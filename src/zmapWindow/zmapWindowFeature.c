@@ -1,3 +1,4 @@
+/*  Last edited: Jul 12 16:18 2012 (edgrif) */
 /*  File: zmapWindowFeature.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -596,7 +597,7 @@ static void featureCopySelectedItem(ZMapFeature feature_in,
 
 /* Handle events on items, note that events for text items are passed through without processing
  * so the text item code can do highlighting etc. */
-static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data)
+static gboolean ß
 {
   gboolean event_handled = FALSE ;			    /* By default we _don't_ handle events. */
   ZMapWindow window = (ZMapWindowStruct*)data ;
@@ -655,8 +656,10 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 
 	  event_handled = TRUE ;
 	}
-      else						    /* button release */
+      else
 	{
+	  /*                            button release                             */
+
 	  /* Gdk defines double clicks as occuring within 250 milliseconds of each other
 	   * but unfortunately if on the first click we do a lot of processing,
 	   * STUPID Gdk no longer delivers the GDK_2BUTTON_PRESS so we have to do this
@@ -675,14 +678,23 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 		  ZMapXRemoteSendCommandError externally_handled = ZMAPXREMOTE_SENDCOMMAND_UNAVAILABLE ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-
 		  highlight_item = item ;
 
 		  /* If external client then call them to do editing. */
 		  if (window->xremote_client)
-		    zmapWindowUpdateXRemoteData(window, (ZMapFeatureAny)feature,
-						ZACP_EDIT_FEATURE, highlight_item) ;
+		    {
+		      /* LOOKS LIKE WE MAY HAVE TO PUT IN A DELAY HERE AS IT'S CAUSING GEMMA
+		       * GRIEF.....WILL THIS DO....OR DO WE NEED TO A TIMER....we end up sending
+		       * this edit request before her program has finished processing the previous
+		       * single select....how wierd..... */
+		      while (gtk_events_pending())
+			{
+			  gtk_main_iteration() ;
+			}
 
+		      zmapWindowUpdateXRemoteData(window, (ZMapFeatureAny)feature,
+						  ZACP_EDIT_FEATURE, highlight_item) ;
+		    }
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 		  /* We can't do this like this any more.....leave it for now and if we need to do
