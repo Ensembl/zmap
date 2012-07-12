@@ -389,6 +389,7 @@ _(ZMAPSTYLE_MODE_ASSEMBLY_PATH, , "assembly-path", "Assembly path "             
 _(ZMAPSTYLE_MODE_TEXT,          , "text"         , "Text only display "                            , "") \
 _(ZMAPSTYLE_MODE_GRAPH,         , "graph"        , "Graphs of various types "                      , "") \
 _(ZMAPSTYLE_MODE_GLYPH,         , "glyph"        , "Special graphics for particular feature types ", "") \
+_(ZMAPSTYLE_MODE_PLAIN,         , "plain"        , "generic non-feature graphics", "") \
 _(ZMAPSTYLE_MODE_META,          , "meta"         , "Meta object controlling display of features "  , "")
 
 /* NOTE x-ref to feature_types[] in zmapWindowCanvasFeatureset.c if you change this */

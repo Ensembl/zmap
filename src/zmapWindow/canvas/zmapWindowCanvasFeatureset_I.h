@@ -46,6 +46,43 @@
 
 
 
+#if NEED_TO_REWRITE_SHED_LOADS_OF_CODE
+/* this is common to all of our display features */
+typedef struct _zmapWindowCanvasBaseStruct
+{
+  zmapWindowCanvasFeatureType type;
+  double y1, y2;    	/* top, bottom of item (box or line) */
+} zmapWindowCanvasBaseStruct;
+#endif
+
+
+/* minimal data for a simple line or box */
+/* to handle text or more complex things need to extend this */
+/* NOTE tyoe < FEATURE_GENOMIC */
+typedef struct _zmapWindowCanvasGraphicsStruct
+{
+#if NEED_TO_REWRITE_SHED_LOADS_OF_CODE
+  zmapWindowCanvasBaseStruct base;
+#else
+  /* must be identical with zmapWindowCanvasBaseStruct */
+  zmapWindowCanvasFeatureType type;
+  double y1, y2;    	/* top, bottom of item (box or line) */
+#endif
+
+  /* include enough to handle lines boxes text, maybe arcs too */
+  /* anything more complex need to be derived from this */
+  double x1, x2;
+  long fill ,outline;
+  char *text;
+  int flags;
+#define WCG_FILL_SET		1
+#define WCG_OUTLINE_SET		2
+
+} zmapWindowCanvasGraphicsStruct;
+
+/* NOTE see featureset_init_funcs() for a relevant Assert */
+
+
 
 /*
  * minimal data struct to define a feature
@@ -54,12 +91,18 @@
 
 typedef struct _zmapWindowCanvasFeatureStruct
 {
+#if NEED_TO_REWRITE_SHED_LOADS_OF_CODE
+  zmapWindowCanvasBaseStruct base;
+#else
+  /* must be identical with zmapWindowCanvasBaseStruct */
   zmapWindowCanvasFeatureType type;
+  double y1, y2;    	/* top, bottom of item (box or line) */
+#endif
+
   ZMapFeature feature;
   GList *from;		/* the list node that holds the feature */
   /* refer to comment above zmapWindowCanvasFeatureset.c/zMapWindowFeaturesetItemRemoveFeature() */
 
-  double y1, y2;    	/* top, bottom of item (box or line) */
   double score;		/* determines feature width */
 
   /* ideally these could be ints but the canvas works with doubles */

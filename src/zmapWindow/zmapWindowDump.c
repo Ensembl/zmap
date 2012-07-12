@@ -932,7 +932,7 @@ static void dumpFeatureCB(gpointer data, gpointer user_data)
   FooCanvasItem *item = FOO_CANVAS_ITEM(data);
   DumpOptions cb_data = (DumpOptions)user_data ;
 
-
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   printf("Paint %s @ %f,%f %f,%f\n", G_OBJECT_TYPE_NAME(item),item->x1,item->y1,item->x2,item->y2);
@@ -1154,7 +1154,7 @@ are x1,y1 and x2,y2 inverted sometimes? this code expands the boxes!
  *  */
 static int getInkColour(int g2_id, GHashTable *ink_colours, guint composite_colour)
 {
-  int ink ;
+  int ink = 0;
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE

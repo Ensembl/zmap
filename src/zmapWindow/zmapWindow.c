@@ -2214,6 +2214,7 @@ static void myWindowZoom(ZMapWindow window, double zoom_factor, double curr_pos)
   double x1, y1, x2, y2, width ;
   double new_canvas_span ;
 
+#if 0
 	zMapLogTime(TIMER_ZOOM,TIMER_CLEAR,0,"zoom");
 	zMapLogTime(TIMER_EXPOSE,TIMER_CLEAR,0,"zoom");
 	zMapLogTime(TIMER_UPDATE,TIMER_CLEAR,0,"zoom");
@@ -2221,7 +2222,7 @@ static void myWindowZoom(ZMapWindow window, double zoom_factor, double curr_pos)
 	zMapLogTime(TIMER_DRAW_CONTEXT,TIMER_CLEAR,0,"zoom");
 	zMapLogTime(TIMER_SETVIS,TIMER_CLEAR,0,"zoom");
       zMapLogTime(TIMER_ZOOM,TIMER_START,0,"");
-
+#endif
 
   if(window->curr_locking == ZMAP_WINLOCK_HORIZONTAL)
     {
@@ -2304,7 +2305,7 @@ static void myWindowZoom(ZMapWindow window, double zoom_factor, double curr_pos)
 
   zMapWindowRedraw(window);
 
-  zMapLogTime(TIMER_ZOOM,TIMER_STOP,0,"");
+//  zMapLogTime(TIMER_ZOOM,TIMER_STOP,0,"");
 
  uninterrupt:
   return ;

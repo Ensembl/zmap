@@ -612,7 +612,7 @@ static FooCanvasItem *rulerCanvasDrawScale(ZMapWindowRulerCanvas ruler,
   zoom_factor = FOO_CANVAS(ruler->canvas)->pixels_per_unit_y;
   height      = ruler->line_height / zoom_factor;
 
-	zMapWindowDrawScaleBar(FOO_CANVAS_GROUP(group), start, end, seq_start, seq_end,
+  zMapWindowDrawScaleBar(FOO_CANVAS_GROUP(group), start, end, seq_start, seq_end,
 		zoom_factor, ruler->revcomped,  0.0);
 
   return group ;
@@ -661,12 +661,39 @@ void zMapWindowDrawScaleBar(FooCanvasGroup *group, double scroll_start, double s
 	double tick_width;
 	int n_levels;	/* number of levels needed for BP resolution */
 	int n_hide; 	/* number we can't see at current zoom level */
-	FooCanvasGroup *lines = 0, *text = 0;
 	char *units[] = { "","","k","M","G" };
 	int i;
 	int scr_start;
 	int scr_end;
-//int nlines = 0;
+
+	ZMapWindowFeaturesetItem featureset;
+	GQuark fid;
+	char buf[32];
+	double text_max,tick_max;	/* max width of each */
+	int tick_inc = 4.0;		/* diff in size per level */
+	double prev;
+
+	static ZMapFeatureTypeStyle scale_style = NULL;
+
+#warning move this to predefined styles code in featureTyoes.c
+	/* temporarily create pre-defined style here (needed by Canvasfeatureset)
+	 * we don't actually use the colours here, maybe we should */
+	if(!scale_style)
+	{
+		scale_style = zMapStyleCreate("scale", "scale bar");
+
+		g_object_set(G_OBJECT(scale_style),
+		       ZMAPSTYLE_PROPERTY_MODE, ZMAPSTYLE_MODE_PLAIN,
+		       ZMAPSTYLE_PROPERTY_COLOURS, "normal fill white; normal border black",
+		       NULL);
+	}
+
+	/* get unique id. and create.... if windows get destroyed then so should the featruesets */
+	sprintf(buf,"scalebar_%p", ((FooCanvasItem *) group)->canvas);
+	fid = g_quark_from_string(buf);
+
+	/* allocate featureset for whole sequence even if zoomed, if the feeatureset does not get re-created on zoom then the extent will be ok */
+	featureset = (ZMapWindowFeaturesetItem) zMapWindowCanvasItemFeaturesetGetFeaturesetItem(group, fid, seq_start, seq_end, scale_style, ZMAPSTRAND_NONE, ZMAPFRAME_0, 0);
 
 	if(revcomped)
 	{
@@ -699,13 +726,6 @@ void zMapWindowDrawScaleBar(FooCanvasGroup *group, double scroll_start, double s
 	if(seq_len < 10)	/* we get called on start up w/ no sequence */
 		return;
 
-	lines = FOO_CANVAS_GROUP(foo_canvas_item_new(group,
-            foo_canvas_group_get_type(),
-            NULL));
-  	text  = FOO_CANVAS_GROUP(foo_canvas_item_new(group,
-            foo_canvas_group_get_type(),
-            NULL));
-
 	gdk_color_parse("black", &black) ;
 	gdk_color_parse("grey", &grey) ;
 
@@ -731,6 +751,37 @@ void zMapWindowDrawScaleBar(FooCanvasGroup *group, double scroll_start, double s
 	for(n_hide = n_levels,gap = n_pixels * tick / seq_len;gap;gap /= 10,n_hide--)
 		continue;
 
+	tick_max = tick_inc * (n_levels - n_hide);
+
+	/* choose units */
+	base = 1;
+	digits = 1;
+	for(i = 1;base <= tick && i < 5;i++,base *= 1000, digits += 2)
+		continue;
+	unit = units[--i];
+	base /= 1000;
+	digits -= 2;
+
+	/* work out space needed for labels */
+	text_max = (digits + strlen(unit)) * font_width;
+	i = (revcomped ? scr_start : scr_end) / base;
+	if(i >= 10)
+		text_max += font_width;
+	if(i >= 100)
+		text_max += font_width;
+	if(i >= 1000)
+		text_max += font_width;
+	if(revcomped)
+		text_max += font_width;		/* for ;'-' */
+
+
+	scale_width = text_max + tick_max;
+	zMapWindowCanvasFeaturesetSetWidth(featureset, scale_width);
+	{
+		FooCanvasItem *foo = (FooCanvasItem *) group;
+		foo_canvas_item_request_update(foo->canvas->root);
+	}
+
 	/* do we assume there are enough pixels for the highest order ticks?
 	 * no: if they shrink the window so that you can't read it then don't display
 	 */
@@ -748,19 +799,7 @@ void zMapWindowDrawScaleBar(FooCanvasGroup *group, double scroll_start, double s
 		if(!gap)
 			break;
 
-		if(top)
-		{
-			base = 1;
-			digits = 1;
-			for(i = 1;base <= tick && i < 5;i++,base *= 1000, digits += 2)
-				continue;
-
-			unit = units[--i];
-			base /= 1000;
-			digits -= 2;
-		}
 //printf("level %d gap = %d, tick = %d, base = %d, digits = %d\n",level,gap,tick,base,digits);
-
 
 		for(tick_coord = (scr_start / tick) * tick;;tick_coord += tick)
 		{
@@ -768,7 +807,6 @@ void zMapWindowDrawScaleBar(FooCanvasGroup *group, double scroll_start, double s
 				continue;
 			if(tick_coord >= scr_end)
 				break;
-
 
 			digit =  (tick_coord / tick) % 10;
 			if(top || digit)			/* don't draw ticks over higher order ticks */
@@ -796,11 +834,11 @@ void zMapWindowDrawScaleBar(FooCanvasGroup *group, double scroll_start, double s
 					canvas_coord = (double) draw_at - canvas_offset;
 //if(top) printf("coord: %d %d (%d,%d) = %d\n", tick_coord, digit, seq_start,seq_end,draw_at);
 
-					tick_width = 4.0 * (level - n_hide);
+					tick_width = tick_inc * (level - n_hide);
 					colour = &black;
 					if(nudge)
 					{
-						tick_width += 3.0;
+						tick_width += tick_inc * 0.75;
 						if(gap < 3)
 							colour = &grey;
 					}
@@ -809,9 +847,11 @@ void zMapWindowDrawScaleBar(FooCanvasGroup *group, double scroll_start, double s
 						colour = &grey;
 					}
 
-					zMapDrawLine(lines, scale_width - tick_width,  canvas_coord,
-						scale_width, canvas_coord, colour, 1.0) ;
-//nlines++;
+					zMapWindowFeaturesetAddGraphics(featureset, FEATURE_LINE,
+						scale_width - tick_width, canvas_coord,
+						scale_width, canvas_coord,
+						NULL, colour, NULL);
+
 					if((gap > text_height * 2))
 					{
 	      				FooCanvasItem *item = NULL;
@@ -819,6 +859,7 @@ void zMapWindowDrawScaleBar(FooCanvasGroup *group, double scroll_start, double s
 						int num,frac;
 						char *sign = "";
 						double offset = revcomped ? -0.5 : 0.5;
+						ZMapWindowCanvasGraphics gfx;
 
 						num = tick_coord / base;
 						if(num < 0)
@@ -849,16 +890,10 @@ void zMapWindowDrawScaleBar(FooCanvasGroup *group, double scroll_start, double s
 							sprintf(label,"%s%d%s",sign,num,unit);
 						}
 
-						item = foo_canvas_item_new(text,
-							foo_canvas_text_get_type(),
-							"x",          x,
-							"y",          canvas_coord + offset,	/* display between ticks at high zoom */
-							"text",       label,
-							"font_desc",  font_desc,
-							"fill_color", "black",
-							// anchor centre means middle of text item is at coordinate?
-							"anchor",     GTK_ANCHOR_W,
-							NULL);
+					      gfx = zMapWindowFeaturesetAddGraphics(featureset, FEATURE_TEXT,
+							0, canvas_coord,
+							0, canvas_coord+1,
+							NULL, &black, g_strdup(label));
 					}
 
 //if(top) printf("tick @ %d %f (%d, %d) level %d: %s\n",tick_coord,canvas_coord,base,tick,level,label);
@@ -866,21 +901,37 @@ void zMapWindowDrawScaleBar(FooCanvasGroup *group, double scroll_start, double s
 			}
 		}
 	}
-//printf("%d lines drawn\n",nlines);
-	/* one vertical line */
-	zMapDrawLine(lines, scale_width, scroll_start, scale_width, scroll_end, &black, 1.0) ;
 
-//  if(text_left)
-    {
-      g_object_set_data(G_OBJECT(text),
-                        ZMAP_SCALE_BAR_GROUP_TYPE_KEY,
-                        GINT_TO_POINTER(ZMAP_SCALE_BAR_GROUP_LEFT));
-      g_object_set_data(G_OBJECT(lines),
-                        ZMAP_SCALE_BAR_GROUP_TYPE_KEY,
-                        GINT_TO_POINTER(ZMAP_SCALE_BAR_GROUP_RIGHT));
-      positionLeftRight(text, lines);
-    }
+	/* add a few shortish vertical lines down the left
+	 * instead of one big one that would mean searching the whole index for small exposes
+	 */
+	for(prev = 0,i = 20,tick = seq_len / i,tick_coord = scr_start; tick_coord < seq_end ;tick_coord += tick)
+	{
+		int draw_at;
 
+		if(revcomped)
+		{
+			/* tick coord is # bases off the end due to revcomp mixture */
+			/* this is the scr_start calc from above reversed */
+			/* but we draw 1 bp backwards */
+			draw_at = tick_coord + seq_end - seq_start + 2 + 1;
+		}
+		else
+		{
+			draw_at = tick_coord + seq_start - 1;
+		}
+
+		canvas_coord = (double) draw_at - canvas_offset;
+
+		if(prev)
+		{
+			zMapWindowFeaturesetAddGraphics(featureset, FEATURE_LINE,
+			scale_width, prev,
+			scale_width, canvas_coord,
+			NULL, &black, NULL);
+		}
+		prev = canvas_coord;
+	}
 }
 
 
