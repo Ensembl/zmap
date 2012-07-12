@@ -38,10 +38,6 @@
 #include <ZMap/zmapStyle.h>
 
 
-#if !ZWCI_AS_FOO
-/* This still gets added as a g_object_set_data on FooCanvasItem objects. */
-#define ITEM_SUBFEATURE_DATA  "item_subfeature_data"
-#endif
 
 /* The type name for the ZMapWindowCanvasItem GType */
 #define ZMAP_WINDOW_CANVAS_ITEM_NAME 	"ZMapWindowCanvasItem"

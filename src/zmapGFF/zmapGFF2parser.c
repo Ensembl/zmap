@@ -43,6 +43,7 @@
 
 
 
+/* Types of name find operation, depend on type of feature. */
 typedef enum {NAME_FIND, NAME_USE_SOURCE, NAME_USE_SEQUENCE, NAME_USE_GIVEN, NAME_USE_GIVEN_OR_NAME } NameFindType ;
 
 
@@ -91,7 +92,6 @@ static gboolean loadGaps(char *currentPos, GArray *gaps, ZMapStrand ref_strand, 
 static gboolean loadAlignString(ZMapGFFParser parser, char *attributes, GArray **gaps_out,
 				ZMapStrand ref_strand, int ref_start, int ref_end,
 				ZMapStrand match_strand, int match_start, int match_end) ;
-
 static void mungeFeatureType(char *source, ZMapStyleMode *type_inout);
 static gboolean getNameFromNote(char *attributes, char **name) ;
 static char *getNoteText(char *attributes) ;
@@ -1292,92 +1292,6 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line, gsize line_lengt
 }
 
 
-#define BAM_ALIGNMENT_CIGAR 1
-
-#if BAM_ALIGNMENT_CIGAR
-/* temp bit of code to read in a gap string as provided for ENCODE data
- * of the form M23 N12234 M53
- *
- * NOTE that the two M's add up to 76 but this is not always the case
- * NOTE also that we tend to get one gap only but more are logically possible
- * and we need to cope
- * we only process M and N tags (or I or D instead of N if that's what anacode end up sending us)
- *
- * this is a deliberately dumb but simple function
- * if we get unexpected stuff like N88 M76 or M12 N12 N23 M29 then we handle it silently
- */
-
-/*NOTE James did the string like this:
- * 23M1234N43M
- * ... which is different
- *
- * target is ref, query is match; see commant above loadGaps()
- */
-
-static gboolean loadGapString(ZMapGFFParser parser,
-				char *attributes, GArray **gaps_out,
-				ZMapStrand ref_strand, int ref_start, int ref_end,
-				ZMapStrand match_strand)
-{
-	char *p = attributes;
-	int match_start = 1;
-
-	/* skip over <cigar "> */
-	while(*p && *p != '"' ) p++;
-	if(!*p++)
-		return FALSE;
-
-	while (*p && *p != '"')
-	{
-		int bases = atoi(p);
-
-		while(*p && *p <= ' ')
-			p++;
-		while(*p >= '0' && *p <= '9')
-			p++;
-		while(*p && *p <= ' ')
-			p++;
-
-		if(*p == 'M')
-		{
-			/* add a block */
-			ZMapAlignBlockStruct ab = { 0 };
-
-			/* Gap coords are positive, 1-based, start < end " So: q2 is off the end of the match */
-
-			ab.q1 = match_start;
-			ab.q2 = match_start + bases - 1;
-			ab.q_strand = match_strand;
-			ab.t1 = ref_start;
-			ab.t2 = ref_start + bases - 1;
-			ab.t_strand = ref_strand;
-
-			g_array_append_val(*gaps_out,ab);
-
-			/* skip to end of block */
-			ref_start += bases;
-			match_start += bases;
-		}
-		else if (*p == 'N')
-		{
-			/* skip to start of next block */
-			ref_start += bases;
-		}
-		else
-		{
-			return FALSE;
-		}
-		p++;
-	}
-
-	return TRUE;
-}
-
-
- #endif
-
-
-
 /*
  * we can get tags in quoted strings, and maybe ';' too
  * i'm assuming that quotes cannot appear in quoted strings even with '\'
@@ -1836,30 +1750,6 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 		}
 	      else if ((gaps_onwards = strstr(attributes, ZMAPSTYLE_ALIGNMENT_CIGAR " ")))
 		{
-#if BAM_ALIGNMENT_CIGAR
-#warning temporary code to get BAM alignments working, to be replaced by 'proper' cigar string handling
-//		  if (!g_ascii_strcasecmp(ontology, "read"))
-		  {
-			gaps = g_array_new(FALSE, FALSE, sizeof(ZMapAlignBlockStruct));
-
-			  if(!loadGapString(parser,
-					 gaps_onwards, &gaps,
-				       strand, start, end,
-				       query_strand))
-			  {
-				zMapLogWarning("Could not parse cigar string: %s", gaps_onwards) ;
-				g_array_free(gaps, TRUE) ;
-				gaps = NULL ;
-			  }
-			  else if (gaps->len < 2)	/* ie is ungapped */
-			  {
-  				g_array_free(gaps, TRUE) ;
-				gaps = NULL ;
-
-			  }
-		  }
-//		  else
-#else
 		  if (!loadAlignString(parser,
 				       gaps_onwards, &gaps,
 				       strand, start, end,
@@ -1867,7 +1757,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 		    {
 		      zMapLogWarning("Could not parse align string: %s", gaps_onwards) ;
 		    }
-#endif
+
 		}
 	    }
 
@@ -2062,7 +1952,6 @@ static gboolean loadAlignString(ZMapGFFParser parser,
 
   return valid ;
 }
-
 
 
 /* This routine attempts to find the feature's name from the GFF attributes field,

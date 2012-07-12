@@ -442,6 +442,7 @@ static gboolean parseSubFeatures(ZMapFeatureTypeStyle style,gchar *str);
 static gchar *zmapStyleValueSubFeatures(GQuark *quarks);
 
 
+static GQuark splice_style_id_G = 0;
 
 
 
@@ -507,6 +508,9 @@ GType zMapFeatureTypeStyleGetType(void)
       type = g_type_register_static (G_TYPE_OBJECT,
                              "ZMapFeatureTypeStyle",
                              &info, (GTypeFlags)0);
+
+	/* try to avoid quarking this for every feature..... */
+	splice_style_id_G = g_quark_from_string(ZMAPSTYLE_LEGACY_3FRAME);
     }
 
   return type;
@@ -1215,14 +1219,22 @@ gboolean zMapStyleMakeDrawable(ZMapFeatureTypeStyle style)
   return result ;
 }
 
+
+
 /* Does style represent the splice style used in acedb to represent gene finder output. */
 gboolean zMapStyleIsSpliceStyle(ZMapFeatureTypeStyle style)
 {
+#if 0
+// calling this several times for every feature has got to be quite slow
+
   gboolean is_splice = FALSE ;
 
   is_splice = (style->unique_id == g_quark_from_string(ZMAPSTYLE_LEGACY_3FRAME)) ;
 
   return is_splice ;
+#else
+	return style->unique_id == splice_style_id_G;
+#endif
 }
 
 
@@ -1619,6 +1631,33 @@ ZMapStyleGlyphShape zMapStyleGetGlyphShape(gchar *shape, GQuark id)
 
   if(!syntax)
     {
+	int minx = 0, maxx = 0, miny = 0,maxy = 0;	/* anchor size to origin */
+	int i,coord;
+
+	for(i = 0; i < glyph_shape->n_coords * 2;i++)
+	{
+	  coord = glyph_shape->coords[i];
+
+	  if(coord == GLYPH_COORD_INVALID)
+	    coord = (int) GLYPH_CANVAS_COORD_INVALID; // zero, will be ignored
+
+	  if(i & 1)			/* Y coord */
+	    {
+		if(miny > coord)
+			miny = coord;
+		if(maxy < coord)
+			maxy = coord;
+	    }
+	  else        		// X coord
+	    {
+		if(minx > coord)
+			minx = coord;
+		if(maxx < coord)
+			maxx = coord;
+	    }
+	}
+	glyph_shape->width  = maxx - minx + 1;
+	glyph_shape->height = maxy - miny + 1;
 
       if(glyph_shape->type == GLYPH_DRAW_LINES && x == glyph_shape->coords[0] && y == glyph_shape->coords[1])
         {

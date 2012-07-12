@@ -214,10 +214,11 @@ static void invoke_merge_in_names(gpointer list_data, gpointer user_data);
 static gboolean mapEventCB(GtkWidget *widget, GdkEvent *event, gpointer user_data) ;
 static gint colOrderCB(gconstpointer a, gconstpointer b,gpointer user_data) ;
 
+#ifdef DEBUG_CONTEXT_MAP
 static void print_source_2_sourcedata(char * str,GHashTable *data) ;
 static void print_fset2col(char * str,GHashTable *data) ;
 static void print_col2fset(char * str,GHashTable *data) ;
-
+#endif
 
 /* These callback routines are global because they are set just once for the lifetime of the
  * process. */
@@ -3999,6 +4000,18 @@ static void getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature_req
 }
 
 
+static gboolean zMapViewSortExons(ZMapFeatureContext diff_context)
+{
+      zMapFeatureContextExecute((ZMapFeatureAny) diff_context,
+                                   ZMAPFEATURE_STRUCT_FEATURESET,
+                                   zMapFeatureTranscriptSortExons,
+                                   NULL);
+
+      return(TRUE);
+}
+
+
+
 static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inout,
 				 GHashTable *styles, GList **masked,
 				 gboolean request_as_columns, gboolean revcomp_if_needed)
@@ -4152,6 +4165,12 @@ static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inou
 	  zMapLogWarning(x,"");
 	  printf("%s\n",x);
 	}
+
+	/* ensure transcripts have exons in fwd strand order
+	 * needed for CanvasTranscript... ACEDB did this but pipe scripts return exons in transcript (strand) order
+	 */
+	zMapViewSortExons(diff_context);
+
 
 	/* collpase short reads if configured
 	 * NOTE this is simpler than EST masking as we simply don't display the collapsed features
@@ -4988,7 +5007,7 @@ static gboolean mapEventCB(GtkWidget *widget, GdkEvent *event, gpointer user_dat
 }
 
 
-
+#ifdef DEBUG_CONTEXT_MAP
 
 static void print_source_2_sourcedata(char * str,GHashTable *data)
 {
@@ -5048,6 +5067,6 @@ static void print_col2fset(char * str,GHashTable *data)
     }
 }
 
-
+#endif
 
 

@@ -286,6 +286,14 @@ typedef struct _zmapWindowFeaturesetItemStruct
   ZMapFeature point_feature;	/* set by cursor movement */
   ZMapWindowCanvasFeature point_canvas_feature;		/* last clicked canvasfeature, set by select, need for legacy code interface */
 
+  ZMapWindowCanvasFeature last_added;	/* necessary optimisation */
+  /* NOTE
+   * when we add a feature we wipe the display index (due to not having implemented the skip list fully)
+   * which means that we can't look up the last added feature
+   * which is what we need to do to set show/hide or colour
+   * so we keep this pointer to find the last one added
+   */
+
   double filter_value;		/* active level, default 0.0 */
   int n_filtered;
   gboolean enable_filter;	/* has score in a feature and style allows it */

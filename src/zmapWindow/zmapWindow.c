@@ -2214,15 +2214,6 @@ static void myWindowZoom(ZMapWindow window, double zoom_factor, double curr_pos)
   double x1, y1, x2, y2, width ;
   double new_canvas_span ;
 
-#if 0
-	zMapLogTime(TIMER_ZOOM,TIMER_CLEAR,0,"zoom");
-	zMapLogTime(TIMER_EXPOSE,TIMER_CLEAR,0,"zoom");
-	zMapLogTime(TIMER_UPDATE,TIMER_CLEAR,0,"zoom");
-	zMapLogTime(TIMER_DRAW,TIMER_CLEAR,0,"zoom");
-	zMapLogTime(TIMER_DRAW_CONTEXT,TIMER_CLEAR,0,"zoom");
-	zMapLogTime(TIMER_SETVIS,TIMER_CLEAR,0,"zoom");
-      zMapLogTime(TIMER_ZOOM,TIMER_START,0,"");
-#endif
 
   if(window->curr_locking == ZMAP_WINLOCK_HORIZONTAL)
     {
@@ -2304,8 +2295,6 @@ static void myWindowZoom(ZMapWindow window, double zoom_factor, double curr_pos)
 
 
   zMapWindowRedraw(window);
-
-//  zMapLogTime(TIMER_ZOOM,TIMER_STOP,0,"");
 
  uninterrupt:
   return ;
@@ -3027,19 +3016,15 @@ static gboolean windowGeneralEventCB(GtkWidget *wigdet, GdkEvent *event, gpointe
 /* This gets run _BEFORE_ any of the canvas item handlers which is good because we can use it
  * to handle more general events such as "click to focus" etc., _BUT_ be careful when adding
  * event handlers here, you could override a canvas item event handler and stop something
- * important working (e.g. dna text highlighting...!!)
+ * important working (e.g. dna text highlighting...!!) mh17: previous code, DNA now handled here
  *
  *
  * There is some slightly arcane handling of button 1 here:
  *
- * When the user presses button 1 while on a text field (e.g. dna) then this routine passes
- * all mouse events straight through without handling them, they are picked up by the text
- * field code to highlight text.
- *
  * if the item under the cursor is a CanvasFeatureset the we ask it if it wants to
  * operate text selection and if so we pass coordinates through to that
- * NOTE we never handle this in canvasItem EventCB, asn we have priority here
- * DNA event callbacks will disappear with ZMapWindowCanvasItems
+ * NOTE we never handle this in canvasItem EventCB, as we have priority here
+ * DNA event callbacks disappeared with ZMapWindowCanvasItems as groups
  *
  * If the user presses button 1 anywhere else we assume they are going to lasso an area for
  * zooming and we track mouse movements, if they have moved far enough then we do the zoom
@@ -3065,7 +3050,9 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
   static FooCanvasItem *seq_item = NULL;		/* if not NULL we are selecting text */
   static long seq_start, seq_end;			/* first coord is fixed, then we can move above or below */
 
-
+#if MOUSE_DEBUG
+zMapLogWarning("canvas event %d",  event->type);
+#endif
 
   /* We record whether we are inside the window to enable user to cancel certain mouse related
    * actions by moving outside the window. */
@@ -3119,17 +3106,16 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 
 
 	      if ((item = foo_canvas_get_item_at(window->canvas, origin_x, origin_y))
-			&& ZMAP_IS_WINDOW_FEATURESET_ITEM(item))
+			&& ZMAP_IS_WINDOW_FEATURESET_ITEM(item)
+			&& zMapWindowCanvasFeaturesetGetSeqCoord((ZMapWindowFeaturesetItem) item, TRUE, origin_x, origin_y, &seq_start, &seq_end))
 		{
-			/* ho hum we get the foo not the containing zmapWindowCanvasItem group, how consistent */
-
 				/* get start coordinate via subpartspan from x and y
 				 * set end coordinate to be the same
 				 * set a flag to say selecting text and remember the canvas item
 				 * highlight the region
 				 */
 
-			if(zMapWindowCanvasFeaturesetGetSeqCoord((ZMapWindowFeaturesetItem) item, TRUE, origin_x, origin_y, &seq_start, &seq_end))
+//			if(zMapWindowCanvasFeaturesetGetSeqCoord((ZMapWindowFeaturesetItem) item, TRUE, origin_x, origin_y, &seq_start, &seq_end))
 			{
 				seq_item = item;
 				/*
@@ -3523,13 +3509,18 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 		    double rootx1, rootx2, rooty1, rooty2 ;
 
 
-		    /* Get size of item and convert to world coords. */
+		    /* Get size of item and convert to world coords, bounds are relative to item's parent */
 		    foo_canvas_item_get_bounds(window->rubberband, &rootx1, &rooty1, &rootx2, &rooty2) ;
-		    foo_canvas_item_i2w(window->rubberband, &rootx1, &rooty1) ;
-		    foo_canvas_item_i2w(window->rubberband, &rootx2, &rooty2) ;
+//		    foo_canvas_item_i2w(window->rubberband, &rootx1, &rooty1) ;
+//		    foo_canvas_item_i2w(window->rubberband, &rootx2, &rooty2) ;
 
-		    /* only finds features in a canvas featureset, old foo gives nothing */
-		    feature_list = zMapWindowFeaturesetItemFindFeatures(&item, rooty1, rooty2, rootx1, rootx2);
+			/* find the canvvas iten (a canvas featureset) at the centre of the lassoo */
+// can-t do this as the canvas featureset point function returns n/a if there's no feature under the cursor
+//		    if ((item = foo_canvas_get_item_at(window->canvas, (rootx2 + rootx1) / 2, (rooty2 + rooty1) / 2) ))
+		    {
+			/* only finds features in a canvas featureset, old foo gives nothing */
+			feature_list = zMapWindowFeaturesetItemFindFeatures(&item, rooty1, rooty2, rootx1, rootx2);
+		    }
 
 			/* this is how features get highlit */
 			if(item)
@@ -4394,6 +4385,16 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	event_handled = TRUE ;
 	break ;
       }
+
+    case GDK_1:
+	    zMapLogWarning("point 1","");
+	    break;
+    case GDK_2:
+	    zMapLogWarning("point 2","");
+	    break;
+    case GDK_3:
+	    zMapLogWarning("point 3","");
+	    break;
 
     case GDK_Delete:
     case GDK_BackSpace:					    /* Good for Macs which have no delete key. */
@@ -5285,8 +5286,6 @@ static char *makePrimarySelectionText(ZMapWindow window) //, FooCanvasItem *high
 	}
       else
 	{
-//	  ZMapFeatureSubPartSpan sub_feature ;
-
 	  while (selected)
 	    {
 	      FeatureCoordStruct feature_coord ;
@@ -5298,38 +5297,15 @@ static char *makePrimarySelectionText(ZMapWindow window) //, FooCanvasItem *high
 	      else
 		canvas_item = zMapWindowCanvasItemIntervalGetObject(item) ;
 
-//	      item_feature = zmapWindowItemGetFeature(canvas_item) ;
 		item_feature = (ZMapFeature) id2c->feature_any;
 
-#if ZWCI_AS_FOO
-/* this is not a get sub part issue, we want the whole canvas feature which is a single 'exon' in a bigger alignment */
+		/* this is not a get sub part issue, we want the whole canvas feature which is a single 'exon' in a bigger alignment */
 		selected_start = item_feature->x1 ;
 		selected_end = item_feature->x2 ;
 		selected_length = item_feature->x2 - item_feature->x1 + 1 ;
 		item_type_int = ZMAPFEATURE_SUBPART_MATCH ;
-#else
-	      if ((sub_feature = zMapWindowCanvasItemIntervalGetData(item, item_feature, 0, item_feature->x1)))
-		{
-#if POINTLESS
-		  possiblyPopulateWithChildData(window, item, // highlight_item,
-						&item_type_int, &selected_start, &selected_end, &selected_length) ;
-#else
-			selected_start = sub_feature->start ;
-			selected_end = sub_feature->end ;
-			selected_length = sub_feature->end - sub_feature->start + 1 ;
-			item_type_int = sub_feature->subpart ;
 
-#endif
-
-		}
-	      else
-		{
-		  possiblyPopulateWithFullData(window, item_feature, item, // highlight_item,
-					       &dummy, &dummy, &dummy, &selected_start,
-					       &selected_end, &selected_length) ;
-		}
-#endif
-	      feature_coord.name = (char *)g_quark_to_string(item_feature->original_id) ;
+		feature_coord.name = (char *)g_quark_to_string(item_feature->original_id) ;
 	      feature_coord.start = selected_start ;
 	      feature_coord.end = selected_end ;
 	      feature_coord.length = selected_length ;
@@ -5355,92 +5331,6 @@ static char *makePrimarySelectionText(ZMapWindow window) //, FooCanvasItem *high
 }
 
 
-#if POINTLESS
-/* this function does nothing and is called from one place */
-
-/* If feature_item is a sub_feature, e.g. an exon, then return its position/length etc. */
-static gboolean possiblyPopulateWithChildData(ZMapWindow window,
-                                              FooCanvasItem *feature_item,
-//                                              FooCanvasItem *highlight_item,
-                                              ZMapFeatureSubpartType *sub_type,
-                                              int *selected_start, int *selected_end, int *selected_length)
-{
-  gboolean populated = FALSE ;
-  ZMapFeatureSubPartSpan item_data ;
-
-
-  item_data = zMapWindowCanvasItemIntervalGetData(feature_item);
-
-  if(item_data)
-  {
-
-	*selected_start = item_data->start ;
-	*selected_end = item_data->end ;
-	*selected_length = (item_data->end - item_data->start + 1) ;
-	*sub_type = item_data->subpart ;
-
-	populated = TRUE ;
-  }
-  return populated ;
-}
-
-
-/* Return full_item data.... */
-static gboolean possiblyPopulateWithFullData(ZMapWindow window,
-                                             ZMapFeature feature,
-                                             FooCanvasItem *feature_item,
- //                                            FooCanvasItem *highlight_item,
-                                             int *feature_start, int *feature_end,
-                                             int *feature_length,
-                                             int *selected_start, int *selected_end,
-                                             int *selected_length)
-{
-  gboolean populated = TRUE;
-  int type;
-
-  zMapAssert(feature_start  && feature_end  &&
-             selected_start && selected_end &&
-             feature_length && selected_length);
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* We could be using this here..... */
-
-	  zMapFeatureGetInfo((ZMapFeatureAny)item_feature, NULL,
-			     "start",  &selected_start,
-			     "end",    &selected_end,
-			     "length", &selected_length,
-			     NULL);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-  type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_TYPE)) ;
-
-
-  switch (feature->type)
-    {
-    case ZMAPSTYLE_MODE_BASIC:
-    case ZMAPSTYLE_MODE_SEQUENCE:
-      *feature_length = zMapFeatureLength(feature, ZMAPFEATURELENGTH_TARGET) ;
-      break ;
-    case ZMAPSTYLE_MODE_TRANSCRIPT:
-      *feature_length = zMapFeatureLength(feature, ZMAPFEATURELENGTH_SPLICED) ;
-      break ;
-    case ZMAPSTYLE_MODE_ALIGNMENT:
-      *feature_length = zMapFeatureLength(feature, ZMAPFEATURELENGTH_QUERY) ;
-      break ;
-    default:
-      *feature_length = 0 ;
-      break ;
-    }
-
-  *selected_start = feature->x1 ;
-  *selected_end = feature->x2 ;
-  *selected_length = *feature_length ;
-
-  return populated ;
-}
-
-#endif
 
 
 void zmapWindowReFocusHighlights(ZMapWindow window)

@@ -1254,6 +1254,7 @@ static ZMapFrame feature_frame(ZMapFeature feature, int start_coord)
   ZMapFrame frame;
   int offset;
   ZMapFeatureBlock block;
+  int fval;
 
   zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
   zMapAssert(feature->parent && feature->parent->parent);
@@ -1262,7 +1263,10 @@ static ZMapFrame feature_frame(ZMapFeature feature, int start_coord)
 
   offset = block->block_to_sequence.block.x1;   /* start of block in sequence/parent */
 
-  frame  = (ZMapFrame) ((start_coord - offset) % 3) + ZMAPFRAME_0 ;
+  fval = ((start_coord - offset) % 3) + ZMAPFRAME_0 ;
+  if(fval < ZMAPFRAME_0) 	/* eg feature starts before the block */
+	  fval += 3;
+  frame  = (ZMapFrame) fval;
 
   return frame;
 }

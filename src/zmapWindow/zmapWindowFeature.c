@@ -583,44 +583,11 @@ static void featureCopySelectedItem(ZMapFeature feature_in,
                                     ZMapFeature feature_out,
                                     FooCanvasItem *selected)
 {
-#if !ZWCI_AS_FOO
-  ZMapFeatureSubPartSpan item_feature_data;
-  ZMapSpanStruct span = {0};
-  ZMapAlignBlockStruct alignBlock = {0};
-#endif
 
   if (feature_in && feature_out)
     memcpy(feature_out, feature_in, sizeof(ZMapFeatureStruct));
   else
     zMapAssertNotReached();
-
-#if !ZWCI_AS_FOO
-  if ((item_feature_data = g_object_get_data(G_OBJECT(selected), ITEM_SUBFEATURE_DATA)))
-    {
-      if (feature_out->type == ZMAPSTYLE_MODE_TRANSCRIPT)
-        {
-          feature_out->feature.transcript.exons   = NULL;
-          feature_out->feature.transcript.introns = NULL;
-          /* copy the selected intron/exon */
-          span.x1 = item_feature_data->start;
-          span.x2 = item_feature_data->end;
-          if(item_feature_data->subpart == ZMAPFEATURE_SUBPART_EXON ||
-             item_feature_data->subpart == ZMAPFEATURE_SUBPART_EXON_CDS)
-            zMapFeatureAddTranscriptExonIntron(feature_out, &span, NULL);
-          else
-            zMapFeatureAddTranscriptExonIntron(feature_out, NULL, &span);
-        }
-      else if (feature_out->type == ZMAPSTYLE_MODE_ALIGNMENT &&
-	       item_feature_data->subpart == ZMAPFEATURE_SUBPART_MATCH)
-        {
-          feature_out->feature.homol.align = NULL;
-          /* copy the selected align */
-          alignBlock.q1 = item_feature_data->start;
-          alignBlock.q2 = item_feature_data->end;
-          feature_out->feature.homol.align = g_array_sized_new(FALSE, TRUE, sizeof(ZMapAlignBlockStruct), 1);
-        }
-    }
-#endif
 
   return ;
 }
@@ -919,7 +886,10 @@ void zmapWindowFeatureExpand(ZMapWindow window, FooCanvasItem *foo,
       feature_stack.feature = (ZMapFeature) l->data;
       item = (ZMapWindowCanvasItem) zmapWindowFeatureDraw(window, feature->style, (FooCanvasGroup *) container_set, &feature_stack);
       //printf(" show %s\n", g_quark_to_string(feature_stack.feature->original_id));
+#if MH17_DO_HIDE
+// ref to same #if in zmapWindowCanvasAlignment.c
       zMapWindowCanvasItemShowHide(item, TRUE);
+#endif
     }
 
 

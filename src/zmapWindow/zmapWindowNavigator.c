@@ -1439,11 +1439,10 @@ printf("navCanvasItemEventCB %f,%f: %s, %p at %f -> %f\n", button->x,button->y,g
                   {
                     /* make item menu */
                     makeMenuFromCanvasItem(button, item, navigate);
+			  event_handled = TRUE ;
                   }
               }
             last_but_press = button->time ;
-
-	    event_handled = TRUE ;
           }
         else
           {

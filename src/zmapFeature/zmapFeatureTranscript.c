@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -24,7 +24,7 @@
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Functions for processing/handling transcript features.
- *              
+ *
  * Exported functions: See ZMap/zmapFeature.h
  *-------------------------------------------------------------------
  */
@@ -34,7 +34,7 @@
 #include <string.h>
 #include <zmapFeature_P.h>
 
-
+#include <ZMap/zmapGLibUtils.h>
 
 
 typedef struct
@@ -94,13 +94,13 @@ static void printDetailedExons(gpointer exon_data, gpointer user_data) ;
 
 
 
-/* 
+/*
  *               External functions.
  */
 
 
 /* Initialises a transcript feature.
- * 
+ *
  *  */
 gboolean zMapFeatureTranscriptInit(ZMapFeature feature)
 {
@@ -173,7 +173,7 @@ gboolean zMapFeatureAddTranscriptStartEnd(ZMapFeature feature,
 
 
 /* Adds a single exon and/or intron to an existing transcript feature.
- * 
+ *
  * NOTE: extends the transcripts start/end coords if introns and/or exons
  * exceed these coords.
  *  */
@@ -224,7 +224,7 @@ gboolean zMapFeatureAddTranscriptExonIntron(ZMapFeature feature,
 
 /* Checks that transcript has at least one exon, if not then adds an exon to
  * cover entire extent of transcript.
- * 
+ *
  * Returns TRUE if the transcript did not need normalising or if it was
  * normalised successfully, FALSE otherwise.
  */
@@ -240,7 +240,7 @@ gboolean zMapFeatureTranscriptNormalise(ZMapFeature feature)
       exon.x1 = feature->x1 ;
       exon.x2 = feature->x2 ;
       exon_ptr = &exon ;
-      
+
       result = zMapFeatureAddTranscriptExonIntron(feature, exon_ptr, NULL) ;
     }
 
@@ -252,7 +252,7 @@ gboolean zMapFeatureTranscriptNormalise(ZMapFeature feature)
 /* Takes a transcript feature and produces a list of "annotated" exon regions
  * which include information about 5' and 3' split codons, frame and much else,
  * see the ZMapFullExon struct.
- * 
+ *
  */
 gboolean zMapFeatureAnnotatedExonsCreate(ZMapFeature feature, gboolean include_protein,
 					 GList **exon_regions_list_out)
@@ -326,8 +326,93 @@ void zMapFeatureAnnotatedExonsDestroy(GList *exon_list)
 
 
 
+static int span_compare (gconstpointer a, gconstpointer b)
+{
+	ZMapSpan sa = (ZMapSpan) a;
+	ZMapSpan sb = (ZMapSpan) b;
 
-/* 
+	if(sa->x1 < sb->x1)
+		return(-1);
+	if(sa->x1 > sb->x1)
+		return( 1);
+	return(0);
+}
+
+
+
+
+/* ensure that exons are in fwd strand order
+ * these come sorted from ACEDB and in reverse order for -ve strand from pipe servers (otterlace)
+ * but GFF does not enforce this so to be safe we need to do this
+ */
+ZMapFeatureContextExecuteStatus zMapFeatureTranscriptSortExons(GQuark key,
+                                                         gpointer data,
+                                                         gpointer user_data,
+                                                         char **error_out)
+{
+  ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
+  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
+
+  ZMapFeatureTypeStyle style;
+  GList *features = NULL;
+
+
+  zMapAssert(feature_any && zMapFeatureIsValid(feature_any)) ;
+
+  switch(feature_any->struct_type)
+    {
+    case ZMAPFEATURE_STRUCT_ALIGN:
+      {
+        ZMapFeatureAlignment feature_align = NULL;
+        feature_align = (ZMapFeatureAlignment)feature_any;
+      }
+      break;
+    case ZMAPFEATURE_STRUCT_BLOCK:
+      {
+        ZMapFeatureBlock feature_block = NULL;
+        feature_block = (ZMapFeatureBlock)feature_any;
+      }
+      break;
+
+    case ZMAPFEATURE_STRUCT_FEATURESET:
+    {
+		ZMapFeatureSet feature_set = NULL;
+
+		feature_set = (ZMapFeatureSet)feature_any;
+		style = feature_set->style;
+
+		if(!style || zMapStyleGetMode(style) != ZMAPSTYLE_MODE_TRANSCRIPT)
+			break;
+
+		zMap_g_hash_table_get_data(&features, feature_set->features);
+
+		for(; features; features = g_list_delete_link(features, features))
+		{
+			ZMapFeature feat = (ZMapFeature) features->data;
+
+			g_array_sort(feat->feature.transcript.exons, span_compare);
+			g_array_sort(feat->feature.transcript.introns, span_compare);
+		}
+
+		break;
+    }
+
+    case ZMAPFEATURE_STRUCT_FEATURE:
+    case ZMAPFEATURE_STRUCT_INVALID:
+    default:
+      {
+      zMapAssertNotReached();
+      break;
+      }
+    }
+
+  return status;
+}
+
+
+
+
+/*
  *               Internal functions.
  */
 
@@ -391,7 +476,7 @@ static void getDetailedExon(gpointer exon_data, gpointer user_data)
 	  int ex_cds_start = exon_start, ex_cds_end = exon_end ;
 	  int exon_length ;
 	  int start_phase, end_phase ;
-	  
+
 	  if (exon_start < full_data->cds_start)
 	    {
 	      /* 5' utr part. */
@@ -456,7 +541,7 @@ static void getDetailedExon(gpointer exon_data, gpointer user_data)
 		{
 		  /* 3' split codon starts one base after end of full codon. */
 		  int correction ;
-		
+
 		  correction = ((end_phase + 1) % 3) - 1 ;
 
 		  ex_split_3.x1 = ex_cds_end - correction ;
@@ -472,7 +557,7 @@ static void getDetailedExon(gpointer exon_data, gpointer user_data)
 	      /* cds part, "simple" now, just set to cds_start/end (only do this if there is
 	       * more, sometimes gene prediction programs produce very short exons so whole
 	       * exon is either split 5 or split 3 codon....) */
-	      if (ex_cds_start <= ex_cds_end 
+	      if (ex_cds_start <= ex_cds_end
 		  && (ex_cds_start >= exon_span->x1 || (ex_split_5.x2 && ex_cds_start > ex_split_5.x2))
 		  && (ex_cds_end <=  exon_span->x2 || (ex_split_3.x1 && ex_cds_end < ex_split_3.x1)))
 		{

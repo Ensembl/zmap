@@ -9,7 +9,7 @@ GTK_PREFIX=/opt/local
 LIBTOOL=glibtool
 LIBTOOLIZE=glibtoolize
 
-LDFLAGS_args="-Xlinker -syslibroot  -Xlinker /opt/local/lib -Xlinker -bind_at_load"
+LDFLAGS_args="-Xlinker -bind_at_load"
 
 PATH=$GTK_PREFIX/bin:$PATH
 ACLOCAL_FLAGS="-I $GTK_PREFIX/share/aclocal"
