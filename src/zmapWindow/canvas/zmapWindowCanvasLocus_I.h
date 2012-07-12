@@ -74,6 +74,7 @@ typedef struct _zmapWindowCanvasLocusStruct
 
 	double ylocus, ytext;		/* line coordinates, text appears around y2 */
 	double x_off;			/* of the text = RH x coord of line */
+	double x_wid;
 #define ZMAP_LOCUS_LINE_WIDTH	20
 
 	LocusGroup group;
