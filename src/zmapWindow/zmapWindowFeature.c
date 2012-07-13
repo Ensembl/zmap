@@ -597,7 +597,7 @@ static void featureCopySelectedItem(ZMapFeature feature_in,
 
 /* Handle events on items, note that events for text items are passed through without processing
  * so the text item code can do highlighting etc. */
-static gboolean ß
+static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data)
 {
   gboolean event_handled = FALSE ;			    /* By default we _don't_ handle events. */
   ZMapWindow window = (ZMapWindowStruct*)data ;
