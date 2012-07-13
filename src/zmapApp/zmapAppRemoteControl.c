@@ -36,7 +36,6 @@
  *
  * Exported functions: See zmapApp_P.h
  * HISTORY:
- * Last edited: Apr 11 09:02 2012 (edgrif)
  * Created: Mon Nov  1 10:32:56 2010 (edgrif)
  * CVS info:   $Id$
  *-------------------------------------------------------------------
