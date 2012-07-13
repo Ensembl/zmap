@@ -353,8 +353,8 @@ void zMapLogMsg(char *domain, GLogLevelFlags log_level,
   format_str = g_string_sized_new(2000) ;		    /* Not too many records longer than this. */
 
   /* All messages have the nodeid and pid as qualifiers to help with logfile analysis. */
-  g_string_append_printf(format_str, "%s[%s:%s:%d]",
-			 ZMAPLOG_PROCESS_TUPLE, log->userid, log->nodeid, log->pid) ;
+//  g_string_append_printf(format_str, "%s[%s:%s:%d]",
+//			 ZMAPLOG_PROCESS_TUPLE, log->userid, log->nodeid, log->pid) ;
 
   /* include a timestamp? */
   if (log->show_time)
@@ -366,7 +366,7 @@ void zMapLogMsg(char *domain, GLogLevelFlags log_level,
       // they provide a 'portable' interface to gettimeofday  but then don't provide any functions to use it
       struct timeval time;
       struct timezone tz = {0,0};
- 
+
       gettimeofday(&time,&tz);
       strftime(tbuf,32,"%H:%M:%S",&time);
       g_string_append_printf(format_str, "%s",tbuf);
@@ -375,8 +375,8 @@ void zMapLogMsg(char *domain, GLogLevelFlags log_level,
       if (zmap_log_timer_G)
 	{
 	  double t = g_timer_elapsed(zmap_log_timer_G,NULL);
-		
-	  sprintf(tbuf," %.3fsec",t);		
+
+	  sprintf(tbuf," %.3fsec",t);
 	  g_string_append_printf(format_str, "%s",tbuf);
 	}
 
