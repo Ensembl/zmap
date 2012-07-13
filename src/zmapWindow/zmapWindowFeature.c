@@ -1,4 +1,3 @@
-/*  Last edited: Jul 12 16:18 2012 (edgrif) */
 /*  File: zmapWindowFeature.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -683,15 +682,6 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 		  /* If external client then call them to do editing. */
 		  if (window->xremote_client)
 		    {
-		      /* LOOKS LIKE WE MAY HAVE TO PUT IN A DELAY HERE AS IT'S CAUSING GEMMA
-		       * GRIEF.....WILL THIS DO....OR DO WE NEED TO A TIMER....we end up sending
-		       * this edit request before her program has finished processing the previous
-		       * single select....how wierd..... */
-		      while (gtk_events_pending())
-			{
-			  gtk_main_iteration() ;
-			}
-
 		      zmapWindowUpdateXRemoteData(window, (ZMapFeatureAny)feature,
 						  ZACP_EDIT_FEATURE, highlight_item) ;
 		    }
