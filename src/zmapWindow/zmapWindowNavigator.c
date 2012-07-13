@@ -969,6 +969,8 @@ static void drawScale(NavigateDraw draw_data)
 
   GQuark scale_id = 0;
   int min, max;
+  double zoom_factor = 0.0;
+
 
   /* HACK...  */
   scale_id = g_quark_from_string(ZMAP_FIXED_STYLE_SCALE_NAME);
@@ -991,11 +993,15 @@ static void drawScale(NavigateDraw draw_data)
 #if MH17_DEBUG_NAV_FOOBAR
 printf("nav draw scale %d %d\n",min,max);
 #endif
-      zmapWindowScaleGroupDraw(features, draw_data->navigate->is_reversed, (double)min, (double)max, min);
+	zoom_factor = item->canvas->pixels_per_unit_y;
+
+      zMapWindowDrawScaleBar(features,  (double)min, (double)max, min, max, zoom_factor, draw_data->navigate->is_reversed, min);
     }
 
   return ;
 }
+
+
 
 
 /* data is a GQuark, user_data is a NavigateDraw */
