@@ -129,7 +129,9 @@ static void processRequest(ZMapWindow window,
 			   RemoteCommandRCType *command_rc_out, char **reason_out, ZMapXMLUtilsEventStack *reply_out) ;
 
 
-
+static void requestblockIfActive(void) ;
+static void requestSetActive(void) ;
+static void requestSetInActive(void) ;
 
 
 /* WE NEED TO ADD THE CODE TO HERE FROM VIEW TO DO THESE COMMANDS, THIS IS THE LEVEL AT WHICH
@@ -137,10 +139,24 @@ static void processRequest(ZMapWindow window,
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	case ZMAPVIEW_REMOTE_HIGHLIGHT_FEATURE:
-	case ZMAPVIEW_REMOTE_HIGHLIGHT2_FEATURE:
-	case ZMAPVIEW_REMOTE_UNHIGHLIGHT_FEATURE:
+case ZMAPVIEW_REMOTE_HIGHLIGHT_FEATURE:
+case ZMAPVIEW_REMOTE_HIGHLIGHT2_FEATURE:
+case ZMAPVIEW_REMOTE_UNHIGHLIGHT_FEATURE:
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+
+/* 
+ *                Globals. 
+ */
+
+/* Maintains a lock while a remote request is active. */
+static gboolean is_active_G = FALSE ;
+static gboolean is_active_debug_G = TRUE ;
+
+
+
 
 
 
@@ -208,6 +224,12 @@ void zmapWindowUpdateXRemoteDataFull(ZMapWindow window, ZMapFeatureAny feature_a
   ZMapFeatureSetStruct feature_set = {0};
   ZMapFeatureSet multi_set;
   ZMapFeature feature;
+
+
+  /* Test to see if we are processing a remote command....and then set that we are active. */
+  requestblockIfActive() ;
+  requestSetActive() ;
+  
 
 
   /* hack to add feature stuff....... */
@@ -306,6 +328,7 @@ void zmapWindowUpdateXRemoteDataFull(ZMapWindow window, ZMapFeatureAny feature_a
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
+
   return ;
 }
 
@@ -316,6 +339,52 @@ void zmapWindowUpdateXRemoteDataFull(ZMapWindow window, ZMapFeatureAny feature_a
 /* 
  *                Internal routines.
  */
+
+
+/* We need to keep a "lock" flag because for some actions, e.g. double click,
+ * we can end up trying to send two requests, in this case a "single_select"
+ * followed by an "edit" too quickly, i.e. we haven't finished the "single_select"
+ * before we try to send the "edit".
+ * 
+ * So we test this flag and if we are processing we block (but process events)
+ * until the previous action is complete.
+ * 
+ *  */
+static void requestblockIfActive(void)
+{
+
+  zMapDebugPrint(is_active_debug_G, "Entering blocking code: %s",
+		 (is_active_G ? "Request Active" : "No Request Active")) ;
+
+  while (is_active_G)
+    {
+      gtk_main_iteration() ;
+    }
+
+  zMapDebugPrint(is_active_debug_G, "Leaving blocking code: %s",
+		 (is_active_G ? "Request Active" : "No Request Active")) ;
+
+  return ;
+}
+
+static void requestSetActive(void)
+{
+  is_active_G = TRUE ;
+
+  zMapDebugPrint(is_active_debug_G, "%s", "Setting Block: Request Active") ;
+
+  return ;
+}
+
+
+static void requestSetInActive(void)
+{
+  is_active_G = FALSE ;
+
+  zMapDebugPrint(is_active_debug_G, "%s", "Unsetting Block: Request Inactive") ;
+
+  return ;
+}
 
 
 
@@ -351,6 +420,9 @@ static void localProcessReplyFunc(char *command,
   if (window->xremote_reply_handler)
     (window->xremote_reply_handler)(window, window->xremote_reply_data,
 				    command, command_rc, reason, reply) ;
+
+  /* Now we know that the request/reply is over unset our "request active" flag. */
+  requestSetInActive() ;
 
   return ;
 }
