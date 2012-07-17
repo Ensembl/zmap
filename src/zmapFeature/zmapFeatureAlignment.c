@@ -1,4 +1,4 @@
-/*  Last edited: Jul 13 11:17 2011 (edgrif) */
+/*  Last edited: Jul 13 15:40 2012 (edgrif) */
 /*  File: zmapFeatureAlignment.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -43,11 +43,6 @@
 
 
 
-/* Defines the different align string formats supported. */
-typedef enum {ALIGNSTR_INVALID, ALIGNSTR_EXONERATE_CIGAR, ALIGNSTR_EXONERATE_VULGAR,
-	      ALIGNSTR_ENSEMBL_CIGAR,ALIGNSTR_BAM_CIGAR} SMapAlignStrFormat ;
-
-
 /* We get align strings in several variants and then convert them into this common format. */
 typedef struct
 {
@@ -58,7 +53,7 @@ typedef struct
 
 typedef struct
 {
-  SMapAlignStrFormat format ;
+  ZMapFeatureAlignFormat format ;
 
   GArray *align ;					    /* Of AlignStrOpStruct. */
 } AlignStrCanonicalStruct, *AlignStrCanonical ;
@@ -66,9 +61,8 @@ typedef struct
 
 static gboolean checkForPerfectAlign(GArray *gaps, unsigned int align_error) ;
 
-static SMapAlignStrFormat alignStrGetFormat(char *match_str) ;
-static gboolean alignStrVerifyStr(char *match_str, SMapAlignStrFormat align_format) ;
-static AlignStrCanonical alignStrMakeCanonical(char *match_str, SMapAlignStrFormat align_format) ;
+static gboolean alignStrVerifyStr(char *match_str, ZMapFeatureAlignFormat align_format) ;
+static AlignStrCanonical alignStrMakeCanonical(char *match_str, ZMapFeatureAlignFormat align_format) ;
 static void alignStrDestroyCanonical(AlignStrCanonical canon) ;
 static gboolean alignStrCanon2Homol(AlignStrCanonical canon, ZMapStrand ref_strand, ZMapStrand match_strand,
 				    int p_start, int p_end, int c_start, int c_end,
@@ -92,6 +86,9 @@ static gboolean gotoLastSpace(char **cp_inout) ;
 /*
  *               External functions.
  */
+
+
+ZMAP_ENUM_AS_NAME_STRING_FUNC(zMapFeatureAlignFormat2ShortText, ZMapFeatureAlignFormat, ZMAP_ALIGN_GAP_FORMAT_LIST) ;
 
 
 
@@ -187,20 +184,16 @@ gboolean zMapFeatureAlignmentIsGapped(ZMapFeature feature)
 /* Constructs a gaps array from an alignment string such as CIGAR, VULGAR etc.
  * Returns TRUE on success with the gaps array returned in gaps_out. The array
  * should be free'd with g_array_free when finished with. */
-gboolean zMapFeatureAlignmentString2Gaps(ZMapStrand ref_strand, int ref_start, int ref_end,
+gboolean zMapFeatureAlignmentString2Gaps(ZMapFeatureAlignFormat align_format,
+					 ZMapStrand ref_strand, int ref_start, int ref_end,
 					 ZMapStrand match_strand, int match_start, int match_end,
 					 char *align_string, GArray **gaps_out)
 {
   gboolean result = FALSE ;
-  SMapAlignStrFormat align_format ;
   AlignStrCanonical canon = NULL ;
   GArray *gaps = NULL ;
 
-  if (!(align_format = alignStrGetFormat(align_string)) || !alignStrVerifyStr(align_string, align_format))
-    {
-      zMapLogWarning("Unrecognised alignment string format: %s", align_string) ;
-    }
-  else if (!(canon = alignStrMakeCanonical(align_string, align_format)))
+ if (!(canon = alignStrMakeCanonical(align_string, align_format)))
     {
       result = FALSE ;
       zMapLogWarning("Cannot convert alignment string to canonical format: %s", align_string) ;
@@ -295,57 +288,9 @@ static gboolean checkForPerfectAlign(GArray *gaps, unsigned int align_error)
 }
 
 
-
-/* THIS IS ALL PRETTY HOKEY, SOON WE WILL BE PASSED THE EXPECTED TYPE OF THE
- * ALIGN STRING. */
-/* Inspects match_str to find out which format its in. If the format is not known
- * returns ALIGNSTR_INVALID.
- *
- * Supported formats are (in regexp ignoring greedy matches):
- *
- *  exonerate cigar:       (([DIM]) ([0-9]+))*              e.g. "M 24 D 3 M 1 I 86"
- *
- * exonerate vulgar:       (([DIMCGN53SF])  ([0-9]+) ([0-9]+))*  e.g. "M 24 24 D 0 3 M 1 1 I 86 0"
- *
- *    ensembl cigar:       (([0-9]+)?([DIM]))*              e.g. "24MD3M86I" or "MD3M86"
- *
- * NOTE exonerate labels are dependent on the alignment type, it would appear that "I" could be
- * Intron or Insert....
- *
- *  */
-static SMapAlignStrFormat alignStrGetFormat(char *match_str)
-{
-  SMapAlignStrFormat align_format = ALIGNSTR_INVALID ;
-
-  if (*(match_str + 1) != ' ')				    /* Crude but effective ? */
-    {
-      if ((strchr(match_str, 'N')))
-	align_format = ALIGNSTR_BAM_CIGAR ;
-      else
-	align_format = ALIGNSTR_ENSEMBL_CIGAR ;
-    }
-  else
-    {
-      char *cp = match_str ;
-
-      if (g_ascii_isalpha(*cp)
-	  && ((cp = nextWord(cp)) && g_ascii_isdigit(*cp))
-	  && (cp = nextWord(cp)))
-	{
-	  if (!g_ascii_isdigit(*cp))
-	    align_format = ALIGNSTR_EXONERATE_CIGAR ;
-	  else
-	    align_format = ALIGNSTR_EXONERATE_VULGAR ;
-	}
-    }
-
-  return align_format ;
-}
-
-
 /* Takes a match string and format and verifies that the string is valid
  * for that format. */
-static gboolean alignStrVerifyStr(char *match_str, SMapAlignStrFormat align_format)
+static gboolean alignStrVerifyStr(char *match_str, ZMapFeatureAlignFormat align_format)
 {
 
   /* We should be using some kind of state machine here, setting a model and
@@ -356,17 +301,17 @@ static gboolean alignStrVerifyStr(char *match_str, SMapAlignStrFormat align_form
 
   switch (align_format)
     {
-    case ALIGNSTR_EXONERATE_CIGAR:
+    case ZMAPALIGN_FORMAT_CIGAR_EXONERATE:
       result = exonerateVerifyCigar(match_str) ;
       break ;
-    case ALIGNSTR_EXONERATE_VULGAR:
-      result = exonerateVerifyVulgar(match_str) ;
-      break ;
-    case ALIGNSTR_ENSEMBL_CIGAR:
+    case ZMAPALIGN_FORMAT_CIGAR_ENSEMBL:
       result = ensemblVerifyCigar(match_str) ;
       break ;
-    case ALIGNSTR_BAM_CIGAR:
+    case ZMAPALIGN_FORMAT_CIGAR_BAM:
       result = bamVerifyCigar(match_str) ;
+      break ;
+    case ZMAPALIGN_FORMAT_VULGAR_EXONERATE:
+      result = exonerateVerifyVulgar(match_str) ;
       break ;
     default:
       zMapAssertNotReached() ;
@@ -380,7 +325,7 @@ static gboolean alignStrVerifyStr(char *match_str, SMapAlignStrFormat align_form
 
 /* Takes a match string and format and converts that string into a canonical form
  * for further processing. */
-static AlignStrCanonical alignStrMakeCanonical(char *match_str, SMapAlignStrFormat align_format)
+static AlignStrCanonical alignStrMakeCanonical(char *match_str, ZMapFeatureAlignFormat align_format)
 {
   AlignStrCanonical canon = NULL ;
   gboolean result = FALSE ;
@@ -391,17 +336,17 @@ static AlignStrCanonical alignStrMakeCanonical(char *match_str, SMapAlignStrForm
 
   switch (align_format)
     {
-    case ALIGNSTR_EXONERATE_CIGAR:
+    case ZMAPALIGN_FORMAT_CIGAR_EXONERATE:
       result = exonerateCigar2Canon(match_str, canon) ;
       break ;
-    case ALIGNSTR_EXONERATE_VULGAR:
-      result = exonerateVulgar2Canon(match_str, canon) ;
-      break ;
-    case ALIGNSTR_ENSEMBL_CIGAR:
+    case ZMAPALIGN_FORMAT_CIGAR_ENSEMBL:
       result = ensemblCigar2Canon(match_str, canon) ;
       break ;
-    case ALIGNSTR_BAM_CIGAR:
+    case ZMAPALIGN_FORMAT_CIGAR_BAM:
       result = bamCigar2Canon(match_str, canon) ;
+      break ;
+    case ZMAPALIGN_FORMAT_VULGAR_EXONERATE:
+      result = exonerateVulgar2Canon(match_str, canon) ;
       break ;
     default:
       zMapAssertNotReached() ;
@@ -534,6 +479,7 @@ static gboolean alignStrCanon2Homol(AlignStrCanonical canon, ZMapStrand ref_stra
 
   return result ;
 }
+
 
 
 

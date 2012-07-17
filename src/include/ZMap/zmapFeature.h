@@ -1,4 +1,4 @@
-/*  Last edited: Jul 13 11:17 2011 (edgrif) */
+/*  Last edited: Jul 13 15:39 2012 (edgrif) */
 /*  File: zmapFeature.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -116,6 +116,24 @@ typedef enum {ZMAPPHASE_NONE = 0, ZMAPPHASE_0, ZMAPPHASE_1, ZMAPPHASE_2} ZMapPha
 
 /* as in BLAST*, i.e. target is DNA, Protein, DNA translated */
 typedef enum {ZMAPHOMOL_NONE = 0, ZMAPHOMOL_N_HOMOL, ZMAPHOMOL_X_HOMOL, ZMAPHOMOL_TX_HOMOL} ZMapHomolType ;
+
+
+
+/* Original format of an alignment. */
+#define ZMAPSTYLE_ALIGNMENT_GAPS   "Gaps"
+#define ZMAPSTYLE_ALIGNMENT_CIGAR  "cigar"
+#define ZMAPSTYLE_ALIGNMENT_VULGAR  "vulgar"
+
+
+#define ZMAP_ALIGN_GAP_FORMAT_LIST(_)					\
+_(ZMAPALIGN_FORMAT_INVALID,          , "invalid",          "invalid mode "                                 , "") \
+_(ZMAPALIGN_FORMAT_CIGAR_EXONERATE,  , "cigar_exonerate",  "invalid mode "                                 , "") \
+_(ZMAPALIGN_FORMAT_CIGAR_ENSEMBL,    , "cigar_ensembl",    "invalid mode "                                 , "") \
+_(ZMAPALIGN_FORMAT_CIGAR_BAM,        , "cigar_bam",        "invalid mode "                                 , "") \
+_(ZMAPALIGN_FORMAT_VULGAR_EXONERATE, , "vulgar_exonerate", "invalid mode "                                 , "") \
+_(ZMAPALIGN_FORMAT_GAPS_ACEDB,       , "gaps_acedb",       "invalid mode "                                 , "")
+
+ZMAP_DEFINE_ENUM(ZMapFeatureAlignFormat, ZMAP_ALIGN_GAP_FORMAT_LIST) ;
 
 
 /* Used to specify the degree of colinearity between two alignment blocks. */
@@ -541,7 +559,11 @@ typedef struct
   /* The coords in this array are start/end pairs for sub blocks and start < end always. */
   GArray *align ;					    /* of AlignBlock, if null, align is ungapped. */
 
+
+  
   char * sequence;					/* sequence if given in GFF */
+
+
 
   struct
   {
@@ -649,12 +671,18 @@ typedef struct ZMapFeatureStruct_
     unsigned int joined: 1;			/* alignments only */
   } flags ;
 
+
+
+  /* SHOULDN'T THIS ALIGN SPECIFIC DATA BE IN THE ALIGN SUB-STRUCT ?? */
   /*
    * for RNA seq data:
    * for composite features this is a list of underlying features that are hidden from view
    */
   GList *children;
   struct ZMapFeatureStruct_ *composite;	/* daddy feature that gets displayed */
+
+
+
 
   ZMapFeatureID db_id ;					    /* unique DB identifier, currently
 							       unused but will be..... */
@@ -691,7 +719,11 @@ typedef struct ZMapFeatureStruct_
    *  */
   float score ;
 
+
+
   int population;		/* the number of features collapsed, is diff from feature score */
+
+
 
   /* Source name and text, gives information about all features of a particular type. */
   GQuark source_id ;
@@ -990,6 +1022,7 @@ GQuark zMapFeatureCreateID(ZMapFeatureType feature_type,
                            int start, int end,
 			   int query_start, int query_end) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 char *zMapFeatureCreateName(ZMapStyleMode feature_type,
                             char *feature_name,
 			    ZMapStrand strand,
@@ -1044,9 +1077,12 @@ gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
 				     GArray *gaps, unsigned int align_error,
 				     gboolean has_local_sequence, char * sequence) ;
 gboolean zMapFeatureAlignmentIsGapped(ZMapFeature feature) ;
-gboolean zMapFeatureAlignmentString2Gaps(ZMapStrand ref_strand, int ref_start, int ref_end,
+gboolean zMapFeatureAlignmentString2Gaps(ZMapFeatureAlignFormat align_format,
+					 ZMapStrand ref_strand, int ref_start, int ref_end,
 					 ZMapStrand match_strand, int match_start, int match_end,
 					 char *align_string, GArray **gaps_out) ;
+ZMAP_ENUM_AS_NAME_STRING_DEC(zMapFeatureAlignFormat2ShortText, ZMapFeatureAlignFormat) ;
+
 
 gboolean zMapFeatureSequenceSetType(ZMapFeature feature, ZMapSequenceType type) ;
 gboolean zMapFeatureSequenceIsDNA(ZMapFeature feature) ;
