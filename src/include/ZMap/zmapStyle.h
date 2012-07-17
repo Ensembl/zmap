@@ -722,11 +722,6 @@ typedef struct
  * to indicate colinearity between adjacent blocks. */
 
 
-/* there are misplaced, they are not display style info but instead GFF keywords and are only used in zmapGFF2Parser.c */
-#define ZMAPSTYLE_ALIGNMENT_GAPS   "Gaps"
-#define ZMAPSTYLE_ALIGNMENT_CIGAR  "cigar"
-#define ZMAPSTYLE_ALIGNMENT_VULGAR  "vulgar"
-
 typedef struct
  {
    /* If set then blixem will be run with nucleotide or peptide sequences for the features. */
