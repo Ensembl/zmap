@@ -1,3 +1,4 @@
+/*  Last edited: Jul 13 14:40 2012 (edgrif) */
 /*  File: zmapFeatureOutput.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -30,11 +31,13 @@
  *-------------------------------------------------------------------
  */
 
-#include <unistd.h>		/* STDOUT_FILENO */
+#include <ZMap/zmap.h>
+
+#include <unistd.h>					    /* STDOUT_FILENO */
 #include <string.h>
 
-#include <ZMap/zmap.h>
 #include <ZMap/zmapFeature.h>
+
 
 typedef enum
   {
@@ -43,8 +46,6 @@ typedef enum
     DUMP_DATA_RANGE
   } DumpDataType;
 
-
-/* Internal data structs */
 
 typedef struct
 {
@@ -71,7 +72,8 @@ typedef struct
   ZMapSpan     span;
 } DumpWithinRangeStruct, *DumpWithinRange;
 
-/* Internal functions */
+
+
 static ZMapFeatureContextExecuteStatus dump_features_cb(GQuark   key,
 							gpointer data,
 							gpointer user_data,
@@ -88,9 +90,43 @@ static ZMapFeatureContextExecuteStatus range_invoke_dump_features_cb(GQuark   ke
 								     char   **err_out);
 
 
-/* The code */
 
-/* Public first */
+
+/* 
+ *                          External interface.
+ */
+
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+/* NOT READY FOR THIS.... */
+
+ZMapFeatureAsText zMapFeature2Text(ZMapFeature feature)
+{
+  ZMapFeatureAsText feature_text = NULL ;
+
+
+
+
+  return feature_text ;
+}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+
+
+void zMapFeaturePrint(ZMapIOOut dest, ZMapFeature feature, char *prefix, gboolean full)
+{
+  char *indent = "" ;
+
+
+  return ;
+}
+
+
 
 
 /*!
