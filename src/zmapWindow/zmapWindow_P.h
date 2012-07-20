@@ -1255,7 +1255,8 @@ void zmapWindowDebugWindowCopy(ZMapWindow window);
 void zmapWindowGetBorderSize(ZMapWindow window, double *border);
 /* End of zmapWindowZoomControl.c functions */
 
-void zMapWindowDrawScaleBar(FooCanvasGroup *group, double scroll_start, double scroll_end, int seq_start, int seq_end, double zoom_factor, gboolean revcomped,  double canvas_offset);
+double zMapWindowDrawScaleBar(FooCanvasGroup *group, int scroll_start, int scroll_end,
+	int seq_start, int seq_end, double zoom_factor, gboolean revcomped, gboolean zoomed);
 
 gboolean zmapWindowItemIsVisible(FooCanvasItem *item) ;
 gboolean zmapWindowItemIsShown(FooCanvasItem *item) ;
@@ -1421,13 +1422,11 @@ void zmapWindowScaleCanvasMaximise(ZMapWindowScaleCanvas obj, double y1, double 
 void zmapWindowScaleCanvasOpenAndMaximise(ZMapWindowScaleCanvas obj);
 void zmapWindowScaleCanvasSetRevComped(ZMapWindowScaleCanvas obj, gboolean revcomped) ;
 void zmapWindowScaleCanvasSetSpan(ZMapWindowScaleCanvas ruler, int start,int end);
-gboolean zmapWindowScaleCanvasDraw(ZMapWindowScaleCanvas obj, double x, double y,int seq_start, int seq_end, gboolean force);
+gboolean zmapWindowScaleCanvasDraw(ZMapWindowScaleCanvas obj, int x, int y,int seq_start, int seq_end);
 void zmapWindowScaleCanvasSetVAdjustment(ZMapWindowScaleCanvas obj, GtkAdjustment *vadjustment);
 void zmapWindowScaleCanvasSetPixelsPerUnit(ZMapWindowScaleCanvas obj, double x, double y);
-void zmapWindowScaleCanvasSetLineHeight(ZMapWindowScaleCanvas obj,
-                                        double border);
-void zmapWindowScaleGroupDraw(FooCanvasGroup *parent, gboolean revcomped,
-                             double start, double end, double canvas_offset);
+void zmapWindowScaleCanvasSetLineHeight(ZMapWindowScaleCanvas obj, double border);
+//void zmapWindowScaleGroupDraw(FooCanvasGroup *parent, gboolean revcomped,double start, double end, double canvas_offset);
 
 /* Stats functions. */
 ZMapWindowStats zmapWindowStatsCreate(ZMapFeatureAny feature_any ) ;

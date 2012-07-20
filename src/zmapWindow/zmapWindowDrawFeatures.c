@@ -322,7 +322,7 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
  * and not the original sequence coordinates.
  * the code just above sets sequence->start,end, but only on the first display, which is not revcomped
  */
-  zmapWindowScaleCanvasSetSpan(window->ruler, seq_start, seq_end) ;
+//  zmapWindowScaleCanvasSetSpan(window->ruler, seq_start, seq_end) ;
 
   zmapWindowZoomControlInitialise(window);		    /* Sets min/max/zf */
 

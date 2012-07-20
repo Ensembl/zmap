@@ -966,8 +966,9 @@ static ZMapSkipList zmap_window_canvas_featureset_find_feature_coords(FeatureCmp
 
 	search.y1 -= extra;
 
-      if(search.y1 < fi->start)
-		search.y1 = fi->start;
+// this is harmelss and otherwise prevents features overlapping the featureset being found
+//      if(search.y1 < fi->start)
+//		search.y1 = fi->start;
     }
 
   sl =  zMapSkipListFind(fi->display_index, compare_func, &search) ;
@@ -2010,8 +2011,8 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
   foo_canvas_c2w(item->canvas,0,floor(expose->area.y - 1),NULL,&y1);
   foo_canvas_c2w(item->canvas,0,ceil(expose->area.y + expose->area.height + 1),NULL,&y2);
 
-#if MOUSE_DEBUG
-zMapLogWarning("expose %d,%d x %d,%d", expose->area.x, expose->area.y, expose->area.width, expose->area.height);
+#if 0
+zMapLogWarning("expose %p %s %.1f,%.1f", item->canvas, g_quark_to_string(fi->id), y1, y2);
 #endif
 
   /* ok...this looks like the place to do feature specific painting..... */
@@ -2039,7 +2040,6 @@ zMapLogWarning("expose %d,%d x %d,%d", expose->area.x, expose->area.y, expose->a
   for(fi->featurestyle = NULL;sl;sl = sl->next)
     {
       feat = (ZMapWindowCanvasFeature) sl->data;
-      //printf("found %d-%d\n",(int) feat->y1,(int) feat->y2);
 
       //if(debug) printf("feat: %s %lx %f %f\n",g_quark_to_string(feat->feature->unique_id), feat->flags, feat->y1,feat->y2);
 

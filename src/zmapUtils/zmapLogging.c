@@ -148,6 +148,12 @@ static gboolean enable_core_dumping_G = TRUE;
 
 
 
+void foo_logger(char *x)
+{
+	/* can;t call this frpm foo as it's a macro */
+	zMapLogWarning(x,"");
+}
+
 
 
 /* This function is NOT thread safe, you should not call this from individual threads. The log
@@ -159,6 +165,7 @@ gboolean zMapLogCreate(char *logname)
 {
   gboolean result = FALSE ;
   ZMapLog log = log_G ;
+  extern void (*foo_log)(char *x);
 
   zMapAssert(!log) ;
 
@@ -179,6 +186,7 @@ gboolean zMapLogCreate(char *logname)
       foo_log_stack = zMapPrintStack;
     }
 #endif
+  foo_log = foo_logger;
 
   log_G = log = createLog() ;
 

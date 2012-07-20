@@ -51,7 +51,8 @@
 #define NAVIGATOR_WIDGET(navigate) GTK_WIDGET(fetchCanvas(navigate))
 
 
-#define MH17_DEBUG_NAV_FOOBAR	0
+#define MH17_DEBUG_NAV_FOOBAR	1
+#define debug	zMapLogWarning
 
 typedef struct
 {
@@ -689,14 +690,14 @@ void print_container_offset(ZMapWindowContainerGroup cont,
 {
 	FooCanvasGroup * group = (FooCanvasGroup *) cont;
 
-	printf("offset %d/%s: %1.f, %.1f\n", level,
+	debug("offset %d/%s: %1.f, %.1f\n", level,
 		cont->feature_any? g_quark_to_string(cont->feature_any->unique_id) : "none",
 		group->xpos, group->ypos);
 }
 
 void print_offsets(char *which)
 {
-	printf("\noffsets from %s:\n",which);
+	debug("\noffsets from %s:\n",which);
 	if(nav_root)
 		zmapWindowContainerUtilsExecute(nav_root, ZMAPCONTAINER_LEVEL_FEATURESET, print_container_offset, NULL);
 }
@@ -739,7 +740,9 @@ static ZMapFeatureContextExecuteStatus drawContext(GQuark key_id,
 	zmapWindowContainerAttachFeatureAny(navigate->container_root, feature_any);
 
       foo_canvas_set_scroll_region(root->canvas, 0.0, navigate->full_span.x1, 1.0, navigate->full_span.x2);
-
+#if MH17_DEBUG_NAV_FOOBAR
+debug("nav set scroll %d %d\n",navigate->full_span.x1,navigate->full_span.x2);
+#endif
 
 	/* Set root group to start where sequence starts... */
 	y = navigate->full_span.x1 ;
@@ -800,7 +803,7 @@ int block_start, block_end;
         block_start = feature_block->block_to_sequence.block.x1;
         block_end   = feature_block->block_to_sequence.block.x2;
 
-printf("nav draw block %d %d\n",block_start,block_end);
+debug("nav draw block %d %d\n",block_start,block_end);
 }
 #endif
 
@@ -889,7 +892,7 @@ printf("nav draw block %d %d\n",block_start,block_end);
 	    ZMapStyleBumpMode bump_mode;
 
 #if MH17_DEBUG_NAV_FOOBAR
-printf("nav draw set %s\n", g_quark_to_string(feature_set->original_id));
+debug("nav draw set %s\n", g_quark_to_string(feature_set->original_id));
 #endif
             group_feature_set = FOO_CANVAS_GROUP(item);
 	    container_feature_set = (ZMapWindowContainerFeatureSet)item;
@@ -991,11 +994,11 @@ static void drawScale(NavigateDraw draw_data)
       min = draw_data->context->master_align->sequence_span.x1;
       max = draw_data->context->master_align->sequence_span.x2;
 #if MH17_DEBUG_NAV_FOOBAR
-printf("nav draw scale %d %d\n",min,max);
+debug("nav draw scale %d %d\n",min,max);
 #endif
 	zoom_factor = item->canvas->pixels_per_unit_y;
 
-      zMapWindowDrawScaleBar(features,  (double)min, (double)max, min, max, zoom_factor, draw_data->navigate->is_reversed, min);
+      zMapWindowDrawScaleBar(features,  min, max, min, max, zoom_factor, draw_data->navigate->is_reversed, FALSE);
     }
 
   return ;
@@ -1026,13 +1029,12 @@ static void createColumnCB(gpointer data, gpointer user_data)
   draw_data->current_set = zMapFeatureBlockGetSetByID(draw_data->current_block, set_unique_id);
 
 #if MH17_DEBUG_NAV_FOOBAR
-printf("nav create column %s %p\n",g_quark_to_string(set_id),draw_data->current_set);
+debug("nav create column %s %p\n",g_quark_to_string(set_id),draw_data->current_set);
 #endif
 
   if(!style)
     {
       zMapLogWarning("Failed to find style for navigator featureset '%s'", g_quark_to_string(set_id));
-      printf("Failed to find style for navigator featureset '%s'\n", g_quark_to_string(set_id));
     }
   else if(draw_data->current_set)
     {
@@ -1148,7 +1150,7 @@ static void updateLocatorDragger(ZMapWindowNavigator navigate, double button_y, 
       top = start;
       bot = end;
 
-      printf("%s: [nav] %f -> %f (%f) = [wrld] %f -> %f (%f)\n",
+      debug("%s: [nav] %f -> %f (%f) = [wrld] %f -> %f (%f)\n",
 	     "updateLocatorDragger",
 	     start, end, end - start + 1.0,
 	     top, bot, bot - top + 1.0);
@@ -1430,7 +1432,7 @@ static gboolean navCanvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpoin
 #if MH17_DEBUG_NAV_FOOBAR
 { double x1,x2,y1,y2;
 foo_canvas_item_get_bounds(item,&x1,&y1,&x2,&y2);
-printf("navCanvasItemEventCB %f,%f: %s, %p at %f -> %f\n", button->x,button->y,g_quark_to_string(feature->original_id), item, y1, y2);
+debug("navCanvasItemEventCB %f,%f: %s, %p at %f -> %f\n", button->x,button->y,g_quark_to_string(feature->original_id), item, y1, y2);
 }
 #endif
         if(button->type == GDK_BUTTON_PRESS)
@@ -1473,7 +1475,7 @@ static gboolean navCanvasItemDestroyCB(FooCanvasItem *feature_item, gpointer dat
 {
   //ZMapWindowNavigator navigate = (ZMapWindowNavigator)data;
   if(locator_debug_G)
-    printf("item got destroyed\n");
+    debug("item got destroyed %s\n", "");
 
   return FALSE;
 }
@@ -1555,7 +1557,7 @@ static gboolean factoryFeatureSizeReq(ZMapFeature feature,
       if(hash_entry->end < *x2_inout)
         hash_entry->end  = *x2_inout;
     }
-//printf("locus factory %s outside = %d\n",feature? g_quark_to_string(feature->original_id) : "null" ,outside);
+//debug("locus factory %s outside = %d\n",feature? g_quark_to_string(feature->original_id) : "null" ,outside);
   return outside;
 }
 
@@ -1727,7 +1729,7 @@ static gboolean highlight_locator_area_cb(ZMapWindowContainerGroup container, Fo
 {
 char *name = "none";
 if(container->feature_any) name = zMapFeatureName(container->feature_any);
-printf("highlight locator %d %s\n", level,name);
+debug("highlight locator %d %s\n", level,name);
 }
 #endif
       container_underlay = (FooCanvasGroup *)zmapWindowContainerGetUnderlay(container);
@@ -1750,7 +1752,7 @@ printf("highlight locator %d %s\n", level,name);
 				      "y2", (double)(navigate->locator_y_coords.x2 - navigate->full_span.x1 + 1),
 				      NULL);
 #if 0 // MH17_DEBUG_NAV_FOOBAR
-printf("highlight_locator_area_cb %f %f\n",
+debug("highlight_locator_area_cb %f %f\n",
 (double)(navigate->locator_y_coords.x1),
 (double)(navigate->locator_y_coords.x2));
 #endif

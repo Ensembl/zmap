@@ -5835,9 +5835,11 @@ static void fc_end_update_cb(FooCanvas *canvas, gpointer user_data)
 
   zMapAssert(canvas == window->canvas) ;
 
-  if (canvas == window->canvas)
+  if (canvas == window->canvas && window->feature_context)	/* we can get called before the featrue context is set */
     {
       double x1, x2, y1, y2;
+	int seq_start,seq_end;
+	int scroll_start, scroll_end;
 
       zMapDebugPrint(foo_debug_G, "%s",  "Entered") ;
 
@@ -5847,26 +5849,22 @@ static void fc_end_update_cb(FooCanvas *canvas, gpointer user_data)
       if(!(x1 == 0.0 && y1 == 0.0 && x2 == ZMAP_CANVAS_INIT_SIZE && y2 == ZMAP_CANVAS_INIT_SIZE))
 	{
 #endif
-	  ZMapGUIClampType clamp = ZMAPGUI_CLAMP_INIT;
-	  double border;
 	  int scroll_x, scroll_y, x, y;
 
-	  clamp = zmapWindowClampedAtStartEnd(window, &y1, &y2);
-
-// this was set in WindowDrawFeatures and is now incorrect here after a revcomp
-// sequence->start,end are fwd stranc coords, we need the revcomp'ed equivalents
-//	  zmapWindowScaleCanvasSetRevComped(window->ruler, window->revcomped_features);
-//        zmapWindowScaleCanvasSetSpan(window->ruler, window->sequence->start,window->sequence->end) ;
+	  zMapFeatureContextGetMasterAlignSpan(window->feature_context,&seq_start,&seq_end);
+	  scroll_start = y1;
+	  scroll_end = y2;
+	  if(scroll_start < seq_start)
+		  scroll_start = seq_start;
+	  if(scroll_end > seq_end)
+		  scroll_end = seq_end;
 
 	  foo_canvas_get_scroll_offsets(canvas, &scroll_x, &scroll_y);
-
-	  if(zmapWindowScaleCanvasDraw(window->ruler, y1, y2, window->sequence->start, window->sequence->end, FALSE))
+	  if(zmapWindowScaleCanvasDraw(window->ruler,  scroll_start, scroll_end, seq_start, seq_end))
 	    {
-	      zmapWindowGetBorderSize(window, &border);
-	      y1 -= ((clamp & ZMAPGUI_CLAMP_START) ? border : 0.0);
-	      y2 += ((clamp & ZMAPGUI_CLAMP_END)   ? border : 0.0);
 	      zmapWindowScaleCanvasMaximise(window->ruler, y1, y2);
-	      /* Cause a never ending loop ? */
+
+		/* Cause a never ending loop ? */
 
 	      /* The zmapWindowScaleCanvasMaximise does a set scroll
 	       * region on the ruler canvas which has the side effect
@@ -5878,6 +5876,10 @@ static void fc_end_update_cb(FooCanvas *canvas, gpointer user_data)
 	      foo_canvas_get_scroll_offsets(canvas, &x, &y);
 	      if(y != scroll_y)
 		foo_canvas_scroll_to(canvas, scroll_x, scroll_y);
+	    }
+	    else
+	    {
+		    zMapLogWarning("scaleCanvasDraw failed\n","");
 	    }
 #ifdef CAUSED_RT_57193
 	}
