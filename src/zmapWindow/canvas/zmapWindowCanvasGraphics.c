@@ -46,6 +46,8 @@
 
 
 
+//int line_debug = 0;
+
 void linePaint(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable, GdkEventExpose *expose)
 {
 	int cx1, cy1, cx2, cy2;
@@ -56,10 +58,13 @@ void linePaint(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feat
 	c.pixel = feat->outline;
 	gdk_gc_set_foreground (featureset->gc, &c);
 
-	foo_canvas_w2c(foo->canvas, feat->x1 + featureset->dx, feat->y1 - featureset->start + 1 + featureset->dy, &cx1, &cy1);
-	foo_canvas_w2c(foo->canvas, feat->x2 + featureset->dx, feat->y2 - featureset->start + 1 + featureset->dy, &cx2, &cy2);
+	foo_canvas_w2c(foo->canvas, feat->x1 + featureset->dx, feat->y1 - featureset->start + featureset->dy, &cx1, &cy1);
+	foo_canvas_w2c(foo->canvas, feat->x2 + featureset->dx, feat->y2 - featureset->start + featureset->dy, &cx2, &cy2);
 
+//printf("paint line %d %d %d %d (%1.f %.1f)\n", cx1, cy1, cx2, cy2, feat->y1, feat->y2);
+//line_debug = 1;
 	zMap_draw_line(drawable, featureset, cx1, cy1, cx2, cy2);
+//line_debug = 0;
 }
 
 
@@ -109,8 +114,9 @@ void textPaint(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feat
 	len = strlen(gfx->text);
 	pango_layout_set_text (pango->layout, gfx->text, len);
 
-	foo_canvas_w2c (foo->canvas, gfx->x1 + featureset->dx, gfx->y1  - featureset->start + 1 + featureset->dy, &cx, &cy);
+	foo_canvas_w2c (foo->canvas, gfx->x1 + featureset->dx, (gfx->y1 + gfx->y2) / 2 - featureset->start + featureset->dy, &cx, &cy);
 	cy -= pango->text_height / 2;		/* centre text on line */
+//printf("paint text %d %d (%1.f %1.f) %s\n", cx, cy,gfx->y1,gfx->y2, gfx->text);
 
 	pango_renderer_draw_layout (pango->renderer, pango->layout,  cx * PANGO_SCALE , cy * PANGO_SCALE);
 }
@@ -122,6 +128,7 @@ void graphicsZoomSet(ZMapWindowFeaturesetItem featureset, GdkDrawable *drawable)
 	/* if longest item < text height increase that to match */
 	ZMapWindowCanvasPango pango = (ZMapWindowCanvasPango) featureset->opt;
 	double text_h;
+	GList *l;
 
 	if(!pango)
 		return;
@@ -135,6 +142,21 @@ void graphicsZoomSet(ZMapWindowFeaturesetItem featureset, GdkDrawable *drawable)
 	 */
 	if(featureset->longest < text_h)
 		featureset->longest = text_h;
+
+		/* resize all the text items so they get painted properly */
+		/* NOTE these structs are ref'd but he index it it exists */
+	for(l = featureset->features; l ; l = l->next)
+	{
+		ZMapWindowCanvasGraphics gfx = (ZMapWindowCanvasGraphics ) l->data;
+		double mid;
+
+		if(gfx->type == FEATURE_TEXT)
+		{
+			mid = (gfx->y1 +gfx->y2 ) / 2;
+			gfx->y1 = mid - text_h / 2;
+			gfx->y2 = gfx->y1 + text_h;
+		}
+	}
 }
 
 

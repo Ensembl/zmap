@@ -55,7 +55,7 @@
 */
 
 #define debug printf
-#define SCALE_DEBUG	1
+#define SCALE_DEBUG	0
 #define FOO_SCALE_DEBUG	0
 
 
@@ -947,7 +947,7 @@ if(top < 2) debug("coord: %.1f %d (%d,%d) = %d\n", canvas_coord, digit, seq_star
 
 					      gfx = zMapWindowFeaturesetAddGraphics(featureset, FEATURE_TEXT,
 							0, canvas_coord,
-							0, canvas_coord+1,
+							text_max, canvas_coord+1,		/* text gets centred on a line, size varies with zoom as it's a fixed size font */
 							NULL, &black, g_strdup(label));
 					}
 

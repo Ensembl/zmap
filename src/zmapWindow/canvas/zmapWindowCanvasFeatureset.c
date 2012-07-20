@@ -2012,7 +2012,8 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
   foo_canvas_c2w(item->canvas,0,ceil(expose->area.y + expose->area.height + 1),NULL,&y2);
 
 #if 0
-zMapLogWarning("expose %p %s %.1f,%.1f", item->canvas, g_quark_to_string(fi->id), y1, y2);
+if(fi->type < FEATURE_GENOMIC)
+	printf("expose %p %s %.1f,%.1f (%d %d, %d %d)\n", item->canvas, g_quark_to_string(fi->id), y1, y2, fi->clip_x1, fi->clip_y1, fi->clip_x2, fi->clip_y2);
 #endif
 
   /* ok...this looks like the place to do feature specific painting..... */
@@ -2042,7 +2043,6 @@ zMapLogWarning("expose %p %s %.1f,%.1f", item->canvas, g_quark_to_string(fi->id)
       feat = (ZMapWindowCanvasFeature) sl->data;
 
       //if(debug) printf("feat: %s %lx %f %f\n",g_quark_to_string(feat->feature->unique_id), feat->flags, feat->y1,feat->y2);
-
       if(!is_line && feat->y1 > y2)		/* for lines we have to do one more */
 	break;	/* finished */
 
@@ -2931,7 +2931,28 @@ int zMapWindowFeaturesetRemoveGraphics(ZMapWindowFeaturesetItem featureset_item,
 {
 #warning zMapWindowFeaturesetRemoveGraphics not implemented
 /* is this needed? yes: diff struct */
+
+#if 0
+	/* copy from remove feature */
+
+
+  /* not strictly necessary to re-sort as the order is the same
+   * but we avoid the index becoming degenerate by doing this
+   * better to implement zmapSkipListRemove() properly
+   */
+  if(fi->display_index)
+    {
+      /* need to recalc bins */
+      /* quick fix FTM, de-calc which requires a re-calc on display */
+      zMapSkipListDestroy(fi->display_index, NULL);
+      fi->display_index = NULL;
+      /* is still sorted if it was before */
+    }
+
+  return fi->n_features;
+#else
 	return 0;
+#endif
 }
 
 
@@ -3041,7 +3062,7 @@ int zMapWindowFeaturesetItemRemoveFeature(FooCanvasItem *foo, ZMapFeature featur
 #endif
 
   /* not strictly necessary to re-sort as the order is the same
-   * but we avoid the index becoming degenerate but doing this
+   * but we avoid the index becoming degenerate by doing this
    * better to implement zmapSkipListRemove() properly
    */
   if(fi->display_index)
