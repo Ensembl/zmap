@@ -54,7 +54,7 @@
 #define VERBOSE_3
 */
 
-#define debug zMapLogWarning
+#define debug printf
 #define SCALE_DEBUG	1
 #define FOO_SCALE_DEBUG	0
 
@@ -298,8 +298,8 @@ debug("scaleCanvasDraw %d %d %d %d\n", start, end, seq_start, seq_end);
       drawn = TRUE;
     }
 
-  ruler->last_draw_coords.y1 = seq_start;
-  ruler->last_draw_coords.y2 = seq_end;
+  ruler->last_draw_coords.y1 = start;
+  ruler->last_draw_coords.y2 = end;
   ruler->last_draw_coords.x1 = 0;
   ruler->last_draw_coords.x2 = width;
   ruler->last_draw_coords.pixels_per_unit_y = ruler->canvas->pixels_per_unit_y;
@@ -679,9 +679,9 @@ debug("draw scale %p\n",((FooCanvasItem *) group)->canvas);
 	if(seq_len < 10)	/* we get called on start up w/ no sequence */
 		return 0;
 
+#if 0
 	if(revcomped)
 	{
-return FALSE;
 		/* scroll coords are seq coords reflected in seq_end, we need these as -1 based -ve
 		 * typically as we never know seq_end these appear to be 1-based
 		 * but they are not eg  if we select a subsequence or zoom in
@@ -713,6 +713,9 @@ debug("revcomp: seq = %d,%d scroll = %d,%d, tick = %d,%d\n", seq_start,seq_end,s
 debug("forward: seq = %d,%d scroll = %d,%d\n",seq_start,seq_end,scroll_start,scroll_end);
 #endif
 	}
+#endif
+
+      scroll_len = scroll_end - scroll_start + 1;
 
 	gdk_color_parse("black", &black) ;
 	gdk_color_parse("grey", &grey) ;
@@ -732,6 +735,14 @@ debug("forward: seq = %d,%d scroll = %d,%d\n",seq_start,seq_end,scroll_start,scr
 	/* highest order tick is the one displayed not the one in the whole sequence */
 	{
 		int s = scroll_start - seq_start + 1, e = scroll_end - seq_start + 1;
+
+		if(revcomped)	/* we are counting backwards from the end in slice coordinates */
+		{
+			int x = s;
+
+			s = scroll_end - e + 1;
+			e = scroll_end - x + 1;
+		}
 
 		for(tick = 1,n_levels = 0; s != e;tick *= 10, s /= 10, e /= 10, n_levels++)
 		{
@@ -803,35 +814,57 @@ tick, n_levels,n_hide, n_pixels, text_height,zoom_factor);
 
 	/* we need a lot of levels to cope with large sequences zoomed in a lot */
 	/* to get down to single base level */
-	for(level = n_levels,top = 1;level >= 0 && tick > 0;level--, tick /= 10, gap /= 10, top = 0)
+	for(level = n_levels,top = 1;level >= 0 && tick > 0;level--, tick /= 10, gap /= 10, top++)
 	{
 		if(!gap)
 			break;
 
 //debug("level %d gap = %d, tick = %d, base = %d, digits = %d\n",level,gap,tick,base,digits);
-		if(zoomed)
+		if(revcomped)
 		{
-			tick_start = (int) scroll_start - seq_start;
-			tick_start -= tick_start % tick;
-			tick_end = tick_start + scroll_len + tick;
-		}
+			if(zoomed)
+			{
+				tick_start = (int) scroll_start - seq_start;
+				tick_start += (seq_len - tick_start) % tick;
+				tick_end = tick_start + scroll_len + tick;
+			}
+			else
+			{
+				tick_start = seq_len % tick;
+				tick_end =  seq_len;
+			}
+		}			/* NOTE tick _coors is 0 based, it is added to seq_start which is not */
 		else
 		{
-			tick_start = 0;
-			tick_end = tick_start + seq_len;
+			if(zoomed)
+			{
+				tick_start = (int) scroll_start - seq_start;
+				tick_start -= tick_start % tick;
+				tick_end = tick_start + scroll_len + tick;
+			}
+			else
+			{
+				tick_start = 0;
+				tick_end =  seq_len;
+			}
 		}
-
 #if SCALE_DEBUG
 debug("tick start,end = %d %d\n",tick_start, tick_end);
 #endif
-		for(tick_coord = (tick_start / tick) * tick; tick_coord <= tick_end ;tick_coord += tick)
+		for(tick_coord = tick_start; tick_coord <= tick_end ;tick_coord += tick)
 		{
-			if(tick_coord + seq_start - 1 < scroll_start)
+			int slice_coord = tick_coord;
+
+			if(tick_coord + seq_start < scroll_start)
 				continue;
-			if(tick_coord + seq_start - 1 > scroll_end)
+			if(tick_coord + seq_start > scroll_end)
 				break;
 
-			digit =  (tick_coord / tick) % 10;
+			if(revcomped)
+				slice_coord = tick_coord - seq_end;	/* -1 based coord off the sequence end */
+
+			digit =  (slice_coord / tick) % 10;
+
 			if(top || digit)			/* don't draw ticks over higher order ticks */
 			{
 				nudge = (digit == 5 || digit == -5);
@@ -841,10 +874,10 @@ debug("tick start,end = %d %d\n",tick_start, tick_end);
 
 					if(revcomped)
 					{
-						/* tick coord is # bases off the end due to revcomp mixture */
-						/* this is the tick_start calc from above reversed */
-						/* but we draw 1 bp backwards */
-						draw_at = tick_coord + seq_len + 2 ;
+						/* tick coord is alinged to ticks from the end
+						 * draw in place but work out coordinate differently
+						 */
+						draw_at = tick_coord + seq_start - 1;
 					}
 					else
 					{
@@ -854,7 +887,7 @@ debug("tick start,end = %d %d\n",tick_start, tick_end);
 					label[0] = 0;
 					canvas_coord = (double) draw_at;
 #if SCALE_DEBUG
-if(top) debug("coord: %.1f %d (%d,%d) = %d\n", canvas_coord, digit, seq_start,seq_end, tick_coord);
+if(top < 2) debug("coord: %.1f %d (%d,%d) = %d\n", canvas_coord, digit, seq_start,seq_end, tick_coord);
 #endif
 					tick_width = tick_inc * (level - n_hide);
 					colour = &black;
@@ -883,13 +916,13 @@ if(top) debug("coord: %.1f %d (%d,%d) = %d\n", canvas_coord, digit, seq_start,se
 //						double offset = revcomped ? -0.5 : 0.5;
 						ZMapWindowCanvasGraphics gfx;
 
-						num = tick_coord / base;	/* tick_start in case zoomed */
+						num = slice_coord / base;	/* tick_start in case zoomed */
 						if(num < 0)
 							num = -num;
-						frac = tick_coord % base;
+						frac = slice_coord % base;
 						if(frac < 0)
 							frac = -frac;
-						if(tick_coord < 0)
+						if(revcomped)
 							sign = "-";
 
 						if(frac)
@@ -919,7 +952,7 @@ if(top) debug("coord: %.1f %d (%d,%d) = %d\n", canvas_coord, digit, seq_start,se
 					}
 
 #if SCALE_DEBUG
-if(top) debug("tick @ %d %f (%d, %d) level %d: %s\n",tick_coord,canvas_coord,base,tick,level,label);
+if(top < 2) debug("tick @ %d %f (%d, %d) level %d: %s\n",tick_coord,canvas_coord,base,tick,level,label);
 #endif
 				}
 			}
@@ -932,23 +965,14 @@ if(top) debug("tick @ %d %f (%d, %d) level %d: %s\n",tick_coord,canvas_coord,bas
 	 * NOTE tick_start and tick_end are as set by the highest res ticks above
 	 */
 
-	for(first = 1, tick = scroll_len / 20,tick_coord = tick_start; tick_coord <= tick_end ;tick_coord += tick)
+	for(first = 1, tick = scroll_len / 20,tick_coord = scroll_start; ;tick_coord += tick)
 	{
-		if(revcomped)
-		{
-			/* tick coord is # bases off the end due to revcomp mixture */
-			/* this is the tick_start calc from above reversed */
-			/* but we draw 1 bp backwards */
-			draw_at = tick_coord + seq_len + 2;
-		}
-		else
-		{
-			draw_at = tick_coord + seq_start - 1;
-		}
-		if(draw_at < seq_start - 1)		/* extra -1 to cover first base which is between canvas 0 and 1 */
-			draw_at = seq_start - 1;
-		if(draw_at > seq_end)
-			draw_at = seq_end;
+		draw_at = tick_coord - 1;		/* extra -1 to cover first base which is between canvas 0 and 1 */
+
+		if(draw_at < scroll_start - 1)
+			draw_at = scroll_start - 1;
+		if(draw_at > scroll_end)
+			draw_at = scroll_end;
 
 		canvas_coord = (double) draw_at;
 
@@ -965,9 +989,12 @@ if(top) debug("tick @ %d %f (%d, %d) level %d: %s\n",tick_coord,canvas_coord,bas
 #endif
 		first = 0;
 		prev = canvas_coord;
+
+		if(tick_coord >= scroll_end)
+			break;
 	}
 #if SCALE_DEBUG
-	debug("lines stop at %.1f\n",canvas_coord);
+	debug("lines stop at %.1f (%d %d)\n",canvas_coord, tick_coord, scroll_end);
 #endif
 	return scale_width;
 }

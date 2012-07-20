@@ -41,9 +41,8 @@
 
 static void createNavViewWindow(ZMap zmap, GtkWidget *parent) ;
 
-#if USE_REGION
+
 static void valueCB(void *user_data, double start, double end) ;
-#endif
 
 static void pane_position_callback(GObject *pane, GParamSpec *scroll, gpointer user_data);
 
@@ -58,9 +57,8 @@ GtkWidget *zmapControlWindowMakeFrame(ZMap zmap)
 
   createNavViewWindow(zmap, frame) ;
 
-#if USE_REGION
+
   zMapNavigatorSetWindowCallback(zmap->navigator, valueCB, (void *)zmap) ;
-#endif
 
   return frame ;
 }
@@ -103,7 +101,7 @@ static void createNavViewWindow(ZMap zmap, GtkWidget *parent)
 }
 
 
-#if USE_REGION
+
 /* Gets called by navigator when user has moved window locator scroll bar. */
 static void valueCB(void *user_data, double start, double end)
 {
@@ -118,7 +116,6 @@ static void valueCB(void *user_data, double start, double end)
 
   return ;
 }
-#endif
 
 static void pane_position_callback(GObject *pane, GParamSpec *scroll, gpointer user_data)
 {

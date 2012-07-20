@@ -155,7 +155,7 @@ ZMapNavigator zMapNavigatorCreate(GtkWidget **top_widg_out, GtkWidget **canvas_o
 }
 
 
-#if USE_REGION
+
 
 /* Set function + data that Navigator will call each time the position of the region window
  * is changed. */
@@ -167,7 +167,6 @@ void zMapNavigatorSetWindowCallback(ZMapNavigator navigator,
 
   return ;
 }
-#endif
 
 /* zmapControl.c:388 calls this! */
 

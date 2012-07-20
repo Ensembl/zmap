@@ -5835,7 +5835,7 @@ static void fc_end_update_cb(FooCanvas *canvas, gpointer user_data)
 
   zMapAssert(canvas == window->canvas) ;
 
-  if (canvas == window->canvas && window->feature_context)	/* we can get called before the featrue context is set */
+  if (canvas == window->canvas && window->feature_context)	/* we can get called before the feature context is set */
     {
       double x1, x2, y1, y2;
 	int seq_start,seq_end;
