@@ -1,3 +1,4 @@
+/*  Last edited: Apr 13 09:13 2012 (edgrif) */
 /*  File: zmapConfigLoader.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -1178,7 +1179,7 @@ GHashTable *zMapConfigIniGetGlyph(ZMapConfigIniContext context)
 /* (there are limits to honw many colours we can use and GArrays are tedious) */
 GHashTable *zMapConfigIniGetHeatmaps(ZMapConfigIniContext context)
 {
-      GHashTable *hash = NULL;
+     GHashTable *hash = NULL;
       GKeyFile *gkf;
       gchar ** keys = NULL;
       gsize len;

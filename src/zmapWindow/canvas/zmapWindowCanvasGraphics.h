@@ -1,5 +1,5 @@
 
-/*  File: zmapWindowCanvasBasic.c
+/*  File: zmapWindowCanvasGraphics.h
  *  Author: malcolm hinsley (mh17@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
@@ -27,17 +27,10 @@
  *
  * Description:
  *
- * implements callback functions for FeaturesetItem basic features
+ * implements callback functions for FeaturesetItem plain graphics
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmap.h>
 
-
-#include <zmapWindowCanvasFeatureset_I.h>
-#include <zmapWindowCanvasBasic.h>
-
-/* NOTE
- * The basic feature struct is just the zmapWindowCanvasFeatureStruct as defined in zmapWindowCanvasFeatureset_I.h
- */
-
+void zMapWindowCanvasGraphicsInit(void);

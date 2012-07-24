@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -23,7 +23,7 @@
  *         Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
  *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- * Description: 
+ * Description:
  * Exported functions: See XXXXXXXXXXXXX.h
  *-------------------------------------------------------------------
  */
@@ -41,6 +41,7 @@
 
 static void createNavViewWindow(ZMap zmap, GtkWidget *parent) ;
 
+
 static void valueCB(void *user_data, double start, double end) ;
 
 static void pane_position_callback(GObject *pane, GParamSpec *scroll, gpointer user_data);
@@ -55,6 +56,7 @@ GtkWidget *zmapControlWindowMakeFrame(ZMap zmap)
   gtk_container_border_width(GTK_CONTAINER(frame), 5) ;
 
   createNavViewWindow(zmap, frame) ;
+
 
   zMapNavigatorSetWindowCallback(zmap->navigator, valueCB, (void *)zmap) ;
 
@@ -82,7 +84,7 @@ static void createNavViewWindow(ZMap zmap, GtkWidget *parent)
   /* This box contains what may be multiple views in paned widgets. */
   zmap->pane_vbox = gtk_vbox_new(FALSE,0) ;
 
-  gtk_paned_pack2(GTK_PANED(zmap->hpane), 
+  gtk_paned_pack2(GTK_PANED(zmap->hpane),
 		  zmap->pane_vbox, TRUE, TRUE);
 
 
@@ -99,6 +101,7 @@ static void createNavViewWindow(ZMap zmap, GtkWidget *parent)
 }
 
 
+
 /* Gets called by navigator when user has moved window locator scroll bar. */
 static void valueCB(void *user_data, double start, double end)
 {
@@ -109,7 +112,7 @@ static void valueCB(void *user_data, double start, double end)
       ZMapWindow window = zMapViewGetWindow(zmap->focus_viewwindow) ;
 
       zMapWindowMove(window, start, end) ;
-    }  
+    }
 
   return ;
 }
@@ -127,14 +130,14 @@ static void pane_position_callback(GObject *pane, GParamSpec *scroll, gpointer u
 
   if(max < pos)
     gtk_paned_set_position(GTK_PANED(pane), max);
-    
+
   return ;
 }
 
 static gboolean double_to_open(GtkWidget *widget, GdkEventButton *button, gpointer user_data)
 {
   gboolean handled = FALSE;
-  
+
   if(GTK_IS_PANED(widget))
     {
       switch(button->type)
@@ -161,7 +164,7 @@ static gboolean double_to_open(GtkWidget *widget, GdkEventButton *button, gpoint
 		  gtk_paned_set_position(pane, 0);
 
 #ifdef DIFFERENCE
-		g_object_set(G_OBJECT(pane), 
+		g_object_set(G_OBJECT(pane),
 			     "position",     max_position,
 			     "position_set", TRUE,
 			     NULL);

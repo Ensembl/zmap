@@ -44,13 +44,6 @@
 
 #include <zmapWindowCanvasItem.h>
 
-#if 0
-//#include <zmapWindowCanvasFeatureset.h>
-#include <zmapWindowCanvasFeatureset_I.h>	// for debug
-
-// temp include for timing test
-#include <zmapWindowCanvasItem_I.h>
-#endif
 
 typedef struct _RunSetStruct *RunSet;
 

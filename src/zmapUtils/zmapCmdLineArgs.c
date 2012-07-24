@@ -1,3 +1,4 @@
+/*  Last edited: Apr 13 08:45 2012 (edgrif) */
 /*  File: zmapCmdLineArgs.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -88,8 +89,8 @@ static ZMapCmdLineArgs arg_context_G = NULL ;
  * The final (optional) argument on the command line specifies the name
  * of a sequence to be displayed, this must not be preceded by "--".
  *
- * ZMap uses the popt package to do command line parsing, the functions
- * provided in the zmap interface to popt provide a simplified interface.
+ * ZMap uses the Glib g_option calls to do command line parsing, the functions
+ * provided in the zmap interface supply a simplified interface.
  *
  *  */
 

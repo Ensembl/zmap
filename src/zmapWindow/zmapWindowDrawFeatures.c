@@ -315,14 +315,14 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
 
   window->seqLength = zmapWindowExt(window->sequence->start, window->sequence->end) ;
 
-  zmapWindowRulerCanvasSetRevComped(window->ruler, window->revcomped_features) ;
+  zmapWindowScaleCanvasSetRevComped(window->ruler, window->revcomped_features) ;
 /*
  * MH17: after a revcomp we end up with 1-based coords if we have no official parent span
  * which is very confusing but valid. To display the ruler properly we need to use those coordinates
  * and not the original sequence coordinates.
  * the code just above sets sequence->start,end, but only on the first display, which is not revcomped
  */
-  zmapWindowRulerCanvasSetSpan(window->ruler, seq_start, seq_end) ;
+//  zmapWindowScaleCanvasSetSpan(window->ruler, seq_start, seq_end) ;
 
   zmapWindowZoomControlInitialise(window);		    /* Sets min/max/zf */
 
@@ -345,13 +345,15 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
   h_adj = gtk_scrolled_window_get_hadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window)) ;
 
   foo_canvas_set_pixels_per_unit_xy(window->canvas, 1.0, zMapWindowGetZoomFactor(window)) ;
-  zmapWindowRulerCanvasSetPixelsPerUnit(window->ruler, 1.0, zMapWindowGetZoomFactor(window)) ;
+  zmapWindowScaleCanvasSetPixelsPerUnit(window->ruler, 1.0, zMapWindowGetZoomFactor(window)) ;
 
+#if 0
   {
     double border_copy = 0.0;
     zmapWindowGetBorderSize(window, &border_copy);
-    zmapWindowRulerCanvasSetLineHeight(window->ruler, border_copy * window->canvas->pixels_per_unit_y);
+    zmapWindowScaleCanvasSetLineHeight(window->ruler, border_copy * window->canvas->pixels_per_unit_y);
   }
+#endif
 
   canvas_data.window = window;
   canvas_data.canvas = window->canvas;

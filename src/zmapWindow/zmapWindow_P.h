@@ -470,19 +470,19 @@ typedef struct
 
 
 
-typedef void (*ZMapWindowRulerCanvasCallback)(gpointer data,
+typedef void (*ZMapWindowScaleCanvasCallback)(gpointer data,
                                               gpointer user_data);
 
-typedef struct _ZMapWindowRulerCanvasCallbackListStruct
+typedef struct _ZMapWindowScaleCanvasCallbackListStruct
 {
-  ZMapWindowRulerCanvasCallback paneResize;
+  ZMapWindowScaleCanvasCallback paneResize;
 
   gpointer user_data;           /* Goes to all! */
-} ZMapWindowRulerCanvasCallbackListStruct, *ZMapWindowRulerCanvasCallbackList;
+} ZMapWindowScaleCanvasCallbackListStruct, *ZMapWindowScaleCanvasCallbackList;
 
 
 
-typedef struct _ZMapWindowRulerCanvasStruct *ZMapWindowRulerCanvas;
+typedef struct _ZMapWindowScaleCanvasStruct *ZMapWindowScaleCanvas;
 
 typedef struct _ZMapWindowZoomControlStruct *ZMapWindowZoomControl ;
 
@@ -674,7 +674,7 @@ typedef struct _ZMapWindowStruct
   GtkWidget *col_config_window ;			    /* column configuration window. */
 
 
-  ZMapWindowRulerCanvas ruler ;
+  ZMapWindowScaleCanvas ruler ;
 
   /* Holds focus items/column for the zmap. */
   ZMapWindowFocus focus ;
@@ -1255,7 +1255,8 @@ void zmapWindowDebugWindowCopy(ZMapWindow window);
 void zmapWindowGetBorderSize(ZMapWindow window, double *border);
 /* End of zmapWindowZoomControl.c functions */
 
-void zmapWindowDrawScaleBar(ZMapWindow window, double start, double end) ;
+double zMapWindowDrawScaleBar(FooCanvasGroup *group, int scroll_start, int scroll_end,
+	int seq_start, int seq_end, double zoom_factor, gboolean revcomped, gboolean zoomed);
 
 gboolean zmapWindowItemIsVisible(FooCanvasItem *item) ;
 gboolean zmapWindowItemIsShown(FooCanvasItem *item) ;
@@ -1413,21 +1414,19 @@ GList *zmapWindowFeatureColumnStyles(ZMapFeatureContextMap map, GQuark column_id
 
 
 /* Ruler Functions */
-ZMapWindowRulerCanvas zmapWindowRulerCanvasCreate(ZMapWindowRulerCanvasCallbackList callbacks);
-void zmapWindowRulerCanvasInit(ZMapWindowRulerCanvas obj,
+ZMapWindowScaleCanvas zmapWindowScaleCanvasCreate(ZMapWindowScaleCanvasCallbackList callbacks);
+void zmapWindowScaleCanvasInit(ZMapWindowScaleCanvas obj,
                                GtkWidget *paned,
                                GtkAdjustment *vadjustment);
-void zmapWindowRulerCanvasMaximise(ZMapWindowRulerCanvas obj, double y1, double y2);
-void zmapWindowRulerCanvasOpenAndMaximise(ZMapWindowRulerCanvas obj);
-void zmapWindowRulerCanvasSetRevComped(ZMapWindowRulerCanvas obj, gboolean revcomped) ;
-void zmapWindowRulerCanvasSetSpan(ZMapWindowRulerCanvas ruler, int start,int end);
-gboolean zmapWindowRulerCanvasDraw(ZMapWindowRulerCanvas obj, double x, double y,int seq_start, int seq_end, gboolean force);
-void zmapWindowRulerCanvasSetVAdjustment(ZMapWindowRulerCanvas obj, GtkAdjustment *vadjustment);
-void zmapWindowRulerCanvasSetPixelsPerUnit(ZMapWindowRulerCanvas obj, double x, double y);
-void zmapWindowRulerCanvasSetLineHeight(ZMapWindowRulerCanvas obj,
-                                        double border);
-void zmapWindowRulerGroupDraw(FooCanvasGroup *parent, gboolean revcomped,
-                             double start, double end, double canvas_offset);
+void zmapWindowScaleCanvasMaximise(ZMapWindowScaleCanvas obj, double y1, double y2);
+void zmapWindowScaleCanvasOpenAndMaximise(ZMapWindowScaleCanvas obj);
+void zmapWindowScaleCanvasSetRevComped(ZMapWindowScaleCanvas obj, gboolean revcomped) ;
+void zmapWindowScaleCanvasSetSpan(ZMapWindowScaleCanvas ruler, int start,int end);
+gboolean zmapWindowScaleCanvasDraw(ZMapWindowScaleCanvas obj, int x, int y,int seq_start, int seq_end);
+void zmapWindowScaleCanvasSetVAdjustment(ZMapWindowScaleCanvas obj, GtkAdjustment *vadjustment);
+void zmapWindowScaleCanvasSetPixelsPerUnit(ZMapWindowScaleCanvas obj, double x, double y);
+void zmapWindowScaleCanvasSetLineHeight(ZMapWindowScaleCanvas obj, double border);
+//void zmapWindowScaleGroupDraw(FooCanvasGroup *parent, gboolean revcomped,double start, double end, double canvas_offset);
 
 /* Stats functions. */
 ZMapWindowStats zmapWindowStatsCreate(ZMapFeatureAny feature_any ) ;
