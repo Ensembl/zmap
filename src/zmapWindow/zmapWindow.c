@@ -1,4 +1,4 @@
-/*  Last edited: Jul 13 16:06 2011 (edgrif) */
+/*  Last edited: Jul 13 14:39 2012 (edgrif) */
 /*  File: zmapWindow.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -3106,8 +3106,9 @@ zMapLogWarning("canvas event %d",  event->type);
 
 
 	      if ((item = foo_canvas_get_item_at(window->canvas, origin_x, origin_y))
-			&& ZMAP_IS_WINDOW_FEATURESET_ITEM(item)
-			&& zMapWindowCanvasFeaturesetGetSeqCoord((ZMapWindowFeaturesetItem) item, TRUE, origin_x, origin_y, &seq_start, &seq_end))
+		  && ZMAP_IS_WINDOW_FEATURESET_ITEM(item)
+		  && zMapWindowCanvasFeaturesetGetSeqCoord((ZMapWindowFeaturesetItem)item, TRUE,
+							   origin_x, origin_y, &seq_start, &seq_end))
 		{
 				/* get start coordinate via subpartspan from x and y
 				 * set end coordinate to be the same
