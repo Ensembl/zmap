@@ -93,7 +93,7 @@ canvas/zmapWindowCanvasLocus.c \
 canvas/zmapWindowCanvasLocus.h \
 canvas/zmapWindowCanvasLocus_I.h \
 canvas/zmapWindowCanvasGraphics.c \
-canvas/zmapWindowCanvasGrahpics.h \
+canvas/zmapWindowCanvasGraphics.h \
 $(NULL)
 
 
