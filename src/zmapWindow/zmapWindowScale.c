@@ -1,6 +1,6 @@
 /*  File: zmapWindowScale.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- * simplified by mh17 and renamed windowScale to avoid confusion with the ruler
+ * simplified by mh17 and renamed zmapWindowScale to avoid confusion with the ruler
  *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
@@ -216,6 +216,10 @@ void zmapWindowScaleCanvasMaximise(ZMapWindowScaleCanvas ruler, double y1, doubl
     {
       foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(ruler->scaleParent),
                                  NULL, NULL, &max_x2, NULL);
+	if(!max_x2)
+		max_x2 = ruler->last_draw_coords.x2 + 1;
+	/* somehow max_x2 is always 0, bit we'd like to maximise only if they have-nt shrunk it */
+
       if(iy1 == iy2 && iy1 == ix1)
         foo_canvas_get_scroll_region(FOO_CANVAS(ruler->canvas),
                                      NULL, &iy1, &x2, &iy2);
@@ -223,12 +227,12 @@ void zmapWindowScaleCanvasMaximise(ZMapWindowScaleCanvas ruler, double y1, doubl
         foo_canvas_get_scroll_region(FOO_CANVAS(ruler->canvas),
                                      NULL, NULL, &x2, NULL);
 #if SCALE_DEBUG
-      debug("scaleCanvas set scroll: %1.f %1.f %1.f - %1.f %1.f %1.f %1.f\n", x2, max_x2, ruler->last_draw_coords.x2, ix1, ruler->last_draw_coords.x2, iy1, iy2);
+      debug("scaleCanvas set scroll: %1.f %1.f - %1.f %1.f %1.f %1.f\n", x2, max_x2, ix1, ruler->last_draw_coords.x2, iy1, iy2);
 #endif /* VERBOSE_1 */
 
 	/* NOTE this canvas has nothing except the scale bar */
       foo_canvas_set_scroll_region(FOO_CANVAS(ruler->canvas),
-                                   ix1, iy1, ruler->last_draw_coords.x2, iy2);
+                                   ix1, iy1, max_x2, iy2);
 
       if(max_x2 > 0.0)
         {
@@ -237,7 +241,7 @@ void zmapWindowScaleCanvasMaximise(ZMapWindowScaleCanvas ruler, double y1, doubl
           if(ruler->callbacks->paneResize &&
              ruler->callbacks->user_data)
             {
-              int floored = (int)max_x2;
+              int floored = (int) max_x2;
               freeze_notify(ruler);
               (*(ruler->callbacks->paneResize))(&floored, ruler->callbacks->user_data);
               thaw_notify(ruler);
@@ -610,7 +614,12 @@ double zMapWindowDrawScaleBar(FooCanvasGroup *group, int scroll_start, int scrol
  * however, the scroll reqion as passsed here is clamped to sequence coordinates
  *
  * for revcomp we have to reverse back and express as -ve to get the ticks in the right place (-1 based)
+ * the code is very fiddly
  *
+ */
+/* NOTE (24 July 2012)
+ * perhaps it would have been simpler to stay with the two columns (text and ticks) instead of calculating text size...
+ * but regardless of that they have to be drawn together in the x axis
  */
 {
 	int seq_len;	/* # bases in the scroll region */
@@ -634,12 +643,14 @@ double zMapWindowDrawScaleBar(FooCanvasGroup *group, int scroll_start, int scrol
 	double tick_width;
 	int n_levels;	/* number of levels needed for BP resolution */
 	int n_hide; 	/* number we can't see at current zoom level */
+	int n_text_hide;	/* text we can't display due to overlap */
 	char *units[] = { "","","k","M","G" };
 	int i;
 	int tick_start;
 	int tick_end;
 	int draw_at;
 	int scroll_len;
+	int seq_max;	/* biggest slice coord to display */
 
 	ZMapWindowFeaturesetItem featureset;
 	GQuark fid;
@@ -679,41 +690,6 @@ debug("draw scale %p\n",((FooCanvasItem *) group)->canvas);
 	if(seq_len < 10)	/* we get called on start up w/ no sequence */
 		return 0;
 
-#if 0
-	if(revcomped)
-	{
-		/* scroll coords are seq coords reflected in seq_end, we need these as -1 based -ve
-		 * typically as we never know seq_end these appear to be 1-based
-		 * but they are not eg  if we select a subsequence or zoom in
-		 * this is a complication introduced by applying revcomp to the model (feature context)
-		 * rather than the view (zmapWindow)
-		 * here tick_start,end are being set to the scroll limits of the coords we want to display
-		 */
-
-		/* get fwd strand coords by reflecting in seq_end then
-		 * make these negative
-		 * then add seq_start to make them -1 based
-		 * they are already swapped (end <-> start)
-		 */
-		tick_start = -(seq_end - ((int) scroll_start) + 1) + seq_start - 2;
-		tick_end = -(seq_end - ((int) scroll_end) + 1) + seq_start - 2;
-
-#if SCALE_DEBUG
-debug("revcomp: seq = %d,%d scroll = %d,%d, tick = %d,%d\n", seq_start,seq_end,scroll_start,scroll_end,tick_start,tick_end);
-#endif
-	}
-	else
-	{
-		/* NOTE we avoid simply using seq_len as we pass in the whole sequence range rather than the visible scroll */
-		/* scroll coordinates can be wider due to the top and bottom border */
-
-		scroll_len = scroll_end - scroll_start + 1;
-
-#if SCALE_DEBUG
-debug("forward: seq = %d,%d scroll = %d,%d\n",seq_start,seq_end,scroll_start,scroll_end);
-#endif
-	}
-#endif
 
       scroll_len = scroll_end - scroll_start + 1;
 
@@ -758,8 +734,9 @@ debug("units: %d %d = %d/%d\n", s, e, tick, n_levels);
 
 	n_pixels = (int) (scroll_len * zoom_factor);
 
-	for(n_hide = n_levels,gap = n_pixels * tick / scroll_len; gap; gap /= 10,n_hide--)
+	for(n_hide = n_levels,gap = n_pixels * tick / scroll_len; n_hide && gap; gap /= 10,n_hide--)
 		continue;
+
 
 	tick_max = tick_inc * (n_levels - n_hide);	/* max tick width */
 #if SCALE_DEBUG
@@ -775,22 +752,36 @@ debug("hide = %d\n", n_hide);
 	base /= 1000;
 	digits -= 2;
 #if SCALE_DEBUG
-debug("levels, hide = %d %d (%s)\n", n_levels,n_hide, unit);
+debug("levels, hide = %d %d %d %d (%s)\n", n_levels,n_hide, base, digits, unit);
 #endif
 
 	/* work out space needed for labels */
-	text_max = (digits + strlen(unit)) * font_width;
-	i = scroll_len / base;
-	if(i >= 10)
-		text_max += font_width;
-	if(i >= 100)
-		text_max += font_width;
-	if(i >= 1000)
-		text_max += font_width;
 
+	for(n_text_hide = n_levels,gap = n_pixels * tick / scroll_len; n_text_hide && gap > text_height * 2; gap /= 10,n_text_hide--)
+		continue;
+
+	for(i = 1; n_text_hide-- && i < base; i *= 10)		/* get max resolution of ticks */
+		continue;
+
+	seq_max = scroll_end;
 	if(revcomped)
-		text_max += font_width;		/* for ;'-' */
+		seq_max = seq_end  - scroll_start + 1;
+	for(text_max = 1; i < seq_max; text_max++, i *= 10)	/* get number of digits needed */
 
+		continue;
+	text_max--;
+
+	if(*unit)		/* for decimal point */
+		text_max++;
+
+	if(revcomped)	/* for - sign */
+		text_max++;
+
+	text_max *= font_width;
+
+#if SCALE_DEBUG
+	debug("text width: %.1f %.1f %d %d %s\n",font_width, text_max, i, base, unit);
+#endif
 
 	scale_width = text_max + tick_max;
 	zMapWindowCanvasFeaturesetSetWidth(featureset, scale_width);
@@ -814,7 +805,7 @@ tick, n_levels,n_hide, n_pixels, text_height,zoom_factor);
 
 	/* we need a lot of levels to cope with large sequences zoomed in a lot */
 	/* to get down to single base level */
-	for(level = n_levels,top = 1;level >= 0 && tick > 0;level--, tick /= 10, gap /= 10, top++)
+	for(level = n_levels,top = 1;level >= 0 && tick > 0;level--, tick /= 10, gap /= 10, top = 0)
 	{
 		if(!gap)
 			break;
@@ -824,16 +815,16 @@ tick, n_levels,n_hide, n_pixels, text_height,zoom_factor);
 		{
 			if(zoomed)
 			{
-				tick_start = (int) scroll_start - seq_start;
-				tick_start += (seq_len - tick_start) % tick;
+				tick_start = (int) scroll_start - seq_start + 1;
+				tick_start -= tick - (seq_len - tick_start) % tick;
 				tick_end = tick_start + scroll_len + tick;
 			}
 			else
 			{
-				tick_start = seq_len % tick;
+				tick_start = seq_len % tick ;
 				tick_end =  seq_len;
 			}
-		}			/* NOTE tick _coors is 0 based, it is added to seq_start which is not */
+		}			/* NOTE tick_coord is 0 based, it is added to seq_start which is not */
 		else
 		{
 			if(zoomed)
@@ -857,11 +848,11 @@ debug("tick start,end = %d %d\n",tick_start, tick_end);
 
 			if(tick_coord + seq_start < scroll_start)
 				continue;
-			if(tick_coord + seq_start > scroll_end)
+			if(tick_coord + seq_start > scroll_end + 1)
 				break;
 
 			if(revcomped)
-				slice_coord = tick_coord - seq_end;	/* -1 based coord off the sequence end */
+				slice_coord = seq_end - tick_coord; 	/* -1 based coord off the sequence end */
 
 			digit =  (slice_coord / tick) % 10;
 
@@ -873,21 +864,14 @@ debug("tick start,end = %d %d\n",tick_start, tick_end);
 					/* draw the tick, with a number if appropriate */
 
 					if(revcomped)
-					{
-						/* tick coord is alinged to ticks from the end
-						 * draw in place but work out coordinate differently
-						 */
-						draw_at = tick_coord + seq_start - 1;
-					}
+						draw_at = tick_coord + seq_start + 1;
 					else
-					{
 						draw_at = tick_coord + seq_start - 1;
-					}
 
 					label[0] = 0;
 					canvas_coord = (double) draw_at;
 #if SCALE_DEBUG
-if(top < 2) debug("coord: %.1f %d (%d,%d) = %d\n", canvas_coord, digit, seq_start,seq_end, tick_coord);
+if(top) debug("coord: %.1f %d (%d,%d) = %d\n", canvas_coord, digit, seq_start,seq_end, tick_coord);
 #endif
 					tick_width = tick_inc * (level - n_hide);
 					colour = &black;
@@ -907,21 +891,21 @@ if(top < 2) debug("coord: %.1f %d (%d,%d) = %d\n", canvas_coord, digit, seq_star
 						scale_width, canvas_coord,
 						NULL, colour, NULL);
 
-					if((gap > text_height * 2))
+					if((slice_coord && gap > text_height * 2))
 					{
 //	      				FooCanvasItem *item = NULL;
 //						double x = 0.0;
 						int num,frac;
 						char *sign = "";
-//						double offset = revcomped ? -0.5 : 0.5;
+						double offset = revcomped ? -0.5 : 0.5;
 						ZMapWindowCanvasGraphics gfx;
 
-						num = slice_coord / base;	/* tick_start in case zoomed */
-						if(num < 0)
-							num = -num;
+						num = slice_coord / base;
+//						if(num < 0)
+//							num = -num;
 						frac = slice_coord % base;
-						if(frac < 0)
-							frac = -frac;
+//						if(frac < 0)
+//							frac = -frac;
 						if(revcomped)
 							sign = "-";
 
@@ -946,13 +930,14 @@ if(top < 2) debug("coord: %.1f %d (%d,%d) = %d\n", canvas_coord, digit, seq_star
 						}
 
 					      gfx = zMapWindowFeaturesetAddGraphics(featureset, FEATURE_TEXT,
-							0, canvas_coord,
-							text_max, canvas_coord+1,		/* text gets centred on a line, size varies with zoom as it's a fixed size font */
+							0, canvas_coord + offset - 1,
+							/* text gets centred on a line, size varies with zoom as it's a fixed size font */
+							text_max, canvas_coord + offset + 1,
 							NULL, &black, g_strdup(label));
 					}
 
 #if SCALE_DEBUG
-if(top < 2) debug("tick @ %d %f (%d, %d) level %d: %s\n",tick_coord,canvas_coord,base,tick,level,label);
+if(top) debug("tick @ %d %f (%d, %d) level %d: %s\n",tick_coord,canvas_coord,base,tick,level,label);
 #endif
 				}
 			}
@@ -967,12 +952,12 @@ if(top < 2) debug("tick @ %d %f (%d, %d) level %d: %s\n",tick_coord,canvas_coord
 
 	for(first = 1, tick = scroll_len / 20,tick_coord = scroll_start; ;tick_coord += tick)
 	{
-		draw_at = tick_coord - 1;		/* extra -1 to cover first base which is between canvas 0 and 1 */
+		draw_at = tick_coord - 1 ;		/* extra -1 to cover first base which is between canvas 0 and 1 */
 
-		if(draw_at < scroll_start - 1)
-			draw_at = scroll_start - 1;
-		if(draw_at > scroll_end)
-			draw_at = scroll_end;
+		if(draw_at < scroll_start)
+			draw_at = scroll_start;
+		if(draw_at > scroll_end + 1)
+			draw_at = scroll_end + 1;
 
 		canvas_coord = (double) draw_at;
 
@@ -990,12 +975,13 @@ if(top < 2) debug("tick @ %d %f (%d, %d) level %d: %s\n",tick_coord,canvas_coord
 		first = 0;
 		prev = canvas_coord;
 
-		if(tick_coord >= scroll_end)
+		if(tick_coord >= scroll_end + 1)
 			break;
 	}
 #if SCALE_DEBUG
 	debug("lines stop at %.1f (%d %d)\n",canvas_coord, tick_coord, scroll_end);
 #endif
+
 	return scale_width;
 }
 

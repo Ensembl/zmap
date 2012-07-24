@@ -1934,7 +1934,7 @@ static void panedResizeCB(gpointer data, gpointer userdata)
 
   current_position = gtk_paned_get_position(GTK_PANED( window->pane ));
 
-#ifdef RDS_DONT_INCLUDE
+#if RDS_DONT_INCLUDE
   printf(" |-- panedResizeCB: got current of %d want to set to %d\n", current_position, *new_position);
 #endif /* RDS_DONT_INCLUDE */
 
