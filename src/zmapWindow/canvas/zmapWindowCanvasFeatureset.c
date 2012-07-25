@@ -2883,7 +2883,7 @@ ZMapWindowCanvasFeature zMapWindowFeaturesetAddFeature(ZMapWindowFeaturesetItem 
 ZMapWindowCanvasGraphics zMapWindowFeaturesetAddGraphics(ZMapWindowFeaturesetItem featureset_item, zmapWindowCanvasFeatureType type, double x1, double y1, double x2, double y2, GdkColor *fill, GdkColor *outline, char *text)
 {
   ZMapWindowCanvasGraphics feat;
-  ulong fill_pixel= 0, outline_pixel = 0;
+  gulong fill_pixel= 0, outline_pixel = 0;
   FooCanvasItem *foo = (FooCanvasItem *) featureset_item;
 
   if(type == FEATURE_INVALID || type >= FEATURE_GENOMIC)
