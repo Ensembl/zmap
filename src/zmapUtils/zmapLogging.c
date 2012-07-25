@@ -165,13 +165,16 @@ gboolean zMapLogCreate(char *logname)
 {
   gboolean result = FALSE ;
   ZMapLog log = log_G ;
-  extern void (*foo_log)(char *x);
 
   zMapAssert(!log) ;
 
 #if 0		// log timing stats from foo
 		// have to take this out to get xremote to compile for perl
 		// should be ok when we get the new xremote
+
+  extern void (*foo_log)(char *x);
+
+
   if (zmap_timing_G)
     {
       extern void (*foo_timer)(int,int);
@@ -185,8 +188,11 @@ gboolean zMapLogCreate(char *logname)
 
       foo_log_stack = zMapPrintStack;
     }
-#endif
+
   foo_log = foo_logger;
+
+#endif
+
 
   log_G = log = createLog() ;
 
