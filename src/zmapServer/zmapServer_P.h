@@ -1,3 +1,4 @@
+/*  Last edited: Jul 23 12:11 2012 (edgrif) */
 /*  File: zmapServer_P.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -40,6 +41,8 @@
 /* A connection to a database. */
 typedef struct _ZMapServerStruct
 {
+  char *config_file ;
+
   ZMapURL url ;                 /* Replace the host & protocol ... */
 
   ZMapServerFuncs funcs ;       /* implementation specific functions
