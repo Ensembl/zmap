@@ -1,4 +1,4 @@
-/*  Last edited: Jul 11 15:42 2011 (edgrif) */
+/*  Last edited: Jul 23 17:28 2012 (edgrif) */
 /*  File: zmapView.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -22,7 +22,7 @@
  * originated by
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Handles the getting of the feature context from sources
  *              and their subsequent processing.
@@ -100,12 +100,13 @@ typedef struct
 
 typedef struct
 {
+  char *config_file ;
   gboolean found_style ;
   GString *missing_styles ;
 } DrawableDataStruct, *DrawableData ;
 
 
-static GList *zmapViewGetIniSources(char *config_str,char **stylesfile);
+static GList *zmapViewGetIniSources(char *config_file, char *config_str,char **stylesfile);
 static void zmapViewCreateColumns(ZMapView view,GList *featuresets) ;
 static ZMapConfigSource zmapViewGetSourceFromFeatureset(GHashTable *hash,GQuark featurequark);
 static ZMapView createZMapView(GtkWidget *xremote_widget, char *view_name,
@@ -203,7 +204,7 @@ static void killAllSpawned(ZMapView zmap_view);
 static gboolean checkContinue(ZMapView zmap_view) ;
 
 
-static gboolean makeStylesDrawable(GHashTable *styles, char **missing_styles_out) ;
+static gboolean makeStylesDrawable(char *config_file, GHashTable *styles, char **missing_styles_out) ;
 static void drawableCB(gpointer key_id, gpointer data, gpointer user_data) ;
 
 static void addPredefined(GHashTable **styles_inout, GHashTable **column_2_styles_inout) ;
@@ -341,13 +342,16 @@ ZMapViewWindow zMapViewCreate(GtkWidget *xremote_widget, GtkWidget *view_contain
 
   /* Set up debugging for threads and servers, we do it here so that user can change setting
    * in config file and next time they create a view the debugging will go on/off */
-
-  zMapUtilsConfigDebug();
+  zMapUtilsConfigDebug(sequence_map->config_file) ;
 
   zMapInitTimer() ; // operates as a reset if already defined
 
+
+  /* I DON'T UNDERSTAND WHY THERE IS A LIST OF SEQUENCES HERE.... */
+
   /* Set up sequence to be fetched, in this case server defaults to whatever is set in config. file. */
   sequence_fetch = g_new0(ZMapFeatureSequenceMapStruct, 1) ;
+  sequence_fetch->config_file = g_strdup(sequence_map->config_file) ;
   sequence_fetch->dataset = g_strdup(sequence_map->dataset) ;
   sequence_fetch->sequence = g_strdup(sequence_map->sequence) ;
   sequence_fetch->start = sequence_map->start ;
@@ -428,7 +432,7 @@ void zMapViewSetupNavigator(ZMapViewWindow view_window, GtkWidget *canvas_widget
  *
  * This 'replaces' ACEDB data but if absent we should still use the ACE stuff, it all gets merged
  */
-void zmapViewGetIniData(ZMapView view, char *config_str, GList *sources)
+void zmapViewGetIniData(ZMapView view, char *config_file, char *config_str, GList *sources)
 {
   ZMapConfigIniContext context ;
   // 8 structs to juggle, count them! It's GLibalicious!!
@@ -471,7 +475,7 @@ void zmapViewGetIniData(ZMapView view, char *config_str, GList *sources)
 
   zMapLogTime(TIMER_LOAD,TIMER_CLEAR,0,"View init");
 
-  if ((context = zMapConfigIniContextProvide()))
+  if ((context = zMapConfigIniContextProvide(config_file)))
     {
       if(config_str)
         zMapConfigIniContextIncludeBuffer(context, config_str);
@@ -785,8 +789,15 @@ static gint colOrderCB(gconstpointer a, gconstpointer b,gpointer user_data)
 }
 
 /* Connect a View to its databases via threads, at this point the View is blank and waiting
- * to be called to load some data. */
-gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
+ * to be called to load some data.
+ * 
+ * WHAT IS config_str ?????????? I THINK IT'S A BIT CONTEXT FILE SPECIFYING A SEQUENCE.
+ * 
+ * I'm adding an arg to specify a different config file.
+ * 
+ * 
+ *  */
+gboolean zMapViewConnect(ZMapView zmap_view, char *config_file, char *config_str)
 {
   gboolean result = TRUE ;
   char *stylesfile = NULL;
@@ -810,7 +821,8 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
        * and load in one call but we will almost certainly need the extra states later... */
       zmap_view->state = ZMAPVIEW_CONNECTING ;
 
-      settings_list = zmapViewGetIniSources(config_str,&stylesfile);    // get the stanza structs from ZMap config
+      // get the stanza structs from ZMap config
+      settings_list = zmapViewGetIniSources(config_file, config_str, &stylesfile) ;
 
 
       /* There are a number of predefined methods that we require so add these in as well
@@ -818,7 +830,7 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
       addPredefined(&(zmap_view->context_map.styles), &(zmap_view->context_map.column_2_styles)) ;
 
       // read in a few ZMap stanzas
-      zmapViewGetIniData(zmap_view, config_str, settings_list);
+      zmapViewGetIniData(zmap_view, config_file, config_str, settings_list);
 
       if (zmap_view->columns_set)
 	{
@@ -1670,15 +1682,15 @@ char *zmapViewGetStatusAsStr(ZMapViewState state)
 
 
 
-static GList *zmapViewGetIniSources(char *config_str,char ** stylesfile)
+static GList *zmapViewGetIniSources(char *config_file, char *config_str, char ** stylesfile)
 {
   GList *settings_list = NULL;
   ZMapConfigIniContext context ;
 
-  if ((context = zMapConfigIniContextProvide()))
+  if ((context = zMapConfigIniContextProvide(config_file)))
     {
 
-      if(config_str)
+      if (config_str)
 	zMapConfigIniContextIncludeBuffer(context, config_str);
 
       settings_list = zMapConfigIniContextGetSources(context);
@@ -1785,8 +1797,10 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
   gboolean dna_requested = FALSE;
 
 
+  /* OH DEAR...THINK WE MIGHT NEED THE CONFIG FILE HERE TOO.... */
+
   /* mh17: this is tedious to do for each request esp on startup */
-  sources = zmapViewGetIniSources(NULL,&stylesfile);
+  sources = zmapViewGetIniSources(view->view_sequence->config_file, NULL, &stylesfile) ;
   hash = zmapViewGetFeatureSourceHash(sources);
 
 
@@ -3435,7 +3449,8 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 	    /* I'm not sure if this couldn't come much earlier actually....something
 	     * to investigate.... */
 
-	    if (!makeStylesDrawable(zmap_view->context_map.styles, &missing_styles))
+	    if (!makeStylesDrawable(zmap_view->view_sequence->config_file,
+				    zmap_view->context_map.styles, &missing_styles))
 	      {
 		zMapLogWarning("Failed to make following styles drawable: %s", missing_styles) ;
 
@@ -3703,7 +3718,11 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
       connect_data->feature_sets = req_featuresets;
 //zMapLogWarning("request %d %s\n",g_list_length(req_featuresets),g_quark_to_string(GPOINTER_TO_UINT(req_featuresets->data)));
 
-      /* the bad news is that these two little numbers have to tunnel through three distinct data structures and layers of s/w to get to the pipe scripts.  Originally the request coordinates were buried in blocks in the context supplied incidentally when requesting features after extracting other data from the server.  Obviously done to handle multiple blocks but it's another iso 7 violation */
+      /* the bad news is that these two little numbers have to tunnel through three distinct data
+	 structures and layers of s/w to get to the pipe scripts.  Originally the request
+	 coordinates were buried in blocks in the context supplied incidentally when requesting
+	 features after extracting other data from the server.  Obviously done to handle multiple
+	 blocks but it's another iso 7 violation  */
 
       connect_data->start = features_start;
       connect_data->end = features_end;
@@ -3720,14 +3739,16 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
 
       /* CHECK WHAT THIS IS ABOUT.... */
       /* Record info. for this session. */
-      zmapViewSessionAddServer(zmap_view->session_data,urlObj,format) ;
+      zmapViewSessionAddServer(zmap_view->session_data, urlObj, format) ;
 
       connect_data->display_after = ZMAP_SERVERREQ_FEATURES;
 
       /* Set up this connection in the step list. */
       if (!existing)
 	{
-	  req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_CREATE, urlObj, format, timeout, version) ;
+	  req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_CREATE,
+					    zmap_view->view_sequence->config_file,
+					    urlObj, format, timeout, version) ;
 	  zmapViewStepListAddServerReq(view_con->step_list, view_con, ZMAP_SERVERREQ_CREATE, req_any, on_fail) ;
 	  req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_OPEN) ;
 	  zmapViewStepListAddServerReq(view_con->step_list, view_con, ZMAP_SERVERREQ_OPEN, req_any, on_fail) ;
@@ -4885,13 +4906,12 @@ static gboolean checkContinue(ZMapView zmap_view)
 
 
 
-
-
-
-static gboolean makeStylesDrawable(GHashTable *styles, char **missing_styles_out)
+static gboolean makeStylesDrawable(char *config_file, GHashTable *styles, char **missing_styles_out)
 {
   gboolean result = FALSE ;
-  DrawableDataStruct drawable_data = {FALSE} ;
+  DrawableDataStruct drawable_data = {NULL, FALSE, NULL} ;
+
+  drawable_data.config_file = config_file ;
 
   g_hash_table_foreach(styles, drawableCB, &drawable_data) ;
 
@@ -4914,7 +4934,7 @@ static void drawableCB(gpointer key, gpointer data, gpointer user_data)
 
   if (zMapStyleIsDisplayable(style))
     {
-      if (zMapStyleMakeDrawable(style))
+      if (zMapStyleMakeDrawable(drawable_data->config_file, style))
 	{
 	  drawable_data->found_style = TRUE ;
 	}

@@ -1,3 +1,4 @@
+/*  Last edited: Jul 23 15:21 2012 (edgrif) */
 /*  File: zmapView.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -204,7 +205,7 @@ ZMapViewWindow zMapViewCopyWindow(ZMapView zmap_view, GtkWidget *parent_widget,
 				  ZMapWindow copy_window, ZMapWindowLockType window_locking) ;
 void zMapViewRemoveWindow(ZMapViewWindow view_window) ;
 void zMapViewRedraw(ZMapViewWindow view_window) ;
-gboolean zMapViewConnect(ZMapView zmap_view, char *config_str) ;
+gboolean zMapViewConnect(ZMapView zmap_view, char *config_file, char *config_str) ;
 gboolean zMapViewReset(ZMapView zmap_view) ;
 gboolean zMapViewReverseComplement(ZMapView zmap_view) ;
 gboolean zMapViewGetRevCompStatus(ZMapView zmap_view) ;
