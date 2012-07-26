@@ -25,6 +25,16 @@ zmap_message_out "Running in $INITIAL_DIR on $(hostname) under $(uname)"
 
 zmap_message_out "cmd line options = '$*'"
 
+
+# Remove any previously generated files in this dir.
+#
+zmap_message_out "Removing previously generated files...."
+
+generated_files='./.deps ./.libs ./Makefile ./config.* dotZMap gffparser* ./include ./lib* ./stamp-h1 ./xml_* \
+./xremote* ./zmap*'
+rm -rf $generated_files
+
+
 opsys=`uname`
 
 case $opsys in
