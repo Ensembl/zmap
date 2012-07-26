@@ -1753,8 +1753,6 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 	      else
 		{
 		  ZMapFeatureAlignFormat align_format = ZMAPALIGN_FORMAT_INVALID ;
-		  char *try_it = zMapFeatureAlignFormat2ShortText(ZMAPALIGN_FORMAT_CIGAR_EXONERATE) ;
-
 
 		  if ((gaps_onwards = strstr(attributes,
 					     zMapFeatureAlignFormat2ShortText(ZMAPALIGN_FORMAT_CIGAR_EXONERATE))))
