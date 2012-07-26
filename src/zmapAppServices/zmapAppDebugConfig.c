@@ -1,3 +1,4 @@
+/*  Last edited: Jul 23 11:18 2012 (edgrif) */
 /*  File: zmapConfigUtils.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -45,12 +46,12 @@
  * Allows debugging for different parts of the application to be turned on/off
  * selectively. */
 
-gboolean zMapUtilsConfigDebug(void)
+gboolean zMapUtilsConfigDebug(char *config_file)
 {
   ZMapConfigIniContext context = NULL;
   gboolean result = FALSE;
 
-  if((context = zMapConfigIniContextProvide()))
+  if((context = zMapConfigIniContextProvide(config_file)))
     {
       result = TRUE;
 #if 0
