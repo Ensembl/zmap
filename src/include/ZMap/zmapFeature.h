@@ -1,4 +1,3 @@
-/*  Last edited: Jul 13 15:39 2012 (edgrif) */
 /*  File: zmapFeature.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -956,10 +955,12 @@ typedef struct
 
 /* Holds a sequence to be fetched, in the end this will include aligns/blocks etc. */
 /* MH17: moved from zmapView.h */
-/* currently (Apr 2011) this is used for the 'default-sequence' or the one loeaded vuia Otterlace */
+/* currently (Apr 2011) this is used for the 'default-sequence' or the one loaded via Otterlace */
 /* multiple aligns must also include this if used */
 typedef struct
 {
+  char *config_file ;
+
   char *dataset ;       /* eg human */
   char *sequence ;      /* eg chr6-18 */
   int start, end ;      /* chromosome coordinates */
