@@ -49,12 +49,12 @@ static void createThreadCB(ZMapFeatureSequenceMap sequence_map, gpointer user_da
  *                 External interface.
  */
 
-GtkWidget *zmapMainMakeConnect(ZMapAppContext app_context)
+GtkWidget *zmapMainMakeConnect(ZMapAppContext app_context, ZMapFeatureSequenceMap sequence_map)
 {
   GtkWidget *frame ;
 
   
-  frame = zMapCreateSequenceViewWidg(createThreadCB, app_context) ;
+  frame = zMapCreateSequenceViewWidg(createThreadCB, app_context, sequence_map) ;
 
 
   return frame ;
@@ -67,10 +67,6 @@ void zmapAppCreateZMap(ZMapAppContext app_context, ZMapFeatureSequenceMap sequen
   ZMap zmap ;
   GtkTreeIter iter1;
   ZMapManagerAddResult add_result ;
-
-  /* Set the text.  This is done even if it's already set, ah well! */
-  if (sequence_map->sequence)
-    gtk_entry_set_text(GTK_ENTRY(app_context->sequence_widg), sequence_map->sequence);
 
   add_result = zMapManagerAdd(app_context->zmap_manager, sequence_map, &zmap) ;
   if (add_result == ZMAPMANAGER_ADD_DISASTER)
