@@ -1108,7 +1108,7 @@ gboolean zMapStyleIsDrawable(ZMapFeatureTypeStyle style, GError **error)
 
 /* Takes a style and defaults enough properties for the style to be used to
  * draw features (albeit boringly), returns FALSE if style is set to non-displayable (e.g. for meta-styles). */
-gboolean zMapStyleMakeDrawable(ZMapFeatureTypeStyle style)
+gboolean zMapStyleMakeDrawable(char *config_file, ZMapFeatureTypeStyle style)
 {
   gboolean result = FALSE ;
   zMapAssert(style) ;
@@ -1193,7 +1193,7 @@ gboolean zMapStyleMakeDrawable(ZMapFeatureTypeStyle style)
                 {
                   ZMapFeatureTypeStyle s_3frame;
 
-                  s_3frame = zMapStyleLegacyStyle(ZMAPSTYLE_LEGACY_3FRAME);
+                  s_3frame = zMapStyleLegacyStyle(config_file, ZMAPSTYLE_LEGACY_3FRAME) ;
                   if(s_3frame)
                     zMapStyleMerge(style,s_3frame);
                 }
@@ -1674,7 +1674,7 @@ ZMapStyleGlyphShape zMapStyleGetGlyphShape(gchar *shape, GQuark id)
 // allow old ACEDB interface to use new configurable glyph styles
 // we invent two styles pre3viosuly hard coded in bits
 // only do this if [ZMap] legacy_styles=TRUE
-ZMapFeatureTypeStyle zMapStyleLegacyStyle(char *name)
+ZMapFeatureTypeStyle zMapStyleLegacyStyle(char *config_file, char *name)
 {
   static ZMapFeatureTypeStyle s_homology = NULL;
   static ZMapFeatureTypeStyle s_3frame = NULL;
@@ -1683,11 +1683,11 @@ ZMapFeatureTypeStyle zMapStyleLegacyStyle(char *name)
 
   hn = (char *) zmapStyleSubFeature2ExactStr(ZMAPSTYLE_SUB_FEATURE_HOMOLOGY);
 
-  if(!got)
+  if (!got)
     {
       got = 1;
 
-      if(zMapConfigLegacyStyles())  // called here as we want to do it only once
+      if (zMapConfigLegacyStyles(config_file))  // called here as we want to do it only once
 	{
 	  /* Triangle markers at start/end of incomplete homology features. */
 	  s_homology = zMapStyleCreate(hn, "homology - legacy style");
