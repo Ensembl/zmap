@@ -1,4 +1,4 @@
-/*  Last edited: Jul 13 14:30 2011 (edgrif) */
+/*  Last edited: Jul 23 16:05 2012 (edgrif) */
 /*  File: zmapWindow_P.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -1450,7 +1450,7 @@ void zmapWindowItemDebugItemToString(FooCanvasItem *item, GString *string);
 
 void zmapWindowPfetchEntry(ZMapWindow window, char *sequence_name) ;
 
-gboolean zmapWindowGetPFetchUserPrefs(PFetchUserPrefsStruct *pfetch);
+gboolean zmapWindowGetPFetchUserPrefs(char *config_file, PFetchUserPrefsStruct *pfetch);
 
 void zmapWindowFetchData(ZMapWindow window, ZMapFeatureBlock block, GList *column_name_list, gboolean use_mark,gboolean is_column);
 
