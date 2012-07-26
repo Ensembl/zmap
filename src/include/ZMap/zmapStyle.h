@@ -1016,7 +1016,7 @@ gboolean zMapStyleNameCompare(ZMapFeatureTypeStyle style, char *name) ;
 gboolean zMapStyleIsTrueFeature(ZMapFeatureTypeStyle style) ;
 
 ZMapStyleGlyphShape zMapStyleGetGlyphShape(gchar *shape, GQuark id);
-ZMapFeatureTypeStyle zMapStyleLegacyStyle(char *name);
+ZMapFeatureTypeStyle zMapStyleLegacyStyle(char *config_file, char *name);
 gboolean zMapStyleIsSpliceStyle(ZMapFeatureTypeStyle style) ;
 
 
@@ -1139,7 +1139,7 @@ void zMapStyleSetWidth(ZMapFeatureTypeStyle style, double width) ;
 
 gboolean zMapStyleHasDrawableMode(ZMapFeatureTypeStyle style) ;
 gboolean zMapStyleIsDrawable(ZMapFeatureTypeStyle style, GError **error) ;
-gboolean zMapStyleMakeDrawable(ZMapFeatureTypeStyle style) ;
+gboolean zMapStyleMakeDrawable(char *config_file, ZMapFeatureTypeStyle style) ;
 
 gboolean zMapStyleGetColoursCDSDefault(ZMapFeatureTypeStyle style,
 				       GdkColor **background, GdkColor **foreground, GdkColor **outline);
