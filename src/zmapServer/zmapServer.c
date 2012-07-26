@@ -125,6 +125,7 @@ gboolean zMapServerGlobalInit(ZMapURL url, void **server_global_data_out)
 
 
 ZMapServerResponseType zMapServerCreateConnection(ZMapServer *server_out, void *global_data,
+						  char *config_file,
 						  ZMapURL url, char *format,
 						  int timeout, char *version_str)
 {
@@ -134,8 +135,9 @@ ZMapServerResponseType zMapServerCreateConnection(ZMapServer *server_out, void *
   int parse_error;
   zMapAssert(server_out && global_data && url) ;
 
-  server      = g_new0(ZMapServerStruct, 1) ; /* n.b. crashes on failure. */
+  server = g_new0(ZMapServerStruct, 1) ;
   *server_out = server ;
+
   /* set function table. */
   server->funcs = serverfuncs ;
 
@@ -150,7 +152,7 @@ ZMapServerResponseType zMapServerCreateConnection(ZMapServer *server_out, void *
 
   if (result == ZMAP_SERVERRESPONSE_OK)
     {
-      if ((server->funcs->create)(&(server->server_conn), url, format,
+      if ((server->funcs->create)(&(server->server_conn), config_file, url, format,
                                   version_str, timeout))
 	{
 	  zMapServerSetErrorMsg(server, NULL) ;
