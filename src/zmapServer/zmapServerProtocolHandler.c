@@ -1,4 +1,3 @@
-/*  Last edited: Jul  7 16:18 2011 (edgrif) */
 /*  File: zmapServerProtocolHandler.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -241,6 +240,7 @@ ZMapServerReqAny zMapServerRequestCreate(ZMapServerReqType request_type, ...)
       {
 	ZMapServerReqCreate create = (ZMapServerReqCreate)req_any ;
 
+	create->config_file = g_strdup(va_arg(args, char *)) ;
 	create->url = va_arg(args, ZMapURL) ;
 	create->format  = g_strdup(va_arg(args, char *)) ;
 	create->timeout = va_arg(args, int) ;
@@ -324,6 +324,7 @@ void zMapServerRequestDestroy(ZMapServerReqAny request)
       {
 	ZMapServerReqCreate create = (ZMapServerReqCreate)request ;
 
+	g_free(create->config_file) ;
 	g_free(create->format) ;
 	g_free(create->version) ;
 
@@ -406,7 +407,7 @@ ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
 	protocolGlobalInitFunc(&protocol_init_G, create->url, &global_init_data) ;
 
 	if ((request->response
-	     = zMapServerCreateConnection(&server, global_init_data,
+	     = zMapServerCreateConnection(&server, global_init_data, create->config_file,
 					  create->url, create->format, create->timeout, create->version))
 	    != ZMAP_SERVERRESPONSE_OK)
 	  {
@@ -894,7 +895,7 @@ static ZMapThreadReturnCode getStyles(ZMapServer server, ZMapServerReqStyles sty
 
       if (styles->styles_file_in)   // style list is now optional, if null read them all
 	{
-	  if (!zMapConfigIniGetStylesFromFile(styles->styles_list_in, styles->styles_file_in, &(styles->styles_out)))
+	  if (!zMapConfigIniGetStylesFromFile(server->config_file, styles->styles_list_in, styles->styles_file_in, &(styles->styles_out)))
 	    {
 	      *err_msg_out = g_strdup_printf("Could not read types from styles file \"%s\"", styles->styles_file_in) ;
 	      thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
