@@ -1,5 +1,5 @@
 /*  File: zmapControlSplit.c
- *  Author: Rob Clack (rnc@sanger.ac.uk)
+ *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
@@ -20,9 +20,8 @@
  * This file is part of the ZMap genome database package
  * originated by
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *         Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
-name
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Splits the zmap window to show either the same view twice
  *              or two different views.
@@ -35,13 +34,10 @@ name
 
 #include <ZMap/zmap.h>
 
-
-
-
-
-
 #include <zmapControl_P.h>
 #include <ZMap/zmapUtilsDebug.h>
+
+
 
 
 /* Used to record which child we are of a pane widget. */
