@@ -35,7 +35,7 @@
 
 
 #include <zmapWindowCanvasFeatureset_I.h>
-#include <zmapWindowCanvasBasic_I.h>
+#include <zmapWindowCanvasBasic.h>
 #include <zmapWindowCanvasGlyph_I.h>
 #include <zmapWindowCanvasAlignment.h>
 

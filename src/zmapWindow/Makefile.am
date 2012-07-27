@@ -49,7 +49,7 @@ zmapWindowOverlays.h \
 zmapWindowPreferences.c \
 zmapWindowPrint.c \
 zmapWindowRemoteReceive.c \
-zmapWindowRuler.c \
+zmapWindowScale.c \
 zmapWindowSearch.c \
 zmapWindowSeqDisp.c \
 zmapWindowState.c \
@@ -72,7 +72,6 @@ canvas/zmapWindowCanvasAssembly.h \
 canvas/zmapWindowCanvasAssembly_I.h \
 canvas/zmapWindowCanvasBasic.c \
 canvas/zmapWindowCanvasBasic.h \
-canvas/zmapWindowCanvasBasic_I.h \
 canvas/zmapWindowCanvasFeatureset.c \
 canvas/zmapWindowCanvasFeaturesetBump.c \
 canvas/zmapWindowCanvasFeaturesetSummarise.c \
@@ -93,6 +92,8 @@ canvas/zmapWindowCanvasSequence_I.h \
 canvas/zmapWindowCanvasLocus.c \
 canvas/zmapWindowCanvasLocus.h \
 canvas/zmapWindowCanvasLocus_I.h \
+canvas/zmapWindowCanvasGraphics.c \
+canvas/zmapWindowCanvasGraphics.h \
 $(NULL)
 
 
