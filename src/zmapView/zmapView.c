@@ -1,4 +1,3 @@
-/*  Last edited: Jul 23 17:28 2012 (edgrif) */
 /*  File: zmapView.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -106,6 +105,7 @@ typedef struct
 } DrawableDataStruct, *DrawableData ;
 
 
+static void getIniData(ZMapView view, char *config_str, GList *sources) ;
 static GList *zmapViewGetIniSources(char *config_file, char *config_str,char **stylesfile);
 static void zmapViewCreateColumns(ZMapView view,GList *featuresets) ;
 static ZMapConfigSource zmapViewGetSourceFromFeatureset(GHashTable *hash,GQuark featurequark);
@@ -356,6 +356,7 @@ ZMapViewWindow zMapViewCreate(GtkWidget *xremote_widget, GtkWidget *view_contain
   sequence_fetch->sequence = g_strdup(sequence_map->sequence) ;
   sequence_fetch->start = sequence_map->start ;
   sequence_fetch->end = sequence_map->end ;
+
   sequences_list = g_list_append(sequences_list, sequence_fetch) ;
 
   view_name = sequence_map->sequence ;
@@ -422,372 +423,6 @@ void zMapViewSetupNavigator(ZMapViewWindow view_window, GtkWidget *canvas_widget
 
 
 
-/* read in rather a lot of stanzas and add the data to a few hash tables and lists
- * This sets up:
- * view->context->map formerly as:
- *    view->columns
- *    view->featureset_2_column
- *    view->source_2_sourcedata
- *    view->context_map.column_2_styles
- *
- * This 'replaces' ACEDB data but if absent we should still use the ACE stuff, it all gets merged
- */
-void zmapViewGetIniData(ZMapView view, char *config_file, char *config_str, GList *sources)
-{
-  ZMapConfigIniContext context ;
-  // 8 structs to juggle, count them! It's GLibalicious!!
-  GHashTable *fset_col;
-  GHashTable *fset_styles;
-  GHashTable *gff_src;
-  GHashTable *col_styles;
-  GHashTable *gff_desc;
-  GHashTable *gff_related;
-  GHashTable *source_2_sourcedata;
-  ZMapFeatureSource gff_source;
-  ZMapFeatureSetDesc gffset;
-  ZMapFeatureColumn column;
-  GList *iter;
-  char *str;
-  gpointer key, value;
-
-#if 0
-
-  ZMapCmdLineArgsType arg;
-
-
-
-  if(zMapCmdLineArgsValue(ZMAPARG_SERIAL,&arg))
-    view->serial_load = arg.b;
-
-  //view->serial_load = TRUE;
-  zMapLogWarning("serial load = %d",view->serial_load);
-#endif
-
-
-  /*
-   * This gets very fiddly
-   * - lots of the names may have whitespace, which we normalise
-   * - most of the rest of the code lowercases the names so we have to
-   *   yet we still need to display the text as capitlaised if that's what people put in
-   * See zMapConfigIniGetQQHash()...
-   *
-   */
-
-  zMapLogTime(TIMER_LOAD,TIMER_CLEAR,0,"View init");
-
-  if ((context = zMapConfigIniContextProvide(config_file)))
-    {
-      if(config_str)
-        zMapConfigIniContextIncludeBuffer(context, config_str);
-
-      /* view global thread fail popup switch */
-      zMapConfigIniContextGetBoolean(context,
-				     ZMAPSTANZA_APP_CONFIG,
-				     ZMAPSTANZA_APP_CONFIG,
-				     ZMAPSTANZA_APP_REPORT_THREAD, &view->thread_fail_silent);
-
-      if(zMapConfigIniContextGetString(context,
-				       ZMAPSTANZA_APP_CONFIG,
-				       ZMAPSTANZA_APP_CONFIG,
-				       ZMAPSTANZA_APP_NAVIGATOR_SETS,&str))
-	{
-	  view->navigator_set_names = zMapConfigString2QuarkList(str,FALSE);
-	  if(view->navigator_window)
-	    zMapWindowNavigatorMergeInFeatureSetNames(view->navigator_window, view->navigator_set_names);
-	}
-
-      /*-------------------------------------
-       * the display columns in L -> R order
-       *-------------------------------------
-       */
-      view->context_map.columns = zMapConfigIniGetColumns(context);
-      if(g_hash_table_size(view->context_map.columns))
-	view->columns_set = TRUE;
-
-
-      //      if(view->columns_set)       // else we rely on defaults and/or ACEDB
-      {
-	/*-------------------------------------------------------------------------------
-	 * featureset to column mapping, with column descriptions added to GFFSet struct
-	 *-------------------------------------------------------------------------------
-	 */
-
-        /* default 1-1 mapping : add for pipe/file and Acedb servers, otherwise get from config
-	 * file. */
-        fset_col = g_hash_table_new(NULL,NULL);
-
-        for(; sources ; sources = sources->next)
-          {
-            GList *featuresets;
-            ZMapConfigSource src;
-            src = (ZMapConfigSource) sources->data;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	    /* THIS CODE CAUSES A PROBLEM IN THE FEATURESET/STYLE MAPPING IF ACEDB IS INCLUDED,
-	     * LEAVE THIS HERE UNTIL FURTHER TESTING DONE WITH WORM STUFF.... */
-            if (g_ascii_strncasecmp(src->url,"pipe", 4) != 0
-		&& g_ascii_strncasecmp(src->url,"file", 4) != 0
-		&& g_ascii_strncasecmp(src->url,"acedb", 5) != 0)
-	      continue;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-            if (g_ascii_strncasecmp(src->url,"pipe", 4) != 0
-		&& g_ascii_strncasecmp(src->url,"file", 4) != 0)
-	      continue;
-
-
-
-
-            featuresets = zMapConfigString2QuarkList(src->featuresets,FALSE) ;
-	    // MH17: need to add server name as default featureset
-	    //  -> it doesn't have one due to GLib config file rubbish
-	    //            if(!featuresets)
-	    //            	featuresets = g_list_add(featuresets,src->name);
-
-            while(featuresets)
-              {
-		GQuark fset,col;
-
-		gffset = g_new0(ZMapFeatureSetDescStruct,1);
-
-		col = GPOINTER_TO_UINT(featuresets->data);
-		fset = zMapFeatureSetCreateID((char *) g_quark_to_string(col));
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-		printf("featureset: %s (%s)\n", g_quark_to_string(col), g_quark_to_string(fset)) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-		gffset->column_id = fset;
-		gffset->column_ID = col;
-		gffset->feature_src_ID = col;
-		gffset->feature_set_text = g_strdup(g_quark_to_string(col));
-
-		/* replace in case we get one twice */
-		g_hash_table_replace(fset_col,GUINT_TO_POINTER(fset),gffset);
-
-		featuresets = g_list_delete_link(featuresets,featuresets);
-              }
-          }
-
-        fset_col   = zMapConfigIniGetFeatureset2Column(context,fset_col,view->context_map.columns);
-
-        if(g_hash_table_size(fset_col))
-	  view->context_map.featureset_2_column = fset_col;
-        else
-	  g_hash_table_destroy(fset_col);
-
-
-	/*-----------------------------------------------------------------------
-	 * source_2_sourcedata:featureset -> (sourceid, styleid, description)
-	 *-----------------------------------------------------------------------
-	 */
-
-        source_2_sourcedata = g_hash_table_new(NULL,NULL);
-
-	// source id may not be a style but it's name still gets normalised
-        gff_src   = zMapConfigIniGetQQHash(context,ZMAPSTANZA_GFF_SOURCE_CONFIG,QQ_QUARK);
-        fset_styles = zMapConfigIniGetQQHash(context,ZMAPSTANZA_FEATURESET_STYLE_CONFIG,QQ_STYLE);
-        gff_desc  = zMapConfigIniGetQQHash(context,ZMAPSTANZA_GFF_DESCRIPTION_CONFIG,QQ_QUARK);
-	/* column related to featureset: get unique ids */
-        gff_related   = zMapConfigIniGetQQHash(context,ZMAPSTANZA_GFF_RELATED_CONFIG,QQ_STYLE);
-
-        gff_source = NULL;
-
-        // it's an input and output for servers, must provide for pipes
-        // see featureset_2_column as above
-        zMap_g_hash_table_iter_init(&iter,view->context_map.featureset_2_column);
-        while(zMap_g_hash_table_iter_next(&iter,&key,&value))
-          {
-            GQuark q;
-
-            gff_source = g_new0(ZMapFeatureSourceStruct,1);
-
-	    // start with a 1-1 default mapping
-            gffset = (ZMapFeatureSetDesc) value;
-
-            gff_source->source_id = gffset->feature_src_ID;   // upper case wanted
-            gff_source->style_id = zMapStyleCreateID((char *) g_quark_to_string(GPOINTER_TO_UINT(key)));
-            gff_source->source_text = gff_source->source_id;
-
-	    // then overlay this with the config file
-
-	    // get the FeatureSource name
-	    // this is displayed at status bar top right
-            if(gff_src)
-	      {
-		q = GPOINTER_TO_UINT(g_hash_table_lookup(gff_src,key));
-		if(q)
-		  gff_source->source_id = q;
-	      }
-	    // get style defined by featureset name
-            if(fset_styles)
-	      {
-		if(q)		/* default to source name */
-		  gff_source->style_id = q;
-		/* but change to explicit config if it's there */
-		q = GPOINTER_TO_UINT(g_hash_table_lookup(fset_styles,key));
-		if(q)
-		  gff_source->style_id = q;
-	      }
-	    // get description defined by featureset name
-            if(gff_desc)
-	      {
-		q = GPOINTER_TO_UINT(g_hash_table_lookup(gff_desc,key));
-		if(q)
-		  gff_source->source_text = q;
-	      }
-
-	    if(gff_related)
-	      {
-		q = GPOINTER_TO_UINT(g_hash_table_lookup(gff_related,key));
-		if(q)
-		  gff_source->related_column = q;
-	      }
-
-            /* source_2_source data defaults are hard coded in GFF2parser
-	       but if we set one field then we set them all */
-            g_hash_table_replace(source_2_sourcedata,
-				 GUINT_TO_POINTER(zMapFeatureSetCreateID((char *)g_quark_to_string(GPOINTER_TO_UINT(key)))),
-				 gff_source);
-          }
-
-
-	if(zMapConfigIniContextGetString(context,
-					 ZMAPSTANZA_APP_CONFIG,
-					 ZMAPSTANZA_APP_CONFIG,
-					 ZMAPSTANZA_APP_SEQ_DATA,&str))
-	  {
-	    view->context_map.seq_data_featuresets = zMapConfigString2QuarkIDList(str);
-	  }
-
-	/* add a flag for each seq_data featureset */
-        for(iter = view->context_map.seq_data_featuresets; iter; iter = iter->next)
-	  {
-	    gff_source = g_hash_table_lookup(source_2_sourcedata,iter->data);
-	    //zMapLogWarning("view is_seq: %s -> %p\n",g_quark_to_string(GPOINTER_TO_UINT(iter->data)),gff_source);
-	    if(gff_source)
-	      gff_source->is_seq = TRUE;
-	  }
-
-        view->context_map.source_2_sourcedata = source_2_sourcedata;
-
-        view->context_map.virtual_featuresets
-	  = zMapConfigIniGetFeatureset2Featureset(context, source_2_sourcedata, view->context_map.featureset_2_column);
-
-        if(gff_src)
-	  g_hash_table_destroy(gff_src);
-        if(fset_styles)
-	  g_hash_table_destroy(fset_styles);
-        if(gff_desc)
-	  g_hash_table_destroy(gff_desc);
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	print_source_2_sourcedata("view ini",view->context_map.source_2_sourcedata);
-	print_fset2col("view ini",view->context_map.featureset_2_column);
-	print_col2fset("view ini",view->context_map.columns);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-	/*---------------------------------------------
-	 * context_map.column_2_styles: hash of Glist of quarks
-	 *---------------------------------------------
-	 * contains all the styles needed by a column
-	 * NB: style for each featureset is also held in source_2_sourcedata above
-	 * column specifc style (not featureset style included in column)
-	 * is optional and we only include it if configured
-	 */
-
-        // NB we have to use zMap_g_hashlist_thing() as this is used all over
-        // view->context_map.column_2_styles is pre-allocated
-
-
-        // get list of featuresets for each column
-        // add column style if it exists to glist
-        // add corresponding featureset styles to glist
-        // add glist to view->featuresets_2_styles
-
-        // or rather, given that our data is upside down:
-        // add each featureset's style to the hashlist
-        // then add the column styles if configured
-        // these are keyed by the column quark
-
-
-	// add featureset styles
-        zMap_g_hash_table_iter_init (&iter, view->context_map.featureset_2_column);
-        while (zMap_g_hash_table_iter_next (&iter, &key, &value))
-	  {
-            GQuark style_id,fset_id;
-
-            gffset = (ZMapFeatureSetDesc) value;
-
-            // key is featureset quark, value is column GFFSet struct
-
-            gff_source = g_hash_table_lookup(source_2_sourcedata,key);
-            if(gff_source)
-	      {
-		style_id = gff_source->style_id;
-		//                  fset_id = zMapFeatureSetCreateID((char *)g_quark_to_string(gffset->feature_set_id));
-		fset_id = gffset->column_id;
-
-		zMap_g_hashlist_insert(view->context_map.column_2_styles,
-				       fset_id,     // the column
-				       GUINT_TO_POINTER(style_id)) ;  // the style
-	      }
-	  }
-
-	// add col specific styles
-
-        col_styles  = zMapConfigIniGetQQHash(context,ZMAPSTANZA_COLUMN_STYLE_CONFIG,QQ_STYLE);
-
-        if(col_styles)
-	  {
-            zMap_g_hash_table_iter_init (&iter, view->context_map.columns);
-            while (zMap_g_hash_table_iter_next (&iter, &key, &value))
-	      {
-		GQuark style_id;
-
-		column = (ZMapFeatureColumn) value;
-		style_id = GPOINTER_TO_UINT(g_hash_table_lookup(col_styles,GUINT_TO_POINTER(column->unique_id)));
-		// set the column style if there
-		if(style_id)
-                  {
-		    column->style_id = style_id;
-		    zMap_g_hashlist_insert(view->context_map.column_2_styles,
-					   column->unique_id,
-					   GUINT_TO_POINTER(style_id)) ;
-                  }
-	      }
-            g_hash_table_destroy(col_styles);
-	  }
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	printf("\nini fset2style\n");
-	zMap_g_hashlist_print(view->context_map.column_2_styles);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-      }
-
-      zMapConfigIniContextDestroy(context);
-    }
-
-  return ;
-}
-
-
-static gint colOrderCB(gconstpointer a, gconstpointer b,gpointer user_data)
-{
-  ZMapFeatureColumn pa,pb;
-  GHashTable *hash = (GHashTable *) user_data;
-
-  pa = g_hash_table_lookup(hash,a);
-  pb = g_hash_table_lookup(hash,b);
-  if(pa && pb)
-    {
-      if(pa->order < pb->order)
-	return(-1);
-      if(pa->order > pb->order)
-	return(1);
-    }
-  return(0);
-}
-
 /* Connect a View to its databases via threads, at this point the View is blank and waiting
  * to be called to load some data.
  * 
@@ -797,7 +432,7 @@ static gint colOrderCB(gconstpointer a, gconstpointer b,gpointer user_data)
  * 
  * 
  *  */
-gboolean zMapViewConnect(ZMapView zmap_view, char *config_file, char *config_str)
+gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 {
   gboolean result = TRUE ;
   char *stylesfile = NULL;
@@ -822,7 +457,7 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_file, char *config_str
       zmap_view->state = ZMAPVIEW_CONNECTING ;
 
       // get the stanza structs from ZMap config
-      settings_list = zmapViewGetIniSources(config_file, config_str, &stylesfile) ;
+      settings_list = zmapViewGetIniSources(zmap_view->view_sequence->config_file, config_str, &stylesfile) ;
 
 
       /* There are a number of predefined methods that we require so add these in as well
@@ -830,7 +465,7 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_file, char *config_str
       addPredefined(&(zmap_view->context_map.styles), &(zmap_view->context_map.column_2_styles)) ;
 
       // read in a few ZMap stanzas
-      zmapViewGetIniData(zmap_view, config_file, config_str, settings_list);
+      getIniData(zmap_view, config_str, settings_list);
 
       if (zmap_view->columns_set)
 	{
@@ -2066,9 +1701,379 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 
 
 
+
+
 /*
- *  ------------------- Internal functions -------------------
+ *                      Internal routines
  */
+
+
+/* read in rather a lot of stanzas and add the data to a few hash tables and lists
+ * This sets up:
+ * view->context->map formerly as:
+ *    view->columns
+ *    view->featureset_2_column
+ *    view->source_2_sourcedata
+ *    view->context_map.column_2_styles
+ *
+ * This 'replaces' ACEDB data but if absent we should still use the ACE stuff, it all gets merged
+ */
+static void getIniData(ZMapView view, char *config_str, GList *sources)
+{
+  ZMapConfigIniContext context ;
+  // 8 structs to juggle, count them! It's GLibalicious!!
+  GHashTable *fset_col;
+  GHashTable *fset_styles;
+  GHashTable *gff_src;
+  GHashTable *col_styles;
+  GHashTable *gff_desc;
+  GHashTable *gff_related;
+  GHashTable *source_2_sourcedata;
+  ZMapFeatureSource gff_source;
+  ZMapFeatureSetDesc gffset;
+  ZMapFeatureColumn column;
+  GList *iter;
+  char *str;
+  gpointer key, value;
+
+#if 0
+
+  ZMapCmdLineArgsType arg;
+
+
+
+  if(zMapCmdLineArgsValue(ZMAPARG_SERIAL,&arg))
+    view->serial_load = arg.b;
+
+  //view->serial_load = TRUE;
+  zMapLogWarning("serial load = %d",view->serial_load);
+#endif
+
+
+  /*
+   * This gets very fiddly
+   * - lots of the names may have whitespace, which we normalise
+   * - most of the rest of the code lowercases the names so we have to
+   *   yet we still need to display the text as capitlaised if that's what people put in
+   * See zMapConfigIniGetQQHash()...
+   *
+   */
+
+  zMapLogTime(TIMER_LOAD,TIMER_CLEAR,0,"View init");
+
+  if ((context = zMapConfigIniContextProvide(view->view_sequence->config_file)))
+    {
+      if(config_str)
+        zMapConfigIniContextIncludeBuffer(context, config_str);
+
+      /* view global thread fail popup switch */
+      zMapConfigIniContextGetBoolean(context,
+				     ZMAPSTANZA_APP_CONFIG,
+				     ZMAPSTANZA_APP_CONFIG,
+				     ZMAPSTANZA_APP_REPORT_THREAD, &view->thread_fail_silent);
+
+      if(zMapConfigIniContextGetString(context,
+				       ZMAPSTANZA_APP_CONFIG,
+				       ZMAPSTANZA_APP_CONFIG,
+				       ZMAPSTANZA_APP_NAVIGATOR_SETS,&str))
+	{
+	  view->navigator_set_names = zMapConfigString2QuarkList(str,FALSE);
+	  if(view->navigator_window)
+	    zMapWindowNavigatorMergeInFeatureSetNames(view->navigator_window, view->navigator_set_names);
+	}
+
+      /*-------------------------------------
+       * the display columns in L -> R order
+       *-------------------------------------
+       */
+      view->context_map.columns = zMapConfigIniGetColumns(context);
+      if(g_hash_table_size(view->context_map.columns))
+	view->columns_set = TRUE;
+
+
+      //      if(view->columns_set)       // else we rely on defaults and/or ACEDB
+      {
+	/*-------------------------------------------------------------------------------
+	 * featureset to column mapping, with column descriptions added to GFFSet struct
+	 *-------------------------------------------------------------------------------
+	 */
+
+        /* default 1-1 mapping : add for pipe/file and Acedb servers, otherwise get from config
+	 * file. */
+        fset_col = g_hash_table_new(NULL,NULL);
+
+        for(; sources ; sources = sources->next)
+          {
+            GList *featuresets;
+            ZMapConfigSource src;
+            src = (ZMapConfigSource) sources->data;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	    /* THIS CODE CAUSES A PROBLEM IN THE FEATURESET/STYLE MAPPING IF ACEDB IS INCLUDED,
+	     * LEAVE THIS HERE UNTIL FURTHER TESTING DONE WITH WORM STUFF.... */
+            if (g_ascii_strncasecmp(src->url,"pipe", 4) != 0
+		&& g_ascii_strncasecmp(src->url,"file", 4) != 0
+		&& g_ascii_strncasecmp(src->url,"acedb", 5) != 0)
+	      continue;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+            if (g_ascii_strncasecmp(src->url,"pipe", 4) != 0
+		&& g_ascii_strncasecmp(src->url,"file", 4) != 0)
+	      continue;
+
+
+
+
+            featuresets = zMapConfigString2QuarkList(src->featuresets,FALSE) ;
+	    // MH17: need to add server name as default featureset
+	    //  -> it doesn't have one due to GLib config file rubbish
+	    //            if(!featuresets)
+	    //            	featuresets = g_list_add(featuresets,src->name);
+
+            while(featuresets)
+              {
+		GQuark fset,col;
+
+		gffset = g_new0(ZMapFeatureSetDescStruct,1);
+
+		col = GPOINTER_TO_UINT(featuresets->data);
+		fset = zMapFeatureSetCreateID((char *) g_quark_to_string(col));
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+		printf("featureset: %s (%s)\n", g_quark_to_string(col), g_quark_to_string(fset)) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+		gffset->column_id = fset;
+		gffset->column_ID = col;
+		gffset->feature_src_ID = col;
+		gffset->feature_set_text = g_strdup(g_quark_to_string(col));
+
+		/* replace in case we get one twice */
+		g_hash_table_replace(fset_col,GUINT_TO_POINTER(fset),gffset);
+
+		featuresets = g_list_delete_link(featuresets,featuresets);
+              }
+          }
+
+        fset_col   = zMapConfigIniGetFeatureset2Column(context,fset_col,view->context_map.columns);
+
+        if(g_hash_table_size(fset_col))
+	  view->context_map.featureset_2_column = fset_col;
+        else
+	  g_hash_table_destroy(fset_col);
+
+
+	/*-----------------------------------------------------------------------
+	 * source_2_sourcedata:featureset -> (sourceid, styleid, description)
+	 *-----------------------------------------------------------------------
+	 */
+
+        source_2_sourcedata = g_hash_table_new(NULL,NULL);
+
+	// source id may not be a style but it's name still gets normalised
+        gff_src   = zMapConfigIniGetQQHash(context,ZMAPSTANZA_GFF_SOURCE_CONFIG,QQ_QUARK);
+        fset_styles = zMapConfigIniGetQQHash(context,ZMAPSTANZA_FEATURESET_STYLE_CONFIG,QQ_STYLE);
+        gff_desc  = zMapConfigIniGetQQHash(context,ZMAPSTANZA_GFF_DESCRIPTION_CONFIG,QQ_QUARK);
+	/* column related to featureset: get unique ids */
+        gff_related   = zMapConfigIniGetQQHash(context,ZMAPSTANZA_GFF_RELATED_CONFIG,QQ_STYLE);
+
+        gff_source = NULL;
+
+        // it's an input and output for servers, must provide for pipes
+        // see featureset_2_column as above
+        zMap_g_hash_table_iter_init(&iter,view->context_map.featureset_2_column);
+        while(zMap_g_hash_table_iter_next(&iter,&key,&value))
+          {
+            GQuark q;
+
+            gff_source = g_new0(ZMapFeatureSourceStruct,1);
+
+	    // start with a 1-1 default mapping
+            gffset = (ZMapFeatureSetDesc) value;
+
+            gff_source->source_id = gffset->feature_src_ID;   // upper case wanted
+            gff_source->style_id = zMapStyleCreateID((char *) g_quark_to_string(GPOINTER_TO_UINT(key)));
+            gff_source->source_text = gff_source->source_id;
+
+	    // then overlay this with the config file
+
+	    // get the FeatureSource name
+	    // this is displayed at status bar top right
+            if(gff_src)
+	      {
+		q = GPOINTER_TO_UINT(g_hash_table_lookup(gff_src,key));
+		if(q)
+		  gff_source->source_id = q;
+	      }
+	    // get style defined by featureset name
+            if(fset_styles)
+	      {
+		if(q)		/* default to source name */
+		  gff_source->style_id = q;
+		/* but change to explicit config if it's there */
+		q = GPOINTER_TO_UINT(g_hash_table_lookup(fset_styles,key));
+		if(q)
+		  gff_source->style_id = q;
+	      }
+	    // get description defined by featureset name
+            if(gff_desc)
+	      {
+		q = GPOINTER_TO_UINT(g_hash_table_lookup(gff_desc,key));
+		if(q)
+		  gff_source->source_text = q;
+	      }
+
+	    if(gff_related)
+	      {
+		q = GPOINTER_TO_UINT(g_hash_table_lookup(gff_related,key));
+		if(q)
+		  gff_source->related_column = q;
+	      }
+
+            /* source_2_source data defaults are hard coded in GFF2parser
+	       but if we set one field then we set them all */
+            g_hash_table_replace(source_2_sourcedata,
+				 GUINT_TO_POINTER(zMapFeatureSetCreateID((char *)g_quark_to_string(GPOINTER_TO_UINT(key)))),
+				 gff_source);
+          }
+
+
+	if(zMapConfigIniContextGetString(context,
+					 ZMAPSTANZA_APP_CONFIG,
+					 ZMAPSTANZA_APP_CONFIG,
+					 ZMAPSTANZA_APP_SEQ_DATA,&str))
+	  {
+	    view->context_map.seq_data_featuresets = zMapConfigString2QuarkIDList(str);
+	  }
+
+	/* add a flag for each seq_data featureset */
+        for(iter = view->context_map.seq_data_featuresets; iter; iter = iter->next)
+	  {
+	    gff_source = g_hash_table_lookup(source_2_sourcedata,iter->data);
+	    //zMapLogWarning("view is_seq: %s -> %p\n",g_quark_to_string(GPOINTER_TO_UINT(iter->data)),gff_source);
+	    if(gff_source)
+	      gff_source->is_seq = TRUE;
+	  }
+
+        view->context_map.source_2_sourcedata = source_2_sourcedata;
+
+        view->context_map.virtual_featuresets
+	  = zMapConfigIniGetFeatureset2Featureset(context, source_2_sourcedata, view->context_map.featureset_2_column);
+
+        if(gff_src)
+	  g_hash_table_destroy(gff_src);
+        if(fset_styles)
+	  g_hash_table_destroy(fset_styles);
+        if(gff_desc)
+	  g_hash_table_destroy(gff_desc);
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	print_source_2_sourcedata("view ini",view->context_map.source_2_sourcedata);
+	print_fset2col("view ini",view->context_map.featureset_2_column);
+	print_col2fset("view ini",view->context_map.columns);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+	/*---------------------------------------------
+	 * context_map.column_2_styles: hash of Glist of quarks
+	 *---------------------------------------------
+	 * contains all the styles needed by a column
+	 * NB: style for each featureset is also held in source_2_sourcedata above
+	 * column specifc style (not featureset style included in column)
+	 * is optional and we only include it if configured
+	 */
+
+        // NB we have to use zMap_g_hashlist_thing() as this is used all over
+        // view->context_map.column_2_styles is pre-allocated
+
+
+        // get list of featuresets for each column
+        // add column style if it exists to glist
+        // add corresponding featureset styles to glist
+        // add glist to view->featuresets_2_styles
+
+        // or rather, given that our data is upside down:
+        // add each featureset's style to the hashlist
+        // then add the column styles if configured
+        // these are keyed by the column quark
+
+
+	// add featureset styles
+        zMap_g_hash_table_iter_init (&iter, view->context_map.featureset_2_column);
+        while (zMap_g_hash_table_iter_next (&iter, &key, &value))
+	  {
+            GQuark style_id,fset_id;
+
+            gffset = (ZMapFeatureSetDesc) value;
+
+            // key is featureset quark, value is column GFFSet struct
+
+            gff_source = g_hash_table_lookup(source_2_sourcedata,key);
+            if(gff_source)
+	      {
+		style_id = gff_source->style_id;
+		//                  fset_id = zMapFeatureSetCreateID((char *)g_quark_to_string(gffset->feature_set_id));
+		fset_id = gffset->column_id;
+
+		zMap_g_hashlist_insert(view->context_map.column_2_styles,
+				       fset_id,     // the column
+				       GUINT_TO_POINTER(style_id)) ;  // the style
+	      }
+	  }
+
+	// add col specific styles
+
+        col_styles  = zMapConfigIniGetQQHash(context,ZMAPSTANZA_COLUMN_STYLE_CONFIG,QQ_STYLE);
+
+        if(col_styles)
+	  {
+            zMap_g_hash_table_iter_init (&iter, view->context_map.columns);
+            while (zMap_g_hash_table_iter_next (&iter, &key, &value))
+	      {
+		GQuark style_id;
+
+		column = (ZMapFeatureColumn) value;
+		style_id = GPOINTER_TO_UINT(g_hash_table_lookup(col_styles,GUINT_TO_POINTER(column->unique_id)));
+		// set the column style if there
+		if(style_id)
+                  {
+		    column->style_id = style_id;
+		    zMap_g_hashlist_insert(view->context_map.column_2_styles,
+					   column->unique_id,
+					   GUINT_TO_POINTER(style_id)) ;
+                  }
+	      }
+            g_hash_table_destroy(col_styles);
+	  }
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	printf("\nini fset2style\n");
+	zMap_g_hashlist_print(view->context_map.column_2_styles);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+      }
+
+      zMapConfigIniContextDestroy(context);
+    }
+
+  return ;
+}
+
+
+static gint colOrderCB(gconstpointer a, gconstpointer b,gpointer user_data)
+{
+  ZMapFeatureColumn pa,pb;
+  GHashTable *hash = (GHashTable *) user_data;
+
+  pa = g_hash_table_lookup(hash,a);
+  pb = g_hash_table_lookup(hash,b);
+  if(pa && pb)
+    {
+      if(pa->order < pb->order)
+	return(-1);
+      if(pa->order > pb->order)
+	return(1);
+    }
+  return(0);
+}
+
 
 
 /* retro fit/ invent the columns config implied by server featuresets= command
@@ -2340,6 +2345,8 @@ static void splitMagic(gpointer data, gpointer user_data)
 
   return ;
 }
+
+
 
 static ZMapView createZMapView(GtkWidget *xremote_widget, char *view_name, GList *sequences, void *app_data)
 {
