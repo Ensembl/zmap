@@ -36,6 +36,7 @@
 
 #include <math.h>
 #include <string.h>
+#include <ZMap/zmapGLibUtils.h>
 #include <ZMap/zmapUtilsGUI.h>
 #include <ZMap/zmapUtils.h>
 #include <zmapWindowNavigator_P.h>
@@ -51,7 +52,10 @@
 #define NAVIGATOR_WIDGET(navigate) GTK_WIDGET(fetchCanvas(navigate))
 
 
-#define MH17_DEBUG_NAV_FOOBAR	1
+#define MH17_DEBUG_NAV_FOOBAR	0
+#if MH17_DEBUG_NAV_FOOBAR
+void print_offsets(char *which);
+#endif
 #define debug	zMapLogWarning
 
 typedef struct
@@ -135,12 +139,11 @@ static gboolean factoryItemHandler(FooCanvasItem       *new_item,
 				   ZMapWindowFeatureStack     feature_stack,
 				   gpointer             handler_data);
 
+#if FEATURE_SIZE_REQUEST
 static gboolean factoryFeatureSizeReq(ZMapFeature feature,
                                       double *limits_array,
                                       double *points_array_inout,
                                       gpointer handler_data);
-
-static void customiseFactory(ZMapWindowNavigator navigator);
 
 static GHashTable *zmapWindowNavigatorLDHCreate(void);
 static LocusEntry zmapWindowNavigatorLDHFind(GHashTable *hash, GQuark key);
@@ -149,6 +152,11 @@ static LocusEntry zmapWindowNavigatorLDHInsert(GHashTable *hash,
                                                double start, double end);
 static void zmapWindowNavigatorLDHDestroy(GHashTable **destroy);
 static void destroyLocusEntry(gpointer data);
+#endif
+
+#if USE_FACTORY
+static void customiseFactory(ZMapWindowNavigator navigator);
+#endif
 
 static void get_filter_list_up_to(GList **filter_out, int max);
 static void available_locus_names_filter(GList **filter_out);
@@ -169,6 +177,12 @@ static void container_group_add_locator(ZMapWindowNavigator navigate,
 					ZMapWindowContainerGroup container);
 static void container_group_add_highlight_area_item(ZMapWindowNavigator navigate,
 						    ZMapWindowContainerGroup container);
+
+void zmapWindowNavigatorRunSet(ZMapFeatureSet set,
+                                 FooCanvasGroup *container,
+                                 ZMapFrame frame,
+					   ZMapWindowNavigator navigate);
+
 
 
 /*
@@ -275,8 +289,9 @@ ZMapWindowNavigator zMapWindowNavigatorCreate(GtkWidget *canvas_widget)
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
-
+#if FEATURE_SIZE_REQUEST
   navigate->locus_display_hash = zmapWindowNavigatorLDHCreate();
+#endif
   navigate->locus_id = g_quark_from_string("locus");
 
   if(USE_BACKGROUNDS)
@@ -337,26 +352,6 @@ ZMapWindowNavigator zMapWindowNavigatorCreate(GtkWidget *canvas_widget)
 								   ROOT_CHILD_SPACING,
 								   &(navigate->root_background), NULL);
 
-#warning this needs to go into zmapNavigatorDrawFeatures as we don-t have the context here or the size of the sequence
-#if 0
-  foo_canvas_set_scroll_region(canvas, 0.0, navigate->full_span.x1, 1.0, navigate->full_span.x2);
-
-	/* need to set background size */
-	/* NOTE span is already offset by 1 to get the extent */
-	/* looks like a prior 'add 1 to it' bug fix error */
-  zmapWindowContainerGroupBackgroundSize(navigate->container_root, navigate->full_span.x2 - navigate->full_span.x1) ;
-
-  zmapWindowContainerAttachFeatureAny(root, feature_any);
-
-  /* Set root group to start where sequence starts... */
-  y = navigate->full_span.x1 ;
-  foo_canvas_item_w2i(FOO_CANVAS_ITEM(root), NULL, &y) ;
-
-  foo_canvas_item_set(FOO_CANVAS_ITEM(root),
-		      "y", y,
-		      NULL) ;
-
-#endif
 
   g_object_set_data(G_OBJECT(navigate->container_root), ZMAP_WINDOW_POINTER, navigate->current_window) ;
 
@@ -379,8 +374,9 @@ ZMapWindowNavigator zMapWindowNavigatorCreate(GtkWidget *canvas_widget)
   g_object_set(G_OBJECT(navigate->container_root),
 	       "debug", navigator_debug_containers_G, NULL);
 
-
+#if USE_FACTORY
   customiseFactory(navigate);
+#endif
 
   default_locus_names_filter(&(navigate->hide_filter));
 
@@ -428,12 +424,14 @@ void zMapWindowNavigatorReset(ZMapWindowNavigator navigate)
   zmapWindowFToIDestroy(navigate->ftoi_hash);
   navigate->ftoi_hash = zmapWindowFToICreate();
 
+#if FEATURE_SIZE_REQUEST
   zmapWindowNavigatorLDHDestroy(&(navigate->locus_display_hash));
   navigate->locus_display_hash = zmapWindowNavigatorLDHCreate();
-
+#endif
+#if USE_FACTROY
   zmapWindowFToIFactoryClose(navigate->item_factory);
   customiseFactory(navigate);
-
+#endif
   return ;
 }
 
@@ -581,8 +579,12 @@ void zMapWindowNavigatorDestroy(ZMapWindowNavigator navigate)
   gtk_object_destroy(GTK_OBJECT(navigate->container_root)); // remove our item.
 
   zmapWindowFToIDestroy(navigate->ftoi_hash);
+#if USE_FACTORY
   zmapWindowFToIFactoryClose(navigate->item_factory);
+#endif
+#if FEATURE_SIZE_REQUEST
   zmapWindowNavigatorLDHDestroy(&(navigate->locus_display_hash));
+#endif
 
   g_free(navigate);             /* possibly not enough ... */
 
@@ -647,12 +649,6 @@ static void navigateDrawFunc(NavigateDraw nav_draw, GtkWidget *widget)
   ZMapWindowNavigator navigate = nav_draw->navigate;
   /* We need this! */
   zMapAssert(navigate->current_window);
-
-
-
-#warning MH17: NOTE this function does some very complex and bizarre stuff and removing it appears to have no effect.
-// zmapWindowContainerRequestReposition(navigate->container_root);
-// (it gets called some time later from somewhere obscure)
 
   zmapWindowNavigatorSizeRequest(widget, navigate->width, navigate->height,
       (double) navigate->full_span.x1,
@@ -897,9 +893,8 @@ debug("nav draw set %s\n", g_quark_to_string(feature_set->original_id));
             group_feature_set = FOO_CANVAS_GROUP(item);
 	    container_feature_set = (ZMapWindowContainerFeatureSet)item;
 
-            zmapWindowFToIFactoryRunSet(draw_data->navigate->item_factory,
-                                        feature_set,
-                                        group_feature_set, ZMAPFRAME_NONE);
+            zmapWindowNavigatorRunSet(feature_set,
+                                        group_feature_set, ZMAPFRAME_NONE, draw_data->navigate);
 
 	    if ((bump_mode = zmapWindowContainerFeatureSetGetBumpMode(container_feature_set)) != ZMAPBUMP_UNBUMP)
 	      {
@@ -1492,9 +1487,13 @@ static gboolean factoryItemHandler(FooCanvasItem       *new_item,
 
   //g_object_set(G_OBJECT(new_item), "debug", TRUE, NULL);
 
+  zMapWindowCanvasItemSetConnected((ZMapWindowCanvasItem) new_item, TRUE);
+
   return TRUE;
 }
 
+
+#if FEATURE_SIZE_REQUEST
 static gboolean factoryFeatureSizeReq(ZMapFeature feature,
                                       double *limits_array,
                                       double *points_array_inout,
@@ -1561,23 +1560,28 @@ static gboolean factoryFeatureSizeReq(ZMapFeature feature,
   return outside;
 }
 
+#endif
 
-
+#if USE_FACTORY
 static void customiseFactory(ZMapWindowNavigator navigate)
 {
   ZMapWindowFToIFactoryProductionTeamStruct factory_helpers = {NULL};
 
   /* create a factory and set up */
   navigate->item_factory = zmapWindowFToIFactoryOpen(navigate->ftoi_hash);	//, NULL);
+#if FEATURE_SIZE_REQUEST
   factory_helpers.feature_size_request = factoryFeatureSizeReq;
+#endif
   factory_helpers.top_item_created     = factoryItemHandler;
   zmapWindowFToIFactorySetup(navigate->item_factory, 1, /* line_width hardcoded for now. */
                              &factory_helpers, (gpointer)navigate);
 
   return ;
 }
+#endif
 
 
+#if FEATURE_SIZE_REQUEST
 
 /* mini package for the locus_display_hash ... */
 /*
@@ -1630,6 +1634,7 @@ static LocusEntry zmapWindowNavigatorLDHInsert(GHashTable *hash,
 
   return hash_entry;
 }
+
 /*
  * \brief Destroy the hash **! NULL's for you.
  */
@@ -1644,6 +1649,8 @@ static void zmapWindowNavigatorLDHDestroy(GHashTable **destroy_me)
   return ;
 }
 
+
+
 static void destroyLocusEntry(gpointer data)
 {
   LocusEntry locus_entry = (LocusEntry)data;
@@ -1656,6 +1663,8 @@ static void destroyLocusEntry(gpointer data)
 
   return ;
 }
+
+#endif
 
 
 static void get_filter_list_up_to(GList **filter_out, int max)
@@ -1984,6 +1993,49 @@ static void container_group_add_locator(ZMapWindowNavigator navigate,
 
   return ;
 }
+
+
+
+void zmapWindowNavigatorRunSet(  ZMapFeatureSet set,
+                                 FooCanvasGroup *container,
+                                 ZMapFrame frame,
+					   ZMapWindowNavigator navigate)
+{
+  ZMapWindowFeatureStackStruct feature_stack;
+  GList *l;
+
+  feature_stack.feature = NULL;
+  zmapGetFeatureStack(&feature_stack,set,NULL,frame);
+
+  zMap_g_hash_table_get_data(&l, set->features);
+
+  for(; l ; l = l->next)
+  {
+	ZMapFeature feature = (ZMapFeature)l->data;
+	FooCanvasItem *foo;
+
+	/* filter on frame! */
+	if((frame != ZMAPFRAME_NONE) && frame  != zmapWindowFeatureFrame(feature))
+		continue;
+
+	feature_stack.feature = feature;
+	if(feature->style)	/* chicken */
+	{
+		if(zMapStyleIsStrandSpecific(feature->style))
+			feature_stack.strand = zmapWindowFeatureStrand(NULL,feature);
+		if(zMapStyleIsFrameSpecific(feature->style))
+			feature_stack.frame = zmapWindowFeatureFrame(feature);
+	}
+
+	foo = zmapWindowFToIFactoryRunSingle(navigate->ftoi_hash, container, &feature_stack);
+
+	if(!zMapWindowCanvasItemIsConnected((ZMapWindowCanvasItem) foo))
+		factoryItemHandler (foo, &feature_stack, (gpointer) navigate);
+  }
+
+  return ;
+}
+
 
 
 

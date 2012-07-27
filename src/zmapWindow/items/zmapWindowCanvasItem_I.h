@@ -108,6 +108,7 @@ typedef struct _zmapWindowCanvasItemStruct
 
   /* Item flags. */
   unsigned int debug : 1 ;
+  gboolean connected: 1;		/* to gtk signal handlers */
 
 } zmapWindowCanvasItemStruct ;
 

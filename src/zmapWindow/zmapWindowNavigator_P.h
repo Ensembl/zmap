@@ -66,7 +66,9 @@ typedef struct _ZMapWindowNavigatorStruct
   ZMapWindowContainerGroup container_root ; /* what we'll raise and lower */
   ZMapWindowContainerGroup container_align; /* because I think we'll probably need it. */
 
+#if USE_FACTORY
   ZMapWindowFToIFactory item_factory;
+#endif
 
   ZMapWindow      current_window; /* the current window... */
 

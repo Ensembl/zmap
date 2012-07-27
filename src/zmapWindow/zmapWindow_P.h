@@ -52,6 +52,8 @@
 #define ZMAP_CANVAS_INIT_SIZE (100.0)
 
 
+#define FEATURE_SIZE_REQUEST	0	// see item factory
+#define USE_FACTORY	0
 
 /*
  *  This section details data that we attach to the foocanvas items that represent
@@ -488,7 +490,6 @@ typedef struct _ZMapWindowZoomControlStruct *ZMapWindowZoomControl ;
 
 
 
-
 typedef struct _ZMapWindowFToIFactoryStruct *ZMapWindowFToIFactory ;
 
 typedef struct _ZMapWindowStatsStruct *ZMapWindowStats ;
@@ -652,7 +653,9 @@ typedef struct _ZMapWindowStruct
 
   ZMapWindowContainerGroup feature_root_group ;	            /* The root of our features. (ZMapWindowContainerContext) */
 
+#if USE_FACTORY
  ZMapWindowFToIFactory item_factory;
+#endif
 
   /* Lists of dialog windows associated with this zmap window, these must be destroyed when
    * the zmap window is destroyed. */
@@ -935,9 +938,10 @@ FooCanvasItem *zmapWindowFToIFindItemChild(ZMapWindow window,GHashTable *feature
 FooCanvasItem *zMapWindowFindFeatureItemByItem(ZMapWindow window, FooCanvasItem *item) ;
 void zmapWindowFToIDestroy(GHashTable *feature_to_item_hash) ;
 
-
+#if USE_FACTORY
 void zmapWindowFeatureFactoryInit(ZMapWindow window);
 void zmapWindowFToIFactoryClose(ZMapWindowFToIFactory factory) ;
+#endif
 
 void zmapWindowZoomToItem(ZMapWindow window, FooCanvasItem *item) ;
 void zmapWindowZoomToItems(ZMapWindow window, GList *items) ;

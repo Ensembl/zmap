@@ -285,11 +285,13 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
 
   zmapWindowBusy(window, TRUE) ;
 
+#if USE_FACTORY
   if(!window->item_factory)
     {
       window->item_factory = zmapWindowFToIFactoryOpen(window->context_to_item); //, window->long_items);
       zmapWindowFeatureFactoryInit(window);
     }
+#endif
 
   /* Set up colours. */
   if (!window->done_colours)

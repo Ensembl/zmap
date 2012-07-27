@@ -44,8 +44,9 @@
 
 #include <zmapWindowCanvasItem.h>
 
-
+#if RUN_SET
 typedef struct _RunSetStruct *RunSet;
+
 
 typedef FooCanvasItem * (*ZMapWindowFToIFactoryInternalMethod)(RunSet run_data, ZMapFeature feature,
                                                                double feature_offset,
@@ -58,22 +59,26 @@ typedef struct
 
   ZMapWindowFToIFactoryInternalMethod method;
 }ZMapWindowFToIFactoryMethodsStruct, *ZMapWindowFToIFactoryMethods;
-
+#endif
 
 typedef struct _ZMapWindowFToIFactoryStruct
 {
   guint line_width ;
+#if RUN_SET
   ZMapWindowFToIFactoryMethodsStruct *methods;
+#endif
   GHashTable                         *ftoi_hash;
   ZMapWindowFToIFactoryProductionTeam user_funcs;
   gpointer                            user_data;
   double                              limits[4];
   double                              points[4];
-  PangoFontDescription               *font_desc;
-  double                              text_width;
-  double                              text_height;
+//  PangoFontDescription               *font_desc;
+//  double                              text_width;
+//  double                              text_height;
 } ZMapWindowFToIFactoryStruct ;
 
+
+#if RUN_SET
 typedef struct _RunSetStruct
 {
   ZMapWindowFToIFactory factory;
@@ -84,6 +89,8 @@ typedef struct _RunSetStruct
   GQuark                data_id;    /* used by composite objectes eg density plot */
 } RunSetStruct ;
 
+#endif
+
 
 /* Noddy macro to calculate the index of sub-parts of features like exons, e.g. Exon 1, 2 etc. */
 #define GET_SUBPART_INDEX(REVCOMP, FEATURE, SUBPART_ARRAY, ARRAY_INDEX)	\
@@ -92,22 +99,28 @@ typedef struct _RunSetStruct
    : ((FEATURE)->strand == ZMAPSTRAND_FORWARD ? (ARRAY_INDEX) + 1 : (SUBPART_ARRAY)->len - (ARRAY_INDEX)) )
 
 
+#define RUN_SET	0
+#if RUN_SET
 static void datalistRun(gpointer key, gpointer list_data, gpointer user_data);
+#endif
 
 
-
+#if USE_FACTORY
 static gboolean null_top_item_created(FooCanvasItem *top_item,
                                       ZMapWindowFeatureStack feature_stack,
                                       gpointer handler_data);
+#endif
+
+#if FEATURE_SIZE_REQUEST
 static gboolean null_feature_size_request(ZMapFeature feature,
                                           double *limits_array,
                                           double *points_array_inout,
                                           gpointer handler_data);
+#endif
 
 
-static FooCanvasItem *drawFeaturesetFeature(RunSet run_data, ZMapFeature feature,
-                              double feature_offset,
-					double x1, double y1, double x2, double y2,
+static FooCanvasItem *drawFeaturesetFeature(FooCanvasGroup *parent, ZMapWindowFeatureStack feature_stack, ZMapFeature feature,
+                              double y1, double y2,
                               ZMapFeatureTypeStyle style);
 
 
@@ -115,7 +128,7 @@ static FooCanvasItem *drawFeaturesetFeature(RunSet run_data, ZMapFeature feature
  * Static function tables for drawing features in various ways.
  */
 
-
+#if USE_FACTORY
 
 ZMapWindowFToIFactory zmapWindowFToIFactoryOpen(GHashTable *feature_to_item_hash)
 {
@@ -128,7 +141,9 @@ ZMapWindowFToIFactory zmapWindowFToIFactoryOpen(GHashTable *feature_to_item_hash
       factory->ftoi_hash  = feature_to_item_hash;
 
       user_funcs->top_item_created = null_top_item_created;
+#if FEATURE_SIZE_REQUEST
       user_funcs->feature_size_request = null_feature_size_request;
+#endif
       factory->user_funcs = user_funcs;
     }
 
@@ -145,20 +160,36 @@ void zmapWindowFToIFactorySetup(ZMapWindowFToIFactory factory,
   if(signal_handlers->top_item_created)
     factory->user_funcs->top_item_created = signal_handlers->top_item_created;
 
+#if FEATURE_SIZE_REQUEST
   if(signal_handlers->feature_size_request)
     factory->user_funcs->feature_size_request = signal_handlers->feature_size_request;
+#endif
 
   factory->user_data  = handler_data;
   factory->line_width = line_width;
 
   return ;
 }
+#endif
 
 
+#if RUN_SET
 /* mh17: only called from windowNavigator(), no doubt here due to scope issues
  * but what scope issues? factory does not look static
  */
 
+/* NOTE moved to zmapWindowNavigator,c
+ * this all seems a bit confused: only called from there and passed callbacks to filter out duplicates
+ * it would make more sense to do the filtering in the module that controls it
+ * this only tangles up the logic and makes the normal interface more complex
+ *
+ * how tangled was this?
+ * runSet takes a factory and creates a runSetStruct that it assigns the factory to
+ * then it calls datalistRun which takes the factory from the RunSetStruct and passes it to RunSingle
+ * RunSingle then creates a RunSetStruct and assigns the factory to it,..
+ * but then does not use the runSetstruct in any meaningful way
+ * ... so there's a lot of code doing nothing at all exepct causing confusion
+ */
 gboolean is_nav = FALSE;
 void zmapWindowFToIFactoryRunSet(ZMapWindowFToIFactory factory,
                                  ZMapFeatureSet set,
@@ -187,8 +218,20 @@ void zmapWindowFToIFactoryRunSet(ZMapWindowFToIFactory factory,
   is_nav = FALSE;
   return ;
 }
+#endif
 
 #define MH17_REVCOMP_DEBUG	0
+
+
+#define RDS_REMOVED_STATS	1
+
+#if FEATURE_SIZE_REQUEST
+/* NOTE only every used by the navigator
+ * a) to scale coordinates by some odd factor (no need, just set the zoom level))
+ * b) to filter duplicated features (variants)
+ * removed as scaling no longer used and filtering can be done better by a filtering function
+ */
+
 
 /* re-using a factory helper to scale a navigator coordinate */
 /* NOTE all factory helpers must handle a NULL feature arg */
@@ -202,21 +245,30 @@ void getFactoriedCoordinates(ZMapWindowFToIFactory factory, int *y1, int *y2)
 
       points[1] = *y1;
       points[3] = *y2;
+
       (factory->user_funcs->feature_size_request)(NULL,&limits[0], &points[0], factory->user_data);
+
       *y1 = (int) points[1];
       *y2 = (int) points[3];
 }
+#endif
 
-FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
+FooCanvasItem *zmapWindowFToIFactoryRunSingle(GHashTable *ftoi_hash,
+#if RUN_SET
 					      FooCanvasItem        *current_item,
+#endif
                                               FooCanvasGroup       *parent_container,
                                               ZMapWindowFeatureStack     feature_stack)
 {
+#if RUN_SET
   RunSetStruct run_data = {NULL};
+#endif
   FooCanvasItem *item = NULL, *return_item = NULL;
   FooCanvasGroup *features_container = NULL;
+#if FEATURE_SIZE_REQUEST
   gboolean no_points_in_block = TRUE;
-  ZMapWindowContainerFeatureSet container = (ZMapWindowContainerFeatureSet) parent_container;
+#endif
+//  ZMapWindowContainerFeatureSet container = (ZMapWindowContainerFeatureSet) parent_container;
   ZMapFeature feature = feature_stack->feature;
 
 #if MH17_REVCOMP_DEBUG > 1
@@ -226,7 +278,7 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 
   /* check here before they get called.  I'd prefer to only do this
    * once per factory rather than once per Run! */
-  zMapAssert(factory->user_funcs && factory->user_funcs->top_item_created) ;
+//  zMapAssert(factory->user_funcs && factory->user_funcs->top_item_created) ;
 
 
 #ifndef RDS_REMOVED_STATS
@@ -257,17 +309,19 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
     {
       ZMapFeatureTypeStyle style ;
       ZMapStyleMode style_mode ;
+#if 0
       double *limits = &(factory->limits[0]);
       double *points = &(factory->points[0]);
       ZMapWindowStats stats ;
+#endif
 
       style = feature->style ;
       style_mode = zMapStyleGetMode(style) ;
 
 
-      stats = g_object_get_data(G_OBJECT(parent_container), ITEM_FEATURE_STATS) ;
-
 #ifndef RDS_REMOVED_STATS
+	stats = g_object_get_data(G_OBJECT(parent_container), ITEM_FEATURE_STATS) ;
+
       zMapAssert(stats) ;
 
       zmapWindowStatsAddChild(stats, (ZMapFeatureAny)feature) ;
@@ -285,6 +339,7 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 	  goto undrawn ;
 	}
 
+#if NOT_USED
       /* Note: for object to _span_ "width" units, we start at zero and end at "width". */
       limits[0] = 0.0;
       limits[1] = (double)(feature_stack->block->block_to_sequence.block.x1);
@@ -296,15 +351,19 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
       points[1] = feature->x1;
       points[2] = zMapStyleGetWidth(style);
       points[3] = feature->x2;
-
+#endif
 
       /* inline static void normalSizeReq(ZMapFeature f, ... ){ return ; } */
       /* inlined this should be nothing most of the time, question is can it be inlined?? */
 
 	/* mh17: NOTE this is very confusing
 	 * the navigator used this function to say 'outside the block' when it really means 'the name is duplicated'
-	 * incredible, despite knowing that 'size request' means 'is_duiplicated?' it still fools me
+	 * incredible, despite knowing that 'size request' means 'is_duplicated?' it still fools me
 	 */
+	/* mh17: NOTE we don't need to do this anyway -> if a feature is outside its block then it will never be painted
+	 * the CanvasFeatureset is given a range and does not care where the features are. we also want to handle overlpaping features...
+	 */
+#if FEATURE_SIZE_REQUEST
       if ((no_points_in_block = (factory->user_funcs->feature_size_request)(feature,
 									    &limits[0], &points[0],
 									    factory->user_data)) == TRUE)
@@ -312,10 +371,15 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 #if MH17_REVCOMP_DEBUG > 2
 	  printf("no points in block\n");
 #endif
+/* NOTE this is a goto:
+ * ref dykstra in the late 1970's ....
+ */
 	  goto undrawn ;
 	}
+#endif
 
-
+#if NOT_USED
+// only does stats that are commented out and get pos from score which is not used
 
       /* NOTE TO ROY: I have probably not got the best logic below...I am sure that we
        * have not handled/thought about all the combinations of style modes and feature
@@ -454,9 +518,11 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 	  zMapAssertNotReached() ;
 	  break;
 	}
-
+#endif
 
      {
+#if NOT_USED
+// get block offset which is ignored
             int offset,block_y1,block_y2;
 
             /*
@@ -480,19 +546,32 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
              */
             block_y1 = feature_stack->block->block_to_sequence.block.x1;
             block_y2 = feature_stack->block->block_to_sequence.block.x2;
+#if FEATURE_SIZE_REQUEST
 // having taken the scaling factor out we don't need this
-//            getFactoriedCoordinates(factory, &block_y1,&block_y2);
+            getFactoriedCoordinates(factory, &block_y1,&block_y2);
+#endif
             offset =  block_y1;
+#endif
 
+#if RUN_SET
             run_data.factory   = factory;
             run_data.container = features_container;
             run_data.feature_stack = feature_stack;
             run_data.canvas_item = current_item;
-
-		item = drawFeaturesetFeature(&run_data, feature, offset,
+#endif
+		item = drawFeaturesetFeature(features_container, feature_stack , feature,
+#if 0
+				  offset,
      				  points[0], points[1],
 				  points[2], points[3],
+#else
+				  feature->x1, feature->x2, /* NOTE these ar really y coordinates */
+#endif
 				  style);
+#if 0
+		if(item && fetaure->population)
+			run_data->canvas_item = item;
+#endif
       }
 
       /* if(!run_data.item_in && item) */
@@ -505,17 +584,9 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 	  frame  = zmapWindowContainerFeatureSetGetFrame((ZMapWindowContainerFeatureSet)parent_container);
 	  strand = zmapWindowContainerFeatureSetGetStrand((ZMapWindowContainerFeatureSet)parent_container);
 
-          if(factory->ftoi_hash)
+          if(ftoi_hash)
 	    {
-#if MH17_REVCOMP_DEBUG > 1
-if(is_nav)
-            printf("FToIAddFeature %s %f,%f - %f,%f to %s\n",
-            g_quark_to_string(feature->unique_id),
-            points[1],points[0],points[3],points[2],
-            g_quark_to_string(feature_stack->set->unique_id));
-#endif
-
-	      status = zmapWindowFToIAddFeature(factory->ftoi_hash,
+	      status = zmapWindowFToIAddFeature(ftoi_hash,
 						feature_stack->align->unique_id,
 						feature_stack->block->unique_id,
 						//zMapWindowGetFeaturesetContainerID(window,set->unique_id),
@@ -530,7 +601,7 @@ if(is_nav)
 #endif
           }
 
-          status = (factory->user_funcs->top_item_created)(item, feature_stack, factory->user_data);
+//          status = (factory->user_funcs->top_item_created)(item, feature_stack, factory->user_data);
 
           zMapAssert(status);
 
@@ -550,6 +621,7 @@ if(is_nav)
   return return_item;
 }
 
+#if USE_FACTORY
 
 void zmapWindowFToIFactoryClose(ZMapWindowFToIFactory factory)
 {
@@ -566,7 +638,9 @@ void zmapWindowFToIFactoryClose(ZMapWindowFToIFactory factory)
   return ;
 }
 
+#endif
 
+#if RUN_SET
 
 static void datalistRun(gpointer key, gpointer list_data, gpointer user_data)
 {
@@ -595,20 +669,18 @@ static void datalistRun(gpointer key, gpointer list_data, gpointer user_data)
 
   return ;
 }
+#endif
 
 
-
-static FooCanvasItem *drawFeaturesetFeature(RunSet run_data, ZMapFeature feature,
-                              double feature_offset,
-					double x1, double y1, double x2, double y2,
+static FooCanvasItem *drawFeaturesetFeature(FooCanvasGroup *parent, ZMapWindowFeatureStack feature_stack, ZMapFeature feature,
+					double y1, double y2,
                               ZMapFeatureTypeStyle style)
 {
-  FooCanvasGroup        *parent = run_data->container;
   FooCanvasItem   *feature_item = NULL;
   ZMapWindowCanvasItem canvas_item;
 
-      ZMapWindowContainerFeatureSet fset = (ZMapWindowContainerFeatureSet) run_data->container->item.parent;
-      ZMapFeatureBlock block = run_data->feature_stack->block;
+      ZMapWindowContainerFeatureSet fset = (ZMapWindowContainerFeatureSet) parent->item.parent;
+      ZMapFeatureBlock block = feature_stack->block;
 
 
 //       if(!run_data->feature_stack->id || zMapStyleIsStrandSpecific(style) || zMapStyleIsFrameSpecific(style))
@@ -622,6 +694,11 @@ static FooCanvasItem *drawFeaturesetFeature(RunSet run_data, ZMapFeature feature
        * Perhaps the best way is to run 6 scans for all frame and strand combinations??
        */
 #warning code needs restructuring around zmapWindowDrawFeatureSet()
+
+	/* NOTE
+	 * parent is the features group in the conatiner featureset
+	 * fset is the parent of that (the column) which has the column id
+	 */
       {
       	/* for frame spcecific data process_feature() in zmapWindowDrawFeatures.c extracts
       	 * all of one type at a time
@@ -630,21 +707,21 @@ static FooCanvasItem *drawFeaturesetFeature(RunSet run_data, ZMapFeature feature
       	 */
             GQuark col_id = zmapWindowContainerFeatureSetGetColumnId(fset);
             FooCanvasItem * foo = FOO_CANVAS_ITEM(fset);
-            GQuark fset_id = run_data->feature_stack->set->unique_id;
+            GQuark fset_id = feature_stack->set->unique_id;
             char strand = '+';
             char frame = '0';
 		char *x;
 
             if(zMapStyleIsStrandSpecific(style) && feature->strand == ZMAPSTRAND_REVERSE)
             	strand = '-';
-            if(run_data->feature_stack->frame != ZMAPFRAME_NONE)
+            if(feature_stack->frame != ZMAPFRAME_NONE)
             	frame += zmapWindowFeatureFrame(feature);
 
 		/* see comment by zMapWindowGraphDensityItemGetDensityItem() */
-		if(run_data->feature_stack->maps_to)
+		if(feature_stack->maps_to)
 		{
 			/* a virtual featureset for combing several source into one display item */
-			fset_id = run_data->feature_stack->maps_to;
+			fset_id = feature_stack->maps_to;
 			x = g_strdup_printf("%p_%s_%s_%c%c", foo->canvas, g_quark_to_string(col_id), g_quark_to_string(fset_id),strand,frame);
 		}
 		else
@@ -653,15 +730,15 @@ static FooCanvasItem *drawFeaturesetFeature(RunSet run_data, ZMapFeature feature
 			x = g_strdup_printf("%p_%s_%c%c", foo->canvas, g_quark_to_string(col_id), strand,frame);
 		}
 
-            run_data->feature_stack->id = g_quark_from_string(x);
+            feature_stack->id = g_quark_from_string(x);
             g_free(x);
       }
 
             /* adds once per canvas+column+style, then returns that repeatedly */
             /* also adds an 'interval' foo canvas item which we need to look up */
-      canvas_item = zMapWindowCanvasItemFeaturesetGetFeaturesetItem(parent, run_data->feature_stack->id,
+      canvas_item = zMapWindowCanvasItemFeaturesetGetFeaturesetItem(parent, feature_stack->id,
             block->block_to_sequence.block.x1,block->block_to_sequence.block.x2, style,
-            run_data->feature_stack->strand,run_data->feature_stack->frame,run_data->feature_stack->set_index);
+            feature_stack->strand,feature_stack->frame,feature_stack->set_index);
 
       zMapAssert(canvas_item);
 
@@ -671,7 +748,7 @@ static FooCanvasItem *drawFeaturesetFeature(RunSet run_data, ZMapFeature feature
 	 */
      	zMapWindowCanvasItemSetFeaturePointer(canvas_item, feature);
 
-	if(run_data->feature_stack->filter && (feature->flags.collapsed || feature->flags.squashed || feature->flags.joined))
+	if(feature_stack->filter && (feature->flags.collapsed || feature->flags.squashed || feature->flags.joined))
 	{
 		/* collapsed items are not displayed as they contain no new information
 		 * but they cam be searched for in the FToI hash
@@ -707,14 +784,15 @@ static FooCanvasItem *drawFeaturesetFeature(RunSet run_data, ZMapFeature feature
 
       feature_item = (FooCanvasItem *)canvas_item;
 
-	if(feature->population)		/* keep displayed iten for use by collapsed ones in FtoI hash */
-		run_data->canvas_item = feature_item;
+// assigned by caller
+//	if(feature->population)		/* keep displayed iten for use by collapsed ones in FtoI hash */
+//		run_data->canvas_item = feature_item;
 
       return feature_item;
 }
 
 
-
+#if USE_FACTORY
 
 
 static gboolean null_top_item_created(FooCanvasItem *top_item,
@@ -723,7 +801,9 @@ static gboolean null_top_item_created(FooCanvasItem *top_item,
 {
   return TRUE;
 }
+#endif
 
+#if FEATURE_SIZE_REQUEST
 static gboolean null_feature_size_request(ZMapFeature feature,
                                           double *limits_array,
                                           double *points_array_inout,
@@ -731,4 +811,4 @@ static gboolean null_feature_size_request(ZMapFeature feature,
 {
   return FALSE;
 }
-
+#endif

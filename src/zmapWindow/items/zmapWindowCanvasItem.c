@@ -266,6 +266,17 @@ FooCanvasItem *zMapWindowCanvasItemGetInterval(ZMapWindowCanvasItem canvas_item,
 }
 
 
+gboolean zMapWindowCanvasItemIsConnected(ZMapWindowCanvasItem item)
+{
+	return item->connected;
+}
+
+void zMapWindowCanvasItemSetConnected(ZMapWindowCanvasItem  item, gboolean val)
+{
+	item->connected = val;
+}
+
+
 
 /* for composite items (eg ZMapWindowGraphDensity)
  * set the pointed at feature to be the one nearest to cursor
