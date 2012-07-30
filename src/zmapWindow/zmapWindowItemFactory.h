@@ -69,7 +69,8 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(GHashTable *ftoi_hash,
 #if RUN_SET
 							FooCanvasItem        *current_item,
 #endif
-                                              FooCanvasGroup       *parent_container,
+                                              ZMapWindowContainerFeatureSet parent_container,
+                                              ZMapWindowContainerFeatures features_container,
                                               ZMapWindowFeatureStack feature_stack);
 
 void zmapWindowFToIFactoryClose(ZMapWindowFToIFactory factory);

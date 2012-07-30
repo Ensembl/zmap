@@ -337,7 +337,8 @@ void zmapWindowFeatureFactoryInit(ZMapWindow window)
 /* Called to draw each individual feature. */
 FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow      window,
 				     ZMapFeatureTypeStyle style,
-				     FooCanvasGroup *set_group,
+				     ZMapWindowContainerFeatureSet set_group,
+				     ZMapWindowContainerFeatures set_features,
 				     ZMapWindowFeatureStack     feature_stack)
 {
   FooCanvasItem *new_feature = NULL ;
@@ -389,10 +390,10 @@ zMapAssertNotReached();
 #if RUN_SET
 					       NULL,
 #endif
-                                     set_group,
-                                     feature_stack);
+                                     set_group, set_features,
+					       feature_stack);
 
-#warning could make this tahe a widnow not a gpointer, would be more readable
+#warning could make this take a window not a gpointer, would be more readable
 #warning ideally only call this first time canvasfeatureset is created
   if(!zMapWindowCanvasItemIsConnected((ZMapWindowCanvasItem) new_feature))
 	factoryTopItemCreated (new_feature, feature_stack, (gpointer) window);
@@ -886,6 +887,7 @@ void zmapWindowFeatureExpand(ZMapWindow window, FooCanvasItem *foo,
   ZMapWindowFeatureStackStruct feature_stack = { NULL };
   ZMapWindowCanvasItem item = (ZMapWindowCanvasItem) foo;
   ZMapStyleBumpMode curr_bump_mode ;
+  ZMapWindowContainerFeatures features = zmapWindowContainerGetFeatures((ZMapWindowContainerGroup) container_set);;
 
   //printf("\n\nexpand %s\n",g_quark_to_string(feature->original_id));
   if(feature->population < 2)	/* should not happen */
@@ -897,11 +899,12 @@ void zmapWindowFeatureExpand(ZMapWindow window, FooCanvasItem *foo,
   /* draw all its children  */
   zmapGetFeatureStack(&feature_stack, NULL, feature, container_set->frame);
 
+
   for(l = feature->children; l; l = l->next)
     {
       /* (mh17) NOTE we have to be careful that these features end up in the same (singleton) CanvasFeatureset else they overlap on bump */
       feature_stack.feature = (ZMapFeature) l->data;
-      item = (ZMapWindowCanvasItem) zmapWindowFeatureDraw(window, feature->style, (FooCanvasGroup *) container_set, &feature_stack);
+      item = (ZMapWindowCanvasItem) zmapWindowFeatureDraw(window, feature->style,  container_set,features, &feature_stack);
       //printf(" show %s\n", g_quark_to_string(feature_stack.feature->original_id));
 #if MH17_DO_HIDE
 // ref to same #if in zmapWindowCanvasAlignment.c

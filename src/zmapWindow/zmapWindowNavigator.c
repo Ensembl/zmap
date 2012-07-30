@@ -2029,8 +2029,9 @@ void zmapWindowNavigatorRunSet(  ZMapFeatureSet set,
                                  ZMapFrame frame,
 					   ZMapWindowNavigator navigate)
 {
-  ZMapWindowFeatureStackStruct feature_stack;
+  ZMapWindowFeatureStackStruct feature_stack = { NULL };
   GList *l;
+  ZMapWindowContainerFeatures features = zmapWindowContainerGetFeatures((ZMapWindowContainerGroup) container) ;
 
   feature_stack.feature = NULL;
   zmapGetFeatureStack(&feature_stack,set,NULL,frame);
@@ -2047,6 +2048,8 @@ void zmapWindowNavigatorRunSet(  ZMapFeatureSet set,
 		continue;
 
 	feature_stack.feature = feature;
+
+	/* this stuff is just not used in the navigator..... esp given that container is a given */
 	if(feature->style)	/* chicken */
 	{
 		if(zMapStyleIsStrandSpecific(feature->style))
@@ -2057,11 +2060,10 @@ void zmapWindowNavigatorRunSet(  ZMapFeatureSet set,
 
 	if(!variantFeature(feature, navigate))
 	{
+		foo = zmapWindowFToIFactoryRunSingle(navigate->ftoi_hash, (ZMapWindowContainerFeatureSet) container, features,  &feature_stack);
 
-	foo = zmapWindowFToIFactoryRunSingle(navigate->ftoi_hash, container, &feature_stack);
-
-	if(!zMapWindowCanvasItemIsConnected((ZMapWindowCanvasItem) foo))
-		factoryItemHandler (foo, &feature_stack, (gpointer) navigate);
+		if(!zMapWindowCanvasItemIsConnected((ZMapWindowCanvasItem) foo))
+			factoryItemHandler (foo, &feature_stack, (gpointer) navigate);
 	}
   }
 

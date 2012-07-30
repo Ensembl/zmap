@@ -119,7 +119,7 @@ static gboolean null_feature_size_request(ZMapFeature feature,
 #endif
 
 
-static FooCanvasItem *drawFeaturesetFeature(FooCanvasGroup *parent, ZMapWindowFeatureStack feature_stack, ZMapFeature feature,
+static FooCanvasItem *drawFeaturesetFeature(FooCanvasGroup *parent, ZMapWindowFeatureStack feature_stack,
                               double y1, double y2,
                               ZMapFeatureTypeStyle style);
 
@@ -252,6 +252,9 @@ void getFactoriedCoordinates(ZMapWindowFToIFactory factory, int *y1, int *y2)
       *y2 = (int) points[3];
 }
 #endif
+
+#if USE_FACTORY
+
 
 FooCanvasItem *zmapWindowFToIFactoryRunSingle(GHashTable *ftoi_hash,
 #if RUN_SET
@@ -559,7 +562,7 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(GHashTable *ftoi_hash,
             run_data.feature_stack = feature_stack;
             run_data.canvas_item = current_item;
 #endif
-		item = drawFeaturesetFeature(features_container, feature_stack , feature,
+		item = drawFeaturesetFeature((FooCanvasGroup *) features_container, feature_stack ,
 #if 0
 				  offset,
      				  points[0], points[1],
@@ -621,6 +624,53 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(GHashTable *ftoi_hash,
   return return_item;
 }
 
+#else
+
+FooCanvasItem *zmapWindowFToIFactoryRunSingle(GHashTable *ftoi_hash,
+							    ZMapWindowContainerFeatureSet parent_container,
+							    ZMapWindowContainerFeatures features_container,
+                                              ZMapWindowFeatureStack     feature_stack)
+{
+	FooCanvasItem *item = NULL, *return_item = NULL;
+
+	ZMapFeature feature = feature_stack->feature;
+
+//    features_container = (FooCanvasGroup *)zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)parent_container) ;
+
+	item = drawFeaturesetFeature((FooCanvasGroup *) features_container, feature_stack,
+				  feature->x1, feature->x2, /* NOTE these are really y coordinates */
+				  feature->style);
+
+      if (item)
+        {
+          gboolean status = FALSE;
+          ZMapFrame frame;
+	    ZMapStrand strand;
+
+	    frame  = zmapWindowContainerFeatureSetGetFrame(parent_container);
+	    strand = zmapWindowContainerFeatureSetGetStrand(parent_container);
+
+          if(ftoi_hash)
+	    {
+		    if(!feature_stack->col_hash[strand])
+		    {
+			    feature_stack->col_hash[strand] = zmapWindowFToIGetSetHash(ftoi_hash,
+					feature_stack->align->unique_id, feature_stack->block->unique_id,
+					feature_stack->set->unique_id, strand, frame);
+		    }
+
+		    status = zmapWindowFToIAddSetFeature(feature_stack->col_hash[strand], feature->unique_id, item, feature);
+
+	    }
+          return_item = item;
+        }
+
+  return return_item;
+}
+
+#endif
+
+
 #if USE_FACTORY
 
 void zmapWindowFToIFactoryClose(ZMapWindowFToIFactory factory)
@@ -672,12 +722,13 @@ static void datalistRun(gpointer key, gpointer list_data, gpointer user_data)
 #endif
 
 
-static FooCanvasItem *drawFeaturesetFeature(FooCanvasGroup *parent, ZMapWindowFeatureStack feature_stack, ZMapFeature feature,
+static FooCanvasItem *drawFeaturesetFeature(FooCanvasGroup *parent, ZMapWindowFeatureStack feature_stack,
 					double y1, double y2,
                               ZMapFeatureTypeStyle style)
 {
   FooCanvasItem   *feature_item = NULL;
   ZMapWindowCanvasItem canvas_item;
+  ZMapFeature feature = feature_stack->feature;
 
       ZMapWindowContainerFeatureSet fset = (ZMapWindowContainerFeatureSet) parent->item.parent;
       ZMapFeatureBlock block = feature_stack->block;

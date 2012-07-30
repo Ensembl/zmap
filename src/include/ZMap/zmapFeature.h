@@ -107,9 +107,11 @@ typedef enum {
 } ZMapFeatureSubpartType ;
 
 typedef enum {ZMAPSTRAND_NONE = 0, ZMAPSTRAND_FORWARD, ZMAPSTRAND_REVERSE} ZMapStrand ;
+#define N_STRAND_ALLOC	3	/* we get to handle NONE as a strand */
 
 #define FRAME_PREFIX "FRAME-"				    /* For text versions. */
 typedef enum {ZMAPFRAME_NONE = 0, ZMAPFRAME_0, ZMAPFRAME_1, ZMAPFRAME_2} ZMapFrame ;
+#define N_FRAME_ALLOC	4	/* we get to handle NONE as a frame */
 
 typedef enum {ZMAPPHASE_NONE = 0, ZMAPPHASE_0, ZMAPPHASE_1, ZMAPPHASE_2} ZMapPhase ;
 
@@ -559,7 +561,7 @@ typedef struct
   GArray *align ;					    /* of AlignBlock, if null, align is ungapped. */
 
 
-  
+
   char * sequence;					/* sequence if given in GFF */
 
 

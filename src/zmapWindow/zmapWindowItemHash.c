@@ -400,6 +400,67 @@ gboolean zmapWindowFToIRemoveSet(GHashTable *feature_context_to_item,
 
 
 
+/* return the hash table for a set to allow repeated inserts more quickly */
+GHashTable *zmapWindowFToIGetSetHash(GHashTable *feature_context_to_item,
+				  GQuark align_id, GQuark block_id,
+				  GQuark set_id, ZMapStrand set_strand, ZMapFrame set_frame)
+{
+  ID2Canvas align = NULL ;
+  ID2Canvas block = NULL ;
+  ID2Canvas set = NULL ;
+
+  /* We need special quarks that incorporate strand indication as there are separate column
+   * hashes are per strand. */
+  GQuark tmp_set_id = makeSetID(set_id, set_strand, set_frame) ;
+
+  if ((align = (ID2Canvas)g_hash_table_lookup(feature_context_to_item,
+					      GUINT_TO_POINTER(align_id)))
+      && (block = (ID2Canvas)g_hash_table_lookup(align->hash_table,
+						 GUINT_TO_POINTER(block_id)))
+      && (set = (ID2Canvas)g_hash_table_lookup(block->hash_table,
+                                                   GUINT_TO_POINTER(tmp_set_id))))
+    {
+	    return set->hash_table;
+    }
+  return NULL ;
+}
+
+gboolean zmapWindowFToIAddSetFeature(GHashTable *set,	GQuark feature_id, FooCanvasItem *feature_item, ZMapFeature feature)
+{
+	ID2Canvas ID2C ;
+	/* mh17: changed insert to replace to allow bumping of compressed features
+	* if compressed, underlying data points to the compressed feature
+	* if not they are on display
+	*/
+	if(!set)
+		return FALSE;
+#if 0
+if (!(g_hash_table_lookup(set->hash_table, GUINT_TO_POINTER(feature_id))))
+	{
+	ID2C = g_new0(ID2CanvasStruct, 1) ;
+	ID2C->item = feature_item ;
+	ID2C->hash_table = NULL; // we don't need g_hash_table_new_full(NULL, NULL, NULL, destroyIDHash) ;
+	ID2C->feature_any = (ZMapFeatureAny) feature ;
+
+	g_hash_table_insert(set->hash_table, GUINT_TO_POINTER(feature_id), ID2C) ;
+	}
+#else
+	ID2C = g_hash_table_lookup(set, GUINT_TO_POINTER(feature_id));
+	if(!ID2C)
+	{
+		ID2C = g_new0(ID2CanvasStruct, 1) ;
+		g_hash_table_insert(set, GUINT_TO_POINTER(feature_id), ID2C) ;
+	}
+
+	ID2C->item = feature_item ;
+	ID2C->hash_table = NULL; // we don't need g_hash_table_new_full(NULL, NULL, NULL, destroyIDHash) ;
+	ID2C->feature_any = (ZMapFeatureAny) feature ;
+#endif
+	return TRUE;
+}
+
+
+
 /* Note that this routine is different in that the feature does not have a hash table associated
  * with it, the table pointer is set to NULL.
  *
@@ -412,13 +473,8 @@ gboolean zmapWindowFToIAddFeature(GHashTable *feature_context_to_item,
 				  FooCanvasItem *feature_item, ZMapFeature feature)
 {
   gboolean result = FALSE ;
-  ID2Canvas align = NULL ;
-  ID2Canvas block = NULL ;
-  ID2Canvas set = NULL ;
+  GHashTable *set = NULL ;
 
-  /* We need special quarks that incorporate strand indication as there are separate column
-   * hashes are per strand. */
-  GQuark tmp_set_id = makeSetID(set_id, set_strand, set_frame) ;
 
   if(window_ftoi_debug_G)
     {
@@ -426,44 +482,13 @@ gboolean zmapWindowFToIAddFeature(GHashTable *feature_context_to_item,
       printHashKeys(align_id, block_id, set_id, feature_id);
     }
 
-  if ((align = (ID2Canvas)g_hash_table_lookup(feature_context_to_item,
-					      GUINT_TO_POINTER(align_id)))
-      && (block = (ID2Canvas)g_hash_table_lookup(align->hash_table,
-						 GUINT_TO_POINTER(block_id)))
-      && (set = (ID2Canvas)g_hash_table_lookup(block->hash_table,
-                                                   GUINT_TO_POINTER(tmp_set_id))))
+  if((set = zmapWindowFToIGetSetHash(feature_context_to_item, align_id, block_id, set_id, set_strand, set_frame)))
     {
-          ID2Canvas ID2C ;
-	    /* mh17: changed insert to replace to allow bumping of compressed features
-	     * if compressed, underlying data points to the compressed feature
-	     * if not they are on display
-	     */
-#if 0
-      if (!(g_hash_table_lookup(set->hash_table, GUINT_TO_POINTER(feature_id))))
-        {
-	     ID2C = g_new0(ID2CanvasStruct, 1) ;
-           ID2C->item = feature_item ;
-           ID2C->hash_table = NULL; // we don't need g_hash_table_new_full(NULL, NULL, NULL, destroyIDHash) ;
-           ID2C->feature_any = (ZMapFeatureAny) feature ;
-
-          g_hash_table_insert(set->hash_table, GUINT_TO_POINTER(feature_id), ID2C) ;
-        }
-#else
-	    ID2C = g_hash_table_lookup(set->hash_table, GUINT_TO_POINTER(feature_id));
-	    if(!ID2C)
-	    {
-		    ID2C = g_new0(ID2CanvasStruct, 1) ;
-		    g_hash_table_insert(set->hash_table, GUINT_TO_POINTER(feature_id), ID2C) ;
-	    }
-
-          ID2C->item = feature_item ;
-          ID2C->hash_table = NULL; // we don't need g_hash_table_new_full(NULL, NULL, NULL, destroyIDHash) ;
-          ID2C->feature_any = (ZMapFeatureAny) feature ;
-#endif
-	    result = TRUE ;
+	result = zmapWindowFToIAddSetFeature(set,	feature_id, feature_item, feature);
     }
   return result ;
 }
+
 
 
 
