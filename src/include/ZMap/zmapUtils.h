@@ -188,7 +188,7 @@ char *zMapGetLicenseString(void) ;
 gboolean zMapCompareVersionStings(char *reference_version, char *test_version) ;
 char *zMapGetCompileString(void) ;
 
-gboolean zMapUtilsConfigDebug(void) ;
+gboolean zMapUtilsConfigDebug(char *config_file) ;
 
 char *zMapGetTimeString(ZMapTimeFormat format, char *format_str_in) ;
 

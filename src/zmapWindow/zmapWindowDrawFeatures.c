@@ -1,3 +1,4 @@
+/*  Last edited: Jul 23 15:37 2012 (edgrif) */
 /*  File: zmapWindowDrawFeatures.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -2763,7 +2764,7 @@ static void setColours(ZMapWindow window)
   gdk_color_parse(ZMAP_WINDOW_ITEM_EVIDENCE_FILL, &(window->colour_evidence_fill)) ;
   window->highlights_set.evidence = TRUE ;
 
-  if ((context = zMapConfigIniContextProvide()))
+  if ((context = zMapConfigIniContextProvide(window->sequence->config_file)))
     {
       char *colour = NULL;
 

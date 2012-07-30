@@ -62,6 +62,8 @@ typedef enum {
 /* Holds all the state we need to manage the das connection. */
 typedef struct _DasServerStruct
 {
+  char *config_file ;
+
   GQuark protocol, host, path, user, passwd; /* url bits */
   int   port ;
 

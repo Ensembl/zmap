@@ -77,7 +77,7 @@ int main(int argc, char *argv[])
 
   zMapLogCreate(NULL) ;
 
-  zMapConfigIniGetStylesFromFile(argv[3], argv[4], &styles);     //  styles  = zMapFeatureTypeGetFromFile(argv[2], argv[3]) ;
+  zMapConfigIniGetStylesFromFile(NULL, argv[3], argv[4], &styles);
   main_rc = parseFile(argv[1], argv[2], styles) ;
 
   zMapLogDestroy() ;

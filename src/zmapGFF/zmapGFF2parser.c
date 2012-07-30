@@ -1621,8 +1621,8 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
       feature_set = parser_feature_set->feature_set ;
 
       if(feature_name)  /* have to check in case of no-name data errors */
-            feature = (ZMapFeature)g_datalist_get_data(&(parser_feature_set->multiline_features),
-						 feature_name) ;
+	feature = (ZMapFeature)g_datalist_get_data(&(parser_feature_set->multiline_features),
+						   feature_name) ;
     }
 
 
@@ -1664,11 +1664,11 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
       *err_text = g_strdup_printf("feature ignored as it has no name");
     }
   else if ((result = zMapFeatureAddStandardData(feature, feature_name_id, feature_name,
-					   sequence, ontology,
-					   feature_type, feature_style,
-					   start, end,
-					   has_score, score,
-					   strand)))
+						sequence, ontology,
+						feature_type, feature_style,
+						start, end,
+						has_score, score,
+						strand)))
     {
       zMapFeatureSetAddFeature(feature_set, feature);
 
@@ -1753,8 +1753,6 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 	      else
 		{
 		  ZMapFeatureAlignFormat align_format = ZMAPALIGN_FORMAT_INVALID ;
-		  char *try_it = zMapFeatureAlignFormat2ShortText(ZMAPALIGN_FORMAT_CIGAR_EXONERATE) ;
-
 
 		  if ((gaps_onwards = strstr(attributes,
 					     zMapFeatureAlignFormat2ShortText(ZMAPALIGN_FORMAT_CIGAR_EXONERATE))))
@@ -1787,18 +1785,19 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 	      local_sequence = TRUE ;
 	    }
 
-		/* own sequence means ACEDB has it; legacy data/code. sequence is given in GFF, so ZMap must store */
+	  /* own sequence means ACEDB has it; legacy data/code. sequence is given in GFF, so ZMap must store */
 	  if((seq_str = find_tag(attributes,"sequence")))
-	  {
-		  char *p;
+	    {
+	      char *p;
 
-		  for(p = seq_str; *p > ';'; p++)
-			  continue;
+	      for (p = seq_str; *p > ';' ; p++)
+		continue;
 
-		  seq_str = g_strdup_printf("%.*s",p - seq_str, seq_str);
-		  for(p = seq_str; *p > ';'; )
-			  *p++ |= 0x20;	/* need to be lower case else rev comp gives zeroes */
-	  }
+	      seq_str = g_strdup_printf("%.*s", (int)(p - seq_str), seq_str);
+
+	      for(p = seq_str; *p > ';'; )
+		*p++ |= 0x20;	/* need to be lower case else rev comp gives zeroes */
+	    }
 
 	  result = zMapFeatureAddAlignmentData(feature, clone_id,
 					       percent_id,

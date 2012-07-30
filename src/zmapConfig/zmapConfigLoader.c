@@ -1,4 +1,3 @@
-/*  Last edited: Apr 13 09:13 2012 (edgrif) */
 /*  File: zmapConfigLoader.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -84,11 +83,11 @@ typedef struct
 
 
 
-ZMapConfigIniContext zMapConfigIniContextProvide(void)
+ZMapConfigIniContext zMapConfigIniContextProvide(char *config_file)
 {
   ZMapConfigIniContext context = NULL;
 
-  if((context = zMapConfigIniContextCreate()))
+  if((context = zMapConfigIniContextCreate(config_file)))
     {
       ZMapConfigIniContextKeyEntry stanza_group = NULL;
       char *stanza_name, *stanza_type;
@@ -124,13 +123,13 @@ ZMapConfigIniContext zMapConfigIniContextProvide(void)
 
 
 
-ZMapConfigIniContext zMapConfigIniContextProvideNamed(char *stanza_name_in)
+ZMapConfigIniContext zMapConfigIniContextProvideNamed(char *config_file, char *stanza_name_in)
 {
   ZMapConfigIniContext context = NULL;
 
   zMapAssert(stanza_name_in && *stanza_name_in) ;
 
-  if ((context = zMapConfigIniContextCreate()))
+  if ((context = zMapConfigIniContextCreate(config_file)))
     {
       ZMapConfigIniContextKeyEntry stanza_group = NULL;
       char *stanza_name, *stanza_type;
@@ -524,7 +523,8 @@ GQuark zMapStyleQuark(gchar *str)
 
 
 // get style stanzas in styles_list of all from the file
-gboolean zMapConfigIniGetStylesFromFile(char *styles_list, char *styles_file, GHashTable **styles_out)
+gboolean zMapConfigIniGetStylesFromFile(char *config_file,
+					char *styles_list, char *styles_file, GHashTable **styles_out)
 {
   gboolean result = FALSE ;
   GHashTable *styles = NULL ;
@@ -533,7 +533,7 @@ gboolean zMapConfigIniGetStylesFromFile(char *styles_list, char *styles_file, GH
   GHashTable *shapes = NULL;
   int enum_value ;
 
-  if ((context = zMapConfigIniContextProvideNamed(ZMAPSTANZA_STYLE_CONFIG)))
+  if ((context = zMapConfigIniContextProvideNamed(config_file, ZMAPSTANZA_STYLE_CONFIG)))
     {
       shapes = zMapConfigIniGetGlyph(context);
 
@@ -1226,7 +1226,7 @@ GHashTable *zMapConfigIniGetHeatmaps(ZMapConfigIniContext context)
 }
 
 
-gboolean zMapConfigLegacyStyles(void)
+gboolean zMapConfigLegacyStyles(char *config_file)
 {
   static gboolean result = FALSE;
   ZMapConfigIniContext context;
@@ -1236,7 +1236,7 @@ gboolean zMapConfigLegacyStyles(void)
   if (!got)
     {
       got = TRUE ;
-      if ((context = zMapConfigIniContextProvide()))
+      if ((context = zMapConfigIniContextProvide(NULL)))
 	{
 	  zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
 					 ZMAPSTANZA_APP_LEGACY_STYLES, &result);

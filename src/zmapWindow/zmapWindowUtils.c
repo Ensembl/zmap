@@ -1,4 +1,4 @@
-/*  Last edited: Jul 13 14:26 2011 (edgrif) */
+/*  Last edited: Jul 23 16:12 2012 (edgrif) */
 /*  File: zmapWindowUtils.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -811,23 +811,22 @@ ZMapGuiNotebookChapter zMapWindowGetConfigChapter(ZMapWindow window, ZMapGuiNote
   callbacks.edit_data   = window;
   callbacks.save_data   = window;
 
-  chapter    = zMapGUINotebookCreateChapter(parent_note_book, "Window Settings", &callbacks);
+  chapter = zMapGUINotebookCreateChapter(parent_note_book, "Window Settings", &callbacks);
 
-  context    = zMapConfigIniContextProvide();
-
+  context = zMapConfigIniContextProvide(window->sequence->config_file) ;
 
   /* Sizes... */
-  page       = zMapGUINotebookCreatePage(chapter, "Sizes");
+  page = zMapGUINotebookCreatePage(chapter, "Sizes");
 
   subsection = zMapGUINotebookCreateSubsection(page, NULL);
 
-  paragraph  = zMapGUINotebookCreateParagraph(subsection, NULL,
-					      ZMAPGUI_NOTEBOOK_PARAGRAPH_TAGVALUE_TABLE,
-					      NULL, NULL);
+  paragraph = zMapGUINotebookCreateParagraph(subsection, NULL,
+					     ZMAPGUI_NOTEBOOK_PARAGRAPH_TAGVALUE_TABLE,
+					     NULL, NULL);
 
-  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "canvas_maxbases",
-					     ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-					     "int", window->canvas_maxwin_bases);
+  tagvalue = zMapGUINotebookCreateTagValue(paragraph, "canvas_maxbases",
+					   ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+					   "int", window->canvas_maxwin_bases);
 
   tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "column_spacing",
 					     ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,

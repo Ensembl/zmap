@@ -1,4 +1,4 @@
-/*  Last edited: Jul 13 14:39 2012 (edgrif) */
+/*  Last edited: Jul 23 15:03 2012 (edgrif) */
 /*  File: zmapWindow.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -2926,7 +2926,7 @@ static gboolean getConfiguration(ZMapWindow window)
   window->display_forward_coords = TRUE;
   window->show_3_frame_reverse = FALSE;
 
-  if((context = zMapConfigIniContextProvide()))
+  if ((context = zMapConfigIniContextProvide(window->sequence->config_file)))
     {
       int tmp_int;
       gboolean tmp_bool;
