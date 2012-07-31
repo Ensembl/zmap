@@ -2891,6 +2891,13 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
+
+	  /* CHECK HOW STEPS_FINISHED IS SET...SOMETHING IS WRONG.....GETTING CALLED EVERYTIME A
+	     SOURCE
+	     * FINISHES INSTEAD WHEN ALL SOURCES ARE FINISHED.... */
+
+
+
 	  /* If the thread has died then remove it's connection. */
 	  // do this before counting up the number of step lists
 	  if (thread_has_died)
@@ -2963,6 +2970,10 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 		  steps_finished = TRUE ;
 		}
 	    }
+
+
+	  /* WE ARE COMING IN HERE TOO OFTEN.....SHOULD ONLY BE RIGHT AT END, CHECK LOGIC FOR
+	     STEPS FINIHSED.... */
 
 	  if (steps_finished)	// (thread_status == THREAD_STATUS_FAILED || thread_status == THREAD_STATUS_OK)     // tell otterlace
 	    {
