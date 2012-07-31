@@ -129,9 +129,18 @@ static void processRequest(ZMapWindow window,
 			   RemoteCommandRCType *command_rc_out, char **reason_out, ZMapXMLUtilsEventStack *reply_out) ;
 
 
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+/* TRY PUTTING AT APP LEVEL.... */
 static void requestblockIfActive(void) ;
 static void requestSetActive(void) ;
 static void requestSetInActive(void) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
 
 
 /* WE NEED TO ADD THE CODE TO HERE FROM VIEW TO DO THESE COMMANDS, THIS IS THE LEVEL AT WHICH
@@ -226,10 +235,16 @@ void zmapWindowUpdateXRemoteDataFull(ZMapWindow window, ZMapFeatureAny feature_a
   ZMapFeature feature;
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* TRY PUTTING AT APP LEVEL.... */
   /* Test to see if we are processing a remote command....and then set that we are active. */
   requestblockIfActive() ;
   requestSetActive() ;
-  
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
 
 
   /* hack to add feature stuff....... */
@@ -341,6 +356,8 @@ void zmapWindowUpdateXRemoteDataFull(ZMapWindow window, ZMapFeatureAny feature_a
  */
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* We need to keep a "lock" flag because for some actions, e.g. double click,
  * we can end up trying to send two requests, in this case a "single_select"
  * followed by an "edit" too quickly, i.e. we haven't finished the "single_select"
@@ -385,6 +402,8 @@ static void requestSetInActive(void)
 
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
@@ -421,8 +440,12 @@ static void localProcessReplyFunc(char *command,
     (window->xremote_reply_handler)(window, window->xremote_reply_data,
 				    command, command_rc, reason, reply) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* Now we know that the request/reply is over unset our "request active" flag. */
   requestSetInActive() ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   return ;
 }
