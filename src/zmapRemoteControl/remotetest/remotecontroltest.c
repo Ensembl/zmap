@@ -136,8 +136,9 @@ enum
     XREMOTE_CLOSE_VIEW,
 
     XREMOTE_CREATE,
-    XREMOTE_FIND,
+    XREMOTE_REPLACE,
     XREMOTE_DELETE,
+    XREMOTE_FIND,
 
     XREMOTE_LOAD_FEATURES,
     XREMOTE_ZOOM_TO,
@@ -468,8 +469,9 @@ static GtkItemFactoryEntry menu_items_G[] =
     {"/Commands/get_mark",       NULL,         cmdCB,      XREMOTE_GET_MARK,   NULL,       NULL},
 
     {"/Commands/Feature Create", NULL,         cmdCB,      XREMOTE_CREATE,   NULL,       NULL},
-    {"/Commands/Feature Find",   NULL,         cmdCB,      XREMOTE_FIND,     NULL,       NULL},
+    {"/Commands/Feature Replace",NULL,         cmdCB,      XREMOTE_REPLACE,     NULL,       NULL},
     {"/Commands/Feature Delete", NULL,         cmdCB,      XREMOTE_DELETE,   NULL,       NULL},
+    {"/Commands/Feature Find",   NULL,         cmdCB,      XREMOTE_FIND,     NULL,       NULL},
 
     {"/Commands/goodbye",        NULL,         cmdCB,      XREMOTE_GOODBYE,   NULL,       NULL},
     {"/Commands/shutdown",       NULL,         cmdCB,      XREMOTE_SHUTDOWN,   NULL,       NULL},
@@ -1863,9 +1865,9 @@ static void cmdCB(gpointer data, guint callback_action, GtkWidget *w)
       do_feature_xml = TRUE ;
       break;
 
-    case XREMOTE_FIND:
-      *action  = g_quark_from_string(ZACP_FIND_FEATURE) ;
-      command = ZACP_FIND_FEATURE ;
+    case XREMOTE_REPLACE:
+      *action  = g_quark_from_string(ZACP_REPLACE_FEATURE) ;
+      command = ZACP_REPLACE_FEATURE ;
 
       data_ptr = &feature[0];
 
@@ -1875,6 +1877,15 @@ static void cmdCB(gpointer data, guint callback_action, GtkWidget *w)
     case XREMOTE_DELETE:
       *action = g_quark_from_string(ZACP_DELETE_FEATURE) ;
       command = ZACP_DELETE_FEATURE ;
+
+      data_ptr = &feature[0];
+
+      do_feature_xml = TRUE ;
+      break;
+
+    case XREMOTE_FIND:
+      *action  = g_quark_from_string(ZACP_FIND_FEATURE) ;
+      command = ZACP_FIND_FEATURE ;
 
       data_ptr = &feature[0];
 
