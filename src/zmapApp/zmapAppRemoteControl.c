@@ -70,6 +70,20 @@ static void handleZMapRequestsCB(char *command, ZMapXMLUtilsEventStack request_b
 				 ZMapRemoteAppProcessReplyFunc reply_func, gpointer reply_func_data) ;
 
 
+/* TRY PUTTING AT APP LEVEL.... */
+static void requestblockIfActive(void) ;
+static void requestSetActive(void) ;
+static void requestSetInActive(void) ;
+
+/* 
+ *                Globals. 
+ */
+
+/* Maintains a lock while a remote request is active. */
+static gboolean is_active_G = FALSE ;
+static gboolean is_active_debug_G = TRUE ;
+
+
 
 
 
@@ -199,6 +213,56 @@ void zmapAppRemoteControlDestroy(ZMapAppContext app_context)
  */
 
 
+/* We need to keep a "lock" flag because for some actions, e.g. double click,
+ * we can end up trying to send two requests, in this case a "single_select"
+ * followed by an "edit" too quickly, i.e. we haven't finished the "single_select"
+ * before we try to send the "edit".
+ * 
+ * So we test this flag and if we are processing we block (but process events)
+ * until the previous action is complete.
+ * 
+ *  */
+static void requestblockIfActive(void)
+{
+
+  zMapDebugPrint(is_active_debug_G, "Entering blocking code: %s",
+		 (is_active_G ? "Request Active" : "No Request Active")) ;
+
+  while (is_active_G)
+    {
+      gtk_main_iteration() ;
+    }
+
+  zMapDebugPrint(is_active_debug_G, "Leaving blocking code: %s",
+		 (is_active_G ? "Request Active" : "No Request Active")) ;
+
+  return ;
+}
+
+static void requestSetActive(void)
+{
+  is_active_G = TRUE ;
+
+  zMapDebugPrint(is_active_debug_G, "%s", "Setting Block: Request Active") ;
+
+  return ;
+}
+
+
+static void requestSetInActive(void)
+{
+  is_active_G = FALSE ;
+
+  zMapDebugPrint(is_active_debug_G, "%s", "Unsetting Block: Request Inactive") ;
+
+  return ;
+}
+
+
+
+
+
+
 
 /*             Functions called directly by ZMapRemoteControl.                */
 
@@ -265,6 +329,9 @@ static void replyHandlerCB(ZMapRemoteControl remote_control, char *reply, void *
   char *error_out = NULL ;
 
 
+
+
+
   /* Again.....is this a good idea....the app callback needs to be called whatever happens
    * to reset state...fine to log a bad message but we still need to call the app func. */
 
@@ -300,6 +367,12 @@ static void replyHandlerCB(ZMapRemoteControl remote_control, char *reply, void *
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
     }
+
+
+  /* TRY THIS HERE.... */
+  /* Now we know that the request/reply is over unset our "request active" flag. */
+  requestSetInActive() ;
+
 
 
   /* I think this is the place to go back to waiting again.... */
@@ -427,6 +500,13 @@ static void handleZMapRequestsCB(char *command, ZMapXMLUtilsEventStack request_b
       char *err_msg = NULL ;
       char *view = NULL ;					    /* to be filled in later..... */
 
+
+      /* TRY ALL THIS HERE.... */
+      /* Test to see if we are processing a remote command....and then set that we are active. */
+      requestblockIfActive() ;
+      requestSetActive() ;
+
+
       if (!err_msg && !(request_stack = zMapRemoteCommandCreateRequest(remote->remote_controller, command, view, -1)))
 	{
 	  err_msg = g_strdup_printf("Could not create request for command \"%s\"", command) ;
@@ -474,7 +554,14 @@ static void handleZMapRequestsCB(char *command, ZMapXMLUtilsEventStack request_b
 
 	  zMapLogCritical("%s", err_msg) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	  /* TOO MANY WARNINGS.... */
+
 	  zMapCritical("%s", err_msg) ;
+	  zMapWarning("%s", err_msg) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 	  g_free(err_msg) ;
 	}
