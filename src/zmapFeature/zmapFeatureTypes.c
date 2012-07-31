@@ -168,7 +168,7 @@ gboolean zMapStyleSetAdd(GHashTable *style_set, ZMapFeatureTypeStyle style)
 // or NULL on failure
 static ZMapFeatureTypeStyle inherit_parent(ZMapFeatureTypeStyle style, GHashTable *root_styles, int depth)
 {
-  ZMapFeatureTypeStyle parent,tmp_style = NULL;
+  ZMapFeatureTypeStyle parent, tmp_style = NULL;
 
   if(depth > 20)
     {
@@ -206,32 +206,32 @@ static ZMapFeatureTypeStyle inherit_parent(ZMapFeatureTypeStyle style, GHashTabl
             {
               tmp_style->inherited = TRUE;
 
+#if  MH17_CHECK_INHERITANCE
+printf("%s inherited  %s, (%d/%d -> %d)\n",
+g_quark_to_string(style->unique_id),
+g_quark_to_string(parent->unique_id),
+parent->default_bump_mode, style->default_bump_mode, tmp_style->default_bump_mode);
+#endif
                   // keep this up to date
               g_hash_table_replace(root_styles,GUINT_TO_POINTER(style->unique_id),tmp_style);
-#if MH17_CHECK_INHERITANCE
-zMapLogWarning("%s inherited  %s, description = %s\n",
-g_quark_to_string(tmp_style->unique_id),
-g_quark_to_string(parent->unique_id),
-tmp_style->description);
-#endif
               zMapStyleDestroy(style);
             }
           else
             {
               zMapLogWarning("Merge of style \"%s\" into style \"%s\" failed.",
-                  g_quark_to_string(style->original_id),
-                  g_quark_to_string(tmp_style->original_id)) ;
+                  g_quark_to_string(parent->original_id),
+                  g_quark_to_string(style->original_id)) ;
 
-              zMapStyleDestroy(tmp_style);
-              tmp_style = NULL;
+               zMapStyleDestroy(tmp_style);
+               tmp_style = style;
             }
         }
     }
   else
   {
       // nothing to do return: input style
-      tmp_style = style;
-      tmp_style->inherited = TRUE;
+      style->inherited = TRUE;
+	tmp_style = style;
   }
 
   return tmp_style;
@@ -372,7 +372,6 @@ gboolean zMapStyleMerge(ZMapFeatureTypeStyle curr_style, ZMapFeatureTypeStyle ne
 
   for(i = 1;i < _STYLE_PROP_N_ITEMS;i++,param++)
     {
-
       if(zMapStyleIsPropertySetId(new_style,param->id))      // something to merge?
         {
 
@@ -976,7 +975,7 @@ void zMapStyleSetGFF(ZMapFeatureTypeStyle style, char *gff_source, char *gff_fea
 
 
 
-
+#if NOT_USED
 void zMapStyleSetBumpMode(ZMapFeatureTypeStyle style, ZMapStyleBumpMode bump_mode)
 {
   if(!(bump_mode >= ZMAPBUMP_START && bump_mode <= ZMAPBUMP_END))
@@ -997,7 +996,7 @@ void zMapStyleSetBumpMode(ZMapFeatureTypeStyle style, ZMapStyleBumpMode bump_mod
 
   return ;
 }
-
+#endif
 
 void zMapStyleSetBumpSpace(ZMapFeatureTypeStyle style, double bump_spacing)
 {

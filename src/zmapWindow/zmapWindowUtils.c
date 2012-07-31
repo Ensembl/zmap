@@ -403,7 +403,7 @@ gboolean zMapWindowGetFilteredColour(ZMapWindow window, GdkColor **fill)
 
 ZMapFeatureTypeStyle zmapWindowColumnMergeStyle(ZMapFeatureColumn column)
 {
-      ZMapFeatureTypeStyle style = NULL,s;
+      ZMapFeatureTypeStyle style = NULL, s;
       GList *iter;
       ZMapStyleMode mode;
 
@@ -428,7 +428,7 @@ ZMapFeatureTypeStyle zmapWindowColumnMergeStyle(ZMapFeatureColumn column)
                   s = (ZMapFeatureTypeStyle) iter->data;
                   if(!s->mode || s->mode == mode)
                   {
-                        if(!style)
+				if(!style)
                         {
                               style = zMapFeatureStyleCopy(s);
                         }
