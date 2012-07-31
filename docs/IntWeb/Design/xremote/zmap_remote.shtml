@@ -40,9 +40,10 @@ legend{ font-weight: bold }
 
 <ul>
   <li><a href="#protocol"><b>The Request/Reply Transport Protocol</b></a></li>
-   <li><a href="#request_reply_format"><b>The Request/Reply Message Format</b></a></li>
- <li><a href="#commands"><b>ZMap Command Interface</b></a></li>
- <li><a href="#c_interface"><b>C Programming Interface</b></a></li>
+  <li><a href="#request_reply_format"><b>The Request/Reply Message Format</b></a></li>
+  <li><a href="#commands"><b>ZMap Command Interface</b></a></li>
+  <li><a href="#c_interface"><b>C Programming Interface</b></a></li>
+  <li><a href="#zmap_xremote"><b>Remote Control in ZMap</b></a></li>
 </ul>
 
 
@@ -2577,17 +2578,153 @@ to the peer.</p>
 sub-systems each of which must respond to requests and return responses. The
 remote control code in ZMap sits in the "ZMapApp" layer and handles all
 communication with the peer program via xremote. Therefore there needs to be a
-way for the remote control code to send requests to and to receive responses
-from the rest of ZMap. The interface that supports this cannot be synchronous
-as some of the requests will result in actions where the response will come
-back "some time later" so it must be based on a callback interface.</p>
+way for the remote control code to send requests to and receive responses from
+the rest of ZMap. The interface that supports this cannot be synchronous as
+some of the requests will result in actions where the response will come back
+"some time later" so it must be based on a callback interface.</p>
 
-<p>The 
+<p>There are essentially three parts to the request/reply processing in
+zmap:</p>
 
+<ul>
+  <li><b>RemoteControl</b> forms the interface to the peer, it receives all
+      requests and transmits all replies.</li>
+  <li><b>ZMapAppRemote</b> forms an interface between RemoteControl and the
+      rest of ZMap.</li>
+  <li><b>ZMap Subsystems</b> all have common code that deserialise/serialise
+      requests/replies from/to zMapAppRemote.</li>
+</ul>
 
-
+<p>Calls are synchronous when receiving a request or returning a reply through the ZMap
+layers but are via callbacks on the return because this is likely to be asynchronous. The
+layers are summarised in this diagram:</p>
 
 <img src="./Clipboard_zmap_implementation.png" align="center">
+
+
+<h3>Start Up</h3>
+
+<p>RemoteControl works off selections and in essence selections need a window
+to operate from because the selection has to be delivered somewhere. In Zmap
+the ZMap main application window is used as it is always created (though it may
+be hidden from the user). In ZMap a "map-event" handler is set for the main
+window and this is called once the app window has been mapped, this routine
+then initialises RemoteControl.</p>
+
+
+<h3>The Remote Control Layers</h3>
+
+<p>The RemoteControl code receives all peer requests and makes all replies to
+the peer, it handles all basic errors in message passing, ensuring that each
+request receives a reply, checking that they are paired, have the correct
+version number and so on. The Remote Control code then passes all requests to a
+ZMapAppRemote layer which has the following purposes:</p>
+
+<ul>
+  <li>validation of the request or reply from a peer, n.b. envelope and format validation only.</li>
+  <li>extracting of the command and the request or reply section from the message to pass these
+      on to the zmap subsystems in a "canonical" format.</li>
+  <li>Setting of the default target "view" (see section XXXX for view description).</li>
+  <li>creating a valid reply from the internal "canonical" reply of a zmap subsystem and passing it back
+      to RemoteControl.</li>
+</ul>
+
+<p>The ZMapAppRemote layer passes requests to and receives requests from the
+various zmap subsystems, internally these subsystems form a tree which relates
+directly to the on screen windows displayed to the user:</p>
+
+<img src="./Clipboard_zmap_structure.png" align="center">
+
+<p>Each command within a request is only relevant to one of the subsystems and
+therefore must in some way be directed to that subsystem and then the reply
+from that subsystem must come back to ZMapAppRemote. To avoid over complicated
+management of request processing commands are passed from sub-system to
+subsystem until either the command is processed or the not recognised and an
+error returned. Each subsystem knows only about the commands that it can process, if
+it doesn't recognise a command it tries to pass the command to each of it's children
+(who in turn try to pass it to each of their children). The design goal here is to
+ensure that when commands are added, modified or deleted only the subsystem that
+processes that command need be changed.</p>
+
+
+<p>To accomplish this each layer has code of the following form:</p>
+
+<pre class="code">
+
+
+boolean ProcessRequest(Subsystem subsystem,
+                       char *command_name, ZMapAppRemoteViewID view_id, char *request,
+		       ZMapRemoteAppReturnReplyFunc reply_func, gpointer reply_data)
+{
+  boolean result = FALSE ;
+
+  if ( command is one of ours )
+    {
+      /* then process it and return TRUE to show command was recognised and processed. */
+
+      result = TRUE ;
+    }
+  else if (subsystem->child_list)
+    {
+      GList *next_zmap ;
+      gboolean zmap_found = FALSE ;
+
+      /* Look for the right zmap. */
+      next_zmap = g_list_first(manager->zmap_list) ;
+      do
+	{
+	  ZMap zmap = (ZMap)(next_zmap->data) ;
+
+	  if (zmap == view_id->zmap)
+	    {
+	      zmap_found = TRUE ;
+	      result = zMapControlProcessRemoteRequest(zmap,
+						       command_name, view_id, request,
+						       app_reply_func, app_reply_data) ;
+	      break ;
+	    }
+	}
+      while ((next_zmap = g_list_next(next_zmap))) ;
+
+      /* If we were passed a zmap but did not find it this is an error... */
+      if (!zmap_found)
+	{
+	  RemoteCommandRCType command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
+	  char *reason ;
+	  ZMapXMLUtilsEventStack reply = NULL ;
+
+	  reason = g_strdup_printf("zmap id %p not found.", view_id->zmap) ;
+
+	  (app_reply_func)(command_name, FALSE, command_rc, reason, reply, app_reply_data) ;
+
+	  result = TRUE ;				    /* Signals we have handled the request. */
+	}
+    }
+
+  return result ;
+}
+
+
+
+</pre>
+
+
+
+
+<p>access to its children it can with each one either processing the request itself or passing it on to the next
+subsystem. If the last subsystem does not recognise the request a "request
+unknown" reply is made to the peer. When the subsystem</p>
+
+
+
+
+
+
+
+
+
+
+
 
 
 <!--#include virtual="/perl/footer"-->
