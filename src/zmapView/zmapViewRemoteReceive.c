@@ -57,6 +57,7 @@ typedef enum
 
     ZMAPVIEW_REMOTE_FIND_FEATURE,
     ZMAPVIEW_REMOTE_CREATE_FEATURE,
+    ZMAPVIEW_REMOTE_REPLACE_FEATURE,
     ZMAPVIEW_REMOTE_DELETE_FEATURE,
 
     ZMAPVIEW_REMOTE_HIGHLIGHT_FEATURE,
@@ -219,6 +220,7 @@ static ActionDescriptorStruct action_table_G[] =
     {ZMAPVIEW_REMOTE_FIND_FEATURE, FALSE, TRUE},
 
     {ZMAPVIEW_REMOTE_CREATE_FEATURE, TRUE, FALSE},
+    {ZMAPVIEW_REMOTE_REPLACE_FEATURE, TRUE, TRUE},
     {ZMAPVIEW_REMOTE_DELETE_FEATURE, TRUE, TRUE},
 
     {ZMAPVIEW_REMOTE_HIGHLIGHT_FEATURE, FALSE, TRUE},
@@ -282,7 +284,7 @@ static char *actions_G[ZMAPVIEW_REMOTE_UNKNOWN + 1] =
 
   /* create and delete must go at this level, code "replace" at the same time. find could
    * be at the window level but it might as well be here I guess...but hang on... */
-  "find_feature", "create_feature", "delete_feature",
+  "find_feature", "create_feature", "replace_feature", "delete_feature",
 
 
   /* I don't know why these are this level..this seems really suspect...they are clearly
@@ -551,6 +553,7 @@ static gboolean xml_request_start_cb(gpointer user_data, ZMapXMLElement set_elem
 	    case ZMAPVIEW_REMOTE_ZOOM_TO:
 	    case ZMAPVIEW_REMOTE_FIND_FEATURE:
 	    case ZMAPVIEW_REMOTE_CREATE_FEATURE:
+	    case ZMAPVIEW_REMOTE_REPLACE_FEATURE:
 	    case ZMAPVIEW_REMOTE_DELETE_FEATURE:
 	    case ZMAPVIEW_REMOTE_HIGHLIGHT_FEATURE:
 	    case ZMAPVIEW_REMOTE_HIGHLIGHT2_FEATURE:
@@ -1106,6 +1109,7 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 	  switch(xml_data->common.action)
 	    {
 	    case ZMAPVIEW_REMOTE_ZOOM_TO:
+	    case ZMAPVIEW_REMOTE_REPLACE_FEATURE:
 	    case ZMAPVIEW_REMOTE_DELETE_FEATURE:
 	    case ZMAPVIEW_REMOTE_FIND_FEATURE:
 	    case ZMAPVIEW_REMOTE_HIGHLIGHT_FEATURE:
@@ -1164,6 +1168,7 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 	    {
 	    case ZMAPVIEW_REMOTE_ZOOM_TO:
 	    case ZMAPVIEW_REMOTE_CREATE_FEATURE:
+	    case ZMAPVIEW_REMOTE_REPLACE_FEATURE:
 	    case ZMAPVIEW_REMOTE_DELETE_FEATURE:
 	    case ZMAPVIEW_REMOTE_FIND_FEATURE:
 	    case ZMAPVIEW_REMOTE_HIGHLIGHT_FEATURE:
@@ -1248,6 +1253,7 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 			}
 
 		      case ZMAPVIEW_REMOTE_CREATE_FEATURE:
+		      case ZMAPVIEW_REMOTE_REPLACE_FEATURE:
 		      case ZMAPVIEW_REMOTE_DELETE_FEATURE:
 		      case ZMAPVIEW_REMOTE_FIND_FEATURE:
 		      case ZMAPVIEW_REMOTE_HIGHLIGHT_FEATURE:
@@ -1593,48 +1599,56 @@ static gboolean executeRequest(ZMapXMLParser parser, ZMapXRemoteParseCommandData
     case ZMAPVIEW_REMOTE_FIND_FEATURE:
       break ;
 
+    case ZMAPVIEW_REMOTE_CREATE_FEATURE:
+    case ZMAPVIEW_REMOTE_REPLACE_FEATURE:
     case ZMAPVIEW_REMOTE_DELETE_FEATURE:
       {
-	eraseFeatures(view, input_data) ;
-	break ;
-      }
 
-    case ZMAPVIEW_REMOTE_CREATE_FEATURE:
-      {
-	/* why is context only sanity checked for this operation and not for others...???? */
-
-	if (sanityCheckContext(view, input_data))
+	if (input->common.action == ZMAPVIEW_REMOTE_REPLACE_FEATURE
+	    || input->common.action == ZMAPVIEW_REMOTE_DELETE_FEATURE)
 	  {
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	    ZMapFeatureAny feature ;
+	    eraseFeatures(view, input_data) ;
+	  }
 
-	    if ((feature = zMapFeatureContextFindFeatureFromFeature(view->features,
-								    input_data.feature)))
+	if (input->common.action == ZMAPVIEW_REMOTE_REPLACE_FEATURE
+	    || input->common.action == ZMAPVIEW_REMOTE_CREATE_FEATURE)
+	  {
+	    /* why is context only sanity checked for this operation and not for others...???? */
+
+	    if (sanityCheckContext(view, input_data))
 	      {
-		g_string_append_printf(output_data.messages,
-				       "Feature \"%s\" already exists in view",
-				       g_quark_to_string(input_data.feature->original_id)) ;
-		output_data.code = ZMAPXREMOTE_FAILED ;
-	      }
-	    else
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+		ZMapFeatureAny feature ;
+
+		if ((feature = zMapFeatureContextFindFeatureFromFeature(view->features,
+									input_data.feature)))
+		  {
+		    g_string_append_printf(output_data.messages,
+					   "Feature \"%s\" already exists in view",
+					   g_quark_to_string(input_data.feature->original_id)) ;
+		    output_data.code = ZMAPXREMOTE_FAILED ;
+		  }
+		else
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-	      if (drawNewFeatures(view, input_data)
-		  && (view->xremote_widget && input_data->edit_context))
-		{
-		  /* slice the input_data into the post_data to make the view_post_execute happy. */
-		  PostExecuteData post_data = g_new0(PostExecuteDataStruct, 1);
+		  if (drawNewFeatures(view, input_data)
+		      && (view->xremote_widget && input_data->edit_context))
+		    {
+		      /* slice the input_data into the post_data to make the view_post_execute happy. */
+		      PostExecuteData post_data = g_new0(PostExecuteDataStruct, 1);
 
-		  post_data->action       = input->common.action;
-		  post_data->edit_context = input_data->edit_context;
+		      post_data->action       = input->common.action;
+		      post_data->edit_context = input_data->edit_context;
 
-		  g_object_set_data(G_OBJECT(view->xremote_widget),
-				    VIEW_POST_EXECUTE_DATA,
-				    post_data);
-		}
+		      g_object_set_data(G_OBJECT(view->xremote_widget),
+					VIEW_POST_EXECUTE_DATA,
+					post_data);
+		    }
 
-	    input_data->edit_context = NULL;
+		input_data->edit_context = NULL;
+	      }
 	  }
+
 	break;
       }
     case ZMAPVIEW_REMOTE_LIST_WINDOWS:
