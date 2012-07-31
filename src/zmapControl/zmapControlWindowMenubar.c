@@ -503,15 +503,19 @@ static void newSequenceByConfigCB(gpointer cb_data, guint callback_action, GtkWi
 static void makeSequenceViewCB(ZMapFeatureSequenceMap seq_map, gpointer user_data)
 {
   ZMap zmap = (ZMap)user_data ;
-  ZMapView view ;
+  ZMapViewWindow view_window ;
 
-  if ((view = zmapControlAddView(zmap, seq_map)))
+  if ((view_window = zmapControlAddView(zmap, seq_map)))
     {
+      ZMapView view ;
+
+      view = zMapViewGetView(view_window) ;
+
       if (!zMapViewConnect(view, NULL))
 	{
 	  zMapWarning("Display of sequence \"%s\" failed, see log for details.", seq_map->sequence) ;
 
-	  zMapViewDestroy(view) ;
+	  zMapViewDestroy(view, NULL) ;
 	}
     }
 

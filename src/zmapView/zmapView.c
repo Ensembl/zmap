@@ -721,7 +721,7 @@ void zMapViewRemoveWindow(ZMapViewWindow view_window)
     {
       if (g_list_length(zmap_view->window_list) > 1)
 	{
-	  destroyWindow(zmap_view, view_window) ;
+	  destroyWindow(zmap_view, view_window, NULL) ;
 	}
     }
 
@@ -1301,15 +1301,25 @@ void zmapViewFeatureDump(ZMapViewWindow view_window, char *file)
  * If the function returns TRUE it means that the view has been killed immediately
  * because it had no threads so the caller can clear up immediately.
  */
-void zMapViewDestroy(ZMapView zmap_view)
+void zMapViewDestroy(ZMapView zmap_view, ZMapViewWindowTree destroyed_zmap_inout)
 {
 
   if (zmap_view->state != ZMAPVIEW_DYING)
     {
+      ZMapViewWindowTree destroyed_view = NULL ;
+
       zmapViewBusy(zmap_view, TRUE) ;
 
+      if (destroyed_zmap_inout)
+	{
+	  destroyed_view = g_new0(ZMapViewWindowTreeStruct, 1) ;
+	  destroyed_view->parent = zmap_view ;
+
+	  destroyed_zmap_inout->children = g_list_append(destroyed_zmap_inout->children, destroyed_view) ;
+	}
+
       /* All states have GUI components which need to be destroyed. */
-      killGUI(zmap_view) ;
+      killGUI(zmap_view, destroyed_view) ;
 
       if (zmap_view->state <= ZMAPVIEW_MAPPED)
 	{

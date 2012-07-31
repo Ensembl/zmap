@@ -3163,7 +3163,7 @@ static ZMapConfigIniContext get_configuration(RemoteData remote_data)
 
       zMapConfigDirCreate(dir, base);
 
-      if((context = zMapConfigIniContextCreate()))
+      if((context = zMapConfigIniContextCreate(NULL)))
 	{
 	  ZMapConfigIniContextKeyEntry stanza_group = NULL;
 	  char *stanza_name, *stanza_type;

@@ -1774,7 +1774,7 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
 void zMapWindowSiblingWasRemoved(ZMapWindow window)
 {
   /* Currently this is all we do here. */
-  zmapWindowRulerCanvasOpenAndMaximise(window->ruler);
+  zmapWindowScaleCanvasOpenAndMaximise(window->ruler);
 
   return ;
 }

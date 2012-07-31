@@ -75,7 +75,7 @@ gboolean zmapAppCreateZMap(ZMapAppContext app_context, ZMapFeatureSequenceMap se
   GtkTreeIter iter1;
   ZMapManagerAddResult add_result ;
 
-  add_result = zMapManagerAdd(app_context->zmap_manager, sequence_map, &zmap) ;
+  add_result = zMapManagerAdd(app_context->zmap_manager, sequence_map, &zmap, &view) ;
   if (add_result == ZMAPMANAGER_ADD_DISASTER)
     {
       zMapWarning("%s", "Failed to create ZMap and then failed to clean up properly,"
@@ -87,53 +87,34 @@ gboolean zmapAppCreateZMap(ZMapAppContext app_context, ZMapFeatureSequenceMap se
     }
   else
     {
-      /* Set the text.  This is done even if it's already set, ah well! */
-      if (sequence_map->sequence)
-	gtk_entry_set_text(GTK_ENTRY(app_context->sequence_widg), sequence_map->sequence);
+      /* agh....ok this not connected bit needs sorting out..... */
 
 
-      add_result = zMapManagerAdd(app_context->zmap_manager, sequence_map, &zmap, &view) ;
+      /* If we tried to load a sequence but couldn't connect then warn user, otherwise
+       * we just created the requested blank zmap. */
+      if (sequence_map->sequence && add_result == ZMAPMANAGER_ADD_NOTCONNECTED)
+	zMapWarning("%s", "ZMap added but could not connect to server, try \"Reload\".") ;
 
-      if (add_result == ZMAPMANAGER_ADD_DISASTER)
-	{
-	  *err_msg_out = g_strdup_printf("%s", "Failed to create ZMap and then failed to clean up properly,"
-				     " save your work and exit now !") ;
-	}
-      else if (add_result == ZMAPMANAGER_ADD_FAIL)
-	{
-	  *err_msg_out = g_strdup_printf("%s", "Failed to create ZMap") ;
-	}
-      else
-	{
-	  /* agh....ok this not connected bit needs sorting out..... */
-
-
-	  /* If we tried to load a sequence but couldn't connect then warn user, otherwise
-	   * we just created the requested blank zmap. */
-	  if (sequence_map->sequence && add_result == ZMAPMANAGER_ADD_NOTCONNECTED)
-	    zMapWarning("%s", "ZMap added but could not connect to server, try \"Reload\".") ;
-
-	  gtk_tree_store_append (app_context->tree_store_widg, &iter1, NULL);
-	  gtk_tree_store_set (app_context->tree_store_widg, &iter1,
-			      ZMAPID_COLUMN, zMapGetZMapID(zmap),
-			      ZMAPSEQUENCE_COLUMN,"<dummy>" ,
-			      ZMAPSTATE_COLUMN, zMapGetZMapStatus(zmap),
-			      ZMAPLASTREQUEST_COLUMN, "blah, blah, blaaaaaa",
-			      ZMAPDATA_COLUMN, (gpointer)zmap,
-			      -1);
+      gtk_tree_store_append (app_context->tree_store_widg, &iter1, NULL);
+      gtk_tree_store_set (app_context->tree_store_widg, &iter1,
+			  ZMAPID_COLUMN, zMapGetZMapID(zmap),
+			  ZMAPSEQUENCE_COLUMN,"<dummy>" ,
+			  ZMAPSTATE_COLUMN, zMapGetZMapStatus(zmap),
+			  ZMAPLASTREQUEST_COLUMN, "blah, blah, blaaaaaa",
+			  ZMAPDATA_COLUMN, (gpointer)zmap,
+			  -1);
 
 #ifdef RDS_NEVER_INCLUDE_THIS_CODE
-	  zMapDebug("GUI: create thread number %d for zmap \"%s\" for sequence \"%s\"\n",
-		    (row + 1), row_text[0], row_text[1]) ;
+      zMapDebug("GUI: create thread number %d for zmap \"%s\" for sequence \"%s\"\n",
+		(row + 1), row_text[0], row_text[1]) ;
 #endif /* RDS_NEVER_INCLUDE_THIS_CODE */
 
-	  *zmap_inout = zmap ;
+      *zmap_inout = zmap ;
 
-	  if (view)
-	    *view_out = view ;
+      if (view)
+	*view_out = view ;
 
-	  result = TRUE ;
-	}
+      result = TRUE ;
     }
 
   return result ;
@@ -151,8 +132,12 @@ gboolean zmapAppCreateZMap(ZMapAppContext app_context, ZMapFeatureSequenceMap se
 static void createThreadCB(ZMapFeatureSequenceMap sequence_map, gpointer user_data)
 {
   ZMapAppContext app_context = (ZMapAppContext)user_data ;
+  ZMap zmap = NULL ;
+  ZMapView view = NULL ;
+  char *err_msg = NULL ;
 
-  zmapAppCreateZMap(app_context, sequence_map) ;
+  if (!zmapAppCreateZMap(app_context, sequence_map, &zmap, &view, &err_msg))
+    zMapWarning("%s", err_msg) ;
 
   return ;
 }

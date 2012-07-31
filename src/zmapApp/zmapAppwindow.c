@@ -58,7 +58,7 @@ static void checkForCmdLineVersionArg(int argc, char *argv[]) ;
 static int checkForCmdLineSleep(int argc, char *argv[]) ;
 static void checkForCmdLineSequenceArg(int argc, char *argv[], char **dataset_out, char **sequence_out) ;
 static void checkForCmdLineStartEndArg(int argc, char *argv[], int *start_inout, int *end_inout) ;
-static void checkConfigDir(void) ;
+static char *checkConfigDir(void) ;
 static gboolean checkPeerID(char **peer_name_out, char **peer_clipboard_out) ;
 
 static gboolean removeZMapRowForeachFunc(GtkTreeModel *model, GtkTreePath *path,
@@ -185,6 +185,25 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   /* Set any global debug flags from config file. */
   zMapUtilsConfigDebug(NULL) ;
 
+  if (!checkPeerID(&peer_name, &peer_clipboard))
+    {
+      /* obscure...only an error if just one is specified... */
+      if (!(!peer_name && !peer_clipboard))
+	zMapLogWarning("No %s name for remote connection specified so remote interface cannot be created.",
+		       (!peer_name ? "peer" : "clipboard")) ;
+    }
+  else
+    {
+      /* set up the remote_request_func, subsystems check for this routine to determine
+       * if they should make/service xremote calls. */
+      app_window_cbs_G.remote_request_func = zmapAppRemoteControlGetRequestCB() ;
+      app_window_cbs_G.remote_request_func_data = (void *)app_context ;
+
+      remote_control = TRUE ;
+      app_context->defer_hiding = TRUE ;
+    }
+
+
   /* Init manager, just happen just once in application. */
   zMapManagerInit(&app_window_cbs_G) ;
 
@@ -202,25 +221,6 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   else
     {
       zMapWriteStartMsg() ;
-    }
-
-
-  if (!checkPeerID(&peer_name, &peer_clipboard))
-    {
-      /* obscure...only an error if just one is specified... */
-      if (!(!peer_name && !peer_clipboard))
-	zMapLogWarning("No %s name for remote connection specified so remote interface cannot be created.",
-		       (!peer_name ? "peer" : "clipboard")) ;
-    }
-  else
-    {
-      /* set up the remote_request_func, subsystems check for this routine to determine
-       * if they should make/service xremote calls. */
-      app_window_cbs_G.remote_request_func = zmapAppRemoteControlGetRequestCB() ;
-      app_window_cbs_G.remote_request_func_data = (void *)app_context ;
-
-      remote_control = TRUE ;
-      app_context->defer_hiding = TRUE ;
     }
 
 
