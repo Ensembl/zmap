@@ -273,6 +273,7 @@ static CommandDescriptorStruct command_table_G[] =
   {
     {ZACP_FIND_FEATURE,      0, FALSE, FEATURE_DONT_CARE, TRUE},
     {ZACP_CREATE_FEATURE,    0, TRUE,  FEATURE_MUST_NOT,  TRUE},
+    {ZACP_REPLACE_FEATURE,   0, TRUE,  FEATURE_MUST,      TRUE},
     {ZACP_DELETE_FEATURE,    0, TRUE,  FEATURE_MUST,      TRUE},
     {ZACP_GET_FEATURE_NAMES, 0, FALSE, FEATURE_DONT_CARE, FALSE},
     {ZACP_LOAD_FEATURES,     0, TRUE,  FEATURE_DONT_CARE, FALSE},
@@ -324,6 +325,7 @@ gboolean zMapViewProcessRemoteRequest(ZMapView view,
   gboolean result = FALSE ;
 
   if (strcmp(command_name, ZACP_CREATE_FEATURE) == 0
+      || strcmp(command_name, ZACP_REPLACE_FEATURE) == 0
       || strcmp(command_name, ZACP_DELETE_FEATURE) == 0
       || strcmp(command_name, ZACP_FIND_FEATURE) == 0
       || strcmp(command_name, ZACP_LOAD_FEATURES) == 0)
@@ -1574,6 +1576,16 @@ static gboolean executeRequest(ZMapXMLParser parser, RequestData request_data)
   else if (request_data->command_id == g_quark_from_string(ZACP_DELETE_FEATURE))
     {
       eraseFeatures(view, request_data) ;
+    }
+  else if (request_data->command_id == g_quark_from_string(ZACP_REPLACE_FEATURE))
+    {
+      eraseFeatures(view, request_data) ;
+
+      /* mergeNewFeatures sets the request error code/msg if it fails. */
+      if (mergeNewFeatures(view, request_data))
+	zmapViewDrawDiffContext(view, &(request_data->edit_context)) ;
+      else
+	result = FALSE ;
     }
   else if (request_data->command_id == g_quark_from_string(ZACP_CREATE_FEATURE))
     {
