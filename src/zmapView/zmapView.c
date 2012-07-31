@@ -214,7 +214,10 @@ static void invoke_merge_in_names(gpointer list_data, gpointer user_data);
 static gboolean mapEventCB(GtkWidget *widget, GdkEvent *event, gpointer user_data) ;
 static gint colOrderCB(gconstpointer a, gconstpointer b,gpointer user_data) ;
 
-#ifdef DEBUG_CONTEXT_MAP
+
+#define DEBUG_CONTEXT_MAP	0
+
+#if DEBUG_CONTEXT_MAP
 static void print_source_2_sourcedata(char * str,GHashTable *data) ;
 static void print_fset2col(char * str,GHashTable *data) ;
 static void print_col2fset(char * str,GHashTable *data) ;
@@ -3113,7 +3116,7 @@ void printStyle(GQuark style_id, gpointer data, gpointer user_data)
       char *x = (char *) user_data;
 	ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle) data;
 
-	printf("%s: style %s = %s\n",x,g_quark_to_string(style_id), g_quark_to_string(style->unique_id));
+	zMapLogWarning("%s: style %s = %s (%d)",x,g_quark_to_string(style_id), g_quark_to_string(style->unique_id), style->default_bump_mode);
 }
 
 void mergeHashTableCB(gpointer key, gpointer value, gpointer user)
@@ -3380,11 +3383,6 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
       {
 	ZMapServerReqStyles get_styles = (ZMapServerReqStyles)req_any ;
 
-	//printf("\nmerging...old\n");
-	//g_hash_table_foreach(&(zmap_view->context_map.styles), printStyle, "got styles") ;
-	//printf("\nmerging...new\n");
-	//g_hash_table_foreach(&(get_styles->styles_out), printStyle, "got styles") ;
-
 	/* Merge the retrieved styles into the views canonical style list. */
 	zmap_view->context_map.styles = zMapStyleMergeStyles(zmap_view->context_map.styles, get_styles->styles_out,
 							     ZMAPSTYLE_MERGE_PRESERVE) ;
@@ -3398,8 +3396,6 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 	//	connect_data->curr_styles = get_styles->styles_out ;
 	/* as the styles in the window get replaced we need to have all of them not the new ones */
 	connect_data->curr_styles = zmap_view->context_map.styles ;
-
-//g_hash_table_foreach(connect_data->curr_styles, (GHFunc) printStyle, "got styles") ;
 
 	break ;
       }
@@ -5007,7 +5003,7 @@ static gboolean mapEventCB(GtkWidget *widget, GdkEvent *event, gpointer user_dat
 }
 
 
-#ifdef DEBUG_CONTEXT_MAP
+#if DEBUG_CONTEXT_MAP
 
 static void print_source_2_sourcedata(char * str,GHashTable *data)
 {
@@ -5040,7 +5036,7 @@ static void print_fset2col(char * str,GHashTable *data)
     {
       gff_set = (ZMapFeatureSetDesc) value;
       if(!g_strstr_len(g_quark_to_string(GPOINTER_TO_UINT(key)),-1,":"))
-	printf("%s = %s %s %s \"%s\"\n",g_quark_to_string(GPOINTER_TO_UINT(key)),
+	zMapLogWarning("%s = %s %s %s \"%s\"\n",g_quark_to_string(GPOINTER_TO_UINT(key)),
 	       g_quark_to_string(gff_set->column_id),
 	       g_quark_to_string(gff_set->column_ID),
 	       g_quark_to_string(gff_set->feature_src_ID),

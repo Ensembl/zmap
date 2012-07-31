@@ -2194,13 +2194,15 @@ static void zmap_feature_type_style_set_property_full(ZMapFeatureTypeStyle style
         break;
 
       case STYLE_PROP_BUMP_MODE:
+#if CAUSES_NON_INHERITANCE
+// make Drawable will set this after inheritance
         p2 = &zmapStyleParams_G[STYLE_PROP_BUMP_DEFAULT];
         if(!(style->is_set[p2->flag_ind] & p2->flag_bit))
           {
             style->default_bump_mode = style->initial_bump_mode;
             style->is_set[p2->flag_ind] |= p2->flag_bit;
           }
-
+#endif
         break;
 
       case STYLE_PROP_MODE:
