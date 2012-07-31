@@ -105,6 +105,7 @@
 
 
 #define ZACP_CREATE_FEATURE       "create_feature"
+#define ZACP_REPLACE_FEATURE      "replace_feature"
 #define ZACP_SELECT_FEATURE       "single_select"
 #define ZACP_SELECT_MULTI_FEATURE "multiple_select"
 #define ZACP_DETAILS_FEATURE      "feature_details"
