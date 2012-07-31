@@ -147,9 +147,13 @@ typedef struct _ZMapAppContextStruct
 
   GtkWidget *app_widg ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   GtkWidget *sequence_widg ;
   GtkWidget *start_widg ;
   GtkWidget *end_widg ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   GtkTreeStore *tree_store_widg ;
 
@@ -219,7 +223,7 @@ enum {
 
 int zmapMainMakeAppWindow(int argc, char *argv[]) ;
 GtkWidget *zmapMainMakeMenuBar(ZMapAppContext app_context) ;
-GtkWidget *zmapMainMakeConnect(ZMapAppContext app_context) ;
+GtkWidget *zmapMainMakeConnect(ZMapAppContext app_context, ZMapFeatureSequenceMap sequence_map) ;
 GtkWidget *zmapMainMakeManage(ZMapAppContext app_context) ;
 gboolean zmapAppCreateZMap(ZMapAppContext app_context, ZMapFeatureSequenceMap sequence_map,
 			   ZMap *zmap_out, ZMapView *view_out, char **err_msg_out) ;

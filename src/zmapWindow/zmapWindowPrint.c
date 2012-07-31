@@ -1,3 +1,4 @@
+/*  Last edited: Jul 23 16:18 2012 (edgrif) */
 /*  File: zmapWindowPrint.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -21,7 +22,7 @@
  * originated by
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Contains functions to print current window.
  *
@@ -31,20 +32,14 @@
 
 #include <ZMap/zmap.h>
 
-
-
-
-
-
-
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 #include <glib.h>
+
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapConfigIni.h>
 #include <ZMap/zmapConfigStrings.h>
-
 #include <zmapWindow_P.h>
 
 
@@ -67,6 +62,8 @@ typedef enum {TO_PRINTER, TO_FILE} PrintFileDestination ;
 
 typedef struct
 {
+  ZMapWindow window ;
+
   GError *print_file_err ;
 
   GList *printers ;
@@ -117,6 +114,8 @@ gboolean zMapWindowPrint(ZMapWindow window)
   char *sys_printers = SYSTEM_PRINT_FILE ;		    /* May require alternative names for porting. */
   PrintCBDataStruct print_cb = {NULL} ;
 
+
+  print_cb.window = window ;
 
   memcpy(&(print_cb.print_template[0]), TMP_FILE_TMPLATE, (strlen(TMP_FILE_TMPLATE) + 1)) ;
 
@@ -577,7 +576,7 @@ static gboolean getConfiguration(PrintCBData print_cb)
   ZMapConfigIniContext context = NULL;
   gboolean result  = FALSE;
 
-  if((context = zMapConfigIniContextProvide()))
+  if((context = zMapConfigIniContextProvide(print_cb->window->sequence->config_file)))
     {
       char *tmp_string;
 

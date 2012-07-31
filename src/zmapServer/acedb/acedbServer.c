@@ -1,3 +1,4 @@
+/*  Last edited: Jul 23 12:33 2012 (edgrif) */
 /*  File: acedbServer.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -144,7 +145,7 @@ typedef gboolean (*ParseMethodNamesFunc)(AcedbServer server, char *method_str_in
  * shouldn't change these prototypes without changing all the other server prototypes..... */
 static gboolean globalInit(void) ;
 static gboolean createConnection(void **server_out,
-				 ZMapURL url, char *format,
+				 char *config_file, ZMapURL url, char *format,
                                  char *version_str, int timeout) ;
 static ZMapServerResponseType openConnection(void *server,ZMapServerReqOpen req_open) ;
 static ZMapServerResponseType getInfo(void *server, ZMapServerInfo info) ;
@@ -242,7 +243,7 @@ static gboolean get_url_query_boolean(char *full_query, char *key) ;
 static void freeDataCB(gpointer data) ;
 static void freeSetCB(gpointer data) ;
 
-static gboolean isStyleFromMethod(void) ;
+static gboolean isStyleFromMethod(char *config_file) ;
 
 /*
  *             Server interface functions.
@@ -290,7 +291,7 @@ static gboolean globalInit(void)
 }
 
 static gboolean createConnection(void **server_out,
-				 ZMapURL url, char *format,
+				 char *config_file, ZMapURL url, char *format,
                                  char *version_str, int timeout)
 {
   gboolean result = FALSE ;
@@ -301,6 +302,8 @@ static gboolean createConnection(void **server_out,
   server = (AcedbServer)g_new0(AcedbServerStruct, 1) ;
 
   resetErr(server) ;
+
+  server->config_file = g_strdup(config_file) ;
 
   server->host = g_strdup(url->host) ;
   server->port = url->port ;
@@ -341,7 +344,7 @@ static gboolean createConnection(void **server_out,
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
     }
 
-  server->stylename_from_methodname = isStyleFromMethod() ;
+  server->stylename_from_methodname = isStyleFromMethod(server->config_file) ;
 
   server->zmap_start = 1;
   server->zmap_end = 0;
@@ -4601,12 +4604,12 @@ static void createSet2StyleList(gpointer data, gpointer user_data)
 
 /* Test for "stylename-from-methodname" in ZMap stanza, returns FALSE (default)
  * if keyword is not there. */
-static gboolean isStyleFromMethod(void)
+static gboolean isStyleFromMethod(char *config_file)
 {
   gboolean style_from_method = FALSE ;
   ZMapConfigIniContext context;
 
-  if ((context = zMapConfigIniContextProvide()))
+  if ((context = zMapConfigIniContextProvide(config_file)))
     {
       gboolean tmp_bool = FALSE;
 

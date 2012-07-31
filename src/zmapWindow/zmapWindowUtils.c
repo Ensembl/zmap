@@ -1,4 +1,4 @@
-/*  Last edited: Jul 13 14:26 2011 (edgrif) */
+/*  Last edited: Jul 23 16:12 2012 (edgrif) */
 /*  File: zmapWindowUtils.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -158,25 +158,6 @@ int zmapWindowCoordFromDisplay(ZMapWindow window, int coord)
 }
 
 
-#if MH17_NO_GOOD
-/* Use if you have no window.... */
-/* ZMap seq coord to display, is not always 1 based, start is the smallest seq coord in the range*/
-/* calculation as for zmapWindowCoordToDisplay() */
-
-/* mh17: NOTE this was only called from zmapWindowRuler.c
- * but was bot useful due to various curcumstances documented in zMapWindowRulerDrawScale()
- */
-int zmapWindowCoordFromOriginRaw(int start, int end, int coord, gboolean revcomped)
-{
-  int new_coord ;
-
-  new_coord = coord - start + 1;
-  if(revcomped)
-      new_coord -= end - start + 2;
-
-  return new_coord ;
-}
-#endif
 
 
 
@@ -830,23 +811,22 @@ ZMapGuiNotebookChapter zMapWindowGetConfigChapter(ZMapWindow window, ZMapGuiNote
   callbacks.edit_data   = window;
   callbacks.save_data   = window;
 
-  chapter    = zMapGUINotebookCreateChapter(parent_note_book, "Window Settings", &callbacks);
+  chapter = zMapGUINotebookCreateChapter(parent_note_book, "Window Settings", &callbacks);
 
-  context    = zMapConfigIniContextProvide();
-
+  context = zMapConfigIniContextProvide(window->sequence->config_file) ;
 
   /* Sizes... */
-  page       = zMapGUINotebookCreatePage(chapter, "Sizes");
+  page = zMapGUINotebookCreatePage(chapter, "Sizes");
 
   subsection = zMapGUINotebookCreateSubsection(page, NULL);
 
-  paragraph  = zMapGUINotebookCreateParagraph(subsection, NULL,
-					      ZMAPGUI_NOTEBOOK_PARAGRAPH_TAGVALUE_TABLE,
-					      NULL, NULL);
+  paragraph = zMapGUINotebookCreateParagraph(subsection, NULL,
+					     ZMAPGUI_NOTEBOOK_PARAGRAPH_TAGVALUE_TABLE,
+					     NULL, NULL);
 
-  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "canvas_maxbases",
-					     ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-					     "int", window->canvas_maxwin_bases);
+  tagvalue = zMapGUINotebookCreateTagValue(paragraph, "canvas_maxbases",
+					   ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+					   "int", window->canvas_maxwin_bases);
 
   tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "column_spacing",
 					     ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,

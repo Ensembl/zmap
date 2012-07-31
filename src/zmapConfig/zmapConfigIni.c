@@ -91,14 +91,14 @@ static gint match_name_type(gconstpointer list_data, gconstpointer user_data);
 
 
 
-ZMapConfigIniContext zMapConfigIniContextCreate(void)
+ZMapConfigIniContext zMapConfigIniContextCreate(char *config_file)
 {
   ZMapConfigIniContext context = NULL;
 
   if((context = g_new0(ZMapConfigIniContextStruct, 1)))
     {
       context->config = zMapConfigIniNew();
-      context->config_read = zMapConfigIniReadAll(context->config);
+      context->config_read = zMapConfigIniReadAll(context->config, config_file) ;
     }
 
   return context;

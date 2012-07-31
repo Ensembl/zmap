@@ -94,6 +94,12 @@ GtkWidget *zmapMainMakeMenuBar(ZMapAppContext app_context)
   return menubar ;
 }
 
+
+/* 
+ *                  Internal routines.
+ */
+
+
 static void quitCB(gpointer cb_data, guint callback_action, GtkWidget *w)
 {
   ZMapAppContext app_context = (ZMapAppContext)cb_data ;

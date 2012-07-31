@@ -1,3 +1,4 @@
+/*  Last edited: Jul 23 10:00 2012 (edgrif) */
 /*  File: zmapConfFile.c
  *  Author: Malcolm Hinsley (mh17@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -75,39 +76,49 @@ ZMapConfigIni zMapConfigIniNew(void)
 
 
 
-gboolean zMapConfigIniReadAll(ZMapConfigIni config)
+gboolean zMapConfigIniReadAll(ZMapConfigIni config, char *config_file)
 {
-  gboolean red = FALSE;
-  zMapAssert(config);
+  gboolean red = FALSE ;
+  char *file_name ;
 
-  if(!system_file_loaded(config) && has_system_file(config))
+  zMapAssert(config) ;
+
+  file_name = (config_file ? config_file : zMapConfigDirGetZmapHomeFile()) ;
+
+  if (!system_file_loaded(config) && has_system_file(config))
     {
-      config->sys_key_file = read_file(zMapConfigDirGetSysFile(), &(config->sys_key_error));
+      config->sys_key_file = read_file(zMapConfigDirGetSysFile(), &(config->sys_key_error)) ;
     }
 
-  if(!system_zmap_file_loaded(config) && has_system_zmap_file(config))
+  if (!system_zmap_file_loaded(config) && (config_file || has_system_zmap_file(config)))
     {
-      config->zmap_key_file = read_file(zMapConfigDirGetZmapHomeFile(), &(config->zmap_key_error));
+      config->zmap_key_file = read_file(file_name, &(config->zmap_key_error)) ;
     }
 
-  red = zMapConfigIniReadUser(config);
+  red = zMapConfigIniReadUser(config, file_name) ;
 
-  return red;
+  return red ;
 }
 
-gboolean zMapConfigIniReadUser(ZMapConfigIni config)
+
+gboolean zMapConfigIniReadUser(ZMapConfigIni config, char *config_file)
 {
-  gboolean red = FALSE;
-  zMapAssert(config);
+  gboolean red = FALSE ;
+  char *file_name ;
 
-  if(!config->unsaved_alterations)
-    config->user_key_file = read_file(zMapConfigDirGetFile(), &(config->user_key_error));
+  zMapAssert(config) ;
 
-  if(config->user_key_file != NULL)
-    red = TRUE;
+  file_name = (config_file ? config_file : zMapConfigDirGetFile()) ;
 
-  return red;
+  if (!config->unsaved_alterations)
+    config->user_key_file = read_file(file_name, &(config->user_key_error)) ;
+
+  if (config->user_key_file != NULL)
+    red = TRUE ;
+
+  return red ;
 }
+
 
 gboolean zMapConfigIniReadBuffer(ZMapConfigIni config, char *buffer)
 {

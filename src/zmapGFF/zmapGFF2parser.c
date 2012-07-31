@@ -1,4 +1,4 @@
-/*  Last edited: Jul 13 11:50 2011 (edgrif) */
+/*  Last edited: Jul 14 10:09 2012 (edgrif) */
 /*  File: zmapGFF2parser.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -88,8 +88,10 @@ static gboolean getVariationString(char *attributes,
 static void getFeatureArray(GQuark key_id, gpointer data, gpointer user_data) ;
 static void destroyFeatureArray(gpointer data) ;
 
-static gboolean loadGaps(char *currentPos, GArray *gaps, ZMapStrand ref_strand, ZMapStrand match_strand) ;
-static gboolean loadAlignString(ZMapGFFParser parser, char *attributes, GArray **gaps_out,
+static gboolean loadGaps(char *currentPos, GArray *gaps,
+			 ZMapStrand ref_strand, ZMapStrand match_strand) ;
+static gboolean loadAlignString(ZMapGFFParser parser, 
+				ZMapFeatureAlignFormat align_format, char *attributes, GArray **gaps_out,
 				ZMapStrand ref_strand, int ref_start, int ref_end,
 				ZMapStrand match_strand, int match_start, int match_end) ;
 static void mungeFeatureType(char *source, ZMapStyleMode *type_inout);
@@ -1619,8 +1621,8 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
       feature_set = parser_feature_set->feature_set ;
 
       if(feature_name)  /* have to check in case of no-name data errors */
-            feature = (ZMapFeature)g_datalist_get_data(&(parser_feature_set->multiline_features),
-						 feature_name) ;
+	feature = (ZMapFeature)g_datalist_get_data(&(parser_feature_set->multiline_features),
+						   feature_name) ;
     }
 
 
@@ -1662,11 +1664,11 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
       *err_text = g_strdup_printf("feature ignored as it has no name");
     }
   else if ((result = zMapFeatureAddStandardData(feature, feature_name_id, feature_name,
-					   sequence, ontology,
-					   feature_type, feature_style,
-					   start, end,
-					   has_score, score,
-					   strand)))
+						sequence, ontology,
+						feature_type, feature_style,
+						start, end,
+						has_score, score,
+						strand)))
     {
       zMapFeatureSetAddFeature(feature_set, feature);
 
@@ -1748,16 +1750,33 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 		      gaps = NULL ;
 		    }
 		}
-	      else if ((gaps_onwards = strstr(attributes, ZMAPSTYLE_ALIGNMENT_CIGAR " ")))
+	      else
 		{
-		  if (!loadAlignString(parser,
-				       gaps_onwards, &gaps,
-				       strand, start, end,
-				       query_strand, query_start, query_end))
-		    {
-		      zMapLogWarning("Could not parse align string: %s", gaps_onwards) ;
-		    }
+		  ZMapFeatureAlignFormat align_format = ZMAPALIGN_FORMAT_INVALID ;
 
+		  if ((gaps_onwards = strstr(attributes,
+					     zMapFeatureAlignFormat2ShortText(ZMAPALIGN_FORMAT_CIGAR_EXONERATE))))
+		    align_format = ZMAPALIGN_FORMAT_CIGAR_EXONERATE ;
+		  else if ((gaps_onwards = strstr(attributes,
+						  zMapFeatureAlignFormat2ShortText(ZMAPALIGN_FORMAT_CIGAR_ENSEMBL))))
+		    align_format = ZMAPALIGN_FORMAT_CIGAR_ENSEMBL ;
+		  else if ((gaps_onwards = strstr(attributes,
+						  zMapFeatureAlignFormat2ShortText(ZMAPALIGN_FORMAT_CIGAR_BAM))))
+		    align_format = ZMAPALIGN_FORMAT_CIGAR_BAM ;
+		  else if ((gaps_onwards = strstr(attributes,
+						  zMapFeatureAlignFormat2ShortText(ZMAPALIGN_FORMAT_VULGAR_EXONERATE))))
+		    align_format = ZMAPALIGN_FORMAT_VULGAR_EXONERATE ;
+
+		  if (align_format)
+		    {
+		      if (!loadAlignString(parser, align_format,
+					   gaps_onwards, &gaps,
+					   strand, start, end,
+					   query_strand, query_start, query_end))
+			{
+			  zMapLogWarning("Could not parse align string: %s", gaps_onwards) ;
+			}
+		    }
 		}
 	    }
 
@@ -1766,18 +1785,19 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 	      local_sequence = TRUE ;
 	    }
 
-		/* own sequence means ACEDB has it; legacy data/code. sequence is given in GFF, so ZMap must store */
+	  /* own sequence means ACEDB has it; legacy data/code. sequence is given in GFF, so ZMap must store */
 	  if((seq_str = find_tag(attributes,"sequence")))
-	  {
-		  char *p;
+	    {
+	      char *p;
 
-		  for(p = seq_str; *p > ';'; p++)
-			  continue;
+	      for (p = seq_str; *p > ';' ; p++)
+		continue;
 
-		  seq_str = g_strdup_printf("%.*s",p - seq_str, seq_str);
-		  for(p = seq_str; *p > ';'; )
-			  *p++ |= 0x20;	/* need to be lower case else rev comp gives zeroes */
-	  }
+	      seq_str = g_strdup_printf("%.*s", (int)(p - seq_str), seq_str);
+
+	      for(p = seq_str; *p > ';'; )
+		*p++ |= 0x20;	/* need to be lower case else rev comp gives zeroes */
+	    }
 
 	  result = zMapFeatureAddAlignmentData(feature, clone_id,
 					       percent_id,
@@ -1936,19 +1956,32 @@ static gboolean loadGaps(char *attributes, GArray *gaps, ZMapStrand ref_strand, 
  * but this function fills in gaps data from a cigar or vulgar string
  */
 static gboolean loadAlignString(ZMapGFFParser parser,
-				char *attributes, GArray **gaps_out,
+				ZMapFeatureAlignFormat align_format, char *attributes, GArray **gaps_out,
 				ZMapStrand ref_strand, int ref_start, int ref_end,
 				ZMapStrand match_strand, int match_start, int match_end)
 {
   gboolean valid = FALSE ;
   int attr_fields ;
+  GString *format_str ;
 
-  if ((attr_fields = sscanf(attributes, parser->cigar_string_format_str, parser->buffers[GFF_BUF_TMP])) == 1)
+  /* Cack handed really, we do the resizing of the format strings in one routine but
+   * don't know which alignment format it is, so we append it here.... */
+  format_str = g_string_sized_new(BUF_FORMAT_SIZE) ;
+
+  g_string_append_printf(format_str, "%s %s",
+			 zMapFeatureAlignFormat2ShortText(align_format),
+			 parser->cigar_string_format_str) ;
+
+
+  if ((attr_fields = sscanf(attributes, format_str->str, parser->buffers[GFF_BUF_TMP])) == 1)
     {
-      valid = zMapFeatureAlignmentString2Gaps(ref_strand, ref_start, ref_end,
+      valid = zMapFeatureAlignmentString2Gaps(align_format,
+					      ref_strand, ref_start, ref_end,
 					      match_strand, match_start, match_end,
 					      (char *)(parser->buffers[GFF_BUF_TMP]), gaps_out) ;
     }
+
+  g_string_free(format_str, TRUE) ;
 
   return valid ;
 }
@@ -2980,19 +3013,17 @@ static gboolean resizeFormatStrs(ZMapGFFParser parser)
 
   format_str = g_string_sized_new(BUF_FORMAT_SIZE) ;
 
-  /* this is what I'm trying to get:  "cigar %*[\"]%50[^\"]%*[\"]%*s" which parses a string
+  /* this is what I'm trying to get:  "XXXXX %*[\"]%50[^\"]%*[\"]%*s" which parses a string
    * like this:
    *
-   *          "cigar "M335ID55M"
+   *       XXXXXXX "M335ID55M"  where XXXXX will be one of the supported alignment formats.
    *  */
-  align_format_str = ZMAPSTYLE_ALIGNMENT_CIGAR " "  "%%*[\"]" "%%%d" "[^\"]%%*[\"]%%*s" ;
+  align_format_str = "%%*[\"]" "%%%d" "[^\"]%%*[\"]%%*s" ;
   g_string_append_printf(format_str,
 			 align_format_str,
 			 length) ;
 
-
   parser->cigar_string_format_str = g_string_free(format_str, FALSE) ;
-
 
   return resized ;
 }

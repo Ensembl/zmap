@@ -390,6 +390,7 @@ _(ZMAPSTYLE_MODE_ASSEMBLY_PATH, , "assembly-path", "Assembly path "             
 _(ZMAPSTYLE_MODE_TEXT,          , "text"         , "Text only display "                            , "") \
 _(ZMAPSTYLE_MODE_GRAPH,         , "graph"        , "Graphs of various types "                      , "") \
 _(ZMAPSTYLE_MODE_GLYPH,         , "glyph"        , "Special graphics for particular feature types ", "") \
+_(ZMAPSTYLE_MODE_PLAIN,         , "plain"        , "generic non-feature graphics", "") \
 _(ZMAPSTYLE_MODE_META,          , "meta"         , "Meta object controlling display of features "  , "")
 
 /* NOTE x-ref to feature_types[] in zmapWindowCanvasFeatureset.c if you change this */
@@ -722,11 +723,6 @@ typedef struct
  * to indicate colinearity between adjacent blocks. */
 
 
-/* there are misplaced, they are not display style info but instead GFF keywords and are only used in zmapGFF2Parser.c */
-#define ZMAPSTYLE_ALIGNMENT_GAPS   "Gaps"
-#define ZMAPSTYLE_ALIGNMENT_CIGAR  "cigar"
-#define ZMAPSTYLE_ALIGNMENT_VULGAR  "vulgar"
-
 typedef struct
  {
    /* If set then blixem will be run with nucleotide or peptide sequences for the features. */
@@ -1021,7 +1017,7 @@ gboolean zMapStyleNameCompare(ZMapFeatureTypeStyle style, char *name) ;
 gboolean zMapStyleIsTrueFeature(ZMapFeatureTypeStyle style) ;
 
 ZMapStyleGlyphShape zMapStyleGetGlyphShape(gchar *shape, GQuark id);
-ZMapFeatureTypeStyle zMapStyleLegacyStyle(char *name);
+ZMapFeatureTypeStyle zMapStyleLegacyStyle(char *config_file, char *name);
 gboolean zMapStyleIsSpliceStyle(ZMapFeatureTypeStyle style) ;
 
 
@@ -1144,7 +1140,7 @@ void zMapStyleSetWidth(ZMapFeatureTypeStyle style, double width) ;
 
 gboolean zMapStyleHasDrawableMode(ZMapFeatureTypeStyle style) ;
 gboolean zMapStyleIsDrawable(ZMapFeatureTypeStyle style, GError **error) ;
-gboolean zMapStyleMakeDrawable(ZMapFeatureTypeStyle style) ;
+gboolean zMapStyleMakeDrawable(char *config_file, ZMapFeatureTypeStyle style) ;
 
 gboolean zMapStyleGetColoursCDSDefault(ZMapFeatureTypeStyle style,
 				       GdkColor **background, GdkColor **foreground, GdkColor **outline);

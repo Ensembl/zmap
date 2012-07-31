@@ -23,18 +23,15 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
- * Description:
+ * Description: Functions for reading zmap configuration 'ini' files.
  *
- * Exported functions: See XXXXXXXXXXXXX.h
  *-------------------------------------------------------------------
  */
-
 #ifndef ZMAP_CONFIG_INI_H
 #define ZMAP_CONFIG_INI_H
 
 #include <glib-object.h>
 
-//typedef struct _ZMapConfigIniStruct *ZMapConfigIni;
 
 typedef gpointer (*ZMapConfigIniUserDataCreateFunc)(void);
 typedef void (*ZMapConfigIniSetPropertyFunc)(char *current_stanza_name, char *key, GType type,
@@ -58,7 +55,7 @@ typedef struct _ZMapConfigIniContextStruct
 
 
 
-ZMapConfigIniContext zMapConfigIniContextCreate(void);
+ZMapConfigIniContext zMapConfigIniContextCreate(char *config_file) ;
 gboolean zMapConfigIniContextIncludeBuffer(ZMapConfigIniContext context, char *buffer);
 gboolean zMapConfigIniContextIncludeFile(ZMapConfigIniContext context, char *file) ;
 gchar **zMapConfigIniContextGetAllStanzaNames(ZMapConfigIniContext context);
@@ -67,12 +64,12 @@ gchar **zMapConfigIniContextGetAllStanzaNames(ZMapConfigIniContext context);
 gboolean zMapConfigIniContextAddGroup(ZMapConfigIniContext context,
 				      char *stanza_name, char *stanza_type,
 				      ZMapConfigIniContextKeyEntryStruct *keys);
+
 gboolean zMapConfigIniContextGetValue(ZMapConfigIniContext context,
 				      char *stanza_name,
 				      char *stanza_type,
 				      char *key_name,
 				      GValue **value_out);
-
 gboolean zMapConfigIniContextGetString(ZMapConfigIniContext context,
 				       char *stanza_name,
 				       char *stanza_type,
@@ -138,16 +135,19 @@ GList *zMapConfigIniContextGetNamedStanzas(ZMapConfigIniContext context,
 
 // zmapConfigLoader.c
 
-ZMapConfigIniContext zMapConfigIniContextProvide() ;
-ZMapConfigIniContext zMapConfigIniContextProvideNamed(char *stanza_name) ;
+ZMapConfigIniContext zMapConfigIniContextProvide(char *config_file) ;
+ZMapConfigIniContext zMapConfigIniContextProvideNamed(char *config_file, char *stanza_name) ;
 
 GList *zMapConfigIniContextGetSources(ZMapConfigIniContext context) ;
 GList *zMapConfigIniContextGetNamed(ZMapConfigIniContext context, char *stanza_name) ;
-GList *zMapConfigIniContextGetStyleList(ZMapConfigIniContext context,char *styles_list_in);
+GList *zMapConfigIniContextGetStyleList(ZMapConfigIniContext context, char *styles_list_in);
 
-gboolean zMapConfigIniGetStylesFromFile(char *styles_list, char *styles_file, GHashTable **styles_out);
+gboolean zMapConfigIniGetStylesFromFile(char *config_file,
+					char *styles_list, char *styles_file, GHashTable **styles_out);
 GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context,GHashTable *hash,GHashTable *columns);
 GHashTable *zMapConfigIniGetGlyph(ZMapConfigIniContext context);
+
+gboolean zMapConfigLegacyStyles(char *config_file) ;
 
 char *zMapConfigNormaliseWhitespace(char *str,gboolean cannonical);
 GList *zMapConfigString2QuarkList(char *string_list,gboolean cannonical);
@@ -158,13 +158,16 @@ GHashTable *zMapConfigIniGetQQHash(ZMapConfigIniContext context,char *stanza,int
 #define QQ_QUARK  1
 #define QQ_STYLE  2
 
-GHashTable *zMapConfigIniGetFeatureset2Featureset(ZMapConfigIniContext context,GHashTable *fset_src, GHashTable *fset2col);
+GHashTable *zMapConfigIniGetFeatureset2Featureset(ZMapConfigIniContext context,
+						  GHashTable *fset_src, GHashTable *fset2col) ;
 
 GHashTable *zMapConfigIniGetColumns(ZMapConfigIniContext context);
 
 void zMapConfigSourcesFreeList(GList *config_sources_list);
 void zMapConfigStylesFreeList(GList *config_styles_list);
 
-gboolean zMapConfigLegacyStyles(void);
+
+
+
 
 #endif /* ZMAP_CONFIG_INI_H */

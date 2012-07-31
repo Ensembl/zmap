@@ -73,10 +73,20 @@
 
 #include "foo-canvas-marshal.h"
 
+//#include <glib.h>		/* for g_strdup_sprintf for debugging */
+
 void (*foo_log_stack)(void) = NULL;
 int n_group_draw = 0;
 int n_item_pick = 0;
 void (*foo_timer)(int,int) = NULL;
+
+void (*foo_log)(char *) = NULL;
+
+#define SCALE_DEBUG	0
+#if SCALE_DEBUG
+gboolean scale_debug = FALSE;
+gpointer scale_thing = NULL;
+#endif
 
 static void foo_canvas_request_update (FooCanvas      *canvas);
 static void group_add                   (FooCanvasGroup *group,
@@ -3053,9 +3063,18 @@ foo_canvas_expose (GtkWidget *widget, GdkEventExpose *event)
 
 	if (!GTK_WIDGET_DRAWABLE (widget) || (event->window != canvas->layout.bin_window)) return FALSE;
 
-#ifdef VERBOSE
-	g_print ("Expose\n");
+#if SCALE_DEBUG
+if(foo_log)
+{
+	char *x = g_strdup_printf("Expose %p @ %d,%d-%d,%d  scroll =  %.1f,%.1f %.1f,%.1f\n", canvas, event->area.x, event->area.y,event->area.width, event->area.height, canvas->scroll_x1, canvas->scroll_y1, canvas->scroll_x2, canvas->scroll_y2);
+	foo_log(x);
+	g_free(x);
+
+	if(canvas == scale_thing)
+		scale_debug = TRUE;
+}
 #endif
+
 n_group_draw = n_item_pick = 0;
       if(foo_timer) foo_timer(0,1);
 
@@ -3118,10 +3137,12 @@ n_group_draw = n_item_pick = 0;
 #if DONT_INCLUDE
 if(foo_timer)
 {
-       printf("expose complete: %d items picked, %d groups drawn in %d,%d-%d,%d\n",
-            n_item_pick, n_group_draw,
-            event->area.x, event->area.y,event->area.width, event->area.height);
+       printf("expose complete: %d items picked, %d groups drawn\n",
+            n_item_pick, n_group_draw);
 }
+#endif
+#if SCALE_DEBUG
+	scale_debug = FALSE;
 #endif
       if(foo_timer) foo_timer(0,2);
 	return FALSE;

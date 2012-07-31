@@ -80,7 +80,7 @@ static char make_clickable_bmp_bits[] =
  *  */
 
 
-
+#if NOT_USED
 
 
 FooCanvasItem *zMapDisplayText(FooCanvasGroup *group, char *text, char *colour,
@@ -153,6 +153,10 @@ FooCanvasItem *zMapDrawHighlightableText(FooCanvasGroup *group,
   return text;
 }
 
+#endif
+
+
+#if 0
 
 FooCanvasItem *zMapDrawBox(FooCanvasGroup *group,
 			   double x1, double y1, double x2, double y2,
@@ -238,6 +242,9 @@ FooCanvasItem *zMapDrawBoxSolid(FooCanvasGroup *group,
   return item;
 }
 
+
+#endif
+
 /* Semi transparent box. */
 FooCanvasItem *zMapDrawBoxOverlay(FooCanvasGroup *group,
 				  double x1, double y1, double x2, double y2,
@@ -278,7 +285,7 @@ void zMapDrawBoxChangeSize(FooCanvasItem *box,
 
 
 
-
+#if NOT_USED
 
 /* dimension is either a line width when form translates to creating a
  * line.  It can refer to a position though, see utr form.  We might
@@ -760,7 +767,10 @@ FooCanvasItem *zMapDrawSSPolygon(FooCanvasItem *grp, ZMapPolygonForm form,
   return item;
 }
 
+#endif
 
+#if NOT_USED
+// last instance was in windowRuler
 FooCanvasItem *zMapDrawLine(FooCanvasGroup *group, double x1, double y1, double x2, double y2,
 			    GdkColor *colour, guint line_width)
 {
@@ -804,7 +814,9 @@ FooCanvasItem *zMapDrawLineFull(FooCanvasGroup *group, FooCanvasGroupPosition po
 
   return item ;
 }
+#endif
 
+#if NOT_USED
 
 /* It may be good not to specify a width here as well (see zMapDrawBox) but I haven't
  * experimented yet. */
@@ -826,6 +838,7 @@ FooCanvasItem *zMapDrawPolyLine(FooCanvasGroup *group, FooCanvasPoints *points,
   return item ;
 }
 
+#endif
 
 /* WE PROBABLY SHOULDN'T USE THE WIDTH PIXELS BELOW AS IT RESULTS IN SLOWER DRAWING, TRY
  * REMOVING AT SOME TIME.... */

@@ -1,4 +1,4 @@
-/*  Last edited: Jul 11 15:19 2011 (edgrif) */
+/*  Last edited: Jul 23 14:45 2012 (edgrif) */
 /*  File: zmapView_P.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -268,6 +268,7 @@ typedef struct _ZMapViewStruct
    * on the screen. */
   GList *sequence_mapping ;				    /* Of ZMapViewSequenceFetch, i.e. list
 							       of sequences to be displayed. */
+
 #ifdef NOT_REQUIRED_ATM
   GList *sequence_2_server ;				    /* Some sequences may only be
 							       fetchable from some servers. */

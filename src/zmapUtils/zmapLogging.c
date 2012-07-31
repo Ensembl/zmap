@@ -148,6 +148,12 @@ static gboolean enable_core_dumping_G = TRUE;
 
 
 
+void foo_logger(char *x)
+{
+	/* can;t call this frpm foo as it's a macro */
+	zMapLogWarning(x,"");
+}
+
 
 
 /* This function is NOT thread safe, you should not call this from individual threads. The log
@@ -165,6 +171,10 @@ gboolean zMapLogCreate(char *logname)
 #if 0		// log timing stats from foo
 		// have to take this out to get xremote to compile for perl
 		// should be ok when we get the new xremote
+
+  extern void (*foo_log)(char *x);
+
+
   if (zmap_timing_G)
     {
       extern void (*foo_timer)(int,int);
@@ -178,7 +188,11 @@ gboolean zMapLogCreate(char *logname)
 
       foo_log_stack = zMapPrintStack;
     }
+
+  foo_log = foo_logger;
+
 #endif
+
 
   log_G = log = createLog() ;
 
@@ -353,8 +367,8 @@ void zMapLogMsg(char *domain, GLogLevelFlags log_level,
   format_str = g_string_sized_new(2000) ;		    /* Not too many records longer than this. */
 
   /* All messages have the nodeid and pid as qualifiers to help with logfile analysis. */
-  g_string_append_printf(format_str, "%s[%s:%s:%d]",
-			 ZMAPLOG_PROCESS_TUPLE, log->userid, log->nodeid, log->pid) ;
+//  g_string_append_printf(format_str, "%s[%s:%s:%d]",
+//			 ZMAPLOG_PROCESS_TUPLE, log->userid, log->nodeid, log->pid) ;
 
   /* include a timestamp? */
   if (log->show_time)
@@ -366,7 +380,7 @@ void zMapLogMsg(char *domain, GLogLevelFlags log_level,
       // they provide a 'portable' interface to gettimeofday  but then don't provide any functions to use it
       struct timeval time;
       struct timezone tz = {0,0};
- 
+
       gettimeofday(&time,&tz);
       strftime(tbuf,32,"%H:%M:%S",&time);
       g_string_append_printf(format_str, "%s",tbuf);
@@ -375,8 +389,8 @@ void zMapLogMsg(char *domain, GLogLevelFlags log_level,
       if (zmap_log_timer_G)
 	{
 	  double t = g_timer_elapsed(zmap_log_timer_G,NULL);
-		
-	  sprintf(tbuf," %.3fsec",t);		
+
+	  sprintf(tbuf," %.3fsec",t);
 	  g_string_append_printf(format_str, "%s",tbuf);
 	}
 

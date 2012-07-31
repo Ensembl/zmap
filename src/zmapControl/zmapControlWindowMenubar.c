@@ -19,9 +19,9 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * and was written by
- *     Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk and,
- *          Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
- *       Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *     Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *       Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *  Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Code for the menubar in a zmap window.
  *
@@ -36,23 +36,20 @@
 
 #include <ZMap/zmap.h>
 
-
-
-
-
-
 #include <stdlib.h>
 #include <stdio.h>
 
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapUtilsGUI.h>
+#include <ZMap/zmapAppServices.h>
 #include <zmapControl_P.h>
 
 
 typedef enum {RT_INVALID, RT_ACEDB, RT_ANACODE, RT_SEQTOOLS, RT_ZMAP, RT_ZMAP_USER_TICKETS} RTQueueName ;
 
 
-static void newCB(gpointer cb_data, guint callback_action, GtkWidget *w) ;
+static void newSequenceByConfigCB(gpointer cb_data, guint callback_action, GtkWidget *w) ;
+static void makeSequenceViewCB(ZMapFeatureSequenceMap sequence_map, gpointer user_data) ;
 static void closeCB(gpointer cb_data, guint callback_action, GtkWidget *w) ;
 static void quitCB(gpointer cb_data, guint callback_action, GtkWidget *w) ;
 
@@ -80,8 +77,8 @@ GtkItemFactory *item_factory;
 
 
 static GtkItemFactoryEntry menu_items[] = {
- { "/_File",         NULL,         NULL, 0, "<Branch>" },
- { "/File/_New",     "<control>N", newCB, 2, NULL },
+ { "/_File",                        NULL,         NULL,                  0, "<Branch>" },
+ { "/File/_New Sequence",           NULL,         newSequenceByConfigCB, 2, NULL },
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
  { "/File/sep1",     NULL,         NULL, 0, "<Separator>" },
@@ -492,43 +489,34 @@ static void popout_panel( gpointer data, guint callback_action, GtkWidget *w )
 #endif /* ALLOW_POPOUT_PANEL */
 
 
-/* THIS NEEDS REDOING TO ALLOW USER TO ENTER START/END, WILL FAIL NOW WITHOUT THEM. */
-/* Load a new sequence into a zmap. */
-static void newCB(gpointer cb_data, guint callback_action, GtkWidget *w)
+/* Load a new sequence by config file into a zmap. */
+static void newSequenceByConfigCB(gpointer cb_data, guint callback_action, GtkWidget *w)
 {
   ZMap zmap = (ZMap)cb_data ;
-  char *new_sequence ;
-  /* these should be passed in ...... */
-  int start = 1, end = 0 ;
-  
 
-  /* Get a new sequence to show.... */
-  if (!(new_sequence = zMapGUIMsgGetText(NULL, ZMAP_MSG_INFORMATION, "New Sequence:", FALSE)))
+  zMapAppGetSequenceView(makeSequenceViewCB, zmap, NULL) ;
+
+  return ;
+}
+
+/* Called once user has selected a new sequence. */
+static void makeSequenceViewCB(ZMapFeatureSequenceMap seq_map, gpointer user_data)
+{
+  ZMap zmap = (ZMap)user_data ;
+  ZMapView view ;
+
+  if ((view = zmapControlAddView(zmap, seq_map)))
     {
-      zMapWarning("%s", "You must give the name of a sequence.") ;
-    }
-  else
-    {
-      ZMapFeatureSequenceMap seq_map ;
-      ZMapViewWindow view_window ;
-      ZMapView view ;
+      if (!zMapViewConnect(view, NULL))
+	{
+	  zMapWarning("Display of sequence \"%s\" failed, see log for details.", seq_map->sequence) ;
 
-      /* WHAT NEEDS DEFINING AND HOW ???? */
-#warning need dataset defined here as well as start,end
-      zMapAssert(zmap->default_sequence);
-
-      seq_map = g_new0(ZMapFeatureSequenceMapStruct,1) ;
-      seq_map->dataset = zmap->default_sequence->dataset ;
-      seq_map->sequence = new_sequence ;
-      seq_map->start = start ;
-      seq_map->end = end ;
-
-      if ((view_window = zmapControlAddView(zmap, seq_map))
-	  && (view = zMapViewGetView(view_window)))
-	zMapViewConnect(view, NULL) ;				    /* return code ???? */
+	  zMapViewDestroy(view) ;
+	}
     }
 
   return ;
 }
+
 
 

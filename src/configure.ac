@@ -61,22 +61,17 @@ case $build in
      *)
      zmap_os_type="Unknown";;
 esac
+
 # replaces -DLINUX
 if test "$zmap_os_type" = "Linux" ; then
    AC_MSG_RESULT([Got OS type of LINUX])
    AC_DEFINE(LINUX, [], [Operating System is LINUX.  See zmapThreads/zmapThreads_P.h])
+
 elif test "$zmap_os_type" = "darwin" ; then
 
    AC_MSG_RESULT([Got OS type of Darwin])
    AC_DEFINE(DARWIN, [], [Operating System is DARWIN.  See zmapThreads/zmapThreads_P.h])
 
-   # this is pretty evil NEED to find a better method_
-#   ALPHA_POPT=-I/sw/include
-#   AC_SUBST(ALPHA_POPT)
-else
-   # this is pretty evil NEED to find a better method
-   ALPHA_POPT=-I/nfs/team71/acedb/prefix/ALPHA/include
-   AC_SUBST(ALPHA_POPT)
 fi
 
 ################################################################################
@@ -284,16 +279,6 @@ AC_CHECK_LIB(AceConn, [main],
   [ have_ace_conn='false';
     AC_MSG_ERROR(AceConn package is required) ])
 
-if test "x$with_macosx_sdk_path" = "x$ZMAP_FALSE" ; then
-    AC_CHECK_LIB(g2, [g2_attach],
-    [ have_g2='true';
-      AC_CHECK_LIB(g2, [g2_open_gd], [ have_g2_gd='true' ], [ have_g2_gd='false';
-          AC_MSG_ERROR(g2 must have GD compiled in) ], [-lgd $X_LIBS] )],
-	[ have_g2=have_g2_gd='false';
-	    AC_MSG_ERROR(g2 package is required) ], [-lgd $X_LIBS])
-fi
-
-#AC_CHECK_LIB(popt, [poptFreeContext], [],AC_MSG_ERROR(where is popt))
 
 # and substitute values....
 # Should be able to use @VARIABLE@ in Makefile.am
@@ -330,12 +315,10 @@ AC_SUBST(DEMO_CANVAS_LIBS)
 # Checks for header files.
 ################################################################################
 ################################################################################
-
 AC_HEADER_STDC
 AC_CHECK_HEADERS([fcntl.h locale.h stdlib.h string.h strings.h sys/param.h unistd.h])
 AC_CHECK_HEADER([AceConn.h])
-AC_CHECK_HEADERS([g2.h g2_gd.h])
-AC_CHECK_HEADER([popt.h])
+
 ################################################################################
 ################################################################################
 # Checks for typedefs, structures, and compiler characteristics.

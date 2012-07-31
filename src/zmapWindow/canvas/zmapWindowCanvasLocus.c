@@ -91,6 +91,7 @@ void zMapWindowCanvasLocusPaintFeature(ZMapWindowFeaturesetItem featureset, ZMap
 	text = (char *) g_quark_to_string(feature->feature->original_id);
 	len = strlen(text);
 	pango_layout_set_text (lset->pango.layout, text, len);
+	locus->x_wid = len * lset->pango.text_width;
 
 		/* need to get pixel coordinates for pango */
 // (dy = start plus block offset)
@@ -395,7 +396,15 @@ static double locusPoint(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature gs
 	double ytext = locus->ytext - lset->text_h / 2 - fi->dy + 1;
 
 	if(item_y >= ytext && item_y <= (ytext + lset->text_h))
-		best = 0.0;
+	{
+		double x1, x2;
+
+		x1 = locus->x_off;
+		x2 = x1 + locus->x_wid;
+
+		if(item_x >= x1 && item_x <= x2)
+			best = 0.0;
+	}
 //printf("locus point: %.1f %s (%.1f, %.1f) -> %.1f\n", item_y, g_quark_to_string(gs->feature->unique_id), ytext, ytext + lset->text_h, best > 0.0 ? 1.0 : 0.0);
 	return best;
 }

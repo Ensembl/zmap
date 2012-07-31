@@ -854,7 +854,7 @@ void zmapWindowContainerFeatureSetSortFeatures(ZMapWindowContainerFeatureSet con
 
   if(container_set->sorted == FALSE)
     {
-zMapStartTimer("Featureset Sort","");
+//zMapStartTimer("Featureset Sort","");
 
       if((container_features = zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)container_set)))
 	{
@@ -866,11 +866,11 @@ zMapStartTimer("Featureset Sort","");
 	    compare_func = comparePosition;
 	  else
 	    compare_func = comparePositionRev;
-zMapLogWarning("sort %d features in set",g_list_length(features_group->item_list));
-	  zMap_foo_canvas_sort_items(features_group, compare_func);
+//zMapLogWarning("sort %d features in set",g_list_length(features_group->item_list));
+//	  zMap_foo_canvas_sort_items(features_group, compare_func);
 	}
 
-zMapStopTimer("Featureset Sort","");
+//zMapStopTimer("Featureset Sort","");
       container_set->sorted = TRUE;
     }
 

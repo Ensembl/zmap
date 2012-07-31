@@ -1,3 +1,4 @@
+/*  Last edited: Jul 23 14:58 2012 (edgrif) */
 /*  File: pipeServer_P.h
  *  Author: Malcolm Hinsley (mh17@sanger.ac.uk)
  *      derived from fileServer_p.h by Ed Griffiths (edgrif@sanger.ac.uk)
@@ -43,6 +44,7 @@
 /* Holds all the state we need to create and access the script output. */
 typedef struct _PipeServerStruct
 {
+  gchar *config_file ;
   gchar *script_dir;		// default location for relative paths
   gchar *script_path ;	      // where our configured script is, including script-dir
   gchar *query;		    	// from query string

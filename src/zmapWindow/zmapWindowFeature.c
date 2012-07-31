@@ -1,3 +1,4 @@
+/*  Last edited: Jul 23 16:05 2012 (edgrif) */
 /*  File: zmapWindowFeature.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -126,8 +127,7 @@ void zmapWindowPfetchEntry(ZMapWindow window, char *sequence_name)
   PFetchUserPrefsStruct prefs = {NULL};
   gboolean  debug_pfetch = FALSE;
 
-  if((zmapWindowGetPFetchUserPrefs(&prefs)) &&
-     (prefs.location   != NULL))
+  if((zmapWindowGetPFetchUserPrefs(window->sequence->config_file, &prefs)) && (prefs.location != NULL))
     {
       GType pfetch_type = PFETCH_TYPE_HTTP_HANDLE;
 

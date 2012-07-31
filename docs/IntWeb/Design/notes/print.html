@@ -70,13 +70,52 @@ Other than this zmapDraw.c appears to be maily code that has fallen out of use, 
 <p>
 
 
-<h3>Some notes about the scale bar</h3>
-<p>CanvasFeatureset code and data has been optimised for drawing genomic features which may overlap and change appearance depending on zoom level.  The scale bar also changes appearance with zoom, but this is driven by externally with knowledge of the current scroll window (not accessable to the CanvasFeatureset code).  There are a few problems that need to be resolved:
+<h3>Some notes about the Scale Bar and adapting CanvasFeatureset code to data without features</h3>
+<p>CanvasFeatureset code and data has been optimised for drawing genomic features which may overlap and change appearance depending on zoom level, and also appear neatly lined up in columns.  The scale bar also changes appearance with zoom, but this is driven by externally with knowledge of the current scroll window (not accessable to the CanvasFeatureset code). There are a few aspects to this that could result in untidy code...
 <ul>
-<li> Implement simple features such as lines and text and interface to existing external code. This has the advantage of providing code that can be re-used eg for the ruler and tooltip, but is less trivail than first appears as canvasfeatureset items do nopt have indivudiual x1 and x2 coordinates: it will be necessary to extend the basic featuresetItem structure to add on x coordinates.
-<li> It is assumed that items added to adisplay column will derive froma genomic feature and the case of graphics primitives this is unlikely.  It will be necessary to ensure that a NULL feature does not cause errors in the code.
-<li> Feature style is used to control colours etc and this is assumed to be provided via a style.  It may be possible to provide a style via the CanvasFeatureset, but this limits the use of colours somewhat and assumes that all features are of the same type (not the case wehn mixinf lines and text).
-<li> Normally features are added vai the ItemFactory, which again assumes that each obne corresponds to a genomic feature (and more so, as they are added to the FtoIhash.
+<li> Implementing simple features such as lines and text is less trivial than first appears. CanvasFeatureset items do not have individual x1 and x2 coordinates: it will be necessary to extend the basic FeaturesetItem structure to add on x coordinates. X coordinates were ommited to cut down on memory use.
+<li> It is assumed that items added to a display column will derive from a genomic feature and in the case of graphics primitives this is unlikely.  It will be necessary to ensure that a NULL feature does not cause errors in the code.  Using a featuresetItem struct for a simple line will also waste memory, although we expect volumes to be less.
+<li> Feature style is used to control colours etc and this is assumed to be provided via a style.  It may be possible to provide a style via the CanvasFeatureset, but this limits the use of colours somewhat and assumes that all features are of the same type (not so in the case when mixing lines and text).
+<li> Normally features are added via the ItemFactory, which again assumes that each one corresponds to a genomic feature (and more so, as they are added to the FtoIhash).
 </ul>
+
+<h4>A slightly more general solution</h4>
+<p>Attempting to have the best of all possible worlds, we continue to assume that the majority of data will be displayed in columns that do not overlap, but allow for the possibility that we could overlay the screen with some extra data.  To handle simple graphics items with no genomic feature attached we will:
+<ul>
+<li> create a base level featuresetItem that can be either a featureless graphics primitve or a genomic feature. Each one of these can be derived into a structure that can actually be displayed.
+<li> genomic features will work as is
+<li> graphics primitives will extend the base structure to include two x coordinates and colour information.
+<li> graphic primitives will not use styles even though the CFS code assumes that features do. Instead they will hold fill and outline colours which will be used directly.  (this requires two longs, as opposed to a style pointer plus added complexity)
+<li> the canvas featureset code will be ammended to handle NULL features and styles.
+<li> alternative interface functions will be provided to add and remove featureless graphics primitives
+<li> graphics primitives will not repsond to the mouse and as such will not accept focus.
+<li> the canvas featureset itself must have a style, if necessary a hard coded one.
+<li> it will be possible to mix genomic an dgraphic features in one CanvasFeatureeet
+</ul>
+</p>
+
+<h5>A problem to solve</h5>
+<p>The navigator has a scroll region rectangle that can be dragged by the mouse which implies that it can have focus.  The ZMap focus module assumes that focussed items are genomic features and previous code handled the scroll regioon foo canvas item directly.  If not better solution can be found then the navigator code will handle this featureset item directly, and maintain a pointer to it explicitly.
+</p>
+
+<h5>Is this heading back to a 2D FooCanvas?</h5>
+<p>CanvasFeaturesets were implemented a) to allow presentation of heatmaps that get re-binned on zoom (necessarily requires a columns wide structure) b) effciently.  They were later extended to handle basic features and alignments with a view to providing a faster user experience.  The FooCanvas is explicitly 2D whereas CanvasFeaturesets are explicitly orgainsed in columns which correspond roughly to FooCanvas groups as used in the Zmap display and as such are quite specific to the ZMap application.
+The use of graphics primitives in a column such as the Scale Bar maintains this close link to the ZMap run-time environment and we should remain aware that this is not an attempt at producing a generalised graphics engine.  Note especially that there is very little explicit Z-ordering, execpt within drawing a single feature and the use of focus (which only applies to genomic features).  To subvert this code into 2D operation wih no restriction on x-coordinates would require a major rethink of indexing methodology,
+</p>
+<p>If we use CanvasFeaturesets to overlay/ underlay the whole canvas with decorative features (eg ruler, mark) then the assumption is that this will have little effect on performance: the bulk of display items will remain as genomic features, operating in a similar way as at present.
+</p>
+<h5>Why use CanvasFeaturesets for this?</h5>
+<p>There are two simple reasons:
+<ul>
+<li> we provide a single interface to GDK which can be changed to cairo and can be use for printing/ screenshots
+<li> CanvasFeatureset items are indexed and thereby run faster
+</ul>
+</p>
+
+<h4>Scale Bar Foo Canvas environment</h4>
+<p>The Scale Bar is drawn in two different contexts a) in a pane next the window on its own in its own canvas ad b) in the navigator in a ZMapWindowContainerFeatureSet.  Regardless of theis it consists of two foo canvas groups, one for text and one for ticks, which are then oriented left and right.
+</p>
+<p>Theoretically the ticks and text could be swapped round but this would require correct horizontal justifcation and therefore would be more complicated that re-positioning the groups.  To avoid having the extra complexity of positioning CanvasFeaturesets we propose to display ticks and text in one CanvasFeatureset, which will require pre-calculation of x-offsets to prevent the need to bump ticks and text after intial display.  Note also that as we implement text and ticks as generic simple graphics features we cannot use a CanvasFeatureset zoom function to operate any such bump operation.
+</p>
 
 

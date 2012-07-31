@@ -1,3 +1,4 @@
+/*  Last edited: Jul 23 16:09 2012 (edgrif) */
 /*  File: zmapWindowPreferences.c
  *  Author: Roy Storey (roy@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -22,26 +23,26 @@
  *
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: 
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  *-------------------------------------------------------------------
  */
-
 #include <ZMap/zmap.h>
+
 #include <ZMap/zmapConfigIni.h>
 #include <ZMap/zmapConfigStrings.h>
 #include <zmapWindow_P.h>
 
 
-gboolean zmapWindowGetPFetchUserPrefs(PFetchUserPrefsStruct *pfetch)
+gboolean zmapWindowGetPFetchUserPrefs(char *config_file, PFetchUserPrefsStruct *pfetch)
 {
   ZMapConfigIniContext context = NULL;
   gboolean result = FALSE;
   
-  if((context = zMapConfigIniContextProvide()))
+  if((context = zMapConfigIniContextProvide(config_file)))
     {
       char *tmp_string;
 

@@ -31,23 +31,17 @@
 
 #include <ZMap/zmap.h>
 
-
 #include <stdio.h>
 #include <gtk/gtk.h>
+
 #include <ZMap/zmapView.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapUtilsGUI.h>
 
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* THIS BREAKS SOME EXISTING ENCAPSULATION OF WHERE HEADERS ARE.... */
 /* need to be sorted out sometime */
 /* but we need this header for an html escaping function */
 #include <ZMap/zmapUrlUtils.h>
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 
 #include <zmapControl_P.h>
 
@@ -234,7 +228,6 @@ gboolean zMapGetDefaultView(ZMapAppRemoteViewID view_inout)
 
   return result ;
 }
-
 
 
 gboolean zmapConnectViewConfig(ZMap zmap, ZMapView view, char *config)

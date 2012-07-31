@@ -5,10 +5,8 @@ NULL =
 
 ARFLAGS = cru
 
-# including ALPHA_POPT here is really bad FIND BETTER method
 AM_CPPFLAGS = -g -I$(top_srcdir)/include \
 	-I$(top_builddir) \
-        @ALPHA_POPT@ \
 	@GTK_CFLAGS@ \
 	@ACECONN_CFLAGS@ \
         @LIBCURL_CPPFLAGS@ \

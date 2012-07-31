@@ -1860,7 +1860,7 @@ static ZMapConfigIniContext get_configuration(XRemoteTestSuiteData suite)
 
       zMapConfigDirCreate(dir, base);
 
-      if((context = zMapConfigIniContextCreate()))
+      if((context = zMapConfigIniContextCreate(NULL)))
 	{
 	  ZMapConfigIniContextKeyEntry stanza_group = NULL;
 	  char *stanza_name, *stanza_type;
