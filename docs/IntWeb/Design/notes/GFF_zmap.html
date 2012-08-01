@@ -1,87 +1,83 @@
 <h2>Running ZMap directly from GFF file(s)</h2>
 <h3>Synopsis</h3>
-<p>The aim is to run ZMap from canned data with little of no configuration - download the distribution, run configure and make then feed in your own data, typically with a command like these:
+<p>The aim is to run ZMap from canned data with little or no configuration - download the distribution, run configure and make then feed in your own data, typically with a command like these:
 <pre>
 cd my_project; zmap *.gff
 zmap  ~/data/fatmouse/models.gff ~/data/fatmouse/fatmouse_psl.gff
 </pre>
-
-<h3>Configuration that needs to be handled automatcially or defaulted.</h3>
-<p>
-<ul>
-<li> [ZMap] stanza
-<li> [blixem] stanza
-<li> column ordering
-<li> default styles
-<li> column configuration
-</ul>
 </p>
 
-<p>It's possible to have ZMap work without a configuration file, but if Blixem requires confgiuration perhaps this is a little pointless.  It make sense to provide a minimal ZMap config as part of the installation - originally ZMap would search its install directory if no local configuration could be found, but in the context of Otterlace this has possibly fallen into disuse.  Default vlaues fopr all the configuration parameters could be set and command line arguments automatically process to match each one, so it is realistic to allow zero configuration use.
+<p> If ZMap is run with file arguments and no configuration files or directories are specified (--conf_file=, --conf_dir=) then it will operate without the main configuration or styles files (which are specified in the configuration file).
+If a configuration file is specified then this may include data sources and files need not be specified.  However, additional data files may be given and added to the session as command line arguements.  A menu option (File/Open) will allow new GFF data to be read in OTF.  (NOTE we may also later provide File/Open on the main window to choose a session).
+</p>
+<p>ZMap will also provide an option (File/Save As) to save the current session in a single configuration file, although the format of this will differ slightly from the existing.  All styles used will be added to the main configuration file, and data sources also, as a list of files.  If started from such a file ZMap will allow updates to be saved (File/Save) eg to store extra data files and different choices of display style.  A configuration option will be set to choose this behaviour - otterlace sessions for example may not be modified OTF, as the state is driven from Otterlace.  Unsetting this option manually will revert to a traditional session.
+</p>
+<p>To use Blixem it will be necessary to provide configuration manually (at least in the first release).
 </p>
 
-<h4>Column Ordering</h4>
-<p>This can be handled by default quite simply, using the existing forward and reverse strand (mirror) model and placing column left to right in the order of assembly, transcripts, alignments, graphs, basic.  However this is likely to puts some columns out of place eg curated features aka PolyA etc which appear to be wanted next to transcripts.  Alternatively, a list of known datasets could be hard code into ZMap to override this default.
+<p>Sensible defaults will be chosen for parameters in the [ZMap] and [ZmapWindow] stanzas. [glyphs] will be defaulted to current configuration if no [glyphs] config stanza is found (or no config file), otherwise they must all be defined.
+</p>
+
+
+
+
+<h3>Column Ordering</h3>
+<p>This can be handled by default quite simply, using the existing forward and reverse strand (mirror) model and placing columns left to right in the order of assembly, transcripts, alignments, graphs, basic.  However this is likely to put some columns out of place eg curated features aka PolyA etc which appear to be wanted next to transcripts.
 </p>
 <p>In Havana there is a requirement to have the same config for the whole team but for wider use this is not so clear and it seems likely that there will be a desire to re-order columns via drag and drop and to remember session details (there have been requests for this from Havana (RT 67466, 205085).
 </p>
 <p>It also seems likely that if each user has thier own preferences then they may want these to apply across different sessions, which implies keeping a configuration file per user (eg in the home directory)
 </p>
+<p>These last two items will not be addressed in the first release.
+</p>
+
+<h4>Column configuration</h4>
+<p>This involves mapping featuresets to columns, choice of styles, and various other things such as pretty names and  descriptions.  Note that if we assume that users will simply load data from file there is no need for a load columns dialog and no need to specify load on startup or otherwise.  File servers have to be 'created' automatically without configuration.
+</p>
+<p> Some columns consist of several sources (eg repeatmasker, curated features) and these can't be set up without external configuration, and without this we would have these appearing in several columns, not necessarily next to each other.  This is obviously poor and also uses up pointless amounts of screen real-estate.  One way to allow users to set this up would be to allow drag and drop to order columns and then menu options/ keyboard shortcuts to merge or split columns.
+(not in the first release).
+</p>
 
 
-<h4>Default Styles</h4>
-<p>These can sensibly be created for the different style modes, and alternate colours generated for new columns automatically from a hard coded palette, perhaps triggering off string in the data featureset name (eg EST is purple).
-There is an obvious need to allow user choice of colours via the usual dialog, and this implies remembering this information, which implies a per user configuration file as above.
+
+<h3>Default Styles</h3>
+<p>These can sensibly be created for the different style modes, and alternate colours generated for new columns automatically from a hard coded palette, perhaps triggering off a string in the data featureset name (eg EST is purple).
+There is an obvious need to allow user choice of colours via the usual dialog, and this implies remembering this information, which implies a session configuration file as above.
 </p>
 
 <h4>Useful styles</h4>
-<p>ZMap displays some data on the forward strand only and there is no obvious way to choose this.  Some alignments are displayed gapped (alignments) when bumped and some always (ditags, BAM).  It's hard to see how this can be catered for without providing a styles configuration file.  Researchers can probably cope with editing such a file and there's little benefit in implemnting a complex GUI interface to style editing (NOTE we have to deal with inheritance), but perhaps it would be a nice project for a summer student.    In this context a default style is just a mechanism for ensuring that data is visible and then we expect users to customise.
+<p>ZMap displays some data on the forward strand only and there is no obvious way to choose this.  Some alignments are displayed gapped (alignments) when bumped and some always (ditags, BAM). In this context a default style is just a mechanism for ensuring that data is visible and then we expect users to customise.  ZMap can provide a number of optional styles per mode and these could be chosen via a style menu, which allows a naive user to set up sensible display of most data sources.
 </p>
-<p>Default styles for the usual data types can be constructed but if they are hard coded then they need to be capable of being overridden.
-There's two aspects to this:<br />
-a) inherit and override -  this is currently possible for defined parameters but we also need to be able to unset parameters. We could allow 'param=' to do this.<br />
-b) change the default styles directly eg is a style file re-defines a hard coded style then it overwrites it.
+<p>If a session is saved then the chosen styles can be modified manually if more control is needed. To avoid complicated code handling style inheritance (and to keep things simple for the user) we will adopt the follwoing strategy:
+<ul>
+<li> Default styles will be assigned to featuresets according to style mode and feature type.
+<li> A single (hard coded) base/ default style per style mode will be defined and optional styles defined by inheritance.
+<li> Styles as used in ZMap will be as copied from the hard coded defaults; if a confguration file is saved and styles modifed these will replace the hard coded defaults.
+<li> Styles that are deleted by the user may be replaced by hard coded defaults if still referenced.
+</ul>
 </p>
 
 
 
 <h5>Servers and styles</h5>
-<p>It's silly having to pass the same styles file to 40 servers in config and also via the server protocol. We should have the option of a global styles file and allow it to be removed via 'stylesfile=' in the acedb server config for example.  We should be able to pass a styles hash to a server instead of a file name.
-
-
-<h4>Column configuration</h4>
-<p>This involves mapping featuresets to columns, choice of styles, and various other things such as pretty names and  descriptions.  Note that if we assume that users will simply load data from file there is no need for a load columns dialog and no need to specify load on startup or otherwise.  File servers have to be 'created' automatically without configuration.
-</p>
-<p> Some columns consist of several sources (eg repeatmasker, curated features) and these can't be set up without external configuration, and without this we would have these appearing in several columns, not necessarily next to each other.  This is obviously poor and also uses up pointless amounts of screen real-estate.
+<p>It's silly having to pass the same styles file to 40 servers in config and also via the server protocol. We should have the option of a global styles file and allow it to be removed via 'stylesfile=' in the acedb server config for example.  Although this applies to a traditional ZMap sessions, we should be able to pass a styles hash to a server instead of a file name and this will be necessary for autoconfigured file servers.
 </p>
 
-<h3>Conclusions</h3>
-<p>
-<ul>
-<li> Zero configuration looks a bit gimmicky and would require a complex UI to make workable.
-<li> Coping with unconfigured featuresets is essential as is providing default styles simply to show that data is there.
-<li> There are many cases of featuresets that need configuration to work usefully (many in one column, alignments as gapped/ non-gapped etc).
-<li> Default column ordering allows data to be displayed but is unlikely to be acceptable in the long term.
-<li> If configuration files are ncesaary then it is also possible that we could specify GFF files via a [ZMap] stanza option.
-</ul>
-</p>
 
 <h4>Work needed</h4>
 <p>
 <ul>
+<li> cope with single configuration file
 <li> autoconfigure columns from GFF file
 <li> hard code basic styles and allocate colours
-<li> use a default config file in ZMap install directory
-<li> write user config overrides (or those derived from data) in home directory <i>or</i>:
+<li> style menu for column/ featureset
 <li> allow 'save as' for session config, which can then be edited manually
 </ul>
 Then possibly:
 <ul>
-<li> drag and drop to position columns
+<li> drag and drop to position and join columns
 <li> colour dialog to override default styles (can be saved as session)
 </ul>
 </p>
 
-<p>If we have a session and configuration derived from a set of GFF files then it may be easier to store the styles and configuration in one file, but this is a departure from current practice and make cause problems.
-</p>
 
