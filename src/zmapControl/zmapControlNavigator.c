@@ -211,10 +211,11 @@ void zMapNavigatorSetView(ZMapNavigator navigator, ZMapFeatureContext features,
   /* May be called with no sequence to parent mapping so must set default navigator for this. */
   if (features)
     {
-      navigator->parent_span = features->parent_span ;	    /* n.b. struct copy. */
-      navigator->sequence_span = features->master_align->sequence_span;
+      navigator->sequence_span = features->master_align->sequence_span;	/* n.b. struct copy. */
 
 #if USE_REGION
+      navigator->parent_span = features->parent_span ;	    /* n.b. struct copy. */
+
       region_top_str = g_strdup_printf("%d", navigator->parent_span.x1) ;
       region_bot_str = g_strdup_printf("%d", navigator->parent_span.x2) ;
 
@@ -251,7 +252,10 @@ void zMapNavigatorSetView(ZMapNavigator navigator, ZMapFeatureContext features,
     }
   else
     {
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       navigator->parent_span.x1 = navigator->parent_span.x2 = 0 ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
       navigator->sequence_span.x1 = navigator->sequence_span.x2 = 0 ;
 
 #if USE_REGION
