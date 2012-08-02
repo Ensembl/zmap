@@ -1942,12 +1942,6 @@ ZMapGUIMenuItem zmapWindowMakeMenuDeveloperOps(int *start_index_inout,
     {
       {ZMAPGUI_MENU_BRANCH, "_"DEVELOPER_STR,                  0, NULL,       NULL},
       {ZMAPGUI_MENU_NORMAL, DEVELOPER_STR"/Show Style"         , 1, developerMenuCB, NULL},
-#if !ZWCI_AS_FOO
-/* mh17: I took this out so as to not have to recode handling ZMapWindowCanvasItems as not being groups
- * besides, it wouldn't do much with ZMapWindowFeaturesetItems
- */
-      {ZMAPGUI_MENU_NORMAL, DEVELOPER_STR"/Print Canvas"       , 2, developerMenuCB, NULL},
-#endif
       {ZMAPGUI_MENU_NONE, NULL               , 0, NULL, NULL}
     } ;
 
@@ -2004,14 +1998,7 @@ static void developerMenuCB(int menu_item_id, gpointer callback_data)
 
 	break ;
       }
-#if !ZWCI_AS_FOO
-    case 2:
-      {
-	zmapWindowPrintCanvas(menu_data->window->canvas) ;
 
-	break ;
-      }
-#endif
     default:
       zMapAssert("Coding error, unrecognised menu item number.") ; /* exits... */
       break ;

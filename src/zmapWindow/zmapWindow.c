@@ -1,4 +1,4 @@
-/*  Last edited: Jul 13 16:06 2011 (edgrif) */
+/*  Last edited: Jul 13 14:39 2012 (edgrif) */
 /*  File: zmapWindow.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -48,7 +48,7 @@
 #include <zmapWindowState.h>
 #include <zmapWindowCanvas.h>
 #include <zmapWindowContainers.h>
-#include <zmapWindowFeatures.h>
+#include <zmapWindowCanvasItem.h>
 #include <zmapWindowCanvasFeatureset.h>
 #include <zmapWindow_P.h>
 
@@ -252,10 +252,6 @@ static void getFirstForwardCol(ZMapWindowContainerGroup container, FooCanvasPoin
 
 static gboolean checkItem(FooCanvasItem *item, gpointer user_data) ;
 
-#if !ZWCI_AS_FOO
-static void zmapWindowInterruptExpose(ZMapWindow window);
-static void zmapWindowUninterruptExpose(ZMapWindow window);
-#endif
 
 static void popUpMenu(GdkEventKey *key_event, ZMapWindow window, FooCanvasItem *focus_item) ;
 
@@ -720,9 +716,6 @@ void zMapWindowRedraw(ZMapWindow window)
   expose_area.width = allocation->width - 1 ;
   expose_area.height = allocation->height - 1 ;
 
-#if !ZWCI_AS_FOO
-  zmapWindowUninterruptExpose(window);
-#endif
   /* Invalidate the displayed canvas window causing to be redrawn. */
   gdk_window_invalidate_rect(GTK_WIDGET(&(window->canvas->layout))->window, &expose_area, TRUE) ;
 
@@ -838,10 +831,6 @@ void zMapWindowFeatureReset(ZMapWindow window, gboolean features_are_revcomped)
 
   zMapStopTimer("WindowFeatureRedraw","Revcomp");
 
-#if !ZWCI_AS_FOO
-  /* wrap the resetCanvas and set scroll region in a expose free cape */
-  zmapWindowInterruptExpose(window);
-#endif
 
   resetCanvas(window, free_child_windows, free_revcomp_safe_windows) ; /* Resets scrolled region and much else. */
   zMapStopTimer("WindowFeatureRedraw","ResetCanvas");
@@ -851,10 +840,6 @@ void zMapWindowFeatureReset(ZMapWindow window, gboolean features_are_revcomped)
   window->strand_separator_context = NULL;
   zMapStopTimer("WindowFeatureRedraw","Separator");
 
-#if !ZWCI_AS_FOO
-  /* stop the expose avoidance */
-  zmapWindowUninterruptExpose(window);
-#endif
   zMapStopTimer("WindowFeatureRset","");
 
   zmapWindowBusy(window, FALSE) ;
@@ -874,11 +859,6 @@ void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_conte
   zMapStartTimer("WindowFeatureRedraw","");
 
 
-#if !ZWCI_AS_FOO
-  /* wrap the resetCanvas and set scroll region in a expose free cape */
-  zmapWindowInterruptExpose(window);
-#endif
-
   /* You cannot just draw the features here as the canvas needs to be realised so we send
    * an event to get the data drawn which means that the canvas is guaranteed to be
    * realised by the time we draw into it. */
@@ -890,10 +870,6 @@ void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_conte
 
   zMapStopTimer("WindowFeatureRedraw","Display");
 
-#if !ZWCI_AS_FOO
-	/* stop the expose avoidance */
-  zmapWindowUninterruptExpose(window);
-#endif
 
   zMapStopTimer("WindowFeatureRedraw","");
 
@@ -1281,9 +1257,6 @@ void zMapWindowDestroy(ZMapWindow window)
     }
 
   gtk_widget_destroy(window->toplevel) ;
-#if !ZWCI_AS_FOO
-  zmapWindowLongItemDestroy(window->long_items) ;	    /* Must be after widget destroy ? */
-#endif
   zmapWindowFToIDestroy(window->context_to_item) ;
 
   if(window->item_factory)
@@ -1292,11 +1265,6 @@ void zMapWindowDestroy(ZMapWindow window)
       window->item_factory = NULL;
     }
 
-#if MH17_CRASH
-/* this points to a struct in the view */
-  if (window->sequence)
-    g_free(window->sequence) ;
-#endif
 
   if(window->history)
     zmapWindowStateQueueDestroy(window->history);
@@ -1467,12 +1435,10 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
   if (feature_arg->type == ZMAPSTYLE_MODE_SEQUENCE)
     {
       /* sequence like feature. */
-      ZMapWindowSequenceFeature sequence_feature = NULL ;
       char *seq_term ;
 
-      sequence_feature = ZMAP_WINDOW_SEQUENCE_FEATURE(item);
 
-      feature = zMapWindowCanvasItemGetFeature(FOO_CANVAS_ITEM(sequence_feature)) ;
+      feature = zMapWindowCanvasItemGetFeature(FOO_CANVAS_ITEM(item)) ;
 
       dna_start = sub_item_dna_start ;
       dna_end = sub_item_dna_end ;
@@ -1765,23 +1731,11 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
 
 	/* dis/enable the filter by score widget and set min and max */
       select.filter.enable = FALSE;
-#if ZWCI_AS_FOO
+
       if (style && zMapStyleIsFilter(style) && ZMAP_IS_WINDOW_FEATURESET_ITEM(item))
-#else
-      if (style && zMapStyleIsFilter(style) && ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(item))
-#endif
 	{
-#if ZWCI_AS_FOO
 	  FooCanvasItem *foo = (FooCanvasItem *) item;
-#else
-		/* get the canvasFeatureset inside the canvas item */
-	  FooCanvasGroup *group = FOO_CANVAS_GROUP(item);
-	  FooCanvasItem *foo;
 
-	  zMapAssert(group && group->item_list);
-
-	  foo = (FooCanvasItem *) group->item_list->data;
-#endif
 	  select.filter.min = zMapStyleGetMinScore(style);
 	  select.filter.max = zMapStyleGetMaxScore(style);
 	  select.filter.value = zMapWindowCanvasFeaturesetGetFilterValue(foo);
@@ -2068,10 +2022,6 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
   /* Add a hash table to map features to their canvas items. */
   window->context_to_item = zmapWindowFToICreate() ;
 
-#if !ZWCI_AS_FOO
-  /* List of items that will exceed X windows max draw size when canvas is zoomed. */
-  window->long_items = zmapWindowLongItemCreate(0.0) ;	    /* Don't know max zoom yet.... */
-#endif
 
   /* Init. lists of dialog windows attached to this zmap window. */
   window->featureListWindows = g_ptr_array_new() ;
@@ -2160,22 +2110,12 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
 
   gtk_widget_show_all(window->parent_widget) ;
 
-#if MH17_NOT_USED_MOVED_TO_VIEW
-  zMapWindowSetupXRemote(window, window->toplevel);
-#endif
 
   /* We want the canvas to be the focus widget of its "window" otherwise keyboard input
    * (i.e. short cuts) will be delivered to some other widget. We do this here because
    * I think we may need a widget window to exist for this call to work. */
   gtk_widget_grab_focus(GTK_WIDGET(window->canvas)) ;
 
-  /* This enables the interruption of the expose cycles.  The long
-   * item cropping used to be done in this, but there still seemed to
-   * be a problem.  Some of this was probably speed, but also clipping
-   * wasn't always correct. */
-#if MH17_POINTLESS_FUNCTION_DOES_NOTHING
-  zmapWindowLongItemsInitialiseExpose(window->long_items, window->canvas);
-#endif
 
 
   if (!(window->normal_cursor))
@@ -2274,17 +2214,6 @@ static void myWindowZoom(ZMapWindow window, double zoom_factor, double curr_pos)
   double x1, y1, x2, y2, width ;
   double new_canvas_span ;
 
-#if !ZWCI_AS_FOO
-  zmapWindowInterruptExpose(window);
-#endif
-	zMapLogTime(TIMER_ZOOM,TIMER_CLEAR,0,"zoom");
-	zMapLogTime(TIMER_EXPOSE,TIMER_CLEAR,0,"zoom");
-	zMapLogTime(TIMER_UPDATE,TIMER_CLEAR,0,"zoom");
-	zMapLogTime(TIMER_DRAW,TIMER_CLEAR,0,"zoom");
-	zMapLogTime(TIMER_DRAW_CONTEXT,TIMER_CLEAR,0,"zoom");
-	zMapLogTime(TIMER_SETVIS,TIMER_CLEAR,0,"zoom");
-      zMapLogTime(TIMER_ZOOM,TIMER_START,0,"");
-
 
   if(window->curr_locking == ZMAP_WINLOCK_HORIZONTAL)
     {
@@ -2367,95 +2296,13 @@ static void myWindowZoom(ZMapWindow window, double zoom_factor, double curr_pos)
 
   zMapWindowRedraw(window);
 
-  zMapLogTime(TIMER_ZOOM,TIMER_STOP,0,"");
-
  uninterrupt:
-#if !ZWCI_AS_FOO
-  zmapWindowUninterruptExpose(window);
-#endif
   return ;
 }
 
 
 
-#if MH17_NOT_USED
 
-static void itemXCB(gpointer data, gpointer user_data)
-{
-  FooCanvasItem *item = (FooCanvasItem *)data ;
-  FooCanvasGroup *group;
-  GList *list;
-
-    if(ZMAP_IS_CANVAS_ITEM(item))         // complex object
-      {
-	    ZMapWindowCanvasItem zwci = (ZMapWindowCanvasItem) item;
-	    ZMapFeature feature;
-
-	    feature = zMapWindwoCanvasItemGetFeature(zwci);
-	    if(feature->style->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
-	    {
-		  printf("transcript %s\n", g_quark_to_string(zwci->feature->original_id));
-		  group = (FooCanvasGroup *) item;
-		  list = group->item_list;
-
-		  for(;list;list = list->next)
-		  {
-			FooCanvasItem *foo = (FooCanvasItem *) list->data;
-			char *what = "????";
-			if(FOO_IS_CANVAS_RE(foo))
-			    what = "rect";
-			if(FOO_IS_CANVAS_LINE(foo))
-			    what = "line";
-			printf("%s @ %p (%f,%f %f,%f)\n",what, foo, foo->x1,foo->y1,foo->x2,foo->y2);
-		  }
-	    }
-      }
-
-  return ;
-}
-
-static void dumpXCB(ZMapWindowContainerGroup container_parent, FooCanvasPoints *points,
-                  ZMapContainerLevelType level,  gpointer user_data)
-{
-      switch(level)
-      {
-        case ZMAPCONTAINER_LEVEL_ROOT:
-        case ZMAPCONTAINER_LEVEL_ALIGN:
-        case ZMAPCONTAINER_LEVEL_BLOCK:
-        case ZMAPCONTAINER_LEVEL_STRAND:
-          break;
-
-        case ZMAPCONTAINER_LEVEL_FEATURESET:
-         {
-            ZMapWindowContainerFeatures features;
-            if ((features = zmapWindowContainerGetFeatures(container_parent)))
-              {
-                FooCanvasGroup *features_group;
-                features_group = (FooCanvasGroup *)features;
-                g_list_foreach(features_group->item_list, itemXCB, user_data) ;
-              }
-            break;
-          }
-
-          default:
-            zMapAssertNotReached();
-            break;
-      }
-//printf("DumpCB ends %s\n",tstamp());
-}
-
-
-
-void zmapWindowDumpFileX(ZMapWindow window,char *file)
-{
-
-	printf("\ndump canvas from %s\n\n",file);
-      zmapWindowContainerUtilsExecute(window->feature_root_group,ZMAPCONTAINER_LEVEL_FEATURESET, dumpXCB,NULL);
-
-
-}
-
-#endif
 
 /* Move the window to a new part of the canvas, we need this because when the window is
  * zoomed in, it may not extend over the whole canvas so this kind of alternative scrolling.
@@ -2537,11 +2384,6 @@ static void resetCanvas(ZMapWindow window, gboolean free_child_windows, gboolean
       zmapWindowContainerGroupDestroy(window->feature_root_group) ;
       window->feature_root_group = NULL ;
 
-#if !ZWCI_AS_FOO
-      /* Must follow the container destroy above...in fact if there is no root group we don't need to
-	 do this...??? */
-      zmapWindowLongItemFree(window->long_items) ;
-#endif
     }
 
 
@@ -3208,7 +3050,9 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
   static FooCanvasItem *seq_item = NULL;		/* if not NULL we are selecting text */
   static long seq_start, seq_end;			/* first coord is fixed, then we can move above or below */
 
-
+#if MOUSE_DEBUG
+zMapLogWarning("canvas event %d",  event->type);
+#endif
 
   /* We record whether we are inside the window to enable user to cancel certain mouse related
    * actions by moving outside the window. */
@@ -3260,24 +3104,11 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 	    origin_x = wx;
 	    origin_y = wy;
 
-#if !ZWCI_AS_FOO
-	      if ((item = foo_canvas_get_item_at(window->canvas, origin_x, origin_y))
-		  && ZMAP_IS_WINDOW_TEXT_ITEM(item))
-		{
-		  /* Don't handle if its text because the text item callbacks handle lasso'ing of
-		   * text. */
 
-		  zMapDebugPrint(mouse_debug_G, "button_press %d is for text item - don't process",
-				 but_event->button) ;
-
-		  event_handled = FALSE ;
-		}
-		else if(item && ZMAP_IS_WINDOW_FEATURESET_ITEM(item))
-#else
 	      if ((item = foo_canvas_get_item_at(window->canvas, origin_x, origin_y))
-			&& ZMAP_IS_WINDOW_FEATURESET_ITEM(item)
-			&& zMapWindowCanvasFeaturesetGetSeqCoord((ZMapWindowFeaturesetItem) item, TRUE, origin_x, origin_y, &seq_start, &seq_end))
-#endif
+		  && ZMAP_IS_WINDOW_FEATURESET_ITEM(item)
+		  && zMapWindowCanvasFeaturesetGetSeqCoord((ZMapWindowFeaturesetItem)item, TRUE,
+							   origin_x, origin_y, &seq_start, &seq_end))
 		{
 				/* get start coordinate via subpartspan from x and y
 				 * set end coordinate to be the same
@@ -3679,13 +3510,18 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 		    double rootx1, rootx2, rooty1, rooty2 ;
 
 
-		    /* Get size of item and convert to world coords. */
+		    /* Get size of item and convert to world coords, bounds are relative to item's parent */
 		    foo_canvas_item_get_bounds(window->rubberband, &rootx1, &rooty1, &rootx2, &rooty2) ;
-		    foo_canvas_item_i2w(window->rubberband, &rootx1, &rooty1) ;
-		    foo_canvas_item_i2w(window->rubberband, &rootx2, &rooty2) ;
+//		    foo_canvas_item_i2w(window->rubberband, &rootx1, &rooty1) ;
+//		    foo_canvas_item_i2w(window->rubberband, &rootx2, &rooty2) ;
 
-		    /* only finds features in a canvas featureset, old foo gives nothing */
-		    feature_list = zMapWindowFeaturesetItemFindFeatures(&item, rooty1, rooty2, rootx1, rootx2);
+			/* find the canvvas iten (a canvas featureset) at the centre of the lassoo */
+// can-t do this as the canvas featureset point function returns n/a if there's no feature under the cursor
+//		    if ((item = foo_canvas_get_item_at(window->canvas, (rootx2 + rootx1) / 2, (rooty2 + rooty1) / 2) ))
+		    {
+			/* only finds features in a canvas featureset, old foo gives nothing */
+			feature_list = zMapWindowFeaturesetItemFindFeatures(&item, rooty1, rooty2, rootx1, rootx2);
+		    }
 
 			/* this is how features get highlit */
 			if(item)
@@ -3748,13 +3584,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 		gboolean moved = FALSE;
 		y = but_event->y;
 
-#if !ZWCI_AS_FOO
-		zmapWindowInterruptExpose(window);
-		if((moved = recenter_scroll_window(window, &y)) == FALSE)
-		  zmapWindowUninterruptExpose(window);
-#else
 		moved = recenter_scroll_window(window, &y);
-#endif
 
 		zMapWindowScrollToWindowPos(window, y) ;
 
@@ -3929,19 +3759,11 @@ void zmapWindowZoomToItem(ZMapWindow window, FooCanvasItem *item)
   double rootx1, rootx2, rooty1, rooty2;
   gboolean border = TRUE ;
 
-#if ZWCI_AS_FOO
   if(ZMAP_IS_WINDOW_FEATURESET_ITEM(item))
   {
   	/* feature has been set by caller */
   	zMapWindowCanvasFeaturesetGetFeatureBounds(item, &rootx1, &rooty1, &rootx2, &rooty2);
   }
-#else
-  if(ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(item))
-  {
-  	/* feature has been set by caller */
-  	zMapWindowCanvasFeaturesetItemGetFeatureBounds(item, &rootx1, &rooty1, &rootx2, &rooty2);
-  }
-#endif
   else
   {
 	  /* Get size of item and convert to world coords. */
@@ -4565,6 +4387,16 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	break ;
       }
 
+    case GDK_1:
+	    zMapLogWarning("point 1","");
+	    break;
+    case GDK_2:
+	    zMapLogWarning("point 2","");
+	    break;
+    case GDK_3:
+	    zMapLogWarning("point 3","");
+	    break;
+
     case GDK_Delete:
     case GDK_BackSpace:					    /* Good for Macs which have no delete key. */
       {
@@ -5089,21 +4921,12 @@ static void getMaxBounds(gpointer data, gpointer user_data)
   MaxBounds max_bounds = (MaxBounds)user_data ;
   double rootx1, rootx2, rooty1, rooty2 ;
 
-#if ZWCI_AS_FOO
   if(ZMAP_IS_WINDOW_FEATURESET_ITEM(item))
   {
   	/* this is a ZMapWindowCanvasItem ie a foo canvas group  */
   	zMapWindowCanvasItemSetFeaturePointer((ZMapWindowCanvasItem) item, (ZMapFeature) id2c->feature_any);
   	zMapWindowCanvasFeaturesetGetFeatureBounds(item, &rootx1, &rooty1, &rootx2, &rooty2);
   }
-#else
-  if(ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(item))
-  {
-  	/* this is a ZMapWindowCanvasItem ie a foo canvas group  */
-  	zMapWindowCanvasItemSetFeaturePointer((ZMapWindowCanvasItem) item, (ZMapFeature) id2c->feature_any);
-  	zMapWindowCanvasFeaturesetItemGetFeatureBounds(item, &rootx1, &rooty1, &rootx2, &rooty2);
-  }
-#endif
   else
   {
 	/* Get size of item and convert to world coords. */
@@ -5378,19 +5201,11 @@ static void unhideItemsCB(gpointer data, gpointer user_data)
   FooCanvasItem *item = id2c->item;
   ZMapWindow window = (ZMapWindow)user_data ;
 
-#if ZWCI_AS_FOO
   if(ZMAP_IS_WINDOW_FEATURESET_ITEM(item))
   {
 	zMapWindowCanvasItemSetFeaturePointer((ZMapWindowCanvasItem) id2c->item, (ZMapFeature) id2c->feature_any);
 	zMapWindowCanvasItemShowHide((ZMapWindowCanvasItem)id2c->item, TRUE);
   }
-#else
-  if(ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(item))
-  {
-	zMapWindowCanvasItemSetFeaturePointer((ZMapWindowCanvasItem) id2c->item, (ZMapFeature) id2c->feature_any);
-	zMapWindowCanvasItemShowHide((ZMapWindowCanvasItem)id2c->item, TRUE);
-  }
-#endif
   else
   {
 	foo_canvas_item_show(item) ;
@@ -5472,8 +5287,6 @@ static char *makePrimarySelectionText(ZMapWindow window) //, FooCanvasItem *high
 	}
       else
 	{
-//	  ZMapFeatureSubPartSpan sub_feature ;
-
 	  while (selected)
 	    {
 	      FeatureCoordStruct feature_coord ;
@@ -5485,38 +5298,15 @@ static char *makePrimarySelectionText(ZMapWindow window) //, FooCanvasItem *high
 	      else
 		canvas_item = zMapWindowCanvasItemIntervalGetObject(item) ;
 
-//	      item_feature = zmapWindowItemGetFeature(canvas_item) ;
 		item_feature = (ZMapFeature) id2c->feature_any;
 
-#if ZWCI_AS_FOO
-/* this is not a get sub part issue, we want the whole canvas feature which is a single 'exon' in a bigger alignment */
+		/* this is not a get sub part issue, we want the whole canvas feature which is a single 'exon' in a bigger alignment */
 		selected_start = item_feature->x1 ;
 		selected_end = item_feature->x2 ;
 		selected_length = item_feature->x2 - item_feature->x1 + 1 ;
 		item_type_int = ZMAPFEATURE_SUBPART_MATCH ;
-#else
-	      if ((sub_feature = zMapWindowCanvasItemIntervalGetData(item, item_feature, 0, item_feature->x1)))
-		{
-#if POINTLESS
-		  possiblyPopulateWithChildData(window, item, // highlight_item,
-						&item_type_int, &selected_start, &selected_end, &selected_length) ;
-#else
-			selected_start = sub_feature->start ;
-			selected_end = sub_feature->end ;
-			selected_length = sub_feature->end - sub_feature->start + 1 ;
-			item_type_int = sub_feature->subpart ;
 
-#endif
-
-		}
-	      else
-		{
-		  possiblyPopulateWithFullData(window, item_feature, item, // highlight_item,
-					       &dummy, &dummy, &dummy, &selected_start,
-					       &selected_end, &selected_length) ;
-		}
-#endif
-	      feature_coord.name = (char *)g_quark_to_string(item_feature->original_id) ;
+		feature_coord.name = (char *)g_quark_to_string(item_feature->original_id) ;
 	      feature_coord.start = selected_start ;
 	      feature_coord.end = selected_end ;
 	      feature_coord.length = selected_length ;
@@ -5542,92 +5332,6 @@ static char *makePrimarySelectionText(ZMapWindow window) //, FooCanvasItem *high
 }
 
 
-#if POINTLESS
-/* this function does nothing and is called from one place */
-
-/* If feature_item is a sub_feature, e.g. an exon, then return its position/length etc. */
-static gboolean possiblyPopulateWithChildData(ZMapWindow window,
-                                              FooCanvasItem *feature_item,
-//                                              FooCanvasItem *highlight_item,
-                                              ZMapFeatureSubpartType *sub_type,
-                                              int *selected_start, int *selected_end, int *selected_length)
-{
-  gboolean populated = FALSE ;
-  ZMapFeatureSubPartSpan item_data ;
-
-//  item_data = g_object_get_data(G_OBJECT(feature_item), ITEM_SUBFEATURE_DATA) ;
-  item_data = zMapWindowCanvasItemIntervalGetData(feature_item);
-//  zMapAssert(item_data) ;
-  if(item_data)
-  {
-
-	*selected_start = item_data->start ;
-	*selected_end = item_data->end ;
-	*selected_length = (item_data->end - item_data->start + 1) ;
-	*sub_type = item_data->subpart ;
-
-	populated = TRUE ;
-  }
-  return populated ;
-}
-
-
-/* Return full_item data.... */
-static gboolean possiblyPopulateWithFullData(ZMapWindow window,
-                                             ZMapFeature feature,
-                                             FooCanvasItem *feature_item,
- //                                            FooCanvasItem *highlight_item,
-                                             int *feature_start, int *feature_end,
-                                             int *feature_length,
-                                             int *selected_start, int *selected_end,
-                                             int *selected_length)
-{
-  gboolean populated = TRUE;
-  int type;
-
-  zMapAssert(feature_start  && feature_end  &&
-             selected_start && selected_end &&
-             feature_length && selected_length);
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* We could be using this here..... */
-
-	  zMapFeatureGetInfo((ZMapFeatureAny)item_feature, NULL,
-			     "start",  &selected_start,
-			     "end",    &selected_end,
-			     "length", &selected_length,
-			     NULL);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-  type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_TYPE)) ;
-
-
-  switch (feature->type)
-    {
-    case ZMAPSTYLE_MODE_BASIC:
-    case ZMAPSTYLE_MODE_SEQUENCE:
-      *feature_length = zMapFeatureLength(feature, ZMAPFEATURELENGTH_TARGET) ;
-      break ;
-    case ZMAPSTYLE_MODE_TRANSCRIPT:
-      *feature_length = zMapFeatureLength(feature, ZMAPFEATURELENGTH_SPLICED) ;
-      break ;
-    case ZMAPSTYLE_MODE_ALIGNMENT:
-      *feature_length = zMapFeatureLength(feature, ZMAPFEATURELENGTH_QUERY) ;
-      break ;
-    default:
-      *feature_length = 0 ;
-      break ;
-    }
-
-  *selected_start = feature->x1 ;
-  *selected_end = feature->x2 ;
-  *selected_length = *feature_length ;
-
-  return populated ;
-}
-
-#endif
 
 
 void zmapWindowReFocusHighlights(ZMapWindow window)
@@ -5827,21 +5531,6 @@ static gboolean checkItem(FooCanvasItem *item, gpointer user_data)
 }
 
 
-#if !ZWCI_AS_FOO
-static void zmapWindowInterruptExpose(ZMapWindow window)
-{
-  if(window->long_items)
-    zmapWindowLongItemPushInterruption(window->long_items);
-  return ;
-}
-
-static void zmapWindowUninterruptExpose(ZMapWindow window)
-{
-  if(window->long_items)
-    zmapWindowLongItemPopInterruption(window->long_items);
-  return ;
-}
-#endif
 
 
 /* Function to pop up the appropriate menu for either a column or a feature in response
@@ -6130,10 +5819,6 @@ static void fc_begin_update_cb(FooCanvas *canvas, gpointer user_data)
       /* see resetCanvas, but result is this test is no longer required */
       if(!(x1 == 0.0 && y1 == 0.0 && x2 == ZMAP_CANVAS_INIT_SIZE && y2 == ZMAP_CANVAS_INIT_SIZE))
 	{
-#endif
-#if !ZWCI_AS_FOO
-		// was commented out before ZWCI_AS_FOO
-	  // zmapWindowLongItemCrop(window->long_items, x1, y1, x2, y2);
 #endif
 #ifdef CAUSED_RT_57193
 	}

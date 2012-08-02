@@ -131,8 +131,9 @@ static void zMapWindowCanvasTranscriptPaintFeature(ZMapWindowFeaturesetItem feat
       	int cx1, cy1, cx2, cy2, cy1_5, cx1_5;
 
 			/* get item canvas coords in pixel coordinates */
+			/* NOTE not quite sure why y1 is 1 out when y2 isn't */
 		foo_canvas_w2c (foo->canvas, x1, feature->y1 - featureset->start + featureset->dy, &cx1, &cy1);
-		foo_canvas_w2c (foo->canvas, x2, feature->y2 - featureset->start + featureset->dy, &cx2, &cy2);
+		foo_canvas_w2c (foo->canvas, x2, feature->y2 - featureset->start + featureset->dy + 1, &cx2, &cy2);
 		cy1_5 = (cy1 + cy2) / 2;
 		cx1_5 = (cx1 + cx2) / 2;
 		c.pixel = outline;
@@ -145,7 +146,7 @@ static void zMapWindowCanvasTranscriptPaintFeature(ZMapWindowFeaturesetItem feat
 
 
 
-static void zMapWindowCanvasTranscriptAddFeature(ZMapWindowFeaturesetItem featureset, ZMapFeature feature, double y1, double y2)
+static ZMapWindowCanvasFeature zMapWindowCanvasTranscriptAddFeature(ZMapWindowFeaturesetItem featureset, ZMapFeature feature, double y1, double y2)
 {
 	int ni = 0, ne = 0, i;
 	GArray *introns,*exons;
@@ -197,6 +198,8 @@ static void zMapWindowCanvasTranscriptAddFeature(ZMapWindowFeaturesetItem featur
 			tr->index = i;
 		}
 	}
+
+	return feat;
 }
 
 

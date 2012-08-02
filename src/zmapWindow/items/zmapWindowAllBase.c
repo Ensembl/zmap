@@ -35,7 +35,7 @@
 #include <ZMap/zmap.h>
 
 
-#include <zmapWindowFeatures_I.h>
+#include <zmapWindowCanvasItem_I.h>
 #include <zmapWindowContainers_I.h>
 
 #include <zmapWindowAllBase.h>
@@ -236,28 +236,14 @@ static MyGObjectInfo initObjectDescriptions(void)
       /* zmap item types */
       {zMapWindowCanvasItemGetType, 0, NULL, sizeof(zmapWindowCanvasItem)},
       {zmapWindowContainerGroupGetType, 0, NULL, sizeof(zmapWindowContainerGroup)},
-#if !ZWCI_AS_FOO
-      {zMapWindowAlignmentFeatureGetType, 0, NULL, sizeof(zmapWindowAlignmentFeature)},
-      {zMapWindowAssemblyFeatureGetType, 0, NULL, sizeof(zmapWindowAssemblyFeature)},
-      {zMapWindowBasicFeatureGetType, 0, NULL, sizeof(zmapWindowBasicFeature)},
-#endif
       {zmapWindowContainerAlignmentGetType, 0, NULL, sizeof(zmapWindowContainerAlignment)},
       {zmapWindowContainerBlockGetType, 0, NULL, sizeof(zmapWindowContainerBlock)},
       {zmapWindowContainerFeaturesGetType, 0, NULL, sizeof(zmapWindowContainerFeatures)},
       {zmapWindowContainerContextGetType, 0, NULL, sizeof(zmapWindowContainerContext)},
       {zmapWindowContainerFeatureSetGetType, 0, NULL, sizeof(zmapWindowContainerFeatureSet)},
       {zmapWindowContainerStrandGetType, 0, NULL, sizeof(zmapWindowContainerStrand)},
-#if !ZWCI_AS_FOO
-      {zMapWindowGlyphItemGetType, 0, NULL, sizeof(zmapWindowGlyphItem)},
-#endif
-      {zMapWindowLongItemGetType, 0, NULL, sizeof(zmapWindowLongItem)},
-#if !ZWCI_AS_FOO
-      {zMapWindowSequenceFeatureGetType, 0, NULL, sizeof(zmapWindowSequenceFeature)},
-      {zMapWindowTextFeatureGetType, 0, NULL, sizeof(zmapWindowTextFeature)},
-      {zMapWindowTextItemGetType, 0, NULL, sizeof(zmapWindowTextItem)},
-      {zMapWindowTranscriptFeatureGetType, 0, NULL, sizeof(zmapWindowTranscriptFeature)},
-#endif
-      /* end of array. */
+//      {zMapWindowLongItemGetType, 0, NULL, sizeof(zmapWindowLongItem)},
+     /* end of array. */
       {NULL, 0, NULL, 0}
     } ;
   MyGObjectInfo tmp ;

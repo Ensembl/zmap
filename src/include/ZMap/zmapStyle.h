@@ -64,6 +64,7 @@ typedef struct _ZMapStyleGlyphShapeStruct      // defined here so that config ca
   {
     gint coords[GLYPH_SHAPE_MAX_POINT];        // defined in pairs (x,y)
     gint n_coords;
+    gint width,height;
     GQuark id;
     /*
      * break between lines flagged by GLYPH_COORD_INVALID
@@ -584,6 +585,7 @@ ZMAP_DEFINE_ENUM(ZMapStyleMergeMode, ZMAP_STYLE_MERGE_MODE_LIST) ;
  *  */
 
 
+
 /*! @struct ZMapStyleColour zmapStyle_P.h
  *  @brief ZMap object colours
  *
@@ -708,6 +710,7 @@ typedef struct
   ZMapStyleGlyphStrand glyph_strand;
   ZMapStyleGlyphAlign glyph_align;
   guint glyph_threshold;
+  gboolean is_splice;				// is is a GF_SPLICE glyph: faster if we set this here
 
 } ZMapStyleGlyphStruct, *ZMapStyleGlyph ;
 
@@ -718,11 +721,6 @@ typedef struct
  * Draws an alignment as a series of blocks joined by straight lines. The lines can be coloured
  * to indicate colinearity between adjacent blocks. */
 
-
-/* there are misplaced, they are not display style info but instead GFF keywords and are only used in zmapGFF2Parser.c */
-#define ZMAPSTYLE_ALIGNMENT_GAPS   "Gaps"
-#define ZMAPSTYLE_ALIGNMENT_CIGAR  "cigar"
-#define ZMAPSTYLE_ALIGNMENT_VULGAR  "vulgar"
 
 typedef struct
  {
@@ -1089,10 +1087,14 @@ void zMapStyleGetStrandAttrs(ZMapFeatureTypeStyle type,
 #define zMapStyleIsFilter(style)   (style->filter)
 
 #define zMapStyleGetShowWhenEmpty(style)   (style->show_when_empty)
+
 gboolean zMapStyleGetColours(ZMapFeatureTypeStyle style, ZMapStyleParamId target, ZMapStyleColourType type,
 			     GdkColor **fill, GdkColor **draw, GdkColor **border) ;
 gboolean zMapStyleGetColoursDefault(ZMapFeatureTypeStyle style,
                             GdkColor **background, GdkColor **foreground, GdkColor **outline);
+char *zMapStyleMakeColourString(char *normal_fill, char *normal_draw, char *normal_border,
+				char *selected_fill, char *selected_draw, char *selected_border) ;
+
 //char *zMapStyleGetDescription(ZMapFeatureTypeStyle style) ;
 #define zMapStyleGetDescription(style) (style->description)
 

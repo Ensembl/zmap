@@ -268,7 +268,7 @@ PixRect zmapWindowCanvasFeaturesetSummarise(PixRect pix, ZMapWindowFeaturesetIte
 	while(blocks)
 	{
 		this = blocks;
-		blocks = blocks->next;		/* one feature only, or a list of always gappad blocks in the feature */
+		blocks = blocks->next;		/* one feature only, or a list of always gapped blocks in the feature */
 		this->next = this->prev = NULL;
 		last = NULL;
 
@@ -287,7 +287,7 @@ printf("this = %d\n",this->which);
 
 			pr = pix;
 
-				/* one block of the feature is visible so it all is */
+				/* one block of the feature is visible so it all is  (if always_gapped)... flag the feature*/
 			pr->feature->flags &= ~FEATURE_SUMMARISED;
 			if(!(pr->feature->flags & FEATURE_HIDE_REASON))
 				pr->feature->flags &= ~FEATURE_HIDDEN;
@@ -312,7 +312,8 @@ printf("testing %d\n",pr->which);
 
 			if(this->x2 >= pr->x2)		/* enough overlap to care about */
 			{
-				pr->y1 = this->y2 + 1;	/* shrink visible region: hidden cannot be after start */
+                        if(pr->y1 >= this->y1)
+					 pr->y1 = this->y2 + 1;	/* shrink visible region: hidden cannot be after start */
 
 				if(pr->y1 > pr->y2)	/* feature is hidden by features on top of it */
 				{
@@ -327,8 +328,8 @@ printf("hidden %d\n",del->which);
 
 					if(del->next)
 						del->next->prev = del->prev;
-
-					last = del->prev;
+					else
+						last = del->prev;
 
 					if(del->prev)
 						del->prev->next = del->next;
@@ -378,6 +379,12 @@ void zmapWindowCanvasFeaturesetSummariseFree(ZMapWindowFeaturesetItem featureset
 	{
 		n_summarise_show++;
 		pr = pix;
+
+		/* the ones at the end are left over and therefore visible */
+            pr->feature->flags &= ~FEATURE_SUMMARISED;
+            if(!(pr->feature->flags & FEATURE_HIDE_REASON))
+                  pr->feature->flags &= ~FEATURE_HIDDEN;
+
 		pix = pix->next;
 		pix_rect_free(pr);
 	}

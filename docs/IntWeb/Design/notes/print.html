@@ -1,0 +1,121 @@
+<h2>Using the GDK Print Interface</h2>
+
+<h3>What we'd like to do</h3>
+<p>This is quite simple really:
+<ul>
+<li>Drive the operation from a dialog like the current (which as based on output to a file).  There is also a direct print option which is thought to send a screenshot to the printer without any great user interaction, which looks like a good thing to review.<br />
+<img src="Design/notes/print_dialog.png">
+<li>Provide options for png, pdf and poscript output formats: bitmaps are quite useful for slides and PDF much better for publications
+<li>Use a common API for screen and printer (vector <i>and</i> raster images).
+<li>Allow the choice of screenshot (visible features only) whole sequence (include stuff off screen)
+We need to choose how to handle detail at higher zoom: PDF and PS formats could handle this at the cost of a slow performance with high volume data , but there is an arguement for only printing what the user can see: ZMap does not display hidden features.
+</ul>
+</p>
+
+<h3>A brief overview of the GTK and Cairo documentation and interface</h3>
+<p>There is a GTK API used to drive printing, which is assumed to be based on choosing printer and orientation etc. but we already have a dialog programmed which is very close to what we want.
+The GTKPrintOperation thing requires you to call gtk_print_operation_run() which will operate a dialog for you and emit signals such as ::draw_page which you are supposed to catch and then call functions to drive the API that actually feeds the printer.
+It may be much simpler to save screenshot to a (temporary) file and the print the file.
+</p>
+<p>Cairo docs can be found near <a href="http://www.cairographics.org/documentation/using_the_postscript_surface/">this useful link</a>.
+What's interesting is that the same API can drive PNG and PDF and PS file formats as well as screen graphics.
+</p>
+
+<p>Other than the scale bar and the mark all the GDK interface in Zmap is encapsulated in CanvasFeaturesets and only a few GDK calls are used.
+</p>
+<h3>What needs to be done in ZMap</h3>
+<h4>Encapsulate all remaining graphics code</h4>
+<p>We wish to avoid making major changes to the foo canvas (which uses gdk_ functions to paint the screen) and to make ZMap have control over how things are drawn we need to implement non-Foo code for the scale bar and the mark, and possible also for conatiner backgrounds, if these are drawn.  We may also have to recode the ruler in case there are any interaction between gdk and cairo.
+</p>
+<p>The scale bar can be coded as a new type of CanvasFeatureset item - it can respond to zoom using existing practices and fits neatly into a column display.
+</p>
+<p>The mark and ruler are slightly harder to deal with as they cover the whole screen and overlay everything else.  Exisiting Foo Canvas and ZMap code handles z-order explicitly via background, and overlay feature and underlay lists, which are implemented at all layers of container.  The mark is drawn as two (or three) foo canvas rectangles using a stipple pattern, and these are added to the block overlay list - all the columns in a block appear underneath this as containers in the block's features list.  The ruler (in two guises - ruler and mark adjuster) are held directly by the window and are created as children of the canvas root group  - this is using code in zmapDraw.c.  The ruler tooltip is also implemnented as a foo group on the canvas root.
+Other than this zmapDraw.c appears to be maily code that has fallen out of use, except for two call from zmapWindowDNAChoose.c, which could be handled by existing sequence highlight code.
+</p>
+<p>The canvas featureset code implements basic graphics objects such as lines and boxes with clipping, and other items (not clipped) such as poly-lines (for wiggle plots) and glyphs (as gdk_polygons, lines, arcs etc).  Note that clipping os only an issue for long items at high zoom, in case the Foo Canvas coordinate system wraps round.  Drawing overflow is clipped by the X-window code (or gdk).  These do not handle stipple patterns.
+</p>
+<p>The obvious course of action (given that we wish to simplify the containers code) is to recode the mark as being part of the canvas root group and size it to according to the relevant block if this is less than the screen size.  Ruler and tooltip items will have to be 'raised to top' in Foo Canvas terms.  However to encapsulate the drawing code outside the foo canvas we will have to implement a CanvasFeatureset like object covering the the whole screen and appearing on top of the other objects.
+</p>
+
+<h4>Replace all gdk_ drawing calls with cairo functions</h4>
+<p>This should be 'simple' but we need to factor in some differences such as the fact that by default lines in cairo are two pixels wide and centred on the gap between two pixels.  We would be wise to be skeptical about
+<a href="http://lists-archives.com/gtk/12263-performance-of-many-widgets.html">performance</a>:
+<pre>
+ I tried here and on a Ubuntu 10.10 install on a recent macbook with
+> the Ambiance theme your example was rather slow. There was an
+> appreciable delay (0.5s? something like that) between pressing the
+> top-left button and the display updating.
+>
+> I tried running under callgrind and it does seem to be spending a lot
+> of time somewhere deep inside libcairo (the graphics library that gtk
+> uses to draw the screen). I don't have a dbg version of cairo handy to
+> dig deeper.
+</pre>
+</p>
+<p>The cairo drawing API comes from a universe different from GDK and is probably not aimed at drawing large numbers of simple boxes, here's an example of <a href="http://www.gnomejournal.org/article/34/writing-a-widget-using-cairo-and-gtk28">how to implement a widget</a>.
+</p>
+
+
+<h4>Interface the print display to the drawing code</h4>
+<p>This should also be simple as we just "create a drawable object (for file/ printer output) and pass this to the existing drawing code".  However in Blixem this has been done by generating a pixmap using gdk_ code and then using cairo to print it, which precludes generating a crisp PDF image.   Referring to the comments above about 'performance skepticism' we may need to implement graphics functions that use gdk or cairo depending on the context.
+</p>
+
+<h4>Decisions</h4>
+<ul>
+<li>allow hidden detail?
+<li>dump to file only or print directly as well?
+<li>implement the mark as a window feature rather than a block feature?
+<li>replace gdk with cairo or run in parallel?
+</ul>
+<p>
+
+
+<h3>Some notes about the Scale Bar and adapting CanvasFeatureset code to data without features</h3>
+<p>CanvasFeatureset code and data has been optimised for drawing genomic features which may overlap and change appearance depending on zoom level, and also appear neatly lined up in columns.  The scale bar also changes appearance with zoom, but this is driven by externally with knowledge of the current scroll window (not accessable to the CanvasFeatureset code). There are a few aspects to this that could result in untidy code...
+<ul>
+<li> Implementing simple features such as lines and text is less trivial than first appears. CanvasFeatureset items do not have individual x1 and x2 coordinates: it will be necessary to extend the basic FeaturesetItem structure to add on x coordinates. X coordinates were ommited to cut down on memory use.
+<li> It is assumed that items added to a display column will derive from a genomic feature and in the case of graphics primitives this is unlikely.  It will be necessary to ensure that a NULL feature does not cause errors in the code.  Using a featuresetItem struct for a simple line will also waste memory, although we expect volumes to be less.
+<li> Feature style is used to control colours etc and this is assumed to be provided via a style.  It may be possible to provide a style via the CanvasFeatureset, but this limits the use of colours somewhat and assumes that all features are of the same type (not so in the case when mixing lines and text).
+<li> Normally features are added via the ItemFactory, which again assumes that each one corresponds to a genomic feature (and more so, as they are added to the FtoIhash).
+</ul>
+
+<h4>A slightly more general solution</h4>
+<p>Attempting to have the best of all possible worlds, we continue to assume that the majority of data will be displayed in columns that do not overlap, but allow for the possibility that we could overlay the screen with some extra data.  To handle simple graphics items with no genomic feature attached we will:
+<ul>
+<li> create a base level featuresetItem that can be either a featureless graphics primitve or a genomic feature. Each one of these can be derived into a structure that can actually be displayed.
+<li> genomic features will work as is
+<li> graphics primitives will extend the base structure to include two x coordinates and colour information.
+<li> graphic primitives will not use styles even though the CFS code assumes that features do. Instead they will hold fill and outline colours which will be used directly.  (this requires two longs, as opposed to a style pointer plus added complexity)
+<li> the canvas featureset code will be ammended to handle NULL features and styles.
+<li> alternative interface functions will be provided to add and remove featureless graphics primitives
+<li> graphics primitives will not repsond to the mouse and as such will not accept focus.
+<li> the canvas featureset itself must have a style, if necessary a hard coded one.
+<li> it will be possible to mix genomic an dgraphic features in one CanvasFeatureeet
+</ul>
+</p>
+
+<h5>A problem to solve</h5>
+<p>The navigator has a scroll region rectangle that can be dragged by the mouse which implies that it can have focus.  The ZMap focus module assumes that focussed items are genomic features and previous code handled the scroll regioon foo canvas item directly.  If not better solution can be found then the navigator code will handle this featureset item directly, and maintain a pointer to it explicitly.
+</p>
+
+<h5>Is this heading back to a 2D FooCanvas?</h5>
+<p>CanvasFeaturesets were implemented a) to allow presentation of heatmaps that get re-binned on zoom (necessarily requires a columns wide structure) b) effciently.  They were later extended to handle basic features and alignments with a view to providing a faster user experience.  The FooCanvas is explicitly 2D whereas CanvasFeaturesets are explicitly orgainsed in columns which correspond roughly to FooCanvas groups as used in the Zmap display and as such are quite specific to the ZMap application.
+The use of graphics primitives in a column such as the Scale Bar maintains this close link to the ZMap run-time environment and we should remain aware that this is not an attempt at producing a generalised graphics engine.  Note especially that there is very little explicit Z-ordering, execpt within drawing a single feature and the use of focus (which only applies to genomic features).  To subvert this code into 2D operation wih no restriction on x-coordinates would require a major rethink of indexing methodology,
+</p>
+<p>If we use CanvasFeaturesets to overlay/ underlay the whole canvas with decorative features (eg ruler, mark) then the assumption is that this will have little effect on performance: the bulk of display items will remain as genomic features, operating in a similar way as at present.
+</p>
+<h5>Why use CanvasFeaturesets for this?</h5>
+<p>There are two simple reasons:
+<ul>
+<li> we provide a single interface to GDK which can be changed to cairo and can be use for printing/ screenshots
+<li> CanvasFeatureset items are indexed and thereby run faster
+</ul>
+</p>
+
+<h4>Scale Bar Foo Canvas environment</h4>
+<p>The Scale Bar is drawn in two different contexts a) in a pane next the window on its own in its own canvas ad b) in the navigator in a ZMapWindowContainerFeatureSet.  Regardless of theis it consists of two foo canvas groups, one for text and one for ticks, which are then oriented left and right.
+</p>
+<p>Theoretically the ticks and text could be swapped round but this would require correct horizontal justifcation and therefore would be more complicated that re-positioning the groups.  To avoid having the extra complexity of positioning CanvasFeaturesets we propose to display ticks and text in one CanvasFeatureset, which will require pre-calculation of x-offsets to prevent the need to bump ticks and text after intial display.  Note also that as we implement text and ticks as generic simple graphics features we cannot use a CanvasFeatureset zoom function to operate any such bump operation.
+</p>
+
+

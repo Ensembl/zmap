@@ -366,13 +366,15 @@ static void zMapWindowCanvasLocusFreeSet(ZMapWindowFeaturesetItem featureset)
 }
 
 
-static void zMapWindowCanvasLocusAddFeature(ZMapWindowFeaturesetItem featureset, ZMapFeature feature, double y1, double y2)
+static ZMapWindowCanvasFeature zMapWindowCanvasLocusAddFeature(ZMapWindowFeaturesetItem featureset, ZMapFeature feature, double y1, double y2)
 {
-	(void) zMapWindowFeaturesetAddFeature(featureset, feature, y1, y2);
+	ZMapWindowCanvasFeature feat = zMapWindowFeaturesetAddFeature(featureset, feature, y1, y2);
 
 	featureset->zoom = 0.0;		/* force recalc of de-overlap */
 						/* force display at all */
 //	printf("added locus feature %s\n",g_quark_to_string(feature->original_id));
+
+	return feat;
 }
 
 

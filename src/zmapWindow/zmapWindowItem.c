@@ -38,53 +38,15 @@
 #include <ZMap/zmapSequence.h>
 #include <zmapWindow_P.h>
 #include <zmapWindowContainerUtils.h>
-#include <zmapWindowItemTextFillColumn.h>
-#include <zmapWindowFeatures.h>
+
+#include <zmapWindowCanvasItem.h>
 #include <zmapWindowContainerFeatureSet_I.h>
 
-/* Used to hold highlight information for the hightlight callback function. */
-typedef struct
-{
-  ZMapWindow window ;
-  ZMapWindowMark mark ;
-  gboolean highlight ;
-} HighlightStruct, *Highlight ;
 
-typedef struct
-{
-  int start, end;
-  FooCanvasItem *item;
-} StartEndTextHighlightStruct, *StartEndTextHighlight;
-
-typedef struct
-{
-  double x1, y1, x2, y2;
-} AreaStruct;
-
-typedef struct
-{
-  ZMapWindow window;
-  FooCanvasGroup *block;
-  int seq_x, seq_y;
-  double wx1, wx2, wy1, wy2;
-  gboolean result;
-} get_item_at_workaround_struct, *get_item_at_workaround;
-
-
-typedef struct
-{
-  ZMapWindow window;
-  gboolean multiple_select;
-  gint highlighted;
-  gint feature_count;
-} HighlightContextStruct, *HighlightContext;
 
 
 
 //static ZMapFeatureContextExecuteStatus highlight_feature(GQuark key, gpointer data, gpointer user_data, char **error_out) ;
-#if !ZWCI_AS_FOO
-static gint sortByPositionCB(gconstpointer a, gconstpointer b) ;
-#endif
 
 static void getVisibleCanvas(ZMapWindow window,
 			     double *screenx1_out, double *screeny1_out,
@@ -98,19 +60,6 @@ static void getVisibleCanvas(ZMapWindow window,
  */
 
 
-#if !ZWCI_AS_FOO
-/* only called by previous bump code and an orphan fucntion in WindowFeature.c */
-/* This looks like something we will want to do often.... */
-GList *zmapWindowItemSortByPostion(GList *feature_item_list)
-{
-  GList *sorted_list = NULL ;
-
-  if (feature_item_list)
-    sorted_list = g_list_sort(feature_item_list, sortByPositionCB) ;
-
-  return sorted_list ;
-}
-#endif
 
 gboolean zmapWindowItemGetStrandFrame(FooCanvasItem *item, ZMapStrand *set_strand, ZMapFrame *set_frame)
 {
@@ -132,33 +81,7 @@ gboolean zmapWindowItemGetStrandFrame(FooCanvasItem *item, ZMapStrand *set_stran
   return result ;
 }
 
-#if 0
-GList *zmapWindowItemListToFeatureList(GList *item_list)
-{
-  GList *feature_list = NULL;
 
-  g_list_foreach(item_list, extract_feature_from_item, &feature_list);
-
-  return feature_list;
-}
-
-
-static void extract_feature_from_item(gpointer list_data, gpointer user_data)
-{
-  GList **list = (GList **)user_data;
-  FooCanvasItem *item = (FooCanvasItem *)list_data;
-  ZMapFeature feature;
-
-  if((feature = zmapWindowItemGetFeature(item)))
-    {
-      *list = g_list_append(*list, feature);
-    }
-  else
-    zMapAssertNotReached();
-
-  return ;
-}
-#else
 /* function is called from 2 places only, may be good to make callers use the id2c list directly
    this is a quick mod to preserve the existing interface */
 
@@ -207,21 +130,6 @@ GList *zmapWindowItemListToFeatureListExpanded(GList *item_list, int expand)
   return feature_list;
 }
 
-#if MH17_NOT_USED
-int zmapWindowItemListStartCoord(GList *item_list)
-{
-  ID2Canvas id2c;
-  ZMapFeature feature;
-
-  if(!item_list)
-	  return(0);
-
-  id2c = (ID2Canvas) item_list->data;
-  feature = (ZMapFeature) id2c->feature_any;
-  return feature->x1;
-}
-#endif
-#endif
 
 
 
@@ -235,11 +143,20 @@ int zmapWindowItemListStartCoord(GList *item_list)
 void zMapWindowHighlightFeature(ZMapWindow window, ZMapFeature feature, gboolean replace)
 {
   FooCanvasItem *feature_item ;
+  ZMapStrand set_strand = ZMAPSTRAND_NONE;
+  ZMapFrame set_frame = ZMAPFRAME_NONE;
+
+  if(zMapStyleIsStrandSpecific(feature->style))
+	set_strand = feature->strand;
+  if(zMapStyleIsFrameSpecific(feature->style))
+	set_frame = zmapWindowFeatureFrame(feature);
 
   if ((feature_item = zmapWindowFToIFindFeatureItem(window, window->context_to_item,
-						    ZMAPSTRAND_NONE, ZMAPFRAME_NONE, feature)))
+						    set_strand, set_frame, feature)))
     zmapWindowHighlightObject(window, feature_item, replace, FALSE, FALSE) ;
 
+  else
+	  printf("didn't find the canvas item\n");
   return ;
 }
 
@@ -255,21 +172,7 @@ void zMapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
 }
 
 
-#if MH17_NOT_USED
-void zMapWindowHighlightObjects(ZMapWindow window, ZMapFeatureContext context, gboolean multiple_select)
-{
-  HighlightContextStruct highlight_data = {NULL};
 
-  highlight_data.window = window;
-  highlight_data.multiple_select = multiple_select;
-  highlight_data.highlighted = highlight_data.feature_count = 0;
-
-  zMapFeatureContextExecute((ZMapFeatureAny)context, ZMAPFEATURE_STRUCT_FEATURE,
-                            highlight_feature, &highlight_data);
-
-  return ;
-}
-#endif
 
 void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
 			       gboolean replace_highlight_item, gboolean highlight_same_names, gboolean sub_part)
@@ -576,30 +479,16 @@ FooCanvasItem *zMapWindowFindFeatureItemByItem(ZMapWindow window, FooCanvasItem 
   FooCanvasItem *matching_item = NULL ;
   ZMapFeature feature ;
   ZMapWindowContainerFeatureSet container;
-  ZMapFeatureSubPartSpan item_subfeature_data ;
 
   /* Retrieve the feature item info from the canvas item. */
   feature = zMapWindowCanvasItemGetFeature(item) ;
   zMapAssert(feature);
 
-
   container = (ZMapWindowContainerFeatureSet)zmapWindowContainerCanvasItemGetContainer(item) ;
 
-  if ((item_subfeature_data = (ZMapFeatureSubPartSpan)g_object_get_data(G_OBJECT(item),
-									ITEM_SUBFEATURE_DATA)))
-    {
-      matching_item = zmapWindowFToIFindItemChild(window,window->context_to_item,
-						  container->strand, container->frame,
-						  feature,
-						  item_subfeature_data->start,
-						  item_subfeature_data->end) ;
-    }
-  else
-    {
-      matching_item = zmapWindowFToIFindFeatureItem(window,window->context_to_item,
+  matching_item = zmapWindowFToIFindFeatureItem(window,window->context_to_item,
 						    container->strand, container->frame,
 						    feature) ;
-    }
 
   return matching_item ;
 }
@@ -820,20 +709,7 @@ void zmapWindowItemCentreOnItemSubPart(ZMapWindow window, FooCanvasItem *item,
       if (FOO_IS_CANVAS_GROUP(item) && zmapWindowContainerUtilsIsValid(FOO_CANVAS_GROUP(item)))
 	{
 	  double height ;
-#if !ZWCI_AS_FOO
-	  FooCanvasItem *long_item ;
-
-
-	  /* this code tries to deal with long items but fails to deal with the zooming and the
-	   * changing scrolled region.... */
-
-	  /* Item may have been clipped by long items code so reinstate its true bounds. */
-	  long_item = (FooCanvasItem *)zmapWindowContainerGetBackground(ZMAP_CONTAINER_GROUP(item)) ;
-
-	  my_foo_canvas_item_get_long_bounds(window->long_items, long_item, &ix1, &iy1, &ix2, &iy2) ;
-#else
 	  foo_canvas_item_get_bounds(item, &ix1, &iy1, &ix2, &iy2) ;
-#endif
 
 	  /* If we are using the background then we should use it's height as originally set. */
 	  height = zmapWindowContainerGroupGetBackgroundSize(ZMAP_CONTAINER_GROUP(item)) ;
@@ -1214,42 +1090,6 @@ void my_foo_canvas_world_bounds_to_item(FooCanvasItem *item,
 
 
 
-#if !ZWCI_AS_FOO
-/* This function returns the original bounds of an item ignoring any long item clipping that may
- * have been done. */
-void my_foo_canvas_item_get_long_bounds(ZMapWindowLongItems long_items, FooCanvasItem *item,
-					double *x1_out, double *y1_out,
-					double *x2_out, double *y2_out)
-{
-  zMapAssert(long_items && item) ;
-
-  if (zmapWindowItemIsShown(item))
-    {
-      double x1, y1, x2, y2 ;
-      double long_start, long_end ;
-
-      foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2) ;
-
-      if (zmapWindowLongItemCoords(long_items, item, &long_start, &long_end))
-	{
-	  if (long_start < y1)
-	    y1 = long_start ;
-
-	  if (long_end > y2)
-	    y2 = long_end ;
-	}
-
-      *x1_out = x1 ;
-      *y1_out = y1 ;
-      *x2_out = x2 ;
-      *y2_out = y2 ;
-    }
-
-  return ;
-}
-
-#endif
-
 
 
 /* I'M TRYING THESE TWO FUNCTIONS BECAUSE I DON'T LIKE THE BIT WHERE IT GOES TO THE ITEMS
@@ -1379,117 +1219,9 @@ void zmapWindowItemGetVisibleWorld(ZMapWindow window,
 
 
 
-#if MH17_NOT_USED
-
-static ZMapFeatureContextExecuteStatus highlight_feature(GQuark key, gpointer data, gpointer user_data,
-							 char **error_out)
-{
-  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
-  ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
-  HighlightContext highlight_data = (HighlightContext)user_data;
-  ZMapFeature feature_in, feature_current;
-  FooCanvasItem *feature_item;
-  gboolean replace_highlight = TRUE;
-
-  if(feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
-    {
-      feature_in = (ZMapFeature)feature_any;
-      if(highlight_data->multiple_select || highlight_data->highlighted == 0)
-        {
-          replace_highlight = !(highlight_data->multiple_select);
-
-          if((feature_item = zmapWindowFToIFindFeatureItem(highlight_data->window,
-							   highlight_data->window->context_to_item,
-							   feature_in->strand, ZMAPFRAME_NONE,
-							   feature_in)))
-            {
-              if(highlight_data->multiple_select)
-                replace_highlight = !(zmapWindowFocusIsItemInHotColumn(highlight_data->window->focus, feature_item));
-
-              feature_current = zmapWindowItemGetFeature(feature_item);
-              zMapAssert(feature_current);
-
-              if(feature_in->type == ZMAPSTYLE_MODE_TRANSCRIPT &&
-                 feature_in->feature.transcript.exons->len > 0 &&
-                 feature_in->feature.transcript.exons->len != feature_current->feature.transcript.exons->len)
-                {
-                  ZMapSpan span;
-                  int i;
-
-                  /* need to do something to find sub feature items??? */
-                  for(i = 0; i < feature_in->feature.transcript.exons->len; i++)
-                    {
-                      if(replace_highlight && i > 0)
-                        replace_highlight = FALSE;
-
-                      span = &g_array_index(feature_in->feature.transcript.exons, ZMapSpanStruct, i) ;
-
-                      if((feature_item = zmapWindowFToIFindItemChild(highlight_data->window,highlight_data->window->context_to_item,
-                                                                     feature_in->strand, ZMAPFRAME_NONE,
-                                                                     feature_in, span->x1, span->x2)))
-                        zmapWindowHighlightObject(highlight_data->window, feature_item,
-						  replace_highlight, TRUE, FALSE) ;
-                    }
-                  for(i = 0; i < feature_in->feature.transcript.introns->len; i++)
-                    {
-                      span = &g_array_index(feature_in->feature.transcript.introns, ZMapSpanStruct, i) ;
-
-                      if((feature_item = zmapWindowFToIFindItemChild(highlight_data->window,highlight_data->window->context_to_item,
-                                                                     feature_in->strand, ZMAPFRAME_NONE,
-                                                                     feature_in, span->x1, span->x2)))
-                        zmapWindowHighlightObject(highlight_data->window, feature_item,
-						  replace_highlight, TRUE, FALSE);
-                    }
-
-                  replace_highlight = !(highlight_data->multiple_select);
-                }
-              else
-                /* we need to highlight the full feature */
-                zmapWindowHighlightObject(highlight_data->window, feature_item, replace_highlight, TRUE, FALSE);
-
-              if(replace_highlight)
-                highlight_data->highlighted = 0;
-              else
-                highlight_data->highlighted++;
-            }
-        }
-      highlight_data->feature_count++;
-    }
-
-  return status;
-}
-
-
-#endif
 
 
 
-#if !ZWCI_AS_FOO
-/* GCompareFunc() to compare two features by their coords so they are sorted into ascending order. */
-static gint sortByPositionCB(gconstpointer a, gconstpointer b)
-{
-  gint result ;
-  FooCanvasItem *item_a = (FooCanvasItem *)a ;
-  FooCanvasItem *item_b = (FooCanvasItem *)b ;
-  ZMapFeature feat_a ;
-  ZMapFeature feat_b ;
-
-  feat_a = zmapWindowItemGetFeature(item_a);
-  zMapAssert(feat_a) ;
-
-  feat_b = zmapWindowItemGetFeature(item_b);
-  zMapAssert(feat_b) ;
-
-  if (feat_a->x1 < feat_b->x1)
-    result = -1 ;
-  else if (feat_a->x1 > feat_b->x1)
-    result = 1 ;
-  else
-    result = 0 ;
-
-  return result ;
-}
-#endif
 
 
 

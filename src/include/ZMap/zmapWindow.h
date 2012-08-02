@@ -331,7 +331,6 @@ typedef struct _ZMapWindowCallbacksStruct
 } ZMapWindowCallbacksStruct, *ZMapWindowCallbacks ;
 
 
-typedef struct _ZMapWindowLongItemsStruct *ZMapWindowLongItems ;
 
 
 

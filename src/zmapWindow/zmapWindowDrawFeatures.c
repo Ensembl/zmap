@@ -326,10 +326,6 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
 
   zmapWindowZoomControlInitialise(window);		    /* Sets min/max/zf */
 
-#if !ZWCI_AS_FOO
-  /* HOPE THIS IS THE RIGHT PLACE TO SET ZOOM FOR LONG_ITEMS... */
-  zmapWindowLongItemSetMaxZoom(window->long_items, zMapWindowGetZoomMax(window)) ;
-#endif
 
       /* we use diff coords from the sequence if RevComped */
   window->min_coord = seq_start;
@@ -2587,23 +2583,11 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
 			select.filter.enable = FALSE;
 
 			foo = zmapWindowContainerGetNthFeatureItem((ZMapWindowContainerGroup) container_set, ZMAPCONTAINER_ITEM_FIRST) ;
-#if ZWCI_AS_FOO
 			if(ZMAP_IS_WINDOW_FEATURESET_ITEM(foo))
-#else
-			if(ZMAP_IS_WINDOW_CANVAS_FEATURESET_ITEM(foo))
-#endif
 			{
 				ZMapWindowFeaturesetItem fi;
 				ZMapFeatureTypeStyle style;
-#if ZWCI_AS_FOO
 				fi = (ZMapWindowFeaturesetItem) foo;
-#else
-				/* get the canvasFeatureset inside the canvas item */
-				FooCanvasGroup *group = FOO_CANVAS_GROUP(foo);
-				zMapAssert(group && group->item_list);
-
-				fi = (ZMapWindowFeaturesetItem) group->item_list->data;
-#endif
 				style = zMapWindowContainerFeatureSetGetStyle(container_set);
 				if(style)
 				{

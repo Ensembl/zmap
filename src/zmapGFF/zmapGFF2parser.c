@@ -1,4 +1,4 @@
-/*  Last edited: Jul 13 11:50 2011 (edgrif) */
+/*  Last edited: Jul 14 10:09 2012 (edgrif) */
 /*  File: zmapGFF2parser.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -43,6 +43,7 @@
 
 
 
+/* Types of name find operation, depend on type of feature. */
 typedef enum {NAME_FIND, NAME_USE_SOURCE, NAME_USE_SEQUENCE, NAME_USE_GIVEN, NAME_USE_GIVEN_OR_NAME } NameFindType ;
 
 
@@ -87,11 +88,12 @@ static gboolean getVariationString(char *attributes,
 static void getFeatureArray(GQuark key_id, gpointer data, gpointer user_data) ;
 static void destroyFeatureArray(gpointer data) ;
 
-static gboolean loadGaps(char *currentPos, GArray *gaps, ZMapStrand ref_strand, ZMapStrand match_strand) ;
-static gboolean loadAlignString(ZMapGFFParser parser, char *attributes, GArray **gaps_out,
+static gboolean loadGaps(char *currentPos, GArray *gaps,
+			 ZMapStrand ref_strand, ZMapStrand match_strand) ;
+static gboolean loadAlignString(ZMapGFFParser parser, 
+				ZMapFeatureAlignFormat align_format, char *attributes, GArray **gaps_out,
 				ZMapStrand ref_strand, int ref_start, int ref_end,
 				ZMapStrand match_strand, int match_start, int match_end) ;
-
 static void mungeFeatureType(char *source, ZMapStyleMode *type_inout);
 static gboolean getNameFromNote(char *attributes, char **name) ;
 static char *getNoteText(char *attributes) ;
@@ -1292,92 +1294,6 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line, gsize line_lengt
 }
 
 
-#define BAM_ALIGNMENT_CIGAR 1
-
-#if BAM_ALIGNMENT_CIGAR
-/* temp bit of code to read in a gap string as provided for ENCODE data
- * of the form M23 N12234 M53
- *
- * NOTE that the two M's add up to 76 but this is not always the case
- * NOTE also that we tend to get one gap only but more are logically possible
- * and we need to cope
- * we only process M and N tags (or I or D instead of N if that's what anacode end up sending us)
- *
- * this is a deliberately dumb but simple function
- * if we get unexpected stuff like N88 M76 or M12 N12 N23 M29 then we handle it silently
- */
-
-/*NOTE James did the string like this:
- * 23M1234N43M
- * ... which is different
- *
- * target is ref, query is match; see commant above loadGaps()
- */
-
-static gboolean loadGapString(ZMapGFFParser parser,
-				char *attributes, GArray **gaps_out,
-				ZMapStrand ref_strand, int ref_start, int ref_end,
-				ZMapStrand match_strand)
-{
-	char *p = attributes;
-	int match_start = 1;
-
-	/* skip over <cigar "> */
-	while(*p && *p != '"' ) p++;
-	if(!*p++)
-		return FALSE;
-
-	while (*p && *p != '"')
-	{
-		int bases = atoi(p);
-
-		while(*p && *p <= ' ')
-			p++;
-		while(*p >= '0' && *p <= '9')
-			p++;
-		while(*p && *p <= ' ')
-			p++;
-
-		if(*p == 'M')
-		{
-			/* add a block */
-			ZMapAlignBlockStruct ab = { 0 };
-
-			/* Gap coords are positive, 1-based, start < end " So: q2 is off the end of the match */
-
-			ab.q1 = match_start;
-			ab.q2 = match_start + bases - 1;
-			ab.q_strand = match_strand;
-			ab.t1 = ref_start;
-			ab.t2 = ref_start + bases - 1;
-			ab.t_strand = ref_strand;
-
-			g_array_append_val(*gaps_out,ab);
-
-			/* skip to end of block */
-			ref_start += bases;
-			match_start += bases;
-		}
-		else if (*p == 'N')
-		{
-			/* skip to start of next block */
-			ref_start += bases;
-		}
-		else
-		{
-			return FALSE;
-		}
-		p++;
-	}
-
-	return TRUE;
-}
-
-
- #endif
-
-
-
 /*
  * we can get tags in quoted strings, and maybe ';' too
  * i'm assuming that quotes cannot appear in quoted strings even with '\'
@@ -1834,40 +1750,35 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 		      gaps = NULL ;
 		    }
 		}
-	      else if ((gaps_onwards = strstr(attributes, ZMAPSTYLE_ALIGNMENT_CIGAR " ")))
+	      else
 		{
-#if BAM_ALIGNMENT_CIGAR
-#warning temporary code to get BAM alignments working, to be replaced by 'proper' cigar string handling
-//		  if (!g_ascii_strcasecmp(ontology, "read"))
-		  {
-			gaps = g_array_new(FALSE, FALSE, sizeof(ZMapAlignBlockStruct));
+		  ZMapFeatureAlignFormat align_format = ZMAPALIGN_FORMAT_INVALID ;
+		  char *try_it = zMapFeatureAlignFormat2ShortText(ZMAPALIGN_FORMAT_CIGAR_EXONERATE) ;
 
-			  if(!loadGapString(parser,
-					 gaps_onwards, &gaps,
-				       strand, start, end,
-				       query_strand))
-			  {
-				zMapLogWarning("Could not parse cigar string: %s", gaps_onwards) ;
-				g_array_free(gaps, TRUE) ;
-				gaps = NULL ;
-			  }
-			  else if (gaps->len < 2)	/* ie is ungapped */
-			  {
-  				g_array_free(gaps, TRUE) ;
-				gaps = NULL ;
 
-			  }
-		  }
-//		  else
-#else
-		  if (!loadAlignString(parser,
-				       gaps_onwards, &gaps,
-				       strand, start, end,
-				       query_strand, query_start, query_end))
+		  if ((gaps_onwards = strstr(attributes,
+					     zMapFeatureAlignFormat2ShortText(ZMAPALIGN_FORMAT_CIGAR_EXONERATE))))
+		    align_format = ZMAPALIGN_FORMAT_CIGAR_EXONERATE ;
+		  else if ((gaps_onwards = strstr(attributes,
+						  zMapFeatureAlignFormat2ShortText(ZMAPALIGN_FORMAT_CIGAR_ENSEMBL))))
+		    align_format = ZMAPALIGN_FORMAT_CIGAR_ENSEMBL ;
+		  else if ((gaps_onwards = strstr(attributes,
+						  zMapFeatureAlignFormat2ShortText(ZMAPALIGN_FORMAT_CIGAR_BAM))))
+		    align_format = ZMAPALIGN_FORMAT_CIGAR_BAM ;
+		  else if ((gaps_onwards = strstr(attributes,
+						  zMapFeatureAlignFormat2ShortText(ZMAPALIGN_FORMAT_VULGAR_EXONERATE))))
+		    align_format = ZMAPALIGN_FORMAT_VULGAR_EXONERATE ;
+
+		  if (align_format)
 		    {
-		      zMapLogWarning("Could not parse align string: %s", gaps_onwards) ;
+		      if (!loadAlignString(parser, align_format,
+					   gaps_onwards, &gaps,
+					   strand, start, end,
+					   query_strand, query_start, query_end))
+			{
+			  zMapLogWarning("Could not parse align string: %s", gaps_onwards) ;
+			}
 		    }
-#endif
 		}
 	    }
 
@@ -2046,23 +1957,35 @@ static gboolean loadGaps(char *attributes, GArray *gaps, ZMapStrand ref_strand, 
  * but this function fills in gaps data from a cigar or vulgar string
  */
 static gboolean loadAlignString(ZMapGFFParser parser,
-				char *attributes, GArray **gaps_out,
+				ZMapFeatureAlignFormat align_format, char *attributes, GArray **gaps_out,
 				ZMapStrand ref_strand, int ref_start, int ref_end,
 				ZMapStrand match_strand, int match_start, int match_end)
 {
   gboolean valid = FALSE ;
   int attr_fields ;
+  GString *format_str ;
 
-  if ((attr_fields = sscanf(attributes, parser->cigar_string_format_str, parser->buffers[GFF_BUF_TMP])) == 1)
+  /* Cack handed really, we do the resizing of the format strings in one routine but
+   * don't know which alignment format it is, so we append it here.... */
+  format_str = g_string_sized_new(BUF_FORMAT_SIZE) ;
+
+  g_string_append_printf(format_str, "%s %s",
+			 zMapFeatureAlignFormat2ShortText(align_format),
+			 parser->cigar_string_format_str) ;
+
+
+  if ((attr_fields = sscanf(attributes, format_str->str, parser->buffers[GFF_BUF_TMP])) == 1)
     {
-      valid = zMapFeatureAlignmentString2Gaps(ref_strand, ref_start, ref_end,
+      valid = zMapFeatureAlignmentString2Gaps(align_format,
+					      ref_strand, ref_start, ref_end,
 					      match_strand, match_start, match_end,
 					      (char *)(parser->buffers[GFF_BUF_TMP]), gaps_out) ;
     }
 
+  g_string_free(format_str, TRUE) ;
+
   return valid ;
 }
-
 
 
 /* This routine attempts to find the feature's name from the GFF attributes field,
@@ -3091,19 +3014,17 @@ static gboolean resizeFormatStrs(ZMapGFFParser parser)
 
   format_str = g_string_sized_new(BUF_FORMAT_SIZE) ;
 
-  /* this is what I'm trying to get:  "cigar %*[\"]%50[^\"]%*[\"]%*s" which parses a string
+  /* this is what I'm trying to get:  "XXXXX %*[\"]%50[^\"]%*[\"]%*s" which parses a string
    * like this:
    *
-   *          "cigar "M335ID55M"
+   *       XXXXXXX "M335ID55M"  where XXXXX will be one of the supported alignment formats.
    *  */
-  align_format_str = ZMAPSTYLE_ALIGNMENT_CIGAR " "  "%%*[\"]" "%%%d" "[^\"]%%*[\"]%%*s" ;
+  align_format_str = "%%*[\"]" "%%%d" "[^\"]%%*[\"]%%*s" ;
   g_string_append_printf(format_str,
 			 align_format_str,
 			 length) ;
 
-
   parser->cigar_string_format_str = g_string_free(format_str, FALSE) ;
-
 
   return resized ;
 }
