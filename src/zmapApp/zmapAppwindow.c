@@ -106,11 +106,11 @@ char *obj_copyright_G = ZMAP_OBJ_COPYRIGHT_STRING(ZMAP_TITLE,
  * in zmapAppmain_c.c and zmapAppmain_c.cc respectively, allowing
  * compilation as a C or C++ program....this has not been tested any
  * time recently.
- * 
+ *
  * Order is important here, if you change the order of calls you may
  * find you have some work to do to make it all work, e.g. logging is
  * set up as early as possible so we catch logged error messages.
- * 
+ *
  *  */
 int zmapMainMakeAppWindow(int argc, char *argv[])
 {
@@ -556,8 +556,8 @@ static void finalCleanUp(ZMapAppContext app_context)
 /*
  * Use this routine to exit the application with a portable (as in POSIX) return
  * code. If exit_code == 0 then application exits with EXIT_SUCCESS, otherwise
- * exits with EXIT_FAILURE. 
- * 
+ * exits with EXIT_FAILURE.
+ *
  * Note: gtk now deprecates use of gtk_exit() for exit().
  *
  * exit_code = 0 for success, anything else for failure.
@@ -599,10 +599,13 @@ static gboolean removeZMapRowForeachFunc(GtkTreeModel *model, GtkTreePath *path,
 /* Did user specify seqence/start/end on command line? */
 static void checkForCmdLineSequenceArg(int argc, char *argv[], char **dataset_out, char **sequence_out)
 {
+  ZMapCmdLineArgsType value ;
   char *sequence ;
 
-  if ((sequence = zMapCmdLineFinalArg()))
+  if (zMapCmdLineArgsValue(ZMAPARG_SEQUENCE, &value))
   {
+    sequence = value.s ;
+
     if(dataset_out)
     {
       gchar *delim;
@@ -650,6 +653,8 @@ static void checkForCmdLineStartEndArg(int argc, char *argv[], int *start_inout,
 
   return ;
 }
+
+
 
 
 /* Did user specify the version arg. */
@@ -700,17 +705,23 @@ static int checkForCmdLineSleep(int argc, char *argv[])
 static char *checkConfigDir(void)
 {
   char *config_file = NULL ;
-  ZMapCmdLineArgsType dir = {FALSE}, file = {FALSE} ;
+  ZMapCmdLineArgsType dir = {FALSE}, file = {FALSE};
+  char **files;
 
   zMapCmdLineArgsValue(ZMAPARG_CONFIG_DIR, &dir) ;
   zMapCmdLineArgsValue(ZMAPARG_CONFIG_FILE, &file) ;
+  files = zMapCmdLineFinalArg(); ;
 
-  if (!zMapConfigDirCreate(dir.s, file.s))
+  /* NOTE if we run config free ('zmap thing.GFF') thene there is not dir/file but this returns TRUE
+   * so that means that the dir and file strings will be valid if not
+   */
+  if (!zMapConfigDirCreate(dir.s, file.s, files ? TRUE : FALSE))
     {
-      fprintf(stderr, "Could not access either/both of configuration directory \"%s\" "
+	fprintf(stderr, "Could not access either/both of configuration directory \"%s\" "
 	      "or file \"%s\" within that directory.\n",
 	      zMapConfigDirGetDir(), zMapConfigDirGetFile()) ;
       doTheExit(EXIT_FAILURE) ;
+
     }
   else
     {
@@ -931,7 +942,12 @@ static gboolean configureLog(void)
 				       ZMAPSTANZA_LOG_DIRECTORY, &tmp_string))
 	full_dir = zMapGetDir(tmp_string, TRUE, TRUE) ;
       else
-	full_dir = g_strdup(zMapConfigDirGetDir()) ;
+	{
+		/* if we run config free we put the log file in the cwd */
+		full_dir = zMapConfigDirGetDir() ;
+		full_dir = g_strdup( full_dir ? full_dir : "./");
+	}
+
 
       /* user specified file, default to zmap.log */
       if (zMapConfigIniContextGetString(context, ZMAPSTANZA_LOG_CONFIG,

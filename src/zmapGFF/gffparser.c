@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
   if (!g_thread_supported())
     g_thread_init(NULL);
 
-  zMapConfigDirCreate(NULL, NULL) ;
+  zMapConfigDirCreate(NULL, NULL, FALSE) ;
 
   zMapLogCreate(NULL) ;
 

@@ -138,17 +138,18 @@ void zMapCmdLineArgsCreate(int *argc, char *argv[])
  * @return           A pointer to the string which is the final argument on the command line.
  *
  *  */
-char *zMapCmdLineFinalArg(void)
+/* NOTE the 'final arg' is actually zero or more files names and can be interspersed with options */
+char **zMapCmdLineFinalArg(void)
 {
-  char *final_arg = NULL ;
+  char **final_arg = NULL ;
   ZMapCmdLineArgs arg_context ;
 
   zMapAssert(arg_context_G) ;
   arg_context = arg_context_G ;
 
-  if (arg_context->sequence_arg &&
-      *(arg_context->sequence_arg))
-    final_arg = *(arg_context->sequence_arg) ;
+  if (arg_context->files_arg &&
+      (arg_context->files_arg))
+    final_arg = (arg_context->files_arg) ;
 
   return final_arg ;
 }
@@ -212,6 +213,13 @@ gboolean zMapCmdLineArgsValue(char *arg_name, ZMapCmdLineArgsType *result)
                   {
                         if(result)
             		      result->s = *(char **)(entries->arg_data);
+                        val_set = TRUE;
+                  }
+		      else if(entries->arg == G_OPTION_ARG_STRING_ARRAY &&
+      			ZMAPARG_INVALID_STR != entries->arg_data)
+                  {
+                        if(result)
+            		      result->sa = (char **)(entries->arg_data);
                         val_set = TRUE;
                   }
 		}
@@ -358,9 +366,10 @@ static GOptionEntry *get_main_entries(ZMapCmdLineArgs arg_context)
 
     { ZMAPARG_SHRINK,  0, G_OPTION_FLAG_NO_ARG, G_OPTION_ARG_NONE, NULL, ZMAPARG_SHRINK_DESC,  ZMAPARG_NO_ARG },
 
+    { ZMAPARG_SEQUENCE, 0, ARG_NO_FLAGS, G_OPTION_ARG_STRING, NULL, ZMAPARG_SEQUENCE_DESC, ZMAPARG_SEQUENCE_ARG },
+
 /* Must be the last entry. */
-    { G_OPTION_REMAINING, 0, ARG_NO_FLAGS, G_OPTION_ARG_STRING_ARRAY, NULL,
-      ZMAPARG_SEQUENCE_DESC, ZMAPARG_SEQUENCE_ARG },
+    { G_OPTION_REMAINING, 0, ARG_NO_FLAGS, G_OPTION_ARG_STRING_ARRAY, NULL, ZMAPARG_FILES, ZMAPARG_FILES_ARG },
 
     { NULL }
   } ;
@@ -379,6 +388,7 @@ static GOptionEntry *get_main_entries(ZMapCmdLineArgs arg_context)
       entries[5].arg_data = &(zmap_timing_G);
       entries[6].arg_data = &(zmap_shrink_G);
       entries[7].arg_data = &(arg_context->sequence_arg);
+      entries[8].arg_data = &(arg_context->files_arg);
     }
 
   return &entries[0] ;

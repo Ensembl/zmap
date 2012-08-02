@@ -1858,7 +1858,7 @@ static ZMapConfigIniContext get_configuration(XRemoteTestSuiteData suite)
       dir  = g_path_get_dirname(suite->cmd_line_args->config_file);
       base = g_path_get_basename(suite->cmd_line_args->config_file);
 
-      zMapConfigDirCreate(dir, base);
+      zMapConfigDirCreate(dir, base, FALSE);
 
       if((context = zMapConfigIniContextCreate(NULL)))
 	{
