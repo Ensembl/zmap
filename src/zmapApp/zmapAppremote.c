@@ -32,17 +32,15 @@
 
 #include <ZMap/zmap.h>
 
-
-
-
-
-
 #include <string.h>
-#include <zmapApp_P.h>
+
 #include <ZMap/zmapXML.h>
 #include <ZMap/zmapCmdLineArgs.h>
 #include <ZMap/zmapConfigDir.h>
 #include <ZMap/zmapUtilsXRemote.h>
+#include <zmapApp_P.h>
+
+
 
 typedef enum {
   ZMAP_APP_REMOTE_ALL = 1
@@ -105,8 +103,10 @@ static char *actions_G[ZMAPAPP_REMOTE_UNKNOWN + 1] = {
   NULL, "new_zmap", "shutdown", NULL
 };
 
+
+
 /* Installs the handlers to monitor/handle requests to/from an external program. */
-void zmapAppRemoteInstaller(GtkWidget *widget, gpointer app_context_data)
+void zmapAppRemoteInstaller(GtkWidget *widget, GdkEvent  *event, gpointer app_context_data)
 {
   ZMapAppContext app_context = (ZMapAppContext)app_context_data;
   ZMapCmdLineArgsType value ;
