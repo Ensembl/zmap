@@ -1,0 +1,122 @@
+<!--#set var="banner" value="ZMap Coordinate System"-->
+<!--#include virtual="/perl/header"-->
+
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+<style>
+pre{ width: 95%; background-color: #DDDDDD; border-style: solid; border-width: 1px; padding: 10px }
+.example{ border-color: #000000 }
+</style>
+
+
+<H2>ZMap: Coordinate System</H2>
+
+
+
+<H3>Background</H3>
+
+<p>ZMap must be able to display sections of sequence with their associated
+features and show the sequence/features reverse complemented as required.
+The features may have up to two associated coordinates: the direct sequence
+parent of the features, e.g. the containing clone dna and the ultimate sequence
+parent, e.g. the chromosome that the clone forms part of. Note that the displayed
+sequence may only be a subsection of the direct parent as here:</p>
+
+<pre class="example">
+
+              1             a             b                               x
+chromosome    |-------------|-------------|-------------------------------|
+                            |             |
+                            |             |
+                            |             |
+                        1   |             |       y
+clone                   |---|-------------|-------|
+                            |             |
+                            |             |
+                            |             |
+                            |             |
+displayed                   s             e
+sequence                    |-------------|
+
+
+</pre>
+
+<p>The minimum information required to capture this information is:</p>
+
+<pre class="example">
+
+          length of chromosome (y)
+          length of clone (x)
+          mapping from clone to chromosome as coords (a, b) and (s, e)
+
+</pre>
+
+<p>(Note that sometimes all the start and end coordinates may be the same as when
+displaying an entire clone that has no parent.)</p>
+
+<p>There are a number of ways this information could be held internally in zmap,
+e.g. as chromosome coordindates with a mapping to the clone coordinate system,
+as 1-based coordinates that are then mapped to clone and chromosome coordinates
+and so on. This document describes one way to do this which would involve changes
+to the way zmap currently holds coordinates.</p>
+
+
+<H3>A Coordinate System for ZMap</H3>
+
+<p>There is a tension between holding "native" (e.g. clone or chromosome)
+coordinates internally which makes it easy to follow feature positions or using
+one-based coordinates which makes display easier and also simplifies operations
+such as reverse complementing. Currently zmap uses "native" coordinates though
+this is currently not working correctly in for the clone/chromsome example
+shown above.</p>
+
+<p>The proposal here is that we move to using 1-based coordinates internally which
+will simplify our code and then translate those coordinates into whichever range
+the user would like to see, e.g. clone or chromosome. This change will involve
+some effort as coordinates are used and caculated in quite a few places in
+the code.</p>
+
+<p>Some factors to consider:</p>
+
+<ul>
+  <li>coordinate code will be simpler as it will always be 1-based, e.g. for
+      reverse complements.</li>
+  <li>displaying coordinates to the user will require translating the 1-based
+      coords into the correct coordinate system.</li>
+  <li>canvas positioning code will be simpler because we can simply draw in
+      canvas-world coordinates with no need for corrections.</li>
+  <li>Debugging will be harder as feature coordinates will not be their
+      native coordinates, we should add some functions to convert coords so
+      both in debug statements and from a debugger we can display native
+      coords.</li>
+</ul>
+
+
+<H3>Stages in Implementation</H3>
+
+<p>As well as changing the coordinate system we want to get rid of the
+Context, Alignment, Block complexity, although originally requested
+when zmap was first developed it has never been used. This hierachy
+is reflected in the canvas groups created to represent the feature
+context.</p>
+
+<p>Sugggested order of changes:</p>
+
+
+<ol>
+  <li>Move any required data in the Alignment and Block structs into
+      the Feature context struct.</li>
+  <li>Change existing code to be 1-based and make sure features are
+      displayed correctly.</li>
+  <li>Comment out display code that creates align and block groups,
+      remove when display is correct.</li>
+  <li>Remove Alignment and Block structs, this is not trivial as a
+      number of functions recurse through these structs.</li>
+</ol>
+
+
+<p>These changes will cause some churn but seem warranted as the existing code
+is hard to follow and to debug.</p>
+
+
+<!--#include virtual="/perl/footer"-->

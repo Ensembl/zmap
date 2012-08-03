@@ -88,6 +88,8 @@ rm -f $version_macro_file
 branch=`$BASE_DIR/../scripts/git_branch.sh`
 if [ "$branch" = "production" ] ; then
   version_arg='-a'
+else
+  version_arg='-b'
 fi
 
 ZMAP_VERSION=`../scripts/git_version.sh $version_arg`

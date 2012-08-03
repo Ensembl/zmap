@@ -52,6 +52,8 @@
 #define ZMAP_CANVAS_INIT_SIZE (100.0)
 
 
+#define FEATURE_SIZE_REQUEST	0	// see item factory
+#define USE_FACTORY	0
 
 /*
  *  This section details data that we attach to the foocanvas items that represent
@@ -236,7 +238,7 @@ typedef struct
 } ZMapWindowItemFeatureBumpDataStruct, *ZMapWindowItemFeatureBumpData ;
 
 
-/* used by item factory */
+/* used by item factory for drawing features from one featureset */
 typedef struct _zmapWindowFeatureStack
 {
       ZMapFeatureContext context;
@@ -250,6 +252,25 @@ typedef struct _zmapWindowFeatureStack
       ZMapStrand strand;
       ZMapFrame frame;
 	gboolean filter;	/* don't add to camvas if hidden */
+
+	/* NOTE there's a structy defined privately in zmapWindowDrawFeatures.c that would be btter having these
+	 * as this is nominally related to the feature contect not the camvas
+	 * but as want tp pass this data around eg to windowFeature.c it can't go there
+	 * the idea here is to cache the column features group and column hash for each feature in the set
+	 * instead of recalcualting it for every feature
+	 * these pointers also act as flags: they hold valid pointers if the frame/strand combination means draw the feature
+	 */
+#if ALL_FRAMES
+//      ZMapWindowContainerFeatures set_columns[N_FRAME * N_STRAND];	/* all possible strand and frame combinations */
+//      GHashTable *col_hash[N_FRAME * N_STRAND];
+#else
+	// just handle the strand / frame conbo's is in the original code structre - set gets drawn 3x in 3 Frame mode
+      ZMapWindowContainerFeatureSet set_column[N_STRAND_ALLOC];	/* all possible strand and frame combinations */
+      ZMapWindowContainerFeatures set_features[N_STRAND_ALLOC];
+	GHashTable *col_hash[N_STRAND_ALLOC];
+
+#endif
+
 } ZMapWindowFeatureStackStruct, *ZMapWindowFeatureStack;
 
 
@@ -494,7 +515,6 @@ typedef struct _ZMapWindowZoomControlStruct *ZMapWindowZoomControl ;
 
 
 
-
 typedef struct _ZMapWindowFToIFactoryStruct *ZMapWindowFToIFactory ;
 
 typedef struct _ZMapWindowStatsStruct *ZMapWindowStats ;
@@ -662,7 +682,9 @@ typedef struct _ZMapWindowStruct
 
   ZMapWindowContainerGroup feature_root_group ;	            /* The root of our features. (ZMapWindowContainerContext) */
 
+#if USE_FACTORY
  ZMapWindowFToIFactory item_factory;
+#endif
 
   /* Lists of dialog windows associated with this zmap window, these must be destroyed when
    * the zmap window is destroyed. */
@@ -895,6 +917,10 @@ gboolean zmapWindowFToIAddSet(GHashTable *feature_to_context_hash,
 gboolean zmapWindowFToIRemoveSet(GHashTable *feature_to_context_hash,
 				 GQuark align_id, GQuark block_id, GQuark set_id,
 				 ZMapStrand strand, ZMapFrame frame, gboolean remove_features) ;
+GHashTable *zmapWindowFToIGetSetHash(GHashTable *feature_context_to_item,
+				  GQuark align_id, GQuark block_id,
+				  GQuark set_id, ZMapStrand set_strand, ZMapFrame set_frame);
+gboolean zmapWindowFToIAddSetFeature(GHashTable *set,	GQuark feature_id, FooCanvasItem *feature_item, ZMapFeature feature);
 gboolean zmapWindowFToIAddFeature(GHashTable *feature_to_context_hash,
 				  GQuark align_id, GQuark block_id,
 				  GQuark set_id, ZMapStrand set_strand, ZMapFrame set_frame,
@@ -949,9 +975,10 @@ FooCanvasItem *zmapWindowFToIFindItemChild(ZMapWindow window,GHashTable *feature
 FooCanvasItem *zMapWindowFindFeatureItemByItem(ZMapWindow window, FooCanvasItem *item) ;
 void zmapWindowFToIDestroy(GHashTable *feature_to_item_hash) ;
 
-
+#if USE_FACTORY
 void zmapWindowFeatureFactoryInit(ZMapWindow window);
 void zmapWindowFToIFactoryClose(ZMapWindowFToIFactory factory) ;
+#endif
 
 void zmapWindowZoomToItem(ZMapWindow window, FooCanvasItem *item) ;
 void zmapWindowZoomToItems(ZMapWindow window, GList *items) ;
@@ -1256,7 +1283,9 @@ ZMapStrand zmapWindowFeatureStrand(ZMapWindow window, ZMapFeature feature) ;
 ZMapFrame zmapWindowFeatureFrame(ZMapFeature feature) ;
 
 FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, ZMapFeatureTypeStyle style,
-				     FooCanvasGroup *set_group, ZMapWindowFeatureStack feature_stack) ;
+				     	ZMapWindowContainerFeatureSet set_group,
+				      ZMapWindowContainerFeatures set_features,
+					ZMapWindowFeatureStack feature_stack) ;
 
 char *zmapWindowFeatureSetDescription(ZMapFeatureSet feature_set) ;
 char *zmapWindowFeatureSourceDescription(ZMapFeature feature) ;

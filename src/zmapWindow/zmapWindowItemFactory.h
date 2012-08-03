@@ -38,15 +38,18 @@ typedef gboolean (*ZMapWindowFToIFactoryTopItemCreated)(FooCanvasItem *top_item,
                                           ZMapWindowFeatureStack feature_stack,
                                           gpointer handler_data);
 
+#if FEATURE_SIZE_REQUEST
 typedef gboolean (*ZMapWindowFToIFactoryItemFeatureSizeRequest)(ZMapFeature feature,
                                                   double *limits_array,
                                                   double *points_array_inout,
                                                   gpointer handler_data);
-
+#endif
 typedef struct
 {
   ZMapWindowFToIFactoryTopItemCreated top_item_created;
+#if FEATURE_SIZE_REQUEST
   ZMapWindowFToIFactoryItemFeatureSizeRequest feature_size_request;
+#endif
 }ZMapWindowFToIFactoryProductionTeamStruct, *ZMapWindowFToIFactoryProductionTeam;
 
 
@@ -56,14 +59,20 @@ void zmapWindowFToIFactorySetup(ZMapWindowFToIFactory factory,
                                 guint line_width, /* replace with a config struct ? */
                                 ZMapWindowFToIFactoryProductionTeam signal_handlers,
                                 gpointer handler_data);
+#if RUN_SET
 void zmapWindowFToIFactoryRunSet(ZMapWindowFToIFactory factory,
                                  ZMapFeatureSet set,
                                  FooCanvasGroup *container,
                                  ZMapFrame frame);
-FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
-					      FooCanvasItem        *current_item,
-                                              FooCanvasGroup       *parent_container,
+#endif
+FooCanvasItem *zmapWindowFToIFactoryRunSingle(GHashTable *ftoi_hash,
+#if RUN_SET
+							FooCanvasItem        *current_item,
+#endif
+                                              ZMapWindowContainerFeatureSet parent_container,
+                                              ZMapWindowContainerFeatures features_container,
                                               ZMapWindowFeatureStack feature_stack);
+
 void zmapWindowFToIFactoryClose(ZMapWindowFToIFactory factory);
 
 

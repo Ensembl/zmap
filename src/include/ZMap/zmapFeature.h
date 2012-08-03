@@ -20,7 +20,8 @@
  * This file is part of the ZMap genome database package
  * originated by
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Data structures describing a sequence feature.
  *
@@ -30,6 +31,7 @@
 #define ZMAP_FEATURE_H
 
 #include <gdk/gdkcolor.h>
+
 #include <ZMap/zmapConfigStyleDefaults.h>
 #include <ZMap/zmapStyle.h>
 #include <ZMap/zmapUtils.h>
@@ -106,9 +108,11 @@ typedef enum {
 } ZMapFeatureSubpartType ;
 
 typedef enum {ZMAPSTRAND_NONE = 0, ZMAPSTRAND_FORWARD, ZMAPSTRAND_REVERSE} ZMapStrand ;
+#define N_STRAND_ALLOC	3	/* we get to handle NONE as a strand */
 
 #define FRAME_PREFIX "FRAME-"				    /* For text versions. */
 typedef enum {ZMAPFRAME_NONE = 0, ZMAPFRAME_0, ZMAPFRAME_1, ZMAPFRAME_2} ZMapFrame ;
+#define N_FRAME_ALLOC	4	/* we get to handle NONE as a frame */
 
 typedef enum {ZMAPPHASE_NONE = 0, ZMAPPHASE_0, ZMAPPHASE_1, ZMAPPHASE_2} ZMapPhase ;
 
@@ -397,18 +401,19 @@ typedef struct ZMapFeatureContextStruct_
   GQuark parent_name ;					    /* Name of parent sequence
 							       (== sequence_name if no parent). */
 
-  ZMapSpanStruct parent_span ;                      /* Start/end of ultimate parent, usually we
-                                                      will have: x1 = 1, x2 = length in
-                                                      bases of parent. */
-  GList *req_feature_set_names ;	            /* Global list of _names_ of all requested
-							       * feature sets for the context.
-                                                 * for ACEDB these are given as columns
-                                                 * and are returned as featuresets
-							       */
-  GList *src_feature_set_names ;                  /* Global list of _names_ of all source
-                                                 feature sets actually in the context,
-                                                 _only_ these sets are loaded into
-                                                 the context. */
+  ZMapSpanStruct parent_span ;				    /* Start/end of ultimate parent, usually we
+							       will have: x1 = 1, x2 = length in
+							       bases of parent. */
+
+  GList *req_feature_set_names ;			    /* Global list of _names_ of all requested
+							     * feature sets for the context.
+							     * for ACEDB these are given as columns
+							     * and are returned as featuresets */
+
+  GList *src_feature_set_names ;			    /* Global list of _names_ of all source
+							       feature sets actually in the context,
+							       _only_ these sets are loaded into
+							       the context. */
 
   ZMapFeatureAlignment master_align ;			    /* The target/master alignment out of
 							       the below set. */
@@ -423,17 +428,19 @@ typedef struct ZMapFeatureAlignmentStruct_
 #ifdef FEATURES_NEED_MAGIC
   ZMapMagic magic;
 #endif
+
   ZMapFeatureStructType struct_type ;			    /* context or align or block etc. */
   ZMapFeatureAny parent ;				    /* Our parent context. */
   GQuark unique_id ;					    /* Unique id this alignment. */
   GQuark original_id ;					    /* Original id of this sequence. */
+
   GHashTable *blocks ;					    /* A set of ZMapFeatureStruct. */
 
   /* Alignment only data should go here. */
 
   /* Mapping for the target sequence, this shows where this section of sequence fits in to its
    * overall assembly, e.g. where a clone is located on a chromosome. */
-  ZMapSpanStruct sequence_span;                       /* start/end of our sequence */
+  ZMapSpanStruct sequence_span ;			    /* start/end of our sequence */
 
 } ZMapFeatureAlignmentStruct;
 
@@ -453,13 +460,14 @@ typedef struct ZMapFeatureBlockStruct_
 							       set of ZMapFeatureSetStruct. */
 
   /* Block only data. */
-  ZMapMapBlockStruct block_to_sequence ;	/* Shows how these features map to the
+  ZMapMapBlockStruct block_to_sequence ;		    /* Shows how these features map to the
 							       sequence, n.b. this feature set may only
 							       span part of the sequence. */
-  ZMapSequenceStruct sequence ;	      /* DNA sequence for this block,
+
+  ZMapSequenceStruct sequence ;				    /* DNA sequence for this block,
 							       n.b. there may not be any dna. */
 
-  gboolean revcomped;                     /* block RevComp'd relative to the window */
+  gboolean revcomped;					    /* block RevComp'd relative to the window */
 
 //  int features_start, features_end ;    /* coord limits for fetching features. */
 
@@ -558,7 +566,7 @@ typedef struct
   GArray *align ;					    /* of AlignBlock, if null, align is ungapped. */
 
 
-  
+
   char * sequence;					/* sequence if given in GFF */
 
 

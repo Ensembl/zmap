@@ -1199,12 +1199,13 @@ void zMapWindowDestroy(ZMapWindow window)
   gtk_widget_destroy(window->toplevel) ;
   zmapWindowFToIDestroy(window->context_to_item) ;
 
+#if USE_FACTORY
   if(window->item_factory)
     {
       zmapWindowFToIFactoryClose(window->item_factory);
       window->item_factory = NULL;
     }
-
+#endif
 
   if(window->history)
     zmapWindowStateQueueDestroy(window->history);
@@ -2381,12 +2382,13 @@ static void resetCanvas(ZMapWindow window, gboolean free_child_windows, gboolean
   zmapWindowFToIDestroy(window->context_to_item) ;
   window->context_to_item = zmapWindowFToICreate() ;
 
+#if USE_FACTORY
   if(window->item_factory)
     {
       zmapWindowFToIFactoryClose(window->item_factory) ;
       window->item_factory = NULL;
     }
-
+#endif
 
   /* Recreate focus object. */
 //  zmapWindowFocusDestroy(window->focus) ;

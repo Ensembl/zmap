@@ -77,6 +77,9 @@ typedef struct _zmapWindowCanvasItemClassStruct  zmapWindowCanvasItemClass, *ZMa
 /* Public funcs */
 GType zMapWindowCanvasItemGetType(void);
 
+gboolean zMapWindowCanvasItemIsConnected(ZMapWindowCanvasItem item);
+void zMapWindowCanvasItemSetConnected(ZMapWindowCanvasItem item, gboolean val);
+
 
 ZMapFeature zMapWindowCanvasItemGetFeature(FooCanvasItem *any_feature_item) ;
 

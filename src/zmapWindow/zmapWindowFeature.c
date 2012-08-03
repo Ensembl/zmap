@@ -78,11 +78,12 @@ static void handle_dialog_close(GtkWidget *dialog, gpointer user_data);
 static gboolean factoryTopItemCreated(FooCanvasItem *top_item,
                                       ZMapWindowFeatureStack feature_stack,
                                       gpointer handler_data);
+#if FEATURE_SIZE_REQUEST
 static gboolean factoryFeatureSizeReq(ZMapFeature feature,
                                       double *limits_array,
                                       double *points_array_inout,
                                       gpointer handler_data);
-
+#endif
 
 static PFetchStatus pfetch_reader_func(PFetchHandle *handle, char *text, guint *actual_read,
 				       GError *error, gpointer user_data) ;
@@ -315,11 +316,14 @@ ZMapStrand zmapWindowFeatureStrand(ZMapWindow window, ZMapFeature feature)
   return strand ;
 }
 
+#if USE_FACTORY
 void zmapWindowFeatureFactoryInit(ZMapWindow window)
 {
   ZMapWindowFToIFactoryProductionTeamStruct factory_helpers = {NULL};
 
+#if FEATURE_SIZE_REQUEST
   factory_helpers.feature_size_request = factoryFeatureSizeReq;
+#endif
   factory_helpers.top_item_created     = factoryTopItemCreated;
 
   zmapWindowFToIFactorySetup(window->item_factory, window->config.feature_line_width,
@@ -327,12 +331,14 @@ void zmapWindowFeatureFactoryInit(ZMapWindow window)
 
   return ;
 }
+#endif
 
 
 /* Called to draw each individual feature. */
 FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow      window,
 				     ZMapFeatureTypeStyle style,
-				     FooCanvasGroup *set_group,
+				     ZMapWindowContainerFeatureSet set_group,
+				     ZMapWindowContainerFeatures set_features,
 				     ZMapWindowFeatureStack     feature_stack)
 {
   FooCanvasItem *new_feature = NULL ;
@@ -343,18 +349,23 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow      window,
 #if MH17_REVCOMP_DEBUG
       zMapLogWarning("FeatureDraw %d-%d",feature->x1,feature->x2);
 #endif
+
+#if DONE_BY_CALLER
   /* Users will often not want to see what is on the reverse strand, style specifies what should
    * be shown. */
   if ((zMapStyleIsStrandSpecific(style)) &&
       ((feature->strand == ZMAPSTRAND_REVERSE) && (!zMapStyleIsShowReverseStrand(style))))
     {
+zMapAssertNotReached();
       return NULL ;
     }
   if ((zMapStyleIsStrandSpecific(style)) && window->revcomped_features &&
       ((feature->strand == ZMAPSTRAND_FORWARD) && (zMapStyleIsHideForwardStrand(style))))
     {
+zMapAssertNotReached();
       return NULL ;
     }
+#endif
 
 #if MH17_REVCOMP_DEBUG
       zMapLogWarning("right strand %d",feature->strand);
@@ -375,10 +386,17 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow      window,
       }
     }
 
-  new_feature = zmapWindowFToIFactoryRunSingle(window->item_factory,
+  new_feature = zmapWindowFToIFactoryRunSingle(window->context_to_item,
+#if RUN_SET
 					       NULL,
-                                               set_group,
-                                               feature_stack);
+#endif
+                                     set_group, set_features,
+					       feature_stack);
+
+#warning could make this take a window not a gpointer, would be more readable
+#warning ideally only call this first time canvasfeatureset is created
+  if(!zMapWindowCanvasItemIsConnected((ZMapWindowCanvasItem) new_feature))
+	factoryTopItemCreated (new_feature, feature_stack, (gpointer) window);
 
   if(masked && container->masked && new_feature)
       foo_canvas_item_hide(new_feature);
@@ -911,6 +929,7 @@ void zmapWindowFeatureExpand(ZMapWindow window, FooCanvasItem *foo,
   ZMapWindowFeatureStackStruct feature_stack = { NULL };
   ZMapWindowCanvasItem item = (ZMapWindowCanvasItem) foo;
   ZMapStyleBumpMode curr_bump_mode ;
+  ZMapWindowContainerFeatures features = zmapWindowContainerGetFeatures((ZMapWindowContainerGroup) container_set);;
 
   //printf("\n\nexpand %s\n",g_quark_to_string(feature->original_id));
   if(feature->population < 2)	/* should not happen */
@@ -922,11 +941,12 @@ void zmapWindowFeatureExpand(ZMapWindow window, FooCanvasItem *foo,
   /* draw all its children  */
   zmapGetFeatureStack(&feature_stack, NULL, feature, container_set->frame);
 
+
   for(l = feature->children; l; l = l->next)
     {
       /* (mh17) NOTE we have to be careful that these features end up in the same (singleton) CanvasFeatureset else they overlap on bump */
       feature_stack.feature = (ZMapFeature) l->data;
-      item = (ZMapWindowCanvasItem) zmapWindowFeatureDraw(window, feature->style, (FooCanvasGroup *) container_set, &feature_stack);
+      item = (ZMapWindowCanvasItem) zmapWindowFeatureDraw(window, feature->style,  container_set,features, &feature_stack);
       //printf(" show %s\n", g_quark_to_string(feature_stack.feature->original_id));
 #if MH17_DO_HIDE
 // ref to same #if in zmapWindowCanvasAlignment.c
@@ -1079,13 +1099,15 @@ static gboolean factoryTopItemCreated(FooCanvasItem *top_item,
       break;
     }
 
+  zMapWindowCanvasItemSetConnected((ZMapWindowCanvasItem) top_item, TRUE);
+
 
   return TRUE ;
 }
 
 
 
-
+#if FEATURE_SIZE_REQUEST
 /* NOTE feature may be null */
 static gboolean factoryFeatureSizeReq(ZMapFeature feature,
                                       double *limits_array,
@@ -1143,5 +1165,5 @@ static gboolean factoryFeatureSizeReq(ZMapFeature feature,
 
  return outside;
 }
-
+#endif
 

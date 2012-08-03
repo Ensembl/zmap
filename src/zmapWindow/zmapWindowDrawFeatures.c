@@ -84,8 +84,8 @@ typedef struct _ZMapCanvasDataStruct
   ZMapWindowContainerFeatures curr_forward_group ;
   ZMapWindowContainerFeatures curr_reverse_group ;
 
-  ZMapWindowContainerFeatures curr_forward_col ;
-  ZMapWindowContainerFeatures curr_reverse_col ;
+//  ZMapWindowContainerFeatures curr_forward_col ;
+//  ZMapWindowContainerFeatures curr_reverse_col ;
 
 
   GHashTable *feature_hash ;
@@ -285,11 +285,13 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
 
   zmapWindowBusy(window, TRUE) ;
 
+#if USE_FACTORY
   if(!window->item_factory)
     {
       window->item_factory = zmapWindowFToIFactoryOpen(window->context_to_item); //, window->long_items);
       zmapWindowFeatureFactoryInit(window);
     }
+#endif
 
   /* Set up colours. */
   if (!window->done_colours)
@@ -854,9 +856,18 @@ int zmapWindowDrawFeatureSet(ZMapWindow window,
   if(f_src)
   	featureset_data.feature_stack.maps_to = f_src->maps_to;
 
+  featureset_data.feature_stack.set_column[ZMAPSTRAND_NONE]    = (ZMapWindowContainerFeatureSet) forward_container;
+  featureset_data.feature_stack.set_column[ZMAPSTRAND_FORWARD] = (ZMapWindowContainerFeatureSet) forward_container;
+  featureset_data.feature_stack.set_column[ZMAPSTRAND_REVERSE] = (ZMapWindowContainerFeatureSet) reverse_container;
+
+  featureset_data.feature_stack.set_features[ZMAPSTRAND_NONE]    = featureset_data.curr_forward_col;
+  featureset_data.feature_stack.set_features[ZMAPSTRAND_FORWARD] = featureset_data.curr_forward_col;
+  featureset_data.feature_stack.set_features[ZMAPSTRAND_REVERSE] = featureset_data.curr_reverse_col;
+
   /* Now draw all the features in the column. */
   //   zMapStartTimer("DrawFeatureSet","ProcessFeature");
-      g_hash_table_foreach(feature_set->features, ProcessFeature, &featureset_data) ;
+
+  g_hash_table_foreach(feature_set->features, ProcessFeature, &featureset_data) ;
 
 //printf("Processed %d features in %s\n",featureset_data.feature_count, g_quark_to_string(feature_set->unique_id));
 
@@ -2344,7 +2355,12 @@ static void ProcessListFeature(gpointer data, gpointer user_data)
   ZMapFeature feature = (ZMapFeature) data ;
   CreateFeatureSetData featureset_data = (CreateFeatureSetData) user_data ;
   ZMapWindow window = featureset_data->window ;
-  ZMapWindowContainerGroup column_group ;
+#if CALCULATE_COLUMNS
+  FooCanavsGroup * column_group;
+#else
+  ZMapWindowContainerFeatureSet column_group ;
+#endif
+  ZMapWindowContainerFeatures features;
   ZMapStrand display_strand ;
   FooCanvasItem *feature_item ;
   ZMapFeatureTypeStyle style ;
@@ -2375,6 +2391,9 @@ static void ProcessListFeature(gpointer data, gpointer user_data)
   /* Find out which strand group the feature should be displayed in. */
   display_strand = zmapWindowFeatureStrand(window, feature) ;
 
+
+#if CALCULATE_COLUMNS
+
   /* Caller may not want a forward or reverse strand and this is indicated by NULL value for
    * curr_forward_col or curr_reverse_col */
   if ((display_strand == ZMAPSTRAND_FORWARD && !(featureset_data->curr_forward_col))
@@ -2385,6 +2404,11 @@ static void ProcessListFeature(gpointer data, gpointer user_data)
 #endif
     return ;
   }
+#else
+  features = featureset_data->feature_stack.set_features[display_strand];
+  if(!features)
+	  return;
+#endif
 
   /* If we are doing frame specific display then don't display the feature if its the wrong
    * frame or its on the reverse strand and we aren't displaying reverse strand frames. */
@@ -2401,6 +2425,8 @@ static void ProcessListFeature(gpointer data, gpointer user_data)
     return ;
   }
 
+
+#if CALCULATE_COLUMNS
   /* Get the correct column to draw into... */
   if (display_strand == ZMAPSTRAND_FORWARD)
     {
@@ -2410,8 +2436,9 @@ static void ProcessListFeature(gpointer data, gpointer user_data)
     {
       column_group = zmapWindowContainerChildGetParent(FOO_CANVAS_ITEM(featureset_data->curr_reverse_col)) ;
     }
-
-//  featureset_data->feature_count++;
+#else
+  column_group = featureset_data->feature_stack.set_column[display_strand];
+#endif
 
 
 
@@ -2432,7 +2459,7 @@ static void ProcessListFeature(gpointer data, gpointer user_data)
   featureset_data->feature_stack.feature = feature;
 
   if(style)
-    feature_item = zmapWindowFeatureDraw(window, style, (FooCanvasGroup *)column_group, &featureset_data->feature_stack) ;
+    feature_item = zmapWindowFeatureDraw(window, style,  column_group, features, &featureset_data->feature_stack) ;
   else
     g_warning("definitely need a style '%s' for feature '%s'",
 	      g_quark_to_string(feature->style_id),
