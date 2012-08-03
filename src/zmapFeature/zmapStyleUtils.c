@@ -171,7 +171,63 @@ ZMAP_ENUM_AS_EXACT_STRING_FUNC(zmapStyleBlixemType2ExactStr,     ZMapStyleBlixem
  *  }
  *
  *  */
-ZMAP_ENUM_TO_SHORT_TEXT_FUNC(zmapStyleBumpMode2ShortText,            ZMapStyleBumpMode,               ZMAP_STYLE_BUMP_MODE_LIST);
+ZMAP_ENUM_TO_SHORT_TEXT_FUNC(zmapStyleBumpMode2ShortText, ZMapStyleBumpMode, ZMAP_STYLE_BUMP_MODE_LIST) ;
+
+
+
+
+/* The too-many bump modes have been remapped to just a few (too few ?) which breaks our
+ * code in a number of places, we need a function (for now) to do the remapping 
+ * to the remaining valid dump modes. 
+ * 
+ * Current valid modes are:   overlap, alternating, all, unbump
+ *  */
+ZMapStyleBumpMode zMapStylePatchBumpMode(ZMapStyleBumpMode curr_bump)
+{
+  ZMapStyleBumpMode valid_bump = ZMAPBUMP_INVALID ;
+
+
+  /* NOTE, I have left Malcolm's original comments in this switch in case what I have
+   * implemented is not correct. */
+
+  switch(curr_bump)
+    {
+    case ZMAPBUMP_UNBUMP:
+      valid_bump = curr_bump ;
+      break;
+
+    case ZMAPBUMP_NAME:
+    case ZMAPBUMP_NAME_INTERLEAVE:
+    case ZMAPBUMP_NAME_NO_INTERLEAVE:
+      /* patch both these to overlap, should just be no_interleave but I got it wrong last time round */
+      /* temporasry situation till i fix the menu to nbe simple */
+      valid_bump = ZMAPBUMP_OVERLAP;
+      break ;
+
+    case ZMAPBUMP_START_POSITION:
+    case ZMAPBUMP_NAME_COLINEAR:
+    case ZMAPBUMP_NAME_BEST_ENDS:
+      /* for alignments these all map to overlap, the alignments code shows the decorations regardless */
+      /* but for historical accuray we use bump all which displays each composite feature in its own column */
+      valid_bump = ZMAPBUMP_ALL ;
+      break ;
+
+    case ZMAPBUMP_ALTERNATING:
+    case ZMAPBUMP_OVERLAP:
+    case ZMAPBUMP_ALL:
+      valid_bump = curr_bump ;
+      break;
+
+    default:
+      zMapAssertNotReached() ;
+      break;
+    }
+
+
+  return valid_bump ;
+}
+
+
 
 
 
