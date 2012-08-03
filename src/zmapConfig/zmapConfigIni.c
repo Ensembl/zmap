@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -24,7 +24,7 @@
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- * Description: 
+ * Description:
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  *-------------------------------------------------------------------
@@ -85,7 +85,7 @@ typedef struct
 
 static GList *copy_keys(ZMapConfigIniContextKeyEntryStruct *keys);
 static void check_required(gpointer list_data, gpointer user_data);
-static gboolean check_required_keys(ZMapConfigIniContext context, 
+static gboolean check_required_keys(ZMapConfigIniContext context,
 				    ZMapConfigIniContextStanzaEntry stanza);
 static GType get_stanza_key_type(ZMapConfigIniContext context,
                          char *stanza_name,
@@ -147,7 +147,7 @@ static void zmapConfigIniContextSetErrorMessage(ZMapConfigIniContext context,cha
 
 
 
-gboolean zMapConfigIniContextAddGroup(ZMapConfigIniContext context, 
+gboolean zMapConfigIniContextAddGroup(ZMapConfigIniContext context,
 				      char *stanza_name, char *stanza_type,
 				      ZMapConfigIniContextKeyEntryStruct *keys)
 {
@@ -177,6 +177,14 @@ gboolean zMapConfigIniContextAddGroup(ZMapConfigIniContext context,
 	  result = TRUE;
 
 	  /* unfortunately we can only check for required keys when we have a stanza name */
+	  /*
+	   * NOTE this function does more than it says on the can
+	   * addgroup apears to suggest that it add a stanza template data structure to the context
+	   * but if it has a name we get to read the file and check that required fields are there
+	   * so we add a group and return a failure if the content is wrong
+	   * even though we do not appear to be reading it yet.
+	   * calling code does not process the return code, so that's pointless
+	   */
 	  if(!(g_ascii_strcasecmp(stanza_name, "*") == 0))
 	    result = check_required_keys(context, new_stanza);
 	}
@@ -192,15 +200,15 @@ static void check_required(gpointer list_data, gpointer user_data)
   ZMapConfigIniContextKeyEntry key = (ZMapConfigIniContextKeyEntry)list_data;
   ZMapConfigIniContextStanzaEntry stanza;
   ZMapConfigIniContext context;
-  
+
   context = checking_data->context;
   stanza  = checking_data->stanza;
 
   if(checking_data->result && !context->error_message && key->required)
     {
       GValue *value = NULL;
-      
-      if(zMapConfigIniGetValue(context->config, 
+
+      if(zMapConfigIniGetValue(context->config,
                          stanza->stanza_name,
                          key->key,
                          &value, key->type))
@@ -260,7 +268,7 @@ ZMapConfigIniContext zMapConfigIniContextDestroy(ZMapConfigIniContext context)
 
 
 
-gboolean zMapConfigIniContextGetValue(ZMapConfigIniContext context, 
+gboolean zMapConfigIniContextGetValue(ZMapConfigIniContext context,
                               char *stanza_name,
                               char *stanza_type,
                               char *key_name,
@@ -273,11 +281,11 @@ gboolean zMapConfigIniContextGetValue(ZMapConfigIniContext context,
   if(value_out)
     {
       type  = get_stanza_key_type(context, stanza_name, stanza_type, key_name);
-      
+
       if((type != 0))
       {
-        if((obtained = zMapConfigIniGetValue(context->config, 
-                                     stanza_name, key_name, 
+        if((obtained = zMapConfigIniGetValue(context->config,
+                                     stanza_name, key_name,
                                      &value, type)))
           *value_out = value;
         else
@@ -291,7 +299,7 @@ gboolean zMapConfigIniContextGetValue(ZMapConfigIniContext context,
       else
       {
         zmapConfigIniContextSetErrorMessage(context,
-                  g_strdup_printf("failed to get type for %s, %s", 
+                  g_strdup_printf("failed to get type for %s, %s",
                   stanza_name, key_name));
         *value_out = NULL;
       }
@@ -310,8 +318,8 @@ gboolean zMapConfigIniContextGetBoolean(ZMapConfigIniContext context,
   GValue *value_out = NULL;
   gboolean success = FALSE;
 
-  if(zMapConfigIniContextGetValue(context, 
-                          stanza_name, stanza_type, 
+  if(zMapConfigIniContextGetValue(context,
+                          stanza_name, stanza_type,
                           key_name,    &value_out))
     {
       if(value)
@@ -340,8 +348,8 @@ gboolean zMapConfigIniContextGetString(ZMapConfigIniContext context,
   GValue *value_out = NULL;
   gboolean success = FALSE;
 
-  if(zMapConfigIniContextGetValue(context, 
-				  stanza_name, stanza_type, 
+  if(zMapConfigIniContextGetValue(context,
+				  stanza_name, stanza_type,
 				  key_name,    &value_out))
     {
       if(value)
@@ -410,8 +418,8 @@ gboolean zMapConfigIniContextGetInt(ZMapConfigIniContext context,
   GValue *value_out = NULL;
   gboolean success = FALSE;
 
-  if(zMapConfigIniContextGetValue(context, 
-                          stanza_name, stanza_type, 
+  if(zMapConfigIniContextGetValue(context,
+                          stanza_name, stanza_type,
                           key_name,    &value_out))
     {
       if(value)
@@ -453,7 +461,7 @@ gboolean zMapConfigIniContextSetString(ZMapConfigIniContext context,
       set = zMapConfigIniContextSetValue(context, stanza_name,
                                key_name, &value);
     }
-  
+
   return set;
 }
 
@@ -479,7 +487,7 @@ gboolean zMapConfigIniContextSetInt(ZMapConfigIniContext context,
       set = zMapConfigIniContextSetValue(context, stanza_name,
                                key_name, &value);
     }
-  
+
   return set;
 }
 
@@ -506,7 +514,7 @@ gboolean zMapConfigIniContextSetBoolean(ZMapConfigIniContext context,
       set = zMapConfigIniContextSetValue(context, stanza_name,
                                key_name, &value);
     }
-  
+
   return set;
 }
 

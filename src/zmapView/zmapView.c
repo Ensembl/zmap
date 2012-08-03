@@ -147,7 +147,8 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
 					   ZMapFeatureContext context,
 					   char *url, char *format,
 					   int timeout, char *version,
-					   char *styles, char *styles_file,
+					   gboolean req_styles,
+					   char *styles_file,
 					   GList *req_featuresets,
 					   gboolean dna_requested,
 					   gint start,gint end,
@@ -462,12 +463,41 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
       // get the stanza structs from ZMap config
       settings_list = zmapViewGetIniSources(zmap_view->view_sequence->config_file, config_str, &stylesfile) ;
 
+	/*
+	 * read styles from file
+	 * the idea is that we can create a new view with new styles without restarting ZMap
+	 * but as that involves re-requesting data there's little gain.
+	 * Maybe you could have views of two sequences and you wan tot change a style in one ?
+	 *
+	 * each server can have it's own styles file, but was always use the same for each
+	 * and ACE can provide it's own styles. w/otterlace we use that same styles file
+	 * w/ XACE they want thier original styles????
+	 * so we have an (optional) global file and cache this data in the view
+	 * servers would traditionally read the file each time, and merge it into the view data
+	 * which is then passsed back to the servers. No need to do this 40x
+	 *
+	 * if we define a global stylesfile and still want styles from ACE then we set 'stylesfile=' in the server config
+	 */
 
       /* There are a number of predefined methods that we require so add these in as well
        * as the mapping for "feature set" -> style for these. */
       addPredefined(&(zmap_view->context_map.styles), &(zmap_view->context_map.column_2_styles)) ;
 
-      // read in a few ZMap stanzas
+	if(stylesfile)
+	{
+	  GHashTable * styles = NULL;
+
+	  if (zMapConfigIniGetStylesFromFile(zmap_view->view_sequence->config_file, NULL, stylesfile, &styles))
+	  {
+		  zmap_view->context_map.styles = zMapStyleMergeStyles(zmap_view->context_map.styles, styles, ZMAPSTYLE_MERGE_MERGE) ;
+	  }
+	  else
+	  {
+	      zMapLogWarning("Could not read styles file \"%s\"", stylesfile) ;
+	  }
+ 	}
+
+     // read in a few ZMap stanzas
       getIniData(zmap_view, config_str, settings_list);
 
       if (zmap_view->columns_set)
@@ -1332,15 +1362,13 @@ static GList *zmapViewGetIniSources(char *config_file, char *config_str, char **
 	zMapConfigIniContextIncludeBuffer(context, config_str);
 
       settings_list = zMapConfigIniContextGetSources(context);
-#if MH17_NOT_NEEDED
-      // now specified per server
+
       if(stylesfile)
         {
 	  zMapConfigIniContextGetString(context,
 					ZMAPSTANZA_APP_CONFIG,ZMAPSTANZA_APP_CONFIG,
 					ZMAPSTANZA_APP_STYLESFILE,stylesfile);
         }
-#endif
       zMapConfigIniContextDestroy(context);
 
     }
@@ -1427,7 +1455,6 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
   GList * sources = NULL;
   GHashTable *hash = NULL;
   ZMapConfigSource server;
-  char *stylesfile = NULL;
   int req_start,req_end;
   ZMapViewConnection view_con ;
   gboolean requested = FALSE;
@@ -1438,7 +1465,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
   /* OH DEAR...THINK WE MIGHT NEED THE CONFIG FILE HERE TOO.... */
 
   /* mh17: this is tedious to do for each request esp on startup */
-  sources = zmapViewGetIniSources(view->view_sequence->config_file, NULL, &stylesfile) ;
+  sources = zmapViewGetIniSources(view->view_sequence->config_file, NULL, NULL) ;
   hash = zmapViewGetFeatureSourceHash(sources);
 
 
@@ -1479,7 +1506,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 
 	  /* this is for ACEDB where the server featureset list is actually a list of columns
 	   * so to find the server we need to find the column
-	   * there is some possibility of collision if mis-configured
+	   * there is some possibility of collision if mis-configuredcreateConnection
 	   * and what will happen will be no data
 	   */
 	  if ((GFFset = g_hash_table_lookup(view->context_map.featureset_2_column, GUINT_TO_POINTER(unique_id))))
@@ -1653,7 +1680,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 					   (char *)server->format,
 					   server->timeout,
 					   (char *)server->version,
-					   (char *)server->styles_list,
+					   server->req_styles,
 					   server->stylesfile,
 					   req_featuresets,
 					   dna_requested,
@@ -1689,9 +1716,6 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 
       (*(view_cbs_G->state_change))(view, view->app_data, NULL) ;
     }
-
-  //  if(stylesfile)
-  //    g_free(stylesfile);
 
   if (sources)
       zMapConfigSourcesFreeList(sources);
@@ -3170,6 +3194,61 @@ GList *get_required_styles_list(GHashTable *srchash,GList *fsets)
       return(styles);
 }
 
+
+
+
+typedef struct
+{
+  GHashTable *all_styles ;
+  gboolean found_style ;
+  GString *missing_styles ;
+} FindStylesStruct, *FindStyles ;
+
+/* GFunc()    */
+static void findStyleCB(gpointer data, gpointer user_data)
+{
+  GQuark style_id = GPOINTER_TO_INT(data) ;
+  FindStyles find_data = (FindStyles)user_data ;
+
+  style_id = zMapStyleCreateID((char *)g_quark_to_string(style_id)) ;
+
+  if ((zMapFindStyle(find_data->all_styles, style_id)))
+      find_data->found_style = TRUE;
+  else
+    {
+      if (!(find_data->missing_styles))
+	find_data->missing_styles = g_string_sized_new(1000) ;
+
+      g_string_append_printf(find_data->missing_styles, "%s ", g_quark_to_string(style_id)) ;
+    }
+
+  return ;
+}
+
+// returns whether we have any of the needed styles and lists the ones we don't
+static gboolean haveRequiredStyles(GHashTable *all_styles, GList *required_styles, char **missing_styles_out)
+{
+  gboolean result = FALSE ;
+  FindStylesStruct find_data = {NULL} ;
+
+  if(!required_styles)  // MH17: semantics -> don't need styles therefore have those that are required
+      return(TRUE);
+
+  find_data.all_styles = all_styles ;
+
+  g_list_foreach(required_styles, findStyleCB, &find_data) ;
+
+  if (find_data.missing_styles)
+    *missing_styles_out = g_string_free(find_data.missing_styles, FALSE) ;
+
+  result = find_data.found_style ;
+
+  return result ;
+}
+
+
+
+
 /* This is _not_ a generalised processing function, it handles a sequence of replies from
  * a thread that build up a feature context from a source. The steps are interdependent
  * and data from one step must be available to the next. */
@@ -3405,13 +3484,49 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 	ZMapServerReqStyles get_styles = (ZMapServerReqStyles)req_any ;
 
 	/* Merge the retrieved styles into the views canonical style list. */
-	zmap_view->context_map.styles = zMapStyleMergeStyles(zmap_view->context_map.styles, get_styles->styles_out,
-							     ZMAPSTYLE_MERGE_PRESERVE) ;
+	if(get_styles->styles_out)
+	{
+	    char *missing_styles = NULL ;
 
+#if 0
+pointless doing this if we have defaults
+code moved from zmapServerProtocolHandler.c
+beside we should text the view data whcih may contain global config
 
-	/* need to patch in sub style pointers after merge/ copy */
-	zMapStyleSetSubStyles(zmap_view->context_map.styles);
+		char *missing_styles = NULL;
 
+		/* Make sure that all the styles that are required for the feature sets were found.
+		* (This check should be controlled from analysing the number of feature servers or
+		* flags set for servers.....) */
+
+		if (!haveRequiredStyles(get_styles->styles_out, get_styles->required_styles_in, &missing_styles))
+		{
+			*err_msg_out = g_strdup_printf("The following required Styles could not be found on the server: %s",
+						missing_styles) ;
+		}
+		if(missing_styles)
+		{
+			g_free(missing_styles);	   /* haveRequiredStyles return == TRUE doesn't mean missing_styles == NULL */
+		}
+#endif
+
+		zmap_view->context_map.styles = zMapStyleMergeStyles(zmap_view->context_map.styles,
+								get_styles->styles_out, ZMAPSTYLE_MERGE_PRESERVE) ;
+
+		/* need to patch in sub style pointers after merge/ copy */
+		zMapStyleSetSubStyles(zmap_view->context_map.styles);
+
+		/* test here, where we have global and predefined styles too */
+
+		if (!haveRequiredStyles(zmap_view->context_map.styles, get_styles->required_styles_in, &missing_styles))
+		{
+			zMapLogWarning("The following required Styles could not be found on the server: %s",missing_styles) ;
+		}
+		if(missing_styles)
+		{
+			g_free(missing_styles);	   /* haveRequiredStyles return == TRUE doesn't mean missing_styles == NULL */
+		}
+	}
 
 	/* Store the curr styles for use in creating the context and drawing features. */
 	//	connect_data->curr_styles = get_styles->styles_out ;
@@ -3429,6 +3544,7 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
     case ZMAP_SERVERREQ_GETSTATUS:
     case ZMAP_SERVERREQ_SEQUENCE:
       {
+      char *missing_styles = NULL ;
 	/* features and getstatus combined as they can both display data */
 	ZMapServerReqGetFeatures get_features = (ZMapServerReqGetFeatures)req_any ;
 
@@ -3437,8 +3553,6 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 
 	if (result && req_any->type == ZMAP_SERVERREQ_FEATURES)
 	  {
-	    char *missing_styles = NULL ;
-
 	    if (!(connect_data->server_styles_have_mode)
 		&& !zMapFeatureAnyAddModesToStyles((ZMapFeatureAny)(connect_data->curr_context),
 						   zmap_view->context_map.styles))
@@ -3635,7 +3749,8 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
 					   ZMapFeatureContext context,
 					   char *server_url, char *format,
 					   int timeout, char *version,
-					   char *styles, char *styles_file,
+					   gboolean req_styles,
+					   char *styles_file,
 					   GList *req_featuresets,
 					   gboolean dna_requested,
 					   gint features_start, gint features_end,
@@ -3763,7 +3878,8 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
 	{
 	  req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_FEATURESETS, req_featuresets, NULL) ;
 	  zmapViewStepListAddServerReq(view_con->step_list, view_con, ZMAP_SERVERREQ_FEATURESETS, req_any, on_fail) ;
-	  req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_STYLES, styles, styles_file) ;
+#warning remove file and styles list replace with hash. NO: remove function altogether
+	  req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_STYLES, req_styles, styles_file && *styles_file ? styles_file : NULL) ;
 	  zmapViewStepListAddServerReq(view_con->step_list, view_con, ZMAP_SERVERREQ_STYLES, req_any, on_fail) ;
 	  req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_NEWCONTEXT, context) ;
 	  zmapViewStepListAddServerReq(view_con->step_list, view_con, ZMAP_SERVERREQ_NEWCONTEXT, req_any, on_fail) ;
@@ -3790,7 +3906,7 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
          */
         req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_GETSTATUS) ;
         zmapViewStepListAddServerReq(view_con->step_list, view_con, ZMAP_SERVERREQ_GETSTATUS, req_any, on_fail) ;
-        connect_data->display_after = ZMAP_SERVERREQ_GETSTATUS;;
+        connect_data->display_after = ZMAP_SERVERREQ_GETSTATUS;
 
 
 	  req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_TERMINATE) ;

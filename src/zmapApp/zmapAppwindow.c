@@ -56,7 +56,7 @@ static void checkForCmdLineVersionArg(int argc, char *argv[]) ;
 static int checkForCmdLineSleep(int argc, char *argv[]) ;
 static void checkForCmdLineSequenceArg(int argc, char *argv[], char **dataset_out, char **sequence_out) ;
 static void checkForCmdLineStartEndArg(int argc, char *argv[], int *start_inout, int *end_inout) ;
-static char *checkConfigDir(void) ;
+static char *checkConfigDir(gboolean use_files) ;
 static gboolean removeZMapRowForeachFunc(GtkTreeModel *model, GtkTreePath *path,
                                          GtkTreeIter *iter, gpointer data);
 
@@ -83,7 +83,7 @@ static void doTheExit(int exit_code) ;
 
 static void setup_signal_handlers(void);
 
-static gboolean configureLog(void) ;
+static gboolean configureLog(char *config_file) ;
 
 ZMapManagerCallbacksStruct app_window_cbs_G = {removeZMapCB, infoSetCB, quitReqCB} ;
 
@@ -163,7 +163,8 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
   /* Set up configuration directory/files, this function exits if the directory/files can't be
    * accessed.... */
-  app_context->default_sequence->config_file = checkConfigDir() ;
+  app_context->files = zMapCmdLineFinalArg();
+  app_context->default_sequence->config_file = checkConfigDir(app_context->files ? TRUE : FALSE) ;
 
   /* Set any global debug flags from config file. */
   zMapUtilsConfigDebug(NULL) ;
@@ -175,7 +176,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   app_context->zmap_manager = zMapManagerCreate((void *)app_context) ;
 
   /* Set up logging for application. */
-  if (!zMapLogCreate(NULL) || !configureLog())
+  if (!zMapLogCreate(NULL) || !configureLog(app_context->default_sequence->config_file))
     {
       printf("Zmap cannot create log file.\n") ;
 
@@ -702,7 +703,7 @@ static int checkForCmdLineSleep(int argc, char *argv[])
 
 
 /* Did user specify a config directory and/or config file within that directory on the command line. */
-static char *checkConfigDir(void)
+static char *checkConfigDir(gboolean use_files)
 {
   char *config_file = NULL ;
   ZMapCmdLineArgsType dir = {FALSE}, file = {FALSE};
@@ -710,12 +711,11 @@ static char *checkConfigDir(void)
 
   zMapCmdLineArgsValue(ZMAPARG_CONFIG_DIR, &dir) ;
   zMapCmdLineArgsValue(ZMAPARG_CONFIG_FILE, &file) ;
-  files = zMapCmdLineFinalArg(); ;
 
-  /* NOTE if we run config free ('zmap thing.GFF') thene there is not dir/file but this returns TRUE
+  /* NOTE if we run config free ('zmap thing.GFF') then there is no dir/file but this returns TRUE
    * so that means that the dir and file strings will be valid if not
    */
-  if (!zMapConfigDirCreate(dir.s, file.s, files ? TRUE : FALSE))
+  if (!zMapConfigDirCreate(dir.s, file.s, use_files))
     {
 	fprintf(stderr, "Could not access either/both of configuration directory \"%s\" "
 	      "or file \"%s\" within that directory.\n",
@@ -768,7 +768,7 @@ static gboolean getConfiguration(ZMapAppContext app_context)
   gboolean result = FALSE ;
   ZMapConfigIniContext context;
 
-  if ((context = zMapConfigIniContextProvide(NULL)))
+  if ((context = zMapConfigIniContextProvide(app_context->default_sequence->config_file)))
     {
       gboolean tmp_bool = FALSE;
       char *tmp_string  = NULL;
@@ -876,12 +876,12 @@ static void setup_signal_handlers(void)
 
 
 /* Read logging configuration from ZMap stanza and apply to log. */
-static gboolean configureLog(void)
+static gboolean configureLog(char *config_file)
 {
   gboolean result = FALSE ;
   ZMapConfigIniContext context ;
 
-  if ((context = zMapConfigIniContextProvide(NULL)))
+  if ((context = zMapConfigIniContextProvide(config_file)))
     {
       gboolean tmp_bool ;
       gboolean logging, log_to_file, show_code_details, show_time, catch_glib, echo_glib ;

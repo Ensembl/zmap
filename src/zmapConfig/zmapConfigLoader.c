@@ -558,6 +558,7 @@ gboolean zMapConfigIniGetStylesFromFile(char *config_file,
         GParameter params[_STYLE_PROP_N_ITEMS + 20] ; // + 20 for good luck :-)
         guint num_params ;
         GParameter *curr_param ;
+	  char *name;
 
         /* Reset params memory.... */
         memset(&params, 0, sizeof(params)) ;
@@ -570,14 +571,21 @@ gboolean zMapConfigIniGetStylesFromFile(char *config_file,
          * is derived from the name of the stanza and so must be treated specially. */
         zMapAssert(curr_config_style->name && *(curr_config_style->name)) ;
         g_value_init(&(curr_param->value), G_TYPE_STRING) ;
-        curr_param->name = curr_config_style->name ;
-        g_value_set_string(&(curr_param->value), curr_config_style->data.str) ;
+
+	  curr_param->name = curr_config_style->name ;
+
 
         // if no parameters are specified the we get NULL for the name
         // quite how will take hours to unravel
         // either way the style is not usable
         if(!curr_config_style->data.str)
             continue;
+
+  	  name = curr_config_style->data.str;
+	  if(!g_ascii_strncasecmp(curr_config_style->data.str,"style-",6))
+		name += 6;
+
+	  g_value_set_string(&(curr_param->value), name) ;
 
         num_params++ ;
         curr_param++ ;
@@ -1270,7 +1278,7 @@ static ZMapConfigIniContextKeyEntry get_app_group_data(char **stanza_name, char 
     { ZMAPSTANZA_APP_PFETCH_LOCATION, G_TYPE_STRING, NULL, FALSE },
 //    { ZMAPSTANZA_APP_SCRIPTS,      G_TYPE_STRING, NULL, FALSE },
     { ZMAPSTANZA_APP_DATA,         G_TYPE_STRING, NULL, FALSE },
-//    { ZMAPSTANZA_APP_STYLESFILE,   G_TYPE_STRING, NULL, FALSE },
+    { ZMAPSTANZA_APP_STYLESFILE,   G_TYPE_STRING, NULL, FALSE },
     { ZMAPSTANZA_APP_LEGACY_STYLES,   G_TYPE_BOOLEAN, NULL, FALSE },
     { ZMAPSTANZA_APP_STYLE_FROM_METHOD,   G_TYPE_BOOLEAN, NULL, FALSE },
     { ZMAPSTANZA_APP_XREMOTE_DEBUG,G_TYPE_BOOLEAN, NULL, FALSE },
@@ -1699,8 +1707,8 @@ static void free_source_list_item(gpointer list_data, gpointer unused_data)
 //    g_free(source_to_free->navigatorsets);
   if(source_to_free->stylesfile)
     g_free(source_to_free->stylesfile);
-  if(source_to_free->styles_list)
-    g_free(source_to_free->styles_list);
+//  if(source_to_free->styles_list)
+//    g_free(source_to_free->styles_list);
   if(source_to_free->format)
     g_free(source_to_free->format);
 
@@ -1716,13 +1724,15 @@ static ZMapConfigIniContextKeyEntry get_source_group_data(char **stanza_name, ch
     { ZMAPSTANZA_SOURCE_TIMEOUT,       G_TYPE_INT,     source_set_property, FALSE },
     { ZMAPSTANZA_SOURCE_VERSION,       G_TYPE_STRING,  source_set_property, FALSE },
     { ZMAPSTANZA_SOURCE_FEATURESETS,   G_TYPE_STRING,  source_set_property, FALSE },
-    { ZMAPSTANZA_SOURCE_STYLES,        G_TYPE_STRING,  source_set_property, FALSE },
+//    { ZMAPSTANZA_SOURCE_STYLES,        G_TYPE_STRING,  source_set_property, FALSE },
+    { ZMAPSTANZA_SOURCE_REQSTYLES,     G_TYPE_BOOLEAN, source_set_property, FALSE },
     { ZMAPSTANZA_SOURCE_STYLESFILE,    G_TYPE_STRING,  source_set_property, FALSE },
 //    { ZMAPSTANZA_SOURCE_NAVIGATORSETS, G_TYPE_STRING,  source_set_property, FALSE },
 //    { ZMAPSTANZA_SOURCE_SEQUENCE,      G_TYPE_BOOLEAN, source_set_property, FALSE },
     { ZMAPSTANZA_SOURCE_FORMAT,        G_TYPE_STRING,  source_set_property, FALSE },
     { ZMAPSTANZA_SOURCE_DELAYED,       G_TYPE_BOOLEAN, source_set_property, FALSE },
-    { ZMAPSTANZA_SOURCE_MAPPING,       G_TYPE_BOOLEAN, source_set_property, FALSE },    { ZMAPSTANZA_SOURCE_GROUP,           G_TYPE_STRING,  source_set_property, FALSE },
+    { ZMAPSTANZA_SOURCE_MAPPING,       G_TYPE_BOOLEAN, source_set_property, FALSE },
+    { ZMAPSTANZA_SOURCE_GROUP,           G_TYPE_STRING,  source_set_property, FALSE },
     {NULL}
   };
 
@@ -1755,8 +1765,10 @@ static void source_set_property(char *current_stanza_name, char *key, GType type
 	str_ptr = &(config_source->version) ;
       else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_FEATURESETS) == 0)
 	str_ptr = &(config_source->featuresets) ;
-      else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_STYLES) == 0)
-	str_ptr = &(config_source->styles_list) ;
+//      else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_STYLES) == 0)
+//	str_ptr = &(config_source->styles_list) ;
+      else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_REQSTYLES) == 0)
+	bool_ptr = &(config_source->req_styles) ;
       else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_STYLESFILE) == 0)
       str_ptr = &(config_source->stylesfile) ;
 //      else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_NAVIGATORSETS) == 0)

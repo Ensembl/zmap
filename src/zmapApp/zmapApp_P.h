@@ -97,6 +97,8 @@ typedef struct _ZMapAppContextStruct
 
   gboolean show_mainwindow ;				    /* Should main window be displayed. */
 
+  char **files;			/* data taken from GFF files on command line or in config file (autoconfigure servers) */
+
       /* Was a default sequence specified in the config. file.*/
   ZMapFeatureSequenceMap default_sequence;
 
