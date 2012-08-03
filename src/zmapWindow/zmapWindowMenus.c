@@ -904,7 +904,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuSearchListOps(int *start_index_inout,
 
 
 
-/* Make the Bump, Hide, Masked, Mark and Compress subpart of the menu. */
+
 ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
 				       ZMapGUIMenuItemCallbackFunc callback_func,
 				       gpointer callback_data, ZMapStyleBumpMode curr_bump)
@@ -936,7 +936,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
 
       {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}  // menu terminates on id = 0 in one loop below
     } ;
-  enum {MENU_INDEX_BUMP = 0, MENU_INDEX_MARK = 3,  MENU_INDEX_COMPRESS = 4} ;
+  enum {MENU_BUMP_TOGGLE = 0, MENU_INDEX_TOGGLE = 12, MENU_INDEX_COMPRESS = 13} ;
 							    /* Keep in step with menu[] positions. */
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data;
   static gboolean menu_set = FALSE ;
@@ -950,9 +950,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
   FooCanvasGroup *column_group =  NULL;
 
 
-  /* Set the initial toggle button correctly....make sure this stays in step with the array above.
-   * NOTE logic, this button is either "no bump" or "Name + No Bump", the latter should be
-   * selectable whatever.... */
+
 
   /* Dynamically set various options in the menu text. */
   if (!menu_set)
@@ -974,8 +972,11 @@ ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
       menu_set = TRUE ;
     }
 
-  /* Set main bump toggle menu item. */
-  menu_item = &(menu[MENU_INDEX_BUMP]) ;
+
+  /* Set the initial toggle button correctly....make sure this stays in step with the array above.
+   * NOTE logic, this button is either "no bump" or "Name + No Bump", the latter should be
+   * selectable whatever.... */
+  menu_item = &(menu[MENU_BUMP_TOGGLE]) ;
   if (curr_bump != ZMAPBUMP_UNBUMP)
     {
       menu_item->type = ZMAPGUI_MENU_TOGGLEACTIVE ;
@@ -987,8 +988,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
       menu_item->id = ZMAPBUMP_UNBUMP ;
     }
 
-  /* Set "Mark" toggle item. */
-  menu_item = &(menu[MENU_INDEX_MARK]) ;
+  menu_item = &(menu[MENU_INDEX_TOGGLE]) ;
   if (zmapWindowMarkIsSet(menu_data->window->mark))
     {
       menu_item->type = ZMAPGUI_MENU_TOGGLEACTIVE ;
@@ -998,12 +998,13 @@ ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
       menu_item->type = ZMAPGUI_MENU_TOGGLE ;
     }
 
-  /* Set "Compress" toggle item. */
+
   menu_item = &(menu[MENU_INDEX_COMPRESS]) ;
   column_container = zmapWindowContainerCanvasItemGetContainer(menu_data->item) ;
   column_group = (FooCanvasGroup *)column_container;
   block_container = zmapWindowContainerUtilsGetParentLevel(column_container, ZMAPCONTAINER_LEVEL_BLOCK) ;
-  if (zmapWindowContainerBlockIsCompressedColumn((ZMapWindowContainerBlock)block_container))
+  if (zmapWindowContainerBlockIsCompressedColumn((ZMapWindowContainerBlock)block_container)
+      || zmapWindowContainerBlockIsBumpedColumn((ZMapWindowContainerBlock)block_container))
     {
       compress = TRUE ;
       menu_item->type = ZMAPGUI_MENU_TOGGLEACTIVE ;
@@ -1024,16 +1025,14 @@ ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
       // hide the menu item if it's not maskable
       menu_item->type = ZMAPGUI_MENU_TOGGLE ;
 
-      if (!menu_data->container_set->maskable
-	  || !menu_data->window->highlights_set.masked
-	  || !zMapWindowFocusCacheGetSelectedColours(WINDOW_FOCUS_GROUP_MASKED, NULL, NULL))
+      if(!menu_data->container_set->maskable || !menu_data->window->highlights_set.masked || !zMapWindowFocusCacheGetSelectedColours(WINDOW_FOCUS_GROUP_MASKED, NULL, NULL))
         menu_item->type = ZMAPGUI_MENU_HIDE;
-      else if (!menu_data->container_set->masked)
+      else if(!menu_data->container_set->masked)
         menu_item->type = ZMAPGUI_MENU_TOGGLEACTIVE ;
     }
 
 
-  /* Unset any previously active bump sub-menu radio button.... */
+  /* Unset any previous active radio button.... */
   menu_item = &(menu[0]) ;
   while (menu_item->type != ZMAPGUI_MENU_NONE)
     {
@@ -1046,11 +1045,11 @@ ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
       menu_item++ ;
     }
 
-  /* Set any new active bump sub-menu radio button... */
+  /* Set new one... */
   menu_item = &(menu[0]) ;
   while (menu_item->type != ZMAPGUI_MENU_NONE)
     {
-      if (menu_item->type == ZMAPGUI_MENU_RADIO && menu_item->id == zMapStylePatchBumpMode(curr_bump))
+      if (menu_item->type == ZMAPGUI_MENU_RADIO && menu_item->id == curr_bump)
 	{
 	  menu_item->type = ZMAPGUI_MENU_RADIOACTIVE ;
 	  break ;
