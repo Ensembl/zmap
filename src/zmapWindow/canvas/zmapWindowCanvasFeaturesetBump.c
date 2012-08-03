@@ -254,298 +254,297 @@ gboolean zmapWindowCanvasFeatureTestMark(ZMapWindowCanvasFeature feature, double
  * simple and complex features have an extent which is used to decide on positioning
  * NOTE a CanvasFeatureSet is a container that may contain multiple types of feature
  */
-gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowFeaturesetItem featureset, ZMapStyleBumpMode bump_mode,
-					int compress, BumpFeatureset bump_data)
+gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowFeaturesetItem featureset, ZMapStyleBumpMode bump_mode, int compress, BumpFeatureset bump_data)
 {
-  /* COMPRESS_ALL appears to get set but never used
-   * COMPRESS_MARK removes stuff outside the mark
-   * COMPRESS_VISIBLE  is in the code as 'UnCompress'
-   *
-   * so FTM just implement MARK or visible sequence (ie in scroll region)
-   * features outside the range are flagged as non-vis
-   * it's a linear scan so we could just flag all regardless of scroll region
-   * but it might be quicker to process the scroll region only
-   *
-   * erm... compress_mode is implied by start and end coords
-   */
-  /* ZMapWindowCompressMode compress_mode = (ZMapWindowCompressMode) compress; */
+	/* COMPRESS_ALL appears to get set but never used
+	 * COMPRESS_MARK removes stuff outside the mark
+	 * COMPRESS_VISIBLE  is in the code as 'UnCompress'
+	 *
+	 * so FTM just implement MARK or visible sequence (ie in scroll region)
+	 * features outside the range are flagged as non-vis
+	 * it's a linear scan so we could just flag all regardless of scroll region
+	 * but it might be quicker to process the scroll region only
+	 *
+	 * erm... compress_mode is implied by start and end coords
+	 */
+	/* ZMapWindowCompressMode compress_mode = (ZMapWindowCompressMode) compress; */
 
-  ZMapSkipList sl;
-  BCR pos_list = NULL;
-  BCR l;
-  int n;
-  double width;
+	ZMapSkipList sl;
+	BCR pos_list = NULL;
+	BCR l;
+	int n;
+	double width;
 #if MODULE_STATS
-  double time;
+	double time;
 #endif
 
-  if(!ZMAP_IS_WINDOW_FEATURESET_ITEM(featureset))
-    return FALSE;
+	if(!ZMAP_IS_WINDOW_FEATURESET_ITEM(featureset))
+		return FALSE;
 
-  //printf("\nbump %s to %d\n",g_quark_to_string(featureset->id), bump_mode);
+//printf("\nbump %s to %d\n",g_quark_to_string(featureset->id), bump_mode);
 
 #if MODULE_STATS
-  time = zMapElapsedSeconds;
+	time = zMapElapsedSeconds;
 #endif
-  /* prepare */
+	/* prepare */
 
-  if(!sub_col_width_G)
-    sub_col_width_G = g_hash_table_new(NULL,NULL);
-  else
-    g_hash_table_remove_all(sub_col_width_G);
+	if(!sub_col_width_G)
+		sub_col_width_G = g_hash_table_new(NULL,NULL);
+	else
+		g_hash_table_remove_all(sub_col_width_G);
 
-  if(!sub_col_offset_G)
-    sub_col_offset_G = g_hash_table_new(NULL,NULL);
-  else
-    g_hash_table_remove_all(sub_col_offset_G);
+	if(!sub_col_offset_G)
+		sub_col_offset_G = g_hash_table_new(NULL,NULL);
+	else
+		g_hash_table_remove_all(sub_col_offset_G);
 
-  bump_data->offset = 0.0;
-  bump_data->incr = featureset->width + bump_data->spacing;
+	bump_data->offset = 0.0;
+	bump_data->incr = featureset->width + bump_data->spacing;
 
-  bump_data->complex = TRUE;	/* use complex features if possible */
-  if(zMapStyleIsUnique(featureset->style))
-    bump_data->complex = 0;
+	bump_data->complex = TRUE;	/* use complex features if possible */
+	if(zMapStyleIsUnique(featureset->style))
+		bump_data->complex = 0;
 
-  /*
-   * a complex feature is a transcript or joined up alignment
-   * some alignments (eg repeats) should not be - this need to go into styles or config somewhere
-   * alignments should be joind up in the feature context if they are a set
-   * if not then we'll have complex features of 1 sub-feature
-   * if we want bump modes with unjoined up alignemnts then the mode can clear this flag (as above)
-   */
+	/*
+	 * a complex feature is a transcript or joined up alignment
+	 * some alignments (eg repeats) should not be - this need to go into styles or config somewhere
+	 * alignments should be joind up in the feature context if they are a set
+	 * if not then we'll have complex features of 1 sub-feature
+	 * if we want bump modes with unjoined up alignemnts then the mode can clear this flag (as above)
+	 */
 
-  if(bump_mode != ZMAPBUMP_UNBUMP)
-    featureset->bump_overlap = 0;
+	if(bump_mode != ZMAPBUMP_UNBUMP)
+		featureset->bump_overlap = 0;
 
-  switch(bump_mode)
-    {
-    case ZMAPBUMP_UNBUMP:
-      /* this is a bit hacky */
-      bump_data->complex = FALSE;	/* reset compound feature handling */
-      break;
-
-    case ZMAPBUMP_NAME_INTERLEAVE:
-    case ZMAPBUMP_NAME_NO_INTERLEAVE:
-      /* patch both these to overlap, should just be no_interleave but I got it wrong last time round */
-      /* temporasry situation till i fix the menu to nbe simple */
-      bump_mode = ZMAPBUMP_OVERLAP;
-      /* fall through */
-    case ZMAPBUMP_START_POSITION:
-    case ZMAPBUMP_NAME_COLINEAR:
-    case ZMAPBUMP_NAME_BEST_ENDS:
-      /* for alignments these all map to overlap, the alignments code shows the decorations regardless */
-      /* but for historical accuray we use bump all which displays each composite feature in its own column */
-      if(bump_mode != ZMAPBUMP_OVERLAP)
-	bump_mode = ZMAPBUMP_ALL;
-      /* fall through */
-
-    case ZMAPBUMP_OVERLAP:
-    case ZMAPBUMP_ALL:
-      /* performance stats */
-      bump_data->n_col = 0;
-      bump_data->comps = 0;
-      bump_data->features = 0;
-      break;
-    default:
-      break;
-    }
-
-  /* in case we get a bump before a paint eg in initial display */
-  if(!featureset->display_index || (featureset->link_sideways && !featureset->linked_sideways))
-    zMapWindowCanvasFeaturesetIndex(featureset);
-
-
-  /* process all features */
-
-  for(sl = zMapSkipListFirst(featureset->display_index); sl; sl = sl->next)
-    {
-      ZMapWindowCanvasFeature feature = (ZMapWindowCanvasFeature) sl->data;	/* base struct of all features */
-      double extra;
-
-      //printf("bump feature %s %lx\n", g_quark_to_string(feature->feature->original_id),feature->flags);
-      if(bump_mode == ZMAPBUMP_UNBUMP)
+	switch(bump_mode)
 	{
-	  /* just redisplays using normal coords */
-	  /* in case of mangled alingments must reset the first exom
-	   * ref to zMapWindowCanvasAlignmentGetFeatureExtent(),
-	   * which extends the feature to catch colinear lines off screen
-	   * NOTE we'd do better with some flag set by the alignment code to trigger this.
-	   */
-	  if(feature->type == FEATURE_ALIGN)
-	    feature->y2 = feature->feature->x2;
+	case ZMAPBUMP_UNBUMP:
+		/* this is a bit hacky */
+		bump_data->complex = FALSE;	/* reset compound feature handling */
+		break;
 
-	  if((feature->flags & FEATURE_SUMMARISED))		/* restore to previous state */
-	    feature->flags |= FEATURE_HIDDEN;
-
-	  feature->flags &= ~FEATURE_MARK_HIDE;
-	  if(!(feature->flags & FEATURE_HIDE_REASON))
-	    {
-	      feature->flags &= ~FEATURE_HIDDEN;
-	    }
-	  continue;
-	}
-
-      if(!zMapWindowCanvasFeaturesetGetFeatureExtent(feature, bump_data->complex, &bump_data->span, &bump_data->width))
-	continue;
-
-      if(bump_data->mark_set)
-	{
-	  if(bump_data->span.x2 < bump_data->start || bump_data->span.x1 > bump_data->end)
-	    {
-	      /* all the feature's exons are outside the mark on the same side */
-	      feature->flags |= FEATURE_HIDDEN | FEATURE_MARK_HIDE;
-	      continue;
-	    }
-
-	  if(zmapWindowCanvasFeatureTestMark(feature, bump_data->start, bump_data->end))
-	    {
-	      /* none of the feature's exons cross the mark */
-	      feature->flags |= FEATURE_HIDDEN | FEATURE_MARK_HIDE;
-	      continue;
-	    }
-	}
-
-      if(( (feature->flags & FEATURE_HIDE_REASON) == FEATURE_SUMMARISED))
-	{
-	  /* bump shows all, that's what it's for */
-	  /* however we still don't show hidden masked features */
-	  feature->flags &= ~FEATURE_HIDDEN;
-	}
-
-      if(feature->flags & FEATURE_HIDDEN)
-	continue;
-
-      if (bump_data->complex && feature->left)
-	{
-	  /* already processed the series of features  */
-	  continue;
-	}
-
-      extra = bump_data->span.x2 - bump_data->span.x1;
-      if(extra > featureset->bump_overlap)
-	featureset->bump_overlap = extra;
-
-      switch(bump_mode)
-	{
-	case ZMAPBUMP_ALL:
-	  /* NOTE this is the normal colinear bump, one set of features per column */
-	  feature->bump_offset = bump_data->offset;
-	  bump_data->offset += bump_data->width + bump_data->spacing;
-	  break ;
+	case ZMAPBUMP_NAME_INTERLEAVE:
+	case ZMAPBUMP_NAME_NO_INTERLEAVE:
+		/* patch both these to overlap, should just be no_interleave but I got it wrong last time round */
+		/* temporasry situation till i fix the menu to nbe simple */
+		bump_mode = ZMAPBUMP_OVERLAP;
+		/* fall through */
+	case ZMAPBUMP_START_POSITION:
+	case ZMAPBUMP_NAME_COLINEAR:
+	case ZMAPBUMP_NAME_BEST_ENDS:
+		/* for alignments these all map to overlap, the alignments code shows the decorations regardless */
+		/* but for historical accuray we use bump all which displays each composite feature in its own column */
+		if(bump_mode != ZMAPBUMP_OVERLAP)
+			bump_mode = ZMAPBUMP_ALL;
+		/* fall through */
 
 	case ZMAPBUMP_OVERLAP:
-	  pos_list = bump_overlap(feature, bump_data, pos_list);
-	  break ;
+	case ZMAPBUMP_ALL:
+		/* performance stats */
+		bump_data->n_col = 0;
+		bump_data->comps = 0;
+		bump_data->features = 0;
+		break;
+	default:
+		break;
+	}
+
+	/* in case we get a bump before a paint eg in initial display */
+	if(!featureset->display_index || (featureset->link_sideways && !featureset->linked_sideways))
+		zMapWindowCanvasFeaturesetIndex(featureset);
+
+
+	/* process all features */
+
+	for(sl = zMapSkipListFirst(featureset->display_index); sl; sl = sl->next)
+	{
+		ZMapWindowCanvasFeature feature = (ZMapWindowCanvasFeature) sl->data;	/* base struct of all features */
+		double extra;
+
+//printf("bump feature %s %lx\n", g_quark_to_string(feature->feature->original_id),feature->flags);
+		if(bump_mode == ZMAPBUMP_UNBUMP)
+		{
+			/* just redisplays using normal coords */
+			/* in case of mangled alingments must reset the first exom
+			 * ref to zMapWindowCanvasAlignmentGetFeatureExtent(),
+			 * which extends the feature to catch colinear lines off screen
+			 * NOTE we'd do better with some flag set by the alignment code to trigger this.
+			 */
+			if(feature->type == FEATURE_ALIGN)
+				feature->y2 = feature->feature->x2;
+
+			if((feature->flags & FEATURE_SUMMARISED))		/* restore to previous state */
+				feature->flags |= FEATURE_HIDDEN;
+
+			feature->flags &= ~FEATURE_MARK_HIDE;
+			if(!(feature->flags & FEATURE_HIDE_REASON))
+			{
+				feature->flags &= ~FEATURE_HIDDEN;
+			}
+			continue;
+		}
+
+		if(!zMapWindowCanvasFeaturesetGetFeatureExtent(feature, bump_data->complex, &bump_data->span, &bump_data->width))
+			continue;
+
+		if(bump_data->mark_set)
+		{
+			if(bump_data->span.x2 < bump_data->start || bump_data->span.x1 > bump_data->end)
+			{
+				/* all the feature's exons are outside the mark on the same side */
+				feature->flags |= FEATURE_HIDDEN | FEATURE_MARK_HIDE;
+				continue;
+			}
+
+			if(zmapWindowCanvasFeatureTestMark(feature, bump_data->start, bump_data->end))
+			{
+				/* none of the feature's exons cross the mark */
+				feature->flags |= FEATURE_HIDDEN | FEATURE_MARK_HIDE;
+				continue;
+			}
+		}
+
+		if(( (feature->flags & FEATURE_HIDE_REASON) == FEATURE_SUMMARISED))
+		{
+			/* bump shows all, that's what it's for */
+			/* however we still don't show hidden masked features */
+			feature->flags &= ~FEATURE_HIDDEN;
+		}
+
+		if(feature->flags & FEATURE_HIDDEN)
+			continue;
+
+		if (bump_data->complex && feature->left)
+		{
+			/* already processed the series of features  */
+			continue;
+		}
+
+		extra = bump_data->span.x2 - bump_data->span.x1;
+		if(extra > featureset->bump_overlap)
+			featureset->bump_overlap = extra;
+
+		switch(bump_mode)
+		{
+		case ZMAPBUMP_ALL:
+			/* NOTE this is the normal colinear bump, one set of features per column */
+			feature->bump_offset = bump_data->offset;
+			bump_data->offset += bump_data->width + bump_data->spacing;
+			break ;
+
+		case ZMAPBUMP_OVERLAP:
+			pos_list = bump_overlap(feature, bump_data, pos_list);
+			break ;
+
+		case ZMAPBUMP_ALTERNATING:
+			feature->bump_offset = bump_data->offset;
+			bump_data->offset = bump_data->incr - bump_data->offset;
+			break;
+
+		default:
+			break;
+		}
+
+		if(bump_data->complex)
+		{
+			double offset = feature->bump_offset;
+			int col = feature->bump_col;
+
+			for(feature = feature->right ;feature; feature = feature->right)
+			{
+				feature->bump_offset = offset;
+				feature->bump_col = col;
+
+			}
+		}
+	}
+
+	/* tidy up */
+
+	featureset->bumped = TRUE;
+	featureset->bump_width = bump_data->offset;
+	featureset->bump_mode = bump_mode;
+
+	switch(bump_mode)
+	{
+	case ZMAPBUMP_UNBUMP:
+		featureset->bumped = FALSE;
+		/* just redisplays using normal coords */
+		break;
 
 	case ZMAPBUMP_ALTERNATING:
-	  feature->bump_offset = bump_data->offset;
-	  bump_data->offset = bump_data->incr - bump_data->offset;
-	  break;
+		featureset->bump_width = bump_data->incr * 2 - bump_data->spacing;
+		break;
 
-	default:
-	  break;
-	}
+	case ZMAPBUMP_ALL:
+		featureset->bump_width = bump_data->offset;
+		break;
 
-      if(bump_data->complex)
-	{
-	  double offset = feature->bump_offset;
-	  int col = feature->bump_col;
+	case ZMAPBUMP_OVERLAP:
+		/* free allocated memory left over */
+		for(n = 0,l = pos_list;l;n++)
+		{
+			BumpColRange range = BCR_DATA(l);
+			l = bump_col_range_delete(l,l,range);
+		}
 
-	  for(feature = feature->right ;feature; feature = feature->right)
-	    {
-	      feature->bump_offset = offset;
-	      feature->bump_col = col;
+		/*  we need to post process the columns and adjust the width to be that of the widest feature */
 
-	    }
-	}
-    }
+			/* get whole column width  and set column offsets */
+		for(n = 0, featureset->bump_width = 0; (width = (double) GPOINTER_TO_UINT(g_hash_table_lookup(sub_col_width_G, GUINT_TO_POINTER(n)))) ;n++)
+		{
+			g_hash_table_insert(sub_col_offset_G, GUINT_TO_POINTER(n), GUINT_TO_POINTER( (int) featureset->bump_width));
+			featureset->bump_width += width + bump_data->spacing;
+//printf("bump: offset of %f = %f (%f)\n",featureset->bump_width, width, bump_data->spacing);
 
-  /* tidy up */
+		}
 
-  featureset->bumped = TRUE;
-  featureset->bump_width = bump_data->offset;
-  featureset->bump_mode = bump_mode;
+		for(sl = zMapSkipListFirst(featureset->display_index); sl; sl = sl->next)
+		{
+			ZMapWindowCanvasFeature feature = (ZMapWindowCanvasFeature) sl->data;	/* base struct of all features */
 
-  switch(bump_mode)
-    {
-    case ZMAPBUMP_UNBUMP:
-      featureset->bumped = FALSE;
-      /* just redisplays using normal coords */
-      break;
+			if(!(feature->flags & FEATURE_HIDDEN))
+			{
+				width = (double) GPOINTER_TO_UINT( g_hash_table_lookup( sub_col_width_G, GUINT_TO_POINTER( feature->bump_col)));
+				feature->bump_offset = (double) GPOINTER_TO_UINT( g_hash_table_lookup( sub_col_offset_G, GUINT_TO_POINTER( feature->bump_col))) ;
+//printf("offset feature %s @ %p %f,%f %d = %f\n",g_quark_to_string(feature->feature->unique_id),feature,feature->y1,feature->y2,(int) feature->bump_col, width);
+				/*
+				 * features are displayed relative to the centre of the column when unbumped
+				 * so we have to offset the feature as if that is still the case
+				 */
+//printf("bump: feature off %d = %f\n", feature->bump_col,feature->bump_offset);
 
-    case ZMAPBUMP_ALTERNATING:
-      featureset->bump_width = bump_data->incr * 2 - bump_data->spacing;
-      break;
+				feature->bump_offset -= (featureset->width - width) / 2;
 
-    case ZMAPBUMP_ALL:
-      featureset->bump_width = bump_data->offset;
-      break;
-
-    case ZMAPBUMP_OVERLAP:
-      /* free allocated memory left over */
-      for(n = 0,l = pos_list;l;n++)
-	{
-	  BumpColRange range = BCR_DATA(l);
-	  l = bump_col_range_delete(l,l,range);
-	}
-
-      /*  we need to post process the columns and adjust the width to be that of the widest feature */
-
-      /* get whole column width  and set column offsets */
-      for(n = 0, featureset->bump_width = 0; (width = (double) GPOINTER_TO_UINT(g_hash_table_lookup(sub_col_width_G, GUINT_TO_POINTER(n)))) ;n++)
-	{
-	  g_hash_table_insert(sub_col_offset_G, GUINT_TO_POINTER(n), GUINT_TO_POINTER( (int) featureset->bump_width));
-	  featureset->bump_width += width + bump_data->spacing;
-	  //printf("bump: offset of %f = %f (%f)\n",featureset->bump_width, width, bump_data->spacing);
-
-	}
-
-      for(sl = zMapSkipListFirst(featureset->display_index); sl; sl = sl->next)
-	{
-	  ZMapWindowCanvasFeature feature = (ZMapWindowCanvasFeature) sl->data;	/* base struct of all features */
-
-	  if(!(feature->flags & FEATURE_HIDDEN))
-	    {
-	      width = (double) GPOINTER_TO_UINT( g_hash_table_lookup( sub_col_width_G, GUINT_TO_POINTER( feature->bump_col)));
-	      feature->bump_offset = (double) GPOINTER_TO_UINT( g_hash_table_lookup( sub_col_offset_G, GUINT_TO_POINTER( feature->bump_col))) ;
-	      //printf("offset feature %s @ %p %f,%f %d = %f\n",g_quark_to_string(feature->feature->unique_id),feature,feature->y1,feature->y2,(int) feature->bump_col, width);
-	      /*
-	       * features are displayed relative to the centre of the column when unbumped
-	       * so we have to offset the feature as if that is still the case
-	       */
-	      //printf("bump: feature off %d = %f\n", feature->bump_col,feature->bump_offset);
-
-	      feature->bump_offset -= (featureset->width - width) / 2;
-
-	    }
-	}
+			}
+		}
 
 
 #if MODULE_STATS
-      time = zMapElapsedSeconds - time;
-      printf("bump overlap %s: %d features %d comparisons in %d columns, residual = %d in %.3f seconds (slow = %d)\n", g_quark_to_string(featureset->id),bump_data->features,bump_data->comps,bump_data->n_col,n,time, SLOW_BUT_EASY);
+		time = zMapElapsedSeconds - time;
+		printf("bump overlap %s: %d features %d comparisons in %d columns, residual = %d in %.3f seconds (slow = %d)\n", g_quark_to_string(featureset->id),bump_data->features,bump_data->comps,bump_data->n_col,n,time, SLOW_BUT_EASY);
 #endif
-      break;
+		break;
 
-    default:
-      break;
-    }
-  //	printf("bump 3: %s %d\n",g_quark_to_string(featureset->id),zMapSkipListCount(featureset->display_index));
+	default:
+		break;
+	}
+//	printf("bump 3: %s %d\n",g_quark_to_string(featureset->id),zMapSkipListCount(featureset->display_index));
 
-  if(featureset->bump_width + featureset->dx > ZMAP_WINDOW_MAX_WINDOW)
-    {
-      zMapWarning("Cannot bump - too many features to fit into the window.\nTry setting the mark to a smaller region","");
+	if(featureset->bump_width + featureset->dx > ZMAP_WINDOW_MAX_WINDOW)
+	{
+		zMapWarning("Cannot bump - too many features to fit into the window.\nTry setting the mark to a smaller region","");
 
-      /* need to hide summarised features again */
-      zMapWindowCanvasFeaturesetBump(featureset, ZMAPBUMP_UNBUMP, compress, bump_data);
+		/* need to hide summarised features again */
+		zMapWindowCanvasFeaturesetBump(featureset, ZMAPBUMP_UNBUMP, compress, bump_data);
 
-      return FALSE;
-    }
+		return FALSE;
+	}
 
 
-  return TRUE;
+	return TRUE;
 
-  /* need to request update and reposition: done by caller */
+	/* need to request update and reposition: done by caller */
 }
 
 
