@@ -568,31 +568,33 @@ void zmapWindowFeaturesetItemSetColour(FooCanvasItem         *interval,
 
 
 
-int zMapWindowCanvasFeaturesetAddFeature(ZMapWindowFeaturesetItem featureset, ZMapFeature feature, double y1, double y2)
+int zMapWindowCanvasFeaturesetAddFeature(ZMapWindowFeaturesetItem featureset,
+					 ZMapFeature feature, double y1, double y2)
 {
-	ZMapWindowCanvasFeature (*func) (ZMapWindowFeaturesetItem featureset, ZMapFeature feature, double y1, double y2);
-	ZMapWindowCanvasFeature feat;
-//	zmapWindowCanvasFeatureType type;
+  int rc = 0 ;
+  ZMapWindowCanvasFeature (*func)(ZMapWindowFeaturesetItem featureset, ZMapFeature feature, double y1, double y2) ;
+  ZMapWindowCanvasFeature feat ;
 
-	if(!feature)
-		return 0;
-
-//	type = feature_types[zMapStyleGetMode(feature->style)];
-
-	func = _featureset_add_G[featureset->type];
-	if(func)
+  if (feature)
+    {
+      if ((func = _featureset_add_G[featureset->type]))
 	{
-		feat = func(featureset, feature, y1, y2);
+	  feat = func(featureset, feature, y1, y2) ;
 	}
-	else
+      else
 	{
-		feat = zMapWindowFeaturesetAddFeature(featureset, feature, y1, y2);
-		zMapWindowFeaturesetSetFeatureWidth(featureset,feat);
+	  if ((feat = zMapWindowFeaturesetAddFeature(featureset, feature, y1, y2)))
+	    zMapWindowFeaturesetSetFeatureWidth(featureset, feat) ;
 	}
 
-	featureset->last_added = feat;
+      if (feat)
+	{
+	  featureset->last_added = feat ;
+	  rc = 1 ;
+	}
+    }
 
-	return(1);
+  return rc ;
 }
 
 

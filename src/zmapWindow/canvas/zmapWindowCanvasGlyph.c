@@ -41,9 +41,6 @@
 
 
 
-
-
-
 /* glyph line widths. */
 enum {DEFAULT_LINE_WIDTH = 1, SPLICE_LINE_WIDTH = 3} ;
 
@@ -64,16 +61,22 @@ enum {DEFAULT_LINE_WIDTH = 1, SPLICE_LINE_WIDTH = 3} ;
  */
 
 static ZMapStyleGlyphShape get_glyph_shape(ZMapFeatureTypeStyle style, int which, ZMapStrand strand) ;
-static gboolean zmap_window_canvas_set_glyph(FooCanvasItem *foo, ZMapWindowCanvasGlyph glyph, ZMapFeatureTypeStyle style, ZMapFeature feature, double col_width, double score);
+static gboolean zmap_window_canvas_set_glyph(FooCanvasItem *foo,
+					     ZMapWindowCanvasGlyph glyph, ZMapFeatureTypeStyle style,
+					     ZMapFeature feature, double col_width, double score);
 static void glyph_set_coords(ZMapWindowCanvasGlyph glyph);
 static void glyph_to_canvas(GdkPoint *points, GdkPoint *coords, int count,int cx, int cy);
-static void zmap_window_canvas_glyph_draw (ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasGlyph glyph, GdkDrawable *drawable, gboolean fill);
-static void zmap_window_canvas_paint_feature_glyph(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, ZMapWindowCanvasGlyph glyph, double y1, GdkDrawable *drawable);
+static void zmap_window_canvas_glyph_draw (ZMapWindowFeaturesetItem featureset,
+					   ZMapWindowCanvasGlyph glyph, GdkDrawable *drawable, gboolean fill);
+static void zmap_window_canvas_paint_feature_glyph(ZMapWindowFeaturesetItem featureset,
+						   ZMapWindowCanvasFeature feature,
+						   ZMapWindowCanvasGlyph glyph, double y1, GdkDrawable *drawable);
 
 static void zMapWindowCanvasGlyphPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
 				       GdkDrawable *drawable, GdkEventExpose *expose);
 
-static ZMapWindowCanvasFeature zMapWindowCanvasGlyphAddFeature(ZMapWindowFeaturesetItem featureset, ZMapFeature feature, double y1, double y2);
+static ZMapWindowCanvasFeature zMapWindowCanvasGlyphAddFeature(ZMapWindowFeaturesetItem featureset,
+							       ZMapFeature feature, double y1, double y2);
 
 static void calcSplicePos(ZMapWindowFeaturesetItem featureset, ZMapFeature feature,
 			  ZMapFeatureTypeStyle style, double score,
@@ -172,47 +175,56 @@ ZMapWindowCanvasGlyph zMapWindowCanvasGetGlyph(ZMapWindowFeaturesetItem features
 					       ZMapFeatureTypeStyle style, ZMapFeature feature,
 					       int which, double score)
 {
-  GQuark siggy = zMapWindowCanvasGlyphSignature(style, feature, which, score);
-  ZMapWindowCanvasGlyph glyph = NULL;
-  double col_width;
+  ZMapWindowCanvasGlyph glyph = NULL ;
+  GQuark siggy ;
+  double col_width ;
 
-  if(siggy)
+  siggy = zMapWindowCanvasGlyphSignature(style, feature, which, score) ;
+
+  if (siggy)
     {
       if(glyph_cache_G)
-	glyph = g_hash_table_lookup(glyph_cache_G,GUINT_TO_POINTER(siggy));
+	glyph = g_hash_table_lookup(glyph_cache_G,GUINT_TO_POINTER(siggy)) ;
       else
-	glyph_cache_G = g_hash_table_new(NULL,NULL);
+	glyph_cache_G = g_hash_table_new(NULL,NULL) ;
     }
 
-  if(!glyph)
+  if (!glyph)
     {
-      FooCanvasItem *foo = (FooCanvasItem *) featureset;
-      ZMapStyleGlyphShape shape;
+      ZMapStyleGlyphShape shape ;
+      FooCanvasItem *foo = (FooCanvasItem *)featureset ;
 
-      glyph = g_new0(zmapWindowCanvasGlyphStruct,1);		/* OK efficient if we really do cache these */
+      shape = get_glyph_shape(style, glyph->which, feature->strand) ;
 
-
-      /* calulate shape when created and cached */
-
-      glyph->which = which;
-      glyph->sub_feature = TRUE;
-
-      glyph->shape = shape = get_glyph_shape(style, glyph->which, feature->strand) ;
-      if(!shape || shape->type == GLYPH_DRAW_INVALID || !shape->n_coords)
-	return NULL;
-
-      col_width = zMapStyleGetWidth(featureset->style);
-      zmap_window_canvas_set_glyph(foo, glyph, style, feature, col_width, score);
-
-      if(siggy)
+      if (shape || shape->type == GLYPH_DRAW_INVALID || !shape->n_coords)
 	{
-	  g_hash_table_insert(glyph_cache_G,GUINT_TO_POINTER(siggy),glyph);
-	  glyph->sig = siggy;
-	  //zMapLogWarning("created glyph %s\n",g_quark_to_string(siggy));
+	  zMapLogWarning("Could not find glyph shape for feature \"%s\" at %d, %d",
+			 g_quark_to_string(feature->original_id), feature->x1, feature->x2) ;
+	}
+      else
+	{
+	  glyph = g_new0(zmapWindowCanvasGlyphStruct,1) ;		/* OK efficient if we really do cache these */
+
+	  /* calulate shape when created and cached */
+
+	  glyph->which = which ;
+	  glyph->sub_feature = TRUE ;
+
+	  glyph->shape = shape ;
+
+	  col_width = zMapStyleGetWidth(featureset->style) ;
+	  zmap_window_canvas_set_glyph(foo, glyph, style, feature, col_width, score) ;
+
+	  if(siggy)
+	    {
+	      g_hash_table_insert(glyph_cache_G,GUINT_TO_POINTER(siggy),glyph) ;
+	      glyph->sig = siggy ;
+	      //zMapLogWarning("created glyph %s",g_quark_to_string(siggy)) ;
+	    }
 	}
     }
 
-  return glyph;
+  return glyph ;
 }
 
 
@@ -987,7 +999,7 @@ static double glyphPoint(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature gs
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       printf("Item x,y: %g, %g\t canvas x,y: %d, %d\tlocal x.y: %g, %g"
 	     "\tCanvas x_start/x_end y_start/y_end: %g,%g %g,%g"
-	     "\tWorld: x_start/x_end y_start/y_end: %g,%g %g,%g\n",
+	     "\tWorld: x_start/x_end y_start/y_end: %g,%g %g,%g",
 	     item_x, item_y, cx, cy, local_x, local_y,
 	     can_start_x, can_end_x, can_start_y, can_end_y,
 	     world_start_x, world_end_x, world_start_y, world_end_y) ;
@@ -1005,42 +1017,56 @@ static double glyphPoint(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature gs
 }
 
 
-/* we need to calculate the exten og the glyph which is somewhere around the single base coordinate */
-static ZMapWindowCanvasFeature zMapWindowCanvasGlyphAddFeature(ZMapWindowFeaturesetItem featureset, ZMapFeature feature, double y1, double y2)
+
+/* we need to calculate the extent of the glyph which is somewhere around the single base coordinate */
+static ZMapWindowCanvasFeature zMapWindowCanvasGlyphAddFeature(ZMapWindowFeaturesetItem featureset,
+							       ZMapFeature feature, double y1, double y2)
 {
-	ZMapWindowCanvasFeature feat;
-	ZMapWindowCanvasGlyph glyph;
-	ZMapStyleGlyphShape shape;
-	FooCanvasItem *foo = (FooCanvasItem *) featureset;
-	double col_width;
-	double longest = featureset->longest;
+  ZMapWindowCanvasFeature feat = NULL ;
+  ZMapStyleGlyphShape shape ;
+  int boundary_type = 0 ;
 
-	feat = zMapWindowFeaturesetAddFeature(featureset, feature, y1, y2);
-	glyph = (ZMapWindowCanvasGlyph) feat;
 
-	/* work out the real coords of the glyph on display and asign the shape */
-      /* for stand-alone glyphs which will be unset ie zero */
-      /* NOTE this boundary code appears to be tied explcitly to GF splice features from ACEDB */
-      if (zMapStyleIsSpliceStyle(feature->style))
-		glyph->which = feature->boundary_type == ZMAPBOUNDARY_5_SPLICE ? 5 : 3;
+  if (zMapStyleIsSpliceStyle(feature->style))
+    boundary_type = (feature->boundary_type == ZMAPBOUNDARY_5_SPLICE ? 5 : 3) ;
 
-      shape = get_glyph_shape(feature->style, glyph->which, feature->strand) ;
+  shape = get_glyph_shape(feature->style, boundary_type, feature->strand)  ;
 
-      if(!shape || shape->type == GLYPH_DRAW_INVALID || !shape->n_coords)
-		return feat;
+  if (!shape || shape->type == GLYPH_DRAW_INVALID || !shape->n_coords)
+    {
+      zMapLogWarning("Could not find glyph shape for feature \"%s\" at %d, %d",
+		     g_quark_to_string(feature->original_id), feature->x1, feature->x2) ;
+    }
+ else
+   {
+     ZMapWindowCanvasGlyph glyph ;
+     FooCanvasItem *foo = (FooCanvasItem *) featureset ;
+     double col_width ;
+     double longest = featureset->longest ;
 
-      glyph->shape = shape;
+     feat = zMapWindowFeaturesetAddFeature(featureset, feature, y1, y2) ;
+     glyph = (ZMapWindowCanvasGlyph) feat ;
 
-      col_width = zMapStyleGetWidth(featureset->style);
+     /* work out the real coords of the glyph on display and asign the shape */
+     /* for stand-alone glyphs which will be unset ie zero */
+     /* NOTE this boundary code appears to be tied explcitly to GF splice features from ACEDB */
+     if (zMapStyleIsSpliceStyle(feature->style))
+       glyph->which = boundary_type ;
 
-      zmap_window_canvas_set_glyph(foo, glyph, feature->style, feature, col_width, feature->score );
+     glyph->shape = shape ;
 
-		/* as glyphs are fixed size we store the longest as pixels and expand on search */
-		/* so here we overwrite the values set by zMapWindowFeaturesetAddFeature(); */
-	if(longest < shape->height)
-		longest = shape->height;
-	featureset->longest = longest;
+     col_width = zMapStyleGetWidth(featureset->style) ;
 
-	return feat;
+     zmap_window_canvas_set_glyph(foo, glyph, feature->style, feature, col_width, feature->score ) ;
+
+     /* as glyphs are fixed size we store the longest as pixels and expand on search */
+     /* so here we overwrite the values set by zMapWindowFeaturesetAddFeature() ; */
+     if(longest < shape->height)
+       longest = shape->height ;
+     featureset->longest = longest ;
+   }
+
+  return feat ;
 }
+
 
