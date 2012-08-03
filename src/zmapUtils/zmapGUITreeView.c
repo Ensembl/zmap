@@ -32,8 +32,14 @@
 
 #include <ZMap/zmap.h>
 
-#include <string.h> /* memcpy() */
 
+
+
+
+
+
+
+#include <string.h> /* memcpy() */
 #include <ZMap/zmapBase.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapUtilsGUI.h>
@@ -137,8 +143,10 @@ static void update_tuple_data_list(ZMapGUITreeView zmap_tv,
 static void  tree_view_size_request(GtkWidget      *widget,
                             GtkRequisition *requisition,
                             gpointer        user_data);
-static gboolean tree_view_map(GtkWidget *widget, GdkEvent  *event, gpointer user_data) ;
-static gboolean tree_view_unmap(GtkWidget *widget, gpointer user_data) ;
+static gboolean tree_view_map(GtkWidget      *widget,
+                        gpointer        user_data);
+static gboolean tree_view_unmap(GtkWidget *widget,
+                        gpointer   user_data);
 static void tree_view_size_allocation(GtkWidget     *widget,
                               GtkAllocation *allocation,
                               gpointer       user_data);
@@ -1763,7 +1771,8 @@ static void  tree_view_size_request(GtkWidget      *widget,
   return ;
 }
 
-static gboolean tree_view_map(GtkWidget *widget, GdkEvent  *event, gpointer user_data)
+static gboolean tree_view_map(GtkWidget      *widget,
+                        gpointer        user_data)
 {
   ZMapGUITreeView zmap_tv = ZMAP_GUITREEVIEW(user_data);
 

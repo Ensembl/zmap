@@ -46,7 +46,7 @@ static void makeStatusTooltips(ZMap zmap) ;
 static GtkWidget *makeStatusPanel(ZMap zmap) ;
 static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data) ;
 
-static void myWindowMaximize(GtkWidget *toplevel, GdkEvent  *event, ZMap zmap) ;
+static void myWindowMaximize(GtkWidget *toplevel, ZMap zmap) ;
 
 gboolean zmap_shrink_G = FALSE;
 
@@ -75,9 +75,8 @@ gboolean zmapControlWindowCreate(ZMap zmap)
   /* We can leave width to default sensibly but height does not because zmap is in a scrolled
    * window, we try to maximise it to the screen depth but have to do this after window is mapped.
    * SHOULD WE BE REMOVING THIS HANDLER ??? TAKE A LOOK AT THIS LATER.... */
-  zmap->map_handler = g_signal_connect(G_OBJECT(toplevel), "map-event",
+  zmap->map_handler = g_signal_connect(G_OBJECT(toplevel), "map",
 				       G_CALLBACK(myWindowMaximize), (gpointer)zmap);
-
 
 
   gtk_signal_connect(GTK_OBJECT(toplevel), "destroy",
@@ -362,7 +361,7 @@ static void makeStatusTooltips(ZMap zmap)
  * but this will be rare.
  *
  */
-static void myWindowMaximize(GtkWidget *toplevel, GdkEvent  *event, ZMap zmap)
+static void myWindowMaximize(GtkWidget *toplevel, ZMap zmap)
 {
   GdkAtom geometry_atom, workarea_atom, max_atom_vert ;
   GdkScreen *screen ;

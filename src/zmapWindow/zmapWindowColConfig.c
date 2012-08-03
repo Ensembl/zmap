@@ -2461,8 +2461,8 @@ static void  zmap_widget_size_request(GtkWidget      *widget,
   return ;
 }
 
-
-static gboolean zmap_widget_map(GtkWidget *widget, GdkEvent  *event, gpointer user_data)
+static gboolean zmap_widget_map(GtkWidget      *widget,
+				gpointer        user_data)
 {
   SizingData sizing_data = (SizingData)user_data;
 
@@ -2530,7 +2530,7 @@ static gboolean zmapAddSizingSignalHandlers(GtkWidget *widget, gboolean debug,
   g_signal_connect(G_OBJECT(widget), "size-request",
 		   G_CALLBACK(zmap_widget_size_request), sizing_data);
 
-  g_signal_connect(G_OBJECT(widget), "map-event",
+  g_signal_connect(G_OBJECT(widget), "map",
 		   G_CALLBACK(zmap_widget_map), sizing_data);
 
   g_signal_connect(G_OBJECT(widget), "size-allocate",

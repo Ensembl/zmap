@@ -132,7 +132,7 @@ GtkWidget *zmapMainMakeManage(ZMapAppContext app_context) ;
 void zmapAppCreateZMap(ZMapAppContext app_context, ZMapFeatureSequenceMap sequence_map) ;
 void zmapAppExit(ZMapAppContext app_context) ;
 
-void zmapAppRemoteInstaller(GtkWidget *widget, GdkEvent  *event, gpointer app_context_data);
+void zmapAppRemoteInstaller(GtkWidget *widget, gpointer app_context_data);
 void zmapAppRemoteSendFinalised(ZMapAppContext app_context);
 
 #endif /* !ZMAP_APP_PRIV_H */

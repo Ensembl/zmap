@@ -1,3 +1,4 @@
+/*  Last edited: Jul 23 14:09 2012 (edgrif) */
 /*  File: zmapappmain.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -230,17 +231,12 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   gtk_window_set_title(GTK_WINDOW(toplevel), "ZMap - Son of FMap !") ;
   gtk_container_border_width(GTK_CONTAINER(toplevel), 0) ;
 
-
-
-
-
   /* This ensures that the widget *really* has a X Window id when it
    * comes to doing XChangeProperty.  Using realize doesn't and the
    * expose_event means we can't hide the mainwindow. */
-  g_signal_connect(G_OBJECT(toplevel), "map-event",
+  g_signal_connect(G_OBJECT(toplevel), "map",
                    G_CALLBACK(zmapAppRemoteInstaller),
                    (gpointer)app_context);
-
 
   gtk_signal_connect(GTK_OBJECT(toplevel), "destroy",
 		     GTK_SIGNAL_FUNC(toplevelDestroyCB), (gpointer)app_context) ;
