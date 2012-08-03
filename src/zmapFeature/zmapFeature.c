@@ -1,3 +1,4 @@
+/*  Last edited: Jul 12 10:55 2011 (edgrif) */
 /*  File: zmapFeatures.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
