@@ -194,9 +194,9 @@ ZMapWindowCanvasGlyph zMapWindowCanvasGetGlyph(ZMapWindowFeaturesetItem features
       ZMapStyleGlyphShape shape ;
       FooCanvasItem *foo = (FooCanvasItem *)featureset ;
 
-      shape = get_glyph_shape(style, glyph->which, feature->strand) ;
+      shape = get_glyph_shape(style, which, feature->strand) ;
 
-      if (shape || shape->type == GLYPH_DRAW_INVALID || !shape->n_coords)
+      if (!shape || shape->type == GLYPH_DRAW_INVALID || !shape->n_coords)
 	{
 	  zMapLogWarning("Could not find glyph shape for feature \"%s\" at %d, %d",
 			 g_quark_to_string(feature->original_id), feature->x1, feature->x2) ;
