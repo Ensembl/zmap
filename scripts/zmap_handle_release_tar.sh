@@ -23,7 +23,7 @@ function zmap_untar_file
     untar_tmp="untar_tmp.$$"
     restore_dir=$(pwd)
 
-    zmap_cd /tmp
+    zmap_cd /var/tmp
 
     if [ "x$1" != "x" ]; then
 	package=$1
