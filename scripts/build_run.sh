@@ -208,7 +208,7 @@ fi
 
 
 if [ -n "$OUTPUT_DIR" ] ; then
-    mkdir $OUTPUT_DIR || message_exit "$INPUT_DIR is not a directory or is not readable."
+    mkdir $OUTPUT_DIR || message_exit "Could not make $OUPUT_DIR."
 fi
 
 
