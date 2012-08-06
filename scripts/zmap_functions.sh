@@ -130,19 +130,20 @@ function zmap_move_aside_dir
   prev_name="$dirname$prev_suffix"
 
 
-  if [[ -d "$dirname" ]] ; then
+  if [ -d "$dirname" ] ; then
 
     zmap_message_err "$dirname exists, renaming to $prev_name."
 
-  if [[ -d "$prev_name" ]] ; then
+    if [ -d "$prev_name" ] ; then
 
-    zmap_message_err "$prev_name exists and will be removed."
+      zmap_message_err "$prev_name exists and will be removed."
 
-    rm -rf $prev_name ||  zmap_message_exit "Can't rm $prev_name !"
+      rm -rf $prev_name ||  zmap_message_exit "Can't rm $prev_name !"
+    fi
+
+    mv $dirname $prev_name || zmap_message_exit "Can't rename $dirname to $prev_name !"
+
   fi
-
-  mv $dirname $prev_name || zmap_message_exit "Can't rename $dirname to $prev_name !"
-
 }
 
 # Usage: zmap_pathmunge <dir> [prepend]

@@ -11,13 +11,12 @@
 # Program stuff.
 RC=0
 PROGNAME=`basename $0`
-FUNCTIONS_SCRIPT="zmap_functions.sh"
+FUNCTIONS_SCRIPT="./zmap_functions.sh"
 BASE_DIR=~zmap
 
 # try to load useful shared shell functions...after this we will have access to
 # common message funcs.
 . $FUNCTIONS_SCRIPT || { echo "Aborted $PROGNAME - Failed to load common functions file: $FUNCTIONS_SCRIPT"; exit 1; }
-
 
 branch='develop'
 headline='DEVELOP'
