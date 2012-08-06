@@ -81,15 +81,16 @@ script_dir="$respository_name/scripts"
 
 curr_dir=`pwd`
 
-# Clone requested branch.
+
+# Check out the requested branch.
 #
-if ! [[ -d $respository_name ]] ; then
-  zmap_message_out "cloning $branch$sub_branch of zmap repository..."
-  git clone -b "$branch$sub_branch" git.internal.sanger.ac.uk:/repos/git/annotools/zmap.git $respository_name || zmap_message_exit "git clone failed"
-  zmap_message_out "finished cloning $branch$sub_branch of zmap repository..."
-else
-  zmap_message_exit "git clone aborted, $respository_name repository already exists !"
+if [[ -d $respository_name ]] ; then
+  zmap_move_aside_dir $respository_name
 fi
+
+zmap_message_out "cloning $branch$sub_branch of zmap repository..."
+git clone -b "$branch$sub_branch" git.internal.sanger.ac.uk:/repos/git/annotools/zmap.git $respository_name || zmap_message_exit "git clone failed"
+zmap_message_out "finished cloning $branch$sub_branch of zmap repository..."
 
 
 cd $script_dir || zmap_message_exit "Cannot cd to $script_dir."
@@ -105,7 +106,9 @@ zmap_message_out "Finished build....."
 
 cd $curr_dir || zmap_message_exit "Cannot cd back to $curr_dir."
 
-# safety first....
+
+# Now clear up as we don't need the git checkout any more.
+# 
 if [[ -d $respository_name ]] ; then
   rm -rf $respository_name || zmap_message_exit "Cannot remove $respository_name, remove by hand before rebuilding."
 else
