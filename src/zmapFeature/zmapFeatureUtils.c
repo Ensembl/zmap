@@ -654,6 +654,25 @@ ZMapFeatureTypeStyle zMapFindStyle(GHashTable *styles, GQuark style_id)
 }
 
 
+ZMapFeatureTypeStyle zMapFindFeatureStyle(GHashTable *styles, GQuark style_id, ZMapStyleMode feature_type)
+{
+  ZMapFeatureTypeStyle feature_style = NULL ;
+  char *type;
+
+  if(!(feature_style = zMapFindStyle(styles, style_id)))
+  {
+	/* feature_style_id is as configured or defaults to the smae name as the featureset
+	   * if not defined try a style with the same name as the feature type
+	   */
+
+	   type = (char *) zMapStyleMode2ExactStr(feature_type);
+	   style_id = zMapStyleCreateID(type);
+	   feature_style = zMapFindStyle(styles, style_id);
+  }
+  return feature_style;
+}
+
+
 /* Check that a style name exists in a list of styles. */
 gboolean zMapStyleNameExists(GList *style_name_list, char *style_name)
 {

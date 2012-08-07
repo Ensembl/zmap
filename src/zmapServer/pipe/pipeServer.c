@@ -996,6 +996,8 @@ static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles, Z
   zMapGFFParseSetSourceHash(server->parser, server->featureset_2_column, server->source_2_sourcedata) ;
 
   zMapGFFParserInitForFeatures(server->parser, styles, FALSE) ;  // FALSE = create features
+  zMapGFFSetDefaultToBasic(server->parser, TRUE);
+
 
   // default to OK, previous pipeGetSequence() could have set unsupported
   // if no DNA was provided

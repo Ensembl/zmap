@@ -1918,7 +1918,8 @@ static void getIniData(ZMapView view, char *config_str, GList *sources)
             gffset = (ZMapFeatureSetDesc) value;
 
             gff_source->source_id = gffset->feature_src_ID;   // upper case wanted
-            gff_source->style_id = zMapStyleCreateID((char *) g_quark_to_string(GPOINTER_TO_UINT(key)));
+// hard coded in zmapGFF-parser.c
+//            gff_source->style_id = zMapStyleCreateID((char *) g_quark_to_string(GPOINTER_TO_UINT(key)));
             gff_source->source_text = gff_source->source_id;
 
 	    // then overlay this with the config file
@@ -1934,8 +1935,8 @@ static void getIniData(ZMapView view, char *config_str, GList *sources)
 	    // get style defined by featureset name
             if(fset_styles)
 	      {
-		if(q)		/* default to source name */
-		  gff_source->style_id = q;
+//		if(q)		/* default to source name */
+//		  gff_source->style_id = q;
 		/* but change to explicit config if it's there */
 		q = GPOINTER_TO_UINT(g_hash_table_lookup(fset_styles,key));
 		if(q)
@@ -2036,11 +2037,13 @@ static void getIniData(ZMapView view, char *config_str, GList *sources)
             gff_source = g_hash_table_lookup(source_2_sourcedata,key);
             if(gff_source)
 	      {
-		style_id = gff_source->style_id;
-		//                  fset_id = zMapFeatureSetCreateID((char *)g_quark_to_string(gffset->feature_set_id));
-		fset_id = gffset->column_id;
+			style_id = gff_source->style_id;
+			if(!style_id)
+				style_id = GPOINTER_TO_UINT(key);
+//                fset_id = zMapFeatureSetCreateID((char *)g_quark_to_string(gffset->feature_set_id));
+			fset_id = gffset->column_id;
 
-		zMap_g_hashlist_insert(view->context_map.column_2_styles,
+			zMap_g_hashlist_insert(view->context_map.column_2_styles,
 				       fset_id,     // the column
 				       GUINT_TO_POINTER(style_id)) ;  // the style
 	      }
@@ -3354,7 +3357,8 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 
 		src->source_id = GPOINTER_TO_UINT(fset->data);	/* may have upper case */
 		src->source_text = src->source_id;
-		src_unique_id = src->style_id = fid;
+		src_unique_id = fid;
+//		src->style_id = fid;
 
 		g_hash_table_insert(feature_sets->source_2_sourcedata_inout, GUINT_TO_POINTER(fid), src) ;
 	      }
@@ -3364,8 +3368,8 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 		  src->source_id = GPOINTER_TO_UINT(fset->data);
 		if(!src->source_text)
 		  src->source_text = src->source_id;
-		if(!src->style_id)
-		  src->style_id = fid;
+//		if(!src->style_id)
+//		  src->style_id = fid;	defaults to this in zmapGFF-Parser.c
 	      }
 	  }
 

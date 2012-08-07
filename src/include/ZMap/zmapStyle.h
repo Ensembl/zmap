@@ -1252,6 +1252,7 @@ gboolean zMapStyleCopyAllStyles(GHashTable *style_set, GHashTable **copy_style_s
 gboolean zMapStyleInheritAllStyles(GHashTable *style_set) ;
 gboolean zMapStyleNameExists(GList *style_name_list, char *style_name) ;
 ZMapFeatureTypeStyle zMapFindStyle(GHashTable *styles, GQuark style_id) ;
+ZMapFeatureTypeStyle zMapFindFeatureStyle(GHashTable *styles, GQuark style_id, ZMapStyleMode type);
 GList *zMapStylesGetNames(GHashTable *styles) ;
 GHashTable *zMapStyleGetAllPredefined(void) ;
 GHashTable *zMapStyleMergeStyles(GHashTable *curr_styles, GHashTable *new_styles, ZMapStyleMergeMode merge_mode) ;
