@@ -853,7 +853,7 @@ static ZMapThreadReturnCode getStyles(ZMapServer server, ZMapServerReqStyles sty
 	}
 	else if (styles->styles_file_in)   /* server specific file not global: return from thread */
 	{
-	  if (!zMapConfigIniGetStylesFromFile(server->config_file, styles->styles_list_in, styles->styles_file_in, &(styles->styles_out)))
+	  if (!zMapConfigIniGetStylesFromFile(server->config_file, styles->styles_list_in, styles->styles_file_in, &(styles->styles_out), NULL))
 	    {
 	      *err_msg_out = g_strdup_printf("Could not read types from styles file \"%s\"", styles->styles_file_in) ;
 	      thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;

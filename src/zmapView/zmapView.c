@@ -487,9 +487,9 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 	{
 	  GHashTable * styles = NULL;
 
-	  if (zMapConfigIniGetStylesFromFile(zmap_view->view_sequence->config_file, NULL, stylesfile, &styles))
+	  if (zMapConfigIniGetStylesFromFile(zmap_view->view_sequence->config_file, NULL, stylesfile, &styles, NULL))
 	  {
-		  zmap_view->context_map.styles = zMapStyleMergeStyles(zmap_view->context_map.styles, styles, ZMAPSTYLE_MERGE_MERGE) ;
+		zmap_view->context_map.styles = zMapStyleMergeStyles(zmap_view->context_map.styles, styles, ZMAPSTYLE_MERGE_MERGE) ;
 	  }
 	  else
 	  {
@@ -3491,7 +3491,7 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 #if 0
 pointless doing this if we have defaults
 code moved from zmapServerProtocolHandler.c
-beside we should text the view data whcih may contain global config
+besides we should test the view data which may contain global config
 
 		char *missing_styles = NULL;
 
@@ -3878,9 +3878,16 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
 	{
 	  req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_FEATURESETS, req_featuresets, NULL) ;
 	  zmapViewStepListAddServerReq(view_con->step_list, view_con, ZMAP_SERVERREQ_FEATURESETS, req_any, on_fail) ;
-#warning remove file and styles list replace with hash. NO: remove function altogether
-	  req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_STYLES, req_styles, styles_file && *styles_file ? styles_file : NULL) ;
-	  zmapViewStepListAddServerReq(view_con->step_list, view_con, ZMAP_SERVERREQ_STYLES, req_any, on_fail) ;
+
+	  if(req_styles || styles_file)
+	  {
+		req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_STYLES, req_styles, styles_file && *styles_file ? styles_file : NULL) ;
+		zmapViewStepListAddServerReq(view_con->step_list, view_con, ZMAP_SERVERREQ_STYLES, req_any, on_fail) ;
+	  }
+	  else
+	  {
+		  connect_data->curr_styles = zmap_view->context_map.styles ;
+	  }
 	  req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_NEWCONTEXT, context) ;
 	  zmapViewStepListAddServerReq(view_con->step_list, view_con, ZMAP_SERVERREQ_NEWCONTEXT, req_any, on_fail) ;
 

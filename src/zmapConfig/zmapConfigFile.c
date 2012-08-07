@@ -102,7 +102,9 @@ gboolean zMapConfigIniReadAll(ZMapConfigIni config, char *config_file)
 
 //  red = zMapConfigIniReadUser(config, file_name) ;
 
-  if(config_file)
+//  if(config_file)
+	/* rather helpfully this function accepts a null arg and then chooses the config file specifed on the command line */
+	/* which is much clearer than having that passed through to this function. Yeah right. */
 	red = zMapConfigIniReadUser(config, config_file) ;
 
   return red ;

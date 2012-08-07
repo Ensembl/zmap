@@ -647,7 +647,11 @@ static ZMapServerResponseType getStyles(void *server_in, GHashTable **styles_out
     {
       if (parseTypes(server, styles_out, NULL, NULL))
 	{
-	  result = ZMAP_SERVERRESPONSE_OK ;
+				/* if reading from a file these will be inherited as is */
+		if(!zMapStyleInheritAllStyles(*styles_out))
+			zMapLogWarning("%s", "There were errors in inheriting styles.") ;
+
+		result = ZMAP_SERVERRESPONSE_OK ;
 	}
       else
 	{

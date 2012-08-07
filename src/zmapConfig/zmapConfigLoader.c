@@ -521,10 +521,24 @@ GQuark zMapStyleQuark(gchar *str)
 }
 
 
+/* get default styles w/ no reference to the styles file
+ * NOTE keep this separate from zMapConfigIniGetStylesFromFile() as the config ini code
+ * has a stanza priority system whe prevents override, in contrast to the key code that has the opposite priority
+ */
+GHashTable * zmapConfigIniGetDefaultStyles(void)
+{
+  GHashTable *styles = NULL ;
+  extern char * default_styles;		/* in a generated source file */
+
+  zMapConfigIniGetStylesFromFile(NULL, NULL, NULL, &styles, default_styles);
+
+  return styles;
+}
+
 
 // get style stanzas in styles_list of all from the file
 gboolean zMapConfigIniGetStylesFromFile(char *config_file,
-					char *styles_list, char *styles_file, GHashTable **styles_out)
+					char *styles_list, char *styles_file, GHashTable **styles_out, char * buffer)
 {
   gboolean result = FALSE ;
   GHashTable *styles = NULL ;
@@ -537,12 +551,22 @@ gboolean zMapConfigIniGetStylesFromFile(char *config_file,
     {
       shapes = zMapConfigIniGetGlyph(context);
 
-      if (zMapConfigIniContextIncludeFile(context,styles_file))
+	if(buffer)		/* default styles */
+	{
+		zMapConfigIniContextIncludeBuffer(context, buffer);
+	}
+	else if(styles_file)		/* separate styles file */
       {
-        settings_list = zMapConfigIniContextGetStyleList(context,styles_list);
-        zMapConfigIniContextDestroy(context) ;
-        context = NULL;
-      }
+		/* NOTE this only uses the extra_key key file */
+	  zMapConfigIniContextIncludeFile(context,styles_file);
+	}
+      /* else styles are in main config named [style-xxx] */
+
+	settings_list = zMapConfigIniContextGetStyleList(context,styles_list);
+		/* style list is legacy and we don-t expect it to be used */
+		/* this gets a list aof all the stanzas in the file */
+      zMapConfigIniContextDestroy(context) ;
+      context = NULL;
     }
 
   if (settings_list)
@@ -584,6 +608,8 @@ gboolean zMapConfigIniGetStylesFromFile(char *config_file,
   	  name = curr_config_style->data.str;
 	  if(!g_ascii_strncasecmp(curr_config_style->data.str,"style-",6))
 		name += 6;
+	  else if(!styles_file)		/* not the styles file: must be explicitly [style-] */
+		  continue;
 
 	  g_value_set_string(&(curr_param->value), name) ;
 
@@ -721,6 +747,12 @@ gboolean zMapConfigIniGetStylesFromFile(char *config_file,
   zMapConfigStylesFreeList(free_this_list) ;
   if(shapes)
       g_hash_table_destroy(shapes);
+
+  /* NOTE we can only inherit default styles not those from another source */
+  if(!zMapStyleInheritAllStyles(styles))
+	zMapLogWarning("%s", "There were errors in inheriting styles.") ;
+
+  zMapStyleSetSubStyles( styles); /* this is not effective as a subsequent style copy will not copy this internal data */
 
   if(styles)
   {
