@@ -1,5 +1,5 @@
 echo "/* Generated file: do not edit */"
 echo "/* due to lack of heredoc syntax or docs on gcc */"
 echo "char *default_styles = \"\\"
-sed s/\$/\\\\/ < $1
-echo "\";"
+sed s/\$/\\\\n\\\\/ < $1
+echo \"\;

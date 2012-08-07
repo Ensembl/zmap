@@ -5085,7 +5085,7 @@ static void addPredefined(GHashTable **styles_out, GHashTable **column_2_styles_
   GHashTable *styles ;
   GHashTable *f2s = *column_2_styles_inout ;
 
-  styles = zMapStyleGetAllPredefined() ;
+  styles = zmapConfigIniGetDefaultStyles();		// zMapStyleGetAllPredefined() ;
 
   g_hash_table_foreach(styles, styleCB, f2s) ;
 

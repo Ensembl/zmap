@@ -55,13 +55,31 @@ void zMapConfigIniGetStanza(ZMapConfigIni config, char *stanza_name)
   return ;
 }
 
+#define FILE_COUNT 5
+
 
 // all stanzas froma file, assumed to be of the same type
 gchar **zMapConfigIniContextGetAllStanzaNames(ZMapConfigIniContext context)
 {
   gchar **names = NULL;
+  GKeyFile *files[FILE_COUNT];
+  gboolean key_found = FALSE;
+  int i;
 
-  names = g_key_file_get_groups(context->config->extra_key_file,NULL);
+  files[0] = context->config->buffer_key_file;
+  files[1] = context->config->extra_key_file;
+  files[2] = context->config->user_key_file;
+  files[3] = context->config->zmap_key_file;
+  files[4] = context->config->sys_key_file;
+
+  for(i = 0; key_found == FALSE && i < FILE_COUNT; i++)
+  {
+	  if(files[i])
+		break;
+  }
+
+  if(i < FILE_COUNT)
+	names = g_key_file_get_groups(files[i],NULL);
   return names ;
 }
 

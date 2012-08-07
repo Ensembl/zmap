@@ -1120,6 +1120,8 @@ GHashTable *zMapStyleMergeStyles(GHashTable *curr_styles, GHashTable *new_styles
 }
 
 
+#if REPLACED_BY_DEFAULT_STYLES
+
 /* Returns a GhashTable of all predefined styles, the user should free the list AND the styles when
  * they have finished with them. */
 GHashTable *zMapStyleGetAllPredefined(void)
@@ -1374,6 +1376,7 @@ GHashTable *zMapStyleGetAllPredefined(void)
   return style_list ;
 }
 
+#endif
 
 
 /* need a func to free a styles list here..... */
@@ -1383,7 +1386,6 @@ void zMapStyleDestroyStyles(GHashTable *styles)
 
   return ;
 }
-
 
 
 

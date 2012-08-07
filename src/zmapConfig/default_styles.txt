@@ -1,13 +1,272 @@
 # default styles for GFF based ZMap
+# also used as base styles for user config
+
+
+# glyphs are needed by styles, may be overridden by user config
+[glyphs]
+dn-tri = <0,4; -4,0 ;4,0; 0,4>
+up-tri = <0,-4 ;-4,0 ;4,0 ;0,-4>
+
+# up/dn tri offset to hit end of feature
+fwd5-tri = <0,0; -4,-4 ;4,-4; 0,0>
+fwd3-tri = <0,4; -4,0 ;4,0; 0,4>
+
+rev5-tri = <0,-4 ;-4,0 ;4,0 ;0,-4>
+rev3-tri = <0,0 ;-4,4 ;4,4 ;0,0>
+
+dn-hook = <0,0; 15,0; 15,10>
+up-hook = <0,0; 15,0; 15,-10>
+
+
+# generic styles lifted from otterlace
+
+[style-heatmap]
+width=8
+graph-scale=log
+mode=graph
+graph-density-fixed=true
+strand-specific=true
+graph-density=true
+graph-mode=heatmap
+bump-style=line
+default-bump-mode=style
+colours=normal fill white; normal border black
+graph-baseline=0.000000
+max-score=1000.000000
+min-score=0.000000
+graph-density-stagger=9
+graph-density-min-bin=2
+
+[style-histogram]
+width=31.000000
+colours=normal fill MistyRose1 ; normal border MistyRose3
+max-mag=1000.000000
+graph-baseline=0.000000
+max-score=1000.000000
+mode=graph
+min-score=0.000000
+graph-mode=histogram
+
+#default graph mode is histogram
+[style-graph]
+parent-style=histogram
+
+[style-line]
+width=40.000000
+graph-scale=log
+mode=graph
+graph-density-fixed=true
+graph-density=true
+graph-mode=line
+colours=normal border blue
+graph-baseline=0.000000
+max-score=1000.000000
+min-score=0.000000
+graph-density-stagger=20
+graph-density-min-bin=4
+
+
+# sub feature glyphs
+[style-homology-glyph]
+mode=glyph
+glyph-alt-colours=normal fill YellowGreen; normal border #81a634
+colours=normal fill #e74343; normal border #dc2323
+glyph-3-rev=rev3-tri
+score-mode=alt
+glyph-3=fwd3-tri
+glyph-5=fwd5-tri
+glyph-5-rev=rev5-tri
+glyph-threshold=3
+
+[style-nc-splice-glyph]
+glyph-strand=flip-y
+colours=normal fill yellow ; normal border blue
+mode=glyph
+glyph-3=up-tri
+glyph-5=dn-tri
+
 
 [style-root]
-width=9.0
-
-[style-basic]
-mode=basic
-parent=root
+width=9.000000
+default-bump-mode=overlap
+colours=selected fill gold ; selected border black
+bump-spacing=3.000000
+bump-mode=unbump
 
 [style-align]
-mode=align
-parent=root
+sub-features=homology:homology-glyph ; non-concensus-splice:nc-splice-glyph
+alignment-show-gaps=true
+alignment-parse-gaps=true
+mode=alignment
+strand-specific=true
+alignment-pfetchable=true
+colours=normal fill pink ; normal border #97737a
+default-bump-mode=all
+parent-style-style=root
+show-reverse-strand=true
+directional-ends=true
+
+[style-basic]
+colours=normal fill lavender ; normal border #898994
+parent-style-style=root
+mode=basic
+bump-mode=unbump
+
+[style-transcript]
+transcript-cds-colours=normal fill white ; normal border SlateBlue ; selected fill gold
+width=7.000000
+colours=normal fill LightGray ; normal border SteelBlue ; selected fill #ecc806
+parent-style-style=root
+show-reverse-strand=true
+mode=transcript
+bump-mode=overlap
+strand-specific=true
+
+
+# alignment optional styles
+[gapped-align]
+alignment-pfetchable=false
+default-bump-mode=overlap
+colours=normal border CadetBlue
+parent-style-style=align
+alignment-join-align=0
+alignment-between-error=1
+alignment-always-gapped=true
+
+[dna_align]
+alignment-blixem=blixem-n
+mode=alignment
+alignment-join-align=0
+strand-specific=false
+show-text=true
+alignment-within-error=0
+parent-style-style=align
+max-score=100.000000
+min-score=70.000000
+score-mode=percent
+
+[pep_align]
+sub-features=homology:homology-glyph
+parent-style-style=align
+max-score=100.000000
+show-reverse-strand=true
+mode=alignment
+min-score=70.000000
+score-mode=percent
+frame-mode=always
+
+[EST_align]
+colours=normal fill Purple ; normal border #3d1954
+parent-style-style=dna_align
+alignment-mask-sets=self ; vertebrate_mRNA
+
+
+
+# former 'predefined' styles: note: names must be as in zmapConfigStyleDefaults.h
+
+[style-3 Frame]
+description=3 frame display
+mode=meta
+bump-mode=unbump
+default_bump_mode=unbump
+displayable=false
+
+[style-sequence]
+mode=sequence
+displayable=true
+display-mode=hide
+bump-mode=unbump
+default-bump-mode=unbump
+bump-fixed=true
+width=30
+colours = normal fill white ; normal draw black ; selected fill red
+sequence-non-coding-colours = normal fill red ; normal draw black ; selected fill pink
+sequence-coding-colours = normal fill darkgreen ; normal draw black ; selected fill pink
+sequence-split-codon-5-colours = normal fill orange ; normal draw black ; selected fill pink
+sequence-split-codon-3-colours = normal fill yellow ; normal draw black ; selected fill pink
+sequence-in-frame-colours = onrmal fill green ; normal draw black ; selected fill pink
+
+[style-3 Frame Translation]
+description=3 frame translation display
+parent-style=sequence
+# width in characters
+width=10
+frame-mode=only-3
+sequence-coding-colours = normal fill darkgreen ; normal draw black ; selected fill pink
+
+[style-Show Translation]
+description=show translation in zmap display
+parent-style=sequence
+
+[style-DNA]
+description=dna display
+parent-style=sequence
+
+[style-Locus]
+description=locus name text column display
+mode=text
+displayable=true
+display-mode=hide
+bump-mode=unbump
+default-bump-mode=unbump
+strand-specific=true
+colours = normal fill white ; normal draw black
+width=20
+
+# due to the vagaries of ACEDB we only request GF features if
+# we hand it a style which has a hard coded name
+# despite the fact that we supply a different one in otter_styles.ini
+[style-GeneFinderFeatures]
+description=Gene Finder Features display
+mode=meta
+displayable=false
+display-mode=hide
+bump-mode=unbump
+default-bump-mode=unbump
+bump-fixed=true
+
+[style-Scale]
+description=scale bar display
+mode=plain
+colours=normal fill white; normal border black
+displayable=true
+
+[style-Strand Separator]
+description=strand separator display
+mode=meta
+displayable=false
+display-mode=hide
+bump-mode=unbump
+default-bump-mode=unbump
+bump-fixed=true
+
+[style-Search Hit Markers]
+description=display location of matches to query
+mode=basic
+displayable=true
+display-mode=hide
+bump-mode=unbump
+default-bump-mode=unbump
+bump-fixed=true
+width=15.0
+strand-specific=false
+show-only-in-separator=true
+colours = normal fill red ; normal draw black ; selected fill red; selected draw black
+rev-colours = normal fill green ; normal draw black ; selected fill green ; selected draw black
+
+[style-assembly]
+rev_colours = normal fill green ; normal draw black ; selected fill green ; selected draw black
+mode=assembly
+displayable=true
+display-mode=show
+width=10
+bump-mode=alternating
+default-bump-mode=alternating
+bump-fixed=true
+colours = normal fill gold ; normal border black ; selected fill orange ; selected border blue
+non-assembly-colours = normal fill brown ; normal border black ; selected fill red ; selected border black
+
+[style-Assembly Path]
+description=assembly path for displayed sequence
+parent-style=assembly
 

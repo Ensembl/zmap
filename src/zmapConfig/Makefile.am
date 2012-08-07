@@ -19,3 +19,4 @@ $(NULL)
 
 libZMapConfig_la_CFLAGS = $(INCLUDE_COMMON)
 
+# refer to main src/Makefile.am default-style

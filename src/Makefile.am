@@ -288,6 +288,8 @@ build-compiledate-file: forcemake
 # pretty but it seems to work. Surely there is a more elegant way.....
 #
 
+
+# copied from build-compile-date: we need to generate default_styles.c before building
 $(top_srcdir)/zmapConfig/default_styles.c: $(top_srcdir)/zmapConfig/default_styles.txt
 	$(top_srcdir)/zmapConfig/gen_default $(top_srcdir)/zmapConfig/default_styles.txt > $(top_srcdir)/zmapConfig/default_styles.c
 

@@ -523,7 +523,8 @@ GQuark zMapStyleQuark(gchar *str)
 
 /* get default styles w/ no reference to the styles file
  * NOTE keep this separate from zMapConfigIniGetStylesFromFile() as the config ini code
- * has a stanza priority system whe prevents override, in contrast to the key code that has the opposite priority
+ * has a stanza priority system that prevents override, in contrast to the key code that does the opposite
+ * application must merge user styles into default
  */
 GHashTable * zmapConfigIniGetDefaultStyles(void)
 {
@@ -549,8 +550,6 @@ gboolean zMapConfigIniGetStylesFromFile(char *config_file,
 
   if ((context = zMapConfigIniContextProvideNamed(config_file, ZMAPSTANZA_STYLE_CONFIG)))
     {
-      shapes = zMapConfigIniGetGlyph(context);
-
 	if(buffer)		/* default styles */
 	{
 		zMapConfigIniContextIncludeBuffer(context, buffer);
@@ -565,7 +564,10 @@ gboolean zMapConfigIniGetStylesFromFile(char *config_file,
 	settings_list = zMapConfigIniContextGetStyleList(context,styles_list);
 		/* style list is legacy and we don-t expect it to be used */
 		/* this gets a list aof all the stanzas in the file */
-      zMapConfigIniContextDestroy(context) ;
+
+      shapes = zMapConfigIniGetGlyph(context);		/* these could be predef'd for default styles or provided/ overridden in user config */
+
+	zMapConfigIniContextDestroy(context) ;
       context = NULL;
     }
 
