@@ -3315,8 +3315,11 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 	  }
 
 
+#if 0
+// defaulted in GFFparser
 	/* Not all servers will provide a mapping between feature sets and styles so we add
 	 * one now which is a straight mapping from feature set name to a style of the same name. */
+
 	if (!(g_hash_table_size(feature_sets->featureset_2_stylelist_out)))
 	  {
 	    GList *sets ;
@@ -3337,7 +3340,7 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 	      }
 	    while((sets = g_list_next(sets))) ;
 	  }
-
+#endif
 	/* not all servers provide a source to source data mapping
 	 * ZMap config can include this info but only if someone provides it
 	 * make sure there is an entry for each featureset from this server
