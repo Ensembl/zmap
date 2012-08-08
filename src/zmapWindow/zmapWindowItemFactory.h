@@ -67,10 +67,12 @@ void zmapWindowFToIFactoryRunSet(ZMapWindowFToIFactory factory,
 #endif
 FooCanvasItem *zmapWindowFToIFactoryRunSingle(GHashTable *ftoi_hash,
 #if RUN_SET
+//was zmapwindow canvar item, used for adding intervals
 							FooCanvasItem        *current_item,
 #endif
                                               ZMapWindowContainerFeatureSet parent_container,
                                               ZMapWindowContainerFeatures features_container,
+							    FooCanvasItem *foo_featureset,
                                               ZMapWindowFeatureStack feature_stack);
 
 void zmapWindowFToIFactoryClose(ZMapWindowFToIFactory factory);

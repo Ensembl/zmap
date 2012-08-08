@@ -2041,7 +2041,7 @@ void zmapWindowNavigatorRunSet(  ZMapFeatureSet set,
   for(; l ; l = l->next)
   {
 	ZMapFeature feature = (ZMapFeature)l->data;
-	FooCanvasItem *foo;
+	FooCanvasItem *foo = NULL;
 
 	/* filter on frame! */
 	if((frame != ZMAPFRAME_NONE) && frame  != zmapWindowFeatureFrame(feature))
@@ -2060,7 +2060,7 @@ void zmapWindowNavigatorRunSet(  ZMapFeatureSet set,
 
 	if(!variantFeature(feature, navigate))
 	{
-		foo = zmapWindowFToIFactoryRunSingle(navigate->ftoi_hash, (ZMapWindowContainerFeatureSet) container, features,  &feature_stack);
+		foo = zmapWindowFToIFactoryRunSingle(navigate->ftoi_hash, (ZMapWindowContainerFeatureSet) container, features, foo, &feature_stack);
 
 		if(!zMapWindowCanvasItemIsConnected((ZMapWindowCanvasItem) foo))
 			factoryItemHandler (foo, &feature_stack, (gpointer) navigate);

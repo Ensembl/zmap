@@ -119,7 +119,7 @@ static gboolean null_feature_size_request(ZMapFeature feature,
 #endif
 
 
-static FooCanvasItem *drawFeaturesetFeature(FooCanvasGroup *parent, ZMapWindowFeatureStack feature_stack,
+static FooCanvasItem *drawFeaturesetFeature(FooCanvasGroup *parent, FooCanvasItem * foo_featureset, ZMapWindowFeatureStack feature_stack,
                               double y1, double y2,
                               ZMapFeatureTypeStyle style);
 
@@ -629,6 +629,7 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(GHashTable *ftoi_hash,
 FooCanvasItem *zmapWindowFToIFactoryRunSingle(GHashTable *ftoi_hash,
 							    ZMapWindowContainerFeatureSet parent_container,
 							    ZMapWindowContainerFeatures features_container,
+							    FooCanvasItem * foo_featureset,
                                               ZMapWindowFeatureStack     feature_stack)
 {
 	FooCanvasItem *item = NULL, *return_item = NULL;
@@ -637,7 +638,7 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(GHashTable *ftoi_hash,
 
 //    features_container = (FooCanvasGroup *)zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)parent_container) ;
 
-	item = drawFeaturesetFeature((FooCanvasGroup *) features_container, feature_stack,
+	item = drawFeaturesetFeature((FooCanvasGroup *) features_container, foo_featureset, feature_stack,
 				  feature->x1, feature->x2, /* NOTE these are really y coordinates */
 				  feature->style);
 
@@ -722,34 +723,24 @@ static void datalistRun(gpointer key, gpointer list_data, gpointer user_data)
 #endif
 
 
-static FooCanvasItem *drawFeaturesetFeature(FooCanvasGroup *parent, ZMapWindowFeatureStack feature_stack,
+static FooCanvasItem *drawFeaturesetFeature(FooCanvasGroup *parent, FooCanvasItem *foo_featureset, ZMapWindowFeatureStack feature_stack,
 					double y1, double y2,
                               ZMapFeatureTypeStyle style)
 {
   FooCanvasItem   *feature_item = NULL;
-  ZMapWindowCanvasItem canvas_item;
+  ZMapWindowCanvasItem canvas_item = (ZMapWindowCanvasItem) foo_featureset;
   ZMapFeature feature = feature_stack->feature;
 
       ZMapWindowContainerFeatureSet fset = (ZMapWindowContainerFeatureSet) parent->item.parent;
       ZMapFeatureBlock block = feature_stack->block;
 
 
-//       if(!run_data->feature_stack->id || zMapStyleIsStrandSpecific(style) || zMapStyleIsFrameSpecific(style))
-      /* NOTE calling code calls zmapWindowDrawFeatureSet() for each frame but
-       * expects it to shuffle features into the right stranded container
-       * it's a half solution which caused a misunderstanding here.
-       * ideally the calling code would have 6 column groups prepared and we'd do one scan of the featureset
-       * that's a bit fiddly to sort now but it needs doing when containers get done
-       * We'd like to set up the 6 CanvasFeaturesets once, not recalc every time
-       * this would need 6 CanvasFeatureset id's to avoid the recalc every time
-       * Perhaps the best way is to run 6 scans for all frame and strand combinations??
-       */
-#warning code needs restructuring around zmapWindowDrawFeatureSet()
-
 	/* NOTE
 	 * parent is the features group in the conatiner featureset
 	 * fset is the parent of that (the column) which has the column id
+	 * foo_featureset is NULL or an existing CanvasFeatureset whcih is the (normally) single foo canvas item in the column
 	 */
+	if(!canvas_item)
       {
       	/* for frame spcecific data process_feature() in zmapWindowDrawFeatures.c extracts
       	 * all of one type at a time
@@ -783,13 +774,14 @@ static FooCanvasItem *drawFeaturesetFeature(FooCanvasGroup *parent, ZMapWindowFe
 
             feature_stack->id = g_quark_from_string(x);
             g_free(x);
-      }
+
 
             /* adds once per canvas+column+style, then returns that repeatedly */
             /* also adds an 'interval' foo canvas item which we need to look up */
-      canvas_item = zMapWindowCanvasItemFeaturesetGetFeaturesetItem(parent, feature_stack->id,
-            block->block_to_sequence.block.x1,block->block_to_sequence.block.x2, style,
-            feature_stack->strand,feature_stack->frame,feature_stack->set_index);
+		canvas_item = zMapWindowCanvasItemFeaturesetGetFeaturesetItem(parent, feature_stack->id,
+			block->block_to_sequence.block.x1,block->block_to_sequence.block.x2, style,
+			feature_stack->strand,feature_stack->frame,feature_stack->set_index);
+      }
 
       zMapAssert(canvas_item);
 

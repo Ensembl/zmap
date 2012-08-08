@@ -2362,7 +2362,7 @@ static void ProcessListFeature(gpointer data, gpointer user_data)
 #endif
   ZMapWindowContainerFeatures features;
   ZMapStrand display_strand ;
-  FooCanvasItem *feature_item ;
+  FooCanvasItem *feature_item = NULL;
   ZMapFeatureTypeStyle style ;
 
 #if MH17_REVCOMP_DEBUG > 1
@@ -2438,6 +2438,7 @@ static void ProcessListFeature(gpointer data, gpointer user_data)
     }
 #else
   column_group = featureset_data->feature_stack.set_column[display_strand];
+  feature_item = featureset_data->feature_stack.col_featureset[display_strand];
 #endif
 
 
@@ -2459,7 +2460,12 @@ static void ProcessListFeature(gpointer data, gpointer user_data)
   featureset_data->feature_stack.feature = feature;
 
   if(style)
-    feature_item = zmapWindowFeatureDraw(window, style,  column_group, features, &featureset_data->feature_stack) ;
+  {
+	  feature_item = zmapWindowFeatureDraw(window, style, column_group, features, feature_item, &featureset_data->feature_stack) ;
+#if !CALCULATE_COLUMNS
+	  featureset_data->feature_stack.col_featureset[display_strand] = feature_item;
+#endif
+  }
   else
     g_warning("definitely need a style '%s' for feature '%s'",
 	      g_quark_to_string(feature->style_id),
