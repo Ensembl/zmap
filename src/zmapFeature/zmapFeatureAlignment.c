@@ -61,23 +61,28 @@ typedef struct
 
 static gboolean checkForPerfectAlign(GArray *gaps, unsigned int align_error) ;
 
-static gboolean alignStrVerifyStr(char *match_str, ZMapFeatureAlignFormat align_format) ;
 static AlignStrCanonical alignStrMakeCanonical(char *match_str, ZMapFeatureAlignFormat align_format) ;
 static void alignStrDestroyCanonical(AlignStrCanonical canon) ;
 static gboolean alignStrCanon2Homol(AlignStrCanonical canon, ZMapStrand ref_strand, ZMapStrand match_strand,
 				    int p_start, int p_end, int c_start, int c_end,
 				    GArray **local_map_out) ;
+#if NOT_USED
+static gboolean alignStrVerifyStr(char *match_str, ZMapFeatureAlignFormat align_format) ;
 static gboolean exonerateVerifyVulgar(char *match_str) ;
 static gboolean exonerateVerifyCigar(char *match_str) ;
 static gboolean ensemblVerifyCigar(char *match_str) ;
 static gboolean bamVerifyCigar(char *match_str) ;
+#endif
 static gboolean exonerateCigar2Canon(char *match_str, AlignStrCanonical canon) ;
 static gboolean exonerateVulgar2Canon(char *match_str, AlignStrCanonical canon) ;
 static gboolean ensemblCigar2Canon(char *match_str, AlignStrCanonical canon) ;
 static gboolean bamCigar2Canon(char *match_str, AlignStrCanonical canon) ;
 static int cigarGetLength(char **cigar_str) ;
+#if NOT_USED
 static char *nextWord(char *str) ;
 static gboolean gotoLastDigit(char **cp_inout) ;
+#endif
+
 static gboolean gotoLastSpace(char **cp_inout) ;
 
 
@@ -288,40 +293,6 @@ static gboolean checkForPerfectAlign(GArray *gaps, unsigned int align_error)
 }
 
 
-/* Takes a match string and format and verifies that the string is valid
- * for that format. */
-static gboolean alignStrVerifyStr(char *match_str, ZMapFeatureAlignFormat align_format)
-{
-
-  /* We should be using some kind of state machine here, setting a model and
-   * then just chonking through it......
-   *  */
-
-  gboolean result = FALSE ;
-
-  switch (align_format)
-    {
-    case ZMAPALIGN_FORMAT_CIGAR_EXONERATE:
-      result = exonerateVerifyCigar(match_str) ;
-      break ;
-    case ZMAPALIGN_FORMAT_CIGAR_ENSEMBL:
-      result = ensemblVerifyCigar(match_str) ;
-      break ;
-    case ZMAPALIGN_FORMAT_CIGAR_BAM:
-      result = bamVerifyCigar(match_str) ;
-      break ;
-    case ZMAPALIGN_FORMAT_VULGAR_EXONERATE:
-      result = exonerateVerifyVulgar(match_str) ;
-      break ;
-    default:
-      zMapAssertNotReached() ;
-      break ;
-    }
-
-  return result ;
-}
-
-
 
 /* Takes a match string and format and converts that string into a canonical form
  * for further processing. */
@@ -480,6 +451,41 @@ static gboolean alignStrCanon2Homol(AlignStrCanonical canon, ZMapStrand ref_stra
   return result ;
 }
 
+
+
+#if NOT_USED
+/* Takes a match string and format and verifies that the string is valid
+ * for that format. */
+static gboolean alignStrVerifyStr(char *match_str, ZMapFeatureAlignFormat align_format)
+{
+
+  /* We should be using some kind of state machine here, setting a model and
+   * then just chonking through it......
+   *  */
+
+  gboolean result = FALSE ;
+
+  switch (align_format)
+    {
+    case ZMAPALIGN_FORMAT_CIGAR_EXONERATE:
+      result = exonerateVerifyCigar(match_str) ;
+      break ;
+    case ZMAPALIGN_FORMAT_CIGAR_ENSEMBL:
+      result = ensemblVerifyCigar(match_str) ;
+      break ;
+    case ZMAPALIGN_FORMAT_CIGAR_BAM:
+      result = bamVerifyCigar(match_str) ;
+      break ;
+    case ZMAPALIGN_FORMAT_VULGAR_EXONERATE:
+      result = exonerateVerifyVulgar(match_str) ;
+      break ;
+    default:
+      zMapAssertNotReached() ;
+      break ;
+    }
+
+  return result ;
+}
 
 
 
@@ -707,7 +713,7 @@ static gboolean bamVerifyCigar(char *match_str)
   return result ;
 }
 
-
+#endif
 
 /* Blindly converts, assumes match_str is a valid exonerate cigar string. */
 static gboolean exonerateCigar2Canon(char *match_str, AlignStrCanonical canon)
@@ -829,6 +835,7 @@ static int cigarGetLength(char **cigar_str)
 }
 
 
+#if NOT_USED
 /* Put in utils somewhere ????
  *
  * Whether str is on a word or on space, moves to the _next_ word.
@@ -868,6 +875,8 @@ static char *nextWord(char *str)
   return word ;
 }
 
+
+
 /* If looking at a character in a string which is a number move to the last digit of that number. */
 static gboolean gotoLastDigit(char **cp_inout)
 {
@@ -890,6 +899,9 @@ static gboolean gotoLastDigit(char **cp_inout)
 
   return result ;
 }
+
+#endif
+
 
 /* If looking at a character in a string which is a space move to the last space of those spaces.  */
 static gboolean gotoLastSpace(char **cp_inout)

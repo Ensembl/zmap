@@ -186,7 +186,9 @@ static void printCB(GtkButton *button, gpointer user_data) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
+#if NOT_USED
 static int getInkColour(int g2_id, GHashTable *ink_colours, guint composite_colour) ;
+#endif
 static void scale2Canvas(DumpOptions dump_opts,
 			 double *width, double *height,
 			 double *x_origin, double *y_origin, double *x_mul, double *y_mul) ;
@@ -727,12 +729,13 @@ static int setScalingPS(DumpOptions dump_opts)
 static int openGD(DumpOptions dump_opts)
 {
   int g2_id = 0 ;
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   double canvas_width, canvas_height ;
   double x_origin, y_origin ;
   double x_mul, y_mul ;
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
   scale2Canvas(dump_opts, &canvas_width, &canvas_height, &x_origin, &y_origin, &x_mul, &y_mul) ;
 
   if (dump_opts->format == DUMP_PNG)
@@ -929,10 +932,10 @@ static void itemCB(gpointer data, gpointer user_data)
  * so we have to convert to world coords...sigh... */
 static void dumpFeatureCB(gpointer data, gpointer user_data)
 {
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   FooCanvasItem *item = FOO_CANVAS_ITEM(data);
   DumpOptions cb_data = (DumpOptions)user_data ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   printf("Paint %s @ %f,%f %f,%f\n", G_OBJECT_TYPE_NAME(item),item->x1,item->y1,item->x2,item->y2);
@@ -1084,14 +1087,13 @@ static void dumpFeatureCB(gpointer data, gpointer user_data)
 /* Dump a rectangle, optionally show its outline. */
 static void dumpRectangle(DumpOptions cb_data, FooCanvasRE *re_item, gboolean outline)
 {
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   double x1, y1, x2, y2 ;
   guint composite ;
   int fill_colour ;
   int outline_colour ;
   gboolean fill_set;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   x1 = re_item->x1 ;
   y1 = re_item->y1 ;
   x2 = re_item->x2 ;
@@ -1145,6 +1147,7 @@ are x1,y1 and x2,y2 inverted sometimes? this code expands the boxes!
 
 
 
+#if NOT_USED
 /* Looks for a colour in our hash table of colours and returns the corresponding ink id.
  * There is a strict limit of 256 colours in g2's interface to the libgd package so
  * we keep a hash of colours so that don't allocate the same colour twice.
@@ -1175,6 +1178,7 @@ static int getInkColour(int g2_id, GHashTable *ink_colours, guint composite_colo
 
   return ink ;
 }
+#endif
 
 
 static void scale2Canvas(DumpOptions dump_opts,
