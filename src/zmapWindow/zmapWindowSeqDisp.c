@@ -41,7 +41,7 @@
 #include <zmapWindowContainerUtils.h>
 #include <zmapWindowCanvasItem.h>
 #include <zmapWindowContainerFeatureSet_I.h>
-//#include <zmapWindowCanvasFeatureset_I.h>
+#include <zmapWindowCanvasFeatureset_I.h>
 
 
 static void highlightSequenceItems(ZMapWindow window, ZMapFeatureBlock block,
