@@ -95,6 +95,7 @@
 #define ZACP_VIEW_CREATED  "view_created"
 #define ZACP_VIEW_DELETED  "view_deleted"
 
+#define ZACP_REVCOMP       "reverse_complement"
 #define ZACP_ZOOM_TO       "zoom_to"
 #define ZACP_GET_MARK      "get_mark"
 
