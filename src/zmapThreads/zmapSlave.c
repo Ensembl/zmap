@@ -1,4 +1,3 @@
-/*  Last edited: Jul  8 13:17 2011 (edgrif) */
 /*  File: zmapSlave.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -21,8 +20,8 @@
  * This file is part of the ZMap genome database package
  * and was written by
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *         Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: This code is called when a new thread is created by the
  *              zmapThread code, it loops waiting for commands from
@@ -34,9 +33,6 @@
 
 #include <ZMap/zmap.h>
 
-
-
-
 #include <stdio.h>
 #include <string.h>
 
@@ -44,6 +40,7 @@
  * BETWEEN pthread.h AND gtk.h SUCH THAT IF pthread.h COMES FIRST THEN gtk.h INCLUDES GET MESSED
  * UP AND THIS FILE WILL NOT COMPILE.... */
 #include <pthread.h>
+
 #include <ZMap/zmapUtils.h>
 
 /* With some additional calls in the zmapConn code I could get rid of the need for
@@ -94,7 +91,6 @@ void *zmapNewThread(void *thread_args)
   pthread_cleanup_push(cleanUpThread, (void *)thread_cb) ;
 
 
-
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* somehow doing this screws up the whole gui-slave communication bit...not sure how....
    * the slaves just die, almost all the time.... */
@@ -102,6 +98,7 @@ void *zmapNewThread(void *thread_args)
   /* Signal that we are ready and waiting... */
   zMapConnSetReply(thread, ZMAPTHREAD_REPLY_WAIT) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   /* Next two calls added to fix MACOSX pthread issues */
   pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
@@ -213,6 +210,8 @@ void *zmapNewThread(void *thread_args)
 		zmapVarSetValueWithError(&(thread->reply), ZMAPTHREAD_REPLY_DIED, error_msg) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+		zMapLogWarning("Bad Request: %s", error_msg) ;
+
 
 		thread_cb->thread_died = TRUE ;
 
@@ -230,8 +229,10 @@ void *zmapNewThread(void *thread_args)
 
 		error_msg = g_strdup_printf("(d) %s - %s", ZMAPTHREAD_SLAVEREQUEST, slave_error) ;
 
-		if(!thread_cb->thread_died)		/* a misnomer, it's the server that the thread talks to */
-			zMapLogWarning("server died","");
+		/* a misnomer, it's the server that the thread talks to */
+		if (!thread_cb->thread_died)
+		  zMapLogWarning("Server died: %s", error_msg) ;
+
 		thread_cb->thread_died = TRUE ;
 
 		thread_cb->initial_error = g_strdup(error_msg) ;
