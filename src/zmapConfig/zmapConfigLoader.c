@@ -193,10 +193,11 @@ GList *zMapConfigIniContextGetStyleList(ZMapConfigIniContext context,char *style
 {
   GList *list = NULL;
 
-  if(styles_list)
-      list = zMapConfigIniContextGetListedStanzas(context, create_config_style,styles_list,"style"); // get the named stanzas
+  if (styles_list)
+    list = zMapConfigIniContextGetListedStanzas(context, create_config_style,styles_list,"style"); // get the named stanzas
   else
-      list = zMapConfigIniContextGetNamedStanzas(context, create_config_style,"style") ; // get all the stanzas
+    list = zMapConfigIniContextGetNamedStanzas(context, create_config_style,"style") ; // 
+										       // get all the stanzas
   return list ;
 }
 
@@ -304,9 +305,9 @@ static void fill_stanza_key_value(gpointer list_data, gpointer user_data)
                       key->type))
     {
       if (key->set_property)
-      (key->set_property)(full_data->current_stanza_name, key->key, key->type, full_data->current_object, value);
+	(key->set_property)(full_data->current_stanza_name, key->key, key->type, full_data->current_object, value);
       else
-      zMapLogWarning("No set_property function for key '%s'", key->key);
+	zMapLogWarning("No set_property function for key '%s'", key->key);
 
       g_free(value);
     }
@@ -324,16 +325,18 @@ static void fetch_referenced_stanzas(gpointer list_data, gpointer user_data)
   if (zMapConfigIniHasStanza(full_data->context->config, stanza_name,NULL) && (full_data->object_create_func))
     {
       if ((full_data->current_object = (full_data->object_create_func)()))
-      {
-        /* get stanza keys */
-        g_list_foreach(full_data->stanza->keys, fill_stanza_key_value, user_data);
+	{
+	  /* get stanza keys */
+	  g_list_foreach(full_data->stanza->keys, fill_stanza_key_value, user_data);
 
-        full_data->object_list_out = g_list_append(full_data->object_list_out,
-                                         full_data->current_object);
-      }
+	  full_data->object_list_out = g_list_append(full_data->object_list_out,
+						     full_data->current_object);
+	}
       else
-      zMapLogWarning("Object Create Function for stanza '%s'"
-                   " failed to return anything", stanza_name);
+	{
+	  zMapLogWarning("Object Create Function for stanza '%s'"
+			 " failed to return anything", stanza_name);
+	}
     }
 
   return ;
@@ -537,12 +540,17 @@ gboolean zMapConfigIniGetStylesFromFile(char *config_file,
     {
       shapes = zMapConfigIniGetGlyph(context);
 
-      if (zMapConfigIniContextIncludeFile(context,styles_file))
-      {
-        settings_list = zMapConfigIniContextGetStyleList(context,styles_list);
-        zMapConfigIniContextDestroy(context) ;
-        context = NULL;
-      }
+      if (!zMapConfigIniContextIncludeFile(context,styles_file))
+	{
+	  zMapLogWarning("Error in styles file \"%s\": %s",
+			 styles_file, zMapConfigIniContextKeyFileErrorMessage(context)) ;
+	}
+      else
+	{
+	  settings_list = zMapConfigIniContextGetStyleList(context,styles_list);
+	  zMapConfigIniContextDestroy(context) ;
+	  context = NULL;
+	}
     }
 
   if (settings_list)
