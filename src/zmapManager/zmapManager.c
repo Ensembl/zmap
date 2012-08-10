@@ -62,6 +62,7 @@ typedef struct
   GQuark sequence ;
   GQuark start ;
   GQuark end ;
+  GQuark config_file ;
   GQuark add_to_view ;
 
   /* Is this used ?????? */
@@ -99,7 +100,7 @@ static gboolean req_start(void *userData, ZMapXMLElement element, ZMapXMLParser 
 static gboolean req_end(void *userData, ZMapXMLElement element, ZMapXMLParser parser);
 
 static void createZMap(ZMapManager manager, ZMapAppRemoteViewID view_id,
-		       GQuark sequence_id, int start, int end,
+		       GQuark sequence_id, int start, int end, GQuark config_file,
 		       RemoteCommandRCType *command_rc_out, char **reason_out, ZMapXMLUtilsEventStack *reply_out) ;
 static void closeZMap(ZMapManager app,
 		      ZMapAppRemoteViewID view_id,
@@ -572,7 +573,7 @@ static void processRequest(ZMapManager manager,
 	  zMapAppRemoteViewResetID(view_id) ;
 
           createZMap(manager, view_id,
-		     request_data.sequence, request_data.start, request_data.end,
+		     request_data.sequence, request_data.start, request_data.end, request_data.config_file,
 		     command_rc_out, reason_out, reply_out) ;
 	}
       else if (strcmp(command_name, ZACP_ADD_TO_VIEW) == 0)
@@ -586,7 +587,7 @@ static void processRequest(ZMapManager manager,
 	    {
 	      /* This call directly sets command_rc etc. */
 	      createZMap(manager, view_id,
-			 request_data.sequence, request_data.start, request_data.end,
+			 request_data.sequence, request_data.start, request_data.end, request_data.config_file,
 			 command_rc_out, reason_out, reply_out) ;
 	    }
 	}
@@ -607,7 +608,7 @@ static void processRequest(ZMapManager manager,
 
 /* Make a new zmap window containing a view of the given sequence from start -> end. */
 static void createZMap(ZMapManager manager, ZMapAppRemoteViewID view_id_inout,
-		       GQuark sequence_id, int start, int end,
+		       GQuark sequence_id, int start, int end, GQuark config_file,
 		       RemoteCommandRCType *command_rc_out, char **reason_out, ZMapXMLUtilsEventStack *reply_out)
 {
   ZMapAppRemoteViewID view_id ;
@@ -637,6 +638,7 @@ static void createZMap(ZMapManager manager, ZMapAppRemoteViewID view_id_inout,
       /* default sequence may be NULL */
       sequence_map = g_new0(ZMapFeatureSequenceMapStruct, 1) ;
 
+      sequence_map->config_file = g_strdup(g_quark_to_string(config_file)) ;
       sequence_map->sequence = sequence = g_strdup(g_quark_to_string(sequence_id)) ;
       sequence_map->start = start ;
       sequence_map->end = end ;
@@ -892,6 +894,9 @@ static gboolean req_end(void *user_data, ZMapXMLElement element, ZMapXMLParser p
 	request_data->end = strtol(g_quark_to_string(zMapXMLAttributeGetValue(attr)), (char **)NULL, 10) ;
       else
 	err_msg = g_strdup_printf("%s is a required tag.", ZACP_SEQUENCE_END) ;
+
+      if (!err_msg && ((attr = zMapXMLElementGetAttributeByName(child, ZACP_SEQUENCE_CONFIG)) != NULL))
+	request_data->config_file = zMapXMLAttributeGetValue(attr) ;
     }
   else if (strcmp(request_data->command_name, ZACP_CLOSEVIEW) == 0)
     {
