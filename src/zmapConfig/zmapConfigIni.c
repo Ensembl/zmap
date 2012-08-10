@@ -129,18 +129,32 @@ gboolean zMapConfigIniContextIncludeFile(ZMapConfigIniContext context, char *fil
 
 gchar *zMapConfigIniContextErrorMessage(ZMapConfigIniContext context)
 {
-  gchar *e = NULL;
-  e = context->error_message;
-  return e;
+  gchar *e = NULL ;
+
+  e = context->error_message ;
+
+  return e ;
 }
 
 static void zmapConfigIniContextSetErrorMessage(ZMapConfigIniContext context,char *error_message)
 {
-  if(context->error_message)
-      g_free(context->error_message);
+  if (context->error_message)
+    g_free(context->error_message);
+
   context->error_message = error_message;
+
+  return ;
 }
 
+gchar *zMapConfigIniContextKeyFileErrorMessage(ZMapConfigIniContext context)
+{
+  gchar *error_msg = NULL ;
+
+  error_msg = context->config->extra_key_error->message ;
+
+
+  return error_msg ;
+}
 
 
 gboolean zMapConfigIniContextAddGroup(ZMapConfigIniContext context, 
