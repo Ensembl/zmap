@@ -284,23 +284,28 @@ static char *control_execute_command(char *command_text, gpointer user_data,
 static void insertView(ZMap zmap, RequestData input_data, ResponseData output_data)
 {
   ViewConnectData view_params = &(input_data->view_params);
-  ZMapView view;
   char *sequence;
-  ZMapFeatureSequenceMap seq_map = g_new0(ZMapFeatureSequenceMapStruct,1);
 
   if ((sequence = (char *)g_quark_to_string(view_params->sequence)) && view_params->config)
     {
-#warning we need to get dataset (= species) from otterlace with added XML
-//      zMapAssert(zmap->default_sequence);
-	if(!zmap->default_sequence || !zmap->default_sequence->dataset)	/* there has been a major configuration error */
-	{
-          	output_data->code = ZMAPXREMOTE_INTERNAL;
-          	g_string_append_printf(output_data->messages,
-                                 "No sequence specified in ZMap config - cannot create view");
-		return;
-	}
-      seq_map->dataset = zmap->default_sequence->dataset;   /* provide a default FTM */
+      ZMapFeatureSequenceMap seq_map ;
+      ZMapView view;
 
+#warning we need to get dataset (= species) from otterlace with added XML
+      //      zMapAssert(zmap->default_sequence);
+
+      if (!zmap->default_sequence || !zmap->default_sequence->dataset)
+	{
+	  /* there has been a major configuration error */
+
+	  output_data->code = ZMAPXREMOTE_INTERNAL;
+	  g_string_append_printf(output_data->messages,
+                                 "No sequence specified in ZMap config - cannot create view");
+	  return;
+	}
+
+      seq_map = g_new0(ZMapFeatureSequenceMapStruct,1) ;
+      seq_map->dataset = zmap->default_sequence->dataset;   /* provide a default FTM */
       seq_map->sequence = sequence;
       seq_map->start = view_params->start;
       seq_map->end = view_params->end;
@@ -314,8 +319,7 @@ static void insertView(ZMap zmap, RequestData input_data, ResponseData output_da
 	      zmapControlRemoveView(zmap, view) ;
 
               output_data->code = ZMAPXREMOTE_UNKNOWNCMD;
-              g_string_append_printf(output_data->messages,
-                                     "view connection failed.");
+              g_string_append_printf(output_data->messages, "view connection failed.") ;
             }
           else
             {
@@ -330,10 +334,8 @@ static void insertView(ZMap zmap, RequestData input_data, ResponseData output_da
       else
         {
           output_data->code = ZMAPXREMOTE_INTERNAL;
-          g_string_append_printf(output_data->messages,
-                                 "failed to create view");
+          g_string_append_printf(output_data->messages, "failed to create view") ;
         }
-
     }
 
   return ;
