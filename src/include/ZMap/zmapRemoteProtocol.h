@@ -122,11 +122,11 @@
 #define ZACP_TIMEOUT "timeout"
 
 
-#define ZACP_SEQUENCE_TAG   "sequence"
-#define ZACP_SEQUENCE_NAME  "name"
-#define ZACP_SEQUENCE_START "start"
-#define ZACP_SEQUENCE_END   "end"
-
+#define ZACP_SEQUENCE_TAG     "sequence"
+#define ZACP_SEQUENCE_NAME    "name"
+#define ZACP_SEQUENCE_START   "start"
+#define ZACP_SEQUENCE_END     "end"
+#define ZACP_SEQUENCE_CONFIG  "config_file"
 
 #define ZACP_GOODBYE_TYPE "type"
 #define ZACP_CLOSE        "close"
