@@ -15,7 +15,7 @@ set -o history
 
 zmap_read_cluster_config
 
-# ================== FUNCTIONS ================== 
+# ================== FUNCTIONS ==================
 
 # Usage: zmap_untar_file <tarfile.tar.gz> <output_dir>
 function zmap_untar_file
@@ -38,7 +38,7 @@ function zmap_untar_file
 	fi
 
 	if ! echo $output_dir | egrep -q "(^)/" ; then
-	    output_dir=/tmp/$output_dir
+	    output_dir=/var/tmp/$output_dir
 	fi
 
 	mkdir -p $untar_tmp
@@ -65,7 +65,7 @@ function zmap_untar_file
 	tar $tar_options $package
 
 	if [ $? != 0 ]; then
-	    zmap_cd /tmp
+	    zmap_cd /var/tmp
 	    rm -rf $untar_tmp
 	    zmap_message_exit "Failed to untar $package"
 	else
@@ -75,7 +75,7 @@ function zmap_untar_file
 	    else
 		cp -r $package_dir/* $output_dir/
 	    fi
-	    zmap_cd /tmp
+	    zmap_cd /var/tmp
 	    rm -rf $untar_tmp
 	fi
 	zmap_message_out "$package untarred to $output_dir"
@@ -85,7 +85,7 @@ function zmap_untar_file
 
 }
 
-# ================== MAIN PART ================== 
+# ================== MAIN PART ==================
 
 usage="$0 -t <tar_file> -r <release_location> VARIABLE=VALUE"
 while getopts ":t:r:" opt ; do
@@ -127,7 +127,7 @@ ZMap Release Version $ZMAP_RELEASE_VERSION
 
 Info:
 
-... 
+...
 
 
 Manifest:
@@ -136,7 +136,7 @@ Manifest:
   ZMap.master/ - cvs checkout (as per tag)
   Dist/        - contains distribution tar.gz
   Docs/        - Some documentation
-  Website/     - website 
+  Website/     - website
 EOF
 
 for host in $ZMAP_BUILD_MACHINES;
@@ -158,7 +158,7 @@ ZMap is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version 2
 of the License, or (at your option) any later version.
- 
+
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -175,7 +175,7 @@ originally written by:
 Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
 Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
 
-Description: 
+Description:
 
 Created: Tue Mar  4 10:32:15 2008 (rds)
 CVS info:   $Id: zmap_handle_release_tar.sh,v 1.8 2009-02-12 09:26:05 rds Exp $
@@ -188,4 +188,4 @@ EOF
 
 
 
-# ================== END OF SCRIPT ================== 
+# ================== END OF SCRIPT ==================

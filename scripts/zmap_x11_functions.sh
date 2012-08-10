@@ -1,6 +1,6 @@
 #!/bin/echo dot script. please source
 
-X11_ENVIRONMENT_FILE=/tmp/zmap.$$.env
+X11_ENVIRONMENT_FILE=/var/tmp/zmap.$$.env
 XSERVER_PATH=Xvnc
 XSERVER_OPTIONS="-terminate -desktop ${USER}-running-$SCRIPT_NAME -depth 24 -geometry 1200x900"
 XSERVER_ADD_OPTIONS="-rfbauth $HOME/.vnc/passwd"
