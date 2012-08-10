@@ -862,7 +862,7 @@ in zmap (known as a "view"):</p>
 
 &lt;zmap version="2.0" type="request" app_id="peer_app" clipboard_id="ZMap-15853-1327414674" request_id="2"&gt;
   &lt;request command="new_view"&gt;
-    &lt;sequence name="clone_X" start="2000" end="3000"/&gt;
+    &lt;sequence name="clone_X" start="2000" end="3000" config_file="/config/file/path"/&gt;
   &lt;/request&gt;
 &lt;/zmap&gt;
 </pre>
@@ -902,7 +902,7 @@ in the same zmap window as a currently displayed view:</p>
 
 &lt;zmap version="2.0" type="request" app_id="peer_app" clipboard_id="ZMap-15853-1327414674" request_id="2"&gt;
   &lt;request command="add_to_view" view="NNNNN"&gt;
-    &lt;sequence name="clone_X" start="2000" end="3000"/&gt;
+    &lt;sequence name="clone_X" start="2000" end="3000" config_file="/config/file/path"/&gt;
   &lt;/request&gt;
 &lt;/zmap&gt;
 </pre>
