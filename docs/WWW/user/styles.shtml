@@ -211,21 +211,14 @@ the properties themselves.
     </tr>
     <tr>
       <td>bump-mode</td>
-      <td>&lt; unbump | overlap | start-position | alternating | all
-	  | name | name-interleave | name-no-interleave | name-colinear | name-best-ends &gt;</td>
+      <td>&lt; unbump | overlap | alternating | all | style &gt;</td>
       <td>Controls how features are arranged within their column:
 	  <ul>
 	    <li><b>unbump:</b> No bumping (default)
 	    <li><b>overlap:</b> Bump any features overlapping each other.
-	    <li><b>start-position:</b> Bump if features have same start coord.
 	    <li><b>alternating:</b> Alternate features between two sub_columns, e.g. to display assemblies.
 	    <li><b>all:</b> A sub-column for every feature.
-	    <li><b>name:</b> A sub-column for features with the same name.
-	    <li><b>name-interleave:</b> All features with same name in a single sub-column
-		but several names interleaved in each sub-column, the most compact display.
-	    <li><b>name-no-interleave:</b> Display as for Interleave but no interleaving of different names.
-	    <li><b>name-colinear:</b> As for No Interleave but for alignments only colinear shown.
-	    <li><b>name-best-ends:</b> As for No Interleave but for alignments sorted by 5' and 3' best/biggest matches, one sub_column per match.
+	    <li><b>style:</b> A different style when bumped eg heatmap to wiggle
 	  </ul>
       </td>
     </tr>
@@ -960,21 +953,21 @@ Score_bounds	 0.000000 3.000000
 
 Method : "GF_coding_seg"
 Score_bounds	 2.000000 8.000000
-Score_by_width	
+Score_by_width
 
 Method : "GF_splice"
 Score_bounds	 -2.000000 4.000000
-Score_by_width	
+Score_by_width
 
 Method : "hexExon"
 Score_bounds	 10.000000 100.000000
-Score_by_width	
+Score_by_width
 
 Method : "hexExon_span"
 
 Method : "hexIntron"
 Score_bounds	 10.000000 100.000000
-Score_by_width	
+Score_by_width
 </pre>
 </ol>
 

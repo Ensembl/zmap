@@ -82,7 +82,7 @@ fi
 
 if [ "x$ZMAP_MAKE_CHECK" == "x$ZMAP_TRUE" ]; then
     zmap_message_out "Running make check"
-    
+
     CHECK_LOG_FILE=$(pwd)/$SCRIPT_NAME.check.log
 
     MAKE_CHECK_FAILED=no
@@ -90,8 +90,8 @@ if [ "x$ZMAP_MAKE_CHECK" == "x$ZMAP_TRUE" ]; then
     make check check_zmap_LOG_FILE=$CHECK_LOG_FILE || MAKE_CHECK_FAILED=$ZMAP_TRUE
 
     if [ "x$MAKE_CHECK_FAILED" == "x$ZMAP_TRUE" ]; then
-	
-	TMP_LOG=/tmp/zmap_fail.$$.log
+
+	TMP_LOG=/var/tmp/zmap_fail.$$.log
 
 	echo "ZMap Tests Failure"                            > $TMP_LOG
 	echo ""                                             >> $TMP_LOG

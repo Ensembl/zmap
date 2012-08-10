@@ -36,7 +36,9 @@
 
 #include <zmapWindow_P.h>
 #include <zmapWindowContainerUtils.h>
+#if USE_FACTORY
 #include <zmapWindowItemFactory.h>
+#endif
 #include <ZMap/zmapWindowNavigator.h>
 
 #define NAVIGATOR_SIZE 25000

@@ -33,8 +33,6 @@ zmapWindowFocus.c \
 zmapWindowFrame.c \
 zmapWindowItem.c \
 zmapWindowItemDebug.c \
-zmapWindowItemFactory.c \
-zmapWindowItemFactory.h \
 zmapWindowItemHash.c \
 zmapWindowList.c \
 zmapWindowMark.c \
@@ -96,7 +94,7 @@ canvas/zmapWindowCanvasLocus.h \
 canvas/zmapWindowCanvasLocus_I.h \
 canvas/zmapWindowCanvasGraphics.c \
 canvas/zmapWindowCanvasGraphics.h \
-canvas/zmapWindowCanvasGrahpics_I.h \
+canvas/zmapWindowCanvasGraphics_I.h \
 $(NULL)
 
 

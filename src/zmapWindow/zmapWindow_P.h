@@ -253,20 +253,24 @@ typedef struct _zmapWindowFeatureStack
       ZMapFrame frame;
 	gboolean filter;	/* don't add to camvas if hidden */
 
-	/* NOTE there's a structy defined privately in zmapWindowDrawFeatures.c that would be btter having these
-	 * as this is nominally related to the feature contect not the camvas
-	 * but as want tp pass this data around eg to windowFeature.c it can't go there
+	/* NOTE there's a struct defined privately in zmapWindowDrawFeatures.c that would be better having these
+	 * as this is nominally related to the feature context not the camvas
+	 * but as want to pass this data around eg to windowFeature.c it can't go there
 	 * the idea here is to cache the column features group and column hash for each feature in the set
-	 * instead of recalcualting it for every feature
+	 * instead of recalculating it for every feature
 	 * these pointers also act as flags: they hold valid pointers if the frame/strand combination means draw the feature
 	 */
 #if ALL_FRAMES
+// 3-frame gets drawn via 3 scans of the featureset
+// it's a toss up whether this is fatser/slower than calculating where to send a feature out of 12 possible columns
+// or to calculate only 3 and do it 3x
 //      ZMapWindowContainerFeatures set_columns[N_FRAME * N_STRAND];	/* all possible strand and frame combinations */
 //      GHashTable *col_hash[N_FRAME * N_STRAND];
 #else
 	// just handle the strand / frame conbo's is in the original code structre - set gets drawn 3x in 3 Frame mode
       ZMapWindowContainerFeatureSet set_column[N_STRAND_ALLOC];	/* all possible strand and frame combinations */
       ZMapWindowContainerFeatures set_features[N_STRAND_ALLOC];
+	FooCanvasItem *col_featureset[N_STRAND_ALLOC];			/* the canvas featureset as allocated by the item factory */
 	GHashTable *col_hash[N_STRAND_ALLOC];
 
 #endif
@@ -899,6 +903,12 @@ void zmapWindowSeq2CanOffset(double *start_inout, double *end_inout, double offs
 
 GQuark zMapWindowGetFeaturesetContainerID(ZMapWindow window,GQuark featureset_id);
 
+FooCanvasItem *zmapWindowFToIFactoryRunSingle(GHashTable *ftoi_hash,
+							    ZMapWindowContainerFeatureSet parent_container,
+							    ZMapWindowContainerFeatures features_container,
+							    FooCanvasItem * foo_featureset,
+                                              ZMapWindowFeatureStack     feature_stack);
+
 GHashTable *zmapWindowFToICreate(void) ;
 gboolean zmapWindowFToIAddRoot(GHashTable *feature_to_context_hash, FooCanvasGroup *root_group) ;
 gboolean zmapWindowFToIRemoveRoot(GHashTable *feature_to_context_hash) ;
@@ -1285,6 +1295,7 @@ ZMapFrame zmapWindowFeatureFrame(ZMapFeature feature) ;
 FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, ZMapFeatureTypeStyle style,
 				     	ZMapWindowContainerFeatureSet set_group,
 				      ZMapWindowContainerFeatures set_features,
+					FooCanvasItem *foo_featureset,
 					ZMapWindowFeatureStack feature_stack) ;
 
 char *zmapWindowFeatureSetDescription(ZMapFeatureSet feature_set) ;

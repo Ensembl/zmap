@@ -164,7 +164,7 @@ typedef struct
 
 static int zmapXremoteTestSuite(int argc, char *argv[]);
 static void installPropertyNotify(GtkWidget *ignored, GdkEvent *event, XRemoteTestSuiteData suite);
-static char *handle_register_client(char *command_text, gpointer user_data, int *statusCode, ZMapXRemoteObj owner);
+static char *handle_register_client(char *command_text, gpointer user_data, ZMapXRemoteStatus *statusCode, ZMapXRemoteObj owner);
 static GtkWidget *entry_box_widgets(XRemoteTestSuiteData suite);
 static GtkWidget *menubar(XRemoteTestSuiteData suite);
 static GtkWidget *message_box(XRemoteTestSuiteData suite);
@@ -470,7 +470,7 @@ static void installPropertyNotify(GtkWidget *widget, GdkEvent *event, XRemoteTes
 }
 
 /* The property notify, receives the requests from zmap, when started with --win_id option */
-static char *handle_register_client(char *command_text, gpointer user_data, int *statusCode, ZMapXRemoteObj owner )
+static char *handle_register_client(char *command_text, gpointer user_data, ZMapXRemoteStatus *statusCode, ZMapXRemoteObj owner )
 {
   XRemoteTestSuiteData suite = (XRemoteTestSuiteData)user_data;
   ZMapXMLObjTagFunctionsStruct starts[] = {

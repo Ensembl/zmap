@@ -133,8 +133,9 @@ static void fileLogger(const gchar *log_domain, GLogLevelFlags log_level, const 
 static void glibLogger(const gchar *log_domain, GLogLevelFlags log_level, const gchar *message,
 		       gpointer user_data);
 static gboolean backtrace2fd(unsigned int remove, int fd);
+#if FOO_LOG
 static void logTime(int what, int how) ;
-
+#endif
 
 
 
@@ -168,7 +169,7 @@ gboolean zMapLogCreate(char *logname)
 
   zMapAssert(!log) ;
 
-#if 0		// log timing stats from foo
+#if FOO_LOG	// log timing stats from foo
 		// have to take this out to get xremote to compile for perl
 		// should be ok when we get the new xremote
 
@@ -997,7 +998,7 @@ static gboolean backtrace2fd(unsigned int remove, int fd)
   return traced;
 }
 
-
+#if FOO_LOG
 static void logTime(int what, int how)
 {
   int stuff[] = { TIMER_EXPOSE, TIMER_UPDATE, TIMER_DRAW };
@@ -1013,3 +1014,4 @@ static void logTime(int what, int how)
   return ;
 }
 
+#endif

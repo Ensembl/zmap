@@ -208,7 +208,7 @@ fi
 
 
 if [ -n "$OUTPUT_DIR" ] ; then
-    mkdir $OUTPUT_DIR || message_exit "$INPUT_DIR is not a directory or is not readable."
+    mkdir $OUTPUT_DIR || message_exit "Could not make $OUPUT_DIR."
 fi
 
 
@@ -362,7 +362,7 @@ rm -f root_checkout.sh || exit 1;   \
 
 if [ $? != 0 ]; then
     # There was an error, email someone about it!
-    TMP_LOG=/tmp/zmap_fail.$$.log
+    TMP_LOG=/var/tmp/zmap_fail.$$.log
     echo "ZMap $BUILD_PREFIX Build Failed"                > $TMP_LOG
     echo ""                                              >> $TMP_LOG
     echo "Tail of log:"                                  >> $TMP_LOG

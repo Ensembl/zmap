@@ -2851,6 +2851,11 @@ void zmapWindowFeaturesetAddToIndex(ZMapWindowFeaturesetItem featureset_item, ZM
 #else
   // untested code
   {
+	 /* NOTE when this is implemented properly then it might be best to add to a linked list if there's no index created
+	  * as that might be more effecient,  or maybe it won't be.
+	  * i'd guess that creating a skip list from a sorted list is faster
+	  * Worth considering and also timing this,
+	  */
     featureset_item->display_index =
       zMapSkipListAdd(featureset_item->display_index, zMapFeatureCmp, feat);
 #warning need to fix linked_sideways

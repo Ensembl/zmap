@@ -42,7 +42,7 @@
 #include <ZMap/zmapGLibUtils.h>
 #include <zmapWindow_P.h>
 #include <zmapWindowContainerUtils.h>
-#include <zmapWindowItemFactory.h>
+//#include <zmapWindowItemFactory.h>
 #include <zmapWindowCanvasItem.h>
 #include <libpfetch/libpfetch.h>
 #include <zmapWindowContainerFeatureSet_I.h>
@@ -339,6 +339,7 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow      window,
 				     ZMapFeatureTypeStyle style,
 				     ZMapWindowContainerFeatureSet set_group,
 				     ZMapWindowContainerFeatures set_features,
+				     FooCanvasItem *foo_featureset,
 				     ZMapWindowFeatureStack     feature_stack)
 {
   FooCanvasItem *new_feature = NULL ;
@@ -391,11 +392,13 @@ zMapAssertNotReached();
 					       NULL,
 #endif
                                      set_group, set_features,
+						 foo_featureset,
 					       feature_stack);
 
-#warning could make this take a window not a gpointer, would be more readable
-#warning ideally only call this first time canvasfeatureset is created
-  if(!zMapWindowCanvasItemIsConnected((ZMapWindowCanvasItem) new_feature))
+//#warning could make this take a window not a gpointer, would be more readable
+//#warning ideally only call this first time canvasfeatureset is created
+//  if(!zMapWindowCanvasItemIsConnected((ZMapWindowCanvasItem) new_feature))
+  if(new_feature != foo_featureset)
 	factoryTopItemCreated (new_feature, feature_stack, (gpointer) window);
 
   if(masked && container->masked && new_feature)
@@ -929,7 +932,8 @@ void zmapWindowFeatureExpand(ZMapWindow window, FooCanvasItem *foo,
   ZMapWindowFeatureStackStruct feature_stack = { NULL };
   ZMapWindowCanvasItem item = (ZMapWindowCanvasItem) foo;
   ZMapStyleBumpMode curr_bump_mode ;
-  ZMapWindowContainerFeatures features = zmapWindowContainerGetFeatures((ZMapWindowContainerGroup) container_set);;
+  ZMapWindowContainerFeatures features = zmapWindowContainerGetFeatures((ZMapWindowContainerGroup) container_set);
+  FooCanvasItem *foo_featureset = NULL;
 
   //printf("\n\nexpand %s\n",g_quark_to_string(feature->original_id));
   if(feature->population < 2)	/* should not happen */
@@ -946,7 +950,8 @@ void zmapWindowFeatureExpand(ZMapWindow window, FooCanvasItem *foo,
     {
       /* (mh17) NOTE we have to be careful that these features end up in the same (singleton) CanvasFeatureset else they overlap on bump */
       feature_stack.feature = (ZMapFeature) l->data;
-      item = (ZMapWindowCanvasItem) zmapWindowFeatureDraw(window, feature->style,  container_set,features, &feature_stack);
+      item = (ZMapWindowCanvasItem) zmapWindowFeatureDraw(window, feature->style,  container_set,features, foo_featureset, &feature_stack);
+	foo_featureset = (FooCanvasItem *) item;
       //printf(" show %s\n", g_quark_to_string(feature_stack.feature->original_id));
 #if MH17_DO_HIDE
 // ref to same #if in zmapWindowCanvasAlignment.c

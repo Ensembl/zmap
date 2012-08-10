@@ -59,6 +59,7 @@ static char overlay_bitmap_bits[] =
     0x88, 0x88
   } ;
 
+#if 0
 #define make_clickable_bmp_width 16
 #define make_clickable_bmp_height 4
 static char make_clickable_bmp_bits[] =
@@ -68,7 +69,7 @@ static char make_clickable_bmp_bits[] =
     0x00, 0x00,
     0x00, 0x00
   } ;
-
+#endif
 
 /*! @defgroup zmapdraw   zMapDraw: basic drawing operations: boxes, text etc.
  * @{

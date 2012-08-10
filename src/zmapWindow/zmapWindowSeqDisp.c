@@ -41,7 +41,7 @@
 #include <zmapWindowContainerUtils.h>
 #include <zmapWindowCanvasItem.h>
 #include <zmapWindowContainerFeatureSet_I.h>
-//#include <zmapWindowCanvasFeatureset_I.h>
+#include <zmapWindowCanvasFeatureset_I.h>
 
 
 static void highlightSequenceItems(ZMapWindow window, ZMapFeatureBlock block,
@@ -696,6 +696,7 @@ gboolean zMapWindowSeqDispSelectByFeature(FooCanvasItem *sequence_feature,
 	if(ZMAP_IS_WINDOW_FEATURESET_ITEM(sequence_feature))
 	{
 		ZMapFeature feature = zMapWindowCanvasItemGetFeature(sequence_feature);
+		ZMapWindowFeaturesetItem featureset = (ZMapWindowFeaturesetItem) sequence_feature;
 		GdkColor *fill;
 		ZMapFeatureSubPartSpanStruct span ;
 
@@ -770,6 +771,8 @@ gboolean zMapWindowSeqDispSelectByFeature(FooCanvasItem *sequence_feature,
 				GdkColor *in_frame_background, *in_frame_foreground, *in_frame_outline ;
 				gboolean result ;
 				int index = 1;
+				gboolean is_pep = zMapFeatureSequenceIsPeptide(feature);
+				gboolean in_frame = FALSE;
 
 				style = feature->style ;
 
@@ -788,13 +791,13 @@ gboolean zMapWindowSeqDispSelectByFeature(FooCanvasItem *sequence_feature,
 				result = zMapStyleGetColours(style, STYLE_PROP_SEQUENCE_IN_FRAME_CODING_COLOURS, colour_type,
 								&in_frame_background, &in_frame_foreground, &in_frame_outline) ;
 
-//printf("\nframe %d\n",frame);
+//zMapLogWarning("displaying frame %d",frame);
 
 
 				for(exon_list_member = g_list_first(exon_list); exon_list_member ; exon_list_member = g_list_next(exon_list_member))
 				{
-					gboolean is_pep = FALSE;
-					gboolean in_frame = FALSE;
+					in_frame = FALSE;
+					int slice_coord;
 
 					current_exon = (ZMapFullExon)(exon_list_member->data) ;
 
@@ -803,7 +806,10 @@ gboolean zMapWindowSeqDispSelectByFeature(FooCanvasItem *sequence_feature,
 					span.index = index++;
 					span.subpart = ZMAPFEATURE_SUBPART_EXON;
 
-					is_pep = zMapFeatureSequenceIsPeptide(feature);
+//zMapLogWarning("exon %d, %d", span.start, span.end);
+
+					slice_coord = span.start - featureset->start;
+						/* 0 based. use featureset->start instead of feature->x1 in case we ever have two disjoint sequences, slice coords are visible seuqnece space at min zoom */
 
 					fill = non_coding_background;
 
@@ -821,10 +827,9 @@ gboolean zMapWindowSeqDispSelectByFeature(FooCanvasItem *sequence_feature,
 						/* For peptides make in-frame column a different colour. */
 						if (is_pep)
 						{
-
-							if(!((span.start - 1 - frame + ZMAPFRAME_0) % 3))
+							if((slice_coord % 3) == (frame - ZMAPFRAME_0))
 								in_frame = TRUE;
-//printf("frame %d coding  %d, %de, in_frame = %d,%d  (%d %d)\n", frame ,span.start,span.end, current_exon->region_type, in_frame, (span.start - 1 - frame + ZMAPFRAME_0), (span.start - 1 - frame + ZMAPFRAME_0) % 3);
+//zMapLogWarning("coding  in_frame = %d  (%d %d)", in_frame, slice_coord, slice_coord % 3);
 
 							if(in_frame)
 								fill = in_frame_background ;
@@ -842,12 +847,12 @@ gboolean zMapWindowSeqDispSelectByFeature(FooCanvasItem *sequence_feature,
 					case EXON_START_NOT_FOUND:	/* defaults to exon subpart */
 						if (is_pep)
 						{
-							if(!((span.start - 1 - frame + ZMAPFRAME_0) % 3))
+							if((slice_coord % 3) == (frame - ZMAPFRAME_0))
 								in_frame = TRUE;
 							if (!in_frame)
 								fill = coding_background ;
 						}
-//printf("frame %d split 3  %d, %d  type, in_frame = %d,%d (%d %d)\n", frame ,span.start, span.end, current_exon->region_type, in_frame, (span.start - 1 - frame + ZMAPFRAME_0), (span.start - 1 - frame + ZMAPFRAME_0) % 3);
+//zMapLogWarning("split3  in_frame = %d  (%d %d)", in_frame, slice_coord, slice_coord % 3);
 						break;
 
 					case EXON_SPLIT_CODON_5:
@@ -856,9 +861,9 @@ gboolean zMapWindowSeqDispSelectByFeature(FooCanvasItem *sequence_feature,
 
 						if (is_pep)
 						{
-							if(!((span.end - frame + ZMAPFRAME_0) % 3))
+							if((slice_coord % 3) == (frame - ZMAPFRAME_0))
 								in_frame = TRUE;
-//printf("frame %d split 5  %d, %d type, in_frame = %d,%d  (%d %d)\n", frame ,span.start, span.end, current_exon->region_type, in_frame, (span.end - frame + ZMAPFRAME_0), (span.start + frame - ZMAPFRAME_0) % 3);
+//zMapLogWarning("split5  in_frame = %d  (%d %d)", in_frame, slice_coord, slice_coord % 3);
 
 							/* For peptides only show split codon for inframe col., confusing otherwise. */
 							if (!in_frame)

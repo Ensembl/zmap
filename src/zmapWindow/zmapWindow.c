@@ -5775,35 +5775,26 @@ static void fc_end_update_cb(FooCanvas *canvas, gpointer user_data)
 {
   ZMapWindow window = (ZMapWindow)user_data;
 
-  zMapAssert(canvas == window->canvas) ;
-
   if (canvas == window->canvas && window->feature_context)	/* we can get called before the feature context is set */
     {
       double x1, x2, y1, y2;
 	int seq_start,seq_end;
 	int scroll_start, scroll_end;
-
-      zMapDebugPrint(foo_debug_G, "%s",  "Entered") ;
+      int scroll_x, scroll_y, x, y;
 
       foo_canvas_get_scroll_region(canvas, &x1, &y1, &x2, &y2);
-#ifdef CAUSED_RT_57193
-      /* see resetCanvas, but result is this test is no longer required */
-      if(!(x1 == 0.0 && y1 == 0.0 && x2 == ZMAP_CANVAS_INIT_SIZE && y2 == ZMAP_CANVAS_INIT_SIZE))
-	{
-#endif
-	  int scroll_x, scroll_y, x, y;
 
-	  zMapFeatureContextGetMasterAlignSpan(window->feature_context,&seq_start,&seq_end);
-	  scroll_start = y1;
-	  scroll_end = y2;
-	  if(scroll_start < seq_start)
-		  scroll_start = seq_start;
-	  if(scroll_end > seq_end)
-		  scroll_end = seq_end;
+	zMapFeatureContextGetMasterAlignSpan(window->feature_context,&seq_start,&seq_end);
+	scroll_start = y1;
+	scroll_end = y2;
+	if(scroll_start < seq_start)
+		scroll_start = seq_start;
+	if(scroll_end > seq_end)
+		scroll_end = seq_end;
 
-	  foo_canvas_get_scroll_offsets(canvas, &scroll_x, &scroll_y);
-	  if(zmapWindowScaleCanvasDraw(window->ruler,  scroll_start, scroll_end, seq_start, seq_end))
-	    {
+	foo_canvas_get_scroll_offsets(canvas, &scroll_x, &scroll_y);
+	if(zmapWindowScaleCanvasDraw(window->ruler,  scroll_start, scroll_end, seq_start, seq_end))
+	  {
 	      zmapWindowScaleCanvasMaximise(window->ruler, y1, y2);
 
 		/* Cause a never ending loop ? */
@@ -5818,18 +5809,9 @@ static void fc_end_update_cb(FooCanvas *canvas, gpointer user_data)
 	      foo_canvas_get_scroll_offsets(canvas, &x, &y);
 	      if(y != scroll_y)
 		foo_canvas_scroll_to(canvas, scroll_x, scroll_y);
-	    }
-	    else
-	    {
-		    zMapLogWarning("scaleCanvasDraw failed\n","");
-	    }
-#ifdef CAUSED_RT_57193
-	}
-#endif
+	  }
 
       zmapWindowBusy(window, FALSE) ;
-
-      zMapDebugPrint(foo_debug_G, "%s",  "Exitted") ;
     }
 
   return ;
