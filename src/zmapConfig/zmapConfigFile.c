@@ -151,9 +151,7 @@ gboolean zMapConfigIniReadFile(ZMapConfigIni config, char *file)
 
   zMapAssert(config);
 
-
-  if ((g_path_is_absolute(file)
-       || (file = zMapConfigDirFindFile(file)))
+  if ((g_path_is_absolute(file) || (file = zMapConfigDirFindFile(file)))
       && (config->extra_key_file = read_file(file, &(config->extra_key_error))))
     {
       read = TRUE;
