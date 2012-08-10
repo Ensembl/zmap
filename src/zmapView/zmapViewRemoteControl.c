@@ -278,6 +278,7 @@ static CommandDescriptorStruct command_table_G[] =
     {ZACP_GET_FEATURE_NAMES, 0, FALSE, FEATURE_DONT_CARE, FALSE},
     {ZACP_LOAD_FEATURES,     0, TRUE,  FEATURE_DONT_CARE, FALSE},
     {ZACP_DUMP_FEATURES,     0, FALSE, FEATURE_DONT_CARE, FALSE},
+    {ZACP_REVCOMP,           0, FALSE, FEATURE_DONT_CARE, FALSE},
 
     {NULL, 0, FALSE, FALSE}				    /* Terminator record. */
   } ;
@@ -328,7 +329,8 @@ gboolean zMapViewProcessRemoteRequest(ZMapView view,
       || strcmp(command_name, ZACP_REPLACE_FEATURE) == 0
       || strcmp(command_name, ZACP_DELETE_FEATURE) == 0
       || strcmp(command_name, ZACP_FIND_FEATURE) == 0
-      || strcmp(command_name, ZACP_LOAD_FEATURES) == 0)
+      || strcmp(command_name, ZACP_LOAD_FEATURES) == 0
+      || strcmp(command_name, ZACP_REVCOMP) == 0)
     {
       localProcessRemoteRequest(view, command_name, view_id, request,
 				app_reply_func, app_reply_data) ;
@@ -1598,6 +1600,10 @@ static gboolean executeRequest(ZMapXMLParser parser, RequestData request_data)
   else if (request_data->command_id == g_quark_from_string(ZACP_DUMP_FEATURES))
     {
       viewDumpContextToFile(view, request_data) ;
+    }
+  else if (request_data->command_id == g_quark_from_string(ZACP_REVCOMP))
+    {
+      zMapViewReverseComplement(view) ;
     }
 
   if (request_data->edit_context)

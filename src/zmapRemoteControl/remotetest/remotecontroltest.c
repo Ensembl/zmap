@@ -143,6 +143,7 @@ enum
     XREMOTE_LOAD_FEATURES,
     XREMOTE_ZOOM_TO,
     XREMOTE_GET_MARK,
+    XREMOTE_REVCOMP,
 
     XREMOTE_GOODBYE,
     XREMOTE_SHUTDOWN,
@@ -468,6 +469,7 @@ static GtkItemFactoryEntry menu_items_G[] =
     {"/Commands/load_features",  NULL,         cmdCB,      XREMOTE_LOAD_FEATURES, NULL,       NULL},
     {"/Commands/zoom_to",        NULL,         cmdCB,      XREMOTE_ZOOM_TO,    NULL,       NULL},
     {"/Commands/get_mark",       NULL,         cmdCB,      XREMOTE_GET_MARK,   NULL,       NULL},
+    {"/Commands/rev_comp",       NULL,         cmdCB,      XREMOTE_REVCOMP,   NULL,       NULL},
 
     {"/Commands/Feature Create", NULL,         cmdCB,      XREMOTE_CREATE,   NULL,       NULL},
     {"/Commands/Feature Replace",NULL,         cmdCB,      XREMOTE_REPLACE,     NULL,       NULL},
@@ -1833,6 +1835,14 @@ static void cmdCB(gpointer data, guint callback_action, GtkWidget *w)
       {
 	*action = g_quark_from_string(ZACP_GET_MARK) ;
 	command = ZACP_GET_MARK ;
+
+	break;
+      }
+
+    case XREMOTE_REVCOMP:
+      {
+	*action = g_quark_from_string(ZACP_REVCOMP) ;
+	command = ZACP_REVCOMP ;
 
 	break;
       }
