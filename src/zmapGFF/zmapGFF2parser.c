@@ -90,7 +90,7 @@ static void destroyFeatureArray(gpointer data) ;
 
 static gboolean loadGaps(char *currentPos, GArray *gaps,
 			 ZMapStrand ref_strand, ZMapStrand match_strand) ;
-static gboolean loadAlignString(ZMapGFFParser parser, 
+static gboolean loadAlignString(ZMapGFFParser parser,
 				ZMapFeatureAlignFormat align_format, char *attributes, GArray **gaps_out,
 				ZMapStrand ref_strand, int ref_start, int ref_end,
 				ZMapStrand match_strand, int match_start, int match_end) ;
@@ -111,7 +111,7 @@ static void checkFeatureCB(GQuark key_id, gpointer data, gpointer user_data_unus
 
 
 
-/* 
+/*
  *               External interface.
  */
 
@@ -1610,9 +1610,11 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 				    start, end, query_start, query_end,
 				    &feature_name, &feature_name_id) ;
 
+#if SILLY
+//this causes an assertion if a feature does not have a name
   if (g_ascii_strcasecmp("RNASEQ_Young_Adult_25dC_46hrs_post-L1_g82_x20_II_p", feature_name) == 0)
     printf("found it\n") ;
-
+#endif
 
   /* Check if the feature name for this feature is already known, if it is then check if there
    * is already a multiline feature with the same name as we will need to augment it with this data. */

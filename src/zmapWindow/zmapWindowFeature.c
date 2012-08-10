@@ -655,7 +655,8 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 		 * seems a bit more semantic to do this in zMapWindowCanvasItemGetInterval()
 		 * but that's called by handleButton which doesn't do double click
 		 */
-	zMapWindowCanvasItemSetFeature((ZMapWindowCanvasItem) item, but_event->x, but_event->y);
+	if(but_event->button == 1)
+		zMapWindowCanvasItemSetFeature((ZMapWindowCanvasItem) item, but_event->x, but_event->y);
 
       /* Get the feature attached to the item, checking that its type is valid */
       feature = zMapWindowCanvasItemGetFeature(item) ;
