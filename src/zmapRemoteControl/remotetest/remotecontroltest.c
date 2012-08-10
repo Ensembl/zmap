@@ -203,7 +203,8 @@ typedef struct RemoteDataStructName
   XRemoteCmdLineArgs cmd_line_args ;
 
   GtkWidget *app_toplevel, *vbox, *menu, *buttons ;
-  GtkWidget *zmap_path_entry, *sequence_entry, *start_entry, *end_entry ;
+  GtkWidget *zmap_path_entry ;
+  GtkWidget *sequence_entry, *start_entry, *end_entry, *config_entry ;
 
   GtkWidget *send_init, *receive_init ;
   GtkWidget *idle, *waiting, *sending, *receiving ;
@@ -721,6 +722,12 @@ static GtkWidget *entry_box_widgets(RemoteData remote_data)
   gtk_box_pack_start(GTK_BOX(entry_box), sequence, FALSE, FALSE, 5);
   if (remote_data->cmd_line_args->end)
     gtk_entry_set_text(GTK_ENTRY(sequence), remote_data->cmd_line_args->end) ;
+
+  label = gtk_label_new("config file :");
+  gtk_box_pack_start(GTK_BOX(entry_box), label, FALSE, FALSE, 5);
+  remote_data->config_entry  = sequence = gtk_entry_new();
+  gtk_box_pack_start(GTK_BOX(entry_box), sequence, FALSE, FALSE, 5);
+  gtk_entry_set_text(GTK_ENTRY(sequence), remote_data->cmd_line_args->zmap_config_file) ;
 
   label = gtk_label_new("zmap path :");
   gtk_box_pack_start(GTK_BOX(entry_box), label, FALSE, FALSE, 5);
@@ -1695,18 +1702,20 @@ static void cmdCB(gpointer data, guint callback_action, GtkWidget *w)
 		 {ZMAPXML_END_ELEMENT_EVENT,   "feature",    ZMAPXML_EVENT_DATA_NONE,    {0}},
 		 {0}},
 
-    sequence[] = {{ZMAPXML_START_ELEMENT_EVENT, ZACP_SEQUENCE_TAG,   ZMAPXML_EVENT_DATA_NONE,    {0}},
-		 {ZMAPXML_ATTRIBUTE_EVENT,      ZACP_SEQUENCE_NAME,  ZMAPXML_EVENT_DATA_STRING,  {0}},
-		 {ZMAPXML_ATTRIBUTE_EVENT,      ZACP_SEQUENCE_START, ZMAPXML_EVENT_DATA_INTEGER, {0}},
-		 {ZMAPXML_ATTRIBUTE_EVENT,      ZACP_SEQUENCE_END,   ZMAPXML_EVENT_DATA_INTEGER, {0}},
-		 {ZMAPXML_END_ELEMENT_EVENT,    ZACP_SEQUENCE_TAG,   ZMAPXML_EVENT_DATA_NONE,    {0}},
+    sequence[] = {{ZMAPXML_START_ELEMENT_EVENT, ZACP_SEQUENCE_TAG,    ZMAPXML_EVENT_DATA_NONE,    {0}},
+		 {ZMAPXML_ATTRIBUTE_EVENT,      ZACP_SEQUENCE_NAME,   ZMAPXML_EVENT_DATA_STRING,  {0}},
+		 {ZMAPXML_ATTRIBUTE_EVENT,      ZACP_SEQUENCE_START,  ZMAPXML_EVENT_DATA_INTEGER, {0}},
+		 {ZMAPXML_ATTRIBUTE_EVENT,      ZACP_SEQUENCE_END,    ZMAPXML_EVENT_DATA_INTEGER, {0}},
+		 {ZMAPXML_ATTRIBUTE_EVENT,      ZACP_SEQUENCE_CONFIG, ZMAPXML_EVENT_DATA_STRING,  {0}},
+		 {ZMAPXML_END_ELEMENT_EVENT,    ZACP_SEQUENCE_TAG,    ZMAPXML_EVENT_DATA_NONE,    {0}},
 		 {0}},
 
-    add_view[] = {{ZMAPXML_START_ELEMENT_EVENT, ZACP_SEQUENCE_TAG,   ZMAPXML_EVENT_DATA_NONE,    {0}},
-		 {ZMAPXML_ATTRIBUTE_EVENT,      ZACP_SEQUENCE_NAME,  ZMAPXML_EVENT_DATA_STRING,  {0}},
-		 {ZMAPXML_ATTRIBUTE_EVENT,      ZACP_SEQUENCE_START, ZMAPXML_EVENT_DATA_INTEGER, {0}},
-		 {ZMAPXML_ATTRIBUTE_EVENT,      ZACP_SEQUENCE_END,   ZMAPXML_EVENT_DATA_INTEGER, {0}},
-		 {ZMAPXML_END_ELEMENT_EVENT,    ZACP_SEQUENCE_TAG,   ZMAPXML_EVENT_DATA_NONE,    {0}},
+    add_view[] = {{ZMAPXML_START_ELEMENT_EVENT, ZACP_SEQUENCE_TAG,    ZMAPXML_EVENT_DATA_NONE,    {0}},
+		 {ZMAPXML_ATTRIBUTE_EVENT,      ZACP_SEQUENCE_NAME,   ZMAPXML_EVENT_DATA_STRING,  {0}},
+		 {ZMAPXML_ATTRIBUTE_EVENT,      ZACP_SEQUENCE_START,  ZMAPXML_EVENT_DATA_INTEGER, {0}},
+		 {ZMAPXML_ATTRIBUTE_EVENT,      ZACP_SEQUENCE_END,    ZMAPXML_EVENT_DATA_INTEGER, {0}},
+		 {ZMAPXML_ATTRIBUTE_EVENT,      ZACP_SEQUENCE_CONFIG, ZMAPXML_EVENT_DATA_STRING,  {0}},
+		 {ZMAPXML_END_ELEMENT_EVENT,    ZACP_SEQUENCE_TAG,    ZMAPXML_EVENT_DATA_NONE,    {0}},
 		 {0}},
 
     view_close[] =
@@ -1781,6 +1790,7 @@ static void cmdCB(gpointer data, guint callback_action, GtkWidget *w)
 	sequence[1].value.s = g_strdup((char *)gtk_entry_get_text(GTK_ENTRY(remote_data->sequence_entry))) ;
 	sequence[2].value.i = atoi((char *)gtk_entry_get_text(GTK_ENTRY(remote_data->start_entry))) ;
 	sequence[3].value.i = atoi((char *)gtk_entry_get_text(GTK_ENTRY(remote_data->end_entry))) ;
+	sequence[4].value.s = g_strdup((char *)gtk_entry_get_text(GTK_ENTRY(remote_data->config_entry))) ;
 
 	break;
       }
