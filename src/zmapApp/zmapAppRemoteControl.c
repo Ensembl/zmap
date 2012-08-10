@@ -225,6 +225,15 @@ void zmapAppRemoteControlDestroy(ZMapAppContext app_context)
 static void requestblockIfActive(void)
 {
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* turn off for now.... */
+  return ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+
   zMapDebugPrint(is_active_debug_G, "Entering blocking code: %s",
 		 (is_active_G ? "Request Active" : "No Request Active")) ;
 
