@@ -41,7 +41,7 @@
 
 #include <zmapWindow_P.h>
 #include <zmapWindowContainerUtils.h>
-#include <zmapWindowItemFactory.h>
+//#include <zmapWindowItemFactory.h>
 #include <zmapWindowContainerFeatureSet_I.h>
 #include <zmapWindowCanvas.h>
 

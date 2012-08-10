@@ -33,8 +33,6 @@ zmapWindowFocus.c \
 zmapWindowFrame.c \
 zmapWindowItem.c \
 zmapWindowItemDebug.c \
-zmapWindowItemFactory.c \
-zmapWindowItemFactory.h \
 zmapWindowItemHash.c \
 zmapWindowList.c \
 zmapWindowMark.c \

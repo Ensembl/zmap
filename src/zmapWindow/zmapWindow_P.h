@@ -889,6 +889,12 @@ void zmapWindowSeq2CanOffset(double *start_inout, double *end_inout, double offs
 
 GQuark zMapWindowGetFeaturesetContainerID(ZMapWindow window,GQuark featureset_id);
 
+FooCanvasItem *zmapWindowFToIFactoryRunSingle(GHashTable *ftoi_hash,
+							    ZMapWindowContainerFeatureSet parent_container,
+							    ZMapWindowContainerFeatures features_container,
+							    FooCanvasItem * foo_featureset,
+                                              ZMapWindowFeatureStack     feature_stack);
+
 GHashTable *zmapWindowFToICreate(void) ;
 gboolean zmapWindowFToIAddRoot(GHashTable *feature_to_context_hash, FooCanvasGroup *root_group) ;
 gboolean zmapWindowFToIRemoveRoot(GHashTable *feature_to_context_hash) ;

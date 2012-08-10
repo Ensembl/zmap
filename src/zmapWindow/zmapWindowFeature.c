@@ -42,7 +42,7 @@
 #include <ZMap/zmapGLibUtils.h>
 #include <zmapWindow_P.h>
 #include <zmapWindowContainerUtils.h>
-#include <zmapWindowItemFactory.h>
+//#include <zmapWindowItemFactory.h>
 #include <zmapWindowCanvasItem.h>
 #include <libpfetch/libpfetch.h>
 #include <zmapWindowContainerFeatureSet_I.h>
