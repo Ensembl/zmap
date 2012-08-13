@@ -100,6 +100,8 @@ typedef struct _ZMapWindowNavigatorStruct
   GList          *hide_filter;
   GList          *available_filters;
 
+  ZMapWindowFeaturesetItem locus_featureset;
+
   ZMapSpanStruct  full_span;    /* N.B. this is seqExtent !!! i.e. seq start -> seq end + 1!!! */
 
   double scaling_factor;        /* NAVIGTOR_SIZE / block length */

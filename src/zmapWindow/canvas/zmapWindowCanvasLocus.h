@@ -36,3 +36,5 @@
 
 
 void zMapWindowCanvasLocusInit(void);
+
+void zMapWindowCanvasLocusSetFilter(ZMapWindowFeaturesetItem featureset, GList * filter);

@@ -88,6 +88,7 @@ typedef struct _zmapWindowCanvasLocusSetStruct
 	/* allow for addition of other pango things eg diff font for diff locus types */
 
 	double text_h;			/* height of text in world coords */
+	GList *filter;			/* list of prefixes to filter by */
 
 } zmapWindowCanvasLocusSetStruct, *ZMapWindowCanvasLocusSet;
 

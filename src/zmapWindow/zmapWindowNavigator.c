@@ -40,6 +40,7 @@
 #include <ZMap/zmapUtilsGUI.h>
 #include <ZMap/zmapUtils.h>
 #include <zmapWindowNavigator_P.h>
+#include <zmapWindowCanvasLocus.h>
 
 #ifdef RDS_WITH_STIPPLE
 #include <ZMap/zmapNavigatorStippleG.xbm> /* bitmap... */
@@ -543,10 +544,12 @@ void zMapWindowNavigatorDrawFeatures(ZMapWindowNavigator navigate,
 void zmapWindowNavigatorLocusRedraw(ZMapWindowNavigator navigate)
 {
       /* NOTE this can get called before we even drew in the first place */
-#if MH17_CFS_WILL_DO_THIS
-  if(navigate)
-      repositionText(navigate);
-#endif
+  if(navigate && navigate->locus_featureset)
+  {
+	/* this will clear zoom and cause a de-overlap recalc with new filtered data */
+	zMapWindowCanvasFeaturesetRedraw(navigate->locus_featureset, 0.0);
+
+  }
   return ;
 }
 
@@ -2032,6 +2035,7 @@ void zmapWindowNavigatorRunSet(  ZMapFeatureSet set,
   ZMapWindowFeatureStackStruct feature_stack = { NULL };
   GList *l;
   ZMapWindowContainerFeatures features = zmapWindowContainerGetFeatures((ZMapWindowContainerGroup) container) ;
+  ZMapWindowFeaturesetItem locus_featureset = NULL;
 
   feature_stack.feature = NULL;
   zmapGetFeatureStack(&feature_stack,set,NULL,frame);
@@ -2058,12 +2062,22 @@ void zmapWindowNavigatorRunSet(  ZMapFeatureSet set,
 			feature_stack.frame = zmapWindowFeatureFrame(feature);
 	}
 
-	if(!variantFeature(feature, navigate))
+	if(zMapStyleGetMode(feature->style) == ZMAPSTYLE_MODE_TEXT)
 	{
-		foo = zmapWindowFToIFactoryRunSingle(navigate->ftoi_hash, (ZMapWindowContainerFeatureSet) container, features, foo, &feature_stack);
+		if(!variantFeature(feature, navigate))
+		{
+			foo = zmapWindowFToIFactoryRunSingle(navigate->ftoi_hash, (ZMapWindowContainerFeatureSet) container, features, foo, &feature_stack);
 
-		if(!zMapWindowCanvasItemIsConnected((ZMapWindowCanvasItem) foo))
-			factoryItemHandler (foo, &feature_stack, (gpointer) navigate);
+			if(!zMapWindowCanvasItemIsConnected((ZMapWindowCanvasItem) foo))
+				factoryItemHandler (foo, &feature_stack, (gpointer) navigate);
+		}
+		if(!locus_featureset && foo)
+		{
+			locus_featureset = (ZMapWindowFeaturesetItem) foo;
+			zMapWindowCanvasLocusSetFilter(locus_featureset, navigate->hide_filter);
+
+			navigate->locus_featureset = locus_featureset;
+		}
 	}
   }
 

@@ -1075,7 +1075,7 @@ void zmap_window_canvas_featureset_expose_feature(ZMapWindowFeaturesetItem fi, Z
 }
 
 
-void zMapWindowCanvasFeaturesetRedraw(ZMapWindowFeaturesetItem fi)
+void zMapWindowCanvasFeaturesetRedraw(ZMapWindowFeaturesetItem fi, double zoom)
 {
   double i2w_dx,i2w_dy;
   int cx1,cx2,cy1,cy2;
@@ -1083,6 +1083,7 @@ void zMapWindowCanvasFeaturesetRedraw(ZMapWindowFeaturesetItem fi)
   double x1;
   double width = fi->width;
 
+  fi->zoom = zoom;	/* can set to 0 to trigger recalc of zoom data */
   x1 = 0.0;
   if(fi->bumped)
     width = fi->bump_width;
@@ -2767,7 +2768,7 @@ int zMapWindowCanvasFeaturesetFilter(gpointer gfilter, double value)
 	}
       else
 	{
-	  zMapWindowCanvasFeaturesetRedraw(fi);
+	  zMapWindowCanvasFeaturesetRedraw(fi, fi->zoom);
 	}
     }
 
@@ -3190,7 +3191,7 @@ static void zmap_window_featureset_item_item_destroy     (GObject *object)
 #include <zmapWindowContainerUtils.h>
 /* to resize ourselves and reposition stuff to the right we have to resize the root */
 /* There's a lot of container code that labouriously trundles up the tree, but each canvas item knows the root. so let's use that */
-/* hmmmm... you need to call special invocations that set prorperties that then set flags... yet another run-around. */
+/* hmmmm... you need to call special invocations that set properties that then set flags... yet another run-around. */
 
 void zMapWindowCanvasFeaturesetRequestReposition(FooCanvasItem *foo)
 {
