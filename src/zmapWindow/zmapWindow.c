@@ -1361,6 +1361,7 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
     }
 
 
+
   /* This appears to be a bit of hack by Roy to get the zmapFeatureData class initialised, can't
    * help feeling we should be calling an init function somewhere. This class essentially
    * exports feature data in human readable form. */
@@ -1438,6 +1439,7 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
 
 //      sub_feature = zMapWindowCanvasItemIntervalGetData(item);
       feature = zMapWindowCanvasItemGetFeature(item);
+
 
 #if 0
 //fixed by adding ZMWCI->set_feature() and zMapWindowCanvasItemSetFeature()
@@ -3466,7 +3468,7 @@ zMapLogWarning("canvas event %d",  event->type);
 
 			/* this is how features get highlit */
 			if(item)
-				zmapWindowUpdateInfoPanel(window, zMapWindowCanvasItemGetFeature(item), feature_list, item, NULL, 0, 0, 0, 0, NULL, !shift, FALSE, ctrl) ;
+				zmapWindowUpdateInfoPanel(window, zMapWindowCanvasItemGetFeature(item), feature_list, item, NULL, 0, 0, 0, 0, NULL, !shift, !ctrl, FALSE) ;
 
 		  }
 		else if (fabs(but_event->x - window_x) > ZMAP_WINDOW_MIN_LASSO

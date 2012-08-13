@@ -455,12 +455,12 @@ void zMapViewSetupNavigator(ZMapViewWindow view_window, GtkWidget *canvas_widget
 
 /* Connect a View to its databases via threads, at this point the View is blank and waiting
  * to be called to load some data.
- * 
+ *
  * WHAT IS config_str ?????????? I THINK IT'S A BIT CONTEXT FILE SPECIFYING A SEQUENCE.
- * 
+ *
  * I'm adding an arg to specify a different config file.
- * 
- * 
+ *
+ *
  *  */
 gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 {
@@ -2297,6 +2297,7 @@ static void viewSelectCB(ZMapWindow window, void *caller_data, void *window_data
 	      /* Highlight the feature in all windows, BUT note that we may not find it in some
 	       * windows, e.g. if a window has been reverse complemented the item may be hidden. */
 	      list_item = g_list_first(view_window->parent_view->window_list) ;
+
 	      do
 		{
 		  ZMapViewWindow view_window ;
@@ -2305,29 +2306,28 @@ static void viewSelectCB(ZMapWindow window, void *caller_data, void *window_data
 
 		  view_window = list_item->data ;
 
-		  if ((item = zMapWindowFindFeatureItemByItem(view_window->window, window_select->highlight_item)))
-		    {
+		if ((item = zMapWindowFindFeatureItemByItem(view_window->window, window_select->highlight_item)))
+		{
 			zMapWindowHighlightObject(view_window->window, item,
-					  window_select->replace_highlight_item,
-					  window_select->highlight_same_names,
-					  window_select->sub_part) ;
-		    }
+				  window_select->replace_highlight_item,
+				  window_select->highlight_same_names,
+				  window_select->sub_part) ;
+		}
 
-		  for (l = window_select->feature_list; l ; l = l->next)
-		    {
-		      ZMapFeature feature = (ZMapFeature) l->data;
-		      
-		      /* NOTE we restrict multi select to one column in line with previous policy
-		       * (in the calling code)
-		       * NOTE: can have several featuresets in one column
-		       * feature_list inlcudes the first and second and subsequent features found,
-		       * the first is also given explicitly in the item
-		       */
-		      if(!l->prev)	/* skip the first as we have already done it */
-			continue;
-		      zMapWindowHighlightFeature(view_window->window, feature, FALSE);
-		      
-		    }
+		for(l = window_select->feature_list;l; l = l->next)
+		{
+			ZMapFeature feature = (ZMapFeature) l->data;
+
+			/* NOTE we restrict multi select to one column in line with previous policy (in the calling code)
+			 * NOTE: can have several featuresets in one column
+			 * feature_list inlcudes the first and second and subsequent features found,
+			 * the first is also given explicitly in the item
+			 */
+			if(!l->prev)		/* already dome the first one */
+				continue;
+
+			zMapWindowHighlightFeature(view_window->window, feature, window_select->highlight_same_names, FALSE);
+
 		}
 	      while ((list_item = g_list_next(list_item))) ;
 	    }
