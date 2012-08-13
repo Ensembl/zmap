@@ -273,6 +273,22 @@ double deOverlap(GList *visible,int n_loci, double text_h, double start, double 
 
 
 
+gboolean locusFeatureIsFiltered(GList *filters, char * locus)
+{
+	GList * l;
+	char *prefix;
+
+	for(l = filters; l ; l = l->next)
+	{
+		prefix = (char *) l->data;
+		if(!g_ascii_strncasecmp(locus, prefix,strlen(prefix)))
+			return TRUE;
+	}
+	return FALSE;
+}
+
+
+
 /* de-overlap and hide features if necessary,
  * NOTE that we never change the zoom,
  * but we'll always get called once for display (NOTE before creating the index)
@@ -319,15 +335,17 @@ static void zMapWindowCanvasLocusZoomSet(ZMapWindowFeaturesetItem featureset, Gd
 		text = (char *) g_quark_to_string(locus->feature.feature->original_id);
 		len = strlen(text);
 
-#if 0
-not implemented yet!
-		if(filtered(text))
+		if(locusFeatureIsFiltered(lset->filter, text))
 		{
-			feature->flags |= FEATURE_HIDDEN | FEATURE_HIDE_FILTER;
+			locus->feature.flags |= FEATURE_HIDDEN | FEATURE_HIDE_FILTER;
 		}
 		else
-#endif
 		{
+			/* make visible */
+			locus->feature.flags &= ~FEATURE_HIDE_FILTER;
+			if(!(locus->feature.flags & FEATURE_HIDE_REASON))
+				locus->feature.flags &= ~FEATURE_HIDDEN;
+
 			/* expand the column if needed */
 			width = locus->x_off + len * lset->pango.text_width;
 			if(width > featureset->width)
@@ -423,3 +441,12 @@ void zMapWindowCanvasLocusInit(void)
 	zMapWindowCanvasFeatureSetSetFuncs(FEATURE_LOCUS, funcs, sizeof(zmapWindowCanvasLocusStruct), sizeof(zmapWindowCanvasLocusSetStruct));
 }
 
+
+
+
+void zMapWindowCanvasLocusSetFilter(ZMapWindowFeaturesetItem featureset, GList * filter)
+{
+	ZMapWindowCanvasLocusSet lset = (ZMapWindowCanvasLocusSet) featureset->opt;
+
+	lset->filter = filter;
+}
