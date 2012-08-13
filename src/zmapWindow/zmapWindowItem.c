@@ -148,7 +148,7 @@ void zMapWindowHighlightFeature(ZMapWindow window, ZMapFeature feature, gboolean
 
   if(zMapStyleIsStrandSpecific(feature->style))
 	set_strand = feature->strand;
-  if(zMapStyleIsFrameSpecific(feature->style) && IS_3FRAME(window->display_3_frame))
+  if(zMapStyleIsFrameSpecific(feature->style) && IS_3FRAME_COLS(window->display_3_frame))
 	set_frame = zmapWindowFeatureFrame(feature);
 
   if ((feature_item = zmapWindowFToIFindFeatureItem(window, window->context_to_item,
