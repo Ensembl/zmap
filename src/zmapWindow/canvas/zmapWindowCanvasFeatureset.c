@@ -1499,7 +1499,7 @@ double  zmap_window_featureset_item_foo_point(FooCanvasItem *item,
   //      FooCanvasGroup *group;
   double x_off;
   static double save_best = 1.0e36, save_x = 0.0, save_y = 0.0 ;
-int debug = fi->type < FEATURE_GENOMIC;
+//int debug = fi->type < FEATURE_GENOMIC;
 
 int n = 0;
   /*
@@ -1519,8 +1519,8 @@ int n = 0;
    * each one goes through about 12 layers of canvas containers first but that's another issue
    * then if we move the lassoo that gets silly (button down: calls point())
    */
-if(debug)
-	zMapLogWarning("point: %.1f,%.1f %.1f %.1f\n", item_x, item_y, fi->start, fi->dy);
+//if(debug)
+//	zMapLogWarning("point: %.1f,%.1f %.1f %.1f\n", item_x, item_y, fi->start, fi->dy);
 
   if(fi->point_canvas_feature && item_x == save_x && item_y == save_y)
     {
