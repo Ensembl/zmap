@@ -1186,8 +1186,6 @@ GList *zMapWindowFeaturesetItemFindFeatures(FooCanvasItem **item, double y1, dou
 
   for(l = lx;l ;l = l->next)
     {
-
-
 	foo = (FooCanvasItem *) l->data;
 
 	if (!(foo->object.flags & FOO_CANVAS_ITEM_VISIBLE))

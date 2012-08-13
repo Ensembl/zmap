@@ -428,12 +428,12 @@ void zMapViewSetupNavigator(ZMapViewWindow view_window, GtkWidget *canvas_widget
 
 /* Connect a View to its databases via threads, at this point the View is blank and waiting
  * to be called to load some data.
- * 
+ *
  * WHAT IS config_str ?????????? I THINK IT'S A BIT CONTEXT FILE SPECIFYING A SEQUENCE.
- * 
+ *
  * I'm adding an arg to specify a different config file.
- * 
- * 
+ *
+ *
  *  */
 gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 {
@@ -2241,18 +2241,17 @@ static void viewSelectCB(ZMapWindow window, void *caller_data, void *window_data
 	      ZMapViewWindow view_window ;
 	      FooCanvasItem *item ;
 		GList *l;
+		int first = 1;
 
 	      view_window = list_item->data ;
-
 
 		if ((item = zMapWindowFindFeatureItemByItem(view_window->window, window_select->highlight_item)))
 		{
 			zMapWindowHighlightObject(view_window->window, item,
-					  window_select->replace_highlight_item,
-					  window_select->highlight_same_names,
-					  window_select->sub_part) ;
+				  window_select->replace_highlight_item,
+				  window_select->highlight_same_names,
+				  window_select->sub_part) ;
 		}
-
 
 		for(l = window_select->feature_list;l; l = l->next)
 		{
@@ -2263,9 +2262,10 @@ static void viewSelectCB(ZMapWindow window, void *caller_data, void *window_data
 			 * feature_list inlcudes the first and second and subsequent features found,
 			 * the first is also given explicitly in the item
 			 */
-			if(!l->prev)	/* skip the first as we have already done it */
+			if(!l->prev)		/* already dome the first one */
 				continue;
-			zMapWindowHighlightFeature(view_window->window, feature, FALSE);
+
+			zMapWindowHighlightFeature(view_window->window, feature, window_select->highlight_same_names, FALSE);
 		}
 	    }
 	  while ((list_item = g_list_next(list_item))) ;
