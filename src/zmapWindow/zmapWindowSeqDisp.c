@@ -538,9 +538,18 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
       exon_list_member = g_list_first(exon_list) ;
       do
 	{
+	  gboolean show;
+
 	  current_exon = (ZMapFullExon)(exon_list_member->data) ;
 
-	  if (current_exon->region_type == EXON_CODING)
+	  show = current_exon->region_type == EXON_CODING;
+	  if (current_exon->region_type == EXON_SPLIT_CODON_3 || current_exon->region_type == EXON_SPLIT_CODON_5)
+	  {
+		  if(current_exon->sequence_span.x2 - current_exon->sequence_span.x1 > 0)
+			  show = TRUE;
+	  }
+
+        if(show)
 	    {
 	      int tmp = 0 ;
 
