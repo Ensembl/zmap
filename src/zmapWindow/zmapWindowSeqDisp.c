@@ -345,7 +345,7 @@ FooCanvasItem *zmapWindowItemGetShowTranslationColumn(ZMapWindow window, FooCanv
 	  ZMapWindowContainerFeatures forward_features;
 	  FooCanvasGroup *tmp_forward, *tmp_reverse;
 
-#ifdef SIMPLIER
+#ifdef SIMPLIFY
 	  FooCanvasGroup *forward_group, *parent_group, *tmp_forward, *tmp_reverse ;
 	  /* Get the FeatureSet Level Container */
 	  parent_group = zmapWindowContainerCanvasItemGetContainer(item);
@@ -861,6 +861,9 @@ gboolean zMapWindowSeqDispSelectByFeature(FooCanvasItem *sequence_feature,
 
 						if (is_pep)
 						{
+							/* get phase from end of 2nd part of split codon, not the middle */
+							slice_coord = span.end + 1 - featureset->start;
+
 							if((slice_coord % 3) == (frame - ZMAPFRAME_0))
 								in_frame = TRUE;
 //zMapLogWarning("split5  in_frame = %d  (%d %d)", in_frame, slice_coord, slice_coord % 3);
