@@ -618,6 +618,8 @@ static void getDetailedExon(gpointer exon_data, gpointer user_data)
 
 
   /* Set up the translation from CDS stuff. */
+
+
   if (full_exon_cds)
     {
       int pep_start, pep_end, pep_length ;
