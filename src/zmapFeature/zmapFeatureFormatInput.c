@@ -472,7 +472,11 @@ gboolean zMapFeatureValidatePhase(char *value, ZMapPhase *phase)
 
 char *zMapFeaturePhase2Str(ZMapPhase phase)
 {
-  static char *phases[] = {".", "0", "1", "2"} ;
+/* NOTE
+ * changed  0/1/2 into 1/2/3  to match the otterlace display
+ * GFF specifies phase as 0,1,2
+ */
+  static char *phases[] = {".", "1", "2", "3"} ;
   char *phase_str ;
 
   zMapAssert(phase == ZMAPPHASE_NONE || phase == ZMAPPHASE_0

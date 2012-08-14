@@ -248,6 +248,8 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
     }
   else
     {
+	ZMapFrame frame = ZMAPFRAME_NONE;
+	;
       zmapWindowItemHighlightDNARegion(window, TRUE, sub_part, item,
 				       ZMAPFRAME_NONE, ZMAPSEQUENCE_NONE, feature->x1, feature->x2);
 
@@ -267,8 +269,9 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
 	zmapWindowItemUnHighlightShowTranslations(window, item) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+
       zmapWindowItemHighlightShowTranslationRegion(window, TRUE, sub_part, item,
-						   ZMAPFRAME_NONE, ZMAPSEQUENCE_NONE, feature->x1, feature->x2) ;
+						   frame, ZMAPSEQUENCE_NONE, feature->x1, feature->x2) ;
 
 
 
