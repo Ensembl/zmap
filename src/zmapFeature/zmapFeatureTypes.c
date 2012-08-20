@@ -1159,7 +1159,7 @@ GHashTable *zMapStyleGetAllPredefined(void)
   {
     char *colours = "normal fill white ; normal draw black ; selected fill red" ;
     char *non_coding_colours = "normal fill red ; normal draw black ; selected fill pink" ;
-    char *coding_colours = "normal fill darkgreen ; normal draw black ; selected fill pink" ;
+    char *coding_colours = "normal fill OliveDrab ; normal draw black ; selected fill pink" ;
     char *split_codon_5_colours = "normal fill orange ; normal draw black ; selected fill pink" ;
     char *split_codon_3_colours = "normal fill yellow ; normal draw black ; selected fill pink" ;
     char *in_frame_colours = "normal fill green ; normal draw black ; selected fill pink" ;
