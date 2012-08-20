@@ -1607,7 +1607,7 @@ static ZMapFeatureContextExecuteStatus draw_separator_features(GQuark key_id,
 	    zmapWindowColumnSetState(window, separator, ZMAPSTYLE_COLDISPLAY_SHOW, FALSE);
 
 	    zmapWindowDrawFeatureSet(window,  canvas_data->styles, (ZMapFeatureSet)feature_any,
-				     NULL, separator, ZMAPFRAME_NONE, FALSE) ;
+				     separator, NULL, ZMAPFRAME_NONE, FALSE) ;
 
 	    if (tmp_forward)
 	      zmapWindowRemoveIfEmptyCol(&tmp_forward);
