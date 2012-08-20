@@ -1,0 +1,48 @@
+<h2>Speeding up loading a new view or window</h2>
+
+<h3>Orientation</h3>
+
+<p>As of Sep 2012  ZMap runs a acceptable speep for large volume data (> 2 million features).  Zoom and scroll are effectively instant (zoom can take up to 0.6 seconds, but is handicapped by the multiple paint problem caused by legacy Foo Camnvas code setting the scroll region and offset several times.  Revcomp and h/v split complete in 2.0 seconds, which is a worst case scenario.
+</p>
+
+<p>A fix for the multiple paint problem is in progress - this involves simplifying the Foo Camnvas containers and recoding column backgrounds, which currently have to be resized on zoom due to legacy issues.  A combined zoom and scroll function has been written, which should result in a single expose event, which will hopefully speed this up noticably, but is currently ineffective as this triggers other scroll events.
+</p>
+
+<p>Can this be improved?
+</p>
+
+<h4>RevComp</h4>
+<p>This is implemented by erasing the canvas, reverse complementing all the data and re-loading the lot and is therefore equivalent to h/v split, as these both load all the data to a new canvas.  Revcomp could be converted to simply reverse the display and thereby run nearly as fast as zoom. (4x faster)
+</p>
+
+<p>There are some tractable problems to solve in order to achieve this, but it could be done as follows:
+<ul>
+<li> Subtract all display coordinates from 0 so that reverse coordinates are the mirror image of forward ones
+<li> Add code to handle reversed exon/intron order and gaps arrays - this is used mainly to drive the status bar??
+<li> Add code to reverse complement DNA and peptides on display.  An easy but space hungry method to do this would be to create both forward and reverse translation strings - note that frame is likely to change as well
+</ul>
+</p>
+<p>Doing this may throw up some other probelms to solve along the way but if does have the advantage of leaving the feature context untouched and therefore stable and reliable, and remove the requirement to reverse complement requested data.
+</p>
+<p>However, there is currently no great usability problem to solve and this is not an urgently needed change.
+</p>
+
+
+<h3>New Window</h3>
+
+<p>This is the hardest performance problem to solve in ZMap as it requires all the relevant data to be loaded into the canvas.  H Split and V Split make a copy of an existing window and to allow each window to be operated independantly these make thier own copies of all the canvas data.
+</p>
+<p>Can any of this be re-used?  Y coordinates and visibility for unbumped columns at the same level of zoom will be stable.
+X coordinates can differ with different bump mode.  Focus highlight is done by the window code and is not relevant here.
+So to some extent we could re-organise canvas data to put flags (visibility) and x-coordinates in a structure that refers to  a stable canvas feature struct.   Gaps arrays for bumped alignments also complicate matters, but for locked windows (same zoom) will be identical.
+</p>
+<p>It's probably possible to re-use stable data but on balance likely to be a difficult balancing act and likely to cause bugs.  Another approach would be to duplicate each CanvasFeatureset's data - the CanvasFeaturesets themselves are foo canvas items and must be created anew.   Simply copying a featuresets' features list should be quite quick, involving a memeory alloc and a struct copy.  For alignments reset the linked_sideways flag and any pointers to gaps arrays (glyphs can be unchanged).  Style and feature pointers to remain as is.  Remove/ reset the from pointer (this didn't work anyway).  Graph items need to be reset if re-binned.
+</p>
+<p>This effectively reduces h/v split to a list memory copy and a zoom, which will recalculate all the cleared pointers and data, plus the need to re-create the FtoI hash for the new window.
+</p>
+<p>Taking a wild guess this may reduce time by 50% max, but we could time this: try commenting out FtoI hash call in adding features to see what difference that makes, try copying a features list to see how long that takes.
+</p>
+
+<p>Again, as this is not a great usability problem it's probably more trouble than it's worth to risk more bugs. If gains of 4x or more could be achieved it might be more interesting.  If zoom can be reduced to 200ms then that leaves only 300 ms to copy data and re-create the FtoiHash, which seems tight.
+</p>
+
