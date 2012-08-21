@@ -185,6 +185,8 @@ static void orderColumnsCB(ZMapWindowContainerGroup container, FooCanvasPoints *
 
       /* update foo_canvas list cache. joy. */
       strand_features_group->item_list_end = g_list_last(strand_features_group->item_list);
+
+
     }
 
   return ;

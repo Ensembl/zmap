@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -24,7 +24,7 @@
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- * Description: 
+ * Description:
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  *-------------------------------------------------------------------
@@ -32,7 +32,7 @@
 
 #include <ZMap/zmap.h>
 
-
+#if USE_OVERLAY
 
 
 
@@ -112,7 +112,7 @@ ZMapWindowOverlay zmapWindowOverlayCreate(FooCanvasItem *parent_container,
       overlay->magic = overlay_magic_G;
 
       overlay->gc_function = GDK_COPY;
-      
+
       if((overlay->masks_parent = (FooCanvasGroup *)zmapWindowContainerGetUnderlay((ZMapWindowContainerGroup)(parent_container))))
         updateBounds(overlay);
 
@@ -172,7 +172,7 @@ void zmapWindowOverlaySetSubject(ZMapWindowOverlay overlay, FooCanvasItem *subje
   return ;
 }
 
-void zmapWindowOverlaySetSizeRequestor(ZMapWindowOverlay overlay, 
+void zmapWindowOverlaySetSizeRequestor(ZMapWindowOverlay overlay,
                                        ZMapWindowOverlaySizeRequestCB request_cb,
                                        gpointer user_data)
 {
@@ -251,7 +251,7 @@ void zmapWindowOverlaySetGdkColorFromGdkColor(ZMapWindowOverlay overlay, GdkColo
 
   zMapAssert(overlay && ZMAP_MAGIC_IS_VALID(overlay_magic_G, overlay->magic)) ;
 
-#ifdef ONLY_SINCE_2_12  
+#ifdef ONLY_SINCE_2_12
   char *color_spec = NULL;
 
   if((color_spec = gdk_color_to_string(input)))
@@ -266,7 +266,7 @@ void zmapWindowOverlaySetGdkColorFromGdkColor(ZMapWindowOverlay overlay, GdkColo
   if(!overlay->stipple_colour_final)
     {
       current = &(overlay->stipple_colour);
-      
+
       current->pixel = input->pixel;
       current->red   = input->red;
       current->green = input->green;
@@ -323,7 +323,7 @@ void zmapWindowOverlayMaskFull(ZMapWindowOverlay              overlay,
            * highlight. However in the case of 3 frame translation
            * it's holding onto the wrong text_item, as the itemfactory
            * just blindly adds... */
-          if(xadd || (xadd = (gboolean)((points->coords[i] < overlay->parent_item_points[0]) && 
+          if(xadd || (xadd = (gboolean)((points->coords[i] < overlay->parent_item_points[0]) &&
                                         (points->coords[i] < xrange))))
             points->coords[i] += overlay->parent_item_points[0];
 
@@ -347,7 +347,7 @@ void zmapWindowOverlayMaskFull(ZMapWindowOverlay              overlay,
           if(points->coords[i] < overlay->parent_item_points[1])
             points->coords[i] = overlay->parent_item_points[1];
           if(points->coords[i] > overlay->parent_item_points[3])
-            points->coords[i] = overlay->parent_item_points[3];          
+            points->coords[i] = overlay->parent_item_points[3];
         }
 
       overlay->points = points;
@@ -399,7 +399,7 @@ void zmapWindowOverlayUnmaskAll(ZMapWindowOverlay overlay)
     {
       g_list_foreach(overlay->masks_parent->item_list, destroy_mask, NULL);
       overlay->masks_parent->item_list = overlay->masks_parent->item_list_end = NULL;
-      zmapWindowOverlaySetLimitItem(overlay, NULL); 
+      zmapWindowOverlaySetLimitItem(overlay, NULL);
       /* So that we don't cache beyond the life of overlay->subject */
       overlay->subject = NULL;
     }
@@ -416,15 +416,15 @@ void zmapWindowOverlayUnmask(ZMapWindowOverlay overlay)
   if(points == NULL)
     points = foo_canvas_points_new(4);
 
-  points->coords[0] = 
-    points->coords[1] = 
-    points->coords[2] = 
-    points->coords[3] = 
-    points->coords[4] = 
-    points->coords[5] = 
-    points->coords[6] = 
+  points->coords[0] =
+    points->coords[1] =
+    points->coords[2] =
+    points->coords[3] =
+    points->coords[4] =
+    points->coords[5] =
+    points->coords[6] =
     points->coords[7] = 0.0;
-    
+
   foo_canvas_item_set(FOO_CANVAS_ITEM(overlay->masks_parent),
                       "points", points,
                       NULL);
@@ -475,19 +475,19 @@ static void updateBounds(ZMapWindowOverlay overlay)
 
   if(item)
     {
-      foo_canvas_item_get_bounds(item, 
+      foo_canvas_item_get_bounds(item,
                                  &(overlay->parent_world_points[0]),
                                  &(overlay->parent_world_points[1]),
                                  &(overlay->parent_world_points[2]),
                                  &(overlay->parent_world_points[3]));
-      
+
       foo_canvas_item_i2w(item, &(overlay->parent_world_points[0]), &(overlay->parent_world_points[1]));
       foo_canvas_item_i2w(item, &(overlay->parent_world_points[2]), &(overlay->parent_world_points[3]));
-      
+
       if(overlay->masks_parent)
         {
           memcpy(&(overlay->parent_item_points[0]), &(overlay->parent_world_points[0]), sizeof(double) * 4);
-          
+
           foo_canvas_item_w2i(FOO_CANVAS_ITEM(overlay->masks_parent), &(overlay->parent_item_points[0]), &(overlay->parent_item_points[1]));
           foo_canvas_item_w2i(FOO_CANVAS_ITEM(overlay->masks_parent), &(overlay->parent_item_points[2]), &(overlay->parent_item_points[3]));
         }
@@ -501,13 +501,13 @@ static void printOverlay(ZMapWindowOverlay overlay)
 {
   printf("Printing Overlay %p with magic %s\n", overlay, overlay->magic);
 
-  printf("  wrld %f, %f -> %f, %f\n", 
+  printf("  wrld %f, %f -> %f, %f\n",
          overlay->parent_world_points[0],
          overlay->parent_world_points[1],
          overlay->parent_world_points[2],
          overlay->parent_world_points[3]);
 
-  printf("  item %f, %f -> %f, %f\n", 
+  printf("  item %f, %f -> %f, %f\n",
          overlay->parent_item_points[0],
          overlay->parent_item_points[1],
          overlay->parent_item_points[2],
@@ -536,3 +536,6 @@ static void printOverlayPoints(ZMapWindowOverlay overlay)
 
   return ;
 }
+
+#endif
+

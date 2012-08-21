@@ -4620,6 +4620,9 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	FooCanvasGroup *focus_column ;
 	FooCanvasItem *focus_item ;
 
+	/* NOTE thsi dioes not reset the focus item but only unhighlights it
+	 * so it doesn;t re3ally toggle the highlight
+	 */
 	if ((focus_item = zmapWindowFocusGetHotItem(window->focus))
 	    || (focus_column = zmapWindowFocusGetHotColumn(window->focus)))
 	  {
@@ -4629,7 +4632,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	  {
 	    focus_column = getFirstColumn(window, ZMAPSTRAND_FORWARD) ;
 
-	    zmapWindowFocusSetHotColumn(window->focus, focus_column) ;
+	    zmapWindowFocusSetHotColumn(window->focus, focus_column, NULL) ;
 
 	    zmapWindowFocusHighlightHotColumn(window->focus) ;
 	  }
@@ -5166,7 +5169,7 @@ static void jumpColumn(ZMapWindow window, guint keyval)
 
       zmapWindowUnHighlightFocusItems(window) ;
 
-      zmapWindowFocusSetHotColumn(window->focus, focus_column) ;
+      zmapWindowFocusSetHotColumn(window->focus, focus_column,NULL) ;
 
       zmapWindowFocusHighlightHotColumn(window->focus) ;
 

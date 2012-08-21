@@ -519,8 +519,6 @@ void zmapWindowContainerFeatureSetSetDisplay(ZMapWindowContainerFeatureSet conta
 
 
 
-
-
 /*!
  * \brief Access the show when empty property of a column.
  *
@@ -878,6 +876,9 @@ void zmapWindowContainerFeatureSetSortFeatures(ZMapWindowContainerFeatureSet con
 }
 
 
+
+
+#if USE_CHILDREN
 /*
       take a focus item from the front of the container/foo canvas group item_list
       and move it to where it should be when sorted
@@ -974,6 +975,8 @@ gboolean zmapWindowContainerFeatureSetItemLowerToMiddle(ZMapWindowContainerFeatu
 
   return TRUE ;
 }
+
+#endif
 
 ZMapWindow zMapWindowContainerFeatureSetGetWindow(ZMapWindowContainerFeatureSet container_set)
 {

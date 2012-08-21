@@ -79,10 +79,12 @@ typedef struct _zmapWindowContainerGroupClassStruct
    * might not be the same for all our items... */
   void            (* post_create) (ZMapWindowContainerGroup window_canvas_item);
 
+#if USE_BACKGROUND
   void  (* reposition_group)(ZMapWindowContainerGroup container_group,
 			     double rect_x1, double rect_y1,
 			     double rect_x2, double rect_y2,
 			     double *x_repos, double *y_repos);
+#endif
 
 } zmapWindowContainerGroupClassStruct;
 
@@ -94,7 +96,8 @@ typedef struct _zmapWindowContainerGroupStruct
 
   GQueue *user_hidden_children;
 
-  GdkColor orig_background;
+  GdkColor *background_fill;
+  GdkColor *background_border;
 
   ZMapContainerLevelType level;
 

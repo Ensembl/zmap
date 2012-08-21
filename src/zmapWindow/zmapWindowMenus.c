@@ -1984,7 +1984,11 @@ static void developerMenuCB(int menu_item_id, gpointer callback_data)
     	  }
 	else if (feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
 	  {
+#if USE_CHILDREN
 	    container = (ZMapWindowContainerFeatureSet)(menu_data->item->parent->parent) ;
+#else
+	    container = (ZMapWindowContainerFeatureSet)(menu_data->item->parent) ;
+#endif
 	    if (container)
 	      {
 		ZMapFeatureTypeStyle style ;

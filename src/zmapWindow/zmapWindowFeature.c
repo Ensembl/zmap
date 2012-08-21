@@ -626,6 +626,13 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
   static gboolean second_press = FALSE ;		    /* Used for double clicks... */
 
 
+  if(!zMapWindowCanvasItemHasPointFeature(item))
+  {
+	/* click on column not feature */
+	return zmapWindowColumnBoundingBoxEventCB(item, event, data);
+  }
+
+
   if (event->type == GDK_BUTTON_PRESS || event->type == GDK_2BUTTON_PRESS  || event->type == GDK_BUTTON_RELEASE)
     {
       GdkEventButton *but_event = (GdkEventButton *)event ;

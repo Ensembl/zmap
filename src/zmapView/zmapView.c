@@ -2241,7 +2241,6 @@ static void viewSelectCB(ZMapWindow window, void *caller_data, void *window_data
 	      ZMapViewWindow view_window ;
 	      FooCanvasItem *item ;
 		GList *l;
-		int first = 1;
 
 	      view_window = list_item->data ;
 

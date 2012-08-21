@@ -371,10 +371,12 @@ ZMapWindowNavigator zMapWindowNavigatorCreate(GtkWidget *canvas_widget)
 					container_draw_locator,
 					navigate);
 
+#if USE_CHILDREN
   g_object_set(G_OBJECT(navigate->container_root),
 	       "debug-xml", navigator_debug_containers_xml_G, NULL);
   g_object_set(G_OBJECT(navigate->container_root),
 	       "debug", navigator_debug_containers_G, NULL);
+#endif
 
 #if USE_FACTORY
   customiseFactory(navigate);
@@ -901,8 +903,9 @@ debug("nav draw set %s\n", g_quark_to_string(feature_set->original_id));
 
 	    if ((bump_mode = zmapWindowContainerFeatureSetGetBumpMode(container_feature_set)) != ZMAPBUMP_UNBUMP)
 	      {
+#if USE_CHILDREN
 		zmapWindowContainerFeatureSetSortFeatures(container_feature_set, 0);
-
+#endif
 		zmapWindowColumnBumpRange(item, bump_mode, ZMAPWINDOW_COMPRESS_ALL) ;
 	      }
           }
@@ -1076,6 +1079,7 @@ debug("nav create column %s %p\n",g_quark_to_string(set_id),draw_data->current_s
 
       zmapWindowContainerSetVisibility(FOO_CANVAS_GROUP(draw_data->container_feature_set), TRUE);
 
+#if USE_BACKGROUND
       container_background = zmapWindowContainerGetBackground(draw_data->container_feature_set);
 
       zmapWindowContainerGroupBackgroundSize(draw_data->container_feature_set,
@@ -1087,6 +1091,7 @@ debug("nav create column %s %p\n",g_quark_to_string(set_id),draw_data->current_s
 	g_signal_connect(G_OBJECT(container_set), "event",
 			 G_CALLBACK(columnBackgroundEventCB),
 			 (gpointer)draw_data->navigate);
+#endif
     }
   else
     zMapLogWarning("Failed to find navigator featureset '%s'\n", g_quark_to_string(set_id));
@@ -1765,13 +1770,8 @@ static gboolean highlight_locator_area_cb(ZMapWindowContainerGroup container, Fo
     case ZMAPCONTAINER_LEVEL_STRAND:
     case ZMAPCONTAINER_LEVEL_FEATURESET:
 
-#if 0 // MH17_DEBUG_NAV_FOOBAR
-{
-char *name = "none";
-if(container->feature_any) name = zMapFeatureName(container->feature_any);
-debug("highlight locator %d %s\n", level,name);
-}
-#endif
+#warning need to re-implement the locator... scan for LOCATOR
+#if LOCATOR
       container_underlay = (FooCanvasGroup *)zmapWindowContainerGetUnderlay(container);
 
       if((item_list = g_list_first(container_underlay->item_list)))
@@ -1791,15 +1791,11 @@ debug("highlight locator %d %s\n", level,name);
 				      "y1", (double)(navigate->locator_y_coords.x1 - navigate->full_span.x1 + 1),
 				      "y2", (double)(navigate->locator_y_coords.x2 - navigate->full_span.x1 + 1),
 				      NULL);
-#if 0 // MH17_DEBUG_NAV_FOOBAR
-debug("highlight_locator_area_cb %f %f\n",
-(double)(navigate->locator_y_coords.x1),
-(double)(navigate->locator_y_coords.x2));
-#endif
 		}
 	    }
 	  while((item_list = g_list_next(item_list)));
 	}
+#endif
 
       break;
     default:
@@ -1815,11 +1811,17 @@ static gboolean idle_resize_widget_cb(gpointer navigate_data)
 {
   ZMapWindowNavigator navigate = (ZMapWindowNavigator)navigate_data;
   GtkWidget *widget;
+  FooCanvasItem * foo = (FooCanvasItem *) navigate->container_root;
 
+#if LOCATOR
   g_return_val_if_fail(navigate->locator != NULL, FALSE);
 
   widget = GTK_WIDGET( navigate->locator->canvas );
+#else
+  g_return_val_if_fail(foo != NULL, FALSE);
 
+  widget = GTK_WIDGET( foo->canvas );
+#endif
   zmapWindowNavigatorSizeRequest(widget, navigate->width, navigate->height,
       (double) navigate->full_span.x1,
       (double) navigate->full_span.x2);
@@ -1867,10 +1869,14 @@ static gboolean container_draw_locator(ZMapWindowContainerGroup container, FooCa
   double x1, x2, y1, y2;
 
   g_return_val_if_fail(navigate != NULL, FALSE);
+#if LOCATOR
   g_return_val_if_fail(navigate->locator != NULL, FALSE);
+#endif
 
+#if LOCATOR
   if(GTK_WIDGET_MAPPED(GTK_WIDGET(navigate->locator->canvas)))
     {
+
 
       x1 = points->coords[0];
       x2 = points->coords[2];
@@ -1910,7 +1916,10 @@ static gboolean container_draw_locator(ZMapWindowContainerGroup container, FooCa
 
       positioning_cb(container, points, level, user_data);
     }
-
+#else
+  if(GTK_WIDGET_MAPPED(GTK_WIDGET(((FooCanvasItem *)navigate->container_root)->canvas)))
+      positioning_cb(container, points, level, user_data);
+#endif
   return TRUE;
 }
 
@@ -1919,6 +1928,7 @@ static gboolean container_draw_locator(ZMapWindowContainerGroup container, FooCa
 static void container_group_add_highlight_area_item(ZMapWindowNavigator navigate,
 						    ZMapWindowContainerGroup container)
 {
+#if LOCATOR
   ZMapWindowContainerUnderlay underlay;
   FooCanvasGroup *underlay_group;
 
@@ -1930,7 +1940,7 @@ static void container_group_add_highlight_area_item(ZMapWindowNavigator navigate
 		      "fill_color_gdk", &(navigate->locator_highlight),
 		      "width_pixels",   0,
 		      NULL);
-
+#endif
   return ;
 }
 
@@ -1938,6 +1948,7 @@ static void container_group_add_highlight_area_item(ZMapWindowNavigator navigate
 static void container_group_add_locator(ZMapWindowNavigator navigate,
 					ZMapWindowContainerGroup container)
 {
+#if LOCATOR
   ZMapWindowContainerOverlay overlay;
   FooCanvasGroup *overlay_group;
   TransparencyEvent transp_data = NULL;
@@ -2021,7 +2032,7 @@ static void container_group_add_locator(ZMapWindowNavigator navigate,
       g_signal_connect(GTK_OBJECT(root_bg), "event",
 		       GTK_SIGNAL_FUNC(rootBGEventCB), transp_data);
     }
-
+#endif
   return ;
 }
 

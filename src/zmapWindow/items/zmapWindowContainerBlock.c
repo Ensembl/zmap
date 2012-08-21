@@ -270,27 +270,36 @@ void zmapWindowContainerBlockMark(ZMapWindowContainerBlock container_block,
 				  ZMapWindowMark           mark)
 {
   ZMapWindowContainerGroup container;
+#if USE_BACKGROUND
   ZMapWindowContainerBackground background;
+#endif
   GdkColor  *mark_colour;
   GdkBitmap *mark_stipple;
   FooCanvasPoints bounds;
   double coords[4];
 
   container = (ZMapWindowContainerGroup)container_block;
-
+#if USE_BACKGROUND
   if ((background = zmapWindowContainerGetBackground(container)))
+#endif
     {
       mark_colour  = zmapWindowMarkGetColour(mark);
       mark_stipple = zmapWindowMarkGetStipple(mark);
       /* Get the gdk stuff ^^ and then update the colour and stipple. */
       mark_items_update_colour(container_block, mark_colour, mark_stipple);
 
-      /* We get the current bounds of the background.  It will have
+
+#if USE_BACKGROUND
+	/* We get the current bounds of the background.  It will have
        * been cropped to the scroll region. The UpdateHook takes care
        * of maximising it. */
       foo_canvas_item_get_bounds((FooCanvasItem *)background,
+#else
+	foo_canvas_get_scroll_region(((FooCanvasItem *) container)->canvas,
+#endif
 				 &coords[0], &coords[1],
 				 &coords[2], &coords[3]);
+
 
       /* If the coords look valid, at least one is > zero, then we can just attempt to
        * update the mark items and show them here.
@@ -422,12 +431,19 @@ static void mark_items_create(ZMapWindowContainerBlock container_block,
 {
   ZMapWindowContainerGroup container;
   ZMapWindowContainerOverlay overlay;
+#if USE_BACKGROUND
   ZMapWindowContainerBackground background;
+#endif
 
+#warning need to recode mark scan for USE_MARK
+#if USE_MARK
   container = (ZMapWindowContainerGroup)container_block;
 
-  if((overlay = zmapWindowContainerGetOverlay(container)) &&
-     (background = zmapWindowContainerGetBackground(container)))
+  if((overlay = zmapWindowContainerGetOverlay(container))
+#if USE_BACKGROUND
+	&& (background = zmapWindowContainerGetBackground(container))
+#endif
+	)
     {
       FooCanvasGroup *parent;
 #ifdef DEBUG_MARK_WITH_OUTLINE
@@ -457,7 +473,7 @@ static void mark_items_create(ZMapWindowContainerBlock container_block,
 
       mark_items_update_colour(container_block, mark_colour, mark_stipple);
     }
-
+#endif
   return ;
 }
 
@@ -546,10 +562,12 @@ static gboolean mark_block_update_hook(ZMapWindowContainerGroup group_in_update,
 				       ZMapContainerLevelType   group_level,
 				       gpointer                 user_data)
 {
+  gboolean status = FALSE;
+#if USE_BACKGROUND
   ZMapWindowContainerBackground background;
+#endif
   ZMapWindowContainerBlock container_block;
   ZMapWindowMark mark = (ZMapWindowMark)user_data;
-  gboolean status = FALSE;
   FooCanvasPoints block_points;
   double block_coords[4];
   double start, end, dummy_x;
@@ -560,6 +578,7 @@ static gboolean mark_block_update_hook(ZMapWindowContainerGroup group_in_update,
   block_points.num_points = 2;
   block_points.ref_count  = 1;
 
+#if USE_BACKGROUND
   if((background = zmapWindowContainerGetBackground(group_in_update)))
     {
       FooCanvasItem *bg_item = FOO_CANVAS_ITEM(background);
@@ -593,7 +612,22 @@ static gboolean mark_block_update_hook(ZMapWindowContainerGroup group_in_update,
 		  block_coords[0], block_coords[1],
 		  block_coords[2], block_coords[3]);
 	}
+#else
+    {
+	FooCanvasItem *bg_item;
 
+	/* NOTE
+	* we want to not use the background: CanvasFeaturesets can work without this
+	* backgroun is only used to drive foo canvas w21 etc and any FooCanvasItem/Group will do
+	* (look at foo_canvas_item_i2w() to see why)
+	* if the group does not have any then we don't need to do anything so no problem
+	*/
+
+      if(!((FooCanvasGroup *) group_in_update)->item_list)
+		return FALSE;
+	bg_item = (FooCanvasItem *) ((FooCanvasGroup *) group_in_update)->item_list->data;
+
+#endif
       block_coords[0] = group_points->coords[0];
       block_coords[1] = group_points->coords[1];
       block_coords[2] = group_points->coords[2];

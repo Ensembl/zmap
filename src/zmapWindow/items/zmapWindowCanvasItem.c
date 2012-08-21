@@ -178,7 +178,15 @@ ZMapFeature zMapWindowCanvasItemGetFeature(FooCanvasItem *any_item)
 
 
 
-
+/* did the user click on a feature or the non existant background ? */
+gboolean zMapWindowCanvasItemHasPointFeature(FooCanvasItem *item)
+{
+  	if(ZMAP_IS_WINDOW_FEATURESET_ITEM(item))
+	{
+		return zMapWindowCanvasFeaturesetHasPointFeature(item);
+	}
+	return FALSE;
+}
 
 
 ZMapFeatureSubPartSpan zMapWindowCanvasItemIntervalGetData(FooCanvasItem *item, ZMapFeature feature, double x, double y)

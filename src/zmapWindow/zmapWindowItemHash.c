@@ -38,7 +38,7 @@
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapFeature.h>
 #include <zmapWindow_P.h>
-#include <zmapWindowCanvasItem.h> /* zMapWindowCanvasItemIntevalGetData() */
+//#include <zmapWindowCanvasItem.h> /* zMapWindowCanvasItemIntevalGetData() */
 #include <ZMap/zmapGLibUtils.h>
 
 #if MH17_NOT_USED
@@ -211,6 +211,10 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(GHashTable *ftoi_hash,
 		canvas_item = zMapWindowCanvasItemFeaturesetGetFeaturesetItem((FooCanvasGroup *) features_container, feature_stack->id,
 			block->block_to_sequence.block.x1,block->block_to_sequence.block.x2, feature->style,
 			feature_stack->strand,feature_stack->frame,feature_stack->set_index);
+
+		zMapWindowCanvasFeaturesetSetBackground((FooCanvasItem *) canvas_item,
+			zmapWindowContainerGroupGetFill( (ZMapWindowContainerGroup) parent_container),
+			zmapWindowContainerGroupGetBorder( (ZMapWindowContainerGroup) parent_container));
       }
 
       feature_item = (FooCanvasItem *) canvas_item;

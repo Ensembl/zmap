@@ -80,6 +80,7 @@ GType zMapWindowCanvasItemGetType(void);
 gboolean zMapWindowCanvasItemIsConnected(ZMapWindowCanvasItem item);
 void zMapWindowCanvasItemSetConnected(ZMapWindowCanvasItem item, gboolean val);
 
+gboolean zMapWindowCanvasItemHasPointFeature(FooCanvasItem *item);
 
 ZMapFeature zMapWindowCanvasItemGetFeature(FooCanvasItem *any_feature_item) ;
 

@@ -1110,6 +1110,8 @@ void zmapWindowColumnHide(FooCanvasGroup *column_group) ;
 void zmapWindowColumnShow(FooCanvasGroup *column_group) ;
 gboolean zmapWindowColumnIsVisible(ZMapWindow window, FooCanvasGroup *col_group) ;
 
+gboolean zmapWindowColumnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data);
+
 gboolean zmapWindowColumnIs3frameVisible(ZMapWindow window, FooCanvasGroup *col_group) ;
 gboolean zmapWindowColumnIs3frameDisplayed(ZMapWindow window, FooCanvasGroup *col_group) ;
 void zmapWindowDrawRemove3FrameFeatures(ZMapWindow window) ;
@@ -1350,7 +1352,7 @@ GList *zmapWindowFocusGetFocusItemsType(ZMapWindowFocus focus, ZMapWindowFocusTy
 #define zmapWindowFocusGetFocusItems(focus) \
     zmapWindowFocusGetFocusItemsType(focus, WINDOW_FOCUS_GROUP_FOCUS)
 gboolean zmapWindowFocusIsItemInHotColumn(ZMapWindowFocus focus, FooCanvasItem *item) ;
-void zmapWindowFocusSetHotColumn(ZMapWindowFocus focus, FooCanvasGroup *column) ;
+void zmapWindowFocusSetHotColumn(ZMapWindowFocus focus, FooCanvasGroup *column, FooCanvasItem *item) ;
 FooCanvasGroup *zmapWindowFocusGetHotColumn(ZMapWindowFocus focus) ;
 void zmapWindowFocusDestroy(ZMapWindowFocus focus) ;
 

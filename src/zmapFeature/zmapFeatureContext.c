@@ -171,7 +171,7 @@ void zMapFeatureReverseComplement(ZMapFeatureContext context, ZMapFeature featur
 void zMapFeatureReverseComplementCoords(ZMapFeatureBlock block, int *start_inout, int *end_inout)
 {
   int start, end, my_start, my_end ;
-  ZMapFeatureContext context = (ZMapFeatureContext) block->parent->parent;
+	ZMapFeatureContext context = (ZMapFeatureContext) block->parent->parent;
 
   start = context->parent_span.x1 ;
   end   = context->parent_span.x2 ;

@@ -120,6 +120,7 @@ void zmapWindowContainerFeatureSetDisplay(ZMapWindowContainerFeatureSet containe
 					  ZMapStyleColumnDisplayState state);
 
 
+
 ZMapWindow zMapWindowContainerFeatureSetGetWindow(ZMapWindowContainerFeatureSet container_set);
 
 void zMapWindowContainerFeatureSetShowHideMaskedFeatures(ZMapWindowContainerFeatureSet container, gboolean show, gboolean set_colour);

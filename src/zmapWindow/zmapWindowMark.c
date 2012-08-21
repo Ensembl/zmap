@@ -932,6 +932,7 @@ void zmapWindowMarkDestroy(ZMapWindowMark mark)
 /* Mark/unmark an item with a highlight colour. */
 static void markItem(ZMapWindowMark mark, FooCanvasItem *item, gboolean set_mark)
 {
+
   if(mark->mark_rectangle)     /* remove previous if set, we need to do this to clear and also if setting */
     {
 //    zMapWindowCanvasItemUnmark((ZMapWindowCanvasItem)item);
@@ -957,9 +958,12 @@ static void markItem(ZMapWindowMark mark, FooCanvasItem *item, gboolean set_mark
       foo_canvas_item_get_bounds(item,&x1, &y1, &x2, &y2);
 
       parent = zmapWindowContainerUtilsItemGetParentLevel(item,ZMAPCONTAINER_LEVEL_FEATURESET);
+#if USE_CHILDREN
       overlay = zmapWindowContainerGetOverlay(parent);
+#endif
 
       mark->mark_src_item = item;
+#if USE_CHILDREN
       mark->mark_rectangle = foo_canvas_item_new(FOO_CANVAS_GROUP(overlay),
                                        FOO_TYPE_CANVAS_RECT,
 #ifdef DEBUG_ITEM_MARK
@@ -973,6 +977,7 @@ static void markItem(ZMapWindowMark mark, FooCanvasItem *item, gboolean set_mark
                                        "y1",             y1,
                                        "y2",             y2,
                                        NULL);
+#endif
     }
 
   return ;
@@ -992,7 +997,7 @@ static void markRange(ZMapWindowMark mark)
 
   if(mark->block_container)
   {
-	  /* mh17: block_container can be null in whiich can black will be invalid */
+	  /* mh17: block_container can be null in whiich can block will be invalid */
 	zmapWindowContainerGetFeatureAny(ZMAP_CONTAINER_GROUP(mark->block_container), (ZMapFeatureAny *)&block) ;
   }
   if(block)

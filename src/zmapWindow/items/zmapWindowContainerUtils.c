@@ -182,10 +182,17 @@ ZMapWindowContainerGroup zmapWindowContainerGetNextParent(FooCanvasItem *item)
 	{
 	  parent = FOO_CANVAS_ITEM(tmp_group);
 	}
+#if USE_CHILDREN
       else if(tmp_item->parent && tmp_item->parent->parent)
 	{
 	  parent = tmp_item->parent->parent;
 	}
+#else
+      else if(tmp_item->parent)
+	{
+	  parent = tmp_item->parent;
+	}
+#endif
 
       if(parent && ZMAP_IS_CONTAINER_GROUP(parent))
 	container_group = ZMAP_CONTAINER_GROUP(parent);
@@ -194,6 +201,7 @@ ZMapWindowContainerGroup zmapWindowContainerGetNextParent(FooCanvasItem *item)
   return container_group;
 }
 
+#if NOT_USED
 ZMapWindowContainerFeatures zmapWindowContainerUtilsItemGetFeatures(FooCanvasItem         *item,
 								    ZMapContainerLevelType level)
 {
@@ -207,6 +215,7 @@ ZMapWindowContainerFeatures zmapWindowContainerUtilsItemGetFeatures(FooCanvasIte
 
   return features;
 }
+#endif
 
 ZMapWindowContainerGroup zmapWindowContainerUtilsGetParentLevel(ZMapWindowContainerGroup container_group,
 								ZMapContainerLevelType   level)
@@ -331,6 +340,7 @@ ZMapWindowContainerStrand zmapWindowContainerBlockGetContainerSeparator(ZMapWind
 /* Note this returns the _canvasgroup_ containing the features, not the feature list. */
 ZMapWindowContainerFeatures zmapWindowContainerGetFeatures(ZMapWindowContainerGroup container)
 {
+#if USE_CHILDREN
   ZMapWindowContainerFeatures features = NULL;
   FooCanvasItem *item;
 
@@ -351,25 +361,32 @@ ZMapWindowContainerFeatures zmapWindowContainerGetFeatures(ZMapWindowContainerGr
 	    }
 	}
 #endif //MH17_NEVER_INCLUDE_THIS_CODE
+	return features;
     }
-
-  return features;
+#else
+// so we remove the child layer from WCG, conatuiner features is a simple group, so this is safe by fluke
+	return (ZMapWindowContainerFeatures) container;
+#endif
 }
 
 
 ZMapWindowContainerBackground zmapWindowContainerGetBackground(ZMapWindowContainerGroup container)
 {
   ZMapWindowContainerBackground background = NULL;
+#if USE_BACKGROUND
   FooCanvasItem *item;
 
   if((item = container_get_child(container, _CONTAINER_BACKGROUND_POSITION)))
     {
       background = ZMAP_CONTAINER_BACKGROUND(item);
     }
-
+#else
+	zMapAssertNotReached();
+#endif
   return background;
 }
 
+#if USE_CHILDREN
 ZMapWindowContainerOverlay zmapWindowContainerGetOverlay(ZMapWindowContainerGroup container)
 {
   ZMapWindowContainerOverlay overlay = NULL;
@@ -395,6 +412,7 @@ ZMapWindowContainerUnderlay zmapWindowContainerGetUnderlay(ZMapWindowContainerGr
 
   return underlay;
 }
+#endif
 
 /* Strand code */
 
@@ -780,6 +798,7 @@ gboolean zmapWindowContainerUtilsGetColumnLists(ZMapWindowContainerGroup block_o
   return found_block;
 }
 
+#if NOT_USED
 
 void zmapWindowContainerSetOverlayResizing(ZMapWindowContainerGroup container_group,
 					   gboolean maximise_width, gboolean maximise_height)
@@ -808,6 +827,7 @@ void zmapWindowContainerSetUnderlayResizing(ZMapWindowContainerGroup container_g
 
   return ;
 }
+#endif
 
 void zmapWindowContainerUtilsRemoveAllItems(FooCanvasGroup *group)
 {
@@ -1018,9 +1038,11 @@ static void eachContainer(gpointer data, gpointer user_data)
   /* If we're redrawing then we need to do extra work... */
   if (all_data->redraw_during_recursion)
     {
-//      ZMapWindowContainerBackground container_background;
+#if USE_BACKGROUND
+      ZMapWindowContainerBackground container_background;
 
-//      container_background = zmapWindowContainerGetBackground(container);
+      container_background = zmapWindowContainerGetBackground(container);
+#endif
 
       switch(level)
         {

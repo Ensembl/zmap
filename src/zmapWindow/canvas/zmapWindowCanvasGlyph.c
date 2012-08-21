@@ -198,7 +198,7 @@ ZMapWindowCanvasGlyph zMapWindowCanvasGetGlyph(ZMapWindowFeaturesetItem features
 
       if (!shape || shape->type == GLYPH_DRAW_INVALID || !shape->n_coords)
 	{
-	  zMapLogWarning("Could not find glyph shape for feature \"%s\" at %d, %d",
+	  zMapLogWarning("Could not find sub feature glyph shape for feature \"%s\" at %d, %d",
 			 g_quark_to_string(feature->original_id), feature->x1, feature->x2) ;
 	}
       else
@@ -626,6 +626,7 @@ static void glyphColumnInit(ZMapWindowFeaturesetItem featureset)
   gboolean dummy_splice = TRUE ;
 
   /* Once again we need to know if this is splice markers...find out how to do this... */
+  /* mh17 - how about from the style id == GF_Splice ?? */
   if (dummy_splice)
     {
       GlyphSpliceColumnData splice_data ;

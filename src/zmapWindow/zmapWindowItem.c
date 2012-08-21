@@ -231,8 +231,9 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
       break ;
     }
 
+#if USE_OVERLAY
    zmapWindowFocusClearOverlayManagers(window->focus) ;
-
+#endif
 
 
   /* Highlight DNA and Peptide sequences corresponding to feature (if visible),
@@ -712,9 +713,12 @@ void zmapWindowItemCentreOnItemSubPart(ZMapWindow window, FooCanvasItem *item,
 	  double height ;
 	  foo_canvas_item_get_bounds(item, &ix1, &iy1, &ix2, &iy2) ;
 
+#if USE_BACKGROUND
 	  /* If we are using the background then we should use it's height as originally set. */
 	  height = zmapWindowContainerGroupGetBackgroundSize(ZMAP_CONTAINER_GROUP(item)) ;
-
+#else
+	  height = iy2 - iy1 + 1;	/* long items ar history */
+#endif
 	  if (iy1 > 0)
 	    iy1 = 0 ;
 	  if (iy2 < height)

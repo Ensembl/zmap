@@ -186,7 +186,7 @@ static gboolean feature_set_matches_frame_drawing_mode(ZMapWindow     window,
 						       int *frame_start_out,
 						       int *frame_end_out) ;
 
-static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data) ;
+//static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data) ;
 static gboolean strandBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data) ;
 static gboolean containerDestroyCB(FooCanvasItem *item_in_hash, gpointer data) ;
 
@@ -402,6 +402,7 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
       root_group = zmapWindowContainerGroupCreateFromFoo(foo_canvas_root(window->canvas),
 							 ZMAPCONTAINER_LEVEL_ROOT,
 							 window->config.align_spacing,
+//							 NULL,NULL);
 							 &(window->colour_root),
 							 &(window->canvas_border));
 
@@ -1650,6 +1651,7 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
             align_parent = zmapWindowContainerGroupCreate(canvas_data->curr_root_group,
 							  ZMAPCONTAINER_LEVEL_ALIGN,
 							  window->config.block_spacing,
+//							  NULL,NULL);
 							  &(window->colour_alignment),
 							  &(window->canvas_border));
             g_signal_connect(G_OBJECT(align_parent),
@@ -1735,9 +1737,11 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
             block_group = zmapWindowContainerGroupCreate(canvas_data->curr_align_group,         							  ZMAPCONTAINER_LEVEL_BLOCK,
 
 							 window->config.strand_spacing,
+//							 NULL,NULL);
 							 &(window->colour_block),
 							 &(canvas_data->window->canvas_border));
-            g_signal_connect(G_OBJECT(block_group),
+
+	g_signal_connect(G_OBJECT(block_group),
                              "destroy",
                              G_CALLBACK(containerDestroyCB),
                              window) ;
@@ -1814,14 +1818,14 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 
                 zmapWindowContainerStrandAugment((ZMapWindowContainerStrand)reverse_group, ZMAPSTRAND_REVERSE);
 
-		zmapWindowContainerGroupBackgroundSize(reverse_group,height);
+#if USE_BACKGROUND
+		    zmapWindowContainerGroupBackgroundSize(reverse_group,height);
 
-
-
+/* NOTE strandBoundingBoxEventCB() does nothing */
                 g_signal_connect(G_OBJECT(zmapWindowContainerGetBackground(reverse_group)),
                                  "event", G_CALLBACK(strandBoundingBoxEventCB),
                                  (gpointer)window);
-
+#endif
 		g_object_set_data(G_OBJECT(reverse_group), ZMAP_WINDOW_POINTER, window) ;
               }
 
@@ -1841,8 +1845,9 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 
 		zmapWindowContainerStrandSetAsSeparator((ZMapWindowContainerStrand)strand_separator);
 
+#if USE_BACKGROUND
 		zmapWindowContainerGroupBackgroundSize(strand_separator,height);
-
+#endif
 		g_object_set_data(G_OBJECT(strand_separator), ZMAP_WINDOW_POINTER, window) ;
 	      }
 
@@ -1856,12 +1861,14 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 							       &(canvas_data->window->canvas_border));
 
                 zmapWindowContainerStrandAugment((ZMapWindowContainerStrand)forward_group, ZMAPSTRAND_FORWARD);
+#if USE_BACKGROUND
 		zmapWindowContainerGroupBackgroundSize(forward_group,height);
 
+/* NOTE strandBoundingBoxEventCB() does nothing */
                 g_signal_connect(G_OBJECT(zmapWindowContainerGetBackground(forward_group)),
                                  "event", G_CALLBACK(strandBoundingBoxEventCB),
                                  (gpointer)window);
-
+#endif
 		g_object_set_data(G_OBJECT(forward_group), ZMAP_WINDOW_POINTER, window) ;
               }
 
@@ -2315,7 +2322,7 @@ static FooCanvasGroup *createColumnFull(ZMapWindowContainerFeatures parent_group
 
       g_signal_connect(G_OBJECT(container), "destroy", G_CALLBACK(containerDestroyCB), (gpointer)window) ;
 
-      g_signal_connect(G_OBJECT(container), "event", G_CALLBACK(columnBoundingBoxEventCB), (gpointer)window) ;
+//      g_signal_connect(G_OBJECT(container), "event", G_CALLBACK(columnBoundingBoxEventCB), (gpointer)window) ;
 
       g_object_set_data(G_OBJECT(container), ZMAP_WINDOW_POINTER, window) ;
 
@@ -2522,7 +2529,8 @@ static gboolean strandBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
 
 /* Handles events on a column, currently this is only mouse press/release events for
  * highlighting and column menus. */
-static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data)
+//static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data)
+gboolean zmapWindowColumnBoundingBoxEventCB(FooCanvasItem *foo, GdkEvent *event, gpointer data)
 {
   gboolean event_handled = FALSE ;
 
@@ -2534,10 +2542,12 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
       ZMapWindowContainerFeatureSet container_set;
       ZMapWindowContainerGroup container_parent;
 
-      container_parent = zmapWindowContainerChildGetParent(item);
+//      container_parent = zmapWindowContainerChildGetParent(item);
+	container_parent = zmapWindowContainerCanvasItemGetContainer(foo);
+
 
       /* These should go in container some time.... */
-      container_set = (ZMapWindowContainerFeatureSet)container_parent;
+      container_set = (ZMapWindowContainerFeatureSet) container_parent;
       feature_set = zmapWindowContainerFeatureSetRecoverFeatureSet(container_set);
       zMapAssert(container_set) ;
 
@@ -2548,7 +2558,7 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
 	  /* Do the column menu. */
 	  if (feature_set)
 	    {
-	      zmapMakeColumnMenu(but_event, window, item, container_set, NULL) ;
+	      zmapMakeColumnMenu(but_event, window, (FooCanvasItem *) container_set, container_set, NULL) ;
 
 	      event_handled = TRUE ;
 	    }
@@ -2588,12 +2598,12 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
 		/* Swop focus from previous item(s)/columns to this column. */
 		zmapWindowUnHighlightFocusItems(window) ;
 
-		/* Try unhighlighting dna/translations... */
-		zmapWindowItemUnHighlightDNA(window, item) ;
-		zmapWindowItemUnHighlightTranslations(window, item) ;
-		zmapWindowItemUnHighlightShowTranslations(window, item) ;
+		/* Try unhighlighting dna/translations... NOTE item not needed, used to be container group (item) */
+		zmapWindowItemUnHighlightDNA(window, foo) ;
+		zmapWindowItemUnHighlightTranslations(window, foo) ;
+		zmapWindowItemUnHighlightShowTranslations(window, foo) ;
 
-		zmapWindowFocusSetHotColumn(window->focus, (FooCanvasGroup *)container_parent);
+		zmapWindowFocusSetHotColumn(window->focus, (FooCanvasGroup *)container_parent, NULL);
 
 		select.feature_desc.struct_type = ZMAPFEATURE_STRUCT_FEATURESET ;
 
@@ -2614,11 +2624,11 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
 
 		/* user clicked on column background - get first canvas item and if is a CanvasFeatureset consider enabling filtering by score */
 		{
-			FooCanvasItem *foo;
+//			FooCanvasItem *foo;
 
 			select.filter.enable = FALSE;
 
-			foo = zmapWindowContainerGetNthFeatureItem((ZMapWindowContainerGroup) container_set, ZMAPCONTAINER_ITEM_FIRST) ;
+//			foo = zmapWindowContainerGetNthFeatureItem((ZMapWindowContainerGroup) container_set, ZMAPCONTAINER_ITEM_FIRST) ;
 			if(ZMAP_IS_WINDOW_FEATURESET_ITEM(foo))
 			{
 				ZMapWindowFeaturesetItem fi;

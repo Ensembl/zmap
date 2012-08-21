@@ -1257,10 +1257,15 @@ static ZMapFrame feature_frame(ZMapFeature feature, int start_coord)
   int fval;
 
   zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
+#if USE_CHILDREN
   zMapAssert(feature->parent && feature->parent->parent);
 
   block = (ZMapFeatureBlock)(feature->parent->parent);
+#else
+  zMapAssert(feature->parent && feature->parent);
 
+  block = (ZMapFeatureBlock)(feature->parent);
+#endif
   offset = block->block_to_sequence.block.x1;   /* start of block in sequence/parent */
 
   fval = ((start_coord - offset) % 3) + ZMAPFRAME_0 ;

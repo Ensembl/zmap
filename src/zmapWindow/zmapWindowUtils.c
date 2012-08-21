@@ -690,7 +690,7 @@ static void window_cancel_cb(ZMapGuiNotebookAny notebook_any, gpointer user_data
 {
   return;
 }
-#ifdef NOT_REQUIRED
+#ifdef USE_BACKGROUND
 static void recolour_backgrounds_cb(FooCanvasGroup *data, FooCanvasPoints *points,
 				    ZMapContainerLevelType level, gpointer user_data)
 {

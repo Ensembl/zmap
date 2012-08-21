@@ -147,6 +147,10 @@ ZMapWindowContainerGroup zmapWindowContainerGroupCreateFromFoo(FooCanvasGroup   
 							       double    child_spacing,
 							       GdkColor *background_fill_colour,
 							       GdkColor *background_border_colour);
+
+GdkColor *zmapWindowContainerGroupGetFill(ZMapWindowContainerGroup group);
+GdkColor *zmapWindowContainerGroupGetBorder(ZMapWindowContainerGroup group);
+
 gboolean zmapWindowContainerSetVisibility(FooCanvasGroup *container_parent, gboolean visible);
 void zmapWindowContainerRequestReposition(ZMapWindowContainerGroup container);
 void zmapWindowContainerGroupBackgroundSize(ZMapWindowContainerGroup container, double height) ;

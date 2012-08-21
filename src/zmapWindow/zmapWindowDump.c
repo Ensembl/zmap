@@ -171,7 +171,9 @@ static void dumpCB(ZMapWindowContainerGroup container_parent, FooCanvasPoints *p
 static void itemCB(gpointer data, gpointer user_data) ;
 static void dumpFeatureCB(gpointer data, gpointer user_data);
 
+#if USE_BACKGROUND
 static void dumpRectangle(DumpOptions cb_data, FooCanvasRE *re_item, gboolean outline) ;
+#endif
 
 static int openPS(DumpOptions dump_opts) ;
 static int openEPSF(DumpOptions dump_opts) ;
@@ -795,7 +797,9 @@ static void dumpCB(ZMapWindowContainerGroup container_parent, FooCanvasPoints *p
                    ZMapContainerLevelType level,  gpointer user_data)
 {
   DumpOptions cb_data = (DumpOptions)user_data ;
+#if USE_BACKGROUND
   ZMapWindowContainerBackground background ;
+#endif
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   {
@@ -846,6 +850,8 @@ static void dumpCB(ZMapWindowContainerGroup container_parent, FooCanvasPoints *p
             // paint the strand seperator, but not the +/-
           if(zmapWindowContainerIsStrandSeparator(container_parent))
           {
+
+#if USE_BACKGROUND
             if ((background = zmapWindowContainerGetBackground(container_parent)))
             {
                g_object_get(G_OBJECT(background),
@@ -853,6 +859,7 @@ static void dumpCB(ZMapWindowContainerGroup container_parent, FooCanvasPoints *p
                    NULL);
               dumpRectangle(cb_data, FOO_CANVAS_RE(background), FALSE) ;        // is narrower than on screen
             }
+#endif
           }
           break;
 
@@ -860,6 +867,7 @@ static void dumpCB(ZMapWindowContainerGroup container_parent, FooCanvasPoints *p
 
 //printf("DumpCB featureset 1 %s\n",tstamp());
          {
+#if USE_BACKGROUND
                   // coloured background eg for 3 Frame
             if ((background = zmapWindowContainerGetBackground(container_parent)))
               {
@@ -871,6 +879,7 @@ static void dumpCB(ZMapWindowContainerGroup container_parent, FooCanvasPoints *p
                     dumpRectangle(cb_data, FOO_CANVAS_RE(background), FALSE) ;
                   }
               }
+#endif
 //printf("DumpCB featureset 2 %s\n",tstamp());
             ZMapWindowContainerFeatures features;
             if ((features = zmapWindowContainerGetFeatures(container_parent)))
@@ -1084,6 +1093,7 @@ static void dumpFeatureCB(gpointer data, gpointer user_data)
 }
 
 
+#if USE_BACKGROUND
 /* Dump a rectangle, optionally show its outline. */
 static void dumpRectangle(DumpOptions cb_data, FooCanvasRE *re_item, gboolean outline)
 {
@@ -1145,6 +1155,7 @@ are x1,y1 and x2,y2 inverted sometimes? this code expands the boxes!
   return ;
 }
 
+#endif
 
 
 #if NOT_USED

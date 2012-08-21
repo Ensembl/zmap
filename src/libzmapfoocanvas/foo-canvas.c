@@ -531,7 +531,7 @@ foo_canvas_item_invoke_update (FooCanvasItem *item,
 
 	/* If this fail you probably forgot to chain up to
 	 * FooCanvasItem::update from a derived class */
- 	g_return_if_fail (!(item->object.flags & FOO_CANVAS_ITEM_NEED_UPDATE));
+	g_return_if_fail (!(item->object.flags & FOO_CANVAS_ITEM_NEED_UPDATE));
 }
 
 /*

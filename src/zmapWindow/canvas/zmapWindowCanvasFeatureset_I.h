@@ -277,11 +277,14 @@ typedef struct _zmapWindowFeaturesetItemStruct
   gulong fill_pixel;            /* Fill color */
   gulong outline_pixel;         /* Outline color */
 
+  gulong background;		  /* eg for 3FT or strand separator */
+
   double width;                 /* column width */
   double bump_width;
 
   gboolean fill_set;    	/* Is fill color set? */
   gboolean outline_set;	 	/* Is outline color set? */
+  gboolean background_set;	/* Is background set ? */
 
   ZMapFeature point_feature;	/* set by cursor movement */
   ZMapWindowCanvasFeature point_canvas_feature;		/* last clicked canvasfeature, set by select, need for legacy code interface */

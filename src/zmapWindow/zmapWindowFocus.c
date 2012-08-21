@@ -80,7 +80,10 @@ typedef struct _ZMapWindowFocusStruct
 
   int cache_id;
 
+#if USE_OVERLAY
   GList *overlay_managers;
+#endif
+
 } ZMapWindowFocusStruct ;
 
 
@@ -174,6 +177,7 @@ static void match_frame(gpointer list_data, gpointer user_data);
 static FooCanvasItem *get_item_with_matching_frame(FooCanvasItem *any_item, FooCanvasItem *feature_item);
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+#if USE_OVERLAY
 static void mask_in_overlay_swap(gpointer list_data, gpointer user_data);
 static void mask_in_overlay(gpointer list_data, gpointer user_data);
 static void set_default_highlight_colour(gpointer list_data, gpointer user_data);
@@ -182,6 +186,7 @@ static void invoke_overlay_unmask_all(gpointer overlay_data, gpointer unused_dat
 static void FocusUnmaskOverlay(ZMapWindowFocus focus);
 
 static gboolean overlay_manager_list_debug_G = FALSE;
+#endif
 
 /*
  *              Set of routines to handle focus items.
@@ -557,7 +562,7 @@ void zmapWindowFocusSetHotItem(ZMapWindowFocus focus, FooCanvasItem *item, ZMapF
 
 /* this one is different, a new column can be set _without_ setting a new item, so we
  * need to get rid of the old items. */
-void zmapWindowFocusSetHotColumn(ZMapWindowFocus focus, FooCanvasGroup *column)
+void zmapWindowFocusSetHotColumn(ZMapWindowFocus focus, FooCanvasGroup *column, FooCanvasItem *item)
 {
   freeFocusItems(focus,WINDOW_FOCUS_GROUP_FOCUS) ;
 
@@ -575,8 +580,13 @@ void zmapWindowFocusHighlightHotColumn(ZMapWindowFocus focus)
 
   if ((hot_column = zmapWindowFocusGetHotColumn(focus)))
   {
+#if USE_BACKGROUND
     zmapWindowContainerGroupSetBackgroundColour(ZMAP_CONTAINER_GROUP(hot_column),
              &(focus->window->colour_column_highlight)) ;
+#else
+	if(ZMAP_IS_WINDOW_FEATURESET_ITEM(focus->hot_item))
+		zMapWindowCanvasFeaturesetSetBackground(focus->hot_item,&(focus->window->colour_column_highlight), NULL);
+#endif
   }
 
   return ;
@@ -587,9 +597,13 @@ void zmapWindowFocusUnHighlightHotColumn(ZMapWindowFocus focus)
 {
   FooCanvasGroup *hot_column;
 
+#if USE_BACKGROUND
   if ((hot_column = zmapWindowFocusGetHotColumn(focus)))
       zmapWindowContainerGroupResetBackgroundColour(ZMAP_CONTAINER_GROUP(hot_column)) ;
-
+#else
+	if(ZMAP_IS_WINDOW_FEATURESET_ITEM(focus->hot_item))
+		zMapWindowCanvasFeaturesetSetBackground(focus->hot_item, NULL, NULL);
+#endif
   return ;
 }
 
@@ -750,7 +764,9 @@ void zmapWindowFocusRemoveFocusItemType(ZMapWindowFocus focus,
 	      if (unhighlight)
 		highlightItem(focus->window,gonner);
 
+#if USE_OVERLAY
 	      FocusUnmaskOverlay(focus) ;   // (not sure what this is for)
+#endif
 
 	      if(!(gonner->flags & WINDOW_FOCUS_GROUP_FOCUSSED))   // no groups: remove from list
 		{
@@ -801,11 +817,14 @@ void zmapWindowFocusReset(ZMapWindowFocus focus)
   focus->focus_column = NULL ;
   focus->hot_item = NULL;
 
+#if USE_OVERLAY
   zmapWindowFocusClearOverlayManagers(focus);
-
+#endif
   return ;
 }
 
+
+#if USE_OVERLAY
 
 /* UM...that seems the wrong thing to do.....styles shouldn't be deciding that kind of thing...EG */
 /* We pass in the default from the window->colour_item_highlight in case there's no other default */
@@ -858,6 +877,7 @@ void zmapWindowFocusClearOverlayManagers(ZMapWindowFocus focus)
 
   return ;
 }
+#endif
 
 void zmapWindowFocusDestroy(ZMapWindowFocus focus)
 {
@@ -970,15 +990,19 @@ void zmapWindowFocusHideFocusItems(ZMapWindowFocus focus, GList **hidden_items)
 
 static void rehighlightFocusCB(gpointer list_data, gpointer user_data)
 {
+#if USE_OVERLAY
   ZMapWindowFocusItem data = (ZMapWindowFocusItem)list_data;
   FooCanvasItem *item = (FooCanvasItem *)data->item ;
+#endif
   ZMapWindow window = (ZMapWindow)user_data ;
   GdkColor *highlight = NULL;
 
   if(window->highlights_set.item)
     highlight = &(window->colour_item_highlight);
 
+#if USE_OVERLAY
   zmapWindowFocusMaskOverlay(window->focus, item, highlight);
+#endif
 
   return ;
 }
@@ -1061,6 +1085,8 @@ static void highlightItem(ZMapWindow window, ZMapWindowFocusItem item)
 
       zMapAssert(n_focus);
       zMapAssert(item->item_column);
+# if USE_CHILDREN
+// a misnomer, but this is all part of the tidying up
       /* move the item back to where it should be */
       if(!zmapWindowContainerFeatureSetItemLowerToMiddle(item->item_column, (ZMapWindowCanvasItem) item->item, n_focus,0))
       {
@@ -1072,6 +1098,7 @@ static void highlightItem(ZMapWindow window, ZMapWindowFocusItem item)
              * which could be called due to a vsplit for example
              */
       }
+#endif
     }
 
    item->display_state = item->flags & WINDOW_FOCUS_GROUP_FOCUSSED;
@@ -1086,7 +1113,9 @@ static void highlightItem(ZMapWindow window, ZMapWindowFocusItem item)
 static void highlightCB(gpointer list_data, gpointer user_data)
 {
   ZMapWindowFocusItem data = (ZMapWindowFocusItem)list_data;
+#if USE_OVERLAY
   FooCanvasItem *item = (FooCanvasItem *)data->item ;
+#endif
   ZMapWindow window = (ZMapWindow)user_data ;
 
   GdkColor *highlight = NULL;
@@ -1096,7 +1125,9 @@ static void highlightCB(gpointer list_data, gpointer user_data)
   if(window->highlights_set.item)
     highlight = &(window->colour_item_highlight);
 
+#if USE_OVERLAY
   zmapWindowFocusMaskOverlay(window->focus, item, highlight);
+#endif
 
   return ;
 }
@@ -1139,6 +1170,7 @@ static ZMapWindowFocusItem add_unique(ZMapWindowFocus focus,
   list_item->item_column = (ZMapWindowContainerFeatureSet) FOO_CANVAS_ITEM(item)->parent;
   // also need to fill in featureset
 
+#if USE_CHILDREN
   if (!list_item->item_column->sorted)
     {
       /* we need this for uh-highlight into stable ordering
@@ -1151,7 +1183,7 @@ static ZMapWindowFocusItem add_unique(ZMapWindowFocus focus,
       zmapWindowContainerFeatureSetSortFeatures(list_item->item_column, 0) ;
       list_item->item_column->sorted = TRUE ;
     }
-
+#endif
 
   highlightItem(focus->window,list_item);
   return list_item;
@@ -1266,6 +1298,7 @@ static FooCanvasItem *get_item_with_matching_frame(FooCanvasItem *any_item,
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
+#if USE_OVERLAY
 /* swap round the parameters and call mask_in_overlay */
 static void mask_in_overlay_swap(gpointer list_data, gpointer user_data)
 {
@@ -1325,6 +1358,8 @@ static void set_default_highlight_colour(gpointer list_data, gpointer user_data)
   return ;
 }
 
+#endif
+
 
 static void setFocusColumn(ZMapWindowFocus focus, FooCanvasGroup *column)
 {
@@ -1339,12 +1374,14 @@ static void setFocusColumn(ZMapWindowFocus focus, FooCanvasGroup *column)
 
       zmapWindowFocusHighlightHotColumn(focus);
 
+#if USE_CHILDREN
       if (!container->sorted)
 	{
 	  zmapWindowContainerFeatureSetSortFeatures(container, 0) ;
 
 	  container->sorted = TRUE ;
 	}
+#endif
     }
 
   return ;

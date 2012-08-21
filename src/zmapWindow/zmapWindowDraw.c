@@ -1113,10 +1113,10 @@ static void preZoomCB(ZMapWindowContainerGroup container, FooCanvasPoints *point
     {
     case ZMAPCONTAINER_LEVEL_FEATURESET:
       {
-	ZMapWindowContainerUnderlay container_underlay;
+	//ZMapWindowContainerUnderlay container_underlay;
 	ZMapWindow window = (ZMapWindow)user_data;
 
-	container_underlay = zmapWindowContainerGetUnderlay(container);
+	//container_underlay = zmapWindowContainerGetUnderlay(container);
 	//zmapWindowContainerPurge(container_underlay);
 
 	if (zmapWindowContainerFeatureSetGetDisplay((ZMapWindowContainerFeatureSet)container) == ZMAPSTYLE_COLDISPLAY_SHOW_HIDE)
@@ -1176,6 +1176,8 @@ static gboolean resetWindowWidthCB(ZMapWindowContainerGroup container, FooCanvas
 	y2 = window->max_coord;
 
       zmapWindowSetScrollRegion(window, &x1, &y1, &x2, &y2,"resetWindowWidthCB 1") ;
+
+	foo_canvas_item_request_redraw((FooCanvasItem *) window->feature_root_group);
     }
   else if(((window->curr_locking == ZMAP_WINLOCK_HORIZONTAL) &&
 	   (root_width > scr_reg_width)))
