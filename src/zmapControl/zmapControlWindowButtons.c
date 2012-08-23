@@ -457,6 +457,9 @@ void zmapControlWindowSetButtonState(ZMap zmap, ZMapWindowFilter window_filter)
 //		  digits++;
 	  }
 
+	  if(step < 5.0)
+		step = 5.0;
+
 		/* style min and max relate to display not feature scores, we can filter on score less than style min
 		 * we flag filtering if features are hidden, not if we are on the min score
 		 */
@@ -597,7 +600,7 @@ static void filterValueChangedCB(GtkSpinButton *spinbutton, gpointer user_data)
 	double value;
 
 	/* if we don't do this then with a busy column we get the column updateds but the spin button is delayed
-	 * so we don't get inertaction withthe filter score.  It's better this way.
+	 * so we don't get inertaction with the filter score.  It's better this way.
 	 */
 	if(zmap->filter_spin_pressed)
 		return;
