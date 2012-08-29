@@ -1065,7 +1065,7 @@ ZMapStyleBumpMode zMapStylePatchBumpMode(ZMapStyleBumpMode curr_mode) ;
 //const gchar *zMapStyleGetGFFSource(ZMapFeatureTypeStyle style) ;
 #define zMapStyleGetGFFSource(style) g_quark_to_string(style->gff_source)     // NULL quark gives NULL string
 //const gchar *zMapStyleGetGFFFeature(ZMapFeatureTypeStyle style) ;
-#define zMapStyleGetGFFFeature(style)      g_quark_to_string(style->gff_feature)
+#define zMapStyleGetGFFFeature(style)      (style->gff_feature)
 void zMapStyleSetDescription(ZMapFeatureTypeStyle style, char *description) ;
 //double zMapStyleGetWidth(ZMapFeatureTypeStyle style) ;
 #define zMapStyleGetWidth(style)   (style->width)

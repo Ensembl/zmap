@@ -1674,6 +1674,9 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
     {
       zMapFeatureSetAddFeature(feature_set, feature);
 
+	if(!zMapStyleGetGFFFeature(feature_style))
+		zMapStyleSetGFF(feature_style,NULL,ontology);
+
       if (url)
 	zMapFeatureAddURL(feature, url) ;
 
