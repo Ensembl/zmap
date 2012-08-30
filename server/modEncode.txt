@@ -1,0 +1,115 @@
+BAM data from modEncode or from local file - script to feed GFF to ZMap
+
+Copy and modify anacode scripts
+- mapping is sourced from otter database, need to replace this
+- bam_get_align uses otterlace environment
+- (scripts have compact syntax)
+
+Scripts needed from Otterlace (eg latest version in /software/anacode/otter/otter_rel69)
+
+bin/bam_get_align
+ensembl-otter/modules/Bio/Otter/Fetch/BAM.pm
+
+???/Bio/DB/Sam.pm
+# jh did this to find it:
+# $ perl -MBio::DB::Sam -e 'printf qq(%s\n), $INC{q(Bio/DB/Sam.pm)};'
+# /software/anacode/distro/lucid/lib/site_perl/5.12.2/i686-linux-thread-multi/Bio/DB/Sam.pm
+
+Need BioPerl....
+(need to sort this out via some install, just set environment for existing sanger setup, create example instructions for third parties)
+(w/ensembl i used ~/ensembl_api/bio-perl-1.2.3 - just install new version?
+ ensembl still says 1.2.3 but 1.6.9 is current)
+
+/software/perl-5.12.2/lib/site_perl/5.12.2/
+/software/pubseq/PerlModules/BioPerl/1_6_1/Bio/DB exists but does not contain Sam.pm
+(download Bio-SamTools-1.35.tar.gz: needs Samtools 0.1.4 or higher which must be compiled and pointed at via env (SAMTOOLS)
+(needs 0.1.6 for URLs)
+
+Building Bio-Sam looks like it should be easy but there's a nest of incompatable versions and missing modules.
+
+The following runs:
+You need "/software/perl-5.12.2/bin" in $PATH before "/software/anacode/bin".
+You need "/software/anacode/distro/lucid/lib:/software/anacode/distro/lucid/lib/site_perl:/software/anacode/lib:/software/anacode/lib/site_perl"
+in $PERL5LIB .
+
+
+
+ensembl-otter/modules/Bio/Otter/Lace/Defaults.pm	command line arguments using GetOptions and may config files and defaults
+ensembl-otter/modules/Bio/Otter/Mapping/Map.pm
+
+
+
+
+
+
+bin/bigwig_get
+ensembl-otter/modules/Bio/Otter/Fetch/BigWig.pm
+
+
+
+
+See also:
+
+ensembl-otter/modules/Bio/Otter/BAM.pm			generates config file for servers
+
+
+
+Development path
+
+- install BioPerl and confirm DB modules present or <find existing and set PERL5LIB environment>
+- remove dependance on otterlace modules eg Defaults.pm
+- make BAM scripts work with example files from Kevin (no mapping)
+- map these to another assembly: where's the data?
+- make BAM scripts work with known encode data in ZMap w/o otterlace, using hand crafted pipe server config
+- find modEncode data and try it
+
+
+
+
+bam_get_align options
+
+csver (=Otter), dataset, chr, start, end for mapping
+beware $options and @options !
+
+
+
+
+Data Files
+
+Here is some example data from Kevin:
+
+>> ftp://ftp.sanger.ac.uk/pub2/wormbase/STAFF/klh/
+>>
+>> There are two BAM files. The "accepted_hits.bam" files have entries with chromosome names that match WormBase (CHROMOSOME_I, CHROMSOME_II etc). However, Ensembl will not let us call our chromosomes that, so when we put C.elegans data into Ensembl, we have to call the chrs I, II etc. The "test.bam" file has chromosome names of that format (so can be viewed in Ensembl.
+>>
+
+
+Also need:
+utility scripts to dump chromosome names in file + any other useful information.
+
+
+
+
+
+
+ZMap scripts: organisation
+
+It is envisaged that server scripts will be relatively simple and self contained - they fetch data from an external source and output this as GFF - and as such do not need a complicted directory structure, but they do have to be included in the ZMap distribution tarball.  It is conceivable that uses may want to use these to extract data to a file and therefore we expect then to be run directly from a shell.
+
+There is already a scripts directory in the ZMap tree, which is used generally for build utilities and with an aim to keep this clean another directory will be added at the same level (ZMap/server), which must be added to the PATH and PERL5LIB env variables.
+
+Initially these will be developed in the GFF ZMap checkout, and special environment settigns will be needed for testing.
+
+Following convention modules will be named as Bio::Server::*.pm and this implies a directory structure within the server directory such as ...ZMap/server/Bio/Server/, and the calling scripts may live in  ...ZMap/server/.
+
+
+
+
+http fails:
+debug and compare bam_get_align: make these work from command line....
+
+/software/anacode/otter/otter_rel69/bin/bam_get_align --chr=chr11-03 --chr_prefix=chr --csver=GRCh37 --end=766404 --file=http://hgdownload-test.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeCshlLongRnaSeq/releaseLatest/wgEncodeCshlLongRnaSeqH1hescCytosolPapAlnRep2.bam --gff_feature_source=Tier1_H1-hESC_cytosol_longPolyA_rep2 --start=745637 -gff_version=2 --dataset=human --gff_seqname=chr11-03
+
+[knet_seek] SEEK_END is not supported for HTTP. Offset is unchanged.
+GET  http://dev.sanger.ac.uk/cgi-bin/otter/69/get_mapping?client=bam_get_align&chr=chr11-03&cs=GRCh37&dataset=human&end=766404&start=745637 get_mapping - client received 51 bytes from server
+[knet_seek] SEEK_END is not supported for HTTP. Offset is unchanged. found 41454 matches
