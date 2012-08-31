@@ -92,7 +92,7 @@ static ZMapFeatureContextExecuteStatus range_invoke_dump_features_cb(GQuark   ke
 
 
 
-/* 
+/*
  *                          External interface.
  */
 
@@ -117,7 +117,7 @@ ZMapFeatureAsText zMapFeature2Text(ZMapFeature feature)
 
 
 
-
+#if NOT_USED
 void zMapFeaturePrint(ZMapIOOut dest, ZMapFeature feature, char *prefix, gboolean full)
 {
   char *indent = "" ;
@@ -125,7 +125,7 @@ void zMapFeaturePrint(ZMapIOOut dest, ZMapFeature feature, char *prefix, gboolea
 
   return ;
 }
-
+#endif
 
 
 

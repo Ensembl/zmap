@@ -66,6 +66,13 @@ fi
 zmap_message_out "bootstrap starting...."
 
 
+# Remove any files/dirs from previous builds, necessary because different
+# systems have different versions of autoconf causing clashes over macros
+# and so on.
+#
+autoconf_generated='./config ./config.h.in ./Makefile.in'
+rm -rf $autoconf_generated
+
 
 # set up zmap version number, this is arcane and horrible and all
 # autoconf's fault. See http://sources.redhat.com/automake/automake.html#Rebuilding
@@ -75,10 +82,13 @@ zmap_message_out "bootstrap starting...."
 version_macro_file='zmap_version.m4'
 rm -f $version_macro_file
 
+
 # For production branches we use the abbreviated version number (i.e. no git commit info.).
 branch=`$BASE_DIR/../scripts/git_branch.sh`
 if [ "$branch" = "production" ] ; then
   version_arg='-a'
+else
+  version_arg='-b'
 fi
 
 ZMAP_VERSION=`../scripts/git_version.sh $version_arg`

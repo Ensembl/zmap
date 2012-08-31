@@ -91,6 +91,7 @@ void zMapWindowCanvasLocusPaintFeature(ZMapWindowFeaturesetItem featureset, ZMap
 	text = (char *) g_quark_to_string(feature->feature->original_id);
 	len = strlen(text);
 	pango_layout_set_text (lset->pango.layout, text, len);
+	locus->x_wid = len * lset->pango.text_width;
 
 		/* need to get pixel coordinates for pango */
 // (dy = start plus block offset)
@@ -272,6 +273,22 @@ double deOverlap(GList *visible,int n_loci, double text_h, double start, double 
 
 
 
+gboolean locusFeatureIsFiltered(GList *filters, char * locus)
+{
+	GList * l;
+	char *prefix;
+
+	for(l = filters; l ; l = l->next)
+	{
+		prefix = (char *) l->data;
+		if(!g_ascii_strncasecmp(locus, prefix,strlen(prefix)))
+			return TRUE;
+	}
+	return FALSE;
+}
+
+
+
 /* de-overlap and hide features if necessary,
  * NOTE that we never change the zoom,
  * but we'll always get called once for display (NOTE before creating the index)
@@ -318,15 +335,17 @@ static void zMapWindowCanvasLocusZoomSet(ZMapWindowFeaturesetItem featureset, Gd
 		text = (char *) g_quark_to_string(locus->feature.feature->original_id);
 		len = strlen(text);
 
-#if 0
-not implemented yet!
-		if(filtered(text))
+		if(locusFeatureIsFiltered(lset->filter, text))
 		{
-			feature->flags |= FEATURE_HIDDEN | FEATURE_HIDE_FILTER;
+			locus->feature.flags |= FEATURE_HIDDEN | FEATURE_HIDE_FILTER;
 		}
 		else
-#endif
 		{
+			/* make visible */
+			locus->feature.flags &= ~FEATURE_HIDE_FILTER;
+			if(!(locus->feature.flags & FEATURE_HIDE_REASON))
+				locus->feature.flags &= ~FEATURE_HIDDEN;
+
 			/* expand the column if needed */
 			width = locus->x_off + len * lset->pango.text_width;
 			if(width > featureset->width)
@@ -395,7 +414,15 @@ static double locusPoint(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature gs
 	double ytext = locus->ytext - lset->text_h / 2 - fi->dy + 1;
 
 	if(item_y >= ytext && item_y <= (ytext + lset->text_h))
-		best = 0.0;
+	{
+		double x1, x2;
+
+		x1 = locus->x_off;
+		x2 = x1 + locus->x_wid;
+
+		if(item_x >= x1 && item_x <= x2)
+			best = 0.0;
+	}
 //printf("locus point: %.1f %s (%.1f, %.1f) -> %.1f\n", item_y, g_quark_to_string(gs->feature->unique_id), ytext, ytext + lset->text_h, best > 0.0 ? 1.0 : 0.0);
 	return best;
 }
@@ -414,3 +441,12 @@ void zMapWindowCanvasLocusInit(void)
 	zMapWindowCanvasFeatureSetSetFuncs(FEATURE_LOCUS, funcs, sizeof(zmapWindowCanvasLocusStruct), sizeof(zmapWindowCanvasLocusSetStruct));
 }
 
+
+
+
+void zMapWindowCanvasLocusSetFilter(ZMapWindowFeaturesetItem featureset, GList * filter)
+{
+	ZMapWindowCanvasLocusSet lset = (ZMapWindowCanvasLocusSet) featureset->opt;
+
+	lset->filter = filter;
+}

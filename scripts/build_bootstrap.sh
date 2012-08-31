@@ -438,11 +438,12 @@ zmap_message_out "Set zmap version to $ZMAP_RELEASE_VERSION."
 zmap_message_out "*** INFORMATION: Version of zmap being built is $ZMAP_RELEASE_VERSION ***"
 
 
-# LET'S TRY ALWAYS NAMING THE RELEASE DIRECTORY....
-#if [ "x$ZMAP_MASTER_TAG_CVS" == "x$ZMAP_TRUE" ]; then
-#    [ "x$RELEASE_LOCATION" == "x" ] && RELEASE_LOCATION=$ZMAP_RELEASES_DIR/ZMap.$ZMAP_RELEASE_VERSION.BUILD
-#fi
+# If release dir already exists then move it aside, if there is already a moved-aside
+# dir it gets removed first.
+#
 RELEASE_LOCATION=$ZMAP_RELEASES_DIR/ZMap.$ZMAP_RELEASE_VERSION.BUILD
+
+zmap_move_aside_dir $RELEASE_LOCATION
 
 mkdir $RELEASE_LOCATION || zmap_message_rm_exit "Failed to create release directory $RELEASE_LOCATION"
 

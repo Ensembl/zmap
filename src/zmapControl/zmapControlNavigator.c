@@ -67,8 +67,11 @@ static ZMapWindowNavigatorCallbackStruct control_nav_cbs_G = {
 ZMapNavigator zMapNavigatorCreate(GtkWidget **top_widg_out, GtkWidget **canvas_out)
 {
   ZMapNavigator navigator ;
+#if USE_REGION
   GtkObject *adjustment ;
-  GtkWidget *pane, *label,
+  GtkWidget *label,
+#endif
+  GtkWidget *pane,
     *locator_frame  = NULL,
     *locator_canvas = NULL,
     *locator_vbox   = NULL,
@@ -79,6 +82,7 @@ ZMapNavigator zMapNavigatorCreate(GtkWidget **top_widg_out, GtkWidget **canvas_o
     {
       navigator->pane = pane = gtk_hpaned_new() ;
 
+#if 0
       /* Construct the region locator. */
 
       /* Need a vbox so we can add a label with sequence size at the bottom later,
@@ -103,7 +107,7 @@ ZMapNavigator zMapNavigatorCreate(GtkWidget **top_widg_out, GtkWidget **canvas_o
        * remains small and the vscale expands to fill the rest of the box. */
       navigator->botLabel = gtk_label_new(BOTTEXT_NO_SCALE) ;
       gtk_box_pack_end(GTK_BOX(navigator->navVBox), navigator->botLabel, FALSE, TRUE, 0);
-
+#endif
 
       /* Construct the window locator ... */
       locator_vbox  = gtk_vbox_new(FALSE, 0);
@@ -151,6 +155,8 @@ ZMapNavigator zMapNavigatorCreate(GtkWidget **top_widg_out, GtkWidget **canvas_o
 }
 
 
+
+
 /* Set function + data that Navigator will call each time the position of the region window
  * is changed. */
 void zMapNavigatorSetWindowCallback(ZMapNavigator navigator,
@@ -193,15 +199,22 @@ int zMapNavigatorSetWindowPos(ZMapNavigator navigator, double top_pos, double bo
 void zMapNavigatorSetView(ZMapNavigator navigator, ZMapFeatureContext features,
 			  double top, double bottom)
 {
+#if UNUSED_MEMORY_LEAK
+  gchar *window_top_str, *window_bot_str ;
+#endif
+#if USE_REGION
   GtkObject *region_adjuster;
-  gchar *region_top_str, *region_bot_str, *window_top_str, *window_bot_str ;
+  gchar *region_top_str, *region_bot_str;
   region_adjuster = (GtkObject *)gtk_range_get_adjustment(GTK_RANGE(navigator->navVScroll)) ;
+#endif
 
   /* May be called with no sequence to parent mapping so must set default navigator for this. */
   if (features)
     {
+      navigator->sequence_span = features->master_align->sequence_span;	/* n.b. struct copy. */
+
+#if USE_REGION
       navigator->parent_span = features->parent_span ;	    /* n.b. struct copy. */
-      navigator->sequence_span = features->master_align->sequence_span;
 
       region_top_str = g_strdup_printf("%d", navigator->parent_span.x1) ;
       region_bot_str = g_strdup_printf("%d", navigator->parent_span.x2) ;
@@ -230,16 +243,22 @@ void zMapNavigatorSetView(ZMapNavigator navigator, ZMapFeatureContext features,
       GTK_ADJUSTMENT(region_adjuster)->page_size = (gdouble)(fabs(navigator->sequence_span.x2
 								  - navigator->sequence_span.x1) + 1) ;
 
-      window_top_str = g_strdup_printf("%d", navigator->sequence_span.x1) ;
+#endif
+#if UNUSED_MEMORY_LEAK
+	window_top_str = g_strdup_printf("%d", navigator->sequence_span.x1) ;
       window_bot_str = g_strdup_printf("%d", navigator->sequence_span.x2) ;
-
+#endif
       zMapNavigatorSetWindowPos(navigator, top, bottom) ;
     }
   else
     {
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       navigator->parent_span.x1 = navigator->parent_span.x2 = 0 ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
       navigator->sequence_span.x1 = navigator->sequence_span.x2 = 0 ;
 
+#if USE_REGION
       region_top_str = g_strdup(TOPTEXT_NO_SCALE) ;
       region_bot_str = g_strdup(BOTTEXT_NO_SCALE) ;
 
@@ -250,11 +269,14 @@ void zMapNavigatorSetView(ZMapNavigator navigator, ZMapFeatureContext features,
       GTK_ADJUSTMENT(region_adjuster)->page_increment = 0.0 ;
       GTK_ADJUSTMENT(region_adjuster)->page_size = 0.0 ;
 
+#endif
+#if UNUSED_MEMORY_LEAK
       window_top_str = g_strdup(TOPTEXT_NO_SCALE) ;
       window_bot_str = g_strdup(BOTTEXT_NO_SCALE) ;
-
+#endif
     }
 
+#if USE_REGION
   gtk_adjustment_changed(GTK_ADJUSTMENT(region_adjuster)) ;
 
   gtk_label_set_text(GTK_LABEL(navigator->topLabel), region_top_str) ;
@@ -262,6 +284,7 @@ void zMapNavigatorSetView(ZMapNavigator navigator, ZMapFeatureContext features,
 
   g_free(region_top_str) ;
   g_free(region_bot_str) ;
+#endif
 
   return ;
 }

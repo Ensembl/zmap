@@ -36,7 +36,9 @@
 
 #include <zmapWindow_P.h>
 #include <zmapWindowContainerUtils.h>
+#if USE_FACTORY
 #include <zmapWindowItemFactory.h>
+#endif
 #include <ZMap/zmapWindowNavigator.h>
 
 #define NAVIGATOR_SIZE 25000
@@ -66,7 +68,9 @@ typedef struct _ZMapWindowNavigatorStruct
   ZMapWindowContainerGroup container_root ; /* what we'll raise and lower */
   ZMapWindowContainerGroup container_align; /* because I think we'll probably need it. */
 
+#if USE_FACTORY
   ZMapWindowFToIFactory item_factory;
+#endif
 
   ZMapWindow      current_window; /* the current window... */
 
@@ -95,6 +99,8 @@ typedef struct _ZMapWindowNavigatorStruct
 
   GList          *hide_filter;
   GList          *available_filters;
+
+  ZMapWindowFeaturesetItem locus_featureset;
 
   ZMapSpanStruct  full_span;    /* N.B. this is seqExtent !!! i.e. seq start -> seq end + 1!!! */
 

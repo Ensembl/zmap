@@ -618,6 +618,8 @@ static void getDetailedExon(gpointer exon_data, gpointer user_data)
 
 
   /* Set up the translation from CDS stuff. */
+
+
   if (full_exon_cds)
     {
       int pep_start, pep_end, pep_length ;
@@ -729,7 +731,16 @@ static ZMapFullExon exonCreate(int feature_start, ExonRegionType region_type, ZM
   *curr_spliced_pos += exon_length ;
   if (region_type != EXON_NON_CODING)
     {
-      *curr_cds_pos += exon_length ;
+      if (region_type != EXON_START_NOT_FOUND)
+	{
+		/* mh17:
+		 * else we get 1 out of step with peptides: CDS is used for getting AA's
+		 * not trans pos, which is used to set phase
+		 * (RT 266769)
+		 */
+
+		*curr_cds_pos += exon_length ;
+	}
 
       if (region_type != EXON_START_NOT_FOUND)
 	*curr_trans_pos += exon_length ;

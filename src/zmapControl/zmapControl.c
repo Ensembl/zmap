@@ -1,4 +1,3 @@
-/*  Last edited: Jul  5 10:26 2011 (edgrif) */
 /*  File: zmapControl.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -21,8 +20,8 @@
  * This file is part of the ZMap genome database package
  * and was written by
  *     Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk and,
- *          Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
- *       Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *       Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *  Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: This is the ZMap interface code, it controls both
  *              the window code and the threaded server code.
@@ -32,17 +31,12 @@
 
 #include <ZMap/zmap.h>
 
-
-
-
-
-
 #include <stdio.h>
 #include <gtk/gtk.h>
+
 #include <ZMap/zmapView.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapUtilsGUI.h>
-
 
 /* THIS BREAKS SOME EXISTING ENCAPSULATION OF WHERE HEADERS ARE.... */
 /* need to be sorted out sometime */
@@ -184,6 +178,7 @@ ZMapView zMapAddView(ZMap zmap, ZMapFeatureSequenceMap sequence_map)
 
   return view ;
 }
+
 
 gboolean zmapConnectViewConfig(ZMap zmap, ZMapView view, char *config)
 {

@@ -1,4 +1,4 @@
-/*  Last edited: Jul 11 12:08 2011 (edgrif) */
+/*  Last edited: Jul 23 14:45 2012 (edgrif) */
 /*  File: pipeServer.c
  *  Author: Malcolm Hinsley (mh17@sanger.ac.uk)
  *      derived from fileServer.c by Ed Griffiths (edgrif@sanger.ac.uk)
@@ -75,7 +75,7 @@ typedef struct
 
 static gboolean globalInit(void) ;
 static gboolean createConnection(void **server_out,
-				 ZMapURL url, char *format,
+				 char *config_file, ZMapURL url, char *format,
                                  char *version_str, int timeout) ;
 
 static gboolean pipe_server_spawn(PipeServer server,GError **error);
@@ -158,7 +158,7 @@ static void getConfiguration(PipeServer server)
 {
   ZMapConfigIniContext context;
 
-  if((context = zMapConfigIniContextProvide()))
+  if((context = zMapConfigIniContextProvide(server->config_file)))
     {
       char *tmp_string  = NULL;
 
@@ -201,7 +201,7 @@ static void getConfiguration(PipeServer server)
  *
  *  */
 static gboolean createConnection(void **server_out,
-				 ZMapURL url, char *format,
+				 char *config_file, ZMapURL url, char *format,
                                  char *version_str, int timeout_unused)
 {
   gboolean result = TRUE ;
@@ -216,59 +216,61 @@ static gboolean createConnection(void **server_out,
 
   getConfiguration(server);	// get scripts directory
 
+  server->config_file = g_strdup(config_file) ;
+
   server->scheme = url->scheme;
 
 #if !SCRIPT_DIR
   server->script_path = zMapGetPath(url->path) ;	/* if absolute */
 
   if(server->scheme == SCHEME_FILE)
-  {
+    {
       char *tmp_path;
 
-  	getConfiguration(server);	// get data directory for files
-	dir = server->data_dir;
+      getConfiguration(server);	// get data directory for files
+      dir = server->data_dir;
 
       if (*(url->path) != '/' && dir && *dir)
 	{
-	      tmp_path = g_strdup_printf("%s/%s", dir,url->path) ;		/* NB '//' works as '/' */
-	    	server->script_path = zMapGetPath(tmp_path) ;
-      	g_free(tmp_path) ;
+	  tmp_path = g_strdup_printf("%s/%s", dir,url->path) ;		/* NB '//' works as '/' */
+	  server->script_path = zMapGetPath(tmp_path) ;
+	  g_free(tmp_path) ;
 	}
-  }
+    }
 #if !USING_SPAWN_SERACH_PATH_FLAG
   else if(server->scheme == SCHEME_PIPE && *(url->path) != '/')	/* find the script on our path env */
-  {
-  	extern char ** environ;
-	char **env = environ;	/* C global */
-	while(*env)
+    {
+      extern char ** environ;
+      char **env = environ;	/* C global */
+      while(*env)
 	{
-		char *p = *env++;
+	  char *p = *env++;
 
-		if(!g_ascii_strncasecmp(p,"PATH=",5))	/* there's no case sensitive version ! */
+	  if(!g_ascii_strncasecmp(p,"PATH=",5))	/* there's no case sensitive version ! */
+	    {
+	      char ** paths = g_strsplit(p+5,":",0);
+	      if(paths)
 		{
-			char ** paths = g_strsplit(p+5,":",0);
-			if(paths)
+		  char ** pathp = paths;
+
+		  while(*pathp)
+		    {
+		      dir =  g_strdup_printf("%s/%s",*pathp,url->path);
+		      if(g_file_test(dir,G_FILE_TEST_IS_EXECUTABLE))
 			{
-				char ** pathp = paths;
+			  server->script_path = zMapGetPath(dir) ;
+			  g_free(dir);
 
-				while(*pathp)
-				{
-					dir =  g_strdup_printf("%s/%s",*pathp,url->path);
-					if(g_file_test(dir,G_FILE_TEST_IS_EXECUTABLE))
-					{
-						server->script_path = zMapGetPath(dir) ;
-						g_free(dir);
-
-						break;
-					}
-					pathp++;
-				}
-
-				g_strfreev(paths);
+			  break;
 			}
+		      pathp++;
+		    }
+
+		  g_strfreev(paths);
 		}
+	    }
 	}
-  }
+    }
 #endif
 #else
   dir = (server->scheme == SCHEME_PIPE) ? server->script_dir : server->data_dir;
@@ -293,13 +295,13 @@ static gboolean createConnection(void **server_out,
 #endif
 
   if(url->query)
-      server->query = g_strdup_printf("%s",url->query);
+    server->query = g_strdup_printf("%s",url->query);
   else
-      server->query = g_strdup("");
+    server->query = g_strdup("");
 
   server->protocol = PIPE_PROTOCOL_STR;
   if(server->scheme == SCHEME_FILE)
-        server->protocol = FILE_PROTOCOL_STR;
+    server->protocol = FILE_PROTOCOL_STR;
 
   server->zmap_start = 1;
   server->zmap_end = 0; // default to all of it

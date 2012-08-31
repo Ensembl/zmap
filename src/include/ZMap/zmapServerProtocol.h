@@ -1,4 +1,3 @@
-/*  Last edited: Jul  7 15:27 2011 (edgrif) */
 /*  File: zmapServerProtocol.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -95,6 +94,8 @@ typedef struct
 {
   ZMapServerReqType type ;
   ZMapServerResponseType response ;
+
+  char *config_file ;
 
   ZMapURL url ;
   char *format ;

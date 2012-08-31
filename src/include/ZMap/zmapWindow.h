@@ -457,7 +457,7 @@ gboolean zMapWindowScrollToItem(ZMapWindow window, FooCanvasItem *feature_item) 
 
 gboolean zMapWindowFeatureSelect(ZMapWindow window, ZMapFeature feature) ;
 
-void zMapWindowHighlightFeature(ZMapWindow window, ZMapFeature feature, gboolean replace) ;
+void zMapWindowHighlightFeature(ZMapWindow window, ZMapFeature feature, gboolean highlight_same_names, gboolean replace);
 void zMapWindowHighlightObject(ZMapWindow window, FooCanvasItem *feature,
 			       gboolean replace_highlight_item, gboolean highlight_same_names, gboolean sub_part) ;
 void zMapWindowHighlightObjects(ZMapWindow window, ZMapFeatureContext context, gboolean multiple_select);

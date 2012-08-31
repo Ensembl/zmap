@@ -1,3 +1,4 @@
+/*  Last edited: Jul 23 15:37 2012 (edgrif) */
 /*  File: zmapWindowDrawFeatures.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -40,7 +41,7 @@
 
 #include <zmapWindow_P.h>
 #include <zmapWindowContainerUtils.h>
-#include <zmapWindowItemFactory.h>
+//#include <zmapWindowItemFactory.h>
 #include <zmapWindowContainerFeatureSet_I.h>
 #include <zmapWindowCanvas.h>
 
@@ -83,8 +84,8 @@ typedef struct _ZMapCanvasDataStruct
   ZMapWindowContainerFeatures curr_forward_group ;
   ZMapWindowContainerFeatures curr_reverse_group ;
 
-  ZMapWindowContainerFeatures curr_forward_col ;
-  ZMapWindowContainerFeatures curr_reverse_col ;
+//  ZMapWindowContainerFeatures curr_forward_col ;
+//  ZMapWindowContainerFeatures curr_reverse_col ;
 
 
   GHashTable *feature_hash ;
@@ -284,11 +285,13 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
 
   zmapWindowBusy(window, TRUE) ;
 
+#if USE_FACTORY
   if(!window->item_factory)
     {
       window->item_factory = zmapWindowFToIFactoryOpen(window->context_to_item); //, window->long_items);
       zmapWindowFeatureFactoryInit(window);
     }
+#endif
 
   /* Set up colours. */
   if (!window->done_colours)
@@ -315,14 +318,14 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
 
   window->seqLength = zmapWindowExt(window->sequence->start, window->sequence->end) ;
 
-  zmapWindowRulerCanvasSetRevComped(window->ruler, window->revcomped_features) ;
+  zmapWindowScaleCanvasSetRevComped(window->ruler, window->revcomped_features) ;
 /*
  * MH17: after a revcomp we end up with 1-based coords if we have no official parent span
  * which is very confusing but valid. To display the ruler properly we need to use those coordinates
  * and not the original sequence coordinates.
  * the code just above sets sequence->start,end, but only on the first display, which is not revcomped
  */
-  zmapWindowRulerCanvasSetSpan(window->ruler, seq_start, seq_end) ;
+//  zmapWindowScaleCanvasSetSpan(window->ruler, seq_start, seq_end) ;
 
   zmapWindowZoomControlInitialise(window);		    /* Sets min/max/zf */
 
@@ -345,13 +348,15 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
   h_adj = gtk_scrolled_window_get_hadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window)) ;
 
   foo_canvas_set_pixels_per_unit_xy(window->canvas, 1.0, zMapWindowGetZoomFactor(window)) ;
-  zmapWindowRulerCanvasSetPixelsPerUnit(window->ruler, 1.0, zMapWindowGetZoomFactor(window)) ;
+  zmapWindowScaleCanvasSetPixelsPerUnit(window->ruler, 1.0, zMapWindowGetZoomFactor(window)) ;
 
+#if 0
   {
     double border_copy = 0.0;
     zmapWindowGetBorderSize(window, &border_copy);
-    zmapWindowRulerCanvasSetLineHeight(window->ruler, border_copy * window->canvas->pixels_per_unit_y);
+    zmapWindowScaleCanvasSetLineHeight(window->ruler, border_copy * window->canvas->pixels_per_unit_y);
   }
+#endif
 
   canvas_data.window = window;
   canvas_data.canvas = window->canvas;
@@ -851,9 +856,18 @@ int zmapWindowDrawFeatureSet(ZMapWindow window,
   if(f_src)
   	featureset_data.feature_stack.maps_to = f_src->maps_to;
 
+  featureset_data.feature_stack.set_column[ZMAPSTRAND_NONE]    = (ZMapWindowContainerFeatureSet) forward_container;
+  featureset_data.feature_stack.set_column[ZMAPSTRAND_FORWARD] = (ZMapWindowContainerFeatureSet) forward_container;
+  featureset_data.feature_stack.set_column[ZMAPSTRAND_REVERSE] = (ZMapWindowContainerFeatureSet) reverse_container;
+
+  featureset_data.feature_stack.set_features[ZMAPSTRAND_NONE]    = featureset_data.curr_forward_col;
+  featureset_data.feature_stack.set_features[ZMAPSTRAND_FORWARD] = featureset_data.curr_forward_col;
+  featureset_data.feature_stack.set_features[ZMAPSTRAND_REVERSE] = featureset_data.curr_reverse_col;
+
   /* Now draw all the features in the column. */
   //   zMapStartTimer("DrawFeatureSet","ProcessFeature");
-      g_hash_table_foreach(feature_set->features, ProcessFeature, &featureset_data) ;
+
+  g_hash_table_foreach(feature_set->features, ProcessFeature, &featureset_data) ;
 
 //printf("Processed %d features in %s\n",featureset_data.feature_count, g_quark_to_string(feature_set->unique_id));
 
@@ -2341,9 +2355,14 @@ static void ProcessListFeature(gpointer data, gpointer user_data)
   ZMapFeature feature = (ZMapFeature) data ;
   CreateFeatureSetData featureset_data = (CreateFeatureSetData) user_data ;
   ZMapWindow window = featureset_data->window ;
-  ZMapWindowContainerGroup column_group ;
+#if CALCULATE_COLUMNS
+  FooCanavsGroup * column_group;
+#else
+  ZMapWindowContainerFeatureSet column_group ;
+#endif
+  ZMapWindowContainerFeatures features;
   ZMapStrand display_strand ;
-  FooCanvasItem *feature_item ;
+  FooCanvasItem *feature_item = NULL;
   ZMapFeatureTypeStyle style ;
 
 #if MH17_REVCOMP_DEBUG > 1
@@ -2372,6 +2391,9 @@ static void ProcessListFeature(gpointer data, gpointer user_data)
   /* Find out which strand group the feature should be displayed in. */
   display_strand = zmapWindowFeatureStrand(window, feature) ;
 
+
+#if CALCULATE_COLUMNS
+
   /* Caller may not want a forward or reverse strand and this is indicated by NULL value for
    * curr_forward_col or curr_reverse_col */
   if ((display_strand == ZMAPSTRAND_FORWARD && !(featureset_data->curr_forward_col))
@@ -2382,6 +2404,11 @@ static void ProcessListFeature(gpointer data, gpointer user_data)
 #endif
     return ;
   }
+#else
+  features = featureset_data->feature_stack.set_features[display_strand];
+  if(!features)
+	  return;
+#endif
 
   /* If we are doing frame specific display then don't display the feature if its the wrong
    * frame or its on the reverse strand and we aren't displaying reverse strand frames. */
@@ -2398,6 +2425,8 @@ static void ProcessListFeature(gpointer data, gpointer user_data)
     return ;
   }
 
+
+#if CALCULATE_COLUMNS
   /* Get the correct column to draw into... */
   if (display_strand == ZMAPSTRAND_FORWARD)
     {
@@ -2407,8 +2436,10 @@ static void ProcessListFeature(gpointer data, gpointer user_data)
     {
       column_group = zmapWindowContainerChildGetParent(FOO_CANVAS_ITEM(featureset_data->curr_reverse_col)) ;
     }
-
-//  featureset_data->feature_count++;
+#else
+  column_group = featureset_data->feature_stack.set_column[display_strand];
+  feature_item = featureset_data->feature_stack.col_featureset[display_strand];
+#endif
 
 
 
@@ -2429,7 +2460,12 @@ static void ProcessListFeature(gpointer data, gpointer user_data)
   featureset_data->feature_stack.feature = feature;
 
   if(style)
-    feature_item = zmapWindowFeatureDraw(window, style, (FooCanvasGroup *)column_group, &featureset_data->feature_stack) ;
+  {
+	  feature_item = zmapWindowFeatureDraw(window, style, column_group, features, feature_item, &featureset_data->feature_stack) ;
+#if !CALCULATE_COLUMNS
+	  featureset_data->feature_stack.col_featureset[display_strand] = feature_item;
+#endif
+  }
   else
     g_warning("definitely need a style '%s' for feature '%s'",
 	      g_quark_to_string(feature->style_id),
@@ -2761,7 +2797,7 @@ static void setColours(ZMapWindow window)
   gdk_color_parse(ZMAP_WINDOW_ITEM_EVIDENCE_FILL, &(window->colour_evidence_fill)) ;
   window->highlights_set.evidence = TRUE ;
 
-  if ((context = zMapConfigIniContextProvide()))
+  if ((context = zMapConfigIniContextProvide(window->sequence->config_file)))
     {
       char *colour = NULL;
 

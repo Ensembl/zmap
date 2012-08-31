@@ -619,6 +619,14 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
 						tmp,
 						NULL) ;
 
+	/* NOTE
+	 * in Otterlace start not found is displayed as <not set> or 1 or 2 or 3
+	 * GFF specifies . or 0/1/2
+	 * so we present a 'human' number here not what's specified in GFF
+	 * See RT 271175 if this is wrong then that ticket needs to be revived and otterlace changed
+	 * or for havana to accept the different numbers
+	 * refer to other calls to zMapFeaturePhase2Str()
+	 */
       if (feature->feature.transcript.flags.start_not_found)
 	tmp = g_strdup_printf("%s", zMapFeaturePhase2Str(feature->feature.transcript.start_not_found)) ;
       else

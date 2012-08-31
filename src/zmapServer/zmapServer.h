@@ -54,6 +54,7 @@ gboolean zMapServerGlobalInit(ZMapURL url, void **server_global_data_out) ;
 
 
 ZMapServerResponseType zMapServerCreateConnection(ZMapServer *server_out, void *server_global_data,
+						  char *config_file,
 						  ZMapURL url,  char *format,
 						  int timeout, char *version_str);
 ZMapServerResponseType zMapServerOpenConnection(ZMapServer server,ZMapServerReqOpen req_open) ;

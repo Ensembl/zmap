@@ -3,6 +3,7 @@ NULL =
 nobase_include_HEADERS = ZMap/sysdep.h \
 ZMap/safe-ctype.h \
 ZMap/zmap.h \
+ZMap/zmapAppServices.h \
 ZMap/zmapBase.h \
 ZMap/zmapCmdLineArgs.h \
 ZMap/zmapConfig.h \

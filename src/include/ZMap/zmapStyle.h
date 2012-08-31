@@ -390,6 +390,7 @@ _(ZMAPSTYLE_MODE_ASSEMBLY_PATH, , "assembly-path", "Assembly path "             
 _(ZMAPSTYLE_MODE_TEXT,          , "text"         , "Text only display "                            , "") \
 _(ZMAPSTYLE_MODE_GRAPH,         , "graph"        , "Graphs of various types "                      , "") \
 _(ZMAPSTYLE_MODE_GLYPH,         , "glyph"        , "Special graphics for particular feature types ", "") \
+_(ZMAPSTYLE_MODE_PLAIN,         , "plain"        , "generic non-feature graphics", "") \
 _(ZMAPSTYLE_MODE_META,          , "meta"         , "Meta object controlling display of features "  , "")
 
 /* NOTE x-ref to feature_types[] in zmapWindowCanvasFeatureset.c if you change this */
@@ -1016,7 +1017,7 @@ gboolean zMapStyleNameCompare(ZMapFeatureTypeStyle style, char *name) ;
 gboolean zMapStyleIsTrueFeature(ZMapFeatureTypeStyle style) ;
 
 ZMapStyleGlyphShape zMapStyleGetGlyphShape(gchar *shape, GQuark id);
-ZMapFeatureTypeStyle zMapStyleLegacyStyle(char *name);
+ZMapFeatureTypeStyle zMapStyleLegacyStyle(char *config_file, char *name);
 gboolean zMapStyleIsSpliceStyle(ZMapFeatureTypeStyle style) ;
 
 
@@ -1045,18 +1046,29 @@ void zMapStyleSetMode(ZMapFeatureTypeStyle style, ZMapStyleMode mode) ;
 
 #define zMapStyleGetInitialBumpMode(style) (style->initial_bump_mode)
 void zMapStyleSetInitialBumpMode(ZMapFeatureTypeStyle style, ZMapStyleBumpMode bump_mode) ;
+//ZMapStyleBumpMode zMapStyleGetDefaultBumpMode(ZMapFeatureTypeStyle style);
+#define zMapStyleGetDefaultBumpMode(style)      (style->default_bump_mode)
+//double zMapStyleGetBumpSpace(ZMapFeatureTypeStyle style) ;
+#define zMapStyleGetBumpSpace(style)   (style->bump_spacing)
+void zMapStyleSetBumpSpace(ZMapFeatureTypeStyle style, double bump_spacing) ;
+//double zMapStyleGetBumpWidth(ZMapFeatureTypeStyle style) ;
+#define zMapStyleGetBumpWidth(style)      (style->bump_spacing)   // yes really
+void zMapStyleInitBumpMode(ZMapFeatureTypeStyle style,
+			   ZMapStyleBumpMode default_bump_mode, ZMapStyleBumpMode curr_bump_mode) ;
+#if MH17_NO_STYLE_BUMP
+ZMapStyleBumpMode zMapStyleResetBumpMode(ZMapFeatureTypeStyle style) ;
+#endif
+ZMapStyleBumpMode zMapStylePatchBumpMode(ZMapStyleBumpMode curr_mode) ;
+
+
 
 //const gchar *zMapStyleGetGFFSource(ZMapFeatureTypeStyle style) ;
 #define zMapStyleGetGFFSource(style) g_quark_to_string(style->gff_source)     // NULL quark gives NULL string
 //const gchar *zMapStyleGetGFFFeature(ZMapFeatureTypeStyle style) ;
 #define zMapStyleGetGFFFeature(style)      g_quark_to_string(style->gff_feature)
 void zMapStyleSetDescription(ZMapFeatureTypeStyle style, char *description) ;
-//ZMapStyleBumpMode zMapStyleGetDefaultBumpMode(ZMapFeatureTypeStyle style);
-#define zMapStyleGetDefaultBumpMode(style)      (style->default_bump_mode)
 //double zMapStyleGetWidth(ZMapFeatureTypeStyle style) ;
 #define zMapStyleGetWidth(style)   (style->width)
-//double zMapStyleGetBumpSpace(ZMapFeatureTypeStyle style) ;
-#define zMapStyleGetBumpSpace(style)   (style->bump_spacing)
 //ZMapStyleColumnDisplayState zMapStyleGetDisplay(ZMapFeatureTypeStyle style) ;
 #define zMapStyleGetDisplay(style)   (style->col_display_state)
 
@@ -1111,8 +1123,6 @@ char *zMapStyleMakeColourString(char *normal_fill, char *normal_draw, char *norm
 
 //void zMapStyleGetGappedAligns(ZMapFeatureTypeStyle style, gboolean *parse_gaps, gboolean *show_gaps) ;
 
-//double zMapStyleGetBumpWidth(ZMapFeatureTypeStyle style) ;
-#define zMapStyleGetBumpWidth(style)      (style->bump_spacing)   // yes really
 void zMapStyleSetParent(ZMapFeatureTypeStyle style, char *parent_name) ;
 void zMapStyleSetMag(ZMapFeatureTypeStyle style, double min_mag, double max_mag) ;
 void zMapStyleSetGraph(ZMapFeatureTypeStyle style, ZMapStyleGraphMode mode, double min, double max, double baseline) ;
@@ -1131,7 +1141,6 @@ void zMapStyleSetEndStyle(ZMapFeatureTypeStyle style, gboolean directional) ;
 void zMapStyleSetGappedAligns(ZMapFeatureTypeStyle style, gboolean parse_gaps, gboolean show_gaps) ;
 
 //gboolean zMapStyleGetJoinAligns(ZMapFeatureTypeStyle style, unsigned int *between_align_error) ;
-void zMapStyleSetBumpSpace(ZMapFeatureTypeStyle style, double bump_spacing) ;
 void zMapStyleSetShowWhenEmpty(ZMapFeatureTypeStyle style, gboolean show_when_empty) ;
 void zMapStyleSetPfetch(ZMapFeatureTypeStyle style, gboolean pfetchable) ;
 void zMapStyleSetWidth(ZMapFeatureTypeStyle style, double width) ;
@@ -1139,7 +1148,7 @@ void zMapStyleSetWidth(ZMapFeatureTypeStyle style, double width) ;
 
 gboolean zMapStyleHasDrawableMode(ZMapFeatureTypeStyle style) ;
 gboolean zMapStyleIsDrawable(ZMapFeatureTypeStyle style, GError **error) ;
-gboolean zMapStyleMakeDrawable(ZMapFeatureTypeStyle style) ;
+gboolean zMapStyleMakeDrawable(char *config_file, ZMapFeatureTypeStyle style) ;
 
 gboolean zMapStyleGetColoursCDSDefault(ZMapFeatureTypeStyle style,
 				       GdkColor **background, GdkColor **foreground, GdkColor **outline);
@@ -1224,13 +1233,6 @@ GQuark zMapStyleCreateID(char *style_name) ;
 
 
 ZMapFeatureTypeStyle zMapStyleGetPredefined(char *style_name) ;
-
-void zMapStyleInitBumpMode(ZMapFeatureTypeStyle style,
-			      ZMapStyleBumpMode default_bump_mode, ZMapStyleBumpMode curr_bump_mode) ;
-
-#if MH17_NO_STYLE_BUMP
-ZMapStyleBumpMode zMapStyleResetBumpMode(ZMapFeatureTypeStyle style) ;
-#endif
 
 ZMapFeatureTypeStyle zMapFeatureStyleCopy(ZMapFeatureTypeStyle style) ;
 gboolean zMapStyleMerge(ZMapFeatureTypeStyle curr_style, ZMapFeatureTypeStyle new_style) ;

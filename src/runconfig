@@ -15,9 +15,12 @@ else
    BASE_DIR=$SCRIPT_DIR
 fi
 
+clean_dirs=''
+
 . $BASE_DIR/../scripts/zmap_functions.sh || { echo "Failed to load zmap_functions.sh"; exit 1; }
 set -o history
 . $BASE_DIR/../scripts/build_config.sh   || { echo "Failed to load build_config.sh";   exit 1; }
+
 
 zmap_message_out "Start of script."
 
@@ -25,29 +28,40 @@ zmap_message_out "Running in $INITIAL_DIR on $(hostname) under $(uname)"
 
 zmap_message_out "cmd line options = '$*'"
 
+
+
+# Cmd line options....
+#
+# Do args.
+#
+usage="$SCRIPT_NAME [ -c ]"
+
+while getopts ":c" opt ; do
+    case $opt in
+	c  ) clean_dirs='yes' ;;
+	\? ) message_exit "Bad arg flag: $usage" ;;
+    esac
+done
+
+
+
+
+# Remove any previously generated files in this dir.
+#
+if [ -n "$clean_dirs" ] ; then
+
+  zmap_message_out "Removing previously generated files...."
+
+  generated_files='./.deps ./.libs ./Makefile ./config.* dotZMap gffparser* ./include ./lib* ./stamp-h1 ./xml_* \
+./xremote* ./zmap*'
+  rm -rf $generated_files
+
+fi
+
+
 opsys=`uname`
 
 case $opsys in
-
-  OSF1 )
-    locals=/nfs/team71/acedb/zmap/prefix/ALPHA/bin
-    PATH="$locals:/usr/local/gtk2/bin:$PATH"
-    export PATH
-
-    # NOTE that currently the LDFLAGS stuff does not get through the configure step
-    # and so does not work....not sure why....
-    popt=/nfs/team71/acedb/zmap/prefix/ALPHA
-    CC_args='CC=cc'
-
-    # N.B. level5 messages just produces too much output for everyday use....
-    CFLAGS_args="CFLAGS=-I$popt/include -msg_enable level4"
-    LDFLAGS_args="LDFLAGS=-rpath /usr/local/gtk2/lib:$popt/lib"
-
-    locals=/nfs/team71/acedb/zmap/prefix/ALPHA/lib/pkgconfig
-    PKG_CONFIG_PATH="$locals:/usr/local/gtk2/lib/pkgconfig"
-    export PKG_CONFIG_PATH
-    zmap_message_exit "No longer a supported operating system."
-    ;;
 
   Linux )
 

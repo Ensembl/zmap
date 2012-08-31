@@ -1,3 +1,4 @@
+/*  Last edited: Jul 23 11:33 2012 (edgrif) */
 /*  File: zmapServerPrototype.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -58,6 +59,7 @@ typedef struct
 typedef gboolean (*ZMapServerGlobalFunc)(void) ;
 
 typedef gboolean (*ZMapServerCreateFunc)(void **server_conn,
+					 char *config_file,
 					 ZMapURL url, char *format,
                                          char *version_str, int timeout) ;
 

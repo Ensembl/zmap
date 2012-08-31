@@ -1,4 +1,4 @@
-/*  Last edited: Jul 13 14:30 2011 (edgrif) */
+/*  Last edited: Jul 23 16:05 2012 (edgrif) */
 /*  File: zmapWindow_P.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -52,6 +52,8 @@
 #define ZMAP_CANVAS_INIT_SIZE (100.0)
 
 
+#define FEATURE_SIZE_REQUEST	0	// see item factory
+#define USE_FACTORY	0
 
 /*
  *  This section details data that we attach to the foocanvas items that represent
@@ -236,7 +238,7 @@ typedef struct
 } ZMapWindowItemFeatureBumpDataStruct, *ZMapWindowItemFeatureBumpData ;
 
 
-/* used by item factory */
+/* used by item factory for drawing features from one featureset */
 typedef struct _zmapWindowFeatureStack
 {
       ZMapFeatureContext context;
@@ -250,6 +252,29 @@ typedef struct _zmapWindowFeatureStack
       ZMapStrand strand;
       ZMapFrame frame;
 	gboolean filter;	/* don't add to camvas if hidden */
+
+	/* NOTE there's a struct defined privately in zmapWindowDrawFeatures.c that would be better having these
+	 * as this is nominally related to the feature context not the camvas
+	 * but as want to pass this data around eg to windowFeature.c it can't go there
+	 * the idea here is to cache the column features group and column hash for each feature in the set
+	 * instead of recalculating it for every feature
+	 * these pointers also act as flags: they hold valid pointers if the frame/strand combination means draw the feature
+	 */
+#if ALL_FRAMES
+// 3-frame gets drawn via 3 scans of the featureset
+// it's a toss up whether this is fatser/slower than calculating where to send a feature out of 12 possible columns
+// or to calculate only 3 and do it 3x
+//      ZMapWindowContainerFeatures set_columns[N_FRAME * N_STRAND];	/* all possible strand and frame combinations */
+//      GHashTable *col_hash[N_FRAME * N_STRAND];
+#else
+	// just handle the strand / frame conbo's is in the original code structre - set gets drawn 3x in 3 Frame mode
+      ZMapWindowContainerFeatureSet set_column[N_STRAND_ALLOC];	/* all possible strand and frame combinations */
+      ZMapWindowContainerFeatures set_features[N_STRAND_ALLOC];
+	FooCanvasItem *col_featureset[N_STRAND_ALLOC];			/* the canvas featureset as allocated by the item factory */
+	GHashTable *col_hash[N_STRAND_ALLOC];
+
+#endif
+
 } ZMapWindowFeatureStackStruct, *ZMapWindowFeatureStack;
 
 
@@ -470,22 +495,21 @@ typedef struct
 
 
 
-typedef void (*ZMapWindowRulerCanvasCallback)(gpointer data,
+typedef void (*ZMapWindowScaleCanvasCallback)(gpointer data,
                                               gpointer user_data);
 
-typedef struct _ZMapWindowRulerCanvasCallbackListStruct
+typedef struct _ZMapWindowScaleCanvasCallbackListStruct
 {
-  ZMapWindowRulerCanvasCallback paneResize;
+  ZMapWindowScaleCanvasCallback paneResize;
 
   gpointer user_data;           /* Goes to all! */
-} ZMapWindowRulerCanvasCallbackListStruct, *ZMapWindowRulerCanvasCallbackList;
+} ZMapWindowScaleCanvasCallbackListStruct, *ZMapWindowScaleCanvasCallbackList;
 
 
 
-typedef struct _ZMapWindowRulerCanvasStruct *ZMapWindowRulerCanvas;
+typedef struct _ZMapWindowScaleCanvasStruct *ZMapWindowScaleCanvas;
 
 typedef struct _ZMapWindowZoomControlStruct *ZMapWindowZoomControl ;
-
 
 
 
@@ -652,7 +676,9 @@ typedef struct _ZMapWindowStruct
 
   ZMapWindowContainerGroup feature_root_group ;	            /* The root of our features. (ZMapWindowContainerContext) */
 
+#if USE_FACTORY
  ZMapWindowFToIFactory item_factory;
+#endif
 
   /* Lists of dialog windows associated with this zmap window, these must be destroyed when
    * the zmap window is destroyed. */
@@ -674,7 +700,7 @@ typedef struct _ZMapWindowStruct
   GtkWidget *col_config_window ;			    /* column configuration window. */
 
 
-  ZMapWindowRulerCanvas ruler ;
+  ZMapWindowScaleCanvas ruler ;
 
   /* Holds focus items/column for the zmap. */
   ZMapWindowFocus focus ;
@@ -863,6 +889,12 @@ void zmapWindowSeq2CanOffset(double *start_inout, double *end_inout, double offs
 
 GQuark zMapWindowGetFeaturesetContainerID(ZMapWindow window,GQuark featureset_id);
 
+FooCanvasItem *zmapWindowFToIFactoryRunSingle(GHashTable *ftoi_hash,
+							    ZMapWindowContainerFeatureSet parent_container,
+							    ZMapWindowContainerFeatures features_container,
+							    FooCanvasItem * foo_featureset,
+                                              ZMapWindowFeatureStack     feature_stack);
+
 GHashTable *zmapWindowFToICreate(void) ;
 gboolean zmapWindowFToIAddRoot(GHashTable *feature_to_context_hash, FooCanvasGroup *root_group) ;
 gboolean zmapWindowFToIRemoveRoot(GHashTable *feature_to_context_hash) ;
@@ -881,6 +913,10 @@ gboolean zmapWindowFToIAddSet(GHashTable *feature_to_context_hash,
 gboolean zmapWindowFToIRemoveSet(GHashTable *feature_to_context_hash,
 				 GQuark align_id, GQuark block_id, GQuark set_id,
 				 ZMapStrand strand, ZMapFrame frame, gboolean remove_features) ;
+GHashTable *zmapWindowFToIGetSetHash(GHashTable *feature_context_to_item,
+				  GQuark align_id, GQuark block_id,
+				  GQuark set_id, ZMapStrand set_strand, ZMapFrame set_frame);
+gboolean zmapWindowFToIAddSetFeature(GHashTable *set,	GQuark feature_id, FooCanvasItem *feature_item, ZMapFeature feature);
 gboolean zmapWindowFToIAddFeature(GHashTable *feature_to_context_hash,
 				  GQuark align_id, GQuark block_id,
 				  GQuark set_id, ZMapStrand set_strand, ZMapFrame set_frame,
@@ -935,9 +971,10 @@ FooCanvasItem *zmapWindowFToIFindItemChild(ZMapWindow window,GHashTable *feature
 FooCanvasItem *zMapWindowFindFeatureItemByItem(ZMapWindow window, FooCanvasItem *item) ;
 void zmapWindowFToIDestroy(GHashTable *feature_to_item_hash) ;
 
-
+#if USE_FACTORY
 void zmapWindowFeatureFactoryInit(ZMapWindow window);
 void zmapWindowFToIFactoryClose(ZMapWindowFToIFactory factory) ;
+#endif
 
 void zmapWindowZoomToItem(ZMapWindow window, FooCanvasItem *item) ;
 void zmapWindowZoomToItems(ZMapWindow window, GList *items) ;
@@ -1239,7 +1276,10 @@ ZMapStrand zmapWindowFeatureStrand(ZMapWindow window, ZMapFeature feature) ;
 ZMapFrame zmapWindowFeatureFrame(ZMapFeature feature) ;
 
 FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, ZMapFeatureTypeStyle style,
-				     FooCanvasGroup *set_group, ZMapWindowFeatureStack feature_stack) ;
+				     	ZMapWindowContainerFeatureSet set_group,
+				      ZMapWindowContainerFeatures set_features,
+					FooCanvasItem *foo_featureset,
+					ZMapWindowFeatureStack feature_stack) ;
 
 char *zmapWindowFeatureSetDescription(ZMapFeatureSet feature_set) ;
 char *zmapWindowFeatureSourceDescription(ZMapFeature feature) ;
@@ -1255,7 +1295,8 @@ void zmapWindowDebugWindowCopy(ZMapWindow window);
 void zmapWindowGetBorderSize(ZMapWindow window, double *border);
 /* End of zmapWindowZoomControl.c functions */
 
-void zmapWindowDrawScaleBar(ZMapWindow window, double start, double end) ;
+double zMapWindowDrawScaleBar(FooCanvasGroup *group, int scroll_start, int scroll_end,
+	int seq_start, int seq_end, double zoom_factor, gboolean revcomped, gboolean zoomed);
 
 gboolean zmapWindowItemIsVisible(FooCanvasItem *item) ;
 gboolean zmapWindowItemIsShown(FooCanvasItem *item) ;
@@ -1413,21 +1454,19 @@ GList *zmapWindowFeatureColumnStyles(ZMapFeatureContextMap map, GQuark column_id
 
 
 /* Ruler Functions */
-ZMapWindowRulerCanvas zmapWindowRulerCanvasCreate(ZMapWindowRulerCanvasCallbackList callbacks);
-void zmapWindowRulerCanvasInit(ZMapWindowRulerCanvas obj,
+ZMapWindowScaleCanvas zmapWindowScaleCanvasCreate(ZMapWindowScaleCanvasCallbackList callbacks);
+void zmapWindowScaleCanvasInit(ZMapWindowScaleCanvas obj,
                                GtkWidget *paned,
                                GtkAdjustment *vadjustment);
-void zmapWindowRulerCanvasMaximise(ZMapWindowRulerCanvas obj, double y1, double y2);
-void zmapWindowRulerCanvasOpenAndMaximise(ZMapWindowRulerCanvas obj);
-void zmapWindowRulerCanvasSetRevComped(ZMapWindowRulerCanvas obj, gboolean revcomped) ;
-void zmapWindowRulerCanvasSetSpan(ZMapWindowRulerCanvas ruler, int start,int end);
-gboolean zmapWindowRulerCanvasDraw(ZMapWindowRulerCanvas obj, double x, double y,int seq_start, int seq_end, gboolean force);
-void zmapWindowRulerCanvasSetVAdjustment(ZMapWindowRulerCanvas obj, GtkAdjustment *vadjustment);
-void zmapWindowRulerCanvasSetPixelsPerUnit(ZMapWindowRulerCanvas obj, double x, double y);
-void zmapWindowRulerCanvasSetLineHeight(ZMapWindowRulerCanvas obj,
-                                        double border);
-void zmapWindowRulerGroupDraw(FooCanvasGroup *parent, gboolean revcomped,
-                             double start, double end, double canvas_offset);
+void zmapWindowScaleCanvasMaximise(ZMapWindowScaleCanvas obj, double y1, double y2);
+void zmapWindowScaleCanvasOpenAndMaximise(ZMapWindowScaleCanvas obj);
+void zmapWindowScaleCanvasSetRevComped(ZMapWindowScaleCanvas obj, gboolean revcomped) ;
+void zmapWindowScaleCanvasSetSpan(ZMapWindowScaleCanvas ruler, int start,int end);
+gboolean zmapWindowScaleCanvasDraw(ZMapWindowScaleCanvas obj, int x, int y,int seq_start, int seq_end);
+void zmapWindowScaleCanvasSetVAdjustment(ZMapWindowScaleCanvas obj, GtkAdjustment *vadjustment);
+void zmapWindowScaleCanvasSetPixelsPerUnit(ZMapWindowScaleCanvas obj, double x, double y);
+void zmapWindowScaleCanvasSetLineHeight(ZMapWindowScaleCanvas obj, double border);
+//void zmapWindowScaleGroupDraw(FooCanvasGroup *parent, gboolean revcomped,double start, double end, double canvas_offset);
 
 /* Stats functions. */
 ZMapWindowStats zmapWindowStatsCreate(ZMapFeatureAny feature_any ) ;
@@ -1450,7 +1489,7 @@ void zmapWindowItemDebugItemToString(FooCanvasItem *item, GString *string);
 
 void zmapWindowPfetchEntry(ZMapWindow window, char *sequence_name) ;
 
-gboolean zmapWindowGetPFetchUserPrefs(PFetchUserPrefsStruct *pfetch);
+gboolean zmapWindowGetPFetchUserPrefs(char *config_file, PFetchUserPrefsStruct *pfetch);
 
 void zmapWindowFetchData(ZMapWindow window, ZMapFeatureBlock block, GList *column_name_list, gboolean use_mark,gboolean is_column);
 

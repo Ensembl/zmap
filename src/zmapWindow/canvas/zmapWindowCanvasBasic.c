@@ -26,7 +26,7 @@
  *
  * Description:
  *
- * implements callback functions for FeaturesetItem basic features
+ * implements callback functions for FeaturesetItem basic features (boxes)
  *-------------------------------------------------------------------
  */
 
@@ -40,7 +40,6 @@
 #include <string.h>
 #include <ZMap/zmapFeature.h>
 #include <zmapWindowCanvasFeatureset_I.h>
-#include <zmapWindowCanvasBasic_I.h>
 
 
 /* not static as we want to use this in alignments */

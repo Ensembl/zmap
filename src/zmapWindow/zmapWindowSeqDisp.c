@@ -345,7 +345,7 @@ FooCanvasItem *zmapWindowItemGetShowTranslationColumn(ZMapWindow window, FooCanv
 	  ZMapWindowContainerFeatures forward_features;
 	  FooCanvasGroup *tmp_forward, *tmp_reverse;
 
-#ifdef SIMPLIER
+#ifdef SIMPLIFY
 	  FooCanvasGroup *forward_group, *parent_group, *tmp_forward, *tmp_reverse ;
 	  /* Get the FeatureSet Level Container */
 	  parent_group = zmapWindowContainerCanvasItemGetContainer(item);
@@ -449,7 +449,8 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
       ZMapFullExon current_exon ;
       char *pep_ptr ;
       int pep_start, pep_end ;
-	ZMapWindowFeaturesetItem fset;
+	double seq_start;
+//	ZMapWindowFeaturesetItem fset;
 
       wild_id = zMapStyleCreateID("*") ;
 
@@ -459,6 +460,8 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
       feature_any = zMapFeatureGetParentGroup((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_BLOCK) ;
       block = (ZMapFeatureBlock)feature_any ;
       block_id = feature_any->unique_id ;
+
+	seq_start = block->block_to_sequence.block.x1;
 
       set_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME) ;
 
@@ -478,7 +481,7 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
       seq = trans_feature->feature.sequence.sequence ;
       len = trans_feature->feature.sequence.length ;
 
-	fset = (ZMapWindowFeaturesetItem) trans_item;
+//	fset = (ZMapWindowFeaturesetItem) trans_item;
 
       /* Brute force, reinit the whole peptide string. */
       memset(seq, (int)SHOW_TRANS_BACKGROUND, trans_feature->feature.sequence.length) ;
@@ -500,7 +503,7 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
 
 	  if (current_exon->region_type == EXON_CODING)
 	    {
-	      pep_start = current_exon->sequence_span.x1 - fset->start + 1;
+	      pep_start = current_exon->sequence_span.x1 - seq_start + 1;
 	      break ;
 	    }
 	}
@@ -514,7 +517,7 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
 
 	  if (current_exon->region_type == EXON_CODING)
 	    {
-	      pep_end = current_exon->sequence_span.x2 - fset->start + 1;
+	      pep_end = current_exon->sequence_span.x2 - seq_start + 1;
 
 	      break ;
 	    }
@@ -535,13 +538,22 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
       exon_list_member = g_list_first(exon_list) ;
       do
 	{
+	  gboolean show;
+
 	  current_exon = (ZMapFullExon)(exon_list_member->data) ;
 
-	  if (current_exon->region_type == EXON_CODING)
+	  show = current_exon->region_type == EXON_CODING;
+	  if (current_exon->region_type == EXON_SPLIT_CODON_3 || current_exon->region_type == EXON_SPLIT_CODON_5)
+	  {
+		  if(current_exon->sequence_span.x2 - current_exon->sequence_span.x1 > 0)
+			  show = TRUE;
+	  }
+
+        if(show)
 	    {
 	      int tmp = 0 ;
 
-	      pep_start = current_exon->sequence_span.x1 - fset->start + 1 ;
+	      pep_start = current_exon->sequence_span.x1 - seq_start + 1 ;
 
 		if(!ZMAP_IS_WINDOW_FEATURESET_ITEM(trans_item))
 			zMapFeature2BlockCoords(block, &pep_start, &tmp) ;
@@ -858,6 +870,9 @@ gboolean zMapWindowSeqDispSelectByFeature(FooCanvasItem *sequence_feature,
 
 						if (is_pep)
 						{
+							/* get phase from end of 2nd part of split codon, not the middle */
+							slice_coord = span.end + 1 - featureset->start;
+
 							if((slice_coord % 3) == (frame - ZMAPFRAME_0))
 								in_frame = TRUE;
 //zMapLogWarning("split5  in_frame = %d  (%d %d)", in_frame, slice_coord, slice_coord % 3);

@@ -45,8 +45,14 @@ Some extra data needs to be stored to handle drawing lines and re-positioning te
 </ul>
 </p>
 
-<h3>How will locus filtering work?<h3>
+<h3>How will locus filtering work?</h3>
 <p>The current hard coded defaults will be used to remove unwanted names and if there is still not enough space to display names readably then more data will be removed until there is only one set of data left.
 </p>
-<p>A menu option will be provided to allow choice of groups to display - this will be a dialog of check boxes (plus a default button) and selections made will override default values, which the same processs of attrition being used to produce a legible display. Choosing an extra set of names to display will result in this taking precedence over the default groups.
+<p>A menu option will be provided to allow choice of groups to display - this will be a dialog of check boxes (plus a default button) and selections made will override default values, which the same processs of attrition being used to produce a ledgible display. Choosing an extra set of names to display will result in this taking precedence over the default groups.
 </p>
+
+<h4>Interim release Sep 2012</h4>
+<p>The dialog has been reinistated and filtering done in the canvas code (zmapWindwoCanvasLocus.c).  Autopmatically filtering more loci is not done.
+Large datasets continue to provide unreadable displays - a re-think is needed now that people habitually request 20-30 clones.
+</p>
+

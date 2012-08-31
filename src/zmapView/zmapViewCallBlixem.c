@@ -1,4 +1,4 @@
-/*  Last edited: Jul 12 08:24 2011 (edgrif) */
+/*  Last edited: Jul 23 15:03 2012 (edgrif) */
 /*  File: zmapViewCallBlixem.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -308,7 +308,7 @@ static gboolean buildParamString (blixemData blixem_data, char **paramString);
 static void freeBlixemData(blixemData blixem_data);
 
 static void setPrefs(BlixemConfigData curr_prefs, blixemData blixem_data) ;
-static gboolean getUserPrefs(BlixemConfigData prefs) ;
+static gboolean getUserPrefs(char *config_file, BlixemConfigData prefs) ;
 
 static void checkForLocalSequence(gpointer key, gpointer data, gpointer user_data) ;
 static gboolean makeTmpfiles(blixemData blixem_data) ;
@@ -621,7 +621,7 @@ ZMapGuiNotebookChapter zMapViewBlixemGetConfigChapter(ZMapGuiNotebook note_book_
 
   /* If the current configuration has not been set yet then read stuff from the config file. */
   if (!blixem_config_curr_G.init)
-    getUserPrefs(&blixem_config_curr_G) ;
+    getUserPrefs(NULL, &blixem_config_curr_G) ;
 
   chapter = makeChapter(note_book_parent) ; // mh17: this uses blixen_config_curr_G
 
@@ -656,6 +656,8 @@ static gboolean initBlixemData(ZMapView view, ZMapFeatureBlock block,
   gboolean status = TRUE ;
 
   blixem_data->view  = view ;
+
+  blixem_data->config_file = ((ZMapFeatureSequenceMap)(view->sequence_mapping->data))->config_file ;
 
   blixem_data->offset = offset ;
   blixem_data->position = position ;
@@ -692,7 +694,7 @@ static gboolean initBlixemData(ZMapView view, ZMapFeatureBlock block,
 
   if (status)
     {
-      if ((status = getUserPrefs(&blixem_config_curr_G)))
+      if ((status = getUserPrefs(blixem_data->config_file, &blixem_config_curr_G)))
 	setPrefs(&blixem_config_curr_G, blixem_data) ;
     }
 
@@ -734,13 +736,13 @@ static void freeBlixemData(blixemData blixem_data)
 
 
 /* Get any user preferences specified in config file. */
-static gboolean getUserPrefs(BlixemConfigData curr_prefs)
+static gboolean getUserPrefs(char *config_file, BlixemConfigData curr_prefs)
 {
   gboolean status = FALSE ;
   ZMapConfigIniContext context = NULL ;
   BlixemConfigDataStruct file_prefs = {FALSE} ;
 
-  if ((context = zMapConfigIniContextProvide()))
+  if ((context = zMapConfigIniContextProvide(config_file)))
     {
       char *tmp_string = NULL ;
       int tmp_int ;
@@ -3483,7 +3485,7 @@ static void saveUserPrefs(BlixemConfigData prefs)
 {
   ZMapConfigIniContext context = NULL;
 
-  if ((context = zMapConfigIniContextProvide()))
+  if ((context = zMapConfigIniContextProvide(prefs->config_file)))
     {
       if (prefs->netid)
 	zMapConfigIniContextSetString(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,

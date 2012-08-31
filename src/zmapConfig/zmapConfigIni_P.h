@@ -1,3 +1,4 @@
+/*  Last edited: Jul 23 09:59 2012 (edgrif) */
 /*  File: zmapConfigIni_P.h
  *  Author: malcolm hinsley (mh17@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -203,8 +204,8 @@ void zMapConfigDestroyStanza(ZMapConfigStanza stanza) ;
 
 
 ZMapConfigIni zMapConfigIniNew(void) ;
-gboolean zMapConfigIniReadAll(ZMapConfigIni config);
-gboolean zMapConfigIniReadUser(ZMapConfigIni config);
+gboolean zMapConfigIniReadAll(ZMapConfigIni config, char *config_file) ;
+gboolean zMapConfigIniReadUser(ZMapConfigIni config, char *config_file);
 gboolean zMapConfigIniReadBuffer(ZMapConfigIni config, char *buffer);
 gboolean zMapConfigIniReadFile(ZMapConfigIni config, char *file);
 gboolean zMapConfigIniHasStanza(ZMapConfigIni config,char *stanza_name,GKeyFile **which);

@@ -88,7 +88,7 @@ typedef struct
 /* required for server */
 static gboolean globalInit(void) ;
 static gboolean createConnection(void **server_out,
-				 ZMapURL url, char *format,
+				 char *config_file, ZMapURL url, char *format,
                                  char *version_str, int timeout) ;
 static ZMapServerResponseType openConnection(void *server,ZMapServerReqOpen req_open) ;
 static ZMapServerResponseType getInfo(void *server, ZMapServerInfo info) ;
@@ -215,7 +215,7 @@ static gboolean globalInit(void)
 }
 
 static gboolean createConnection(void **server_out,
-				 ZMapURL url, char *format,
+				 char *config_file, ZMapURL url, char *format,
                                  char *version_str, int timeout)
 {
   gboolean result = TRUE;
@@ -225,6 +225,7 @@ static gboolean createConnection(void **server_out,
 
   server = (DasServer)g_new0(DasServerStruct, 1) ;
 
+  server->config_file = g_strdup(config_file) ;
   server->protocol = g_quark_from_string(url->protocol);
   server->host     = g_quark_from_string(url->host) ;
   server->port     = url->port ;

@@ -140,7 +140,7 @@ GList *zmapWindowItemListToFeatureListExpanded(GList *item_list, int expand)
  */
 
 /* Highlight the given feature. */
-void zMapWindowHighlightFeature(ZMapWindow window, ZMapFeature feature, gboolean replace)
+void zMapWindowHighlightFeature(ZMapWindow window, ZMapFeature feature, gboolean highlight_same_names, gboolean replace)
 {
   FooCanvasItem *feature_item ;
   ZMapStrand set_strand = ZMAPSTRAND_NONE;
@@ -148,15 +148,13 @@ void zMapWindowHighlightFeature(ZMapWindow window, ZMapFeature feature, gboolean
 
   if(zMapStyleIsStrandSpecific(feature->style))
 	set_strand = feature->strand;
-  if(zMapStyleIsFrameSpecific(feature->style))
+  if(zMapStyleIsFrameSpecific(feature->style) && IS_3FRAME_COLS(window->display_3_frame))
 	set_frame = zmapWindowFeatureFrame(feature);
 
   if ((feature_item = zmapWindowFToIFindFeatureItem(window, window->context_to_item,
 						    set_strand, set_frame, feature)))
-    zmapWindowHighlightObject(window, feature_item, replace, FALSE, FALSE) ;
+    zmapWindowHighlightObject(window, feature_item, replace, highlight_same_names, FALSE) ;
 
-  else
-	  printf("didn't find the canvas item\n");
   return ;
 }
 
@@ -250,6 +248,8 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
     }
   else
     {
+	ZMapFrame frame = ZMAPFRAME_NONE;
+	;
       zmapWindowItemHighlightDNARegion(window, TRUE, sub_part, item,
 				       ZMAPFRAME_NONE, ZMAPSEQUENCE_NONE, feature->x1, feature->x2);
 
@@ -269,8 +269,9 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
 	zmapWindowItemUnHighlightShowTranslations(window, item) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+
       zmapWindowItemHighlightShowTranslationRegion(window, TRUE, sub_part, item,
-						   ZMAPFRAME_NONE, ZMAPSEQUENCE_NONE, feature->x1, feature->x2) ;
+						   frame, ZMAPSEQUENCE_NONE, feature->x1, feature->x2) ;
 
 
 
