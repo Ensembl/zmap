@@ -1888,7 +1888,7 @@ static gboolean printAlignment(ZMapFeature feature, blixemData  blixem_data)
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-   if (score)
+  if (score)
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
     {
@@ -1900,27 +1900,26 @@ static gboolean printAlignment(ZMapFeature feature, blixemData  blixem_data)
       GIOChannel *curr_channel ;
 
       match_name = (char *)g_quark_to_string(feature->original_id) ;
-      source_name = (char *)g_quark_to_string(feature->source_id) ;
-
+      source_name = (char *)g_quark_to_string(feature->parent->original_id) ;
       seq_str = feature->feature.homol.sequence;
 
+      /* this if could be tidied up, but let's leave existing logic alone
+       * of old 'local sequence' meant in ACEDB, for BAM we get it in GFF and save it in the feature
+       */
       if (!seq_str)
-		/* this if could be tidied up, but let's leave existing logic alone
-		 * of old 'local sequence' meant in ACEDB, for BAM we get it in GFF and save it in the feature
-		 */
 	{
-		if((list_ptr = g_list_find_custom(blixem_data->local_sequences, feature, findFeature)))
-		{
-		ZMapSequence sequence = (ZMapSequence)list_ptr->data ;
+	  if((list_ptr = g_list_find_custom(blixem_data->local_sequences, feature, findFeature)))
+	    {
+	      ZMapSequence sequence = (ZMapSequence)list_ptr->data ;
 
-		seq_str = sequence->sequence ;
-		}
-		else
-		{
-		/* In theory we should be checking for a description for non-local sequences,
-		* see acedb code in doShowAlign...don't know how important this is..... */
-		seq_str = "" ;
-		}
+	      seq_str = sequence->sequence ;
+	    }
+	  else
+	    {
+	      /* In theory we should be checking for a description for non-local sequences,
+	       * see acedb code in doShowAlign...don't know how important this is..... */
+	      seq_str = "" ;
+	    }
 	}
 
       /* Phase out stupid curr_channel                    */
@@ -1969,7 +1968,7 @@ static gboolean printAlignment(ZMapFeature feature, blixemData  blixem_data)
     }
 
 
-   /* If view is recomp'd we should swop back again now. */
+  /* If view is recomp'd we should swop back again now. */
   if (blixem_data->view->revcomped_features)
     zMapFeatureReverseComplement(blixem_data->view->features, feature) ;
 
@@ -2282,7 +2281,8 @@ static gboolean processExonsGFF(blixemData blixem_data, ZMapFeature feature, gbo
 
   ref_name = (char *)g_quark_to_string(blixem_data->block->original_id) ;
   transcript_name = (char *)g_quark_to_string(feature->original_id) ;
-  source_name = (char *)g_quark_to_string(feature->source_id) ;
+
+  source_name = (char *)g_quark_to_string(feature->parent->original_id) ;
 
   /* Write out the transcript record:
    *            ctg123 . mRNA            1050  9000  .  +  .  ID=mRNA00001;Name=EDEN.1 */
@@ -2416,7 +2416,7 @@ static gboolean processExonsExblx(blixemData blixem_data, ZMapFeature feature, g
 
   ref_name = (char *)g_quark_to_string(blixem_data->block->original_id) ;
   transcript_name = (char *)g_quark_to_string(feature->original_id) ;
-  source_name = (char *)g_quark_to_string(feature->source_id) ;
+  source_name = (char *)g_quark_to_string(feature->parent->original_id) ;
 
   if (cds_only)
     {
@@ -2690,7 +2690,7 @@ static gboolean printBasic(ZMapFeature feature, blixemData  blixem_data)
 
 
   ref_name = (char *)g_quark_to_string(blixem_data->block->original_id) ;
-  source_name = (char *)g_quark_to_string(feature->source_id) ;
+  source_name = (char *)g_quark_to_string(feature->parent->original_id) ;
 
   curr = dumpers ;
   while (curr->source_name)
