@@ -1902,7 +1902,7 @@ static gboolean printAlignment(ZMapFeature feature, blixemData  blixem_data)
       match_name = (char *)g_quark_to_string(feature->original_id) ;
       source_name = (char *)g_quark_to_string(feature->source_id) ;
 
-	seq_str = feature->feature.homol.sequence;
+      seq_str = feature->feature.homol.sequence;
 
       if (!seq_str)
 		/* this if could be tidied up, but let's leave existing logic alone
