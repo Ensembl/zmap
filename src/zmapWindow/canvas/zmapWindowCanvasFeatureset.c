@@ -1014,7 +1014,7 @@ static ZMapSkipList zmap_window_canvas_featureset_find_feature_index(ZMapWindowF
 	 *	according to pixel coordinates.
 	 *	so we can have bin contains feature, feature contains bin, bin and feature overlap left or right. Yuk
 	 */
-#warning lookup exact feature may fail if rebinned
+	/* NOTE lookup exact feature may fail if rebinned */
 	if(!((gs->y1 > feature->x2) || (gs->y2 < feature->x1)))
 #endif
 	  {
@@ -1415,7 +1415,6 @@ static gboolean zmap_window_featureset_item_show_hide(FooCanvasItem *item, gbool
 		ZMapWindowFeaturesetItem di = (ZMapWindowFeaturesetItem) item;
 		ZMapWindowCanvasItem canvas_item = (ZMapWindowCanvasItem) &(di->__parent__);
 		/* find the feature struct and set a flag */
-#warning this should be a class function
 		zmapWindowFeaturesetItemShowHide(item,canvas_item->feature,show, ZMWCF_HIDE_USER);
 
 	}
@@ -1434,7 +1433,6 @@ static void zmap_window_featureset_item_set_colour(ZMapWindowCanvasItem   item,
 {
 	if (g_type_is_a(G_OBJECT_TYPE(interval), ZMAP_TYPE_WINDOW_FEATURESET_ITEM))
 	{
-#warning this should be a class function
 		zmapWindowFeaturesetItemSetColour(interval,feature,sub_feature,colour_type,colour_flags,fill,border);
 	}
 
@@ -1552,7 +1550,7 @@ int n = 0;
 
 
       /* This all seems a bit hokey...who says the glyphs are in the middle of the column ? */
-	/* NOTE histgrams are hooked onto the LHS, but we can click on the row and still get the feature */
+	/* NOTE histograms are hooked onto the LHS, but we can click on the row and still get the feature */
 #warning change this to use featurex1 and x2 coords
 	/* NOTE warning even better if we express point() fucntion in pixel coordinates only */
       x_off = fi->dx + fi->x_off + fi->width / 2;
@@ -1594,7 +1592,10 @@ n++;
 	      fi->point_feature = gs->feature;
 	      *actual_item = item;
 	      //printf("overlaps x\n");
-#warning this could concievably cause a memory fault if we freed point_canvas_feature but that seems unlikely if we don-t nove the cursor
+
+		/* NOTE this could concievably cause a memory fault if we freed point_canvas_feature
+		 * but that seems unlikely if we don-t nove the cursor
+		 */
 		fi->point_canvas_feature = gs;
 		best = this_one;
 
@@ -1754,7 +1755,10 @@ double  zmap_window_featureset_item_point(FooCanvasItem *item, double cx, double
 	    {
 	      fi->point_feature = gs->feature;
 	      //printf("overlaps x\n");
-#warning this could concievably cause a memory fault if we freed point_canvas_feature but that seems unlikely if we don-t nove the cursor
+		/* NOTE this could concievably cause a memory fault if we freed point_canvas_feature
+		 * but that seems unlikely if we don-t nove the cursor
+		 */
+
 		fi->point_canvas_feature = gs;
 		best = this_one;
 	    }
@@ -2770,7 +2774,7 @@ int zMapWindowCanvasFeaturesetFilter(gpointer gfilter, double value)
 	  zmapWindowColumnBumpRange(filter->column, ZMAPBUMP_INVALID, ZMAPWINDOW_COMPRESS_INVALID);
 
 	  /* dissapointing: we only need to reposition columns to the right of this one */
-#warning need a better reposition function
+
 	  zmapWindowFullReposition(filter->window) ;
 	}
       else
@@ -2857,7 +2861,7 @@ void zmapWindowFeaturesetAddToIndex(ZMapWindowFeaturesetItem featureset_item, ZM
 	  */
     featureset_item->display_index =
       zMapSkipListAdd(featureset_item->display_index, zMapFeatureCmp, feat);
-#warning need to fix linked_sideways
+	/* NOTE need to fix linked_sideways */
   }
 }
 #endif
