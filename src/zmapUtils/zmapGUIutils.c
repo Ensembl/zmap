@@ -337,7 +337,6 @@ GtkWidget *zMapGUIPopOutWidget(GtkWidget *popout, char *title)
  *  */
 void zMapGUIShowAbout(void)
 {
-  GtkAboutDialog *about_dialog ;
   const gchar *authors[] = {"Ed Griffiths, Sanger Institute, UK <edgrif@sanger.ac.uk>",
 			    "Roy Storey Sanger Institute, UK <rds@sanger.ac.uk>",
 			    "Malcolm Hinsley, Sanger Institute, UK <mh17@sanger.ac.uk>",
@@ -346,7 +345,9 @@ void zMapGUIShowAbout(void)
 
   comment_str = g_strdup_printf("%s\n\n%s\n", zMapGetCompileString(), zMapGetCommentsString()) ;
 
+#if MAC_VERSION_HAS_BUG
   if (gtk_major_version == 2 && gtk_minor_version < 24)
+#endif
     {
       gtk_about_dialog_set_url_hook(aboutLinkOldCB, NULL, NULL) ;
 
@@ -360,9 +361,12 @@ void zMapGUIShowAbout(void)
 			    "website", zMapGetWebSiteString(),
 			    NULL) ;
     }
+#if MAC_VERSION_HAS_BUG
   else
     {
-      about_dialog = (GtkAboutDialog *)gtk_about_dialog_new() ;
+	GtkAboutDialog *about_dialog ;
+
+	about_dialog = (GtkAboutDialog *)gtk_about_dialog_new() ;
 
       gtk_about_dialog_set_program_name(about_dialog, zMapGetAppName()) ;
       gtk_about_dialog_set_version(about_dialog, zMapGetAppVersionString()) ;
@@ -378,6 +382,7 @@ void zMapGUIShowAbout(void)
 
       gtk_widget_show_all(GTK_WIDGET(about_dialog)) ;
     }
+#endif
 
   g_free(comment_str) ;
 
@@ -820,7 +825,7 @@ char *zmapGUIFileChooser(GtkWidget *toplevel,  char *title, char *directory_in, 
 /* Takes a colour spec in the standard string form given for X11 in the file rgb.txt, parses it
  * and allocates it in the colormap returning the colour description in colour_inout
  * (the contents of which are overwritten).
- * 
+ *
  * Returns TRUE if all worked, FALSE otherwise. */
 gboolean zMapGUIGetColour(GtkWidget *widget, char *colour_spec, GdkColor *colour_inout)
 {
