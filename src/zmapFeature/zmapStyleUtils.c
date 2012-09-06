@@ -177,11 +177,16 @@ ZMAP_ENUM_TO_SHORT_TEXT_FUNC(zmapStyleBumpMode2ShortText, ZMapStyleBumpMode, ZMA
 
 
 /* The too-many bump modes have been remapped to just a few (too few ?) which breaks our
- * code in a number of places, we need a function (for now) to do the remapping 
- * to the remaining valid dump modes. 
- * 
+ * code in a number of places, we need a function (for now) to do the remapping
+ * to the remaining valid dump modes.
+ *
  * Current valid modes are:   overlap, alternating, all, unbump
  *  */
+/* not convinced about this
+ * i left the config options as they were and mapped these to the modes that are now coded
+ * scan for these bump modes and you'll see they are not ref'd from many places.
+ * what is broken is bump_style, which was not included in this function causing an assert if used
+ */
 ZMapStyleBumpMode zMapStylePatchBumpMode(ZMapStyleBumpMode curr_bump)
 {
   ZMapStyleBumpMode valid_bump = ZMAPBUMP_INVALID ;
@@ -218,6 +223,10 @@ ZMapStyleBumpMode zMapStylePatchBumpMode(ZMapStyleBumpMode curr_bump)
       valid_bump = curr_bump ;
       break;
 
+    case ZMAPBUMP_STYLE:
+      valid_bump = curr_bump ;
+	break;
+
     default:
       zMapAssertNotReached() ;
       break;
@@ -233,21 +242,21 @@ ZMapStyleBumpMode zMapStylePatchBumpMode(ZMapStyleBumpMode curr_bump)
 
 
 /* Our style objects take a colour spec in the form:
- * 
+ *
  *     "[<colour_type> <colour_target> <colour>] ; etc..."
- * 
+ *
  * where    colour_type = [normal | selected]
  *        colour_target = [fill | draw | border]
  *               colour = any X11 format colour string
- *      
+ *
  * e.g.    "normal fill white ; normal draw black ; selected fill red"
- * 
+ *
  * This function takes a series of string pointers to colours for the 6
  * possible colours that can be set and then creates the string that
  * can be used for the colour spec argument for the style.
- * 
+ *
  * The returned string should be g_free()'d when finished with.
- * 
+ *
  *  */
 char *zMapStyleMakeColourString(char *normal_fill, char *normal_draw, char *normal_border,
 				char *selected_fill, char *selected_draw, char *selected_border)

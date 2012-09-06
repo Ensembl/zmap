@@ -408,7 +408,9 @@ ZMapFeatureTypeStyle zmapWindowColumnMergeStyle(ZMapFeatureColumn column)
       ZMapStyleMode mode;
 
       if(!column->style_table)      /* mis-configuration */
+	{
             return NULL;
+	}
 
       if(!column->style_table->next)  /* only one style: use this directly */
       {
