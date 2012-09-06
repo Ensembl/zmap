@@ -440,14 +440,26 @@ void zMapWindowCanvasFeaturesetPaintFeature(ZMapWindowFeaturesetItem featureset,
 
 /* output any buffered paints: useful eg for poly-line */
 /* paint function and flush must access data via FeaturesetItem or globally in thier module */
-/* fetature is the last feature painted */
+/* feaature is the last feature painted */
 void zMapWindowCanvasFeaturesetPaintFlush(ZMapWindowFeaturesetItem featureset,ZMapWindowCanvasFeature feature, GdkDrawable *drawable, GdkEventExpose *expose)
 {
   void (*func) (ZMapWindowFeaturesetItem featureset,ZMapWindowCanvasFeature feature, GdkDrawable *drawable, GdkEventExpose *expose) = NULL;
 
+  /* NOTE each feature type has it's own buffer if implemented
+   * but  we expect only one type of feature and to handle mull features
+   * (which we do to join up lines in gaps betweeen features)
+   * we need to use the featureset type instead.
+   * we could code this as featyreset iff feature is null
+   * x-ref with PaintPrepare above
+   */
+#if 0
   if(feature &&
 	(feature->type > 0 && feature->type < FEATURE_N_TYPE)
       && (func = _featureset_flush_G[feature->type]))
+#else
+  if ((featureset->type > 0 && featureset->type < FEATURE_N_TYPE)
+      && (func = _featureset_flush_G[featureset->type]))
+#endif
     func(featureset, feature, drawable, expose);
 
   return;
@@ -1278,6 +1290,9 @@ gboolean zMapWindowFeaturesetItemSetStyle(ZMapWindowFeaturesetItem di, ZMapFeatu
   gboolean re_index = FALSE;
   GList  *features;
 
+//  di->zoom = 0.0;		// trigger recalc
+
+
   if(zMapStyleGetMode(di->style) == ZMAPSTYLE_MODE_GRAPH && di->re_bin && zMapStyleDensityMinBin(di->style) != zMapStyleDensityMinBin(style))
     re_index = TRUE;
 
@@ -2017,7 +2032,7 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
   foo_canvas_c2w(item->canvas,0,ceil(expose->area.y + expose->area.height + 1),NULL,&y2);
 
 #if 0
-if(fi->type < FEATURE_GENOMIC)
+//if(fi->type < FEATURE_GENOMIC)
 	printf("expose %p %s %.1f,%.1f (%d %d, %d %d)\n", item->canvas, g_quark_to_string(fi->id), y1, y2, fi->clip_x1, fi->clip_y1, fi->clip_x2, fi->clip_y2);
 #endif
 
@@ -2028,7 +2043,7 @@ if(fi->type < FEATURE_GENOMIC)
   //if(zMapStyleDisplayInSeparator(fi->style)) debug = TRUE;
 
   sl = zmap_window_canvas_featureset_find_feature_coords(NULL, fi, y1, y2);
-  //if(debug) printf("draw %s	%f,%f: %p\n",g_quark_to_string(fi->id),y1,y2,sl);
+//if(debug) printf("draw %s	%f,%f: %p\n",g_quark_to_string(fi->id),y1,y2,sl);
 
   if(!sl)
 	return;
@@ -2047,7 +2062,7 @@ if(fi->type < FEATURE_GENOMIC)
     {
       feat = (ZMapWindowCanvasFeature) sl->data;
 
-      //if(debug) printf("feat: %s %lx %f %f\n",g_quark_to_string(feat->feature->unique_id), feat->flags, feat->y1,feat->y2);
+//      if(debug && feat->feature) printf("feat: %s %lx %f %f\n",g_quark_to_string(feat->feature->unique_id), feat->flags, feat->y1,feat->y2);
       if(!is_line && feat->y1 > y2)		/* for lines we have to do one more */
 	break;	/* finished */
 

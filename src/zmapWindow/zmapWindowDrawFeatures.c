@@ -1881,8 +1881,9 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 	FooCanvasGroup *tmp_forward = NULL, *tmp_reverse = NULL ;
 	int frame_start, frame_end;
 	ZMapFeatureTypeStyle style;
-#if MH17_REVCOMP_DEBUG
-	zMapLogWarning("featureset: drawing %s\n", g_quark_to_string(feature_any->unique_id));
+#if 0 //MH17_REVCOMP_DEBUG
+//	zMapLogWarning("featureset: drawing %s\n", g_quark_to_string(feature_any->unique_id));
+	printf("drawfeatureset: %s\n", g_quark_to_string(feature_any->unique_id));
 #endif
 
         /* record the full_context current block, not the diff block which will get destroyed! */

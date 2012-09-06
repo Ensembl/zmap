@@ -470,9 +470,10 @@ static gboolean zmapWindowContainerBumpStyle(ZMapWindowContainerFeatureSet conta
 
 	if(col_style->bump_style)
 	{
+//printf("col style: %d %s -> %s\n", bump, g_quark_to_string(col_style->unique_id), g_quark_to_string(col_style->bump_style));
 		if(bump)
-			col_style = g_hash_table_lookup(container->window->context_map->styles, GUINT_TO_POINTER(col_style->bump_style));
-
+			col_style = g_hash_table_lookup(container->window->context_map->styles,
+					GUINT_TO_POINTER(zMapStyleCreateID( (char *) g_quark_to_string(col_style->bump_style))));
 		if(!col_style)
 			return FALSE;
 
@@ -488,14 +489,24 @@ static gboolean zmapWindowContainerBumpStyle(ZMapWindowContainerFeatureSet conta
       		/* NOTE item contains many features but they must all have the same style */
 
 			bump_style = style;
+//printf("item style: %d %s -> %s\n", bump, g_quark_to_string(col_style->unique_id), g_quark_to_string(style->bump_style));
 			if(bump)
 			{
-				bump_style = g_hash_table_lookup(container->window->context_map->styles, GUINT_TO_POINTER(style->bump_style));
+				bump_style = g_hash_table_lookup(container->window->context_map->styles,
+						GUINT_TO_POINTER(zMapStyleCreateID( (char *) g_quark_to_string(style->bump_style))));
 				if(!bump_style)
 					bump_style = col_style;
 			}
+#warning need to recode simple features alignements & trancripts to handle bump_style
+// best to remove style from feature and use the one in featureset
+// avoid getting confused with featureset in the feature context and canvasfeatureset = column
+// this all relates to GFF base ZMap and the need to set styles OTF
 
+// NOTE this assumes that all features in the column have the same style
+// orignally this was ok for graph features
+// extending to basic features only (late aug 2012)
       		zMapWindowCanvasItemSetStyle(item,bump_style);
+			zMapWindowCanvasFeaturesetRequestReposition((FooCanvasItem *) item);
       	}
 	}
 	return TRUE;
