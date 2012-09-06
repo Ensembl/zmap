@@ -117,7 +117,7 @@ ZMapConfigIniContext zMapConfigIniContextCreate(char *config_file)
 {
   ZMapConfigIniContext context = NULL;
 
-  if((context = g_new0(ZMapConfigIniContextStruct, 1)))
+  if(config_file && (context = g_new0(ZMapConfigIniContextStruct, 1)))
     {
       context->config = zMapConfigIniNew();
       context->config_read = zMapConfigIniReadAll(context->config, config_file) ;

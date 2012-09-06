@@ -18,8 +18,11 @@ use Bio::Server::BigWig;
 
 # parameters
 my %params = ();
-my @options = qw ( help man gff_version=i chr_prefix=s file=s chr=s start=i end=i source=s strand=s sequence=s);
-my @required = qw ( file chr start end source strand);
+my @options = qw ( help man gff_version=i chr_prefix=s file=s chr=s start=i end=i source=s strand=s sequence=s roman! Roman! gff_seqname=s );
+# gff_seqname is here for legacy code, we use source instead
+# ZMap will not add it for non otter systems when the code is back in the main branch
+
+my @required = qw ( file chr start end source strand );
 
 my $attributes_format;
 my $strands = { 1  => '+', -1 => '-' };
@@ -51,6 +54,9 @@ sub get_params
 	pod2usage(1) if $missing;
 
 	$strand_field = ( $params { 'strand' } == 1 ) ? '+' : ( $params { 'strand' } == -1 ) ? '-' : '.';
+
+	$params { 'chr' } = Roman($params { 'chr' }) if(defined $params { 'Roman' });
+	$params { 'chr' } = roman($params { 'chr' }) if(defined $params { 'roman' });
 
 	if(defined $params { 'sequence' })
 	{
@@ -184,7 +190,7 @@ zmap_get_bigwig request coverage data and output as GFF
 
 =head1 SYNOPSIS
 
-zmap_get_bigwig [--help] [--man] --file=[http:|ftp:]/path/to/file --start=123 --end=456 --source=name --chr=IV [--chr_prefix=CHROMOSOME_] --strand=1 [--gff_version=3]
+zmap_get_bigwig [--help] [--man] --file=[http:|ftp:]/path/to/file --start=123 --end=456 --source=name --chr=IV [--chr_prefix=CHROMOSOME_] --strand=1 [--gff_version=3]  [--roman] [--Roman]
 
 =head1 OPTIONS
 

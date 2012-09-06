@@ -707,7 +707,6 @@ static char *checkConfigDir(gboolean use_files)
 {
   char *config_file = NULL ;
   ZMapCmdLineArgsType dir = {FALSE}, file = {FALSE};
-  char **files;
 
   zMapCmdLineArgsValue(ZMAPARG_CONFIG_DIR, &dir) ;
   zMapCmdLineArgsValue(ZMAPARG_CONFIG_FILE, &file) ;
@@ -768,6 +767,9 @@ static gboolean getConfiguration(ZMapAppContext app_context)
   gboolean result = FALSE ;
   ZMapConfigIniContext context;
 
+  app_context->show_mainwindow = TRUE;
+  app_context->exit_timeout = ZMAP_DEFAULT_EXIT_TIMEOUT;
+
   if ((context = zMapConfigIniContextProvide(app_context->default_sequence->config_file)))
     {
       gboolean tmp_bool = FALSE;
@@ -778,8 +780,6 @@ static gboolean getConfiguration(ZMapAppContext app_context)
       if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
 					 ZMAPSTANZA_APP_MAINWINDOW, &tmp_bool))
 	app_context->show_mainwindow = tmp_bool;
-      else
-	app_context->show_mainwindow = TRUE;
 
       /* How long to wait when closing, before timeout */
       if (zMapConfigIniContextGetInt(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
@@ -792,7 +792,7 @@ static gboolean getConfiguration(ZMapAppContext app_context)
       if (zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
 					ZMAPSTANZA_APP_DATASET, &tmp_string))
 	{
-	  /* if not supplied meeds to appear in all the pipe script URLs */
+	  /* if not supplied needs to appear in all the pipe script URLs */
 	  app_context->default_sequence->dataset = tmp_string;
 	}
 
@@ -878,63 +878,63 @@ static void setup_signal_handlers(void)
 /* Read logging configuration from ZMap stanza and apply to log. */
 static gboolean configureLog(char *config_file)
 {
-  gboolean result = FALSE ;
+  gboolean result = TRUE ;	/* if no config, we can't fail to configure */
   ZMapConfigIniContext context ;
+  gboolean logging, log_to_file, show_code_details, show_time, catch_glib, echo_glib ;
+  char *full_dir, *log_name, *logfile_path ;
+
+	/* default values */
+  logging = TRUE ;
+  log_to_file = TRUE ;
+  show_code_details = TRUE;
+  show_time = TRUE;
+  catch_glib = TRUE;
+  echo_glib = TRUE;
+	/* if we run config free we put the log file in the cwd */
+  full_dir = g_strdup("./");
+  log_name = g_strdup(ZMAPLOG_FILENAME) ;
+
 
   if ((context = zMapConfigIniContextProvide(config_file)))
     {
       gboolean tmp_bool ;
-      gboolean logging, log_to_file, show_code_details, show_time, catch_glib, echo_glib ;
       char *tmp_string = NULL;
-      char *full_dir, *log_name, *logfile_path ;
 
       /* logging at all */
       if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_LOG_CONFIG,
 					 ZMAPSTANZA_LOG_CONFIG,
 					 ZMAPSTANZA_LOG_LOGGING, &tmp_bool))
 	logging = tmp_bool ;
-      else
-	logging = TRUE ;
 
       /* logging to the file */
       if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_LOG_CONFIG,
 					ZMAPSTANZA_LOG_CONFIG,
 					ZMAPSTANZA_LOG_FILE, &tmp_bool))
 	log_to_file = tmp_bool ;
-      else
-	log_to_file = TRUE ;
 
       /* how much detail to show...code... */
       if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_LOG_CONFIG,
 					ZMAPSTANZA_LOG_CONFIG,
 					ZMAPSTANZA_LOG_SHOW_CODE, &tmp_bool))
 	show_code_details = tmp_bool;
-      else
-	show_code_details = TRUE;
 
       /* how much detail to show...time... */
       if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_LOG_CONFIG,
 					ZMAPSTANZA_LOG_CONFIG,
 					ZMAPSTANZA_LOG_SHOW_TIME, &tmp_bool))
 	show_time = tmp_bool;
-      else
-	show_time = TRUE;
 
       /* catch GLib errors, else they stay on stdout */
       if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_LOG_CONFIG,
 					ZMAPSTANZA_LOG_CONFIG,
 					ZMAPSTANZA_LOG_CATCH_GLIB, &tmp_bool))
 	catch_glib = tmp_bool;
-      else
-	catch_glib = TRUE;
 
       /* catch GLib errors, else they stay on stdout */
       if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_LOG_CONFIG,
 					ZMAPSTANZA_LOG_CONFIG,
 					ZMAPSTANZA_LOG_ECHO_GLIB, &tmp_bool))
 	echo_glib = tmp_bool;
-      else
-	echo_glib = TRUE;
 
       /* user specified dir, default to config dir */
       if (zMapConfigIniContextGetString(context, ZMAPSTANZA_LOG_CONFIG,
@@ -943,9 +943,8 @@ static gboolean configureLog(char *config_file)
 	full_dir = zMapGetDir(tmp_string, TRUE, TRUE) ;
       else
 	{
-		/* if we run config free we put the log file in the cwd */
+		g_free (full_dir);
 		full_dir = zMapConfigDirGetDir() ;
-		full_dir = g_strdup( full_dir ? full_dir : "./");
 	}
 
 
@@ -953,31 +952,26 @@ static gboolean configureLog(char *config_file)
       if (zMapConfigIniContextGetString(context, ZMAPSTANZA_LOG_CONFIG,
 				       ZMAPSTANZA_LOG_CONFIG,
 				       ZMAPSTANZA_LOG_FILENAME, &tmp_string))
-	log_name = tmp_string;
-      else
-	log_name = g_strdup(ZMAPLOG_FILENAME) ;
-
-      logfile_path = zMapGetFile(full_dir, log_name, TRUE) ;
-
-      /* all our strings need freeing */
-      g_free(log_name) ;
-      g_free(full_dir) ;
+	{
+		g_free(log_name) ;
+		log_name = tmp_string;
+	}
 
       /* config context needs freeing */
       zMapConfigIniContextDestroy(context);
 
+    }
 
-      result = zMapLogConfigure(logging, log_to_file,
+  logfile_path = zMapGetFile(full_dir, log_name, TRUE) ;
+
+      /* all our strings need freeing */
+  g_free(log_name) ;
+  g_free(full_dir) ;
+
+  result = zMapLogConfigure(logging, log_to_file,
 				show_code_details, show_time,
 				catch_glib, echo_glib,
 				logfile_path) ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      /* everything was ok */
-      result = TRUE ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-    }
 
   return result ;
 }

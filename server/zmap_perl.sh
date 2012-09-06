@@ -26,6 +26,8 @@ else
 fi
 export PATH
 
+local=/nfs/users/nfs_m/mh17/Perl/lib;
+
 PERL5LIB="\
 $OTTER_HOME/PerlModules:\
 $OTTER_HOME/ensembl-otter/modules:\
@@ -37,7 +39,8 @@ $OTTER_HOME/ensembl-otter/tk:\
 $anasoft_distro/lib:\
 $anasoft_distro/lib/site_perl:\
 $anasoft/lib:\
-$anasoft/lib/site_perl\
+$anasoft/lib/site_perl:\
+$local\
 "
 
 

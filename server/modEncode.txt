@@ -102,6 +102,8 @@ Initially these will be developed in the GFF ZMap checkout, and special environm
 
 Following convention modules will be named as Bio::Server::*.pm and this implies a directory structure within the server directory such as ...ZMap/server/Bio/Server/, and the calling scripts may live in  ...ZMap/server/.
 
+Second thoughts syggest that BAM.pm and BigWig.pm could be merged into the calling scripts as they doon't do very much, then we'd just have two flat scripts and no module tree, which makes distribution much simpler.
+
 
 
 

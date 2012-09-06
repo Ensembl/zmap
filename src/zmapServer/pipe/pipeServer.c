@@ -186,6 +186,14 @@ static void getConfiguration(PipeServer server)
         server->data_dir = g_get_current_dir();
       }
 
+      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+                               ZMAPSTANZA_APP_CSVER, &tmp_string))
+	{
+		if(!g_ascii_strcasecmp(tmp_string,"Otter"))
+			server->is_otter = TRUE;
+	}
+
+
       zMapConfigIniContextDestroy(context);
     }
 }
@@ -338,7 +346,7 @@ typedef struct pipe_arg
 #define PA_DATASET  4
 #define PA_SEQUENCE  8
 
-pipeArgStruct pipe_args[] =
+pipeArgStruct otter_args[] =
 {
       { "start", PA_INT,PA_START },
       { "end", PA_INT,PA_END },
@@ -346,6 +354,16 @@ pipeArgStruct pipe_args[] =
       { "gff_seqname", PA_STRING,PA_SEQUENCE },
       { NULL, 0, 0 }
 };
+
+pipeArgStruct zmap_args[] =
+{
+      { "start", PA_INT,PA_START },
+      { "end", PA_INT,PA_END },
+//      { "dataset", PA_STRING,PA_DATASET },	may need when mapping available
+      { "sequence", PA_STRING,PA_SEQUENCE },
+      { NULL, 0, 0 }
+};
+
 #define PIPE_MAX_ARGS   8    // extra args we add on to the query, including the program and terminating NULL
 
 static char *make_arg(pipeArg pipe_arg, char *prefix,PipeServer server)
@@ -420,9 +438,9 @@ static gboolean pipe_server_spawn(PipeServer server,GError **error)
       char *q;
       p = q_args[i-1] + strlen(minus);
 
-      for(pipe_arg = pipe_args; pipe_arg->type; pipe_arg++)
+	pipe_arg = server->is_otter ? otter_args : zmap_args;
+      for(; pipe_arg->type; pipe_arg++)
       {
-
             if(!g_ascii_strncasecmp(p,pipe_arg->arg,strlen(pipe_arg->arg)))
             {
                   arg_done |= pipe_arg->flag;
@@ -440,7 +458,8 @@ static gboolean pipe_server_spawn(PipeServer server,GError **error)
   }
 
       /* add on if not defined already */
-  for(pipe_arg = pipe_args; pipe_arg->type; pipe_arg++)
+  pipe_arg = server->is_otter ? otter_args : zmap_args;
+  for(; pipe_arg->type; pipe_arg++)
   {
       if(!(arg_done & pipe_arg->flag))
       {
