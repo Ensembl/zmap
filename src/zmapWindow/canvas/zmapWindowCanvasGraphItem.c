@@ -97,7 +97,7 @@ void zMapWindowCanvasGraphPaintPrepare(ZMapWindowFeaturesetItem featureset, ZMap
 	if(feature)
 			/* add first point to join up to */
 	{
-		/* this is probable a paint in the middle of the window */
+		/* this is probably a paint in the middle of the window */
 		/* and the line has been drawn previously, we need to paint over it exactly */
 		x2 = featureset->style->mode_data.graph.baseline + feature->width;
 		y2 = (feature->y2 + feature->y1 + 1) / 2;
@@ -225,14 +225,29 @@ static void zMapWindowCanvasGraphPaintFeature(ZMapWindowFeaturesetItem featurese
 
 void zMapWindowCanvasGraphPaintFlush(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable, GdkEventExpose *expose)
 {
+	gboolean is_line = (zMapStyleGraphMode(featureset->style) == ZMAPSTYLE_GRAPH_LINE);
 
-	if(n_points > 1)
+	if(!is_line)
+		return;
+
+	if(n_points < 1)		/* no features, draw baseline */
+	{
+		zmapWindowCanvasFeatureStruct dummy = { 0 };
+		FooCanvasItem *foo = (FooCanvasItem *) featureset;
+
+		foo_canvas_c2w (foo->canvas, 0, featureset->clip_y1, NULL, &dummy.y2);
+		dummy.y1 = dummy.y2 - 1.0;;
+		dummy.width = 0.0;
+
+		zMapWindowCanvasGraphPaintFeature(featureset, &dummy, drawable, expose );
+		n_points -= 1;	/* remove this point and leave the downstream vertical */
+	}
+
+	if(n_points >= 1)
 	{
 		GdkColor c;
-		gboolean is_line = (zMapStyleGraphMode(featureset->style) == ZMAPSTYLE_GRAPH_LINE);
 
-
-		if(is_line && !feature)	/* draw back to baseline from last point and add trailing line */
+		if(!feature)	/* draw back to baseline from last point and add trailing line */
 
 		{
 			zmapWindowCanvasFeatureStruct dummy = { 0 };
@@ -244,7 +259,7 @@ void zMapWindowCanvasGraphPaintFlush(ZMapWindowFeaturesetItem featureset, ZMapWi
 			dummy.width = 0.0;
 
 			zMapWindowCanvasGraphPaintFeature(featureset, &dummy, drawable, expose );
-			n_points -= 1;	/* remove this point and leave the dosnstream vertical */
+			n_points -= 1;	/* remove this point and leave the downstream vertical */
 		}
 
 		c.pixel = featureset->outline_pixel;
@@ -252,7 +267,7 @@ void zMapWindowCanvasGraphPaintFlush(ZMapWindowFeaturesetItem featureset, ZMapWi
 
 		gdk_draw_lines(drawable, featureset->gc, points, n_points);	/* these are already clipped to the visible scroll region */
 
-		if(is_line && feature)		/* interim flush: add last point at start */
+		if(feature)		/* interim flush: add last point at start */
 		{
 			n_points--;
 			points[0].x = points[n_points].x;
