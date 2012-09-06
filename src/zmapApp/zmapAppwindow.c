@@ -178,7 +178,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   /* Set up logging for application. */
   if (!zMapLogCreate(NULL) || !configureLog(app_context->default_sequence->config_file))
     {
-      printf("Zmap cannot create log file.\n") ;
+      printf("ZMap cannot create log file.\n") ;
 
       exit(EXIT_FAILURE) ;
     }
