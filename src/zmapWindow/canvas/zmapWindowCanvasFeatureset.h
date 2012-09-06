@@ -101,12 +101,26 @@ typedef void (*ZMapWindowFeatureFreeFunc)(ZMapWindowFeaturesetItem featureset) ;
 
 
 /* enums for feature function lookup  (feature types) */
-/* NOTE these are set by style mode but are defined separately as CanvasFeaturesets do not initially handle all style modes */
+/* NOTE these are set by style mode but are defined separately as CanvasFeaturesets
+ * do not initially handle all style modes */
 /* see  zMapWindowFeaturesetAddItem() */
-
 typedef enum
   {
     FEATURE_INVALID,
+
+    /* genomic features */
+    FEATURE_BASIC,
+    FEATURE_GENOMIC = FEATURE_BASIC,
+
+    FEATURE_ALIGN,
+    FEATURE_TRANSCRIPT,
+
+    FEATURE_SEQUENCE,
+    FEATURE_ASSEMBLY,
+    FEATURE_LOCUS,
+
+    FEATURE_GRAPH,
+    FEATURE_GLYPH,
 
     /* unadorned graphics primitives */
     FEATURE_GRAPHICS,		/* a catch-all for the featureset type */
@@ -114,20 +128,9 @@ typedef enum
     FEATURE_BOX,
     FEATURE_TEXT,
 
-    /* genomic features */
-    FEATURE_BASIC,
-    FEATURE_GLYPH,
-    FEATURE_ALIGN,
-    FEATURE_GRAPH,
-    FEATURE_TRANSCRIPT,
-    FEATURE_ASSEMBLY,
-    FEATURE_SEQUENCE,
-    FEATURE_LOCUS,
-
     FEATURE_N_TYPE
   } zmapWindowCanvasFeatureType;
 
-#define FEATURE_GENOMIC		FEATURE_BASIC
 
 
 /* Public funcs */
