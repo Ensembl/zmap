@@ -211,12 +211,16 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   /* If user specifyed a sequence in the config. file or on the command line then
    * display it straight away, app exits if bad command line params supplied. */
   seq_map = app_context->default_sequence ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   if (!seq_map->start)
     {
       /* Do we really want to do this anymore...I think not.... */
       seq_map->start = 1 ;
       seq_map->end = 0;
     }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   checkForCmdLineSequenceArg(argc, argv, &seq_map->dataset, &seq_map->sequence);
   checkForCmdLineStartEndArg(argc, argv, &seq_map->start, &seq_map->end) ;
