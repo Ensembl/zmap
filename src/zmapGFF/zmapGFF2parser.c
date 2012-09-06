@@ -1167,6 +1167,11 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line, gsize line_lengt
       	 }
       }
 #endif
+
+      if (g_ascii_strcasecmp(source, "novel_cds") == 0)
+	printf("found it\n") ;
+
+
       /* Do some sanity checking... */
       if (g_ascii_strcasecmp(sequence, ".") == 0)
 	err_text = g_strdup("sequence cannot be '.'") ;
@@ -1678,6 +1683,9 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 						strand)))
     {
       zMapFeatureSetAddFeature(feature_set, feature);
+
+	if(!zMapStyleGetGFFFeature(feature_style))
+		zMapStyleSetGFF(feature_style,NULL,ontology);
 
       if (url)
 	zMapFeatureAddURL(feature, url) ;

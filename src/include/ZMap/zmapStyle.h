@@ -21,7 +21,8 @@
  * originally written by:
  *
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Style and Style set handling functions.
  *
@@ -427,8 +428,8 @@ _(ZMAPBUMP_NAME,                  , "name",                  "Name",            
 _(ZMAPBUMP_NAME_INTERLEAVE,       , "name-interleave",       "Name Interleave",               "All features with same name in a single sub-column but several names interleaved in each sub-column, the most compact display.") \
 _(ZMAPBUMP_NAME_NO_INTERLEAVE,    , "name-no-interleave",    "Name No Interleave",            "Display as for Interleave but no interleaving of different names.") \
 _(ZMAPBUMP_NAME_COLINEAR,         , "name-colinear",         "Name & Colinear", "As for Name but colinear alignments shown.") \
-_(ZMAPBUMP_NAME_BEST_ENDS,        , "name-best-ends",        "Name and Best 5'& 3' Matches",  "As for No Interleave but for alignments sorted by 5' and 3' best/biggest matches, one sub_column per match.")\
-_(ZMAPBUMP_STYLE,               , "style",               "Style",                       "Show features using an alternate style.") \
+_(ZMAPBUMP_NAME_BEST_ENDS,        , "name-best-ends",        "Name and Best 5'& 3' Matches",  "As for No Interleave but for alignments sorted by 5' and 3' best/biggest matches, one sub_column per match.") \
+_(ZMAPBUMP_STYLE,               , "style",               "Style",                       "Show features using an alternate style.")
 
 
 /* We should do this automatically or not at all..... */
@@ -1065,7 +1066,7 @@ ZMapStyleBumpMode zMapStylePatchBumpMode(ZMapStyleBumpMode curr_mode) ;
 //const gchar *zMapStyleGetGFFSource(ZMapFeatureTypeStyle style) ;
 #define zMapStyleGetGFFSource(style) g_quark_to_string(style->gff_source)     // NULL quark gives NULL string
 //const gchar *zMapStyleGetGFFFeature(ZMapFeatureTypeStyle style) ;
-#define zMapStyleGetGFFFeature(style)      g_quark_to_string(style->gff_feature)
+#define zMapStyleGetGFFFeature(style)      (style->gff_feature)
 void zMapStyleSetDescription(ZMapFeatureTypeStyle style, char *description) ;
 //double zMapStyleGetWidth(ZMapFeatureTypeStyle style) ;
 #define zMapStyleGetWidth(style)   (style->width)

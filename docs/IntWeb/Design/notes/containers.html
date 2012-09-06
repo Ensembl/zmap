@@ -1,0 +1,97 @@
+<h2>Rationalising the ZMap Container objects</h2>
+
+<h3>Existing code</h3>
+<p> Each ZMap window (actually a pane in the ZMap widnow that users see) has its own FooCanvas (and the scale bar and navigator are implemented a seperate canvases),  Each canvas is organised as a treee structure from a root FooCanvasGroup which contains derived group objects for:
+<ul>
+<li>Context
+<li>Alignment
+<li>Block
+<li>Strand
+<li>Column (sometimes referred to as Featureset)
+</ul>
+Each of these containers has a background rectangle and a list of derived foo canvas groups for underlay features and overlay which are rarely used. ZMapWindowContainerBlock uses overlay for the mark, ZMapWindowContainerFeatureset uses the background to collect mouse clicks.  ZMapWindowFocus (historically) did not use overlay for focus but instead re-ordered features in the canvas (which failed with multiple selections).  The ruler and tooltip are implemented as special items added directly to the root container outside of this context.  All the containers paint backgrounds (which have to be resized) that get overwritten by contained groups: context and align paint the screen white, block paints it yellow, and all the featuresets paint it white again, resulting in the whole screen being painted 4x before any features appear,  Some columns (eg 3FT) are coloured, but these are rare.
+</p>
+
+<h4>The Navigator</h4>
+<p>This actually uses layering for the locator, which is implemented as a background item with a dragger cursor as an overlay.
+There is a callback added to very layer to collect mouse press and release and motion events which could be simplified.
+</p>
+
+<h3>Complications relating to Zoom and column positioning</h3>
+
+<p>The Foo Canvas operates by grouping itens in a nested hierarchy and has functions to find the canvas extent of groups, defined by thier contained features.  It seem likely that is was designed to allow for overlapping groups (comments mention circuit diagrams) and there may have been a reuqirement to click through to a partly hidden item, and therefore by default groups cannot be clicked on directly.  To collect mouse clicks on a column backgrounnd, historically ZMap has added a background rectangle to each group,  and these have to be resized on zoom.  Again, historcally these have had to be clipped at high zoom to avoid breaking the 32k pixel limit inposed by the foo canvas.
+</p>
+
+<p>Hide and show colunn and column bump require many column groups to be repostioned, and (especially on bump) this has required using the foo canvas group extent functions to find out how big a group is to shift groups further to the right.
+Overlayed data such as the mark has to be expanded to fit the block display after this.
+</p>
+
+<p>Some features are shown/hidden depending on the zoom level.
+</p>
+
+<p>This results in a zoom operation causing additional set-scroll-region calls, although these secondary calls should only affect the x-coodinates.
+</p>
+
+<h3>Simplifying the group data structures</h3>
+<p>There is lot of code (about 6000 lines) devoted to handling the extra complication of layers and also to implement different derived structures for each kind of context group.   Mostly for invsible containers (context, align, block, strand) this is not used and the same behaviour cn be implemented usign a generic module that is operated in a way to create what differences exist (eg by adding callbacks as at present - these callbacks are not specific to the derived data types).
+This will allow the removal of 3 or 4 files with no loss of function.
+</p>
+<p>Each foo canvas group has list of contained items (the item_list) which may include further groups. ZMap source has a derived variant of this that has a list of exactly four items which have defined positions; the first is a background rectangle and then underlay features and overlay groups follow.
+
+</p>
+<p>This can easily be replaced by the original item_list if we add flags to the displayable data to specify layering, which will result in every second canvas layer being removed: features will be the fifth layer down rather the 10th.
+</p>
+<p> In a column (ZMapWindowContainerFeatureset) the item_list will consist of ZMapWindowCanvasFeatureset items, which are derived foo canvas items and not groups.   Each one may be flagged as underlay normal or overlay, and if necessary may be kept in order within the item_list - as each list will be very small and not changed very often this will be a small overhead.
+</p>
+<p>In a higher level container (eg strand) then we can add a ZMapWindowCanvasFeatureset item to colour the background (as the yellow fixed size strand separator), but if not needed (eg align) we can omit this step.
+</p>
+
+<p>NOTE that this structure allows implementing the mark as relating to a column, block align, or whole window simply by adding it to a different level, currently it is hard coded as part ot the block container.  Likewise, we can add different coloured background if desired but the is no requirement to do this and therefore no automatic overhead.
+</p>
+
+<h4>Some nuances relating to layering</h4>
+
+<h5>FooCanvas extents </h5>
+<p> Backgrounds (underlay) and overlay need to have different behaviours: the strand separator has to be fixed size, yet the mark has to re-size to match the data on display.  This can be implemented by flags in the ZMapWindowCanvasFeatureset.
+</p>
+<p>The ZMapWindowContainerGroup code will have to handle fixed and resizable items, and run the update function taking this into account: set it's own extent according to normal features and fixed background/ overlay (normally we only expect background to be fixed), and resizable items to pick up thier extent from their parent.
+</p>
+
+<h5>Column colouring</h5>
+<p>There's a couple of examples: 3FT can be coloured by the column or each ZMapWindowCanvasFeatureset can paint its owbn background.  The strand separator has to paint its own background as it does not always have any data items (search hit markers).  This code could be changed, and if we remove the strand layer, then we would have to add a strand spearator ZMapWindowContainerFeatureset, but the process will be the same.
+
+<h5>ENCODE heatmaps</h5>
+<p>These are implemented as ZMapWindowCanvasFeatureset items for each heatmap, each of which includes several source featuresets.  Several of these are display in one ZMapWindowContainerFeatureset (column) as this allows show/hide to apply to all together.   This is an example fo a colun group with more than one features iten in its item_list.
+</p>
+
+<h3>Work Involved</h3>
+<p>Using a feature branch (created after the thread started to unravel) backgrounds have already been removed and the following order of ceremonies looks fairly obvious:
+<ul>
+<li>remove container children layer from canvas: requires resolving all zmapWindowContainerGetFeatures() calls etc - quite complex.  NOTE that the move to CanvasFeaturesets has left a few loose ends that will be resolved by doing this eg zMapWindowContainerFeatureSetSortfeatures(), which is now irrelevant).
+<li> add layer flags to CanvasFeatureset
+<li> handle layers in zMapWindowContainerGroup
+<li> re-code Mark  distinct from Block
+<li> re-code ruler and tooltip as context overlay
+>li> re-code top level contains as blank groups
+</ul>
+A quick inspection of the code suggests that there's a lot of editing to do....
+</p>
+<h4>After it's finsished</h4>
+<p>... we will be well set up to complete the zoom mutliple paint problem and also interface to Cairo for printing,
+</p>
+
+
+<h4>Mid and post implementation comments</h4>
+<b>Container children</b> were relatively easy to remove by searching for GetFeatures GetUnderlay and GetOverlay.  The function zmapWindowContainerGroupGetFeatures() simply returns its argument.  It was also necessary to search for parent->parent relating to ContainerGroups (and not ZMapfeatureAny).
+<br />
+Initially the <b>Mark</b> and <b>Navigator Locator</b> have been iffed out - the locator was driving the navigator Widget resize and this had to be tweaked slightly.  (locator was the most conventient canvas item to get the canvas from).
+<br />
+Code has been implemented to resize a CanvasFeatureset sideways - it's a bit ad hoc but if the mark and locator are implemented as empty CanvasFeaturesets then this can be done automatically.  It's not clear how to resize by Y cleanly, but as we add CanvasFeaturesets to cover the whole sequence should not be a problem.  <i>This is a bit unsatisfactory though</i>.  Note that the Mark can be added to any particular level of group... the box over a mark item will have to be on a column group regardless (if we want to keep it - it prevents clicking on the feature and displayng the status bar.
+<p>
+
+
+<h3>Reviving the Mark</h3>
+<p>This was temporarilty removed to help with removi9ng the cntainer children.  We wish to re-implement this using code in zmapWindowMark.c and removing code in the block - the Makr already has a item mark FooCanvas pointer and it seem pointless to impelement this in two places.  This will allow the removal of more code...
+</p>
+<p>It is also planned in future to simplify the canvas structure - we only ever use one block; however it's worth retaining the code in the zmapWindowMark that finds the releveant block in the FooCanvas, this can be ammended to find other groups if necessary.
+</p>To avoid any doubt, we define the window mark as being active in one place in any one window. If we ever implement mutliple blocks in one window then the mark may only be set in one:setting it in a second will unset it in the first.  This may seem retrograde in that if each block has mark items (as at present we could concievably have several active, but the controlling code uses a single ZMapWindowMark structure and cannot be used to operate two marks.  This is not thought to be a pressing operational problem as you mark bump and unmark and the features are still visible as marked.

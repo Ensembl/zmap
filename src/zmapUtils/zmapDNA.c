@@ -195,6 +195,9 @@ gboolean zMapDNAValidate(char *dna)
  *
  * In addition if match_str is not NULL a pointer to an allocated string which is the match
  * is returned. N.B. this could potentially use up a lot of memory !
+ * mh17/ RT 276426 due to ?X11 or GTK bug? a long match that results in a window wider than the screen causes X to fall over sometimes
+ * so restrict the size of a match string to some small number and add ... at the end
+ * actual match can be seen by clicking on separator features
  *
  * tp is the query (with degenerate codes) and cp is the DNA to search (with atgcnx)
  */
@@ -251,12 +254,20 @@ gboolean zMapDNAFindMatch(char *cp, char *end, char *tp, int maxError, int maxN,
 
   if (result || !*t)
     {
+	int len;
+#define MAX_BASE 50
+
       result = TRUE ;
       *start_out = start ;
-      *end_out = c - 1 ;				    /* We've gone past the last match so
-							       reset. */
+      *end_out = c - 1 ;				    /* We've gone past the last match so reset. */
+	len = *end_out - *start_out + 1;
+
       if (match_str)
-	*match_str = g_strndup(*start_out, *end_out - *start_out + 1) ;
+	{
+//		*match_str = g_strndup(*start_out, *end_out - *start_out + 1) ;
+		*match_str = g_strdup_printf("%.*s%s", MAX_BASE, *start_out,  len > MAX_BASE ? "..." : "");
+	}
+
     }
 
   return result ;

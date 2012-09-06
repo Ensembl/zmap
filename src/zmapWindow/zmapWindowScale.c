@@ -629,7 +629,7 @@ double zMapWindowDrawScaleBar(FooCanvasGroup *group, int scroll_start, int scrol
 	int n_pixels;	/* cannot be more than 30k due to foo */
 	int gap;		/* pixels between ticks */
 	int digit;		/* which tick out of 10 */
-	int digits;		/* how many digits in fractional part */
+//	int digits;		/* how many digits in fractional part */
 	int nudge;		/* tick is 5th? make bigger */
 	char label [32];	/* only need ~8 but there you go */
 	char *unit;
@@ -707,7 +707,7 @@ debug("draw scale %p\n",((FooCanvasItem *) group)->canvas);
 		zMapLogWarning("DrawScale get font size failed","");
 	}
 
-	/* get the highest order ticks:  sequence and scroll are in chromosome coordinates but  we display slice coordinates.... */
+	/* get the highest order ticks:  sequence and scroll are in chromosome coordinates but we display slice coordinates.... */
 	/* highest order tick is the one displayed not the one in the whole sequence */
 	{
 		int s = scroll_start - seq_start + 1, e = scroll_end - seq_start + 1;
@@ -745,12 +745,12 @@ debug("hide = %d\n", n_hide);
 
 	/* choose units */
 	base = 1;
-	digits = 1;
-	for(i = 1;base <= tick && i < 5;i++,base *= 1000, digits += 2)
+//	digits = 1;
+	for(i = 1;base <= tick && i < 5;i++,base *= 1000 /*, digits += 2*/)
 		continue;
 	unit = units[--i];
 	base /= 1000;
-	digits -= 2;
+//	digits -= 2;
 #if SCALE_DEBUG
 debug("levels, hide = %d %d %d %d (%s)\n", n_levels,n_hide, base, digits, unit);
 #endif
@@ -916,6 +916,11 @@ if(top) debug("coord: %.1f %d (%d,%d) = %d\n", canvas_coord, digit, seq_start,se
 							 * and then the % operator is a bit flaky w/ -ve numbers
 							 */
 							char *p;
+							int f = tick;
+							int digits;
+
+							for(digits = 1; f < base ; f *= 10)
+								digits++;
 
 							p = label + sprintf(label,"%s%d.%0*d",sign,num,digits,frac);
 							while(*--p == '0')
