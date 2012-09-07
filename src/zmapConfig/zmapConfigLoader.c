@@ -563,7 +563,7 @@ gboolean zMapConfigIniGetStylesFromFile(char *config_file,
 
 	settings_list = zMapConfigIniContextGetStyleList(context,styles_list);
 		/* style list is legacy and we don-t expect it to be used */
-		/* this gets a list aof all the stanzas in the file */
+		/* this gets a list of all the stanzas in the file */
 
       shapes = zMapConfigIniGetGlyph(context);		/* these could be predef'd for default styles or provided/ overridden in user config */
 

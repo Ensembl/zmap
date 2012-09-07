@@ -2086,7 +2086,6 @@ static void getIniData(ZMapView view, char *config_str, GList *req_sources)
 		    zMap_g_hashlist_insert(view->context_map.column_2_styles,
 					   column->unique_id,
 					   GUINT_TO_POINTER(style_id)) ;
-printf("getIniData column adds %s to %s\n",g_quark_to_string(style_id),g_quark_to_string(column->unique_id));
                   }
 	      }
             g_hash_table_destroy(col_styles);

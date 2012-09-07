@@ -899,7 +899,7 @@ static gboolean configureLog(char *config_file)
   log_name = g_strdup(ZMAPLOG_FILENAME) ;
 
 
-  if ((context = zMapConfigIniContextProvide(config_file)))
+  if (config_file && (context = zMapConfigIniContextProvide(config_file)))
     {
       gboolean tmp_bool ;
       char *tmp_string = NULL;
