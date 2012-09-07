@@ -1168,8 +1168,8 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line, gsize line_lengt
       }
 #endif
 
-      if (g_ascii_strcasecmp(source, "novel_cds") == 0)
-	printf("found it\n") ;
+//      if (g_ascii_strcasecmp(source, "novel_cds") == 0)
+//	printf("found it\n") ;
 
 
       /* Do some sanity checking... */

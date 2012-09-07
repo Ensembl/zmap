@@ -162,7 +162,7 @@ Somewhere in this process we need to be able to specify coordinate mapping.  For
 
 
 <h5>Source Code: View creation and status</h6>
-<p>It seem likely that it may be benficial or necessary to have a View with no data and then add data to it, although a view necessarily has a defined sequence and coordinate range.  All of the above implies that we can merge a feature context into a view, whcih is currently done by the code that drives servers from within the view.
+<p>It seem likely that it may be benficial or necessary to have a View with no data and then add data to it, although a view necessarily has a defined sequence and coordinate range.  All of the above implies that we can merge a feature context into a view, which is currently done by the code that drives servers from within the view.
 
 <p>There seems to be little benefit in creating a new module and it is proposed to move the code that drives servers into zmapServer.  This includes the functions (from zmapView.c):
 <ul>
