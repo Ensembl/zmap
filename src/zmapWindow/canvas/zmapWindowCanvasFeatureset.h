@@ -122,7 +122,8 @@ typedef enum
     FEATURE_GRAPH,
     FEATURE_GLYPH,
 
-    /* unadorned graphics primitives */
+    /* unadorned graphics primitives, NOTE that FEATURE_GRAPHICS is used in the code to test
+     * for feature vs. graphic items. */
     FEATURE_GRAPHICS,		/* a catch-all for the featureset type */
     FEATURE_LINE,
     FEATURE_BOX,
