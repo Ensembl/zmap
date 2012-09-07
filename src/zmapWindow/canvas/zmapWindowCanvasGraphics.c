@@ -163,18 +163,19 @@ void graphicsZoomSet(ZMapWindowFeaturesetItem featureset, GdkDrawable *drawable)
 
 void zMapWindowCanvasGraphicsInit(void)
 {
-	gpointer funcs[FUNC_N_FUNC] = { NULL };
+  gpointer funcs[FUNC_N_FUNC] = { NULL };
 
-	funcs[FUNC_ZOOM] = graphicsZoomSet;
-	zMapWindowCanvasFeatureSetSetFuncs(FEATURE_GRAPHICS, funcs, 0, sizeof(zmapWindowCanvasPangoStruct));
+  funcs[FUNC_ZOOM] = graphicsZoomSet;
+  zMapWindowCanvasFeatureSetSetFuncs(FEATURE_GRAPHICS, funcs, 0, sizeof(zmapWindowCanvasPangoStruct));
 
-	funcs[FUNC_ZOOM] = NULL;	/* not needed by the others but no harm done  if it's left in?? */
+  funcs[FUNC_ZOOM] = NULL;	/* not needed by the others but no harm done  if it's left in?? */
 
-	funcs[FUNC_PAINT] = linePaint;
-	zMapWindowCanvasFeatureSetSetFuncs(FEATURE_LINE, funcs, 0, 0);
+  funcs[FUNC_PAINT] = linePaint;
+  zMapWindowCanvasFeatureSetSetFuncs(FEATURE_LINE, funcs, 0, 0);
 
-	funcs[FUNC_PAINT] = textPaint;
-	zMapWindowCanvasFeatureSetSetFuncs(FEATURE_TEXT, funcs, 0, 0);
+  funcs[FUNC_PAINT] = textPaint;
+  zMapWindowCanvasFeatureSetSetFuncs(FEATURE_TEXT, funcs, 0, 0);
 
+  return ;
 }
 
