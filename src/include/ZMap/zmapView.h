@@ -1,4 +1,3 @@
-/*  Last edited: Jul 23 15:21 2012 (edgrif) */
 /*  File: zmapView.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -21,7 +20,8 @@
  * This file is part of the ZMap genome database package
  * originated by
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Interface for controlling a single "view", a view
  *              comprises one or more windowsw which display data
@@ -232,7 +232,8 @@ void   zMapViewSetWindowList(ZMapViewWindow view_window, GList *list);
 
 void zmapViewFeatureDump(ZMapViewWindow view_window, char *file) ;
 
-void zMapViewHighlightFeatures(ZMapView view, ZMapViewWindow view_window, ZMapFeatureContext context, gboolean multiple);
+void zMapViewHighlightFeatures(ZMapView view,
+			       ZMapViewWindow view_window, ZMapFeatureContext context, gboolean multiple);
 
 void zMapViewReadConfigBuffer(ZMapView zmap_view, char *buffer);
 
