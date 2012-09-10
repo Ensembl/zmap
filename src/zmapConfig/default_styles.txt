@@ -93,7 +93,7 @@ colours=selected fill gold ; selected border black
 bump-spacing=3.000000
 bump-mode=unbump
 
-[style-align]
+[style-alignment]
 sub-features=homology:homology-glyph ; non-concensus-splice:nc-splice-glyph
 alignment-show-gaps=true
 alignment-parse-gaps=true
@@ -102,13 +102,13 @@ strand-specific=true
 alignment-pfetchable=true
 colours=normal fill pink ; normal border #97737a
 default-bump-mode=all
-parent-style-style=root
+parent-style=root
 show-reverse-strand=true
 directional-ends=true
 
 [style-basic]
 colours=normal fill lavender ; normal border #898994
-parent-style-style=root
+parent-style=root
 mode=basic
 bump-mode=unbump
 
@@ -116,7 +116,7 @@ bump-mode=unbump
 transcript-cds-colours=normal fill white ; normal border SlateBlue ; selected fill gold
 width=7.000000
 colours=normal fill LightGray ; normal border SteelBlue ; selected fill #ecc806
-parent-style-style=root
+parent-style=root
 show-reverse-strand=true
 mode=transcript
 bump-mode=overlap
@@ -124,30 +124,30 @@ strand-specific=true
 
 
 # alignment optional styles
-[gapped-align]
+[style-gapped-align]
 alignment-pfetchable=false
 default-bump-mode=overlap
 colours=normal border CadetBlue
-parent-style-style=align
+parent-style=align
 alignment-join-align=0
 alignment-between-error=1
 alignment-always-gapped=true
 
-[dna_align]
+[style-dna_align]
 alignment-blixem=blixem-n
 mode=alignment
 alignment-join-align=0
 strand-specific=false
 show-text=true
 alignment-within-error=0
-parent-style-style=align
+parent-style=align
 max-score=100.000000
 min-score=70.000000
 score-mode=percent
 
-[pep_align]
+[style-pep_align]
 sub-features=homology:homology-glyph
-parent-style-style=align
+parent-style=align
 max-score=100.000000
 show-reverse-strand=true
 mode=alignment
@@ -155,9 +155,9 @@ min-score=70.000000
 score-mode=percent
 frame-mode=always
 
-[EST_align]
+[style-EST_align]
 colours=normal fill Purple ; normal border #3d1954
-parent-style-style=dna_align
+parent-style=dna_align
 alignment-mask-sets=self ; vertebrate_mRNA
 
 

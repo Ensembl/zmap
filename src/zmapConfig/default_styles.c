@@ -96,7 +96,7 @@ colours=selected fill gold ; selected border black\n\
 bump-spacing=3.000000\n\
 bump-mode=unbump\n\
 \n\
-[style-align]\n\
+[style-alignment]\n\
 sub-features=homology:homology-glyph ; non-concensus-splice:nc-splice-glyph\n\
 alignment-show-gaps=true\n\
 alignment-parse-gaps=true\n\
@@ -105,13 +105,13 @@ strand-specific=true\n\
 alignment-pfetchable=true\n\
 colours=normal fill pink ; normal border #97737a\n\
 default-bump-mode=all\n\
-parent-style-style=root\n\
+parent-style=root\n\
 show-reverse-strand=true\n\
 directional-ends=true\n\
 \n\
 [style-basic]\n\
 colours=normal fill lavender ; normal border #898994\n\
-parent-style-style=root\n\
+parent-style=root\n\
 mode=basic\n\
 bump-mode=unbump\n\
 \n\
@@ -119,7 +119,7 @@ bump-mode=unbump\n\
 transcript-cds-colours=normal fill white ; normal border SlateBlue ; selected fill gold\n\
 width=7.000000\n\
 colours=normal fill LightGray ; normal border SteelBlue ; selected fill #ecc806\n\
-parent-style-style=root\n\
+parent-style=root\n\
 show-reverse-strand=true\n\
 mode=transcript\n\
 bump-mode=overlap\n\
@@ -127,30 +127,30 @@ strand-specific=true\n\
 \n\
 \n\
 # alignment optional styles\n\
-[gapped-align]\n\
+[style-gapped-align]\n\
 alignment-pfetchable=false\n\
 default-bump-mode=overlap\n\
 colours=normal border CadetBlue\n\
-parent-style-style=align\n\
+parent-style=align\n\
 alignment-join-align=0\n\
 alignment-between-error=1\n\
 alignment-always-gapped=true\n\
 \n\
-[dna_align]\n\
+[style-dna_align]\n\
 alignment-blixem=blixem-n\n\
 mode=alignment\n\
 alignment-join-align=0\n\
 strand-specific=false\n\
 show-text=true\n\
 alignment-within-error=0\n\
-parent-style-style=align\n\
+parent-style=align\n\
 max-score=100.000000\n\
 min-score=70.000000\n\
 score-mode=percent\n\
 \n\
-[pep_align]\n\
+[style-pep_align]\n\
 sub-features=homology:homology-glyph\n\
-parent-style-style=align\n\
+parent-style=align\n\
 max-score=100.000000\n\
 show-reverse-strand=true\n\
 mode=alignment\n\
@@ -158,9 +158,9 @@ min-score=70.000000\n\
 score-mode=percent\n\
 frame-mode=always\n\
 \n\
-[EST_align]\n\
+[style-EST_align]\n\
 colours=normal fill Purple ; normal border #3d1954\n\
-parent-style-style=dna_align\n\
+parent-style=dna_align\n\
 alignment-mask-sets=self ; vertebrate_mRNA\n\
 \n\
 \n\

@@ -1923,6 +1923,38 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
             style = zMapWindowGetColumnStyle(window,feature_set->unique_id);
 	  }
 	if(!style)
+	{
+		/* for autoconfigured columns we have to patch up a few data structs
+		 * that are needed by various bits of code scattered all over the place
+		 * that are assumed to have been set up before requesting the data
+		 * and they are assumed to have been _copied_ to some other place at some time
+		 * in between startup, requesting data, getting data and displaying it
+		 * sorry i can't be more speciific but i didn't write this
+		 * what's below is in repsonse to whatever errors and assertions happened
+		 * it's called 'design by experiment'
+		 */
+		style = feature_set->style;	/* eg for an auto configured freatureset with a default style */
+		/* also set up column2styles */
+		if(style)
+		{
+			ZMapFeatureColumn f_col;
+
+			zMap_g_hashlist_insert(window->context_map->column_2_styles,
+				       feature_set->unique_id,     // the column
+				       GUINT_TO_POINTER(style->unique_id)) ;  // the style
+
+			f_col = g_hash_table_lookup(window->context_map->columns,GUINT_TO_POINTER(feature_set->unique_id));
+			if(f_col)
+			{
+				if(!f_col->style)
+					f_col->style = style;
+				if(!f_col->style_table)
+					f_col->style_table = g_list_append(f_col->style_table, (gpointer) style);
+			}
+		}
+	}
+
+	if(!style)
 	  {
             zMapLogCritical("no column style for featureset \"%s\"\n",g_quark_to_string(feature_set->unique_id));
             break;

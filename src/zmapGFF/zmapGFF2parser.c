@@ -1503,6 +1503,28 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
        g_hash_table_lookup(parser_feature_set->feature_styles,GUINT_TO_POINTER(feature_style_id))))
     {
       if(!(feature_style = zMapFindFeatureStyle(parser->sources, feature_style_id, feature_type)))
+	{
+#if 1
+		/* try to find style w/ same name as feature type (known here as ontology) */
+		if(!g_ascii_strcasecmp(ontology,"similarity"))
+		{
+			feature_style_id = zMapStyleCreateID("alignment");
+		}
+		else if(!g_ascii_strcasecmp(ontology,"intron") || !g_ascii_strcasecmp(ontology,"exon") ||
+			!g_ascii_strcasecmp(ontology,"CDS") || !g_ascii_strcasecmp(ontology,"Sequence"))
+		{
+			feature_style_id = zMapStyleCreateID("transcript");
+		}
+		else
+		{
+			feature_style_id = zMapStyleCreateID("basic");
+		}
+#else
+		feature_style_id = (GQuark) feature_type;
+#endif
+	}
+
+      if(!(feature_style = zMapFindFeatureStyle(parser->sources, feature_style_id, feature_type)))
 	   {
 		*err_text = g_strdup_printf("feature ignored, could not find style \"%s\" for feature set \"%s\".",
 					g_quark_to_string(feature_style_id), feature_set_name) ;
