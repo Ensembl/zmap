@@ -108,6 +108,9 @@
 #define XREMOTEARG_END "end"
 #define XREMOTEARG_END_DESC "End coord in sequence."
 
+#define XREMOTEARG_REMOTE_DEBUG "remote-debug"
+#define XREMOTEARG_REMOTE_DEBUG_DESC "Remote debug level: off | normal | verbose."
+
 #define XREMOTEARG_NO_TIMEOUT "no_timeout"
 #define XREMOTEARG_NO_TIMEOUT_DESC "Never timeout waiting for a response."
 
@@ -181,6 +184,7 @@ typedef struct
   char *sequence ;
   char *start ;
   char *end ;
+  char *remote_debug ;
   gboolean timeout ;
   char **zmap_path ;
 } XRemoteCmdLineArgsStruct, *XRemoteCmdLineArgs;
@@ -2686,6 +2690,8 @@ static GOptionEntry *get_main_entries(XRemoteCmdLineArgs arg_context)
       XREMOTEARG_START_DESC, "start" },
     { XREMOTEARG_END, 0, 0, G_OPTION_ARG_STRING, NULL,
       XREMOTEARG_END_DESC, "end" },
+    { XREMOTEARG_REMOTE_DEBUG, 0, 0, G_OPTION_ARG_STRING, NULL,
+      XREMOTEARG_REMOTE_DEBUG_DESC, "remote-debug" },
     { XREMOTEARG_SLEEP, 0, 0, G_OPTION_ARG_STRING, NULL,
       XREMOTEARG_SLEEP_DESC, "sleep" },
     { XREMOTEARG_NO_TIMEOUT, 0, G_OPTION_FLAG_NO_ARG, G_OPTION_ARG_NONE, NULL,
@@ -2708,9 +2714,10 @@ static GOptionEntry *get_main_entries(XRemoteCmdLineArgs arg_context)
       entries[7].arg_data = &(arg_context->sequence) ;
       entries[8].arg_data = &(arg_context->start) ;
       entries[9].arg_data = &(arg_context->end) ;
-      entries[10].arg_data = &(arg_context->sleep_seconds) ;
-      entries[11].arg_data = &(arg_context->timeout) ;
-      entries[12].arg_data = &(arg_context->zmap_path) ;
+      entries[10].arg_data = &(arg_context->remote_debug) ;
+      entries[11].arg_data = &(arg_context->sleep_seconds) ;
+      entries[12].arg_data = &(arg_context->timeout) ;
+      entries[13].arg_data = &(arg_context->zmap_path) ;
     }
 
   return entries;
@@ -3027,6 +3034,7 @@ static gboolean start_zmap_cb(gpointer remote_data_data)
       tmp_string = NULL ;
       GString *cmd_str ;
       char *sleep = remote_data->cmd_line_args->sleep_seconds ;
+      char *remote_debug = remote_data->cmd_line_args->remote_debug ;
       int screen_num ;
 
 
@@ -3048,6 +3056,9 @@ static gboolean start_zmap_cb(gpointer remote_data_data)
 
       if (sleep)
 	g_string_append_printf(cmd_str, " --sleep=%s", sleep) ;
+
+      if (remote_debug)
+	g_string_append_printf(cmd_str, " --remote-debug=%s", remote_debug) ;
 
       g_string_append_printf(cmd_str, " --%s=%s",
 			     ZMAPSTANZA_APP_PEER_NAME,
