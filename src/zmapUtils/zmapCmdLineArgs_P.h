@@ -41,6 +41,7 @@
 #define ZMAPARG_CONFIG_FILE_DESC    "Relative or full path to configuration file."
 #define ZMAPARG_CONFIG_DIR_DESC     "Relative or full path to configuration directory."
 #define ZMAPARG_WINDOW_ID_DESC      "Window ID of the controlling application."
+#define ZMAPARG_REMOTE_DEBUG_DESC   "Set RemoteControl debug level."
 #define ZMAPARG_PEER_NAME_DESC      "Peer Remote Control app name."
 #define ZMAPARG_PEER_CLIPBOARD_DESC "Peer Remote Control clipboard name."
 #define ZMAPARG_SEQUENCE_DESC       "Sequence name."
@@ -48,15 +49,16 @@
 #define ZMAPARG_TIMING_DESC         "switch on timing functions"
 #define ZMAPARG_SHRINK_DESC         "allow shrinkable ZMap window"
 
-#define ZMAPARG_NO_ARG         "<none>"
-#define ZMAPARG_COORD_ARG      "coord"
-#define ZMAPARG_FILE_ARG       "file path"
-#define ZMAPARG_DIR_ARG        "directory"
-#define ZMAPARG_WINID_ARG      "0x0000000"
-#define ZMAPARG_SEQUENCE_ARG   "<sequence name>"
-#define ZMAPARG_PEER_NAME_ARG  "peer app name"
-#define ZMAPARG_PEER_CLIPBOARD_ARG    "peer clipboard unique id"
-#define ZMAPARG_SERIAL_ARG     "<none>"
+#define ZMAPARG_NO_ARG              "<none>"
+#define ZMAPARG_COORD_ARG           "coord"
+#define ZMAPARG_FILE_ARG            "file path"
+#define ZMAPARG_DIR_ARG             "directory"
+#define ZMAPARG_WINID_ARG           "0x0000000"
+#define ZMAPARG_SEQUENCE_ARG        "<sequence name>"
+#define ZMAPARG_REMOTE_DEBUG_ARG    "debug level: off | normal | verbose"
+#define ZMAPARG_PEER_NAME_ARG       "peer app name"
+#define ZMAPARG_PEER_CLIPBOARD_ARG  "peer clipboard unique id"
+#define ZMAPARG_SERIAL_ARG          "<none>"
 
 #define ZMAPARG_INVALID_INT -1
 #define ZMAPARG_INVALID_BOOL FALSE
@@ -71,7 +73,7 @@ enum
     ARG_START, ARG_END,
     ARG_CONF_FILE, ARG_CONF_DIR,
     ARG_WINID,
-    ARG_PEER_NAME, ARG_PEER_CLIPBOARD,
+    ARG_REMOTE_DEBUG, ARG_PEER_NAME, ARG_PEER_CLIPBOARD,
     ARG_TIMING
   } ;
 
@@ -101,8 +103,11 @@ typedef struct _ZMapCmdLineArgsStruct
   char *config_file_path ;
   char *window ;
 
+  char *remote_debug ;
   char *peer_name ;
   char *peer_clipboard ;
+
+  gboolean shrink ;
 
 } ZMapCmdLineArgsStruct, *ZMapCmdLineArgs ;
 
