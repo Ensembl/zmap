@@ -43,6 +43,7 @@
 #include <gtk/gtk.h>
 
 #include <ZMap/zmapUtils.h>
+#include <ZMap/zmapCmdLineArgs.h>
 #include <zmapRemoteControl_P.h>
 
 
@@ -74,10 +75,10 @@
     } while (0)
 
 /* Switchable version of remotelogmsg for debugging sessions. */
-#define DEBUGLOGMSG(REMOTE_CONTROL, FORMAT_STR, ...)			\
+#define DEBUGLOGMSG(REMOTE_CONTROL, DEBUG_LEVEL, FORMAT_STR, ...)	\
   do									\
     {									\
-      if (remote_debug_G)						\
+      if (remote_debug_G && DEBUG_LEVEL <= remote_debug_G)		\
         {								\
 	  REMOTELOGMSG((REMOTE_CONTROL),				\
 		       (FORMAT_STR), __VA_ARGS__) ;			\
@@ -138,6 +139,7 @@ enum
     DEFAULT_TIMEOUT = 500,				    /* Standard timeout, needs testing. */
     DEBUG_TIMEOUT = 3600000				    /* Debug timeout of an hour.... */
   } ;
+
 
 
 
@@ -227,7 +229,7 @@ static GtkTargetEntry clipboard_target_G[TARGET_NUM] = {{ZACP_DATA_TYPE, 0, TARG
 
 
 /* Debugging stuff... */
-static gboolean remote_debug_G = TRUE ;
+static ZMapRemoteControlDebugLevelType remote_debug_G = ZMAP_REMOTECONTROL_DEBUG_NORMAL ;
 
 
 
@@ -300,11 +302,11 @@ ZMapRemoteControl zMapRemoteControlCreate(char *app_id,
 	}
 
       /* can't be earlier as we need app_id and err_report_XX stuff. */
-      DEBUGLOGMSG(remote_control, "%s", ENTER_TXT) ;
+      DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", ENTER_TXT) ;
 
       REMOTELOGMSG(remote_control, "%s", "RemoteControl object created.") ;
 
-      DEBUGLOGMSG(remote_control, "%s", EXIT_TXT) ;
+      DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", EXIT_TXT) ;
     }
 
   return remote_control ;
@@ -325,7 +327,7 @@ gboolean zMapRemoteControlReceiveInit(ZMapRemoteControl remote_control, char *ap
 
   ZMAP_MAGIC_ASSERT(remote_control_magic_G, remote_control->magic) ;
 
-  DEBUGLOGMSG(remote_control, "%s", ENTER_TXT) ;
+  DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", ENTER_TXT) ;
 
   if (remote_control->receive)
    {
@@ -361,7 +363,7 @@ gboolean zMapRemoteControlReceiveInit(ZMapRemoteControl remote_control, char *ap
       result = TRUE ;
     }    
 
-  DEBUGLOGMSG(remote_control, "%s", EXIT_TXT) ;				   
+  DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", EXIT_TXT) ;				   
 
   return result ;
 }
@@ -382,7 +384,7 @@ gboolean zMapRemoteControlSendInit(ZMapRemoteControl remote_control,
 
   ZMAP_MAGIC_ASSERT(remote_control_magic_G, remote_control->magic) ;
 
-  DEBUGLOGMSG(remote_control, "%s", ENTER_TXT) ;
+  DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", ENTER_TXT) ;
 
   if (remote_control->send)
    {
@@ -419,7 +421,7 @@ gboolean zMapRemoteControlSendInit(ZMapRemoteControl remote_control,
       result = TRUE ;
     }
 
-  DEBUGLOGMSG(remote_control, "%s", EXIT_TXT) ;				   
+  DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", EXIT_TXT) ;				   
 
   return result ;
 }
@@ -434,7 +436,7 @@ gboolean zMapRemoteControlReceiveWaitForRequest(ZMapRemoteControl remote_control
 
   ZMAP_MAGIC_ASSERT(remote_control_magic_G, remote_control->magic) ;
 
-  DEBUGLOGMSG(remote_control, "%s", ENTER_TXT) ;
+  DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", ENTER_TXT) ;
 
   receive = remote_control->receive ;
 
@@ -477,7 +479,7 @@ gboolean zMapRemoteControlReceiveWaitForRequest(ZMapRemoteControl remote_control
 	}
     }
 
-  DEBUGLOGMSG(remote_control, "%s", EXIT_TXT) ;
+  DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", EXIT_TXT) ;
 
   return result ;
 }
@@ -490,7 +492,7 @@ gboolean zMapRemoteControlSendRequest(ZMapRemoteControl remote_control, char *re
 
   ZMAP_MAGIC_ASSERT(remote_control_magic_G, remote_control->magic) ;
 
-  DEBUGLOGMSG(remote_control, "%s", ENTER_TXT) ;
+  DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", ENTER_TXT) ;
 
   if (remote_control->state != REMOTE_STATE_IDLE && remote_control->state != REMOTE_STATE_SERVER_WAIT_NEW_REQ)
     {
@@ -562,7 +564,7 @@ gboolean zMapRemoteControlSendRequest(ZMapRemoteControl remote_control, char *re
 	}
     }
 
-  DEBUGLOGMSG(remote_control, "%s", EXIT_TXT) ;
+  DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", EXIT_TXT) ;
 
   return result ;
 }
@@ -581,13 +583,13 @@ void zMapRemoteControlReset(ZMapRemoteControl remote_control)
 
 
 /* Set debug on/off. */
-gboolean zMapRemoteControlSetDebug(ZMapRemoteControl remote_control, gboolean debug_on)
+gboolean zMapRemoteControlSetDebug(ZMapRemoteControl remote_control, ZMapRemoteControlDebugLevelType debug_level)
 {
   gboolean result = TRUE ;
 
   ZMAP_MAGIC_ASSERT(remote_control_magic_G, remote_control->magic) ;
 
-  remote_debug_G = debug_on ;
+  remote_debug_G = debug_level ;
 
   return result ;
  }
@@ -664,7 +666,7 @@ gboolean zMapRemoteControlDestroy(ZMapRemoteControl remote_control)
 
   ZMAP_MAGIC_ASSERT(remote_control_magic_G, remote_control->magic) ;
 
-  DEBUGLOGMSG(remote_control, "%s", ENTER_TXT) ;
+  DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", ENTER_TXT) ;
 
   if (remote_control->state == REMOTE_STATE_IDLE)
     {
@@ -685,7 +687,7 @@ gboolean zMapRemoteControlDestroy(ZMapRemoteControl remote_control)
     }
 
   /* Make sure this happens whether destroy succeeds or not.... */
-  DEBUGLOGMSG(remote_control, "%s", EXIT_TXT) ;		    /* Latest we can make this call as we 
+  DEBUGLOGMSG(remote_control,  ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", EXIT_TXT) ;	/* Latest we can make this call as we 
 							       need remote_control. */
 
   if (remote_control->state == REMOTE_STATE_IDLE)
@@ -793,7 +795,7 @@ static void sendClipboardSendRequestCB(GtkClipboard *clipboard, GtkSelectionData
 
   ZMAP_MAGIC_ASSERT(remote_control_magic_G, remote_control->magic) ;
 
-  DEBUGLOGMSG(remote_control, "%s", ENTER_TXT) ;
+  DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", ENTER_TXT) ;
 
   if (remote_control->state != REMOTE_STATE_IDLE)
     {
@@ -843,7 +845,7 @@ static void sendClipboardSendRequestCB(GtkClipboard *clipboard, GtkSelectionData
 	}
     }
 
-  DEBUGLOGMSG(remote_control, "%s", EXIT_TXT) ;
+  DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", EXIT_TXT) ;
 
   return ;
 }
@@ -864,7 +866,7 @@ static void sendClipboardClearCB(GtkClipboard *clipboard, gpointer user_data)
 
   ZMAP_MAGIC_ASSERT(remote_control_magic_G, remote_control->magic) ;
 
-  DEBUGLOGMSG(remote_control, "%s", ENTER_TXT) ;
+  DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", ENTER_TXT) ;
 
   if (remote_control->state != REMOTE_STATE_IDLE)
     {
@@ -916,7 +918,7 @@ static void sendClipboardClearCB(GtkClipboard *clipboard, gpointer user_data)
 	}
     }
 
-  DEBUGLOGMSG(remote_control, "%s", EXIT_TXT) ;
+  DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", EXIT_TXT) ;
 
   return ;
 }
@@ -938,7 +940,7 @@ static void sendReplyWaitClipboardClearCB(GtkClipboard *clipboard, gpointer user
 
   ZMAP_MAGIC_ASSERT(remote_control_magic_G, remote_control->magic) ;
 
-  DEBUGLOGMSG(remote_control, "%s", ENTER_TXT) ;
+  DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", ENTER_TXT) ;
 
   if (remote_control->state != REMOTE_STATE_IDLE)
     {
@@ -970,7 +972,7 @@ static void sendReplyWaitClipboardClearCB(GtkClipboard *clipboard, gpointer user
 	}
     }
 
-  DEBUGLOGMSG(remote_control, "%s", EXIT_TXT) ;
+  DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", EXIT_TXT) ;
 
   return ;
 }
@@ -983,14 +985,14 @@ static void sendReplyWaitClipboardGetCB(GtkClipboard *clipboard, GtkSelectionDat
 
   ZMAP_MAGIC_ASSERT(remote_control_magic_G, remote_control->magic) ;
 
-  DEBUGLOGMSG(remote_control, "%s", ENTER_TXT) ;
+  DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", ENTER_TXT) ;
 
   if (remote_control->state != REMOTE_STATE_IDLE)
     {
       CALL_OUTOFBAND_HANDLER(remote_control, "get", "clear") ;
     }
 
-  DEBUGLOGMSG(remote_control, "%s", EXIT_TXT) ;
+  DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", EXIT_TXT) ;
 
   return ;
 }
@@ -1011,7 +1013,7 @@ static void sendGetRequestClipboardCB(GtkClipboard *clipboard, GtkSelectionData 
 
   ZMAP_MAGIC_ASSERT(remote_control_magic_G, remote_control->magic) ;
 
-  DEBUGLOGMSG(remote_control, "%s", ENTER_TXT) ;
+  DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", ENTER_TXT) ;
 
   if (remote_control->state != REMOTE_STATE_IDLE)
     {
@@ -1086,7 +1088,7 @@ static void sendGetRequestClipboardCB(GtkClipboard *clipboard, GtkSelectionData 
 	}
     }
 
-  DEBUGLOGMSG(remote_control, "%s", EXIT_TXT) ;
+  DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", EXIT_TXT) ;
 
   return ;
 }
@@ -1109,7 +1111,7 @@ static void sendRequestReceivedClipboardClearCB(GtkClipboard *clipboard, gpointe
 
   ZMAP_MAGIC_ASSERT(remote_control_magic_G, remote_control->magic) ;
 
-  DEBUGLOGMSG(remote_control, "%s", ENTER_TXT) ;
+  DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", ENTER_TXT) ;
 
   if (remote_control->state != REMOTE_STATE_IDLE)
     {
@@ -1157,7 +1159,7 @@ static void sendRequestReceivedClipboardClearCB(GtkClipboard *clipboard, gpointe
 	}
     }
 
-  DEBUGLOGMSG(remote_control, "%s", EXIT_TXT) ;
+  DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", EXIT_TXT) ;
 
   return ;
 }
@@ -1171,14 +1173,14 @@ static void sendRequestReceivedClipboardGetCB(GtkClipboard *clipboard, GtkSelect
 
   ZMAP_MAGIC_ASSERT(remote_control_magic_G, remote_control->magic) ;
 
-  DEBUGLOGMSG(remote_control, "%s", ENTER_TXT) ;
+  DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", ENTER_TXT) ;
 
   if (remote_control->state != REMOTE_STATE_IDLE)
     {
       CALL_OUTOFBAND_HANDLER(remote_control, "get", "clear") ;
     }
 
-  DEBUGLOGMSG(remote_control, "%s", EXIT_TXT) ;
+  DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", EXIT_TXT) ;
 
   return ;
 }
@@ -1223,7 +1225,7 @@ static void receiveWaitClipboardClearCB(GtkClipboard *clipboard, gpointer user_d
 
   ZMAP_MAGIC_ASSERT(remote_control_magic_G, remote_control->magic) ;
 
-  DEBUGLOGMSG(remote_control, "%s", ENTER_TXT) ;
+  DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", ENTER_TXT) ;
 
   if (remote_control->state != REMOTE_STATE_IDLE)
     {
@@ -1246,7 +1248,7 @@ static void receiveWaitClipboardClearCB(GtkClipboard *clipboard, gpointer user_d
 	}
     }
 
-  DEBUGLOGMSG(remote_control, "%s", EXIT_TXT) ;
+  DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", EXIT_TXT) ;
 
   return ;
 }
@@ -1262,14 +1264,14 @@ static void receiveWaitClipboardGetCB(GtkClipboard *clipboard, GtkSelectionData 
 
   ZMAP_MAGIC_ASSERT(remote_control_magic_G, remote_control->magic) ;
 
-  DEBUGLOGMSG(remote_control, "%s", ENTER_TXT) ;
+  DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", ENTER_TXT) ;
 
   if (remote_control->state != REMOTE_STATE_IDLE)
     {
       CALL_OUTOFBAND_HANDLER(remote_control, "get", "clear") ;
     }
 
-  DEBUGLOGMSG(remote_control, "%s", EXIT_TXT) ;
+  DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", EXIT_TXT) ;
 
   return ;
 }
@@ -1290,7 +1292,7 @@ static void receiveGetRequestClipboardCB(GtkClipboard *clipboard, GtkSelectionDa
 
   ZMAP_MAGIC_ASSERT(remote_control_magic_G, remote_control->magic) ;
 
-  DEBUGLOGMSG(remote_control, "%s", ENTER_TXT) ;
+  DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", ENTER_TXT) ;
 
   if (remote_control->state != REMOTE_STATE_IDLE)
     {
@@ -1360,7 +1362,7 @@ static void receiveGetRequestClipboardCB(GtkClipboard *clipboard, GtkSelectionDa
 	}
     }
 
-  DEBUGLOGMSG(remote_control, "%s", EXIT_TXT) ;
+  DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", EXIT_TXT) ;
 
   return ;
 }
@@ -1384,7 +1386,7 @@ static void receiveRequestReceivedClipboardClearCB(GtkClipboard *clipboard, gpoi
 
   ZMAP_MAGIC_ASSERT(remote_control_magic_G, remote_control->magic) ;
 
-  DEBUGLOGMSG(remote_control, "%s", ENTER_TXT) ;
+  DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", ENTER_TXT) ;
 
   if (remote_control->state != REMOTE_STATE_IDLE)
     {
@@ -1414,7 +1416,7 @@ static void receiveRequestReceivedClipboardClearCB(GtkClipboard *clipboard, gpoi
 	}
     }
 
-  DEBUGLOGMSG(remote_control, "%s", EXIT_TXT) ;
+  DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", EXIT_TXT) ;
 
   return ;
 }
@@ -1427,14 +1429,14 @@ static void receiveRequestReceivedClipboardGetCB(GtkClipboard *clipboard, GtkSel
   
   ZMAP_MAGIC_ASSERT(remote_control_magic_G, remote_control->magic) ;
 
-  DEBUGLOGMSG(remote_control, "%s", ENTER_TXT) ;
+  DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", ENTER_TXT) ;
 
   if (remote_control->state != REMOTE_STATE_IDLE)
     {
       CALL_OUTOFBAND_HANDLER(remote_control,"get", "clear") ;
     }
 
-  DEBUGLOGMSG(remote_control, "%s", EXIT_TXT) ;
+  DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", EXIT_TXT) ;
 
   return ;
 }
@@ -1457,7 +1459,7 @@ static void receiveAppCB(void *remote_data, gboolean abort, char *reply)
 
   ZMAP_MAGIC_ASSERT(remote_control_magic_G, remote_control->magic) ;
 
-  DEBUGLOGMSG(remote_control, "%s", ENTER_TXT) ;
+  DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", ENTER_TXT) ;
 
 
   /* STICK IN ABORT STUFF HERE....NEED TO CALL ERROR HANDLER.... */
@@ -1508,7 +1510,7 @@ static void receiveAppCB(void *remote_data, gboolean abort, char *reply)
 	}
     }
 
-  DEBUGLOGMSG(remote_control, "%s", EXIT_TXT) ;
+  DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", EXIT_TXT) ;
 
   return ;
 }
@@ -1534,7 +1536,7 @@ static void receiveClipboardGetReplyCB(GtkClipboard *clipboard, GtkSelectionData
 
   ZMAP_MAGIC_ASSERT(remote_control_magic_G, remote_control->magic) ;
 
-  DEBUGLOGMSG(remote_control, "%s", ENTER_TXT) ;
+  DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", ENTER_TXT) ;
 
   if (remote_control->state != REMOTE_STATE_IDLE)
     {
@@ -1582,7 +1584,7 @@ static void receiveClipboardGetReplyCB(GtkClipboard *clipboard, GtkSelectionData
 	}
     }
 
-  DEBUGLOGMSG(remote_control, "%s", EXIT_TXT) ;
+  DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", EXIT_TXT) ;
 
   return ;
 }
@@ -1607,7 +1609,7 @@ static void receiveClipboardClearWaitAfterReplyCB(GtkClipboard *clipboard, gpoin
 
   ZMAP_MAGIC_ASSERT(remote_control_magic_G, remote_control->magic) ;
 
-  DEBUGLOGMSG(remote_control, "%s", ENTER_TXT) ;
+  DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", ENTER_TXT) ;
 
   if (remote_control->state != REMOTE_STATE_IDLE)
     {
@@ -1657,7 +1659,7 @@ static void receiveClipboardClearWaitAfterReplyCB(GtkClipboard *clipboard, gpoin
 	}
     }
 
-  DEBUGLOGMSG(remote_control, "%s", EXIT_TXT) ;
+  DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", EXIT_TXT) ;
 
   return ;
 }
@@ -2022,7 +2024,7 @@ static gboolean timeOutCB(gpointer user_data)
   gboolean result = FALSE ;				    /* Returning FALSE removes timer. */
   ZMapRemoteControl remote_control = (ZMapRemoteControl)user_data ;
 
-  DEBUGLOGMSG(remote_control, "%s", ENTER_TXT) ;
+  DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", ENTER_TXT) ;
 
   CALL_ERR_HANDLER(remote_control,
 		   ZMAP_REMOTECONTROL_RC_TIMED_OUT,
@@ -2032,7 +2034,7 @@ static gboolean timeOutCB(gpointer user_data)
   /* This callback is removed automatically by gtk so reset the source_id. */
   remote_control->timer_source_id = 0 ;
 
-  DEBUGLOGMSG(remote_control, "%s", EXIT_TXT) ;
+  DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", EXIT_TXT) ;
 
   return result ;
 }
@@ -2190,8 +2192,5 @@ static char *getClipboardData(GtkSelectionData *selection_data, char **err_msg_o
 
   return clipboard_str ;
 }
-
-
-
 
 

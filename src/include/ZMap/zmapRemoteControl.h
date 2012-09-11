@@ -65,6 +65,10 @@ _(ZMAP_REMOTECONTROL_RC_BAD_STATE,     , "bad_state",      "Internal error, bad 
 ZMAP_DEFINE_ENUM(ZMapRemoteControlRCType, ZMAP_REMOTECONTROL_RC_LIST) ;
 
 
+/* Debugging levels. */
+typedef enum {ZMAP_REMOTECONTROL_DEBUG_OFF,
+	      ZMAP_REMOTECONTROL_DEBUG_NORMAL, ZMAP_REMOTECONTROL_DEBUG_VERBOSE} ZMapRemoteControlDebugLevelType ;
+
 
 /* 
  *                         Callback definitions.
@@ -148,7 +152,7 @@ gboolean zMapRemoteControlReceiveWaitForRequest(ZMapRemoteControl remote_control
 gboolean zMapRemoteControlSendRequest(ZMapRemoteControl remote_control, char *peer_xml_request) ;
 
 void zMapRemoteControlReset(ZMapRemoteControl remote_control) ;
-gboolean zMapRemoteControlSetDebug(ZMapRemoteControl remote_control, gboolean debug_on) ;
+gboolean zMapRemoteControlSetDebug(ZMapRemoteControl remote_control, ZMapRemoteControlDebugLevelType debug_level) ;
 gboolean zMapRemoteControlSetTimeout(ZMapRemoteControl remote_control, int timeout_secs) ;
 gboolean zMapRemoteControlSetErrorCB(ZMapRemoteControl remote_control,
 				     ZMapRemoteControlErrorReportFunc err_func, gpointer err_data) ;
