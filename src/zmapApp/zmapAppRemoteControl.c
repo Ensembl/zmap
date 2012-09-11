@@ -46,6 +46,7 @@
 
 #include <ZMap/zmapRemoteCommand.h>
 #include <ZMap/zmapAppRemote.h>
+#include <ZMap/zmapCmdLineArgs.h>
 #include <zmapApp_P.h>
 
 
@@ -75,6 +76,8 @@ static void requestblockIfActive(void) ;
 static void requestSetActive(void) ;
 static void requestSetInActive(void) ;
 
+static void setDebugLevel(void) ;
+
 /* 
  *                Globals. 
  */
@@ -83,7 +86,8 @@ static void requestSetInActive(void) ;
 static gboolean is_active_G = FALSE ;
 static gboolean is_active_debug_G = TRUE ;
 
-
+/* Set debug level in remote control. */
+static ZMapRemoteControlDebugLevelType remote_debug_G = ZMAP_REMOTECONTROL_DEBUG_OFF ;
 
 
 
@@ -111,7 +115,7 @@ gboolean zmapAppRemoteControlCreate(ZMapAppContext app_context, char *peer_name,
   ZMapAppRemote remote ;
   char *app_id ;
   ZMapRemoteControl remote_control ;
-  
+  static gboolean debug_set = FALSE ;  
 
   app_id = zMapGetAppName() ;
   if ((remote_control = zMapRemoteControlCreate(app_id,
@@ -129,6 +133,18 @@ gboolean zmapAppRemoteControlCreate(ZMapAppContext app_context, char *peer_name,
 
       /* set no timeout for now... */
       zMapRemoteControlSetTimeout(remote->remote_controller, 0) ;
+
+
+      /* Only set debug from cmdline the first time around otherwise it overrides what
+       * is set dynamically....maybe it should be per remote object ? */
+      if (!debug_set)
+	{
+	  setDebugLevel() ;
+
+	  debug_set = TRUE ;
+	}
+
+      zMapRemoteControlSetDebug(remote->remote_controller, remote_debug_G) ;
 
       app_context->remote_control = remote ;
 
@@ -574,6 +590,30 @@ static void handleZMapRequestsCB(char *command, ZMapXMLUtilsEventStack request_b
 
 	  g_free(err_msg) ;
 	}
+    }
+
+  return ;
+}
+
+
+/* Check command line for remote_debug level. */
+static void setDebugLevel(void)
+{
+  ZMapCmdLineArgsType cmdline_arg = {FALSE} ;
+  char *debug_level_str ;
+	  
+  if (zMapCmdLineArgsValue(ZMAPARG_REMOTE_DEBUG, &cmdline_arg))
+    {
+      char *debug_level_str ;
+	      
+      debug_level_str = cmdline_arg.s ;
+
+      if (strcasecmp(debug_level_str, "off") == 0)
+	remote_debug_G = ZMAP_REMOTECONTROL_DEBUG_OFF ;
+      else if (strcasecmp(debug_level_str, "normal") == 0)
+	remote_debug_G = ZMAP_REMOTECONTROL_DEBUG_NORMAL ;
+      else if (strcasecmp(debug_level_str, "verbose") == 0)
+	remote_debug_G = ZMAP_REMOTECONTROL_DEBUG_VERBOSE ;
     }
 
   return ;
