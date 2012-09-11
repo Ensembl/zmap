@@ -452,6 +452,7 @@ void zMapWindowCanvasFeaturesetPaintFlush(ZMapWindowFeaturesetItem featureset,ZM
    * we could code this as featyreset iff feature is null
    * x-ref with PaintPrepare above
    */
+
 #if 0
   if(feature &&
 	(feature->type > 0 && feature->type < FEATURE_N_TYPE)
@@ -1560,11 +1561,7 @@ double  zmap_window_featureset_item_foo_point(FooCanvasItem *item,
 
 
       /* This all seems a bit hokey...who says the glyphs are in the middle of the column ? */
-<<<<<<< HEAD
-	/* NOTE histograms are hooked onto the LHS, but we can click on the row and still get the feature */
-=======
       /* NOTE histgrams are hooked onto the LHS, but we can click on the row and still get the feature */
->>>>>>> "fix the fix for broken scale bar + formatting."
 #warning change this to use featurex1 and x2 coords
       /* NOTE warning even better if we express point() fucntion in pixel coordinates only */
       x_off = fi->dx + fi->x_off + fi->width / 2;
@@ -1606,18 +1603,9 @@ double  zmap_window_featureset_item_foo_point(FooCanvasItem *item,
 	      fi->point_feature = gs->feature;
 	      *actual_item = item;
 	      //printf("overlaps x\n");
-<<<<<<< HEAD
-
-		/* NOTE this could concievably cause a memory fault if we freed point_canvas_feature
-		 * but that seems unlikely if we don-t nove the cursor
-		 */
-		fi->point_canvas_feature = gs;
-		best = this_one;
-=======
 #warning this could concievably cause a memory fault if we freed point_canvas_feature but that seems unlikely if we don-t nove the cursor
 	      fi->point_canvas_feature = gs;
 	      best = this_one;
->>>>>>> "fix the fix for broken scale bar + formatting."
 
 	      if(!best)	/* can't get better */
 		{
@@ -1775,18 +1763,9 @@ double  zmap_window_featureset_item_point(FooCanvasItem *item, double cx, double
 	    {
 	      fi->point_feature = gs->feature;
 	      //printf("overlaps x\n");
-<<<<<<< HEAD
-		/* NOTE this could concievably cause a memory fault if we freed point_canvas_feature
-		 * but that seems unlikely if we don-t nove the cursor
-		 */
-
-		fi->point_canvas_feature = gs;
-		best = this_one;
-=======
 #warning this could concievably cause a memory fault if we freed point_canvas_feature but that seems unlikely if we don-t nove the cursor
 	      fi->point_canvas_feature = gs;
 	      best = this_one;
->>>>>>> "fix the fix for broken scale bar + formatting."
 	    }
 	}
     }
@@ -2050,13 +2029,8 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
   foo_canvas_c2w(item->canvas,0,ceil(expose->area.y + expose->area.height + 1),NULL,&y2);
 
 #if 0
-<<<<<<< HEAD
-//if(fi->type < FEATURE_GENOMIC)
-	printf("expose %p %s %.1f,%.1f (%d %d, %d %d)\n", item->canvas, g_quark_to_string(fi->id), y1, y2, fi->clip_x1, fi->clip_y1, fi->clip_x2, fi->clip_y2);
-=======
   if(fi->type >= FEATURE_GRAPHICS)
     printf("expose %p %s %.1f,%.1f (%d %d, %d %d)\n", item->canvas, g_quark_to_string(fi->id), y1, y2, fi->clip_x1, fi->clip_y1, fi->clip_x2, fi->clip_y2);
->>>>>>> "fix the fix for broken scale bar + formatting."
 #endif
 
   /* ok...this looks like the place to do feature specific painting..... */
