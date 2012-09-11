@@ -996,6 +996,7 @@ ZMAP_ENUM_AS_EXACT_STRING_DEC(zmapStyleBlixemType2ExactStr,     ZMapStyleBlixemT
 
 
 ZMAP_ENUM_TO_SHORT_TEXT_DEC(zmapStyleBumpMode2ShortText, ZMapStyleBumpMode) ;
+ZMAP_ENUM_AS_NAME_STRING_DEC(zmapStyleMode2ShortText, ZMapStyleMode) ;
 
 
 

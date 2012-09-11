@@ -1508,24 +1508,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
     {
       if(!(feature_style = zMapFindFeatureStyle(parser->sources, feature_style_id, feature_type)))
 	{
-#if 1
-		/* try to find style w/ same name as feature type (known here as ontology) */
-		if(!g_ascii_strcasecmp(ontology,"similarity"))
-		{
-			feature_style_id = zMapStyleCreateID("alignment");
-		}
-		else if(!g_ascii_strcasecmp(ontology,"intron") || !g_ascii_strcasecmp(ontology,"exon") ||
-			!g_ascii_strcasecmp(ontology,"CDS") || !g_ascii_strcasecmp(ontology,"Sequence"))
-		{
-			feature_style_id = zMapStyleCreateID("transcript");
-		}
-		else
-		{
-			feature_style_id = zMapStyleCreateID("basic");
-		}
-#else
-		feature_style_id = (GQuark) feature_type;
-#endif
+		feature_style_id = g_quark_from_string(zmapStyleMode2ShortText(feature_type)) ;
 	}
 
       if(!(feature_style = zMapFindFeatureStyle(parser->sources, feature_style_id, feature_type)))

@@ -3698,11 +3698,11 @@ besides we should test the view data which may contain global config
 	      {
 		zMapStopTimer("LoadFeatureSet",g_quark_to_string(GPOINTER_TO_UINT(connect_data->get_features->context->req_feature_set_names->data)));
 
+		/* can't copy this list after getFeatures as it gets wiped */
+	    	if(!connect_data->feature_sets)	/* (is autoconfigured server/ featuresets not specified) */
+			connect_data->feature_sets = g_list_copy(connect_data->get_features->context->src_feature_set_names);
+
 		getFeatures(zmap_view, connect_data->get_features, connect_data) ;
-
-	    	if(!connect_data->feature_sets)
-			connect_data->feature_sets = g_list_copy(connect_data->get_features->context->req_feature_set_names);
-
 
 	      }
             /* we record succcessful requests, if some fail they will get zapped in checkstateconnections() */

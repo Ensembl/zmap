@@ -1945,7 +1945,7 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 		 * what's below is in repsonse to whatever errors and assertions happened
 		 * it's called 'design by experiment'
 		 */
-		style = feature_set->style;	/* eg for an auto configured freatureset with a default style */
+		style = feature_set->style;	/* eg for an auto configured featureset with a default style */
 		/* also set up column2styles */
 		if(style)
 		{
