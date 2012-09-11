@@ -471,11 +471,17 @@ ZMapFeatureColumn zMapWindowGetSetColumn(ZMapFeatureContextMap map,GQuark set_id
 
       char *name = (char *) g_quark_to_string(set_id);
 
+	if(!map->featureset_2_column)
+	{
+		/* so that we can use autoconfigured servers */
+		map->featureset_2_column = g_hash_table_new(NULL,NULL);
+	}
+
       /* get the column the featureset goes in */
       gff = g_hash_table_lookup(map->featureset_2_column,GUINT_TO_POINTER(set_id));
       if(!gff)
       {
-            zMapLogWarning("creating featureset_2_column for %s",name);
+//            zMapLogWarning("creating featureset_2_column for %s",name);
             /* recover from un-configured error
              * NOTE this occurs for seperator features eg DNA search
              * the style is predefined but the featureset and column are created
@@ -498,7 +504,7 @@ ZMapFeatureColumn zMapWindowGetSetColumn(ZMapFeatureContextMap map,GQuark set_id
             {
 	            ZMapFeatureSource gff_source;
 
-                  zMapLogWarning("creating column  %s for featureset %s (%s)", g_quark_to_string(gff->column_id), g_quark_to_string(set_id), g_quark_to_string(gff->column_ID));
+//                  zMapLogWarning("creating column  %s for featureset %s (%s)", g_quark_to_string(gff->column_id), g_quark_to_string(set_id), g_quark_to_string(gff->column_ID));
 
                   column = g_new0(ZMapFeatureColumnStruct,1);
 

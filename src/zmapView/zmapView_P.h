@@ -31,6 +31,7 @@
 #define ZMAP_VIEW_P_H
 
 #include <glib.h>
+#include <ZMap/zmapConfigStanzaStructs.h>
 #include <ZMap/zmapServerProtocol.h>
 #include <ZMap/zmapThreads.h>
 #include <ZMap/zmapView.h>
@@ -399,6 +400,7 @@ void zmapViewStepDestroy(gpointer data, gpointer user_data) ;
 void zmapViewStepListDestroy(ZMapViewConnection view_conn) ;
 
 void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req_featuresets,
+		        ZMapConfigSource server,
 			  int features_start, int features_end,
 			  gboolean group, gboolean make_new_connection, gboolean terminate) ;
 

@@ -128,7 +128,7 @@ strand-specific=true
 alignment-pfetchable=false
 default-bump-mode=overlap
 colours=normal border CadetBlue
-parent-style=align
+parent-style=alignment
 alignment-join-align=0
 alignment-between-error=1
 alignment-always-gapped=true
@@ -140,14 +140,14 @@ alignment-join-align=0
 strand-specific=false
 show-text=true
 alignment-within-error=0
-parent-style=align
+parent-style=alignment
 max-score=100.000000
 min-score=70.000000
 score-mode=percent
 
 [style-pep_align]
 sub-features=homology:homology-glyph
-parent-style=align
+parent-style=alignment
 max-score=100.000000
 show-reverse-strand=true
 mode=alignment

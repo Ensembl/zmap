@@ -142,6 +142,12 @@ static void freeDataRequest(ZMapServerReqAny req_any) ;
 
 static gboolean processGetSeqRequests(ZMapViewConnection view_con, ZMapServerReqAny req_any) ;
 
+ZMapViewConnection zMapViewRequestServer(ZMapView view, ZMapViewConnection view_conn,
+				   ZMapFeatureBlock block_orig, GList *req_featuresets,
+				   ZMapConfigSource server,
+	   			   int req_start, int req__end,
+				   gboolean dna_requested, gboolean terminate);
+
 static ZMapViewConnection createConnection(ZMapView zmap_view,
 					   ZMapViewConnection view_con,
 					   ZMapFeatureContext context,
@@ -557,6 +563,16 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 		  continue ;
 
 		}
+#if 0
+	/* featuresets are absolutley not required as if so we could not autoconfigure
+	 * a file server wihtout reading the whole file first
+	 * which would require us to read it twice
+	 * NOTE also that some other code assumes that we know what featuresets
+	 * exist in a file before reading it or get told by the server
+	 * we could change the pipe server to read the whole file on open connection
+	 * construct a list of featuresets and return it
+	 * but that mocks the server protocol design somewhat
+	 */
 	      else if (!(current_server->featuresets))
 		{
 		  /* featuresets are absolutely required, go on to next stanza if there aren't
@@ -568,7 +584,7 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 
 		  continue ;
 		}
-
+#endif
 
 #ifdef NOT_REQUIRED_ATM
 	      /* This will become redundant with step stuff..... */
@@ -588,19 +604,22 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 		//		ZMapFeatureContext context;
 		//		gboolean dna_requested = FALSE;
 
-		/* req all featuresets  as a list of their quark names. */
-		/* we need non canonicalised name to get Capitalised name on the status display */
-		req_featuresets = zMapConfigString2QuarkList(current_server->featuresets,FALSE) ;
+		if(current_server->featuresets)
+		{
+			/* req all featuresets  as a list of their quark names. */
+			/* we need non canonicalised name to get Capitalised name on the status display */
+			req_featuresets = zMapConfigString2QuarkList(current_server->featuresets,FALSE) ;
 
-		if(!zmap_view->columns_set)
-		  {
-		    zmapViewCreateColumns(zmap_view,req_featuresets);
-		    g_list_foreach(zmap_view->window_list, invoke_merge_in_names, req_featuresets);
-		  }
+			if(!zmap_view->columns_set)
+			{
+			zmapViewCreateColumns(zmap_view,req_featuresets);
+			g_list_foreach(zmap_view->window_list, invoke_merge_in_names, req_featuresets);
+			}
+		}
 
 		terminate = g_str_has_prefix(current_server->url,"pipe://");
 
-		zmapViewLoadFeatures(zmap_view, NULL, req_featuresets,
+		zmapViewLoadFeatures(zmap_view, NULL, req_featuresets, current_server,
 				     zmap_view->view_sequence->start, zmap_view->view_sequence->end,
 				     SOURCE_GROUP_START,TRUE, terminate) ;
 	      }
@@ -1447,16 +1466,13 @@ ZMapConfigSource zmapViewGetSourceFromFeatureset(GHashTable *hash, GQuark featur
  * NOTE block is NULL for startup requests
  */
 void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req_sources,
+			  ZMapConfigSource server,
 			  int features_start, int features_end,
 			  gboolean group_flag, gboolean make_new_connection, gboolean terminate)
 {
-  ZMapFeatureContext context ;
-  ZMapFeatureBlock block ;
   GList * sources = NULL;
   GHashTable *hash = NULL;
-  ZMapConfigSource server;
   int req_start,req_end;
-  ZMapViewConnection view_con ;
   gboolean requested = FALSE;
   static gboolean debug_sources = FALSE ;
   gboolean dna_requested = FALSE;
@@ -1482,228 +1498,188 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
   req_start = features_start;
   req_end = features_end;
 
-
-  for ( ; req_sources ; req_sources = g_list_next(req_sources))
-    {
-      GQuark featureset = GPOINTER_TO_UINT(req_sources->data);
-      char *unique_name ;
-      GQuark unique_id ;
-
- 	dna_requested = 0;
-
-      zMapDebugPrint(debug_sources, "feature set quark (%d) is: %s", featureset, g_quark_to_string(featureset)) ;
-
-      unique_name = (char *)g_quark_to_string(featureset) ;
-      unique_id = zMapFeatureSetCreateID(unique_name) ;
-
-      zMapDebugPrint(debug_sources, "feature set unique quark (%d) is: %s", unique_id, g_quark_to_string(unique_id)) ;
-
-      server = zmapViewGetSourceFromFeatureset(hash, unique_id) ;
-
-      if (!server && view->context_map.featureset_2_column)
+  if(server)
+  {
+		zMapViewRequestServer(view, NULL, block_orig, req_sources, server, req_start, req_end, FALSE, terminate);
+  }
+  else
+  {
+	for ( ; req_sources ; req_sources = g_list_next(req_sources))
 	{
-	  ZMapFeatureSetDesc GFFset = NULL;
+		GQuark featureset = GPOINTER_TO_UINT(req_sources->data);
+		char *unique_name ;
+		GQuark unique_id ;
 
-	  /* this is for ACEDB where the server featureset list is actually a list of columns
-	   * so to find the server we need to find the column
-	   * there is some possibility of collision if mis-configuredcreateConnection
-	   * and what will happen will be no data
-	   */
-	  if ((GFFset = g_hash_table_lookup(view->context_map.featureset_2_column, GUINT_TO_POINTER(unique_id))))
+		dna_requested = 0;
 
-	    {
-	      featureset = GFFset->column_id;
-	      server = zmapViewGetSourceFromFeatureset(hash,featureset);
-	    }
-	}
+		zMapDebugPrint(debug_sources, "feature set quark (%d) is: %s", featureset, g_quark_to_string(featureset)) ;
 
+		unique_name = (char *)g_quark_to_string(featureset) ;
+		unique_id = zMapFeatureSetCreateID(unique_name) ;
 
-      if (server)
-	{
-	  GList *req_featuresets = NULL;
-	  int existing = FALSE;
-	  int is_pipe;
-	  ZMapViewConnection view_conn = NULL ;
+		zMapDebugPrint(debug_sources, "feature set unique quark (%d) is: %s", unique_id, g_quark_to_string(unique_id)) ;
 
-//	  zMapLogMessage("Load features %s from %s, group = %d",
-//			 g_quark_to_string(featureset),server->url,server->group) ;
+		server = zmapViewGetSourceFromFeatureset(hash, unique_id) ;
 
-	  // make a list of one feature only
-	  req_featuresets = g_list_append(req_featuresets,GUINT_TO_POINTER(featureset));
-
-	  //zMapLogWarning("server group %x %x %s",group_flag,server->group,g_quark_to_string(featureset));
-
-	  if ((server->group & group_flag))
-	    {
-	      // get all featuresets from this source and remove from req_sources
-	      GList *req_src;
-	      GQuark fset;
-	      ZMapConfigSource fset_server;
-
-	      for(req_src = req_sources->next;req_src;)
+		if (!server && view->context_map.featureset_2_column)
 		{
-		  fset = GPOINTER_TO_UINT(req_src->data);
-		  //            zMapLogWarning("add %s\n",g_quark_to_string(fset));
-		  fset_server = zmapViewGetSourceFromFeatureset(hash,fset);
+		ZMapFeatureSetDesc GFFset = NULL;
 
-		  if (!fset_server && view->context_map.featureset_2_column)
-		    {
-		      ZMapFeatureSetDesc GFFset = NULL;
+		/* this is for ACEDB where the server featureset list is actually a list of columns
+		* so to find the server we need to find the column
+		* there is some possibility of collision if mis-configuredcreateConnection
+		* and what will happen will be no data
+		*/
+		if ((GFFset = g_hash_table_lookup(view->context_map.featureset_2_column, GUINT_TO_POINTER(unique_id))))
 
-		      GFFset = g_hash_table_lookup(view->context_map.featureset_2_column, GUINT_TO_POINTER(fset)) ;
-		      if (GFFset)
+		{
+			featureset = GFFset->column_id;
+			server = zmapViewGetSourceFromFeatureset(hash,featureset);
+		}
+		}
+
+
+		if (server)
+		{
+		GList *req_featuresets = NULL;
+		int existing = FALSE;
+		ZMapViewConnection view_conn = NULL ;
+
+	//	  zMapLogMessage("Load features %s from %s, group = %d",
+	//			 g_quark_to_string(featureset),server->url,server->group) ;
+
+		// make a list of one feature only
+		req_featuresets = g_list_append(req_featuresets,GUINT_TO_POINTER(featureset));
+
+		//zMapLogWarning("server group %x %x %s",group_flag,server->group,g_quark_to_string(featureset));
+
+		if ((server->group & group_flag))
+		{
+			// get all featuresets from this source and remove from req_sources
+			GList *req_src;
+			GQuark fset;
+			ZMapConfigSource fset_server;
+
+			for(req_src = req_sources->next;req_src;)
 			{
-			  fset = GFFset->column_id;
-			  fset_server = zmapViewGetSourceFromFeatureset(hash,fset);
-			  //                      zMapLogWarning("translate to  %s\n",g_quark_to_string(fset));
+			fset = GPOINTER_TO_UINT(req_src->data);
+			//            zMapLogWarning("add %s\n",g_quark_to_string(fset));
+			fset_server = zmapViewGetSourceFromFeatureset(hash,fset);
+
+			if (!fset_server && view->context_map.featureset_2_column)
+			{
+				ZMapFeatureSetDesc GFFset = NULL;
+
+				GFFset = g_hash_table_lookup(view->context_map.featureset_2_column, GUINT_TO_POINTER(fset)) ;
+				if (GFFset)
+				{
+				fset = GFFset->column_id;
+				fset_server = zmapViewGetSourceFromFeatureset(hash,fset);
+				//                      zMapLogWarning("translate to  %s\n",g_quark_to_string(fset));
+				}
 			}
-		    }
 
-		  //if (fset_server) zMapLogMessage("Try %s\n",fset_server->url);
-		  if (fset_server == server)
-		    {
-		      GList *del;
+			//if (fset_server) zMapLogMessage("Try %s\n",fset_server->url);
+			if (fset_server == server)
+			{
+				GList *del;
 
-		      /* prepend faster than append...we don't care about the order */
-//		      req_featuresets = g_list_prepend(req_featuresets,GUINT_TO_POINTER(fset));
-			/* but we need to add unique columns eg for ext_curated (column) = 100's of featuresets */
-			req_featuresets = zMap_g_list_append_unique(req_featuresets, GUINT_TO_POINTER(fset));
+				/* prepend faster than append...we don't care about the order */
+	//		      req_featuresets = g_list_prepend(req_featuresets,GUINT_TO_POINTER(fset));
+				/* but we need to add unique columns eg for ext_curated (column) = 100's of featuresets */
+				req_featuresets = zMap_g_list_append_unique(req_featuresets, GUINT_TO_POINTER(fset));
 
-		      // avoid getting ->next from deleted item
-		      del = req_src;
-		      req_src = req_src->next;
-		      //		      zMapLogMessage("use %s\n",g_quark_to_string(fset));
+				// avoid getting ->next from deleted item
+				del = req_src;
+				req_src = req_src->next;
+				//		      zMapLogMessage("use %s\n",g_quark_to_string(fset));
 
-		      // as req_src is ->next of req_sources we know req_sources is still valid
-		      // even though we are removing an item from it
-		      // However we still get a retval from g_list remove()
-		      req_sources = g_list_remove_link(req_sources,del);
-		      // where else is this held: crashes
-		      //NB could use delete link if that was ok
-		      //                     g_free(del); // free the link; no data to free
-		    }
-		  else
-		    {
-		      req_src = req_src->next;
-		      //                  zMapLogWarning("skip %s\n",g_quark_to_string(fset));
-		    }
+				// as req_src is ->next of req_sources we know req_sources is still valid
+				// even though we are removing an item from it
+				// However we still get a retval from g_list remove()
+				req_sources = g_list_remove_link(req_sources,del);
+				// where else is this held: crashes
+				//NB could use delete link if that was ok
+				//                     g_free(del); // free the link; no data to free
+			}
+			else
+			{
+				req_src = req_src->next;
+				//                  zMapLogWarning("skip %s\n",g_quark_to_string(fset));
+			}
+			}
 		}
-	    }
 
-	  // look for server in view->connections list
-	  if (group_flag & SOURCE_GROUP_DELAYED)
-	    {
-	      GList *view_con_list ;
-
-	      for (view_con_list = view->connection_list ; view_con_list ; view_con_list = g_list_next(view_con_list))
+		// look for server in view->connections list
+		if (group_flag & SOURCE_GROUP_DELAYED)
 		{
-		  view_conn = (ZMapViewConnection) view_con_list->data ;
+			GList *view_con_list ;
 
-		  if (strcmp(view_conn->url,server->url) == 0)
-		    {
-		      existing = TRUE ;
-		      break ;
-		    }
+			for (view_con_list = view->connection_list ; view_con_list ; view_con_list = g_list_next(view_con_list))
+			{
+			view_conn = (ZMapViewConnection) view_con_list->data ;
+
+			if (strcmp(view_conn->url,server->url) == 0)
+			{
+				existing = TRUE ;
+				break ;
+			}
+			}
+
+
+			/* AGH...THIS CODE IS USING THE EXISTENCE OF A PARTICULAR SOURCE TO TEST WHETHER
+			* FEATURE SETS ARE SET UP...UGH.... */
+			/* why? if the source exists ie is persistent (eg ACEDB) then if we get here
+			* then we've already set up the ACEDB columns
+			* so we don't want to do it again
+			*/
+			// make the windows have the same list of featuresets so that they display
+			// this function is a deferred load: for existing connections we already have the columns defined
+			// so don't concat new ones on the end.
+			// A better fix would be to merge the data see zMapWindowMergeInFeatureSetNames()
+			if (!view->columns_set && !existing)
+				{
+				zmapViewCreateColumns(view,req_featuresets);
+
+				g_list_foreach(view->window_list, invoke_merge_in_names, req_featuresets);
+			}
 		}
 
-
-	      /* AGH...THIS CODE IS USING THE EXISTENCE OF A PARTICULAR SOURCE TO TEST WHETHER
-	       * FEATURE SETS ARE SET UP...UGH.... */
-	       /* why? if the source exists ie is persistent (eg ACEDB) then if we get here
-	        * then we've already set up the ACEDB columns
-	        * so we don't want to do it again
-	        */
-	      // make the windows have the same list of featuresets so that they display
-	      // this function is a deferred load: for existing connections we already have the columns defined
-	      // so don't concat new ones on the end.
-	      // A better fix would be to merge the data see zMapWindowMergeInFeatureSetNames()
-	      if (!view->columns_set && !existing)
+		/* THESE NEED TO GO WHEN STEP LIST STUFF IS DONE PROPERLY.... */
+		// this is an optimisation: the server supports DNA so no point in searching for it
+		// if we implement multiple sources then we can remove this
+		if ((zMap_g_list_find_quark(req_featuresets, zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME))))
 		{
-                  zmapViewCreateColumns(view,req_featuresets);
-
-                  g_list_foreach(view->window_list, invoke_merge_in_names, req_featuresets);
+			dna_requested = TRUE ;
 		}
-	    }
+
+		// start a new server connection
+		// can optionally use an existing one -> pass in second arg
+		view_conn = (make_new_connection ? NULL : (existing ? view_conn : NULL)) ;
 
 
-	  /* Copy the original context from the target block upwards setting feature set names
-	   * and the range of features to be copied.
-	   * We need one for each featureset/ request
-	   */
-	  if (block_orig)
-	    {
-	      // using this as it may be necessary for Blixem ?
-	      context = zMapFeatureContextCopyWithParents((ZMapFeatureAny)block_orig) ;
-	      context->req_feature_set_names = req_featuresets ;
+		view_conn = zMapViewRequestServer(view, view_conn, block_orig, req_featuresets, server, req_start, req_end,
+						dna_requested, (!existing && terminate) );
 
-	      /* need request coords for ACEDB in case of no data returned
-	       * so that we can record the actual range
-	       */
-	      block = zMapFeatureAlignmentGetBlockByID(context->master_align, block_orig->unique_id) ;
-	      zMapFeatureBlockSetFeaturesCoords(block, req_start, req_end) ;
+		if(view_conn)
+			requested = TRUE;
 
 
-              if (view->revcomped_features)
+		/* THESE NEED TO GO WHEN STEP LIST STUFF IS DONE PROPERLY.... */
+		// this is an optimisation: the server supports DNA so no point in searching for it
+		// if we implement multiple sources then we can remove this
+		if (dna_requested)	//(zMap_g_list_find_quark(req_featuresets, zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME))))
 		{
-                  /* revcomp our empty context to get external fwd strand coordinates */
-                  zMapFeatureContextReverseComplement(context, view->context_map.styles);
+			view->sequence_server  = view_conn ;
 		}
-	    }
-	  else
-	    {
-	      /* Create data specific to this step list...and set it in the connection. */
-	      context = createContext(view->view_sequence, req_featuresets) ;
-	    }
-
-	  //printf("request featureset %s from %s\n",g_quark_to_string(GPOINTER_TO_UINT(req_featuresets->data)),server->url);
-	  zMapStartTimer("LoadFeatureSet",g_quark_to_string(GPOINTER_TO_UINT(req_featuresets->data)));
-
-	  // start a new server connection
-	  // can optionally use an existing one -> pass in second arg
-	  view_conn = (make_new_connection ? NULL : (existing ? view_conn : NULL)) ;
-
-	  /* force pipe servers to terminate, to fix mis-config error that causes a crash (RT 223055) */
-	  is_pipe = g_str_has_prefix(server->url,"pipe://");
 
 
-	  /* THESE NEED TO GO WHEN STEP LIST STUFF IS DONE PROPERLY.... */
-	  // this is an optimisation: the server supports DNA so no point in searching for it
-	  // if we implement multiple sources then we can remove this
-	  if ((zMap_g_list_find_quark(req_featuresets, zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME))))
-	    {
-	      dna_requested = TRUE ;
-	    }
 
-
-	  if ((view_con = createConnection(view, make_new_connection ? view_conn : NULL,
-					   context, server->url,
-					   (char *)server->format,
-					   server->timeout,
-					   (char *)server->version,
-					   server->req_styles,
-					   server->stylesfile,
-					   req_featuresets,
-					   dna_requested,
-					   req_start,req_end,
-					   (!existing && terminate) || is_pipe)))
-	    {
-	      requested = TRUE ;
-	      view->sources_loading ++ ;
-
-	      /* THESE NEED TO GO WHEN STEP LIST STUFF IS DONE PROPERLY.... */
-	      // this is an optimisation: the server supports DNA so no point in searching for it
-	      // if we implement multiple sources then we can remove this
-	      if ((zMap_g_list_find_quark(req_featuresets, zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME))))
-		{
-		  view->sequence_server  = view_con ;
+		// g_list_free(req_featuresets); no! this list gets used by threads
+		req_featuresets = NULL ;
 		}
-	    }
-
-
-	  // g_list_free(req_featuresets); no! this list gets used by threads
-	  req_featuresets = NULL ;
 	}
-    }
+  }
 
   if (requested)
     {
@@ -1728,6 +1704,76 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 
 
 
+/* request featuresets from a server, req_featuresets may be null in whcih case all are requested implicitly */
+/* called from zmapViewLoadfeatures() to preserve original fucntion
+ * called from zmapViewConnect() to handle autoconfigured file servers,
+ * which cannot be delayed as there's no way to fit these into the columns dialog as it currrently exists
+ */
+
+ZMapViewConnection zMapViewRequestServer(ZMapView view, ZMapViewConnection view_conn, ZMapFeatureBlock block_orig, GList *req_featuresets,
+				   ZMapConfigSource server,
+	   			   int req_start, int req_end,
+				   gboolean dna_requested, gboolean terminate)
+{
+	ZMapFeatureContext context ;
+	ZMapFeatureBlock block ;
+	gboolean is_pipe;
+
+
+	/* Copy the original context from the target block upwards setting feature set names
+	* and the range of features to be copied.
+	* We need one for each featureset/ request
+	*/
+	if (block_orig)
+	{
+	// using this as it may be necessary for Blixem ?
+	context = zMapFeatureContextCopyWithParents((ZMapFeatureAny)block_orig) ;
+	context->req_feature_set_names = req_featuresets ;
+
+	/* need request coords for ACEDB in case of no data returned
+		* so that we can record the actual range
+		*/
+	block = zMapFeatureAlignmentGetBlockByID(context->master_align, block_orig->unique_id) ;
+	zMapFeatureBlockSetFeaturesCoords(block, req_start, req_end) ;
+
+
+		if (view->revcomped_features)
+		{
+			/* revcomp our empty context to get external fwd strand coordinates */
+			zMapFeatureContextReverseComplement(context, view->context_map.styles);
+		}
+	}
+	else
+	{
+	/* Create data specific to this step list...and set it in the connection. */
+		context = createContext(view->view_sequence, req_featuresets) ;
+	}
+
+	//printf("request featureset %s from %s\n",g_quark_to_string(GPOINTER_TO_UINT(req_featuresets->data)),server->url);
+	zMapStartTimer("LoadFeatureSet",g_quark_to_string(GPOINTER_TO_UINT(req_featuresets->data)));
+
+	/* force pipe servers to terminate, to fix mis-config error that causes a crash (RT 223055) */
+	is_pipe = g_str_has_prefix(server->url,"pipe://");
+
+
+	if ((view_conn = createConnection(view, view_conn,
+					context, server->url,
+					(char *)server->format,
+					server->timeout,
+					(char *)server->version,
+					server->req_styles,
+					server->stylesfile,
+					req_featuresets,
+					dna_requested,
+					req_start,req_end,
+					terminate || is_pipe)))
+	{
+		view->sources_loading ++ ;
+
+	}
+
+	return view_conn;
+}
 
 
 /*
@@ -3330,6 +3376,33 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 				       feature_sets->feature_sets_inout);
 	  }
 
+/* NOTE (mh17)
+	tasked with handling a GFF file from the command line and no config
+	i proposed moving this request logic (from zmapViewLoadFeatures/ createConnection)
+	into a zmapServer file with a view to being able to change the interface more easily.
+	this met with resistance and the plan moved to generating a config file with a perl script
+	the idea being to read the GFF headers before running ZMap.
+	But servers needed a list of featuresets
+	a) so that the request code could work out which servers to use
+	b) so that we could precalculate featureset to column mapping and source to source data mapping
+	(otherwise all data will be ignored and ZMap will abort from several places)
+	which gives the crazy situation of having the read the entire file
+	to extract all the featureset names so that we can read the entire file.
+	NB files could be remote which is not ideal, and we expcect some files to be large
+
+	So i adapted the code to have featureset free servers (that can only be requested on startup)
+	and hoped that i'd be able to patch this data in.
+	There is a server protocol step to get featureset names
+	but that would require processing subsequent steps to find out this information and
+	the GFFparser rejects features from sources that have not been preconfigured.
+	ie it's tied up in a knot that cannot be untied.
+
+	Several parts of the display code have been patched to make up featureset to columns etc OTF
+	which is in direct confrontation with the design of most of the server and diplay code,
+	which explicitly assumes that this is predefined
+
+	Well it sort of runs but really the server code needs a total rewrite.
+ */
 
 #if 0
 // defaulted in GFFparser
@@ -3626,6 +3699,11 @@ besides we should test the view data which may contain global config
 		zMapStopTimer("LoadFeatureSet",g_quark_to_string(GPOINTER_TO_UINT(connect_data->get_features->context->req_feature_set_names->data)));
 
 		getFeatures(zmap_view, connect_data->get_features, connect_data) ;
+
+	    	if(!connect_data->feature_sets)
+			connect_data->feature_sets = g_list_copy(connect_data->get_features->context->req_feature_set_names);
+
+
 	      }
             /* we record succcessful requests, if some fail they will get zapped in checkstateconnections() */
 	    zmap_view->sources_loading--;
@@ -3772,7 +3850,7 @@ static void invoke_merge_in_names(gpointer list_data, gpointer user_data)
 
 
 /* Allocate a connection and send over the request to get the sequence displayed. */
-/* NB: this is called from zmapViewConnect() and also zmapViewLoadFeatures() and commandCB (for DNA only) */
+/* NB: this is called from zmapViewLoadFeatures() and commandCB (for DNA only) */
 static ZMapViewConnection createConnection(ZMapView zmap_view,
 					   ZMapViewConnection view_con,
 					   ZMapFeatureContext context,
@@ -3903,7 +3981,8 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
 	  zmapViewStepListAddServerReq(view_con->step_list, view_con, ZMAP_SERVERREQ_GETSERVERINFO, req_any, on_fail) ;
 	}
 
-      if (req_featuresets)
+//      if (req_featuresets)
+// need to request all if none specified
 	{
 	  req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_FEATURESETS, req_featuresets, NULL) ;
 	  zmapViewStepListAddServerReq(view_con->step_list, view_con, ZMAP_SERVERREQ_FEATURESETS, req_any, on_fail) ;
@@ -4287,6 +4366,11 @@ static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inou
   else
     {
       featureset_names = new_features->req_feature_set_names;
+
+	/* not sure if these lists need copying, but a small memory leak is better than a crash due to a double free */
+
+	if(!featureset_names)
+		featureset_names = new_features->req_feature_set_names = g_list_copy(new_features->src_feature_set_names);
     }
 
   if (0)
@@ -4456,7 +4540,7 @@ static void commandCB(ZMapWindow window, void *caller_data, void *window_data)
             req_end = tmp;
 	  }
 
-	zmapViewLoadFeatures(view, get_data->block, get_data->feature_set_ids,
+	zmapViewLoadFeatures(view, get_data->block, get_data->feature_set_ids, NULL,
 			     req_start, req_end,
 			     SOURCE_GROUP_DELAYED, TRUE, TRUE) ;
 

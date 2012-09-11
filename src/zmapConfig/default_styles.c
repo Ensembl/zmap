@@ -131,7 +131,7 @@ strand-specific=true\n\
 alignment-pfetchable=false\n\
 default-bump-mode=overlap\n\
 colours=normal border CadetBlue\n\
-parent-style=align\n\
+parent-style=alignment\n\
 alignment-join-align=0\n\
 alignment-between-error=1\n\
 alignment-always-gapped=true\n\
@@ -143,14 +143,14 @@ alignment-join-align=0\n\
 strand-specific=false\n\
 show-text=true\n\
 alignment-within-error=0\n\
-parent-style=align\n\
+parent-style=alignment\n\
 max-score=100.000000\n\
 min-score=70.000000\n\
 score-mode=percent\n\
 \n\
 [style-pep_align]\n\
 sub-features=homology:homology-glyph\n\
-parent-style=align\n\
+parent-style=alignment\n\
 max-score=100.000000\n\
 show-reverse-strand=true\n\
 mode=alignment\n\

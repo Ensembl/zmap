@@ -1350,17 +1350,29 @@ static FooCanvasGroup *find_or_create_column(ZMapCanvasData  canvas_data,
   /* MH17: map feature sets from context to canvas columns
    * refer to zmapGFF2parser.c/makeNewFeature()
    */
-  zMapAssert(window->context_map->featureset_2_column); /* will always be but let's play safe */
+//  zMapAssert(window->context_map->featureset_2_column); /* will always be but let's play safe */
+// except to handle autoconfigured servers we have to make this up
+  if(!window->context_map->featureset_2_column)
+	  window->context_map->featureset_2_column = g_hash_table_new(NULL,NULL);
+
   {
     ZMapFeatureSetDesc set_data ;
 
-    if ((set_data = g_hash_table_lookup(window->context_map->featureset_2_column,
+    if (!(set_data = g_hash_table_lookup(window->context_map->featureset_2_column,
 					GUINT_TO_POINTER(feature_set_id))))
-      {
+    {
+		// to handle autoconfigured servers we have to make this up
+	    set_data = g_new0(ZMapFeatureSetDescStruct,1);
+	    set_data->column_id = feature_set_id;
+	    set_data->column_ID = feature_set_id;
+    }
+
+    zMapAssert(window->context_map->columns);
+	{
 	column_id = set_data->column_id;      /* the display column as a key */
 	display_id = set_data->column_ID;
 	f_col = g_hash_table_lookup(window->context_map->columns,GUINT_TO_POINTER(column_id));
-      }
+	}
     /* else we use the original feature_set_id
        which should never happen as the view creates a 1-1 mapping regardless */
   }
@@ -1939,10 +1951,13 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 		{
 			ZMapFeatureColumn f_col;
 
+			/* createColumnFull() needs a style table, although the error is buried in zmapWindowUtils.c */
 			zMap_g_hashlist_insert(window->context_map->column_2_styles,
 				       feature_set->unique_id,     // the column
 				       GUINT_TO_POINTER(style->unique_id)) ;  // the style
 
+
+			/* find_or_create_column() needs f_col->style */
 			f_col = g_hash_table_lookup(window->context_map->columns,GUINT_TO_POINTER(feature_set->unique_id));
 			if(f_col)
 			{

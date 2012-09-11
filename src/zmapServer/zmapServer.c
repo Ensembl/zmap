@@ -199,7 +199,8 @@ ZMapServerResponseType zMapServerFeatureSetNames(ZMapServer server,
 {
   ZMapServerResponseType result = server->last_response ;
 
-  zMapAssert(server && *feature_sets_inout && !*required_styles_out) ;
+//  zMapAssert(server && *feature_sets_inout && !*required_styles_out) ;
+  zMapAssert(server && !*required_styles_out) ;	// need to request all if not specified
 
   if (server->last_response != ZMAP_SERVERRESPONSE_SERVERDIED && server->last_response != ZMAP_SERVERRESPONSE_REQFAIL)
     {

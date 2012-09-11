@@ -1374,26 +1374,30 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
    */
   if (parser->source_2_sourcedata)
     {
+	source_id = zMapFeatureSetCreateID(source);
 
-
-      if (!(source_data = g_hash_table_lookup(parser->source_2_sourcedata,
-					      GINT_TO_POINTER(zMapFeatureSetCreateID(source)))))
+      if (!(source_data = g_hash_table_lookup(parser->source_2_sourcedata,GINT_TO_POINTER(source_id))))
 	{
+#if 0
 	  *err_text = g_strdup_printf("feature ignored, could not find data for source \"%s\".", source) ;
 	  result = FALSE ;
 
 	  return result ;
+#else
+		/* need to invent this for autoconfigured servers */
+	source_data = g_new0(ZMapFeatureSourceStruct,1);
+	source_data->source_id = source_id;
+	source_data->source_text = source_id;
+#endif
 	}
-      else
-	{
-	  if(source_data->style_id)
+
+	if(source_data->style_id)
 		feature_style_id = zMapStyleCreateID((char *) g_quark_to_string(source_data->style_id)) ;
-	  else
+	else
 		feature_style_id = zMapStyleCreateID((char *) g_quark_to_string(source_data->source_id)) ;
 
-	  source_id = source_data->source_id ;
-	  source_text = (char *)g_quark_to_string(source_data->source_text) ;
-	}
+	source_id = source_data->source_id ;
+	source_text = (char *)g_quark_to_string(source_data->source_text) ;
     }
   else
     {

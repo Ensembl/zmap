@@ -740,10 +740,6 @@ gboolean zMapConfigIniGetStylesFromFile(char *config_file,
                          styles_file, curr_config_style->name) ;
 #endif
             }
-else
-{
-	printf("added style %s\n",g_quark_to_string(new_style->unique_id));
-}
           }
 
       } while((settings_list = g_list_next(settings_list)));
