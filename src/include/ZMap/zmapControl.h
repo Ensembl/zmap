@@ -1,4 +1,3 @@
-/*  Last edited: Feb 14 20:26 2012 (edgrif) */
 /*  File: zmapControl.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -22,7 +21,7 @@
  * originated by
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk,
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Interface for creating, controlling and destroying ZMaps.
  *
@@ -69,7 +68,7 @@ typedef struct _ZMapCallbacksStruct
 
 
 void zMapInit(ZMapCallbacks callbacks) ;
-ZMap zMapCreate(void *app_data, ZMapFeatureSequenceMap seq_map) ;
+ZMap zMapCreate(void *app_data, ZMapFeatureSequenceMap sequence_map) ;
 int zMapNumViews(ZMap zmap) ;
 ZMapViewWindow zMapAddView(ZMap zmap, ZMapFeatureSequenceMap sequence_map) ;
 gboolean zMapGetDefaultView(ZMapAppRemoteViewID view_inout) ;

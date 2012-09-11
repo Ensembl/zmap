@@ -20,7 +20,7 @@
  * This file is part of the ZMap genome database package
  * originated by
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Interface for controlling a single "view", a view
@@ -256,7 +256,8 @@ gboolean zMapViewProcessRemoteRequest(ZMapView user_data,
 
 void zmapViewFeatureDump(ZMapViewWindow view_window, char *file) ;
 
-void zMapViewHighlightFeatures(ZMapView view, ZMapViewWindow view_window, ZMapFeatureContext context, gboolean multiple);
+void zMapViewHighlightFeatures(ZMapView view,
+			       ZMapViewWindow view_window, ZMapFeatureContext context, gboolean multiple);
 
 void zMapViewReadConfigBuffer(ZMapView zmap_view, char *buffer);
 

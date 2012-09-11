@@ -455,8 +455,8 @@ void zMapWindowCanvasFeaturesetPaintFlush(ZMapWindowFeaturesetItem featureset,ZM
 
 #if 0
   if(feature &&
-	(feature->type > 0 && feature->type < FEATURE_N_TYPE)
-      && (func = _featureset_flush_G[feature->type]))
+     (feature->type > 0 && feature->type < FEATURE_N_TYPE)
+     && (func = _featureset_flush_G[feature->type]))
 #else
   if ((featureset->type > 0 && featureset->type < FEATURE_N_TYPE)
       && (func = _featureset_flush_G[featureset->type]))
