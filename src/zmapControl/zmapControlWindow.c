@@ -31,14 +31,9 @@
 
 #include <ZMap/zmap.h>
 
-
-
-
-
-
-
 #include <string.h>
 #include <ZMap/zmapUtils.h>
+#include <ZMap/zmapCmdLineArgs.h>
 #include <zmapControl_P.h>
 
 static void setTooltips(ZMap zmap) ;
@@ -48,7 +43,10 @@ static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data) ;
 
 static void myWindowMaximize(GtkWidget *toplevel, ZMap zmap) ;
 
-gboolean zmap_shrink_G = FALSE;
+
+static gboolean zmap_shrink_G = FALSE;
+
+
 
 /* Makes the toplevel window and control panels for an individual zmap. */
 gboolean zmapControlWindowCreate(ZMap zmap)
@@ -56,6 +54,8 @@ gboolean zmapControlWindowCreate(ZMap zmap)
   gboolean result = TRUE ;
   GtkWidget *toplevel, *vbox, *menubar, *frame, *controls_box, *button_box, *status_box,
     *info_panel_box, *info_box ;
+  ZMapCmdLineArgsType shrink_arg = {FALSE} ;
+
 
   /* Make tooltips groups for the main zmap controls and the feature information. */
   zmap->tooltips = gtk_tooltips_new() ;
@@ -63,8 +63,12 @@ gboolean zmapControlWindowCreate(ZMap zmap)
 
 
   zmap->toplevel = toplevel = gtk_window_new(GTK_WINDOW_TOPLEVEL) ;
-  gtk_window_set_policy(GTK_WINDOW(toplevel), zmap_shrink_G, TRUE, FALSE ) ;	// allow shrink for charlie'ss RT 215415
-								/* ref to GTK help: it says 'don't allow shrink' */
+
+  /* allow shrink for charlie'ss RT 215415, ref to GTK help: it says 'don't allow shrink' */
+  if (zMapCmdLineArgsValue(ZMAPARG_SHRINK, &shrink_arg))
+    zmap_shrink_G = shrink_arg.b ;
+  gtk_window_set_policy(GTK_WINDOW(toplevel), zmap_shrink_G, TRUE, FALSE) ;
+
   gtk_window_set_title(GTK_WINDOW(toplevel), zmap->zmap_id) ;
   gtk_container_border_width(GTK_CONTAINER(toplevel), 5) ;
 
