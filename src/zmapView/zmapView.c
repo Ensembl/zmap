@@ -2347,6 +2347,7 @@ static void viewSelectCB(ZMapWindow window, void *caller_data, void *window_data
 			zMapWindowHighlightFeature(view_window->window, feature, window_select->highlight_same_names, FALSE);
 
 		}
+		}
 	      while ((list_item = g_list_next(list_item))) ;
 	    }
 
