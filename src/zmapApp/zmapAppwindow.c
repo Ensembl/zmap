@@ -250,16 +250,6 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
    * display it straight away, app exits if bad command line params supplied. */
   seq_map = app_context->default_sequence ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  if (!seq_map->start)
-    {
-      /* Do we really want to do this anymore...I think not.... */
-      seq_map->start = 1 ;
-      seq_map->end = 0;
-    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
   checkForCmdLineSequenceArg(argc, argv, &seq_map->dataset, &seq_map->sequence);
   checkForCmdLineStartEndArg(argc, argv, &seq_map->start, &seq_map->end) ;
 
@@ -394,6 +384,8 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+/* the old app exit. */
+
 /* Signals zmap to clean up and exit, this may be asynchronous if there are underlying threads. */
 void zmapAppExit(ZMapAppContext app_context)
 {
@@ -758,20 +750,25 @@ static void signalFinalCleanUp(ZMapAppContext app_context, int exit_rc, char *ex
   app_context->exit_rc = exit_rc ;
   app_context->exit_msg = exit_msg ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* Surely should not be called any more..... */
+
   if (app_context->xremote_client)
     {
       zmapAppRemoteSendFinalised(app_context);
 
       zMapXRemoteDestroy(app_context->xremote_client) ;
     }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
   /* **NEW XREMOTE** destroy, Note that at this point we have already told the peer
    * that we are quitting so now we just need to clear up. */
   if (app_context->remote_control)
     {
-      zMapRemoteControlDestroy(app_context->remote_control->remote_controller) ;
-      app_context->remote_control->remote_controller = NULL ;
+      zmapAppRemoteControlDestroy(app_context) ;
     }
 
   /* Causes the destroy callback to be invoked which then calls the final clean up. */
