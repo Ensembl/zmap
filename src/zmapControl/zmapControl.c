@@ -714,7 +714,31 @@ static void dataLoadCB(ZMapView view, void *app_data, void *view_data)
 	  g_free(featurelist);
 
 	}
+#if 0
+	else
+	{
+	  char *featurelist = NULL;
+	  GList *features;
 
+	  for (features = lfd->feature_sets ; features ; features = features->next)
+	    {
+	      char *prev,*f ;
+
+	      f = (char *) g_quark_to_string(GPOINTER_TO_UINT(features->data)) ;
+
+	      prev = featurelist ;
+
+	      if (!prev)
+		featurelist = g_strdup(f) ;
+	      else
+		featurelist = g_strjoin(";", prev, f, NULL) ;
+
+	      g_free(prev) ;
+	    }
+	  printf("%d features loaded from %s",lfd->num_features, featurelist);
+	  g_free(featurelist);
+	}
+#endif
     }
 
 

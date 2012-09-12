@@ -1505,7 +1505,11 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 
   if(server)
   {
-		zMapViewRequestServer(view, NULL, block_orig, req_sources, server, req_start, req_end, FALSE, terminate);
+		ZMapViewConnection view_conn;
+
+		view_conn = zMapViewRequestServer(view, NULL, block_orig, req_sources, server, req_start, req_end, FALSE, terminate);
+		if(view_conn)
+			requested = TRUE;
   }
   else
   {
@@ -1723,7 +1727,6 @@ ZMapViewConnection zMapViewRequestServer(ZMapView view, ZMapViewConnection view_
 	ZMapFeatureContext context ;
 	ZMapFeatureBlock block ;
 	gboolean is_pipe;
-
 
 	/* Copy the original context from the target block upwards setting feature set names
 	* and the range of features to be copied.
@@ -4464,12 +4467,11 @@ static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inou
     }
   else
     {
-      featureset_names = new_features->req_feature_set_names;
-
 	/* not sure if these lists need copying, but a small memory leak is better than a crash due to a double free */
+      if(!new_features->req_feature_set_names)
+		new_features->req_feature_set_names = g_list_copy(new_features->src_feature_set_names);
 
-	if(!featureset_names)
-		featureset_names = new_features->req_feature_set_names = g_list_copy(new_features->src_feature_set_names);
+	featureset_names = new_features->req_feature_set_names;
 
 	/* need to add column_2_style and column style table; tediously we need the featureset structs to do this */
       zMapFeatureContextExecute((ZMapFeatureAny) new_features,

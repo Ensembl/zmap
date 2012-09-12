@@ -1388,6 +1388,9 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 	source_data = g_new0(ZMapFeatureSourceStruct,1);
 	source_data->source_id = source_id;
 	source_data->source_text = source_id;
+
+	/* this is the same hash owned by the view & window */
+	g_hash_table_insert(parser->source_2_sourcedata,GINT_TO_POINTER(source_id), source_data);
 #endif
 	}
 
@@ -1398,6 +1401,8 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 
 	source_id = source_data->source_id ;
 	source_text = (char *)g_quark_to_string(source_data->source_text) ;
+
+	source_data->style_id = feature_style_id;
     }
   else
     {
@@ -1519,6 +1524,9 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 
 		return result ;
 	   }
+
+	if(source_data)
+		source_data->style_id = feature_style_id;
 
       g_hash_table_insert(parser_feature_set->feature_styles,GUINT_TO_POINTER(feature_style_id),(gpointer) feature_style);
       /* printf("using feature style %s @%p for %s\n",g_quark_to_string(feature_style->unique_id),feature_style, feature_set_name);*/
