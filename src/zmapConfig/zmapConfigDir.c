@@ -64,8 +64,8 @@ static ZMapConfigDir dir_context_G = NULL ;
  * returns FALSE if the configuration directory does not exist/read/writeable.
  *
  * if file_opt then config files must be explicit and if not specified we run config free
- * which is done by creating a config strung in memory as if it came from a file
- * there's code that assumed we have a file and directory so we get to keep this regardless
+ * which is done by creating a config string in memory as if it came from a file
+ * there's code that assumes we have a file and directory so we get to keep this regardless
  */
 gboolean zMapConfigDirCreate(char *config_dir, char *config_file, gboolean file_opt)
 {

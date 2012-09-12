@@ -1358,14 +1358,8 @@ static FooCanvasGroup *find_or_create_column(ZMapCanvasData  canvas_data,
   {
     ZMapFeatureSetDesc set_data ;
 
-    if (!(set_data = g_hash_table_lookup(window->context_map->featureset_2_column,
-					GUINT_TO_POINTER(feature_set_id))))
-    {
-		// to handle autoconfigured servers we have to make this up
-	    set_data = g_new0(ZMapFeatureSetDescStruct,1);
-	    set_data->column_id = feature_set_id;
-	    set_data->column_ID = feature_set_id;
-    }
+    set_data = g_hash_table_lookup(window->context_map->featureset_2_column, GUINT_TO_POINTER(feature_set_id));
+    zMapAssert(set_data);
 
     zMapAssert(window->context_map->columns);
 	{
@@ -1934,14 +1928,17 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
             /* for special columns eg locus we may not have a mapping */
             style = zMapWindowGetColumnStyle(window,feature_set->unique_id);
 	  }
+#if 0
+// moved to justMergeContext() in zmapView: needed earlier on
+
 	if(!style)
 	{
 		/* for autoconfigured columns we have to patch up a few data structs
 		 * that are needed by various bits of code scattered all over the place
 		 * that are assumed to have been set up before requesting the data
-		 * and they are assumed to have been _copied_ to some other place at some time
+		 * and they are assumed to have been copied to some other place at some time
 		 * in between startup, requesting data, getting data and displaying it
-		 * sorry i can't be more speciific but i didn't write this
+		 *
 		 * what's below is in repsonse to whatever errors and assertions happened
 		 * it's called 'design by experiment'
 		 */
@@ -1968,7 +1965,7 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 			}
 		}
 	}
-
+#endif
 	if(!style)
 	  {
             zMapLogCritical("no column style for featureset \"%s\"\n",g_quark_to_string(feature_set->unique_id));
@@ -1978,7 +1975,7 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 
 	if(!feature_set->style)		/* eg from a featureset with no features.... how can it exist?  */
 	{
-		/* mh17: it's very odd. this has suddently started crashing using data that used to work */
+		/* mh17: it's very odd. this has suddenly started crashing using data that used to work */
 		/* maybe we could look up the style in window->context_map->source_to_sourcedata
 		  and then go looking for the style but this should have been done already ?? */
 		feature_set->style = style;

@@ -466,6 +466,11 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
        * and load in one call but we will almost certainly need the extra states later... */
       zmap_view->state = ZMAPVIEW_CONNECTING ;
 
+	if(!zmap_view->view_sequence->config_file)
+	{
+		zmap_view->view_sequence->config_file = zMapConfigDirGetFile();
+	}
+
       // get the stanza structs from ZMap config
       settings_list = zmapViewGetIniSources(zmap_view->view_sequence->config_file, config_str, &stylesfile) ;
 
@@ -4267,6 +4272,100 @@ static gboolean zMapViewSortExons(ZMapFeatureContext diff_context)
 
 
 
+
+static ZMapFeatureContextExecuteStatus add_default_styles(GQuark key,
+                                                         gpointer data,
+                                                         gpointer user_data,
+                                                         char **error_out)
+{
+  ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
+  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
+  ZMapView view = (ZMapView) user_data;
+//  ZMapFeatureSource src2src;
+  ZMapFeatureTypeStyle style;
+  ZMapFeatureColumn f_col;
+//  ZMapFeatureSetDesc set_data ;
+
+  zMapAssert(feature_any && zMapFeatureIsValid(feature_any)) ;
+
+  switch(feature_any->struct_type)
+    {
+    case ZMAPFEATURE_STRUCT_ALIGN:
+      {
+        ZMapFeatureAlignment feature_align = NULL;
+        feature_align = (ZMapFeatureAlignment)feature_any;
+      }
+      break;
+    case ZMAPFEATURE_STRUCT_BLOCK:
+      {
+      }
+      break;
+
+    case ZMAPFEATURE_STRUCT_FEATURESET:
+      {
+		ZMapFeatureSet feature_set = NULL;
+		feature_set = (ZMapFeatureSet)feature_any;
+
+			/* for autoconfigured columns we have to patch up a few data structs
+			* that are needed by various bits of code scattered all over the place
+			* that are assumed to have been set up before requesting the data
+			* and they are assumed to have been copied to some other place at some time
+			* in between startup, requesting data, getting data and displaying it
+			*
+			* what's below is in repsonse to whatever errors and assertions happened
+			* it's called 'design by experiment'
+			*/
+		style = feature_set->style;	/* eg for an auto configured featureset with a default style */
+			/* also set up column2styles */
+		if(style)
+		{
+			if(!g_hash_table_lookup(view->context_map.column_2_styles,GUINT_TO_POINTER(feature_set->unique_id)))
+			{
+				/* createColumnFull() needs a style table, although the error is buried in zmapWindowUtils.c */
+				zMap_g_hashlist_insert(view->context_map.column_2_styles,
+					feature_set->unique_id,     // the column
+					GUINT_TO_POINTER(style->unique_id)) ;  // the style
+			}
+
+#if 0
+/* cretaed by zMapFeatureGetSetColumn() below */
+			if (!(set_data = g_hash_table_lookup(view->context_map->featureset_2_column,GUINT_TO_POINTER(feature_set_id))))
+			{
+				// to handle autoconfigured servers we have to make this up
+				set_data = g_new0(ZMapFeatureSetDescStruct,1);
+				set_data->column_id = feature_set_id;
+				set_data->column_ID = feature_set_id;
+				g_hash_table_insert(view->context_map->featureset_2_column,GUINT_TO_POINTER(feature_set_id), (gpointer) set_data);
+			}
+
+#endif
+			/* find_or_create_column() needs f_col->style */
+			f_col = zMapFeatureGetSetColumn(&(view->context_map),feature_set->unique_id);
+			if(f_col)
+			{
+				if(!f_col->style)
+					f_col->style = style;
+				if(!f_col->style_table)
+					f_col->style_table = g_list_append(f_col->style_table, (gpointer) style);
+			}
+
+			/* source_2_sourcedata has been set up by GFF parser, which needed it. */
+		}
+	}
+	break;
+
+    case ZMAPFEATURE_STRUCT_FEATURE:
+    case ZMAPFEATURE_STRUCT_INVALID:
+    default:
+      {
+      zMapAssertNotReached();
+      break;
+      }
+    }
+
+  return status;
+}
+
 static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inout,
 				 GHashTable *styles, GList **masked,
 				 gboolean request_as_columns, gboolean revcomp_if_needed)
@@ -4341,7 +4440,7 @@ static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inou
 
 
 
-	  /* the column featureset lists have been assmbled by this point,
+	  /* the column featureset lists have been assembled by this point,
 	     could not do this at the request stage */
 
 	  if(column)
@@ -4371,6 +4470,12 @@ static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inou
 
 	if(!featureset_names)
 		featureset_names = new_features->req_feature_set_names = g_list_copy(new_features->src_feature_set_names);
+
+	/* need to add column_2_style and column style table; tediously we need the featureset structs to do this */
+      zMapFeatureContextExecute((ZMapFeatureAny) new_features,
+				ZMAPFEATURE_STRUCT_FEATURESET,
+				add_default_styles,
+				(gpointer) view);
     }
 
   if (0)
