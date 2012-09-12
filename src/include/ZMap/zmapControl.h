@@ -20,7 +20,8 @@
  * This file is part of the ZMap genome database package
  * originated by
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Interface for creating, controlling and destroying ZMaps.
  *
@@ -58,7 +59,7 @@ typedef struct _ZMapCallbacksStruct
 
 
 void zMapInit(ZMapCallbacks callbacks) ;
-ZMap zMapCreate(void *app_data, ZMapFeatureSequenceMap seq_map) ;
+ZMap zMapCreate(void *app_data, ZMapFeatureSequenceMap sequence_map) ;
 ZMapView zMapAddView(ZMap zmap, ZMapFeatureSequenceMap sequence_map) ;
 gboolean zMapConnectView(ZMap zmap, ZMapView view) ;
 gboolean zMapLoadView(ZMap zmap, ZMapView view) ;
