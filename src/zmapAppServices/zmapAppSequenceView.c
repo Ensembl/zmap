@@ -332,55 +332,68 @@ static void chooseConfigCB(GtkFileChooserButton *widget, gpointer user_data)
 }
 
 
-/* Ok...check the users entries and then call the callback function
- * provided. */
+/* Ok...check the users entries and then call the callback function provided.
+ * 
+ * Note that valid entries are:
+ * 
+ *       sequence & start & end with optional config file 
+ * 
+ *       config file (which contains sequence, start, end)
+ * 
+ *  */
 static void createViewCB(GtkWidget *widget, gpointer cb_data)
 {
   MainFrame main_frame = (MainFrame)cb_data ;
   gboolean status = TRUE ;
   char *err_msg = NULL ;
-  char *sequence = "", *start_txt, *end_txt, *config_txt = "" ;
+  char *sequence = "", *start_txt, *end_txt, *config_txt ;
   int start = 1, end = 0 ;
 
-  /* Note gtk_entry returns "" not NULL for when there is no text. */
 
-  if (status)
+  /* Note gtk_entry returns the empty string "" _not_ NULL when there is no text. */
+  sequence = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->sequence_widg)) ;
+  start_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->start_widg)) ;
+  end_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->end_widg)) ;
+  config_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->config_widg)) ;
+
+
+  if (!(*sequence) && !(*start_txt) && !(*end_txt) && *config_txt)
     {
-      sequence = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->sequence_widg)) ;
-      if (!(*sequence))
+      /* Just a config file specified, try that. */
+      status = TRUE ;
+    }
+  else if (*sequence && *start_txt && *end_txt)
+    {
+      if (status)
 	{
-	  status = FALSE ;
-	  err_msg = "No sequence specified." ;
+	  if (!(*start_txt) || !zMapStr2Int(start_txt, &start) || start < 1)
+	    {
+	      status = FALSE ;
+	      err_msg = "Invalid start specified." ;
+	    }
+	}
+
+      if (status)
+	{
+	  if (!(*end_txt) || !zMapStr2Int(end_txt, &end) || end <= start)
+	    {
+	      status = FALSE ;
+	      err_msg = "Invalid end specified." ;
+	    }
+	}
+
+      if (status)
+	{
+	  if (!(*config_txt))
+	    config_txt = NULL ;				    /* No file specified. */
 	}
     }
-
-  if (status)
+  else
     {
-      start_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->start_widg)) ;
-      if (!(*start_txt) || !zMapStr2Int(start_txt, &start) || start < 1)
-	{
-	  status = FALSE ;
-	  err_msg = "Invalid start specified." ;
-	}
-    }
-
-  if (status)
-    {
-      end_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->end_widg)) ;
-      if (!(*end_txt) || !zMapStr2Int(end_txt, &end) || end <= start)
-	{
-	  status = FALSE ;
-	  err_msg = "Invalid end specified." ;
-	}
-    }
-
-
-  if (status)
-    {
-      config_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->config_widg)) ;
-
-      if (!(*config_txt))
-	config_txt = NULL ;				    /* No file specified. */
+      status = FALSE ;
+      err_msg = "You must specify\n"
+	"either just a config file containing a sequence and start,end\n"
+	"or a sequence, start, end and optionally a config file." ;
     }
 
 
@@ -390,19 +403,45 @@ static void createViewCB(GtkWidget *widget, gpointer cb_data)
     }
   else
     {
+      /* when we get here we should either have only a config file specified or
+       * a sequence/start/end and optionally a config file. */
       ZMapFeatureSequenceMap seq_map ;
+      gboolean sequence_ok = FALSE ;
+      char *err_msg = NULL ;
 
       seq_map = g_new0(ZMapFeatureSequenceMapStruct,1) ;
 
-      seq_map->sequence = sequence ;
-      seq_map->start = start ;
-      seq_map->end = end ;
+      if (*sequence)
+	{
+	  sequence_ok = TRUE ;
+	  seq_map->sequence = sequence ;
+	  seq_map->start = start ;
+	  seq_map->end = end ;
+	  seq_map->config_file = config_txt ;
+	}
+      else 
+	{
+	  if (!(sequence_ok = zMapAppGetSequenceConfig(seq_map)))
+	    {
+	      err_msg = "Cannot read config file, check config file." ;
+	    }
+	  else if (!seq_map->sequence || !seq_map->start || !seq_map->end)
+	    {
+	      err_msg = "Cannot load sequence from config file, check sequence, start and end specified." ;
+	      sequence_ok = FALSE ;
+	    }
+	}
 
-      if (config_txt)
-	seq_map->config_file = config_txt ;
-
-      /* Call back with users parameters for new sequence display. */
-      (main_frame->user_func)(seq_map, main_frame->user_data) ;
+      if (!sequence_ok)
+	{
+	  zMapWarning("%s", err_msg) ;
+	  g_free(seq_map) ;
+	}
+      else
+	{
+	  /* Call back with users parameters for new sequence display. */
+	  (main_frame->user_func)(seq_map, main_frame->user_data) ;
+	}
     }
 
   return ;
