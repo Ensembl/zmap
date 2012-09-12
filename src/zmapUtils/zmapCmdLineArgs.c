@@ -1,4 +1,3 @@
-/*  Last edited: Apr 13 08:45 2012 (edgrif) */
 /*  File: zmapCmdLineArgs.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -22,8 +21,7 @@
  * originated by
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *         Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Creates a global object that contains command line
  *              args, the init function should be called once at
