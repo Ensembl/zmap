@@ -97,7 +97,7 @@ gboolean zMapAppGetSequenceConfig(ZMapFeatureSequenceMap seq_map)
   gboolean result = FALSE ;
   ZMapConfigIniContext context;
 
-  if ((context = zMapConfigIniContextProvide(NULL)))
+  if ((context = zMapConfigIniContextProvide(seq_map->config_file)))
     {
 //      gboolean tmp_bool = FALSE;
       char *tmp_string  = NULL;

@@ -58,7 +58,7 @@ static void checkForCmdLineSequenceArg(int argc, char *argv[], char **dataset_ou
 static void checkForCmdLineStartEndArg(int argc, char *argv[], int *start_inout, int *end_inout) ;
 
 static char *checkConfigDir(gboolean use_files) ;
-static gboolean checkSequenceArgs(int argc, char *argv[],  char *config_file,
+static gboolean checkSequenceArgs(int argc, char *argv[],
 				  ZMapFeatureSequenceMap seq_map_inout, char **err_msg_out) ;
 
 
@@ -126,7 +126,6 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   GtkWidget *quit_button ;
   int log_size ;
   int sleep_seconds = 0 ;
-  char *config_file ;
   ZMapFeatureSequenceMap seq_map;
   char *err_msg = NULL ;
 
@@ -174,7 +173,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
    * accessed.... */
 
   app_context->files = zMapCmdLineFinalArg();
-  config_file = app_context->default_sequence->config_file = checkConfigDir(app_context->files ? TRUE : FALSE) ;
+  seq_map->config_file = app_context->default_sequence->config_file = checkConfigDir(app_context->files ? TRUE : FALSE) ;
 
   /* Set any global debug flags from config file. */
   zMapUtilsConfigDebug(NULL) ;
@@ -219,8 +218,9 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   }
 
 
+
   /* Check for sequence/start/end on command line or in config. file. */
-  if (!checkSequenceArgs(argc, argv, config_file, seq_map, &err_msg))
+  if (!checkSequenceArgs(argc, argv, seq_map, &err_msg))
     {
       zMapLogFatal("Bad sequence args: %s", err_msg) ;
     }
@@ -995,7 +995,7 @@ static gboolean configureLog(char *config_file)
  * a config file, only returns FALSE if they tried to specify it and it was
  * wrong. If FALSE an error message is returned in err_msg_out which should
  * be g_free'd by caller. */
-static gboolean checkSequenceArgs(int argc, char *argv[],  char *config_file,
+static gboolean checkSequenceArgs(int argc, char *argv[],
 				  ZMapFeatureSequenceMap seq_map_inout, char **err_msg_out)
 {
   gboolean result = FALSE ;

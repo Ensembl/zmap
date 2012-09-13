@@ -635,7 +635,10 @@ static void dataLoadCB(ZMapView view, void *app_data, void *view_data)
 
       if (!(lfd->feature_sets))
 	{
-	  zMapLogCritical("%s", "Data Load notification received but no datasets specified.") ;
+//	  zMapLogCritical("%s", "Data Load notification received but no datasets specified.") ;
+// if we have a file input then we may not know the featuresets if there is no data or an error
+#warning better to patch in the server name here
+		lfd->feature_sets = g_list_append(NULL, GUINT_TO_POINTER(g_quark_from_string("_unknown_")));
 	}
       else if (zmap->xremote_client)
 	{
