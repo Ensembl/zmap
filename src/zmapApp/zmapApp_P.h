@@ -35,6 +35,7 @@
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapManager.h>
 #include <ZMap/zmapXRemote.h>
+#include <ZMap/zmapAppServices.h>
 
 
 /* Minimum GTK version supported. */

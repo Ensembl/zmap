@@ -56,7 +56,12 @@ static void checkForCmdLineVersionArg(int argc, char *argv[]) ;
 static int checkForCmdLineSleep(int argc, char *argv[]) ;
 static void checkForCmdLineSequenceArg(int argc, char *argv[], char **dataset_out, char **sequence_out) ;
 static void checkForCmdLineStartEndArg(int argc, char *argv[], int *start_inout, int *end_inout) ;
+
 static char *checkConfigDir(gboolean use_files) ;
+static gboolean checkSequenceArgs(int argc, char *argv[],  char *config_file,
+				  ZMapFeatureSequenceMap seq_map_inout, char **err_msg_out) ;
+
+
 static gboolean removeZMapRowForeachFunc(GtkTreeModel *model, GtkTreePath *path,
                                          GtkTreeIter *iter, gpointer data);
 
@@ -80,10 +85,12 @@ static void crashExitApp(ZMapAppContext app_context) ;
 
 static void finalCleanUp(ZMapAppContext app_context) ;
 static void doTheExit(int exit_code) ;
-
 static void setup_signal_handlers(void);
 
 static gboolean configureLog(char *config_file) ;
+
+
+
 
 ZMapManagerCallbacksStruct app_window_cbs_G = {removeZMapCB, infoSetCB, quitReqCB} ;
 
@@ -119,7 +126,9 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   GtkWidget *quit_button ;
   int log_size ;
   int sleep_seconds = 0 ;
+  char *config_file ;
   ZMapFeatureSequenceMap seq_map;
+  char *err_msg = NULL ;
 
   /* AppRealiseData app_data = g_new0(AppRealiseDataStruct, 1); */
 
@@ -159,12 +168,13 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   app_context = createAppContext() ;
 
   /* default sequence to display -> if not run via XRemote (window_ID in cmd line args) */
-  app_context->default_sequence = (ZMapFeatureSequenceMap)g_new0(ZMapFeatureSequenceMapStruct, 1) ;
+  seq_map = app_context->default_sequence = (ZMapFeatureSequenceMap)g_new0(ZMapFeatureSequenceMapStruct, 1) ;
 
   /* Set up configuration directory/files, this function exits if the directory/files can't be
    * accessed.... */
+
   app_context->files = zMapCmdLineFinalArg();
-  app_context->default_sequence->config_file = checkConfigDir(app_context->files ? TRUE : FALSE) ;
+  config_file = app_context->default_sequence->config_file = checkConfigDir(app_context->files ? TRUE : FALSE) ;
 
   /* Set any global debug flags from config file. */
   zMapUtilsConfigDebug(NULL) ;
@@ -209,22 +219,11 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   }
 
 
-  /* If user specifyed a sequence in the config. file or on the command line then
-   * display it straight away, app exits if bad command line params supplied. */
-  seq_map = app_context->default_sequence ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  if (!seq_map->start)
+  /* Check for sequence/start/end on command line or in config. file. */
+  if (!checkSequenceArgs(argc, argv, config_file, seq_map, &err_msg))
     {
-      /* Do we really want to do this anymore...I think not.... */
-      seq_map->start = 1 ;
-      seq_map->end = 0;
+      zMapLogFatal("Bad sequence args: %s", err_msg) ;
     }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-  checkForCmdLineSequenceArg(argc, argv, &seq_map->dataset, &seq_map->sequence);
-  checkForCmdLineStartEndArg(argc, argv, &seq_map->start, &seq_map->end) ;
 
 
 
@@ -279,17 +278,19 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
     zMapWarning("Log file was grown to %d bytes, you should think about archiving or removing it.\n", log_size) ;
 
 
-  /* show default sequence is based on whether or not we are controlled via XRemote */
+  /* show default sequence is based on whether or not we are controlled via XRemote
+   *
+   * Some work will be needed here with the new xremote....as the sequence won't
+   * be in the config file.
+   */
   if (seq_map->sequence && !zMapCmdLineArgsValue(ZMAPARG_WINDOW_ID, NULL))
       zmapAppCreateZMap(app_context, seq_map) ;
 
   app_context->state = ZMAPAPP_RUNNING ;
 
 
-
   /* Start the GUI. */
   gtk_main() ;
-
 
 
   doTheExit(EXIT_SUCCESS) ;				    /* exits.... */
@@ -298,6 +299,11 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   /* We should never get here, hence the failure return code. */
   return(EXIT_FAILURE) ;
 }
+
+
+
+
+
 
 
 
@@ -793,6 +799,8 @@ static gboolean getConfiguration(ZMapAppContext app_context)
       if (app_context->exit_timeout < 0)
 	app_context->exit_timeout = ZMAP_DEFAULT_EXIT_TIMEOUT;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       if (zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
 					ZMAPSTANZA_APP_DATASET, &tmp_string))
 	{
@@ -825,6 +833,8 @@ static gboolean getConfiguration(ZMapAppContext app_context)
             }
 
 	}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
       /* help url to use */
       if (zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
@@ -981,6 +991,45 @@ static gboolean configureLog(char *config_file)
 }
 
 
+/* Check to see if user specied a sequence/start/end on the command line or in
+ * a config file, only returns FALSE if they tried to specify it and it was
+ * wrong. If FALSE an error message is returned in err_msg_out which should
+ * be g_free'd by caller. */
+static gboolean checkSequenceArgs(int argc, char *argv[],  char *config_file,
+				  ZMapFeatureSequenceMap seq_map_inout, char **err_msg_out)
+{
+  gboolean result = FALSE ;
+  char *source = NULL ;
 
 
+  /* Check command line first, calls will exit if there is a problem. */
+  checkForCmdLineSequenceArg(argc, argv, &seq_map_inout->dataset, &seq_map_inout->sequence);
+  checkForCmdLineStartEndArg(argc, argv, &seq_map_inout->start, &seq_map_inout->end) ;
 
+  /* Nothing specified on command line so check config file. */
+  if (!(seq_map_inout->sequence) && !(seq_map_inout->start) && !(seq_map_inout->end))
+    {
+      zMapAppGetSequenceConfig(seq_map_inout) ;
+
+      source = "config file" ;
+    }
+  else
+    {
+      source = "command line" ;
+    }
+
+  /* Everything must be specified or nothing. */
+  if ((seq_map_inout->sequence && seq_map_inout->start && seq_map_inout->end)
+      || (!(seq_map_inout->sequence) && !(seq_map_inout->start) && !(seq_map_inout->end)))
+    {
+      result = TRUE ;
+    }
+  else
+    {
+      result = FALSE ;
+      *err_msg_out = g_strdup_printf("Bad sequence args in %s, you must specify a sequence start and end.",
+				     source) ;
+    }
+
+  return result ;
+}
