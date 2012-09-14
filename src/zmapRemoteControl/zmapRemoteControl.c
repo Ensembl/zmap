@@ -1148,7 +1148,7 @@ static void sendRequestReceivedClipboardClearCB(GtkClipboard *clipboard, gpointe
 	    {
 	      REMOTELOGMSG(remote_control, "About to call apps ReplyHandlerFunc callback"
 			   " to process the reply:\n \"%s\"",
-			   send->their_reply) ;
+			   their_reply) ;
 
 	      /* Call the app callback, this MUST be last because app may make a new call
 	       * to this code causing us to re-enter. */
@@ -1462,8 +1462,6 @@ static void receiveAppCB(void *remote_data, gboolean abort, char *reply)
   DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", ENTER_TXT) ;
 
 
-  /* STICK IN ABORT STUFF HERE....NEED TO CALL ERROR HANDLER.... */
-
   if (remote_control->state != REMOTE_STATE_IDLE)
     {
       if (remote_control->state != REMOTE_STATE_SERVER_PROCESS_REQ)
@@ -1476,7 +1474,7 @@ static void receiveAppCB(void *remote_data, gboolean abort, char *reply)
 	{
 	  CALL_ERR_HANDLER(remote_control, ZMAP_REMOTECONTROL_RC_APP_ABORT,
 			   "%s",
-			   "App has aborted transaction, see log file. \"%s\".") ;
+			   "App has aborted transaction, see log file for reason.") ;
 	}
       else
 	{
