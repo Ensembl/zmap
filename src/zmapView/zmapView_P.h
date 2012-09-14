@@ -100,7 +100,7 @@ typedef enum
  *
  */
 
-typedef struct _ZMapViewConnectionStruct *ZMapViewConnection;
+
 
 /* Callback for dispatching step requests. */
 typedef gboolean (*StepListDispatchCB)(ZMapViewConnection connection, ZMapServerReqAny req_any) ;

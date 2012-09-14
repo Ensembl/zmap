@@ -35,6 +35,7 @@
 #include <ZMap/zmapView.h>
 #include <ZMap/zmapNavigator.h>
 #include <ZMap/zmapControl.h>
+#include <ZMap/zmapControlImportFile.h>
 #include <ZMap/zmapXRemote.h>
 
 

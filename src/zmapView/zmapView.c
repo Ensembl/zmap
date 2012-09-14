@@ -106,7 +106,6 @@ typedef struct
 
 
 static void getIniData(ZMapView view, char *config_str, GList *sources) ;
-static GList *zmapViewGetIniSources(char *config_file, char *config_str,char **stylesfile);
 static void zmapViewCreateColumns(ZMapView view,GList *featuresets) ;
 static ZMapConfigSource zmapViewGetSourceFromFeatureset(GHashTable *hash,GQuark featurequark);
 static ZMapView createZMapView(GtkWidget *xremote_widget, char *view_name,
@@ -144,7 +143,7 @@ static gboolean processGetSeqRequests(ZMapViewConnection view_con, ZMapServerReq
 
 ZMapViewConnection zMapViewRequestServer(ZMapView view, ZMapViewConnection view_conn,
 				   ZMapFeatureBlock block_orig, GList *req_featuresets,
-				   ZMapConfigSource server,
+				   gpointer server, /* ZMapConfigSource */
 	   			   int req_start, int req__end,
 				   gboolean dna_requested, gboolean terminate);
 
@@ -1121,6 +1120,17 @@ char *zMapViewGetSequenceName(ZMapFeatureSequenceMap sequence_map)
   return sequence ;
 }
 
+ZMapFeatureSequenceMap zMapViewGetSequenceMap(ZMapView zmap_view)
+{
+  if (zmap_view->state != ZMAPVIEW_DYING)
+  {
+    return zmap_view->view_sequence;
+  }
+
+  return NULL ;
+}
+
+
 void zMapViewGetSourceNameTitle(ZMapView zmap_view, char **name, char **title)
 {
 
@@ -1374,7 +1384,7 @@ char *zmapViewGetStatusAsStr(ZMapViewState state)
 
 
 
-static GList *zmapViewGetIniSources(char *config_file, char *config_str, char ** stylesfile)
+GList *zmapViewGetIniSources(char *config_file, char *config_str, char ** stylesfile)
 {
   GList *settings_list = NULL;
   ZMapConfigIniContext context ;
@@ -1507,7 +1517,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
   {
 		ZMapViewConnection view_conn;
 
-		view_conn = zMapViewRequestServer(view, NULL, block_orig, req_sources, server, req_start, req_end, FALSE, terminate);
+		view_conn = zMapViewRequestServer(view, NULL, block_orig, req_sources, (gpointer) server, req_start, req_end, FALSE, terminate);
 		if(view_conn)
 			requested = TRUE;
   }
@@ -1536,7 +1546,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 
 		/* this is for ACEDB where the server featureset list is actually a list of columns
 		* so to find the server we need to find the column
-		* there is some possibility of collision if mis-configuredcreateConnection
+		* there is some possibility of collision if mis-configured
 		* and what will happen will be no data
 		*/
 		if ((GFFset = g_hash_table_lookup(view->context_map.featureset_2_column, GUINT_TO_POINTER(unique_id))))
@@ -1667,7 +1677,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 		view_conn = (make_new_connection ? NULL : (existing ? view_conn : NULL)) ;
 
 
-		view_conn = zMapViewRequestServer(view, view_conn, block_orig, req_featuresets, server, req_start, req_end,
+		view_conn = zMapViewRequestServer(view, view_conn, block_orig, req_featuresets, (gpointer) server, req_start, req_end,
 						dna_requested, (!existing && terminate) );
 
 		if(view_conn)
@@ -1720,13 +1730,16 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
  */
 
 ZMapViewConnection zMapViewRequestServer(ZMapView view, ZMapViewConnection view_conn, ZMapFeatureBlock block_orig, GList *req_featuresets,
-				   ZMapConfigSource server,
+				   gpointer _server, /* ZMapConfigSource */
 	   			   int req_start, int req_end,
 				   gboolean dna_requested, gboolean terminate)
 {
 	ZMapFeatureContext context ;
 	ZMapFeatureBlock block ;
 	gboolean is_pipe;
+
+	/* things you have to do to get round scope and headers... */
+	ZMapConfigSource server = (ZMapConfigSource) _server;
 
 	/* Copy the original context from the target block upwards setting feature set names
 	* and the range of features to be copied.

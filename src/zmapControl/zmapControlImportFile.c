@@ -1,5 +1,6 @@
-/*  File: zmapAppSequenceView.c
+/*  File: zmapControlImportFile.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
+ *  Author: malcolm hinsley (mh17@sanger.ac.uk)
  *  Copyright (c) 2012: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
@@ -29,9 +30,11 @@
  *              user has chosen then this code calls the function
  *              provided by the caller to get the sequence displayed.
  *
- * Exported functions: See ZMap/zmapAppServices.h
+ * Exported functions: See ZMap/zmapControlImportFile.h
  *
- * NOTE this file has been copied and used as a basis for zmapControlImportFile.c
+ * NOTE this file was initially copied from zmapAppSequenceView.c
+ * and then tweaked. Ther emay be some common code & functions
+ * but maybe this file will be volatile for a while
  *-------------------------------------------------------------------
  */
 
@@ -39,7 +42,11 @@
 
 #include <string.h>
 
-#include <ZMap/zmapAppServices.h>
+#include <ZMap/zmapConfigIni.h>
+#include <ZMap/zmapConfigStanzaStructs.h>
+#include <zmapControl_P.h>
+#include <ZMap/zmapControlImportFile.h>
+
 
 
 
@@ -50,22 +57,26 @@ typedef struct MainFrameStructName
   GtkWidget *sequence_widg ;
   GtkWidget *start_widg ;
   GtkWidget *end_widg ;
-  GtkWidget *config_widg ;
+  GtkWidget *file_widg ;
 
-  ZMapAppGetSequenceViewCB user_func ;
+  GtkWidget *map_widg ;
+  GtkWidget *offset_widg ;
+
+  ZMapControlImportFileCB user_func ;
   gpointer user_data ;
 } MainFrameStruct, *MainFrame ;
 
 
 
 static GtkWidget *makePanel(GtkWidget *toplevel, gpointer *seqdata_out,
-			    ZMapAppGetSequenceViewCB user_func, gpointer user_data,
+			    ZMapControlImportFileCB user_func, gpointer user_data,
 			    ZMapFeatureSequenceMap sequence_map) ;
 static GtkWidget *makeMainFrame(MainFrame main_frame, ZMapFeatureSequenceMap sequence_map) ;
+static GtkWidget *makeOptionsBox(MainFrame main_frame);
 static GtkWidget *makeButtonBox(MainFrame main_frame) ;
 
 static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data) ;
-static void createViewCB(GtkWidget *widget, gpointer cb_data) ;
+static void importFileCB(GtkWidget *widget, gpointer cb_data) ;
 static void chooseConfigCB(GtkFileChooserButton *widget, gpointer user_data) ;
 static void closeCB(GtkWidget *widget, gpointer cb_data) ;
 
@@ -73,9 +84,10 @@ static void closeCB(GtkWidget *widget, gpointer cb_data) ;
 
 
 
-/* Display a dialog to get from the reader a sequence to be displayed with a start/end
- * and optionally a config file. */
-void zMapAppGetSequenceView(ZMapAppGetSequenceViewCB user_func, gpointer user_data,
+/* Display a dialog to get from the reader a file to be displayed
+ * with a optional start/end and various mapping parameters
+ */
+void zMapControlImportFile(ZMapControlImportFileCB user_func, gpointer user_data,
 			    ZMapFeatureSequenceMap sequence_map)
 {
   GtkWidget *toplevel, *container ;
@@ -85,7 +97,7 @@ void zMapAppGetSequenceView(ZMapAppGetSequenceViewCB user_func, gpointer user_da
 
   toplevel = gtk_window_new(GTK_WINDOW_TOPLEVEL) ;
   gtk_window_set_policy(GTK_WINDOW(toplevel), FALSE, TRUE, FALSE ) ;
-  gtk_window_set_title(GTK_WINDOW(toplevel), "Please specify sequence to be viewed.") ;
+  gtk_window_set_title(GTK_WINDOW(toplevel), "Please choose a file to import.") ;
   gtk_container_border_width(GTK_CONTAINER(toplevel), 0) ;
 
   container = makePanel(toplevel, &seq_data, user_func, user_data, sequence_map) ;
@@ -100,17 +112,6 @@ void zMapAppGetSequenceView(ZMapAppGetSequenceViewCB user_func, gpointer user_da
 }
 
 
-/* As for zMapAppGetSequenceView() except that returns a GtkWidget that can be
- * incorporated into a window. */
-GtkWidget *zMapCreateSequenceViewWidg(ZMapAppGetSequenceViewCB user_func, gpointer user_data,
-				      ZMapFeatureSequenceMap sequence_map)
-{
-  GtkWidget *container = NULL ;
-
-  container = makePanel(NULL, NULL, user_func, user_data, sequence_map) ;
-
-  return container ;
-}
 
 
 /*
@@ -120,11 +121,11 @@ GtkWidget *zMapCreateSequenceViewWidg(ZMapAppGetSequenceViewCB user_func, gpoint
 
 /* Make the whole panel returning the top container of the panel. */
 static GtkWidget *makePanel(GtkWidget *toplevel, gpointer *our_data,
-			    ZMapAppGetSequenceViewCB user_func, gpointer user_data,
+			    ZMapControlImportFileCB user_func, gpointer user_data,
 			    ZMapFeatureSequenceMap sequence_map)
 {
   GtkWidget *frame = NULL ;
-  GtkWidget *vbox, *main_frame, *button_box ;
+  GtkWidget *vbox, *main_frame, *button_box, *options_box;
   MainFrame main_data ;
 
   main_data = g_new0(MainFrameStruct, 1) ;
@@ -147,6 +148,9 @@ static GtkWidget *makePanel(GtkWidget *toplevel, gpointer *our_data,
   main_frame = makeMainFrame(main_data, sequence_map) ;
   gtk_box_pack_start(GTK_BOX(vbox), main_frame, TRUE, TRUE, 0) ;
 
+  options_box = makeOptionsBox(main_data) ;
+  gtk_box_pack_start(GTK_BOX(vbox), options_box, TRUE, TRUE, 0) ;
+
   button_box = makeButtonBox(main_data) ;
   gtk_box_pack_start(GTK_BOX(vbox), button_box, TRUE, TRUE, 0) ;
 
@@ -161,7 +165,7 @@ static GtkWidget *makeMainFrame(MainFrame main_frame, ZMapFeatureSequenceMap seq
 {
   GtkWidget *frame ;
   GtkWidget *topbox, *hbox, *entrybox, *labelbox, *entry, *label ;
-  char *sequence = "", *start = "", *end = "", *config_file = "" ;
+  char *sequence = "", *start = "", *end = "", *file = "" ;
 
   if (sequence_map)
     {
@@ -171,11 +175,9 @@ static GtkWidget *makeMainFrame(MainFrame main_frame, ZMapFeatureSequenceMap seq
 	start = g_strdup_printf("%d", sequence_map->start) ;
       if (sequence_map->end)
 	end = g_strdup_printf("%d", sequence_map->end) ;
-      if (sequence_map->config_file)
-	config_file = sequence_map->config_file ;
     }
 
-  frame = gtk_frame_new( "New Sequence: " );
+  frame = gtk_frame_new( "Sequence: " );
   gtk_container_border_width(GTK_CONTAINER(frame), 5);
 
   topbox = gtk_vbox_new(FALSE, 5) ;
@@ -203,7 +205,7 @@ static GtkWidget *makeMainFrame(MainFrame main_frame, ZMapFeatureSequenceMap seq
   gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
   gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
 
-  label = gtk_label_new( "Config File :" ) ;
+  label = gtk_label_new( "File :" ) ;
   gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
   gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
 
@@ -226,8 +228,8 @@ static GtkWidget *makeMainFrame(MainFrame main_frame, ZMapFeatureSequenceMap seq
   gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;
 
-  main_frame->config_widg = entry = gtk_entry_new() ;
-  gtk_entry_set_text(GTK_ENTRY(entry), config_file) ;
+  main_frame->file_widg = entry = gtk_entry_new() ;
+  gtk_entry_set_text(GTK_ENTRY(entry), file) ;
   gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;
 
@@ -245,6 +247,37 @@ static GtkWidget *makeMainFrame(MainFrame main_frame, ZMapFeatureSequenceMap seq
 }
 
 
+/* Make the option buttons frame. */
+static GtkWidget *makeOptionsBox(MainFrame main_frame)
+{
+  GtkWidget *frame ;
+  GtkWidget *options_box, *map_seq_button, *entry, *label ;
+
+  frame = gtk_frame_new(NULL) ;
+  gtk_container_border_width(GTK_CONTAINER(frame), 5) ;
+
+  options_box = gtk_hbutton_box_new() ;
+  gtk_container_border_width(GTK_CONTAINER(options_box), 5) ;
+  gtk_container_add (GTK_CONTAINER (frame), options_box) ;
+
+
+  main_frame->map_widg = map_seq_button = gtk_check_button_new_with_label ("Map sequence") ;
+  gtk_box_pack_start(GTK_BOX(options_box), map_seq_button, FALSE, TRUE, 0) ;
+
+  label = gtk_label_new( "Sequence offset:" ) ;
+  gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
+  gtk_box_pack_start(GTK_BOX(options_box), label, FALSE, TRUE, 0) ;
+
+  main_frame->offset_widg = entry = gtk_entry_new() ;
+  gtk_entry_set_text(GTK_ENTRY(entry), "") ;
+  gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
+  gtk_box_pack_start(GTK_BOX(options_box), entry, FALSE, TRUE, 0) ;
+
+  return frame ;
+}
+
+
+
 /* Make the action buttons frame. */
 static GtkWidget *makeButtonBox(MainFrame main_frame)
 {
@@ -259,13 +292,13 @@ static GtkWidget *makeButtonBox(MainFrame main_frame)
   gtk_container_border_width(GTK_CONTAINER(button_box), 5) ;
   gtk_container_add (GTK_CONTAINER (frame), button_box) ;
 
-  create_button = gtk_button_new_with_label("Create ZMap") ;
+  create_button = gtk_button_new_with_label("Import File") ;
   gtk_signal_connect(GTK_OBJECT(create_button), "clicked",
-		     GTK_SIGNAL_FUNC(createViewCB), (gpointer)main_frame) ;
+		     GTK_SIGNAL_FUNC(importFileCB), (gpointer)main_frame) ;
   gtk_box_pack_start(GTK_BOX(button_box), create_button, FALSE, TRUE, 0) ;
 
   /* N.B. we use the gtk "built-in" file chooser stuff. */
-  config_button = gtk_file_chooser_button_new("Choose A Config File", GTK_FILE_CHOOSER_ACTION_OPEN) ;
+  config_button = gtk_file_chooser_button_new("Choose a File to Import", GTK_FILE_CHOOSER_ACTION_OPEN) ;
   gtk_signal_connect(GTK_OBJECT(config_button), "file-set",
 		     GTK_SIGNAL_FUNC(chooseConfigCB), (gpointer)main_frame) ;
   gtk_box_pack_start(GTK_BOX(button_box), config_button, FALSE, TRUE, 0) ;
@@ -326,7 +359,7 @@ static void chooseConfigCB(GtkFileChooserButton *widget, gpointer user_data)
 
   filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(widget)) ;
 
-  gtk_entry_set_text(GTK_ENTRY(main_frame->config_widg), filename) ;
+  gtk_entry_set_text(GTK_ENTRY(main_frame->file_widg), filename) ;
 
   g_free(filename) ;
 
@@ -343,28 +376,31 @@ static void chooseConfigCB(GtkFileChooserButton *widget, gpointer user_data)
  *       config file (which contains sequence, start, end)
  *
  *  */
-static void createViewCB(GtkWidget *widget, gpointer cb_data)
+static void importFileCB(GtkWidget *widget, gpointer cb_data)
 {
+
   MainFrame main_frame = (MainFrame)cb_data ;
   gboolean status = TRUE ;
   char *err_msg = NULL ;
-  char *sequence = "", *start_txt, *end_txt, *config_txt ;
+  char *sequence = "", *start_txt, *end_txt, *file_txt, *offset_txt ;
   int start = 1, end = 0 ;
-
+  gboolean map_seq = FALSE;
+  int seq_offset = 0;
 
   /* Note gtk_entry returns the empty string "" _not_ NULL when there is no text. */
   sequence = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->sequence_widg)) ;
   start_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->start_widg)) ;
   end_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->end_widg)) ;
-  config_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->config_widg)) ;
+  file_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->file_widg)) ;
 
+  offset_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->offset_widg)) ;
 
-  if (!(*sequence) && !(*start_txt) && !(*end_txt) && *config_txt)
+  if (!*file_txt)
     {
-      /* Just a config file specified, try that. */
-      status = TRUE ;
+      status = FALSE ;
+      err_msg = "Please choose a file to import." ;
     }
-  else if (*sequence && *start_txt && *end_txt)
+ else if (*sequence && *start_txt && *end_txt)
     {
       if (status)
 	{
@@ -383,21 +419,18 @@ static void createViewCB(GtkWidget *widget, gpointer cb_data)
 	      err_msg = "Invalid end specified." ;
 	    }
 	}
-
-      if (status)
-	{
-	  if (!(*config_txt))
-	    config_txt = NULL ;				    /* No file specified. */
-	}
-    }
-  else
-    {
-      status = FALSE ;
-      err_msg = "You must specify\n"
-	"either just a config file containing a sequence and start,end\n"
-	"or a sequence, start, end and optionally a config file." ;
     }
 
+  if(status)
+  {
+	if ((*offset_txt) && !zMapStr2Int(offset_txt, &seq_offset))
+		{
+		status = FALSE ;
+		err_msg = "Invalid offset specified." ;
+		}
+
+	map_seq = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON(main_frame->map_widg));
+  }
 
   if (!status)
     {
@@ -405,48 +438,32 @@ static void createViewCB(GtkWidget *widget, gpointer cb_data)
     }
   else
     {
-      /* when we get here we should either have only a config file specified or
-       * a sequence/start/end and optionally a config file. */
-      ZMapFeatureSequenceMap seq_map ;
-      gboolean sequence_ok = FALSE ;
-      char *err_msg = NULL ;
+	char *config_str;
+	GList * servers;
+	ZMapConfigSource server;
+	GList *req_featuresets = NULL;
+	ZMapView view;
+	ZMap zmap = (ZMap) main_frame->user_data;
 
-      seq_map = g_new0(ZMapFeatureSequenceMapStruct,1) ;
+	zMapWarning("parameters: %s %d %d %s %d %d",sequence,start,end,file_txt,map_seq,seq_offset);
 
-	seq_map->config_file = config_txt ;
+	config_str = g_strdup_printf("[ZMap]\nsources = temp\n\n[temp]\nfeaturesets=\nurl=file:///%s\n",file_txt);
 
-      if (*sequence)
+	servers = zmapViewGetIniSources(NULL, config_str, NULL);
+	zMapAssert(servers);
+
+	server = (ZMapConfigSource) servers->data;
+
+	view = zMapViewGetView(zmap->focus_viewwindow);
+
+	if( !zMapViewRequestServer(view, NULL, NULL, req_featuresets, (gpointer) server, start, end, FALSE, TRUE))
 	{
-	  sequence_ok = TRUE ;
-	  seq_map->sequence = sequence ;
-	  seq_map->start = start ;
-	  seq_map->end = end ;
-	}
-      else
-	{
-	  if (!(sequence_ok = zMapAppGetSequenceConfig(seq_map)))
-	    {
-	      err_msg = "Cannot read config file, check config file." ;
-	    }
-	  else if (!seq_map->sequence || !seq_map->start || !seq_map->end)
-	    {
-	      err_msg = "Cannot load sequence from config file, check sequence, start and end specified." ;
-	      sequence_ok = FALSE ;
-	    }
+		zMapWarning("could not request %s",file_txt);
 	}
 
-      if (!sequence_ok)
-	{
-	  zMapWarning("%s", err_msg) ;
-	  g_free(seq_map) ;
-	}
-      else
-	{
-	  /* Call back with users parameters for new sequence display. */
-	  (main_frame->user_func)(seq_map, main_frame->user_data) ;
-	}
+	zMapConfigSourcesFreeList(servers);
+	g_free(config_str);
     }
-
   return ;
 }
 
