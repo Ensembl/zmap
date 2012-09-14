@@ -499,6 +499,7 @@ static void handleZMapRepliesCB(char *command,
   /* Must ALWAYS call back to ZMapRemoteControl to return reply to peer. */
   (remote->return_reply_func)(remote->return_reply_func_data, abort, full_reply) ;
 
+
   return ;
 }
 
