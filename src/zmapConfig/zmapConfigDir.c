@@ -227,7 +227,8 @@ void zMapConfigDirDestroy(void)
 
   zMapAssert(dir_context) ;
 
-  g_free(dir_context->config_dir) ;
+#warning this free causes memory corruption
+//  g_free(dir_context->config_dir) ;
 
   g_free(dir_context) ;
 

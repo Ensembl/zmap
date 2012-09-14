@@ -167,13 +167,15 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   app_context = createAppContext() ;
 
   /* default sequence to display -> if not run via XRemote (window_ID in cmd line args) */
-  seq_map = app_context->default_sequence = (ZMapFeatureSequenceMap)g_new0(ZMapFeatureSequenceMapStruct, 1) ;
+  seq_map = app_context->default_sequence =  g_new0(ZMapFeatureSequenceMapStruct, 1) ;
 
   /* Set up configuration directory/files, this function exits if the directory/files can't be
    * accessed.... */
 
   app_context->files = zMapCmdLineFinalArg();
-  seq_map->config_file = app_context->default_sequence->config_file = checkConfigDir(app_context->files ? TRUE : FALSE) ;
+
+  /* if no config and no files the we display the main window */
+  seq_map->config_file = checkConfigDir(TRUE);	//app_context->files ? TRUE : FALSE) ;
 
   /* Set any global debug flags from config file. */
   zMapUtilsConfigDebug(NULL) ;
@@ -185,7 +187,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   app_context->zmap_manager = zMapManagerCreate((void *)app_context) ;
 
   /* Set up logging for application. */
-  if (!zMapLogCreate(NULL) || !configureLog(app_context->default_sequence->config_file))
+  if (!zMapLogCreate(NULL) || !configureLog(seq_map->config_file))
     {
       printf("ZMap cannot create log file.\n") ;
 
@@ -283,15 +285,31 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
    * Some work will be needed here with the new xremote....as the sequence won't
    * be in the config file.
    */
+
+  /* NOTE i tried making acopy of this to prevent a crash on shutdown inside localtime();
+   * on the assumpiton that there was some memory corruption
+   * as runnign zmap without a default sequence works
+   * can't see what other difference there could be
+   * run the sam efuile by adding file and sequence to the main window and it's fine
+   * spend more than a day on this ....
+   */
   if (seq_map->sequence && !zMapCmdLineArgsValue(ZMAPARG_WINDOW_ID, NULL))
-      zmapAppCreateZMap(app_context, seq_map) ;
+  {
+	ZMapFeatureSequenceMap copy = g_new0(ZMapFeatureSequenceMapStruct,1);
+
+	memcpy(copy, seq_map, sizeof(ZMapFeatureSequenceMapStruct));
+	if(seq_map->sequence)
+		copy->sequence = g_strdup(seq_map->sequence);
+	if(seq_map->config_file)
+		copy->config_file = g_strdup(seq_map->config_file);
+
+	zmapAppCreateZMap(app_context, copy) ;
+  }
 
   app_context->state = ZMAPAPP_RUNNING ;
 
-
   /* Start the GUI. */
   gtk_main() ;
-
 
   doTheExit(EXIT_SUCCESS) ;				    /* exits.... */
 
@@ -411,6 +429,7 @@ static void destroyAppContext(ZMapAppContext app_context)
             g_free(app_context->default_sequence->sequence);
       g_free(app_context->default_sequence);
   }
+
   g_free(app_context) ;
 
   return ;
@@ -501,7 +520,7 @@ static gboolean timeoutHandler(gpointer data)
 /* Called on clean exit of zmap. */
 static void exitApp(ZMapAppContext app_context)
 {
-  /* This must be done here as manager checks to see if all its zmaps have gone. */
+/* This must be done here as manager checks to see if all its zmaps have gone. */
   if (app_context->zmap_manager)
     zMapManagerDestroy(app_context->zmap_manager) ;
 

@@ -308,8 +308,8 @@ static void createZMap(ZMapAppContext app, RequestData request_data, ResponseCon
   g_string_append_printf(response_data->message, "%s", app->info->message);
 
   /* Clean up. */
-  if (sequence)
-    g_free(sequence) ;
+//  if (sequence)
+//	g_free(sequence) ;
 
   return ;
 }
