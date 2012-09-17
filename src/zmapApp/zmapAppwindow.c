@@ -275,13 +275,9 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
     zMapWarning("Log file was grown to %d bytes, you should think about archiving or removing it.\n", log_size) ;
 
 
-  /* show default sequence is based on whether or not we are controlled via XRemote
-   * 
-   * Some work will be needed here with the new xremote....as the sequence won't
-   * be in the config file.
-   */
+  /* show default sequence is based on whether or not we are controlled via XRemote */
   if (seq_map->sequence && !zMapCmdLineArgsValue(ZMAPARG_WINDOW_ID, NULL))
-      zmapAppCreateZMap(app_context, seq_map) ;
+    zmapAppCreateZMap(app_context, seq_map) ;		    /* Ignore return code, handled in function. */
 
   app_context->state = ZMAPAPP_RUNNING ;
 
@@ -987,24 +983,10 @@ static gboolean checkSequenceArgs(int argc, char *argv[],  char *config_file,
 				  ZMapFeatureSequenceMap seq_map_inout, char **err_msg_out)
 {
   gboolean result = FALSE ;
-  char *source = NULL ;
 
-
-  /* Check command line first, calls will exit if there is a problem. */
+  /* Check command line first, calls will exit if there is a problem if flag is completely wrong. */
   checkForCmdLineSequenceArg(argc, argv, &seq_map_inout->dataset, &seq_map_inout->sequence);
   checkForCmdLineStartEndArg(argc, argv, &seq_map_inout->start, &seq_map_inout->end) ;
-
-  /* Nothing specified on command line so check config file. */
-  if (!(seq_map_inout->sequence) && !(seq_map_inout->start) && !(seq_map_inout->end))
-    {
-      zMapAppGetSequenceConfig(seq_map_inout) ;
-
-      source = "config file" ;
-    }
-  else
-    {
-      source = "command line" ;
-    }
 
   /* Everything must be specified or nothing. */
   if ((seq_map_inout->sequence && seq_map_inout->start && seq_map_inout->end)
@@ -1015,8 +997,9 @@ static gboolean checkSequenceArgs(int argc, char *argv[],  char *config_file,
   else
     {
       result = FALSE ;
-      *err_msg_out = g_strdup_printf("Bad sequence args in %s, you must specify a sequence start and end.",
-				     source) ;
+      *err_msg_out = g_strdup_printf("Bad sequence args in command line: %s",
+				     (!seq_map_inout->sequence ? "no sequence name"
+				      : (seq_map_inout->start <= 1 ? "start less than 1" : "end less than start"))) ;
     }
 
   return result ;
