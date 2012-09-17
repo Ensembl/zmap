@@ -3114,26 +3114,26 @@ zMapLogWarning("canvas event %d",  event->type);
 		  && zMapWindowCanvasFeaturesetGetSeqCoord((ZMapWindowFeaturesetItem)item, TRUE,
 							   origin_x, origin_y, &seq_start, &seq_end))
 		{
-				/* get start coordinate via subpartspan from x and y
-				 * set end coordinate to be the same
-				 * set a flag to say selecting text and remember the canvas item
-				 * highlight the region
-				 */
+		  /* get start coordinate via subpartspan from x and y
+		   * set end coordinate to be the same
+		   * set a flag to say selecting text and remember the canvas item
+		   * highlight the region
+		   */
 
-//			if(zMapWindowCanvasFeaturesetGetSeqCoord((ZMapWindowFeaturesetItem) item, TRUE, origin_x, origin_y, &seq_start, &seq_end))
-			{
-				seq_item = item;
-				/*
-				* Although we start with a base Foo item the highlight code does a FToI lookup on the feature
-				 * to get the full ZMapCanvasItem whcih is sued to drive SeqDispSelByRegion()
-				 */
-				zmapWindowHighlightSequenceItem(window, seq_item, seq_start, seq_end);
+		  //			if(zMapWindowCanvasFeaturesetGetSeqCoord((ZMapWindowFeaturesetItem) item, TRUE, origin_x, origin_y, &seq_start, &seq_end))
+		  {
+		    seq_item = item;
+		    /*
+		     * Although we start with a base Foo item the highlight code does a FToI lookup on the feature
+		     * to get the full ZMapCanvasItem whcih is sued to drive SeqDispSelByRegion()
+		     */
+		    zmapWindowHighlightSequenceItem(window, seq_item, seq_start, seq_end);
 
-				/* NOTE we set feature list to NULL here, update info panel must handle */
-				zmapWindowUpdateInfoPanel(window, zMapWindowCanvasItemGetFeature(seq_item), NULL, seq_item, NULL, seq_start, seq_end, seq_start, seq_end, NULL, FALSE, FALSE, FALSE) ;
+		    /* NOTE we set feature list to NULL here, update info panel must handle */
+		    zmapWindowUpdateInfoPanel(window, zMapWindowCanvasItemGetFeature(seq_item), NULL, seq_item, NULL, seq_start, seq_end, seq_start, seq_end, NULL, FALSE, FALSE, FALSE) ;
 
-				event_handled = TRUE;
-			}
+		    event_handled = TRUE;
+		  }
 		}
 	      else
 		{
@@ -3284,12 +3284,12 @@ zMapLogWarning("canvas event %d",  event->type);
 
 	 if(seq_item)
 		{
-			zMapWindowCanvasFeaturesetGetSeqCoord((ZMapWindowFeaturesetItem) seq_item, FALSE,  wx, wy, &seq_start, &seq_end);
+		  zMapWindowCanvasFeaturesetGetSeqCoord((ZMapWindowFeaturesetItem) seq_item, FALSE,  wx, wy, &seq_start, &seq_end);
+		  
+		  zmapWindowHighlightSequenceItem(window, seq_item, seq_start, seq_end);
 
-			zmapWindowHighlightSequenceItem(window, seq_item, seq_start, seq_end);
-
-			/* NOTE we set feature list to NULL here, update info panel must handle */
-			zmapWindowUpdateInfoPanel(window, zMapWindowCanvasItemGetFeature(seq_item), NULL, seq_item, NULL, seq_start, seq_end, seq_start, seq_end, NULL, FALSE, FALSE, FALSE) ;
+		  /* NOTE we set feature list to NULL here, update info panel must handle */
+		  zmapWindowUpdateInfoPanel(window, zMapWindowCanvasItemGetFeature(seq_item), NULL, seq_item, NULL, seq_start, seq_end, seq_start, seq_end, NULL, FALSE, FALSE, FALSE) ;
 		}
 	else if (dragging || guide)
 	  {
@@ -3480,19 +3480,19 @@ zMapLogWarning("canvas event %d",  event->type);
 
 	zMapDebugPrint(mouse_debug_G, "Start: button_release %d", but_event->button) ;
 
-	  if(seq_item)
+	if(seq_item)
 	  {
-		zMapWindowCanvasFeaturesetGetSeqCoord((ZMapWindowFeaturesetItem) seq_item, FALSE,  wx, wy, &seq_start, &seq_end);
+	    zMapWindowCanvasFeaturesetGetSeqCoord((ZMapWindowFeaturesetItem) seq_item, FALSE,  wx, wy, &seq_start, &seq_end);
 
-		zmapWindowHighlightSequenceItem(window, seq_item, seq_start, seq_end);
+	    zmapWindowHighlightSequenceItem(window, seq_item, seq_start, seq_end);
 
-		  /* NOTE we set feature list to NULL here, update info panel must handle */
-		zmapWindowUpdateInfoPanel(window, zMapWindowCanvasItemGetFeature(seq_item), NULL, seq_item, NULL, seq_start, seq_end, seq_start, seq_end, NULL, FALSE, FALSE, FALSE) ;
+	    /* NOTE we set feature list to NULL here, update info panel must handle */
+	    zmapWindowUpdateInfoPanel(window, zMapWindowCanvasItemGetFeature(seq_item), NULL, seq_item, NULL, seq_start, seq_end, seq_start, seq_end, NULL, FALSE, FALSE, FALSE) ;
 
-		seq_item = NULL;
-		event_handled = TRUE;		    /* We _ARE_ handling */
+	    seq_item = NULL;
+	    event_handled = TRUE;		    /* We _ARE_ handling */
 	  }
-        else if (dragging)
+	else if (dragging)
           {
 	    GdkModifierType shift_mask = GDK_SHIFT_MASK, control_mask = GDK_CONTROL_MASK;
 	    /* refer to handleButton() in zmapWindowfeature.c re shift/num lock */
@@ -3506,7 +3506,7 @@ zMapLogWarning("canvas event %d",  event->type);
 		gboolean ctrl = zMapGUITestModifiers(but_event, control_mask);
 		gboolean shift = zMapGUITestModifiers(but_event, shift_mask);
 
-		if(shift || ctrl)
+		if (shift || ctrl)
 		  {
 		    /* make a list of the foo canvas items */
 		    GList *feature_list;
@@ -3524,13 +3524,12 @@ zMapLogWarning("canvas event %d",  event->type);
 //		    if ((item = foo_canvas_get_item_at(window->canvas, (rootx2 + rootx1) / 2, (rooty2 + rooty1) / 2) ))
 		    {
 			/* only finds features in a canvas featureset, old foo gives nothing */
-			feature_list = zMapWindowFeaturesetItemFindFeatures(&item, rooty1, rooty2, rootx1, rootx2);
+		      feature_list = zMapWindowFeaturesetItemFindFeatures(&item, rooty1, rooty2, rootx1, rootx2);
 		    }
 
-			/* this is how features get highlit */
-			if(item)
-				zmapWindowUpdateInfoPanel(window, zMapWindowCanvasItemGetFeature(item), feature_list, item, NULL, 0, 0, 0, 0, NULL, !shift, !ctrl, FALSE) ;
-
+		    /* this is how features get highlit */
+		    if(item)
+		      zmapWindowUpdateInfoPanel(window, zMapWindowCanvasItemGetFeature(item), feature_list, item, NULL, 0, 0, 0, 0, NULL, !shift, !ctrl, FALSE) ;
 		  }
 		else if (fabs(but_event->x - window_x) > ZMAP_WINDOW_MIN_LASSO
 			 || fabs(but_event->y - window_y) > ZMAP_WINDOW_MIN_LASSO)
