@@ -342,6 +342,9 @@ static char *view_execute_command(char *command_text, gpointer user_data,
     zMapLogMessage("New xremote command received: %s", command_text) ;
 
 
+  zMapDebugPrint(xremote_debug_GG, "ZMap App View Handler: %s",  command_text) ; 
+
+
   request_data.messages = g_string_sized_new(512) ;
 
   request_data.view = view ;
