@@ -132,7 +132,7 @@ sub print_feature {
 
     my @fields =
         (
-         'similarity',
+         $params { 'gff_version' } == 2 ? 'similarity' : "read",
          (sprintf "%d", $start),
          (sprintf "%d", $end),
          (defined $score ? (sprintf "%f", $score) : '.'),

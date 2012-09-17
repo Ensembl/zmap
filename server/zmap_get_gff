@@ -1,0 +1,202 @@
+#!/usr/bin/env perl
+
+# a simple script to translate sequence name and offset seq coords in GFF
+# we could do that in ZMap directly but this way we have more options to interpret the data
+# could modify to translate GFF2 <-> GFF3 ??
+# could modify to translate featureset names to avoid colissions
+
+use strict;
+use warnings;
+
+use Carp;
+use Getopt::Long 'GetOptions';
+use Pod::Usage;
+use Roman;
+
+use URI::Escape qw(uri_unescape);
+
+use Bio::DB::Sam;
+use Bio::Server::BAM;
+
+
+# parameters
+my %params = ();
+my @options = qw ( help! man! gff_version=i file=s start=i end=i mapto=i sequence=s gff_seqname=s);
+# gff_seqname is here for legacy code, we use source instead
+# ZMap will not add it for non otter systems when the code is back in the main branch
+my @required = qw ( file );
+
+my $attributes_format;
+my $attributes_sep = ';';
+my $strands = { 1  => '+', -1 => '-' };
+my $source;
+my $sequence;
+my $mapto;
+
+
+sub gff_escape {
+    # escapes a minimal set of characters
+    s/([\t\r\n[:cntrl:];=%&])/sprintf "%%%02X", ord($1)/eg;
+    return;
+}
+
+sub gff_escape_seqid {
+    # escapes everything except a restricted set of characters
+    s/([^-a-zA-Z0-9.:^*$@!+_?|])/sprintf "%%%02X", ord($1)/eg;
+    return;
+}
+
+sub gff_escape_source {
+    # escapes everything except a restricted set of characters
+    s/([^-a-zA-Z0-9.:^*$@!+_? ])/sprintf "%%%02X", ord($1)/eg;
+    return;
+}
+
+sub gff_escape_attribute {
+    # like gff_escape, but escapes commas too
+    s/([\t\r\n[:cntrl:];=%&,])/sprintf "%%%02X", ord($1)/eg;
+    return;
+}
+
+sub gff_escape_target {
+    # like gff_escape, but escapes commas and spaces too
+    s/([\t\r\n[:cntrl:];=%&, ])/sprintf "%%%02X", ord($1)/eg;
+    return;
+}
+
+
+sub get_params
+{
+ 	# defaults
+	$params {'gff_version'}= 2;		# default for now as ZMap doesn't do v3 yet
+	$params {'chr_prefix'} = '';
+
+	GetOptions(\%params, @options ) or pod2usage(2);
+
+	pod2usage(1) if defined $params { 'help' };
+	pod2usage(-exitstatus => 0, -verbose => 2) if defined $params {'man'} ;
+
+	my $missing = 0;
+	foreach my $param (@required)
+	{
+		if (!defined $params { $param })
+		{
+			print "$param not specified\n";
+			$missing++;
+		}
+	}
+	pod2usage(1) if $missing;
+
+	$params{$_} = uri_unescape($params{$_}) for keys %params;
+
+	if(defined $params { 'sequence' })
+	{
+		$sequence = $params { 'sequence' };
+		gff_escape_seqid for $sequence;
+	}
+
+	# mapto is inteneded mainly for mapping sequence to 1 based coords and vice versa
+	$mapto = defined $params{ 'mapto' } if(defined $params{ 'mapto' });
+
+	if($params { 'gff_version' } == 2)
+	{
+		$attributes_format ='%s %s';
+		$attributes_sep = ' ; ';
+	}
+	else
+	{
+		$attributes_format = '%s=%s';
+		$attributes_sep = ';';
+	}
+}
+
+
+
+
+
+sub main
+{
+	my $in_version = 3;
+	my ($fseq,$fstart,$fend);
+	my $offset;
+
+	get_params();
+
+	my $file = $params { 'file' };
+	open IFILE, $file or die ("cannot open $file");
+
+	while ( <IFILE> )
+	{
+		chomp;
+
+		if(m/^#/)
+		{
+			##gff-version 2
+			##sequence-region AH6 1 37801
+
+
+			if ( m/sequence-region\s(\S+)\s(\d+)\s(\d+)/)
+			{
+				($fseq, $fstart, $fend) = ($1, $2, $3);
+
+				$fseq = $sequence if(defined $sequence);
+
+				$offset = defined $mapto ?  $mapto - $fstart : 0;
+				$fstart += $offset;
+				$fend   += $offset;
+
+				$_ = sprintf("##sequence_region %s %d %d", $fseq, $fstart, $fend);
+			}
+			else
+			{
+#				$in_version = $1 if(m/gff-version\s(\d+)/);
+			}
+		}
+		else
+		{
+			if(defined $offset)
+			{
+				# AH6	accepted_hits	similarity	644	677	.	+	.	.... stuff
+
+				@_ = split /\s+/, $_;		# $_ on whitespace to @_
+
+				$_[0] =  $fseq;
+				$_[3] += $offset;
+				$_[4] += $offset;
+
+				$_ = join '\t', @_;
+			}
+		}
+
+		print $_, "\n";
+	}
+}
+
+main;
+
+__END__
+
+=head1 NAME
+
+zmap_get_bam request data and output as GFF
+
+=head1 SYNOPSIS
+
+zmap_get_bam [--help] [--man] --file=[http:|ftp:]/path/to/file --start=123 --end=456 --source=name --chr=IV [--chr_prefix=CHROMOSOME_] [--gff_version=3] --sequence=GFF_sequence_name [--roman] [--Roman]
+
+=head1 OPTIONS
+
+=over 8
+=item B<-help>
+Print a brief help message and exits.
+=item B<-man>
+Prints the manual page and exits.
+=back
+
+=head1 DESCRIPTION
+
+B<This program> will read the given input file(s) and do someting
+useful with the contents thereof.
+
+
+
