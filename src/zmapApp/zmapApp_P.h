@@ -130,7 +130,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[]) ;
 GtkWidget *zmapMainMakeMenuBar(ZMapAppContext app_context) ;
 GtkWidget *zmapMainMakeConnect(ZMapAppContext app_context, ZMapFeatureSequenceMap sequence_map) ;
 GtkWidget *zmapMainMakeManage(ZMapAppContext app_context) ;
-void zmapAppCreateZMap(ZMapAppContext app_context, ZMapFeatureSequenceMap sequence_map) ;
+gboolean zmapAppCreateZMap(ZMapAppContext app_context, ZMapFeatureSequenceMap sequence_map) ;
 void zmapAppExit(ZMapAppContext app_context) ;
 
 void zmapAppRemoteInstaller(GtkWidget *widget, gpointer app_context_data);
