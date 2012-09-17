@@ -37,7 +37,7 @@
 typedef void (*ZMapControlImportFileCB)(gpointer user_data) ;
 
 void zMapControlImportFile(ZMapControlImportFileCB user_func, gpointer user_data,
-			    ZMapFeatureSequenceMap sequence_map) ;
+			    ZMapFeatureSequenceMap sequence_map, int req_start, int req_end) ;
 
 
 

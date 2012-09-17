@@ -62,6 +62,10 @@ typedef struct MainFrameStructName
   GtkWidget *map_widg ;
   GtkWidget *offset_widg ;
 
+  ZMapFeatureSequenceMap sequence_map;
+  int req_start;
+  int req_end;
+
   ZMapControlImportFileCB user_func ;
   gpointer user_data ;
 } MainFrameStruct, *MainFrame ;
@@ -70,7 +74,7 @@ typedef struct MainFrameStructName
 
 static GtkWidget *makePanel(GtkWidget *toplevel, gpointer *seqdata_out,
 			    ZMapControlImportFileCB user_func, gpointer user_data,
-			    ZMapFeatureSequenceMap sequence_map) ;
+			    ZMapFeatureSequenceMap sequence_map, int req_start, int req_end) ;
 static GtkWidget *makeMainFrame(MainFrame main_frame, ZMapFeatureSequenceMap sequence_map) ;
 static GtkWidget *makeOptionsBox(MainFrame main_frame);
 static GtkWidget *makeButtonBox(MainFrame main_frame) ;
@@ -88,7 +92,7 @@ static void closeCB(GtkWidget *widget, gpointer cb_data) ;
  * with a optional start/end and various mapping parameters
  */
 void zMapControlImportFile(ZMapControlImportFileCB user_func, gpointer user_data,
-			    ZMapFeatureSequenceMap sequence_map)
+			    ZMapFeatureSequenceMap sequence_map, int req_start, int req_end)
 {
   GtkWidget *toplevel, *container ;
   gpointer seq_data = NULL ;
@@ -100,7 +104,7 @@ void zMapControlImportFile(ZMapControlImportFileCB user_func, gpointer user_data
   gtk_window_set_title(GTK_WINDOW(toplevel), "Please choose a file to import.") ;
   gtk_container_border_width(GTK_CONTAINER(toplevel), 0) ;
 
-  container = makePanel(toplevel, &seq_data, user_func, user_data, sequence_map) ;
+  container = makePanel(toplevel, &seq_data, user_func, user_data, sequence_map, req_start, req_end) ;
 
   gtk_container_add(GTK_CONTAINER(toplevel), container) ;
   gtk_signal_connect(GTK_OBJECT(toplevel), "destroy",
@@ -122,7 +126,7 @@ void zMapControlImportFile(ZMapControlImportFileCB user_func, gpointer user_data
 /* Make the whole panel returning the top container of the panel. */
 static GtkWidget *makePanel(GtkWidget *toplevel, gpointer *our_data,
 			    ZMapControlImportFileCB user_func, gpointer user_data,
-			    ZMapFeatureSequenceMap sequence_map)
+			    ZMapFeatureSequenceMap sequence_map, int req_start, int req_end)
 {
   GtkWidget *frame = NULL ;
   GtkWidget *vbox, *main_frame, *button_box, *options_box;
@@ -148,8 +152,15 @@ static GtkWidget *makePanel(GtkWidget *toplevel, gpointer *our_data,
   main_frame = makeMainFrame(main_data, sequence_map) ;
   gtk_box_pack_start(GTK_BOX(vbox), main_frame, TRUE, TRUE, 0) ;
 
-  options_box = makeOptionsBox(main_data) ;
-  gtk_box_pack_start(GTK_BOX(vbox), options_box, TRUE, TRUE, 0) ;
+  main_data->sequence_map = sequence_map;
+  main_data->req_start = req_start;
+  main_data->req_end = req_end;
+
+  if(sequence_map)
+  {
+	options_box = makeOptionsBox(main_data) ;
+	gtk_box_pack_start(GTK_BOX(vbox), options_box, TRUE, TRUE, 0) ;
+  }
 
   button_box = makeButtonBox(main_data) ;
   gtk_box_pack_start(GTK_BOX(vbox), button_box, TRUE, TRUE, 0) ;
@@ -445,16 +456,27 @@ static void importFileCB(GtkWidget *widget, gpointer cb_data)
 	ZMapView view;
 	ZMap zmap = (ZMap) main_frame->user_data;
 
-	zMapWarning("parameters: %s %d %d %s %d %d",sequence,start,end,file_txt,map_seq,seq_offset);
+	view = zMapViewGetView(zmap->focus_viewwindow);
 
-	config_str = g_strdup_printf("[ZMap]\nsources = temp\n\n[temp]\nfeaturesets=\nurl=file:///%s\n",file_txt);
+	if(main_frame->sequence_map && (seq_offset || map_seq))
+	{
+		seq_offset += main_frame->sequence_map->start - 1;
+
+		config_str = g_strdup_printf("[ZMap]\nsources = temp\n\n"
+			"[temp]\nfeaturesets=\nurl=pipe:///zmap_get_gff?--file=%s&--sequence=%s&--mapto=%d&--start=%d&--end=%d\n",
+			file_txt, sequence, seq_offset, main_frame->req_start,  main_frame->req_end);
+	}
+	else
+	{
+		/* don't rely on scripts being available */
+		config_str = g_strdup_printf("[ZMap]\nsources = temp\n\n[temp]\nfeaturesets=\nurl=file:///%s\n",file_txt);
+	}
 
 	servers = zmapViewGetIniSources(NULL, config_str, NULL);
 	zMapAssert(servers);
 
 	server = (ZMapConfigSource) servers->data;
 
-	view = zMapViewGetView(zmap->focus_viewwindow);
 
 	if( !zMapViewRequestServer(view, NULL, NULL, req_featuresets, (gpointer) server, start, end, FALSE, TRUE))
 	{

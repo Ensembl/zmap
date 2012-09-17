@@ -173,21 +173,25 @@ static void importCB(gpointer cb_data, guint callback_action, GtkWidget *window)
 {
   ZMap zmap = (ZMap)cb_data ;
   ZMapViewWindow vw = zmap->focus_viewwindow;
-  ZMapFeatureSequenceMapStruct map;
+  ZMapFeatureSequenceMap map;
   ZMapFeatureSequenceMap view_seq;
+  int start,end;
 
   view_seq = zMapViewGetSequenceMap( zMapViewGetView(vw) );
 
   /* get view sequence and coords */
-  map.start = view_seq->start;
-  map.end = view_seq->end;
-  map.sequence = view_seq->sequence;
+  map = g_new0(ZMapFeatureSequenceMapStruct,1);
+  map->start = view_seq->start;
+  map->end = view_seq->end;
+  map->sequence = view_seq->sequence;
 
   /* limit to mark if set */
-  zMapWindowGetMark(zMapViewGetWindow(vw), &map.start, &map.end);
+  start = view_seq->start;
+  end   = view_seq->end;
+  zMapWindowGetMark(zMapViewGetWindow(vw), &start, &end);
 
   /* need sequence_map to set default seq coords and map sequence name */
-  zMapControlImportFile(importFileCB, cb_data, &map);
+  zMapControlImportFile(importFileCB, cb_data, map, start, end);
 
   return ;
 }
