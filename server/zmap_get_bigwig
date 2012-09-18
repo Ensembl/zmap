@@ -18,7 +18,7 @@ use Bio::Server::BigWig;
 
 # parameters
 my %params = ();
-my @options = qw ( help man gff_version=i chr_prefix=s file=s chr=s start=i end=i source=s strand=s sequence=s roman! Roman! gff_seqname=s );
+my @options = qw ( help man gff_version=i chr_prefix=s file=s chr=s start=i end=i source=s strand=s sequence=s roman! Roman! gff_seqname=s mapto=i);
 # gff_seqname is here for legacy code, we use source instead
 # ZMap will not add it for non otter systems when the code is back in the main branch
 
@@ -73,7 +73,7 @@ sub get_params
 
 sub print_header
 {
-    printf "##gff-version %d\n##sequence-region %s %d %d\n", $params { 'gff_version' }, $params { 'chr' }, $params { 'start' }, $params { 'end' } ;
+    printf "##gff-version %d\n##sequence-region %s %d %d\n", $params { 'gff_version' }, $sequence, $params { 'start' }, $params { 'end' } ;
     return;
 }
 

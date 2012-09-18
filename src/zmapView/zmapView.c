@@ -225,9 +225,9 @@ static gint colOrderCB(gconstpointer a, gconstpointer b,gpointer user_data) ;
 #define DEBUG_CONTEXT_MAP	0
 
 #if DEBUG_CONTEXT_MAP
-static void print_source_2_sourcedata(char * str,GHashTable *data) ;
-static void print_fset2col(char * str,GHashTable *data) ;
-static void print_col2fset(char * str,GHashTable *data) ;
+void print_source_2_sourcedata(char * str,GHashTable *data) ;
+void print_fset2col(char * str,GHashTable *data) ;
+void print_col2fset(char * str,GHashTable *data) ;
 #endif
 
 /* These callback routines are global because they are set just once for the lifetime of the
@@ -3398,12 +3398,11 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 	  }
 
 /* NOTE (mh17)
-	tasked with handling a GFF file from the command line and no config
-	i proposed moving this request logic (from zmapViewLoadFeatures/ createConnection)
-	into a zmapServer file with a view to being able to change the interface more easily.
-	this met with resistance and the plan moved to generating a config file with a perl script
+	tasked with handling a GFF file from the command line and no config..
+	it became clea that this could nto be done simply withotu reading each file twice
+	and the plan moved to generating a config file with a perl script
 	the idea being to read the GFF headers before running ZMap.
-	But servers needed a list of featuresets
+	But servers need a list of featuresets
 	a) so that the request code could work out which servers to use
 	b) so that we could precalculate featureset to column mapping and source to source data mapping
 	(otherwise all data will be ignored and ZMap will abort from several places)
@@ -3411,18 +3410,19 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 	to extract all the featureset names so that we can read the entire file.
 	NB files could be remote which is not ideal, and we expcect some files to be large
 
-	So i adapted the code to have featureset free servers (that can only be requested on startup)
+	So i adapted the code to have featureset free servers
+	(that can only be requested on startup - can't look one up by featureset if it's not defined)
 	and hoped that i'd be able to patch this data in.
 	There is a server protocol step to get featureset names
 	but that would require processing subsequent steps to find out this information and
 	the GFFparser rejects features from sources that have not been preconfigured.
-	ie it's tied up in a knot that cannot be untied.
+	ie it's tied up in a knot
 
 	Several parts of the display code have been patched to make up featureset to columns etc OTF
 	which is in direct confrontation with the design of most of the server and diplay code,
 	which explicitly assumes that this is predefined
 
-	Well it sort of runs but really the server code needs a total rewrite.
+	Well it sort of runs but really the server code needs a rewrite.
  */
 
 #if 0
@@ -5388,7 +5388,7 @@ static gboolean mapEventCB(GtkWidget *widget, GdkEvent *event, gpointer user_dat
 
 #if DEBUG_CONTEXT_MAP
 
-static void print_source_2_sourcedata(char * str,GHashTable *data)
+void print_source_2_sourcedata(char * str,GHashTable *data)
 {
   GList *iter;
   ZMapFeatureSource gff_source;
@@ -5406,7 +5406,7 @@ static void print_source_2_sourcedata(char * str,GHashTable *data)
     }
 }
 
-static void print_fset2col(char * str,GHashTable *data)
+void print_fset2col(char * str,GHashTable *data)
 {
   GList *iter;
   ZMapFeatureSetDesc gff_set;
@@ -5427,7 +5427,7 @@ static void print_fset2col(char * str,GHashTable *data)
     }
 }
 
-static void print_col2fset(char * str,GHashTable *data)
+void print_col2fset(char * str,GHashTable *data)
 {
   GList *iter;
   ZMapFeatureColumn column;

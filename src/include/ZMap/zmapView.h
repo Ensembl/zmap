@@ -233,7 +233,13 @@ void   zMapViewSetWindowList(ZMapViewWindow view_window, GList *list);
 
 ZMapFeatureSequenceMap zMapViewGetSequenceMap(ZMapView zmap_view);
 
+ZMapFeatureSource zMapViewGetFeatureSetSource(ZMapView view, GQuark f_id);
+void zMapViewSetFeatureSetSource(ZMapView view, GQuark f_id, ZMapFeatureSource src);
+
+
+
 GList *zmapViewGetIniSources(char *config_file, char *config_str,char **stylesfile);
+
 
 ZMapViewConnection zMapViewRequestServer(ZMapView view, ZMapViewConnection view_conn, ZMapFeatureBlock block_orig, GList *req_featuresets,
 				   gpointer server, /* ZMapConfigSource */

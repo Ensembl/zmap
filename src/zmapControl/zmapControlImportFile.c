@@ -48,6 +48,7 @@
 #include <ZMap/zmapControlImportFile.h>
 
 
+typedef enum { GFF, BAM, BIGWIG } fileType;
 
 
 /* Data we need in callbacks. */
@@ -57,14 +58,21 @@ typedef struct MainFrameStructName
   GtkWidget *sequence_widg ;
   GtkWidget *start_widg ;
   GtkWidget *end_widg ;
+
   GtkWidget *file_widg ;
+  GtkWidget *req_sequence_widg ;
+  GtkWidget *req_start_widg ;
+  GtkWidget *req_end_widg ;
+  GtkWidget *strand_widg;
+  GtkWidget *source_widg;
+  GtkWidget *style_widg;
 
   GtkWidget *map_widg ;
   GtkWidget *offset_widg ;
 
+  fileType file_type;
+
   ZMapFeatureSequenceMap sequence_map;
-  int req_start;
-  int req_end;
 
   ZMapControlImportFileCB user_func ;
   gpointer user_data ;
@@ -72,11 +80,12 @@ typedef struct MainFrameStructName
 
 
 
+
 static GtkWidget *makePanel(GtkWidget *toplevel, gpointer *seqdata_out,
 			    ZMapControlImportFileCB user_func, gpointer user_data,
 			    ZMapFeatureSequenceMap sequence_map, int req_start, int req_end) ;
 static GtkWidget *makeMainFrame(MainFrame main_frame, ZMapFeatureSequenceMap sequence_map) ;
-static GtkWidget *makeOptionsBox(MainFrame main_frame);
+static GtkWidget *makeOptionsBox(MainFrame main_frame, char *seq, int start, int end);
 static GtkWidget *makeButtonBox(MainFrame main_frame) ;
 
 static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data) ;
@@ -84,7 +93,8 @@ static void importFileCB(GtkWidget *widget, gpointer cb_data) ;
 static void chooseConfigCB(GtkFileChooserButton *widget, gpointer user_data) ;
 static void closeCB(GtkWidget *widget, gpointer cb_data) ;
 
-
+static void fileChangedCB(GtkWidget *widget, gpointer user_data);
+//static void fileChangedCB(GtkWidget *widget, GtkStateType state, gpointer user_data);
 
 
 
@@ -131,6 +141,7 @@ static GtkWidget *makePanel(GtkWidget *toplevel, gpointer *our_data,
   GtkWidget *frame = NULL ;
   GtkWidget *vbox, *main_frame, *button_box, *options_box;
   MainFrame main_data ;
+  char *sequence = "";
 
   main_data = g_new0(MainFrameStruct, 1) ;
 
@@ -153,14 +164,12 @@ static GtkWidget *makePanel(GtkWidget *toplevel, gpointer *our_data,
   gtk_box_pack_start(GTK_BOX(vbox), main_frame, TRUE, TRUE, 0) ;
 
   main_data->sequence_map = sequence_map;
-  main_data->req_start = req_start;
-  main_data->req_end = req_end;
-
   if(sequence_map)
-  {
-	options_box = makeOptionsBox(main_data) ;
-	gtk_box_pack_start(GTK_BOX(vbox), options_box, TRUE, TRUE, 0) ;
-  }
+	sequence = sequence_map->sequence;		/* request defaults to original */
+
+  options_box = makeOptionsBox(main_data, sequence, req_start, req_end) ;
+  gtk_box_pack_start(GTK_BOX(vbox), options_box, TRUE, TRUE, 0) ;
+
 
   button_box = makeButtonBox(main_data) ;
   gtk_box_pack_start(GTK_BOX(vbox), button_box, TRUE, TRUE, 0) ;
@@ -176,7 +185,7 @@ static GtkWidget *makeMainFrame(MainFrame main_frame, ZMapFeatureSequenceMap seq
 {
   GtkWidget *frame ;
   GtkWidget *topbox, *hbox, *entrybox, *labelbox, *entry, *label ;
-  char *sequence = "", *start = "", *end = "", *file = "" ;
+  char *sequence = "", *start = "", *end = "" ;
 
   if (sequence_map)
     {
@@ -188,7 +197,7 @@ static GtkWidget *makeMainFrame(MainFrame main_frame, ZMapFeatureSequenceMap seq
 	end = g_strdup_printf("%d", sequence_map->end) ;
     }
 
-  frame = gtk_frame_new( "Sequence: " );
+  frame = gtk_frame_new( "ZMap Sequence: " );
   gtk_container_border_width(GTK_CONTAINER(frame), 5);
 
   topbox = gtk_vbox_new(FALSE, 5) ;
@@ -216,9 +225,6 @@ static GtkWidget *makeMainFrame(MainFrame main_frame, ZMapFeatureSequenceMap seq
   gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
   gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
 
-  label = gtk_label_new( "File :" ) ;
-  gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
-  gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
 
   /* Entries.... */
   entrybox = gtk_vbox_new(TRUE, 0) ;
@@ -226,23 +232,22 @@ static GtkWidget *makeMainFrame(MainFrame main_frame, ZMapFeatureSequenceMap seq
 
   main_frame->sequence_widg = entry = gtk_entry_new() ;
   gtk_entry_set_text(GTK_ENTRY(entry), sequence) ;
-  gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
+//  gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, TRUE, 0) ;
+  gtk_widget_set_sensitive(GTK_WIDGET(entrybox),FALSE);
 
   main_frame->start_widg = entry = gtk_entry_new() ;
   gtk_entry_set_text(GTK_ENTRY(entry), start) ;
-  gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
+//  gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;
+  gtk_widget_set_sensitive(GTK_WIDGET(entrybox),FALSE);
 
   main_frame->end_widg = entry = gtk_entry_new() ;
   gtk_entry_set_text(GTK_ENTRY(entry), end) ;
-  gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
+//  gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;
+  gtk_widget_set_sensitive(GTK_WIDGET(entrybox),FALSE);
 
-  main_frame->file_widg = entry = gtk_entry_new() ;
-  gtk_entry_set_text(GTK_ENTRY(entry), file) ;
-  gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
-  gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;
 
   /* Free resources. */
   if (sequence_map)
@@ -259,30 +264,138 @@ static GtkWidget *makeMainFrame(MainFrame main_frame, ZMapFeatureSequenceMap seq
 
 
 /* Make the option buttons frame. */
-static GtkWidget *makeOptionsBox(MainFrame main_frame)
+static GtkWidget *makeOptionsBox(MainFrame main_frame, char *req_sequence, int req_start, int req_end)
 {
   GtkWidget *frame ;
-  GtkWidget *options_box, *map_seq_button, *entry, *label ;
+  GtkWidget *map_seq_button, *config_button;
+  GtkWidget *topbox, *hbox, *entrybox, *labelbox, *entry, *label ;
+  char *sequence = "", *start = "", *end = "", *file = "" ;
+  char *home_dir ;
 
-  frame = gtk_frame_new(NULL) ;
+  if (req_sequence)
+    {
+	sequence = req_sequence ;
+      if (req_start)
+		start = g_strdup_printf("%d", req_start) ;
+      if (req_end)
+		end = g_strdup_printf("%d", req_end) ;
+    }
+
+  frame = gtk_frame_new("Request Sequence") ;
   gtk_container_border_width(GTK_CONTAINER(frame), 5) ;
 
-  options_box = gtk_hbutton_box_new() ;
-  gtk_container_border_width(GTK_CONTAINER(options_box), 5) ;
-  gtk_container_add (GTK_CONTAINER (frame), options_box) ;
+  topbox = gtk_vbox_new(FALSE, 5) ;
+  gtk_container_border_width(GTK_CONTAINER(topbox), 5) ;
+  gtk_container_add (GTK_CONTAINER (frame), topbox) ;
+
+  hbox = gtk_hbox_new(FALSE, 0) ;
+  gtk_container_border_width(GTK_CONTAINER(hbox), 0);
+  gtk_box_pack_start(GTK_BOX(topbox), hbox, TRUE, FALSE, 0) ;
 
 
-  main_frame->map_widg = map_seq_button = gtk_check_button_new_with_label ("Map sequence") ;
-  gtk_box_pack_start(GTK_BOX(options_box), map_seq_button, FALSE, TRUE, 0) ;
+  /* Labels..... */
+  labelbox = gtk_vbox_new(TRUE, 0) ;
+  gtk_box_pack_start(GTK_BOX(hbox), labelbox, FALSE, FALSE, 0) ;
 
-  label = gtk_label_new( "Sequence offset:" ) ;
+  /* N.B. we use the gtk "built-in" file chooser stuff. */
+  config_button = gtk_file_chooser_button_new("Choose a File to Import", GTK_FILE_CHOOSER_ACTION_OPEN) ;
+  gtk_signal_connect(GTK_OBJECT(config_button), "file-set",
+		     GTK_SIGNAL_FUNC(chooseConfigCB), (gpointer)main_frame) ;
+  gtk_box_pack_start(GTK_BOX(labelbox), config_button, FALSE, TRUE, 0) ;
+  home_dir = (char *)g_get_home_dir() ;
+  gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(config_button), home_dir) ;
+  gtk_file_chooser_set_show_hidden(GTK_FILE_CHOOSER(config_button), TRUE) ;
+
+
+  label = gtk_label_new( "Sequence :" ) ;
   gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
-  gtk_box_pack_start(GTK_BOX(options_box), label, FALSE, TRUE, 0) ;
+  gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
+
+  label = gtk_label_new( "Start :" ) ;
+  gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
+  gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
+
+  label = gtk_label_new( "End :" ) ;
+  gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
+  gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
+
+  label = gtk_label_new( "Strand :" ) ;
+  gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
+  gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
+
+  label = gtk_label_new( "Source :" ) ;
+  gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
+  gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
+
+  label = gtk_label_new( "Style :" ) ;
+  gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
+  gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
+
+  label = gtk_label_new( "Map Sequence :" ) ;
+  gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
+  gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
+
+  label = gtk_label_new( "Sequence Offset:" ) ;
+  gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
+  gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
+
+
+  /* Entries.... */
+  entrybox = gtk_vbox_new(TRUE, 0) ;
+  gtk_box_pack_start(GTK_BOX(hbox), entrybox, TRUE, TRUE, 0) ;
+
+  main_frame->file_widg = entry = gtk_entry_new() ;
+  gtk_entry_set_text(GTK_ENTRY(entry), file) ;
+  gtk_signal_connect(GTK_OBJECT(entry), "changed",
+		     GTK_SIGNAL_FUNC(fileChangedCB), (gpointer)main_frame) ;
+//  gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
+  gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;
+
+  main_frame->req_sequence_widg = entry = gtk_entry_new() ;
+  gtk_entry_set_text(GTK_ENTRY(entry), sequence) ;
+//  gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
+  gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, TRUE, 0) ;
+
+  main_frame->req_start_widg = entry = gtk_entry_new() ;
+  gtk_entry_set_text(GTK_ENTRY(entry), start) ;
+//  gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
+  gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;
+
+  main_frame->req_end_widg = entry = gtk_entry_new() ;
+  gtk_entry_set_text(GTK_ENTRY(entry), end) ;
+//  gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
+  gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;
+
+  main_frame->strand_widg = entry = gtk_entry_new() ;
+  gtk_entry_set_text(GTK_ENTRY(entry), "") ;
+//  gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
+  gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;
+
+  main_frame->source_widg = entry = gtk_entry_new() ;
+  gtk_entry_set_text(GTK_ENTRY(entry), "") ;
+//  gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
+  gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, TRUE, 0) ;
+
+  main_frame->style_widg = entry = gtk_entry_new() ;
+  gtk_entry_set_text(GTK_ENTRY(entry), "") ;
+//  gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
+  gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, TRUE, 0) ;
+
+
+  main_frame->map_widg = map_seq_button = gtk_check_button_new () ;
+  gtk_box_pack_start(GTK_BOX(entrybox), map_seq_button, FALSE, TRUE, 0) ;
 
   main_frame->offset_widg = entry = gtk_entry_new() ;
   gtk_entry_set_text(GTK_ENTRY(entry), "") ;
-  gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
-  gtk_box_pack_start(GTK_BOX(options_box), entry, FALSE, TRUE, 0) ;
+//  gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
+  gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, TRUE, 0) ;
+
+
+  if (*start)
+	g_free(start) ;
+  if (*end)
+	g_free(end) ;
+
 
   return frame ;
 }
@@ -293,8 +406,7 @@ static GtkWidget *makeOptionsBox(MainFrame main_frame)
 static GtkWidget *makeButtonBox(MainFrame main_frame)
 {
   GtkWidget *frame ;
-  GtkWidget *button_box, *create_button, *config_button, *close_button ;
-  char *home_dir ;
+  GtkWidget *button_box, *create_button, *close_button ;
 
   frame = gtk_frame_new(NULL) ;
   gtk_container_border_width(GTK_CONTAINER(frame), 5) ;
@@ -308,14 +420,6 @@ static GtkWidget *makeButtonBox(MainFrame main_frame)
 		     GTK_SIGNAL_FUNC(importFileCB), (gpointer)main_frame) ;
   gtk_box_pack_start(GTK_BOX(button_box), create_button, FALSE, TRUE, 0) ;
 
-  /* N.B. we use the gtk "built-in" file chooser stuff. */
-  config_button = gtk_file_chooser_button_new("Choose a File to Import", GTK_FILE_CHOOSER_ACTION_OPEN) ;
-  gtk_signal_connect(GTK_OBJECT(config_button), "file-set",
-		     GTK_SIGNAL_FUNC(chooseConfigCB), (gpointer)main_frame) ;
-  gtk_box_pack_start(GTK_BOX(button_box), config_button, FALSE, TRUE, 0) ;
-  home_dir = (char *)g_get_home_dir() ;
-  gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(config_button), home_dir) ;
-  gtk_file_chooser_set_show_hidden(GTK_FILE_CHOOSER(config_button), TRUE) ;
 
   /* Only add a close button and set a default button if this is a standalone dialog. */
   if (main_frame->toplevel)
@@ -365,16 +469,109 @@ static void closeCB(GtkWidget *widget, gpointer cb_data)
 /* Called when user chooses a file via the file dialog. */
 static void chooseConfigCB(GtkFileChooserButton *widget, gpointer user_data)
 {
-  MainFrame main_frame = (MainFrame)user_data ;
-  char *filename ;
+	MainFrame main_frame = (MainFrame) user_data ;
+	char *filename ;
 
-  filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(widget)) ;
+	filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(widget)) ;
 
-  gtk_entry_set_text(GTK_ENTRY(main_frame->file_widg), filename) ;
+	gtk_entry_set_text(GTK_ENTRY(main_frame->file_widg), g_strdup(filename)) ;
 
-  g_free(filename) ;
+	fileChangedCB ( main_frame->file_widg, user_data);
+}
 
-  return ;
+
+static void fileChangedCB(GtkWidget *widget, gpointer user_data)
+{
+	MainFrame main_frame = (MainFrame) user_data ;
+	char *filename ;
+	char *extent;
+	fileType file_type = GFF;
+	char *source_txt = NULL;
+	char *style_txt = NULL;
+	ZMapFeatureSource src;
+	ZMapView view;
+	ZMap zmap = (ZMap) main_frame->user_data;
+
+
+	view = zMapViewGetView(zmap->focus_viewwindow);
+
+	filename = (char *) gtk_entry_get_text(GTK_ENTRY(widget)) ;
+
+	extent = filename + strlen(filename);
+	while(*extent != '.' && extent > filename)
+		extent--;
+	if(!g_ascii_strcasecmp(extent,".bam"))
+		file_type = BAM;
+	else if(!g_ascii_strcasecmp(extent,".bigwig"))
+		file_type = BIGWIG;
+
+	main_frame->file_type = file_type;
+
+	if(file_type == GFF)
+	{
+		gtk_widget_set_sensitive(main_frame->strand_widg,FALSE);
+		gtk_widget_set_sensitive(main_frame->source_widg,FALSE);
+		gtk_widget_set_sensitive(main_frame->style_widg,FALSE);
+	}
+	else
+	{
+		char *name = extent;
+
+		while(name > filename && *name != '/')
+			name--;
+		if(*name == '/')
+			name++;
+		source_txt = g_strdup_printf("%.*s",extent - name,name);
+
+		gtk_entry_set_text(GTK_ENTRY(main_frame->source_widg), source_txt) ;
+
+		gtk_widget_set_sensitive(main_frame->strand_widg, file_type == BIGWIG ? TRUE : FALSE);
+		gtk_widget_set_sensitive(main_frame->source_widg,TRUE);
+		gtk_widget_set_sensitive(main_frame->style_widg,TRUE);
+	}
+
+	if(file_type == BAM)
+	{
+		/* add featureset_2_style entry to the view */
+		GQuark f_id;
+
+		f_id = zMapFeatureSetCreateID("BAM");
+		src = zMapViewGetFeatureSetSource(view, f_id);
+		if(src)
+		{
+			style_txt = g_strdup_printf("%s",g_quark_to_string(src->style_id));
+			gtk_entry_set_text(GTK_ENTRY(main_frame->style_widg), style_txt) ;
+//			src->is_seq = TRUE;
+		}
+	}
+
+	if(file_type == BIGWIG)
+	{
+		/* add featureset_2_style entry to the view */
+		GQuark f_id;
+		char * strand_txt;
+
+		f_id = zMapFeatureSetCreateID("bigWig");
+		src = zMapViewGetFeatureSetSource(view, f_id);
+		if(src)
+		{
+			style_txt = g_strdup_printf("%s",g_quark_to_string(src->style_id));
+			gtk_entry_set_text(GTK_ENTRY(main_frame->style_widg), style_txt) ;
+//			src->is_seq = TRUE;
+		}
+
+		strand_txt = g_strstr_len(filename,-1,"inus") ? "-" : "+";		/* encode has 'Minus' */
+		gtk_entry_set_text(GTK_ENTRY(main_frame->strand_widg), strand_txt) ;
+
+	}
+
+//	g_free(filename) ;
+//	if(source_txt)
+//		g_free(source_txt);
+//	if(style_txt)
+//		g_free(style_txt);
+
+	return ;
 }
 
 
@@ -393,16 +590,30 @@ static void importFileCB(GtkWidget *widget, gpointer cb_data)
   MainFrame main_frame = (MainFrame)cb_data ;
   gboolean status = TRUE ;
   char *err_msg = NULL ;
-  char *sequence = "", *start_txt, *end_txt, *file_txt, *offset_txt ;
+  char *sequence = "", *start_txt, *end_txt, *file_txt, *req_start_txt, *req_end_txt, *offset_txt, *source_txt, *style_txt, *strand_txt ;
   int start = 1, end = 0 ;
   gboolean map_seq = FALSE;
   int seq_offset = 0;
+  char *req_sequence;
+  int req_start, req_end;
+  fileType file_type = main_frame->file_type;
+  ZMapView view;
+  ZMap zmap = (ZMap) main_frame->user_data;
+  int strand = 0;
+
+  view = zMapViewGetView(zmap->focus_viewwindow);
 
   /* Note gtk_entry returns the empty string "" _not_ NULL when there is no text. */
   sequence = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->sequence_widg)) ;
   start_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->start_widg)) ;
   end_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->end_widg)) ;
+
   file_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->file_widg)) ;
+  req_sequence = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->req_sequence_widg)) ;
+  req_start_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->req_start_widg)) ;
+  req_end_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->req_end_widg)) ;
+  source_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->source_widg)) ;
+  style_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->style_widg)) ;
 
   offset_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->offset_widg)) ;
 
@@ -411,7 +622,9 @@ static void importFileCB(GtkWidget *widget, gpointer cb_data)
       status = FALSE ;
       err_msg = "Please choose a file to import." ;
     }
- else if (*sequence && *start_txt && *end_txt)
+ else
+ {
+    if (*sequence && *start_txt && *end_txt)
     {
       if (status)
 	{
@@ -432,6 +645,34 @@ static void importFileCB(GtkWidget *widget, gpointer cb_data)
 	}
     }
 
+    if (*req_sequence && *req_start_txt && *req_end_txt)
+    {
+      if (status)
+	{
+	  if (!(*req_start_txt) || !zMapStr2Int(req_start_txt, &req_start) || req_start < 1)
+	    {
+	      status = FALSE ;
+	      err_msg = "Invalid request start specified." ;
+	    }
+	}
+
+      if (status)
+	{
+	  if (!(*req_end_txt) || !zMapStr2Int(req_end_txt, &req_end) || req_end <= start)
+	    {
+	      status = FALSE ;
+	      err_msg = "Invalid request end specified." ;
+	    }
+	}
+    }
+    else
+    {
+		status = FALSE;
+		err_msg = "Please specify request sequence start and end";
+    }
+
+ }
+
   if(status)
   {
 	if ((*offset_txt) && !zMapStr2Int(offset_txt, &seq_offset))
@@ -441,7 +682,23 @@ static void importFileCB(GtkWidget *widget, gpointer cb_data)
 		}
 
 	map_seq = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON(main_frame->map_widg));
+
+	if(main_frame->file_type == BIGWIG)
+	{
+		strand_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->strand_widg)) ;
+		while(*strand_txt  && *strand_txt <= ' ')
+			strand_txt++;
+		strand = (*strand_txt == '-') ? -1 : (*strand_txt == '+') ? 1 : 0;
+		if(!strand)
+		{
+			status = FALSE ;
+			err_msg = "Strand must be + or -";
+		}
+	}
   }
+
+
+
 
   if (!status)
     {
@@ -453,30 +710,71 @@ static void importFileCB(GtkWidget *widget, gpointer cb_data)
 	GList * servers;
 	ZMapConfigSource server;
 	GList *req_featuresets = NULL;
-	ZMapView view;
-	ZMap zmap = (ZMap) main_frame->user_data;
 
-	view = zMapViewGetView(zmap->focus_viewwindow);
 
+#if USE_FILE
 	if(main_frame->sequence_map && (seq_offset || map_seq))
 	{
-		seq_offset += main_frame->sequence_map->start - 1;
+#endif
+	if(main_frame->sequence_map && (seq_offset || map_seq))
+		seq_offset += main_frame->sequence_map->start;
 
+	if(file_type != GFF)
+	{
+		/* add featureset_2_style entry to the view */
+		ZMapFeatureSource src;
+		GQuark f_id;
+
+		f_id = zMapFeatureSetCreateID(source_txt);
+		src = zMapViewGetFeatureSetSource(view, f_id);
+		if(!src)
+		{
+			src = g_new0(ZMapFeatureSourceStruct,1);
+			src->source_text = g_quark_from_string(source_txt);
+			src->source_id = f_id;
+			zMapViewSetFeatureSetSource(view, f_id, src);
+		}
+
+		src->style_id = zMapStyleCreateID(style_txt);
+		src->is_seq = TRUE;
+	}
+
+	switch(file_type)
+	{
+	case GFF:
 		config_str = g_strdup_printf("[ZMap]\nsources = temp\n\n"
 			"[temp]\nfeaturesets=\nurl=pipe:///zmap_get_gff?--file=%s&--sequence=%s&--mapto=%d&--start=%d&--end=%d\n",
-			file_txt, sequence, seq_offset, main_frame->req_start,  main_frame->req_end);
+			file_txt, sequence, seq_offset, req_start,  req_end);
+		break;
+	case BAM:
+
+		config_str = g_strdup_printf("[ZMap]\nsources = temp\n\n"
+			"[temp]\nfeaturesets=\nurl=pipe:///zmap_get_bam?--file=%s&--sequence=%s&--mapto=%d&--start=%d&--end=%d&--chr=%s&--source=%s\n",
+			file_txt, sequence, seq_offset, req_start,  req_end, req_sequence, source_txt);
+		break;
+	case BIGWIG:
+		config_str = g_strdup_printf("[ZMap]\nsources = temp\n\n"
+			"[temp]\nfeaturesets=\nurl=pipe:///zmap_get_bigwig?--file=%s&--sequence=%s&--mapto=%d&--start=%d&--end=%d&--chr=%s&--source=%s&--strand=%d\n",
+			file_txt, sequence, seq_offset, req_start,  req_end, req_sequence, source_txt, strand);
+		break;
+	}
+#if USE_FILE
+		// out GFF parser will reject files that have data outside our sequence
+		// so this will not be much use in a general sense
+		// we need to use a script to filter the source file
+		// better to fix the gff parser & server protiocol
+		//, but that involves some quite tedious coding
 	}
 	else
 	{
 		/* don't rely on scripts being available */
 		config_str = g_strdup_printf("[ZMap]\nsources = temp\n\n[temp]\nfeaturesets=\nurl=file:///%s\n",file_txt);
 	}
-
+#endif
 	servers = zmapViewGetIniSources(NULL, config_str, NULL);
 	zMapAssert(servers);
 
 	server = (ZMapConfigSource) servers->data;
-
 
 	if( !zMapViewRequestServer(view, NULL, NULL, req_featuresets, (gpointer) server, start, end, FALSE, TRUE))
 	{
@@ -484,6 +782,7 @@ static void importFileCB(GtkWidget *widget, gpointer cb_data)
 	}
 
 	zMapConfigSourcesFreeList(servers);
+
 	g_free(config_str);
     }
   return ;

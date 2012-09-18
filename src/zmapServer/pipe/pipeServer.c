@@ -222,9 +222,9 @@ static gboolean createConnection(void **server_out,
   server = (PipeServer)g_new0(PipeServerStruct, 1) ;
   *server_out = (void *)server ;
 
-  getConfiguration(server);	// get scripts directory
-
   server->config_file = g_strdup(config_file) ;
+
+  getConfiguration(server);	// get scripts directory
 
   server->scheme = url->scheme;
 

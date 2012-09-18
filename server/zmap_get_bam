@@ -19,7 +19,7 @@ use Bio::Server::BAM;
 
 # parameters
 my %params = ();
-my @options = qw ( help! man! gff_version=i chr_prefix=s file=s chr=s start=i end=i source=s sequence=s roman! Roman! gff_seqname=s );
+my @options = qw ( help! man! gff_version=i chr_prefix=s file=s chr=s start=i end=i source=s sequence=s roman! Roman! gff_seqname=s mapto=i);
 # gff_seqname is here for legacy code, we use source instead
 # ZMap will not add it for non otter systems when the code is back in the main branch
 my @required = qw ( file chr start end source );

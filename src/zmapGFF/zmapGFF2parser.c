@@ -2114,7 +2114,7 @@ static gboolean getFeatureName(NameFindType name_find, char *sequence, char *att
 	    }
 	}
     }
-  else if (name_find != NAME_USE_GIVEN_OR_NAME)	/* chicken: for BAM we have a basic feature with name so let's dobge this in */
+  else if (name_find != NAME_USE_GIVEN_OR_NAME)	/* chicken: for BAM we have a basic feature with name so let's bodge this in */
     {
       char *tag_pos ;
 
@@ -2259,6 +2259,18 @@ static gboolean getFeatureName(NameFindType name_find, char *sequence, char *att
 
     }
 
+	/* mh17: catch all to create names for totally anonymous features
+	 * me, i'd review all the stuff above and simplify it...
+	 * use case in particular is bigwig OTF request from File menu, we get a basic feature with no name (if we don'tl specify a style)
+	 * normally they'd be graph features which somehow ends up with a made up name
+	 * also fixes RT 238732
+	 */
+	if(!*feature_name_id)
+	{
+		*feature_name = g_strdup(sequence) ;
+		*feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
+						   start, end, query_start, query_end) ;
+	}
 
   return has_name ;
 }
