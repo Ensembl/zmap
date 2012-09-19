@@ -746,24 +746,26 @@ static void importFileCB(GtkWidget *widget, gpointer cb_data)
 			"[temp]\nfeaturesets=\nurl=pipe:///zmap_get_gff?--file=%s&--sequence=%s&--mapto=%d&--start=%d&--end=%d\n",
 			file_txt, sequence, seq_offset, req_start,  req_end);
 		break;
-	case BAM:
 
+	case BAM:
 		config_str = g_strdup_printf("[ZMap]\nsources = temp\n\n"
 			"[temp]\nfeaturesets=\nurl=pipe:///zmap_get_bam?--file=%s&--sequence=%s&--mapto=%d&--start=%d&--end=%d&--chr=%s&--source=%s\n",
 			file_txt, sequence, seq_offset, req_start,  req_end, req_sequence, source_txt);
 		break;
+
 	case BIGWIG:
 		config_str = g_strdup_printf("[ZMap]\nsources = temp\n\n"
 			"[temp]\nfeaturesets=\nurl=pipe:///zmap_get_bigwig?--file=%s&--sequence=%s&--mapto=%d&--start=%d&--end=%d&--chr=%s&--source=%s&--strand=%d\n",
 			file_txt, sequence, seq_offset, req_start,  req_end, req_sequence, source_txt, strand);
 		break;
 	}
+
 #if USE_FILE
-		// out GFF parser will reject files that have data outside our sequence
+		// our GFF parser will reject files that have data outside our sequence
 		// so this will not be much use in a general sense
 		// we need to use a script to filter the source file
-		// better to fix the gff parser & server protiocol
-		//, but that involves some quite tedious coding
+		// better to fix the gff parser & server protocol
+		// but that involves some quite tedious coding
 	}
 	else
 	{
