@@ -36,7 +36,6 @@ typedef enum
  {
    ZMAPMANAGER_ADD_INVALID,
    ZMAPMANAGER_ADD_OK,					    /* Add succeeded, zmap connected. */
-   ZMAPMANAGER_ADD_NOTCONNECTED,			    /* ZMap added but connect failed. */
    ZMAPMANAGER_ADD_FAIL,				    /* ZMap could not be added. */
    ZMAPMANAGER_ADD_DISASTER				    /* There has been a serious error,
 							       caller should abort. */
@@ -68,7 +67,8 @@ typedef struct
 
 void zMapManagerInit(ZMapManagerCallbacks callbacks) ;
 ZMapManager zMapManagerCreate(void *gui_data) ;
-ZMapManagerAddResult zMapManagerAdd(ZMapManager zmaps, ZMapFeatureSequenceMap sequence_map, ZMap *zmap_out) ;
+ZMapManagerAddResult zMapManagerAdd(ZMapManager zmaps, ZMapFeatureSequenceMap sequence_map, ZMap *zmap_out,
+				    gboolean load_view) ;
 guint zMapManagerCount(ZMapManager zmaps);
 gboolean zMapManagerReset(ZMap zmap) ;
 gboolean zMapManagerRaise(ZMap zmap) ;

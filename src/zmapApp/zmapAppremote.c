@@ -105,6 +105,16 @@ static char *actions_G[ZMAPAPP_REMOTE_UNKNOWN + 1] = {
   NULL, "new_zmap", "shutdown", NULL
 };
 
+
+
+gboolean xremote_debug_GG = TRUE ;
+
+
+/* 
+ *                   External routines.
+ */
+
+
 /* Installs the handlers to monitor/handle requests to/from an external program. */
 void zmapAppRemoteInstaller(GtkWidget *widget, gpointer app_context_data)
 {
@@ -218,6 +228,10 @@ static char *application_execute_command(char *command_text, gpointer app_contex
       goto HAVE_RESPONSE;
     }
 
+
+  zMapDebugPrint(xremote_debug_GG, "ZMap App Remote Handler: %s",  command_text) ; 
+
+
   parser = zMapXMLParserCreate(&request_data, FALSE, cmd_debug);
 
   zMapXMLParserSetMarkupObjectTagHandlers(parser, start_handlers_G, end_handlers_G);
@@ -232,10 +246,13 @@ static char *application_execute_command(char *command_text, gpointer app_contex
       switch(request_data.action)
         {
         case ZMAPAPP_REMOTE_OPEN_ZMAP:
+
           createZMap(app_context_data, &request_data, &response_data);
-          if(app_context->info)
+          if (app_context->info)
             response_data.code = app_context->info->code;
+
           break;
+
         case ZMAPAPP_REMOTE_CLOSE_ZMAP:
 	  {
 	    guint handler_id ;
@@ -293,19 +310,25 @@ static void createZMap(ZMapAppContext app, RequestData request_data, ResponseCon
   char *sequence = g_strdup(g_quark_to_string(request_data->sequence));
   ZMapFeatureSequenceMap seq_map = g_new0(ZMapFeatureSequenceMapStruct,1);
 
-      /* MH17: this is a bodge FTM, we need a dataset XRemote field as well */
-      // default sequence may be NULL
-  if(app->default_sequence)
-        seq_map->dataset = app->default_sequence->dataset;
+  /* MH17: this is a bodge FTM, we need a dataset XRemote field as well */
+  // default sequence may be NULL
+  if (app->default_sequence)
+    seq_map->dataset = app->default_sequence->dataset;
   seq_map->sequence = sequence;
   seq_map->start = request_data->start;
   seq_map->end = request_data->end;
 
-  zmapAppCreateZMap(app, seq_map) ;
+  if (zmapAppCreateZMap(app, seq_map))
+    {
+      response_data->handled = TRUE ;
+      g_string_append_printf(response_data->message, "%s", app->info->message) ;
+    }
+  else
+    {
+      response_data->handled = FALSE ;
+      g_string_append_printf(response_data->message, "%s", "zmap create failed.") ;
+    }
 
-  response_data->handled = TRUE;
-  /* that screwy rabbit */
-  g_string_append_printf(response_data->message, "%s", app->info->message);
 
   /* Clean up. */
 //  if (sequence)

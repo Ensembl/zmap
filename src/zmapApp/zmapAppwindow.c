@@ -282,16 +282,15 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
   /* show default sequence is based on whether or not we are controlled via XRemote
    *
-   * Some work will be needed here with the new xremote....as the sequence won't
-   * be in the config file.
    */
 
-  /* NOTE i tried making acopy of this to prevent a crash on shutdown inside localtime();
+  /* NOTE i tried making a copy of this to prevent a crash on shutdown inside localtime();
    * on the assumpiton that there was some memory corruption
    * as runnign zmap without a default sequence works
    * can't see what other difference there could be
-   * run the sam efuile by adding file and sequence to the main window and it's fine
+   * run the same file by adding file and sequence to the main window and it's fine
    * spend more than a day on this ....
+   * -> it was zMapConfigDirDestroy that did the bad free
    */
   if (seq_map->sequence && !zMapCmdLineArgsValue(ZMAPARG_WINDOW_ID, NULL))
   {
@@ -1018,24 +1017,10 @@ static gboolean checkSequenceArgs(int argc, char *argv[],
 				  ZMapFeatureSequenceMap seq_map_inout, char **err_msg_out)
 {
   gboolean result = FALSE ;
-  char *source = NULL ;
 
-
-  /* Check command line first, calls will exit if there is a problem. */
+  /* Check command line first, calls will exit if there is a problem if flag is completely wrong. */
   checkForCmdLineSequenceArg(argc, argv, &seq_map_inout->dataset, &seq_map_inout->sequence);
   checkForCmdLineStartEndArg(argc, argv, &seq_map_inout->start, &seq_map_inout->end) ;
-
-  /* Nothing specified on command line so check config file. */
-  if (!(seq_map_inout->sequence) && !(seq_map_inout->start) && !(seq_map_inout->end))
-    {
-      zMapAppGetSequenceConfig(seq_map_inout) ;
-
-      source = "config file" ;
-    }
-  else
-    {
-      source = "command line" ;
-    }
 
   /* Everything must be specified or nothing. */
   if ((seq_map_inout->sequence && seq_map_inout->start && seq_map_inout->end)
@@ -1046,8 +1031,9 @@ static gboolean checkSequenceArgs(int argc, char *argv[],
   else
     {
       result = FALSE ;
-      *err_msg_out = g_strdup_printf("Bad sequence args in %s, you must specify a sequence start and end.",
-				     source) ;
+      *err_msg_out = g_strdup_printf("Bad sequence args in command line: %s",
+				     (!seq_map_inout->sequence ? "no sequence name"
+				      : (seq_map_inout->start <= 1 ? "start less than 1" : "end less than start"))) ;
     }
 
   return result ;

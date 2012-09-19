@@ -20,8 +20,8 @@
  * This file is part of the ZMap genome database package
  * and was written by
  *     Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk and,
- *          Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
- *       Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *       Roy Storey (Sanger Institute, UK) rnc@sanger.ac.uk,
+ *  Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Handles a list of zmaps which it can delete and add
  *              to.
@@ -32,13 +32,9 @@
 
 #include <ZMap/zmap.h>
 
-
-
-
-
-
 #include <ZMap/zmapUtils.h>
 #include <zmapManager_P.h>
+
 
 
 static void destroyedCB(ZMap zmap, void *cb_data) ;
@@ -104,10 +100,16 @@ ZMapManager zMapManagerCreate(void *gui_data)
  * Policy is:
  *
  * If no connection can be made for the view then the zmap is destroyed,
- * if any connection succeeds then the zmap is added but errors are reported,
- * if sequence is NULL a blank zmap is created.
+ * if any connection succeeds then the zmap is added but errors are reported.
+ * 
+ * sequence_map is assumed to be filled in correctly.
+ * 
+ * 
+ * load_view is a hack that can go once the new view stuff is here...
+ * 
  *  */
-ZMapManagerAddResult zMapManagerAdd(ZMapManager zmaps, ZMapFeatureSequenceMap sequence_map, ZMap *zmap_out)
+ZMapManagerAddResult zMapManagerAdd(ZMapManager zmaps, ZMapFeatureSequenceMap sequence_map, ZMap *zmap_out,
+				    gboolean load_view)
 {
   ZMapManagerAddResult result = ZMAPMANAGER_ADD_FAIL ;
   ZMap zmap = NULL ;
@@ -117,16 +119,14 @@ ZMapManagerAddResult zMapManagerAdd(ZMapManager zmaps, ZMapFeatureSequenceMap se
 
   if ((zmap = zMapCreate((void *)zmaps, sequence_map)))
     {
-      if (!sequence_map->sequence)
+      if (!load_view)
 	{
-	  /* No sequence so just add blank zmap. */
-	  result = ZMAPMANAGER_ADD_NOTCONNECTED ;
+	  result = ZMAPMANAGER_ADD_OK ;
 	}
       else
 	{
 	  /* Try to load the sequence. */
-	  if ((view = zMapAddView(zmap, sequence_map))
-	      && zMapConnectView(zmap, view))
+	  if ((view = zMapAddView(zmap, sequence_map)) && zMapConnectView(zmap, view))
 	    {
 	      result = ZMAPMANAGER_ADD_OK ;
 	    }
@@ -141,7 +141,7 @@ ZMapManagerAddResult zMapManagerAdd(ZMapManager zmaps, ZMapFeatureSequenceMap se
 	}
     }
 
-  if (result == ZMAPMANAGER_ADD_OK || result == ZMAPMANAGER_ADD_NOTCONNECTED)
+  if (result == ZMAPMANAGER_ADD_OK)
     {
       zmaps->zmap_list = g_list_append(zmaps->zmap_list, zmap) ;
       *zmap_out = zmap ;

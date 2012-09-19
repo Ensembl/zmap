@@ -522,6 +522,30 @@ void zmapControlResetCB(ZMap zmap)
   return ;
 }
 
+/* Inserts a view into an existing zmap and returns that view, on error returns NULL
+ * and an error message in err_msg which the caller should free with g_free.
+ * Note this call only creates the window and tells the view to connect, the connection
+ * may fail some time later resulting in the view being removed. */
+ZMapView zmapControlInsertView(ZMap zmap, ZMapFeatureSequenceMap sequence_map, char **err_msg)
+{
+  ZMapView view = NULL ;
+
+  if ((view = zmapControlAddView(zmap, sequence_map)))
+    {
+      if (!zMapViewConnect(view, NULL))
+	{
+	  *err_msg = g_strdup_printf("Display of sequence \"%s\" failed, see log for details.",
+				     sequence_map->sequence) ;
+
+	  zMapViewDestroy(view) ;
+
+	  view = NULL ;
+	}
+    }
+
+  return view ;
+}
+
 
 
 

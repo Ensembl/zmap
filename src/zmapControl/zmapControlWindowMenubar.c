@@ -541,15 +541,12 @@ static void makeSequenceViewCB(ZMapFeatureSequenceMap seq_map, gpointer user_dat
 {
   ZMap zmap = (ZMap)user_data ;
   ZMapView view ;
+  char *err_msg = NULL ;
 
-  if ((view = zmapControlAddView(zmap, seq_map)))
+  if (!(view = zmapControlInsertView(zmap, seq_map, &err_msg)))
     {
-      if (!zMapViewConnect(view, NULL))
-	{
-	  zMapWarning("Display of sequence \"%s\" failed, see log for details.", seq_map->sequence) ;
-
-	  zMapViewDestroy(view) ;
-	}
+      zMapWarning("%", err_msg) ;
+      g_free(err_msg) ;
     }
 
   return ;

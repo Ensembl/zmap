@@ -61,45 +61,82 @@ GtkWidget *zmapMainMakeConnect(ZMapAppContext app_context, ZMapFeatureSequenceMa
 }
 
 
-/* sequence etc can be unspecified to create a blank zmap. */
-void zmapAppCreateZMap(ZMapAppContext app_context, ZMapFeatureSequenceMap sequence_map)
+/* Sequence must be fully specified in seq_map as sequence/start/end 
+ * 
+ * and config_file....investigate more thoroughly....probably needs setting....
+ * check in debugger.....
+ * 
+ * Returns TRUE if sequence correctly specified or no sequence at all specified,
+ * only returns FALSE if sequence incorrectly specified.
+ * 
+ * 
+ *  */
+gboolean zmapAppCreateZMap(ZMapAppContext app_context, ZMapFeatureSequenceMap seq_map)
 {
+  gboolean result = FALSE ;
   ZMap zmap ;
-  GtkTreeIter iter1;
   ZMapManagerAddResult add_result ;
 
-  add_result = zMapManagerAdd(app_context->zmap_manager, sequence_map, &zmap) ;
-  if (add_result == ZMAPMANAGER_ADD_DISASTER)
+  /* Nothing specified on command line so check config file. */
+  if (!(seq_map->sequence) && !(seq_map->start) && !(seq_map->end))
+    zMapAppGetSequenceConfig(seq_map) ;
+
+
+  /* Everything must be specified or nothing otherwise it's an error. */
+  if (seq_map->sequence && seq_map->start && seq_map->end)
     {
-      zMapWarning("%s", "Failed to create ZMap and then failed to clean up properly,"
-                  " save your work and exit now !") ;
+      gboolean load_view = TRUE ;
+
+      /* Hack...we need to make sure manager does _NOT_ load the view with the old xremote. */
+      if (app_context->xremote_client)
+	load_view = FALSE ;
+
+
+      add_result = zMapManagerAdd(app_context->zmap_manager, seq_map, &zmap, load_view) ;
+      if (add_result == ZMAPMANAGER_ADD_DISASTER)
+	{
+	  zMapWarning("%s", "Failed to create ZMap and then failed to clean up properly,"
+		      " save your work and exit now !") ;
+	}
+      else if (add_result == ZMAPMANAGER_ADD_FAIL)
+	{
+	  zMapWarning("%s", "Failed to create ZMap") ;
+	}
+      else
+	{
+	  GtkTreeIter iter1 = {0} ;
+
+	  gtk_tree_store_append(app_context->tree_store_widg, &iter1, NULL) ;
+	  gtk_tree_store_set(app_context->tree_store_widg, &iter1,
+			     ZMAPID_COLUMN, zMapGetZMapID(zmap),
+			     ZMAPSEQUENCE_COLUMN,"<dummy>" ,
+			     ZMAPSTATE_COLUMN, zMapGetZMapStatus(zmap),
+			     ZMAPLASTREQUEST_COLUMN, "blah, blah, blaaaaaa",
+			     ZMAPDATA_COLUMN, (gpointer)zmap,
+			     -1) ;
+
+#ifdef RDS_NEVER_INCLUDE_THIS_CODE
+	  zMapDebug("GUI: create thread number %d for zmap \"%s\" for sequence \"%s\"\n",
+		    (row + 1), row_text[0], row_text[1]) ;
+#endif /* RDS_NEVER_INCLUDE_THIS_CODE */
+
+	  result = TRUE ;
+	}
     }
-  else if (add_result == ZMAPMANAGER_ADD_FAIL)
+  else if (!(seq_map->sequence) && !(seq_map->start) && !(seq_map->end))
     {
-      zMapWarning("%s", "Failed to create ZMap") ;
+      result = TRUE ;
     }
   else
     {
-      /* If we tried to load a sequence but couldn't connect then warn user, otherwise
-       * we just created the requested blank zmap. */
-      if (sequence_map->sequence && add_result == ZMAPMANAGER_ADD_NOTCONNECTED)
-	zMapWarning("%s", "ZMap added but could not connect to server, try \"Reload\".") ;
+      result = FALSE ;
 
-      gtk_tree_store_append (app_context->tree_store_widg, &iter1, NULL);
-      gtk_tree_store_set (app_context->tree_store_widg, &iter1,
-                          ZMAPID_COLUMN, zMapGetZMapID(zmap),
-                          ZMAPSEQUENCE_COLUMN,"<dummy>" ,
-                          ZMAPSTATE_COLUMN, zMapGetZMapStatus(zmap),
-                          ZMAPLASTREQUEST_COLUMN, "blah, blah, blaaaaaa",
-                          ZMAPDATA_COLUMN, (gpointer)zmap,
-                          -1);
-#ifdef RDS_NEVER_INCLUDE_THIS_CODE
-      zMapDebug("GUI: create thread number %d for zmap \"%s\" for sequence \"%s\"\n",
-                (row + 1), row_text[0], row_text[1]) ;
-#endif /* RDS_NEVER_INCLUDE_THIS_CODE */
+      zMapWarning("Sequence not specified properly: %s",
+		  (!seq_map->sequence ? "no sequence name"
+		   : (seq_map->start <= 1 ? "start less than 1" : "end less than start"))) ;
     }
 
-  return ;
+  return result ;
 }
 
 

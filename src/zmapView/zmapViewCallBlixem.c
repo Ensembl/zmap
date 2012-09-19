@@ -607,7 +607,16 @@ gboolean zmapViewCallBlixem(ZMapView view,
   freeBlixemData(&blixem_data) ;
 
   if (!status)
-    zMapShowMsg(ZMAP_MSG_WARNING, err_msg) ;
+    {
+      zMapShowMsg(ZMAP_MSG_WARNING, err_msg) ;
+    }
+  else
+    {
+      /* N.B. we block for a couple of seconds here to make sure user can see message. */
+      zMapGUIShowMsgFull(NULL, "blixem launched and will display shortly.",
+			 ZMAP_MSG_EXIT,
+			 GTK_JUSTIFY_CENTER, 3, FALSE) ;
+    }
 
   return status ;
 }
