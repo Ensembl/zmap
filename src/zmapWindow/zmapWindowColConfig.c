@@ -1221,7 +1221,8 @@ static GtkWidget *deferred_cols_panel(NotebookPage notebook_page,
 
 		col_id = zMapFeatureSetCreateID(column_name);
 
-		force_mark = zMapFeatureIsCoverageColumn(window->context_map,col_id);
+// not needed now
+//		force_mark = zMapFeatureIsCoverageColumn(window->context_map,col_id);
 
             deferred_radio_buttons(button_box, col_id, loaded_in_mark,
 				     &all, &mark, &none);

@@ -110,7 +110,7 @@ static char *actions_G[ZMAPAPP_REMOTE_UNKNOWN + 1] = {
 gboolean xremote_debug_GG = TRUE ;
 
 
-/* 
+/*
  *                   External routines.
  */
 
@@ -229,7 +229,7 @@ static char *application_execute_command(char *command_text, gpointer app_contex
     }
 
 
-  zMapDebugPrint(xremote_debug_GG, "ZMap App Remote Handler: %s",  command_text) ; 
+  zMapDebugPrint(xremote_debug_GG, "ZMap App Remote Handler: %s",  command_text) ;
 
 
   parser = zMapXMLParserCreate(&request_data, FALSE, cmd_debug);
@@ -321,7 +321,8 @@ static void createZMap(ZMapAppContext app, RequestData request_data, ResponseCon
   if (zmapAppCreateZMap(app, seq_map))
     {
       response_data->handled = TRUE ;
-      g_string_append_printf(response_data->message, "%s", app->info->message) ;
+	if(app->info)
+		g_string_append_printf(response_data->message, "%s", app->info->message) ;
     }
   else
     {

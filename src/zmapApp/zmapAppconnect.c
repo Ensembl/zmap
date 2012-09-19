@@ -45,7 +45,7 @@ static void createThreadCB(ZMapFeatureSequenceMap sequence_map, gpointer user_da
 
 
 
-/* 
+/*
  *                 External interface.
  */
 
@@ -53,7 +53,7 @@ GtkWidget *zmapMainMakeConnect(ZMapAppContext app_context, ZMapFeatureSequenceMa
 {
   GtkWidget *frame ;
 
-  
+
   frame = zMapCreateSequenceViewWidg(createThreadCB, app_context, sequence_map) ;
 
 
@@ -61,15 +61,15 @@ GtkWidget *zmapMainMakeConnect(ZMapAppContext app_context, ZMapFeatureSequenceMa
 }
 
 
-/* Sequence must be fully specified in seq_map as sequence/start/end 
- * 
+/* Sequence must be fully specified in seq_map as sequence/start/end
+ *
  * and config_file....investigate more thoroughly....probably needs setting....
  * check in debugger.....
- * 
+ *
  * Returns TRUE if sequence correctly specified or no sequence at all specified,
  * only returns FALSE if sequence incorrectly specified.
- * 
- * 
+ *
+ *
  *  */
 gboolean zmapAppCreateZMap(ZMapAppContext app_context, ZMapFeatureSequenceMap seq_map)
 {
@@ -83,13 +83,15 @@ gboolean zmapAppCreateZMap(ZMapAppContext app_context, ZMapFeatureSequenceMap se
 
 
   /* Everything must be specified or nothing otherwise it's an error. */
-  if (seq_map->sequence && seq_map->start && seq_map->end)
+//  if (seq_map->sequence && seq_map->start && seq_map->end)
     {
       gboolean load_view = TRUE ;
 
       /* Hack...we need to make sure manager does _NOT_ load the view with the old xremote. */
+	if (!seq_map->sequence || !seq_map->start || !seq_map->end)
+		load_view = FALSE;
       if (app_context->xremote_client)
-	load_view = FALSE ;
+		load_view = FALSE ;
 
 
       add_result = zMapManagerAdd(app_context->zmap_manager, seq_map, &zmap, load_view) ;
@@ -123,6 +125,7 @@ gboolean zmapAppCreateZMap(ZMapAppContext app_context, ZMapFeatureSequenceMap se
 	  result = TRUE ;
 	}
     }
+#if 0
   else if (!(seq_map->sequence) && !(seq_map->start) && !(seq_map->end))
     {
       result = TRUE ;
@@ -135,6 +138,7 @@ gboolean zmapAppCreateZMap(ZMapAppContext app_context, ZMapFeatureSequenceMap se
 		  (!seq_map->sequence ? "no sequence name"
 		   : (seq_map->start <= 1 ? "start less than 1" : "end less than start"))) ;
     }
+#endif
 
   return result ;
 }
