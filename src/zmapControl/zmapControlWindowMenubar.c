@@ -188,7 +188,13 @@ static void importCB(gpointer cb_data, guint callback_action, GtkWidget *window)
   /* limit to mark if set */
   start = view_seq->start;
   end   = view_seq->end;
-  zMapWindowGetMark(zMapViewGetWindow(vw), &start, &end);
+
+  zMapWindowGetMark(zMapViewGetWindow(vw), &start, &end);	/* NOTE we get -fsd coords from this function if revcomped */
+
+  if(start < 0)
+	start = -start;
+  if(end < 0)
+	end = -end;
 
   /* need sequence_map to set default seq coords and map sequence name */
   zMapControlImportFile(importFileCB, cb_data, map, start, end);
