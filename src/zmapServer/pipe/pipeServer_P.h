@@ -73,6 +73,7 @@ typedef struct _PipeServerStruct
 
   ZMapFeatureSequenceMap sequence_map;
   gboolean sequence_server;
+  gboolean is_otter;
 
   GHashTable *source_2_sourcedata;  // mapping data as per config file
   GHashTable *featureset_2_column;

@@ -1350,17 +1350,23 @@ static FooCanvasGroup *find_or_create_column(ZMapCanvasData  canvas_data,
   /* MH17: map feature sets from context to canvas columns
    * refer to zmapGFF2parser.c/makeNewFeature()
    */
-  zMapAssert(window->context_map->featureset_2_column); /* will always be but let's play safe */
+//  zMapAssert(window->context_map->featureset_2_column); /* will always be but let's play safe */
+// except to handle autoconfigured servers we have to make this up
+  if(!window->context_map->featureset_2_column)
+	  window->context_map->featureset_2_column = g_hash_table_new(NULL,NULL);
+
   {
     ZMapFeatureSetDesc set_data ;
 
-    if ((set_data = g_hash_table_lookup(window->context_map->featureset_2_column,
-					GUINT_TO_POINTER(feature_set_id))))
-      {
+    set_data = g_hash_table_lookup(window->context_map->featureset_2_column, GUINT_TO_POINTER(feature_set_id));
+    zMapAssert(set_data);
+
+    zMapAssert(window->context_map->columns);
+	{
 	column_id = set_data->column_id;      /* the display column as a key */
 	display_id = set_data->column_ID;
 	f_col = g_hash_table_lookup(window->context_map->columns,GUINT_TO_POINTER(column_id));
-      }
+	}
     /* else we use the original feature_set_id
        which should never happen as the view creates a 1-1 mapping regardless */
   }
@@ -1922,6 +1928,44 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
             /* for special columns eg locus we may not have a mapping */
             style = zMapWindowGetColumnStyle(window,feature_set->unique_id);
 	  }
+#if 0
+// moved to justMergeContext() in zmapView: needed earlier on
+
+	if(!style)
+	{
+		/* for autoconfigured columns we have to patch up a few data structs
+		 * that are needed by various bits of code scattered all over the place
+		 * that are assumed to have been set up before requesting the data
+		 * and they are assumed to have been copied to some other place at some time
+		 * in between startup, requesting data, getting data and displaying it
+		 *
+		 * what's below is in repsonse to whatever errors and assertions happened
+		 * it's called 'design by experiment'
+		 */
+		style = feature_set->style;	/* eg for an auto configured featureset with a default style */
+		/* also set up column2styles */
+		if(style)
+		{
+			ZMapFeatureColumn f_col;
+
+			/* createColumnFull() needs a style table, although the error is buried in zmapWindowUtils.c */
+			zMap_g_hashlist_insert(window->context_map->column_2_styles,
+				       feature_set->unique_id,     // the column
+				       GUINT_TO_POINTER(style->unique_id)) ;  // the style
+
+
+			/* find_or_create_column() needs f_col->style */
+			f_col = g_hash_table_lookup(window->context_map->columns,GUINT_TO_POINTER(feature_set->unique_id));
+			if(f_col)
+			{
+				if(!f_col->style)
+					f_col->style = style;
+				if(!f_col->style_table)
+					f_col->style_table = g_list_append(f_col->style_table, (gpointer) style);
+			}
+		}
+	}
+#endif
 	if(!style)
 	  {
             zMapLogCritical("no column style for featureset \"%s\"\n",g_quark_to_string(feature_set->unique_id));
@@ -1931,7 +1975,7 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 
 	if(!feature_set->style)		/* eg from a featureset with no features.... how can it exist?  */
 	{
-		/* mh17: it's very odd. this has suddently started crashing using data that used to work */
+		/* mh17: it's very odd. this has suddenly started crashing using data that used to work */
 		/* maybe we could look up the style in window->context_map->source_to_sourcedata
 		  and then go looking for the style but this should have been done already ?? */
 		feature_set->style = style;

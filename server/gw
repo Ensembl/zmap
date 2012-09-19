@@ -1,0 +1,7 @@
+#!/bin/bash
+
+. ./zmap_proxy.sh
+. ./zmap_perl.sh
+
+./zmap_get_bam --file=ftp://ftp.sanger.ac.uk/pub2/wormbase/STAFF/klh/accepted_hits.bam --start=1 --end=37801 --chr=4 --roman --chr_prefix=CHROMOSOME_ --source=accepted_hits --gff_version=3 --sequence=AH6
+

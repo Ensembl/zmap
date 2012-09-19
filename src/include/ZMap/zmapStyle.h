@@ -996,6 +996,7 @@ ZMAP_ENUM_AS_EXACT_STRING_DEC(zmapStyleBlixemType2ExactStr,     ZMapStyleBlixemT
 
 
 ZMAP_ENUM_TO_SHORT_TEXT_DEC(zmapStyleBumpMode2ShortText, ZMapStyleBumpMode) ;
+ZMAP_ENUM_AS_NAME_STRING_DEC(zmapStyleMode2ShortText, ZMapStyleMode) ;
 
 
 
@@ -1253,6 +1254,7 @@ gboolean zMapStyleCopyAllStyles(GHashTable *style_set, GHashTable **copy_style_s
 gboolean zMapStyleInheritAllStyles(GHashTable *style_set) ;
 gboolean zMapStyleNameExists(GList *style_name_list, char *style_name) ;
 ZMapFeatureTypeStyle zMapFindStyle(GHashTable *styles, GQuark style_id) ;
+ZMapFeatureTypeStyle zMapFindFeatureStyle(GHashTable *styles, GQuark style_id, ZMapStyleMode type);
 GList *zMapStylesGetNames(GHashTable *styles) ;
 GHashTable *zMapStyleGetAllPredefined(void) ;
 GHashTable *zMapStyleMergeStyles(GHashTable *curr_styles, GHashTable *new_styles, ZMapStyleMergeMode merge_mode) ;

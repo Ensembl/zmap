@@ -1,0 +1,8 @@
+#!/bin/bash
+
+. ./zmap_proxy.sh
+. ./zmap_perl.sh
+
+./zmap_get_bam --file=http://hgdownload-test.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeCshlLongRnaSeq/releaseLatest/wgEncodeCshlLongRnaSeqH1hescCellPapAlnRep1.bam --start=85591570 --end=87672398 --chr=chr16 --source=Tier1_H1-hESC_cell_longPolyA_rep1 --sequence=chr16-03
+
+

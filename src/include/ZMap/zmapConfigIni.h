@@ -142,8 +142,9 @@ GList *zMapConfigIniContextGetSources(ZMapConfigIniContext context) ;
 GList *zMapConfigIniContextGetNamed(ZMapConfigIniContext context, char *stanza_name) ;
 GList *zMapConfigIniContextGetStyleList(ZMapConfigIniContext context, char *styles_list_in);
 
+GHashTable * zmapConfigIniGetDefaultStyles(void);
 gboolean zMapConfigIniGetStylesFromFile(char *config_file,
-					char *styles_list, char *styles_file, GHashTable **styles_out);
+					char *styles_list, char *styles_file, GHashTable **styles_out, char *buffer);
 GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context,GHashTable *hash,GHashTable *columns);
 GHashTable *zMapConfigIniGetGlyph(ZMapConfigIniContext context);
 

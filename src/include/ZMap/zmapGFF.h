@@ -75,6 +75,7 @@ gboolean zMapGFFParserSetSequenceFlag(ZMapGFFParser parser);
 ZMapSequence zMapGFFGetSequence(ZMapGFFParser parser);
 void zMapGFFParseSetSourceHash(ZMapGFFParser parser,
 			       GHashTable *source_2_feature_set, GHashTable *source_2_sourcedata) ;
+void zMapGFFSetDefaultToBasic(ZMapGFFParser parser, gboolean default_to_basic);
 void zMapGFFSetStopOnError(ZMapGFFParser parser, gboolean stop_on_error) ;
 void zMapGFFSetParseOnly(ZMapGFFParser parser, gboolean parse_only) ;
 void zMapGFFSetSOCompliance(ZMapGFFParser parser, gboolean SO_compliant) ;

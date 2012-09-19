@@ -132,11 +132,11 @@ GList *zMapViewMaskFeatureSets(ZMapView view, GList *new_feature_set_names)
 	  continue;
 	}
 
-      style =  zMapFindStyle(view->context_map.styles,src2src->style_id);
+      style =  zMapFindStyle(view->context_map.styles, src2src->style_id);
 
       if (!style)
 	{
-	  zMapLogWarning("zMapFeatureMaskFeatureSets() cannot find style for %s", g_quark_to_string(GPOINTER_TO_UINT(fset->data)));
+	  zMapLogWarning("zMapFeatureMaskFeatureSets() cannot find style %s for %s", g_quark_to_string(src2src->style_id), g_quark_to_string(GPOINTER_TO_UINT(fset->data)));
 	  continue;
 	}
 

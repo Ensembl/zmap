@@ -1366,6 +1366,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
   GQuark clone_id = 0, source_id = 0 ;
   GQuark SO_acc = 0 ;
   char *name_string = NULL, *variation_string = NULL ;
+  ZMapFeatureSource source_data ;
 
   /* If the parser was given a source -> data mapping then
    * use that to get the style id and other
@@ -1373,24 +1374,35 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
    */
   if (parser->source_2_sourcedata)
     {
-      ZMapFeatureSource source_data ;
+	source_id = zMapFeatureSetCreateID(source);
 
-
-      if (!(source_data = g_hash_table_lookup(parser->source_2_sourcedata,
-					      GINT_TO_POINTER(zMapFeatureSetCreateID(source)))))
+      if (!(source_data = g_hash_table_lookup(parser->source_2_sourcedata,GINT_TO_POINTER(source_id))))
 	{
+#if 0
 	  *err_text = g_strdup_printf("feature ignored, could not find data for source \"%s\".", source) ;
 	  result = FALSE ;
 
 	  return result ;
-	}
-      else
-	{
-	  feature_style_id = zMapStyleCreateID((char *)g_quark_to_string(source_data->style_id)) ;
+#else
+		/* need to invent this for autoconfigured servers */
+	source_data = g_new0(ZMapFeatureSourceStruct,1);
+	source_data->source_id = source_id;
+	source_data->source_text = source_id;
 
-	  source_id = source_data->source_id ;
-	  source_text = (char *)g_quark_to_string(source_data->source_text) ;
+	/* this is the same hash owned by the view & window */
+	g_hash_table_insert(parser->source_2_sourcedata,GINT_TO_POINTER(source_id), source_data);
+#endif
 	}
+
+	if(source_data->style_id)
+		feature_style_id = zMapStyleCreateID((char *) g_quark_to_string(source_data->style_id)) ;
+	else
+		feature_style_id = zMapStyleCreateID((char *) g_quark_to_string(source_data->source_id)) ;
+
+	source_id = source_data->source_id ;
+	source_text = (char *)g_quark_to_string(source_data->source_text) ;
+
+	source_data->style_id = feature_style_id;
     }
   else
     {
@@ -1499,18 +1511,28 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
   if(!(feature_style = (ZMapFeatureTypeStyle)
        g_hash_table_lookup(parser_feature_set->feature_styles,GUINT_TO_POINTER(feature_style_id))))
     {
-      if(!(feature_style = zMapFindStyle(parser->sources, feature_style_id)))
-        {
-          *err_text = g_strdup_printf("feature ignored, could not find style \"%s\" for feature set \"%s\".",
-				      g_quark_to_string(feature_style_id), feature_set_name) ;
-	  result = FALSE ;
+      if(!(feature_style = zMapFindFeatureStyle(parser->sources, feature_style_id, feature_type)))
+	{
+		feature_style_id = g_quark_from_string(zmapStyleMode2ShortText(feature_type)) ;
+	}
 
-          return result ;
-        }
+      if(!(feature_style = zMapFindFeatureStyle(parser->sources, feature_style_id, feature_type)))
+	   {
+		*err_text = g_strdup_printf("feature ignored, could not find style \"%s\" for feature set \"%s\".",
+					g_quark_to_string(feature_style_id), feature_set_name) ;
+		result = FALSE ;
+
+		return result ;
+	   }
+
+	if(source_data)
+		source_data->style_id = feature_style_id;
 
       g_hash_table_insert(parser_feature_set->feature_styles,GUINT_TO_POINTER(feature_style_id),(gpointer) feature_style);
       /* printf("using feature style %s @%p for %s\n",g_quark_to_string(feature_style->unique_id),feature_style, feature_set_name);*/
 
+	if(source_data && feature_style->unique_id != feature_style_id)
+		source_data->style_id = feature_style->unique_id;		// mapped to generic style ??
     }
 
   /* with one type of feature in a featureset this should be ok */
@@ -2092,7 +2114,7 @@ static gboolean getFeatureName(NameFindType name_find, char *sequence, char *att
 	    }
 	}
     }
-  else if (name_find != NAME_USE_GIVEN_OR_NAME)	/* chicken: for BAM we have a basic feature with name so let's dobge this in */
+  else if (name_find != NAME_USE_GIVEN_OR_NAME)	/* chicken: for BAM we have a basic feature with name so let's bodge this in */
     {
       char *tag_pos ;
 
@@ -2237,6 +2259,18 @@ static gboolean getFeatureName(NameFindType name_find, char *sequence, char *att
 
     }
 
+	/* mh17: catch all to create names for totally anonymous features
+	 * me, i'd review all the stuff above and simplify it...
+	 * use case in particular is bigwig OTF request from File menu, we get a basic feature with no name (if we don'tl specify a style)
+	 * normally they'd be graph features which somehow ends up with a made up name
+	 * also fixes RT 238732
+	 */
+	if(!*feature_name_id)
+	{
+		*feature_name = g_strdup(sequence) ;
+		*feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
+						   start, end, query_start, query_end) ;
+	}
 
   return has_name ;
 }

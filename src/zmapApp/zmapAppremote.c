@@ -331,8 +331,8 @@ static void createZMap(ZMapAppContext app, RequestData request_data, ResponseCon
 
 
   /* Clean up. */
-  if (sequence)
-    g_free(sequence) ;
+//  if (sequence)
+//	g_free(sequence) ;
 
   return ;
 }

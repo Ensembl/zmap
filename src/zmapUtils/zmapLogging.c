@@ -884,7 +884,7 @@ static gboolean closeLogFile(ZMapLog log)
 
 
 /* Write out a start or stop record. */
-static void writeStartOrStopMessage(gboolean start)
+static void writeStartOrStopMessage(int start)
 {
   char *time_str ;
 
@@ -896,7 +896,6 @@ static void writeStartOrStopMessage(gboolean start)
 
   return ;
 }
-
 
 
 

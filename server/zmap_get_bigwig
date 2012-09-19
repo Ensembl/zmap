@@ -1,0 +1,210 @@
+#!/usr/bin/env perl
+
+# copied from Otterlace script bam_get_align and ammedned by mh17 to be otterlace free
+# you do however have to provide Bio::DB::Sam, i'm using the otterlace build for testing
+
+use strict;
+use warnings;
+
+use Carp;
+use Getopt::Long 'GetOptions';
+use Pod::Usage;
+
+use URI::Escape qw(uri_unescape);
+
+use Bio::DB::BigWig;
+use Bio::Server::BigWig;
+
+
+# parameters
+my %params = ();
+my @options = qw ( help man gff_version=i chr_prefix=s file=s chr=s start=i end=i source=s strand=s sequence=s roman! Roman! gff_seqname=s mapto=i);
+# gff_seqname is here for legacy code, we use source instead
+# ZMap will not add it for non otter systems when the code is back in the main branch
+
+my @required = qw ( file chr start end source strand );
+
+my $attributes_format;
+my $strands = { 1  => '+', -1 => '-' };
+my $sequence;
+my $strand_field;
+my $source;
+
+
+sub get_params
+{
+ 	# defaults
+	$params {'gff_version'} = 2;		# default for now as ZMap doesn't do v3 yet
+	$params {'chr_prefix'} = '';
+
+	GetOptions(\%params, @options ) or pod2usage(2);
+
+	pod2usage(1) if defined $params { 'help' };
+	pod2usage(-exitstatus => 0, -verbose => 2) if defined $params {'man'} ;
+
+	my $missing = 0;
+	foreach my $param (@required)
+	{
+		if (!defined $params { $param })
+		{
+			print "$param not specified\n";
+			$missing++;
+		}
+	}
+	pod2usage(1) if $missing;
+
+	$strand_field = ( $params { 'strand' } == 1 ) ? '+' : ( $params { 'strand' } == -1 ) ? '-' : '.';
+
+	$params { 'chr' } = Roman($params { 'chr' }) if(defined $params { 'Roman' });
+	$params { 'chr' } = roman($params { 'chr' }) if(defined $params { 'roman' });
+
+	if(defined $params { 'sequence' })
+	{
+		$sequence = $params { 'sequence' };
+	}
+	else
+	{
+		$sequence = $params {'chr_prefix'} . $params {'chr'};
+	}
+
+	$attributes_format = $params { 'gff_version' } == 3 ? '%s=%s' : '%s %s';
+}
+
+
+sub print_header
+{
+    printf "##gff-version %d\n##sequence-region %s %d %d\n", $params { 'gff_version' }, $sequence, $params { 'start' }, $params { 'end' } ;
+    return;
+}
+
+
+sub gff_escape {
+    # escapes a minimal set of characters
+    s/([\t\r\n[:cntrl:];=%&])/sprintf "%%%02X", ord($1)/eg;
+    return;
+}
+
+sub gff_escape_seqid {
+    # escapes everything except a restricted set of characters
+    s/([^-a-zA-Z0-9.:^*$@!+_?|])/sprintf "%%%02X", ord($1)/eg;
+    return;
+}
+
+sub gff_escape_source {
+    # escapes everything except a restricted set of characters
+    s/([^-a-zA-Z0-9.:^*$@!+_? ])/sprintf "%%%02X", ord($1)/eg;
+    return;
+}
+
+sub gff_escape_attribute {
+    # like gff_escape, but escapes commas too
+    s/([\t\r\n[:cntrl:];=%&,])/sprintf "%%%02X", ord($1)/eg;
+    return;
+}
+
+sub gff_escape_target {
+    # like gff_escape, but escapes commas and spaces too
+    s/([\t\r\n[:cntrl:];=%&, ])/sprintf "%%%02X", ord($1)/eg;
+    return;
+}
+
+
+sub print_feature {
+    my ($feature, $start, $end) = @_;
+
+    my @fields =
+        (
+         'region',
+         (sprintf "%d", $start),
+         (sprintf "%d", $end),
+         abs($feature->score),
+         $strand_field,
+         '.', # phase, undefined
+         '', # attributes, empty
+        );
+
+    gff_escape for @fields;
+    printf "%s\n", join "\t", $sequence, $params { 'source' }, @fields;
+
+    return;
+}
+
+
+
+=begin comment
+
+# get the mapping from the Otter server
+my $client = Bio::Otter::Lace::Defaults::make_Client();
+my $mapping_xml = $client->otter_response_content(
+    'GET', 'get_mapping', {
+        dataset => $dataset,
+        cs      => $csver,
+        chr     => $chr,
+        start   => $start,
+        end     => $end,
+    });
+my $mapping = Bio::Otter::Mapping->new_from_xml($mapping_xml);
+
+# map and print the features
+_print_header;
+$mapping->do_features($bam_fetch, $start, $end, \&_print_feature);
+
+=cut
+
+
+sub main
+{
+	get_params();
+
+	my $chr = $params { 'chr_prefix' } . $params { 'chr' } ;
+	gff_escape_seqid for $sequence;
+
+	$source = $params { 'source' };
+	gff_escape_source for $source;
+
+	my $bigwig = Bio::DB::BigWig->new( -bigwig => $params { 'file'} );
+	my $bigwig_fetch = Bio::Server::BigWig->new( -bigwig => $bigwig );
+
+	# map first then request.... move this to inside the mapping function
+	my $features = $bigwig_fetch->features ( $chr, $params { 'start' },  $params { 'end' } );
+
+# if it's a ref
+#	printf "found %d matches\n", scalar @{$$features}  ;
+	printf STDERR "found %d matches\n", scalar @{$features}  ;
+
+	print_header();
+
+	foreach my $feat (@{$features})
+	{
+		print_feature($feat, $feat->start, $feat->end );
+	}
+}
+
+main;
+
+__END__
+
+=head1 NAME
+
+zmap_get_bigwig request coverage data and output as GFF
+
+=head1 SYNOPSIS
+
+zmap_get_bigwig [--help] [--man] --file=[http:|ftp:]/path/to/file --start=123 --end=456 --source=name --chr=IV [--chr_prefix=CHROMOSOME_] --strand=1 [--gff_version=3]  [--roman] [--Roman]
+
+=head1 OPTIONS
+
+=over 8
+=item B<-help>
+Print a brief help message and exits.
+=item B<-man>
+Prints the manual page and exits.
+=back
+
+=head1 DESCRIPTION
+
+B<This program> will read the given input file(s) and do someting
+useful with the contents thereof.
+=cut
+
+

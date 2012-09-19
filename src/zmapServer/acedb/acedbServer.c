@@ -647,7 +647,11 @@ static ZMapServerResponseType getStyles(void *server_in, GHashTable **styles_out
     {
       if (parseTypes(server, styles_out, NULL, NULL))
 	{
-	  result = ZMAP_SERVERRESPONSE_OK ;
+				/* if reading from a file these will be inherited as is */
+		if(!zMapStyleInheritAllStyles(*styles_out))
+			zMapLogWarning("%s", "There were errors in inheriting styles.") ;
+
+		result = ZMAP_SERVERRESPONSE_OK ;
 	}
       else
 	{
@@ -1383,6 +1387,9 @@ static gboolean sequenceRequest(DoAllAlignBlocks get_features, ZMapFeatureBlock 
 
 				       server->zmap_start, server->zmap_end) ;
 	  zMapGFFParserInitForFeatures(parser, styles, FALSE) ;
+
+        zMapGFFSetDefaultToBasic(parser, TRUE);
+
 
 	  if (server->has_new_tags)
 	    {

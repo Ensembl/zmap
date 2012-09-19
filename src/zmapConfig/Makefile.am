@@ -12,6 +12,11 @@ zmapConfigIni.c \
 zmapConfigIni_P.h \
 zmapConfigKey.c \
 zmapConfigLoader.c \
+default_styles.c\
+default_styles.txt\
+gen_default\
 $(NULL)
 
 libZMapConfig_la_CFLAGS = $(INCLUDE_COMMON)
+
+# refer to main src/Makefile.am default-style

@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -30,6 +30,8 @@
  *              provided by the caller to get the sequence displayed.
  *
  * Exported functions: See ZMap/zmapAppServices.h
+ *
+ * NOTE this file has been copied and used as a basis for zmapControlImportFile.c
  *-------------------------------------------------------------------
  */
 
@@ -111,7 +113,7 @@ GtkWidget *zMapCreateSequenceViewWidg(ZMapAppGetSequenceViewCB user_func, gpoint
 }
 
 
-/* 
+/*
  *                   Internal routines.
  */
 
@@ -317,7 +319,7 @@ static void closeCB(GtkWidget *widget, gpointer cb_data)
 
 
 /* Called when user chooses a file via the file dialog. */
-static void chooseConfigCB(GtkFileChooserButton *widget, gpointer user_data)  
+static void chooseConfigCB(GtkFileChooserButton *widget, gpointer user_data)
 {
   MainFrame main_frame = (MainFrame)user_data ;
   char *filename ;
@@ -333,13 +335,13 @@ static void chooseConfigCB(GtkFileChooserButton *widget, gpointer user_data)
 
 
 /* Ok...check the users entries and then call the callback function provided.
- * 
+ *
  * Note that valid entries are:
- * 
- *       sequence & start & end with optional config file 
- * 
+ *
+ *       sequence & start & end with optional config file
+ *
  *       config file (which contains sequence, start, end)
- * 
+ *
  *  */
 static void createViewCB(GtkWidget *widget, gpointer cb_data)
 {
@@ -411,15 +413,16 @@ static void createViewCB(GtkWidget *widget, gpointer cb_data)
 
       seq_map = g_new0(ZMapFeatureSequenceMapStruct,1) ;
 
+	seq_map->config_file = config_txt ;
+
       if (*sequence)
 	{
 	  sequence_ok = TRUE ;
 	  seq_map->sequence = sequence ;
 	  seq_map->start = start ;
 	  seq_map->end = end ;
-	  seq_map->config_file = config_txt ;
 	}
-      else 
+      else
 	{
 	  if (!(sequence_ok = zMapAppGetSequenceConfig(seq_map)))
 	    {

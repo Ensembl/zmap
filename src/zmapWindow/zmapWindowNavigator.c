@@ -1817,6 +1817,7 @@ static gboolean idle_resize_widget_cb(gpointer navigate_data)
   GtkWidget *widget;
 
   g_return_val_if_fail(navigate->locator != NULL, FALSE);
+  g_return_val_if_fail(navigate->locator->canvas != NULL, FALSE);	/* race condition on adding loacator? */
 
   widget = GTK_WIDGET( navigate->locator->canvas );
 

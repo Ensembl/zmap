@@ -1,0 +1,98 @@
+#!/usr/bin/env perl
+# list sequences stored in BAM file
+
+use strict;
+use warnings;
+
+use Carp;
+use Getopt::Long 'GetOptions';
+use Pod::Usage;
+
+use URI::Escape qw(uri_unescape);
+
+use Bio::DB::Sam;
+use Bio::Server::BAM;
+
+
+# parameters
+my %params = ();
+my @options = qw ( help man );
+my @required = ( );
+
+
+sub get_params
+{
+	GetOptions(\%params, @options ) or pod2usage(2);
+
+	pod2usage(1) if defined $params { 'help' };
+	pod2usage(-exitstatus => 0, -verbose => 2) if defined $params {'man'} ;
+
+	my $missing = 0;
+	foreach my $param (@required)
+	{
+		if (!defined $params { $param })
+		{
+			print "$param not specified\n";
+			$missing++;
+		}
+	}
+	pod2usage(1) if $missing;
+
+	$params{$_} = uri_unescape($params{$_}) for keys %params;
+}
+
+
+sub main
+{
+	get_params();
+
+	my $n_files = scalar @ARGV;
+
+	foreach my $file (@ARGV)
+	{
+		my $sam = Bio::DB::Sam->new
+		(
+			-bam   => uri_unescape( $file ),	# unescape probably not needed, was copied from other script
+			# -fasta => $fasta_path,
+		);
+
+		printf("%s:\n", $file) if($n_files > 1);
+
+		my $n_sequences = $sam->n_targets;
+		printf("%s sequences\n", $n_sequences);
+
+		my @sequences = $sam->seq_ids;
+		foreach my $seq (sort @sequences)
+		{
+			printf("%s\t%d\n", $seq,  $sam->length($seq));
+		}
+	}
+}
+
+main();
+
+
+=head1 NAME
+
+zmap_get_bam request data and output as GFF
+
+=head1 SYNOPSIS
+
+zmap_get_bam_sequences [--help] [--man] --file=[http:|ftp:]/path/to/file
+
+=head1 OPTIONS
+
+=over 8
+=item B<-help>
+Print a brief help message and exits.
+=item B<-man>
+Prints the manual page and exits.
+=back
+
+=head1 DESCRIPTION
+
+B<This program> will read the given input file and list the reference sequences within
+=cut
+
+
+

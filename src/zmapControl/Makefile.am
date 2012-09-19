@@ -6,6 +6,7 @@ SUBDIRS = .
 noinst_LTLIBRARIES = libZMapControl.la
 
 libZMapControl_la_SOURCES = zmapControl.c \
+zmapControlImportFile.c\
 zmapControlNavigator.c \
 zmapControlPreferences.c \
 zmapControlRemoteReceive.c \
