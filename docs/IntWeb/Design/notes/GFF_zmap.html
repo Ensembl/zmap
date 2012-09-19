@@ -185,5 +185,17 @@ and adjusting others such as
 </p>
 
 
+<h3>A simpler approach to implementation</h3>
+<p>It was decided that too much effort would be required to do the above and the following was done instead:
+<ul>
+<li> A perl script has been written to read GFF file headers and generate ZMap configuration. Note that this breaks the previous objective of having one executable and a configuration free environment.  However it could be recoded in C (or run via a child process from ZMap) if this proves to be important.  There is an advantage in being able to adjust a script easily.
+<li> GFF parser code and view display code  has been modified to adjust automatically to handle unconfigured featuresets (as otherwise it would be necessary to read each file twice).  Currently the source code is based on the assumption that several sets of configuration data are pre-defined and this solution is a quite ad-hoc.
+<li> default styles have been implemented and these need to be adjusted to have colours chosen from a palette or by a user dialog
+<li> Reading a file via the window menu will display a dialog which will allow the user to enter file names and sequence information, which can default to the current view settings.  Options will be provided to translate sequence names in the GFF to allow data from different sources to be used.  Coordinate mapping (eg from 1-based to chromosome) may be allowed. Data in a file is assumed to be from different tracks from those already in the sessions and in case of collision featureset names will be made unique.  Data outside the view's sequence range will be ignored - the file menu will know the current view implicitly.
+<li> The information in the user dialog will be used to generate a 'micro configuration' file in memory and fed to the server modules via the existing configuration code.
+<li> BAM and BigWig files wil be read in using a similar process using different parameters as necessary.  Note that we will have to provide some way to extract sequence names from BAM files to allow these to be mapped (eg 'CHROMOSOVE_IV' to 'chr-4').  A perl script already exists (zmap_bam_get_sequence) to do this and either the user will be asked to operate this and enter the data manually (first implementation) or it can be run as a child process and the output used to create a drop down menu.
+</ul>
+
+
 
 
