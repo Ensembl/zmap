@@ -1,4 +1,3 @@
-/*  Last edited: Jul 12 08:18 2011 (edgrif) */
 /*  File: zmapWindowMenus.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -30,6 +29,20 @@
  *
  *-------------------------------------------------------------------
  */
+
+
+/* PLEASE READ:
+ * 
+ * This file is a unification of code that was scattered and replicated
+ * in a number of files. The unification is not complete, itemMenuCB()
+ * needs merging with other callbacks to remove all duplication and
+ * there is further simplification to be done as there used to be
+ * completely separate code to service the feature menu as opposed
+ * to the column menu.
+ * 
+ *  */
+
+
 
 #include <ZMap/zmap.h>
 
@@ -701,56 +714,6 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 
   switch (menu_item_id)
     {
-    case ITEM_MENU_LIST_ALL_FEATURES:
-      {
-	ZMapWindowFToISetSearchData search_data = NULL;
-	ZMapStrand set_strand ;
-	ZMapFrame set_frame ;
-	gboolean result ;
-
-	result = zmapWindowItemGetStrandFrame(menu_data->item, &set_strand, &set_frame) ;
-	zMapAssert(result) ;
-
-	search_data = zmapWindowFToISetSearchCreate(zmapWindowFToIFindItemSetFull, NULL,
-						    feature->parent->parent->parent->unique_id,
-						    feature->parent->parent->unique_id,
-						    menu_data->container_set->unique_id,
-						    0,
-						    g_quark_from_string("*"),
-						    zMapFeatureStrand2Str(set_strand),
-						    zMapFeatureFrame2Str(set_frame));
-
-	zmapWindowListWindow(menu_data->window,
-			     menu_data->item,
-			     (char *)g_quark_to_string(feature->parent->original_id),
-			     NULL, NULL,
-			     menu_data->window->context_map,
-			     (ZMapWindowListSearchHashFunc)zmapWindowFToISetSearchPerform, search_data,
-			     (GDestroyNotify)zmapWindowFToISetSearchDestroy, zoom_to_item) ;
-	break ;
-      }
-    case ITEM_MENU_LIST_NAMED_FEATURES:
-      {
-	ZMapWindowFToISetSearchData search_data = NULL;
-	ZMapStrand set_strand ;
-	ZMapFrame set_frame ;
-	gboolean result ;
-
-	result = zmapWindowItemGetStrandFrame(menu_data->item, &set_strand, &set_frame) ;
-	zMapAssert(result) ;
-
-	search_data = zmapWindowFToISetSearchCreate(zmapWindowFToIFindSameNameItems, feature,
-						    0, 0, menu_data->container_set->unique_id, 0, 0, zMapFeatureStrand2Str(set_strand),
-						    zMapFeatureFrame2Str(set_frame));
-	zmapWindowListWindow(menu_data->window,
-			     menu_data->item,
-			     (char *)g_quark_to_string(feature->parent->original_id),
-			     NULL, NULL,
-			     menu_data->window->context_map,
-			     (ZMapWindowListSearchHashFunc)zmapWindowFToISetSearchPerform, search_data,
-			     (GDestroyNotify)zmapWindowFToISetSearchDestroy, zoom_to_item) ;
-	break ;
-      }
     case ITEM_MENU_MARK_ITEM:
       zmapWindowMarkSetItem(menu_data->window->mark, menu_data->item) ;
 
@@ -3306,8 +3269,7 @@ static void offsetTextAttr(gpointer data, gpointer user_data)
 }
 
 
-
-
+/* Services the "Search or List Features and Sequence" sub-menu.  */
 static void searchListMenuCB(int menu_item_id, gpointer callback_data)
 {
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
@@ -3352,19 +3314,25 @@ static void searchListMenuCB(int menu_item_id, gpointer callback_data)
 	char *title ;
 
 	column_id = menu_data->container_set->unique_id ;
-	block_id = featureset->parent->unique_id ;
 	align_id = featureset->parent->parent->unique_id ;
+	block_id = featureset->parent->unique_id ;
+	featureset_id = featureset->unique_id ;
 
 	if (feature)
 	  current_item = menu_data->item ;
 
 	title = (char *)g_quark_to_string(container->original_id) ;
 
-	/* check this is all working....args look broken to me.... */
+
 	if (menu_item_id == ITEM_MENU_LIST_ALL_FEATURES)
-	  feature_id = g_quark_from_string("*") ;
-	else if (feature)
-	  feature_id = feature->unique_id ;
+	  {
+	    feature_id = g_quark_from_string("*") ;
+	    feature = NULL ;				    /* unset feature for "all" search. */
+	  }
+	else
+	  {
+	    feature_id = feature->unique_id ;
+	  }
 
 	set_strand = zmapWindowContainerFeatureSetGetStrand(container) ;
 	set_frame = zmapWindowContainerFeatureSetGetFrame(container) ;
