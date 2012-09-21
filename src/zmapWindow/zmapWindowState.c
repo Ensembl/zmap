@@ -320,18 +320,20 @@ gboolean zmapWindowStateSaveMark(ZMapWindowState state, ZMapWindow window)
 
 
 /* mh17: a misnomer, it only does one item */
-gboolean zmapWindowStateSaveFocusItems(ZMapWindowState state,
-				       ZMapWindow      window)
+gboolean zmapWindowStateSaveFocusItems(ZMapWindowState state, ZMapWindow window)
 {
+  gboolean result = FALSE ;
   FooCanvasItem *focus_item ;
 
-  if ((focus_item = zmapWindowFocusGetHotItem(window->focus)))
+  if ((window->focus) && (focus_item = zmapWindowFocusGetHotItem(window->focus)))
     {
       state->focus_items_set = serialize_item(focus_item, &(state->focus.item));
       state->rev_comp_state = state->focus.rev_comp_state = window->revcomped_features;
+
+      result = state->focus_items_set ;
     }
 
-  return state->focus_items_set ;
+  return result ;
 }
 
 

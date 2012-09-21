@@ -1,4 +1,3 @@
-/*  Last edited: Jul 12 08:18 2011 (edgrif) */
 /*  File: zmapWindowMenus.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -30,6 +29,20 @@
  *
  *-------------------------------------------------------------------
  */
+
+
+/* PLEASE READ:
+ * 
+ * This file is a unification of code that was scattered and replicated
+ * in a number of files. The unification is not complete, itemMenuCB()
+ * needs merging with other callbacks to remove all duplication and
+ * there is further simplification to be done as there used to be
+ * completely separate code to service the feature menu as opposed
+ * to the column menu.
+ * 
+ *  */
+
+
 
 #include <ZMap/zmap.h>
 
@@ -333,7 +346,10 @@ static void offsetTextAttr(gpointer data, gpointer user_data) ;
 
 
 
-/* In the end this should be merged with column menu code so one function does both... */
+/*
+ * In the end this should be merged with column menu code so one function does both...
+ */
+
 /* Build the menu for a feature item. */
 void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvasItem *item)
 {
@@ -352,15 +368,9 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
   ZMapWindowContainerFeatureSet container_set;
   ZMapGUIMenuItem seq_menus ;
 
+
   /* Some parts of the menu are feature type specific so retrieve the feature item info
    * from the canvas item. */
-
-  /* MH17:
-   * if we get here they clicked on a feature not the column
-   * if the click on the column background the it gets handled in
-   * zmapWindowDrawFeatures.c/columnMenuCB()
-   */
-
   feature = zMapWindowCanvasItemGetFeature(item);
   zMapAssert(feature);
 
@@ -414,7 +424,6 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
       if (feature->feature.homol.type == ZMAPHOMOL_X_HOMOL)
 	{
 	  menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuProteinHomol(NULL, NULL, menu_data)) ;
-	  menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuProteinHomolFeature(NULL, NULL, menu_data)) ;
 	}
       else
 	{
@@ -487,6 +496,105 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
 
   return ;
 }
+
+
+/* Build the background menu for a column. */
+void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
+			FooCanvasItem *item,
+			ZMapWindowContainerFeatureSet container_set,
+			ZMapFeatureTypeStyle style_unused)
+{
+  static ZMapGUIMenuItemStruct separator[] =
+    {
+      {ZMAPGUI_MENU_SEPARATOR, NULL, 0, NULL, NULL},
+      {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}
+    } ;
+  char *menu_title ;
+  GList *menu_sets = NULL ;
+  ItemMenuCBData cbdata ;
+  ZMapFeature feature;
+  ZMapFeatureSet feature_set ;
+  ZMapGUIMenuItem seq_menus ;
+
+
+  menu_title = (char *) g_quark_to_string(container_set->original_id);
+
+  feature_set = zmapWindowContainerFeatureSetRecoverFeatureSet(container_set) ;
+
+  cbdata = g_new0(ItemMenuCBDataStruct, 1) ;
+  cbdata->x = button_event->x ;
+  cbdata->y = button_event->y ;
+  cbdata->item_cb = FALSE ;
+  cbdata->window = window ;
+  cbdata->item = item ;
+  cbdata->feature_set = feature_set ;
+  cbdata->container_set = container_set;
+  cbdata->context_map = window->context_map ;
+
+  /* Make up the menu. */
+  if (zMapUtilsUserIsDeveloper())
+    {
+      menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDeveloperOps(NULL, NULL, cbdata)) ;
+
+      menu_sets = g_list_append(menu_sets, separator) ;
+    }
+
+  /* Quite a big hack actually, we judge feature type and protein/dna on the first feature
+   * we find in the column..... */
+  if ((feature = zMap_g_hash_table_nth(feature_set->features, 0)))
+    {
+      if (feature->type != ZMAPSTYLE_MODE_ALIGNMENT)
+	{
+	  menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuNonHomolFeature(NULL, NULL, cbdata)) ;
+	}
+      else if (zMapStyleIsPfetchable(feature->style))
+	{
+	  menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuBlixColCommon(NULL, NULL, cbdata)) ;
+
+	  if (feature->feature.homol.type == ZMAPHOMOL_X_HOMOL)
+	    {
+	      menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuProteinHomol(NULL, NULL, cbdata)) ;
+	    }
+	  else
+	    {
+	      menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDNAHomolFeature(NULL, NULL, cbdata)) ;
+	      menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDNAHomol(NULL, NULL, cbdata)) ;
+	    }
+	}
+      else if (zMapStyleBlixemType(feature->style) != ZMAPSTYLE_BLIXEM_INVALID)
+	{
+	  menu_sets = g_list_append(menu_sets,  zmapWindowMakeMenuDNAHomolFeature(NULL, NULL, cbdata)) ;
+	}
+
+      if ((seq_menus = zmapWindowMakeMenuBlixemBAM(NULL, NULL, cbdata)))
+	menu_sets = g_list_append(menu_sets, seq_menus) ;
+    }
+
+  menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuFeatureOps(NULL, NULL, cbdata)) ;
+
+  menu_sets = g_list_append(menu_sets, separator) ;
+
+  menu_sets
+    = g_list_append(menu_sets,
+		    zmapWindowMakeMenuBump(NULL, NULL, cbdata,
+					   zmapWindowContainerFeatureSetGetBumpMode((ZMapWindowContainerFeatureSet)item))) ;
+
+  if ((seq_menus = zmapWindowMakeMenuRequestBAM(NULL, NULL, cbdata)))
+    menu_sets = g_list_append(menu_sets, seq_menus);
+
+  menu_sets = g_list_append(menu_sets, separator) ;
+
+  menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuSearchListOps(NULL, NULL, cbdata)) ;
+
+  menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuExportOps(NULL, NULL, cbdata)) ;
+
+
+  zMapGUIMakeMenu(menu_title, menu_sets, button_event) ;
+
+  return ;
+}
+
+
 
 
 /* This is in the general menu and needs to be handled separately perhaps as the index is a global
@@ -606,56 +714,6 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 
   switch (menu_item_id)
     {
-    case ITEM_MENU_LIST_ALL_FEATURES:
-      {
-	ZMapWindowFToISetSearchData search_data = NULL;
-	ZMapStrand set_strand ;
-	ZMapFrame set_frame ;
-	gboolean result ;
-
-	result = zmapWindowItemGetStrandFrame(menu_data->item, &set_strand, &set_frame) ;
-	zMapAssert(result) ;
-
-	search_data = zmapWindowFToISetSearchCreate(zmapWindowFToIFindItemSetFull, NULL,
-						    feature->parent->parent->parent->unique_id,
-						    feature->parent->parent->unique_id,
-						    menu_data->container_set->unique_id,
-						    0,
-						    g_quark_from_string("*"),
-						    zMapFeatureStrand2Str(set_strand),
-						    zMapFeatureFrame2Str(set_frame));
-
-	zmapWindowListWindow(menu_data->window,
-			     menu_data->item,
-			     (char *)g_quark_to_string(feature->parent->original_id),
-			     NULL, NULL,
-			     menu_data->window->context_map,
-			     (ZMapWindowListSearchHashFunc)zmapWindowFToISetSearchPerform, search_data,
-			     (GDestroyNotify)zmapWindowFToISetSearchDestroy, zoom_to_item) ;
-	break ;
-      }
-    case ITEM_MENU_LIST_NAMED_FEATURES:
-      {
-	ZMapWindowFToISetSearchData search_data = NULL;
-	ZMapStrand set_strand ;
-	ZMapFrame set_frame ;
-	gboolean result ;
-
-	result = zmapWindowItemGetStrandFrame(menu_data->item, &set_strand, &set_frame) ;
-	zMapAssert(result) ;
-
-	search_data = zmapWindowFToISetSearchCreate(zmapWindowFToIFindSameNameItems, feature,
-						    0, 0, menu_data->container_set->unique_id, 0, 0, zMapFeatureStrand2Str(set_strand),
-						    zMapFeatureFrame2Str(set_frame));
-	zmapWindowListWindow(menu_data->window,
-			     menu_data->item,
-			     (char *)g_quark_to_string(feature->parent->original_id),
-			     NULL, NULL,
-			     menu_data->window->context_map,
-			     (ZMapWindowListSearchHashFunc)zmapWindowFToISetSearchPerform, search_data,
-			     (GDestroyNotify)zmapWindowFToISetSearchDestroy, zoom_to_item) ;
-	break ;
-      }
     case ITEM_MENU_MARK_ITEM:
       zmapWindowMarkSetItem(menu_data->window->mark, menu_data->item) ;
 
@@ -2050,11 +2108,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuBlixCommon(int *start_index_inout,
 }
 
 
-
-
-
-
-/* Blixem top level menu entry.... */
+/* Blixem top level menu branch entry.... */
 ZMapGUIMenuItem zmapWindowMakeMenuBlixTop(int *start_index_inout,
 					  ZMapGUIMenuItemCallbackFunc callback_func,
 					  gpointer callback_data)
@@ -2069,6 +2123,27 @@ ZMapGUIMenuItem zmapWindowMakeMenuBlixTop(int *start_index_inout,
 
   return menu ;
 }
+
+
+/* Common blixem ops that must be at top of column sub-menu for blixem. */
+ZMapGUIMenuItem zmapWindowMakeMenuBlixColCommon(int *start_index_inout,
+						ZMapGUIMenuItemCallbackFunc callback_func,
+						gpointer callback_data)
+{
+  static ZMapGUIMenuItemStruct menu[] =
+    {
+      {ZMAPGUI_MENU_NORMAL, BLIXEM_OPS_STR"/"BLIXEM_MENU_STR " - all matches for this column",
+       BLIX_SET, blixemMenuCB, NULL, "A"},
+      {ZMAPGUI_MENU_NORMAL, BLIXEM_OPS_STR"/"BLIXEM_MENU_STR " - all matches for selected features",
+       BLIX_SELECTED, blixemMenuCB, NULL, "<shift>A"},
+      {ZMAPGUI_MENU_NONE,   NULL,                                        0, NULL,         NULL}
+    } ;
+
+  zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
+
+  return menu ;
+}
+
 
 /* Clicked on a dna homol feature... */
 ZMapGUIMenuItem zmapWindowMakeMenuDNAHomolFeature(int *start_index_inout,
@@ -2106,14 +2181,15 @@ ZMapGUIMenuItem zmapWindowMakeMenuDNAHomol(int *start_index_inout,
 }
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+/* no protein specific operations currently.... */
 ZMapGUIMenuItem zmapWindowMakeMenuProteinHomolFeature(int *start_index_inout,
 						      ZMapGUIMenuItemCallbackFunc callback_func,
 						      gpointer callback_data)
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {ZMAPGUI_MENU_NORMAL, BLIXEM_OPS_STR"/"BLIXEM_AA_STR " - all matches for selected features",
-       BLIX_SELECTED, blixemMenuCB, NULL, "<shift>A"},
       {ZMAPGUI_MENU_NONE,   NULL,                             0, NULL,         NULL}
     } ;
 
@@ -2121,6 +2197,8 @@ ZMapGUIMenuItem zmapWindowMakeMenuProteinHomolFeature(int *start_index_inout,
 
   return menu ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 ZMapGUIMenuItem zmapWindowMakeMenuProteinHomol(int *start_index_inout,
 					       ZMapGUIMenuItemCallbackFunc callback_func,
@@ -2128,9 +2206,6 @@ ZMapGUIMenuItem zmapWindowMakeMenuProteinHomol(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {ZMAPGUI_MENU_NORMAL, BLIXEM_OPS_STR"/"BLIXEM_AAS_STR " - all matches for this column",
-       BLIX_SET, blixemMenuCB, NULL, "A"},
-
       {ZMAPGUI_MENU_NORMAL, BLIXEM_OPS_STR"/"BLIXEM_AAS_STR " - all matches for associated columns",
        BLIX_MULTI_SETS, blixemMenuCB, NULL, "<Ctrl>A"},
 
@@ -3194,8 +3269,7 @@ static void offsetTextAttr(gpointer data, gpointer user_data)
 }
 
 
-
-
+/* Services the "Search or List Features and Sequence" sub-menu.  */
 static void searchListMenuCB(int menu_item_id, gpointer callback_data)
 {
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
@@ -3238,26 +3312,38 @@ static void searchListMenuCB(int menu_item_id, gpointer callback_data)
 	GQuark align_id = 0, block_id = 0, column_id = 0, featureset_id = 0, feature_id = 0 ;
 	FooCanvasItem *current_item = NULL ;
 	char *title ;
+	gpointer search_func ;
 
 	column_id = menu_data->container_set->unique_id ;
-	block_id = featureset->parent->unique_id ;
 	align_id = featureset->parent->parent->unique_id ;
+	block_id = featureset->parent->unique_id ;
+	featureset_id = featureset->unique_id ;
 
 	if (feature)
 	  current_item = menu_data->item ;
 
 	title = (char *)g_quark_to_string(container->original_id) ;
 
-	/* check this is all working....args look broken to me.... */
+
 	if (menu_item_id == ITEM_MENU_LIST_ALL_FEATURES)
-	  feature_id = g_quark_from_string("*") ;
-	else if (feature)
-	  feature_id = feature->unique_id ;
+	  {
+	    /* Set feature name to wild card to ensure we list all of them. */
+	    feature_id = g_quark_from_string("*") ;
+	    feature = NULL ;				    /* unset feature for "all" search. */
+	    search_func = zmapWindowFToIFindItemSetFull ;
+	  }
+	else
+	  {
+	    /* Set feature name to original id to ensure we get all features in column with 
+	     * same name. */
+	    feature_id = feature->original_id ;
+	    search_func = zmapWindowFToIFindSameNameItems ;
+	  }
 
 	set_strand = zmapWindowContainerFeatureSetGetStrand(container) ;
 	set_frame = zmapWindowContainerFeatureSetGetFrame(container) ;
 
-	if ((search_data = zmapWindowFToISetSearchCreate(zmapWindowFToIFindItemSetFull,
+	if ((search_data = zmapWindowFToISetSearchCreate(search_func,
 							 feature,
 							 align_id,
 							 block_id,
@@ -3273,26 +3359,32 @@ static void searchListMenuCB(int menu_item_id, gpointer callback_data)
 			       (ZMapWindowListSearchHashFunc)zmapWindowFToISetSearchPerform, search_data,
 			       (GDestroyNotify)zmapWindowFToISetSearchDestroy, zoom_to_item) ;
 
-
 	break ;
       }
 
     case ITEM_MENU_SEARCH:
-      zmapWindowCreateSearchWindow(menu_data->window,
-				   NULL, NULL,
-				   menu_data->window->context_map,
-				   menu_data->item) ;
+      {
+	zmapWindowCreateSearchWindow(menu_data->window,
+				     NULL, NULL,
+				     menu_data->window->context_map,
+				     menu_data->item) ;
 
-      break ;
+	break ;
+      }
+
     case ITEM_MENU_SEQUENCE_SEARCH_DNA:
-      zmapWindowCreateSequenceSearchWindow(menu_data->window, menu_data->item, ZMAPSEQUENCE_DNA) ;
+      {
+	zmapWindowCreateSequenceSearchWindow(menu_data->window, menu_data->item, ZMAPSEQUENCE_DNA) ;
 
-      break ;
+	break ;
+      }
 
     case ITEM_MENU_SEQUENCE_SEARCH_PEPTIDE:
-      zmapWindowCreateSequenceSearchWindow(menu_data->window, menu_data->item, ZMAPSEQUENCE_PEPTIDE) ;
+      {
+	zmapWindowCreateSequenceSearchWindow(menu_data->window, menu_data->item, ZMAPSEQUENCE_PEPTIDE) ;
 
-      break ;
+	break ;
+      }
 
     default:
       {

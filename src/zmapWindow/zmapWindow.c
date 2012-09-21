@@ -750,7 +750,6 @@ void zMapWindowFeatureReset(ZMapWindow window, gboolean features_are_revcomped)
   int x, y ;
   double scroll_x1, scroll_y1, scroll_x2, scroll_y2 ;
   gboolean free_child_windows = FALSE, free_revcomp_safe_windows = FALSE ;
-
   gboolean state_saves_position = TRUE;
 
 
@@ -812,7 +811,7 @@ void zMapWindowFeatureReset(ZMapWindow window, gboolean features_are_revcomped)
 	  scroll_y2 = tmp ;
 	}
 
-      zmapWindowStateSaveFocusItems(window->state,window);
+      zmapWindowStateSaveFocusItems(window->state, window) ;
 
       if (window_rev_comp_save_state_G)
 	{
