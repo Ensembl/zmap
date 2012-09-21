@@ -196,6 +196,71 @@ and adjusting others such as
 <li> BAM and BigWig files wil be read in using a similar process using different parameters as necessary.  Note that we will have to provide some way to extract sequence names from BAM files to allow these to be mapped (eg 'CHROMOSOVE_IV' to 'chr-4').  A perl script already exists (zmap_bam_get_sequence) to do this and either the user will be asked to operate this and enter the data manually (first implementation) or it can be run as a child process and the output used to create a drop down menu.
 </ul>
 
+<h4>Default styles</h4>
+<p>As GFF may contain several featuresets it's not possible to speficy a single style for display: ZMap will use a default style to display each feature, but note that soem data may be shown inappropriately as basic features (eg graph data).
+</p>
+<p>BAM and bigWig import relaiably produced data of a single type and a style can be supplied for these, using the following configuration in ZMap:
+<pre>
+[columns]
+any_name_not_likely_to_be_used = BAM; bigWig
+
+[featureset-style]
+BAM = short-read
+bigWig = short-read-coverage
+</pre>
+</p>
+
+<h4>Import Dialog screenshot</h4>
+<p>This is after implementation running a 1-based wormbase dump and looking at a human bam file downlaoded from encode.  No aplogies fro mismatching data, it's there for software development only.
+</p>
+<img src="Design/notes/import.png" class="img" alt="Import dialog">
+
+<a name="scripts"></a>
+<h3>Handling server script interfaces </h3>
+<p>File/Import has been implemented using some hard coded scripts and arguments, and Otterlace pipe servers use script and arg combinations specifed in server stanzas.  Each of these have parameters added or substituted on demand (eg coordinates), and the zmap scripts take slightly different arguments from the otterlace ones (this is triggered by the cvser=Otter option in [ZMap]).
+</p>
+
+<p>OTF file requests are implemented by creating a config file in memory and feeding this into the server code, and the scripts and parameters are hard coded.  This is partly because the script operation requires specific information and this varies according to the type of file, but we would like to allow for extra flexibility, to allow modified scripts to be used to read in data in other formats currently unspecified.
+</p>
+
+<p>Ideally we would like to provide a tokenised specification of a script command line, but this becomes complex when taking into account how this can be driven from a user dialog - currently we limit the data that can be entered according to file type.  A more practical solution will be to allow the script name to be changed in the dialog and also any mandatory (hidden) arguments
+</p>
+<p> Standard scripts are triggered from the file extent and if the script name is changed then all dialog etries will be enabled. Parameters may be enetered directly in the dialog and any non blank entries will be passed to the script/ User scripts must be on the path as must ZMap scripts.
+</p>
+<p>In the otterlace environment ZMap will be given script names in the config file with extra parameters as required.  Script types will correspond to file extents and the script names defaulted automatically.
+These are defined by script name = type; args; more args; etc.  If unspecified the existing hard coded (zmap) scripts will be used by default.
+</p>
+
+<p>Here's an example: for Otterlace:
+<pre>
+[Import]
+zmap_get_gff = GFF
+bam_get_align = BAM; --chr_prefix=chr ;-csver=GRCh37 ; -gff_version=2
+bigwig_get = bigwig; --chr_prefix=chr; -csver=GRCh37; -gff_version=2
+</pre>
+
+<h3>Arguments added automatically</h3>
+<p>
+<p>Scripts will be run with the following arguments added:
+<ul>
+<li><b>GFF</b>--file --start, --end, --gff_seqname --mapto
+<li><b>bigWig</b>--file --start, --end, --gff_feature_source --chr  --gff_seqname --strand
+<li><b>BAM</b>--file --start, --end, --gff_feature_source --chr --gff_seqname
+</ul>
+</p>
+<h4>A note about the mapto argument</h4>
+<p>This was inteneded for use in a standalone ZMap to cater for GFF and ACE sessions where sequences can be 1-based, (or even subsequences of clones).  In the Otterlace environnent it makes little sense, except in the case of importing a 1-based GFF file into an Otter session.  Therefore in an Otterlace session it will be omitted from BAM abd bigWig requests.
+</p>
+
+<h4>Otterlace script interface summarised</h4>
+<p>In ZMap (config) we need the following stanza:
+<pre>
+[Import]
+otter_get_gff = GFF; --mapping-arguments? etc
+bam_get_align = BAM; --chr_prefix=chr ; -csver=GRCh37 ; -gff_version=2
+bigwig_get = bigwig; --chr_prefix=chr ; -csver=GRCh37 ; -gff_version=2
+</pre>
+
 
 
 

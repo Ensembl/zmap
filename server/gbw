@@ -3,5 +3,5 @@
 . ./zmap_proxy.sh
 . ./zmap_perl.sh
 
-./zmap_get_bigwig --file=/nfs/users/nfs_m/mh17/Downloads/wgEncodeCshlLongRnaSeqA549CytosolPapMinusRep3.bigWig --start=85591570 --end=87672398 --chr=chr16 --source=Tier1_H1-hESC_cell_longPolyA_rep1 --strand=1 --sequence=chr13-03
+./zmap_get_bigwig --file=/nfs/users/nfs_m/mh17/Downloads/wgEncodeCshlLongRnaSeqA549CytosolPapMinusRep3.bigWig --start=85591570 --end=87672398 --chr=chr16 --gff_feature_source=Tier1_H1-hESC_cell_longPolyA_rep1 --strand=1 --gff_seqname=chr13-03
 

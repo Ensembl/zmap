@@ -54,6 +54,9 @@ typedef struct _ZMapConfigIniContextStruct
 }ZMapConfigIniContextStruct, *ZMapConfigIniContext;
 
 
+typedef struct _ZMapConfigStruct *ZMapConfig ;
+
+typedef  struct _ZMapConfigIniStruct *ZMapConfigIni;
 
 ZMapConfigIniContext zMapConfigIniContextCreate(char *config_file) ;
 gboolean zMapConfigIniContextIncludeBuffer(ZMapConfigIniContext context, char *buffer);
@@ -137,6 +140,8 @@ GList *zMapConfigIniContextGetNamedStanzas(ZMapConfigIniContext context,
 
 ZMapConfigIniContext zMapConfigIniContextProvide(char *config_file) ;
 ZMapConfigIniContext zMapConfigIniContextProvideNamed(char *config_file, char *stanza_name) ;
+
+gboolean zMapConfigIniHasStanza(ZMapConfigIni config,char *stanza_name,GKeyFile **which);
 
 GList *zMapConfigIniContextGetSources(ZMapConfigIniContext context) ;
 GList *zMapConfigIniContextGetNamed(ZMapConfigIniContext context, char *stanza_name) ;

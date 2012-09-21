@@ -1108,6 +1108,9 @@ GHashTable *zMapConfigIniGetColumns(ZMapConfigIniContext context)
       return(hash);
 }
 
+
+
+
 /*
  * read a named stanza and put it in a hash table
  * NOTE: this function operates differently from normal ConfigIni in that we do not know

@@ -914,7 +914,7 @@
 #define ZMAPSTANZA_GFF_RELATED_CONFIG         "featureset-related"
 #define ZMAPSTANZA_FEATURESETS_CONFIG         "featuresets"
 
-
+#define ZMAPSTANZA_IMPORT_CONFIG              "import"
 
 
 

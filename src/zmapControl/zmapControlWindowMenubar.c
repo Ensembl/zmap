@@ -164,9 +164,10 @@ static void exportCB(gpointer cb_data, guint callback_action, GtkWidget *window)
 
 
 
-static void importFileCB(gpointer user_data)
+static void controlImportFileCB(gpointer user_data)
 {
-	zMapWarning("importFileCB not implemented","");
+	zMapWarning("controlImportFileCB not implemented","");
+	/* this is a callback to report something */
 }
 
 static void importCB(gpointer cb_data, guint callback_action, GtkWidget *window)
@@ -184,6 +185,7 @@ static void importCB(gpointer cb_data, guint callback_action, GtkWidget *window)
   map->start = view_seq->start;
   map->end = view_seq->end;
   map->sequence = view_seq->sequence;
+  map->config_file = view_seq->config_file;
 
   /* limit to mark if set */
   start = view_seq->start;
@@ -197,7 +199,7 @@ static void importCB(gpointer cb_data, guint callback_action, GtkWidget *window)
 	end = -end;
 
   /* need sequence_map to set default seq coords and map sequence name */
-  zMapControlImportFile(importFileCB, cb_data, map, start, end);
+  zMapControlImportFile(controlImportFileCB, cb_data, map, start, end);
 
   return ;
 }
