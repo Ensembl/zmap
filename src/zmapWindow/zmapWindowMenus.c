@@ -32,14 +32,14 @@
 
 
 /* PLEASE READ:
- * 
+ *
  * This file is a unification of code that was scattered and replicated
  * in a number of files. The unification is not complete, itemMenuCB()
  * needs merging with other callbacks to remove all duplication and
  * there is further simplification to be done as there used to be
  * completely separate code to service the feature menu as opposed
  * to the column menu.
- * 
+ *
  *  */
 
 
@@ -111,9 +111,9 @@
 #define COLUMN_BUMP_OPTS           "Column Bump More Opts"
 
 
-#define PAIRED_READS_RELATED       "Request %s paired reads from mark"
-#define PAIRED_READS_ALL           "Request all paired reads from mark"
-#define PAIRED_READS_DATA          "Request paired reads data from mark"
+#define PAIRED_READS_RELATED       "Request %s paired reads"
+#define PAIRED_READS_ALL           "Request all paired readsk"
+#define PAIRED_READS_DATA          "Request paired reads datak"
 
 
 /* Search/Listing menus. */
@@ -2571,11 +2571,14 @@ static void requestShortReadsCB(int menu_item_id, gpointer callback_data)
   int i;
   GList *req_list = NULL;
 
+#if 0
   if (!zmapWindowMarkIsSet(menu_data->window->mark))
     {
       zMapMessage("You must set the mark first to select this option","");
     }
-  else if(menu_item_id == REQUEST_SELECTED)
+  else
+#endif
+  if(menu_item_id == REQUEST_SELECTED)
     {
       /* this is for a column related to a coverage featureset so we get several featuresets */
       req_list = add_column_featuresets(menu_data->context_map,req_list,menu_data->req_id,TRUE);
@@ -3334,7 +3337,7 @@ static void searchListMenuCB(int menu_item_id, gpointer callback_data)
 	  }
 	else
 	  {
-	    /* Set feature name to original id to ensure we get all features in column with 
+	    /* Set feature name to original id to ensure we get all features in column with
 	     * same name. */
 	    feature_id = feature->original_id ;
 	    search_func = zmapWindowFToIFindSameNameItems ;
