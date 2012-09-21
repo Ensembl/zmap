@@ -3312,6 +3312,7 @@ static void searchListMenuCB(int menu_item_id, gpointer callback_data)
 	GQuark align_id = 0, block_id = 0, column_id = 0, featureset_id = 0, feature_id = 0 ;
 	FooCanvasItem *current_item = NULL ;
 	char *title ;
+	gpointer search_func ;
 
 	column_id = menu_data->container_set->unique_id ;
 	align_id = featureset->parent->parent->unique_id ;
@@ -3326,18 +3327,23 @@ static void searchListMenuCB(int menu_item_id, gpointer callback_data)
 
 	if (menu_item_id == ITEM_MENU_LIST_ALL_FEATURES)
 	  {
+	    /* Set feature name to wild card to ensure we list all of them. */
 	    feature_id = g_quark_from_string("*") ;
 	    feature = NULL ;				    /* unset feature for "all" search. */
+	    search_func = zmapWindowFToIFindItemSetFull ;
 	  }
 	else
 	  {
-	    feature_id = feature->unique_id ;
+	    /* Set feature name to original id to ensure we get all features in column with 
+	     * same name. */
+	    feature_id = feature->original_id ;
+	    search_func = zmapWindowFToIFindSameNameItems ;
 	  }
 
 	set_strand = zmapWindowContainerFeatureSetGetStrand(container) ;
 	set_frame = zmapWindowContainerFeatureSetGetFrame(container) ;
 
-	if ((search_data = zmapWindowFToISetSearchCreate(zmapWindowFToIFindItemSetFull,
+	if ((search_data = zmapWindowFToISetSearchCreate(search_func,
 							 feature,
 							 align_id,
 							 block_id,
@@ -3353,26 +3359,32 @@ static void searchListMenuCB(int menu_item_id, gpointer callback_data)
 			       (ZMapWindowListSearchHashFunc)zmapWindowFToISetSearchPerform, search_data,
 			       (GDestroyNotify)zmapWindowFToISetSearchDestroy, zoom_to_item) ;
 
-
 	break ;
       }
 
     case ITEM_MENU_SEARCH:
-      zmapWindowCreateSearchWindow(menu_data->window,
-				   NULL, NULL,
-				   menu_data->window->context_map,
-				   menu_data->item) ;
+      {
+	zmapWindowCreateSearchWindow(menu_data->window,
+				     NULL, NULL,
+				     menu_data->window->context_map,
+				     menu_data->item) ;
 
-      break ;
+	break ;
+      }
+
     case ITEM_MENU_SEQUENCE_SEARCH_DNA:
-      zmapWindowCreateSequenceSearchWindow(menu_data->window, menu_data->item, ZMAPSEQUENCE_DNA) ;
+      {
+	zmapWindowCreateSequenceSearchWindow(menu_data->window, menu_data->item, ZMAPSEQUENCE_DNA) ;
 
-      break ;
+	break ;
+      }
 
     case ITEM_MENU_SEQUENCE_SEARCH_PEPTIDE:
-      zmapWindowCreateSequenceSearchWindow(menu_data->window, menu_data->item, ZMAPSEQUENCE_PEPTIDE) ;
+      {
+	zmapWindowCreateSequenceSearchWindow(menu_data->window, menu_data->item, ZMAPSEQUENCE_PEPTIDE) ;
 
-      break ;
+	break ;
+      }
 
     default:
       {
