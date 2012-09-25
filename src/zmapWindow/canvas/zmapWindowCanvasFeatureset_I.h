@@ -65,10 +65,8 @@ typedef struct _zmapWindowCanvasGraphicsStruct
   zmapWindowCanvasBaseStruct base;
 #else
 
-  /* must be identical with zmapWindowCanvasBaseStruct, NOTE type < FEATURE_GENOMIC */
+  /* must be identical with zmapWindowCanvasBaseStruct, NOTE type > FEATURE_GRAPHICS */
   zmapWindowCanvasFeatureType type;
-
-
   double y1, y2;    	/* top, bottom of item (box or line) */
 #endif
 

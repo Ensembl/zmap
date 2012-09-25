@@ -1828,10 +1828,6 @@ static double graphicsPoint(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature
   ZMapWindowCanvasGraphics gfx = (ZMapWindowCanvasGraphics) gs;
 
   /* Get feature extent on display. */
-  /* NOTE cannot use feature coords as transcript exons all point to the same feature */
-  /* alignments have to implement a special fucntion to handle bumped features - the first exon gets expanded to cover the whole */
-  /* when we get upgraded to vulgar strings these can be like transcripts... except that there's a performance problem due to volume */
-  /* perhaps better to add  extra display/ search coords to ZMapWindowCancasFeature ?? */
   can_start = gs->y1; 	//feature->x1 ;
   can_end = gs->y2;	//feature->x2 ;
   zmapWindowFeaturesetS2Ccoords(&can_start, &can_end) ;
