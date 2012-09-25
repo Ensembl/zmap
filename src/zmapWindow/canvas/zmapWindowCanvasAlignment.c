@@ -838,7 +838,7 @@ static double alignmentPoint(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeatur
       double wx ;
       double left, right ;
 
-      wx = x_off - (gs->width / 2) ;
+      wx = x_off; // - (gs->width / 2) ;
 
       if (fi->bumped)
 	wx += gs->bump_offset ;
