@@ -983,7 +983,7 @@ static gboolean setBlixemScope(blixemData blixem_data)
   gboolean status = TRUE ;
   static gboolean scope_debug = FALSE ;
 
-
+#if RESTRICT_TO_MARK
   /* We shouldn't need this here...window should take care of it..... */
   if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_SEQ && !(blixem_data->mark_start && blixem_data->mark_end))
     {
@@ -991,6 +991,7 @@ static gboolean setBlixemScope(blixemData blixem_data)
 
       status = FALSE ;
     }
+#endif
 
   if (status)
     {

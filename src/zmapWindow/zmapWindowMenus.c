@@ -92,7 +92,7 @@
 /* Strings/enums for invoking blixem. */
 #define BLIXEM_MENU_STR            "Blixem"
 #define BLIXEM_OPS_STR             BLIXEM_MENU_STR " - more options"
-#define BLIXEM_READS_STR           BLIXEM_MENU_STR " paired reads data from mark"
+#define BLIXEM_READS_STR           BLIXEM_MENU_STR " paired reads data"
 
 #define BLIXEM_DNA_STR             "DNA"
 #define BLIXEM_DNAS_STR            BLIXEM_DNA_STR "s"
@@ -128,11 +128,11 @@ enum
     BLIX_EXPANDED,	/* selected features expanded into hidden underlying data */
     BLIX_SET,		/* Blixem all matches for all features in this column. */
     BLIX_MULTI_SETS,	/* Blixem all matches for all features in the list of columns in the blixem config file. */
-    BLIX_SEQ_COVERAGE,	/* Blixem a coverage column from the mark: find the real data column */
+    BLIX_SEQ_COVERAGE,	/* Blixem a coverage column: find the real data column */
 //    BLIX_SEQ_SET		/* Blixem a paried read featureset */
   } ;
 
-#define BLIX_SEQ		10000       /* Blixem short reads data from the mark base menu index */
+#define BLIX_SEQ		10000       /* Blixem short reads data base menu index */
 #define REQUEST_SELECTED 20000	/* data related to selected featureset in column */
 #define REQUEST_ALL_SEQ 20001		/* all data related to coverage featuresets in column */
 #define REQUEST_SEQ	20002		/* request SR data from mark from menu */
@@ -2295,7 +2295,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuBlixemBAM(int *start_index_inout,
   if (blixem_col)
     {
       m->type = ZMAPGUI_MENU_NORMAL;
-      m->name = g_strdup_printf("Blixem %s paired reads from mark", blixem_col);
+      m->name = g_strdup_printf("Blixem %s paired reads", blixem_col);
       m->id = BLIX_SEQ_COVERAGE;
       m->callback_func = blixemMenuCB;
       m++;
@@ -2665,11 +2665,13 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data)
       break;
 
     case BLIX_SEQ_COVERAGE:		/* blixem from a selected item in a coverage featureset */
+#if RESTRICT_TO_MAKR
       if (!zmapWindowMarkIsSet(menu_data->window->mark))
 	{
 	  zMapMessage("You must set the mark first to select this option","");
 	}
       else
+#endif
 	{
 #warning if we ever have paired reads data in a virtual featureset we need to expand that here
 	  seq_sets = add_column_featuresets(menu_data->window->context_map,seq_sets,menu_data->req_id,FALSE);
@@ -2687,12 +2689,13 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data)
 	  GList *l;
 	  int i;
 
-
+#if RESTRICT_TO_MAKR
 	  if (!zmapWindowMarkIsSet(menu_data->window->mark))
 	    {
 	      zMapMessage("You must set the mark first to select this option","");
 	    }
 	  else
+#endif
 	    {
 	      for (i = menu_item_id - BLIX_SEQ, l = menu_data->window->context_map->seq_data_featuresets ;
 		   i && l ;
