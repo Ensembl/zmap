@@ -1,4 +1,3 @@
-/*  Last edited: Jul 23 15:37 2012 (edgrif) */
 /*  File: zmapWindowDrawFeatures.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -2842,8 +2841,7 @@ static gboolean containerDestroyCB(FooCanvasItem *item, gpointer user_data)
   /* Some items may not have features attached...e.g. empty cols....I should revisit the empty
    * cols bit, it keeps causing trouble all over the place.....column creation would be so much
    * simpler without it.... */
-  if ((ZMAP_IS_CONTAINER_GROUP(item) == TRUE) &&
-      (container   = ZMAP_CONTAINER_GROUP(item)))
+  if ((ZMAP_IS_CONTAINER_GROUP(item) == TRUE) && (container   = ZMAP_CONTAINER_GROUP(item)))
     {
       context_to_item = window->context_to_item;
 
