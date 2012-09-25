@@ -360,7 +360,7 @@ pipeArgStruct zmap_args[] =
       { "start", PA_INT,PA_START },
       { "end", PA_INT,PA_END },
 //      { "dataset", PA_STRING,PA_DATASET },	may need when mapping available
-      { "gff_sequence", PA_STRING,PA_SEQUENCE },
+      { "gff_seqname", PA_STRING,PA_SEQUENCE },
       { NULL, 0, 0 }
 };
 
