@@ -2566,21 +2566,25 @@ int zMapWindowCanvasFeaturesetFilter(gpointer gfilter, double value)
       if(feature->left)		/* we do joined up alignments */
 	continue;
 
-      if(! feature->feature->flags.has_score)
+      if( !feature->feature->flags.has_score && !feature->feature->population)
 	continue;
 
 
       /* get score for whole series of alignments */
       for(f = feature, score = 0.0; f; f = f->right)
 	{
-	  double feature_score = f->feature->score;
-	  /* NOTE feature->score is normalised, feature->feature->score is what we filter by */
+	  double feature_score = feature->feature->population;
 
-	  if(zMapStyleGetScoreMode(f->feature->style) == ZMAPSCORE_PERCENT)
-	    feature_score = f->feature->feature.homol.percent_id;
+	  if(!feature_score)
+	  {
+		  feature_score = feature->feature->score;
+		/* NOTE feature->score is normalised, feature->feature->score is what we filter by */
 
+		if(zMapStyleGetScoreMode(f->feature->style) == ZMAPSCORE_PERCENT)
+			feature_score = f->feature->feature.homol.percent_id;
+	  }
 	  if(feature_score > score)
-	    score = feature_score;
+	  score = feature_score;
 	}
 
       /* set flags for whole series based on max score: filter is all below value */
