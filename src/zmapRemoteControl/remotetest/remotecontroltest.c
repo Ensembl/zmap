@@ -785,31 +785,15 @@ static GtkWidget *button_bar(RemoteData remote_data)
 
   button_bar   = gtk_hbox_new(FALSE, 0) ;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  run_zmap     = gtk_button_new_with_label("Run ZMap");
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
   send_command = gtk_button_new_with_label("Send Command");
   list_views = gtk_button_new_with_label("List Views");
   clear        = gtk_button_new_with_label("Clear XML");
   parse        = gtk_button_new_with_label("Check XML");
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  gtk_box_pack_start(GTK_BOX(button_bar), run_zmap, TRUE, TRUE, 5) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
   gtk_box_pack_start(GTK_BOX(button_bar), send_command, TRUE, TRUE, 5) ;
   gtk_box_pack_start(GTK_BOX(button_bar), list_views, TRUE, TRUE, 5) ;
   gtk_box_pack_start(GTK_BOX(button_bar), clear, TRUE, TRUE, 5) ;
   gtk_box_pack_start(GTK_BOX(button_bar), parse, TRUE, TRUE, 5) ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  g_signal_connect(G_OBJECT(run_zmap), "clicked",
-                   G_CALLBACK(runZMapCB), remote_data);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
   g_signal_connect(G_OBJECT(send_command), "clicked",
@@ -864,28 +848,6 @@ static GtkWidget *makeStateBox(RemoteData remote_data)
   gtk_box_pack_start(GTK_BOX(state_box), button, TRUE, TRUE, 5) ;
 
   gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(remote_data->idle), TRUE) ;
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  g_signal_connect(G_OBJECT(run_zmap), "clicked",
-                   G_CALLBACK(runZMapCB), remote_data);
-
-
-
-  g_signal_connect(G_OBJECT(send_command), "clicked",
-                   G_CALLBACK(sendCommandCB), remote_data);
-
-  g_signal_connect(G_OBJECT(list_views), "clicked",
-                   G_CALLBACK(listViewsCB), remote_data);
-
-  g_signal_connect(G_OBJECT(clear), "clicked",
-                   G_CALLBACK(clearCB), remote_data);
-
-  g_signal_connect(G_OBJECT(parse), "clicked",
-                   G_CALLBACK(parseCB), remote_data);
-
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
   return hbox ;
@@ -1111,6 +1073,8 @@ static void replySentCB(void *user_data)
   else
     toggleAndUpdate(remote_data->waiting) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   if (!(req_count % 2))
     {
       /* try sending another command from here... */
@@ -1120,6 +1084,8 @@ static void replySentCB(void *user_data)
 
       req_count++ ;
     }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
   return ;
@@ -1796,7 +1762,8 @@ static void cmdCB(gpointer data, guint callback_action, GtkWidget *w)
 	sequence[1].value.s = g_strdup((char *)gtk_entry_get_text(GTK_ENTRY(remote_data->sequence_entry))) ;
 	sequence[2].value.i = atoi((char *)gtk_entry_get_text(GTK_ENTRY(remote_data->start_entry))) ;
 	sequence[3].value.i = atoi((char *)gtk_entry_get_text(GTK_ENTRY(remote_data->end_entry))) ;
-	sequence[4].value.s = g_strdup((char *)gtk_entry_get_text(GTK_ENTRY(remote_data->config_entry))) ;
+	sequence[4].value.s = g_strdup_printf("%sZMap",
+					      (char *)gtk_entry_get_text(GTK_ENTRY(remote_data->config_entry))) ;
 
 	break;
       }
@@ -3068,10 +3035,21 @@ static gboolean start_zmap_cb(gpointer remote_data_data)
 			     ZMAPSTANZA_APP_PEER_CLIPBOARD,
 			     remote_data->unique_atom_str) ;
 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       /* HACK.... */
       if (remote_data->cmd_line_args->zmap_config_file)
 	g_string_append_printf(cmd_str, " --%s=/nfs/users/nfs_e/edgrif/.ZMap/ --%s=ZMap",
 			       ZMAPARG_CONFIG_DIR, ZMAPARG_CONFIG_FILE) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+      if (remote_data->cmd_line_args->zmap_config_file)
+	g_string_append_printf(cmd_str, " --%s=%s", ZMAPARG_CONFIG_DIR,
+			       remote_data->cmd_line_args->zmap_config_file) ;
+
+
 
       if (tmp_string)
 	g_string_append(cmd_str, tmp_string) ;
