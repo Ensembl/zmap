@@ -740,6 +740,9 @@ static void freeBlixemData(blixemData blixem_data)
       g_list_free(blixem_data->local_sequences) ;
     }
 
+  memset(blixem_data, 0, sizeof(blixemDataStruct)) ;
+
+
   return ;
 }
 
