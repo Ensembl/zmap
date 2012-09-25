@@ -666,7 +666,7 @@ static gboolean initBlixemData(ZMapView view, ZMapFeatureBlock block,
 
   blixem_data->view  = view ;
 
-  blixem_data->config_file = ((ZMapFeatureSequenceMap)(view->sequence_mapping->data))->config_file ;
+  blixem_data->config_file = g_strdup(((ZMapFeatureSequenceMap)(view->sequence_mapping->data))->config_file) ;
 
   blixem_data->offset = offset ;
   blixem_data->position = position ;
