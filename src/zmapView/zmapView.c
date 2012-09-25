@@ -486,11 +486,12 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 	 * servers would traditionally read the file each time, and merge it into the view data
 	 * which is then passsed back to the servers. No need to do this 40x
 	 *
-	 * if we define a global stylesfile and still want styles from ACE then we set 'stylesfile=' in the server config
+	 * if we define a global stylesfile and still want styles from ACE then we set 'req_styles=true' in the server config
 	 */
 
       /* There are a number of predefined methods that we require so add these in as well
-       * as the mapping for "feature set" -> style for these. */
+       * and the mapping for "feature set" -> style for these.
+	 */
       addPredefined(&(zmap_view->context_map.styles), &(zmap_view->context_map.column_2_styles)) ;
 
 	if(stylesfile)
@@ -1517,7 +1518,13 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
   {
 		ZMapViewConnection view_conn;
 
-		view_conn = zMapViewRequestServer(view, NULL, block_orig, req_sources, (gpointer) server, req_start, req_end, FALSE, terminate);
+		if ((zMap_g_list_find_quark(req_sources, zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME))))
+		{
+			dna_requested = TRUE ;
+		}
+
+		view_conn = zMapViewRequestServer(view, NULL, block_orig, req_sources, (gpointer) server,
+				req_start, req_end, dna_requested, terminate);
 		if(view_conn)
 			requested = TRUE;
   }
@@ -1529,7 +1536,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 		char *unique_name ;
 		GQuark unique_id ;
 
-		dna_requested = 0;
+		dna_requested = FALSE;
 
 		zMapDebugPrint(debug_sources, "feature set quark (%d) is: %s", featureset, g_quark_to_string(featureset)) ;
 
@@ -3399,7 +3406,7 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 
 /* NOTE (mh17)
 	tasked with handling a GFF file from the command line and no config..
-	it became clea that this could nto be done simply withotu reading each file twice
+	it became clear that this could not be done simply without reading each file twice
 	and the plan moved to generating a config file with a perl script
 	the idea being to read the GFF headers before running ZMap.
 	But servers need a list of featuresets
@@ -3408,7 +3415,7 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 	(otherwise all data will be ignored and ZMap will abort from several places)
 	which gives the crazy situation of having the read the entire file
 	to extract all the featureset names so that we can read the entire file.
-	NB files could be remote which is not ideal, and we expcect some files to be large
+	NB files could be remote which is not ideal, and we expect some files to be large
 
 	So i adapted the code to have featureset free servers
 	(that can only be requested on startup - can't look one up by featureset if it's not defined)
@@ -3419,7 +3426,7 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 	ie it's tied up in a knot
 
 	Several parts of the display code have been patched to make up featureset to columns etc OTF
-	which is in direct confrontation with the design of most of the server and diplay code,
+	which is in direct confrontation with the design of most of the server and display code,
 	which explicitly assumes that this is predefined
 
 	Well it sort of runs but really the server code needs a rewrite.
