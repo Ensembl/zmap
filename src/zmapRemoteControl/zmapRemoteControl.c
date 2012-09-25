@@ -531,7 +531,7 @@ gboolean zMapRemoteControlSendRequest(ZMapRemoteControl remote_control, char *re
       /* Swop to client interface to make request. */
       remote_control->curr_remote = (RemoteAny)(remote_control->send) ;
 
-      REMOTELOGMSG(remote_control, "Taking ownership of peer clipboard \"%s\" to make request.",
+      REMOTELOGMSG(remote_control, "Taking ownership of peer clipboard \"%s\" to make request: %s",
 		   send->their_atom_string, request) ;
 
       if ((result = gtk_clipboard_set_with_data(send->their_clipboard,
