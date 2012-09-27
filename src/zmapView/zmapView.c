@@ -1518,7 +1518,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
   {
 		ZMapViewConnection view_conn;
 
-		if ((zMap_g_list_find_quark(req_sources, zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME))))
+		if (req_sources && (zMap_g_list_find_quark(req_sources, zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME))))
 		{
 			dna_requested = TRUE ;
 		}
