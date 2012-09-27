@@ -1,4 +1,3 @@
-/*  Last edited: Jul 23 14:09 2012 (edgrif) */
 /*  File: zmapappmain.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -57,7 +56,7 @@ static int checkForCmdLineSleep(int argc, char *argv[]) ;
 static void checkForCmdLineSequenceArg(int argc, char *argv[], char **dataset_out, char **sequence_out) ;
 static void checkForCmdLineStartEndArg(int argc, char *argv[], int *start_inout, int *end_inout) ;
 
-static char *checkConfigDir(gboolean use_files) ;
+static char *checkConfigDir(void) ;
 static gboolean checkSequenceArgs(int argc, char *argv[],
 				  ZMapFeatureSequenceMap seq_map_inout, char **err_msg_out) ;
 
@@ -82,13 +81,11 @@ static gboolean timeoutHandler(gpointer data) ;
 static void signalFinalCleanUp(ZMapAppContext app_context, int exit_rc, char *exit_msg) ;
 static void exitApp(ZMapAppContext app_context) ;
 static void crashExitApp(ZMapAppContext app_context) ;
-
 static void finalCleanUp(ZMapAppContext app_context) ;
 static void doTheExit(int exit_code) ;
 static void setup_signal_handlers(void);
-
 static gboolean configureLog(char *config_file) ;
-
+static void consoleMsg(gboolean err_msg, char *format, ...) ;
 
 
 
@@ -166,16 +163,15 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   /* The main control block.2 */
   app_context = createAppContext() ;
 
+
   /* default sequence to display -> if not run via XRemote (window_ID in cmd line args) */
   seq_map = app_context->default_sequence =  g_new0(ZMapFeatureSequenceMapStruct, 1) ;
 
+
   /* Set up configuration directory/files, this function exits if the directory/files can't be
    * accessed.... */
+  seq_map->config_file = checkConfigDir() ;
 
-  app_context->files = zMapCmdLineFinalArg();
-
-  /* if no config and no files the we display the main window */
-  seq_map->config_file = checkConfigDir(TRUE);	//app_context->files ? TRUE : FALSE) ;
 
   /* Set any global debug flags from config file. */
   zMapUtilsConfigDebug(NULL) ;
@@ -189,44 +185,43 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   /* Set up logging for application. */
   if (!zMapLogCreate(NULL) || !configureLog(seq_map->config_file))
     {
-      printf("ZMap cannot create log file.\n") ;
-
-      exit(EXIT_FAILURE) ;
+      consoleMsg(TRUE, "%s", "ZMap cannot create log file.") ;
+      doTheExit(EXIT_FAILURE) ;
     }
   else
     {
       zMapWriteStartMsg() ;
     }
 
-
+  /* Get general zmap configuration from config. file. */
   getConfiguration(app_context) ;
 
   {
-    /* locale setting */
+    /* Check locale setting, vital for message handling, text parsing and much else. */
     char *default_locale = "POSIX";
     char *locale_in_use, *user_req_locale, *new_locale;
     locale_in_use = setlocale(LC_ALL, NULL);
 
-    if(!(user_req_locale = app_context->locale))
+    if (!(user_req_locale = app_context->locale))
       user_req_locale = app_context->locale = g_strdup(default_locale);
 
-    if(!(new_locale = setlocale(LC_ALL, app_context->locale)))
-      {
-	zMapLogWarning("Failed setting locale to '%s'", app_context->locale);
-	printf("Failed setting locale to '%s'", app_context->locale);
-	/* Is it worth exiting? */
-      }
     /* should we store locale_in_use and new_locale somewhere? */
+    if (!(new_locale = setlocale(LC_ALL, app_context->locale)))
+      {
+	zMapLogWarning("Failed setting locale to '%s'", app_context->locale) ;
+	consoleMsg(TRUE, "Failed setting locale to '%s'", app_context->locale) ;
+	doTheExit(EXIT_FAILURE) ;
+      }
   }
 
-
-
-  /* Check for sequence/start/end on command line or in config. file. */
+  /* Check for sequence/start/end on command line or in config. file, must be
+   * either completely correct or not specified. */
   if (!checkSequenceArgs(argc, argv, seq_map, &err_msg))
     {
-      zMapLogFatal("Bad sequence args: %s", err_msg) ;
+      zMapLogCritical("%s", err_msg) ;
+      consoleMsg(TRUE, "%s", err_msg) ;
+      doTheExit(EXIT_FAILURE) ;
     }
-
 
 
   /*             GTK initialisation              */
@@ -280,30 +275,9 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
     zMapWarning("Log file was grown to %d bytes, you should think about archiving or removing it.\n", log_size) ;
 
 
-  /* show default sequence is based on whether or not we are controlled via XRemote
-   *
-   */
-
-  /* NOTE i tried making a copy of this to prevent a crash on shutdown inside localtime();
-   * on the assumption that there was some memory corruption
-   * as running zmap without a default sequence works
-   * can't see what other difference there could be
-   * run the same file by adding file and sequence to the main window and it's fine
-   * spend more than a day on this ....
-   * -> it was zMapConfigDirDestroy that did the bad free
-   */
-  if (seq_map->sequence && !zMapCmdLineArgsValue(ZMAPARG_WINDOW_ID, NULL))
-  {
-	ZMapFeatureSequenceMap copy = g_new0(ZMapFeatureSequenceMapStruct,1);
-
-	memcpy(copy, seq_map, sizeof(ZMapFeatureSequenceMapStruct));
-	if(seq_map->sequence)
-		copy->sequence = g_strdup(seq_map->sequence);
-	if(seq_map->config_file)
-		copy->config_file = g_strdup(seq_map->config_file);
-
-	zmapAppCreateZMap(app_context, copy) ;
-  }
+  /* Only show default sequence if we are _not_ controlled via XRemote */
+  if (!zMapCmdLineArgsValue(ZMAPARG_WINDOW_ID, NULL))
+    zmapAppCreateZMap(app_context, seq_map) ;
 
   app_context->state = ZMAPAPP_RUNNING ;
 
@@ -316,10 +290,6 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   /* We should never get here, hence the failure return code. */
   return(EXIT_FAILURE) ;
 }
-
-
-
-
 
 
 
@@ -365,7 +335,7 @@ void zmapAppExit(ZMapAppContext app_context)
 
 
 /*
- *  ------------------- Internal functions -------------------
+ *                 Internal routines
  */
 
 static void initGnomeGTK(int argc, char *argv[])
@@ -423,11 +393,11 @@ static void destroyAppContext(ZMapAppContext app_context)
     g_free(app_context->locale) ;
 
   if(app_context->default_sequence)
-  {
+    {
       if(app_context->default_sequence->sequence)
-            g_free(app_context->default_sequence->sequence);
+	g_free(app_context->default_sequence->sequence);
       g_free(app_context->default_sequence);
-  }
+    }
 
   g_free(app_context) ;
 
@@ -731,7 +701,7 @@ static int checkForCmdLineSleep(int argc, char *argv[])
 
 
 /* Did user specify a config directory and/or config file within that directory on the command line. */
-static char *checkConfigDir(gboolean use_files)
+static char *checkConfigDir(void)
 {
   char *config_file = NULL ;
   ZMapCmdLineArgsType dir = {FALSE}, file = {FALSE};
@@ -739,10 +709,8 @@ static char *checkConfigDir(gboolean use_files)
   zMapCmdLineArgsValue(ZMAPARG_CONFIG_DIR, &dir) ;
   zMapCmdLineArgsValue(ZMAPARG_CONFIG_FILE, &file) ;
 
-  /* NOTE if we run config free ('zmap thing.GFF') then there is no dir/file but this returns TRUE
-   * so that means that the dir and file strings will be valid if not
-   */
-  if (!zMapConfigDirCreate(dir.s, file.s, use_files))
+
+  if (!zMapConfigDirCreate(dir.s, file.s, FALSE))
     {
 	fprintf(stderr, "Could not access either/both of configuration directory \"%s\" "
 	      "or file \"%s\" within that directory.\n",
@@ -757,6 +725,8 @@ static char *checkConfigDir(gboolean use_files)
 
   return config_file ;
 }
+
+
 
 /* This function isn't very intelligent at the moment.  It's function
  * is to set the info (GError) object of the appcontext so that the
@@ -816,42 +786,6 @@ static gboolean getConfiguration(ZMapAppContext app_context)
 
       if (app_context->exit_timeout < 0)
 	app_context->exit_timeout = ZMAP_DEFAULT_EXIT_TIMEOUT;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      if (zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
-					ZMAPSTANZA_APP_DATASET, &tmp_string))
-	{
-	  /* if not supplied needs to appear in all the pipe script URLs */
-	  app_context->default_sequence->dataset = tmp_string;
-	}
-
-      if (zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
-					ZMAPSTANZA_APP_SEQUENCE, &tmp_string))
-	{
-	  ZMapFeatureSequenceMap s = app_context->default_sequence;
-
-	  s->sequence = tmp_string;
-	  s->start = 1;
-	  if (zMapConfigIniContextGetInt(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
-					 ZMAPSTANZA_APP_START, &s->start))
-            {
-	      zMapConfigIniContextGetInt(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
-					 ZMAPSTANZA_APP_END, &s->end);
-
-	      /* possibly worth checking csname and csver at some point */
-	      tmp_string = NULL;
-	      zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
-					    ZMAPSTANZA_APP_CSNAME,&tmp_string);
-	      zMapAssert(!tmp_string || !g_ascii_strcasecmp(tmp_string,"chromosome"));
-            }
-	  else
-            {
-	      /* (don't) try to get chromo coords from seq name */
-            }
-
-	}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
       /* help url to use */
@@ -915,14 +849,14 @@ static gboolean configureLog(char *config_file)
   gboolean logging, log_to_file, show_code_details, show_time, catch_glib, echo_glib ;
   char *full_dir, *log_name, *logfile_path ;
 
-	/* default values */
+  /* default values */
   logging = TRUE ;
   log_to_file = TRUE ;
   show_code_details = TRUE;
   show_time = TRUE;
   catch_glib = TRUE;
   echo_glib = TRUE;
-	/* if we run config free we put the log file in the cwd */
+  /* if we run config free we put the log file in the cwd */
   full_dir = g_strdup("./");
   log_name = g_strdup(ZMAPLOG_FILENAME) ;
 
@@ -1028,11 +962,11 @@ static gboolean checkSequenceArgs(int argc, char *argv[],
     {
       zMapAppGetSequenceConfig(seq_map_inout) ;
 
-      source = "config file" ;
+      source = "in config file" ;
     }
   else
     {
-      source = "command line" ;
+      source = "on command line" ;
     }
 
   /* Everything must be specified or nothing. */
@@ -1044,10 +978,35 @@ static gboolean checkSequenceArgs(int argc, char *argv[],
   else
     {
       result = FALSE ;
-      *err_msg_out = g_strdup_printf("Bad sequence args in command line: %s",
+      *err_msg_out = g_strdup_printf("Bad sequence args %s: %s",
+				     source,
 				     (!seq_map_inout->sequence ? "no sequence name"
 				      : (seq_map_inout->start <= 1 ? "start less than 1" : "end less than start"))) ;
     }
 
   return result ;
 }
+
+
+static void consoleMsg(gboolean err_msg, char *format, ...)
+{
+  va_list args ;
+  char *msg_string ;
+  FILE *stream ;
+
+  va_start(args, format) ;
+  msg_string = g_strdup_vprintf(format, args) ;
+  va_end(args) ;
+
+  if (err_msg)
+    stream = stderr ;
+  else
+    stream = stdout ;
+
+  fprintf(stream, "%s\n", msg_string) ;
+
+  g_free(msg_string) ;
+
+  return ;
+}
+

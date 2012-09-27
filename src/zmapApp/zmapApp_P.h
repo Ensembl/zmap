@@ -19,9 +19,9 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * and was written by
- *     Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk and,
- *          Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *       Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *     Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *       Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *  Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Private header for application level of zmap.
  *
@@ -70,19 +70,11 @@ typedef struct _ZMapAppContextStruct
   ZMapAppState state ;					    /* Needed to control exit in a clean way. */
 
   int exit_timeout ;					    /* time (s) to wait before forced exit. */
-
   int exit_rc ;
   char *exit_msg ;
 
+
   GtkWidget *app_widg ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  GtkWidget *sequence_widg ;
-  GtkWidget *start_widg ;
-  GtkWidget *end_widg ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
   GtkTreeStore *tree_store_widg ;
 
@@ -92,19 +84,21 @@ typedef struct _ZMapAppContextStruct
   ZMapManager zmap_manager ;
   ZMap selected_zmap ;
 
+
+  /* OLD XREMOTE...REMOVE WHEN NEW ONE ARRIVES.... */
   gulong property_notify_event_id;
   ZMapXRemoteObj xremote_client ;			    /* The external program we are sending
 							       commands to. */
+  gboolean sent_finalised ;				    /* ?????? */
+
 
   gboolean show_mainwindow ;				    /* Should main window be displayed. */
 
-  char **files;			/* data taken from GFF files on command line or in config file (autoconfigure servers) */
+  /* Was a default sequence specified in the config. file.*/
+  ZMapFeatureSequenceMap default_sequence ;
 
-      /* Was a default sequence specified in the config. file.*/
-  ZMapFeatureSequenceMap default_sequence;
+  char *locale ;
 
-  char *locale;
-  gboolean sent_finalised ;
 
   char *script_dir;					    /* where scripts are kept for the pipeServer module
 							     * can be set in [ZMap] or defaults to run-time directory
