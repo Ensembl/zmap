@@ -495,7 +495,7 @@ static gboolean dump_gff_cb(ZMapFeatureAny feature_any,
 	ZMapFeature feature = (ZMapFeature)feature_any;
 	ZMapFeatureTypeStyle style ;
 
-	style = feature->style;       /*zMapFindStyle(gff_data->styles, feature->style_id) ;*/
+	style = *feature->style;       /*zMapFindStyle(gff_data->styles, feature->style_id) ;*/
 
 
 	/* Output a GFFv2 record for the whole feature, fields are:

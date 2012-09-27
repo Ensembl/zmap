@@ -524,6 +524,10 @@ static void zmapWindowCanvasSequenceSetColour(FooCanvasItem         *foo,
 
 	ZMapSkipList sl;
 
+	if(!default_fill)		/* eg if not configured in the style */
+		return;
+	// if(!default_border) return;	not actually used
+
 	/* nominally there is only one feature in a seq column, but we could have 3 franes staggered.
 	 * besides, this data is in the feature not the featureset so we have to iterate regardless
 	 */

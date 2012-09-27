@@ -342,7 +342,7 @@ static char *view_execute_command(char *command_text, gpointer user_data,
     zMapLogMessage("New xremote command received: %s", command_text) ;
 
 
-  zMapDebugPrint(xremote_debug_GG, "ZMap App View Handler: %s",  command_text) ; 
+  zMapDebugPrint(xremote_debug_GG, "ZMap App View Handler: %s",  command_text) ;
 
 
   request_data.messages = g_string_sized_new(512) ;
@@ -1697,10 +1697,15 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 							      parser,
 							      "feature tag not contained within featureset tag");
 
+			   /* NOTE we assume that OTF features are neatly arranged in featuresets
+			    * and the styles match any that have previously been defined
+			    */
+			  request_data->feature_set->style = request_data->style;
+
 			  if (result
 			      && (request_data->feature = zMapFeatureCreateFromStandardData(feature_name, NULL, "",
 											    mode,
-											    request_data->style,
+											    &request_data->feature_set->style,
 											    start, end, has_score,
 											    score, strand)))
 			    {
@@ -1744,6 +1749,8 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 					  zMapFeatureBlockAddFeatureSet(request_data->block, locus_feature_set);
 					}
 
+					locus_feature_set->style = locus_style;
+
 				      /* For some reason lace passes over odd xml here...
 					 <zmap action="delete_feature">
 					 <featureset>
@@ -1786,7 +1793,7 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 
 					  tmp_locus_feature = zMapFeatureCreateFromStandardData(old_locus_name,
 												NULL, "",
-												ZMAPSTYLE_MODE_BASIC, locus_style,
+												ZMAPSTYLE_MODE_BASIC, &locus_feature_set->style,
 												start, end, FALSE, 0.0,
 												ZMAPSTRAND_NONE) ;
 
@@ -1805,7 +1812,7 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 					      /* make the locus feature itself. */
 					      locus_feature = zMapFeatureCreateFromStandardData(old_locus_name,
 												NULL, "",
-												ZMAPSTYLE_MODE_BASIC, locus_style,
+												ZMAPSTYLE_MODE_BASIC, &locus_feature_set->style,
 												start, end, FALSE, 0.0,
 												ZMAPSTRAND_NONE) ;
 					    }
@@ -1817,7 +1824,7 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 					  /* make the locus feature itself. */
 					  locus_feature = zMapFeatureCreateFromStandardData(new_locus_name,
 											    NULL, "",
-											    ZMAPSTYLE_MODE_BASIC, locus_style,
+											    ZMAPSTYLE_MODE_BASIC, &locus_feature_set->style,
 											    start, end, FALSE, 0.0,
 											    ZMAPSTRAND_NONE) ;
 

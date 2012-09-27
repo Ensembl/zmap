@@ -804,7 +804,7 @@ static gboolean serialize_item(FooCanvasItem *item, SerializedItemStruct *serial
 
 
       /* we need to record strand stuff here.......otherwise we can't set strand correctly later.....*/
-      serialize->strand_specific = zMapStyleIsStrandSpecific(feature->style) ;
+      serialize->strand_specific = zMapStyleIsStrandSpecific(*feature->style) ;
 
 
       serialize->strand     = container_set->strand;

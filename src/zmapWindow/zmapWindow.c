@@ -1524,7 +1524,7 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
 
       feature_group   = zmapWindowItemGetParentContainer(FOO_CANVAS_ITEM(top_canvas_item)) ;
 
-      style = feature->style;
+      style = *feature->style;
       select.feature_desc.struct_type = feature->struct_type ;
       select.feature_desc.type        = feature->type ;
 
@@ -3284,7 +3284,7 @@ zMapLogWarning("canvas event %d",  event->type);
 	 if(seq_item)
 		{
 		  zMapWindowCanvasFeaturesetGetSeqCoord((ZMapWindowFeaturesetItem) seq_item, FALSE,  wx, wy, &seq_start, &seq_end);
-		  
+
 		  zmapWindowHighlightSequenceItem(window, seq_item, seq_start, seq_end);
 
 		  /* NOTE we set feature list to NULL here, update info panel must handle */
@@ -3784,6 +3784,7 @@ void zmapWindowZoomToItem(ZMapWindow window, FooCanvasItem *item)
 void zmapWindowGetMaxBoundsItems(ZMapWindow window, GList *items,
 				 double *rootx1, double *rooty1, double *rootx2, double *rooty2)
 {
+
   MaxBoundsStruct max_bounds = {0.0} ;
 
   g_list_foreach(items, getMaxBounds, &max_bounds) ;

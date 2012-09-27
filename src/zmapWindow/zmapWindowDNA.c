@@ -994,11 +994,16 @@ static void matches_to_features(gpointer list_data, gpointer user_data)
   feature_set = fstyle->feature_set;
   style       = fstyle->feature_style;
 
+  if(!feature_set->style)
+  {
+	  feature_set->style = style;
+  }
+
   current_feature = zMapFeatureCreateFromStandardData(current_match->match,
 						      sequence,
 						      ontology,
 						      ZMAPSTYLE_MODE_BASIC,
-						      style,
+						      &fstyle->feature_set->style,
 						      start, end,
 						      has_score, score,
 						      current_match->strand) ;

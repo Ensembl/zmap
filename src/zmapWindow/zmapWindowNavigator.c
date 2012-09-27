@@ -2057,13 +2057,13 @@ void zmapWindowNavigatorRunSet(  ZMapFeatureSet set,
 	/* this stuff is just not used in the navigator..... esp given that container is a given */
 	if(feature->style)	/* chicken */
 	{
-		if(zMapStyleIsStrandSpecific(feature->style))
+		if(zMapStyleIsStrandSpecific(*feature->style))
 			feature_stack.strand = zmapWindowFeatureStrand(NULL,feature);
-		if(zMapStyleIsFrameSpecific(feature->style))
+		if(zMapStyleIsFrameSpecific(*feature->style))
 			feature_stack.frame = zmapWindowFeatureFrame(feature);
 	}
 
-	if(zMapStyleGetMode(feature->style) == ZMAPSTYLE_MODE_TEXT)
+	if(zMapStyleGetMode(*feature->style) == ZMAPSTYLE_MODE_TEXT)
 	{
 		if(!variantFeature(feature, navigate))
 		{

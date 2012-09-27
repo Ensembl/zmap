@@ -483,9 +483,13 @@ static gboolean zmapWindowContainerBumpStyle(ZMapWindowContainerFeatureSet conta
       	for(l = column_features->item_list;l;l = l->next)
       	{
       		ZMapWindowCanvasItem item = (ZMapWindowCanvasItem) l->data;
-      		ZMapFeatureTypeStyle style = item->feature->style;
+      		ZMapFeatureTypeStyle style;
       		ZMapFeatureTypeStyle bump_style;
 
+			/* NOTE we are bumping a CanvasFeatureset here and assume there is a feature displayed */
+			if(!item->feature)
+				continue;
+			style = *item->feature->style;
       		/* NOTE item contains many features but they must all have the same style */
 
 			bump_style = style;
@@ -505,6 +509,8 @@ static gboolean zmapWindowContainerBumpStyle(ZMapWindowContainerFeatureSet conta
 // NOTE this assumes that all features in the column have the same style
 // orignally this was ok for graph features
 // extending to basic features only (late aug 2012)
+
+// NOTE must set the featureset style not the feature
       		zMapWindowCanvasItemSetStyle(item,bump_style);
 			zMapWindowCanvasFeaturesetRequestReposition((FooCanvasItem *) item);
       	}

@@ -626,7 +626,7 @@ static gboolean simple_context_print_cb(ZMapFeatureAny feature_any,
 
       if(styles)
       {
-	      style = feature->style ; /* zMapFindStyle(styles, feature->style_id) ; */
+	      style = *feature->style ; /* zMapFindStyle(styles, feature->style_id) ; */
 	      type   = (char *)zMapStyleMode2ExactStr(zMapStyleGetMode(style)) ;
       }
         strand = zMapFeatureStrand2Str(feature->strand) ;

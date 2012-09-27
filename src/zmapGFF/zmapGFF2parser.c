@@ -170,6 +170,17 @@ ZMapGFFParser zMapGFFCreateParser(char *sequence, int features_start, int featur
 }
 
 
+/* the servers need styles to add DNA and 3FT
+ * they used to create temp style and then destroy these but that's not very good
+ * they don't have styles info directly but this is stored in the parser
+ * during the protocol steps
+ */
+GHashTable *zMapGFFParserGetStyles(ZMapGFFParser parser)
+{
+	if(!parser)
+		return NULL;
+	return parser->sources;
+}
 
 /* We should do this internally with a var in the parser struct.... */
 /* This function must be called prior to parsing feature lines, it is not required
@@ -1694,7 +1705,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
     }
   else if ((result = zMapFeatureAddStandardData(feature, feature_name_id, feature_name,
 						sequence, ontology,
-						feature_type, feature_style,
+						feature_type, &parser_feature_set->feature_set->style, // feature_style,
 						start, end,
 						has_score, score,
 						strand)))
