@@ -83,15 +83,16 @@ gboolean zmapAppCreateZMap(ZMapAppContext app_context, ZMapFeatureSequenceMap se
 
 
   /* Everything must be specified or nothing otherwise it's an error. */
-//  if (seq_map->sequence && seq_map->start && seq_map->end)
+  if ((seq_map->sequence && seq_map->start && seq_map->end)
+      || (!(seq_map->sequence) && !(seq_map->start) && !(seq_map->end)))
     {
       gboolean load_view = TRUE ;
 
-      /* Hack...we need to make sure manager does _NOT_ load the view with the old xremote. */
-	if (!seq_map->sequence || !seq_map->start || !seq_map->end)
-		load_view = FALSE;
+
+      /* HACK...WE NEED TO MAKE SURE MANAGER DOES _NOT_ LOAD THE VIEW WITH THE OLD XREMOTE.
+       * THE LOAD_VIEW FLAG CAN GO ONCE WE SWOP TO THE NEW XREMOTE. */
       if (app_context->xremote_client)
-		load_view = FALSE ;
+	load_view = FALSE ;
 
 
       add_result = zMapManagerAdd(app_context->zmap_manager, seq_map, &zmap, load_view) ;
@@ -125,11 +126,6 @@ gboolean zmapAppCreateZMap(ZMapAppContext app_context, ZMapFeatureSequenceMap se
 	  result = TRUE ;
 	}
     }
-#if 0
-  else if (!(seq_map->sequence) && !(seq_map->start) && !(seq_map->end))
-    {
-      result = TRUE ;
-    }
   else
     {
       result = FALSE ;
@@ -138,7 +134,6 @@ gboolean zmapAppCreateZMap(ZMapAppContext app_context, ZMapFeatureSequenceMap se
 		  (!seq_map->sequence ? "no sequence name"
 		   : (seq_map->start <= 1 ? "start less than 1" : "end less than start"))) ;
     }
-#endif
 
   return result ;
 }
