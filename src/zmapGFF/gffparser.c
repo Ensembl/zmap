@@ -73,11 +73,11 @@ int main(int argc, char *argv[])
   if (!g_thread_supported())
     g_thread_init(NULL);
 
-  zMapConfigDirCreate(NULL, NULL) ;
+  zMapConfigDirCreate(NULL, NULL, FALSE) ;
 
   zMapLogCreate(NULL) ;
 
-  zMapConfigIniGetStylesFromFile(NULL, argv[3], argv[4], &styles);
+  zMapConfigIniGetStylesFromFile(NULL, argv[3], argv[4], &styles, NULL);
   main_rc = parseFile(argv[1], argv[2], styles) ;
 
   zMapLogDestroy() ;

@@ -251,7 +251,7 @@ static ActionDescriptorStruct action_table_G[] =
 
 
 
-static ZMapXMLObjTagFunctionsStruct view_starts_G[] = 
+static ZMapXMLObjTagFunctionsStruct view_starts_G[] =
   {
     { "zmap",       xml_zmap_start_cb                  },
     { "request",    xml_request_start_cb               },
@@ -373,6 +373,9 @@ static char *view_execute_command(char *command_text, gpointer user_data,
 
   if (!ping)
     zMapLogMessage("New xremote command received: %s", command_text) ;
+
+
+  zMapDebugPrint(xremote_debug_GG, "ZMap App View Handler: %s",  command_text) ; 
 
 
   request_data.messages = g_string_sized_new(512) ;
@@ -2183,7 +2186,7 @@ static void loadFeatures(ZMapView view, RequestData input_data)
     }
 
   if (input_data->code == ZMAPXREMOTE_OK)
-    zmapViewLoadFeatures(view, input_data->block, input_data->feature_sets, start, end,
+    zmapViewLoadFeatures(view, input_data->block, input_data->feature_sets, NULL, start, end,
 			 SOURCE_GROUP_DELAYED, TRUE, TRUE) ;
 
   return ;

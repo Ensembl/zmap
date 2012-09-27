@@ -44,7 +44,6 @@
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #include <ZMap/zmapRemoteCommand.h>
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 #include <ZMap/zmapAppRemote.h>
 
 
@@ -212,7 +211,7 @@ typedef struct
 } ZMapViewSessionStruct, *ZMapViewSession ;
 
 
-
+typedef struct _ZMapViewConnectionStruct *ZMapViewConnection;
 
 
 
@@ -246,14 +245,19 @@ ZMapView zMapViewGetView(ZMapViewWindow view_window) ;
 GHashTable *zMapViewGetStyles(ZMapViewWindow view_window) ;
 ZMapWindowNavigator zMapViewGetNavigator(ZMapView view);
 int zMapViewNumWindows(ZMapViewWindow view_window) ;
-
 GList *zMapViewGetWindowList(ZMapViewWindow view_window);
 void   zMapViewSetWindowList(ZMapViewWindow view_window, GList *list);
-
 gboolean zMapViewProcessRemoteRequest(ZMapView user_data,
 				      char *command_name, ZMapAppRemoteViewID view_id, char *request,
 				      ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data) ;
-
+ZMapFeatureSequenceMap zMapViewGetSequenceMap(ZMapView zmap_view);
+ZMapFeatureSource zMapViewGetFeatureSetSource(ZMapView view, GQuark f_id);
+void zMapViewSetFeatureSetSource(ZMapView view, GQuark f_id, ZMapFeatureSource src);
+GList *zmapViewGetIniSources(char *config_file, char *config_str,char **stylesfile);
+ZMapViewConnection zMapViewRequestServer(ZMapView view, ZMapViewConnection view_conn, ZMapFeatureBlock block_orig, GList *req_featuresets,
+				   gpointer server, /* ZMapConfigSource */
+	   			   int req_start, int req_end,
+				   gboolean dna_requested, gboolean terminate);
 void zmapViewFeatureDump(ZMapViewWindow view_window, char *file) ;
 
 void zMapViewHighlightFeatures(ZMapView view,

@@ -15,6 +15,7 @@ ZMap/zmapConfigStrings.h \
 ZMap/zmapConfigStanzaStructs.h \
 ZMap/zmapConfigStyleDefaults.h \
 ZMap/zmapControl.h \
+ZMap/zmapControlImportFile.h \
 ZMap/zmapDAS.h \
 ZMap/zmapDNA.h \
 ZMap/zmapDraw.h \

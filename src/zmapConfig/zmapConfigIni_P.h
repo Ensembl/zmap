@@ -33,6 +33,7 @@
 #ifndef ZMAP_CONFIGINI_P_H
 #define ZMAP_CONFIGINI_P_H
 
+#include <ZMap/zmapConfigIni.h>
 #include <ZMap/zmapConfigStrings.h>       // hmmm... private header include global defines... cane be justfied perhaps?
 #include <ZMap/zmapConfigKeyboard.h>
 #include <ZMap/zmapConfigStyleDefaults.h>
@@ -59,7 +60,7 @@ typedef struct _ZMapConfigIniStruct
 
   unsigned int unsaved_alterations : 1;
 
-} ZMapConfigIniStruct, *ZMapConfigIni;
+} ZMapConfigIniStruct;
 
 #ifdef MH17_IN_CONFIG_H
 
@@ -138,6 +139,7 @@ typedef struct
 /*@}*/
 
 
+
 /*!
  * Config data available to application. */
 typedef struct _ZMapConfigStruct *ZMapConfig ;
@@ -208,7 +210,6 @@ gboolean zMapConfigIniReadAll(ZMapConfigIni config, char *config_file) ;
 gboolean zMapConfigIniReadUser(ZMapConfigIni config, char *config_file);
 gboolean zMapConfigIniReadBuffer(ZMapConfigIni config, char *buffer);
 gboolean zMapConfigIniReadFile(ZMapConfigIni config, char *file);
-gboolean zMapConfigIniHasStanza(ZMapConfigIni config,char *stanza_name,GKeyFile **which);
 void zMapConfigIniGetStanza(ZMapConfigIni config, char *stanza_name);
 void zMapConfigIniGetAllStanzas(ZMapConfigIni config);
 void zMapConfigIniGetStanzaValues(ZMapConfigIni, char *stanza_name);

@@ -174,6 +174,7 @@ ZMAP_ENUM_AS_EXACT_STRING_FUNC(zmapStyleBlixemType2ExactStr,     ZMapStyleBlixem
 ZMAP_ENUM_TO_SHORT_TEXT_FUNC(zmapStyleBumpMode2ShortText, ZMapStyleBumpMode, ZMAP_STYLE_BUMP_MODE_LIST) ;
 
 
+ZMAP_ENUM_AS_NAME_STRING_FUNC(zmapStyleMode2ShortText, ZMapStyleMode, ZMAP_STYLE_MODE_LIST) ;
 
 
 /* The too-many bump modes have been remapped to just a few (too few ?) which breaks our

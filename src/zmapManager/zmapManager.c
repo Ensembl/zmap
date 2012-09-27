@@ -58,7 +58,6 @@ typedef struct
   /* only for now....not sure why this is in app_context->info->code */
   int code ;
 
-
   GQuark sequence ;
   GQuark start ;
   GQuark end ;
@@ -205,11 +204,16 @@ ZMapManager zMapManagerCreate(void *gui_data)
  * Policy is:
  *
  * If no connection can be made for the view then the zmap is destroyed,
- * if any connection succeeds then the zmap is added but errors are reported,
- * if sequence is NULL a blank zmap is created.
+ * if any connection succeeds then the zmap is added but errors are reported.
+ * 
+ * sequence_map is assumed to be filled in correctly.
+ * 
+ * 
+ * load_view is a hack that can go once the new view stuff is here...
+ * 
  *  */
 ZMapManagerAddResult zMapManagerAdd(ZMapManager zmaps, ZMapFeatureSequenceMap sequence_map,
-				    ZMap *zmap_inout, ZMapView *view_out)
+				    ZMap *zmap_inout, ZMapView *view_out, gboolean load_view)
 {
   ZMapManagerAddResult result = ZMAPMANAGER_ADD_FAIL ;
   ZMap zmap = *zmap_inout ;
@@ -221,19 +225,16 @@ ZMapManagerAddResult zMapManagerAdd(ZMapManager zmaps, ZMapFeatureSequenceMap se
 
   if (zmap)
     {
-      if (!sequence_map->sequence)
+      if (!load_view)
 	{
-	  /* No sequence so just add blank zmap. */
-	  result = ZMAPMANAGER_ADD_NOTCONNECTED ;
+	  result = ZMAPMANAGER_ADD_OK ;
 	}
       else
 	{
 	  ZMapViewWindow view_window ;
 
 	  /* Try to load the sequence. */
-	  if ((view_window = zMapAddView(zmap, sequence_map))
-	      && (view = zMapViewGetView(view_window))
-	      && zMapConnectView(zmap, view))
+	  if ((view = zMapAddView(zmap, sequence_map)) && zMapConnectView(zmap, view))
 	    {
 	      result = ZMAPMANAGER_ADD_OK ;
 	    }
@@ -246,7 +247,7 @@ ZMapManagerAddResult zMapManagerAdd(ZMapManager zmaps, ZMapFeatureSequenceMap se
 	}
     }
 
-  if (result == ZMAPMANAGER_ADD_OK || result == ZMAPMANAGER_ADD_NOTCONNECTED)
+  if (result == ZMAPMANAGER_ADD_OK)
     {
       zmaps->zmap_list = g_list_append(zmaps->zmap_list, zmap) ;
       *zmap_inout = zmap ;

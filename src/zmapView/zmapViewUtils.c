@@ -83,6 +83,21 @@ static void stepDestroy(gpointer data, gpointer user_data) ;
 
 
 
+ZMapFeatureSource zMapViewGetFeatureSetSource(ZMapView view, GQuark f_id)
+{
+	ZMapFeatureSource src;
+
+	src = g_hash_table_lookup(view->context_map.source_2_sourcedata,GUINT_TO_POINTER(f_id));
+
+	return src;
+}
+
+void zMapViewSetFeatureSetSource(ZMapView view, GQuark f_id, ZMapFeatureSource src)
+{
+	g_hash_table_replace(view->context_map.source_2_sourcedata,GUINT_TO_POINTER(f_id), src);
+}
+
+
 /*
  *                  ZMapView interface functions.
  */
@@ -323,7 +338,7 @@ void zmapViewStepListIter(ZMapViewConnection view_con)
 	  {
 	    if (curr_step->connection_req->state != STEPLIST_DISPATCHED)
 	      curr_step->state = STEPLIST_FINISHED ;
-	    
+
 	    break ;
 	  }
 	case STEPLIST_INVALID:  // if a step is not used then skip over it

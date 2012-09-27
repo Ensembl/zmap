@@ -232,6 +232,10 @@ static char *window_execute_command(char *command_text, gpointer user_data, int 
   RequestDataStruct input_data = {0};
   char *response = NULL;
 
+
+  zMapDebugPrint(xremote_debug_GG, "ZMap Window Remote Handler: %s",  command_text) ; 
+
+
   input_data.window = window;
   input.user_data   = &input_data;
 

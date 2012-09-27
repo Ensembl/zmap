@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -32,28 +32,30 @@
 #define ZMAP_CONFIG_STYLE_DEFAULTS_H
 
 
-/*! 
+/*!
  * Here are a list of predefined/fixed styles which zmap uses. Styles with these names
  * _MUST_ be available from the server with the given name (case insensitive),
  * if they are not then various types of display (dna, 3 frame) are not possible.
- * 
+ *
  * ZMap will fill in the style with some reasonable defaults, which
  * users may overload/override, so long as they use these names.
- * 
+ *
  * - 3 Frame                  controls 3 frame display
  * - 3 Frame Translation      controls 3 frame protein translation
- * 
+ *
  * - DNA                      controls dna sequence display
- * 
+ *
  * - Locus                    controls display of a column of locus names
- * 
+ *
  * - GeneFinderFeatures       controls fetching/display of gene finder features
- * 
+ *
  * - Assembly_path            display of clone/tiling path for virtual sequence
- * 
+ *
  */
 
 #define TEXT_PREFIX "Predefined method: required for "
+
+/* mh17: rep0lace space by - to allow default styles via text file */
 
 #define ZMAP_FIXED_STYLE_3FRAME   "3 Frame"
 #define ZMAP_FIXED_STYLE_3FRAME_TEXT TEXT_PREFIX "3 frame display."
@@ -73,7 +75,7 @@
 #define ZMAP_FIXED_STYLE_STRAND_SEPARATOR_TEXT TEXT_PREFIX "strand separator display"
 #define ZMAP_FIXED_STYLE_SEARCH_MARKERS_NAME "Search Hit Marker"
 #define ZMAP_FIXED_STYLE_SEARCH_MARKERS_TEXT TEXT_PREFIX "display location of matches to query."
-#define ZMAP_FIXED_STYLE_ASSEMBLY_PATH_NAME "Assembly_path"
+#define ZMAP_FIXED_STYLE_ASSEMBLY_PATH_NAME "Assembly path"
 #define ZMAP_FIXED_STYLE_ASSEMBLY_PATH_TEXT TEXT_PREFIX "assembly path for displayed sequence."
 
 /* The opts struct */

@@ -104,6 +104,14 @@ static char *actions_G[ZMAPAPP_REMOTE_UNKNOWN + 1] = {
 
 
 
+gboolean xremote_debug_GG = TRUE ;
+
+
+/*
+ *                   External routines.
+ */
+
+
 /* Installs the handlers to monitor/handle requests to/from an external program. */
 void zmapAppRemoteInstaller(GtkWidget *widget, gpointer app_context_data)
 {
@@ -217,6 +225,10 @@ static char *application_execute_command(char *command_text, gpointer app_contex
       goto HAVE_RESPONSE;
     }
 
+
+  zMapDebugPrint(xremote_debug_GG, "ZMap App Remote Handler: %s",  command_text) ;
+
+
   parser = zMapXMLParserCreate(&request_data, FALSE, cmd_debug);
 
   zMapXMLParserSetMarkupObjectTagHandlers(parser, start_handlers_G, end_handlers_G);
@@ -231,7 +243,6 @@ static char *application_execute_command(char *command_text, gpointer app_contex
       switch(request_data.action)
         {
         case ZMAPAPP_REMOTE_OPEN_ZMAP:
-          createZMap(app_context_data, &request_data, &response_data);
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
           if(app_context->info)
@@ -239,6 +250,7 @@ static char *application_execute_command(char *command_text, gpointer app_contex
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
           break;
+
         case ZMAPAPP_REMOTE_CLOSE_ZMAP:
 	  {
 	    guint handler_id ;
@@ -304,24 +316,22 @@ static void createZMap(ZMapAppContext app, RequestData request_data, ResponseCon
   seq_map->start = request_data->start;
   seq_map->end = request_data->end;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  zmapAppCreateZMap(app, seq_map) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-  response_data->handled = TRUE;
-
-  /* that screwy rabbit */
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  g_string_append_printf(response_data->message, "%s", app->info->message);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  if (zmapAppCreateZMap(app, seq_map))
+    {
+      response_data->handled = TRUE ;
+	if(app->info)
+		g_string_append_printf(response_data->message, "%s", app->info->message) ;
+    }
+  else
+    {
+      response_data->handled = FALSE ;
+      g_string_append_printf(response_data->message, "%s", "zmap create failed.") ;
+    }
 
 
   /* Clean up. */
-  if (sequence)
-    g_free(sequence) ;
+//  if (sequence)
+//	g_free(sequence) ;
 
   return ;
 }

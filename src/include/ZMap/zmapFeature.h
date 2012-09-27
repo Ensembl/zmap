@@ -1141,6 +1141,8 @@ GList *zMapFeatureSetGetNamedFeatures(ZMapFeatureSet feature_set, GQuark origina
 
 gboolean zMapFeatureSetIsLoadedInRange(ZMapFeatureBlock block, GQuark unique_id,int start, int end);
 
+ZMapFeatureColumn zMapFeatureGetSetColumn(ZMapFeatureContextMap map,GQuark set_id);
+
 
 /* *********************
  * FEATURE BLOCK METHODS

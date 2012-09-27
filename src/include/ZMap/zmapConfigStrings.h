@@ -196,7 +196,7 @@
 #define ZMAPSTANZA_APP_LOCALE            "locale"
 //#define ZMAPSTANZA_APP_SCRIPTS           "script-dir"
 #define ZMAPSTANZA_APP_DATA              "data-dir"
-//#define ZMAPSTANZA_APP_STYLESFILE        "stylesfile"
+#define ZMAPSTANZA_APP_STYLESFILE        "stylesfile"
 #define ZMAPSTANZA_APP_LEGACY_STYLES     "legacy-styles"
 #define ZMAPSTANZA_APP_STYLE_FROM_METHOD "stylename-from-methodname"
 #define ZMAPSTANZA_APP_XREMOTE_DEBUG     "xremote-debug"
@@ -393,7 +393,8 @@
 #define ZMAPSTANZA_SOURCE_TIMEOUT        "timeout"
 #define ZMAPSTANZA_SOURCE_VERSION        "version"
 #define ZMAPSTANZA_SOURCE_FEATURESETS    "featuresets"
-#define ZMAPSTANZA_SOURCE_STYLES         "styles"
+//#define ZMAPSTANZA_SOURCE_STYLES         "styles"
+#define ZMAPSTANZA_SOURCE_REQSTYLES      "request-styles"
 #define ZMAPSTANZA_SOURCE_STYLESFILE     "stylesfile"
 #define ZMAPSTANZA_SOURCE_MAPPING        "provide-mapping"
 #define ZMAPSTANZA_SOURCE_NAVIGATORSETS  "navigatorsets"
@@ -916,7 +917,7 @@
 #define ZMAPSTANZA_GFF_RELATED_CONFIG         "featureset-related"
 #define ZMAPSTANZA_FEATURESETS_CONFIG         "featuresets"
 
-
+#define ZMAPSTANZA_IMPORT_CONFIG              "import"
 
 
 

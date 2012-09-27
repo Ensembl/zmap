@@ -1,0 +1,185 @@
+#!/usr/bin/env perl
+
+# take a few (GFF) file arguments and create a minimal ZMap config file
+# written following discussions about how to make ZMap run config free
+# we assume that each file given contains data for the same sequence
+# non matching files will be ignored
+# files may be urls
+# will create ~/.ZMap/ZMap by default
+# one previous file is backed up to file~
+
+use strict;
+use warnings;
+
+use Carp;
+use Getopt::Long 'GetOptions';
+use Pod::Usage;
+
+use URI::Escape qw(uri_unescape);
+
+
+# parameters
+my %params = ();
+my @options = qw ( help! man! start=i end=i sequence=s file=s );
+my @required = qw ( );
+
+my ($sequence, $start, $end);
+my %src_files;
+
+
+
+sub get_params
+{
+ 	# defaults
+
+	GetOptions(\%params, @options ) or pod2usage(2);
+
+	pod2usage(1) if defined $params { 'help' };
+	pod2usage(-exitstatus => 0, -verbose => 2) if defined $params {'man'} ;
+
+	my $missing = 0;
+	foreach my $param (@required)
+	{
+		if (!defined $params { $param })
+		{
+			print "$param not specified\n";
+			$missing++;
+		}
+	}
+	pod2usage(1) if $missing;
+
+	$params{$_} = uri_unescape($params{$_}) for keys %params;
+}
+
+
+
+sub get_config
+{
+	my ($file) = @_;
+
+	return  "cannot open $file\n" if ! open IFILE, $file;
+
+	while (<IFILE>)
+	{
+		last if(! m/^\#\#/ );
+
+##gff-version 2
+##source-version giface:ACEDB 4.9.50
+##date 2010-05-18
+##sequence-region B0250 1 39216
+
+		if ( m/gff-version\s+(\d+)/ )
+		{
+			$src_files { $file } -> { 'gff_version' } = $1;
+
+		}
+		elsif ( m/sequence-region\s+(\S+)\s+(\d+)\s+(\d+)/ )
+		{
+			$src_files { $file } -> { 'sequence' } = $1;
+			$src_files { $file } -> { 'start' } = $2;
+			$src_files { $file } -> { 'end' } = $3;
+		}
+	}
+
+	close IFILE;
+
+	return "$file: GFF version not specified\n"  if !defined $src_files { $file } -> { 'gff_version' };
+	return "$file: sequence not specified\n"  if !defined $src_files { $file } -> { 'sequence' };
+
+
+	$sequence = $src_files { $file } -> { 'sequence' } if !defined $sequence;
+	$start    = $src_files { $file } -> { 'start' }    if !defined $start;
+	$end      = $src_files { $file } -> { 'end' } 	   if !defined $end;
+
+	return "$file: ignored - different sequence\n"  if  $src_files { $file } -> { 'sequence' } ne $sequence;
+
+	return 0;	# ie success
+}
+
+
+sub main
+{
+	get_params;
+
+	# if not set in command line these get set by the first file
+	$sequence = $params { 'sequence' } if(defined $params { 'sequence' });
+	$start    = $params { 'start' }    if(defined $params { 'start' });
+	$end      = $params { 'end' }      if(defined $params { 'end' });
+
+	my $file = $params { 'file' };
+	$file = $ENV{HOME} . "/.ZMap/ZMap" if !defined $file;
+
+	if( -r $file)
+	{
+		my $backfile = $file . '~';
+
+		unlink "$backfile"  if -r $backfile;
+		rename $file, $backfile;
+	}
+
+	open (OFILE, "> " . $file ) or die("cannot open $file\n");
+
+	my @sources = ();
+	foreach my $file (@ARGV)
+	{
+		if (get_config($file))
+		{
+			print $_;
+		}
+		else
+		{
+			my $src = $file;
+			$src =~ s/\.gff//;
+			$src_files { $file } -> { 'source' } = $src;
+			push @sources, $src;
+		}
+
+	}
+
+	$" = ';';
+	print OFILE <<ZMAP
+[ZMap]
+show-mainwindow = true
+sequence = $sequence
+start = $start
+end = $end
+sources = @sources
+navigatorsets = scale ; genomic_canonical ; locus
+
+ZMAP
+;
+	# explicitly we do not create a columns list or stanza
+
+	 print OFILE <<ZMAP_WINDOW
+[ZMapWindow]
+colour-column-highlight = cornsilk
+colour-frame-2 = #e6e6ff
+canvas-maxsize = 10000
+feature-line-width = 1
+feature-spacing = 4.0
+colour-frame-1 = #e6ffe6
+colour-frame-0 = #ffe6e6
+
+ZMAP_WINDOW
+;
+
+
+	foreach my $fname (keys %src_files)
+	{
+		my $src = $src_files { $fname} -> { 'source' };
+		my $sep = ( $src =~ m/^\// ) ? '/' : '';
+		print OFILE <<MY_FILE
+[$src]
+delayed = false
+featuresets=
+url=file:///$sep$fname
+
+MY_FILE
+;
+	}
+
+	close OFILE;
+}
+
+
+main;

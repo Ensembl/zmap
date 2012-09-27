@@ -607,7 +607,16 @@ gboolean zmapViewCallBlixem(ZMapView view,
   freeBlixemData(&blixem_data) ;
 
   if (!status)
-    zMapShowMsg(ZMAP_MSG_WARNING, err_msg) ;
+    {
+      zMapShowMsg(ZMAP_MSG_WARNING, err_msg) ;
+    }
+  else
+    {
+      /* N.B. we block for a couple of seconds here to make sure user can see message. */
+      zMapGUIShowMsgFull(NULL, "blixem launched and will display shortly.",
+			 ZMAP_MSG_EXIT,
+			 GTK_JUSTIFY_CENTER, 3, FALSE) ;
+    }
 
   return status ;
 }
@@ -657,7 +666,7 @@ static gboolean initBlixemData(ZMapView view, ZMapFeatureBlock block,
 
   blixem_data->view  = view ;
 
-  blixem_data->config_file = ((ZMapFeatureSequenceMap)(view->sequence_mapping->data))->config_file ;
+  blixem_data->config_file = g_strdup(((ZMapFeatureSequenceMap)(view->sequence_mapping->data))->config_file) ;
 
   blixem_data->offset = offset ;
   blixem_data->position = position ;
@@ -730,6 +739,9 @@ static void freeBlixemData(blixemData blixem_data)
       g_list_foreach(blixem_data->local_sequences, freeSequences, NULL) ;
       g_list_free(blixem_data->local_sequences) ;
     }
+
+  memset(blixem_data, 0, sizeof(blixemDataStruct)) ;
+
 
   return ;
 }
@@ -971,7 +983,7 @@ static gboolean setBlixemScope(blixemData blixem_data)
   gboolean status = TRUE ;
   static gboolean scope_debug = FALSE ;
 
-
+#if RESTRICT_TO_MARK
   /* We shouldn't need this here...window should take care of it..... */
   if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_SEQ && !(blixem_data->mark_start && blixem_data->mark_end))
     {
@@ -979,6 +991,7 @@ static gboolean setBlixemScope(blixemData blixem_data)
 
       status = FALSE ;
     }
+#endif
 
   if (status)
     {

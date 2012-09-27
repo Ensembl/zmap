@@ -1,4 +1,4 @@
-/*  File: zmapappconnect.c
+/*  File: zmapAppconnect.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
@@ -45,7 +45,7 @@ static void createThreadCB(ZMapFeatureSequenceMap sequence_map, gpointer user_da
 
 
 
-/* 
+/*
  *                 External interface.
  */
 
@@ -53,7 +53,7 @@ GtkWidget *zmapMainMakeConnect(ZMapAppContext app_context, ZMapFeatureSequenceMa
 {
   GtkWidget *frame ;
 
-  
+
   frame = zMapCreateSequenceViewWidg(createThreadCB, app_context, sequence_map) ;
 
 
@@ -61,66 +61,95 @@ GtkWidget *zmapMainMakeConnect(ZMapAppContext app_context, ZMapFeatureSequenceMa
 }
 
 
-/* Moving code to manager so need to somehow make sure that we signal app back so it
- * can update it's display...... */
-
 /* Make a new zmap, if sequence is unspecified then the zmap will be blank and view
  * will not be set. */
+/* sequence etc can be unspecified to create a blank zmap. */
+/* Sequence must be fully specified in seq_map as sequence/start/end
+ *
+ * and config_file....investigate more thoroughly....probably needs setting....
+ * check in debugger.....
+ *
+ * Returns TRUE if sequence correctly specified or no sequence at all specified,
+ * only returns FALSE if sequence incorrectly specified.
+ *
+ *
+ *  */
 gboolean zmapAppCreateZMap(ZMapAppContext app_context, ZMapFeatureSequenceMap sequence_map,
 			   ZMap *zmap_inout, ZMapView *view_out, char **err_msg_out)
 {
   gboolean result = FALSE ;
   ZMap zmap = *zmap_inout ;
   ZMapView view = NULL ;
-  GtkTreeIter iter1;
   ZMapManagerAddResult add_result ;
 
-  add_result = zMapManagerAdd(app_context->zmap_manager, sequence_map, &zmap, &view) ;
-  if (add_result == ZMAPMANAGER_ADD_DISASTER)
-    {
-      zMapWarning("%s", "Failed to create ZMap and then failed to clean up properly,"
-                  " save your work and exit now !") ;
-    }
-  else if (add_result == ZMAPMANAGER_ADD_FAIL)
-    {
-      *err_msg_out = g_strdup_printf("Bad start/end coords: %d, %d", sequence_map->start, sequence_map->end) ;
-    }
-  else
-    {
-      /* agh....ok this not connected bit needs sorting out..... */
+
+  /* Nothing specified on command line so check config file. */
+  if (!(seq_map->sequence) && !(seq_map->start) && !(seq_map->end))
+    zMapAppGetSequenceConfig(seq_map) ;
 
 
-      /* If we tried to load a sequence but couldn't connect then warn user, otherwise
-       * we just created the requested blank zmap. */
-      if (sequence_map->sequence && add_result == ZMAPMANAGER_ADD_NOTCONNECTED)
-	zMapWarning("%s", "ZMap added but could not connect to server, try \"Reload\".") ;
+  /* Everything must be specified or nothing otherwise it's an error. */
+  if ((seq_map->sequence && seq_map->start && seq_map->end)
+      || (!(seq_map->sequence) && !(seq_map->start) && !(seq_map->end)))
+    {
+      gboolean load_view = TRUE ;
 
-      gtk_tree_store_append (app_context->tree_store_widg, &iter1, NULL);
-      gtk_tree_store_set (app_context->tree_store_widg, &iter1,
-			  ZMAPID_COLUMN, zMapGetZMapID(zmap),
-			  ZMAPSEQUENCE_COLUMN,"<dummy>" ,
-			  ZMAPSTATE_COLUMN, zMapGetZMapStatus(zmap),
-			  ZMAPLASTREQUEST_COLUMN, "blah, blah, blaaaaaa",
-			  ZMAPDATA_COLUMN, (gpointer)zmap,
-			  -1);
+
+      /* HACK...WE NEED TO MAKE SURE MANAGER DOES _NOT_ LOAD THE VIEW WITH THE OLD XREMOTE.
+       * THE LOAD_VIEW FLAG CAN GO ONCE WE SWOP TO THE NEW XREMOTE. */
+      if (app_context->xremote_client)
+	load_view = FALSE ;
+
+
+      add_result = zMapManagerAdd(app_context->zmap_manager, seq_map, &zmap, &view, load_view) ;
+      if (add_result == ZMAPMANAGER_ADD_DISASTER)
+	{
+	  zMapWarning("%s", "Failed to create ZMap and then failed to clean up properly,"
+		      " save your work and exit now !") ;
+	}
+      else if (add_result == ZMAPMANAGER_ADD_FAIL)
+	{
+	  zMapWarning("%s", "Failed to create ZMap") ;
+	  /* DO WE NEED THIS ERR_MSG_OUT STUFF....CHECK.... */
+	  *err_msg_out = g_strdup_printf("Bad start/end coords: %d, %d", sequence_map->start, sequence_map->end) ;
+	}
+      else
+	{
+	  GtkTreeIter iter1 = {0} ;
+
+	  gtk_tree_store_append(app_context->tree_store_widg, &iter1, NULL) ;
+	  gtk_tree_store_set(app_context->tree_store_widg, &iter1,
+			     ZMAPID_COLUMN, zMapGetZMapID(zmap),
+			     ZMAPSEQUENCE_COLUMN,"<dummy>" ,
+			     ZMAPSTATE_COLUMN, zMapGetZMapStatus(zmap),
+			     ZMAPLASTREQUEST_COLUMN, "blah, blah, blaaaaaa",
+			     ZMAPDATA_COLUMN, (gpointer)zmap,
+			     -1) ;
 
 #ifdef RDS_NEVER_INCLUDE_THIS_CODE
-      zMapDebug("GUI: create thread number %d for zmap \"%s\" for sequence \"%s\"\n",
-		(row + 1), row_text[0], row_text[1]) ;
+	  zMapDebug("GUI: create thread number %d for zmap \"%s\" for sequence \"%s\"\n",
+		    (row + 1), row_text[0], row_text[1]) ;
 #endif /* RDS_NEVER_INCLUDE_THIS_CODE */
 
-      *zmap_inout = zmap ;
+	  *zmap_inout = zmap ;
+	  if (view)
+	    *view_out = view ;
 
-      if (view)
-	*view_out = view ;
+	  result = TRUE ;
+	}
+    }
 
-      result = TRUE ;
+  else
+    {
+      result = FALSE ;
+
+      zMapWarning("Sequence not specified properly: %s",
+		  (!seq_map->sequence ? "no sequence name"
+		   : (seq_map->start <= 1 ? "start less than 1" : "end less than start"))) ;
     }
 
   return result ;
 }
-
-
 
 
 

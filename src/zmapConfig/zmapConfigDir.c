@@ -57,8 +57,11 @@ static ZMapConfigDir dir_context_G = NULL ;
  *
  * returns FALSE if the configuration directory does not exist/read/writeable.
  *
- *  */
-gboolean zMapConfigDirCreate(char *config_dir, char *config_file)
+ * if file_opt then config files must be explicit and if not specified we run config free
+ * which is done by creating a config string in memory as if it came from a file
+ * there's code that assumes we have a file and directory so we get to keep this regardless
+ */
+gboolean zMapConfigDirCreate(char *config_dir, char *config_file, gboolean file_opt)
 {
   gboolean result = FALSE ;
   ZMapConfigDir dir_context = NULL ;
@@ -69,13 +72,16 @@ gboolean zMapConfigDirCreate(char *config_dir, char *config_file)
 
   dir_context_G = dir_context = g_new0(ZMapConfigDirStruct, 1) ;
 
-  if (!config_file)
+  if (!config_file && (config_dir || !file_opt))
     config_file = ZMAP_USER_CONFIG_FILE ;
 
   if (!config_dir)
     {
-      config_dir = ZMAP_USER_CONFIG_DIR ;
-      home_relative = TRUE ;
+	   if(config_file || !file_opt)
+	   {
+		config_dir = ZMAP_USER_CONFIG_DIR ;
+		home_relative = TRUE ;
+	   }
     }
   else if(*config_dir == '~' && *(config_dir + 1) == '/')
     {
@@ -83,9 +89,16 @@ gboolean zMapConfigDirCreate(char *config_dir, char *config_file)
       home_relative = TRUE ;
     }
 
-  if ((dir_context->config_dir = zMapGetDir(config_dir, home_relative, make_dir))
-      && (dir_context->config_file = zMapGetFile(dir_context->config_dir, config_file, FALSE)))
-    result = TRUE ;
+  if(config_dir && config_file)
+  {
+	if ((dir_context->config_dir = zMapGetDir(config_dir, home_relative, make_dir))
+		&& (dir_context->config_file = zMapGetFile(dir_context->config_dir, config_file, FALSE)))
+	result = TRUE ;
+  }
+  else if(file_opt)
+  {
+	  result = TRUE;		/* we make up a config file internally */
+  }
 
   if((zmap_home = getenv("ZMAP_HOME")))
     {
@@ -105,7 +118,7 @@ gboolean zMapConfigDirCreate(char *config_dir, char *config_file)
 
   if(!result)
   {
-      //  for error reporting
+      //  for error reporting  NOTE these may be NULL if we run config free
       dir_context->config_dir = config_dir;
       dir_context->config_file = config_file;
   }
@@ -208,7 +221,8 @@ void zMapConfigDirDestroy(void)
 
   zMapAssert(dir_context) ;
 
-  g_free(dir_context->config_dir) ;
+#warning this free causes memory corruption
+//  g_free(dir_context->config_dir) ;
 
   g_free(dir_context) ;
 

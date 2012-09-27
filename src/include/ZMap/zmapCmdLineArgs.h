@@ -42,6 +42,7 @@ typedef union
   gboolean b ;
   int i ;
   char *s ;
+  char **sa;
   double f ;
 } ZMapCmdLineArgsType ;
 
@@ -68,11 +69,13 @@ typedef union
 #define ZMAPARG_SLEEP          "sleep"
 #define ZMAPARG_TIMING         "timing"
 #define ZMAPARG_SHRINK         "shrink"	// to allow the window to shrink: gives too small size by default
+#define ZMAPARG_SEQUENCE	 "sequence"	// [dataset/]sequence
+#define ZMAPARG_FILES		 "<file(s)>"
 
 
 void zMapCmdLineArgsCreate(int *argc, char *argv[]) ;
 gboolean zMapCmdLineArgsValue(char *arg_name, ZMapCmdLineArgsType *result) ;
-char *zMapCmdLineFinalArg(void) ;
+char **zMapCmdLineFinalArg(void) ;
 void zMapCmdLineArgsDestroy(void) ;
 
 
