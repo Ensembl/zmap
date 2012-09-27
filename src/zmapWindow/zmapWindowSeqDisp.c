@@ -697,6 +697,8 @@ gboolean zMapWindowSeqDispDeSelect(FooCanvasItem *sequence_feature)
 
 
 
+
+
 /* Highlight sequence in sequence_feature corresponding to seed_feature. */
 gboolean zMapWindowSeqDispSelectByFeature(FooCanvasItem *sequence_feature,
 						  FooCanvasItem *item, ZMapFeature seed_feature,
