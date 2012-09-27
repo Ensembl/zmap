@@ -1494,11 +1494,6 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
   gboolean dna_requested = FALSE;
 
 
-  /* OH DEAR...THINK WE MIGHT NEED THE CONFIG FILE HERE TOO.... */
-
-  /* mh17: this is tedious to do for each request esp on startup */
-  sources = zmapViewGetIniSources(view->view_sequence->config_file, NULL, NULL) ;
-  hash = zmapViewGetFeatureSourceHash(sources);
 
 
   /* MH17 NOTE
@@ -1530,6 +1525,12 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
   }
   else
   {
+	/* OH DEAR...THINK WE MIGHT NEED THE CONFIG FILE HERE TOO.... */
+
+	/* mh17: this is tedious to do for each request esp on startup */
+	sources = zmapViewGetIniSources(view->view_sequence->config_file, NULL, NULL) ;
+	hash = zmapViewGetFeatureSourceHash(sources);
+
 	for ( ; req_sources ; req_sources = g_list_next(req_sources))
 	{
 		GQuark featureset = GPOINTER_TO_UINT(req_sources->data);
