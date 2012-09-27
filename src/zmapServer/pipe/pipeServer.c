@@ -1128,8 +1128,8 @@ static void eachBlockSequence(gpointer key, gpointer data, gpointer user_data)
 #endif
 	    }
 
-#if 0
-// this is insane: asking a pipe server for 3FT
+
+// this is insane: asking a pipe server for 3FT, however some old code might expect it
 	  context = (ZMapFeatureContext)zMapFeatureGetParentGroup((ZMapFeatureAny)feature_block,
 								  ZMAPFEATURE_STRUCT_CONTEXT) ;
 
@@ -1139,6 +1139,7 @@ static void eachBlockSequence(gpointer key, gpointer data, gpointer user_data)
 	      if ((zMapFeature3FrameTranslationCreateSet(feature_block, &feature_set)))
 	      {
 		  ZMapFeatureTypeStyle frame_style = NULL;
+		  ZMapFeature feature;
 #if 0
 		/* NOTE: this old code has the wrong style name ! */
 		  frame_style = zMapStyleCreate(ZMAP_FIXED_STYLE_DNA_NAME,
@@ -1157,14 +1158,14 @@ static void eachBlockSequence(gpointer key, gpointer data, gpointer user_data)
 		GHashTable *hash = zMapGFFParserGetStyles(server->parser);
 
 		if(hash)
-			dna_style = g_hash_table_lookup(hash, GUINT_TO_POINTER(g_quark_from_string(ZMAP_FIXED_STYLE_3FT_NAME)));
-		if(dna_style)
-			feature = zMapFeatureDNACreateFeature(feature_block, dna_style,
+			frame_style = g_hash_table_lookup(hash, GUINT_TO_POINTER(g_quark_from_string(ZMAP_FIXED_STYLE_3FT_NAME)));
+		if(frame_style)
+			feature = zMapFeatureDNACreateFeature(feature_block, frame_style,
 						    sequence->sequence, sequence->length);
 #endif
 		}
 	    }
-#endif
+
 	  g_free(sequence);
 	}
     }
