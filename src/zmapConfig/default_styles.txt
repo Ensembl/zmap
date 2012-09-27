@@ -184,7 +184,7 @@ sequence-non-coding-colours = normal fill red ; normal draw black ; selected fil
 sequence-coding-colours = normal fill darkgreen ; normal draw black ; selected fill pink
 sequence-split-codon-5-colours = normal fill orange ; normal draw black ; selected fill pink
 sequence-split-codon-3-colours = normal fill yellow ; normal draw black ; selected fill pink
-sequence-in-frame-colours = normal fill green ; normal draw black ; selected fill pink
+sequence-in-frame-coding-colours = normal fill green ; normal draw black ; selected fill pink
 
 [style-3 Frame Translation]
 description=3 frame translation display
