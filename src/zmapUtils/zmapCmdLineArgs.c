@@ -34,17 +34,17 @@
 
 #include <ZMap/zmap.h>
 
-
-
-
-
-
 #include <stdlib.h>
 #include <string.h>
+
 #include <glib.h>
 #include <ZMap/zmapUtils.h>
 #include <zmapCmdLineArgs_P.h>
 #include <zmapUtils_P.h>
+
+
+#define ARG_NO_FLAGS 0
+
 
 static void makeContext(int argc, char *argv[]) ;
 
@@ -341,7 +341,6 @@ static void makeOptionContext(ZMapCmdLineArgs arg_context)
   return;
 }
 
-#define ARG_NO_FLAGS 0
 
 static GOptionEntry *get_main_entries(ZMapCmdLineArgs arg_context)
 {
