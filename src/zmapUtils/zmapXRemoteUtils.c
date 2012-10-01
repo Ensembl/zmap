@@ -74,6 +74,8 @@ static gboolean destroy_property_notify_data(GtkWidget *widget, gpointer user_da
 static gboolean begin_handler(GtkWidget *widget, GdkEvent  *event, gpointer realize_data);
 static gboolean end_handler(GtkWidget *widget, GdkEvent  *event, gpointer realize_data);
 
+/* External globals */
+gboolean xremote_debug_GG = TRUE ;
 
 
 /* Local globals */

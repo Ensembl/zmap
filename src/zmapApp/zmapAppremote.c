@@ -21,7 +21,6 @@
  * originated by
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *         Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
  *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description:
@@ -31,11 +30,6 @@
  */
 
 #include <ZMap/zmap.h>
-
-
-
-
-
 
 #include <string.h>
 #include <zmapApp_P.h>
@@ -107,7 +101,6 @@ static char *actions_G[ZMAPAPP_REMOTE_UNKNOWN + 1] = {
 
 
 
-gboolean xremote_debug_GG = TRUE ;
 
 
 /*
