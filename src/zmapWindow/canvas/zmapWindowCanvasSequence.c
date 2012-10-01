@@ -524,7 +524,7 @@ static void zmapWindowCanvasSequenceSetColour(FooCanvasItem         *foo,
 
 	ZMapSkipList sl;
 
-	if(!default_fill)		/* eg if not configured in the style */
+	if((colour_type != ZMAPSTYLE_COLOURTYPE_INVALID) && !default_fill)		/* eg if not configured in the style */
 		return;
 	// if(!default_border) return;	not actually used
 
