@@ -1162,8 +1162,8 @@ gboolean zMapFeatureBlockSetFeaturesCoords(ZMapFeatureBlock feature_block,
 gboolean zMapFeatureBlockAddFeatureSet(ZMapFeatureBlock feature_block, ZMapFeatureSet feature_set) ;
 gboolean zMapFeatureBlockFindFeatureSet(ZMapFeatureBlock feature_block,
                                         ZMapFeatureSet   feature_set);
-ZMapFeatureSet zMapFeatureBlockGetSetByID(ZMapFeatureBlock feature_block,
-                                          GQuark set_id) ;
+ZMapFeatureSet zMapFeatureBlockGetSetByID(ZMapFeatureBlock feature_block, GQuark set_id) ;
+GList *zMapFeatureBlockGetMatchingSets(ZMapFeatureBlock feature_block, char *prefix);
 gboolean zMapFeatureBlockRemoveFeatureSet(ZMapFeatureBlock feature_block,
                                           ZMapFeatureSet   feature_set);
 void zMapFeatureBlockDestroy(ZMapFeatureBlock block, gboolean free_data) ;

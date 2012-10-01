@@ -242,7 +242,7 @@ bump-mode=unbump\n\
 default-bump-mode=unbump\n\
 bump-fixed=true\n\
 \n\
-[style-Search Hit Markers]\n\
+[style-Search Hit Marker]\n\
 description=display location of matches to query\n\
 mode=basic\n\
 displayable=true\n\

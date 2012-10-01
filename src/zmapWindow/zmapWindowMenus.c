@@ -620,7 +620,6 @@ ZMapGUIMenuItem zmapWindowMakeMenuFeatureOps(int *start_index_inout,
     } ;
   int i ;
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
-  ZMapFeatureTypeStyle style = *menu_data->feature->style;
 
   i = 1 ;
   menu[i].type = ZMAPGUI_MENU_NONE;
@@ -628,6 +627,8 @@ ZMapGUIMenuItem zmapWindowMakeMenuFeatureOps(int *start_index_inout,
   /* add in evidence/ transcript items option to remove existing is in column menu */
   if (menu_data->feature)
     {
+	ZMapFeatureTypeStyle style = *menu_data->feature->style;
+
       if (!style)
 	{
 	  // style should be attached to the feature, but if not don't fall over

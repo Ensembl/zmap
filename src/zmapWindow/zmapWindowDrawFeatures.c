@@ -2142,11 +2142,16 @@ static FooCanvasGroup *createColumn(ZMapWindowContainerFeatures parent_group,
     {
       gboolean status;
       ZMapWindowContainerFeatureSet container_set;
+      ZMapFeatureSetDesc f2c;
+
+	/* oh joy! an alternate path through the code so i get to debug any chages 2x */
+	f2c = g_hash_table_lookup(window->context_map->featureset_2_column, GUINT_TO_POINTER(feature_set->unique_id));
+	zMapAssert(f2c);
 
       group = createColumnFull(parent_group, window,
 			       align, block, NULL,
-                         feature_set->original_id,
-			       feature_set->unique_id,
+                         f2c->column_ID,
+			       f2c->column_id,
 			       strand, frame, is_separator_col,
 			       width, top, bot);
 

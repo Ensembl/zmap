@@ -251,6 +251,7 @@ ZMapFeatureAny zMapFeatureAnyGetFeatureByID(ZMapFeatureAny feature_set, GQuark f
 }
 
 
+
 gboolean zMapFeatureAnyRemoveFeature(ZMapFeatureAny feature_parent, ZMapFeatureAny feature)
 {
   gboolean result = FALSE;
@@ -1381,6 +1382,30 @@ ZMapFeatureSet zMapFeatureBlockGetSetByID(ZMapFeatureBlock feature_block, GQuark
   feature_set = (ZMapFeatureSet)zMapFeatureAnyGetFeatureByID((ZMapFeatureAny)feature_block, set_id) ;
 
   return feature_set ;
+}
+
+GList *zMapFeatureBlockGetMatchingSets(ZMapFeatureBlock feature_block, char *prefix)
+{
+	GList *sets = NULL,*s, *del;
+	ZMapFeatureSet set;
+
+	zMap_g_hash_table_get_data(&sets, feature_block->feature_sets);
+
+	for(s = sets; s; )
+	{
+		const char *name;
+
+		set = (ZMapFeatureSet) s->data;
+		name = g_quark_to_string(set->unique_id);
+
+		del = s;
+		s = s->next;
+
+		if(!g_str_has_prefix(name, prefix))
+			sets = g_list_delete_link(sets, del);
+	}
+
+	return sets;
 }
 
 

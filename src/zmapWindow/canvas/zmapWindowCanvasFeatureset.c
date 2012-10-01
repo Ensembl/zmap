@@ -2870,6 +2870,9 @@ int zMapWindowFeaturesetRemoveGraphics(ZMapWindowFeaturesetItem featureset_item,
  * unfortunately glib sorts by creating new list nodes (i infer) so that the from pointer is invalid
  *
  */
+/* NOTE it turns out that g_list_sort invalidtaes ->from pointers so we can;t use them
+ * however to delete all features we can just destroy the featureset, ite will be created again when we add a new feature
+ */
 int zMapWindowFeaturesetItemRemoveFeature(FooCanvasItem *foo, ZMapFeature feature)
 {
   ZMapWindowFeaturesetItem fi = (ZMapWindowFeaturesetItem) foo;

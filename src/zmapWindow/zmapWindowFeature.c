@@ -197,6 +197,7 @@ void zmapWindowPfetchEntry(ZMapWindow window, char *sequence_name)
  * NOTE IF YOU EVER CHANGE THIS FUNCTION OR CALL IT TO REMOVE A WHOLE FEATURESET
  * refer to the comment above zmapWindowCanvasfeatureset.c/zMapWindowFeaturesetItemRemoveFeature()
  * and write a new function to delete the whole set
+ * NOTE: destroying the CanvasFeaturset will do the job
  *
  * Returns FALSE if the feature does not exist. */
 

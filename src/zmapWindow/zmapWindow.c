@@ -585,6 +585,9 @@ void zMapWindowDisplayData(ZMapWindow window, ZMapWindowState state,
   return ;
 }
 
+
+
+
 static ZMapFeatureContextExecuteStatus undisplayFeaturesCB(GQuark key,
                                                            gpointer data,
                                                            gpointer user_data,
@@ -670,6 +673,71 @@ void zMapWindowUnDisplayData(ZMapWindow window,
 
   return ;
 }
+
+
+
+typedef struct
+{
+	ZMapWindow window;
+	GQuark align_id;
+	GQuark block_id;
+
+}
+_contextStack, *contextStack;
+
+
+static ZMapFeatureContextExecuteStatus undisplaySearchFeatureSetsCB(GQuark key,
+                                                           gpointer data,
+                                                           gpointer user_data,
+                                                           char **err_out)
+{
+  contextStack stuff = (contextStack) user_data ;
+  ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
+  ZMapFeatureSet set;
+  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
+
+  switch(feature_any->struct_type)
+  {
+  case ZMAPFEATURE_STRUCT_ALIGN:
+	  stuff->align_id = feature_any->unique_id;
+	  break;
+  case ZMAPFEATURE_STRUCT_BLOCK:
+	  stuff->block_id = feature_any->unique_id;
+	  break;
+
+    case ZMAPFEATURE_STRUCT_FEATURESET:
+	set = (ZMapFeatureSet) feature_any;
+
+	zmapWindowFToIRemoveSet(stuff->window->context_to_item,
+				  stuff->align_id, stuff->block_id, set->unique_id,
+				  ZMAPSTRAND_NONE, ZMAPFRAME_NONE, TRUE);
+      break;
+
+    default:
+      break;
+    }
+
+  return status;
+}
+
+
+/* this function is here to remove whole featuresets from the FtoiHash, which is a lot more effciecient than one feature at time */
+void zMapWindowUnDisplaySearchFeatureSets(ZMapWindow window,
+                             ZMapFeatureContext current_features,
+                             ZMapFeatureContext new_features)
+{
+  _contextStack stuff = { NULL };
+
+  stuff.window = window;
+
+  zMapFeatureContextExecute((ZMapFeatureAny)new_features,
+			    ZMAPFEATURE_STRUCT_FEATURESET,
+			    undisplaySearchFeatureSetsCB,
+			    &stuff);
+
+  return ;
+}
+
 
 /* completely reset window. */
 void zMapWindowReset(ZMapWindow window)
