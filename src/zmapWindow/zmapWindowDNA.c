@@ -665,10 +665,20 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
   if(*query_txt == '>')		/* we probably pasted a FASTA sequence */
   {
 
-	  /* caution: reverse engineered fix, search for 'bp' */
-	char * where = (char *) g_strstr_len(query_txt,-1,"bp");
-	if(where)
-		query_txt = where + 2;
+	  if (search_data->sequence_type == ZMAPSEQUENCE_DNA)
+	  {
+		/* caution: reverse engineered fix, search for 'bp' */
+		char * where = (char *) g_strstr_len(query_txt,-1,"bp");
+		if(where)
+			query_txt = where + 2;
+	  }
+	  else
+	  {
+  		/* caution: reverse engineered fix, search for 'AA' */
+		char * where = (char *) g_strstr_len(query_txt,-1,"AA");
+		if(where)
+			query_txt = where + 2;
+	  }
   }
 
 
