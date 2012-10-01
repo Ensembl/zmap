@@ -586,7 +586,7 @@ gboolean zMapConfigIniGetStylesFromFile(char *config_file,
         GParameter *curr_param ;
 	  char *name;
 
-        /* Reset params memory.... */
+	  /* Reset params memory.... */
         memset(&params, 0, sizeof(params)) ;
         curr_param = params ;
         num_params = 0 ;
@@ -716,7 +716,6 @@ gboolean zMapConfigIniGetStylesFromFile(char *config_file,
                           curr_param->name = shape_param;
                           g_value_init(&(curr_param->value), zMapStyleGlyphShapeGetType()) ;
                           g_value_set_boxed(&(curr_param->value),shape ) ;
-
                           num_params++ ;
                           curr_param++ ;
                         }
@@ -1199,6 +1198,7 @@ GHashTable *zMapConfigIniGetGlyph(ZMapConfigIniContext context)
             {
                   q = g_quark_from_string(*keys);
                   shape = g_key_file_get_string(gkf,ZMAPSTANZA_GLYPH_CONFIG,*keys,NULL);
+
 			if(!shape)
 				continue;
 			glyph_shape = zMapStyleGetGlyphShape(shape,q);
