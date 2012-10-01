@@ -693,11 +693,11 @@ void zmapGetFeatureStack(ZMapWindowFeatureStack feature_stack,ZMapFeatureSet fea
 
   feature_stack->filter = FALSE;
 
-  if(feature && feature->style)	/* chicken */
+  if(feature && *feature->style)	/* chicken */
     {
-      if(zMapStyleIsStrandSpecific(feature->style))
+      if(zMapStyleIsStrandSpecific(*feature->style))
 		feature_stack->strand = zmapWindowFeatureStrand(NULL,feature);
-//      if(zMapStyleIsFrameSpecific(feature->style) && IS_3FRAME(display_3_frame))
+//      if(zMapStyleIsFrameSpecific(*feature->style) && IS_3FRAME(display_3_frame))
 //		feature_stack->frame = zmapWindowFeatureFrame(feature);
     }
    feature_stack->frame = frame;
@@ -2142,11 +2142,16 @@ static FooCanvasGroup *createColumn(ZMapWindowContainerFeatures parent_group,
     {
       gboolean status;
       ZMapWindowContainerFeatureSet container_set;
+      ZMapFeatureSetDesc f2c;
+
+	/* oh joy! an alternate path through the code so i get to debug any chages 2x */
+	f2c = g_hash_table_lookup(window->context_map->featureset_2_column, GUINT_TO_POINTER(feature_set->unique_id));
+	zMapAssert(f2c);
 
       group = createColumnFull(parent_group, window,
 			       align, block, NULL,
-                         feature_set->original_id,
-			       feature_set->unique_id,
+                         f2c->column_ID,
+			       f2c->column_id,
 			       strand, frame, is_separator_col,
 			       width, top, bot);
 
@@ -2414,7 +2419,7 @@ static void ProcessListFeature(gpointer data, gpointer user_data)
   zMapLogWarning("ProcessFeature %s %d-%d",g_quark_to_string(feature->original_id), feature->x1,feature->x2);
 #endif
 
-  style = feature->style;
+  style = *feature->style;
       /* if fails: no display. fixed for pipe via GFF2parser, ACE seems to call it???
        * features paint so it musk be ok! *
        * but if a user adds an object and we make a fetaure OTF then no style is attached
@@ -2423,8 +2428,24 @@ static void ProcessListFeature(gpointer data, gpointer user_data)
   if(!style)
   {
       /* should only be a consideration for OTF data w/ no styles?? */
-      style = zMapFindStyle(featureset_data->styles, feature->style_id) ;
-      feature->style = style;
+	/* xremote code should set this up anyway */
+	/* NOTE there's a knot here
+	 * to allow column styles to be changed we have features point to the styles in the containing context featureset
+	 * if we get a feature via XRemote the we don't have that set up as it doesnly go through GFFParser
+	 * so we have to find the feature's parent anf set the style there
+	 */
+	/* NOTE: 3FT and DNA get supplied by acedbServer and pipeServer and areg given temporary styles that are freed
+	 * which means thet that data is not usable.
+	 */
+
+	ZMapFeatureSet set = (ZMapFeatureSet) feature->parent;
+	zMapAssert(set);
+
+	if(!set->style)
+	{
+		set->style = zMapFindStyle(featureset_data->styles, feature->style_id) ;
+	}
+      feature->style = &set->style;
   }
 
 #if MH17_REVCOMP_DEBUG > 1

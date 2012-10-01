@@ -372,7 +372,7 @@ gboolean zMapWindowCanvasItemIsMasked(ZMapWindowCanvasItem item,gboolean andHidd
       ZMapFeatureTypeStyle style;
 
       feature = item->feature;
-      style = feature->style;
+      style = *feature->style;
 
       if(style->mode == ZMAPSTYLE_MODE_ALIGNMENT && feature->feature.homol.flags.masked)
       {
@@ -558,7 +558,7 @@ static ZMapFeatureTypeStyle zmap_window_canvas_item_get_style(ZMapWindowCanvasIt
   zMapLogReturnValIfFail(canvas_item != NULL, NULL);
   zMapLogReturnValIfFail(canvas_item->feature != NULL, NULL);
 
-  style = canvas_item->feature->style;
+  style = *canvas_item->feature->style;
 
   return style;
 }

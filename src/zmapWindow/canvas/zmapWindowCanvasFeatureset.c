@@ -2001,7 +2001,7 @@ void zmapWindowCanvasFeaturesetSetColours(ZMapWindowFeaturesetItem fi, ZMapWindo
    * so mixed focus types are not a problem
    */
 
-  if((fi->featurestyle != feat->feature->style) || !(fi->frame && zMapStyleIsFrameSpecific(feat->feature->style)))
+  if((fi->featurestyle != *feat->feature->style) || !(fi->frame && zMapStyleIsFrameSpecific(*feat->feature->style)))
     /* diff style: set colour from style */
     {
       /* cache style for a single featureset
@@ -2015,7 +2015,7 @@ void zmapWindowCanvasFeaturesetSetColours(ZMapWindowFeaturesetItem fi, ZMapWindo
       ZMapFrame frame;
       ZMapStrand strand;
 
-      fi->featurestyle = feat->feature->style;
+      fi->featurestyle = *feat->feature->style;
 
       /* eg for glyphs these get mixed up in one column so have to set for the feature not featureset */
       frame = zMapFeatureFrame(feat->feature);
@@ -2580,7 +2580,7 @@ int zMapWindowCanvasFeaturesetFilter(gpointer gfilter, double value)
 		  feature_score = feature->feature->score;
 		/* NOTE feature->score is normalised, feature->feature->score is what we filter by */
 
-		if(zMapStyleGetScoreMode(f->feature->style) == ZMAPSCORE_PERCENT)
+		if(zMapStyleGetScoreMode(*f->feature->style) == ZMAPSCORE_PERCENT)
 			feature_score = f->feature->feature.homol.percent_id;
 	  }
 	  if(feature_score > score)
@@ -2651,7 +2651,7 @@ int zMapWindowCanvasFeaturesetFilter(gpointer gfilter, double value)
 void zMapWindowFeaturesetSetFeatureWidth(ZMapWindowFeaturesetItem featureset_item, ZMapWindowCanvasFeature feat)
 {
   ZMapFeature feature = feat->feature;
-  ZMapFeatureTypeStyle style = feature->style;
+  ZMapFeatureTypeStyle style = *feature->style;
 
   feat->width = featureset_item->width;
 
@@ -2731,13 +2731,13 @@ void zmapWindowFeaturesetAddToIndex(ZMapWindowFeaturesetItem featureset_item, ZM
 ZMapWindowCanvasFeature zMapWindowFeaturesetAddFeature(ZMapWindowFeaturesetItem featureset_item, ZMapFeature feature, double y1, double y2)
 {
   ZMapWindowCanvasFeature feat;
-  ZMapFeatureTypeStyle style = feature->style;
+  ZMapFeatureTypeStyle style = *feature->style;
   zmapWindowCanvasFeatureType type = FEATURE_INVALID;
 
   zMapAssert(zMapFeatureIsValid((ZMapFeatureAny) feature));
 
   if(style)
-    type = feature_types[zMapStyleGetMode(feature->style)];
+    type = feature_types[zMapStyleGetMode(style)];
   if(type == FEATURE_INVALID)		/* no style or feature type not implemented */
     return NULL;
 
@@ -2869,6 +2869,9 @@ int zMapWindowFeaturesetRemoveGraphics(ZMapWindowFeaturesetItem featureset_item,
  *
  * unfortunately glib sorts by creating new list nodes (i infer) so that the from pointer is invalid
  *
+ */
+/* NOTE it turns out that g_list_sort invalidtaes ->from pointers so we can;t use them
+ * however to delete all features we can just destroy the featureset, ite will be created again when we add a new feature
  */
 int zMapWindowFeaturesetItemRemoveFeature(FooCanvasItem *foo, ZMapFeature feature)
 {

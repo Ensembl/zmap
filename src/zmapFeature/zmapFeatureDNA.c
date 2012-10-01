@@ -187,11 +187,14 @@ ZMapFeature zMapFeatureDNACreateFeature(ZMapFeatureBlock     block,
 	  /* check dna length == block length? */
 	  sequence = ontology = NULL;
 	  ontology = "dna";
+
+	  dna_feature_set->style = style;
+
 	  dna_feature = zMapFeatureCreateFromStandardData(feature_name,
 							  sequence,
 							  ontology,
 							  ZMAPSTYLE_MODE_SEQUENCE,
-							  style,
+							  &dna_feature_set->style,
 							  block_start,
 							  block_end,
 							  FALSE, 0.0,

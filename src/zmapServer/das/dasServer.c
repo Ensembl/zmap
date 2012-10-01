@@ -1427,7 +1427,7 @@ static void featureFilter(ZMapDAS1Feature feature, gpointer user_data)
 
           zMapFeatureAddStandardData(new_feature, feature_name,
                                      short_ft_name, NULL, method_name,
-                                     feature_type, style,
+                                     feature_type,  &feature_set->style, // style,
                                      feature->start, feature->end,
                                      has_score, feature->score,
                                      feature_strand) ;
@@ -1444,7 +1444,7 @@ static void featureFilter(ZMapDAS1Feature feature, gpointer user_data)
 
           if(zMapFeatureAddStandardData(new_feature, feature_name,
                                         short_ft_name, NULL, method_name,
-                                        feature_type, style,
+                                        feature_type, &feature_set->style, // style,
                                         feature->start, feature->end,
                                         has_score, feature->score,
                                         feature_strand))

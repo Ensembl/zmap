@@ -697,6 +697,8 @@ gboolean zMapWindowSeqDispDeSelect(FooCanvasItem *sequence_feature)
 
 
 
+
+
 /* Highlight sequence in sequence_feature corresponding to seed_feature. */
 gboolean zMapWindowSeqDispSelectByFeature(FooCanvasItem *sequence_feature,
 						  FooCanvasItem *item, ZMapFeature seed_feature,
@@ -762,7 +764,7 @@ gboolean zMapWindowSeqDispSelectByFeature(FooCanvasItem *sequence_feature,
 				span.subpart = ZMAPFEATURE_SUBPART_MATCH;
 				span.index = 0;
 
-				zMapStyleGetColours(feature->style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_SELECTED, &fill, NULL,NULL);
+				zMapStyleGetColours(*feature->style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_SELECTED, &fill, NULL,NULL);
 
 				zMapWindowCanvasItemSetIntervalColours((FooCanvasItem *) sequence_feature,  feature, &span,
 					    ZMAPSTYLE_COLOURTYPE_SELECTED,  0, fill ,NULL);
@@ -773,17 +775,17 @@ gboolean zMapWindowSeqDispSelectByFeature(FooCanvasItem *sequence_feature,
 				ZMapFeatureTypeStyle style ;
 				/* most of these colours are just not used */
 				ZMapStyleColourType colour_type = ZMAPSTYLE_COLOURTYPE_NORMAL ;
-				GdkColor *non_coding_background, *non_coding_foreground, *non_coding_outline ;
-				GdkColor *coding_background, *coding_foreground, *coding_outline ;
-				GdkColor *split_codon_5_background, *split_codon_5_foreground, *split_codon_5_outline ;
-				GdkColor *split_codon_3_background, *split_codon_3_foreground, *split_codon_3_outline ;
-				GdkColor *in_frame_background, *in_frame_foreground, *in_frame_outline ;
+				GdkColor *non_coding_background = NULL, *non_coding_foreground = NULL, *non_coding_outline = NULL ;
+				GdkColor *coding_background = NULL, *coding_foreground = NULL, *coding_outline = NULL ;
+				GdkColor *split_codon_5_background = NULL, *split_codon_5_foreground = NULL, *split_codon_5_outline = NULL ;
+				GdkColor *split_codon_3_background = NULL, *split_codon_3_foreground = NULL, *split_codon_3_outline = NULL ;
+				GdkColor *in_frame_background = NULL, *in_frame_foreground = NULL, *in_frame_outline = NULL ;
 				gboolean result ;
 				int index = 1;
 				gboolean is_pep = zMapFeatureSequenceIsPeptide(feature);
 				gboolean in_frame = FALSE;
 
-				style = feature->style ;
+				style = *feature->style ;
 
 				result = zMapStyleGetColours(style, STYLE_PROP_SEQUENCE_NON_CODING_COLOURS, colour_type,
 								&non_coding_background, &non_coding_foreground, &non_coding_outline) ;
@@ -910,7 +912,7 @@ gboolean zMapWindowSeqDispSelectByFeature(FooCanvasItem *sequence_feature,
 			span.subpart = ZMAPFEATURE_SUBPART_MATCH;
 			span.index = 0;
 
-			zMapStyleGetColours(feature->style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_SELECTED, &fill, NULL,NULL);
+			zMapStyleGetColours(*feature->style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_SELECTED, &fill, NULL,NULL);
 
 			zMapWindowCanvasItemSetIntervalColours((FooCanvasItem *) sequence_feature,  feature, &span,
 					    ZMAPSTYLE_COLOURTYPE_SELECTED,  0, fill ,NULL);
@@ -941,11 +943,11 @@ gboolean zMapWindowSeqDispSelectByRegion(FooCanvasItem *sequence_feature,
 		span.subpart = ZMAPFEATURE_SUBPART_MATCH;
 		span.index = 0;
 
-		zMapStyleGetColours(feature->style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_SELECTED, &fill, NULL,NULL);
+		zMapStyleGetColours(*feature->style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_SELECTED, &fill, NULL,NULL);
 
 		/* calling stack for this gets tangled up so it never triggers, needs restructuring */
 		if(out_frame)
-			zMapStyleGetColours(feature->style, STYLE_PROP_SEQUENCE_NON_CODING_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
+			zMapStyleGetColours(*feature->style, STYLE_PROP_SEQUENCE_NON_CODING_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
 								&fill, NULL, NULL) ;
 
 		zMapWindowCanvasItemSetIntervalColours((FooCanvasItem *) sequence_feature,  feature, &span,

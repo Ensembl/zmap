@@ -245,10 +245,10 @@ static void zMapWindowCanvasGlyphPaintFeature(ZMapWindowFeaturesetItem featurese
     {
       /* for stand-alone glyphs which will be unset ie zero */
       /* NOTE this boundary code appears to be tied explcitly to GF splice features from ACEDB */
-      if (zMapStyleIsSpliceStyle(feat->style))
+      if (zMapStyleIsSpliceStyle(*feat->style))
 	glyph->which = feat->boundary_type == ZMAPBOUNDARY_5_SPLICE ? 5 : 3;
 
-      shape = get_glyph_shape(feat->style, glyph->which, feature->feature->strand) ;
+      shape = get_glyph_shape(*feat->style, glyph->which, feature->feature->strand) ;
 
       if(!shape || shape->type == GLYPH_DRAW_INVALID || !shape->n_coords)
 	return;
@@ -401,7 +401,7 @@ static gboolean zmap_window_canvas_set_glyph(FooCanvasItem *foo, ZMapWindowCanva
 
   /* We need splice markers to behave in a particular way for wormbase, I've added this function
    * to get the positions so it doesn't interfere with the general workings of glyphs. */
-  if (zMapStyleIsSpliceStyle(feature->style))
+  if (zMapStyleIsSpliceStyle(style))
     {
       calcSplicePos(featureset, feature, style, score, &origin, &width, &height) ;
     }
@@ -784,7 +784,7 @@ static void zmap_window_canvas_paint_feature_glyph(ZMapWindowFeaturesetItem feat
     }
 
 
-  if (zMapStyleIsSpliceStyle(feature->style))
+  if (zMapStyleIsSpliceStyle(*feature->style))
     gdk_gc_set_line_attributes(featureset->gc,
 			       SPLICE_LINE_WIDTH,
 			       GDK_LINE_SOLID,
@@ -821,7 +821,7 @@ static void zmap_window_canvas_glyph_draw(ZMapWindowFeaturesetItem featureset,
   int start,end ;
 
   /* Note that sub feature glyphs do not cache the feature. */
-  if ((glyph->feature.feature) && zMapStyleIsSpliceStyle(glyph->feature.feature->style))
+  if ((glyph->feature.feature) && zMapStyleIsSpliceStyle(*glyph->feature.feature->style))
     {
       GdkColor c;
       gulong fill_pixel, outline_pixel ;
@@ -1034,10 +1034,10 @@ static ZMapWindowCanvasFeature zMapWindowCanvasGlyphAddFeature(ZMapWindowFeature
   int boundary_type = 0 ;
 
 
-  if (zMapStyleIsSpliceStyle(feature->style))
+  if (zMapStyleIsSpliceStyle(*feature->style))
     boundary_type = (feature->boundary_type == ZMAPBOUNDARY_5_SPLICE ? 5 : 3) ;
 
-  shape = get_glyph_shape(feature->style, boundary_type, feature->strand)  ;
+  shape = get_glyph_shape(*feature->style, boundary_type, feature->strand)  ;
 
   if (!shape || shape->type == GLYPH_DRAW_INVALID || !shape->n_coords)
     {
@@ -1057,14 +1057,14 @@ static ZMapWindowCanvasFeature zMapWindowCanvasGlyphAddFeature(ZMapWindowFeature
      /* work out the real coords of the glyph on display and asign the shape */
      /* for stand-alone glyphs which will be unset ie zero */
      /* NOTE this boundary code appears to be tied explcitly to GF splice features from ACEDB */
-     if (zMapStyleIsSpliceStyle(feature->style))
+     if (zMapStyleIsSpliceStyle(*feature->style))
        glyph->which = boundary_type ;
 
      glyph->shape = shape ;
 
      col_width = zMapStyleGetWidth(featureset->style) ;
 
-     zmap_window_canvas_set_glyph(foo, glyph, feature->style, feature, col_width, feature->score ) ;
+     zmap_window_canvas_set_glyph(foo, glyph, *feature->style, feature, col_width, feature->score ) ;
 
      /* as glyphs are fixed size we store the longest as pixels and expand on search */
      /* so here we overwrite the values set by zMapWindowFeaturesetAddFeature() ; */

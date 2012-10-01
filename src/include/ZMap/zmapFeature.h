@@ -499,7 +499,7 @@ typedef struct ZMapFeatureSetStruct_
 							       set of ZMapFeatureStruct. */
   char *description ;					    /* As it says... */
 
-  ZMapFeatureTypeStyle style;
+  ZMapFeatureTypeStyle style;		/* NOTE features point at this pointer */
 
       /* NB we don't expect to use both these on the same featureset but play safe... */
   GList *masker_sorted_features;    /* or NULL if not sorted */
@@ -708,7 +708,8 @@ typedef struct ZMapFeatureStruct_
   GQuark style_id ;					    /* Style defining how this feature is processed.
 							       (use Styles _unique_ id.) */
 
-  ZMapFeatureTypeStyle style;                   // pointer to the style structure
+  ZMapFeatureTypeStyle *style;                   // pointer to the style structure held by the featureset in the context
+								// NOTE we can have mixed styles in a column/ virtual featureset
 
 
   /* coords are _always_ with reference to forward strand, i.e. x1 <= x2, strand flag gives the
@@ -1048,7 +1049,7 @@ GQuark zMapFeatureCreateID(ZMapStyleMode feature_type,
 ZMapFeature zMapFeatureCreateEmpty(void) ;
 ZMapFeature zMapFeatureCreateFromStandardData(char *name, char *sequence, char *ontology,
 					      ZMapStyleMode feature_type,
-                                              ZMapFeatureTypeStyle style,
+                                              ZMapFeatureTypeStyle *style,
                                               int start, int end,
                                               gboolean has_score, double score,
 					      ZMapStrand strand) ;
@@ -1056,7 +1057,7 @@ ZMapFeature zMapFeatureCreateFromStandardData(char *name, char *sequence, char *
 gboolean zMapFeatureAddStandardData(ZMapFeature feature, char *feature_name_id, char *name,
 				    char *sequence, char *ontology,
 				    ZMapStyleMode feature_type,
-				    ZMapFeatureTypeStyle style,
+				    ZMapFeatureTypeStyle *style,
 				    int start, int end,
 				    gboolean has_score, double score,
 				    ZMapStrand strand) ;
@@ -1134,7 +1135,7 @@ ZMapFeature zMapFeatureSetGetFeatureByID(ZMapFeatureSet feature_set,
 gboolean zMapFeatureSetRemoveFeature(ZMapFeatureSet feature_set, ZMapFeature feature) ;
 void zMapFeatureSetDestroyFeatures(ZMapFeatureSet feature_set) ;
 void     zMapFeatureSetDestroy(ZMapFeatureSet feature_set, gboolean free_data) ;
-void  zMapFeatureSetStyle(ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style) ;
+//void  zMapFeatureSetStyle(ZMapFeatureSet feature_set, ZMapFeatureTypeStyle *style) ;
 char *zMapFeatureSetGetName(ZMapFeatureSet feature_set) ;
 GList *zMapFeatureSetGetRangeFeatures(ZMapFeatureSet feature_set, int start, int end) ;
 GList *zMapFeatureSetGetNamedFeatures(ZMapFeatureSet feature_set, GQuark original_id) ;
@@ -1161,8 +1162,8 @@ gboolean zMapFeatureBlockSetFeaturesCoords(ZMapFeatureBlock feature_block,
 gboolean zMapFeatureBlockAddFeatureSet(ZMapFeatureBlock feature_block, ZMapFeatureSet feature_set) ;
 gboolean zMapFeatureBlockFindFeatureSet(ZMapFeatureBlock feature_block,
                                         ZMapFeatureSet   feature_set);
-ZMapFeatureSet zMapFeatureBlockGetSetByID(ZMapFeatureBlock feature_block,
-                                          GQuark set_id) ;
+ZMapFeatureSet zMapFeatureBlockGetSetByID(ZMapFeatureBlock feature_block, GQuark set_id) ;
+GList *zMapFeatureBlockGetMatchingSets(ZMapFeatureBlock feature_block, char *prefix);
 gboolean zMapFeatureBlockRemoveFeatureSet(ZMapFeatureBlock feature_block,
                                           ZMapFeatureSet   feature_set);
 void zMapFeatureBlockDestroy(ZMapFeatureBlock block, gboolean free_data) ;
@@ -1279,7 +1280,7 @@ gboolean zMapFeatureIsSane(ZMapFeature feature, char **insanity_explained);
 ZMapFeatureAny zMapFeatureGetParentGroup(ZMapFeatureAny any_feature, ZMapFeatureStructType group_type) ;
 char *zMapFeatureName(ZMapFeatureAny any_feature) ;
 char *zMapFeatureCanonName(char *feature_name) ;
-ZMapFeatureTypeStyle zMapFeatureGetStyle(ZMapFeatureAny feature) ;
+//ZMapFeatureTypeStyle *zMapFeatureGetStyle(ZMapFeatureAny feature) ;
 gboolean zMapSetListEqualStyles(GList **feature_set_names, GList **styles) ;
 gboolean zMapFeatureAnyForceModesToStyles(ZMapFeatureAny feature_any, GHashTable *styles) ;
 

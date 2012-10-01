@@ -181,7 +181,7 @@ bump-fixed=true
 width=30
 colours = normal fill white ; normal draw black ; selected fill red
 sequence-non-coding-colours = normal fill red ; normal draw black ; selected fill pink
-sequence-coding-colours = normal fill darkgreen ; normal draw black ; selected fill pink
+sequence-coding-colours = normal fill OliveDrab ; normal draw black ; selected fill pink
 sequence-split-codon-5-colours = normal fill orange ; normal draw black ; selected fill pink
 sequence-split-codon-3-colours = normal fill yellow ; normal draw black ; selected fill pink
 sequence-in-frame-coding-colours = normal fill green ; normal draw black ; selected fill pink
@@ -192,7 +192,6 @@ parent-style=sequence
 # width in characters
 width=10
 frame-mode=only-3
-sequence-coding-colours = normal fill darkgreen ; normal draw black ; selected fill pink
 
 [style-Show Translation]
 description=show translation in zmap display
@@ -240,7 +239,7 @@ bump-mode=unbump
 default-bump-mode=unbump
 bump-fixed=true
 
-[style-Search Hit Markers]
+[style-Search Hit Marker]
 description=display location of matches to query
 mode=basic
 displayable=true

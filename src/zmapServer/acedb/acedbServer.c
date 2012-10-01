@@ -1585,20 +1585,18 @@ static gboolean blockDNARequest(AcedbServer server, GHashTable *styles, ZMapFeat
        * it was done this way - Ed) */
       if (zMapFeatureDNACreateFeatureSet(feature_block, &feature_set))
 	{
-	  ZMapFeatureTypeStyle temp_style = NULL;
 
 	  /* This temp style creation feels wrong, and probably is,
 	   * but we don't have the merged in default styles in here,
 	   * or so it seems... */
 
-	  if (!(dna_style = zMapFindStyle(styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME))))
+	  if ((dna_style = zMapFindStyle(styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME))))
+#if 0
 	    temp_style = dna_style = zMapStyleCreate(ZMAP_FIXED_STYLE_DNA_NAME,
 						     ZMAP_FIXED_STYLE_DNA_NAME_TEXT);
+#endif
 
-	  feature = zMapFeatureDNACreateFeature(feature_block, dna_style, dna_sequence, dna_length);
-
-	  if (temp_style)
-	    zMapStyleDestroy(temp_style);
+		feature = zMapFeatureDNACreateFeature(feature_block, dna_style, dna_sequence, dna_length);
 	}
 
 
@@ -1607,16 +1605,9 @@ static gboolean blockDNARequest(AcedbServer server, GHashTable *styles, ZMapFeat
 	  if ((zMapFeature3FrameTranslationCreateSet(feature_block, &feature_set)))
 	    {
 	      ZMapFeatureTypeStyle frame_style = NULL;
-	      gboolean style_absolutely_required = FALSE;
 
-	      frame_style = zMapFindStyle(styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME));
-
-	      /* What is this all about...?????? */
-	      if(style_absolutely_required && !frame_style)
-		zMapLogWarning("Cowardly refusing to create features '%s' without style",
-			       ZMAP_FIXED_STYLE_3FT_NAME);
-	      else
-		zMapFeature3FrameTranslationSetCreateFeatures(feature_set, frame_style);
+	      if((frame_style = zMapFindStyle(styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME))))
+			zMapFeature3FrameTranslationSetCreateFeatures(feature_set, frame_style);
 	    }
 	}
 
@@ -1630,7 +1621,7 @@ static gboolean blockDNARequest(AcedbServer server, GHashTable *styles, ZMapFeat
 	      ZMapFeatureTypeStyle frame_style = NULL;
 
 	      if ((frame_style = zMapFindStyle(styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME))))
-		zMapFeatureShowTranslationSetCreateFeatures(feature_set, frame_style) ;
+			zMapFeatureShowTranslationSetCreateFeatures(feature_set, frame_style) ;
 	    }
 	}
 

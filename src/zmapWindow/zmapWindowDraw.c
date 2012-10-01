@@ -870,6 +870,8 @@ void zmapWindowDrawZoom(ZMapWindow window)
 }
 
 
+#if NOT_USED
+
 /* Some features have different widths according to their score, this helps annotators
  * guage whether something like an alignment is worth taking notice of.
  *
@@ -937,6 +939,8 @@ void zmapWindowGetPosFromScore(ZMapFeatureTypeStyle style,
 
   return ;
 }
+
+#endif
 
 
 void zmapWindowDrawSeparatorFeatures(ZMapWindow           window,
