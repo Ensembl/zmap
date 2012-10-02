@@ -112,8 +112,8 @@
 
 
 #define PAIRED_READS_RELATED       "Request %s paired reads"
-#define PAIRED_READS_ALL           "Request all paired readsk"
-#define PAIRED_READS_DATA          "Request paired reads datak"
+#define PAIRED_READS_ALL           "Request all paired reads"
+#define PAIRED_READS_DATA          "Request paired reads data"
 
 
 /* Search/Listing menus. */

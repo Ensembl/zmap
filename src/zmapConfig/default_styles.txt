@@ -88,10 +88,11 @@ glyph-5=dn-tri
 
 [style-root]
 width=9.000000
+bump-mode=unbump
 default-bump-mode=overlap
 colours=selected fill gold ; selected border black
 bump-spacing=3.000000
-bump-mode=unbump
+
 
 [style-alignment]
 sub-features=homology:homology-glyph ; non-concensus-splice:nc-splice-glyph
@@ -110,7 +111,6 @@ directional-ends=true
 colours=normal fill lavender ; normal border #898994
 parent-style=root
 mode=basic
-bump-mode=unbump
 
 [style-transcript]
 transcript-cds-colours=normal fill white ; normal border SlateBlue ; selected fill gold
@@ -158,7 +158,8 @@ frame-mode=always
 [style-EST_align]
 colours=normal fill Purple ; normal border #3d1954
 parent-style=dna_align
-alignment-mask-sets=self ; vertebrate_mRNA
+alignment-mask-sets=self
+default-bump-mode=all
 
 
 

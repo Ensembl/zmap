@@ -1047,7 +1047,7 @@ void zmapWindowDraw3FrameFeatures(ZMapWindow window)
 
 
   zMapFeatureContextExecuteComplete((ZMapFeatureAny)full_context,
-				    ZMAPFEATURE_STRUCT_FEATURE,
+				    ZMAPFEATURE_STRUCT_FEATURESET,
 				    windowDrawContextCB,
 				    NULL, &canvas_data);
 
@@ -1174,7 +1174,7 @@ static void windowDrawContext(ZMapCanvasData     canvas_data,
 
   /* We iterate through the diff context to draw new data */
   zMapFeatureContextExecuteComplete((ZMapFeatureAny)diff_context,
-                                    ZMAPFEATURE_STRUCT_FEATURE,
+                                    ZMAPFEATURE_STRUCT_FEATURESET,
                                     windowDrawContextCB,
                                     NULL,
                                     canvas_data);
@@ -1928,8 +1928,6 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
             /* for special columns eg locus we may not have a mapping */
             style = zMapWindowGetColumnStyle(window,feature_set->unique_id);
 	  }
-#if 0
-// moved to justMergeContext() in zmapView: needed earlier on
 
 	if(!style)
 	{
@@ -1947,6 +1945,7 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 		if(style)
 		{
 			ZMapFeatureColumn f_col;
+			ZMapFeatureSetDesc f2c;
 
 			/* createColumnFull() needs a style table, although the error is buried in zmapWindowUtils.c */
 			zMap_g_hashlist_insert(window->context_map->column_2_styles,
@@ -1955,7 +1954,8 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 
 
 			/* find_or_create_column() needs f_col->style */
-			f_col = g_hash_table_lookup(window->context_map->columns,GUINT_TO_POINTER(feature_set->unique_id));
+			f2c = g_hash_table_lookup(window->context_map->featureset_2_column,GUINT_TO_POINTER(feature_set->unique_id));
+			f_col = g_hash_table_lookup(window->context_map->columns,GUINT_TO_POINTER(f2c->column_id));
 			if(f_col)
 			{
 				if(!f_col->style)
@@ -1963,9 +1963,10 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 				if(!f_col->style_table)
 					f_col->style_table = g_list_append(f_col->style_table, (gpointer) style);
 			}
+
 		}
 	}
-#endif
+
 	if(!style)
 	  {
             zMapLogCritical("no column style for featureset \"%s\"\n",g_quark_to_string(feature_set->unique_id));
