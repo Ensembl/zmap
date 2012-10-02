@@ -106,6 +106,10 @@ default-bump-mode=all
 parent-style=root
 show-reverse-strand=true
 directional-ends=true
+max-score=100.000000
+min-score=70.000000
+score-mode=percent
+
 
 [style-basic]
 colours=normal fill lavender ; normal border #898994
