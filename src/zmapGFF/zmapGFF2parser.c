@@ -1179,9 +1179,6 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line, gsize line_lengt
       }
 #endif
 
-//      if (g_ascii_strcasecmp(source, "novel_cds") == 0)
-//	printf("found it\n") ;
-
 
       /* Do some sanity checking... */
       if (g_ascii_strcasecmp(sequence, ".") == 0)
@@ -1647,12 +1644,6 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 				    feature_type, strand,
 				    start, end, query_start, query_end,
 				    &feature_name, &feature_name_id) ;
-
-#if SILLY
-//this causes an assertion if a feature does not have a name
-  if (g_ascii_strcasecmp("RNASEQ_Young_Adult_25dC_46hrs_post-L1_g82_x20_II_p", feature_name) == 0)
-    printf("found it\n") ;
-#endif
 
   /* Check if the feature name for this feature is already known, if it is then check if there
    * is already a multiline feature with the same name as we will need to augment it with this data. */
