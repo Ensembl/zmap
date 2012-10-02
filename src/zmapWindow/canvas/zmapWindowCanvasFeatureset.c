@@ -2669,7 +2669,8 @@ void zMapWindowFeaturesetSetFeatureWidth(ZMapWindowFeaturesetItem featureset_ite
       if(featureset_item->style->mode == ZMAPSTYLE_MODE_GRAPH)
 	{
 	  feat->score = zMapWindowCanvasFeatureGetNormalisedScore(style, feature->score);
-	  feat->width = featureset_item->width * feat->score;
+	  if(featureset_item->style->mode_data.graph.mode != ZMAPSTYLE_GRAPH_HEATMAP)
+		feat->width = featureset_item->width * feat->score;
 	}
       else
 	{

@@ -504,7 +504,7 @@ static gboolean zmapWindowContainerBumpStyle(ZMapWindowContainerFeatureSet conta
 #warning need to recode simple features alignements & trancripts to handle bump_style
 // best to remove style from feature and use the one in featureset
 // avoid getting confused with featureset in the feature context and canvasfeatureset = column
-// this all relates to GFF base ZMap and the need to set styles OTF
+// this all relates to GFF based ZMap and the need to set styles OTF
 
 // NOTE this assumes that all features in the column have the same style
 // orignally this was ok for graph features
