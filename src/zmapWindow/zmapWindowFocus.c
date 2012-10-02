@@ -598,21 +598,26 @@ void zmapWindowFocusUnHighlightHotColumn(ZMapWindowFocus focus)
 
 FooCanvasItem *zmapWindowFocusGetHotItem(ZMapWindowFocus focus)
 {
-  FooCanvasItem *item;
+  FooCanvasItem *item = NULL ;
 
-  item = focus->hot_item;
+  if ((focus->hot_item))
+    {
+      /* for composite canvas items */
+      /* NOTE there's a theory that iten may be Foo but not Zmap eg when clicking on a trancript's exon */
+      /* it's quite difficult to tell how true this is, need to trawl thro'
+       * zmapWindowUpdateInfoPanel() and up/dowbnstram functions all; of which meander somewhat
+       */
+      if ((focus->hot_item) && ZMAP_IS_WINDOW_FEATURESET_ITEM(focus->hot_item))
+	{
+	  zMapWindowCanvasItemSetFeaturePointer((ZMapWindowCanvasItem)focus->hot_item, focus->hot_feature) ;
 
-  /* for composite canvas items */
-  /* NOTE there's a theory that iten may be Foo but not Zmap eg when clicking on a trancript's exon */
-  /* it's quite difficult to tell how true this is, need to trawl thro'
-   * zmapWindowUpdateInfoPanel() and up/dowbnstram functions all; of which meander somewhat
-   */
-
-  if(item && ZMAP_IS_WINDOW_FEATURESET_ITEM(item))
-    zMapWindowCanvasItemSetFeaturePointer((ZMapWindowCanvasItem) item, focus->hot_feature);
+	  item = focus->hot_item ;
+	}
+    }
 
   return item ;
 }
+
 
 GList *zmapWindowFocusGetFocusItemsType(ZMapWindowFocus focus, ZMapWindowFocusType type)
 {

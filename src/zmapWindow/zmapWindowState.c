@@ -1,4 +1,3 @@
-/*  Last edited: Jun 27 13:52 2011 (edgrif) */
 /*  File: zmapWindowState.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -25,9 +24,10 @@
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- * Description:
+ * Description: Implements saving state for zmapwindow prior to 
+ *              operations after which we must restore ourselves.
  *
- * Exported functions: See XXXXXXXXXXXXX.h
+ * Exported functions: See zmapWindowState.h
  *-------------------------------------------------------------------
  */
 
@@ -790,18 +790,16 @@ static void print_position(ZMapWindowPositionStruct *position, char *from)
 
 static gboolean serialize_item(FooCanvasItem *item, SerializedItemStruct *serialize)
 {
+  gboolean serialized = FALSE ;
   ZMapWindowContainerGroup container_group ;
   ZMapFeature feature ;
-  gboolean serialized = FALSE ;
 
-  feature = zMapWindowCanvasItemGetFeature(item) ;
-
-  if ((container_group = zmapWindowContainerCanvasItemGetContainer(item)))
+  if ((container_group = zmapWindowContainerCanvasItemGetContainer(item))
+      && (feature = zMapWindowCanvasItemGetFeature(item)))
     {
       ZMapWindowContainerFeatureSet container_set;
 
       container_set = (ZMapWindowContainerFeatureSet)container_group ;
-
 
       /* we need to record strand stuff here.......otherwise we can't set strand correctly later.....*/
       serialize->strand_specific = zMapStyleIsStrandSpecific(feature->style) ;
