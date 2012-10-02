@@ -206,7 +206,7 @@ static ZMapFeatureTypeStyle inherit_parent(ZMapFeatureTypeStyle style, GHashTabl
             {
               tmp_style->inherited = TRUE;
 
-#if  MH17_CHECK_INHERITANCE
+#if MH17_CHECK_INHERITANCE
 printf("%s inherited  %s, (%d/%d -> %d)\n",
 g_quark_to_string(style->unique_id),
 g_quark_to_string(parent->unique_id),
@@ -283,6 +283,7 @@ gboolean zMapStyleInheritAllStyles(GHashTable *style_set)
 
   return result ;
 }
+
 
 
 gboolean zMapStyleSetSubStyles(GHashTable *style_set)

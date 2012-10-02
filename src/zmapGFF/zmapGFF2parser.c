@@ -1167,6 +1167,8 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line, gsize line_lengt
       	 }
       }
 #endif
+
+
       /* Do some sanity checking... */
       if (g_ascii_strcasecmp(sequence, ".") == 0)
 	err_text = g_strdup("sequence cannot be '.'") ;
@@ -1610,12 +1612,6 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 				    start, end, query_start, query_end,
 				    &feature_name, &feature_name_id) ;
 
-#if SILLY
-//this causes an assertion if a feature does not have a name
-  if (g_ascii_strcasecmp("RNASEQ_Young_Adult_25dC_46hrs_post-L1_g82_x20_II_p", feature_name) == 0)
-    printf("found it\n") ;
-#endif
-
   /* Check if the feature name for this feature is already known, if it is then check if there
    * is already a multiline feature with the same name as we will need to augment it with this data. */
   if (!parser->parse_only) // && parser_feature_set)
@@ -1673,6 +1669,9 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 						strand)))
     {
       zMapFeatureSetAddFeature(feature_set, feature);
+
+	if(!zMapStyleGetGFFFeature(feature_style))
+		zMapStyleSetGFF(feature_style,NULL,ontology);
 
       if (url)
 	zMapFeatureAddURL(feature, url) ;

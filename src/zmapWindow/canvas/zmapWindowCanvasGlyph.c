@@ -948,6 +948,13 @@ static void zmap_window_canvas_glyph_draw(ZMapWindowFeaturesetItem featureset,
  *
  * reimplementation based on coords of glyph, not the feature coords which may
  * be useless for glyph purposes. */
+
+/* NOTE: this could perhaps be simplified by adding canvas coord to the glyph feature struct
+ * (which are necessarily calcuated on draw)
+ * and then comparing these coords with the cursor position in this func
+ * but maybe there's some intfercae to the draw code needed as well
+ * may have to swap canvas and feature coord to allow draw code to know which features to draw
+ */
 static double glyphPoint(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature gs,
 			 double item_x, double item_y, int cx, int cy,
 			 double local_x, double local_y, double x_off)

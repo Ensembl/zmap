@@ -1721,7 +1721,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
  *
  * This 'replaces' ACEDB data but if absent we should still use the ACE stuff, it all gets merged
  */
-static void getIniData(ZMapView view, char *config_str, GList *sources)
+static void getIniData(ZMapView view, char *config_str, GList *req_sources)
 {
   ZMapConfigIniContext context ;
   // 8 structs to juggle, count them! It's GLibalicious!!
@@ -1738,6 +1738,7 @@ static void getIniData(ZMapView view, char *config_str, GList *sources)
   GList *iter;
   char *str;
   gpointer key, value;
+  GList *sources;
 
 #if 0
 
@@ -1805,7 +1806,7 @@ static void getIniData(ZMapView view, char *config_str, GList *sources)
 	 * file. */
         fset_col = g_hash_table_new(NULL,NULL);
 
-        for(; sources ; sources = sources->next)
+        for(sources = req_sources; sources ; sources = sources->next)
           {
             GList *featuresets;
             ZMapConfigSource src;
@@ -2019,8 +2020,24 @@ static void getIniData(ZMapView view, char *config_str, GList *sources)
 		zMap_g_hashlist_insert(view->context_map.column_2_styles,
 				       fset_id,     // the column
 				       GUINT_TO_POINTER(style_id)) ;  // the style
+//printf("getIniData featureset adds %s to %s\n",g_quark_to_string(style_id),g_quark_to_string(fset_id));
 	      }
 	  }
+#if 0
+		/* add 1-1 mappingg from colum to style where featureset->column is not defined and it's not sourced from acedb */
+		/* there's a race condtion... */
+        for(sources = req_sources; sources ; sources = sources->next)
+          {
+            GList *featuresets;
+            ZMapConfigSource src;
+            src = (ZMapConfigSource) sources->data;
+
+
+            if (!g_ascii_strncasecmp(src->url,"pipe", 4) || !g_ascii_strncasecmp(src->url,"file", 4) != 0)
+		{
+		}
+#endif
+
 
 	// add col specific styles
 
@@ -2042,6 +2059,7 @@ static void getIniData(ZMapView view, char *config_str, GList *sources)
 		    zMap_g_hashlist_insert(view->context_map.column_2_styles,
 					   column->unique_id,
 					   GUINT_TO_POINTER(style_id)) ;
+printf("getIniData column adds %s to %s\n",g_quark_to_string(style_id),g_quark_to_string(column->unique_id));
                   }
 	      }
             g_hash_table_destroy(col_styles);
@@ -2241,7 +2259,6 @@ static void viewSelectCB(ZMapWindow window, void *caller_data, void *window_data
 	      ZMapViewWindow view_window ;
 	      FooCanvasItem *item ;
 		GList *l;
-		int first = 1;
 
 	      view_window = list_item->data ;
 
@@ -3252,6 +3269,7 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 		zMap_g_hashlist_insert(feature_sets->featureset_2_stylelist_out,
 				       feature_set_id,
 				       GUINT_TO_POINTER(feature_set_id)) ;
+//("processData f2s adds %s to %s\n",g_quark_to_string(feature_set_id),g_quark_to_string(feature_set_id));
 	      }
 	    while((sets = g_list_next(sets))) ;
 	  }
@@ -3295,15 +3313,20 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 	connect_data->required_styles = feature_sets->required_styles_out ;
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+#if 0 //ED_G_NEVER_INCLUDE_THIS_CODE
 	printf("\nadding stylelists:\n");
 	zMap_g_hashlist_print(feature_sets->featureset_2_stylelist_out) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+#if 0 //ED_G_NEVER_INCLUDE_THIS_CODE
+	printf("\nview styles lists before merge:\n");
+	zMap_g_hashlist_print(zmap_view->context_map.column_2_styles) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 	/* Merge the featureset to style hashses. */
 	zMap_g_hashlist_merge(zmap_view->context_map.column_2_styles, feature_sets->featureset_2_stylelist_out) ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+#if 0 //ED_G_NEVER_INCLUDE_THIS_CODE
 	printf("\nview styles lists after merge:\n");
 	zMap_g_hashlist_print(zmap_view->context_map.column_2_styles) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */

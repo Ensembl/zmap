@@ -1,4 +1,3 @@
-/*  Last edited: Jul 23 15:37 2012 (edgrif) */
 /*  File: zmapWindowDrawFeatures.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -1881,8 +1880,9 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 	FooCanvasGroup *tmp_forward = NULL, *tmp_reverse = NULL ;
 	int frame_start, frame_end;
 	ZMapFeatureTypeStyle style;
-#if MH17_REVCOMP_DEBUG
-	zMapLogWarning("featureset: drawing %s\n", g_quark_to_string(feature_any->unique_id));
+#if 0 //MH17_REVCOMP_DEBUG
+//	zMapLogWarning("featureset: drawing %s\n", g_quark_to_string(feature_any->unique_id));
+	printf("drawfeatureset: %s\n", g_quark_to_string(feature_any->unique_id));
 #endif
 
         /* record the full_context current block, not the diff block which will get destroyed! */
@@ -2670,103 +2670,6 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
 
 
 
-/* Build the background menu for a column. */
-void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
-			FooCanvasItem *item,
-			ZMapWindowContainerFeatureSet container_set,
-			ZMapFeatureTypeStyle style_unused)
-{
-  static ZMapGUIMenuItemStruct separator[] =
-    {
-      {ZMAPGUI_MENU_SEPARATOR, NULL, 0, NULL, NULL},
-      {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}
-    } ;
-  char *menu_title ;
-  GList *menu_sets = NULL ;
-  ItemMenuCBData cbdata ;
-  ZMapFeature feature;
-  ZMapFeatureSet feature_set ;
-  ZMapGUIMenuItem seq_menus ;
-
-
-  menu_title = (char *) g_quark_to_string(container_set->original_id);
-
-  feature_set = zmapWindowContainerFeatureSetRecoverFeatureSet(container_set) ;
-
-  cbdata = g_new0(ItemMenuCBDataStruct, 1) ;
-  cbdata->x = button_event->x ;
-  cbdata->y = button_event->y ;
-  cbdata->item_cb = FALSE ;
-  cbdata->window = window ;
-  cbdata->item = item ;
-  cbdata->feature_set = feature_set ;
-  cbdata->container_set = container_set;
-  cbdata->context_map = window->context_map ;
-
-  /* Make up the menu. */
-  if (zMapUtilsUserIsDeveloper())
-    {
-      menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDeveloperOps(NULL, NULL, cbdata)) ;
-
-      menu_sets = g_list_append(menu_sets, separator) ;
-    }
-
-  if ((feature = zMap_g_hash_table_nth(feature_set->features, 0)))
-    {
-      if (feature->type != ZMAPSTYLE_MODE_ALIGNMENT)
-	{
-	  menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuNonHomolFeature(NULL, NULL, cbdata)) ;
-	}
-      else if (zMapStyleIsPfetchable(feature->style))
-	{
-	  if (feature->feature.homol.type == ZMAPHOMOL_X_HOMOL)
-	    {
-	      menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuProteinHomolFeature(NULL, NULL, cbdata)) ;
-	      menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuProteinHomol(NULL, NULL, cbdata)) ;
-	    }
-	  else
-	    {
-	      menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDNAHomolFeature(NULL, NULL, cbdata)) ;
-	      menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDNAHomol(NULL, NULL, cbdata)) ;
-	    }
-	}
-      else if (zMapStyleBlixemType(feature->style) != ZMAPSTYLE_BLIXEM_INVALID)
-	{
-	  menu_sets = g_list_append(menu_sets,  zmapWindowMakeMenuDNAHomolFeature(NULL, NULL, cbdata)) ;
-	}
-
-      if ((seq_menus = zmapWindowMakeMenuBlixemBAM(NULL, NULL, cbdata)))
-	menu_sets = g_list_append(menu_sets, seq_menus) ;
-    }
-
-  menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuFeatureOps(NULL, NULL, cbdata)) ;
-
-  menu_sets = g_list_append(menu_sets, separator) ;
-
-  menu_sets
-    = g_list_append(menu_sets,
-		    zmapWindowMakeMenuBump(NULL, NULL, cbdata,
-					   zmapWindowContainerFeatureSetGetBumpMode((ZMapWindowContainerFeatureSet)item))) ;
-
-  if ((seq_menus = zmapWindowMakeMenuRequestBAM(NULL, NULL, cbdata)))
-    menu_sets = g_list_append(menu_sets, seq_menus);
-
-  menu_sets = g_list_append(menu_sets, separator) ;
-
-  menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuSearchListOps(NULL, NULL, cbdata)) ;
-
-  menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuExportOps(NULL, NULL, cbdata)) ;
-
-
-  zMapGUIMakeMenu(menu_title, menu_sets, button_event) ;
-
-  return ;
-}
-
-
-
-
-
 /* Read colour information from the configuration file, note that we read _only_ the first
  * colour stanza found in the file, subsequent ones are not read. */
 static void setColours(ZMapWindow window)
@@ -2938,8 +2841,7 @@ static gboolean containerDestroyCB(FooCanvasItem *item, gpointer user_data)
   /* Some items may not have features attached...e.g. empty cols....I should revisit the empty
    * cols bit, it keeps causing trouble all over the place.....column creation would be so much
    * simpler without it.... */
-  if ((ZMAP_IS_CONTAINER_GROUP(item) == TRUE) &&
-      (container   = ZMAP_CONTAINER_GROUP(item)))
+  if ((ZMAP_IS_CONTAINER_GROUP(item) == TRUE) && (container   = ZMAP_CONTAINER_GROUP(item)))
     {
       context_to_item = window->context_to_item;
 

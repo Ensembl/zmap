@@ -1206,6 +1206,9 @@ ZMapGUIMenuItem zmapWindowMakeMenuBlixTop(int *start_index_inout,
 ZMapGUIMenuItem zmapWindowMakeMenuBlixCommon(int *start_index_inout,
 					     ZMapGUIMenuItemCallbackFunc callback_func,
 					     gpointer callback_data) ;
+ZMapGUIMenuItem zmapWindowMakeMenuBlixColCommon(int *start_index_inout,
+						ZMapGUIMenuItemCallbackFunc callback_func,
+						gpointer callback_data) ;
 ZMapGUIMenuItem zmapWindowMakeMenuNonHomolFeature(int *start_index_inout,
 						  ZMapGUIMenuItemCallbackFunc callback_func,
 						  gpointer callback_data) ;

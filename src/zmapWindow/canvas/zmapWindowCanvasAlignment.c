@@ -430,7 +430,7 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
       x1 += featureset->dx;
       x2 = x1 + feature->width;
 
-	/* must use feature coords here as the first alignemtn in the series gets expanded to pick up colinear lines
+	/* must use feature coords here as the first alignment in the series gets expanded to pick up colinear lines
 	 * if it's ungapped we'd draw a big box over the whole series
 	 */
 	zMapCanvasFeaturesetDrawBoxMacro(featureset,x1,x2, feature->feature->x1, feature->feature->x2, drawable, fill_set,outline_set,fill,outline);

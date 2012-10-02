@@ -56,6 +56,11 @@ There is an obvious need to allow user choice of colours via the usual dialog, a
 <li> Styles that are deleted by the user may be replaced by hard coded defaults if still referenced.
 </ul>
 </p>
+<h4>Assigning non-default styles</h4>
+<p>There is some code already in existance for 'bump-style' is display a column using a different style, but this was only implemeted for graph features, which by nature require features to use the same style.  This drawing code uses the style in the featureset, whereas other types of data can be mixed in a single column and that drawing code uses the style from the feature.
+</p>
+<p>It will be necessary to modify ZMap to use the style from the featureset (remove the style pointer from the feature) to allow this to be implemented cleanly.  Several featureset may be mixed in a coluimn and therefoe there will be no loss of function.
+</p>
 
 
 
