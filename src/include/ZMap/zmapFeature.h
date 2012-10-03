@@ -309,18 +309,23 @@ typedef struct
 
 
 
-/* DO THESE STRUCTS NEED TO BE EXPOSED ? PROBABLY NOT....TO HIDE THEM WOULD REQUIRE
- * QUITE A NUMBER OF ACCESS FUNCTIONS.... */
-
+/* The main "feature structs", these form a hierachy:
+ * 
+ * context -> align -> block -> featureset -> feature
+ * 
+ * Each struct has an initial common set of members allowing all
+ * such structs to be accessed in some common ways.
+ * 
+ *  */
 
 
 /* We need some forward declarations for pointers we include in some structs. */
-
 typedef struct ZMapFeatureAlignmentStruct_ *ZMapFeatureAlignment ;
-
 typedef struct ZMapFeatureAnyStruct_ *ZMapFeatureAny ;
 
-#define FEATURES_NEED_MAGIC
+
+
+#define FEATURES_NEED_MAGIC				    /* Allows validation of structs. */
 
 
 /* WARNING: READ THIS BEFORE CHANGING ANY FEATURE STRUCTS:
@@ -402,9 +407,15 @@ typedef struct ZMapFeatureContextStruct_
   GQuark parent_name ;					    /* Name of parent sequence
 							       (== sequence_name if no parent). */
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* DO WE NEED THIS.... ? */
+
   ZMapSpanStruct parent_span ;				    /* Start/end of ultimate parent, usually we
 							       will have: x1 = 1, x2 = length in
 							       bases of parent. */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   GList *req_feature_set_names ;			    /* Global list of _names_ of all requested
 							     * feature sets for the context.
@@ -439,9 +450,13 @@ typedef struct ZMapFeatureAlignmentStruct_
 
   /* Alignment only data should go here. */
 
+
+
   /* Mapping for the target sequence, this shows where this section of sequence fits in to its
    * overall assembly, e.g. where a clone is located on a chromosome. */
   ZMapSpanStruct sequence_span ;			    /* start/end of our sequence */
+
+
 
 } ZMapFeatureAlignmentStruct;
 
