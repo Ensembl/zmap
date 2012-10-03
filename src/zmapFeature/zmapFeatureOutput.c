@@ -590,8 +590,8 @@ static gboolean simple_context_print_cb(ZMapFeatureAny feature_any,
 	g_string_append_printf(dump_string_in_out,
 			       "\tAlignment:\t%s\t%d\t%d\n",
 			       g_quark_to_string(feature_align->unique_id),
-                         feature_align->sequence_span.x1,
-                         feature_align->sequence_span.x2);
+			       feature_align->sequence_span.x1,
+			       feature_align->sequence_span.x2);
 
       }
       break;
