@@ -1228,15 +1228,15 @@ gboolean zMapFeatureAlignmentAddBlock(ZMapFeatureAlignment alignment, ZMapFeatur
 
   result = featureAnyAddFeature((ZMapFeatureAny)alignment, (ZMapFeatureAny)block) ;
 
-  if(result)
-  {
+  if (result)
+    {
       /* remember where our data hails from */
-      if(!alignment->sequence_span.x1 || alignment->sequence_span.x1 > block->block_to_sequence.block.x1)
-            alignment->sequence_span.x1 = block->block_to_sequence.block.x1;
+      if (!alignment->sequence_span.x1 || alignment->sequence_span.x1 > block->block_to_sequence.block.x1)
+	alignment->sequence_span.x1 = block->block_to_sequence.block.x1;
 
-      if(!alignment->sequence_span.x2 || alignment->sequence_span.x2 < block->block_to_sequence.block.x2)
-            alignment->sequence_span.x2 = block->block_to_sequence.block.x2;
-  }
+      if (!alignment->sequence_span.x2 || alignment->sequence_span.x2 < block->block_to_sequence.block.x2)
+	alignment->sequence_span.x2 = block->block_to_sequence.block.x2;
+    }
 
   return result ;
 }
