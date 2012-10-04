@@ -408,13 +408,11 @@ typedef struct ZMapFeatureContextStruct_
 							       (== sequence_name if no parent). */
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* DO WE NEED THIS.... ? */
 
   ZMapSpanStruct parent_span ;				    /* Start/end of ultimate parent, usually we
 							       will have: x1 = 1, x2 = length in
 							       bases of parent. */
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
   GList *req_feature_set_names ;			    /* Global list of _names_ of all requested
@@ -1305,7 +1303,9 @@ gboolean zMapFeatureIsSeqFeatureSet(ZMapFeatureContextMap map,GQuark fset_id);
 
 GList *zMapFeatureGetColumnFeatureSets(ZMapFeatureContextMap map,GQuark column_id,gboolean unique_id);
 
+
 /* Probably should be merged at some time.... */
+char *zMapFeatureAsString(ZMapFeature feature) ;
 gboolean zMapFeatureDumpStdOutFeatures(ZMapFeatureContext feature_context, GHashTable *styles, GError **error_out) ;
 gboolean zMapFeatureDumpToFileName(ZMapFeatureContext feature_context,char *filename,char *header, GHashTable *styles, GError **error_out);
 gboolean zMapFeatureContextDump(ZMapFeatureContext feature_context, GHashTable *styles,

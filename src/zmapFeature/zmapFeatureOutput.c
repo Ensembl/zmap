@@ -1,4 +1,3 @@
-/*  Last edited: Jul 13 14:40 2012 (edgrif) */
 /*  File: zmapFeatureOutput.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -25,9 +24,10 @@
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- * Description:
+ * Description: Dumping of features/feature context to various
+ *              destinations.
  *
- * Exported functions: See XXXXXXXXXXXXX.h
+ * Exported functions: See ZMap/zmapFeature.h
  *-------------------------------------------------------------------
  */
 
@@ -79,15 +79,18 @@ static ZMapFeatureContextExecuteStatus dump_features_cb(GQuark   key,
 							gpointer user_data,
 							char   **err_out);
 static void invoke_dump_features_cb(gpointer list_data, gpointer user_data);
+static ZMapFeatureContextExecuteStatus range_invoke_dump_features_cb(GQuark   key,
+								     gpointer data,
+								     gpointer user_data,
+								     char   **err_out);
 static gboolean simple_context_print_cb(ZMapFeatureAny feature_any,
 					GHashTable    *styles,
 					GString       *dump_string_in_out,
 					GError       **error,
 					gpointer       user_data);
-static ZMapFeatureContextExecuteStatus range_invoke_dump_features_cb(GQuark   key,
-								     gpointer data,
-								     gpointer user_data,
-								     char   **err_out);
+GString *feature2Text(GString *feature_str, ZMapFeature feature) ;
+
+
 
 
 
@@ -117,15 +120,20 @@ ZMapFeatureAsText zMapFeature2Text(ZMapFeature feature)
 
 
 
-#if NOT_USED
-void zMapFeaturePrint(ZMapIOOut dest, ZMapFeature feature, char *prefix, gboolean full)
+char *zMapFeatureAsString(ZMapFeature feature)
 {
-  char *indent = "" ;
+  char *feature_text = NULL ;
+  GString *feature_str ;
 
+  feature_str = g_string_sized_new(2048) ;
 
-  return ;
+  feature_str = feature2Text(feature_str, feature) ;
+  
+  feature_text = g_string_free(feature_str, FALSE) ;
+
+  return feature_text ;
 }
-#endif
+
 
 
 
@@ -557,107 +565,6 @@ static void invoke_dump_features_cb(gpointer list_data, gpointer user_data)
   return ;
 }
 
-static gboolean simple_context_print_cb(ZMapFeatureAny feature_any,
-					GHashTable    *styles,
-					GString       *dump_string_in_out,
-					GError       **error,
-					gpointer       user_data)
-{
-  gboolean result = TRUE;
-
-  switch(feature_any->struct_type)
-    {
-    case ZMAPFEATURE_STRUCT_CONTEXT:
-      {
-	ZMapFeatureContext feature_context;
-
-	feature_context = (ZMapFeatureContext)feature_any;
-	g_string_append_printf(dump_string_in_out,
-			       "Feature Context:\t%s\t%s\t%s\t%s\t%d\t%d\n",
-			       g_quark_to_string(feature_context->unique_id),
-			       g_quark_to_string(feature_context->original_id),
-			       g_quark_to_string(feature_context->sequence_name),
-			       g_quark_to_string(feature_context->parent_name),
-			       feature_context->parent_span.x1,
-			       feature_context->parent_span.x2);
-      }
-      break;
-    case ZMAPFEATURE_STRUCT_ALIGN:
-      {
-	ZMapFeatureAlignment feature_align;
-
-	feature_align = (ZMapFeatureAlignment)feature_any;
-	g_string_append_printf(dump_string_in_out,
-			       "\tAlignment:\t%s\t%d\t%d\n",
-			       g_quark_to_string(feature_align->unique_id),
-			       feature_align->sequence_span.x1,
-			       feature_align->sequence_span.x2);
-
-      }
-      break;
-    case ZMAPFEATURE_STRUCT_BLOCK:
-      {
-	ZMapFeatureBlock feature_block;
-	feature_block = (ZMapFeatureBlock)feature_any;
-	g_string_append_printf(dump_string_in_out,
-			       "\tBlock:\t%s\t%d\t%d\n",
-			       g_quark_to_string(feature_block->unique_id),
-			       feature_block->block_to_sequence.parent.x1,
-			       feature_block->block_to_sequence.parent.x2) ;
-      }
-      break;
-    case ZMAPFEATURE_STRUCT_FEATURESET:
-      {
-	ZMapFeatureSet feature_set;
-	feature_set = (ZMapFeatureSet)feature_any;
-	g_string_append_printf(dump_string_in_out,
-			       "\tFeature Set:\t%s\t%s\n",
-			       g_quark_to_string(feature_set->unique_id),
-			       (char *)g_quark_to_string(feature_set->original_id)) ;
-      }
-      break;
-    case ZMAPFEATURE_STRUCT_FEATURE:
-      {
-	ZMapFeature feature;
-	char *type = "(type)", *strand ;
-	ZMapFeatureTypeStyle style ;
-
-	feature = (ZMapFeature)feature_any;
-
-      if(styles)
-      {
-	      style = *feature->style ; /* zMapFindStyle(styles, feature->style_id) ; */
-	      type   = (char *)zMapStyleMode2ExactStr(zMapStyleGetMode(style)) ;
-      }
-        strand = zMapFeatureStrand2Str(feature->strand) ;
-
-	g_string_append_printf(dump_string_in_out,
-			       "\t\t%s\t%d\t%s\t%s\t%d\t%d\t%s\t%f",
-			       (char *)g_quark_to_string(feature->unique_id),
-			       feature->db_id,
-			       (char *)g_quark_to_string(feature->original_id),
-			       type,
-			       feature->x1,
-			       feature->x2,
-			       strand,
-			       feature->score) ;
-
-        if (feature->description)
-          {
-            g_string_append_c(dump_string_in_out, '\t');
-            g_string_append(dump_string_in_out, feature->description) ;
-          }
-
-        g_string_append_c(dump_string_in_out, '\n') ;
-      }
-      break;
-    default:
-      result = FALSE;
-      break;
-    }
-
-  return result;
-}
 
 static ZMapFeatureContextExecuteStatus range_invoke_dump_features_cb(GQuark   key,
 								     gpointer data,
@@ -702,4 +609,124 @@ static ZMapFeatureContextExecuteStatus range_invoke_dump_features_cb(GQuark   ke
 
   return status;
 }
+
+
+
+static gboolean simple_context_print_cb(ZMapFeatureAny feature_any,
+					GHashTable    *styles,
+					GString       *dump_string_in_out,
+					GError       **error,
+					gpointer       user_data)
+{
+  gboolean result = TRUE;
+
+  switch(feature_any->struct_type)
+    {
+    case ZMAPFEATURE_STRUCT_CONTEXT:
+      {
+	ZMapFeatureContext feature_context;
+
+	feature_context = (ZMapFeatureContext)feature_any;
+	g_string_append_printf(dump_string_in_out,
+			       "Feature Context:\t%s\t%s\t%s\t%s\t%d\t%d\n",
+			       g_quark_to_string(feature_context->unique_id),
+			       g_quark_to_string(feature_context->original_id),
+			       g_quark_to_string(feature_context->sequence_name),
+			       g_quark_to_string(feature_context->parent_name),
+			       feature_context->parent_span.x1,
+			       feature_context->parent_span.x2);
+	break;
+      }
+    case ZMAPFEATURE_STRUCT_ALIGN:
+      {
+	ZMapFeatureAlignment feature_align;
+
+	feature_align = (ZMapFeatureAlignment)feature_any;
+	g_string_append_printf(dump_string_in_out,
+			       "\tAlignment:\t%s\t%d\t%d\n",
+			       g_quark_to_string(feature_align->unique_id),
+			       feature_align->sequence_span.x1,
+			       feature_align->sequence_span.x2);
+
+	break;
+      }
+    case ZMAPFEATURE_STRUCT_BLOCK:
+      {
+	ZMapFeatureBlock feature_block;
+	feature_block = (ZMapFeatureBlock)feature_any;
+	g_string_append_printf(dump_string_in_out,
+			       "\tBlock:\t%s\t%d\t%d\n",
+			       g_quark_to_string(feature_block->unique_id),
+			       feature_block->block_to_sequence.parent.x1,
+			       feature_block->block_to_sequence.parent.x2) ;
+	break;
+      }
+    case ZMAPFEATURE_STRUCT_FEATURESET:
+      {
+	ZMapFeatureSet feature_set;
+	feature_set = (ZMapFeatureSet)feature_any;
+	g_string_append_printf(dump_string_in_out,
+			       "\tFeature Set:\t%s\t%s\n",
+			       g_quark_to_string(feature_set->unique_id),
+			       (char *)g_quark_to_string(feature_set->original_id)) ;
+	break;
+      }
+    case ZMAPFEATURE_STRUCT_FEATURE:
+      {
+	ZMapFeature feature;
+	feature = (ZMapFeature)feature_any;
+
+	g_string_append(dump_string_in_out, "\t\t") ;
+	dump_string_in_out = feature2Text(dump_string_in_out, feature) ;
+        g_string_append_c(dump_string_in_out, '\n') ;
+
+	break;
+      }
+    default:
+      {
+	result = FALSE;
+	break;
+      }
+    }
+
+  return result;
+}
+
+
+
+GString *feature2Text(GString *feature_str, ZMapFeature feature)
+{
+  GString *result = feature_str ;
+  char *type = "(type)", *strand ;
+  ZMapFeatureTypeStyle style ;
+
+  style = *feature->style ;
+  type = (char *)zMapStyleMode2ExactStr(zMapStyleGetMode(style)) ;
+
+  strand = zMapFeatureStrand2Str(feature->strand) ;
+
+  g_string_append_printf(result,
+			 "%s\t(%s)\t%s\t%d\t%d\t%s\t%f",
+			 (char *)g_quark_to_string(feature->original_id),
+			 (char *)g_quark_to_string(feature->unique_id),
+			 type,
+			 feature->x1,
+			 feature->x2,
+			 strand,
+			 feature->score) ;
+
+  if (feature->description)
+    {
+      g_string_append_c(result, '\t') ;
+      g_string_append(result, feature->description) ;
+    }
+
+  return result ;
+}
+
+
+
+
+
+
 
