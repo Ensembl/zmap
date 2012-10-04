@@ -1,4 +1,3 @@
-/*  Last edited: Jul 23 12:33 2012 (edgrif) */
 /*  File: acedbServer.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -1732,7 +1731,7 @@ static gboolean getSequenceMapping(AcedbServer server, ZMapFeatureContext featur
       feature_context->parent_name = g_quark_from_string(parent_name) ;
       g_free(parent_name) ;
 
-      if(!feature_context->parent_span.x2)
+      if (!feature_context->parent_span.x2)
 	{
 	  feature_context->parent_span.x1 = 1;
 	  feature_context->parent_span.x2 = parent_length;
