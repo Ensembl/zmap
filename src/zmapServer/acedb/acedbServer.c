@@ -1,4 +1,3 @@
-/*  Last edited: Jul 23 12:33 2012 (edgrif) */
 /*  File: acedbServer.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -1732,7 +1731,7 @@ static gboolean getSequenceMapping(AcedbServer server, ZMapFeatureContext featur
       feature_context->parent_name = g_quark_from_string(parent_name) ;
       g_free(parent_name) ;
 
-      if(!feature_context->parent_span.x2)
+      if (!feature_context->parent_span.x2)
 	{
 	  feature_context->parent_span.x1 = 1;
 	  feature_context->parent_span.x2 = parent_length;
@@ -1796,6 +1795,11 @@ static gboolean getSequenceMapping(AcedbServer server, ZMapFeatureContext featur
  *        // 0 Active Objects
  *
  */
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+/* I'M DISABLING THIS FOR NOW AND REPLACING IT WITH A ROUTINE THAT SIMPLY COPIES
+ * IN THE GIVEN SEQUENCE NAME ETC..... BECAUSE OUR CLONE DISPLAY IS BROKEN. */
+
 static gboolean getSMapping(AcedbServer server, char *class,
 			    char *sequence, int start, int end,
 			    char **parent_class_out, char **parent_name_out,
@@ -1868,6 +1872,39 @@ static gboolean getSMapping(AcedbServer server, char *class,
 
   return result ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+/* DUMMY VERSION....JUST COPIES IN EXISTING SEQUENCE TO PARENT SLOTS.... */
+static gboolean getSMapping(AcedbServer server, char *class,
+			    char *sequence, int start, int end,
+			    char **parent_class_out, char **parent_name_out,
+			    ZMapMapBlock child_to_parent_out)
+{
+  gboolean result = FALSE ;
+  ZMapMapBlockStruct child_to_parent = {{0, 0}, {0, 0}, FALSE} ;
+
+  if (parent_class_out)
+    *parent_class_out = g_strdup("sequence") ;
+
+  if (parent_name_out)
+    *parent_name_out = g_strdup(sequence) ;
+
+  if (child_to_parent_out)
+    {
+      child_to_parent.parent.x1 = child_to_parent.block.x1 = start ;
+      child_to_parent.parent.x2 = child_to_parent.block.x2 = end ;
+      
+      *child_to_parent_out = child_to_parent ;    /* n.b. struct copy. */
+    }
+
+  result = TRUE ;
+
+  return result ;
+}
+
+
+
 
 
 

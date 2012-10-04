@@ -414,7 +414,6 @@ typedef struct ZMapFeatureContextStruct_
 							       will have: x1 = 1, x2 = length in
 							       bases of parent. */
 
-
   GList *req_feature_set_names ;			    /* Global list of _names_ of all requested
 							     * feature sets for the context.
 							     * for ACEDB these are given as columns
