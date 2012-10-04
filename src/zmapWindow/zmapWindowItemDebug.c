@@ -53,7 +53,7 @@ static gboolean get_container_type_as_string(FooCanvasItem *item, char **str_out
 static gboolean get_container_child_type_as_string(FooCanvasItem *item, char **str_out) ;
 static gboolean get_item_type_as_string(FooCanvasItem *item, char **str_out) ;
 static gboolean get_feature_type_as_string(FooCanvasItem *item, char **str_out) ;
-
+static GString *getItemCoords(GString *str, FooCanvasItem *item, gboolean local_only) ;
 
 
 /* We just dip into the foocanvas struct for some data, we use the interface calls where they
@@ -98,18 +98,18 @@ void zmapWindowPrintGroups(FooCanvas *canvas)
 }
 
 
-void zmapWindowItemDebugItemToString(FooCanvasItem *item, GString *string)
+void zmapWindowItemDebugItemToString(GString *string, FooCanvasItem *item)
 {
   gboolean has_feature = FALSE, is_container = FALSE ;
   char *str = NULL ;
 
   if ((is_container = get_container_type_as_string(item, &str)))
-    g_string_append_printf(string, " %s", str) ;
+    g_string_append_printf(string, "%s", str) ;
   else if (get_item_type_as_string(item, &str))
-    g_string_append_printf(string, " %s", str) ;
+    g_string_append_printf(string, "%s", str) ;
 
   if ((has_feature = get_feature_type_as_string(item, &str)))
-    g_string_append_printf(string, " %s", str) ;
+    g_string_append_printf(string, "%s", str) ;
 
   if (has_feature)
     {
@@ -127,7 +127,7 @@ void zmapWindowItemDebugItemToString(FooCanvasItem *item, GString *string)
       if (container != item)
 	{
 	  g_string_append_printf(string, "Parent Details... ");
-	  zmapWindowItemDebugItemToString(container, string);
+	  zmapWindowItemDebugItemToString(string, container);
 	}
     }
 
@@ -139,33 +139,48 @@ void zmapWindowItemDebugItemToString(FooCanvasItem *item, GString *string)
 /* Prints out an items coords in local coords, good for debugging.... */
 void zmapWindowPrintLocalCoords(char *msg_prefix, FooCanvasItem *item)
 {
-  double x1, y1, x2, y2 ;
+  GString *str ;
 
-  /* Gets bounding box in parents coord system. */
-  foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2) ;
+  str = g_string_sized_new(2048) ;
 
-  printf("%s:\t%f,%f -> %f,%f\n",
-	 (msg_prefix ? msg_prefix : ""),
-	 x1, y1, x2, y2) ;
+  str = getItemCoords(str, item, TRUE) ;
 
+  printf("%s %s\n", msg_prefix, str->str) ;
+
+  g_string_free(str, TRUE) ;
 
   return ;
 }
 
+
+char *zmapWindowItemCoordsText(FooCanvasItem *item)
+{
+  char *item_coords = NULL ;
+  GString *str ;
+
+  str = g_string_sized_new(2048) ;
+
+  str = getItemCoords(str, item, FALSE) ;
+  
+  item_coords = g_string_free(str, FALSE) ;
+
+  return item_coords ;
+}
+
+
+
 /* Prints out an items coords in world coords, good for debugging.... */
 void zmapWindowPrintItemCoords(FooCanvasItem *item)
 {
-  double x1, y1, x2, y2 ;
+  GString *str ;
 
-  /* Gets bounding box in parents coord system. */
-  foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2) ;
+  str = g_string_sized_new(2048) ;
 
-  printf("P %f, %f, %f, %f -> ", x1, y1, x2, y2) ;
+  str = getItemCoords(str, item, FALSE) ;
 
-  foo_canvas_item_i2w(item, &x1, &y1) ;
-  foo_canvas_item_i2w(item, &x2, &y2) ;
+  printf("%s\n", str->str) ;
 
-  printf("W %f, %f, %f, %f\n", x1, y1, x2, y2) ;
+  g_string_free(str, TRUE) ;
 
   return ;
 }
@@ -225,7 +240,7 @@ static void printGroup(FooCanvasGroup *group, int indent, GString *buf)
   /* Print this group. */
   if (ZMAP_IS_CONTAINER_GROUP(group) || ZMAP_IS_CANVAS_ITEM(group))
     {
-      zmapWindowItemDebugItemToString((FooCanvasItem *)group, buf) ;
+      zmapWindowItemDebugItemToString(buf, (FooCanvasItem *)group) ;
       printf("%s", buf->str) ;
     }
   else if (FOO_IS_CANVAS_GROUP(group))
@@ -412,5 +427,28 @@ static gboolean get_feature_type_as_string(FooCanvasItem *item, char **str_out)
   return has_type ;
 }
 
+
+
+
+static GString *getItemCoords(GString *str, FooCanvasItem *item, gboolean local_only)
+{
+  GString *result = str ;
+  double x1, y1, x2, y2 ;
+
+  /* Gets bounding box in parents coord system. */
+  foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2) ;
+
+  g_string_append_printf(str, "item: %g, %g, %g, %g", x1, y1, x2, y2) ;
+
+  if (!local_only)
+    {
+      foo_canvas_item_i2w(item, &x1, &y1) ;
+      foo_canvas_item_i2w(item, &x2, &y2) ;
+
+      g_string_append_printf(str, " -> World: %g, %g, %g, %g\n", x1, y1, x2, y2) ;
+    }
+
+  return result ;
+}
 
 
