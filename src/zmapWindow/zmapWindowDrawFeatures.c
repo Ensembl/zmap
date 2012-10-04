@@ -1190,6 +1190,54 @@ static void windowDrawContext(ZMapCanvasData     canvas_data,
 }
 
 
+/* eg after changing the style, we remove the column fron the canvas and draw it again to handle stranding changes */
+void zmapWindowRedrawFeatureSet(ZMapWindow window, ZMapFeatureSet featureset)
+{
+  ZMapCanvasDataStruct canvas_data = {NULL};
+  ZMapFeatureContext full_context;
+  ZMapFeatureAlignment align;
+  ZMapFeatureBlock block;
+  ZMapFeatureContext diff_context = NULL;
+  gboolean is_master = FALSE;
+
+  full_context = window->feature_context;
+
+  canvas_data.window        = window;
+  canvas_data.canvas        = window->canvas;
+  canvas_data.curr_x_offset = 0.0;
+  canvas_data.full_context  = full_context;
+  canvas_data.frame_mode_change = TRUE;       // refer to comment in feature_set_matches_frame_drawing_mode()
+  /* as we may be adding frame sensitivity we need to do this */
+
+  canvas_data.curr_root_group = zmapWindowContainerGetFeatures(window->feature_root_group) ;
+
+  block = (ZMapFeatureBlock) featureset->parent;
+  align = (ZMapFeatureAlignment) block->parent;
+
+  is_master = (full_context->master_align == align);
+
+  block = (ZMapFeatureBlock)zMapFeatureAnyCopy((ZMapFeatureAny)block);
+  align = (ZMapFeatureAlignment)zMapFeatureAnyCopy((ZMapFeatureAny)align);
+  diff_context = (ZMapFeatureContext)zMapFeatureAnyCopy((ZMapFeatureAny)full_context);
+
+
+  zMapFeatureContextAddAlignment(diff_context, align, is_master);
+  zMapFeatureAlignmentAddBlock(align, block);
+
+  featureset = zMapFeatureSetCopy(featureset);
+  zMapFeatureBlockAddFeatureSet(block, featureset);
+
+  zMapFeatureContextExecuteComplete((ZMapFeatureAny)diff_context,
+				    ZMAPFEATURE_STRUCT_FEATURESET,
+				    windowDrawContextCB,
+				    NULL, &canvas_data);
+
+   zMapFeatureContextDestroy(diff_context, TRUE);
+
+   zmapWindowHideEmpty(window);
+}
+
+
 static void purge_hide_frame_specific_columns(ZMapWindowContainerGroup container, FooCanvasPoints *points,
 					      ZMapContainerLevelType level, gpointer user_data)
 {

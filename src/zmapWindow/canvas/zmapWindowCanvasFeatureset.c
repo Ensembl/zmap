@@ -2844,6 +2844,7 @@ int zMapWindowFeaturesetRemoveGraphics(ZMapWindowFeaturesetItem featureset_item,
   so to delete a whole featureset we could have a quadratic search time unless we delete in order
   but from OTF if we delete old ones we do this via a small hash table
   we don't delete elsewhere, execpt for legacy gapped alignments, so this works ok by fluke
+  NOTE contract expended BAM features will delete 1000 times, so may be slow
 
   this function's a bit horrid: when we find the feature to delete we have to look it up in the index to repaint
   we really need a column refresh
@@ -2854,7 +2855,7 @@ int zMapWindowFeaturesetRemoveGraphics(ZMapWindowFeaturesetItem featureset_item,
 // ideas:
 // use a skip list exclusively ??
 // use features list for loading, convert to skip list and remove features
-// can add new features via list and add to skip list (extract skip list, add to features , sort and re-create skip list
+// can add new features via list and add to skip list (extract skip list, add to features , sort and re-create skip list)
 
 /* NOTE Here we improve the efficiency of deleting a feature with some rubbish code
  * we add a pointer to a feature's list mode in the fi->features list
@@ -2871,8 +2872,8 @@ int zMapWindowFeaturesetRemoveGraphics(ZMapWindowFeaturesetItem featureset_item,
  * unfortunately glib sorts by creating new list nodes (i infer) so that the from pointer is invalid
  *
  */
-/* NOTE it turns out that g_list_sort invalidtaes ->from pointers so we can;t use them
- * however to delete all features we can just destroy the featureset, ite will be created again when we add a new feature
+/* NOTE it turns out that g_list_sort invalidates ->from pointers so we can't use them
+ * however to delete all features we can just destroy the featureset, it will be created again when we add a new feature
  */
 int zMapWindowFeaturesetItemRemoveFeature(FooCanvasItem *foo, ZMapFeature feature)
 {
@@ -2958,6 +2959,106 @@ int zMapWindowFeaturesetItemRemoveFeature(FooCanvasItem *foo, ZMapFeature featur
 
   return fi->n_features;
 }
+
+
+
+/*
+ * remove all the features in the given set from the canvas item
+ * we may have several mapped into one featuresetItem
+ * we could just remove each feature individually , but this is quicker and easier
+ */
+
+int zMapWindowFeaturesetItemRemoveSet(FooCanvasItem *foo, ZMapFeatureSet featureset)
+{
+  ZMapWindowFeaturesetItem fi = (ZMapWindowFeaturesetItem) foo;
+
+
+#if 1
+  GList *l;
+  ZMapWindowCanvasFeature feat;
+  ZMapFeatureSet set;
+
+  for(l = fi->features;l;)
+    {
+      GList *del;
+
+      feat = (ZMapWindowCanvasFeature) l->data;
+
+	set = (ZMapFeatureSet) feat->feature->parent;
+      if(set == featureset)
+	{
+	  /* NOTE the features list and display index both point to the same structs */
+
+	  zmap_window_canvas_featureset_expose_feature(fi, feat);
+
+	  zmapWindowCanvasFeatureFree(feat);
+	  del = l;
+	  l = l->next;
+	  fi->features = g_list_delete_link(fi->features,del);
+	  fi->n_features--;
+
+	  if(fi->link_sideways)	/* we'll get calls for each sub-feature */
+	    break;
+	  /* else have to go through the whole list; fortunately transcripts are low volume */
+	}
+      else
+	{
+	  l = l->next;
+	}
+    }
+
+  /* NOTE we may not have an index so this flag must be unset seperately */
+  fi->linked_sideways = FALSE;  /* See code below: this was slack */
+
+
+#else
+#if CODE_COPIED_FROM_REMOVE_FEATURE
+  ZMapWindowCanvasFeature gs = zmap_window_canvas_featureset_find_feature(fi,feature);
+
+  if(gs)
+    {
+      GList *link = gs->from;
+      /* NOTE search for ->from if you revive this */
+      /* glib  g_list_sort() invalidates these adresses -> preserves the data but not the list elements */
+
+      zMapAssert(link);
+      zmap_window_canvas_featureset_expose_feature(fi, gs);
+
+
+      //      if(fi->linked_sideways)
+      {
+	if(gs->left)
+	  gs->left->right = gs->right;
+	if(gs->right)
+	  gs->right->left = gs->left;
+      }
+
+      zmapWindowCanvasFeatureFree(gs);
+      fi->features = g_list_delete_link(fi->features,link);
+      fi->n_features--;
+    }
+#endif
+#endif
+
+  /* not strictly necessary to re-sort as the order is the same
+   * but we avoid the index becoming degenerate by doing this
+   * better to implement zmapSkipListRemove() properly
+   */
+  if(fi->display_index)
+    {
+      /* need to recalc bins */
+      /* quick fix FTM, de-calc which requires a re-calc on display */
+      zMapSkipListDestroy(fi->display_index, NULL);
+      fi->display_index = NULL;
+      /* is still sorted if it was before */
+    }
+
+  if(!fi->n_features)
+	  zmap_window_featureset_item_item_destroy((GObject *) fi);
+
+  return fi->n_features;
+}
+
 
 
 #warning make this into a foo canvas item class func

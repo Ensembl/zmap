@@ -398,6 +398,7 @@ _(ZMAPSTYLE_MODE_META,          , "meta"         , "Meta object controlling disp
 
 ZMAP_DEFINE_ENUM(ZMapStyleMode, ZMAP_STYLE_MODE_LIST);
 #define N_STYLE_MODE	(ZMAPSTYLE_MODE_META)
+#define N_STYLE_FEATURE_MODE	ZMAPSTYLE_MODE_PLAIN
 
 #define ZMAP_STYLE_COLUMN_DISPLAY_LIST(_)                                                      \
 _(ZMAPSTYLE_COLDISPLAY_INVALID,   , "invalid"  , "invalid mode  "                        , "") \

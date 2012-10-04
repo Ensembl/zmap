@@ -923,6 +923,11 @@ gboolean zmapWindowFToIAddFeature(GHashTable *feature_to_context_hash,
 				  GQuark feature_id, FooCanvasItem *feature_item, ZMapFeature feature) ;
 gboolean zmapWindowFToIRemoveFeature(GHashTable *feature_to_context_hash,
 				     ZMapStrand set_strand, ZMapFrame set_frame, ZMapFeature feature) ;
+ID2Canvas zmapWindowFToIFindID2CFull(ZMapWindow window, GHashTable *feature_context_to_item,
+					  GQuark align_id, GQuark block_id,
+					  GQuark set_id,
+					  ZMapStrand set_strand, ZMapFrame set_frame,
+					  GQuark feature_id);
 FooCanvasItem *zmapWindowFToIFindItemFull(ZMapWindow window,GHashTable *feature_to_context_hash,
 					  GQuark align_id, GQuark block_id, GQuark set_id,
 					  ZMapStrand strand, ZMapFrame frame,
@@ -1284,6 +1289,8 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, ZMapFeatureTypeStyle sty
 				      ZMapWindowContainerFeatures set_features,
 					FooCanvasItem *foo_featureset,
 					ZMapWindowFeatureStack feature_stack) ;
+
+void zmapWindowRedrawFeatureSet(ZMapWindow window, ZMapFeatureSet featureset);
 
 char *zmapWindowFeatureSetDescription(ZMapFeatureSet feature_set) ;
 char *zmapWindowFeatureSourceDescription(ZMapFeature feature) ;

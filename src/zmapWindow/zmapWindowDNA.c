@@ -100,8 +100,6 @@ static GtkWidget *makeSpinPanel(DNASearchData search_data,
 static void remapCoords(gpointer data, gpointer user_data) ;
 static void printCoords(gpointer data, gpointer user_data) ;
 
-static void copy_to_new_featureset(gpointer key, gpointer hash_data, gpointer user_data);
-static ZMapFeatureSet my_feature_set_copy(ZMapFeatureSet feature_set);
 static void matches_to_features(gpointer list_data, gpointer user_data);
 static void remove_current_matches_from_display(DNASearchData search_data);
 
@@ -1034,37 +1032,6 @@ static void printCoords(gpointer data, gpointer user_data)
 }
 
 
-static void copy_to_new_featureset(gpointer key, gpointer hash_data, gpointer user_data)
-{
-  ZMapFeatureSet set = (ZMapFeatureSet)user_data;
-  ZMapFeature    new;
-
-  new = (ZMapFeature)zMapFeatureAnyCopy((ZMapFeatureAny)hash_data);
-
-  zMapFeatureSetAddFeature(set, new);
-
-  return ;
-}
-
-static ZMapFeatureSet my_feature_set_copy(ZMapFeatureSet feature_set)
-{
-  ZMapFeatureSet new_feature_set = NULL;
-  gboolean report_hash_size = FALSE;
-
-  new_feature_set = (ZMapFeatureSet)zMapFeatureAnyCopy((ZMapFeatureAny)feature_set);
-
-  if(report_hash_size)
-    printf("original hash is %d long\n", g_hash_table_size(feature_set->features));
-
-  g_hash_table_foreach(feature_set->features, copy_to_new_featureset, new_feature_set);
-
-  if(report_hash_size)
-    printf("new hash is %d long\n", g_hash_table_size(new_feature_set->features));
-
-  return new_feature_set;
-}
-
-
 
 static void matches_to_features(gpointer list_data, gpointer user_data)
 {
@@ -1158,7 +1125,7 @@ static void remove_current_matches_from_display(DNASearchData search_data)
 						ZMAPSTRAND_NONE,
 						ZMAPFRAME_NONE);
 
-		feature_set = my_feature_set_copy(feature_set);
+		feature_set = zMapFeatureSetCopy(feature_set);
 
 		zMapFeatureBlockAddFeatureSet(block, feature_set);
 	}
@@ -1176,7 +1143,7 @@ static void remove_current_matches_from_display(DNASearchData search_data)
 			/* remove the FtoiHash only */
 			zMapWindowUnDisplaySearchFeatureSets(search_data->window, NULL, diff_context);
 
-			/* this handles destroy of the (virtual) Canvasfeatureset */
+			/* this handles destroy of the (virtual) CanvasFeatureset */
 			zmapWindowContainerGroupDestroy((ZMapWindowContainerGroup)(container));
 
 			zmapWindowContainerRequestReposition(search_data->window->feature_root_group);

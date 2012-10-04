@@ -632,8 +632,8 @@ static ZMapFeatureContextExecuteStatus undisplayFeaturesCB(GQuark key,
        * This is true when otterlace sends a single feature to delete and then we fail to find
        * the extra locus feature
        *
-       * regardless of that if we have features that are not displayed due to config this couls also fail
-       * so if not column_id defined log a warnign adn fail silently.
+       * regardless of that if we have features that are not displayed due to config this could also fail
+       * so if not column_id defined log a warning and fail silently.
        *
        * locus is used in the naviagtor, we hope dealt with via another call.
        */
@@ -659,6 +659,7 @@ static ZMapFeatureContextExecuteStatus undisplayFeaturesCB(GQuark key,
 
   return status;
 }
+
 
 void zMapWindowUnDisplayData(ZMapWindow window,
                              ZMapFeatureContext current_features,

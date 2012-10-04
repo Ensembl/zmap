@@ -44,6 +44,15 @@
  *
  * NOTE initially we do not implement balancing, and stop at the point where
  * the data structure is secure through insert and delete operations
+ * actual use is static, and we construct the skip list by lazy evaluation
+ * when we delete or addfeatures afterwards we just re-create the skip list as that is safe
+ * if you implement list balancing the write a test program to thrash the code
+ * as any bugs will be obscure otherwise
+ *
+ * NOTE later developments have a requirement for efficient delete and add and these include:
+ * - expand and contract compressed BAM (1000 features in 60k)
+ * - change featureset style - need to remove one set from a column of many and re-insert
+ *   possibly in a diff column (if setting stranded)
  */
 
 #include <memory.h>

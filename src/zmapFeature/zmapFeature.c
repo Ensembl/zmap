@@ -1057,6 +1057,32 @@ gboolean zMapFeatureSetAddFeature(ZMapFeatureSet feature_set, ZMapFeature featur
 }
 
 
+static void copy_to_new_featureset(gpointer key, gpointer hash_data, gpointer user_data)
+{
+  ZMapFeatureSet set = (ZMapFeatureSet)user_data;
+  ZMapFeature    new;
+
+  new = (ZMapFeature)zMapFeatureAnyCopy((ZMapFeatureAny)hash_data);
+
+  zMapFeatureSetAddFeature(set, new);
+
+  return ;
+}
+
+ZMapFeatureSet zMapFeatureSetCopy(ZMapFeatureSet feature_set)
+{
+  ZMapFeatureSet new_feature_set = NULL;
+
+  new_feature_set = (ZMapFeatureSet)zMapFeatureAnyCopy((ZMapFeatureAny)feature_set);
+
+  g_hash_table_foreach(feature_set->features, copy_to_new_featureset, new_feature_set);
+
+  return new_feature_set;
+}
+
+
+
+
 /* Returns TRUE if the feature could be found in the feature_set, FALSE otherwise. */
 gboolean zMapFeatureSetFindFeature(ZMapFeatureSet feature_set,
                                    ZMapFeature    feature)
