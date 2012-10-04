@@ -1034,6 +1034,7 @@ void zmapWindowSortCanvasItems(FooCanvasGroup *group) ;
 FooCanvasGroup *zmapWindowFeatureItemsMakeGroup(ZMapWindow window, GList *feature_items) ;
 gboolean zmapWindowItemGetStrandFrame(FooCanvasItem *item, ZMapStrand *set_strand, ZMapFrame *set_frame) ;
 void zmapWindowPrintItemCoords(FooCanvasItem *item) ;
+char *zmapWindowItemCoordsText(FooCanvasItem *item) ;
 
 gboolean zmapWindowWorld2SeqCoords(ZMapWindow window, FooCanvasItem *foo,
 				   double wx1, double wy1, double wx2, double wy2,
@@ -1488,7 +1489,7 @@ void zmapWindowToggleMark(ZMapWindow window, gboolean whole_feature);
 void zmapWindowColOrderColumns(ZMapWindow window);
 void zmapWindowColOrderPositionColumns(ZMapWindow window);
 
-void zmapWindowItemDebugItemToString(FooCanvasItem *item, GString *string);
+void zmapWindowItemDebugItemToString(GString *string, FooCanvasItem *item);
 
 void zmapWindowPfetchEntry(ZMapWindow window, char *sequence_name) ;
 

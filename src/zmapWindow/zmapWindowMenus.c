@@ -2000,8 +2000,9 @@ ZMapGUIMenuItem zmapWindowMakeMenuDeveloperOps(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {ZMAPGUI_MENU_BRANCH, "_"DEVELOPER_STR,                  0, NULL,       NULL},
-      {ZMAPGUI_MENU_NORMAL, DEVELOPER_STR"/Show Style"         , 1, developerMenuCB, NULL},
+      {ZMAPGUI_MENU_BRANCH, "_"DEVELOPER_STR,                   0, NULL,       NULL},
+      {ZMAPGUI_MENU_NORMAL, DEVELOPER_STR"/Show Feature",       1, developerMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, DEVELOPER_STR"/Show Feature Style", 2, developerMenuCB, NULL},
       {ZMAPGUI_MENU_NONE, NULL               , 0, NULL, NULL}
     } ;
 
@@ -2023,11 +2024,48 @@ static void developerMenuCB(int menu_item_id, gpointer callback_data)
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
   ZMapFeatureAny feature_any ;
 
-  feature_any = zmapWindowItemGetFeatureAny(menu_data->item);
+  feature_any = zmapWindowItemGetFeatureAny(menu_data->item) ;
 
   switch (menu_item_id)
     {
     case 1:
+      {
+	if (feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURESET)
+	  {
+	    zMapWarning("%s", "Not on a feature.") ;
+	  }
+	else if (feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
+	  {
+	    char *feature_text ;
+	    ZMapFeature feature ;
+	    GString *item_text_str ;
+	    char *item_text ;
+	    char *coord_text ;
+	    char *msg_text ;
+
+	    feature = (ZMapFeature)feature_any ;
+
+	    feature_text = zMapFeatureAsString(feature) ;
+
+	    item_text_str = g_string_sized_new(2048) ;
+
+	    zmapWindowItemDebugItemToString(item_text_str, menu_data->item) ;
+	    
+	    coord_text = zmapWindowItemCoordsText(menu_data->item) ;
+
+	    msg_text = g_strdup_printf("%s\n%s\t%s\n", feature_text, item_text_str->str, coord_text) ;
+
+	    zMapGUIShowText((char *)g_quark_to_string(feature->original_id), msg_text, FALSE) ;
+
+	    g_free(msg_text) ;
+	    g_free(coord_text) ;
+	    g_string_free(item_text_str, TRUE) ;
+	    g_free(feature_text) ;
+	  }
+
+	break ;
+      }
+    case 2:
       {
 	ZMapWindowContainerFeatureSet container = NULL;
 

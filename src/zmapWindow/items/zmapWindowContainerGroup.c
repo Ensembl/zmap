@@ -847,7 +847,7 @@ static void maximise_background_rectangle(ZMapWindowContainerGroup this_containe
 
   buf = g_string_new("") ;
 
-  zmapWindowItemDebugItemToString(container_item, buf) ;
+  zmapWindowItemDebugItemToString(buf, container_item) ;
   printf("%s\n", buf->str) ;
 
   g_string_free(buf, TRUE) ;
