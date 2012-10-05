@@ -281,6 +281,13 @@ foocanvas world then the view could easily be extended and feature drawing
 coordinates would be the same as feature coordinates. This will involve some changes
 to our code handling the scrolled window.</p>
 
+<p>The proposed drawing model is summarised in this diagram:</p>
+
+<img src="./ZMap_Coord_System.png" align="center">
+
+
+
+
 
 <H3>Stages in Implementation</H3>
 
