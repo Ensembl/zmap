@@ -72,14 +72,10 @@ typedef struct
 } DNASearchDataStruct, *DNASearchData ;
 
 
-/* gets incremented for each DNA search added to the seperator
- * used to name featuresets for each search so that they can have diff styles
- * it's not feasable for anyone to wrap round
- * ie nominally with 1 second to do a search it would take 68 years.
- * NOTE this number is used for all ZMaps views and windows, they are all distinct
- */
-static int DNA_group = 0;
-
+static gboolean dnaMatchesToFeatures(ZMapWindow            window,
+				     GList                *match_list,
+				     ZMapFeatureSet       *feature_set,
+				     ZMapFeatureTypeStyle *style_out) ;
 static void requestDestroyCB(gpointer data, guint callback_action, GtkWidget *widget) ;
 static void destroyCB(GtkWidget *widget, gpointer cb_data) ;
 static void helpCB(gpointer data, guint callback_action, GtkWidget *w) ;
@@ -112,6 +108,8 @@ static void remove_current_matches_from_display(DNASearchData search_data);
 static void setColoursInStyle(DNASearchData search_data, ZMapFeatureTypeStyle style) ;
 
 
+
+
 static GtkItemFactoryEntry menu_items_G[] = {
  { "/_File",           NULL,          NULL,          0, "<Branch>",      NULL},
  { "/File/Close",      "<control>W",  requestDestroyCB,    0, NULL,            NULL},
@@ -121,6 +119,22 @@ static GtkItemFactoryEntry menu_items_G[] = {
 
 static gboolean window_dna_debug_G = FALSE;
 
+
+/* gets incremented for each DNA search added to the seperator
+ * used to name featuresets for each search so that they can have diff styles
+ * it's not feasable for anyone to wrap round
+ * ie nominally with 1 second to do a search it would take 68 years.
+ * NOTE this number is used for all ZMaps views and windows, they are all distinct
+ */
+static int DNA_group = 0;
+
+
+
+
+
+/* 
+ *                     External routines.
+ */
 
 void zmapWindowCreateSequenceSearchWindow(ZMapWindow window, FooCanvasItem *feature_item,
 					  ZMapSequenceType sequence_type)
@@ -383,10 +397,14 @@ void zmapWindowCreateSequenceSearchWindow(ZMapWindow window, FooCanvasItem *feat
   return ;
 }
 
-gboolean zmapWindowDNAMatchesToFeatures(ZMapWindow            window,
-					GList                *match_list,
-					ZMapFeatureSet       *feature_set,
-					ZMapFeatureTypeStyle *style_out)
+/*
+ *                 Internal routines
+ */
+
+static gboolean dnaMatchesToFeatures(ZMapWindow            window,
+				     GList                *match_list,
+				     ZMapFeatureSet       *feature_set,
+				     ZMapFeatureTypeStyle *style_out)
 {
   gboolean made_features = FALSE ;
   ZMapFeatureSet separator_featureset = NULL ;
@@ -471,11 +489,7 @@ gboolean zmapWindowDNAMatchesToFeatures(ZMapWindow            window,
 }
 
 
-/*
- *                 Internal functions
- */
-
-GtkWidget *makeMenuBar(DNASearchData search_data)
+static GtkWidget *makeMenuBar(DNASearchData search_data)
 {
   GtkAccelGroup *accel_group;
   GtkItemFactory *item_factory;
@@ -756,7 +770,7 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 	  if (!(search_data->keep_previous_hits))
 	    remove_current_matches_from_display(search_data);
 
-	  if (zmapWindowDNAMatchesToFeatures(search_data->window, match_list, &new_feature_set, &new_style))
+	  if (dnaMatchesToFeatures(search_data->window, match_list, &new_feature_set, &new_style))
 	    {
 	      setColoursInStyle(search_data, new_style) ;
 
@@ -804,7 +818,7 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 	  if (!(search_data->keep_previous_hits))
 	    remove_current_matches_from_display(search_data);
 
-	  if (zmapWindowDNAMatchesToFeatures(search_data->window, match_list, &new_feature_set, &new_style))
+	  if (dnaMatchesToFeatures(search_data->window, match_list, &new_feature_set, &new_style))
 	    {
 	      setColoursInStyle(search_data, new_style) ;
 
