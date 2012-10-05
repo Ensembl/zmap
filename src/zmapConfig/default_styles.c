@@ -151,7 +151,7 @@ alignment-join-align=0\n\
 alignment-between-error=1\n\
 alignment-always-gapped=true\n\
 \n\
-[style-dna_align]\n\
+[style-dna-align]\n\
 alignment-blixem=blixem-n\n\
 mode=alignment\n\
 alignment-join-align=0\n\
@@ -163,7 +163,7 @@ max-score=100.000000\n\
 min-score=70.000000\n\
 score-mode=percent\n\
 \n\
-[style-pep_align]\n\
+[style-pep-align]\n\
 sub-features=homology:homology-glyph\n\
 parent-style=alignment\n\
 max-score=100.000000\n\
@@ -175,7 +175,7 @@ frame-mode=always\n\
 \n\
 [style-EST_align]\n\
 colours=normal fill Purple ; normal border #3d1954\n\
-parent-style=dna_align\n\
+parent-style=dna-align\n\
 alignment-mask-sets=self\n\
 default-bump-mode=all\n\
 \n\

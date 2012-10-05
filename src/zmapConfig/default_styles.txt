@@ -148,7 +148,7 @@ alignment-join-align=0
 alignment-between-error=1
 alignment-always-gapped=true
 
-[style-dna_align]
+[style-dna-align]
 alignment-blixem=blixem-n
 mode=alignment
 alignment-join-align=0
@@ -160,7 +160,7 @@ max-score=100.000000
 min-score=70.000000
 score-mode=percent
 
-[style-pep_align]
+[style-pep-align]
 sub-features=homology:homology-glyph
 parent-style=alignment
 max-score=100.000000
@@ -172,7 +172,7 @@ frame-mode=always
 
 [style-EST_align]
 colours=normal fill Purple ; normal border #3d1954
-parent-style=dna_align
+parent-style=dna-align
 alignment-mask-sets=self
 default-bump-mode=all
 
