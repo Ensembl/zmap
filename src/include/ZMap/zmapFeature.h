@@ -717,8 +717,7 @@ typedef struct ZMapFeatureStruct_
 
 
   // style id tp be removed when style fully working
-  GQuark style_id ;					    /* Style defining how this feature is processed.
-							       (use Styles _unique_ id.) */
+//  GQuark style_id ;	/* Style defining how this feature is processed (use Styles _unique_ id.) */
 
   ZMapFeatureTypeStyle *style;                   // pointer to the style structure held by the featureset in the context
 								// NOTE we can have mixed styles in a column/ virtual featureset
@@ -1024,6 +1023,7 @@ void zMapFeatureAnyDestroy(ZMapFeatureAny feature) ;
 void zMapCoords2FeatureCoords(ZMapFeatureBlock block, int *x1_inout, int *x2_inout) ;
 
 
+void zMapFeatureAddStyleMode(ZMapFeatureTypeStyle style, ZMapStyleMode f_type);
 
 
 

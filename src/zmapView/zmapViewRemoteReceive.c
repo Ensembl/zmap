@@ -1709,7 +1709,7 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 											    start, end, has_score,
 											    score, strand)))
 			    {
-			      request_data->feature->style_id = request_data->style_id ;
+//			      request_data->feature->style_id = request_data->style_id ;
 
 			      zMapFeatureSetAddFeature(request_data->feature_set, request_data->feature);
 

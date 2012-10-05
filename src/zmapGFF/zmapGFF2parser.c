@@ -1557,6 +1557,12 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 
       feature_type = style_mode ;
     }
+    else
+    {
+	    /* from acedb w/ methods we have to invent this
+	     * easier to do it here than processing afterwards */
+	    zMapFeatureAddStyleMode(feature_style, feature_type);
+    }
 
 
   /* We load some mode specific data which is needed in making a unique feature name. */

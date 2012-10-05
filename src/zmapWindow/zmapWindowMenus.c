@@ -2023,13 +2023,63 @@ static void colourMenuCB(int menu_item_id, gpointer callback_data)
 static void setStyleCB(int menu_item_id, gpointer callback_data)
 {
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
-  FooCanvasItem *style_item ;
   ZMapFeatureSet feature_set = menu_data->feature_set;
   ZMapFeatureTypeStyle style;
   FooCanvasItem *set_item, *canvas_item;
   ZMapStrand set_strand;
   ZMapFrame set_frame;
   ID2Canvas id2c;
+  int ok = FALSE;
+
+
+  style = g_hash_table_lookup( menu_data->context_map->styles, GUINT_TO_POINTER(menu_item_id));
+  if(style)
+  {
+	  ZMapFeatureColumn column;
+	  ZMapFeatureSource s2s;
+	  ZMapFeatureSetDesc f2c;
+	  GList *c2s;
+
+	  /* now tweak featureset & column styles in various places */
+	  s2s = g_hash_table_lookup(menu_data->context_map->source_2_sourcedata,GUINT_TO_POINTER(feature_set->unique_id));
+	  f2c = g_hash_table_lookup(menu_data->context_map->featureset_2_column,GUINT_TO_POINTER(feature_set->unique_id));
+	  if(s2s && f2c)
+	  {
+		s2s->style_id = style->unique_id;
+		column = g_hash_table_lookup(menu_data->context_map->columns,GUINT_TO_POINTER(f2c->column_id));
+		if(column)
+		{
+
+			c2s = g_hash_table_lookup(menu_data->context_map->column_2_styles,GUINT_TO_POINTER(f2c->column_id));
+			if(c2s)
+			{
+				g_list_free(column->style_table);
+				column->style_table = NULL;
+				column->style = NULL;	/* must clear this to trigger style table calculation */
+				/* NOTE column->style_id is column specific not related to a featureset, set by config */
+
+				for( ; c2s; c2s = c2s->next)
+				{
+					if(c2s->data == (gpointer) feature_set->style)
+					{
+						c2s->data = (gpointer) style;
+						break;
+					}
+				}
+				ok = TRUE;
+			}
+
+			zMapWindowGetSetColumnStyle(menu_data->window, feature_set->unique_id);
+		}
+	  }
+  }
+
+  if(!ok)
+  {
+	  zMapWarning("cannot set new style","");
+	  return;
+  }
+
 
   /* get current style strand and frame status and operate on 1 or more columns
    * NOTE that the FToIhash has diff hash tables per strand and frame
@@ -2094,7 +2144,6 @@ static void setStyleCB(int menu_item_id, gpointer callback_data)
 			if(ZMAP_IS_WINDOW_FEATURESET_ITEM(canvas_item))
 			{
 				zMapWindowFeaturesetItemRemoveSet(canvas_item, feature_set);
-
 			}
 
 			/* destroy set item if empty ? */
@@ -2104,19 +2153,13 @@ static void setStyleCB(int menu_item_id, gpointer callback_data)
 	}
   }
 
-printf("redraw...\n");
-  style_item = menu_data->item ;
 
-  style = g_hash_table_lookup( menu_data->context_map->styles, GUINT_TO_POINTER(menu_item_id));
-  if(style)
-	feature_set->style = style;
-  else
-	  zMapWarning("cann0t set new style","");
+  feature_set->style = style;
 
-  zmapWindowRedrawFeatureSet(menu_data->window, feature_set);
-
+  zmapWindowRedrawFeatureSet(menu_data->window, feature_set);	/* does a complex context thing */
 
   zmapWindowFullReposition(menu_data->window) ;
+
 
   g_free(menu_data) ;
 

@@ -3684,6 +3684,7 @@ besides we should test the view data which may contain global config
 
 	if (result && req_any->type == ZMAP_SERVERREQ_FEATURES)
 	  {
+#if MH17_ADDED_IN_GFF_PARSER
 	    if (!(connect_data->server_styles_have_mode)
 		&& !zMapFeatureAnyAddModesToStyles((ZMapFeatureAny)(connect_data->curr_context),
 						   zmap_view->context_map.styles))
@@ -3693,7 +3694,7 @@ besides we should test the view data which may contain global config
 
 		result = FALSE ;
 	      }
-
+#endif
 	    /* I'm not sure if this couldn't come much earlier actually....something
 	     * to investigate.... */
 

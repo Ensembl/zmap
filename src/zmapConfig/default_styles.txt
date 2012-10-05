@@ -110,11 +110,22 @@ max-score=100.000000
 min-score=70.000000
 score-mode=percent
 
+[style-alignment-unstranded]
+parent-style=alignment
+strand-specific=false
+
 
 [style-basic]
 colours=normal fill lavender ; normal border #898994
 parent-style=root
 mode=basic
+
+
+[style-assembly-path]
+colours=normal fill lavender ; normal border #898994
+parent-style=root
+mode=assembly-path
+
 
 [style-transcript]
 transcript-cds-colours=normal fill white ; normal border SlateBlue ; selected fill gold

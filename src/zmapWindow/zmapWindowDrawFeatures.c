@@ -2482,7 +2482,7 @@ static void ProcessListFeature(gpointer data, gpointer user_data)
 	 * if we get a feature via XRemote the we don't have that set up as it doesnly go through GFFParser
 	 * so we have to find the feature's parent anf set the style there
 	 */
-	/* NOTE: 3FT and DNA get supplied by acedbServer and pipeServer and areg given temporary styles that are freed
+	/* NOTE: 3FT and DNA get supplied by acedbServer and pipeServer and are given temporary styles that are freed
 	 * which means thet that data is not usable.
 	 */
 
@@ -2491,7 +2491,10 @@ static void ProcessListFeature(gpointer data, gpointer user_data)
 
 	if(!set->style)
 	{
-		set->style = zMapFindStyle(featureset_data->styles, feature->style_id) ;
+//		set->style = zMapFindStyle(featureset_data->styles, feature->style_id) ;
+		zMapWarning("no style for feature %s",g_quark_to_string(feature->unique_id));
+		zMapLogWarning("no style for feature %s",g_quark_to_string(feature->unique_id));
+		zMapLogStack();
 	}
       feature->style = &set->style;
   }
@@ -2581,8 +2584,7 @@ static void ProcessListFeature(gpointer data, gpointer user_data)
 #endif
   }
   else
-    g_warning("definitely need a style '%s' for feature '%s'",
-	      g_quark_to_string(feature->style_id),
+    g_warning("definitely need a style for feature '%s'",
 	      g_quark_to_string(feature->original_id));
 
   if(feature_item)
