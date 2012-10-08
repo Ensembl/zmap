@@ -143,6 +143,8 @@ enum
 
 
 
+
+
 static void sendClipboardSendRequestCB(GtkClipboard *clipboard, GtkSelectionData *selection_data,
 				       guint info, gpointer user_data) ;
 static void sendClipboardClearCB(GtkClipboard *clipboard, gpointer user_data) ;
@@ -186,7 +188,7 @@ static void destroyIdle(RemoteIdle idle_request) ;
 static void destroyReceive(RemoteReceive client_request) ;
 static void destroySend(RemoteSend server_request) ;
 
-static gboolean clipboardTakeOwnership(GtkClipboard *clipboard,
+static gboolean clipboardTakeOwnership(ZMapRemoteControl remote_control, GtkClipboard *clipboard,
 				       GtkClipboardGetFunc get_func, GtkClipboardClearFunc clear_func,
 				       gpointer user_data) ;
 static void resetRemoteToIdle(ZMapRemoteControl remote_control) ;
@@ -459,7 +461,7 @@ gboolean zMapRemoteControlReceiveWaitForRequest(ZMapRemoteControl remote_control
     }
   else
     {
-      if ((result = clipboardTakeOwnership(receive->our_clipboard,
+      if ((result = clipboardTakeOwnership(remote_control, receive->our_clipboard,
 					   receiveWaitClipboardGetCB, receiveWaitClipboardClearCB,
 					   remote_control)))
 	{
@@ -745,31 +747,6 @@ ZMAP_ENUM_AS_EXACT_STRING_FUNC(remoteState2ExactStr, RemoteControlState, REMOTE_
 
 
 
-/* Get rid of this.....??? */
-/* NOT USEFUL....JUST PUT THE CLIPBOARD CALLS INSTEAD.... */
-/* Take ownership of a clipboard ready to receive commands. */
-static gboolean clipboardTakeOwnership(GtkClipboard *clipboard,
-				       GtkClipboardGetFunc get_func, GtkClipboardClearFunc clear_func,
-				       gpointer user_data)
-{
-  gboolean result = FALSE ;
-
-  result = gtk_clipboard_set_with_data(clipboard,
-				       clipboard_target_G,
-				       TARGET_NUM,
-				       get_func,
-				       clear_func,
-				       user_data) ;
-
-  return result ;
-}
-
-
-
-
-
-
-
 /* 
  *             Callbacks for making requests.
  * 
@@ -890,7 +867,7 @@ static void sendClipboardClearCB(GtkClipboard *clipboard, gpointer user_data)
 
 	  /* Retake ownership of the peers clipboard to signal that we know they got the request and we
 	   * are now waiting for their reply. */
-	  if (!clipboardTakeOwnership(send->their_clipboard,
+	  if (!clipboardTakeOwnership(remote_control, send->their_clipboard,
 				      sendReplyWaitClipboardGetCB, sendReplyWaitClipboardClearCB,
 				      remote_control))
 	    {
@@ -1063,7 +1040,7 @@ static void sendGetRequestClipboardCB(GtkClipboard *clipboard, GtkSelectionData 
 	      send->their_reply = selection_str ;
 
 	      /* Retake ownership so they know we have got reply. */
-	      if (!clipboardTakeOwnership(send->their_clipboard,
+	      if (!clipboardTakeOwnership(remote_control, send->their_clipboard,
 					  sendRequestReceivedClipboardGetCB, sendRequestReceivedClipboardClearCB,
 					  remote_control))
 		{
@@ -1339,7 +1316,7 @@ static void receiveGetRequestClipboardCB(GtkClipboard *clipboard, GtkSelectionDa
 	      receive_request->their_request = selection_str ;
 
 	      /* Retake ownership so they know we have got request. */
-	      if (!clipboardTakeOwnership(receive_request->our_clipboard,
+	      if (!clipboardTakeOwnership(remote_control, receive_request->our_clipboard,
 					  receiveRequestReceivedClipboardGetCB, receiveRequestReceivedClipboardClearCB,
 					  remote_control))
 		{
@@ -2083,6 +2060,49 @@ gboolean isInSendState(RemoteControlState state)
 
   return result ;
 }
+
+
+/* Get rid of this.....??? */
+/* NOT USEFUL....JUST PUT THE CLIPBOARD CALLS INSTEAD.... */
+/* Take ownership of a clipboard ready to receive commands. */
+static gboolean clipboardTakeOwnership(ZMapRemoteControl remote_control, GtkClipboard *clipboard,
+				       GtkClipboardGetFunc get_func, GtkClipboardClearFunc clear_func,
+				       gpointer user_data)
+{
+  gboolean result = FALSE ;
+  int i, retrys = 3 ;
+
+  /*  I seem to having a problem with this failing from time to time but I'm not sure why ? */
+  /* let's try doing it several times and then giving up..... DOESN'T HELP.... */
+  /* 
+   * I think it might be a timing issue, if we try to take ownership of the clipboard
+   * too soon we fail....can we check if we own it ???? If we own it already
+   * who cares...?? There are gdk calls to see who owns the selection.
+   * 
+   * Actually if we already own it we still need to set ownership because the
+   * get and clear funcs will have changed.
+   * 
+   *  */
+  for (i = 0 ; i < retrys ; i++)
+    {
+      if ((result = gtk_clipboard_set_with_data(clipboard,
+						clipboard_target_G,
+						TARGET_NUM,
+						get_func,
+						clear_func,
+						user_data)))
+	break ;
+      else
+	g_usleep(5000) ;
+    }
+
+  if (!result)
+    REMOTELOGMSG(remote_control,
+		 "Could not take ownership of clipboard even after %d tries....", retrys) ;
+
+  return result ;
+}
+
 
 
 /* Checks to see that the data specified in selection_data is a format that we support
