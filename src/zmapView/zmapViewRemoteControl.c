@@ -2062,7 +2062,8 @@ static void loadFeatures(ZMapView view, RequestData request_data)
     }
 
   if (request_data->command_rc == REMOTE_COMMAND_RC_OK)
-    zmapViewLoadFeatures(view, request_data->edit_block, request_data->feature_sets, start, end,
+    zmapViewLoadFeatures(view, request_data->edit_block, request_data->feature_sets,
+			 NULL, start, end,
 			 SOURCE_GROUP_DELAYED, TRUE, TRUE) ;
 
   return ;
