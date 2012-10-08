@@ -1,4 +1,3 @@
-/*  Last edited: Jul 23 12:33 2012 (edgrif) */
 /*  File: acedbServer.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -1593,20 +1592,18 @@ static gboolean blockDNARequest(AcedbServer server, GHashTable *styles, ZMapFeat
        * it was done this way - Ed) */
       if (zMapFeatureDNACreateFeatureSet(feature_block, &feature_set))
 	{
-	  ZMapFeatureTypeStyle temp_style = NULL;
 
 	  /* This temp style creation feels wrong, and probably is,
 	   * but we don't have the merged in default styles in here,
 	   * or so it seems... */
 
-	  if (!(dna_style = zMapFindStyle(styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME))))
+	  if ((dna_style = zMapFindStyle(styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME))))
+#if 0
 	    temp_style = dna_style = zMapStyleCreate(ZMAP_FIXED_STYLE_DNA_NAME,
 						     ZMAP_FIXED_STYLE_DNA_NAME_TEXT);
+#endif
 
-	  feature = zMapFeatureDNACreateFeature(feature_block, dna_style, dna_sequence, dna_length);
-
-	  if (temp_style)
-	    zMapStyleDestroy(temp_style);
+		feature = zMapFeatureDNACreateFeature(feature_block, dna_style, dna_sequence, dna_length);
 	}
 
 
@@ -1615,16 +1612,9 @@ static gboolean blockDNARequest(AcedbServer server, GHashTable *styles, ZMapFeat
 	  if ((zMapFeature3FrameTranslationCreateSet(feature_block, &feature_set)))
 	    {
 	      ZMapFeatureTypeStyle frame_style = NULL;
-	      gboolean style_absolutely_required = FALSE;
 
-	      frame_style = zMapFindStyle(styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME));
-
-	      /* What is this all about...?????? */
-	      if(style_absolutely_required && !frame_style)
-		zMapLogWarning("Cowardly refusing to create features '%s' without style",
-			       ZMAP_FIXED_STYLE_3FT_NAME);
-	      else
-		zMapFeature3FrameTranslationSetCreateFeatures(feature_set, frame_style);
+	      if((frame_style = zMapFindStyle(styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME))))
+			zMapFeature3FrameTranslationSetCreateFeatures(feature_set, frame_style);
 	    }
 	}
 
@@ -1638,7 +1628,7 @@ static gboolean blockDNARequest(AcedbServer server, GHashTable *styles, ZMapFeat
 	      ZMapFeatureTypeStyle frame_style = NULL;
 
 	      if ((frame_style = zMapFindStyle(styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME))))
-		zMapFeatureShowTranslationSetCreateFeatures(feature_set, frame_style) ;
+			zMapFeatureShowTranslationSetCreateFeatures(feature_set, frame_style) ;
 	    }
 	}
 
@@ -1749,7 +1739,7 @@ static gboolean getSequenceMapping(AcedbServer server, ZMapFeatureContext featur
       feature_context->parent_name = g_quark_from_string(parent_name) ;
       g_free(parent_name) ;
 
-      if(!feature_context->parent_span.x2)
+      if (!feature_context->parent_span.x2)
 	{
 	  feature_context->parent_span.x1 = 1;
 	  feature_context->parent_span.x2 = parent_length;
@@ -1813,6 +1803,11 @@ static gboolean getSequenceMapping(AcedbServer server, ZMapFeatureContext featur
  *        // 0 Active Objects
  *
  */
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+/* I'M DISABLING THIS FOR NOW AND REPLACING IT WITH A ROUTINE THAT SIMPLY COPIES
+ * IN THE GIVEN SEQUENCE NAME ETC..... BECAUSE OUR CLONE DISPLAY IS BROKEN. */
+
 static gboolean getSMapping(AcedbServer server, char *class,
 			    char *sequence, int start, int end,
 			    char **parent_class_out, char **parent_name_out,
@@ -1885,6 +1880,39 @@ static gboolean getSMapping(AcedbServer server, char *class,
 
   return result ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+/* DUMMY VERSION....JUST COPIES IN EXISTING SEQUENCE TO PARENT SLOTS.... */
+static gboolean getSMapping(AcedbServer server, char *class,
+			    char *sequence, int start, int end,
+			    char **parent_class_out, char **parent_name_out,
+			    ZMapMapBlock child_to_parent_out)
+{
+  gboolean result = FALSE ;
+  ZMapMapBlockStruct child_to_parent = {{0, 0}, {0, 0}, FALSE} ;
+
+  if (parent_class_out)
+    *parent_class_out = g_strdup("sequence") ;
+
+  if (parent_name_out)
+    *parent_name_out = g_strdup(sequence) ;
+
+  if (child_to_parent_out)
+    {
+      child_to_parent.parent.x1 = child_to_parent.block.x1 = start ;
+      child_to_parent.parent.x2 = child_to_parent.block.x2 = end ;
+      
+      *child_to_parent_out = child_to_parent ;    /* n.b. struct copy. */
+    }
+
+  result = TRUE ;
+
+  return result ;
+}
+
+
+
 
 
 

@@ -597,6 +597,81 @@ void zMapWindowDisplayData(ZMapWindow window, ZMapWindowState state,
   return ;
 }
 
+
+
+
+static ZMapFeatureContextExecuteStatus undisplayFeaturesCB(GQuark key,
+                                                           gpointer data,
+                                                           gpointer user_data,
+                                                           char **err_out)
+{
+  ZMapWindow window = (ZMapWindow)user_data ;
+  ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
+  ZMapFeature feature;
+  FooCanvasItem *feature_item;
+  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
+  ZMapStrand column_strand;
+
+  switch(feature_any->struct_type)
+    {
+    case ZMAPFEATURE_STRUCT_FEATURESET:
+      zMapLogWarning("FeatureSet %s", g_quark_to_string(feature_any->unique_id));
+      break;
+    case ZMAPFEATURE_STRUCT_FEATURE:
+      {
+	feature = (ZMapFeature)feature_any;
+
+	/* which column drawn in depends on style. */
+	column_strand = zmapWindowFeatureStrand(window, feature);
+
+#if MH17_FToIHash_does_this_mapping
+      /* if the feature context is from a request from otterlace then
+       * the display column has not been set, we need to lookup
+       */
+  ZMapFeatureSetDesc gffset;
+  ZMapFeatureSet fset;
+
+      fset = (ZMapFeatureSet) (feature_any->parent);
+      if(!fset->column_id)
+      {
+            gffset = g_hash_table_lookup(window->context_map->featureset_2_column, GUINT_TO_POINTER(fset->unique_id));
+            if(gffset)
+                  fset->column_id = gffset->column_id;
+      }
+#endif
+      /* MH17: we get locus features inserted mysteriously if a feature has a locus id
+       * but they don't always appear in zmap in whcih case there is no column id
+       * This is true when otterlace sends a single feature to delete and then we fail to find
+       * the extra locus feature
+       *
+       * regardless of that if we have features that are not displayed due to config this couls also fail
+       * so if not column_id defined log a warnign adn fail silently.
+       *
+       * locus is used in the naviagtor, we hope dealt with via another call.
+       */
+
+	if ( /*fset->column_id && */
+      (feature_item = zmapWindowFToIFindFeatureItem(window,window->context_to_item,
+							  column_strand,
+							  ZMAPFRAME_NONE,
+							  feature)))
+	  {
+	    zMapWindowFeatureRemove(window, feature_item, feature, FALSE);
+	    status = ZMAP_CONTEXT_EXEC_STATUS_OK;
+	  }
+	else
+	  zMapLogWarning("Failed to find feature '%s'\n", g_quark_to_string(feature->original_id));
+
+	break;
+      }
+    default:
+      /* nothing to do for most of it while we only have single blocks and aligns... */
+      break;
+    }
+
+  return status;
+}
+
 void zMapWindowUnDisplayData(ZMapWindow window,
                              ZMapFeatureContext current_features,
                              ZMapFeatureContext new_features)
@@ -610,6 +685,71 @@ void zMapWindowUnDisplayData(ZMapWindow window,
 
   return ;
 }
+
+
+
+typedef struct
+{
+	ZMapWindow window;
+	GQuark align_id;
+	GQuark block_id;
+
+}
+_contextStack, *contextStack;
+
+
+static ZMapFeatureContextExecuteStatus undisplaySearchFeatureSetsCB(GQuark key,
+                                                           gpointer data,
+                                                           gpointer user_data,
+                                                           char **err_out)
+{
+  contextStack stuff = (contextStack) user_data ;
+  ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
+  ZMapFeatureSet set;
+  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
+
+  switch(feature_any->struct_type)
+  {
+  case ZMAPFEATURE_STRUCT_ALIGN:
+	  stuff->align_id = feature_any->unique_id;
+	  break;
+  case ZMAPFEATURE_STRUCT_BLOCK:
+	  stuff->block_id = feature_any->unique_id;
+	  break;
+
+    case ZMAPFEATURE_STRUCT_FEATURESET:
+	set = (ZMapFeatureSet) feature_any;
+
+	zmapWindowFToIRemoveSet(stuff->window->context_to_item,
+				  stuff->align_id, stuff->block_id, set->unique_id,
+				  ZMAPSTRAND_NONE, ZMAPFRAME_NONE, TRUE);
+      break;
+
+    default:
+      break;
+    }
+
+  return status;
+}
+
+
+/* this function is here to remove whole featuresets from the FtoiHash, which is a lot more effciecient than one feature at time */
+void zMapWindowUnDisplaySearchFeatureSets(ZMapWindow window,
+                             ZMapFeatureContext current_features,
+                             ZMapFeatureContext new_features)
+{
+  _contextStack stuff = { NULL };
+
+  stuff.window = window;
+
+  zMapFeatureContextExecute((ZMapFeatureAny)new_features,
+			    ZMAPFEATURE_STRUCT_FEATURESET,
+			    undisplaySearchFeatureSetsCB,
+			    &stuff);
+
+  return ;
+}
+
 
 /* completely reset window. */
 void zMapWindowReset(ZMapWindow window)
@@ -1464,7 +1604,7 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
 
       feature_group   = zmapWindowItemGetParentContainer(FOO_CANVAS_ITEM(top_canvas_item)) ;
 
-      style = feature->style;
+      style = *feature->style;
       select.feature_desc.struct_type = feature->struct_type ;
       select.feature_desc.type        = feature->type ;
 
@@ -3223,7 +3363,7 @@ zMapLogWarning("canvas event %d",  event->type);
 	 if(seq_item)
 		{
 		  zMapWindowCanvasFeaturesetGetSeqCoord((ZMapWindowFeaturesetItem) seq_item, FALSE,  wx, wy, &seq_start, &seq_end);
-		  
+
 		  zmapWindowHighlightSequenceItem(window, seq_item, seq_start, seq_end);
 
 		  /* NOTE we set feature list to NULL here, update info panel must handle */
@@ -3723,6 +3863,7 @@ void zmapWindowZoomToItem(ZMapWindow window, FooCanvasItem *item)
 void zmapWindowGetMaxBoundsItems(ZMapWindow window, GList *items,
 				 double *rootx1, double *rooty1, double *rootx2, double *rooty2)
 {
+
   MaxBoundsStruct max_bounds = {0.0} ;
 
   g_list_foreach(items, getMaxBounds, &max_bounds) ;

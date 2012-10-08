@@ -430,7 +430,7 @@ gboolean canSquash(ZMapFeature first, ZMapFeature current)
 {
 	GArray *g1 = first->feature.homol.align, *g2 = current->feature.homol.align;
 
-	if(!first || zMapStyleGetMode(first->style) != ZMAPSTYLE_MODE_ALIGNMENT)
+	if(!first || zMapStyleGetMode(*first->style) != ZMAPSTYLE_MODE_ALIGNMENT)
 		return FALSE;
 
 	/* test gaps equal for both squash and collapse */
@@ -831,7 +831,7 @@ printf("feature block  %d,%d , query %d,%d\n", ab->t1,ab->t2,ab->q1,ab->q2);
 			feature->composite = composite;
 		}
 
-		if(composite && zMapStyleJoinMax(feature->style) && composite->population >= zMapStyleJoinMax(feature->style))
+		if(composite && zMapStyleJoinMax(*feature->style) && composite->population >= zMapStyleJoinMax(*feature->style))
 		{
 			squash_this = FALSE;		/* leave these bumpable an give more indication of volume */
 			f->flags.squashed = FALSE;	/* make visible */
@@ -1082,7 +1082,7 @@ printf("join this:  %.1f %.1f\n",y1,y2);
 			feature->composite = composite;
 		}
 
-		if(composite && zMapStyleJoinMax(feature->style) && composite->population >= zMapStyleJoinMax(feature->style))
+		if(composite && zMapStyleJoinMax(*feature->style) && composite->population >= zMapStyleJoinMax(*feature->style))
 		{
 			duplicate = FALSE;		/* leave these bumpable and give more indication of volume */
 			f->flags.joined = FALSE;	/* else will not be displayed */

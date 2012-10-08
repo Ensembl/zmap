@@ -88,10 +88,11 @@ glyph-5=dn-tri
 
 [style-root]
 width=9.000000
+bump-mode=unbump
 default-bump-mode=overlap
 colours=selected fill gold ; selected border black
 bump-spacing=3.000000
-bump-mode=unbump
+
 
 [style-alignment]
 sub-features=homology:homology-glyph ; non-concensus-splice:nc-splice-glyph
@@ -105,12 +106,15 @@ default-bump-mode=all
 parent-style=root
 show-reverse-strand=true
 directional-ends=true
+max-score=100.000000
+min-score=70.000000
+score-mode=percent
+
 
 [style-basic]
 colours=normal fill lavender ; normal border #898994
 parent-style=root
 mode=basic
-bump-mode=unbump
 
 [style-transcript]
 transcript-cds-colours=normal fill white ; normal border SlateBlue ; selected fill gold
@@ -158,7 +162,8 @@ frame-mode=always
 [style-EST_align]
 colours=normal fill Purple ; normal border #3d1954
 parent-style=dna_align
-alignment-mask-sets=self ; vertebrate_mRNA
+alignment-mask-sets=self
+default-bump-mode=all
 
 
 
@@ -181,10 +186,10 @@ bump-fixed=true
 width=30
 colours = normal fill white ; normal draw black ; selected fill red
 sequence-non-coding-colours = normal fill red ; normal draw black ; selected fill pink
-sequence-coding-colours = normal fill darkgreen ; normal draw black ; selected fill pink
+sequence-coding-colours = normal fill OliveDrab ; normal draw black ; selected fill pink
 sequence-split-codon-5-colours = normal fill orange ; normal draw black ; selected fill pink
 sequence-split-codon-3-colours = normal fill yellow ; normal draw black ; selected fill pink
-sequence-in-frame-colours = normal fill green ; normal draw black ; selected fill pink
+sequence-in-frame-coding-colours = normal fill green ; normal draw black ; selected fill pink
 
 [style-3 Frame Translation]
 description=3 frame translation display
@@ -192,7 +197,6 @@ parent-style=sequence
 # width in characters
 width=10
 frame-mode=only-3
-sequence-coding-colours = normal fill darkgreen ; normal draw black ; selected fill pink
 
 [style-Show Translation]
 description=show translation in zmap display
@@ -240,7 +244,7 @@ bump-mode=unbump
 default-bump-mode=unbump
 bump-fixed=true
 
-[style-Search Hit Markers]
+[style-Search Hit Marker]
 description=display location of matches to query
 mode=basic
 displayable=true

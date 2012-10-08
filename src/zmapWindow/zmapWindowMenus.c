@@ -112,8 +112,8 @@
 
 
 #define PAIRED_READS_RELATED       "Request %s paired reads"
-#define PAIRED_READS_ALL           "Request all paired readsk"
-#define PAIRED_READS_DATA          "Request paired reads datak"
+#define PAIRED_READS_ALL           "Request all paired reads"
+#define PAIRED_READS_DATA          "Request paired reads data"
 
 
 /* Search/Listing menus. */
@@ -375,7 +375,7 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
   zMapAssert(feature);
 
 
-  style = feature->style;
+  style = *feature->style;
 
   feature_set = (ZMapFeatureSet)(feature->parent);
   menu_title = g_strdup_printf("%s (%s)", zMapFeatureName((ZMapFeatureAny)feature),
@@ -415,7 +415,7 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
     {
       menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuNonHomolFeature(NULL, NULL, menu_data)) ;
     }
-  else if (zMapStyleIsPfetchable(feature->style))
+  else if (zMapStyleIsPfetchable(style))
     {
       menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuBlixCommon(NULL, NULL, menu_data)) ;
 
@@ -431,7 +431,7 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
 	  menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDNAHomolFeature(NULL, NULL, menu_data)) ;
 	}
     }
-  else if (zMapStyleBlixemType(feature->style) != ZMAPSTYLE_BLIXEM_INVALID)
+  else if (zMapStyleBlixemType(style) != ZMAPSTYLE_BLIXEM_INVALID)
     {
       menu_sets = g_list_append(menu_sets,  zmapWindowMakeMenuDNAHomolFeature(NULL, NULL, menu_data)) ;
     }
@@ -440,7 +440,7 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
   if ((seq_menus = zmapWindowMakeMenuBlixemBAM(NULL, NULL, menu_data)))
       menu_sets = g_list_append(menu_sets, seq_menus) ;
 
-  if (zMapStyleIsPfetchable(feature->style))
+  if (zMapStyleIsPfetchable(style))
     menu_sets = g_list_append(menu_sets, makeMenuPfetchOps(NULL, NULL, menu_data)) ;
 
   /* Feature ops. */
@@ -547,7 +547,7 @@ void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
 	{
 	  menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuNonHomolFeature(NULL, NULL, cbdata)) ;
 	}
-      else if (zMapStyleIsPfetchable(feature->style))
+      else if (zMapStyleIsPfetchable(*feature->style))
 	{
 	  menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuBlixColCommon(NULL, NULL, cbdata)) ;
 
@@ -561,7 +561,7 @@ void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
 	      menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDNAHomol(NULL, NULL, cbdata)) ;
 	    }
 	}
-      else if (zMapStyleBlixemType(feature->style) != ZMAPSTYLE_BLIXEM_INVALID)
+      else if (zMapStyleBlixemType(*feature->style) != ZMAPSTYLE_BLIXEM_INVALID)
 	{
 	  menu_sets = g_list_append(menu_sets,  zmapWindowMakeMenuDNAHomolFeature(NULL, NULL, cbdata)) ;
 	}
@@ -621,14 +621,15 @@ ZMapGUIMenuItem zmapWindowMakeMenuFeatureOps(int *start_index_inout,
   int i ;
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
 
-
   i = 1 ;
   menu[i].type = ZMAPGUI_MENU_NONE;
 
   /* add in evidence/ transcript items option to remove existing is in column menu */
   if (menu_data->feature)
     {
-      if (!(menu_data->feature->style))
+	ZMapFeatureTypeStyle style = *menu_data->feature->style;
+
+      if (!style)
 	{
 	  // style should be attached to the feature, but if not don't fall over
 	  // new features should also have styles attached
@@ -636,7 +637,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuFeatureOps(int *start_index_inout,
 	}
       else
 	{
-	  if(menu_data->feature->style->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
+	  if(style->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
 	    {
 	      menu[i].type = ZMAPGUI_MENU_NORMAL;
 	      menu[i].name = "Highlight Evidence";
@@ -647,7 +648,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuFeatureOps(int *start_index_inout,
 	      menu[i].id = ITEM_MENU_ADD_EVIDENCE;
 	      i++;
 	    }
-	  else if (menu_data->feature->style->mode == ZMAPSTYLE_MODE_ALIGNMENT)
+	  else if (style->mode == ZMAPSTYLE_MODE_ALIGNMENT)
 	    {
 	      menu[i].type = ZMAPGUI_MENU_NORMAL;
 	      menu[i].name = "Highlight Transcript";
@@ -1999,8 +2000,9 @@ ZMapGUIMenuItem zmapWindowMakeMenuDeveloperOps(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {ZMAPGUI_MENU_BRANCH, "_"DEVELOPER_STR,                  0, NULL,       NULL},
-      {ZMAPGUI_MENU_NORMAL, DEVELOPER_STR"/Show Style"         , 1, developerMenuCB, NULL},
+      {ZMAPGUI_MENU_BRANCH, "_"DEVELOPER_STR,                   0, NULL,       NULL},
+      {ZMAPGUI_MENU_NORMAL, DEVELOPER_STR"/Show Feature",       1, developerMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, DEVELOPER_STR"/Show Feature Style", 2, developerMenuCB, NULL},
       {ZMAPGUI_MENU_NONE, NULL               , 0, NULL, NULL}
     } ;
 
@@ -2022,11 +2024,48 @@ static void developerMenuCB(int menu_item_id, gpointer callback_data)
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
   ZMapFeatureAny feature_any ;
 
-  feature_any = zmapWindowItemGetFeatureAny(menu_data->item);
+  feature_any = zmapWindowItemGetFeatureAny(menu_data->item) ;
 
   switch (menu_item_id)
     {
     case 1:
+      {
+	if (feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURESET)
+	  {
+	    zMapWarning("%s", "Not on a feature.") ;
+	  }
+	else if (feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
+	  {
+	    char *feature_text ;
+	    ZMapFeature feature ;
+	    GString *item_text_str ;
+	    char *item_text ;
+	    char *coord_text ;
+	    char *msg_text ;
+
+	    feature = (ZMapFeature)feature_any ;
+
+	    feature_text = zMapFeatureAsString(feature) ;
+
+	    item_text_str = g_string_sized_new(2048) ;
+
+	    zmapWindowItemDebugItemToString(item_text_str, menu_data->item) ;
+	    
+	    coord_text = zmapWindowItemCoordsText(menu_data->item) ;
+
+	    msg_text = g_strdup_printf("%s\n%s\t%s\n", feature_text, item_text_str->str, coord_text) ;
+
+	    zMapGUIShowText((char *)g_quark_to_string(feature->original_id), msg_text, FALSE) ;
+
+	    g_free(msg_text) ;
+	    g_free(coord_text) ;
+	    g_string_free(item_text_str, TRUE) ;
+	    g_free(feature_text) ;
+	  }
+
+	break ;
+      }
+    case 2:
       {
 	ZMapWindowContainerFeatureSet container = NULL;
 
@@ -2049,7 +2088,7 @@ static void developerMenuCB(int menu_item_id, gpointer callback_data)
 		ZMapFeature feature ;
 
 		feature = (ZMapFeature)feature_any ;
-		style = feature->style ;
+		style = *feature->style ;
 
 		zmapWindowShowStyle(style) ;
 	      }

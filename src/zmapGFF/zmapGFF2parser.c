@@ -170,6 +170,17 @@ ZMapGFFParser zMapGFFCreateParser(char *sequence, int features_start, int featur
 }
 
 
+/* the servers need styles to add DNA and 3FT
+ * they used to create temp style and then destroy these but that's not very good
+ * they don't have styles info directly but this is stored in the parser
+ * during the protocol steps
+ */
+GHashTable *zMapGFFParserGetStyles(ZMapGFFParser parser)
+{
+	if(!parser)
+		return NULL;
+	return parser->sources;
+}
 
 /* We should do this internally with a var in the parser struct.... */
 /* This function must be called prior to parsing feature lines, it is not required
@@ -1168,9 +1179,6 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line, gsize line_lengt
       }
 #endif
 
-//      if (g_ascii_strcasecmp(source, "novel_cds") == 0)
-//	printf("found it\n") ;
-
 
       /* Do some sanity checking... */
       if (g_ascii_strcasecmp(sequence, ".") == 0)
@@ -1637,12 +1645,6 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 				    start, end, query_start, query_end,
 				    &feature_name, &feature_name_id) ;
 
-#if SILLY
-//this causes an assertion if a feature does not have a name
-  if (g_ascii_strcasecmp("RNASEQ_Young_Adult_25dC_46hrs_post-L1_g82_x20_II_p", feature_name) == 0)
-    printf("found it\n") ;
-#endif
-
   /* Check if the feature name for this feature is already known, if it is then check if there
    * is already a multiline feature with the same name as we will need to augment it with this data. */
   if (!parser->parse_only) // && parser_feature_set)
@@ -1694,7 +1696,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
     }
   else if ((result = zMapFeatureAddStandardData(feature, feature_name_id, feature_name,
 						sequence, ontology,
-						feature_type, feature_style,
+						feature_type, &parser_feature_set->feature_set->style, // feature_style,
 						start, end,
 						has_score, score,
 						strand)))

@@ -91,10 +91,11 @@ glyph-5=dn-tri\n\
 \n\
 [style-root]\n\
 width=9.000000\n\
+bump-mode=unbump\n\
 default-bump-mode=overlap\n\
 colours=selected fill gold ; selected border black\n\
 bump-spacing=3.000000\n\
-bump-mode=unbump\n\
+\n\
 \n\
 [style-alignment]\n\
 sub-features=homology:homology-glyph ; non-concensus-splice:nc-splice-glyph\n\
@@ -108,12 +109,15 @@ default-bump-mode=all\n\
 parent-style=root\n\
 show-reverse-strand=true\n\
 directional-ends=true\n\
+max-score=100.000000\n\
+min-score=70.000000\n\
+score-mode=percent\n\
+\n\
 \n\
 [style-basic]\n\
 colours=normal fill lavender ; normal border #898994\n\
 parent-style=root\n\
 mode=basic\n\
-bump-mode=unbump\n\
 \n\
 [style-transcript]\n\
 transcript-cds-colours=normal fill white ; normal border SlateBlue ; selected fill gold\n\
@@ -161,7 +165,8 @@ frame-mode=always\n\
 [style-EST_align]\n\
 colours=normal fill Purple ; normal border #3d1954\n\
 parent-style=dna_align\n\
-alignment-mask-sets=self ; vertebrate_mRNA\n\
+alignment-mask-sets=self\n\
+default-bump-mode=all\n\
 \n\
 \n\
 \n\
@@ -184,10 +189,10 @@ bump-fixed=true\n\
 width=30\n\
 colours = normal fill white ; normal draw black ; selected fill red\n\
 sequence-non-coding-colours = normal fill red ; normal draw black ; selected fill pink\n\
-sequence-coding-colours = normal fill darkgreen ; normal draw black ; selected fill pink\n\
+sequence-coding-colours = normal fill OliveDrab ; normal draw black ; selected fill pink\n\
 sequence-split-codon-5-colours = normal fill orange ; normal draw black ; selected fill pink\n\
 sequence-split-codon-3-colours = normal fill yellow ; normal draw black ; selected fill pink\n\
-sequence-in-frame-colours = normal fill green ; normal draw black ; selected fill pink\n\
+sequence-in-frame-coding-colours = normal fill green ; normal draw black ; selected fill pink\n\
 \n\
 [style-3 Frame Translation]\n\
 description=3 frame translation display\n\
@@ -195,7 +200,6 @@ parent-style=sequence\n\
 # width in characters\n\
 width=10\n\
 frame-mode=only-3\n\
-sequence-coding-colours = normal fill darkgreen ; normal draw black ; selected fill pink\n\
 \n\
 [style-Show Translation]\n\
 description=show translation in zmap display\n\
@@ -243,7 +247,7 @@ bump-mode=unbump\n\
 default-bump-mode=unbump\n\
 bump-fixed=true\n\
 \n\
-[style-Search Hit Markers]\n\
+[style-Search Hit Marker]\n\
 description=display location of matches to query\n\
 mode=basic\n\
 displayable=true\n\

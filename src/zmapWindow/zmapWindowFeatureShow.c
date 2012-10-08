@@ -669,7 +669,7 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
 					    "string", g_strdup(g_quark_to_string(feature->original_id)),
 					    NULL) ;
 
-  style = feature->style; /* zMapFindStyle(show->zmapWindow->display_styles, feature->style_id); */
+  style = *feature->style; /* zMapFindStyle(show->zmapWindow->display_styles, feature->style_id); */
 
   tag_value = zMapGUINotebookCreateTagValue(paragraph, "Feature Group [style_id]",
 					    ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,

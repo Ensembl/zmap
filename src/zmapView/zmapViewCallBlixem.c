@@ -1974,7 +1974,7 @@ static gboolean printAlignment(ZMapFeature feature, blixemData  blixem_data)
 				      qstart, qend, feature->strand,
 				      sstart, send, feature->feature.homol.strand,
 				      feature->score, feature->feature.homol.percent_id,
-				      feature->feature.homol.align, seq_str, description, zMapStyleIsPfetchable(feature->style)) ;
+				      feature->feature.homol.align, seq_str, description, zMapStyleIsPfetchable((*feature->style))) ;
 	}
 
       status = printLine(curr_channel, &(blixem_data->errorMsg), line->str) ;

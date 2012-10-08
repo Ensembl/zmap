@@ -149,7 +149,7 @@ typedef struct ZMapGFFParserStruct_
   GQuark locus_set_id ;					    /* If not zero then make a locus set from
 							       locus tags in sequence objects. */
 
-      // NB for sources read styles
+      // NOTE for sources read styles
   GHashTable *sources ;					    /* If present, only make features from
 							       GFF records with a source from this
 							       list. */

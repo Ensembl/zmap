@@ -145,7 +145,7 @@ gboolean zMapFeatureIsDrawable(ZMapFeatureAny any_feature)
 
 	feature = (ZMapFeature)any_feature;
 
-	if(feature->style)
+	if(*feature->style)
 	  allowed = get_feature_allowed_types();
 
 	if(allowed & feature->type)
@@ -661,7 +661,7 @@ ZMapFeatureTypeStyle zMapFindFeatureStyle(GHashTable *styles, GQuark style_id, Z
 
   if(!(feature_style = zMapFindStyle(styles, style_id)))
   {
-	/* feature_style_id is as configured or defaults to the smae name as the featureset
+	/* feature_style_id is as configured or defaults to the same name as the featureset
 	   * if not defined try a style with the same name as the feature type
 	   */
 

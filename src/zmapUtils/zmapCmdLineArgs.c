@@ -36,13 +36,16 @@
 
 #include <stdlib.h>
 #include <string.h>
+
 #include <glib.h>
 #include <ZMap/zmapUtils.h>
 #include <zmapCmdLineArgs_P.h>
 #include <zmapUtils_P.h>
 
 
+
 #define ARG_NO_FLAGS 0
+
 
 
 typedef GOptionEntry *(* get_entries_func)(ZMapCmdLineArgs context) ;

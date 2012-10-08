@@ -1013,7 +1013,7 @@ void zMapWindowContainerFeatureSetShowHideMaskedFeatures(ZMapWindowContainerFeat
         {
 		item = ZMAP_CANVAS_ITEM(list->data);
 		feature = item->feature;
-		style = feature->style;
+		style = *feature->style;
 
         	if(ZMAP_IS_WINDOW_FEATURESET_ITEM(list->data))
         	{

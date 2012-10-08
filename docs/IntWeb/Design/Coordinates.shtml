@@ -15,81 +15,281 @@ pre{ width: 95%; background-color: #DDDDDD; border-style: solid; border-width: 1
 
 <H3>Background</H3>
 
-<p>ZMap must be able to display sections of sequence with their associated
-features and show the sequence/features reverse complemented as required.
-The features may have up to two associated coordinates: the direct sequence
-parent of the features, e.g. the containing clone dna and the ultimate sequence
-parent, e.g. the chromosome that the clone forms part of. Note that the displayed
-sequence may only be a subsection of the direct parent as here:</p>
+<p>The sequences that ZMap must be able to display range from small clones
+up to large parts of chromosomes. The sequence may have been derived
+from a quite complex "scaffolding" of intermediate "virtual" sequences
+leading from invidual clones up a chromosome:</p>
 
 <pre class="example">
 
-              1             a             b                               x
-chromosome    |-------------|-------------|-------------------------------|
-                            |             |
-                            |             |
-                            |             |
-                        1   |             |       y
-clone                   |---|-------------|-------|
-                            |             |
-                            |             |
-                            |             |
-                            |             |
-displayed                   s             e
-sequence                    |-------------|
+              1             a                                      b                               x
+chromosome    |-------------|--------------------------------------|-------------------------------|
+                            |                                      |
+                            |                                      |
+                            |                                      |
+                            |                                      |
+                            |               c                  d   |
+superlink                   |---------------|------------------|---|
+                                            |                  |
+                                            |                  |
+                                            |                  |
+                                            |                  |
+                                            |  e        f      |
+link                                        |--|--------|------|
+                                               |        |
+                                               |        |
+                                               |        |
+                                               |        |
+                                               |  g   h |
+clone                                          |--|---|-|
+                                                  |   |
+                                                  |   |
+                                                  |   |
+                                                  |   |
+                                                  |   |
+displayed sequence slice                          |---|
 
 
 </pre>
 
-<p>The minimum information required to capture this information is:</p>
 
-<pre class="example">
+<p>In the above example the annotator may wish to see the slice displayed with
+chromosome coordinates or any level in between (though realistically they would
+probably only want to see clone or chromosome).</p>
 
-          length of chromosome (y)
-          length of clone (x)
-          mapping from clone to chromosome as coords (a, b) and (s, e)
+<p>The challenge is to come up with a way of storing and displaying coordinate
+information in a way that is both useful to the annotator but also manageable
+internally.</p>
 
-</pre>
+<p>Originally zmap was designed to display an arbitrary number of these
+sequences and display an arbitrary number of slices within them, this
+feature although requested by annotators has never been and is unlikely ever to be
+used. It led to a complicated series of mappings that have made code hard to
+maintain and debug.</p>
 
-<p>(Note that sometimes all the start and end coordinates may be the same as when
-displaying an entire clone that has no parent.)</p>
-
-<p>There are a number of ways this information could be held internally in zmap,
-e.g. as chromosome coordindates with a mapping to the clone coordinate system,
-as 1-based coordinates that are then mapped to clone and chromosome coordinates
-and so on. This document describes one way to do this which would involve changes
-to the way zmap currently holds coordinates.</p>
+<p>The decision has been taken to remove this complication and impose the
+restriction that any one zmap window will display just one block of
+sequence. In moving to this simpler system the way we store and display
+features can also be simplified, this document describes how this could be done.</p>
 
 
-<H3>A Coordinate System for ZMap</H3>
 
-<p>There is a tension between holding "native" (e.g. clone or chromosome)
-coordinates internally which makes it easy to follow feature positions or using
-one-based coordinates which makes display easier and also simplifies operations
-such as reverse complementing. Currently zmap uses "native" coordinates though
-this is currently not working correctly in for the clone/chromsome example
-shown above.</p>
+<h3>Design Requirements</h3>
 
-<p>The proposal here is that we move to using 1-based coordinates internally which
-will simplify our code and then translate those coordinates into whichever range
-the user would like to see, e.g. clone or chromosome. This change will involve
-some effort as coordinates are used and caculated in quite a few places in
-the code.</p>
 
-<p>Some factors to consider:</p>
+<p>Internal (coding) requirements:</p>
+
 
 <ul>
-  <li>coordinate code will be simpler as it will always be 1-based, e.g. for
-      reverse complements.</li>
-  <li>displaying coordinates to the user will require translating the 1-based
-      coords into the correct coordinate system.</li>
-  <li>canvas positioning code will be simpler because we can simply draw in
-      canvas-world coordinates with no need for corrections.</li>
-  <li>Debugging will be harder as feature coordinates will not be their
-      native coordinates, we should add some functions to convert coords so
-      both in debug statements and from a debugger we can display native
-      coords.</li>
+  <li><p>The "killer" requirement as far as internal coordinate systems are concerned
+      is that we want to be able to extend displayed slices. Unless we hold
+      features in their original coordinate frame this will be awkward and therefore error prone.
+      <b>NOTE</b> that there is an implication here that the coordinate system we are handed
+      must be capable of extension, e.g. if we are given the whole of a clone to display
+      then we cannot extend it, if we were given that clones position in the parent sequence
+      then we could easily extend into adjoining clones using parent sequence coordinates.</p></li>
+      
+  <li><p>Internally we want to have a very simple system with features being
+      stored in their original coordinates otherwise writing bug free code becomes
+      difficult and debugging becomes tedious.</p></li>
+      
+  <li><p>We could draw directly in the feature coordinates or map them into a
+      zero or one-based group. The most sensible thing to do is to draw directly
+      into the foocanvas world space using their original coordinates which makes
+      the whole system simpler and more robust. The major requirement this imposes is that the
+      position of the foocanvas scrolled_window must be set correctly to lie within
+      the slice start/end of the world coordinate frame.</p></li>
+
+  <li><p>Reverse complementing is straight forward where zmap is given a complete
+      sequence, the sequence runs from 1 to n and the operation is simple. But what
+      should be done when we have a slice from a sequence, currently this is completely
+      broken in zmap as we try to reverse it using the coordinates 1 to the end of the
+      sequence slice resulting in large jumps in position which are completely diorientating
+      for user and programmer alike. We should make the internal coordinates as easy
+      to follow as possible and the simplest system would be to reverse complement features within
+      the given coordinate space so that they are can be simply redrawn into the same foocanvas
+      world range. The coordinates of each feature will be "mirrored" within the slice space.</p></li>
+      
 </ul>
+
+
+
+
+<p>External (user) requirements:</p>
+
+
+<ul>
+  <li><p>Different users have different requirements for the coordinate frame
+      they wish to see, some obvious ones are:
+      <ul>
+	<li>Chromosome (or some other parent or top level sequence) coords</li>
+	<li>1-based coords</li>
+	<li>the original coordinate system, e.g. clone, link etc.</li>
+      </ul>
+      </p></li>
+      
+  <li><p>On reverse complementing the user will not want to see coordinates shift
+      in large and disorientating ways, they will want to feel that the sequence
+      has simply been reverse complemented "in place" so they still know where they
+      are.
+      </p></li>
+
+  <li><p>On reverse complementing the user will want to see coordinates displayed
+      in different ways, e.g.
+      <ul>
+	<li>existing coordinates but reversed</li>
+	<li>existing coordinates but reversed with a negative sign</li>
+	<li>perhaps even reversed in parent coords</li>
+      </ul>
+      </p></li>
+      
+</ul>
+
+
+<p>So where are we ? We need a system that can do the following:</p>
+
+
+<ul>
+  <li><p>Store and display features in their oringal coordinate system.</p></li>
+  <li><p>Reverse complement features and still have a original coordinate system.</p></li>
+  <li><p>Display coordinates to the user according to some given offset including
+      when reverse complemented.</p></li>
+  <li><p>Allow extension of displayed features at either end of the sequence without
+      the need to remap existing features.</p></li>
+</ul>
+
+
+
+
+<H3>Overview of views/slices/sequences</H3>
+
+<p>Our system will either be passed a start and end coordinate or will have to
+implicitly calculate one from the feature coordinate range. Either way features
+will be passed in a single coordinate frame and will be stored and drawn in
+that frame.  In addition an offset may be supplied which will be used to change
+the coordinates that are <b>displayed</b> to the user <b>not</b> the internal feature
+and drawing coordinates. We
+will also be passed a start/end of the whole sequence allowing the initial slice
+to be extended. The start/end of the sequence will default to the slice start/end
+meaning no extension of the view is possible. Some examples will help:</p>
+
+
+<pre class="example">
+Displaying a single clone 30,000 bases long in a view that cannot be extended:
+
+sequence_start = 1, sequence_end = 30,000
+display_start = 1, display_end = 30,000
+display_offset = 0
+
+
+                        1                                                                 30,000
+Sequence extent         |-------------------------------------------------------------------|
+(Clone)                 |                                                                   |
+                        |                                                                   |
+                        |                                                                   |
+                        |                                                                   |
+                        |                                                                   |
+Displayed sequence      1 --------------------------------------------------------------- 30,000
+(Clone)                 |                                                                   |
+                        |                                                                   |
+                        |                                                                   |
+                        |                                                                   |
+                        |                                                                   |
+Displayed coords        |-------------------------------------------------------------------|
+(Clone)                 1                                                                 30,000
+
+</pre>
+
+
+
+<pre class="example">
+Displaying a slice within the same clone with clone coords in a view that can
+be extended out to the ends of the clone:
+
+sequence_start = 1, sequence_end = 30,000
+display_start = 10,000, display_end = 20,000
+display_offset = 0
+
+
+                        1                                                                 30,000
+Sequence extent         |--------------------|-----------------------|----------------------|
+(Clone)                                      |                       |
+                                             |                       |
+                                             |                       |
+                                             |                       |
+                                             |                       |
+Displayed sequence                         10,000 ---------------- 20,000
+(Clone slice)                                |                       |
+                                             |                       |
+                                             |                       |
+                                             |                       |
+                                             |                       |
+Displayed coords                           10,000 ---------------- 20,000
+(Clone slice)
+
+</pre>
+
+
+<pre class="example">
+Displaying a slice that is a clone within a chromosome (n.b. not to scale), the
+coords displayed are the clone coords and the view can be extended to the whole
+chromosome:
+
+sequence_start = 1, sequence_end = 1,000,000
+display_start = 500,001, display_end = 530,000
+display_offset = 500,000
+
+
+                        1                                                              1,000,000
+Sequence extent         |--------------------|-----------------------|----------------------|
+(Chromosome)                                 |                       |
+                                             |                       |
+                                             |                       |
+                                             |                       |
+                                             |                       |
+Displayed sequence                        500,001 --------------- 530,000
+(Chromosome slice == clone)                  |                       |
+                                             |                       |
+                                             |                       |
+                                             |                       |
+                                             |                       |
+Displayed coords                             1 ------------------- 30,000
+(Clone slice)
+
+</pre>
+
+
+<H3>Drawing</H3>
+
+<p>Currently we use the foocanvas for sequence display. Shapes (i.e. features)
+are laid out within groups in a "world" coordinate frame and then projected
+onto the pixels of the foocanvas window. Which section of the world space
+gets projected into the foocanvas window is controlled by an internal
+frame called the scrolled_window, by moving the scrolled_window different
+parts of the world space can be displayed.</p>
+
+<p>Currently features are drawn at an offset of 1 within their group, this
+was originally done to make coordinates in the foocanvas easier to understand
+but there are two major problems with this:</p>
+
+<ol>
+  <li><p>As a developer it's hard to go from feature space (e.g. huge chromosome
+      coords) to the 1-based foocanvas coords.</p></li>
+  <li><p>If the view was extended then all coords in the canvas would
+      need to remapped.</p></li>
+</ol>
+
+<p>If the features were drawn in their original coordinate positions in the
+foocanvas world then the view could easily be extended and feature drawing
+coordinates would be the same as feature coordinates. This will involve some changes
+to our code handling the scrolled window.</p>
+
+<p>The proposed drawing model is summarised in this diagram:</p>
+
+<img src="./ZMap_Coord_System.png" align="center">
+
+
+
 
 
 <H3>Stages in Implementation</H3>
@@ -104,14 +304,17 @@ context.</p>
 
 
 <ol>
-  <li>Move any required data in the Alignment and Block structs into
-      the Feature context struct.</li>
-  <li>Change existing code to be 1-based and make sure features are
-      displayed correctly.</li>
-  <li>Comment out display code that creates align and block groups,
-      remove when display is correct.</li>
-  <li>Remove Alignment and Block structs, this is not trivial as a
-      number of functions recurse through these structs.</li>
+  <li><p>Put the sequence start/end, slice start/end and display offset coordinates
+      into the feature context and change feature context and display code to use
+      them.</p></li>
+  <li><p>Change revcomp code to use slice start/end to do the reverse complement
+      (already works like this in fact).</p></li>
+  <li><p>Change code that creates foocanvas code to use same coords as features
+      including making sure scrolled window position is correct.</p></li>
+  <li><p>Replace display code that creates nest of foocanvas context, align and block
+      groups with code to create a context group only.</p></li>
+  <li><p>Remove Alignment and Block structs, this is not trivial as a
+      number of functions recurse through these structs.</p></li>
 </ol>
 
 

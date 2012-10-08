@@ -88,8 +88,20 @@ gboolean zmapAppCreateZMap(ZMapAppContext app_context, ZMapFeatureSequenceMap se
 
 
   /* Everything must be specified or nothing otherwise it's an error. */
-  if ((sequence_map->sequence && sequence_map->start && sequence_map->end)
-      || (!(sequence_map->sequence) && !(sequence_map->start) && !(sequence_map->end)))
+  if (!((seq_map->sequence && seq_map->start && seq_map->end)
+	|| (!(seq_map->sequence) && !(seq_map->start) && !(seq_map->end))))
+    {
+      result = FALSE ;
+
+      zMapWarning("Sequence not specified properly: %s",
+		  (!seq_map->sequence ? "no sequence name"
+		   : (seq_map->start <= 1 ? "start less than 1" : "end less than start"))) ;
+    }
+  else if ((!app_context->xremote_client) && (!(seq_map->sequence) && !(seq_map->start) && !(seq_map->end)))
+    {
+      result = TRUE ;
+    }
+  else
     {
       gboolean load_view = TRUE ;
 
@@ -137,15 +149,6 @@ gboolean zmapAppCreateZMap(ZMapAppContext app_context, ZMapFeatureSequenceMap se
 
 	  result = TRUE ;
 	}
-    }
-
-  else
-    {
-      result = FALSE ;
-
-      zMapWarning("Sequence not specified properly: %s",
-		  (!sequence_map->sequence ? "no sequence name"
-		   : (sequence_map->start <= 1 ? "start less than 1" : "end less than start"))) ;
     }
 
   return result ;

@@ -138,6 +138,14 @@ ZMapServerResponseType zMapServerCreateConnection(ZMapServer *server_out, void *
   server = g_new0(ZMapServerStruct, 1) ;
   *server_out = server ;
 
+  /* oh joy! OO programming strike again, or rather it doesn't
+   * as the sevrer protocol has many layers and data is duplicated (and often subtly changed or discarded between them)
+   * then we have to have several ciopied fothe same information
+   * i just spent a few hours loking for a bug cauise by this unititialised struct member
+   * which really has no buisness having a duplicate existance in the pipeServer or acedebServer code
+   */
+  server->config_file = config_file;
+
   /* set function table. */
   server->funcs = serverfuncs ;
 

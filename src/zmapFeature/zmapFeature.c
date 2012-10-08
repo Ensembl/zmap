@@ -251,6 +251,7 @@ ZMapFeatureAny zMapFeatureAnyGetFeatureByID(ZMapFeatureAny feature_set, GQuark f
 }
 
 
+
 gboolean zMapFeatureAnyRemoveFeature(ZMapFeatureAny feature_parent, ZMapFeatureAny feature)
 {
   gboolean result = FALSE;
@@ -293,8 +294,8 @@ gboolean zMapFeatureAnyRemoveFeature(ZMapFeatureAny feature_parent, ZMapFeatureA
 
 
 #if MH17_ADD_MODES
-/* legacy code that might just be sued somewhere in the world
- * should _not_ be called is we  used a styles file
+/* legacy code that might just be used somewhere in the world
+ * should _not_ be called if we  used a styles file
  */
 
 /* go through all the feature sets in the given AnyFeature (must be at least a feature set)
@@ -594,7 +595,7 @@ ZMapFeature zMapFeatureCreateEmpty(void)
  */
 ZMapFeature zMapFeatureCreateFromStandardData(char *name, char *sequence, char *ontology,
 					      ZMapStyleMode feature_type,
-                                              ZMapFeatureTypeStyle style,
+                                              ZMapFeatureTypeStyle *style,
                                               int start, int end,
                                               gboolean has_score, double score,
                                               ZMapStrand strand)
@@ -628,16 +629,16 @@ ZMapFeature zMapFeatureCreateFromStandardData(char *name, char *sequence, char *
   return feature;
 }
 
-/* Adds the standard data fields to an empty feature. 
- * 
- * 
- * 
- * 
+/* Adds the standard data fields to an empty feature.
+ *
+ *
+ *
+ *
  */
 gboolean zMapFeatureAddStandardData(ZMapFeature feature, char *feature_name_id, char *name,
 				    char *sequence, char *SO_accession,
 				    ZMapStyleMode feature_type,
-				    ZMapFeatureTypeStyle style,
+				    ZMapFeatureTypeStyle *style,
 				    int start, int end,
 				    gboolean has_score, double score,
 				    ZMapStrand strand)
@@ -652,7 +653,7 @@ gboolean zMapFeatureAddStandardData(ZMapFeature feature, char *feature_name_id, 
       feature->original_id = g_quark_from_string(name) ;
       feature->type = feature_type ;
       feature->SO_accession = g_quark_from_string(SO_accession) ;
-      feature->style_id = zMapStyleGetUniqueID(style) ;
+      feature->style_id = zMapStyleGetUniqueID((*style)) ;
       feature->style = style;
       feature->x1 = start ;
       feature->x2 = end ;
@@ -1227,15 +1228,15 @@ gboolean zMapFeatureAlignmentAddBlock(ZMapFeatureAlignment alignment, ZMapFeatur
 
   result = featureAnyAddFeature((ZMapFeatureAny)alignment, (ZMapFeatureAny)block) ;
 
-  if(result)
-  {
+  if (result)
+    {
       /* remember where our data hails from */
-      if(!alignment->sequence_span.x1 || alignment->sequence_span.x1 > block->block_to_sequence.block.x1)
-            alignment->sequence_span.x1 = block->block_to_sequence.block.x1;
+      if (!alignment->sequence_span.x1 || alignment->sequence_span.x1 > block->block_to_sequence.block.x1)
+	alignment->sequence_span.x1 = block->block_to_sequence.block.x1;
 
-      if(!alignment->sequence_span.x2 || alignment->sequence_span.x2 < block->block_to_sequence.block.x2)
-            alignment->sequence_span.x2 = block->block_to_sequence.block.x2;
-  }
+      if (!alignment->sequence_span.x2 || alignment->sequence_span.x2 < block->block_to_sequence.block.x2)
+	alignment->sequence_span.x2 = block->block_to_sequence.block.x2;
+    }
 
   return result ;
 }
@@ -1381,6 +1382,30 @@ ZMapFeatureSet zMapFeatureBlockGetSetByID(ZMapFeatureBlock feature_block, GQuark
   feature_set = (ZMapFeatureSet)zMapFeatureAnyGetFeatureByID((ZMapFeatureAny)feature_block, set_id) ;
 
   return feature_set ;
+}
+
+GList *zMapFeatureBlockGetMatchingSets(ZMapFeatureBlock feature_block, char *prefix)
+{
+	GList *sets = NULL,*s, *del;
+	ZMapFeatureSet set;
+
+	zMap_g_hash_table_get_data(&sets, feature_block->feature_sets);
+
+	for(s = sets; s; )
+	{
+		const char *name;
+
+		set = (ZMapFeatureSet) s->data;
+		name = g_quark_to_string(set->unique_id);
+
+		del = s;
+		s = s->next;
+
+		if(!g_str_has_prefix(name, prefix))
+			sets = g_list_delete_link(sets, del);
+	}
+
+	return sets;
 }
 
 
@@ -2864,6 +2889,19 @@ static gboolean featureAnyAddFeature(ZMapFeatureAny feature_any, ZMapFeatureAny 
       g_hash_table_insert(feature_any->children, zmapFeature2HashKey(feature), feature) ;
 
       feature->parent = feature_any ;
+
+	if(feature->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
+	{
+		/* as features have styles stored indrectly in their containing featureset
+		 * we must assign this here as this is called from merge
+		 * the actual style struct will be the same one but we access it via an indirect link
+		 * and after the merge that pointer woudl be invalid
+		 */
+		/* NOTE also called from locus code in viewremote receive, but is benign */
+		ZMapFeature feat = (ZMapFeature) feature;
+		ZMapFeatureSet set = (ZMapFeatureSet) feature_any;
+		feat->style = & set->style;
+	}
 
       result = TRUE ;
     }
