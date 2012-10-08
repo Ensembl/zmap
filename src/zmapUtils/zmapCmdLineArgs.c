@@ -42,6 +42,8 @@
 #include <zmapUtils_P.h>
 
 
+#define ARG_NO_FLAGS 0
+
 
 typedef GOptionEntry *(* get_entries_func)(ZMapCmdLineArgs context) ;
 
