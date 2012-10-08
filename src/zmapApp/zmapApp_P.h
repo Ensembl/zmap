@@ -193,8 +193,6 @@ typedef struct _ZMapAppContextStruct
 
   char *locale;
 
-  gboolean sent_finalised ;				    /* ?????????????????? */
-
   char *script_dir;					    /* where scripts are kept for the pipeServer module
 							     * can be set in [ZMap] or defaults to run-time directory
 							     */
