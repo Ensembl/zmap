@@ -45,6 +45,7 @@
 #include <ZMap/zmapUtilsXRemote.h>
 #include <ZMap/zmapGLibUtils.h>
 #include <ZMap/zmapXML.h>
+#include <ZMap/zmapXRemote.h>
 #include <zmapView_P.h>
 #include <ZMap/zmapConfigStanzaStructs.h>
 
