@@ -98,8 +98,8 @@ static void remoteInstaller(GtkWidget *widget, GdkEvent *event, gpointer app_con
 
 static gboolean pingHandler(gpointer data) ;
 
-static gboolean configureLog(void) ;
-
+static gboolean configureLog(char *config_file) ;
+static void consoleMsg(gboolean err_msg, char *format, ...) ;
 
 
 static ZMapManagerCallbacksStruct app_window_cbs_G = {addZMapCB, removeZMapCB, infoSetCB, quitReqCB, NULL} ;
@@ -148,16 +148,17 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
   /*       Application initialisation.        */
 
-  /* User can ask for an immediate sleep, useful for attaching a debugger. */
-  if ((sleep_seconds = checkForCmdLineSleep(argc, argv)))
-    sleep(sleep_seconds) ;
-
-
   /* Since thread support is crucial we do compile and run time checks that its all intialised.
    * the function calls look obscure but its what's recommended in the glib docs. */
 #if !defined G_THREADS_ENABLED || defined G_THREADS_IMPL_NONE || !defined G_THREADS_IMPL_POSIX
 #error "Cannot compile, threads not properly enabled."
 #endif
+
+
+  /* User can ask for an immediate sleep, useful for attaching a debugger. */
+  if ((sleep_seconds = checkForCmdLineSleep(argc, argv)))
+    sleep(sleep_seconds) ;
+
 
   /* Make sure glib threading is supported and initialised. */
   g_thread_init(NULL) ;
@@ -341,20 +342,11 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
 
   /* Only show default sequence if we are _not_ controlled via XRemote */
-  if (!zMapCmdLineArgsValue(ZMAPARG_WINDOW_ID, NULL))
-    zmapAppCreateZMap(app_context, seq_map) ;
-
-
-      if (!zmapAppCreateZMap(app_context, seq_map, &zmap, &view, &err_msg))
-	zMapWarning("%s", err_msg) ;
-    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-  if (seq_map->sequence)
-    {
+  if (!remote_control)
+     {
       ZMap zmap = NULL ;
       ZMapView view = NULL ;
       char *err_msg = NULL ;
-
 
       if (!zmapAppCreateZMap(app_context, seq_map, &zmap, &view, &err_msg))
 	zMapWarning("%s", err_msg) ;
