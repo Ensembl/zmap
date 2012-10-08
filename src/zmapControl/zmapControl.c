@@ -194,8 +194,7 @@ ZMapViewWindow zMapAddView(ZMap zmap, ZMapFeatureSequenceMap sequence_map)
   ZMapViewWindow view_window = NULL ;
 
   zMapAssert(zmap && sequence_map->sequence && *sequence_map->sequence
-	     && (sequence_map->start > 0
-		 && (sequence_map->end == 0 || sequence_map->end > sequence_map->start))) ;
+	     && (sequence_map->start > 0 && sequence_map->end > sequence_map->start)) ;
 
   g_return_val_if_fail((zmap->state != ZMAP_DYING), NULL) ;
 
@@ -621,15 +620,19 @@ void zmapControlResetCB(ZMap zmap)
 ZMapView zmapControlInsertView(ZMap zmap, ZMapFeatureSequenceMap sequence_map, char **err_msg)
 {
   ZMapView view = NULL ;
+  ZMapViewWindow view_window ;
 
-  if ((view = zmapControlAddView(zmap, sequence_map)))
+
+  if ((view_window = zmapControlAddView(zmap, sequence_map)))
     {
+      view = zMapViewGetView(view_window) ;
+
       if (!zMapViewConnect(view, NULL))
 	{
 	  *err_msg = g_strdup_printf("Display of sequence \"%s\" failed, see log for details.",
 				     sequence_map->sequence) ;
 
-	  zMapViewDestroy(view) ;
+	  zMapViewDestroy(view, NULL) ;
 
 	  view = NULL ;
 	}
