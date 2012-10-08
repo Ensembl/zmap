@@ -1,4 +1,3 @@
-/*  Last edited: Oct 26 14:07 2011 (edgrif) */
 /*  File: zmapAppRemote.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -83,7 +82,7 @@ static gboolean end(void *userData, ZMapXMLElement element, ZMapXMLParser parser
 static gboolean req_start(void *userData, ZMapXMLElement element, ZMapXMLParser parser);
 static gboolean req_end(void *userData, ZMapXMLElement element, ZMapXMLParser parser);
 
-static void createZMap(ZMapAppContext app, RequestData request_data, ResponseContext response);
+
 static void send_finalised(ZMapXRemoteObj client);
 static gboolean finalExit(gpointer data) ;
 
@@ -104,7 +103,6 @@ static char *actions_G[ZMAPAPP_REMOTE_UNKNOWN + 1] = {
 
 
 
-gboolean xremote_debug_GG = TRUE ;
 
 
 /*
@@ -300,40 +298,6 @@ static char *application_execute_command(char *command_text, gpointer app_contex
   if(xml_reply == NULL){ xml_reply = g_strdup("Broken code."); }
 
   return xml_reply;
-}
-
-
-static void createZMap(ZMapAppContext app, RequestData request_data, ResponseContext response_data)
-{
-  char *sequence = g_strdup(g_quark_to_string(request_data->sequence));
-  ZMapFeatureSequenceMap seq_map = g_new0(ZMapFeatureSequenceMapStruct,1);
-
-  /* MH17: this is a bodge FTM, we need a dataset XRemote field as well */
-  // default sequence may be NULL
-  if(app->default_sequence)
-        seq_map->dataset = app->default_sequence->dataset;
-  seq_map->sequence = sequence;
-  seq_map->start = request_data->start;
-  seq_map->end = request_data->end;
-
-  if (zmapAppCreateZMap(app, seq_map))
-    {
-      response_data->handled = TRUE ;
-	if(app->info)
-		g_string_append_printf(response_data->message, "%s", app->info->message) ;
-    }
-  else
-    {
-      response_data->handled = FALSE ;
-      g_string_append_printf(response_data->message, "%s", "zmap create failed.") ;
-    }
-
-
-  /* Clean up. */
-//  if (sequence)
-//	g_free(sequence) ;
-
-  return ;
 }
 
 static void send_finalised(ZMapXRemoteObj client)
