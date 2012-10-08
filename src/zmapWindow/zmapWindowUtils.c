@@ -423,11 +423,13 @@ ZMapFeatureTypeStyle zmapWindowColumnMergeStyle(ZMapFeatureColumn column)
              * NB: sub feature styles come after their parents, see zmapWindowFeatureSetStyle() below
              * but are likely to be a different style mode and will be ignored
              */
-            mode = ((ZMapFeatureTypeStyle) column->style_table->data)->mode;
+		s = (ZMapFeatureTypeStyle) column->style_table->data;
+            mode = s->mode;
 
             for(iter = g_list_last(column->style_table);iter; iter = iter->prev)
             {
                   s = (ZMapFeatureTypeStyle) iter->data;
+
                   if(!s->mode || s->mode == mode)
                   {
 				if(!style)

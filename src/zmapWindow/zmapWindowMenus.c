@@ -2060,9 +2060,9 @@ static void setStyleCB(int menu_item_id, gpointer callback_data)
 
 				for( ; c2s; c2s = c2s->next)
 				{
-					if(c2s->data == (gpointer) feature_set->style)
+					if(GPOINTER_TO_UINT(c2s->data) == feature_set->style->unique_id)
 					{
-						c2s->data = (gpointer) style;
+						c2s->data = GUINT_TO_POINTER(style->unique_id);
 						break;
 					}
 				}
@@ -2150,6 +2150,9 @@ static void setStyleCB(int menu_item_id, gpointer callback_data)
 			if(!group->item_list)
 				zmapWindowContainerGroupDestroy((ZMapWindowContainerGroup) set_item);
 		}
+
+		zmapWindowRemoveIfEmptyCol((FooCanvasGroup **) &set_item) ;
+
 	}
   }
 
@@ -2339,7 +2342,7 @@ static void developerMenuCB(int menu_item_id, gpointer callback_data)
 	    char *feature_text ;
 	    ZMapFeature feature ;
 	    GString *item_text_str ;
-	    char *item_text ;
+//	    char *item_text ;
 	    char *coord_text ;
 	    char *msg_text ;
 
@@ -2350,7 +2353,7 @@ static void developerMenuCB(int menu_item_id, gpointer callback_data)
 	    item_text_str = g_string_sized_new(2048) ;
 
 	    zmapWindowItemDebugItemToString(item_text_str, menu_data->item) ;
-	    
+
 	    coord_text = zmapWindowItemCoordsText(menu_data->item) ;
 
 	    msg_text = g_strdup_printf("%s\n%s\t%s\n", feature_text, item_text_str->str, coord_text) ;

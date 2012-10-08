@@ -837,6 +837,8 @@ void zmapWindowContainerFeatureSetRemoveAllItems(ZMapWindowContainerFeatureSet c
 }
 
 
+#if OBSOLETE
+
 /*!
  * \brief Sort all the features in a columns.
  *
@@ -878,6 +880,11 @@ void zmapWindowContainerFeatureSetSortFeatures(ZMapWindowContainerFeatureSet con
 }
 
 
+
+
+/* this never worked properly w/ more than one focus item
+ * Canvas featureset handles ontopiness as a display function that does not affect the data
+ */
 /*
       take a focus item from the front of the container/foo canvas group item_list
       and move it to where it should be when sorted
@@ -975,6 +982,8 @@ gboolean zmapWindowContainerFeatureSetItemLowerToMiddle(ZMapWindowContainerFeatu
   return TRUE ;
 }
 
+#endif
+
 ZMapWindow zMapWindowContainerFeatureSetGetWindow(ZMapWindowContainerFeatureSet container_set)
 {
       return container_set->window;
@@ -1052,7 +1061,7 @@ ZMapStyleBumpMode zMapWindowContainerFeatureSetGetContainerBumpMode(ZMapWindowCo
 
 
 
-
+#if OBSOLETE
 /*!
  * \brief Unset the sorted flag for the featureset to force a re-sort on display eg after adding a feature
  *
@@ -1065,7 +1074,7 @@ void zMapWindowContainerFeatureSetMarkUnsorted(ZMapWindowContainerFeatureSet con
 {
       container_set->sorted = FALSE;
 }
-
+#endif
 
 /*!
  * \brief Time to free the memory associated with the ZMapWindowContainerFeatureSet.
