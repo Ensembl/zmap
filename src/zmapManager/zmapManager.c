@@ -1,4 +1,3 @@
-/*  Last edited: Apr 11 10:51 2012 (edgrif) */
 /*  File: zmapManager.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -198,7 +197,10 @@ ZMapManager zMapManagerCreate(void *gui_data)
 /* Add a new zmap window with associated thread and all the gubbins.
  * Return indicates what happened on trying to add zmap.
  * 
- * If zmap_inout is NULL view is displayed in a new window, if an
+
+OOPS...THIS ALL DOESN'T WORK LIKE THAT NOW....
+
+ * If zmap_out is NULL view is displayed in a new window, if an
  * existing  zmap is given then view is added to that zmap.
  * 
  * Policy is:
@@ -234,7 +236,7 @@ ZMapManagerAddResult zMapManagerAdd(ZMapManager zmaps, ZMapFeatureSequenceMap se
 	  ZMapViewWindow view_window ;
 
 	  /* Try to load the sequence. */
-	  if ((view = zMapAddView(zmap, sequence_map)) && zMapConnectView(zmap, view))
+	  if ((view_window = zMapAddView(zmap, sequence_map)) && zMapConnectView(zmap, zMapViewGetView(view_window)))
 	    {
 	      result = ZMAPMANAGER_ADD_OK ;
 	    }
@@ -670,12 +672,6 @@ static void createZMap(ZMapManager manager, ZMapAppRemoteViewID view_id_inout,
 
 	      zMapWarning("%s", *reason_out) ;
 	    }
-	  else if (add_result == ZMAPMANAGER_ADD_NOTCONNECTED)
-	    {
-	      *reason_out = g_strdup_printf("%s", "Failed to connect ZMap") ;
-
-	      zMapWarning("%s", *reason_out) ;
-	    }
 	  else
 	    {
 	      char *id_str ;
@@ -766,10 +762,12 @@ static ZMapManagerAddResult addNewView(ZMapManager zmaps, ZMapFeatureSequenceMap
 
   if (zmap)
     {
-      if (!sequence_map->sequence)
+
+      /* NOT SURE THIS BIT WORKS PROPERLY NOW.... */
+      if (!(zmaps->remote_control))
 	{
 	  /* No sequence so just add blank zmap. */
-	  result = ZMAPMANAGER_ADD_NOTCONNECTED ;
+	  result = ZMAPMANAGER_ADD_OK ;
 	}
       else
 	{
@@ -786,14 +784,14 @@ static ZMapManagerAddResult addNewView(ZMapManager zmaps, ZMapFeatureSequenceMap
 	    }
 	  else
 	    {
-	      /* Remove zmap we just created. */
+	      /* Remove zmap we just created, if this fails then return disaster.... */
 	      zMapDestroy(zmap, NULL) ;
 	      result = ZMAPMANAGER_ADD_FAIL ;
 	    }
 	}
     }
 
-  if (result == ZMAPMANAGER_ADD_OK || result == ZMAPMANAGER_ADD_NOTCONNECTED)
+  if (result == ZMAPMANAGER_ADD_OK)
     {
       /* Only add zmap to list if we made a new one. */
       if (!zMapAppRemoteViewIsValidID(view_id))
