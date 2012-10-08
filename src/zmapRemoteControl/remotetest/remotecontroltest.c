@@ -733,7 +733,8 @@ static GtkWidget *entry_box_widgets(RemoteData remote_data)
   gtk_box_pack_start(GTK_BOX(entry_box), label, FALSE, FALSE, 5);
   remote_data->config_entry  = sequence = gtk_entry_new();
   gtk_box_pack_start(GTK_BOX(entry_box), sequence, FALSE, FALSE, 5);
-  gtk_entry_set_text(GTK_ENTRY(sequence), remote_data->cmd_line_args->zmap_config_file) ;
+  if (remote_data->cmd_line_args->zmap_config_file)
+    gtk_entry_set_text(GTK_ENTRY(sequence), remote_data->cmd_line_args->zmap_config_file) ;
 
   label = gtk_label_new("zmap path :");
   gtk_box_pack_start(GTK_BOX(entry_box), label, FALSE, FALSE, 5);
@@ -3170,7 +3171,7 @@ static ZMapConfigIniContext get_configuration(RemoteData remote_data)
       dir  = g_path_get_dirname(remote_data->cmd_line_args->config_file);
       base = g_path_get_basename(remote_data->cmd_line_args->config_file);
 
-      zMapConfigDirCreate(dir, base);
+      zMapConfigDirCreate(dir, base, FALSE) ;
 
       if((context = zMapConfigIniContextCreate(NULL)))
 	{
