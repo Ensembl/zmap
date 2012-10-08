@@ -194,10 +194,10 @@ ZMapViewWindow zmapControlNewWindow(ZMap zmap, ZMapFeatureSequenceMap sequence_m
 void zmapControlSplitWindow(ZMap zmap, GtkOrientation orientation, ZMapControlSplitOrder window_order) ;
 
 void zmapControlClose(ZMap zmap) ;
-void zmapControlRemoveWindow(ZMap zmap) ;
+void zmapControlRemoveWindow(ZMap zmap, ZMapViewWindowTree destroyed_zmap) ;
 
 ZMapView zmapControlInsertView(ZMap zmap, ZMapFeatureSequenceMap sequence_map, char **err_msg) ;
-ZMapView zmapControlAddView(ZMap zmap, ZMapFeatureSequenceMap sequence_map) ;
+ZMapViewWindow zmapControlAddView(ZMap zmap, ZMapFeatureSequenceMap sequence_map) ;
 int zmapControlNumViews(ZMap zmap) ;
 void zmapControlRemoveView(ZMap zmap, ZMapView view, ZMapViewWindowTree destroyed_zmap_inout) ;
 
