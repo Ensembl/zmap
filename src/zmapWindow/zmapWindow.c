@@ -2965,7 +2965,7 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
 				       GTK_SIGNAL_FUNC(canvasWindowEventCB), (gpointer)window) ;
 	}
       else
-	zMapLogMessage("%s", "event handler for canvas already registered.");
+//	zMapLogMessage("%s", "event handler for canvas already registered.");
 
       g_free(feature_sets) ;
       g_free(window_data) ;				    /* Free the WindowData struct. */

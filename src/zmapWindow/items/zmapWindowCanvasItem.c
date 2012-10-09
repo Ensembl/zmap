@@ -504,8 +504,9 @@ static void zmap_window_canvas_item_destroy (GtkObject *gtkobject)
 
   canvas_item->feature = NULL;
 
-  if(GTK_OBJECT_CLASS (group_parent_class_G)->destroy)
-    (GTK_OBJECT_CLASS (group_parent_class_G)->destroy)(GTK_OBJECT(gtkobject));
+  /* NOTE FooCanavsItems call dispose not destroy, whcih is in a Gobject  but not a GTK Object */
+  if(G_OBJECT_CLASS (group_parent_class_G)->dispose)
+    (G_OBJECT_CLASS (group_parent_class_G)->dispose)(G_OBJECT(gtkobject));
 
   zmapWindowItemStatsDecr(&(canvas_item_class->stats)) ;
 

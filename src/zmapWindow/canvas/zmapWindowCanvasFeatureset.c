@@ -110,7 +110,7 @@ static gboolean zmap_window_featureset_item_set_feature(FooCanvasItem *item, dou
 
 static gboolean zmap_window_featureset_item_show_hide(FooCanvasItem *item, gboolean show);
 
-static void zmap_window_featureset_item_item_destroy     (GObject *object);
+static void zmap_window_featureset_item_item_destroy     (GtkObject *object);
 static void zMapWindowCanvasFeaturesetPaintSet(ZMapWindowFeaturesetItem featureset,
 					       GdkDrawable *drawable, GdkEventExpose *expose) ;
 
@@ -127,6 +127,7 @@ gint zMapFeatureCmp(gconstpointer a, gconstpointer b);
 
 
 static FooCanvasItemClass *item_class_G = NULL;
+static ZMapWindowCanvasItemClass parent_class_G = NULL;
 static ZMapWindowFeaturesetItemClass featureset_class_G = NULL;
 
 static void zmapWindowCanvasFeaturesetSetColours(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature);
@@ -1346,19 +1347,21 @@ gboolean zMapWindowFeaturesetItemSetStyle(ZMapWindowFeaturesetItem di, ZMapFeatu
 /* NOTE this extends FooCanvasItem via ZMapWindowCanvasItem */
 static void zmap_window_featureset_item_item_class_init(ZMapWindowFeaturesetItemClass featureset_class)
 {
-  GObjectClass *gobject_class ;
+  GtkObjectClass *gtkobject_class ;
   FooCanvasItemClass *item_class;
   ZMapWindowCanvasItemClass canvas_class;
 
   featureset_class_G = featureset_class;
   featureset_class_G->featureset_items = g_hash_table_new(NULL,NULL);
 
-  gobject_class = (GObjectClass *) featureset_class;
+  parent_class_G = g_type_class_peek_parent (featureset_class);
+
+  gtkobject_class = (GtkObjectClass *) featureset_class;
   item_class = (FooCanvasItemClass *) featureset_class;
   item_class_G = gtk_type_class(FOO_TYPE_CANVAS_ITEM);
   canvas_class = (ZMapWindowCanvasItemClass) featureset_class;
 
-  gobject_class->dispose = zmap_window_featureset_item_item_destroy;
+  gtkobject_class->destroy = zmap_window_featureset_item_item_destroy;
 
   item_class->update = zmap_window_featureset_item_item_update;
   item_class->bounds = zmap_window_featureset_item_item_bounds;
@@ -3079,7 +3082,7 @@ printf("canvas removed set %s %s: %d features\n",g_quark_to_string(fi->id), g_qu
 #endif
 
   if(!fi->n_features)
-	  zmap_window_featureset_item_item_destroy((GObject *) fi);
+	  zmap_window_featureset_item_item_destroy((GtkObject *) fi);
 
   return n_feat;
 }
@@ -3107,7 +3110,7 @@ void zMapWindowCanvasFeaturesetGetFeatureBounds(FooCanvasItem *foo, double *root
 
 
 
-static void zmap_window_featureset_item_item_destroy     (GObject *object)
+static void zmap_window_featureset_item_item_destroy     (GtkObject *object)
 {
 
   ZMapWindowFeaturesetItem featureset_item;
@@ -3177,12 +3180,8 @@ printf("destroy featureset %s\n",g_quark_to_string(featureset_item->id));
       featureset_item->gc = NULL;
     }
 
-  {
-    GtkObjectClass *gobj_class = (GtkObjectClass *) featureset_class_G;
-
-    if(gobj_class->destroy)
-      gobj_class->destroy (GTK_OBJECT(object));
-  }
+    if(GTK_OBJECT_CLASS (parent_class_G)->destroy)
+      GTK_OBJECT_CLASS (parent_class_G)->destroy (GTK_OBJECT(object));
 
   return ;
 }
