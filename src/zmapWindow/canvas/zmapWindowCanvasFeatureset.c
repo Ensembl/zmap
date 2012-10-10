@@ -3077,12 +3077,13 @@ int zMapWindowFeaturesetItemRemoveSet(FooCanvasItem *foo, ZMapFeatureSet feature
 
   n_feat = fi->n_features;
 
-#if STYLE_DEBUG
-printf("canvas removed set %s %s: %d features\n",g_quark_to_string(fi->id), g_quark_to_string(featureset->unique_id), n_feat);
-#endif
+
+//printf("canvas remove set %p %s %s: %d features\n", fi, g_quark_to_string(fi->id), g_quark_to_string(featureset->unique_id), n_feat);
 
   if(!fi->n_features)
-	  zmap_window_featureset_item_item_destroy((GtkObject *) fi);
+// don-t do this we get glib **** errors
+//	  zmap_window_featureset_item_item_destroy((GtkObject *) fi);
+	gtk_object_destroy(GTK_OBJECT(fi));
 
   return n_feat;
 }
@@ -3110,7 +3111,7 @@ void zMapWindowCanvasFeaturesetGetFeatureBounds(FooCanvasItem *foo, double *root
 
 
 
-static void zmap_window_featureset_item_item_destroy     (GtkObject *object)
+static void zmap_window_featureset_item_item_destroy (GtkObject *object)
 {
 
   ZMapWindowFeaturesetItem featureset_item;
@@ -3121,67 +3122,77 @@ static void zmap_window_featureset_item_item_destroy     (GtkObject *object)
   /* no idea why, but this is all harmless here if we make sure to test if pointers are valid */
   /* what's more interesting is why an object has to be killed twice */
 
+  /* having changed it from GtkObject->destroy to GObject->destroy
+   * it seems that FootCanvasitem destroy eventually calls remove from group
+   * which calls dispose 'just to be sure'
+   * so we have to ignore 2nd time round
+   */
+  /* didn-t change anything so i put it back to destroy
+   * foo_canvas_re uses destroy not dispose so there must be some reaosn behind it
+   * ...and that fixed it: the key is not to chain up to the parent 2nd time round
+   */
 
-  //  printf("zmap_window_featureset_item_item_destroy %p\n",object);
+
+//printf("zmap_window_featureset_item_item_destroy %p\n",object);
 
   g_return_if_fail(ZMAP_IS_WINDOW_FEATURESET_ITEM(object));
 
   featureset_item = ZMAP_WINDOW_FEATURESET_ITEM(object);
 
-  if(featureset_item->display_index)
-    {
-      zMapSkipListDestroy(featureset_item->display_index, NULL);
-      featureset_item->display_index = NULL;
-      featureset_item->features_sorted = FALSE;
-    }
-  if(featureset_item->display)	/* was re-binned */
-    {
-      for(features = featureset_item->display; features; features = g_list_delete_link(features,features))
+  if(g_hash_table_remove(featureset_class_G->featureset_items,GUINT_TO_POINTER(featureset_item->id)))
+  {
+
+
+	if(featureset_item->display_index)
 	{
-	  feat = (ZMapWindowCanvasFeature) features->data;
-	  zmapWindowCanvasFeatureFree(feat);
+		zMapSkipListDestroy(featureset_item->display_index, NULL);
+		featureset_item->display_index = NULL;
+		featureset_item->features_sorted = FALSE;
 	}
-      featureset_item->display = NULL;
-    }
-
-  if(featureset_item->features)
-    {
-      /* free items separately from the index as conceivably we may not have an index */
-      for(features = featureset_item->features; features; features = g_list_delete_link(features,features))
+	if(featureset_item->display)	/* was re-binned */
 	{
-	  feat = (ZMapWindowCanvasFeature) features->data;
-	  zmapWindowCanvasFeatureFree(feat);
+		for(features = featureset_item->display; features; features = g_list_delete_link(features,features))
+		{
+		feat = (ZMapWindowCanvasFeature) features->data;
+		zmapWindowCanvasFeatureFree(feat);
+		}
+		featureset_item->display = NULL;
 	}
-      featureset_item->features = NULL;
-      featureset_item->n_features = 0;
-    }
+
+	if(featureset_item->features)
+	{
+		/* free items separately from the index as conceivably we may not have an index */
+		for(features = featureset_item->features; features; features = g_list_delete_link(features,features))
+		{
+		feat = (ZMapWindowCanvasFeature) features->data;
+		zmapWindowCanvasFeatureFree(feat);
+		}
+		featureset_item->features = NULL;
+		featureset_item->n_features = 0;
+	}
+
+	// printf("featureset %s: %ld %ld %ld,\n",g_quark_to_string(featureset_item->id), n_block_alloc, n_feature_alloc, n_feature_free);
+//printf("destroy featureset %s\n",g_quark_to_string(featureset_item->id));
+
+	zMapWindowCanvasFeaturesetFree(featureset_item);	/* must tidy optional set data*/
+
+	if(featureset_item->opt)
+	{
+		g_free(featureset_item->opt);
+		featureset_item->opt = NULL;
+	}
 
 
-  /* removing it the second time will fail gracefully */
-  g_hash_table_remove(featureset_class_G->featureset_items,GUINT_TO_POINTER(featureset_item->id));
+	if(featureset_item->gc)
+	{
+		g_object_unref(featureset_item->gc);
+		featureset_item->gc = NULL;
+	}
 
-// printf("featureset %s: %ld %ld %ld,\n",g_quark_to_string(featureset_item->id), n_block_alloc, n_feature_alloc, n_feature_free);
-#if STYLE_DEBUG
-printf("destroy featureset %s\n",g_quark_to_string(featureset_item->id));
-#endif
-
-  zMapWindowCanvasFeaturesetFree(featureset_item);	/* must tidy opt */
-
-  if(featureset_item->opt)
-    {
-      g_free(featureset_item->opt);
-      featureset_item->opt = NULL;
-    }
-
-
-  if(featureset_item->gc)
-    {
-      g_object_unref(featureset_item->gc);
-      featureset_item->gc = NULL;
-    }
-
-    if(GTK_OBJECT_CLASS (parent_class_G)->destroy)
-      GTK_OBJECT_CLASS (parent_class_G)->destroy (GTK_OBJECT(object));
+//printf("chaining to parent... \n");
+	if(GTK_OBJECT_CLASS (parent_class_G)->destroy)
+		GTK_OBJECT_CLASS (parent_class_G)->destroy (object);
+  }
 
   return ;
 }

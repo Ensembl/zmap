@@ -937,7 +937,9 @@ zmapFeatureTypeStyle;
 // we need a pointer to a const style not a const pointer to a volatile style
 // typdefs are atomic and not text substitutions.
 // try 'google C typedef const pointer' for a few explanations
-typedef  const zmapFeatureTypeStyle* ZMapFeatureTypeStyle ;
+//typedef  const zmapFeatureTypeStyle* ZMapFeatureTypeStyle ;
+/* lets forget about the const, there's too much dressage in this source code */
+typedef   zmapFeatureTypeStyle* ZMapFeatureTypeStyle ;
 #endif
 
 

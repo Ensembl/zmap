@@ -108,8 +108,8 @@ static void zmap_window_item_feature_set_get_property(GObject    *gobject,
 						      GParamSpec *pspec);
 static void zmap_window_item_feature_set_destroy     (GtkObject *gtkobject);
 
-static gint comparePosition(gconstpointer a, gconstpointer b);
-static gint comparePositionRev(gconstpointer a, gconstpointer b);
+//static gint comparePosition(gconstpointer a, gconstpointer b);
+//static gint comparePositionRev(gconstpointer a, gconstpointer b);
 
 //static void extract_value_from_style_table(gpointer key, gpointer value, gpointer user_data);
 //static void value_to_each_style_in_table(gpointer key, gpointer value, gpointer user_data);
@@ -1299,6 +1299,7 @@ static void zmap_window_item_feature_set_destroy(GtkObject *gtkobject)
  *                               INTERNAL
  */
 
+#if OBSOLETE
 /* simple function to compare feature positions. */
 static gint comparePosition(gconstpointer a, gconstpointer b)
 {
@@ -1341,6 +1342,7 @@ static gint comparePosition(gconstpointer a, gconstpointer b)
   return result ;
 }
 
+
 /* opposite order of comparePosition */
 static gint comparePositionRev(gconstpointer a, gconstpointer b)
 {
@@ -1350,7 +1352,7 @@ static gint comparePositionRev(gconstpointer a, gconstpointer b)
 
   return result;
 }
-
+#endif
 
 
 

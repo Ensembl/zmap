@@ -2101,6 +2101,7 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
   window->dnalist_windows = g_ptr_array_new() ;
   window->edittable_features = FALSE ;			    /* By default features are not edittable. */
   window->feature_show_windows = g_ptr_array_new() ;
+  window->style_windows = g_ptr_array_new() ;
 
   /* Init focus item/column stuff. */
   window->focus = zmapWindowFocusCreate(window) ;
