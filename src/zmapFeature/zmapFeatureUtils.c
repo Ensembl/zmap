@@ -811,12 +811,15 @@ ZMapFeatureColumn zMapFeatureGetSetColumn(ZMapFeatureContextMap map,GQuark set_i
 
                   column = g_new0(ZMapFeatureColumnStruct,1);
 
+// don-t set this from featureset data it's column specific style from config only
+//                  column->style_id =
                   column->unique_id =
-                  column->column_id =
-                  column->style_id = set_id;
+                  column->column_id = set_id;
+
                   gff_source = g_hash_table_lookup(map->source_2_sourcedata,GUINT_TO_POINTER(set_id));
-			if(gff_source)
-				column->style_id = gff_source->style_id;
+// don-t set this from featureset data it's column specific style from config only
+//			if(gff_source)
+//				column->style_id = gff_source->style_id;
                   column->column_desc = name;
 
                   column->featuresets_unique_ids = g_list_append(column->featuresets_unique_ids,GUINT_TO_POINTER(set_id));

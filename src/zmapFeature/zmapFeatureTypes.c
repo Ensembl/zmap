@@ -143,6 +143,15 @@ gboolean zMapStyleSetAdd(GHashTable *style_set, ZMapFeatureTypeStyle style)
   return result ;
 }
 
+void zMapStyleSetIsDefault(ZMapFeatureTypeStyle style)
+{
+	style->is_default = TRUE;
+}
+
+void zMapStyleSetOverridden(ZMapFeatureTypeStyle style, gboolean truth)
+{
+	style->overridden = truth;
+}
 
 
 /* Sets up all the inheritance for the set of styles.

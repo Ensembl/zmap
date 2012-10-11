@@ -909,7 +909,10 @@ typedef struct _zmapFeatureTypeStyleStruct
 
   gboolean loaded;             /* flag to say if we're loaded */
 #endif
+	/* these flags are not set by config */
   gboolean inherited;         /* style has inherited it's parents */
+  gboolean is_default;
+  gboolean overridden;
 
   /*! Mode specific fields, see docs for individual structs. */
   union
@@ -1168,6 +1171,7 @@ gboolean zMapStyleColourByStrand(ZMapFeatureTypeStyle style);
 
 
 
+
 //gboolean zMapStyleIsDirectionalEnd(ZMapFeatureTypeStyle style) ;
 #define zMapStyleIsDirectionalEnd(style)   ((style)->directional_end)
 
@@ -1264,6 +1268,9 @@ GHashTable *zMapStyleMergeStyles(GHashTable *curr_styles, GHashTable *new_styles
 void zMapStyleDestroyStyles(GHashTable *styles) ;
 
 
+/* editing functions */
+void zMapStyleSetIsDefault(ZMapFeatureTypeStyle style);
+void zMapStyleSetOverridden(ZMapFeatureTypeStyle style, gboolean truth);
 
 /* Debug functions. */
 

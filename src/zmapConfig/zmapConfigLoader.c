@@ -521,6 +521,13 @@ GQuark zMapStyleQuark(gchar *str)
 }
 
 
+void set_is_default(gpointer key, gpointer value, gpointer data)
+{
+	ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle) value;
+
+	zMapStyleSetIsDefault(style);
+}
+
 /* get default styles w/ no reference to the styles file
  * NOTE keep this separate from zMapConfigIniGetStylesFromFile() as the config ini code
  * has a stanza priority system that prevents override, in contrast to the key code that does the opposite
@@ -532,6 +539,8 @@ GHashTable * zmapConfigIniGetDefaultStyles(void)
   extern char * default_styles;		/* in a generated source file */
 
   zMapConfigIniGetStylesFromFile(NULL, NULL, NULL, &styles, default_styles);
+
+  g_hash_table_foreach(styles, set_is_default, NULL);
 
   return styles;
 }

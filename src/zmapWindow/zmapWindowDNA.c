@@ -130,7 +130,7 @@ static int DNA_group = 0;
 
 
 
-/* 
+/*
  *                     External routines.
  */
 

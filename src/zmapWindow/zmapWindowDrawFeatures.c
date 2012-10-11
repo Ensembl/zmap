@@ -1245,7 +1245,7 @@ void zmapWindowRedrawFeatureSet(ZMapWindow window, ZMapFeatureSet featureset)
 #else
 
 /* NOTE better to make the diff context work ?? */
-/* this is good for 1 featureset, whcih is what we have so right no not so */
+/* this is good for 1 featureset, which is what we have so right no not so */
 
   canvas_data.this_featureset_only = featureset;
 
@@ -2060,7 +2060,6 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 		{
 
 		int i, got_columns = 0;
-
 		i = frame_start;
 		do
 			{

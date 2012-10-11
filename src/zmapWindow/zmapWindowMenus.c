@@ -234,6 +234,7 @@ static void compressMenuCB(int menu_item_id, gpointer callback_data);
 static void configureMenuCB(int menu_item_id, gpointer callback_data) ;
 
 static void colourMenuCB(int menu_item_id, gpointer callback_data);
+static void setStyleCB(int menu_item_id, gpointer callback_data);
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -1264,7 +1265,7 @@ static ZMapGUIMenuItem zmapWindowMakeMenuStyle(int *start_index_inout,
 	g_free(name);
 
 	m->id = s->unique_id;
-	m->callback_func = zmapWindowMenuSetStyleCB;
+	m->callback_func = setStyleCB;
 	m++;
     }
 
@@ -2014,6 +2015,19 @@ static void colourMenuCB(int menu_item_id, gpointer callback_data)
 
   return ;
 }
+
+static void setStyleCB(int menu_item_id, gpointer callback_data)
+{
+  ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
+
+  zmapWindowMenuSetStyleCB(menu_item_id, menu_data);
+
+  g_free(menu_data) ;
+
+  return ;
+}
+
+
 
 
 #if ED_G_NEVER_INCLUDE_THIS_CODE
