@@ -110,10 +110,6 @@ max-score=100.000000
 min-score=70.000000
 score-mode=percent
 
-[style-alignment-unstranded]
-parent-style=alignment
-strand-specific=false
-
 
 [style-basic]
 colours=normal fill lavender ; normal border #898994
@@ -170,7 +166,7 @@ min-score=70.000000
 score-mode=percent
 frame-mode=always
 
-[style-EST_align]
+[style-masked-align]
 colours=normal fill Purple ; normal border #3d1954
 parent-style=dna-align
 alignment-mask-sets=self

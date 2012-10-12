@@ -2841,6 +2841,12 @@ static void setColours(ZMapWindow window)
   if ((context = zMapConfigIniContextProvide(window->sequence->config_file)))
     {
       char *colour = NULL;
+	gboolean truth = FALSE;		/* i always wanted to say that :-) */
+	/* actually on a philosophical note 'gboolean' subverts the design of the language
+	 * and is part of a bug creating meme the reaches the depths of despaier when people
+	 * write things like if(x == TRUE) when in fact there are 4G-2 other eaually true values
+	 * if you had a library that had 1 as TRUE and another as 0xffffffff then you have a problem
+	 */
 
       if(zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
 				       ZMAPSTANZA_WINDOW_ROOT, &colour))
@@ -2952,6 +2958,24 @@ static void setColours(ZMapWindow window)
         gdk_color_parse(colour, &window->colour_evidence_fill) ;
         window->highlights_set.evidence = TRUE ;
       }
+
+	/* why bury this here?
+	 * we can't set config info glabally due to the design
+	 * so every time we R click on a feature we'd have to read a very long config file
+	 * so I'm setting a flag for the lifetime of the window
+	 * can-t edit styles if we can see no features and this must get called first.
+	 *
+	 * it would be more logical to cal this func from myWindowCreate, but previous this was tangled up
+	 * with FooCanvas map and realise even though we're only reading a configration file.
+	 */
+
+	window->edit_styles = TRUE;
+	if(zMapConfigIniContextGetBoolean(context,ZMAPSTANZA_APP_CONFIG,ZMAPSTANZA_APP_CONFIG,
+					ZMAPSTANZA_APP_EDIT_STYLES, &truth))
+	{
+        window->edit_styles = truth ;
+	}
+
 
       zMapConfigIniContextDestroy(context);
     }

@@ -859,6 +859,10 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
 		/* Pass information about the object clicked on back to the application. */
 		zmapWindowUpdateInfoPanel(window, feature, NULL, item, sub_feature, start, end, start, end,
 				NULL, replace_highlight, highlight_same_names, control) ;
+
+			/* if we have an active dialog update it: they have to click on a feature not the column */
+		zmapWindowSetStyleFeatureset(window, item, feature);
+
 	}
     }
 

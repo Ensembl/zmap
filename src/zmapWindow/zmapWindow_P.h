@@ -693,7 +693,9 @@ typedef struct _ZMapWindowStruct
 
   GPtrArray *dnalist_windows ;				    /* popup showing list of dna match locations. */
 
-  GPtrArray *style_windows;					/* set colour popup */
+  gpointer style_window;					/* set colour popup, one per window */
+									/* is a struct defined in zmapWindowStyle,c */
+  gboolean edit_styles;
 
   gboolean edittable_features ;				    /* FALSE means no features are edittable. */
   gboolean reuse_edit_window ;				    /* TRUE means reuse existing window
@@ -1259,6 +1261,9 @@ ZMapXRemoteSendCommandError zmapWindowUpdateXRemoteDataFull(ZMapWindow window, Z
 
 void zmapWindowShowStyleDialog( ItemMenuCBData menu_data );
 void zmapWindowMenuSetStyleCB(int menu_item_id, gpointer callback_data);
+gboolean zmapWindowSetStyleFeatureset(ZMapWindow window, FooCanvasItem *foo, ZMapFeature feature);
+void zmapStyleWindowDestroy(ZMapWindow window);
+
 
 /* ================= in zmapWindowZoomControl.c ========================= */
 ZMapWindowZoomControl zmapWindowZoomControlCreate(ZMapWindow window) ;

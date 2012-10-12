@@ -115,8 +115,8 @@
 #define PAIRED_READS_ALL           "Request all paired reads"
 #define PAIRED_READS_DATA          "Request paired reads data"
 
-#define COLUMN_COLOUR			"Set Colour"
-#define COLUMN_STYLE_OPTS		"Style"
+#define COLUMN_COLOUR			"Edit Style"
+#define COLUMN_STYLE_OPTS		"Choose Style"
 
 /* Search/Listing menus. */
 #define SEARCH_STR                 "Search or List Features and Sequence"
@@ -468,7 +468,23 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
 			    zmapWindowMakeMenuBump(NULL, NULL, menu_data,
 						   zmapWindowContainerFeatureSetGetBumpMode(container_set))) ;
 
-  menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuStyle(NULL, NULL, menu_data, style, feature->type));
+  {
+	GQuark parent_id = 0;
+	ZMapFeatureTypeStyle parent = NULL;
+
+	if(!(style->is_default) && (parent_id = style->parent_id))
+	{
+		parent = g_hash_table_lookup(window->context_map->styles, GUINT_TO_POINTER(parent_id));
+	}
+
+	/*
+	 * hacky: otterlace styles will not be defaulted
+	 * any styles defined in a style cannot be edited live
+	 * NOTE is we define EST_ALIGN as a default style then EST_Human etc can be edited
+	 */
+	if(window->edit_styles || style->is_default || (parent && parent->is_default))
+		menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuStyle(NULL, NULL, menu_data, style, feature->type));
+  }
 
   /* list all short reads data, temp access till we get wiggle plots running */
   if ((seq_menus = zmapWindowMakeMenuRequestBAM(NULL, NULL, menu_data)))
@@ -1159,7 +1175,7 @@ gint style_menu_sort(gconstpointer a, gconstpointer b, gpointer data)
 }
 
 
-/* is a style comapatbel with a feature type: need to avoid crashed due to wrong data */
+/* is a style comapatble with a feature type: need to avoid crashes due to wrong data */
 gboolean style_is_compatable(ZMapFeatureTypeStyle style, ZMapStyleMode f_type)
 {
 	if(f_type == style->mode)

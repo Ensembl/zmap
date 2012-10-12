@@ -81,7 +81,8 @@ typedef struct MainFrameStructName
 
   GtkWidget *map_widg ;
   GtkWidget *offset_widg ;
-#define N_ARGS 12		/* number of optional dialog entries for FILE_NONE (is really 8 so i allowed a few spare) */
+  GtkWidget *assembly_widg;
+#define N_ARGS 16		/* number of optional dialog entries for FILE_NONE (is really 8 so i allowed a few spare) */
 
   fileType file_type;
   ZMapImportScriptStruct scripts[N_FILE_TYPE];
@@ -447,6 +448,10 @@ static GtkWidget *makeOptionsBox(MainFrame main_frame, char *req_sequence, int r
   gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5);
   gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
 
+  label = gtk_label_new( "Assembly " ) ;
+  gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5);
+  gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
+
 
   /* Entries.... */
   entrybox = gtk_vbox_new(TRUE, 0) ;
@@ -497,6 +502,10 @@ static GtkWidget *makeOptionsBox(MainFrame main_frame, char *req_sequence, int r
   gtk_box_pack_start(GTK_BOX(entrybox), map_seq_button, FALSE, TRUE, 0) ;
 
   main_frame->offset_widg = entry = gtk_entry_new() ;
+  gtk_entry_set_text(GTK_ENTRY(entry), "") ;
+  gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, TRUE, 0) ;
+
+  main_frame->assembly_widg = entry = gtk_entry_new() ;
   gtk_entry_set_text(GTK_ENTRY(entry), "") ;
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, TRUE, 0) ;
 
@@ -609,6 +618,7 @@ static void enable_widgets(MainFrame main_frame)
 
 	gtk_widget_set_sensitive(main_frame->map_widg, !(is_bam && main_frame->is_otter));
 	gtk_widget_set_sensitive(main_frame->offset_widg, !(is_bam && main_frame->is_otter));
+	gtk_widget_set_sensitive(main_frame->assembly_widg, (main_frame->is_otter));
 }
 
 static void scriptChangedCB(GtkWidget *widget, gpointer user_data)
@@ -733,7 +743,7 @@ static void importFileCB(GtkWidget *widget, gpointer cb_data)
   MainFrame main_frame = (MainFrame)cb_data ;
   gboolean status = TRUE ;
   char *err_msg = NULL ;
-  char *sequence = "", *start_txt, *end_txt, *file_txt, *script_txt, *args_txt, *req_start_txt, *req_end_txt, *offset_txt, *source_txt, *style_txt, *strand_txt ;
+  char *sequence = "", *start_txt, *end_txt, *file_txt, *script_txt, *args_txt, *req_start_txt, *req_end_txt, *offset_txt, *source_txt, *style_txt, *strand_txt, *assembly_txt ;
   int start = 1, end = 0 ;
   gboolean map_seq = FALSE;
   int seq_offset = 0;
@@ -761,6 +771,7 @@ static void importFileCB(GtkWidget *widget, gpointer cb_data)
   style_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->style_widg)) ;
 
   offset_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->offset_widg)) ;
+  assembly_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->assembly_widg)) ;
 
   if (!*file_txt)
     {
@@ -921,6 +932,9 @@ static void importFileCB(GtkWidget *widget, gpointer cb_data)
 
 	if((seq_offset || map_seq) && !main_frame->is_otter)
 		*argp++ = g_strdup_printf("--mapto=%d",seq_offset);
+
+	if((*assembly_txt) && main_frame->is_otter)
+		*argp++ = g_strdup_printf("--csver=%s",assembly_txt);
 
 	/* some depend on file type */
 	switch(file_type)

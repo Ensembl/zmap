@@ -1309,6 +1309,8 @@ void zMapWindowDestroy(ZMapWindow window)
   /* free the array of editor windows and the windows themselves */
   zmapWindowFreeWindowArray(&(window->feature_show_windows), TRUE) ;
 
+  if(window->style_window)
+	zmapStyleWindowDestroy(window);
 
   /* Get rid of the column configuration window. */
   zmapWindowColumnConfigureDestroy(window) ;
@@ -2101,7 +2103,6 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
   window->dnalist_windows = g_ptr_array_new() ;
   window->edittable_features = FALSE ;			    /* By default features are not edittable. */
   window->feature_show_windows = g_ptr_array_new() ;
-  window->style_windows = g_ptr_array_new() ;
 
   /* Init focus item/column stuff. */
   window->focus = zmapWindowFocusCreate(window) ;
@@ -2432,6 +2433,9 @@ static void resetCanvas(ZMapWindow window, gboolean free_child_windows, gboolean
 
       /* free the array of editor windows and the windows themselves */
       zmapWindowFreeWindowArray(&(window->feature_show_windows), FALSE) ;
+
+	if(window->style_window)
+		zmapStyleWindowDestroy(window);
     }
 
 	/* mh17 band aid approach to fixing 3FT columns
