@@ -1090,12 +1090,8 @@ static void highlightItem(ZMapWindow window, ZMapWindowFocusItem item)
 
       zMapAssert(n_focus);
       zMapAssert(item->item_column);
-<<<<<<< HEAD
-# if USE_CHILDREN
-// a misnomer, but this is all part of the tidying up
-=======
+
 #if OBSOLETE
->>>>>>> develop
       /* move the item back to where it should be */
       if(!zmapWindowContainerFeatureSetItemLowerToMiddle(item->item_column, (ZMapWindowCanvasItem) item->item, n_focus,0))
       {
@@ -1179,11 +1175,8 @@ static ZMapWindowFocusItem add_unique(ZMapWindowFocus focus,
   list_item->item_column = (ZMapWindowContainerFeatureSet) FOO_CANVAS_ITEM(item)->parent;
   // also need to fill in featureset
 
-<<<<<<< HEAD
-#if USE_CHILDREN
-=======
+
 #if OBSOLETE
->>>>>>> develop
   if (!list_item->item_column->sorted)
     {
       /* we need this for uh-highlight into stable ordering
