@@ -21,6 +21,7 @@ up-hook = <0,0; 15,0; 15,-10>
 # generic styles lifted from otterlace
 
 [style-heatmap]
+description=intensity scale between fill and border colours, rebinned on zoom
 width=8
 graph-scale=log
 mode=graph
@@ -38,6 +39,7 @@ graph-density-stagger=9
 graph-density-min-bin=2
 
 [style-histogram]
+description=box graph, not rebinned on zoom
 width=31.000000
 colours=normal fill MistyRose1 ; normal border MistyRose3
 max-mag=1000.000000
@@ -50,8 +52,10 @@ graph-mode=histogram
 #default graph mode is histogram
 [style-graph]
 parent-style=histogram
+description=default graph mode
 
 [style-line]
+description=wiggle plot, rebinned on zoom
 width=40.000000
 graph-scale=log
 mode=graph
@@ -68,6 +72,7 @@ graph-density-min-bin=4
 
 # sub feature glyphs
 [style-homology-glyph]
+description=incomplete homology marker
 mode=glyph
 glyph-alt-colours=normal fill YellowGreen; normal border #81a634
 colours=normal fill #e74343; normal border #dc2323
@@ -79,6 +84,7 @@ glyph-5-rev=rev5-tri
 glyph-threshold=3
 
 [style-nc-splice-glyph]
+description=non-conceus splice marker
 glyph-strand=flip-y
 colours=normal fill yellow ; normal border blue
 mode=glyph
@@ -87,6 +93,7 @@ glyph-5=dn-tri
 
 
 [style-root]
+description=base style for all, implements default width and selected colours
 width=9.000000
 bump-mode=unbump
 default-bump-mode=overlap
@@ -95,6 +102,7 @@ bump-spacing=3.000000
 
 
 [style-alignment]
+description=default alignment style
 sub-features=homology:homology-glyph ; non-concensus-splice:nc-splice-glyph
 alignment-show-gaps=true
 alignment-parse-gaps=true
@@ -112,18 +120,21 @@ score-mode=percent
 
 
 [style-basic]
+description=simple features
 colours=normal fill lavender ; normal border #898994
 parent-style=root
 mode=basic
 
 
 [style-assembly-path]
+description=assembly path
 colours=normal fill lavender ; normal border #898994
 parent-style=root
 mode=assembly-path
 
 
 [style-transcript]
+description=generic transcript
 transcript-cds-colours=normal fill white ; normal border SlateBlue ; selected fill gold
 width=7.000000
 colours=normal fill LightGray ; normal border SteelBlue ; selected fill #ecc806
@@ -136,6 +147,7 @@ strand-specific=true
 
 # alignment optional styles
 [style-gapped-align]
+description=alignment, shows gaps when not bumped
 alignment-pfetchable=false
 default-bump-mode=overlap
 colours=normal border CadetBlue
@@ -145,6 +157,7 @@ alignment-between-error=1
 alignment-always-gapped=true
 
 [style-dna-align]
+description=DNA alignment
 alignment-blixem=blixem-n
 mode=alignment
 alignment-join-align=0
@@ -157,6 +170,7 @@ min-score=70.000000
 score-mode=percent
 
 [style-pep-align]
+description=Protein alignment
 sub-features=homology:homology-glyph
 parent-style=alignment
 max-score=100.000000
@@ -167,6 +181,7 @@ score-mode=percent
 frame-mode=always
 
 [style-masked-align]
+description=masked alignment, useful for EST
 colours=normal fill Purple ; normal border #3d1954
 parent-style=dna-align
 alignment-mask-sets=self
@@ -184,6 +199,7 @@ default_bump_mode=unbump
 displayable=false
 
 [style-sequence]
+description=text display for DNA and protein sequences
 mode=sequence
 displayable=true
 display-mode=hide
