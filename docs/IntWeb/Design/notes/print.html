@@ -69,6 +69,10 @@ Other than this zmapDraw.c appears to be maily code that has fallen out of use, 
 </ul>
 <p>
 
+<h5>Experiments</h5>
+<p>As there is some doubt that cairo will run fast enough we make be faced with runnign GDK and cairo on parallel, one for the screen and one for the printer. It would be a good idea to write a simple test program to draw X thousand random boxes and compare the two.  Alternatively the cairo calls could be run via a compile time switch or a configuration parameter.
+</p>
+
 
 <h3>Some notes about the Scale Bar and adapting CanvasFeatureset code to data without features</h3>
 <p>CanvasFeatureset code and data has been optimised for drawing genomic features which may overlap and change appearance depending on zoom level, and also appear neatly lined up in columns.  The scale bar also changes appearance with zoom, but this is driven by externally with knowledge of the current scroll window (not accessable to the CanvasFeatureset code). There are a few aspects to this that could result in untidy code...

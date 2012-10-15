@@ -1104,7 +1104,7 @@ GHashTable *zMapConfigIniGetColumns(ZMapConfigIniContext context)
                         GUINT_TO_POINTER(f_col->column_id));
                   if(!f_col->column_desc)
                         f_col->column_desc = desc;
-                  f_col->order = zMapWindowColumnOrderNext();
+                  f_col->order = zMapFeatureColumnOrderNext() ;
                   g_hash_table_insert(hash,GUINT_TO_POINTER(f_col->unique_id),f_col);
             }
       }
