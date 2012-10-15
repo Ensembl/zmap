@@ -204,7 +204,10 @@ void zmapWindowShowStyleDialog( ItemMenuCBData menu_data )
 	if(style->mode == ZMAPSTYLE_MODE_TRANSCRIPT)	/* add CDS colours */
 	{
 		zMapStyleGetColours(style, STYLE_PROP_TRANSCRIPT_CDS_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL, &fill, NULL, &border);
+	}
 
+	/* must create these anyway */
+	{
 		my_data->cds = hbox = gtk_hbox_new(FALSE, 0) ;		/* hbox for fill / border */
 		gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0) ;
 		gtk_box_set_spacing(GTK_BOX(hbox), ZMAP_WINDOW_GTK_BUTTON_BOX_SPACING) ;
@@ -230,6 +233,12 @@ void zmapWindowShowStyleDialog( ItemMenuCBData menu_data )
 				G_CALLBACK(colourSetCB), my_data) ;
 		gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
 	}
+
+	if(style->mode == ZMAPSTYLE_MODE_TRANSCRIPT)	/* add CDS colours */
+	{
+		gtk_widget_hide_all(my_data->cds);
+	}
+
 
 	/* some major parameters */
       frame = gtk_frame_new("Layout:") ;
