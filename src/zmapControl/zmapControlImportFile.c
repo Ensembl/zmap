@@ -68,6 +68,8 @@ typedef struct MainFrameStructName
   GtkWidget *sequence_widg ;
   GtkWidget *start_widg ;
   GtkWidget *end_widg ;
+  GtkWidget *whole_widg ;
+  GtkWidget *mark_widg ;
 
   GtkWidget *file_widg ;
   GtkWidget *script_widg;
@@ -109,6 +111,8 @@ static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data) ;
 static void importFileCB(GtkWidget *widget, gpointer cb_data) ;
 static void chooseConfigCB(GtkFileChooserButton *widget, gpointer user_data) ;
 static void closeCB(GtkWidget *widget, gpointer cb_data) ;
+
+static void sequenceCB(GtkWidget *widget, gpointer cb_data) ;
 
 static void fileChangedCB(GtkWidget *widget, gpointer user_data);
 static void scriptChangedCB(GtkWidget *widget, gpointer user_data);
@@ -286,7 +290,7 @@ static GtkWidget *makePanel(GtkWidget *toplevel, gpointer *our_data,
 static GtkWidget *makeMainFrame(MainFrame main_frame, ZMapFeatureSequenceMap sequence_map)
 {
   GtkWidget *frame ;
-  GtkWidget *topbox, *hbox, *entrybox, *labelbox, *entry, *label ;
+  GtkWidget *topbox, *hbox, *entrybox, *labelbox, *entry, *label, *button ;
   char *sequence = "", *start = "", *end = "" ;
 
   if (sequence_map)
@@ -336,20 +340,42 @@ static GtkWidget *makeMainFrame(MainFrame main_frame, ZMapFeatureSequenceMap seq
   gtk_entry_set_text(GTK_ENTRY(entry), sequence) ;
 //  gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, TRUE, 0) ;
-  gtk_widget_set_sensitive(GTK_WIDGET(entrybox),FALSE);
+  gtk_widget_set_sensitive(GTK_WIDGET(entry),FALSE);
 
   main_frame->start_widg = entry = gtk_entry_new() ;
   gtk_entry_set_text(GTK_ENTRY(entry), start) ;
 //  gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;
-  gtk_widget_set_sensitive(GTK_WIDGET(entrybox),FALSE);
+  gtk_widget_set_sensitive(GTK_WIDGET(entry),FALSE);
 
   main_frame->end_widg = entry = gtk_entry_new() ;
   gtk_entry_set_text(GTK_ENTRY(entry), end) ;
 //  gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;
-  gtk_widget_set_sensitive(GTK_WIDGET(entrybox),FALSE);
+  gtk_widget_set_sensitive(GTK_WIDGET(entry),FALSE);
 
+
+  {
+  	ZMap zmap = (ZMap) main_frame->user_data;
+	ZMapWindow window = zMapViewGetWindow(zmap->focus_viewwindow);
+
+	if(zMapWindowMarkIsSet(window))
+	{
+		hbox = gtk_hbox_new(FALSE, 0) ;
+		gtk_container_border_width(GTK_CONTAINER(hbox), 0);
+		gtk_box_pack_start(GTK_BOX(topbox), hbox, TRUE, FALSE, 0) ;
+
+		main_frame->whole_widg = button = gtk_button_new_with_label("Whole Sequence") ;
+		gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
+		gtk_signal_connect(GTK_OBJECT(button), "clicked",
+				GTK_SIGNAL_FUNC(sequenceCB), (gpointer)main_frame) ;
+
+		main_frame->mark_widg = button = gtk_button_new_with_label("Use Mark") ;
+		gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
+		gtk_signal_connect(GTK_OBJECT(button), "clicked",
+				GTK_SIGNAL_FUNC(sequenceCB), (gpointer)main_frame) ;
+	}
+  }
 
   /* Free resources. */
   if (sequence_map)
@@ -591,6 +617,45 @@ static void closeCB(GtkWidget *widget, gpointer cb_data)
 }
 
 
+/* set start, end as requested */
+static void sequenceCB(GtkWidget *widget, gpointer cb_data)
+{
+  MainFrame main_frame = (MainFrame)cb_data ;
+  int start, end;
+  char buf[32];
+
+  if(widget == main_frame->mark_widg)
+  {
+	ZMap zmap = (ZMap) main_frame->user_data;
+	ZMapWindow window = zMapViewGetWindow(zmap->focus_viewwindow);
+
+	zMapWindowGetMark(window, &start, &end);	/* NOTE we get -fsd coords from this function if revcomped */
+
+	if(start < 0)
+		start = -start;
+	if(end < 0)
+		end = -end;
+
+	start += main_frame->sequence_map->start;
+	end   += main_frame->sequence_map->start;
+  }
+  else if(widget == main_frame->whole_widg)
+  {
+	  start = main_frame->sequence_map->start;
+	  end   = main_frame->sequence_map->end;
+  }
+  else
+  {
+	  return;
+  }
+
+  sprintf(buf,"%d",start);
+  gtk_entry_set_text(GTK_ENTRY( main_frame->req_start_widg), buf) ;
+  sprintf(buf,"%d",end);
+  gtk_entry_set_text(GTK_ENTRY( main_frame->req_end_widg),   buf) ;
+}
+
+
 /* Called when user chooses a file via the file dialog. */
 static void chooseConfigCB(GtkFileChooserButton *widget, gpointer user_data)
 {
@@ -641,6 +706,7 @@ static void fileChangedCB(GtkWidget *widget, gpointer user_data)
 	ZMapFeatureSource src;
 	ZMapView view;
 	ZMap zmap = (ZMap) main_frame->user_data;
+
 	char *args_txt = "";
 	ZMapImportScript scripts;
 

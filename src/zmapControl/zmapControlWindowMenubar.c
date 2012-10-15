@@ -191,12 +191,18 @@ static void importCB(gpointer cb_data, guint callback_action, GtkWidget *window)
   start = view_seq->start;
   end   = view_seq->end;
 
-  zMapWindowGetMark(zMapViewGetWindow(vw), &start, &end);	/* NOTE we get -fsd coords from this function if revcomped */
+  if(zMapWindowMarkIsSet(zMapViewGetWindow(vw)))
+  {
+	zMapWindowGetMark(zMapViewGetWindow(vw), &start, &end);	/* NOTE we get -fwd coords from this function if revcomped */
 
-  if(start < 0)
-	start = -start;
-  if(end < 0)
-	end = -end;
+	if(start < 0)
+		start = -start;
+	if(end < 0)
+		end = -end;
+
+	start += map->start;
+	end   += map->start;
+  }
 
   /* need sequence_map to set default seq coords and map sequence name */
   zMapControlImportFile(controlImportFileCB, cb_data, map, start, end);
