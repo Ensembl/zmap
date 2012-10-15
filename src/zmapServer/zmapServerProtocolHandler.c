@@ -92,12 +92,6 @@ typedef struct
 } ZMapProtocolInitListStruct, *ZMapProtocolInitList ;
 
 
-typedef struct
-{
-  GHashTable *all_styles ;
-  gboolean found_style ;
-  GString *missing_styles ;
-} FindStylesStruct, *FindStyles ;
 
 typedef struct
 {
@@ -113,8 +107,6 @@ static ZMapThreadReturnCode getSequence(ZMapServer server, ZMapServerReqGetSeque
 static ZMapThreadReturnCode terminateServer(ZMapServer *server, char **err_msg_out) ;
 static ZMapThreadReturnCode destroyServer(ZMapServer *server) ;
 
-static gboolean haveRequiredStyles(GHashTable *all_styles, GList *required_styles, char **missing_styles_out) ;
-static void findStyleCB(gpointer data, gpointer user_data) ;
 #if OLD_STYLES_CODE
 static gboolean getStylesFromFile(char *styles_list, char *styles_file, GHashTable **styles_out) ;
 #endif
@@ -273,7 +265,7 @@ ZMapServerReqAny zMapServerRequestCreate(ZMapServerReqType request_type, ...)
       {
 	ZMapServerReqStyles get_styles = (ZMapServerReqStyles)req_any ;
 
-	get_styles->styles_list_in = g_strdup(va_arg(args, char *)) ;
+	get_styles->req_styles = va_arg(args, gboolean) ;
 	get_styles->styles_file_in = g_strdup(va_arg(args, char *)) ;
 
 	break ;
@@ -334,7 +326,7 @@ void zMapServerRequestDestroy(ZMapServerReqAny request)
       {
 	ZMapServerReqStyles styles = (ZMapServerReqStyles)request ;
 
-	g_free(styles->styles_list_in) ;
+//	g_free(styles->styles_list_in) ;		what??
 	g_free(styles->styles_file_in) ;
 
 	break ;
@@ -831,48 +823,6 @@ static ZMapThreadReturnCode destroyServer(ZMapServer *server)
 
 
 
-// returns whether we have any of the needed styles and lists the ones we don't
-static gboolean haveRequiredStyles(GHashTable *all_styles, GList *required_styles, char **missing_styles_out)
-{
-  gboolean result = FALSE ;
-  FindStylesStruct find_data = {NULL} ;
-
-  if(!required_styles)  // MH17: semantics -> don't need styles therefore have those that are required
-      return(TRUE);
-
-  find_data.all_styles = all_styles ;
-
-  g_list_foreach(required_styles, findStyleCB, &find_data) ;
-
-  if (find_data.missing_styles)
-    *missing_styles_out = g_string_free(find_data.missing_styles, FALSE) ;
-
-  result = find_data.found_style ;
-
-  return result ;
-}
-
-
-/* GFunc()    */
-static void findStyleCB(gpointer data, gpointer user_data)
-{
-  GQuark style_id = GPOINTER_TO_INT(data) ;
-  FindStyles find_data = (FindStyles)user_data ;
-
-  style_id = zMapStyleCreateID((char *)g_quark_to_string(style_id)) ;
-
-  if ((zMapFindStyle(find_data->all_styles, style_id)))
-      find_data->found_style = TRUE;
-  else
-    {
-      if (!(find_data->missing_styles))
-	find_data->missing_styles = g_string_sized_new(1000) ;
-
-      g_string_append_printf(find_data->missing_styles, "%s ", g_quark_to_string(style_id)) ;
-    }
-
-  return ;
-}
 
 
 
@@ -881,8 +831,6 @@ static ZMapThreadReturnCode getStyles(ZMapServer server, ZMapServerReqStyles sty
 {
   ZMapThreadReturnCode thread_rc = ZMAPTHREAD_RETURNCODE_OK ;
   GHashTable *tmp_styles = NULL ;
-  char *missing_styles = NULL ;
-
 
   if (thread_rc == ZMAPTHREAD_RETURNCODE_OK)
     {
@@ -893,16 +841,7 @@ static ZMapThreadReturnCode getStyles(ZMapServer server, ZMapServerReqStyles sty
        * pipe and file servers should not need to do this as zmapView will read the file anyway
        */
 
-      if (styles->styles_file_in)   // style list is now optional, if null read them all
-	{
-	  if (!zMapConfigIniGetStylesFromFile(server->config_file, styles->styles_list_in, styles->styles_file_in, &(styles->styles_out)))
-	    {
-	      *err_msg_out = g_strdup_printf("Could not read types from styles file \"%s\"", styles->styles_file_in) ;
-	      thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
-	    }
-        styles->server_styles_have_mode = TRUE;
-	}
-      else
+	if(styles->req_styles)		/* get from server */
       {
         styles->response = zMapServerGetStyles(server, &(styles->styles_out));
             // unsupported eg for PIPE or FILE - zmapView will have loaded these anyway
@@ -912,92 +851,49 @@ static ZMapThreadReturnCode getStyles(ZMapServer server, ZMapServerReqStyles sty
 	    thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
         }
 	}
+	else if (styles->styles_file_in)   /* server specific file not global: return from thread */
+	{
+	  if (!zMapConfigIniGetStylesFromFile(server->config_file, styles->styles_list_in, styles->styles_file_in, &(styles->styles_out), NULL))
+	    {
+	      *err_msg_out = g_strdup_printf("Could not read types from styles file \"%s\"", styles->styles_file_in) ;
+	      thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
+	    }
+        styles->server_styles_have_mode = TRUE;
+	}
 
       if (thread_rc == ZMAPTHREAD_RETURNCODE_OK)
 	{
-	  ZMapIOOut dest ;
-	  char *string ;
-	  gboolean styles_debug = zmap_server_styles_debug_G;
+	  /* removed haveRequiredStyles() call to zmapView,c */
 
-
-	  /* PRINTOUT is changed to this now so need to write a short debug routine for all
-	   * the style calls below...n.b. should print to a glib io buffer.... */
-	  if(styles_debug)
-	    {
-	      dest = zMapOutCreateStr(NULL, 0) ;
-
-	      zMapStyleSetPrintAll(dest, styles->styles_out, "Before merge", styles_debug) ;
-
-	      string = zMapOutGetStr(dest) ;
-
-	      printf("%s\n", string) ;
-
-	      zMapOutDestroy(dest) ;
-	    }
-
-
+#if 0
 	  /* Some styles are predefined and do not have to be in the server,
 	   * do a merge of styles from the server with these predefined ones. */
-	  tmp_styles = zMapStyleGetAllPredefined() ;
+// these are set in zMapViewConnect()
+//	  tmp_styles = zMapStyleGetAllPredefined() ;
 
-	  tmp_styles = zMapStyleMergeStyles(tmp_styles, styles->styles_out, ZMAPSTYLE_MERGE_MERGE) ;
+//	  tmp_styles = zMapStyleMergeStyles(tmp_styles, styles->styles_out, ZMAPSTYLE_MERGE_MERGE) ;
 
-	  zMapStyleDestroyStyles(styles->styles_out) ;
+//	  zMapStyleDestroyStyles(styles->styles_out) ;
+#else
+	  tmp_styles = styles->styles_out;
+#endif
 
-
-	  if(styles_debug)
-	    {
-	      dest = zMapOutCreateStr(NULL, 0) ;
-
-	      zMapStyleSetPrintAll(dest, tmp_styles, "Before inherit", styles_debug) ;
-
-	      string = zMapOutGetStr(dest) ;
-
-	      printf("%s\n", string) ;
-
-	      zMapOutDestroy(dest) ;
-	    }
 
 	  /* Now we have all the styles do the inheritance for them all. */
-	  if (!zMapStyleInheritAllStyles(tmp_styles))
-	    zMapLogWarning("%s", "There were errors in inheriting styles.") ;
+	  if (tmp_styles)
+	  {
+		if(!zMapStyleInheritAllStyles(tmp_styles))
+			zMapLogWarning("%s", "There were errors in inheriting styles.") ;
 
-        zMapStyleSetSubStyles(tmp_styles); /* this is not effective as a subsequent style copy will not copy this internal data */
+		zMapStyleSetSubStyles(tmp_styles); /* this is not effective as a subsequent style copy will not copy this internal data */
+	  }
 
-	  if(styles_debug)
-	    {
-	      dest = zMapOutCreateStr(NULL, 0) ;
-
-	      zMapStyleSetPrintAll(dest, tmp_styles, "After inherit", styles_debug) ;
-
-	      string = zMapOutGetStr(dest) ;
-
-	      printf("%s\n", string) ;
-
-	      zMapOutDestroy(dest) ;
-	    }
 	}
     }
 
 
   if(styles->response != ZMAP_SERVERRESPONSE_UNSUPPORTED)
     {
-      /* Make sure that all the styles that are required for the feature sets were found.
-       * (This check should be controlled from analysing the number of feature servers or
-       * flags set for servers.....) */
-
-      if (thread_rc == ZMAPTHREAD_RETURNCODE_OK
-	  && !haveRequiredStyles(tmp_styles, styles->required_styles_in, &missing_styles))
-	{
-	  *err_msg_out = g_strdup_printf("The following required Styles could not be found on the server: %s",
-					 missing_styles) ;
-	  g_free(missing_styles) ;
-	  thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
-	}
-      else if(missing_styles)
-	{
-	  g_free(missing_styles);	   /* haveRequiredStyles return == TRUE doesn't mean missing_styles == NULL */
-	}
 
       /* Find out if the styles will need to have their mode set from the features.
        * I'm feeling like this is a bit hacky because it's really an acedb issue. */

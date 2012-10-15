@@ -101,33 +101,37 @@ typedef void (*ZMapWindowFeatureFreeFunc)(ZMapWindowFeaturesetItem featureset) ;
 
 
 /* enums for feature function lookup  (feature types) */
-/* NOTE these are set by style mode but are defined separately as CanvasFeaturesets do not initially handle all style modes */
+/* NOTE these are set by style mode but are defined separately as CanvasFeaturesets
+ * do not initially handle all style modes */
 /* see  zMapWindowFeaturesetAddItem() */
-
 typedef enum
   {
     FEATURE_INVALID,
 
-    /* unadorned graphics primitives */
+    /* genomic features */
+    FEATURE_BASIC,
+    FEATURE_GENOMIC = FEATURE_BASIC,
+
+    FEATURE_ALIGN,
+    FEATURE_TRANSCRIPT,
+
+    FEATURE_SEQUENCE,
+    FEATURE_ASSEMBLY,
+    FEATURE_LOCUS,
+
+    FEATURE_GRAPH,
+    FEATURE_GLYPH,
+
+    /* unadorned graphics primitives, NOTE that FEATURE_GRAPHICS is used in the code to test
+     * for feature vs. graphic items. */
     FEATURE_GRAPHICS,		/* a catch-all for the featureset type */
     FEATURE_LINE,
     FEATURE_BOX,
     FEATURE_TEXT,
 
-    /* genomic features */
-    FEATURE_BASIC,
-    FEATURE_GLYPH,
-    FEATURE_ALIGN,
-    FEATURE_GRAPH,
-    FEATURE_TRANSCRIPT,
-    FEATURE_ASSEMBLY,
-    FEATURE_SEQUENCE,
-    FEATURE_LOCUS,
-
     FEATURE_N_TYPE
   } zmapWindowCanvasFeatureType;
 
-#define FEATURE_GENOMIC		FEATURE_BASIC
 
 
 /* Public funcs */
@@ -165,6 +169,8 @@ int zMapWindowCanvasFeaturesetAddFeature(ZMapWindowFeaturesetItem featureset, ZM
 
 ZMapWindowCanvasFeature zMapWindowFeaturesetAddFeature(ZMapWindowFeaturesetItem featureset_item, ZMapFeature feature, double y1, double y2);
 int zMapWindowFeaturesetItemRemoveFeature(FooCanvasItem *foo, ZMapFeature feature);
+
+int zMapWindowFeaturesetItemRemoveSet(FooCanvasItem *foo, ZMapFeatureSet featureset);
 
 ZMapWindowCanvasGraphics zMapWindowFeaturesetAddGraphics(ZMapWindowFeaturesetItem featureset_item, zmapWindowCanvasFeatureType type, double x1, double y1, double x2, double y2, GdkColor *fill, GdkColor *outline, char *text);
 int zMapWindowFeaturesetRemoveGraphics(ZMapWindowFeaturesetItem featureset_item, ZMapWindowCanvasGraphics feat);

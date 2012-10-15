@@ -1,4 +1,3 @@
-/*  Last edited: Jul 23 15:21 2012 (edgrif) */
 /*  File: zmapView.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -21,7 +20,8 @@
  * This file is part of the ZMap genome database package
  * originated by
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Interface for controlling a single "view", a view
  *              comprises one or more windowsw which display data
@@ -39,6 +39,7 @@
 #include <ZMap/zmapWindowNavigator.h>
 #include <ZMap/zmapXMLHandler.h>
 #include <ZMap/zmapUrl.h>
+
 
 /* Opaque type, represents an instance of a ZMapView. */
 typedef struct _ZMapViewStruct *ZMapView ;
@@ -193,7 +194,7 @@ typedef struct
 } ZMapViewSessionStruct, *ZMapViewSession ;
 
 
-
+typedef struct _ZMapViewConnectionStruct *ZMapViewConnection;
 
 
 
@@ -230,9 +231,25 @@ int zMapViewNumWindows(ZMapViewWindow view_window) ;
 GList *zMapViewGetWindowList(ZMapViewWindow view_window);
 void   zMapViewSetWindowList(ZMapViewWindow view_window, GList *list);
 
+ZMapFeatureSequenceMap zMapViewGetSequenceMap(ZMapView zmap_view);
+
+ZMapFeatureSource zMapViewGetFeatureSetSource(ZMapView view, GQuark f_id);
+void zMapViewSetFeatureSetSource(ZMapView view, GQuark f_id, ZMapFeatureSource src);
+
+
+
+GList *zmapViewGetIniSources(char *config_file, char *config_str,char **stylesfile);
+
+
+ZMapViewConnection zMapViewRequestServer(ZMapView view, ZMapViewConnection view_conn, ZMapFeatureBlock block_orig, GList *req_featuresets,
+				   gpointer server, /* ZMapConfigSource */
+	   			   int req_start, int req_end,
+				   gboolean dna_requested, gboolean terminate);
+
 void zmapViewFeatureDump(ZMapViewWindow view_window, char *file) ;
 
-void zMapViewHighlightFeatures(ZMapView view, ZMapViewWindow view_window, ZMapFeatureContext context, gboolean multiple);
+void zMapViewHighlightFeatures(ZMapView view,
+			       ZMapViewWindow view_window, ZMapFeatureContext context, gboolean multiple);
 
 void zMapViewReadConfigBuffer(ZMapView zmap_view, char *buffer);
 

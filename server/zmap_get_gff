@@ -1,0 +1,240 @@
+#!/usr/bin/env perl
+
+# a simple script to translate sequence name and offset seq coords in GFF
+# we could do that in ZMap directly but this way we have more options to interpret the data
+# could modify to translate GFF2 <-> GFF3 ??
+# could modify to translate featureset names to avoid colissions
+
+use strict;
+use warnings;
+
+use Carp;
+use Getopt::Long 'GetOptions';
+use Pod::Usage;
+
+use URI::Escape qw(uri_unescape);
+
+
+# parameters
+my %params = ();
+my @options = qw ( help! man! gff_version=i file=s start=i end=i mapto=i gff_seqname=s );
+my @required = qw ( file start end );
+
+my $attributes_format;
+my $attributes_sep = ';';
+my $strands = { 1  => '+', -1 => '-' };
+my $source;
+my $sequence;
+my $mapto;
+my $start;
+my $end;
+
+
+sub gff_escape {
+    # escapes a minimal set of characters
+    s/([\t\r\n[:cntrl:];=%&])/sprintf "%%%02X", ord($1)/eg;
+    return;
+}
+
+sub gff_escape_seqid {
+    # escapes everything except a restricted set of characters
+    s/([^-a-zA-Z0-9.:^*$@!+_?|])/sprintf "%%%02X", ord($1)/eg;
+    return;
+}
+
+sub gff_escape_source {
+    # escapes everything except a restricted set of characters
+    s/([^-a-zA-Z0-9.:^*$@!+_? ])/sprintf "%%%02X", ord($1)/eg;
+    return;
+}
+
+sub gff_escape_attribute {
+    # like gff_escape, but escapes commas too
+    s/([\t\r\n[:cntrl:];=%&,])/sprintf "%%%02X", ord($1)/eg;
+    return;
+}
+
+sub gff_escape_target {
+    # like gff_escape, but escapes commas and spaces too
+    s/([\t\r\n[:cntrl:];=%&, ])/sprintf "%%%02X", ord($1)/eg;
+    return;
+}
+
+
+sub get_params
+{
+ 	# defaults
+	$params {'gff_version'}= 2;		# default for now as ZMap doesn't do v3 yet
+	$params {'chr_prefix'} = '';
+
+	GetOptions(\%params, @options ) or pod2usage(2);
+
+	pod2usage(1) if defined $params { 'help' };
+	pod2usage(-exitstatus => 0, -verbose => 2) if defined $params {'man'} ;
+
+	my $missing = 0;
+	foreach my $param (@required)
+	{
+		if (!defined $params { $param })
+		{
+			print "$param not specified\n";
+			$missing++;
+		}
+	}
+	pod2usage(1) if $missing;
+
+	$params{$_} = uri_unescape($params{$_}) for keys %params;
+
+	if(defined $params { 'gff_seqname' })
+	{
+		$sequence = $params { 'gff_seqname' };
+		gff_escape_seqid for $sequence;
+	}
+
+	# mapto is inteneded mainly for mapping sequence to 1 based coords and vice versa
+	$mapto = $params { 'mapto' } if(defined $params{ 'mapto' });
+	$start = $params { 'start' };
+	$end = $params { 'end' };
+
+	if($params { 'gff_version' } == 2)
+	{
+		$attributes_format ='%s %s';
+		$attributes_sep = ' ; ';
+	}
+	else
+	{
+		$attributes_format = '%s=%s';
+		$attributes_sep = ';';
+	}
+}
+
+
+
+
+
+sub main
+{
+	my $in_version = 3;
+	my ($fseq,$fstart,$fend);
+	my $offset;
+
+	get_params();
+
+	my $file = $params { 'file' };
+	open IFILE, $file or die ("cannot open $file");
+
+	while ( <IFILE> )
+	{
+		chomp;
+
+		if(m/^#/)
+		{
+			##gff-version 2
+			##sequence-region AH6 1 37801
+
+
+			if ( m/sequence-region\s(\S+)\s(\d+)\s(\d+)/)
+			{
+				($fseq, $fstart, $fend) = ($1, $2, $3);
+
+				$fseq = $sequence if(defined $sequence);
+
+				# i suspect this code needs adjusting to cope with subsequences of clones
+				$offset = defined $mapto ?  $mapto - $fstart : 0;
+
+				# $fstart += $offset;
+				# $fend   += $offset;
+
+				# NOTE the ZMap source code regards a file with more data than requested as an error
+				# how useful!  so we have to filter the features here and limit the GFF header
+				# start and end are as requested
+				$_ = sprintf("##sequence-region %s %d %d", $fseq, $start, $end);
+			}
+			else
+			{
+#				$in_version = $1 if(m/gff-version\s(\d+)/);
+			}
+		}
+		else
+		{
+			if(defined $offset)
+			{
+				# AH6	accepted_hits	similarity	644	677	.	+	.	.... stuff
+
+				@_ = split /\s+/, $_;		# $_ on whitespace to @_
+
+				$_[0] =  $fseq;
+				$_[3] += $offset;
+				$_[4] += $offset;
+
+				# remove features outside requested region
+				next if $_[3] > $end || $_[4] < $start;
+
+				$_ = join "\t", @_;
+			}
+		}
+
+		print $_, "\n";
+	}
+}
+
+main;
+
+__END__
+
+=head1 NAME
+
+zmap_get_bam request data and output as GFF
+
+=head1 SYNOPSIS
+
+zmap_get_gff [--help] [--man] --file=[http:|ftp:]/path/to/file --start=123 --end=456 --gff_feature_source=name --chr=IV [--chr_prefix=CHROMOSOME_] [--gff_version=3] --gff_seqname=GFF_sequence_name [--roman] [--Roman]
+
+=head1 OPTIONS
+
+=over 8
+
+=item B<-help>
+Print a brief help message and exits.
+=item B<-man>
+Prints the manual page and exits.
+
+=back
+
+=head1 DESCRIPTION
+
+B<This program> will read the given input file(s) and do someting
+useful with the contents thereof.
+
+
+=head1 COPYRIGHT
+
+ Author: Malcolm Hinsley (mh17@sanger.ac.uk)
+ Copyright (c) 2006-2012: Genome Research Ltd.
+------------------------------------------------------------------
+ZMap is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+or see the on-line version at http://www.gnu.org/copyleft/gpl.txt
+------------------------------------------------------------------
+This file is part of the ZMap genome database package
+originated by
+     Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+       Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+  Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+
+
+
+
+
+

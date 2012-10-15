@@ -416,7 +416,6 @@ foo_canvas_item_dispose (GObject *object)
 	g_return_if_fail (FOO_IS_CANVAS_ITEM (object));
 
 	item = FOO_CANVAS_ITEM (object);
-
 	if (item->canvas) {
 		foo_canvas_item_request_redraw (item);
 
@@ -432,7 +431,6 @@ foo_canvas_item_dispose (GObject *object)
 
 		if (item->object.flags & FOO_CANVAS_ITEM_REALIZED)
 			(* FOO_CANVAS_ITEM_GET_CLASS (item)->unrealize) (item);
-
 		if (item->parent)
 			group_remove (FOO_CANVAS_GROUP (item->parent), item);
 
@@ -1819,6 +1817,7 @@ group_remove (FooCanvasGroup *group, FooCanvasItem *item)
 				group->item_list_end = children->prev;
 
 			group->item_list = g_list_remove_link (group->item_list, children);
+
 			g_list_free (children);
 			break;
 		}

@@ -45,6 +45,7 @@
 #define ZMAPARG_SERIAL_DESC         "Operate pipe servers in serial on startup"
 #define ZMAPARG_TIMING_DESC         "switch on timing functions"
 #define ZMAPARG_SHRINK_DESC         "allow shrinkable ZMap window"
+#define ZMAPARG_FILES_DESC         "allow shrinkable ZMap window"
 
 #define ZMAPARG_NO_ARG         "<none>"
 #define ZMAPARG_COORD_ARG      "coord"
@@ -53,12 +54,15 @@
 #define ZMAPARG_WINID_ARG      "0x0000000"
 #define ZMAPARG_SEQUENCE_ARG   "<sequence name>"
 #define ZMAPARG_SERIAL_ARG     "<none>"
+#define ZMAPARG_FILES_ARG      "<file(s)>"
 
 #define ZMAPARG_INVALID_INT -1
 #define ZMAPARG_INVALID_BOOL FALSE
 #define ZMAPARG_INVALID_STR NULL
 #define ZMAPARG_INVALID_FLOAT 0.0
 
+
+#if NOT_USED
 enum {ARG_SET = 1,					    /* Special value, do not alter. */
       ARG_VERSION,
       ARG_SERIAL,
@@ -67,7 +71,7 @@ enum {ARG_SET = 1,					    /* Special value, do not alter. */
       ARG_WINID,
       ARG_TIMING
 } ;
-
+#endif
 
 
 typedef struct _ZMapCmdLineArgsStruct
@@ -78,8 +82,9 @@ typedef struct _ZMapCmdLineArgsStruct
 
   GOptionContext *opt_context ;
 
-  /* This holds the final argument on the command line which is the sequence name. */
   char **sequence_arg ;
+
+  char **files_arg ;	/* non options/ remainder args */
 
   /* All option values are stored here for later reference. */
   gboolean version ;

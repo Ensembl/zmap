@@ -67,6 +67,16 @@ static gboolean isFrameSensitive(gconstpointer col_data);
 
 static gboolean order_debug_G = FALSE;
 
+/*
+ *	for new columns that appear out of nowhere put them on the right
+ *	this does not get reset on a new view, but with 100 columns it will take a very long time to wrap round
+ */
+int zMapWindowColumnOrderNext(void)
+{
+	static int which = 0;
+	return ++which;		/* 0 is invalid */
+}
+
 
 /* void zmapWindowColOrderColumns(ZMapWindow window)
  *

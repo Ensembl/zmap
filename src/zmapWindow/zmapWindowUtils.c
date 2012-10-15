@@ -408,7 +408,9 @@ ZMapFeatureTypeStyle zmapWindowColumnMergeStyle(ZMapFeatureColumn column)
       ZMapStyleMode mode;
 
       if(!column->style_table)      /* mis-configuration */
+	{
             return NULL;
+	}
 
       if(!column->style_table->next)  /* only one style: use this directly */
       {
@@ -421,11 +423,13 @@ ZMapFeatureTypeStyle zmapWindowColumnMergeStyle(ZMapFeatureColumn column)
              * NB: sub feature styles come after their parents, see zmapWindowFeatureSetStyle() below
              * but are likely to be a different style mode and will be ignored
              */
-            mode = ((ZMapFeatureTypeStyle) column->style_table->data)->mode;
+		s = (ZMapFeatureTypeStyle) column->style_table->data;
+            mode = s->mode;
 
             for(iter = g_list_last(column->style_table);iter; iter = iter->prev)
             {
                   s = (ZMapFeatureTypeStyle) iter->data;
+
                   if(!s->mode || s->mode == mode)
                   {
 				if(!style)
@@ -458,62 +462,6 @@ ZMapFeatureColumn zMapWindowGetColumn(ZMapFeatureContextMap map,GQuark col_id)
       if(!column)
             zMapLogWarning("no column for featureset %s",g_quark_to_string(col_id));
 
-      return column;
-}
-
-/* get the column struct for a featureset */
-ZMapFeatureColumn zMapWindowGetSetColumn(ZMapFeatureContextMap map,GQuark set_id)
-{
-      ZMapFeatureColumn column = NULL;
-      ZMapFeatureSetDesc gff;
-
-      char *name = (char *) g_quark_to_string(set_id);
-
-      /* get the column the featureset goes in */
-      gff = g_hash_table_lookup(map->featureset_2_column,GUINT_TO_POINTER(set_id));
-      if(!gff)
-      {
-            zMapLogWarning("creating featureset_2_column for %s",name);
-            /* recover from un-configured error
-             * NOTE this occurs for seperator features eg DNA search
-             * the style is predefined but the featureset and column are created
-             * blindly with no reference to config
-             * NOTE ideally these should be done along with getAllPredefined() styles
-             */
-
-             /* instant fix for a bug: DNA search fails to display seperator features */
-             gff = g_new0(ZMapFeatureSetDescStruct,1);
-             gff->column_id =
-             gff->column_ID =
-             gff->feature_src_ID = set_id;
-             gff->feature_set_text = name;
-             g_hash_table_insert(map->featureset_2_column,GUINT_TO_POINTER(set_id),gff);
-      }
-/*      else*/
-      {
-            column = g_hash_table_lookup(map->columns,GUINT_TO_POINTER(gff->column_id));
-            if(!column)
-            {
-	            ZMapFeatureSource gff_source;
-
-                  zMapLogWarning("creating column  %s for featureset %s (%s)", g_quark_to_string(gff->column_id), g_quark_to_string(set_id), g_quark_to_string(gff->column_ID));
-
-                  column = g_new0(ZMapFeatureColumnStruct,1);
-
-                  column->unique_id =
-                  column->column_id =
-                  column->style_id = set_id;
-                  gff_source = g_hash_table_lookup(map->source_2_sourcedata,GUINT_TO_POINTER(set_id));
-			if(gff_source)
-				column->style_id = gff_source->style_id;
-                  column->column_desc = name;
-
-                  column->featuresets_unique_ids = g_list_append(column->featuresets_unique_ids,GUINT_TO_POINTER(set_id));
-//printf("window adding %s to column %s\n", g_quark_to_string(GPOINTER_TO_UINT(set_id)), g_quark_to_string(column->unique_id));
-
-                  g_hash_table_insert(map->columns,GUINT_TO_POINTER(set_id),column);
-            }
-      }
       return column;
 }
 
@@ -556,7 +504,7 @@ ZMapFeatureTypeStyle zMapWindowGetSetColumnStyle(ZMapWindow window,GQuark set_id
 {
       ZMapFeatureColumn column = NULL;
 
-      column = zMapWindowGetSetColumn(window->context_map,set_id);
+      column = zMapFeatureGetSetColumn(window->context_map,set_id);
       if(!column)
             return NULL;
 

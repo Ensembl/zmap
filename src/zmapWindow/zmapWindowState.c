@@ -1,4 +1,3 @@
-/*  Last edited: Jun 27 13:52 2011 (edgrif) */
 /*  File: zmapWindowState.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -25,9 +24,10 @@
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- * Description:
+ * Description: Implements saving state for zmapwindow prior to
+ *              operations after which we must restore ourselves.
  *
- * Exported functions: See XXXXXXXXXXXXX.h
+ * Exported functions: See zmapWindowState.h
  *-------------------------------------------------------------------
  */
 
@@ -320,18 +320,20 @@ gboolean zmapWindowStateSaveMark(ZMapWindowState state, ZMapWindow window)
 
 
 /* mh17: a misnomer, it only does one item */
-gboolean zmapWindowStateSaveFocusItems(ZMapWindowState state,
-				       ZMapWindow      window)
+gboolean zmapWindowStateSaveFocusItems(ZMapWindowState state, ZMapWindow window)
 {
+  gboolean result = FALSE ;
   FooCanvasItem *focus_item ;
 
-  if ((focus_item = zmapWindowFocusGetHotItem(window->focus)))
+  if ((window->focus) && (focus_item = zmapWindowFocusGetHotItem(window->focus)))
     {
       state->focus_items_set = serialize_item(focus_item, &(state->focus.item));
       state->rev_comp_state = state->focus.rev_comp_state = window->revcomped_features;
+
+      result = state->focus_items_set ;
     }
 
-  return state->focus_items_set ;
+  return result ;
 }
 
 
@@ -731,7 +733,7 @@ static void state_bumped_columns_restore(ZMapWindow window, ZMapWindowBumpStateS
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
-#if USE_CHILDREN
+#if OBSOLETE
 	      zmapWindowContainerFeatureSetSortFeatures(container_set, 0);
 #endif
 
@@ -790,21 +792,19 @@ static void print_position(ZMapWindowPositionStruct *position, char *from)
 
 static gboolean serialize_item(FooCanvasItem *item, SerializedItemStruct *serialize)
 {
+  gboolean serialized = FALSE ;
   ZMapWindowContainerGroup container_group ;
   ZMapFeature feature ;
-  gboolean serialized = FALSE ;
 
-  feature = zMapWindowCanvasItemGetFeature(item) ;
-
-  if ((container_group = zmapWindowContainerCanvasItemGetContainer(item)))
+  if ((container_group = zmapWindowContainerCanvasItemGetContainer(item))
+      && (feature = zMapWindowCanvasItemGetFeature(item)))
     {
       ZMapWindowContainerFeatureSet container_set;
 
       container_set = (ZMapWindowContainerFeatureSet)container_group ;
 
-
       /* we need to record strand stuff here.......otherwise we can't set strand correctly later.....*/
-      serialize->strand_specific = zMapStyleIsStrandSpecific(feature->style) ;
+      serialize->strand_specific = zMapStyleIsStrandSpecific(*feature->style) ;
 
 
       serialize->strand     = container_set->strand;

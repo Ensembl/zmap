@@ -607,7 +607,16 @@ gboolean zmapViewCallBlixem(ZMapView view,
   freeBlixemData(&blixem_data) ;
 
   if (!status)
-    zMapShowMsg(ZMAP_MSG_WARNING, err_msg) ;
+    {
+      zMapShowMsg(ZMAP_MSG_WARNING, err_msg) ;
+    }
+  else
+    {
+      /* N.B. we block for a couple of seconds here to make sure user can see message. */
+      zMapGUIShowMsgFull(NULL, "blixem launched and will display shortly.",
+			 ZMAP_MSG_EXIT,
+			 GTK_JUSTIFY_CENTER, 3, FALSE) ;
+    }
 
   return status ;
 }
@@ -657,7 +666,7 @@ static gboolean initBlixemData(ZMapView view, ZMapFeatureBlock block,
 
   blixem_data->view  = view ;
 
-  blixem_data->config_file = ((ZMapFeatureSequenceMap)(view->sequence_mapping->data))->config_file ;
+  blixem_data->config_file = g_strdup(((ZMapFeatureSequenceMap)(view->sequence_mapping->data))->config_file) ;
 
   blixem_data->offset = offset ;
   blixem_data->position = position ;
@@ -730,6 +739,9 @@ static void freeBlixemData(blixemData blixem_data)
       g_list_foreach(blixem_data->local_sequences, freeSequences, NULL) ;
       g_list_free(blixem_data->local_sequences) ;
     }
+
+  memset(blixem_data, 0, sizeof(blixemDataStruct)) ;
+
 
   return ;
 }
@@ -971,7 +983,7 @@ static gboolean setBlixemScope(blixemData blixem_data)
   gboolean status = TRUE ;
   static gboolean scope_debug = FALSE ;
 
-
+#if RESTRICT_TO_MARK
   /* We shouldn't need this here...window should take care of it..... */
   if (blixem_data->align_set == ZMAPWINDOW_ALIGNCMD_SEQ && !(blixem_data->mark_start && blixem_data->mark_end))
     {
@@ -979,6 +991,7 @@ static gboolean setBlixemScope(blixemData blixem_data)
 
       status = FALSE ;
     }
+#endif
 
   if (status)
     {
@@ -1888,7 +1901,7 @@ static gboolean printAlignment(ZMapFeature feature, blixemData  blixem_data)
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-   if (score)
+  if (score)
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
     {
@@ -1900,27 +1913,26 @@ static gboolean printAlignment(ZMapFeature feature, blixemData  blixem_data)
       GIOChannel *curr_channel ;
 
       match_name = (char *)g_quark_to_string(feature->original_id) ;
-      source_name = (char *)g_quark_to_string(feature->source_id) ;
+      source_name = (char *)g_quark_to_string(feature->parent->original_id) ;
+      seq_str = feature->feature.homol.sequence;
 
-	seq_str = feature->feature.homol.sequence;
-
+      /* this if could be tidied up, but let's leave existing logic alone
+       * of old 'local sequence' meant in ACEDB, for BAM we get it in GFF and save it in the feature
+       */
       if (!seq_str)
-		/* this if could be tidied up, but let's leave existing logic alone
-		 * of old 'local sequence' meant in ACEDB, for BAM we get it in GFF and save it in the feature
-		 */
 	{
-		if((list_ptr = g_list_find_custom(blixem_data->local_sequences, feature, findFeature)))
-		{
-		ZMapSequence sequence = (ZMapSequence)list_ptr->data ;
+	  if((list_ptr = g_list_find_custom(blixem_data->local_sequences, feature, findFeature)))
+	    {
+	      ZMapSequence sequence = (ZMapSequence)list_ptr->data ;
 
-		seq_str = sequence->sequence ;
-		}
-		else
-		{
-		/* In theory we should be checking for a description for non-local sequences,
-		* see acedb code in doShowAlign...don't know how important this is..... */
-		seq_str = "" ;
-		}
+	      seq_str = sequence->sequence ;
+	    }
+	  else
+	    {
+	      /* In theory we should be checking for a description for non-local sequences,
+	       * see acedb code in doShowAlign...don't know how important this is..... */
+	      seq_str = "" ;
+	    }
 	}
 
       /* Phase out stupid curr_channel                    */
@@ -1962,14 +1974,14 @@ static gboolean printAlignment(ZMapFeature feature, blixemData  blixem_data)
 				      qstart, qend, feature->strand,
 				      sstart, send, feature->feature.homol.strand,
 				      feature->score, feature->feature.homol.percent_id,
-				      feature->feature.homol.align, seq_str, description, zMapStyleIsPfetchable(feature->style)) ;
+				      feature->feature.homol.align, seq_str, description, zMapStyleIsPfetchable((*feature->style))) ;
 	}
 
       status = printLine(curr_channel, &(blixem_data->errorMsg), line->str) ;
     }
 
 
-   /* If view is recomp'd we should swop back again now. */
+  /* If view is recomp'd we should swop back again now. */
   if (blixem_data->view->revcomped_features)
     zMapFeatureReverseComplement(blixem_data->view->features, feature) ;
 
@@ -2282,7 +2294,8 @@ static gboolean processExonsGFF(blixemData blixem_data, ZMapFeature feature, gbo
 
   ref_name = (char *)g_quark_to_string(blixem_data->block->original_id) ;
   transcript_name = (char *)g_quark_to_string(feature->original_id) ;
-  source_name = (char *)g_quark_to_string(feature->source_id) ;
+
+  source_name = (char *)g_quark_to_string(feature->parent->original_id) ;
 
   /* Write out the transcript record:
    *            ctg123 . mRNA            1050  9000  .  +  .  ID=mRNA00001;Name=EDEN.1 */
@@ -2416,7 +2429,7 @@ static gboolean processExonsExblx(blixemData blixem_data, ZMapFeature feature, g
 
   ref_name = (char *)g_quark_to_string(blixem_data->block->original_id) ;
   transcript_name = (char *)g_quark_to_string(feature->original_id) ;
-  source_name = (char *)g_quark_to_string(feature->source_id) ;
+  source_name = (char *)g_quark_to_string(feature->parent->original_id) ;
 
   if (cds_only)
     {
@@ -2690,7 +2703,7 @@ static gboolean printBasic(ZMapFeature feature, blixemData  blixem_data)
 
 
   ref_name = (char *)g_quark_to_string(blixem_data->block->original_id) ;
-  source_name = (char *)g_quark_to_string(feature->source_id) ;
+  source_name = (char *)g_quark_to_string(feature->parent->original_id) ;
 
   curr = dumpers ;
   while (curr->source_name)

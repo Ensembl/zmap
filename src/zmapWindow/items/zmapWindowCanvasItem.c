@@ -380,7 +380,7 @@ gboolean zMapWindowCanvasItemIsMasked(ZMapWindowCanvasItem item,gboolean andHidd
       ZMapFeatureTypeStyle style;
 
       feature = item->feature;
-      style = feature->style;
+      style = *feature->style;
 
       if(style->mode == ZMAPSTYLE_MODE_ALIGNMENT && feature->feature.homol.flags.masked)
       {
@@ -441,6 +441,7 @@ void zMapWindowCanvasItemSetIntervalColours(FooCanvasItem *item, ZMapFeature fea
 /* Class initialization function for ZMapWindowCanvasItemClass */
 static void zmap_window_canvas_item_class_init (ZMapWindowCanvasItemClass window_class)
 {
+//  GtkObjectClass *object_class;
   GtkObjectClass *object_class;
   FooCanvasItemClass *item_class;
   GType canvas_item_type, parent_type;
@@ -509,11 +510,11 @@ static void zmap_window_canvas_item_destroy (GtkObject *gtkobject)
   canvas_item = ZMAP_CANVAS_ITEM(gtkobject);
   canvas_item_class = ZMAP_CANVAS_ITEM_GET_CLASS(canvas_item) ;
 
-
   canvas_item->feature = NULL;
 
-  if(GTK_OBJECT_CLASS (group_parent_class_G)->destroy)
-    (GTK_OBJECT_CLASS (group_parent_class_G)->destroy)(GTK_OBJECT(gtkobject));
+  /* NOTE FooCanavsItems call destroy not destroy, which is in a Gobject  but not a GTK Object */
+  if(G_OBJECT_CLASS (group_parent_class_G)->dispose)
+    (G_OBJECT_CLASS (group_parent_class_G)->dispose)(G_OBJECT(gtkobject));
 
   zmapWindowItemStatsDecr(&(canvas_item_class->stats)) ;
 
@@ -566,7 +567,7 @@ static ZMapFeatureTypeStyle zmap_window_canvas_item_get_style(ZMapWindowCanvasIt
   zMapLogReturnValIfFail(canvas_item != NULL, NULL);
   zMapLogReturnValIfFail(canvas_item->feature != NULL, NULL);
 
-  style = canvas_item->feature->style;
+  style = *canvas_item->feature->style;
 
   return style;
 }

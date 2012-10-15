@@ -20,11 +20,10 @@
  * This file is part of the ZMap genome database package
  * originated by
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *         Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Utility functions for a ZMapView.
- * StepLists changed to be the child of a connection by Malcolm Hinsley (mh17@sanger.ac.uk) 11 Mar 2010
  *
  * Exported functions: See ZMap/ZMapView.h for public functions and
  *              zmapView_P.h for private functions.
@@ -82,6 +81,21 @@ static void cwh_destroy_value(gpointer cwh_data) ;
 static ZMapViewConnectionStep stepListFindStep(ZMapViewConnectionStepList step_list, ZMapServerReqType request_type) ;
 static void stepDestroy(gpointer data, gpointer user_data) ;
 
+
+
+ZMapFeatureSource zMapViewGetFeatureSetSource(ZMapView view, GQuark f_id)
+{
+	ZMapFeatureSource src;
+
+	src = g_hash_table_lookup(view->context_map.source_2_sourcedata,GUINT_TO_POINTER(f_id));
+
+	return src;
+}
+
+void zMapViewSetFeatureSetSource(ZMapView view, GQuark f_id, ZMapFeatureSource src)
+{
+	g_hash_table_replace(view->context_map.source_2_sourcedata,GUINT_TO_POINTER(f_id), src);
+}
 
 
 /*
@@ -324,7 +338,7 @@ void zmapViewStepListIter(ZMapViewConnection view_con)
 	  {
 	    if (curr_step->connection_req->state != STEPLIST_DISPATCHED)
 	      curr_step->state = STEPLIST_FINISHED ;
-	    
+
 	    break ;
 	  }
 	case STEPLIST_INVALID:  // if a step is not used then skip over it

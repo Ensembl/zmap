@@ -522,6 +522,30 @@ void zmapControlResetCB(ZMap zmap)
   return ;
 }
 
+/* Inserts a view into an existing zmap and returns that view, on error returns NULL
+ * and an error message in err_msg which the caller should free with g_free.
+ * Note this call only creates the window and tells the view to connect, the connection
+ * may fail some time later resulting in the view being removed. */
+ZMapView zmapControlInsertView(ZMap zmap, ZMapFeatureSequenceMap sequence_map, char **err_msg)
+{
+  ZMapView view = NULL ;
+
+  if ((view = zmapControlAddView(zmap, sequence_map)))
+    {
+      if (!zMapViewConnect(view, NULL))
+	{
+	  *err_msg = g_strdup_printf("Display of sequence \"%s\" failed, see log for details.",
+				     sequence_map->sequence) ;
+
+	  zMapViewDestroy(view) ;
+
+	  view = NULL ;
+	}
+    }
+
+  return view ;
+}
+
 
 
 
@@ -635,7 +659,10 @@ static void dataLoadCB(ZMapView view, void *app_data, void *view_data)
 
       if (!(lfd->feature_sets))
 	{
-	  zMapLogCritical("%s", "Data Load notification received but no datasets specified.") ;
+//	  zMapLogCritical("%s", "Data Load notification received but no datasets specified.") ;
+// if we have a file input then we may not know the featuresets if there is no data or an error
+#warning better to patch in the server name here
+		lfd->feature_sets = g_list_append(NULL, GUINT_TO_POINTER(g_quark_from_string("_unknown_")));
 	}
       else if (zmap->xremote_client)
 	{
@@ -714,7 +741,31 @@ static void dataLoadCB(ZMapView view, void *app_data, void *view_data)
 	  g_free(featurelist);
 
 	}
+#if 0
+	else
+	{
+	  char *featurelist = NULL;
+	  GList *features;
 
+	  for (features = lfd->feature_sets ; features ; features = features->next)
+	    {
+	      char *prev,*f ;
+
+	      f = (char *) g_quark_to_string(GPOINTER_TO_UINT(features->data)) ;
+
+	      prev = featurelist ;
+
+	      if (!prev)
+		featurelist = g_strdup(f) ;
+	      else
+		featurelist = g_strjoin(";", prev, f, NULL) ;
+
+	      g_free(prev) ;
+	    }
+	  printf("%d features loaded from %s",lfd->num_features, featurelist);
+	  g_free(featurelist);
+	}
+#endif
     }
 
 

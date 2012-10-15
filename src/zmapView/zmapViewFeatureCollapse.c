@@ -362,13 +362,13 @@ printf("join squash collapse: %d %d %d\n",join,squash,collapse);
 		features = fl = g_list_sort(features,featureGapCompare);
 
 		/*
-		 * features are sorted first by strand so we do the composite-ing in two stages
+		 * features are sorted first by strand so we do the compositing in two stages
 		 * not two passes: one scan of the data with a break at half time
-		 * each part does squash first for get splice coordinates, then join and/or collapse
+		 * each part does squash first to get splice coordinates, then join and/or collapse
 		 */
 
 		/* NOTE the idea was to do a single scan of the list of features
-		 * the the code might be clearer if coded explciitiy as an automation
+		 * the the code might be clearer if coded explicitly as an automaton
 		 * with an explict state variable
 		 * oh well.... next time maybe
 		 */
@@ -430,7 +430,7 @@ gboolean canSquash(ZMapFeature first, ZMapFeature current)
 {
 	GArray *g1 = first->feature.homol.align, *g2 = current->feature.homol.align;
 
-	if(!first || zMapStyleGetMode(first->style) != ZMAPSTYLE_MODE_ALIGNMENT)
+	if(!first || zMapStyleGetMode(*first->style) != ZMAPSTYLE_MODE_ALIGNMENT)
 		return FALSE;
 
 	/* test gaps equal for both squash and collapse */
@@ -550,7 +550,7 @@ printf("(extra,diff) = %d,%d %d,%d\n", extra1,diff1, extra2, diff2);
 		if(extra1 || diff1)
 		{
 			edge = g_new0(ZMapAlignBlockStruct,1);
-			diff = edge1 - y1 - 1;
+			diff = edge1 - y1;	// worm=bame have single base matches!, start == end
 			zMapAssert(diff >= 0);
 
 			/* target blocks are always fwd strand coords */
@@ -579,7 +579,7 @@ printf("(extra,diff) = %d,%d %d,%d\n", extra1,diff1, extra2, diff2);
 		if(extra2 || diff2)
 		{
 			edge = g_new0(ZMapAlignBlockStruct,1);
-			diff = edge2 - ab->t1 - 1;
+			diff = edge2 - ab->t1;
 			zMapAssert(diff >= 0);
 
 			edge->t1 = ab->t1 + diff + 1;
@@ -831,7 +831,7 @@ printf("feature block  %d,%d , query %d,%d\n", ab->t1,ab->t2,ab->q1,ab->q2);
 			feature->composite = composite;
 		}
 
-		if(composite && zMapStyleJoinMax(feature->style) && composite->population >= zMapStyleJoinMax(feature->style))
+		if(composite && zMapStyleJoinMax(*feature->style) && composite->population >= zMapStyleJoinMax(*feature->style))
 		{
 			squash_this = FALSE;		/* leave these bumpable an give more indication of volume */
 			f->flags.squashed = FALSE;	/* make visible */
@@ -1082,7 +1082,7 @@ printf("join this:  %.1f %.1f\n",y1,y2);
 			feature->composite = composite;
 		}
 
-		if(composite && zMapStyleJoinMax(feature->style) && composite->population >= zMapStyleJoinMax(feature->style))
+		if(composite && zMapStyleJoinMax(*feature->style) && composite->population >= zMapStyleJoinMax(*feature->style))
 		{
 			duplicate = FALSE;		/* leave these bumpable and give more indication of volume */
 			f->flags.joined = FALSE;	/* else will not be displayed */

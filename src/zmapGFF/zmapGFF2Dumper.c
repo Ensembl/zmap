@@ -495,7 +495,7 @@ static gboolean dump_gff_cb(ZMapFeatureAny feature_any,
 	ZMapFeature feature = (ZMapFeature)feature_any;
 	ZMapFeatureTypeStyle style ;
 
-	style = feature->style;       /*zMapFindStyle(gff_data->styles, feature->style_id) ;*/
+	style = *feature->style;       /*zMapFindStyle(gff_data->styles, feature->style_id) ;*/
 
 
 	/* Output a GFFv2 record for the whole feature, fields are:
@@ -515,6 +515,12 @@ static gboolean dump_gff_cb(ZMapFeatureAny feature_any,
       fset = (ZMapFeatureSet)(feature_any->parent);
 
       /* this is made up data: do not dump */
+      if(fset->original_id == g_quark_from_string("Locus"))
+            break;
+      /* this is made up data: do not dump */
+      if(fset->original_id == g_quark_from_string("Show Translation"))
+            break;
+      /* this is made up data: do not dump */
       if(fset->original_id == g_quark_from_string("3 Frame Translation"))
             break;
       /* better to dump DNA to a FASTA file */
@@ -524,11 +530,14 @@ static gboolean dump_gff_cb(ZMapFeatureAny feature_any,
       gff_data->gff_source = (char *) g_quark_to_string(fset->original_id);
 #endif
 
+      gff_data->gff_feature = zMapSOAcc2Term(feature->SO_accession) ;
+	if(!gff_data->gff_feature)
+	{
+		GQuark gff_ontology;
 
-	if (!(gff_data->gff_feature = (char *)zMapStyleGetGFFFeature(style)))
-	  {
-	    gff_data->gff_feature = zMapSOAcc2Term(feature->SO_accession) ;
-	  }
+		gff_ontology = zMapStyleGetGFFFeature(style);
+		gff_data->gff_feature = (char *) g_quark_to_string(gff_ontology);
+	}
 
 	g_string_append_printf(gff_string,
 			       GFF_SEQ_SOURCE_FEAT_START_END,

@@ -146,9 +146,9 @@ void zMapWindowHighlightFeature(ZMapWindow window, ZMapFeature feature, gboolean
   ZMapStrand set_strand = ZMAPSTRAND_NONE;
   ZMapFrame set_frame = ZMAPFRAME_NONE;
 
-  if(zMapStyleIsStrandSpecific(feature->style))
+  if(zMapStyleIsStrandSpecific(*feature->style))
 	set_strand = feature->strand;
-  if(zMapStyleIsFrameSpecific(feature->style) && IS_3FRAME_COLS(window->display_3_frame))
+  if(zMapStyleIsFrameSpecific(*feature->style) && IS_3FRAME_COLS(window->display_3_frame))
 	set_frame = zmapWindowFeatureFrame(feature);
 
   if ((feature_item = zmapWindowFToIFindFeatureItem(window, window->context_to_item,
@@ -238,7 +238,7 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
 
   /* Highlight DNA and Peptide sequences corresponding to feature (if visible),
    * note we only do this if the feature is forward or non-stranded, makes no sense otherwise. */
-  if (zMapStyleIsStrandSpecific(feature->style) && ZMAPFEATURE_REVERSE(feature))
+  if (zMapStyleIsStrandSpecific(*feature->style) && ZMAPFEATURE_REVERSE(feature))
     {
       /* Deselect any already selected sequence as focus item is now the reverse strand item. */
       zmapWindowItemUnHighlightDNA(window, item) ;
