@@ -1525,10 +1525,16 @@ static void zmap_window_featureset_item_item_update (FooCanvasItem *item, double
   foo_canvas_w2c (item->canvas, x2, y2, &cx2, &cy2);
 
 //printf("CFS update: %s %d %d %d %d\n",g_quark_to_string(di->id),cx1,cy1,cx2+1,cy2+1);
-  item->x1 = cx1;
-  item->y1 = cy1;
-  item->x2 = cx2+1;
-  item->y2 = cy2+1;
+  if(!(di->layer & ZMAP_CANVAS_LAYER_STRETCH_X))	/* else containing group to set size */
+  {
+	item->x1 = cx1;
+	item->x2 = cx2+1;
+  }
+  if(!(di->layer & ZMAP_CANVAS_LAYER_STRETCH_Y))
+  {
+	item->y1 = cy1;
+	item->y2 = cy2+1;
+  }
 }
 
 

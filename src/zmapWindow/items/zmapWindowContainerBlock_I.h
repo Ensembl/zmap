@@ -50,12 +50,14 @@ typedef struct _zmapWindowContainerBlockStruct
   GHashTable *loaded_region_hash;
 #endif
 
+#if BLOCK_MARK
   struct
   {
     FooCanvasItem *top_item;
     FooCanvasItem *bottom_item;
     double start, end;
   }mark;
+#endif
 
 } zmapWindowContainerBlockStruct;
 

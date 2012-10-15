@@ -72,6 +72,19 @@ typedef struct _zmapWindowCanvasItemClassStruct  zmapWindowCanvasItemClass, *ZMa
 #include <zmapWindowCanvasFeatureset.h>	/* need typedefs to stop gcc from barfing */
 
 
+/* layering for canvas items... (ZMapWindowCanvasFeatureset)
+ * if not _FIXED_ will fit to containing group, which will be sized by normal features
+ * this replaces the overlay underlay and backgound conatiner children
+ * display items are held in a group's item list in order of underlay, features and overlay,
+ * so layering can be implemented by using this ordered list
+ * flags are provided to make it easier to sort this
+ * ??? really stretchy items only refer to featureset backgrounds???
+ */
+#define ZMAP_CANVAS_LAYER_DECORATION	1	/* else is normal features */
+#define ZMAP_CANVAS_LAYER_OVERLAY		2	/* else is underlay if decoration */
+#define ZMAP_CANVAS_LAYER_STRETCH_X		4	/* fit to container? */
+#define ZMAP_CANVAS_LAYER_STRECTH_Y		8
+
 
 
 /* Public funcs */

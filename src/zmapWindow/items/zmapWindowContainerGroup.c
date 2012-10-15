@@ -1191,17 +1191,6 @@ static void zmap_window_container_group_update (FooCanvasItem *item, double i2w_
 {
   ZMapWindowContainerGroup   this_container = NULL;
   ZMapWindowContainerGroup parent_container = NULL;
-#if USE_OVERLAY
-  ZMapWindowContainerOverlay   overlay = NULL;
-  ZMapWindowContainerUnderlay underlay = NULL;
-  GList *item_list;
-#endif
-#if USE_BACKGROUND
-  FooCanvasRE *rect = NULL;
-#endif
-#if USE_CHILDREN
-  FooCanvasItem *parent_parent = NULL;
-#endif
   FooCanvasGroup *canvas_group;
 
   double current_x = 0.0;
@@ -1223,19 +1212,10 @@ static void zmap_window_container_group_update (FooCanvasItem *item, double i2w_
   if(add_strand_border && this_container->level == ZMAPCONTAINER_LEVEL_STRAND)
     this_container->reposition_x += this_container->child_spacing;
 
-	/* mh17: missing something here: why do we skip two levels to get the foo parent? */
-	/* because each level is contained in the features list in the parent level, so we have to skip two */
-
-#if USE_CHILDREN
-	/* test works by fluke on canvas root */
-  if(item->parent && (parent_parent = item->parent->parent))
-    {
-      parent_container = (ZMapWindowContainerGroup)parent_parent;
-#else
   if(item->parent && ZMAP_IS_CONTAINER_GROUP(item->parent))
     {
       parent_container = (ZMapWindowContainerGroup) item->parent;
-#endif
+
 	if(this_container->flags.need_reposition)
 	flags |= ZMAP_CANVAS_UPDATE_NEED_REPOSITION;
 
@@ -1256,140 +1236,60 @@ static void zmap_window_container_group_update (FooCanvasItem *item, double i2w_
 
 #endif
 
-  if(doing_reposition)
+  if(doing_reposition && item_visible)
     {
-      GList *list, *list_end, tmp_features = {NULL};
-#if USE_BACKGROUND
-	GLsit tmp_background = {NULL};
-#endif
-
-#if USE_OVERLAY
-      if((item_list = canvas_group->item_list))
-	{
-	  /* reposition immediate descendants (features, background, overlay, underlay) */
-	  do
-	    {
-	      if(FOO_IS_CANVAS_GROUP(item_list->data))
-		{
-		  FooCanvasGroup *group = (FooCanvasGroup *)(item_list->data);
-
-		  if(group->xpos != 0.0)
-		    group->xpos = 0.0;
-		  if(group->ypos != 0.0)
-		    group->ypos = 0.0;
-
-		  if(ZMAP_IS_CONTAINER_OVERLAY(item_list->data))
-		    overlay = (ZMapWindowContainerOverlay)(item_list->data);
-		  else if(ZMAP_IS_CONTAINER_UNDERLAY(item_list->data))
-		    underlay = (ZMapWindowContainerUnderlay)(item_list->data);
-		}
-#if USE_BACKGROUND
-// not necessary to if this out is it won't be there
-	      else if(ZMAP_IS_CONTAINER_BACKGROUND(item_list->data))
-		{
-		  rect = FOO_CANVAS_RE(item_list->data);
-
-		  if(rect->x1 != 0.0)
-		    rect->x1 = 0.0;
-		  if(rect->y1 != 0.0)
-		    rect->y1 = 0.0;
-
-		  rect->x2 = 1.0;	/* There's no way to know width */
-		  rect->y2 = this_container->height; /* We know height though. */
-		}
-#endif
-	      /* no recursion here... */
-	    }
-	  while((item_list = item_list->next));
-	}
-#endif
-
-      if(item_visible)
-	{
 	  /* There's _no_ need to use group->translate, nor move by dx,dy. Just set the positions */
 	  canvas_group->xpos = current_x;
 	  /* We don't do y at the moment. no real idea what should happen here. */
 	  /* real_group->ypos = current_y; */
+    }
+
+  item->x2 = item->x1;		/* reset group to zero size to avoid stretchy items expanding it by proxy */
+  item->y2 = item->y1;
+
+  (item_parent_class_G->update)(item, i2w_dx, i2w_dy, flags);
+
+  /* ergo: invisible items expand a group */
+
+  if(item_visible)
+    {
+	GList *l;
+	FooCanvasItem *foo;
+	ZMapWindowFeaturesetItem featureset;
+	double size;
+
+	for(l = canvas_group->item_list; l ; l = l->next)
+	{
+		foo = (FooCanvasItem *) l->data;
+
+		if(ZMAP_IS_WINDOW_FEATURESET_ITEM(foo))	/* these could be groups or even normal foo items */
+		{
+			featureset = (ZMapWindowFeaturesetItem) foo;
+			if(featureset->layer & ZMAP_CANVAS_LAYER_STRETCH_X)
+			{
+				// this will automatcially stretch the mark sideways
+				// and also strand backgrounds if used
+				// and also navigator locator background and cursor
+				// as all are implemented as empty ZMapWindowCanvasFeaturesets
+
+				foo->x2 = foo->x1 + item->x2 - item->x1;
+				foo_canvas_c2w(foo->canvas,foo->x2 - foo->x1, 0, &size, NULL);
+				zMapWindowCanvasFeaturesetSetWidth(featureset,size);
+			}
+			if(featureset->layer & ZMAP_CANVAS_LAYER_STRETCH_Y)
+			{
+				foo->y2 = foo->y1 + item->y2 - item->y1;
+			}
+		}
 	}
-
-#if USE_CHILDREN
-      /* We _only_ update the background and features at this time. Underlays and overlays will get done later */
-	/* mh17: is this due to the block size not being known till after we update? */
-
-      list     = canvas_group->item_list;
-      list_end = canvas_group->item_list_end;
-
-
-#if USE_BACKGROUND
-      tmp_background.next = &tmp_features;
-      tmp_background.data = zmapWindowContainerGetBackground(this_container);
-      tmp_background.prev = NULL;
-
-      tmp_features.next = NULL;
-      tmp_features.data = zmapWindowContainerGetFeatures(this_container);
-      tmp_features.prev = &tmp_background;
-
-      canvas_group->item_list     = &tmp_background;
-      canvas_group->item_list_end = &tmp_features;
-#else
-      tmp_features.next = NULL;
-      tmp_features.data = zmapWindowContainerGetFeatures(this_container);
-      tmp_features.prev = NULL;
-
-      canvas_group->item_list     = &tmp_features;
-      canvas_group->item_list_end = &tmp_features;
-#endif
-
-      (item_parent_class_G->update)(item, i2w_dx, i2w_dy, flags);
-
-      canvas_group->item_list     = list;
-      canvas_group->item_list_end = list_end;
-#else
-      (item_parent_class_G->update)(item, i2w_dx, i2w_dy, flags);
-#endif
-    }
-  else
-    {
-      (item_parent_class_G->update)(item, i2w_dx, i2w_dy, flags);
-    }
-
-  if( /* rect && */ item_visible)
-    {
-#if USE_OVERLAY
-      gboolean need_2nd_update = TRUE;
-#endif
 
 	if(doing_reposition)
 	{
-	      FooCanvasItem *foo = (FooCanvasItem *) this_container;
-
-#if USE_BACKGROUND
-	  maximise_background_rectangle(this_container, item, rect);
-
-	  /* Update the current reposition_x, and reposition_y coords */
-	  if(parent_container)
-	    {
-	      double dx, dy;
-
-	      if(ZMAP_CONTAINER_GROUP_GET_CLASS(this_container)->reposition_group)
-		(ZMAP_CONTAINER_GROUP_GET_CLASS(this_container)->reposition_group)(this_container,
-										   rect->x1, rect->y1,
-										   rect->x2, rect->y2,
-										   &dx, &dy);
-printf("repos group: %.1f %.1f\n",dx,dy);
-	      parent_container->reposition_x += dx;
-	      parent_container->reposition_y += dy;
-	    }
-
-	  zmap_window_container_invoke_post_update_hooks(this_container,
-							 rect->x1, rect->y1,
-							 rect->x2, rect->y2);
-#else
 	  if(parent_container)
 	  {
-		  parent_container->reposition_x += foo->x2 - foo->x1 + this_container->this_spacing;
+		  parent_container->reposition_x += item->x2 - item->x1 + this_container->this_spacing;
 #if UPDATE_DEBUG
-printf("repos group cur x = %.1f (%1.f %.1f %.1f)\n",parent_container->reposition_x, foo->x2 , foo->x1 ,this_container->this_spacing);
+printf("repos group cur x = %.1f (%1.f %.1f %.1f)\n",parent_container->reposition_x, item->x2 , item->x1 ,this_container->this_spacing);
 #endif
 	  }
 
@@ -1397,67 +1297,13 @@ printf("repos group cur x = %.1f (%1.f %.1f %.1f)\n",parent_container->repositio
 	/* these are set for the root as well as possibly column containers */
 	/* NOTE untangle this hook stuff */
 	  zmap_window_container_invoke_post_update_hooks(this_container,
-							 foo->x1, foo->y1,
-							 foo->x2, foo->y2);
-#endif
+							 item->x1, item->y1,
+							 item->x2, item->y2);
+
 #if UPDATE_DEBUG
-printf("group position: %d %s %.1f %.1f (%.1f %.1f %.1f %.1f)\n",this_container->level, name,canvas_group->xpos,canvas_group->ypos,foo->x1,foo->y1,foo->x2,foo->y2);
+printf("group position: %d %s %.1f %.1f (%.1f %.1f %.1f %.1f)\n",this_container->level, name,canvas_group->xpos,canvas_group->ypos,item->x1,item->y1,item->x2,item->y2);
 #endif
 	}
-
-
-#if USE_OVERLAY
-      /* The background needs updating now so that the canvas knows
-       * where it is (canvas coords) for events. We are only setting
-       * the points to match the containers bounds or within so no
-       * need to re-update the whole tree...phew... */
-      if(need_2nd_update)
-	{
-	  FooCanvasItem *update_items[3] = {NULL};
-	  FooCanvasPoints scroll_region;
-	  double coords[4];
-	  int i = 0, update_flags = flags;
-
-	  i2w_dx += canvas_group->xpos;
-	  i2w_dy += canvas_group->ypos;
-
-	  update_items[i++] = (FooCanvasItem *)rect;
-	  update_items[i++] = (FooCanvasItem *)overlay;
-	  update_items[i++] = (FooCanvasItem *)underlay;
-
-	  zmap_window_container_scroll_region_get_item_bounds(update_items[0],
-							      &coords[0], &coords[1],
-							      &coords[2], &coords[3]);
-	  scroll_region.coords     = &coords[0];
-	  scroll_region.num_points = 2;
-	  scroll_region.ref_count  = 1;
-
-	  /* We need to maximise overlays and underlays if required too. */
-	  if(overlay)
-	    zmapWindowContainerOverlayMaximiseItems(overlay,
-						    rect->x1, rect->y1,
-						    rect->x2, rect->y2);
-
-	  if(underlay)
-	    zmapWindowContainerUnderlayMaximiseItems(underlay,
-						     rect->x1, rect->y1,
-						     rect->x2, rect->y2);
-
-	  for(i = 0; i < 3; i++)
-	    {
-	      zmap_window_container_update_with_crop(update_items[i], i2w_dx, i2w_dy, &scroll_region, update_flags);
-	    }
-	}
-#else
-	/* having repostioned groups we need to run update again to tell Foo where things are
-	 * first update to find the size and reposition, second to set where
-	 * surely these can be combined??
-	 * they are: the only thing that was needed was the mark resizing
-	 */
-// ends up doing someting wrong....
-//      if(need_2nd_update)
-//		(item_parent_class_G->update)(item, i2w_dx, i2w_dy, flags);
-#endif
     }
 
 
@@ -1471,27 +1317,6 @@ printf("group position: %d %s %.1f %.1f (%.1f %.1f %.1f %.1f)\n",this_container-
 }
 
 
-#if USE_BACKGROUND
-static void zmap_window_container_group_reposition(ZMapWindowContainerGroup container_group,
-						   double  rect_x1,  double  rect_y1,
-						   double  rect_x2,  double  rect_y2,
-						   double *dx_repos, double *dy_repos)
-{
-  double dx, dy;
-
-  dx = dy = 0.0;
-
-  dx = (rect_x2 - rect_x1 + 1) + container_group->this_spacing;
-
-  if(dx_repos)
-    *dx_repos = dx;
-
-  if(dy_repos)
-    *dy_repos = dy;
-
-  return ;
-}
-#endif
 
 
 /* helper to zmapWindowContainerGroupRemoveUpdateHook() */

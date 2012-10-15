@@ -49,6 +49,7 @@ enum
   };
 
 
+#if BLOCK_MARK
 /* There's some functions for managing ZMapWindowMark here... */
 static gboolean maximise_mark_items_cb(ZMapWindowContainerGroup group_updated,
 				       FooCanvasPoints         *group_bounds,
@@ -75,6 +76,7 @@ static gboolean areas_intersection(FooCanvasPoints *area_1,
 static gboolean areas_intersect_gt_threshold(FooCanvasPoints *area_1,
 					     FooCanvasPoints *area_2,
 					     double           threshold);
+#endif
 
 /* All the basic object functions */
 static void zmap_window_container_block_class_init  (ZMapWindowContainerBlockClass block_data_class);
@@ -424,6 +426,8 @@ static gboolean maximise_mark_items_cb(ZMapWindowContainerGroup group_updated,
   return status ;
 }
 
+#if BLOCK_MARK
+
 /* Create the two mark items in the overlay, without a size and we'll update all that later */
 static void mark_items_create(ZMapWindowContainerBlock container_block,
 			      GdkColor  *mark_colour,
@@ -435,8 +439,6 @@ static void mark_items_create(ZMapWindowContainerBlock container_block,
   ZMapWindowContainerBackground background;
 #endif
 
-#warning need to recode mark scan for USE_MARK
-#if USE_MARK
   container = (ZMapWindowContainerGroup)container_block;
 
   if((overlay = zmapWindowContainerGetOverlay(container))
@@ -473,7 +475,7 @@ static void mark_items_create(ZMapWindowContainerBlock container_block,
 
       mark_items_update_colour(container_block, mark_colour, mark_stipple);
     }
-#endif
+
   return ;
 }
 
@@ -750,7 +752,7 @@ static gboolean areas_intersect_gt_threshold(FooCanvasPoints *area_1,
   return above_threshold;
 }
 
-
+#endif
 
 /*
  * OBJECT CODE
@@ -786,7 +788,9 @@ static void zmap_window_container_block_class_init(ZMapWindowContainerBlockClass
 
 #endif
 
+#if BLOCK_MARK
   group_class->post_create = zmap_window_container_block_post_create;
+#endif
 
   gtkobject_class->destroy = zmap_window_container_block_destroy;
 
@@ -844,12 +848,14 @@ static void zmap_window_container_block_destroy(GtkObject *gtkobject)
 
   block_data->window = NULL;	/* not ours */
 
+#if BLOCK_MARK
   /* I think that the overlay (FooCanvasGroup) cleanup will remove these */
   block_data->mark.top_item    = NULL;
   block_data->mark.bottom_item = NULL;
   /* just zero these for the paranoid... */
   block_data->mark.start = 0.0;
   block_data->mark.end   = 0.0;
+#endif
 
   /* compressed and bumped columns are not ours. canvas owns them, just free the lists */
   if(block_data->compressed_cols)
@@ -871,6 +877,7 @@ static void zmap_window_container_block_destroy(GtkObject *gtkobject)
   return ;
 }
 
+#if BLOCK_MARK
 static void zmap_window_container_block_post_create(ZMapWindowContainerGroup group)
 {
   ZMapWindowContainerBlock block;
@@ -881,4 +888,4 @@ static void zmap_window_container_block_post_create(ZMapWindowContainerGroup gro
 
   return ;
 }
-
+#endif

@@ -205,6 +205,8 @@ typedef struct _zmapWindowFeaturesetItemStruct
 
   zmapWindowCanvasFeatureType type;
 
+  gint layer;			/* underlay features or overlay */
+
   ZMapStrand strand;
   ZMapFrame frame;
 
