@@ -310,12 +310,12 @@ typedef struct
 
 
 /* The main "feature structs", these form a hierachy:
- * 
+ *
  * context -> align -> block -> featureset -> feature
- * 
+ *
  * Each struct has an initial common set of members allowing all
  * such structs to be accessed in some common ways.
- * 
+ *
  *  */
 
 
@@ -1282,6 +1282,9 @@ void zMapFeatureRevComp(int seq_start, int seq_end, int *coord_1, int *coord_2) 
 
 
 void zMapGetFeatureExtent(ZMapFeature feature, gboolean complex, ZMapSpan span);
+
+
+int zMapFeatureColumnOrderNext(void);	/* order of columns L -> R */
 
 
 gboolean zMapFeatureIsValid(ZMapFeatureAny any_feature) ;
