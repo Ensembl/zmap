@@ -66,6 +66,7 @@ build system:</p>
 <ol>
   <li> <a href="#build_scripts">Build Script Details.</a></li>
   <li> <a href="#code_version">The Code Version System.</a></li>
+  <li> <a href="#broken">Broken build: common causes and how to fix it.</a></li>
 </ol>
 
 <a name="day_to_day"></a>
@@ -1025,6 +1026,59 @@ linked and is included in the dependency lists etc.</p>
 
 <p><b>src/zmapUtils/zmapUtils.c</b> functions have been slightly rewritten to make use
 of the functions in src/zmapUtils/zmapVersion.c to get the version string and compile time.</p>
+
+
+<a name="broken">
+<h2>3) Broken build: common causes and how to fix it.</h2>
+<p>Code is only pushed back to the master repository in a working state but there are a few easy ways to break the build.
+A build is done via a fresh checkout of the master code repository followed by the bootstrap and runconfig process and then a make, but this ia done three times on different machines (32 bit and 64 bit linux and a mac).
+</p>
+<p>If a build fails there will be an email posted to annotools and this contains the tail of the master log file and its pathname. In addition to that there are log files held on <b>tviewsrv</b> in <b>/var/tmp/zmap.&lt;pid/&gt;</b> - one for each machine eg tviewsrv.log.
+</p>
+<h3>Spontaneous failure</h3>
+<p>This can occur if the partion in use fills up. /nfs/zmap is allocated 50GB of space and this soon fills up if old builds are not deleted. Overnight builds and development builds must be erased when replaced.  Production builds accumulate over time and will eventually become a problem.  This is so far the most common cause of failure - to check try the following command:
+<pre>
+deskpro20407[mh17]4: df /nfs/zmap
+Filesystem           1K-blocks      Used Available Use% Mounted on
+netapp5a:/vol/team119/zmap
+                      52428800  35903936  16524864  69% /nfs/zmap
+deskpro20407[mh17]5:
+</pre>
+There are (AFAIK) still some old development builds left lying around: if free space looks too small then that's the first thing to look at.
+</p>
+<p>It is also possible to have some network error, which is rare but does occasionally happen, and just repeating the build should be ok.
+It may be necessary to delete the existing build checkout first:
+<pre>
+deskpro20407[mh17]6: ssh tviewsrv -l zmap
+Password:
+muppet
+
+...
+
+tviewsrv:~>
+tviewsrv:~> cd BUILD_CHECKOUT/
+tviewsrv:~/BUILD_CHECKOUT> ls
+annobuild  build_bootstrap.sh  README  tools  zmap_functions.sh  zmap_master_build ZMap ZMap_old  zmap_web
+
+tviewsrv:~> rm -Rf ZMap
+</pre>
+
+<h3>New source file does not appear in Makefile.am</h3>
+<p>If you've added a file to the make eg a new C file which includes a new header it's quite easy to add the C file to the makefile and forget the header.  This builds OK on your machine but fails when someone attempts to build the distribution as the required header is not included.
+</p>
+<p>Update Makefile.am, push the changes and retry.
+</p>
+
+<h3>New source file added to makefile but not git</h3>
+<p>As above this builds OK on your maching but fails from the build script.  Currently (Oct 2012) this is not immediately obvious from the log files as the error is reported in /var/tmp/zmap.&lt;pid&gt;/$lt;machine&gt;.log on tviwesrv.
+</p>
+<p>Add the file to git, commit and push and retry.
+</p>
+
+<h3>Some other problem</h3>
+<p>Staring at build scripts is not very effective - the best course of action is to make a fresh clone of the master repository, bootstrap and build on you own machine.
+</p>
+
 
 
 <!--#include virtual="/perl/footer"-->
