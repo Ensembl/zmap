@@ -816,6 +816,8 @@ ZMapFeatureColumn zMapFeatureGetSetColumn(ZMapFeatureContextMap map,GQuark set_i
                   column->unique_id =
                   column->column_id = set_id;
 
+			column->order = zMapWindowColumnOrderNext();
+
                   gff_source = g_hash_table_lookup(map->source_2_sourcedata,GUINT_TO_POINTER(set_id));
 // don-t set this from featureset data it's column specific style from config only
 //			if(gff_source)

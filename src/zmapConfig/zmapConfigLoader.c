@@ -1075,7 +1075,6 @@ GHashTable *zMapConfigIniGetColumns(ZMapConfigIniContext context)
       gchar *colstr;
       ZMapFeatureColumn f_col;
       GHashTable *hash = NULL;
-      int i = 0;
       GHashTable *col_desc;
       char *desc;
 
@@ -1105,7 +1104,7 @@ GHashTable *zMapConfigIniGetColumns(ZMapConfigIniContext context)
                         GUINT_TO_POINTER(f_col->column_id));
                   if(!f_col->column_desc)
                         f_col->column_desc = desc;
-                  f_col->order = ++i;
+                  f_col->order = zMapWindowColumnOrderNext();
                   g_hash_table_insert(hash,GUINT_TO_POINTER(f_col->unique_id),f_col);
             }
       }

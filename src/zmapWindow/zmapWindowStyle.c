@@ -345,8 +345,6 @@ gboolean zmapWindowSetStyleFeatureset(ZMapWindow window, FooCanvasItem *foo, ZMa
 	/* Update the colour buttons. */
 	zMapStyleGetColours(style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL, &fill, NULL, &border);
 
-zMapAssert(fill->red || fill->green || fill->blue || fill->pixel);
-
       gtk_color_button_set_color(GTK_COLOR_BUTTON(my_data->fill_widget), fill) ;
       gtk_color_button_set_color(GTK_COLOR_BUTTON(my_data->border_widget), border) ;
 
@@ -698,6 +696,7 @@ void zmapWindowMenuSetStyleCB(int menu_item_id, gpointer callback_data)
 
   zmapWindowRedrawFeatureSet(menu_data->window, feature_set);	/* does a complex context thing */
 
-  zmapWindowFullReposition(menu_data->window) ;
+  zmapWindowColOrderColumns(menu_data->window) ;	/* put this column (deleted then created) back into the right place */
+  zmapWindowFullReposition(menu_data->window) ;		/* adjust sizing and shuffle left / right */
 }
 
