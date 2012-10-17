@@ -194,6 +194,12 @@ default-bump-mode=all\n\
 \n\
 # former 'predefined' styles: note: names must be as in zmapConfigStyleDefaults.h\n\
 \n\
+[style-Plain]\n\
+description=internal style used for decorations\n\
+mode=plain\n\
+colours=normal fill white; normal border black\n\
+displayable=true\n\
+\n\
 [style-3 Frame]\n\
 description=3 frame display\n\
 mode=meta\n\
@@ -299,5 +305,7 @@ non-assembly-colours = normal fill brown ; normal border black ; selected fill r
 [style-Assembly Path]\n\
 description=assembly path for displayed sequence\n\
 parent-style=assembly\n\
+\n\
+\n\
 \n\
 ";

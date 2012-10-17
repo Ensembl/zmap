@@ -106,9 +106,10 @@ typedef struct _ZMapWindowMarkStruct
 
 static void markItem(ZMapWindowMark mark, FooCanvasItem *item, gboolean set_mark) ;
 static void markRange(ZMapWindowMark mark) ;
+#if BLOCK_MARK
 static void mark_block_cb(ZMapWindowContainerGroup container, FooCanvasPoints *points,
 			  ZMapContainerLevelType level, gpointer user_data);
-
+#endif
 
 static ZMapWindowContainerBlock getBlock(ZMapWindow window,
 					 double world_x1, double world_y1, double world_x2, double world_y2) ;
@@ -286,10 +287,12 @@ void zmapWindowMarkReset(ZMapWindowMark mark)
     {
       mark->mark_set = FALSE ;
 
+#if BLOCK_MARK
       if(mark->block_container)
 	zmapWindowContainerBlockUnmark(mark->block_container);
 
       mark->block_container = NULL;
+#endif
 
       if (mark->mark_src_item)
 	{
@@ -947,8 +950,9 @@ static void markItem(ZMapWindowMark mark, FooCanvasItem *item, gboolean set_mark
       GdkBitmap *mark_stipple;
       double x1, y1, x2, y2;
       ZMapWindowContainerGroup parent;
+#if USE_CHILDREN
       ZMapWindowContainerOverlay overlay;
-
+#endif
       mark_colour  = zmapWindowMarkGetColour(mark);
       mark_stipple = mark->stipple;
 
@@ -1032,6 +1036,7 @@ static void markRange(ZMapWindowMark mark)
   mark->world_y2 = tmp_y2;
   mark->mark_set = TRUE ;
 
+#if BLOCK_MARK
   if (mark->block_container)
     {
       /* Hey, we've got the block.  We'll just mark that block rather
@@ -1050,11 +1055,13 @@ static void markRange(ZMapWindowMark mark)
 				      mark_block_cb,
 				      mark);
     }
+#endif
 
   return ;
 }
 
 
+#if 0
 static void mark_block_cb(ZMapWindowContainerGroup container, FooCanvasPoints *points,
 			  ZMapContainerLevelType level, gpointer user_data)
 {
@@ -1077,7 +1084,7 @@ static void mark_block_cb(ZMapWindowContainerGroup container, FooCanvasPoints *p
 
   return ;
 }
-
+#endif
 
 
 /* This potentially should be converted to a generalised function that finds items in a

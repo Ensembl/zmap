@@ -187,7 +187,9 @@ static gboolean feature_set_matches_frame_drawing_mode(ZMapWindow     window,
 						       int *frame_end_out) ;
 
 //static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data) ;
+#if USE_BACKGROUND
 static gboolean strandBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data) ;
+#endif
 static gboolean containerDestroyCB(FooCanvasItem *item_in_hash, gpointer data) ;
 
 static void removeEmptyColumnCB(gpointer data, gpointer user_data) ;
@@ -2642,6 +2644,7 @@ static void removeEmptyColumnCB(gpointer data, gpointer user_data)
  *                           Event handlers
  */
 
+#if USE_BACKGROUND
 static gboolean strandBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data)
 {
   gboolean event_handled = FALSE;
@@ -2663,7 +2666,7 @@ static gboolean strandBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
 
   return event_handled;
 }
-
+#endif
 
 /* Handles events on a column, currently this is only mouse press/release events for
  * highlighting and column menus. */

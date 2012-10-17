@@ -119,8 +119,10 @@ char *zmapWindowDNAChoose(ZMapWindow window, FooCanvasItem *feature_item, ZMapWi
   ZMapFeatureBlock block ;
   double x1, y1, x2, y2 ;
   ZMapWindowContainerGroup container;
+#if USE_CHILDREN
   ZMapWindowContainerOverlay overlay;
   FooCanvasGroup *overlay_group ;
+#endif
   FooCanvasItem *parent ;
   gint block_start, block_end ;
   char *button_text ;

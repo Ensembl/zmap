@@ -874,6 +874,47 @@ GType zMapWindowFeaturesetItemGetType(void)
 }
 
 
+/* NOTE don-t _EVER_ let this get called by a Foo Canvas callback */
+/* let's us a filter sort here, we stability is a good thing and volumes are tiny */
+static void sort_containing_group_by_layer(ZMapWindowFeaturesetItem featureset)
+{
+	GList *old;
+	FooCanvasGroup *group = (FooCanvasGroup *) ((FooCanvasItem *) featureset)-> parent;
+	ZMapWindowFeaturesetItem item;
+	guint layer;
+
+	/* we only implement 3 layers */
+	GList *back = NULL, *features = NULL, *overlay = NULL;
+
+	for(old = group->item_list; old; old = old->next)
+	{
+		if(!ZMAP_IS_WINDOW_FEATURESET_ITEM(old->data))
+		{
+			layer = 0;		/* don-t expect to get here but you never know.... */
+		}
+		else
+		{
+			item = (ZMapWindowFeaturesetItem) old->data;
+			layer = item->layer;
+		}
+
+		if(!(layer & ZMAP_CANVAS_LAYER_DECORATION))	/* normal features */
+			features = g_list_append(features, old->data);
+		else if((layer & ZMAP_CANVAS_LAYER_OVERLAY))
+			overlay = g_list_append(overlay, old->data);
+		else
+			back = g_list_append(back, old->data);
+	}
+
+	features = g_list_concat(features, overlay);
+	back = g_list_concat(back, features);
+
+	g_list_free(group->item_list);
+
+	group->item_list = back;
+	group->item_list_end = g_list_last(back);
+}
+
 /*
  * return a singleton column wide canvas item
  * just in case we wanted to overlay two or more line graphs we need to allow for more than one
@@ -882,8 +923,12 @@ GType zMapWindowFeaturesetItemGetType(void)
  * we also have to include the window to allow more than one -> not accessable so we use the canvas instead
  *
  * we also allow several featuresets to map into the same canvas item via a virtual featureset (quark)
+ *
+ * NOTE after adding an item we sort the group's item list according to layer.
+ * **** This assumes that we only have a few items in the group ****
+ * which is ok as it's typically 1, occasionally 2 (focus)  and sometimes serveral eg 4 or 12
  */
-ZMapWindowCanvasItem zMapWindowCanvasItemFeaturesetGetFeaturesetItem(FooCanvasGroup *parent, GQuark id, int start,int end, ZMapFeatureTypeStyle style, ZMapStrand strand, ZMapFrame frame, int index)
+ZMapWindowCanvasItem zMapWindowCanvasItemFeaturesetGetFeaturesetItem(FooCanvasGroup *parent, GQuark id, int start,int end, ZMapFeatureTypeStyle style, ZMapStrand strand, ZMapFrame frame, int index, guint layer)
 {
   ZMapWindowFeaturesetItem featureset = NULL;
   zmapWindowCanvasFeatureType type;
@@ -974,12 +1019,20 @@ printf("create canvas set %s\n",g_quark_to_string(featureset->id));
 	  && (func = _featureset_set_init_G[featureset->type]))
 	func(featureset) ;
 
+	featureset->layer = layer;
+	sort_containing_group_by_layer(featureset);
 
       /* set our bounding box in canvas coordinates to be the whole column */
       foo_canvas_item_request_update (foo);
     }
 
   return ((ZMapWindowCanvasItem) foo);
+}
+
+
+guint zMapWindowCanvasFeaturesetGetId(ZMapWindowFeaturesetItem featureset)
+{
+	return(featureset->id);
 }
 
 
@@ -1014,6 +1067,23 @@ void zMapWindowCanvasFeaturesetSetBackground(FooCanvasItem *foo, GdkColor *fill,
 	zMapWindowCanvasFeaturesetRedraw(featureset, featureset->zoom);
 }
 
+
+
+
+guint zMapWindowCanvasFeaturesetGetLayer(ZMapWindowFeaturesetItem featureset)
+{
+	return(featureset->layer);
+}
+
+
+
+#if EVER_CALLED
+void zMapWindowCanvasFeaturesetSetLayer(ZMapWindowFeaturesetItem featureset, guint layer)
+{
+	featureset->layer = layer;
+	sort_containing_group_by_layer(featureset);
+}
+#endif
 
 
 
@@ -1162,7 +1232,10 @@ void zMapWindowCanvasFeaturesetRedraw(ZMapWindowFeaturesetItem fi, double zoom)
   double width = fi->width;
 
   fi->zoom = zoom;	/* can set to 0 to trigger recalc of zoom data */
-  x1 = 0.0;
+  x1 = fi->x_off;
+  /* x_off is for staggered columns - we can't just add it to our foo position as it's columns that get moved about */
+  /* well maybe that would be possible but the rest of the code works this way */
+
   if(fi->bumped)
     width = fi->bump_width;
 
@@ -1483,7 +1556,6 @@ static gboolean zmap_window_featureset_item_set_style(FooCanvasItem *item, ZMapF
 
 static gboolean zmap_window_featureset_item_show_hide(FooCanvasItem *item, gboolean show)
 {
-<<<<<<< HEAD
 	if (g_type_is_a(G_OBJECT_TYPE(item), ZMAP_TYPE_WINDOW_FEATURESET_ITEM))
 	{
 		ZMapWindowFeaturesetItem di = (ZMapWindowFeaturesetItem) item;
@@ -1491,7 +1563,7 @@ static gboolean zmap_window_featureset_item_show_hide(FooCanvasItem *item, gbool
 		/* find the feature struct and set a flag */
 
 		zmapWindowFeaturesetItemShowHide(item,canvas_item->feature,show, ZMWCF_HIDE_USER);
-
+	}
 
   return FALSE;
 }
@@ -1522,6 +1594,44 @@ static void zmap_window_featureset_item_item_init(ZMapWindowFeaturesetItem featu
 }
 
 
+/* stretchy items are sized according to the contaning group
+ * this gets called during a group update anc the size is not yet set
+ * but we can predict the size from the CanvasFeatureset items
+ * so scan the containing group's item list
+ * this avoids bouncing round repeated update calls
+ */
+
+static double get_containing_group_width(FooCanvasItem *item)
+{
+	GList *l;
+	FooCanvasGroup *group = (FooCanvasGroup *) item->parent;
+	ZMapWindowFeaturesetItem fi;
+	double width = 0.0, w;
+	FooCanvasItem *foo;
+
+	for(l = group->item_list; l; l = l->next)
+	{
+		if(!ZMAP_IS_WINDOW_FEATURESET_ITEM(l->data))
+		{
+			foo = (FooCanvasItem *) l->data;
+			w = foo->x2 - foo->x1 + 1;
+		}
+		else
+		{
+			fi = (ZMapWindowFeaturesetItem) l->data;
+			if(fi->layer & ZMAP_CANVAS_LAYER_STRETCH_X)
+				continue;
+			w = (fi->bumped? fi->bump_width : fi->width);
+			if(fi->x_off)
+				w += fi->x_off;	/* if staggered */
+		}
+
+		if(w > width)
+			width = w;
+	}
+
+	return width;
+}
 
 static void zmap_window_featureset_item_item_update (FooCanvasItem *item, double i2w_dx, double i2w_dy, int flags)
 {
@@ -1529,6 +1639,7 @@ static void zmap_window_featureset_item_item_update (FooCanvasItem *item, double
   ZMapWindowFeaturesetItem di = (ZMapWindowFeaturesetItem) item;
   int cx1,cy1,cx2,cy2;
   double x1,x2,y1,y2;
+  double width;
 
   if(item_class_G->update)
     item_class_G->update(item, i2w_dx, i2w_dy, flags);
@@ -1537,7 +1648,12 @@ static void zmap_window_featureset_item_item_update (FooCanvasItem *item, double
   // cribbed from FooCanvasRE; this sets the canvas coords in the foo item
   /* x_off is needed for staggered graphs, is currently 0 for all other types */
   di->dx = x1 = i2w_dx + di->x_off;
-  x2 = x1 + (di->bumped? di->bump_width : di->width);
+  width = (di->bumped? di->bump_width : di->width);
+
+  if((di->layer & ZMAP_CANVAS_LAYER_STRETCH_X))
+	  width = get_containing_group_width(item);
+
+  x2 = x1 + width;
 
   di->dy = y1 = i2w_dy;
   y2 = y1 + di->end - di->start;
@@ -1546,12 +1662,12 @@ static void zmap_window_featureset_item_item_update (FooCanvasItem *item, double
   foo_canvas_w2c (item->canvas, x2, y2, &cx2, &cy2);
 
 //printf("CFS update: %s %d %d %d %d\n",g_quark_to_string(di->id),cx1,cy1,cx2+1,cy2+1);
-  if(!(di->layer & ZMAP_CANVAS_LAYER_STRETCH_X))	/* else containing group to set size */
+//  if(!(di->layer & ZMAP_CANVAS_LAYER_STRETCH_X))	/* else containing group to set size */
   {
 	item->x1 = cx1;
 	item->x2 = cx2+1;
   }
-  if(!(di->layer & ZMAP_CANVAS_LAYER_STRETCH_Y))
+//  if(!(di->layer & ZMAP_CANVAS_LAYER_STRETCH_Y))
   {
 	item->y1 = cy1;
 	item->y2 = cy2+1;
@@ -1561,7 +1677,8 @@ static void zmap_window_featureset_item_item_update (FooCanvasItem *item, double
 
 
 
-/* are we withing the bounding box if not on a feature ? */
+/* are we within the bounding box if not on a feature ? */
+/* when we call this we already know, but we have to set actual_item */
 double featureset_background_point(FooCanvasItem *item,int cx, int cy, FooCanvasItem **actual_item)
 {
 	double best = 1.0e36;
@@ -1616,6 +1733,8 @@ double  zmap_window_featureset_item_foo_point(FooCanvasItem *item,
   */
   *actual_item = NULL;
 
+  if((fi->layer & ZMAP_CANVAS_LAYER_DECORATION))	/* we don-t eant to click on these ! */
+	  return(best);
 
   /* optimise repeat calls: the foo canvas does 6 calls for a click event (3 down 3 up)
    * and if we are zoomed into a bumped peptide alignment column that means looking at a lot of features
@@ -3103,7 +3222,7 @@ int zMapWindowFeaturesetItemRemoveFeature(FooCanvasItem *foo, ZMapFeature featur
  * we could just remove each feature individually , but this is quicker and easier
  */
 
-int zMapWindowFeaturesetItemRemoveSet(FooCanvasItem *foo, ZMapFeatureSet featureset)
+int zMapWindowFeaturesetItemRemoveSet(FooCanvasItem *foo, ZMapFeatureSet featureset, gboolean destroy)
 {
   ZMapWindowFeaturesetItem fi = (ZMapWindowFeaturesetItem) foo;
   int n_feat = fi->n_features;
@@ -3189,11 +3308,12 @@ int zMapWindowFeaturesetItemRemoveSet(FooCanvasItem *foo, ZMapFeatureSet feature
 
 //printf("canvas remove set %p %s %s: %d features\n", fi, g_quark_to_string(fi->id), g_quark_to_string(featureset->unique_id), n_feat);
 
-  if(!fi->n_features)
+  if(!fi->n_features && destroy)	/* if the canvasfeatureset is used only as a background we may not want to do this */
+  {
 // don-t do this we get glib **** errors
 //	  zmap_window_featureset_item_item_destroy((GtkObject *) fi);
 	gtk_object_destroy(GTK_OBJECT(fi));
-
+  }
   return n_feat;
 }
 

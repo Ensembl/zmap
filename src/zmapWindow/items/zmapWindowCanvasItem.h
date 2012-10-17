@@ -74,7 +74,7 @@ typedef struct _zmapWindowCanvasItemClassStruct  zmapWindowCanvasItemClass, *ZMa
 
 /* layering for canvas items... (ZMapWindowCanvasFeatureset)
  * if not _FIXED_ will fit to containing group, which will be sized by normal features
- * this replaces the overlay underlay and backgound conatiner children
+ * this replaces the overlay underlay and backgound container children
  * display items are held in a group's item list in order of underlay, features and overlay,
  * so layering can be implemented by using this ordered list
  * flags are provided to make it easier to sort this
@@ -83,8 +83,11 @@ typedef struct _zmapWindowCanvasItemClassStruct  zmapWindowCanvasItemClass, *ZMa
 #define ZMAP_CANVAS_LAYER_DECORATION	1	/* else is normal features */
 #define ZMAP_CANVAS_LAYER_OVERLAY		2	/* else is underlay if decoration */
 #define ZMAP_CANVAS_LAYER_STRETCH_X		4	/* fit to container? */
-#define ZMAP_CANVAS_LAYER_STRECTH_Y		8
+#define ZMAP_CANVAS_LAYER_STRETCH_Y		8	/* nothing stretches to Y as cord are set from the block? */
+								/* NOTE this may be not implemted */
 
+#define ZMAP_CANVAS_LAYER_COL_BACKGROUND	5
+#define ZMAP_CANVAS_LAYER_BLOCK_MARK	7
 
 
 /* Public funcs */

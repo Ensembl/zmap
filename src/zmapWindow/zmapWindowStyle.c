@@ -687,7 +687,7 @@ void zmapWindowMenuSetStyleCB(int menu_item_id, gpointer callback_data)
 			/* if it's empty it will perform hari kiri */
 			if(ZMAP_IS_WINDOW_FEATURESET_ITEM(canvas_item))
 			{
-				zMapWindowFeaturesetItemRemoveSet(canvas_item, feature_set);
+				zMapWindowFeaturesetItemRemoveSet(canvas_item, feature_set, TRUE);
 			}
 
 			/* destroy set item if empty ? */

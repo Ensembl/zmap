@@ -207,14 +207,13 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(GHashTable *ftoi_hash,
 
 
             /* adds once per canvas+column+style, then returns that repeatedly */
-            /* also adds an 'interval' foo canvas item which we need to look up */
 		canvas_item = zMapWindowCanvasItemFeaturesetGetFeaturesetItem((FooCanvasGroup *) features_container, feature_stack->id,
 			block->block_to_sequence.block.x1,block->block_to_sequence.block.x2, *feature->style,
-			feature_stack->strand,feature_stack->frame,feature_stack->set_index);
+			feature_stack->strand,feature_stack->frame,feature_stack->set_index, 0);
 
-		zMapWindowCanvasFeaturesetSetBackground((FooCanvasItem *) canvas_item,
-			zmapWindowContainerGroupGetFill( (ZMapWindowContainerGroup) parent_container),
-			zmapWindowContainerGroupGetBorder( (ZMapWindowContainerGroup) parent_container));
+//		zMapWindowCanvasFeaturesetSetBackground((FooCanvasItem *) canvas_item,
+//			zmapWindowContainerGroupGetFill( (ZMapWindowContainerGroup) parent_container),
+//			zmapWindowContainerGroupGetBorder( (ZMapWindowContainerGroup) parent_container));
       }
 
       feature_item = (FooCanvasItem *) canvas_item;

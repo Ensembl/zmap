@@ -91,8 +91,9 @@ static void zmap_window_container_block_get_property(GObject    *gobject,
 						     GParamSpec *pspec);
 static void zmap_window_container_block_destroy     (GtkObject *gtkobject);
 /* A ZMapWindowContainerGroup 'interface' function. */
+#if BLOCK_MARK
 static void zmap_window_container_block_post_create (ZMapWindowContainerGroup group);
-
+#endif
 
 static GObjectClass *parent_class_G = NULL;
 
@@ -254,6 +255,7 @@ GList *zmapWindowContainerBlockRemoveBumpedColumns(ZMapWindowContainerBlock bloc
 }
 
 
+#if BLOCK_MARK
 /*!
  * \brief Code to actually mark the Block
  *
@@ -364,6 +366,7 @@ void zmapWindowContainerBlockUnmark(ZMapWindowContainerBlock container_block)
 
   return ;
 }
+#endif
 
 /* --- */
 
@@ -382,6 +385,7 @@ ZMapWindowContainerBlock zmapWindowContainerBlockDestroy(ZMapWindowContainerBloc
  *                           INTERNAL
  */
 
+#if BLOCK_MARK
 
 static gboolean maximise_mark_items_cb(ZMapWindowContainerGroup group_updated,
 				       FooCanvasPoints         *group_bounds,
@@ -426,7 +430,6 @@ static gboolean maximise_mark_items_cb(ZMapWindowContainerGroup group_updated,
   return status ;
 }
 
-#if BLOCK_MARK
 
 /* Create the two mark items in the overlay, without a size and we'll update all that later */
 static void mark_items_create(ZMapWindowContainerBlock container_block,

@@ -573,38 +573,130 @@ void zmapWindowFocusSetHotColumn(ZMapWindowFocus focus, FooCanvasGroup *column, 
 }
 
 
-/* highlight/unhiglight cols. */
-void zmapWindowFocusHighlightHotColumn(ZMapWindowFocus focus)
+void zmapWindowFocusSetHighlightColumn(ZMapWindowFocus focus, GdkColor *fill, GdkColor *border)
 {
   FooCanvasGroup *hot_column;
 
   if ((hot_column = zmapWindowFocusGetHotColumn(focus)))
   {
 #if USE_BACKGROUND
+
     zmapWindowContainerGroupSetBackgroundColour(ZMAP_CONTAINER_GROUP(hot_column),
              &(focus->window->colour_column_highlight)) ;
+
 #else
-	if(ZMAP_IS_WINDOW_FEATURESET_ITEM(focus->hot_item))
-		zMapWindowCanvasFeaturesetSetBackground(focus->hot_item,&(focus->window->colour_column_highlight), NULL);
+#if 1
+	/*
+	 * add an empty CanvasFeatureset to paint the background
+	 * can-t use an existing one as:
+	 * a) there might not be one (strand sep)
+	 * b) there may be several overlapping (wiggle plots)
+	 */
+
+	GList *l;
+	GQuark id;
+	char *x;
+	ZMapWindowFeaturesetItem cfs = NULL;
+	ZMapWindowContainerFeatureSet container = (ZMapWindowContainerFeatureSet) hot_column;
+	ZMapFeatureTypeStyle style = NULL;
+	FooCanvasItem *foo = (FooCanvasItem *) hot_column;
+
+	/* get the id of our focus background CanvasFeatureset */
+	x = g_strdup_printf("%p_%s_%c%c_focus", foo->canvas, g_quark_to_string(zmapWindowContainerFeatureSetGetColumnId(container)), container->strand, container->frame);
+      id = g_quark_from_string(x);
+      g_free(x);
+
+	/* hot column is a ContainerFeatureset that has typically one CanvasFeatureset in it
+	 * but may have several (eg heatmap or other group columns)
+	 */
+
+	for(l = hot_column->item_list; l ; l = l->next)
+	{
+		ZMapWindowFeaturesetItem temp = (ZMapWindowFeaturesetItem) l->data;
+
+		if(ZMAP_IS_WINDOW_FEATURESET_ITEM(temp))	/* should alwyas be */
+		{
+			if(zMapWindowCanvasFeaturesetGetId(temp) == id)
+			{
+				cfs = temp;
+				break;
+			}
+		}
+	}
+
+
+	if(fill || border)	/* add a focus CanvasFeatureset */
+	{
+		double x1, x2;
+		double y1, y2;
+
+		if(!cfs)
+		{
+			/* find a plain background style */
+			style = g_hash_table_lookup(focus->window->context_map->styles, GUINT_TO_POINTER(zMapStyleCreateID(ZMAP_FIXED_STYLE_PLAIN_NAME))) ;
+			if(style)
+			{
+				foo = (FooCanvasItem *) hot_column;
+				foo_canvas_c2w(foo->canvas, 0, foo->y1, NULL, &y1);
+				foo_canvas_c2w(foo->canvas, 0, foo->y2, NULL, &y2);
+
+				cfs = (ZMapWindowFeaturesetItem) zMapWindowCanvasItemFeaturesetGetFeaturesetItem(hot_column, id,
+//				block->block_to_sequence.block.x1,block->block_to_sequence.block.x2,
+				y1,y2,
+				style, container->strand,container->frame, 0, ZMAP_CANVAS_LAYER_COL_BACKGROUND);
+			}
+		}
+		if(cfs)
+		{
+			/* get the width of the container */
+			foo = (FooCanvasItem *) container;
+			foo_canvas_c2w(foo->canvas, foo->x1, 0, &x1, NULL);
+			foo_canvas_c2w(foo->canvas, foo->x2, 0, &x2, NULL);
+
+			zMapWindowCanvasFeaturesetSetWidth(cfs, x2 - x1 + 1);
+
+//			zMapWindowCanvasFeaturesetSetLayer(cfs, ZMAP_CANVAS_LAYER_COL_BACKGROUND);
+			zMapWindowCanvasFeaturesetSetBackground((FooCanvasItem *) cfs, fill, border );
+		}
+
+	}
+	else if(cfs)
+	{
+		gtk_object_destroy(GTK_OBJECT(cfs));
+	}
+
+
+#else	/* CFS to paint background - no good we get overlaps on staggered styles */
+
+	GList *l;
+
+	/* hot column is a ContainerFeatureset that has typically one CanvasFeatureset in it
+	 * but may have several (eg heatmap or other group columns
+	 */
+
+	for(l = hot_column->item_list; l ; l = l->next)
+	{
+		FooCanvasItem *foo = (FooCanvasItem *) l->data;
+
+		if(ZMAP_IS_WINDOW_FEATURESET_ITEM(foo))
+			zMapWindowCanvasFeaturesetSetBackground(foo, fill, border );
+	}
+
+#endif
 #endif
   }
+}
 
-  return ;
+/* highlight/unhiglight cols. */
+void zmapWindowFocusHighlightHotColumn(ZMapWindowFocus focus)
+{
+  zmapWindowFocusSetHighlightColumn(focus, &(focus->window->colour_column_highlight), NULL);
 }
 
 
 void zmapWindowFocusUnHighlightHotColumn(ZMapWindowFocus focus)
 {
-  FooCanvasGroup *hot_column;
-
-#if USE_BACKGROUND
-  if ((hot_column = zmapWindowFocusGetHotColumn(focus)))
-      zmapWindowContainerGroupResetBackgroundColour(ZMAP_CONTAINER_GROUP(hot_column)) ;
-#else
-	if(ZMAP_IS_WINDOW_FEATURESET_ITEM(focus->hot_item))
-		zMapWindowCanvasFeaturesetSetBackground(focus->hot_item, NULL, NULL);
-#endif
-  return ;
+  zmapWindowFocusSetHighlightColumn(focus, NULL, NULL);
 }
 
 

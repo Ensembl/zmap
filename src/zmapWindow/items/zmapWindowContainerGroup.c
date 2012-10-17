@@ -208,9 +208,11 @@ ZMapWindowContainerGroup zmapWindowContainerGroupCreateFromFoo(FooCanvasGroup   
 {
   ZMapWindowContainerGroup container  = NULL;
   ZMapWindowContainerGroup parent_container  = NULL;
+#if 0
   FooCanvasItem *features   = NULL;
   FooCanvasItem *overlay    = NULL;
   FooCanvasItem *underlay   = NULL;
+#endif
 #if USE_BACKGROUND
   FooCanvasItem *background = NULL;
 #endif
@@ -438,15 +440,16 @@ void zmapWindowContainerGroupChildRedrawRequired(ZMapWindowContainerGroup contai
  * \return void
  */
 
+#if USE_BACKGROUND
 void zmapWindowContainerGroupSetBackgroundColour(ZMapWindowContainerGroup container,
 						 GdkColor *new_colour)
 {
-#if USE_BACKGROUND
+
   ZMapWindowContainerBackground background;
 
   if((background = zmapWindowContainerGetBackground(container)))
     zmapWindowContainerBackgroundSetColour(background, new_colour);
-#endif
+
   return ;
 }
 
@@ -460,15 +463,15 @@ void zmapWindowContainerGroupSetBackgroundColour(ZMapWindowContainerGroup contai
 
 void zmapWindowContainerGroupResetBackgroundColour(ZMapWindowContainerGroup container)
 {
-#if USE_BACKGROUND
   ZMapWindowContainerBackground background;
 
   if((background = zmapWindowContainerGetBackground(container)))
     zmapWindowContainerBackgroundResetColour(background);
-#endif
 
   return ;
 }
+
+#endif
 
 #ifdef NOT_IMPLEMENTED
 
@@ -1253,6 +1256,12 @@ static void zmap_window_container_group_update (FooCanvasItem *item, double i2w_
 
   if(item_visible)
     {
+#if 0
+oops! can-t do this
+groups are sized according to what they contain
+so we can-t size a canvas item accoriding to the size of a group
+at least not here
+
 	GList *l;
 	FooCanvasItem *foo;
 	ZMapWindowFeaturesetItem featureset;
@@ -1265,24 +1274,27 @@ static void zmap_window_container_group_update (FooCanvasItem *item, double i2w_
 		if(ZMAP_IS_WINDOW_FEATURESET_ITEM(foo))	/* these could be groups or even normal foo items */
 		{
 			featureset = (ZMapWindowFeaturesetItem) foo;
-			if(featureset->layer & ZMAP_CANVAS_LAYER_STRETCH_X)
+			guint layer = zMapWindowCanvasFeaturesetGetLayer(featureset);
+
+			if(layer & ZMAP_CANVAS_LAYER_STRETCH_X)
 			{
 				// this will automatcially stretch the mark sideways
 				// and also strand backgrounds if used
 				// and also navigator locator background and cursor
+				// and also column backgrounds
 				// as all are implemented as empty ZMapWindowCanvasFeaturesets
 
 				foo->x2 = foo->x1 + item->x2 - item->x1;
 				foo_canvas_c2w(foo->canvas,foo->x2 - foo->x1, 0, &size, NULL);
 				zMapWindowCanvasFeaturesetSetWidth(featureset,size);
 			}
-			if(featureset->layer & ZMAP_CANVAS_LAYER_STRETCH_Y)
+			if(layer & ZMAP_CANVAS_LAYER_STRETCH_Y)
 			{
 				foo->y2 = foo->y1 + item->y2 - item->y1;
 			}
 		}
 	}
-
+#endif
 	if(doing_reposition)
 	{
 	  if(parent_container)

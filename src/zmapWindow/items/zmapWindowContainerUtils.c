@@ -74,8 +74,9 @@ typedef struct
   GList *forward, *reverse;
 }ForwardReverseColumnListsStruct, *ForwardReverseColumnLists;
 
-
+#if USE_CHILDREN
 static FooCanvasItem *container_get_child(ZMapWindowContainerGroup container, guint position);
+#endif
 
 static void eachContainer(gpointer data, gpointer user_data);
 
@@ -973,6 +974,7 @@ FooCanvasItem *zMapFindCanvasColumn(ZMapWindowContainerGroup group,
 
 /* Internal */
 
+#if USE_CHILDREN
 static FooCanvasItem *container_get_child(ZMapWindowContainerGroup container, guint position)
 {
   FooCanvasItem *child = NULL;
@@ -993,7 +995,7 @@ static FooCanvasItem *container_get_child(ZMapWindowContainerGroup container, gu
   return child;
 }
 
-
+#endif
 
 /* Called for every container while descending.... */
 static void eachContainer(gpointer data, gpointer user_data)

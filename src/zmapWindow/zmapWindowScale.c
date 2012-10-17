@@ -684,7 +684,7 @@ debug("draw scale %p\n",((FooCanvasItem *) group)->canvas);
 	fid = g_quark_from_string(buf);
 
 	/* allocate featureset for whole sequence even if zoomed, if the feeatureset does not get re-created on zoom then the extent will be ok */
-	featureset = (ZMapWindowFeaturesetItem) zMapWindowCanvasItemFeaturesetGetFeaturesetItem(group, fid, seq_start, seq_end, scale_style, ZMAPSTRAND_NONE, ZMAPFRAME_0, 0);
+	featureset = (ZMapWindowFeaturesetItem) zMapWindowCanvasItemFeaturesetGetFeaturesetItem(group, fid, seq_start, seq_end, scale_style, ZMAPSTRAND_NONE, ZMAPFRAME_0, 0, 0);
 
 	seq_len = seq_end - seq_start + 1;
 	if(seq_len < 10)	/* we get called on start up w/ no sequence */

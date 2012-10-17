@@ -219,6 +219,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
   ZMapStyleBumpMode historic_bump_mode;
   ZMapWindow window;
   gboolean column = FALSE ;
+  gboolean ok = TRUE;
 
   gboolean mark_set;
   int start, end ;
@@ -318,10 +319,11 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
   if(bump_mode == ZMAPBUMP_STYLE || historic_bump_mode == ZMAPBUMP_STYLE)
   {
 		/* this does many featuresets, we expect heatmap sub-columns */
-	if(zmapWindowContainerBumpStyle(container,bump_mode == ZMAPBUMP_STYLE))
-		zMapWindowContainerFeatureSetSetBumpMode(container,bump_mode);
-	else
+	if(!zmapWindowContainerBumpStyle(container,bump_mode == ZMAPBUMP_STYLE))
+	{
+		ok = FALSE;
 		zMapWarning("bump style not configured","");
+	}
   }
   else
   {
@@ -331,7 +333,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
 	GList *l;
 	FooCanvasGroup *column_features;
 	BumpFeaturesetStruct bump_data = { 0 };
-	gboolean ok = TRUE;
+
 
 	column_features = (FooCanvasGroup *)zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)container) ;
 
@@ -348,13 +350,14 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
 		if(!zMapWindowCanvasFeaturesetBump(l->data, bump_mode, (int) compress_mode, &bump_data))
 		    ok = FALSE;
       }
+  }
 
      	/* this is a bit poor: we could have a column half bumped if there are > 1 CanvasFeatureset
 	 * in practice w/ heatmaps there will always be room and w/ other features only 1 CanvasFeatureset
 	 */
-      if(ok)
-	  zMapWindowContainerFeatureSetSetBumpMode(container,bump_mode);
-  }
+  if(ok)
+	zMapWindowContainerFeatureSetSetBumpMode(container,bump_mode);
+
 
 //		time = zMapElapsedSeconds - time;
 //		printf("featureset bump in %.3f seconds\n", time);
