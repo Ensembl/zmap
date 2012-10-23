@@ -4329,7 +4329,7 @@ static void commandCB(ZMapWindow window, void *caller_data, void *window_data)
 
 	zmapViewLoadFeatures(view, get_data->block, get_data->feature_set_ids,
 			     req_start, req_end,
-			     SOURCE_GROUP_DELAYED, TRUE, TRUE) ;
+			     SOURCE_GROUP_DELAYED, TRUE, FALSE) ;	/* don't terminate, need to keep alive for blixem */
 
 	break ;
       }
