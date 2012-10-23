@@ -234,7 +234,7 @@ static ActionDescriptorStruct action_table_G[] =
 
 
 
-static ZMapXMLObjTagFunctionsStruct view_starts_G[] = 
+static ZMapXMLObjTagFunctionsStruct view_starts_G[] =
   {
     { "zmap",       xml_zmap_start_cb                  },
     { "request",    xml_request_start_cb               },
@@ -2138,7 +2138,7 @@ static void loadFeatures(ZMapView view, RequestData input_data)
 
   if (input_data->code == ZMAPXREMOTE_OK)
     zmapViewLoadFeatures(view, input_data->block, input_data->feature_sets, start, end,
-			 SOURCE_GROUP_DELAYED, TRUE, TRUE) ;
+			 SOURCE_GROUP_DELAYED, TRUE, FALSE) ;	/* will terminate if is pipe otherwase keep alive */
 
   return ;
 }
