@@ -161,7 +161,7 @@ char *zmapWindowItemCoordsText(FooCanvasItem *item)
   str = g_string_sized_new(2048) ;
 
   str = getItemCoords(str, item, FALSE) ;
-  
+
   item_coords = g_string_free(str, FALSE) ;
 
   return item_coords ;
@@ -353,8 +353,10 @@ static gboolean get_container_type_as_string(FooCanvasItem *item, char **str_out
     *str_out = "ZMAP_CONTAINER_ALIGNMENT" ;
   else if (ZMAP_IS_CONTAINER_BLOCK(item))
     *str_out = "ZMAP_CONTAINER_BLOCK" ;
+#if USE_STRAND
   else if (ZMAP_IS_CONTAINER_STRAND(item))
     *str_out = "ZMAP_CONTAINER_STRAND" ;
+#endif
   else if (ZMAP_IS_CONTAINER_FEATURESET(item))
     *str_out = "ZMAP_CONTAINER_FEATURESET" ;
   else

@@ -186,7 +186,7 @@ static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inou
 				 gboolean request_as_columns, gboolean revcomp_if_needed);
 static void justDrawContext(ZMapView view, ZMapFeatureContext diff_context, GHashTable *styles, GList *masked);
 
-static ZMapFeatureContext createContext(ZMapFeatureSequenceMap sequence, GList *feature_set_names) ;
+static ZMapFeatureContext createContext(ZMapView view, GList *feature_set_names) ;
 
 static ZMapViewWindow addWindow(ZMapView zmap_view, GtkWidget *parent_widget) ;
 
@@ -1775,7 +1775,7 @@ ZMapViewConnection zMapViewRequestServer(ZMapView view, ZMapViewConnection view_
 	else
 	{
 	/* Create data specific to this step list...and set it in the connection. */
-		context = createContext(view->view_sequence, req_featuresets) ;
+		context = createContext(view, req_featuresets) ;
 	}
 
 	//printf("request featureset %s from %s\n",g_quark_to_string(GPOINTER_TO_UINT(req_featuresets->data)),server->url);
@@ -4821,12 +4821,16 @@ static void setZoomStatus(gpointer data, gpointer user_data)
 
 
 /* Trial code to get alignments from a file and create a context...... */
-static ZMapFeatureContext createContext(ZMapFeatureSequenceMap sequence, GList *feature_set_names)
+static ZMapFeatureContext createContext(ZMapView view, GList *feature_set_names)
 {
   ZMapFeatureContext context = NULL ;
   gboolean master = TRUE ;
   ZMapFeatureAlignment alignment ;
   ZMapFeatureBlock block ;
+  ZMapFeatureSet feature_set;
+  ZMapFeatureTypeStyle style;
+
+  ZMapFeatureSequenceMap sequence = view->view_sequence;
 
   context = zMapFeatureContextCreate(sequence->sequence, sequence->start, sequence->end, feature_set_names) ;
 
@@ -4841,11 +4845,25 @@ static ZMapFeatureContext createContext(ZMapFeatureSequenceMap sequence, GList *
 
   zMapFeatureAlignmentAddBlock(alignment, block) ;
 
+  /* add a strand separator featureset if this repeats it will be merged, but we need it for the yellow stripe in the middle of the screen */
 
+  feature_set = zMapFeatureSetCreate(ZMAP_FIXED_STYLE_STRAND_SEPARATOR, NULL);
+  if(feature_set)
+  {
+	style = g_hash_table_lookup(view->context_map.styles,
+					GUINT_TO_POINTER(zMapStyleCreateID(ZMAP_FIXED_STYLE_STRAND_SEPARATOR)));
+
+	zMapFeatureSetStyle(feature_set,style);
+
+	zMapFeatureBlockAddFeatureSet(block, feature_set);
+  }
+
+
+#if 0
   /* Add other alignments if any were specified in a config file. */
   /* NOTE it's iffed out */
   addAlignments(context) ;
-
+#endif
 
   return context ;
 }

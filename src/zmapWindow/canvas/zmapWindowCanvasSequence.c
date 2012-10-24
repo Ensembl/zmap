@@ -164,7 +164,7 @@ static GList *zmapWindowCanvasSequencePaintHighlight( GdkDrawable *drawable, ZMa
 		/* there may be more than one on a line eg w/ split codon */
 
 		sh = (ZMapSequenceHighlight) highlight->data;
-//printf("highlight %ld (%ld) @ %x, %ld, %ld\n",y, seq->row_size, sh->type, sh->start, sh->end);
+//printf("3FT highlight %ld (%ld) @ %x, %ld, %ld\n",y, seq->row_size, sh->type, sh->start, sh->end);
 
 		if(sh->end < y)
 		{
@@ -234,7 +234,7 @@ static GList *zmapWindowCanvasSequencePaintHighlight( GdkDrawable *drawable, ZMa
 					height = (height * len) / seq->factor;
 				}
 			}
-//printf("paint sel %x %ld,%ld @ %ld %d %d,(%ld,%ld %d %d) %d\n", sh->type, sh->start, sh->end, start - y, cy, hcx, start, end, n_bases, n_show, len);
+printf("3FT paint sel %x %ld,%ld @ %ld %d %d,(%ld,%ld %d %d) %d\n", sh->type, sh->start, sh->end, start - y, cy, hcx, start, end, n_bases, n_show, len);
 
 			/* NOTE
 			 * we paint ascending seq coords. If we have a 3' split codon (which is at the 5' end of an exon)
@@ -301,7 +301,7 @@ static GList *zmapWindowCanvasSequencePaintHighlight( GdkDrawable *drawable, ZMa
 			if(!join_left)
 				done_middle = TRUE;	/* likely to be a split codon */
 
-//printf("paint ... @ %ld %d, %d (%d)\n", y, cy, cx, n_bases);
+//printf("3FT paint ... @ %ld %d, %d (%d)\n", y, cy, cx, n_bases);
 
 			gdk_draw_rectangle (drawable, featureset->gc, TRUE, hcx, cy, pango->text_width * n_bases, seq->spacing + 1);
 		}
@@ -340,20 +340,22 @@ static void zmapWindowCanvasSequencePaintFeature(ZMapWindowFeaturesetItem featur
 
 	zmapWindowCanvasSequenceSetRow(featureset, seq);
 
-		/* restrict to actual expose area, any expose will fetch the whole feature */
+printf("3FT paint %s index= %p\n",g_quark_to_string(featureset->id), featureset->display_index);
+
+	/* restrict to actual expose area, any expose will fetch the whole feature */
 	cx = expose->area.y - 1;
 	cy = expose->area.y + expose->area.height + 1;
 	if(cx < featureset->clip_y1)
 		cx = featureset->clip_y1 - seq->spacing + 1;
 	if(cy > featureset->clip_y2)
 		cy = featureset->clip_y2 + seq->spacing - 1;
-//if(sequence->frame == ZMAPFRAME_2) printf("expose: %d %d (%d %d) -> %d %d\n",expose->area.y - 1,expose->area.y + expose->area.height + 1, featureset->clip_y1,featureset->clip_y2, cx,cy);
+if(sequence->frame == ZMAPFRAME_2) printf("3FT expose: %d %d (%d %d) -> %d %d\n",expose->area.y - 1,expose->area.y + expose->area.height + 1, featureset->clip_y1,featureset->clip_y2, cx,cy);
 
 	/* get the expose area: copied from calling code, we have one item here and it's normally bigger than the expose area */
 	foo_canvas_c2w(foo->canvas,0,floor(cx),NULL,&y1);
 	foo_canvas_c2w(foo->canvas,0,ceil(cy),NULL,&y2);
 
-//if(sequence->frame == ZMAPFRAME_2) printf("paint from %.1f to %.1f\n",y1,y2);
+//if(sequence->frame == ZMAPFRAME_2) printf("3FT paint from %.1f to %.1f\n",y1,y2);
 
 //	NOTE need to sort highlight list here if it's not added in ascending coord order */
 
@@ -378,7 +380,7 @@ static void zmapWindowCanvasSequencePaintFeature(ZMapWindowFeaturesetItem featur
 	y -= 1;
 	y -=  y % (seq->row_size  * seq->factor);		/* sequence offset from start, 0 based, biased to row start */
 
-//if(sequence->frame == ZMAPFRAME_2) printf("%s frame = %d y1, = %.1f  (%ld)\n",g_quark_to_string(featureset->id),sequence->frame, y1, y);
+//if(sequence->frame == ZMAPFRAME_2) printf("3FT %s frame = %d y1, = %.1f  (%ld)\n",g_quark_to_string(featureset->id),sequence->frame, y1, y);
 
 	seq->offset = (seq->spacing - pango->text_height) / 2;		/* vertical padding if relevant */
 
@@ -397,7 +399,7 @@ static void zmapWindowCanvasSequencePaintFeature(ZMapWindowFeaturesetItem featur
 			y_paint += sequence->frame - ZMAPFRAME_0;
 
 
-//if(sequence->frame == ZMAPFRAME_2) printf("y, seq: %ld (%ld %ld) start,end %ld %ld, ybase %ld\n",y, seq_y1,seq_y2,seq->start, seq->end, y_base);
+//if(sequence->frame == ZMAPFRAME_2) printf("3FT y, seq: %ld (%ld %ld) start,end %ld %ld, ybase %ld\n",y, seq_y1,seq_y2,seq->start, seq->end, y_base);
 
 		p = sequence->sequence + y_base;
 		q = seq->text;
@@ -421,7 +423,7 @@ static void zmapWindowCanvasSequencePaintFeature(ZMapWindowFeaturesetItem featur
 		/* NOTE y is 0 based so we have to add 1 to do the highlight properly */
 		hl = zmapWindowCanvasSequencePaintHighlight(drawable, featureset, seq, hl, y_paint + featureset->start, cx, cy);
 
-//if(sequence->frame == ZMAPFRAME_2) printf("paint dna %s @ %ld = %d (%ld)\n",seq->text, y_paint, cy, seq->offset);
+//if(sequence->frame == ZMAPFRAME_2) printf("3FT paint dna %s @ %ld = %d (%ld)\n",seq->text, y_paint, cy, seq->offset);
 
 		pango_renderer_draw_layout (pango->renderer, pango->layout,  cx * PANGO_SCALE ,  (cy + seq->offset) * PANGO_SCALE);
 
@@ -447,6 +449,8 @@ static void zmapWindowCanvasSequenceZoomSet(ZMapWindowFeaturesetItem featureset,
 
 		seq->row_size = 0;	/* trigger recalc, can't do it here as we don't have the seq feature, or a drawable  */
 	}
+printf("3FT zoom %s index= %p\n",g_quark_to_string(featureset->id), featureset->display_index);
+
 }
 
 
@@ -524,6 +528,8 @@ static void zmapWindowCanvasSequenceSetColour(FooCanvasItem         *foo,
 
 	ZMapSkipList sl;
 
+printf("3FT set colour %s index= %p\n",g_quark_to_string(fi->id), fi->display_index);
+
 	if((colour_type != ZMAPSTYLE_COLOURTYPE_INVALID) && !default_fill)		/* eg if not configured in the style */
 		return;
 	// if(!default_border) return;	not actually used
@@ -563,7 +569,7 @@ static void zmapWindowCanvasSequenceSetColour(FooCanvasItem         *foo,
 				/* which are zero based relative to seq start coord and featureset offset (dy) */
 				h->start = sub_feature->start;	// - fi->dy + 1;
 				h->end = sub_feature->end;		// - fi->dy + 1;
-//printf("set highlight for %d,%d @ %ld, %ld\n",sub_feature->start, sub_feature->end, h->start,h->end);
+printf("3FT set highlight for %d,%d @ %ld, %ld\n",sub_feature->start, sub_feature->end, h->start,h->end);
 				seq->highlight = g_list_append(seq->highlight, h);
 				break;
 		}

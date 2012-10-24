@@ -72,7 +72,9 @@ typedef struct
   ZMapFeatureSet       current_set;
   /* The current containers in the recursion */
   ZMapWindowContainerGroup container_block;
+#if USE_STRAND
   ZMapWindowContainerGroup container_strand;
+#endif
   ZMapWindowContainerGroup container_feature_set;
   double current;
 
@@ -350,7 +352,7 @@ ZMapWindowNavigator zMapWindowNavigatorCreate(GtkWidget *canvas_widget)
   g_object_set_data(G_OBJECT(canvas), ZMAP_WINDOW_POINTER, navigate->current_window) ;
 
 
-  navigate->container_root = zmapWindowContainerGroupCreateFromFoo(root, ZMAPCONTAINER_LEVEL_ROOT,
+  navigate->container_root = zmapWindowContainerGroupCreate(root, ZMAPCONTAINER_LEVEL_ROOT,
 								   ROOT_CHILD_SPACING,
 								   &(navigate->root_background), NULL);
 
@@ -370,6 +372,8 @@ ZMapWindowNavigator zMapWindowNavigatorCreate(GtkWidget *canvas_widget)
   zmapWindowContainerGroupAddUpdateHook(navigate->container_root,
 					container_draw_locator,
 					navigate);
+
+   zmapWindowDrawSetGroupBackground(navigate->container_root, 0, 1, 1.0, ZMAP_CANVAS_LAYER_ROOT_BACKGROUND, NULL, NULL);
 
 #if USE_CHILDREN
   g_object_set(G_OBJECT(navigate->container_root),
@@ -763,7 +767,7 @@ debug("nav set scroll %d %d\n",navigate->full_span.x1,navigate->full_span.x2);
         container_features = zmapWindowContainerGetFeatures(navigate->container_root);
         if(!navigate->container_align)
           {
-            navigate->container_align = zmapWindowContainerGroupCreate(container_features, ZMAPCONTAINER_LEVEL_ALIGN,
+            navigate->container_align = zmapWindowContainerGroupCreate((FooCanvasGroup *) container_features, ZMAPCONTAINER_LEVEL_ALIGN,
 								       ALIGN_CHILD_SPACING,
 								       &(navigate->align_background), NULL);
 
@@ -780,6 +784,8 @@ debug("nav set scroll %d %d\n",navigate->full_span.x1,navigate->full_span.x2);
 	    zmapWindowContainerAlignmentAugment((ZMapWindowContainerAlignment) navigate->container_align,
 						(ZMapFeatureAlignment) feature_any);
 
+		zmapWindowDrawSetGroupBackground(navigate->container_align, 0, 1, 1.0, ZMAP_CANVAS_LAYER_ALIGN_BACKGROUND, NULL, NULL);
+
             hash_status = zmapWindowFToIAddAlign(navigate->ftoi_hash, key_id, (FooCanvasGroup *)(navigate->container_align));
 
             zMapAssert(hash_status);
@@ -789,9 +795,12 @@ debug("nav set scroll %d %d\n",navigate->full_span.x1,navigate->full_span.x2);
     case ZMAPFEATURE_STRUCT_BLOCK:
       {
         ZMapWindowContainerFeatures features = NULL;
-//        int block_start, block_end;
+        int block_start, block_end;
 
         draw_data->current_block = feature_block = (ZMapFeatureBlock)feature_any;
+
+        block_start = feature_block->block_to_sequence.block.x1;
+        block_end   = feature_block->block_to_sequence.block.x2;
 
 #if MH17_DEBUG_NAV_FOOBAR
 /* NOTE the navigator features get scaled but the block is not as these don't appear to
@@ -800,9 +809,6 @@ debug("nav set scroll %d %d\n",navigate->full_span.x1,navigate->full_span.x2);
  * which also has to be scaled
  */
 {
-int block_start, block_end;
-        block_start = feature_block->block_to_sequence.block.x1;
-        block_end   = feature_block->block_to_sequence.block.x2;
 
 debug("nav draw block %d %d\n",block_start,block_end);
 }
@@ -810,7 +816,7 @@ debug("nav draw block %d %d\n",block_start,block_end);
 
         /* create the block and add the item to the hash */
         features    = zmapWindowContainerGetFeatures(draw_data->navigate->container_align);
-        draw_data->container_block = zmapWindowContainerGroupCreate(features, ZMAPCONTAINER_LEVEL_BLOCK,
+        draw_data->container_block = zmapWindowContainerGroupCreate((FooCanvasGroup *) features, ZMAPCONTAINER_LEVEL_BLOCK,
 								    BLOCK_CHILD_SPACING,
 								    &(navigate->block_background), NULL);
 
@@ -830,6 +836,8 @@ debug("nav draw block %d %d\n",block_start,block_end);
       zmapWindowContainerBlockAugment((ZMapWindowContainerBlock)draw_data->container_block,
 					    (ZMapFeatureBlock) feature_any) ;
 
+	zmapWindowDrawSetGroupBackground(draw_data->container_block, 0, 1, 1.0, ZMAP_CANVAS_LAYER_BLOCK_BACKGROUND, NULL, NULL);
+
         hash_status = zmapWindowFToIAddBlock(navigate->ftoi_hash, draw_data->current_align->unique_id,
                                              key_id, (FooCanvasGroup *)(draw_data->container_block));
         zMapAssert(hash_status);
@@ -837,8 +845,9 @@ debug("nav draw block %d %d\n",block_start,block_end);
         /* we're only displaying one strand... create it ... */
         features = zmapWindowContainerGetFeatures(draw_data->container_block);
 
+#if USE_STRAND
         /* The strand container doesn't get added to the hash! */
-        draw_data->container_strand = zmapWindowContainerGroupCreate(features, ZMAPCONTAINER_LEVEL_STRAND,
+        draw_data->container_strand = zmapWindowContainerGroupCreate((FooCanvasGroup *) features, ZMAPCONTAINER_LEVEL_STRAND,
 								     STRAND_CHILD_SPACING,
 								     &(navigate->strand_background), NULL);
 
@@ -850,6 +859,9 @@ debug("nav draw block %d %d\n",block_start,block_end);
 	zmapWindowContainerGroupAddUpdateHook(draw_data->container_strand,
 					      highlight_locator_area_cb,
 					      draw_data->navigate);
+
+	zmapWindowDrawSetGroupBackground(draw_data->container_strand, NULL, NULL);
+#endif
 
         /* create a column per set ... */
         initialiseScaleIfNotExists(draw_data->current_block);
@@ -1041,10 +1053,12 @@ debug("nav create column %s %p\n",g_quark_to_string(set_id),draw_data->current_s
   else if(draw_data->current_set)
     {
       ZMapWindowContainerFeatureSet container_set;
-
+#if USE_STRAND
       features = zmapWindowContainerGetFeatures(ZMAP_CONTAINER_GROUP(draw_data->container_strand));
-
-      draw_data->container_feature_set = zmapWindowContainerGroupCreate(features,
+#else
+      features = zmapWindowContainerGetFeatures(ZMAP_CONTAINER_GROUP(draw_data->container_block));
+#endif
+      draw_data->container_feature_set = zmapWindowContainerGroupCreate((FooCanvasGroup *) features,
 									ZMAPCONTAINER_LEVEL_FEATURESET,
 									SET_CHILD_SPACING,
 									&(draw_data->navigate->column_background),
@@ -1093,6 +1107,7 @@ debug("nav create column %s %p\n",g_quark_to_string(set_id),draw_data->current_s
 			 G_CALLBACK(columnBackgroundEventCB),
 			 (gpointer)draw_data->navigate);
 #endif
+	zmapWindowDrawSetGroupBackground(draw_data->container_feature_set, 0, 1, 1.0, ZMAP_CANVAS_LAYER_COL_BACKGROUND,  NULL, NULL);
     }
   else
     zMapLogWarning("Failed to find navigator featureset '%s'\n", g_quark_to_string(set_id));
@@ -1768,7 +1783,9 @@ static gboolean highlight_locator_area_cb(ZMapWindowContainerGroup container, Fo
     {
     case ZMAPCONTAINER_LEVEL_ALIGN:
     case ZMAPCONTAINER_LEVEL_BLOCK:
+#if USE_STRAND
     case ZMAPCONTAINER_LEVEL_STRAND:
+#endif
     case ZMAPCONTAINER_LEVEL_FEATURESET:
 
 #warning need to re-implement the locator... scan for LOCATOR

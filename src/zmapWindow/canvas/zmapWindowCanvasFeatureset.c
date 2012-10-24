@@ -83,13 +83,14 @@
 
 #include <zmapWindowCanvasGraphics.h>
 
+#include <zmapWindow_P.h>	// for debugging only
+#include <zmapWindowContainerFeatureSet_I.h>
 
 typedef gint (FeatureCmpFunc)(gconstpointer a, gconstpointer b) ;
 
 static void zmap_window_featureset_item_item_class_init  (ZMapWindowFeaturesetItemClass featureset_class);
 static void zmap_window_featureset_item_item_init        (ZMapWindowFeaturesetItem      item);
 
-static void  zmap_window_featureset_item_item_update (FooCanvasItem *item, double i2w_dx, double i2w_dy, int flags);
 static void  zmap_window_featureset_item_item_update (FooCanvasItem *item, double i2w_dx, double i2w_dy, int flags);
 static double  zmap_window_featureset_item_foo_point (FooCanvasItem *item, double x, double y, int cx, int cy, FooCanvasItem **actual_item);
 static void  zmap_window_featureset_item_item_bounds (FooCanvasItem *item, double *x1, double *y1, double *x2, double *y2);
@@ -726,7 +727,7 @@ static void zMapWindowCanvasFeaturesetPaintSet(ZMapWindowFeaturesetItem fi,
 	y1 = (gint) foo->y1;
 	y2 = (gint) foo->y2;
 
-	/* NB: clip region is 1 bigger than the expose  to avoid drawing spurious lines */
+	/* NB: clip region is 1 bigger than the expose to avoid drawing spurious lines */
 
 	if(x1 < fi->clip_x1)
 		x1 = fi->clip_x1;
@@ -740,6 +741,7 @@ static void zMapWindowCanvasFeaturesetPaintSet(ZMapWindowFeaturesetItem fi,
 	c.pixel = fi->background;
 	gdk_gc_set_foreground (fi->gc, &c);
 	zMap_draw_rect (drawable, fi, x1, y1, x2, y2, TRUE);
+//printf("draw back %x %d,%d - %d,%d\n",c.pixel , x1, y1, x2, y2);
   }
 
   if ((fi->type > 0 && fi->type < FEATURE_N_TYPE)
@@ -1043,6 +1045,14 @@ void zMapWindowCanvasFeaturesetSetWidth(ZMapWindowFeaturesetItem featureset, dou
   featureset->width = width;
   foo_canvas_item_request_update ((FooCanvasItem *) featureset);
 }
+
+
+void zMapWindowCanvasFeaturesetSetSequence(ZMapWindowFeaturesetItem featureset, double y1, double y2)
+{
+	featureset->start = y1;
+	featureset->end = y2;
+}
+
 
 
 void zMapWindowCanvasFeaturesetSetBackground(FooCanvasItem *foo, GdkColor *fill, GdkColor * outline)
@@ -1594,8 +1604,10 @@ static void zmap_window_featureset_item_item_init(ZMapWindowFeaturesetItem featu
 }
 
 
-/* stretchy items are sized according to the contaning group
- * this gets called during a group update anc the size is not yet set
+
+#if 0
+/* stretchy items are sized according to the containing group
+ * this gets called during a group update and the size is not yet set
  * but we can predict the size from the CanvasFeatureset items
  * so scan the containing group's item list
  * this avoids bouncing round repeated update calls
@@ -1632,6 +1644,7 @@ static double get_containing_group_width(FooCanvasItem *item)
 
 	return width;
 }
+#endif
 
 static void zmap_window_featureset_item_item_update (FooCanvasItem *item, double i2w_dx, double i2w_dy, int flags)
 {
@@ -1642,7 +1655,7 @@ static void zmap_window_featureset_item_item_update (FooCanvasItem *item, double
   double width;
 
   if(item_class_G->update)
-    item_class_G->update(item, i2w_dx, i2w_dy, flags);
+    item_class_G->update(item, i2w_dx, i2w_dy, flags);		/* just sets flags */
 
   //printf("update %s width = %.1f\n",g_quark_to_string(di->id),di->width);
   // cribbed from FooCanvasRE; this sets the canvas coords in the foo item
@@ -1651,22 +1664,25 @@ static void zmap_window_featureset_item_item_update (FooCanvasItem *item, double
   width = (di->bumped? di->bump_width : di->width);
 
   if((di->layer & ZMAP_CANVAS_LAYER_STRETCH_X))
-	  width = get_containing_group_width(item);
+	  width = 1;  	/* will be set afterwards by caller */
 
   x2 = x1 + width;
 
   di->dy = y1 = i2w_dy;
   y2 = y1 + di->end - di->start;
 
+  if((di->layer & ZMAP_CANVAS_LAYER_STRETCH_Y))
+	  y2 = y1;  	/* will be set afterwards by caller */
+
   foo_canvas_w2c (item->canvas, x1, y1, &cx1, &cy1);
   foo_canvas_w2c (item->canvas, x2, y2, &cx2, &cy2);
 
-//printf("CFS update: %s %d %d %d %d\n",g_quark_to_string(di->id),cx1,cy1,cx2+1,cy2+1);
 //  if(!(di->layer & ZMAP_CANVAS_LAYER_STRETCH_X))	/* else containing group to set size */
   {
 	item->x1 = cx1;
 	item->x2 = cx2+1;
   }
+
 //  if(!(di->layer & ZMAP_CANVAS_LAYER_STRETCH_Y))
   {
 	item->y1 = cy1;
@@ -2081,7 +2097,10 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
   if(!fi->gc && (item->object.flags & FOO_CANVAS_ITEM_REALIZED))
     fi->gc = gdk_gc_new (item->canvas->layout.bin_window);
   if(!fi->gc)
+  {
+printf("draw: no gc\n");
     return;		/* got a draw before realize ?? */
+  }
 
   /* check zoom level and recalculate */
   /* NOTE this also creates the index if needed */
@@ -2112,8 +2131,18 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
 
 #if 0
 
-  if(fi->type >= FEATURE_GRAPHICS)
-    printf("expose %p %s %.1f,%.1f (%d %d, %d %d)\n", item->canvas, g_quark_to_string(fi->id), y1, y2, fi->clip_x1, fi->clip_y1, fi->clip_x2, fi->clip_y2);
+//  if(fi->type >= FEATURE_GRAPHICS)
+if(!fi->features)
+{
+	ZMapWindowContainerFeatureSet column;
+
+	printf("expose %p %s %.1f,%.1f (%d %d, %d %d)\n", item->canvas, g_quark_to_string(fi->id),
+		 y1, y2, fi->clip_x1, fi->clip_y1, fi->clip_x2, fi->clip_y2);
+
+	column =  (ZMapWindowContainerFeatureSet) ((ZMapWindowCanvasItem) item)->__parent__.parent;
+	if(ZMAP_IS_CONTAINER_FEATURESET(column))
+		printf("painting column %s\n",g_quark_to_string(column->unique_id));
+}
 #endif
 
   /* ok...this looks like the place to do feature specific painting..... */

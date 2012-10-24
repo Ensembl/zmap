@@ -164,6 +164,7 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(GHashTable *ftoi_hash,
 	ZMapFeature feature = feature_stack->feature;
 	ZMapWindowCanvasItem canvas_item = (ZMapWindowCanvasItem) foo_featureset;
       ZMapFeatureBlock block = feature_stack->block;
+char *x;
 
 	/* NOTE
 	 * parent is the features group in the conatiner featureset
@@ -239,7 +240,7 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(GHashTable *ftoi_hash,
 			* and the population copied in.
 			*
 			* NOTE calling code will need to set the feature in the hash as the composite feature
-	#warning need to set composite feature in lookup code
+#warning need to set composite feature in lookup code
 			*/
 
 			return (FooCanvasItem *) feature_item;
@@ -263,6 +264,9 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(GHashTable *ftoi_hash,
 
 			status = zmapWindowFToIAddSetFeature(feature_stack->col_hash[strand], feature->unique_id, feature_item, feature);
 
+//x = g_quark_to_string(feature->unique_id);
+//if(frame != ZMAPFRAME_NONE)
+//	printf("add to hash %p %s %s\n",feature_stack->col_hash[strand], x, g_quark_to_string(feature_stack->set->unique_id));
 		}
 	}
 
@@ -476,6 +480,7 @@ gboolean zmapWindowFToIAddSet(GHashTable *feature_context_to_item,
 	  set->feature_any = item_feature ;
 
 	  g_hash_table_insert(block->hash_table, GUINT_TO_POINTER(set_id), set) ;
+//printf("added set %s to block\n",g_quark_to_string(set_id));
 	}
 
       result = TRUE ;
@@ -777,6 +782,8 @@ ID2Canvas zmapWindowFToIFindID2CFull(ZMapWindow window, GHashTable *feature_cont
                   id2c = feature ;
 
  	          }
+printf("ftoi find: %p %p %s %s\n",set->hash_table, feature, g_quark_to_string(feature_id), g_quark_to_string(tmp_set_id));
+
 		}
 	    }
 	}

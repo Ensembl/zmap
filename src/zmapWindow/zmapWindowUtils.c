@@ -652,11 +652,13 @@ static void recolour_backgrounds_cb(FooCanvasGroup *data, FooCanvasPoints *point
       background = zmapWindowContainerGetBackground(data);
       colour     = &(window->colour_separator);
       break;
+#if USE_STRAND
     case ZMAPCONTAINER_LEVEL_STRAND:
       background = zmapWindowContainerGetBackground(data);
       if(zmapWindowContainerIsStrandSeparator(data))
 	colour   = &(window->colour_separator);
       break;
+#endif
     default:
       break;
     }

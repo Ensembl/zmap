@@ -1147,7 +1147,7 @@ ZMapFeature zMapFeatureSetGetFeatureByID(ZMapFeatureSet feature_set,
 gboolean zMapFeatureSetRemoveFeature(ZMapFeatureSet feature_set, ZMapFeature feature) ;
 void zMapFeatureSetDestroyFeatures(ZMapFeatureSet feature_set) ;
 void     zMapFeatureSetDestroy(ZMapFeatureSet feature_set, gboolean free_data) ;
-//void  zMapFeatureSetStyle(ZMapFeatureSet feature_set, ZMapFeatureTypeStyle *style) ;
+void  zMapFeatureSetStyle(ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style) ;
 char *zMapFeatureSetGetName(ZMapFeatureSet feature_set) ;
 GList *zMapFeatureSetGetRangeFeatures(ZMapFeatureSet feature_set, int start, int end) ;
 GList *zMapFeatureSetGetNamedFeatures(ZMapFeatureSet feature_set, GQuark original_id) ;

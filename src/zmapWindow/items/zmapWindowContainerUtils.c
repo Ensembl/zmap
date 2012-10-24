@@ -126,7 +126,9 @@ void zmapWindowContainerUtilsPrint(FooCanvasGroup *any_group)
 	case ZMAPCONTAINER_LEVEL_ROOT:       printf("context: ");    break;
 	case ZMAPCONTAINER_LEVEL_ALIGN:      printf("align: ");      break;
 	case ZMAPCONTAINER_LEVEL_BLOCK:      printf("block: ");      break;
+#if USE_STRAND
 	case ZMAPCONTAINER_LEVEL_STRAND:     printf("strand: ");     break;
+#endif
 	case ZMAPCONTAINER_LEVEL_FEATURESET: printf("featureset: "); break;
 	default:
 	  break;
@@ -292,12 +294,13 @@ ZMapWindowContainerGroup zmapWindowContainerCanvasItemGetContainer(FooCanvasItem
   return container_group;
 }
 
+#if USE_STRAND
 ZMapWindowContainerStrand zmapWindowContainerBlockGetContainerStrand(ZMapWindowContainerBlock container_block,
 								     ZMapStrand               strand)
 {
   ZMapWindowContainerStrand container_strand = NULL;
   GList *item_list;
-  int max = 3, llength;
+//  int max = 3, llength;
 
   if(ZMAP_IS_CONTAINER_BLOCK(container_block))
     {
@@ -306,12 +309,15 @@ ZMapWindowContainerStrand zmapWindowContainerBlockGetContainerStrand(ZMapWindowC
       features  = zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)container_block);
 
       item_list = ((FooCanvasGroup *)features)->item_list;
-      llength   = g_list_length(item_list);
+//      llength   = g_list_length(item_list);
 
-      zMapAssert(llength <= max && llength > 0);
+//      zMapAssert(llength <= max && llength > 0);
 
       do
 	{
+	  if(!ZMAP_IS_CONTAINER_GROUP(item_list->data))	/* now we can have background CanvasFeaturesets in top level groups, just one item list */
+		continue;
+
 	  container_strand = ZMAP_CONTAINER_STRAND(item_list->data);
 
 	  if(container_strand->strand == strand)
@@ -334,7 +340,7 @@ ZMapWindowContainerStrand zmapWindowContainerBlockGetContainerSeparator(ZMapWind
 
   return container_strand;
 }
-
+#endif
 
 /* Child access. container group -> container <CHILD> */
 
@@ -415,6 +421,8 @@ ZMapWindowContainerUnderlay zmapWindowContainerGetUnderlay(ZMapWindowContainerGr
 }
 #endif
 
+
+#if USE_STRAND
 /* Strand code */
 
 ZMapStrand zmapWindowContainerGetStrand(ZMapWindowContainerGroup container)
@@ -447,6 +455,9 @@ gboolean zmapWindowContainerIsStrandSeparator(ZMapWindowContainerGroup container
 
   return result;
 }
+
+#endif
+
 
 /* Get the index of an item in the feature list. */
 GList *zmapWindowContainerFindItemInList(ZMapWindowContainerGroup container_parent, FooCanvasItem *item)
@@ -665,7 +676,7 @@ gboolean zmapWindowContainerAttachFeatureAny(ZMapWindowContainerGroup container,
  * this is the only place this function gets called
  *
  * some months later ... when trying tp ding the block feature from a CanvasBlock ...
- * all the canvas items/groups have a feature_any (expect strand) and not attaching one might cause errors
+ * all the canvas items/groups have a feature_any (except strand) and not attaching one might cause errors
  * but as several featuresets can go in a column (featureset in canvas speak) then we don't get a 1-1 mapping
  */
 	  if((status = ZMAP_IS_CONTAINER_FEATURESET(container)))
@@ -704,11 +715,13 @@ gboolean zmapWindowContainerGetFeatureAny(ZMapWindowContainerGroup container, ZM
     {
       if(ZMAP_IS_CONTAINER_FEATURESET(container))
 	status = TRUE;
+#if USE_STRAND
       else if(ZMAP_IS_CONTAINER_STRAND(container))
 	{
 	  status = FALSE;		/* strands don't have feature context equivalent levels */
 	  zMapLogWarning("%s", "request for feature from a container strand");
 	}
+#endif
       else if(ZMAP_IS_CONTAINER_BLOCK(container))
 	status = TRUE;
       else if(ZMAP_IS_CONTAINER_ALIGNMENT(container))
@@ -758,19 +771,43 @@ ZMapFeatureBlock zmapWindowContainerGetFeatureBlock(ZMapWindowContainerGroup fea
   return feature_block;
 }
 
+
+/* this used to be the features list as distinct from background item or underlay/overlay lists
+ * so to preserve the meaning we return TRUE if there are real features
+ * ie we ignore background
+ * there is a loop here but we expect only on background feature
+ * and there for we will not scan loads
+ */
 gboolean zmapWindowContainerHasFeatures(ZMapWindowContainerGroup container)
 {
   ZMapWindowContainerFeatures features;
-  gboolean has_features = FALSE;
+  GList *l;
+  gint layer;
 
   if((features = zmapWindowContainerGetFeatures(container)))
     {
+#if USE_BACKGROUND // ie old style
       if(((FooCanvasGroup *)features)->item_list)
 	has_features = TRUE;
+#else
+	for (l = ((FooCanvasGroup *)features)->item_list ; l ; l = l->next)
+	{
+		if(FOO_IS_CANVAS_GROUP(l->data))
+			continue;
+		if(!ZMAP_IS_WINDOW_FEATURESET_ITEM(l->data))	/* a real foo canvas item? should not happen */
+			return(TRUE);
+
+		layer = zMapWindowCanvasFeaturesetGetLayer((ZMapWindowFeaturesetItem) l->data);
+		if(!(layer & ZMAP_CANVAS_LAYER_DECORATION))
+			return TRUE;
+	}
+#endif
     }
 
-  return has_features;
+  return FALSE;
 }
+
+
 
 gboolean zmapWindowContainerUtilsGetColumnLists(ZMapWindowContainerGroup block_or_strand_group,
 						GList **forward_columns_out,
@@ -928,8 +965,12 @@ static ZMapWindowContainerGroup getChildById(ZMapWindowContainerGroup group,GQua
 
       for(l = children->item_list;l;l = l->next)
       {
+		if(!ZMAP_IS_CONTAINER_GROUP(l->data))	/* now we can have background CanvasFeaturesets in top level groups, just one item list */
+			continue;
+
             g = (ZMapWindowContainerGroup) l->data;
 
+#if USE_STRAND
             if(g->level == ZMAPCONTAINER_LEVEL_STRAND)
             {
                   /* has no feature_any */
@@ -938,7 +979,9 @@ static ZMapWindowContainerGroup getChildById(ZMapWindowContainerGroup group,GQua
                   if(s->strand == id)
                         return(g);
             }
-            else if(g->level == ZMAPCONTAINER_LEVEL_FEATURESET)
+            else
+#endif
+		if(g->level == ZMAPCONTAINER_LEVEL_FEATURESET)
             {
                   ZMapWindowContainerFeatureSet set = ZMAP_CONTAINER_FEATURESET(g);;
 
@@ -1008,6 +1051,9 @@ static void eachContainer(gpointer data, gpointer user_data)
   FooCanvasPoints *this_points = NULL, *parent_points = NULL;
   double *bound = NULL, spacing = 0.0, bound_data = 0.0, coords[4] = {0.0, 0.0, 0.0, 0.0};
 
+  if(!ZMAP_IS_CONTAINER_GROUP(container))	/* now we can have background CanvasFeaturesets in top level groups, just one item list */
+	  return;
+
   children = (FooCanvasGroup *)zmapWindowContainerGetFeatures(container) ;
 
   /* We need to get what we need in case someone destroys it under us. */
@@ -1057,9 +1103,11 @@ static void eachContainer(gpointer data, gpointer user_data)
         case ZMAPCONTAINER_LEVEL_BLOCK:
 	  zmapWindowContainerRequestReposition(container);
           break;
+#if USE_STRAND
         case ZMAPCONTAINER_LEVEL_STRAND:
 	  zmapWindowContainerRequestReposition(container);
           break;
+#endif
         case ZMAPCONTAINER_LEVEL_FEATURESET:
           {
             /* If this featureset requires a redraw... */

@@ -194,11 +194,11 @@ default-bump-mode=all\n\
 \n\
 # former 'predefined' styles: note: names must be as in zmapConfigStyleDefaults.h\n\
 \n\
-[style-Plain]\n\
-description=internal style used for decorations\n\
-mode=plain\n\
-colours=normal fill white; normal border black\n\
-displayable=true\n\
+#[style-Plain]\n\
+#description=internal style used for decorations\n\
+#mode=plain\n\
+#colours=normal fill white; normal border black\n\
+#displayable=true\n\
 \n\
 [style-3 Frame]\n\
 description=3 frame display\n\
@@ -269,12 +269,17 @@ displayable=true\n\
 \n\
 [style-Strand Separator]\n\
 description=strand separator display\n\
-mode=meta\n\
-displayable=false\n\
-display-mode=hide\n\
+#ideally mode would be plain but we want to add basic features to this\n\
+mode=basic\n\
+width=17.0\n\
+show-when-empty=true\n\
+displayable=true\n\
+display-mode=show\n\
 bump-mode=unbump\n\
 default-bump-mode=unbump\n\
 bump-fixed=true\n\
+show-only-in-separator=true\n\
+colours = normal fill yellow ; normal draw black\n\
 \n\
 [style-Search Hit Marker]\n\
 description=display location of matches to query\n\
@@ -286,7 +291,7 @@ default-bump-mode=unbump\n\
 bump-fixed=true\n\
 width=15.0\n\
 strand-specific=false\n\
-show-only-in-separator=true\n\
+#show-only-in-separator=true\n\
 colours = normal fill red ; normal draw black ; selected fill red; selected draw black\n\
 rev-colours = normal fill green ; normal draw black ; selected fill green ; selected draw black\n\
 \n\

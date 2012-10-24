@@ -1586,10 +1586,11 @@ static ZMapFeatureContextExecuteStatus draw_separator_features(GQuark key_id,
 
 	    canvas_data->curr_block_group =
 	      zmapWindowContainerGetFeatures(block_parent);
-
+#if USE_STRAND
 	    forward_strand = zmapWindowContainerBlockGetContainerStrand((ZMapWindowContainerBlock)block_parent,
 									ZMAPSTRAND_FORWARD);
 	    canvas_data->curr_forward_group = zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)forward_strand);
+#endif
 	  }
 	else
 	  zMapAssertNotReached();

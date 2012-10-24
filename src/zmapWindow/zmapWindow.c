@@ -4693,8 +4693,8 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	FooCanvasGroup *focus_column ;
 	FooCanvasItem *focus_item ;
 
-	/* NOTE thsi dioes not reset the focus item but only unhighlights it
-	 * so it doesn;t re3ally toggle the highlight
+	/* NOTE this does not reset the focus item but only unhighlights it
+	 * so it doesn-t really toggle the highlight
 	 */
 	if ((focus_item = zmapWindowFocusGetHotItem(window->focus))
 	    || (focus_column = zmapWindowFocusGetHotColumn(window->focus)))
@@ -5141,6 +5141,8 @@ static void jumpFeature(ZMapWindow window, guint keyval)
 /* Jump to the previous/next column according to which arrow key was pressed. */
 static void jumpColumn(ZMapWindow window, guint keyval)
 {
+#warning jumpColumn commented out temporarily
+#if 0
   FooCanvasGroup *focus_column;
   gboolean move_focus = FALSE, highlight_column = FALSE ;
 
@@ -5266,7 +5268,7 @@ static void jumpColumn(ZMapWindow window, guint keyval)
       g_free(select.secondary_text) ;
 
     }
-
+#endif
   return ;
 }
 
@@ -5536,10 +5538,13 @@ static FooCanvasGroup *getFirstColumn(ZMapWindow window, ZMapStrand strand)
   StrandColStruct strand_data = {strand, NULL} ;
 
   strand_data.strand = strand ;
-
+#if USE_STRAND
   zmapWindowContainerUtilsExecute(window->feature_root_group, ZMAPCONTAINER_LEVEL_STRAND,
 				  getFirstForwardCol, &strand_data) ;
-
+#else
+  zmapWindowContainerUtilsExecute(window->feature_root_group, ZMAPCONTAINER_LEVEL_BLOCK,
+				  getFirstForwardCol, &strand_data) ;
+#endif
   return strand_data.first_column ;
 }
 
@@ -5550,8 +5555,12 @@ static void getFirstForwardCol(ZMapWindowContainerGroup container, FooCanvasPoin
   StrandCol strand_data = (StrandCol)func_data ;
 
   /* Only look for a column in the requested strand. */
+#if USE_STRAND
   if (container_level == ZMAPCONTAINER_LEVEL_STRAND
       && zmapWindowContainerGetStrand(container) == strand_data->strand)
+#else
+  if (container_level == ZMAPCONTAINER_LEVEL_BLOCK)
+#endif
     {
       if (!(strand_data->first_column))
 	{
@@ -5566,6 +5575,8 @@ static void getFirstForwardCol(ZMapWindowContainerGroup container, FooCanvasPoin
 	  else
 	    col_ptr = (strand_columns->item_list_end) ;
 
+#warning getFirstForwarsCol() code needs adjusting, commented out temporarily
+#if 0
 	  while (col_ptr)
 	    {
 	      column = (FooCanvasGroup *)(col_ptr->data) ;
@@ -5585,7 +5596,13 @@ static void getFirstForwardCol(ZMapWindowContainerGroup container, FooCanvasPoin
 	    }
 
 	  strand_data->first_column = column ;
+#else
+        column = (FooCanvasGroup *)(col_ptr->data) ;
+	  strand_data->first_column = column ;
+#endif
+
 	}
+
     }
 
   return ;

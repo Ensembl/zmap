@@ -83,11 +83,14 @@ typedef struct _zmapWindowCanvasItemClassStruct  zmapWindowCanvasItemClass, *ZMa
 #define ZMAP_CANVAS_LAYER_DECORATION	1	/* else is normal features */
 #define ZMAP_CANVAS_LAYER_OVERLAY		2	/* else is underlay if decoration */
 #define ZMAP_CANVAS_LAYER_STRETCH_X		4	/* fit to container? */
-#define ZMAP_CANVAS_LAYER_STRETCH_Y		8	/* nothing stretches to Y as cord are set from the block? */
-								/* NOTE this may be not implemted */
+#define ZMAP_CANVAS_LAYER_STRETCH_Y		8
 
-#define ZMAP_CANVAS_LAYER_COL_BACKGROUND	5
-#define ZMAP_CANVAS_LAYER_BLOCK_MARK	7
+#define ZMAP_CANVAS_LAYER_ROOT_BACKGROUND		13
+#define ZMAP_CANVAS_LAYER_ALIGN_BACKGROUND	13
+#define ZMAP_CANVAS_LAYER_BLOCK_BACKGROUND	13
+#define ZMAP_CANVAS_LAYER_COL_BACKGROUND		13
+#define ZMAP_CANVAS_LAYER_SEPARATOR_BACKGROUND	1
+#define ZMAP_CANVAS_LAYER_BLOCK_MARK		7
 
 
 /* Public funcs */

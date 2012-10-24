@@ -121,11 +121,17 @@ static void orderPositionColumns(ZMapWindow window, gboolean redraw_too)
   if(!order_data.three_frame_position)
       order_data.three_frame_position = i;           // off the end
 
-
+#if USE_STRAND
   zmapWindowContainerUtilsExecuteFull(window->feature_root_group,
 				      ZMAPCONTAINER_LEVEL_STRAND,
 				      orderColumnsCB, &order_data,
 				      NULL, NULL, redraw_too);
+#else
+  zmapWindowContainerUtilsExecuteFull(window->feature_root_group,
+				      ZMAPCONTAINER_LEVEL_BLOCK,
+				      orderColumnsCB, &order_data,
+				      NULL, NULL, redraw_too);
+#endif
 
   /* If we've reversed the feature_set_names list, and left it like that, re-reverse. */
   if(order_data.strand == ZMAPSTRAND_REVERSE)
@@ -146,10 +152,15 @@ static void orderColumnsCB(ZMapWindowContainerGroup container, FooCanvasPoints *
   OrderColumnsData order_data = (OrderColumnsData)user_data;
   ZMapWindowContainerFeatures container_features;
   FooCanvasGroup *strand_features_group;
+
+#if USE_STRAND
   ZMapStrand strand;
   ZMapWindow window = order_data->window;
 
   if(level == ZMAPCONTAINER_LEVEL_STRAND)
+#else
+  if(level == ZMAPCONTAINER_LEVEL_BLOCK)
+#endif
     {
       /* Get Features */
       container_features = zmapWindowContainerGetFeatures(container);
@@ -157,6 +168,7 @@ static void orderColumnsCB(ZMapWindowContainerGroup container, FooCanvasPoints *
       /* Cast to FooCanvasGroup */
       strand_features_group = (FooCanvasGroup *)container_features;
 
+#if USE_STRAND
       strand = zmapWindowContainerGetStrand(container);
 
       if(strand == ZMAPSTRAND_REVERSE)
@@ -174,19 +186,62 @@ static void orderColumnsCB(ZMapWindowContainerGroup container, FooCanvasPoints *
           order_data->strand = ZMAPSTRAND_FORWARD;
         }
       else if(zmapWindowContainerIsStrandSeparator(container))
-	return ;		/* Watch early return! */
+		return ;		/* Watch early return! */
       else
-        zMapAssertNotReached(); /* What! */  //mh17: strand can only bw fwd, bwd, or sep */
+	{
+		return;
+		//zMapAssertNotReached(); /* What! */  //mh17: strand can only bw fwd, bwd, or sep */
+		/* we can now have background which is not a group */
+	}
+#endif
 
+#if 1
+	/* hack: background appears at the front of the list and we don't implement overlay on strand
+	   so trim the front, sort and put it back together
+	 */
+#warning fix column ordering when strand removed
+	{
+		GList *back, *feat;
+//printf("order strand %d\n", order_data->strand);
 
-      strand_features_group->item_list =
-            g_list_sort_with_data(strand_features_group->item_list,
-                                  qsortColumnsCB, order_data);
+		back = feat = strand_features_group->item_list;
+		while(feat && !ZMAP_IS_CONTAINER_GROUP(feat->data))
+		{
+//printf("order skipping background\n");
+			feat = feat->next;
+		}
+
+//GList *l;
+//for(l = feat;l; l = l->next)
+//{
+//	 if(!(ZMAP_IS_CONTAINER_GROUP(l->data)))
+//		 printf("feat contains non group\n");
+//	else
+//		printf("Group %s\n", g_quark_to_string(zmapWindowContainerFeatureSetGetColumnId((ZMapWindowContainerFeatureSet) l->data)));
+//}
+
+		if(back != feat && feat)
+		{
+			feat->prev->next = NULL;
+			feat->prev = NULL;
+		}
+		else
+		{
+			back = NULL;
+		}
+
+            feat = g_list_sort_with_data(feat, qsortColumnsCB, order_data);
+
+		strand_features_group->item_list = feat;;
+		if(back)
+			strand_features_group->item_list = g_list_concat(back,feat);
+	}
+#else
+	strand_features_group->item_list = g_list_sort_with_data(strand_features_group->item_list, qsortColumnsCB, order_data);
+#endif
 
       /* update foo_canvas list cache. joy. */
       strand_features_group->item_list_end = g_list_last(strand_features_group->item_list);
-
-
     }
 
   return ;
@@ -255,6 +310,7 @@ static gint qsortColumnsCB(gconstpointer colA, gconstpointer colB, gpointer user
 {
   OrderColumnsData order_data = (OrderColumnsData)user_data;
   ZMapFrame frame_a, frame_b;
+  ZMapStrand strand_a, strand_b;
   int pos_a, pos_b;
   gboolean sens_a, sens_b;
   gint order = 0;
@@ -262,6 +318,13 @@ static gint qsortColumnsCB(gconstpointer colA, gconstpointer colB, gpointer user
 
   if(colA == colB)
     return order;
+
+  strand_a = zmapWindowContainerFeatureSetGetStrand((ZMapWindowContainerFeatureSet) colA);
+  strand_b = zmapWindowContainerFeatureSetGetStrand((ZMapWindowContainerFeatureSet) colB);
+  if(strand_a < strand_b)	/* these are right to left */
+	  return(1);
+  if(strand_a > strand_b)	/* these are right to left */
+	  return(-1);
 
   idA = columnFSNid(colA);
   idB = columnFSNid(colB);

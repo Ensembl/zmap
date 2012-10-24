@@ -1362,7 +1362,7 @@ static ZMapFrame feature_frame(ZMapFeature feature, int start_coord)
 
   block = (ZMapFeatureBlock)(feature->parent->parent);
 #else
-  zMapAssert(feature->parent && feature->parent);
+  zMapAssert(feature->parent);
 
   block = (ZMapFeatureBlock)(feature->parent);
 #endif

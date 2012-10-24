@@ -171,7 +171,7 @@ GType zmapWindowContainerGroupGetType(void)
  *                                  It will be a ZMapWindowContainerGroup by inheritance though.
  */
 
-ZMapWindowContainerGroup zmapWindowContainerGroupCreate(ZMapWindowContainerFeatures parent,
+ZMapWindowContainerGroup zmapWindowContainerGroupCreate(FooCanvasGroup  *parent,
 							ZMapContainerLevelType level,
 							double child_spacing,
 							GdkColor *background_fill_colour,
@@ -261,9 +261,11 @@ ZMapWindowContainerGroup zmapWindowContainerGroupCreateFromFoo(FooCanvasGroup   
     case ZMAPCONTAINER_LEVEL_BLOCK:
       container_type = ZMAP_TYPE_CONTAINER_BLOCK;
       break;
+#if USE_STRAND
     case ZMAPCONTAINER_LEVEL_STRAND:
       container_type = ZMAP_TYPE_CONTAINER_STRAND;
       break;
+#endif
     case ZMAPCONTAINER_LEVEL_FEATURESET:
       container_type = ZMAP_TYPE_CONTAINER_FEATURESET;
       break;
@@ -1201,8 +1203,9 @@ static void zmap_window_container_group_update (FooCanvasItem *item, double i2w_
   gboolean item_visible;
   gboolean doing_reposition;
   gboolean need_cropping;
+#if USE_STRAND
   gboolean add_strand_border = TRUE;
-
+#endif
 
   canvas_group   = (FooCanvasGroup *)item;
   item_visible   = ((item->object.flags & FOO_CANVAS_ITEM_VISIBLE) == FOO_CANVAS_ITEM_VISIBLE);
@@ -1211,9 +1214,11 @@ static void zmap_window_container_group_update (FooCanvasItem *item, double i2w_
   this_container->reposition_x = current_x;
   this_container->reposition_y = current_y;
 
+#if USE_STRAND
   /* This was in the previous version of the code, copying across... */
   if(add_strand_border && this_container->level == ZMAPCONTAINER_LEVEL_STRAND)
     this_container->reposition_x += this_container->child_spacing;
+#endif
 
   if(item->parent && ZMAP_IS_CONTAINER_GROUP(item->parent))
     {
@@ -1256,12 +1261,6 @@ static void zmap_window_container_group_update (FooCanvasItem *item, double i2w_
 
   if(item_visible)
     {
-#if 0
-oops! can-t do this
-groups are sized according to what they contain
-so we can-t size a canvas item accoriding to the size of a group
-at least not here
-
 	GList *l;
 	FooCanvasItem *foo;
 	ZMapWindowFeaturesetItem featureset;
@@ -1270,31 +1269,65 @@ at least not here
 	for(l = canvas_group->item_list; l ; l = l->next)
 	{
 		foo = (FooCanvasItem *) l->data;
+		featureset = (ZMapWindowFeaturesetItem) foo;
 
+#if 1
+char *x = "?";
+if(ZMAP_IS_WINDOW_FEATURESET_ITEM(foo))	/* these could be groups or even normal foo items */
+{
+	x = g_strdup_printf("%s layer %x",g_quark_to_string(zMapWindowCanvasFeaturesetGetId(featureset)),
+				     zMapWindowCanvasFeaturesetGetLayer(featureset));
+}
+else if(ZMAP_IS_CONTAINER_GROUP(foo))
+{
+	char *name = "none";
+
+	ZMapFeatureAny f = ((ZMapWindowContainerGroup) foo)->feature_any;
+
+	if(f)
+		name = (char *) g_quark_to_string(f->unique_id);
+	x = g_strdup_printf("group %s level %d",name, ((ZMapWindowContainerGroup) foo)->level);
+}
+
+printf("group update %s\n", x);
+#endif
 		if(ZMAP_IS_WINDOW_FEATURESET_ITEM(foo))	/* these could be groups or even normal foo items */
 		{
-			featureset = (ZMapWindowFeaturesetItem) foo;
 			guint layer = zMapWindowCanvasFeaturesetGetLayer(featureset);
+
+			// this will automatically stretch the mark sideways
+			// and also strand backgrounds if used
+			// and also navigator locator background and cursor
+			// and also column backgrounds
+			// as all are implemented as empty ZMapWindowCanvasFeaturesets
+			/* the background expands to cover the data inside the group */
 
 			if(layer & ZMAP_CANVAS_LAYER_STRETCH_X)
 			{
-				// this will automatcially stretch the mark sideways
-				// and also strand backgrounds if used
-				// and also navigator locator background and cursor
-				// and also column backgrounds
-				// as all are implemented as empty ZMapWindowCanvasFeaturesets
 
-				foo->x2 = foo->x1 + item->x2 - item->x1;
+				foo->x1 = item->x1;
+				foo->x2 = item->x2;
 				foo_canvas_c2w(foo->canvas,foo->x2 - foo->x1, 0, &size, NULL);
 				zMapWindowCanvasFeaturesetSetWidth(featureset,size);
 			}
+
 			if(layer & ZMAP_CANVAS_LAYER_STRETCH_Y)
 			{
-				foo->y2 = foo->y1 + item->y2 - item->y1;
+				double y1, y2;
+
+				/* NOTE for featureset level groups we set Y extend by containing block sequence coords */
+				/* this is used for higher level groups */
+				foo->y1 = item->y1;
+				foo->y2 = item->y2;
+				foo_canvas_c2w(foo->canvas,0, foo->y1, NULL, &y1);
+				foo_canvas_c2w(foo->canvas,0, foo->y2, NULL, &y2);
+				zMapWindowCanvasFeaturesetSetSequence(featureset,y1,y2);
 			}
 		}
 	}
-#endif
+
+
+#if 1
 	if(doing_reposition)
 	{
 	  if(parent_container)
@@ -1306,16 +1339,18 @@ printf("repos group cur x = %.1f (%1.f %.1f %.1f)\n",parent_container->repositio
 	  }
 
 
+#if 1
 	/* these are set for the root as well as possibly column containers */
 	/* NOTE untangle this hook stuff */
 	  zmap_window_container_invoke_post_update_hooks(this_container,
 							 item->x1, item->y1,
 							 item->x2, item->y2);
-
+#endif
 #if UPDATE_DEBUG
 printf("group position: %d %s %.1f %.1f (%.1f %.1f %.1f %.1f)\n",this_container->level, name,canvas_group->xpos,canvas_group->ypos,item->x1,item->y1,item->x2,item->y2);
 #endif
 	}
+#endif
     }
 
 
@@ -1324,6 +1359,7 @@ printf("group position: %d %s %.1f %.1f (%.1f %.1f %.1f %.1f)\n",this_container-
   this_container->reposition_x          = 0.0;
   this_container->reposition_y          = 0.0;
   this_container->flags.need_reposition = FALSE;
+
 
   return ;
 }

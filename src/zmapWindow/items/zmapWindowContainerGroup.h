@@ -115,7 +115,9 @@ typedef enum
     ZMAPCONTAINER_LEVEL_ROOT,
     ZMAPCONTAINER_LEVEL_ALIGN,
     ZMAPCONTAINER_LEVEL_BLOCK,
+#if USE_STRAND
     ZMAPCONTAINER_LEVEL_STRAND,
+#endif
     ZMAPCONTAINER_LEVEL_FEATURESET,
     ZMAPCONTAINER_LEVEL_FEATURESET_GROUP
 } ZMapContainerLevelType ;
@@ -137,7 +139,7 @@ typedef gboolean (* ZMapWindowContainerUpdateHook)(ZMapWindowContainerGroup grou
 /* Public funcs */
 GType zmapWindowContainerGroupGetType(void);
 
-ZMapWindowContainerGroup zmapWindowContainerGroupCreate(ZMapWindowContainerFeatures parent,
+ZMapWindowContainerGroup zmapWindowContainerGroupCreate(FooCanvasGroup *parent,
 							ZMapContainerLevelType level,
 							double    child_spacing,
 							GdkColor *background_fill_colour,

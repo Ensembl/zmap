@@ -846,6 +846,7 @@ static void dumpCB(ZMapWindowContainerGroup container_parent, FooCanvasPoints *p
           // paint background?
           break;
 
+#if USE_STRAND
         case ZMAPCONTAINER_LEVEL_STRAND:
             // paint the strand seperator, but not the +/-
           if(zmapWindowContainerIsStrandSeparator(container_parent))
@@ -862,6 +863,7 @@ static void dumpCB(ZMapWindowContainerGroup container_parent, FooCanvasPoints *p
 #endif
           }
           break;
+#endif
 
         case ZMAPCONTAINER_LEVEL_FEATURESET:
 

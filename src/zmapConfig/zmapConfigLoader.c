@@ -1091,8 +1091,10 @@ GHashTable *zMapConfigIniGetColumns(ZMapConfigIniContext context)
             if(colstr && *colstr)
                   columns = zMapConfigString2QuarkList(colstr,FALSE);
 
+		/* add in a hard coded column first */
+		col = g_list_prepend(columns, GUINT_TO_POINTER(g_quark_from_string(ZMAP_FIXED_STYLE_STRAND_SEPARATOR)));
 
-            for(col = columns; col;col = col->next)
+            for(; col;col = col->next)
             {
                   f_col = g_new0(ZMapFeatureColumnStruct,1);
                   f_col->column_id = GPOINTER_TO_UINT(col->data);

@@ -573,6 +573,8 @@ void zmapWindowFocusSetHotColumn(ZMapWindowFocus focus, FooCanvasGroup *column, 
 }
 
 
+#if 1
+
 void zmapWindowFocusSetHighlightColumn(ZMapWindowFocus focus, GdkColor *fill, GdkColor *border)
 {
   FooCanvasGroup *hot_column;
@@ -636,6 +638,9 @@ void zmapWindowFocusSetHighlightColumn(ZMapWindowFocus focus, GdkColor *fill, Gd
 			style = g_hash_table_lookup(focus->window->context_map->styles, GUINT_TO_POINTER(zMapStyleCreateID(ZMAP_FIXED_STYLE_PLAIN_NAME))) ;
 			if(style)
 			{
+				/* NOTE: the column has already been displayed and therefor has been foo updated
+				 * or else we could not have clicked on it
+				 */
 				foo = (FooCanvasItem *) hot_column;
 				foo_canvas_c2w(foo->canvas, 0, foo->y1, NULL, &y1);
 				foo_canvas_c2w(foo->canvas, 0, foo->y2, NULL, &y2);
@@ -687,16 +692,24 @@ void zmapWindowFocusSetHighlightColumn(ZMapWindowFocus focus, GdkColor *fill, Gd
   }
 }
 
+#endif
+
 /* highlight/unhiglight cols. */
 void zmapWindowFocusHighlightHotColumn(ZMapWindowFocus focus)
 {
-  zmapWindowFocusSetHighlightColumn(focus, &(focus->window->colour_column_highlight), NULL);
+	ZMapWindowContainerGroup column = (ZMapWindowContainerGroup) zmapWindowFocusGetHotColumn(focus);
+
+	if(column)
+		zmapWindowDrawSetGroupBackground(column, 0, 1, 1.0, ZMAP_CANVAS_LAYER_COL_BACKGROUND, &(focus->window->colour_column_highlight), NULL);
 }
 
 
 void zmapWindowFocusUnHighlightHotColumn(ZMapWindowFocus focus)
 {
-  zmapWindowFocusSetHighlightColumn(focus, NULL, NULL);
+	ZMapWindowContainerGroup column = (ZMapWindowContainerGroup) zmapWindowFocusGetHotColumn(focus);
+
+	if(column)
+		zmapWindowDrawSetGroupBackground(column, 0, 1, 1.0, ZMAP_CANVAS_LAYER_COL_BACKGROUND, NULL, NULL);
 }
 
 

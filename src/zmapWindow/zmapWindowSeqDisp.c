@@ -357,10 +357,15 @@ FooCanvasItem *zmapWindowItemGetShowTranslationColumn(ZMapWindow window, FooCanv
 
 	  parent_container = zmapWindowContainerUtilsItemGetParentLevel(item, ZMAPCONTAINER_LEVEL_BLOCK);
 
+#if USE_STRAND
 	  /* Get the Forward Group Parent Container... */
 	  forward_container = zmapWindowContainerBlockGetContainerStrand((ZMapWindowContainerBlock)parent_container, ZMAPSTRAND_FORWARD);
 	  /* zmapWindowCreateSetColumns needs the Features not the Parent. */
 	  forward_features  = zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)forward_container);
+#else
+	  /* zmapWindowCreateSetColumns needs the Features not the Parent. */
+	  forward_features  = zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)parent_container);
+#endif
 
 	  /* make the column... */
 	  if (zmapWindowCreateSetColumns(window,
@@ -1138,6 +1143,8 @@ static FooCanvasItem *translation_from_block_frame(ZMapWindow window, char *colu
 						   strand, /* STILL ALWAYS FORWARD */
 						   frame,
 						   feature_id) ;
+
+printf("translation: %p %s %s\n",translation, g_quark_to_string(feature_id), g_quark_to_string(feature_set_id));
 
 	  g_free(feature_name) ;
 	}

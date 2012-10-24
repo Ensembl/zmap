@@ -427,7 +427,9 @@ typedef enum
  *           Default colours.
  */
 
-#define ZMAP_WINDOW_BACKGROUND_COLOUR "white"		    /* main canvas background */
+#define ZMAP_WINDOW_BACKGROUND_COLOUR "grey"		    /* main canvas background */
+
+#define ZMAP_WINDOW_BLOCK_BACKGROUND_COLOUR "light grey"		    /* main canvas background */
 
 #define ZMAP_WINDOW_STRAND_DIVIDE_COLOUR "yellow"	    /* Marks boundary of forward/reverse
 							       strands. */
@@ -874,6 +876,14 @@ void zmapWindowreDrawContainerExecute(ZMapWindow                 window,
 				      gpointer                   enter_data);
 
 gboolean zmapWindowDumpFile(ZMapWindow window, char *filename) ;
+
+
+void zmapWindowDrawSetGroupBackground(ZMapWindowContainerGroup group, int start, int end, double width, gint layer, GdkColor *fill, GdkColor *border);
+ZMapWindowContainerGroup zmapWindowContainerGroupCreateWithBackground(FooCanvasGroup        *parent,
+							       ZMapContainerLevelType level,
+							       double                 child_spacing,
+							       GdkColor              *background_fill_colour,
+							       GdkColor              *background_border_colour);
 
 
 int zmapWindowCoordToDisplay(ZMapWindow window, int coord) ;
