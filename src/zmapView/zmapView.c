@@ -1492,8 +1492,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
   gboolean requested = FALSE;
   static gboolean debug_sources = FALSE ;
   gboolean dna_requested = FALSE;
-
-
+  ZMapViewConnection view_conn = NULL ;
 
 
   /* MH17 NOTE
@@ -1511,8 +1510,6 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 
   if(server)
   {
-		ZMapViewConnection view_conn;
-
 		if (req_sources && (zMap_g_list_find_quark(req_sources, zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME))))
 		{
 			dna_requested = TRUE ;
@@ -1570,7 +1567,6 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 		{
 		GList *req_featuresets = NULL;
 		int existing = FALSE;
-		ZMapViewConnection view_conn = NULL ;
 
 	//	  zMapLogMessage("Load features %s from %s, group = %d",
 	//			 g_quark_to_string(featureset),server->url,server->group) ;
@@ -1692,16 +1688,6 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 			requested = TRUE;
 
 
-		/* THESE NEED TO GO WHEN STEP LIST STUFF IS DONE PROPERLY.... */
-		// this is an optimisation: the server supports DNA so no point in searching for it
-		// if we implement multiple sources then we can remove this
-		if (dna_requested)	//(zMap_g_list_find_quark(req_featuresets, zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME))))
-		{
-			view->sequence_server  = view_conn ;
-		}
-
-
-
 		// g_list_free(req_featuresets); no! this list gets used by threads
 		req_featuresets = NULL ;
 		}
@@ -1714,6 +1700,14 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 	view->state = ZMAPVIEW_LOADING ;
       if (view->state > ZMAPVIEW_LOADING)
 	view->state = ZMAPVIEW_UPDATING;
+
+
+	// this is an optimisation: the server supports DNA so no point in searching for it
+	// if we implement multiple sources then we can remove this
+	if (dna_requested)	//(zMap_g_list_find_quark(req_featuresets, zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME))))
+	{
+		view->sequence_server  = view_conn ;
+	}
 
       zmapViewBusy(view, TRUE) ;     // gets unset when all step lists finish
 
