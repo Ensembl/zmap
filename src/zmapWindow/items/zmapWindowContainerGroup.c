@@ -379,6 +379,9 @@ void zmapWindowContainerRequestReposition(ZMapWindowContainerGroup container)
 
   context_container = zmapWindowContainerUtilsGetParentLevel(container, ZMAPCONTAINER_LEVEL_ROOT);
 
+  zmapWindowFullReposition((ZMapWindowContainerGroup) container);
+
+#if GROUP_REPOS
   if(context_container)
     {
       g_object_set(G_OBJECT(context_container),
@@ -386,6 +389,7 @@ void zmapWindowContainerRequestReposition(ZMapWindowContainerGroup container)
 		   NULL);
 	/* this sets the update needed flag in the root group & when that happens we reposition the columns */
     }
+#endif
 
   return ;
 }

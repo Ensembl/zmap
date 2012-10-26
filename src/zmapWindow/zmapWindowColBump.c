@@ -523,7 +523,7 @@ static gboolean zmapWindowContainerBumpStyle(ZMapWindowContainerFeatureSet conta
 
 // NOTE must set the featureset style not the feature
       		zMapWindowCanvasItemSetStyle(item,bump_style);
-			zMapWindowCanvasFeaturesetRequestReposition((FooCanvasItem *) item);
+			zMapWindowRequestReposition((FooCanvasItem *) item);
       	}
 	}
 	return TRUE;

@@ -363,7 +363,7 @@ static void zMapWindowCanvasLocusZoomSet(ZMapWindowFeaturesetItem featureset, Gd
 	}
 
 	if(f_width != featureset->width)
-		zMapWindowCanvasFeaturesetRequestReposition((FooCanvasItem *) featureset);
+		zMapWindowRequestReposition((FooCanvasItem *) featureset);
 
 
 	/* de-overlap the loci left over

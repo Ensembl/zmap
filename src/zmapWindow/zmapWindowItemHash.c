@@ -164,7 +164,7 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(GHashTable *ftoi_hash,
 	ZMapFeature feature = feature_stack->feature;
 	ZMapWindowCanvasItem canvas_item = (ZMapWindowCanvasItem) foo_featureset;
       ZMapFeatureBlock block = feature_stack->block;
-char *x;
+//char *x;
 
 	/* NOTE
 	 * parent is the features group in the conatiner featureset

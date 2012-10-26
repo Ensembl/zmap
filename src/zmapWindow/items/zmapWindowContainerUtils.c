@@ -1083,6 +1083,9 @@ static void eachContainer(gpointer data, gpointer user_data)
 	}
     }
 
+
+#if GROUP_REPOS
+
   /* If we're redrawing then we need to do extra work... */
   if (all_data->redraw_during_recursion)
     {
@@ -1124,6 +1127,7 @@ static void eachContainer(gpointer data, gpointer user_data)
           break;
         }
     }
+#endif
 
   /* Execute post-recursion function. */
   if(all_data->container_leave_cb)

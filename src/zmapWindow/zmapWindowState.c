@@ -765,7 +765,7 @@ static void state_bumped_columns_restore(ZMapWindow window, ZMapWindowBumpStateS
 	}
 
       if(changed)
-	zmapWindowFullReposition(window);
+	zmapWindowFullReposition(window->feature_root_group);
     }
 
   return ;

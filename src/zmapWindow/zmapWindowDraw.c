@@ -231,7 +231,7 @@ static void myWindowSet3FrameMode(ZMapWindow window, ZMapWindow3FrameMode frame_
      zmapWindowColOrderColumns(window);
 
      /* FullReposition Sets the correct scroll region. */
-     zmapWindowFullReposition(window);
+     zmapWindowFullReposition(window->feature_root_group);
 
     }
   else
@@ -266,7 +266,7 @@ void zMapWindowToggleDNAProteinColumns(ZMapWindow window,
     toggleColumnInMultipleBlocks(window, ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME,
 				 align_id, block_id, force_to, force) ;
 
-  zmapWindowFullReposition(window) ;
+  zmapWindowFullReposition(window->feature_root_group) ;
 
   zmapWindowBusy(window, FALSE) ;
 
@@ -422,7 +422,7 @@ void zmapWindowColumnSetState(ZMapWindow window, FooCanvasGroup *column_group,
 
       /* Only do redraw if it was requested _and_ state change needs it. */
       if (redraw_if_needed && redraw)
-            zmapWindowFullReposition(window) ;
+            zmapWindowFullReposition(window->feature_root_group) ;
    }
   zMapLogTime(TIMER_SETVIS,TIMER_STOP,0,"");
 }
@@ -728,7 +728,7 @@ void zmapWindowColumnsCompress(FooCanvasItem *column_item, ZMapWindow window, ZM
 	  g_list_free(bumped);
 	}
 
-      zmapWindowFullReposition(window) ;
+      zmapWindowFullReposition(window->feature_root_group) ;
     }
   else
     {
@@ -814,11 +814,56 @@ void zmapWindowDrawManageWindowWidth(ZMapWindow window)
 }
 
 
-/* Makes sure all the things that need to be redrawn when the canvas needs redrawing. */
-void zmapWindowFullReposition(ZMapWindow window)
+
+
+/* to resize ourselves and reposition stuff to the right of a CanvasFeatureset we have to resize the root */
+/* There's a lot of container code that labouriously trundles up the tree, but each canvas item knows the root. so let's use that */
+/* hmmmm... you need to call special invocations that set properties that then set flags... yet another run-around. */
+
+void zMapWindowRequestReposition(FooCanvasItem *foo)
 {
+  ZMapWindowContainerGroup container;
+
+    /* container and item code is separate despite all of them having parent pointers */
+  container = zmapWindowContainerCanvasItemGetContainer(foo);
+
+  container = zmapWindowContainerUtilsGetParentLevel(container, ZMAPCONTAINER_LEVEL_ROOT);
+
+  zmapWindowFullReposition((ZMapWindowContainerGroup) container);
+
+  return ;
+}
+
+
+
+/* Makes sure all the things that need to be redrawn when the canvas needs redrawing. */
+void zmapWindowFullReposition(ZMapWindowContainerGroup root)
+{
+
+  /* scan canvas and move columns sideways */
+
   /* Is this enough or do we need to foo_canvas_update_now() */
-  zmapWindowContainerRequestReposition(window->feature_root_group);
+#if GROUP_REPOS
+	/* we get called from this function */
+  zmapWindowContainerRequestReposition(root);
+#else
+
+#if ORIGINAL_CODE_FROM_CONTAINER_GROUP
+  if(context_container)
+    {
+      g_object_set(G_OBJECT(context_container),
+		   "need-reposition", TRUE,
+		   NULL);
+	/* this sets the update needed flag in the root group & when that happens we reposition the columns */
+    }
+#else
+
+	/* what we really need */
+	foo_canvas_item_request_update((FooCanvasItem *) root);
+
+#endif
+
+#endif
 
 #ifdef REWRITE_THIS
   FooCanvasGroup *super_root ;
@@ -989,7 +1034,7 @@ void zmapWindowDrawSeparatorFeatures(ZMapWindow           window,
 
       drawSeparatorFeatures(&canvas_data, window->strand_separator_context) ;
 
-      zmapWindowFullReposition(window);
+      zmapWindowFullReposition(window->feature_root_group);
     }
   else if(style)
     zMapLogWarning("Trying to draw feature set with non-separator "

@@ -83,8 +83,8 @@
 
 #include <zmapWindowCanvasGraphics.h>
 
-#include <zmapWindow_P.h>	// for debugging only
-#include <zmapWindowContainerFeatureSet_I.h>
+//#include <zmapWindow_P.h>	// for debugging only
+//#include <zmapWindowContainerFeatureSet_I.h>
 
 typedef gint (FeatureCmpFunc)(gconstpointer a, gconstpointer b) ;
 
@@ -2901,7 +2901,7 @@ int zMapWindowCanvasFeaturesetFilter(gpointer gfilter, double value)
 
 	  /* dissapointing: we only need to reposition columns to the right of this one */
 
-	  zmapWindowFullReposition(filter->window) ;
+	  zmapWindowFullReposition(filter->window->feature_root_group) ;
 	}
       else
 	{
@@ -3459,24 +3459,6 @@ static void zmap_window_featureset_item_item_destroy (GtkObject *object)
 
 
 
-
-
-#include <zmapWindowContainerGroup.h>
-#include <zmapWindowContainerUtils.h>
-/* to resize ourselves and reposition stuff to the right we have to resize the root */
-/* There's a lot of container code that labouriously trundles up the tree, but each canvas item knows the root. so let's use that */
-/* hmmmm... you need to call special invocations that set properties that then set flags... yet another run-around. */
-
-void zMapWindowCanvasFeaturesetRequestReposition(FooCanvasItem *foo)
-{
-  /* container and item code is separate despite all of them having parent pointers */
-  foo = (FooCanvasItem *) zmapWindowContainerCanvasItemGetContainer(foo);
-
-  /* this finds the root slowly and sets a flag, slowly */
-  zmapWindowContainerRequestReposition((ZMapWindowContainerGroup) foo);
-
-  return ;
-}
 
 
 

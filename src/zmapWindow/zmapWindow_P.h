@@ -1518,6 +1518,8 @@ void zmapWindowToggleMark(ZMapWindow window, gboolean whole_feature);
 void zmapWindowColOrderColumns(ZMapWindow window);
 void zmapWindowColOrderPositionColumns(ZMapWindow window);
 
+void zmapWindowFullReposition(ZMapWindowContainerGroup root) ;
+
 void zmapWindowItemDebugItemToString(GString *string, FooCanvasItem *item);
 
 void zmapWindowPfetchEntry(ZMapWindow window, char *sequence_name) ;

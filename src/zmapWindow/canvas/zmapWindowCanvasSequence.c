@@ -137,7 +137,7 @@ static void zmapWindowCanvasSequenceSetRow(ZMapWindowFeaturesetItem featureset, 
 		featureset->width = seq->row_disp * pango->text_width;
 
 			/* have to do the whole canvas */
-		zMapWindowCanvasFeaturesetRequestReposition((FooCanvasItem *) featureset);
+		zMapWindowRequestReposition((FooCanvasItem *) featureset);
 	}
 }
 

@@ -335,7 +335,7 @@ void zmapWindowContainerBlockMark(ZMapWindowContainerBlock container_block,
       zmapWindowContainerGroupAddUpdateHook(container, maximise_mark_items_cb,
 					    &(container_block->mark));
 
-      zmapWindowContainerRequestReposition(container);
+      zmapWindowRequestReposition(container);
     }
 
   return ;

@@ -394,7 +394,8 @@ void zmapWindowMarkPrint(ZMapWindow window, char *title) ;
 gboolean zMapWindowMarkIsSet(ZMapWindow window);
 
 void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_mode, ZMapWindowCompressMode compress_mode) ;
-void zmapWindowFullReposition(ZMapWindow window) ;
+
+void zMapWindowRequestReposition(FooCanvasItem *foo);
 
 gboolean zMapWindowGetDNAStatus(ZMapWindow window);
 void zMapWindowStats(ZMapWindow window,GString *text) ;

@@ -468,22 +468,6 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
   /* Now we've drawn all the features we can position them all. */
   zmapWindowColOrderColumns(window);
 
-#ifdef CONTAINER_REQUEST_REPOSITION_DOES_THE_SAME_THING
-  /* FullReposition Sets the correct scroll region. */
-  zmapWindowFullReposition(window);
-#endif
-
-#ifdef THIS_IS_DONE_WITH_THE_STATE_CODE_NOW
-#ifdef FIX_RT_66294
-  /* There may be a focus item if this routine is called as a result of splitting a window
-   * or adding more features, make sure we scroll to the same point as we were
-   * at in the previously. */
-  if ((fresh_focus_item = zmapWindowFocusGetHotItem(window->focus)))
-    {
-      zMapWindowScrollToItem(window, fresh_focus_item) ;
-    }
-#endif /* FIX_RT_66294 */
-#endif /* THIS_IS_DONE_WITH_THE_STATE_CODE_NOW */
 
   /* Update dependent windows...there is more work to do here.... */
 
@@ -500,7 +484,7 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
 
   zMapPrintTimer(NULL, "Finished creating canvas features") ;
 
-  zmapWindowContainerRequestReposition(root_group);
+  zMapWindowRequestReposition(root_group);
 
   zmapWindowBusy(window, FALSE) ;
 
@@ -1095,7 +1079,7 @@ void zmapWindowHideEmpty(ZMapWindow window)
 				  hideEmptyCB,
 				  window);
 
-  zmapWindowContainerRequestReposition(window->feature_root_group);
+  zMapWindowRequestReposition(window->feature_root_group);
 
   return ;
 }
@@ -1208,7 +1192,7 @@ static void windowDrawContext(ZMapCanvasData     canvas_data,
   zmapWindowHideEmpty(canvas_data->window);
 
       /* unbumped features might be wider */
-  zmapWindowFullReposition(canvas_data->window) ;
+  zmapWindowFullReposition(canvas_data->window->feature_root_group) ;
 
 
   return ;

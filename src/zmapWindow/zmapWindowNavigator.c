@@ -570,14 +570,14 @@ void zMapWindowNavigatorDrawLocator(ZMapWindowNavigator navigate,
   navigate->locator_y_coords.x2 = raw_bot;
 
   if(navigate->draw_expose_handler_id == 0)
-    zmapWindowContainerRequestReposition(navigate->container_root);
+    zMapWindowRequestReposition(navigate->container_root);
 
   return ;
 }
 
 void zmapWindowNavigatorPositioning(ZMapWindowNavigator navigate)
 {
-  zmapWindowContainerRequestReposition(navigate->container_root);
+  zMapWindowRequestReposition(navigate->container_root);
 
   return ;
 }
