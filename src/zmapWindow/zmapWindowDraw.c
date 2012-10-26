@@ -129,9 +129,10 @@ static void toggleColumnInMultipleBlocks(ZMapWindow window, char *name,
 
 static void preZoomCB(ZMapWindowContainerGroup container, FooCanvasPoints *points,
                       ZMapContainerLevelType level, gpointer user_data) ;
+#if GROUP_REPOS
 static gboolean resetWindowWidthCB(ZMapWindowContainerGroup container, FooCanvasPoints *points,
 				   ZMapContainerLevelType level, gpointer user_data);
-
+#endif
 
 //static gint horizPosCompare(gconstpointer a, gconstpointer b) ;
 
@@ -805,13 +806,19 @@ void zmapWindowreDrawContainerExecute(ZMapWindow                 window,
   return ;
 }
 
+
+#if GROUP_REPOS
 void zmapWindowDrawManageWindowWidth(ZMapWindow window)
 {
+	// this appears to exist so that the window can be passed to teh callback
+	// howvever all the containers has a ZMAP_WINDOW_POINTER g_object thing the can refer to  (hmme except for the container context)
+	// so this callback is being mved into context_update()
   if(window->feature_root_group)
     zmapWindowContainerGroupAddUpdateHook(window->feature_root_group, resetWindowWidthCB, window);
 
   return;
 }
+#endif
 
 
 
@@ -1180,6 +1187,9 @@ static void preZoomCB(ZMapWindowContainerGroup container, FooCanvasPoints *point
   return ;
 }
 
+
+
+
 static void set_hlocked_scroll_region(gpointer key, gpointer value, gpointer user_data)
 {
   ZMapWindow window = (ZMapWindow)key;
@@ -1191,6 +1201,9 @@ static void set_hlocked_scroll_region(gpointer key, gpointer value, gpointer use
 
   return ;
 }
+
+
+#if GROUP_REPOS
 
 /* A version of zmapWindowResetWidth which uses the points from the recursion to set the width */
 static gboolean resetWindowWidthCB(ZMapWindowContainerGroup container, FooCanvasPoints *points,
@@ -1263,7 +1276,101 @@ static gboolean resetWindowWidthCB(ZMapWindowContainerGroup container, FooCanvas
 
   return result;
 }
+#else
 
+
+
+/* this function has been hacked to run off args as easily supplied
+ (previously it was called via an update hook list that has now been removed)
+ */
+gboolean zMapWindowResetWindowWidth(FooCanvasItem *item)
+{
+  ZMapWindow window = NULL;
+  double x1, x2, y1, y2 ;       /* scroll region positions */
+  double scr_reg_width, root_width ;
+  gboolean result = TRUE;
+  FooCanvasPoints bounds;
+  double coords[4] = {0.0};
+
+  ZMapWindowContainerGroup group = (ZMapWindowContainerGroup) item;
+
+//  if(!group->feature_any)	/* we got called before setting up */
+//	  return;
+
+  window = g_object_get_data(G_OBJECT(item), ZMAP_WINDOW_POINTER);
+  if(!window)
+	  return FALSE;
+
+  coords[0] = item->x1;
+  coords[1] = item->y1;
+  coords[2] = item->x2;
+  coords[3] = item->y2;
+
+  bounds.coords     = &coords[0];
+  bounds.ref_count  = 1;
+  bounds.num_points = 2;
+
+
+  zmapWindowGetScrollRegion(window, &x1, &y1, &x2, &y2);
+
+  scr_reg_width = x2 - x1 + 1.0 ;
+
+  root_width = coords[2] - coords[0] + 1.0 ;
+
+  if (((root_width != scr_reg_width) &&
+       (window->curr_locking != ZMAP_WINLOCK_HORIZONTAL)))
+    {
+      double excess ;
+
+      excess = root_width - scr_reg_width ;
+      /* the spacing should be a border width from somewhere. */
+      x2 = x2 + excess + window->config.strand_spacing;
+
+      /* Annoyingly the initial size of the canvas is an issue here on first draw */
+      if(y2 == ZMAP_CANVAS_INIT_SIZE)
+	y2 = window->max_coord;
+
+      zmapWindowSetScrollRegion(window, &x1, &y1, &x2, &y2,"resetWindowWidth 1") ;
+
+	foo_canvas_item_request_redraw((FooCanvasItem *) window->feature_root_group);
+    }
+  else if(((window->curr_locking == ZMAP_WINLOCK_HORIZONTAL) &&
+	   (root_width > scr_reg_width)))
+    {
+      double excess ;
+      FooCanvasPoints *box;
+
+      excess = root_width - scr_reg_width ;
+      /* the spacing should be a border width from somewhere. */
+      x2 = x2 + excess + window->config.strand_spacing;
+
+      /* Annoyingly the initial size of the canvas is an issue here on first draw */
+      if(y2 == 100.0)
+	y2 = window->max_coord;
+
+      box = foo_canvas_points_new(2);
+      box->coords[0] = x1;
+      box->coords[1] = y1;
+      box->coords[2] = x2;
+      box->coords[3] = y2;
+
+      zmapWindowSetScrollRegion(window, &x1, &y1, &x2, &y2,"resetWindowWidth 2") ;
+
+      /* We need to make the horizontal split & locked windows have
+       * the maximum width so that _all_ the features are
+       * accessible. Test: bump a column, split window, bump column
+       * another few columns and check the windows are scroolable
+       * to the full extent of columns. */
+      g_hash_table_foreach(window->sibling_locked_windows,
+			   set_hlocked_scroll_region, box);
+
+      foo_canvas_points_free(box);
+    }
+
+  return result;
+}
+
+#endif
 
 
 /*

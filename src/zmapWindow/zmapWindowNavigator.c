@@ -369,10 +369,11 @@ ZMapWindowNavigator zMapWindowNavigatorCreate(GtkWidget *canvas_widget)
 
   container_group_add_locator(navigate, navigate->container_root);
 
+#if GROUP_REPOS
   zmapWindowContainerGroupAddUpdateHook(navigate->container_root,
 					container_draw_locator,
 					navigate);
-
+#endif
    zmapWindowDrawSetGroupBackground(navigate->container_root, 0, 1, 1.0, ZMAP_CANVAS_LAYER_ROOT_BACKGROUND, NULL, NULL);
 
 #if USE_CHILDREN
@@ -570,14 +571,14 @@ void zMapWindowNavigatorDrawLocator(ZMapWindowNavigator navigate,
   navigate->locator_y_coords.x2 = raw_bot;
 
   if(navigate->draw_expose_handler_id == 0)
-    zMapWindowRequestReposition(navigate->container_root);
+    zmapWindowFullReposition(navigate->container_root);
 
   return ;
 }
 
 void zmapWindowNavigatorPositioning(ZMapWindowNavigator navigate)
 {
-  zMapWindowRequestReposition(navigate->container_root);
+  zmapWindowFullReposition(navigate->container_root);
 
   return ;
 }
@@ -775,10 +776,11 @@ debug("nav set scroll %d %d\n",navigate->full_span.x1,navigate->full_span.x2);
 
 	    container_group_add_highlight_area_item(navigate, navigate->container_align);
 
+#if GROUP_REPOS
 	    zmapWindowContainerGroupAddUpdateHook(navigate->container_align,
 						  highlight_locator_area_cb,
 						  navigate);
-
+#endif
 
 		/* mh17: has to add thsi to avoid an assert in FtoIAddAlign() */
 	    zmapWindowContainerAlignmentAugment((ZMapWindowContainerAlignment) navigate->container_align,
@@ -825,9 +827,11 @@ debug("nav draw block %d %d\n",block_start,block_end);
 
 	container_group_add_highlight_area_item(navigate, draw_data->container_block);
 
+#if GROUP_REPOS
 	zmapWindowContainerGroupAddUpdateHook(draw_data->container_block,
 					      highlight_locator_area_cb,
 					      draw_data->navigate);
+#endif
 
 	g_object_set_data(G_OBJECT(draw_data->container_block), ITEM_FEATURE_STATS,
 			  zmapWindowStatsCreate((ZMapFeatureAny)draw_data->current_block)) ;
@@ -856,10 +860,11 @@ debug("nav draw block %d %d\n",block_start,block_end);
 
 	container_group_add_highlight_area_item(navigate, draw_data->container_strand);
 
+#if GROUP_REPOS
 	zmapWindowContainerGroupAddUpdateHook(draw_data->container_strand,
 					      highlight_locator_area_cb,
 					      draw_data->navigate);
-
+#endif
 	zmapWindowDrawSetGroupBackground(draw_data->container_strand, NULL, NULL);
 #endif
 
@@ -1069,10 +1074,11 @@ debug("nav create column %s %p\n",g_quark_to_string(set_id),draw_data->current_s
 
       container_group_add_highlight_area_item(draw_data->navigate, draw_data->container_feature_set);
 
-
+#if GROUP_REPOS
       zmapWindowContainerGroupAddUpdateHook(draw_data->container_feature_set,
 					    highlight_locator_area_cb,
 					    draw_data->navigate);
+#endif
 
       status = zmapWindowFToIAddSet(draw_data->navigate->ftoi_hash,
                                     draw_data->current_align->unique_id,

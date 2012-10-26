@@ -190,7 +190,9 @@ static ZMapFeatureContext createContext(ZMapView view, GList *feature_set_names)
 
 static ZMapViewWindow addWindow(ZMapView zmap_view, GtkWidget *parent_widget) ;
 
+#if 0
 static void addAlignments(ZMapFeatureContext context) ;
+#endif
 
 static void eraseAndUndrawContext(ZMapView view, ZMapFeatureContext context_inout);
 
@@ -4869,6 +4871,7 @@ static ZMapFeatureContext createContext(ZMapView view, GList *feature_set_names)
 }
 
 
+#if 0
 /* Add other alignments if any specified in a config file. */
 static void addAlignments(ZMapFeatureContext context)
 {
@@ -4981,7 +4984,7 @@ static void addAlignments(ZMapFeatureContext context)
 #endif /* THIS_NEEDS_REDOING */
   return ;
 }
-
+#endif
 
 
 

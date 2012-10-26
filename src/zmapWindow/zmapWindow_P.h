@@ -1520,6 +1520,8 @@ void zmapWindowColOrderPositionColumns(ZMapWindow window);
 
 void zmapWindowFullReposition(ZMapWindowContainerGroup root) ;
 
+
+
 void zmapWindowItemDebugItemToString(GString *string, FooCanvasItem *item);
 
 void zmapWindowPfetchEntry(ZMapWindow window, char *sequence_name) ;

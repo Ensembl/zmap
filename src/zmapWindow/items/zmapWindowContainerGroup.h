@@ -42,7 +42,7 @@
 #include <zmapWindowContainerChildren.h>
 
 
-
+#if USE_CHILDREN
 
 /*!
  * ZMapWindowContainerGroup for containing and positioning of canvas items.
@@ -84,7 +84,7 @@
  * container level.
  *
  */
-
+#endif
 
 
 

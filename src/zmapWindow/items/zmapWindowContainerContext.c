@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -24,7 +24,7 @@
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- * Description: 
+ * Description:
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  *-------------------------------------------------------------------
@@ -41,8 +41,10 @@
 #include <zmapWindowCanvas.h>
 #include <zmapWindowContainerGroup_I.h>
 #include <zmapWindowContainerContext_I.h>
+#include <ZMap/zmapWindow.h>
 
 
+#if GROUP_REPOS
 enum
   {
     CONTAINER_CONTEXT_PROP_0,	/* zero is invalid in gobject properties */
@@ -50,16 +52,18 @@ enum
     CONTAINER_CONTEXT_PROP_DEBUG_XML,
     CONTAINER_CONTEXT_PROP_DEBUG,
   };
+#endif
+
 
 static void zmap_window_container_context_class_init  (ZMapWindowContainerContextClass block_data_class);
 static void zmap_window_container_context_init        (ZMapWindowContainerContext block_data);
-static void zmap_window_container_context_set_property(GObject      *gobject, 
-						      guint         param_id, 
-						      const GValue *value, 
+static void zmap_window_container_context_set_property(GObject      *gobject,
+						      guint         param_id,
+						      const GValue *value,
 						      GParamSpec   *pspec);
-static void zmap_window_container_context_get_property(GObject    *gobject, 
-						      guint       param_id, 
-						      GValue     *value, 
+static void zmap_window_container_context_get_property(GObject    *gobject,
+						      guint       param_id,
+						      GValue     *value,
 						      GParamSpec *pspec);
 #ifdef EXTRA_DATA_NEEDS_FREE
 static void zmap_window_container_context_dispose     (GObject *object);
@@ -74,10 +78,10 @@ static FooCanvasItemClass *parent_item_class_G = NULL;
 GType zmapWindowContainerContextGetType(void)
 {
   static GType group_type = 0;
-  
-  if (!group_type) 
+
+  if (!group_type)
     {
-      static const GTypeInfo group_info = 
+      static const GTypeInfo group_info =
 	{
 	  sizeof (zmapWindowContainerContextClass),
 	  (GBaseInitFunc) NULL,
@@ -89,13 +93,13 @@ GType zmapWindowContainerContextGetType(void)
 	  0,              /* n_preallocs */
 	  (GInstanceInitFunc) zmap_window_container_context_init
       };
-    
+
     group_type = g_type_register_static (ZMAP_TYPE_CONTAINER_GROUP,
 					 ZMAP_WINDOW_CONTAINER_CONTEXT_NAME,
 					 &group_info,
 					 0);
   }
-  
+
   return group_type;
 }
 
@@ -134,6 +138,7 @@ static void zmap_window_container_context_class_init(ZMapWindowContainerContextC
 
   item_class->update = zmap_window_container_context_update;
 
+#if GROUP_REPOS
   g_object_class_install_property(gobject_class, CONTAINER_CONTEXT_PROP_REPOSITION,
 				  g_param_spec_boolean("need-reposition", "need reposition",
 						       "Container needs repositioning in update",
@@ -148,6 +153,7 @@ static void zmap_window_container_context_class_init(ZMapWindowContainerContextC
 				  g_param_spec_boolean("debug", "debug",
 						       "For reposition update print debug text",
 						       FALSE, ZMAP_PARAM_STATIC_RW));
+#endif
 
 #ifdef EXTRA_DATA_NEEDS_FREE
   gobject_class->dispose  = zmap_window_container_context_dispose;
@@ -159,13 +165,13 @@ static void zmap_window_container_context_class_init(ZMapWindowContainerContextC
 
 static void zmap_window_container_context_init(ZMapWindowContainerContext block_data)
 {
-  
+
   return ;
 }
 
-static void zmap_window_container_context_set_property(GObject      *gobject, 
-						       guint         param_id, 
-						       const GValue *value, 
+static void zmap_window_container_context_set_property(GObject      *gobject,
+						       guint         param_id,
+						       const GValue *value,
 						       GParamSpec   *pspec)
 {
   ZMapWindowContainerGroup container;
@@ -176,6 +182,7 @@ static void zmap_window_container_context_set_property(GObject      *gobject,
 
   switch(param_id)
     {
+#if GROUP_REPOS
     case CONTAINER_CONTEXT_PROP_REPOSITION:
       {
 	container->flags.need_reposition = g_value_get_boolean(value);
@@ -194,6 +201,8 @@ static void zmap_window_container_context_set_property(GObject      *gobject,
 	  container->flags.debug_xml = flag;
       }
       break;
+#endif
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID(gobject, param_id, pspec);
       break;
@@ -202,9 +211,9 @@ static void zmap_window_container_context_set_property(GObject      *gobject,
   return ;
 }
 
-static void zmap_window_container_context_get_property(GObject    *gobject, 
-						       guint       param_id, 
-						       GValue     *value, 
+static void zmap_window_container_context_get_property(GObject    *gobject,
+						       guint       param_id,
+						       GValue     *value,
 						       GParamSpec *pspec)
 {
   ZMapWindowContainerContext container_context;
@@ -234,6 +243,7 @@ static void zmap_window_container_context_finalize(GObject *object)
 #endif /* EXTRA_DATA_NEEDS_FREE */
 
 
+#if GROUP_REPOS
 static void dump_item_xml(gpointer item_data, gpointer user_data)
 {
   FooCanvasItem *item = (FooCanvasItem *)item_data;
@@ -247,15 +257,15 @@ static void dump_item_xml(gpointer item_data, gpointer user_data)
     {
       printf("  ");
     }
-  
-  printf("<%s world=\"%f,%f,%f,%f\" visible=\"%s\" canvas=\"%f,%f,%f,%f\" ", 
+
+  printf("<%s world=\"%f,%f,%f,%f\" visible=\"%s\" canvas=\"%f,%f,%f,%f\" ",
 	 G_OBJECT_TYPE_NAME(item),
 	 x1, y1, x2, y2,
 	 item->object.flags & FOO_CANVAS_ITEM_VISIBLE ? "yes" : "no",
 	 item->x1, item->y1, item->x2, item->y2);
-  
 
-  
+
+
   if(FOO_IS_CANVAS_GROUP(item))
     {
       FooCanvasGroup *group;
@@ -277,7 +287,7 @@ static void dump_item_xml(gpointer item_data, gpointer user_data)
     }
   else
     printf("/>\n");
-     
+
   return ;
 }
 
@@ -294,13 +304,13 @@ static void dump_item(gpointer item_data, gpointer user_data)
     {
       printf("  ");
     }
-  
-  printf("item (%s) %f,%f -> %f,%f [visible=%s, canvas=%f,%f -> %f,%f]\n", 
+
+  printf("item (%s) %f,%f -> %f,%f [visible=%s, canvas=%f,%f -> %f,%f]\n",
 	 G_OBJECT_TYPE_NAME(item),
 	 x1, y1, x2, y2,
 	 item->object.flags & FOO_CANVAS_ITEM_VISIBLE ? "yes" : "no",
 	 item->x1, item->y1, item->x2, item->y2);
-  
+
   if(FOO_IS_CANVAS_GROUP(item))
     {
       FooCanvasGroup *group;
@@ -309,7 +319,7 @@ static void dump_item(gpointer item_data, gpointer user_data)
       g_list_foreach(group->item_list, dump_item, user_data);
       (*indent)--;
     }
-     
+
   return ;
 }
 
@@ -325,7 +335,7 @@ static void dump_container(ZMapWindowContainerGroup container)
       canvas = ((FooCanvasItem *)container)->canvas;
       printf("<%s pointer=\"%p\" >\n",
 	     G_OBJECT_TYPE_NAME(canvas), canvas);
-	    
+
       dump_item_xml(container, &indent);
       printf("</%s>\n", G_OBJECT_TYPE_NAME(canvas));
     }
@@ -337,19 +347,27 @@ static void dump_container(ZMapWindowContainerGroup container)
 
   return ;
 }
+#endif
 
+
+
+
+
+
+#if GROUP_REPOS
 
 static void reposition_update(FooCanvasItemClass *item_class,
 			      FooCanvasItem      *item,
-			      double i2w_dx, 
-			      double i2w_dy, 
+			      double i2w_dx,
+			      double i2w_dy,
 			      int    flags)
 {
-  ZMapWindowContainerGroup container;
+
   FooCanvas *canvas;
   gboolean need_crop = FALSE;
 
   container = (ZMapWindowContainerGroup)item;
+
   container->reposition_x = container->reposition_y = 0.0;
 
   if((canvas = item->canvas))
@@ -367,14 +385,15 @@ static void reposition_update(FooCanvasItemClass *item_class,
   /* this is a little bit of a hack to make sure we visit every item
    * to do the repositioning! */
   if(container->flags.need_reposition == TRUE)
-    flags |= FOO_CANVAS_UPDATE_DEEP | ZMAP_CANVAS_UPDATE_NEED_REPOSITION; 
+    flags |= FOO_CANVAS_UPDATE_DEEP | ZMAP_CANVAS_UPDATE_NEED_REPOSITION;
 
   if(flags & FOO_CANVAS_UPDATE_DEEP)
     flags |= ZMAP_CANVAS_UPDATE_NEED_REPOSITION;
 
   if(item_class->update)
     (item_class->update)(item, i2w_dx, i2w_dy, flags);
-      
+
+
   if(flags & ZMAP_CANVAS_UPDATE_NEED_REPOSITION)
     {
       dump_container(container);
@@ -382,14 +401,19 @@ static void reposition_update(FooCanvasItemClass *item_class,
 
   container->flags.need_reposition = FALSE;
   container->reposition_x = container->reposition_y = 0.0;
-  
+
   return ;
 }
+#endif
+
+
 
 static void zmap_window_container_context_update (FooCanvasItem *item, double i2w_dx, double i2w_dy, int flags)
 {
-  
-  reposition_update(parent_item_class_G, item, i2w_dx, i2w_dy, flags);
+  if(parent_item_class_G->update)
+    (parent_item_class_G->update)(item, i2w_dx, i2w_dy, flags);
+
+  zMapWindowResetWindowWidth(item);
 
   return ;
 }

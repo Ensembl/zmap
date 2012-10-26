@@ -42,23 +42,28 @@
 #include <zmapWindowCanvas.h>
 #include <zmapWindowContainerGroup_I.h>
 #include <zmapWindowContainerUtils.h>
+#include <zmapWindow_P.h>		/* for fullReposition only */
 
 
 enum
   {
     CONTAINER_PROP_0,		/* zero is invalid */
     CONTAINER_PROP_VISIBLE,
+#if NOT_USED
     CONTAINER_PROP_COLUMN_REDRAW,
     CONTAINER_PROP_ZMAPWINDOW,
+#endif
+
   };
 
+#if GROUP_REPOS
 /*! Simple struct to hold data about update hooks.  */
 typedef struct
 {
   ZMapWindowContainerUpdateHook hook_func; /*! The function.  */
   gpointer                      hook_data; /*! The data passed to the function.  */
 } ContainerUpdateHookStruct, *ContainerUpdateHook;
-
+#endif
 
 static void zmap_window_container_group_class_init  (ZMapWindowContainerGroupClass container_class);
 static void zmap_window_container_group_init        (ZMapWindowContainerGroup      group);
@@ -101,6 +106,7 @@ static void zmap_window_container_update_with_crop(FooCanvasItem *item,
 						   int flags);
 #endif
 
+#if GROUP_REPOS
 static void invoke_update_hooks(ZMapWindowContainerGroup container, GSList *hooks_list,
 				double x1, double y1, double x2, double y2);
 #ifdef NOT_IMPLEMENTED
@@ -111,7 +117,7 @@ static void zmap_window_container_invoke_post_update_hooks(ZMapWindowContainerGr
 							   double x1, double y1, double x2, double y2);
 
 static gint find_update_hook_cb(gconstpointer list_data, gconstpointer query_data);
-
+#endif
 
 #ifdef NO_NEED
 static FooCanvasGroupClass *group_parent_class_G = NULL;
@@ -286,7 +292,9 @@ ZMapWindowContainerGroup zmapWindowContainerGroupCreateFromFoo(FooCanvasGroup   
       container->level = level;				    /* level */
       container->child_spacing = child_spacing;
       container->this_spacing = this_spacing;
+#if GROUP_REPOS
       container->flags.column_redraw = FALSE;
+#endif
 
 #if USE_BACKGROUND
       background = foo_canvas_item_new(group, ZMAP_TYPE_CONTAINER_BACKGROUND,
@@ -419,6 +427,7 @@ double zmapWindowContainerGroupGetBackgroundSize(ZMapWindowContainerGroup contai
 
 
 
+#if GROUP_REDRAW
 /*!
  * \brief A ZMapWindowContainerGroup may need to redraw it's children.
  *        This sets a flag so that it happens
@@ -436,6 +445,9 @@ void zmapWindowContainerGroupChildRedrawRequired(ZMapWindowContainerGroup contai
 
   return ;
 }
+
+#endif
+
 
 /*!
  * \brief Simple, Set the background colour of the container.
@@ -525,6 +537,8 @@ void zmapWindowContainerGroupRemovePreUpdateHook(ZMapWindowContainerGroup contai
 }
 #endif /* NOT_IMPLEMENTED */
 
+
+#if GROUP_REPOS
 /*!
  * \brief Add an update hook to the ZMapWindowContainerGroup
  *
@@ -591,6 +605,8 @@ void zmapWindowContainerGroupRemoveUpdateHook(ZMapWindowContainerGroup container
     }
 }
 
+#endif
+
 /*!
  * \brief Time to free the memory associated with the ZMapWindowContainerGroup.
  *
@@ -650,10 +666,12 @@ static void zmap_window_container_group_class_init  (ZMapWindowContainerGroupCla
   canvas_class->obj_size = sizeof(zmapWindowContainerGroupStruct) ;
   canvas_class->obj_total = 0 ;
 
+#if NOT_USED
   g_object_class_install_property(gobject_class, CONTAINER_PROP_COLUMN_REDRAW,
 				  g_param_spec_boolean("column-redraw", "column redraw",
 						       "Column needs redrawing when zoom changes",
 						       FALSE, ZMAP_PARAM_STATIC_RW));
+#endif
 
   item_parent_class_G  = (FooCanvasItemClass *)(g_type_class_peek_parent(container_class));
 
@@ -716,6 +734,7 @@ static void zmap_window_container_group_set_property(GObject               *obje
 	  } /* switch(container->level) */
       }
       break;
+#if NOT_USED
     case CONTAINER_PROP_COLUMN_REDRAW:
       {
 	switch(container->level)
@@ -728,6 +747,7 @@ static void zmap_window_container_group_set_property(GObject               *obje
 	  } /* switch(container->level) */
       }
       break;
+#endif
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID(object, param_id, pspec);
       break;
@@ -757,6 +777,7 @@ static void zmap_window_container_group_get_property(GObject               *obje
 
 	break;
       }
+#if NOT_USED
     case CONTAINER_PROP_COLUMN_REDRAW:
       {
 	switch(container->level)
@@ -770,6 +791,7 @@ static void zmap_window_container_group_get_property(GObject               *obje
 
 	break;
       }
+#endif
     default:
       {
 	G_OBJECT_WARN_INVALID_PROPERTY_ID(object, param_id, pspec);
@@ -852,10 +874,11 @@ static double zmap_window_container_group_item_point (FooCanvasItem *item,
 
 static void zmap_window_container_group_destroy     (GtkObject *gtkobject)
 {
-  ZMapWindowContainerGroup container;
   GtkObjectClass *gtkobject_class;
 
-  gtkobject_class = (GtkObjectClass *)item_parent_class_G;
+#if GROUP_REPOS
+  ZMapWindowContainerGroup container;
+
   container = (ZMapWindowContainerGroup)gtkobject;
 
   if(container->pre_update_hooks)
@@ -871,6 +894,9 @@ static void zmap_window_container_group_destroy     (GtkObject *gtkobject)
       g_slist_free(container->post_update_hooks);
       container->post_update_hooks = NULL;
     }
+#endif
+
+  gtkobject_class = (GtkObjectClass *)item_parent_class_G;
 
   if(gtkobject_class->destroy)
     (gtkobject_class->destroy)(gtkobject);
@@ -1098,6 +1124,9 @@ static void zmap_window_container_update_with_crop(FooCanvasItem *item,
 #endif
 
 
+
+#if GROUP_REPOS
+
 static void invoke_update_hooks(ZMapWindowContainerGroup container, GSList *hooks_list,
 				double x1, double y1, double x2, double y2)
 {
@@ -1190,7 +1219,7 @@ static void zmap_window_container_invoke_post_update_hooks(ZMapWindowContainerGr
   return ;
 }
 
-
+#endif
 
 
 /* This takes care of the x positioning of the containers as well as the maximising in the y coords. */
@@ -1343,7 +1372,7 @@ printf("repos group cur x = %.1f (%1.f %.1f %.1f)\n",parent_container->repositio
 	  }
 
 
-#if 1
+#if GROUP_REPOS
 	/* these are set for the root as well as possibly column containers */
 	/* NOTE untangle this hook stuff */
 	  zmap_window_container_invoke_post_update_hooks(this_container,
@@ -1370,7 +1399,7 @@ printf("group position: %d %s %.1f %.1f (%.1f %.1f %.1f %.1f)\n",this_container-
 
 
 
-
+#if GROUP_REPOS
 /* helper to zmapWindowContainerGroupRemoveUpdateHook() */
 static gint find_update_hook_cb(gconstpointer list_data, gconstpointer query_data)
 {
@@ -1386,5 +1415,6 @@ static gint find_update_hook_cb(gconstpointer list_data, gconstpointer query_dat
 
   return zero_when_matched;
 }
+#endif
 
 

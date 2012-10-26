@@ -442,10 +442,12 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
 
   window->feature_root_group = root_group ;
 
+#if GROUP_REPOS
   if(root_created)
     {
       zmapWindowDrawManageWindowWidth(window);
     }
+#endif
 
   /* Set root group to start where sequence starts... */
   x = canvas_data.curr_x_offset ;
@@ -484,7 +486,7 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
 
   zMapPrintTimer(NULL, "Finished creating canvas features") ;
 
-  zMapWindowRequestReposition(root_group);
+  zmapWindowFullReposition(root_group);
 
   zmapWindowBusy(window, FALSE) ;
 
@@ -1079,7 +1081,7 @@ void zmapWindowHideEmpty(ZMapWindow window)
 				  hideEmptyCB,
 				  window);
 
-  zMapWindowRequestReposition(window->feature_root_group);
+  zmapWindowFullReposition(window->feature_root_group);
 
   return ;
 }
@@ -2583,9 +2585,13 @@ static FooCanvasGroup *createColumnFull(ZMapWindowContainerFeatures parent_group
       if (strand == ZMAPSTRAND_REVERSE)
 	foo_canvas_item_lower_to_bottom(FOO_CANVAS_ITEM(container));
 
+#if GROUP_REPOS
+// erm.... we just created the group so there are no features WTF was going on here??? only place this is called from
+
       /* By default we do not redraw our children which are the individual features, the canvas
        * should do this for us. */
       zmapWindowContainerGroupChildRedrawRequired(container, FALSE) ;
+#endif
 
       /* Make sure group covers whole span in y direction. */
       zmapWindowContainerGroupBackgroundSize(container, bot-top) ;

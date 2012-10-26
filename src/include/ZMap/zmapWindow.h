@@ -397,6 +397,8 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
 
 void zMapWindowRequestReposition(FooCanvasItem *foo);
 
+gboolean zMapWindowResetWindowWidth(FooCanvasItem *item);
+
 gboolean zMapWindowGetDNAStatus(ZMapWindow window);
 void zMapWindowStats(ZMapWindow window,GString *text) ;
 
