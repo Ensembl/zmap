@@ -484,7 +484,8 @@ char *zMapFeatureCreateName(ZMapStyleMode feature_type,
   char *feature_name = NULL, *ptr ;
   int len;
 
-  zMapAssert(feature_type && feature) ;
+  zMapAssert(feature_type) ;
+  zMapAssert(feature && *feature) ;
 
   /* Get the length of the feature (saving time??) for later */
   len = strlen(feature);
