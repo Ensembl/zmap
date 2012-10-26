@@ -102,7 +102,7 @@ typedef struct _zmapWindowCanvasFeatureStruct
 #endif
 
   ZMapFeature feature;
-  GList *from;		/* the list node that holds the feature */
+//  GList *from;		/* the list node that holds the feature */
   /* refer to comment above zmapWindowCanvasFeatureset.c/zMapWindowFeaturesetItemRemoveFeature() */
 
   double score;		/* determines feature width */

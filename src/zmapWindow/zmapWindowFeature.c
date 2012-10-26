@@ -195,8 +195,8 @@ void zmapWindowPfetchEntry(ZMapWindow window, char *sequence_name)
  *
  * NOTE IF YOU EVER CHANGE THIS FUNCTION OR CALL IT TO REMOVE A WHOLE FEATURESET
  * refer to the comment above zmapWindowCanvasfeatureset.c/zMapWindowFeaturesetItemRemoveFeature()
- * and write a new function to delete the whole set
- * NOTE: destroying the CanvasFeaturset will do the job
+ * and write a new function to delete the whole set (i did that: zMapWindowFeaturesetItemRemoveSet)
+ * NOTE: destroying the CanvasFeaturset will also do the job
  *
  * Returns FALSE if the feature does not exist. */
 
@@ -897,10 +897,14 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
 	    end = sub_feature->end;
 	  }
 
-	/* Pass information about the object clicked on back to the application. */
-	zmapWindowUpdateInfoPanel(window, feature, NULL, item, sub_feature, start, end, start, end,
-				  NULL, replace_highlight, highlight_same_names, control) ;
-      }
+		/* Pass information about the object clicked on back to the application. */
+		zmapWindowUpdateInfoPanel(window, feature, NULL, item, sub_feature, start, end, start, end,
+				NULL, replace_highlight, highlight_same_names, control) ;
+
+			/* if we have an active dialog update it: they have to click on a feature not the column */
+		zmapWindowSetStyleFeatureset(window, item, feature);
+
+	}
     }
 
 

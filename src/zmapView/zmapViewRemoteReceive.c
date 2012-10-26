@@ -1281,7 +1281,7 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 											    start, end, has_score,
 											    score, strand)))
 			    {
-			      request_data->feature->style_id = request_data->style_id ;
+//			      request_data->feature->style_id = request_data->style_id ;
 
 			      zMapFeatureSetAddFeature(request_data->feature_set, request_data->feature);
 
@@ -2195,7 +2195,8 @@ static void loadFeatures(ZMapView view, RequestData input_data)
 
   if (input_data->code == ZMAPXREMOTE_OK)
     zmapViewLoadFeatures(view, input_data->block, input_data->feature_sets, NULL, start, end,
-			 SOURCE_GROUP_DELAYED, TRUE, TRUE) ;
+			 SOURCE_GROUP_DELAYED, TRUE, FALSE) ;	/* will terminate if is pipe otherwase keep alive */
+
 
   return ;
 }

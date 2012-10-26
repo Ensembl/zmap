@@ -115,6 +115,8 @@
 #define PAIRED_READS_ALL           "Request all paired reads"
 #define PAIRED_READS_DATA          "Request paired reads data"
 
+#define COLUMN_COLOUR			"Edit Style"
+#define COLUMN_STYLE_OPTS		"Choose Style"
 
 /* Search/Listing menus. */
 #define SEARCH_STR                 "Search or List Features and Sequence"
@@ -231,6 +233,10 @@ static void hideEvidenceMenuCB(int menu_item_id, gpointer callback_data);
 static void compressMenuCB(int menu_item_id, gpointer callback_data);
 static void configureMenuCB(int menu_item_id, gpointer callback_data) ;
 
+static void colourMenuCB(int menu_item_id, gpointer callback_data);
+static void setStyleCB(int menu_item_id, gpointer callback_data);
+
+
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void bumpToInitialCB(int menu_item_id, gpointer callback_data);
 static void unbumpAllCB(int menu_item_id, gpointer callback_data);
@@ -266,6 +272,9 @@ static ZMapGUIMenuItem makeMenuPfetchOps(int *start_index_inout,
 					 gpointer callback_data) ;
 static void itemMenuCB(int menu_item_id, gpointer callback_data) ;
 
+static ZMapGUIMenuItem zmapWindowMakeMenuStyle(int *start_index_inout,
+				       ZMapGUIMenuItemCallbackFunc callback_func,
+				       gpointer callback_data, ZMapFeatureTypeStyle cur_style, ZMapStyleMode f_type);
 
 
 
@@ -458,6 +467,24 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
   menu_sets = g_list_append(menu_sets,
 			    zmapWindowMakeMenuBump(NULL, NULL, menu_data,
 						   zmapWindowContainerFeatureSetGetBumpMode(container_set))) ;
+
+  {
+	GQuark parent_id = 0;
+	ZMapFeatureTypeStyle parent = NULL;
+
+	if(!(style->is_default) && (parent_id = style->parent_id))
+	{
+		parent = g_hash_table_lookup(window->context_map->styles, GUINT_TO_POINTER(parent_id));
+	}
+
+	/*
+	 * hacky: otterlace styles will not be defaulted
+	 * any styles defined in a style cannot be edited live
+	 * NOTE is we define EST_ALIGN as a default style then EST_Human etc can be edited
+	 */
+	if(window->edit_styles || style->is_default || (parent && parent->is_default))
+		menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuStyle(NULL, NULL, menu_data, style, feature->type));
+  }
 
   /* list all short reads data, temp access till we get wiggle plots running */
   if ((seq_menus = zmapWindowMakeMenuRequestBAM(NULL, NULL, menu_data)))
@@ -992,7 +1019,6 @@ ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
       {ZMAPGUI_MENU_NORMAL, "Unbump All Columns",                     0,                              unbumpAllCB, NULL},
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-
       {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}  // menu terminates on id = 0 in one loop below
     } ;
   enum {MENU_INDEX_BUMP = 0, MENU_INDEX_MARK = 3,  MENU_INDEX_COMPRESS = 4} ;
@@ -1124,6 +1150,152 @@ ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
 }
 
 
+/* sort into order of style mode then alpha by name but put current style at the front */
+gint style_menu_sort(gconstpointer a, gconstpointer b, gpointer data)
+{
+	ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle) data;
+	ZMapFeatureTypeStyle sa = (ZMapFeatureTypeStyle) a, sb = (ZMapFeatureTypeStyle) b;
+	const char *na, *nb;
+
+	if(sa->mode != sb->mode)
+	{
+		if(sa->mode == style->mode)
+			return -1;
+		if(sb->mode == style->mode)
+			return  1;
+		if(sa->mode < sb->mode)
+			return -1;
+		return 1;
+	}
+
+	na = g_quark_to_string(sa->unique_id);
+	nb = g_quark_to_string(sb->unique_id);
+
+	return strcmp(na,nb);
+}
+
+
+/* is a style comapatble with a feature type: need to avoid crashes due to wrong data */
+gboolean style_is_compatable(ZMapFeatureTypeStyle style, ZMapStyleMode f_type)
+{
+	if(f_type == style->mode)
+		return TRUE;
+
+	switch(f_type)
+	{
+	case ZMAPSTYLE_MODE_BASIC:
+		if(style->mode == ZMAPSTYLE_MODE_GRAPH)
+			return TRUE;
+		return FALSE;
+
+	case ZMAPSTYLE_MODE_GRAPH:
+	case ZMAPSTYLE_MODE_ASSEMBLY_PATH:
+	case ZMAPSTYLE_MODE_GLYPH:
+		if(style->mode == ZMAPSTYLE_MODE_BASIC)
+			return TRUE;
+		return FALSE;
+
+	case ZMAPSTYLE_MODE_ALIGNMENT:
+	case ZMAPSTYLE_MODE_TRANSCRIPT:
+	case ZMAPSTYLE_MODE_SEQUENCE:
+	case ZMAPSTYLE_MODE_TEXT:
+	default:
+		return FALSE;
+	}
+}
+
+
+static ZMapGUIMenuItem zmapWindowMakeMenuStyle(int *start_index_inout,
+				       ZMapGUIMenuItemCallbackFunc callback_func,
+				       gpointer callback_data, ZMapFeatureTypeStyle cur_style, ZMapStyleMode f_type)
+{
+  /* get a list of featuresets from the window's context_map */
+  static ZMapGUIMenuItem menu = NULL;
+  static int n_menu = 0;
+  ItemMenuCBData cbdata  = (ItemMenuCBData)callback_data;
+  ZMapGUIMenuItem m;
+  GHashTable *styles = cbdata->window->context_map->styles;
+  GList *style_list, *sl;
+  int n_styles;
+  int i = 0;
+
+  zMap_g_hash_table_get_data(&style_list,styles);
+  style_list = g_list_sort_with_data(style_list, style_menu_sort, (gpointer) cur_style);
+  n_styles = g_list_length(style_list);		/* max possible, will never be reached */
+
+  if (!n_styles)
+    return NULL;
+
+
+  if(n_menu < n_styles + N_STYLE_MODE + 1)
+    {
+      /* as this derives from config data read on creating the view
+       * it will not change unless we reconfig and open another view
+       * alloc enough for all views
+       */
+      if(menu)
+	{
+	  for(m = menu; m->type != ZMAPGUI_MENU_NONE ;m++)
+	    g_free(m->name);
+
+	  g_free(menu);
+	}
+
+	n_menu = n_styles + N_STYLE_MODE + 10;
+      menu = g_new0(ZMapGUIMenuItemStruct, n_menu);
+
+    }
+
+  m = menu;
+
+  m->type = ZMAPGUI_MENU_NORMAL;
+  m->name = g_strdup(COLUMN_CONFIG_STR"/"COLUMN_COLOUR);
+  m->id = 0;
+  m->callback_func = colourMenuCB;
+  m++;
+
+	/* add sub menu */
+  m->type = ZMAPGUI_MENU_BRANCH;
+  m->name = g_strdup(COLUMN_CONFIG_STR"/"COLUMN_STYLE_OPTS);
+  m->id = 0;
+  m->callback_func = NULL;
+  m++;
+
+  for( i = 0, sl = style_list;i < n_styles; i++, sl = sl->next)
+    {
+      char *name;
+	char *mode = "";
+	ZMapFeatureTypeStyle s = (ZMapFeatureTypeStyle) sl->data;
+
+	if(!style_is_compatable(s,f_type))
+		continue;
+
+      m->type = ZMAPGUI_MENU_NORMAL;
+
+	name = get_menu_string(s->original_id, '-');
+
+	if(s->mode != cur_style->mode)
+		mode = (char *) zmapStyleMode2ShortText(s->mode);
+
+	m->name = g_strdup_printf(COLUMN_CONFIG_STR"/"COLUMN_STYLE_OPTS"/%s%s%s", mode, *mode ? "/" : "", name);
+	g_free(name);
+
+	m->id = s->unique_id;
+	m->callback_func = setStyleCB;
+	m++;
+    }
+
+  if(m <= menu + 3)	/* empty sub_menu or choice of current */
+	  m = menu + 1;
+  m->type = ZMAPGUI_MENU_NONE;
+  m->name = NULL;
+
+
+  /* this overrides data in the menus as given in the args, but index and func are always NULL */
+  zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
+
+  return menu;
+}
 
 
 /*
@@ -1850,23 +2022,31 @@ static void configureMenuCB(int menu_item_id, gpointer callback_data)
 }
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static void bumpToInitialCB(int menu_item_id, gpointer callback_data) // menu item commented out
+static void colourMenuCB(int menu_item_id, gpointer callback_data)
 {
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
-  FooCanvasGroup *column_group ;
 
-  column_group = menuDataItemToColumn(menu_data->item);
+  zmapWindowShowStyleDialog(menu_data);
+	/* don't free the callback data, it's in use */
 
-  zmapWindowColumnBumpAllInitial(FOO_CANVAS_ITEM(column_group));
+  return ;
+}
 
-  zmapWindowFullReposition(menu_data->window);
+static void setStyleCB(int menu_item_id, gpointer callback_data)
+{
+  ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
+
+  zmapWindowMenuSetStyleCB(menu_item_id, menu_data);
 
   g_free(menu_data) ;
 
   return ;
 }
 
+
+
+
+#if ED_G_NEVER_INCLUDE_THIS_CODE
 
 static void unbumpAllCB(int menu_item_id, gpointer callback_data)
 {
@@ -2039,7 +2219,7 @@ static void developerMenuCB(int menu_item_id, gpointer callback_data)
 	    char *feature_text ;
 	    ZMapFeature feature ;
 	    GString *item_text_str ;
-	    char *item_text ;
+//	    char *item_text ;
 	    char *coord_text ;
 	    char *msg_text ;
 
@@ -2050,7 +2230,7 @@ static void developerMenuCB(int menu_item_id, gpointer callback_data)
 	    item_text_str = g_string_sized_new(2048) ;
 
 	    zmapWindowItemDebugItemToString(item_text_str, menu_data->item) ;
-	    
+
 	    coord_text = zmapWindowItemCoordsText(menu_data->item) ;
 
 	    msg_text = g_strdup_printf("%s\n%s\t%s\n", feature_text, item_text_str->str, coord_text) ;

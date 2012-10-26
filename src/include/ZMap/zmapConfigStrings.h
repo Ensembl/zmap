@@ -206,6 +206,7 @@
 
 #define ZMAPSTANZA_APP_SEQ_DATA          "seq-data"
 
+#define ZMAPSTANZA_APP_EDIT_STYLES       "edit-styles"
 
 /*! @addtogroup config_stanzas
  *

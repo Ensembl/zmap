@@ -118,14 +118,6 @@ typedef struct
 } DataListLengthStruct, *DataListLength ;
 
 
-typedef struct _HackForForcingStyleModeStruct
-{
-  gboolean force;
-  GHashTable *styles ;
-  ZMapFeatureSet feature_set;
-} HackForForcingStyleModeStruct, *HackForForcingStyleMode;
-
-
 typedef struct
 {
   GQuark original_id ;
@@ -167,13 +159,13 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
                                                   gpointer user_data,
                                                   char **err_out);
 
-#define MH17_ADD_MODES  1
-#if MH17_ADD_MODES
+#if ADD_MODES
 static ZMapFeatureContextExecuteStatus addModeCB(GQuark key_id,
 						 gpointer data,
 						 gpointer user_data,
 						 char **error_out) ;
-static void addFeatureModeCB(gpointer key, gpointer data, gpointer user_data) ;
+//static void addFeatureModeCB(gpointer key, gpointer data, gpointer user_data) ;
+static void addStyleMode(ZMapFeatureTypeStyle style, ZMapStyleMode f_type)
 #endif
 
 static void logMemCalls(gboolean alloc, ZMapFeatureAny feature_any) ;
@@ -293,7 +285,7 @@ gboolean zMapFeatureAnyRemoveFeature(ZMapFeatureAny feature_parent, ZMapFeatureA
 
 
 
-#if MH17_ADD_MODES
+#if ADD_MODES
 /* legacy code that might just be used somewhere in the world
  * should _not_ be called if we  used a styles file
  */
@@ -309,53 +301,19 @@ gboolean zMapFeatureAnyAddModesToStyles(ZMapFeatureAny feature_any, GHashTable *
 {
   gboolean result = TRUE;
   ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
-  HackForForcingStyleModeStruct hack = {FALSE} ;
-
-  hack.force = FALSE ;
-  hack.styles = styles ;
 
   zMapFeatureContextExecuteSubset(feature_any,
                                   ZMAPFEATURE_STRUCT_FEATURESET,
                                   addModeCB,
-                                  &hack) ;
+					    NULL) ;
 
   if (status != ZMAP_CONTEXT_EXEC_STATUS_OK)
     result = FALSE ;
 
   return result;
 }
-
-
-
-/* This function is _only_ here for the otterlace -> zmap
- * communication processing of styles.  When using methods on the
- * acedb server, the server code makes them drawable, setting their
- * mode to basic for featureset where there are no features to get the
- * mode from... When adding new features to these once empty
- * columns, we must force the styles... */
-gboolean zMapFeatureAnyForceModesToStyles(ZMapFeatureAny feature_any, GHashTable *styles)
-{
-  gboolean result = TRUE;
-  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
-  HackForForcingStyleModeStruct hack = {FALSE} ;
-
-  hack.force = TRUE ;
-  hack.styles = styles ;
-
-#warning This function should be removed... and zMapFeatureAnyAddModesToStyles used instead.
-
-  zMapFeatureContextExecuteSubset(feature_any,
-                                  ZMAPFEATURE_STRUCT_FEATURESET,
-                                  addModeCB,
-                                  &hack) ;
-
-  if (status != ZMAP_CONTEXT_EXEC_STATUS_OK)
-    result = FALSE ;
-
-  return result;
-}
-
 #endif
+
 
 ZMapFeatureAny zmapFeatureAnyCopy(ZMapFeatureAny orig_feature_any, GDestroyNotify destroy_cb)
 {
@@ -653,7 +611,7 @@ gboolean zMapFeatureAddStandardData(ZMapFeature feature, char *feature_name_id, 
       feature->original_id = g_quark_from_string(name) ;
       feature->type = feature_type ;
       feature->SO_accession = g_quark_from_string(SO_accession) ;
-      feature->style_id = zMapStyleGetUniqueID((*style)) ;
+//      feature->style_id = zMapStyleGetUniqueID((*style)) ;
       feature->style = style;
       feature->x1 = start ;
       feature->x2 = end ;
@@ -1055,6 +1013,32 @@ gboolean zMapFeatureSetAddFeature(ZMapFeatureSet feature_set, ZMapFeature featur
 
   return result ;
 }
+
+
+static void copy_to_new_featureset(gpointer key, gpointer hash_data, gpointer user_data)
+{
+  ZMapFeatureSet set = (ZMapFeatureSet)user_data;
+  ZMapFeature    new;
+
+  new = (ZMapFeature)zMapFeatureAnyCopy((ZMapFeatureAny)hash_data);
+
+  zMapFeatureSetAddFeature(set, new);
+
+  return ;
+}
+
+ZMapFeatureSet zMapFeatureSetCopy(ZMapFeatureSet feature_set)
+{
+  ZMapFeatureSet new_feature_set = NULL;
+
+  new_feature_set = (ZMapFeatureSet)zMapFeatureAnyCopy((ZMapFeatureAny)feature_set);
+
+  g_hash_table_foreach(feature_set->features, copy_to_new_featureset, new_feature_set);
+
+  return new_feature_set;
+}
+
+
 
 
 /* Returns TRUE if the feature could be found in the feature_set, FALSE otherwise. */
@@ -2960,14 +2944,13 @@ static void featureAnyAddToDestroyList(ZMapFeatureContext context, ZMapFeatureAn
 }
 
 
-#if MH17_ADD_MODES
+#if ADD_MODES
 static ZMapFeatureContextExecuteStatus addModeCB(GQuark key_id,
 						 gpointer data,
 						 gpointer user_data,
 						 char **error_out)
 {
   ZMapFeatureAny feature_any = (ZMapFeatureAny)data ;
-  HackForForcingStyleMode hack = (HackForForcingStyleMode)user_data ;
   ZMapFeatureStructType feature_type ;
   ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
 
@@ -2983,9 +2966,7 @@ static ZMapFeatureContextExecuteStatus addModeCB(GQuark key_id,
       }
     case ZMAPFEATURE_STRUCT_FEATURESET:
       {
-        hack->feature_set = (ZMapFeatureSet)feature_any ;
-
-	g_hash_table_foreach(hack->feature_set->features, addFeatureModeCB, hack) ;
+	addStyleMode(feature_set->style, featureset->type);
 
 	break;
       }
@@ -3002,6 +2983,7 @@ static ZMapFeatureContextExecuteStatus addModeCB(GQuark key_id,
   return status ;
 }
 
+#endif
 
 
 /* A GHashTableForeachFunc() to add a mode to the styles for all features in a set, note that
@@ -3012,35 +2994,16 @@ static ZMapFeatureContextExecuteStatus addModeCB(GQuark key_id,
  * Note that I'm setting some other style data here because we need different default bumping
  * modes etc for different feature types....
  *
- *  */
-static void addFeatureModeCB(gpointer key, gpointer data, gpointer user_data)
+ * Oct 2012: featuresets have a single style, these can be commbined into a virtual featureset in a CanvasFeatureset on display
+ * so we can just process the featuresets
+ */
+void zMapFeatureAddStyleMode(ZMapFeatureTypeStyle style, ZMapStyleMode f_type)
 {
-  ZMapFeature feature = (ZMapFeature)data ;
-  HackForForcingStyleMode hack = (HackForForcingStyleMode)user_data;
-  ZMapFeatureSet feature_set = NULL;
-  ZMapFeatureTypeStyle style ;
-  gboolean force = FALSE;
-
-
-  style = zMapFindStyle(hack->styles, feature->style_id) ;
-  zMapAssert(style) ;
-
-  feature_set = hack->feature_set;
-  force       = hack->force;
-
-  if(force)
-    {
-      if(zMapStyleHasMode(style))
-	g_warning("Force=TRUE and style '%s' has mode (Couldn't have used zMapFeatureAnyAddModesToStyles)", g_quark_to_string(feature->style_id));
-      else
-	g_warning("Force=TRUE and style '%s' has no mode (Could have used zMapFeatureAnyAddModesToStyles)", g_quark_to_string(feature->style_id));
-    }
-
-  if (force || !zMapStyleHasMode(style))
+  if (!zMapStyleHasMode(style))
     {
       ZMapStyleMode mode ;
 
-      switch (feature->type)
+      switch (f_type)
 	{
 	case ZMAPSTYLE_MODE_BASIC:
 	  {
@@ -3086,7 +3049,7 @@ static void addFeatureModeCB(gpointer key, gpointer data, gpointer user_data)
 	case ZMAPSTYLE_MODE_TEXT:
 	case ZMAPSTYLE_MODE_GLYPH:
 	case ZMAPSTYLE_MODE_GRAPH:
-	  mode = feature->type;           /* grrrrr is this really correct? */
+	  mode = f_type;           /* grrrrr is this really correct? */
 	  break;
 	default:
 	  zMapAssertNotReached() ;
@@ -3099,7 +3062,9 @@ static void addFeatureModeCB(gpointer key, gpointer data, gpointer user_data)
 
   return ;
 }
-#endif
+
+
+
 
 gboolean zMapFeatureAnyHasMagic(ZMapFeatureAny feature_any)
 {

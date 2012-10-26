@@ -309,12 +309,12 @@ typedef struct
 
 
 /* The main "feature structs", these form a hierachy:
- * 
+ *
  * context -> align -> block -> featureset -> feature
- * 
+ *
  * Each struct has an initial common set of members allowing all
  * such structs to be accessed in some common ways.
- * 
+ *
  *  */
 
 
@@ -716,8 +716,7 @@ typedef struct ZMapFeatureStruct_
 
 
   // style id tp be removed when style fully working
-  GQuark style_id ;					    /* Style defining how this feature is processed.
-							       (use Styles _unique_ id.) */
+//  GQuark style_id ;	/* Style defining how this feature is processed (use Styles _unique_ id.) */
 
   ZMapFeatureTypeStyle *style;                   // pointer to the style structure held by the featureset in the context
 								// NOTE we can have mixed styles in a column/ virtual featureset
@@ -1023,6 +1022,7 @@ void zMapFeatureAnyDestroy(ZMapFeatureAny feature) ;
 void zMapCoords2FeatureCoords(ZMapFeatureBlock block, int *x1_inout, int *x2_inout) ;
 
 
+void zMapFeatureAddStyleMode(ZMapFeatureTypeStyle style, ZMapStyleMode f_type);
 
 
 
@@ -1151,6 +1151,7 @@ char *zMapFeatureSetGetName(ZMapFeatureSet feature_set) ;
 GList *zMapFeatureSetGetRangeFeatures(ZMapFeatureSet feature_set, int start, int end) ;
 GList *zMapFeatureSetGetNamedFeatures(ZMapFeatureSet feature_set, GQuark original_id) ;
 
+ZMapFeatureSet zMapFeatureSetCopy(ZMapFeatureSet feature_set);
 
 gboolean zMapFeatureSetIsLoadedInRange(ZMapFeatureBlock block, GQuark unique_id,int start, int end);
 
@@ -1280,6 +1281,9 @@ void zMapFeatureRevComp(int seq_start, int seq_end, int *coord_1, int *coord_2) 
 
 
 void zMapGetFeatureExtent(ZMapFeature feature, gboolean complex, ZMapSpan span);
+
+
+int zMapFeatureColumnOrderNext(void);	/* order of columns L -> R */
 
 
 gboolean zMapFeatureIsValid(ZMapFeatureAny any_feature) ;

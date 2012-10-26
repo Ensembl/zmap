@@ -160,6 +160,7 @@ zmap_LDADD =                                                 \
 	$(ACECONN_LIBS) $(GTK_LIBS)                          \
 	$(LIBCURL) -lexpat                                   \
 	@MACOSX_UNIVERSAL_FLAGS@ $(NULL)
+
 zmap_SOURCES      = $(top_srcdir)/zmapApp/zmapAppmain_c.c
 zmap_LDFLAGS      = 
 # We need this so as not to have libtool prune out multiple -lZMap so we can resolve our dependency cycle :(

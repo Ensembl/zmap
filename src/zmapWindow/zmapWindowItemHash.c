@@ -482,6 +482,7 @@ gboolean zmapWindowFToIAddSet(GHashTable *feature_context_to_item,
 }
 
 
+
 gboolean zmapWindowFToIRemoveSet(GHashTable *feature_context_to_item,
 				  GQuark align_id, GQuark block_id, GQuark set_id,
 				  ZMapStrand set_strand, ZMapFrame set_frame, gboolean remove_features)
@@ -517,6 +518,7 @@ gboolean zmapWindowFToIRemoveSet(GHashTable *feature_context_to_item,
 
 
 
+
 /* return the hash table for a set to allow repeated inserts more quickly */
 GHashTable *zmapWindowFToIGetSetHash(GHashTable *feature_context_to_item,
 				  GQuark align_id, GQuark block_id,
@@ -541,6 +543,8 @@ GHashTable *zmapWindowFToIGetSetHash(GHashTable *feature_context_to_item,
     }
   return NULL ;
 }
+
+
 
 gboolean zmapWindowFToIAddSetFeature(GHashTable *set,	GQuark feature_id, FooCanvasItem *feature_item, ZMapFeature feature)
 {
@@ -678,6 +682,8 @@ FooCanvasItem *zmapWindowFToIFindFeatureItem(ZMapWindow window, GHashTable *feat
 }
 
 
+
+
 FooCanvasItem *zmapWindowFToIFindSetItem(ZMapWindow window,GHashTable *feature_context_to_item,
      					 ZMapFeatureSet feature_set,
 					 ZMapStrand set_strand, ZMapFrame set_frame)
@@ -719,18 +725,18 @@ FooCanvasItem *zmapWindowFToIFindSetItem(ZMapWindow window,GHashTable *feature_c
  */
 
 
-FooCanvasItem *zmapWindowFToIFindItemFull(ZMapWindow window, GHashTable *feature_context_to_item,
+ID2Canvas zmapWindowFToIFindID2CFull(ZMapWindow window, GHashTable *feature_context_to_item,
 					  GQuark align_id, GQuark block_id,
 					  GQuark set_id,
 					  ZMapStrand set_strand, ZMapFrame set_frame,
 					  GQuark feature_id)
 {
-  FooCanvasItem *item = NULL ;
   ID2Canvas root ;
   ID2Canvas align ;
   ID2Canvas block ;
   ID2Canvas set ;
   ID2Canvas feature ;
+  ID2Canvas id2c = NULL;
 
   /* Required for minimum query. */
   zMapAssert(feature_context_to_item) ; /* && align_id */
@@ -742,7 +748,7 @@ FooCanvasItem *zmapWindowFToIFindItemFull(ZMapWindow window, GHashTable *feature
     {
       if (!block_id)
 	{
-	  item = FOO_CANVAS_ITEM(align->item) ;
+	  id2c = align;
 	}
       else if ((block = (ID2Canvas)g_hash_table_lookup(align->hash_table,
 						       GUINT_TO_POINTER(block_id))))
@@ -751,23 +757,22 @@ FooCanvasItem *zmapWindowFToIFindItemFull(ZMapWindow window, GHashTable *feature
 
 	  if (!set_id)
 	    {
-	      item = FOO_CANVAS_ITEM(block->item) ;
+	      id2c = block ;
 	    }
 	  else if ((set = (ID2Canvas)g_hash_table_lookup(block->hash_table,
 							 GUINT_TO_POINTER(tmp_set_id))))
 	    {
 	      if (!feature_id)
 		{
-		  item = FOO_CANVAS_ITEM(set->item) ;
+		  id2c = set ;
 		}
 	      else
 		{
 		  if((feature = (ID2Canvas)g_hash_table_lookup(set->hash_table,
                                                                GUINT_TO_POINTER(feature_id))))
                 {
-                  item = feature->item ;
+                  id2c = feature ;
 
- 			zMapWindowCanvasItemSetFeaturePointer((ZMapWindowCanvasItem) item,(ZMapFeature) feature->feature_any);
  	          }
 		}
 	    }
@@ -782,14 +787,37 @@ FooCanvasItem *zmapWindowFToIFindItemFull(ZMapWindow window, GHashTable *feature
 
       if((root = (ID2Canvas)g_hash_table_lookup(feature_context_to_item,
                                                 GUINT_TO_POINTER(rootCanvasID()))))
-        item = FOO_CANVAS_ITEM(root->item); /* This is actually a group. */
+        id2c = root; /* This is actually a group. */
     }
 
 
-  return item ;
+  return id2c ;
 }
 
 
+FooCanvasItem *zmapWindowFToIFindItemFull(ZMapWindow window, GHashTable *feature_context_to_item,
+					  GQuark align_id, GQuark block_id,
+					  GQuark set_id,
+					  ZMapStrand set_strand, ZMapFrame set_frame,
+					  GQuark feature_id)
+{
+	ID2Canvas id2c;
+	FooCanvasItem *item = NULL ;
+
+	id2c = zmapWindowFToIFindID2CFull(window, feature_context_to_item,
+					  align_id, block_id,set_id,
+					  set_strand, set_frame,
+					  feature_id);
+
+	if(id2c)
+	{
+		item = id2c->item;
+		if(feature_id)
+			zMapWindowCanvasItemSetFeaturePointer((ZMapWindowCanvasItem) item,(ZMapFeature) id2c->feature_any);
+	}
+
+	return item;
+}
 
 
 /* Use this function to find the _set_ of Foo canvas item/group corresponding to

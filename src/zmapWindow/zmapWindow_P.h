@@ -703,6 +703,10 @@ typedef struct _ZMapWindowStruct
 
   GPtrArray *dnalist_windows ;				    /* popup showing list of dna match locations. */
 
+  gpointer style_window;					/* set colour popup, one per window */
+									/* is a struct defined in zmapWindowStyle,c */
+  gboolean edit_styles;
+
   gboolean edittable_features ;				    /* FALSE means no features are edittable. */
   gboolean reuse_edit_window ;				    /* TRUE means reuse existing window
 							       for new selected feature. */
@@ -937,6 +941,11 @@ gboolean zmapWindowFToIAddFeature(GHashTable *feature_to_context_hash,
 				  GQuark feature_id, FooCanvasItem *feature_item, ZMapFeature feature) ;
 gboolean zmapWindowFToIRemoveFeature(GHashTable *feature_to_context_hash,
 				     ZMapStrand set_strand, ZMapFrame set_frame, ZMapFeature feature) ;
+ID2Canvas zmapWindowFToIFindID2CFull(ZMapWindow window, GHashTable *feature_context_to_item,
+					  GQuark align_id, GQuark block_id,
+					  GQuark set_id,
+					  ZMapStrand set_strand, ZMapFrame set_frame,
+					  GQuark feature_id);
 FooCanvasItem *zmapWindowFToIFindItemFull(ZMapWindow window,GHashTable *feature_to_context_hash,
 					  GQuark align_id, GQuark block_id, GQuark set_id,
 					  ZMapStrand strand, ZMapFrame frame,
@@ -1267,6 +1276,12 @@ ZMapXMLUtilsEventStack zMapFeatureAnyAsXMLEvents(ZMapFeature feature) ;
 
 
 
+void zmapWindowShowStyleDialog( ItemMenuCBData menu_data );
+void zmapWindowMenuSetStyleCB(int menu_item_id, gpointer callback_data);
+gboolean zmapWindowSetStyleFeatureset(ZMapWindow window, FooCanvasItem *foo, ZMapFeature feature);
+void zmapStyleWindowDestroy(ZMapWindow window);
+
+
 /* ================= in zmapWindowZoomControl.c ========================= */
 ZMapWindowZoomControl zmapWindowZoomControlCreate(ZMapWindow window) ;
 void zmapWindowZoomControlInitialise(ZMapWindow window) ;
@@ -1301,6 +1316,8 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, ZMapFeatureTypeStyle sty
 				      ZMapWindowContainerFeatures set_features,
 					FooCanvasItem *foo_featureset,
 					ZMapWindowFeatureStack feature_stack) ;
+
+void zmapWindowRedrawFeatureSet(ZMapWindow window, ZMapFeatureSet featureset);
 
 char *zmapWindowFeatureSetDescription(ZMapFeatureSet feature_set) ;
 char *zmapWindowFeatureSourceDescription(ZMapFeature feature) ;

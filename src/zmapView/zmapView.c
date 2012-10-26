@@ -1552,8 +1552,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
   gboolean requested = FALSE;
   static gboolean debug_sources = FALSE ;
   gboolean dna_requested = FALSE;
-
-
+  ZMapViewConnection view_conn = NULL ;
 
 
   /* MH17 NOTE
@@ -1580,7 +1579,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 
       view_conn = zMapViewRequestServer(view, NULL, block_orig, req_sources, (gpointer) server,
 					req_start, req_end, dna_requested, terminate);
-      if(view_conn)
+      if (view_conn)
 	requested = TRUE;
     }
   else
@@ -1624,7 +1623,6 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 		  server = zmapViewGetSourceFromFeatureset(hash,featureset);
 		}
 	    }
-
 
 	  if (server)
 	    {
@@ -1752,19 +1750,9 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 		requested = TRUE;
 
 
-	      /* THESE NEED TO GO WHEN STEP LIST STUFF IS DONE PROPERLY.... */
-	      // this is an optimisation: the server supports DNA so no point in searching for it
-	      // if we implement multiple sources then we can remove this
-	      if (dna_requested)	//(zMap_g_list_find_quark(req_featuresets, zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME))))
-		{
-		  view->sequence_server  = view_conn ;
+		// g_list_free(req_featuresets); no! this list gets used by threads
+		req_featuresets = NULL ;
 		}
-
-
-
-	      // g_list_free(req_featuresets); no! this list gets used by threads
-	      req_featuresets = NULL ;
-	    }
 	}
     }
 
@@ -1774,6 +1762,14 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 	view->state = ZMAPVIEW_LOADING ;
       if (view->state > ZMAPVIEW_LOADING)
 	view->state = ZMAPVIEW_UPDATING;
+
+
+	// this is an optimisation: the server supports DNA so no point in searching for it
+	// if we implement multiple sources then we can remove this
+	if (dna_requested)	//(zMap_g_list_find_quark(req_featuresets, zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME))))
+	{
+		view->sequence_server  = view_conn ;
+	}
 
       zmapViewBusy(view, TRUE) ;     // gets unset when all step lists finish
 
@@ -3779,6 +3775,7 @@ besides we should test the view data which may contain global config
 
 	if (result && req_any->type == ZMAP_SERVERREQ_FEATURES)
 	  {
+#if MH17_ADDED_IN_GFF_PARSER
 	    if (!(connect_data->server_styles_have_mode)
 		&& !zMapFeatureAnyAddModesToStyles((ZMapFeatureAny)(connect_data->curr_context),
 						   zmap_view->context_map.styles))
@@ -3788,7 +3785,7 @@ besides we should test the view data which may contain global config
 
 		result = FALSE ;
 	      }
-
+#endif
 	    /* I'm not sure if this couldn't come much earlier actually....something
 	     * to investigate.... */
 
@@ -4759,7 +4756,7 @@ static void commandCB(ZMapWindow window, void *caller_data, void *window_data)
 
 	zmapViewLoadFeatures(view, get_data->block, get_data->feature_set_ids, NULL,
 			     req_start, req_end,
-			     SOURCE_GROUP_DELAYED, TRUE, TRUE) ;
+			     SOURCE_GROUP_DELAYED, TRUE, FALSE) ;	/* don't terminate, need to keep alive for blixem */
 
 	break ;
       }

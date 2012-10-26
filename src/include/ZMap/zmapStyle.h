@@ -398,6 +398,7 @@ _(ZMAPSTYLE_MODE_META,          , "meta"         , "Meta object controlling disp
 
 ZMAP_DEFINE_ENUM(ZMapStyleMode, ZMAP_STYLE_MODE_LIST);
 #define N_STYLE_MODE	(ZMAPSTYLE_MODE_META)
+#define N_STYLE_FEATURE_MODE	ZMAPSTYLE_MODE_PLAIN
 
 #define ZMAP_STYLE_COLUMN_DISPLAY_LIST(_)                                                      \
 _(ZMAPSTYLE_COLDISPLAY_INVALID,   , "invalid"  , "invalid mode  "                        , "") \
@@ -908,7 +909,10 @@ typedef struct _zmapFeatureTypeStyleStruct
 
   gboolean loaded;             /* flag to say if we're loaded */
 #endif
+	/* these flags are not set by config */
   gboolean inherited;         /* style has inherited it's parents */
+  gboolean is_default;
+  gboolean overridden;
 
   /*! Mode specific fields, see docs for individual structs. */
   union
@@ -936,7 +940,9 @@ zmapFeatureTypeStyle;
 // we need a pointer to a const style not a const pointer to a volatile style
 // typdefs are atomic and not text substitutions.
 // try 'google C typedef const pointer' for a few explanations
-typedef  const zmapFeatureTypeStyle* ZMapFeatureTypeStyle ;
+//typedef  const zmapFeatureTypeStyle* ZMapFeatureTypeStyle ;
+/* lets forget about the const, there's too much dressage in this source code */
+typedef   zmapFeatureTypeStyle* ZMapFeatureTypeStyle ;
 #endif
 
 
@@ -1165,6 +1171,7 @@ gboolean zMapStyleColourByStrand(ZMapFeatureTypeStyle style);
 
 
 
+
 //gboolean zMapStyleIsDirectionalEnd(ZMapFeatureTypeStyle style) ;
 #define zMapStyleIsDirectionalEnd(style)   ((style)->directional_end)
 
@@ -1261,6 +1268,9 @@ GHashTable *zMapStyleMergeStyles(GHashTable *curr_styles, GHashTable *new_styles
 void zMapStyleDestroyStyles(GHashTable *styles) ;
 
 
+/* editing functions */
+void zMapStyleSetIsDefault(ZMapFeatureTypeStyle style);
+void zMapStyleSetOverridden(ZMapFeatureTypeStyle style, gboolean truth);
 
 /* Debug functions. */
 

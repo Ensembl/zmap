@@ -197,7 +197,7 @@ and adjusting others such as
 </ul>
 
 <h4>Default styles</h4>
-<p>As GFF may contain several featuresets it's not possible to speficy a single style for display: ZMap will use a default style to display each feature, but note that soem data may be shown inappropriately as basic features (eg graph data).
+<p>As GFF may contain several featuresets it's not possible to specify a single style for display: ZMap will use a default style to display each feature, but note that some data may be shown inappropriately as basic features (eg graph data).
 </p>
 <p>BAM and bigWig import relaiably produced data of a single type and a style can be supplied for these, using the following configuration in ZMap:
 <pre>
@@ -209,6 +209,26 @@ BAM = short-read
 bigWig = short-read-coverage
 </pre>
 </p>
+
+<h4>User Chosen Styles</h4>
+<p>This will be implemented in stages: first the user may choose another predefined style, second colours may be assigned and (possibly) third a dialog will be provided to allow more detailed changes. Initially user defined style choices will not be saved ans after a restart they will have to reset these.
+</p>
+<h5>Choosing another existing style</h5>
+<p>A right click menu will allow the user to use any given style for a set of features - as features have thier style defined by thier containing featureset this will always affect all the other features in that set on display.  Note that if several featuresets are displayed in one column this will not affect the other features.
+</p>
+<p>The menu will consist of all the styles valid for that type of feature plus sub menus for other types of feature that are compatable with the data. For example a basic feature could be displayed as a graph, but a transcript could not be displayed as an alignment.  Note that if this is applied to an otterlace session this menu may be unwieldy.
+</p>
+<p>The set of default styles will include a reasonable subset of variations, especially strandedness, but will not be exhaustive.
+</p>
+
+<h5>Setting a different colour</h5>
+<p>For a standalone ZMap user this may be essential to help distinguish similar columns displayed side by side.  A right click menu will display a colour dialog and be used to set this.  Any pre-defined or default style in force at the time will be inherited and a new style created for that featureset, and if this has been done already the existing user defined style will be modified directly.
+</p>
+<p>When the ZMap session is saved (subsequent implemntation) all non default styles used will be saved.  In case a user defined style is invalidated by a software change, it will have to be recreated manually.
+</p>
+<p>Note that it's probably not best to supply different colours automatically, as these could change between sessions depending on external factors such as network speed.
+</p>
+
 
 <h4>Import Dialog screenshot</h4>
 <p>This is after implementation running a 1-based wormbase dump and looking at a human bam file downlaoded from encode.  No aplogies fro mismatching data, it's there for software development only.

@@ -55,6 +55,7 @@ zmapWindowSeqDisp.c \
 zmapWindowState.c \
 zmapWindowState.h \
 zmapWindowStats.c \
+zmapWindowStyle.c \
 zmapWindowUtils.c \
 zmapWindowZoomControl.c \
 zmapWindowZoomControl_P.h \

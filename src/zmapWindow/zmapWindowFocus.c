@@ -1066,6 +1066,7 @@ static void highlightItem(ZMapWindow window, ZMapWindowFocusItem item)
 
       zMapAssert(n_focus);
       zMapAssert(item->item_column);
+#if OBSOLETE
       /* move the item back to where it should be */
       if(!zmapWindowContainerFeatureSetItemLowerToMiddle(item->item_column, (ZMapWindowCanvasItem) item->item, n_focus,0))
       {
@@ -1077,6 +1078,7 @@ static void highlightItem(ZMapWindow window, ZMapWindowFocusItem item)
              * which could be called due to a vsplit for example
              */
       }
+#endif
     }
 
    item->display_state = item->flags & WINDOW_FOCUS_GROUP_FOCUSSED;
@@ -1144,6 +1146,7 @@ static ZMapWindowFocusItem add_unique(ZMapWindowFocus focus,
   list_item->item_column = (ZMapWindowContainerFeatureSet) FOO_CANVAS_ITEM(item)->parent;
   // also need to fill in featureset
 
+#if OBSOLETE
   if (!list_item->item_column->sorted)
     {
       /* we need this for uh-highlight into stable ordering
@@ -1156,7 +1159,7 @@ static ZMapWindowFocusItem add_unique(ZMapWindowFocus focus,
       zmapWindowContainerFeatureSetSortFeatures(list_item->item_column, 0) ;
       list_item->item_column->sorted = TRUE ;
     }
-
+#endif
 
   highlightItem(focus->window,list_item);
   return list_item;
@@ -1343,13 +1346,14 @@ static void setFocusColumn(ZMapWindowFocus focus, FooCanvasGroup *column)
       focus->focus_column = container = (ZMapWindowContainerFeatureSet)column ;
 
       zmapWindowFocusHighlightHotColumn(focus);
-
+#if OBSOLETE
       if (!container->sorted)
 	{
 	  zmapWindowContainerFeatureSetSortFeatures(container, 0) ;
 
 	  container->sorted = TRUE ;
 	}
+#endif
     }
 
   return ;

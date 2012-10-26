@@ -644,8 +644,8 @@ static ZMapFeatureContextExecuteStatus undisplayFeaturesCB(GQuark key,
        * This is true when otterlace sends a single feature to delete and then we fail to find
        * the extra locus feature
        *
-       * regardless of that if we have features that are not displayed due to config this couls also fail
-       * so if not column_id defined log a warnign adn fail silently.
+       * regardless of that if we have features that are not displayed due to config this could also fail
+       * so if not column_id defined log a warning and fail silently.
        *
        * locus is used in the naviagtor, we hope dealt with via another call.
        */
@@ -671,6 +671,7 @@ static ZMapFeatureContextExecuteStatus undisplayFeaturesCB(GQuark key,
 
   return status;
 }
+
 
 void zMapWindowUnDisplayData(ZMapWindow window,
                              ZMapFeatureContext current_features,
@@ -1320,6 +1321,8 @@ void zMapWindowDestroy(ZMapWindow window)
   /* free the array of editor windows and the windows themselves */
   zmapWindowFreeWindowArray(&(window->feature_show_windows), TRUE) ;
 
+  if(window->style_window)
+	zmapStyleWindowDestroy(window);
 
   /* Get rid of the column configuration window. */
   zmapWindowColumnConfigureDestroy(window) ;
@@ -2441,6 +2444,9 @@ static void resetCanvas(ZMapWindow window, gboolean free_child_windows, gboolean
 
       /* free the array of editor windows and the windows themselves */
       zmapWindowFreeWindowArray(&(window->feature_show_windows), FALSE) ;
+
+	if(window->style_window)
+		zmapStyleWindowDestroy(window);
     }
 
 	/* mh17 band aid approach to fixing 3FT columns
@@ -2975,7 +2981,7 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
 				       GTK_SIGNAL_FUNC(canvasWindowEventCB), (gpointer)window) ;
 	}
       else
-	zMapLogMessage("%s", "event handler for canvas already registered.");
+//	zMapLogMessage("%s", "event handler for canvas already registered.");
 
       g_free(feature_sets) ;
       g_free(window_data) ;				    /* Free the WindowData struct. */
