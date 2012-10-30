@@ -163,6 +163,10 @@ ZMapWindowCanvasFeature zmapWindowCanvasFeatureAlloc(zmapWindowCanvasFeatureType
 void zmapWindowCanvasFeatureFree(gpointer thing);
 
 void zMapWindowCanvasFeaturesetSetWidth(ZMapWindowFeaturesetItem featureset, double width);
+double zMapWindowCanvasFeaturesetGetWidth(ZMapWindowFeaturesetItem featureset);
+
+double zMapWindowCanvasFeaturesetGetOffset(ZMapWindowFeaturesetItem featureset);
+
 void zMapWindowCanvasFeaturesetSetSequence(ZMapWindowFeaturesetItem featureset, double y1, double y2);
 
 void zMapWindowCanvasFeaturesetSetBackground(FooCanvasItem *foo, GdkColor *fill, GdkColor *outline);

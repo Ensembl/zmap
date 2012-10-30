@@ -78,10 +78,12 @@ void zmapWindowColOrderColumns(ZMapWindow window)
   return orderPositionColumns(window, FALSE);
 }
 
+#if GROUP_REPOS
 void zmapWindowColOrderPositionColumns(ZMapWindow window)
 {
   return orderPositionColumns(window, TRUE);
 }
+#endif
 
 /* INTERNALS */
 

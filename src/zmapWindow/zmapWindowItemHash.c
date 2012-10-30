@@ -782,7 +782,7 @@ ID2Canvas zmapWindowFToIFindID2CFull(ZMapWindow window, GHashTable *feature_cont
                   id2c = feature ;
 
  	          }
-printf("ftoi find: %p %p %s %s\n",set->hash_table, feature, g_quark_to_string(feature_id), g_quark_to_string(tmp_set_id));
+//printf("ftoi find: %p %p %s %s\n",set->hash_table, feature, g_quark_to_string(feature_id), g_quark_to_string(tmp_set_id));
 
 		}
 	    }

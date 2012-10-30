@@ -273,6 +273,8 @@ typedef struct _zmapWindowFeaturesetItemStruct
 
   gint clip_y1,clip_y2,clip_x1,clip_x2;		/* visble scroll region plus one pixel all round */
 
+  double x;				  /* x canvas coordinate of the featureset, used for column reposition */
+
   double dx,dy;			  /* canvas offsets as calculated for paint */
   gpointer deferred;		  /* buffer for deferred paints, eg constructed polyline */
 

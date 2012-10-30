@@ -73,7 +73,7 @@
 #include <ZMap/zmapUtils.h>
 #include <zmapWindow_P.h>
 
-#include <zmapWindowCanvas.h>
+//#include <zmapWindowCanvas.h>
 #include <zmapWindowContainers.h>
 #include <zmapWindowCanvasItem.h>
 

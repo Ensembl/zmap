@@ -1144,7 +1144,7 @@ static FooCanvasItem *translation_from_block_frame(ZMapWindow window, char *colu
 						   frame,
 						   feature_id) ;
 
-printf("translation: %p %s %s\n",translation, g_quark_to_string(feature_id), g_quark_to_string(feature_set_id));
+//printf("translation: %p %s %s\n",translation, g_quark_to_string(feature_id), g_quark_to_string(feature_set_id));
 
 	  g_free(feature_name) ;
 	}

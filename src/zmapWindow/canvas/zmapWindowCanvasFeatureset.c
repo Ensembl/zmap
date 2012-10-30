@@ -877,7 +877,7 @@ GType zMapWindowFeaturesetItemGetType(void)
 
 
 /* NOTE don-t _EVER_ let this get called by a Foo Canvas callback */
-/* let's us a filter sort here, we stability is a good thing and volumes are tiny */
+/* let's use a filter sort here, stability is a good thing and volumes are tiny */
 static void sort_containing_group_by_layer(ZMapWindowFeaturesetItem featureset)
 {
 	GList *old;
@@ -1042,8 +1042,24 @@ guint zMapWindowCanvasFeaturesetGetId(ZMapWindowFeaturesetItem featureset)
 /* scope issues.... */
 void zMapWindowCanvasFeaturesetSetWidth(ZMapWindowFeaturesetItem featureset, double width)
 {
+  FooCanvasItem *foo = (FooCanvasItem *) featureset;
   featureset->width = width;
-  foo_canvas_item_request_update ((FooCanvasItem *) featureset);
+
+  if(!foo->canvas->doing_update)	/* will be a stretchy CanvasFeatureset being adjusted during an update */
+	foo_canvas_item_request_update ((FooCanvasItem *) featureset);
+}
+
+double zMapWindowCanvasFeaturesetGetWidth(ZMapWindowFeaturesetItem featureset)
+{
+	if(featureset->bumped)
+		return featureset->bump_width;
+	else
+		return featureset->width;
+}
+
+double zMapWindowCanvasFeaturesetGetOffset(ZMapWindowFeaturesetItem featureset)
+{
+	return featureset->x_off;
 }
 
 
@@ -1605,46 +1621,6 @@ static void zmap_window_featureset_item_item_init(ZMapWindowFeaturesetItem featu
 
 
 
-#if 0
-/* stretchy items are sized according to the containing group
- * this gets called during a group update and the size is not yet set
- * but we can predict the size from the CanvasFeatureset items
- * so scan the containing group's item list
- * this avoids bouncing round repeated update calls
- */
-
-static double get_containing_group_width(FooCanvasItem *item)
-{
-	GList *l;
-	FooCanvasGroup *group = (FooCanvasGroup *) item->parent;
-	ZMapWindowFeaturesetItem fi;
-	double width = 0.0, w;
-	FooCanvasItem *foo;
-
-	for(l = group->item_list; l; l = l->next)
-	{
-		if(!ZMAP_IS_WINDOW_FEATURESET_ITEM(l->data))
-		{
-			foo = (FooCanvasItem *) l->data;
-			w = foo->x2 - foo->x1 + 1;
-		}
-		else
-		{
-			fi = (ZMapWindowFeaturesetItem) l->data;
-			if(fi->layer & ZMAP_CANVAS_LAYER_STRETCH_X)
-				continue;
-			w = (fi->bumped? fi->bump_width : fi->width);
-			if(fi->x_off)
-				w += fi->x_off;	/* if staggered */
-		}
-
-		if(w > width)
-			width = w;
-	}
-
-	return width;
-}
-#endif
 
 static void zmap_window_featureset_item_item_update (FooCanvasItem *item, double i2w_dx, double i2w_dy, int flags)
 {
@@ -1660,7 +1636,7 @@ static void zmap_window_featureset_item_item_update (FooCanvasItem *item, double
   //printf("update %s width = %.1f\n",g_quark_to_string(di->id),di->width);
   // cribbed from FooCanvasRE; this sets the canvas coords in the foo item
   /* x_off is needed for staggered graphs, is currently 0 for all other types */
-  di->dx = x1 = i2w_dx + di->x_off;
+  di->dx = x1 = i2w_dx + di->x + di->x_off;
   width = (di->bumped? di->bump_width : di->width);
 
   if((di->layer & ZMAP_CANVAS_LAYER_STRETCH_X))
@@ -1677,17 +1653,11 @@ static void zmap_window_featureset_item_item_update (FooCanvasItem *item, double
   foo_canvas_w2c (item->canvas, x1, y1, &cx1, &cy1);
   foo_canvas_w2c (item->canvas, x2, y2, &cx2, &cy2);
 
-//  if(!(di->layer & ZMAP_CANVAS_LAYER_STRETCH_X))	/* else containing group to set size */
-  {
-	item->x1 = cx1;
-	item->x2 = cx2+1;
-  }
+  item->x1 = cx1;
+  item->x2 = cx2+1;
 
-//  if(!(di->layer & ZMAP_CANVAS_LAYER_STRETCH_Y))
-  {
-	item->y1 = cy1;
-	item->y2 = cy2+1;
-  }
+  item->y1 = cy1;
+  item->y2 = cy2+1;
 }
 
 
@@ -2098,7 +2068,7 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
     fi->gc = gdk_gc_new (item->canvas->layout.bin_window);
   if(!fi->gc)
   {
-printf("draw: no gc\n");
+    zMapLogWarning("draw: no gc","");
     return;		/* got a draw before realize ?? */
   }
 

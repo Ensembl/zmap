@@ -100,8 +100,6 @@ $(NULL)
 libZMapWindowItems_la_SOURCES = \
 items/zmapWindowAllBase.c \
 items/zmapWindowAllBase.h \
-items/zmapWindowCanvas.c \
-items/zmapWindowCanvas.h \
 items/zmapWindowCanvasItem.c \
 items/zmapWindowCanvasItem.h \
 items/zmapWindowCanvasItem_I.h \

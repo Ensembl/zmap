@@ -39,7 +39,7 @@
 
 #include <math.h>
 #include <ZMap/zmapBase.h>				    /* for ZMAP_PARAM_STATIC_RW */
-#include <zmapWindowCanvas.h>
+//#include <zmapWindowCanvas.h>
 #include <zmapWindowContainerGroup_I.h>
 #include <zmapWindowContainerUtils.h>
 #include <zmapWindow_P.h>		/* for fullReposition only */
@@ -1227,15 +1227,20 @@ static void zmap_window_container_invoke_post_update_hooks(ZMapWindowContainerGr
 
 static void zmap_window_container_group_update (FooCanvasItem *item, double i2w_dx, double i2w_dy, int flags)
 {
+  FooCanvasGroup *canvas_group;
+  gboolean item_visible;
+
+#if GROUP_REPOS
   ZMapWindowContainerGroup   this_container = NULL;
   ZMapWindowContainerGroup parent_container = NULL;
-  FooCanvasGroup *canvas_group;
+
 
   double current_x = 0.0;
   double current_y = 0.0;
-  gboolean item_visible;
+
   gboolean doing_reposition;
   gboolean need_cropping;
+#endif
 #if USE_STRAND
   gboolean add_strand_border = TRUE;
 #endif
@@ -1243,6 +1248,7 @@ static void zmap_window_container_group_update (FooCanvasItem *item, double i2w_
   canvas_group   = (FooCanvasGroup *)item;
   item_visible   = ((item->object.flags & FOO_CANVAS_ITEM_VISIBLE) == FOO_CANVAS_ITEM_VISIBLE);
 
+#if GROUP_REPOS
   this_container = (ZMapWindowContainerGroup)item;
   this_container->reposition_x = current_x;
   this_container->reposition_y = current_y;
@@ -1267,6 +1273,7 @@ static void zmap_window_container_group_update (FooCanvasItem *item, double i2w_
   doing_reposition = ((flags & ZMAP_CANVAS_UPDATE_NEED_REPOSITION) == ZMAP_CANVAS_UPDATE_NEED_REPOSITION);
   need_cropping    = ((flags & ZMAP_CANVAS_UPDATE_CROP_REQUIRED)   == ZMAP_CANVAS_UPDATE_CROP_REQUIRED);
 
+doing_reposition = TRUE;
 #if UPDATE_DEBUG
 	char *name = "no name";
 	ZMapFeatureAny feature_any = this_container->feature_any;
@@ -1284,13 +1291,13 @@ static void zmap_window_container_group_update (FooCanvasItem *item, double i2w_
 	  /* We don't do y at the moment. no real idea what should happen here. */
 	  /* real_group->ypos = current_y; */
     }
+#endif
 
   item->x2 = item->x1;		/* reset group to zero size to avoid stretchy items expanding it by proxy */
   item->y2 = item->y1;
 
   (item_parent_class_G->update)(item, i2w_dx, i2w_dy, flags);
 
-  /* ergo: invisible items expand a group */
 
   if(item_visible)
     {
@@ -1304,7 +1311,7 @@ static void zmap_window_container_group_update (FooCanvasItem *item, double i2w_
 		foo = (FooCanvasItem *) l->data;
 		featureset = (ZMapWindowFeaturesetItem) foo;
 
-#if 1
+#if 0
 char *x = "?";
 if(ZMAP_IS_WINDOW_FEATURESET_ITEM(foo))	/* these could be groups or even normal foo items */
 {
@@ -1360,7 +1367,7 @@ printf("group update %s\n", x);
 	}
 
 
-#if 1
+#if GROUO_REPOS
 	if(doing_reposition)
 	{
 	  if(parent_container)
@@ -1387,12 +1394,12 @@ printf("group position: %d %s %.1f %.1f (%.1f %.1f %.1f %.1f)\n",this_container-
     }
 
 
-
+#if GROUP_REPOS
   /* Always do these, whatever else went on. No question! */
   this_container->reposition_x          = 0.0;
   this_container->reposition_y          = 0.0;
   this_container->flags.need_reposition = FALSE;
-
+#endif
 
   return ;
 }

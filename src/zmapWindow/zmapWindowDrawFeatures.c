@@ -42,7 +42,7 @@
 #include <zmapWindowContainerUtils.h>
 //#include <zmapWindowItemFactory.h>
 #include <zmapWindowContainerFeatureSet_I.h>
-#include <zmapWindowCanvas.h>
+//#include <zmapWindowCanvas.h>
 
 //#include <ZMap/zmapGFF.h>     // for GFFSet struct for column mapping
 #include <zmapWindowCanvasFeatureset_I.h>		// for debug only
@@ -875,7 +875,7 @@ int zmapWindowDrawFeatureSet(ZMapWindow window,
 
   g_hash_table_foreach(feature_set->features, ProcessFeature, &featureset_data) ;
 
-printf("Processed %d features in %s\n",featureset_data.feature_count, g_quark_to_string(feature_set->unique_id));
+//printf("Processed %d features in %s\n",featureset_data.feature_count, g_quark_to_string(feature_set->unique_id));
 
   {
   char *str = g_strdup_printf("Processed %d features",featureset_data.feature_count);
@@ -2318,7 +2318,8 @@ void zmapWindowDrawSetGroupBackground(ZMapWindowContainerGroup container, int st
 	static ZMapFeatureTypeStyle style = NULL;
 	GList *l;
 	GQuark id;
-	char *x, *y;
+	char *x;
+	char *y;
 	ZMapWindowFeaturesetItem cfs = NULL;
 	FooCanvasItem *foo = (FooCanvasItem *) container;
 	FooCanvasGroup *group = (FooCanvasGroup *) container;

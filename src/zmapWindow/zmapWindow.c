@@ -46,7 +46,7 @@
 #include <ZMap/zmapConfigIni.h>
 #include <ZMap/zmapConfigStrings.h>
 #include <zmapWindowState.h>
-#include <zmapWindowCanvas.h>
+//#include <zmapWindowCanvas.h>
 #include <zmapWindowContainers.h>
 #include <zmapWindowCanvasItem.h>
 #include <zmapWindowCanvasFeatureset.h>
@@ -2129,8 +2129,14 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
 
   /* Create the canvas, add it to the scrolled window so all the scrollbar stuff gets linked up
    * and set the background to be white. */
+#if GROUP_REPOS
+	/* windowCanvas does nothing ! */
   canvas = zMapWindowCanvasNew(1.0) ;
   window->canvas = FOO_CANVAS(canvas);
+#else
+  canvas = foo_canvas_new();
+  window->canvas = FOO_CANVAS(canvas);
+#endif
   /* This will be removed when RT:1589 is resolved */
   g_object_set_data(G_OBJECT(canvas), ZMAP_WINDOW_POINTER, window);
   /* Definitively set the canvas to have a scroll region size, that WE
@@ -2152,9 +2158,11 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
 
   window->zoom = zmapWindowZoomControlCreate(window);
 
+#if GROUP_REPOS
   g_object_set(G_OBJECT(canvas),
 	       "max-zoom-y", zMapWindowGetZoomMax(window),
 	       NULL);
+#endif
 
   {
     ZMapWindowScaleCanvasCallbackListStruct callbacks = {NULL};

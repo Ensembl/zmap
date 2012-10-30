@@ -27,7 +27,7 @@
  * Description: Implements the base functions of a zmap canvas item
  *              which is derived from a foocanvas item.
  *
- * Exported functions: See zmapWindowCanvas.h
+ * Exported functions: See zmapWindowCanvasItem.h
  *-------------------------------------------------------------------
  */
 
@@ -35,7 +35,7 @@
 
 
 #include <string.h>		/* memcpy */
-#include <zmapWindowCanvas.h>
+//#include <zmapWindowCanvas.h>
 #include <zmapWindowCanvasItem_I.h>
 
 

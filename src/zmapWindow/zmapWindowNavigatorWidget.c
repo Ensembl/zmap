@@ -37,7 +37,7 @@
 
 
 #include <ZMap/zmapUtils.h>
-#include <zmapWindowCanvas.h>
+//#include <zmapWindowCanvas.h>
 #include <zmapWindowNavigator_P.h>
 
 #define MH17_DEBUG_NAV_FOOBAR	0
@@ -87,8 +87,14 @@ GtkWidget *zMapWindowNavigatorCreateCanvas(ZMapWindowNavigatorCallback callbacks
   GtkWidget *canvas_widget = NULL;
   FooCanvas *canvas = NULL;
 
+#if GROUP_REPOS
+	/* windowCanvas does nothing ! */
   canvas_widget = zMapWindowCanvasNew(1.0);
   canvas = FOO_CANVAS(canvas_widget);
+#else
+  canvas_widget = foo_canvas_new();
+  canvas = (FooCanvas *) canvas_widget;
+#endif
 
   foo_canvas_set_scroll_region(canvas, 0.0, 0.0, 0.0, 0.0);
 

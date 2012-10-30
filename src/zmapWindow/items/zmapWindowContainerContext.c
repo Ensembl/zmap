@@ -38,7 +38,7 @@
 
 
 #include <ZMap/zmapBase.h>
-#include <zmapWindowCanvas.h>
+//#include <zmapWindowCanvas.h>
 #include <zmapWindowContainerGroup_I.h>
 #include <zmapWindowContainerContext_I.h>
 #include <ZMap/zmapWindow.h>

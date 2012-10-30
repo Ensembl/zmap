@@ -39,7 +39,7 @@
 #include <zmapWindow_P.h>
 #include <zmapWindowContainerFeatureSet_I.h>
 #include <zmapWindowCanvasItem_I.h>
-#include <zmapWindowCanvas.h>
+//#include <zmapWindowCanvas.h>
 
 
 

@@ -91,6 +91,14 @@ typedef struct
 
 typedef struct
 {
+	double block_cur_x;		/* x pos of current column */
+	double block_spacing_x;		/* as set in current block */
+
+} PositionColumnStruct, *PositionColumn;
+
+
+typedef struct
+{
   ZMapWindowContainerBlock block_group;
   int start, end ;
   gboolean in_view ;
@@ -822,55 +830,90 @@ void zmapWindowDrawManageWindowWidth(ZMapWindow window)
 
 
 
-
-/* to resize ourselves and reposition stuff to the right of a CanvasFeatureset we have to resize the root */
-/* There's a lot of container code that labouriously trundles up the tree, but each canvas item knows the root. so let's use that */
-/* hmmmm... you need to call special invocations that set properties that then set flags... yet another run-around. */
-
-void zMapWindowRequestReposition(FooCanvasItem *foo)
+static void positionColumnCB(ZMapWindowContainerGroup container, FooCanvasPoints *points,
+				ZMapContainerLevelType level, gpointer user_data)
 {
-  ZMapWindowContainerGroup container;
+	PositionColumn pc = (PositionColumn) user_data;
+	FooCanvasGroup *group = (FooCanvasGroup *) container;
+	GList *l;
+	FooCanvasItem *foo;
+	ZMapWindowFeaturesetItem cfs = NULL;
+	ZMapWindowContainerBlock block;
+	ZMapWindowContainerFeatureSet featureset;
+	double col_width, width;
 
-    /* container and item code is separate despite all of them having parent pointers */
-  container = zmapWindowContainerCanvasItemGetContainer(foo);
+	switch(level)
+	{
+	case ZMAPCONTAINER_LEVEL_BLOCK:
+		block = (ZMapWindowContainerBlock) container;
+		pc->block_spacing_x = container->child_spacing;
+		pc->block_cur_x = 0;
+//printf("block %f %f\n",container->child_spacing, container->this_spacing);
+		break;
 
-  container = zmapWindowContainerUtilsGetParentLevel(container, ZMAPCONTAINER_LEVEL_ROOT);
+	case ZMAPCONTAINER_LEVEL_FEATURESET:
+		/* each column is a ContainerFeatureSet is a foo canvas group and contains 0 or more Canvasfeaturesets */
 
-  zmapWindowFullReposition((ZMapWindowContainerGroup) container);
+		foo = (FooCanvasItem *) container;
+		if(!(foo->object.flags & FOO_CANVAS_ITEM_VISIBLE))
+			break;
 
-  return ;
+		featureset = (ZMapWindowContainerFeatureSet) container;
+		col_width = 0.0;
+		cfs = NULL;
+
+		for(l = group->item_list; l ; l = l->next)
+		{
+			foo = (FooCanvasItem *) l->data;
+			if(!(foo->object.flags & FOO_CANVAS_ITEM_VISIBLE))
+				continue;
+
+			if(ZMAP_IS_WINDOW_FEATURESET_ITEM(foo))
+			{
+				gint layer;
+
+				cfs = (ZMapWindowFeaturesetItem) foo;
+				layer = zMapWindowCanvasFeaturesetGetLayer(cfs);
+				if( !(layer & ZMAP_CANVAS_LAYER_DECORATION) || !(layer & ZMAP_CANVAS_LAYER_STRETCH_X))
+				{
+					width = zMapWindowCanvasFeaturesetGetWidth(cfs);
+					width += zMapWindowCanvasFeaturesetGetOffset(cfs);
+
+					if(width > col_width)
+						col_width = width;
+				}
+			}
+		}
+
+		group->xpos = pc->block_cur_x;
+//if(cfs) printf("pos col %s %f %f %f\n",g_quark_to_string(zMapWindowCanvasFeaturesetGetId(cfs)), pc->block_cur_x, pc->block_spacing_x, width);
+		pc->block_cur_x += pc->block_spacing_x + col_width;
+
+		break;
+
+	default:
+		break;
+	}
 }
+
+
 
 
 
 /* Makes sure all the things that need to be redrawn when the canvas needs redrawing. */
 void zmapWindowFullReposition(ZMapWindowContainerGroup root)
 {
+  PositionColumnStruct poscol = { 0 };
 
   /* scan canvas and move columns sideways */
 
-  /* Is this enough or do we need to foo_canvas_update_now() */
-#if GROUP_REPOS
-	/* we get called from this function */
-  zmapWindowContainerRequestReposition(root);
-#else
+  zmapWindowContainerUtilsExecuteFull(root,
+				      ZMAPCONTAINER_LEVEL_FEATURESET,
+				      positionColumnCB, &poscol,
+					NULL, NULL, FALSE) ;
 
-#if ORIGINAL_CODE_FROM_CONTAINER_GROUP
-  if(context_container)
-    {
-      g_object_set(G_OBJECT(context_container),
-		   "need-reposition", TRUE,
-		   NULL);
-	/* this sets the update needed flag in the root group & when that happens we reposition the columns */
-    }
-#else
+  foo_canvas_item_request_update((FooCanvasItem *) root);
 
-	/* what we really need */
-	foo_canvas_item_request_update((FooCanvasItem *) root);
-
-#endif
-
-#endif
 
 #ifdef REWRITE_THIS
   FooCanvasGroup *super_root ;
@@ -920,6 +963,26 @@ void zmapWindowDrawZoom(ZMapWindow window)
 
   return ;
 }
+
+
+/* to resize ourselves and reposition stuff to the right of a CanvasFeatureset we have to resize the root */
+/* There's a lot of container code that labouriously trundles up the tree, but each canvas item knows the root. so let's use that */
+/* hmmmm... you need to call special invocations that set properties that then set flags... yet another run-around. */
+
+void zMapWindowRequestReposition(FooCanvasItem *foo)
+{
+  ZMapWindowContainerGroup container;
+
+    /* container and item code is separate despite all of them having parent pointers */
+  container = zmapWindowContainerCanvasItemGetContainer(foo);
+
+  container = zmapWindowContainerUtilsGetParentLevel(container, ZMAPCONTAINER_LEVEL_ROOT);
+
+  zmapWindowFullReposition((ZMapWindowContainerGroup) container);
+
+  return ;
+}
+
 
 
 #if NOT_USED
@@ -1292,14 +1355,9 @@ gboolean zMapWindowResetWindowWidth(FooCanvasItem *item)
   FooCanvasPoints bounds;
   double coords[4] = {0.0};
 
-  ZMapWindowContainerGroup group = (ZMapWindowContainerGroup) item;
-
-//  if(!group->feature_any)	/* we got called before setting up */
-//	  return;
-
   window = g_object_get_data(G_OBJECT(item), ZMAP_WINDOW_POINTER);
   if(!window)
-	  return FALSE;
+	  return FALSE;	/* we got called before setting up */
 
   coords[0] = item->x1;
   coords[1] = item->y1;
@@ -1730,7 +1788,7 @@ static ZMapFeatureContextExecuteStatus draw_separator_features(GQuark key_id,
 							 ZMAPSTRAND_NONE, ZMAPFRAME_NONE, 0)))
 	  {
 	    ZMapWindowContainerGroup block_parent;
-	    ZMapWindowContainerStrand forward_strand;
+//	    ZMapWindowContainerStrand forward_strand;
 
 	    zMapAssert(ZMAP_IS_CONTAINER_GROUP(block_hash_item));
 

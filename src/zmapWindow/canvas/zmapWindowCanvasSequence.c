@@ -449,7 +449,7 @@ static void zmapWindowCanvasSequenceZoomSet(ZMapWindowFeaturesetItem featureset,
 
 		seq->row_size = 0;	/* trigger recalc, can't do it here as we don't have the seq feature, or a drawable  */
 	}
-printf("3FT zoom %s index= %p\n",g_quark_to_string(featureset->id), featureset->display_index);
+//printf("3FT zoom %s index= %p\n",g_quark_to_string(featureset->id), featureset->display_index);
 
 }
 
@@ -528,7 +528,7 @@ static void zmapWindowCanvasSequenceSetColour(FooCanvasItem         *foo,
 
 	ZMapSkipList sl;
 
-printf("3FT set colour %s index= %p\n",g_quark_to_string(fi->id), fi->display_index);
+//printf("3FT set colour %s index= %p\n",g_quark_to_string(fi->id), fi->display_index);
 
 	if((colour_type != ZMAPSTYLE_COLOURTYPE_INVALID) && !default_fill)		/* eg if not configured in the style */
 		return;
@@ -569,7 +569,7 @@ printf("3FT set colour %s index= %p\n",g_quark_to_string(fi->id), fi->display_in
 				/* which are zero based relative to seq start coord and featureset offset (dy) */
 				h->start = sub_feature->start;	// - fi->dy + 1;
 				h->end = sub_feature->end;		// - fi->dy + 1;
-printf("3FT set highlight for %d,%d @ %ld, %ld\n",sub_feature->start, sub_feature->end, h->start,h->end);
+//printf("3FT set highlight for %d,%d @ %ld, %ld\n",sub_feature->start, sub_feature->end, h->start,h->end);
 				seq->highlight = g_list_append(seq->highlight, h);
 				break;
 		}

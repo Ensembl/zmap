@@ -39,7 +39,7 @@
 
 
 #include <ZMap/zmapUtilsFoo.h>
-#include <zmapWindowCanvas.h>
+//#include <zmapWindowCanvas.h>
 #include <zmapWindowCanvasItem.h>
 #include <zmapWindowContainerUtils.h>
 
@@ -905,7 +905,7 @@ void zmapWindowContainerUtilsExecuteFull(ZMapWindowContainerGroup   container_gr
 					 gboolean                   redraw_during_recursion)
 {
   ContainerRecursionDataStruct data  = {0,NULL};
-  ZMapWindowCanvas zmap_canvas;
+//  ZMapWindowCanvas zmap_canvas;
   FooCanvasItem *parent;
 
   zMapAssert(stop_at_type >= ZMAPCONTAINER_LEVEL_ROOT &&
@@ -921,17 +921,22 @@ void zmapWindowContainerUtilsExecuteFull(ZMapWindowContainerGroup   container_gr
   data.container_leave_cb   = container_leave_cb;
   data.container_leave_data = container_leave_data;
 
+#if GROUP_REPOS
   if(redraw_during_recursion && ZMAP_IS_CANVAS(parent->canvas))
     {
       zmap_canvas = ZMAP_CANVAS(parent->canvas);
       zMapWindowCanvasBusy(zmap_canvas);
     }
+#endif
+
+zMapAssert(!redraw_during_recursion);
 
   eachContainer((gpointer)container_group, &data) ;
 
+#if GROUP_REPOS
   if(redraw_during_recursion && ZMAP_IS_CANVAS(parent->canvas))
     zMapWindowCanvasUnBusy(zmap_canvas);
-
+#endif
 
   return ;
 }
