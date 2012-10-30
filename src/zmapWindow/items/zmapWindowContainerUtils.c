@@ -45,11 +45,11 @@
 
 /* There's a lot of sharing here....is it wise or necessary ? */
 #include <zmapWindowContainerGroup_I.h>
-#include <zmapWindowContainerChildren_I.h>
+//#include <zmapWindowContainerChildren_I.h>
 
 /* It doesn't feel good that these are here.... */
 #include <zmapWindowContainerFeatureSet_I.h>
-#include <zmapWindowContainerStrand_I.h> /* access to ZMapWindowContainerStrand->strand */
+//#include <zmapWindowContainerStrand_I.h> /* access to ZMapWindowContainerStrand->strand */
 
 
 
@@ -154,15 +154,17 @@ ZMapWindowContainerGroup zmapWindowContainerChildGetParent(FooCanvasItem *item)
     {
       container_group = ZMAP_CONTAINER_GROUP(item);
     }
+#if USE_CHILDREN
   else if (ZMAP_IS_CONTAINER_FEATURES(item)   ||
 	  ZMAP_IS_CONTAINER_BACKGROUND(item) ||
 	  ZMAP_IS_CONTAINER_OVERLAY(item)    ||
 	  ZMAP_IS_CONTAINER_UNDERLAY(item))
     {
+	/* there's a bug in this code i just iffed out! should be item->parent !!! */
       if ((item = item->parent) && ZMAP_IS_CONTAINER_GROUP(item))
 	container_group = ZMAP_CONTAINER_GROUP(item);
     }
-
+#endif
   return container_group;
 }
 
@@ -344,10 +346,11 @@ ZMapWindowContainerStrand zmapWindowContainerBlockGetContainerSeparator(ZMapWind
 
 /* Child access. container group -> container <CHILD> */
 
+#if USE_CHILDREN
+
 /* Note this returns the _canvasgroup_ containing the features, not the feature list. */
 ZMapWindowContainerFeatures zmapWindowContainerGetFeatures(ZMapWindowContainerGroup container)
 {
-#if USE_CHILDREN
   ZMapWindowContainerFeatures features = NULL;
   FooCanvasItem *item;
 
@@ -370,28 +373,25 @@ ZMapWindowContainerFeatures zmapWindowContainerGetFeatures(ZMapWindowContainerGr
 #endif //MH17_NEVER_INCLUDE_THIS_CODE
 	return features;
     }
-#else
-// so we remove the child layer from WCG, conatuiner features is a simple group, so this is safe by fluke
-	return (ZMapWindowContainerFeatures) container;
-#endif
 }
+#endif
 
 
+#if USE_BACKGROUND
 ZMapWindowContainerBackground zmapWindowContainerGetBackground(ZMapWindowContainerGroup container)
 {
   ZMapWindowContainerBackground background = NULL;
-#if USE_BACKGROUND
+
   FooCanvasItem *item;
 
   if((item = container_get_child(container, _CONTAINER_BACKGROUND_POSITION)))
     {
       background = ZMAP_CONTAINER_BACKGROUND(item);
     }
-#else
-	zMapAssertNotReached();
-#endif
   return background;
 }
+#endif
+
 
 #if USE_CHILDREN
 ZMapWindowContainerOverlay zmapWindowContainerGetOverlay(ZMapWindowContainerGroup container)

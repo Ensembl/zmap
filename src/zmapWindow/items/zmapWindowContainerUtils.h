@@ -45,6 +45,24 @@ typedef void (*ZMapContainerUtilsExecFunc)(ZMapWindowContainerGroup container,
 gboolean zmapWindowContainerUtilsIsValid(FooCanvasGroup *any_group);
 
 
+#if !USE_CHILDREN
+#define ZMapWindowContainerFeatures	ZMapWindowContainerGroup
+#define zmapWindowContainerGetFeatures(container)	container
+
+/* Used by zmapWindowContainer calls for going forward/backward through lists. */
+typedef enum
+  {
+    ZMAPCONTAINER_ITEM_FIRST = -1,			    /* These two _must_ be < 0 */
+    ZMAPCONTAINER_ITEM_LAST = -2,
+    ZMAPCONTAINER_ITEM_PREV,
+    ZMAPCONTAINER_ITEM_NEXT
+  } ZMapContainerItemDirection ;
+
+typedef gboolean (*zmapWindowContainerItemTestCallback)(FooCanvasItem *item, gpointer user_data) ;
+
+
+#endif
+
 ZMapWindowContainerGroup zmapWindowContainerChildGetParent(FooCanvasItem *item);
 ZMapWindowContainerGroup zmapWindowContainerGetNextParent(FooCanvasItem *item);
 
@@ -63,6 +81,7 @@ gboolean zmapWindowContainerSetItemPosition(ZMapWindowContainerGroup container_p
 
 
 /* Block level utilities */
+#if USE_CHILDREN
 ZMapWindowContainerStrand zmapWindowContainerBlockGetContainerStrand(ZMapWindowContainerBlock container_block,
 								     ZMapStrand               strand);
 ZMapWindowContainerStrand zmapWindowContainerBlockGetContainerSeparator(ZMapWindowContainerBlock container_block);
@@ -71,9 +90,12 @@ ZMapWindowContainerFeatures   zmapWindowContainerGetFeatures  (ZMapWindowContain
 ZMapWindowContainerBackground zmapWindowContainerGetBackground(ZMapWindowContainerGroup container);
 ZMapWindowContainerOverlay    zmapWindowContainerGetOverlay   (ZMapWindowContainerGroup container);
 ZMapWindowContainerUnderlay   zmapWindowContainerGetUnderlay  (ZMapWindowContainerGroup container);
+#endif
 
+#if USE_STRAND
 ZMapStrand zmapWindowContainerGetStrand(ZMapWindowContainerGroup container);
 gboolean zmapWindowContainerIsStrandSeparator(ZMapWindowContainerGroup container);
+#endif
 
 GList *zmapWindowContainerFindItemInList(ZMapWindowContainerGroup container_parent, FooCanvasItem *item);
 FooCanvasItem *zmapWindowContainerGetNthFeatureItem(ZMapWindowContainerGroup container, int nth_item);

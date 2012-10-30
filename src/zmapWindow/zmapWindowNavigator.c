@@ -1032,7 +1032,9 @@ static void createColumnCB(gpointer data, gpointer user_data)
   GQuark set_id = GPOINTER_TO_UINT(data);
   NavigateDraw draw_data = (NavigateDraw)user_data;
   ZMapWindowContainerFeatures features;
+#if USE_BACKGROUND
   ZMapWindowContainerBackground container_background = NULL;
+#endif
   ZMapFeatureTypeStyle style;
   gboolean status = FALSE;
   GQuark set_unique_id;

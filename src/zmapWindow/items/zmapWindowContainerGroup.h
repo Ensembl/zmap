@@ -39,7 +39,7 @@
 /* It feels wrong that you can't compile this header without including this...the encapsution
  * is wrong at some level...perhaps more of the stuff from zmapWindowContainerChildren.h
  * should be in this header.... */
-#include <zmapWindowContainerChildren.h>
+//#include <zmapWindowContainerChildren.h>
 
 
 #if USE_CHILDREN

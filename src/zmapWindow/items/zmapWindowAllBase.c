@@ -238,7 +238,9 @@ static MyGObjectInfo initObjectDescriptions(void)
       {zmapWindowContainerGroupGetType, 0, NULL, sizeof(zmapWindowContainerGroup)},
       {zmapWindowContainerAlignmentGetType, 0, NULL, sizeof(zmapWindowContainerAlignment)},
       {zmapWindowContainerBlockGetType, 0, NULL, sizeof(zmapWindowContainerBlock)},
+#if USE_CHILDREN
       {zmapWindowContainerFeaturesGetType, 0, NULL, sizeof(zmapWindowContainerFeatures)},
+#endif
       {zmapWindowContainerContextGetType, 0, NULL, sizeof(zmapWindowContainerContext)},
       {zmapWindowContainerFeatureSetGetType, 0, NULL, sizeof(zmapWindowContainerFeatureSet)},
 #if USE_STRAND

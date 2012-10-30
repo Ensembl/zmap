@@ -589,8 +589,9 @@ gboolean zmapWindowCreateSetColumns(ZMapWindow window,
 	{
 	  ZMapWindowContainerGroup tmp_container;
 	  ZMapWindowContainerGroup block_container;
+#if USE_STRAND
 	  ZMapWindowContainerStrand separator;
-
+#endif
 	  /* Yes we piggy back here, but as the function requires a F or R group so what. */
 	  if(forward_strand_group)
 	    {

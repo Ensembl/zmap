@@ -341,7 +341,9 @@ FooCanvasItem *zmapWindowItemGetShowTranslationColumn(ZMapWindow window, FooCanv
       if (feature_set)
 	{
 	  ZMapWindowContainerGroup parent_container;
+#if USE_STRAND
 	  ZMapWindowContainerStrand forward_container;
+#endif
 	  ZMapWindowContainerFeatures forward_features;
 	  FooCanvasGroup *tmp_forward, *tmp_reverse;
 

@@ -50,7 +50,9 @@
 static void printGroup(FooCanvasGroup *group, int indent, GString *buf) ;
 static void printItem(FooCanvasItem *item) ;
 static gboolean get_container_type_as_string(FooCanvasItem *item, char **str_out) ;
+#if USE_CHILDREN
 static gboolean get_container_child_type_as_string(FooCanvasItem *item, char **str_out) ;
+#endif
 static gboolean get_item_type_as_string(FooCanvasItem *item, char **str_out) ;
 static gboolean get_feature_type_as_string(FooCanvasItem *item, char **str_out) ;
 static GString *getItemCoords(GString *str, FooCanvasItem *item, gboolean local_only) ;
@@ -270,7 +272,7 @@ static void printGroup(FooCanvasGroup *group, int indent, GString *buf)
 	      FooCanvasGroup *sub_group = (FooCanvasGroup *)(item_list->data) ;
 	      FooCanvasItem *sub_item = (FooCanvasItem *)(item_list->data) ;
 
-
+#if USE_CHILDREN
 	      if (get_container_child_type_as_string(sub_item, &str))
 		{
 		  for (i = 0 ; i < indent ; i++)
@@ -282,6 +284,8 @@ static void printGroup(FooCanvasGroup *group, int indent, GString *buf)
 		  printItem(FOO_CANVAS_ITEM(sub_group)) ;
 		}
 	      else
+#endif
+
 		{
 		  if (FOO_IS_CANVAS_GROUP(sub_group))
 		    printGroup(sub_group, indent + 1, buf) ;
@@ -366,6 +370,7 @@ static gboolean get_container_type_as_string(FooCanvasItem *item, char **str_out
 }
 
 
+#if USE_CHILDREN
 static gboolean get_container_child_type_as_string(FooCanvasItem *item, char **str_out)
 {
   gboolean has_type = TRUE ;
@@ -381,6 +386,7 @@ static gboolean get_container_child_type_as_string(FooCanvasItem *item, char **s
 
   return has_type ;
 }
+#endif
 
 
 static gboolean get_item_type_as_string(FooCanvasItem *item, char **str_out)
