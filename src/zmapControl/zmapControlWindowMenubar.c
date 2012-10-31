@@ -265,12 +265,11 @@ static void developerCB(gpointer cb_data, guint callback_action, GtkWidget *wind
   ZMap zmap = (ZMap)cb_data ;
   char *passwd = NULL ;
 
-  if ((passwd = zMapGUIMsgGetText(GTK_WINDOW(zmap->toplevel),
-				  ZMAP_MSG_INFORMATION, "Enter Developer Password:", TRUE)))
-    {
-      if (!zMapUtilsUserSetDeveloper(passwd))
-	zMapGUIShowMsg(ZMAP_MSG_WARNING, "Password Verification Failed") ;
-    }
+  passwd = zMapGUIMsgGetText(GTK_WINDOW(zmap->toplevel),
+			     ZMAP_MSG_INFORMATION, "Enter Developer Password:", TRUE) ;
+
+  if (!passwd || !(*passwd) || !zMapUtilsUserSetDeveloper(passwd))
+    zMapGUIShowMsg(ZMAP_MSG_WARNING, "Password Verification Failed") ;
 
   return ;
 }
