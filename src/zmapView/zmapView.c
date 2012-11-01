@@ -346,11 +346,11 @@ void zMapViewInit(ZMapViewCallbacks callbacks)
   view_cbs_G->remote_request_func = callbacks->remote_request_func ;
   view_cbs_G->remote_request_func_data = callbacks->remote_request_func_data ;
 
-
   /* Init windows.... */
   window_cbs_G.remote_request_func = callbacks->remote_request_func ;
   window_cbs_G.remote_request_func_data = callbacks->remote_request_func_data ;
   zMapWindowInit(&window_cbs_G) ;
+
 
   return ;
 }
@@ -494,7 +494,7 @@ void zMapViewSetupNavigator(ZMapViewWindow view_window, GtkWidget *canvas_widget
  *
  *
  *  */
-gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
+gboolean zMapViewConnect(ZMapFeatureSequenceMap sequence_map, ZMapView zmap_view, char *config_str)
 {
   gboolean result = TRUE ;
   char *stylesfile = NULL;
@@ -750,6 +750,10 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
     }
   //  if(stylesfile)
   //    g_free(stylesfile);
+
+
+
+  zmapViewEditColumnInit(zmap_view, sequence_map);
 
   return result ;
 }
@@ -1910,17 +1914,17 @@ ZMapViewConnection zmapViewRequestServer(ZMapView view, ZMapViewConnection view_
       zMapFeatureBlockSetFeaturesCoords(block, req_start, req_end) ;
 
 
-      if (view->revcomped_features)
-	{
-	  /* revcomp our empty context to get external fwd strand coordinates */
-	  zMapFeatureContextReverseComplement(context, view->context_map.styles);
+		if (view->revcomped_features)
+		{
+			/* revcomp our empty context to get external fwd strand coordinates */
+			zMapFeatureContextReverseComplement(context, view->context_map.styles);
+		}
 	}
-    }
-  else
-    {
-      /* Create data specific to this step list...and set it in the connection. */
-      context = createContext(view, req_featuresets, NULL) ;
-    }
+	else
+	{
+	/* Create data specific to this step list...and set it in the connection. */
+          context = zmapViewCreateContext(view, req_featuresets, NULL) ;
+	}
 
   //printf("request featureset %s from %s\n",g_quark_to_string(GPOINTER_TO_UINT(req_featuresets->data)),server->url);
   zMapStartTimer("LoadFeatureSet",g_quark_to_string(GPOINTER_TO_UINT(req_featuresets->data)));
@@ -5102,7 +5106,7 @@ static void setZoomStatus(gpointer data, gpointer user_data)
 
 
 /* Trial code to get alignments from a file and create a context...... */
-static ZMapFeatureContext createContext(ZMapView view, GList *feature_set_names, ZMapFeatureSet feature_set)
+ZMapFeatureContext zmapViewCreateContext(ZMapView view, GList *feature_set_names, ZMapFeatureSet feature_set)
 {
   ZMapFeatureContext context = NULL ;
   gboolean master = TRUE ;
@@ -5133,6 +5137,9 @@ static ZMapFeatureContext createContext(ZMapView view, GList *feature_set_names,
   /* NOTE it's iffed out */
   addAlignments(context) ;
 #endif
+
+  if (feature_set)
+    zMapFeatureBlockAddFeatureSet(block, feature_set) ;
 
   return context ;
 }

@@ -14,6 +14,7 @@ zmapViewFeatureCollapse.c \
 zmapViewRemoteControl.c \
 zmapViewRemoteReceive.c \
 zmapViewRemoteSend.c \
+zmapViewEditColumn.c \
 $(NULL)
 
 libZMapView_la_CFLAGS = $(INCLUDE_COMMON)

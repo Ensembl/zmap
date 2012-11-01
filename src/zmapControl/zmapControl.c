@@ -244,7 +244,7 @@ gboolean zmapConnectViewConfig(ZMap zmap, ZMapView view, char *config)
 
   g_return_val_if_fail((zmap->state != ZMAP_DYING), FALSE) ;
 
-  result = zMapViewConnect(view, config) ;
+  result = zMapViewConnect(zmap->default_sequence, view, config) ;
 
   zmapControlWindowSetGUIState(zmap) ;
 
@@ -260,7 +260,7 @@ gboolean zMapConnectView(ZMap zmap, ZMapView view)
 
   g_return_val_if_fail((zmap->state != ZMAP_DYING), FALSE) ;
 
-  if ((result = zMapViewConnect(view, NULL)))
+  if ((result = zMapViewConnect(zmap->default_sequence, view, NULL)))
     zmapControlWindowSetGUIState(zmap) ;
 
   return result ;
@@ -632,7 +632,7 @@ void zmapControlLoadCB(ZMap zmap)
 	}
       else
 	{
-	  if (!(status = zMapViewConnect(curr_view, NULL)))
+	  if (!(status = zMapViewConnect(zmap->default_sequence, curr_view, NULL)))
 	    zMapCritical("%s", "ZMap could not configure server connections, please check connection data.") ;
 	}
     }
@@ -678,7 +678,7 @@ ZMapView zmapControlInsertView(ZMap zmap, ZMapFeatureSequenceMap sequence_map, c
     {
       view = zMapViewGetView(view_window) ;
 
-      if (!zMapViewConnect(view, NULL))
+      if (!zMapViewConnect(sequence_map, view, NULL))
 	{
 	  *err_msg = g_strdup_printf("Display of sequence \"%s\" failed, see log for details.",
 				     sequence_map->sequence) ;

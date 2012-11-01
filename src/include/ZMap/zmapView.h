@@ -182,7 +182,7 @@ ZMapViewWindow zMapViewCopyWindow(ZMapView zmap_view, GtkWidget *parent_widget,
 				  ZMapWindow copy_window, ZMapWindowLockType window_locking) ;
 ZMapViewWindow zMapViewRemoveWindow(ZMapViewWindow view_window) ;
 void zMapViewRedraw(ZMapViewWindow view_window) ;
-gboolean zMapViewConnect(ZMapView zmap_view, char *config_str) ;
+gboolean zMapViewConnect(ZMapFeatureSequenceMap sequence_map, ZMapView zmap_view, char *config_str) ;
 gboolean zMapViewReset(ZMapView zmap_view) ;
 gboolean zMapViewReverseComplement(ZMapView zmap_view) ;
 gboolean zMapViewGetRevCompStatus(ZMapView zmap_view) ;
