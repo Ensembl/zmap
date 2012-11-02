@@ -341,33 +341,13 @@ FooCanvasItem *zmapWindowItemGetShowTranslationColumn(ZMapWindow window, FooCanv
       if (feature_set)
 	{
 	  ZMapWindowContainerGroup parent_container;
-#if USE_STRAND
-	  ZMapWindowContainerStrand forward_container;
-#endif
 	  ZMapWindowContainerFeatures forward_features;
 	  FooCanvasGroup *tmp_forward, *tmp_reverse;
 
-#ifdef SIMPLIFY
-	  FooCanvasGroup *forward_group, *parent_group, *tmp_forward, *tmp_reverse ;
-	  /* Get the FeatureSet Level Container */
-	  parent_group = zmapWindowContainerCanvasItemGetContainer(item);
-	  /* Get the Strand Level Container (Could be Forward OR Reverse) */
-	  parent_group = zmapWindowContainerGetSuperGroup(parent_group);
-	  /* Get the Block Level Container... */
-	  parent_group = zmapWindowContainerGetSuperGroup(parent_group);
-#endif /* SIMPLIER */
 
 	  parent_container = zmapWindowContainerUtilsItemGetParentLevel(item, ZMAPCONTAINER_LEVEL_BLOCK);
 
-#if USE_STRAND
-	  /* Get the Forward Group Parent Container... */
-	  forward_container = zmapWindowContainerBlockGetContainerStrand((ZMapWindowContainerBlock)parent_container, ZMAPSTRAND_FORWARD);
-	  /* zmapWindowCreateSetColumns needs the Features not the Parent. */
-	  forward_features  = zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)forward_container);
-#else
-	  /* zmapWindowCreateSetColumns needs the Features not the Parent. */
 	  forward_features  = zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)parent_container);
-#endif
 
 	  /* make the column... */
 	  if (zmapWindowCreateSetColumns(window,

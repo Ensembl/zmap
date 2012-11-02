@@ -171,9 +171,6 @@ static void dumpCB(ZMapWindowContainerGroup container_parent, FooCanvasPoints *p
 static void itemCB(gpointer data, gpointer user_data) ;
 static void dumpFeatureCB(gpointer data, gpointer user_data);
 
-#if USE_BACKGROUND
-static void dumpRectangle(DumpOptions cb_data, FooCanvasRE *re_item, gboolean outline) ;
-#endif
 
 static int openPS(DumpOptions dump_opts) ;
 static int openEPSF(DumpOptions dump_opts) ;
@@ -797,9 +794,6 @@ static void dumpCB(ZMapWindowContainerGroup container_parent, FooCanvasPoints *p
                    ZMapContainerLevelType level,  gpointer user_data)
 {
   DumpOptions cb_data = (DumpOptions)user_data ;
-#if USE_BACKGROUND
-  ZMapWindowContainerBackground background ;
-#endif
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   {
@@ -846,42 +840,11 @@ static void dumpCB(ZMapWindowContainerGroup container_parent, FooCanvasPoints *p
           // paint background?
           break;
 
-#if USE_STRAND
-        case ZMAPCONTAINER_LEVEL_STRAND:
-            // paint the strand seperator, but not the +/-
-          if(zmapWindowContainerIsStrandSeparator(container_parent))
-          {
-
-#if USE_BACKGROUND
-            if ((background = zmapWindowContainerGetBackground(container_parent)))
-            {
-               g_object_get(G_OBJECT(background),
-                   "fill_color_gdk", &(cb_data->current_background_colour),
-                   NULL);
-              dumpRectangle(cb_data, FOO_CANVAS_RE(background), FALSE) ;        // is narrower than on screen
-            }
-#endif
-          }
-          break;
-#endif
 
         case ZMAPCONTAINER_LEVEL_FEATURESET:
 
 //printf("DumpCB featureset 1 %s\n",tstamp());
          {
-#if USE_BACKGROUND
-                  // coloured background eg for 3 Frame
-            if ((background = zmapWindowContainerGetBackground(container_parent)))
-              {
-                FooCanvasItem *foo = FOO_CANVAS_ITEM(background);
-                if(dumpItemIsVisible(foo,cb_data)) // else this would get _very_ slow on png format
-                  {
-                    g_object_get(G_OBJECT(background),
-                        "fill_color_gdk", &(cb_data->current_background_colour),NULL);
-                    dumpRectangle(cb_data, FOO_CANVAS_RE(background), FALSE) ;
-                  }
-              }
-#endif
 //printf("DumpCB featureset 2 %s\n",tstamp());
             ZMapWindowContainerFeatures features;
             if ((features = zmapWindowContainerGetFeatures(container_parent)))
@@ -1095,69 +1058,6 @@ static void dumpFeatureCB(gpointer data, gpointer user_data)
 }
 
 
-#if USE_BACKGROUND
-/* Dump a rectangle, optionally show its outline. */
-static void dumpRectangle(DumpOptions cb_data, FooCanvasRE *re_item, gboolean outline)
-{
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  double x1, y1, x2, y2 ;
-  guint composite ;
-  int fill_colour ;
-  int outline_colour ;
-  gboolean fill_set;
-
-  x1 = re_item->x1 ;
-  y1 = re_item->y1 ;
-  x2 = re_item->x2 ;
-  y2 = re_item->y2 ;
-
-#if 0
-are x1,y1 and x2,y2 inverted sometimes? this code expands the boxes!
-  if(x1 < cb_data->x1) x1 = cb_data->x1;  // could be huge if zoomed in
-  if(x2 > cb_data->x2) x2 = cb_data->x2;  // png results in very slow
-  if(y1 < cb_data->y1) y1 = cb_data->y1;
-  if(y2 > cb_data->y2) y2 = cb_data->y2;
-#endif
-
-  foo_canvas_item_i2w(FOO_CANVAS_ITEM(re_item), &x1, &y1) ;
-  x1 -= cb_data->x1;
-  COORDINVERT(y1, cb_data->y2) ;
-
-  foo_canvas_item_i2w(FOO_CANVAS_ITEM(re_item), &x2, &y2) ;
-  x2 -= cb_data->x1;
-  COORDINVERT(y2, cb_data->y2) ;
-
-  if(!(fill_set = re_item->fill_set))
-    foo_canvas_item_set(FOO_CANVAS_ITEM(re_item),
-			"fill_color_gdk", cb_data->current_background_colour,
-			NULL);
-
-  composite = re_item->fill_color ;
-  fill_colour = getInkColour(cb_data->g2_id, cb_data->ink_colours, composite) ;
-
-  if(!fill_set)
-    foo_canvas_item_set(FOO_CANVAS_ITEM(re_item),
-			"fill_color_gdk", NULL,
-			NULL);
-
-  composite = re_item->outline_color ;
-  outline_colour = getInkColour(cb_data->g2_id, cb_data->ink_colours, composite) ;
-
-  g2_pen(cb_data->g2_id, fill_colour) ;
-  g2_filled_rectangle(cb_data->g2_id, x1, y1, x2, y2) ;
-
-  if (outline)
-    {
-      g2_pen(cb_data->g2_id, outline_colour) ;
-      g2_rectangle(cb_data->g2_id, x1, y1, x2, y2) ;
-    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-  return ;
-}
-
-#endif
 
 
 #if NOT_USED

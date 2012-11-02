@@ -1329,14 +1329,6 @@ void zMapWindowDestroy(ZMapWindow window)
   gtk_widget_destroy(window->toplevel) ;
   zmapWindowFToIDestroy(window->context_to_item) ;
 
-#if USE_FACTORY
-  if(window->item_factory)
-    {
-      zmapWindowFToIFactoryClose(window->item_factory);
-      window->item_factory = NULL;
-    }
-#endif
-
   if(window->history)
     zmapWindowStateQueueDestroy(window->history);
 
@@ -2129,14 +2121,9 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
 
   /* Create the canvas, add it to the scrolled window so all the scrollbar stuff gets linked up
    * and set the background to be white. */
-#if GROUP_REPOS
-	/* windowCanvas does nothing ! */
-  canvas = zMapWindowCanvasNew(1.0) ;
-  window->canvas = FOO_CANVAS(canvas);
-#else
   canvas = foo_canvas_new();
   window->canvas = FOO_CANVAS(canvas);
-#endif
+
   /* This will be removed when RT:1589 is resolved */
   g_object_set_data(G_OBJECT(canvas), ZMAP_WINDOW_POINTER, window);
   /* Definitively set the canvas to have a scroll region size, that WE
@@ -2157,12 +2144,6 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
   GTK_WIDGET_SET_FLAGS(canvas, GTK_CAN_FOCUS) ;
 
   window->zoom = zmapWindowZoomControlCreate(window);
-
-#if GROUP_REPOS
-  g_object_set(G_OBJECT(canvas),
-	       "max-zoom-y", zMapWindowGetZoomMax(window),
-	       NULL);
-#endif
 
   {
     ZMapWindowScaleCanvasCallbackListStruct callbacks = {NULL};
@@ -2526,13 +2507,6 @@ static void resetCanvas(ZMapWindow window, gboolean free_child_windows, gboolean
   zmapWindowFToIDestroy(window->context_to_item) ;
   window->context_to_item = zmapWindowFToICreate() ;
 
-#if USE_FACTORY
-  if(window->item_factory)
-    {
-      zmapWindowFToIFactoryClose(window->item_factory) ;
-      window->item_factory = NULL;
-    }
-#endif
 
   /* Recreate focus object. */
 //  zmapWindowFocusDestroy(window->focus) ;
@@ -5546,13 +5520,8 @@ static FooCanvasGroup *getFirstColumn(ZMapWindow window, ZMapStrand strand)
   StrandColStruct strand_data = {strand, NULL} ;
 
   strand_data.strand = strand ;
-#if USE_STRAND
-  zmapWindowContainerUtilsExecute(window->feature_root_group, ZMAPCONTAINER_LEVEL_STRAND,
-				  getFirstForwardCol, &strand_data) ;
-#else
   zmapWindowContainerUtilsExecute(window->feature_root_group, ZMAPCONTAINER_LEVEL_BLOCK,
 				  getFirstForwardCol, &strand_data) ;
-#endif
   return strand_data.first_column ;
 }
 
@@ -5563,12 +5532,7 @@ static void getFirstForwardCol(ZMapWindowContainerGroup container, FooCanvasPoin
   StrandCol strand_data = (StrandCol)func_data ;
 
   /* Only look for a column in the requested strand. */
-#if USE_STRAND
-  if (container_level == ZMAPCONTAINER_LEVEL_STRAND
-      && zmapWindowContainerGetStrand(container) == strand_data->strand)
-#else
   if (container_level == ZMAPCONTAINER_LEVEL_BLOCK)
-#endif
     {
       if (!(strand_data->first_column))
 	{

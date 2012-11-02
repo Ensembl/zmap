@@ -638,55 +638,13 @@ static void window_cancel_cb(ZMapGuiNotebookAny notebook_any, gpointer user_data
 {
   return;
 }
-#ifdef USE_BACKGROUND
-static void recolour_backgrounds_cb(FooCanvasGroup *data, FooCanvasPoints *points,
-				    ZMapContainerLevelType level, gpointer user_data)
-{
-  ZMapWindow window = (ZMapWindow)user_data;
-  FooCanvasItem *background = NULL;
-  GdkColor *colour = NULL;
 
-  switch(level)
-    {
-    case ZMAPCONTAINER_LEVEL_BLOCK:
-      background = zmapWindowContainerGetBackground(data);
-      colour     = &(window->colour_separator);
-      break;
-#if USE_STRAND
-    case ZMAPCONTAINER_LEVEL_STRAND:
-      background = zmapWindowContainerGetBackground(data);
-      if(zmapWindowContainerIsStrandSeparator(data))
-	colour   = &(window->colour_separator);
-      break;
-#endif
-    default:
-      break;
-    }
 
-  if(background && colour)
-    foo_canvas_item_set(background,
-			"fill_color_gdk", colour,
-			NULL);
-
-  return ;
-}
-#endif /* NOT_REQUIRED */
-
-static void recolour_backgrounds(ZMapWindow window)
-{
-#ifdef NOT_REQUIRED
-  zmapWindowContainerUtilsExecute(window->feature_root_group,
-				  ZMAPCONTAINER_LEVEL_FEATURESET,
-				  recolour_backgrounds_cb, window);
-#endif /* NOT_REQUIRED */
-  return ;
-}
 static void window_apply_cb(ZMapGuiNotebookAny notebook_any, gpointer user_data)
 {
   ZMapGuiNotebookChapter chapter = (ZMapGuiNotebookChapter)notebook_any;
   ZMapGuiNotebookPage page = NULL;
   ZMapWindow window = (ZMapWindow)user_data;
-  gboolean update_req = FALSE;
 
   if((page = zMapGUINotebookFindPage(chapter, "Colours")))
     {
@@ -695,7 +653,7 @@ static void window_apply_cb(ZMapGuiNotebookAny notebook_any, gpointer user_data)
 	{
 	  if(string_value && *string_value)
 	    {
-	      update_req = gdk_color_parse(string_value, &(window->colour_separator));
+	      gdk_color_parse(string_value, &(window->colour_separator));
 	    }
 	}
 
@@ -718,9 +676,6 @@ static void window_apply_cb(ZMapGuiNotebookAny notebook_any, gpointer user_data)
 	}
 
     }
-
-  if(update_req)
-    recolour_backgrounds(window);
 
   return ;
 }

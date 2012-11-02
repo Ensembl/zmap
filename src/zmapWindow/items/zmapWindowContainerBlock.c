@@ -274,33 +274,20 @@ void zmapWindowContainerBlockMark(ZMapWindowContainerBlock container_block,
 				  ZMapWindowMark           mark)
 {
   ZMapWindowContainerGroup container;
-#if USE_BACKGROUND
-  ZMapWindowContainerBackground background;
-#endif
   GdkColor  *mark_colour;
   GdkBitmap *mark_stipple;
   FooCanvasPoints bounds;
   double coords[4];
 
   container = (ZMapWindowContainerGroup)container_block;
-#if USE_BACKGROUND
-  if ((background = zmapWindowContainerGetBackground(container)))
-#endif
+
     {
       mark_colour  = zmapWindowMarkGetColour(mark);
       mark_stipple = zmapWindowMarkGetStipple(mark);
       /* Get the gdk stuff ^^ and then update the colour and stipple. */
       mark_items_update_colour(container_block, mark_colour, mark_stipple);
 
-
-#if USE_BACKGROUND
-	/* We get the current bounds of the background.  It will have
-       * been cropped to the scroll region. The UpdateHook takes care
-       * of maximising it. */
-      foo_canvas_item_get_bounds((FooCanvasItem *)background,
-#else
 	foo_canvas_get_scroll_region(((FooCanvasItem *) container)->canvas,
-#endif
 				 &coords[0], &coords[1],
 				 &coords[2], &coords[3]);
 
@@ -438,17 +425,10 @@ static void mark_items_create(ZMapWindowContainerBlock container_block,
 {
   ZMapWindowContainerGroup container;
   ZMapWindowContainerOverlay overlay;
-#if USE_BACKGROUND
-  ZMapWindowContainerBackground background;
-#endif
 
   container = (ZMapWindowContainerGroup)container_block;
 
-  if((overlay = zmapWindowContainerGetOverlay(container))
-#if USE_BACKGROUND
-	&& (background = zmapWindowContainerGetBackground(container))
-#endif
-	)
+  if((overlay = zmapWindowContainerGetOverlay(container)))
     {
       FooCanvasGroup *parent;
 #ifdef DEBUG_MARK_WITH_OUTLINE
@@ -568,9 +548,6 @@ static gboolean mark_block_update_hook(ZMapWindowContainerGroup group_in_update,
 				       gpointer                 user_data)
 {
   gboolean status = FALSE;
-#if USE_BACKGROUND
-  ZMapWindowContainerBackground background;
-#endif
   ZMapWindowContainerBlock container_block;
   ZMapWindowMark mark = (ZMapWindowMark)user_data;
   FooCanvasPoints block_points;
@@ -583,41 +560,6 @@ static gboolean mark_block_update_hook(ZMapWindowContainerGroup group_in_update,
   block_points.num_points = 2;
   block_points.ref_count  = 1;
 
-#if USE_BACKGROUND
-  if((background = zmapWindowContainerGetBackground(group_in_update)))
-    {
-      FooCanvasItem *bg_item = FOO_CANVAS_ITEM(background);
-
-      if(debug_update_hook)
-	{
-	  /* I was concerned that the group_points and the
-	   * item_get_bounds might not marry up, but it appears
-	   * there's no need for concern. */
-	  foo_canvas_item_get_bounds(bg_item,
-				     &block_coords[0], &block_coords[1],
-				     &block_coords[2], &block_coords[3]);
-
-	  if(group_points->coords[0] != block_coords[0] ||
-	     group_points->coords[0] != block_coords[0] ||
-	     group_points->coords[0] != block_coords[0] ||
-	     group_points->coords[0] != block_coords[0])
-	    {
-	      zMapLogWarning("block %p has item coords: [%f,%f] - [%f,%f]",
-			     group_in_update,
-			     block_coords[0], block_coords[1],
-			     block_coords[2], block_coords[3]);
-	      zMapLogWarning("block %p has grouppoints: [%f,%f] - [%f,%f]\n",
-			     group_in_update,
-			     group_points->coords[0], group_points->coords[1],
-			     group_points->coords[2], group_points->coords[3]);
-	    }
-
-	  printf ("block %p has item coords: [%f,%f] - [%f,%f]\n",
-		  group_in_update,
-		  block_coords[0], block_coords[1],
-		  block_coords[2], block_coords[3]);
-	}
-#else
     {
 	FooCanvasItem *bg_item;
 
@@ -632,7 +574,6 @@ static gboolean mark_block_update_hook(ZMapWindowContainerGroup group_in_update,
 		return FALSE;
 	bg_item = (FooCanvasItem *) ((FooCanvasGroup *) group_in_update)->item_list->data;
 
-#endif
       block_coords[0] = group_points->coords[0];
       block_coords[1] = group_points->coords[1];
       block_coords[2] = group_points->coords[2];

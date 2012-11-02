@@ -72,9 +72,6 @@ typedef struct
   ZMapFeatureSet       current_set;
   /* The current containers in the recursion */
   ZMapWindowContainerGroup container_block;
-#if USE_STRAND
-  ZMapWindowContainerGroup container_strand;
-#endif
   ZMapWindowContainerGroup container_feature_set;
   double current;
 
@@ -143,12 +140,6 @@ static gboolean factoryItemHandler(FooCanvasItem       *new_item,
 				   gpointer             handler_data);
 
 
-#if FEATURE_SIZE_REQUEST
-static gboolean factoryFeatureSizeReq(ZMapFeature feature,
-                                      double *limits_array,
-                                      double *points_array_inout,
-                                      gpointer handler_data);
-#endif
 
 static GHashTable *zmapWindowNavigatorLDHCreate(void);
 static LocusEntry zmapWindowNavigatorLDHFind(GHashTable *hash, GQuark key);
@@ -158,9 +149,6 @@ static void zmapWindowNavigatorLDHDestroy(GHashTable **destroy);
 static void destroyLocusEntry(gpointer data);
 
 
-#if USE_FACTORY
-static void customiseFactory(ZMapWindowNavigator navigator);
-#endif
 
 static void get_filter_list_up_to(GList **filter_out, int max);
 static void available_locus_names_filter(GList **filter_out);
@@ -376,16 +364,6 @@ ZMapWindowNavigator zMapWindowNavigatorCreate(GtkWidget *canvas_widget)
 #endif
    zmapWindowDrawSetGroupBackground(navigate->container_root, 0, 1, 1.0, ZMAP_CANVAS_LAYER_ROOT_BACKGROUND, NULL, NULL);
 
-#if USE_CHILDREN
-  g_object_set(G_OBJECT(navigate->container_root),
-	       "debug-xml", navigator_debug_containers_xml_G, NULL);
-  g_object_set(G_OBJECT(navigate->container_root),
-	       "debug", navigator_debug_containers_G, NULL);
-#endif
-
-#if USE_FACTORY
-  customiseFactory(navigate);
-#endif
 
   default_locus_names_filter(&(navigate->hide_filter));
 
@@ -437,10 +415,6 @@ void zMapWindowNavigatorReset(ZMapWindowNavigator navigate)
   zmapWindowNavigatorLDHDestroy(&(navigate->locus_display_hash));
   navigate->locus_display_hash = zmapWindowNavigatorLDHCreate();
 
-#if USE_FACTROY
-  zmapWindowFToIFactoryClose(navigate->item_factory);
-  customiseFactory(navigate);
-#endif
   return ;
 }
 
@@ -590,9 +564,6 @@ void zMapWindowNavigatorDestroy(ZMapWindowNavigator navigate)
   gtk_object_destroy(GTK_OBJECT(navigate->container_root)); // remove our item.
 
   zmapWindowFToIDestroy(navigate->ftoi_hash);
-#if USE_FACTORY
-  zmapWindowFToIFactoryClose(navigate->item_factory);
-#endif
 
   zmapWindowNavigatorLDHDestroy(&(navigate->locus_display_hash));
 
@@ -849,24 +820,6 @@ debug("nav draw block %d %d\n",block_start,block_end);
         /* we're only displaying one strand... create it ... */
         features = zmapWindowContainerGetFeatures(draw_data->container_block);
 
-#if USE_STRAND
-        /* The strand container doesn't get added to the hash! */
-        draw_data->container_strand = zmapWindowContainerGroupCreate((FooCanvasGroup *) features, ZMAPCONTAINER_LEVEL_STRAND,
-								     STRAND_CHILD_SPACING,
-								     &(navigate->strand_background), NULL);
-
-	g_object_set_data(G_OBJECT(draw_data->container_strand),
-			  ZMAP_WINDOW_POINTER, draw_data->navigate->current_window) ;
-
-	container_group_add_highlight_area_item(navigate, draw_data->container_strand);
-
-#if GROUP_REPOS
-	zmapWindowContainerGroupAddUpdateHook(draw_data->container_strand,
-					      highlight_locator_area_cb,
-					      draw_data->navigate);
-#endif
-	zmapWindowDrawSetGroupBackground(draw_data->container_strand, NULL, NULL);
-#endif
 
         /* create a column per set ... */
         initialiseScaleIfNotExists(draw_data->current_block);
@@ -1032,9 +985,6 @@ static void createColumnCB(gpointer data, gpointer user_data)
   GQuark set_id = GPOINTER_TO_UINT(data);
   NavigateDraw draw_data = (NavigateDraw)user_data;
   ZMapWindowContainerFeatures features;
-#if USE_BACKGROUND
-  ZMapWindowContainerBackground container_background = NULL;
-#endif
   ZMapFeatureTypeStyle style;
   gboolean status = FALSE;
   GQuark set_unique_id;
@@ -1060,11 +1010,7 @@ debug("nav create column %s %p\n",g_quark_to_string(set_id),draw_data->current_s
   else if(draw_data->current_set)
     {
       ZMapWindowContainerFeatureSet container_set;
-#if USE_STRAND
-      features = zmapWindowContainerGetFeatures(ZMAP_CONTAINER_GROUP(draw_data->container_strand));
-#else
       features = zmapWindowContainerGetFeatures(ZMAP_CONTAINER_GROUP(draw_data->container_block));
-#endif
       draw_data->container_feature_set = zmapWindowContainerGroupCreate((FooCanvasGroup *) features,
 									ZMAPCONTAINER_LEVEL_FEATURESET,
 									SET_CHILD_SPACING,
@@ -1102,19 +1048,6 @@ debug("nav create column %s %p\n",g_quark_to_string(set_id),draw_data->current_s
 
       zmapWindowContainerSetVisibility(FOO_CANVAS_GROUP(draw_data->container_feature_set), TRUE);
 
-#if USE_BACKGROUND
-      container_background = zmapWindowContainerGetBackground(draw_data->container_feature_set);
-
-      zmapWindowContainerGroupBackgroundSize(draw_data->container_feature_set,
-		(draw_data->current_block->block_to_sequence.block.x2 -
-             draw_data->current_block->block_to_sequence.block.x1));
-
-      /* scale doesn't need this. */
-      if(set_id != g_quark_from_string(ZMAP_FIXED_STYLE_SCALE_NAME))
-	g_signal_connect(G_OBJECT(container_set), "event",
-			 G_CALLBACK(columnBackgroundEventCB),
-			 (gpointer)draw_data->navigate);
-#endif
 	zmapWindowDrawSetGroupBackground(draw_data->container_feature_set, 0, 1, 1.0, ZMAP_CANVAS_LAYER_COL_BACKGROUND,  NULL, NULL);
     }
   else
@@ -1623,23 +1556,6 @@ static gboolean variantFeature(ZMapFeature feature, ZMapWindowNavigator navigate
 
 
 
-#if USE_FACTORY
-static void customiseFactory(ZMapWindowNavigator navigate)
-{
-  ZMapWindowFToIFactoryProductionTeamStruct factory_helpers = {NULL};
-
-  /* create a factory and set up */
-  navigate->item_factory = zmapWindowFToIFactoryOpen(navigate->ftoi_hash);	//, NULL);
-#if FEATURE_SIZE_REQUEST
-  factory_helpers.feature_size_request = factoryFeatureSizeReq;
-#endif
-  factory_helpers.top_item_created     = factoryItemHandler;
-  zmapWindowFToIFactorySetup(navigate->item_factory, 1, /* line_width hardcoded for now. */
-                             &factory_helpers, (gpointer)navigate);
-
-  return ;
-}
-#endif
 
 
 
@@ -1791,9 +1707,6 @@ static gboolean highlight_locator_area_cb(ZMapWindowContainerGroup container, Fo
     {
     case ZMAPCONTAINER_LEVEL_ALIGN:
     case ZMAPCONTAINER_LEVEL_BLOCK:
-#if USE_STRAND
-    case ZMAPCONTAINER_LEVEL_STRAND:
-#endif
     case ZMAPCONTAINER_LEVEL_FEATURESET:
 
 #warning need to re-implement the locator... scan for LOCATOR

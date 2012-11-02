@@ -103,7 +103,6 @@ items/zmapWindowAllBase.h \
 items/zmapWindowCanvasItem.c \
 items/zmapWindowCanvasItem.h \
 items/zmapWindowCanvasItem_I.h \
-items/zmapWindowCanvas_I.h \
 items/zmapWindowContainerAlignment.c \
 items/zmapWindowContainerAlignment.h \
 items/zmapWindowContainerAlignment_I.h \

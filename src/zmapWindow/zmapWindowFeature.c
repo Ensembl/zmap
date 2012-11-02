@@ -317,22 +317,7 @@ ZMapStrand zmapWindowFeatureStrand(ZMapWindow window, ZMapFeature feature)
   return strand ;
 }
 
-#if USE_FACTORY
-void zmapWindowFeatureFactoryInit(ZMapWindow window)
-{
-  ZMapWindowFToIFactoryProductionTeamStruct factory_helpers = {NULL};
 
-#if FEATURE_SIZE_REQUEST
-  factory_helpers.feature_size_request = factoryFeatureSizeReq;
-#endif
-  factory_helpers.top_item_created     = factoryTopItemCreated;
-
-  zmapWindowFToIFactorySetup(window->item_factory, window->config.feature_line_width,
-                             &factory_helpers, (gpointer)window);
-
-  return ;
-}
-#endif
 
 
 /* Called to draw each individual feature. */

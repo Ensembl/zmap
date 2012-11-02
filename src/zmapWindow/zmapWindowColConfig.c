@@ -522,9 +522,6 @@ static void configure_get_column_lists(ColConfigure configure_data,
 				       GList **forward_columns_out, GList **reverse_columns_out)
 {
   ZMapWindowColConfigureMode configure_mode;
-#if USE_STRAND
-  ZMapWindowContainerGroup container = (ZMapWindowContainerGroup)column_group;
-#endif
   GList *forward_columns = NULL, *reverse_columns = NULL  ;
   ZMapWindow window;
 
@@ -535,11 +532,8 @@ static void configure_get_column_lists(ColConfigure configure_data,
     {
       ZMapStrand strand ;
 
-#if USE_STRAND
-      strand = zmapWindowContainerGetStrand(container);
-#else
 	strand = zmapWindowContainerFeatureSetGetStrand((ZMapWindowContainerFeatureSet) column_group);
-#endif
+
       zMapAssert(strand == ZMAPSTRAND_FORWARD || strand == ZMAPSTRAND_REVERSE) ;
 
       if (strand == ZMAPSTRAND_FORWARD)

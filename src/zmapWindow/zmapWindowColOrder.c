@@ -56,7 +56,7 @@ typedef struct
   int n_names;
 } OrderColumnsDataStruct, *OrderColumnsData;
 
-static void orderPositionColumns(ZMapWindow window, gboolean redraw_too);
+static void orderPositionColumns(ZMapWindow window);
 static void orderColumnsCB(ZMapWindowContainerGroup container, FooCanvasPoints *points,
                            ZMapContainerLevelType level, gpointer user_data);
 static gint qsortColumnsCB(gconstpointer colA, gconstpointer colB, gpointer user_data);
@@ -75,19 +75,13 @@ static gboolean order_debug_G = FALSE;
  */
 void zmapWindowColOrderColumns(ZMapWindow window)
 {
-  return orderPositionColumns(window, FALSE);
+  return orderPositionColumns(window);
 }
 
-#if GROUP_REPOS
-void zmapWindowColOrderPositionColumns(ZMapWindow window)
-{
-  return orderPositionColumns(window, TRUE);
-}
-#endif
 
 /* INTERNALS */
 
-static void orderPositionColumns(ZMapWindow window, gboolean redraw_too)
+static void orderPositionColumns(ZMapWindow window)
 {
   OrderColumnsDataStruct order_data = {NULL} ;
   GList *names;
@@ -123,17 +117,11 @@ static void orderPositionColumns(ZMapWindow window, gboolean redraw_too)
   if(!order_data.three_frame_position)
       order_data.three_frame_position = i;           // off the end
 
-#if USE_STRAND
-  zmapWindowContainerUtilsExecuteFull(window->feature_root_group,
-				      ZMAPCONTAINER_LEVEL_STRAND,
-				      orderColumnsCB, &order_data,
-				      NULL, NULL, redraw_too);
-#else
+
   zmapWindowContainerUtilsExecuteFull(window->feature_root_group,
 				      ZMAPCONTAINER_LEVEL_BLOCK,
 				      orderColumnsCB, &order_data,
-				      NULL, NULL, redraw_too);
-#endif
+				      NULL, NULL);
 
   /* If we've reversed the feature_set_names list, and left it like that, re-reverse. */
   if(order_data.strand == ZMAPSTRAND_REVERSE)
@@ -155,14 +143,8 @@ static void orderColumnsCB(ZMapWindowContainerGroup container, FooCanvasPoints *
   ZMapWindowContainerFeatures container_features;
   FooCanvasGroup *strand_features_group;
 
-#if USE_STRAND
-  ZMapStrand strand;
-  ZMapWindow window = order_data->window;
 
-  if(level == ZMAPCONTAINER_LEVEL_STRAND)
-#else
   if(level == ZMAPCONTAINER_LEVEL_BLOCK)
-#endif
     {
       /* Get Features */
       container_features = zmapWindowContainerGetFeatures(container);
@@ -170,32 +152,7 @@ static void orderColumnsCB(ZMapWindowContainerGroup container, FooCanvasPoints *
       /* Cast to FooCanvasGroup */
       strand_features_group = (FooCanvasGroup *)container_features;
 
-#if USE_STRAND
-      strand = zmapWindowContainerGetStrand(container);
 
-      if(strand == ZMAPSTRAND_REVERSE)
-        {
-          if(order_data->strand == ZMAPSTRAND_FORWARD)
-            window->feature_set_names =
-              g_list_reverse(window->feature_set_names);
-          order_data->strand = ZMAPSTRAND_REVERSE;
-        }
-      else if(strand == ZMAPSTRAND_FORWARD)
-        {
-          if(order_data->strand == ZMAPSTRAND_REVERSE)
-            window->feature_set_names =
-              g_list_reverse(window->feature_set_names);
-          order_data->strand = ZMAPSTRAND_FORWARD;
-        }
-      else if(zmapWindowContainerIsStrandSeparator(container))
-		return ;		/* Watch early return! */
-      else
-	{
-		return;
-		//zMapAssertNotReached(); /* What! */  //mh17: strand can only bw fwd, bwd, or sep */
-		/* we can now have background which is not a group */
-	}
-#endif
 
 #if 1
 	/* hack: background appears at the front of the list and we don't implement overlay on strand

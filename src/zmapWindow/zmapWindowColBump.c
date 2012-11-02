@@ -369,12 +369,7 @@ void zmapWindowColumnBumpAllInitial(FooCanvasItem *column_item)
 {
   ZMapWindowContainerGroup container_strand;
 
-#if USE_STRAND
-  /* Get the strand level container */
-  if((container_strand = zmapWindowContainerUtilsItemGetParentLevel(column_item, ZMAPCONTAINER_LEVEL_STRAND)))
-#else
   if((container_strand = zmapWindowContainerUtilsItemGetParentLevel(column_item, ZMAPCONTAINER_LEVEL_BLOCK)))
-#endif
     {
       /* container execute */
       zmapWindowContainerUtilsExecute(container_strand,
@@ -391,12 +386,7 @@ void zmapWindowColumnUnbumpAll(FooCanvasItem *column_item)
 {
   ZMapWindowContainerGroup container_strand;
 
-#if USE_STRAND
-  /* Get the strand level container */
-  if((container_strand = zmapWindowContainerUtilsItemGetParentLevel(column_item, ZMAPCONTAINER_LEVEL_STRAND)))
-#else
   if((container_strand = zmapWindowContainerUtilsItemGetParentLevel(column_item, ZMAPCONTAINER_LEVEL_BLOCK)))
-#endif
    {
       /* container execute */
       zmapWindowContainerUtilsExecute(container_strand,

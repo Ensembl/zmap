@@ -79,13 +79,6 @@ typedef struct _zmapWindowContainerGroupClassStruct
    * might not be the same for all our items... */
   void            (* post_create) (ZMapWindowContainerGroup window_canvas_item);
 
-#if USE_BACKGROUND
-  void  (* reposition_group)(ZMapWindowContainerGroup container_group,
-			     double rect_x1, double rect_y1,
-			     double rect_x2, double rect_y2,
-			     double *x_repos, double *y_repos);
-#endif
-
 } zmapWindowContainerGroupClassStruct;
 
 typedef struct _zmapWindowContainerGroupStruct
@@ -105,10 +98,6 @@ typedef struct _zmapWindowContainerGroupStruct
   ZMapWindowStats stats;
 #endif
 
-#if GROUP_REPOS
-  GSList *pre_update_hooks;		/* list of ContainerUpdateHooks */
-  GSList *post_update_hooks;		/* list of ContainerUpdateHooks */
-#endif
   double child_spacing;
   double this_spacing;
   double height;
@@ -120,11 +109,6 @@ typedef struct _zmapWindowContainerGroupStruct
   {
     unsigned int max_width  : 1;
     unsigned int max_height : 1;
-#if GROUP_REPOS
-    unsigned int column_redraw : 1;
-    unsigned int debug_xml : 1;
-    unsigned int debug_text : 1;
-#endif
     unsigned int need_reposition : 1;
     unsigned int visible: 1;
   } flags;

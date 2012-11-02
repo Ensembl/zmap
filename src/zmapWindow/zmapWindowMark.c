@@ -950,10 +950,8 @@ static void markItem(ZMapWindowMark mark, FooCanvasItem *item, gboolean set_mark
       GdkBitmap *mark_stipple;
       double x1, y1, x2, y2;
       ZMapWindowContainerGroup parent;
-#if USE_CHILDREN
-      ZMapWindowContainerOverlay overlay;
-#endif
-      mark_colour  = zmapWindowMarkGetColour(mark);
+
+	mark_colour  = zmapWindowMarkGetColour(mark);
       mark_stipple = mark->stipple;
 
 // previous code: convert to a ZMapWindoCanvasItem  to call a fucntion that converts back to a FooCanvasItem
@@ -962,26 +960,9 @@ static void markItem(ZMapWindowMark mark, FooCanvasItem *item, gboolean set_mark
       foo_canvas_item_get_bounds(item,&x1, &y1, &x2, &y2);
 
       parent = zmapWindowContainerUtilsItemGetParentLevel(item,ZMAPCONTAINER_LEVEL_FEATURESET);
-#if USE_CHILDREN
-      overlay = zmapWindowContainerGetOverlay(parent);
-#endif
 
       mark->mark_src_item = item;
-#if USE_CHILDREN
-      mark->mark_rectangle = foo_canvas_item_new(FOO_CANVAS_GROUP(overlay),
-                                       FOO_TYPE_CANVAS_RECT,
-#ifdef DEBUG_ITEM_MARK
-                                       "outline_color_gdk", &outline,
-                                       "width_pixels", 1,
-#endif /* DEBUG_ITEM_MARK */
-                                       "fill_color_gdk", mark_colour,
-                                       "fill_stipple",   mark_stipple,
-                                       "x1",             x1,
-                                       "x2",             x2,
-                                       "y1",             y1,
-                                       "y2",             y2,
-                                       NULL);
-#endif
+
     }
 
   return ;

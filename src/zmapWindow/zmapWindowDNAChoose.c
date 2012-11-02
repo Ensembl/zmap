@@ -119,10 +119,6 @@ char *zmapWindowDNAChoose(ZMapWindow window, FooCanvasItem *feature_item, ZMapWi
   ZMapFeatureBlock block ;
   double x1, y1, x2, y2 ;
   ZMapWindowContainerGroup container;
-#if USE_CHILDREN
-  ZMapWindowContainerOverlay overlay;
-  FooCanvasGroup *overlay_group ;
-#endif
   FooCanvasItem *parent ;
   gint block_start, block_end ;
   char *button_text ;
@@ -166,10 +162,6 @@ char *zmapWindowDNAChoose(ZMapWindow window, FooCanvasItem *feature_item, ZMapWi
 
   /* Draw an overlay box over the feature to show the extent of the dna selected. */
   container = zmapWindowContainerCanvasItemGetContainer(feature_item) ;
-#if USE_CHILDREN
-  overlay   = zmapWindowContainerGetOverlay(container) ;
-  overlay_group = (FooCanvasGroup *)overlay;
-#endif
   parent = zmapWindowItemGetTrueItem(feature_item) ;
   foo_canvas_item_get_bounds(parent, &x1, &y1, &x2, &y2) ;
 
@@ -178,11 +170,7 @@ char *zmapWindowDNAChoose(ZMapWindow window, FooCanvasItem *feature_item, ZMapWi
   dna_data->item_y1 = y1 ;
   dna_data->item_x2 = x2 ;
   dna_data->item_y2 = y2 ;
-#if USE_CHILDREN
-  dna_data->overlay_box = zMapDrawBoxOverlay(overlay_group,
-					     x1, y1, x2, y2,
-					     &overlay_colour) ;
-#endif
+
 
   /* set up the top level window */
   button_text = zmapWindowGetDialogText(dialog_type) ;
@@ -266,10 +254,6 @@ char *zmapWindowDNAChoose(ZMapWindow window, FooCanvasItem *feature_item, ZMapWi
   gtk_widget_destroy(toplevel) ;
 
   g_ptr_array_remove(window->dna_windows, (gpointer)toplevel) ;
-
-#if USE_CHILDREN
-  gtk_object_destroy(GTK_OBJECT(dna_data->overlay_box)) ;
-#endif
 
   return dna ;
 }

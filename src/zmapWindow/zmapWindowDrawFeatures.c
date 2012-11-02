@@ -82,13 +82,8 @@ typedef struct _ZMapCanvasDataStruct
   ZMapWindowContainerFeatures curr_root_group ;
   ZMapWindowContainerFeatures curr_align_group ;
   ZMapWindowContainerFeatures curr_block_group ;
-#if USE_STRAND
-  ZMapWindowContainerFeatures curr_forward_group ;
-  ZMapWindowContainerFeatures curr_reverse_group ;
-#else
 #define curr_forward_group	curr_block_group
 #define curr_reverse_group	curr_block_group
-#endif
 
 //  ZMapWindowContainerFeatures curr_forward_col ;
 //  ZMapWindowContainerFeatures curr_reverse_col ;
@@ -176,15 +171,6 @@ static FooCanvasGroup *createColumnFull(ZMapWindowContainerFeatures parent_group
 					gboolean             is_separator_col,
 					double width, double top, double bot);
 
-#if USE_STRAND
-static FooCanvasGroup *createColumn(ZMapWindowContainerFeatures parent_group,
-				    ZMapWindow           window,
-                                    ZMapFeatureSet       feature_set,
-				    ZMapStrand           strand,
-                                    ZMapFrame            frame,
-				    gboolean             is_separator_col,
-				    double width, double top, double bot);
-#endif
 
 static void ProcessFeature(gpointer key, gpointer data, gpointer user_data) ;
 static void ProcessListFeature(gpointer data, gpointer user_data) ;
@@ -196,10 +182,7 @@ static gboolean feature_set_matches_frame_drawing_mode(ZMapWindow     window,
 						       int *frame_start_out,
 						       int *frame_end_out) ;
 
-//static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data) ;
-#if USE_BACKGROUND
-static gboolean strandBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data) ;
-#endif
+
 static gboolean containerDestroyCB(FooCanvasItem *item_in_hash, gpointer data) ;
 
 static void removeEmptyColumnCB(gpointer data, gpointer user_data) ;
@@ -297,13 +280,6 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
 
   zmapWindowBusy(window, TRUE) ;
 
-#if USE_FACTORY
-  if(!window->item_factory)
-    {
-      window->item_factory = zmapWindowFToIFactoryOpen(window->context_to_item); //, window->long_items);
-      zmapWindowFeatureFactoryInit(window);
-    }
-#endif
 
   /* Set up colours. */
   if (!window->done_colours)
@@ -441,13 +417,6 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
   zmapWindowFToIAddRoot(window->context_to_item, (FooCanvasGroup *)root_group);
 
   window->feature_root_group = root_group ;
-
-#if GROUP_REPOS
-  if(root_created)
-    {
-      zmapWindowDrawManageWindowWidth(window);
-    }
-#endif
 
   /* Set root group to start where sequence starts... */
   x = canvas_data.curr_x_offset ;
@@ -589,9 +558,6 @@ gboolean zmapWindowCreateSetColumns(ZMapWindow window,
 	{
 	  ZMapWindowContainerGroup tmp_container;
 	  ZMapWindowContainerGroup block_container;
-#if USE_STRAND
-	  ZMapWindowContainerStrand separator;
-#endif
 	  /* Yes we piggy back here, but as the function requires a F or R group so what. */
 	  if(forward_strand_group)
 	    {
@@ -603,31 +569,10 @@ gboolean zmapWindowCreateSetColumns(ZMapWindow window,
 	      tmp_container   = zmapWindowContainerChildGetParent((FooCanvasItem *)reverse_strand_group);
 	      block_container = zmapWindowContainerUtilsGetParentLevel(tmp_container, ZMAPCONTAINER_LEVEL_BLOCK);
 	    }
-#if USE_STRAND
-	  if((separator = zmapWindowContainerBlockGetContainerSeparator((ZMapWindowContainerBlock)block_container)))
-	    {
-	      /* No need to create if we've already got one. */
-	      /* N.B. separatorGetFeatureSetColumn returns a FooCanvasGroup * */
-	      if(!(*separator_col_out = separatorGetFeatureSetColumn(separator,
-								     feature_set)))
-		{
-		  ZMapWindowContainerFeatures separator_features;
-		  separator_features = zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)separator);
-		  *separator_col_out = createColumn(separator_features, window,
-						    feature_set,
-						    ZMAPSTRAND_NONE,
-						    frame,
-/* MH17: this is the separator yet 'is_seperator_col' is FALSE !! */
-						    FALSE,
-						    zMapStyleGetWidth(style),
-						    top, bottom);
-		}
-	    }
-#else
+
 	      /* No need to create if we've already got one. */
 	      /* N.B. separatorGetFeatureSetColumn returns a FooCanvasGroup * */
 	      *separator_col_out = separatorGetFeatureSetColumn((ZMapWindowContainerGroup) block_container, feature_set);
-#endif
 	}
 
       if (forward_strand_group)
@@ -988,35 +933,6 @@ int zmapWindowDrawFeatureSet(ZMapWindow window,
 
 
 
-#if USE_STRAND
-
-/* Removes a column which has no features (the default action). */
-void zmapWindowRemoveEmptyColumns(ZMapWindow window,
-				  FooCanvasGroup *forward_group, FooCanvasGroup *reverse_group)
-{
-  RemoveEmptyColumnStruct remove_data ;
-
-  zMapAssert(forward_group || reverse_group) ;
-
-  remove_data.window = window ;
-
-  if (forward_group)
-    {
-      remove_data.strand = ZMAPSTRAND_FORWARD ;
-      g_list_foreach(forward_group->item_list, removeEmptyColumnCB, &remove_data) ;
-    }
-	// MH17 NOTE the function removeEmptyColumnCB() is 1300 lines south of here
-	// and does nothing except call the function immediately below this one
-  if (reverse_group)
-    {
-      remove_data.strand = ZMAPSTRAND_REVERSE ;
-      g_list_foreach(reverse_group->item_list, removeEmptyColumnCB, &remove_data) ;
-    }
-
-  return ;
-}
-
-#endif
 
 gboolean zmapWindowRemoveIfEmptyCol(FooCanvasGroup **col_group)
 {
@@ -1874,111 +1790,13 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 	container_block = (ZMapWindowContainerBlock)block_group;
 
 
-#if !USE_STRAND
+
 	if (status == ZMAP_CONTEXT_EXEC_STATUS_OK)
 	  {
 	    canvas_data->curr_block_group = zmapWindowContainerGetFeatures(block_group) ;
 	  }
-#else
-	if (status == ZMAP_CONTEXT_EXEC_STATUS_OK)
-	  {
-	    canvas_data->curr_block_group = zmapWindowContainerGetFeatures(block_group) ;
 
-	    if (block_created)
-	      {
-		if (canvas_data->curr_alignment == canvas_data->full_context->master_align)
-		  {
-		    for_bg_colour = &(window->colour_mblock_for) ;
-		    rev_bg_colour = &(window->colour_mblock_rev) ;
-		  }
-		else
-		  {
-		    for_bg_colour = &(window->colour_qblock_for) ;
-		    rev_bg_colour = &(window->colour_qblock_rev) ;
-		  }
-	      }
-
-            /* Create the reverse group first.  It's then first in the list and
-             * so gets called first in container execute. e.g. reposition code */
-            if ((block_created) ||
-		(reverse_group = (ZMapWindowContainerGroup)zmapWindowContainerBlockGetContainerStrand(container_block, ZMAPSTRAND_REVERSE)) == NULL)
-              {
-                reverse_group = zmapWindowContainerGroupCreate((FooCanvasGroup *) canvas_data->curr_block_group,
-							       ZMAPCONTAINER_LEVEL_STRAND,
-							       window->config.column_spacing,
-							       rev_bg_colour,
-							       &(canvas_data->window->canvas_border));
-
-                zmapWindowContainerStrandAugment((ZMapWindowContainerStrand)reverse_group, ZMAPSTRAND_REVERSE);
-
-#if USE_BACKGROUND
-		    zmapWindowContainerGroupBackgroundSize(reverse_group,height);
-
-/* NOTE strandBoundingBoxEventCB() does nothing */
-                g_signal_connect(G_OBJECT(zmapWindowContainerGetBackground(reverse_group)),
-                                 "event", G_CALLBACK(strandBoundingBoxEventCB),
-                                 (gpointer)window);
-#endif
-		zmapWindowDrawSetGroupBackground(reverse_group,  NULL, NULL);
-
-		g_object_set_data(G_OBJECT(reverse_group), ZMAP_WINDOW_POINTER, window) ;
-              }
-
-            canvas_data->curr_reverse_group = zmapWindowContainerGetFeatures(reverse_group) ;
-
-	    /* Create the strand separator... */
-	    if ((block_created == TRUE) ||
-
-		(strand_separator = (ZMapWindowContainerGroup)zmapWindowContainerBlockGetContainerSeparator(container_block)) == NULL)
-
-	      {
-		strand_separator = zmapWindowContainerGroupCreate((FooCanvasGroup *) canvas_data->curr_block_group,
-								  ZMAPCONTAINER_LEVEL_STRAND,
-								  window->config.column_spacing,
-								  &(window->colour_separator),
-								  &(canvas_data->window->canvas_border));
-
-		zmapWindowContainerStrandSetAsSeparator((ZMapWindowContainerStrand)strand_separator);
-
-#if USE_BACKGROUND
-		zmapWindowContainerGroupBackgroundSize(strand_separator,height);
-#endif
-		zmapWindowDrawSetGroupBackground(strand_separator, NULL, NULL);
-
-		g_object_set_data(G_OBJECT(strand_separator), ZMAP_WINDOW_POINTER, window) ;
-	      }
-
-            if ((block_created == TRUE) ||
-		(forward_group = (ZMapWindowContainerGroup)zmapWindowContainerBlockGetContainerStrand(container_block, ZMAPSTRAND_FORWARD)) == NULL)
-              {
-                forward_group = zmapWindowContainerGroupCreate((FooCanvasGroup *) canvas_data->curr_block_group,
-							       ZMAPCONTAINER_LEVEL_STRAND,
-							       window->config.column_spacing,
-							       for_bg_colour,
-							       &(canvas_data->window->canvas_border));
-
-                zmapWindowContainerStrandAugment((ZMapWindowContainerStrand)forward_group, ZMAPSTRAND_FORWARD);
-#if USE_BACKGROUND
-		zmapWindowContainerGroupBackgroundSize(forward_group,height);
-
-/* NOTE strandBoundingBoxEventCB() does nothing */
-                g_signal_connect(G_OBJECT(zmapWindowContainerGetBackground(forward_group)),
-                                 "event", G_CALLBACK(strandBoundingBoxEventCB),
-                                 (gpointer)window);
-#endif
-		zmapWindowDrawSetGroupBackground(forward_group, NULL, NULL);
-
-		g_object_set_data(G_OBJECT(forward_group), ZMAP_WINDOW_POINTER, window) ;
-              }
-
-            canvas_data->curr_forward_group = zmapWindowContainerGetFeatures(forward_group) ;
-
-          }
-
-          // attempted fix: crashes
-          // zmapWindowRemoveEmptyColumns(window, FOO_CANVAS_GROUP(forward_group), FOO_CANVAS_GROUP(reverse_group));
-#endif
-        zMapStopTimer("DrawBlock","");
+      zMapStopTimer("DrawBlock","");
 
 	break;
       }
@@ -2226,70 +2044,6 @@ static gboolean feature_set_matches_frame_drawing_mode(ZMapWindow window,
 
 
 
-#if USE_STRAND
-/* Cover/Utility function for createColumnFull() to save caller work. */
-// NOTE: only ever called for separator features
-// not true - also called by seqDisp.c (only by coincidence)
-static FooCanvasGroup *createColumn(ZMapWindowContainerFeatures parent_group,
-				    ZMapWindow           window,
-				    ZMapFeatureSet       feature_set,
-				    ZMapStrand           strand,
-				    ZMapFrame            frame,
-				    gboolean             is_separator_col,
-				    double width, double top, double bot)
-{
-  FooCanvasGroup *group = NULL;
-  ZMapFeatureAlignment align ;
-  ZMapFeatureBlock     block;
-
-  if((block = (ZMapFeatureBlock)(feature_set->parent)) &&
-     (align = (ZMapFeatureAlignment)(block->parent)))
-    {
-      gboolean status;
-      ZMapWindowContainerFeatureSet container_set;
-      ZMapFeatureSetDesc f2c;
-
-	/* oh joy! an alternate path through the code so i get to debug any chages 2x */
-	f2c = g_hash_table_lookup(window->context_map->featureset_2_column, GUINT_TO_POINTER(feature_set->unique_id));
-	zMapAssert(f2c);
-
-      group = createColumnFull(parent_group, window,
-			       align, block, feature_set,
-                         f2c->column_ID,
-			       f2c->column_id,
-			       strand, frame, is_separator_col,
-			       width, top, bot);
-
-      status = zmapWindowFToIAddSet(window->context_to_item,
-                              align->unique_id,
-                              block->unique_id,
-                              feature_set->unique_id,
-                              strand, frame,
-                              group) ;
-      zMapAssert(status) ;
-
-      container_set = (ZMapWindowContainerFeatureSet) group;
-      if(!g_list_find(container_set->featuresets,GUINT_TO_POINTER(feature_set->unique_id)))
-        {
-            container_set->featuresets = g_list_prepend(container_set->featuresets,
-                              GUINT_TO_POINTER(feature_set->unique_id));
-        }
-
-    }
-  else if(feature_set)
-    {
-      if(!block)
-	zMapLogCritical("Featureset '%s' has no block parent.", g_quark_to_string(feature_set->original_id));
-      if(!align)
-	zMapLogCritical("Featureset '%s' has no align parent.", g_quark_to_string(feature_set->original_id));
-    }
-  else
-    zMapLogCritical("%s", "No featureset!");
-
-  return group;
-}
-
-#endif
 
 GQuark zMapWindowGetFeaturesetContainerID(ZMapWindow window,GQuark featureset_id)
 {
@@ -2587,13 +2341,6 @@ static FooCanvasGroup *createColumnFull(ZMapWindowContainerFeatures parent_group
       if (strand == ZMAPSTRAND_REVERSE)
 	foo_canvas_item_lower_to_bottom(FOO_CANVAS_ITEM(container));
 
-#if GROUP_REPOS
-// erm.... we just created the group so there are no features WTF was going on here??? only place this is called from
-
-      /* By default we do not redraw our children which are the individual features, the canvas
-       * should do this for us. */
-      zmapWindowContainerGroupChildRedrawRequired(container, FALSE) ;
-#endif
 
       /* Make sure group covers whole span in y direction. */
       zmapWindowContainerGroupBackgroundSize(container, bot-top) ;
@@ -2844,29 +2591,6 @@ static void removeEmptyColumnCB(gpointer data, gpointer user_data)
  *                           Event handlers
  */
 
-#if USE_BACKGROUND
-static gboolean strandBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data)
-{
-  gboolean event_handled = FALSE;
-
-  switch (event->type)
-    {
-    case GDK_BUTTON_PRESS:
-      {
-	GdkEventButton *but_event = (GdkEventButton *)event ;
-        if(but_event->button == 1)
-          {
-
-          }
-      }
-      break;
-    default:
-      break;
-    }
-
-  return event_handled;
-}
-#endif
 
 /* Handles events on a column, currently this is only mouse press/release events for
  * highlighting and column menus. */
