@@ -50,6 +50,8 @@
  * - GeneFinderFeatures       controls fetching/display of gene finder features
  *
  * - Assembly_path            display of clone/tiling path for virtual sequence
+ * 
+ * - Scratch                  display a 'scratch-pad' column for editing temporary features
  *
  */
 
@@ -78,6 +80,8 @@
 #define ZMAP_FIXED_STYLE_SEARCH_MARKERS_TEXT TEXT_PREFIX "display location of matches to query."
 #define ZMAP_FIXED_STYLE_ASSEMBLY_PATH_NAME "Assembly path"
 #define ZMAP_FIXED_STYLE_ASSEMBLY_PATH_TEXT TEXT_PREFIX "assembly path for displayed sequence."
+#define ZMAP_FIXED_STYLE_SCRATCH_NAME "Scratch"
+#define ZMAP_FIXED_STYLE_SCRATCH_TEXT TEXT_PREFIX "scratch-pad column for creating/editing temporary features."
 
 /* The opts struct */
 #define ZMAP_STYLE_DEFAULT_HIDE_INITIALLY  FALSE

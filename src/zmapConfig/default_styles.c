@@ -312,6 +312,12 @@ non-assembly-colours = normal fill brown ; normal border black ; selected fill r
 description=assembly path for displayed sequence\n\
 parent-style=assembly\n\
 \n\
+[style-Scratch]\n\
+description=scratch-pad column for creating/editing temporary features\n\
+parent-style=transcript\n\
+# width in characters\n\
+width=10\n\
+\n\
 \n\
 \n\
 ";
