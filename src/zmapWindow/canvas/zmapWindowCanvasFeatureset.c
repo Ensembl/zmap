@@ -1042,11 +1042,8 @@ guint zMapWindowCanvasFeaturesetGetId(ZMapWindowFeaturesetItem featureset)
 /* scope issues.... */
 void zMapWindowCanvasFeaturesetSetWidth(ZMapWindowFeaturesetItem featureset, double width)
 {
-  FooCanvasItem *foo = (FooCanvasItem *) featureset;
   featureset->width = width;
-
-  if(!foo->canvas->doing_update)	/* will be a stretchy CanvasFeatureset being adjusted during an update */
-	foo_canvas_item_request_update ((FooCanvasItem *) featureset);
+//printf("CFS width set to %s %f\n",g_quark_to_string(featureset->id), width);
 }
 
 double zMapWindowCanvasFeaturesetGetWidth(ZMapWindowFeaturesetItem featureset)
@@ -1274,10 +1271,6 @@ void zMapWindowCanvasFeaturesetRedraw(ZMapWindowFeaturesetItem fi, double zoom)
   foo_canvas_w2c (foo->canvas, x1 + i2w_dx, i2w_dy, &cx1, &cy1);
   foo_canvas_w2c (foo->canvas, x1 + width + i2w_dx, fi->end - fi->start + i2w_dy, &cx2, &cy2);
 
-  /* need to expose + 1, plus for glyphs add on a bit: bodged to 8 pixels
-   * really ought to work out max glyph size or rather have true featrue extent
-   * NOTE this is only currently used via OTF remove exisitng features
-   */
   foo_canvas_request_redraw (foo->canvas, cx1, cy1, cx2 + 1, cy2 + 1);
 }
 

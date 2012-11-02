@@ -160,7 +160,6 @@ ZMapWindowContainerGroup zmapWindowContainerChildGetParent(FooCanvasItem *item)
 	  ZMAP_IS_CONTAINER_OVERLAY(item)    ||
 	  ZMAP_IS_CONTAINER_UNDERLAY(item))
     {
-	/* there's a bug in this code i just iffed out! should be item->parent !!! */
       if ((item = item->parent) && ZMAP_IS_CONTAINER_GROUP(item))
 	container_group = ZMAP_CONTAINER_GROUP(item);
     }

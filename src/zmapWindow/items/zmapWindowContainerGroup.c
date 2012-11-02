@@ -1265,7 +1265,6 @@ static void zmap_window_container_group_update (FooCanvasItem *item, double i2w_
 
 	if(this_container->flags.need_reposition)
 	flags |= ZMAP_CANVAS_UPDATE_NEED_REPOSITION;
-
       current_x = parent_container->reposition_x;
       current_y = parent_container->reposition_y;
     }
@@ -1273,7 +1272,9 @@ static void zmap_window_container_group_update (FooCanvasItem *item, double i2w_
   doing_reposition = ((flags & ZMAP_CANVAS_UPDATE_NEED_REPOSITION) == ZMAP_CANVAS_UPDATE_NEED_REPOSITION);
   need_cropping    = ((flags & ZMAP_CANVAS_UPDATE_CROP_REQUIRED)   == ZMAP_CANVAS_UPDATE_CROP_REQUIRED);
 
-doing_reposition = TRUE;
+  doing_reposition = TRUE;
+
+
 #if UPDATE_DEBUG
 	char *name = "no name";
 	ZMapFeatureAny feature_any = this_container->feature_any;
@@ -1342,9 +1343,10 @@ printf("group update %s\n", x);
 			// as all are implemented as empty ZMapWindowCanvasFeaturesets
 			/* the background expands to cover the data inside the group */
 
+//printf("featureset %s %x %f\n",g_quark_to_string(zMapWindowCanvasFeaturesetGetId(featureset)), zMapWindowCanvasFeaturesetGetLayer(featureset), zMapWindowCanvasFeaturesetGetWidth(featureset));
+
 			if(layer & ZMAP_CANVAS_LAYER_STRETCH_X)
 			{
-
 				foo->x1 = item->x1;
 				foo->x2 = item->x2;
 				foo_canvas_c2w(foo->canvas,foo->x2 - foo->x1, 0, &size, NULL);
@@ -1393,6 +1395,7 @@ printf("group position: %d %s %.1f %.1f (%.1f %.1f %.1f %.1f)\n",this_container-
 #endif
     }
 
+//printf("group width = %f\n", item->x2 - item->x1);
 
 #if GROUP_REPOS
   /* Always do these, whatever else went on. No question! */

@@ -885,7 +885,9 @@ static void positionColumnCB(ZMapWindowContainerGroup container, FooCanvasPoints
 			}
 		}
 
-		group->xpos = pc->block_cur_x;
+
+		g_object_set(G_OBJECT(group), "x",pc->block_cur_x, NULL);	/* this sets deep update flags */
+//		group->xpos = pc->block_cur_x;
 //if(cfs) printf("pos col %s %f %f %f\n",g_quark_to_string(zMapWindowCanvasFeaturesetGetId(cfs)), pc->block_cur_x, pc->block_spacing_x, width);
 		pc->block_cur_x += pc->block_spacing_x + col_width;
 

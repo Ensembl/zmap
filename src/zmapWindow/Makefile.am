@@ -110,9 +110,6 @@ items/zmapWindowContainerAlignment_I.h \
 items/zmapWindowContainerBlock.c \
 items/zmapWindowContainerBlock.h \
 items/zmapWindowContainerBlock_I.h \
-items/zmapWindowContainerChildren.c \
-items/zmapWindowContainerChildren.h \
-items/zmapWindowContainerChildren_I.h \
 items/zmapWindowContainerContext.c \
 items/zmapWindowContainerContext.h \
 items/zmapWindowContainerContext_I.h \
@@ -122,9 +119,6 @@ items/zmapWindowContainerFeatureSet_I.h \
 items/zmapWindowContainerGroup.c \
 items/zmapWindowContainerGroup.h \
 items/zmapWindowContainerGroup_I.h \
-items/zmapWindowContainerStrand.c \
-items/zmapWindowContainerStrand.h \
-items/zmapWindowContainerStrand_I.h \
 items/zmapWindowContainerUtils.c \
 items/zmapWindowContainerUtils.h \
 items/zmapWindowContainerUtils_P.h \
