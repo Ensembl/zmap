@@ -78,10 +78,6 @@ static gboolean end_handler(GtkWidget *widget, GdkEvent  *event, gpointer realiz
 gboolean xremote_debug_GG = TRUE ;
 
 
-/* external globals */
-gboolean xremote_debug_GG = TRUE ;
-
-
 /* Local globals */
 static gboolean events_debug_G = FALSE ;
 
