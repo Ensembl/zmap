@@ -1427,7 +1427,7 @@ static void featureFilter(ZMapDAS1Feature feature, gpointer user_data)
 
           zMapFeatureAddStandardData(new_feature, feature_name,
                                      short_ft_name, NULL, method_name,
-                                     feature_type, style,
+                                     feature_type,  &feature_set->style, // style,
                                      feature->start, feature->end,
                                      has_score, feature->score,
                                      feature_strand) ;
@@ -1444,7 +1444,7 @@ static void featureFilter(ZMapDAS1Feature feature, gpointer user_data)
 
           if(zMapFeatureAddStandardData(new_feature, feature_name,
                                         short_ft_name, NULL, method_name,
-                                        feature_type, style,
+                                        feature_type, &feature_set->style, // style,
                                         feature->start, feature->end,
                                         has_score, feature->score,
                                         feature_strand))
@@ -1616,8 +1616,8 @@ static void fixFeatureCache(gpointer key, gpointer data, gpointer user_data)
   /* add feature to the correct set! Not just this block! To do this: */
   /* find the feature_set.  If it doesn't exist create it.
    * I haven't got time to work out why */
-  style_id  = feature->style_id;
-  type_name = (char *)g_quark_to_string(feature->style_id);
+  style_id  = (*feature->style)->unique_id;
+  type_name = (char *)g_quark_to_string(style_id);
 
   if((feature_set = g_hash_table_lookup(block->feature_sets, GINT_TO_POINTER(style_id))) == NULL)
     {

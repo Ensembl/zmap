@@ -185,6 +185,8 @@ typedef struct
 
   GList *required_styles_in ;
 
+  gboolean req_styles;
+
   /* Some styles specify the mode/type of the features they represent (e.g. "transcript like",
    * "text" etc.), zmap requires that the style mode is set otherwise the features
    * referencing that style will _not_ be displayed. This flag records whether the styles

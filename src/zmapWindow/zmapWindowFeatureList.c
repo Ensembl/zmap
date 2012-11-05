@@ -711,7 +711,7 @@ static void feature_style_to_value (GValue *value, gpointer feature_data)
       switch(feature_any->struct_type)
       {
       case ZMAPFEATURE_STRUCT_FEATURE:
-        g_value_set_string(value, g_quark_to_string(feature_any->style_id));
+        g_value_set_string(value, g_quark_to_string((*feature_any->style)->unique_id));
         break;
       default:
         break;

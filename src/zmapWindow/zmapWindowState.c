@@ -24,7 +24,7 @@
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- * Description: Implements saving state for zmapwindow prior to 
+ * Description: Implements saving state for zmapwindow prior to
  *              operations after which we must restore ourselves.
  *
  * Exported functions: See zmapWindowState.h
@@ -732,8 +732,9 @@ static void state_bumped_columns_restore(ZMapWindow window, ZMapWindowBumpStateS
 	      printf("bump restore col %s = %d\n", g_quark_to_string(container_set->original_id),zmapWindowContainerFeatureSetGetBumpMode(container_set));
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-
+#if OBSOLETE
 	      zmapWindowContainerFeatureSetSortFeatures(container_set, 0);
+#endif
 
 	      /* Only bump if it's different from current.
 	       * This _implicit_ test is the only way to currently check this as
@@ -802,7 +803,7 @@ static gboolean serialize_item(FooCanvasItem *item, SerializedItemStruct *serial
       container_set = (ZMapWindowContainerFeatureSet)container_group ;
 
       /* we need to record strand stuff here.......otherwise we can't set strand correctly later.....*/
-      serialize->strand_specific = zMapStyleIsStrandSpecific(feature->style) ;
+      serialize->strand_specific = zMapStyleIsStrandSpecific(*feature->style) ;
 
 
       serialize->strand     = container_set->strand;

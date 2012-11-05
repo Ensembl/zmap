@@ -108,8 +108,8 @@ static void zmap_window_item_feature_set_get_property(GObject    *gobject,
 						      GParamSpec *pspec);
 static void zmap_window_item_feature_set_destroy     (GtkObject *gtkobject);
 
-static gint comparePosition(gconstpointer a, gconstpointer b);
-static gint comparePositionRev(gconstpointer a, gconstpointer b);
+//static gint comparePosition(gconstpointer a, gconstpointer b);
+//static gint comparePositionRev(gconstpointer a, gconstpointer b);
 
 //static void extract_value_from_style_table(gpointer key, gpointer value, gpointer user_data);
 //static void value_to_each_style_in_table(gpointer key, gpointer value, gpointer user_data);
@@ -837,6 +837,8 @@ void zmapWindowContainerFeatureSetRemoveAllItems(ZMapWindowContainerFeatureSet c
 }
 
 
+#if OBSOLETE
+
 /*!
  * \brief Sort all the features in a columns.
  *
@@ -878,6 +880,11 @@ void zmapWindowContainerFeatureSetSortFeatures(ZMapWindowContainerFeatureSet con
 }
 
 
+
+
+/* this never worked properly w/ more than one focus item
+ * Canvas featureset handles ontopiness as a display function that does not affect the data
+ */
 /*
       take a focus item from the front of the container/foo canvas group item_list
       and move it to where it should be when sorted
@@ -975,6 +982,8 @@ gboolean zmapWindowContainerFeatureSetItemLowerToMiddle(ZMapWindowContainerFeatu
   return TRUE ;
 }
 
+#endif
+
 ZMapWindow zMapWindowContainerFeatureSetGetWindow(ZMapWindowContainerFeatureSet container_set)
 {
       return container_set->window;
@@ -1013,7 +1022,7 @@ void zMapWindowContainerFeatureSetShowHideMaskedFeatures(ZMapWindowContainerFeat
         {
 		item = ZMAP_CANVAS_ITEM(list->data);
 		feature = item->feature;
-		style = feature->style;
+		style = *feature->style;
 
         	if(ZMAP_IS_WINDOW_FEATURESET_ITEM(list->data))
         	{
@@ -1052,7 +1061,7 @@ ZMapStyleBumpMode zMapWindowContainerFeatureSetGetContainerBumpMode(ZMapWindowCo
 
 
 
-
+#if OBSOLETE
 /*!
  * \brief Unset the sorted flag for the featureset to force a re-sort on display eg after adding a feature
  *
@@ -1065,7 +1074,7 @@ void zMapWindowContainerFeatureSetMarkUnsorted(ZMapWindowContainerFeatureSet con
 {
       container_set->sorted = FALSE;
 }
-
+#endif
 
 /*!
  * \brief Time to free the memory associated with the ZMapWindowContainerFeatureSet.
@@ -1290,6 +1299,7 @@ static void zmap_window_item_feature_set_destroy(GtkObject *gtkobject)
  *                               INTERNAL
  */
 
+#if OBSOLETE
 /* simple function to compare feature positions. */
 static gint comparePosition(gconstpointer a, gconstpointer b)
 {
@@ -1332,6 +1342,7 @@ static gint comparePosition(gconstpointer a, gconstpointer b)
   return result ;
 }
 
+
 /* opposite order of comparePosition */
 static gint comparePositionRev(gconstpointer a, gconstpointer b)
 {
@@ -1341,7 +1352,7 @@ static gint comparePositionRev(gconstpointer a, gconstpointer b)
 
   return result;
 }
-
+#endif
 
 
 

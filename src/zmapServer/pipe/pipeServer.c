@@ -186,6 +186,14 @@ static void getConfiguration(PipeServer server)
         server->data_dir = g_get_current_dir();
       }
 
+      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+                               ZMAPSTANZA_APP_CSVER, &tmp_string))
+	{
+		if(!g_ascii_strcasecmp(tmp_string,"Otter"))
+			server->is_otter = TRUE;
+	}
+
+
       zMapConfigIniContextDestroy(context);
     }
 }
@@ -214,9 +222,9 @@ static gboolean createConnection(void **server_out,
   server = (PipeServer)g_new0(PipeServerStruct, 1) ;
   *server_out = (void *)server ;
 
-  getConfiguration(server);	// get scripts directory
-
   server->config_file = g_strdup(config_file) ;
+
+  getConfiguration(server);	// get scripts directory
 
   server->scheme = url->scheme;
 
@@ -338,7 +346,7 @@ typedef struct pipe_arg
 #define PA_DATASET  4
 #define PA_SEQUENCE  8
 
-pipeArgStruct pipe_args[] =
+pipeArgStruct otter_args[] =
 {
       { "start", PA_INT,PA_START },
       { "end", PA_INT,PA_END },
@@ -346,6 +354,16 @@ pipeArgStruct pipe_args[] =
       { "gff_seqname", PA_STRING,PA_SEQUENCE },
       { NULL, 0, 0 }
 };
+
+pipeArgStruct zmap_args[] =
+{
+      { "start", PA_INT,PA_START },
+      { "end", PA_INT,PA_END },
+//      { "dataset", PA_STRING,PA_DATASET },	may need when mapping available
+      { "gff_seqname", PA_STRING,PA_SEQUENCE },
+      { NULL, 0, 0 }
+};
+
 #define PIPE_MAX_ARGS   8    // extra args we add on to the query, including the program and terminating NULL
 
 static char *make_arg(pipeArg pipe_arg, char *prefix,PipeServer server)
@@ -420,9 +438,9 @@ static gboolean pipe_server_spawn(PipeServer server,GError **error)
       char *q;
       p = q_args[i-1] + strlen(minus);
 
-      for(pipe_arg = pipe_args; pipe_arg->type; pipe_arg++)
+	pipe_arg = server->is_otter ? otter_args : zmap_args;
+      for(; pipe_arg->type; pipe_arg++)
       {
-
             if(!g_ascii_strncasecmp(p,pipe_arg->arg,strlen(pipe_arg->arg)))
             {
                   arg_done |= pipe_arg->flag;
@@ -440,7 +458,8 @@ static gboolean pipe_server_spawn(PipeServer server,GError **error)
   }
 
       /* add on if not defined already */
-  for(pipe_arg = pipe_args; pipe_arg->type; pipe_arg++)
+  pipe_arg = server->is_otter ? otter_args : zmap_args;
+  for(; pipe_arg->type; pipe_arg++)
   {
       if(!(arg_done & pipe_arg->flag))
       {
@@ -996,6 +1015,8 @@ static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles, Z
   zMapGFFParseSetSourceHash(server->parser, server->featureset_2_column, server->source_2_sourcedata) ;
 
   zMapGFFParserInitForFeatures(server->parser, styles, FALSE) ;  // FALSE = create features
+  zMapGFFSetDefaultToBasic(server->parser, TRUE);
+
 
   // default to OK, previous pipeGetSequence() could have set unsupported
   // if no DNA was provided
@@ -1078,7 +1099,9 @@ static void eachBlockSequence(gpointer key, gpointer data, gpointer user_data)
 	    {
 	      ZMapFeatureTypeStyle dna_style = NULL;
 	      ZMapFeature feature;
+		GHashTable *hash = zMapGFFParserGetStyles(server->parser);
 
+#if 0
 	      /* This temp style creation feels wrong, and probably is,
 	       * but we don't have the merged in default styles in here,
 	       * or so it seems... */
@@ -1089,8 +1112,24 @@ static void eachBlockSequence(gpointer key, gpointer data, gpointer user_data)
 						    sequence->sequence, sequence->length);
 
 	      zMapStyleDestroy(dna_style);
+#else
+		/* the servers need styles to add DNA and 3FT
+		 * they used to create temp style and then destroy these but that's not very good
+		 * they don't have styles info directly but this is stored in the parser
+		 * during the protocol steps, so i wrote a GFF function to supply that info
+		 * Now that features have style ref'd indirectly via the featureset we can't use temp data
+		 */
+
+		if(hash)
+			dna_style = g_hash_table_lookup(hash, GUINT_TO_POINTER(g_quark_from_string(ZMAP_FIXED_STYLE_DNA_NAME)));
+		if(dna_style)
+			feature = zMapFeatureDNACreateFeature(feature_block, dna_style,
+						    sequence->sequence, sequence->length);
+#endif
 	    }
 
+
+// this is insane: asking a pipe server for 3FT, however some old code might expect it
 	  context = (ZMapFeatureContext)zMapFeatureGetParentGroup((ZMapFeatureAny)feature_block,
 								  ZMAPFEATURE_STRUCT_CONTEXT) ;
 
@@ -1100,13 +1139,30 @@ static void eachBlockSequence(gpointer key, gpointer data, gpointer user_data)
 	      if ((zMapFeature3FrameTranslationCreateSet(feature_block, &feature_set)))
 	      {
 		  ZMapFeatureTypeStyle frame_style = NULL;
-
+		  ZMapFeature feature;
+#if 0
+		/* NOTE: this old code has the wrong style name ! */
 		  frame_style = zMapStyleCreate(ZMAP_FIXED_STYLE_DNA_NAME,
 						ZMAP_FIXED_STYLE_DNA_NAME_TEXT);
 
 		  zMapFeature3FrameTranslationSetCreateFeatures(feature_set, frame_style);
 
 		  zMapStyleDestroy(frame_style);
+#else
+		/* the servers need styles to add DNA and 3FT
+		 * they used to create temp style and then destroy these but that's not very good
+		 * they don't have styles info directly but this is stored in the parser
+		 * during the protocol steps, so i wrote a GFF function to supply that info
+		 * Now that features have style ref'd indirectly via the featureset we can't use temp data
+		 */
+		GHashTable *hash = zMapGFFParserGetStyles(server->parser);
+
+		if(hash)
+			frame_style = g_hash_table_lookup(hash, GUINT_TO_POINTER(g_quark_from_string(ZMAP_FIXED_STYLE_3FT_NAME)));
+		if(frame_style)
+			feature = zMapFeatureDNACreateFeature(feature_block, frame_style,
+						    sequence->sequence, sequence->length);
+#endif
 		}
 	    }
 

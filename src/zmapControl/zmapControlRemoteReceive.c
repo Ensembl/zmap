@@ -33,11 +33,6 @@
 
 #include <ZMap/zmap.h>
 
-
-
-
-
-
 #include <string.h>
 
 #include <ZMap/zmapView.h>
@@ -61,12 +56,17 @@ enum
     ZMAPCONTROL_REMOTE_UNKNOWN
   }ZMapControlValidXRemoteActions;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 typedef struct
 {
-  GQuark sequence;
-  gint   start, end;
-  char *config;
+  GQuark sequence ;
+  int start ;
+  int end ;
+  char *config_file ;
 }ViewConnectDataStruct, *ViewConnectData;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 typedef struct
 {
@@ -77,8 +77,8 @@ typedef struct
 
   unsigned long xwid ;
 
-  ViewConnectDataStruct view_params;
-}RequestDataStruct, *RequestData;
+  ZMapFeatureSequenceMapStruct seq_map ;
+}RequestDataStruct, *RequestData ;
 
 typedef struct
 {
@@ -111,9 +111,9 @@ static gboolean xml_zmap_start_cb(gpointer user_data,
 static gboolean xml_request_start_cb(gpointer user_data,
 				     ZMapXMLElement zmap_element,
 				     ZMapXMLParser parser);
-static gboolean xml_segment_end_cb(gpointer user_data,
-                                   ZMapXMLElement segment,
-                                   ZMapXMLParser parser);
+static gboolean xml_segment_start_cb(gpointer user_data,
+				     ZMapXMLElement segment,
+				     ZMapXMLParser parser);
 static gboolean xml_location_end_cb(gpointer user_data,
                                     ZMapXMLElement segment,
                                     ZMapXMLParser parser);
@@ -134,15 +134,16 @@ static ZMapXMLObjTagFunctionsStruct control_starts_G[] = {
   { "featureset", xml_featureset_start_cb },
   { "feature",    xml_feature_start_cb    },
 #endif
+  { "segment",    xml_segment_start_cb    },
 
   { "client",     zMapXRemoteXMLGenericClientStartCB },
   {NULL, NULL}
 };
+
 static ZMapXMLObjTagFunctionsStruct control_ends_G[] = {
   { "zmap",       xml_return_true_cb    },
   { "request",    xml_return_true_cb    },
   { "feature",    xml_return_true_cb    },
-  { "segment",    xml_segment_end_cb    },
 
 #ifdef NOT_YET
   { "subfeature", xml_subfeature_end_cb },
@@ -210,6 +211,10 @@ static char *control_execute_command(char *command_text, gpointer user_data,
       goto HAVE_RESPONSE;
     }
 
+
+  zMapDebugPrint(xremote_debug_GG, "ZMap Control Remote Handler: %s",  command_text) ; 
+
+
   input_data.zmap = zmap;
   input.user_data = &input_data;
 
@@ -232,6 +237,8 @@ static char *control_execute_command(char *command_text, gpointer user_data,
           createClient(zmap, &input, &output_data);
           break;
         case ZMAPCONTROL_REMOTE_NEW_VIEW:
+	  input_data.seq_map.dataset = zmap->default_sequence->dataset;   /* provide a default FTM */
+
           insertView(zmap, &input_data, &output_data);
           break;
         case ZMAPCONTROL_REMOTE_CLOSE_VIEW:
@@ -248,8 +255,8 @@ static char *control_execute_command(char *command_text, gpointer user_data,
       *statusCode = output_data.code;
       if(input.common.action != ZMAPCONTROL_REMOTE_NEW_VIEW || output_data.code != ZMAPXREMOTE_OK)
         {
-            /* new view has to delay before responding */
-          xml_reply   = g_string_free(output_data.messages, FALSE);
+	  /* new view has to delay before responding */
+          xml_reply = g_string_free(output_data.messages, FALSE);
         }
     }
   else
@@ -283,17 +290,19 @@ static char *control_execute_command(char *command_text, gpointer user_data,
 
 static void insertView(ZMap zmap, RequestData input_data, ResponseData output_data)
 {
-  ViewConnectData view_params = &(input_data->view_params);
-  char *sequence;
+  ZMapView view ;
+  ZMapFeatureSequenceMap seq_map_in = &(input_data->seq_map) ;
 
-  if ((sequence = (char *)g_quark_to_string(view_params->sequence)) && view_params->config)
+  if (seq_map_in->sequence && seq_map_in->start >= 1 && seq_map_in->end >= seq_map_in->start)
     {
       ZMapFeatureSequenceMap seq_map ;
-      ZMapView view;
+      char *err_msg = NULL ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      /* Is this needed now.....oh....probably need dataset= in the xml..... */
 
 #warning we need to get dataset (= species) from otterlace with added XML
       //      zMapAssert(zmap->default_sequence);
-
       if (!zmap->default_sequence || !zmap->default_sequence->dataset)
 	{
 	  /* there has been a major configuration error */
@@ -303,38 +312,26 @@ static void insertView(ZMap zmap, RequestData input_data, ResponseData output_da
                                  "No sequence specified in ZMap config - cannot create view");
 	  return;
 	}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
       seq_map = g_new0(ZMapFeatureSequenceMapStruct,1) ;
-      seq_map->dataset = zmap->default_sequence->dataset;   /* provide a default FTM */
-      seq_map->sequence = sequence;
-      seq_map->start = view_params->start;
-      seq_map->end = view_params->end;
+      *seq_map = *seq_map_in ;
 
-      if ((view = zMapAddView(zmap, seq_map)))
-        {
-          zMapViewReadConfigBuffer(view, view_params->config);
+      /* call to add view needed here with err_msg return etc..... */
+      if ((view = zmapControlInsertView(zmap, seq_map, &err_msg)))
+	{
+	  char *xml = NULL;
 
-          if (!(zmapConnectViewConfig(zmap, view, view_params->config)))
-            {
-	      zmapControlRemoveView(zmap, view) ;
-
-              output_data->code = ZMAPXREMOTE_UNKNOWNCMD;
-              g_string_append_printf(output_data->messages, "view connection failed.") ;
-            }
-          else
-            {
-              char *xml = NULL;
-
-              output_data->code = ZMAPXREMOTE_OK;
-              xml = zMapViewRemoteReceiveAccepts(view);
-              g_string_append(output_data->messages, xml);
-              g_free(xml);
-            }
-        }
+	  output_data->code = ZMAPXREMOTE_OK;
+	  xml = zMapViewRemoteReceiveAccepts(view);
+	  g_string_append(output_data->messages, xml);
+	  g_free(xml);
+	}
       else
         {
           output_data->code = ZMAPXREMOTE_INTERNAL;
-          g_string_append_printf(output_data->messages, "failed to create view") ;
+          g_string_append(output_data->messages, err_msg) ;
+	  g_free(err_msg) ;
         }
     }
 
@@ -423,13 +420,16 @@ static void createClient(ZMap zmap, ZMapXRemoteParseCommandData input_data, Resp
 }
 
 
-/* Handlers */
+
+/*
+ *                 XML Handlers
+ */
+
 
 /* all the action happens in <request> now. */
 static gboolean xml_zmap_start_cb(gpointer user_data, ZMapXMLElement zmap_element,
                                   ZMapXMLParser parser)
 {
-
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   ZMapXRemoteParseCommandData parsing_data = (ZMapXRemoteParseCommandData)user_data;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
@@ -453,15 +453,18 @@ static gboolean xml_request_start_cb(gpointer user_data, ZMapXMLElement zmap_ele
 
       parsing_data->common.action = ZMAPCONTROL_REMOTE_INVALID;
 
-      for(i = ZMAPCONTROL_REMOTE_INVALID + 1; i < ZMAPCONTROL_REMOTE_UNKNOWN; i++)
+      for (i = ZMAPCONTROL_REMOTE_INVALID + 1; i < ZMAPCONTROL_REMOTE_UNKNOWN; i++)
         {
-          if(action == g_quark_from_string(actions_G[i]))
-            parsing_data->common.action = i;
+          if (action == g_quark_from_string(actions_G[i]))
+	    {
+	      parsing_data->common.action = i;
+	      break ;
+	    }
         }
 
       /* unless((action > INVALID) and (action < UNKNOWN)) */
-      if(!(parsing_data->common.action > ZMAPCONTROL_REMOTE_INVALID &&
-           parsing_data->common.action < ZMAPCONTROL_REMOTE_UNKNOWN))
+      if(!(parsing_data->common.action > ZMAPCONTROL_REMOTE_INVALID
+	   && parsing_data->common.action < ZMAPCONTROL_REMOTE_UNKNOWN))
         {
           zMapLogWarning("action='%s' is unknown", g_quark_to_string(action));
           parsing_data->common.action = ZMAPCONTROL_REMOTE_UNKNOWN;
@@ -476,7 +479,7 @@ static gboolean xml_request_start_cb(gpointer user_data, ZMapXMLElement zmap_ele
   return FALSE;
 }
 
-static gboolean xml_segment_end_cb(gpointer user_data, ZMapXMLElement segment,
+static gboolean xml_segment_start_cb(gpointer user_data, ZMapXMLElement segment,
                                    ZMapXMLParser parser)
 {
   ZMapXRemoteParseCommandData xml_data = (ZMapXRemoteParseCommandData)user_data;
@@ -484,23 +487,24 @@ static gboolean xml_segment_end_cb(gpointer user_data, ZMapXMLElement segment,
   ZMapXMLAttribute attr = NULL;
 
   if((attr = zMapXMLElementGetAttributeByName(segment, "sequence")) != NULL)
-    request_data->view_params.sequence = zMapXMLAttributeGetValue(attr);
+    request_data->seq_map.sequence = (char *)g_quark_to_string(zMapXMLAttributeGetValue(attr)) ;
 
   if((attr = zMapXMLElementGetAttributeByName(segment, "start")) != NULL)
-    request_data->view_params.start = strtol(g_quark_to_string(zMapXMLAttributeGetValue(attr)), (char **)NULL, 10);
+    request_data->seq_map.start = strtol(g_quark_to_string(zMapXMLAttributeGetValue(attr)), (char **)NULL, 10);
   else
-    request_data->view_params.start = 1;
+    request_data->seq_map.start = 1;
 
   if((attr = zMapXMLElementGetAttributeByName(segment, "end")) != NULL)
-    request_data->view_params.end = strtol(g_quark_to_string(zMapXMLAttributeGetValue(attr)), (char **)NULL, 10);
+    request_data->seq_map.end = strtol(g_quark_to_string(zMapXMLAttributeGetValue(attr)), (char **)NULL, 10);
   else
-    request_data->view_params.end = 0;
+    request_data->seq_map.end = 0;
 
-  /* Need to put contents into a source stanza buffer... */
-  request_data->view_params.config = zMapXMLElementStealContent(segment);
+  if((attr = zMapXMLElementGetAttributeByName(segment, "config-file")) != NULL)
+    request_data->seq_map.config_file = (char *)g_quark_to_string(zMapXMLAttributeGetValue(attr)) ;
 
-  return TRUE;
+  return TRUE ;
 }
+
 
 static gboolean xml_location_end_cb(gpointer user_data, ZMapXMLElement zmap_element,
                                     ZMapXMLParser parser)

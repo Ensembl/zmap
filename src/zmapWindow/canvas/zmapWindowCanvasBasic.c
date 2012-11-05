@@ -63,7 +63,7 @@ void zMapWindowCanvasBasicPaintFeature(ZMapWindowFeaturesetItem featureset, ZMap
 	if(fill_set && feature->feature->population)
 	{
 		FooCanvasItem *foo = (FooCanvasItem *) featureset;
-		ZMapFeatureTypeStyle style = feature->feature->style;
+		ZMapFeatureTypeStyle style = *feature->feature->style;
 
 		if((zMapStyleGetScoreMode(style) == ZMAPSCORE_HEAT) || (zMapStyleGetScoreMode(style) == ZMAPSCORE_HEAT_WIDTH))
 		{

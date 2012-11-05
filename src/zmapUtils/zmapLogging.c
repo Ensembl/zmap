@@ -63,6 +63,8 @@
 
 #define ZMAPLOG_MAX_TRACE_SIZE 50
 
+#define FOO_LOG 0
+
 
 /* Common struct for all log handlers, we use these to turn logging on/off. */
 typedef struct
@@ -154,7 +156,6 @@ void foo_logger(char *x)
 	/* can;t call this frpm foo as it's a macro */
 	zMapLogWarning(x,"");
 }
-
 
 
 /* This function is NOT thread safe, you should not call this from individual threads. The log
@@ -884,7 +885,7 @@ static gboolean closeLogFile(ZMapLog log)
 
 
 /* Write out a start or stop record. */
-static void writeStartOrStopMessage(gboolean start)
+static void writeStartOrStopMessage(int start)
 {
   char *time_str ;
 
@@ -896,7 +897,6 @@ static void writeStartOrStopMessage(gboolean start)
 
   return ;
 }
-
 
 
 

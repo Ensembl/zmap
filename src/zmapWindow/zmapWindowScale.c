@@ -704,7 +704,8 @@ debug("draw scale %p\n",((FooCanvasItem *) group)->canvas);
 		font_height = 14.0;	/* don't just give up ! */
 		font_width = 8.0;
 		text_height = 14;
-		zMapLogWarning("DrawScale get font size failed","");
+//		zMapLogWarning("DrawScale get font size failed","");
+#warning fix the font size to work centrally
 	}
 
 	/* get the highest order ticks:  sequence and scroll are in chromosome coordinates but we display slice coordinates.... */

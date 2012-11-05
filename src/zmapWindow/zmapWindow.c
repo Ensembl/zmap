@@ -585,6 +585,9 @@ void zMapWindowDisplayData(ZMapWindow window, ZMapWindowState state,
   return ;
 }
 
+
+
+
 static ZMapFeatureContextExecuteStatus undisplayFeaturesCB(GQuark key,
                                                            gpointer data,
                                                            gpointer user_data,
@@ -629,8 +632,8 @@ static ZMapFeatureContextExecuteStatus undisplayFeaturesCB(GQuark key,
        * This is true when otterlace sends a single feature to delete and then we fail to find
        * the extra locus feature
        *
-       * regardless of that if we have features that are not displayed due to config this couls also fail
-       * so if not column_id defined log a warnign adn fail silently.
+       * regardless of that if we have features that are not displayed due to config this could also fail
+       * so if not column_id defined log a warning and fail silently.
        *
        * locus is used in the naviagtor, we hope dealt with via another call.
        */
@@ -657,6 +660,7 @@ static ZMapFeatureContextExecuteStatus undisplayFeaturesCB(GQuark key,
   return status;
 }
 
+
 void zMapWindowUnDisplayData(ZMapWindow window,
                              ZMapFeatureContext current_features,
                              ZMapFeatureContext new_features)
@@ -670,6 +674,71 @@ void zMapWindowUnDisplayData(ZMapWindow window,
 
   return ;
 }
+
+
+
+typedef struct
+{
+	ZMapWindow window;
+	GQuark align_id;
+	GQuark block_id;
+
+}
+_contextStack, *contextStack;
+
+
+static ZMapFeatureContextExecuteStatus undisplaySearchFeatureSetsCB(GQuark key,
+                                                           gpointer data,
+                                                           gpointer user_data,
+                                                           char **err_out)
+{
+  contextStack stuff = (contextStack) user_data ;
+  ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
+  ZMapFeatureSet set;
+  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
+
+  switch(feature_any->struct_type)
+  {
+  case ZMAPFEATURE_STRUCT_ALIGN:
+	  stuff->align_id = feature_any->unique_id;
+	  break;
+  case ZMAPFEATURE_STRUCT_BLOCK:
+	  stuff->block_id = feature_any->unique_id;
+	  break;
+
+    case ZMAPFEATURE_STRUCT_FEATURESET:
+	set = (ZMapFeatureSet) feature_any;
+
+	zmapWindowFToIRemoveSet(stuff->window->context_to_item,
+				  stuff->align_id, stuff->block_id, set->unique_id,
+				  ZMAPSTRAND_NONE, ZMAPFRAME_NONE, TRUE);
+      break;
+
+    default:
+      break;
+    }
+
+  return status;
+}
+
+
+/* this function is here to remove whole featuresets from the FtoiHash, which is a lot more effciecient than one feature at time */
+void zMapWindowUnDisplaySearchFeatureSets(ZMapWindow window,
+                             ZMapFeatureContext current_features,
+                             ZMapFeatureContext new_features)
+{
+  _contextStack stuff = { NULL };
+
+  stuff.window = window;
+
+  zMapFeatureContextExecute((ZMapFeatureAny)new_features,
+			    ZMAPFEATURE_STRUCT_FEATURESET,
+			    undisplaySearchFeatureSetsCB,
+			    &stuff);
+
+  return ;
+}
+
 
 /* completely reset window. */
 void zMapWindowReset(ZMapWindow window)
@@ -1240,6 +1309,8 @@ void zMapWindowDestroy(ZMapWindow window)
   /* free the array of editor windows and the windows themselves */
   zmapWindowFreeWindowArray(&(window->feature_show_windows), TRUE) ;
 
+  if(window->style_window)
+	zmapStyleWindowDestroy(window);
 
   /* Get rid of the column configuration window. */
   zmapWindowColumnConfigureDestroy(window) ;
@@ -1524,7 +1595,7 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
 
       feature_group   = zmapWindowItemGetParentContainer(FOO_CANVAS_ITEM(top_canvas_item)) ;
 
-      style = feature->style;
+      style = *feature->style;
       select.feature_desc.struct_type = feature->struct_type ;
       select.feature_desc.type        = feature->type ;
 
@@ -2362,6 +2433,9 @@ static void resetCanvas(ZMapWindow window, gboolean free_child_windows, gboolean
 
       /* free the array of editor windows and the windows themselves */
       zmapWindowFreeWindowArray(&(window->feature_show_windows), FALSE) ;
+
+	if(window->style_window)
+		zmapStyleWindowDestroy(window);
     }
 
 	/* mh17 band aid approach to fixing 3FT columns
@@ -2896,7 +2970,7 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
 				       GTK_SIGNAL_FUNC(canvasWindowEventCB), (gpointer)window) ;
 	}
       else
-	zMapLogMessage("%s", "event handler for canvas already registered.");
+//	zMapLogMessage("%s", "event handler for canvas already registered.");
 
       g_free(feature_sets) ;
       g_free(window_data) ;				    /* Free the WindowData struct. */
@@ -3113,26 +3187,26 @@ zMapLogWarning("canvas event %d",  event->type);
 		  && zMapWindowCanvasFeaturesetGetSeqCoord((ZMapWindowFeaturesetItem)item, TRUE,
 							   origin_x, origin_y, &seq_start, &seq_end))
 		{
-				/* get start coordinate via subpartspan from x and y
-				 * set end coordinate to be the same
-				 * set a flag to say selecting text and remember the canvas item
-				 * highlight the region
-				 */
+		  /* get start coordinate via subpartspan from x and y
+		   * set end coordinate to be the same
+		   * set a flag to say selecting text and remember the canvas item
+		   * highlight the region
+		   */
 
-//			if(zMapWindowCanvasFeaturesetGetSeqCoord((ZMapWindowFeaturesetItem) item, TRUE, origin_x, origin_y, &seq_start, &seq_end))
-			{
-				seq_item = item;
-				/*
-				* Although we start with a base Foo item the highlight code does a FToI lookup on the feature
-				 * to get the full ZMapCanvasItem whcih is sued to drive SeqDispSelByRegion()
-				 */
-				zmapWindowHighlightSequenceItem(window, seq_item, seq_start, seq_end);
+		  //			if(zMapWindowCanvasFeaturesetGetSeqCoord((ZMapWindowFeaturesetItem) item, TRUE, origin_x, origin_y, &seq_start, &seq_end))
+		  {
+		    seq_item = item;
+		    /*
+		     * Although we start with a base Foo item the highlight code does a FToI lookup on the feature
+		     * to get the full ZMapCanvasItem whcih is sued to drive SeqDispSelByRegion()
+		     */
+		    zmapWindowHighlightSequenceItem(window, seq_item, seq_start, seq_end);
 
-				/* NOTE we set feature list to NULL here, update info panel must handle */
-				zmapWindowUpdateInfoPanel(window, zMapWindowCanvasItemGetFeature(seq_item), NULL, seq_item, NULL, seq_start, seq_end, seq_start, seq_end, NULL, FALSE, FALSE, FALSE) ;
+		    /* NOTE we set feature list to NULL here, update info panel must handle */
+		    zmapWindowUpdateInfoPanel(window, zMapWindowCanvasItemGetFeature(seq_item), NULL, seq_item, NULL, seq_start, seq_end, seq_start, seq_end, NULL, FALSE, FALSE, FALSE) ;
 
-				event_handled = TRUE;
-			}
+		    event_handled = TRUE;
+		  }
 		}
 	      else
 		{
@@ -3283,12 +3357,12 @@ zMapLogWarning("canvas event %d",  event->type);
 
 	 if(seq_item)
 		{
-			zMapWindowCanvasFeaturesetGetSeqCoord((ZMapWindowFeaturesetItem) seq_item, FALSE,  wx, wy, &seq_start, &seq_end);
+		  zMapWindowCanvasFeaturesetGetSeqCoord((ZMapWindowFeaturesetItem) seq_item, FALSE,  wx, wy, &seq_start, &seq_end);
 
-			zmapWindowHighlightSequenceItem(window, seq_item, seq_start, seq_end);
+		  zmapWindowHighlightSequenceItem(window, seq_item, seq_start, seq_end);
 
-			/* NOTE we set feature list to NULL here, update info panel must handle */
-			zmapWindowUpdateInfoPanel(window, zMapWindowCanvasItemGetFeature(seq_item), NULL, seq_item, NULL, seq_start, seq_end, seq_start, seq_end, NULL, FALSE, FALSE, FALSE) ;
+		  /* NOTE we set feature list to NULL here, update info panel must handle */
+		  zmapWindowUpdateInfoPanel(window, zMapWindowCanvasItemGetFeature(seq_item), NULL, seq_item, NULL, seq_start, seq_end, seq_start, seq_end, NULL, FALSE, FALSE, FALSE) ;
 		}
 	else if (dragging || guide)
 	  {
@@ -3479,19 +3553,19 @@ zMapLogWarning("canvas event %d",  event->type);
 
 	zMapDebugPrint(mouse_debug_G, "Start: button_release %d", but_event->button) ;
 
-	  if(seq_item)
+	if(seq_item)
 	  {
-		zMapWindowCanvasFeaturesetGetSeqCoord((ZMapWindowFeaturesetItem) seq_item, FALSE,  wx, wy, &seq_start, &seq_end);
+	    zMapWindowCanvasFeaturesetGetSeqCoord((ZMapWindowFeaturesetItem) seq_item, FALSE,  wx, wy, &seq_start, &seq_end);
 
-		zmapWindowHighlightSequenceItem(window, seq_item, seq_start, seq_end);
+	    zmapWindowHighlightSequenceItem(window, seq_item, seq_start, seq_end);
 
-		  /* NOTE we set feature list to NULL here, update info panel must handle */
-		zmapWindowUpdateInfoPanel(window, zMapWindowCanvasItemGetFeature(seq_item), NULL, seq_item, NULL, seq_start, seq_end, seq_start, seq_end, NULL, FALSE, FALSE, FALSE) ;
+	    /* NOTE we set feature list to NULL here, update info panel must handle */
+	    zmapWindowUpdateInfoPanel(window, zMapWindowCanvasItemGetFeature(seq_item), NULL, seq_item, NULL, seq_start, seq_end, seq_start, seq_end, NULL, FALSE, FALSE, FALSE) ;
 
-		seq_item = NULL;
-		event_handled = TRUE;		    /* We _ARE_ handling */
+	    seq_item = NULL;
+	    event_handled = TRUE;		    /* We _ARE_ handling */
 	  }
-        else if (dragging)
+	else if (dragging)
           {
 	    GdkModifierType shift_mask = GDK_SHIFT_MASK, control_mask = GDK_CONTROL_MASK;
 	    /* refer to handleButton() in zmapWindowfeature.c re shift/num lock */
@@ -3505,7 +3579,7 @@ zMapLogWarning("canvas event %d",  event->type);
 		gboolean ctrl = zMapGUITestModifiers(but_event, control_mask);
 		gboolean shift = zMapGUITestModifiers(but_event, shift_mask);
 
-		if(shift || ctrl)
+		if (shift || ctrl)
 		  {
 		    /* make a list of the foo canvas items */
 		    GList *feature_list;
@@ -3523,13 +3597,12 @@ zMapLogWarning("canvas event %d",  event->type);
 //		    if ((item = foo_canvas_get_item_at(window->canvas, (rootx2 + rootx1) / 2, (rooty2 + rooty1) / 2) ))
 		    {
 			/* only finds features in a canvas featureset, old foo gives nothing */
-			feature_list = zMapWindowFeaturesetItemFindFeatures(&item, rooty1, rooty2, rootx1, rootx2);
+		      feature_list = zMapWindowFeaturesetItemFindFeatures(&item, rooty1, rooty2, rootx1, rootx2);
 		    }
 
-			/* this is how features get highlit */
-			if(item)
-				zmapWindowUpdateInfoPanel(window, zMapWindowCanvasItemGetFeature(item), feature_list, item, NULL, 0, 0, 0, 0, NULL, !shift, !ctrl, FALSE) ;
-
+		    /* this is how features get highlit */
+		    if(item)
+		      zmapWindowUpdateInfoPanel(window, zMapWindowCanvasItemGetFeature(item), feature_list, item, NULL, 0, 0, 0, 0, NULL, !shift, !ctrl, FALSE) ;
 		  }
 		else if (fabs(but_event->x - window_x) > ZMAP_WINDOW_MIN_LASSO
 			 || fabs(but_event->y - window_y) > ZMAP_WINDOW_MIN_LASSO)
@@ -3785,6 +3858,7 @@ void zmapWindowZoomToItem(ZMapWindow window, FooCanvasItem *item)
 void zmapWindowGetMaxBoundsItems(ZMapWindow window, GList *items,
 				 double *rootx1, double *rooty1, double *rootx2, double *rooty2)
 {
+
   MaxBoundsStruct max_bounds = {0.0} ;
 
   g_list_foreach(items, getMaxBounds, &max_bounds) ;

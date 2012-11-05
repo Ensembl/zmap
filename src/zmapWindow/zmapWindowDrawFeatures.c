@@ -86,6 +86,7 @@ typedef struct _ZMapCanvasDataStruct
 //  ZMapWindowContainerFeatures curr_forward_col ;
 //  ZMapWindowContainerFeatures curr_reverse_col ;
 
+  ZMapFeatureSet this_featureset_only;	/* when redrawing one featureset only */
 
   GHashTable *feature_hash ;
 
@@ -692,11 +693,11 @@ void zmapGetFeatureStack(ZMapWindowFeatureStack feature_stack,ZMapFeatureSet fea
 
   feature_stack->filter = FALSE;
 
-  if(feature && feature->style)	/* chicken */
+  if(feature && *feature->style)	/* chicken */
     {
-      if(zMapStyleIsStrandSpecific(feature->style))
+      if(zMapStyleIsStrandSpecific(*feature->style))
 		feature_stack->strand = zmapWindowFeatureStrand(NULL,feature);
-//      if(zMapStyleIsFrameSpecific(feature->style) && IS_3FRAME(display_3_frame))
+//      if(zMapStyleIsFrameSpecific(*feature->style) && IS_3FRAME(display_3_frame))
 //		feature_stack->frame = zmapWindowFeatureFrame(feature);
     }
    feature_stack->frame = frame;
@@ -1046,7 +1047,7 @@ void zmapWindowDraw3FrameFeatures(ZMapWindow window)
 
 
   zMapFeatureContextExecuteComplete((ZMapFeatureAny)full_context,
-				    ZMAPFEATURE_STRUCT_FEATURE,
+				    ZMAPFEATURE_STRUCT_FEATURESET,
 				    windowDrawContextCB,
 				    NULL, &canvas_data);
 
@@ -1173,7 +1174,7 @@ static void windowDrawContext(ZMapCanvasData     canvas_data,
 
   /* We iterate through the diff context to draw new data */
   zMapFeatureContextExecuteComplete((ZMapFeatureAny)diff_context,
-                                    ZMAPFEATURE_STRUCT_FEATURE,
+                                    ZMAPFEATURE_STRUCT_FEATURESET,
                                     windowDrawContextCB,
                                     NULL,
                                     canvas_data);
@@ -1187,6 +1188,75 @@ static void windowDrawContext(ZMapCanvasData     canvas_data,
 
 
   return ;
+}
+
+
+/* eg after changing the style, we remove the column fron the canvas and draw it again to handle stranding changes */
+void zmapWindowRedrawFeatureSet(ZMapWindow window, ZMapFeatureSet featureset)
+{
+  ZMapCanvasDataStruct canvas_data = {NULL};
+  ZMapFeatureContext full_context;
+
+  full_context = window->feature_context;
+
+  canvas_data.window        = window;
+  canvas_data.canvas        = window->canvas;
+  canvas_data.curr_x_offset = 0.0;
+  canvas_data.full_context  = full_context;
+  canvas_data.frame_mode_change = FALSE;       // refer to comment in feature_set_matches_frame_drawing_mode()
+
+  canvas_data.curr_root_group = zmapWindowContainerGetFeatures(window->feature_root_group) ;
+
+#if 0
+// pointers are all wrong after destroy
+
+  ZMapFeatureAlignment align;
+  ZMapFeatureBlock block;
+  ZMapFeatureContext diff_context = NULL;
+  gboolean is_master = FALSE;
+
+  block = (ZMapFeatureBlock) featureset->parent;
+  align = (ZMapFeatureAlignment) block->parent;
+
+  is_master = (full_context->master_align == align);
+
+  block = (ZMapFeatureBlock)zMapFeatureAnyCopy((ZMapFeatureAny)block);
+  align = (ZMapFeatureAlignment)zMapFeatureAnyCopy((ZMapFeatureAny)align);
+  diff_context = (ZMapFeatureContext)zMapFeatureAnyCopy((ZMapFeatureAny)full_context);
+
+
+  zMapFeatureContextAddAlignment(diff_context, align, is_master);
+  zMapFeatureAlignmentAddBlock(align, block);
+
+//  must not copy else the data we display will be freed
+//  featureset = zMapFeatureSetCopy(featureset);
+  zMapFeatureBlockAddFeatureSet(block, featureset);
+
+  /* have to do this to run the create column stuff */
+  zMapFeatureContextExecuteComplete((ZMapFeatureAny)diff_context,
+				    ZMAPFEATURE_STRUCT_FEATURESET,
+				    windowDrawContextCB,
+				    NULL, &canvas_data);
+
+   zMapFeatureBlockRemoveFeatureSet(block, featureset);
+
+   zMapFeatureContextDestroy(diff_context, TRUE);
+
+#else
+
+/* NOTE better to make the diff context work ?? */
+/* this is good for 1 featureset, which is what we have so right no not so */
+
+  canvas_data.this_featureset_only = featureset;
+
+  /* have to do this to run the create column stuff */
+  zMapFeatureContextExecuteComplete((ZMapFeatureAny) full_context,
+				    ZMAPFEATURE_STRUCT_FEATURESET,
+				    windowDrawContextCB,
+				    NULL, &canvas_data);
+
+#endif
+   zmapWindowHideEmpty(window);
 }
 
 
@@ -1349,17 +1419,23 @@ static FooCanvasGroup *find_or_create_column(ZMapCanvasData  canvas_data,
   /* MH17: map feature sets from context to canvas columns
    * refer to zmapGFF2parser.c/makeNewFeature()
    */
-  zMapAssert(window->context_map->featureset_2_column); /* will always be but let's play safe */
+//  zMapAssert(window->context_map->featureset_2_column); /* will always be but let's play safe */
+// except to handle autoconfigured servers we have to make this up
+  if(!window->context_map->featureset_2_column)
+	  window->context_map->featureset_2_column = g_hash_table_new(NULL,NULL);
+
   {
     ZMapFeatureSetDesc set_data ;
 
-    if ((set_data = g_hash_table_lookup(window->context_map->featureset_2_column,
-					GUINT_TO_POINTER(feature_set_id))))
-      {
+    set_data = g_hash_table_lookup(window->context_map->featureset_2_column, GUINT_TO_POINTER(feature_set_id));
+    zMapAssert(set_data);
+
+    zMapAssert(window->context_map->columns);
+	{
 	column_id = set_data->column_id;      /* the display column as a key */
 	display_id = set_data->column_ID;
 	f_col = g_hash_table_lookup(window->context_map->columns,GUINT_TO_POINTER(column_id));
-      }
+	}
     /* else we use the original feature_set_id
        which should never happen as the view creates a 1-1 mapping regardless */
   }
@@ -1759,7 +1835,6 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 	    x = 0.0 ;
 	    y = feature_block->block_to_sequence.block.x1 ;
 
-
 	    my_foo_canvas_item_w2i(FOO_CANVAS_ITEM(canvas_data->curr_align_group), &x, &y) ;
 
 	    foo_canvas_item_set(FOO_CANVAS_ITEM(block_group),
@@ -1880,10 +1955,7 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 	FooCanvasGroup *tmp_forward = NULL, *tmp_reverse = NULL ;
 	int frame_start, frame_end;
 	ZMapFeatureTypeStyle style;
-#if 0 //MH17_REVCOMP_DEBUG
-//	zMapLogWarning("featureset: drawing %s\n", g_quark_to_string(feature_any->unique_id));
-	printf("drawfeatureset: %s\n", g_quark_to_string(feature_any->unique_id));
-#endif
+
 
         /* record the full_context current block, not the diff block which will get destroyed! */
 	canvas_data->curr_set = zMapFeatureBlockGetSetByID(canvas_data->curr_block, feature_any->unique_id);
@@ -1921,6 +1993,45 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
             /* for special columns eg locus we may not have a mapping */
             style = zMapWindowGetColumnStyle(window,feature_set->unique_id);
 	  }
+
+	if(!style)
+	{
+		/* for autoconfigured columns we have to patch up a few data structs
+		 * that are needed by various bits of code scattered all over the place
+		 * that are assumed to have been set up before requesting the data
+		 * and they are assumed to have been copied to some other place at some time
+		 * in between startup, requesting data, getting data and displaying it
+		 *
+		 * what's below is in repsonse to whatever errors and assertions happened
+		 * it's called 'design by experiment'
+		 */
+		style = feature_set->style;	/* eg for an auto configured featureset with a default style */
+		/* also set up column2styles */
+		if(style)
+		{
+			ZMapFeatureColumn f_col;
+			ZMapFeatureSetDesc f2c;
+
+			/* createColumnFull() needs a style table, although the error is buried in zmapWindowUtils.c */
+			zMap_g_hashlist_insert(window->context_map->column_2_styles,
+				       feature_set->unique_id,     // the column
+				       GUINT_TO_POINTER(style->unique_id)) ;  // the style
+
+
+			/* find_or_create_column() needs f_col->style */
+			f2c = g_hash_table_lookup(window->context_map->featureset_2_column,GUINT_TO_POINTER(feature_set->unique_id));
+			f_col = g_hash_table_lookup(window->context_map->columns,GUINT_TO_POINTER(f2c->column_id));
+			if(f_col)
+			{
+				if(!f_col->style)
+					f_col->style = style;
+				if(!f_col->style_table)
+					f_col->style_table = g_list_append(f_col->style_table, (gpointer) style);
+			}
+
+		}
+	}
+
 	if(!style)
 	  {
             zMapLogCritical("no column style for featureset \"%s\"\n",g_quark_to_string(feature_set->unique_id));
@@ -1930,12 +2041,11 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 
 	if(!feature_set->style)		/* eg from a featureset with no features.... how can it exist?  */
 	{
-		/* mh17: it's very odd. this has suddently started crashing using data that used to work */
+		/* mh17: it's very odd. this has suddenly started crashing using data that used to work */
 		/* maybe we could look up the style in window->context_map->source_to_sourcedata
 		  and then go looking for the style but this should have been done already ?? */
 		feature_set->style = style;
 	}
-
 
 	/* Default is to draw one column... */
 	frame_start = ZMAPFRAME_NONE;
@@ -1945,38 +2055,44 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 	if ((!(canvas_data->frame_mode_change)
 	     || feature_set_matches_frame_drawing_mode(window, style, &frame_start, &frame_end)))
 	  {
-	    int i, got_columns = 0;
 
-	    i = frame_start;
-	    do
-	      {
-		canvas_data->current_frame = (ZMapFrame)i;
+		if(!(canvas_data->this_featureset_only)  || (canvas_data->this_featureset_only == feature_set))
+		{
 
-		if ((got_columns = pick_forward_reverse_columns(window, canvas_data,
-								/* This is the one to be attached to the column. */
-								canvas_data->curr_set,
-								canvas_data->current_frame,
-								&tmp_forward, &tmp_reverse)))
-		  {
-		    if(tmp_forward)
-		      zMapWindowContainerFeatureSetMarkUnsorted(ZMAP_CONTAINER_FEATURESET(tmp_forward));
-		    if(tmp_reverse)
-		      zMapWindowContainerFeatureSetMarkUnsorted(ZMAP_CONTAINER_FEATURESET(tmp_reverse));
+		int i, got_columns = 0;
+		i = frame_start;
+		do
+			{
+			canvas_data->current_frame = (ZMapFrame)i;
 
-		    zMapStartTimer("DrawFeatureSet",g_quark_to_string(feature_set->unique_id));
+			if ((got_columns = pick_forward_reverse_columns(window, canvas_data,
+									/* This is the one to be attached to the column. */
+									canvas_data->curr_set,
+									canvas_data->current_frame,
+									&tmp_forward, &tmp_reverse)))
+			{
+#if OBSOLETE
+			if(tmp_forward)
+				zMapWindowContainerFeatureSetMarkUnsorted(ZMAP_CONTAINER_FEATURESET(tmp_forward));
+			if(tmp_reverse)
+				zMapWindowContainerFeatureSetMarkUnsorted(ZMAP_CONTAINER_FEATURESET(tmp_reverse));
+#endif
+			zMapStartTimer("DrawFeatureSet",g_quark_to_string(feature_set->unique_id));
 
-		    canvas_data->feature_count += zmapWindowDrawFeatureSet(window,
-					     window->context_map->styles,
-					     feature_set,
-					     tmp_forward,
-					     tmp_reverse,
-					     canvas_data->current_frame, canvas_data->frame_mode_change) ;
+			canvas_data->feature_count += zmapWindowDrawFeatureSet(window,
+						window->context_map->styles,
+						feature_set,
+						tmp_forward,
+						tmp_reverse,
+						canvas_data->current_frame, canvas_data->frame_mode_change) ;
 
-		    zMapStopTimer("DrawFeatureSet", g_quark_to_string(feature_set->unique_id));
-		  }
-		i++;
-	      }
-	    while(got_columns && i <= frame_end);
+			zMapStopTimer("DrawFeatureSet", g_quark_to_string(feature_set->unique_id));
+			}
+			i++;
+			}
+			while( i <= frame_end);
+//		    while(got_columns && i <= frame_end);
+		}
 	  }
 
 	break;
@@ -2097,11 +2213,16 @@ static FooCanvasGroup *createColumn(ZMapWindowContainerFeatures parent_group,
     {
       gboolean status;
       ZMapWindowContainerFeatureSet container_set;
+      ZMapFeatureSetDesc f2c;
+
+	/* oh joy! an alternate path through the code so i get to debug any chages 2x */
+	f2c = g_hash_table_lookup(window->context_map->featureset_2_column, GUINT_TO_POINTER(feature_set->unique_id));
+	zMapAssert(f2c);
 
       group = createColumnFull(parent_group, window,
 			       align, block, NULL,
-                         feature_set->original_id,
-			       feature_set->unique_id,
+                         f2c->column_ID,
+			       f2c->column_id,
 			       strand, frame, is_separator_col,
 			       width, top, bot);
 
@@ -2185,8 +2306,6 @@ static FooCanvasGroup *createColumnFull(ZMapWindowContainerFeatures parent_group
   /* ...and either a featureset _or_ a featureset id. */
 //  zMapAssert((feature_set != NULL) || (column_id != 0));
   zMapAssert((column_id != 0));
-
-
 
   if(!original_id)
     {
@@ -2302,6 +2421,7 @@ static FooCanvasGroup *createColumnFull(ZMapWindowContainerFeatures parent_group
       zMapLogWarning("Adding column: \"%s\" %s %s\n",
 	     g_quark_to_string(original_id), g_quark_to_string(column_id), zMapFeatureStrand2Str(strand), zMapFeatureFrame2Str(frame)) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
       /* needs to accept style_list */
 
       zmapWindowContainerFeatureSetAugment((ZMapWindowContainerFeatureSet)container, window,
@@ -2369,7 +2489,7 @@ static void ProcessListFeature(gpointer data, gpointer user_data)
   zMapLogWarning("ProcessFeature %s %d-%d",g_quark_to_string(feature->original_id), feature->x1,feature->x2);
 #endif
 
-  style = feature->style;
+  style = *feature->style;
       /* if fails: no display. fixed for pipe via GFF2parser, ACE seems to call it???
        * features paint so it musk be ok! *
        * but if a user adds an object and we make a fetaure OTF then no style is attached
@@ -2378,8 +2498,27 @@ static void ProcessListFeature(gpointer data, gpointer user_data)
   if(!style)
   {
       /* should only be a consideration for OTF data w/ no styles?? */
-      style = zMapFindStyle(featureset_data->styles, feature->style_id) ;
-      feature->style = style;
+	/* xremote code should set this up anyway */
+	/* NOTE there's a knot here
+	 * to allow column styles to be changed we have features point to the styles in the containing context featureset
+	 * if we get a feature via XRemote the we don't have that set up as it doesnly go through GFFParser
+	 * so we have to find the feature's parent anf set the style there
+	 */
+	/* NOTE: 3FT and DNA get supplied by acedbServer and pipeServer and are given temporary styles that are freed
+	 * which means thet that data is not usable.
+	 */
+
+	ZMapFeatureSet set = (ZMapFeatureSet) feature->parent;
+	zMapAssert(set);
+
+	if(!set->style)
+	{
+//		set->style = zMapFindStyle(featureset_data->styles, feature->style_id) ;
+		zMapWarning("no style for feature %s",g_quark_to_string(feature->unique_id));
+		zMapLogWarning("no style for feature %s",g_quark_to_string(feature->unique_id));
+		zMapLogStack();
+	}
+      feature->style = &set->style;
   }
 
 #if MH17_REVCOMP_DEBUG > 1
@@ -2467,8 +2606,7 @@ static void ProcessListFeature(gpointer data, gpointer user_data)
 #endif
   }
   else
-    g_warning("definitely need a style '%s' for feature '%s'",
-	      g_quark_to_string(feature->style_id),
+    g_warning("definitely need a style for feature '%s'",
 	      g_quark_to_string(feature->original_id));
 
   if(feature_item)
@@ -2703,6 +2841,12 @@ static void setColours(ZMapWindow window)
   if ((context = zMapConfigIniContextProvide(window->sequence->config_file)))
     {
       char *colour = NULL;
+	gboolean truth = FALSE;		/* i always wanted to say that :-) */
+	/* actually on a philosophical note 'gboolean' subverts the design of the language
+	 * and is part of a bug creating meme the reaches the depths of despaier when people
+	 * write things like if(x == TRUE) when in fact there are 4G-2 other eaually true values
+	 * if you had a library that had 1 as TRUE and another as 0xffffffff then you have a problem
+	 */
 
       if(zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
 				       ZMAPSTANZA_WINDOW_ROOT, &colour))
@@ -2814,6 +2958,24 @@ static void setColours(ZMapWindow window)
         gdk_color_parse(colour, &window->colour_evidence_fill) ;
         window->highlights_set.evidence = TRUE ;
       }
+
+	/* why bury this here?
+	 * we can't set config info glabally due to the design
+	 * so every time we R click on a feature we'd have to read a very long config file
+	 * so I'm setting a flag for the lifetime of the window
+	 * can-t edit styles if we can see no features and this must get called first.
+	 *
+	 * it would be more logical to cal this func from myWindowCreate, but previous this was tangled up
+	 * with FooCanvas map and realise even though we're only reading a configration file.
+	 */
+
+	window->edit_styles = TRUE;
+	if(zMapConfigIniContextGetBoolean(context,ZMAPSTANZA_APP_CONFIG,ZMAPSTANZA_APP_CONFIG,
+					ZMAPSTANZA_APP_EDIT_STYLES, &truth))
+	{
+        window->edit_styles = truth ;
+	}
+
 
       zMapConfigIniContextDestroy(context);
     }

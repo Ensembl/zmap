@@ -901,8 +901,9 @@ debug("nav draw set %s\n", g_quark_to_string(feature_set->original_id));
 
 	    if ((bump_mode = zmapWindowContainerFeatureSetGetBumpMode(container_feature_set)) != ZMAPBUMP_UNBUMP)
 	      {
+#if OBSOLETE
 		zmapWindowContainerFeatureSetSortFeatures(container_feature_set, 0);
-
+#endif
 		zmapWindowColumnBumpRange(item, bump_mode, ZMAPWINDOW_COMPRESS_ALL) ;
 	      }
           }
@@ -1817,6 +1818,7 @@ static gboolean idle_resize_widget_cb(gpointer navigate_data)
   GtkWidget *widget;
 
   g_return_val_if_fail(navigate->locator != NULL, FALSE);
+  g_return_val_if_fail(navigate->locator->canvas != NULL, FALSE);	/* race condition on adding loacator? */
 
   widget = GTK_WIDGET( navigate->locator->canvas );
 
@@ -2056,13 +2058,13 @@ void zmapWindowNavigatorRunSet(  ZMapFeatureSet set,
 	/* this stuff is just not used in the navigator..... esp given that container is a given */
 	if(feature->style)	/* chicken */
 	{
-		if(zMapStyleIsStrandSpecific(feature->style))
+		if(zMapStyleIsStrandSpecific(*feature->style))
 			feature_stack.strand = zmapWindowFeatureStrand(NULL,feature);
-		if(zMapStyleIsFrameSpecific(feature->style))
+		if(zMapStyleIsFrameSpecific(*feature->style))
 			feature_stack.frame = zmapWindowFeatureFrame(feature);
 	}
 
-	if(zMapStyleGetMode(feature->style) == ZMAPSTYLE_MODE_TEXT)
+	if(zMapStyleGetMode(*feature->style) == ZMAPSTYLE_MODE_TEXT)
 	{
 		if(!variantFeature(feature, navigate))
 		{

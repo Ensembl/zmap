@@ -54,6 +54,7 @@ static void makeSequenceViewCB(ZMapFeatureSequenceMap sequence_map, gpointer use
 static void closeCB(gpointer cb_data, guint callback_action, GtkWidget *w) ;
 static void quitCB(gpointer cb_data, guint callback_action, GtkWidget *w) ;
 
+static void importCB(gpointer cb_data, guint callback_action, GtkWidget *window);
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void exportCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
@@ -81,9 +82,11 @@ static GtkItemFactoryEntry menu_items[] = {
  { "/_File",                        NULL,         NULL,                  0, "<Branch>" },
  { "/File/_New Sequence",           NULL,         newSequenceByConfigCB, 2, NULL },
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
  { "/File/sep1",     NULL,         NULL, 0, "<Separator>" },
- { "/File/_Export",  "<control>E", exportCB, 0, NULL },
+ { "/File/_Import",  "<control>I", importCB, 0, NULL },		/* or Read ? */
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+{ "/File/_Export",  "<control>E", exportCB, 0, NULL },
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
  { "/File/sep1",                     NULL,         NULL, 0, "<Separator>" },
@@ -159,6 +162,53 @@ static void exportCB(gpointer cb_data, guint callback_action, GtkWidget *window)
 }
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+
+
+static void controlImportFileCB(gpointer user_data)
+{
+	zMapWarning("controlImportFileCB not implemented","");
+	/* this is a callback to report something */
+}
+
+static void importCB(gpointer cb_data, guint callback_action, GtkWidget *window)
+{
+  ZMap zmap = (ZMap)cb_data ;
+  ZMapViewWindow vw = zmap->focus_viewwindow;
+  ZMapFeatureSequenceMap map;
+  ZMapFeatureSequenceMap view_seq;
+  int start,end;
+
+  view_seq = zMapViewGetSequenceMap( zMapViewGetView(vw) );
+
+  /* get view sequence and coords */
+  map = g_new0(ZMapFeatureSequenceMapStruct,1);
+  map->start = view_seq->start;
+  map->end = view_seq->end;
+  map->sequence = view_seq->sequence;
+  map->config_file = view_seq->config_file;
+
+  /* limit to mark if set */
+  start = view_seq->start;
+  end   = view_seq->end;
+
+  if(zMapWindowMarkIsSet(zMapViewGetWindow(vw)))
+  {
+	zMapWindowGetMark(zMapViewGetWindow(vw), &start, &end);	/* NOTE we get -fwd coords from this function if revcomped */
+
+	if(start < 0)
+		start = -start;
+	if(end < 0)
+		end = -end;
+
+	start += map->start;
+	end   += map->start;
+  }
+
+  /* need sequence_map to set default seq coords and map sequence name */
+  zMapControlImportFile(controlImportFileCB, cb_data, map, start, end);
+
+  return ;
+}
 
 
 static void dumpCB(gpointer cb_data, guint callback_action, GtkWidget *widget)
@@ -505,15 +555,12 @@ static void makeSequenceViewCB(ZMapFeatureSequenceMap seq_map, gpointer user_dat
 {
   ZMap zmap = (ZMap)user_data ;
   ZMapView view ;
+  char *err_msg = NULL ;
 
-  if ((view = zmapControlAddView(zmap, seq_map)))
+  if (!(view = zmapControlInsertView(zmap, seq_map, &err_msg)))
     {
-      if (!zMapViewConnect(view, NULL))
-	{
-	  zMapWarning("Display of sequence \"%s\" failed, see log for details.", seq_map->sequence) ;
-
-	  zMapViewDestroy(view) ;
-	}
+      zMapWarning("%", err_msg) ;
+      g_free(err_msg) ;
     }
 
   return ;

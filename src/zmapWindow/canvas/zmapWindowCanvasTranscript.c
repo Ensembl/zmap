@@ -100,7 +100,7 @@ static void zMapWindowCanvasTranscriptPaintFeature(ZMapWindowFeaturesetItem feat
 		GdkColor *gdk_fill = NULL, *gdk_outline = NULL;
 
 		ct = feature->flags & WINDOW_FOCUS_GROUP_FOCUSSED ? ZMAPSTYLE_COLOURTYPE_SELECTED : ZMAPSTYLE_COLOURTYPE_NORMAL;
-		zMapStyleGetColours(feature->feature->style, STYLE_PROP_TRANSCRIPT_CDS_COLOURS, ct, &gdk_fill, NULL, &gdk_outline);
+		zMapStyleGetColours(*feature->feature->style, STYLE_PROP_TRANSCRIPT_CDS_COLOURS, ct, &gdk_fill, NULL, &gdk_outline);
 
 		if(gdk_fill)
 		{

@@ -61,7 +61,7 @@ static GdkColor *zmapWindowCanvasAlignmentGetFwdColinearColour(ZMapWindowCanvasA
 	ZMapWindowCanvasAlignment next = (ZMapWindowCanvasAlignment) align->feature.right;
 	int diff;
 	int start2,end1;
-	int threshold = (int) zMapStyleGetWithinAlignError(align->feature.feature->style);
+	int threshold = (int) zMapStyleGetWithinAlignError(*align->feature.feature->style);
 	ColinearityType ct = COLINEAR_PERFECT;
 	ZMapHomol h1,h2;
 
@@ -392,7 +392,7 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
 
   if(fill_set && feature->feature->population)
     {
-      ZMapFeatureTypeStyle style = feature->feature->style;
+      ZMapFeatureTypeStyle style = *feature->feature->style;
 
       if((zMapStyleGetScoreMode(style) == ZMAPSCORE_HEAT) || (zMapStyleGetScoreMode(style) == ZMAPSCORE_HEAT_WIDTH))
 	{
@@ -411,10 +411,10 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
 
   if(  !(feature->feature->feature.homol.align)  ||
        (
-	!zMapStyleIsAlwaysGapped(feature->feature->style) &&
+	!zMapStyleIsAlwaysGapped(*feature->feature->style) &&
 	(!featureset->bumped ||
 	 //			featureset->strand == ZMAPSTRAND_REVERSE ||
-	 !zMapStyleIsShowGaps(feature->feature->style))
+	 !zMapStyleIsShowGaps(*feature->feature->style))
 	)
        )
     {
@@ -531,10 +531,11 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
 	  /* NOTE this code assumes the styles have been set up with:
 	   * 	'glyph-strand=flip-y'
 	   * which will handle reverse strand indication */
+	  ZMapFeatureTypeStyle style = *feature->feature->style;
 
 	  /* set the glyph pointers if applicable */
-	  homology = feature->feature->style->sub_style[ZMAPSTYLE_SUB_FEATURE_HOMOLOGY];
-	  nc_splice = feature->feature->style->sub_style[ZMAPSTYLE_SUB_FEATURE_NON_CONCENCUS_SPLICE];
+	  homology = style->sub_style[ZMAPSTYLE_SUB_FEATURE_HOMOLOGY];
+	  nc_splice = style->sub_style[ZMAPSTYLE_SUB_FEATURE_NON_CONCENCUS_SPLICE];
 
 	  /* find and/or allocate glyph structs */
 	  if(!feature->left && homology)	/* top end homology incomplete ? */
@@ -595,7 +596,7 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
 	  align->bump_set = TRUE;
 	}
 
-      if(!feature->left && !zMapStyleIsUnique(feature->feature->style))	/* first feature: draw colinear lines */
+      if(!feature->left && !zMapStyleIsUnique(*feature->feature->style))	/* first feature: draw colinear lines */
 	{
 	  ZMapWindowCanvasFeature feat;
 
@@ -650,7 +651,7 @@ static void zMapWindowCanvasAlignmentGetFeatureExtent(ZMapWindowCanvasFeature fe
 
 	*width = feature->width;
 
-	if(!zMapStyleIsUnique(feature->feature->style))
+	if(!zMapStyleIsUnique(*feature->feature->style))
 		/* if not joining up same name features they don't need to go in the same column */
 	{
 		while(first->left)
@@ -838,7 +839,7 @@ static double alignmentPoint(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeatur
       double wx ;
       double left, right ;
 
-      wx = x_off - (gs->width / 2) ;
+      wx = x_off; // - (gs->width / 2) ;
 
       if (fi->bumped)
 	wx += gs->bump_offset ;

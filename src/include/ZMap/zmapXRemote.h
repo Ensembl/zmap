@@ -168,7 +168,8 @@ typedef char * (*ZMapXRemoteCallback) (char *command, gpointer user_data,
 				       ZMapXRemoteStatus *status_code, ZMapXRemoteObj owner) ;
 
 
-
+/* Turn on debugging in xremote handling code. */
+extern gboolean xremote_debug_GG ;
 
 extern gboolean externalPerl;
 

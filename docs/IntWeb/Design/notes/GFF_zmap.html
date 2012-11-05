@@ -21,7 +21,9 @@ If a configuration file is specified then this may include data sources and file
 
 
 
-<h3>Column Ordering</h3>
+<h3>Column Configuration</h3>
+
+<h4>Column Ordering</h4>
 <p>This can be handled by default quite simply, using the existing forward and reverse strand (mirror) model and placing columns left to right in the order of assembly, transcripts, alignments, graphs, basic.  However this is likely to put some columns out of place eg curated features aka PolyA etc which appear to be wanted next to transcripts.
 </p>
 <p>In Havana there is a requirement to have the same config for the whole team but for wider use this is not so clear and it seems likely that there will be a desire to re-order columns via drag and drop and to remember session details (there have been requests for this from Havana (RT 67466, 205085).
@@ -31,7 +33,7 @@ If a configuration file is specified then this may include data sources and file
 <p>These last two items will not be addressed in the first release.
 </p>
 
-<h4>Column configuration</h4>
+<h4>Column featuresets and styles</h4>
 <p>This involves mapping featuresets to columns, choice of styles, and various other things such as pretty names and  descriptions.  Note that if we assume that users will simply load data from file there is no need for a load columns dialog and no need to specify load on startup or otherwise.  File servers have to be 'created' automatically without configuration.
 </p>
 <p> Some columns consist of several sources (eg repeatmasker, curated features) and these can't be set up without external configuration, and without this we would have these appearing in several columns, not necessarily next to each other.  This is obviously poor and also uses up pointless amounts of screen real-estate.  One way to allow users to set this up would be to allow drag and drop to order columns and then menu options/ keyboard shortcuts to merge or split columns.
@@ -72,9 +74,9 @@ There is an obvious need to allow user choice of colours via the usual dialog, a
 <h4>Work needed</h4>
 <p>
 <ul>
-<li> cope with single configuration file
+<li> cope with no configuration file
 <li> autoconfigure columns from GFF file
-<li> hard code basic styles and allocate colours
+<li> hard code basic styles and allocate colours, pass styles hash to servers
 <li> style menu for column/ featureset
 <li> allow 'save as' for session config, which can then be edited manually
 </ul>
@@ -84,5 +86,201 @@ Then possibly:
 <li> colour dialog to override default styles (can be saved as session)
 </ul>
 </p>
+
+
+
+<h3>Implementing File menu and servers</h3>
+
+<h4>What to display and where</h4>
+<p>The above assumes a set of files given to ZMap on startup that all correspond to the same sequence.  We would like to allow users to request data from a file or url at run time and the obvious way to present this is via the File menu.  As users may select data that is not relevant to existing ZMap views we need to decide what should happen in all likely circumstances and the following paragraphs define these.  Note that files given as command line arguments may not match and these will be treated in the same way as files requested OTF.
+</p>
+<p>In the following we assume nominally that there is at least one ZMap view open, but obviously if we read in a number of files at startup we could change ZMap to run without views and create one as the first data arrives,  We also assume theat theree is only one menu option (eg File/Read).
+</p>
+
+<h5>The user requests a file that matches an existing ZMap view exactly or is contained within it</h5>
+<p>
+Data is merged into that view's feature context and displayed.  If the data does not cover the whole sequnece space then this is exactly as if requested from mark.  If several views exist that match the new data then it is merged into each one.
+</p>
+<p>We also have the choice of restricting this to the window/ view that was active the the request was made.  (please refer to RT 280520: feature request: narrower inter-pane window chrome for v-split/h-split).
+</p>
+
+<h5> The user requests data that does not match an existing view </h5>
+<p> This could be due to the sequence name being different or the coordinates not overlapping, and this could be deliberate or due to a user error.  (for example the user requests a mouse data set to compare with a human view).  In this case we should create a new view and display the data - even if in error it's better to display it as it may have taken a long time to load.
+</p>
+<p>We have the choice here is starting a new ZMap or a new View.
+</p>
+
+<h5>The user requests data that overlaps an existing view</h5>
+<p>Here we clip the data to include only data covered by the existing view.  Not that this avoids any requirement to join up views if two or more overlap new data.
+</p>
+
+<p>This appears to be the most sensible option but we need to consider the wormbase scenario of zooming out, the implementaion of which will affect how we handle overlapping data.
+</p>
+
+<p>We also have to decide how to handle truncated features that extend beyong the start/ finish of a view.
+</p>
+
+<h5>Other possible menu options</h5>
+<p>To keep the user interface simple we can have just one File/Read option and have ZMap operate as above, possibly controlled by some user prefernces.  It is also possible to add eg File/Read in new Window/View/ZMap ... this could become complex as users may not immediatly guess the differece bewteen these as a ZMap look like what people normally call a Window.
+</p>
+<p>It may be more friendly to operate as above and allow drag and drop to move columns between windows views and ZMaps - note that this looks like soemthing we'd like to offer anyway.
+</p>
+
+
+<h4>Implications for ZMap code</h4>
+
+<p>Currently data is requested by a view and within each view there may be several windows.  The view code operates the server code and when data is recieved it is merged into all the view's windows.  Other open ZMaps are not affected.
+</p>
+<p>It is the case that data may not be requested without a view existing to request it. When a view is created it performs and initial data request as defined in configuration.
+</p>
+<p>If we preserve this structure and then request data that does not match the displayed sequence then we either ignore ir operate as above. in which case there is little benefit if having the request code driven by a view.  The solution is to move the request code from zmapView.c either into a module of its own or into zmapServer.  This will then be called directly from zmapControl - it will be possible to start ZMap with no default sequence and simply request a file.  When a file is requested from a view then this request must go via a callback to zmapControl.  Note that this implies two types of request - via configruration and a file chosen by the user OTF.   The request code must also have some way of choosing whether to read a file in directly (*.GFF) or via a pipe script (*.bam, *.BigWig), which can obviously be done from the file name by default of via a few menu options.
+</p>
+
+<h5>Clipping features to requested region</h5>
+<p>The GFF2parser code will reject features oustide the requested regions and it will be relatively easy to preserve this function if we use the sequence region of the requesting (ie last active/ current) view.  If the GFF header spcifies a non overlapping region then we can simply switch this off.  Unfortunately if there are two views open and the file corresponds to the non active one this will not work, but it's not clear that passing all active view sequence is the best policy.
+</p>
+
+<h5>Mismatching data formats and mapping sequences</h5>
+<p>A good example comes from Wormbase where currently they have two copies of the same BAM file with the sequence name as CHR_I or CHROMOSOME_I.  Note that in this case chromosomes are named in roman numerals and are uppercased.  Obviously we need to allow the sequence names to be patched to allow data to be requested and displayed where required.  Likewise there may be some data mapped to a diffferent assembly and there needs to be some way of specifiying a transformation.
+</p>
+<p>An obvious strategy would be to to present a dialog in response to the File/Read menu or on reciept of the data, however this soon becomes complex.  To request data from a BAM file we need to know the sequence names in advance (ie query the file) and to request the right data we need to map the request coordinates before making the request.  On reading a pre-existing GFF file we may need to map the sequence name an possibly feature and sequence coordinates: these may be given as chromosome clone or some other slice.
+</p>
+<p>This implies several stages of request:
+<ul>
+<li> user browses for or enters file name
+<li> user chooses server options (eg BAM, BigWig, GFF etc)
+<li> ZMap reads header, queries file and presents sequence name and coordinates, defaulting to current view or equivalent
+<li> user clicks on 'apply' and ZMap fetches the data
+<li> data is merged and displayed
+<li> in case of error the data is held active and the user may alter paramters and retry
+</ul>
+Somewhere in this process we need to be able to specify coordinate mapping.  For otterlace this information is in the otter database and for Wormbase in ACEDB, for File based systems it is undefined.  Initially we can implement the first two, the third will probably require uses to create an SQLite database to hold the information.
+</p>
+
+<p>This is becoming non trivial and we may initially implement file input by requiring GFF files to be 'correctly mapped'.
+</p>
+
+
+<h5>Source Code: View creation and status</h6>
+<p>It seem likely that it may be benficial or necessary to have a View with no data and then add data to it, although a view necessarily has a defined sequence and coordinate range.  All of the above implies that we can merge a feature context into a view, which is currently done by the code that drives servers from within the view.
+
+<p>There seems to be little benefit in creating a new module and it is proposed to move the code that drives servers into zmapServer.  This includes the functions (from zmapView.c):
+<ul>
+<li>createConnection
+<li>dispatchContextRequests
+<li>processDataRequests
+<li>checkStateConnections
+</ul>
+
+and adjusting others such as
+<ul>
+<li>zMapViewConnect
+<li>getFeatures (which calls justMergeContext and justDrawContext)
+</ul>
+</p>
+
+<p>The interface to this code should specify featuresets, sequence name and range (all may be NULL eg for a GFF file, but may be given eg to clip feature to and existing sequence.  It should return a feature context and whatever status info as at present.
+</p>
+<p>There is a clear advantage to splitting the server protocol into two; a) return server info such as supported sequences (BAM, ACEDB), featuresets (ACEDB) etc) and data request, as then we can implement a dialog to choose reuqest paramters.
+</p>
+
+
+<h3>A simpler approach to implementation</h3>
+<p>It was decided that too much effort would be required to do the above and the following was done instead:
+<ul>
+<li> A perl script has been written to read GFF file headers and generate ZMap configuration. Note that this breaks the previous objective of having one executable and a configuration free environment.  However it could be recoded in C (or run via a child process from ZMap) if this proves to be important.  There is an advantage in being able to adjust a script easily.
+<li> GFF parser code and view display code  has been modified to adjust automatically to handle unconfigured featuresets (as otherwise it would be necessary to read each file twice).  Currently the source code is based on the assumption that several sets of configuration data are pre-defined and this solution is a quite ad-hoc.
+<li> default styles have been implemented and these need to be adjusted to have colours chosen from a palette or by a user dialog
+<li> Reading a file via the window menu will display a dialog which will allow the user to enter file names and sequence information, which can default to the current view settings.  Options will be provided to translate sequence names in the GFF to allow data from different sources to be used.  Coordinate mapping (eg from 1-based to chromosome) may be allowed. Data in a file is assumed to be from different tracks from those already in the sessions and in case of collision featureset names will be made unique.  Data outside the view's sequence range will be ignored - the file menu will know the current view implicitly.
+<li> The information in the user dialog will be used to generate a 'micro configuration' file in memory and fed to the server modules via the existing configuration code.
+<li> BAM and BigWig files wil be read in using a similar process using different parameters as necessary.  Note that we will have to provide some way to extract sequence names from BAM files to allow these to be mapped (eg 'CHROMOSOVE_IV' to 'chr-4').  A perl script already exists (zmap_bam_get_sequence) to do this and either the user will be asked to operate this and enter the data manually (first implementation) or it can be run as a child process and the output used to create a drop down menu.
+</ul>
+
+<h4>Default styles</h4>
+<p>As GFF may contain several featuresets it's not possible to specify a single style for display: ZMap will use a default style to display each feature, but note that some data may be shown inappropriately as basic features (eg graph data).
+</p>
+<p>BAM and bigWig import relaiably produced data of a single type and a style can be supplied for these, using the following configuration in ZMap:
+<pre>
+[columns]
+any_name_not_likely_to_be_used = BAM; bigWig
+
+[featureset-style]
+BAM = short-read
+bigWig = short-read-coverage
+</pre>
+</p>
+
+<h4>User Chosen Styles</h4>
+<p>This will be implemented in stages: first the user may choose another predefined style, second colours may be assigned and (possibly) third a dialog will be provided to allow more detailed changes. Initially user defined style choices will not be saved ans after a restart they will have to reset these.
+</p>
+<h5>Choosing another existing style</h5>
+<p>A right click menu will allow the user to use any given style for a set of features - as features have thier style defined by thier containing featureset this will always affect all the other features in that set on display.  Note that if several featuresets are displayed in one column this will not affect the other features.
+</p>
+<p>The menu will consist of all the styles valid for that type of feature plus sub menus for other types of feature that are compatable with the data. For example a basic feature could be displayed as a graph, but a transcript could not be displayed as an alignment.  Note that if this is applied to an otterlace session this menu may be unwieldy.
+</p>
+<p>The set of default styles will include a reasonable subset of variations, especially strandedness, but will not be exhaustive.
+</p>
+
+<h5>Setting a different colour</h5>
+<p>For a standalone ZMap user this may be essential to help distinguish similar columns displayed side by side.  A right click menu will display a colour dialog and be used to set this.  Any pre-defined or default style in force at the time will be inherited and a new style created for that featureset, and if this has been done already the existing user defined style will be modified directly.
+</p>
+<p>When the ZMap session is saved (subsequent implemntation) all non default styles used will be saved.  In case a user defined style is invalidated by a software change, it will have to be recreated manually.
+</p>
+<p>Note that it's probably not best to supply different colours automatically, as these could change between sessions depending on external factors such as network speed.
+</p>
+
+
+<h4>Import Dialog screenshot</h4>
+<p>This is after implementation running a 1-based wormbase dump and looking at a human bam file downlaoded from encode.  No aplogies fro mismatching data, it's there for software development only.
+</p>
+<img src="Design/notes/import.png" class="img" alt="Import dialog">
+
+<a name="scripts"></a>
+<h3>Handling server script interfaces </h3>
+<p>File/Import has been implemented using some hard coded scripts and arguments, and Otterlace pipe servers use script and arg combinations specifed in server stanzas.  Each of these have parameters added or substituted on demand (eg coordinates), and the zmap scripts take slightly different arguments from the otterlace ones (this is triggered by the cvser=Otter option in [ZMap]).
+</p>
+
+<p>OTF file requests are implemented by creating a config file in memory and feeding this into the server code, and the scripts and parameters are hard coded.  This is partly because the script operation requires specific information and this varies according to the type of file, but we would like to allow for extra flexibility, to allow modified scripts to be used to read in data in other formats currently unspecified.
+</p>
+
+<p>Ideally we would like to provide a tokenised specification of a script command line, but this becomes complex when taking into account how this can be driven from a user dialog - currently we limit the data that can be entered according to file type.  A more practical solution will be to allow the script name to be changed in the dialog and also any mandatory (hidden) arguments
+</p>
+<p> Standard scripts are triggered from the file extent and if the script name is changed then all dialog etries will be enabled. Parameters may be enetered directly in the dialog and any non blank entries will be passed to the script/ User scripts must be on the path as must ZMap scripts.
+</p>
+<p>In the otterlace environment ZMap will be given script names in the config file with extra parameters as required.  Script types will correspond to file extents and the script names defaulted automatically.
+These are defined by script name = type; args; more args; etc.  If unspecified the existing hard coded (zmap) scripts will be used by default.
+</p>
+
+<p>Here's an example: for Otterlace:
+<pre>
+[Import]
+zmap_get_gff = GFF
+bam_get_align = BAM; --chr_prefix=chr ;-csver=GRCh37 ; -gff_version=2
+bigwig_get = bigwig; --chr_prefix=chr; -csver=GRCh37; -gff_version=2
+</pre>
+
+<h3>Arguments added automatically</h3>
+<p>
+<p>Scripts will be run with the following arguments added:
+<ul>
+<li><b>GFF</b>--file --start, --end, --gff_seqname --mapto
+<li><b>bigWig</b>--file --start, --end, --gff_feature_source --chr  --gff_seqname --strand
+<li><b>BAM</b>--file --start, --end, --gff_feature_source --chr --gff_seqname
+</ul>
+</p>
+<h4>A note about the mapto argument</h4>
+<p>This was inteneded for use in a standalone ZMap to cater for GFF and ACE sessions where sequences can be 1-based, (or even subsequences of clones).  In the Otterlace environnent it makes little sense, except in the case of importing a 1-based GFF file into an Otter session.  Therefore in an Otterlace session it will be omitted from BAM abd bigWig requests.
+</p>
+
+<h4>Otterlace script interface summarised</h4>
+<p>In ZMap (config) we need the following stanza:
+<pre>
+[Import]
+otter_get_gff = GFF; --mapping-arguments? etc
+bam_get_align = BAM; --chr_prefix=chr ; -csver=GRCh37 ; -gff_version=2
+bigwig_get = bigwig; --chr_prefix=chr ; -csver=GRCh37 ; -gff_version=2
+</pre>
+
+
 
 

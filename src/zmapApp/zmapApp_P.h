@@ -19,9 +19,9 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * and was written by
- *     Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk and,
- *          Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *       Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *     Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *       Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *  Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Private header for application level of zmap.
  *
@@ -35,6 +35,7 @@
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapManager.h>
 #include <ZMap/zmapXRemote.h>
+#include <ZMap/zmapAppServices.h>
 
 
 /* Minimum GTK version supported. */
@@ -69,19 +70,11 @@ typedef struct _ZMapAppContextStruct
   ZMapAppState state ;					    /* Needed to control exit in a clean way. */
 
   int exit_timeout ;					    /* time (s) to wait before forced exit. */
-
   int exit_rc ;
   char *exit_msg ;
 
+
   GtkWidget *app_widg ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  GtkWidget *sequence_widg ;
-  GtkWidget *start_widg ;
-  GtkWidget *end_widg ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
   GtkTreeStore *tree_store_widg ;
 
@@ -91,17 +84,21 @@ typedef struct _ZMapAppContextStruct
   ZMapManager zmap_manager ;
   ZMap selected_zmap ;
 
+
+  /* OLD XREMOTE...REMOVE WHEN NEW ONE ARRIVES.... */
   gulong property_notify_event_id;
   ZMapXRemoteObj xremote_client ;			    /* The external program we are sending
 							       commands to. */
+  gboolean sent_finalised ;				    /* ?????? */
+
 
   gboolean show_mainwindow ;				    /* Should main window be displayed. */
 
-      /* Was a default sequence specified in the config. file.*/
-  ZMapFeatureSequenceMap default_sequence;
+  /* Was a default sequence specified in the config. file.*/
+  ZMapFeatureSequenceMap default_sequence ;
 
-  char *locale;
-  gboolean sent_finalised ;
+  char *locale ;
+
 
   char *script_dir;					    /* where scripts are kept for the pipeServer module
 							     * can be set in [ZMap] or defaults to run-time directory
@@ -129,7 +126,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[]) ;
 GtkWidget *zmapMainMakeMenuBar(ZMapAppContext app_context) ;
 GtkWidget *zmapMainMakeConnect(ZMapAppContext app_context, ZMapFeatureSequenceMap sequence_map) ;
 GtkWidget *zmapMainMakeManage(ZMapAppContext app_context) ;
-void zmapAppCreateZMap(ZMapAppContext app_context, ZMapFeatureSequenceMap sequence_map) ;
+gboolean zmapAppCreateZMap(ZMapAppContext app_context, ZMapFeatureSequenceMap sequence_map) ;
 void zmapAppExit(ZMapAppContext app_context) ;
 
 void zmapAppRemoteInstaller(GtkWidget *widget, gpointer app_context_data);

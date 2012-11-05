@@ -1,4 +1,7 @@
-/*  Last edited: Jul 23 11:18 2012 (edgrif) */
+
+/* File needs renaming to be a general config getting file.... */
+
+
 /*  File: zmapConfigUtils.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -84,6 +87,53 @@ gboolean zMapUtilsConfigDebug(char *config_file)
     }
 
   return result;
+}
+
+
+
+/* Read ZMap sequence/start/end from config file. */
+gboolean zMapAppGetSequenceConfig(ZMapFeatureSequenceMap seq_map)
+{
+  gboolean result = FALSE ;
+  ZMapConfigIniContext context;
+
+  if ((context = zMapConfigIniContextProvide(seq_map->config_file)))
+    {
+//      gboolean tmp_bool = FALSE;
+      char *tmp_string  = NULL;
+//      int tmp_int = 0;
+
+      if (zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+					ZMAPSTANZA_APP_DATASET, &tmp_string))
+	{
+	  /* if not supplied needs to appear in all the pipe script URLs */
+	  seq_map->dataset = tmp_string;
+	}
+
+      if (zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+					ZMAPSTANZA_APP_SEQUENCE, &tmp_string))
+	{
+	  seq_map->sequence = tmp_string;
+	  if (zMapConfigIniContextGetInt(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+					 ZMAPSTANZA_APP_START, &seq_map->start))
+            {
+	      zMapConfigIniContextGetInt(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+					 ZMAPSTANZA_APP_END, &seq_map->end);
+
+	      /* possibly worth checking csname and csver at some point */
+	      tmp_string = NULL;
+	      zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+					    ZMAPSTANZA_APP_CSNAME,&tmp_string);
+	      zMapAssert(!tmp_string || !g_ascii_strcasecmp(tmp_string,"chromosome"));
+            }
+	}
+
+      zMapConfigIniContextDestroy(context);
+
+      result = TRUE;
+    }
+
+  return result ;
 }
 
 

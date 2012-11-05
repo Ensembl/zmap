@@ -678,7 +678,7 @@ static gboolean selection_func_cb(GtkTreeSelection *selection,
         gtk_tree_view_scroll_to_cell(treeView, path, NULL, FALSE, 0.0, 0.0);
 
             /* if a feature is masked then make sure it's visible */
-      if (zMapStyleGetMode(feature->style) == ZMAPSTYLE_MODE_ALIGNMENT &&
+      if (zMapStyleGetMode(*feature->style) == ZMAPSTYLE_MODE_ALIGNMENT &&
             (!feature->feature.homol.flags.displayed))
 #if MH17_SHOW_ALL_MASKED
         {

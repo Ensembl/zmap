@@ -38,11 +38,13 @@ typedef struct _ZMapConfigSourceStruct
   char *url ;
   char *version ;
   char *featuresets; //, *navigatorsets ;
-  char *styles_list, *stylesfile ;
+//  char *styles_list;  not used,. pointless
+  char *stylesfile ;
   char *format ;
   int timeout ;
   gboolean delayed ;
   gboolean provide_mapping;
+  gboolean req_styles;
   int group;
 #define SOURCE_GROUP_NEVER    0     // these are bitfields, and correspond to the obvious strings
 #define SOURCE_GROUP_START    1

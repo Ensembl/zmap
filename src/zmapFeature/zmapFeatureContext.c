@@ -855,6 +855,8 @@ static ZMapFeatureContextExecuteStatus revCompFeaturesCB(GQuark key,
 
             /* we revcomp a complete context so reflect in the parent span */
 
+	/* THIS LOOKS DEEPLY INCORRECT TO ME..... */
+
 //zMapLogWarning("rev comp align 1, sequence span = %d -> %d", feature_align->sequence_span.x1,feature_align->sequence_span.x2);
         zmapFeatureRevComp(Coord, cb_data->start, cb_data->end,
                            feature_align->sequence_span.x1,
@@ -1315,12 +1317,14 @@ static void fetch_exon_sequence(gpointer exon_data, gpointer user_data)
 
 gboolean zMapFeatureContextGetMasterAlignSpan(ZMapFeatureContext context,int *start,int *end)
 {
-      gboolean res = start && end;
+  gboolean res = start && end;
 
-      if(start) *start = context->master_align->sequence_span.x1;
-      if(end)   *end   = context->master_align->sequence_span.x2;
+  if(start)
+    *start = context->master_align->sequence_span.x1;
+  if(end)
+    *end = context->master_align->sequence_span.x2;
 
-      return(res);
+  return(res);
 }
 
 

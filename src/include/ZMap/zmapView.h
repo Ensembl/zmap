@@ -40,6 +40,7 @@
 #include <ZMap/zmapXMLHandler.h>
 #include <ZMap/zmapUrl.h>
 
+
 /* Opaque type, represents an instance of a ZMapView. */
 typedef struct _ZMapViewStruct *ZMapView ;
 
@@ -193,7 +194,7 @@ typedef struct
 } ZMapViewSessionStruct, *ZMapViewSession ;
 
 
-
+typedef struct _ZMapViewConnectionStruct *ZMapViewConnection;
 
 
 
@@ -229,6 +230,21 @@ int zMapViewNumWindows(ZMapViewWindow view_window) ;
 
 GList *zMapViewGetWindowList(ZMapViewWindow view_window);
 void   zMapViewSetWindowList(ZMapViewWindow view_window, GList *list);
+
+ZMapFeatureSequenceMap zMapViewGetSequenceMap(ZMapView zmap_view);
+
+ZMapFeatureSource zMapViewGetFeatureSetSource(ZMapView view, GQuark f_id);
+void zMapViewSetFeatureSetSource(ZMapView view, GQuark f_id, ZMapFeatureSource src);
+
+
+
+GList *zmapViewGetIniSources(char *config_file, char *config_str,char **stylesfile);
+
+
+ZMapViewConnection zMapViewRequestServer(ZMapView view, ZMapViewConnection view_conn, ZMapFeatureBlock block_orig, GList *req_featuresets,
+				   gpointer server, /* ZMapConfigSource */
+	   			   int req_start, int req_end,
+				   gboolean dna_requested, gboolean terminate);
 
 void zmapViewFeatureDump(ZMapViewWindow view_window, char *file) ;
 

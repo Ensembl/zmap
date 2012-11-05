@@ -447,7 +447,9 @@ GList *density_calc_bins(ZMapWindowFeaturesetItem di)
 		if(bin_gs->score > 0)
 		{
 			bin_gs->score = zMapWindowCanvasFeatureGetNormalisedScore(di->style, bin_gs->feature->score);
-			bin_gs->width = di->width * bin_gs->score;
+			bin_gs->width = di->width;
+			if(di->style->mode_data.graph.mode != ZMAPSTYLE_GRAPH_HEATMAP)
+				bin_gs->width = di->width * bin_gs->score;
 
 			if(!fixed && src_gs->y2 < bin_gs->y2)	/* limit dest bin to extent of src */
 			{

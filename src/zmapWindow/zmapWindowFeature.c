@@ -196,7 +196,8 @@ void zmapWindowPfetchEntry(ZMapWindow window, char *sequence_name)
  *
  * NOTE IF YOU EVER CHANGE THIS FUNCTION OR CALL IT TO REMOVE A WHOLE FEATURESET
  * refer to the comment above zmapWindowCanvasfeatureset.c/zMapWindowFeaturesetItemRemoveFeature()
- * and write a new function to delete the whole set
+ * and write a new function to delete the whole set (i did that: zMapWindowFeaturesetItemRemoveSet)
+ * NOTE: destroying the CanvasFeaturset will also do the job
  *
  * Returns FALSE if the feature does not exist. */
 
@@ -299,7 +300,7 @@ ZMapStrand zmapWindowFeatureStrand(ZMapWindow window, ZMapFeature feature)
   ZMapStrand strand = ZMAPSTRAND_FORWARD ;
 
 //  style = zMapFindStyle(window->context_map.styles, feature->style_id) ;
-  style = feature->style;     // safe failure...
+  style = *feature->style;     // safe failure...
 
   g_return_val_if_fail(style != NULL, strand);
 
@@ -780,7 +781,7 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
 
       sub_item = zMapWindowCanvasItemGetInterval(canvas_item, but_event->x, but_event->y, &sub_feature);
 
-	if(feature->type != ZMAPSTYLE_MODE_ALIGNMENT || zMapStyleIsUnique(feature->style))
+	if(feature->type != ZMAPSTYLE_MODE_ALIGNMENT || zMapStyleIsUnique(*feature->style))
 	  highlight_same_names = FALSE ;
 
 
@@ -858,6 +859,10 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
 		/* Pass information about the object clicked on back to the application. */
 		zmapWindowUpdateInfoPanel(window, feature, NULL, item, sub_feature, start, end, start, end,
 				NULL, replace_highlight, highlight_same_names, control) ;
+
+			/* if we have an active dialog update it: they have to click on a feature not the column */
+		zmapWindowSetStyleFeatureset(window, item, feature);
+
 	}
     }
 
@@ -909,7 +914,7 @@ void zmapWindowFeatureExpand(ZMapWindow window, FooCanvasItem *foo,
     {
       /* (mh17) NOTE we have to be careful that these features end up in the same (singleton) CanvasFeatureset else they overlap on bump */
       feature_stack.feature = (ZMapFeature) l->data;
-      item = (ZMapWindowCanvasItem) zmapWindowFeatureDraw(window, feature->style,  container_set,features, foo_featureset, &feature_stack);
+      item = (ZMapWindowCanvasItem) zmapWindowFeatureDraw(window, *feature->style,  container_set,features, foo_featureset, &feature_stack);
 	foo_featureset = (FooCanvasItem *) item;
       //printf(" show %s\n", g_quark_to_string(feature_stack.feature->original_id));
 #if MH17_DO_HIDE

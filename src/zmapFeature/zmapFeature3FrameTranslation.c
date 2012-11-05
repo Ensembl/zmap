@@ -63,7 +63,7 @@ static void translationPopulate(ZMapFeatureBlock feature_block,
 
 
 
-/* 
+/*
  *                External functions.
  */
 
@@ -243,7 +243,7 @@ void zMapFeatureShowTranslationSetCreateFeatures(ZMapFeatureSet feature_set, ZMa
 
 /* Accepts NULL as style but the translation features must already
  * exist and we just revcomp the feature and hence do not need a style.
- * 
+ *
  *  */
 static gboolean feature3FrameTranslationPopulate(ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style,
 						 int block_start, int block_end)
@@ -338,10 +338,11 @@ static void translation_set_populate(ZMapFeatureBlock feature_block,
           x2 = x1 + zMapPeptideFullSourceCodonLength(pep) - 1 ;
 
           translation = zMapFeatureCreateEmpty() ;
-
+	    if(!feature_set->style)
+			feature_set->style = style;
           zMapFeatureAddStandardData(translation, feature_name, feature_name,
                                      seq_name, "sequence",
-                                     ZMAPSTYLE_MODE_SEQUENCE, style,
+                                     ZMAPSTYLE_MODE_SEQUENCE, &feature_set->style,
                                      x1, x2, FALSE, 0.0,
                                      ZMAPSTRAND_NONE) ;
 
@@ -467,12 +468,14 @@ static void translationPopulate(ZMapFeatureBlock feature_block,
       x1 = block_start ;
       x2 = block_end ;
 
+	if(!feature_set->style)
+		feature_set->style = style;
 
       translation = zMapFeatureCreateEmpty() ;
 
       zMapFeatureAddStandardData(translation, feature_name, feature_name,
 				 seq_name, "sequence",
-				 ZMAPSTYLE_MODE_SEQUENCE, style,
+				 ZMAPSTYLE_MODE_SEQUENCE, &feature_set->style,
 				 x1, x2, FALSE, 0.0,
 				 ZMAPSTRAND_NONE) ;
 

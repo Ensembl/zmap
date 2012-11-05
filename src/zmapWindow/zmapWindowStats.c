@@ -149,7 +149,7 @@ ZMapWindowStatsAny zmapWindowStatsAddChild(ZMapWindowStats stats, ZMapFeatureAny
 	    {
 	      stats_any = g_slice_alloc0(num_bytes) ;
 	      stats_any->feature_type = feature->type ;
-	      stats_any->style_id = feature->style_id ;
+	      stats_any->style_id = (*feature->style)->unique_id ;
 
 	      stats->child_sets = g_list_append(stats->child_sets, stats_any) ;
 	    }
@@ -296,7 +296,7 @@ static gint feature2StyleCompare(gconstpointer a, gconstpointer b)
   ZMapWindowStatsAny stats = (ZMapWindowStatsAny)a ;
   ZMapFeature feature = (ZMapFeature)b ;
 
-  if (stats->style_id == feature->style_id)
+  if (stats->style_id == (*feature->style)->unique_id)
     result = 0 ;
 
   return result ;

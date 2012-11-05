@@ -1,0 +1,65 @@
+<h2>Grouping columns together for easy of use</h2>
+
+<h3>Preamble</h3>
+
+<p> The current use of featuresets (data/ features) and columns (containers to put them in)  has roots in ACEDB whcih refered to both as columns.  A user would request a column from ACEDB and this could contain many featureseets (eg Repeats, curated transcripts).  More recently with data being sourced from pipe servers it has been more convenient to regard these as distinct.
+</p>
+<p>With the display code changed to use canvas featuresets and also with new user requirements is is worth reviewing this.  There is a need to request (and show / hide/ bump) groups of columns together; some examples fo this are as follows:
+<ul>
+<li> bigWig heatmaps make a lot more sense with several featuresets displayed next to each other. We assign several featureset to one column and each is displayed in a CanvasFeatureset using a style that staggers the display so that they do not overlap.
+<li> EnsEMBL bodymap consists of about a dozen featuresets that currently have to be requested seperately, and like heatmaps are usefully displayed side by side.
+<li> PolYASeq data also fits this pattern.
+</ul>
+</p>
+<p>Another user requirement is to be able to bump one of a group of columns (bodymap, polyASeq or the whole group (heatmap) and this is currently mot possible as bumping is a function that applied to a column (container).  Each bodymap featureset is displayed in its own column, unlike heatmaps - bumping all 12 featuresest would likley use too much space to be usable.
+</p>
+
+
+<h3>Configuration</h3>
+<p>
+Featuresets by default are displayed in a column of the same name without any other data but columns can be specified as containing several:
+<pre>
+[columns]
+Repeats = repeatmasker_LINE; repeatmasker_SINE; trf
+</pre>
+Note that in ths example each featureset would overlap if the column was bumped - each featureset would be displayed in a different CanvasFeatureset.  Configuration like this work by fluke for repeats as by definition they do not overlap, but is more useful for heatmaps thta have a style set up to stagger the display and prevernt overlap.
+</p>
+
+<p>
+Featuresets by definition contain features of the same type from one source but we can specify a virtual featureset that causes several featuresets to be displayed in the same CanvasFeatureset:
+<pre>
+[featuresets]
+encode_data_xxx  = encode_data_xxx_rep1 ; encode_data_xxx_rep2
+</pre>
+This displays data from the distinct sources in one CanvasFeatureset and when bumped the features will not overlap. For a heatmnap display (encode coverage data) we use a combination the the two options above.
+</p>
+
+<h3>Focus and selecting features</h3>
+<p>Recent changes in the display data structure impact this>: to simplify the canvas containers CanvasFeaturesets have been made to display thoer own background, whcih implies that they must not overlap - this requires Repeats to be configured as a virtual featureset not a composite column.
+Clicking on a feature will highlight the column it's displayed in and also the feature.  If we select a feature then all the CanvasFeaturesets in that column will be highlit by displaying a different coloured background, and if several featuresets are display such that they overlap then some will be hidden from view.
+</p>
+
+<h3>Displaying EnsEMBL bodymap and PolyASeq data in column groups</h3>
+<p>We can group the featuresets into one columeneasily by using [columns] configuration but need to change styles handling slightly to allow stagger to be more effective.  The columns configuration specifies the order that featuresets appear from left to right and the 'stagger' option specified an offset for each on in turn, using the style width.  This assumes that each has the same style (or the styles all have the same width) and we we need to allow the offset to be calculated OTF.   Originally we wanted to have stable positioning for a heatmap display.  Bumping one sub-column would then result in a recalculation of offsets.
+</p>
+
+<h3>Tweaking the user interface</h3>
+<p>Menus can be extended easily to give extra option by keyboard shortcuts are essential for ease of use.  Currently to select a column we simply click on it and that highlights all the CanvasFeaturesets in it.  If we allow <shift> click to specify 'one CanvasFeatureset only' then we can focus on one sub-column.  Normal shift cam select the whole column (and highlight all Canvas Featuresets) and also remember which one was clicked on.  The 'b' can be used to bump the whole column (as normal for a column with a single CanvasfeatureSet, or to bump all heatmaps in a column to wiggle plots) and 'B' (shift 'b') can be used to bump just the selected one.  Normal select can remember which CanvasFeatureset was clicked, so we can select a column as normal and the shift-b to bump one only, and have the choice of bumping all (may be useful for polyASeq)
+</p>
+<p>It may be better to have two levels of highlight for these columns.
+</p>
+
+<h3>New style parameters</h3>
+<p>As data for different featuresets arrives 'when it's ready' we cannot use the existing stagger mechansim to offset each CanvasFeatureset - if we bumped one column durign this process it would not work.
+</p>
+We could reuse the existing 'stagger' option which specifies an offset per CanvasFeatureset and specify 0 to mean 'calculate offset OTF'.  but perhaps it wopudl be better to add a new option:
+<pre>
+offset=true
+</pre>
+which would be mutually exclusive with stagger.
+</p>
+
+<p>
+We can also define an extra highlight colour to use for sub-column select.
+</p>
+

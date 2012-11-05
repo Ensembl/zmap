@@ -360,6 +360,9 @@ void zMapWindowDisplayData(ZMapWindow window, ZMapWindowState state,
 void zMapWindowUnDisplayData(ZMapWindow window,
                              ZMapFeatureContext current_features,
                              ZMapFeatureContext new_features);
+void zMapWindowUnDisplaySearchFeatureSets(ZMapWindow window,
+                             ZMapFeatureContext current_features,
+                             ZMapFeatureContext new_features);
 void zMapWindowMove(ZMapWindow window, double start, double end) ;
 void zMapWindowReset(ZMapWindow window) ;
 void zMapWindowRedraw(ZMapWindow window) ;
@@ -393,8 +396,6 @@ gboolean zMapWindowMarkIsSet(ZMapWindow window);
 
 void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_mode, ZMapWindowCompressMode compress_mode) ;
 void zmapWindowFullReposition(ZMapWindow window) ;
-
-
 
 gboolean zMapWindowGetDNAStatus(ZMapWindow window);
 void zMapWindowStats(ZMapWindow window,GString *text) ;
