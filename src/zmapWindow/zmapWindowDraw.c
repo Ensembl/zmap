@@ -240,6 +240,23 @@ void zMapWindowToggleDNAProteinColumns(ZMapWindow window,
 }
 
 
+void zMapWindowToggleScratchColumn(ZMapWindow window,
+                                   GQuark align_id,   GQuark block_id,
+                                   gboolean force_to, gboolean force)
+{
+  zmapWindowBusy(window, TRUE) ;
+
+  toggleColumnInMultipleBlocks(window, ZMAP_FIXED_STYLE_SCRATCH_NAME,
+                               align_id, block_id, force_to, force);
+
+  zmapWindowFullReposition(window) ;
+
+  zmapWindowBusy(window, FALSE) ;
+
+  return ;
+}
+
+
 
 
 
@@ -1180,24 +1197,26 @@ static void toggleColumnInMultipleBlocks(ZMapWindow window, char *name,
 							ZMAPSTRAND_FORWARD,
 							frame) ;
 
-	      if (frame_column && ZMAP_IS_CONTAINER_FEATURESET(frame_column)
-		  && zmapWindowContainerHasFeatures((ZMapWindowContainerGroup)(frame_column)))
+
+	      if (frame_column && ZMAP_IS_CONTAINER_FEATURESET(frame_column) &&
+                  (zmapWindowContainerHasFeatures((ZMapWindowContainerGroup)frame_column) ||
+                   zmapWindowContainerFeatureSetShowWhenEmpty((ZMapWindowContainerFeatureSet)frame_column)))
 		{
-		  ZMapStyleColumnDisplayState show_hide_state ;
-
-		  if (force && force_to)
-		    show_hide_state = ZMAPSTYLE_COLDISPLAY_SHOW ;
-		  else if (force && !force_to)
-		    show_hide_state = ZMAPSTYLE_COLDISPLAY_HIDE ;
-		  else if (zmapWindowItemIsShown(FOO_CANVAS_ITEM(frame_column)))
-		    show_hide_state = ZMAPSTYLE_COLDISPLAY_HIDE ;
-		  else
-		    show_hide_state = ZMAPSTYLE_COLDISPLAY_SHOW ;
-
-		  zmapWindowColumnSetState(window,
-					   FOO_CANVAS_GROUP(frame_column),
-					   show_hide_state,
-					   FALSE) ;
+                  ZMapStyleColumnDisplayState show_hide_state ;
+                  
+                  if (force && force_to)
+                    show_hide_state = ZMAPSTYLE_COLDISPLAY_SHOW ;
+                  else if (force && !force_to)
+                    show_hide_state = ZMAPSTYLE_COLDISPLAY_HIDE ;
+                  else if (zmapWindowItemIsShown(FOO_CANVAS_ITEM(frame_column)))
+                    show_hide_state = ZMAPSTYLE_COLDISPLAY_HIDE ;
+                  else
+                    show_hide_state = ZMAPSTYLE_COLDISPLAY_SHOW ;
+                  
+                  zmapWindowColumnSetState(window,
+                                           FOO_CANVAS_GROUP(frame_column),
+                                           show_hide_state,
+                                           FALSE) ;
 		}
 	    }
 

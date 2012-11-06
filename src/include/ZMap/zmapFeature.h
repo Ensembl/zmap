@@ -1112,6 +1112,7 @@ ZMAP_ENUM_AS_NAME_STRING_DEC(zMapFeatureAlignFormat2ShortText, ZMapFeatureAlignF
 
 
 gboolean zMapFeatureSequenceSetType(ZMapFeature feature, ZMapSequenceType type) ;
+gboolean zMapFeatureAddFrame(ZMapFeature feature, ZMapFrame frame);
 gboolean zMapFeatureSequenceIsDNA(ZMapFeature feature) ;
 gboolean zMapFeatureSequenceIsPeptide(ZMapFeature feature) ;
 

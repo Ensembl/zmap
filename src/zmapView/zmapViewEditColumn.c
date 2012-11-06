@@ -37,6 +37,7 @@
 
 #include <ZMap/zmap.h>
 #include <ZMap/zmapUtils.h>
+#include <ZMap/zmapFeature.h>
 #include <zmapView_P.h>
 
 
@@ -51,28 +52,44 @@
 void zmapViewEditColumnInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence)
 {
   const char *featureset_name = "scratch";
+  ZMapFeatureContextMap context_map = &zmap_view->context_map;
 
+  /* Create a featureset for the edit column */
   ZMapFeatureSet feature_set = zMapFeatureSetCreate((char*)featureset_name, NULL);
+
+  /* Create the context, align and block, and add the featureset to it */
   ZMapFeatureContext context = zmapViewCreateContext(sequence, NULL, feature_set);
-  ZMapFeatureContext context_new = zmapViewMergeInContext(zmap_view, context);
+
+  /* Merge our context into the view's context and view the diff context */
+  ZMapFeatureContext diff_context = zmapViewMergeInContext(zmap_view, context);
+  zmapViewDrawDiffContext(zmap_view, &diff_context);
   
-  // if entry is missing
-  // allocate a new struct and add to the table
+  /* Create the source and add it to the source_2_sourcedata hash table */
   GQuark fid = g_quark_from_string(featureset_name);
   ZMapFeatureSource src = g_new0(ZMapFeatureSourceStruct,1);
-      
   src->source_id = fid;
   src->source_text = src->source_id;
   src->style_id = fid;
-
-
-  ZMapFeatureContextMap context_map = &zmap_view->context_map;
   g_hash_table_insert(context_map->source_2_sourcedata, GUINT_TO_POINTER(fid), src) ;
 
-
+  /* Create the FeatureSetDesc and add it to the featureset_2_column hash table */
   ZMapFeatureSetDesc set_data = g_new0(ZMapFeatureSetDescStruct,1);
   set_data->column_id = fid;
   set_data->column_ID = fid;
   g_hash_table_insert(context_map->featureset_2_column,GUINT_TO_POINTER(fid), (gpointer) set_data);
+
+
+#warning gb10: hack in a test feature
+  ZMapFeature translation = zMapFeatureCreateEmpty() ;
+  zMapFeatureAddStandardData(translation, featureset_name, featureset_name,
+                             "scratch_seq", "sequence",
+                             ZMAPSTYLE_MODE_SEQUENCE, &feature_set->style,
+                             0, 500, FALSE, 0.0,
+                             ZMAPSTRAND_NONE) ;
+  
+  zMapFeatureSequenceSetType(translation, ZMAPSEQUENCE_PEPTIDE) ;
+  zMapFeatureAddFrame(translation, ZMAPFRAME_NONE) ;
+  
+  zMapFeatureSetAddFeature(feature_set, translation) ;
   
 }

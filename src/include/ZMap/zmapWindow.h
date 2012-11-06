@@ -442,6 +442,9 @@ void zMapWindowToggleDNAProteinColumns(ZMapWindow window,
                                        GQuark align_id,   GQuark block_id,
                                        gboolean dna,      gboolean protein, gboolean trans,
                                        gboolean force_to, gboolean force);
+void zMapWindowToggleScratchColumn(ZMapWindow window,
+                                   GQuark align_id,   GQuark block_id,
+                                   gboolean force_to, gboolean force);
 
 void zMapWindowStateRecord(ZMapWindow window);
 void zMapWindowBack(ZMapWindow window);

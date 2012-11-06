@@ -118,7 +118,7 @@ typedef struct _ZMapStruct
     *filter_but,
     *revcomp_but, *column_but,
     *quit_button, *frame3_but,
-    *dna_but, *back_button;
+    *dna_but, *back_button, *scratch_but;
 
   ZMapWindowFilterStruct filter;
   gboolean filter_spin_pressed;			/* flag to prevent value changed signal handling when spinning button */
