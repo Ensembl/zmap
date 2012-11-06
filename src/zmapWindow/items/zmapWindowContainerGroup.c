@@ -298,31 +298,6 @@ void zmapWindowContainerRequestReposition(ZMapWindowContainerGroup container)
 }
 
 
-/*!
- * Simple, set/get the vertical dimension for the background of the container.
- *
- * container  The container that needs its size set.
- * height     The height the container needs to be.
- *
- * void
- */
-
-void zmapWindowContainerGroupBackgroundSize(ZMapWindowContainerGroup container, double height)
-{
-  container->height = height;
-
-  return ;
-}
-
-
-double zmapWindowContainerGroupGetBackgroundSize(ZMapWindowContainerGroup container)
-{
-  return container->height ;
-}
-
-
-
-
 
 
 

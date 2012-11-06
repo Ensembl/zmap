@@ -100,7 +100,6 @@ typedef struct _zmapWindowContainerGroupStruct
 
   double child_spacing;
   double this_spacing;
-  double height;
 
   double reposition_x;		/* used to position child contianers */
   double reposition_y;		/* currently unused */

@@ -709,11 +709,6 @@ static ZMapFeatureContextExecuteStatus drawContext(GQuark key_id,
 	FooCanvasItem *root = (FooCanvasItem *) navigate->container_root;
 	double x,y;
 
-	/* need to set background size */
-	/* NOTE span is already offset by 1 to get the extent */
-	/* looks like a prior 'add 1 to it' bug fix error */
-	zmapWindowContainerGroupBackgroundSize(navigate->container_root, navigate->full_span.x2 - navigate->full_span.x1) ;
-
 	zmapWindowContainerAttachFeatureAny(navigate->container_root, feature_any);
 
       foo_canvas_set_scroll_region(root->canvas, 0.0, navigate->full_span.x1, 1.0, navigate->full_span.x2);

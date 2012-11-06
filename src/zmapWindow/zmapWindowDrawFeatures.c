@@ -185,8 +185,6 @@ static gboolean feature_set_matches_frame_drawing_mode(ZMapWindow     window,
 
 static gboolean containerDestroyCB(FooCanvasItem *item_in_hash, gpointer data) ;
 
-static void removeEmptyColumnCB(gpointer data, gpointer user_data) ;
-
 static void setColours(ZMapWindow window) ;
 
 void zmapWindowHideEmpty(ZMapWindow window);
@@ -393,8 +391,6 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
 //							 NULL,NULL);
 							 &(window->colour_root),
 							 &(window->canvas_border));
-
-      zmapWindowContainerGroupBackgroundSize(root_group, zmapWindowExt(window->min_coord, window->max_coord)) ;
 
       g_signal_connect(G_OBJECT(root_group), "destroy", G_CALLBACK(containerDestroyCB), window) ;
 
@@ -1737,10 +1733,9 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
           }
         else
           {
-            block_group = zmapWindowContainerGroupCreate((FooCanvasGroup *) canvas_data->curr_align_group,         							  ZMAPCONTAINER_LEVEL_BLOCK,
-
+            block_group = zmapWindowContainerGroupCreate((FooCanvasGroup *) canvas_data->curr_align_group,
+							 ZMAPCONTAINER_LEVEL_BLOCK,
 							 window->config.strand_spacing,
-//							 NULL,NULL);
 							 &(window->colour_block),
 							 &(canvas_data->window->canvas_border));
 
@@ -1756,9 +1751,6 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 	    zmapWindowContainerBlockAugment((ZMapWindowContainerBlock)block_group,
 					    canvas_data->curr_block) ;
 
-	    zmapWindowContainerGroupBackgroundSize(block_group, height) ;
-
-
 	    g_object_set_data(G_OBJECT(block_group), ITEM_FEATURE_STATS,
 			      zmapWindowStatsCreate((ZMapFeatureAny)(canvas_data->curr_block))) ;
 
@@ -1773,7 +1765,7 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 				"y", y,
 				NULL) ;
 
-	    zmapWindowDrawSetGroupBackground(block_group, 0, 1, 1.0, ZMAP_CANVAS_LAYER_BLOCK_BACKGROUND, NULL, NULL);
+	    zmapWindowDrawSetGroupBackground(block_group, 0, 1, 1.0, ZMAP_CANVAS_LAYER_BLOCK_BACKGROUND, &(window->colour_block), NULL);
 
 	    /* Add this block to our hash for going from the feature context to its on screen item. */
 	    if (!(zmapWindowFToIAddBlock(canvas_data->window->context_to_item,
@@ -2081,7 +2073,7 @@ void zmapWindowDrawSetGroupBackground(ZMapWindowContainerGroup container, int st
 	GdkColor *parent_fill = NULL, *parent_border = NULL;
 	ZMapWindowContainerGroup parent = (ZMapWindowContainerGroup) (container->__parent__.item.parent);
 
-#warning temp. ignore blocks etc REMOVE THIS
+//#warning temp. ignore blocks etc REMOVE THIS
 	if(!ZMAP_IS_CONTAINER_FEATURESET(container))
 		return;
 
@@ -2342,9 +2334,6 @@ static FooCanvasGroup *createColumnFull(ZMapWindowContainerFeatures parent_group
 	foo_canvas_item_lower_to_bottom(FOO_CANVAS_ITEM(container));
 
 
-      /* Make sure group covers whole span in y direction. */
-      zmapWindowContainerGroupBackgroundSize(container, bot-top) ;
-
       /* THIS WOULD ALL GO IF WE DIDN'T ADD EMPTY COLS...... */
       /* We can't set the ITEM_FEATURE_DATA as we don't have the feature set at this point.
        * This probably points to some muckiness in the code, problem is caused by us deciding
@@ -2574,16 +2563,6 @@ if(!strncmp(g_quark_to_string(feature->unique_id),"3 frame",7))
 
 
 
-/* Note how we must look at the items drawn, _not_ whether there are any features in the feature
- * set because the features may not be drawn (e.g. because they are on the opposite strand. */
-static void removeEmptyColumnCB(gpointer data, gpointer user_data)
-{
-  FooCanvasGroup *container = (FooCanvasGroup *)data ;
-
-  zmapWindowRemoveIfEmptyCol(&container) ;
-
-  return ;
-}
 
 
 
