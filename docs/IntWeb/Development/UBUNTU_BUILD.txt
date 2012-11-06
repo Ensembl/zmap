@@ -1,0 +1,60 @@
+==============================================================================
+                         Ubuntu Build Support
+
+
+My thesis is this: with ubuntu we are _not_ stepping up to supporting multiple
+versions of linux simultaneously, we will have two versions for a short period
+only, i.e.
+
+                               debian
+                        ----------------|stops|
+ linux (= debian)      /                         linux (= ubuntu)
+-----------------------                      -----------------------
+                       \                    /
+                        --------------------
+                               ubuntu
+
+
+
+Therefore we do not need complicated version recognising build systems but
+simply to rejig our existing build system to make either debian or ubuntu
+builds on a temporary (i.e. hacked) basis. Once we are all using ubuntu then
+our build systems can just run as always....
+
+
+Here is what I've done to make this possible:
+
+
+1) Ran the zmap build on linux/debian to produce a 'lenny' production build,
+this build is in /nfs/zmap/BUILDS/PRODUCTION_BUILDS/ZMap.0-1-136.BUILD.debian
+but is more succinctly referenced as ~zmap/BUILD.PRODUCTION and as
+~zmap/BUILD.PRODUCTION.debian
+
+
+2) The current tviewsrv-compiled acedb binaries run on ubuntu so no need to do
+anything but if I did need to I'd just need to edit updatetree and change the
+build list to include deskpro17537 instead of tviewsrv.
+
+
+3) The seqtools binaries also just run on ubuntu so no need to do anything.
+
+
+4) Instructions for hacking our build for ubuntu:
+
+
+ temporarily hacked the zmap build list in ZMap/scripts/build_config.sh to
+replace tviewsrv with deskpro17537 while I did a production build. This was
+done in the develop branch as that's how the build system works....could
+revist this though and allow checking out of the different build branches.
+
+> su zmap
+
+> cd ~zmap/BUILD_CHECKOUT/
+
+
+
+5) Did a new production zmap build but with all ubuntu code, this build is
+in /nfs/zmap/BUILDS/PRODUCTION_BUILDS/ZMap.0-1-136.BUILD.ubuntu but is more
+succinctly referenced as ~zmap/BUILD.PRODUCTION.ubuntu
+
+

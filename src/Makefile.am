@@ -68,15 +68,6 @@ noinst_LTLIBRARIES = libZMapApp.la libZMap.la libZMapAppServices.la \
                      libZMapThr.la libZMapXML.la libZMapUtils.la \
                      libzmapfoocanvas.la libPFetch.la
 
-libZMapXML_la_SOURCES =
-libZMapXML_la_LIBADD  = zmapXML/libZMapXML.la
-
-libZMapUtils_la_SOURCES =
-libZMapUtils_la_LIBADD  = zmapUtils/libZMapUtils.la
-
-libZMapAppServices_la_SOURCES =
-libZMapAppServices_la_LIBADD  = zmapAppServices/libZMapAppServices.la
-
 libZMapApp_la_SOURCES =
 libZMapApp_la_LIBADD  = zmapApp/libZMapApp.la
 
@@ -96,10 +87,19 @@ zmapServer/libZMapServer.la   \
 zmapServer/libZMapServers.la  \
 $(NULL)
 
+libZMapAppServices_la_SOURCES =
+libZMapAppServices_la_LIBADD  = zmapAppServices/libZMapAppServices.la
+
 libZMapThr_la_SOURCES =
 libZMapThr_la_LIBADD  =       \
 zmapThreads/libZMapThreads.la \
 $(NULL)
+
+libZMapXML_la_SOURCES =
+libZMapXML_la_LIBADD  = zmapXML/libZMapXML.la
+
+libZMapUtils_la_SOURCES =
+libZMapUtils_la_LIBADD  = zmapUtils/libZMapUtils.la
 
 libPFetch_la_SOURCES =
 libPFetch_la_LIBADD  = libpfetch/libpfetch.la libcurlobject/libcurlobject.la
@@ -153,7 +153,6 @@ zmap_LDADD =                                                 \
 	$(ACECONN_LIBS) $(GTK_LIBS)                          \
 	$(LIBCURL) -lexpat                                   \
 	@MACOSX_UNIVERSAL_FLAGS@ $(NULL)
-
 
 zmap_SOURCES      = $(top_srcdir)/zmapApp/zmapAppmain_c.c
 zmap_LDFLAGS      =

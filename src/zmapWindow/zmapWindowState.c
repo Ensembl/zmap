@@ -156,12 +156,11 @@ ZMapWindowState zmapWindowStateCreate(void)
 {
   ZMapWindowState state = NULL;
 
-  if(!(state = g_new0(ZMapWindowStateStruct, 1)))
-    zMapAssertNotReached();
-  else
-    state->magic = window_state_magic_G;
+  state = g_new0(ZMapWindowStateStruct, 1) ;
 
-  return state;
+  state->magic = window_state_magic_G ;
+
+  return state ;
 }
 
 void zmapWindowStateRestore(ZMapWindowState state, ZMapWindow window)
@@ -233,13 +232,18 @@ ZMapWindowState zmapWindowStateDestroy(ZMapWindowState state)
 {
   zMapAssert(state && ZMAP_MAGIC_IS_VALID(window_state_magic_G, state->magic)) ;
 
+
+
   /* Anything that needs freeing */
 
+
+  /* Reset magic ptr to invalidate the block. */
+  state->magic = NULL ;
 
   /* ZERO AND FREE */
   ZMAP_PTR_ZERO_FREE(state, ZMapWindowStateStruct);
 
-  return state;
+  return state ;
 }
 
 gboolean zmapWindowStateSavePosition(ZMapWindowState state, ZMapWindow window)
@@ -324,6 +328,9 @@ gboolean zmapWindowStateSaveFocusItems(ZMapWindowState state, ZMapWindow window)
 {
   gboolean result = FALSE ;
   FooCanvasItem *focus_item ;
+
+  zMapAssert(state && ZMAP_MAGIC_IS_VALID(window_state_magic_G, state->magic)) ;
+  zMapAssert(window) ;
 
   if ((window->focus) && (focus_item = zmapWindowFocusGetHotItem(window->focus)))
     {
