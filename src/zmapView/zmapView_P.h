@@ -333,6 +333,8 @@ typedef struct _ZMapViewStruct
 
 
 
+ZMapViewCallbacks zmapViewGetCallbacks(void) ;
+
 void zmapViewBusyFull(ZMapView zmap_view, gboolean busy, const char *file, const char *function) ;
 #define zmapViewBusy(VIEW, BUSY) \
   zmapViewBusyFull((VIEW), (BUSY), __FILE__, __PRETTY_FUNCTION__)

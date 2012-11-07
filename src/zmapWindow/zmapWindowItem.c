@@ -160,6 +160,33 @@ void zMapWindowHighlightFeature(ZMapWindow window, ZMapFeature feature, gboolean
 
 
 
+/* Unhighlight the given feature. */
+gboolean zMapWindowUnhighlightFeature(ZMapWindow window, ZMapFeature feature)
+{
+  gboolean result = FALSE ;
+  FooCanvasItem *feature_item ;
+  ZMapStrand set_strand = ZMAPSTRAND_NONE ;
+  ZMapFrame set_frame = ZMAPFRAME_NONE ;
+
+  if (zMapStyleIsStrandSpecific(*feature->style))
+    set_strand = feature->strand;
+  if (zMapStyleIsFrameSpecific(*feature->style) && IS_3FRAME_COLS(window->display_3_frame))
+    set_frame = zmapWindowFeatureFrame(feature);
+
+  if ((feature_item = zmapWindowFToIFindFeatureItem(window, window->context_to_item,
+						    set_strand, set_frame, feature))
+      && feature_item == zmapWindowFocusGetHotItem(window->focus))
+    {
+      zmapWindowFocusRemoveFocusItem(window->focus, feature_item) ;
+      result = TRUE ;
+    }
+
+  return result ;
+}
+
+
+
+
 /* Highlight a feature or list of related features (e.g. all hits for same query sequence). */
 void zMapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
 			       gboolean replace_highlight_item, gboolean highlight_same_names, gboolean sub_part)

@@ -459,11 +459,14 @@ gboolean zMapWindowScrollToItem(ZMapWindow window, FooCanvasItem *feature_item) 
 gboolean zMapWindowFeatureSelect(ZMapWindow window, ZMapFeature feature) ;
 
 void zMapWindowHighlightFeature(ZMapWindow window, ZMapFeature feature, gboolean highlight_same_names, gboolean replace);
+gboolean zMapWindowUnhighlightFeature(ZMapWindow window, ZMapFeature feature) ;
 void zMapWindowHighlightObject(ZMapWindow window, FooCanvasItem *feature,
 			       gboolean replace_highlight_item, gboolean highlight_same_names, gboolean sub_part) ;
 void zMapWindowHighlightObjects(ZMapWindow window, ZMapFeatureContext context, gboolean multiple_select);
 
 void zmapWindowHighlightSequenceItem(ZMapWindow window, FooCanvasItem *item, int start, int end);
+
+char *zMapWindowGetHotColumnName(ZMapWindow window) ;
 
 void zMapWindowDestroyLists(ZMapWindow window) ;
 void zMapWindowUnlock(ZMapWindow window) ;

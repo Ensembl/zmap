@@ -476,35 +476,43 @@ char *zMapFeatureCanonName(char *feature_name)
 /* This function creates a unique id for a feature. This is essential if we are to use the
  * g_hash_table package to hold and reference features. Code should _ALWAYS_ use this function
  * to produce these IDs.
- * Caller must g_free() returned string when finished with. */
+ * 
+ * Caller must g_free() returned string when finished with.
+ * 
+ * OK, I THINK THERE IS A PROBLEM HERE...WE COULD HAVE FEATURES WITH SAME COORDS ON
+ * OPPOSITE STRAND WHILE AN ANNOTATOR IS EDITING FEATURES....DOH.....
+ * 
+ */
 char *zMapFeatureCreateName(ZMapStyleMode feature_type,
 			    char *feature,
 			    ZMapStrand strand, int start, int end, int query_start, int query_end)
 {
-  char *feature_name = NULL, *ptr ;
-  int len;
+  char *feature_unique_name = NULL ;
+  char *strand_str, *ptr ;
+  int len ;
 
+  /* Turn this into a if() and return null if things not supplied.... */
   zMapAssert(feature_type) ;
   zMapAssert(feature && *feature) ;
 
-  /* Get the length of the feature (saving time??) for later */
-  len = strlen(feature);
+  strand_str = zMapFeatureStrand2Str(strand) ;
 
   if (feature_type == ZMAPSTYLE_MODE_ALIGNMENT)
-    feature_name = g_strdup_printf("%s_%d.%d_%d.%d", feature,
-				   start, end, query_start, query_end) ;
+    feature_unique_name = g_strdup_printf("%s_'%s'_%d.%d_%d.%d", feature,
+					  strand_str, start, end, query_start, query_end) ;
   else
-    feature_name = g_strdup_printf("%s_%d.%d", feature, start, end) ;
+    feature_unique_name = g_strdup_printf("%s_'%s'_%d.%d", feature, strand_str, start, end) ;
 
   /* lower case the feature name, only the feature part though,
    * numbers don't matter. Here we do as g_strdown does, but in place
    * rather than a g_strdup first. */
-  for(ptr = feature_name; ptr <= feature_name + len; ptr++)
+  len = strlen(feature) ;
+  for (ptr = feature_unique_name ; ptr <= feature_unique_name + len ; ptr++)
     {
-      *ptr = g_ascii_tolower(*ptr);
+      *ptr = g_ascii_tolower(*ptr) ;
     }
 
-  return feature_name ;
+  return feature_unique_name ;
 }
 
 
