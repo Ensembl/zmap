@@ -719,6 +719,37 @@ static gboolean sanityCheckContext(ZMapView view, RequestData input_data)
 
 static void eraseFeatures(ZMapView view, RequestData input_data)
 {
+  GList* list_item ;
+
+  /* If the feature is highlighted we need to unhighlight it in all windows first.... */
+  list_item = g_list_first(view->window_list) ;
+  do
+    {
+      ZMapViewWindow view_window ;
+
+      view_window = list_item->data ;
+
+      /* If feature to be erased is highlighted then unhighlight it and tell our
+       * parent that only column is no selected. */
+      if (zMapWindowUnhighlightFeature(view_window->window, input_data->feature))
+	{
+	  ZMapViewSelectStruct view_select = {0} ;
+	  ZMapViewCallbacks view_cbs ;
+	  ZMapFeatureDescStruct feature_desc ;
+
+	  feature_desc.struct_type = ZMAPFEATURE_STRUCT_FEATURESET ;
+	  feature_desc.feature_set = zMapWindowGetHotColumnName(view_window->window) ;
+	  view_select.feature_desc = feature_desc ;
+
+	  view_cbs = zmapViewGetCallbacks() ;
+
+	  (*(view_cbs->select))(view_window, view_window->parent_view->app_data, &view_select) ;
+	}
+
+    }
+  while ((list_item = g_list_next(list_item))) ;
+
+  /* OK, now get rid of feature from context. */
   zmapViewEraseFromContext(view, input_data->edit_context);
 
   zMapFeatureContextExecute((ZMapFeatureAny)(input_data->edit_context),

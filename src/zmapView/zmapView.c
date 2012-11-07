@@ -315,6 +315,17 @@ void zMapViewInit(ZMapViewCallbacks callbacks)
 }
 
 
+/* Return the global callbacks registered with view by caller. */
+ZMapViewCallbacks zmapViewGetCallbacks(void)
+{
+  ZMapViewCallbacks call_backs ;
+
+  call_backs = view_cbs_G ;
+
+  return  call_backs ;
+}
+
+
 
 /*!
  * Create a "view", this is the holder for a single feature context. The view may use
@@ -2353,31 +2364,31 @@ static void viewSelectCB(ZMapWindow window, void *caller_data, void *window_data
 	    {
 	      ZMapViewWindow view_window ;
 	      FooCanvasItem *item ;
-		GList *l;
+	      GList *l;
 
 	      view_window = list_item->data ;
 
-		if ((item = zMapWindowFindFeatureItemByItem(view_window->window, window_select->highlight_item)))
+	      if ((item = zMapWindowFindFeatureItemByItem(view_window->window, window_select->highlight_item)))
 		{
-			zMapWindowHighlightObject(view_window->window, item,
-				  window_select->replace_highlight_item,
-				  window_select->highlight_same_names,
-				  window_select->sub_part) ;
+		  zMapWindowHighlightObject(view_window->window, item,
+					    window_select->replace_highlight_item,
+					    window_select->highlight_same_names,
+					    window_select->sub_part) ;
 		}
 
-		for(l = window_select->feature_list;l; l = l->next)
+	      for(l = window_select->feature_list;l; l = l->next)
 		{
-			ZMapFeature feature = (ZMapFeature) l->data;
+		  ZMapFeature feature = (ZMapFeature) l->data;
 
-			/* NOTE we restrict multi select to one column in line with previous policy (in the calling code)
-			 * NOTE: can have several featuresets in one column
-			 * feature_list inlcudes the first and second and subsequent features found,
-			 * the first is also given explicitly in the item
-			 */
-			if(!l->prev)		/* already dome the first one */
-				continue;
+		  /* NOTE we restrict multi select to one column in line with previous policy (in the calling code)
+		   * NOTE: can have several featuresets in one column
+		   * feature_list inlcudes the first and second and subsequent features found,
+		   * the first is also given explicitly in the item
+		   */
+		  if(!l->prev)		/* already dome the first one */
+		    continue;
 
-			zMapWindowHighlightFeature(view_window->window, feature, window_select->highlight_same_names, FALSE);
+		  zMapWindowHighlightFeature(view_window->window, feature, window_select->highlight_same_names, FALSE);
 		}
 	    }
 	  while ((list_item = g_list_next(list_item))) ;
@@ -2394,11 +2405,11 @@ static void viewSelectCB(ZMapWindow window, void *caller_data, void *window_data
   if (window_select->xml_handler.zmap_action)
     {
       window_select->remote_result = zmapViewRemoteSendCommand(view_window->parent_view,
-								     window_select->xml_handler.zmap_action,
-								     window_select->xml_handler.xml_events,
-								     window_select->xml_handler.start_handlers,
-								     window_select->xml_handler.end_handlers,
-								     window_select->xml_handler.handler_data) ;
+							       window_select->xml_handler.zmap_action,
+							       window_select->xml_handler.xml_events,
+							       window_select->xml_handler.start_handlers,
+							       window_select->xml_handler.end_handlers,
+							       window_select->xml_handler.handler_data) ;
     }
 
 

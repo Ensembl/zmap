@@ -593,18 +593,22 @@ static ZMapFeatureContextExecuteStatus undisplayFeaturesCB(GQuark key,
                                                            gpointer user_data,
                                                            char **err_out)
 {
+  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK ;
   ZMapWindow window = (ZMapWindow)user_data ;
   ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
   ZMapFeature feature;
   FooCanvasItem *feature_item;
-  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
   ZMapStrand column_strand;
 
   switch(feature_any->struct_type)
     {
     case ZMAPFEATURE_STRUCT_FEATURESET:
-      zMapLogWarning("FeatureSet %s", g_quark_to_string(feature_any->unique_id));
-      break;
+      {
+	/* CHRIST, WHAT IS THIS CODE....?????????? */
+
+	zMapLogWarning("FeatureSet %s", g_quark_to_string(feature_any->unique_id));
+	break;
+      }
     case ZMAPFEATURE_STRUCT_FEATURE:
       {
 	feature = (ZMapFeature)feature_any;
@@ -616,30 +620,29 @@ static ZMapFeatureContextExecuteStatus undisplayFeaturesCB(GQuark key,
       /* if the feature context is from a request from otterlace then
        * the display column has not been set, we need to lookup
        */
-  ZMapFeatureSetDesc gffset;
-  ZMapFeatureSet fset;
+	ZMapFeatureSetDesc gffset;
+	ZMapFeatureSet fset;
 
-      fset = (ZMapFeatureSet) (feature_any->parent);
-      if(!fset->column_id)
-      {
-            gffset = g_hash_table_lookup(window->context_map->featureset_2_column, GUINT_TO_POINTER(fset->unique_id));
-            if(gffset)
-                  fset->column_id = gffset->column_id;
-      }
+	fset = (ZMapFeatureSet) (feature_any->parent);
+	if(!fset->column_id)
+	  {
+	    gffset = g_hash_table_lookup(window->context_map->featureset_2_column, GUINT_TO_POINTER(fset->unique_id));
+	    if(gffset)
+	      fset->column_id = gffset->column_id;
+	  }
 #endif
-      /* MH17: we get locus features inserted mysteriously if a feature has a locus id
-       * but they don't always appear in zmap in whcih case there is no column id
-       * This is true when otterlace sends a single feature to delete and then we fail to find
-       * the extra locus feature
-       *
-       * regardless of that if we have features that are not displayed due to config this could also fail
-       * so if not column_id defined log a warning and fail silently.
-       *
-       * locus is used in the naviagtor, we hope dealt with via another call.
-       */
 
-	if ( /*fset->column_id && */
-      (feature_item = zmapWindowFToIFindFeatureItem(window,window->context_to_item,
+	/* MH17: we get locus features inserted mysteriously if a feature has a locus id
+	 * but they don't always appear in zmap in whcih case there is no column id
+	 * This is true when otterlace sends a single feature to delete and then we fail to find
+	 * the extra locus feature
+	 *
+	 * regardless of that if we have features that are not displayed due to config this could also fail
+	 * so if not column_id defined log a warning and fail silently.
+	 *
+	 * locus is used in the naviagtor, we hope dealt with via another call.
+	 */
+	if ((feature_item = zmapWindowFToIFindFeatureItem(window,window->context_to_item,
 							  column_strand,
 							  ZMAPFRAME_NONE,
 							  feature)))
@@ -648,16 +651,21 @@ static ZMapFeatureContextExecuteStatus undisplayFeaturesCB(GQuark key,
 	    status = ZMAP_CONTEXT_EXEC_STATUS_OK;
 	  }
 	else
-	  zMapLogWarning("Failed to find feature '%s'\n", g_quark_to_string(feature->original_id));
+	  {
+	    zMapLogWarning("Failed to find feature '%s'\n", g_quark_to_string(feature->original_id));
+	    status = ZMAP_CONTEXT_EXEC_STATUS_ERROR ;
+	  }
 
 	break;
       }
     default:
-      /* nothing to do for most of it while we only have single blocks and aligns... */
-      break;
+      {
+	/* nothing to do for most of it while we only have single blocks and aligns... */
+	break;
+      }
     }
 
-  return status;
+  return status ;
 }
 
 
