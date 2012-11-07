@@ -190,6 +190,8 @@ typedef struct _ZMapViewConnectionStruct
   ThreadStatus thread_status;				    /* probably this is badly placed, but not as badly as before */
   								    /* at least it has some persistance now */
 
+  gboolean show_warning;
+
 } ZMapViewConnectionStruct;
 
 
