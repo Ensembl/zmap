@@ -603,8 +603,8 @@ gboolean zmapWindowColumnIs3frameDisplayed(ZMapWindow window, FooCanvasGroup *co
 gboolean zmapWindowColumnIsMagVisible(ZMapWindow window, FooCanvasGroup *col_group)
 {
   gboolean visible = TRUE ;
-  ZMapWindowContainerGroup container = (ZMapWindowContainerGroup)col_group;
-  ZMapWindowContainerFeatureSet featureset = (ZMapWindowContainerFeatureSet)col_group;
+  ZMapWindowContainerGroup container = ZMAP_CONTAINER_GROUP(col_group);
+  ZMapWindowContainerFeatureSet featureset = ZMAP_CONTAINER_FEATURESET(col_group);
 
   zMapAssert(window && FOO_IS_CANVAS_GROUP(col_group)) ;
 
@@ -1199,8 +1199,8 @@ static void toggleColumnInMultipleBlocks(ZMapWindow window, char *name,
 
 
 	      if (frame_column && ZMAP_IS_CONTAINER_FEATURESET(frame_column) &&
-                  (zmapWindowContainerHasFeatures((ZMapWindowContainerGroup)frame_column) ||
-                   zmapWindowContainerFeatureSetShowWhenEmpty((ZMapWindowContainerFeatureSet)frame_column)))
+                  (zmapWindowContainerHasFeatures(ZMAP_CONTAINER_GROUP(frame_column)) ||
+                   zmapWindowContainerFeatureSetShowWhenEmpty(ZMAP_CONTAINER_FEATURESET(frame_column))))
 		{
                   ZMapStyleColumnDisplayState show_hide_state ;
                   

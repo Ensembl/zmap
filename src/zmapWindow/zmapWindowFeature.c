@@ -243,9 +243,12 @@ gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_
 
 	  /* I think we shouldn't need to do this probably....on the other hand showing
 	   * empty cols is configurable.... */
-	  if (!(zmapWindowContainerHasFeatures((ZMapWindowContainerGroup)container_set)))
-	    zmapWindowContainerSetVisibility(FOO_CANVAS_GROUP(container_set), FALSE) ;
-
+	  if (!zmapWindowContainerHasFeatures(ZMAP_CONTAINER_GROUP(container_set)) &&
+              !zmapWindowContainerFeatureSetShowWhenEmpty(container_set))
+            {
+              zmapWindowContainerSetVisibility(FOO_CANVAS_GROUP(container_set), FALSE) ;
+            }
+          
 	  /* destroy the feature... deletes record in the featureset. */
           if (destroy_feature)
             zMapFeatureDestroy(feature);

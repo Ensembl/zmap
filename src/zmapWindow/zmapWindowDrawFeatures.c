@@ -737,7 +737,7 @@ gboolean zmapWindowRemoveIfEmptyCol(FooCanvasGroup **col_group)
   container = (ZMapWindowContainerGroup)(*col_group);
 
   if ((!zmapWindowContainerHasFeatures(container)) &&
-      (!zmapWindowContainerFeatureSetShowWhenEmpty((ZMapWindowContainerFeatureSet)container)))
+      (!zmapWindowContainerFeatureSetShowWhenEmpty(ZMAP_CONTAINER_FEATURESET(container))))
     {
       container = zmapWindowContainerGroupDestroy(container) ;
 
@@ -827,8 +827,8 @@ static void hideEmptyCB(ZMapWindowContainerGroup container, FooCanvasPoints *poi
     {
     case ZMAPCONTAINER_LEVEL_FEATURESET:
       {
-	  if ((!zmapWindowContainerHasFeatures(container)) &&
-      	(!zmapWindowContainerFeatureSetShowWhenEmpty((ZMapWindowContainerFeatureSet)container)))
+	  if (!zmapWindowContainerHasFeatures(container) &&
+              !zmapWindowContainerFeatureSetShowWhenEmpty(ZMAP_CONTAINER_FEATURESET(container)))
     	  {
     	     zmapWindowColumnHide((FooCanvasGroup *)container) ;
     	  }

@@ -2084,11 +2084,15 @@ static void loaded_show_button_cb(GtkToggleButton *togglebutton, gpointer user_d
 			  frame_column = zmapWindowFToIFindSetItem(window, window->context_to_item,feature_set,
 								   zmapWindowContainerFeatureSetGetStrand(container), frame);
 
-			  if(frame_column && zmapWindowContainerHasFeatures((ZMapWindowContainerGroup)(frame_column)))
-			    zmapWindowColumnSetState(window,
-						     FOO_CANVAS_GROUP(frame_column),
-						     button_data->show_hide_state,
-						     FALSE) ;
+			  if(frame_column && 
+                             (zmapWindowContainerHasFeatures(ZMAP_CONTAINER_GROUP(frame_column)) ||
+                              zmapWindowContainerFeatureSetShowWhenEmpty(ZMAP_CONTAINER_FEATURESET(frame_column))))
+                            {
+                              zmapWindowColumnSetState(window,
+                                                       FOO_CANVAS_GROUP(frame_column),
+                                                       button_data->show_hide_state,
+                                                       FALSE) ;
+                            }
 			}
 
 		      if(page_data->reposition)
@@ -2184,7 +2188,7 @@ static void set_column_lists_cb(ZMapWindowContainerGroup container, FooCanvasPoi
 	    gboolean allow_empty;
 
 	    container_set = (ZMapWindowContainerFeatureSet)container;
-	    is_empty      = !zmapWindowContainerHasFeatures((ZMapWindowContainerGroup)container_set);
+	    is_empty      = !zmapWindowContainerHasFeatures(ZMAP_CONTAINER_GROUP(container_set));
             allow_empty   = zmapWindowContainerFeatureSetShowWhenEmpty(container_set);
 
 	    if(!is_empty || allow_empty)
