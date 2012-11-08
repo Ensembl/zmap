@@ -2180,6 +2180,19 @@ static void getIniData(ZMapView view, char *config_str, GList *req_sources)
             g_hash_table_destroy(col_styles);
 	  }
 
+	  {
+		  GQuark col_id = zMapFeatureSetCreateID(ZMAP_FIXED_STYLE_STRAND_SEPARATOR);
+		  column = g_hash_table_lookup(view->context_map.columns,GUINT_TO_POINTER(col_id));
+		  if(column)
+		  {
+			  column->style_id = col_id;
+
+			  zMap_g_hashlist_insert(view->context_map.column_2_styles,
+					   column->unique_id,
+					   GUINT_TO_POINTER(col_id)) ;
+		  }
+ 	  }
+
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	printf("\nini fset2style\n");
 	zMap_g_hashlist_print(view->context_map.column_2_styles);

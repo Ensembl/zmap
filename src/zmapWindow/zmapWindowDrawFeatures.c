@@ -2235,18 +2235,6 @@ static FooCanvasGroup *createColumnFull(ZMapWindowContainerFeatures parent_group
     }
   else
     {
-    	if(feature_set->style && zMapStyleDisplayInSeparator(feature_set->style))
-	{
-		GdkColor *fill = NULL;
-
-		/* this featureset never has features, search hit markers are in extra featuresets created OTF
-		 * so this yellow background is safe from being overridden
-		 */
-		zMapStyleGetColours(feature_set->style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL, &fill, NULL, NULL);
-		colour = fill;
-	}
-	else
-
       if (align == window->feature_context->master_align)
 	{
 	  if (strand == ZMAPSTRAND_FORWARD)
@@ -2272,6 +2260,7 @@ static FooCanvasGroup *createColumnFull(ZMapWindowContainerFeatures parent_group
 
   if(column && column->style_id)
   {
+	  /* for strand separator this is hard coded in zmapView/getIniData(); */
 	ZMapFeatureTypeStyle s;
 
 	s = g_hash_table_lookup(window->context_map->styles,GUINT_TO_POINTER(column->style_id));
