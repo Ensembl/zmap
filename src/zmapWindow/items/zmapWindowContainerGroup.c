@@ -217,10 +217,13 @@ ZMapWindowContainerGroup zmapWindowContainerGroupCreateFromFoo(FooCanvasGroup   
 
 	container->background_fill = background_fill_colour;
 	container->background_border = background_border_colour;
-
+#if BLOCK_MARK
       if(ZMAP_CONTAINER_GROUP_GET_CLASS(container)->post_create)
 	(ZMAP_CONTAINER_GROUP_GET_CLASS(container)->post_create)(container);
+#endif
     }
+
+  zMapWindowContainerGroupSortByLayer((FooCanvasGroup *) item->parent);
 
   return container;
 }
@@ -321,6 +324,48 @@ ZMapWindowContainerGroup zmapWindowContainerGroupDestroy(ZMapWindowContainerGrou
 }
 
 
+
+/* NOTE don-t _EVER_ let this get called by a Foo Canvas callback */
+/* let's use a filter sort here, stability is a good thing and volumes are small */
+void zMapWindowContainerGroupSortByLayer(FooCanvasGroup * group)
+{
+	GList *old;
+	ZMapWindowFeaturesetItem item;
+	guint layer;
+	/* we only implement 3 layers */
+	GList *back = NULL, *features = NULL, *overlay = NULL;
+
+	if(!group || !ZMAP_IS_CONTAINER_GROUP(group))
+		return;
+
+	for(old = group->item_list; old; old = old->next)
+	{
+		if(!ZMAP_IS_WINDOW_FEATURESET_ITEM(old->data))
+		{
+			layer = 0;		/* is another group eg a column */
+		}
+		else
+		{
+			item = (ZMapWindowFeaturesetItem) old->data;
+			layer = zMapWindowCanvasFeaturesetGetLayer(item);
+		}
+
+		if(!(layer & ZMAP_CANVAS_LAYER_DECORATION))	/* normal features */
+			features = g_list_append(features, old->data);
+		else if((layer & ZMAP_CANVAS_LAYER_OVERLAY))
+			overlay = g_list_append(overlay, old->data);
+		else
+			back = g_list_append(back, old->data);
+	}
+
+	features = g_list_concat(features, overlay);
+	back = g_list_concat(back, features);
+
+	g_list_free(group->item_list);
+
+	group->item_list = back;
+	group->item_list_end = g_list_last(back);
+}
 
 
 
@@ -602,7 +647,6 @@ static void zmap_window_container_group_draw (FooCanvasItem *item, GdkDrawable *
 
 
 
-
 /* This takes care of the x positioning of the containers as well as the maximising in the y coords. */
 /* colunns have been ordered before calling, place each one to the right of the previous one */
 
@@ -612,7 +656,7 @@ static void zmap_window_container_group_update (FooCanvasItem *item, double i2w_
   gboolean item_visible;
 
 
-canvas_group   = (FooCanvasGroup *)item;
+  canvas_group   = (FooCanvasGroup *)item;
   item_visible   = ((item->object.flags & FOO_CANVAS_ITEM_VISIBLE) == FOO_CANVAS_ITEM_VISIBLE);
 
 
@@ -685,6 +729,7 @@ printf("group update %s\n", x);
 				foo->y2 = item->y2;
 				foo_canvas_c2w(foo->canvas,0, foo->y1, NULL, &y1);
 				foo_canvas_c2w(foo->canvas,0, foo->y2, NULL, &y2);
+
 				zMapWindowCanvasFeaturesetSetSequence(featureset,y1,y2);
 			}
 		}

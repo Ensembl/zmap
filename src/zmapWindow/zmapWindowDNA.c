@@ -1098,7 +1098,7 @@ static void remove_current_matches_from_display(DNASearchData search_data)
       /* Get the block matching the search_data->block */
       block = zMapFeatureAlignmentGetBlockByID(align, search_data->block->unique_id);
 
-	free_this = sets = zMapFeatureBlockGetMatchingSets(block,g_ascii_strdown(ZMAP_FIXED_STYLE_SEARCH_MARKERS_NAME,-1));
+	free_this = sets = zMapFeatureBlockGetMatchingSets(block,g_ascii_strdown(ZMAP_FIXED_STYLE_SEARCH_MARKERS_NAME"_",-1));
 
 
 	/* remove multiple featuresets matching the name, we have a diff set for each search */
@@ -1118,6 +1118,8 @@ static void remove_current_matches_from_display(DNASearchData search_data)
 	for( ; sets; sets = sets->next)
 	{
 		feature_set = (ZMapFeatureSet) sets->data;
+printf("remove set %s\n", g_quark_to_string(feature_set->unique_id));
+
 		/* its container, to hide it later */
 		if(!container)
 			container = zmapWindowFToIFindSetItem(search_data->window,search_data->window->context_to_item,

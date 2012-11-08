@@ -876,46 +876,6 @@ GType zMapWindowFeaturesetItemGetType(void)
 }
 
 
-/* NOTE don-t _EVER_ let this get called by a Foo Canvas callback */
-/* let's use a filter sort here, stability is a good thing and volumes are tiny */
-static void sort_containing_group_by_layer(ZMapWindowFeaturesetItem featureset)
-{
-	GList *old;
-	FooCanvasGroup *group = (FooCanvasGroup *) ((FooCanvasItem *) featureset)-> parent;
-	ZMapWindowFeaturesetItem item;
-	guint layer;
-
-	/* we only implement 3 layers */
-	GList *back = NULL, *features = NULL, *overlay = NULL;
-
-	for(old = group->item_list; old; old = old->next)
-	{
-		if(!ZMAP_IS_WINDOW_FEATURESET_ITEM(old->data))
-		{
-			layer = 0;		/* don-t expect to get here but you never know.... */
-		}
-		else
-		{
-			item = (ZMapWindowFeaturesetItem) old->data;
-			layer = item->layer;
-		}
-
-		if(!(layer & ZMAP_CANVAS_LAYER_DECORATION))	/* normal features */
-			features = g_list_append(features, old->data);
-		else if((layer & ZMAP_CANVAS_LAYER_OVERLAY))
-			overlay = g_list_append(overlay, old->data);
-		else
-			back = g_list_append(back, old->data);
-	}
-
-	features = g_list_concat(features, overlay);
-	back = g_list_concat(back, features);
-
-	g_list_free(group->item_list);
-
-	group->item_list = back;
-	group->item_list_end = g_list_last(back);
-}
 
 /*
  * return a singleton column wide canvas item
@@ -1022,7 +982,8 @@ printf("create canvas set %s\n",g_quark_to_string(featureset->id));
 	func(featureset) ;
 
 	featureset->layer = layer;
-	sort_containing_group_by_layer(featureset);
+
+	zMapWindowContainerGroupSortByLayer(parent);
 
       /* set our bounding box in canvas coordinates to be the whole column */
       foo_canvas_item_request_update (foo);
@@ -1104,7 +1065,7 @@ guint zMapWindowCanvasFeaturesetGetLayer(ZMapWindowFeaturesetItem featureset)
 void zMapWindowCanvasFeaturesetSetLayer(ZMapWindowFeaturesetItem featureset, guint layer)
 {
 	featureset->layer = layer;
-	sort_containing_group_by_layer(featureset);
+	zMapWindowContainerGroupSortByLayer(((FooCanvasItem *) featureset)->parent);
 }
 #endif
 
@@ -2095,16 +2056,16 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
 #if 0
 
 //  if(fi->type >= FEATURE_GRAPHICS)
-if(!fi->features)
+//if(!fi->features)
 {
 	ZMapWindowContainerFeatureSet column;
 
 	printf("expose %p %s %.1f,%.1f (%d %d, %d %d)\n", item->canvas, g_quark_to_string(fi->id),
 		 y1, y2, fi->clip_x1, fi->clip_y1, fi->clip_x2, fi->clip_y2);
 
-	column =  (ZMapWindowContainerFeatureSet) ((ZMapWindowCanvasItem) item)->__parent__.parent;
-	if(ZMAP_IS_CONTAINER_FEATURESET(column))
-		printf("painting column %s\n",g_quark_to_string(column->unique_id));
+//	column =  (ZMapWindowContainerFeatureSet) ((ZMapWindowCanvasItem) item)->__parent__.parent;
+//	if(ZMAP_IS_CONTAINER_FEATURESET(column))
+//		printf("painting column %s\n",g_quark_to_string(column->unique_id));
 }
 #endif
 

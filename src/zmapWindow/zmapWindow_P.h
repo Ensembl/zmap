@@ -279,6 +279,58 @@ typedef struct _zmapWindowFeatureStack
 
 
 
+
+/* parameters passed between the various functions drawing the features on the canvas, it's
+ * simplest to cache the current stuff as we go otherwise the code becomes convoluted by having
+ * to look up stuff all the time. */
+typedef struct _ZMapCanvasDataStruct
+{
+  ZMapWindow window ;
+  FooCanvas *canvas ;
+
+  /* Records which alignment, block, set, type we are processing. */
+  ZMapFeatureContext full_context ;
+//  GHashTable *styles ;
+  ZMapFeatureAlignment curr_alignment ;
+  ZMapFeatureBlock curr_block ;
+  ZMapFeatureSet curr_set ;
+
+  /* THESE ARE REALLY NEEDED TO POSITION THE ALIGNMENTS FOR WHICH WE CURRENTLY HAVE NO
+   * ORDERING/PLACEMENT MECHANISM.... */
+  /* Records current positional information. */
+//  double curr_x_offset ;
+//  double curr_y_offset ;
+
+  int feature_count;
+
+  /* Records current canvas item groups, these are the direct parent groups of the display
+   * types they contain, e.g. curr_root_group is the parent of the align */
+  ZMapWindowContainerFeatures curr_root_group ;
+  ZMapWindowContainerFeatures curr_align_group ;
+  ZMapWindowContainerFeatures curr_block_group ;
+#define curr_forward_group	curr_block_group
+#define curr_reverse_group	curr_block_group
+
+//  ZMapWindowContainerFeatures curr_forward_col ;
+//  ZMapWindowContainerFeatures curr_reverse_col ;
+
+  ZMapFeatureSet this_featureset_only;	/* when redrawing one featureset only */
+
+  GHashTable *feature_hash ;
+
+  GList *masked;
+
+
+  /* frame specific display control. */
+  gboolean    frame_mode_change ;
+  ZMapFrame   current_frame;
+
+  ZMapFeatureTypeStyle style;       /* for the column */
+
+} ZMapCanvasDataStruct, *ZMapCanvasData ;
+
+
+
 /* Item features are the canvas items that represent sequence features, they can be of various
  * types, in particular compound features such as transcripts require a parent, a bounding box
  * and children for features such as introns/exons. */
@@ -427,12 +479,11 @@ typedef enum
  *           Default colours.
  */
 
-#define ZMAP_WINDOW_BACKGROUND_COLOUR "grey"		    /* main canvas background */
+#define ZMAP_WINDOW_BACKGROUND_COLOUR "green"		    /* main canvas background */
 
-#define ZMAP_WINDOW_BLOCK_BACKGROUND_COLOUR "light grey"		    /* main canvas background */
+#define ZMAP_WINDOW_BLOCK_BACKGROUND_COLOUR "white"	    /* main canvas background */
 
-#define ZMAP_WINDOW_STRAND_DIVIDE_COLOUR "yellow"	    /* Marks boundary of forward/reverse
-							       strands. */
+#define ZMAP_WINDOW_STRAND_DIVIDE_COLOUR "yellow"	    /* Marks boundary of forward/reverse strands. */
 
 /* Colours for master alignment block (forward and reverse). */
 #define ZMAP_WINDOW_MBLOCK_F_BG "white"
@@ -526,7 +577,9 @@ typedef struct
 {
   double align_spacing ;
   double block_spacing ;
+#if USE_STRAND
   double strand_spacing ;
+#endif
   double column_spacing ;
   double feature_spacing ;
   guint  feature_line_width ;				    /* n.b. line width is in pixels. */
@@ -1444,17 +1497,22 @@ gboolean zmapWindowCreateSetColumns(ZMapWindow window,
                                     ZMapWindowContainerFeatures reverse_strand_group,
                                     ZMapFeatureBlock block,
                                     ZMapFeatureSet feature_set,
-				    GHashTable *styles,
                                     ZMapFrame frame,
                                     FooCanvasGroup **forward_col_out,
                                     FooCanvasGroup **reverse_col_out,
 				    FooCanvasGroup **separator_col_out);
 int zmapWindowDrawFeatureSet(ZMapWindow window,
-			      GHashTable *styles,
+//			      GHashTable *styles,
                               ZMapFeatureSet feature_set,
                               FooCanvasGroup *forward_col,
                               FooCanvasGroup *reverse_col,
                               ZMapFrame frame, gboolean frame_mode_change) ;
+
+void zMapWindowDrawContext(ZMapCanvasData     canvas_data,
+			      ZMapFeatureContext full_context,
+			      ZMapFeatureContext diff_context,
+			      GList *masked);
+
 void zmapWindowRemoveEmptyColumns(ZMapWindow window,
 				  FooCanvasGroup *forward_group, FooCanvasGroup *reverse_group) ;
 gboolean zmapWindowRemoveIfEmptyCol(FooCanvasGroup **col_group) ;

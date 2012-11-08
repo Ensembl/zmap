@@ -108,6 +108,7 @@ typedef struct
 } VisCoordsStruct, *VisCoords ;
 
 
+#if 0
 typedef struct
 {
   ZMapWindow window;
@@ -129,7 +130,7 @@ typedef struct
   FooCanvasGroup *curr_reverse_col ;
 
 }SeparatorCanvasDataStruct, *SeparatorCanvasData;
-
+#endif
 
 static void toggleColumnInMultipleBlocks(ZMapWindow window, char *name,
 					 GQuark align_id, GQuark block_id,
@@ -154,7 +155,7 @@ static ZMapFeatureContextExecuteStatus draw_separator_features(GQuark key_id,
 							       gpointer feature_data,
 							       gpointer user_data,
 							       char **error_out);
-static void drawSeparatorFeatures(SeparatorCanvasData canvas_data, ZMapFeatureContext context);
+static void drawSeparatorFeatures(ZMapCanvasData canvas_data, ZMapFeatureContext context);
 
 static void set3FrameState(ZMapWindow window, ZMapWindow3FrameMode frame_mode) ; ;
 static void myWindowSet3FrameMode(ZMapWindow window, ZMapWindow3FrameMode frame_mode) ;
@@ -1022,9 +1023,15 @@ void zmapWindowDrawSeparatorFeatures(ZMapWindow           window,
 
   /* We need the block to know which one to draw into... */
 
-  if (zMapStyleDisplayInSeparator(style))
+#if USE_STRAND
+//  if (zMapStyleDisplayInSeparator(style))
+#else
+   if(!style)
+	zMapLogWarning("Feature set '%s' has no style!", g_quark_to_string(feature_set->original_id));
+    else
+#endif
     {
-      SeparatorCanvasDataStruct canvas_data = {NULL};
+      ZMapCanvasDataStruct canvas_data = {NULL};
       /* this is a good start. */
       /* need to copy the block, */
       block_cp = (ZMapFeatureBlock)zMapFeatureAnyCopy((ZMapFeatureAny)block);
@@ -1052,20 +1059,33 @@ void zmapWindowDrawSeparatorFeatures(ZMapWindow           window,
 			      &context_cp, &diff,NULL);
 
       canvas_data.window = window;
+//      canvas_data.styles = window->context_map->styles ;
+
+#if NEST_OF_BUGGY_CODE
       canvas_data.full_context = window->strand_separator_context;
-      canvas_data.styles = window->context_map->styles ;
-
       drawSeparatorFeatures(&canvas_data, window->strand_separator_context) ;
+#else
+	/* let's just use the code that we debugged for the normal columns */
+	canvas_data.curr_root_group = zmapWindowContainerGetFeatures(window->feature_root_group) ;
+	zMapWindowDrawContext(&canvas_data, window->strand_separator_context, diff, NULL);
 
-      zmapWindowFullReposition(window->feature_root_group);
+//	zmapWindowRedrawFeatureSet(window, feature_set);
+
+#endif
+
+
+//      zmapWindowFullReposition(window->feature_root_group); ermmm/// why??
     }
+#if USE_STRAND
   else if(style)
     zMapLogWarning("Trying to draw feature set with non-separator "
 		   "style '%s' in strand separator.",
 		   zMapStyleGetName(style));
+
   else
     zMapLogWarning("Feature set '%s' has no style!",
 		   g_quark_to_string(feature_set->original_id));
+#endif
 
   return;
 }
@@ -1258,15 +1278,18 @@ gboolean zMapWindowResetWindowWidth(FooCanvasItem *item)
     {
       double excess ;
 
+//printf("window_width %f %f\n",root_width, scr_reg_width);
+
       excess = root_width - scr_reg_width ;
       /* the spacing should be a border width from somewhere. */
-      x2 = x2 + excess + window->config.strand_spacing;
+#warning define some left/right border and also subtract from x1
+      x2 = x2 + excess;	// why ???  + window->config.strand_spacing;
 
       /* Annoyingly the initial size of the canvas is an issue here on first draw */
       if(y2 == ZMAP_CANVAS_INIT_SIZE)
-	y2 = window->max_coord;
+		y2 = window->max_coord;
 
-      zmapWindowSetScrollRegion(window, &x1, &y1, &x2, &y2,"resetWindowWidth 1") ;
+	zmapWindowSetScrollRegion(window, &x1, &y1, &x2, &y2,"resetWindowWidth 1") ;
 
 	foo_canvas_item_request_redraw((FooCanvasItem *) window->feature_root_group);
     }
@@ -1278,10 +1301,10 @@ gboolean zMapWindowResetWindowWidth(FooCanvasItem *item)
 
       excess = root_width - scr_reg_width ;
       /* the spacing should be a border width from somewhere. */
-      x2 = x2 + excess + window->config.strand_spacing;
+      x2 = x2 + excess; // why ???  + window->config.strand_spacing;
 
       /* Annoyingly the initial size of the canvas is an issue here on first draw */
-      if(y2 == 100.0)
+      if(y2 == ZMAP_CANVAS_INIT_SIZE)
 	y2 = window->max_coord;
 
       box = foo_canvas_points_new(2);
@@ -1619,7 +1642,7 @@ static ZMapFeatureContextExecuteStatus draw_separator_features(GQuark key_id,
 							       char **error_out)
 {
   ZMapFeatureAny feature_any             = (ZMapFeatureAny)feature_data;
-  SeparatorCanvasData canvas_data        = (SeparatorCanvasData)user_data;
+  ZMapCanvasData canvas_data        = (ZMapCanvasData)user_data;
   ZMapWindow window                      = canvas_data->window;
   ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
 
@@ -1683,19 +1706,35 @@ static ZMapFeatureContextExecuteStatus draw_separator_features(GQuark key_id,
 
 	canvas_data->curr_set = zMapFeatureBlockGetSetByID(canvas_data->curr_block,
 							   feature_any->unique_id);
+#if 1
+/*
+the trouble with  having several subtly different functions to do the same thing is
+that it-s really really difficult to make any changes to the code
+a) you have to do it several times
+b) you have to debug it several times
+c) each slightly different function has different parameters and scope
+d) they use different data structures to hold the same information
+*/
+
 	if (zmapWindowCreateSetColumns(window,
 				       canvas_data->curr_forward_group,
 				       canvas_data->curr_reverse_group,
 				       canvas_data->curr_block,
 				       canvas_data->curr_set,
-				       canvas_data->styles,
 				       ZMAPFRAME_NONE,
 				       &tmp_forward, NULL, &separator))
+#else
+// produce column is static and at the bottom of a long stack
+	  separator = produce_column(canvas_data, canvas_data->curr_block_group,
+					  canvas_data->curr_set->unique_id,
+					  ZMAPSTRAND_NONE, ZMAP_FRAME_NONE,canvas_data->curr_set);
+
+#endif
 	  {
 	    zmapWindowColumnSetState(window, separator, ZMAPSTYLE_COLDISPLAY_SHOW, FALSE);
 
-	    zmapWindowDrawFeatureSet(window,  canvas_data->styles, (ZMapFeatureSet)feature_any,
-				     separator, NULL, ZMAPFRAME_NONE, FALSE) ;
+	    zmapWindowDrawFeatureSet(window,  /*canvas_data->styles, */ (ZMapFeatureSet)feature_any,
+				     separator, NULL, ZMAPFRAME_NONE, TRUE) ;
 
 	    if (tmp_forward)
 	      zmapWindowRemoveIfEmptyCol(&tmp_forward);
@@ -1712,7 +1751,7 @@ static ZMapFeatureContextExecuteStatus draw_separator_features(GQuark key_id,
   return status;
 }
 
-static void drawSeparatorFeatures(SeparatorCanvasData canvas_data, ZMapFeatureContext context)
+static void drawSeparatorFeatures(ZMapCanvasData canvas_data, ZMapFeatureContext context)
 {
   zMapFeatureContextExecuteComplete((ZMapFeatureAny)context,
 				    ZMAPFEATURE_STRUCT_FEATURE,

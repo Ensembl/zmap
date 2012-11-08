@@ -75,9 +75,11 @@ typedef struct _zmapWindowContainerGroupClassStruct
 
   /* Useful things that the interface provides... */
 
+#if BLOCK_MARK
   /* We want to use foo_canvas_item_new and have default items created.  These
    * might not be the same for all our items... */
   void            (* post_create) (ZMapWindowContainerGroup window_canvas_item);
+#endif
 
 } zmapWindowContainerGroupClassStruct;
 

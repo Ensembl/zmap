@@ -286,9 +286,9 @@ display-mode=hide
 bump-mode=unbump
 default-bump-mode=unbump
 bump-fixed=true
-width=15.0
+width=11.0
 strand-specific=false
-#show-only-in-separator=true
+show-only-in-separator=true
 colours = normal fill red ; normal draw black ; selected fill red; selected draw black
 rev-colours = normal fill green ; normal draw black ; selected fill green ; selected draw black
 

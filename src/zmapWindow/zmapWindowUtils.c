@@ -736,10 +736,11 @@ ZMapGuiNotebookChapter zMapWindowGetConfigChapter(ZMapWindow window, ZMapGuiNote
   tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "column_spacing",
 					     ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
 					     "float", window->config.column_spacing);
-
+#if USE_STRAND
   tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "strand_spacing",
 					     ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
 					     "float", window->config.strand_spacing);
+#endif
 
   tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "keep_empty_columns",
 					     ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX,

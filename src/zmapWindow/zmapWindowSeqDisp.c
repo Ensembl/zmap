@@ -355,7 +355,7 @@ FooCanvasItem *zmapWindowItemGetShowTranslationColumn(ZMapWindow window, FooCanv
 					 NULL,
 					 block,
 					 feature_set,
-					 window->context_map->styles,
+//					 window->context_map->styles,
 					 ZMAPFRAME_NONE,
 					 &tmp_forward, &tmp_reverse, NULL))
 	    {

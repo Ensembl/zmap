@@ -147,6 +147,8 @@ ZMapWindowContainerGroup zmapWindowContainerGroupCreateFromFoo(FooCanvasGroup   
 							       GdkColor *background_fill_colour,
 							       GdkColor *background_border_colour);
 
+void zMapWindowContainerGroupSortByLayer(FooCanvasGroup * group);
+
 GdkColor *zmapWindowContainerGroupGetFill(ZMapWindowContainerGroup group);
 GdkColor *zmapWindowContainerGroupGetBorder(ZMapWindowContainerGroup group);
 

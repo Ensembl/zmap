@@ -4842,6 +4842,8 @@ static ZMapFeatureContext createContext(ZMapView view, GList *feature_set_names)
   zMapFeatureAlignmentAddBlock(alignment, block) ;
 
   /* add a strand separator featureset if this repeats it will be merged, but we need it for the yellow stripe in the middle of the screen */
+  /* it will cause a column of the ame name to be created */
+  /* real separator featureset have diff names and will be added to the column */
 
   feature_set = zMapFeatureSetCreate(ZMAP_FIXED_STYLE_STRAND_SEPARATOR, NULL);
   if(feature_set)

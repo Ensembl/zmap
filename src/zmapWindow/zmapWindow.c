@@ -2033,7 +2033,9 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
 
   window->config.align_spacing = ALIGN_SPACING ;
   window->config.block_spacing = BLOCK_SPACING ;
+#if USE_STRAND
   window->config.strand_spacing = STRAND_SPACING ;
+#endif
   window->config.column_spacing = COLUMN_SPACING ;
   window->config.feature_spacing = FEATURE_SPACING ;
   window->config.feature_line_width = FEATURE_LINE_WIDTH ;
@@ -3023,9 +3025,11 @@ static gboolean getConfiguration(ZMapWindow window)
 				    ZMAPSTANZA_WINDOW_B_SPACING, &tmp_int))
 	window->config.block_spacing = (double)tmp_int;
 
+#if USE_STRAND
       if(zMapConfigIniContextGetInt(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
 				    ZMAPSTANZA_WINDOW_S_SPACING, &tmp_int))
 	window->config.strand_spacing = (double)tmp_int;
+#endif
 
       if(zMapConfigIniContextGetInt(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
 				    ZMAPSTANZA_WINDOW_C_SPACING, &tmp_int))
