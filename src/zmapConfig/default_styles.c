@@ -315,8 +315,8 @@ parent-style=assembly\n\
 [style-Scratch]\n\
 description=scratch-pad column for creating/editing temporary features\n\
 parent-style=transcript\n\
-# width in characters\n\
-width=10\n\
+width=20\n\
+show-when-empty=true\n\
 \n\
 \n\
 \n\
