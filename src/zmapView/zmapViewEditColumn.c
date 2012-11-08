@@ -51,45 +51,84 @@
  */
 void zmapViewEditColumnInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence)
 {
-  const char *featureset_name = "scratch";
+  ZMapFeatureSet scratch_featureset = NULL ;
+  ZMapFeatureTypeStyle style = NULL ;
+  ZMapFeatureSetDesc f2c;
+  ZMapFeatureSource src;
+  GList *list;
+  ZMapFeatureColumn column;
+
   ZMapFeatureContextMap context_map = &zmap_view->context_map;
 
-  /* Create a featureset for the edit column */
-  ZMapFeatureSet feature_set = zMapFeatureSetCreate((char*)featureset_name, NULL);
+  if((style = zMapFindStyle(context_map->styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_SCRATCH_NAME))))
+    {
+      /* Create the featureset */
+      scratch_featureset = zMapFeatureSetCreate(ZMAP_FIXED_STYLE_SCRATCH_NAME, NULL);
+      style = zMapFeatureStyleCopy(style);
+      scratch_featureset->style = style ;
 
-  /* Create the context, align and block, and add the featureset to it */
-  ZMapFeatureContext context = zmapViewCreateContext(sequence, NULL, feature_set);
+      /* Create the context, align and block, and add the featureset to it */
+      ZMapFeatureContext context = zmapViewCreateContext(sequence, NULL, scratch_featureset);
 
-  /* Merge our context into the view's context and view the diff context */
-  ZMapFeatureContext diff_context = zmapViewMergeInContext(zmap_view, context);
-  zmapViewDrawDiffContext(zmap_view, &diff_context);
+      /* Merge our context into the view's context and view the diff context */
+      ZMapFeatureContext diff_context = zmapViewMergeInContext(zmap_view, context);
+      zmapViewDrawDiffContext(zmap_view, &diff_context);
   
-  /* Create the source and add it to the source_2_sourcedata hash table */
-  GQuark fid = g_quark_from_string(featureset_name);
-  ZMapFeatureSource src = g_new0(ZMapFeatureSourceStruct,1);
-  src->source_id = fid;
-  src->source_text = src->source_id;
-  src->style_id = fid;
-  g_hash_table_insert(context_map->source_2_sourcedata, GUINT_TO_POINTER(fid), src) ;
 
-  /* Create the FeatureSetDesc and add it to the featureset_2_column hash table */
-  ZMapFeatureSetDesc set_data = g_new0(ZMapFeatureSetDescStruct,1);
-  set_data->column_id = fid;
-  set_data->column_ID = fid;
-  g_hash_table_insert(context_map->featureset_2_column,GUINT_TO_POINTER(fid), (gpointer) set_data);
+	/* set up featureset2_column and anything else needed */
+      f2c = g_hash_table_lookup(context_map->featureset_2_column, GUINT_TO_POINTER(scratch_featureset->unique_id));
+      if(!f2c)	/* these just accumulate  and should be removed from the hash table on clear */
+	{
+		f2c = g_new0(ZMapFeatureSetDescStruct,1);
+
+		f2c->column_id = zMapFeatureSetCreateID(ZMAP_FIXED_STYLE_SCRATCH_NAME);
+		f2c->column_ID = g_quark_from_string(ZMAP_FIXED_STYLE_SCRATCH_NAME);
+		f2c->feature_src_ID = g_quark_from_string(ZMAP_FIXED_STYLE_SCRATCH_NAME);
+		f2c->feature_set_text = ZMAP_FIXED_STYLE_SCRATCH_TEXT;
+		g_hash_table_insert(context_map->featureset_2_column, GUINT_TO_POINTER(scratch_featureset->unique_id), f2c);
+	}
+
+      src = g_hash_table_lookup(context_map->source_2_sourcedata, GUINT_TO_POINTER(scratch_featureset->unique_id));
+      if(!src)
+	{
+		src = g_new0(ZMapFeatureSourceStruct,1);
+		src->source_id = f2c->feature_src_ID;
+		src->source_text = g_quark_from_string(ZMAP_FIXED_STYLE_SCRATCH_TEXT);
+		src->style_id = style->unique_id;
+		src->maps_to = f2c->column_id;
+		g_hash_table_insert(context_map->source_2_sourcedata, GUINT_TO_POINTER(scratch_featureset->unique_id), src);
+	}
+
+      list = g_hash_table_lookup(context_map->column_2_styles,GUINT_TO_POINTER(f2c->column_id));
+      if(!list)
+	{
+		list = g_list_prepend(list,GUINT_TO_POINTER(src->style_id));
+		g_hash_table_insert(context_map->column_2_styles,GUINT_TO_POINTER(f2c->column_id), list);
+	}
+
+      column = g_hash_table_lookup(context_map->columns,GUINT_TO_POINTER(f2c->column_id));
+      if(!column)
+	{
+		column = g_new0(ZMapFeatureColumnStruct,1);
+		column->unique_id = f2c->column_id;
+		column->style_table = g_list_prepend(NULL, (gpointer)  style);
+		/* the rest shoudl get filled in elsewhere */
+		g_hash_table_insert(context_map->columns, GUINT_TO_POINTER(f2c->column_id), column);
+	}
+    }
 
 
-#warning gb10: hack in a test feature
-  ZMapFeature translation = zMapFeatureCreateEmpty() ;
-  zMapFeatureAddStandardData(translation, featureset_name, featureset_name,
-                             "scratch_seq", "sequence",
-                             ZMAPSTYLE_MODE_SEQUENCE, &feature_set->style,
-                             0, 500, FALSE, 0.0,
-                             ZMAPSTRAND_NONE) ;
-  
-  zMapFeatureSequenceSetType(translation, ZMAPSEQUENCE_PEPTIDE) ;
-  zMapFeatureAddFrame(translation, ZMAPFRAME_NONE) ;
-  
-  zMapFeatureSetAddFeature(feature_set, translation) ;
-  
+//#warning gb10: hack in a test feature
+//  ZMapFeature translation = zMapFeatureCreateEmpty() ;
+//  zMapFeatureAddStandardData(translation, ZMAP_FIXED_STYLE_SCRATCH_NAME, ZMAP_FIXED_STYLE_SCRATCH_NAME, 
+//                             "scratch_seq", "sequence",
+//                             ZMAPSTYLE_MODE_SEQUENCE, &scratch_featureset->style,
+//                             0, 500, FALSE, 0.0,
+//                             ZMAPSTRAND_NONE) ;
+//  
+//  zMapFeatureSequenceSetType(translation, ZMAPSEQUENCE_PEPTIDE) ;
+//  zMapFeatureAddFrame(translation, ZMAPFRAME_NONE) ;
+//  
+//  zMapFeatureSetAddFeature(scratch_featureset, translation) ;
+//  
 }
