@@ -89,29 +89,29 @@ typedef struct _ZMapWindowFocusStruct
 
 typedef struct _ZMapWindowFocusItemStruct
 {
-      FooCanvasItem *item;
-      ZMapFeature feature;
-      	/* for density items we have one foo and many features
-      	 * and we need to store the feature
-      	 */
+  FooCanvasItem *item;
+  ZMapFeature feature;
+  /* for density items we have one foo and many features
+   * and we need to store the feature
+   */
 
-      ZMapWindowContainerFeatureSet item_column ;   // column if on display: interacts w/ focus_column
+  ZMapWindowContainerFeatureSet item_column ;   // column if on display: interacts w/ focus_column
 
-      // next one not used yet
-      ZMapFeatureSet featureset;                    // featureset it lives in (esp if not displayed)
+  // next one not used yet
+  ZMapFeatureSet featureset;                    // featureset it lives in (esp if not displayed)
 
-      int flags;                                    // a bitmap of focus types and misc data
-      int display_state;
-            // selected flags if any
-            // all states need to be kept as more than one may be visible
-            // as some use fill and some use border
+  int flags;                                    // a bitmap of focus types and misc data
+  int display_state;
+  // selected flags if any
+  // all states need to be kept as more than one may be visible
+  // as some use fill and some use border
 
-// if needed add this for data structs for any group
-//      void *data[N_FOCUS_GROUPS];
+  // if needed add this for data structs for any group
+  //      void *data[N_FOCUS_GROUPS];
 
-// from the previous ZMapWindowFocusItemAreaStruct
-//  gboolean        highlighted;    // this was used but never unset
-//  gpointer        associated;     // this had set values preserved but never set
+  // from the previous ZMapWindowFocusItemAreaStruct
+  //  gboolean        highlighted;    // this was used but never unset
+  //  gpointer        associated;     // this had set values preserved but never set
 
 } ZMapWindowFocusItemStruct, *ZMapWindowFocusItem;
 
@@ -134,15 +134,15 @@ typedef struct
  */
 typedef struct _zmapWindowFocusCacheStruct
 {
-	int id;	/* counts from 1 */
-	ZMapWindow window;	/* boringly we need this to set global colours after the window is realised */
+  int id;	/* counts from 1 */
+  ZMapWindow window;	/* boringly we need this to set global colours after the window is realised */
 
-	gulong fill_pixel[N_FOCUS_GROUPS];		/* these are globally set colours */
-	gboolean fill_set[N_FOCUS_GROUPS];
-	gulong outline_pixel[N_FOCUS_GROUPS];
-	gboolean outline_set[N_FOCUS_GROUPS];
+  gulong fill_pixel[N_FOCUS_GROUPS];		/* these are globally set colours */
+  gboolean fill_set[N_FOCUS_GROUPS];
+  gulong outline_pixel[N_FOCUS_GROUPS];
+  gboolean outline_set[N_FOCUS_GROUPS];
 
-	gboolean done_colours;
+  gboolean done_colours;
 
 } zmapWindowFocusCacheStruct, *ZMapWindowFocusCache;
 
@@ -154,10 +154,12 @@ int focus_cache_id_G = 0;	/* one for each window, we allow for up to 64k
 
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 ZMapWindowFocusItem zmapWindowFocusItemCreate(FooCanvasItem *item);
-void zmapWindowFocusItemDestroy(ZMapWindowFocusItem list_item);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-
+static void focusItemDestroy(ZMapWindowFocusItem list_item);
 
 static ZMapWindowFocusItem add_unique(ZMapWindowFocus focus,FooCanvasItem *item,ZMapFeature feature,
       ZMapWindowFocusType type);
@@ -188,6 +190,10 @@ static void FocusUnmaskOverlay(ZMapWindowFocus focus);
 static gboolean overlay_manager_list_debug_G = FALSE;
 #endif
 
+
+
+
+
 /*
  *              Set of routines to handle focus items.
  *    extended by mh17 to handle evidence features highlighting too.
@@ -213,6 +219,27 @@ static gboolean overlay_manager_list_debug_G = FALSE;
  * which is called via zmapWindowHighlightObject()
  * and not the SetHotItem function in this file which had code to do this that was never run
  */
+
+
+char *zMapWindowGetHotColumnName(ZMapWindow window)
+{
+  char *column_name = NULL ;
+  ZMapWindowContainerFeatureSet column ;
+  GQuark set_id ;
+
+  if ((column = window->focus->focus_column))
+    {
+      set_id = zmapWindowContainerFeatureSetColumnDisplayName(column) ;
+      column_name = (char *)g_quark_to_string(set_id) ;
+    }
+
+  return column_name ;
+}
+
+
+
+
+
 
 
 gboolean zmapWindowFocusHasType(ZMapWindowFocus focus, ZMapWindowFocusType type)
@@ -760,7 +787,7 @@ void zmapWindowFocusRemoveFocusItemType(ZMapWindowFocus focus,
 
 	      if(!(gonner->flags & WINDOW_FOCUS_GROUP_FOCUSSED))   // no groups: remove from list
 		{
-		  zmapWindowFocusItemDestroy(gonner);
+		  focusItemDestroy(gonner);
 		  focus->focus_item_set = g_list_delete_link(focus->focus_item_set,remove);
                   /* although we are removing the link that gets processed by the for loop
                    * we will break out of it so this is safe
@@ -894,6 +921,8 @@ void zmapWindowFocusDestroy(ZMapWindowFocus focus)
   return ;
 }
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 ZMapWindowFocusItem zmapWindowFocusItemCreate(FooCanvasItem *item)
 {
   ZMapWindowFocusItem list_item;
@@ -908,8 +937,10 @@ ZMapWindowFocusItem zmapWindowFocusItemCreate(FooCanvasItem *item)
 
   return list_item;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-void zmapWindowFocusItemDestroy(ZMapWindowFocusItem list_item)
+
+static void focusItemDestroy(ZMapWindowFocusItem list_item)
 {
   list_item->item = NULL;
 
@@ -1197,19 +1228,19 @@ static void freeFocusItems(ZMapWindowFocus focus, ZMapWindowFocusType type)
       l = l->next;
 
       if(type == WINDOW_FOCUS_GROUP_FOCUSSED)
-            li->flags &= ~WINDOW_FOCUS_GROUP_FOCUSSED;
+	li->flags &= ~WINDOW_FOCUS_GROUP_FOCUSSED;
       else
-            li->flags &= ~focus_group_mask[type];
+	li->flags &= ~focus_group_mask[type];
 
       highlightItem(focus->window,li);
 
       if(!(li->flags & WINDOW_FOCUS_GROUP_FOCUSSED))
-      {
-            zmapWindowFocusItemDestroy(del->data);
-            focus->focus_item_set = g_list_delete_link(focus->focus_item_set,del) ;
-            if(focus->hot_item == li->item)
-            	focus->hot_item = NULL;
-      }
+	{
+	  focusItemDestroy(del->data);
+	  focus->focus_item_set = g_list_delete_link(focus->focus_item_set,del) ;
+	  if(focus->hot_item == li->item)
+	    focus->hot_item = NULL;
+	}
     }
 
   return ;

@@ -1197,7 +1197,7 @@ void zmap_window_canvas_featureset_expose_feature(ZMapWindowFeaturesetItem fi, Z
 
   /* get item canvas coords, following example from FOO_CANVAS_RE (used by graph items) */
   foo_canvas_w2c (foo->canvas, x1 + i2w_dx, gs->y1 - fi->start + i2w_dy, &cx1, &cy1);
-  foo_canvas_w2c (foo->canvas, x1 + gs->width + i2w_dx, gs->y2 - fi->start + i2w_dy, &cx2, &cy2);
+  foo_canvas_w2c (foo->canvas, x1 + gs->width + i2w_dx, (gs->y2 - fi->start + i2w_dy + 1), &cx2, &cy2);
 
   /* need to expose + 1, plus for glyphs add on a bit: bodged to 8 pixels
    * really ought to work out max glyph size or rather have true feature extent
@@ -2178,7 +2178,10 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
 void zmapWindowCanvasFeaturesetSetColours(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature feat)
 {
   FooCanvasItem *item = (FooCanvasItem *) fi;
+  ZMapFeature feature = feat->feature ;
   ZMapStyleColourType ct;
+  static gboolean tmp_debug = FALSE ;
+
 
   /* NOTE carefully balanced code:
    * we do all blurred features then all focussed ones
@@ -2187,6 +2190,11 @@ void zmapWindowCanvasFeaturesetSetColours(ZMapWindowFeaturesetItem fi, ZMapWindo
    * other kinds of focus eg evidence do not have colours set in the style
    * so mixed focus types are not a problem
    */
+
+  if (tmp_debug)
+    zMapUtilsDebugPrintf(stderr, "Feature: \"%s\", \"%s\"\n",
+			 g_quark_to_string(feature->original_id), g_quark_to_string(feature->unique_id)) ;
+
 
   zMapAssert(*feat->feature->style);
 

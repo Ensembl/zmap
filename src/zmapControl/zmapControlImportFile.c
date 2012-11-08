@@ -1055,10 +1055,11 @@ static void importFileCB(GtkWidget *widget, gpointer cb_data)
 
 	server = (ZMapConfigSource) servers->data;
 
-	if( !zMapViewRequestServer(view, NULL, NULL, req_featuresets, (gpointer) server, start, end, FALSE, TRUE))
-	{
+	if( zMapViewRequestServer(view, NULL, NULL, req_featuresets, (gpointer) server, start, end, FALSE, TRUE, TRUE))
+		zMapViewShowLoadStatus(view);
+      else
 		zMapWarning("could not request %s",file_txt);
-	}
+
 
 	zMapConfigSourcesFreeList(servers);
 

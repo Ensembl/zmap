@@ -2008,12 +2008,12 @@ static ZMapFeatureContextExecuteStatus eraseContextCB(GQuark key,
     case ZMAPFEATURE_STRUCT_FEATURE:
       /* look up in the current */
 
-      if(merge_data->current_view_set &&
-         (erased_feature_any = zMapFeatureAnyGetFeatureByID(merge_data->current_view_set, key)))
+      if (merge_data->current_view_set
+	 && (erased_feature_any = zMapFeatureAnyGetFeatureByID(merge_data->current_view_set, key)))
         {
 	  erased_feature = (ZMapFeature)erased_feature_any;
 
-          if(merge_debug_G)
+          if (merge_debug_G)
             zMapLogWarning("%s","\tFeature in erase and current contexts...");
 
           /* insert into the diff context.
@@ -2021,7 +2021,7 @@ static ZMapFeatureContextExecuteStatus eraseContextCB(GQuark key,
            */
           if (!merge_data->current_diff_align)
             {
-              if(merge_debug_G)
+              if (merge_debug_G)
                 zMapLogWarning("%s","\tno parent align... creating align in diff");
 
 	      merge_data->current_diff_align
@@ -2035,9 +2035,10 @@ static ZMapFeatureContextExecuteStatus eraseContextCB(GQuark key,
 					     (ZMapFeatureAlignment)merge_data->current_diff_align,
 					     FALSE);
             }
+
           if (!merge_data->current_diff_block)
             {
-              if(merge_debug_G)
+              if (merge_debug_G)
                 zMapLogWarning("%s","\tno parent block... creating block in diff");
 
 	      merge_data->current_diff_block
@@ -2050,9 +2051,12 @@ static ZMapFeatureContextExecuteStatus eraseContextCB(GQuark key,
               zMapFeatureAlignmentAddBlock((ZMapFeatureAlignment)merge_data->current_diff_align,
 					   (ZMapFeatureBlock)merge_data->current_diff_block);
             }
-          if(!merge_data->current_diff_set)
+
+          if (!merge_data->current_diff_set)
             {
-              if(merge_debug_G)
+	      ZMapFeatureSet feature_set ;
+
+              if (merge_debug_G)
                 zMapLogWarning("%s","\tno parent set... creating set in diff");
 
 	      merge_data->current_diff_set
@@ -2061,6 +2065,11 @@ static ZMapFeatureContextExecuteStatus eraseContextCB(GQuark key,
 					  merge_data->current_view_set->original_id,
 					  merge_data->current_view_set->unique_id,
 					  NULL) ;
+
+	      feature_set = (ZMapFeatureSet)(merge_data->current_diff_set) ;
+
+	      /* YES....AND AGH.....COPY THE STYLE POINTER !!!!!!!!!!!!!! */
+	      feature_set->style = ((ZMapFeatureSet)(merge_data->current_view_set))->style ;
 
               zMapFeatureBlockAddFeatureSet((ZMapFeatureBlock)merge_data->current_diff_block,
 					    (ZMapFeatureSet)merge_data->current_diff_set);

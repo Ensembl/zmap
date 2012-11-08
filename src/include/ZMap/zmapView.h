@@ -244,7 +244,9 @@ GList *zmapViewGetIniSources(char *config_file, char *config_str,char **stylesfi
 ZMapViewConnection zMapViewRequestServer(ZMapView view, ZMapViewConnection view_conn, ZMapFeatureBlock block_orig, GList *req_featuresets,
 				   gpointer server, /* ZMapConfigSource */
 	   			   int req_start, int req_end,
-				   gboolean dna_requested, gboolean terminate);
+				   gboolean dna_requested, gboolean terminate, gboolean show_warning);
+
+void zMapViewShowLoadStatus(ZMapView view);
 
 void zmapViewFeatureDump(ZMapViewWindow view_window, char *file) ;
 
