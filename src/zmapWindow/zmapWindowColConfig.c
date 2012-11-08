@@ -2181,11 +2181,13 @@ static void set_column_lists_cb(ZMapWindowContainerGroup container, FooCanvasPoi
 	  {
 	    ZMapWindowContainerFeatureSet container_set;
 	    gboolean is_empty;
+	    gboolean allow_empty;
 
 	    container_set = (ZMapWindowContainerFeatureSet)container;
 	    is_empty      = !zmapWindowContainerHasFeatures((ZMapWindowContainerGroup)container_set);
+            allow_empty   = zmapWindowContainerFeatureSetShowWhenEmpty(container_set);
 
-	    if(!is_empty)
+	    if(!is_empty || allow_empty)
 	      {
 		if(zmapWindowContainerFeatureSetGetStrand(container_set) == ZMAPSTRAND_FORWARD)
 		  lists_data->forward = g_list_append(lists_data->forward, container);
