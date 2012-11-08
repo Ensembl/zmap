@@ -324,11 +324,20 @@ FooCanvasItem *zmapWindowContainerGetNthFeatureItem(ZMapWindowContainerGroup con
   features = (FooCanvasGroup *)zmapWindowContainerGetFeatures(container) ;
 
   if (nth_item == 0 || nth_item == ZMAPCONTAINER_ITEM_FIRST)
-    item = FOO_CANVAS_ITEM(features->item_list->data) ;
+    {
+      if (features->item_list)
+        item = FOO_CANVAS_ITEM(features->item_list->data) ;
+    }
   else if (nth_item == ZMAPCONTAINER_ITEM_LAST)
-    item = FOO_CANVAS_ITEM(features->item_list_end->data) ;
+    {
+      if (features->item_list_end)
+        item = FOO_CANVAS_ITEM(features->item_list_end->data) ;
+    }
   else
-    item = FOO_CANVAS_ITEM((g_list_nth(features->item_list, nth_item))->data) ;
+    {
+      if (features->item_list)
+        item = FOO_CANVAS_ITEM((g_list_nth(features->item_list, nth_item))->data) ;
+    }
 
   return item ;
 }
