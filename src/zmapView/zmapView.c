@@ -753,7 +753,7 @@ gboolean zMapViewConnect(ZMapFeatureSequenceMap sequence_map, ZMapView zmap_view
 
 
 
-  zmapViewEditColumnInit(zmap_view, sequence_map);
+  zmapViewScratchInit(zmap_view, sequence_map);
 
   return result ;
 }

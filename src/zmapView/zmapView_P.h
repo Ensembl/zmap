@@ -469,8 +469,8 @@ GList *zMapViewMaskFeatureSets(ZMapView view, GList *feature_set_names);
 
 gboolean zMapViewCollapseFeatureSets(ZMapView view, ZMapFeatureContext diff_context);
 
-/* zmapViewEditColumn.c */
-void zmapViewEditColumnInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence);
+/* zmapViewScratch.c */
+void zmapViewScratchInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence);
 
 
 

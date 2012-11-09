@@ -1,5 +1,5 @@
 /*  Last edited: 30 Oct 16"27 2012 (gb10) */
-/*  File: zmapViewEditColumn.c
+/*  File: zmapViewScratchColumn.c
  *  Author: Gemma Barson (gb10@sanger.ac.uk)
  *  Copyright (c) 2012: Genome Research Ltd.
  *-------------------------------------------------------------------
@@ -25,7 +25,7 @@
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- * Description: Handles the 'edit' column, which allows users to
+ * Description: Handles the 'scratch' or 'edit' column, which allows users to
  *              create and edit temporary features
  *
  * Exported functions: see zmapView_P.h
@@ -42,14 +42,14 @@
 
 
 /*!
- * \brief Initialise the Edit column
+ * \brief Initialise the Scratch column
  *
  * \param[in] zmap_view
  * \param[in] sequence
  *
  * \return void
  */
-void zmapViewEditColumnInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence)
+void zmapViewScratchInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence)
 {
   ZMapFeatureSet scratch_featureset = NULL ;
   ZMapFeatureTypeStyle style = NULL ;
