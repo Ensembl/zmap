@@ -2180,8 +2180,14 @@ static void getIniData(ZMapView view, char *config_str, GList *req_sources)
             g_hash_table_destroy(col_styles);
 	  }
 
+
 	  {
+
 		  GQuark col_id = zMapFeatureSetCreateID(ZMAP_FIXED_STYLE_STRAND_SEPARATOR);
+		  GQuark set_id = zMapFeatureSetCreateID(ZMAP_FIXED_STYLE_SEARCH_MARKERS_NAME);
+
+		/* hard coded column style for strand separator */
+
 		  column = g_hash_table_lookup(view->context_map.columns,GUINT_TO_POINTER(col_id));
 		  if(column)
 		  {
@@ -2190,8 +2196,33 @@ static void getIniData(ZMapView view, char *config_str, GList *req_sources)
 			  zMap_g_hashlist_insert(view->context_map.column_2_styles,
 					   column->unique_id,
 					   GUINT_TO_POINTER(col_id)) ;
+			  zMap_g_hashlist_insert(view->context_map.column_2_styles,
+					   column->unique_id,
+					   GUINT_TO_POINTER(set_id)) ;
 		  }
- 	  }
+
+#if NOT_NEEDED_DONE_BY_WINDOW_DNA_C
+		/* hard coded default column for search hit markers */
+
+		  ZMapFeatureSetDesc f2c;
+		  f2c = g_hash_table_lookup(view->context_map.featureset_2_column,GUINT_TO_POINTER(set_id));
+
+		  if(!f2c) 		/* can override with config */
+		  {
+			  /* NOTE this is the strand separator column which used to be the third strand
+			   * it used to have a Search Hit Markers column in it sometimes
+			   * but now we load these featuresets into the strand sep. directly
+			   */
+			  f2c = g_new0(ZMapFeatureSetDescStruct,1);
+			  f2c->column_id = col_id;
+			  f2c->column_ID = g_quark_from_string(ZMAP_FIXED_STYLE_STRAND_SEPARATOR);
+			  f2c->feature_src_ID = g_quark_from_string(ZMAP_FIXED_STYLE_SEARCH_MARKERS_NAME);
+			  f2c->feature_set_text = ZMAP_FIXED_STYLE_SEARCH_MARKERS_NAME;
+
+			  g_hash_table_insert(view->context_map.featureset_2_column,GUINT_TO_POINTER(set_id), f2c);
+		  }
+#endif
+	  }
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	printf("\nini fset2style\n");

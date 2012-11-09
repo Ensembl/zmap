@@ -87,10 +87,6 @@ typedef struct RemoveFeatureDataStructName
 } RemoveFeatureDataStruct, *RemoveFeatureData ;
 
 
-static void windowDrawContext(ZMapCanvasData     canvas_data,
-			       ZMapFeatureContext full_context,
-			       ZMapFeatureContext diff_context,
-                         GList *masked);
 static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 							   gpointer data,
 							   gpointer user_data,
@@ -2036,7 +2032,7 @@ void zmapWindowDrawSetGroupBackground(ZMapWindowContainerGroup container, int st
 	static ZMapFeatureTypeStyle style = NULL;
 	GList *l;
 	GQuark id;
-	char *x;
+	char *x,*name = "?";
 	ZMapWindowFeaturesetItem cfs = NULL;
 	FooCanvasItem *foo = (FooCanvasItem *) container;
 	FooCanvasGroup *group = (FooCanvasGroup *) container;
@@ -2082,7 +2078,9 @@ void zmapWindowDrawSetGroupBackground(ZMapWindowContainerGroup container, int st
 	 * but GroupCreate does not have this info
 	 * previous backgrounds were anonymous so no big deal
 	 */
-      x = g_strdup_printf("%p_%p_bgnd", foo->canvas, group);
+	if(ZMAP_IS_CONTAINER_FEATURESET(group))
+		name = (char *) g_quark_to_string(zmapWindowContainerFeatureSetGetColumnId((ZMapWindowContainerFeatureSet) group));
+      x = g_strdup_printf("%p_%p_%s_bgnd", foo->canvas, group, name);
 
 	id = g_quark_from_string(x);
 

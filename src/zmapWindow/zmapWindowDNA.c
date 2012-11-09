@@ -433,8 +433,8 @@ static gboolean dnaMatchesToFeatures(ZMapWindow            window,
 	{
 		f2c = g_new0(ZMapFeatureSetDescStruct,1);
 
-		f2c->column_id = zMapFeatureSetCreateID(ZMAP_FIXED_STYLE_SEARCH_MARKERS_NAME);
-		f2c->column_ID = g_quark_from_string(ZMAP_FIXED_STYLE_SEARCH_MARKERS_NAME);
+		f2c->column_id = zMapFeatureSetCreateID(ZMAP_FIXED_STYLE_STRAND_SEPARATOR);
+		f2c->column_ID = g_quark_from_string(ZMAP_FIXED_STYLE_STRAND_SEPARATOR);
 		f2c->feature_src_ID = g_quark_from_string(name);
 		f2c->feature_set_text = ZMAP_FIXED_STYLE_SEARCH_MARKERS_TEXT;
 		g_hash_table_insert(window->context_map->featureset_2_column, GUINT_TO_POINTER(separator_featureset->unique_id), f2c);
@@ -1067,6 +1067,9 @@ static void matches_to_features(gpointer list_data, gpointer user_data)
 
   zMapFeatureSetAddFeature(feature_set, current_feature);
 
+  zMapFeatureAddText(current_feature, feature_set->original_id, ZMAP_FIXED_STYLE_SEARCH_MARKERS_NAME, style->description) ;
+
+
   return ;
 }
 
@@ -1146,7 +1149,7 @@ printf("remove set %s\n", g_quark_to_string(feature_set->unique_id));
 			zMapWindowUnDisplaySearchFeatureSets(search_data->window, NULL, diff_context);
 
 			/* this handles destroy of the (virtual) CanvasFeatureset */
-			zmapWindowContainerGroupDestroy((ZMapWindowContainerGroup)(container));
+//			zmapWindowContainerGroupDestroy((ZMapWindowContainerGroup)(container));
 
 			zmapWindowFullReposition(search_data->window->feature_root_group);
 

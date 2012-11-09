@@ -736,7 +736,7 @@ void zmapWindowContainerUtilsExecute(ZMapWindowContainerGroup   parent,
  * - it has a strand layer under block
  * - 3-frame columns all have the same id, whereas in the FToI hash the names are mangled
  */
-static ZMapWindowContainerGroup getChildById(ZMapWindowContainerGroup group,GQuark id, ZMapFrame frame)
+static ZMapWindowContainerGroup getChildById(ZMapWindowContainerGroup group,GQuark id, ZMapStrand strand, ZMapFrame frame)
 {
       ZMapWindowContainerGroup g;
       GList *l;
@@ -754,7 +754,7 @@ static ZMapWindowContainerGroup getChildById(ZMapWindowContainerGroup group,GQua
             {
                   ZMapWindowContainerFeatureSet set = ZMAP_CONTAINER_FEATURESET(g);;
 
-                  if(set->unique_id == id && set->frame == frame)
+                  if(set->unique_id == id && set->frame == frame && set->strand == strand)
                         return g;
             }
             else
@@ -772,13 +772,11 @@ FooCanvasItem *zMapFindCanvasColumn(ZMapWindowContainerGroup group,
       GQuark align, GQuark block, GQuark set, ZMapStrand strand, ZMapFrame frame)
 {
   if(group)
-      group = getChildById(group,align,ZMAPFRAME_NONE);
+      group = getChildById(group,align, ZMAPSTRAND_NONE, ZMAPFRAME_NONE);
   if(group)
-      group = getChildById(group,block,ZMAPFRAME_NONE);
+      group = getChildById(group,block,ZMAPSTRAND_NONE, ZMAPFRAME_NONE);
   if(group)
-      group = getChildById(group,strand,ZMAPFRAME_NONE);
-  if(group)
-      group = getChildById(group,set,frame);
+      group = getChildById(group,set, strand, frame);
 
   return FOO_CANVAS_ITEM(group);
 }

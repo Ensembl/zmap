@@ -916,8 +916,14 @@ ZMapWindowCanvasItem zMapWindowCanvasItemFeaturesetGetFeaturesetItem(FooCanvasGr
       featureset = (ZMapWindowFeaturesetItem) foo ;
       featureset->id = id;
 
-#if STYLE_DEBUG
-printf("create canvas set %s\n",g_quark_to_string(featureset->id));
+#if 1 // STYLE_DEBUG
+{
+ZMapWindowContainerFeatureSet x = (ZMapWindowContainerFeatureSet) foo->parent;
+
+printf("create canvas set %s(%p)/%s %x\n",
+	 g_quark_to_string(zmapWindowContainerFeatureSetGetColumnId(x)),
+	 x, g_quark_to_string(featureset->id),layer);
+}
 #endif
 
       g_hash_table_insert(featureset_class_G->featureset_items,GUINT_TO_POINTER(id),(gpointer) foo);
@@ -1673,7 +1679,17 @@ double  zmap_window_featureset_item_foo_point(FooCanvasItem *item,
   */
   *actual_item = NULL;
 
-  if((fi->layer & ZMAP_CANVAS_LAYER_DECORATION))	/* we don-t eant to click on these ! */
+#if 0
+{
+ZMapWindowContainerFeatureSet x = (ZMapWindowContainerFeatureSet) item->parent;
+
+printf("CFS point %s(%p)/%s %x %ld\n",
+	 g_quark_to_string(zmapWindowContainerFeatureSetGetColumnId(x)),
+	 x, g_quark_to_string(fi->id),fi->layer, fi->n_features);
+}
+#endif
+
+  if((fi->layer & ZMAP_CANVAS_LAYER_DECORATION))	/* we don-t want to click on these ! */
 	  return(best);
 
   /* optimise repeat calls: the foo canvas does 6 calls for a click event (3 down 3 up)
@@ -2053,19 +2069,19 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
   foo_canvas_c2w(item->canvas,0,floor(expose->area.y - 1),NULL,&y1);
   foo_canvas_c2w(item->canvas,0,ceil(expose->area.y + expose->area.height + 1),NULL,&y2);
 
-#if 0
+#if 1
 
-//  if(fi->type >= FEATURE_GRAPHICS)
+//if(fi->type >= FEATURE_GRAPHICS)
 //if(!fi->features)
 {
 	ZMapWindowContainerFeatureSet column;
 
-	printf("expose %p %s %.1f,%.1f (%d %d, %d %d)\n", item->canvas, g_quark_to_string(fi->id),
-		 y1, y2, fi->clip_x1, fi->clip_y1, fi->clip_x2, fi->clip_y2);
+	printf("expose %p %s %.1f,%.1f (%d %d, %d %d) %d features\n", item->canvas, g_quark_to_string(fi->id),
+		 y1, y2, fi->clip_x1, fi->clip_y1, fi->clip_x2, fi->clip_y2, fi->n_features);
 
-//	column =  (ZMapWindowContainerFeatureSet) ((ZMapWindowCanvasItem) item)->__parent__.parent;
-//	if(ZMAP_IS_CONTAINER_FEATURESET(column))
-//		printf("painting column %s\n",g_quark_to_string(column->unique_id));
+	column =  (ZMapWindowContainerFeatureSet) ((ZMapWindowCanvasItem) item)->__parent__.parent;
+	if(ZMAP_IS_CONTAINER_FEATURESET(column))
+		printf("painting column %s\n", g_quark_to_string(zmapWindowContainerFeatureSetGetColumnId(column)));
 }
 #endif
 
@@ -3333,6 +3349,7 @@ static void zmap_window_featureset_item_item_destroy (GtkObject *object)
   if(g_hash_table_remove(featureset_class_G->featureset_items,GUINT_TO_POINTER(featureset_item->id)))
   {
 
+printf("destroy featureset %s %ld features\n",g_quark_to_string(featureset_item->id), featureset_item->n_features);
 
 	if(featureset_item->display_index)
 	{
@@ -3363,7 +3380,6 @@ static void zmap_window_featureset_item_item_destroy (GtkObject *object)
 	}
 
 	// printf("featureset %s: %ld %ld %ld,\n",g_quark_to_string(featureset_item->id), n_block_alloc, n_feature_alloc, n_feature_free);
-//printf("destroy featureset %s\n",g_quark_to_string(featureset_item->id));
 
 	zMapWindowCanvasFeaturesetFree(featureset_item);	/* must tidy optional set data*/
 

@@ -1059,6 +1059,8 @@ void zmapWindowDrawSeparatorFeatures(ZMapWindow           window,
 			      &context_cp, &diff,NULL);
 
       canvas_data.window = window;
+	canvas_data.canvas = window->canvas;
+
 //      canvas_data.styles = window->context_map->styles ;
 
 #if NEST_OF_BUGGY_CODE
@@ -1073,8 +1075,7 @@ void zmapWindowDrawSeparatorFeatures(ZMapWindow           window,
 
 #endif
 
-
-//      zmapWindowFullReposition(window->feature_root_group); ermmm/// why??
+//      zmapWindowFullReposition(window->feature_root_group); // ermmm.... why??
     }
 #if USE_STRAND
   else if(style)
