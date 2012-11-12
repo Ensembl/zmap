@@ -37,6 +37,8 @@ zmapWindowItemHash.c \
 zmapWindowList.c \
 zmapWindowMark.c \
 zmapWindowMark.h \
+zmapWindowScratch.c \
+zmapWindowScratch_P.h \
 zmapWindowMenus.c \
 zmapWindowNavigator.c \
 zmapWindowNavigatorMenus.c \

@@ -174,6 +174,7 @@ enum
     ITEM_MENU_LIST_NAMED_FEATURES,
     ITEM_MENU_LIST_ALL_FEATURES,
     ITEM_MENU_MARK_ITEM,
+    ITEM_MENU_COPY_TO_SCRATCH,
     ITEM_MENU_SEARCH,
     ITEM_MENU_FEATURE_DETAILS,
     ITEM_MENU_PFETCH,
@@ -637,6 +638,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuFeatureOps(int *start_index_inout,
     {
       /* extra items need for code below */
       {ZMAPGUI_MENU_NORMAL, "Use Feature for Mark", ITEM_MENU_MARK_ITEM,       itemMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Copy Feature to Edit Column", ITEM_MENU_COPY_TO_SCRATCH,itemMenuCB, NULL},
       {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         itemMenuCB, NULL},
       {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         itemMenuCB, NULL},
       {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         itemMenuCB, NULL},
@@ -648,7 +650,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuFeatureOps(int *start_index_inout,
   int i ;
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
 
-  i = 1 ;
+  i = 2 ;
   menu[i].type = ZMAPGUI_MENU_NONE;
 
   /* add in evidence/ transcript items option to remove existing is in column menu */
@@ -745,6 +747,8 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
     case ITEM_MENU_MARK_ITEM:
       zmapWindowMarkSetItem(menu_data->window->mark, menu_data->item) ;
 
+    case ITEM_MENU_COPY_TO_SCRATCH:
+      zmapWindowScratchCopyFeature(menu_data->window, menu_data->feature);
 
       break ;
     case ITEM_MENU_SEARCH:
