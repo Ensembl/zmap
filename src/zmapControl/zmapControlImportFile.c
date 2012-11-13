@@ -911,7 +911,7 @@ static void importFileCB(GtkWidget *widget, gpointer cb_data)
 		while(*strand_txt  && *strand_txt <= ' ')
 			strand_txt++;
 		strand = (*strand_txt == '-') ? -1 : (*strand_txt == '+') ? 1 : 0;
-		if(*strand_txt)
+		if(!strand_txt)
 		{
 			status = FALSE ;
 			err_msg = "Strand must be + or -";
