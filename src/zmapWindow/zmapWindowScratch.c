@@ -48,6 +48,8 @@ typedef struct _GetFeaturesetCBDataStruct
 
 
 
+
+
 /*!
  * \brief Callback called on every child in a FeatureAny.
  * 
@@ -95,6 +97,41 @@ ZMapFeatureSet zmapWindowGetFeaturesetFromId(ZMapWindow window, GQuark set_id)
 }
 
 
+/*!
+ * \brief Get the single featureset that resides in the scratch column
+ *
+ * \returns The ZMapFeatureSet, or NULL if there was a problem
+ */
+ZMapFeatureSet scratchGetFeatureset(ZMapWindow window)
+{
+  ZMapFeatureSet feature_set = NULL;
+
+  GQuark column_id = zMapFeatureSetCreateID(ZMAP_FIXED_STYLE_SCRATCH_NAME);
+  GList *fs_list = zMapFeatureGetColumnFeatureSets(window->context_map, column_id, TRUE);
+  
+  /* There should be one (and only one) featureset in the column */
+  if (g_list_length(fs_list) == 1)
+    {         
+      GQuark set_id = (GQuark)(GPOINTER_TO_INT(fs_list->data));
+      feature_set = zmapWindowGetFeaturesetFromId(window, set_id);
+    }
+  else
+    {
+      zMapWarning("Expected 1 featureset in column '%s' but found %d\n", ZMAP_FIXED_STYLE_SCRATCH_NAME, g_list_length(fs_list));
+    }
+
+  return feature_set;
+}
+
+
+/*! 
+ * \brief Does the work to add/merge a feature to the scratch column
+ */
+void scratchAddFeature(ZMapFeatureSet feature_set, ZMapFeature feature)
+{
+  /* to do: merge with existing features */
+  zMapFeatureSetAddFeature(feature_set, feature);
+}
 
 
 /*!
@@ -104,34 +141,14 @@ void zmapWindowScratchCopyFeature(ZMapWindow window, ZMapFeature feature)
 {
   if (feature)
     {
-      /* Make a copy of the given feature */
       ZMapFeature new_feature = (ZMapFeature)zMapFeatureAnyCopy((ZMapFeatureAny)feature);
-
-      /* Find the scratch column, and its featureset */
-      GQuark column_id = zMapFeatureSetCreateID(ZMAP_FIXED_STYLE_SCRATCH_NAME);
-      GList *fs_list = zMapFeatureGetColumnFeatureSets(window->context_map, column_id, TRUE);
+      ZMapFeatureSet feature_set = scratchGetFeatureset(window);
       
-      /* There should be one (and only one) featureset in the column */
-      if (g_list_length(fs_list) == 1)
-        {         
-          GQuark set_id = (GQuark)(GPOINTER_TO_INT(fs_list->data));
-
-          /* Get the featureset struct */
-          ZMapFeatureSet feature_set = zmapWindowGetFeaturesetFromId(window, set_id);
-
-          /* Add the feature to the featureset */
-          zMapFeatureSetAddFeature(feature_set, new_feature);
-
-          zMapWindowRedraw(window);
-        }
-      else
-        {
-          zMapWarning("Expected 1 featureset in column '%s' but found %d\n", ZMAP_FIXED_STYLE_SCRATCH_NAME, g_list_length(fs_list));
-        }
+      if (feature_set)
+        scratchAddFeature(feature_set, new_feature);
     }
   else
     {
       zMapWarning("%s", "Error: no feature selected\n");
     }
-
 }

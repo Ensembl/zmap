@@ -70,10 +70,6 @@ void zmapViewScratchInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence)
       /* Create the context, align and block, and add the featureset to it */
       ZMapFeatureContext context = zmapViewCreateContext(sequence, NULL, scratch_featureset);
 
-      /* Merge our context into the view's context and view the diff context */
-      ZMapFeatureContext diff_context = zmapViewMergeInContext(zmap_view, context);
-      zmapViewDrawDiffContext(zmap_view, &diff_context);
-  
 
 	/* set up featureset2_column and anything else needed */
       f2c = g_hash_table_lookup(context_map->featureset_2_column, GUINT_TO_POINTER(scratch_featureset->unique_id));
@@ -115,20 +111,24 @@ void zmapViewScratchInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence)
 		/* the rest shoudl get filled in elsewhere */
 		g_hash_table_insert(context_map->columns, GUINT_TO_POINTER(f2c->column_id), column);
 	}
+
+
+//      ZMapFeature translation = zMapFeatureCreateEmpty() ;
+//      zMapFeatureAddStandardData(translation, ZMAP_FIXED_STYLE_SCRATCH_NAME, ZMAP_FIXED_STYLE_SCRATCH_NAME, 
+//                                 "scratch_seq", "sequence",
+//                                 ZMAPSTYLE_MODE_SEQUENCE, &scratch_featureset->style,
+//                                 0, 500, FALSE, 0.0,
+//                                 ZMAPSTRAND_NONE) ;
+//      
+//      zMapFeatureSequenceSetType(translation, ZMAPSEQUENCE_PEPTIDE) ;
+//      zMapFeatureAddFrame(translation, ZMAPFRAME_NONE) ;
+//      
+//      zMapFeatureSetAddFeature(scratch_featureset, translation) ;
+      
+      
+      /* Merge our context into the view's context and view the diff context */
+      ZMapFeatureContext diff_context = zmapViewMergeInContext(zmap_view, context);
+      zmapViewDrawDiffContext(zmap_view, &diff_context);
     }
-
-
-//#warning gb10: hack in a test feature
-//  ZMapFeature translation = zMapFeatureCreateEmpty() ;
-//  zMapFeatureAddStandardData(translation, ZMAP_FIXED_STYLE_SCRATCH_NAME, ZMAP_FIXED_STYLE_SCRATCH_NAME, 
-//                             "scratch_seq", "sequence",
-//                             ZMAPSTYLE_MODE_SEQUENCE, &scratch_featureset->style,
-//                             0, 500, FALSE, 0.0,
-//                             ZMAPSTRAND_NONE) ;
-//  
-//  zMapFeatureSequenceSetType(translation, ZMAPSEQUENCE_PEPTIDE) ;
-//  zMapFeatureAddFrame(translation, ZMAPFRAME_NONE) ;
-//  
-//  zMapFeatureSetAddFeature(scratch_featureset, translation) ;
-//  
+  
 }
