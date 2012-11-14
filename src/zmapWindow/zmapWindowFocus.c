@@ -572,16 +572,10 @@ void zmapWindowFocusSetHotItem(ZMapWindowFocus focus, FooCanvasItem *item, ZMapF
 
   focus->hot_feature = feature;
 
-  /* Set the focus items column as the focus column. */
+  /* Set the focus item's column as the focus column. */
   column = (FooCanvasGroup *) zmapWindowContainerCanvasItemGetContainer(item) ;
 
   setFocusColumn(focus, column) ;			    /* N.B. May sort features. */
-
-  /* Record where the item is in the stack of column items _after_ setFocusColumn. */
-  /* focus->hot_item_orig_index = zmapWindowContainerGetItemPosition(ZMAP_CONTAINER_GROUP(column), item) ;*/
-
-  /* Now raise the item to the top of its group to make sure it is visible. */
-  zmapWindowRaiseItem(item) ;
 
   return ;
 }
@@ -604,10 +598,31 @@ void zmapWindowFocusSetHotColumn(ZMapWindowFocus focus, FooCanvasGroup *column, 
 /* highlight/unhiglight cols. */
 void zmapWindowFocusHighlightHotColumn(ZMapWindowFocus focus)
 {
-	ZMapWindowContainerGroup column = (ZMapWindowContainerGroup) zmapWindowFocusGetHotColumn(focus);
+	ZMapWindowContainerGroup hot_column = (ZMapWindowContainerGroup) zmapWindowFocusGetHotColumn(focus);
 
-	if(column)
-		zmapWindowDrawSetGroupBackground(column, 0, 1, 1.0, ZMAP_CANVAS_LAYER_COL_BACKGROUND, &(focus->window->colour_column_highlight), NULL);
+	if(hot_column)
+	{
+		GdkColor *colour = NULL;
+
+		/* Check if there's a selection colour set in the column style */
+		GQuark column_id = zmapWindowContainerFeatureSetGetColumnId(ZMAP_CONTAINER_FEATURESET(hot_column));
+		ZMapFeatureColumn column = zMapWindowGetColumn(focus->window->context_map,column_id);
+
+		if(hot_column && column->style_id)
+		{
+			ZMapFeatureTypeStyle s = g_hash_table_lookup(focus->window->context_map->styles,GUINT_TO_POINTER(column->style_id));
+
+			if(s)
+				zMapStyleGetColours(s, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_SELECTED, &colour, NULL, NULL);
+		}
+
+		if (!colour)
+		{
+			colour = &focus->window->colour_column_highlight;
+		}
+
+		zmapWindowDrawSetGroupBackground(hot_column, 0, 1, 1.0, ZMAP_CANVAS_LAYER_COL_BACKGROUND, colour, NULL);
+	}
 }
 
 
@@ -631,7 +646,7 @@ FooCanvasItem *zmapWindowFocusGetHotItem(ZMapWindowFocus focus)
       /* for composite canvas items */
       /* NOTE there's a theory that iten may be Foo but not Zmap eg when clicking on a trancript's exon */
       /* it's quite difficult to tell how true this is, need to trawl thro'
-       * zmapWindowUpdateInfoPanel() and up/dowbnstram functions all; of which meander somewhat
+       * zmapWindowUpdateInfoPanel() and up/downstream functions all; of which meander somewhat
        */
       if ((focus->hot_item) && ZMAP_IS_WINDOW_FEATURESET_ITEM(focus->hot_item))
 	{

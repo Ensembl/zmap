@@ -2201,7 +2201,7 @@ static void getIniData(ZMapView view, char *config_str, GList *req_sources)
 					   GUINT_TO_POINTER(set_id)) ;
 		  }
 
-#if NOT_NEEDED_DONE_BY_WINDOW_DNA_C
+#if 1 // IS_NEEDED  NOT_NEEDED_DONE_BY_WINDOW_DNA_C
 		/* hard coded default column for search hit markers */
 
 		  ZMapFeatureSetDesc f2c;

@@ -276,7 +276,7 @@ bump-mode=unbump
 default-bump-mode=unbump
 bump-fixed=true
 show-only-in-separator=true
-colours = normal fill yellow ; normal draw black
+colours = normal fill yellow; selected fill yellow
 
 [style-Search Hit Marker]
 description=display location of matches to query

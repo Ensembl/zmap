@@ -305,79 +305,7 @@ void zmapWindowItemUnHighlightShowTranslations(ZMapWindow window, FooCanvasItem 
 
 
 
-FooCanvasItem *zmapWindowItemGetShowTranslationColumn(ZMapWindow window, FooCanvasItem *item)
-{
-  FooCanvasItem *translation = NULL;
-  ZMapFeature feature;
-  ZMapFeatureBlock block;
 
-  if ((feature = zmapWindowItemGetFeature(item)))
-    {
-      ZMapFeatureSet feature_set;
-      ZMapFeatureTypeStyle style;
-
-      /* First go up to block... */
-      block = (ZMapFeatureBlock)(zMapFeatureGetParentGroup((ZMapFeatureAny)(feature), ZMAPFEATURE_STRUCT_BLOCK));
-      zMapAssert(block);
-
-      /* Get the frame for the item... and its translation feature (ITEM_FEATURE_PARENT!) */
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      if ((style = zMapFeatureContextFindStyle((ZMapFeatureContext)(block->parent->parent),
-					       ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME))
-	  && !(feature_set = zMapFeatureBlockGetSetByID(block,
-							zMapStyleCreateID(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME))))
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-	if ((style = zMapFindStyle(window->context_map->styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME)))
-	    && !(feature_set = zMapFeatureBlockGetSetByID(block,
-							  zMapStyleCreateID(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME))))
-
-	{
-	  /* Feature set doesn't exist, so create. */
-	  feature_set = zMapFeatureSetCreate(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME, NULL);
-	  //feature_set->style = style;
-	  zMapFeatureBlockAddFeatureSet(block, feature_set);
-	}
-
-      if (feature_set)
-	{
-	  ZMapWindowContainerGroup parent_container;
-	  ZMapWindowContainerFeatures forward_features;
-	  FooCanvasGroup *tmp_forward, *tmp_reverse;
-
-
-	  parent_container = zmapWindowContainerUtilsItemGetParentLevel(item, ZMAPCONTAINER_LEVEL_BLOCK);
-
-	  forward_features  = zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)parent_container);
-
-	  /* make the column... */
-	  if (zmapWindowCreateSetColumns(window,
-					 forward_features,
-					 NULL,
-					 block,
-					 feature_set,
-//					 window->context_map->styles,
-					 ZMAPFRAME_NONE,
-					 &tmp_forward, &tmp_reverse, NULL))
-	    {
-	      translation = FOO_CANVAS_ITEM(tmp_forward);
-	    }
-	}
-      else
-	zMapLogWarning("Failed to find Feature Set for '%s'", ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME);
-    }
-
-  return translation ;
-}
-
-
-
-/* two functions formerly in zmapWindowItemtext.c
-
- * "THIS FILE SHOULD GO AND THE FUNCTIONS SHOULD BE INCORPORATED INTO OTHER FILES. THIS
- * USED TO CONTAIN CODE TO DO THE SHOW TRANSLATION COLUMN BUT THAT IS NOW DONE VIA
- * THE CODE IN THE items SUBDIRECTORY."
-
- */
 
 /* chars for Show Translation column. */
 #define SHOW_TRANS_BACKGROUND '='			    /* background char for entire column. */
@@ -385,19 +313,24 @@ FooCanvasItem *zmapWindowItemGetShowTranslationColumn(ZMapWindow window, FooCanv
 
 void zmapWindowItemShowTranslationRemove(ZMapWindow window, FooCanvasItem *feature_item)
 {
-  FooCanvasItem *translation_column = NULL;
   ZMapFeature feature;
 
   feature = zMapWindowCanvasItemGetFeature(feature_item);
 
-  if(ZMAPFEATURE_IS_TRANSCRIPT(feature) && ZMAPFEATURE_FORWARD(feature))
+// remove is ok regardless of which feature we click on since displaying it
+//  if(ZMAPFEATURE_IS_TRANSCRIPT(feature) && ZMAPFEATURE_FORWARD(feature))
     {
-      /* get the column to draw it in, this involves possibly making it, so we can't do it in the execute call */
-      if((translation_column = zmapWindowItemGetShowTranslationColumn(window, feature_item)))
-	{
-	  zmapWindowColumnSetState(window, FOO_CANVAS_GROUP(translation_column),
-				   ZMAPSTYLE_COLDISPLAY_HIDE, TRUE);
-	}
+		ZMapFeatureAny feature_any;
+		GQuark align_id, block_id;
+
+		feature_any = zMapFeatureGetParentGroup((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_ALIGN) ;
+		align_id = feature_any->unique_id ;
+
+		feature_any = zMapFeatureGetParentGroup((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_BLOCK) ;
+		block_id = feature_any->unique_id ;
+
+		/* Revist whether we need to do this call or just a redraw...... */
+		zMapWindowToggleDNAProteinColumns(window, align_id, block_id, FALSE, FALSE, TRUE, FALSE, TRUE) ;
     }
 
   return ;
@@ -459,6 +392,12 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
 						set_id, "+", ".",
 						feature_id,
 						NULL, NULL) ;
+
+	/* trans set may once have been a column but not we donlt ahve co9lumns in the ftoi hash
+	   context feature sets now refer to the canvasfeatureset foo item not the containing group
+	  */
+	if(!trans_set)
+		return;
 
       trans_id2c = (ID2Canvas)(trans_set->data) ;
 
@@ -1108,6 +1047,12 @@ static FooCanvasItem *translation_from_block_frame(ZMapWindow window, char *colu
 						    feature_set_id, "+", ".",
 						    feature_id,
 						    NULL, NULL) ;
+
+ 	  /* trans set may once have been a column but not we don't have columns in the ftoi hash
+	   context feature sets now refer to the canvasfeatureset foo item not the containing group
+	  */
+	  if(!trans_set)
+		return NULL;
 
 	  trans_id2c = (ID2Canvas)(trans_set->data) ;
 

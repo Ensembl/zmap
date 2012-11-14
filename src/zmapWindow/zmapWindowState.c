@@ -722,13 +722,12 @@ static void state_bumped_columns_restore(ZMapWindow window, ZMapWindowBumpStateS
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
-	  if((container = zmapWindowFToIFindItemFull(window,window->context_to_item,
+	  if((container = zmapWindowFToIFindItemColumn(window,window->context_to_item,
 						     column_state->column.align_id,
 						     column_state->column.block_id,
 						     column_state->column.fset_id,
 						     column_state->column.strand,
-						     column_state->column.frame,
-						     0)))
+						     column_state->column.frame)))
 	    {
 	      ZMapWindowContainerFeatureSet container_set;
 

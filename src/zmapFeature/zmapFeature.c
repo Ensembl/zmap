@@ -611,7 +611,6 @@ gboolean zMapFeatureAddStandardData(ZMapFeature feature, char *feature_name_id, 
       feature->original_id = g_quark_from_string(name) ;
       feature->type = feature_type ;
       feature->SO_accession = g_quark_from_string(SO_accession) ;
-//      feature->style_id = zMapStyleGetUniqueID((*style)) ;
       feature->style = style;
       feature->x1 = start ;
       feature->x2 = end ;

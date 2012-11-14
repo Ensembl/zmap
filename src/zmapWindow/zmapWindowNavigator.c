@@ -927,7 +927,7 @@ static gboolean drawScaleRequired(NavigateDraw draw_data)
                                         scale_id, ZMAPSTRAND_NONE, ZMAPFRAME_NONE, 0)))
     {
       /* if block size changes then the scale will start breaking... */
-      required = !(zmapWindowContainerHasFeatures(ZMAP_CONTAINER_GROUP(item)));
+      required = !item; // !(zmapWindowContainerHasFeatures(ZMAP_CONTAINER_GROUP(item)));
     }
 
   return required;
@@ -945,11 +945,11 @@ static void drawScale(NavigateDraw draw_data)
   /* HACK...  */
   scale_id = g_quark_from_string(ZMAP_FIXED_STYLE_SCALE_NAME);
   /* less of a hack ... */
-  if((item = zmapWindowFToIFindItemFull(draw_data->navigate->current_window,
+  if((item = zmapWindowFToIFindItemColumn(draw_data->navigate->current_window,
                                         draw_data->navigate->ftoi_hash,
                                         draw_data->current_align->unique_id,
                                         draw_data->current_block->unique_id,
-                                        scale_id, ZMAPSTRAND_NONE, ZMAPFRAME_NONE, 0)))
+                                        scale_id, ZMAPSTRAND_NONE, ZMAPFRAME_NONE)))
     {
       FooCanvasGroup *scale_group = NULL;
       FooCanvasGroup *features    = NULL;
@@ -981,7 +981,6 @@ static void createColumnCB(gpointer data, gpointer user_data)
   NavigateDraw draw_data = (NavigateDraw)user_data;
   ZMapWindowContainerFeatures features;
   ZMapFeatureTypeStyle style;
-  gboolean status = FALSE;
   GQuark set_unique_id;
 
   /* We need the mapping stuff so navigator can use windowsearch calls and other stuff. */
@@ -1023,12 +1022,16 @@ debug("nav create column %s %p\n",g_quark_to_string(set_id),draw_data->current_s
 					    draw_data->navigate);
 #endif
 
+#if FEATURESET_AS_COLUMN
+	gboolean status = FALSE;
+
       status = zmapWindowFToIAddSet(draw_data->navigate->ftoi_hash,
                                     draw_data->current_align->unique_id,
                                     draw_data->current_block->unique_id,
                                     set_unique_id, ZMAPSTRAND_NONE, ZMAPFRAME_NONE,
                                     (FooCanvasGroup *)draw_data->container_feature_set);
       zMapAssert(status);
+#endif
 
       container_set = (ZMapWindowContainerFeatureSet)draw_data->container_feature_set;
 

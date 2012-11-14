@@ -151,11 +151,7 @@ static void hideColsCB(ZMapWindowContainerGroup container, FooCanvasPoints *poin
 static void featureInViewCB(void *data, void *user_data) ;
 static void showColsCB(void *data, void *user_data) ;
 static void rebumpColsCB(void *data, void *user_data) ;
-static ZMapFeatureContextExecuteStatus draw_separator_features(GQuark key_id,
-							       gpointer feature_data,
-							       gpointer user_data,
-							       char **error_out);
-static void drawSeparatorFeatures(ZMapCanvasData canvas_data, ZMapFeatureContext context);
+
 
 static void set3FrameState(ZMapWindow window, ZMapWindow3FrameMode frame_mode) ; ;
 static void myWindowSet3FrameMode(ZMapWindow window, ZMapWindow3FrameMode frame_mode) ;
@@ -900,6 +896,7 @@ void zmapWindowFullReposition(ZMapWindowContainerGroup root)
 					NULL, NULL) ;
 
   foo_canvas_item_request_update((FooCanvasItem *) root);
+  foo_canvas_item_request_redraw((FooCanvasItem *) root);
 
   return ;
 }
@@ -939,77 +936,6 @@ void zMapWindowRequestReposition(FooCanvasItem *foo)
 
 
 
-#if NOT_USED
-
-/* Some features have different widths according to their score, this helps annotators
- * guage whether something like an alignment is worth taking notice of.
- *
- * Currently we only implement the algorithm given by acedb's Score_by_width but it maybe
- * that we will need to do others to support their display.
- *
- * I've done this because for James Havana DBs all methods that mention score have:
- *
- * Score_by_width
- * Score_bounds	 70.000000 130.000000
- *
- * (the bounds are different for different data sources...)
- *
- * The interface is slightly tricky here in that we use the style->width to calculate
- * width, not (x2 - x1), hence x2 is only used to return result.
- *
- */
-void zmapWindowGetPosFromScore(ZMapFeatureTypeStyle style,
-			       double score,
-			       double *curr_x1_inout, double *curr_x2_out)
-{
-  double dx = 0.0 ;
-  double numerator, denominator ;
-  double max_score, min_score ;
-
-  zMapAssert(style && curr_x1_inout && curr_x2_out) ;
-
-  min_score = zMapStyleGetMinScore(style) ;
-  max_score = zMapStyleGetMaxScore(style) ;
-
-  /* We only do stuff if there are both min and max scores to work with.... */
-  if (max_score && min_score)
-    {
-      double start = *curr_x1_inout ;
-      double width, half_width, mid_way ;
-
-      width = zMapStyleGetWidth(style) ;
-
-      half_width = width / 2 ;
-      mid_way = start + half_width ;
-
-      numerator = score - min_score ;
-      denominator = max_score - min_score ;
-
-      if (denominator == 0)				    /* catch div by zero */
-	{
-	  if (numerator < 0)
-	    dx = 0.25 ;
-	  else if (numerator > 0)
-	    dx = 1 ;
-	}
-      else
-	{
-	  dx = 0.25 + (0.75 * (numerator / denominator)) ;
-	}
-
-      if (dx < 0.25)
-	dx = 0.25 ;
-      else if (dx > 1)
-	dx = 1 ;
-
-      *curr_x1_inout = mid_way - (half_width * dx) ;
-      *curr_x2_out = mid_way + (half_width * dx) ;
-    }
-
-  return ;
-}
-
-#endif
 
 
 void zmapWindowDrawSeparatorFeatures(ZMapWindow           window,
@@ -1023,13 +949,10 @@ void zmapWindowDrawSeparatorFeatures(ZMapWindow           window,
 
   /* We need the block to know which one to draw into... */
 
-#if USE_STRAND
-//  if (zMapStyleDisplayInSeparator(style))
-#else
+
    if(!style)
 	zMapLogWarning("Feature set '%s' has no style!", g_quark_to_string(feature_set->original_id));
     else
-#endif
     {
       ZMapCanvasDataStruct canvas_data = {NULL};
       /* this is a good start. */
@@ -1044,11 +967,6 @@ void zmapWindowDrawSeparatorFeatures(ZMapWindow           window,
 							       ZMAPFEATURE_STRUCT_CONTEXT) ;
       context_cp = (ZMapFeatureContext)zMapFeatureAnyCopy((ZMapFeatureAny)context);
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      /* This is pretty important! */
-      //context_cp->styles = context->styles;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
       /* Now make a tree */
       zMapFeatureContextAddAlignment(context_cp, align_cp, context->master_align == align);
       zMapFeatureAlignmentAddBlock(align_cp, block_cp);
@@ -1061,32 +979,10 @@ void zmapWindowDrawSeparatorFeatures(ZMapWindow           window,
       canvas_data.window = window;
 	canvas_data.canvas = window->canvas;
 
-//      canvas_data.styles = window->context_map->styles ;
-
-#if NEST_OF_BUGGY_CODE
-      canvas_data.full_context = window->strand_separator_context;
-      drawSeparatorFeatures(&canvas_data, window->strand_separator_context) ;
-#else
 	/* let's just use the code that we debugged for the normal columns */
 	canvas_data.curr_root_group = zmapWindowContainerGetFeatures(window->feature_root_group) ;
 	zMapWindowDrawContext(&canvas_data, window->strand_separator_context, diff, NULL);
-
-//	zmapWindowRedrawFeatureSet(window, feature_set);
-
-#endif
-
-//      zmapWindowFullReposition(window->feature_root_group); // ermmm.... why??
     }
-#if USE_STRAND
-  else if(style)
-    zMapLogWarning("Trying to draw feature set with non-separator "
-		   "style '%s' in strand separator.",
-		   zMapStyleGetName(style));
-
-  else
-    zMapLogWarning("Feature set '%s' has no style!",
-		   g_quark_to_string(feature_set->original_id));
-#endif
 
   return;
 }
@@ -1414,11 +1310,11 @@ static void toggleColumnInMultipleBlocks(ZMapWindow window, char *name,
 	      FooCanvasItem *frame_column ;
 	      ZMapFrame frame = (ZMapFrame)i ;
 
-	      frame_column = zmapWindowFToIFindItemFull(window, window->context_to_item,
+	      frame_column = zmapWindowFToIFindItemColumn(window, window->context_to_item,
 							feature_block->parent->unique_id,
 							feature_block->unique_id,
 							featureset_unique,
-							ZMAPSTRAND_FORWARD, frame, 0) ;
+							ZMAPSTRAND_FORWARD, frame) ;
 
 	      if (frame_column && ZMAP_IS_CONTAINER_FEATURESET(frame_column)
 		  && zmapWindowContainerHasFeatures((ZMapWindowContainerGroup)(frame_column)))
@@ -1636,129 +1532,5 @@ static void rebumpColsCB(void *data, void *user_data)
   return ;
 }
 
-
-static ZMapFeatureContextExecuteStatus draw_separator_features(GQuark key_id,
-							       gpointer feature_data,
-							       gpointer user_data,
-							       char **error_out)
-{
-  ZMapFeatureAny feature_any             = (ZMapFeatureAny)feature_data;
-  ZMapCanvasData canvas_data        = (ZMapCanvasData)user_data;
-  ZMapWindow window                      = canvas_data->window;
-  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
-
-  switch(feature_any->struct_type)
-    {
-    case ZMAPFEATURE_STRUCT_CONTEXT:
-      break;
-    case ZMAPFEATURE_STRUCT_ALIGN:
-      {
-	FooCanvasItem  *align_hash_item;
-
-	canvas_data->curr_alignment =
-	  zMapFeatureContextGetAlignmentByID(canvas_data->full_context,
-					     feature_any->unique_id);
-	if((align_hash_item = zmapWindowFToIFindItemFull(window,window->context_to_item,
-                                           feature_any->unique_id,
-							 0, 0, ZMAPSTRAND_NONE,
-							 ZMAPFRAME_NONE, 0)))
-	  {
-	    ZMapWindowContainerGroup align_parent;
-
-	    zMapAssert(ZMAP_IS_CONTAINER_GROUP(align_hash_item));
-
-	    align_parent = (ZMapWindowContainerGroup)align_hash_item;
-
-	    canvas_data->curr_align_group = zmapWindowContainerGetFeatures(align_parent);
-	  }
-	else
-	  zMapAssertNotReached();
-      }
-      break;
-    case ZMAPFEATURE_STRUCT_BLOCK:
-      {
-	FooCanvasItem  *block_hash_item;
-	canvas_data->curr_block =
-	  zMapFeatureAlignmentGetBlockByID(canvas_data->curr_alignment,
-					   feature_any->unique_id);
-
-	if((block_hash_item = zmapWindowFToIFindItemFull(window,window->context_to_item,
-                                           canvas_data->curr_alignment->unique_id,
-							 feature_any->unique_id, 0,
-							 ZMAPSTRAND_NONE, ZMAPFRAME_NONE, 0)))
-	  {
-	    ZMapWindowContainerGroup block_parent;
-//	    ZMapWindowContainerStrand forward_strand;
-
-	    zMapAssert(ZMAP_IS_CONTAINER_GROUP(block_hash_item));
-
-	    block_parent = (ZMapWindowContainerGroup)(block_hash_item);
-
-	    canvas_data->curr_block_group =
-	      zmapWindowContainerGetFeatures(block_parent);
-	  }
-	else
-	  zMapAssertNotReached();
-      }
-      break;
-    case ZMAPFEATURE_STRUCT_FEATURESET:
-      {
-	FooCanvasGroup *tmp_forward, *separator;
-
-	canvas_data->curr_set = zMapFeatureBlockGetSetByID(canvas_data->curr_block,
-							   feature_any->unique_id);
-#if 1
-/*
-the trouble with  having several subtly different functions to do the same thing is
-that it-s really really difficult to make any changes to the code
-a) you have to do it several times
-b) you have to debug it several times
-c) each slightly different function has different parameters and scope
-d) they use different data structures to hold the same information
-*/
-
-	if (zmapWindowCreateSetColumns(window,
-				       canvas_data->curr_forward_group,
-				       canvas_data->curr_reverse_group,
-				       canvas_data->curr_block,
-				       canvas_data->curr_set,
-				       ZMAPFRAME_NONE,
-				       &tmp_forward, NULL, &separator))
-#else
-// produce column is static and at the bottom of a long stack
-	  separator = produce_column(canvas_data, canvas_data->curr_block_group,
-					  canvas_data->curr_set->unique_id,
-					  ZMAPSTRAND_NONE, ZMAP_FRAME_NONE,canvas_data->curr_set);
-
-#endif
-	  {
-	    zmapWindowColumnSetState(window, separator, ZMAPSTYLE_COLDISPLAY_SHOW, FALSE);
-
-	    zmapWindowDrawFeatureSet(window,  /*canvas_data->styles, */ (ZMapFeatureSet)feature_any,
-				     separator, NULL, ZMAPFRAME_NONE, TRUE) ;
-
-	    if (tmp_forward)
-	      zmapWindowRemoveIfEmptyCol(&tmp_forward);
-	  }
-      }
-      break;
-    case ZMAPFEATURE_STRUCT_FEATURE:
-      break;
-    default:
-      zMapAssertNotReached();
-      break;
-    }
-
-  return status;
-}
-
-static void drawSeparatorFeatures(ZMapCanvasData canvas_data, ZMapFeatureContext context)
-{
-  zMapFeatureContextExecuteComplete((ZMapFeatureAny)context,
-				    ZMAPFEATURE_STRUCT_FEATURE,
-				    draw_separator_features,
-				    NULL, canvas_data);
-  return;
-}
 
 

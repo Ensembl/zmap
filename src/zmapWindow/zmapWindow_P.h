@@ -976,7 +976,12 @@ gboolean zmapWindowFToIRemoveBlock(GHashTable *feature_to_context_hash,
 gboolean zmapWindowFToIAddSet(GHashTable *feature_to_context_hash,
 			      GQuark align_id, GQuark block_id, GQuark set_id,
 			      ZMapStrand strand, ZMapFrame frame,
+#if FEATURESET_AS_COLUMN
 			      FooCanvasGroup *set_group) ;
+#else
+			      FooCanvasItem *set_item) ;
+#endif
+
 gboolean zmapWindowFToIRemoveSet(GHashTable *feature_to_context_hash,
 				 GQuark align_id, GQuark block_id, GQuark set_id,
 				 ZMapStrand strand, ZMapFrame frame, gboolean remove_features) ;
@@ -999,6 +1004,10 @@ FooCanvasItem *zmapWindowFToIFindItemFull(ZMapWindow window,GHashTable *feature_
 					  GQuark align_id, GQuark block_id, GQuark set_id,
 					  ZMapStrand strand, ZMapFrame frame,
 					  GQuark feature_id) ;
+FooCanvasItem *zmapWindowFToIFindItemColumn(ZMapWindow window, GHashTable *feature_context_to_item,
+					  GQuark align_id, GQuark block_id,
+					  GQuark set_id,
+					  ZMapStrand set_strand, ZMapFrame set_frame);
 GList *zmapWindowFToIFindItemSetFull(ZMapWindow window,GHashTable *feature_to_context_hash,
 				     GQuark align_id, GQuark block_id, GQuark column_id, GQuark set_id,
 				     char *strand_spec, char *frame_spec,

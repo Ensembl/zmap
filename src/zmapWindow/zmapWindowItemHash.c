@@ -212,6 +212,12 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(GHashTable *ftoi_hash,
 			block->block_to_sequence.block.x1,block->block_to_sequence.block.x2, *feature->style,
 			feature_stack->strand,feature_stack->frame,feature_stack->set_index, 0);
 
+#if !FEATURESET_AS_COLUMN
+		zmapWindowFToIAddSet(ftoi_hash,
+						feature_stack->align->unique_id, feature_stack->block->unique_id,
+						feature_stack->set->unique_id, feature_stack->strand, feature_stack->frame, (FooCanvasItem *) canvas_item) ;
+#endif
+
 //		zMapWindowCanvasFeaturesetSetBackground((FooCanvasItem *) canvas_item,
 //			zmapWindowContainerGroupGetFill( (ZMapWindowContainerGroup) parent_container),
 //			zmapWindowContainerGroupGetBorder( (ZMapWindowContainerGroup) parent_container));
@@ -448,7 +454,11 @@ gboolean zmapWindowFToIRemoveBlock(GHashTable *feature_context_to_item,
 gboolean zmapWindowFToIAddSet(GHashTable *feature_context_to_item,
 			      GQuark align_id, GQuark block_id, GQuark set_id,
 			      ZMapStrand set_strand, ZMapFrame set_frame,
+#if FEATURESET_AS_COLUMN
 			      FooCanvasGroup *set_group)
+#else
+				FooCanvasItem *set_item)
+#endif
 {
   gboolean result = FALSE ;
   ID2Canvas align ;
@@ -457,6 +467,7 @@ gboolean zmapWindowFToIAddSet(GHashTable *feature_context_to_item,
   /* We need special quarks that incorporate strand/frame indication because any one feature set
    * may be displayed in multiple columns. */
   set_id = makeSetID(set_id, set_strand, set_frame) ;
+printf("hash add set %s\n",g_quark_to_string(set_id));
 
   if ((align = (ID2Canvas)g_hash_table_lookup(feature_context_to_item,
 					      GUINT_TO_POINTER(align_id)))
@@ -469,13 +480,13 @@ gboolean zmapWindowFToIAddSet(GHashTable *feature_context_to_item,
 	  ID2Canvas set ;
 	  ZMapFeatureAny item_feature ;
 
-	  item_feature = zmapWindowItemGetFeatureAny((FooCanvasItem *) set_group) ;
+	  item_feature = zmapWindowItemGetFeatureAny((FooCanvasItem *) set_item) ;
 // MH17: despite looking as if this is set up we still get an assert
 // i suspect this assert was added recently and now prevents the navigator from being displayed
 //	  zMapAssert(item_feature) ;
 
 	  set = g_new0(ID2CanvasStruct, 1) ;
-	  set->item = FOO_CANVAS_ITEM(set_group) ;
+	  set->item = set_item ;
 	  set->hash_table = g_hash_table_new_full(NULL, NULL, NULL, destroyIDHash) ;
 	  set->feature_any = item_feature ;
 
@@ -762,6 +773,7 @@ ID2Canvas zmapWindowFToIFindID2CFull(ZMapWindow window, GHashTable *feature_cont
 						       GUINT_TO_POINTER(block_id))))
 	{
 	  GQuark tmp_set_id = makeSetID(set_id, set_strand, set_frame) ;
+printf("hash find set %s\n",g_quark_to_string(tmp_set_id));
 
 	  if (!set_id)
 	    {
@@ -828,6 +840,33 @@ FooCanvasItem *zmapWindowFToIFindItemFull(ZMapWindow window, GHashTable *feature
 
 	return item;
 }
+
+
+FooCanvasItem *zmapWindowFToIFindItemColumn(ZMapWindow window, GHashTable *feature_context_to_item,
+					  GQuark align_id, GQuark block_id,
+					  GQuark set_id,
+					  ZMapStrand set_strand, ZMapFrame set_frame)
+{
+	ID2Canvas id2c;
+	FooCanvasItem *item = NULL ;
+
+	id2c = zmapWindowFToIFindID2CFull(window, feature_context_to_item,
+					  align_id, block_id,set_id,
+					  set_strand, set_frame, 0);
+
+	if(id2c)
+	{
+		item = id2c->item;
+
+		if(!ZMAP_IS_WINDOW_FEATURESET_ITEM(item))
+			item = NULL;
+		else
+			item = item->parent;
+	}
+
+	return item;
+}
+
 
 
 /* Use this function to find the _set_ of Foo canvas item/group corresponding to

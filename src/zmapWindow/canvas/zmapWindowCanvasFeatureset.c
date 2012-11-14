@@ -928,6 +928,7 @@ printf("create canvas set %s(%p)/%s %x\n",
 
       g_hash_table_insert(featureset_class_G->featureset_items,GUINT_TO_POINTER(id),(gpointer) foo);
 
+
       /* we record strand and frame for display colours
        * the features get added to the appropriate column depending on strand, frame
        * so we get the right featureset item foo item implicitly
@@ -2069,14 +2070,14 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
   foo_canvas_c2w(item->canvas,0,floor(expose->area.y - 1),NULL,&y1);
   foo_canvas_c2w(item->canvas,0,ceil(expose->area.y + expose->area.height + 1),NULL,&y2);
 
-#if 1
+#if 0
 
 //if(fi->type >= FEATURE_GRAPHICS)
 //if(!fi->features)
 {
 	ZMapWindowContainerFeatureSet column;
 
-	printf("expose %p %s %.1f,%.1f (%d %d, %d %d) %d features\n", item->canvas, g_quark_to_string(fi->id),
+	printf("expose %p %s %.1f,%.1f (%d %d, %d %d) %ld features\n", item->canvas, g_quark_to_string(fi->id),
 		 y1, y2, fi->clip_x1, fi->clip_y1, fi->clip_x2, fi->clip_y2, fi->n_features);
 
 	column =  (ZMapWindowContainerFeatureSet) ((ZMapWindowCanvasItem) item)->__parent__.parent;
@@ -3204,6 +3205,8 @@ int zMapWindowFeaturesetItemRemoveSet(FooCanvasItem *foo, ZMapFeatureSet feature
   ZMapWindowFeaturesetItem fi = (ZMapWindowFeaturesetItem) foo;
   int n_feat = fi->n_features;
 
+  if(!ZMAP_IS_WINDOW_FEATURESET_ITEM(foo))
+	  return 0;
 #if 1
   GList *l;
   ZMapWindowCanvasFeature feat;

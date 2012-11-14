@@ -454,24 +454,6 @@ FooCanvasItem *zmapWindowItemGetTrueItem(FooCanvasItem *item)
 
 
 
-/* Need to test whether this works for groups...it should do....
- *
- * For simple features or the parent of a compound feature the raise is done on the item
- * directly, for compound objects we want to raise the parent so that the whole item
- * is still raised.
- *  */
-void zmapWindowRaiseItem(FooCanvasItem *item)
-{
-
-  foo_canvas_item_raise_to_top(item) ;
-#ifdef RDS_DONT_INCLUDE
-  /* this raises the container features group! Not good. */
-  foo_canvas_item_raise_to_top(item->parent) ;
-#endif /* RDS_DONT_INCLUDE */
-  return ;
-}
-
-
 
 
 
