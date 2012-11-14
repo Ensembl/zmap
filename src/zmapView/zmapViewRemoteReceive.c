@@ -704,70 +704,86 @@ static gboolean sanityCheckContext(ZMapView view, RequestData request_data)
 }
 
 
+/* client has asked us to erase features in a feature set, this could be anything from
+ * a single feature to all features in the feature set. Note that we have to handle
+ * there being no features in the feature set.
+ */
 static void eraseFeatures(ZMapView view, RequestData request_data)
 {
-  GList* list_item ;
-
-  /* If the feature(s) are highlighted we need to unhighlight it in all windows first.... */
-  list_item = g_list_first(view->window_list) ;
-  do
+  if (!(request_data->edit_feature) && !(request_data->feature_list))
     {
-      ZMapViewWindow view_window ;
-      ZMapFeature feature ;
+      /* What should we return here ? current xremote return codes not great for this.... */
 
+      request_data->code = ZMAPXREMOTE_OK;
 
-      /* I'm going to try a hack here...given all features should be unhighlighted perhaps
-       * we only need do the first if it's a list of features.... */
-      /* Also....sometimes the feature is in a list and sometimes on it's own....CHRIST....
-       * NEED TO SORT THIS OUT...SHOULD ALWAYS JUST HAVE A LIST....
-       * 
-       *  */
-      if (request_data->edit_feature)
-	feature = request_data->edit_feature ;
-      else
-	feature = (ZMapFeature)(request_data->feature_list->data) ;
-
-
-      view_window = list_item->data ;
-
-      /* If feature to be erased is highlighted then unhighlight it and tell our
-       * parent that only column is no selected. */
-      if (zMapWindowUnhighlightFeature(view_window->window, feature))
-	{
-	  ZMapViewSelectStruct view_select = {0} ;
-	  ZMapViewCallbacks view_cbs ;
-	  ZMapFeatureDescStruct feature_desc = {ZMAPFEATURE_STRUCT_INVALID} ;
-
-	  feature_desc.struct_type = ZMAPFEATURE_STRUCT_FEATURESET ;
-	  feature_desc.feature_set = zMapWindowGetHotColumnName(view_window->window) ;
-	  view_select.feature_desc = feature_desc ;
-
-	  view_cbs = zmapViewGetCallbacks() ;
-
-	  (*(view_cbs->select))(view_window, view_window->parent_view->app_data, &view_select) ;
-	}
-
+      request_data->handled = TRUE;
     }
-  while ((list_item = g_list_next(list_item))) ;
+  else
+    {
+      GList* list_item ;
 
-  /* OK, now get rid of feature from context. */
-  zmapViewEraseFromContext(view, request_data->edit_context);
+      /* If the feature(s) are highlighted we need to unhighlight it in all windows first.... */
+      list_item = g_list_first(view->window_list) ;
+      do
+	{
+	  ZMapViewWindow view_window ;
+	  ZMapFeature feature ;
 
-  zMapFeatureContextExecute((ZMapFeatureAny)(request_data->edit_context),
-                            ZMAPFEATURE_STRUCT_FEATURE,
-                            mark_matching_invalid,
-                            &(request_data->feature_list));
 
-  request_data->code = 0;
+	  /* I'm going to try a hack here...given all features should be unhighlighted perhaps
+	   * we only need do the first if it's a list of features.... */
+	  /* Also....sometimes the feature is in a list and sometimes on it's own....CHRIST....
+	   * NEED TO SORT THIS OUT...SHOULD ALWAYS JUST HAVE A LIST....
+	   * 
+	   *  */
+	  if (request_data->edit_feature)
+	    feature = request_data->edit_feature ;
+	  else
+	    feature = (ZMapFeature)(request_data->feature_list->data) ;
 
-  if (g_list_length(request_data->feature_list))
-    g_list_foreach(request_data->feature_list, delete_failed_make_message, request_data);
 
-  /* if delete_failed_make_message didn't change the code then all is ok */
-  if (request_data->code == 0)
-    request_data->code = ZMAPXREMOTE_OK;
+	  view_window = list_item->data ;
 
-  request_data->handled = TRUE;
+	  /* If feature to be erased is highlighted then unhighlight it and tell our
+	   * parent that only column is no selected. */
+	  if (zMapWindowUnhighlightFeature(view_window->window, feature))
+	    {
+	      ZMapViewSelectStruct view_select = {0} ;
+	      ZMapViewCallbacks view_cbs ;
+	      ZMapFeatureDescStruct feature_desc = {ZMAPFEATURE_STRUCT_INVALID} ;
+
+	      feature_desc.struct_type = ZMAPFEATURE_STRUCT_FEATURESET ;
+	      feature_desc.feature_set = zMapWindowGetHotColumnName(view_window->window) ;
+	      view_select.feature_desc = feature_desc ;
+
+	      view_cbs = zmapViewGetCallbacks() ;
+
+	      (*(view_cbs->select))(view_window, view_window->parent_view->app_data, &view_select) ;
+	    }
+
+	}
+      while ((list_item = g_list_next(list_item))) ;
+
+      /* OK, now get rid of feature from context. */
+      zmapViewEraseFromContext(view, request_data->edit_context);
+
+      zMapFeatureContextExecute((ZMapFeatureAny)(request_data->edit_context),
+				ZMAPFEATURE_STRUCT_FEATURE,
+				mark_matching_invalid,
+				&(request_data->feature_list));
+
+      request_data->code = 0;
+
+      if (g_list_length(request_data->feature_list))
+	g_list_foreach(request_data->feature_list, delete_failed_make_message, request_data);
+
+      /* if delete_failed_make_message didn't change the code then all is ok */
+      if (request_data->code == 0)
+	request_data->code = ZMAPXREMOTE_OK;
+
+      request_data->handled = TRUE;
+    }
+
 
   return ;
 }
