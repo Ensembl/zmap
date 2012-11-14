@@ -1222,12 +1222,17 @@ char *zMapViewGetStatusStr(ZMapView view)
 			       "Resetting", "Dying"} ;
   char *state_str ;
   ZMapViewState state = view->state;
+  char failed[32] = "";
 
   zMapAssert(state >= ZMAPVIEW_INIT);
   zMapAssert(state <= ZMAPVIEW_DYING) ;
 
+  if(view->sources_failed)
+	  sprintf(failed," (%d failed)",view->sources_failed);
   if(state == ZMAPVIEW_LOADING || state == ZMAPVIEW_UPDATING)
-      state_str = g_strdup_printf("%s (%d)", zmapStates[state], view->sources_loading);
+      state_str = g_strdup_printf("%s (%d)%s", zmapStates[state], view->sources_loading,failed);
+  else if(state == ZMAPVIEW_LOADED)
+	state_str = g_strdup_printf("%s%s", zmapStates[state], failed);
   else
       state_str = g_strdup(zmapStates[state]) ;
 
@@ -1809,8 +1814,14 @@ ZMapViewConnection zMapViewRequestServer(ZMapView view, ZMapViewConnection view_
 					req_start,req_end,
 					terminate || is_pipe)))
 	{
+		if(!view->sources_loading)
+			view->sources_failed = 0;
 		view->sources_loading ++ ;
 		view_conn->show_warning = show_warning;
+	}
+	else
+	{
+		view->sources_failed++;
 	}
 
 	return view_conn;
@@ -3076,6 +3087,8 @@ if(reply != ZMAPTHREAD_REPLY_WAIT)
 		        	zMapWarning("Data request failed: %s\n%s%s",err_msg,
 		        		cd->stderr_out && *cd->stderr_out ? "Server reports:\n": "", cd->stderr_out);
 		        }
+
+		      zmap_view->sources_failed ++;
 		    }
 
 
