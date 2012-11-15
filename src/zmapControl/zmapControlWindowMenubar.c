@@ -90,7 +90,7 @@ static GtkItemFactoryEntry menu_items[] = {
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
  { "/File/sep1",                     NULL,         NULL, 0, "<Separator>" },
- { "/File/_Save screen shot",        "<control>D", dumpCB, 0, NULL },
+ { "/File/_Save screen shot",        NULL,         dumpCB, 0, NULL },
  { "/File/_Print screen shot",       "<control>P", printCB, 0, NULL },
  { "/File/sep1",                     NULL,           NULL, 0, "<Separator>" },
  { "/File/Close",                    "<control>W", closeCB, 0, NULL },
