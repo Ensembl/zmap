@@ -77,6 +77,18 @@
 	within the range displayed on screen regardless of any column, zoom, mark etc. settings.</td>
   </tr>
   <tr>
+    <td><b>d</b></td>
+    <td><b>d</b>na copy: copies DNA to cut buffer so it can be pasted into other applications with the
+	following options/actions:
+	<p>For simple features the simple DNA sequence is placed in the cut buffer.</p>
+	<p>For transcripts the DNA placed into the cut buffer is:
+	<ul>
+	  <li><b>'d'</b> the spliced transcript</li>
+	  <li><b>&lt;shift&gt;'d'</b> the CDS</li>
+	  <li><b>&lt;cntl&gt;'d'</b> the unspliced transcript</li>
+	</ul>
+  </tr>
+  <tr>
     <td><b>h</b></td>
     <td>Toggles <b>h</b>ighlighting (good for screen shots).</td>
   </tr>
@@ -117,12 +129,12 @@
   </tr>
   <tr>
     <td><b>z</b></td>
-    <td><b>z</b>oom to the extent of any selected features (e.g. exon/introns, HSPs etc)
+    <td><b>z</b>oom in to the extent of any selected features (e.g. exon/introns, HSPs etc)
 	or any rubberbanded area if there was one.</td>
   </tr>
   <tr>
     <td><b>Z</b></td>
-    <td><b>z</b>oom to whole transcript or all HSPs of a selected feature.</td>
+    <td><b>Z</b>oom in to whole transcript or all HSPs of a selected feature.</td>
   </tr>
 
 </table>
