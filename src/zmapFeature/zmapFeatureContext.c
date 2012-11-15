@@ -271,14 +271,20 @@ char *zMapFeatureGetFeatureDNA(ZMapFeature feature)
 }
 
 
-/* Get a transcripts DNA, this will probably mean extracting snipping out the dna for
- * each exon. */
+/* Get a transcripts DNA, this is done by getting the unspliced DNA and then snipping
+ * out the exons, CDS.
+ * 
+ * Returns unspliced/spliced/cds dna or NULL if there is no DNA in the feature context
+ * or if CDS is requested and transcript does not have one or feature is not a transcript.
+ * 
+ */
 char *zMapFeatureGetTranscriptDNA(ZMapFeature transcript, gboolean spliced, gboolean cds_only)
 {
   char *dna = NULL ;
 
   if (zMapFeatureIsValidFull((ZMapFeatureAny)transcript, ZMAPFEATURE_STRUCT_FEATURE)
-      && ZMAPFEATURE_IS_TRANSCRIPT(transcript))
+      && ZMAPFEATURE_IS_TRANSCRIPT(transcript)
+      && (!cds_only || (cds_only && transcript->feature.transcript.flags.cds)))
     {
       char *tmp = NULL ;
       GArray *exons ;
