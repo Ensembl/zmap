@@ -1386,11 +1386,9 @@ ZMapGUIMenuItem zmapWindowMakeMenuDNATranscript(int *start_index_inout,
       {ZMAPGUI_MENU_NORMAL, FEATURE_SHOW_STR"/"FEATURE_VIEW_STR"/"FEATURE_DNA_SHOW_STR"/with flanking sequence", ZMAPCHOOSERANGE,   dnaMenuCB, NULL},
       {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}
     } ;
-
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
   zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
 

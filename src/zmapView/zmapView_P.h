@@ -255,6 +255,8 @@ typedef struct _ZMapViewStruct
 
   int sources_loading;        /* how many active/ queued requests */
                               /* this is not very neat as failures are dealt with in a complex way */
+  int sources_failed;		/* a count of the number that failed since the last data request, is reset on next load command */
+
 
   GList *connection_list ;				    /* Of ZMapViewConnection. */
   ZMapViewConnection sequence_server ;			    /* Which connection to get raw

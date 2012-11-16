@@ -303,19 +303,14 @@ static void createZMap(ZMapAppContext app, RequestData request_data, ResponseCon
   char *sequence = g_strdup(g_quark_to_string(request_data->sequence));
   ZMapFeatureSequenceMap seq_map = g_new0(ZMapFeatureSequenceMapStruct,1);
 
-  /* MH17: this is a bodge FTM, we need a dataset XRemote field as well */
-  // default sequence may be NULL
-  if (app->default_sequence)
-    seq_map->dataset = app->default_sequence->dataset;
-  seq_map->sequence = sequence;
-  seq_map->start = request_data->start;
-  seq_map->end = request_data->end;
+  /* Copy the default sequence which will have been derived from the config file and/or command line. */
+  seq_map = app->default_sequence ;
 
   if (zmapAppCreateZMap(app, seq_map))
     {
       response_data->handled = TRUE ;
-	if(app->info)
-		g_string_append_printf(response_data->message, "%s", app->info->message) ;
+      if (app->info)
+	g_string_append_printf(response_data->message, "%s", app->info->message) ;
     }
   else
     {
