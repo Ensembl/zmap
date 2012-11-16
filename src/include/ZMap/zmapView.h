@@ -262,7 +262,7 @@ char *zMapViewRemoteReceiveAccepts(ZMapView view);
 /* HACK! not really to be used... */
 ZMapFeatureContext zMapViewGetContextAsEmptyCopy(ZMapView do_not_use);
 
-ZMapGuiNotebookChapter zMapViewBlixemGetConfigChapter(ZMapGuiNotebook note_book_parent) ;
+ZMapGuiNotebookChapter zMapViewBlixemGetConfigChapter(ZMapView view, ZMapGuiNotebook note_book_parent) ;
 
 
 #endif /* !ZMAPVIEW_H */
