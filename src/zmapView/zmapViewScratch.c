@@ -112,23 +112,27 @@ void zmapViewScratchInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence)
 		g_hash_table_insert(context_map->columns, GUINT_TO_POINTER(f2c->column_id), column);
 	}
 
+      /* Create an empty feature */
+      ZMapFeature feature = zMapFeatureCreateEmpty() ;
+      char *feature_name = "scratch_feature";
+      
+      zMapFeatureAddStandardData(feature, feature_name, feature_name,
+                                 NULL, NULL,
+                                 ZMAPSTYLE_MODE_TRANSCRIPT, &scratch_featureset->style,
+                                 0, 0, FALSE, 0.0,
+                                 ZMAPSTRAND_NONE);
 
-//      ZMapFeature translation = zMapFeatureCreateEmpty() ;
-//      zMapFeatureAddStandardData(translation, ZMAP_FIXED_STYLE_SCRATCH_NAME, ZMAP_FIXED_STYLE_SCRATCH_NAME, 
-//                                 "scratch_seq", "sequence",
-//                                 ZMAPSTYLE_MODE_SEQUENCE, &scratch_featureset->style,
-//                                 0, 500, FALSE, 0.0,
-//                                 ZMAPSTRAND_NONE) ;
-//      
-//      zMapFeatureSequenceSetType(translation, ZMAPSEQUENCE_PEPTIDE) ;
-//      zMapFeatureAddFrame(translation, ZMAPFRAME_NONE) ;
-//      
-//      zMapFeatureSetAddFeature(scratch_featureset, translation) ;
+      zMapFeatureTranscriptInit(feature);
+      zMapFeatureAddTranscriptStartEnd(feature, FALSE, 0, FALSE);
+      
+      //zMapFeatureSequenceSetType(feature, ZMAPSEQUENCE_PEPTIDE);
+      //zMapFeatureAddFrame(feature, ZMAPFRAME_NONE);
+      
+      zMapFeatureSetAddFeature(scratch_featureset, feature);
       
       
       /* Merge our context into the view's context and view the diff context */
       ZMapFeatureContext diff_context = zmapViewMergeInContext(zmap_view, context);
       zmapViewDrawDiffContext(zmap_view, &diff_context);
-    }
-  
+    }  
 }

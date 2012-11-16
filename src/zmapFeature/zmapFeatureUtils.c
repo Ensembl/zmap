@@ -1175,6 +1175,52 @@ gboolean zMapFeatureTranscriptChildForeach(ZMapFeature feature, ZMapFeatureSubpa
 }
 
 
+void zMapFeatureTranscriptIntronForeach(ZMapFeature feature, GFunc function, gpointer user_data)
+{
+  GArray *introns;
+  unsigned index;
+  int multiplier = 1, start = 0, end, i;
+  gboolean forward = TRUE;
+
+  zMapAssert(feature->type == ZMAPSTYLE_MODE_TRANSCRIPT);
+
+  introns = feature->feature.transcript.introns;
+
+  if(introns->len > 1)
+    {
+      ZMapSpan first, last;
+      first = &(g_array_index(introns, ZMapSpanStruct, 0));
+      last  = &(g_array_index(introns, ZMapSpanStruct, introns->len - 1));
+      zMapAssert(first && last);
+
+      if(first->x1 > last->x1)
+        forward = FALSE;
+    }
+
+  if(forward)
+    end = introns->len;
+  else
+    {
+      multiplier = -1;
+      start = (introns->len * multiplier) + 1;
+      end   = 1;
+    }
+
+  for(i = start; i < end; i++)
+    {
+      ZMapSpan intron_span;
+
+      index = i * multiplier;
+
+      intron_span = &(g_array_index(introns, ZMapSpanStruct, index));
+
+      (function)(intron_span, user_data);
+    }
+
+  return ;
+}
+
+
 
 GArray *zMapFeatureWorld2CDSArray(ZMapFeature feature)
 {

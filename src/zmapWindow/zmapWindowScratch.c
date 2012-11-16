@@ -47,8 +47,12 @@ typedef struct _GetFeaturesetCBDataStruct
 } GetFeaturesetCBDataStruct, *GetFeaturesetCBData;
 
 
-
-
+typedef struct _ScratchMergeDataStruct
+{
+  ZMapFeature orig_feature;
+  ZMapFeature new_feature;
+} ScratchMergeDataStruct, *ScratchMergeData;
+  
 
 /*!
  * \brief Callback called on every child in a FeatureAny.
@@ -125,27 +129,135 @@ ZMapFeatureSet scratchGetFeatureset(ZMapWindow window)
 
 
 /*! 
+ * \brief Get the single feature that resides in the scratch column featureset
+ *
+ * \returns The ZMapFeature, or NULL if there was a problem
+ */
+ZMapFeature scratchGetFeature(ZMapFeatureSet feature_set)
+{
+  ZMapFeature feature = NULL;
+  
+  ZMapFeatureAny feature_any = (ZMapFeatureAny)feature_set;
+
+  if (g_hash_table_size(feature_any->children) != 1)
+    {
+      zMapWarning("Error merging feature into '%s' column; expected 1 existing feature but found %d\n", g_quark_to_string(feature_any->unique_id), g_hash_table_size(feature_any->children));
+    }
+  else
+    {
+      GHashTableIter iter;
+      gpointer key, value;
+      
+      g_hash_table_iter_init (&iter, feature_any->children);
+      g_hash_table_iter_next (&iter, &key, &value);
+      
+      if (value)
+        {
+          feature = (ZMapFeature)(value);
+        }
+    }
+
+  return feature;
+}
+
+
+/*! 
+ * \brief Merge a single exon into the scratch column feature
+ */
+void scratchMergeExonCB(gpointer exon, gpointer user_data)
+{
+  ZMapSpan exon_span = (ZMapSpan)exon;
+  ScratchMergeData merge_data = (ScratchMergeData)user_data;
+
+  /* Add this exon to the destination feature */
+  zMapFeatureAddTranscriptExonIntron(merge_data->orig_feature, exon_span, NULL);
+
+  /* If this is the first/last exon set the start/end coord */
+  if (exon_span->x1 == merge_data->new_feature->x1)
+    merge_data->orig_feature->x1 = exon_span->x1;
+  
+  if (exon_span->x2 == merge_data->new_feature->x2)
+    merge_data->orig_feature->x2 = exon_span->x2;  
+}
+
+
+/*! 
+ * \brief Merge a single exon into the scratch column feature
+ */
+void scratchMergeIntronCB(gpointer intron, gpointer user_data)
+{
+  ZMapSpan intron_span = (ZMapSpan)intron;
+  ScratchMergeData merge_data = (ScratchMergeData)user_data;
+
+  /* Add this intron to the destination feature */
+  zMapFeatureAddTranscriptExonIntron(merge_data->orig_feature, NULL, intron_span);
+
+  /* If this is the first/last intron set the start/end coord */
+  if (intron_span->x1 == merge_data->new_feature->x1)
+    merge_data->orig_feature->x1 = intron_span->x1;
+  
+  if (intron_span->x2 == merge_data->new_feature->x2)
+    merge_data->orig_feature->x2 = intron_span->x2;  
+}
+
+
+/*! 
  * \brief Does the work to add/merge a feature to the scratch column
  */
-void scratchAddFeature(ZMapFeatureSet feature_set, ZMapFeature feature)
+void scratchMergeFeature(ZMapFeatureSet feature_set, 
+                         ZMapFeature orig_feature, 
+                         ZMapFeature new_feature)
 {
-  /* to do: merge with existing features */
-  zMapFeatureSetAddFeature(feature_set, feature);
+  ScratchMergeDataStruct cb_data = {orig_feature, new_feature};
+
+  switch (new_feature->type)
+    {
+      case ZMAPSTYLE_MODE_INVALID:
+        break;
+      case ZMAPSTYLE_MODE_BASIC:
+        break;
+      case ZMAPSTYLE_MODE_ALIGNMENT:
+        break;
+      case ZMAPSTYLE_MODE_TRANSCRIPT:
+        zMapFeatureTranscriptExonForeach(new_feature, scratchMergeExonCB, &cb_data);
+        zMapFeatureTranscriptIntronForeach(new_feature, scratchMergeIntronCB, &cb_data);
+        break;
+      case ZMAPSTYLE_MODE_SEQUENCE:
+        break;
+      case ZMAPSTYLE_MODE_ASSEMBLY_PATH:
+        break;
+      case ZMAPSTYLE_MODE_TEXT:
+        break;
+      case ZMAPSTYLE_MODE_GRAPH:
+        break;
+      case ZMAPSTYLE_MODE_GLYPH:
+        break;
+      case ZMAPSTYLE_MODE_PLAIN:
+        break;
+      case ZMAPSTYLE_MODE_META:
+        break;
+      default:
+        zMapWarning("Unrecognised feature type %d\n", new_feature->type);
+        break;
+    };
 }
 
 
 /*!
  * \brief Copy the given feature to the scratch column 
  */
-void zmapWindowScratchCopyFeature(ZMapWindow window, ZMapFeature feature)
+void zmapWindowScratchCopyFeature(ZMapWindow window, ZMapFeature new_feature)
 {
-  if (feature)
+  if (new_feature)
     {
-      ZMapFeature new_feature = (ZMapFeature)zMapFeatureAnyCopy((ZMapFeatureAny)feature);
       ZMapFeatureSet feature_set = scratchGetFeatureset(window);
+      ZMapFeature orig_feature = scratchGetFeature(feature_set);
+
+      //      ZMapFeature new_feature = (ZMapFeature)zMapFeatureAnyCopy((ZMapFeatureAny)feature);
+  //  zMapFeatureSetAddFeature(feature_set, feature);
       
-      if (feature_set)
-        scratchAddFeature(feature_set, new_feature);
+      if (feature_set && orig_feature)
+        scratchMergeFeature(feature_set, orig_feature, new_feature);
     }
   else
     {

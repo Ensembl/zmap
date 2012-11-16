@@ -1092,6 +1092,7 @@ gboolean zMapFeatureTranscriptNormalise(ZMapFeature feature) ;
 gboolean zMapFeatureTranscriptExonForeach(ZMapFeature feature, GFunc function, gpointer user_data) ;
 gboolean zMapFeatureTranscriptChildForeach(ZMapFeature feature, ZMapFeatureSubpartType child_type,
 					   GFunc function, gpointer user_data) ;
+void zMapFeatureTranscriptIntronForeach(ZMapFeature feature, GFunc function, gpointer user_data);
 
 gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
 				     GQuark clone_id,
