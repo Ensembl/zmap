@@ -192,14 +192,14 @@ static gpointer _featureset_colour_G[FEATURE_N_TYPE] = { 0 };
 
 /* clip to expose region */
 /* erm,,, clip to visible scroll region: else rectangles would get extra edges */
-void zMap_draw_line(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, gint cx1, gint cy1, gint cx2, gint cy2)
+int zMap_draw_line(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, gint cx1, gint cy1, gint cx2, gint cy2)
 {
 	/* for H or V lines we can clip easily */
 
 	if(cy1 > featureset->clip_y2)
-		return;
+		return 0;
 	if(cy2 < featureset->clip_y1)
-		return;
+		return 0;
 #if 0
 /*
 	the problem is long vertical lines that wrap round
@@ -251,6 +251,8 @@ void zMap_draw_line(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, 
 
 	  }
 	gdk_draw_line (drawable, featureset->gc, cx1, cy1, cx2, cy2);
+
+	return 1;
 }
 
 
@@ -261,19 +263,20 @@ void zMap_draw_line(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, 
 /* NOTE rectangles may be drawn partially if they overlap the visible region
  * in which case a false outline will be draw outside the region
  */
-void zMap_draw_rect(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, gint cx1, gint cy1, gint cx2, gint cy2, gboolean fill)
+int zMap_draw_rect(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, gint cx1, gint cy1, gint cx2, gint cy2, gboolean fill)
 {
   /* as our rectangles are all aligned to H and V we can clip easily */
 
   if(cy1 > featureset->clip_y2)
-    return;
+    return 0;
   if(cy2 < featureset->clip_y1)
-    return;
+    return 0;
 
   if(cx1 > featureset->clip_x2)
-    return;
+    return 0;
   if(cx2 < featureset->clip_x1)
-    return;
+    return 0;
+
 
   if(cx1 < featureset->clip_x1)
     cx1 = featureset->clip_x1;
@@ -295,15 +298,15 @@ void zMap_draw_rect(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, 
     }
   else
     {
-      if(fill)
+      if(!fill)
 	{
-	  cx2++;
-	  cy2++;
+	  cx2--;	/* outline rects are 1 pixel bigger than filled ones */
+	  cy2--;
 	}
       gdk_draw_rectangle (drawable, featureset->gc, fill, cx1, cy1, cx2 - cx1, cy2 - cy1);
     }
 
-
+  return 1;
 }
 
 
@@ -741,7 +744,7 @@ static void zMapWindowCanvasFeaturesetPaintSet(ZMapWindowFeaturesetItem fi,
 	c.pixel = fi->background;
 	gdk_gc_set_foreground (fi->gc, &c);
 	zMap_draw_rect (drawable, fi, x1, y1, x2, y2, TRUE);
-//printf("draw back %x %d,%d - %d,%d\n",c.pixel , x1, y1, x2, y2);
+//printf("draw back %s %x %d,%d - %d,%d\n", g_quark_to_string(fi->id), c.pixel, x1, y1, x2, y2);
   }
 
   if ((fi->type > 0 && fi->type < FEATURE_N_TYPE)
@@ -1011,7 +1014,6 @@ guint zMapWindowCanvasFeaturesetGetId(ZMapWindowFeaturesetItem featureset)
 void zMapWindowCanvasFeaturesetSetWidth(ZMapWindowFeaturesetItem featureset, double width)
 {
   featureset->width = width;
-//printf("CFS width set to %s %f\n",g_quark_to_string(featureset->id), width);
 }
 
 double zMapWindowCanvasFeaturesetGetWidth(ZMapWindowFeaturesetItem featureset)
@@ -1020,6 +1022,7 @@ double zMapWindowCanvasFeaturesetGetWidth(ZMapWindowFeaturesetItem featureset)
 		return featureset->bump_width;
 	else
 		return featureset->width;
+
 }
 
 double zMapWindowCanvasFeaturesetGetOffset(ZMapWindowFeaturesetItem featureset)
@@ -1223,6 +1226,14 @@ void zMapWindowCanvasFeaturesetRedraw(ZMapWindowFeaturesetItem fi, double zoom)
   double width = fi->width;
 
   fi->zoom = zoom;	/* can set to 0 to trigger recalc of zoom data */
+
+#if 1
+  foo_canvas_item_request_update (foo);
+  // won't run as the item is not mapped yet
+//  foo_canvas_item_request_redraw (foo);
+#endif
+
+// this code fails if we just added the item as it's no been updated yet
   x1 = fi->x_off;
   /* x_off is for staggered columns - we can't just add it to our foo position as it's columns that get moved about */
   /* well maybe that would be possible but the rest of the code works this way */
@@ -1239,7 +1250,8 @@ void zMapWindowCanvasFeaturesetRedraw(ZMapWindowFeaturesetItem fi, double zoom)
   foo_canvas_w2c (foo->canvas, x1 + i2w_dx, i2w_dy, &cx1, &cy1);
   foo_canvas_w2c (foo->canvas, x1 + width + i2w_dx, fi->end - fi->start + i2w_dy, &cx2, &cy2);
 
-  foo_canvas_request_redraw (foo->canvas, cx1, cy1, cx2 + 1, cy2 + 1);
+  foo_canvas_request_redraw (foo->canvas, cx1, cy1, cx2 + 1, cy2 + 1);	/* hits column next door? (NO, is needed) */
+//  foo_canvas_request_redraw (foo->canvas, cx1, cy1, cx2, cy2);
 }
 
 
@@ -1615,10 +1627,10 @@ static void zmap_window_featureset_item_item_update (FooCanvasItem *item, double
   foo_canvas_w2c (item->canvas, x2, y2, &cx2, &cy2);
 
   item->x1 = cx1;
-  item->x2 = cx2+1;
+  item->x2 = cx2;
 
   item->y1 = cy1;
-  item->y2 = cy2+1;
+  item->y2 = cy2;
 }
 
 
@@ -2076,13 +2088,14 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
 //if(!fi->features)
 {
 	ZMapWindowContainerFeatureSet column;
+	GdkRectangle *area = &expose->area;
 
 	printf("expose %p %s %.1f,%.1f (%d %d, %d %d) %ld features\n", item->canvas, g_quark_to_string(fi->id),
-		 y1, y2, fi->clip_x1, fi->clip_y1, fi->clip_x2, fi->clip_y2, fi->n_features);
+		 y1, y2, area->x, area->y, area->width, area->height, fi->n_features);
 
 	column =  (ZMapWindowContainerFeatureSet) ((ZMapWindowCanvasItem) item)->__parent__.parent;
-	if(ZMAP_IS_CONTAINER_FEATURESET(column))
-		printf("painting column %s\n", g_quark_to_string(zmapWindowContainerFeatureSetGetColumnId(column)));
+//	if(ZMAP_IS_CONTAINER_FEATURESET(column))
+//		printf("painting column %s\n", g_quark_to_string(zmapWindowContainerFeatureSetGetColumnId(column)));
 }
 #endif
 
@@ -3352,7 +3365,7 @@ static void zmap_window_featureset_item_item_destroy (GtkObject *object)
   if(g_hash_table_remove(featureset_class_G->featureset_items,GUINT_TO_POINTER(featureset_item->id)))
   {
 
-printf("destroy featureset %s %ld features\n",g_quark_to_string(featureset_item->id), featureset_item->n_features);
+//printf("destroy featureset %s %ld features\n",g_quark_to_string(featureset_item->id), featureset_item->n_features);
 
 	if(featureset_item->display_index)
 	{

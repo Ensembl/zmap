@@ -626,36 +626,7 @@ gboolean zmapWindowContainerUtilsGetColumnLists(ZMapWindowContainerGroup block_o
   return found_block;
 }
 
-#if NOT_USED
 
-void zmapWindowContainerSetOverlayResizing(ZMapWindowContainerGroup container_group,
-					   gboolean maximise_width, gboolean maximise_height)
-{
-  ZMapWindowContainerOverlay overlay;
-
-  if((overlay = zmapWindowContainerGetOverlay(container_group)))
-    {
-      overlay->flags.max_width  = maximise_width ;
-      overlay->flags.max_height = maximise_height ;
-    }
-
-  return ;
-}
-
-void zmapWindowContainerSetUnderlayResizing(ZMapWindowContainerGroup container_group,
-					    gboolean maximise_width, gboolean maximise_height)
-{
-  ZMapWindowContainerUnderlay underlay;
-
-  if((underlay = zmapWindowContainerGetUnderlay(container_group)))
-    {
-      underlay->flags.max_width  = maximise_width ;
-      underlay->flags.max_height = maximise_height ;
-    }
-
-  return ;
-}
-#endif
 
 void zmapWindowContainerUtilsRemoveAllItems(FooCanvasGroup *group)
 {

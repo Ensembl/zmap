@@ -428,7 +428,7 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
 	x1 += feature->bump_offset;
 
       x1 += featureset->dx;
-      x2 = x1 + feature->width;
+      x2 = x1 + feature->width - 1;
 
 	/* must use feature coords here as the first alignment in the series gets expanded to pick up colinear lines
 	 * if it's ungapped we'd draw a big box over the whole series

@@ -141,8 +141,8 @@ GType zMapWindowFeaturesetItemGetType(void);
 void zMapWindowCanvasFeatureSetSetFuncs(int featuretype,gpointer *funcs, int feature_size, int set_size);
 
 /* GDK wrappers to clip features */
-void zMap_draw_line(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, gint cx1, gint cy1, gint cx2, gint cy2);
-void zMap_draw_rect(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, gint cx1, gint cy1, gint cx2, gint cy2, gboolean fill);
+int zMap_draw_line(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, gint cx1, gint cy1, gint cx2, gint cy2);
+int zMap_draw_rect(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, gint cx1, gint cy1, gint cx2, gint cy2, gboolean fill);
 
 void zmapWindowCanvasFeaturesetInitPango(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasPango pango, char *family, int size, GdkColor *draw);
 
@@ -254,7 +254,7 @@ void zMapWindowCanvasFeaturesetGetFeatureBounds(FooCanvasItem *foo, double *root
 	{\
 		c.pixel = outline;\
 		gdk_gc_set_foreground (featureset->gc, &c);\
-		zMap_draw_rect (drawable, featureset, cx1, cy1, cx2, cy2, FALSE);\
+		zMap_draw_rect (drawable, featureset, cx1, cy1, cx2+1, cy2+1, FALSE); /* +1 due to gdk_draw_rect and zMap_draw_rect */\
 	}\
 }
 

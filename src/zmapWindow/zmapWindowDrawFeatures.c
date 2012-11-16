@@ -601,7 +601,7 @@ if(!strcmp(x,"locus"))
   g_hash_table_foreach(feature_set->features, ProcessFeature, &featureset_data) ;
 
 
-printf("Processed %d features in %s\n",featureset_data.feature_count, g_quark_to_string(feature_set->unique_id));
+//printf("Processed %d features in %s\n",featureset_data.feature_count, g_quark_to_string(feature_set->unique_id));
 
 
   {
@@ -1072,7 +1072,7 @@ static FooCanvasGroup *produce_column(ZMapCanvasData  canvas_data,
 				     column_strand, column_frame, feature_set, TRUE) ;
 
 
-#if 1 // ED_G_NEVER_INCLUDE_THIS_CODE
+#if ED_G_NEVER_INCLUDE_THIS_CODE
 
   /* We need the feature_set to be attached to the column in find_or_create_column().... */
   /* SO I THINK THIS ROUTINE CAN NOW BE REMOVED...IT DOESN'T ADD ANYTHING......... */
@@ -1081,7 +1081,7 @@ static FooCanvasGroup *produce_column(ZMapCanvasData  canvas_data,
     {
       zmapWindowContainerAttachFeatureAny((ZMapWindowContainerGroup) new_column, (ZMapFeatureAny) feature_set);
 
-#if 1 // MH17_PRINT_CREATE_COL
+#if MH17_PRINT_CREATE_COL
       printf("produced column  %s\n",
 	     g_quark_to_string(zmapWindowContainerFeatureSetGetColumnId((ZMapWindowContainerFeatureSet) new_column)));
 #endif
@@ -1548,7 +1548,7 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 				"y", y,
 				NULL) ;
 
-	    zmapWindowDrawSetGroupBackground(block_group, 0, 1, 1.0, ZMAP_CANVAS_LAYER_BLOCK_BACKGROUND, &(window->colour_block), NULL);
+	    zmapWindowDrawSetGroupBackground(block_group, start, end, 1.0, ZMAP_CANVAS_LAYER_BLOCK_BACKGROUND, &(window->colour_block), NULL);
 
 	    /* Add this block to our hash for going from the feature context to its on screen item. */
 	    if (!(zmapWindowFToIAddBlock(canvas_data->window->context_to_item,
@@ -1847,7 +1847,7 @@ void zmapWindowDrawSetGroupBackground(ZMapWindowContainerGroup container, int st
 	static ZMapFeatureTypeStyle style = NULL;
 	GList *l;
 	GQuark id;
-	char *x,*name = "?";
+	char *x,*y,*name = "?";
 	ZMapWindowFeaturesetItem cfs = NULL;
 	FooCanvasItem *foo = (FooCanvasItem *) container;
 	FooCanvasGroup *group = (FooCanvasGroup *) container;
@@ -1893,10 +1893,16 @@ void zmapWindowDrawSetGroupBackground(ZMapWindowContainerGroup container, int st
 	 * but GroupCreate does not have this info
 	 * previous backgrounds were anonymous so no big deal
 	 */
+	y = "?";
+	if(container->feature_any)
+		y = (char *) g_quark_to_string(container->feature_any->unique_id);
 	if(ZMAP_IS_CONTAINER_FEATURESET(group))
 		name = (char *) g_quark_to_string(zmapWindowContainerFeatureSetGetColumnId((ZMapWindowContainerFeatureSet) group));
+	else
+		name = g_strdup_printf("%d-%s",container->level, y);
       x = g_strdup_printf("%p_%p_%s_bgnd", foo->canvas, group, name);
 
+//printf("zmapWindowDrawSetGroupBackground %s\n",x);
 	id = g_quark_from_string(x);
 
 
@@ -1936,6 +1942,12 @@ printf("\n");
 }
 #endif
 
+#if OPTIMISE
+/* there's some very odd stuff going on, we get expose and call gdk_draw_rectangle but it does not paint
+ *  but only if the foo canvas item is new, so it should be related to mapped or realize flags
+ *  but as we do get exposed and do draw this cannot prevent backgrounds being visible yet they are not
+ * (this refers to column backgrounds)
+ */
 	/* don't paint white on white */
 	/* boringly we have to compare RGB and these have not been set in GdkColor.pixel */
 	/* if you happen to know a good function to do that then fix this.... */
@@ -1943,12 +1955,13 @@ printf("\n");
 		fill = NULL;
 	if(border && parent_border && border->red == parent_border->red && border->green == parent_border->green && border->blue == parent_border->blue)
 		border = NULL;
+#endif
 
 	if(fill || border)
 	{
 		double x1, x2;
 
-//printf("set background %s\n", container->feature_any ? g_quark_to_string(container->feature_any->unique_id) : "none");
+//printf("try background %s\n", container->feature_any ? g_quark_to_string(container->feature_any->unique_id) : "none");
 		if(!cfs)	/* add a background CanvasFeatureset if it's not there */
 		{
 				/* foo canvas update will resize this */
@@ -1959,14 +1972,16 @@ printf("\n");
 
 		if(cfs)
 		{
+			foo = (FooCanvasItem *) container;
+
 			if(layer & ZMAP_CANVAS_LAYER_STRETCH_X)
 			{
 				/* get the width of the container, should be set by group update regardless */
-				foo = (FooCanvasItem *) container;
 				foo_canvas_c2w(foo->canvas, foo->x1, 0, &x1, NULL);
 				foo_canvas_c2w(foo->canvas, foo->x2, 0, &x2, NULL);
-				width = x2 - x1 + 1;
+				width = x2 - x1;
 			}
+//printf("set background %s %x %x %x = %f %f %f\n", container->feature_any ? g_quark_to_string(container->feature_any->unique_id) : "none", fill->red,fill->green,fill->blue, foo->x1,foo->x2, width);
 
 			zMapWindowCanvasFeaturesetSetWidth(cfs, width);
 			/* set background does a request redraw */
@@ -2121,6 +2136,9 @@ static FooCanvasGroup *createColumnFull(ZMapWindowContainerFeatures parent_group
   /* Can we still proceed? */
   if(proceed)
     {
+	int start = block->block_to_sequence.block.x1;
+	int end = block->block_to_sequence.block.x2;
+
       ZMapWindowContainerGroup container;
       /* Only now can we create a group. */
       container = zmapWindowContainerGroupCreate((FooCanvasGroup *) parent_group, ZMAPCONTAINER_LEVEL_FEATURESET,
@@ -2159,16 +2177,13 @@ static FooCanvasGroup *createColumnFull(ZMapWindowContainerFeatures parent_group
 
 	if(feature_set->style && zMapStyleDisplayInSeparator(feature_set->style))
 	{
-		int start = block->block_to_sequence.block.x1;
-		int end = block->block_to_sequence.block.x2;
-
 		/* fixed width, colour already set to yellow, but need start and end as there are no features */
 		zmapWindowDrawSetGroupBackground(container, start, end, style->width, ZMAP_CANVAS_LAYER_SEPARATOR_BACKGROUND, NULL, NULL);
 	}
 	else
 	{
 		/* white background that will not be added as block has a white background */
-		zmapWindowDrawSetGroupBackground(container, 0, 1 , 1.0, ZMAP_CANVAS_LAYER_COL_BACKGROUND, NULL, NULL);
+		zmapWindowDrawSetGroupBackground(container, start, end, 1.0, ZMAP_CANVAS_LAYER_COL_BACKGROUND, NULL, NULL);
 	}
 
       g_signal_connect(G_OBJECT(container), "destroy", G_CALLBACK(containerDestroyCB), (gpointer)window) ;

@@ -655,6 +655,7 @@ static void zmap_window_container_group_update (FooCanvasItem *item, double i2w_
   FooCanvasGroup *canvas_group;
   gboolean item_visible;
 
+ZMapWindowContainerGroup zg = (ZMapWindowContainerGroup) item;
 
   canvas_group   = (FooCanvasGroup *)item;
   item_visible   = ((item->object.flags & FOO_CANVAS_ITEM_VISIBLE) == FOO_CANVAS_ITEM_VISIBLE);
@@ -679,11 +680,14 @@ static void zmap_window_container_group_update (FooCanvasItem *item, double i2w_
 		featureset = (ZMapWindowFeaturesetItem) foo;
 
 #if 0
+// NOTE code has been hacked about
 char *x = "?";
 if(ZMAP_IS_WINDOW_FEATURESET_ITEM(foo))	/* these could be groups or even normal foo items */
 {
 	x = g_strdup_printf("%s layer %x",g_quark_to_string(zMapWindowCanvasFeaturesetGetId(featureset)),
 				     zMapWindowCanvasFeaturesetGetLayer(featureset));
+	if(zg->level < 4)
+		printf("group update bgnd %s: %f %f %f %f\n", x, item->x1, item->y1, item->x2, item->y2);
 }
 else if(ZMAP_IS_CONTAINER_GROUP(foo))
 {
@@ -694,9 +698,9 @@ else if(ZMAP_IS_CONTAINER_GROUP(foo))
 	if(f)
 		name = (char *) g_quark_to_string(f->unique_id);
 	x = g_strdup_printf("group %s level %d",name, ((ZMapWindowContainerGroup) foo)->level);
+	printf("group update %s: %f %f %f %f\n", x, item->x1, item->y1, item->x2, item->y2);
 }
 
-printf("group update %s\n", x);
 #endif
 		if(ZMAP_IS_WINDOW_FEATURESET_ITEM(foo))	/* these could be groups or even normal foo items */
 		{
@@ -716,6 +720,8 @@ printf("group update %s\n", x);
 				foo->x1 = item->x1;
 				foo->x2 = item->x2;
 				foo_canvas_c2w(foo->canvas,foo->x2 - foo->x1, 0, &size, NULL);
+if(zg->level < 4)
+	printf("update %d set x %s = %f %f\n",zg->level, g_quark_to_string(zMapWindowCanvasFeaturesetGetId(featureset)), foo->x1, foo->x2);
 				zMapWindowCanvasFeaturesetSetWidth(featureset,size);
 			}
 
@@ -727,6 +733,8 @@ printf("group update %s\n", x);
 				/* this is used for higher level groups */
 				foo->y1 = item->y1;
 				foo->y2 = item->y2;
+if(zg->level < 4)
+	printf("update %d set y %s = %f %f\n", zg->level, g_quark_to_string(zMapWindowCanvasFeaturesetGetId(featureset)), foo->y1, foo->y2);
 				foo_canvas_c2w(foo->canvas,0, foo->y1, NULL, &y1);
 				foo_canvas_c2w(foo->canvas,0, foo->y2, NULL, &y2);
 

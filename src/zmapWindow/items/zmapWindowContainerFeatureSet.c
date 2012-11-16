@@ -359,6 +359,8 @@ GQuark zmapWindowContainerFeatureSetColumnDisplayName(ZMapWindowContainerFeature
 
 GQuark zmapWindowContainerFeatureSetGetColumnId(ZMapWindowContainerFeatureSet container_set)
 {
+  if(!ZMAP_IS_CONTAINER_FEATURESET(container_set))
+	return 0;
   return container_set->unique_id;
 }
 

@@ -99,7 +99,7 @@ void zMapWindowCanvasGraphPaintPrepare(ZMapWindowFeaturesetItem featureset, ZMap
 	{
 		/* this is probably a paint in the middle of the window */
 		/* and the line has been drawn previously, we need to paint over it exactly */
-		x2 = featureset->style->mode_data.graph.baseline + feature->width;
+		x2 = featureset->style->mode_data.graph.baseline + feature->width - 1;
 		y2 = (feature->y2 + feature->y1 + 1) / 2;
 		foo_canvas_w2c (item->canvas, x2 + featureset->dx + featureset->x_off, y2 - featureset->start + featureset->dy, &cx2, &cy2);
 
@@ -167,7 +167,7 @@ static void zMapWindowCanvasGraphPaintFeature(ZMapWindowFeaturesetItem featurese
 		}
 
 
-		x2 = featureset->style->mode_data.graph.baseline + feature->width;
+		x2 = featureset->style->mode_data.graph.baseline + feature->width - 1;
 		y2 = (feature->y2 + feature->y1 + 1) / 2;
 		foo_canvas_w2c (item->canvas, x2 + featureset->dx + featureset->x_off, y2 - featureset->start + featureset->dy, &cx2, &cy2);
 
@@ -185,7 +185,7 @@ static void zMapWindowCanvasGraphPaintFeature(ZMapWindowFeaturesetItem featurese
 	case ZMAPSTYLE_GRAPH_HEATMAP:
 		/* colour between fill and outline according to score */
 		x1 = featureset->dx + featureset->x_off;
-		x2 = x1 + featureset->width;
+		x2 = x1 + featureset->width - 1;
 
 		outline_set = FALSE;
 		fill_set = TRUE;
@@ -197,7 +197,7 @@ static void zMapWindowCanvasGraphPaintFeature(ZMapWindowFeaturesetItem featurese
 	default:
 	case ZMAPSTYLE_GRAPH_HISTOGRAM:
 		x1 = featureset->dx + featureset->x_off; //  + (width * zMapStyleBaseline(di->style)) ;
-		x2 = x1 + feature->width;
+		x2 = x1 + feature->width - 1;
 
 		/* If the baseline is not zero then we can end up with x2 being less than x1
 		* so we mst swap these round.

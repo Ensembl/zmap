@@ -1384,7 +1384,6 @@ GList *zMapFeatureBlockGetMatchingSets(ZMapFeatureBlock feature_block, char *pre
 		del = s;
 		s = s->next;
 
-printf("matching sets %s/%s\n", name, prefix);
 		if(!g_str_has_prefix(name, prefix))
 			sets = g_list_delete_link(sets, del);
 	}

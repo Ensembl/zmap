@@ -185,10 +185,16 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(GHashTable *ftoi_hash,
             char frame = '0';
 		char *x;
 
+			/* as we process both strands together strand is per feature not per set */
+		feature_stack->strand = feature->strand;
             if(zMapStyleIsStrandSpecific(*feature->style) && feature->strand == ZMAPSTRAND_REVERSE)
-            	strand = '-';
+			strand = '-';
+
             if(feature_stack->frame != ZMAPFRAME_NONE)
-            	frame += zmapWindowFeatureFrame(feature);
+		{
+			feature_stack->frame = zmapWindowFeatureFrame(feature);
+			frame += feature_stack->frame;
+		}
 
 		/* see comment by zMapWindowGraphDensityItemGetDensityItem() */
 		if(feature_stack->maps_to)
@@ -213,6 +219,7 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(GHashTable *ftoi_hash,
 			feature_stack->strand,feature_stack->frame,feature_stack->set_index, 0);
 
 #if !FEATURESET_AS_COLUMN
+
 		zmapWindowFToIAddSet(ftoi_hash,
 						feature_stack->align->unique_id, feature_stack->block->unique_id,
 						feature_stack->set->unique_id, feature_stack->strand, feature_stack->frame, (FooCanvasItem *) canvas_item) ;
@@ -265,7 +272,7 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(GHashTable *ftoi_hash,
 			{
 				feature_stack->col_hash[strand] = zmapWindowFToIGetSetHash(ftoi_hash,
 						feature_stack->align->unique_id, feature_stack->block->unique_id,
-						feature_stack->set->unique_id, strand, frame);
+						feature_stack->set->unique_id, feature_stack->strand, feature_stack->frame);
 			}
 
 			status = zmapWindowFToIAddSetFeature(feature_stack->col_hash[strand], feature->unique_id, feature_item, feature);
@@ -467,7 +474,6 @@ gboolean zmapWindowFToIAddSet(GHashTable *feature_context_to_item,
   /* We need special quarks that incorporate strand/frame indication because any one feature set
    * may be displayed in multiple columns. */
   set_id = makeSetID(set_id, set_strand, set_frame) ;
-printf("hash add set %s\n",g_quark_to_string(set_id));
 
   if ((align = (ID2Canvas)g_hash_table_lookup(feature_context_to_item,
 					      GUINT_TO_POINTER(align_id)))
@@ -773,7 +779,6 @@ ID2Canvas zmapWindowFToIFindID2CFull(ZMapWindow window, GHashTable *feature_cont
 						       GUINT_TO_POINTER(block_id))))
 	{
 	  GQuark tmp_set_id = makeSetID(set_id, set_strand, set_frame) ;
-printf("hash find set %s\n",g_quark_to_string(tmp_set_id));
 
 	  if (!set_id)
 	    {
