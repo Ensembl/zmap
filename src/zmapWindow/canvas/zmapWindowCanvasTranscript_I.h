@@ -37,11 +37,38 @@
 #include <zmapWindowCanvasFeatureset_I.h>
 #include <zmapWindowCanvasTranscript.h>
 
+/*
+---------------------------------------------------------------------------------
+	*** handling start and end not found ***
+
+	there is probably a lot of code that assumed we have neat & tidy exons with intron between
+	for truncated transcripts (ie that overlap the clone boundaries) we just have part of the whole
+	and no trailing introns.
+	There is a separate status of start/end not found which doesn not imply truncatiion due to session limits
+	and this is handled with exactly the same flags.
+
+	to display these as dotted lines we insert intron CanvasFeatureset items at either end of the transcript
+	but DO NOT ALTER THE TRANSCRIPT FEATURE in any way.
+
+	the transcript is displayed as a series of exons and introns linked sideways and we just insert extra introns at the ends,
+	but note that these do not correspond to data in the transcript feature's GArrays.
+
+	These are indedxed as -1 or n+1
+
+	the overall extent of the transcript is expanded to match
+
+	If we have diff styles for transcript_trunc and start-not-found-but-not-truncated (we do) then we display dotted lines
+	in the different colours as specified and uses wil be able to tell the difference.
+---------------------------------------------------------------------------------
+*/
+
 typedef enum
 {
 	TRANSCRIPT_INVALID,
 	TRANSCRIPT_EXON,
-	TRANSCRIPT_INTRON
+	TRANSCRIPT_INTRON,
+	TRANSCRIPT_INTRON_START_NOT_FOUND,		/* canvas featureset items not in the feature */
+	TRANSCRIPT_INTRON_END_NOT_FOUND
 
 } ZMapWindowCanvasTranscriptSubType;
 
@@ -51,6 +78,7 @@ typedef struct _zmapWindowCanvasTranscriptStruct
 	zmapWindowCanvasFeatureStruct feature;	/* all the common stuff */
 
 	int index;		/* of intron or exon */
+
 	ZMapWindowCanvasTranscriptSubType sub_type;
 	/* can tell if exon has CDS/  UTR from feature->feature struct */
 

@@ -125,21 +125,52 @@ static void zMapWindowCanvasTranscriptPaintFeature(ZMapWindowFeaturesetItem feat
 	{
 		zMapCanvasFeaturesetDrawBoxMacro(featureset, x1, x2, y1, y2, drawable, fill_set,outline_set,fill,outline);
 	}
-	else if (outline_set && tr->sub_type == TRANSCRIPT_INTRON)
+	else if (outline_set)
 	{
-		GdkColor c;
-      	int cx1, cy1, cx2, cy2, cy1_5, cx1_5;
+		if(tr->sub_type == TRANSCRIPT_INTRON)
+		{
+			GdkColor c;
+			int cx1, cy1, cx2, cy2, cy1_5, cx1_5;
 
-			/* get item canvas coords in pixel coordinates */
-			/* NOTE not quite sure why y1 is 1 out when y2 isn't */
-		foo_canvas_w2c (foo->canvas, x1, feature->y1 - featureset->start + featureset->dy, &cx1, &cy1);
-		foo_canvas_w2c (foo->canvas, x2, feature->y2 - featureset->start + featureset->dy + 1, &cx2, &cy2);
-		cy1_5 = (cy1 + cy2) / 2;
-		cx1_5 = (cx1 + cx2) / 2;
-		c.pixel = outline;
-		gdk_gc_set_foreground (featureset->gc, &c);
-		zMap_draw_line(drawable, featureset, cx1_5, cy1, cx2, cy1_5);
-		zMap_draw_line(drawable, featureset, cx2, cy1_5, cx1_5, cy2);
+				/* get item canvas coords in pixel coordinates */
+				/* NOTE not quite sure why y1 is 1 out when y2 isn't */
+			foo_canvas_w2c (foo->canvas, x1, feature->y1 - featureset->start + featureset->dy, &cx1, &cy1);
+			foo_canvas_w2c (foo->canvas, x2, feature->y2 - featureset->start + featureset->dy + 1, &cx2, &cy2);
+			cy1_5 = (cy1 + cy2) / 2;
+			cx1_5 = (cx1 + cx2) / 2;
+			c.pixel = outline;
+			gdk_gc_set_foreground (featureset->gc, &c);
+			zMap_draw_line(drawable, featureset, cx1_5, cy1, cx2, cy1_5);
+			zMap_draw_line(drawable, featureset, cx2, cy1_5, cx1_5, cy2);
+		}
+		else if(tr->sub_type == TRANSCRIPT_INTRON_START_NOT_FOUND)
+		{
+			GdkColor c;
+			int cx1, cy1, cx2, cy2, cx1_5;
+
+				/* get item canvas coords in pixel coordinates */
+				/* NOTE not quite sure why y1 is 1 out when y2 isn't */
+			foo_canvas_w2c (foo->canvas, x1, feature->y1 - featureset->start + featureset->dy, &cx1, &cy1);
+			foo_canvas_w2c (foo->canvas, x2, feature->y2 - featureset->start + featureset->dy + 1, &cx2, &cy2);
+			cx1_5 = (cx1 + cx2) / 2;
+			c.pixel = outline;
+			gdk_gc_set_foreground (featureset->gc, &c);
+			zMap_draw_broken_line(drawable, featureset, cx2, cy1, cx1_5, cy2);
+		}
+		else if(tr->sub_type == TRANSCRIPT_INTRON_END_NOT_FOUND)
+		{
+			GdkColor c;
+			int cx1, cy1, cx2, cy2, cx1_5;
+
+				/* get item canvas coords in pixel coordinates */
+				/* NOTE not quite sure why y1 is 1 out when y2 isn't */
+			foo_canvas_w2c (foo->canvas, x1, feature->y1 - featureset->start + featureset->dy, &cx1, &cy1);
+			foo_canvas_w2c (foo->canvas, x2, feature->y2 - featureset->start + featureset->dy + 1, &cx2, &cy2);
+			cx1_5 = (cx1 + cx2) / 2;
+			c.pixel = outline;
+			gdk_gc_set_foreground (featureset->gc, &c);
+			zMap_draw_broken_line(drawable, featureset, cx1_5, cy1, cx2, cy2);
+		}
 	}
 }
 
@@ -155,12 +186,32 @@ static ZMapWindowCanvasFeature zMapWindowCanvasTranscriptAddFeature(ZMapWindowFe
 	double fy1,fy2;
 	ZMapSpan exon,intron;
 
+
 	introns = feature->feature.transcript.introns;
 	exons = feature->feature.transcript.exons;
 	if(introns)
 		ni = introns->len;
 	if(exons)
 		ne = exons->len;
+
+#if USE_DOTTED_LINES
+	if(feature->feature.transcript.flags.start_not_found)	/* add dotted line fading away into the distance */
+	{
+		double trunc_len = zMapStyleGetTruncatedIntronLength(*feature->style);
+		if(!trunc_len)
+			trunc_len = y1 - featureset->start;
+
+		fy2 = y1;
+		fy1 = fy2 - trunc_len;
+
+		feat = zMapWindowFeaturesetAddFeature(featureset, feature, fy1, fy2);
+		feat->width = featureset->width;
+
+		tr = (ZMapWindowCanvasTranscript) feat;
+		tr->sub_type = TRANSCRIPT_INTRON_START_NOT_FOUND;
+		tr->index = -1;
+	}
+#endif
 
 	for(i = 0; i < ne; i++)
 	{
@@ -187,7 +238,7 @@ static ZMapWindowCanvasFeature zMapWindowCanvasTranscriptAddFeature(ZMapWindowFe
 			fy1 = y1 - feature->x1 + intron->x1;
 			fy2 = y1 - feature->x1 + intron->x2;
 
-			feat = zMapWindowFeaturesetAddFeature(featureset, feature, fy1, fy2);
+			feat = zMapWindowFeaturesetAddFeature(featureset, feature, fy1,fy2);
 			feat->width = featureset->width;
 
 			tr->feature.right = feat;
@@ -198,6 +249,28 @@ static ZMapWindowCanvasFeature zMapWindowCanvasTranscriptAddFeature(ZMapWindowFe
 			tr->index = i;
 		}
 	}
+
+#if USE_DOTTED_LINES
+	if(feature->feature.transcript.flags.end_not_found)	/* add dotted line fading away into the distance */
+	{
+		double trunc_len = zMapStyleGetTruncatedIntronLength(*feature->style);
+		if(!trunc_len)
+			trunc_len =  featureset->end - y2;
+
+		fy1 = y2;
+		fy2 = fy1 + trunc_len;
+
+		feat = zMapWindowFeaturesetAddFeature(featureset, feature, fy1, fy2);
+		feat->width = featureset->width;
+
+		tr->feature.right = feat;
+		feat->left = &tr->feature;
+
+		tr = (ZMapWindowCanvasTranscript) feat;
+		tr->sub_type = TRANSCRIPT_INTRON_END_NOT_FOUND;
+		tr->index = i;
+	}
+#endif
 
 	return feat;
 }
@@ -247,6 +320,8 @@ static ZMapFeatureSubPartSpan zmapWindowCanvasTranscriptGetSubPartSpan (FooCanva
 		ni = introns->len;
 	if(exons)
 		ne = exons->len;
+
+	/* NOTE: is we have truncated introns then we will not return a sub part as they are not in the feature */
 
 	for(i = 0; i < ne; i++)
 	{

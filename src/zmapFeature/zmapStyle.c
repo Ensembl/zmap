@@ -357,6 +357,10 @@ ZMapStyleParamStruct zmapStyleParams_G[_STYLE_PROP_N_ITEMS] =
             "join overlapping reads into one", "join overlapping reads into one",
             offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.join_max),ZMAPSTYLE_MODE_ALIGNMENT },
 
+    { STYLE_PROP_TRANSCRIPT_TRUNC_LEN, STYLE_PARAM_TYPE_DOUBLE, ZMAPSTYLE_PROPERTY_TRANSCRIPT_TRUNC_LEN,
+            "show dotted intron at edge of partial trancript", "show dotted intron at edge of partial trancript",
+            offsetof(zmapFeatureTypeStyleStruct, mode_data.transcript.truncated_intron_length),ZMAPSTYLE_MODE_TRANSCRIPT },
+
 
     { STYLE_PROP_SEQUENCE_NON_CODING_COLOURS, STYLE_PARAM_TYPE_COLOUR, ZMAPSTYLE_PROPERTY_SEQUENCE_NON_CODING_COLOURS,
             "non-coding exon region colour", "Colour used to highlight UTR section of an exon.",
