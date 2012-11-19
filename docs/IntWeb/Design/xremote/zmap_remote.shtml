@@ -1346,8 +1346,12 @@ subsequent selections will be sent as a "multiple_select".
 
 <p><b>Sender: zmap</b></p>
 
-<p>brief description</p>
+<p><b>Format of this command is likely to change to use a peer-assigned ID to identify
+the feature rather than passing all the features details.</b></p>
 
+<p>Sent by zmap when the user selects a feature to "edit" it. ZMap sends all the information
+it has about the feature to enable the peer to identify the feature but also if the feature is new
+to pass complete details to the peer.</p>
 
 <pre class="request">
 &lt;zmap type="request" version="2.0" app_id="ZMap" clipboard_id="remotecontrol-31375-1339077666" request_id="17"&gt;
@@ -1373,7 +1377,7 @@ subsequent selections will be sent as a "multiple_select".
 &lt;/zmap&gt;
 </pre>
 
-<p>description of paramsm, reply etc. </p>
+<p>zmap sends full details of the feature back to the peer for display or processing.</p>
 
 <pre class="reply">
 &lt;zmap type="reply" version="2.0" app_id="remotecontrol" clipboard_id="remotecontrol-31375-1339077666" request_id="15"&gt;
@@ -1392,8 +1396,12 @@ subsequent selections will be sent as a "multiple_select".
 
 <p><b>Sender: zmap</b></p>
 
-<p>brief description</p>
-
+<p>Sent by zmap to request any extra information that the peer may have about a feature,
+currently this information is displayed in zmap to the user but the information could be
+used for other purposes in the future. zmap sends all the information it has about the feature
+so the peer can identify it. In response the peer sends back extra information in a
+"book" format with chapters, pages, subsections and paragraphs about the feature which
+zmap then incorporates into it's "notebook" style display of feature information.</p>
 
 <pre class="request">
 &lt;zmap type="request" version="2.0" app_id="ZMap" clipboard_id="remotecontrol-31375-1339077666" request_id="18"&gt;
@@ -1419,7 +1427,7 @@ subsequent selections will be sent as a "multiple_select".
 &lt;/zmap&gt;
 </pre>
 
-<p>description of paramsm, reply etc. </p>
+<p>zmap sends full details of the feature to the peer so it can identify the feature.</p>
 
 <pre class="reply">
 &lt;zmap type="reply" version="2.0" app_id="remotecontrol" clipboard_id="remotecontrol-31375-1339077666" request_id="18"&gt;
