@@ -600,6 +600,8 @@ void zMapWindowDisplayData(ZMapWindow window, ZMapWindowState state,
 
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static ZMapFeatureContextExecuteStatus undisplayFeaturesCB(GQuark key,
                                                            gpointer data,
                                                            gpointer user_data,
@@ -671,6 +673,8 @@ static ZMapFeatureContextExecuteStatus undisplayFeaturesCB(GQuark key,
 
   return status;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 void zMapWindowUnDisplayData(ZMapWindow window,
