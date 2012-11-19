@@ -246,7 +246,7 @@ GArray *addFeature(GArray *xml_array, ZMapFeature feature)
   /* Add feature end. */
   g_array_append_val(xml_array, feature_element[index]) ;
 
-<<<<<<< HEAD:src/zmapWindow/zmapWindowRemoteControlUtils.c
+
   return xml_array ;
 }
 
