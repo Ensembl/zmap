@@ -1,4 +1,3 @@
-/*  Last edited: Apr 11 10:51 2012 (edgrif) */
 /*  File: zmapViewRemoteControl.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2012: Genome Research Ltd.
@@ -149,6 +148,7 @@ typedef struct RequestDataStructName
 
   /* Command result. */
   RemoteCommandRCType command_rc ;
+  char *msg ;
   GString *err_msg ;
 
 
@@ -456,9 +456,18 @@ static void processRequest(ZMapView view,
 	{
 	  *reason_out = request_data.err_msg->str ;
 	}
+      else
+	{
+	  if (!(request_data.msg))
+	    request_data.msg = "*Error* - Command worked but no message set." ;
+
+	  *reply_out = zMapRemoteCommandMessage2Element(request_data.msg) ;
+	}
+
       *command_rc_out = request_data.command_rc ;
 
       g_string_free(request_data.err_msg, FALSE) ;
+
     }
 
   /* Free the parser!!! */
@@ -627,6 +636,7 @@ static gboolean xml_align_start_cb(gpointer user_data, ZMapXMLElement set_elemen
 	  /* If we can't find the align it's a serious error and we can't carry on. */
 	  char *err_msg ;
 
+	  request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
 	  err_msg = g_strdup_printf("Unknown Align \"%s\":  not found in original_context", align_name) ;
 	  zMapXMLParserRaiseParsingError(parser, err_msg) ;
 	  g_free(err_msg) ;
@@ -685,6 +695,7 @@ static gboolean xml_block_start_cb(gpointer user_data, ZMapXMLElement set_elemen
 	  /* Bad format block name. */
 	  char *err_msg ;
 
+	  request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
 	  err_msg = g_strdup_printf("Bad Format Block name: \"%s\"", block_name) ;
 	  zMapXMLParserRaiseParsingError(parser, err_msg) ;
 	  g_free(err_msg) ;
@@ -697,6 +708,7 @@ static gboolean xml_block_start_cb(gpointer user_data, ZMapXMLElement set_elemen
 	  /* If we can't find the block it's a serious error and we can't carry on. */
 	  char *err_msg ;
 
+	  request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
 	  err_msg = g_strdup_printf("Unknown Block \"%s\":  not found in original_context", block_name) ;
 	  zMapXMLParserRaiseParsingError(parser, err_msg) ;
 	  g_free(err_msg) ;
@@ -740,7 +752,7 @@ static gboolean xml_block_start_cb(gpointer user_data, ZMapXMLElement set_elemen
  * once for the feature to be deleted and once for the feature to be recreated. */
 static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_element, ZMapXMLParser parser)
 {
-  gboolean result = FALSE ;
+  gboolean result = TRUE ;
   RequestData request_data = (RequestData)user_data ;
   ZMapXMLAttribute attr = NULL ;
   ZMapFeatureSet feature_set ;
@@ -799,6 +811,7 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
       /* Featureset name is mandatory. */
       char *err_msg ;
 
+      request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
       err_msg = g_strdup_printf("No featureset name in request: \"%s\"",
 				request_data->request) ;
       zMapXMLParserRaiseParsingError(parser, err_msg) ;
@@ -822,6 +835,7 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 	       * and we can't carry on. */
 	      char *err_msg ;
 
+	      request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
 	      err_msg = g_strdup_printf("Too many featuresets for replace operation: \"%s\"",
 					request_data->request) ;
 	      zMapXMLParserRaiseParsingError(parser, err_msg) ;
@@ -849,6 +863,7 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 	       * and we can't carry on. */
 	      char *err_msg ;
 
+	      request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
 	      err_msg = g_strdup_printf("Unknown Featureset \"%s\":  not found in original_block", featureset_name) ;
 	      zMapXMLParserRaiseParsingError(parser, err_msg) ;
 	      g_free(err_msg) ;
@@ -858,6 +873,8 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 	  else
 	    {
 	      result = TRUE ;
+
+	      request_data->style = &(request_data->orig_feature_set->style) ;
 	    }
 	}
 
@@ -865,11 +882,21 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
        * loaded it will not have been created yet so we shouldn't check for existence. */
       if (result && request_data->cmd_desc->is_edit)
 	{
+	  ZMapSpan span ;
+
+	  /* record the region we are getting */
+	  span = (ZMapSpan)g_new0(ZMapSpanStruct,1) ;
+	  span->x1 = request_data->orig_block->block_to_sequence.block.x1 ;
+	  span->x2 = request_data->orig_block->block_to_sequence.block.x2 ;
+
+
 	  /* Make sure this feature set is a child of the block........ */
 	  if (!(feature_set = zMapFeatureBlockGetSetByID(request_data->edit_block, unique_set_id)))
 	    {
 	      feature_set = zMapFeatureSetCreate(featureset_name, NULL) ;
 	      zMapFeatureBlockAddFeatureSet(request_data->edit_block, feature_set) ;
+
+	      feature_set->loaded = g_list_append(NULL, span) ;
 	    }
 	  request_data->edit_feature_set = feature_set ;
 
@@ -882,6 +909,8 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 		{
 		  feature_set = zMapFeatureSetCreate(featureset_name, NULL) ;
 		  zMapFeatureBlockAddFeatureSet(request_data->replace_block, feature_set) ;
+
+		  feature_set->loaded = g_list_append(NULL, span) ;
 		}
 	      request_data->replace_feature_set = feature_set ;
 	    }
@@ -902,6 +931,7 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 	{
 	  char *err_msg ;
 
+	  request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
 	  err_msg = g_strdup_printf("Source %s not found in view->context_map.source_2_sourcedata",
 				    g_quark_to_string(unique_set_id)) ;
 	  zMapXMLParserRaiseParsingError(parser, err_msg) ;
@@ -921,13 +951,13 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 	  // then if the style is not there then we'll drop the features
 
 
-	  /* OK ..... WE NEED THE STYLE POINTER FROM THE FEATURE SET.....TO Add IN THE FEATURE...  */
-
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  if (!(request_data->style = zMapFindStyle(request_data->view->context_map.styles, request_data->style_id)))
+	  /* DO WE NEED TO DO THIS NOW....... */
+	  if (!(request_data->style = &(zMapFindStyle(request_data->view->context_map.styles, request_data->style_id))))
 	    {
 	      char *err_msg ;
 
+	      request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
 	      err_msg = g_strdup_printf("Style %s not found in view->context_map.styles",
 					g_quark_to_string(request_data->style_id)) ;
 	      zMapXMLParserRaiseParsingError(parser, err_msg) ;
@@ -937,8 +967,12 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 	    }
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  /* New way of styles..... */
 	  request_data->style = &(feature_set->style) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 	}
     }
@@ -971,6 +1005,7 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 	    }
 	  else
 	    {
+	      request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
 	      zMapXMLParserRaiseParsingError(parser, "start is a required attribute for feature.");
 	      result = FALSE ;
 	    }
@@ -982,6 +1017,7 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 	    }
 	  else
 	    {
+	      request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
 	      zMapXMLParserRaiseParsingError(parser, "end is a required attribute for feature.");
 	      result = FALSE ;
 	    }
@@ -1041,6 +1077,7 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
     }
   else
     {
+      request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
       zMapXMLParserRaiseParsingError(parser, "\"name\" is a required attribute for feature.") ;
       result = FALSE ;
     }
@@ -1053,6 +1090,7 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
     }
   else
     {
+      request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
       zMapXMLParserRaiseParsingError(parser, "\"start\" is a required attribute for feature.");
       result = FALSE ;
     }
@@ -1064,6 +1102,7 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
     }
   else
     {
+      request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
       zMapXMLParserRaiseParsingError(parser, "\"end\" is a required attribute for feature.");
       result = FALSE ;
     }
@@ -1075,6 +1114,7 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
     }
   else
     {
+      request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
       zMapXMLParserRaiseParsingError(parser, "\"strand\" is a required attribute for feature.");
       result = FALSE ;
     }
@@ -1083,6 +1123,7 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
    * xml to contain SO term ?? Maybe not....not sure. */
   if (result && ((mode = zMapStyleGetMode(*(request_data->style))) == ZMAPSTYLE_MODE_INVALID))
     {
+      request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
       zMapXMLParserRaiseParsingError(parser, "\"style\" must have a valid feature mode.");
       result = FALSE ;
     }
@@ -1102,6 +1143,7 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 	      /* If we _don't_ find the feature then it's a serious error for these commands. */
 	      char *err_msg ;
 
+	      request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
 	      err_msg = g_strdup_printf("Feature \"%s\" with id \"%s\" could not be found in featureset \"%s\",",
 					feature_name, g_quark_to_string(feature_unique_id),
 					zMapFeatureName((ZMapFeatureAny)(request_data->orig_feature_set))) ;
@@ -1128,6 +1170,7 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 	      /* If we _do_ find the feature then it's a serious error. */
 	      char *err_msg ;
 
+	      request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
 	      err_msg = g_strdup_printf("Feature \"%s\" with id \"%s\" already exists in featureset \"%s\",",
 					feature_name, g_quark_to_string(feature_unique_id),
 					zMapFeatureName((ZMapFeatureAny)(request_data->orig_feature_set))) ;
@@ -1271,10 +1314,6 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 		}
 
 
-	      /* THIS DOESN'T DO A DEEP ENOUGH COPY, WE FAIL LATER FOR SOME ACTIONS
-	       * BECAUSE STUFF LIKE THE HOMOL DATA IS NOT COPIED SO WE CAN'T FIND
-	       * THE FEATURE IN THE HASH. */
-
 	      if (request_data->command_id != g_quark_from_string(ZACP_REPLACE_FEATURE)
 		  || request_data->replace_stage == REPLACE_DELETE_FEATURE)
 		{
@@ -1308,6 +1347,7 @@ static gboolean xml_feature_end_cb(gpointer user_data, ZMapXMLElement sub_elemen
       /* I don't really like this error handling, it seems wierd.... */
       if (!(request_data->edit_feature))
 	{
+	  request_data->command_rc = REMOTE_COMMAND_RC_BAD_XML ;
 	  zMapXMLParserCheckIfTrueErrorReturn(request_data->edit_feature == NULL,
 					      parser,
 					      "a feature end tag without a created feature.") ;
@@ -1345,6 +1385,7 @@ static gboolean xml_subfeature_end_cb(gpointer user_data, ZMapXMLElement sub_ele
     feature = request_data->replace_feature ;
 
 
+  request_data->command_rc = REMOTE_COMMAND_RC_BAD_XML ;
   zMapXMLParserCheckIfTrueErrorReturn(feature == NULL,
                                       parser,
                                       "a feature end tag without a created feature.");
@@ -1367,6 +1408,7 @@ static gboolean xml_subfeature_end_cb(gpointer user_data, ZMapXMLElement sub_ele
         }
       else
 	{
+	  request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
 	  zMapXMLParserRaiseParsingError(parser, "start is a required attribute for subfeature.");
 
 	  valid = FALSE ;
@@ -1379,6 +1421,7 @@ static gboolean xml_subfeature_end_cb(gpointer user_data, ZMapXMLElement sub_ele
         }
       else
 	{
+	  request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
 	  zMapXMLParserRaiseParsingError(parser, "end is a required attribute for subfeature.");
 
 	  valid = FALSE ;
@@ -1524,9 +1567,6 @@ static void copyAddFeature(gpointer key, gpointer value, gpointer user_data)
    * names match, caller will have given a source name. */
   if (!(request_data->source_id) || feature->source_id == request_data->source_id)
     {
-      /* THIS DOESN'T DO A DEEP ENOUGH COPY, WE FAIL LATER FOR SOME ACTIONS
-       * BECAUSE STUFF LIKE THE HOMOL DATA IS NOT COPIED SO WE CAN'T FIND
-       * THE FEATURE IN THE HASH. */
       if ((feature_any = zMapFeatureAnyCopy((ZMapFeatureAny)feature)))
 	{
 	  ZMapFeatureAny feature_copy ;
@@ -1634,9 +1674,15 @@ static gboolean executeRequest(ZMapXMLParser parser, RequestData request_data)
     {
       /* mergeNewFeatures sets the request error code/msg if it fails. */
       if (mergeNewFeatures(view, request_data, &(request_data->edit_context), &(request_data->edit_feature_list)))
-	zmapViewDrawDiffContext(view, &(request_data->edit_context)) ;
+	{
+	  zmapViewDrawDiffContext(view, &(request_data->edit_context)) ;
+
+	  request_data->msg = "Created feature ok !" ;
+	}
       else
-	result = FALSE ;
+	{
+	  result = FALSE ;
+	}
     }
   else if (request_data->command_id == g_quark_from_string(ZACP_DUMP_FEATURES))
     {
@@ -1726,32 +1772,6 @@ static void viewDumpContextToFile(ZMapView view, RequestData request_data)
 
 
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static gboolean sanityCheckContext(ZMapView view, RequestData request_data)
-{
-  gboolean features_are_sane = TRUE ;
-  ZMapXRemoteStatus save_code ;
-
-  save_code = request_data->code ;
-  request_data->code = 0 ;
-
-  zMapFeatureContextExecute((ZMapFeatureAny)(request_data->edit_context),
-                            ZMAPFEATURE_STRUCT_FEATURE,
-                            sanity_check_context,
-                            request_data) ;
-
-  if (request_data->code != 0)
-    features_are_sane = FALSE ;
-  else
-    request_data->code = save_code ;
-
-  return features_are_sane ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
 /* Remove a list of features from the context. */
 static void eraseFeatures(ZMapView view, RequestData request_data)
 {
@@ -1778,6 +1798,8 @@ static gboolean findFeature(ZMapView view, RequestData request_data)
   if (request_data->found_feature)
     {
       request_data->command_rc = REMOTE_COMMAND_RC_OK ;
+
+      request_data->msg = "Feature found ok !" ;
 
       result = TRUE ;
     }
