@@ -2437,37 +2437,38 @@ static void viewSelectCB(ZMapWindow window, void *caller_data, void *window_data
 	       * windows, e.g. if a window has been reverse complemented the item may be hidden. */
 	      list_item = g_list_first(view_window->parent_view->window_list) ;
 
-	  do
-	    {
-	      ZMapViewWindow view_window ;
-	      FooCanvasItem *item ;
-	      GList *l;
+	      do
+		{
+		  ZMapViewWindow view_window ;
+		  FooCanvasItem *item ;
+		  GList *l;
 
 		  view_window = list_item->data ;
 
-	      if ((item = zMapWindowFindFeatureItemByItem(view_window->window, window_select->highlight_item)))
-		{
-		  zMapWindowHighlightObject(view_window->window, item,
-					    window_select->replace_highlight_item,
-					    window_select->highlight_same_names,
-					    window_select->sub_part) ;
+		  if ((item = zMapWindowFindFeatureItemByItem(view_window->window, window_select->highlight_item)))
+		    {
+		      zMapWindowHighlightObject(view_window->window, item,
+						window_select->replace_highlight_item,
+						window_select->highlight_same_names,
+						window_select->sub_part) ;
+		    }
+
+		  for(l = window_select->feature_list;l; l = l->next)
+		    {
+		      ZMapFeature feature = (ZMapFeature) l->data;
+
+		      /* NOTE we restrict multi select to one column in line with previous policy (in the calling code)
+		       * NOTE: can have several featuresets in one column
+		       * feature_list inlcudes the first and second and subsequent features found,
+		       * the first is also given explicitly in the item
+		       */
+		      if(!l->prev)		/* already dome the first one */
+			continue;
+
+		      zMapWindowHighlightFeature(view_window->window, feature, window_select->highlight_same_names, FALSE);
+		    }
 		}
-
-	      for(l = window_select->feature_list;l; l = l->next)
-		{
-		  ZMapFeature feature = (ZMapFeature) l->data;
-
-		  /* NOTE we restrict multi select to one column in line with previous policy (in the calling code)
-		   * NOTE: can have several featuresets in one column
-		   * feature_list inlcudes the first and second and subsequent features found,
-		   * the first is also given explicitly in the item
-		   */
-		  if(!l->prev)		/* already dome the first one */
-		    continue;
-
-		  zMapWindowHighlightFeature(view_window->window, feature, window_select->highlight_same_names, FALSE);
-	  }
-	  while ((list_item = g_list_next(list_item))) ;
+	      while ((list_item = g_list_next(list_item))) ;
 	    }
 
 	  view_select.feature_desc = window_select->feature_desc ;
@@ -2478,25 +2479,25 @@ static void viewSelectCB(ZMapWindow window, void *caller_data, void *window_data
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      /*  THIS NEEDS TO GO...SHOULD BE A CALL TO REMOTE DIRECTLY FROM WINDOW LEVEL....MAKE THIS HAPPEN....*/
+	  /*  THIS NEEDS TO GO...SHOULD BE A CALL TO REMOTE DIRECTLY FROM WINDOW LEVEL....MAKE THIS HAPPEN....*/
 
-	if (window_select->xml_handler.zmap_action)
-	  {
-	    window_select->remote_result = zmapViewRemoteSendCommand(view_window->parent_view,
-								     window_select->xml_handler.zmap_action,
-								     window_select->xml_handler.xml_events,
-								     window_select->xml_handler.start_handlers,
-								     window_select->xml_handler.end_handlers,
-								     window_select->xml_handler.handler_data) ;
+      if (window_select->xml_handler.zmap_action)
+	{
+	  window_select->remote_result = zmapViewRemoteSendCommand(view_window->parent_view,
+								   window_select->xml_handler.zmap_action,
+								   window_select->xml_handler.xml_events,
+								   window_select->xml_handler.start_handlers,
+								   window_select->xml_handler.end_handlers,
+								   window_select->xml_handler.handler_data) ;
 
-	  }
+	}
 
       /* temporary.... */
       window_select->xml_handler.handled = FALSE ;
 
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-
+      
       /* Pass back a ZMapViewWindow as it has both the View and the window to our caller. */
       (*(view_cbs_G->select))(view_window, view_window->parent_view->app_data, &view_select) ;
 
