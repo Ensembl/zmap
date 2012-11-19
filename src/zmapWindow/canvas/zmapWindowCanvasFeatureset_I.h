@@ -284,6 +284,7 @@ typedef struct _zmapWindowFeaturesetItemStruct
   gulong outline_pixel;         /* Outline color */
 
   gulong background;		  /* eg for 3FT or strand separator */
+  GdkBitmap *stipple;
 
   double width;                 /* column width */
   double bump_width;

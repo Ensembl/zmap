@@ -112,10 +112,6 @@ typedef struct _ZMapWindowMarkStruct
 
 static void markItem(ZMapWindowMark mark, FooCanvasItem *item, gboolean set_mark) ;
 static void markRange(ZMapWindowMark mark) ;
-#if BLOCK_MARK
-static void mark_block_cb(ZMapWindowContainerGroup container, FooCanvasPoints *points,
-			  ZMapContainerLevelType level, gpointer user_data);
-#endif
 
 static ZMapWindowContainerBlock getBlock(ZMapWindow window, double world_y1, double world_y2) ;
 static void get_block_cb(ZMapWindowContainerGroup container, FooCanvasPoints *points,
@@ -291,19 +287,12 @@ void zmapWindowMarkReset(ZMapWindowMark mark)
     {
       mark->mark_set = FALSE ;
 
-#if BLOCK_MARK
-      if(mark->block_container)
-	zmapWindowContainerBlockUnmark(mark->block_container);
-
-      mark->block_container = NULL;
-#else
 	if(mark->mark_top)
 		gtk_object_destroy(GTK_OBJECT(mark->mark_top));
 	mark->mark_top = NULL;
 	if(mark->mark_bot)
 		gtk_object_destroy(GTK_OBJECT(mark->mark_bot));
 	mark->mark_bot = NULL;
-#endif
 
       if (mark->mark_src_item)
 	{
@@ -466,42 +455,7 @@ GdkColor *zmapWindowMarkGetColour(ZMapWindowMark mark)
   return &(mark->colour) ;
 }
 
-/*!
- * \brief Set the stipple for the mark.
- *
- * \param mark    The mark
- * \param stipple The stipple
- *
- * \return nothing.
- */
-void zmapWindowMarkSetStipple(ZMapWindowMark mark, GdkBitmap *stipple)
-{
-  zMapAssert(mark && ZMAP_MAGIC_IS_VALID(mark_magic_G, mark->magic)) ;
 
-  if(mark->stipple)
-    {
-      g_object_unref(G_OBJECT(mark->stipple)) ;
-    }
-
-  mark->stipple = stipple;
-
-  return ;
-}
-
-/*!
- * \brief Get the stipple from the mark
- *
- * \param mark  The mark
- *
- * \return GdkBitmap.
- */
-
-GdkBitmap *zmapWindowMarkGetStipple(ZMapWindowMark mark)
-{
-  zMapAssert(mark && ZMAP_MAGIC_IS_VALID(mark_magic_G, mark->magic)) ;
-
-  return mark->stipple ;
-}
 
 
 /* Mark an item, the marking must be done explicitly, it is unaffected by highlighting.
@@ -991,6 +945,7 @@ FooCanvasItem *set_mark_item(ZMapWindowMark mark, gboolean top)
 
 	zMapWindowCanvasFeaturesetSetSequence((ZMapWindowFeaturesetItem) foo, y1, y2);
 	zMapWindowCanvasFeaturesetSetBackground(foo, &mark->colour, NULL );
+	zMapWindowCanvasFeaturesetSetStipple((ZMapWindowFeaturesetItem) foo, mark->stipple);
 
 	foo_canvas_item_request_update(foo);
 	foo_canvas_item_show(foo);
@@ -1074,28 +1029,8 @@ static void markRange(ZMapWindowMark mark)
   mark->world_y2 = tmp_y2;
   mark->mark_set = TRUE ;
 
-#if BLOCK_MARK
-  if (mark->block_container)
-    {
-      /* Hey, we've got the block.  We'll just mark that block rather
-       * than go to each one and potentially mark one. */
-      zmapWindowContainerBlockMark(mark->block_container, mark);
-    }
-  else
-    {
-      /* Potentially we could mark the wrong block, or multiple blocks.
-       * marking multiple blocks that have intersections in y axis is
-       * probably not bad and might be desired... Actually thinking
-       * about the code this is probably what would happen.
-       */
-      zmapWindowContainerUtilsExecute(mark->window->feature_root_group,
-				      ZMAPCONTAINER_LEVEL_BLOCK,
-				      mark_block_cb,
-				      mark);
-    }
-#else
-	zmapWindowMarkShowMark(mark);
-#endif
+
+  zmapWindowMarkShowMark(mark);
 
   return ;
 }

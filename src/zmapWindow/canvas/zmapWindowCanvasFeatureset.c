@@ -743,6 +743,17 @@ static void zMapWindowCanvasFeaturesetPaintSet(ZMapWindowFeaturesetItem fi,
 
 	c.pixel = fi->background;
 	gdk_gc_set_foreground (fi->gc, &c);
+
+	if(fi->stipple)
+	{
+		gdk_gc_set_stipple (fi->gc, fi->stipple);
+		gdk_gc_set_fill (fi->gc, GDK_STIPPLED);
+	}
+	else
+	{
+		gdk_gc_set_fill (fi->gc, GDK_SOLID);
+	}
+
 	zMap_draw_rect (drawable, fi, x1, y1, x2, y2, TRUE);
 //printf("draw back %s %x %d,%d - %d,%d\n", g_quark_to_string(fi->id), c.pixel, x1, y1, x2, y2);
   }
@@ -1009,6 +1020,11 @@ guint zMapWindowCanvasFeaturesetGetId(ZMapWindowFeaturesetItem featureset)
 }
 
 
+void zMapWindowCanvasFeaturesetSetStipple(ZMapWindowFeaturesetItem featureset, GdkBitmap *stipple)
+{
+	featureset->stipple = stipple;
+	foo_canvas_item_request_redraw((FooCanvasItem *) featureset);
+}
 
 /* scope issues.... */
 void zMapWindowCanvasFeaturesetSetWidth(ZMapWindowFeaturesetItem featureset, double width)
@@ -1190,6 +1206,8 @@ static ZMapWindowCanvasFeature zmap_window_canvas_featureset_find_feature(ZMapWi
 }
 
 
+
+/* NOTE idea: allow NULL feature for whole foo item */
 void zmap_window_canvas_featureset_expose_feature(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature gs)
 {
   double i2w_dx,i2w_dy;

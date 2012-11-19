@@ -869,9 +869,6 @@ debug("nav draw set %s\n", g_quark_to_string(feature_set->original_id));
 	    if ((bump_mode = zmapWindowContainerFeatureSetGetBumpMode(container_feature_set)) != ZMAPBUMP_UNBUMP)
 	      {
 
-#if OBSOLETE
-		zmapWindowContainerFeatureSetSortFeatures(container_feature_set, 0);
-#endif
 		zmapWindowColumnBumpRange(item, bump_mode, ZMAPWINDOW_COMPRESS_ALL) ;
 	      }
           }

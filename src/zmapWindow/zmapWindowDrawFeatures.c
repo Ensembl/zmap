@@ -1686,12 +1686,7 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 									canvas_data->current_frame,
 									&tmp_forward, &tmp_reverse)))
 			{
-#if OBSOLETE
-			if(tmp_forward)
-				zMapWindowContainerFeatureSetMarkUnsorted(ZMAP_CONTAINER_FEATURESET(tmp_forward));
-			if(tmp_reverse)
-				zMapWindowContainerFeatureSetMarkUnsorted(ZMAP_CONTAINER_FEATURESET(tmp_reverse));
-#endif
+
 			zMapStartTimer("DrawFeatureSet",g_quark_to_string(feature_set->unique_id));
 
 			canvas_data->feature_count += zmapWindowDrawFeatureSet(window,

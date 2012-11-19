@@ -42,8 +42,6 @@ zmapWindowNavigator.c \
 zmapWindowNavigatorMenus.c \
 zmapWindowNavigatorWidget.c \
 zmapWindowNavigator_P.h \
-zmapWindowOverlays.c \
-zmapWindowOverlays.h \
 zmapWindowPreferences.c \
 zmapWindowPrint.c \
 zmapWindowRemoteReceive.c \

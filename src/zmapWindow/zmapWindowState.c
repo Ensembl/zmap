@@ -739,10 +739,6 @@ static void state_bumped_columns_restore(ZMapWindow window, ZMapWindowBumpStateS
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
-#if OBSOLETE
-	      zmapWindowContainerFeatureSetSortFeatures(container_set, 0);
-#endif
-
 	      /* Only bump if it's different from current.
 	       * This _implicit_ test is the only way to currently check this as
 	       * there's no initial_bump_mode in the style...

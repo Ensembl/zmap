@@ -38,7 +38,6 @@
 #include <ZMap/zmapIO.h>
 #include <ZMap/zmapWindow.h>
 #include <zmapWindowMark_P.h>
-#include <zmapWindowOverlays.h>
 #include <zmapWindowContainerGroup.h>
 #include <zmapWindowContainerUtils.h>
 
@@ -1449,10 +1448,6 @@ void zmapWindowFocusSetHotColumn(ZMapWindowFocus focus, FooCanvasGroup *column, 
 FooCanvasGroup *zmapWindowFocusGetHotColumn(ZMapWindowFocus focus) ;
 void zmapWindowFocusDestroy(ZMapWindowFocus focus) ;
 
-void zmapWindowFocusMaskOverlay(ZMapWindowFocus focus, FooCanvasItem *item, GdkColor *highlight);
-void zmapWindowFocusAddOverlayManager(ZMapWindowFocus focus, ZMapWindowOverlay overlay);
-void zmapWindowFocusRemoveOverlayManager(ZMapWindowFocus focus, ZMapWindowOverlay overlay);
-void zmapWindowFocusClearOverlayManagers(ZMapWindowFocus focus);
 
 
 void zmapWindowFocusHideFocusItems(ZMapWindowFocus focus, GList **hidden_items);

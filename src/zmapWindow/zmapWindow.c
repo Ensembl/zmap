@@ -3526,7 +3526,8 @@ zMapLogWarning("canvas event %d",  event->type);
 
 			/* find the canvvas iten (a canvas featureset) at the centre of the lassoo */
 // can-t do this as the canvas featureset point function returns n/a if there's no feature under the cursor
-//		    if ((item = foo_canvas_get_item_at(window->canvas, (rootx2 + rootx1) / 2, (rooty2 + rooty1) / 2) ))
+// no longer true....
+		    if ((item = foo_canvas_get_item_at(window->canvas, (rootx2 + rootx1) / 2, (rooty2 + rooty1) / 2) ))
 		    {
 			/* only finds features in a canvas featureset, old foo gives nothing */
 		      feature_list = zMapWindowFeaturesetItemFindFeatures(&item, rooty1, rooty2, rootx1, rootx2);

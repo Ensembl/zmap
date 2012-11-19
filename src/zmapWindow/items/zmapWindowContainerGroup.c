@@ -217,10 +217,6 @@ ZMapWindowContainerGroup zmapWindowContainerGroupCreateFromFoo(FooCanvasGroup   
 
 	container->background_fill = background_fill_colour;
 	container->background_border = background_border_colour;
-#if BLOCK_MARK
-      if(ZMAP_CONTAINER_GROUP_GET_CLASS(container)->post_create)
-	(ZMAP_CONTAINER_GROUP_GET_CLASS(container)->post_create)(container);
-#endif
     }
 
   zMapWindowContainerGroupSortByLayer((FooCanvasGroup *) item->parent);
