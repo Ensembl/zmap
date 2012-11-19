@@ -769,7 +769,7 @@ typedef struct ZMapFeatureStruct_
 
 /* Struct that supplies text descriptions of the parts of a feature, which fields are filled
  * in depends on the feature type. */
-typedef struct
+typedef struct ZMapFeatureDescStructName
 {
   /* Use these fields to interpret and give more info. for the feature parts. */
   ZMapFeatureStructType struct_type ;

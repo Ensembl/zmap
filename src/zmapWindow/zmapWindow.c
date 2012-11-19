@@ -607,18 +607,22 @@ static ZMapFeatureContextExecuteStatus undisplayFeaturesCB(GQuark key,
                                                            gpointer user_data,
                                                            char **err_out)
 {
+  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK ;
   ZMapWindow window = (ZMapWindow)user_data ;
   ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
   ZMapFeature feature;
   FooCanvasItem *feature_item;
-  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
   ZMapStrand column_strand;
 
   switch(feature_any->struct_type)
     {
     case ZMAPFEATURE_STRUCT_FEATURESET:
-      zMapLogWarning("FeatureSet %s", g_quark_to_string(feature_any->unique_id));
-      break;
+      {
+	/* CHRIST, WHAT IS THIS CODE....?????????? */
+
+	zMapLogWarning("FeatureSet %s", g_quark_to_string(feature_any->unique_id));
+	break;
+      }
     case ZMAPFEATURE_STRUCT_FEATURE:
       {
 	feature = (ZMapFeature)feature_any;
@@ -630,30 +634,29 @@ static ZMapFeatureContextExecuteStatus undisplayFeaturesCB(GQuark key,
       /* if the feature context is from a request from otterlace then
        * the display column has not been set, we need to lookup
        */
-  ZMapFeatureSetDesc gffset;
-  ZMapFeatureSet fset;
+	ZMapFeatureSetDesc gffset;
+	ZMapFeatureSet fset;
 
-      fset = (ZMapFeatureSet) (feature_any->parent);
-      if(!fset->column_id)
-      {
-            gffset = g_hash_table_lookup(window->context_map->featureset_2_column, GUINT_TO_POINTER(fset->unique_id));
-            if(gffset)
-                  fset->column_id = gffset->column_id;
-      }
+	fset = (ZMapFeatureSet) (feature_any->parent);
+	if(!fset->column_id)
+	  {
+	    gffset = g_hash_table_lookup(window->context_map->featureset_2_column, GUINT_TO_POINTER(fset->unique_id));
+	    if(gffset)
+	      fset->column_id = gffset->column_id;
+	  }
 #endif
-      /* MH17: we get locus features inserted mysteriously if a feature has a locus id
-       * but they don't always appear in zmap in whcih case there is no column id
-       * This is true when otterlace sends a single feature to delete and then we fail to find
-       * the extra locus feature
-       *
-       * regardless of that if we have features that are not displayed due to config this could also fail
-       * so if not column_id defined log a warning and fail silently.
-       *
-       * locus is used in the naviagtor, we hope dealt with via another call.
-       */
 
-	if ( /*fset->column_id && */
-      (feature_item = zmapWindowFToIFindFeatureItem(window,window->context_to_item,
+	/* MH17: we get locus features inserted mysteriously if a feature has a locus id
+	 * but they don't always appear in zmap in whcih case there is no column id
+	 * This is true when otterlace sends a single feature to delete and then we fail to find
+	 * the extra locus feature
+	 *
+	 * regardless of that if we have features that are not displayed due to config this could also fail
+	 * so if not column_id defined log a warning and fail silently.
+	 *
+	 * locus is used in the naviagtor, we hope dealt with via another call.
+	 */
+	if ((feature_item = zmapWindowFToIFindFeatureItem(window,window->context_to_item,
 							  column_strand,
 							  ZMAPFRAME_NONE,
 							  feature)))
@@ -662,16 +665,21 @@ static ZMapFeatureContextExecuteStatus undisplayFeaturesCB(GQuark key,
 	    status = ZMAP_CONTEXT_EXEC_STATUS_OK;
 	  }
 	else
-	  zMapLogWarning("Failed to find feature '%s'\n", g_quark_to_string(feature->original_id));
+	  {
+	    zMapLogWarning("Failed to find feature '%s'\n", g_quark_to_string(feature->original_id));
+	    status = ZMAP_CONTEXT_EXEC_STATUS_ERROR ;
+	  }
 
 	break;
       }
     default:
-      /* nothing to do for most of it while we only have single blocks and aligns... */
-      break;
+      {
+	/* nothing to do for most of it while we only have single blocks and aligns... */
+	break;
+      }
     }
 
-  return status;
+  return status ;
 }
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
@@ -4565,11 +4573,11 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	if (key_event->state & GDK_CONTROL_MASK)
 	  requested_homol_set = ZMAPWINDOW_ALIGNCMD_MULTISET ;
 	else if (key_event->keyval == GDK_a)
-	{
-		requested_homol_set = ZMAPWINDOW_ALIGNCMD_SET ;
-		if(!focus_item)
-		  focus_item = (FooCanvasItem *) zmapWindowFocusGetHotColumn(window->focus);
-	}
+	  {
+	    requested_homol_set = ZMAPWINDOW_ALIGNCMD_SET ;
+	    if(!focus_item)
+	      focus_item = (FooCanvasItem *) zmapWindowFocusGetHotColumn(window->focus);
+	  }
 	else if (key_event->keyval == GDK_A)
 	  requested_homol_set = ZMAPWINDOW_ALIGNCMD_FEATURES ;
 
@@ -4650,28 +4658,67 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
       }
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     case GDK_d:
     case GDK_D:
-      //      g_hash_table_foreach(NULL,lockedDisplayCB,NULL);
-      printf("sizes: gtkobject %zu foocanvasitem %zu foocanvasgroup %zu"
-	     " zmapcanvasitem %zu zmapwindowcontainergroup %zu"
-	     " zmapwindowalignmentfeature %zu\n",
-	     sizeof(GtkObject), sizeof(struct _FooCanvasItem), sizeof(struct _FooCanvasGroup),
-	     sizeof(zmapWindowCanvasItemStruct), sizeof(zmapWindowContainerGroupStruct),
-	     sizeof(zmapWindowAlignmentFeatureStruct)) ;
-      break;
-#endif
-#if 0
-    case GDK_d:
-    case GDK_D:
-    {
-	    extern ZMapWindowContainerGroup nav_root;
+      {
+	/* Use the current focus item and display translation of it. */
+	FooCanvasItem *focus_item ;
 
-	    nav_root = window->feature_root_group;
-	    print_offsets("normal window");
-    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+	/* If there is a focus item use that.  */
+	if ((focus_item = zmapWindowFocusGetHotItem(window->focus))
+	    || (focus_item = zmapWindowMarkGetItem(window->mark)))
+	  {
+	    ZMapFeatureAny context ;
+	    ZMapFeature feature ;
+	    gboolean is_transcript ;
+	    char *dna ;
+	    gboolean spliced = TRUE, cds = FALSE ;
+
+	    feature = zmapWindowItemGetFeature(focus_item);
+	    zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
+
+	    context = zMapFeatureGetParentGroup((ZMapFeatureAny)feature,
+						ZMAPFEATURE_STRUCT_CONTEXT);
+
+	    is_transcript = ZMAPFEATURE_IS_TRANSCRIPT(feature) ;
+
+	    if (is_transcript)
+	      {
+		if (zMapGUITestModifiers(key_event, GDK_SHIFT_MASK))
+		  cds = TRUE ;
+		else if (zMapGUITestModifiers(key_event, GDK_CONTROL_MASK))
+		  spliced = FALSE ;
+
+		dna = zMapFeatureGetTranscriptDNA(feature, spliced, cds) ;
+	      }
+	    else
+	      {
+		dna = zMapFeatureGetFeatureDNA(feature) ;
+	      }
+
+	    if (!dna)
+	      {
+		char *err_msg ;
+
+		if (is_transcript && (cds && !(feature->feature.transcript.flags.cds)))
+		  err_msg = "Transcript has no CDS" ;
+		else
+		  err_msg = "No DNA loaded in view" ;
+
+		zMapWarning("%s", err_msg) ;
+	      }
+	    else
+	      {
+		zMapGUISetClipboard(window->toplevel, dna) ;
+
+		g_free(dna) ;
+	      }
+	  }
+
+	event_handled = TRUE ;
+
+	break ;
+      }
 
 
 #if MH17_DONT_INCLUDE
@@ -4965,6 +5012,36 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	event_handled = TRUE ;
 	break ;
       }
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      /* If these are ever used then they need a new letter as the shortcut. */
+
+    case GDK_d:
+    case GDK_D:
+      //      g_hash_table_foreach(NULL,lockedDisplayCB,NULL);
+      printf("sizes: gtkobject %zu foocanvasitem %zu foocanvasgroup %zu"
+	     " zmapcanvasitem %zu zmapwindowcontainergroup %zu"
+	     " zmapwindowalignmentfeature %zu\n",
+	     sizeof(GtkObject), sizeof(struct _FooCanvasItem), sizeof(struct _FooCanvasGroup),
+	     sizeof(zmapWindowCanvasItemStruct), sizeof(zmapWindowContainerGroupStruct),
+	     sizeof(zmapWindowAlignmentFeatureStruct)) ;
+      break;
+#endif
+#if 0
+    case GDK_d:
+    case GDK_D:
+    {
+	    extern ZMapWindowContainerGroup nav_root;
+
+	    nav_root = window->feature_root_group;
+	    print_offsets("normal window");
+    }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+
 
     default:
       event_handled = FALSE ;

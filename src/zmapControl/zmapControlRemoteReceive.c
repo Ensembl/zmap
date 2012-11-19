@@ -267,6 +267,9 @@ static char *control_execute_command(char *command_text, gpointer user_data,
   input_data.zmap = zmap;
   input.user_data = &input_data;
 
+  /* copy the default sequence which will have been derived from the config file and/or cmd line. */
+  input_data.seq_map = *(zmap->default_sequence) ;
+
   zmap->xremote_server = owner;     /* so we can do a delayed reply */
 
 
@@ -288,8 +291,6 @@ static char *control_execute_command(char *command_text, gpointer user_data,
           createClient(zmap, &input, &output_data);
           break;
         case ZMAPCONTROL_REMOTE_NEW_VIEW:
-	  input_data.seq_map.dataset = zmap->default_sequence->dataset;   /* provide a default FTM */
-
           insertView(zmap, &input_data, &output_data);
           break;
         case ZMAPCONTROL_REMOTE_CLOSE_VIEW:

@@ -89,7 +89,7 @@ static GtkItemFactoryEntry menu_items[] = {
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
  { "/File/sep1",                     NULL,         NULL, 0, "<Separator>" },
- { "/File/_Save screen shot",        "<control>D", dumpCB, 0, NULL },
+ { "/File/_Save screen shot",        NULL,         dumpCB, 0, NULL },
  { "/File/_Print screen shot",       "<control>P", printCB, 0, NULL },
  { "/File/sep1",                     NULL,           NULL, 0, "<Separator>" },
  { "/File/Close",                    "<control>W", closeCB, 0, NULL },
@@ -263,11 +263,15 @@ static void developerCB(gpointer cb_data, guint callback_action, GtkWidget *wind
 {
   ZMap zmap = (ZMap)cb_data ;
   char *passwd = NULL ;
+  GtkResponseType result ;
 
-  if ((passwd = zMapGUIMsgGetText(GTK_WINDOW(zmap->toplevel),
-				  ZMAP_MSG_INFORMATION, "Enter Developer Password:", TRUE)))
+  result = zMapGUIMsgGetText(GTK_WINDOW(zmap->toplevel),
+			     ZMAP_MSG_INFORMATION, "Enter Developer Password:", TRUE,
+			     &passwd) ;
+
+  if (result == GTK_RESPONSE_OK)
     {
-      if (!zMapUtilsUserSetDeveloper(passwd))
+      if (!passwd || !(*passwd) || !zMapUtilsUserSetDeveloper(passwd))
 	zMapGUIShowMsg(ZMAP_MSG_WARNING, "Password Verification Failed") ;
     }
 

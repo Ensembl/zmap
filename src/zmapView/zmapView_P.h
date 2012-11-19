@@ -190,6 +190,8 @@ typedef struct _ZMapViewConnectionStruct
   ThreadStatus thread_status;				    /* probably this is badly placed, but not as badly as before */
   								    /* at least it has some persistance now */
 
+  gboolean show_warning;
+
 } ZMapViewConnectionStruct;
 
 
@@ -278,6 +280,8 @@ typedef struct _ZMapViewStruct
 
   int sources_loading;        /* how many active/ queued requests */
                               /* this is not very neat as failures are dealt with in a complex way */
+  int sources_failed;		/* a count of the number that failed since the last data request, is reset on next load command */
+
 
   GList *connection_list ;				    /* Of ZMapViewConnection. */
   ZMapViewConnection sequence_server ;			    /* Which connection to get raw
@@ -355,6 +359,8 @@ typedef struct _ZMapViewStruct
 } ZMapViewStruct ;
 
 
+
+ZMapViewCallbacks zmapViewGetCallbacks(void) ;
 
 void zmapViewBusyFull(ZMapView zmap_view, gboolean busy, const char *file, const char *function) ;
 #define zmapViewBusy(VIEW, BUSY) \

@@ -2355,9 +2355,23 @@ static FooCanvasGroup *createColumnFull(ZMapWindowContainerFeatures parent_group
 	}
     }
 
-
   style = zMapWindowGetColumnStyle(window, column_id);
   column = zMapWindowGetColumn(window->context_map,column_id);
+
+  if(column && column->style_id)
+  {
+	ZMapFeatureTypeStyle s;
+
+	s = g_hash_table_lookup(window->context_map->styles,GUINT_TO_POINTER(column->style_id));
+	if(s)
+	{
+		GdkColor *fill = NULL;
+
+		zMapStyleGetColours(s, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL, &fill, NULL, NULL);
+		colour = fill;
+	}
+  }
+
   if(column)
       style_list = column->style_table;
 
