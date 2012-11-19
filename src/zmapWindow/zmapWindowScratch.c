@@ -88,7 +88,7 @@ static ZMapFeatureContextExecuteStatus getFeaturesetFromIdCB(GQuark key,
 /*!
  * \brief Find the featureset with the given id in the given window's context
  */
-ZMapFeatureSet zmapWindowGetFeaturesetFromId(ZMapWindow window, GQuark set_id)
+static ZMapFeatureSet zmapWindowGetFeaturesetFromId(ZMapWindow window, GQuark set_id)
 {
   GetFeaturesetCBDataStruct cb_data = { set_id, NULL };
   
@@ -106,7 +106,7 @@ ZMapFeatureSet zmapWindowGetFeaturesetFromId(ZMapWindow window, GQuark set_id)
  *
  * \returns The ZMapFeatureSet, or NULL if there was a problem
  */
-ZMapFeatureSet scratchGetFeatureset(ZMapWindow window)
+static ZMapFeatureSet scratchGetFeatureset(ZMapWindow window)
 {
   ZMapFeatureSet feature_set = NULL;
 
@@ -133,7 +133,7 @@ ZMapFeatureSet scratchGetFeatureset(ZMapWindow window)
  *
  * \returns The ZMapFeature, or NULL if there was a problem
  */
-ZMapFeature scratchGetFeature(ZMapFeatureSet feature_set)
+static ZMapFeature scratchGetFeature(ZMapFeatureSet feature_set)
 {
   ZMapFeature feature = NULL;
   
@@ -164,7 +164,7 @@ ZMapFeature scratchGetFeature(ZMapFeatureSet feature_set)
 /*! 
  * \brief Merge a single exon into the scratch column feature
  */
-void scratchMergeExonCB(gpointer exon, gpointer user_data)
+static void scratchMergeExonCB(gpointer exon, gpointer user_data)
 {
   ZMapSpan exon_span = (ZMapSpan)exon;
   ScratchMergeData merge_data = (ScratchMergeData)user_data;
@@ -184,7 +184,7 @@ void scratchMergeExonCB(gpointer exon, gpointer user_data)
 /*! 
  * \brief Merge a single exon into the scratch column feature
  */
-void scratchMergeIntronCB(gpointer intron, gpointer user_data)
+static void scratchMergeIntronCB(gpointer intron, gpointer user_data)
 {
   ZMapSpan intron_span = (ZMapSpan)intron;
   ScratchMergeData merge_data = (ScratchMergeData)user_data;
@@ -202,11 +202,21 @@ void scratchMergeIntronCB(gpointer intron, gpointer user_data)
 
 
 /*! 
- * \brief Does the work to add/merge a feature to the scratch column
+ * \brief Add/merge a transcript feature to the scratch column
  */
-void scratchMergeFeature(ZMapFeatureSet feature_set, 
-                         ZMapFeature orig_feature, 
-                         ZMapFeature new_feature)
+static void scratchMergeTranscript(ScratchMergeData cb_data)
+{
+  zMapFeatureTranscriptExonForeach(cb_data->new_feature, scratchMergeExonCB, cb_data);
+  zMapFeatureTranscriptIntronForeach(cb_data->new_feature, scratchMergeIntronCB, cb_data);
+}
+
+
+/*! 
+ * \brief Add/merge a feature to the scratch column
+ */
+static void scratchMergeFeature(ZMapFeatureSet feature_set, 
+                                ZMapFeature orig_feature, 
+                                ZMapFeature new_feature)
 {
   ScratchMergeDataStruct cb_data = {orig_feature, new_feature};
 
@@ -219,8 +229,7 @@ void scratchMergeFeature(ZMapFeatureSet feature_set,
       case ZMAPSTYLE_MODE_ALIGNMENT:
         break;
       case ZMAPSTYLE_MODE_TRANSCRIPT:
-        zMapFeatureTranscriptExonForeach(new_feature, scratchMergeExonCB, &cb_data);
-        zMapFeatureTranscriptIntronForeach(new_feature, scratchMergeIntronCB, &cb_data);
+        scratchMergeTranscript(&cb_data);
         break;
       case ZMAPSTYLE_MODE_SEQUENCE:
         break;
