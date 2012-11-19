@@ -1598,7 +1598,7 @@ static GArray *addReplyElement(GArray *xml_stack_inout, RemoteCommandRCType remo
   reply_body[0].value.q = g_quark_from_string(zMapRemoteCommandRC2Str(remote_rc)) ;
   reply_body[1].value.s = g_strdup(reply) ;
 
-  xml_stack = zMapXMLUtilsAddStackToEventsArrayAfterElement(xml_stack, "reply", &reply_body[0]) ;
+  xml_stack = zMapXMLUtilsAddStackToEventsArrayAfterElement(xml_stack, "reply", NULL, NULL, &reply_body[0]) ;
 
   return xml_stack ;
 }
@@ -1718,6 +1718,7 @@ static void cmdCB(gpointer data, guint callback_action, GtkWidget *w)
   GArray *events ;
   GQuark *action ;
   gboolean do_feature_xml = FALSE ;
+  gboolean do_replace_xml = FALSE ;
 
   /* New stuff.... */
   char *command = NULL ;
@@ -1864,6 +1865,7 @@ static void cmdCB(gpointer data, guint callback_action, GtkWidget *w)
       data_ptr = &feature[0];
 
       do_feature_xml = TRUE ;
+      do_replace_xml = TRUE ;
       break;
 
     case XREMOTE_DELETE:
@@ -1905,50 +1907,11 @@ static void cmdCB(gpointer data, guint callback_action, GtkWidget *w)
     }
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* Create the xml for the request. */
-  events = zMapXMLUtilsStackToEventsArray(&start[0]);
-
-  events = zMapXMLUtilsAddStackToEventsArrayEnd(events, &req_start[0]);
-
-  if (do_feature_xml)
-    {
-      events = zMapXMLUtilsAddStackToEventsArrayEnd(events, &align_start[0]);
-
-      events = zMapXMLUtilsAddStackToEventsArrayEnd(events, &block_start[0]);
-    }
-
-  if (data_ptr)
-    events = zMapXMLUtilsAddStackToEventsArrayEnd(events, data_ptr);
-
-  if (do_feature_xml)
-    {
-      events = zMapXMLUtilsAddStackToEventsArrayEnd(events, &block_end[0]);
-
-      events = zMapXMLUtilsAddStackToEventsArrayEnd(events, &align_end[0]);
-    }
-
-  events = zMapXMLUtilsAddStackToEventsArrayEnd(events, &req_end[0]);
-
-  events = zMapXMLUtilsAddStackToEventsArrayEnd(events, &end[0]);
-
-  if ((writer = zMapXMLWriterCreate(events_to_text_buffer, remote_data)))
-    {
-      ZMapXMLWriterErrorCode xml_status ;
-
-      gtk_text_buffer_set_text(remote_data->our_req.request_text_buffer, "", -1) ;
-      gtk_text_buffer_set_text(remote_data->our_req.response_text_buffer, "", -1) ;
-
-      if ((xml_status = zMapXMLWriterProcessEvents(writer, events)) != ZMAPXMLWRITER_OK)
-        zMapGUIShowMsg(ZMAP_MSG_WARNING, zMapXMLWriterErrorMsg(writer));
-    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
   /* Create the xml request and display it in our request window. */
   request_stack = zMapRemoteCommandCreateRequest(remote_data->remote_cntl, command, view_id, -1) ;
 
-  /* how to do this ??? */
+
+  /* Feature or basic command ? */
   if (do_feature_xml)
     {
       /* set a load of default stuff.... */
@@ -1959,19 +1922,9 @@ static void cmdCB(gpointer data, guint callback_action, GtkWidget *w)
       feature[3].value.i = 6000 ;
       feature[4].value.q = g_quark_from_string("+") ;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      /* Make align/block optional. */
       request_stack = zMapXMLUtilsAddStackToEventsArrayAfterElement(request_stack,
-								    ZACP_REQUEST, &align_start[0]) ;
-      request_stack = zMapXMLUtilsAddStackToEventsArrayAfterElement(request_stack,
-								    ZACP_ALIGN, &block_start[0]) ;
-      request_stack = zMapXMLUtilsAddStackToEventsArrayAfterElement(request_stack,
-								    ZACP_BLOCK, &featureset[0]) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-      request_stack = zMapXMLUtilsAddStackToEventsArrayAfterElement(request_stack,
-								    ZACP_REQUEST, &featureset[0]) ;
+								    ZACP_REQUEST, NULL, NULL,
+								    &featureset[0]) ;
 
       next_element = ZACP_FEATURESET ;
     }
@@ -1980,10 +1933,43 @@ static void cmdCB(gpointer data, guint callback_action, GtkWidget *w)
       next_element = ZACP_REQUEST ;
     }
 
+  /* ok, insert data_ptr at right place. */
   if (data_ptr)
     request_stack = zMapXMLUtilsAddStackToEventsArrayAfterElement(request_stack,
-								  next_element, data_ptr) ;
+								  next_element, NULL, NULL,
+								  data_ptr) ;
 
+
+  if (do_replace_xml)
+    {
+      /* set a load of default stuff.... */
+      featureset[1].value.q = g_quark_from_string("other_history") ;
+
+      feature[1].value.q = g_quark_from_string("eds_replace_feature") ;
+      feature[2].value.i = 5000 ;
+      feature[3].value.i = 6000 ;
+      feature[4].value.q = g_quark_from_string("+") ;
+
+      request_stack = zMapXMLUtilsAddStackToEventsArrayAfterElementEnd(request_stack,
+								       ZACP_FEATURESET,
+								       ZACP_SEQUENCE_NAME, "history",
+								       &featureset[0]) ;
+
+      request_stack = zMapXMLUtilsAddStackToEventsArrayAfterElement(request_stack,
+								    ZACP_FEATURESET,
+								    ZACP_SEQUENCE_NAME, "other_history",
+								    data_ptr) ;
+
+
+
+      next_element = ZACP_FEATURESET ;
+    }
+
+
+
+
+
+  /* Create the string from the xml stack and put it into the text buffer for the user. */
   request = zMapXMLUtilsStack2XML(request_stack, &err_msg, FALSE) ;
 
   gtk_text_buffer_set_text(remote_data->our_req.request_text_buffer, request, -1) ;
