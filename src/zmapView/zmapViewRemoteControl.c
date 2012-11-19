@@ -198,7 +198,7 @@ typedef struct RequestDataStructName
 
   GQuark source_id ;
   GQuark style_id ;
-  ZMapFeatureTypeStyle style ;
+  ZMapFeatureTypeStyle *style ;
 
   GList *locations ;
 
@@ -254,7 +254,7 @@ static gboolean xml_return_true_cb(gpointer user_data, ZMapXMLElement zmap_eleme
 
 static void copyAddFeature(gpointer key, gpointer value, gpointer user_data) ;
 static ZMapFeature createLocusFeature(ZMapFeatureContext context, ZMapFeature feature,
-				      ZMapFeatureSet locus_feature_set, ZMapFeatureTypeStyle locus_style,
+				      ZMapFeatureSet locus_feature_set, ZMapFeatureTypeStyle *locus_style,
 				      GQuark new_locus_id) ;
 static gboolean executeRequest(ZMapXMLParser parser, RequestData request_data) ;
 static void viewDumpContextToFile(ZMapView view, RequestData request_data) ;
@@ -920,6 +920,10 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 	  // as load features processes a complete step list that inludes requesting the style
 	  // then if the style is not there then we'll drop the features
 
+
+	  /* OK ..... WE NEED THE STYLE POINTER FROM THE FEATURE SET.....TO Add IN THE FEATURE...  */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  if (!(request_data->style = zMapFindStyle(request_data->view->context_map.styles, request_data->style_id)))
 	    {
 	      char *err_msg ;
@@ -931,6 +935,11 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 
 	      result = FALSE ;
 	    }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+	  /* New way of styles..... */
+	  request_data->style = &(feature_set->style) ;
+
 	}
     }
 
@@ -1072,7 +1081,7 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 
   /* Need the style to get hold of the feature mode, better would be for
    * xml to contain SO term ?? Maybe not....not sure. */
-  if (result && ((mode = zMapStyleGetMode(request_data->style)) == ZMAPSTYLE_MODE_INVALID))
+  if (result && ((mode = zMapStyleGetMode(*(request_data->style))) == ZMAPSTYLE_MODE_INVALID))
     {
       zMapXMLParserRaiseParsingError(parser, "\"style\" must have a valid feature mode.");
       result = FALSE ;
@@ -1199,7 +1208,11 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 		request_data->edit_feature = feature ;
 
 
-	      feature->style_id = request_data->style_id ;
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	      /* duh...why did we ever need this.....?????? */
+	      feature->style = request_data->style_id ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 	      zMapFeatureSetAddFeature(featureset, feature) ;
 
@@ -1220,116 +1233,27 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 		  GQuark new_locus_id  = zMapXMLAttributeGetValue(attr);
 		  GQuark locus_set_id  = zMapStyleCreateID(ZMAP_FIXED_STYLE_LOCUS_NAME);
 		  char *new_locus_name = (char *)g_quark_to_string(new_locus_id);
-		  ZMapFeatureTypeStyle locus_style ;
+		  ZMapFeatureTypeStyle *locus_style ;
 
 		  if (request_data->command_id == g_quark_from_string(ZACP_REPLACE_FEATURE))
 		    block = request_data->replace_block ;
 		  else
 		    block = request_data->edit_block ;
 
-		  if (!(locus_style = zMapFindStyle(request_data->view->context_map.styles,
-						    zMapStyleCreateID(ZMAP_FIXED_STYLE_LOCUS_NAME))))
+
+		  /* Find locus feature set first ... we used to create one here but it should
+		   * already exist in fact. */
+		  if (!(locus_feature_set = zMapFeatureBlockGetSetByID(block, locus_set_id)))
 		    {
-		      zMapLogWarning("Feature %s created but Locus %s could not be added"
-				     " because Locus style could not be found.",
-				     feature_name, new_locus_name) ;
+		      zMapLogWarning("Cannot find locus feature set so no locus created for feature \"%s\".",
+				     feature_name) ;
 		    }
 		  else
 		    {
-		      /* Find locus feature set first ... */
-		      if (!(locus_feature_set = zMapFeatureBlockGetSetByID(block, locus_set_id)))
-			{
-			  /* Can't find one, create one and add it. */
-			  locus_feature_set = zMapFeatureSetCreate(ZMAP_FIXED_STYLE_LOCUS_NAME, NULL);
-			  zMapFeatureBlockAddFeatureSet(block, locus_feature_set);
-			}
+		      locus_style = &(locus_feature_set->style) ;
 
 		      locus_feature = createLocusFeature(request_data->orig_context, feature,
 							 locus_feature_set, locus_style, new_locus_id) ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-
-		      /* For some reason lace passes over odd xml here...
-			 <zmap action="delete_feature">
-			 <featureset>
-			 <feature style="Known_CDS" name="RP23-383F20.1-004" locus="Oxsm" ... />
-			 </featureset>
-			 </zmap>
-			 <zmap action="create_feature">
-			 <featureset>
-			 <feature style="Known_CDS" name="RP23-383F20.1-004" locus="Oxsm" ... />
-			 ...
-			 i.e. deleting the locus name it's creating!
-		      */
-
-		      old_feature =
-			(ZMapFeature)zMapFeatureContextFindFeatureFromFeature(request_data->orig_context,
-									      (ZMapFeatureAny)request_data->feature);
-
-		      if ((old_feature) && (old_feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
-			  && (old_feature->feature.transcript.locus_id != 0)
-			  && (old_feature->feature.transcript.locus_id != new_locus_id))
-			{
-			  /* ^^^ check the old one was a transcript and had a locus that doesn't match this one */
-			  ZMapFeature tmp_locus_feature;
-			  ZMapFeatureAny old_locus_feature;
-			  char *old_locus_name = (char *)g_quark_to_string(old_feature->feature.transcript.locus_id);
-
-			  /* I DON'T REALLY UNDERSTAND THIS BIT CURRENTLY...WHY DO WE ALWAYS LOG THIS... */
-			  /* If we're here, assumptions have been made
-			   * 1 - We are in an action=delete_feature request
-			   * 2 - We are modifying an existing feature.
-			   * 3 - Lace has passed a locus="name" which does not = existing feature locus name.
-			   * 4 - Locus start and end are based on feature start end.
-			   *     If they are the extent of the locus as they should be...
-			   *     The unique_id will be different and therefore the next
-			   *     zMapFeatureContextFindFeatureFromFeature will fail.
-			   *     This means the locus won't be deleted as it should be.
-			   */
-			  zMapLogMessage("loci '%s' & '%s' don't match will delete '%s'",
-					 old_locus_name, new_locus_name, old_locus_name);
-
-			  tmp_locus_feature = zMapFeatureCreateFromStandardData(old_locus_name,
-										NULL, "",
-										ZMAPSTYLE_MODE_BASIC, locus_style,
-										start, end, FALSE, 0.0,
-										ZMAPSTRAND_NONE) ;
-
-			  zMapFeatureSetAddFeature(locus_feature_set, tmp_locus_feature);
-
-			  if ((old_locus_feature
-			       = zMapFeatureContextFindFeatureFromFeature(request_data->orig_context,
-									  (ZMapFeatureAny)tmp_locus_feature)))
-			    {
-			      zMapLogMessage("Found old locus '%s', deleting.", old_locus_name);
-			      locus_feature = (ZMapFeature)zMapFeatureAnyCopy(old_locus_feature);
-			    }
-			  else
-			    {
-			      zMapLogMessage("Failed to find old locus '%s' during delete.", old_locus_name);
-			      /* make the locus feature itself. */
-			      locus_feature = zMapFeatureCreateFromStandardData(old_locus_name,
-										NULL, "",
-										ZMAPSTYLE_MODE_BASIC, locus_style,
-										start, end, FALSE, 0.0,
-										ZMAPSTRAND_NONE) ;
-			    }
-
-			  zMapFeatureDestroy(tmp_locus_feature);
-			}
-		      else
-			{
-			  /* make the locus feature itself. */
-			  locus_feature = zMapFeatureCreateFromStandardData(new_locus_name,
-									    NULL, "",
-									    ZMAPSTYLE_MODE_BASIC, locus_style,
-									    start, end, FALSE, 0.0,
-									    ZMAPSTRAND_NONE) ;
-
-			}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
 		      /* The feature set and feature need to have their styles set... */
 
@@ -1495,7 +1419,7 @@ static gboolean xml_return_true_cb(gpointer user_data,
 
 
 static ZMapFeature createLocusFeature(ZMapFeatureContext context, ZMapFeature feature,
-				      ZMapFeatureSet locus_feature_set, ZMapFeatureTypeStyle locus_style,
+				      ZMapFeatureSet locus_feature_set, ZMapFeatureTypeStyle *locus_style,
 				      GQuark new_locus_id)
 {
   ZMapFeature locus_feature = NULL;
