@@ -168,10 +168,6 @@ static void receiveClipboardGetReplyCB(GtkClipboard *clipboard, GtkSelectionData
 				       guint info, gpointer user_data) ;
 static void receiveClipboardClearWaitAfterReplyCB(GtkClipboard *clipboard, gpointer user_data) ;
 
-static void endOfReceiveClipboardClearCB(GtkClipboard *clipboard, gpointer user_data) ;
-static void endReceiveClipboardGetCB(GtkClipboard *clipboard, GtkSelectionData *selection_data,
-				     guint info, gpointer user_data) ;
-
 static RemoteIdle createIdle(void) ;
 static RemoteReceive createReceive(GQuark app_id, char *app_str,
 				   ZMapRemoteControlRequestHandlerFunc process_request_func,
@@ -2070,7 +2066,7 @@ static gboolean clipboardTakeOwnership(ZMapRemoteControl remote_control, GtkClip
 				       gpointer user_data)
 {
   gboolean result = FALSE ;
-  int i, retrys = 3 ;
+  int i, retrys = 10 ;
 
   /*  I seem to having a problem with this failing from time to time but I'm not sure why ? */
   /* let's try doing it several times and then giving up..... DOESN'T HELP.... */
@@ -2091,9 +2087,16 @@ static gboolean clipboardTakeOwnership(ZMapRemoteControl remote_control, GtkClip
 						get_func,
 						clear_func,
 						user_data)))
-	break ;
+	{
+	  break ;
+	}
       else
-	g_usleep(5000) ;
+	{
+	  REMOTELOGMSG(remote_control,
+		       "Could not take ownership of clipboard after %d retries, about to sleep....", i) ;
+
+	  g_usleep(5000) ;
+	}
     }
 
   if (!result)
