@@ -300,6 +300,8 @@ static char *application_execute_command(char *command_text, gpointer app_contex
   return xml_reply;
 }
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void createZMap(ZMapAppContext app, RequestData request_data, ResponseContext response_data)
 {
   char *sequence = g_strdup(g_quark_to_string(request_data->sequence));
@@ -327,6 +329,8 @@ static void createZMap(ZMapAppContext app, RequestData request_data, ResponseCon
 
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 static void send_finalised(ZMapXRemoteObj client)
 {
