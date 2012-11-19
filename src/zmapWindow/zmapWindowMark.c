@@ -53,11 +53,14 @@
 #define mark_bitmap_height 4
 
 
+
 /* Used to find containing block for a given world position. */
 typedef struct GetBlockStructType
 {
   ZMapWindow window ;
+#if TEST_BLOCK
   double world_x1, world_y1, world_x2, world_y2 ;
+#endif
   ZMapWindowContainerBlock block ;
 } GetBlockStruct, *GetBlock ;
 
@@ -69,7 +72,7 @@ typedef struct _ZMapWindowMarkStruct
   ZMapWindow               window ;			    /* Mark needs access to the ZMapWindow
 							       without having to pass it in. */
 
-  ZMapWindowContainerBlock block_container ;		    /* The block the mark is set on. */
+  ZMapWindowContainerBlock block_container ;	/* The group the mark is set on. ColConfig assumes this is a block */
 
   gboolean        mark_set ;				    /* internal flag for whether mark is set.  */
 
@@ -88,6 +91,7 @@ typedef struct _ZMapWindowMarkStruct
   int             seq_start ;				    /* start of the mark in seq coords (of block)  */
   int             seq_end   ;				    /* end of the mark in seq coords (of block)  */
 
+  int			prev_start, prev_end;		/* where it used to be */
 
   /* World coords of the mark, these are used to draw the mark, they should be graphical
    * use only, e.g. is an canvas item within the mark ? etc. They are ALWAYS derived
@@ -100,6 +104,8 @@ typedef struct _ZMapWindowMarkStruct
   GdkColor        colour ;				    /* colour used for the mark  */
   GdkBitmap      *stipple ;				    /* stipple used for the mark  */
 
+  FooCanvasItem *mark_top, *mark_bot;
+
 
 } ZMapWindowMarkStruct ;
 
@@ -111,14 +117,10 @@ static void mark_block_cb(ZMapWindowContainerGroup container, FooCanvasPoints *p
 			  ZMapContainerLevelType level, gpointer user_data);
 #endif
 
-static ZMapWindowContainerBlock getBlock(ZMapWindow window,
-					 double world_x1, double world_y1, double world_x2, double world_y2) ;
+static ZMapWindowContainerBlock getBlock(ZMapWindow window, double world_y1, double world_y2) ;
 static void get_block_cb(ZMapWindowContainerGroup container, FooCanvasPoints *points,
 			 ZMapContainerLevelType level, gpointer user_data) ;
 
-static gboolean rectangleIntersection(double rect1_x1, double rect1_y1, double rect1_x2, double rect1_y2,
-				      double rect2_x1, double rect2_y1, double rect2_x2, double rect2_y2,
-				      double *intsect_x1, double *intsect_y1, double *intsect_x2, double *intsect_y2) ;
 
 
 
@@ -219,6 +221,8 @@ ZMapWindowMark zmapWindowMarkCreate(ZMapWindow window)
 
   mark->seq_start = mark->seq_end = 0 ;
 
+  mark->prev_start = mark->prev_end  = -1 ;
+
   mark->margin = MARK_MARGIN ;
 
   zmapWindowMarkSetColour(mark, ZMAP_WINDOW_ITEM_MARK) ;
@@ -258,7 +262,7 @@ gboolean zmapWindowMarkIsSet(ZMapWindowMark mark)
    */
   /* This is not a problem for MarkSetItem marks as the block_container is known before hand
    * and is therefore saved and available any time afterwards to save state. */
-  result = (mark->mark_set && mark->block_container);
+//  result = (mark->mark_set && mark->block_container);
   result = (mark->mark_set);
 
   if(mark->mark_set)
@@ -292,6 +296,13 @@ void zmapWindowMarkReset(ZMapWindowMark mark)
 	zmapWindowContainerBlockUnmark(mark->block_container);
 
       mark->block_container = NULL;
+#else
+	if(mark->mark_top)
+		gtk_object_destroy(GTK_OBJECT(mark->mark_top));
+	mark->mark_top = NULL;
+	if(mark->mark_bot)
+		gtk_object_destroy(GTK_OBJECT(mark->mark_bot));
+	mark->mark_bot = NULL;
 #endif
 
       if (mark->mark_src_item)
@@ -305,6 +316,7 @@ void zmapWindowMarkReset(ZMapWindowMark mark)
       mark->world_x1  = mark->world_x2 = 0.0;
       mark->world_y1  = mark->world_y2 = 0.0;
       mark->seq_start = mark->seq_end  = 0 ;
+      mark->prev_start = mark->prev_end  = -1 ;
     }
 
   return ;
@@ -582,9 +594,7 @@ gboolean zmapWindowMarkSetWorldRange(ZMapWindowMark mark,
   zMapAssert(mark);
   zMapAssert(ZMAP_MAGIC_IS_VALID(mark_magic_G, mark->magic)) ;
 
-  zmapWindowMarkReset(mark) ;
-
-zMapLogWarning("set mark from %f %f",world_y1,world_y2);
+//  zmapWindowMarkReset(mark) ;
 
   /* clamp x to scroll region. Fix RT # 55131 */
   zmapWindowGetScrollRegion(mark->window, &scroll_x1, NULL, &scroll_x2, NULL);
@@ -603,23 +613,22 @@ zMapLogWarning("set mark from %f %f",world_y1,world_y2);
   if (world_x1 > world_x2)
     ZMAP_SWAP_TYPE(double, world_x1, world_x2) ;
 
-
+#if MARK_BLOCK
   /* At this point we always want to get the block container. */
   mark->block_container = getBlock(mark->window, world_x1, world_y1, world_x2, world_y2) ;
 
 
   /* we need to convert these coords to sequence coords inside block and then
    * back convert to world coords.... */
-
+#endif
 
   mark->world_x1 = world_x1 ;
   mark->world_y1 = world_y1 ;
   mark->world_x2 = world_x2 ;
   mark->world_y2 = world_y2 ;
-zMapLogWarning("set mark to %f %f",world_y1,world_y2);
 
-  mark->seq_start = 0;  /* if set is from set mark from feature, if we move the mark we need to recalc this */
-  mark->seq_end = 0;
+//  mark->seq_start = 0;  /* if set is from set mark from feature, if we move the mark we need to recalc this */
+//  mark->seq_end = 0;
 
   /* Now sort out the seq coords which should be inside the world coords. */
   mark->seq_start = ceil(world_y1 - mark->margin) ;
@@ -751,10 +760,7 @@ gboolean zmapWindowMarkGetSequenceRange(ZMapWindowMark mark, int *start, int *en
             // start and end are 0 in mark so no features displayed
         mark->seq_start = (int) mark->world_y1 - 1 ;
         mark->seq_end   = (int) mark->world_y2 + 1 ;
-zMapLogWarning("set seq range %d-%d",mark->seq_start,mark->seq_end);
       }
-zMapLogWarning("get seq range %d-%d",mark->seq_start,mark->seq_end);
-
 
       *start = mark->seq_start ;
       *end   = mark->seq_end ;
@@ -766,42 +772,7 @@ zMapLogWarning("get seq range %d-%d",mark->seq_start,mark->seq_end);
 }
 
 
-#if MH17_NOT_NEEDED
-/* mh17: cut and paste from zmapWindowUtils.c */
-/* we revcomp on request not on get mark */
-gboolean zmapWindowGetMarkedSequenceRangeFwd(ZMapWindow       window,
-                                   ZMapFeatureBlock block,
-                                   int *start, int *end)
-{
-  gboolean result = FALSE ;
-  int x1,x2;
 
-  result = zmapWindowMarkGetSequenceRange(window->mark, &x1,&x2);
-
-  if(result)
-  {
-      if(window->revcomped_features)
-      {
-            int temp;
-            temp = x2;
-            x2 = x1;
-            x1 = temp;
-      }
-
-      *start = zmapWindowWorldToSequenceForward(window,x1);
-      *end   = zmapWindowWorldToSequenceForward(window,x2);
-
-      zMapAssert(*start <= *end); /* should be < but why bottle out in a limiting case ? */
-  }
-
-
-zMapLogWarning("mark: %d %d, %d %d %d, %f -> %f, %d -> %d",
-      x1,x2,*start,*end,window->origin, window->min_coord,window->max_coord,
-      block->block_to_sequence.block.x1,block->block_to_sequence.block.x2);
-
-  return result ;
-}
-#endif
 
 
 /*!
@@ -946,26 +917,109 @@ static void markItem(ZMapWindowMark mark, FooCanvasItem *item, gboolean set_mark
 
   if (set_mark)
     {
-      GdkColor  *mark_colour;
-      GdkBitmap *mark_stipple;
-      double x1, y1, x2, y2;
-      ZMapWindowContainerGroup parent;
+//      GdkColor  *mark_colour;
+//      GdkBitmap *mark_stipple;
+//      double x1, y1, x2, y2;
+//      ZMapWindowContainerGroup parent;
 
-	mark_colour  = zmapWindowMarkGetColour(mark);
-      mark_stipple = mark->stipple;
+//	mark_colour  = zmapWindowMarkGetColour(mark);
+//      mark_stipple = mark->stipple;
 
 // previous code: convert to a ZMapWindoCanvasItem  to call a fucntion that converts back to a FooCanvasItem
 //    zMapWindowCanvasItemMark((ZMapWindowCanvasItem)item, mark_colour, mark_stipple);
 
-      foo_canvas_item_get_bounds(item,&x1, &y1, &x2, &y2);
+//      foo_canvas_item_get_bounds(item,&x1, &y1, &x2, &y2);
 
-      parent = zmapWindowContainerUtilsItemGetParentLevel(item,ZMAPCONTAINER_LEVEL_FEATURESET);
+//      parent = zmapWindowContainerUtilsItemGetParentLevel(item,ZMAPCONTAINER_LEVEL_FEATURESET);
 
       mark->mark_src_item = item;
 
     }
 
   return ;
+}
+
+
+
+FooCanvasItem *set_mark_item(ZMapWindowMark mark, gboolean top)
+{
+	FooCanvasItem *foo = top ? mark->mark_top : mark->mark_bot;
+	int y1,y2;
+	static GQuark id_top, id_bot;
+	GQuark id;
+	static ZMapFeatureTypeStyle style = NULL;
+	ZMapFeatureBlock block;
+
+      zmapWindowContainerGetFeatureAny(ZMAP_CONTAINER_GROUP(mark->block_container), (ZMapFeatureAny *)&block) ;
+
+
+	id_top =  g_quark_from_string("mark_top");
+	id_bot =  g_quark_from_string("mark_bot");
+
+	if(!style)
+	{
+		style = zMapStyleCreate("mark", "mark");
+
+		g_object_set(G_OBJECT(style),
+		       ZMAPSTYLE_PROPERTY_MODE, ZMAPSTYLE_MODE_PLAIN,
+		       ZMAPSTYLE_PROPERTY_COLOURS, "normal draw cyan; normal border cyan",
+		       NULL);
+		zMapStyleSetDisplayable(style, TRUE);	/* (always drawable) */
+	}
+
+	if(top)
+	{
+		y1 = block->block_to_sequence.block.x1;
+		y2 = mark->seq_start - 1;
+		if(y2 < y1)
+			y2 = y1;
+		id = id_top;
+	}
+	else
+	{
+		y2 = block->block_to_sequence.block.x2;
+		y1 = mark->seq_end + 1;
+		if(y1 > y2)
+			y1 = y2;
+		id = id_bot;
+	}
+
+	if(!foo)
+	{
+		foo = (FooCanvasItem *) zMapWindowCanvasItemFeaturesetGetFeaturesetItem((FooCanvasGroup *) mark->block_container, id, y1, y2, style, ZMAPSTRAND_NONE, ZMAPFRAME_NONE, 0, ZMAP_CANVAS_LAYER_BLOCK_MARK);
+	}
+
+	zMapWindowCanvasFeaturesetSetSequence((ZMapWindowFeaturesetItem) foo, y1, y2);
+	zMapWindowCanvasFeaturesetSetBackground(foo, &mark->colour, NULL );
+
+	foo_canvas_item_request_update(foo);
+	foo_canvas_item_show(foo);
+
+	return foo;
+}
+
+/* add overlay stuff to show where it is */
+/* this goes on to the marks block_container */
+void zmapWindowMarkShowMark(ZMapWindowMark mark)
+{
+	if(!mark->block_container)
+		return;
+
+	if(mark->seq_start != mark->prev_start)		/* only display if changed */
+		mark->mark_top = set_mark_item(mark, TRUE);
+
+	if(mark->seq_end != mark->prev_end)		/* only display if changed */
+		mark->mark_bot = set_mark_item(mark, FALSE);
+
+	mark->prev_start = mark->seq_start;
+	mark->prev_end = mark->seq_end;
+
+	/* dissapointingly it's quite difficult to request a redraw of an item until it's been updated,
+	 * something that involves the containing groups
+	 * we need to calc the future canvas coords and request a foo canvas redraw
+	 * instead redraw the whole block
+	 */
+	foo_canvas_item_request_redraw((FooCanvasItem *) mark->block_container);
 }
 
 
@@ -979,6 +1033,9 @@ static void markRange(ZMapWindowMark mark)
 
   tmp_y1 = mark->seq_start ;
   tmp_y2 = mark->seq_end ;
+
+  if(!mark->block_container)
+    mark->block_container = getBlock(mark->window, mark->world_y1, mark->world_y2) ;
 
   if(mark->block_container)
   {
@@ -1036,52 +1093,30 @@ static void markRange(ZMapWindowMark mark)
 				      mark_block_cb,
 				      mark);
     }
+#else
+	zmapWindowMarkShowMark(mark);
 #endif
 
   return ;
 }
 
 
-#if 0
-static void mark_block_cb(ZMapWindowContainerGroup container, FooCanvasPoints *points,
-			  ZMapContainerLevelType level, gpointer user_data)
-{
-  switch(level)
-    {
-    case ZMAPCONTAINER_LEVEL_BLOCK:
-      {
-	ZMapWindowContainerBlock block = (ZMapWindowContainerBlock)container;
-	ZMapWindowMark mark = (ZMapWindowMark)user_data;
 
-	zmapWindowContainerBlockMark(block, mark);
-
-	break ;
-      }
-    default:
-      {
-	break;
-      }
-    }
-
-  return ;
-}
-#endif
 
 
 /* This potentially should be converted to a generalised function that finds items in a
  * certain coord range, better than Roys bug-prone method of hoping he finds a canvas
  * item of a certain type which probably fails because the point is not over a feature item. */
-static ZMapWindowContainerBlock getBlock(ZMapWindow window,
-					 double world_x1, double world_y1, double world_x2, double world_y2)
+static ZMapWindowContainerBlock getBlock(ZMapWindow window, double world_y1, double world_y2)
 {
   ZMapWindowContainerBlock block = NULL ;
   GetBlockStruct get_block_data = {NULL} ;
 
-  get_block_data.window = window ;
-  get_block_data.world_x1 = world_x1 ;
-  get_block_data.world_x2 = world_x2 ;
+ #if TEST_BLOCK
+ get_block_data.window = window ;
   get_block_data.world_y1 = world_y1 ;
   get_block_data.world_y2 = world_y2 ;
+#endif
 
   zmapWindowContainerUtilsExecute(window->feature_root_group,
 				  ZMAPCONTAINER_LEVEL_BLOCK,
@@ -1100,23 +1135,20 @@ static void get_block_cb(ZMapWindowContainerGroup container, FooCanvasPoints *po
   if (level == ZMAPCONTAINER_LEVEL_BLOCK)
     {
       ZMapWindowContainerBlock block = (ZMapWindowContainerBlock)container ;
+
+
       GetBlock get_block_data = (GetBlock)user_data ;
-      double x1, y1, x2, y2 ;
+#if 0
+	ZMapFeatureBlock b;
+
+	b = (ZMapFeatureBlock) container->feature_any;
 
 
-      my_foo_canvas_item_get_world_bounds((FooCanvasItem *)block, &x1, &y1, &x2, &y2) ;
+	/* this is a bit pedantic, we only have one block */
 
-#if MH17_WHAT_IS_THIS_FOR
-// erm.. fill in soem data and then overwrite it??
-// totalview suggests we want world coordinates as does this code
-
-      foo_canvas_item_get_bounds((FooCanvasItem *)block, &x1, &y1, &x2, &y2) ;
+	if(get_block_data->world_x1 < block->block_to_sequence.block.x2 && get_block_data->world_x2 > block->block_to_sequence.block.x1)
 #endif
 
-      if (rectangleIntersection(x1, y1, x2, y2,
-				get_block_data->world_x1, get_block_data->world_y1,
-				get_block_data->world_x2, get_block_data->world_y2,
-				NULL, NULL, NULL, NULL))
 	get_block_data->block = block ;
     }
 
@@ -1125,37 +1157,4 @@ static void get_block_cb(ZMapWindowContainerGroup container, FooCanvasPoints *po
 
 
 
-
-
-/* Should be an external function, perhaps in the items code directory ? */
-static gboolean rectangleIntersection(double rect1_x1, double rect1_y1, double rect1_x2, double rect1_y2,
-				      double rect2_x1, double rect2_y1, double rect2_x2, double rect2_y2,
-				      double *intersect_x1, double *intersect_y1,
-				      double *intersect_x2, double *intersect_y2)
-{
-  gboolean overlap = FALSE ;
-  double x1, x2, y1, y2 ;
-
-  x1 = MAX(rect1_x1, rect2_x1) ;
-  y1 = MAX(rect1_y1, rect2_y1) ;
-  x2 = MIN(rect1_x2, rect2_x2) ;
-  y2 = MIN(rect1_y2, rect2_y2) ;
-
-  if (y2 - y1 > 0 && x2 - x1 > 0)
-    {
-      if (intersect_x1)
-	*intersect_x1 = x1 ;
-      if (intersect_y1)
-	*intersect_y1 = y1 ;
-      if (intersect_x2)
-	*intersect_x2 = x2 ;
-      if (intersect_y2)
-	*intersect_y2 = y2 ;
-
-      overlap = TRUE ;
-    }
-
-
-  return overlap ;
-}
 

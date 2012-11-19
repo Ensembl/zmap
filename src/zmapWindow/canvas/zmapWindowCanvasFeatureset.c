@@ -919,7 +919,7 @@ ZMapWindowCanvasItem zMapWindowCanvasItemFeaturesetGetFeaturesetItem(FooCanvasGr
       featureset = (ZMapWindowFeaturesetItem) foo ;
       featureset->id = id;
 
-#if 1 // STYLE_DEBUG
+#if STYLE_DEBUG
 {
 ZMapWindowContainerFeatureSet x = (ZMapWindowContainerFeatureSet) foo->parent;
 
@@ -1036,6 +1036,7 @@ void zMapWindowCanvasFeaturesetSetSequence(ZMapWindowFeaturesetItem featureset, 
 	featureset->start = y1;
 	featureset->end = y2;
 }
+
 
 
 
@@ -1251,7 +1252,6 @@ void zMapWindowCanvasFeaturesetRedraw(ZMapWindowFeaturesetItem fi, double zoom)
   foo_canvas_w2c (foo->canvas, x1 + width + i2w_dx, fi->end - fi->start + i2w_dy, &cx2, &cy2);
 
   foo_canvas_request_redraw (foo->canvas, cx1, cy1, cx2 + 1, cy2 + 1);	/* hits column next door? (NO, is needed) */
-//  foo_canvas_request_redraw (foo->canvas, cx1, cy1, cx2, cy2);
 }
 
 
@@ -1606,22 +1606,25 @@ static void zmap_window_featureset_item_item_update (FooCanvasItem *item, double
   if(item_class_G->update)
     item_class_G->update(item, i2w_dx, i2w_dy, flags);		/* just sets flags */
 
-  //printf("update %s width = %.1f\n",g_quark_to_string(di->id),di->width);
   // cribbed from FooCanvasRE; this sets the canvas coords in the foo item
   /* x_off is needed for staggered graphs, is currently 0 for all other types */
   di->dx = x1 = i2w_dx + di->x + di->x_off;
   width = (di->bumped? di->bump_width : di->width);
+//printf("update %s width = %.1f\n",g_quark_to_string(di->id),di->width);
 
   if((di->layer & ZMAP_CANVAS_LAYER_STRETCH_X))
 	  width = 1;  	/* will be set afterwards by caller */
 
   x2 = x1 + width;
 
-  di->dy = y1 = i2w_dy;
+  di->dy = i2w_dy;
+  y1 = di->dy = di->start;
   y2 = y1 + di->end - di->start;
 
   if((di->layer & ZMAP_CANVAS_LAYER_STRETCH_Y))
 	  y2 = y1;  	/* will be set afterwards by caller */
+
+//printf("update %s y1,y2 = %f, %f\n",g_quark_to_string(di->id), y1, y2);
 
   foo_canvas_w2c (item->canvas, x1, y1, &cx1, &cy1);
   foo_canvas_w2c (item->canvas, x2, y2, &cx2, &cy2);
@@ -2084,7 +2087,7 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
 
 #if 0
 
-//if(fi->type >= FEATURE_GRAPHICS)
+if(fi->type >= FEATURE_GRAPHICS)
 //if(!fi->features)
 {
 	ZMapWindowContainerFeatureSet column;

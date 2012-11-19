@@ -509,17 +509,7 @@ int zmapWindowDrawFeatureSet(ZMapWindow window,
 #endif
 
   featureset_data.window = window ;
-//{
-//	int x = 0;
-//if(!strncmp(g_quark_to_string(feature_set->unique_id),"3 frame",7))
-//	x = 1;
-//}
-{
-char *x = (char *) g_quark_to_string(feature_set->unique_id);
-printf("draw featureset %s\n", x);
-if(!strcmp(x,"locus"))
-	x = "here";
-}
+
   if (forward_col_wcp)
     {
       ZMapWindowContainerFeatureSet container;

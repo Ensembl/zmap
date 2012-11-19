@@ -655,7 +655,7 @@ static void zmap_window_container_group_update (FooCanvasItem *item, double i2w_
   FooCanvasGroup *canvas_group;
   gboolean item_visible;
 
-ZMapWindowContainerGroup zg = (ZMapWindowContainerGroup) item;
+//ZMapWindowContainerGroup zg = (ZMapWindowContainerGroup) item;
 
   canvas_group   = (FooCanvasGroup *)item;
   item_visible   = ((item->object.flags & FOO_CANVAS_ITEM_VISIBLE) == FOO_CANVAS_ITEM_VISIBLE);
@@ -720,8 +720,7 @@ else if(ZMAP_IS_CONTAINER_GROUP(foo))
 				foo->x1 = item->x1;
 				foo->x2 = item->x2;
 				foo_canvas_c2w(foo->canvas,foo->x2 - foo->x1, 0, &size, NULL);
-if(zg->level < 4)
-	printf("update %d set x %s = %f %f\n",zg->level, g_quark_to_string(zMapWindowCanvasFeaturesetGetId(featureset)), foo->x1, foo->x2);
+//if(zg->level < 4) printf("update %d set x %s = %f %f\n",zg->level, g_quark_to_string(zMapWindowCanvasFeaturesetGetId(featureset)), foo->x1, foo->x2);
 				zMapWindowCanvasFeaturesetSetWidth(featureset,size);
 			}
 
@@ -733,8 +732,7 @@ if(zg->level < 4)
 				/* this is used for higher level groups */
 				foo->y1 = item->y1;
 				foo->y2 = item->y2;
-if(zg->level < 4)
-	printf("update %d set y %s = %f %f\n", zg->level, g_quark_to_string(zMapWindowCanvasFeaturesetGetId(featureset)), foo->y1, foo->y2);
+//if(zg->level < 4) printf("update %d set y %s = %f %f\n", zg->level, g_quark_to_string(zMapWindowCanvasFeaturesetGetId(featureset)), foo->y1, foo->y2);
 				foo_canvas_c2w(foo->canvas,0, foo->y1, NULL, &y1);
 				foo_canvas_c2w(foo->canvas,0, foo->y2, NULL, &y2);
 
