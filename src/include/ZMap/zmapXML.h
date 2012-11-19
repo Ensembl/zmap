@@ -1,4 +1,3 @@
-/*  Last edited: Oct 28 14:30 2011 (edgrif) */
 /*  File: zmapXML.h
  *  Author: Roy Storey (rds@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -24,9 +23,8 @@
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
  *
- * Description:
+ * Description: Interface to xml handling routines.
  *
- * Exported functions: See XXXXXXXXXXXXX.h
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_XML_H
@@ -363,11 +361,18 @@ char *zMapXMLWriterVerboseErrorMsg(ZMapXMLWriter writer);
 GArray *zMapXMLUtilsCreateEventsArray(void) ;
 GArray *zMapXMLUtilsStackToEventsArray(ZMapXMLUtilsEventStack event_stack) ;
 GArray *zMapXMLUtilsAddStackToEventsArrayStart(GArray *events_array, ZMapXMLUtilsEventStack event_stack) ;
-GArray *zMapXMLUtilsAddStackToEventsArrayAfterElement(GArray *events_array,
-						      char *element_name, ZMapXMLUtilsEventStack event_stack) ;
 GArray *zMapXMLUtilsAddStackToEventsArrayEnd(GArray *events_array, ZMapXMLUtilsEventStack event_stack) ;
+GArray *zMapXMLUtilsAddStackToEventsArrayAfterElement(GArray *events_array, char *element_name, 
+						      char *attribute_name, char *attribute_value,
+						      ZMapXMLUtilsEventStack event_stack) ;
+GArray *zMapXMLUtilsAddStackToEventsArrayAfterElementEnd(GArray *events_array, char *element_name,
+							 char *attribute_name, char *attribute_value,
+							 ZMapXMLUtilsEventStackStruct *event_stack) ;
 char *zMapXMLUtilsStack2XML(GArray *xml_stack, char **err_msg_out, gboolean full_format) ;
 
+
+char *zMapXMLUtilsEvent2Txt(ZMapXMLUtilsEventStack event) ;
+char *zMapXMLWriterEvent2Txt(ZMapXMLWriterEvent event) ;
 
 char *zMapXMLUtilsUnescapeStrdup(char *str);	/* NOTE: incomplete */
 

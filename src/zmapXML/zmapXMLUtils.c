@@ -1,4 +1,3 @@
-/*  Last edited: Oct 28 14:41 2011 (edgrif) */
 /*  File: zmapXMLUtils.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -41,7 +40,12 @@
 
 
 static void transfer(ZMapXMLUtilsEventStack source, ZMapXMLWriterEvent dest) ;
+static gboolean hasAttribute(GArray *events_array, int element_index, char *attribute_name, char *attribute_value) ;
 
+
+
+
+static gboolean debug_G = FALSE ;
 
 
 /* 
@@ -51,6 +55,8 @@ static void transfer(ZMapXMLUtilsEventStack source, ZMapXMLWriterEvent dest) ;
 
 /* GHASTLY....SURELY THE THING THAT PERSISTS SHOULD BE THE FIRST PARAM IN ALL THE
  * CALLS SINCE IT IS THE INVARIANT IN ALL THE CALLS.... */
+
+
 
 /* Create an empty events array. */
 GArray *zMapXMLUtilsCreateEventsArray(void)
@@ -74,6 +80,30 @@ GArray *zMapXMLUtilsStackToEventsArray(ZMapXMLUtilsEventStackStruct *event_stack
 
   return events;
 }
+
+
+
+/* Take a stack of xml parts and convert to the string containing the xml. */
+char *zMapXMLUtilsStack2XML(GArray *xml_stack, char **err_msg_out, gboolean full_format)
+{
+  char *xml_string = NULL ;
+  ZMapXMLWriter writer ;
+
+  if ((writer = zMapXMLWriterCreate(NULL, NULL)))
+    {
+      ZMapXMLWriterErrorCode xml_status ;
+
+      if ((xml_status = zMapXMLWriterProcessEvents(writer, xml_stack, full_format)) != ZMAPXMLWRITER_OK)
+        *err_msg_out = g_strdup(zMapXMLWriterErrorMsg(writer)) ;
+      else
+	xml_string = g_strdup(zMapXMLWriterGetXMLStr(writer)) ;
+
+      zMapXMLWriterDestroy(writer) ;
+    }
+
+  return xml_string ;
+}
+
 
 
 /* Add an events stack to the beginning of an events array. */
@@ -101,24 +131,46 @@ GArray *zMapXMLUtilsAddStackToEventsArrayStart(GArray *events_array, ZMapXMLUtil
 }
 
 
-/* Add the event stack to the middle of the events array. Use this to allow
+/* Add the event stack to the end of the events array. */
+GArray *zMapXMLUtilsAddStackToEventsArrayEnd(GArray *events_array, ZMapXMLUtilsEventStackStruct *event_stack)
+{
+  ZMapXMLUtilsEventStack input;
+  ZMapXMLWriterEventStruct single = {0};
+
+  input = event_stack;
+
+  while(input && input->event_type)
+    {
+      transfer(input, &single);
+      events_array = g_array_append_val(events_array, single);
+      input++;
+    }
+
+  return events_array;
+}
+
+
+
+/* Add the event stack as a child of the element given by element_name. Use this to allow
  * insertion of new xml levels into a pre-existing nest of xml.
  * 
+ * Optionally specify an attribute name and optinally value that qualifies the element to
+ * add the event_stack to. If no attribute name/value given then the stack is inserted in
+ * the first element with element_name.
+ * 
+ * 
  *  */
-GArray *zMapXMLUtilsAddStackToEventsArrayAfterElement(GArray *events_array, char *element_name,
+GArray *zMapXMLUtilsAddStackToEventsArrayAfterElement(GArray *events_array,
+						      char *element_name,
+						      char *attribute_name, char *attribute_value,
 						      ZMapXMLUtilsEventStackStruct *event_stack)
 {
   GArray *result = NULL ;
-
   ZMapXMLUtilsEventStack input ;
-
   ZMapXMLWriterEventStruct single = {0} ;
-  
   int insert_pos ;
   int i ;
   gboolean found_element ;
-  static gboolean debug = FALSE ;
-
 
   /* Find first position in the array after the named element _and_ that elements attributes.  */
   for (i = 0, insert_pos = 0, found_element = FALSE ; i < events_array->len ; i++)
@@ -127,13 +179,15 @@ GArray *zMapXMLUtilsAddStackToEventsArrayAfterElement(GArray *events_array, char
 
       event = &(g_array_index(events_array, ZMapXMLWriterEventStruct, i)) ;
 
-      zMapDebugPrint(debug, "element: %s, attribute: %s",
-		     g_quark_to_string(event->data.name), g_quark_to_string(event->data.comp.name)) ;
+      zMapDebugPrint(debug_G, "%s\n", zMapXMLWriterEvent2Txt(event)) ;
 
       if (event->type == ZMAPXML_START_ELEMENT_EVENT
 	  && g_ascii_strcasecmp(g_quark_to_string(event->data.name), element_name) == 0)
 	{
-	  found_element = TRUE ;
+	  int index = i ;				    /* Pass in start of element. */
+
+	  if (!attribute_name || hasAttribute(events_array, index, attribute_name, attribute_value))
+	    found_element = TRUE ;
 	}
       else if (found_element && (event->type == ZMAPXML_END_ELEMENT_EVENT
 				 && g_ascii_strcasecmp(g_quark_to_string(event->data.name), element_name) == 0))
@@ -161,14 +215,14 @@ GArray *zMapXMLUtilsAddStackToEventsArrayAfterElement(GArray *events_array, char
     }
 
 
-  if (debug)
+  if (debug_G)
     {
       char *request ;
       char *err_msg = NULL ;
 
       request = zMapXMLUtilsStack2XML(result, &err_msg, FALSE) ;
 
-      zMapDebugPrint(debug, "%s", request) ;
+      zMapDebugPrint(debug_G, "%s\n", request) ;
     }
 
 
@@ -176,46 +230,166 @@ GArray *zMapXMLUtilsAddStackToEventsArrayAfterElement(GArray *events_array, char
 }
 
 
+/* TO BE DONE.....ADD FLAG TO SAY "INSERT AFTER LAST ONE OF ELEMENT_NAME".... */
 
-/* Add the event stack to the end of the events array. */
-GArray *zMapXMLUtilsAddStackToEventsArrayEnd(GArray *events_array, ZMapXMLUtilsEventStackStruct *event_stack)
+/* Add the event stack after the xml element given by element_name. Typically used
+ * to add multiple copies of the same element.
+ * 
+ * Optionally specify an attribute name and optinally value that qualifies the element to
+ * add the event_stack to. If no attribute name/value given then the stack is inserted in
+ * the first element with element_name.
+ * 
+ *  */
+GArray *zMapXMLUtilsAddStackToEventsArrayAfterElementEnd(GArray *events_array, char *element_name,
+							 char *attribute_name, char *attribute_value,
+							 ZMapXMLUtilsEventStackStruct *event_stack)
 {
-  ZMapXMLUtilsEventStack input;
-  ZMapXMLWriterEventStruct single = {0};
+  GArray *result = NULL ;
+  ZMapXMLUtilsEventStack input ;
+  ZMapXMLWriterEventStruct single = {0} ;
+  int insert_pos ;
+  int i ;
+  gboolean found_element ;
 
-  input = event_stack;
 
-  while(input && input->event_type)
+  /* Find position of end of named element in the array.  */
+  for (i = 0, insert_pos = 0, found_element = FALSE ; i < events_array->len ; i++)
     {
-      transfer(input, &single);
-      events_array = g_array_append_val(events_array, single);
-      input++;
+      ZMapXMLWriterEvent event ;
+
+      event = &(g_array_index(events_array, ZMapXMLWriterEventStruct, i)) ;
+
+      zMapDebugPrint(debug_G, "%s\n", zMapXMLWriterEvent2Txt(event)) ;
+
+      if (event->type == ZMAPXML_START_ELEMENT_EVENT
+	  && g_ascii_strcasecmp(g_quark_to_string(event->data.name), element_name) == 0)
+	{
+	  found_element = TRUE ;
+	}
+      else if (found_element && (event->type == ZMAPXML_END_ELEMENT_EVENT
+				 && g_ascii_strcasecmp(g_quark_to_string(event->data.name), element_name) == 0))
+	{
+	  insert_pos = i + 1 ;				    /* bump past end element. */
+	  break ;
+	}
     }
 
-  return events_array;
+  if (found_element)
+    {
+      result = events_array ;
+      input = event_stack ;
+
+      while (input && input->event_type)
+	{
+	  transfer(input, &single) ;
+
+	  result = g_array_insert_val(result, insert_pos, single) ;
+
+	  insert_pos++ ;
+
+	  input++ ;
+	}
+    }
+
+
+  if (debug_G)
+    {
+      char *request ;
+      char *err_msg = NULL ;
+
+      request = zMapXMLUtilsStack2XML(result, &err_msg, FALSE) ;
+
+      zMapDebugPrint(debug_G, "%s\n", request) ;
+    }
+
+
+  return result ;
 }
 
 
-/* Take a stack of xml parts and convert to the string containing the xml. */
-char *zMapXMLUtilsStack2XML(GArray *xml_stack, char **err_msg_out, gboolean full_format)
+/* Returns event as a string, note if you want to keep the returned string
+ * you have to copy it between calls to this function as it uses a static buffer. */
+char *zMapXMLUtilsEvent2Txt(ZMapXMLUtilsEventStack event)
 {
-  char *xml_string = NULL ;
-  ZMapXMLWriter writer ;
+  char *event_text = NULL ;
+  static GString *event_str = NULL ;
 
-  if ((writer = zMapXMLWriterCreate(NULL, NULL)))
+  if (!event_str)
+    event_str = g_string_sized_new(1024) ;
+  else
+    g_string_set_size(event_str, 0) ;
+
+  g_string_append_printf(event_str, "%s\t", event->name) ;
+
+  switch (event->data_type)
     {
-      ZMapXMLWriterErrorCode xml_status ;
-
-      if ((xml_status = zMapXMLWriterProcessEvents(writer, xml_stack, full_format)) != ZMAPXMLWRITER_OK)
-        *err_msg_out = g_strdup(zMapXMLWriterErrorMsg(writer)) ;
-      else
-	xml_string = g_strdup(zMapXMLWriterGetXMLStr(writer)) ;
-
-      zMapXMLWriterDestroy(writer) ;
+    case ZMAPXML_EVENT_DATA_QUARK:
+      g_string_append(event_str, g_quark_to_string(event->value.q)) ;
+      break ;
+    case ZMAPXML_EVENT_DATA_STRING:
+      g_string_append(event_str, event->value.s) ;
+      break ;
+    case ZMAPXML_EVENT_DATA_INTEGER:
+      g_string_append_printf(event_str, "%d", event->value.i) ;
+      break ;
+    case ZMAPXML_EVENT_DATA_DOUBLE:
+      g_string_append_printf(event_str, "%g", event->value.d) ;
+      break ;
+    default:
+      g_string_append(event_str, "No Value") ;
+      break ;
     }
 
-  return xml_string ;
+  event_text = event_str->str ;
+
+  return event_text ;
 }
+
+
+
+/* Returns event as a string, note if you want to keep the returned string
+ * you have to copy it between calls to this function as it uses a static buffer. */
+char *zMapXMLWriterEvent2Txt(ZMapXMLWriterEvent event)
+{
+  char *event_text = NULL ;
+  static GString *event_str = NULL ;
+
+  if (!event_str)
+    event_str = g_string_sized_new(1024) ;
+  else
+    g_string_set_size(event_str, 0) ;
+
+  g_string_append_printf(event_str, "%s\t", g_quark_to_string(event->data.name)) ;
+
+  switch (event->data.comp.data)
+    {
+      char *str ;
+
+    case ZMAPXML_EVENT_DATA_QUARK:
+      g_string_append(event_str,
+		      ((str = (char *)g_quark_to_string(event->data.comp.value.quark))
+		       ? str : "No Value")) ;
+      break ;
+    case ZMAPXML_EVENT_DATA_STRING:
+      g_string_append(event_str,
+		      ((str = event->data.comp.value.s) ? str : "No Value"))  ;
+      break ;
+    case ZMAPXML_EVENT_DATA_INTEGER:
+      g_string_append_printf(event_str, "%d", event->data.comp.value.integer) ;
+      break ;
+    case ZMAPXML_EVENT_DATA_DOUBLE:
+      g_string_append_printf(event_str, "%g", event->data.comp.value.flt) ;
+      break ;
+    default:
+      g_string_append(event_str, "No Value") ;
+      break ;
+    }
+
+  event_text = event_str->str ;
+
+  return event_text ;
+}
+
 
 
 
@@ -304,4 +478,41 @@ static void transfer(ZMapXMLUtilsEventStack source, ZMapXMLWriterEvent dest)
 }
 
 
+/* Can attribute with attribute_name and attribute_value be found in the element pointed to
+ * by element index ? returns TRUE if it is, FALSE otherwise.
+ * 
+ * Note, routine expects index to point to start of the element, _not_ the first attribute.
+ *  */
+static gboolean hasAttribute(GArray *events_array, int element_index, char *attribute_name, char *attribute_value)
+{
+  gboolean result = FALSE ;
+  ZMapXMLWriterEvent event ;
 
+  event = &(g_array_index(events_array, ZMapXMLWriterEventStruct, element_index)) ;
+
+  if (event->type == ZMAPXML_START_ELEMENT_EVENT)
+    {
+      int i ;
+
+      for (i = element_index + 1 ; i < events_array->len ; i++)
+	{
+	  event = &(g_array_index(events_array, ZMapXMLWriterEventStruct, i)) ;
+
+	  zMapDebugPrint(debug_G, "%s\n", zMapXMLWriterEvent2Txt(event)) ;
+
+	  if (event->type == ZMAPXML_ATTRIBUTE_EVENT
+	      && g_ascii_strcasecmp(g_quark_to_string(event->data.name), attribute_name) == 0
+	      && g_ascii_strcasecmp(g_quark_to_string(event->data.comp.value.quark), attribute_value) == 0)
+	    {
+	      result = TRUE ;
+	      break ;
+	    }
+	  else if (event->type == ZMAPXML_END_ELEMENT_EVENT)
+	    {
+	      break ;
+	    }
+	}
+    }
+
+  return result ;
+}
