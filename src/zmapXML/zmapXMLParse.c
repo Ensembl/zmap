@@ -725,8 +725,8 @@ static void start_handler(void *userData,
     }
 #endif  
 
-  if(parser->useXMLBase && currentHasXMLBase &&
-     ((attribute = zMapXMLElementGetAttributeByName(current_ele, ZMAP_XML_BASE_ATTR)) != NULL))
+  if (parser->useXMLBase && currentHasXMLBase
+      && ((attribute = zMapXMLElementGetAttributeByName(current_ele, ZMAP_XML_BASE_ATTR)) != NULL))
     {
       tagHandlerItem item = g_new0(tagHandlerItemStruct, 1);
       item->id      = current_ele->name;
@@ -735,9 +735,14 @@ static void start_handler(void *userData,
       parser->xmlBaseHandlers = g_list_prepend(parser->xmlBaseHandlers, item);      
     }
 
-  if(((handler = parser->startMOHandler) != NULL) || 
-     ((handler = getObjHandler(current_ele, parser->startTagHandlers)) != NULL))
-    (*handler)((void *)parser->user_data, current_ele, parser);
+  if (((handler = parser->startMOHandler) != NULL)
+      || ((handler = getObjHandler(current_ele, parser->startTagHandlers)) != NULL))
+    {
+      /* THE HANDLER FUNCTION IS REQUIRED TO RETURN A GBOOLEAN BUT THE CODE HERE
+       * JUST IGNORES THIS VALUE.....HOW RUBBISH IS THAT..... */
+
+      (*handler)((void *)parser->user_data, current_ele, parser);
+    }
 
   return ;
 }

@@ -98,6 +98,9 @@ G_STMT_START{                                                      \
  * \brief A XML element object
  */
 typedef struct _zmapXMLElementStruct   *ZMapXMLElement;
+
+
+/* DOES THIS NEED TO BE EXPOSED.....?????? */
 typedef struct _zmapXMLElementStruct
 {
   gboolean dirty;               /* internal flag */
@@ -207,9 +210,11 @@ typedef struct _ZMapXMLWriterEventStruct
 } ZMapXMLWriterEventStruct, *ZMapXMLWriterEvent ;
 
 
-/*!
- * \brief XML object handler.
 
+
+
+/* XML object handler.
+ * 
  * If XML is broken into a series of objects, a collection of
  * properties between like elements then it's sensible to get your
  * handler called when an object is created (start handler) and
@@ -217,52 +222,52 @@ typedef struct _ZMapXMLWriterEventStruct
  * within that object.  Of course there may be internal dependencies
  * within the xml document that can't be resolved until the end of the
  * document, but these links maybe resolved in the last end handler.
-
+ *
  * Viewing XML as a collection of objects you may limit the number of
  * handlers that get called. Internally the handlers are still called,
  * it's just that as a user of this package you don't need to handle
  * everything in your handlers.
-
+ *
  */
-typedef gboolean
-(*ZMapXMLMarkupObjectHandler)(void *userData, ZMapXMLElement element, ZMapXMLParser parser);
-
-typedef int
-(*ZMapXMLWriterOutputCallback)(ZMapXMLWriter writer, char *flushed_xml, int flushed_length, gpointer user_data);
 
 
-/*!
- * \brief Small struct to link element names to their handlers
+/* Small struct to link element names to their handlers
  * pass a pointer to an array of these to
- * zMapXMLParser_setMarkupObjectTagHandlers
+ * zMapXMLParser_setMarkupObjectTagHandlers()
  */
+
+/* THIS ROUTINE RETURNS A BOOLEAN BUT IT'S _NOT_ USED BY XML HANDLING CODE AT ALL !!!!!!!!!!!
+ * POINTLESS AND ANNOYING......LOOKS LIKE IT SHOULD SUSPEND PROCESSING.... */
+typedef gboolean (*ZMapXMLMarkupObjectHandler)(void *userData, ZMapXMLElement element, ZMapXMLParser parser) ;
+
 typedef struct ZMapXMLObjTagFunctionsStruct_
 {
-  char *element_name;
-  ZMapXMLMarkupObjectHandler handler;
-} ZMapXMLObjTagFunctionsStruct, *ZMapXMLObjTagFunctions;
+  char *element_name ;
+  ZMapXMLMarkupObjectHandler handler ;
+} ZMapXMLObjTagFunctionsStruct, *ZMapXMLObjTagFunctions ;
+
+
+
+
+
+/* Used in writing xml docs. */
+typedef int (*ZMapXMLWriterOutputCallback)(ZMapXMLWriter writer,
+					   char *flushed_xml, int flushed_length, gpointer user_data) ;
 
 
 /* ATTRIBUTES */
-/*!
- * \brief get an attribute's value
- * \param attribute
- */
 GQuark zMapXMLAttributeGetValue(ZMapXMLAttribute attr);
 
 
 
 /* DOCUMENTS */
-ZMapXMLDocument zMapXMLDocumentCreate(const XML_Char *version,
-                                       const XML_Char *encoding,
-                                       int standalone);
-void zMapXMLDocumentSetRoot(ZMapXMLDocument doc,
-                              ZMapXMLElement root);
-char *zMapXMLDocumentVersion(ZMapXMLDocument doc);
-char *zMapXMLDocumentEncoding(ZMapXMLDocument doc);
-gboolean zMapXMLDocumentIsStandalone(ZMapXMLDocument doc);
-void zMapXMLDocumentReset(ZMapXMLDocument doc);
-void zMapXMLDocumentDestroy(ZMapXMLDocument doc);
+ZMapXMLDocument zMapXMLDocumentCreate(const XML_Char *version, const XML_Char *encoding, int standalone) ;
+void zMapXMLDocumentSetRoot(ZMapXMLDocument doc, ZMapXMLElement root) ;
+char *zMapXMLDocumentVersion(ZMapXMLDocument doc) ;
+char *zMapXMLDocumentEncoding(ZMapXMLDocument doc) ;
+gboolean zMapXMLDocumentIsStandalone(ZMapXMLDocument doc) ;
+void zMapXMLDocumentReset(ZMapXMLDocument doc) ;
+void zMapXMLDocumentDestroy(ZMapXMLDocument doc) ;
 
 
 
@@ -285,6 +290,7 @@ ZMapXMLAttribute zMapXMLElementGetAttributeByName(ZMapXMLElement ele,
 ZMapXMLAttribute zMapXMLElementGetAttributeByName1(ZMapXMLElement ele,
                                                     GQuark name);
 char *zMapXMLElementStealContent(ZMapXMLElement element);
+
 
 
 /* PARSER */
