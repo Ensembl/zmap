@@ -1087,6 +1087,8 @@ gboolean zMapFeatureAddTranscriptStartEnd(ZMapFeature feature,
 					  gboolean end_not_found_flag) ;
 gboolean zMapFeatureAddTranscriptExonIntron(ZMapFeature feature,
 					    ZMapSpanStruct *exon, ZMapSpanStruct *intron) ;
+void zMapFeatureRemoveIntrons(ZMapFeature feature);
+void zMapFeatureTranscriptRecreateIntrons(ZMapFeature feature);
 gboolean zMapFeatureTranscriptNormalise(ZMapFeature feature) ;
 
 gboolean zMapFeatureTranscriptExonForeach(ZMapFeature feature, GFunc function, gpointer user_data) ;
@@ -1380,6 +1382,7 @@ ZMapFeatureContextExecuteStatus zMapFeatureContextTranscriptSortExons(GQuark key
 								      gpointer user_data,
 								      char **error_out) ;
 
+void zMapFeatureTranscriptMergeExon(ZMapFeature feature, ZMapSpan exon_to_merge);
 
 /* ============================================================== for teh === */
 /* functions in zmapFeatureFormatInput.c */

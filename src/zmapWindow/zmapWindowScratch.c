@@ -49,6 +49,8 @@ typedef struct _GetFeaturesetCBDataStruct
 
 typedef struct _ScratchMergeDataStruct
 {
+  ZMapWindow window;
+  ZMapFeatureSet feature_set;
   ZMapFeature orig_feature;
   ZMapFeature new_feature;
 } ScratchMergeDataStruct, *ScratchMergeData;
@@ -169,56 +171,45 @@ static void scratchMergeExonCB(gpointer exon, gpointer user_data)
   ZMapSpan exon_span = (ZMapSpan)exon;
   ScratchMergeData merge_data = (ScratchMergeData)user_data;
 
-  /* Add this exon to the destination feature */
-  zMapFeatureAddTranscriptExonIntron(merge_data->orig_feature, exon_span, NULL);
+  /* If this is the first/last exon in the new feature
+   * and the start/end is not set, set it now */
+  if (merge_data->orig_feature->x1 == 0 && merge_data->orig_feature->x2 == 0)
+    {
+      if (exon_span->x1 == merge_data->new_feature->x1)
+        merge_data->orig_feature->x1 = exon_span->x1;
 
-  /* If this is the first/last exon set the start/end coord */
-  if (exon_span->x1 == merge_data->new_feature->x1)
-    merge_data->orig_feature->x1 = exon_span->x1;
+      if (exon_span->x2 == merge_data->new_feature->x2)
+        merge_data->orig_feature->x2 = exon_span->x2;
+    }
   
-  if (exon_span->x2 == merge_data->new_feature->x2)
-    merge_data->orig_feature->x2 = exon_span->x2;  
-}
-
-
-/*! 
- * \brief Merge a single exon into the scratch column feature
- */
-static void scratchMergeIntronCB(gpointer intron, gpointer user_data)
-{
-  ZMapSpan intron_span = (ZMapSpan)intron;
-  ScratchMergeData merge_data = (ScratchMergeData)user_data;
-
-  /* Add this intron to the destination feature */
-  zMapFeatureAddTranscriptExonIntron(merge_data->orig_feature, NULL, intron_span);
-
-  /* If this is the first/last intron set the start/end coord */
-  if (intron_span->x1 == merge_data->new_feature->x1)
-    merge_data->orig_feature->x1 = intron_span->x1;
-  
-  if (intron_span->x2 == merge_data->new_feature->x2)
-    merge_data->orig_feature->x2 = intron_span->x2;  
+  zMapFeatureTranscriptMergeExon(merge_data->orig_feature, exon_span);
 }
 
 
 /*! 
  * \brief Add/merge a transcript feature to the scratch column
  */
-static void scratchMergeTranscript(ScratchMergeData cb_data)
+static void scratchMergeTranscript(ScratchMergeData merge_data)
 {
-  zMapFeatureTranscriptExonForeach(cb_data->new_feature, scratchMergeExonCB, cb_data);
-  zMapFeatureTranscriptIntronForeach(cb_data->new_feature, scratchMergeIntronCB, cb_data);
+  zMapFeatureRemoveIntrons(merge_data->orig_feature);
+
+  /* Merge in the new exons */
+  zMapFeatureTranscriptExonForeach(merge_data->new_feature, scratchMergeExonCB, merge_data);
+
+  /* Recreate the introns */
+  zMapFeatureTranscriptRecreateIntrons(merge_data->orig_feature);
 }
 
 
 /*! 
  * \brief Add/merge a feature to the scratch column
  */
-static void scratchMergeFeature(ZMapFeatureSet feature_set, 
+static void scratchMergeFeature(ZMapWindow window,
+                                ZMapFeatureSet feature_set, 
                                 ZMapFeature orig_feature, 
                                 ZMapFeature new_feature)
 {
-  ScratchMergeDataStruct cb_data = {orig_feature, new_feature};
+  ScratchMergeDataStruct merge_data = {window, feature_set, orig_feature, new_feature};
 
   switch (new_feature->type)
     {
@@ -229,7 +220,7 @@ static void scratchMergeFeature(ZMapFeatureSet feature_set,
       case ZMAPSTYLE_MODE_ALIGNMENT:
         break;
       case ZMAPSTYLE_MODE_TRANSCRIPT:
-        scratchMergeTranscript(&cb_data);
+        scratchMergeTranscript(&merge_data);
         break;
       case ZMAPSTYLE_MODE_SEQUENCE:
         break;
@@ -266,7 +257,7 @@ void zmapWindowScratchCopyFeature(ZMapWindow window, ZMapFeature new_feature)
   //  zMapFeatureSetAddFeature(feature_set, feature);
       
       if (feature_set && orig_feature)
-        scratchMergeFeature(feature_set, orig_feature, new_feature);
+        scratchMergeFeature(window, feature_set, orig_feature, new_feature);
     }
   else
     {

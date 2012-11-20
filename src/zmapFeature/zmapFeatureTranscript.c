@@ -221,6 +221,64 @@ gboolean zMapFeatureAddTranscriptExonIntron(ZMapFeature feature,
 }
 
 
+/* Removes a single exon and/or intron to an existing transcript feature. */
+void zMapFeatureRemoveIntrons(ZMapFeature feature)
+{
+  if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT && feature->feature.transcript.introns)
+    {
+      g_array_free(feature->feature.transcript.introns, TRUE);
+      feature->feature.transcript.introns = g_array_sized_new(FALSE, TRUE, sizeof(ZMapSpanStruct), 30);
+    }
+}
+
+
+/* Create introns based on exons */
+void zMapFeatureTranscriptRecreateIntrons(ZMapFeature feature)
+{
+  GArray *exons;
+  int multiplier = 1, start = 0, end, i;
+  gboolean forward = TRUE;
+
+  zMapAssert(feature->type == ZMAPSTYLE_MODE_TRANSCRIPT);
+
+  exons = feature->feature.transcript.exons;
+
+  if(exons->len > 1)
+    {
+      ZMapSpan first, last;
+      first = &(g_array_index(exons, ZMapSpanStruct, 0));
+      last  = &(g_array_index(exons, ZMapSpanStruct, exons->len - 1));
+      zMapAssert(first && last);
+
+      if(first->x1 > last->x1)
+        forward = FALSE;
+    }
+
+  if(forward)
+    end = exons->len;
+  else
+    {
+      multiplier = -1;
+      start = (exons->len * multiplier) + 1;
+      end   = 1;
+    }
+
+  for(i = start; i < end - 1; i++)
+    {
+      int index = i * multiplier;
+      ZMapSpan exon1 = &(g_array_index(exons, ZMapSpanStruct, index));
+      ZMapSpan exon2 = &(g_array_index(exons, ZMapSpanStruct, index + multiplier));      
+      
+      ZMapSpan intron = g_malloc0(sizeof *intron);
+      intron->x1 = exon1->x2 + 1;
+      intron->x2 = exon2->x1 - 1;
+      zMapFeatureAddTranscriptExonIntron(feature, NULL, intron);      
+    }
+
+  return ;  
+}
+
+
 /* Checks that transcript has at least one exon, if not then adds an exon to
  * cover entire extent of transcript.
  *
@@ -394,6 +452,77 @@ ZMapFeatureContextExecuteStatus zMapFeatureContextTranscriptSortExons(GQuark key
 }
 
 
+/* Merge the given exon into the given feature */
+void zMapFeatureTranscriptMergeExon(ZMapFeature feature, ZMapSpan exon_to_merge)
+{
+  if (!feature || feature->type != ZMAPSTYLE_MODE_TRANSCRIPT)
+    return;
+
+  /* Loop through existing exons to determine how to do the merge. 
+   * Simple logic at the moment: if the new exon overlaps existing
+   * exon(s) then replace them, otherwise insert a new exon. */
+  gboolean replace = FALSE;
+  gboolean overlaps = FALSE;
+  GArray *array = feature->feature.transcript.exons;
+  GSList *exons_to_replace = NULL;
+  int i = 0;
+  int start = exon_to_merge->x1;
+  int end = exon_to_merge->x2;
+
+  for ( ; i < array->len; ++i)
+    {
+      /* Check if the new exon overlaps the existing one */
+      ZMapSpan compare_exon = &(g_array_index(array, ZMapSpanStruct, i));
+
+      if (exon_to_merge->x2 >= compare_exon->x1 && exon_to_merge->x1 <= compare_exon->x2)
+        {
+          overlaps = TRUE;
+          
+          /* Check if it's different to the existing exon (otherwise we just ignore it) */
+          if (exon_to_merge->x1 != compare_exon->x1 || exon_to_merge->x2 != compare_exon->x2)
+            {
+              replace = TRUE;
+              
+              /* Adjust new start/end to include the existing exon */
+              if (compare_exon->x1 < start)
+                start = compare_exon->x1;
+              
+              if (compare_exon->x2 > end)
+                end = compare_exon->x2;
+              
+              /* Remove the existing exon. Note that we don't 
+               * increment the index because the subsequent array
+               * elements are shuffled down one. */
+              g_array_remove_index(array, i);
+              --i;
+            }
+        }
+    }
+
+  /* Remove existing exons that are being replaced */
+  GSList *item = exons_to_replace;
+  for ( ; item; item = item->next)
+    {
+      int i = GPOINTER_TO_INT(item->data);
+      g_array_remove_index(array, i);
+    }
+
+  /* Create the new exon. Only do this if replacing exons or
+   * if we didn't overlap any exons at all (i.e. inside an intron) */
+  if (replace || !overlaps)
+    {
+      ZMapSpan new_exon = g_malloc0(sizeof *new_exon);
+      new_exon->x1 = start;
+      new_exon->x2 = end;
+      
+      zMapFeatureAddTranscriptExonIntron(feature, new_exon, NULL);
+    
+      g_array_sort(feature->feature.transcript.exons, span_compare);
+  
+      /* If this is the first/last exon set the start/end coord */
+      extendTranscript(feature, new_exon);
+    }
+}
 
 
 
