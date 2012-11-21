@@ -287,10 +287,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   app_context->app_widg = toplevel = zMapGUIToplevelNew(NULL, NULL) ;
 
   gtk_window_set_policy(GTK_WINDOW(toplevel), FALSE, TRUE, FALSE ) ;
-
   gtk_container_border_width(GTK_CONTAINER(toplevel), 0) ;
-
-
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* THIS IS THE OLD REMOTE HANDLER.... */
   /* This ensures that the widget *really* has a X Window id when it
@@ -1067,7 +1064,6 @@ static gboolean getConfiguration(ZMapAppContext app_context)
 	app_context->abbrev_title_prefix = tmp_bool ;
       zMapGUISetAbbrevTitlePrefix(app_context->abbrev_title_prefix) ;
       
-
 
       /* How long to wait when closing, before timeout */
       if (zMapConfigIniContextGetInt(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
