@@ -97,203 +97,204 @@ static void setParametersInStyle(StyleChange my_data, ZMapFeatureTypeStyle style
 
 void zmapWindowShowStyleDialog( ItemMenuCBData menu_data )
 {
-	StyleChange my_data = g_new0(StyleChangeStruct,1);
-	/* theoretically we could have more than one dialog active. How confusing that would be */
-	ZMapFeatureTypeStyle style;
-	char *text;
-	GtkWidget *toplevel, *top_vbox, *vbox, *hbox, *frame, *button, *label;
-	GdkColor colour = {0} ;
-	GdkColor *fill = &colour, *border = &colour;
+  StyleChange my_data = g_new0(StyleChangeStruct,1);
+  /* theoretically we could have more than one dialog active. How confusing that would be */
+  ZMapFeatureTypeStyle style;
+  char *text;
+  GtkWidget *toplevel, *top_vbox, *vbox, *hbox, *frame, *button, *label;
+  GdkColor colour = {0} ;
+  GdkColor *fill = &colour, *border = &colour;
 
-	if(zmapWindowSetStyleFeatureset(menu_data->window, menu_data->item, menu_data->feature))
-		return;
+  if(zmapWindowSetStyleFeatureset(menu_data->window, menu_data->item, menu_data->feature))
+    return;
 
-	my_data->menu_data = menu_data;
-	style = menu_data->feature_set->style;
-	memcpy(& my_data->save, style,sizeof (zmapFeatureTypeStyleStruct));
+  my_data->menu_data = menu_data;
+  style = menu_data->feature_set->style;
+  memcpy(& my_data->save, style,sizeof (zmapFeatureTypeStyleStruct));
 
-	/* when to override a style? (create a child)
-	 * - if it has not been overridden already
-	 * - if it does not have the same name as the featureset
-	 * - if it is a default style
-	 * NOTE for otterlace we do not edit styles that are not default/ spec'd in styles.ini
-	 * for standalone we want to be able to edit the styles file here
-	 * NOTE it's conceivable that we could have a default style and featureset of the same name
-	 * so we may have to patch this in applyCB()
-	 */
-	if(style->is_default || (!style->overridden && style->unique_id != menu_data->feature_set->unique_id))
-		my_data->override = TRUE;
-
-
-      /* set up the top level window */
-      my_data->toplevel = toplevel = gtk_window_new(GTK_WINDOW_TOPLEVEL) ;
-      g_signal_connect(GTK_OBJECT(toplevel), "destroy",
-		       GTK_SIGNAL_FUNC(destroyCB), (gpointer)my_data) ;
-	gtk_window_set_keep_above((GtkWindow *) toplevel,TRUE);
-      gtk_container_set_focus_chain (GTK_CONTAINER(toplevel), NULL);
-
-      gtk_container_border_width(GTK_CONTAINER(toplevel), 5) ;
-	text = "Edit Style" ;
-      gtk_window_set_title(GTK_WINDOW(toplevel), text) ;
-      gtk_window_set_default_size(GTK_WINDOW(toplevel), 500, -1) ;
-
-      /* Add ptr so parent knows about us */
-      menu_data->window->style_window = (gpointer) my_data ;
+  /* when to override a style? (create a child)
+   * - if it has not been overridden already
+   * - if it does not have the same name as the featureset
+   * - if it is a default style
+   * NOTE for otterlace we do not edit styles that are not default/ spec'd in styles.ini
+   * for standalone we want to be able to edit the styles file here
+   * NOTE it's conceivable that we could have a default style and featureset of the same name
+   * so we may have to patch this in applyCB()
+   */
+  if(style->is_default || (!style->overridden && style->unique_id != menu_data->feature_set->unique_id))
+    my_data->override = TRUE;
 
 
-      top_vbox = gtk_vbox_new(FALSE, 0) ;
-      gtk_container_add(GTK_CONTAINER(toplevel), top_vbox) ;
-      gtk_container_set_focus_chain (GTK_CONTAINER(top_vbox), NULL);
+  /* set up the top level window */
+  my_data->toplevel = toplevel = zMapGUIToplevelNew(NULL, "Edit Style") ;
 
-//      menubar = makeMenuBar(my_data) ;
-//      gtk_box_pack_start(GTK_BOX(vbox), menubar, FALSE, FALSE, 0);
+  g_signal_connect(GTK_OBJECT(toplevel), "destroy",
+		   GTK_SIGNAL_FUNC(destroyCB), (gpointer)my_data) ;
+  gtk_window_set_keep_above((GtkWindow *) toplevel,TRUE);
+  gtk_container_set_focus_chain (GTK_CONTAINER(toplevel), NULL);
 
+  gtk_container_border_width(GTK_CONTAINER(toplevel), 5) ;
+  gtk_window_set_default_size(GTK_WINDOW(toplevel), 500, -1) ;
 
-	text = "Featureset " ;
-      frame = gtk_frame_new(text) ;
-      gtk_frame_set_label_align(GTK_FRAME(frame), 0.0, 0.5);
-      gtk_container_border_width(GTK_CONTAINER(frame), 5);
-      gtk_box_pack_start(GTK_BOX(top_vbox), frame, TRUE, TRUE, 0) ;
-
-      hbox = gtk_hbox_new(FALSE, 0) ;
-      gtk_container_set_focus_chain (GTK_CONTAINER(hbox), NULL);
-	gtk_container_add(GTK_CONTAINER(frame), hbox) ;
-
-      my_data->featureset_name = label = gtk_label_new(g_quark_to_string(my_data->menu_data->feature_set->original_id)) ;
-      gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
-      gtk_box_pack_start(GTK_BOX(hbox), label, FALSE, TRUE, 0) ;
+  /* Add ptr so parent knows about us */
+  menu_data->window->style_window = (gpointer) my_data ;
 
 
-      /* Make colour buttons. */
-	zMapStyleGetColours(style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL, &fill, NULL, &border);
+  top_vbox = gtk_vbox_new(FALSE, 0) ;
+  gtk_container_add(GTK_CONTAINER(toplevel), top_vbox) ;
+  gtk_container_set_focus_chain (GTK_CONTAINER(top_vbox), NULL);
+
+  //      menubar = makeMenuBar(my_data) ;
+  //      gtk_box_pack_start(GTK_BOX(vbox), menubar, FALSE, FALSE, 0);
 
 
-      frame = gtk_frame_new("Set Colours:") ;
-      gtk_container_set_border_width(GTK_CONTAINER(frame),
-				     ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
-      gtk_box_pack_start(GTK_BOX(top_vbox), frame, FALSE, FALSE, 0) ;
+  text = "Featureset " ;
+  frame = gtk_frame_new(text) ;
+  gtk_frame_set_label_align(GTK_FRAME(frame), 0.0, 0.5);
+  gtk_container_border_width(GTK_CONTAINER(frame), 5);
+  gtk_box_pack_start(GTK_BOX(top_vbox), frame, TRUE, TRUE, 0) ;
 
-      vbox = gtk_vbox_new(FALSE, 0) ;		/* vbox for rows of colours */
-      gtk_container_add(GTK_CONTAINER(frame), vbox) ;
+  hbox = gtk_hbox_new(FALSE, 0) ;
+  gtk_container_set_focus_chain (GTK_CONTAINER(hbox), NULL);
+  gtk_container_add(GTK_CONTAINER(frame), hbox) ;
 
-	hbox = gtk_hbox_new(FALSE, 0) ;		/* hbox for fill / border */
-      gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0) ;
-      gtk_box_set_spacing(GTK_BOX(hbox), ZMAP_WINDOW_GTK_BUTTON_BOX_SPACING) ;
-      gtk_container_set_border_width(GTK_CONTAINER(hbox), ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
-
-      label = gtk_label_new("Fill:") ;
-      gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
-      gtk_box_pack_start(GTK_BOX(hbox), label, FALSE, TRUE, 0) ;
-
-      my_data->fill_widget = button = gtk_color_button_new() ;
-      gtk_color_button_set_color(GTK_COLOR_BUTTON(button), fill) ;
-      g_signal_connect(G_OBJECT(button), "color-set",
-		       G_CALLBACK(colourSetCB), my_data) ;
-      gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
-
-      label = gtk_label_new("Border:") ;
-      gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
-      gtk_box_pack_start(GTK_BOX(hbox), label, FALSE, TRUE, 0) ;
-
-      my_data->border_widget = button = gtk_color_button_new() ;
-      gtk_color_button_set_color(GTK_COLOR_BUTTON(button), border) ;
-      g_signal_connect(G_OBJECT(button), "color-set",
-		       G_CALLBACK(colourSetCB), my_data) ;
-      gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
-
-	if(style->mode == ZMAPSTYLE_MODE_TRANSCRIPT)	/* add CDS colours */
-	{
-		zMapStyleGetColours(style, STYLE_PROP_TRANSCRIPT_CDS_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL, &fill, NULL, &border);
-	}
-
-	/* must create these anyway */
-	{
-		my_data->cds = hbox = gtk_hbox_new(FALSE, 0) ;		/* hbox for fill / border */
-		gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0) ;
-		gtk_box_set_spacing(GTK_BOX(hbox), ZMAP_WINDOW_GTK_BUTTON_BOX_SPACING) ;
-		gtk_container_set_border_width(GTK_CONTAINER(hbox), ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
-
-		label = gtk_label_new("CDS\nFill:") ;
-		gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
-		gtk_box_pack_start(GTK_BOX(hbox), label, FALSE, TRUE, 0) ;
-
-		my_data->cds_fill_widget = button = gtk_color_button_new() ;
-		gtk_color_button_set_color(GTK_COLOR_BUTTON(button), fill) ;
-		g_signal_connect(G_OBJECT(button), "color-set",
-				G_CALLBACK(colourSetCB), my_data) ;
-		gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
-
-		label = gtk_label_new("CDS\nBorder:") ;
-		gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
-		gtk_box_pack_start(GTK_BOX(hbox), label, FALSE, TRUE, 0) ;
-
-		my_data->cds_border_widget = button = gtk_color_button_new() ;
-		gtk_color_button_set_color(GTK_COLOR_BUTTON(button), border) ;
-		g_signal_connect(G_OBJECT(button), "color-set",
-				G_CALLBACK(colourSetCB), my_data) ;
-		gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
-	}
-
-	if(style->mode == ZMAPSTYLE_MODE_TRANSCRIPT)	/* add CDS colours */
-	{
-		gtk_widget_hide_all(my_data->cds);
-	}
+  my_data->featureset_name = label = gtk_label_new(g_quark_to_string(my_data->menu_data->feature_set->original_id)) ;
+  gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
+  gtk_box_pack_start(GTK_BOX(hbox), label, FALSE, TRUE, 0) ;
 
 
-	/* some major parameters */
-      frame = gtk_frame_new("Layout:") ;
-      gtk_container_set_border_width(GTK_CONTAINER(frame),
-				     ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
-      gtk_box_pack_start(GTK_BOX(top_vbox), frame, FALSE, FALSE, 0) ;
+  /* Make colour buttons. */
+  zMapStyleGetColours(style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL, &fill, NULL, &border);
 
-      vbox = gtk_vbox_new(FALSE, 0) ;		/* vbox for rows of colours */
-      gtk_container_add(GTK_CONTAINER(frame), vbox) ;
 
-	my_data->stranded = button = gtk_check_button_new_with_label("Stranded");
-      gtk_box_pack_start(GTK_BOX(vbox), button, FALSE, FALSE, 0);
-// if anything should be toggled
-//      g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(strandedCB), my_data);
+  frame = gtk_frame_new("Set Colours:") ;
+  gtk_container_set_border_width(GTK_CONTAINER(frame),
+				 ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
+  gtk_box_pack_start(GTK_BOX(top_vbox), frame, FALSE, FALSE, 0) ;
+
+  vbox = gtk_vbox_new(FALSE, 0) ;		/* vbox for rows of colours */
+  gtk_container_add(GTK_CONTAINER(frame), vbox) ;
+
+  hbox = gtk_hbox_new(FALSE, 0) ;		/* hbox for fill / border */
+  gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0) ;
+  gtk_box_set_spacing(GTK_BOX(hbox), ZMAP_WINDOW_GTK_BUTTON_BOX_SPACING) ;
+  gtk_container_set_border_width(GTK_CONTAINER(hbox), ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
+
+  label = gtk_label_new("Fill:") ;
+  gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
+  gtk_box_pack_start(GTK_BOX(hbox), label, FALSE, TRUE, 0) ;
+
+  my_data->fill_widget = button = gtk_color_button_new() ;
+  gtk_color_button_set_color(GTK_COLOR_BUTTON(button), fill) ;
+  g_signal_connect(G_OBJECT(button), "color-set",
+		   G_CALLBACK(colourSetCB), my_data) ;
+  gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
+
+  label = gtk_label_new("Border:") ;
+  gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
+  gtk_box_pack_start(GTK_BOX(hbox), label, FALSE, TRUE, 0) ;
+
+  my_data->border_widget = button = gtk_color_button_new() ;
+  gtk_color_button_set_color(GTK_COLOR_BUTTON(button), border) ;
+  g_signal_connect(G_OBJECT(button), "color-set",
+		   G_CALLBACK(colourSetCB), my_data) ;
+  gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
+
+  if(style->mode == ZMAPSTYLE_MODE_TRANSCRIPT)	/* add CDS colours */
+    {
+      zMapStyleGetColours(style, STYLE_PROP_TRANSCRIPT_CDS_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL, &fill, NULL, &border);
+    }
+
+  /* must create these anyway */
+  {
+    my_data->cds = hbox = gtk_hbox_new(FALSE, 0) ;		/* hbox for fill / border */
+    gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0) ;
+    gtk_box_set_spacing(GTK_BOX(hbox), ZMAP_WINDOW_GTK_BUTTON_BOX_SPACING) ;
+    gtk_container_set_border_width(GTK_CONTAINER(hbox), ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
+
+    label = gtk_label_new("CDS\nFill:") ;
+    gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
+    gtk_box_pack_start(GTK_BOX(hbox), label, FALSE, TRUE, 0) ;
+
+    my_data->cds_fill_widget = button = gtk_color_button_new() ;
+    gtk_color_button_set_color(GTK_COLOR_BUTTON(button), fill) ;
+    g_signal_connect(G_OBJECT(button), "color-set",
+		     G_CALLBACK(colourSetCB), my_data) ;
+    gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
+
+    label = gtk_label_new("CDS\nBorder:") ;
+    gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
+    gtk_box_pack_start(GTK_BOX(hbox), label, FALSE, TRUE, 0) ;
+
+    my_data->cds_border_widget = button = gtk_color_button_new() ;
+    gtk_color_button_set_color(GTK_COLOR_BUTTON(button), border) ;
+    g_signal_connect(G_OBJECT(button), "color-set",
+		     G_CALLBACK(colourSetCB), my_data) ;
+    gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0) ;
+  }
+
+  if(style->mode == ZMAPSTYLE_MODE_TRANSCRIPT)	/* add CDS colours */
+    {
+      gtk_widget_hide_all(my_data->cds);
+    }
+
+
+  /* some major parameters */
+  frame = gtk_frame_new("Layout:") ;
+  gtk_container_set_border_width(GTK_CONTAINER(frame),
+				 ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
+  gtk_box_pack_start(GTK_BOX(top_vbox), frame, FALSE, FALSE, 0) ;
+
+  vbox = gtk_vbox_new(FALSE, 0) ;		/* vbox for rows of colours */
+  gtk_container_add(GTK_CONTAINER(frame), vbox) ;
+
+  my_data->stranded = button = gtk_check_button_new_with_label("Stranded");
+  gtk_box_pack_start(GTK_BOX(vbox), button, FALSE, FALSE, 0);
+  // if anything should be toggled
+  //      g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(strandedCB), my_data);
 
 #if 0
-	/* if alignment... */
-	button = gtk_check_button_new_with_label("Always Gapped");
-      gtk_box_pack_start(GTK_BOX(vbox), button, FALSE, FALSE, 0);
-      g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(strandedCB), my_data);
+  /* if alignment... */
+  button = gtk_check_button_new_with_label("Always Gapped");
+  gtk_box_pack_start(GTK_BOX(vbox), button, FALSE, FALSE, 0);
+  g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(strandedCB), my_data);
 #endif
 
-      /* Make control buttons along bottom of dialog. */
-      frame = gtk_frame_new(NULL) ;
-      gtk_container_set_border_width(GTK_CONTAINER(frame),
-				     ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
-      gtk_box_pack_start(GTK_BOX(top_vbox), frame, FALSE, FALSE, 0) ;
+  /* Make control buttons along bottom of dialog. */
+  frame = gtk_frame_new(NULL) ;
+  gtk_container_set_border_width(GTK_CONTAINER(frame),
+				 ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
+  gtk_box_pack_start(GTK_BOX(top_vbox), frame, FALSE, FALSE, 0) ;
 
 
-      hbox = gtk_hbutton_box_new();
-      gtk_container_add(GTK_CONTAINER(frame), hbox);
-      gtk_box_set_spacing(GTK_BOX(hbox), ZMAP_WINDOW_GTK_BUTTON_BOX_SPACING);
-      gtk_container_set_border_width(GTK_CONTAINER (hbox), ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
+  hbox = gtk_hbutton_box_new();
+  gtk_container_add(GTK_CONTAINER(frame), hbox);
+  gtk_box_set_spacing(GTK_BOX(hbox), ZMAP_WINDOW_GTK_BUTTON_BOX_SPACING);
+  gtk_container_set_border_width(GTK_CONTAINER (hbox), ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
 
-      button = gtk_button_new_from_stock(GTK_STOCK_CLOSE);
-      gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0);
-      g_signal_connect(G_OBJECT(button), "clicked",
-		       G_CALLBACK(closeCB), my_data);
+  button = gtk_button_new_from_stock(GTK_STOCK_CLOSE);
+  gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0);
+  g_signal_connect(G_OBJECT(button), "clicked",
+		   G_CALLBACK(closeCB), my_data);
 
-      button = gtk_button_new_from_stock(GTK_STOCK_CANCEL);
-      gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0);
-      g_signal_connect(G_OBJECT(button), "clicked",
-		       G_CALLBACK(cancelCB), my_data);
+  button = gtk_button_new_from_stock(GTK_STOCK_CANCEL);
+  gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0);
+  g_signal_connect(G_OBJECT(button), "clicked",
+		   G_CALLBACK(cancelCB), my_data);
 
-      button = gtk_button_new_from_stock(GTK_STOCK_APPLY);
-      gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0);
-      g_signal_connect(G_OBJECT(button), "clicked",
-		       G_CALLBACK(applyCB), my_data);
+  button = gtk_button_new_from_stock(GTK_STOCK_APPLY);
+  gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0);
+  g_signal_connect(G_OBJECT(button), "clicked",
+		   G_CALLBACK(applyCB), my_data);
 
-      GTK_WIDGET_SET_FLAGS(button, GTK_CAN_DEFAULT) ; /* set apply button as default. */
-      gtk_window_set_default(GTK_WINDOW(toplevel), button) ;
+  GTK_WIDGET_SET_FLAGS(button, GTK_CAN_DEFAULT) ; /* set apply button as default. */
+  gtk_window_set_default(GTK_WINDOW(toplevel), button) ;
 
-      gtk_widget_show_all(toplevel) ;
+  gtk_widget_show_all(toplevel) ;
 
-	zmapWindowSetStyleFeatureset(menu_data->window, menu_data->item, menu_data->feature);
+  zmapWindowSetStyleFeatureset(menu_data->window, menu_data->item, menu_data->feature);
+
+  return ;
 }
 
 

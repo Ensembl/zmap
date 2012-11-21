@@ -122,6 +122,13 @@ static gboolean aboutLinkNewCB(GtkAboutDialog *label, gchar *uri, gpointer user_
 static char *help_URL_base_G = NULL ;
 
 
+/* If TRUE then window title prefix is abbreviated. */
+static gboolean abbreviated_title_prefix_G = FALSE ;
+
+
+
+
+
 
 /*! @defgroup zmapguiutils   zMapGUI: set of utility functions for use in a GUI.
  * @{
@@ -221,31 +228,52 @@ gint my_gtk_run_dialog_nonmodal(GtkWidget *toplevel)
 
 
 
-/*!
- * Returns a title string in standard form to be used for the window manager title
+/* Sets/gets abbreviated style for window title prefix, if TRUE then 
+ * instead of"ZMap (version)" just "Z" is displayed, if FALSE
+ * then full prefix is restored. */
+void zMapGUISetAbbrevTitlePrefix(gboolean abbrev_prefix)
+{
+  abbreviated_title_prefix_G = abbrev_prefix ;
+
+  return ;
+}
+
+gboolean zMapGUIGetAbbrevTitlePrefix(void)
+{
+  return abbreviated_title_prefix_G ;
+}
+
+
+
+
+
+/* Returns a title string in standard form to be used for the window manager title
  * bar in zmap windows.
  *
  * Currently the format is:
  *
  *             "ZMap (version) <window_type> - <text>"
  *
- * Either the window_type or the text can be NULL but not both.
+ * Both window_type and text can be NULL.
  *
  * The returned string should be free'd by the caller using g_free() when no longer required.
+ * 
+ * If abbreviated style has been set then prefix is just "Z",
+ * see zMapGUISetAbbrevTitlePrefix(). 
  *
- *
- * @param window_type  The sort of window it is, e.g. "feature editor"
- * @param message      Very short text, e.g. "Please Reply" or a feature name or....
- * @return             the title string.
+ * window_type  The sort of window it is, e.g. "feature editor"
+ * message      Very short text, e.g. "Please Reply" or a feature name or....
+ * returns      the title string.
  *  */
 char *zMapGUIMakeTitleString(char *window_type, char *message)
 {
   char *title = NULL ;
 
-  zMapAssert(!(window_type == NULL && message == NULL)) ;
-
-  title = g_strdup_printf("ZMap (%s)%s%s%s%s",
-			  zMapGetAppVersionString(),
+  title = g_strdup_printf("%s%s%s%s%s%s%s%s",
+			  (abbreviated_title_prefix_G ? "Z" : "ZMap"),
+			  (abbreviated_title_prefix_G ? "" : " ("),
+			  (abbreviated_title_prefix_G ? "" : zMapGetAppVersionString()),
+			  (abbreviated_title_prefix_G ? "" : ")"),
 			  (window_type ? " " : ""),
 			  (window_type ? window_type : ""),
 			  (message ? " - " : ""),
@@ -254,28 +282,39 @@ char *zMapGUIMakeTitleString(char *window_type, char *message)
   return title ;
 }
 
-/*!
- * Trivial cover function for creating a new toplevel window complete
+/* Trivial cover function for setting toplevel title
+ * as per zMapGUIMakeTitleString above.
+ *
+ * window_type  The sort of window it is, e.g. "feature editor"
+ * message      Very short text, e.g. "Please Reply" or a feature name or....
+ * returns      nothing.
+ */
+void zMapGUISetToplevelTitle(GtkWidget *toplevel, char *zmap_win_type, char *zmap_win_text)
+{
+  char *title ;
+
+  title = zMapGUIMakeTitleString(zmap_win_type, zmap_win_text) ;
+  gtk_window_set_title(GTK_WINDOW(toplevel), title) ;
+  g_free(title) ;
+
+  return ;
+}
+
+/* Trivial cover function for creating a new toplevel window complete
  * with the title set as per zMapGUIMakeTitleString above.
  *
- * @param window_type  The sort of window it is, e.g. "feature editor"
- * @param message      Very short text, e.g. "Please Reply" or a feature name or....
- * @return             the toplevel widget.
+ * window_type  The sort of window it is, e.g. "feature editor"
+ * message      Very short text, e.g. "Please Reply" or a feature name or....
+ * returns      the toplevel widget.
  */
 GtkWidget *zMapGUIToplevelNew(char *zmap_win_type, char *zmap_win_text)
 {
-  GtkWidget *toplevel = NULL;
-  char *title = NULL;
+  GtkWidget *toplevel = NULL ;
 
-  toplevel = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+  toplevel = gtk_window_new(GTK_WINDOW_TOPLEVEL) ;
+  zMapGUISetToplevelTitle(toplevel, zmap_win_type, zmap_win_text) ;
 
-  if((title = zMapGUIMakeTitleString(zmap_win_type, zmap_win_text)))
-    {
-      gtk_window_set_title(GTK_WINDOW(toplevel), title);
-      g_free(title);
-    }
-
-  return toplevel;
+  return toplevel ;
 }
 
 /*! zMapGUIPopOutWidget
@@ -297,8 +336,8 @@ GtkWidget *zMapGUIPopOutWidget(GtkWidget *popout, char *title)
   curr_parent = gtk_widget_get_parent(popout);
   curr_toplevel = zMapGUIFindTopLevel(popout);
 
-  if((curr_toplevel != curr_parent) &&
-     (new_toplevel = zMapGUIToplevelNew(title, "close to return to original position")))
+  if ((curr_toplevel != curr_parent)
+      && (new_toplevel = zMapGUIToplevelNew(title, "close to return to original position")))
     {
       PopOutData popout_data;
 
@@ -357,14 +396,15 @@ void zMapGUIShowAbout(void)
 			    "program-name", zMapGetAppName(),
 			    "version", zMapGetAppVersionString(),
 			    "website", zMapGetWebSiteString(),
+			    "title", zMapGUIMakeTitleString(NULL, "About the program"),
 			    NULL) ;
     }
 #if MAC_VERSION_HAS_BUG
   else
     {
-	GtkAboutDialog *about_dialog ;
+      GtkAboutDialog *about_dialog ;
 
-	about_dialog = (GtkAboutDialog *)gtk_about_dialog_new() ;
+      about_dialog = (GtkAboutDialog *)gtk_about_dialog_new() ;
 
       gtk_about_dialog_set_program_name(about_dialog, zMapGetAppName()) ;
       gtk_about_dialog_set_version(about_dialog, zMapGetAppVersionString()) ;
@@ -377,6 +417,8 @@ void zMapGUIShowAbout(void)
       g_signal_connect(GTK_OBJECT(about_dialog), "activate-link",
 		       GTK_SIGNAL_FUNC(aboutLinkNewCB),
 		       NULL) ;
+
+      zMapGUISetToplevelTitle((GtkWidget)about_dialog, NULL, "About the program") ;
 
       gtk_widget_show_all(GTK_WIDGET(about_dialog)) ;
     }
@@ -449,9 +491,10 @@ void zMapGUIShowHelp(ZMapHelpType help_contents)
 	break;
 
     default:
-	zMapWarning("menu choice (%d) temporarily unavailable",help_contents);
-	/* this used to assert: why crash? */
-	/* NOTE gcc flags up switches with enums not handled, so doubly useless */
+      zMapWarning("menu choice (%d) temporarily unavailable",help_contents);
+      /* this used to assert: why crash? */
+      /* NOTE gcc flags up switches with enums not handled, so doubly useless */
+      break ;
 
     }
 
@@ -670,6 +713,7 @@ GtkWidget *zMapGUIShowTextFull(char *title, char *text, gboolean edittable, GLis
 			       GtkTextBuffer **buffer_out)
 {
   enum {TEXT_X_BORDERS = 32, TEXT_Y_BORDERS = 50} ;
+  char *full_title ;
   GtkWidget *dialog, *scrwin, *view ;
   GtkTextBuffer *buffer ;
   GList *fixed_font_list = NULL ;
@@ -683,10 +727,12 @@ GtkWidget *zMapGUIShowTextFull(char *title, char *text, gboolean edittable, GLis
 
   zMapAssert(title && *title && text && *text) ;
 
-
-  dialog = gtk_dialog_new_with_buttons(title, NULL, flags,
+  full_title = zMapGUIMakeTitleString(NULL, title) ;
+  dialog = gtk_dialog_new_with_buttons(full_title, NULL, flags,
 				       "Close", GTK_RESPONSE_NONE,
 				       NULL) ;
+  g_free(full_title) ;
+
   gtk_container_set_border_width(GTK_CONTAINER(dialog), 5) ;
 
   /* Ensure that the dialog box is destroyed when the user responds. */
@@ -768,9 +814,10 @@ GtkWidget *zMapGUIShowTextFull(char *title, char *text, gboolean edittable, GLis
 /* Returns path of file chosen by user which can be used directly to open the file,
  * it is the callers responsibility to free the filepath using g_free().
  * Caller can optionally specify a default directory. */
-char *zmapGUIFileChooserFull(GtkWidget *toplevel,  char *title, char *directory_in, char *file_suffix,
+char *zmapGUIFileChooserFull(GtkWidget *toplevel, char *title, char *directory_in, char *file_suffix,
 			     ZMapFileChooserContentAreaCB content_func, gpointer content_data)
 {
+  char *full_title ;
   char *file_path = NULL ;
   GtkWidget *dialog ;
 
@@ -779,13 +826,17 @@ char *zmapGUIFileChooserFull(GtkWidget *toplevel,  char *title, char *directory_
   if (!title)
     title = "Please give a file name:" ;
 
+  full_title = zMapGUIMakeTitleString(title, NULL) ;
+
   /* Set up the dialog. */
-  dialog = gtk_file_chooser_dialog_new(title,
+  dialog = gtk_file_chooser_dialog_new(full_title,
 				       GTK_WINDOW(toplevel),
 				       GTK_FILE_CHOOSER_ACTION_SAVE,
 				       GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
 				       GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
 				       NULL) ;
+
+  g_free(full_title) ;
 
   gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(dialog), TRUE) ;
 
@@ -1336,7 +1387,7 @@ static GtkResponseType messageFull(GtkWindow *parent, char *title_in, char *msg,
   GtkResponseType result = GTK_RESPONSE_CANCEL ;
   GtkWidget *dialog, *button, *label ;
   GtkWidget *entry = NULL ;
-  char *title = NULL ;
+  char *title = NULL, *full_title ;
   GtkDialogFlags flags = GTK_DIALOG_DESTROY_WITH_PARENT ;
   guint timeout_func_id ;
   int interval = display_timeout * 1000 ;		    /* glib needs time in milliseconds. */
@@ -1358,23 +1409,24 @@ static GtkResponseType messageFull(GtkWindow *parent, char *title_in, char *msg,
       switch(msg_type)
 	{
 	case ZMAP_MSG_INFORMATION:
-	  title = "ZMAP - Information" ;
+	  title = "Information" ;
 	  break ;
 	case ZMAP_MSG_WARNING:
-	  title = "ZMAP - Warning !" ;
+	  title = "Warning !" ;
 	  break;
 	case ZMAP_MSG_CRITICAL:
-	  title = "ZMAP - CRITICAL !" ;
+	  title = "CRITICAL !" ;
 	  break;
 	case ZMAP_MSG_EXIT:
-	  title = "ZMAP - EXIT !" ;
+	  title = "EXIT !" ;
 	  break;
 	case ZMAP_MSG_CRASH:
-	  title = "ZMAP - CRASH !" ;
+	  title = "CRASH !" ;
 	  break;
 	}
     }
 
+  full_title = zMapGUIMakeTitleString(NULL, title) ;
 
   /* Set up the dialog, if user data is required we need all the buttons, otherwise
    * there will be a "close" or perhaps no buttons for messages that time out. */
@@ -1382,19 +1434,23 @@ static GtkResponseType messageFull(GtkWindow *parent, char *title_in, char *msg,
     flags |= GTK_DIALOG_MODAL ;
 
   if (user_data)
-    dialog = gtk_dialog_new_with_buttons(title, parent, flags,
+    dialog = gtk_dialog_new_with_buttons(full_title, parent, flags,
 					 GTK_STOCK_OK,
 					 GTK_RESPONSE_OK,
 					 GTK_STOCK_CANCEL,
 					 GTK_RESPONSE_CANCEL,
 					 NULL) ;
   else if (close_button)
-    dialog = gtk_dialog_new_with_buttons(title, parent, flags,
+    dialog = gtk_dialog_new_with_buttons(full_title, parent, flags,
 					 "Close", GTK_RESPONSE_NONE,
 					 NULL) ;
   else
-    dialog = gtk_dialog_new_with_buttons(title, parent, flags,
+    dialog = gtk_dialog_new_with_buttons(full_title, parent, flags,
 					 NULL) ;
+
+  g_free(full_title) ;
+
+
   gtk_container_set_border_width(GTK_CONTAINER(dialog), 5) ;
 
 

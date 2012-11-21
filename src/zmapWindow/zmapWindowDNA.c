@@ -224,18 +224,18 @@ void zmapWindowCreateSequenceSearchWindow(ZMapWindow window, FooCanvasItem *feat
 
 
       /* set up the top level window */
-      search_data->toplevel = toplevel = gtk_window_new(GTK_WINDOW_TOPLEVEL) ;
+      if (sequence_type == ZMAPSEQUENCE_DNA)
+	text = "DNA Search" ;
+      else
+	text = "Peptide Search" ;
+      search_data->toplevel = toplevel = zMapGUIToplevelNew(NULL, text) ;
+
       g_signal_connect(GTK_OBJECT(toplevel), "destroy",
 		       GTK_SIGNAL_FUNC(destroyCB), (gpointer)search_data) ;
 
       gtk_container_set_focus_chain (GTK_CONTAINER(toplevel), NULL);
 
       gtk_container_border_width(GTK_CONTAINER(toplevel), 5) ;
-      if (sequence_type == ZMAPSEQUENCE_DNA)
-	text = "DNA Search" ;
-      else
-	text = "Peptide Search" ;
-      gtk_window_set_title(GTK_WINDOW(toplevel), text) ;
       gtk_window_set_default_size(GTK_WINDOW(toplevel), 500, -1) ;
 
 

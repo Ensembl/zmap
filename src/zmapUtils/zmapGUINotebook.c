@@ -616,9 +616,9 @@ GtkWidget *zMapGUINotebookCreateDialog(ZMapGuiNotebook notebook_spec, char *help
   /*
    * Make dialog
    */
-  make_notebook->toplevel = dialog = gtk_window_new(GTK_WINDOW_TOPLEVEL) ;
+  make_notebook->toplevel = dialog = zMapGUIToplevelNew(NULL, (char *)g_quark_to_string(notebook_spec->name)) ;
+
   g_object_set_data(G_OBJECT(dialog), GUI_NOTEBOOK_SETDATA, make_notebook) ;
-  gtk_window_set_title(GTK_WINDOW(dialog), g_quark_to_string(notebook_spec->name)) ;
   gtk_container_set_border_width(GTK_CONTAINER (dialog), 10);
   g_signal_connect(G_OBJECT(dialog), "destroy", G_CALLBACK(destroyCB), make_notebook) ;
 
