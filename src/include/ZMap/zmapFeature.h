@@ -1382,7 +1382,8 @@ ZMapFeatureContextExecuteStatus zMapFeatureContextTranscriptSortExons(GQuark key
 								      gpointer user_data,
 								      char **error_out) ;
 
-void zMapFeatureTranscriptMergeExon(ZMapFeature feature, ZMapSpan exon_to_merge);
+void zMapFeatureTranscriptMergeExon(ZMapFeature feature, Coord x1, Coord x2);
+void zMapFeatureTranscriptMergeBase(ZMapFeature transcript, const int x);
 
 /* ============================================================== for teh === */
 /* functions in zmapFeatureFormatInput.c */

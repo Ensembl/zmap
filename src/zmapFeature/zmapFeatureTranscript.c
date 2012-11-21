@@ -452,10 +452,16 @@ ZMapFeatureContextExecuteStatus zMapFeatureContextTranscriptSortExons(GQuark key
 }
 
 
-/* Merge the given exon into the given feature */
-void zMapFeatureTranscriptMergeExon(ZMapFeature feature, ZMapSpan exon_to_merge)
+/*!
+ * \brief Merge a new exon into the given transcript.
+ *
+ * The given coords represent the start/end of the new exon to be
+ * created. If these coords overlap existing exon(s) then the existing
+ * exon(s) will be extended rather than a new exon being created.
+ */
+void zMapFeatureTranscriptMergeExon(ZMapFeature transcript, Coord x1, Coord x2)
 {
-  if (!feature || feature->type != ZMAPSTYLE_MODE_TRANSCRIPT)
+  if (!transcript || transcript->type != ZMAPSTYLE_MODE_TRANSCRIPT)
     return;
 
   /* Loop through existing exons to determine how to do the merge. 
@@ -463,23 +469,23 @@ void zMapFeatureTranscriptMergeExon(ZMapFeature feature, ZMapSpan exon_to_merge)
    * exon(s) then replace them, otherwise insert a new exon. */
   gboolean replace = FALSE;
   gboolean overlaps = FALSE;
-  GArray *array = feature->feature.transcript.exons;
+  GArray *array = transcript->feature.transcript.exons;
   GSList *exons_to_replace = NULL;
   int i = 0;
-  int start = exon_to_merge->x1;
-  int end = exon_to_merge->x2;
+  int start = x1;
+  int end = x2;
 
   for ( ; i < array->len; ++i)
     {
       /* Check if the new exon overlaps the existing one */
       ZMapSpan compare_exon = &(g_array_index(array, ZMapSpanStruct, i));
 
-      if (exon_to_merge->x2 >= compare_exon->x1 && exon_to_merge->x1 <= compare_exon->x2)
+      if (x2 >= compare_exon->x1 && x1 <= compare_exon->x2)
         {
           overlaps = TRUE;
           
           /* Check if it's different to the existing exon (otherwise we just ignore it) */
-          if (exon_to_merge->x1 != compare_exon->x1 || exon_to_merge->x2 != compare_exon->x2)
+          if (x1 != compare_exon->x1 || x2 != compare_exon->x2)
             {
               replace = TRUE;
               
@@ -515,12 +521,59 @@ void zMapFeatureTranscriptMergeExon(ZMapFeature feature, ZMapSpan exon_to_merge)
       new_exon->x1 = start;
       new_exon->x2 = end;
       
-      zMapFeatureAddTranscriptExonIntron(feature, new_exon, NULL);
+      zMapFeatureAddTranscriptExonIntron(transcript, new_exon, NULL);
     
-      g_array_sort(feature->feature.transcript.exons, span_compare);
+      g_array_sort(transcript->feature.transcript.exons, span_compare);
   
       /* If this is the first/last exon set the start/end coord */
-      extendTranscript(feature, new_exon);
+      extendTranscript(transcript, new_exon);
+    }
+}
+
+
+/*!
+ * \brief Merge a single base into the given transcript.
+ */
+void zMapFeatureTranscriptMergeBase(ZMapFeature transcript, const int x)
+{
+  if (!transcript || transcript->type != ZMAPSTYLE_MODE_TRANSCRIPT)
+    return;
+
+  GArray *array = transcript->feature.transcript.exons;
+
+  /* For now just extend the start/end if it lies outside the 
+   * current feature extent, or trim the first/last exon if it
+   * lies inside either of those */
+  ZMapSpan first_exon = &(g_array_index(array, ZMapSpanStruct, 0));
+  ZMapSpan last_exon = &(g_array_index(array, ZMapSpanStruct, array->len - 1));
+  
+  if (x < first_exon->x1)
+    {
+      /* extend first exon */
+      first_exon->x1 = x;
+      transcript->x1 = x;
+    }
+  else if (x > last_exon->x2)
+    {
+      /* extend last exon */
+      last_exon->x2 = x;
+      transcript->x2 = x;
+    }
+  else if (x > first_exon->x1 && x < first_exon->x2)
+    {
+      /* trim first exon */
+      first_exon->x1 = x;
+      transcript->x1 = x;
+    }
+  else if (x > last_exon->x1 && x < last_exon->x2)
+    {
+      /* trim last exon */
+      last_exon->x2 = x;
+      transcript->x2 = x;
+    }
+  else
+    {
+      zMapCritical("%s", "Could not merge feature\n");
     }
 }
 

@@ -748,8 +748,7 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
       zmapWindowMarkSetItem(menu_data->window->mark, menu_data->item) ;
 
     case ITEM_MENU_COPY_TO_SCRATCH:
-      zmapWindowScratchCopyFeature(menu_data->window, menu_data->feature);
-
+      zmapWindowScratchCopyFeature(menu_data->window, menu_data->feature, menu_data->item, (int)menu_data->y);
       break ;
     case ITEM_MENU_SEARCH:
       zmapWindowCreateSearchWindow(menu_data->window,
