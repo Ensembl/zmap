@@ -532,12 +532,20 @@ gboolean zMapRemoteControlSendRequest(ZMapRemoteControl remote_control, char *re
       REMOTELOGMSG(remote_control, "Taking ownership of peer clipboard \"%s\" to make request: %s",
 		   send->their_atom_string, request) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       if ((result = gtk_clipboard_set_with_data(send->their_clipboard,
 						clipboard_target_G,
 						TARGET_NUM,
 						sendClipboardSendRequestCB,
 						sendClipboardClearCB,
-						remote_control)))
+						remote_control))) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+      if ((result = clipboardTakeOwnership(remote_control,
+					   send->their_clipboard,
+					   sendClipboardSendRequestCB,
+					   sendClipboardClearCB,
+					   remote_control)))
 	{
 	  REMOTELOGMSG(remote_control,
 		       "Have ownership of peer clipboard \"%s\", waiting for peer to ask for our request.",
@@ -1457,12 +1465,20 @@ static void receiveAppCB(void *remote_data, gboolean abort, char *reply)
 
 	  receive->our_reply = reply ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  if (gtk_clipboard_set_with_data(receive->our_clipboard,
 					  clipboard_target_G,
 					  TARGET_NUM,
 					  receiveClipboardGetReplyCB,
 					  receiveClipboardClearWaitAfterReplyCB,
-					  remote_control))
+					  remote_control)) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+	  if (clipboardTakeOwnership(remote_control,
+				     receive->our_clipboard,
+				     receiveClipboardGetReplyCB,
+				     receiveClipboardClearWaitAfterReplyCB,
+				     remote_control))
 	    {
 	      REMOTELOGMSG(remote_control,
 			   "Have ownership of peer clipboard \"%s\", waiting for peer to ask for our reply.",
@@ -2058,8 +2074,6 @@ gboolean isInSendState(RemoteControlState state)
 }
 
 
-/* Get rid of this.....??? */
-/* NOT USEFUL....JUST PUT THE CLIPBOARD CALLS INSTEAD.... */
 /* Take ownership of a clipboard ready to receive commands. */
 static gboolean clipboardTakeOwnership(ZMapRemoteControl remote_control, GtkClipboard *clipboard,
 				       GtkClipboardGetFunc get_func, GtkClipboardClearFunc clear_func,
