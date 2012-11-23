@@ -212,6 +212,9 @@ static void scratchMergeTranscript(ScratchMergeData merge_data)
   /* Merge in the new exons */
   zMapFeatureTranscriptExonForeach(merge_data->new_feature, scratchMergeExonCB, merge_data);
 
+  /* Copy CDS, if set */
+  zMapFeatureMergeTranscriptCDS(merge_data->new_feature, merge_data->orig_feature);
+
   /* Recreate the introns */
   zMapFeatureTranscriptRecreateIntrons(merge_data->orig_feature);
 }

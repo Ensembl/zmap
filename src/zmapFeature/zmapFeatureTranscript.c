@@ -148,6 +148,32 @@ gboolean zMapFeatureAddTranscriptCDS(ZMapFeature feature,
 }
 
 
+/* Merges CDS details from one transcript feature to another */
+gboolean zMapFeatureMergeTranscriptCDS(ZMapFeature src_feature, ZMapFeature dest_feature)
+{
+  gboolean result = FALSE ;
+
+  zMapAssert(src_feature && src_feature->type == ZMAPSTYLE_MODE_TRANSCRIPT &&
+             dest_feature && dest_feature->type == ZMAPSTYLE_MODE_TRANSCRIPT) ;
+
+  /* There ought to be sanity checking of coords of cds/exons/introns here.... */
+  if (src_feature->feature.transcript.flags.cds)
+    {
+      dest_feature->feature.transcript.flags.cds = src_feature->feature.transcript.flags.cds ;
+
+      if (src_feature->feature.transcript.cds_start < dest_feature->feature.transcript.cds_start)
+        dest_feature->feature.transcript.cds_start = src_feature->feature.transcript.cds_start ;
+
+      if (src_feature->feature.transcript.cds_end > dest_feature->feature.transcript.cds_end)
+        dest_feature->feature.transcript.cds_end = src_feature->feature.transcript.cds_end ;
+
+      result = TRUE ;
+    }
+
+  return result ;
+}
+
+
 /* Add start/end "not found" data to a transcript feature. */
 gboolean zMapFeatureAddTranscriptStartEnd(ZMapFeature feature,
 					  gboolean start_not_found_flag, int start_not_found,
