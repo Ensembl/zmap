@@ -4546,7 +4546,7 @@ static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inou
 	  else  /* should not happen */
             {
 	      /* this is a not configured error */
-	      zMapLogWarning("merge: no column for %s",set_name);
+	      zMapLogWarning("merge: no column configured for %s in ACEDB",set_name);
             }
 
 	  l = l->next;
@@ -4900,6 +4900,7 @@ static ZMapFeatureContext createContext(ZMapView view, GList *feature_set_names)
   ZMapFeatureBlock block ;
   ZMapFeatureSet feature_set;
   ZMapFeatureTypeStyle style;
+  ZMapSpan loaded;
 
   ZMapFeatureSequenceMap sequence = view->view_sequence;
 
@@ -4929,6 +4930,12 @@ static ZMapFeatureContext createContext(ZMapView view, GList *feature_set_names)
 	zMapFeatureSetStyle(feature_set,style);
 
 	zMapFeatureBlockAddFeatureSet(block, feature_set);
+
+	loaded = g_new0(ZMapSpanStruct,1);	/* prevent silly log messages */
+	loaded->x1 = sequence->start;
+	loaded->x2 = sequence->end;
+	feature_set->loaded = g_list_append(NULL,loaded);
+
   }
 
 

@@ -869,25 +869,30 @@ static void markItem(ZMapWindowMark mark, FooCanvasItem *item, gboolean set_mark
       mark->mark_rectangle = NULL;
     }
 
+
   if (set_mark)
     {
-//      GdkColor  *mark_colour;
-//      GdkBitmap *mark_stipple;
-//      double x1, y1, x2, y2;
-//      ZMapWindowContainerGroup parent;
+#if SHOW_MARK_ITEM
+// NOTE this ode will no longer work
+// besides covering the item means you can't click on it
 
-//	mark_colour  = zmapWindowMarkGetColour(mark);
-//      mark_stipple = mark->stipple;
+      GdkColor  *mark_colour;
+      GdkBitmap *mark_stipple;
+      double x1, y1, x2, y2;
+      ZMapWindowContainerGroup parent;
+
+	mark_colour  = zmapWindowMarkGetColour(mark);
+      mark_stipple = mark->stipple;
 
 // previous code: convert to a ZMapWindoCanvasItem  to call a fucntion that converts back to a FooCanvasItem
-//    zMapWindowCanvasItemMark((ZMapWindowCanvasItem)item, mark_colour, mark_stipple);
+    zMapWindowCanvasItemMark((ZMapWindowCanvasItem)item, mark_colour, mark_stipple);
 
-//      foo_canvas_item_get_bounds(item,&x1, &y1, &x2, &y2);
+      foo_canvas_item_get_bounds(item,&x1, &y1, &x2, &y2);
 
-//      parent = zmapWindowContainerUtilsItemGetParentLevel(item,ZMAPCONTAINER_LEVEL_FEATURESET);
+      parent = zmapWindowContainerUtilsItemGetParentLevel(item,ZMAPCONTAINER_LEVEL_FEATURESET);
+#endif
 
       mark->mark_src_item = item;
-
     }
 
   return ;

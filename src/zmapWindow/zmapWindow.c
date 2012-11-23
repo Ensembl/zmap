@@ -2334,7 +2334,7 @@ static void myWindowMove(ZMapWindow window, double start, double end)
   /* Code that looks so simple moves the canvas...  */
 //  zmapWindowContainerRequestReposition(window->feature_root_group);
 
-// actually not relevant here
+// actually not relevant here we are changing Y not X
 //  zmapWindowFullReposition(window->feature_root_group);
 
   zmapWindowSetScrollRegion(window, NULL, &start, NULL, &end,"myWindowMove");

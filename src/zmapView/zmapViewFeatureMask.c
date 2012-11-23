@@ -117,6 +117,7 @@ GList *zMapViewMaskFeatureSets(ZMapView view, GList *new_feature_set_names)
   ZMapFeatureSource src2src;
   ZMapFeatureTypeStyle style;
   GList *masked_by;
+  GQuark style_id;
 
   data->view = view;
   data->perfect = FALSE;		/* original default */
@@ -128,7 +129,10 @@ GList *zMapViewMaskFeatureSets(ZMapView view, GList *new_feature_set_names)
 
       if (!src2src)
 	{
-	  zMapLogWarning("zMapFeatureMaskFeatureSets() cannot find style id for %s", g_quark_to_string(GPOINTER_TO_UINT(fset->data)));
+// if there's no style configured then we don't mask
+// this error message pops up for the strand separator ans tell us nothing
+// it was ok for debugging during development though
+//	  zMapLogWarning("zMapFeatureMaskFeatureSets() cannot find style id for %s", g_quark_to_string(GPOINTER_TO_UINT(fset->data)));
 	  continue;
 	}
 
@@ -136,7 +140,8 @@ GList *zMapViewMaskFeatureSets(ZMapView view, GList *new_feature_set_names)
 
       if (!style)
 	{
-	  zMapLogWarning("zMapFeatureMaskFeatureSets() cannot find style %s for %s", g_quark_to_string(src2src->style_id), g_quark_to_string(GPOINTER_TO_UINT(fset->data)));
+// as per comment above
+//	  zMapLogWarning("zMapFeatureMaskFeatureSets() cannot find style %s for %s", g_quark_to_string(src2src->style_id), g_quark_to_string(GPOINTER_TO_UINT(fset->data)));
 	  continue;
 	}
 

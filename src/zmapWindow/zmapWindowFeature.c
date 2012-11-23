@@ -228,6 +228,7 @@ gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_
       /* check the feature is in featureset. */
       if(zMapFeatureSetFindFeature(feature_set, feature))
         {
+#if SHOW_MARK_ITEM
           double x1, x2, y1, y2;
 
           if (zmapWindowMarkIsSet(zmap_window->mark)
@@ -236,7 +237,7 @@ gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_
             {
               zmapWindowMarkSetWorldRange(zmap_window->mark, x1, y1, x2, y2);
             }
-
+#endif
 
 	  if(ZMAP_IS_WINDOW_FEATURESET_ITEM(feature_item))
 		zMapWindowFeaturesetItemRemoveFeature(feature_item,feature);

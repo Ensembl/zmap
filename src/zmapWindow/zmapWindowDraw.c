@@ -839,7 +839,9 @@ static void positionColumnCB(ZMapWindowContainerGroup container, FooCanvasPoints
 		{
 			foo = (FooCanvasItem *) l->data;
 			if(!(foo->object.flags & FOO_CANVAS_ITEM_VISIBLE))
+			{
 				continue;
+			}
 
 			if(ZMAP_IS_WINDOW_FEATURESET_ITEM(foo))
 			{
@@ -847,6 +849,7 @@ static void positionColumnCB(ZMapWindowContainerGroup container, FooCanvasPoints
 
 				cfs = (ZMapWindowFeaturesetItem) foo;
 				layer = zMapWindowCanvasFeaturesetGetLayer(cfs);
+
 				if( !(layer & ZMAP_CANVAS_LAYER_DECORATION) || !(layer & ZMAP_CANVAS_LAYER_STRETCH_X))
 				{
 					width = zMapWindowCanvasFeaturesetGetWidth(cfs);
@@ -861,7 +864,7 @@ static void positionColumnCB(ZMapWindowContainerGroup container, FooCanvasPoints
 
 		g_object_set(G_OBJECT(group), "x",pc->block_cur_x, NULL);	/* this sets deep update flags */
 
-//if(cfs) printf("pos col %s %f %f %f\n",g_quark_to_string(zMapWindowCanvasFeaturesetGetId(cfs)), pc->block_cur_x, pc->block_spacing_x, width);
+//printf("pos col %s %f %f %f\n",g_quark_to_string((container->feature_any->unique_id)), pc->block_cur_x, pc->block_spacing_x, width);
 		pc->block_cur_x += col_width;
 
 		break;

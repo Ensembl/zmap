@@ -266,7 +266,7 @@ displayable=true
 
 [style-Strand Separator]
 description=strand separator display
-#ideally mode would be plain but we want to add basic features to this
+#ideally mode would be plain but we want to add basic features (search hit markers) to this
 mode=basic
 width=17.0
 show-when-empty=true

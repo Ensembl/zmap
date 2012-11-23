@@ -367,6 +367,9 @@ void zMapWindowNavigatorReset(ZMapWindowNavigator navigate)
       navigate->container_align = NULL;
     }
 
+	/* these will have been destroyed with the align */
+  navigate->locator = navigate->locator_drag = NULL;
+
   /* The hash contains invalid pointers so destroy and recreate. */
   zmapWindowFToIDestroy(navigate->ftoi_hash);
   navigate->ftoi_hash = zmapWindowFToICreate();
