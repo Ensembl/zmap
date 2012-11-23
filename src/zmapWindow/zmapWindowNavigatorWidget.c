@@ -103,7 +103,9 @@ GtkWidget *zMapWindowNavigatorCreateCanvas(ZMapWindowNavigatorCallback callbacks
 
       if(callbacks)
         {
+#if RUN_AROUND
           class_data->callbacks.valueCB = callbacks->valueCB;
+#endif
           class_data->callbacks.widthCB = callbacks->widthCB;
           class_data->callbacks.resizeCB = callbacks->resizeCB;
 
@@ -197,6 +199,7 @@ void zMapWindowNavigatorSetWindowNavigator(GtkWidget *widget,ZMapWindowNavigator
 }
 
 
+#if RUN_AROUND
 void zmapWindowNavigatorValueChanged(GtkWidget *widget, double top, double bottom)
 {
   ZMapNavigatorClassData class_data = NULL;
@@ -212,6 +215,7 @@ void zmapWindowNavigatorValueChanged(GtkWidget *widget, double top, double botto
 
   return ;
 }
+#endif
 
 void zmapWindowNavigatorWidthChanged(GtkWidget *widget, double left, double right)
 {
@@ -556,7 +560,9 @@ static void destroyClassData(gpointer user_data)
   class_data->text_height =
     class_data->container_width =
     class_data->container_height = 0.0;
+#if RUN_ARROUND
   class_data->callbacks.valueCB  = NULL;
+#endif
   class_data->user_data = NULL;
 
   g_free(class_data);

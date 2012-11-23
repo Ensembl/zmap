@@ -1085,6 +1085,7 @@ static gboolean rootBGEventCB(FooCanvasItem *item, GdkEvent *event, gpointer dat
 
 	            zMapWindowNavigatorDrawLocator(navigate, y_coord, y_coord + locator_size);
 
+#if RUN_AROUND
 			/*
 			* this follows an obscure callback meander that ends up calling zMapWindowMove()
 			* with a window parameter stored elsewhere
@@ -1094,11 +1095,11 @@ static gboolean rootBGEventCB(FooCanvasItem *item, GdkEvent *event, gpointer dat
 			* which then calls a ZMapNavigator (NOTE: not the same as ZMapWindowNavigator) callback
 			* (set up by zMapNavigatorSetWindowCallback() in zmapControlWindowMakeFrame() in zmapControlWindowFrame.c)
 			* which then calls zMapWindowMove() with that mysterious window pointer
-			*
-			zmapWindowNavigatorValueChanged(NAVIGATOR_WIDGET(navigate), y_coord, y_coord + locator_size);
 			*/
-
+			zmapWindowNavigatorValueChanged(NAVIGATOR_WIDGET(navigate), y_coord, y_coord + locator_size);
+#else
 			zMapWindowMove(navigate->current_window, y_coord, y_coord + locator_size);
+#endif
 		}
 
             navigate->locator_click = FALSE;
