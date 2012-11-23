@@ -89,8 +89,12 @@ typedef struct _zmapWindowCanvasItemClassStruct  zmapWindowCanvasItemClass, *ZMa
 #define ZMAP_CANVAS_LAYER_ALIGN_BACKGROUND	13
 #define ZMAP_CANVAS_LAYER_BLOCK_BACKGROUND	5
 #define ZMAP_CANVAS_LAYER_COL_BACKGROUND		5
-#define ZMAP_CANVAS_LAYER_SEPARATOR_BACKGROUND	1
-#define ZMAP_CANVAS_LAYER_BLOCK_MARK		7
+#define ZMAP_CANVAS_LAYER_SEPARATOR_BACKGROUND	1	/* fixed size according to style */
+#define ZMAP_CANVAS_LAYER_BLOCK_MARK		7	/* overlay, y can be set by user */
+#define ZMAP_CANVAS_LAYER_NAV_LOCATOR		5	/* underlay, y is set by zoom and scroll */
+#define ZMAP_CANVAS_LAYER_NAV_LOCATOR_DRAG	7	/* overlay, y is set by user*/
+
+
 
 
 /* Public funcs */

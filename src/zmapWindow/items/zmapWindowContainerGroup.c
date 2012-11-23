@@ -276,28 +276,6 @@ gboolean zmapWindowContainerSetVisibility(FooCanvasGroup *container_parent, gboo
   return setable ;
 }
 
-/*!
- * \brief Set flag for the next update/draw cycle in the FooCanvas.
- *        When the flag is set the container code will do extra calculation
- *        to determine new positions.
- *
- * \param container Any container.  The code finds the root container.
- * \return void
- */
-
-void zmapWindowContainerRequestReposition(ZMapWindowContainerGroup container)
-{
-  ZMapWindowContainerGroup context_container;
-
-  context_container = zmapWindowContainerUtilsGetParentLevel(container, ZMAPCONTAINER_LEVEL_ROOT);
-
-  zmapWindowFullReposition((ZMapWindowContainerGroup) container);
-
-  return ;
-}
-
-
-
 
 
 /*!
@@ -401,13 +379,6 @@ static void zmap_window_container_group_class_init  (ZMapWindowContainerGroupCla
   canvas_class->obj_size = sizeof(zmapWindowContainerGroupStruct) ;
   canvas_class->obj_total = 0 ;
 
-#if NOT_USED
-  g_object_class_install_property(gobject_class, CONTAINER_PROP_COLUMN_REDRAW,
-				  g_param_spec_boolean("column-redraw", "column redraw",
-						       "Column needs redrawing when zoom changes",
-						       FALSE, ZMAP_PARAM_STATIC_RW));
-#endif
-
   item_parent_class_G  = (FooCanvasItemClass *)(g_type_class_peek_parent(container_class));
 
   zMapAssert(item_parent_class_G);
@@ -465,20 +436,7 @@ static void zmap_window_container_group_set_property(GObject               *obje
 	  } /* switch(container->level) */
       }
       break;
-#if NOT_USED
-    case CONTAINER_PROP_COLUMN_REDRAW:
-      {
-	switch(container->level)
-	  {
-	  case ZMAPCONTAINER_LEVEL_FEATURESET:
-	    container->flags.column_redraw = g_value_get_boolean(value);
-	    break;
-	  default:
-	    break;
-	  } /* switch(container->level) */
-      }
-      break;
-#endif
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID(object, param_id, pspec);
       break;
@@ -508,21 +466,7 @@ static void zmap_window_container_group_get_property(GObject               *obje
 
 	break;
       }
-#if NOT_USED
-    case CONTAINER_PROP_COLUMN_REDRAW:
-      {
-	switch(container->level)
-	  {
-	  case ZMAPCONTAINER_LEVEL_FEATURESET:
-	    g_value_set_boolean(value, container->flags.column_redraw);
-	    break;
-	  default:
-	    break;
-	  } /* switch(container->level) */
 
-	break;
-      }
-#endif
     default:
       {
 	G_OBJECT_WARN_INVALID_PROPERTY_ID(object, param_id, pspec);
@@ -650,18 +594,54 @@ static void zmap_window_container_group_update (FooCanvasItem *item, double i2w_
 {
   FooCanvasGroup *canvas_group;
   gboolean item_visible;
-
-//ZMapWindowContainerGroup zg = (ZMapWindowContainerGroup) item;
+#define DEBUG	0
+#if DEBUG
+ZMapWindowContainerGroup zg = (ZMapWindowContainerGroup) item;
+#endif
 
   canvas_group   = (FooCanvasGroup *)item;
   item_visible   = ((item->object.flags & FOO_CANVAS_ITEM_VISIBLE) == FOO_CANVAS_ITEM_VISIBLE);
 
+#if DEBUG
+{
+char *x = "?";
+
+if(ZMAP_IS_CONTAINER_GROUP(item) && zg->level <= ZMAPCONTAINER_LEVEL_FEATURESET)
+{
+	char *name = "none";
+
+	ZMapFeatureAny f = ((ZMapWindowContainerGroup) item)->feature_any;
+
+	if(f)
+		name = (char *) g_quark_to_string(f->unique_id);
+	x = g_strdup_printf("group %s level %d",name, ((ZMapWindowContainerGroup) item)->level);
+	printf("group update 1 %s: %f %f %f %f\n", x, item->x1, item->y1, item->x2, item->y2);
+}
+}
+#endif
 
   item->x2 = item->x1;		/* reset group to zero size to avoid stretchy items expanding it by proxy */
   item->y2 = item->y1;
 
   (item_parent_class_G->update)(item, i2w_dx, i2w_dy, flags);
 
+#if DEBUG
+{
+char *x = "?";
+
+if(ZMAP_IS_CONTAINER_GROUP(item) && zg->level < ZMAPCONTAINER_LEVEL_FEATURESET)
+{
+	char *name = "none";
+
+	ZMapFeatureAny f = ((ZMapWindowContainerGroup) item)->feature_any;
+
+	if(f)
+		name = (char *) g_quark_to_string(f->unique_id);
+	x = g_strdup_printf("group %s level %d",name, ((ZMapWindowContainerGroup) item)->level);
+	printf("group update 2 %s: %f %f %f %f\n", x, item->x1, item->y1, item->x2, item->y2);
+}
+}
+#endif
 
   if(item_visible)
     {
@@ -675,33 +655,35 @@ static void zmap_window_container_group_update (FooCanvasItem *item, double i2w_
 		foo = (FooCanvasItem *) l->data;
 		featureset = (ZMapWindowFeaturesetItem) foo;
 
-#if 0
-// NOTE code has been hacked about
-char *x = "?";
-if(ZMAP_IS_WINDOW_FEATURESET_ITEM(foo))	/* these could be groups or even normal foo items */
+#if DEBUG
+if(zg->level <= ZMAPCONTAINER_LEVEL_FEATURESET)
 {
-	x = g_strdup_printf("%s layer %x",g_quark_to_string(zMapWindowCanvasFeaturesetGetId(featureset)),
+	char *x = "?";
+
+	if(ZMAP_IS_WINDOW_FEATURESET_ITEM(foo))	/* these could be groups or even normal foo items */
+		x = g_strdup_printf("%s layer %x",g_quark_to_string(zMapWindowCanvasFeaturesetGetId(featureset)),
 				     zMapWindowCanvasFeaturesetGetLayer(featureset));
-	if(zg->level < 4)
-		printf("group update bgnd %s: %f %f %f %f\n", x, item->x1, item->y1, item->x2, item->y2);
+	else if(ZMAP_IS_CONTAINER_GROUP(item))
+		x = g_strdup_printf("group %s", g_quark_to_string(((ZMapWindowContainerGroup) item) ->feature_any->unique_id));
+	else
+		x = g_strdup_printf("foo %d %d",FOO_IS_CANVAS_LINE(foo),FOO_IS_CANVAS_RECT(foo));
+	printf("child %s %f %f %f %f\n", x, foo->x1, foo->y1, foo->x2, foo->y2);
 }
-else if(ZMAP_IS_CONTAINER_GROUP(foo))
-{
-	char *name = "none";
-
-	ZMapFeatureAny f = ((ZMapWindowContainerGroup) foo)->feature_any;
-
-	if(f)
-		name = (char *) g_quark_to_string(f->unique_id);
-	x = g_strdup_printf("group %s level %d",name, ((ZMapWindowContainerGroup) foo)->level);
-	printf("group update %s: %f %f %f %f\n", x, item->x1, item->y1, item->x2, item->y2);
-}
-
 #endif
 		if(ZMAP_IS_WINDOW_FEATURESET_ITEM(foo))	/* these could be groups or even normal foo items */
 		{
 			guint layer = zMapWindowCanvasFeaturesetGetLayer(featureset);
 
+#if DEBUG
+{
+	char *x = "?";
+
+	x = g_strdup_printf("%s layer %x",g_quark_to_string(zMapWindowCanvasFeaturesetGetId(featureset)),
+				     zMapWindowCanvasFeaturesetGetLayer(featureset));
+	if(zg->level < ZMAPCONTAINER_LEVEL_FEATURESET)
+		printf("group update bgnd %s: %f %f %f %f\n", x, item->x1, item->y1, item->x2, item->y2);
+}
+#endif
 			// this will automatically stretch the mark sideways
 			// and also strand backgrounds if used
 			// and also navigator locator background and cursor
@@ -716,7 +698,9 @@ else if(ZMAP_IS_CONTAINER_GROUP(foo))
 				foo->x1 = item->x1;
 				foo->x2 = item->x2;
 				foo_canvas_c2w(foo->canvas,foo->x2 - foo->x1, 0, &size, NULL);
-//if(zg->level < 4) printf("update %d set x %s = %f %f\n",zg->level, g_quark_to_string(zMapWindowCanvasFeaturesetGetId(featureset)), foo->x1, foo->x2);
+#if DEBUG
+if(zg->level < 4) printf("update %d set x %s = %f %f\n",zg->level, g_quark_to_string(zMapWindowCanvasFeaturesetGetId(featureset)), foo->x1, foo->x2);
+#endif
 				zMapWindowCanvasFeaturesetSetWidth(featureset,size);
 			}
 
@@ -728,7 +712,9 @@ else if(ZMAP_IS_CONTAINER_GROUP(foo))
 				/* this is used for higher level groups */
 				foo->y1 = item->y1;
 				foo->y2 = item->y2;
-//if(zg->level < 4) printf("update %d set y %s = %f %f\n", zg->level, g_quark_to_string(zMapWindowCanvasFeaturesetGetId(featureset)), foo->y1, foo->y2);
+#if DEBUG
+if(zg->level < 4) printf("update %d set y %s = %f %f\n", zg->level, g_quark_to_string(zMapWindowCanvasFeaturesetGetId(featureset)), foo->y1, foo->y2);
+#endif
 				foo_canvas_c2w(foo->canvas,0, foo->y1, NULL, &y1);
 				foo_canvas_c2w(foo->canvas,0, foo->y2, NULL, &y2);
 

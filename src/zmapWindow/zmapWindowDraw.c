@@ -93,6 +93,7 @@ typedef struct
 {
 	double block_cur_x;		/* x pos of current column */
 	double block_spacing_x;		/* as set in current block */
+	double x1,x2;
 
 } PositionColumnStruct, *PositionColumn;
 
@@ -156,6 +157,8 @@ static void rebumpColsCB(void *data, void *user_data) ;
 static void set3FrameState(ZMapWindow window, ZMapWindow3FrameMode frame_mode) ; ;
 static void myWindowSet3FrameMode(ZMapWindow window, ZMapWindow3FrameMode frame_mode) ;
 
+
+static gboolean zMapWindowResetWindowWidth(ZMapWindow window, FooCanvasItem *item, double x1, double x2);
 
 
 /* Turn on/off 3 frame cols. */
@@ -277,26 +280,6 @@ void zMapWindowToggleDNAProteinColumns(ZMapWindow window,
 
 
 
-#if MH17_NOT_USED
-/* Sorts the children of a group by horizontal position, sorts all children that
- * are groups and leaves children that are items untouched, this is because item children
- * are background items that do not need to be ordered.
- */
-void zmapWindowCanvasGroupChildSort(FooCanvasGroup *group_inout)
-{
-
-  zMapAssert(FOO_IS_CANVAS_GROUP(group_inout)) ;
-
-  group_inout->item_list = g_list_sort(group_inout->item_list, horizPosCompare) ;
-  group_inout->item_list_end = g_list_last(group_inout->item_list);
-
-  /* Now reset the last item as well !!!! */
-  group_inout->item_list_end = g_list_last(group_inout->item_list) ;
-
-  return ;
-}
-
-#endif
 
 
 /*
@@ -761,7 +744,7 @@ void zmapWindowColumnsCompress(FooCanvasItem *column_item, ZMapWindow window, ZM
       /* Note that curretly we need to start at the top of the tree or redraw does
        * not work properly. */
 
-      zmapWindowreDrawContainerExecute(window, hideColsCB, &coords);
+     zmapWindowreDrawContainerExecute(window, hideColsCB, &coords);
 
     }
 
@@ -792,16 +775,17 @@ void zmapWindowreDrawContainerExecute(ZMapWindow                 window,
 				      gpointer                   enter_data)
 {
   zMapPrintTimer(NULL, "About to do some work - including a reposition") ;
-  window->interrupt_expose = TRUE ;
+//  window->interrupt_expose = TRUE ;
 
   zmapWindowContainerUtilsExecute(window->feature_root_group,
 				  ZMAPCONTAINER_LEVEL_FEATURESET,
 				  enter_cb,
 				  enter_data);
 
-  zmapWindowContainerRequestReposition(window->feature_root_group);
+//  zmapWindowContainerRequestReposition(window->feature_root_group);
+  zmapWindowFullReposition(window->feature_root_group);
 
-  window->interrupt_expose = FALSE ;
+//  window->interrupt_expose = FALSE ;
   zMapPrintTimer(NULL, "Finished the work - including a reposition") ;
 
   return ;
@@ -825,10 +809,16 @@ static void positionColumnCB(ZMapWindowContainerGroup container, FooCanvasPoints
 
 	switch(level)
 	{
+	case ZMAPCONTAINER_LEVEL_ROOT:
+		pc->x1 = pc->block_cur_x = 0;
+		/* fall through */
+	case ZMAPCONTAINER_LEVEL_ALIGN:
+		pc->x1 -= container->child_spacing;
+		break;
+
 	case ZMAPCONTAINER_LEVEL_BLOCK:
 		block = (ZMapWindowContainerBlock) container;
 		pc->block_spacing_x = container->child_spacing;
-		pc->block_cur_x = 0;
 //printf("block %f %f\n",container->child_spacing, container->this_spacing);
 		break;
 
@@ -842,6 +832,8 @@ static void positionColumnCB(ZMapWindowContainerGroup container, FooCanvasPoints
 		featureset = (ZMapWindowContainerFeatureSet) container;
 		col_width = 0.0;
 		cfs = NULL;
+
+		pc->block_cur_x += pc->block_spacing_x;	/* spacer before column */
 
 		for(l = group->item_list; l ; l = l->next)
 		{
@@ -870,13 +862,15 @@ static void positionColumnCB(ZMapWindowContainerGroup container, FooCanvasPoints
 		g_object_set(G_OBJECT(group), "x",pc->block_cur_x, NULL);	/* this sets deep update flags */
 
 //if(cfs) printf("pos col %s %f %f %f\n",g_quark_to_string(zMapWindowCanvasFeaturesetGetId(cfs)), pc->block_cur_x, pc->block_spacing_x, width);
-		pc->block_cur_x += pc->block_spacing_x + col_width;
+		pc->block_cur_x += col_width;
 
 		break;
 
 	default:
 		break;
 	}
+
+	pc->x2 = pc->block_cur_x + pc->block_spacing_x - pc->x1; 	/* x1 is -ve, block x1 is 0 */
 }
 
 
@@ -887,6 +881,10 @@ static void positionColumnCB(ZMapWindowContainerGroup container, FooCanvasPoints
 void zmapWindowFullReposition(ZMapWindowContainerGroup root)
 {
   PositionColumnStruct poscol = { 0 };
+  ZMapWindow window = g_object_get_data(G_OBJECT(root), ZMAP_WINDOW_POINTER);
+
+//  if(!window)
+//	  return;	/* we got called before setting up */
 
   /* scan canvas and move columns sideways */
 
@@ -894,6 +892,9 @@ void zmapWindowFullReposition(ZMapWindowContainerGroup root)
 				      ZMAPCONTAINER_LEVEL_FEATURESET,
 				      positionColumnCB, &poscol,
 					NULL, NULL) ;
+
+  if(window)	/* if we get called from the navigator there is no window */
+	zMapWindowResetWindowWidth(window,(FooCanvasItem *) root, poscol.x1, poscol.x2);
 
   foo_canvas_item_request_update((FooCanvasItem *) root);
   foo_canvas_item_request_redraw((FooCanvasItem *) root);
@@ -910,7 +911,8 @@ void zmapWindowDrawZoom(ZMapWindow window)
 				  preZoomCB,
 				  window);
 
-  zmapWindowContainerRequestReposition(window->feature_root_group);
+//  zmapWindowContainerRequestReposition(window->feature_root_group);
+  zmapWindowFullReposition(window->feature_root_group);
 
   return ;
 }
@@ -920,6 +922,8 @@ void zmapWindowDrawZoom(ZMapWindow window)
 /* There's a lot of container code that labouriously trundles up the tree, but each canvas item knows the root. so let's use that */
 /* hmmmm... you need to call special invocations that set properties that then set flags... yet another run-around. */
 
+/* after removing a fair bit of code you should now be able to call FullReposition from canvas->root */
+/* this is called from canvasLocus & Sequence and ColBump */
 void zMapWindowRequestReposition(FooCanvasItem *foo)
 {
   ZMapWindowContainerGroup container;
@@ -1122,6 +1126,7 @@ static void preZoomCB(ZMapWindowContainerGroup container, FooCanvasPoints *point
 
 
 
+#if OBSOLETE
 
 static void set_hlocked_scroll_region(gpointer key, gpointer value, gpointer user_data)
 {
@@ -1135,61 +1140,55 @@ static void set_hlocked_scroll_region(gpointer key, gpointer value, gpointer use
   return ;
 }
 
+#endif
 
 
-
-/* this function has been hacked to run off args as easily supplied
- (previously it was called via an update hook list that has now been removed)
- */
-gboolean zMapWindowResetWindowWidth(FooCanvasItem *item)
+static gboolean zMapWindowResetWindowWidth(ZMapWindow window, FooCanvasItem *item, double x1, double x2)
 {
-  ZMapWindow window = NULL;
-  double x1, x2, y1, y2 ;       /* scroll region positions */
-  double scr_reg_width, root_width ;
+  double y1, y2 ;       /* scroll region positions */
+//  double scr_reg_width, root_width ;
   gboolean result = TRUE;
-  FooCanvasPoints bounds;
-  double coords[4] = {0.0};
+//  FooCanvasPoints bounds;
+//  double coords[4] = {0.0};
 
-  window = g_object_get_data(G_OBJECT(item), ZMAP_WINDOW_POINTER);
-  if(!window)
-	  return FALSE;	/* we got called before setting up */
+//  coords[0] = item->x1;
+//  coords[1] = item->y1;
+//  coords[2] = item->x2;
+//  coords[3] = item->y2;
 
-  coords[0] = item->x1;
-  coords[1] = item->y1;
-  coords[2] = item->x2;
-  coords[3] = item->y2;
-
-  bounds.coords     = &coords[0];
-  bounds.ref_count  = 1;
-  bounds.num_points = 2;
+//  bounds.coords     = &coords[0];
+//  bounds.ref_count  = 1;
+//  bounds.num_points = 2;
 
 
-  zmapWindowGetScrollRegion(window, &x1, &y1, &x2, &y2);
+  zmapWindowGetScrollRegion(window, NULL, &y1, NULL, &y2);
 
-  scr_reg_width = x2 - x1 + 1.0 ;
+        /* Annoyingly the initial size of the canvas is an issue here on first draw */
+  if(y2 == ZMAP_CANVAS_INIT_SIZE)
+	y2 = window->max_coord;
 
-  root_width = coords[2] - coords[0] + 1.0 ;
+//  scr_reg_width = x2 - x1 + 1.0 ;
+//  root_width = coords[2] - coords[0] + 1.0 ;
 
-  if (((root_width != scr_reg_width) &&
-       (window->curr_locking != ZMAP_WINLOCK_HORIZONTAL)))
+//  if (((root_width != scr_reg_width)
+//      && (window->curr_locking != ZMAP_WINLOCK_HORIZONTAL)
+//	  ))
     {
-      double excess ;
+//      double excess ;
 
-//printf("window_width %f %f\n",root_width, scr_reg_width);
 
-      excess = root_width - scr_reg_width ;
+//      excess = root_width - scr_reg_width; // + window->config.column_spacing;
       /* the spacing should be a border width from somewhere. */
 #warning define some left/right border and also subtract from x1
-      x2 = x2 + excess;	// why ???  + window->config.strand_spacing;
+//      x2 = x2 + excess;
+//	x1 = x1 - excess;
 
-      /* Annoyingly the initial size of the canvas is an issue here on first draw */
-      if(y2 == ZMAP_CANVAS_INIT_SIZE)
-		y2 = window->max_coord;
+	zmapWindowSetScrollRegion(window, &x1, &y1, &x2, &y2,"resetWindowWidth") ;
 
-	zmapWindowSetScrollRegion(window, &x1, &y1, &x2, &y2,"resetWindowWidth 1") ;
-
-	foo_canvas_item_request_redraw((FooCanvasItem *) window->feature_root_group);
+//	foo_canvas_item_request_redraw((FooCanvasItem *) window->feature_root_group);
     }
+#if 0
+// ermmm.... whenever  other windows resize then they will call this function themeselves
   else if(((window->curr_locking == ZMAP_WINLOCK_HORIZONTAL) &&
 	   (root_width > scr_reg_width)))
     {
@@ -1200,9 +1199,6 @@ gboolean zMapWindowResetWindowWidth(FooCanvasItem *item)
       /* the spacing should be a border width from somewhere. */
       x2 = x2 + excess; // why ???  + window->config.strand_spacing;
 
-      /* Annoyingly the initial size of the canvas is an issue here on first draw */
-      if(y2 == ZMAP_CANVAS_INIT_SIZE)
-	y2 = window->max_coord;
 
       box = foo_canvas_points_new(2);
       box->coords[0] = x1;
@@ -1222,6 +1218,7 @@ gboolean zMapWindowResetWindowWidth(FooCanvasItem *item)
 
       foo_canvas_points_free(box);
     }
+#endif
 
   return result;
 }

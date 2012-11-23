@@ -297,8 +297,8 @@ typedef struct _ZMapCanvasDataStruct
   /* THESE ARE REALLY NEEDED TO POSITION THE ALIGNMENTS FOR WHICH WE CURRENTLY HAVE NO
    * ORDERING/PLACEMENT MECHANISM.... */
   /* Records current positional information. */
-//  double curr_x_offset ;
-//  double curr_y_offset ;
+  double curr_x_offset ;
+  double curr_y_offset ;
 
   int feature_count;
 
@@ -348,9 +348,11 @@ typedef struct _ZMapCanvasDataStruct
 
 
 /* All settable from configuration file. */
-#define ALIGN_SPACING        30.0
-#define BLOCK_SPACING         5.0
+#define ALIGN_SPACING         2.0
+#define BLOCK_SPACING         2.0
+#if USE_STRAND
 #define STRAND_SPACING        7.0
+#endif
 #define COLUMN_SPACING        2.0
 #define FEATURE_SPACING       1.0
 #define FEATURE_LINE_WIDTH    0				    /* Special value meaning one pixel wide
@@ -478,7 +480,7 @@ typedef enum
  *           Default colours.
  */
 
-#define ZMAP_WINDOW_BACKGROUND_COLOUR "white"		    /* main canvas background */
+#define ZMAP_WINDOW_BACKGROUND_COLOUR "grey"		    /* main canvas background */
 
 #define ZMAP_WINDOW_BLOCK_BACKGROUND_COLOUR "white"	    /* main canvas background */
 
@@ -673,6 +675,7 @@ typedef struct _ZMapWindowStruct
   gboolean scroll_initialised;      /* have we ever set a scroll region?
                                      * used to control re-intialise eg on RevComp
                                      */
+  double scroll_x1, scroll_y1, scroll_x2, scroll_y2;	/* current reguin, to prevent setting it to the same value */
 
   /* Max canvas window size can either be set in pixels or in DNA bases, the latter overrides the
    * former. In either case the window cannot be more than 30,000 pixels (32k is the actual
@@ -930,7 +933,7 @@ void zmapWindowreDrawContainerExecute(ZMapWindow                 window,
 gboolean zmapWindowDumpFile(ZMapWindow window, char *filename) ;
 
 
-void zmapWindowDrawSetGroupBackground(ZMapWindowContainerGroup group, int start, int end, double width, gint layer, GdkColor *fill, GdkColor *border);
+FooCanvasItem *zmapWindowDrawSetGroupBackground(ZMapWindowContainerGroup group, int start, int end, double width, gint layer, GdkColor *fill, GdkColor *border);
 ZMapWindowContainerGroup zmapWindowContainerGroupCreateWithBackground(FooCanvasGroup        *parent,
 							       ZMapContainerLevelType level,
 							       double                 child_spacing,

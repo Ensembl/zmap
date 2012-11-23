@@ -203,7 +203,7 @@ static void zmap_window_container_context_update (FooCanvasItem *item, double i2
   if(parent_item_class_G->update)
     (parent_item_class_G->update)(item, i2w_dx, i2w_dy, flags);
 
-  zMapWindowResetWindowWidth(item);
+//  zMapWindowResetWindowWidth(item);
 
   return ;
 }

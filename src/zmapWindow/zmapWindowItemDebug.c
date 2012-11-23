@@ -185,6 +185,8 @@ void zmapWindowPrintItemCoords(FooCanvasItem *item)
 }
 
 
+#if NOT_USED
+
 /* Converts given world coords to an items coord system and prints them. */
 void zmapWindowPrintW2I(FooCanvasItem *item, char *text, double x1_in, double y1_in)
 {
@@ -199,6 +201,7 @@ void zmapWindowPrintW2I(FooCanvasItem *item, char *text, double x1_in, double y1
 
   return ;
 }
+
 
 /* Converts coords in an items coord system into world coords and prints them. */
 /* Prints out item coords position in world and its parents coords.... */
@@ -217,6 +220,7 @@ void zmapWindowPrintI2W(FooCanvasItem *item, char *text, double x1_in, double y1
   return ;
 }
 
+#endif
 
 
 /*

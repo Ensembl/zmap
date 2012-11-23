@@ -485,70 +485,7 @@ static void paneNotifyPositionCB(GObject *pane, GParamSpec *scroll, gpointer use
   return ;
 }
 
-#if LEGACY
 
-static void positionLeftRight(FooCanvasGroup *left, FooCanvasGroup *right)
-{
-  double x2 = 0.0;
-
-  my_foo_canvas_item_goto(FOO_CANVAS_ITEM(left), &x2, NULL);
-
-  foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(left),
-                             NULL, NULL, &x2, NULL);
-  my_foo_canvas_item_goto(FOO_CANVAS_ITEM(right), &x2, NULL);
-
-  return ;
-}
-
-static gboolean rulerVisibilityHandlerCB(GtkWidget *widget, GdkEventExpose *expose, gpointer user_data)
-{
-  ZMapWindowScaleCanvas ruler = (ZMapWindowScaleCanvas)user_data;
-  gboolean handled  = FALSE;
-
-#ifdef VERBOSE_1
-  printf("rulerVisibilityHandlerCB: enter\n");
-#endif /* VERBOSE_1 */
-  if(ruler->scaleParent)
-    {
-      GList *list = NULL;
-      FooCanvasGroup *left = NULL, *right = NULL;
-
-#ifdef VERBOSE_1
-      printf("rulerVisibilityHandlerCB: got a scale bar\n");
-#endif /* VERBOSE_1 */
-
-      list = FOO_CANVAS_GROUP(ruler->scaleParent)->item_list;
-      while(list)
-        {
-          ZMapScaleBarGroupType type = ZMAP_SCALE_BAR_GROUP_NONE;
-          type = GPOINTER_TO_INT( g_object_get_data(G_OBJECT(list->data), ZMAP_SCALE_BAR_GROUP_TYPE_KEY) );
-          switch(type)
-            {
-            case ZMAP_SCALE_BAR_GROUP_LEFT:
-              left = FOO_CANVAS_GROUP(list->data);
-              break;
-            case ZMAP_SCALE_BAR_GROUP_RIGHT:
-              right = FOO_CANVAS_GROUP(list->data);
-              break;
-            default:
-              break;
-            }
-          list = list->next;
-        }
-      if(left && right)
-        {
-          positionLeftRight(left, right);
-          g_signal_handler_disconnect(G_OBJECT(widget), ruler->visibilityHandlerCB);
-          ruler->visibilityHandlerCB = 0; /* Make sure we reset this! */
-        }
-    }
-#ifdef VERBOSE_1
-  printf("rulerVisibilityHandlerCB: leave, handled = %s\n", (handled ? "TRUE" : "FALSE"));
-#endif /* VERBOSE_1 */
-
-  return handled;
-}
-#endif
 
 
 /* And a version which WILL maximise after calling the other one. */
@@ -556,10 +493,6 @@ static gboolean rulerMaxVisibilityHandlerCB(GtkWidget *widget, GdkEventExpose *e
 {
   ZMapWindowScaleCanvas ruler = (ZMapWindowScaleCanvas)user_data;
   gboolean handled = FALSE;
-
-#if LEGACY
-  handled = rulerVisibilityHandlerCB(widget, expose, user_data);
-#endif
 
   zmapWindowScaleCanvasMaximise(ruler, 0.0, 0.0);
 

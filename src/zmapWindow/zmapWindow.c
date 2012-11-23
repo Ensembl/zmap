@@ -1347,20 +1347,27 @@ void zmapWindowSetScrollRegion(ZMapWindow window,
   y1   -= (tmp_top = ((clamp & ZMAPGUI_CLAMP_START) ? border : 0.0));
   y2   += (tmp_bot = ((clamp & ZMAPGUI_CLAMP_END)   ? border : 0.0));
 
-#if MH17_REVCOMP_DEBUG
-      zMapLogWarning("set scroll %p %f,%f - %f,%f from %s",window->canvas,y1,x1,y2,x2,where);
-#endif
-  foo_canvas_set_scroll_region(FOO_CANVAS(window->canvas),
-			       x1, y1, x2, y2);
-
   window->scroll_initialised = TRUE;
 
- /* -----> letting the window creator know what's going on */
-  vis_change.zoom_status    = zMapWindowGetZoomStatus(window) ;
-  vis_change.scrollable_top = (y1 += tmp_top); /* should these be sequence clamped */
-  vis_change.scrollable_bot = (y2 -= tmp_bot); /* or include the border? (SEQUENCE CLAMPED ATM) */
+  if(x1 != window->scroll_x1 || y1 != window->scroll_y1 || x2 != window->scroll_x2 || y2 != window->scroll_y2)
+  {
+#if 0
+      printf("set scroll %p %f,%f - %f,%f from %s\n",window->canvas,y1,x1,y2,x2,where);
+#endif
+	foo_canvas_set_scroll_region(FOO_CANVAS(window->canvas), x1, y1, x2, y2);
 
-  (*(window_cbs_G->visibilityChange))(window, window->app_data, (void *)&vis_change) ;
+	window->scroll_x1 = x1;
+	window->scroll_y1 = y1;
+	window->scroll_x2 = x2;
+	window->scroll_y2 = y2;
+
+	/* -----> letting the window creator know what's going on */
+	vis_change.zoom_status    = zMapWindowGetZoomStatus(window) ;
+	vis_change.scrollable_top = (y1 += tmp_top); /* should these be sequence clamped */
+	vis_change.scrollable_bot = (y2 -= tmp_bot); /* or include the border? (SEQUENCE CLAMPED ATM) */
+
+	(*(window_cbs_G->visibilityChange))(window, window->app_data, (void *)&vis_change) ;
+  }
 
   return ;
 }
@@ -2325,7 +2332,10 @@ static void myWindowMove(ZMapWindow window, double start, double end)
   zmapWindowClampSpan(window, &start, &end);
 
   /* Code that looks so simple moves the canvas...  */
-  zmapWindowContainerRequestReposition(window->feature_root_group);
+//  zmapWindowContainerRequestReposition(window->feature_root_group);
+
+// actually not relevant here
+//  zmapWindowFullReposition(window->feature_root_group);
 
   zmapWindowSetScrollRegion(window, NULL, &start, NULL, &end,"myWindowMove");
 

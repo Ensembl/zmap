@@ -332,9 +332,8 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
       root_group = zmapWindowContainerGroupCreate((FooCanvasGroup *) foo_canvas_root(window->canvas),
 							 ZMAPCONTAINER_LEVEL_ROOT,
 							 window->config.align_spacing,
-//							 NULL,NULL);
 							 &(window->colour_root),
-							 &(window->canvas_border));
+							 NULL);
 
       g_signal_connect(G_OBJECT(root_group), "destroy", G_CALLBACK(containerDestroyCB), window) ;
 
@@ -352,18 +351,19 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
   /* Always reset this as context changes with new features.*/
   zmapWindowContainerAttachFeatureAny(root_group, (ZMapFeatureAny)full_context);
 
-  zmapWindowDrawSetGroupBackground(root_group, 0, 1, 1.0, ZMAP_CANVAS_LAYER_ROOT_BACKGROUND, &(window->colour_root), NULL);
+  zmapWindowDrawSetGroupBackground(root_group, seq_start, seq_end, 1.0, ZMAP_CANVAS_LAYER_ROOT_BACKGROUND, &(window->colour_root), NULL);
 
   zmapWindowFToIAddRoot(window->context_to_item, (FooCanvasGroup *)root_group);
 
   window->feature_root_group = root_group ;
 
   /* Set root group to start where sequence starts... */
-  x = 0.0;	// canvas_data.curr_x_offset ;
+  x = canvas_data.curr_x_offset ;
   y = full_context->master_align->sequence_span.x1 ;
   foo_canvas_item_w2i(FOO_CANVAS_ITEM(foo_canvas_root(window->canvas)), &x, &y) ;
 
   foo_canvas_item_set(FOO_CANVAS_ITEM(root_group),
+			"x", x,
 		      "y", y,
 		      NULL) ;
 
@@ -735,7 +735,8 @@ void zmapWindowDraw3FrameFeatures(ZMapWindow window)
 
   canvas_data.window        = window;
   canvas_data.canvas        = window->canvas;
-//  canvas_data.curr_x_offset = 0.0;
+  /* offset root group so that block starts at 0,0 (well sort of) */
+  canvas_data.curr_x_offset = -(window->config.align_spacing + window->config.block_spacing);
   canvas_data.full_context  = full_context;
   canvas_data.frame_mode_change = TRUE ;       // refer to comment in feature_set_matches_frame_drawing_mode()
 
@@ -847,9 +848,7 @@ void zMapWindowDrawContext(ZMapCanvasData     canvas_data,
 			      GList *masked)
 {
 
-//  canvas_data->curr_x_offset = 0.0;
-
-//  canvas_data->styles        = styles;
+  canvas_data->curr_x_offset = -(canvas_data->window->config.align_spacing + canvas_data->window->config.block_spacing);
 
   /* Full Context to attach to the items.
    * Diff Context feature any (aligns,blocks,sets) are destroyed! */
@@ -897,7 +896,7 @@ void zmapWindowRedrawFeatureSet(ZMapWindow window, ZMapFeatureSet featureset)
 
   canvas_data.window        = window;
   canvas_data.canvas        = window->canvas;
-//  canvas_data.curr_x_offset = 0.0;
+  canvas_data.curr_x_offset = -(window->config.align_spacing + window->config.block_spacing);
   canvas_data.full_context  = full_context;
   canvas_data.frame_mode_change = FALSE;       // refer to comment in feature_set_matches_frame_drawing_mode()
 
@@ -1401,10 +1400,10 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
         canvas_data->curr_alignment = zMapFeatureContextGetAlignmentByID(canvas_data->full_context,
                                                                          feature_any->unique_id) ;
 
-//        x = canvas_data->curr_x_offset ;
+        x = canvas_data->curr_x_offset ;
+	  canvas_data->curr_x_offset += window->config.align_spacing;
         zMapFeatureContextGetMasterAlignSpan(canvas_data->full_context,&start,&end);   // else we get everything offset by the start coord
         y = start;
-
 
         my_foo_canvas_item_w2i(FOO_CANVAS_ITEM(canvas_data->curr_root_group), &x, &y) ;
 
@@ -1421,13 +1420,13 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
             align_parent = zmapWindowContainerGroupCreate((FooCanvasGroup *) canvas_data->curr_root_group,
 							  ZMAPCONTAINER_LEVEL_ALIGN,
 							  window->config.block_spacing,
-//							  NULL,NULL);
 							  &(window->colour_alignment),
-							  &(window->canvas_border));
+							  NULL);
             g_signal_connect(G_OBJECT(align_parent),
                              "destroy",
                              G_CALLBACK(containerDestroyCB),
                              window) ;
+
 
 	    g_object_set_data(G_OBJECT(align_parent), ITEM_FEATURE_STATS,
 			      zmapWindowStatsCreate((ZMapFeatureAny)(canvas_data->curr_alignment))) ;
@@ -1437,7 +1436,7 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 	    zmapWindowContainerAlignmentAugment((ZMapWindowContainerAlignment)align_parent,
 						canvas_data->curr_alignment);
 
-	    zmapWindowDrawSetGroupBackground(align_parent, 0, 1, 1.0, ZMAP_CANVAS_LAYER_ALIGN_BACKGROUND, &(window->colour_alignment), NULL);
+	    zmapWindowDrawSetGroupBackground(align_parent, start, end, 1.0, ZMAP_CANVAS_LAYER_ALIGN_BACKGROUND, &(window->colour_alignment), NULL);
 
 	    foo_canvas_item_set(FOO_CANVAS_ITEM(align_parent),
 				"x", x,
@@ -1510,7 +1509,7 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 							 ZMAPCONTAINER_LEVEL_BLOCK,
 							 window->config.column_spacing,
 							 &(window->colour_block),
-							 &(canvas_data->window->canvas_border));
+							 NULL);
 
 	g_signal_connect(G_OBJECT(block_group),
                              "destroy",
@@ -1529,12 +1528,14 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 
 	    g_object_set_data(G_OBJECT(block_group), ZMAP_WINDOW_POINTER, window) ;
 
-	    x = 0.0 ;
+	    x = canvas_data->curr_x_offset ;
+	     canvas_data->curr_x_offset += window->config.block_spacing;
 	    y = feature_block->block_to_sequence.block.x1 ;
 
 	    my_foo_canvas_item_w2i(FOO_CANVAS_ITEM(canvas_data->curr_align_group), &x, &y) ;
 
 	    foo_canvas_item_set(FOO_CANVAS_ITEM(block_group),
+				"x",x,
 				"y", y,
 				NULL) ;
 
@@ -1827,7 +1828,7 @@ GQuark zMapWindowGetFeaturesetContainerID(ZMapWindow window,GQuark featureset_id
  * the good news is that these are relatively easy to resize to a containing group
  * Instead of blindly adding backgrounds as before we only do so if they are a diff colour from the container's container
  */
-void zmapWindowDrawSetGroupBackground(ZMapWindowContainerGroup container, int start, int end, double width, gint layer, GdkColor *fill, GdkColor *border)
+FooCanvasItem *zmapWindowDrawSetGroupBackground(ZMapWindowContainerGroup container, int start, int end, double width, gint layer, GdkColor *fill, GdkColor *border)
 {
 	static ZMapFeatureTypeStyle style = NULL;
 	GList *l;
@@ -1885,7 +1886,7 @@ void zmapWindowDrawSetGroupBackground(ZMapWindowContainerGroup container, int st
 		name = (char *) g_quark_to_string(zmapWindowContainerFeatureSetGetColumnId((ZMapWindowContainerFeatureSet) group));
 	else
 		name = g_strdup_printf("%d-%s",container->level, y);
-      x = g_strdup_printf("%p_%p_%s_bgnd", foo->canvas, group, name);
+      x = g_strdup_printf("%p_%p_%s_l%x", foo->canvas, group, name,layer);
 
 //printf("zmapWindowDrawSetGroupBackground %s\n",x);
 	id = g_quark_from_string(x);
@@ -1909,11 +1910,18 @@ void zmapWindowDrawSetGroupBackground(ZMapWindowContainerGroup container, int st
 		}
 	}
 
+#if 0
+NO.... remove background if it's null, don't auto fill w/group colour
+set group colour explicitly in call to this
+need for locator dragger
+and no doubt lasoo later on
+
 	/* clear highlight done by removing colours in which case we restore the default ones if they exist */
 	if(!fill)
 		fill = container->background_fill;
 	if(!border)
 		border = container->background_border;
+#endif
 
 #if 0
 if(container->feature_any)
@@ -1938,8 +1946,8 @@ printf("\n");
 	/* if you happen to know a good function to do that then fix this.... */
 	if(fill && parent_fill && fill->red == parent_fill->red && fill->green == parent_fill->green && fill->blue == parent_fill->blue)
 		fill = NULL;
-	if(border && parent_border && border->red == parent_border->red && border->green == parent_border->green && border->blue == parent_border->blue)
-		border = NULL;
+//	if(border && parent_border && border->red == parent_border->red && border->green == parent_border->green && border->blue == parent_border->blue)
+//		border = NULL;
 #endif
 
 	if(fill || border)
@@ -1981,6 +1989,8 @@ printf("\n");
 		gtk_object_destroy(GTK_OBJECT(cfs));
 	}
       g_free(x);
+
+	return((FooCanvasItem *) cfs);
 }
 
 
@@ -2086,6 +2096,10 @@ static FooCanvasGroup *createColumnFull(ZMapWindowContainerFeatures parent_group
 		zMapStyleGetColours(s, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL, &fill, NULL, NULL);
 		colour = fill;
 	}
+	else
+	{
+		colour = parent_group->background_fill;
+	}
   }
 
   if(column)
@@ -2128,7 +2142,7 @@ static FooCanvasGroup *createColumnFull(ZMapWindowContainerFeatures parent_group
       /* Only now can we create a group. */
       container = zmapWindowContainerGroupCreate((FooCanvasGroup *) parent_group, ZMAPCONTAINER_LEVEL_FEATURESET,
 						 window->config.feature_spacing,
-						 colour, &(window->canvas_border));
+						 colour, NULL);
 
       /* reverse the column ordering on the reverse strand */
       if (strand == ZMAPSTRAND_REVERSE)

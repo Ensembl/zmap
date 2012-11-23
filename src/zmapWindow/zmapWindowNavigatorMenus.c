@@ -341,7 +341,7 @@ static void navigatorBumpMenuCB(int menu_item_id, gpointer callback_data)
 
   zmapWindowColumnBump(style_item, bump_type) ;
 
-  zmapWindowNavigatorPositioning(menu_data->navigate);
+  zmapWindowFullReposition(menu_data->navigate->container_root);
 
   g_free(menu_data) ;
 

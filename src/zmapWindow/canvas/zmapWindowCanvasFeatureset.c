@@ -720,27 +720,27 @@ static void zMapWindowCanvasFeaturesetPaintSet(ZMapWindowFeaturesetItem fi,
   ZMapWindowFeatureItemSetPaintFunc func ;
   FooCanvasItem * foo = (FooCanvasItem *) fi;
 
+  gint x1, x2, y1, y2;
+  GdkColor c;
+
+  x1 = (gint) foo->x1;
+  x2 = (gint) foo->x2;
+  y1 = (gint) foo->y1;
+  y2 = (gint) foo->y2;
+
+  /* NB: clip region is 1 bigger than the expose to avoid drawing spurious lines */
+
+  if(x1 < fi->clip_x1)
+	x1 = fi->clip_x1;
+  if(x2 > fi->clip_x2)
+	x2 = fi->clip_x2;
+  if(y1 < fi->clip_y1)
+	y1 = fi->clip_y1;
+  if(y2 > fi->clip_y2)
+	y2 = fi->clip_y2;
+
   if(fi->background_set)
   {
-	gint x1, x2, y1, y2;
-	GdkColor c;
-
-	x1 = (gint) foo->x1;
-	x2 = (gint) foo->x2;
-	y1 = (gint) foo->y1;
-	y2 = (gint) foo->y2;
-
-	/* NB: clip region is 1 bigger than the expose to avoid drawing spurious lines */
-
-	if(x1 < fi->clip_x1)
-		x1 = fi->clip_x1;
-	if(x2 > fi->clip_x2)
-		x2 = fi->clip_x2;
-	if(y1 < fi->clip_y1)
-		y1 = fi->clip_y1;
-	if(y2 > fi->clip_y2)
-		y2 = fi->clip_y2;
-
 	c.pixel = fi->background;
 	gdk_gc_set_foreground (fi->gc, &c);
 
@@ -757,6 +757,18 @@ static void zMapWindowCanvasFeaturesetPaintSet(ZMapWindowFeaturesetItem fi,
 	zMap_draw_rect (drawable, fi, x1, y1, x2, y2, TRUE);
 //printf("draw back %s %x %d,%d - %d,%d\n", g_quark_to_string(fi->id), c.pixel, x1, y1, x2, y2);
   }
+
+  if(fi->border_set)
+  {
+	c.pixel = fi->border;
+	gdk_gc_set_foreground (fi->gc, &c);
+	gdk_gc_set_fill (fi->gc, GDK_SOLID);
+
+	zMap_draw_rect (drawable, fi, x1, y1, x2, y2, FALSE);
+//printf("draw border %d,%d - %d,%d\n", g_quark_to_string(fi->id), c.pixel, x1, y1, x2, y2);
+  }
+
+
 
   if ((fi->type > 0 && fi->type < FEATURE_N_TYPE)
       &&(func = _featureset_set_paint_G[fi->type]))
@@ -1059,20 +1071,21 @@ void zMapWindowCanvasFeaturesetSetSequence(ZMapWindowFeaturesetItem featureset, 
 void zMapWindowCanvasFeaturesetSetBackground(FooCanvasItem *foo, GdkColor *fill, GdkColor * outline)
 {
 	ZMapWindowFeaturesetItem featureset = (ZMapWindowFeaturesetItem) foo;
+	gulong pixel;
 
-	/* (border not implemented) */
+	featureset->background_set = featureset->border_set = FALSE;
 
 	if(fill)
 	{
-		gulong pixel;
-
 		pixel = zMap_gdk_color_to_rgba(fill);
 		featureset->background = foo_canvas_get_color_pixel(foo->canvas, pixel);
 		featureset->background_set = TRUE;
 	}
-	else
+	if(outline)
 	{
-		featureset->background_set = FALSE;
+		pixel = zMap_gdk_color_to_rgba(outline);
+		featureset->border = foo_canvas_get_color_pixel(foo->canvas, pixel);
+		featureset->border_set = TRUE;
 	}
 
 	zMapWindowCanvasFeaturesetRedraw(featureset, featureset->zoom);
@@ -1626,7 +1639,8 @@ static void zmap_window_featureset_item_item_update (FooCanvasItem *item, double
 
   // cribbed from FooCanvasRE; this sets the canvas coords in the foo item
   /* x_off is needed for staggered graphs, is currently 0 for all other types */
-  di->dx = x1 = i2w_dx + di->x + di->x_off;
+  /* x1 is relative to the groups (column), but would be better to implement the foo 'x' property */
+  x1 = di->dx = i2w_dx + di->x + di->x_off;
   width = (di->bumped? di->bump_width : di->width);
 //printf("update %s width = %.1f\n",g_quark_to_string(di->id),di->width);
 
@@ -1935,23 +1949,24 @@ static double graphicsPoint(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature
 void  zmap_window_featureset_item_item_bounds (FooCanvasItem *item, double *x1, double *y1, double *x2, double *y2)
 {
   double minx,miny,maxx,maxy;
-  FooCanvasGroup *group;
 
   minx = item->x1;
   miny = item->y1;
   maxx = item->x2;
   maxy = item->y2;
 
+#if 0
   /* Make the bounds be relative to our parent's coordinate system */
   if (item->parent)
     {
-      group = FOO_CANVAS_GROUP (item->parent);
+	FooCanvasGroup *group = FOO_CANVAS_GROUP (item->parent);
 
       minx += group->xpos;
       miny += group->ypos;
       maxx += group->xpos;
       maxy += group->ypos;
     }
+#endif
 
   *x1 = minx;
   *y1 = miny;

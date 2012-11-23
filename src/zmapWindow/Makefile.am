@@ -30,7 +30,6 @@ zmapWindowFeatureList.h \
 zmapWindowFeatureList_I.h \
 zmapWindowFeatureShow.c \
 zmapWindowFocus.c \
-zmapWindowFrame.c \
 zmapWindowItem.c \
 zmapWindowItemDebug.c \
 zmapWindowItemHash.c \
