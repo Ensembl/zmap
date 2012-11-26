@@ -58,6 +58,7 @@ typedef struct _ZMapWindowListStruct
   ZMapWindowDNAList dna_list;
 
   ZMapFeatureBlock  block;
+  ZMapFeatureSet match_feature_set ;
 
 } DNAWindowListDataStruct, *DNAWindowListData ;
 
@@ -111,7 +112,7 @@ static GtkItemFactoryEntry menu_items_G[] = {
  */
 void zmapWindowDNAListCreate(ZMapWindow zmap_window, GList *dna_list,
 			     char *ref_seq_name, char *match_sequence, char *match_details,
-			     ZMapFeatureBlock block)
+			     ZMapFeatureBlock block, ZMapFeatureSet match_feature_set)
 {
   DNAWindowListData window_list ;
   GString *title_str ;
@@ -123,6 +124,7 @@ void zmapWindowDNAListCreate(ZMapWindow zmap_window, GList *dna_list,
   window_list->dna_match_list = dna_list ;
   window_list->dna_list = zMapWindowDNAListCreate();
   window_list->block = block;
+  window_list->match_feature_set = match_feature_set ;
 
   title_str = g_string_new(ref_seq_name) ;
   title_str = g_string_append(title_str, ": \"") ;
@@ -314,16 +316,38 @@ static gboolean selectionFuncCB(GtkTreeSelection *selection,
 	  GtkTreeView *tree_view = NULL;
 	  ZMapWindow window = window_list->window;
 	  ZMapFeatureBlock block = NULL ;
-
+	  FooCanvasItem *item ;
+	  ZMapFrame tmp_frame ;
+	  ZMapStrand tmp_strand ;
+	  gboolean done_centring = FALSE ;
 
 	  block = window_list->block ;
 	  zMapAssert(block) ;
 	
+	  /* Scroll to treeview entry. */
 	  tree_view = gtk_tree_selection_get_tree_view(selection) ;
-
 	  gtk_tree_view_scroll_to_cell(tree_view, path, NULL, FALSE, 0.0, 0.0) ;
 
-	  zmapWindowHighlightSequenceRegion(window, block, seq_type, frame, start, end, TRUE) ;
+	  /* Scroll to marker and highlight sequence (if its displayed). */
+	  tmp_strand = ZMAPSTRAND_NONE ;
+	  tmp_frame = ZMAPFRAME_NONE ;
+
+	  if ((item = zmapWindowFToIFindSetItem(window, window->context_to_item,
+						window_list->match_feature_set,
+						tmp_strand, tmp_frame)))
+	    {
+	      int dna_start, dna_end ;
+
+	      dna_start = start ;
+	      dna_end = end ;
+
+	      /* Need to convert sequence coords to block for this call. */
+	      zMapFeature2BlockCoords(block, &dna_start, &dna_end) ;
+
+	      zmapWindowItemCentreOnItemSubPart(window, item, FALSE, 0.0, dna_start, dna_end) ;
+
+	      zmapWindowHighlightSequenceRegion(window, block, seq_type, frame, start, end, FALSE) ;
+	    }
         }
     }
 
