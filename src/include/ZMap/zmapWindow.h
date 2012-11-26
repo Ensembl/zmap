@@ -235,7 +235,8 @@ typedef enum
     ZMAPWINDOW_CMD_INVALID,
     ZMAPWINDOW_CMD_GETFEATURES,
     ZMAPWINDOW_CMD_SHOWALIGN,
-    ZMAPWINDOW_CMD_REVERSECOMPLEMENT
+    ZMAPWINDOW_CMD_REVERSECOMPLEMENT,
+    ZMAPWINDOW_CMD_COPYTOSCRATCH
   } ZMapWindowCommandType ;
 
 
@@ -328,6 +329,19 @@ typedef struct
   /* No extra data needed for rev. comp. */
 
 } ZMapWindowCallbackCommandRevCompStruct, *ZMapWindowCallbackCommandRevComp ;
+
+
+typedef struct ZMapWindowCallbackCommandScratchStructName
+{
+  /* Common section. */
+  ZMapWindowCommandType cmd ;
+
+  ZMapFeatureBlock block ;
+
+  /* Scratch specific section. */
+  ZMapFeatureContext context;
+
+} ZMapWindowCallbackCommandScratchStruct, *ZMapWindowCallbackCommandScratch ;
 
 
 

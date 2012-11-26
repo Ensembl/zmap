@@ -4976,6 +4976,14 @@ static void commandCB(ZMapWindow window, void *caller_data, void *window_data)
 
 	break ;
       }
+
+    case ZMAPWINDOW_CMD_COPYTOSCRATCH:
+      {
+	ZMapWindowCallbackCommandScratch scratch_cmd = (ZMapWindowCallbackCommandScratch)cmd_any ;
+        zmapViewScratchUpdateContext(view, scratch_cmd->context);
+        break;
+      }
+      
     default:
       {
 	zMapAssertNotReached() ;

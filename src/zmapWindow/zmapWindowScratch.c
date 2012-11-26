@@ -279,10 +279,21 @@ void zmapWindowScratchCopyFeature(ZMapWindow window,
 
       if (feature_set && orig_feature)
         {
+          /* Work out where we are.... */
           int y_pos = 0;
           zmapWindowWorld2SeqCoords(window, item, 0, y_pos_in, 0,0, NULL, &y_pos, NULL) ;
 
           scratchMergeFeature(window, feature_set, orig_feature, new_feature, y_pos);
+
+
+          ZMapWindowCallbacks window_cbs_G = zmapWindowGetCBs() ;
+          ZMapWindowCallbackCommandScratch scratch_cmd = g_new0(ZMapWindowCallbackCommandScratchStruct, 1) ;
+          
+          /* Set up general command field for callback. */
+          scratch_cmd->cmd = ZMAPWINDOW_CMD_COPYTOSCRATCH ;
+          scratch_cmd->context = window->feature_context;
+
+          (*(window_cbs_G->command))(window, window->app_data, scratch_cmd) ;
         }
     }
   else

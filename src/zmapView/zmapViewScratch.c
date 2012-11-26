@@ -136,3 +136,18 @@ void zmapViewScratchInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence)
       zmapViewDrawDiffContext(zmap_view, &diff_context);
     }  
 }
+
+
+/*!
+ * \brief Update any changes to the given featureset
+ */
+gboolean zmapViewScratchUpdateContext(ZMapView zmap_view, 
+                                      ZMapFeatureContext context)
+{
+  /* \todo: gb10: should we be doing a merge here and just drawing the diff? doesn't seem to work... */
+  /* ZMapFeatureContext diff_context = zmapViewMergeInContext(zmap_view, context);*/
+
+  zmapViewDrawDiffContext(zmap_view, &context);
+
+  return TRUE;
+}
