@@ -1088,7 +1088,8 @@ void zMapWindowCanvasFeaturesetSetBackground(FooCanvasItem *foo, GdkColor *fill,
 		featureset->border_set = TRUE;
 	}
 
-	zMapWindowCanvasFeaturesetRedraw(featureset, featureset->zoom);
+// call from caller: this gives exposes between drawing featuresets
+//	zMapWindowCanvasFeaturesetRedraw(featureset, featureset->zoom);
 }
 
 
@@ -1249,6 +1250,12 @@ void zmap_window_canvas_featureset_expose_feature(ZMapWindowFeaturesetItem fi, Z
 }
 
 
+void zMapWindowCanvasFeaturesetExpose(ZMapWindowFeaturesetItem fi)
+{
+	zMapWindowCanvasFeaturesetRedraw(fi, fi->zoom);
+}
+
+
 void zMapWindowCanvasFeaturesetRedraw(ZMapWindowFeaturesetItem fi, double zoom)
 {
   double i2w_dx,i2w_dy;
@@ -1261,7 +1268,7 @@ void zMapWindowCanvasFeaturesetRedraw(ZMapWindowFeaturesetItem fi, double zoom)
 
 #if 1
   foo_canvas_item_request_update (foo);
-  // won't run as the item is not mapped yet
+  // won't run if the item is not mapped yet
 //  foo_canvas_item_request_redraw (foo);
 #endif
 
@@ -2899,7 +2906,7 @@ int zMapWindowCanvasFeaturesetFilter(gpointer gfilter, double value)
 
 	  /* dissapointing: we only need to reposition columns to the right of this one */
 
-	  zmapWindowFullReposition(filter->window->feature_root_group) ;
+	  zmapWindowFullReposition(filter->window->feature_root_group,TRUE) ;
 	}
       else
 	{

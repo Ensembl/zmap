@@ -708,7 +708,7 @@ void zMapWindowReset(ZMapWindow window)
  * foo_canvas_update_now() even if you set the need_update flag to TRUE, this
  * would only work if you set the update flag for every group/item to TRUE as well !
  *
- * Instead we in effect send an expose event (via dk_window_invalidate_rect()) to
+ * Instead we in effect send an expose event (via gdk_window_invalidate_rect()) to
  * the canvas window. Note that this is not straightforward as there are two
  * windows: layout->bin_window which equates to the scroll_region of the canvas
  * and widget->window which is the window you actually see. To get the redraw
@@ -1355,6 +1355,9 @@ void zmapWindowSetScrollRegion(ZMapWindow window,
       printf("set scroll %p %f,%f - %f,%f from %s\n",window->canvas,y1,x1,y2,x2,where);
 #endif
 	foo_canvas_set_scroll_region(FOO_CANVAS(window->canvas), x1, y1, x2, y2);
+
+	if(x2 < window->scroll_x2)
+		zMapWindowRedraw(window);	/* expose the blank area off the edge */
 
 	window->scroll_x1 = x1;
 	window->scroll_y1 = y1;
@@ -2335,7 +2338,7 @@ static void myWindowMove(ZMapWindow window, double start, double end)
 //  zmapWindowContainerRequestReposition(window->feature_root_group);
 
 // actually not relevant here we are changing Y not X
-//  zmapWindowFullReposition(window->feature_root_group);
+//  zmapWindowFullReposition(window->feature_root_group,TRUE);
 
   zmapWindowSetScrollRegion(window, NULL, &start, NULL, &end,"myWindowMove");
 
@@ -4470,7 +4473,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
             }
 
 	    /* Make sure selected features are shown or hidden. */
-	    zmapWindowFullReposition(window->feature_root_group) ;
+	    zmapWindowFullReposition(window->feature_root_group,TRUE) ;
 	  }
 
 	event_handled = TRUE ;
@@ -4542,7 +4545,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 
 	    zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(focus_column), bump_mode, compress_mode) ;
 
-	    zmapWindowFullReposition(window->feature_root_group) ;
+	    zmapWindowFullReposition(window->feature_root_group,TRUE) ;
 	  }
 
 	event_handled = TRUE ;
@@ -4815,7 +4818,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 
 	    zmapWindowColumnBump(FOO_CANVAS_ITEM(focus_column), curr_bump_mode) ;
 
-	    zmapWindowFullReposition(window->feature_root_group) ;
+	    zmapWindowFullReposition(window->feature_root_group,TRUE) ;
 	  }
 
 	event_handled = TRUE ;

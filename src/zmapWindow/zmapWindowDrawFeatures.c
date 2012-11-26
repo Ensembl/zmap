@@ -395,7 +395,7 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
 
   zMapPrintTimer(NULL, "Finished creating canvas features") ;
 
-  zmapWindowFullReposition(root_group);
+  zmapWindowFullReposition(root_group,TRUE);
 
   zmapWindowBusy(window, FALSE) ;
 
@@ -768,7 +768,7 @@ void zmapWindowHideEmpty(ZMapWindow window)
 				  hideEmptyCB,
 				  window);
 
-  zmapWindowFullReposition(window->feature_root_group);
+  zmapWindowFullReposition(window->feature_root_group,TRUE);
 
   return ;
 }
@@ -878,10 +878,6 @@ void zMapWindowDrawContext(ZMapCanvasData     canvas_data,
 
   zmapWindowHideEmpty(canvas_data->window);
 
-      /* unbumped features might be wider */
-  zmapWindowFullReposition(canvas_data->window->feature_root_group) ;
-
-
   return ;
 }
 
@@ -985,7 +981,14 @@ static void purge_hide_frame_specific_columns(ZMapWindowContainerGroup container
 #endif
 // printf("3F1: hiding %s\n", g_quark_to_string(container_set->unique_id)) ;
 //	      if (window->display_3_frame)
+
+#if HIDE_3F_COLUMN
 		    zmapWindowColumnHide((FooCanvasGroup *)container) ;
+#else
+		  removeAllFeatures(window, container_set) ;
+		  zmapWindowContainerFeatureSetRemoveAllItems(container_set) ;
+		  gtk_object_destroy((GtkObject *) container_set);
+#endif
 	    }
 	  else
 	    {
@@ -1004,13 +1007,15 @@ static void purge_hide_frame_specific_columns(ZMapWindowContainerGroup container
 #ifdef MH17_NEVER_INCLUDE_THIS_CODE
 		  zMapLogMessage("3F3: hiding %s", g_quark_to_string(container_set->unique_id)) ;
 #endif
-		  zmapWindowColumnHide((FooCanvasGroup *)container) ;
+
+#if HIDE_3F_COLUMN
 // printf("3F3: hiding %s\n", g_quark_to_string(container_set->unique_id)) ;
-
-		  /* remove all items from hash first !! */
-		  removeAllFeatures(window, container_set) ;
-
-		  zmapWindowContainerFeatureSetRemoveAllItems(container_set) ;
+		    zmapWindowColumnHide((FooCanvasGroup *)container) ;
+#else
+		    removeAllFeatures(window, container_set) ;
+		    zmapWindowContainerFeatureSetRemoveAllItems(container_set) ;
+		    gtk_object_destroy((GtkObject *) container_set);
+#endif
 		}
 	    }
 	}
@@ -1833,13 +1838,17 @@ GQuark zMapWindowGetFeaturesetContainerID(ZMapWindow window,GQuark featureset_id
 
 
 /* add or update an empty CanvasFeatureset that covers the group extent
- * Formerly all columns had backgrounds so they could be clicked on.
+ * Formerly all columns had foo backgrounds so they could be clicked on.
  * We could use existing CanvasFeaturesets to draw backgrounds but there's two problems:
  * - we may have an empty column for no CanvasFeatureset (esp strand separator)
  * - we may have overlapping CanvasFeaturesets (wiggle plots) that would hide each other
  * so boringly we have to add a CanvasFeatureset to cover a column (group) background
  * the good news is that these are relatively easy to resize to a containing group
- * Instead of blindly adding backgrounds as before we only do so if they are a diff colour from the container's container
+ * NOT TRUE: instead of blindly adding backgrounds as before we only do so if they are a diff colour from the container's container
+ * there's some race condition w/ fresh backgrounds as update has not been doem so a redraw seems to fail
+ * ways round this:
+ * - always draw backgrouns even if same colour (works but we get flicker on LHS)
+ * always draw but hide if same colour as parent
  */
 FooCanvasItem *zmapWindowDrawSetGroupBackground(ZMapWindowContainerGroup container, int start, int end, double width, gint layer, GdkColor *fill, GdkColor *border)
 {
@@ -1852,6 +1861,7 @@ FooCanvasItem *zmapWindowDrawSetGroupBackground(ZMapWindowContainerGroup contain
 	FooCanvasGroup *group = (FooCanvasGroup *) container;
 	GdkColor *parent_fill = NULL, *parent_border = NULL;
 	ZMapWindowContainerGroup parent = (ZMapWindowContainerGroup) (container->__parent__.item.parent);
+	gboolean show = FALSE;
 
 	if(!style)
 	{
@@ -1992,9 +2002,11 @@ printf("\n");
 			zMapWindowCanvasFeaturesetSetWidth(cfs, width);
 			/* set background does a request redraw */
 			zMapWindowCanvasFeaturesetSetBackground((FooCanvasItem *) cfs, fill, border );
+			show = TRUE;
 		}
 
 	}
+#if DELETE_IF_NULL
 	else if(cfs)
 	{
 //printf("del background %s\n", container->feature_any ? g_quark_to_string(container->feature_any->unique_id) : "none");
@@ -2003,6 +2015,19 @@ printf("\n");
 		zMapWindowCanvasFeaturesetSetBackground((FooCanvasItem *) cfs, NULL, NULL );
 
 	}
+#endif
+
+	if(cfs)
+	{
+		if(fill && parent_fill && fill->red == parent_fill->red && fill->green == parent_fill->green && fill->blue == parent_fill->blue)
+			show = FALSE;
+
+		if(show)
+			foo_canvas_item_show((FooCanvasItem *) cfs);
+		else
+			foo_canvas_item_hide((FooCanvasItem *) cfs);
+	}
+
       g_free(x);
 
 	return((FooCanvasItem *) cfs);
@@ -2320,8 +2345,8 @@ if(featureset_data->frame != ZMAPFRAME_NONE)
 
   /* If we are doing frame specific display then don't display the feature if its the wrong
    * frame or its on the reverse strand and we aren't displaying reverse strand frames. */
-if(!strncmp(g_quark_to_string(feature->unique_id),"3 frame",7))
-	printf("process feature %s: %d/%d (%d)\n",g_quark_to_string(feature->unique_id), featureset_data->frame, zmapWindowFeatureFrame(feature), feature->x1);
+//if(!strncmp(g_quark_to_string(feature->unique_id),"3 frame",7))
+//	printf("process feature %s: %d/%d (%d)\n",g_quark_to_string(feature->unique_id), featureset_data->frame, zmapWindowFeatureFrame(feature), feature->x1);
 
   if (featureset_data->frame != ZMAPFRAME_NONE
       && (featureset_data->frame != zmapWindowFeatureFrame(feature)

@@ -224,10 +224,6 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(GHashTable *ftoi_hash,
 						feature_stack->align->unique_id, feature_stack->block->unique_id,
 						feature_stack->set->unique_id, feature_stack->strand, feature_stack->frame, (FooCanvasItem *) canvas_item) ;
 #endif
-
-//		zMapWindowCanvasFeaturesetSetBackground((FooCanvasItem *) canvas_item,
-//			zmapWindowContainerGroupGetFill( (ZMapWindowContainerGroup) parent_container),
-//			zmapWindowContainerGroupGetBorder( (ZMapWindowContainerGroup) parent_container));
       }
 
       feature_item = (FooCanvasItem *) canvas_item;

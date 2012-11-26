@@ -706,6 +706,6 @@ void zmapWindowMenuSetStyleCB(int menu_item_id, gpointer callback_data)
   zmapWindowRedrawFeatureSet(menu_data->window, feature_set);	/* does a complex context thing */
 
   zmapWindowColOrderColumns(menu_data->window) ;	/* put this column (deleted then created) back into the right place */
-  zmapWindowFullReposition(menu_data->window->feature_root_group) ;		/* adjust sizing and shuffle left / right */
+  zmapWindowFullReposition(menu_data->window->feature_root_group,TRUE) ;		/* adjust sizing and shuffle left / right */
 }
 

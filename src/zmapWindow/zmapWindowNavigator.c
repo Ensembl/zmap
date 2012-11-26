@@ -528,7 +528,7 @@ void zMapWindowNavigatorDrawLocator(ZMapWindowNavigator navigate,
   }
 
   if(navigate->draw_expose_handler_id == 0)
-    zmapWindowFullReposition(navigate->container_root);
+    zmapWindowFullReposition(navigate->container_root,TRUE);
 
   return ;
 }

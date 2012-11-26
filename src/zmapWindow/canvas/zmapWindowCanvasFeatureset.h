@@ -148,6 +148,7 @@ void zmapWindowCanvasFeaturesetInitPango(GdkDrawable *drawable, ZMapWindowFeatur
 
 void zmapWindowCanvasFeaturesetFreePango(ZMapWindowCanvasPango pango);
 
+void zMapWindowCanvasFeaturesetExpose(ZMapWindowFeaturesetItem fi);
 void zMapWindowCanvasFeaturesetRedraw(ZMapWindowFeaturesetItem fi, double zoom);
 
 

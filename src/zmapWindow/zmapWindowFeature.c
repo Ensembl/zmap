@@ -926,7 +926,7 @@ void zmapWindowFeatureExpand(ZMapWindow window, FooCanvasItem *foo,
       zmapWindowColumnBump(FOO_CANVAS_ITEM(container_set), curr_bump_mode ) ;
 
       /* redraw this col and ones to the right */
-      zmapWindowFullReposition(window->feature_root_group) ;
+      zmapWindowFullReposition(window->feature_root_group,TRUE) ;
     }
 }
 
@@ -967,7 +967,7 @@ void zmapWindowFeatureContract(ZMapWindow window, FooCanvasItem *foo,
       zmapWindowColumnBump(FOO_CANVAS_ITEM(container_set), curr_bump_mode ) ;
 
       /* redraw this col and ones to the right */
-      zmapWindowFullReposition(window->feature_root_group) ;
+      zmapWindowFullReposition(window->feature_root_group,TRUE) ;
     }
 
   return ;

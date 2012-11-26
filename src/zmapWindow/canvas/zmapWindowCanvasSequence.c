@@ -234,7 +234,7 @@ static GList *zmapWindowCanvasSequencePaintHighlight( GdkDrawable *drawable, ZMa
 					height = (height * len) / seq->factor;
 				}
 			}
-printf("3FT paint sel %x %ld,%ld @ %ld %d %d,(%ld,%ld %d %d) %d\n", sh->type, sh->start, sh->end, start - y, cy, hcx, start, end, n_bases, n_show, len);
+//printf("3FT paint sel %x %ld,%ld @ %ld %d %d,(%ld,%ld %d %d) %d\n", sh->type, sh->start, sh->end, start - y, cy, hcx, start, end, n_bases, n_show, len);
 
 			/* NOTE
 			 * we paint ascending seq coords. If we have a 3' split codon (which is at the 5' end of an exon)
@@ -340,7 +340,7 @@ static void zmapWindowCanvasSequencePaintFeature(ZMapWindowFeaturesetItem featur
 
 	zmapWindowCanvasSequenceSetRow(featureset, seq);
 
-printf("3FT paint %s index= %p\n",g_quark_to_string(featureset->id), featureset->display_index);
+//printf("3FT paint %s index= %p\n",g_quark_to_string(featureset->id), featureset->display_index);
 
 	/* restrict to actual expose area, any expose will fetch the whole feature */
 	cx = expose->area.y - 1;
@@ -349,7 +349,7 @@ printf("3FT paint %s index= %p\n",g_quark_to_string(featureset->id), featureset-
 		cx = featureset->clip_y1 - seq->spacing + 1;
 	if(cy > featureset->clip_y2)
 		cy = featureset->clip_y2 + seq->spacing - 1;
-if(sequence->frame == ZMAPFRAME_2) printf("3FT expose: %d %d (%d %d) -> %d %d\n",expose->area.y - 1,expose->area.y + expose->area.height + 1, featureset->clip_y1,featureset->clip_y2, cx,cy);
+//if(sequence->frame == ZMAPFRAME_2) printf("3FT expose: %d %d (%d %d) -> %d %d\n",expose->area.y - 1,expose->area.y + expose->area.height + 1, featureset->clip_y1,featureset->clip_y2, cx,cy);
 
 	/* get the expose area: copied from calling code, we have one item here and it's normally bigger than the expose area */
 	foo_canvas_c2w(foo->canvas,0,floor(cx),NULL,&y1);

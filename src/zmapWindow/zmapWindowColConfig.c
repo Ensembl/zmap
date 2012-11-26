@@ -692,7 +692,7 @@ static void loaded_page_apply  (NotebookPage notebook_page)
   show_hide_data->apply_now  = save_apply_now;
   show_hide_data->reposition = save_reposition;
 
-  zmapWindowFullReposition(configure_data->window->feature_root_group);
+  zmapWindowFullReposition(configure_data->window->feature_root_group,TRUE);
 
  return ;
 }
@@ -2103,7 +2103,7 @@ static void loaded_show_button_cb(GtkToggleButton *togglebutton, gpointer user_d
 			}
 
 		      if(page_data->reposition)
-			zmapWindowFullReposition(window->feature_root_group);
+			zmapWindowFullReposition(window->feature_root_group,TRUE);
 		    }
 		  else
 		    {
@@ -2167,7 +2167,7 @@ static void select_all_buttons(GtkWidget *button, gpointer user_data)
 
 // unitiialised
 //      if((show_hide_data->reposition = needs_reposition))
-//	zmapWindowFullReposition(configure_data->window->feature_root_group);
+//	zmapWindowFullReposition(configure_data->window->feature_root_group,TRUE);
     }
 
 

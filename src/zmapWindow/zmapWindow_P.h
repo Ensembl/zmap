@@ -480,7 +480,7 @@ typedef enum
  *           Default colours.
  */
 
-#define ZMAP_WINDOW_BACKGROUND_COLOUR "grey"		    /* main canvas background */
+#define ZMAP_WINDOW_BACKGROUND_COLOUR "light grey"	    /* main canvas background */
 
 #define ZMAP_WINDOW_BLOCK_BACKGROUND_COLOUR "white"	    /* main canvas background */
 
@@ -1583,7 +1583,8 @@ void zmapWindowToggleMark(ZMapWindow window, gboolean whole_feature);
 void zmapWindowColOrderColumns(ZMapWindow window);
 void zmapWindowColOrderPositionColumns(ZMapWindow window);
 
-void zmapWindowFullReposition(ZMapWindowContainerGroup root) ;
+
+void zmapWindowFullReposition(ZMapWindowContainerGroup root, gboolean redraw) ;
 
 
 

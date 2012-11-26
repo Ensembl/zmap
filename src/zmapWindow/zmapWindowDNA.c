@@ -1221,7 +1221,7 @@ static void remove_current_matches_from_display(DNASearchData search_data)
 			/* this handles destroy of the (virtual) CanvasFeatureset */
 //			zmapWindowContainerGroupDestroy((ZMapWindowContainerGroup)(container));
 
-//			zmapWindowFullReposition(search_data->window->feature_root_group);
+//			zmapWindowFullReposition(search_data->window->feature_root_group,TRUE);
 
 			zMapFeatureContextDestroy(diff_context, TRUE);
 		}

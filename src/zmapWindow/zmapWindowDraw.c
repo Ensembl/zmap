@@ -236,8 +236,7 @@ static void myWindowSet3FrameMode(ZMapWindow window, ZMapWindow3FrameMode frame_
      zmapWindowColOrderColumns(window);
 
      /* FullReposition Sets the correct scroll region. */
-     zmapWindowFullReposition(window->feature_root_group);
-
+     zmapWindowFullReposition(window->feature_root_group, TRUE);
     }
   else
     {
@@ -271,7 +270,7 @@ void zMapWindowToggleDNAProteinColumns(ZMapWindow window,
     toggleColumnInMultipleBlocks(window, ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME,
 				 align_id, block_id, force_to, force) ;
 
-  zmapWindowFullReposition(window->feature_root_group) ;
+  zmapWindowFullReposition(window->feature_root_group,TRUE) ;
 
   zmapWindowBusy(window, FALSE) ;
 
@@ -407,7 +406,9 @@ void zmapWindowColumnSetState(ZMapWindow window, FooCanvasGroup *column_group,
 
       /* Only do redraw if it was requested _and_ state change needs it. */
       if (redraw_if_needed && redraw)
-            zmapWindowFullReposition(window->feature_root_group) ;
+	{
+		zmapWindowFullReposition(window->feature_root_group,TRUE) ;
+	}
    }
   zMapLogTime(TIMER_SETVIS,TIMER_STOP,0,"");
 }
@@ -713,7 +714,7 @@ void zmapWindowColumnsCompress(FooCanvasItem *column_item, ZMapWindow window, ZM
 	  g_list_free(bumped);
 	}
 
-      zmapWindowFullReposition(window->feature_root_group) ;
+      zmapWindowFullReposition(window->feature_root_group,TRUE) ;
     }
   else
     {
@@ -783,7 +784,7 @@ void zmapWindowreDrawContainerExecute(ZMapWindow                 window,
 				  enter_data);
 
 //  zmapWindowContainerRequestReposition(window->feature_root_group);
-  zmapWindowFullReposition(window->feature_root_group);
+  zmapWindowFullReposition(window->feature_root_group,TRUE);
 
 //  window->interrupt_expose = FALSE ;
   zMapPrintTimer(NULL, "Finished the work - including a reposition") ;
@@ -879,15 +880,11 @@ static void positionColumnCB(ZMapWindowContainerGroup container, FooCanvasPoints
 
 
 
-
 /* Makes sure all the things that need to be redrawn when the canvas needs redrawing. */
-void zmapWindowFullReposition(ZMapWindowContainerGroup root)
+void zmapWindowFullReposition(ZMapWindowContainerGroup root, gboolean redraw)
 {
   PositionColumnStruct poscol = { 0 };
   ZMapWindow window = g_object_get_data(G_OBJECT(root), ZMAP_WINDOW_POINTER);
-
-//  if(!window)
-//	  return;	/* we got called before setting up */
 
   /* scan canvas and move columns sideways */
 
@@ -900,7 +897,8 @@ void zmapWindowFullReposition(ZMapWindowContainerGroup root)
 	zMapWindowResetWindowWidth(window,(FooCanvasItem *) root, poscol.x1, poscol.x2);
 
   foo_canvas_item_request_update((FooCanvasItem *) root);
-  foo_canvas_item_request_redraw((FooCanvasItem *) root);
+  if(redraw)
+	foo_canvas_item_request_redraw((FooCanvasItem *) root);
 
   return ;
 }
@@ -915,7 +913,7 @@ void zmapWindowDrawZoom(ZMapWindow window)
 				  window);
 
 //  zmapWindowContainerRequestReposition(window->feature_root_group);
-  zmapWindowFullReposition(window->feature_root_group);
+  zmapWindowFullReposition(window->feature_root_group,TRUE);
 
   return ;
 }
@@ -936,7 +934,7 @@ void zMapWindowRequestReposition(FooCanvasItem *foo)
 
   container = zmapWindowContainerUtilsGetParentLevel(container, ZMAPCONTAINER_LEVEL_ROOT);
 
-  zmapWindowFullReposition((ZMapWindowContainerGroup) container);
+  zmapWindowFullReposition((ZMapWindowContainerGroup) container, FALSE);
 
   return ;
 }

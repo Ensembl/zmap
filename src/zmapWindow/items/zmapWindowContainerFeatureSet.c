@@ -853,30 +853,33 @@ void zMapWindowContainerFeatureSetShowHideMaskedFeatures(ZMapWindowContainerFeat
   ZMapStyleBumpMode bump_mode;      /* = container->settings.bump_mode; */
 
   container->masked = !show;
-
+//printf("show_hide 1\n");
   bump_mode = zMapWindowContainerFeatureSetGetContainerBumpMode(container);
 
+//printf("show_hide 2\n");
   if(bump_mode > ZMAPBUMP_UNBUMP)
     {
        zmapWindowColumnBump(FOO_CANVAS_ITEM(container),ZMAPBUMP_UNBUMP);
     }
 
+//printf("show_hide 3\n");
 
   if ((container_features = zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)container)))
     {
       FooCanvasGroup *group ;
 	GList *list;
-	ZMapWindowCanvasItem item;
-	ZMapFeature feature;
-	ZMapFeatureTypeStyle style;
+//	ZMapWindowCanvasItem item;
+//	ZMapFeature feature;
+//	ZMapFeatureTypeStyle style;
 
       group = FOO_CANVAS_GROUP(container_features) ;
 
       for(list = group->item_list;list;)
         {
-		item = ZMAP_CANVAS_ITEM(list->data);
-		feature = item->feature;
-		style = *feature->style;
+//printf("show_hide 3.1\n");
+//		item = ZMAP_CANVAS_ITEM(list->data);
+//		feature = item->feature;
+//		style = *feature->style;
 
         	if(ZMAP_IS_WINDOW_FEATURESET_ITEM(list->data))
         	{
@@ -885,11 +888,14 @@ void zMapWindowContainerFeatureSetShowHideMaskedFeatures(ZMapWindowContainerFeat
         	}
         }
     }
+//printf("show_hide 4\n");
             /* if we are adding/ removing features we may need to compress and/or rebump */
     if(bump_mode > ZMAPBUMP_UNBUMP)
     {
       zmapWindowColumnBump(FOO_CANVAS_ITEM(container),bump_mode);
     }
+//printf("show_hide 5\n");
+
 }
 
 
@@ -915,7 +921,8 @@ ZMapStyleBumpMode zMapWindowContainerFeatureSetGetContainerBumpMode(ZMapWindowCo
 
 
 
-
+#if 0
+// never called
 
 /*!
  * \brief Time to free the memory associated with the ZMapWindowContainerFeatureSet.
@@ -940,7 +947,7 @@ ZMapWindowContainerFeatureSet zmapWindowContainerFeatureSetDestroy(ZMapWindowCon
 
   return item_feature_set;
 }
-
+#endif
 
 
 
@@ -1117,18 +1124,21 @@ static void zmap_window_item_feature_set_destroy(GtkObject *gtkobject)
       container_set->user_hidden_stack = NULL;
     }
 
+#if MH17_NO_IDEA_WHY
   {
     char *col_name ;
 
     col_name = (char *) g_quark_to_string(zmapWindowContainerFeatureSetColumnDisplayName(container_set)) ;
     if (g_ascii_strcasecmp("3 frame translation", col_name) !=0)
       {
+#else
+  {
+	{
+#endif
+
 	if (gtkobject_class->destroy)
 	  (gtkobject_class->destroy)(gtkobject);
       }
-
-
-
   }
 
   return ;

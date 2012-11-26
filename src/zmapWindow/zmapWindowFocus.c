@@ -598,6 +598,7 @@ void zmapWindowFocusHighlightHotColumn(ZMapWindowFocus focus)
 		}
 
 		zmapWindowDrawSetGroupBackground(hot_column, 0, 1, 1.0, ZMAP_CANVAS_LAYER_COL_BACKGROUND, colour, NULL);
+		foo_canvas_item_request_redraw((FooCanvasItem *) hot_column);
 	}
 }
 
@@ -607,7 +608,11 @@ void zmapWindowFocusUnHighlightHotColumn(ZMapWindowFocus focus)
 	ZMapWindowContainerGroup column = (ZMapWindowContainerGroup) zmapWindowFocusGetHotColumn(focus);
 
 	if(column)
-		zmapWindowDrawSetGroupBackground(column, 0, 1, 1.0, ZMAP_CANVAS_LAYER_COL_BACKGROUND, NULL, NULL);
+	{
+		zmapWindowDrawSetGroupBackground(column, 0, 1, 1.0, ZMAP_CANVAS_LAYER_COL_BACKGROUND, column->background_fill, NULL);
+		foo_canvas_item_request_redraw((FooCanvasItem *) column);
+	}
+
 }
 
 
