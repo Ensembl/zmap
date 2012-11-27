@@ -133,7 +133,7 @@ static gboolean containerDestroyCB(FooCanvasItem *item_in_hash, gpointer data) ;
 
 static void setColours(ZMapWindow window) ;
 
-void zmapWindowHideEmpty(ZMapWindow window);
+static void zmapWindowHideEmpty(ZMapWindow window, char * where);
 static void hideEmptyCB(ZMapWindowContainerGroup container, FooCanvasPoints *points,
                       ZMapContainerLevelType level, gpointer user_data);
 
@@ -395,7 +395,7 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
 
   zMapPrintTimer(NULL, "Finished creating canvas features") ;
 
-  zmapWindowFullReposition(root_group,TRUE);
+  zmapWindowHideEmpty(window, "draw features");
 
   zmapWindowBusy(window, FALSE) ;
 
@@ -748,7 +748,6 @@ void zmapWindowDraw3FrameFeatures(ZMapWindow window)
 				    windowDrawContextCB,
 				    NULL, &canvas_data);
 
-	zmapWindowHideEmpty(window);
   return ;
 }
 
@@ -761,14 +760,14 @@ void zmapWindowDraw3FrameFeatures(ZMapWindow window)
    so these get created within justMergeContext() if they do not exist.
    So we have to hide empty columns after displaying all the featuresets
  */
-void zmapWindowHideEmpty(ZMapWindow window)
+static void zmapWindowHideEmpty(ZMapWindow window, char *where)
 {
   zmapWindowContainerUtilsExecute(window->feature_root_group,
 				  ZMAPCONTAINER_LEVEL_FEATURESET,
 				  hideEmptyCB,
 				  window);
 
-  zmapWindowFullReposition(window->feature_root_group,TRUE);
+  zmapWindowFullReposition(window->feature_root_group,TRUE, where);
 
   return ;
 }
@@ -876,7 +875,7 @@ void zMapWindowDrawContext(ZMapCanvasData     canvas_data,
 
   zMapLogTime(TIMER_DRAW_CONTEXT,TIMER_STOP,canvas_data->feature_count,"");
 
-  zmapWindowHideEmpty(canvas_data->window);
+//  zmapWindowHideEmpty(canvas_data->window);	/* done by caller */
 
   return ;
 }
@@ -947,7 +946,7 @@ void zmapWindowRedrawFeatureSet(ZMapWindow window, ZMapFeatureSet featureset)
 				    NULL, &canvas_data);
 
 #endif
-   zmapWindowHideEmpty(window);
+   zmapWindowHideEmpty(window, "redraw featureset");
 }
 
 
@@ -1713,7 +1712,8 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 						feature_set,
 						tmp_forward,
 						tmp_reverse,
-						canvas_data->current_frame, canvas_data->frame_mode_change) ;
+						canvas_data->current_frame, FALSE);
+						// causes screen refresh thrash: canvas_data->frame_mode_change) ;
 
 			zMapStopTimer("DrawFeatureSet", g_quark_to_string(feature_set->unique_id));
 			}

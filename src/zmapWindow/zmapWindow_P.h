@@ -813,7 +813,6 @@ typedef struct _ZMapWindowStruct
   Display3FrameMode display_3_frame ;
   gboolean show_3_frame_reverse ;			  /* 3 frame displayed on reverse col ? */
 
-  gboolean interrupt_expose;
 
 } ZMapWindowStruct ;
 
@@ -1584,7 +1583,7 @@ void zmapWindowColOrderColumns(ZMapWindow window);
 void zmapWindowColOrderPositionColumns(ZMapWindow window);
 
 
-void zmapWindowFullReposition(ZMapWindowContainerGroup root, gboolean redraw) ;
+void zmapWindowFullReposition(ZMapWindowContainerGroup root, gboolean redraw, char *where) ;
 
 
 

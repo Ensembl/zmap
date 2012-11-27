@@ -2920,7 +2920,7 @@ int zMapWindowCanvasFeaturesetFilter(gpointer gfilter, double value)
 
 	  /* dissapointing: we only need to reposition columns to the right of this one */
 
-	  zmapWindowFullReposition(filter->window->feature_root_group,TRUE) ;
+	  zmapWindowFullReposition(filter->window->feature_root_group,TRUE, "filter") ;
 	}
       else
 	{

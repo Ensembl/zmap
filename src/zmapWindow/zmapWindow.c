@@ -4473,7 +4473,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
             }
 
 	    /* Make sure selected features are shown or hidden. */
-	    zmapWindowFullReposition(window->feature_root_group,TRUE) ;
+	    zmapWindowFullReposition(window->feature_root_group,TRUE, "key_del") ;
 	  }
 
 	event_handled = TRUE ;
@@ -4545,7 +4545,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 
 	    zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(focus_column), bump_mode, compress_mode) ;
 
-	    zmapWindowFullReposition(window->feature_root_group,TRUE) ;
+	    zmapWindowFullReposition(window->feature_root_group,TRUE, "key b") ;
 	  }
 
 	event_handled = TRUE ;
@@ -4818,7 +4818,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 
 	    zmapWindowColumnBump(FOO_CANVAS_ITEM(focus_column), curr_bump_mode) ;
 
-	    zmapWindowFullReposition(window->feature_root_group,TRUE) ;
+	    zmapWindowFullReposition(window->feature_root_group,TRUE, "key u") ;
 	  }
 
 	event_handled = TRUE ;

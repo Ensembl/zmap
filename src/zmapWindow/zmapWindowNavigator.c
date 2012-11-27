@@ -492,7 +492,7 @@ void zmapWindowNavigatorLocusRedraw(ZMapWindowNavigator navigate)
 /* this resizes the widget too after having done some canvas update
  * we could calculate this stuff without waiting for the canvas....
  * the locator gets redrawn when the window zoom changes so this is called from there via zmapView->visibilityChangeCB()
- * ans also from this module due to drag and drop
+ * and also from this module due to drag and drop
  */
 
 void zMapWindowNavigatorDrawLocator(ZMapWindowNavigator navigate,
@@ -527,8 +527,8 @@ void zMapWindowNavigatorDrawLocator(ZMapWindowNavigator navigate,
 	  foo_canvas_item_request_redraw(navigate->locator);
   }
 
-  if(navigate->draw_expose_handler_id == 0)
-    zmapWindowFullReposition(navigate->container_root,TRUE);
+//  if(navigate->draw_expose_handler_id == 0)	/* sets nav scroll region ?? */
+//	zmapWindowFullReposition(navigate->container_root,TRUE, "draw locator");
 
   return ;
 }
@@ -620,7 +620,8 @@ static void navigateDrawFunc(NavigateDraw nav_draw, GtkWidget *widget)
                                     drawContext,
                                     NULL, nav_draw);
 
-// don-t:  zmapWindowFullReposition(navigate->container_root);
+// commenting this back in gives a mavigator pane that's too narrow: very odd
+// don-t: zmapWindowFullReposition(navigate->container_root,TRUE, "nav draw");
 
   return ;
 }
