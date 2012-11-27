@@ -132,39 +132,7 @@ static void get_filter_list_up_to(GList **filter_out, int max);
 static void available_locus_names_filter(GList **filter_out);
 static void default_locus_names_filter(GList **filter_out);
 
-#if 0
-/* We need this because the locator is drawn as a foo_canvas_rect with
- * a transparent background, that will not receive events! Therefore as
- * a work around we set up a handler on the root background and test
- * whether we're within the bounds of the locator. */
-typedef struct
-{
-  ZMapWindowNavigator navigate;
-  gboolean locator_click;
-  double   click_correction;
-}TransparencyEventStruct, *TransparencyEvent;
 
-
-static void container_group_add_highlight_area_item(ZMapWindowNavigator navigate,
-						    ZMapWindowContainerGroup container);
-
-
-/* The container update hooks */
-static gboolean highlight_locator_area_cb(ZMapWindowContainerGroup container, FooCanvasPoints *points,
-					  ZMapContainerLevelType level, gpointer user_data);
-
-static gboolean positioning_cb(ZMapWindowContainerGroup container, FooCanvasPoints *points,
-			       ZMapContainerLevelType level, gpointer user_data);
-
-static gboolean container_draw_locator(ZMapWindowContainerGroup container, FooCanvasPoints *points,
-				       ZMapContainerLevelType level, gpointer user_data);
-
-/* create the items which get updated during hooks */
-static void container_group_add_locator(ZMapWindowNavigator navigate,
-					ZMapWindowContainerGroup container);
-static void container_group_add_highlight_area_item(ZMapWindowNavigator navigate,
-						    ZMapWindowContainerGroup container);
-#endif
 
 void zmapWindowNavigatorRunSet(ZMapFeatureSet set,
                                  FooCanvasGroup *container,
@@ -505,7 +473,7 @@ void zMapWindowNavigatorDrawLocator(ZMapWindowNavigator navigate,
   root  = (FooCanvasItem *) navigate->container_root;
   if(!root)
 	  return;
-  widget = GTK_WIDGET(((FooCanvasItem *)root)->canvas );
+  widget = GTK_WIDGET(root->canvas );
 
   /* Always set these... */
   navigate->locator_y_coords.x1 = raw_top;
@@ -524,7 +492,7 @@ void zMapWindowNavigatorDrawLocator(ZMapWindowNavigator navigate,
   {
 	  zMapWindowCanvasFeaturesetSetSequence((ZMapWindowFeaturesetItem) navigate->locator, raw_top,raw_bot);
 	  foo_canvas_item_request_update(navigate->locator);
-	  foo_canvas_item_request_redraw(navigate->locator);
+	  zMapWindowCanvasFeaturesetExpose((ZMapWindowFeaturesetItem) navigate->locator);
   }
 
 //  if(navigate->draw_expose_handler_id == 0)	/* sets nav scroll region ?? */

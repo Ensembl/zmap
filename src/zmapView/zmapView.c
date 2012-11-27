@@ -186,7 +186,7 @@ static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inou
 				 gboolean request_as_columns, gboolean revcomp_if_needed);
 static void justDrawContext(ZMapView view, ZMapFeatureContext diff_context, GHashTable *styles, GList *masked);
 
-static ZMapFeatureContext createContext(ZMapView view, GList *feature_set_names) ;
+static ZMapFeatureContext createContext(ZMapView view, GList *feature_set_names, ZMapFeatureSet feature_set) ;
 
 static ZMapViewWindow addWindow(ZMapView zmap_view, GtkWidget *parent_widget) ;
 
@@ -523,6 +523,36 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 
      // read in a few ZMap stanzas
       getIniData(zmap_view, config_str, settings_list);
+
+	if(!zmap_view->features)
+	{
+		/* add a strand separator featureset, we need it for the yellow stripe in the middle of the screen */
+		/* it will cause a column of the same name to be created */
+		/* real separator featuresets have diff names and will be added to the column */
+		ZMapFeatureSet feature_set;
+		ZMapFeatureTypeStyle style;
+		ZMapSpan loaded;
+		ZMapFeatureSequenceMap sequence = zmap_view->view_sequence;
+
+		feature_set = zMapFeatureSetCreate(ZMAP_FIXED_STYLE_STRAND_SEPARATOR, NULL);
+		if(feature_set)
+		{
+			style = g_hash_table_lookup(zmap_view->context_map.styles,
+							GUINT_TO_POINTER(zMapStyleCreateID(ZMAP_FIXED_STYLE_STRAND_SEPARATOR)));
+
+			zMapFeatureSetStyle(feature_set,style);
+
+			loaded = g_new0(ZMapSpanStruct,1);	/* prevent silly log messages */
+			loaded->x1 = sequence->start;
+			loaded->x2 = sequence->end;
+			feature_set->loaded = g_list_append(NULL,loaded);
+
+		}
+		zmap_view->features = createContext(zmap_view, g_list_append(NULL,
+			GUINT_TO_POINTER(zMapStyleCreateID(ZMAP_FIXED_STYLE_STRAND_SEPARATOR))),
+			feature_set);	/* initialise to strand separator */
+	}
+
 
       if (zmap_view->columns_set)
 	{
@@ -1794,7 +1824,7 @@ ZMapViewConnection zMapViewRequestServer(ZMapView view, ZMapViewConnection view_
 	else
 	{
 	/* Create data specific to this step list...and set it in the connection. */
-		context = createContext(view, req_featuresets) ;
+		context = createContext(view, req_featuresets, NULL) ;
 	}
 
 	//printf("request featureset %s from %s\n",g_quark_to_string(GPOINTER_TO_UINT(req_featuresets->data)),server->url);
@@ -4892,15 +4922,12 @@ static void setZoomStatus(gpointer data, gpointer user_data)
 
 
 /* Trial code to get alignments from a file and create a context...... */
-static ZMapFeatureContext createContext(ZMapView view, GList *feature_set_names)
+static ZMapFeatureContext createContext(ZMapView view, GList *feature_set_names, ZMapFeatureSet feature_set)
 {
   ZMapFeatureContext context = NULL ;
   gboolean master = TRUE ;
   ZMapFeatureAlignment alignment ;
   ZMapFeatureBlock block ;
-  ZMapFeatureSet feature_set;
-  ZMapFeatureTypeStyle style;
-  ZMapSpan loaded;
 
   ZMapFeatureSequenceMap sequence = view->view_sequence;
 
@@ -4917,26 +4944,8 @@ static ZMapFeatureContext createContext(ZMapView view, GList *feature_set_names)
 
   zMapFeatureAlignmentAddBlock(alignment, block) ;
 
-  /* add a strand separator featureset if this repeats it will be merged, but we need it for the yellow stripe in the middle of the screen */
-  /* it will cause a column of the ame name to be created */
-  /* real separator featureset have diff names and will be added to the column */
-
-  feature_set = zMapFeatureSetCreate(ZMAP_FIXED_STYLE_STRAND_SEPARATOR, NULL);
   if(feature_set)
-  {
-	style = g_hash_table_lookup(view->context_map.styles,
-					GUINT_TO_POINTER(zMapStyleCreateID(ZMAP_FIXED_STYLE_STRAND_SEPARATOR)));
-
-	zMapFeatureSetStyle(feature_set,style);
-
 	zMapFeatureBlockAddFeatureSet(block, feature_set);
-
-	loaded = g_new0(ZMapSpanStruct,1);	/* prevent silly log messages */
-	loaded->x1 = sequence->start;
-	loaded->x2 = sequence->end;
-	feature_set->loaded = g_list_append(NULL,loaded);
-
-  }
 
 
 #if 0
