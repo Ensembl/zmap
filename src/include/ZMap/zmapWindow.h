@@ -339,8 +339,10 @@ typedef struct ZMapWindowCallbackCommandScratchStructName
   ZMapFeatureBlock block ;
 
   /* Scratch specific section. */
+  ZMapFeatureSequenceMap sequence;
+  ZMapFeature feature;
+  ZMapFeatureSet feature_set;
   ZMapFeatureContext context;
-
 } ZMapWindowCallbackCommandScratchStruct, *ZMapWindowCallbackCommandScratch ;
 
 

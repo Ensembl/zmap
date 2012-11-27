@@ -291,6 +291,9 @@ void zmapWindowScratchCopyFeature(ZMapWindow window,
           
           /* Set up general command field for callback. */
           scratch_cmd->cmd = ZMAPWINDOW_CMD_COPYTOSCRATCH ;
+          scratch_cmd->sequence = window->sequence;
+          scratch_cmd->feature = orig_feature;
+          scratch_cmd->feature_set = feature_set;
           scratch_cmd->context = window->feature_context;
 
           (*(window_cbs_G->command))(window, window->app_data, scratch_cmd) ;

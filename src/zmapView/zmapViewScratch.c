@@ -141,13 +141,65 @@ void zmapViewScratchInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence)
 /*!
  * \brief Update any changes to the given featureset
  */
-gboolean zmapViewScratchUpdateContext(ZMapView zmap_view, 
+gboolean zmapViewScratchUpdateFeature(ZMapView zmap_view, 
+                                      ZMapFeatureSequenceMap sequence,
+                                      ZMapFeature feature,
+                                      ZMapFeatureSet feature_set,
                                       ZMapFeatureContext context)
 {
-  /* \todo: gb10: should we be doing a merge here and just drawing the diff? doesn't seem to work... */
-  /* ZMapFeatureContext diff_context = zmapViewMergeInContext(zmap_view, context);*/
 
-  zmapViewDrawDiffContext(zmap_view, &context);
+  
+  GList *list_item = NULL;
+
+  for (list_item = g_list_first(zmap_view->window_list); list_item; list_item = g_list_next(list_item))
+    {
+      ZMapViewWindow view_window = list_item->data ;
+      zMapWindowFeatureReset(view_window->window, zmap_view->revcomped_features) ;
+    }
+
+  //zMapWindowNavigatorReset(zmap_view->navigator_window);  
+  //zMapWindowNavigatorSetStrand(zmap_view->navigator_window, zmap_view->revcomped_features);
+  //zMapWindowNavigatorDrawFeatures(zmap_view->navigator_window, zmap_view->features, zmap_view->context_map.styles);
+  
+  for (list_item = g_list_first(zmap_view->window_list); list_item; list_item = g_list_next(list_item))
+    {
+      ZMapViewWindow view_window = list_item->data ;
+      zMapWindowFeatureRedraw(view_window->window, zmap_view->features, zmap_view->revcomped_features) ;
+    }
+
+
+//  if (feature->style)
+//    {
+//
+//      ZMapFeatureBlock block = (ZMapFeatureBlock)zMapFeatureGetParentGroup((ZMapFeatureAny)feature_set, ZMAPFEATURE_STRUCT_BLOCK) ;      
+//      ZMapFeatureBlock block_cp = (ZMapFeatureBlock)zMapFeatureAnyCopy((ZMapFeatureAny)block);
+//      
+//      ZMapFeatureAlignment align    = (ZMapFeatureAlignment)zMapFeatureGetParentGroup((ZMapFeatureAny)block, ZMAPFEATURE_STRUCT_ALIGN) ;
+//      ZMapFeatureAlignment align_cp = (ZMapFeatureAlignment)zMapFeatureAnyCopy((ZMapFeatureAny)align);
+//      
+//      //ZMapFeatureContext context  = (ZMapFeatureContext)zMapFeatureGetParentGroup((ZMapFeatureAny)align, ZMAPFEATURE_STRUCT_CONTEXT) ;
+//      ZMapFeatureContext context_cp = (ZMapFeatureContext)zMapFeatureAnyCopy((ZMapFeatureAny)context);
+//
+//      /* Now make a tree */
+//      zMapFeatureContextAddAlignment(context_cp, align_cp, context->master_align == align);
+//      zMapFeatureAlignmentAddBlock(align_cp, block_cp);
+//      zMapFeatureBlockAddFeatureSet(block_cp, feature_set);
+//
+//      /* Now we have a context to merge. */
+//      ZMapFeatureContext diff = NULL;
+//      zMapFeatureContextMerge(&context, &context_cp, &diff,NULL);
+//
+//      /* Merge our context into the view's context and view the diff context */
+//      //ZMapFeatureContext diff = zmapViewMergeInContext(zmap_view, context_cp);
+//      if (diff)
+//        zmapViewDrawDiffContext(zmap_view, &diff);
+//
+//    }
+//  else
+//    {
+//      zMapLogWarning("Feature set '%s' has no style!",
+//                     g_quark_to_string(feature_set->original_id));
+//    }
 
   return TRUE;
 }

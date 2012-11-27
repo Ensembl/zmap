@@ -4980,7 +4980,7 @@ static void commandCB(ZMapWindow window, void *caller_data, void *window_data)
     case ZMAPWINDOW_CMD_COPYTOSCRATCH:
       {
 	ZMapWindowCallbackCommandScratch scratch_cmd = (ZMapWindowCallbackCommandScratch)cmd_any ;
-        zmapViewScratchUpdateContext(view, scratch_cmd->context);
+        zmapViewScratchUpdateFeature(view, scratch_cmd->sequence, scratch_cmd->feature, scratch_cmd->feature_set, scratch_cmd->context);
         break;
       }
       
