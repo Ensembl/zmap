@@ -256,6 +256,20 @@ int zMap_draw_line(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, g
 }
 
 
+/* these are less common than solid lines */
+int zMap_draw_broken_line(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, gint cx1, gint cy1, gint cx2, gint cy2)
+{
+	int ret;
+
+	gdk_gc_set_line_attributes(featureset->gc, 1, GDK_LINE_ON_OFF_DASH,GDK_CAP_BUTT, GDK_JOIN_MITER);
+
+	ret = zMap_draw_line(drawable, featureset, cx1, cy1, cx2, cy2);
+
+	gdk_gc_set_line_attributes(featureset->gc, 1, GDK_LINE_SOLID,GDK_CAP_BUTT, GDK_JOIN_MITER);
+
+	return ret;
+}
+
 
 
 /* clip to expose region */

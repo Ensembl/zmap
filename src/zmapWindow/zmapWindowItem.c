@@ -1,4 +1,3 @@
-/*  Last edited: Jul 13 14:33 2011 (edgrif) */
 /*  File: zmapWindowItem.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -39,6 +38,8 @@
 #include <zmapWindow_P.h>
 #include <zmapWindowContainerUtils.h>
 
+
+/* Why are these here....try to get rid of them.... */
 #include <zmapWindowCanvasItem.h>
 #include <zmapWindowContainerFeatureSet_I.h>
 
@@ -46,11 +47,11 @@
 
 
 
-//static ZMapFeatureContextExecuteStatus highlight_feature(GQuark key, gpointer data, gpointer user_data, char **error_out) ;
-
 static void getVisibleCanvas(ZMapWindow window,
 			     double *screenx1_out, double *screeny1_out,
 			     double *screenx2_out, double *screeny2_out) ;
+
+
 
 
 
@@ -689,7 +690,7 @@ void zmapWindowItemCentreOnItem(ZMapWindow window, FooCanvasItem *item,
 
 
 /* Moves to a subpart of an item, note the coords sub_start/sub_end need to be item coords,
- * NOT world coords. If sub_start == sub_end == 0.0 then they are ignored. */
+ * NOT world coords. If sub_start == sub_end == 0.0 then the whole item is centred on. */
 void zmapWindowItemCentreOnItemSubPart(ZMapWindow window, FooCanvasItem *item,
 				       gboolean alterScrollRegionSize,
 				       double boundaryAroundItem,
@@ -698,8 +699,10 @@ void zmapWindowItemCentreOnItemSubPart(ZMapWindow window, FooCanvasItem *item,
   double ix1, ix2, iy1, iy2;
   int cx1, cx2, cy1, cy2;
   int final_canvasx, final_canvasy, tmpx, tmpy, cheight, cwidth;
-  gboolean debug = FALSE;
+  static gboolean debug = FALSE ;
 
+
+  /* OH GOSH....THIS FUNCTION IS HARD TO FOLLOW, SOME COMMENTING WOULD HAVE HELPED. */
   zMapAssert(window && item) ;
 
   if (zmapWindowItemIsShown(item))
@@ -719,8 +722,18 @@ void zmapWindowItemCentreOnItemSubPart(ZMapWindow window, FooCanvasItem *item,
 	  double height ;
 	  foo_canvas_item_get_bounds(item, &ix1, &iy1, &ix2, &iy2) ;
 
+#if 1 // WAS_MERGE_CONFLICT
 	  height = iy2 - iy1 + 1;
 	  if (iy1 > 0)
+#else
+	  /* If we are using the background then we should use it's height as originally set. */
+	  height = zmapWindowContainerGroupGetBackgroundSize(ZMAP_CONTAINER_GROUP(item)) ;
+
+	  /* Clamp y extent to be within items background, note that sometimes background
+	   * may be negative.....afraid I don't know why.... */
+	  if (iy1 != 0)
+>>>>>>> develop
+#endif
 	    iy1 = 0 ;
 	  if (iy2 < height)
 	    iy2 = height ;
@@ -730,6 +743,8 @@ void zmapWindowItemCentreOnItemSubPart(ZMapWindow window, FooCanvasItem *item,
 	  foo_canvas_item_get_bounds(item, &ix1, &iy1, &ix2, &iy2) ;
 	}
 
+
+      /* If sub_part start/end are set then need to centre on that part of an item. */
       if (sub_start != 0.0 || sub_end != 0.0)
 	{
 	  zMapAssert(sub_start <= sub_end
@@ -742,16 +757,15 @@ void zmapWindowItemCentreOnItemSubPart(ZMapWindow window, FooCanvasItem *item,
 	}
 
 
-      /* Fix the numbers to make sense. */
+      /* Fix the item coords to be in world coords for following calculations. */
       foo_canvas_item_i2w(item, &ix1, &iy1);
       foo_canvas_item_i2w(item, &ix2, &iy2);
 
 
-      /* the item coords are now WORLD */
-
-
       if (boundaryAroundItem > 0.0)
 	{
+	  /* sadly I don't know what PPU stand for.... */
+
 	  /* think about PPU for X & Y!! */
 	  ix1 -= boundaryAroundItem;
 	  iy1 -= boundaryAroundItem;
@@ -759,7 +773,8 @@ void zmapWindowItemCentreOnItemSubPart(ZMapWindow window, FooCanvasItem *item,
 	  iy2 += boundaryAroundItem;
 	}
 
-      if(alterScrollRegionSize)
+
+      if (alterScrollRegionSize)
 	{
 	  /* this doeesn't work. don't know why. */
 	  double sy1, sy2;
@@ -769,22 +784,27 @@ void zmapWindowItemCentreOnItemSubPart(ZMapWindow window, FooCanvasItem *item,
 	}
       else
 	{
-	  if(!zmapWindowItemRegionIsVisible(window, item))
+	  if (!zmapWindowItemRegionIsVisible(window, item))
 	    {
 	      double sx1, sx2, sy1, sy2, tmps, tmpi, diff;
+
 	      /* Get scroll region (clamped to sequence coords) */
 	      zmapWindowGetScrollRegion(window, &sx1, &sy1, &sx2, &sy2);
+
 	      /* we now have scroll region coords */
 	      /* set tmp to centre of regions ... */
 	      tmps = sy1 + ((sy2 - sy1) / 2);
 	      tmpi = iy1 + ((iy2 - iy1) / 2);
+
 	      /* find difference between centre points */
 	      diff = tmps - tmpi;
 
 	      /* alter scroll region to match that */
 	      sy1 -= diff; sy2 -= diff;
+
 	      /* clamp in case we've moved outside the sequence */
 	      zmapWindowClampSpan(window, &sy1, &sy2);
+
 	      /* Do the move ... */
 	      zMapWindowMove(window, sy1, sy2);
 	    }
@@ -800,28 +820,34 @@ void zmapWindowItemCentreOnItemSubPart(ZMapWindow window, FooCanvasItem *item,
       foo_canvas_w2c(item->canvas, ix1, iy1, &cx1, &cy1);
       foo_canvas_w2c(item->canvas, ix2, iy2, &cx2, &cy2);
 
-      if(debug)
+      if (debug)
 	{
 	  printf("[zmapWindowItemCentreOnItem] ix1=%f, ix2=%f, iy1=%f, iy2=%f\n", ix1, ix2, iy1, iy2);
 	  printf("[zmapWindowItemCentreOnItem] cx1=%d, cx2=%d, cy1=%d, cy2=%d\n", cx1, cx2, cy1, cy2);
 	}
 
-      /* This should possibly be a function */
-      tmpx = cx2 - cx1; tmpy = cy2 - cy1;
+      /* This should possibly be a function...YEH, WHAT DOES IT DO.....????? */
+      tmpx = cx2 - cx1;
+      tmpy = cy2 - cy1;
+
       if(tmpx & 1)
 	tmpx += 1;
       if(tmpy & 1)
 	tmpy += 1;
+
       final_canvasx = cx1 + (tmpx / 2);
       final_canvasy = cy1 + (tmpy / 2);
 
       tmpx = GTK_WIDGET(window->canvas)->allocation.width;
       tmpy = GTK_WIDGET(window->canvas)->allocation.height;
+
       if(tmpx & 1)
 	tmpx -= 1;
       if(tmpy & 1)
 	tmpy -= 1;
-      cwidth = tmpx / 2; cheight = tmpy / 2;
+
+      cwidth = tmpx / 2;
+      cheight = tmpy / 2;
       final_canvasx -= cwidth;
       final_canvasy -= cheight;
 
@@ -839,6 +865,9 @@ void zmapWindowItemCentreOnItemSubPart(ZMapWindow window, FooCanvasItem *item,
 
   return ;
 }
+
+
+
 
 
 /* Scrolls to an item if that item is not visible on the scren.

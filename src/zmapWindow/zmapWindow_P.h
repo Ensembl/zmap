@@ -913,7 +913,7 @@ void zmapWindowCreateSequenceSearchWindow(ZMapWindow window, FooCanvasItem *feat
 					  ZMapSequenceType sequence_type) ;
 void zmapWindowDNAListCreate(ZMapWindow zmapWindow, GList *dna_list,
 			     char *ref_seq_name, char *match_sequence, char *match_details,
-			     ZMapFeatureBlock block) ;
+			     ZMapFeatureBlock block, ZMapFeatureSet match_feature_set) ;
 char *zmapWindowDNAChoose(ZMapWindow window, FooCanvasItem *feature_item, ZMapWindowDialogType dialog_type,
 			  int *sequence_start_out, int *sequence_end_out) ;
 

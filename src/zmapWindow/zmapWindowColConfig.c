@@ -486,12 +486,15 @@ static GtkWidget *configure_make_toplevel(ColConfigure configure_data)
 {
   GtkWidget *toplevel = NULL;
 
-  if(!configure_data->window->col_config_window)
+  if (!configure_data->window->col_config_window)
     {
-      char *title, *seq_name ;
+      char *seq_name ;
 
-      /* New toplevel */
-      toplevel = gtk_window_new(GTK_WINDOW_TOPLEVEL) ;
+      /* Get sequence name for the title */
+      seq_name = (char *)g_quark_to_string(configure_data->window->feature_context->sequence_name);
+
+      toplevel = zMapGUIToplevelNew("Column configuration", seq_name) ;
+
       /* Add destroy func - destroyCB */
       g_signal_connect(GTK_OBJECT(toplevel), "destroy",
 		       GTK_SIGNAL_FUNC(destroyCB), (gpointer)configure_data) ;
@@ -500,16 +503,6 @@ static GtkWidget *configure_make_toplevel(ColConfigure configure_data)
       g_object_set_data(G_OBJECT(toplevel), CONFIGURE_DATA, configure_data) ;
 
       gtk_container_border_width(GTK_CONTAINER(toplevel), 5) ;
-
-      /* Get sequence name for the title */
-      seq_name = (char *)g_quark_to_string(configure_data->window->feature_context->sequence_name);
-
-      /* make the title, and set */
-      if((title = zMapGUIMakeTitleString("Column configuration", seq_name)))
-	{
-	  gtk_window_set_title(GTK_WINDOW(toplevel), title) ;
-	  g_free(title) ;	/* free me now. */
-	}
     }
 
   return toplevel;

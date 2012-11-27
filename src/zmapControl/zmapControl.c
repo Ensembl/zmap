@@ -595,7 +595,7 @@ static ZMap createZMap(void *app_data, ZMapFeatureSequenceMap seq_map)
   zmap->zmap_cbs_G = zmap_cbs_G ;
 
   zmap_num++ ;
-  zmap->zmap_id = g_strdup_printf("ZMap.%d", zmap_num) ;
+  zmap->zmap_id = g_strdup_printf("%d", zmap_num) ;
 
   zmap->app_data = app_data ;
   zmap->default_sequence = seq_map;
@@ -1147,13 +1147,15 @@ static void updateControl(ZMap zmap, ZMapView view)
       /* Update title bar of zmap window. */
       zMapViewGetSourceNameTitle(view, &db_name, &db_title) ;
       seq_name = zMapViewGetSequence(view) ;
-      title = g_strdup_printf("%s: %s%s%s - %s%s", zmap->zmap_id,
+
+      title = g_strdup_printf("%s%s%s - %s%s",
 			      db_name ? db_name : "",
 			      db_title ? " - ": "",
 			      db_title ? db_title : "",
 			      seq_name ? seq_name : "<no sequence>",
 			      features ? "" : " <no sequence loaded>") ;
-      gtk_window_set_title(GTK_WINDOW(zmap->toplevel), title) ;
+      zMapGUISetToplevelTitle(zmap->toplevel, zMapGetZMapID(zmap), title) ;
+
       g_free(title) ;
       g_free(seq_name);
 

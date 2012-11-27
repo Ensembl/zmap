@@ -76,6 +76,8 @@ typedef struct _ZMapAppContextStruct
 
   GtkWidget *app_widg ;
 
+  gboolean abbrev_title_prefix ;			    /* Is window title prefix abbreviated ? */
+
   GtkTreeStore *tree_store_widg ;
 
   GError *info;                 /* This is an object to hold a code

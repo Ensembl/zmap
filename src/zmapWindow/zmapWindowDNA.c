@@ -72,10 +72,8 @@ typedef struct
 } DNASearchDataStruct, *DNASearchData ;
 
 
-static gboolean dnaMatchesToFeatures(ZMapWindow            window,
-				     GList                *match_list,
-				     ZMapFeatureSet       *feature_set,
-				     ZMapFeatureTypeStyle *style_out) ;
+static void dnaMatchesToFeatures(ZMapWindow window, GList *match_list, ZMapFeatureTypeStyle orig_style,
+				 ZMapFeatureSet *feature_set_out, ZMapFeatureTypeStyle *style_out) ;
 static void requestDestroyCB(gpointer data, guint callback_action, GtkWidget *widget) ;
 static void destroyCB(GtkWidget *widget, gpointer cb_data) ;
 static void helpCB(gpointer data, guint callback_action, GtkWidget *w) ;
@@ -124,7 +122,7 @@ static gboolean window_dna_debug_G = FALSE;
  * ie nominally with 1 second to do a search it would take 68 years.
  * NOTE this number is used for all ZMaps views and windows, they are all distinct
  */
-static int DNA_group = 0;
+static int DNA_group_G = 0;
 
 
 
@@ -224,18 +222,18 @@ void zmapWindowCreateSequenceSearchWindow(ZMapWindow window, FooCanvasItem *feat
 
 
       /* set up the top level window */
-      search_data->toplevel = toplevel = gtk_window_new(GTK_WINDOW_TOPLEVEL) ;
+      if (sequence_type == ZMAPSEQUENCE_DNA)
+	text = "DNA Search" ;
+      else
+	text = "Peptide Search" ;
+      search_data->toplevel = toplevel = zMapGUIToplevelNew(NULL, text) ;
+
       g_signal_connect(GTK_OBJECT(toplevel), "destroy",
 		       GTK_SIGNAL_FUNC(destroyCB), (gpointer)search_data) ;
 
       gtk_container_set_focus_chain (GTK_CONTAINER(toplevel), NULL);
 
       gtk_container_border_width(GTK_CONTAINER(toplevel), 5) ;
-      if (sequence_type == ZMAPSEQUENCE_DNA)
-	text = "DNA Search" ;
-      else
-	text = "Peptide Search" ;
-      gtk_window_set_title(GTK_WINDOW(toplevel), text) ;
       gtk_window_set_default_size(GTK_WINDOW(toplevel), 500, -1) ;
 
 
@@ -399,32 +397,24 @@ void zmapWindowCreateSequenceSearchWindow(ZMapWindow window, FooCanvasItem *feat
  *                 Internal routines
  */
 
-static gboolean dnaMatchesToFeatures(ZMapWindow            window,
-				     GList                *match_list,
-				     ZMapFeatureSet       *feature_set,
-				     ZMapFeatureTypeStyle *style_out)
+static void dnaMatchesToFeatures(ZMapWindow window, GList *match_list, ZMapFeatureTypeStyle orig_style,
+				 ZMapFeatureSet *feature_set_out, ZMapFeatureTypeStyle *style_out)
 {
-  gboolean made_features = FALSE ;
   ZMapFeatureSet separator_featureset = NULL ;
-  ZMapFeatureTypeStyle style = NULL ;
+  ZMapFeatureTypeStyle style ;
   ZMapFeatureSetDesc f2c;
   ZMapFeatureSource src;
   GList *list;
   ZMapFeatureColumn column;
-
-  if (!g_list_length(match_list))
-	  return FALSE;
-
-  if((style = zMapFindStyle(window->context_map->styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_SEARCH_MARKERS_NAME))))
-    {
-      zmapWindowFeatureSetStyleStruct fstyle = {NULL} ;
-	gchar *name = g_strdup_printf("%s_%d", ZMAP_FIXED_STYLE_SEARCH_MARKERS_NAME, DNA_group++);
-
-      separator_featureset = zMapFeatureSetCreate(name, NULL);
+  zmapWindowFeatureSetStyleStruct fstyle = {NULL} ;
+  gchar *name = g_strdup_printf("%s_%d", ZMAP_FIXED_STYLE_SEARCH_MARKERS_NAME, DNA_group_G++);
 
 
-      style = zMapFeatureStyleCopy(style);
+  separator_featureset = zMapFeatureSetCreate(name, NULL);
 
+  style = zMapFeatureStyleCopy(orig_style);
+
+#if 1 // WAS_MERGE_CONFLICT
       separator_featureset->style = style ;
 
 	/* set up featureset2_column and anything else needed */
@@ -453,39 +443,65 @@ static gboolean dnaMatchesToFeatures(ZMapWindow            window,
 		g_hash_table_insert(window->context_map->source_2_sourcedata, GUINT_TO_POINTER(separator_featureset->unique_id), src);
 	}
 
-	list = g_hash_table_lookup(window->context_map->column_2_styles,GUINT_TO_POINTER(f2c->column_id));
-	if(!list)
-	{
-		list = g_list_prepend(list,GUINT_TO_POINTER(src->style_id));
-		g_hash_table_insert(window->context_map->column_2_styles,GUINT_TO_POINTER(f2c->column_id), list);
-	}
+#else
+=======
+  separator_featureset->style = style ;
 
-	column = g_hash_table_lookup(window->context_map->columns,GUINT_TO_POINTER(f2c->column_id));
-	if(!column)
-	{
-		column = g_new0(ZMapFeatureColumnStruct,1);
-		column->unique_id = f2c->column_id;
-		column->style_table = g_list_prepend(NULL, (gpointer)  style);
-		/* the rest shoudl get filled in elsewhere */
-		g_hash_table_insert(window->context_map->columns, GUINT_TO_POINTER(f2c->column_id), column);
-	}
+  /* set up featureset2_column and anything else needed */
+  f2c = g_hash_table_lookup(window->context_map->featureset_2_column, GUINT_TO_POINTER(separator_featureset->unique_id));
+  if(!f2c)	/* these just accumulate  and should be removed from the hash table on clear */
+    {
+      f2c = g_new0(ZMapFeatureSetDescStruct,1);
+>>>>>>> develop
 
-      fstyle.feature_set   = separator_featureset;
-      fstyle.feature_style = style;
-
-      g_list_foreach(match_list, matches_to_features, &fstyle);
-
-      made_features = TRUE;
-
-      if (feature_set)
-	*feature_set = separator_featureset ;
-
-      if (style_out)
-	*style_out = style ;
+      f2c->column_id = zMapFeatureSetCreateID(ZMAP_FIXED_STYLE_SEARCH_MARKERS_NAME);
+      f2c->column_ID = g_quark_from_string(ZMAP_FIXED_STYLE_SEARCH_MARKERS_NAME);
+      f2c->feature_src_ID = g_quark_from_string(name);
+      f2c->feature_set_text = ZMAP_FIXED_STYLE_SEARCH_MARKERS_TEXT;
+      g_hash_table_insert(window->context_map->featureset_2_column, GUINT_TO_POINTER(separator_featureset->unique_id), f2c);
     }
 
+  src = g_hash_table_lookup(window->context_map->source_2_sourcedata, GUINT_TO_POINTER(separator_featureset->unique_id));
+  if(!src)
+    {
+      src = g_new0(ZMapFeatureSourceStruct,1);
+      src->source_id = f2c->feature_src_ID;
+      src->source_text = g_quark_from_string(ZMAP_FIXED_STYLE_SEARCH_MARKERS_TEXT);
+      src->style_id = style->unique_id;
+      src->maps_to = f2c->column_id;
+      g_hash_table_insert(window->context_map->source_2_sourcedata, GUINT_TO_POINTER(separator_featureset->unique_id), src);
+    }
+#endif
 
-  return made_features ;
+  list = g_hash_table_lookup(window->context_map->column_2_styles,GUINT_TO_POINTER(f2c->column_id));
+  if(!list)
+    {
+      list = g_list_prepend(list,GUINT_TO_POINTER(src->style_id));
+      g_hash_table_insert(window->context_map->column_2_styles,GUINT_TO_POINTER(f2c->column_id), list);
+    }
+
+  column = g_hash_table_lookup(window->context_map->columns,GUINT_TO_POINTER(f2c->column_id));
+  if(!column)
+    {
+      column = g_new0(ZMapFeatureColumnStruct,1);
+      column->unique_id = f2c->column_id;
+      column->style_table = g_list_prepend(NULL, (gpointer)  style);
+      /* the rest shoudl get filled in elsewhere */
+      g_hash_table_insert(window->context_map->columns, GUINT_TO_POINTER(f2c->column_id), column);
+    }
+
+  fstyle.feature_set   = separator_featureset;
+  fstyle.feature_style = style;
+
+  g_list_foreach(match_list, matches_to_features, &fstyle);
+
+  if (feature_set_out)
+    *feature_set_out = separator_featureset ;
+
+  if (style_out)
+    *style_out = style ;
+
+  return ;
 }
 
 
@@ -735,17 +751,22 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
     }
   else
     {
+      ZMapFeatureTypeStyle orig_style ;
       GList *match_list ;
 
+      orig_style = zMapFindStyle(search_data->window->context_map->styles,
+				 zMapStyleCreateID(ZMAP_FIXED_STYLE_SEARCH_MARKERS_NAME)) ;
+      zMapAssert(orig_style) ;
 
       if (search_data->sequence_type == ZMAPSEQUENCE_DNA
 	  && (match_list = zMapDNAFindAllMatches(dna, query_txt, strand, start, end - start + 1,
 						 search_data->max_errors, search_data->max_Ns, TRUE)))
 	{
-	  ZMapFeatureSet new_feature_set = NULL;
-	  ZMapFeatureTypeStyle new_style = NULL;
+	  ZMapFeatureSet new_feature_set = NULL ;
+	  ZMapFeatureTypeStyle new_style = NULL ;
 	  ZMapDNAMatch match_data ;
 	  char *match_seq, *match_details ;
+
 
           if (window_dna_debug_G)
             g_list_foreach(match_list, printCoords, dna) ;
@@ -761,24 +782,24 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 	  /* Need to convert coords back to block coords here.... */
 	  g_list_foreach(match_list, remapCoords, search_data) ;
 
+	  if (!(search_data->keep_previous_hits))
+	    remove_current_matches_from_display(search_data);
+
+	  dnaMatchesToFeatures(search_data->window, match_list, orig_style,
+			       &new_feature_set, &new_style) ;
+
+	  setColoursInStyle(search_data, new_style) ;
+
+	  zmapWindowDrawSeparatorFeatures(search_data->window,
+					  search_data->block,
+					  new_feature_set,
+					  new_style) ;
+
 	  zmapWindowDNAListCreate(search_data->window, match_list,
 				  (char *)g_quark_to_string(search_data->block->original_id),
 				  match_seq,
 				  match_details,
-				  search_data->block) ;
-
-	  if (!(search_data->keep_previous_hits))
-	    remove_current_matches_from_display(search_data);
-
-	  if (dnaMatchesToFeatures(search_data->window, match_list, &new_feature_set, &new_style))
-	    {
-	      setColoursInStyle(search_data, new_style) ;
-
-	      zmapWindowDrawSeparatorFeatures(search_data->window,
-					      search_data->block,
-					      new_feature_set,
-					      new_style);
-	    }
+				  search_data->block, new_feature_set) ;
 
 	  g_free(match_details) ;
 	}
@@ -809,24 +830,23 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 	  /* Need to convert coords back to block coords here.... */
 	  g_list_foreach(match_list, remapCoords, search_data) ;
 
+	  if (!(search_data->keep_previous_hits))
+	    remove_current_matches_from_display(search_data);
+
+	  dnaMatchesToFeatures(search_data->window, match_list,  orig_style, &new_feature_set, &new_style) ;
+
+	  setColoursInStyle(search_data, new_style) ;
+
+	  zmapWindowDrawSeparatorFeatures(search_data->window,
+					  search_data->block,
+					  new_feature_set,
+					  new_style);
+
 	  zmapWindowDNAListCreate(search_data->window, match_list,
 				  (char *)g_quark_to_string(search_data->block->original_id),
 				  match_seq,
 				  match_details,
-				  search_data->block) ;
-
-	  if (!(search_data->keep_previous_hits))
-	    remove_current_matches_from_display(search_data);
-
-	  if (dnaMatchesToFeatures(search_data->window, match_list, &new_feature_set, &new_style))
-	    {
-	      setColoursInStyle(search_data, new_style) ;
-
-	      zmapWindowDrawSeparatorFeatures(search_data->window,
-					      search_data->block,
-					      new_feature_set,
-					      new_style);
-	    }
+				  search_data->block, new_feature_set) ;
 
 	  g_free(match_details) ;
 	}

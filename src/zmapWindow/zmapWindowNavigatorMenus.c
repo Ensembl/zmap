@@ -447,16 +447,10 @@ static GHashTable *access_window_context_to_item(gpointer user_data)
 static GtkWidget *zmapWindowNavigatorNewToplevel(char *title)
 {
   GtkWidget *window;
-  GtkWindow *gtk_window;
 
-  window     = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-  gtk_window = GTK_WINDOW(window);
+  window = zMapGUIToplevelNew(NULL, title) ;
 
-  /* Set it up graphically nice */
-  gtk_window_set_title(gtk_window, title) ;
-
-  gtk_window_set_default_size(gtk_window, -1, -1);
-
+  gtk_window_set_default_size(GTK_WINDOW(window), -1, -1);
   gtk_container_border_width(GTK_CONTAINER(window), 5) ;
 
   return window;

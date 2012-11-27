@@ -129,9 +129,9 @@ void zMapControlImportFile(ZMapControlImportFileCB user_func, gpointer user_data
 
   zMapAssert(user_func) ;
 
-  toplevel = gtk_window_new(GTK_WINDOW_TOPLEVEL) ;
+  toplevel = zMapGUIToplevelNew(NULL, "Please choose a file to import.") ;
+
   gtk_window_set_policy(GTK_WINDOW(toplevel), FALSE, TRUE, FALSE ) ;
-  gtk_window_set_title(GTK_WINDOW(toplevel), "Please choose a file to import.") ;
   gtk_container_border_width(GTK_CONTAINER(toplevel), 0) ;
 
   container = makePanel(toplevel, &seq_data, user_func, user_data, sequence_map, req_start, req_end) ;
