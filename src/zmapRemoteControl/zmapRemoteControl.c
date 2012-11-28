@@ -890,7 +890,16 @@ static void sendClipboardClearCB(GtkClipboard *clipboard, gpointer user_data)
 
 	      /* Optionally call app to signal that peer has received their request. */
 	      if (send->req_sent_func)
-		(send->req_sent_func)(send->req_sent_func_data) ;
+		{
+		  REMOTELOGMSG(remote_control,
+			       "%s", "About to call Apps requestSentCB.") ;
+
+		  (send->req_sent_func)(send->req_sent_func_data) ;
+
+		  REMOTELOGMSG(remote_control,
+			       "%s", "Back from Apps requestSentCB.") ;
+		}
+
 
 	      /* Now we are waiting so set timeout. */
 	      addTimeout(remote_control) ;
@@ -1079,8 +1088,9 @@ static void sendGetRequestClipboardCB(GtkClipboard *clipboard, GtkSelectionData 
 
 /* Send Request Step 5)
  * Peer takes ownership of its clipboard to signal that they know we have the reply.
- * that we have the reply. We pass the reply back to the application and reset our state
- * to waiting for a request.
+ * We pass the reply back to the application and reset our state to idle and then
+ * app will decide whether to wait, terminate or whatever.
+ * 
  * Our get callback should not be called at this stage.
  */
 
