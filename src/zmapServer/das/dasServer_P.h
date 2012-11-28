@@ -30,11 +30,6 @@
 #define DAS_SERVER_P_H
 
 #include <curl/curl.h>
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-#include <curl/types.h>
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 #include <curl/easy.h>
 #include <ZMap/zmapDAS.h>
 #include <ZMap/zmapXML.h>
