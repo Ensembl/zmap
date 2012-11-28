@@ -529,10 +529,13 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 		/* add a strand separator featureset, we need it for the yellow stripe in the middle of the screen */
 		/* it will cause a column of the same name to be created */
 		/* real separator featuresets have diff names and will be added to the column */
+
 		ZMapFeatureSet feature_set;
 		ZMapFeatureTypeStyle style;
 		ZMapSpan loaded;
 		ZMapFeatureSequenceMap sequence = zmap_view->view_sequence;
+		ZMapFeatureContext context;
+		GList *dummy = NULL;
 
 		feature_set = zMapFeatureSetCreate(ZMAP_FIXED_STYLE_STRAND_SEPARATOR, NULL);
 		if(feature_set)
@@ -548,9 +551,15 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 			feature_set->loaded = g_list_append(NULL,loaded);
 
 		}
-		zmap_view->features = createContext(zmap_view, g_list_append(NULL,
+		context = createContext(zmap_view, g_list_append(NULL,
 			GUINT_TO_POINTER(zMapStyleCreateID(ZMAP_FIXED_STYLE_STRAND_SEPARATOR))),
 			feature_set);	/* initialise to strand separator */
+
+		/* now draw it */
+
+		if (justMergeContext(zmap_view, &context, zmap_view->context_map.styles, &dummy, FALSE, TRUE))
+			justDrawContext(zmap_view, context, zmap_view->context_map.styles , dummy);
+
 	}
 
 
@@ -4944,7 +4953,7 @@ static ZMapFeatureContext createContext(ZMapView view, GList *feature_set_names,
 
   zMapFeatureAlignmentAddBlock(alignment, block) ;
 
-  if(feature_set)
+  if(feature_set)		/* this will be the strand separator dummy featureset */
 	zMapFeatureBlockAddFeatureSet(block, feature_set);
 
 

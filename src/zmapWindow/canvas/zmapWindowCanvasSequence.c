@@ -333,7 +333,7 @@ static void zmapWindowCanvasSequencePaintFeature(ZMapWindowFeaturesetItem featur
 	long y_base, y_paint;		/* index of base or peptide to draw */
 	int nb;
 	GList *hl;	/* iterator through highlight */
-//	ZMapFrame frame = feature->feature->feature.sequence.frame ;
+	ZMapFrame frame = zMapFeatureFrame(feature->feature);
 	ZMapWindowCanvasPango pango = (ZMapWindowCanvasPango) featureset->opt;
 
 	zmapWindowCanvasSequenceGetPango(drawable, featureset, seq);
@@ -369,8 +369,8 @@ static void zmapWindowCanvasSequencePaintFeature(ZMapWindowFeaturesetItem featur
 	if(seq->row_disp == 1 && seq->factor > 1)
 	{
 			/* bias backwards as we bias fwds later */
-		seq_y1-= sequence->frame - ZMAPFRAME_0;
-		seq_y2 -= sequence->frame - ZMAPFRAME_0;
+		seq_y1-= frame - ZMAPFRAME_0;
+		seq_y2 -= frame - ZMAPFRAME_0;
 	}
 
 	if(seq_y1 < 1)			/* sequence coords are 1 based */
@@ -395,8 +395,8 @@ static void zmapWindowCanvasSequencePaintFeature(ZMapWindowFeaturesetItem featur
 
 		y_paint = y_base * seq->factor;
 
-		if(sequence->frame)
-			y_paint += sequence->frame - ZMAPFRAME_0;
+		if(frame)
+			y_paint += frame - ZMAPFRAME_0;
 
 
 //if(sequence->frame == ZMAPFRAME_2) printf("3FT y, seq: %ld (%ld %ld) start,end %ld %ld, ybase %ld\n",y, seq_y1,seq_y2,seq->start, seq->end, y_base);
@@ -427,7 +427,7 @@ static void zmapWindowCanvasSequencePaintFeature(ZMapWindowFeaturesetItem featur
 
 		pango_renderer_draw_layout (pango->renderer, pango->layout,  cx * PANGO_SCALE ,  (cy + seq->offset) * PANGO_SCALE);
 
-//printf("frame %d text %s at %ld, canvas %.1f, %.1f = %d, %d \n", seq->feature.feature->feature.sequence.frame, seq->text, y, featureset->dx, y + featureset->dy, cx, cy);
+//printf("frame %d text %s at %ld, canvas %.1f, %.1f = %d, %d \n", zMapFeatureFrame(seq->feature), seq->text, y, featureset->dx, y + featureset->dy, cx, cy);
 	}
 }
 

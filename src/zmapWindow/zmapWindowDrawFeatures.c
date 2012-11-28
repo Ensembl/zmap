@@ -508,6 +508,14 @@ int zmapWindowDrawFeatureSet(ZMapWindow window,
 	double time = zMapElapsedSeconds;
 #endif
 
+#if 0
+GQuark fred = g_quark_from_string(ZMAP_FIXED_STYLE_DNA_NAME);
+if(feature_set->original_id == fred)
+{
+	printf("draw DNA %s %p %p\n", g_quark_to_string(feature_set->unique_id), forward_col_wcp, reverse_col_wcp);
+}
+#endif
+
   featureset_data.window = window ;
 
   if (forward_col_wcp)
@@ -576,6 +584,16 @@ int zmapWindowDrawFeatureSet(ZMapWindow window,
   }
   if(f_src)
   	featureset_data.feature_stack.maps_to = f_src->maps_to;
+
+#if 0
+  if(!reverse_container)
+  /* map rev strand features to fwd strand ... not sure why this ever worked without this */
+  /* -> display strand calculated in ProcessFeature and maps rev to fwd */
+  {
+	  reverse_container = forward_container;
+	  featureset_data.curr_reverse_col = featureset_data.curr_forward_col;
+  }
+#endif
 
   featureset_data.feature_stack.set_column[ZMAPSTRAND_NONE]    = (ZMapWindowContainerFeatureSet) forward_container;
   featureset_data.feature_stack.set_column[ZMAPSTRAND_FORWARD] = (ZMapWindowContainerFeatureSet) forward_container;
@@ -933,9 +951,6 @@ void zmapWindowRedrawFeatureSet(ZMapWindow window, ZMapFeatureSet featureset)
    zMapFeatureContextDestroy(diff_context, TRUE);
 
 #else
-
-/* NOTE better to make the diff context work ?? */
-/* this is good for 1 featureset, which is what we have so right no not so */
 
   canvas_data.this_featureset_only = featureset;
 
@@ -2199,6 +2214,7 @@ static FooCanvasGroup *createColumnFull(ZMapWindowContainerFeatures parent_group
        * represents, and also its style and a table of styles, used to cache column feature styles
        * where there is more than one feature type in a column. */
 #if ED_G_NEVER_INCLUDE_THIS_CODE
+if(zMapStyleGetMode(feature_set->style) == ZMAPSTYLE_MODE_SEQUENCE)
       printf("Adding column: \"%s\" %s %s %s\n",
 	     g_quark_to_string(original_id), g_quark_to_string(column_id), zMapFeatureStrand2Str(strand), zMapFeatureFrame2Str(frame)) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */

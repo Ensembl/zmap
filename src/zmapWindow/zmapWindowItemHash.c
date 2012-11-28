@@ -205,12 +205,11 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(GHashTable *ftoi_hash,
 		}
 		else
 		{
-			/* a display column for combing one or several sources into one display item */
+			/* a display column for combining one or several sources into one display item */
 			x = g_strdup_printf("%p_%s_%c%c", foo->canvas, g_quark_to_string(col_id), strand,frame);
 		}
 
             feature_stack->id = g_quark_from_string(x);
-            g_free(x);
 
 
             /* adds once per canvas+column+style, then returns that repeatedly */
@@ -219,11 +218,14 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(GHashTable *ftoi_hash,
 			feature_stack->strand,feature_stack->frame,feature_stack->set_index, 0);
 
 #if !FEATURESET_AS_COLUMN
-
 		zmapWindowFToIAddSet(ftoi_hash,
 						feature_stack->align->unique_id, feature_stack->block->unique_id,
 						feature_stack->set->unique_id, feature_stack->strand, feature_stack->frame, (FooCanvasItem *) canvas_item) ;
+
+//if(zMapStyleGetMode(feature_stack->set->style) == ZMAPSTYLE_MODE_SEQUENCE)
+//	printf("added set %s (%s) to hash\n", g_quark_to_string(feature_stack->set->unique_id),x);
 #endif
+            g_free(x);
       }
 
       feature_item = (FooCanvasItem *) canvas_item;
@@ -272,6 +274,9 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(GHashTable *ftoi_hash,
 			}
 
 			status = zmapWindowFToIAddSetFeature(feature_stack->col_hash[strand], feature->unique_id, feature_item, feature);
+
+//if(zMapStyleGetMode(feature_stack->set->style) == ZMAPSTYLE_MODE_SEQUENCE)
+//	printf("added feature %s to hash\n", g_quark_to_string(feature->unique_id));
 
 //x = g_quark_to_string(feature->unique_id);
 //if(frame != ZMAPFRAME_NONE)
@@ -795,7 +800,7 @@ ID2Canvas zmapWindowFToIFindID2CFull(ZMapWindow window, GHashTable *feature_cont
                   id2c = feature ;
 
  	          }
-//printf("ftoi find: %p %p %s %s\n",set->hash_table, feature, g_quark_to_string(feature_id), g_quark_to_string(tmp_set_id));
+//printf("ftoi find: %p %p %s, %s\n",set->hash_table, feature, g_quark_to_string(feature_id), g_quark_to_string(tmp_set_id));
 
 		}
 	    }
@@ -1404,13 +1409,13 @@ static GQuark makeSetID(GQuark set_id, ZMapStrand strand, ZMapFrame frame)
   switch (frame)
     {
     case ZMAPFRAME_0:
-      frame_str = "0" ;
-      break ;
-    case ZMAPFRAME_1:
       frame_str = "1" ;
       break ;
-    case ZMAPFRAME_2:
+    case ZMAPFRAME_1:
       frame_str = "2" ;
+      break ;
+    case ZMAPFRAME_2:
+      frame_str = "3" ;
       break ;
     default:
       frame_str = "." ;

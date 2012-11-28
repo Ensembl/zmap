@@ -69,24 +69,6 @@ typedef struct execOnChildrenStruct_
 } execOnChildrenStruct, *execOnChildren ;
 
 
-#if 0
-/* For 3 frame display/normal display. */
-typedef struct
-{
-  FooCanvasGroup *forward_group, *reverse_group ;
-  ZMapFeatureBlock block ;
-  ZMapWindow window ;
-  GData *styles ;
-
-  FooCanvasGroup *curr_forward_col ;
-  FooCanvasGroup *curr_reverse_col ;
-
-  int frame3_pos ;
-  ZMapFrame frame ;
-
-  ZMapFeatureTypeStyle style;
-} RedrawDataStruct, *RedrawData ;
-#endif
 
 
 typedef struct
@@ -110,29 +92,6 @@ typedef struct
 } VisCoordsStruct, *VisCoords ;
 
 
-#if 0
-typedef struct
-{
-  ZMapWindow window;
-
-  /* Records which alignment, block, set, type we are processing. */
-  ZMapFeatureContext full_context ;
-  GHashTable *styles ;
-  ZMapFeatureAlignment curr_alignment ;
-  ZMapFeatureBlock curr_block ;
-  ZMapFeatureSet curr_set ;
-
-  FooCanvasGroup *curr_root_group ;
-  ZMapWindowContainerFeatures curr_align_group ;
-  ZMapWindowContainerFeatures curr_block_group ;
-  ZMapWindowContainerFeatures curr_forward_group ;
-  ZMapWindowContainerFeatures curr_reverse_group ;
-
-  FooCanvasGroup *curr_forward_col ;
-  FooCanvasGroup *curr_reverse_col ;
-
-}SeparatorCanvasDataStruct, *SeparatorCanvasData;
-#endif
 
 static void toggleColumnInMultipleBlocks(ZMapWindow window, char *name,
 					 GQuark align_id, GQuark block_id,
@@ -141,7 +100,6 @@ static void toggleColumnInMultipleBlocks(ZMapWindow window, char *name,
 static void preZoomCB(ZMapWindowContainerGroup container, FooCanvasPoints *points,
                       ZMapContainerLevelType level, gpointer user_data) ;
 
-//static gint horizPosCompare(gconstpointer a, gconstpointer b) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void printChild(gpointer data, gpointer user_data) ;
@@ -937,6 +895,7 @@ void zMapWindowRequestReposition(FooCanvasItem *foo)
 
 
 
+
 void zmapWindowDrawSeparatorFeatures(ZMapWindow           window,
 				     ZMapFeatureBlock     block,
 				     ZMapFeatureSet       feature_set,
@@ -954,6 +913,8 @@ void zmapWindowDrawSeparatorFeatures(ZMapWindow           window,
     else
     {
       ZMapCanvasDataStruct canvas_data = {NULL};
+	FooCanvasItem *foo;
+
       /* this is a good start. */
       /* need to copy the block, */
       block_cp = (ZMapFeatureBlock)zMapFeatureAnyCopy((ZMapFeatureAny)block);
@@ -981,6 +942,12 @@ void zmapWindowDrawSeparatorFeatures(ZMapWindow           window,
 	/* let's just use the code that we debugged for the normal columns */
 	canvas_data.curr_root_group = zmapWindowContainerGetFeatures(window->feature_root_group) ;
 	zMapWindowDrawContext(&canvas_data, window->strand_separator_context, diff, NULL);
+
+	foo = zmapWindowFToIFindSetItem(window,window->context_to_item,
+     					 feature_set,
+					 ZMAPSTRAND_FORWARD, ZMAPFRAME_NONE);
+
+	foo_canvas_item_request_redraw(foo->parent);	/* will have been updated so coords work */
     }
 
   return;
@@ -1041,35 +1008,6 @@ static void set3FrameState(ZMapWindow window, ZMapWindow3FrameMode frame_mode)
  */
 
 
-
-#if MH17_NOT_USED
-
-/* MAY NEED TO INGNORE BACKGROUND BOXES....WHICH WILL BE ITEMS.... */
-
-/* A GCompareFunc() called from g_list_sort(), compares groups on their horizontal position. */
-static gint horizPosCompare(gconstpointer a, gconstpointer b)
-{
-  gint result = 0 ;
-  FooCanvasGroup *group_a = (FooCanvasGroup *)a, *group_b = (FooCanvasGroup *)b ;
-
-  if (!FOO_IS_CANVAS_GROUP(group_a) || !FOO_IS_CANVAS_GROUP(group_b))
-    {
-      result = 0 ;
-    }
-  else
-    {
-      if (group_a->xpos < group_b->xpos)
-	result = -1 ;
-      else if (group_a->xpos > group_b->xpos)
-	result = 1 ;
-      else
-	result = 0 ;
-    }
-
-  return result ;
-}
-
-#endif
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -1226,7 +1164,11 @@ static void toggleColumnInMultipleBlocks(ZMapWindow window, char *name,
 							feature_block->parent->unique_id,
 							feature_block->unique_id,
 							featureset_unique,
-							ZMAPSTRAND_FORWARD, frame) ;
+// DNA is reverse but ST is fwd when revcomped
+// this is very tedious
+							window->revcomped_features ? ZMAPSTRAND_REVERSE: ZMAPSTRAND_FORWARD,
+//							ZMAPSTRAND_FORWARD,
+							frame) ;
 
 	      if (frame_column && ZMAP_IS_CONTAINER_FEATURESET(frame_column)
 		  && zmapWindowContainerHasFeatures((ZMapWindowContainerGroup)(frame_column)))

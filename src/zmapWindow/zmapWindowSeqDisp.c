@@ -388,11 +388,13 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
 
       trans_set = zmapWindowFToIFindItemSetFull(window, window->context_to_item,
 						align_id, block_id, set_id,
-						set_id, "+", ".",
+						set_id,
+//						window->revcomped_features? "-" : "+", ".",
+						"+", ".",
 						feature_id,
 						NULL, NULL) ;
 
-	/* trans set may once have been a column but not we donlt ahve co9lumns in the ftoi hash
+	/* trans set may once have been a column but now we don-t have columns in the ftoi hash
 	   context feature sets now refer to the canvasfeatureset foo item not the containing group
 	  */
 	if(!trans_set)
@@ -652,7 +654,7 @@ gboolean zMapWindowSeqDispSelectByFeature(FooCanvasItem *sequence_feature,
 		{
 			GList *exon_list = NULL, *exon_list_member ;
 			ZMapFullExon current_exon ;
-			ZMapFrame frame = feature->feature.sequence.frame ;
+			ZMapFrame frame = zMapFeatureFrame(feature);
 
 			/* If no frame we just default to frame 1 which seems sensible. */
 			if (!frame)

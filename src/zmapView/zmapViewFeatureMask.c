@@ -117,7 +117,7 @@ GList *zMapViewMaskFeatureSets(ZMapView view, GList *new_feature_set_names)
   ZMapFeatureSource src2src;
   ZMapFeatureTypeStyle style;
   GList *masked_by;
-  GQuark style_id;
+//  GQuark style_id;
 
   data->view = view;
   data->perfect = FALSE;		/* original default */
