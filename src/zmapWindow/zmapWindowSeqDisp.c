@@ -85,49 +85,6 @@ static FooCanvasItem *translation_from_block_frame(ZMapWindow window, char *colu
 
 
 
-FooCanvasItem *zmapWindowItemGetDNAParentItem(ZMapWindow window, FooCanvasItem *item)
-{
-  ZMapFeature feature;
-  ZMapFeatureBlock block = NULL;
-  FooCanvasItem *dna_item = NULL;
-  GQuark feature_set_unique = 0, dna_id = 0;
-  char *feature_name = NULL;
-
-  feature_set_unique = zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME);
-
-  if ((feature = zmapWindowItemGetFeature(item)))
-    {
-      if((block = (ZMapFeatureBlock)(zMapFeatureGetParentGroup((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_BLOCK))) &&
-         (feature_name = zMapFeatureDNAFeatureName(block)))
-        {
-          dna_id = zMapFeatureCreateID(ZMAPSTYLE_MODE_SEQUENCE,
-                                       feature_name,
-                                       ZMAPSTRAND_FORWARD, /* ALWAYS FORWARD */
-                                       block->block_to_sequence.block.x1,
-                                       block->block_to_sequence.block.x2,
-                                       0,0);
-          g_free(feature_name);
-        }
-
-      if((dna_item = zmapWindowFToIFindItemFull(window,window->context_to_item,
-						block->parent->unique_id,
-						block->unique_id,
-						feature_set_unique,
-						ZMAPSTRAND_FORWARD, /* STILL ALWAYS FORWARD */
-						ZMAPFRAME_NONE,/* NO STRAND */
-						dna_id)))
-	{
-	  if(!(FOO_CANVAS_ITEM(dna_item)->object.flags & FOO_CANVAS_ITEM_VISIBLE))
-	    dna_item = NULL;
-	}
-    }
-  else
-    {
-      zMapAssertNotReached();
-    }
-
-  return dna_item;
-}
 
 FooCanvasItem *zmapWindowItemGetDNATextItem(ZMapWindow window, FooCanvasItem *item)
 {
@@ -151,6 +108,15 @@ FooCanvasItem *zmapWindowItemGetDNATextItem(ZMapWindow window, FooCanvasItem *it
 						 block->unique_id,
 						 dna_set_id,
 						 ZMAPSTRAND_FORWARD, /* STILL ALWAYS FORWARD */
+/* since removing strand we seem to need this:
+ * the column is forward as the style is unstranded
+ * the featureset is reverse as the DNA feature has been revcomped
+ * the feature is forward ???? as the unique id was set on fwd strand ????
+ */
+/* but as ST require fwds always it's better to keep the featureset fwds */
+/* this is set in item factory run single() */
+//						 window->revcomped_features? ZMAPSTRAND_REVERSE : ZMAPSTRAND_FORWARD,
+
 						 ZMAPFRAME_NONE, /* NO FRAME */
 						 dna_id)))
 	{
@@ -369,7 +335,7 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
       char *pep_ptr ;
       int pep_start, pep_end ;
 	double seq_start;
-//	ZMapWindowFeaturesetItem fset;
+	ZMapWindowFeaturesetItem fset;
 
       wild_id = zMapStyleCreateID("*") ;
 
@@ -400,6 +366,7 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
 	if(!trans_set)
 		return;
 
+
       trans_id2c = (ID2Canvas)(trans_set->data) ;
 
       trans_item = trans_id2c->item ;
@@ -408,7 +375,9 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
       seq = trans_feature->feature.sequence.sequence ;
       len = trans_feature->feature.sequence.length ;
 
-//	fset = (ZMapWindowFeaturesetItem) trans_item;
+	fset = (ZMapWindowFeaturesetItem) trans_item;
+	/* as we change viz status, cols to the right get exposed by full repos but this one does not move */
+	zMapWindowCanvasFeaturesetExpose(fset);		/* so we get a double expose */
 
       /* Brute force, reinit the whole peptide string. */
       memset(seq, (int)SHOW_TRANS_BACKGROUND, trans_feature->feature.sequence.length) ;
@@ -497,6 +466,15 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
       /* Revist whether we need to do this call or just a redraw...... */
       zMapWindowToggleDNAProteinColumns(window, align_id, block_id, do_dna, do_aa, do_trans, force_to, force) ;
 
+#if 0
+/* i tried, but this does not highlight */
+/* but previous implementation didn't either */
+	zmapWindowItemHighlightShowTranslationRegion(window, TRUE, FALSE,
+						  feature_to_translate,
+						  zMapFeatureFrame(feature),
+						  ZMAPSEQUENCE_PEPTIDE,
+						  feature->x1, feature->x2);
+#endif
     }
 
   return ;

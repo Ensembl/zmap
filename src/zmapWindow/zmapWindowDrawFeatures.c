@@ -422,8 +422,9 @@ void zmapGetFeatureStack(ZMapWindowFeatureStack feature_stack,ZMapFeatureSet fea
 
   if(feature && *feature->style)	/* chicken */
     {
-      if(zMapStyleIsStrandSpecific(*feature->style))
-		feature_stack->strand = zmapWindowFeatureStrand(NULL,feature);
+//      if(zMapStyleIsStrandSpecific(*feature->style))	/* set per feature */
+//		feature_stack->strand = zmapWindowFeatureStrand(NULL,feature);
+
 //      if(zMapStyleIsFrameSpecific(*feature->style) && IS_3FRAME(display_3_frame))
 //		feature_stack->frame = zmapWindowFeatureFrame(feature);
     }

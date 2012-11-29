@@ -186,9 +186,12 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(GHashTable *ftoi_hash,
 		char *x;
 
 			/* as we process both strands together strand is per feature not per set */
-		feature_stack->strand = feature->strand;
-            if(zMapStyleIsStrandSpecific(*feature->style) && feature->strand == ZMAPSTRAND_REVERSE)
-			strand = '-';
+            if(zMapStyleIsStrandSpecific(*feature->style))
+		{
+			if(feature->strand == ZMAPSTRAND_REVERSE)
+				strand = '-';
+			feature_stack->strand = feature->strand;
+		}
 
             if(feature_stack->frame != ZMAPFRAME_NONE)
 		{
@@ -800,10 +803,12 @@ ID2Canvas zmapWindowFToIFindID2CFull(ZMapWindow window, GHashTable *feature_cont
                   id2c = feature ;
 
  	          }
-//printf("ftoi find: %p %p %s, %s\n",set->hash_table, feature, g_quark_to_string(feature_id), g_quark_to_string(tmp_set_id));
-
 		}
 	    }
+
+//printf("ftoi find feature: %p %p %s, %s\n", set, feature, g_quark_to_string(feature_id), g_quark_to_string(tmp_set_id));
+
+
 	}
     }
   else if(!align_id)
