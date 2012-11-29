@@ -53,7 +53,7 @@
 #define NAVIGATOR_WIDGET(navigate) GTK_WIDGET(fetchCanvas(navigate))
 
 
-#define MH17_DEBUG_NAV_FOOBAR	0
+#define MH17_DEBUG_NAV_FOOBAR	1
 #if MH17_DEBUG_NAV_FOOBAR
 void print_offsets(char *which);
 #endif
@@ -180,10 +180,8 @@ static void container_group_add_locator(ZMapWindowNavigator navigate,
 static void container_group_add_highlight_area_item(ZMapWindowNavigator navigate,
 						    ZMapWindowContainerGroup container);
 
-void zmapWindowNavigatorRunSet(ZMapFeatureSet set,
-                                 FooCanvasGroup *container,
-                                 ZMapFrame frame,
-					   ZMapWindowNavigator navigate);
+static void navigatorRunSet(ZMapFeatureSet set, FooCanvasGroup *container, ZMapFrame frame,
+			    ZMapWindowNavigator navigate);
 
 
 
@@ -500,6 +498,7 @@ void zMapWindowNavigatorDrawFeatures(ZMapWindowNavigator navigate,
   FooCanvas *canvas = NULL;
   NavigateDrawStruct draw_data = {NULL};
 
+
   draw_data.navigate  = navigate;
   draw_data.context   = full_context;
   draw_data.styles    = styles;
@@ -791,6 +790,25 @@ debug("nav set scroll %d %d\n",navigate->full_span.x1,navigate->full_span.x2);
 
         draw_data->current_block = feature_block = (ZMapFeatureBlock)feature_any;
 
+
+	{
+	  GQuark set_id ;
+	  ZMapFeatureSet feature_set ;
+	  GList *matching_sets ;
+
+	  set_id = zMapFeatureSetCreateID("locus") ;
+
+	  feature_set = zMapFeatureBlockGetSetByID(feature_block, set_id) ;
+
+	  matching_sets = zMapFeatureBlockGetMatchingSets(feature_block, "locus") ;
+
+	  if (feature_set)
+	    zMapUtilsDebugPrintf(stderr, "%s", "found locus set") ;
+	}
+
+
+
+
 #if MH17_DEBUG_NAV_FOOBAR
 /* NOTE the navigator features get scaled but the block is not as these don't appear to
  * have any coordinates set anywhere.
@@ -825,8 +843,8 @@ debug("nav draw block %d %d\n",block_start,block_end);
 			  zmapWindowStatsCreate((ZMapFeatureAny)draw_data->current_block)) ;
 
 
-      zmapWindowContainerBlockAugment((ZMapWindowContainerBlock)draw_data->container_block,
-					    (ZMapFeatureBlock) feature_any) ;
+	zmapWindowContainerBlockAugment((ZMapWindowContainerBlock)draw_data->container_block,
+					(ZMapFeatureBlock) feature_any) ;
 
         hash_status = zmapWindowFToIAddBlock(navigate->ftoi_hash, draw_data->current_align->unique_id,
                                              key_id, (FooCanvasGroup *)(draw_data->container_block));
@@ -861,7 +879,14 @@ debug("nav draw block %d %d\n",block_start,block_end);
     case ZMAPFEATURE_STRUCT_FEATURESET:
       {
         FooCanvasItem *item = NULL;
-        feature_set = (ZMapFeatureSet)feature_any;
+	char *name ;
+
+	feature_set = (ZMapFeatureSet)feature_any;
+
+	name = zMapFeatureSetGetName(feature_set) ;
+
+	zMapUtilsDebugPrintf(stderr, "Processing featureset \"%s\"", name) ;
+
 
 #if MH17_FToIHash_does_this_mapping
         if(!feature_set->column_id)
@@ -896,8 +921,7 @@ debug("nav draw set %s\n", g_quark_to_string(feature_set->original_id));
             group_feature_set = FOO_CANVAS_GROUP(item);
 	    container_feature_set = (ZMapWindowContainerFeatureSet)item;
 
-            zmapWindowNavigatorRunSet(feature_set,
-                                        group_feature_set, ZMAPFRAME_NONE, draw_data->navigate);
+            navigatorRunSet(feature_set, group_feature_set, ZMAPFRAME_NONE, draw_data->navigate) ;
 
 	    if ((bump_mode = zmapWindowContainerFeatureSetGetBumpMode(container_feature_set)) != ZMAPBUMP_UNBUMP)
 	      {
@@ -1018,13 +1042,16 @@ static void createColumnCB(gpointer data, gpointer user_data)
   GQuark set_unique_id;
 
   /* We need the mapping stuff so navigator can use windowsearch calls and other stuff. */
+
   /* for the navigator styles are hard coded?? and there's no featureset_2_column mapping ?
      style = zMapWindowGetColumnStyle(draw_data->navigate->current_window,set_id);
   */
 
-      /* mh17: need to canonicalise the set name to find the style */
-  set_unique_id = zMapStyleCreateID((char *) g_quark_to_string(set_id));
-  style = zMapFindStyle(draw_data->styles,set_unique_id);
+  /* mh17: need to canonicalise the set name to find the style */
+  set_unique_id = zMapStyleCreateID((char *) g_quark_to_string(set_id)) ;
+
+  style = zMapFindStyle(draw_data->styles, set_unique_id) ;
+
   draw_data->current_set = zMapFeatureBlockGetSetByID(draw_data->current_block, set_unique_id);
 
 #if MH17_DEBUG_NAV_FOOBAR
@@ -2029,10 +2056,8 @@ static void container_group_add_locator(ZMapWindowNavigator navigate,
 
 
 
-void zmapWindowNavigatorRunSet(  ZMapFeatureSet set,
-                                 FooCanvasGroup *container,
-                                 ZMapFrame frame,
-					   ZMapWindowNavigator navigate)
+static void navigatorRunSet(ZMapFeatureSet set, FooCanvasGroup *container, ZMapFrame frame,
+			    ZMapWindowNavigator navigate)
 {
   ZMapWindowFeatureStackStruct feature_stack = { NULL };
   GList *l;
@@ -2045,43 +2070,44 @@ void zmapWindowNavigatorRunSet(  ZMapFeatureSet set,
   zMap_g_hash_table_get_data(&l, set->features);
 
   for(; l ; l = l->next)
-  {
-	ZMapFeature feature = (ZMapFeature)l->data;
-	FooCanvasItem *foo = NULL;
+    {
+      ZMapFeature feature = (ZMapFeature)l->data;
+      FooCanvasItem *foo = NULL;
 
-	/* filter on frame! */
-	if((frame != ZMAPFRAME_NONE) && frame  != zmapWindowFeatureFrame(feature))
-		continue;
+      /* filter on frame! */
+      if((frame != ZMAPFRAME_NONE) && frame  != zmapWindowFeatureFrame(feature))
+	continue;
 
-	feature_stack.feature = feature;
+      feature_stack.feature = feature;
 
-	/* this stuff is just not used in the navigator..... esp given that container is a given */
-	if(feature->style)	/* chicken */
+      /* this stuff is just not used in the navigator..... esp given that container is a given */
+      if(*(feature->style))	/* chicken */
 	{
-		if(zMapStyleIsStrandSpecific(*feature->style))
-			feature_stack.strand = zmapWindowFeatureStrand(NULL,feature);
-		if(zMapStyleIsFrameSpecific(*feature->style))
-			feature_stack.frame = zmapWindowFeatureFrame(feature);
+	  if(zMapStyleIsStrandSpecific(*feature->style))
+	    feature_stack.strand = zmapWindowFeatureStrand(NULL,feature);
+	  if(zMapStyleIsFrameSpecific(*feature->style))
+	    feature_stack.frame = zmapWindowFeatureFrame(feature);
+
+	  if(zMapStyleGetMode(*feature->style) == ZMAPSTYLE_MODE_TEXT)
+	    {
+	      if(!variantFeature(feature, navigate))
+		{
+		  foo = zmapWindowFToIFactoryRunSingle(navigate->ftoi_hash, (ZMapWindowContainerFeatureSet) container, features, foo, &feature_stack);
+
+		  if(!zMapWindowCanvasItemIsConnected((ZMapWindowCanvasItem) foo))
+		    factoryItemHandler (foo, &feature_stack, (gpointer) navigate);
+		}
+	      if(!locus_featureset && foo)
+		{
+		  locus_featureset = (ZMapWindowFeaturesetItem) foo;
+		  zMapWindowCanvasLocusSetFilter(locus_featureset, navigate->hide_filter);
+
+		  navigate->locus_featureset = locus_featureset;
+		}
+	    }
 	}
 
-	if(zMapStyleGetMode(*feature->style) == ZMAPSTYLE_MODE_TEXT)
-	{
-		if(!variantFeature(feature, navigate))
-		{
-			foo = zmapWindowFToIFactoryRunSingle(navigate->ftoi_hash, (ZMapWindowContainerFeatureSet) container, features, foo, &feature_stack);
-
-			if(!zMapWindowCanvasItemIsConnected((ZMapWindowCanvasItem) foo))
-				factoryItemHandler (foo, &feature_stack, (gpointer) navigate);
-		}
-		if(!locus_featureset && foo)
-		{
-			locus_featureset = (ZMapWindowFeaturesetItem) foo;
-			zMapWindowCanvasLocusSetFilter(locus_featureset, navigate->hide_filter);
-
-			navigate->locus_featureset = locus_featureset;
-		}
-	}
-  }
+    }
 
   return ;
 }
