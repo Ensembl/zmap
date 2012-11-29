@@ -1105,6 +1105,7 @@ static void requestSentCB(void *user_data)
 {
   RemoteData remote_data = (RemoteData)user_data ;
 
+
   return ;
 }
 
@@ -1216,15 +1217,46 @@ static void replyHandlerCB(ZMapRemoteControl remote_control, char *reply, void *
     }
 
 
-  gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(remote_data->idle), TRUE) ;
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* test Gemma's bug.... */
+  if (strcmp(command, ZACP_NEWVIEW) == 0)
+    {
+      char *request ;
 
+      request = g_strdup_printf("<zmap type=\"request\" version=\"2.0\" app_id=\"remotecontrol\""
+				" clipboard_id=\"%s\" request_id=\"3\">"
+				" <request command=\"zoom_to\">"
+				" <featureset name=\"Coding_transcript\">"
+				" <feature name=\"B0250.1\" start=\"22869\" end=\"23993\" strand=\"+\"/>"
+				" </featureset>"
+				" </request>"
+				" </zmap>", remote_data->peer_unique_id) ;
 
-  /* Need to return to waiting here..... */
-  if (!zMapRemoteControlReceiveWaitForRequest(remote_data->remote_cntl))
-    zMapCritical("%s", "Cannot set remote controller to wait for requests.") ;
+      if (!zMapRemoteControlSendRequest(remote_data->remote_cntl, request))
+	{
+	  zMapCritical("Could not send request to peer program: %s.", request) ;
+	}
+
+      g_free(request) ;
+    }
   else
-    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(remote_data->waiting), TRUE) ;
+    {
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+      gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(remote_data->idle), TRUE) ;
+
+      /* Need to return to waiting here..... */
+      if (!zMapRemoteControlReceiveWaitForRequest(remote_data->remote_cntl))
+	zMapCritical("%s", "Cannot set remote controller to wait for requests.") ;
+      else
+	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(remote_data->waiting), TRUE) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+    }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
   zMapDebugPrint(debug_G, "%s", "Exit...") ;
