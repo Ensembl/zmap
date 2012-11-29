@@ -935,10 +935,6 @@ static void importFileCB(GtkWidget *widget, gpointer cb_data)
 	gchar **argp = args;
 	char * opt_args_txt = "";
 
-#if USE_FILE
-	if(main_frame->sequence_map && (seq_offset || map_seq))
-	{
-#endif
 	if(main_frame->sequence_map && (seq_offset || map_seq))
 		seq_offset += main_frame->sequence_map->start;
 
@@ -1035,20 +1031,6 @@ static void importFileCB(GtkWidget *widget, gpointer cb_data)
 
 	config_str = g_strdup_printf("[ZMap]\nsources = temp\n\n[temp]\nfeaturesets=\nurl=pipe://%s/%s?%s%s%s",
 		*script_txt == '/' ? "/" :"", script_txt, args_txt, and, opt_args_txt);
-
-#if USE_FILE
-		// our GFF parser will reject files that have data outside our sequence
-		// so this will not be much use in a general sense
-		// we need to use a script to filter the source file
-		// better to fix the gff parser & server protocol
-		// but that involves some quite tedious coding
-	}
-	else
-	{
-		/* don't rely on scripts being available */
-		config_str = g_strdup_printf("[ZMap]\nsources = temp\n\n[temp]\nfeaturesets=\nurl=file:///%s\n",file_txt);
-	}
-#endif
 
 	servers = zmapViewGetIniSources(NULL, config_str, NULL);
 	zMapAssert(servers);
