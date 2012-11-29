@@ -895,7 +895,7 @@ static void importFileCB(GtkWidget *widget, gpointer cb_data)
 
     }
 
-  if(status)
+  if (status)
     {
       if ((*offset_txt) && !zMapStr2Int(offset_txt, &seq_offset))
         {
@@ -906,12 +906,12 @@ static void importFileCB(GtkWidget *widget, gpointer cb_data)
       map_seq = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON(main_frame->map_widg));
 
       strand_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->strand_widg)) ;
-      if(strand_txt)
+      if (strand_txt)
         {
-          while(*strand_txt  && *strand_txt <= ' ')
+          while (*strand_txt  && *strand_txt <= ' ')
             strand_txt++;
           strand = (*strand_txt == '-') ? -1 : (*strand_txt == '+') ? 1 : 0;
-          if(!strand_txt)
+          if (!strand_txt)
             {
               status = FALSE ;
               err_msg = "Strand must be + or -";
@@ -935,10 +935,10 @@ static void importFileCB(GtkWidget *widget, gpointer cb_data)
       gchar **argp = args;
       char * opt_args_txt = "";
 
-      if(main_frame->sequence_map && (seq_offset || map_seq))
+      if (main_frame->sequence_map && (seq_offset || map_seq))
         seq_offset += main_frame->sequence_map->start;
 
-      if(file_type != FILE_GFF)
+      if (file_type != FILE_GFF)
         {
           /* add featureset_2_style entry to the view */
           ZMapFeatureSource src;
@@ -946,7 +946,7 @@ static void importFileCB(GtkWidget *widget, gpointer cb_data)
 
           f_id = zMapFeatureSetCreateID(source_txt);
           src = zMapViewGetFeatureSetSource(view, f_id);
-          if(!src)
+          if (!src)
             {
               src = g_new0(ZMapFeatureSourceStruct,1);
               src->source_text = g_quark_from_string(source_txt);
@@ -958,7 +958,7 @@ static void importFileCB(GtkWidget *widget, gpointer cb_data)
           src->is_seq = TRUE;
         }
 
-     if(*args_txt) /* prep user defined args */
+     if (*args_txt) /* prep user defined args */
        {
           gchar ** vector;
           char *p,*q;
@@ -968,9 +968,9 @@ static void importFileCB(GtkWidget *widget, gpointer cb_data)
             continue;
           for(*p = *q ; *q; q++)
             {
-              if(*q <= ' ') /* don't trip over tabs */
+              if (*q <= ' ') /* don't trip over tabs */
                 {
-                  if(p[-1] <= ' ')
+                  if (p[-1] <= ' ')
                     continue;
                   *q = ' ';
                 }
@@ -992,10 +992,10 @@ static void importFileCB(GtkWidget *widget, gpointer cb_data)
       *argp++ = g_strdup_printf("--start=%d",req_start);
       *argp++ = g_strdup_printf("--end=%d",req_end);
 
-      if((seq_offset || map_seq) && !main_frame->is_otter)
+      if ((seq_offset || map_seq) && !main_frame->is_otter)
         *argp++ = g_strdup_printf("--mapto=%d",seq_offset);
 
-      if((*assembly_txt) && main_frame->is_otter)
+      if ((*assembly_txt) && main_frame->is_otter)
         *argp++ = g_strdup_printf("--csver=%s",assembly_txt);
 
       /* some depend on file type */
@@ -1003,11 +1003,11 @@ static void importFileCB(GtkWidget *widget, gpointer cb_data)
         {
         case FILE_NONE:
           /* add in any that have data */
-          if(source_txt)
+          if (source_txt)
             *argp++ = g_strdup_printf("--gff_feature_source=%s",source_txt);
-          if(req_sequence)
+          if (req_sequence)
             *argp++ = g_strdup_printf("--chr=%s",req_sequence);
-          if(strand)
+          if (strand)
             *argp++ = g_strdup_printf("--strand=%d",strand); /* NOTE this is not +/- as presented to the user */
           break;
 
@@ -1037,7 +1037,7 @@ static void importFileCB(GtkWidget *widget, gpointer cb_data)
 
       server = (ZMapConfigSource) servers->data;
 
-      if( zMapViewRequestServer(view, NULL, NULL, req_featuresets, (gpointer) server, start, end, FALSE, TRUE, TRUE))
+      if (zMapViewRequestServer(view, NULL, NULL, req_featuresets, (gpointer) server, start, end, FALSE, TRUE, TRUE))
         zMapViewShowLoadStatus(view);
       else
         zMapWarning("could not request %s",file_txt);
