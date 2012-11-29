@@ -115,6 +115,19 @@ static ZMapXMLObjTagFunctionsStruct window_ends_G[] =
   } ;
 
 
+static ZMapXMLObjTagFunctionsStruct mark_starts_G[] = 
+  {
+    { "request",    xml_request_start_cb},
+    {NULL, NULL}
+  };
+
+static ZMapXMLObjTagFunctionsStruct mark_ends_G[] =
+  {
+    { "request",    xml_return_true_cb},
+    {NULL, NULL}
+  } ;
+
+
 
 
 
@@ -130,42 +143,9 @@ static void processRequest(ZMapWindow window,
 
 
 
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* TRY PUTTING AT APP LEVEL.... */
-static void requestblockIfActive(void) ;
-static void requestSetActive(void) ;
-static void requestSetInActive(void) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-
-
-/* WE NEED TO ADD THE CODE TO HERE FROM VIEW TO DO THESE COMMANDS, THIS IS THE LEVEL AT WHICH
-   THEY SHOULD HAPPEN...*/
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-case ZMAPVIEW_REMOTE_HIGHLIGHT_FEATURE:
-case ZMAPVIEW_REMOTE_HIGHLIGHT2_FEATURE:
-case ZMAPVIEW_REMOTE_UNHIGHLIGHT_FEATURE:
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-
 /* 
  *                Globals. 
  */
-
-/* Maintains a lock while a remote request is active. */
-static gboolean is_active_G = FALSE ;
-static gboolean is_active_debug_G = TRUE ;
-
-
-
 
 
 
@@ -208,6 +188,8 @@ gboolean zMapWindowProcessRemoteRequest(ZMapWindow window,
 /* MOVED FROM ZMAPWINDOW.C......FIX THIS UP TO WORK WITH NEW REMOTE CONTROL..... */
 
 
+/* ARE THESE CALLED ANY MORE..... */
+
 void zmapWindowUpdateXRemoteData(ZMapWindow window, ZMapFeatureAny feature_any,
 				 char *action, FooCanvasItem *real_item)
 
@@ -233,17 +215,6 @@ void zmapWindowUpdateXRemoteDataFull(ZMapWindow window, ZMapFeatureAny feature_a
   ZMapFeatureSetStruct feature_set = {0};
   ZMapFeatureSet multi_set;
   ZMapFeature feature;
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* TRY PUTTING AT APP LEVEL.... */
-  /* Test to see if we are processing a remote command....and then set that we are active. */
-  requestblockIfActive() ;
-  requestSetActive() ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 
 
 
@@ -356,57 +327,6 @@ void zmapWindowUpdateXRemoteDataFull(ZMapWindow window, ZMapFeatureAny feature_a
  */
 
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* We need to keep a "lock" flag because for some actions, e.g. double click,
- * we can end up trying to send two requests, in this case a "single_select"
- * followed by an "edit" too quickly, i.e. we haven't finished the "single_select"
- * before we try to send the "edit".
- * 
- * So we test this flag and if we are processing we block (but process events)
- * until the previous action is complete.
- * 
- *  */
-static void requestblockIfActive(void)
-{
-
-  zMapDebugPrint(is_active_debug_G, "Entering blocking code: %s",
-		 (is_active_G ? "Request Active" : "No Request Active")) ;
-
-  while (is_active_G)
-    {
-      gtk_main_iteration() ;
-    }
-
-  zMapDebugPrint(is_active_debug_G, "Leaving blocking code: %s",
-		 (is_active_G ? "Request Active" : "No Request Active")) ;
-
-  return ;
-}
-
-static void requestSetActive(void)
-{
-  is_active_G = TRUE ;
-
-  zMapDebugPrint(is_active_debug_G, "%s", "Setting Block: Request Active") ;
-
-  return ;
-}
-
-
-static void requestSetInActive(void)
-{
-  is_active_G = FALSE ;
-
-  zMapDebugPrint(is_active_debug_G, "%s", "Unsetting Block: Request Inactive") ;
-
-  return ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-
 /* Process requests from remote programs and calls app_reply_func to return the result. */
 static void localProcessRemoteRequest(ZMapWindow window,
 				      char *command_name, ZMapAppRemoteViewID view_id, char *request,
@@ -463,6 +383,8 @@ static void processRequest(ZMapWindow window,
   gboolean cmd_debug = FALSE ;
   gboolean parse_ok = FALSE ;
   RequestDataStruct request_data = {0} ;
+  ZMapXMLObjTagFunctions starts, ends ;
+
 
 
   /* set up return code etc. for parsing code. */
@@ -472,7 +394,18 @@ static void processRequest(ZMapWindow window,
 
   parser = zMapXMLParserCreate(&request_data, FALSE, cmd_debug) ;
 
-  zMapXMLParserSetMarkupObjectTagHandlers(parser, window_starts_G, window_ends_G) ;
+  /* Set start/end handlers, some commands are much simpler than others. */
+  if (strcmp(command_name, ZACP_ZOOM_TO) == 0)
+    {
+      starts = window_starts_G ;
+      ends = window_ends_G ;
+    }
+  else if (strcmp(command_name, ZACP_GET_MARK) == 0)
+    {
+      starts = mark_starts_G ;
+      ends = mark_ends_G ;
+    }
+  zMapXMLParserSetMarkupObjectTagHandlers(parser, starts, ends) ;
 
   if (!(parse_ok = zMapXMLParserParseBuffer(parser, request, strlen(request))))
     {
@@ -607,16 +540,29 @@ static gboolean xml_request_start_cb(gpointer user_data, ZMapXMLElement set_elem
   gboolean result = FALSE ;
   RequestData request_data = (RequestData)user_data ;
 
+
   if (strcmp(request_data->command_name, ZACP_ZOOM_TO) == 0)
     {
-      request_data->orig_context = request_data->window->feature_context ;
+      if (request_data->window->feature_context)
+	{
+	  request_data->orig_context = request_data->window->feature_context ;
 
-      /* We default to the master alignment and the first block within that alignment, the xml
-       * does not have to contain either making it easier for the peer. */
-      request_data->orig_align = request_data->orig_context->master_align ;
-      request_data->orig_block = zMap_g_hash_table_nth(request_data->orig_context->master_align->blocks, 0) ;
+	  /* We default to the master alignment and the first block within that alignment, the xml
+	   * does not have to contain either making it easier for the peer. */
+	  request_data->orig_align = request_data->orig_context->master_align ;
+	  request_data->orig_block = zMap_g_hash_table_nth(request_data->orig_context->master_align->blocks, 0) ;
 
-      result = TRUE ;
+	  result = TRUE ;
+	}
+      else
+	{
+	  /* If we can't find the feature context it probably means that zmap hasn't had time to 
+	   * fetch any features before the peer has sent a command needing features. */
+	  zMapXMLParserRaiseParsingError(parser, "No features in context yet !") ;
+
+	  request_data->command_rc = REMOTE_COMMAND_RC_FAILED ;
+	  result = FALSE ;
+	}
     }
 
   return result ;
