@@ -844,80 +844,80 @@ static void importFileCB(GtkWidget *widget, gpointer cb_data)
       status = FALSE ;
       err_msg = "Please choose a file to import." ;
     }
- else
- {
-    if (*sequence && *start_txt && *end_txt)
+  else
     {
-      if (status)
-	{
-	  if (!(*start_txt) || !zMapStr2Int(start_txt, &start) || start < 1)
-	    {
-	      status = FALSE ;
-	      err_msg = "Invalid start specified." ;
-	    }
-	}
+      if (*sequence && *start_txt && *end_txt)
+        {
+          if (status)
+            {
+              if (!(*start_txt) || !zMapStr2Int(start_txt, &start) || start < 1)
+                {
+                  status = FALSE ;
+                  err_msg = "Invalid start specified." ;
+                }
+            }
 
-      if (status)
-	{
-	  if (!(*end_txt) || !zMapStr2Int(end_txt, &end) || end <= start)
-	    {
-	      status = FALSE ;
-	      err_msg = "Invalid end specified." ;
-	    }
-	}
+          if (status)
+            {
+              if (!(*end_txt) || !zMapStr2Int(end_txt, &end) || end <= start)
+                {
+                  status = FALSE ;
+                  err_msg = "Invalid end specified." ;
+                }
+            }
+        }
+
+      if (*req_sequence && *req_start_txt && *req_end_txt)
+        {
+          if (status)
+            {
+              if (!(*req_start_txt) || !zMapStr2Int(req_start_txt, &req_start) || req_start < 1)
+                {
+                  status = FALSE ;
+                  err_msg = "Invalid request start specified." ;
+                }
+            }
+
+          if (status)
+            {
+              if (!(*req_end_txt) || !zMapStr2Int(req_end_txt, &req_end) || req_end <= start)
+                {
+                  status = FALSE ;
+                  err_msg = "Invalid request end specified." ;
+                }
+            }
+        }
+      else
+        {
+          status = FALSE;
+          err_msg = "Please specify request sequence start and end";
+        }
+
     }
-
-    if (*req_sequence && *req_start_txt && *req_end_txt)
-    {
-      if (status)
-	{
-	  if (!(*req_start_txt) || !zMapStr2Int(req_start_txt, &req_start) || req_start < 1)
-	    {
-	      status = FALSE ;
-	      err_msg = "Invalid request start specified." ;
-	    }
-	}
-
-      if (status)
-	{
-	  if (!(*req_end_txt) || !zMapStr2Int(req_end_txt, &req_end) || req_end <= start)
-	    {
-	      status = FALSE ;
-	      err_msg = "Invalid request end specified." ;
-	    }
-	}
-    }
-    else
-    {
-		status = FALSE;
-		err_msg = "Please specify request sequence start and end";
-    }
-
- }
 
   if(status)
-  {
-	if ((*offset_txt) && !zMapStr2Int(offset_txt, &seq_offset))
-		{
-		status = FALSE ;
-		err_msg = "Invalid offset specified." ;
-		}
+    {
+      if ((*offset_txt) && !zMapStr2Int(offset_txt, &seq_offset))
+        {
+          status = FALSE ;
+          err_msg = "Invalid offset specified." ;
+        }
 
-	map_seq = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON(main_frame->map_widg));
+      map_seq = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON(main_frame->map_widg));
 
-	strand_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->strand_widg)) ;
-	if(strand_txt)
-	{
-		while(*strand_txt  && *strand_txt <= ' ')
-			strand_txt++;
-		strand = (*strand_txt == '-') ? -1 : (*strand_txt == '+') ? 1 : 0;
-		if(!strand_txt)
-		{
-			status = FALSE ;
-			err_msg = "Strand must be + or -";
-		}
-	}
-  }
+      strand_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->strand_widg)) ;
+      if(strand_txt)
+        {
+          while(*strand_txt  && *strand_txt <= ' ')
+            strand_txt++;
+          strand = (*strand_txt == '-') ? -1 : (*strand_txt == '+') ? 1 : 0;
+          if(!strand_txt)
+            {
+              status = FALSE ;
+              err_msg = "Strand must be + or -";
+            }
+        }
+    }
 
 
   if (!status)
@@ -926,128 +926,128 @@ static void importFileCB(GtkWidget *widget, gpointer cb_data)
     }
   else
     {
-	char *config_str;
-	GList * servers;
-	ZMapConfigSource server;
-	GList *req_featuresets = NULL;
-	char *and = "";
-	gchar *args[N_ARGS];
-	gchar **argp = args;
-	char * opt_args_txt = "";
+      char *config_str;
+      GList * servers;
+      ZMapConfigSource server;
+      GList *req_featuresets = NULL;
+      char *and = "";
+      gchar *args[N_ARGS];
+      gchar **argp = args;
+      char * opt_args_txt = "";
 
-	if(main_frame->sequence_map && (seq_offset || map_seq))
-		seq_offset += main_frame->sequence_map->start;
+      if(main_frame->sequence_map && (seq_offset || map_seq))
+        seq_offset += main_frame->sequence_map->start;
 
-	if(file_type != FILE_GFF)
-	{
-		/* add featureset_2_style entry to the view */
-		ZMapFeatureSource src;
-		GQuark f_id;
+      if(file_type != FILE_GFF)
+        {
+          /* add featureset_2_style entry to the view */
+          ZMapFeatureSource src;
+          GQuark f_id;
 
-		f_id = zMapFeatureSetCreateID(source_txt);
-		src = zMapViewGetFeatureSetSource(view, f_id);
-		if(!src)
-		{
-			src = g_new0(ZMapFeatureSourceStruct,1);
-			src->source_text = g_quark_from_string(source_txt);
-			src->source_id = f_id;
-			zMapViewSetFeatureSetSource(view, f_id, src);
-		}
+          f_id = zMapFeatureSetCreateID(source_txt);
+          src = zMapViewGetFeatureSetSource(view, f_id);
+          if(!src)
+            {
+              src = g_new0(ZMapFeatureSourceStruct,1);
+              src->source_text = g_quark_from_string(source_txt);
+              src->source_id = f_id;
+              zMapViewSetFeatureSetSource(view, f_id, src);
+            }
 
-		src->style_id = zMapStyleCreateID(style_txt);
-		src->is_seq = TRUE;
-	}
+          src->style_id = zMapStyleCreateID(style_txt);
+          src->is_seq = TRUE;
+        }
 
-	if(*args_txt)		/* prep user defined args */
-	{
-		gchar ** vector;
-		char *p,*q;
+     if(*args_txt) /* prep user defined args */
+       {
+          gchar ** vector;
+          char *p,*q;
 
-		/* strip out multiple whitespace to avoid null args from strsplit */
-		for(p = q = args_txt; *q && *q <= ' ' ; q++)
-			continue;
-		for(*p = *q ; *q; q++)
-		{
-			if(*q <= ' ')	/* don't trip over tabs */
-			{
-				if(p[-1] <= ' ')
-					continue;
-				*q = ' ';
-			}
-			*p++ = *q;
-		}
-		*p = 0;
+          /* strip out multiple whitespace to avoid null args from strsplit */
+          for(p = q = args_txt; *q && *q <= ' ' ; q++)
+            continue;
+          for(*p = *q ; *q; q++)
+            {
+              if(*q <= ' ') /* don't trip over tabs */
+                {
+                  if(p[-1] <= ' ')
+                    continue;
+                  *q = ' ';
+                }
+              *p++ = *q;
+            }
+          *p = 0;
 
-		vector = g_strsplit(args_txt," ",0);
-		args_txt = g_strjoinv("&", vector);
-		g_strfreev(vector);
+          vector = g_strsplit(args_txt," ",0);
+          args_txt = g_strjoinv("&", vector);
+          g_strfreev(vector);
 
-		and = "&";
-	}
+          and = "&";
+}
 
-	/* prep dialog defined args according to file type and session */
-	/* some are mandatory: */
-	*argp++ = g_strdup_printf("--file=%s",file_txt);
-	*argp++ = g_strdup_printf("--gff_seqname=%s",sequence);
-	*argp++ = g_strdup_printf("--start=%d",req_start);
-	*argp++ = g_strdup_printf("--end=%d",req_end);
+      /* prep dialog defined args according to file type and session */
+      /* some are mandatory: */
+      *argp++ = g_strdup_printf("--file=%s",file_txt);
+      *argp++ = g_strdup_printf("--gff_seqname=%s",sequence);
+      *argp++ = g_strdup_printf("--start=%d",req_start);
+      *argp++ = g_strdup_printf("--end=%d",req_end);
 
-	if((seq_offset || map_seq) && !main_frame->is_otter)
-		*argp++ = g_strdup_printf("--mapto=%d",seq_offset);
+      if((seq_offset || map_seq) && !main_frame->is_otter)
+        *argp++ = g_strdup_printf("--mapto=%d",seq_offset);
 
-	if((*assembly_txt) && main_frame->is_otter)
-		*argp++ = g_strdup_printf("--csver=%s",assembly_txt);
+      if((*assembly_txt) && main_frame->is_otter)
+        *argp++ = g_strdup_printf("--csver=%s",assembly_txt);
 
-	/* some depend on file type */
-	switch(file_type)
-	{
-	case FILE_NONE:
-		/* add in any that have data */
-		if(source_txt)
-			*argp++ = g_strdup_printf("--gff_feature_source=%s",source_txt);
-		if(req_sequence)
-			*argp++ = g_strdup_printf("--chr=%s",req_sequence);
-		if(strand)
-			*argp++ = g_strdup_printf("--strand=%d",strand);		/* NOTE this is not +/- as presented to the user */
-		break;
+      /* some depend on file type */
+      switch(file_type)
+        {
+        case FILE_NONE:
+          /* add in any that have data */
+          if(source_txt)
+            *argp++ = g_strdup_printf("--gff_feature_source=%s",source_txt);
+          if(req_sequence)
+            *argp++ = g_strdup_printf("--chr=%s",req_sequence);
+          if(strand)
+            *argp++ = g_strdup_printf("--strand=%d",strand); /* NOTE this is not +/- as presented to the user */
+          break;
 
-	case FILE_GFF:
-		break;
+        case FILE_GFF:
+          break;
 
-	case FILE_BIGWIG:
-		*argp++ = g_strdup_printf("--strand=%d",strand);		/* NOTE this is not +/- as presented to the user */
-		/* fall through */
+        case FILE_BIGWIG:
+          *argp++ = g_strdup_printf("--strand=%d",strand); /* NOTE this is not +/- as presented to the user */
+          /* fall through */
 
-	case FILE_BAM:
-		*argp++ = g_strdup_printf("--chr=%s",req_sequence);
-		*argp++ = g_strdup_printf("--gff_feature_source=%s",source_txt);
-		break;
-	}
+        case FILE_BAM:
+          *argp++ = g_strdup_printf("--chr=%s",req_sequence);
+          *argp++ = g_strdup_printf("--gff_feature_source=%s",source_txt);
+          break;
+        }
 
-	*argp = NULL;
-	opt_args_txt = g_strjoinv("&", args);
-	while(argp > args)
-		g_free(*--argp);
+      *argp = NULL;
+      opt_args_txt = g_strjoinv("&", args);
+      while(argp > args)
+        g_free(*--argp);
 
-	config_str = g_strdup_printf("[ZMap]\nsources = temp\n\n[temp]\nfeaturesets=\nurl=pipe://%s/%s?%s%s%s",
-		*script_txt == '/' ? "/" :"", script_txt, args_txt, and, opt_args_txt);
+      config_str = g_strdup_printf("[ZMap]\nsources = temp\n\n[temp]\nfeaturesets=\nurl=pipe://%s/%s?%s%s%s",
+                                   *script_txt == '/' ? "/" :"", script_txt, args_txt, and, opt_args_txt);
 
-	servers = zmapViewGetIniSources(NULL, config_str, NULL);
-	zMapAssert(servers);
+      servers = zmapViewGetIniSources(NULL, config_str, NULL);
+      zMapAssert(servers);
 
-	server = (ZMapConfigSource) servers->data;
+      server = (ZMapConfigSource) servers->data;
 
-	if( zMapViewRequestServer(view, NULL, NULL, req_featuresets, (gpointer) server, start, end, FALSE, TRUE, TRUE))
-		zMapViewShowLoadStatus(view);
+      if( zMapViewRequestServer(view, NULL, NULL, req_featuresets, (gpointer) server, start, end, FALSE, TRUE, TRUE))
+        zMapViewShowLoadStatus(view);
       else
-		zMapWarning("could not request %s",file_txt);
+        zMapWarning("could not request %s",file_txt);
 
 
-	zMapConfigSourcesFreeList(servers);
+      zMapConfigSourcesFreeList(servers);
 
-	g_free(config_str);
+      g_free(config_str);
 
-	/* call user func if you like.... */
+      /* call user func if you like.... */
     }
   return ;
 }
