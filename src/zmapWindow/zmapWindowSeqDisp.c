@@ -144,6 +144,8 @@ FooCanvasItem *zmapWindowItemGetDNATextItem(ZMapWindow window, FooCanvasItem *it
  * sequence item class objects.
  */
 
+/* this is from the mouse cursor only */
+
 void zmapWindowHighlightSequenceItem(ZMapWindow window, FooCanvasItem *item, int start, int end)
 {
   ZMapFeatureAny feature_any ;
@@ -152,10 +154,10 @@ void zmapWindowHighlightSequenceItem(ZMapWindow window, FooCanvasItem *item, int
     {
       ZMapFeatureBlock block ;
 
-      block = (ZMapFeatureBlock)(zMapFeatureGetParentGroup((ZMapFeatureAny)(feature_any), ZMAPFEATURE_STRUCT_BLOCK));
+      block = (ZMapFeatureBlock)(zMapFeatureGetParentGroup((feature_any), ZMAPFEATURE_STRUCT_BLOCK));
       zMapAssert(block);
 
-      highlightSequenceItems(window, block, item, ZMAPSEQUENCE_NONE, ZMAPFRAME_NONE, start, end, FALSE) ;
+      highlightSequenceItems(window, block, NULL, ZMAPSEQUENCE_NONE, ZMAPFRAME_NONE, start, end, FALSE) ;
     }
 
   return ;
@@ -502,13 +504,15 @@ static void highlightSequenceItems(ZMapWindow window, ZMapFeatureBlock block,
 
 
   /* If there is a dna column then highlight match in that. */
-  tmp_strand = ZMAPSTRAND_NONE ;
+  tmp_strand = ZMAPSTRAND_FORWARD ;	/* seq columns/ featruesets are always forward strand */
   tmp_frame = ZMAPFRAME_NONE ;
   set_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME) ;
 
-  if ((item = zmapWindowFToIFindItemFull(window,window->context_to_item,
+  item = zmapWindowFToIFindItemFull(window,window->context_to_item,
 					 block->parent->unique_id, block->unique_id,
-					 set_id, tmp_strand, tmp_frame, 0)))
+					 set_id, tmp_strand, tmp_frame, 0);
+//printf("highlight sequence %s -> %p\n", g_quark_to_string(set_id), item);
+  if (item)
     {
       int dna_start, dna_end ;
 
@@ -530,36 +534,48 @@ static void highlightSequenceItems(ZMapWindow window, ZMapFeatureBlock block,
 
 
   /* If there are peptide columns then highlight match in those. */
-  tmp_strand = ZMAPSTRAND_NONE ;
+  tmp_strand = ZMAPSTRAND_FORWARD ;
   tmp_frame = ZMAPFRAME_NONE ;
   set_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME) ;
 
+#if 0
   if ((item = zmapWindowFToIFindItemFull(window,window->context_to_item,
 					 block->parent->unique_id, block->unique_id,
 					 set_id, tmp_strand, tmp_frame, 0)))
+#endif
     {
       int frame_num, pep_start, pep_end ;
-
-
 
       for (frame_num = ZMAPFRAME_0 ; frame_num <= ZMAPFRAME_2 ; frame_num++)
 	{
 	  pep_start = start ;
 	  pep_end = end ;
 
-	  if (seq_type == ZMAPSEQUENCE_DNA)
-	    {
-	      highlightTranslationRegion(window, TRUE, FALSE, FALSE,
-					 item, ZMAP_FIXED_STYLE_3FT_NAME, frame_num, seq_type, pep_start, pep_end) ;
-	    }
-	  else
-	    {
-//	      if (frame_num == required_frame)
-		highlightTranslationRegion(window, TRUE, FALSE, FALSE, item,
-					   ZMAP_FIXED_STYLE_3FT_NAME, frame_num, seq_type, pep_start, pep_end) ;
-//	      else
-//		unHighlightTranslation(window, item, ZMAP_FIXED_STYLE_3FT_NAME, frame_num) ;
-	    }
+	  if ((item = zmapWindowFToIFindItemFull(window,window->context_to_item,
+					 block->parent->unique_id, block->unique_id,
+					 set_id, tmp_strand, frame_num, 0)))
+	  {
+		if (seq_type == ZMAPSEQUENCE_DNA)
+		{
+			highlightTranslationRegion(window, TRUE, FALSE, FALSE,
+						item, ZMAP_FIXED_STYLE_3FT_NAME, frame_num, seq_type, pep_start, pep_end) ;
+		}
+		else
+		{
+#if HIGHLIGHT_CURSOR_FRAME
+// thinking if you cursor on one 3FT col you donlt highlight the others
+// but i doesn't work...
+			if (required_frame == ZMAPFRAME_NONE || frame_num == required_frame)
+				highlightTranslationRegion(window, TRUE, FALSE, FALSE, item,
+						ZMAP_FIXED_STYLE_3FT_NAME, frame_num, seq_type, pep_start, pep_end) ;
+			else
+				unHighlightTranslation(window, item, ZMAP_FIXED_STYLE_3FT_NAME, frame_num) ;
+#else
+			highlightTranslationRegion(window, TRUE, FALSE, FALSE, item,
+						ZMAP_FIXED_STYLE_3FT_NAME, frame_num, seq_type, pep_start, pep_end) ;
+#endif
+		}
+	  }
 	}
 
       if (centre_on_region && !done_centring)
@@ -871,7 +887,8 @@ static void handleHightlightDNA(gboolean on, gboolean item_highlight, gboolean s
   if ((dna_item = zmapWindowItemGetDNATextItem(window, item))
       &&
 		ZMAP_IS_WINDOW_FEATURESET_ITEM (dna_item)
-		&& item != dna_item)
+//		&& item != dna_item
+		)
     {
       ZMapFeature feature ;
 
