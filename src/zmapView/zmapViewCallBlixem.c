@@ -1,4 +1,3 @@
-/*  Last edited: Jul 23 15:03 2012 (edgrif) */
 /*  File: zmapViewCallBlixem.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -624,13 +623,14 @@ gboolean zmapViewCallBlixem(ZMapView view,
 
 
 /* Returns a ZMapGuiNotebookChapter containing all user settable blixem resources. */
-ZMapGuiNotebookChapter zMapViewBlixemGetConfigChapter(ZMapGuiNotebook note_book_parent)
+ZMapGuiNotebookChapter zMapViewBlixemGetConfigChapter(ZMapView view, ZMapGuiNotebook note_book_parent)
 {
   ZMapGuiNotebookChapter chapter = NULL ;
 
   /* If the current configuration has not been set yet then read stuff from the config file. */
   if (!blixem_config_curr_G.init)
-    getUserPrefs(NULL, &blixem_config_curr_G) ;
+    getUserPrefs(view->view_sequence->config_file, &blixem_config_curr_G) ;
+
 
   chapter = makeChapter(note_book_parent) ; // mh17: this uses blixen_config_curr_G
 

@@ -201,6 +201,8 @@ typedef enum
     STYLE_PROP_ALIGNMENT_JOIN_THRESHOLD,
     STYLE_PROP_ALIGNMENT_JOIN_MAX,
 
+    STYLE_PROP_TRANSCRIPT_TRUNC_LEN,
+
     STYLE_PROP_SEQUENCE_NON_CODING_COLOURS,
     STYLE_PROP_SEQUENCE_CODING_COLOURS,
     STYLE_PROP_SEQUENCE_SPLIT_CODON_5_COLOURS,
@@ -345,7 +347,11 @@ typedef enum
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_SQUASH              "alignment-squash"
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_JOIN_OVERLAP        "alignment-join-overlap"
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_JOIN_THRESHOLD      "alignment-join-threshold"
-#define ZMAPSTYLE_PROPERTY_ALIGNMENT_JOIN_MAX            "alignment-join-max"
+#define ZMAPSTYLE_PROPERTY_ALIGNMENT_JOIN_MAX		   "alignment-join-max"
+
+
+/* transcript properties */
+#define ZMAPSTYLE_PROPERTY_TRANSCRIPT_TRUNC_LEN            "transcript-truncated-intron-length"
 
 
 /* Sequence properties. */
@@ -477,7 +483,6 @@ ZMAP_DEFINE_ENUM(ZMapStyleGraphScale, ZMAP_STYLE_GRAPH_SCALE_LIST);
 _(ZMAPSTYLE_SUB_FEATURE_INVALID, , "invalid", "Not used. ", "") \
 _(ZMAPSTYLE_SUB_FEATURE_HOMOLOGY,  , "homology" , "Incomplete-homology-marker" , "") \
 _(ZMAPSTYLE_SUB_FEATURE_NON_CONCENCUS_SPLICE,  , "non-concensus-splice" , "Non concensus splice marker" , "") \
-_(ZMAPSTYLE_SUB_FEATURE_TRUNCATED,  , "truncated" , "Truncated transcript" , "")\
 _(ZMAPSTYLE_SUB_FEATURE_POLYA,  , "polyA" , "Poly A tail on RNA seq"   , "") \
 _(ZMAPSTYLE_SUB_FEATURE_MAX , ,"do-not-use" ,"" , "")
 
@@ -780,6 +785,8 @@ typedef struct
 typedef struct
 {
   ZMapStyleFullColourStruct CDS_colours ;           /*!< Colour for CDS part of feature. */
+
+  double truncated_intron_length;
 
 } ZMapStyleTranscriptStruct, *ZMapStyleTranscript ;
 
@@ -1130,6 +1137,9 @@ char *zMapStyleMakeColourString(char *normal_fill, char *normal_draw, char *norm
 #define zMapStyleGetAlign(style)   ((style)->mode_data.glyph.glyph_align)
 
 //void zMapStyleGetGappedAligns(ZMapFeatureTypeStyle style, gboolean *parse_gaps, gboolean *show_gaps) ;
+
+#define zMapStyleGetTruncatedIntronLength(style)   ((style)->mode_data.transcript.truncated_intron_length)
+
 
 void zMapStyleSetParent(ZMapFeatureTypeStyle style, char *parent_name) ;
 void zMapStyleSetMag(ZMapFeatureTypeStyle style, double min_mag, double max_mag) ;

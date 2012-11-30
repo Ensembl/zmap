@@ -20,14 +20,14 @@ AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
 
 
-# Check if this is a Git repository and, if so, use PACKAGE_VERSION which will
-# include info about the current status in the version info (gets set from
-# VERSION_NUMBER in zmap_version.m4). Otherwise use output
+# Check if this is a Git repository and, if so, use output
 # of git describe abbreviated to just tag which for us is the version string.
+# otherwise use PACKAGE_VERSION which will include info about the current
+# status in the version info (gets set from VERSION_NUMBER in zmap_version.m4).
 # 
 if test -d "$srcdir/../.git" 
-then AC_DEFINE([ZMAP_VERSION_NUMBER], [PACKAGE_VERSION], [ZMap package version])
-else AC_DEFINE_UNQUOTED([ZMAP_VERSION_NUMBER], ["`git describe --abbrev=0`"], [ZMap package version])
+then AC_DEFINE_UNQUOTED([ZMAP_VERSION_NUMBER], ["`git describe --abbrev=0`"], [ZMap package version])
+else AC_DEFINE([ZMAP_VERSION_NUMBER], [PACKAGE_VERSION], [ZMap package version])
 fi
 
 

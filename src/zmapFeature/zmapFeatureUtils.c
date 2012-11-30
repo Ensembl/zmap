@@ -492,7 +492,8 @@ char *zMapFeatureCreateName(ZMapStyleMode feature_type,
   int len ;
 
   /* Turn this into a if() and return null if things not supplied.... */
-  zMapAssert(feature_type && feature) ;
+  zMapAssert(feature_type) ;
+  zMapAssert(feature && *feature) ;
 
   strand_str = zMapFeatureStrand2Str(strand) ;
 

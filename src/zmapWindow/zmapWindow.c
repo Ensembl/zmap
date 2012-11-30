@@ -1,4 +1,3 @@
-/*  Last edited: Jul 23 15:03 2012 (edgrif) */
 /*  File: zmapWindow.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -4558,11 +4557,11 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	if (key_event->state & GDK_CONTROL_MASK)
 	  requested_homol_set = ZMAPWINDOW_ALIGNCMD_MULTISET ;
 	else if (key_event->keyval == GDK_a)
-	{
-		requested_homol_set = ZMAPWINDOW_ALIGNCMD_SET ;
-		if(!focus_item)
-		  focus_item = (FooCanvasItem *) zmapWindowFocusGetHotColumn(window->focus);
-	}
+	  {
+	    requested_homol_set = ZMAPWINDOW_ALIGNCMD_SET ;
+	    if(!focus_item)
+	      focus_item = (FooCanvasItem *) zmapWindowFocusGetHotColumn(window->focus);
+	  }
 	else if (key_event->keyval == GDK_A)
 	  requested_homol_set = ZMAPWINDOW_ALIGNCMD_FEATURES ;
 
@@ -4643,28 +4642,67 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
       }
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     case GDK_d:
     case GDK_D:
-      //      g_hash_table_foreach(NULL,lockedDisplayCB,NULL);
-      printf("sizes: gtkobject %zu foocanvasitem %zu foocanvasgroup %zu"
-	     " zmapcanvasitem %zu zmapwindowcontainergroup %zu"
-	     " zmapwindowalignmentfeature %zu\n",
-	     sizeof(GtkObject), sizeof(struct _FooCanvasItem), sizeof(struct _FooCanvasGroup),
-	     sizeof(zmapWindowCanvasItemStruct), sizeof(zmapWindowContainerGroupStruct),
-	     sizeof(zmapWindowAlignmentFeatureStruct)) ;
-      break;
-#endif
-#if 0
-    case GDK_d:
-    case GDK_D:
-    {
-	    extern ZMapWindowContainerGroup nav_root;
+      {
+	/* Use the current focus item and display translation of it. */
+	FooCanvasItem *focus_item ;
 
-	    nav_root = window->feature_root_group;
-	    print_offsets("normal window");
-    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+	/* If there is a focus item use that.  */
+	if ((focus_item = zmapWindowFocusGetHotItem(window->focus))
+	    || (focus_item = zmapWindowMarkGetItem(window->mark)))
+	  {
+	    ZMapFeatureAny context ;
+	    ZMapFeature feature ;
+	    gboolean is_transcript ;
+	    char *dna ;
+	    gboolean spliced = TRUE, cds = FALSE ;
+
+	    feature = zmapWindowItemGetFeature(focus_item);
+	    zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
+
+	    context = zMapFeatureGetParentGroup((ZMapFeatureAny)feature,
+						ZMAPFEATURE_STRUCT_CONTEXT);
+
+	    is_transcript = ZMAPFEATURE_IS_TRANSCRIPT(feature) ;
+
+	    if (is_transcript)
+	      {
+		if (zMapGUITestModifiers(key_event, GDK_SHIFT_MASK))
+		  cds = TRUE ;
+		else if (zMapGUITestModifiers(key_event, GDK_CONTROL_MASK))
+		  spliced = FALSE ;
+
+		dna = zMapFeatureGetTranscriptDNA(feature, spliced, cds) ;
+	      }
+	    else
+	      {
+		dna = zMapFeatureGetFeatureDNA(feature) ;
+	      }
+
+	    if (!dna)
+	      {
+		char *err_msg ;
+
+		if (is_transcript && (cds && !(feature->feature.transcript.flags.cds)))
+		  err_msg = "Transcript has no CDS" ;
+		else
+		  err_msg = "No DNA loaded in view" ;
+
+		zMapWarning("%s", err_msg) ;
+	      }
+	    else
+	      {
+		zMapGUISetClipboard(window->toplevel, dna) ;
+
+		g_free(dna) ;
+	      }
+	  }
+
+	event_handled = TRUE ;
+
+	break ;
+      }
 
 
 #if MH17_DONT_INCLUDE
@@ -4958,6 +4996,36 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	event_handled = TRUE ;
 	break ;
       }
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      /* If these are ever used then they need a new letter as the shortcut. */
+
+    case GDK_d:
+    case GDK_D:
+      //      g_hash_table_foreach(NULL,lockedDisplayCB,NULL);
+      printf("sizes: gtkobject %zu foocanvasitem %zu foocanvasgroup %zu"
+	     " zmapcanvasitem %zu zmapwindowcontainergroup %zu"
+	     " zmapwindowalignmentfeature %zu\n",
+	     sizeof(GtkObject), sizeof(struct _FooCanvasItem), sizeof(struct _FooCanvasGroup),
+	     sizeof(zmapWindowCanvasItemStruct), sizeof(zmapWindowContainerGroupStruct),
+	     sizeof(zmapWindowAlignmentFeatureStruct)) ;
+      break;
+#endif
+#if 0
+    case GDK_d:
+    case GDK_D:
+    {
+	    extern ZMapWindowContainerGroup nav_root;
+
+	    nav_root = window->feature_root_group;
+	    print_offsets("normal window");
+    }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+
 
     default:
       event_handled = FALSE ;

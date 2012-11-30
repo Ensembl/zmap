@@ -145,7 +145,7 @@ ZMapViewConnection zMapViewRequestServer(ZMapView view, ZMapViewConnection view_
 				   ZMapFeatureBlock block_orig, GList *req_featuresets,
 				   gpointer server, /* ZMapConfigSource */
 	   			   int req_start, int req__end,
-				   gboolean dna_requested, gboolean terminate);
+				   gboolean dna_requested, gboolean terminate, gboolean show_warning);
 
 static ZMapViewConnection createConnection(ZMapView zmap_view,
 					   ZMapViewConnection view_con,
@@ -1222,12 +1222,17 @@ char *zMapViewGetStatusStr(ZMapView view)
 			       "Resetting", "Dying"} ;
   char *state_str ;
   ZMapViewState state = view->state;
+  char failed[32] = "";
 
   zMapAssert(state >= ZMAPVIEW_INIT);
   zMapAssert(state <= ZMAPVIEW_DYING) ;
 
+  if(view->sources_failed)
+	  sprintf(failed," (%d failed)",view->sources_failed);
   if(state == ZMAPVIEW_LOADING || state == ZMAPVIEW_UPDATING)
-      state_str = g_strdup_printf("%s (%d)", zmapStates[state], view->sources_loading);
+      state_str = g_strdup_printf("%s (%d)%s", zmapStates[state], view->sources_loading,failed);
+  else if(state == ZMAPVIEW_LOADED)
+	state_str = g_strdup_printf("%s%s", zmapStates[state], failed);
   else
       state_str = g_strdup(zmapStates[state]) ;
 
@@ -1527,7 +1532,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 		}
 
 		view_conn = zMapViewRequestServer(view, NULL, block_orig, req_sources, (gpointer) server,
-				req_start, req_end, dna_requested, terminate);
+				req_start, req_end, dna_requested, terminate, !view->thread_fail_silent);
 		if(view_conn)
 			requested = TRUE;
   }
@@ -1693,7 +1698,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 
 
 		view_conn = zMapViewRequestServer(view, view_conn, block_orig, req_featuresets, (gpointer) server, req_start, req_end,
-						dna_requested, (!existing && terminate) );
+						dna_requested, (!existing && terminate), !view->thread_fail_silent);
 
 		if(view_conn)
 			requested = TRUE;
@@ -1707,11 +1712,6 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 
   if (requested)
     {
-      if (view->state < ZMAPVIEW_LOADING)
-	view->state = ZMAPVIEW_LOADING ;
-      if (view->state > ZMAPVIEW_LOADING)
-	view->state = ZMAPVIEW_UPDATING;
-
 
 	// this is an optimisation: the server supports DNA so no point in searching for it
 	// if we implement multiple sources then we can remove this
@@ -1720,9 +1720,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 		view->sequence_server  = view_conn ;
 	}
 
-      zmapViewBusy(view, TRUE) ;     // gets unset when all step lists finish
-
-      (*(view_cbs_G->state_change))(view, view->app_data, NULL) ;
+	zMapViewShowLoadStatus(view);
     }
 
   if (sources)
@@ -1736,6 +1734,20 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 
 
 
+void zMapViewShowLoadStatus(ZMapView view)
+{
+	if (view->state < ZMAPVIEW_LOADING)
+	view->state = ZMAPVIEW_LOADING ;
+	if (view->state > ZMAPVIEW_LOADING)
+	view->state = ZMAPVIEW_UPDATING;
+
+	zmapViewBusy(view, TRUE) ;     // gets unset when all step lists finish
+
+	(*(view_cbs_G->state_change))(view, view->app_data, NULL) ;
+}
+
+
+
 /* request featuresets from a server, req_featuresets may be null in whcih case all are requested implicitly */
 /* called from zmapViewLoadfeatures() to preserve original fucntion
  * called from zmapViewConnect() to handle autoconfigured file servers,
@@ -1745,7 +1757,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 ZMapViewConnection zMapViewRequestServer(ZMapView view, ZMapViewConnection view_conn, ZMapFeatureBlock block_orig, GList *req_featuresets,
 				   gpointer _server, /* ZMapConfigSource */
 	   			   int req_start, int req_end,
-				   gboolean dna_requested, gboolean terminate)
+				   gboolean dna_requested, gboolean terminate, gboolean show_warning)
 {
 	ZMapFeatureContext context ;
 	ZMapFeatureBlock block ;
@@ -1802,8 +1814,14 @@ ZMapViewConnection zMapViewRequestServer(ZMapView view, ZMapViewConnection view_
 					req_start,req_end,
 					terminate || is_pipe)))
 	{
+		if(!view->sources_loading)
+			view->sources_failed = 0;
 		view->sources_loading ++ ;
-
+		view_conn->show_warning = show_warning;
+	}
+	else
+	{
+		view->sources_failed++;
 	}
 
 	return view_conn;
@@ -2764,7 +2782,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 	      threadDebugMsg(thread, "GUI: thread %s, cannot access reply from server thread - %s\n", err_msg) ;
 
 	      /* Warn the user ! */
-	      if (!zmap_view->thread_fail_silent)
+	      if (view_con->show_warning)
 		zMapWarning("Source \"%s\" is being removed, check log for details.", view_con->url) ;
 
 	      zMapLogCritical("Source \"%s\", cannot access reply from server thread,"
@@ -2834,7 +2852,7 @@ if(reply != ZMAPTHREAD_REPLY_WAIT)
 				char *format_str =
 				  "Source \"%s\" has returned an error, request that failed was: %s" ;
 
-				if(!zmap_view->thread_fail_silent)
+				if(view_con->show_warning)
 				  zMapWarning(format_str, view_con->url, err_msg) ;
 
 				zMapLogCritical(format_str, view_con->url, err_msg) ;
@@ -2881,7 +2899,7 @@ if(reply != ZMAPTHREAD_REPLY_WAIT)
 		    if (kill_connection)
 		      {
 			/* Warn the user ! */
-			if(!zmap_view->thread_fail_silent)
+			if(view_con->show_warning)
 			  zMapWarning("Source \"%s\" is being cancelled, check log for details.", view_con->url) ;
 
 			zMapLogCritical("Source \"%s\" is being cancelled"//
@@ -2906,7 +2924,7 @@ if(reply != ZMAPTHREAD_REPLY_WAIT)
 		    if (step->on_fail != REQUEST_ONFAIL_CONTINUE)
 		      {
 			/* Thread has failed for some reason and we should clean up. */
-			if (err_msg && !zmap_view->thread_fail_silent)
+			if (err_msg && view_con->show_warning)
 			  zMapWarning("%s", err_msg) ;
 
 			thread_has_died = TRUE ;
@@ -3063,12 +3081,14 @@ if(reply != ZMAPTHREAD_REPLY_WAIT)
 		        err_msg = g_strdup(err_msg) ;	    /* Set default message.... */
 		      }
 
-		      if (!zmap_view->thread_fail_silent && is_continue)
+		      if (view_con->show_warning && is_continue)
 		        {
 		        	/* we get here at the end of a step list, prev errors not reported till now */
 		        	zMapWarning("Data request failed: %s\n%s%s",err_msg,
 		        		cd->stderr_out && *cd->stderr_out ? "Server reports:\n": "", cd->stderr_out);
 		        }
+
+		      zmap_view->sources_failed ++;
 		    }
 
 

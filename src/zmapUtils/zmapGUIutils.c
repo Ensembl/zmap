@@ -88,10 +88,10 @@ typedef struct TextAttrsStructName
 
 
 static gboolean modalFromMsgType(ZMapMsgType msg_type) ;
-static gboolean messageFull(GtkWindow *parent, char *title_in, char *msg,
-			    gboolean modal, int display_timeout, gboolean close_button,
-			    ZMapMsgType msg_type, GtkJustification justify,
-			    ZMapGUIMsgUserData user_data) ;
+static GtkResponseType messageFull(GtkWindow *parent, char *title_in, char *msg,
+				   gboolean modal, int display_timeout, gboolean close_button,
+				   ZMapMsgType msg_type, GtkJustification justify,
+				   ZMapGUIMsgUserData user_data) ;
 static void butClick(GtkButton *button, gpointer user_data) ;
 static gboolean timeoutHandlerModal(gpointer data) ;
 static gboolean timeoutHandler(gpointer data) ;
@@ -181,9 +181,7 @@ GtkWidget *zMapGUIFindTopLevel(GtkWidget *widget)
 
 
 
-
-
-/*! For use with custom built dialogs.
+/* For use with custom built dialogs.
  *
  * Gtk provides a function called  gtk_dialog_run() which blocks until the user presses
  * a button on the dialog, the function returns an int indicating which button was
@@ -194,9 +192,9 @@ GtkWidget *zMapGUIFindTopLevel(GtkWidget *widget)
  * The code _relies_ on the response never being zero, no GTK predefined responses
  * have this value and you should not use this value either (see gtk web page for dialogs).
  *
- *
- * @param toplevel     This must be the dialog widget itself.
- * @return             an integer which corresponds to the button pressed.
+ * toplevel     This must be the dialog widget itself.
+ * 
+ * returns an integer which corresponds to the button pressed.
  *  */
 gint my_gtk_run_dialog_nonmodal(GtkWidget *toplevel)
 {
@@ -211,7 +209,7 @@ gint my_gtk_run_dialog_nonmodal(GtkWidget *toplevel)
   g_signal_connect(GTK_OBJECT(toplevel), "response",
 		   GTK_SIGNAL_FUNC(responseCB), (gpointer)response_ptr) ;
 
-  while (*response_ptr == 0 || gtk_events_pending())
+  while (*response_ptr == 0)
     gtk_main_iteration() ;
 
   result = *response_ptr ;
@@ -580,6 +578,9 @@ void zMapGUIShowMsgFull(GtkWindow *parent, char *msg,
 
 /*!
  * Show a message where user must select "ok" or "cancel".
+ * 
+ * Works differently from zMapGUIMsgGetText(), can only return
+ * TRUE or FALSE, these are only choices for user.
  *
  * See zMapGUIMsgFull() for complete documentation of parameters.
  *
@@ -593,8 +594,10 @@ gboolean zMapGUIMsgGetBool(GtkWindow *parent, ZMapMsgType msg_type, char *msg)
 
   modal = modalFromMsgType(msg_type) ;
 
-  if (messageFull(parent, NULL, msg, modal, 0, TRUE, msg_type, GTK_JUSTIFY_CENTER, &user_data))
-    result = user_data.data.bool ;
+  /* We ignore the return value, it's not needed, just pick up the boolean. */
+  messageFull(parent, NULL, msg, modal, 0, TRUE, msg_type, GTK_JUSTIFY_CENTER, &user_data) ;
+
+  result = user_data.data.bool ;
 
   return result ;
 }
@@ -609,9 +612,10 @@ gboolean zMapGUIMsgGetBool(GtkWindow *parent, ZMapMsgType msg_type, char *msg)
  *
  * @return  char *, users text or NULL if no text.
  */
-char *zMapGUIMsgGetText(GtkWindow *parent, ZMapMsgType msg_type, char *msg, gboolean hide_text)
+GtkResponseType zMapGUIMsgGetText(GtkWindow *parent, ZMapMsgType msg_type, char *msg, gboolean hide_text,
+				  char **text_out)
 {
-  char *text = NULL ;
+  GtkResponseType result = GTK_RESPONSE_CANCEL ;
   ZMapGUIMsgUserDataStruct user_data = {ZMAPGUI_USERDATA_TEXT, FALSE, {FALSE}} ;
   gboolean modal ;
 
@@ -619,10 +623,11 @@ char *zMapGUIMsgGetText(GtkWindow *parent, ZMapMsgType msg_type, char *msg, gboo
 
   user_data.hide_input = hide_text ;
 
-  if (messageFull(parent, NULL, msg, modal, 0, TRUE, msg_type, GTK_JUSTIFY_CENTER, &user_data))
-    text = user_data.data.text ;
+  if ((result = messageFull(parent, NULL, msg, modal, 0, TRUE, msg_type, GTK_JUSTIFY_CENTER, &user_data))
+      == GTK_RESPONSE_OK)
+    *text_out = user_data.data.text ;
 
-  return text ;
+  return result ;
 }
 
 
@@ -1323,12 +1328,12 @@ static gboolean modalFromMsgType(ZMapMsgType msg_type)
  *
  * returns TRUE if user data not required or if user data returned, FALSE otherwise.
  *  */
-static gboolean messageFull(GtkWindow *parent, char *title_in, char *msg,
-			    gboolean modal, int display_timeout, gboolean close_button,
-			    ZMapMsgType msg_type, GtkJustification justify,
-			    ZMapGUIMsgUserData user_data)
+static GtkResponseType messageFull(GtkWindow *parent, char *title_in, char *msg,
+				   gboolean modal, int display_timeout, gboolean close_button,
+				   ZMapMsgType msg_type, GtkJustification justify,
+				   ZMapGUIMsgUserData user_data)
 {
-  gboolean result = TRUE ;
+  GtkResponseType result = GTK_RESPONSE_CANCEL ;
   GtkWidget *dialog, *button, *label ;
   GtkWidget *entry = NULL ;
   char *title = NULL ;
@@ -1379,9 +1384,9 @@ static gboolean messageFull(GtkWindow *parent, char *title_in, char *msg,
   if (user_data)
     dialog = gtk_dialog_new_with_buttons(title, parent, flags,
 					 GTK_STOCK_OK,
-					 GTK_RESPONSE_ACCEPT,
+					 GTK_RESPONSE_OK,
 					 GTK_STOCK_CANCEL,
-					 GTK_RESPONSE_REJECT,
+					 GTK_RESPONSE_CANCEL,
 					 NULL) ;
   else if (close_button)
     dialog = gtk_dialog_new_with_buttons(title, parent, flags,
@@ -1442,8 +1447,6 @@ static gboolean messageFull(GtkWindow *parent, char *title_in, char *msg,
     }
   else
     {
-      gint result ;
-
       /* block waiting for user to answer dialog, for modal we can use straight gtk call,
        * for non-modal must use our home-grown (and probably buggy) version. */
       if (modal)
@@ -1456,7 +1459,7 @@ static gboolean messageFull(GtkWindow *parent, char *title_in, char *msg,
 	{
 	  switch (result)
 	    {
-	    case GTK_RESPONSE_ACCEPT:
+	    case GTK_RESPONSE_OK:
 	      {
 		switch (user_data->type)
 		  {
@@ -1468,17 +1471,16 @@ static gboolean messageFull(GtkWindow *parent, char *title_in, char *msg,
 		  case ZMAPGUI_USERDATA_TEXT:
 		    {
 		      char *text ;
-		      if ((text = (char *)gtk_entry_get_text(GTK_ENTRY(entry)))
-			  && *text)			    /* entry returns "" for no string. */
+
+		      /* entry returns "" for no string so check there is some text. */
+		      if ((text = (char *)gtk_entry_get_text(GTK_ENTRY(entry))) && *text)
 			user_data->data.text = g_strdup(text) ;
-		      else
-			result = FALSE ;
 
 		      break ;
 		    }
 		  default:
 		    {
-		      result = FALSE ;
+		      zMapAssertNotReached() ;
 
 		      break ;
 		    }
@@ -1497,7 +1499,7 @@ static gboolean messageFull(GtkWindow *parent, char *title_in, char *msg,
 		    }
 		  default:
 		    {
-		      result = FALSE ;
+		      /* No need to do anything, just return CANCEL. */
 
 		      break ;
 		    }
