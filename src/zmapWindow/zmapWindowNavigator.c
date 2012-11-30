@@ -52,12 +52,12 @@
 /* Return the widget! */
 #define NAVIGATOR_WIDGET(navigate) GTK_WIDGET(fetchCanvas(navigate))
 
-
-#define MH17_DEBUG_NAV_FOOBAR	1
+#define EDS_DEBUG	0
+#define MH17_DEBUG_NAV_FOOBAR	0
 #if MH17_DEBUG_NAV_FOOBAR
 void print_offsets(char *which);
 #endif
-#define debug	zMapLogWarning
+#define debug	printf
 
 typedef struct
 {
@@ -791,6 +791,7 @@ debug("nav set scroll %d %d\n",navigate->full_span.x1,navigate->full_span.x2);
         draw_data->current_block = feature_block = (ZMapFeatureBlock)feature_any;
 
 
+#if EDS_DEBUG
 	{
 	  GQuark set_id ;
 	  ZMapFeatureSet feature_set ;
@@ -803,9 +804,10 @@ debug("nav set scroll %d %d\n",navigate->full_span.x1,navigate->full_span.x2);
 	  matching_sets = zMapFeatureBlockGetMatchingSets(feature_block, "locus") ;
 
 	  if (feature_set)
-	    zMapUtilsDebugPrintf(stderr, "%s", "found locus set") ;
+	    //zMapUtilsDebugPrintf(stderr, "%s", "found locus set\n") ;
+	    printf("%s", "found locus set\n") ;
 	}
-
+#endif
 
 
 
@@ -885,8 +887,10 @@ debug("nav draw block %d %d\n",block_start,block_end);
 
 	name = zMapFeatureSetGetName(feature_set) ;
 
-	zMapUtilsDebugPrintf(stderr, "Processing featureset \"%s\"", name) ;
-
+#if EDS_DEBUG
+	//zMapUtilsDebugPrintf(stderr, "Processing featureset \"%s\"\n", name) ;
+	printf("Processing featureset \"%s\"\n", name) ;
+#endif
 
 #if MH17_FToIHash_does_this_mapping
         if(!feature_set->column_id)
