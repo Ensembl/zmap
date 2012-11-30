@@ -2504,36 +2504,45 @@ static void ProcessListFeature(gpointer data, gpointer user_data)
 #endif
 
   style = *feature->style;
-      /* if fails: no display. fixed for pipe via GFF2parser, ACE seems to call it???
-       * features paint so it musk be ok! *
-       * but if a user adds an object and we make a fetaure OTF then no style is attached
-       * the above is an optimisation
-       */
+  /* if fails: no display. fixed for pipe via GFF2parser, ACE seems to call it???
+   * features paint so it musk be ok! *
+   * but if a user adds an object and we make a fetaure OTF then no style is attached
+   * the above is an optimisation
+   */
   if(!style)
-  {
+    {
       /* should only be a consideration for OTF data w/ no styles?? */
-	/* xremote code should set this up anyway */
-	/* NOTE there's a knot here
-	 * to allow column styles to be changed we have features point to the styles in the containing context featureset
-	 * if we get a feature via XRemote the we don't have that set up as it doesnly go through GFFParser
-	 * so we have to find the feature's parent anf set the style there
-	 */
-	/* NOTE: 3FT and DNA get supplied by acedbServer and pipeServer and are given temporary styles that are freed
-	 * which means thet that data is not usable.
-	 */
+      /* xremote code should set this up anyway */
+      /* NOTE there's a knot here
+       * to allow column styles to be changed we have features point to the styles in the containing context featureset
+       * if we get a feature via XRemote the we don't have that set up as it doesnly go through GFFParser
+       * so we have to find the feature's parent anf set the style there
+       */
+      /* NOTE: 3FT and DNA get supplied by acedbServer and pipeServer and are given temporary styles that are freed
+       * which means thet that data is not usable.
+       */
 
-	ZMapFeatureSet set = (ZMapFeatureSet) feature->parent;
-	zMapAssert(set);
+      ZMapFeatureSet set = (ZMapFeatureSet) feature->parent;
+      zMapAssert(set);
 
-	if(!set->style)
+      if(!set->style)
 	{
-//		set->style = zMapFindStyle(featureset_data->styles, feature->style_id) ;
-		zMapWarning("no style for feature %s",g_quark_to_string(feature->unique_id));
-		zMapLogWarning("no style for feature %s",g_quark_to_string(feature->unique_id));
-		zMapLogStack();
+	  char *err_msg ;
+
+	  err_msg = g_strdup_printf("no style for feature set \"%s\", feature \"%s\", (%s)",
+				    g_quark_to_string(set->original_id),
+				    g_quark_to_string(feature->original_id),
+				    g_quark_to_string(feature->unique_id));
+
+	  //		set->style = zMapFindStyle(featureset_data->styles, feature->style_id) ;
+	  zMapWarning("%s", err_msg) ;
+	  zMapLogWarning("%s", err_msg) ;
+	  zMapLogStack();
+
+	  g_free(err_msg) ;
 	}
       feature->style = &set->style;
-  }
+    }
 
 #if MH17_REVCOMP_DEBUG > 1
   if(!style) zMapLogWarning("no style 1 ","");
