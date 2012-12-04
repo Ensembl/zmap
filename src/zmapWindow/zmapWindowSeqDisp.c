@@ -379,7 +379,7 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
 
 	fset = (ZMapWindowFeaturesetItem) trans_item;
 	/* as we change viz status, cols to the right get exposed by full repos but this one does not move */
-	zMapWindowCanvasFeaturesetExpose(fset);		/* so we get a double expose */
+//	zMapWindowCanvasFeaturesetExpose(fset);		/* so we get a double expose */
 
       /* Brute force, reinit the whole peptide string. */
       memset(seq, (int)SHOW_TRANS_BACKGROUND, trans_feature->feature.sequence.length) ;

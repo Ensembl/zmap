@@ -77,6 +77,8 @@ typedef struct
 	double block_spacing_x;		/* as set in current block */
 	double x1,x2;
 	double left;			/* left most coordinate of a column that has moved */
+	double last_left;			/* previous column */
+	double last_right;
 
 } PositionColumnStruct, *PositionColumn;
 
@@ -748,6 +750,7 @@ static void positionColumnCB(ZMapWindowContainerGroup container, FooCanvasPoints
 		block = (ZMapWindowContainerBlock) container;
 		pc->block_spacing_x = container->child_spacing;
 		pc->x1 -= container->child_spacing;
+		pc->last_left = pc->last_right = 0.0;
 		break;
 
 	case ZMAPCONTAINER_LEVEL_FEATURESET:
@@ -788,11 +791,15 @@ static void positionColumnCB(ZMapWindowContainerGroup container, FooCanvasPoints
 				}
 			}
 		}
+		if(!pc->left && pc->last_right > group->xpos)	/* previous column got bigger, must refresh that one */
+			pc->left = pc->last_left;
+
+		pc->last_left = pc->block_cur_x;
 
 		if(group->xpos != pc->block_cur_x)	/* if new col xpos will be 0 */
 		{
 			if(!pc->left)
-				pc->left = pc->block_cur_x;
+				pc->left = pc->last_left;	//pc->block_cur_x;
 
 //printf("pos col %s %f %f %f\n",g_quark_to_string((container->feature_any->unique_id)), pc->block_cur_x, pc->block_spacing_x, width);
 		}
@@ -800,6 +807,8 @@ static void positionColumnCB(ZMapWindowContainerGroup container, FooCanvasPoints
 		g_object_set(G_OBJECT(group), "x",pc->block_cur_x, NULL);	/* this sets deep update flags */
 
 		pc->block_cur_x += col_width;
+		pc->last_right = pc->block_cur_x;
+//printf("pos col %s %f %f %f %f %f\n",g_quark_to_string((container->feature_any->unique_id)), pc->block_cur_x, pc->block_spacing_x, width, pc->last_left, pc->last_right);
 
 		break;
 
@@ -847,7 +856,7 @@ void zmapWindowFullReposition(ZMapWindowContainerGroup root, gboolean redraw, ch
 		foo_canvas_w2c(((FooCanvasItem *) root)->canvas, x2, y2, &cx2, &cy2);
 
 		foo_canvas_request_redraw(((FooCanvasItem *) root)->canvas, cx1, cy1, cx2, cy2);
-//printf("full repos request redraw %d - %d\n",cx1,cx2);
+//printf("full repos request redraw %d %d - %d %d\n",cx1, cy1, cx2, cy2);
 	}
   }
 

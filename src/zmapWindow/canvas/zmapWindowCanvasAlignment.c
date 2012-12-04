@@ -487,14 +487,14 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
 
 	      c.pixel = outline;
 	      gdk_gc_set_foreground (featureset->gc, &c);
-	      zMap_draw_line(drawable, featureset, cx1, gy1, cx2, gy2);
+	      zMap_draw_line(drawable, featureset, cx1, gy1, cx2 - 1, gy2);	/* GDK foible */
 	      break;
 
 	    case GAP_VLINE:		/* y coords differ, x is the same */
 	      if(!outline_set)	/* must be or else we are up the creek! */
 		break;
 
-	      gx = (int) mid_x;
+	      gx = (cx1 + cx2) / 2;
 	      c.pixel = outline;
 	      gdk_gc_set_foreground (featureset->gc, &c);
 	      zMap_draw_line(drawable, featureset, gx, gy1, gx, gy2);
