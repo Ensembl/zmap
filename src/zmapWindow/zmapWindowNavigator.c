@@ -964,10 +964,22 @@ static void updateLocatorDragger(ZMapWindowNavigator navigate, double button_y, 
 
   clampScaled(navigate, &a, &b);
 
-  zMapWindowCanvasFeaturesetSetSequence((ZMapWindowFeaturesetItem) navigate->locator_drag, a, b);
+  /* need to expose where we moved from */
+  zMapWindowCanvasFeaturesetExpose((ZMapWindowFeaturesetItem) navigate->locator_drag);
 
+
+  zMapWindowCanvasFeaturesetSetSequence((ZMapWindowFeaturesetItem) navigate->locator_drag, a, b);
   foo_canvas_item_request_update(navigate->locator_drag);
-  foo_canvas_item_request_redraw(navigate->locator_drag);
+
+// this fails to draw the top line if dragging upwards
+//  foo_canvas_item_request_redraw(navigate->locator_drag);
+
+// this works but is a bodge
+//  foo_canvas_item_request_redraw(navigate->canvas->root);
+
+  /* need to expose where we moved to */
+  zMapWindowCanvasFeaturesetExpose((ZMapWindowFeaturesetItem) navigate->locator_drag);
+
 
   return ;
 }

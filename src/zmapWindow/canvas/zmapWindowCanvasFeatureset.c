@@ -1281,9 +1281,10 @@ void zMapWindowCanvasFeaturesetRedraw(ZMapWindowFeaturesetItem fi, double zoom)
   fi->zoom = zoom;	/* can set to 0 to trigger recalc of zoom data */
 
 #if 1
+
   foo_canvas_item_request_update (foo);
-  // won't run if the item is not mapped yet
-//  foo_canvas_item_request_redraw (foo);
+//  foo_canvas_item_request_redraw (foo); /* won't run if the item is not mapped yet */
+
 #endif
 
 // this code fails if we just added the item as it's no been updated yet
@@ -1300,8 +1301,11 @@ void zMapWindowCanvasFeaturesetRedraw(ZMapWindowFeaturesetItem fi, double zoom)
   foo_canvas_item_i2w (foo, &i2w_dx, &i2w_dy);
 
   /* get item canvas coords, following example from FOO_CANVAS_RE (used by graph items) */
-  foo_canvas_w2c (foo->canvas, x1 + i2w_dx, i2w_dy, &cx1, &cy1);
-  foo_canvas_w2c (foo->canvas, x1 + width + i2w_dx, fi->end - fi->start + i2w_dy, &cx2, &cy2);
+//  foo_canvas_w2c (foo->canvas, x1 + i2w_dx, i2w_dy, &cx1, &cy1);
+//  foo_canvas_w2c (foo->canvas, x1 + width + i2w_dx, fi->end - fi->start + i2w_dy, &cx2, &cy2);
+/* NOTE: these coords should be relative to the block but that requires fixing update and .... draw, point??? */
+  foo_canvas_w2c (foo->canvas, x1 + i2w_dx, fi->start, &cx1, &cy1);
+  foo_canvas_w2c (foo->canvas, x1 + width + i2w_dx, fi->end, &cx2, &cy2);
 
   foo_canvas_request_redraw (foo->canvas, cx1, cy1, cx2 + 1, cy2 + 1);	/* hits column next door? (NO, is needed) */
 }
