@@ -1507,7 +1507,7 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
         feature_block = (ZMapFeatureBlock)feature_any;
 
 #if MH17_REVCOMP_DEBUG
-	zMapLogWarning("\ndrawFeatures block %d-%d", feature_block->block_to_sequence.block.x1,feature_block->block_to_sequence.block.x2);
+	printf("drawFeatures block %d-%d\n", feature_block->block_to_sequence.block.x1,feature_block->block_to_sequence.block.x2);
 #endif
 
 	/* Work out height of block making sure it spans all bases in the block. */
@@ -1614,6 +1614,7 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
             char *x = g_strdup_printf("cannot find set %s, available are: ", g_quark_to_string(feature_any->unique_id));
             {
 	      GList *l;
+		char *x;
 
 	      zMap_g_hash_table_get_keys(&l,canvas_data->curr_block->feature_sets);
 	      for(;l;l = l->next)
@@ -1625,7 +1626,7 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 
             zMapLogWarning(x,"");
 	  }
-//printf("DrawFeatureSet %s\n",g_quark_to_string(feature_any->unique_id));
+//printf("DrawFeatureSet %s, context = %p\n",g_quark_to_string(feature_any->unique_id),canvas_data->full_context);
 
 	/* Don't attach this feature_set to anything. It is
 	 * potentially part of a _diff_ context in which it might be a

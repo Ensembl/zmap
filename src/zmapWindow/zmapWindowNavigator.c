@@ -738,22 +738,18 @@ static ZMapFeatureContextExecuteStatus drawContext(GQuark key_id,
 					   col_id,
 					   ZMAPSTRAND_FORWARD, ZMAPFRAME_NONE)))
           {
-	    ZMapWindowContainerFeatureSet container_feature_set;
+	      ZMapWindowContainerFeatureSet container_feature_set;
             FooCanvasGroup *group_feature_set;
-	    ZMapStyleBumpMode bump_mode;
-
+	      ZMapStyleBumpMode bump_mode;
 
             group_feature_set = FOO_CANVAS_GROUP(item);
-	    container_feature_set = (ZMapWindowContainerFeatureSet)item;
+	      container_feature_set = (ZMapWindowContainerFeatureSet)item;
 
             zmapWindowNavigatorRunSet(feature_set,
                                         group_feature_set, ZMAPFRAME_NONE, draw_data->navigate);
 
-	    if ((bump_mode = zmapWindowContainerFeatureSetGetBumpMode(container_feature_set)) != ZMAPBUMP_UNBUMP)
-	      {
-
-		zmapWindowColumnBumpRange(item, bump_mode, ZMAPWINDOW_COMPRESS_ALL) ;
-	      }
+	      if ((bump_mode = zmapWindowContainerFeatureSetGetBumpMode(container_feature_set)) != ZMAPBUMP_UNBUMP)
+			zmapWindowColumnBumpRange(item, bump_mode, ZMAPWINDOW_COMPRESS_ALL) ;
           }
         else
           {
@@ -909,8 +905,24 @@ static void createColumnCB(gpointer data, gpointer user_data)
 
 //	zmapWindowDrawSetGroupBackground(draw_data->container_feature_set, 0, 1, 1.0, ZMAP_CANVAS_LAYER_COL_BACKGROUND,  NULL, NULL);
     }
+#if 0
+// we'll get this pointless error if the set has not loaded yet
   else
-    zMapLogWarning("Failed to find navigator featureset '%s'\n", g_quark_to_string(set_id));
+  {
+      GList *l;
+	char *x = "";
+
+	printf("Failed to find navigator featureset '%s'\n", g_quark_to_string(set_id));
+
+	zMap_g_hash_table_get_keys(&l,draw_data->current_block->feature_sets);
+	for(;l;l = l->next)
+	{
+		char *y = (char *) g_quark_to_string(GPOINTER_TO_UINT(l->data));
+		x = g_strconcat(x," ",y,NULL);
+	}
+	printf("available are: %s\n",x);
+  }
+#endif
 
   return ;
 }
@@ -1501,22 +1513,23 @@ void zmapWindowNavigatorRunSet(  ZMapFeatureSet set,
 			feature_stack.frame = zmapWindowFeatureFrame(feature);
 	}
 
-	if(zMapStyleGetMode(*feature->style) == ZMAPSTYLE_MODE_TEXT)
+//	if(zMapStyleGetMode(*feature->style) == ZMAPSTYLE_MODE_TEXT)	variant feature handles this
 	{
-		if(!variantFeature(feature, navigate))
-		{
-			foo = zmapWindowFToIFactoryRunSingle(navigate->ftoi_hash, (ZMapWindowContainerFeatureSet) container, features, foo, &feature_stack);
+		if(variantFeature(feature, navigate))
+			continue;
+	}
 
-			if(!zMapWindowCanvasItemIsConnected((ZMapWindowCanvasItem) foo))
+	foo = zmapWindowFToIFactoryRunSingle(navigate->ftoi_hash, (ZMapWindowContainerFeatureSet) container, features, foo, &feature_stack);
+
+	if(!zMapWindowCanvasItemIsConnected((ZMapWindowCanvasItem) foo))
 				factoryItemHandler (foo, &feature_stack, (gpointer) navigate);
-		}
-		if(!locus_featureset && foo)
-		{
-			locus_featureset = (ZMapWindowFeaturesetItem) foo;
-			zMapWindowCanvasLocusSetFilter(locus_featureset, navigate->hide_filter);
 
-			navigate->locus_featureset = locus_featureset;
-		}
+	if(zMapStyleGetMode(*feature->style) == ZMAPSTYLE_MODE_TEXT && !locus_featureset && foo)
+	{
+		locus_featureset = (ZMapWindowFeaturesetItem) foo;
+		zMapWindowCanvasLocusSetFilter(locus_featureset, navigate->hide_filter);
+
+		navigate->locus_featureset = locus_featureset;
 	}
   }
 
