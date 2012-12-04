@@ -134,10 +134,8 @@ static void default_locus_names_filter(GList **filter_out);
 
 
 
-void zmapWindowNavigatorRunSet(ZMapFeatureSet set,
-                                 FooCanvasGroup *container,
-                                 ZMapFrame frame,
-					   ZMapWindowNavigator navigate);
+static void navigatorRunSet(ZMapFeatureSet set, FooCanvasGroup *container, ZMapFrame frame,
+			    ZMapWindowNavigator navigate);
 
 
 
@@ -401,6 +399,7 @@ void zMapWindowNavigatorDrawFeatures(ZMapWindowNavigator navigate,
 {
   FooCanvas *canvas = NULL;
   NavigateDrawStruct draw_data = {NULL};
+
 
   draw_data.navigate  = navigate;
   draw_data.context   = full_context;
@@ -692,8 +691,8 @@ static ZMapFeatureContextExecuteStatus drawContext(GQuark key_id,
 			  zmapWindowStatsCreate((ZMapFeatureAny)draw_data->current_block)) ;
 
 
-      zmapWindowContainerBlockAugment((ZMapWindowContainerBlock)draw_data->container_block,
-					    (ZMapFeatureBlock) feature_any) ;
+	zmapWindowContainerBlockAugment((ZMapWindowContainerBlock)draw_data->container_block,
+					(ZMapFeatureBlock) feature_any) ;
 
 //	zmapWindowDrawSetGroupBackground(draw_data->container_block, 0, 1, 1.0, ZMAP_CANVAS_LAYER_BLOCK_BACKGROUND, NULL, NULL);
 
@@ -745,8 +744,7 @@ static ZMapFeatureContextExecuteStatus drawContext(GQuark key_id,
             group_feature_set = FOO_CANVAS_GROUP(item);
 	      container_feature_set = (ZMapWindowContainerFeatureSet)item;
 
-            zmapWindowNavigatorRunSet(feature_set,
-                                        group_feature_set, ZMAPFRAME_NONE, draw_data->navigate);
+            navigatorRunSet(feature_set, group_feature_set, ZMAPFRAME_NONE, draw_data->navigate) ;
 
 	      if ((bump_mode = zmapWindowContainerFeatureSetGetBumpMode(container_feature_set)) != ZMAPBUMP_UNBUMP)
 			zmapWindowColumnBumpRange(item, bump_mode, ZMAPWINDOW_COMPRESS_ALL) ;
@@ -855,13 +853,16 @@ static void createColumnCB(gpointer data, gpointer user_data)
   GQuark set_unique_id;
 
   /* We need the mapping stuff so navigator can use windowsearch calls and other stuff. */
+
   /* for the navigator styles are hard coded?? and there's no featureset_2_column mapping ?
      style = zMapWindowGetColumnStyle(draw_data->navigate->current_window,set_id);
   */
 
-      /* mh17: need to canonicalise the set name to find the style */
-  set_unique_id = zMapStyleCreateID((char *) g_quark_to_string(set_id));
-  style = zMapFindStyle(draw_data->styles,set_unique_id);
+  /* mh17: need to canonicalise the set name to find the style */
+  set_unique_id = zMapStyleCreateID((char *) g_quark_to_string(set_id)) ;
+
+  style = zMapFindStyle(draw_data->styles, set_unique_id) ;
+
   draw_data->current_set = zMapFeatureBlockGetSetByID(draw_data->current_block, set_unique_id);
 
 
@@ -1494,24 +1495,23 @@ void zmapWindowNavigatorRunSet(  ZMapFeatureSet set,
   zMap_g_hash_table_get_data(&l, set->features);
 
   for(; l ; l = l->next)
-  {
-	ZMapFeature feature = (ZMapFeature)l->data;
-	FooCanvasItem *foo = NULL;
+    {
+      ZMapFeature feature = (ZMapFeature)l->data;
+      FooCanvasItem *foo = NULL;
 
-	/* filter on frame! */
-	if((frame != ZMAPFRAME_NONE) && frame  != zmapWindowFeatureFrame(feature))
-		continue;
+      /* filter on frame! */
+      if((frame != ZMAPFRAME_NONE) && frame  != zmapWindowFeatureFrame(feature))
+	continue;
 
-	feature_stack.feature = feature;
+      feature_stack.feature = feature;
 
-	/* this stuff is just not used in the navigator..... esp given that container is a given */
-	if(feature->style)	/* chicken */
+      /* this stuff is just not used in the navigator..... esp given that container is a given */
+      if(*(feature->style))	/* chicken */
 	{
-		if(zMapStyleIsStrandSpecific(*feature->style))
-			feature_stack.strand = zmapWindowFeatureStrand(NULL,feature);
-		if(zMapStyleIsFrameSpecific(*feature->style))
-			feature_stack.frame = zmapWindowFeatureFrame(feature);
-	}
+	  if(zMapStyleIsStrandSpecific(*feature->style))
+	    feature_stack.strand = zmapWindowFeatureStrand(NULL,feature);
+	  if(zMapStyleIsFrameSpecific(*feature->style))
+	    feature_stack.frame = zmapWindowFeatureFrame(feature);
 
 //	if(zMapStyleGetMode(*feature->style) == ZMAPSTYLE_MODE_TEXT)	variant feature handles this
 	{
@@ -1531,7 +1531,8 @@ void zmapWindowNavigatorRunSet(  ZMapFeatureSet set,
 
 		navigate->locus_featureset = locus_featureset;
 	}
-  }
+
+    }
 
   return ;
 }
