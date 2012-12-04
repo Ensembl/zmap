@@ -246,6 +246,8 @@ FooCanvasItem *zMapDrawBoxSolid(FooCanvasGroup *group,
 
 #endif
 
+
+#if 0
 /* Semi transparent box. */
 FooCanvasItem *zMapDrawBoxOverlay(FooCanvasGroup *group,
 				  double x1, double y1, double x2, double y2,
@@ -284,7 +286,7 @@ void zMapDrawBoxChangeSize(FooCanvasItem *box,
   return ;
 }
 
-
+#endif
 
 #if NOT_USED
 
