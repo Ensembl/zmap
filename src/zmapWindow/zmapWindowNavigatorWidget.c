@@ -53,7 +53,7 @@ typedef struct _ZMapNavigatorClassDataStruct
   ZMapWindowNavigatorCallbackStruct callbacks;
   gpointer user_data;
   double container_width, container_height;     /* size of the features in canvas coordinates */
-  FooCanvasItem *top_bg, *bot_bg;
+//  FooCanvasItem *top_bg, *bot_bg;
   GdkColor original_colour;
   GtkTooltips *tooltips; /* Tooltips */
   double start,end;
@@ -155,6 +155,7 @@ GtkWidget *zMapWindowNavigatorCreateCanvas(ZMapWindowNavigatorCallback callbacks
       class_data->tooltips = gtk_tooltips_new();
       setupTooltips(canvas_widget, class_data);
 
+#if 0
       /* struct copy */
       class_data->original_colour = gtk_widget_get_style(canvas_widget)->bg[GTK_STATE_NORMAL];
 
@@ -180,6 +181,7 @@ GtkWidget *zMapWindowNavigatorCreateCanvas(ZMapWindowNavigatorCallback callbacks
 
       foo_canvas_item_lower_to_bottom(class_data->top_bg);
       foo_canvas_item_lower_to_bottom(class_data->bot_bg);
+#endif
     }
 
 
@@ -311,7 +313,7 @@ void zmapWindowNavigatorFillWidget(GtkWidget *widget)
   target_pixels = getZoomFactor(class_data->height, class_data->text_height, class_data->span);
 
   {
-      double x1, x2, y1, y2, x3;
+      double x1, x2, y1, y2; //, x3;
       double border = class_data->text_height / target_pixels;
 
       if(curr_pixels != target_pixels)
@@ -320,6 +322,7 @@ void zmapWindowNavigatorFillWidget(GtkWidget *widget)
       fetchScrollCoords(class_data, border, &x1, &y1, &x2, &y2);
       foo_canvas_set_scroll_region(canvas, x1, y1, x2, y2);
 
+#if 0
       /* use widget->allocation.width instead of x2 as that might not be full width. */
       x3 = widget->allocation.width + (0 - x1);
       if(x3 < x2)
@@ -339,6 +342,8 @@ void zmapWindowNavigatorFillWidget(GtkWidget *widget)
 			  "y2", y2,
 			  NULL);
       foo_canvas_item_lower_to_bottom(class_data->bot_bg);
+#endif
+
 
 #if MH17_DEBUG_NAV_FOOBAR
 printf("fill widget %f %f, %f %f\n", x1, y1, x2, y2);

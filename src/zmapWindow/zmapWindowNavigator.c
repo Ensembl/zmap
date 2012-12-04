@@ -491,7 +491,10 @@ void zMapWindowNavigatorDrawLocator(ZMapWindowNavigator navigate,
   {
 	  zMapWindowCanvasFeaturesetSetSequence((ZMapWindowFeaturesetItem) navigate->locator, raw_top,raw_bot);
 	  foo_canvas_item_request_update(navigate->locator);
-	  zMapWindowCanvasFeaturesetExpose((ZMapWindowFeaturesetItem) navigate->locator);
+
+	  /* redraw all to ensure shrinking locator is wiped */
+	  foo_canvas_item_request_redraw(navigate->canvas->root);
+//	  zMapWindowCanvasFeaturesetExpose((ZMapWindowFeaturesetItem) navigate->locator);
   }
 
 //  if(navigate->draw_expose_handler_id == 0)	/* sets nav scroll region ?? */
@@ -1479,7 +1482,7 @@ static void default_locus_names_filter(GList **filter_out)
 
 
 
-void zmapWindowNavigatorRunSet(  ZMapFeatureSet set,
+void navigatorRunSet(  ZMapFeatureSet set,
                                  FooCanvasGroup *container,
                                  ZMapFrame frame,
 					   ZMapWindowNavigator navigate)
@@ -1512,6 +1515,7 @@ void zmapWindowNavigatorRunSet(  ZMapFeatureSet set,
 	    feature_stack.strand = zmapWindowFeatureStrand(NULL,feature);
 	  if(zMapStyleIsFrameSpecific(*feature->style))
 	    feature_stack.frame = zmapWindowFeatureFrame(feature);
+	}
 
 //	if(zMapStyleGetMode(*feature->style) == ZMAPSTYLE_MODE_TEXT)	variant feature handles this
 	{

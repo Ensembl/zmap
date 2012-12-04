@@ -40,6 +40,7 @@
 
 #include <zmapDraw_P.h>
 
+#if OVERLAY
 /* bitmap for doing the overlays, leads to diagonal lines allowing an element of "transparency".
  *
  * The only way to get rid of a bitmap (i.e. drawable) once allocated seems to be to do
@@ -58,6 +59,7 @@ static char overlay_bitmap_bits[] =
     0x44, 0x44,
     0x88, 0x88
   } ;
+#endif
 
 #if 0
 #define make_clickable_bmp_width 16
@@ -288,7 +290,7 @@ void zMapDrawBoxChangeSize(FooCanvasItem *box,
 
 #endif
 
-#if NOT_USED
+#if 0 // NOT_USED
 
 /* dimension is either a line width when form translates to creating a
  * line.  It can refer to a position though, see utr form.  We might
@@ -772,7 +774,7 @@ FooCanvasItem *zMapDrawSSPolygon(FooCanvasItem *grp, ZMapPolygonForm form,
 
 #endif
 
-#if NOT_USED
+#if 0 // NOT_USED
 // last instance was in windowRuler
 FooCanvasItem *zMapDrawLine(FooCanvasGroup *group, double x1, double y1, double x2, double y2,
 			    GdkColor *colour, guint line_width)
@@ -819,7 +821,7 @@ FooCanvasItem *zMapDrawLineFull(FooCanvasGroup *group, FooCanvasGroupPosition po
 }
 #endif
 
-#if NOT_USED
+#if 0 // NOT_USED
 
 /* It may be good not to specify a width here as well (see zMapDrawBox) but I haven't
  * experimented yet. */
@@ -1064,7 +1066,7 @@ void zMapDrawToolTipSetPosition(FooCanvasGroup *tooltip, double x, double y, cha
   return ;
 }
 
-#ifdef RDS_DONT_INCLUDE
+#if 0 // RDS_DONT_INCLUDE
 /* *grp must be an empty group or one containing 8 line items at the
  * beginning.
  *
@@ -1135,6 +1137,7 @@ void zMapDrawHighlightTextRegion(FooCanvasGroup *grp,
 }
 #endif
 
+#if 0 // NOT_USED
 FooCanvasItem *zMapDrawTextWithFont(FooCanvasGroup *parent,
                                     char *some_text,
                                     PangoFontDescription *font_desc,
@@ -1158,6 +1161,8 @@ FooCanvasItem *zMapDrawTextWithFont(FooCanvasGroup *parent,
 
   return text_item;
 }
+
+#endif
 
 
 /*! @} end of zmapdraw docs. */
