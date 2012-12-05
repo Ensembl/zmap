@@ -70,7 +70,9 @@ typedef struct _ZMapWindowScaleCanvasStruct
   int default_position;
   gboolean freeze, text_left;
 //  double line_height;
+#if ZOOM_SCROLL
   gulong visibilityHandlerCB;
+#endif
 
   PangoFont *font;
   PangoFontDescription *font_desc;
@@ -108,10 +110,12 @@ typedef enum
 //static void positionLeftRight(FooCanvasGroup *left, FooCanvasGroup *right);
 static void paneNotifyPositionCB(GObject *pane, GParamSpec *scroll, gpointer user_data);
 //static gboolean rulerVisibilityHandlerCB(GtkWidget *widget, GdkEventExpose *expose, gpointer user_data);
+#if ZOOM_SCROLL
 static gboolean rulerMaxVisibilityHandlerCB(GtkWidget *widget, GdkEventExpose *expose, gpointer user_data);
+
 static void freeze_notify(ZMapWindowScaleCanvas ruler);
 static void thaw_notify(ZMapWindowScaleCanvas ruler);
-
+#endif
 
 
 
@@ -132,7 +136,9 @@ ZMapWindowScaleCanvas zmapWindowScaleCanvasCreate(ZMapWindowScaleCanvasCallbackL
   ruler->default_position = DEFAULT_PANE_POSITION;
   ruler->text_left        = TRUE; /* TRUE = put the text on the left! */
 
+#if ZOOM_SCROLL
   ruler->visibilityHandlerCB = 0;
+#endif
 
   ruler->last_draw_coords.y1 = ruler->last_draw_coords.y2 = 0.0;
   ruler->last_draw_coords.x1 = ruler->last_draw_coords.x2 = 0.0;
@@ -186,6 +192,7 @@ void zmapWindowScaleCanvasOpenAndMaximise(ZMapWindowScaleCanvas ruler)
 {
   int open = 10;
 
+#if ZOOM_SCROLL
   /* If there's one set, disconnect it */
   if(ruler->visibilityHandlerCB)
     g_signal_handler_disconnect(G_OBJECT(ruler->canvas), ruler->visibilityHandlerCB);
@@ -196,6 +203,7 @@ void zmapWindowScaleCanvasOpenAndMaximise(ZMapWindowScaleCanvas ruler)
                      "visibility-notify-event",
                      G_CALLBACK(rulerMaxVisibilityHandlerCB),
                      (gpointer)ruler);
+#endif
 
   /* Now open it, which will result in the above getting called... */
   if(ruler->callbacks->paneResize &&
@@ -205,6 +213,8 @@ void zmapWindowScaleCanvasOpenAndMaximise(ZMapWindowScaleCanvas ruler)
   return ;
 }
 
+
+#if ZOOM_SCROLL
 void zmapWindowScaleCanvasMaximise(ZMapWindowScaleCanvas ruler, double y1, double y2)
 {
   double x2, max_x2,
@@ -251,7 +261,7 @@ void zmapWindowScaleCanvasMaximise(ZMapWindowScaleCanvas ruler, double y1, doubl
 
   return ;
 }
-
+#endif
 
 #if FOO_SCALE_DEBUG
 extern gpointer scale_thing;
@@ -316,6 +326,20 @@ scale_thing = ruler->canvas;
   return drawn;
 }
 
+
+double zMapWindowScaleCanvasGetWidth(ZMapWindowScaleCanvas ruler)
+{
+	return ruler->last_draw_coords.x2;
+}
+
+
+void zMapWindowScaleCanvasSetScroll(ZMapWindowScaleCanvas ruler, double x1, double y1, double x2, double y2)
+{
+	/* NOTE this canvas has nothing except the scale bar */
+      foo_canvas_set_scroll_region(FOO_CANVAS(ruler->canvas), x1, y1, x2, y2);
+}
+
+#if NOT_USED
 void zmapWindowScaleCanvasZoom(ZMapWindowScaleCanvas ruler, double x, double y)
 {
 
@@ -323,7 +347,7 @@ void zmapWindowScaleCanvasZoom(ZMapWindowScaleCanvas ruler, double x, double y)
 
   return ;
 }
-
+#endif
 
 
 void zmapWindowScaleCanvasSetRevComped(ZMapWindowScaleCanvas ruler, gboolean revcomped)
@@ -487,7 +511,7 @@ static void paneNotifyPositionCB(GObject *pane, GParamSpec *scroll, gpointer use
 
 
 
-
+#if ZOOM_SCROLL
 /* And a version which WILL maximise after calling the other one. */
 static gboolean rulerMaxVisibilityHandlerCB(GtkWidget *widget, GdkEventExpose *expose, gpointer user_data)
 {
@@ -498,7 +522,10 @@ static gboolean rulerMaxVisibilityHandlerCB(GtkWidget *widget, GdkEventExpose *e
 
   return handled;
 }
+#endif
 
+
+#if ZOOM_SCROLL
 
 static void freeze_notify(ZMapWindowScaleCanvas ruler)
 {
@@ -511,7 +538,7 @@ static void thaw_notify(ZMapWindowScaleCanvas ruler)
   return ;
 }
 
-
+#endif
 
 
 
@@ -562,7 +589,9 @@ double zMapWindowDrawScaleBar(FooCanvasGroup *group, int scroll_start, int scrol
 	int n_pixels;	/* cannot be more than 30k due to foo */
 	int gap;		/* pixels between ticks */
 	int digit;		/* which tick out of 10 */
-//	int digits;		/* how many digits in fractional part */
+#if SCALE_DEBUG
+	int digits;		/* how many digits in fractional part */
+#endif
 	int nudge;		/* tick is 5th? make bigger */
 	char label [32];	/* only need ~8 but there you go */
 	char *unit;
@@ -679,13 +708,20 @@ debug("hide = %d\n", n_hide);
 
 	/* choose units */
 	base = 1;
-//	digits = 1;
-	for(i = 1;base <= tick && i < 5;i++,base *= 1000 /*, digits += 2*/)
+#if SCALE_DEBUG
+	digits = 1;
+#endif
+	for(i = 1;base <= tick && i < 5;i++,base *= 1000
+#if SCALE_DEBUG
+			, digits += 2
+#endif
+			)
 		continue;
 	unit = units[--i];
 	base /= 1000;
-//	digits -= 2;
+
 #if SCALE_DEBUG
+	digits -= 2;
 debug("levels, hide = %d %d %d %d (%s)\n", n_levels,n_hide, base, digits, unit);
 #endif
 

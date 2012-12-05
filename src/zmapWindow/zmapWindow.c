@@ -259,12 +259,15 @@ static void printStats(ZMapWindowContainerGroup container_parent, FooCanvasPoint
 
 static void revCompRequest(ZMapWindow window) ;
 
+#if ZOOM_SCROLL
 static void fc_begin_update_cb(FooCanvas *canvas, gpointer user_data);
 static void fc_end_update_cb(FooCanvas *canvas, gpointer user_data);
 static void fc_begin_map_cb(FooCanvas *canvas, gpointer user_data) ;
 static void fc_end_map_cb(FooCanvas *canvas, gpointer user_data) ;
 static void fc_draw_background_cb(FooCanvas *canvas, int x, int y, int width, int height, gpointer user_data);
 static void fc_drawn_items_cb(FooCanvas *canvas, int x, int y, int width, int height, gpointer user_data);
+#endif
+
 static void canvas_set_busy_cursor(ZMapWindow window, gboolean external_call, const char *file, const char *func) ;
 static void canvas_unset_busy_cursor(ZMapWindow window, const char *file, const char *func) ;
 
@@ -301,7 +304,7 @@ static gboolean window_split_save_bumped_G = TRUE;
 
 /* Debugging canvas... */
 static gboolean busy_debug_G = FALSE ;
-static gboolean foo_debug_G = FALSE ;
+//static gboolean foo_debug_G = FALSE ;
 static gboolean mouse_debug_G = FALSE ;
 
 
@@ -1349,6 +1352,59 @@ void zmapWindowSetScrollRegion(ZMapWindow window,
 
   window->scroll_initialised = TRUE;
 
+
+  /* if the vertical scroll region has changed then draw the scale bar */
+  /* formerly done by fc_end_update_cb(), which is silly: why redraw the scale bar on any update?? */
+  /* NOTE also required stupid coding to habndle spurious calls and bouncing event loops */
+  if(y1 != window->scroll_y1 || y2 != window->scroll_y2)
+    {
+#if 0
+      double x1, x2, y1, y2;
+	int seq_start,seq_end;
+	int scroll_start, scroll_end;
+      int scroll_x, scroll_y, x, y;
+
+      foo_canvas_get_scroll_region(canvas, &x1, &y1, &x2, &y2);
+
+	zMapFeatureContextGetMasterAlignSpan(window->feature_context,&seq_start,&seq_end);
+	scroll_start = y1;
+	scroll_end = y2;
+	if(scroll_start < seq_start)
+		scroll_start = seq_start;
+	if(scroll_end > seq_end)
+		scroll_end = seq_end;
+
+	foo_canvas_get_scroll_offsets(canvas, &scroll_x, &scroll_y);
+#endif
+#if 0
+      printf("draw scale %f,%f - %f,%f\n",y1,y2, window->min_coord, window->max_coord);
+#endif
+	if(zmapWindowScaleCanvasDraw(window->ruler,  y1, y2, window->min_coord, window->max_coord))
+	  {
+		double max_x2 = zMapWindowScaleCanvasGetWidth(window->ruler) + 1;
+
+		/* NOTE this canvas has nothing except the scale bar */
+		zMapWindowScaleCanvasSetScroll(window->ruler, x1, y1, max_x2, y2);
+#if 0
+	      zmapWindowScaleCanvasMaximise(window->ruler, y1, y2);
+
+		/* Cause a never ending loop ? */
+
+	      /* The zmapWindowScaleCanvasMaximise does a set scroll
+	       * region on the ruler canvas which has the side effect
+	       * of a scroll_to call in the canvas. As that canvas
+	       * and this canvas share adjusters, this canvas scrolls
+	       * too.  This isn't really desireable when doing a
+	       * zmapWindowZoomToWorldPosition for example, so we do
+	       * a scroll to back to our original position. */
+	      foo_canvas_get_scroll_offsets(canvas, &x, &y);
+	      if(y != scroll_y)
+		foo_canvas_scroll_to(canvas, scroll_x, scroll_y);
+#endif
+	  }
+   }
+
+
   if(x1 != window->scroll_x1 || y1 != window->scroll_y1 || x2 != window->scroll_x2 || y2 != window->scroll_y2)
   {
 #if 0
@@ -2147,7 +2203,7 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
 
 
 
-
+#if ZOOM_SCROLL
   /* These signals are now the way to handle the long items cropping.
    * begin update is the place to do this.
    * end update is for symmetry and informational purposes.
@@ -2173,6 +2229,7 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
 		   GTK_SIGNAL_FUNC(fc_draw_background_cb), (gpointer)window) ;
   g_signal_connect(GTK_OBJECT(window->canvas), "drawn-items",
 		   GTK_SIGNAL_FUNC(fc_drawn_items_cb), (gpointer)window);
+#endif
 
   window->history = zmapWindowStateQueueCreate();
 
@@ -2208,11 +2265,18 @@ void zMapWindowStateRecord(ZMapWindow window)
       zmapWindowStateSavePosition(state, window);
 
       if(!zmapWindowStateQueueStore(window, state, TRUE))
-	zmapWindowStateDestroy(state);
+		zmapWindowStateDestroy(state);
+#if 0
+we-re recording the state not changing it
+if this function needs calling then it should be done by the caller
+NOTE StateRecord is only called by myWindowZoom (which calls SetScrollRegion which calls visibilityChange)
+or when setting the mark
+
       else
 	{
 	  invokeVisibilityChange(window);
 	}
+#endif
     }
 
   return ;
@@ -2282,12 +2346,12 @@ static void myWindowZoom(ZMapWindow window, double zoom_factor, double curr_pos)
        * to set both zoom and scroll region in one go. */
       foo_canvas_set_pixels_per_unit_xy(window->canvas, 1.0, zMapWindowGetZoomFactor(window)) ;
 
+      /* must set zoom before SetScroll as that set Scroll may redraw the ruler */
+      zmapWindowScaleCanvasSetPixelsPerUnit(window->ruler, 1.0, zMapWindowGetZoomFactor(window));
+
       zmapWindowSetScrollRegion(window, &x1, &y1, &x2, &y2,"myWindowZoom");
 
 
-
-      /* Try this here as a hack to avoid double call to work out widget set ups... */
-      zmapWindowScaleCanvasSetPixelsPerUnit(window->ruler, 1.0, zMapWindowGetZoomFactor(window));
 
 
 
@@ -3101,19 +3165,24 @@ zMapLogWarning("canvas event %d",  event->type);
 	foo_canvas_window_to_world(window->canvas,
 				       but_event->x, but_event->y,
 				       &wx, &wy);
-	/* We want the canvas to be the focus widget of its "window" otherwise keyboard input
-	 * (i.e. short cuts) will be delivered to some other widget. */
-	gtk_widget_grab_focus(GTK_WIDGET(window->canvas)) ;
 
-	/* Report to our parent that we have been clicked in, we change "click" to "focus"
-	 * because that is what this is for.... */
-	(*(window_cbs_G->focus))(window, window->app_data, NULL) ;
+	if(!gtk_widget_has_focus (GTK_WIDGET(window->canvas)))	/* avoid thrashing the scroll region and navigator */
+	{
+		/* We want the canvas to be the focus widget of its "window" otherwise keyboard input
+		* (i.e. short cuts) will be delivered to some other widget. */
+		gtk_widget_grab_focus(GTK_WIDGET(window->canvas)) ;
 
-	if (TRUE)
-	  {
-	    invokeVisibilityChange(window);
-	  }
+		/* Report to our parent that we have been clicked in, we change "click" to "focus"
+		* because that is what this is for.... */
+		/* NOTE this goes up to zmapControl.c and shows the navigator for the clicked on view */
+		(*(window_cbs_G->focus))(window, window->app_data, NULL) ;
 
+		if (TRUE)
+		{
+			/* NOTE this set the locator according to the selected window and its scroll region */
+		invokeVisibilityChange(window);
+		}
+	}
 
 	/* Button 1 is for selecting features OR lasso for zoom/mark.
 	 * Button 2 is handled, we display ruler and maybe centre on that position,
@@ -4015,8 +4084,10 @@ static void canvasSizeAllocateCB(GtkWidget *widget, GtkAllocation *allocation, g
 	  zmapWindowZoomControlHandleResize(window);
 
 	  zmapWindowGetScrollRegion(window, NULL, &start, NULL, &end);
-        /* MH17 is this fucntion being called for a side effect? */
-	  zmapWindowSetScrollRegion(window, NULL, &start, NULL, &end,"canvasSizeAllocateCB");
+        /* MH17 is this function being called for a side effect? */
+// it does clamp the coords but these are never affected by widget resize
+// navigator deals with itself via its own widget resize
+//	  zmapWindowSetScrollRegion(window, NULL, &start, NULL, &end,"canvasSizeAllocateCB");
 
 	  vis_change.zoom_status    = zMapWindowGetZoomStatus(window) ;
 	  vis_change.scrollable_top = start ;
@@ -4024,8 +4095,11 @@ static void canvasSizeAllocateCB(GtkWidget *widget, GtkAllocation *allocation, g
 	  (*(window_cbs_G->visibilityChange))(window, window->app_data, (void *)&vis_change) ;
 	}
 
+	/* this is the area allocated to the window by the parent GTK object */
+	/* should be identical to the canvas layout?? */
       window->window_width  = widget->allocation.width ;
       window->window_height = widget->allocation.height ;
+
       window->canvas_width  = layout->width ;
       window->canvas_height = layout->height ;
     }
@@ -5901,6 +5975,8 @@ static void canvas_unset_busy_cursor(ZMapWindow window, const char *file, const 
 }
 
 
+#if ZOOM_SCROLL
+
 /* foo canvas signal handlers  */
 static void fc_begin_update_cb(FooCanvas *canvas, gpointer user_data)
 {
@@ -5911,22 +5987,7 @@ static void fc_begin_update_cb(FooCanvas *canvas, gpointer user_data)
 
   if (canvas == window->canvas)
     {
-      zMapDebugPrint(foo_debug_G, "%s",  "Entered") ;
-
       zmapWindowBusy(window, TRUE) ;
-
-      foo_canvas_get_scroll_region(canvas, &x1, &y1, &x2, &y2);
-
-#ifdef CAUSED_RT_57193
-      /* see resetCanvas, but result is this test is no longer required */
-      if(!(x1 == 0.0 && y1 == 0.0 && x2 == ZMAP_CANVAS_INIT_SIZE && y2 == ZMAP_CANVAS_INIT_SIZE))
-	{
-#endif
-#ifdef CAUSED_RT_57193
-	}
-#endif
-
-      zMapDebugPrint(foo_debug_G, "%s",  "Exitted") ;
     }
 
   return ;
@@ -6054,6 +6115,7 @@ static void fc_drawn_items_cb(FooCanvas *canvas, int x, int y, int width, int he
 
 /* end of the foo canvas signal handlers stuff */
 
+#endif
 
 
 /* Callbacks to manipulate rulers in other windows. */

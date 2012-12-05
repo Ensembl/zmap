@@ -722,18 +722,9 @@ void zmapWindowItemCentreOnItemSubPart(ZMapWindow window, FooCanvasItem *item,
 	  double height ;
 	  foo_canvas_item_get_bounds(item, &ix1, &iy1, &ix2, &iy2) ;
 
-#if 1 // WAS_MERGE_CONFLICT
 	  height = iy2 - iy1 + 1;
 	  if (iy1 > 0)
-#else
-	  /* If we are using the background then we should use it's height as originally set. */
-	  height = zmapWindowContainerGroupGetBackgroundSize(ZMAP_CONTAINER_GROUP(item)) ;
 
-	  /* Clamp y extent to be within items background, note that sometimes background
-	   * may be negative.....afraid I don't know why.... */
-	  if (iy1 != 0)
->>>>>>> develop
-#endif
 	    iy1 = 0 ;
 	  if (iy2 < height)
 	    iy2 = height ;

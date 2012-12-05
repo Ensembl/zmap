@@ -322,9 +322,9 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
 	  sy1 = window->min_coord;
 	  sx2 = ZMAP_CANVAS_INIT_SIZE;
 	  sy2 = window->max_coord;
+	  zmapWindowSetScrollRegion(window, &sx1, &sy1, &sx2, &sy2,"zmapWindowDrawFeatures");
 	}
 
-      zmapWindowSetScrollRegion(window, &sx1, &sy1, &sx2, &sy2,"zmapWindowDrawFeatures");
 
 #warning seq offset should be in block and/or align? shouldn-t this should go into drawContextCB??
 

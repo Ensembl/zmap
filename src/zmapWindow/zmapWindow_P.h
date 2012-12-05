@@ -1394,6 +1394,9 @@ void zmapWindowGetBorderSize(ZMapWindow window, double *border);
 double zMapWindowDrawScaleBar(FooCanvasGroup *group, int scroll_start, int scroll_end,
 	int seq_start, int seq_end, double zoom_factor, gboolean revcomped, gboolean zoomed);
 
+double zMapWindowScaleCanvasGetWidth(ZMapWindowScaleCanvas ruler);
+void zMapWindowScaleCanvasSetScroll(ZMapWindowScaleCanvas ruler, double x1, double y1, double x2, double y2);
+
 gboolean zmapWindowItemIsVisible(FooCanvasItem *item) ;
 gboolean zmapWindowItemIsShown(FooCanvasItem *item) ;
 void zmapWindowItemCentreOnItem(ZMapWindow window, FooCanvasItem *item,
