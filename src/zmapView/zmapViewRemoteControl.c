@@ -24,7 +24,9 @@
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- * Description: 
+ * Description: Functions to handle requests originating from a
+ *              remote peer and to send requests originating at this
+ *              level to a remote peer.
  *
  * Exported functions: See ZMap/zmapView.h
  * 
@@ -57,39 +59,12 @@ typedef enum
     ZMAPVIEW_REMOTE_CREATE_FEATURE,
     ZMAPVIEW_REMOTE_DELETE_FEATURE,
     ZMAPVIEW_REMOTE_GET_FEATURE_NAMES,
-    ZMAPVIEW_REMOTE_LOAD_FEATURES,
-    ZMAPVIEW_REMOTE_DUMP_CONTEXT,
-
-
-    /* should be in window... */
     ZMAPVIEW_REMOTE_HIGHLIGHT_FEATURE,
     ZMAPVIEW_REMOTE_HIGHLIGHT2_FEATURE,
     ZMAPVIEW_REMOTE_UNHIGHLIGHT_FEATURE,
 
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-    /* already in window */
-    ZMAPVIEW_REMOTE_ZOOM_TO,
-    ZMAPVIEW_REMOTE_GET_MARK,
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-    /* Not needed.... */
-    ZMAPVIEW_REMOTE_REGISTER_CLIENT,
-    ZMAPVIEW_REMOTE_LIST_WINDOWS,
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-    /* not implemented.... */
-    ZMAPVIEW_REMOTE_NEW_WINDOW,
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
+    ZMAPVIEW_REMOTE_LOAD_FEATURES,
+    ZMAPVIEW_REMOTE_DUMP_CONTEXT,
 
     /* ...but above here */
     ZMAPVIEW_REMOTE_UNKNOWN
@@ -544,6 +519,8 @@ static gboolean executeRequest(ZMapXMLParser parser, RequestData request_data)
   else if (request_data->command_id == g_quark_from_string(ZACP_REVCOMP))
     {
       zMapViewReverseComplement(view) ;
+
+      request_data->msg = "Reverse complemented view." ;
     }
 
   if (request_data->edit_context)
