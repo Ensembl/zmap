@@ -1630,7 +1630,7 @@ static GArray *addReplyElement(GArray *xml_stack_inout, RemoteCommandRCType remo
   reply_body[0].value.q = g_quark_from_string(zMapRemoteCommandRC2Str(remote_rc)) ;
   reply_body[1].value.s = g_strdup(reply) ;
 
-  xml_stack = zMapXMLUtilsAddStackToEventsArrayAfterElement(xml_stack, "reply", NULL, NULL, &reply_body[0]) ;
+  xml_stack = zMapXMLUtilsAddStackToEventsArrayAfterElement(xml_stack, "reply", 0, NULL, NULL, &reply_body[0]) ;
 
   return xml_stack ;
 }
@@ -1954,9 +1954,10 @@ static void cmdCB(gpointer data, guint callback_action, GtkWidget *w)
       feature[3].value.i = 6000 ;
       feature[4].value.q = g_quark_from_string("+") ;
 
-      request_stack = zMapXMLUtilsAddStackToEventsArrayAfterElement(request_stack,
-								    ZACP_REQUEST, NULL, NULL,
-								    &featureset[0]) ;
+      request_stack = zMapXMLUtilsAddStackToEventsArrayToElement(request_stack,
+								 ZACP_REQUEST, 0,
+								 NULL, NULL,
+								 &featureset[0]) ;
 
       next_element = ZACP_FEATURESET ;
     }
@@ -1967,30 +1968,31 @@ static void cmdCB(gpointer data, guint callback_action, GtkWidget *w)
 
   /* ok, insert data_ptr at right place. */
   if (data_ptr)
-    request_stack = zMapXMLUtilsAddStackToEventsArrayAfterElement(request_stack,
-								  next_element, NULL, NULL,
-								  data_ptr) ;
+    request_stack = zMapXMLUtilsAddStackToEventsArrayToElement(request_stack,
+							       next_element, 0,
+							       NULL, NULL,
+							       data_ptr) ;
 
 
   if (do_replace_xml)
     {
       /* set a load of default stuff.... */
-      featureset[1].value.q = g_quark_from_string("other_history") ;
+      featureset[1].value.q = g_quark_from_string("history") ;
 
       feature[1].value.q = g_quark_from_string("eds_replace_feature") ;
       feature[2].value.i = 5000 ;
       feature[3].value.i = 6000 ;
       feature[4].value.q = g_quark_from_string("+") ;
 
-      request_stack = zMapXMLUtilsAddStackToEventsArrayAfterElementEnd(request_stack,
-								       ZACP_FEATURESET,
-								       ZACP_SEQUENCE_NAME, "history",
-								       &featureset[0]) ;
-
       request_stack = zMapXMLUtilsAddStackToEventsArrayAfterElement(request_stack,
-								    ZACP_FEATURESET,
-								    ZACP_SEQUENCE_NAME, "other_history",
-								    data_ptr) ;
+								    ZACP_FEATURESET, 0,
+								    ZACP_SEQUENCE_NAME, "history",
+								    &featureset[0]) ;
+
+      request_stack = zMapXMLUtilsAddStackToEventsArrayToElement(request_stack,
+								 ZACP_FEATURESET, 2,
+								 ZACP_SEQUENCE_NAME, "history",
+								 data_ptr) ;
 
 
 
