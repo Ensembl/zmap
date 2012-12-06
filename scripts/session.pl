@@ -125,14 +125,14 @@ delayed=true
 featuresets=Tier1_H1-hESC_cytosol_longPolyA_rep2
 group=always
 stylesfile=/var/tmp/lace_63.mh17.21836.4/ZMap/styles.ini
-url=pipe:///bam_get_align?--chr=chr1-14&--chr_prefix=chr&--csver=GRCh37&--end=1127268&--file=http%3A%2F%2Fhgdownload-test.cse.ucsc.edu%2FgoldenPath%2Fhg19%2FencodeDCC%2FwgEncodeCshlLongRnaSeq%2FreleaseLatest%2FwgEncodeCshlLongRnaSeqH1hescCytosolPapAlnRep2.bam&--gff_feature_source=Tier1_H1-hESC_cytosol_longPolyA_rep2&--start=812485&-gff_version=2
+url=pipe:///bam_get_align?--chr=chr1-14&--csver=GRCh37&--end=1127268&--file=http%3A%2F%2Fhgdownload-test.cse.ucsc.edu%2FgoldenPath%2Fhg19%2FencodeDCC%2FwgEncodeCshlLongRnaSeq%2FreleaseLatest%2FwgEncodeCshlLongRnaSeqH1hescCytosolPapAlnRep2.bam&--gff_feature_source=Tier1_H1-hESC_cytosol_longPolyA_rep2&--start=812485&-gff_version=2
 
 [Tier3_SK-N-SH_RA_cell_longPolyA_rep2_coverage_minus]
 delayed=true
 featuresets=Tier3_SK-N-SH_RA_cell_longPolyA_rep2_coverage_minus
 group=always
 stylesfile=/var/tmp/lace_63.mh17.21836.4/ZMap/styles.ini
-url=pipe:///bigwig_get?-chr=chr1-14&-chr_prefix=chr&-csver=GRCh37&-end=1127268&-file=http%3A%2F%2Fhgdownload-test.cse.ucsc.edu%2FgoldenPath%2Fhg19%2FencodeDCC%2FwgEncodeCshlLongRnaSeq%2FreleaseLatest%2FwgEncodeCshlLongRnaSeqSknshraCellPapMinusRawSigRep2.bigWig&-gff_feature_source=Tier3_SK-N-SH_RA_cell_longPolyA_rep2_coverage_minus&-gff_version=2&-start=812485&-strand=-1
+url=pipe:///bigwig_get?-chr=chr1-14&-csver=GRCh37&-end=1127268&-file=http%3A%2F%2Fhgdownload-test.cse.ucsc.edu%2FgoldenPath%2Fhg19%2FencodeDCC%2FwgEncodeCshlLongRnaSeq%2FreleaseLatest%2FwgEncodeCshlLongRnaSeqSknshraCellPapMinusRawSigRep2.bigWig&-gff_feature_source=Tier3_SK-N-SH_RA_cell_longPolyA_rep2_coverage_minus&-gff_version=2&-start=812485&-strand=-1
 =cut
 
 		if(/url=/)

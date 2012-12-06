@@ -17,8 +17,8 @@ sub new {
 sub features {
     my ($self, $chr, $start, $end) = @_;
 
-    my ( $bigwig, $chr_prefix ) =
-        @{$self}{ qw( -bigwig -chr_prefix ) };
+    my ( $bigwig ) =
+        @{$self}{ qw( -bigwig ) };
 
     my $size = ($end + 1 - $start);
     my $bin_count = $size / $bin_size;

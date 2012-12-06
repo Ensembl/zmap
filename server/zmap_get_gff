@@ -65,7 +65,6 @@ sub get_params
 {
  	# defaults
 	$params {'gff_version'}= 2;		# default for now as ZMap doesn't do v3 yet
-	$params {'chr_prefix'} = '';
 
 	GetOptions(\%params, @options ) or pod2usage(2);
 
@@ -188,7 +187,7 @@ zmap_get_bam request data and output as GFF
 
 =head1 SYNOPSIS
 
-zmap_get_gff [--help] [--man] --file=[http:|ftp:]/path/to/file --start=123 --end=456 --gff_feature_source=name --chr=IV [--chr_prefix=CHROMOSOME_] [--gff_version=3] --gff_seqname=GFF_sequence_name [--roman] [--Roman]
+zmap_get_gff [--help] [--man] --file=[http:|ftp:]/path/to/file --start=123 --end=456 --gff_feature_source=name --chr=CHROMOSOME_IV [--gff_version=3] --gff_seqname=GFF_sequence_name [--roman] [--Roman]
 
 =head1 OPTIONS
 
