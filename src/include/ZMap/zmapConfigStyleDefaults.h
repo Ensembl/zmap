@@ -53,6 +53,8 @@
  * 
  * - Scratch                  display a 'scratch-pad' column for editing temporary features
  *
+ * - hand_built               a column used by acedb as a default place for newly created features
+ *
  */
 
 #define TEXT_PREFIX "Predefined method: required for "
@@ -82,6 +84,8 @@
 #define ZMAP_FIXED_STYLE_ASSEMBLY_PATH_TEXT TEXT_PREFIX "assembly path for displayed sequence."
 #define ZMAP_FIXED_STYLE_SCRATCH_NAME "Scratch"
 #define ZMAP_FIXED_STYLE_SCRATCH_TEXT TEXT_PREFIX "scratch-pad column for creating/editing temporary features."
+#define ZMAP_FIXED_STYLE_HAND_BUILT_NAME "hand_built"
+#define ZMAP_FIXED_STYLE_HAND_BUILT_TEXT TEXT_PREFIX "column for displaying hand-built features."
 
 /* The opts struct */
 #define ZMAP_STYLE_DEFAULT_HIDE_INITIALLY  FALSE

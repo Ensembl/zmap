@@ -41,6 +41,77 @@
 #include <zmapView_P.h>
 
 
+static void handBuiltInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence)
+{
+  ZMapFeatureSet featureset = NULL ;
+  ZMapFeatureTypeStyle style = NULL ;
+  ZMapFeatureSetDesc f2c;
+  ZMapFeatureSource src;
+  GList *list;
+  ZMapFeatureColumn column;
+
+  ZMapFeatureContextMap context_map = &zmap_view->context_map;
+
+  if((style = zMapFindStyle(context_map->styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_HAND_BUILT_NAME))))
+    {
+      /* Create the featureset */
+      featureset = zMapFeatureSetCreate(ZMAP_FIXED_STYLE_HAND_BUILT_NAME, NULL);
+      style = zMapFeatureStyleCopy(style);
+      featureset->style = style ;
+
+      /* Create the context, align and block, and add the featureset to it */
+      ZMapFeatureContext context = zmapViewCreateContext(sequence, NULL, featureset);
+
+
+	/* set up featureset2_column and anything else needed */
+      f2c = g_hash_table_lookup(context_map->featureset_2_column, GUINT_TO_POINTER(featureset->unique_id));
+      if(!f2c)	/* these just accumulate  and should be removed from the hash table on clear */
+	{
+		f2c = g_new0(ZMapFeatureSetDescStruct,1);
+
+		f2c->column_id = zMapFeatureSetCreateID(ZMAP_FIXED_STYLE_HAND_BUILT_NAME);
+		f2c->column_ID = g_quark_from_string(ZMAP_FIXED_STYLE_HAND_BUILT_NAME);
+		f2c->feature_src_ID = g_quark_from_string(ZMAP_FIXED_STYLE_HAND_BUILT_NAME);
+		f2c->feature_set_text = ZMAP_FIXED_STYLE_HAND_BUILT_TEXT;
+		g_hash_table_insert(context_map->featureset_2_column, GUINT_TO_POINTER(featureset->unique_id), f2c);
+	}
+
+      src = g_hash_table_lookup(context_map->source_2_sourcedata, GUINT_TO_POINTER(featureset->unique_id));
+      if(!src)
+	{
+		src = g_new0(ZMapFeatureSourceStruct,1);
+		src->source_id = f2c->feature_src_ID;
+		src->source_text = g_quark_from_string(ZMAP_FIXED_STYLE_HAND_BUILT_TEXT);
+		src->style_id = style->unique_id;
+		src->maps_to = f2c->column_id;
+		g_hash_table_insert(context_map->source_2_sourcedata, GUINT_TO_POINTER(featureset->unique_id), src);
+	}
+
+      list = g_hash_table_lookup(context_map->column_2_styles,GUINT_TO_POINTER(f2c->column_id));
+      if(!list)
+	{
+		list = g_list_prepend(list,GUINT_TO_POINTER(src->style_id));
+		g_hash_table_insert(context_map->column_2_styles,GUINT_TO_POINTER(f2c->column_id), list);
+	}
+
+      column = g_hash_table_lookup(context_map->columns,GUINT_TO_POINTER(f2c->column_id));
+      if(!column)
+	{
+		column = g_new0(ZMapFeatureColumnStruct,1);
+		column->unique_id = f2c->column_id;
+		column->style_table = g_list_prepend(NULL, (gpointer)  style);
+		/* the rest shoudl get filled in elsewhere */
+		g_hash_table_insert(context_map->columns, GUINT_TO_POINTER(f2c->column_id), column);
+	}
+
+      
+      /* Merge our context into the view's context and view the diff context */
+      ZMapFeatureContext diff_context = zmapViewMergeInContext(zmap_view, context);
+      zmapViewDrawDiffContext(zmap_view, &diff_context);
+    }  
+}
+
+
 /*!
  * \brief Initialise the Scratch column
  *
@@ -135,6 +206,10 @@ void zmapViewScratchInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence)
       ZMapFeatureContext diff_context = zmapViewMergeInContext(zmap_view, context);
       zmapViewDrawDiffContext(zmap_view, &diff_context);
     }  
+
+  /* Also initialise the "hand_built" column. xace puts newly created
+   * features in this column. */
+  handBuiltInit(zmap_view, sequence);
 }
 
 
