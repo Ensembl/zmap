@@ -20,8 +20,8 @@
  * This file is part of the ZMap genome database package
  * originated by
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Interface to xml handling routines.
  *
@@ -363,17 +363,21 @@ char *zMapXMLWriterErrorMsg(ZMapXMLWriter writer);
 char *zMapXMLWriterVerboseErrorMsg(ZMapXMLWriter writer);
 
 
-/* UTILS */
+/* Functions to build arrays of xml "events" and turn them into xml. */
 GArray *zMapXMLUtilsCreateEventsArray(void) ;
 GArray *zMapXMLUtilsStackToEventsArray(ZMapXMLUtilsEventStack event_stack) ;
 GArray *zMapXMLUtilsAddStackToEventsArrayStart(GArray *events_array, ZMapXMLUtilsEventStack event_stack) ;
 GArray *zMapXMLUtilsAddStackToEventsArrayEnd(GArray *events_array, ZMapXMLUtilsEventStack event_stack) ;
-GArray *zMapXMLUtilsAddStackToEventsArrayAfterElement(GArray *events_array, char *element_name, 
+
+GArray *zMapXMLUtilsAddStackToEventsArrayToElement(GArray *events_array,
+						   char *element_name, int element_index,
+						   char *attribute_name, char *attribute_value,
+						   ZMapXMLUtilsEventStack event_stack) ;
+GArray *zMapXMLUtilsAddStackToEventsArrayAfterElement(GArray *events_array,
+						      char *element_name,  int element_index,
 						      char *attribute_name, char *attribute_value,
-						      ZMapXMLUtilsEventStack event_stack) ;
-GArray *zMapXMLUtilsAddStackToEventsArrayAfterElementEnd(GArray *events_array, char *element_name,
-							 char *attribute_name, char *attribute_value,
-							 ZMapXMLUtilsEventStackStruct *event_stack) ;
+						      ZMapXMLUtilsEventStackStruct *event_stack) ;
+
 char *zMapXMLUtilsStack2XML(GArray *xml_stack, char **err_msg_out, gboolean full_format) ;
 
 
