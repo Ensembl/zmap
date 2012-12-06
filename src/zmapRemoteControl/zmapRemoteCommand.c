@@ -380,9 +380,10 @@ GArray *zMapRemoteCommandAddBody(GArray *request_in_out, char *req_or_reply,
 {
   GArray *xml_stack = request_in_out ;
 
-  xml_stack = zMapXMLUtilsAddStackToEventsArrayAfterElement(xml_stack,
-							    req_or_reply, NULL, NULL,
-							    request_body) ;
+  xml_stack = zMapXMLUtilsAddStackToEventsArrayToElement(xml_stack,
+							 req_or_reply, 0,
+							 NULL, NULL,
+							 request_body) ;
 
   return xml_stack ;
 }
