@@ -1080,19 +1080,11 @@ view, <b>note</b> that all windows of that view will be reverse complemented:</p
 
 &lt;zmap version="2.0" type="reply" app_id="ZMap" clipboard_id="ZMap-15853-1327414674" request_id="2"&gt;
   &lt;reply command="reverse_complement" return_code="ok"&gt;
-    &lt;message&gt;reverse complement worked. &lt;/message&gt;
+    &lt;message&gt;Reverse complemented view.&lt;/message&gt;
   &lt;/reply&gt;
 &lt;/zmap&gt;
 
 </pre>
-
-<p>The new view will be displayed in its own window and the reply gives the id
-of the newly created view. This id is only needed if the peer creates more than
-one view at a time in which case the id can be used to specify which view a
-command should be applied to. If there is only one view displayed then zmap
-will apply commands to that view without needing to specify the view id.  Note
-that the view id should only be specified for commands that take a "view_id"
-attribute.</p>
 
 </fieldset>
 <br/>
