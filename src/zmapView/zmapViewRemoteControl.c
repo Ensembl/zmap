@@ -159,6 +159,8 @@ typedef struct RequestDataStructName
   /* flag records when we have found first and second feature descriptions for
    * a replace command. */
   ReplaceFeature replace_stage ;
+  GQuark curr_feature_id ;
+  GQuark new_feature_id ;
 
   /* replace_context needed for replace operations. */
   ZMapFeatureContext replace_context ;
@@ -1749,22 +1751,36 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
     {
       FeatureExistsType feature_exists ;
 
+      feature_unique_id = zMapFeatureCreateID(mode, feature_name, strand, start, end, 0, 0) ;
+
+      feature = zMapFeatureSetGetFeatureByID(request_data->orig_feature_set, feature_unique_id) ;
+
       /* More complicated for feature replace.... */
       if (request_data->command_id == g_quark_from_string(ZACP_REPLACE_FEATURE))
 	{
 	  if (request_data->replace_stage == REPLACE_DELETE_FEATURE)
-	    feature_exists = FEATURE_MUST ;
+	    request_data->curr_feature_id = feature_unique_id ;
 	  else
-	    feature_exists = FEATURE_MUST_NOT ;
+	    request_data->new_feature_id = feature_unique_id ;
+
+	  if (request_data->replace_stage == REPLACE_DELETE_FEATURE)
+	    {
+	      feature_exists = FEATURE_MUST ;
+	    }
+	  else
+	    {
+	      /* Fine if new feature has same name as old one, we just delete it but
+	       * if new feature is a new name then is must not already exist. */
+	      if (request_data->curr_feature_id == request_data->new_feature_id)
+		feature_exists = FEATURE_DONT_CARE ;
+	      else
+		feature_exists = FEATURE_MUST_NOT ;
+	    }
 	}
       else
 	{
 	  feature_exists = request_data->cmd_desc->exists ;
 	}
-
-      feature_unique_id = zMapFeatureCreateID(mode, feature_name, strand, start, end, 0, 0) ;
-
-      feature = zMapFeatureSetGetFeatureByID(request_data->orig_feature_set, feature_unique_id) ;
 
       if (feature_exists == FEATURE_MUST)
 	{
