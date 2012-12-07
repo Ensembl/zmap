@@ -820,7 +820,7 @@ static void dataLoadCB(ZMapView view, void *app_data, void *view_data)
 	    }
 
 
-	  request = g_strdup_printf("<zmap> <request action=\"features_loaded\">"
+	  request = g_strdup_printf("<zmap> <request action=\"" ZACP_FEATURES_LOADED "\">"
 				    " <client xwid=\"0x%lx\" />"
 				    " <featureset names=\"%s\" />"
 				    " <start value=\"%d\" />"
