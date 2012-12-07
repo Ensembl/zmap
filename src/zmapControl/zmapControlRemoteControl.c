@@ -156,12 +156,15 @@ typedef struct
 
 
 /* ZMAPXREMOTE_CALLBACK */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static char *control_execute_command(char *command_text, gpointer user_data,
 				     ZMapXRemoteStatus *statusCode, ZMapXRemoteObj owner);
 static void insertView(ZMap zmap, RequestData input_data, ResponseData output_data);
 static void closeView(ZMap zmap, ZMapXRemoteParseCommandData input_data, ResponseData output_data) ;
 static void createClient(ZMap zmap, ZMapXRemoteParseCommandData input_data, ResponseData output_data);
 static void findView(gpointer data, gpointer user_data) ;
+
 
 static gboolean xml_zmap_start_cb(gpointer user_data,
                                   ZMapXMLElement zmap_element,
@@ -181,15 +184,18 @@ static gboolean xml_style_end_cb(gpointer user_data,
 static gboolean xml_return_true_cb(gpointer user_data,
                                    ZMapXMLElement zmap_element,
                                    ZMapXMLParser parser);
-
-
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 /* 
  *                  Globals.
  */
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static gboolean control_execute_debug_G = FALSE;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
@@ -321,10 +327,9 @@ static void handlePeerReply(char *command,
 			    RemoteCommandRCType command_rc, char *reason, char *reply,
 			    gpointer reply_handler_func_data)
 {
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   ZMap zmap = (ZMap)reply_handler_func_data ;
-
-
-
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
   return ;
 }
@@ -354,13 +359,12 @@ static void processRequest(ZMap zmap,
 			   RemoteCommandRCType *command_rc_out, char **reason_out,
 			   ZMapXMLUtilsEventStack *reply_out)
 {
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   ZMapXMLParser parser ;
   gboolean cmd_debug = FALSE ;
   gboolean parse_ok = FALSE ;
   RequestDataStruct request_data = {0} ;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 
   /* Sample code from Manager....code here needs to be similar.... */
 

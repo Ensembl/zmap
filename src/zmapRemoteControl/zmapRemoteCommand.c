@@ -852,11 +852,15 @@ static GArray *createRequestReply(EnvelopeType type, GQuark version,
 	{ZMAPXML_ATTRIBUTE_EVENT, ZACP_REASON, ZMAPXML_EVENT_DATA_QUARK, {0}},
 	{ZMAPXML_NULL_EVENT}
       },
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     reply_body[] =
       {
 	{ZMAPXML_CHAR_DATA_EVENT, "", ZMAPXML_EVENT_DATA_STRING, {0}},
 	{ZMAPXML_NULL_EVENT}
       },
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
     envelope_end[] =
       {
 	{ZMAPXML_END_ELEMENT_EVENT, "",        ZMAPXML_EVENT_DATA_NONE,  {0}},

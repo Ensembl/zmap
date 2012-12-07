@@ -320,8 +320,12 @@ static GtkWidget *makeStateBox(RemoteData remote_data) ;
 
 static void mapCB(GtkWidget *widget, GdkEvent *event, gpointer user_data) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static gboolean messageProcess(char *message_xml_in, gboolean full_process,
 			       char **action_out, XRemoteMessage *message_out) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 static void errorCB(ZMapRemoteControl remote_control,
 		    ZMapRemoteControlRCType error_type, char *err_msg,
@@ -346,16 +350,18 @@ static char *makeReplyFromText(char *envelope, char *dummy_body, char *reply_txt
 static gboolean handleHandshake(char *command_text, RemoteData remote_data) ;
 
 
-static GArray *addReplyElement(GArray *xml_stack_inout, RemoteCommandRCType remote_rc, char *reply) ;
 
-
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static gboolean xml_zmap_start_cb(gpointer user_data, ZMapXMLElement element, ZMapXMLParser parser) ;
 static gboolean xml_zmap_end_cb(gpointer user_data, ZMapXMLElement element, ZMapXMLParser parser) ;
 static gboolean xml_reply_start_cb(gpointer user_data, ZMapXMLElement element, ZMapXMLParser parser) ;
 static gboolean xml_reply_end_cb(gpointer user_data, ZMapXMLElement element, ZMapXMLParser parser) ;
+static gboolean xml_error_end_cb(gpointer user_data, ZMapXMLElement element, ZMapXMLParser parser) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 static gboolean xml_peer_start_cb(gpointer user_data, ZMapXMLElement client_element, ZMapXMLParser parser) ;
 static gboolean xml_peer_end_cb(gpointer user_data, ZMapXMLElement client_element, ZMapXMLParser parser) ;
-static gboolean xml_error_end_cb(gpointer user_data, ZMapXMLElement element, ZMapXMLParser parser) ;
+
 
 
 
@@ -394,43 +400,76 @@ static GtkWidget *button_bar(RemoteData remote_data);
 
 
 
-static int send_command_cb(gpointer key, gpointer hash_data, gpointer user_data);
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+static int send_command_cb(gpointer key, gpointer hash_data, gpointer user_data);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static int events_to_text_buffer(ZMapXMLWriter writer, char *xml, int len, gpointer user_data);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 static void cmdCB( gpointer data, guint callback_action, GtkWidget *w );
 static void runZMapCB( gpointer data, guint callback_action, GtkWidget *w );
 static void menuQuitCB(gpointer data, guint callback_action, GtkWidget *w);
 
-static void addClientCB(GtkWidget *button, gpointer user_data);
 static void quitCB(GtkWidget *button, gpointer user_data);
 static void clearCB(GtkWidget *button, gpointer user_data);
 static void parseCB(GtkWidget *button, gpointer user_data);
 
 static void toggleAndUpdate(GtkWidget *toggle_button) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static gboolean api_zmap_start_cb(gpointer user_data, ZMapXMLElement zmap_element, ZMapXMLParser parser) ;
 static gboolean api_zmap_end_cb(gpointer user_data, ZMapXMLElement zmap_element, ZMapXMLParser parser) ;
 static gboolean api_request_start_cb(gpointer user_data, ZMapXMLElement zmap_element, ZMapXMLParser parser) ;
 static gboolean api_request_end_cb(gpointer user_data, ZMapXMLElement zmap_element, ZMapXMLParser parser) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static gboolean copy_hash_to_hash(gpointer key, gpointer value, gpointer user_data);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 static char *getXML(RemoteData remote_data, int *length_out);
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static HashEntry clientToHashEntry(ZMapXRemoteObj client, gboolean is_main);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static gboolean addClientToHash(GHashTable *table, ZMapXRemoteObj client, Window id, GList *actions, gboolean is_main);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 static void destroyHashEntry(gpointer entry_data);
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void internal_send_command(SendCommandData send_data);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 static gboolean run_command(char **command, int *pid);
 
 static gboolean start_zmap_cb(gpointer remote_data_data);
 
 static GOptionEntry *get_main_entries(XRemoteCmdLineArgs arg_context);
 static gboolean makeOptionContext(XRemoteCmdLineArgs arg_context);
+
 static XRemoteCmdLineArgs process_command_line_args(int argc, char *argv[]);
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void process_command_file(RemoteData remote_data, char *command_file);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 static ZMapConfigIniContext get_configuration(RemoteData remote_data);
 static ZMapConfigIniContextKeyEntry get_programs_group_data(char **stanza_name, char **stanza_type);
 
@@ -493,6 +532,8 @@ static GtkItemFactoryEntry menu_items_G[] =
   };
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static ZMapXMLObjTagFunctionsStruct api_message_starts_G[] =
   {
     {"zmap", api_zmap_start_cb },
@@ -506,6 +547,8 @@ static ZMapXMLObjTagFunctionsStruct api_message_ends_G[] =
     { "request", api_request_end_cb },
     { NULL,   NULL }
   };
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 /* Gets used in debug messages embedded in the xremote lib. */
@@ -1063,8 +1106,6 @@ static void requestHandlerCB(ZMapRemoteControl remote_control,
 static void replySentCB(void *user_data)
 {
   RemoteData remote_data = (RemoteData)user_data ;
-  static int req_count = 0 ;
-
 
   toggleAndUpdate(remote_data->idle) ;
 
@@ -1103,8 +1144,9 @@ static void replySentCB(void *user_data)
  * that it has our request. */
 static void requestSentCB(void *user_data)
 {
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   RemoteData remote_data = (RemoteData)user_data ;
-
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
   return ;
 }
@@ -1293,8 +1335,6 @@ void processRequest(RemoteData remote_data, char *request,
 		    ZMapXMLUtilsEventStack *reply_out, char **reply_txt_out)
 {
   char *action ;
-  char *error = NULL ;
-
 
   remote_data->error = NULL ;
   remote_data->reply = NULL ;
@@ -1541,7 +1581,6 @@ static char *makeReply(RemoteData remote_data, char *request, char *error_msg,
   char *full_reply = NULL ;
   GArray *xml_stack ;
   char *err_msg = NULL ;
-  ZMapXMLWriter writer ;
 
   if (error_msg)
     {
@@ -1615,28 +1654,8 @@ static char *makeReplyFromText(char *envelope, char *dummy_body, char *reply_txt
 
 
 
-static GArray *addReplyElement(GArray *xml_stack_inout, RemoteCommandRCType remote_rc, char *reply)
-{
-  GArray *xml_stack = xml_stack_inout ;
-  static ZMapXMLUtilsEventStackStruct
-    reply_body[] =
-    {
-      {ZMAPXML_ATTRIBUTE_EVENT,     "result",    ZMAPXML_EVENT_DATA_QUARK,  {0}},
-      {ZMAPXML_CHAR_DATA_EVENT,     "",          ZMAPXML_EVENT_DATA_STRING, {0}},
-      {ZMAPXML_NULL_EVENT}
-    } ;
 
-  /* Fill in peer element attributes. */
-  reply_body[0].value.q = g_quark_from_string(zMapRemoteCommandRC2Str(remote_rc)) ;
-  reply_body[1].value.s = g_strdup(reply) ;
-
-  xml_stack = zMapXMLUtilsAddStackToEventsArrayAfterElement(xml_stack, "reply", 0, NULL, NULL, &reply_body[0]) ;
-
-  return xml_stack ;
-}
-
-
-
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* Menu commands internal to put xml events into the text buffer as text (xml) */
 static int events_to_text_buffer(ZMapXMLWriter writer, char *xml, int len, gpointer user_data)
 {
@@ -1652,11 +1671,15 @@ static int events_to_text_buffer(ZMapXMLWriter writer, char *xml, int len, gpoin
 
   return len;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 /* button -> run a zmap */
 static void runZMapCB(gpointer user_data, guint callback_action, GtkWidget *w)
 {
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   RemoteData remote_data = (RemoteData)user_data ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
   start_zmap_cb(user_data) ;
 
@@ -1668,17 +1691,27 @@ static void runZMapCB(gpointer user_data, guint callback_action, GtkWidget *w)
 static void cmdCB(gpointer data, guint callback_action, GtkWidget *w)
 {
   static ZMapXMLUtilsEventStackStruct
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     start[] = {{ZMAPXML_START_ELEMENT_EVENT, ZACP_TAG,   ZMAPXML_EVENT_DATA_NONE,  {0}},
 	       {0}},
     end[] = {{ZMAPXML_END_ELEMENT_EVENT,   ZACP_TAG,   ZMAPXML_EVENT_DATA_NONE,  {0}},
 	     {0}},
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
     req_start[] = {{ZMAPXML_START_ELEMENT_EVENT, ZACP_REQUEST,   ZMAPXML_EVENT_DATA_NONE,  {0}},
 		   {ZMAPXML_ATTRIBUTE_EVENT,     ZACP_CMD, ZMAPXML_EVENT_DATA_QUARK, {0}},
 		   {0}},
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     req_end[] = {{ZMAPXML_END_ELEMENT_EVENT,   ZACP_REQUEST,   ZMAPXML_EVENT_DATA_NONE,  {0}},
 		 {0}},
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     align_start[] = {{ZMAPXML_START_ELEMENT_EVENT, "align", ZMAPXML_EVENT_DATA_NONE,  {0}},
 		     {ZMAPXML_ATTRIBUTE_EVENT,     "name",  ZMAPXML_EVENT_DATA_QUARK, {0}},
 		     {ZMAPXML_END_ELEMENT_EVENT,   "align",   ZMAPXML_EVENT_DATA_NONE,  {0}},
@@ -1688,6 +1721,8 @@ static void cmdCB(gpointer data, guint callback_action, GtkWidget *w)
 		     {ZMAPXML_ATTRIBUTE_EVENT,     "name",  ZMAPXML_EVENT_DATA_QUARK, {0}},
 		     {ZMAPXML_END_ELEMENT_EVENT,   "block",   ZMAPXML_EVENT_DATA_NONE,  {0}},
 		     {0}},
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
     featureset[] = {{ZMAPXML_START_ELEMENT_EVENT, "featureset", ZMAPXML_EVENT_DATA_NONE,    {0}},
 		    {ZMAPXML_ATTRIBUTE_EVENT,     "name",       ZMAPXML_EVENT_DATA_QUARK,   {0}},
@@ -1715,6 +1750,8 @@ static void cmdCB(gpointer data, guint callback_action, GtkWidget *w)
 		 {ZMAPXML_END_ELEMENT_EVENT,    ZACP_SEQUENCE_TAG,    ZMAPXML_EVENT_DATA_NONE,    {0}},
 		 {0}},
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     add_view[] = {{ZMAPXML_START_ELEMENT_EVENT, ZACP_SEQUENCE_TAG,    ZMAPXML_EVENT_DATA_NONE,    {0}},
 		 {ZMAPXML_ATTRIBUTE_EVENT,      ZACP_SEQUENCE_NAME,   ZMAPXML_EVENT_DATA_STRING,  {0}},
 		 {ZMAPXML_ATTRIBUTE_EVENT,      ZACP_SEQUENCE_START,  ZMAPXML_EVENT_DATA_INTEGER, {0}},
@@ -1730,24 +1767,16 @@ static void cmdCB(gpointer data, guint callback_action, GtkWidget *w)
 	{ZMAPXML_END_ELEMENT_EVENT,   ZACP_VIEW,      ZMAPXML_EVENT_DATA_NONE,  {0}},
 	{ZMAPXML_NULL_EVENT}
       },
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
     abort[] = {{ZMAPXML_START_ELEMENT_EVENT, ZACP_SHUTDOWN_TAG,   ZMAPXML_EVENT_DATA_NONE,    {0}},
 	       {ZMAPXML_ATTRIBUTE_EVENT,     ZACP_SHUTDOWN_TYPE,  ZMAPXML_EVENT_DATA_QUARK,  {0}},
 	       {ZMAPXML_END_ELEMENT_EVENT,   ZACP_SHUTDOWN_TAG,   ZMAPXML_EVENT_DATA_NONE,    {0}},
-	       {0}},
-
-    client[] = {{ZMAPXML_START_ELEMENT_EVENT, "client",  ZMAPXML_EVENT_DATA_NONE,    {0}},
-		{ZMAPXML_ATTRIBUTE_EVENT,     "xwid", ZMAPXML_EVENT_DATA_QUARK,   {0}},
-		{ZMAPXML_ATTRIBUTE_EVENT,     "request_atom",    ZMAPXML_EVENT_DATA_QUARK, {0}},
-		{ZMAPXML_ATTRIBUTE_EVENT,     "response_atom",      ZMAPXML_EVENT_DATA_QUARK, {0}},
-		{ZMAPXML_END_ELEMENT_EVENT,   "client",  ZMAPXML_EVENT_DATA_NONE,    {0}},
-		{0}} ;
-
+	       {0}} ;
 
   RemoteData remote_data = (RemoteData)data;
   ZMapXMLUtilsEventStack data_ptr = NULL ;
-  ZMapXMLWriter writer;
-  GArray *events ;
   GQuark *action ;
   gboolean do_feature_xml = FALSE ;
   gboolean do_replace_xml = FALSE ;
@@ -2156,13 +2185,19 @@ static void list_views_cb(gpointer data, gpointer user_data)
  * a hash we alter while iterating over the main one, which then
  * alters the main one at the end */
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* Just results in the entry being removed from the hash table, the destroy func
  * does the real work. */
 static gboolean remove_cb(gpointer key, gpointer hash_data, gpointer user_data)
 {
   return TRUE ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static gint action_lookup_cb(gconstpointer list_data, gconstpointer user_data)
 {
   char *action_to_find = (char *)user_data;
@@ -2174,9 +2209,13 @@ static gint action_lookup_cb(gconstpointer list_data, gconstpointer user_data)
 
   return match;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static gboolean messageProcess(char *message_xml_in, gboolean full_process,
 			       char **action_out, XRemoteMessage *message_out)
 {
@@ -2222,9 +2261,13 @@ static gboolean messageProcess(char *message_xml_in, gboolean full_process,
 
   return success;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void action_elements_to_list(gpointer list_data, gpointer user_data)
 {
   ZMapXMLElement element = (ZMapXMLElement)list_data;
@@ -2242,6 +2285,8 @@ static void action_elements_to_list(gpointer list_data, gpointer user_data)
 
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
@@ -2249,6 +2294,8 @@ static void action_elements_to_list(gpointer list_data, gpointer user_data)
 /* XML event handlers */
 /* ------------------ */
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static gboolean xml_zmap_start_cb(gpointer user_data, ZMapXMLElement zmap_element,
                                   ZMapXMLParser parser)
 {
@@ -2286,8 +2333,12 @@ static gboolean xml_zmap_end_cb(gpointer user_data, ZMapXMLElement element, ZMap
 {
   return TRUE;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static gboolean xml_request_start_cb(gpointer user_data, ZMapXMLElement element, ZMapXMLParser parser)
 {
 
@@ -2304,7 +2355,11 @@ static gboolean xml_request_end_cb(gpointer user_data, ZMapXMLElement element, Z
 
   return TRUE ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static gboolean xml_reply_start_cb(gpointer user_data, ZMapXMLElement element, ZMapXMLParser parser)
 {
 
@@ -2321,6 +2376,8 @@ static gboolean xml_reply_end_cb(gpointer user_data, ZMapXMLElement element, ZMa
 
   return TRUE ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
@@ -2418,14 +2475,20 @@ static gboolean xml_peer_end_cb(gpointer user_data, ZMapXMLElement peer_element,
 
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static gboolean xml_error_end_cb(gpointer user_data, ZMapXMLElement element,
                                  ZMapXMLParser parser)
 {
   return TRUE;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* really send an xremote command */
 static gboolean send_command_cb(gpointer key, gpointer hash_data, gpointer user_data)
 {
@@ -2506,12 +2569,16 @@ static gboolean send_command_cb(gpointer key, gpointer hash_data, gpointer user_
 
   return dead_client;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 
 
 
 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* handle the hashes so we can correctly iterate and remove/append to the hash of clients... */
 static void internal_send_command(SendCommandData send_data)
 {
@@ -2533,9 +2600,13 @@ static void internal_send_command(SendCommandData send_data)
 
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 /* Hash related functions */
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static HashEntry clientToHashEntry(ZMapXRemoteObj client, gboolean is_main)
 {
   HashEntry entry;
@@ -2548,7 +2619,11 @@ static HashEntry clientToHashEntry(ZMapXRemoteObj client, gboolean is_main)
 
   return entry;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static gboolean addClientToHash(GHashTable *table, ZMapXRemoteObj client, Window id, GList *actions, gboolean is_main)
 {
   HashEntry new_entry;
@@ -2565,7 +2640,11 @@ static gboolean addClientToHash(GHashTable *table, ZMapXRemoteObj client, Window
 
   return inserted;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static gboolean copy_hash_to_hash(gpointer key, gpointer value, gpointer user_data)
 {
   HashEntry hash_entry = (HashEntry)value;
@@ -2579,6 +2658,8 @@ static gboolean copy_hash_to_hash(gpointer key, gpointer value, gpointer user_da
 
   return copied_ok;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 static void destroyHashEntry(gpointer entry_data)
 {
@@ -2787,6 +2868,8 @@ static char **build_command(char *params_as_string)
   return command_out ;
 }
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static GList *read_command_file(RemoteData remote_data, char *file_name)
 {
   GIOChannel *io_channel;
@@ -2839,15 +2922,23 @@ static GList *read_command_file(RemoteData remote_data, char *file_name)
 
   return commands;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void command_file_free_strings(gpointer list_data, gpointer unused_data)
 {
   GString *command = (GString *)list_data;
   g_string_free(command, FALSE);
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static gboolean queue_send_command_cb(gpointer user_data)
 {
   SendCommandData send_data = (SendCommandData)user_data;
@@ -2857,7 +2948,11 @@ static gboolean queue_send_command_cb(gpointer user_data)
 
   return sent;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void queue_destroy_send_data_cb(gpointer destroy_data)
 {
   SendCommandData send_data = (SendCommandData)destroy_data;
@@ -2869,7 +2964,11 @@ static void queue_destroy_send_data_cb(gpointer destroy_data)
 
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static gboolean queue_sent_command_cb(gpointer user_data)
 {
   SendCommandData send_data = (SendCommandData)user_data;
@@ -2879,7 +2978,11 @@ static gboolean queue_sent_command_cb(gpointer user_data)
 
   return remove_when_true;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void command_file_run_command_cb(gpointer list_data, gpointer user_data)
 {
   RemoteData remote_data = (RemoteData)user_data;
@@ -2910,7 +3013,11 @@ static void command_file_run_command_cb(gpointer list_data, gpointer user_data)
 
   return;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static gboolean command_source_cb(gpointer user_data)
 {
   RemoteData remote_data = (RemoteData)user_data;
@@ -2942,7 +3049,11 @@ static gboolean command_source_cb(gpointer user_data)
 
   return remove_when_false;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static gboolean start_server_cb(gpointer remote_data_data)
 {
   RemoteData remote_data = (RemoteData)remote_data_data;
@@ -2971,7 +3082,11 @@ static gboolean start_server_cb(gpointer remote_data_data)
   /* Make sure we only run once */
   return FALSE;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static gboolean server_started_cb(gpointer remote_data_data)
 {
   RemoteData remote_data = (RemoteData)remote_data_data;
@@ -2982,6 +3097,8 @@ static gboolean server_started_cb(gpointer remote_data_data)
 
   return remove_when_true;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
@@ -3089,6 +3206,8 @@ static gboolean start_zmap_cb(gpointer remote_data_data)
   return FALSE;
 }
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static gboolean zmap_started_cb(gpointer remote_data_data)
 {
   RemoteData remote_data = (RemoteData)remote_data_data;
@@ -3113,7 +3232,11 @@ static gboolean invoke_quit_cb(gpointer remote_data_data)
 
   return FALSE;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void process_command_file(RemoteData remote_data, char *command_file)
 {
   DependRunner depend_data;
@@ -3158,6 +3281,8 @@ static void process_command_file(RemoteData remote_data, char *command_file)
 
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 static ZMapConfigIniContextKeyEntry get_programs_group_data(char **stanza_name, char **stanza_type)
 {
@@ -3214,6 +3339,8 @@ static ZMapConfigIniContext get_configuration(RemoteData remote_data)
 
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* THIS STUFF SEEMS NOT TO BE USED...NOT SURE WHAT THE INTENTION WAS.... */
 
 
@@ -3268,6 +3395,8 @@ static gboolean api_request_end_cb(gpointer user_data, ZMapXMLElement zmap_eleme
 {
   return TRUE;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 

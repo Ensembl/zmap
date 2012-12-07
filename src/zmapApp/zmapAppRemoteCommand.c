@@ -338,8 +338,9 @@ gboolean zmapAppRemoteControlDisconnect(ZMapAppContext app_context, gboolean app
 /* Gets called by remotecontrol right at the end of the transaction to process a request we sent. */
 void zmapAppRemoteControlOurRequestEndedCB(void *user_data)
 {
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   ZMapAppContext app_context = (ZMapAppContext)user_data ;
-
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
   return ;
 }

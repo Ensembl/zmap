@@ -5619,14 +5619,11 @@ static void sendViewLoaded(ZMapView zmap_view, ZMapViewLoadFeaturesData lfd)
     }
   else
     {
-      char *request ;
-      char *response = NULL;
       GList *features;
       char *featurelist = NULL;
       char *f ;
       char *emsg = NULL ;
       char *ok_mess = NULL;
-      ZMapXMLUtilsEventStack data_ptr = NULL ;
       int i ;
 
       for (features = lfd->feature_sets ; features ; features = features->next)
@@ -5735,7 +5732,9 @@ static void localProcessReplyFunc(char *command,
 				  char *reply,
 				  gpointer reply_handler_func_data)
 {
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   ZMapView view = (ZMapView)reply_handler_func_data ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
   if (command_rc != REMOTE_COMMAND_RC_OK)
     {

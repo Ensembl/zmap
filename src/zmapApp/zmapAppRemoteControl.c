@@ -335,9 +335,9 @@ static void replySentCB(void *user_data)
 /* Called by remote control when peer has signalled that it has received request. */
 static void requestSentCB(void *user_data)
 {
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   ZMapAppContext app_context = (ZMapAppContext)user_data ;
-
-
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
   return ;
 }
@@ -601,7 +601,6 @@ static void handleZMapRequestsCB(char *command, ZMapXMLUtilsEventStack request_b
 static void setDebugLevel(void)
 {
   ZMapCmdLineArgsType cmdline_arg = {FALSE} ;
-  char *debug_level_str ;
 	  
   if (zMapCmdLineArgsValue(ZMAPARG_REMOTE_DEBUG, &cmdline_arg))
     {

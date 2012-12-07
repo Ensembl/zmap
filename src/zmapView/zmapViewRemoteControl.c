@@ -1921,7 +1921,6 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 		      ZMapFeature locus_feature = NULL;
 		      GQuark new_locus_id  = zMapXMLAttributeGetValue(attr);
 		      GQuark locus_set_id  = zMapStyleCreateID(ZMAP_FIXED_STYLE_LOCUS_NAME);
-		      char *new_locus_name = (char *)g_quark_to_string(new_locus_id);
 		      ZMapFeatureTypeStyle *locus_style ;
 
 		      if (request_data->command_id == g_quark_from_string(ZACP_REPLACE_FEATURE))
