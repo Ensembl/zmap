@@ -138,6 +138,9 @@ typedef struct
 	int n_filtered;			/* how many we hid */
 	gboolean enable;
 
+	/* be good to implement this oe day, currently we look it up from config every time someone click the filter button */
+	GdkColor fill;			/* background for widget and also filtered column */
+
 } ZMapWindowFilterStruct, *ZMapWindowFilter;
 
 

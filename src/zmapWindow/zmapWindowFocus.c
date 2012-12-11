@@ -163,8 +163,9 @@ static void setFocusColumn(ZMapWindowFocus focus, FooCanvasGroup *column) ;
 
 static void highlightCB(gpointer data, gpointer user_data) ;
 static void highlightItem(ZMapWindow window, ZMapWindowFocusItem item) ;
+#if DOES_NOTHING
 static void rehighlightFocusCB(gpointer list_data, gpointer user_data) ;
-
+#endif
 
 
 
@@ -706,6 +707,8 @@ void zmapWindowFocusForEachFocusItemType(ZMapWindowFocus focus, ZMapWindowFocusT
 }
 
 
+#if DOES_NOTHING
+
 // NB: never called
 void zmapWindowFocusRehighlightFocusItems(ZMapWindowFocus focus, ZMapWindow window)
 {
@@ -713,7 +716,7 @@ void zmapWindowFocusRehighlightFocusItems(ZMapWindowFocus focus, ZMapWindow wind
 
   return ;
 }
-
+#endif
 
 void zmapWindowFocusHighlightFocusItems(ZMapWindowFocus focus, ZMapWindow window)
 {
@@ -925,6 +928,7 @@ void zmapWindowFocusHideFocusItems(ZMapWindowFocus focus, GList **hidden_items)
 }
 
 
+#if DOES_NOTHING
 static void rehighlightFocusCB(gpointer list_data, gpointer user_data)
 {
   ZMapWindow window = (ZMapWindow)user_data ;
@@ -935,7 +939,7 @@ static void rehighlightFocusCB(gpointer list_data, gpointer user_data)
 
   return ;
 }
-
+#endif
 
 /* Do the right thing with groups and items
  * also does unhighlight and is called on free
@@ -967,13 +971,10 @@ static void highlightItem(ZMapWindow window, ZMapWindowFocusItem item)
            }
       }
       zMapWindowCanvasItemSetIntervalColours(item->item, item->feature, NULL, ZMAPSTYLE_COLOURTYPE_SELECTED, item->flags, fill, border);
-      foo_canvas_item_raise_to_top(FOO_CANVAS_ITEM(item->item)) ;
-
     }
   else
     {
       zMapWindowCanvasItemSetIntervalColours(item->item, item->feature, NULL, ZMAPSTYLE_COLOURTYPE_NORMAL, 0, NULL,NULL);
-      /* foo_canvas_item_lower_to_bottom(FOO_CANVAS_ITEM(item->item)) ;*/
 
       /* this is a pain: to keep ordering stable we have to put the focus item back where it was
        * so we have to compare it with items not in the focus list

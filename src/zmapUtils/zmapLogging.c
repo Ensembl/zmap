@@ -63,7 +63,7 @@
 
 #define ZMAPLOG_MAX_TRACE_SIZE 50
 
-#define FOO_LOG 0
+#define FOO_LOG 1
 
 
 /* Common struct for all log handlers, we use these to turn logging on/off. */
@@ -155,6 +155,7 @@ void foo_logger(char *x)
 {
 	/* can;t call this frpm foo as it's a macro */
 	zMapLogWarning(x,"");
+	printf("%s\n",x);
 }
 
 
@@ -503,7 +504,7 @@ void zMapLogStack(void)
 /* As zMapLogStack(), but to stderr instead. */
 void zMapPrintStack(void)
 {
-  backtrace2fd(1, STDERR_FILENO);
+  backtrace2fd(1, STDOUT_FILENO);
   return ;
 }
 

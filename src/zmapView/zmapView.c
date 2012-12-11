@@ -435,6 +435,7 @@ void zMapViewSetupNavigator(ZMapViewWindow view_window, GtkWidget *canvas_widget
 
   if (zmap_view->state != ZMAPVIEW_DYING)
     {
+//printf("view setupnavigator\n");
       zmap_view->navigator_window = zMapWindowNavigatorCreate(canvas_widget);
       zMapWindowNavigatorSetCurrentWindow(zmap_view->navigator_window, view_window->window);
     }
@@ -4901,6 +4902,7 @@ static void viewVisibilityChangeCB(ZMapWindow window, void *caller_data, void *w
   /* signal our caller that something has changed. */
   (*(view_cbs_G->visibility_change))(view_window, view_window->parent_view->app_data, window_data) ;
 
+//printf("view viz change\n");
   /* view_window->window can be NULL (when window copying) so we use the passed in window... */
   /* Yes it's a bit messy, but it's stopping it crashing. */
   zMapWindowNavigatorSetCurrentWindow(view_window->parent_view->navigator_window, window);

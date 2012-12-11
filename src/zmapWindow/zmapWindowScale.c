@@ -129,6 +129,8 @@ ZMapWindowScaleCanvas zmapWindowScaleCanvasCreate(ZMapWindowScaleCanvasCallbackL
 
   /* Now we make the ruler canvas */
   ruler->canvas    = FOO_CANVAS(foo_canvas_new());
+foo_bug_set(ruler->canvas,"scale");
+
   ruler->callbacks = g_new0(ZMapWindowScaleCanvasCallbackListStruct, 1);
   ruler->callbacks->paneResize = callbacks->paneResize;
   ruler->callbacks->user_data  = callbacks->user_data;
@@ -274,7 +276,7 @@ gboolean zmapWindowScaleCanvasDraw(ZMapWindowScaleCanvas ruler, int start, int e
 {
   gboolean drawn = FALSE;
   double zoom_factor = 0.0;
-  double width;
+  double width = 0.0;
   gboolean zoomed = FALSE;
 
   zMapAssert(ruler && ruler->canvas);
@@ -292,7 +294,7 @@ gboolean zmapWindowScaleCanvasDraw(ZMapWindowScaleCanvas ruler, int start, int e
 	}
 
 #if SCALE_DEBUG
-debug("scaleCanvasDraw %d %d %d %d\n", start, end, seq_start, seq_end);
+printf("scaleCanvasDraw %d %d %d %d\n", start, end, seq_start, seq_end);
 #endif
 
 	ruler->scaleParent = foo_canvas_item_new(foo_canvas_root(ruler->canvas),
@@ -310,14 +312,26 @@ debug("scaleCanvasDraw %d %d %d %d\n", start, end, seq_start, seq_end);
 	width = zMapWindowDrawScaleBar(FOO_CANVAS_GROUP(ruler->scaleParent), start, end, seq_start, seq_end, zoom_factor, ruler->revcomped, zoomed);
 
       drawn = TRUE;
-    }
 
-  ruler->last_draw_coords.y1 = start;
-  ruler->last_draw_coords.y2 = end;
-  ruler->last_draw_coords.x1 = 0;
-  ruler->last_draw_coords.x2 = width;
-  ruler->last_draw_coords.pixels_per_unit_y = ruler->canvas->pixels_per_unit_y;
-  ruler->last_draw_coords.revcomped = ruler->revcomped;
+	ruler->last_draw_coords.y1 = start;
+	ruler->last_draw_coords.y2 = end;
+	ruler->last_draw_coords.x1 = 0;
+	ruler->last_draw_coords.x2 = width;
+	ruler->last_draw_coords.pixels_per_unit_y = ruler->canvas->pixels_per_unit_y;
+	ruler->last_draw_coords.revcomped = ruler->revcomped;
+
+#if 0	// this doesn't work, no idea why
+	/* somehow wihtout this we get an expose 1 pixel wide, prob due to the style not speciying width
+	 * canvasfeaturesets hide the width of features and thier width is onyl taken into account during and update
+	 * the foo canvas queue extra exposes on update but somehow this isn't working */
+	{
+		int x1,x2,y1,y2;
+		foo_canvas_w2c(ruler->canvas,0, start,&x1,&y1);
+		foo_canvas_w2c(ruler->canvas, width, end, &x2, &y2);
+		foo_canvas_request_redraw(ruler->canvas, x1, y1, x2, y2);
+	}
+#endif
+    }
 
 #if FOO_SCALE_DEBUG
 scale_thing = ruler->canvas;
@@ -335,8 +349,19 @@ double zMapWindowScaleCanvasGetWidth(ZMapWindowScaleCanvas ruler)
 
 void zMapWindowScaleCanvasSetScroll(ZMapWindowScaleCanvas ruler, double x1, double y1, double x2, double y2)
 {
+//printf("scale set scroll %f %f %f %f\n", x1, y1, x2, y2);
+
 	/* NOTE this canvas has nothing except the scale bar */
       foo_canvas_set_scroll_region(FOO_CANVAS(ruler->canvas), x1, y1, x2, y2);
+
+	/* we can't rely on scroll to queue an expose */
+	{
+		int ix1, ix2, iy1, iy2;
+		foo_canvas_w2c(ruler->canvas, x1, y1,&ix1,&iy1);
+		foo_canvas_w2c(ruler->canvas, x2, y2, &ix2, &iy2);
+		foo_canvas_request_redraw(ruler->canvas, ix1, iy1, ix2, iy2);
+	}
+
 }
 
 #if NOT_USED
@@ -749,9 +774,6 @@ debug("levels, hide = %d %d %d %d (%s)\n", n_levels,n_hide, base, digits, unit);
 
 	text_max *= font_width;
 
-#if SCALE_DEBUG
-	debug("text width: %.1f %.1f %d %d %s\n",font_width, text_max, i, base, unit);
-#endif
 
 	scale_width = text_max + tick_max;
 	zMapWindowCanvasFeaturesetSetWidth(featureset, scale_width);
@@ -759,6 +781,11 @@ debug("levels, hide = %d %d %d %d (%s)\n", n_levels,n_hide, base, digits, unit);
 		FooCanvasItem *foo = (FooCanvasItem *) group;
 		foo_canvas_item_request_update(foo);
 	}
+#if SCALE_DEBUG
+	printf("text width: %.1f %.1f %d %d %s\n",font_width, text_max, i, base, unit);
+	printf("tick width: %.1f %.1f\n",tick_max, scale_width);
+#endif
+
 
 	/* do we assume there are enough pixels for the highest order ticks?
 	 * no: if they shrink the window so that you can't read it then don't display
@@ -767,9 +794,9 @@ debug("levels, hide = %d %d %d %d (%s)\n", n_levels,n_hide, base, digits, unit);
 	gap = (int) (((double) n_pixels) * tick / scroll_len );	/* (double) or else would get overflow on big sequences */
 
 #if SCALE_DEBUG
-debug("scale bar: %d bases (%d-%d) @(%d,%d)  tick = %d, levels= %d,%d, %d pixels font %d, zoom %f\n",
+debug("scale bar: %d bases (%d-%d) @(%d,%d)  tick = %d, levels= %d,%d, %d pixels font %d, zoom %f, rev %d\n",
 seq_len, seq_start, seq_end,  scroll_start, scroll_end,
-tick, n_levels,n_hide, n_pixels, text_height,zoom_factor);
+tick, n_levels,n_hide, n_pixels, text_height, zoom_factor, revcomped);
 #endif
 
 

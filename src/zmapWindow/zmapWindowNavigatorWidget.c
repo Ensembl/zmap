@@ -89,6 +89,7 @@ GtkWidget *zMapWindowNavigatorCreateCanvas(ZMapWindowNavigatorCallback callbacks
 
   canvas_widget = foo_canvas_new();
   canvas = (FooCanvas *) canvas_widget;
+foo_bug_set(canvas,"navigator");
 
   foo_canvas_set_scroll_region(canvas, 0.0, 0.0, 0.0, 0.0);
 

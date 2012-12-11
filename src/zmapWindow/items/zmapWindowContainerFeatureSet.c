@@ -382,9 +382,8 @@ ZMapStrand zmapWindowContainerFeatureSetGetStrand(ZMapWindowContainerFeatureSet 
 {
   ZMapStrand strand = ZMAPSTRAND_NONE;
 
-  g_return_val_if_fail(ZMAP_IS_CONTAINER_FEATURESET(container_set), strand);
-
-  strand = container_set->strand;
+  if(ZMAP_IS_CONTAINER_FEATURESET(container_set))
+	strand = container_set->strand;
 
   return strand;
 }

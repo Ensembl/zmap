@@ -87,7 +87,9 @@ void zmapWindowNavigatorGoToLocusExtents(ZMapWindowNavigator navigate, FooCanvas
         {
           /* x coords are HACKED!!!! */
           if(zMapFeatureGetFeatureListExtent(feature_list, &start, &end))
+	    {
             zmapWindowZoomToWorldPosition(window, TRUE, 0.0, start, 100.0, end);
+	    }
           g_list_free(feature_list);
         }
     }

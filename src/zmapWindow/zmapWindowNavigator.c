@@ -284,9 +284,6 @@ ZMapWindowNavigator zMapWindowNavigatorCreate(GtkWidget *canvas_widget)
   /* add it to the hash. */
   zmapWindowFToIAddRoot(navigate->ftoi_hash, (FooCanvasGroup *)(navigate->container_root));
 
-  /* lower to bottom so that everything else works... */
-  foo_canvas_item_lower_to_bottom(FOO_CANVAS_ITEM(navigate->container_root));
-
 
   g_signal_connect(GTK_OBJECT(navigate->canvas), "event", GTK_SIGNAL_FUNC(rootBGEventCB), (gpointer) navigate) ;
 
@@ -353,7 +350,7 @@ void zMapWindowNavigatorFocus(ZMapWindowNavigator navigate,
   FooCanvasItem *root;
 
   root = FOO_CANVAS_ITEM(navigate->container_root);
-
+//printf("nav focus %p %d\n", navigate, true_eq_focus);
   if(true_eq_focus)
     {
       foo_canvas_item_show(root);
@@ -374,6 +371,7 @@ void zMapWindowNavigatorSetCurrentWindow(ZMapWindowNavigator navigate, ZMapWindo
    * unlocked windows the locator becomes out of step on focusing
    * until the visibility change handler is called */
 
+//printf("nav set window %p -> %p\n", navigate, window);
  /* mh17: should also twiddle revcomped? but as revcomp applies to the view
      in violation of MVC then all the windows will follow
   */
@@ -400,6 +398,7 @@ void zMapWindowNavigatorDrawFeatures(ZMapWindowNavigator navigate,
   FooCanvas *canvas = NULL;
   NavigateDrawStruct draw_data = {NULL};
 
+//printf("nav draw features %p -> %p\n",navigate, navigate->current_window);
 
   draw_data.navigate  = navigate;
   draw_data.context   = full_context;
@@ -751,6 +750,7 @@ static ZMapFeatureContextExecuteStatus drawContext(GQuark key_id,
 
 	      if ((bump_mode = zmapWindowContainerFeatureSetGetBumpMode(container_feature_set)) != ZMAPBUMP_UNBUMP)
 			zmapWindowColumnBumpRange(item, bump_mode, ZMAPWINDOW_COMPRESS_ALL) ;
+//printf("nav draw context %p -> %p %s %s\n", draw_data->navigate, draw_data->navigate->current_window, g_quark_to_string(feature_set->unique_id), g_quark_to_string(col_id));
           }
         else
           {
@@ -836,7 +836,6 @@ static void drawScale(NavigateDraw draw_data)
       max = draw_data->context->master_align->sequence_span.x2;
 
 	zoom_factor = item->canvas->pixels_per_unit_y;
-
       zMapWindowDrawScaleBar(features,  min, max, min, max, zoom_factor, draw_data->navigate->is_reversed, FALSE);
     }
 
@@ -1083,7 +1082,11 @@ static gboolean rootBGEventCB(FooCanvasItem *item, GdkEvent *event, gpointer dat
 			y_coord = (double) button->y - navigate->click_correction;
 			foo_canvas_c2w(navigate->canvas, 0, y_coord, NULL, &y_coord);
 
+
+#if 0
+this will be called by zMapWindowMove()
 	            zMapWindowNavigatorDrawLocator(navigate, y_coord, y_coord + locator_size);
+#endif
 
 #if RUN_AROUND
 			/*
@@ -1279,6 +1282,8 @@ static gboolean navCanvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpoin
               {
                   /*used to get a transcript feature? no idea how, but the locus feature is a text item */
                 zmapWindowNavigatorGoToLocusExtents(navigate, item);
+
+		    navigate->locator_click = FALSE;	/* can get mixed signals ??, end up moving somewhere else ?? */
                 event_handled = TRUE;
               }
           }

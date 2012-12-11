@@ -1078,8 +1078,10 @@ static gboolean zMapWindowResetWindowWidth(ZMapWindow window, FooCanvasItem *ite
 
         /* Annoyingly the initial size of the canvas is an issue here on first draw */
   if(y2 == ZMAP_CANVAS_INIT_SIZE)
+  {
+	y1 = window->min_coord;		/* rev comp changes both of these */
 	y2 = window->max_coord;
-
+  }
   zmapWindowSetScrollRegion(window, &x1, &y1, &x2, &y2,"resetWindowWidth") ;
 
   return result;

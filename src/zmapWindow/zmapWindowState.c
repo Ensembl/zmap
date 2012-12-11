@@ -176,14 +176,27 @@ void zmapWindowStateRestore(ZMapWindowState state, ZMapWindow window)
    * not save whilst restoring... */
   mark_queue_updating(window->history, TRUE);
 
-  if(state->zoom_set)
-    {
-      double current, target, factor;
-      current = zMapWindowGetZoomFactor(window);
-      target  = state->zoom_factor;
-      factor  = target / current;
-      zMapWindowZoom(window, factor);
-    }
+//  foo_canvas_busy(window->canvas, TRUE);	can't do this as zmapWindowZoom does */
+#if 0
+  if(state->zoom_set && state->position_set)
+  {
+  }
+  else
+#endif
+  {
+	if(state->zoom_set)
+	{
+		double current, target, factor;
+		current = zMapWindowGetZoomFactor(window);
+		target  = state->zoom_factor;
+		factor  = target / current;
+		zMapWindowZoom(window, factor);
+	}
+	if(state->position_set)
+	{
+		state_position_restore(window, &(state->position));
+	}
+  }
 
   if (state->mark_set)
     {
@@ -192,11 +205,6 @@ void zmapWindowStateRestore(ZMapWindowState state, ZMapWindow window)
   else
     {
       zmapWindowMarkReset(window->mark) ;
-    }
-
-  if(state->position_set)
-    {
-      state_position_restore(window, &(state->position));
     }
 
 
@@ -211,6 +219,10 @@ void zmapWindowStateRestore(ZMapWindowState state, ZMapWindow window)
     }
 
   mark_queue_updating(window->history, FALSE);
+
+//  foo_canvas_busy(window->canvas, FALSE);
+
+  zMapWindowRedraw(window);	/* include area off canvas */
 
   return ;
 }

@@ -605,7 +605,9 @@ static void filterValueChangedCB(GtkSpinButton *spinbutton, gpointer user_data)
 	if(zmap->filter_spin_pressed)
 		return;
 
-	zmap->filter.value = value = gtk_spin_button_get_value(spinbutton);
+	value = gtk_spin_button_get_value(spinbutton);
+//printf("filter value %f %f\n", zmap->filter.value, value);
+	zmap->filter.value = value;
 	if(zmap->filter.func)
 		zmap->filter.n_filtered = zmap->filter.func(&zmap->filter, value);
 
@@ -619,6 +621,8 @@ static gboolean filterSpinButtonCB(GtkWidget *spin, GdkEvent *event, gpointer us
 {
   gboolean handled = FALSE ;
   ZMap zmap = (ZMap) user_data;
+
+//printf("filter spin %d\n", event->type == GDK_BUTTON_PRESS ? 1 : event->type == GDK_BUTTON_RELEASE ? 2 : 0);
 
   switch(event->type)
     {
