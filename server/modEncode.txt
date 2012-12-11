@@ -110,8 +110,8 @@ Second thoughts syggest that BAM.pm and BigWig.pm could be merged into the calli
 http fails:
 debug and compare bam_get_align: make these work from command line....
 
-/software/anacode/otter/otter_rel69/bin/bam_get_align --chr=chr11-03 --chr_prefix=chr --csver=GRCh37 --end=766404 --file=http://hgdownload-test.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeCshlLongRnaSeq/releaseLatest/wgEncodeCshlLongRnaSeqH1hescCytosolPapAlnRep2.bam --gff_feature_source=Tier1_H1-hESC_cytosol_longPolyA_rep2 --start=745637 -gff_version=2 --dataset=human --gff_seqname=chr11-03
+/software/anacode/otter/otter_rel72/bin/bam_get_align --chr=chr11-03 --csver=GRCh37 --end=766404 --file=http://hgdownload-test.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeCshlLongRnaSeq/releaseLatest/wgEncodeCshlLongRnaSeqH1hescCytosolPapAlnRep2.bam --gff_feature_source=Tier1_H1-hESC_cytosol_longPolyA_rep2 --start=745637 -gff_version=2 --dataset=human --gff_seqname=chr11-03
 
 [knet_seek] SEEK_END is not supported for HTTP. Offset is unchanged.
-GET  http://dev.sanger.ac.uk/cgi-bin/otter/69/get_mapping?client=bam_get_align&chr=chr11-03&cs=GRCh37&dataset=human&end=766404&start=745637 get_mapping - client received 51 bytes from server
+GET  http://dev.sanger.ac.uk/cgi-bin/otter/72/get_mapping?client=bam_get_align&chr=chr11-03&cs=GRCh37&dataset=human&end=766404&start=745637 get_mapping - client received 51 bytes from server
 [knet_seek] SEEK_END is not supported for HTTP. Offset is unchanged. found 41454 matches

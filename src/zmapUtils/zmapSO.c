@@ -165,7 +165,7 @@ GQuark zMapSOVariation2SO(char *variation_str)
 /* Probably need a has here in the end but this will get us started... */
 GQuark zMapSOFeature2SO(ZMapFeature feature)
 {
-  GQuark SO_acc = 0, tmp_id ;
+  GQuark SO_acc = 0, tmp_id = 0 ;
 
 
   if (g_ascii_strcasecmp(g_quark_to_string(feature->source_id), "polya_site") == 0)
