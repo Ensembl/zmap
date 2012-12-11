@@ -304,7 +304,6 @@ static char *application_execute_command(char *command_text, gpointer app_contex
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void createZMap(ZMapAppContext app, RequestData request_data, ResponseContext response_data)
 {
-  char *sequence = g_strdup(g_quark_to_string(request_data->sequence));
   ZMapFeatureSequenceMap seq_map = g_new0(ZMapFeatureSequenceMapStruct,1);
 
   /* Copy the default sequence which will have been derived from the config file and/or command line. */

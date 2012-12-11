@@ -39,6 +39,7 @@
 
 #include <string.h>
 
+#include <ZMap/zmapUtilsGUI.h>
 #include <ZMap/zmapAppServices.h>
 
 
@@ -83,9 +84,9 @@ void zMapAppGetSequenceView(ZMapAppGetSequenceViewCB user_func, gpointer user_da
 
   zMapAssert(user_func) ;
 
-  toplevel = gtk_window_new(GTK_WINDOW_TOPLEVEL) ;
+  toplevel = zMapGUIToplevelNew(NULL, "Please specify sequence to be viewed.") ;
+
   gtk_window_set_policy(GTK_WINDOW(toplevel), FALSE, TRUE, FALSE ) ;
-  gtk_window_set_title(GTK_WINDOW(toplevel), "Please specify sequence to be viewed.") ;
   gtk_container_border_width(GTK_CONTAINER(toplevel), 0) ;
 
   container = makePanel(toplevel, &seq_data, user_func, user_data, sequence_map) ;

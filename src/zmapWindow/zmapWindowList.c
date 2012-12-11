@@ -569,10 +569,9 @@ static void drawListWindow(ZMapWindowList windowList)
   char *frame_label = NULL;
 
   /* Create window top level */
-  windowList->toplevel = window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+  windowList->toplevel = window = zMapGUIToplevelNew(NULL, windowList->title) ;
 
   /* Set it up graphically nice */
-  gtk_window_set_title(GTK_WINDOW(window), windowList->title) ;
   gtk_window_set_default_size(GTK_WINDOW(window), -1, 600);
   gtk_container_border_width(GTK_CONTAINER(window), 5) ;
 

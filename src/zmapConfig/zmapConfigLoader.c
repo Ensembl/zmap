@@ -1315,6 +1315,7 @@ static ZMapConfigIniContextKeyEntry get_app_group_data(char **stanza_name, char 
 {
   static ZMapConfigIniContextKeyEntryStruct stanza_keys[] = {
     { ZMAPSTANZA_APP_MAINWINDOW,   G_TYPE_BOOLEAN, NULL, FALSE },
+    { ZMAPSTANZA_APP_ABBREV_TITLE, G_TYPE_BOOLEAN, NULL, FALSE },
 
     { ZMAPSTANZA_APP_DATASET ,     G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_APP_SEQUENCE,     G_TYPE_STRING,  NULL, FALSE },

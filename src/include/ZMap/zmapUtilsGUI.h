@@ -458,7 +458,12 @@ void zMapGUIGetPixelsPerUnit(ZMapGUIPixelConvType conv_type, GtkWidget *widget, 
 
 gboolean zMapGUIGetColour(GtkWidget *widget, char *colour_spec, GdkColor *colour_inout) ;
 
+void zMapGUISetAbbrevTitlePrefix(gboolean abbrev_prefix) ;
+gboolean zMapGUIGetAbbrevTitlePrefix(void) ;
 char *zMapGUIMakeTitleString(char *window_type, char *message) ;
+void zMapGUISetToplevelTitle(GtkWidget *toplevel, char *zmap_win_type, char *zmap_win_text) ;
+GtkWidget *zMapGUIToplevelNew(char *zmap_win_type, char *zmap_win_text) ;
+
 
 GdkCursor *zMapGUIGetCursor(char *cursor_name) ;
 

@@ -43,6 +43,7 @@
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapSO.h>
 #include <ZMap/zmapGLibUtils.h>
+#include <ZMap/zmapUtilsGUI.h>
 #include <ZMap/zmapConfigIni.h>
 #include <ZMap/zmapConfigStrings.h>
 #include <ZMap/zmapThreads.h>       // for thread lock functions
@@ -80,6 +81,7 @@ enum
 #define BLX_ARGV_CONFIGFILE  BLX_ARGV_NETID_PORT             /* [filepath] */
 
     BLX_ARGV_RM_TMP_FILES,      /* --remove-input-files */
+    BLX_ARGV_ABBREV_TITLES,     /* --abbrev-title-on */
     BLX_ARGV_START_FLAG,        /* -s */
     BLX_ARGV_START,             /* [start] */
     BLX_ARGV_OFFSET_FLAG,       /* -m */
@@ -1250,6 +1252,12 @@ static gboolean buildParamString(blixemData blixem_data, char **paramString)
    * (keep_tempfiles = true in blixem stanza of ZMap file) */
   if (!blixem_data->keep_tmpfiles)
     paramString[BLX_ARGV_RM_TMP_FILES - missed] = g_strdup("--remove-input-files");
+  else
+    missed += 1;
+
+  /* Should abbreviated window titles be turned on. */
+  if (zMapGUIGetAbbrevTitlePrefix())
+    paramString[BLX_ARGV_ABBREV_TITLES - missed] = g_strdup("--abbrev-title-on") ;
   else
     missed += 1;
 

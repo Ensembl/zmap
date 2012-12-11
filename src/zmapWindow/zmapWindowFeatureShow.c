@@ -542,7 +542,7 @@ static void featureShowReset(ZMapWindowFeatureShow show, ZMapWindow window, char
   show->item = NULL ;
   show->feature = NULL ;
 
-  gtk_window_set_title(GTK_WINDOW(show->window), title) ;
+  zMapGUISetToplevelTitle(show->window,"Feature Show", title) ;
 
   return ;
 }
@@ -839,9 +839,9 @@ static void createEditWindow(ZMapWindowFeatureShow feature_show, char *title)
   GtkWidget *vbox ;
 
   /* Create the edit window. */
-  feature_show->window = gtk_window_new(GTK_WINDOW_TOPLEVEL) ;
+  feature_show->window = zMapGUIToplevelNew(NULL, title) ;
+
   g_object_set_data(G_OBJECT(feature_show->window), "zmap_feature_show", feature_show) ;
-  gtk_window_set_title(GTK_WINDOW(feature_show->window), title) ;
   gtk_container_set_border_width(GTK_CONTAINER (feature_show->window), 10);
   g_signal_connect(G_OBJECT (feature_show->window), "destroy",
 		   G_CALLBACK (destroyCB), feature_show);

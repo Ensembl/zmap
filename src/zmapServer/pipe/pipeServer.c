@@ -471,8 +471,10 @@ static gboolean pipe_server_spawn(PipeServer server,GError **error)
       }
   }
 
+#define MH17_DEBUG_ARGS
+
   argv[i]= NULL;
-#if  MH17_DEBUG_ARGS
+#if defined  MH17_DEBUG_ARGS
 {
 char *x = "";
 int j;

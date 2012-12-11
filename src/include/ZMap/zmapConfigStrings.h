@@ -175,6 +175,7 @@
  *  */
 #define ZMAPSTANZA_APP_CONFIG            "ZMap"
 #define ZMAPSTANZA_APP_MAINWINDOW        "show-mainwindow"
+#define ZMAPSTANZA_APP_ABBREV_TITLE      "abbrev-window-title"
 #define ZMAPSTANZA_APP_EXIT_TIMEOUT      "exit-timeout"
 #define ZMAPSTANZA_APP_SLEEP             "sleep"
 #define ZMAPSTANZA_APP_PEER_NAME         "peer-name"

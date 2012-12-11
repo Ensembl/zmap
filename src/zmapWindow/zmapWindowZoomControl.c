@@ -746,9 +746,8 @@ void zmapWindowZoomControlWindowCreate(ZMapWindow zmapwindow)
   win = g_new0(ZMapWindowZoomControlWindowStruct, 1);
   win->zmapwindow = zmapwindow;
 
-  window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+  window = zMapGUIToplevelNew(NULL, "view browser") ;
 
-  gtk_window_set_title(GTK_WINDOW(window), "view browser");
   gtk_window_set_default_size(GTK_WINDOW(window), 215, 175);
   gtk_window_set_resizable(GTK_WINDOW(window), FALSE);
   gtk_container_border_width(GTK_CONTAINER(window), 5);
