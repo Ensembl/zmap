@@ -180,6 +180,7 @@ void zmapWindowStateRestore(ZMapWindowState state, ZMapWindow window)
 #if 0
   if(state->zoom_set && state->position_set)
   {
+	 /* do a zoom to */
   }
   else
 #endif
@@ -219,8 +220,6 @@ void zmapWindowStateRestore(ZMapWindowState state, ZMapWindow window)
     }
 
   mark_queue_updating(window->history, FALSE);
-
-//  foo_canvas_busy(window->canvas, FALSE);
 
   zMapWindowRedraw(window);	/* include area off canvas */
 
@@ -610,8 +609,16 @@ static void state_position_restore(ZMapWindow window, ZMapWindowPositionStruct *
 			new_position.scroll_x1, new_position.scroll_y1,
 			new_position.scroll_x2, new_position.scroll_y2);
 
-      gtk_adjustment_set_value(v_adjuster, new_position.v_adjuster.value);
-      gtk_adjustment_set_value(h_adjuster, new_position.h_adjuster.value);
+#if 0
+printf("pos restore: %f %f %f %f\n",gtk_adjustment_get_value(v_adjuster), gtk_adjustment_get_value(h_adjuster),
+	      new_position.v_adjuster.value, new_position.h_adjuster.value);
+// old is 0, new y is 4000+: prevents expose events to the canvas
+
+//      gtk_adjustment_set_value(v_adjuster, new_position.v_adjuster.value);
+//      gtk_adjustment_set_value(h_adjuster, new_position.h_adjuster.value);
+#else
+	foo_canvas_scroll_to(FOO_CANVAS(window->canvas), new_position.scroll_offset_x, new_position.scroll_offset_y);
+#endif
 
       if(window_state_debug_G)
 	print_position(&new_position, "state_position_restore input");

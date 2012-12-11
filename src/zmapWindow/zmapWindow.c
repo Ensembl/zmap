@@ -730,7 +730,7 @@ void zMapWindowRedraw(ZMapWindow window)
 
   if(!window->canvas->busy)
   {
-	zmapWindowBusy(window, TRUE) ;
+//	zmapWindowBusy(window, TRUE) ;
 
 	/* Get the size of the canvas's on screen window, i.e. the section of canvas you
 	* can actually see. */
@@ -741,11 +741,36 @@ void zMapWindowRedraw(ZMapWindow window)
 	expose_area.width = allocation->width - 1 ;
 	expose_area.height = allocation->height - 1 ;
 
+foo_bug_print(window->canvas,"redraw");
+//printf("expose 0,0 -> %d, %d\n",expose_area.width, expose_area.height );
+
+
+	{
+	/* kick GDK to make this work */
+//printf("canvas: %d %d %d\n", window->canvas->busy, window->canvas->x_changed, window->canvas->y_changed);
+//	foo_canvas_busy(window->canvas,TRUE);
+//	foo_canvas_busy(window->canvas,FALSE);
+	}
+
 	/* Invalidate the displayed canvas window causing to be redrawn. */
 	gdk_window_invalidate_rect(GTK_WIDGET(&(window->canvas->layout))->window, &expose_area, TRUE) ;
 
-	zmapWindowBusy(window, FALSE) ;
+	/* NOTE we don't get expose events to split windows reliably from this */
+
+//	gdk_window_process_updates(GTK_WIDGET(&(window->canvas->layout))->window, TRUE);
+
+	/* but this doesn-t work either */
+//	gdk_window_invalidate_rect(gtk_layout_get_bin_window(&window->canvas->layout), &expose_area, TRUE) ;
+//	gtk_widget_show_all(GTK_WIDGET(&(window->canvas->layout)));
+
+	/* or these */
+//	gtk_widget_queue_draw(window->parent_widget);
+//	gtk_widget_queue_resize(window->parent_widget);
+
+//	zmapWindowBusy(window, FALSE) ;
   }
+
+
   return ;
 }
 
@@ -942,6 +967,22 @@ void zMapWindowBack(ZMapWindow window)
       zmapWindowStateDestroy(prev_state);
 
       change.zoom_status = zMapWindowGetZoomStatus(window);
+
+
+	/* somehow this does not paint till we get a window/widget resise if back from big zoom in a vsplit window */
+	/* unless we call this, but we also need to handle the blank bits at the edges */
+#warning still doesn-t work, possibly a race condition, it-s not 100% producable
+/* only appears to apply to v-split */
+//	sleep(4);		/* still goes wrong as before */
+	zMapWindowRedraw(window);
+
+	/* also need to do locked windows */
+	/* NOTE this hash table has window as key and value, maybe a GList would have been better
+	 * but we will call WindowRedraw with 3 args and the first will be valid
+	 * C handles passing a diff number of args, it's not a compiler choice
+	 */
+	g_hash_table_foreach(window->sibling_locked_windows, (GHFunc) zMapWindowRedraw, NULL) ;
+
 
       foo_canvas_get_scroll_region(window->canvas,
 				   NULL, &(change.scrollable_top),
@@ -1394,8 +1435,8 @@ void zmapWindowSetScrollRegion(ZMapWindow window,
   if(x1 != window->scroll_x1 || y1 != window->scroll_y1 || x2 != window->scroll_x2 || y2 != window->scroll_y2)
   {
 #if 0
-      zMapLogWarning("set scroll %p %f,%f - %f,%f from %s",window->canvas,y1,x1,y2,x2,where);
-	zMapLogStack();
+      printf("set scroll %p %f,%f - %f,%f from %s\n",window->canvas,y1,x1,y2,x2,where);
+//	zMapLogStack();
 #endif
 	foo_canvas_set_scroll_region(FOO_CANVAS(window->canvas), x1, y1, x2, y2);
 
@@ -2934,7 +2975,7 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
 
       (*(window_cbs_G->drawn_data))(window, window->app_data, diff_context);
 
-#warning can't see any reason for this code, removing has no effect (none that I can see)
+#warning can-t see any reason for this code, removing has no effect (none that I can see)
 #if 0
       if (feature_sets->state != NULL)
 	{

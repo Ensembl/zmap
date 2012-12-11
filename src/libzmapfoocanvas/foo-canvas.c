@@ -3085,17 +3085,23 @@ foo_canvas_expose (GtkWidget *widget, GdkEventExpose *event)
 
 	canvas = FOO_CANVAS (widget);
 
+if(foo_bug) foo_bug(canvas,"expose");
+
 	if(canvas->busy)
 		return FALSE;
 
-if(foo_bug) foo_bug(canvas,"expose");
-
+if(foo_bug) foo_bug(canvas,"expose not busy");
+//printf("drawable: %d, %p %p\n",GTK_WIDGET_DRAWABLE (widget), event->window, canvas->layout.bin_window);
 	if (!GTK_WIDGET_DRAWABLE (widget) || (event->window != canvas->layout.bin_window)) return FALSE;
 
-#if SCALE_DEBUG
+#if  SCALE_DEBUG
 if(foo_log)
 {
-	char *x = g_strdup_printf("Expose %p @ %d,%d-%d,%d  scroll =  %.1f,%.1f %.1f,%.1f\n", canvas, event->area.x, event->area.y,event->area.width, event->area.height, canvas->scroll_x1, canvas->scroll_y1, canvas->scroll_x2, canvas->scroll_y2);
+	FooCanvasItem *root = canvas->root;
+	char *x = g_strdup_printf("Expose %p @ %d,%d-%d,%d  scroll =  %.1f,%.1f %.1f,%.1f, root = %.1f %.1f %.1f %.1f\n", canvas,
+					  event->area.x, event->area.y,event->area.width, event->area.height,
+					  canvas->scroll_x1, canvas->scroll_y1, canvas->scroll_x2, canvas->scroll_y2,
+					  root->x1, root->y1, root->x2, root->y2);
 	foo_log(x);
 	g_free(x);
 
@@ -4334,6 +4340,8 @@ foo_canvas_busy(FooCanvas *canvas, gboolean busy)
 
 	if(!busy)
 	{
+		int ix1,ix2,iy1,iy2;
+
 foo_bug(canvas,"not busy");
 		/* Signal GtkLayout that it should do a redraw. */
 		if(canvas->x_changed || canvas->y_changed)
@@ -4344,7 +4352,9 @@ foo_bug(canvas,"not busy");
 		if (canvas->y_changed)
 			g_signal_emit_by_name (G_OBJECT (canvas->layout.vadjustment), "value_changed");
 
-		foo_canvas_item_request_update(canvas->root);
+		canvas->x_changed = canvas->y_changed = 0;
+
+		foo_canvas_update_now(canvas);	/* must update before requesting redraw else rect will be wrong */
 		foo_canvas_item_request_redraw(canvas->root);
 	}
 else
