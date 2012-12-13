@@ -2516,12 +2516,14 @@ static void resetCanvas(ZMapWindow window, gboolean free_child_windows, gboolean
 		zmapStyleWindowDestroy(window);
     }
 
+    zmapWindowFocusReset(window->focus);
+
 	/* mh17 band aid approach to fixing 3FT columns
-	 * these never com back is we revcomp when they are on display
+	 * these never come back if we revcomp when they are on display
 	 * & yet removing them first is ok
 	 * somewhere in the mas co container code there's some kind of broken
 	 */
-	zmapWindowDrawRemove3FrameFeatures(window);
+//	zmapWindowDrawRemove3FrameFeatures(window);
 
       // destroy focus before the canvas items via
       // zmapWindowContainerGroupDestroy(window->feature_root_group)
