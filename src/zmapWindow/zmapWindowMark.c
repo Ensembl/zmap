@@ -908,12 +908,14 @@ FooCanvasItem *set_mark_item(ZMapWindowMark mark, gboolean top)
 	GQuark id;
 	static ZMapFeatureTypeStyle style = NULL;
 	ZMapFeatureBlock block;
+	char buf[128];
 
       zmapWindowContainerGetFeatureAny(ZMAP_CONTAINER_GROUP(mark->block_container), (ZMapFeatureAny *)&block) ;
 
-
-	id_top =  g_quark_from_string("mark_top");
-	id_bot =  g_quark_from_string("mark_bot");
+	sprintf(buf,"mark_top_%p", mark->window->canvas);
+	id_top =  g_quark_from_string(buf);
+	sprintf(buf,"mark_bot_%p", mark->window->canvas);
+	id_bot =  g_quark_from_string(buf);
 
 	if(!style)
 	{
