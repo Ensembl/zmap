@@ -485,8 +485,7 @@ typedef enum
  *           Default colours.
  */
 
-#define ZMAP_WINDOW_BACKGROUND_COLOUR "white"	    /* main canvas background */
-
+#define ZMAP_WINDOW_BACKGROUND_COLOUR "white"		    /* main canvas background */
 #define ZMAP_WINDOW_BLOCK_BACKGROUND_COLOUR "white"	    /* main canvas background */
 
 #define ZMAP_WINDOW_STRAND_DIVIDE_COLOUR "yellow"	    /* Marks boundary of forward/reverse strands. */
