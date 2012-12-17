@@ -41,7 +41,7 @@
 #include <zmapView_P.h>
 
 
-static void handBuiltInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence)
+static void handBuiltInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, ZMapFeatureContext context)
 {
   ZMapFeatureSet featureset = NULL ;
   ZMapFeatureTypeStyle style = NULL ;
@@ -60,8 +60,8 @@ static void handBuiltInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence)
       featureset->style = style ;
 
       /* Create the context, align and block, and add the featureset to it */
-      ZMapFeatureContext context = zmapViewCreateContext(sequence, NULL, featureset);
-
+      if (!context)
+        context = zmapViewCreateContext(sequence, NULL, featureset);
 
 	/* set up featureset2_column and anything else needed */
       f2c = g_hash_table_lookup(context_map->featureset_2_column, GUINT_TO_POINTER(featureset->unique_id));
@@ -103,11 +103,6 @@ static void handBuiltInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence)
 		/* the rest shoudl get filled in elsewhere */
 		g_hash_table_insert(context_map->columns, GUINT_TO_POINTER(f2c->column_id), column);
 	}
-
-      
-      /* Merge our context into the view's context and view the diff context */
-      ZMapFeatureContext diff_context = zmapViewMergeInContext(zmap_view, context);
-      zmapViewDrawDiffContext(zmap_view, &diff_context);
     }  
 }
 
@@ -130,6 +125,7 @@ void zmapViewScratchInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence)
   ZMapFeatureColumn column;
 
   ZMapFeatureContextMap context_map = &zmap_view->context_map;
+  ZMapFeatureContext context = NULL;
 
   if((style = zMapFindStyle(context_map->styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_SCRATCH_NAME))))
     {
@@ -139,8 +135,8 @@ void zmapViewScratchInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence)
       scratch_featureset->style = style ;
 
       /* Create the context, align and block, and add the featureset to it */
-      ZMapFeatureContext context = zmapViewCreateContext(sequence, NULL, scratch_featureset);
-
+      if (!context)
+        context = zmapViewCreateContext(sequence, NULL, scratch_featureset);
 
 	/* set up featureset2_column and anything else needed */
       f2c = g_hash_table_lookup(context_map->featureset_2_column, GUINT_TO_POINTER(scratch_featureset->unique_id));
@@ -199,17 +195,16 @@ void zmapViewScratchInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence)
       //zMapFeatureSequenceSetType(feature, ZMAPSEQUENCE_PEPTIDE);
       //zMapFeatureAddFrame(feature, ZMAPFRAME_NONE);
       
-      zMapFeatureSetAddFeature(scratch_featureset, feature);
-      
-      
-      /* Merge our context into the view's context and view the diff context */
-      ZMapFeatureContext diff_context = zmapViewMergeInContext(zmap_view, context);
-      zmapViewDrawDiffContext(zmap_view, &diff_context);
+      zMapFeatureSetAddFeature(scratch_featureset, feature);      
     }  
 
   /* Also initialise the "hand_built" column. xace puts newly created
    * features in this column. */
-  handBuiltInit(zmap_view, sequence);
+  handBuiltInit(zmap_view, sequence, context);
+
+  /* Merge our context into the view's context and view the diff context */
+  ZMapFeatureContext diff_context = zmapViewMergeInContext(zmap_view, context);
+  zmapViewDrawDiffContext(zmap_view, &diff_context);
 }
 
 
