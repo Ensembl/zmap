@@ -243,6 +243,7 @@ void zMapWindowCanvasFeaturesetGetFeatureBounds(FooCanvasItem *foo, double *root
 	foo_canvas_w2c (item->canvas, x2, y2 - featureset->start + featureset->dy + 1, &cx2, &cy2);\
       						/* + 1 to draw to the end of the last base */\
 \
+zMapAssert(x2 - x1 > 0 && x2 - x1 < 40);\
 		/* NOTE that the gdk_draw_rectangle interface is a bit esoteric\
 		 * and it doesn't like rectangles that have no depth\
 		 */\

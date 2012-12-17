@@ -340,7 +340,7 @@ static gboolean selectionFuncCB(GtkTreeSelection *selection,
 
 	      zmapWindowItemCentreOnItemSubPart(window, item, FALSE, 0.0, dna_start, dna_end) ;
 
-	      zmapWindowHighlightSequenceRegion(window, block, seq_type, frame, start, end, FALSE) ;
+	      zmapWindowHighlightSequenceRegion(window, block, seq_type, frame, start, end, FALSE, 0) ;
 	    }
         }
     }

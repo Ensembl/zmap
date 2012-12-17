@@ -3285,7 +3285,7 @@ zMapLogWarning("canvas event %d",  event->type);
 		     * Although we start with a base Foo item the highlight code does a FToI lookup on the feature
 		     * to get the full ZMapCanvasItem whcih is sued to drive SeqDispSelByRegion()
 		     */
-		    zmapWindowHighlightSequenceItem(window, seq_item, seq_start, seq_end);
+		    zmapWindowHighlightSequenceItem(window, seq_item, seq_start, seq_end, 0);
 
 		    /* NOTE we set feature list to NULL here, update info panel must handle */
 		    zmapWindowUpdateInfoPanel(window, zMapWindowCanvasItemGetFeature(seq_item), NULL, seq_item, NULL, seq_start, seq_end, seq_start, seq_end, NULL, FALSE, FALSE, FALSE) ;
@@ -3444,7 +3444,7 @@ zMapLogWarning("canvas event %d",  event->type);
 		{
 		  zMapWindowCanvasFeaturesetGetSeqCoord((ZMapWindowFeaturesetItem) seq_item, FALSE,  wx, wy, &seq_start, &seq_end);
 
-		  zmapWindowHighlightSequenceItem(window, seq_item, seq_start, seq_end);
+		  zmapWindowHighlightSequenceItem(window, seq_item, seq_start, seq_end, 0);
 
 		  /* NOTE we set feature list to NULL here, update info panel must handle */
 		  zmapWindowUpdateInfoPanel(window, zMapWindowCanvasItemGetFeature(seq_item), NULL, seq_item, NULL, seq_start, seq_end, seq_start, seq_end, NULL, FALSE, FALSE, FALSE) ;
@@ -3642,7 +3642,7 @@ zMapLogWarning("canvas event %d",  event->type);
 	  {
 	    zMapWindowCanvasFeaturesetGetSeqCoord((ZMapWindowFeaturesetItem) seq_item, FALSE,  wx, wy, &seq_start, &seq_end);
 
-	    zmapWindowHighlightSequenceItem(window, seq_item, seq_start, seq_end);
+	    zmapWindowHighlightSequenceItem(window, seq_item, seq_start, seq_end, 0);
 
 	    /* NOTE we set feature list to NULL here, update info panel must handle */
 	    zmapWindowUpdateInfoPanel(window, zMapWindowCanvasItemGetFeature(seq_item), NULL, seq_item, NULL, seq_start, seq_end, seq_start, seq_end, NULL, FALSE, FALSE, FALSE) ;

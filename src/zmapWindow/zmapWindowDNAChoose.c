@@ -182,8 +182,8 @@ char *zmapWindowDNAChoose(ZMapWindow window, FooCanvasItem *feature_item, ZMapWi
 #endif
 
   zmapWindowHighlightSequenceItem(window, dna_data->seq_item,
-					    block->block_to_sequence.block.x1 + dna_data->dna_start - dna_data->dna_flanking,
-					    block->block_to_sequence.block.x1 + dna_data->dna_end + dna_data->dna_flanking);
+					    block->block_to_sequence.block.x1 + dna_data->dna_start,
+					    block->block_to_sequence.block.x1 + dna_data->dna_end, dna_data->dna_flanking);
 
 
   /* set up the top level window */
@@ -670,8 +670,8 @@ static void updateSpinners(DNASearchData dna_data)
 			dna_data->dna_end + dna_data->dna_flanking) ;
 #else
     zmapWindowHighlightSequenceItem(dna_data->window,  dna_data->seq_item,
-						dna_data->block->block_to_sequence.block.x1 + dna_data->dna_start - dna_data->dna_flanking,
-						dna_data->block->block_to_sequence.block.x1 + dna_data->dna_end + dna_data->dna_flanking);
+						dna_data->block->block_to_sequence.block.x1 + dna_data->dna_start,
+						dna_data->block->block_to_sequence.block.x1 + dna_data->dna_end, dna_data->dna_flanking);
 #endif
   return ;
 }

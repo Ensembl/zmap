@@ -277,10 +277,10 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
 	ZMapFrame frame = ZMAPFRAME_NONE;
 	;
       zmapWindowItemHighlightDNARegion(window, TRUE, sub_part, item,
-				       ZMAPFRAME_NONE, ZMAPSEQUENCE_NONE, feature->x1, feature->x2);
+				       ZMAPFRAME_NONE, ZMAPSEQUENCE_NONE, feature->x1, feature->x2, 0) ;
 
       zmapWindowItemHighlightTranslationRegions(window, TRUE, sub_part, item,
-						ZMAPFRAME_NONE, ZMAPSEQUENCE_NONE, feature->x1, feature->x2) ;
+						ZMAPFRAME_NONE, ZMAPSEQUENCE_NONE, feature->x1, feature->x2, 0) ;
 
 
       /* PROBABLY NEED TO DISABLE THIS UNTIL I CAN GET IT ALL WORKING...... */
@@ -297,7 +297,7 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
 
 
       zmapWindowItemHighlightShowTranslationRegion(window, TRUE, sub_part, item,
-						   frame, ZMAPSEQUENCE_NONE, feature->x1, feature->x2) ;
+						   frame, ZMAPSEQUENCE_NONE, feature->x1, feature->x2, 0) ;
 
 
 

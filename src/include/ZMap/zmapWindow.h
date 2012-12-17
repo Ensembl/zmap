@@ -468,7 +468,7 @@ void zMapWindowHighlightObject(ZMapWindow window, FooCanvasItem *feature,
 			       gboolean replace_highlight_item, gboolean highlight_same_names, gboolean sub_part) ;
 void zMapWindowHighlightObjects(ZMapWindow window, ZMapFeatureContext context, gboolean multiple_select);
 
-void zmapWindowHighlightSequenceItem(ZMapWindow window, FooCanvasItem *item, int start, int end);
+void zmapWindowHighlightSequenceItem(ZMapWindow window, FooCanvasItem *item, int start, int end, int flanking);
 
 char *zMapWindowGetHotColumnName(ZMapWindow window) ;
 
