@@ -103,6 +103,7 @@ typedef struct _zmapWindowContainerGroupStruct
     unsigned int max_height : 1;
     unsigned int need_reposition : 1;
     unsigned int visible: 1;
+    unsigned int filtered: 1;
   } flags;
 
 } zmapWindowContainerGroupStruct;

@@ -610,7 +610,12 @@ void zmapWindowFocusUnHighlightHotColumn(ZMapWindowFocus focus)
 
 	if(column)
 	{
-		zmapWindowDrawSetGroupBackground(column, 0, 1, 1.0, ZMAP_CANVAS_LAYER_COL_BACKGROUND, column->background_fill, NULL);
+		GdkColor *fill = column->background_fill;
+
+		if(column->flags.filtered)
+			zMapWindowGetFilteredColour(focus->window,&fill);
+
+		zmapWindowDrawSetGroupBackground(column, 0, 1, 1.0, ZMAP_CANVAS_LAYER_COL_BACKGROUND, fill, NULL);
 		foo_canvas_item_request_redraw((FooCanvasItem *) column);
 	}
 

@@ -2905,6 +2905,7 @@ int zMapWindowCanvasFeaturesetFilter(gpointer gfilter, double value)
 
   if(fi->n_filtered != was)
     {
+	ZMapWindowContainerGroup column = (ZMapWindowContainerGroup)((FooCanvasItem *)fi)->parent;
 	GdkColor white = { 0xffffffff, 0xffff, 0xffff, 0xffff } ;		/* is there a column background config colour? */
 	GdkColor *fill = &white;
 
@@ -2917,19 +2918,22 @@ int zMapWindowCanvasFeaturesetFilter(gpointer gfilter, double value)
 	{
 		zMapWindowGetFilteredColour(filter->window,&fill);
 
+		column->flags.filtered = 1;
+
 // NO:	zMapWindowCanvasFeaturesetSetBackground((FooCanvasItem *) fi, fill, NULL);
 // must do the column not the featureset
-		zmapWindowDrawSetGroupBackground((ZMapWindowContainerGroup)((FooCanvasItem *)fi)->parent, 0, 1, 1.0, ZMAP_CANVAS_LAYER_COL_BACKGROUND, fill, NULL);
+		zmapWindowDrawSetGroupBackground(column, 0, 1, 1.0, ZMAP_CANVAS_LAYER_COL_BACKGROUND, fill, NULL);
 
 		foo_canvas_item_request_redraw(((FooCanvasItem *)fi)->parent);
 	}
 	else
 	{
+		column->flags.filtered = 0;
 		/*
 		this col is selected or else we could not operate its filter button
 		so we revert to select not normal background
 		*/
-		zmapWindowFocusUnHighlightHotColumn	(filter->window->focus);
+		zmapWindowFocusHighlightHotColumn(filter->window->focus);
 	}
 
       if(fi->bumped)
