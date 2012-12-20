@@ -32,10 +32,6 @@
 
 #include <ZMap/zmap.h>
 
-
-
-
-
 #include <math.h>
 #include <string.h>
 #include <ZMap/zmapFeature.h>
@@ -44,134 +40,137 @@
 
 
 
-static void zMapWindowCanvasTranscriptPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable, GdkEventExpose *expose)
+static void zMapWindowCanvasTranscriptPaintFeature(ZMapWindowFeaturesetItem featureset,
+						   ZMapWindowCanvasFeature feature,
+						   GdkDrawable *drawable, GdkEventExpose *expose)
 {
-	gulong fill,outline;
-	int colours_set, fill_set, outline_set;
-	double x1,x2;
-	double y1,y2;
-	ZMapWindowCanvasTranscript tr = (ZMapWindowCanvasTranscript) feature;
-	FooCanvasItem *foo = (FooCanvasItem *) featureset;
-	ZMapTranscript transcript = &feature->feature->feature.transcript;
+  gulong fill,outline;
+  int colours_set, fill_set, outline_set;
+  double x1,x2;
+  double y1,y2;
+  ZMapWindowCanvasTranscript tr = (ZMapWindowCanvasTranscript) feature;
+  FooCanvasItem *foo = (FooCanvasItem *) featureset;
+  ZMapTranscript transcript = &feature->feature->feature.transcript;
 
-	/* draw a box */
+  /* draw a box */
 
-	/* colours are not defined for the CanvasFeatureSet
-	 * as we can have several styles in a column
-	 * but they are cached by the calling function
-	 * and also the window focus code
-	 * however, as we have CDS colours diff from non-CDS and possibly diff style in one column
-	 * this is likely ineffective, but as the number of features is small we don't care so much
-	 */
+  /* colours are not defined for the CanvasFeatureSet
+   * as we can have several styles in a column
+   * but they are cached by the calling function
+   * and also the window focus code
+   * however, as we have CDS colours diff from non-CDS and possibly diff style in one column
+   * this is likely ineffective, but as the number of features is small we don't care so much
+   */
 
-	colours_set = zMapWindowCanvasFeaturesetGetColours(featureset, feature, &fill, &outline);		/* non cds colours */
-	fill_set = colours_set & WINDOW_FOCUS_CACHE_FILL;
-	outline_set = colours_set & WINDOW_FOCUS_CACHE_OUTLINE;
+  colours_set = zMapWindowCanvasFeaturesetGetColours(featureset, feature, &fill, &outline);		/* non cds colours */
+  fill_set = colours_set & WINDOW_FOCUS_CACHE_FILL;
+  outline_set = colours_set & WINDOW_FOCUS_CACHE_OUTLINE;
 
-	x1 = featureset->width / 2 - feature->width / 2;	/* NOTE works for exons not introns */
-	if(featureset->bumped)
-		x1 += feature->bump_offset;
+  x1 = featureset->width / 2 - feature->width / 2;	/* NOTE works for exons not introns */
+  if(featureset->bumped)
+    x1 += feature->bump_offset;
 
-	x1 += featureset->dx + featureset->x_off;
-	x2 = x1 + feature->width - 1;
-	y1 = feature->y1;
-	y2 = feature->y2;
+  x1 += featureset->dx;
+  x2 = x1 + feature->width - 1;
+  y1 = feature->y1;
+  y2 = feature->y2;
 
-	if(tr->sub_type == TRANSCRIPT_EXON)
+  if(tr->sub_type == TRANSCRIPT_EXON)
+    {
+      if(transcript->flags.cds && transcript->cds_start > y1 && transcript->cds_start < y2)
+
 	{
-		if(transcript->flags.cds && transcript->cds_start > y1 && transcript->cds_start < y2)
-		{
-			/* draw a utr box at the start of the exon */
-			zMapCanvasFeaturesetDrawBoxMacro(featureset, x1, x2, y1, transcript->cds_start-1, drawable, fill_set,outline_set,fill,outline);
-			y1 = transcript->cds_start;
-		}
-		if(transcript->flags.cds && transcript->cds_end > y1 && transcript->cds_end < y2)
-		{
-			/* draw a utr box at the end of the exon */
-			zMapCanvasFeaturesetDrawBoxMacro(featureset, x1, x2, transcript->cds_end + 1, y2, drawable, fill_set,outline_set,fill,outline);
-			y2 = transcript->cds_end;
-		}
+	  /* draw a utr box at the start of the exon */
+	  zMapCanvasFeaturesetDrawBoxMacro(featureset, x1, x2, y1, transcript->cds_start-1, drawable, fill_set,outline_set,fill,outline);
+	  y1 = transcript->cds_start;
 	}
-
-	/* get cds colours if in CDS */
-	if(transcript->flags.cds && transcript->cds_start <= y1 && transcript->cds_end >= y2)
+      if(transcript->flags.cds && transcript->cds_end > y1 && transcript->cds_end < y2)
 	{
-		ZMapStyleColourType ct;
-		GdkColor *gdk_fill = NULL, *gdk_outline = NULL;
-
-		ct = feature->flags & WINDOW_FOCUS_GROUP_FOCUSSED ? ZMAPSTYLE_COLOURTYPE_SELECTED : ZMAPSTYLE_COLOURTYPE_NORMAL;
-		zMapStyleGetColours(*feature->feature->style, STYLE_PROP_TRANSCRIPT_CDS_COLOURS, ct, &gdk_fill, NULL, &gdk_outline);
-
-		if(gdk_fill)
-		{
-			gulong fill_colour;
-
-			fill_set = TRUE;
-			fill_colour = zMap_gdk_color_to_rgba(gdk_fill);
-			fill = foo_canvas_get_color_pixel(foo->canvas, fill_colour);
-		}
-		if(gdk_outline)
-		{
-			gulong outline_colour;
-
-			outline_set = TRUE;
-			outline_colour = zMap_gdk_color_to_rgba(gdk_outline);
-			outline = foo_canvas_get_color_pixel(foo->canvas, outline_colour);
-		}
+	  /* draw a utr box at the end of the exon */
+	  zMapCanvasFeaturesetDrawBoxMacro(featureset, x1, x2, transcript->cds_end + 1, y2, drawable, fill_set,outline_set,fill,outline);
+	  y2 = transcript->cds_end;
 	}
+    }
 
+  /* get cds colours if in CDS */
+  if(transcript->flags.cds && transcript->cds_start <= y1 && transcript->cds_end >= y2)
+    {
+      ZMapStyleColourType ct;
+      GdkColor *gdk_fill = NULL, *gdk_outline = NULL;
 
-	if(tr->sub_type == TRANSCRIPT_EXON)
+      ct = feature->flags & WINDOW_FOCUS_GROUP_FOCUSSED ? ZMAPSTYLE_COLOURTYPE_SELECTED : ZMAPSTYLE_COLOURTYPE_NORMAL;
+      zMapStyleGetColours(*feature->feature->style, STYLE_PROP_TRANSCRIPT_CDS_COLOURS, ct, &gdk_fill, NULL, &gdk_outline);
+
+      if(gdk_fill)
 	{
-		zMapCanvasFeaturesetDrawBoxMacro(featureset, x1, x2, y1, y2, drawable, fill_set,outline_set,fill,outline);
+	  gulong fill_colour;
+
+	  fill_set = TRUE;
+	  fill_colour = zMap_gdk_color_to_rgba(gdk_fill);
+	  fill = foo_canvas_get_color_pixel(foo->canvas, fill_colour);
 	}
-	else if (outline_set)
+      if(gdk_outline)
 	{
-		if(tr->sub_type == TRANSCRIPT_INTRON)
-		{
-			GdkColor c;
-			int cx1, cy1, cx2, cy2, cy1_5, cx1_5;
+	  gulong outline_colour;
 
-				/* get item canvas coords in pixel coordinates */
-				/* NOTE not quite sure why y1 is 1 out when y2 isn't */
-			foo_canvas_w2c (foo->canvas, x1, feature->y1 - featureset->start + featureset->dy, &cx1, &cy1);
-			foo_canvas_w2c (foo->canvas, x2, feature->y2 - featureset->start + featureset->dy + 1, &cx2, &cy2);
-			cy1_5 = (cy1 + cy2) / 2;
-			cx1_5 = (cx1 + cx2) / 2;
-			c.pixel = outline;
-			gdk_gc_set_foreground (featureset->gc, &c);
-			zMap_draw_line(drawable, featureset, cx1_5, cy1, cx2, cy1_5);
-			zMap_draw_line(drawable, featureset, cx2, cy1_5, cx1_5, cy2);
-		}
-		else if(tr->sub_type == TRANSCRIPT_INTRON_START_NOT_FOUND)
-		{
-			GdkColor c;
-			int cx1, cy1, cx2, cy2, cx1_5;
-
-				/* get item canvas coords in pixel coordinates */
-				/* NOTE not quite sure why y1 is 1 out when y2 isn't */
-			foo_canvas_w2c (foo->canvas, x1, feature->y1 - featureset->start + featureset->dy, &cx1, &cy1);
-			foo_canvas_w2c (foo->canvas, x2, feature->y2 - featureset->start + featureset->dy + 1, &cx2, &cy2);
-			cx1_5 = (cx1 + cx2) / 2;
-			c.pixel = outline;
-			gdk_gc_set_foreground (featureset->gc, &c);
-			zMap_draw_broken_line(drawable, featureset, cx2, cy1, cx1_5, cy2);
-		}
-		else if(tr->sub_type == TRANSCRIPT_INTRON_END_NOT_FOUND)
-		{
-			GdkColor c;
-			int cx1, cy1, cx2, cy2, cx1_5;
-
-				/* get item canvas coords in pixel coordinates */
-				/* NOTE not quite sure why y1 is 1 out when y2 isn't */
-			foo_canvas_w2c (foo->canvas, x1, feature->y1 - featureset->start + featureset->dy, &cx1, &cy1);
-			foo_canvas_w2c (foo->canvas, x2, feature->y2 - featureset->start + featureset->dy + 1, &cx2, &cy2);
-			cx1_5 = (cx1 + cx2) / 2;
-			c.pixel = outline;
-			gdk_gc_set_foreground (featureset->gc, &c);
-			zMap_draw_broken_line(drawable, featureset, cx1_5, cy1, cx2, cy2);
-		}
+	  outline_set = TRUE;
+	  outline_colour = zMap_gdk_color_to_rgba(gdk_outline);
+	  outline = foo_canvas_get_color_pixel(foo->canvas, outline_colour);
 	}
+    }
+
+
+  if(tr->sub_type == TRANSCRIPT_EXON)
+    {
+      zMapCanvasFeaturesetDrawBoxMacro(featureset, x1, x2, y1, y2, drawable, fill_set,outline_set,fill,outline);
+    }
+  else if (outline_set)
+    {
+      if(tr->sub_type == TRANSCRIPT_INTRON)
+	{
+	  GdkColor c;
+	  int cx1, cy1, cx2, cy2, cy1_5, cx1_5;
+
+	  /* get item canvas coords in pixel coordinates */
+	  /* NOTE not quite sure why y1 is 1 out when y2 isn't */
+	  foo_canvas_w2c (foo->canvas, x1, feature->y1 - featureset->start + featureset->dy, &cx1, &cy1);
+	  foo_canvas_w2c (foo->canvas, x2, feature->y2 - featureset->start + featureset->dy + 1, &cx2, &cy2);
+	  cy1_5 = (cy1 + cy2) / 2;
+	  cx1_5 = (cx1 + cx2) / 2;
+	  c.pixel = outline;
+	  gdk_gc_set_foreground (featureset->gc, &c);
+	  zMap_draw_line(drawable, featureset, cx1_5, cy1, cx2, cy1_5);
+	  zMap_draw_line(drawable, featureset, cx2, cy1_5, cx1_5, cy2);
+	}
+      else if(tr->sub_type == TRANSCRIPT_INTRON_START_NOT_FOUND)
+	{
+	  GdkColor c;
+	  int cx1, cy1, cx2, cy2, cx1_5;
+
+	  /* get item canvas coords in pixel coordinates */
+	  /* NOTE not quite sure why y1 is 1 out when y2 isn't */
+	  foo_canvas_w2c (foo->canvas, x1, feature->y1 - featureset->start + featureset->dy, &cx1, &cy1);
+	  foo_canvas_w2c (foo->canvas, x2, feature->y2 - featureset->start + featureset->dy + 1, &cx2, &cy2);
+	  cx1_5 = (cx1 + cx2) / 2;
+	  c.pixel = outline;
+	  gdk_gc_set_foreground (featureset->gc, &c);
+	  zMap_draw_broken_line(drawable, featureset, cx2, cy1, cx1_5, cy2);
+	}
+      else if(tr->sub_type == TRANSCRIPT_INTRON_END_NOT_FOUND)
+	{
+	  GdkColor c;
+	  int cx1, cy1, cx2, cy2, cx1_5;
+
+	  /* get item canvas coords in pixel coordinates */
+	  /* NOTE not quite sure why y1 is 1 out when y2 isn't */
+	  foo_canvas_w2c (foo->canvas, x1, feature->y1 - featureset->start + featureset->dy, &cx1, &cy1);
+	  foo_canvas_w2c (foo->canvas, x2, feature->y2 - featureset->start + featureset->dy + 1, &cx2, &cy2);
+	  cx1_5 = (cx1 + cx2) / 2;
+	  c.pixel = outline;
+	  gdk_gc_set_foreground (featureset->gc, &c);
+	  zMap_draw_broken_line(drawable, featureset, cx1_5, cy1, cx2, cy2);
+	}
+    }
 }
 
 
