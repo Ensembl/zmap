@@ -619,6 +619,9 @@ gboolean zmapWindowItemIsOnScreen(ZMapWindow window, FooCanvasItem *item, gboole
 }
 
 
+#if 0
+only ever use by centre on sub_part below
+scroll down for alternate code (1 lines)
 /* if(!zmapWindowItemRegionIsVisible(window, item))
  *   zmapWindowItemCentreOnItem(window, item, changeRegionSize, boundarySize);
  */
@@ -653,7 +656,7 @@ gboolean zmapWindowItemRegionIsVisible(ZMapWindow window, FooCanvasItem *item)
 
   return visible;
 }
-
+#endif
 
 
 /* Scroll to the specified item.
@@ -691,6 +694,10 @@ void zmapWindowItemCentreOnItem(ZMapWindow window, FooCanvasItem *item,
 
 /* Moves to a subpart of an item, note the coords sub_start/sub_end need to be item coords,
  * NOT world coords. If sub_start == sub_end == 0.0 then the whole item is centred on. */
+/* NOTE (mh17) must be sequence coordinates
+ * (not world)
+ */
+
 void zmapWindowItemCentreOnItemSubPart(ZMapWindow window, FooCanvasItem *item,
 				       gboolean alterScrollRegionSize,
 				       double boundaryAroundItem,
@@ -714,7 +721,8 @@ void zmapWindowItemCentreOnItemSubPart(ZMapWindow window, FooCanvasItem *item,
 
       foo_canvas_item_get_bounds(item, &ix1, &iy1, &ix2, &iy2) ;
 
-
+#if NOT_RELEVANT
+/* this will never be a group now */
       /* If the item is a group then we need to use its background to check in long items as the
        * group itself is not a long item. */
       if (FOO_IS_CANVAS_GROUP(item) && zmapWindowContainerUtilsIsValid(FOO_CANVAS_GROUP(item)))
@@ -733,24 +741,31 @@ void zmapWindowItemCentreOnItemSubPart(ZMapWindow window, FooCanvasItem *item,
 	{
 	  foo_canvas_item_get_bounds(item, &ix1, &iy1, &ix2, &iy2) ;
 	}
+#endif
 
 
       /* If sub_part start/end are set then need to centre on that part of an item. */
       if (sub_start != 0.0 || sub_end != 0.0)
 	{
-	  zMapAssert(sub_start <= sub_end
+#if USING_ITEM_COORDS
+		zMapAssert(sub_start <= sub_end
 		     && (sub_start >= iy1 && sub_start <= iy2)
 		     && (sub_end >= iy1 && sub_end <= iy2)) ;
 
 	  iy2 = iy1 ;
 	  iy1 = iy1 + sub_start ;
 	  iy2 = iy2 + sub_end ;
+#else
+	  iy1 = sub_start;
+	  iy2 = sub_end;
+#endif
 	}
 
-
-      /* Fix the item coords to be in world coords for following calculations. */
+#if USING_ITEM_COORDS
+	/* Fix the item coords to be in world coords for following calculations. */
       foo_canvas_item_i2w(item, &ix1, &iy1);
       foo_canvas_item_i2w(item, &ix2, &iy2);
+#endif
 
 
       if (boundaryAroundItem > 0.0)
@@ -775,12 +790,13 @@ void zmapWindowItemCentreOnItemSubPart(ZMapWindow window, FooCanvasItem *item,
 	}
       else
 	{
-	  if (!zmapWindowItemRegionIsVisible(window, item))
-	    {
-	      double sx1, sx2, sy1, sy2, tmps, tmpi, diff;
-
+        double sx1, sx2, sy1, sy2, tmps, tmpi, diff;
 	      /* Get scroll region (clamped to sequence coords) */
-	      zmapWindowGetScrollRegion(window, &sx1, &sy1, &sx2, &sy2);
+	  zmapWindowGetScrollRegion(window, &sx1, &sy1, &sx2, &sy2);
+
+//	  if (!zmapWindowItemRegionIsVisible(window, item))
+	  if(iy1 < sy1 || iy2 > sy2)	/* as iy1 < iy2 that's all we need to test */
+	    {
 
 	      /* we now have scroll region coords */
 	      /* set tmp to centre of regions ... */
@@ -797,6 +813,7 @@ void zmapWindowItemCentreOnItemSubPart(ZMapWindow window, FooCanvasItem *item,
 	      zmapWindowClampSpan(window, &sy1, &sy2);
 
 	      /* Do the move ... */
+#warning this assumes the scroll region is big enough for the DNA match, but some people have searched for big sequences
 	      zMapWindowMove(window, sy1, sy2);
 	    }
 	}

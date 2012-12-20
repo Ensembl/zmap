@@ -338,7 +338,8 @@ static gboolean selectionFuncCB(GtkTreeSelection *selection,
 	      /* Need to convert sequence coords to block for this call. */
 	      zMapFeature2BlockCoords(block, &dna_start, &dna_end) ;
 
-	      zmapWindowItemCentreOnItemSubPart(window, item, FALSE, 0.0, dna_start, dna_end) ;
+#warning FTM need seq coords, fix when fixing canvas featureset group relative coords
+	      zmapWindowItemCentreOnItemSubPart(window, item, FALSE, 0.0, start, end); // dna_start, dna_end) ;
 
 	      zmapWindowHighlightSequenceRegion(window, block, seq_type, frame, start, end, FALSE, 0) ;
 	    }
