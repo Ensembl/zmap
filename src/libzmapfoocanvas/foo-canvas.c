@@ -3425,7 +3425,7 @@ foo_canvas_set_pixels_per_unit_xy (FooCanvas *canvas, double x, double y)
 	double cx, cy;
 	int x1, y1;
 	int center_x, center_y;
-	GdkWindow *window;
+//	GdkWindow *window;
 //	GdkWindowAttr attributes;
 //	gint attributes_mask;
 

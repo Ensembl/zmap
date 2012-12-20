@@ -1454,6 +1454,8 @@ static gpointer create_config_style()
       { ZMAPSTYLE_PROPERTY_FOO,   FALSE, ZMAPCONF_BOOLEAN, {FALSE}, ZMAPCONV_NONE, {NULL} },
       { ZMAPSTYLE_PROPERTY_FILTER,FALSE, ZMAPCONF_BOOLEAN, {FALSE}, ZMAPCONV_NONE, {NULL} },
 
+      { ZMAPSTYLE_PROPERTY_OFFSET,FALSE, ZMAPCONF_DOUBLE, {FALSE}, ZMAPCONV_NONE, {NULL} },
+
 
       { ZMAPSTYLE_PROPERTY_GLYPH_NAME, FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleQuark} },
       { ZMAPSTYLE_PROPERTY_GLYPH_SHAPE,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_NONE, {NULL} },
@@ -1614,6 +1616,8 @@ static ZMapConfigIniContextKeyEntry get_style_group_data(char **stanza_name, cha
     { ZMAPSTYLE_PROPERTY_DIRECTIONAL_ENDS,   G_TYPE_BOOLEAN, style_set_property, FALSE },
     { ZMAPSTYLE_PROPERTY_FOO,   G_TYPE_BOOLEAN, style_set_property, FALSE },
     { ZMAPSTYLE_PROPERTY_FILTER,G_TYPE_BOOLEAN, style_set_property, FALSE },
+
+    { ZMAPSTYLE_PROPERTY_OFFSET,G_TYPE_DOUBLE, style_set_property, FALSE },
 
 
       // these three names relate to 3 more real parameters

@@ -1008,7 +1008,9 @@ printf("create canvas set %s(%p)/%s %x\n",
 	  featureset->x_off = stagger * featureset->set_index;
 	}
 
-      featureset->width = zMapStyleGetWidth(featureset->style);
+	featureset->x_off += zMapStyleOffset(style);
+
+	featureset->width = zMapStyleGetWidth(featureset->style);
 
       /* width is in characters, need to get the sequence code to adjust this */
       if(zMapStyleGetMode(featureset->style) == ZMAPSTYLE_MODE_SEQUENCE)
@@ -1243,7 +1245,7 @@ void zmap_window_canvas_featureset_expose_feature(ZMapWindowFeaturesetItem fi, Z
   FooCanvasItem *foo = (FooCanvasItem *) fi;
   double x1;
 
-  x1 = 0.0;
+  x1 = fi->x_off;
   if(fi->bumped)
     x1 += gs->bump_offset;
 
@@ -1287,8 +1289,8 @@ void zMapWindowCanvasFeaturesetRedraw(ZMapWindowFeaturesetItem fi, double zoom)
 
 #endif
 
-// this code fails if we just added the item as it's no been updated yet
-  x1 = fi->x_off;
+// this code fails if we just added the item as it's not been updated yet
+  x1 = fi->dx + fi->x_off;
   /* x_off is for staggered columns - we can't just add it to our foo position as it's columns that get moved about */
   /* well maybe that would be possible but the rest of the code works this way */
 
@@ -1513,6 +1515,7 @@ gboolean zMapWindowFeaturesetItemSetStyle(ZMapWindowFeaturesetItem di, ZMapFeatu
   di->style = style;		/* includes col width */
   di->width = style->width;
   di->x_off = zMapStyleDensityStagger(style) * di->set_index;
+  di->x_off += zMapStyleOffset(style);
 
   /* need to set colours */
   zmapWindowCanvasItemGetColours(style, di->strand, di->frame, ZMAPSTYLE_COLOURTYPE_NORMAL, &fill, &draw, &outline, NULL, NULL);

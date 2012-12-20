@@ -414,7 +414,6 @@ static void dnaMatchesToFeatures(ZMapWindow window, GList *match_list, ZMapFeatu
 
   style = zMapFeatureStyleCopy(orig_style);
 
-#if 1 // WAS_MERGE_CONFLICT
       separator_featureset->style = style ;
 
 	/* set up featureset2_column and anything else needed */
@@ -443,35 +442,6 @@ static void dnaMatchesToFeatures(ZMapWindow window, GList *match_list, ZMapFeatu
 		g_hash_table_insert(window->context_map->source_2_sourcedata, GUINT_TO_POINTER(separator_featureset->unique_id), src);
 	}
 
-#else
-=======
-  separator_featureset->style = style ;
-
-  /* set up featureset2_column and anything else needed */
-  f2c = g_hash_table_lookup(window->context_map->featureset_2_column, GUINT_TO_POINTER(separator_featureset->unique_id));
-  if(!f2c)	/* these just accumulate  and should be removed from the hash table on clear */
-    {
-      f2c = g_new0(ZMapFeatureSetDescStruct,1);
->>>>>>> develop
-
-      f2c->column_id = zMapFeatureSetCreateID(ZMAP_FIXED_STYLE_SEARCH_MARKERS_NAME);
-      f2c->column_ID = g_quark_from_string(ZMAP_FIXED_STYLE_SEARCH_MARKERS_NAME);
-      f2c->feature_src_ID = g_quark_from_string(name);
-      f2c->feature_set_text = ZMAP_FIXED_STYLE_SEARCH_MARKERS_TEXT;
-      g_hash_table_insert(window->context_map->featureset_2_column, GUINT_TO_POINTER(separator_featureset->unique_id), f2c);
-    }
-
-  src = g_hash_table_lookup(window->context_map->source_2_sourcedata, GUINT_TO_POINTER(separator_featureset->unique_id));
-  if(!src)
-    {
-      src = g_new0(ZMapFeatureSourceStruct,1);
-      src->source_id = f2c->feature_src_ID;
-      src->source_text = g_quark_from_string(ZMAP_FIXED_STYLE_SEARCH_MARKERS_TEXT);
-      src->style_id = style->unique_id;
-      src->maps_to = f2c->column_id;
-      g_hash_table_insert(window->context_map->source_2_sourcedata, GUINT_TO_POINTER(separator_featureset->unique_id), src);
-    }
-#endif
 
   list = g_hash_table_lookup(window->context_map->column_2_styles,GUINT_TO_POINTER(f2c->column_id));
   if(!list)
@@ -1227,6 +1197,8 @@ static void remove_current_matches_from_display(DNASearchData search_data)
 
 	if(container)
 	{
+		foo_canvas_item_request_redraw((FooCanvasItem *) container -> parent); /* that's the column */
+
 		if(!zMapFeatureContextErase(&(search_data->window->strand_separator_context),
 					erase_context,
 					&diff_context))

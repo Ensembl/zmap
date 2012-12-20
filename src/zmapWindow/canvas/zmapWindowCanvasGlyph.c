@@ -759,7 +759,7 @@ static void zmap_window_canvas_paint_feature_glyph(ZMapWindowFeaturesetItem feat
   /* just draw the glyph */
   /* must recalculate gdk coords as columns can move around */
 
-  x1 = featureset->dx;
+  x1 = featureset->dx + featureset->x_off;
   if(featureset->bumped)
     x1 += canvas_feature->bump_offset;
 

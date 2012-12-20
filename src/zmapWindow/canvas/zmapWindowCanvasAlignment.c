@@ -374,7 +374,7 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
   /* display code assumes a narrow column w/ overlapping features and does not process x-coord */
   /* this makes a huge difference to display speed */
 
-  mid_x = featureset->dx + (featureset->width / 2);
+  mid_x = featureset->dx + featureset->x_off + (featureset->width / 2);
   if(featureset->bumped)
     mid_x += feature->bump_offset;
   x1 = mid_x - feature->width / 2;
@@ -427,7 +427,7 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
       if(featureset->bumped)
 	x1 += feature->bump_offset;
 
-      x1 += featureset->dx;
+      x1 += featureset->dx + featureset->x_off;
       x2 = x1 + feature->width - 1;
 
 	/* must use feature coords here as the first alignment in the series gets expanded to pick up colinear lines

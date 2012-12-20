@@ -72,7 +72,7 @@ static void zMapWindowCanvasTranscriptPaintFeature(ZMapWindowFeaturesetItem feat
 	if(featureset->bumped)
 		x1 += feature->bump_offset;
 
-	x1 += featureset->dx;
+	x1 += featureset->dx + featureset->x_off;
 	x2 = x1 + feature->width - 1;
 	y1 = feature->y1;
 	y2 = feature->y2;

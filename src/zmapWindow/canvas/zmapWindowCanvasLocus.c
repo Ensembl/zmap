@@ -85,7 +85,7 @@ void zMapWindowCanvasLocusPaintFeature(ZMapWindowFeaturesetItem featureset, ZMap
 
 	zmapWindowCanvasLocusGetPango(drawable, featureset, lset);
 
-	x1 = featureset->dx;
+	x1 = featureset->dx + featureset->x_off;
 	x2 = x1 + locus->x_off;
 
 	text = (char *) g_quark_to_string(feature->feature->original_id);

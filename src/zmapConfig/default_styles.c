@@ -290,6 +290,7 @@ bump-mode=unbump\n\
 default-bump-mode=unbump\n\
 bump-fixed=true\n\
 width=11.0\n\
+offset=3.0\n\
 strand-specific=false\n\
 show-only-in-separator=true\n\
 colours = normal fill red ; normal draw black ; selected fill red; selected draw black\n\
