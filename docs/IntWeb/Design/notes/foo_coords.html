@@ -1,0 +1,152 @@
+<h2>Foo Canvas Coordinates and CanvasFeaturesets and other loose ends</h2>
+
+<h3> How the Foo Canvas handles coordinates </h3>
+<p>Objects are held in groups and each item's coordinates are relative to its containing group, and this process continues all the way to the Canvas root object. This has the advantage that groups can be moved around by updating one group object and the disadvantages that a) calculating an item's coordinates may be time consuming and b) looking at these in a debugger is not practical.
+</p>
+
+<p>The Foo Canvas has an operation called update where the pixel coordinates (bounding box) for each item are calculated which allows them to be displayed on an expose event.  This has the disadvantage that you cannot move and object and refresh that part of the display directly, instead it is common to queue an expose event for the original poisiton and then during the expose process a Foo Canvas update occurs and further expose events are queued.  This is the primary cause of the remaining double expose events on Zoom operations in ZMap.
+</p>
+
+<p>Bizzarrely, a basic FooCanvasItem does not have x and y coordinates: these are implemented only by derived classes, so looking at the main FooCanvas code does not give many clues.
+</p>
+
+<p>FooCanvasGroups also have an odd property of not necessarilty having thier position in their extent:
+<br />
+<img src="Design/notes/foogroup.png">
+</p>
+
+<h3> History.... </h3>
+<p>Canvas Featuresets were implemented before simplifying the canvas a) to make canvas items into simple items again (not complex double layer groups) and b) removing the background overlay and underlay layers from ContainerGroups.  Some of the code written was based on Glyphs code which was written when I could not work out just how Canvas items worked and the result is an implementation that uses coordinates differently from the foo canvas.  The good news is that now the canvas is a lot simpler it should be possible to fix this fairly easily.
+</p>
+
+<h3> Column positioning </h3>
+<p>
+Columns are now simple ContainerGroups and are ordered on the screen by <b>zmapWindowColOrderColumns()</b> which sorts these according to strand and configuration (by name), and positioned by <b>zMapWindowFullReposition()</b> which set the group xpos and ypos. This queues update and expose events and the foo canvas will then re-calculate the item coordinates for the groups.  All column positioning is done by foreground functions and the update process is almost identical to the original FooCanvas ethos, with the exception of background layer canvas featuresets which are sized to be the same as thier containing groups (optionally).
+</p>
+
+<h3>CanvasFeatureset coordinate handling</h3>
+
+<p> This needs to be reviewed and restored to work as per the FooCanvas.  NOTE that the central code (zmapWindowCanvasFeatureset.c) is explicitly intended to handle feature position to the exlcusion of all the other source modules. However if these modules extend this code then they have to work within the same system... zmapWindowCanvasGlyph.c is a case to consider as these features are fixed size in pixels and the central code works with sequence coordinates. (This is currently unresolved).
+</p>
+
+
+<h4>Pixel or feature coordinates?</h4>
+
+<p>We use feature coordinates to operate point and draw functions etc etc as this corresponds to the underlying data.  However thse can only operate at pixel resolutuon and there may be some benefit in rewritng some of these, especially where glyph features are concerned.
+This was not done orignally as it would increase memory requirements, but as further implementation of feature types have occurred this is not such a signifivcant amount.  It may make a lot of sense to do this for glyphs only.
+</p>
+
+
+<h4>X-coordinate (horizontal)</h4>
+
+<p>Features are displayed centered in a column or from the left according to a style.  This may be poorly implemented and some functions may be confused on this point:
+<pre>
+zmap_window_featureset_item_foo_point()
+
+      /* This all seems a bit hokey...who says the glyphs are in the middle of the column ? */
+
+      /* NOTE histograms are hooked onto the LHS, but we can click on the row and still get the feature */
+#warning change this to use featurex1 and x2 coords
+      /* NOTE warning even better if we express point() fucntion in pixel coordinates only */
+</pre>
+
+NOTE that if you change this it would be wise to check all CanvasFeatureset modules, not just the central code. Normal features (eg alignments, transcripts, basic) are typically centred, graphs are left justified, glyphs are centered but the glyph code implements offsets from the centre if configured.
+</p>
+
+<p>Obvious functions to look at are update, point, draw, but also AddFeature, AddGraphics, and any equivalents (callbacks) in the other modules, but also the macro zMapCanvasFeaturesetDrawBoxMacro() and the basic fucntions zMap_draw_line() and zMap_draw_box() (these last 2 should be ok as they deal with pixel coordinates only).
+</p>
+
+
+<h5>Bumping - dealing with X-coordinates</h5>
+<p>There is a separate module to do this (zmapWindowCanvasFeaturesetBump.c) and features are drawn relative to the centre of thier sub-column.
+Features are de-overlapped in Y and each sub colum's width is calculated and then these sub-columns positioned to minimese blank space. As the drawing code assumes a fixed width column there is a bump_offset to adjust the X-coordinate on display, so that it can be used unmodified.
+</p>
+
+
+<h5>Strand Separator - offset SHM features</h5>
+<p>
+The strand separator is a fixed wdth column and the search hit marker features appear in a CanvasFeatureset (or more) within that column.  By default these are left justified and a style option 'offset=3.0" has been added to the SHM style.
+At various points in the code the featureset->x_off value has to be added into the  group x coordinate passs in by the foo canvas.  This is afflicted by the same problems relates to group relative coordinates as mentioned on this page.
+Most modules have had thioer display x-coordinates adjusted to match (NOTE only the SHM features use this option so this should have no effect. (SHM are Basic features).  Sequence features have not been offset like this.
+</p>
+<p>The DNA search fucntion remove_current_matches_from display() has also been ammended to expose the strand separator column to ensure all matches are cleared: there is a fault somewhere in the remove featrue code that does not expsoe relatiev to this offset.   It's more appropriate to  fix this when group relative coordinates are restored.
+</p>
+
+
+
+<h4>Y-coordinate (vertical) </h4>
+
+<p> CanvasFeaturesets have a start and end coordinate which corresponds to the sequence region in view (all of it, not just the visible part).  They have a FooCanvas x coordinate (set but column positioning) and the FooCanvas y coordinate is the start coord.  There is also a dx and dy which are the 'offset within the containing group'.  The relationship between FooCanvasGroup and ContainerFeatureset coordinates is a little bit unclear and need to be reviewed rigourously; it seems likely that we will need a separate y coordinate.
+</p>
+<p>It is likely that CanvasFeaturesets implement coordinates in parallel with the FooCanvas. This has not been looked at due to time constraints, simplifying the canvas structure was more important.
+</p>
+<p>Hovever, ZMap adds features to a canvas featureset and these are specified using sequence coordinates.  Any mapping of sequence coordinates to FooCanvasGroup relative coordinate dneed to be encapsulated by the AddFeature() and AddGraphics() functions and that need to follow though into the class functions such as point and draw.  Arguably what should happen is that the block group has start and end sequence coordinates (its' ypos is the sequence start coordinate) and canvas featuresets will have slice coordinates (zero based).
+</p>
+
+
+
+<h3>Handling Text</h3>
+<p>There are several places in the ZMap code where fonts are allocated or queried and these should be rationalised. CanvasFeaturesets have a function called zmapWindowCanvasFeaturesetInitPango() which is used by locus and sequence features, but there are a few other files implicated: (other than foo-canvas-text.c, which is not used).
+<pre>
+deskpro20407[mh17]3: gzf pango
+./zmapDraw/zmapDraw.c:8
+./zmapUtils/zmapFooUtils.c:11
+./zmapUtils/zmapGUIutils.c:29
+./zmapWindow/canvas/zmapWindowCanvasFeatureset.c:39
+./zmapWindow/canvas/zmapWindowCanvasGraphics.c:19
+./zmapWindow/canvas/zmapWindowCanvasLocus.c:16
+./zmapWindow/canvas/zmapWindowCanvasSequence.c:39
+./zmapWindow/zmapWindowNavigatorWidget.c:10
+./zmapWindow/zmapWindowScale.c:4
+./zmapWindow/zmapWindowZoomControl.c:27
+./include/ZMap/zmapDraw.h:2
+./include/ZMap/zmapUtilsFoo.h:1
+./include/ZMap/zmapUtilsGUI.h:3
+./include/ZMap/zmapWindow.h:1
+./zmapWindow/canvas/zmapWindowCanvasFeatureset.h:3
+./zmapWindow/canvas/zmapWindowCanvasFeatureset_I.h:6
+./zmapWindow/canvas/zmapWindowCanvasLocus_I.h:2
+./zmapWindow/zmapWindowZoomControl_P.h:2
+</pre>
+</p>
+
+
+<h3>Restoring screenshots</h3>
+<p>There are some notes <a href="Design/notes/print.shtml">here</a>.
+Theoretically, the canvas caode is now in state where all drawing code can be mapped to Cairo a) for printing only b) for screen painting too, but there is some doubt over whether or not Cairo will run fast enough for user interaction, and it is recommended that this is tried in a new feature branch and also made configurable.
+</p>
+<p>As there are no FooCanvas items left in ZMap except for the ruler and tooltip then it in only necessary to look at the following files:
+(NOTE that only the zmapWindowCanvas* file are releveant)
+<pre>
+deskpro20407[mh17]9: gz gdk_draw
+./zmapApp/zmapAppremote.c:1
+./zmapControl/remote/xremote_gui_test.c:2
+./zmapUtils/zmapXRemoteUtils.c:3
+./zmapWindow/canvas/zmapWindowCanvasFeatureset.c:6
+./zmapWindow/canvas/zmapWindowCanvasGlyph.c:7
+./zmapWindow/canvas/zmapWindowCanvasGraphItem.c:1
+./zmapWindow/canvas/zmapWindowCanvasSequence.c:2
+./zmapWindow/items/zmapWindowContainerGroup.c:1
+./zmapWindow/zmapWindowDrawFeatures.c:1
+./zmapWindow/zmapWindowDump.c:1
+./zmapWindow/zmapWindowZoomControl.c:1
+./zmapWindow/canvas/zmapWindowCanvasFeatureset.h:2
+./zmapWindow/canvas/zmapWindowCanvasGlyph_I.h:1
+</pre>
+
+<h4>Ruler and Tooltip</h4>
+<p>As CanvasFeaturesets are FooCanvasItems the can co-exist with the ruler and tooltip as is, but if we replace Gdk with Cairo directly in the CanvasFeaturesetthen we may have synchronisation problems - another reason to implement Cairo for printing only in the short term. To replace the ruler and tooltip with CanvasFeatureset code the following is recommended:
+<ul>
+<li> Add an empty CanvasFeatureset to the block group with an overlay layer flag set.  This needs to have a plain graphics style (example in zmapWindowScale.c) and is best hidden by default. It should cover the whole sequence region and stretch in X.
+<li> Keep a pointer to this in the ZMapWindow struct.
+<li> check that existing code will sort this by layer correctly (ie it must stay at the end of the item_list)
+<li> on button 2 press add a ruler (a line) and a tooltip (a rectangle and some text) to this featureset and foo_canvas_show() the CanvasFeatureset.
+<li> on mouse move delete the old and add new graphics features to the CanvasFeatureset
+<li> on button release clear (delete all features) the CanvasFeatureset and foo_canvas_hide() it.
+</ul>
+NOTE that we could create and erase the CanvasFeatureset on press and release, but we have to handle overlapping data load events and also that it proved impractical to operate column backgrounds without pre-allocated CanvasFeaturesets.
+</p>
+
+
+
+
