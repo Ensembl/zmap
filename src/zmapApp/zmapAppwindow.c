@@ -139,7 +139,6 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   int sleep_seconds = 0 ;
   ZMapFeatureSequenceMap seq_map;
   char *err_msg = NULL ;
-  char *window_title ;
   gboolean remote_control = FALSE ;
 
 
@@ -271,7 +270,6 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
   gtk_container_border_width(GTK_CONTAINER(toplevel), 0) ;
 
-  g_free(window_title) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* THIS IS THE OLD REMOTE HANDLER.... */

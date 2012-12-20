@@ -303,8 +303,8 @@ static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data)
   zmapControlDoKill(zmap, &destroyed_zmaps) ;
 
   /* Need to tell peer (if there is one) that all is destroyed.... */
-  zmapControlSendViewDeleted(zmap, destroyed_zmaps) ;
-
+  if (zmap->remote_control)
+    zmapControlSendViewDeleted(zmap, destroyed_zmaps) ;
 
   return ;
 }
