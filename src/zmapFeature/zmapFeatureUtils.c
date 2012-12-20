@@ -1408,7 +1408,6 @@ static void get_feature_list_extent(gpointer list_data, gpointer span_data)
   ZMapFeature feature = (ZMapFeature)list_data;
   ZMapSpan span = (ZMapSpan)span_data;
 
-printf("fl extent: %s %d %d\n",g_quark_to_string(feature->unique_id),feature->x1,feature->x2);
   if(feature->x1 < span->x1)
     span->x1 = feature->x1;
   if(feature->x2 > span->x2)

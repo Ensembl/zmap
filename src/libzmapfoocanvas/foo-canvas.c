@@ -3426,8 +3426,8 @@ foo_canvas_set_pixels_per_unit_xy (FooCanvas *canvas, double x, double y)
 	int x1, y1;
 	int center_x, center_y;
 	GdkWindow *window;
-	GdkWindowAttr attributes;
-	gint attributes_mask;
+//	GdkWindowAttr attributes;
+//	gint attributes_mask;
 
 if(foo_bug) foo_bug(canvas,"zoom");
 
@@ -4340,8 +4340,6 @@ foo_canvas_busy(FooCanvas *canvas, gboolean busy)
 
 	if(!busy)
 	{
-		int ix1,ix2,iy1,iy2;
-
 foo_bug(canvas,"not busy");
 		/* Signal GtkLayout that it should do a redraw. */
 		if(canvas->x_changed || canvas->y_changed)

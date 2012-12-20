@@ -1283,6 +1283,8 @@ static gboolean navCanvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpoin
                   /*used to get a transcript feature? no idea how, but the locus feature is a text item */
                 zmapWindowNavigatorGoToLocusExtents(navigate, item);
 
+		    foo_canvas_item_hide(navigate->locator_drag);	/* stupid GTK give a press and 2-press, so i'm depressed */
+
 		    navigate->locator_click = FALSE;	/* can get mixed signals ??, end up moving somewhere else ?? */
                 event_handled = TRUE;
               }
