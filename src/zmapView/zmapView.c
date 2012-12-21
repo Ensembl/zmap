@@ -2434,7 +2434,8 @@ static void viewFocusCB(ZMapWindow window, void *caller_data, void *window_data)
   (*(view_cbs_G->focus))(view_window, view_window->parent_view->app_data, NULL) ;
 
   {
-    zMapWindowNavigatorFocus(view_window->parent_view->navigator_window, TRUE);
+  /* done by focus callback above */
+//    zMapWindowNavigatorFocus(view_window->parent_view->navigator_window, TRUE);
   }
 
   return ;

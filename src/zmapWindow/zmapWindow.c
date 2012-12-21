@@ -2079,13 +2079,15 @@ void foo_bug_print(void *key, char *where)
 }
 void foo_bug_set(void *key,char *id)
 {
+#if 0
 	struct fooBug * fb = foo_wins + n_foo_wins++;
 	extern void (*foo_bug)(void *, char *);
 
 	fb->key = key;
 	fb->id = id;
-//	printf("foo bug set %s %d\n",fb->id, n_foo_wins - 1);
+	printf("foo bug set %s %d\n",fb->id, n_foo_wins - 1);
 	foo_bug = foo_bug_print;
+#endif
 }
 
 

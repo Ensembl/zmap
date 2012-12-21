@@ -363,7 +363,16 @@ static void zMapWindowCanvasLocusZoomSet(ZMapWindowFeaturesetItem featureset, Gd
 	}
 
 	if(f_width != featureset->width)
-		zMapWindowRequestReposition((FooCanvasItem *) featureset);
+	{
+		FooCanvasItem * foo = (FooCanvasItem *) featureset;
+
+		zMapWindowRequestReposition(foo);
+
+		/* we only know the width after drawing, so we need anotehr expose */
+		foo_canvas_update_now(foo->canvas);
+		foo_canvas_item_request_redraw(foo->canvas->root);
+	}
+
 
 
 	/* de-overlap the loci left over

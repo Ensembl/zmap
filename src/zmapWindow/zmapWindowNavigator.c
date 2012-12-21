@@ -477,8 +477,11 @@ void zMapWindowNavigatorDrawLocator(ZMapWindowNavigator navigate,
   navigate->locator_y_coords.x1 = raw_top;
   navigate->locator_y_coords.x2 = raw_bot;
 
+  foo_canvas_update_now(navigate->canvas);
+
   navigate->width = root->x2 - root->x1 + 1;
   navigate->height = root->y2 - root->y1 + 1;
+//printf("DrawLocator %f\n",navigate->width);
 
   zmapWindowNavigatorSizeRequest(widget, navigate->width, navigate->height,
       (double) navigate->full_span.x1,
@@ -574,14 +577,19 @@ static gboolean nav_draw_expose_handler(GtkWidget *widget, GdkEventExpose *expos
 static void navigateDrawFunc(NavigateDraw nav_draw, GtkWidget *widget)
 {
   ZMapWindowNavigator navigate = nav_draw->navigate;
+  FooCanvasItem *root;
+
   /* We need this! */
   zMapAssert(navigate->current_window);
 
+#if SIZE_INVALID
   zmapWindowNavigatorSizeRequest(widget, navigate->width, navigate->height,
       (double) navigate->full_span.x1,
       (double) navigate->full_span.x2);
 
   zmapWindowNavigatorFillWidget(widget);
+#endif
+  foo_canvas_busy(navigate->canvas, TRUE);
 
   /* Everything to get a context drawn, raised to top and visible. */
   zMapFeatureContextExecuteComplete((ZMapFeatureAny)(nav_draw->context),
@@ -589,8 +597,31 @@ static void navigateDrawFunc(NavigateDraw nav_draw, GtkWidget *widget)
                                     drawContext,
                                     NULL, nav_draw);
 
-// commenting this back in gives a mavigator pane that's too narrow: very odd
+  foo_canvas_item_request_update(navigate->canvas->root);
+  foo_canvas_update_now(navigate->canvas);
+
+  root  = (FooCanvasItem *) navigate->container_root;
+
+  navigate->width = root->x2 - root->x1 + 1;
+  navigate->height = root->y2 - root->y1 + 1;
+
+//printf("draw func root: %f %f %f %f\n",root->x1,root->y1,navigate->width,navigate->height);
+
+	/* these next two calls may not actually be useful due to race conditions */
+  zmapWindowNavigatorSizeRequest(widget, navigate->width, navigate->height,
+      (double) navigate->full_span.x1,
+      (double) navigate->full_span.x2);
+
+  zmapWindowNavigatorFillWidget(widget);
+
+  /* bodge to trigger a good refresh (see RT 303016) */
+  zMapWindowNavigatorDrawLocator(navigate, navigate->locator_y_coords.x1, navigate->locator_y_coords.x2);
+
+
+// commenting this back in gives a navigator pane that's too narrow: very odd
 // don-t: zmapWindowFullReposition(navigate->container_root,TRUE, "nav draw");
+
+  foo_canvas_busy(navigate->canvas, FALSE);
 
   return ;
 }

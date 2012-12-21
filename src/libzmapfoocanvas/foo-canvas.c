@@ -3092,14 +3092,17 @@ if(foo_bug) foo_bug(canvas,"expose");
 
 if(foo_bug) foo_bug(canvas,"expose not busy");
 //printf("drawable: %d, %p %p\n",GTK_WIDGET_DRAWABLE (widget), event->window, canvas->layout.bin_window);
-	if (!GTK_WIDGET_DRAWABLE (widget) || (event->window != canvas->layout.bin_window)) return FALSE;
+	if (!GTK_WIDGET_DRAWABLE (widget) || (event->window != canvas->layout.bin_window))
+	{
+		return FALSE;
+	}
 
-#if  SCALE_DEBUG
+#if SCALE_DEBUG
 if(foo_log)
 {
 	FooCanvasItem *root = canvas->root;
 	char *x = g_strdup_printf("Expose %p @ %d,%d-%d,%d  scroll =  %.1f,%.1f %.1f,%.1f, root = %.1f %.1f %.1f %.1f\n", canvas,
-					  event->area.x, event->area.y,event->area.width, event->area.height,
+					  event->area.x, event->area.y, event->area.width, event->area.height,
 					  canvas->scroll_x1, canvas->scroll_y1, canvas->scroll_x2, canvas->scroll_y2,
 					  root->x1, root->y1, root->x2, root->y2);
 	foo_log(x);
@@ -3201,6 +3204,8 @@ static void
 do_update (FooCanvas *canvas)
 {
 	/* Cause the update if necessary */
+//if(foo_bug) foo_bug(canvas,"update");
+//printf("width = %f, need = %d\n",canvas->root->x2 - canvas->root->x1, canvas->need_update);
 
 update_again:
 	if (canvas->need_update) {
@@ -3238,6 +3243,8 @@ update_again:
 	if (canvas->need_update) {
 		goto update_again;
 	}
+if(foo_bug) foo_bug(canvas,"update");
+//printf("width = %f\n",canvas->root->x2 - canvas->root->x1);
 }
 
 /* Idle handler for the canvas.  It deals with pending updates and redraws. */
@@ -3559,6 +3566,8 @@ foo_canvas_update_now (FooCanvas *canvas)
 {
 	g_return_if_fail (FOO_IS_CANVAS (canvas));
 
+if(foo_bug) foo_bug(canvas,"update now");
+
 	if (!(canvas->need_update || canvas->need_redraw))
 		return;
 	remove_idle (canvas);
@@ -3631,7 +3640,7 @@ foo_canvas_request_redraw (FooCanvas *canvas, int x1, int y1, int x2, int y2)
 
 	if(canvas->busy)
 		return;
-if(foo_bug) foo_bug(canvas,"request redraw");
+//if(foo_bug) foo_bug(canvas,"request redraw");
 
 	if (!GTK_WIDGET_DRAWABLE (canvas) || (x1 >= x2) || (y1 >= y2)) return;
 
@@ -4340,7 +4349,7 @@ foo_canvas_busy(FooCanvas *canvas, gboolean busy)
 
 	if(!busy)
 	{
-foo_bug(canvas,"not busy");
+if(foo_bug) foo_bug(canvas,"not busy");
 		/* Signal GtkLayout that it should do a redraw. */
 		if(canvas->x_changed || canvas->y_changed)
 			gtk_layout_set_size (GTK_LAYOUT (canvas), canvas->scroll_width, canvas->scroll_height);
@@ -4356,7 +4365,7 @@ foo_bug(canvas,"not busy");
 		foo_canvas_item_request_redraw(canvas->root);
 	}
 else
-	foo_bug(canvas,"busy");
+	if(foo_bug) foo_bug(canvas,"busy");
 }
 
 /*  Last edited: Mar  7 11:45 2011 (edgrif) */
