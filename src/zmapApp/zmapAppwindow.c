@@ -1225,7 +1225,7 @@ static gboolean configureLog(char *config_file)
       else
 	{
 		g_free (full_dir);
-		full_dir = zMapConfigDirGetDir() ;
+		full_dir = g_strdup(zMapConfigDirGetDir()) ;
 	}
 
 
