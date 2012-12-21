@@ -86,6 +86,7 @@ zmap_get_bam_sequences [--help] [--man] --file=[http:|ftp:]/path/to/file
 
 =item B<-help>
 Print a brief help message and exits.
+
 =item B<-man>
 Prints the manual page and exits.
 
