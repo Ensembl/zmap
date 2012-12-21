@@ -26,7 +26,7 @@ AC_CONFIG_MACRO_DIR([m4])
 # status in the version info (gets set from VERSION_NUMBER in zmap_version.m4).
 # 
 if test -d "$srcdir/../.git" 
-then AC_DEFINE_UNQUOTED([ZMAP_VERSION_NUMBER], ["`git describe --abbrev=0`"], [ZMap package version])
+then AC_DEFINE_UNQUOTED([ZMAP_VERSION_NUMBER], ["`git describe`"], [ZMap package version])
 else AC_DEFINE([ZMAP_VERSION_NUMBER], [PACKAGE_VERSION], [ZMap package version])
 fi
 
