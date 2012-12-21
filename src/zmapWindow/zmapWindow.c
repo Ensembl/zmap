@@ -2979,17 +2979,14 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
 
       (*(window_cbs_G->drawn_data))(window, window->app_data, diff_context);
 
-#warning can-t see any reason for this code, removing has no effect (none that I can see)
-#if 0
+
       if (feature_sets->state != NULL)
 	{
-// WTF is this for... it appears to bounce the seq position all over the place
-//removing gives a blank window
 	  zmapWindowStateRestore(feature_sets->state, window);
 
 	  feature_sets->state = zmapWindowStateDestroy(feature_sets->state);
 	}
-#endif
+
 
       /* Reread the data in any feature list windows we might have. */
       for (i = 0 ; i < window->featureListWindows->len ; i++)
