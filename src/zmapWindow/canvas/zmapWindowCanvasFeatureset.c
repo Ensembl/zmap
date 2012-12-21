@@ -306,13 +306,13 @@ int zMap_draw_rect(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, g
    * read the docs to understand the coordinate calculations here
    */
 
-  if(cy2 == cy1)
+  if (cy2 == cy1 || cx1 == cx2)
     {
       gdk_draw_line (drawable, featureset->gc, cx1, cy1, cx2, cy2);
     }
   else
     {
-      if(!fill)
+      if (!fill)
 	{
 	  cx2--;	/* outline rects are 1 pixel bigger than filled ones */
 	  cy2--;
