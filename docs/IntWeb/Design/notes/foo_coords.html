@@ -53,7 +53,7 @@ zmap_window_featureset_item_foo_point()
 NOTE that if you change this it would be wise to check all CanvasFeatureset modules, not just the central code. Normal features (eg alignments, transcripts, basic) are typically centred, graphs are left justified, glyphs are centered but the glyph code implements offsets from the centre if configured.
 </p>
 
-<p>Obvious functions to look at are update, point, draw, but also AddFeature, AddGraphics, and any equivalents (callbacks) in the other modules, but also the macro zMapCanvasFeaturesetDrawBoxMacro() and the basic fucntions zMap_draw_line() and zMap_draw_box() (these last 2 should be ok as they deal with pixel coordinates only).
+<p>Obvious functions to look at are update, point, draw, but also AddFeature, AddGraphics, and any equivalents (callbacks) in the other modules, but also the macro zMapCanvasFeaturesetDrawBoxMacro() and the basic functions zMap_draw_line() and zMap_draw_box() (these last 2 should be ok as they deal with pixel coordinates only).
 </p>
 
 
@@ -148,5 +148,43 @@ NOTE that we could create and erase the CanvasFeatureset on press and release, b
 </p>
 
 
+<h3>Navigator canvas and widget issues esp w/ revcomp</h3>
+<p>There are some obscure issues relating to interaction between Gtk Widgets, the navigator canvas, CanvasFeatureset locus features and the foo canvas update and referesh cycle.  Ideally the navigate should be refactored (at least) but here's some notes about what caused an obscure bug where on revcomp it did not paint properly until the user clicked somewhere.
+</p>
 
+<p>The Navigator code is split into mainly 3 files, one of which handles the widget and deals with pane resize etc and another two which deal with drawing and clicking on features.
+</p>
+
+<p>The Foo Canvas has an update cycle which calculates pixel coordinates for (groups of) features and until then we do not know how bug the canvas is.  Asking the foo canvas to refsesh the display before this will use an incorrect region.
+</p>
+<p>CanavsFeaturesets (the ZMapWindow feature drawing module) operates a process of lazy evaluation for some aspects of drawing, and for locus features this includes determining the width of the locus column, and the is predciated by the fact that we cannot calculate the size of text features before we have a GdkDrawable that we can use to allocate a Pango object.
+</p>
+<p> As locus features are normally only drawn in the navigator this neas we cannot size the navigator widget, or expose it fully, before first drawing the features, which is a bit of a catch 22.  However, we only need a canvas zoom event on the navigator to trigger this.  Unfortunately after doing this we have to call foo_canvas_update_now() and ask for another foo canvas refresh.
+</p>
+<p>This has been implemented and was only a problem on RevComp.  Zoom only rezises the locators and v/h-split work due to window set scroll region calls triggering a refresh.
+</p>
+
+<h4>Navigator coordinate systems</h4>
+<p>A few of these are operated in parallel: widget size , foo canvas scroll region, foo canvas extent (root item coordinates) and of course foo canvas pixel and world coordinates, and sequence coordinates.  The navigator widget code has a private class to hold some of this information and provides functions for the otehr file sin the module to query and set these.
+</p>
+<p>It should be possibly to simplfy this considerably but this is nto a trivial job.
+</p>
+
+<h4> Refer to </h4>
+<p> These functions are a good place to start:
+<ul>
+<li> navigateDrawFunc()
+<li> zmapWindowNavigatorFillWidget()
+<li> zmapWindowNavigatorSizeRequest()
+<li> zMapWindowRequestReposition()
+<li> zMapWindowFullReposition()
+<li> zMapWindowNavigatorDrawLocator()
+</ul>
+Due to history some of the navigator fucntion may call some of these more often than necessary, but its not worth spending a lot if time experiemnting wihtout considreing rationalisation of the widget and drawing code;
+</p>
+
+
+<h3>Navigator Column positioing</h3>
+<p>How this happens is a lttle obscure... nonimally there are 3 columns: scale, genomic canonocal and locus. Locus calls zMapWindowRequestReposition() on zoom, which is triggered by the first display event, and this calls the column ordering code in zmaopWindow.  Due to the fact that the navigator has a canvas with ZMapWindowContainerGroups (as for a normal window) but no ZMapWindow for its canvas, this code (zMapWindowFullReposition()) cannot call the foo canvas update and refresh code (look at the function to see why)
+</p>
 
