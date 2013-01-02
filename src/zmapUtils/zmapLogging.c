@@ -63,7 +63,8 @@
 
 #define ZMAPLOG_MAX_TRACE_SIZE 50
 
-#define FOO_LOG 1
+/* Must be zero for xremote compile. */
+#define FOO_LOG 0
 
 
 /* Common struct for all log handlers, we use these to turn logging on/off. */
