@@ -71,10 +71,11 @@ case $opsys in
 
 	    # For some reason aceconn isn't installed in GTK_PREFIX
 	    # This should change asap. Production foocanvas is!
-	    if [ "x$ACECONN_PREFIX" != "x" ]; then
-		zmap_register_prefix_in_env $ACECONN_PREFIX
-		zmap_register_prefix_as_rpath $ACECONN_PREFIX
-	    fi
+	    #if [ "x$ACECONN_PREFIX" != "x" ]; then
+		#zmap_register_prefix_in_env $ACECONN_PREFIX
+		#zmap_register_prefix_as_rpath $ACECONN_PREFIX
+	    #fi
+
 	    # We need to find freetype2.pc in here. No idea why.
 	    PKG_CONFIG_PATH="/usr/lib/pkgconfig:$PKG_CONFIG_PATH:/usr/share/pkgconfig"
 
@@ -104,10 +105,10 @@ case $opsys in
 
 	    # For some reason aceconn isn't installed in GTK_PREFIX
 	    # This should change asap. Production foocanvas is!
-	    if [ "x$ACECONN_PREFIX" != "x" ]; then
-		zmap_register_prefix_in_env $ACECONN_PREFIX
-		zmap_register_prefix_as_rpath $ACECONN_PREFIX
-	    fi
+	    #if [ "x$ACECONN_PREFIX" != "x" ]; then
+		#zmap_register_prefix_in_env $ACECONN_PREFIX
+		#zmap_register_prefix_as_rpath $ACECONN_PREFIX
+	    #fi
 
 	    # We need to find freetype2.pc in here. No idea why.
 	    PKG_CONFIG_PATH="/usr/lib/pkgconfig:$PKG_CONFIG_PATH"
