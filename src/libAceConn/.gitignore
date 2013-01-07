@@ -1,0 +1,2 @@
+# Ignore AceConn, it's an external library.
+AceConn
