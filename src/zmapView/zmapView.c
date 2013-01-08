@@ -958,6 +958,45 @@ void zMapViewStats(ZMapViewWindow view_window,GString *text)
 }
 
 
+/* Reset the state for all windows in this view */
+static void zmapViewResetWindows(ZMapView zmap_view)
+{
+  GList* list_item ;
+  
+  /* First, loop through and save the state for ALL windows.
+   * We must do this BEFORE WE RESET ANY WINDOWS because
+   * windows can share the same vadjustment (when scrolling
+   * is locked) and we don't want to reset the scroll position
+   * until we've saved it for all windows. */
+  if((list_item = g_list_first(zmap_view->window_list)))
+    {
+      do
+        {
+          ZMapViewWindow view_window ;
+          
+          view_window = list_item->data ;
+          
+          zMapWindowFeatureSaveState(view_window->window, TRUE) ;
+        }
+      while ((list_item = g_list_next(list_item))) ;
+    }
+
+  /* Now reset the windows */
+  if((list_item = g_list_first(zmap_view->window_list)))
+    {
+      do
+        {
+          ZMapViewWindow view_window ;
+          
+          view_window = list_item->data ;
+          
+          zMapWindowFeatureReset(view_window->window, TRUE) ;
+        }
+      while ((list_item = g_list_next(list_item))) ;
+    }
+}
+
+
 /* Reverse complement a view, this call will:
  *
  *    - leave the View window(s) displayed and hold onto user information such as machine/port
@@ -985,18 +1024,7 @@ gboolean zMapViewReverseComplement(ZMapView zmap_view)
 	zMapLogTime(TIMER_DRAW_CONTEXT,TIMER_CLEAR,0,"Revcomp");
 	zMapLogTime(TIMER_SETVIS,TIMER_CLEAR,0,"Revcomp");
 
-      if((list_item = g_list_first(zmap_view->window_list)))
-	{
-	  do
-	    {
-	      ZMapViewWindow view_window ;
-
-	      view_window = list_item->data ;
-
-	      zMapWindowFeatureReset(view_window->window, TRUE) ;
-	    }
-	  while ((list_item = g_list_next(list_item))) ;
-	}
+      zmapViewResetWindows(zmap_view);
 
       zMapWindowNavigatorReset(zmap_view->navigator_window);
 

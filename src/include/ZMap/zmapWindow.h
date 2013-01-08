@@ -369,6 +369,7 @@ void zMapWindowUnDisplaySearchFeatureSets(ZMapWindow window,
 void zMapWindowMove(ZMapWindow window, double start, double end) ;
 void zMapWindowReset(ZMapWindow window) ;
 void zMapWindowRedraw(ZMapWindow window) ;
+void zMapWindowFeatureSaveState(ZMapWindow window, gboolean features_are_revcomped);
 void zMapWindowFeatureReset(ZMapWindow window, gboolean features_are_revcomped);
 void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_context,
 			     gboolean reversed) ;

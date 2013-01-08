@@ -791,15 +791,12 @@ void zMapWindowStats(ZMapWindow window, GString *text)
 
 
 
-
-/* only called by zMapViewReverseComplement()
- * need to save status and reset the canvas before rev comp ing the context as focus items get lost otherwise
- */
-void zMapWindowFeatureReset(ZMapWindow window, gboolean features_are_revcomped)
+/* Should only be called by zmapViewResetWindows() because
+ * all windows need to be saved/reset together */
+void zMapWindowFeatureSaveState(ZMapWindow window, gboolean features_are_revcomped)
 {
   int x, y ;
   double scroll_x1, scroll_y1, scroll_x2, scroll_y2 ;
-  gboolean free_child_windows = FALSE, free_revcomp_safe_windows = FALSE ;
   gboolean state_saves_position = TRUE;
 
 
@@ -874,12 +871,19 @@ void zMapWindowFeatureReset(ZMapWindow window, gboolean features_are_revcomped)
 	}
 
       window->revcomped_features = !window->revcomped_features ;
-
-      free_child_windows = TRUE ;
     }
 
   zMapStopTimer("WindowFeatureRedraw","Revcomp");
 
+  return ;
+}
+
+/* Should only be called by zmapViewResetWindows() because
+ * all windows need to be saved/reset together */
+void zMapWindowFeatureReset(ZMapWindow window, gboolean features_are_revcomped)
+{
+  gboolean free_child_windows = features_are_revcomped;
+  gboolean free_revcomp_safe_windows = FALSE;
 
   resetCanvas(window, free_child_windows, free_revcomp_safe_windows) ; /* Resets scrolled region and much else. */
   zMapStopTimer("WindowFeatureRedraw","ResetCanvas");
