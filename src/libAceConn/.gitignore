@@ -1,2 +1,15 @@
-# Ignore AceConn, it's an external library.
-AceConn
+# Ignore files created by build.
+AceConn/AceConn-1.1.pc
+AceConn/Makefile
+AceConn/include
+AceConn/libtool
+AceConn/doc/Makefile
+AceConn/src/.deps
+AceConn/src/.libs
+AceConn/src/Makefile
+AceConn/src/*.lo
+AceConn/src/libAceConn.la
+AceConn/stamp-h1
+AceConn/test/.deps
+AceConn/test/Makefile
+AceConn/test/simple*
