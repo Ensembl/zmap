@@ -1,0 +1,81 @@
+General Information
+===================
+
+This is AceConn version 1.2.0. AceConn is a C library for accessing
+the socket protocol version of the AceDB servers.
+
+The official AceDB ftp site is:
+  ftp://ftp.sanger.ac.uk/pub/acedb
+
+The official web site is:
+  http://www.acedb.org/
+
+Installation
+============
+
+See the file 'INSTALL'
+
+Notes about AceConn 1.2.0
+=========================
+
+* This most recent version of AceConn now builds/installs using the
+  gnu autoconf system.
+
+Future work
+===========
+
+client is non-blocking at the moment but could be made blocking and
+would be much simpler.
+
+currently does raw socket calls but we could use the giochannel stuff.
+
+need to expose "encoring" interface to application so that it can
+choose whether to do it or have all the reply batched up.
+
+
+How to report bugs
+==================
+
+Bugs should be reported to the acedb bug tracking system. 
+Send an email to acedb-bug@sanger.ac.uk.
+
+In the bug report please include:
+
+* Information about your system. For instance:
+
+   - What operating system and version
+   - For Linux, what version of the C library
+
+  And anything else you think is relevant.
+
+* How to reproduce the bug. 
+
+  If you can reproduce it with one of the test programs that are built 
+  in the tests/ subdirectory, that will be most convenient.  Otherwise, 
+  please include a short test program that exhibits the behavior. 
+  As a last resort, you can also provide a pointer to a larger piece 
+  of software that can be downloaded.
+
+* If the bug was a crash, the exact text that was printed out
+  when the crash occured.
+
+* Further information such as stack traces may be useful, but
+  is not necessary.
+
+Patches
+=======
+
+Patches should be submitted to acedb@sanger.ac.uk. If the
+patch fixes an existing bug, add the patch as an attachment
+to that bug report.
+
+Otherwise, enter a new bug report that describes the patch,
+and attach the patch to that bug report.
+
+Bug reports containing patches should include the PATCH keyword
+in their keyword fields. If the patch adds to or changes the GLib 
+programming interface, the API keyword should also be included.
+
+Patches should be in unified diff form. (The -u option to GNU
+diff.)
+
