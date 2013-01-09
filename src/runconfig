@@ -39,7 +39,7 @@ usage="$SCRIPT_NAME [ -c ]"
 while getopts ":c" opt ; do
     case $opt in
 	c  ) clean_dirs='yes' ;;
-	\? ) message_exit "Bad arg flag: $usage" ;;
+	\? ) zmap_message_exit "Bad arg flag: $usage" ;;
     esac
 done
 
