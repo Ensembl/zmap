@@ -6,7 +6,7 @@ SUBDIRS = . tests
 noinst_LTLIBRARIES = libZMapUtils.la
 
 libZMapUtils_la_SOURCES = \
-zmapCompileDate.c \
+$(ZMAP_COMPILEDATE_FILE) \
 zmapGUITreeView_I.h \
 zmapCmdLineArgs_P.h \
 zmapHandle.c \
@@ -65,8 +65,12 @@ char *zmapCompileString(void)                       \
 
 # Here's the target that creates the file containing the ZMAP_COMPILEDATE_FILE_CODE.
 # By making build-compiledate-file depend on the empty forcemake target it gets
-# remade every time.
+# remade every time. By making ZMAP_COMPILEDATE_FILE depend on build-compiledate-file
+# we make sure the file is created before it needs to be compiled !
 #
+
+$(ZMAP_COMPILEDATE_FILE): build-compiledate-file
+
 forcemake:
 
 build-compiledate-file: forcemake
@@ -75,10 +79,5 @@ build-compiledate-file: forcemake
 	echo "#include <zmapUtils_P.h>" >> $(top_srcdir)/$(ZMAP_COMPILEDATE_PATH) ; \
 	echo "$(ZMAP_COMPILEDATE_FILE_CODE)" >> $(top_srcdir)/$(ZMAP_COMPILEDATE_PATH) ; \
 	echo "created compiledate file....."
-
-
-# autoconf runs all-local every time all is run (all-local runs _after_ the all
-# targets are built).
-all-local: build-compiledate-file
 
 
