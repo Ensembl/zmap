@@ -30,7 +30,7 @@ zmap_message_out "cmd line options = '$*'"
 
 
 #
-# THIS IS A BAD IDEA....SCRIPT HAS TO BE RUNNABLE WITHOUT ARGS OTHERWISE
+# THIS IS A BAD IDEA....SCRIPT HAS TO BE RUNNABLE WITHOUT __ANY__ ARGS OTHERWISE
 # OTHER SCRIPTS THAT CALL THIS GET MESSED UP.....
 #
 # Cmd line options....
@@ -72,13 +72,6 @@ case $opsys in
 
 	x86_64 )
 
-	    # For some reason aceconn isn't installed in GTK_PREFIX
-	    # This should change asap. Production foocanvas is!
-	    #if [ "x$ACECONN_PREFIX" != "x" ]; then
-		#zmap_register_prefix_in_env $ACECONN_PREFIX
-		#zmap_register_prefix_as_rpath $ACECONN_PREFIX
-	    #fi
-
 	    # We need to find freetype2.pc in here. No idea why.
 	    PKG_CONFIG_PATH="/usr/lib/pkgconfig:$PKG_CONFIG_PATH:/usr/share/pkgconfig"
 
@@ -86,10 +79,10 @@ case $opsys in
 	    zmap_register_prefix_in_env $GTK_PREFIX
 	    zmap_register_prefix_as_rpath $GTK_PREFIX
 
-	    if [ "x$FOOCANVAS_DEV" == "x$ZMAP_TRUE" ] ; then
-		zmap_register_prefix_in_env $FOOCANVAS_PREFIX
-		zmap_register_prefix_as_rpath $FOOCANVAS_PREFIX
-	    fi
+	    #if [ "x$FOOCANVAS_DEV" == "x$ZMAP_TRUE" ] ; then
+		#zmap_register_prefix_in_env $FOOCANVAS_PREFIX
+		#zmap_register_prefix_as_rpath $FOOCANVAS_PREFIX
+	    #fi
 
 	    if [ "x$USE_GPROF" == "x$ZMAP_TRUE" ]; then
 		LDFLAGS="-pg $LDFLAGS"
@@ -106,13 +99,6 @@ case $opsys in
 
 	* )
 
-	    # For some reason aceconn isn't installed in GTK_PREFIX
-	    # This should change asap. Production foocanvas is!
-	    #if [ "x$ACECONN_PREFIX" != "x" ]; then
-		#zmap_register_prefix_in_env $ACECONN_PREFIX
-		#zmap_register_prefix_as_rpath $ACECONN_PREFIX
-	    #fi
-
 	    # We need to find freetype2.pc in here. No idea why.
 	    PKG_CONFIG_PATH="/usr/lib/pkgconfig:$PKG_CONFIG_PATH"
 
@@ -120,10 +106,10 @@ case $opsys in
 	    zmap_register_prefix_in_env $GTK_PREFIX
 	    zmap_register_prefix_as_rpath $GTK_PREFIX
 
-	    if [ "x$FOOCANVAS_DEV" == "x$ZMAP_TRUE" ] ; then
-		zmap_register_prefix_in_env $FOOCANVAS_PREFIX
-		zmap_register_prefix_as_rpath $FOOCANVAS_PREFIX
-	    fi
+	    #if [ "x$FOOCANVAS_DEV" == "x$ZMAP_TRUE" ] ; then
+		#zmap_register_prefix_in_env $FOOCANVAS_PREFIX
+		#zmap_register_prefix_as_rpath $FOOCANVAS_PREFIX
+	    #fi
 
 	    if [ "x$USE_GPROF" == "x$ZMAP_TRUE" ]; then
 		LDFLAGS="-pg $LDFLAGS"
@@ -146,17 +132,17 @@ case $opsys in
 
     CFLAGS_args="-Wall -I$GTK_PREFIX/include"
 
-    if [ "x$FOOCANVAS_DEV" != "x$ZMAP_TRUE" ]; then
-	zmap_register_prefix_in_env $FOOCANVAS_PREFIX
-    fi
+    #if [ "x$FOOCANVAS_DEV" != "x$ZMAP_TRUE" ]; then
+	#zmap_register_prefix_in_env $FOOCANVAS_PREFIX
+    #fi
 
-    if [ "x$UNIVERSAL_BUILD" == "x$ZMAP_TRUE" ]; then
-	SDK=/Developer/SDKs/MacOSX10.4u.sdk
-	SPECIFIC_CONFIGURE_ARGS="--disable-dependency-tracking --with-macosx-sdk-path=$SDK --x-includes=$SDK/include --x-libraries=$SDK/lib"
-	if [ -d $SDK/usr/bin ]; then
-	    PATH=$SDK/usr/bin:$PATH
-	fi
-    fi
+    #if [ "x$UNIVERSAL_BUILD" == "x$ZMAP_TRUE" ]; then
+	#SDK=/Developer/SDKs/MacOSX10.4u.sdk
+	#SPECIFIC_CONFIGURE_ARGS="--disable-dependency-tracking --with-macosx-sdk-path=$SDK --x-includes=$SDK/include --x-libraries=$SDK/lib"
+	#if [ -d $SDK/usr/bin ]; then
+	    #PATH=$SDK/usr/bin:$PATH
+	#fi
+    #fi
 
     LDFLAGS_args="$LDFLAGS $LDFLAGS_args"
     ;;
