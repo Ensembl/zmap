@@ -192,7 +192,7 @@ void zmapWindowScaleCanvasInit(ZMapWindowScaleCanvas ruler,
 
 void zmapWindowScaleCanvasOpenAndMaximise(ZMapWindowScaleCanvas ruler)
 {
-  int open = 10;
+  int open = zMapWindowScaleCanvasGetWidth(ruler) + 1;
 
 #if ZOOM_SCROLL
   /* If there's one set, disconnect it */
