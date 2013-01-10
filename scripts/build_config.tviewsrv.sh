@@ -2,9 +2,6 @@
 
 # nothing here.
 
-#FOOCANVAS_DEV=$ZMAP_TRUE
-#FOOCANVAS_PREFIX=/nfs/team71/acedb/edgrif/CHECKOUT/foocanvas_test/linux
-
 # Required to get backtraces otherwise many symbols are not passed to ELF linker.
 #CFLAGS_args="$CFLAGS_args -rdynamic"
 
