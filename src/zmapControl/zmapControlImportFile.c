@@ -958,8 +958,8 @@ static void importFileCB(GtkWidget *widget, gpointer cb_data)
           src->is_seq = TRUE;
         }
 
-     if (*args_txt) /* prep user defined args */
-       {
+      if (*args_txt) /* prep user defined args */
+        {
           gchar ** vector;
           char *p,*q;
 
@@ -983,7 +983,7 @@ static void importFileCB(GtkWidget *widget, gpointer cb_data)
           g_strfreev(vector);
 
           and = "&";
-}
+        }
 
       /* prep dialog defined args according to file type and session */
       /* some are mandatory: */
