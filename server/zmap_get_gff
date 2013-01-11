@@ -63,48 +63,48 @@ sub gff_escape_target {
 
 sub get_params
 {
- 	# defaults
-	$params {'gff_version'}= 2;		# default for now as ZMap doesn't do v3 yet
+    # defaults
+    $params {'gff_version'}= 2; # default for now as ZMap doesn't do v3 yet
 
-	GetOptions(\%params, @options ) or pod2usage(2);
+    GetOptions(\%params, @options ) or pod2usage(2);
 
-	pod2usage(1) if defined $params { 'help' };
-	pod2usage(-exitstatus => 0, -verbose => 2) if defined $params {'man'} ;
+    pod2usage(1) if defined $params { 'help' };
+    pod2usage(-exitstatus => 0, -verbose => 2) if defined $params {'man'} ;
 
-	my $missing = 0;
-	foreach my $param (@required)
-	{
-		if (!defined $params { $param })
-		{
-			print "$param not specified\n";
-			$missing++;
-		}
-	}
-	pod2usage(1) if $missing;
+    my $missing = 0;
+    foreach my $param (@required)
+    {
+        if (!defined $params { $param })
+        {
+            print "$param not specified\n";
+            $missing++;
+        }
+    }
+    pod2usage(1) if $missing;
 
-	$params{$_} = uri_unescape($params{$_}) for keys %params;
+    $params{$_} = uri_unescape($params{$_}) for keys %params;
 
-	if(defined $params { 'gff_seqname' })
-	{
-		$sequence = $params { 'gff_seqname' };
-		gff_escape_seqid for $sequence;
-	}
+    if(defined $params { 'gff_seqname' })
+    {
+        $sequence = $params { 'gff_seqname' };
+        gff_escape_seqid for $sequence;
+    }
 
-	# mapto is inteneded mainly for mapping sequence to 1 based coords and vice versa
-	$mapto = $params { 'mapto' } if(defined $params{ 'mapto' });
-	$start = $params { 'start' };
-	$end = $params { 'end' };
+    # mapto is inteneded mainly for mapping sequence to 1 based coords and vice versa
+    $mapto = $params { 'mapto' } if(defined $params{ 'mapto' });
+    $start = $params { 'start' };
+    $end = $params { 'end' };
 
-	if($params { 'gff_version' } == 2)
-	{
-		$attributes_format ='%s %s';
-		$attributes_sep = ' ; ';
-	}
-	else
-	{
-		$attributes_format = '%s=%s';
-		$attributes_sep = ';';
-	}
+    if($params { 'gff_version' } == 2)
+    {
+        $attributes_format ='%s %s';
+        $attributes_sep = ' ; ';
+    }
+    else
+    {
+        $attributes_format = '%s=%s';
+        $attributes_sep = ';';
+    }
 }
 
 
@@ -113,68 +113,68 @@ sub get_params
 
 sub main
 {
-	my $in_version = 3;
-	my ($fseq,$fstart,$fend);
-	my $offset;
+    my $in_version = 3;
+    my ($fseq,$fstart,$fend);
+    my $offset;
 
-	get_params();
+    get_params();
 
-	my $file = $params { 'file' };
-	open IFILE, $file or die ("cannot open $file");
+    my $file = $params { 'file' };
+    open IFILE, $file or die ("cannot open $file");
 
-	while ( <IFILE> )
-	{
-		chomp;
+    while ( <IFILE> )
+    {
+        chomp;
 
-		if(m/^#/)
-		{
-			##gff-version 2
-			##sequence-region AH6 1 37801
+        if(m/^#/)
+        {
+            ##gff-version 2
+            ##sequence-region AH6 1 37801
 
 
-			if ( m/sequence-region\s(\S+)\s(\d+)\s(\d+)/)
-			{
-				($fseq, $fstart, $fend) = ($1, $2, $3);
+            if ( m/sequence-region\s(\S+)\s(\d+)\s(\d+)/)
+            {
+                ($fseq, $fstart, $fend) = ($1, $2, $3);
 
-				$fseq = $sequence if(defined $sequence);
+                $fseq = $sequence if(defined $sequence);
 
-				# i suspect this code needs adjusting to cope with subsequences of clones
-				$offset = defined $mapto ?  $mapto - $fstart : 0;
+                # i suspect this code needs adjusting to cope with subsequences of clones
+                $offset = defined $mapto ?  $mapto - $fstart : 0;
 
-				# $fstart += $offset;
-				# $fend   += $offset;
+                # $fstart += $offset;
+                # $fend   += $offset;
 
-				# NOTE the ZMap source code regards a file with more data than requested as an error
-				# how useful!  so we have to filter the features here and limit the GFF header
-				# start and end are as requested
-				$_ = sprintf("##sequence-region %s %d %d", $fseq, $start, $end);
-			}
-			else
-			{
-#				$in_version = $1 if(m/gff-version\s(\d+)/);
-			}
-		}
-		else
-		{
-			if(defined $offset)
-			{
-				# AH6	accepted_hits	similarity	644	677	.	+	.	.... stuff
+                # NOTE the ZMap source code regards a file with more data than requested as an error
+                # how useful!  so we have to filter the features here and limit the GFF header
+                # start and end are as requested
+                $_ = sprintf("##sequence-region %s %d %d", $fseq, $start, $end);
+            }
+            else
+            {
+                # $in_version = $1 if(m/gff-version\s(\d+)/);
+            }
+        }
+        else
+        {
+            if(defined $offset)
+            {
+                # AH6	accepted_hits	similarity	644	677	.	+	.	.... stuff
 
-				@_ = split /\s+/, $_;		# $_ on whitespace to @_
+                @_ = split /\s+/, $_; # $_ on whitespace to @_
 
-				$_[0] =  $fseq;
-				$_[3] += $offset;
-				$_[4] += $offset;
+                $_[0] =  $fseq;
+                $_[3] += $offset;
+                $_[4] += $offset;
 
-				# remove features outside requested region
-				next if $_[3] > $end || $_[4] < $start;
+                # remove features outside requested region
+                next if $_[3] > $end || $_[4] < $start;
 
-				$_ = join "\t", @_;
-			}
-		}
+                $_ = join "\t", @_;
+            }
+        }
 
-		print $_, "\n";
-	}
+        print $_, "\n";
+    }
 }
 
 main;
