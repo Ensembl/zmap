@@ -1,8 +1,5 @@
 #!/usr/bin/env perl
 
-# copied from Otterlace script bam_get_align and ammedned by mh17 to be otterlace free
-# you do however have to provide Bio::DB::Sam, i'm using the otterlace build for testing
-
 use strict;
 use warnings;
 
