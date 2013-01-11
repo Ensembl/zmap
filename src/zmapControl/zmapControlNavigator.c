@@ -49,7 +49,10 @@
 
 
 
+#ifdef NAVIGATOR_USES_PANES
 static void paneNotifyPositionCB(GObject *pane, GParamSpec *scroll, gpointer user_data);
+#endif
+
 static void canvas_value_cb(gpointer user_data, double top, double bottom);
 static void canvas_width_cb(gpointer user_data, double left, double right);
 static void canvas_size_cb(ZMapWindowNavigator navigator);
@@ -79,9 +82,13 @@ ZMapNavigator zMapNavigatorCreate(GtkWidget **top_widg_out, GtkWidget **canvas_o
 
   if((navigator = g_new0(ZMapNavStruct, 1)))
     {
+#ifdef NAVIGATOR_USES_PANES
+      /* gb10: this code was originally if'd out except that it was still
+       * creating a paned window, just with nothing in the left pane. This
+       * caused an with the navigator to be partially visible on startup
+       * when it shouldn't be, so I've removed the paned window altogether. */
       navigator->pane = pane = gtk_hpaned_new() ;
 
-#if 0
       /* Construct the region locator. */
 
       /* Need a vbox so we can add a label with sequence size at the bottom later,
@@ -111,6 +118,10 @@ ZMapNavigator zMapNavigatorCreate(GtkWidget **top_widg_out, GtkWidget **canvas_o
       /* Construct the window locator ... */
       locator_vbox  = gtk_vbox_new(FALSE, 0);
 
+#ifndef NAVIGATOR_USES_PANES
+      navigator->pane = pane = locator_vbox;
+#endif
+
       /* A label */
       locator_label = gtk_label_new("Scroll Navigator") ;
       gtk_box_pack_start(GTK_BOX(locator_vbox), locator_label, FALSE, TRUE, 0);
@@ -133,16 +144,18 @@ ZMapNavigator zMapNavigatorCreate(GtkWidget **top_widg_out, GtkWidget **canvas_o
       gtk_container_set_border_width(GTK_CONTAINER(locator_frame), 0);
 
       /* pack into the pane */
+#ifdef NAVIGATOR_USES_PANES
       gtk_paned_add2(GTK_PANED(pane), locator_vbox) ;
-
-      /* Set left hand (region view) pane closed by default. */
-      gtk_paned_set_position(GTK_PANED(pane), 0) ;
 
       g_object_connect(G_OBJECT(pane),
                        "signal::notify::position",
                        G_CALLBACK(paneNotifyPositionCB),
                        (gpointer)navigator,
                        NULL);
+
+      /* Set left hand (region view) pane closed by default. */
+      gtk_paned_set_position(GTK_PANED(pane), 0) ;
+#endif
 
       if(canvas_out)
         *canvas_out = locator_canvas;
@@ -290,13 +303,15 @@ void zMapNavigatorSetView(ZMapNavigator navigator, ZMapFeatureContext features,
 
 int zMapNavigatorGetMaxWidth(ZMapNavigator navigator)
 {
-  int handle_size = 0;
-
-  gtk_widget_style_get(navigator->pane, "handle-size", &handle_size, NULL);
+#ifdef NAVIGATOR_USES_PANES
+  int handle_size = gtk_widget_style_get(navigator->pane, "handle-size", &handle_size, NULL);
 
   return handle_size +
     navigator->left_pane_width +
     navigator->right_pane_width;
+#endif 
+
+  return navigator->left_pane_width + navigator->right_pane_width;
 }
 
 /* Destroys a navigator instance, note there is not much to do here because we
@@ -342,6 +357,7 @@ static void canvas_size_cb(ZMapWindowNavigator navigator)
   return ;
 }
 
+#ifdef NAVIGATOR_USES_PANES
 static void paneNotifyPositionCB(GObject *pane, GParamSpec *scroll, gpointer user_data)
 {
   ZMapNavigator navigator = (ZMapNavigator)user_data;
@@ -353,4 +369,4 @@ static void paneNotifyPositionCB(GObject *pane, GParamSpec *scroll, gpointer use
 
   return ;
 }
-
+#endif
