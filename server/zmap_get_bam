@@ -32,18 +32,16 @@ my $sequence;
 sub get_params
 {
     # defaults
-    $params {'gff_version'}= 2; # default for now as ZMap doesn't do v3 yet
+    $params{'gff_version'} = 2; # default for now as ZMap doesn't do v3 yet
 
     GetOptions(\%params, @options ) or pod2usage(2);
 
-    pod2usage(1) if defined $params { 'help' };
-    pod2usage(-exitstatus => 0, -verbose => 2) if defined $params {'man'} ;
+    pod2usage(1) if defined $params{'help'};
+    pod2usage(-exitstatus => 0, -verbose => 2) if defined $params{'man'} ;
 
     my $missing = 0;
-    foreach my $param (@required)
-    {
-        if (!defined $params { $param })
-        {
+    foreach my $param (@required) {
+        if (!defined $params{$param}) {
             print "$param not specified\n";
             $missing++;
         }
@@ -52,25 +50,21 @@ sub get_params
 
     $params{$_} = uri_unescape($params{$_}) for keys %params;
 
-    $params { 'chr' } = Roman($params { 'chr' }) if(defined $params { 'Roman' });
-    $params { 'chr' } = roman($params { 'chr' }) if(defined $params { 'roman' });
+    $params{'chr'} = Roman($params{'chr'}) if defined $params{'Roman'};
+    $params{'chr'} = roman($params{'chr'}) if defined $params{'roman'};
 
-    if(defined $params { 'gff_seqname' })
-    {
-        $sequence = $params { 'gff_seqname' };
+    if (defined $params{'gff_seqname'}) {
+        $sequence = $params{'gff_seqname'};
     }
-    else
-    {
-        $sequence = $params {'chr'};
+    else {
+        $sequence = $params{'chr'};
     }
 
-    if($params { 'gff_version' } == 2)
-    {
+    if ($params{'gff_version'} == 2) {
         $attributes_format ='%s %s';
         $attributes_sep = ' ; ';
     }
-    else
-    {
+    else {
         $attributes_format = '%s=%s';
         $attributes_sep = ';';
     }
@@ -79,7 +73,7 @@ sub get_params
 
 sub print_header
 {
-    printf "##gff-version %d\n##sequence-region %s %d %d\n", $params { 'gff_version' }, $sequence, $params { 'start' }, $params { 'end' } ;
+    printf "##gff-version %d\n##sequence-region %s %d %d\n", $params{'gff_version'}, $sequence, $params{'start'}, $params{'end'} ;
     return;
 }
 
@@ -129,7 +123,7 @@ sub print_feature {
 
     my @fields =
         (
-         $params { 'gff_version' } == 2 ? 'similarity' : 'read',
+         $params{'gff_version'} == 2 ? 'similarity' : 'read',
          (sprintf "%d", $start),
          (sprintf "%d", $end),
          (defined $score ? (sprintf "%f", $score) : '.'),
@@ -155,8 +149,7 @@ sub print_feature {
     my $q_length = $feature->l_qseq;
     my @attributes;
 
-    if($params { 'gff_version' } == 2)
-    {
+    if ($params{'gff_version'} == 2) {
         @attributes = (
         Class       => qq{"Sequence"},
         Name        => qq{"$name"},
@@ -166,8 +159,7 @@ sub print_feature {
         sequence    => $query->dna
         );
     }
-    else
-    {
+    else {
         @attributes = (
         name        => $name,
         Target      =>join(' ', ($name, @align_fields) ),
@@ -178,15 +170,12 @@ sub print_feature {
 
     my $cigar = $feature->cigar_str;
     $cigar =~ s/\d+S//g;    # Remove BAM "S" clipping strings from CIGAR
-    if ($cigar !~ /^\d+M$/)
-    {
-        if($params { 'gff_version' } == 2)
-        {
+    if ($cigar !~ /^\d+M$/) {
+        if ($params { 'gff_version' } == 2) {
             # It isn't a simple match string, so we do need CIGAR
             push(@attributes, cigar_bam => qq{"$cigar"});
         }
-        else
-        {
+        else {
             $cigar =~ s/(\d+)(\D+)/$2$1 /g;
             push(@attributes, 'Gap' => $cigar );
         }
@@ -236,15 +225,15 @@ sub main
 {
     get_params();
 
-    my $chr = $params { 'chr' } ;
+    my $chr = $params{'chr'};
     gff_escape_seqid for $sequence;
 
-    $source = $params { 'gff_feature_source' };
+    $source = $params{'gff_feature_source'};
     gff_escape_source for $source;
 
     my $sam = Bio::DB::Sam->new
         (
-         -bam   => uri_unescape($params { 'file' }),
+         -bam   => uri_unescape($params{'file'}),
          # -fasta => $fasta_path,
         );
 
@@ -255,7 +244,7 @@ sub main
 
 
     # map first then request.... move this to inside the mapping function
-    my $features = $bam_fetch->features ( $chr, $params { 'start' },  $params { 'end' } );
+    my $features = $bam_fetch->features($chr, $params{'start'}, $params{'end'});
 
 # if it's a ref
 #   printf "found %d matches\n", scalar @{$$features}  ;
@@ -263,8 +252,7 @@ sub main
 
     print_header();
 
-    foreach my $feat (@{$features})
-    {
+    foreach my $feat (@{$features}) {
         print_feature($feat, $feat->start, $feat->end );
     }
 }

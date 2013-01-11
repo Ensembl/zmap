@@ -32,7 +32,7 @@ my $source;
 sub get_params
 {
     # defaults
-    $params {'gff_version'} = 2; # default for now as ZMap doesn't do v3 yet
+    $params{'gff_version'} = 2; # default for now as ZMap doesn't do v3 yet
 
     GetOptions(\%params, @options ) or pod2usage(2);
 
@@ -40,37 +40,33 @@ sub get_params
     pod2usage(-exitstatus => 0, -verbose => 2) if defined $params {'man'} ;
 
     my $missing = 0;
-    foreach my $param (@required)
-    {
-        if (!defined $params { $param })
-        {
+    foreach my $param (@required) {
+        if (!defined $params { $param }) {
             print "$param not specified\n";
             $missing++;
         }
     }
     pod2usage(1) if $missing;
 
-    $strand_field = ( $params { 'strand' } == 1 ) ? '+' : ( $params { 'strand' } == -1 ) ? '-' : '.';
+    $strand_field = ($params{'strand'} == 1 ) ? '+' : ($params{'strand'} == -1 ) ? '-' : '.';
 
-    $params { 'chr' } = Roman($params { 'chr' }) if(defined $params { 'Roman' });
-    $params { 'chr' } = roman($params { 'chr' }) if(defined $params { 'roman' });
+    $params{'chr'} = Roman($params{'chr'}) if defined $params{'Roman'};
+    $params{'chr'} = roman($params{'chr'}) if defined $params{'roman'};
 
-    if(defined $params { 'gff_seqname' })
-    {
-        $sequence = $params { 'gff_seqname' };
+    if (defined $params{'gff_seqname'}) {
+        $sequence = $params{'gff_seqname'};
     }
-    else
-    {
-        $sequence = $params {'chr'};
+    else {
+        $sequence = $params{'chr'};
     }
 
-    $attributes_format = $params { 'gff_version' } == 3 ? '%s=%s' : '%s %s';
+    $attributes_format = $params{'gff_version'} == 3 ? '%s=%s' : '%s %s';
 }
 
 
 sub print_header
 {
-    printf "##gff-version %d\n##sequence-region %s %d %d\n", $params { 'gff_version' }, $sequence, $params { 'start' }, $params { 'end' } ;
+    printf "##gff-version %d\n##sequence-region %s %d %d\n", $params{'gff_version'}, $sequence, $params{'start'}, $params{'end'};
     return;
 }
 
@@ -153,17 +149,17 @@ sub main
 {
     get_params();
 
-    my $chr = $params { 'chr' } ;
+    my $chr = $params{'chr'};
     gff_escape_seqid for $sequence;
 
-    $source = $params { 'gff_feature_source' };
+    $source = $params{'gff_feature_source'};
     gff_escape_source for $source;
 
-    my $bigwig = Bio::DB::BigWig->new( -bigwig => $params { 'file'} );
+    my $bigwig = Bio::DB::BigWig->new( -bigwig => $params{'file'} );
     my $bigwig_fetch = Bio::Server::BigWig->new( -bigwig => $bigwig );
 
     # map first then request.... move this to inside the mapping function
-    my $features = $bigwig_fetch->features ( $chr, $params { 'start' },  $params { 'end' } );
+    my $features = $bigwig_fetch->features( $chr, $params{'start'}, $params{'end'});
 
 # if it's a ref
 #   printf "found %d matches\n", scalar @{$$features}  ;
@@ -171,9 +167,8 @@ sub main
 
     print_header();
 
-    foreach my $feat (@{$features})
-    {
-        print_feature($feat, $feat->start, $feat->end );
+    foreach my $feat (@{$features}) {
+        print_feature($feat, $feat->start, $feat->end);
     }
 }
 
