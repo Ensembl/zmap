@@ -18,8 +18,8 @@ use Bio::Server::BigWig;
 my %params = ();
 
 my @options = qw(
-    help
-    man
+    help!
+    man!
     gff_version=i
     file=s
     chr=s
