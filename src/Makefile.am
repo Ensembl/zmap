@@ -240,6 +240,22 @@ $(NULL)
 # as "all" etc.
 #----------------------------------------------------------------------
 
+# The most clean you can get your tree is to use the targer maintainer-clean
+# but this does not clean out everything to the state when you check out a
+# copy from git...so we add some stuff to maintainer-clean to try to achieve
+# this.
+
+#GENERATED_FILES = './.deps ./.libs ./bin ./include ./lib* ./zmap* ./Makefile ./config.* dotZMap gffparser* \
+#./stamp-h1 ./xml_* ./xremote* ./zmap*'
+
+GENERATED_FILES = $(top_builddir)/.deps $(top_builddir)/.libs $(top_builddir)/*
+
+maintainer-clean-local:
+	@echo 'maintainer-clean-local: Removing all generated files....'
+	rm -rf $(GENERATED_FILES)
+	rm -f $(top_srcdir)/m4/*.m4
+	@echo 'maintainer-clean-local: Finished removing all generated files....'
+
 mkdocdir:
 	@if test ! -d docs ; then \
 	  mkdir docs; \
@@ -247,11 +263,12 @@ mkdocdir:
 
 docs: mkdocdir doxygen-doc
 
-maintainer-clean-local:
-	rm -rf cleanDir
+#maintainer-clean-local:
+#	rm -rf cleanDir
 
-distclean-local:
-	rm -f $(top_srcdir)/m4/*.m4
+# should we be doing this....???? really a maintainer thing....
+#distclean-local:
+#
 
 # the next two targets are required for installing the static
 # libraries.  Not something we should be doing I'm sure, but
