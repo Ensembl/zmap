@@ -16,8 +16,29 @@ use Bio::Server::BAM;
 
 # parameters
 my %params = ();
-my @options = qw ( help! man! gff_version=i file=s chr=s start=i end=i gff_feature_source=s gff_seqname=s roman! Roman! mapto=i);
-my @required = qw ( file chr start end gff_feature_source );
+
+my @options = qw(
+    help!
+    man!
+    gff_version=i
+    file=s
+    chr=s
+    start=i
+    end=i
+    gff_feature_source=s
+    gff_seqname=s
+    roman!
+    Roman!
+    mapto=i
+    );
+
+my @required = qw(
+    file
+    chr
+    start
+    end
+    gff_feature_source
+    );
 
 my $attributes_format;
 my $attributes_sep = ';';

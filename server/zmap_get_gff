@@ -17,8 +17,23 @@ use URI::Escape qw(uri_unescape);
 
 # parameters
 my %params = ();
-my @options = qw ( help! man! gff_version=i file=s start=i end=i mapto=i gff_seqname=s );
-my @required = qw ( file start end );
+
+my @options = qw(
+    help!
+    man!
+    gff_version=i
+    file=s
+    start=i
+    end=i
+    mapto=i
+    gff_seqname=s
+    );
+
+my @required = qw(
+    file
+    start
+    end
+    );
 
 my $attributes_format;
 my $attributes_sep = ';';

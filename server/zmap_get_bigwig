@@ -16,9 +16,31 @@ use Bio::Server::BigWig;
 
 # parameters
 my %params = ();
-my @options = qw ( help man gff_version=i file=s chr=s start=i end=i gff_feature_source=s strand=s gff_seqname=s roman! Roman! mapto=i);
 
-my @required = qw ( file chr start end gff_feature_source strand );
+my @options = qw(
+    help
+    man
+    gff_version=i
+    file=s
+    chr=s
+    start=i
+    end=i
+    gff_feature_source=s
+    strand=s
+    gff_seqname=s
+    roman!
+    Roman!
+    mapto=i
+    );
+
+my @required = qw(
+    file
+    chr
+    start
+    end
+    gff_feature_source
+    strand
+    );
 
 my $attributes_format;
 my $strands = { 1  => '+', -1 => '-' };
