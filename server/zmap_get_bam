@@ -304,7 +304,6 @@ B<This program> will read the given input file(s) and generate GFF output as req
 
 =head1 COPYRIGHT
 
- Author: Malcolm Hinsley (mh17@sanger.ac.uk)
  Copyright (c) 2006-2012: Genome Research Ltd.
 ------------------------------------------------------------------
 ZMap is free software; you can redistribute it and/or
@@ -331,5 +330,6 @@ originated by
 This script was derived fron an Anacode script believed to have been
 written originally by Jeremy Henty (jh13@sanger.ac.uk)
 
+=head1 AUTHOR
 
-
+Malcolm Hinsley B<email> mh17@sanger.ac.uk
