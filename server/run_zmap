@@ -57,9 +57,9 @@ sub get_config
 {
 	my ($file) = @_;
 
-	return  "cannot open $file\n" if ! open IFILE, $file;
+	open my $file_h, '<', $file or return  "cannot open $file\n";
 
-	while (<IFILE>)
+	while (<$file_h>)
 	{
 		last if(! m/^\#\#/ );
 
@@ -81,7 +81,7 @@ sub get_config
 		}
 	}
 
-	close IFILE;
+	close $file_h;
 
 	return "$file: GFF version not specified\n"  if !defined $src_files { $file } -> { 'gff_version' };
 	return "$file: sequence not specified\n"  if !defined $src_files { $file } -> { 'sequence' };
@@ -117,7 +117,7 @@ sub main
 		rename $file, $backfile;
 	}
 
-	open (OFILE, "> " . $file ) or die("cannot open $file\n");
+	open (my $file_h, '>', $file ) or die("cannot open $file\n");
 
 	my @sources = ();
 	foreach my $file (@ARGV)
@@ -137,7 +137,7 @@ sub main
 	}
 
 	$" = ';';
-	print OFILE <<ZMAP
+	print $file_h <<ZMAP
 [ZMap]
 show-mainwindow = true
 sequence = $sequence
@@ -150,7 +150,7 @@ ZMAP
 ;
 	# explicitly we do not create a columns list or stanza
 
-	 print OFILE <<ZMAP_WINDOW
+	 print $file_h <<ZMAP_WINDOW
 [ZMapWindow]
 colour-column-highlight = cornsilk
 colour-frame-2 = #e6e6ff
@@ -168,7 +168,7 @@ ZMAP_WINDOW
 	{
 		my $src = $src_files { $fname} -> { 'source' };
 		my $sep = ( $src =~ m/^\// ) ? '/' : '';
-		print OFILE <<MY_FILE
+		print $file_h <<MY_FILE
 [$src]
 delayed = false
 featuresets=
@@ -178,7 +178,7 @@ MY_FILE
 ;
 	}
 
-	close OFILE;
+	close $file_h;
 }
 
 

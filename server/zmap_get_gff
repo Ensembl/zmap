@@ -130,9 +130,9 @@ sub main
     get_params();
 
     my $file = $params{'file'};
-    open IFILE, $file or die "cannot open $file";
+    open my $file_h, '<', $file or die "cannot open $file";
 
-    while (<IFILE>) {
+    while (<$file_h>) {
         chomp;
 
         if (m/^#/) {
