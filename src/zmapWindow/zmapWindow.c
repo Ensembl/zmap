@@ -166,6 +166,17 @@ typedef struct FeatureCoordStructType
 } FeatureCoordStruct, *FeatureCoord ;
 
 
+
+struct fooBug
+{
+  void *key;
+  char *id;
+};
+
+
+
+
+
 static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
                                  ZMapFeatureSequenceMap sequence, void *app_data,
                                  GList *feature_set_names,
@@ -296,6 +307,7 @@ static gboolean recenter_scroll_window(ZMapWindow window, double *event_y_in_out
 static void makeSelectionString(ZMapWindow window, GString *selection_str, GArray *feature_coords) ;
 static gint sortCoordsCB(gconstpointer a, gconstpointer b) ;
 
+static void foo_bug_print(void *key, char *where) ;
 
 
 /* Callbacks we make back to the level above us. This structure is static
@@ -312,6 +324,8 @@ static gboolean busy_debug_G = FALSE ;
 //static gboolean foo_debug_G = FALSE ;
 static gboolean mouse_debug_G = FALSE ;
 
+struct fooBug foo_wins [128];
+int n_foo_wins = 0;
 
 
 
@@ -2054,33 +2068,28 @@ static void panedResizeCB(gpointer data, gpointer userdata)
 }
 
 
-struct fooBug
+
+
+
+static void foo_bug_print(void *key, char *where)
 {
-	void *key;
-	char *id;
-};
+  int i;
+  struct fooBug * fb;
 
-struct fooBug foo_wins [128];
-int n_foo_wins = 0;
-
-
-void foo_bug_print(void *key, char *where)
-{
-	int i;
-	struct fooBug * fb;
-
-	for(i = 0, fb = foo_wins; i < n_foo_wins; i++, fb++)
+  for(i = 0, fb = foo_wins; i < n_foo_wins; i++, fb++)
+    {
+      if(fb->key == key)
 	{
-		if(fb->key == key)
-		{
-//			printf("%s %s %d\n", where, fb->id, i);
-//			fflush(stdout);
-//			zMapPrintStack();
-//			fflush(stdout);
-		}
+	  //			printf("%s %s %d\n", where, fb->id, i);
+	  //			fflush(stdout);
+	  //			zMapPrintStack();
+	  //			fflush(stdout);
 	}
+    }
 
+  return ;
 }
+
 void foo_bug_set(void *key,char *id)
 {
 #if 0
@@ -3173,6 +3182,8 @@ static gboolean windowGeneralEventCB(GtkWidget *wigdet, GdkEvent *event, gpointe
   return handled;
 }
 
+
+
 /* This gets run _BEFORE_ any of the canvas item handlers which is good because we can use it
  * to handle more general events such as "click to focus" etc., _BUT_ be careful when adding
  * event handlers here, you could override a canvas item event handler and stop something
@@ -3181,7 +3192,7 @@ static gboolean windowGeneralEventCB(GtkWidget *wigdet, GdkEvent *event, gpointe
  *
  * There is some slightly arcane handling of button 1 here:
  *
- * if the item under the cursor is a CanvasFeatureset the we ask it if it wants to
+ * if the item under the cursor is a CanvasFeatureset then we ask it if it wants to
  * operate text selection and if so we pass coordinates through to that
  * NOTE we never handle this in canvasItem EventCB, as we have priority here
  * DNA event callbacks disappeared with ZMapWindowCanvasItems as groups
@@ -3199,20 +3210,21 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
   ZMapWindow window = (ZMapWindow)data ;
   static double origin_x, origin_y;			    /* The world coords of the source of the button event */
   static gboolean dragging = FALSE, guide = FALSE ;	    /* Rubber banding or ruler ? */
-  static gboolean locked = FALSE ;			    /*
-							       For ruler, are there locked windows ? */
+  static gboolean shift_on = FALSE ;			    /* shift/rubber banding == feature selection. */
+  static gboolean locked = FALSE ;			    /* For ruler, are there locked windows ? */
   static gboolean in_window = FALSE ;			    /* Still in window while cursor lining
 							       or rubber banding ? */
   double wx, wy;					    /* These hold the current world coords of the event */
   static double window_x, window_y ;			    /* Track number of pixels user moves mouse. */
-  static MarkRegionUpdateStruct mark_updater = {0};
+  static MarkRegionUpdateStruct mark_updater = {0} ;
+  static FooCanvasItem *seq_item = NULL;		    /* if not NULL we are selecting text */
+  static long seq_start, seq_end;			    /* first coord is fixed, then we can move above or below */
 
-  static FooCanvasItem *seq_item = NULL;		/* if not NULL we are selecting text */
-  static long seq_start, seq_end;			/* first coord is fixed, then we can move above or below */
 
 #if MOUSE_DEBUG
-zMapLogWarning("canvas event %d",  event->type);
+  zMapLogWarning("canvas event %d",  event->type);
 #endif
+
 
   /* We record whether we are inside the window to enable user to cancel certain mouse related
    * actions by moving outside the window. */
@@ -3220,7 +3232,6 @@ zMapLogWarning("canvas event %d",  event->type);
     in_window = TRUE ;
   else if (event->type == GDK_LEAVE_NOTIFY)
     in_window = FALSE ;
-
   /* This hack is really only needed for the mac.... */
   else if (event->type == GDK_BUTTON_PRESS)
     in_window = TRUE ;
@@ -3235,28 +3246,28 @@ zMapLogWarning("canvas event %d",  event->type);
 
 	zMapDebugPrint(mouse_debug_G, "Start: button_press %d", but_event->button) ;
 
-	    /* work out the world of where we are */
+	/* work out the world of where we are */
 	foo_canvas_window_to_world(window->canvas,
-				       but_event->x, but_event->y,
-				       &wx, &wy);
+				   but_event->x, but_event->y,
+				   &wx, &wy);
 
 	if(!gtk_widget_has_focus (GTK_WIDGET(window->canvas)))	/* avoid thrashing the scroll region and navigator */
-	{
-		/* We want the canvas to be the focus widget of its "window" otherwise keyboard input
-		* (i.e. short cuts) will be delivered to some other widget. */
-		gtk_widget_grab_focus(GTK_WIDGET(window->canvas)) ;
+	  {
+	    /* We want the canvas to be the focus widget of its "window" otherwise keyboard input
+	     * (i.e. short cuts) will be delivered to some other widget. */
+	    gtk_widget_grab_focus(GTK_WIDGET(window->canvas)) ;
 
-		/* Report to our parent that we have been clicked in, we change "click" to "focus"
-		* because that is what this is for.... */
-		/* NOTE this goes up to zmapControl.c and shows the navigator for the clicked on view */
-		(*(window_cbs_G->focus))(window, window->app_data, NULL) ;
+	    /* Report to our parent that we have been clicked in, we change "click" to "focus"
+	     * because that is what this is for.... */
+	    /* NOTE this goes up to zmapControl.c and shows the navigator for the clicked on view */
+	    (*(window_cbs_G->focus))(window, window->app_data, NULL) ;
 
-		if (TRUE)
-		{
-			/* NOTE this set the locator according to the selected window and its scroll region */
+	    if (TRUE)
+	      {
+		/* NOTE this set the locator according to the selected window and its scroll region */
 		invokeVisibilityChange(window);
-		}
-	}
+	      }
+	  }
 
 	/* Button 1 is for selecting features OR lasso for zoom/mark.
 	 * Button 2 is handled, we display ruler and maybe centre on that position,
@@ -3266,9 +3277,13 @@ zMapLogWarning("canvas event %d",  event->type);
 	  {
 	  case 1:
 	    {
-	    origin_x = wx;
-	    origin_y = wy;
+	      GdkModifierType shift_mask = GDK_SHIFT_MASK, control_mask = GDK_CONTROL_MASK ;
+	      /* refer to handleButton() in zmapWindowfeature.c re shift/num lock */
 
+	      shift_on = zMapGUITestModifiers(but_event, shift_mask) ;
+
+	      origin_x = wx;
+	      origin_y = wy;
 
 	      if ((item = foo_canvas_get_item_at(window->canvas, origin_x, origin_y))
 		  && ZMAP_IS_WINDOW_FEATURESET_ITEM(item)
@@ -3434,24 +3449,24 @@ zMapLogWarning("canvas event %d",  event->type);
     case GDK_MOTION_NOTIFY:
       {
 	/* interestingly we don't check the button number here.... */
-	    GdkEventMotion *mot_event = (GdkEventMotion *)event ;
+	GdkEventMotion *mot_event = (GdkEventMotion *)event ;
 
-	    /* work out the world of where we are */
-	    foo_canvas_window_to_world(window->canvas,
-				       mot_event->x, mot_event->y,
-				       &wx, &wy);
+	/* work out the world of where we are */
+	foo_canvas_window_to_world(window->canvas,
+				   mot_event->x, mot_event->y,
+				   &wx, &wy);
 
-	    zMapDebugPrint(mouse_debug_G, "%s", "Start: motion") ;
+	zMapDebugPrint(mouse_debug_G, "%s", "Start: motion") ;
 
-	 if(seq_item)
-		{
-		  zMapWindowCanvasFeaturesetGetSeqCoord((ZMapWindowFeaturesetItem) seq_item, FALSE,  wx, wy, &seq_start, &seq_end);
+	if(seq_item)
+	  {
+	    zMapWindowCanvasFeaturesetGetSeqCoord((ZMapWindowFeaturesetItem) seq_item, FALSE,  wx, wy, &seq_start, &seq_end);
 
-		  zmapWindowHighlightSequenceItem(window, seq_item, seq_start, seq_end, 0);
+	    zmapWindowHighlightSequenceItem(window, seq_item, seq_start, seq_end, 0);
 
-		  /* NOTE we set feature list to NULL here, update info panel must handle */
-		  zmapWindowUpdateInfoPanel(window, zMapWindowCanvasItemGetFeature(seq_item), NULL, seq_item, NULL, seq_start, seq_end, seq_start, seq_end, NULL, FALSE, FALSE, FALSE) ;
-		}
+	    /* NOTE we set feature list to NULL here, update info panel must handle */
+	    zmapWindowUpdateInfoPanel(window, zMapWindowCanvasItemGetFeature(seq_item), NULL, seq_item, NULL, seq_start, seq_end, seq_start, seq_end, NULL, FALSE, FALSE, FALSE) ;
+	  }
 	else if (dragging || guide)
 	  {
 	    if (dragging)
@@ -3633,15 +3648,15 @@ zMapLogWarning("canvas event %d",  event->type);
       {
 	GdkEventButton *but_event = (GdkEventButton *)event ;
 
-	    /* work out the world of where we are */
+	/* work out the world of where we are */
 	foo_canvas_window_to_world(window->canvas,
-				       but_event->x, but_event->y,
-				       &wx, &wy);
+				   but_event->x, but_event->y,
+				   &wx, &wy);
 	/* interestingly we don't check the button number here.... */
 
 	zMapDebugPrint(mouse_debug_G, "Start: button_release %d", but_event->button) ;
 
-	if(seq_item)
+	if (seq_item)
 	  {
 	    zMapWindowCanvasFeaturesetGetSeqCoord((ZMapWindowFeaturesetItem) seq_item, FALSE,  wx, wy, &seq_start, &seq_end);
 
@@ -3655,19 +3670,13 @@ zMapLogWarning("canvas event %d",  event->type);
 	  }
 	else if (dragging)
           {
-	    GdkModifierType shift_mask = GDK_SHIFT_MASK, control_mask = GDK_CONTROL_MASK;
-	    /* refer to handleButton() in zmapWindowfeature.c re shift/num lock */
-
             foo_canvas_item_hide(window->rubberband);
 
 	    /* mouse must still be within window to zoom, outside means user is cancelling motion,
 	     * and motion must be more than 10 pixels in either direction to zoom. */
 	    if (in_window)
 	      {
-		gboolean ctrl = zMapGUITestModifiers(but_event, control_mask);
-		gboolean shift = zMapGUITestModifiers(but_event, shift_mask);
-
-		if (shift || ctrl)
+		if (shift_on)
 		  {
 		    /* make a list of the foo canvas items */
 		    GList *feature_list;
@@ -3677,28 +3686,31 @@ zMapLogWarning("canvas event %d",  event->type);
 
 		    /* Get size of item and convert to world coords, bounds are relative to item's parent */
 		    foo_canvas_item_get_bounds(window->rubberband, &rootx1, &rooty1, &rootx2, &rooty2) ;
-//		    foo_canvas_item_i2w(window->rubberband, &rootx1, &rooty1) ;
-//		    foo_canvas_item_i2w(window->rubberband, &rootx2, &rooty2) ;
+		    //		    foo_canvas_item_i2w(window->rubberband, &rootx1, &rooty1) ;
+		    //		    foo_canvas_item_i2w(window->rubberband, &rootx2, &rooty2) ;
 
-			/* find the canvvas iten (a canvas featureset) at the centre of the lassoo */
-// can-t do this as the canvas featureset point function returns n/a if there's no feature under the cursor
-// no longer true....
-		    if ((item = foo_canvas_get_item_at(window->canvas, (rootx2 + rootx1) / 2, (rooty2 + rooty1) / 2) ))
-		    {
+		    /* find the canvvas iten (a canvas featureset) at the centre of the lassoo */
+		    // can-t do this as the canvas featureset point function returns n/a
+		    // if there's no feature under the cursor no longer true....
+		    if ((item = foo_canvas_get_item_at(window->canvas, (rootx2 + rootx1) / 2, (rooty2 + rooty1) / 2)))
+		      {
 			/* only finds features in a canvas featureset, old foo gives nothing */
-		      feature_list = zMapWindowFeaturesetItemFindFeatures(&item, rooty1, rooty2, rootx1, rootx2);
-		    }
+			feature_list = zMapWindowFeaturesetItemFindFeatures(&item, rooty1, rooty2, rootx1, rootx2);
+		      }
+
 
 		    /* this is how features get highlit */
-		    if(item)
-		      zmapWindowUpdateInfoPanel(window, zMapWindowCanvasItemGetFeature(item), feature_list, item, NULL, 0, 0, 0, 0, NULL, !shift, !ctrl, FALSE) ;
+		    if (item)
+		      zmapWindowUpdateInfoPanel(window, zMapWindowCanvasItemGetFeature(item),
+						feature_list, item, NULL, 0, 0, 0, 0, NULL, !shift_on, FALSE, FALSE) ;
+
+		    event_handled = TRUE;		    /* We _ARE_ handling */
 		  }
 		else if (fabs(but_event->x - window_x) > ZMAP_WINDOW_MIN_LASSO
 			 || fabs(but_event->y - window_y) > ZMAP_WINDOW_MIN_LASSO)
 		  {
 		    /* User has moved pointer quite a lot between press and release so zoom
 		     * to marked area. */
-
 		    zoomToRubberBandArea(window) ;
 
 		    event_handled = TRUE;		    /* We _ARE_ handling */
@@ -3723,6 +3735,7 @@ zMapLogWarning("canvas event %d",  event->type);
 		gtk_object_destroy(GTK_OBJECT(window->rubberband)) ;
 		window->rubberband = NULL ;
 	      }
+
 	    dragging = FALSE ;
           }
         else if (guide)
@@ -3762,7 +3775,7 @@ zMapLogWarning("canvas event %d",  event->type);
 
             event_handled = TRUE ;			    /* We _ARE_ handling */
           }
-	else if(mark_updater.activated)
+	else if (mark_updater.activated)
 	  {
 	    mark_updater.activated = FALSE;
 	    mark_updater.in_mark_move_region = FALSE;
@@ -3787,6 +3800,9 @@ zMapLogWarning("canvas event %d",  event->type);
 
 	    event_handled = TRUE;
 	  }
+
+	shift_on = FALSE ;
+
 
 	zMapDebugPrint(mouse_debug_G, "Leave: button_release %d - return %s",
 		       but_event->button,
@@ -5243,8 +5259,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 
 	/* If there is a focus item(s) we zoom to that, if not we zoom to
 	 * any marked feature or area.  */
-	if ((focus_item = zmapWindowFocusGetHotItem(window->focus))
-	    || (focus_item = zmapWindowMarkGetItem(window->mark)))
+	if ((focus_item = zmapWindowFocusGetHotItem(window->focus)))
 	  {
 	    ZMapFeature feature ;
 
@@ -5257,11 +5272,12 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	      {
 		GList *focus_items ;
 
-		focus_items = zmapWindowFocusGetFocusItems(window->focus) ;
+		if ((focus_items = zmapWindowFocusGetFocusItems(window->focus)))
+		  {
+		    zmapWindowZoomToItems(window, focus_items) ;
 
-		zmapWindowZoomToItems(window, focus_items) ;
-
-		g_list_free(focus_items) ;
+		    g_list_free(focus_items) ;
+		  }
 	      }
 	    else
 	      {
