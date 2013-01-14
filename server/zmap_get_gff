@@ -166,16 +166,16 @@ sub main
             if (defined $offset) {
                 # AH6	accepted_hits	similarity	644	677	.	+	.	.... stuff
 
-                @_ = split /\s+/, $_; # $_ on whitespace to @_
+                my @field_list = split /\s+/, $_;
 
-                $_[0] =  $fseq;
-                $_[3] += $offset;
-                $_[4] += $offset;
+                $field_list[0] =  $fseq;
+                $field_list[3] += $offset;
+                $field_list[4] += $offset;
 
                 # remove features outside requested region
-                next if $_[3] > $end || $_[4] < $start;
+                next if $field_list[3] > $end || $field_list[4] < $start;
 
-                $_ = join "\t", @_;
+                $_ = join "\t", @field_list;
             }
         }
 
