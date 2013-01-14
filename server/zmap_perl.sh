@@ -1,4 +1,3 @@
-#!/bin/bash
 
 # set up path and library envorinment to allow zmap BAM scripts to work
 # NOTE this uses and existign otterlace installation
