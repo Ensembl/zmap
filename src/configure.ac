@@ -385,11 +385,9 @@ zmapConfig \
 zmapControl \
 zmapControl/remote \
 zmapDAS \
-zmapDocs \
 zmapDraw \
 zmapFeature \
 zmapGFF \
-zmapMake \
 zmapManager \
 zmapServer \
 zmapThreads \
@@ -420,13 +418,11 @@ zmapAppServices/Makefile
 zmapConfig/Makefile
 zmapControl/Makefile
 zmapControl/remote/Makefile
-zmapDocs/Makefile
 zmapDAS/Makefile
 zmapDraw/Makefile
 zmapFeature/Makefile
 zmapFeature/tests/Makefile
 zmapGFF/Makefile
-zmapMake/Makefile
 zmapManager/Makefile
 zmapServer/Makefile
 zmapServer/acedb/Makefile
