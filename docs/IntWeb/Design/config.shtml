@@ -230,7 +230,7 @@ In the [source] type stanzas options are available to define featuresets and sty
 Styles may be defined in a config file which can be specified in [ZMap] with the key styles-file=filename, and only one will be allowed.
 Individual source stanzas will not have a styles-file key.
 
-Styles may be defined in a source stanza as at present - it is inteneded that DAS servers will be able to request styles in future - but sources are not required to process this.  ACEDB servers have styles defined by thier featuresets and do not use styles config. File and Pipe servers do not use styles config as they assume that featuresets are displayed using a style of the same name,  wever they will honour the list of styles if given.
+Styles may be defined in a source stanza as at present - it is intended that DAS servers will be able to request styles in future - but sources are not required to process this.  ACEDB servers have styles defined by thier featuresets and do not use styles config. File and Pipe servers do not use styles config as they assume that featuresets are displayed using a style of the same name,  wever they will honour the list of styles if given.
 
 Options to specify ambiguous stanzas have been removed eg [sources], [source] etc.
 Sources must be listed in [ZMap] sources=one ; two ;....  and the individual sources defined in a stanza each.
