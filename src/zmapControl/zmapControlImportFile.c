@@ -50,14 +50,14 @@
 
 
 typedef enum { FILE_NONE, FILE_GFF, FILE_BAM, FILE_BIGWIG } fileType;
-#define N_FILE_TYPE	(FILE_BIGWIG + 1)
+#define N_FILE_TYPE (FILE_BIGWIG + 1)
 
 typedef struct
 {
-	fileType file_type;
-	char * script;
-	gchar ** args;			/* an allocated null terminated array os arg strings */
-	gchar ** allocd;			/* args for freeing on destroy */
+  fileType file_type;
+  char * script;
+  gchar ** args;   /* an allocated null terminated array os arg strings */
+  gchar ** allocd; /* args for freeing on destroy */
 } ZMapImportScriptStruct, *ZMapImportScript;
 
 
@@ -84,7 +84,7 @@ typedef struct MainFrameStructName
   GtkWidget *map_widg ;
   GtkWidget *offset_widg ;
   GtkWidget *assembly_widg;
-#define N_ARGS 16		/* number of optional dialog entries for FILE_NONE (is really 8 so i allowed a few spare) */
+#define N_ARGS 16 /* number of optional dialog entries for FILE_NONE (is really 8 so i allowed a few spare) */
 
   fileType file_type;
   ZMapImportScriptStruct scripts[N_FILE_TYPE];
@@ -101,8 +101,8 @@ typedef struct MainFrameStructName
 
 
 static GtkWidget *makePanel(GtkWidget *toplevel, gpointer *seqdata_out,
-			    ZMapControlImportFileCB user_func, gpointer user_data,
-			    ZMapFeatureSequenceMap sequence_map, int req_start, int req_end) ;
+                            ZMapControlImportFileCB user_func, gpointer user_data,
+                            ZMapFeatureSequenceMap sequence_map, int req_start, int req_end) ;
 static GtkWidget *makeMainFrame(MainFrame main_frame, ZMapFeatureSequenceMap sequence_map) ;
 static GtkWidget *makeOptionsBox(MainFrame main_frame, char *seq, int start, int end);
 static GtkWidget *makeButtonBox(MainFrame main_frame) ;
