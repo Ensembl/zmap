@@ -115,6 +115,8 @@ sub get_params
         $attributes_format = '%s=%s';
         $attributes_sep = ';';
     }
+
+    return;
 }
 
 
@@ -179,6 +181,8 @@ sub main
 
         print $_, "\n";
     }
+
+    return;
 }
 
 main;

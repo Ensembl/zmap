@@ -49,6 +49,8 @@ sub get_params
 	pod2usage(1) if $missing;
 
 	$params{$_} = uri_unescape($params{$_}) for keys %params;
+
+	return;
 }
 
 
@@ -179,6 +181,8 @@ MY_FILE
 	}
 
 	close $file_h;
+
+	return;
 }
 
 

@@ -86,6 +86,8 @@ sub get_params
         $attributes_format = '%s=%s';
         $attributes_sep = ';';
     }
+
+    return;
 }
 
 
@@ -273,6 +275,8 @@ sub main
     foreach my $feat (@{$features}) {
         print_feature($feat, $feat->start, $feat->end );
     }
+
+    return;
 }
 
 main;

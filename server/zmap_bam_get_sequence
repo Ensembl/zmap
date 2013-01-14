@@ -39,6 +39,8 @@ sub get_params
 	pod2usage(1) if $missing;
 
 	$params{$_} = uri_unescape($params{$_}) for keys %params;
+
+	return;
 }
 
 
@@ -67,6 +69,8 @@ sub main
 			printf("%s\t%d\n", $seq,  $sam->length($seq));
 		}
 	}
+
+	return;
 }
 
 main();
