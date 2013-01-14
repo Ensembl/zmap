@@ -138,7 +138,7 @@ sub main
 
 	}
 
-	$" = ';';
+	local $" = ';';
 	print $file_h <<ZMAP
 [ZMap]
 show-mainwindow = true
