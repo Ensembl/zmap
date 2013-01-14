@@ -139,7 +139,7 @@ sub main
 	}
 
 	local $" = ';';
-	print $file_h <<ZMAP
+	print $file_h <<"ZMAP"
 [ZMap]
 show-mainwindow = true
 sequence = $sequence
@@ -152,7 +152,7 @@ ZMAP
 ;
 	# explicitly we do not create a columns list or stanza
 
-	 print $file_h <<ZMAP_WINDOW
+	 print $file_h <<'ZMAP_WINDOW'
 [ZMapWindow]
 colour-column-highlight = cornsilk
 colour-frame-2 = #e6e6ff
@@ -170,7 +170,7 @@ ZMAP_WINDOW
 	{
 		my $src = $src_files { $fname} -> { 'source' };
 		my $sep = ( $src =~ m/^\// ) ? '/' : '';
-		print $file_h <<MY_FILE
+		print $file_h <<"MY_FILE"
 [$src]
 delayed = false
 featuresets=
