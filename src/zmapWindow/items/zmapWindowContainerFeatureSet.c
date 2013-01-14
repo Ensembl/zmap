@@ -224,7 +224,7 @@ ZMapWindowContainerFeatureSet zmapWindowContainerFeatureSetAugment(ZMapWindowCon
 /* replaced by utils/attach_feature_any
  * stats are not handled for the moment
  * Ed was looking at a base class to do that if needs be we can add something back
- * BUT if we remove it the we have to fix up stats ref'd fron the factory
+ * BUT if we remove it the we have to fix up stats ref'd from the factory
  */
 
 /*!

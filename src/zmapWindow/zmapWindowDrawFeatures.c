@@ -1191,7 +1191,7 @@ static void windowDrawContext(ZMapCanvasData     canvas_data,
 }
 
 
-/* eg after changing the style, we remove the column fron the canvas and draw it again to handle stranding changes */
+/* eg after changing the style, we remove the column from the canvas and draw it again to handle stranding changes */
 void zmapWindowRedrawFeatureSet(ZMapWindow window, ZMapFeatureSet featureset)
 {
   ZMapCanvasDataStruct canvas_data = {NULL};
