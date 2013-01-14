@@ -54,7 +54,7 @@ sub main
 	{
 		my $sam = Bio::DB::Sam->new
 		(
-			-bam   => uri_unescape( $file ),	# unescape probably not needed, was copied from other script
+			-bam   => uri_unescape( $file ), # unescape probably not needed, was copied from other script
 			# -fasta => $fasta_path,
 		);
 

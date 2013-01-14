@@ -91,11 +91,11 @@ sub get_config
 
 	$sequence = $src_files { $file } -> { 'sequence' } if !defined $sequence;
 	$start    = $src_files { $file } -> { 'start' }    if !defined $start;
-	$end      = $src_files { $file } -> { 'end' } 	   if !defined $end;
+	$end      = $src_files { $file } -> { 'end' }      if !defined $end;
 
 	return "$file: ignored - different sequence\n"  if  $src_files { $file } -> { 'sequence' } ne $sequence;
 
-	return 0;	# ie success
+	return 0; # ie success
 }
 
 
