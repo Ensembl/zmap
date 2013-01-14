@@ -21,3 +21,19 @@ all-local:
 	make ; \
 	make install
 	@echo "Finished building $(ACECONN)...."
+
+
+# Extra files to remove for the maintainer-clean target.
+#
+MAINTAINERCLEANFILES = $(top_srcdir)/libAceConn/Makefile.in
+
+
+# We really need a maintainer-clean-local target here to clear up aceconn....
+maintainer-clean-local:
+	@echo "maintainer-clean-local: Cleaning up $(ACECONN)...."
+	@cd $(top_srcdir)/libAceConn/$(ACECONN_DIR) ; \
+	make maintainer-clean
+	@echo "maintainer-clean-local: Finished cleaning up $(ACECONN)...."
+
+
+
