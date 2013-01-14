@@ -113,7 +113,7 @@ In zmapView.c when replies are received to requests there is a flag that control
 <h4>Another problem</h5>
 <p>Due to a previous implementation where the View's step list data structures were used to ensure that all active connections did each request in step and all finished at the same time attempts to add a getStatus call by using the function <b>zmapViewStepListAddServerReq()</b> failed as this requires <b>      zmapViewStepListAddStep(step_list, ZMAP_SERVERREQ_GETSTATUS,  REQUEST_ONFAIL_CANCEL_THREAD)</b> to have been called first. This is hidden away in <b>zmapViewConnectionStepListCreate()</b>.
 </p>
-<p>This implies that the current implemenation prevents re-ordering of requests for different types of server. Note: some of the requests are required to be in the given order as some require data retrieved by a previous request.  Some of this may be passed in arguments or perhaps held secretly by the server module.
+<p>This implies that the current implementation prevents re-ordering of requests for different types of server. Note: some of the requests are required to be in the given order as some require data retrieved by a previous request.  Some of this may be passed in arguments or perhaps held secretly by the server module.
 </p>
 
 <h4>Another problem</h4>

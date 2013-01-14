@@ -37,7 +37,7 @@ Not implemented.
 <pre>
 graph-density=true
 </pre>
-enables re-binning of data dependind on zoom level, whcih allows the efficient display of lagre amounts of coverage data.  For exampke if you have 300k or sequens and 40bp bins then that's 7500 features. At min zoom you can see max 1000.  Re-binning combines several bins into one and takes the maximum score of the source bins as the one displayed. Clicking on the bin selects that source feature.  Note that currently it is assumed that all score values are positive.
+enables re-binning of data depending on zoom level, which allows the efficient display of large amounts of coverage data.  For example if you have 300k of sequence and 40bp bins then that's 7500 features. At min zoom you can see max 1000.  Re-binning combines several bins into one and takes the maximum score of the source bins as the one displayed. Clicking on the bin selects that source feature.  Note that currently it is assumed that all score values are positive.
 </p>
 
 <p>
@@ -55,7 +55,7 @@ If a source bin is bigger than the nominal display bin size then the display bin
 graph-density-min-bin=4
 </pre>
 sets the minimum bin size for display in pixels.  The default (4) is the smallest histogram bin that can be easily clicked on (subjectively, for me).
-Line plots look better with a relatievly wide bin despite the fact that this looses detail. Histograms are usually displayed as coloured boxes with an outline and a size of less than 3 pixels means no fill colour will be visible. Heatmaps work best out of the three type with high resolution but it's not clear that a bin size of less than 2 is any use - the point of coverage displays is to highlight wherethe data is, and users can zoom in quite quickly.
+Line plots look better with a relatively wide bin despite the fact that this looses detail. Histograms are usually displayed as coloured boxes with an outline and a size of less than 3 pixels means no fill colour will be visible. Heatmaps work best out of the three type with high resolution but it's not clear that a bin size of less than 2 is any use - the point of coverage displays is to highlight wherethe data is, and users can zoom in quite quickly.
 </p>
 <p>
 <pre>

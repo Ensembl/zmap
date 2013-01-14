@@ -2,7 +2,7 @@
 
 <h3>Preamble</h3>
 
-<p> The current use of featuresets (data/ features) and columns (containers to put them in)  has roots in ACEDB whcih refered to both as columns.  A user would request a column from ACEDB and this could contain many featureseets (eg Repeats, curated transcripts).  More recently with data being sourced from pipe servers it has been more convenient to regard these as distinct.
+<p> The current use of featuresets (data/ features) and columns (containers to put them in)  has roots in ACEDB which refered to both as columns.  A user would request a column from ACEDB and this could contain many featureseets (eg Repeats, curated transcripts).  More recently with data being sourced from pipe servers it has been more convenient to regard these as distinct.
 </p>
 <p>With the display code changed to use canvas featuresets and also with new user requirements is is worth reviewing this.  There is a need to request (and show / hide/ bump) groups of columns together; some examples fo this are as follows:
 <ul>
@@ -35,7 +35,7 @@ This displays data from the distinct sources in one CanvasFeatureset and when bu
 </p>
 
 <h3>Focus and selecting features</h3>
-<p>Recent changes in the display data structure impact this>: to simplify the canvas containers CanvasFeaturesets have been made to display thoer own background, whcih implies that they must not overlap - this requires Repeats to be configured as a virtual featureset not a composite column.
+<p>Recent changes in the display data structure impact this>: to simplify the canvas containers CanvasFeaturesets have been made to display thoer own background, which implies that they must not overlap - this requires Repeats to be configured as a virtual featureset not a composite column.
 Clicking on a feature will highlight the column it's displayed in and also the feature.  If we select a feature then all the CanvasFeaturesets in that column will be highlit by displaying a different coloured background, and if several featuresets are display such that they overlap then some will be hidden from view.
 </p>
 
@@ -50,7 +50,7 @@ Clicking on a feature will highlight the column it's displayed in and also the f
 </p>
 
 <h3>New style parameters</h3>
-<p>As data for different featuresets arrives 'when it's ready' we cannot use the existing stagger mechansim to offset each CanvasFeatureset - if we bumped one column durign this process it would not work.
+<p>As data for different featuresets arrives 'when it's ready' we cannot use the existing stagger mechansim to offset each CanvasFeatureset - if we bumped one column during this process it would not work.
 </p>
 We could reuse the existing 'stagger' option which specifies an offset per CanvasFeatureset and specify 0 to mean 'calculate offset OTF'.  but perhaps it wopudl be better to add a new option:
 <pre>

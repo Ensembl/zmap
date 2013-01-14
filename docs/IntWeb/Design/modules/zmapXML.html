@@ -14,13 +14,13 @@
 </ul>
 Although Otterlace waits in a tight loop for the response this takes an indeterminate but normally short period of time and there is a 30 second timeout in case of any failure.
 </p>
-<p>This solution does break some of the design assumptions of the XRemote code (which were incompatable with correct fucntioning of the module).  In the near future the XRemote module will be replaced by a new one, which will operate using Xwindow Select functions instead of XAtoms.
+<p>This solution does break some of the design assumptions of the XRemote code (which were incompatable with correct functioning of the module).  In the near future the XRemote module will be replaced by a new one, which will operate using Xwindow Select functions instead of XAtoms.
 </p>
 
 </fieldset>
 
 <fieldset><legend>Simplifying existing code</legend>
-<p>Out of the three XML contexts on the app/control and view are used; window fucntions were moved into the view some time previously.  To avoid confusion the window code has been removed by doing the following:
+<p>Out of the three XML contexts on the app/control and view are used; window functions were moved into the view some time previously.  To avoid confusion the window code has been removed by doing the following:
 <ul>
 <li> commenting out the call to <b>zMapWindowSetupXRemote()<b> in </b>zmapWIndow.c/myWindowCreate()</b>
 <li> commenting out all the code in <b>zmapWindowRemoteReceive.c</b> except for <b>zMapWindowRemoteReceiveAccepts()</b>, a very short function used by the view's 'list windows' request.

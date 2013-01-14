@@ -35,7 +35,7 @@ The major problem to solve is one of passing round information regarding what da
 <h3>[Blixem] configuration - new options</h3>
 <h4>Configuration file</h4>
 <p>
-The blixem configuration file <b>blixemrc</b> will be ammended to include a stanza for fetching short-read data, which will include a script with optional arguments, not including the sequence name or start or end coordinates. Refer <a href="Design/notes/standalone.shtml">here</a> for some relevant comments regarding other pipe-server arguments which may affect this configuration in future.
+The blixem configuration file <b>blixemrc</b> will be amended to include a stanza for fetching short-read data, which will include a script with optional arguments, not including the sequence name or start or end coordinates. Refer <a href="Design/notes/standalone.shtml">here</a> for some relevant comments regarding other pipe-server arguments which may affect this configuration in future.
 </p>
 <p>
 The config file already specifies the default pfetch mode for our current data type (EMBL sequences).  This fetch mode relates to fetching missing data for sequences that Blixem already knows about (i.e. those in its &lt;datafile&gt; input file).  The new fetch method will fetch all sequences within a particular region from a particular source, without any prior knowledge of what those sequences are.  We could in the future want additional fetch methods for different data types that we don't yet know about, which may fetch sequences or just sequence data.

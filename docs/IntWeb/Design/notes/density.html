@@ -249,7 +249,7 @@ coverage = liver; heart ; brain
 will specify that the featuresets are in that order from left to right.  Note that each set's width is specified separately
 and this may indicate overlap (eg for wiggles) or a gap (eg for a heatmap).  This is necessary to avoid having to define different styles for each featureset with a different offset - it is important that the featuresets appear in the same (predictable) order and position within the column.
 </p>
-<p>The whole column may be shown/ hidden as normal, but the RC menu will be ammended to allow a single featureset to be hidden / displayed with a keyboard shortcut for the selected one.  Note that we will have to show column highlight differently and for heatmaps this may be difficult.  One solution would be by using an outline for select.  The columns dialog popup was intended to allow selection of featuresets in a column at some point... NOTE that this will be deferred until the dialog design is revisited, and in the short term only a menu driven interface will be provided.
+<p>The whole column may be shown/ hidden as normal, but the RC menu will be amended to allow a single featureset to be hidden / displayed with a keyboard shortcut for the selected one.  Note that we will have to show column highlight differently and for heatmaps this may be difficult.  One solution would be by using an outline for select.  The columns dialog popup was intended to allow selection of featuresets in a column at some point... NOTE that this will be deferred until the dialog design is revisited, and in the short term only a menu driven interface will be provided.
 </p>
 
 <h6> Handling short reads data</h6>
@@ -336,7 +336,7 @@ What is important is that there is a clear switch between one style and the othe
 <fieldset><legend>GC content</legend>
 <h4>(needs to be reviewed, ref to density plots above)</h4>
 <h3>Not a density plot</h3>
-<p>GC content provides an easy way to implement wiggle plots as a graph mode feature whcih can later be used  in a density plot environment subject to configuration.  Note that they are defined as style mode = graph!
+<p>GC content provides an easy way to implement wiggle plots as a graph mode feature which can later be used  in a density plot environment subject to configuration.  Note that they are defined as style mode = graph!
 </p>
 <h3>Rolling window size</h3>
 <p>A cursory scan of google suggests a window of 50-500bp - 50 as the GC skew can change suddenly and 500 relating to 'flanking DNA', with values being calculated at 100 bp steps (Human Molecular Genetics, 1999, Vol. 8, No. 6 1061?1067).  This suggests that we must provide this paramet in the style, and also possibly provide more than one graph, using different window sizes.  One way to implement this would be to define hard coded featuresets (like DNA) such as GC_Skew1, GC_Skew2 etc and map these into a single column (if desired) and attach different styles to specify the window size.

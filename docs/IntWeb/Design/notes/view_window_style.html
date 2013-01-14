@@ -9,7 +9,7 @@
 </p>
 <p>Styles are merged into a global (to the view) table as they are supplied by servers - the ZMap server model is one where each server supplies styles for its features although in practice ZMap supplies these to the server and then retrieves them.  Each display window (pane) is given the global list of styles and traditionally maintained a read-only (original) and volatile copy (with state information).  Various functions were written to juggle all this information and distribute it.
 </p>
-<p>More recently this code ahas been changed to allow each feature to refer to its style directly (and also the containign featureset and ContainerFeatureset and to have on copy of this information per view which is referred to directly without copying, whcih means that it will not be necessary to maintain updater functions.
+<p>More recently this code has been changed to allow each feature to refer to its style directly (and also the containing featureset and ContainerFeatureset and to have on copy of this information per view which is referred to directly without copying, which means that it will not be necessary to maintain updater functions.
 </p>
 
 <fieldset><legend>Handling Styles in Server modules</legend>

@@ -209,7 +209,7 @@ the properties themselves.
     <tr>
       <td>bump-style</td>
       <td>string</td>
-      <td>Specifies whcih style to use with the style bump-mode.</td>
+      <td>Specifies which style to use with the style bump-mode.</td>
     </tr>
     <tr>
       <td>bump-spacing</td>
@@ -285,7 +285,7 @@ the properties themselves.
     <tr>
       <td>collapse</td>
       <td>boolean</td>
-      <td>switches on collapse mode display, whcih combines identical features and sets a score depending on how many.  Use with min-score, max-scoree, score_scale, score-mode.</td>
+      <td>switches on collapse mode display, which combines identical features and sets a score depending on how many.  Use with min-score, max-scoree, score_scale, score-mode.</td>
     </tr>
 
     <tr>
