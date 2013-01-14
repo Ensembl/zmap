@@ -295,6 +295,7 @@ typedef struct _zmapWindowFeaturesetItemStruct
   gboolean background_set;	/* Is background set ? */
   gboolean border_set;		/* Is border set ? */
 
+
   ZMapFeature point_feature;	/* set by cursor movement */
   ZMapWindowCanvasFeature point_canvas_feature;		/* last clicked canvasfeature, set by select, need for legacy code interface */
 
