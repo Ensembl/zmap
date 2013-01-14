@@ -194,80 +194,86 @@ static gpointer _featureset_colour_G[FEATURE_N_TYPE] = { 0 };
 /* erm,,, clip to visible scroll region: else rectangles would get extra edges */
 int zMap_draw_line(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, gint cx1, gint cy1, gint cx2, gint cy2)
 {
-	/* for H or V lines we can clip easily */
+  /* for H or V lines we can clip easily */
 
-	if(cy1 > featureset->clip_y2)
-		return 0;
-	if(cy2 < featureset->clip_y1)
-		return 0;
+  if(cy1 > featureset->clip_y2)
+    return 0;
+  if(cy2 < featureset->clip_y1)
+    return 0;
+
+
 #if 0
-/*
+  /*
+    the problem is long vertical lines that wrap round
+    we don't draw big horizontal ones
+  */
+  if(cx1 > featureset->clip_x2)
+    return;
+  if(cx2 < featureset->clip_x1)
+    {
+      /* this will return if we expose part of a line that runs TR to BL
+       * we'd have to swap x1 and x2 round for the comparison to work
+       */
+      return;
+    }
+#endif
+
+
+  if(cx1 == cx2)	/* is vertical */
+    {
+#if 0
+      /*
 	the problem is long vertical lines that wrap round
 	we don't draw big horizontal ones
-    */
-	if(cx1 > featureset->clip_x2)
-	  return;
-	if(cx2 < featureset->clip_x1)
-	  {
-	    /* this will return if we expose part of a line that runs TR to BL
-	     * we'd have to swap x1 and x2 round for the comparison to work
-	     */
-	    return;
-	  }
+      */
+      if(cx1 < featureset->clip_x1)
+	cx1 = featureset->clip_x1;
+      if(cx2 > featureset->clip_x2)
+	cx2 = featureset->clip_x2;
 #endif
-	if(cx1 == cx2)	/* is vertical */
-	  {
-#if 0
-	    /*
-	      the problem is long vertical lines that wrap round
-	      we don't draw big horizontal ones
-	    */
-	    if(cx1 < featureset->clip_x1)
-	      cx1 = featureset->clip_x1;
-	    if(cx2 > featureset->clip_x2)
-	      cx2 = featureset->clip_x2;
-#endif
-	    if(cy1 < featureset->clip_y1)
-	      cy1 = featureset->clip_y1;
-	    if(cy2 > featureset->clip_y2)
-	      cy2 = featureset->clip_y2 ;
-	  }
-	else
-	  {
-	    double dx = cx2 - cx1;
-	    double dy = cy2 - cy1;
 
-	    if(cy1 < featureset->clip_y1)
-	      {
-		/* need to round to get partial lines joining up neatly */
-		cx1 += round(dx * (featureset->clip_y1 - cy1) / dy);
-		cy1 = featureset->clip_y1;
-	      }
-	    if(cy2 > featureset->clip_y2)
-	      {
-		cx2 -= round(dx * (cy2 - featureset->clip_y2) / dy);
-		cy2 = featureset->clip_y2;
-	      }
+      if(cy1 < featureset->clip_y1)
+	cy1 = featureset->clip_y1;
+      if(cy2 > featureset->clip_y2)
+	cy2 = featureset->clip_y2 ;
+    }
+  else
+    {
+      double dx = cx2 - cx1;
+      double dy = cy2 - cy1;
 
-	  }
-	gdk_draw_line (drawable, featureset->gc, cx1, cy1, cx2, cy2);
+      if(cy1 < featureset->clip_y1)
+	{
+	  /* need to round to get partial lines joining up neatly */
+	  cx1 += round(dx * (featureset->clip_y1 - cy1) / dy);
+	  cy1 = featureset->clip_y1;
+	}
+      if(cy2 > featureset->clip_y2)
+	{
+	  cx2 -= round(dx * (cy2 - featureset->clip_y2) / dy);
+	  cy2 = featureset->clip_y2;
+	}
 
-	return 1;
+    }
+
+  gdk_draw_line (drawable, featureset->gc, cx1, cy1, cx2, cy2);
+
+  return 1;
 }
 
 
 /* these are less common than solid lines */
 int zMap_draw_broken_line(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, gint cx1, gint cy1, gint cx2, gint cy2)
 {
-	int ret;
+  int ret;
 
-	gdk_gc_set_line_attributes(featureset->gc, 1, GDK_LINE_ON_OFF_DASH,GDK_CAP_BUTT, GDK_JOIN_MITER);
+  gdk_gc_set_line_attributes(featureset->gc, 1, GDK_LINE_ON_OFF_DASH,GDK_CAP_BUTT, GDK_JOIN_MITER);
 
-	ret = zMap_draw_line(drawable, featureset, cx1, cy1, cx2, cy2);
+  ret = zMap_draw_line(drawable, featureset, cx1, cy1, cx2, cy2);
 
-	gdk_gc_set_line_attributes(featureset->gc, 1, GDK_LINE_SOLID,GDK_CAP_BUTT, GDK_JOIN_MITER);
+  gdk_gc_set_line_attributes(featureset->gc, 1, GDK_LINE_SOLID,GDK_CAP_BUTT, GDK_JOIN_MITER);
 
-	return ret;
+  return ret;
 }
 
 
@@ -1381,44 +1387,42 @@ void zmapWindowFeaturesetItemShowHide(FooCanvasItem *foo, ZMapFeature feature, g
  */
 GList *zMapWindowFeaturesetItemFindFeatures(FooCanvasItem **item, double y1, double y2, double x1, double x2)
 {
-  ZMapWindowFeaturesetItem fset;
-  ZMapSkipList sl;
-  GList *feature_list = NULL;
-  FooCanvasItem *foo = NULL;
+  GList *feature_list = NULL ;
+  ZMapWindowFeaturesetItem fset ;
+  ZMapSkipList sl ;
+  FooCanvasItem *foo = NULL ;
+  double mid_x = (x1 + x2) / 2 ;
+  GList *l, *lx ;
 
-  *item = NULL;
 
-  double mid_x = (x1 + x2) / 2;
-  GList *l, *lx;
+  zMap_g_hash_table_get_data(&lx, featureset_class_G->featureset_items) ;
 
-  zMap_g_hash_table_get_data(&lx,featureset_class_G->featureset_items);
-
-  for(l = lx;l ;l = l->next)
+  for (l = lx ; l ; l = l->next)
     {
       foo = (FooCanvasItem *) l->data;
 
-	if(foo->canvas != (*item)->canvas)	/* on another window ? */
-		continue;
+      if (foo->canvas != (*item)->canvas)	/* on another window ? */
+	continue;
 
-	if (!(foo->object.flags & FOO_CANVAS_ITEM_VISIBLE))
-		continue;
+      if (!(foo->object.flags & FOO_CANVAS_ITEM_VISIBLE))
+	continue;
 
+      fset = (ZMapWindowFeaturesetItem)foo ;
 
-      if(foo->x1 < mid_x && foo->x2 > mid_x)
+      if ((foo->x1 < mid_x && foo->x2 > mid_x)
+	  && (fset->start < y1 && fset->end > y2))
 	break;
     }
 
-  if(lx)
-    g_list_free(lx);
+  if (lx)
+    g_list_free(lx) ;
 
-  if(!l || !foo)
+  if (!l || !foo)
     return(NULL);
-
-  fset = (ZMapWindowFeaturesetItem) foo;
 
   sl = zmap_window_canvas_featureset_find_feature_coords(NULL, fset, y1, y2);
 
-  for(;sl ; sl = sl->next)
+  for( ; sl ; sl = sl->next)
     {
       ZMapWindowCanvasFeature gs;
       gs = sl->data;
@@ -1463,7 +1467,9 @@ GList *zMapWindowFeaturesetItemFindFeatures(FooCanvasItem **item, double y1, dou
 	feature_list = zMap_g_list_append_unique(feature_list, gs->feature);
       }
     }
-  return feature_list;
+
+
+  return feature_list ;
 }
 
 
@@ -2056,8 +2062,9 @@ void zMapWindowCanvasFeaturesetIndex(ZMapWindowFeaturesetItem fi)
   GList *features;
 
   /*
-   * this call has to be here as zMapWindowCanvasFeaturesetIndex() is called from bump, which can happen before we get a paint
-   * i tried to move it into alignments (it's a bodge to cope with the data being shredded before we get it)
+   * this call has to be here as zMapWindowCanvasFeaturesetIndex() is called from bump,
+   * which can happen before we get a paint i tried to move it into alignments 
+   * (it's a bodge to cope with the data being shredded before we get it)
    */
   if(fi->link_sideways && !fi->linked_sideways)
     zmap_window_featureset_item_link_sideways(fi);
@@ -3314,14 +3321,15 @@ int zMapWindowFeaturesetItemRemoveSet(FooCanvasItem *foo, ZMapFeatureSet feature
   ZMapWindowCanvasFeature feat;
   ZMapFeatureSet set;
 
-  for(l = fi->features;l;)
+  for (l = fi->features;l;)
     {
       GList *del;
 
       feat = (ZMapWindowCanvasFeature) l->data;
 
-	set = (ZMapFeatureSet) feat->feature->parent;
-      if(set == featureset)
+      set = (ZMapFeatureSet) feat->feature->parent;
+
+      if (set == featureset)
 	{
 	  /* NOTE the features list and display index both point to the same structs */
 
@@ -3391,11 +3399,13 @@ int zMapWindowFeaturesetItemRemoveSet(FooCanvasItem *foo, ZMapFeatureSet feature
 //printf("canvas remove set %p %s %s: %d features\n", fi, g_quark_to_string(fi->id), g_quark_to_string(featureset->unique_id), n_feat);
 
   if(!fi->n_features && destroy)	/* if the canvasfeatureset is used only as a background we may not want to do this */
-  {
+    {
 // don-t do this we get glib **** errors
 //	  zmap_window_featureset_item_item_destroy((GtkObject *) fi);
-	gtk_object_destroy(GTK_OBJECT(fi));
-  }
+      gtk_object_destroy(GTK_OBJECT(fi));
+    }
+
+
   return n_feat;
 }
 
