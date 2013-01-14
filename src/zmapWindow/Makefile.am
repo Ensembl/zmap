@@ -146,3 +146,8 @@ libZMapWindowCanvas_la_CFLAGS = $(INCLUDE_COMMON) -I$(top_srcdir)/zmapUtils  -I$
 libZMapWindowCanvas_la_DEPENDENCIES = $(nodist_libZMapWindowCanvas_la_SOURCES)
 
 
+# Extra files to remove for the maintainer-clean target.
+#
+MAINTAINERCLEANFILES = $(top_srcdir)/zmapWindow/Makefile.in
+
+

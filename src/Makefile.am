@@ -237,7 +237,7 @@ $(NULL)
 #----------------------------------------------------------------------
 # Our additions to some standard targets. (the XXX-local targets are
 # automakes way of allowing us to add stuff to standard targets such
-# as "all" etc.
+# as "all" etc.)
 #----------------------------------------------------------------------
 
 # The most clean you can get your tree is to use the targer maintainer-clean
@@ -248,13 +248,27 @@ $(NULL)
 #GENERATED_FILES = './.deps ./.libs ./bin ./include ./lib* ./zmap* ./Makefile ./config.* dotZMap gffparser* \
 #./stamp-h1 ./xml_* ./xremote* ./zmap*'
 
-GENERATED_FILES = $(top_builddir)/.deps $(top_builddir)/.libs $(top_builddir)/*
+
+# Standard way to add _files_ to the list deleted by the maintainer-clean target.
+#
+MAINTAINERCLEANFILES = $(top_srcdir)/Makefile.in $(top_srcdir)/aclocal.m4 \
+$(top_srcdir)/config.h.in $(top_srcdir)/configure $(top_srcdir)/zmap_version.m4
+
+
+# To remove directories and other more complex lists of files we use the standard
+# maintainer-clean-local target which is run after all the stuff in maintainer-clean
+#
+GENERATED_FILES = $(top_builddir)/.deps $(top_builddir)/.libs $(top_builddir)/* $(top_srcdir)/config
 
 maintainer-clean-local:
 	@echo 'maintainer-clean-local: Removing all generated files....'
 	rm -rf $(GENERATED_FILES)
 	rm -f $(top_srcdir)/m4/*.m4
 	@echo 'maintainer-clean-local: Finished removing all generated files....'
+
+
+
+
 
 mkdocdir:
 	@if test ! -d docs ; then \
@@ -263,12 +277,7 @@ mkdocdir:
 
 docs: mkdocdir doxygen-doc
 
-#maintainer-clean-local:
-#	rm -rf cleanDir
 
-# should we be doing this....???? really a maintainer thing....
-#distclean-local:
-#
 
 # the next two targets are required for installing the static
 # libraries.  Not something we should be doing I'm sure, but

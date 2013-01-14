@@ -23,3 +23,11 @@ das/libDasServer.la     \
 $(NULL)
 libZMapServers_la_CFLAGS  = 
 libZMapServers_la_LDFLAGS = 
+
+# Extra files to remove for the maintainer-clean target.
+#
+MAINTAINERCLEANFILES = $(top_srcdir)/zmapServer/Makefile.in
+
+
+
+

@@ -49,6 +49,12 @@ libZMapUtils_la_CFLAGS = $(INCLUDE_COMMON)
 
 
 
+# Extra files to remove for the maintainer-clean target.
+#
+MAINTAINERCLEANFILES = $(top_srcdir)/zmapUtils/Makefile.in
+
+
+
 # Create a file containing the compile date each time zmap is compiled.
 # NOTE, this file is not in the repository because it will change with
 # every build.

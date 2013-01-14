@@ -16,3 +16,10 @@ zmapViewFeatureCollapse.c \
 $(NULL)
 
 libZMapView_la_CFLAGS = $(INCLUDE_COMMON)
+
+
+# Extra files to remove for the maintainer-clean target.
+#
+MAINTAINERCLEANFILES = $(top_srcdir)/zmapView/Makefile.in
+
+

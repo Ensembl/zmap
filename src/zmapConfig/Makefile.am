@@ -20,6 +20,12 @@ $(NULL)
 libZMapConfig_la_CFLAGS = $(INCLUDE_COMMON)
 
 
+# Extra files to remove for the maintainer-clean target.
+#
+MAINTAINERCLEANFILES = $(top_srcdir)/zmapConfig/Makefile.in
+
+
+
 # Create default styles string dynamically each time the text file is changed.
 #
 $(top_srcdir)/zmapConfig/default_styles.c: $(top_srcdir)/zmapConfig/default_styles.txt

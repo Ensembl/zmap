@@ -55,6 +55,13 @@ EXTRA_DIST = $(libzmapfoocanvas_la_marshal)
 
 GENMARSHAL_COMMAND = $(GLIB_GENMARSHAL) --prefix=foo_canvas_marshal
 
+
+# Extra files to remove for the maintainer-clean target.
+#
+MAINTAINERCLEANFILES = $(top_srcdir)/libzmapfoocanvas/Makefile.in
+
+
+
 .list.h:
 	$(GENMARSHAL_COMMAND) --header $< >$@
 
