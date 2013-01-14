@@ -3,7 +3,7 @@
 # a simple script to translate sequence name and offset seq coords in GFF
 # we could do that in ZMap directly but this way we have more options to interpret the data
 # could modify to translate GFF2 <-> GFF3 ??
-# could modify to translate featureset names to avoid colissions
+# could modify to translate featureset names to avoid collisions
 
 use strict;
 use warnings;

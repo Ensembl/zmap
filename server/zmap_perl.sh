@@ -1,6 +1,6 @@
 
-# set up path and library envorinment to allow zmap BAM scripts to work
-# NOTE this uses and existign otterlace installation
+# set up path and library environment to allow zmap BAM scripts to work
+# NOTE this uses an existing otterlace installation
 # we need to set up and export a complete Perl environment w/ ZMap
 # or supply scripts as a separate add-on
 
