@@ -458,7 +458,7 @@ many lines
 
 and turns it into a hyperlinked display of the tasks where each task will be placed in one of
 the four categories ranging from "Important & Urgent" to "Not Important & Not Urgent". Each
-task is represented by the short description text which is linked to a file containging
+task is represented by the short description text which is linked to a file containing
 the longer description.
 
 This provides a way of ranking tasks which can be added/removed from a simple windows INI format
