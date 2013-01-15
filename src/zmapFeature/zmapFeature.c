@@ -105,7 +105,7 @@ typedef struct
   /* the list of real featuresets (not columns) actually requested */
   GList *req_featuresets;
 
-  gboolean new_features ;	/* this is a flag that includes featruesets and features */
+  gboolean new_features ;	/* this is a flag that includes featuresets and features */
   					/* don't know if it matters if we flag featuresets */
   int feature_count;		/* this is a count of the new features */
 

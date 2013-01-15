@@ -457,7 +457,7 @@ void removeZMapCB(void *app_data, void *zmap_data)
      doesn't as the first found one that matches, gets removed an
      returns true. See
      http://scentric.net/tutorial/sec-treemodel-remove-many-rows.html
-     for an implementation of mutliple deletes */
+     for an implementation of multiple deletes */
   gtk_tree_model_foreach(GTK_TREE_MODEL(app_context->tree_store_widg),
                          (GtkTreeModelForeachFunc)removeZMapRowForeachFunc,
                          (gpointer)zmap);

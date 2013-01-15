@@ -461,7 +461,7 @@ static gboolean zmap_window_canvas_set_glyph(FooCanvasItem *foo, ZMapWindowCanva
 
       if(col_width)
 	{
-	  // if niether of these are set we'll offset by zero and default to centred glyphs
+	  // if neither of these are set we'll offset by zero and default to centred glyphs
 	  // if config is poor they'll look silly so no need for an error message
 
 	  align = zMapStyleGetAlign(style);

@@ -770,7 +770,7 @@ void zMapWindowCanvasFeatureSetSetFuncs(int featuretype, gpointer *funcs, int fe
  */
 void featureset_init_funcs(void)
 {
-  /* set size of unspecifed features structs to just the base */
+  /* set size of unspecified features structs to just the base */
   featureset_class_G->struct_size[FEATURE_INVALID] = sizeof(zmapWindowCanvasFeatureStruct);
 
   zMapWindowCanvasBasicInit();		/* the order of these may be important */
@@ -1124,7 +1124,7 @@ void zMapWindowCanvasFeaturesetRedraw(ZMapWindowFeaturesetItem fi, double zoom)
   foo_canvas_w2c (foo->canvas, x1 + width + i2w_dx, fi->end - fi->start + i2w_dy, &cx2, &cy2);
 
   /* need to expose + 1, plus for glyphs add on a bit: bodged to 8 pixels
-   * really ought to work out max glyph size or rather have true featrue extent
+   * really ought to work out max glyph size or rather have true feature extent
    * NOTE this is only currently used via OTF remove exisitng features
    */
   foo_canvas_request_redraw (foo->canvas, cx1, cy1, cx2 + 1, cy2 + 1);
@@ -1617,7 +1617,7 @@ double  zmap_window_featureset_item_foo_point(FooCanvasItem *item,
 	      fi->point_feature = gs->feature;
 	      *actual_item = item;
 	      //printf("overlaps x\n");
-#warning this could concievably cause a memory fault if we freed point_canvas_feature but that seems unlikely if we don-t nove the cursor
+#warning this could conceivably cause a memory fault if we freed point_canvas_feature but that seems unlikely if we don-t nove the cursor
 	      fi->point_canvas_feature = gs;
 	      best = this_one;
 

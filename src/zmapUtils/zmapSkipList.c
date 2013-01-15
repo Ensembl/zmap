@@ -185,7 +185,7 @@ ZMapSkipList zMapSkipListCreate(GList *data_in, GCompareFunc cmp)
 
 
 /* to avoid handling NULL in the cmp function we provide this to get the first leaf node
- * NOTE that it's possible to descend to ta leaf frpm the head ans still have previous leaves
+ * NOTE that it's possible to descend to a leaf from the head and still have previous leaves
  * depending on implementation details - this is due to add/ delete operations
  * but we do know that downward links go direct to a leaf
  * NOTE finding the last item efficiently is a bit harder - romm for more design here??

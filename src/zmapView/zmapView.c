@@ -581,7 +581,7 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 		}
 #if 0
 	/* featuresets are absolutley not required as if so we could not autoconfigure
-	 * a file server wihtout reading the whole file first
+	 * a file server without reading the whole file first
 	 * which would require us to read it twice
 	 * NOTE also that some other code assumes that we know what featuresets
 	 * exist in a file before reading it or get told by the server

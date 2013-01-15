@@ -186,7 +186,7 @@ void zmapControlWindowSetStatus(ZMap zmap)
        * so we get to write another goddam function to access the same data
        * and introduce yet more repetition of code
        * these functions were written to provide a reliable single point of access
-       * but you have to feed them the right data of else they don't work
+       * but you have to feed them the right data or else they don't work
        */
 
 #if NO_SCOPE_FOR_IMPROVEMENT
