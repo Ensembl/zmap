@@ -59,7 +59,7 @@ gboolean zmap_thread_debug_G = FALSE ;
 
 
 /* For locking/unlocking of fork calls. */
-static pthread_mutex_t thread_fork_mutex_G = PTHREAD_ERRORCHECK_MUTEX_INITIALIZER_NP ;
+static pthread_mutex_t thread_fork_mutex_G = PTHREAD_MUTEX_INITIALIZER ;
 
 
 
