@@ -1547,7 +1547,7 @@ ZMapFeatureContextMergeCode zMapFeatureContextMerge(ZMapFeatureContext *merged_c
 
 #if 0
 	/* mh17: NOTE nice idea but DNA search draws stuff into a NULL seperator context
-	 * so we restore the previous code whcih should be safe as there are no race conditions
+	 * so we restore the previous code which should be safe as there are no race conditions
 	 */
   zMapAssert(current_context);
 #else

@@ -951,7 +951,7 @@ static void markItem(ZMapWindowMark mark, FooCanvasItem *item, gboolean set_mark
       mark_colour  = zmapWindowMarkGetColour(mark);
       mark_stipple = mark->stipple;
 
-// previous code: convert to a ZMapWindoCanvasItem  to call a fucntion that converts back to a FooCanvasItem
+// previous code: convert to a ZMapWindoCanvasItem  to call a function that converts back to a FooCanvasItem
 //    zMapWindowCanvasItemMark((ZMapWindowCanvasItem)item, mark_colour, mark_stipple);
 
       foo_canvas_item_get_bounds(item,&x1, &y1, &x2, &y2);

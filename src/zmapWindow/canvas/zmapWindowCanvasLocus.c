@@ -368,7 +368,7 @@ static void zMapWindowCanvasLocusZoomSet(ZMapWindowFeaturesetItem featureset, Gd
 
 	/* de-overlap the loci left over
 	 * this will move features around and expand their extents
-	 * after this fucntion the featureset code will create the index
+	 * after this function the featureset code will create the index
 	 */
 	if(n_loci > 1)
 		featureset->longest = deOverlap(visible, n_loci, lset->text_h, featureset->start, featureset->end);
@@ -410,7 +410,7 @@ static double locusPoint(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature gs
 	ZMapWindowCanvasLocus locus = (ZMapWindowCanvasLocus) gs;
 	ZMapWindowCanvasLocusSet lset = (ZMapWindowCanvasLocusSet) fi->opt;
 
-	/* fucntion interface looks too complex, let's just use the feature info */
+	/* function interface looks too complex, let's just use the feature info */
 	double ytext = locus->ytext - lset->text_h / 2 - fi->dy + 1;
 
 	if(item_y >= ytext && item_y <= (ytext + lset->text_h))

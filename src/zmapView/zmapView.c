@@ -1748,8 +1748,8 @@ void zMapViewShowLoadStatus(ZMapView view)
 
 
 
-/* request featuresets from a server, req_featuresets may be null in whcih case all are requested implicitly */
-/* called from zmapViewLoadfeatures() to preserve original fucntion
+/* request featuresets from a server, req_featuresets may be null in which case all are requested implicitly */
+/* called from zmapViewLoadfeatures() to preserve original function
  * called from zmapViewConnect() to handle autoconfigured file servers,
  * which cannot be delayed as there's no way to fit these into the columns dialog as it currrently exists
  */

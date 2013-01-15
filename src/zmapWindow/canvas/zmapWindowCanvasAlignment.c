@@ -826,7 +826,7 @@ static double alignmentPoint(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeatur
 
   /* Get feature extent on display. */
   /* NOTE cannot use feature coords as transcript exons all point to the same feature */
-  /* alignments have to implement a special fucntion to handle bumped features - the first exon gets expanded to cover the whole */
+  /* alignments have to implement a special function to handle bumped features - the first exon gets expanded to cover the whole */
   /* when we get upgraded to vulgar strings these can be like transcripts... except that there's a performance problem due to volume */
   /* perhaps better to add  extra display/ search coords to ZMapWindowCancasFeature ?? */
   can_start = gs->feature->x1 ;

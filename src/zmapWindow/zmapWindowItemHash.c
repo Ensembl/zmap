@@ -166,9 +166,9 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(GHashTable *ftoi_hash,
       ZMapFeatureBlock block = feature_stack->block;
 
 	/* NOTE
-	 * parent is the features group in the conatiner featureset
+	 * parent is the features group in the container featureset
 	 * fset is the parent of that (the column) which has the column id
-	 * foo_featureset is NULL or an existing CanvasFeatureset whcih is the (normally) single foo canvas item in the column
+	 * foo_featureset is NULL or an existing CanvasFeatureset which is the (normally) single foo canvas item in the column
 	 */
 	if(!canvas_item)
       {

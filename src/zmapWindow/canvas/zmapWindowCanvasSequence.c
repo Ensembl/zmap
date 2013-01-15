@@ -241,10 +241,10 @@ static GList *zmapWindowCanvasSequencePaintHighlight( GdkDrawable *drawable, ZMa
 			 * and there is more than 1 residue on a line then we could overwrite a split codon with coding
 			 * as these highlights could appear it the same character cell.
 			 * split codons are important, so we don't overwrite these
-			 * implemenation is by detecting highlights of < 3 bases adn sam x coordinate
-			 * no state needs to be kept by the caller as this is containg within on line, which this is what fucntion does.
+			 * implementation is by detecting highlights of < 3 bases adn sam x coordinate
+			 * no state needs to be kept by the caller as this is contained within one line, which this is what function does.
 			 * 5' split cocdons could conceivably fail to overwrite a whole residue previous,
-			 * but we only trigger this if the highlight is less than 3 bases, whcih can't happen
+			 * but we only trigger this if the highlight is less than 3 bases, which can't happen
 			 */
 
 			if(hcx == last_paint)

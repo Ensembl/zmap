@@ -183,7 +183,7 @@ void zmapControlWindowSetStatus(ZMap zmap)
        * due to scope issues we can't see the view of the window
        * the view can return the sequence span which is in fwd strand
        * but the windowcoordpairtodisplay func assumes 'current fwd strand'
-       * so we get to write another goddam fucntion to access the same data
+       * so we get to write another goddam function to access the same data
        * and introduce yet more repetition of code
        * these functions were written to provide a reliable single point of access
        * but you have to feed them the right data of else they don't work

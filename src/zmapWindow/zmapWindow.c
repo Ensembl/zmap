@@ -632,7 +632,7 @@ static ZMapFeatureContextExecuteStatus undisplayFeaturesCB(GQuark key,
 #endif
 
 	/* MH17: we get locus features inserted mysteriously if a feature has a locus id
-	 * but they don't always appear in zmap in whcih case there is no column id
+	 * but they don't always appear in zmap in which case there is no column id
 	 * This is true when otterlace sends a single feature to delete and then we fail to find
 	 * the extra locus feature
 	 *
@@ -3205,7 +3205,7 @@ zMapLogWarning("canvas event %d",  event->type);
 		    seq_item = item;
 		    /*
 		     * Although we start with a base Foo item the highlight code does a FToI lookup on the feature
-		     * to get the full ZMapCanvasItem whcih is sued to drive SeqDispSelByRegion()
+		     * to get the full ZMapCanvasItem which is used to drive SeqDispSelByRegion()
 		     */
 		    zmapWindowHighlightSequenceItem(window, seq_item, seq_start, seq_end);
 
@@ -4076,7 +4076,7 @@ static void canvasSizeAllocateCB(GtkWidget *widget, GtkAllocation *allocation, g
 	  zmapWindowZoomControlHandleResize(window);
 
 	  zmapWindowGetScrollRegion(window, NULL, &start, NULL, &end);
-        /* MH17 is this fucntion being called for a side effect? */
+        /* MH17 is this function being called for a side effect? */
 	  zmapWindowSetScrollRegion(window, NULL, &start, NULL, &end,"canvasSizeAllocateCB");
 
 	  vis_change.zoom_status    = zMapWindowGetZoomStatus(window) ;
@@ -5750,7 +5750,7 @@ static void popUpMenu(GdkEventKey *key_event, ZMapWindow window, FooCanvasItem *
 
 
       /* Now call appropriate menu routine. */
-      /* focus item is either a CanvasItem or a column ie a windowconatinerfeatureset */
+      /* focus item is either a CanvasItem or a column ie a window container featureset */
       if (is_feature)
 	{
 	  zmapMakeItemMenu(&button_event, window, focus_item) ;

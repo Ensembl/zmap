@@ -13,7 +13,7 @@ create table value (atom_id integer, table_type integer, table_id integer, value
 
 -- generic table: line type and name to unique rowid
 -- different types can have the same name
--- and are distinguished by the tag whcih is just another atom
+-- and are distinguished by the tag which is just another atom
 create table style (tag integer, name text);
 create table featureset (tag integer, name text);
 create table column (tag integer, name text);

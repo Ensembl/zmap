@@ -888,7 +888,7 @@ gboolean zMapStyleHasDrawableMode(ZMapFeatureTypeStyle style)
  * Function returns FALSE if there style is not valid and the GError says
  * what the problem was.
  *  */
-/* (mh17) NOTE this fucntion is only called from obscure places and is not run for the majority of drawing operations
+/* (mh17) NOTE this function is only called from obscure places and is not run for the majority of drawing operations
  * so attempting to add style defaults here is doomed to failure
  */
 gboolean zMapStyleIsDrawable(ZMapFeatureTypeStyle style, GError **error)

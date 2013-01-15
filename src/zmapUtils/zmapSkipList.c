@@ -26,7 +26,7 @@
  *
  * Description:
  *
- * a simple implemenation of a skip list data structure
+ * a simple implementation of a skip list data structure
  * NOTE we expect the lists to be static except exceptionally
  * and the module is designed with this in mind
  * used initially by zmapWindowGraphDensityItem.c
@@ -216,7 +216,7 @@ int zMapSkipListCount(ZMapSkipList head)
 
 
 /* we could had a tail pointer handy, but we'd need to wrap the data in a class thingy
- * keep it simple: we don't expect to call this fucntion repeatedly
+ * keep it simple: we don't expect to call this function repeatedly
  */
 ZMapSkipList zMapSkipListLast(ZMapSkipList head)
 {
