@@ -169,6 +169,8 @@ void zmapWindowPfetchEntry(ZMapWindow window, char *sequence_name)
 
       g_signal_connect(G_OBJECT(pfetch), "closed", G_CALLBACK(pfetch_closed_func), pfetch_data);
 
+      /* It would seem that PFetchHandleFetch() calls g_spawn_async_with_pipes() which is not
+       * thread safe so lock round it...should locks be in pfetch code ?? */
       zMapThreadForkLock();   // see zmapThreads.c
 
       if(PFetchHandleFetch(pfetch, sequence_name) == PFETCH_STATUS_FAILED)
@@ -177,9 +179,11 @@ void zmapWindowPfetchEntry(ZMapWindow window, char *sequence_name)
       zMapThreadForkUnlock();
     }
   else
-    zMapWarning("%s", "Failed to obtain preferences for pfetch.\n"
-		"ZMap's config file needs at least pfetch "
-		"entry in the ZMap stanza.");
+    {
+      zMapWarning("%s", "Failed to obtain preferences for pfetch.\n"
+		  "ZMap's config file needs at least pfetch "
+		  "entry in the ZMap stanza.");
+    }
 
   return ;
 }
