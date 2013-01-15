@@ -335,8 +335,7 @@ typedef struct _zmapWindowCanvasPangoStruct
 	PangoLayout *layout;
 
 	int text_height, text_width;
-}
-zmapWindowCanvasPangoStruct;
+} zmapWindowCanvasPangoStruct ;
 
 
 #endif /* ZMAP_WINDOW_FEATURESET_ITEM_I_H */
