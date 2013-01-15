@@ -1,4 +1,3 @@
-/*  Last edited: Jul  8 13:17 2011 (edgrif) */
 /*  File: zmapSlave.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -21,8 +20,8 @@
  * This file is part of the ZMap genome database package
  * and was written by
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *         Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: This code is called when a new thread is created by the
  *              zmapThread code, it loops waiting for commands from
@@ -339,7 +338,17 @@ static void cleanUpThread(void *thread_args)
 
   ZMAPTHREAD_DEBUG(("%s: thread clean-up routine starting....\n", zMapThreadGetThreadID(thread))) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* I think this is probably a very bad idea isn't it...what if this thread didn't have the lock,
+   * just seems like asking for trouble.... */
+
   zMapThreadForkUnlock(); // not needed, but play safe. See zmapThread.c
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+
 
   if (thread_cb->thread_died)
     {
