@@ -147,7 +147,7 @@ if [ $# == 1 ]; then
     # redo _default_ mail subject now we have a name for the build.
     MAIL_SUBJECT="ZMap $BUILD_PREFIX Build Failed (control script)"
 else
-  message_exit "No build prefix specifed: $usage"
+  message_exit "No build prefix specified: $usage"
 fi
 
 
