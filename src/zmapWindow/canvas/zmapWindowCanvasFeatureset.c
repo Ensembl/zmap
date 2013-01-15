@@ -458,7 +458,7 @@ void zMapWindowCanvasFeaturesetPaintFeature(ZMapWindowFeaturesetItem featureset,
   return ;
 }
 
-
+s
 /* output any buffered paints: useful eg for poly-line */
 /* paint function and flush must access data via FeaturesetItem or globally in thier module */
 /* feaature is the last feature painted */
@@ -1419,6 +1419,7 @@ GList *zMapWindowFeaturesetItemFindFeatures(FooCanvasItem **item, double y1, dou
 
   if (!l || !foo)
     return(NULL);
+
 
   sl = zmap_window_canvas_featureset_find_feature_coords(NULL, fset, y1, y2);
 
