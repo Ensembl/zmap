@@ -55,7 +55,7 @@ If a source bin is bigger than the nominal display bin size then the display bin
 graph-density-min-bin=4
 </pre>
 sets the minimum bin size for display in pixels.  The default (4) is the smallest histogram bin that can be easily clicked on (subjectively, for me).
-Line plots look better with a relatively wide bin despite the fact that this looses detail. Histograms are usually displayed as coloured boxes with an outline and a size of less than 3 pixels means no fill colour will be visible. Heatmaps work best out of the three type with high resolution but it's not clear that a bin size of less than 2 is any use - the point of coverage displays is to highlight wherethe data is, and users can zoom in quite quickly.
+Line plots look better with a relatively wide bin despite the fact that this looses detail. Histograms are usually displayed as coloured boxes with an outline and a size of less than 3 pixels means no fill colour will be visible. Heatmaps work best out of the three type with high resolution but it's not clear that a bin size of less than 2 is any use - the point of coverage displays is to highlight where the data is, and users can zoom in quite quickly.
 </p>
 <p>
 <pre>
@@ -67,7 +67,7 @@ If selected then source data (score) is converted to a log value. If the source 
 <pre>
 graph-density-stagger=12
 </pre>
-offsets a column of graph data by the specifed number of pixels.  This is intended to allow several graphs to be combined into one column (eg a series of heatmaps showing differential expression - set stagger to be 1 greater the the column width.  It's possible to stagger wiggle plots by less, but at low zoom you will get some overlap, and if you do it may be wise to colour code the graphs.  Each graph column is ordered by ZMap's column configuration eg:
+offsets a column of graph data by the specified number of pixels.  This is intended to allow several graphs to be combined into one column (eg a series of heatmaps showing differential expression - set stagger to be 1 greater the the column width.  It's possible to stagger wiggle plots by less, but at low zoom you will get some overlap, and if you do it may be wise to colour code the graphs.  Each graph column is ordered by ZMap's column configuration eg:
 <pre>
 [columns]
 coverage=liver;heart;brain;kidney

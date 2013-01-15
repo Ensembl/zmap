@@ -444,7 +444,7 @@ Using a simple manually generated printout of timings for various parts of these
 </fieldset>
 
 <fieldset><legend>Where does the time go?</legend>
-<p>Adding further data to ProcessFeature reveals that the trembl column take about 4 seconds to draw and then more than one second to bump, even though it is not bumped on startup. Possibly it is configured wihtout a valid bump mode as default (eg ZMAPBUMP_UNBUMP); however this is relatively unimportant.</p>
+<p>Adding further data to ProcessFeature reveals that the trembl column take about 4 seconds to draw and then more than one second to bump, even though it is not bumped on startup. Possibly it is configured without a valid bump mode as default (eg ZMAPBUMP_UNBUMP); however this is relatively unimportant.</p>
 
 <p>Experiments  with commenting out code show that almost all the time is used by <b>zMapWindowFeatureDraw()</b> which apart from some innocuous parent lookups calls <b>zmapWindowFToIFactoryRunSingle()</b>.  Inside this almost all the time is spent in <b>((method)->method)()</b>, and from within that almost the time is spent in:
 <ul>

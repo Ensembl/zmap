@@ -1,9 +1,9 @@
 <h2>New Model Canvas</h2>
 <p>An attempt to speed things up a bit.  <i>Note</i> that here 'new model' refers more to Oliver Cromwell than MVC, although it is one of the design aims to make the view and window have less model and more view.
 </p>
-<p>This design follows an initial experiment with coverage displays which involved creating a single ZMapWindowCanvasItem (foo canvas group) conatining a single ZMapWindowGraphDensityItem (foo canvas item) for each featureset.  Features were represented by simple data structure accessed by a skip list from the ZMapWindowGraphDensityItem and were not added directly to the foo canvas.  Expose events were handled by calling GDK functions for the relevant feature structures.
+<p>This design follows an initial experiment with coverage displays which involved creating a single ZMapWindowCanvasItem (foo canvas group) containing a single ZMapWindowGraphDensityItem (foo canvas item) for each featureset.  Features were represented by simple data structure accessed by a skip list from the ZMapWindowGraphDensityItem and were not added directly to the foo canvas.  Expose events were handled by calling GDK functions for the relevant feature structures.
 </p>
-<p>This initial experiment relates to handling the foo canvas at a level below the column objetcs and the new model canvas is to be implemented first by replacing data and code at that level and then by revisiting the container design but for clarity here we present a top down discussion from canvas root to indivudual sub-feature.
+<p>This initial experiment relates to handling the foo canvas at a level below the column objects and the new model canvas is to be implemented first by replacing data and code at that level and then by revisiting the container design but for clarity here we present a top down discussion from canvas root to indivudual sub-feature.
 </p>
 
 <h4>Problems being addressed</h4>
@@ -223,9 +223,9 @@ This gives: a) efficient memory use for stable glyph styles, b) once only calcul
 
 <h4>Transcripts</h4>
 <h5>Compared with alignments</h5>
-<p>Due to historical constraints alignments are soucred from multiple features and then linked together and in future we expect this to change, with a single cigar string and sequence for a whole series.  Transcripts appear in several lines of GFF but are assembled on input into complex features.  These then have to be added to the canvas as a series of simple features linked together.  Data volumes are much lower and they are normally viewed bumped, and there is no difference in the display format whether bumped or not.
+<p>Due to historical constraints alignments are sourced from multiple features and then linked together and in future we expect this to change, with a single cigar string and sequence for a whole series.  Transcripts appear in several lines of GFF but are assembled on input into complex features.  These then have to be added to the canvas as a series of simple features linked together.  Data volumes are much lower and they are normally viewed bumped, and there is no difference in the display format whether bumped or not.
 </p>
-<p>Alignments were implmented by having all decorations (such as co-linear lines) as virtual canvas items a) to handle alternate display formats without deleting and adding large amounts of data to the canvas on bumping. and b) to reduce the amount of features in the canvas.  Niether of these constraints are relevant to transcripts.
+<p>Alignments were implemented by having all decorations (such as co-linear lines) as virtual canvas items a) to handle alternate display formats without deleting and adding large amounts of data to the canvas on bumping. and b) to reduce the amount of features in the canvas.  Neither of these constraints are relevant to transcripts.
 </p>
 <h5>Displaying a Transcript</h5>
 <p>A new feature specific function will be written to handle adding transcripts to the canvas, which will display each exon and intron as simple canvas features and ink these together via the existing left and right links.  CDS and UTR regions could be added as distinct canvas features but this would make selection of a complete exon more complex and ths will not be done. An exon with a CDS/UTR split will be dislayed as a single feature but my consist of 1, 2, or 3 boxes.  Unlike alignments intron lines will be added as explicit canvas features.

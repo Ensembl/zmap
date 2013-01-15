@@ -216,7 +216,7 @@
 
   </li>
   <li> src/zmapServer/zmapServerProtocolHandler.c: read styles from file
-	  optionally reads all if none specifed
+	  optionally reads all if none specified
 
 
   </li>

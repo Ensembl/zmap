@@ -31,13 +31,13 @@ Another option would be to overlay the features with a stipple (similar to the m
 
 <h3>Features used for the mask</h3>
 <p>Selecting a feature and then the mask results in that feature being stippled.  This is implemented by adding an overlay item to the feature.<br />
-<b>NB</b> As we wish to simplfy basic features it may be a better idea to add this feature to the block, as for the mark range overlays.
+<b>NB</b> As we wish to simplify basic features it may be a better idea to add this feature to the block, as for the mark range overlays.
 </p>
 
 </fieldset>
 
 <fieldset><legend>Handling multiple feature lists</legend>
-<p>Multiple highlit features will interact - removing a focus highlight will require us to redisplay a feature in normal or 'evidence' mode and having multiple data structres will require us either to have these interact internally or to have the application code operate all of them together, niether of which is a clean solution.
+<p>Multiple highlit features will interact - removing a focus highlight will require us to redisplay a feature in normal or 'evidence' mode and having multiple data structres will require us either to have these interact internally or to have the application code operate all of them together, neither of which is a clean solution.
 <p>
 
 <p>Extending the existing focus list to handle multiple independant groups of data looks like the best solution.  Currently the focus data has a 'hot column' and a list of references to features in it. The following is proposed:
