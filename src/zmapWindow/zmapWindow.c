@@ -3203,6 +3203,10 @@ static gboolean windowGeneralEventCB(GtkWidget *wigdet, GdkEvent *event, gpointe
  *
  * If the user does lassoing, ruler or moving the mark then we return TRUE to say we have
  * handled the event, otherwise we pass the event on (so canvas items can receive events).
+ * 
+ * NOTE...WITH THE INTRODUCTION OF MARK CODE HERE THIS FUNCTION IS NOW FAR TOO LONG,
+ * SOME SUBROUTINES ARE NEEDED.....
+ * 
  */
 static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer data)
 {
@@ -3676,44 +3680,48 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 	     * and motion must be more than 10 pixels in either direction to zoom. */
 	    if (in_window)
 	      {
-		if (shift_on)
+		if (fabs(but_event->x - window_x) > ZMAP_WINDOW_MIN_LASSO
+		    || fabs(but_event->y - window_y) > ZMAP_WINDOW_MIN_LASSO)
 		  {
-		    /* make a list of the foo canvas items */
-		    GList *feature_list;
-		    FooCanvasItem *item;
-		    double rootx1, rootx2, rooty1, rooty2 ;
+		    /* User has moved pointer quite a lot between press and release so do our
+		     * stuff. */
 
-
-		    /* Get size of item and convert to world coords, bounds are relative to item's parent */
-		    foo_canvas_item_get_bounds(window->rubberband, &rootx1, &rooty1, &rootx2, &rooty2) ;
-		    //		    foo_canvas_item_i2w(window->rubberband, &rootx1, &rooty1) ;
-		    //		    foo_canvas_item_i2w(window->rubberband, &rootx2, &rooty2) ;
-
-		    /* find the canvvas iten (a canvas featureset) at the centre of the lassoo */
-		    // can-t do this as the canvas featureset point function returns n/a
-		    // if there's no feature under the cursor no longer true....
-		    if ((item = foo_canvas_get_item_at(window->canvas, (rootx2 + rootx1) / 2, (rooty2 + rooty1) / 2)))
+		    if (!shift_on)
 		      {
-			/* only finds features in a canvas featureset, old foo gives nothing */
-			feature_list = zMapWindowFeaturesetItemFindFeatures(&item, rooty1, rooty2, rootx1, rootx2);
+			zoomToRubberBandArea(window) ;
+
+			event_handled = TRUE;		    /* We _ARE_ handling */
 		      }
+		    else
+		      {
+			/* make a list of the foo canvas items */
+			GList *feature_list;
+			FooCanvasItem *item;
+			double rootx1, rootx2, rooty1, rooty2 ;
 
 
-		    /* this is how features get highlit */
-		    if (item)
-		      zmapWindowUpdateInfoPanel(window, zMapWindowCanvasItemGetFeature(item),
-						feature_list, item, NULL, 0, 0, 0, 0, NULL, !shift_on, FALSE, FALSE) ;
+			/* Get size of item and convert to world coords, bounds are relative to item's parent */
+			foo_canvas_item_get_bounds(window->rubberband, &rootx1, &rooty1, &rootx2, &rooty2) ;
+			//		    foo_canvas_item_i2w(window->rubberband, &rootx1, &rooty1) ;
+			//		    foo_canvas_item_i2w(window->rubberband, &rootx2, &rooty2) ;
 
-		    event_handled = TRUE;		    /* We _ARE_ handling */
-		  }
-		else if (fabs(but_event->x - window_x) > ZMAP_WINDOW_MIN_LASSO
-			 || fabs(but_event->y - window_y) > ZMAP_WINDOW_MIN_LASSO)
-		  {
-		    /* User has moved pointer quite a lot between press and release so zoom
-		     * to marked area. */
-		    zoomToRubberBandArea(window) ;
+			/* find the canvvas iten (a canvas featureset) at the centre of the lassoo */
+			// can-t do this as the canvas featureset point function returns n/a
+			// if there's no feature under the cursor no longer true....
+			if ((item = foo_canvas_get_item_at(window->canvas, (rootx2 + rootx1) / 2, (rooty2 + rooty1) / 2)))
+			  {
+			    /* only finds features in a canvas featureset, old foo gives nothing */
+			    feature_list = zMapWindowFeaturesetItemFindFeatures(&item, rooty1, rooty2, rootx1, rootx2);
+			  }
 
-		    event_handled = TRUE;		    /* We _ARE_ handling */
+
+			/* this is how features get highlit */
+			if (item)
+			  zmapWindowUpdateInfoPanel(window, zMapWindowCanvasItemGetFeature(item),
+						    feature_list, item, NULL, 0, 0, 0, 0, NULL, !shift_on, FALSE, FALSE) ;
+
+			event_handled = TRUE;		    /* We _ARE_ handling */
+		      }
 		  }
 		else
 		  {
