@@ -1399,7 +1399,7 @@ GList *zMapWindowFeaturesetItemFindFeatures(FooCanvasItem **item, double y1, dou
 
   for (l = lx ; l ; l = l->next)
     {
-      foo = (FooCanvasItem *) l->data;
+      foo = (FooCanvasItem *)(l->data) ;
 
       if (foo->canvas != (*item)->canvas)	/* on another window ? */
 	continue;
@@ -1409,16 +1409,45 @@ GList *zMapWindowFeaturesetItemFindFeatures(FooCanvasItem **item, double y1, dou
 
       fset = (ZMapWindowFeaturesetItem)foo ;
 
+      /* feature set must surround the given coords and must be features and not
+       * some graphics. */
       if ((foo->x1 < mid_x && foo->x2 > mid_x)
-	  && (fset->start < y1 && fset->end > y2))
-	break;
+	  && (fset->start < y1 && fset->end > y2)
+	  && (fset->type == FEATURE_BASIC || fset->type == FEATURE_ALIGN || fset->type == FEATURE_TRANSCRIPT))
+	{
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	  /* Keeping this in for debugging.....original bug was that we picked up a feature set
+	   * that was graphics or the wrong type or..... */
+
+	  char *fset_name ;
+
+	  fset_name = g_quark_to_string(fset->id) ;
+
+	  printf("%s\n", fset_name) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+	  break;
+	}
     }
 
   if (lx)
     g_list_free(lx) ;
 
   if (!l || !foo)
-    return(NULL);
+    return(NULL) ;
+
+
+  {
+    char *fset_name ;
+
+    fset_name = g_quark_to_string(fset->id) ;
+
+    printf("%s\n", fset_name) ;
+
+  }
+
+
 
 
   sl = zmap_window_canvas_featureset_find_feature_coords(NULL, fset, y1, y2);
