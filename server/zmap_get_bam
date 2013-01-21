@@ -22,7 +22,7 @@ my @options = qw(
     man!
     gff_version=i
     file=s
-    chr=s
+    seq_id=s
     start=i
     end=i
     gff_feature_source=s
@@ -34,7 +34,7 @@ my @options = qw(
 
 my @required = qw(
     file
-    chr
+    seq_id
     start
     end
     gff_feature_source
@@ -68,14 +68,14 @@ sub get_params
 
     $params{$_} = uri_unescape($params{$_}) for keys %params;
 
-    $params{'chr'} = Roman($params{'chr'}) if defined $params{'Roman'};
-    $params{'chr'} = roman($params{'chr'}) if defined $params{'roman'};
+    $params{'seq_id'} = Roman($params{'seq_id'}) if defined $params{'Roman'};
+    $params{'seq_id'} = roman($params{'seq_id'}) if defined $params{'roman'};
 
     if (defined $params{'gff_seqname'}) {
         $sequence = $params{'gff_seqname'};
     }
     else {
-        $sequence = $params{'chr'};
+        $sequence = $params{'seq_id'};
     }
 
     if ($params{'gff_version'} == 2) {
@@ -228,7 +228,7 @@ my $mapping_xml = $client->otter_response_content(
     'GET', 'get_mapping', {
         dataset => $dataset,
         cs      => $csver,
-        chr     => $chr,
+        seq_id  => $seq_id,
         start   => $start,
         end     => $end,
     });
@@ -245,7 +245,7 @@ sub main
 {
     get_params();
 
-    my $chr = $params{'chr'};
+    my $seq_id = $params{'seq_id'};
     gff_escape_seqid for $sequence;
 
     $source = $params{'gff_feature_source'};
@@ -264,7 +264,7 @@ sub main
 
 
     # map first then request.... move this to inside the mapping function
-    my $features = $bam_fetch->features($chr, $params{'start'}, $params{'end'});
+    my $features = $bam_fetch->features($seq_id, $params{'start'}, $params{'end'});
 
 # if it's a ref
 #   printf "found %d matches\n", scalar @{$$features}  ;
@@ -289,7 +289,7 @@ zmap_get_bam request data and output as GFF
 
 =head1 SYNOPSIS
 
-zmap_get_bam [--help] [--man] --file=[http:|ftp:]/path/to/file --start=123 --end=456 --gff_feature_source=name --chr=CHROMOSOME_IV [--gff_version=3] --gff_seqname=GFF_sequence_name [--roman] [--Roman] --mapto=offset
+zmap_get_bam [--help] [--man] --file=[http:|ftp:]/path/to/file --start=123 --end=456 --gff_feature_source=name --seq_id=CHROMOSOME_IV [--gff_version=3] --gff_seqname=GFF_sequence_name [--roman] [--Roman] --mapto=offset
 
 =head1 OPTIONS
 

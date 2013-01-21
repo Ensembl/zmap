@@ -9,7 +9,7 @@ gff_source=Tier1_H1-hESC_cell_longPolyA_rep1
 false && # comment out to enable
 ./zmap_get_bam \
     --file=${file}   \
-    --chr=chr16      \
+    --seq_id=chr16   \
     --start=85591570 \
     --end=87672398   \
     --gff_seqname=chr16-03 \
@@ -19,7 +19,7 @@ false && # comment out to enable
 # false && # comment out to enable
 ./zmap_get_bam \
     --file=${file}   \
-    --chr=chr10      \
+    --seq_id=chr10   \
     --start=31536329 \
     --end=31721845   \
     --gff_seqname=chr10-10 \

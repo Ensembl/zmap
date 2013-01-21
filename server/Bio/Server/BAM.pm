@@ -13,7 +13,7 @@ sub new {
 }
 
 sub features {
-    my ($self, $chr, $start, $end) = @_;
+    my ($self, $seq_id, $start, $end) = @_;
 
     my ( $sam ) =
         @{$self}{qw( -sam )};
@@ -22,7 +22,7 @@ sub features {
 
     my $features = [ $sam->features(
             -type   => 'match',
-            -seq_id => $chr,
+            -seq_id => $seq_id,
             -start  => $start,
             -end    => $end,
         )

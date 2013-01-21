@@ -999,7 +999,7 @@ static void importFileCB(GtkWidget *widget, gpointer cb_data)
         *argp++ = g_strdup_printf("--csver=%s",assembly_txt);
 
       if (req_sequence)
-        *argp++ = g_strdup_printf("--chr=%s",req_sequence);
+        *argp++ = g_strdup_printf("--seq_id=%s",req_sequence);
 
       /* some depend on file type */
       switch(file_type)
