@@ -383,7 +383,7 @@ ZMapViewWindow zMapViewCreate(GtkWidget *xremote_widget, GtkWidget *view_contain
 
   if(!sequence_map->start)
     {
-      /* this should use coords extratced from ACEDB/smap or provided by otterlace
+      /* this should use coords extracted from ACEDB/smap or provided by otterlace
        * but unfortunately the info is not available
        * so we use this unsafe mechanism in the interim
        */
