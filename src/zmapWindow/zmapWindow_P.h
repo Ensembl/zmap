@@ -1,4 +1,3 @@
-/*  Last edited: Jul 23 16:05 2012 (edgrif) */
 /*  File: zmapWindow_P.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -22,7 +21,7 @@
  * and was written by
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *
