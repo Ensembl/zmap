@@ -23,6 +23,7 @@ my @options = qw(
     man!
     gff_version=i
     file=s
+    chr=s
     start=i
     end=i
     mapto=i

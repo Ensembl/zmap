@@ -998,6 +998,9 @@ static void importFileCB(GtkWidget *widget, gpointer cb_data)
       if ((*assembly_txt) && main_frame->is_otter)
         *argp++ = g_strdup_printf("--csver=%s",assembly_txt);
 
+      if (req_sequence)
+        *argp++ = g_strdup_printf("--chr=%s",req_sequence);
+
       /* some depend on file type */
       switch(file_type)
         {
@@ -1005,8 +1008,6 @@ static void importFileCB(GtkWidget *widget, gpointer cb_data)
           /* add in any that have data */
           if (source_txt)
             *argp++ = g_strdup_printf("--gff_feature_source=%s",source_txt);
-          if (req_sequence)
-            *argp++ = g_strdup_printf("--chr=%s",req_sequence);
           if (strand)
             *argp++ = g_strdup_printf("--strand=%d",strand); /* NOTE this is not +/- as presented to the user */
           break;
@@ -1019,7 +1020,6 @@ static void importFileCB(GtkWidget *widget, gpointer cb_data)
           /* fall through */
 
         case FILE_BAM:
-          *argp++ = g_strdup_printf("--chr=%s",req_sequence);
           *argp++ = g_strdup_printf("--gff_feature_source=%s",source_txt);
           break;
         }
