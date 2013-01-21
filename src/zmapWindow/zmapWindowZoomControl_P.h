@@ -21,15 +21,12 @@
  * originated by
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *         Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description:
  *
- * Exported functions: See XXXXXXXXXXXXX.h
  *-------------------------------------------------------------------
  */
-
 #ifndef ZMAPWINDOWZOOMCONTROL_P_H
 #define ZMAPWINDOWZOOMCONTROL_P_H
 
@@ -46,18 +43,22 @@
 
 
 
-enum {
-  ZMAP_WINDOW_BROWSER_HEIGHT = 160,
-  ZMAP_WINDOW_BROWSER_WIDTH  = 200
-};
+enum
+  {
+    ZMAP_WINDOW_BROWSER_HEIGHT = 160,
+    ZMAP_WINDOW_BROWSER_WIDTH  = 200
+  };
+
 
 typedef struct _ZMapWindowZoomControlStruct
 {
   ZMapMagic magic;
 
-  double zF;
-  double minZF;
-  double maxZF;
+  ZMapWindowZoomStatus status ;
+
+  double zF ;
+  double minZF ;
+  double maxZF ;
 
   double textHeight;
   double textWidth;
@@ -75,7 +76,7 @@ typedef struct _ZMapWindowZoomControlStruct
                     * absolutely requires
                     * that. */
 
-  ZMapWindowZoomStatus status;
+
 } ZMapWindowZoomControlStruct;
 
 #endif
