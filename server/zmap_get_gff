@@ -127,7 +127,6 @@ sub get_params
 sub main
 {
     my $in_version = 3;
-    my ($fseq, $fstart, $fend);
     my $offset;
 
     get_params();
@@ -144,7 +143,7 @@ sub main
 
 
             if ( m/sequence-region\s(\S+)\s(\d+)\s(\d+)/) {
-                ($fseq, $fstart, $fend) = ($1, $2, $3);
+                my ($fseq, $fstart, $fend) = ($1, $2, $3);
 
                 next unless $fseq eq $seq_id;
 
