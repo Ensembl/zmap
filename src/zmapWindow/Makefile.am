@@ -11,6 +11,7 @@ libZMapWindow_la_LDFLAGS = -all-static
 
 libZMapWindowGUI_la_SOURCES = \
 zmapWindow.c \
+zmapWindowCanvas.c \
 zmapWindowColBump.c \
 zmapWindowColConfig.c \
 zmapWindowColOrder.c \
