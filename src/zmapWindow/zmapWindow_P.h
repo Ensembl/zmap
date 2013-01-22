@@ -630,7 +630,11 @@ typedef struct _ZMapWindowStruct
   /* We need to monitor changes to the size of the canvas window caused by user interactions
    * so we can adjust zoom and other controls appropriately. */
   gint window_width, window_height ;
-  gint canvas_width, canvas_height ;
+
+
+  guint canvas_width, canvas_height ;
+
+
 
 
   /* Windows can be locked together in their zooming/scrolling. */
@@ -1146,6 +1150,11 @@ void zmapWindowGetScrollRegion(ZMapWindow window,
 void zmapWindowSetScrollRegion(ZMapWindow window,
 			       double *x1_inout, double *y1_inout,
 			       double *x2_inout, double *y2_inout,char *where);
+
+void zmapWindowSetScrolledRegion(ZMapWindow window, double x1, double x2, double y1, double y2) ;
+void zmapWindowSetPixelxy(ZMapWindow window, double pixels_per_unit_x, double pixels_per_unit_y) ;
+
+
 ZMapGUIClampType zmapWindowClampSpan(ZMapWindow window,
                                      double *top_inout,
                                      double *bot_inout) ;
