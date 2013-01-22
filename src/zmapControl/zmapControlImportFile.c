@@ -683,6 +683,7 @@ static void enable_widgets(MainFrame main_frame)
 
 	gtk_widget_set_sensitive(main_frame->map_widg, !(is_bam && main_frame->is_otter));
 	gtk_widget_set_sensitive(main_frame->offset_widg, !(is_bam && main_frame->is_otter));
+	gtk_widget_set_sensitive(main_frame->req_sequence_widg, !(main_frame->is_otter));
 	gtk_widget_set_sensitive(main_frame->assembly_widg, (main_frame->is_otter));
 }
 
@@ -998,7 +999,7 @@ static void importFileCB(GtkWidget *widget, gpointer cb_data)
       if ((*assembly_txt) && main_frame->is_otter)
         *argp++ = g_strdup_printf("--csver=%s",assembly_txt);
 
-      if (req_sequence)
+      if (req_sequence && !main_frame->is_otter)
         *argp++ = g_strdup_printf("--seq_id=%s",req_sequence);
 
       /* some depend on file type */
