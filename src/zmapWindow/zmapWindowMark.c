@@ -548,7 +548,7 @@ gboolean zmapWindowMarkSetWorldRange(ZMapWindowMark mark,
   zMapAssert(mark);
   zMapAssert(ZMAP_MAGIC_IS_VALID(mark_magic_G, mark->magic)) ;
 
-//  zmapWindowMarkReset(mark) ;
+  zmapWindowMarkReset(mark) ;
 
   /* clamp x to scroll region. Fix RT # 55131 */
   zmapWindowGetScrollRegion(mark->window, &scroll_x1, NULL, &scroll_x2, NULL);
@@ -860,15 +860,18 @@ void zmapWindowMarkDestroy(ZMapWindowMark mark)
 /* Mark/unmark an item with a highlight colour. */
 static void markItem(ZMapWindowMark mark, FooCanvasItem *item, gboolean set_mark)
 {
-
-  if(mark->mark_rectangle)     /* remove previous if set, we need to do this to clear and also if setting */
+  /* remove previous item/rectangle if set; we need to do whether clearing or setting the mark */
+  if (mark->mark_rectangle)     
     {
 //    zMapWindowCanvasItemUnmark((ZMapWindowCanvasItem)item);
       gtk_object_destroy(GTK_OBJECT(mark->mark_rectangle));
-      mark->mark_src_item = NULL ;
       mark->mark_rectangle = NULL;
     }
 
+  if (mark->mark_src_item)
+    {
+      mark->mark_src_item = NULL ;
+    }
 
   if (set_mark)
     {
