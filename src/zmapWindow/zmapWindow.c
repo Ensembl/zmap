@@ -18,9 +18,9 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * and was written by
- *     Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk and,
- *          Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *     Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *       Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *  Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Provides interface functions for controlling a data
  *              display window.
@@ -45,7 +45,6 @@
 #include <ZMap/zmapConfigIni.h>
 #include <ZMap/zmapConfigStrings.h>
 #include <zmapWindowState.h>
-//#include <zmapWindowCanvas.h>
 #include <zmapWindowContainers.h>
 #include <zmapWindowCanvasItem.h>
 #include <zmapWindowCanvasFeatureset.h>
@@ -222,12 +221,6 @@ static GtkAdjustment *copyAdjustmentObj(GtkAdjustment *orig_adj) ;
 
 static void zoomToRubberBandArea(ZMapWindow window);
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static void printWindowSizeDebug(char *prefix, ZMapWindow window,
-				 GtkWidget *widget, GtkAllocation *allocation) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 static void getMaxBounds(gpointer data, gpointer user_data) ;
 
 static void jumpFeature(ZMapWindow window, guint keyval) ;
@@ -236,9 +229,6 @@ static void jumpColumn(ZMapWindow window, guint keyval) ;
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void swapColumns(ZMapWindow window, guint keyval);
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
 
 static void unhideItemsCB(gpointer data, gpointer user_data) ;
 
@@ -309,6 +299,16 @@ static gint sortCoordsCB(gconstpointer a, gconstpointer b) ;
 
 static void foo_bug_print(void *key, char *where) ;
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+static void printWindowSizeDebug(char *prefix, ZMapWindow window,
+				 GtkWidget *widget, GtkAllocation *allocation) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+/* 
+ *                  Globals
+ */
 
 /* Callbacks we make back to the level above us. This structure is static
  * because the callback routines are set just once for the lifetime of the
@@ -463,9 +463,9 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, ZMapFeatureSequenceMap seque
    * going to call the draw features code anyway. */
   /* Set the zoom factor, there is no call to get hold of pixels_per_unit so we dive.
    * into the struct. */
-  foo_canvas_set_pixels_per_unit_xy(new_window->canvas,
-				    original_window->canvas->pixels_per_unit_x,
-				    original_window->canvas->pixels_per_unit_y) ;
+  zmapWindowSetPixelxy(new_window,
+		       original_window->canvas->pixels_per_unit_x,original_window->canvas->pixels_per_unit_y) ;
+
   zmapWindowScaleCanvasSetPixelsPerUnit(new_window->ruler,
                                         original_window->canvas->pixels_per_unit_x,
                                         original_window->canvas->pixels_per_unit_y);
@@ -586,7 +586,7 @@ void zMapWindowDisplayData(ZMapWindow window, ZMapWindowState state,
       realiseData->window = window ;
       realiseData->feature_sets = feature_sets ;
 
-	window->exposeHandlerCB = g_signal_connect(GTK_OBJECT(window->canvas), "expose_event",
+      window->exposeHandlerCB = g_signal_connect(GTK_OBJECT(window->canvas), "expose_event",
 						 GTK_SIGNAL_FUNC(exposeHandlerCB),
 						 (gpointer)realiseData) ;
     }
@@ -742,48 +742,42 @@ void zMapWindowRedraw(ZMapWindow window)
   GdkRectangle expose_area ;
   GtkAllocation *allocation ;
 
-  if(!window->canvas->busy)
+  /* Get the size of the canvas's on screen window, i.e. the section of canvas you
+   * can actually see. */
+  allocation = &(GTK_WIDGET(&(window->canvas->layout))->allocation) ;
+
+  /* Set up the area of this window to be invalidated (i.e. to be redrawn). */
+  expose_area.x = expose_area.y = 0 ;
+  expose_area.width = allocation->width - 1 ;
+  expose_area.height = allocation->height - 1 ;
+
+  foo_bug_print(window->canvas,"redraw");
+  //printf("expose 0,0 -> %d, %d\n",expose_area.width, expose_area.height );
+
+
   {
-//	zmapWindowBusy(window, TRUE) ;
-
-	/* Get the size of the canvas's on screen window, i.e. the section of canvas you
-	* can actually see. */
-	allocation = &(GTK_WIDGET(&(window->canvas->layout))->allocation) ;
-
-	/* Set up the area of this window to be invalidated (i.e. to be redrawn). */
-	expose_area.x = expose_area.y = 0 ;
-	expose_area.width = allocation->width - 1 ;
-	expose_area.height = allocation->height - 1 ;
-
-foo_bug_print(window->canvas,"redraw");
-//printf("expose 0,0 -> %d, %d\n",expose_area.width, expose_area.height );
-
-
-	{
-	/* kick GDK to make this work */
-//printf("canvas: %d %d %d\n", window->canvas->busy, window->canvas->x_changed, window->canvas->y_changed);
-//	foo_canvas_busy(window->canvas,TRUE);
-//	foo_canvas_busy(window->canvas,FALSE);
-	}
-
-	/* Invalidate the displayed canvas window causing to be redrawn. */
-	gdk_window_invalidate_rect(GTK_WIDGET(&(window->canvas->layout))->window, &expose_area, TRUE) ;
-
-	/* NOTE we don't get expose events to split windows reliably from this */
-
-//	gdk_window_process_updates(GTK_WIDGET(&(window->canvas->layout))->window, TRUE);
-
-	/* but this doesn-t work either */
-//	gdk_window_invalidate_rect(gtk_layout_get_bin_window(&window->canvas->layout), &expose_area, TRUE) ;
-//	gtk_widget_show_all(GTK_WIDGET(&(window->canvas->layout)));
-
-	/* or these */
-//	gtk_widget_queue_draw(window->parent_widget);
-//	gtk_widget_queue_resize(window->parent_widget);
-
-//	zmapWindowBusy(window, FALSE) ;
+    /* kick GDK to make this work */
+    //printf("canvas: %d %d %d\n", window->canvas->busy, window->canvas->x_changed, window->canvas->y_changed);
+    //	foo_canvas_busy(window->canvas,TRUE);
+    //	foo_canvas_busy(window->canvas,FALSE);
   }
 
+  /* Invalidate the displayed canvas window causing to be redrawn. */
+  gdk_window_invalidate_rect(GTK_WIDGET(&(window->canvas->layout))->window, &expose_area, TRUE) ;
+
+  /* NOTE we don't get expose events to split windows reliably from this */
+
+  //	gdk_window_process_updates(GTK_WIDGET(&(window->canvas->layout))->window, TRUE);
+
+  /* but this doesn-t work either */
+  //	gdk_window_invalidate_rect(gtk_layout_get_bin_window(&window->canvas->layout), &expose_area, TRUE) ;
+  //	gtk_widget_show_all(GTK_WIDGET(&(window->canvas->layout)));
+
+  /* or these */
+  //	gtk_widget_queue_draw(window->parent_widget);
+  //	gtk_widget_queue_resize(window->parent_widget);
+
+  //	zmapWindowBusy(window, FALSE) ;
 
   return ;
 }
@@ -1025,6 +1019,17 @@ void zMapWindowZoom(ZMapWindow window, double zoom_factor)
 }
 
 
+void zMapWindowZoomToMin(ZMapWindow window)
+{
+  double start, end;
+
+  zmapWindowZoomControlHandleResize(window) ;
+
+  return ;
+}
+
+
+
 
 
 
@@ -1035,74 +1040,74 @@ void zmapWindowZoom(ZMapWindow window, double zoom_factor, gboolean stay_centere
   double width, curr_pos = 0.0, sensitivity = 0.001 ;
   GtkAdjustment *adjust;
 
-  adjust = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window)) ;
 
-  if((zoom_factor > (1.0 - sensitivity)) && (zoom_factor < (1.0 + sensitivity)))
-    return ;
-
-  zmapWindowBusy(window, TRUE) ;	/* just does the hour glass cursor */
-
-  /* Record the current position. */
-  /* In order to stay centred on wherever we are in the canvas while zooming, we get the
-   * current position (offset, in canvas pixels), add half the page-size to get the centre
-   * of the screen,then convert to world coords and store those.
-   * After the zoom, we convert those values back to canvas pixels (changed by the call to
-   * pixels_per_unit) and scroll to them.
-   * We end up working this out again in myWindowZoom, if and only if we're horizontally
-   * split windows, but I don't thik it'll be a big issue.
-   */
-  foo_canvas_get_scroll_offsets(window->canvas, &x, &y);
-  y += adjust->page_size / 2 ;
-  foo_canvas_c2w(window->canvas, x, y, &width, &curr_pos) ;
-
-  /* possible bug here with width and scrolling, need to check. */
-  if (window->locked_display)
+  if((zoom_factor < (1.0 - sensitivity)) || (zoom_factor > (1.0 + sensitivity)))
     {
-      ZMapWindowState prev_state;
-      LockedDisplayStruct locked_data = { NULL };
-      gboolean use_queue = TRUE;
+      zmapWindowBusy(window, TRUE) ;	/* just does the hour glass cursor */
 
-      locked_data.window      = window ;
-      locked_data.type        = ZMAP_LOCKED_ZOOMING;
-      locked_data.zoom_factor = zoom_factor ;
-      locked_data.position    = curr_pos ;
+      adjust = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window)) ;
 
-      if(use_queue && zmapWindowStateQueueIsRestoring(window->history) &&
-	 zmapWindowStateGetPrevious(window, &prev_state, FALSE))
+      /* Record the current position. */
+      /* In order to stay centred on wherever we are in the canvas while zooming, we get the
+       * current position (offset, in canvas pixels), add half the page-size to get the centre
+       * of the screen,then convert to world coords and store those.
+       * After the zoom, we convert those values back to canvas pixels (changed by the call to
+       * pixels_per_unit) and scroll to them.
+       * We end up working this out again in myWindowZoom, if and only if we're horizontally
+       * split windows, but I don't thik it'll be a big issue.
+       */
+      foo_canvas_get_scroll_offsets(window->canvas, &x, &y);
+      y += adjust->page_size / 2 ;
+      foo_canvas_c2w(window->canvas, x, y, &width, &curr_pos) ;
+
+      /* possible bug here with width and scrolling, need to check. */
+      if (window->locked_display)
 	{
-	  double ry1, ry2;	/* restore scroll region */
-	  zmapWindowStateGetScrollRegion(prev_state,
-					 NULL, &ry1,
-					 NULL, &ry2);
-	  locked_data.position = ((ry2 - ry1) / 2 ) + ry1;
+	  ZMapWindowState prev_state;
+	  LockedDisplayStruct locked_data = { NULL };
+	  gboolean use_queue = TRUE;
+
+	  locked_data.window      = window ;
+	  locked_data.type        = ZMAP_LOCKED_ZOOMING;
+	  locked_data.zoom_factor = zoom_factor ;
+	  locked_data.position    = curr_pos ;
+
+	  if(use_queue && zmapWindowStateQueueIsRestoring(window->history) &&
+	     zmapWindowStateGetPrevious(window, &prev_state, FALSE))
+	    {
+	      double ry1, ry2;	/* restore scroll region */
+	      zmapWindowStateGetScrollRegion(prev_state,
+					     NULL, &ry1,
+					     NULL, &ry2);
+	      locked_data.position = ((ry2 - ry1) / 2 ) + ry1;
+	    }
+
+	  g_hash_table_foreach(window->sibling_locked_windows, lockedDisplayCB, (gpointer)&locked_data) ;
+	}
+      else
+	{
+	  foo_canvas_busy(window->canvas,TRUE);
+	  myWindowZoom(window, zoom_factor, curr_pos) ;
+	  foo_canvas_busy(window->canvas,FALSE);
 	}
 
-      g_hash_table_foreach(window->sibling_locked_windows, lockedDisplayCB, (gpointer)&locked_data) ;
-    }
-  else
-  {
-    foo_canvas_busy(window->canvas,TRUE);
-    myWindowZoom(window, zoom_factor, curr_pos) ;
-    foo_canvas_busy(window->canvas,FALSE);
-  }
+      /* We need to scroll to the previous position. This is dependent on
+       * not having split horizontal windows. We only do this once per
+       * potential multiple windows as the vertically split windows share
+       * an adjuster.  If we try to work out position within myWindowZoom
+       * we end up getting the wrong position the second ... times round
+       * and not scrolling to the right position.
+       */
+      if (stay_centered && window->curr_locking != ZMAP_WINLOCK_HORIZONTAL)
+	{
+	  foo_canvas_w2c(window->canvas, width, curr_pos, &x, &y);
+	  foo_canvas_scroll_to(window->canvas, x, y - (adjust->page_size/2));
+	}
 
-  /* We need to scroll to the previous position. This is dependent on
-   * not having split horizontal windows. We only do this once per
-   * potential multiple windows as the vertically split windows share
-   * an adjuster.  If we try to work out position within myWindowZoom
-   * we end up getting the wrong position the second ... times round
-   * and not scrolling to the right position.
-   */
-  if(stay_centered && window->curr_locking != ZMAP_WINLOCK_HORIZONTAL)
-    {
-      foo_canvas_w2c(window->canvas, width, curr_pos, &x, &y);
-      foo_canvas_scroll_to(window->canvas, x, y - (adjust->page_size/2));
+      zmapWindowBusy(window, FALSE) ;
     }
 
-  zmapWindowBusy(window, FALSE) ;
-
-
-  return;
+  return ;
 }
 
 
@@ -1413,7 +1418,7 @@ void zmapWindowSetScrollRegion(ZMapWindow window,
 
   zmapWindowGetBorderSize(window, &border);
 
-// if(y1_inout && y2_inout) zMapAssert(*y1_inout <= *y2_inout);
+  // if(y1_inout && y2_inout) zMapAssert(*y1_inout <= *y2_inout);
 
   foo_canvas_get_scroll_region(FOO_CANVAS(window->canvas),
                                &x1, &y1, &x2, &y2);
@@ -1438,41 +1443,41 @@ void zmapWindowSetScrollRegion(ZMapWindow window,
     {
 #if 0
       zMapLogWarning("draw scale %f,%f - %f,%f",y1,y2, window->min_coord, window->max_coord);
-	zMapLogStack();
+      zMapLogStack();
 #endif
-	if(zmapWindowScaleCanvasDraw(window->ruler,  y1, y2, window->min_coord, window->max_coord))
-	  {
-		double max_x2 = zMapWindowScaleCanvasGetWidth(window->ruler) + 1;
+      if(zmapWindowScaleCanvasDraw(window->ruler,  y1, y2, window->min_coord, window->max_coord))
+	{
+	  double max_x2 = zMapWindowScaleCanvasGetWidth(window->ruler) + 1;
 
-		/* NOTE this canvas has nothing except the scale bar */
-		zMapWindowScaleCanvasSetScroll(window->ruler, x1, y1, max_x2, y2);
-	  }
-   }
+	  /* NOTE this canvas has nothing except the scale bar */
+	  zMapWindowScaleCanvasSetScroll(window->ruler, x1, y1, max_x2, y2);
+	}
+    }
 
 
   if(x1 != window->scroll_x1 || y1 != window->scroll_y1 || x2 != window->scroll_x2 || y2 != window->scroll_y2)
-  {
+    {
 #if 0
       printf("set scroll %p %f,%f - %f,%f from %s\n",window->canvas,y1,x1,y2,x2,where);
-//	zMapLogStack();
+      //	zMapLogStack();
 #endif
-	foo_canvas_set_scroll_region(FOO_CANVAS(window->canvas), x1, y1, x2, y2);
 
-//	if(x2 < window->scroll_x2)		/* need an expose here regardless */
-		zMapWindowRedraw(window);	/* expose the blank area off the edge */
+      zmapWindowSetScrolledRegion(window, x1, x2, y1, y2) ;
+      
+      zMapWindowRedraw(window);	/* expose the blank area off the edge */
 
-	window->scroll_x1 = x1;
-	window->scroll_y1 = y1;
-	window->scroll_x2 = x2;
-	window->scroll_y2 = y2;
+      window->scroll_x1 = x1;
+      window->scroll_y1 = y1;
+      window->scroll_x2 = x2;
+      window->scroll_y2 = y2;
 
-	/* -----> letting the window creator know what's going on */
-	vis_change.zoom_status    = zMapWindowGetZoomStatus(window) ;
-	vis_change.scrollable_top = (y1 += tmp_top); /* should these be sequence clamped */
-	vis_change.scrollable_bot = (y2 -= tmp_bot); /* or include the border? (SEQUENCE CLAMPED ATM) */
+      /* -----> letting the window creator know what's going on */
+      vis_change.zoom_status    = zMapWindowGetZoomStatus(window) ;
+      vis_change.scrollable_top = (y1 += tmp_top); /* should these be sequence clamped */
+      vis_change.scrollable_bot = (y2 -= tmp_bot); /* or include the border? (SEQUENCE CLAMPED ATM) */
 
-	(*(window_cbs_G->visibilityChange))(window, window->app_data, (void *)&vis_change) ;
-  }
+      (*(window_cbs_G->visibilityChange))(window, window->app_data, (void *)&vis_change) ;
+    }
 
   return ;
 }
@@ -2226,13 +2231,11 @@ foo_bug_set(canvas,"window");
 
   /* This will be removed when RT:1589 is resolved */
   g_object_set_data(G_OBJECT(canvas), ZMAP_WINDOW_POINTER, window);
+
   /* Definitively set the canvas to have a scroll region size, that WE
    * know and can test for.  If the foo_canvas default changes then
    * later our might fail. */
-  foo_canvas_set_scroll_region(window->canvas,
-                               0.0, 0.0,
-                               ZMAP_CANVAS_INIT_SIZE,
-                               ZMAP_CANVAS_INIT_SIZE);
+  zmapWindowSetScrolledRegion(window, 0.0, 0.0, ZMAP_CANVAS_INIT_SIZE, ZMAP_CANVAS_INIT_SIZE) ;
 
   gtk_container_add(GTK_CONTAINER(window->scrolled_window), canvas) ;
 
@@ -2243,7 +2246,13 @@ foo_bug_set(canvas,"window");
    * otherwise keyboard input (i.e. short cuts) will be delivered to some other widget. */
   GTK_WIDGET_SET_FLAGS(canvas, GTK_CAN_FOCUS) ;
 
-  window->zoom = zmapWindowZoomControlCreate(window);
+  if (!(window->zoom = zmapWindowZoomControlCreate(window)))
+    {
+      zMapExitMsg("%s", "Zoom Control create failed, see zmap log.") ;
+      zMapLogFatal("%s", "Zoom Control create failed, see zmap log.") ;
+    }
+
+
 
   {
     ZMapWindowScaleCanvasCallbackListStruct callbacks = {NULL};
@@ -2386,17 +2395,15 @@ static void myWindowZoom(ZMapWindow window, double zoom_factor, double curr_pos)
 
 //printf("myWindowZoom 1\n");
 
-  if(window->curr_locking == ZMAP_WINLOCK_HORIZONTAL)
+  if (window->curr_locking == ZMAP_WINLOCK_HORIZONTAL)
     {
-      adjust =
-        gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window)) ;
+      adjust = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window)) ;
       foo_canvas_get_scroll_offsets(window->canvas, &x, &y) ;
       y += adjust->page_size / 2 ;
       foo_canvas_c2w(window->canvas, x, y, &width, &curr_pos) ;
     }
 
   zMapWindowStateRecord(window);
-
 
   /* We don't zoom in further than is necessary to show individual bases or further out than
    * is necessary to show the whole sequence, or if the sequence is so short that it can be
@@ -2427,7 +2434,9 @@ static void myWindowZoom(ZMapWindow window, double zoom_factor, double curr_pos)
        * If this doesn't work we'll need to provide a new single foocanvas call
        * to set both zoom and scroll region in one go. */
 	/* MH17: they cause expose events internally so we use foo_canvas_busy() around this function */
-      foo_canvas_set_pixels_per_unit_xy(window->canvas, 1.0, zMapWindowGetZoomFactor(window)) ;
+
+      zmapWindowSetPixelxy(window, 1.0, zMapWindowGetZoomFactor(window)) ;
+
 
       /* must set zoom before SetScroll as that set Scroll may redraw the ruler */
       zmapWindowScaleCanvasSetPixelsPerUnit(window->ruler, 1.0, zMapWindowGetZoomFactor(window));
@@ -2445,19 +2454,19 @@ static void myWindowZoom(ZMapWindow window, double zoom_factor, double curr_pos)
       zmapWindowDrawZoom(window);
 
 
-	if(window->curr_locking == ZMAP_WINLOCK_HORIZONTAL)
+      if(window->curr_locking == ZMAP_WINLOCK_HORIZONTAL)
 	{
-		foo_canvas_w2c(window->canvas, width, curr_pos, &x, &y);
-		foo_canvas_scroll_to(window->canvas, x, y - (adjust->page_size/2));
+	  foo_canvas_w2c(window->canvas, width, curr_pos, &x, &y);
+	  foo_canvas_scroll_to(window->canvas, x, y - (adjust->page_size/2));
 	}
 
 #if DOES_NOTHING
-	/* We need to redo the highlighting in the columns with a zoom handler.  i.e. DNA column... */
-	/* NOTE this function does nothing */
-	zmapWindowReFocusHighlights(window);
+      /* We need to redo the highlighting in the columns with a zoom handler.  i.e. DNA column... */
+      /* NOTE this function does nothing */
+      zmapWindowReFocusHighlights(window);
 #endif
 
-	zMapWindowRedraw(window);	/* exposes the blank edges as well as the canvas */
+      zMapWindowRedraw(window);				    /* exposes the blank edges as well as the canvas */
     }
 
   return ;
@@ -2604,7 +2613,8 @@ static void resetCanvas(ZMapWindow window, gboolean free_child_windows, gboolean
 
     	foo_canvas_get_scroll_region(window->canvas,&x1,&y1,&x2,&y2);
 	zmapWindowStateRevCompRegion(window, &y1, &y2);
-    	foo_canvas_set_scroll_region(window->canvas,x1, y1, x2, y2);
+
+	zmapWindowSetScrolledRegion(window, x1, x2, y1, y2) ;
     }
 #endif
   }
@@ -2906,6 +2916,7 @@ static gboolean exposeHandlerCB(GtkWidget *widget, GdkEventExpose *expose, gpoin
   realiseData->window = NULL ;
   realiseData->feature_sets = NULL ;
   g_free(realiseData) ;
+
 
   return FALSE ;					    /* ie allow any other callbacks to run as well */
 }
@@ -4166,7 +4177,7 @@ static void myWindowZoomTo(ZMapWindow window, double zoom_factor, double start, 
        * If this doesn't work we'll need to provide a new single foocanvas call
        * to set both zoom and scroll region in one go. */
 	/* MH17: they cause expose events internally so we use foo_canvas_busy() around this function */
-      foo_canvas_set_pixels_per_unit_xy(window->canvas, 1.0, zMapWindowGetZoomFactor(window)) ;
+      zmapWindowSetPixelxy(window, 1.0, zMapWindowGetZoomFactor(window)) ;
 
       /* must set zoom before SetScroll as that set Scroll may redraw the ruler */
       zmapWindowScaleCanvasSetPixelsPerUnit(window->ruler, 1.0, zMapWindowGetZoomFactor(window));
@@ -4378,16 +4389,9 @@ static void canvasSizeAllocateCB(GtkWidget *widget, GtkAllocation *allocation, g
   FooCanvas *canvas = FOO_CANVAS(widget) ;
   GtkLayout *layout = &(canvas->layout) ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* to debug insert calls before after the below code like this: */
-  printWindowSizeDebug("PRE", window, widget, allocation) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-  if(!window->seqLength)
-    return ;
-
-  if (window->window_height != widget->allocation.height
-      || window->canvas_height != layout->height)
+  if ((window->seqLength)
+      && (window->window_height < widget->allocation.height || window->canvas_height != layout->height))
     {
       if (window->canvas_width != 0 && window->canvas_height != 0)
 	{
@@ -4397,10 +4401,6 @@ static void canvasSizeAllocateCB(GtkWidget *widget, GtkAllocation *allocation, g
 	  zmapWindowZoomControlHandleResize(window);
 
 	  zmapWindowGetScrollRegion(window, NULL, &start, NULL, &end);
-        /* MH17 is this function being called for a side effect? */
-// it does clamp the coords but these are never affected by widget resize
-// navigator deals with itself via its own widget resize
-//	  zmapWindowSetScrollRegion(window, NULL, &start, NULL, &end,"canvasSizeAllocateCB");
 
 	  vis_change.zoom_status    = zMapWindowGetZoomStatus(window) ;
 	  vis_change.scrollable_top = start ;
@@ -4408,13 +4408,12 @@ static void canvasSizeAllocateCB(GtkWidget *widget, GtkAllocation *allocation, g
 	  (*(window_cbs_G->visibilityChange))(window, window->app_data, (void *)&vis_change) ;
 	}
 
-	/* this is the area allocated to the window by the parent GTK object */
-	/* should be identical to the canvas layout?? */
-      window->window_width  = widget->allocation.width ;
+      /* this is the area allocated to the window by the parent GTK object */
+      /* should be identical to the canvas layout?? */
+      window->window_width = widget->allocation.width ;
       window->window_height = widget->allocation.height ;
 
-      window->canvas_width  = layout->width ;
-      window->canvas_height = layout->height ;
+      gtk_layout_get_size(layout, &(window->canvas_width), &(window->canvas_height)) ;
     }
 
   return ;
@@ -5223,13 +5222,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
     case GDK_W:
       {
 	/* Zoom out to show whole sequence. */
-	double zoom_factor = 0.0, curr_factor = 0.0 ;
-
-	curr_factor = zMapWindowGetZoomFactor(window) ;
-	zoom_factor = zMapWindowGetZoomMin(window) ;
-	zoom_factor = zoom_factor / curr_factor ;
-
-	zMapWindowZoom(window, zoom_factor) ;
+	zMapWindowZoomToMin(window) ;
 
 	event_handled = TRUE ;
 	break ;
@@ -5372,6 +5365,8 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 
 
 
+
+
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void printWindowSizeDebug(char *prefix, ZMapWindow window,
 				 GtkWidget *widget, GtkAllocation *allocation)
@@ -5379,26 +5374,27 @@ static void printWindowSizeDebug(char *prefix, ZMapWindow window,
   FooCanvas *canvas = FOO_CANVAS(widget) ;
   GtkLayout *layout = &(canvas->layout) ;
 
-  printf("%s ----\n", prefix) ;
+  zMapUtilsDebugPrintf(stderr, "%s ----\n", prefix) ;
 
-  printf("alloc_req: %d, %d\tallocation_widg: %d, %d\twindow: %d, %d\n",
-	 allocation->width, allocation->height,
-	 widget->allocation.width, widget->allocation.height,
-	 window->window_width, window->window_height) ;
+  zMapUtilsDebugPrintf(stderr, "alloc_req: %d, %d\tallocation_widg: %d, %d\twindow: %d, %d\n",
+		       allocation->width, allocation->height,
+		       widget->allocation.width, widget->allocation.height,
+		       window->window_width, window->window_height) ;
 
-  printf("layout: %d, %d\tcanvas: %d, %d\n",
-	 layout->width, layout->height,
-	 window->canvas_width, window->canvas_height) ;
+  zMapUtilsDebugPrintf(stderr, "layout: %d, %d\tcanvas: %d, %d\n",
+		       layout->width, layout->height,
+		       window->canvas_width, window->canvas_height) ;
 
-  printf("scroll: %f, %f, %f, %f\t\t%f, %f\n\n",
-	 canvas->scroll_x1, canvas->scroll_y1,
-	 canvas->scroll_x2, canvas->scroll_y2,
-	 floor ((canvas->scroll_x2 - canvas->scroll_x1) * canvas->pixels_per_unit_x + 0.5),
-	 floor ((canvas->scroll_y2 - canvas->scroll_y1) * canvas->pixels_per_unit_y + 0.5)) ;
+  zMapUtilsDebugPrintf(stderr, "scroll: %f, %f, %f, %f\t\t%f, %f\n\n",
+		       canvas->scroll_x1, canvas->scroll_y1,
+		       canvas->scroll_x2, canvas->scroll_y2,
+		       floor ((canvas->scroll_x2 - canvas->scroll_x1) * canvas->pixels_per_unit_x + 0.5),
+		       floor ((canvas->scroll_y2 - canvas->scroll_y1) * canvas->pixels_per_unit_y + 0.5)) ;
 
   return ;
 }
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 /* Checks to see if current item has coords outside of current min/max. */
