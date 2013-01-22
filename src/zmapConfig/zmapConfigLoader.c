@@ -1315,6 +1315,7 @@ static ZMapConfigIniContextKeyEntry get_app_group_data(char **stanza_name, char 
      */
     { ZMAPSTANZA_APP_CSNAME,       G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_APP_CSVER,        G_TYPE_STRING,  NULL, FALSE },
+    { ZMAPSTANZA_APP_CHR,          G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_APP_START,        G_TYPE_INT,     NULL, FALSE },
     { ZMAPSTANZA_APP_END,          G_TYPE_INT,     NULL, FALSE },
     { ZMAPSTANZA_APP_HELP_URL,     G_TYPE_STRING,  NULL, FALSE },

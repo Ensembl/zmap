@@ -90,6 +90,7 @@ typedef struct MainFrameStructName
   ZMapImportScriptStruct scripts[N_FILE_TYPE];
 
   gboolean is_otter;
+  char *chr;
 
   ZMapFeatureSequenceMap sequence_map;
 
@@ -189,7 +190,22 @@ void importGetConfig(MainFrame main_frame, char *config_file)
 						ZMAPSTANZA_APP_CSVER, &tmp_string))
 		{
 			if(!g_ascii_strcasecmp(tmp_string,"Otter"))
+			{
+				char *chr;
 				main_frame->is_otter = TRUE;
+				if(zMapConfigIniContextGetString(context,
+								 ZMAPSTANZA_APP_CONFIG,
+								 ZMAPSTANZA_APP_CONFIG,
+								 ZMAPSTANZA_APP_CHR,
+								 &chr))
+				{
+					main_frame->chr = chr;
+				}
+				else
+				{
+					main_frame->chr = NULL;
+				}
+			}
 		}
 
 		if(zMapConfigIniHasStanza(context->config,ZMAPSTANZA_IMPORT_CONFIG,&gkf))
@@ -996,8 +1012,12 @@ static void importFileCB(GtkWidget *widget, gpointer cb_data)
       if ((seq_offset || map_seq) && !main_frame->is_otter)
         *argp++ = g_strdup_printf("--mapto=%d",seq_offset);
 
-      if ((*assembly_txt) && main_frame->is_otter)
-        *argp++ = g_strdup_printf("--csver=%s",assembly_txt);
+      if (main_frame->is_otter)
+        {
+          *argp++ = g_strdup_printf("--csver=%s",assembly_txt);
+          if (main_frame->chr)
+            *argp++ = g_strdup_printf("--chr=%s",main_frame->chr);
+        }
 
       if (req_sequence && !main_frame->is_otter)
         *argp++ = g_strdup_printf("--seq_id=%s",req_sequence);
