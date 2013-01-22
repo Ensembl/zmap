@@ -286,7 +286,8 @@ int zMap_draw_broken_line(GdkDrawable *drawable, ZMapWindowFeaturesetItem featur
 int zMap_draw_rect(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, gint cx1, gint cy1, gint cx2, gint cy2, gboolean fill)
 {
   /* as our rectangles are all aligned to H and V we can clip easily */
-
+  
+  /* First check whether the coords overlap the clip rect at all */
   if(cy1 > featureset->clip_y2)
     return 0;
   if(cy2 < featureset->clip_y1)
@@ -297,7 +298,7 @@ int zMap_draw_rect(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, g
   if(cx2 < featureset->clip_x1)
     return 0;
 
-
+  /* Clip the coords */
   if(cx1 < featureset->clip_x1)
     cx1 = featureset->clip_x1;
   if(cy1 < featureset->clip_y1)
@@ -308,13 +309,22 @@ int zMap_draw_rect(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, g
     cy2 = featureset->clip_y2;
 
   /* NOTE that the gdk_draw_rectangle interface is a bit esoteric
-   * and it doesn't like rectangles that have no depth
+   * and it doesn't like rectangles that have no depth 
    * read the docs to understand the coordinate calculations here
    */
 
+  int result = 0;
+  
   if (cy2 == cy1 || cx1 == cx2)
     {
       gdk_draw_line (drawable, featureset->gc, cx1, cy1, cx2, cy2);
+      result = 1;
+    }
+  else if (cy2 < cy1 || cx2 < cx1)
+    {
+      /* We expect the second coord to be greater than the first so
+       * if we get here it's an error. */
+      zMapWarning("Program error: Tried to draw a rectangle with negative width/height (width=%d, height=%d)", cx2 - cx1, cy2 - cy1);
     }
   else
     {
@@ -324,9 +334,10 @@ int zMap_draw_rect(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, g
 	  cy2--;
 	}
       gdk_draw_rectangle (drawable, featureset->gc, fill, cx1, cy1, cx2 - cx1, cy2 - cy1);
+      result = 1;
     }
 
-  return 1;
+  return result;
 }
 
 
