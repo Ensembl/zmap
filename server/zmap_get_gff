@@ -137,13 +137,13 @@ sub main
     while (<$file_h>) {
         chomp;
 
-        if (m/^#/) {
+        if (/^#/) {
             ##gff-version 2
             ##sequence-region AH6 1 37801
 
 
             if (my ($fseq, $fstart, $fend) =
-                m/sequence-region\s(\S+)\s(\d+)\s(\d+)/) {
+                /sequence-region\s(\S+)\s(\d+)\s(\d+)/) {
 
                 next unless $fseq eq $seq_id;
 
@@ -160,7 +160,7 @@ sub main
             }
             else {
                 printf "%s\n", $_;
-                # $in_version = $1 if m/gff-version\s(\d+)/;
+                # $in_version = $1 if /gff-version\s(\d+)/;
             }
         }
         else {
