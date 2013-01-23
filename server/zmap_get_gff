@@ -8,7 +8,6 @@
 use strict;
 use warnings;
 
-use Carp;
 use Getopt::Long 'GetOptions';
 use Pod::Usage;
 
