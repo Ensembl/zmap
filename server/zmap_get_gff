@@ -142,8 +142,8 @@ sub main
             ##sequence-region AH6 1 37801
 
 
-            if ( m/sequence-region\s(\S+)\s(\d+)\s(\d+)/) {
-                my ($fseq, $fstart, $fend) = ($1, $2, $3);
+            if (my ($fseq, $fstart, $fend) =
+                m/sequence-region\s(\S+)\s(\d+)\s(\d+)/) {
 
                 next unless $fseq eq $seq_id;
 
