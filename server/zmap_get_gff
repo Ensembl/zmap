@@ -37,9 +37,6 @@ my @required = qw(
     end
     );
 
-my $attributes_format;
-my $attributes_sep = ';';
-my $strands = { 1  => '+', -1 => '-' };
 my $seq_id;
 my $sequence;
 my $mapto;
@@ -108,15 +105,6 @@ sub get_params
     $start = $params{'start'};
     $end   = $params{'end'};
 
-    if ($params{'gff_version'} == 2) {
-        $attributes_format = '%s %s';
-        $attributes_sep = ' ; ';
-    }
-    else {
-        $attributes_format = '%s=%s';
-        $attributes_sep = ';';
-    }
-
     return;
 }
 
@@ -126,7 +114,6 @@ sub get_params
 
 sub main
 {
-    my $in_version = 3;
     my $offset;
 
     get_params();
