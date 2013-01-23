@@ -160,7 +160,6 @@ sub main
             }
             else {
                 printf "%s\n", $_;
-                # $in_version = $1 if /gff-version\s(\d+)/;
             }
         }
         else {
