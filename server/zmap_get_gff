@@ -76,7 +76,7 @@ sub get_params
     $sequence = $params{'gff_seqname'} || $seq_id;
     gff_escape_seqid for $sequence;
 
-    # mapto is inteneded mainly for mapping sequence to 1 based coords and vice versa
+    # mapto is intended mainly for mapping sequence to 1 based coords and vice versa
     $mapto = $params{'mapto'} if defined $params{'mapto'};
     $start = $params{'start'};
     $end   = $params{'end'};
