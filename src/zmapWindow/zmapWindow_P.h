@@ -629,12 +629,8 @@ typedef struct _ZMapWindowStruct
 
   /* We need to monitor changes to the size of the canvas window caused by user interactions
    * so we can adjust zoom and other controls appropriately. */
-  gint window_width, window_height ;
-
-
-  guint canvas_width, canvas_height ;
-
-
+  gint layout_alloc_width, layout_alloc_height ;
+  guint layout_actual_width, layout_actual_height ;
 
 
   /* Windows can be locked together in their zooming/scrolling. */
@@ -1144,12 +1140,12 @@ void my_foo_canvas_item_lower_to(FooCanvasItem *item, int position) ;
 void zmapWindowPrintW2I(FooCanvasItem *item, char *text, double x1, double y1) ;
 void zmapWindowPrintI2W(FooCanvasItem *item, char *text, double x1, double y1) ;
 
-void zmapWindowGetScrollRegion(ZMapWindow window,
-			       double *x1_inout, double *y1_inout,
-			       double *x2_inout, double *y2_inout);
-void zmapWindowSetScrollRegion(ZMapWindow window,
-			       double *x1_inout, double *y1_inout,
-			       double *x2_inout, double *y2_inout,char *where);
+void zmapWindowGetScrollableArea(ZMapWindow window,
+				 double *x1_inout, double *y1_inout,
+				 double *x2_inout, double *y2_inout);
+void zmapWindowSetScrollableArea(ZMapWindow window,
+				 double *x1_inout, double *y1_inout,
+				 double *x2_inout, double *y2_inout,char *where);
 
 void zmapWindowSetScrolledRegion(ZMapWindow window, double x1, double x2, double y1, double y2) ;
 void zmapWindowSetPixelxy(ZMapWindow window, double pixels_per_unit_x, double pixels_per_unit_y) ;
