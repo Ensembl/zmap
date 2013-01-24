@@ -33,6 +33,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <glib.h>
+#include <gdk/gdk.h>
 #include <gdk/gdkx.h>
 #include <gdk/gdkkeysyms.h>
 
@@ -474,8 +475,8 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, ZMapFeatureSequenceMap seque
    * with border, possibly to canvas height region size). Required
    * for the scroll_to call next too. */
   scroll_x1 = scroll_x2 = scroll_y1 = scroll_y2 = 0.0;
-  zmapWindowGetScrollRegion(original_window,  &scroll_x1, &scroll_y1, &scroll_x2, &scroll_y2) ;
-  zmapWindowSetScrollRegion(new_window,  &scroll_x1, &scroll_y1, &scroll_x2, &scroll_y2,"zMapWindowCopy") ;
+  zmapWindowGetScrollableArea(original_window,  &scroll_x1, &scroll_y1, &scroll_x2, &scroll_y2) ;
+  zmapWindowSetScrollableArea(new_window,  &scroll_x1, &scroll_y1, &scroll_x2, &scroll_y2,"zMapWindowCopy") ;
 
   /* Reset our scrolled position otherwise we can end up jumping to the top of the window. */
   foo_canvas_scroll_to(original_window->canvas, x, y) ;
@@ -748,8 +749,9 @@ void zMapWindowRedraw(ZMapWindow window)
 
   /* Set up the area of this window to be invalidated (i.e. to be redrawn). */
   expose_area.x = expose_area.y = 0 ;
-  expose_area.width = allocation->width - 1 ;
-  expose_area.height = allocation->height - 1 ;
+  expose_area.width = allocation->width ;
+  expose_area.height = allocation->height ;
+
 
   foo_bug_print(window->canvas,"redraw");
   //printf("expose 0,0 -> %d, %d\n",expose_area.width, expose_area.height );
@@ -1076,9 +1078,7 @@ void zmapWindowZoom(ZMapWindow window, double zoom_factor, gboolean stay_centere
 	     zmapWindowStateGetPrevious(window, &prev_state, FALSE))
 	    {
 	      double ry1, ry2;	/* restore scroll region */
-	      zmapWindowStateGetScrollRegion(prev_state,
-					     NULL, &ry1,
-					     NULL, &ry2);
+	      zmapWindowStateGetScrollRegion(prev_state, NULL, &ry1, NULL, &ry2);
 	      locked_data.position = ((ry2 - ry1) / 2 ) + ry1;
 	    }
 
@@ -1392,9 +1392,9 @@ void zmapWindowBusyInternal(ZMapWindow window, gboolean external_call,
 /*
  *
  */
-void zmapWindowGetScrollRegion(ZMapWindow window,
-			       double *x1_inout, double *y1_inout,
-			       double *x2_inout, double *y2_inout)
+void zmapWindowGetScrollableArea(ZMapWindow window,
+				 double *x1_inout, double *y1_inout,
+				 double *x2_inout, double *y2_inout)
 {
   foo_canvas_get_scroll_region(FOO_CANVAS(window->canvas),
 			       x1_inout, y1_inout, x2_inout, y2_inout);
@@ -1408,7 +1408,7 @@ zMapAssert(*y1_inout <= *y2_inout);
   return ;
 }
 
-void zmapWindowSetScrollRegion(ZMapWindow window,
+void zmapWindowSetScrollableArea(ZMapWindow window,
 			       double *x1_inout, double *y1_inout,
 			       double *x2_inout, double *y2_inout,char *where)
 {
@@ -2417,7 +2417,7 @@ static void myWindowZoom(ZMapWindow window, double zoom_factor, double curr_pos)
 
       /* Calculate the extent of the new span, new span must not exceed maximum X window size
        * but we must display as much of the sequence as we can for zooming out. */
-      zmapWindowGetScrollRegion(window, &x1, &y1, &x2, &y2);
+      zmapWindowGetScrollableArea(window, &x1, &y1, &x2, &y2);
       new_canvas_span = zmapWindowZoomControlLimitSpan(window, y1, y2);
       half_new_span   = (new_canvas_span / 2);
 
@@ -2441,7 +2441,7 @@ static void myWindowZoom(ZMapWindow window, double zoom_factor, double curr_pos)
       /* must set zoom before SetScroll as that set Scroll may redraw the ruler */
       zmapWindowScaleCanvasSetPixelsPerUnit(window->ruler, 1.0, zMapWindowGetZoomFactor(window));
 
-      zmapWindowSetScrollRegion(window, &x1, &y1, &x2, &y2,"myWindowZoom");
+      zmapWindowSetScrollableArea(window, &x1, &y1, &x2, &y2,"myWindowZoom");
 
 
       /* Now we've actually done the zoom on the canvas we can
@@ -2492,7 +2492,7 @@ static void myWindowMove(ZMapWindow window, double start, double end)
 // actually not relevant here we are changing Y not X
 //  zmapWindowFullReposition(window->feature_root_group,TRUE);
 
-  zmapWindowSetScrollRegion(window, NULL, &start, NULL, &end,"myWindowMove");
+  zmapWindowSetScrollableArea(window, NULL, &start, NULL, &end,"myWindowMove");
 
   zmapWindowBusy(window, FALSE) ;
 
@@ -2807,7 +2807,7 @@ static void changeRegion(ZMapWindow window, guint keyval)
   double window_size ;
 
   /* THIS FUNCTION NEEDS REFACTORING SLIGHTLY */
-  zmapWindowGetScrollRegion(window, &x1, &y1, &x2, &y2);
+  zmapWindowGetScrollableArea(window, &x1, &y1, &x2, &y2);
 
   /* There is no sense in trying to scroll the region if we already showing all of it already. */
   if (y1 > window->min_coord || y2 < window->max_coord)
@@ -2872,7 +2872,7 @@ static void changeRegion(ZMapWindow window, guint keyval)
 	  y1 = y2 - window_size + 1 ;
 	}
 
-      zmapWindowSetScrollRegion(window, NULL, &y1, NULL, &y2,"changeRegion");
+      zmapWindowSetScrollableArea(window, NULL, &y1, NULL, &y2,"changeRegion");
 
     }
 
@@ -4160,7 +4160,7 @@ static void myWindowZoomTo(ZMapWindow window, double zoom_factor, double start, 
 
       /* Calculate the extent of the new span, new span must not exceed maximum X window size
        * but we must display as much of the sequence as we can for zooming out. */
-      zmapWindowGetScrollRegion(window, &x1, &y1, &x2, &y2);
+      zmapWindowGetScrollableArea(window, &x1, &y1, &x2, &y2);
       new_canvas_span = zmapWindowZoomControlLimitSpan(window, y1, y2);/* try out the new zoom window.... */
       half_new_span   = (new_canvas_span / 2);
 
@@ -4182,7 +4182,7 @@ static void myWindowZoomTo(ZMapWindow window, double zoom_factor, double start, 
       /* must set zoom before SetScroll as that set Scroll may redraw the ruler */
       zmapWindowScaleCanvasSetPixelsPerUnit(window->ruler, 1.0, zMapWindowGetZoomFactor(window));
 
-      zmapWindowSetScrollRegion(window, &x1, &y1, &x2, &y2,"myWindowZoom");
+      zmapWindowSetScrollableArea(window, &x1, &y1, &x2, &y2,"myWindowZoom");
 
 
       /* Now we've actually done the zoom on the canvas we can
@@ -4297,9 +4297,9 @@ this makes this function ignore its arguments
 			zmapWindowStateGetPrevious(window, &prev_state, FALSE))
 		{
 			double ry1, ry2;	/* restore scroll region */
-			zmapWindowStateGetScrollRegion(prev_state,
-							NULL, &ry1,
-							NULL, &ry2);
+			zmapWindowStateGetScrollableArea(prev_state,
+							 NULL, &ry1,
+							 NULL, &ry2);
 			locked_data.position = ((ry2 - ry1) / 2 ) + ry1;
 		}
 #endif
@@ -4371,50 +4371,94 @@ static gboolean canvasRootEventCB(GtkWidget *widget, GdkEventClient *event, gpoi
 /* NOTE: This routine only gets called when the canvas widgets parent requests a resize, not when
  * the canvas changes its own size through zooming.
  *
- * We need to take action whether the canvas window changes size OR the underlying bin_window
- * where all the features get drawn to, changes size. In either case there are changes that
- * must be made to zoomControl and to the user interface, e.g. if the canvas window gets smaller
- * then we need to allow the user to be able to zoom out more.
- *
- * Notes:
- * This is essentially a time when visibility may have changed or need to be
- * changed. zmapZoomControlHandleResize below works out whether the
- * zoom factor needs changing based on the window height.  Currently
- * this calls zMapWindowZoom (if required).
- *
+ * We _may_ need to take action when the canvas window changes size:
+ * 
+ * If we are at min zoom and the window gets larger then we need to redo the min zoom so
+ * the sequence once again occupies the whole window....
+ * 
+ * ...otherwise we don't need to do anything, the scrolled window/canvas interface takes
+ * care of sorting out the scroll bars.
+ * 
+ * NOTES:
+ * 
+ * - foocanvas uses GtkLayout which has two windows, the one that's visible on the screen
+ * and the larger scrolling one that sits "behind" it with the actual data. alloc_XXX is
+ * the size of the visible window, actual_XXX is the size of the scrolling window.
+ * 
+ *  -  you cannot use the sizes of the layout widgets actual windows because when this
+ * routine is called they have not yet been set to the new sizes specified in the allocation.
+ * 
+ * - the allocation struct passed in seems always to have the same values as the allocation
+ * struct embedded in the widget passed in (the foocanvas/layout).....duh....
+ * 
  */
 static void canvasSizeAllocateCB(GtkWidget *widget, GtkAllocation *allocation, gpointer user_data)
 {
   ZMapWindow window = (ZMapWindow)user_data ;
   FooCanvas *canvas = FOO_CANVAS(widget) ;
   GtkLayout *layout = &(canvas->layout) ;
+  int layout_alloc_width, layout_alloc_height ;
 
 
-  if ((window->seqLength)
-      && (window->window_height < widget->allocation.height || window->canvas_height != layout->height))
+  /* New layout window size as set by parent widget. */
+  layout_alloc_width = widget->allocation.width ;
+  layout_alloc_height = widget->allocation.height ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  {
+    /* debug info...leaving this in for now in case we need further fixing... */
+    unsigned int layout_width, layout_height ;
+    int layout_win_width, layout_win_height,  layout_binwin_width, layout_binwin_height ;
+
+    layout_alloc_width = widget->allocation.width ;
+    layout_alloc_height = widget->allocation.height ;
+    gtk_layout_get_size(layout, &layout_width, &layout_height) ;
+    gdk_drawable_get_size(GDK_DRAWABLE(widget->window), &layout_win_width, &layout_win_height) ;
+    gdk_drawable_get_size(GDK_DRAWABLE(layout->bin_window), &layout_binwin_width, &layout_binwin_height) ;
+
+    printf("\nLayout width/height - alloc: %d, %d\tactual: %u, %u\twin: %d, %d\tbin_win: %d, %d\n",
+	   layout_alloc_width, layout_alloc_height, layout_width, layout_height,
+	   layout_win_width, layout_win_height,  layout_binwin_width, layout_binwin_height) ;
+
+    printf("ZMapWindow width/height - alloc: %d, %d\twindow: %d, %d\tbin_win: %d, %d\n",
+	   window->layout_alloc_width, window->layout_alloc_height,
+	   window->layout_actual_width, window->layout_actual_height,
+	   window->bin_window_width, window->bin_window_height) ;
+  }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+  /* If the window has got bigger than (essentially) the length of the displayed sequence
+   * then we need to zoom so sequence fills whole window.
+   * (Need to test seqLength because this routine can be called before we have loaded
+   * the sequence.) */
+  if ((window->seqLength) && (window->layout_actual_height < layout_alloc_height))
     {
-      if (window->canvas_width != 0 && window->canvas_height != 0)
+      if (window->layout_actual_width != 0 && window->layout_actual_height != 0)
 	{
 	  ZMapWindowVisibilityChangeStruct vis_change ;
 	  double start, end;
 
 	  zmapWindowZoomControlHandleResize(window);
 
-	  zmapWindowGetScrollRegion(window, NULL, &start, NULL, &end);
+	  zmapWindowGetScrollableArea(window, NULL, &start, NULL, &end);
 
 	  vis_change.zoom_status    = zMapWindowGetZoomStatus(window) ;
 	  vis_change.scrollable_top = start ;
 	  vis_change.scrollable_bot = end ;
 	  (*(window_cbs_G->visibilityChange))(window, window->app_data, (void *)&vis_change) ;
 	}
-
-      /* this is the area allocated to the window by the parent GTK object */
-      /* should be identical to the canvas layout?? */
-      window->window_width = widget->allocation.width ;
-      window->window_height = widget->allocation.height ;
-
-      gtk_layout_get_size(layout, &(window->canvas_width), &(window->canvas_height)) ;
     }
+
+
+  /* Record size of window allocated to visible layout window. */
+  window->layout_alloc_width = widget->allocation.width ;
+  window->layout_alloc_height = widget->allocation.height ;
+
+  /* Record size of scrolled layout window. */
+  gtk_layout_get_size(layout, &(window->layout_actual_width), &(window->layout_actual_height)) ;
+
 
   return ;
 }
@@ -6573,7 +6617,7 @@ static gboolean real_recenter_scroll_window(ZMapWindow window, unsigned int one_
       double sx1, sx2, sy1, sy2, tmps, diff;
 
       /* Get scroll region (clamped to sequence coords) */
-      zmapWindowGetScrollRegion(window, &sx1, &sy1, &sx2, &sy2);
+      zmapWindowGetScrollableArea(window, &sx1, &sy1, &sx2, &sy2);
       /* we now have scroll region coords */
       /* set tmp to centre of regions ... */
       tmps = sy1 + ((sy2 - sy1) / 2);
