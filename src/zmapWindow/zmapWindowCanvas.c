@@ -44,7 +44,7 @@ void zmapWindowSetScrolledRegion(ZMapWindow window, double x1, double x2, double
 
   foo_canvas_set_scroll_region(canvas, x1, y1, x2, y2) ;
 
-  gtk_layout_get_size(layout, &(window->canvas_width), &(window->canvas_height)) ;
+  gtk_layout_get_size(layout, &(window->layout_actual_width), &(window->layout_actual_height)) ;
 
   return ;
 }
@@ -57,7 +57,7 @@ void zmapWindowSetPixelxy(ZMapWindow window, double pixels_per_unit_x, double pi
 
   foo_canvas_set_pixels_per_unit_xy(canvas, pixels_per_unit_x, pixels_per_unit_y) ;
 
-  gtk_layout_get_size(layout, &(window->canvas_width), &(window->canvas_height)) ;
+  gtk_layout_get_size(layout, &(window->layout_actual_width), &(window->layout_actual_height)) ;
 
   return ;
 }
