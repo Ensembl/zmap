@@ -1101,9 +1101,9 @@ static gboolean factoryFeatureSizeReq(ZMapFeature feature,
 
       points_array_inout[1] = points_array_inout[3] = x1 = x2 = 0.0;
       /* Get scrolled region (clamped to sequence coords)  */
-      zmapWindowGetScrollRegion(window,
-                                 &x1, &(points_array_inout[1]),
-                                 &x2, &(points_array_inout[3]));
+      zmapWindowGetScrollableArea(window,
+				  &x1, &(points_array_inout[1]),
+				  &x2, &(points_array_inout[3]));
     }
   else
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */

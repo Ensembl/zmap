@@ -321,7 +321,7 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
 
       if(window->scroll_initialised)
 	{
-	  zmapWindowGetScrollRegion(window, &sx1, &sy1, &sx2, &sy2);
+	  zmapWindowGetScrollableArea(window, &sx1, &sy1, &sx2, &sy2);
 	}
       else
 	{
@@ -329,7 +329,7 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
 	  sy1 = window->min_coord;
 	  sx2 = ZMAP_CANVAS_INIT_SIZE;
 	  sy2 = window->max_coord;
-	  zmapWindowSetScrollRegion(window, &sx1, &sy1, &sx2, &sy2,"zmapWindowDrawFeatures");
+	  zmapWindowSetScrollableArea(window, &sx1, &sy1, &sx2, &sy2,"zmapWindowDrawFeatures");
 	}
 
 

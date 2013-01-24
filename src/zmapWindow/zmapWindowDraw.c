@@ -1,4 +1,3 @@
-/*  Last edited: Jul 13 15:13 2011 (edgrif) */
 /*  File: zmapWindowDraw.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -851,7 +850,7 @@ void zmapWindowFullReposition(ZMapWindowContainerGroup root, gboolean redraw, ch
 		double x1,x2,y1,y2;
 		int cx1,cx2,cy1,cy2;
 
-		zmapWindowGetScrollRegion(window, &x1, &y1, &x2, &y2);
+		zmapWindowGetScrollableArea(window, &x1, &y1, &x2, &y2);
 		foo_canvas_w2c(((FooCanvasItem *) root)->canvas, poscol->left, y1, &cx1, &cy1);
 		foo_canvas_w2c(((FooCanvasItem *) root)->canvas, x2, y2, &cx2, &cy2);
 
@@ -1074,7 +1073,7 @@ static gboolean zMapWindowResetWindowWidth(ZMapWindow window, FooCanvasItem *ite
   double y1, y2 ;       /* scroll region positions */
   gboolean result = TRUE;
 
-  zmapWindowGetScrollRegion(window, NULL, &y1, NULL, &y2);
+  zmapWindowGetScrollableArea(window, NULL, &y1, NULL, &y2);
 
         /* Annoyingly the initial size of the canvas is an issue here on first draw */
   if(y2 == ZMAP_CANVAS_INIT_SIZE)
@@ -1082,7 +1081,7 @@ static gboolean zMapWindowResetWindowWidth(ZMapWindow window, FooCanvasItem *ite
 	y1 = window->min_coord;		/* rev comp changes both of these */
 	y2 = window->max_coord;
   }
-  zmapWindowSetScrollRegion(window, &x1, &y1, &x2, &y2,"resetWindowWidth") ;
+  zmapWindowSetScrollableArea(window, &x1, &y1, &x2, &y2,"resetWindowWidth") ;
 
   return result;
 }

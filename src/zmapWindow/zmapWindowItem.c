@@ -645,7 +645,7 @@ gboolean zmapWindowItemRegionIsVisible(ZMapWindow window, FooCanvasItem *item)
   zMapFeature2MasterCoords(feature, &feature_x1, &feature_x2);
 
   /* Get scroll region (clamped to sequence coords) */
-  zmapWindowGetScrollRegion(window, &wx1, &wy1, &wx2, &wy2);
+  zmapWindowGetScrollableArea(window, &wx1, &wy1, &wx2, &wy2);
 
   wx2 = feature_x2 + 1;
   if(feature_x1 >= wx1 && feature_x2 <= wx2  &&
@@ -792,7 +792,7 @@ void zmapWindowItemCentreOnItemSubPart(ZMapWindow window, FooCanvasItem *item,
 	{
         double sx1, sx2, sy1, sy2, tmps, tmpi, diff;
 	      /* Get scroll region (clamped to sequence coords) */
-	  zmapWindowGetScrollRegion(window, &sx1, &sy1, &sx2, &sy2);
+	  zmapWindowGetScrollableArea(window, &sx1, &sy1, &sx2, &sy2);
 
 //	  if (!zmapWindowItemRegionIsVisible(window, item))
 	  if(iy1 < sy1 || iy2 > sy2)	/* as iy1 < iy2 that's all we need to test */

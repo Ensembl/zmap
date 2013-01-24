@@ -1020,7 +1020,7 @@ static void lockedDisplaySetScrollRegionCB(gpointer key, gpointer value, gpointe
   y1 = locked->y1;
   y2 = locked->y2;
 
-  zmapWindowSetScrollRegion(locked->window, &x1, &y1, &x2, &y2,"lockedDisplaySetScrollRegionCB");
+  zmapWindowSetScrollableArea(locked->window, &x1, &y1, &x2, &y2,"lockedDisplaySetScrollRegionCB");
 
   return ;
 }
@@ -1041,7 +1041,9 @@ static void set_scroll_region(ZMapWindow window, double x1, double y1, double x2
       g_hash_table_foreach(window->sibling_locked_windows, lockedDisplaySetScrollRegionCB, &locked);
     }
   else
-    zmapWindowSetScrollRegion(window, &x1, &y1, &x2, &y2,"set_scroll_region");
+    {
+      zmapWindowSetScrollableArea(window, &x1, &y1, &x2, &y2,"set_scroll_region");
+    }
 
   return ;
 }

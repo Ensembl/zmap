@@ -414,7 +414,7 @@ void zmapWindowToggleMark(ZMapWindow window, gboolean whole_feature)
         y1 += margin ;
         y2 -= margin ;
         /* We only ever want the mark as wide as the scroll region */
-        zmapWindowGetScrollRegion(window, NULL, NULL, &x2, NULL);
+        zmapWindowGetScrollableArea(window, NULL, NULL, &x2, NULL);
 
         zmapWindowMarkSetWorldRange(window->mark, x1, y1, x2, y2) ;
       }
@@ -551,7 +551,7 @@ gboolean zmapWindowMarkSetWorldRange(ZMapWindowMark mark,
   zmapWindowMarkReset(mark) ;
 
   /* clamp x to scroll region. Fix RT # 55131 */
-  zmapWindowGetScrollRegion(mark->window, &scroll_x1, NULL, &scroll_x2, NULL);
+  zmapWindowGetScrollableArea(mark->window, &scroll_x1, NULL, &scroll_x2, NULL);
 
   if (world_x2 > scroll_x2)
     {
