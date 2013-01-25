@@ -110,7 +110,7 @@ sub main
                 next unless $fseq eq $seq_id;
 
                 # i suspect this code needs adjusting to cope with subsequences of clones
-                $offset = defined $mapto ?  $mapto - $fstart : 0;
+                $offset = $mapto - $fstart if defined $mapto;
 
                 # $fstart += $offset;
                 # $fend   += $offset;
@@ -125,22 +125,24 @@ sub main
             }
         }
         else {
-            if (defined $offset) {
-                # AH6	accepted_hits	similarity	644	677	.	+	.	.... stuff
+            # AH6	accepted_hits	similarity	644	677	.	+	.	.... stuff
 
-                my @field_list = split /\s+/, $_;
+            my @field_list = split /\s+/, $_;
 
-                next unless $field_list[0] eq $seq_id;
+            next unless $field_list[0] eq $seq_id;
 
-                $field_list[0] =  $sequence;
+            $field_list[0] =  $sequence;
+            if (defined $mapto) {
+                defined $offset
+                    or die "mapto argument specified but no ##sequence-region header found";
                 $field_list[3] += $offset;
                 $field_list[4] += $offset;
-
-                # remove features outside requested region
-                next if $field_list[3] > $end || $field_list[4] < $start;
-
-                printf "%s\n", join "\t", @field_list;
             }
+
+            # remove features outside requested region
+            next if $field_list[3] > $end || $field_list[4] < $start;
+
+            printf "%s\n", join "\t", @field_list;
         }
     }
 
