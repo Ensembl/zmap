@@ -978,24 +978,25 @@ void zMapWindowBack(ZMapWindow window)
 
       zmapWindowStateQueueRemove(window->history, prev_state);
 
-      zmapWindowStateDestroy(prev_state);
+      prev_state = zmapWindowStateDestroy(prev_state);
 
       change.zoom_status = zMapWindowGetZoomStatus(window);
 
 
-	/* somehow this does not paint till we get a window/widget resise if back from big zoom in a vsplit window */
-	/* unless we call this, but we also need to handle the blank bits at the edges */
+      /* somehow this does not paint till we get a window/widget resise if back from big zoom in a vsplit window */
+      /* unless we call this, but we also need to handle the blank bits at the edges */
 #warning still doesn-t work, possibly a race condition, it-s not 100% producable
 /* only appears to apply to v-split */
 //	sleep(4);		/* still goes wrong as before */
-	zMapWindowRedraw(window);
-
-	/* also need to do locked windows */
-	/* NOTE this hash table has window as key and value, maybe a GList would have been better
-	 * but we will call WindowRedraw with 3 args and the first will be valid
-	 * C handles passing a diff number of args, it's not a compiler choice
-	 */
-	g_hash_table_foreach(window->sibling_locked_windows, (GHFunc) zMapWindowRedraw, NULL) ;
+      zMapWindowRedraw(window);
+        
+      /* also need to do locked windows */
+      /* NOTE this hash table has window as key and value, maybe a GList would have been better
+       * but we will call WindowRedraw with 3 args and the first will be valid
+       * C handles passing a diff number of args, it's not a compiler choice
+       */
+      if (window->sibling_locked_windows)
+        g_hash_table_foreach(window->sibling_locked_windows, (GHFunc) zMapWindowRedraw, NULL) ;
 
 
       foo_canvas_get_scroll_region(window->canvas,
@@ -2360,7 +2361,7 @@ void zMapWindowStateRecord(ZMapWindow window)
       zmapWindowStateSavePosition(state, window);
 
       if(!zmapWindowStateQueueStore(window, state, TRUE))
-		zmapWindowStateDestroy(state);
+        state = zmapWindowStateDestroy(state);
 #if 0
 we-re recording the state not changing it
 if this function needs calling then it should be done by the caller
