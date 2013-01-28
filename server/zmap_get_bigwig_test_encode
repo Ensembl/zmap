@@ -8,7 +8,7 @@ gff_source=Tier1_H1-hESC_cell_longPolyA_rep1
 
 ./zmap_get_bigwig \
     --file=${file}   \
-    --chr=chr16      \
+    --seq_id=chr16   \
     --start=85591570 \
     --end=87672398   \
     --gff_seqname=chr13-03 \

@@ -7,6 +7,7 @@ file=fake.gff
 
 ./zmap_get_gff \
     --file=${file} \
+    --seq_id=15    \
     --start=100000 \
     --end=200000   \
     ;

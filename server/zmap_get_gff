@@ -8,7 +8,6 @@
 use strict;
 use warnings;
 
-use Carp;
 use Getopt::Long 'GetOptions';
 use Pod::Usage;
 
@@ -23,6 +22,7 @@ my @options = qw(
     man!
     gff_version=i
     file=s
+    seq_id=s
     start=i
     end=i
     mapto=i
@@ -31,46 +31,21 @@ my @options = qw(
 
 my @required = qw(
     file
+    seq_id
     start
     end
     );
 
-my $attributes_format;
-my $attributes_sep = ';';
-my $strands = { 1  => '+', -1 => '-' };
+my $seq_id;
 my $sequence;
 my $mapto;
 my $start;
 my $end;
 
 
-sub gff_escape {
-    # escapes a minimal set of characters
-    s/([\t\r\n[:cntrl:];=%&])/sprintf "%%%02X", ord($1)/eg;
-    return;
-}
-
 sub gff_escape_seqid {
     # escapes everything except a restricted set of characters
     s/([^-a-zA-Z0-9.:^*$@!+_?|])/sprintf "%%%02X", ord($1)/eg;
-    return;
-}
-
-sub gff_escape_source {
-    # escapes everything except a restricted set of characters
-    s/([^-a-zA-Z0-9.:^*$@!+_? ])/sprintf "%%%02X", ord($1)/eg;
-    return;
-}
-
-sub gff_escape_attribute {
-    # like gff_escape, but escapes commas too
-    s/([\t\r\n[:cntrl:];=%&,])/sprintf "%%%02X", ord($1)/eg;
-    return;
-}
-
-sub gff_escape_target {
-    # like gff_escape, but escapes commas and spaces too
-    s/([\t\r\n[:cntrl:];=%&, ])/sprintf "%%%02X", ord($1)/eg;
     return;
 }
 
@@ -96,24 +71,14 @@ sub get_params
 
     $params{$_} = uri_unescape($params{$_}) for keys %params;
 
-    if (defined $params{'gff_seqname'}) {
-        $sequence = $params{'gff_seqname'};
-        gff_escape_seqid for $sequence;
-    }
+    $seq_id = $params{'seq_id'};
+    $sequence = $params{'gff_seqname'} || $seq_id;
+    gff_escape_seqid for $sequence;
 
-    # mapto is inteneded mainly for mapping sequence to 1 based coords and vice versa
+    # mapto is intended mainly for mapping sequence to 1 based coords and vice versa
     $mapto = $params{'mapto'} if defined $params{'mapto'};
     $start = $params{'start'};
     $end   = $params{'end'};
-
-    if ($params{'gff_version'} == 2) {
-        $attributes_format = '%s %s';
-        $attributes_sep = ' ; ';
-    }
-    else {
-        $attributes_format = '%s=%s';
-        $attributes_sep = ';';
-    }
 
     return;
 }
@@ -124,8 +89,6 @@ sub get_params
 
 sub main
 {
-    my $in_version = 3;
-    my ($fseq, $fstart, $fend);
     my $offset;
 
     get_params();
@@ -136,18 +99,18 @@ sub main
     while (<$file_h>) {
         chomp;
 
-        if (m/^#/) {
+        if (/^#/) {
             ##gff-version 2
             ##sequence-region AH6 1 37801
 
 
-            if ( m/sequence-region\s(\S+)\s(\d+)\s(\d+)/) {
-                ($fseq, $fstart, $fend) = ($1, $2, $3);
+            if (my ($fseq, $fstart, $fend) =
+                /sequence-region\s(\S+)\s(\d+)\s(\d+)/) {
 
-                $fseq = $sequence if defined $sequence;
+                next unless $fseq eq $seq_id;
 
                 # i suspect this code needs adjusting to cope with subsequences of clones
-                $offset = defined $mapto ?  $mapto - $fstart : 0;
+                $offset = $mapto - $fstart if defined $mapto;
 
                 # $fstart += $offset;
                 # $fend   += $offset;
@@ -155,30 +118,32 @@ sub main
                 # NOTE the ZMap source code regards a file with more data than requested as an error
                 # how useful!  so we have to filter the features here and limit the GFF header
                 # start and end are as requested
-                $_ = sprintf "##sequence-region %s %d %d", $fseq, $start, $end;
+                printf "##sequence-region %s %d %d\n", $sequence, $start, $end;
             }
             else {
-                # $in_version = $1 if m/gff-version\s(\d+)/;
+                printf "%s\n", $_;
             }
         }
         else {
-            if (defined $offset) {
-                # AH6	accepted_hits	similarity	644	677	.	+	.	.... stuff
+            # AH6	accepted_hits	similarity	644	677	.	+	.	.... stuff
 
-                my @field_list = split /\s+/, $_;
+            my @field_list = split /\s+/, $_;
 
-                $field_list[0] =  $fseq;
+            next unless $field_list[0] eq $seq_id;
+
+            $field_list[0] =  $sequence;
+            if (defined $mapto) {
+                defined $offset
+                    or die "mapto argument specified but no ##sequence-region header found";
                 $field_list[3] += $offset;
                 $field_list[4] += $offset;
-
-                # remove features outside requested region
-                next if $field_list[3] > $end || $field_list[4] < $start;
-
-                $_ = join "\t", @field_list;
             }
-        }
 
-        print $_, "\n";
+            # remove features outside requested region
+            next if $field_list[3] > $end || $field_list[4] < $start;
+
+            printf "%s\n", join "\t", @field_list;
+        }
     }
 
     return;
@@ -194,7 +159,7 @@ zmap_get_bam request data and output as GFF
 
 =head1 SYNOPSIS
 
-zmap_get_gff [--help] [--man] --file=[http:|ftp:]/path/to/file --start=123 --end=456 --gff_feature_source=name --chr=CHROMOSOME_IV [--gff_version=3] --gff_seqname=GFF_sequence_name
+zmap_get_gff [--help] [--man] --file=[http:|ftp:]/path/to/file --start=123 --end=456 --gff_feature_source=name --seq_id=CHROMOSOME_IV [--gff_version=3] --gff_seqname=GFF_sequence_name
 
 =head1 OPTIONS
 

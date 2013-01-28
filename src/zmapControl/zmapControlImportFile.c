@@ -90,6 +90,7 @@ typedef struct MainFrameStructName
   ZMapImportScriptStruct scripts[N_FILE_TYPE];
 
   gboolean is_otter;
+  char *chr;
 
   ZMapFeatureSequenceMap sequence_map;
 
@@ -189,7 +190,22 @@ void importGetConfig(MainFrame main_frame, char *config_file)
 						ZMAPSTANZA_APP_CSVER, &tmp_string))
 		{
 			if(!g_ascii_strcasecmp(tmp_string,"Otter"))
+			{
+				char *chr;
 				main_frame->is_otter = TRUE;
+				if(zMapConfigIniContextGetString(context,
+								 ZMAPSTANZA_APP_CONFIG,
+								 ZMAPSTANZA_APP_CONFIG,
+								 ZMAPSTANZA_APP_CHR,
+								 &chr))
+				{
+					main_frame->chr = chr;
+				}
+				else
+				{
+					main_frame->chr = NULL;
+				}
+			}
 		}
 
 		if(zMapConfigIniHasStanza(context->config,ZMAPSTANZA_IMPORT_CONFIG,&gkf))
@@ -683,6 +699,7 @@ static void enable_widgets(MainFrame main_frame)
 
 	gtk_widget_set_sensitive(main_frame->map_widg, !(is_bam && main_frame->is_otter));
 	gtk_widget_set_sensitive(main_frame->offset_widg, !(is_bam && main_frame->is_otter));
+	gtk_widget_set_sensitive(main_frame->req_sequence_widg, !(main_frame->is_otter));
 	gtk_widget_set_sensitive(main_frame->assembly_widg, (main_frame->is_otter));
 }
 
@@ -995,8 +1012,15 @@ static void importFileCB(GtkWidget *widget, gpointer cb_data)
       if ((seq_offset || map_seq) && !main_frame->is_otter)
         *argp++ = g_strdup_printf("--mapto=%d",seq_offset);
 
-      if ((*assembly_txt) && main_frame->is_otter)
-        *argp++ = g_strdup_printf("--csver=%s",assembly_txt);
+      if (main_frame->is_otter)
+        {
+          *argp++ = g_strdup_printf("--csver=%s",assembly_txt);
+          if (main_frame->chr)
+            *argp++ = g_strdup_printf("--chr=%s",main_frame->chr);
+        }
+
+      if (req_sequence && !main_frame->is_otter)
+        *argp++ = g_strdup_printf("--seq_id=%s",req_sequence);
 
       /* some depend on file type */
       switch(file_type)
@@ -1005,8 +1029,6 @@ static void importFileCB(GtkWidget *widget, gpointer cb_data)
           /* add in any that have data */
           if (source_txt)
             *argp++ = g_strdup_printf("--gff_feature_source=%s",source_txt);
-          if (req_sequence)
-            *argp++ = g_strdup_printf("--chr=%s",req_sequence);
           if (strand)
             *argp++ = g_strdup_printf("--strand=%d",strand); /* NOTE this is not +/- as presented to the user */
           break;
@@ -1019,7 +1041,6 @@ static void importFileCB(GtkWidget *widget, gpointer cb_data)
           /* fall through */
 
         case FILE_BAM:
-          *argp++ = g_strdup_printf("--chr=%s",req_sequence);
           *argp++ = g_strdup_printf("--gff_feature_source=%s",source_txt);
           break;
         }

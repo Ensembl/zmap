@@ -355,7 +355,7 @@ but note that many of the otterlace scripts refer to a 'server script' such as g
 Some standard tokens will be defined to cover what's needed. These will be defined as '$token' as $ appears not to be used in existing URL syntax.  Initially we will use only the tokens needed by encode servers, and as is currently implemented in ZMap we will adjust sequence specific options (start, end, dataset, gff_seqname) automatically.
 <pre>
 url=pipe:///bigwig_get?
-	-chr=chr4-04&
+	-seq_id=chr4-04&
 	-csver=GRCh37&
 	-end=9721721&
 	-file=http%3A%2F%2Fhgdownload-test.cse.ucsc.edu%2FgoldenPath%2Fhg19%2FencodeDCC%2FwgEncodeCshlLongRnaSeq%2FreleaseLatest%2FwgEncodeCshlLongRnaSeqAg04450CellPapPlusRawSigRep2.bigWig
@@ -365,7 +365,7 @@ url=pipe:///bigwig_get?
 	&-strand=1
 
 url=pipe:///bam_get?
-	--chr=chr4-04
+	--seq_id=chr4-04
 	&--csver=GRCh37
 	&--end=9721721
 	&--file=http%3A%2F%2Fhgdownload-test.cse.ucsc.edu%2FgoldenPath%2Fhg19%2FencodeDCC%2FwgEncodeCshlLongRnaSeq%2FreleaseLatest%2FwgEncodeCshlLongRnaSeqHsmmCellPapAlnRep2.bam
@@ -395,7 +395,7 @@ url=pipe:///filter_get?
 	&type=chr4-04
 	&url_root=http%3A%2F%2Fdev.sanger.ac.uk%3A80%2Fcgi-bin%2Fotter%2F61
 </pre>
-and to process these URLs reliably we have to be careful to preserve what's configured.  We also need to process 'chr' and 'gff_seqname' interchangably and update both if they are present, but not add chr if it's not there.  Specifically this means that encode URL's need to include -chr= and not -gff_seqname=. Otterlace URLs do not include chr but do include gff_seqname, and this is added if not present.
+and to process these URLs reliably we have to be careful to preserve what's configured.  We also need to process seq_id' and 'gff_seqname' interchangably and update both if they are present, but not add seq_id if it's not there.  Specifically this means that encode URL's need to include -seq_id= and not -gff_seqname=. Otterlace URLs do not include seq_id but do include gff_seqname, and this is added if not present.
 </p>
 
 <p>
