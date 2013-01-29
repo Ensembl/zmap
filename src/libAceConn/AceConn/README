@@ -10,16 +10,59 @@ The official AceDB ftp site is:
 The official web site is:
   http://www.acedb.org/
 
+
+
 Installation
 ============
 
-See the file 'INSTALL'
+See the file 'INSTALL' for the generic install instructions.
+
+
+Bootstrapping the Build
+
+If you are installing AceConn from a development copy of the source tree
+rather than a dist tar file then run the autogen.sh script to create the
+configure script and then follow the instructions in INSTALL.
+
+> autogen.sh
+
+> ./configure
+
+> make
+
+and optionally
+
+> made dist
+
+or perhaps
+
+> sudo make install
+
+
+You can tailor the autogen.sh script using environment variables:
+
+> export LIBTOOLIZE=glibtoolize
+
+> export AC_LOCAL_INC=" -I /opt/local/share/aclocal "
+
+
+BUT the hope is that the autogen.sh script will minimise the need to set extra
+variables.
+
+
+You can install in non-standard places by:
+
+> ./configure --prefix=/opt/local
+
+
+
 
 Notes about AceConn 1.2.0
 =========================
 
 * This most recent version of AceConn now builds/installs using the
   gnu autoconf system.
+
 
 Future work
 ===========
