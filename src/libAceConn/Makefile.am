@@ -10,11 +10,11 @@ ACECONN = AceConn
 ACECONN_DIR = $(ACECONN)
 
 all-local:
-	@echo "Starting building $(ACECONN)...."
+	@echo "Started building $(ACECONN)...."
 	@cd $(top_srcdir)/libAceConn/$(ACECONN_DIR) ; \
 	if ! test -f Makefile ; then \
 	echo 'No Makefile, creating Makefile....' ; \
-	autoreconf -i -v ; \
+	autogen.sh ; \
 	./configure --prefix=$(abs_top_builddir) ; \
 	fi ; \
 	echo "Running make for $(ACECONN)" ; \
