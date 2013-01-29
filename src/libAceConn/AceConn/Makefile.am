@@ -2,9 +2,11 @@
 
 AUTOMAKE_OPTIONS = gnu
 
+ACLOCAL_AMFLAGS = -I m4
+
 SUBDIRS = include src test doc
 
-EXTRA_DIST = AceConn-1.1.pc.in
+EXTRA_DIST = autogen.sh AceConn-1.1.pc.in
 
 
 pkgconfigdir = $(libdir)/pkgconfig
