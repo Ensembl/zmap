@@ -1,4 +1,5 @@
-# Ignore files created by build.
+# Ignore files created by build.....note when AceConn goes into a git repository
+# these will not be needed.
 AceConn/AceConn-1.1.pc
 AceConn/Makefile
 AceConn/include
@@ -13,3 +14,4 @@ AceConn/stamp-h1
 AceConn/test/.deps
 AceConn/test/Makefile
 AceConn/test/simple*
+AceConn/m4/*.m4
