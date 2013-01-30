@@ -1073,33 +1073,6 @@ void zMapViewZoom(ZMapView zmap_view, ZMapViewWindow view_window, double zoom)
   return ;
 }
 
-#if MH17_NOT_USED
-void zMapViewHighlightFeatures(ZMapView view, ZMapViewWindow view_window, ZMapFeatureContext context, gboolean multiple)
-{
-  GList *list;
-
-  if (view->state == ZMAPVIEW_LOADED)
-    {
-      if (view_window)
-	{
-	  zMapLogWarning("%s", "What were you thinking");
-	}
-      else
-	{
-	  list = g_list_first(view->window_list);
-	  do
-	    {
-	      view_window = list->data;
-	      zMapWindowHighlightObjects(view_window->window, context, multiple);
-	    }
-	  while((list = g_list_next(list)));
-	}
-    }
-
-  return ;
-}
-#endif
-
 /*
  *    A set of accessor functions.
  */
@@ -1397,8 +1370,6 @@ char *zmapViewGetStatusAsStr(ZMapViewState state)
 
   return state_str ;
 }
-
-
 
 
 GList *zmapViewGetIniSources(char *config_file, char *config_str, char ** stylesfile)
@@ -2363,6 +2334,8 @@ static void viewSelectCB(ZMapWindow window, void *caller_data, void *window_data
   ZMapWindowSelect window_select = (ZMapWindowSelect)window_data ;
   ZMapViewSelectStruct view_select = {0} ;
 
+
+  /* HOW COULD THIS EVER HAPPEN...THIS SEEMS MAD..... */
   /* Check we've got a window_select! */
   if(!window_select)
     return ;                    /* !!! RETURN !!! */
@@ -2394,7 +2367,7 @@ static void viewSelectCB(ZMapWindow window, void *caller_data, void *window_data
 					    window_select->sub_part) ;
 		}
 
-	      for(l = window_select->feature_list;l; l = l->next)
+	      for (l = window_select->feature_list;l; l = l->next)
 		{
 		  ZMapFeature feature = (ZMapFeature) l->data;
 
@@ -2403,17 +2376,18 @@ static void viewSelectCB(ZMapWindow window, void *caller_data, void *window_data
 		   * feature_list inlcudes the first and second and subsequent features found,
 		   * the first is also given explicitly in the item
 		   */
-		  if(!l->prev)		/* already dome the first one */
-		    continue;
+		  if (!l->prev)		/* already dome the first one */
+		    continue ;
 
-		  zMapWindowHighlightFeature(view_window->window, feature, window_select->highlight_same_names, FALSE);
+		  zMapWindowHighlightFeature(view_window->window, feature,
+					     window_select->highlight_same_names, FALSE) ;
 		}
 	    }
 	  while ((list_item = g_list_next(list_item))) ;
 	}
 
 
-      view_select.feature_desc   = window_select->feature_desc ;
+      view_select.feature_desc = window_select->feature_desc ;
       view_select.secondary_text = window_select->secondary_text ;
 
       view_select.filter   = window_select->filter ;
