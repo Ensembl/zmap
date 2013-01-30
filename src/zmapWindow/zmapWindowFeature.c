@@ -781,8 +781,8 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
 
       sub_item = zMapWindowCanvasItemGetInterval(canvas_item, but_event->x, but_event->y, &sub_feature);
 
-	if(feature->type != ZMAPSTYLE_MODE_ALIGNMENT || zMapStyleIsUnique(*feature->style))
-	  highlight_same_names = FALSE ;
+      if(feature->type != ZMAPSTYLE_MODE_ALIGNMENT || zMapStyleIsUnique(*feature->style))
+	highlight_same_names = FALSE ;
 
 
       if (zMapGUITestModifiers(but_event, control_mask))
@@ -801,7 +801,7 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
 	      featureCopySelectedItem(feature, &feature_copy, highlight_item);
 	      my_feature = (ZMapFeatureAny) &feature_copy;
 	    }
-      }
+	}
 
       if (zMapGUITestModifiers(but_event, shift_mask))
 	{
@@ -843,25 +843,25 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
 	}
 
 	{
-		/* mh17 Foo sequence features have a diff interface, but we wish to avoid that, see sequenceSelectionCB() above */
-		/* using a CanvasFeatureset we get here, first off just pass a single coord through so it does not crash */
-		/* InfoPanel has two sets of coords, but they appear the same in totalview */
-		/* possibly we can hide region selection in the GetInterval call above: we can certainly use the X coordinate ?? */
+	  /* mh17 Foo sequence features have a diff interface, but we wish to avoid that, see sequenceSelectionCB() above */
+	  /* using a CanvasFeatureset we get here, first off just pass a single coord through so it does not crash */
+	  /* InfoPanel has two sets of coords, but they appear the same in totalview */
+	  /* possibly we can hide region selection in the GetInterval call above: we can certainly use the X coordinate ?? */
 
-		int start = feature->x1, end = feature->x2;
+	  int start = feature->x1, end = feature->x2;
 
-		if(sub_feature)
-		{
-			start = sub_feature->start;
-			end = sub_feature->end;
-		}
+	  if(sub_feature)
+	    {
+	      start = sub_feature->start;
+	      end = sub_feature->end;
+	    }
 
-		/* Pass information about the object clicked on back to the application. */
-		zmapWindowUpdateInfoPanel(window, feature, NULL, item, sub_feature, start, end, start, end,
-				NULL, replace_highlight, highlight_same_names, control) ;
+	  /* Pass information about the object clicked on back to the application. */
+	  zmapWindowUpdateInfoPanel(window, feature, NULL, item, sub_feature, start, end, start, end,
+				    NULL, replace_highlight, highlight_same_names, control) ;
 
-			/* if we have an active dialog update it: they have to click on a feature not the column */
-		zmapWindowSetStyleFeatureset(window, item, feature);
+	  /* if we have an active dialog update it: they have to click on a feature not the column */
+	  zmapWindowSetStyleFeatureset(window, item, feature);
 
 	}
     }
