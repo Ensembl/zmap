@@ -166,8 +166,7 @@ static void resetWindows(ZMapView zmap_view) ;
 static void displayDataWindows(ZMapView zmap_view,
 			       ZMapFeatureContext all_features,
                                ZMapFeatureContext new_features, GHashTable *new_styles,
-                               gboolean undisplay,GList *masked;
-                               ) ;
+                               gboolean undisplay, GList *masked, ZMapFeature highlight_feature) ;
 static void killAllWindows(ZMapView zmap_view) ;
 
 static ZMapViewWindow createWindow(ZMapView zmap_view, ZMapWindow window) ;
@@ -184,7 +183,8 @@ static gboolean nextIsQuoted(char **text) ;
 static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inout,
 				 GHashTable *styles, GList **masked,
 				 gboolean request_as_columns, gboolean revcomp_if_needed);
-static void justDrawContext(ZMapView view, ZMapFeatureContext diff_context, GHashTable *styles, GList *masked);
+static void justDrawContext(ZMapView view, ZMapFeatureContext diff_context,
+			    GHashTable *styles, GList *masked, ZMapFeature highlight_feature);
 
 static ZMapFeatureContext createContext(ZMapView view, GList *feature_set_names, ZMapFeatureSet feature_set) ;
 
@@ -479,87 +479,87 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
        * and load in one call but we will almost certainly need the extra states later... */
       zmap_view->state = ZMAPVIEW_CONNECTING ;
 
-	if(!zmap_view->view_sequence->config_file)
+      if(!zmap_view->view_sequence->config_file)
 	{
-		zmap_view->view_sequence->config_file = zMapConfigDirGetFile();
+	  zmap_view->view_sequence->config_file = zMapConfigDirGetFile();
 	}
 
       // get the stanza structs from ZMap config
       settings_list = zmapViewGetIniSources(zmap_view->view_sequence->config_file, config_str, &stylesfile) ;
 
-	/*
-	 * read styles from file
-	 * the idea is that we can create a new view with new styles without restarting ZMap
-	 * but as that involves re-requesting data there's little gain.
-	 * Maybe you could have views of two sequences and you wan tot change a style in one ?
-	 *
-	 * each server can have it's own styles file, but was always use the same for each
-	 * and ACE can provide it's own styles. w/otterlace we use that same styles file
-	 * w/ XACE they want thier original styles????
-	 * so we have an (optional) global file and cache this data in the view
-	 * servers would traditionally read the file each time, and merge it into the view data
-	 * which is then passsed back to the servers. No need to do this 40x
-	 *
-	 * if we define a global stylesfile and still want styles from ACE then we set 'req_styles=true' in the server config
-	 */
+      /*
+       * read styles from file
+       * the idea is that we can create a new view with new styles without restarting ZMap
+       * but as that involves re-requesting data there's little gain.
+       * Maybe you could have views of two sequences and you wan tot change a style in one ?
+       *
+       * each server can have it's own styles file, but was always use the same for each
+       * and ACE can provide it's own styles. w/otterlace we use that same styles file
+       * w/ XACE they want thier original styles????
+       * so we have an (optional) global file and cache this data in the view
+       * servers would traditionally read the file each time, and merge it into the view data
+       * which is then passsed back to the servers. No need to do this 40x
+       *
+       * if we define a global stylesfile and still want styles from ACE then we set 'req_styles=true' in the server config
+       */
 
       /* There are a number of predefined methods that we require so add these in as well
        * and the mapping for "feature set" -> style for these.
-	 */
+       */
       addPredefined(&(zmap_view->context_map.styles), &(zmap_view->context_map.column_2_styles)) ;
 
-	if(stylesfile)
+      if(stylesfile)
 	{
 	  GHashTable * styles = NULL;
 
 	  if (zMapConfigIniGetStylesFromFile(zmap_view->view_sequence->config_file, NULL, stylesfile, &styles, NULL))
-	  {
-		zmap_view->context_map.styles = zMapStyleMergeStyles(zmap_view->context_map.styles, styles, ZMAPSTYLE_MERGE_MERGE) ;
-	  }
+	    {
+	      zmap_view->context_map.styles = zMapStyleMergeStyles(zmap_view->context_map.styles, styles, ZMAPSTYLE_MERGE_MERGE) ;
+	    }
 	  else
-	  {
+	    {
 	      zMapLogWarning("Could not read styles file \"%s\"", stylesfile) ;
-	  }
+	    }
  	}
 
-     // read in a few ZMap stanzas
+      // read in a few ZMap stanzas
       getIniData(zmap_view, config_str, settings_list);
 
-	if(!zmap_view->features)
+      if(!zmap_view->features)
 	{
-		/* add a strand separator featureset, we need it for the yellow stripe in the middle of the screen */
-		/* it will cause a column of the same name to be created */
-		/* real separator featuresets have diff names and will be added to the column */
+	  /* add a strand separator featureset, we need it for the yellow stripe in the middle of the screen */
+	  /* it will cause a column of the same name to be created */
+	  /* real separator featuresets have diff names and will be added to the column */
 
-		ZMapFeatureSet feature_set;
-		ZMapFeatureTypeStyle style;
-		ZMapSpan loaded;
-		ZMapFeatureSequenceMap sequence = zmap_view->view_sequence;
-		ZMapFeatureContext context;
-		GList *dummy = NULL;
+	  ZMapFeatureSet feature_set;
+	  ZMapFeatureTypeStyle style;
+	  ZMapSpan loaded;
+	  ZMapFeatureSequenceMap sequence = zmap_view->view_sequence;
+	  ZMapFeatureContext context;
+	  GList *dummy = NULL;
 
-		feature_set = zMapFeatureSetCreate(ZMAP_FIXED_STYLE_STRAND_SEPARATOR, NULL);
-		if(feature_set)
-		{
-			style = g_hash_table_lookup(zmap_view->context_map.styles,
-							GUINT_TO_POINTER(zMapStyleCreateID(ZMAP_FIXED_STYLE_STRAND_SEPARATOR)));
+	  feature_set = zMapFeatureSetCreate(ZMAP_FIXED_STYLE_STRAND_SEPARATOR, NULL);
+	  if(feature_set)
+	    {
+	      style = g_hash_table_lookup(zmap_view->context_map.styles,
+					  GUINT_TO_POINTER(zMapStyleCreateID(ZMAP_FIXED_STYLE_STRAND_SEPARATOR)));
 
-			zMapFeatureSetStyle(feature_set,style);
+	      zMapFeatureSetStyle(feature_set,style);
 
-			loaded = g_new0(ZMapSpanStruct,1);	/* prevent silly log messages */
-			loaded->x1 = sequence->start;
-			loaded->x2 = sequence->end;
-			feature_set->loaded = g_list_append(NULL,loaded);
+	      loaded = g_new0(ZMapSpanStruct,1);	/* prevent silly log messages */
+	      loaded->x1 = sequence->start;
+	      loaded->x2 = sequence->end;
+	      feature_set->loaded = g_list_append(NULL,loaded);
 
-		}
-		context = createContext(zmap_view, g_list_append(NULL,
-			GUINT_TO_POINTER(zMapStyleCreateID(ZMAP_FIXED_STYLE_STRAND_SEPARATOR))),
-			feature_set);	/* initialise to strand separator */
+	    }
+	  context = createContext(zmap_view, g_list_append(NULL,
+							   GUINT_TO_POINTER(zMapStyleCreateID(ZMAP_FIXED_STYLE_STRAND_SEPARATOR))),
+				  feature_set);	/* initialise to strand separator */
 
-		/* now draw it */
+	  /* now draw it */
 
-		if (justMergeContext(zmap_view, &context, zmap_view->context_map.styles, &dummy, FALSE, TRUE))
-			justDrawContext(zmap_view, context, zmap_view->context_map.styles , dummy);
+	  if (justMergeContext(zmap_view, &context, zmap_view->context_map.styles, &dummy, FALSE, TRUE))
+	    justDrawContext(zmap_view, context, zmap_view->context_map.styles, dummy, NULL) ;
 
 	}
 
@@ -622,15 +622,15 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 
 		}
 #if 0
-	/* featuresets are absolutley not required as if so we could not autoconfigure
-	 * a file server wihtout reading the whole file first
-	 * which would require us to read it twice
-	 * NOTE also that some other code assumes that we know what featuresets
-	 * exist in a file before reading it or get told by the server
-	 * we could change the pipe server to read the whole file on open connection
-	 * construct a list of featuresets and return it
-	 * but that mocks the server protocol design somewhat
-	 */
+	      /* featuresets are absolutley not required as if so we could not autoconfigure
+	       * a file server wihtout reading the whole file first
+	       * which would require us to read it twice
+	       * NOTE also that some other code assumes that we know what featuresets
+	       * exist in a file before reading it or get told by the server
+	       * we could change the pipe server to read the whole file on open connection
+	       * construct a list of featuresets and return it
+	       * but that mocks the server protocol design somewhat
+	       */
 	      else if (!(current_server->featuresets))
 		{
 		  /* featuresets are absolutely required, go on to next stanza if there aren't
@@ -663,17 +663,17 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 		//		gboolean dna_requested = FALSE;
 
 		if(current_server->featuresets)
-		{
-			/* req all featuresets  as a list of their quark names. */
-			/* we need non canonicalised name to get Capitalised name on the status display */
-			req_featuresets = zMapConfigString2QuarkList(current_server->featuresets,FALSE) ;
+		  {
+		    /* req all featuresets  as a list of their quark names. */
+		    /* we need non canonicalised name to get Capitalised name on the status display */
+		    req_featuresets = zMapConfigString2QuarkList(current_server->featuresets,FALSE) ;
 
-			if(!zmap_view->columns_set)
-			{
+		    if(!zmap_view->columns_set)
+		      {
 			zmapViewCreateColumns(zmap_view,req_featuresets);
 			g_list_foreach(zmap_view->window_list, invoke_merge_in_names, req_featuresets);
-			}
-		}
+		      }
+		  }
 
 		terminate = g_str_has_prefix(current_server->url,"pipe://");
 
@@ -882,7 +882,7 @@ ZMapFeatureContext zmapViewMergeInContext(ZMapView view, ZMapFeatureContext cont
  *                      free'd and now == NULL, FALSE only if
  *                      diff_context is the same context as view->features
  *************************************************** */
-gboolean zmapViewDrawDiffContext(ZMapView view, ZMapFeatureContext *diff_context)
+gboolean zmapViewDrawDiffContext(ZMapView view, ZMapFeatureContext *diff_context, ZMapFeature highlight_feature)
 {
   gboolean context_freed = TRUE;
 
@@ -890,21 +890,21 @@ gboolean zmapViewDrawDiffContext(ZMapView view, ZMapFeatureContext *diff_context
 
   if (view->state != ZMAPVIEW_DYING)
     {
-      if(view->features == *diff_context)
-        context_freed = FALSE;
+      if (view->features == *diff_context)
+        context_freed = FALSE ;
 
-      justDrawContext(view, *diff_context, NULL,NULL);
+      justDrawContext(view, *diff_context, NULL, NULL, highlight_feature) ;
     }
   else
     {
       context_freed = TRUE;
-      zMapFeatureContextDestroy(*diff_context, context_freed);
+      zMapFeatureContextDestroy(*diff_context, context_freed) ;
     }
 
-  if(context_freed)
-    *diff_context = NULL;
+  if (context_freed)
+    *diff_context = NULL ;
 
-  return context_freed;
+  return context_freed ;
 }
 
 /* Force a redraw of all the windows in a view, may be reuqired if it looks like
@@ -4264,10 +4264,9 @@ static void resetWindows(ZMapView zmap_view)
 
 
 /* Signal all windows there is data to draw. */
-static void displayDataWindows(ZMapView zmap_view,
-			             ZMapFeatureContext all_features,
-                               ZMapFeatureContext new_features, GHashTable *new_styles,
-                               gboolean undisplay, GList *masked)
+static void displayDataWindows(ZMapView zmap_view, ZMapFeatureContext all_features, ZMapFeatureContext new_features,
+			       GHashTable *new_styles,
+			       gboolean undisplay, GList *masked, ZMapFeature highlight_feature)
 {
   GList *list_item, *window_list  = NULL;
   gboolean clean_required = FALSE;
@@ -4288,14 +4287,16 @@ static void displayDataWindows(ZMapView zmap_view,
       view_window = list_item->data ;
 
       if (!undisplay)
-      {
-        zMapWindowDisplayData(view_window->window, NULL,
-			      all_features, new_features,
-                        &zmap_view->context_map,
-                        masked) ;
-      }
+	{
+	  zMapWindowDisplayData(view_window->window, NULL,
+				all_features, new_features,
+				&zmap_view->context_map,
+				masked, highlight_feature) ;
+	}
       else
-        zMapWindowUnDisplayData(view_window->window, all_features, new_features);
+	{
+	  zMapWindowUnDisplayData(view_window->window, all_features, new_features) ;
+	}
 
       if (clean_required)
         window_list = g_list_append(window_list, view_window->window);
@@ -4395,37 +4396,40 @@ static void getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature_req
   zMapPrintTimer(NULL, "Got Features from Thread") ;
 
   /* May be a new context or a merge with an existing one. */
-/*
- * MH17: moved mergeAndDrawContext code here:
- * Error handling is rubbish here...stuff needs to be free whether there is an error or not.
- *
- * new_features should be freed (but not the data...ahhhh actually the merge should
- * free any replicated data...yes, that is what should happen. Then when it comes to
- * the diff we should not free the data but should free all our structs...
- *
- * We should free the context_inout context here....actually better
- * would to have a "free" flag............
- *  */
+  /*
+   * MH17: moved mergeAndDrawContext code here:
+   * Error handling is rubbish here...stuff needs to be free whether there is an error or not.
+   *
+   * new_features should be freed (but not the data...ahhhh actually the merge should
+   * free any replicated data...yes, that is what should happen. Then when it comes to
+   * the diff we should not free the data but should free all our structs...
+   *
+   * We should free the context_inout context here....actually better
+   * would to have a "free" flag............
+   *  */
   if (feature_req->context)
     {
       new_features = feature_req->context ;
       zMapAssert(!new_features->no_parent);
-
+      
       connect_data->num_features = feature_req->context->num_features;
-
+      
       if ((merge_results = justMergeContext(zmap_view,
 					    &new_features, connect_data->curr_styles,
 					    &masked, connect_data->request_as_columns, TRUE)))   // && !view->serial_load)
         {
-            diff_context = new_features;
-            justDrawContext(zmap_view, diff_context, connect_data->curr_styles , masked);
+	  diff_context = new_features;
+	  justDrawContext(zmap_view, diff_context, connect_data->curr_styles , masked, NULL) ;
         }
       else
         {
-            feature_req->context = NULL;
+	  feature_req->context = NULL;
         }
     }
-}
+
+  return ;
+  
+ }
 
 
 static gboolean zMapViewSortExons(ZMapFeatureContext diff_context)
@@ -4731,10 +4735,11 @@ static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inou
   return merge_result ;
 }
 
-static void justDrawContext(ZMapView view, ZMapFeatureContext diff_context, GHashTable *new_styles, GList *masked)
+static void justDrawContext(ZMapView view, ZMapFeatureContext diff_context,
+			    GHashTable *new_styles, GList *masked, ZMapFeature highlight_feature)
 {
   /* Signal the ZMap that there is work to be done. */
-  displayDataWindows(view, view->features, diff_context, new_styles, FALSE, masked) ;
+  displayDataWindows(view, view->features, diff_context, new_styles, FALSE, masked, highlight_feature) ;
 
   /* Not sure about the timing of the next bit. */
 
@@ -4763,7 +4768,7 @@ static void eraseAndUndrawContext(ZMapView view, ZMapFeatureContext context_inou
     zMapLogCritical("%s", "Cannot erase feature data from...");
   else
     {
-      displayDataWindows(view, view->features, diff_context, NULL, TRUE, NULL);
+      displayDataWindows(view, view->features, diff_context, NULL, TRUE, NULL, NULL);
 
       zMapFeatureContextDestroy(diff_context, TRUE);
     }
