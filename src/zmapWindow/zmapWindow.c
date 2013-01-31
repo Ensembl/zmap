@@ -1026,8 +1026,6 @@ void zMapWindowZoom(ZMapWindow window, double zoom_factor)
 
 void zMapWindowZoomToMin(ZMapWindow window)
 {
-  double start, end;
-
   zmapWindowZoomControlHandleResize(window) ;
 
   return ;
@@ -3306,7 +3304,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 	  {
 	  case 1:
 	    {
-	      GdkModifierType shift_mask = GDK_SHIFT_MASK, control_mask = GDK_CONTROL_MASK ;
+	      GdkModifierType shift_mask = GDK_SHIFT_MASK ;
 	      /* refer to handleButton() in zmapWindowfeature.c re shift/num lock */
 
 	      shift_on = zMapGUITestModifiers(but_event, shift_mask) ;
