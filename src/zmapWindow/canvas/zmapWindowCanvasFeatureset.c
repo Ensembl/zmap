@@ -2956,14 +2956,18 @@ int zMapWindowCanvasFeaturesetFilter(gpointer gfilter, double value)
 
   if(fi->n_filtered != was)
     {
-	ZMapWindowContainerGroup column = (ZMapWindowContainerGroup)((FooCanvasItem *)fi)->parent;
-	GdkColor white = { 0xffffffff, 0xffff, 0xffff, 0xffff } ;		/* is there a column background config colour? */
-	GdkColor *fill = &white;
-
       /* trigger a re-calc if summarised to ensure the picture is pixel perfect
        * NOTE if bumped we don-t calculate so no creeping inefficiency here
        */
       fi->zoom = 0;
+
+#if HIGHLIGHT_FILTERED_COLUMNS 
+      /*!> \todo This code highlights columns that are filtered.
+       * It is requested functionality but it needs to be optional
+       * so that the user can turn it off. */
+	ZMapWindowContainerGroup column = (ZMapWindowContainerGroup)((FooCanvasItem *)fi)->parent;
+	GdkColor white = { 0xffffffff, 0xffff, 0xffff, 0xffff } ;		/* is there a column background config colour? */
+	GdkColor *fill = &white;
 
 	if(fi->n_filtered && filter->window)
 	{
@@ -2986,6 +2990,7 @@ int zMapWindowCanvasFeaturesetFilter(gpointer gfilter, double value)
 		*/
 		zmapWindowFocusHighlightHotColumn(filter->window->focus);
 	}
+#endif
 
       if(fi->bumped)
 	{
