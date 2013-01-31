@@ -358,8 +358,8 @@ void zMapWindowBusyFull(ZMapWindow window, gboolean busy, const char *file, cons
 
 void zMapWindowDisplayData(ZMapWindow window, ZMapWindowState state,
 			   ZMapFeatureContext current_features, ZMapFeatureContext new_features,
-                     ZMapFeatureContextMap context_map,
-                     GList *masked) ;
+			   ZMapFeatureContextMap context_map,
+			   GList *masked, ZMapFeature highlight_feature) ;
 void zMapWindowUnDisplayData(ZMapWindow window,
                              ZMapFeatureContext current_features,
                              ZMapFeatureContext new_features);

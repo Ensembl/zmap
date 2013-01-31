@@ -1052,6 +1052,8 @@ FooCanvasItem *zmapWindowFToIFindItemChild(ZMapWindow window,GHashTable *feature
 FooCanvasItem *zMapWindowFindFeatureItemByItem(ZMapWindow window, FooCanvasItem *item) ;
 void zmapWindowFToIDestroy(GHashTable *feature_to_item_hash) ;
 
+
+
 #if USE_FACTORY
 void zmapWindowFeatureFactoryInit(ZMapWindow window);
 void zmapWindowFToIFactoryClose(ZMapWindowFToIFactory factory) ;

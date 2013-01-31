@@ -64,6 +64,7 @@ typedef struct
 {
   ZMapFeatureContext current_features ;
   ZMapFeatureContext new_features ;
+  ZMapFeature highlight_feature ;
   GHashTable *all_styles ;
   GHashTable *new_styles ;
   GHashTable *featuresets_2_stylelist ;
@@ -500,8 +501,8 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, ZMapFeatureSequenceMap seque
 
     /* should we be passing in a copy of the full set of original styles ? */
     zMapWindowDisplayData(new_window, state, feature_context, feature_context,
-                    original_window->context_map,
-                    NULL) ;
+			  original_window->context_map,
+			  NULL, NULL) ;
   }
 
   zmapWindowBusy(new_window, FALSE) ;
@@ -551,8 +552,8 @@ gboolean zMapWindowXRemoteRegister(ZMapWindow window)
  *  */
 void zMapWindowDisplayData(ZMapWindow window, ZMapWindowState state,
 			   ZMapFeatureContext current_features, ZMapFeatureContext new_features,
-                     ZMapFeatureContextMap context_map,
-                     GList *masked)
+			   ZMapFeatureContextMap context_map,
+			   GList *masked, ZMapFeature highlight_feature)
 {
   FeatureSetsState feature_sets ;
 
@@ -561,7 +562,8 @@ void zMapWindowDisplayData(ZMapWindow window, ZMapWindowState state,
    * that should be done later when this event arrives in window. */
   feature_sets = g_new0(FeatureSetsStateStruct, 1) ;
   feature_sets->current_features = current_features ;
-  feature_sets->new_features     = new_features ;
+  feature_sets->new_features = new_features ;
+  feature_sets->highlight_feature = highlight_feature ;
 
   window->context_map = context_map;
   feature_sets->masked = masked;
@@ -926,8 +928,8 @@ void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_conte
    * an event to get the data drawn which means that the canvas is guaranteed to be
    * realised by the time we draw into it. */
   zMapWindowDisplayData(window, window->state, feature_context, feature_context,
-                  window->context_map,
-                  NULL) ;
+			window->context_map,
+			NULL, NULL) ;
 
   window->state = NULL;	/* see comment in zmapWindowFeatureReset() above */
 
@@ -2976,6 +2978,7 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
       ZMapWindow window = NULL ;
       FeatureSetsState feature_sets ;
       ZMapFeatureContext diff_context ;
+      ZMapFeature highlight_feature ;
       GSignalMatchType signal_match_mask;
       GQuark signal_detail;
       gulong signal_id;
@@ -2987,6 +2990,8 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
       feature_sets = window_data->data ;
 
       zmapWindowBusy(window, TRUE) ;
+
+      highlight_feature = feature_sets->highlight_feature ;
 
       /* ****Remember that someone needs to free the data passed over....****  */
 
@@ -3078,6 +3083,14 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
       g_free(window_data) ;				    /* Free the WindowData struct. */
 
       event_handled = TRUE ;
+
+
+
+      /* TRY FEATURE HIGHLIGHT HERE............. */
+      if (highlight_feature)
+	zMapWindowFeatureSelect(window, highlight_feature) ;
+
+
 
       zmapWindowBusy(window, FALSE) ;
     }
