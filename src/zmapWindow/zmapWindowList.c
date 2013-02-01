@@ -569,10 +569,9 @@ static void drawListWindow(ZMapWindowList windowList)
   char *frame_label = NULL;
 
   /* Create window top level */
-  windowList->toplevel = window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+  windowList->toplevel = window = zMapGUIToplevelNew(NULL, windowList->title) ;
 
   /* Set it up graphically nice */
-  gtk_window_set_title(GTK_WINDOW(window), windowList->title) ;
   gtk_window_set_default_size(GTK_WINDOW(window), -1, 600);
   gtk_container_border_width(GTK_CONTAINER(window), 5) ;
 
@@ -687,7 +686,7 @@ static gboolean selection_func_cb(GtkTreeSelection *selection,
             zMapWindowContainerFeatureSetShowHideMaskedFeatures(cfs,TRUE,FALSE);
 
             /* un/bumped features might be wider */
-            zmapWindowFullReposition(window) ;
+            zmapWindowFullReposition(window->feature_root_group,TRUE, "show masked") ;
         }
 #else
         {
@@ -743,7 +742,7 @@ static gboolean selection_func_cb(GtkTreeSelection *selection,
                   zmapWindowColumnBump(FOO_CANVAS_ITEM(cfs),bump_mode);
 
                   /* un/bumped features might be wider */
-                  zmapWindowFullReposition(window) ;
+                  zmapWindowFullReposition(window->feature_root_group,TRUE, "selection func") ;
             }
         }
 #endif

@@ -227,9 +227,10 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   /*             GTK initialisation              */
 
   initGnomeGTK(argc, argv) ;					    /* May exit if checks fail. */
-  app_context->app_widg = toplevel = gtk_window_new(GTK_WINDOW_TOPLEVEL) ;
+
+  app_context->app_widg = toplevel = zMapGUIToplevelNew(NULL, NULL) ;
+
   gtk_window_set_policy(GTK_WINDOW(toplevel), FALSE, TRUE, FALSE ) ;
-  gtk_window_set_title(GTK_WINDOW(toplevel), "ZMap - Son of FMap !") ;
   gtk_container_border_width(GTK_CONTAINER(toplevel), 0) ;
 
   /* This ensures that the widget *really* has a X Window id when it
@@ -777,21 +778,28 @@ static gboolean getConfiguration(ZMapAppContext app_context)
       /* Do we show the main window? if not then on ZMap close we should exit */
       if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
 					 ZMAPSTANZA_APP_MAINWINDOW, &tmp_bool))
-	app_context->show_mainwindow = tmp_bool;
+	app_context->show_mainwindow = tmp_bool ;
+
+      /* Should window title prefix be abbreviated ? */
+      if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+					 ZMAPSTANZA_APP_ABBREV_TITLE, &tmp_bool))
+	app_context->abbrev_title_prefix = tmp_bool ;
+      zMapGUISetAbbrevTitlePrefix(app_context->abbrev_title_prefix) ;
+      
 
       /* How long to wait when closing, before timeout */
       if (zMapConfigIniContextGetInt(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
 				     ZMAPSTANZA_APP_EXIT_TIMEOUT, &tmp_int))
-	app_context->exit_timeout = tmp_int;
+	app_context->exit_timeout = tmp_int ;
 
       if (app_context->exit_timeout < 0)
-	app_context->exit_timeout = ZMAP_DEFAULT_EXIT_TIMEOUT;
+	app_context->exit_timeout = ZMAP_DEFAULT_EXIT_TIMEOUT ;
 
 
       /* help url to use */
       if (zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
 					ZMAPSTANZA_APP_HELP_URL, &tmp_string))
-	zMapGUISetHelpURL( tmp_string );
+	zMapGUISetHelpURL(tmp_string) ;
 
       /* locale to use */
       if (zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
@@ -910,7 +918,7 @@ static gboolean configureLog(char *config_file)
       else
 	{
 		g_free (full_dir);
-		full_dir = zMapConfigDirGetDir() ;
+		full_dir = g_strdup(zMapConfigDirGetDir()) ;
 	}
 
 

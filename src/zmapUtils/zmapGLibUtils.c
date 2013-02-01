@@ -21,7 +21,7 @@
  * originated by
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: A collection of "add-ons" to GLib that seem useful.
  *
@@ -31,13 +31,9 @@
 
 #include <ZMap/zmap.h>
 
-
-
-
-
-
 #include <stdio.h>
 #include <string.h>
+
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapGLibUtils.h>
 
@@ -700,53 +696,58 @@ static void get_key_value(gpointer key, gpointer value, gpointer user)
 
 void  zMap_g_hash_table_iter_init(GList **iter, GHashTable *h)
 {
-      *iter = NULL;
-      if(h)
-            g_hash_table_foreach(h,get_key_value,iter);
+  *iter = NULL ;
+
+  if (h)
+    g_hash_table_foreach(h, get_key_value, iter) ;
+
+  return ;
 }
 
 
 static void get_hash_key(gpointer key, gpointer value, gpointer user)
 {
-      GList **list = (GList **) user;
+  GList **list = (GList **) user;
 
 
-      *list = g_list_prepend(*list,key); // faster than append
+  *list = g_list_prepend(*list,key); // faster than append
 }
 
 void  zMap_g_hash_table_get_keys(GList **iter, GHashTable *h)
 {
-      *iter = NULL;
-      if(h)
-            g_hash_table_foreach(h,get_hash_key,iter);
+  *iter = NULL;
+  if(h)
+    g_hash_table_foreach(h,get_hash_key,iter);
+
+  return ;
 }
 
 
 static void get_hash_val(gpointer key, gpointer value, gpointer user)
 {
-      GList **list = (GList **) user;
+  GList **list = (GList **) user;
 
 
-      *list = g_list_prepend(*list,value); // faster than append
+  *list = g_list_prepend(*list,value); // faster than append
 }
 
 void  zMap_g_hash_table_get_data(GList **iter, GHashTable *h)
 {
-      *iter = NULL;
-      if(h)
-            g_hash_table_foreach(h,get_hash_val,iter);
+  *iter = NULL;
+  if(h)
+    g_hash_table_foreach(h,get_hash_val,iter);
 }
 
 
 // must iter through all to free memory
-gboolean zMap_g_hash_table_iter_next(GList **iter,gpointer *key, gpointer *value)
+gboolean zMap_g_hash_table_iter_next(GList **iter, gpointer *key, gpointer *value)
 {
-      ZMapGHashIter data;
-      GList *list = *iter;
+  gboolean result = FALSE ;
+  ZMapGHashIter data ;
+  GList *list = *iter ;
 
-      if(!list)
-            return(FALSE);
-
+  if(list)
+    {
       data = list->data;
       *iter = g_list_remove_link(*iter,list);
       g_list_free_1(list);
@@ -755,7 +756,10 @@ gboolean zMap_g_hash_table_iter_next(GList **iter,gpointer *key, gpointer *value
       *value = data->value;
       g_free(data);
 
-      return(TRUE);
+      result = TRUE ;
+    }
+
+  return result ;
 }
 
 // in case we decide to not iter through the whole lot

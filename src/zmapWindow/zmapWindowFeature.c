@@ -169,6 +169,8 @@ void zmapWindowPfetchEntry(ZMapWindow window, char *sequence_name)
 
       g_signal_connect(G_OBJECT(pfetch), "closed", G_CALLBACK(pfetch_closed_func), pfetch_data);
 
+      /* It would seem that PFetchHandleFetch() calls g_spawn_async_with_pipes() which is not
+       * thread safe so lock round it...should locks be in pfetch code ?? */
       zMapThreadForkLock();   // see zmapThreads.c
 
       if(PFetchHandleFetch(pfetch, sequence_name) == PFETCH_STATUS_FAILED)
@@ -177,9 +179,11 @@ void zmapWindowPfetchEntry(ZMapWindow window, char *sequence_name)
       zMapThreadForkUnlock();
     }
   else
-    zMapWarning("%s", "Failed to obtain preferences for pfetch.\n"
-		"ZMap's config file needs at least pfetch "
-		"entry in the ZMap stanza.");
+    {
+      zMapWarning("%s", "Failed to obtain preferences for pfetch.\n"
+		  "ZMap's config file needs at least pfetch "
+		  "entry in the ZMap stanza.");
+    }
 
   return ;
 }
@@ -228,6 +232,7 @@ gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_
       /* check the feature is in featureset. */
       if(zMapFeatureSetFindFeature(feature_set, feature))
         {
+#if SHOW_MARK_ITEM
           double x1, x2, y1, y2;
 
           if (zmapWindowMarkIsSet(zmap_window->mark)
@@ -236,7 +241,7 @@ gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_
             {
               zmapWindowMarkSetWorldRange(zmap_window->mark, x1, y1, x2, y2);
             }
-
+#endif
 
 	  if(ZMAP_IS_WINDOW_FEATURESET_ITEM(feature_item))
 		zMapWindowFeaturesetItemRemoveFeature(feature_item,feature);
@@ -317,22 +322,7 @@ ZMapStrand zmapWindowFeatureStrand(ZMapWindow window, ZMapFeature feature)
   return strand ;
 }
 
-#if USE_FACTORY
-void zmapWindowFeatureFactoryInit(ZMapWindow window)
-{
-  ZMapWindowFToIFactoryProductionTeamStruct factory_helpers = {NULL};
 
-#if FEATURE_SIZE_REQUEST
-  factory_helpers.feature_size_request = factoryFeatureSizeReq;
-#endif
-  factory_helpers.top_item_created     = factoryTopItemCreated;
-
-  zmapWindowFToIFactorySetup(window->item_factory, window->config.feature_line_width,
-                             &factory_helpers, (gpointer)window);
-
-  return ;
-}
-#endif
 
 
 /* Called to draw each individual feature. */
@@ -631,6 +621,13 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
     {
       GdkEventButton *but_event = (GdkEventButton *)event ;
       FooCanvasItem *highlight_item = NULL ;
+
+
+	if(!zMapWindowCanvasItemHasPointFeature(item))
+	{
+		/* click on column not feature */
+		return zmapWindowColumnBoundingBoxEventCB(item, event, data);
+	}
 
       zMapDebugPrint(mouse_debug_G, "Start: %s %d",
 		     (event->type == GDK_BUTTON_PRESS ? "button_press"
@@ -933,7 +930,7 @@ void zmapWindowFeatureExpand(ZMapWindow window, FooCanvasItem *foo,
       zmapWindowColumnBump(FOO_CANVAS_ITEM(container_set), curr_bump_mode ) ;
 
       /* redraw this col and ones to the right */
-      zmapWindowFullReposition(window) ;	/* yuk */
+      zmapWindowFullReposition(window->feature_root_group,TRUE, "expand") ;
     }
 }
 
@@ -974,7 +971,7 @@ void zmapWindowFeatureContract(ZMapWindow window, FooCanvasItem *foo,
       zmapWindowColumnBump(FOO_CANVAS_ITEM(container_set), curr_bump_mode ) ;
 
       /* redraw this col and ones to the right */
-      zmapWindowFullReposition(window) ;	/* yuk */
+      zmapWindowFullReposition(window->feature_root_group,TRUE, "contract") ;
     }
 
   return ;
@@ -1104,9 +1101,9 @@ static gboolean factoryFeatureSizeReq(ZMapFeature feature,
 
       points_array_inout[1] = points_array_inout[3] = x1 = x2 = 0.0;
       /* Get scrolled region (clamped to sequence coords)  */
-      zmapWindowGetScrollRegion(window,
-                                 &x1, &(points_array_inout[1]),
-                                 &x2, &(points_array_inout[3]));
+      zmapWindowGetScrollableArea(window,
+				  &x1, &(points_array_inout[1]),
+				  &x2, &(points_array_inout[3]));
     }
   else
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */

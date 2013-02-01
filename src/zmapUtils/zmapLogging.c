@@ -63,6 +63,7 @@
 
 #define ZMAPLOG_MAX_TRACE_SIZE 50
 
+/* Must be zero for xremote compile. */
 #define FOO_LOG 0
 
 
@@ -155,6 +156,7 @@ void foo_logger(char *x)
 {
 	/* can;t call this frpm foo as it's a macro */
 	zMapLogWarning(x,"");
+	printf("%s\n",x);
 }
 
 
@@ -503,7 +505,7 @@ void zMapLogStack(void)
 /* As zMapLogStack(), but to stderr instead. */
 void zMapPrintStack(void)
 {
-  backtrace2fd(1, STDERR_FILENO);
+  backtrace2fd(1, STDOUT_FILENO);
   return ;
 }
 

@@ -207,6 +207,8 @@ typedef struct _zmapWindowFeaturesetItemStruct
 
   zmapWindowCanvasFeatureType type;
 
+  gint layer;			/* underlay features or overlay (flags) */
+
   ZMapStrand strand;
   ZMapFrame frame;
 
@@ -271,6 +273,8 @@ typedef struct _zmapWindowFeaturesetItemStruct
 
   gint clip_y1,clip_y2,clip_x1,clip_x2;		/* visble scroll region plus one pixel all round */
 
+  double x;				  /* x canvas coordinate of the featureset, used for column reposition */
+
   double dx,dy;			  /* canvas offsets as calculated for paint */
   gpointer deferred;		  /* buffer for deferred paints, eg constructed polyline */
 
@@ -279,11 +283,18 @@ typedef struct _zmapWindowFeaturesetItemStruct
   gulong fill_pixel;            /* Fill color */
   gulong outline_pixel;         /* Outline color */
 
+  gulong background;		  /* eg for 3FT or strand separator */
+  GdkBitmap *stipple;
+  gulong border;			  /* eg for navigator locator */
+
   double width;                 /* column width */
   double bump_width;
 
   gboolean fill_set;    	/* Is fill color set? */
   gboolean outline_set;	 	/* Is outline color set? */
+  gboolean background_set;	/* Is background set ? */
+  gboolean border_set;		/* Is border set ? */
+
 
   ZMapFeature point_feature;	/* set by cursor movement */
   ZMapWindowCanvasFeature point_canvas_feature;		/* last clicked canvasfeature, set by select, need for legacy code interface */
@@ -324,8 +335,7 @@ typedef struct _zmapWindowCanvasPangoStruct
 	PangoLayout *layout;
 
 	int text_height, text_width;
-}
-zmapWindowCanvasPangoStruct;
+} zmapWindowCanvasPangoStruct ;
 
 
 #endif /* ZMAP_WINDOW_FEATURESET_ITEM_I_H */

@@ -67,7 +67,7 @@ void zmapControlShowPreferences(ZMap zmap)
   ZMapGuiNotebookChapter chapter ;
 
   /* Construct the preferences representation */
-  notebook_title = g_strdup_printf("ZMap Preferences for: %s", zMapGetZMapID(zmap)) ;
+  notebook_title = g_strdup_printf("Preferences for zmap %s", zMapGetZMapID(zmap)) ;
   note_book = zMapGUINotebookCreateNotebook(notebook_title, TRUE, cleanUpCB, NULL) ;
   g_free(notebook_title) ;
 

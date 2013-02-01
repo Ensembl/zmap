@@ -61,11 +61,9 @@ gboolean zmapControlWindowCreate(ZMap zmap)
   zmap->tooltips = gtk_tooltips_new() ;
   zmap->feature_tooltips = gtk_tooltips_new() ;
 
-
-  zmap->toplevel = toplevel = gtk_window_new(GTK_WINDOW_TOPLEVEL) ;
+  zmap->toplevel = toplevel = zMapGUIToplevelNew(zMapGetZMapID(zmap), NULL) ;
   gtk_window_set_policy(GTK_WINDOW(toplevel), zmap_shrink_G, TRUE, FALSE ) ;	// allow shrink for charlie'ss RT 215415
 								/* ref to GTK help: it says 'don't allow shrink' */
-  gtk_window_set_title(GTK_WINDOW(toplevel), zmap->zmap_id) ;
   gtk_container_border_width(GTK_CONTAINER(toplevel), 5) ;
 
   /* Only after map-event are we guaranteed that there's a window for us to work with. */
@@ -220,6 +218,9 @@ void zmapControlWindowSetStatus(ZMap zmap)
     }
 
   gtk_entry_set_text(GTK_ENTRY(zmap->status_entry), status_text) ;
+
+#if UPDATES_SIBLING_WINDOWS  /* thought to be due to there being one event queue only */
+
   /* display instantly, else we don't update due to other stuff using idle time */
   /* except it doesn't work */
   {
@@ -233,6 +234,7 @@ void zmapControlWindowSetStatus(ZMap zmap)
       if(win)
            gdk_window_process_updates(win,TRUE);
   }
+#endif
 
   if(free_this)
       g_free(status_text);

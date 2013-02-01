@@ -72,6 +72,29 @@ typedef struct _zmapWindowCanvasItemClassStruct  zmapWindowCanvasItemClass, *ZMa
 #include <zmapWindowCanvasFeatureset.h>	/* need typedefs to stop gcc from barfing */
 
 
+/* layering for canvas items... (ZMapWindowCanvasFeatureset)
+ * if not _FIXED_ will fit to containing group, which will be sized by normal features
+ * this replaces the overlay underlay and backgound container children
+ * display items are held in a group's item list in order of underlay, features and overlay,
+ * so layering can be implemented by using this ordered list
+ * flags are provided to make it easier to sort this
+ * ??? really stretchy items only refer to featureset backgrounds???
+ */
+#define ZMAP_CANVAS_LAYER_DECORATION	1	/* else is normal features */
+#define ZMAP_CANVAS_LAYER_OVERLAY		2	/* else is underlay if decoration */
+#define ZMAP_CANVAS_LAYER_STRETCH_X		4	/* fit to container? */
+#define ZMAP_CANVAS_LAYER_STRETCH_Y		8
+
+#define ZMAP_CANVAS_LAYER_ROOT_BACKGROUND		13
+#define ZMAP_CANVAS_LAYER_ALIGN_BACKGROUND	13
+#define ZMAP_CANVAS_LAYER_BLOCK_BACKGROUND	5
+#define ZMAP_CANVAS_LAYER_COL_BACKGROUND		5
+#define ZMAP_CANVAS_LAYER_SEPARATOR_BACKGROUND	1	/* fixed size according to style */
+#define ZMAP_CANVAS_LAYER_BLOCK_MARK		7	/* overlay, y can be set by user */
+#define ZMAP_CANVAS_LAYER_NAV_LOCATOR		5	/* underlay, y is set by zoom and scroll */
+#define ZMAP_CANVAS_LAYER_NAV_LOCATOR_DRAG	7	/* overlay, y is set by user*/
+
+
 
 
 /* Public funcs */
@@ -80,6 +103,7 @@ GType zMapWindowCanvasItemGetType(void);
 gboolean zMapWindowCanvasItemIsConnected(ZMapWindowCanvasItem item);
 void zMapWindowCanvasItemSetConnected(ZMapWindowCanvasItem item, gboolean val);
 
+gboolean zMapWindowCanvasItemHasPointFeature(FooCanvasItem *item);
 
 ZMapFeature zMapWindowCanvasItemGetFeature(FooCanvasItem *any_feature_item) ;
 

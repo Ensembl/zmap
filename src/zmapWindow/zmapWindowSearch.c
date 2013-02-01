@@ -211,12 +211,11 @@ void zmapWindowCreateSearchWindow(ZMapWindow window,
 
 
   /* set up the top level window */
-  search_data->toplevel = toplevel = gtk_window_new(GTK_WINDOW_TOPLEVEL) ;
+  search_data->toplevel = toplevel = zMapGUIToplevelNew(NULL, "Feature Search") ;
+
   g_signal_connect(GTK_OBJECT(toplevel), "destroy",
 		   GTK_SIGNAL_FUNC(destroyCB), (gpointer)search_data) ;
-
   gtk_container_border_width(GTK_CONTAINER(toplevel), 5) ;
-  gtk_window_set_title(GTK_WINDOW(toplevel), "Feature Search") ;
   gtk_window_set_default_size(GTK_WINDOW(toplevel), 500, -1) ;
 
   /* Add ptrs so parent knows about us */

@@ -1,0 +1,92 @@
+<h2>Skip Lists - some unfinished code</h2>
+
+
+<h3>Context and History</h3>
+<p>About 15 years ago i wrote some code to drive a GUI display in the context of migrating a DOS character based application to windows and the intention was to to preserve the easy to use DOS display mode of operation where you simply put display things in a screen buffer and forget about them. Windows (and X) assume that you have codesitting around to keep drawing things, so the idea was to impelement that function once only.  This obviously involved some way of responding to paint events efficiently.
+</p>
+
+<h4>B-Trees</h4>
+<p>Back then i made up a B-tree structure which consists of node with (configurable) 24 items organised as an n-way tree. Typically nodes we kept as having 8-16 items. so that insertion and deletion of one did not result in the tree being modified execept occasionally and only reuqired insertion into a small array.  The tree was explicitly balanced and items could be shuffled from one node to the next to ensure even distribution.
+</p>
+<img src="Design/modules/btree.png" border="1">
+<p>
+It was also a design aim to handle high volume updates (eg page change, real time status info from several data-feeds.  This differs from the ZMap usage where we have high volume loading events and later handle zoom and bump by handling the draw operation differently.
+</p>
+<p>
+What's common between then and now is the aim to search for an item and then process the list forwards till you hit another item - ie O(log &nbsp;n) initial search and then O(n) to process the data.
+</p>
+
+<h4>Skip Lists as defined</h4>
+<p>Skip lists as written up involve a fixed size stack of higher level lists. When I started looking I had thought that they were guaranteed to not become degenrate, but if you look at what's online you see that it's only 'fairly likely'.  I had hoped to not have to write code to prevent degeneracy...
+</p>
+<img src="Design/modules/skip_array.png" border="1">
+
+<h4>Skip Lists as implemented</h4>
+<p>
+
+The implementation provided is quite like a B-tree, but replacing the array nodes with a list. I also made all the list links double.
+Balancing/ non degeneracy is a pain, as there are a few edge cases and I can remember writing a test program to find all these by brute force rather than artistically just working them out ('immaculate design').
+</p>
+<img src="Design/modules/skip_list.png" border="1">
+
+
+<h3>Balancing upper layers is not implemented</h3>
+<p>
+As the ZMap usage is nominally static I took the lazy option and did not implemnent this, instead just erasing and re-creating the whole list on any insert/ delete.  This is practical, as the list is calculated by lazy evaluation, and 100 insertions and deletions will only result in the list bneing re-calculated once.
+</p>
+
+<p>
+Although this is still valid, BAM expand and contract is a counter example of static data... it all works but is not ideal - we are dealing with up to 1000 features (configurable by styles) so it's a limited efficiency issue.
+</p>
+<p>
+Another counter example is multiple featuresets in a column (virtual featureset) which presents and issue with deleting large number of features as this could be O(n^2).  This also applies to changing stranded display via the styles dialog.
+There's a function provided (zMapWindowFeaturesetItemRemoveSet() to get round this problem.
+Edited transcripts and OTF alignments we don't care about as volumes are low.
+</p>
+<p>
+Choices:
+<ul>
+<li> leave it as is and be aware of possible performance problems if usage changes
+<li> finish the implemntation
+<li> trust the 'it will be alright' marketing
+<li> rewrite/replace (possible but no point)
+</ul>
+</p>
+<p>
+
+<h3>Degeneracy</h3>
+<p>
+What can go wrong:
+<ul>
+<li> tall - the upper layers can expand with only a single pointer downwards
+<li> wide -layers can have too many items between upward pointers
+<li> narrow - layer can have too few items bewteen upward pointers
+<li> dangling - the first and last nodes may have leaf items outside the upper layers (eg before the first skip list node) above the bottom layer)
+</ul>
+</p>
+
+
+<pre>
+/*
+ * NOTE William Pugh's original example code can be found via ftp://ftp.cs.umd.edu/pub/skipLists/
+ * but we adopt slightly different approach:
+ * - we use forward and backward pointers not just forward
+ * - index levels are implemented by list pointers up and down not an array, which means that we
+ *   do not concern ourselves with how nuch data we want to index and data is allocated only when needed
+ * - the list layers are explicitly balanced by inserting and deleting nodes
+ * - layers are removed when they become empty
+ *
+ * NOTE initially we do not implement balancing, and stop at the point where
+ * the data structure is secure through insert and delete operations
+ * actual use is static, and we construct the skip list by lazy evaluation
+ * when we delete or addfeatures afterwards we just re-create the skip list as that is safe
+ * if you implement list balancing the write a test program to thrash the code
+ * as any bugs will be obscure otherwise
+ *
+ * NOTE later developments have a requirement for efficient delete and add and these include:
+ * - expand and contract compressed BAM (1000 features in 60k)
+ * - change featureset style - need to remove one set from a column of many and re-insert eg if stranding changes
+ *   possibly in a diff column (if setting stranded)
+ */
+</pre>
+</p>

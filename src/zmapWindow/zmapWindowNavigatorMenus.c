@@ -87,7 +87,9 @@ void zmapWindowNavigatorGoToLocusExtents(ZMapWindowNavigator navigate, FooCanvas
         {
           /* x coords are HACKED!!!! */
           if(zMapFeatureGetFeatureListExtent(feature_list, &start, &end))
+	    {
             zmapWindowZoomToWorldPosition(window, TRUE, 0.0, start, 100.0, end);
+	    }
           g_list_free(feature_list);
         }
     }
@@ -341,7 +343,7 @@ static void navigatorBumpMenuCB(int menu_item_id, gpointer callback_data)
 
   zmapWindowColumnBump(style_item, bump_type) ;
 
-  zmapWindowNavigatorPositioning(menu_data->navigate);
+  zmapWindowFullReposition(menu_data->navigate->container_root,TRUE, "nav bump");
 
   g_free(menu_data) ;
 
@@ -447,16 +449,10 @@ static GHashTable *access_window_context_to_item(gpointer user_data)
 static GtkWidget *zmapWindowNavigatorNewToplevel(char *title)
 {
   GtkWidget *window;
-  GtkWindow *gtk_window;
 
-  window     = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-  gtk_window = GTK_WINDOW(window);
+  window = zMapGUIToplevelNew(NULL, title) ;
 
-  /* Set it up graphically nice */
-  gtk_window_set_title(gtk_window, title) ;
-
-  gtk_window_set_default_size(gtk_window, -1, -1);
-
+  gtk_window_set_default_size(GTK_WINDOW(window), -1, -1);
   gtk_container_border_width(GTK_CONTAINER(window), 5) ;
 
   return window;

@@ -2,7 +2,7 @@
 
 <h2>Display columns</h4>
 <fieldset><legend>Orientation</legend>
-<p>All features on display are held in a data structure known as a <b>zmapWindowContainerFeatureset</b> which is a species of FooCanvasGroup (see <a href="Design_notes/modules/zmapindow_items.shtml"> zmapWindow/items</a>). These data structures can contain zero or more featuresets, although they should not be created unless there are features to display.
+<p>All features on display are held in a data structure known as a <b>zmapWindowContainerFeatureset</b> which is a species of FooCanvasGroup (see <a href="Design_notes/modules/zmapwindow_items.shtml"> zmapWindow/items</a>). These data structures can contain zero or more featuresets, although they should not be created unless there are features to display.
 </p>
 <p>A featureset may be displayed in one or more columns, for example separate columns for strand and frame.  It has long been assumed that each feature will only be displayed in a single column - each displayed feature's canvas item structure refers directly to the features context and there is a data structure known as the <b>FtoIHash</b> which maps from feature context to <b>ZMapWindowCanvasItem</b>.
 </p>

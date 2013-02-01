@@ -176,14 +176,28 @@ void zmapWindowStateRestore(ZMapWindowState state, ZMapWindow window)
    * not save whilst restoring... */
   mark_queue_updating(window->history, TRUE);
 
-  if(state->zoom_set)
-    {
-      double current, target, factor;
-      current = zMapWindowGetZoomFactor(window);
-      target  = state->zoom_factor;
-      factor  = target / current;
-      zMapWindowZoom(window, factor);
-    }
+//  foo_canvas_busy(window->canvas, TRUE);	can't do this as zmapWindowZoom does */
+#if 0
+  if(state->zoom_set && state->position_set)
+  {
+	 /* do a zoom to */
+  }
+  else
+#endif
+  {
+	if(state->zoom_set)
+	{
+		double current, target, factor;
+		current = zMapWindowGetZoomFactor(window);
+		target  = state->zoom_factor;
+		factor  = target / current;
+		zMapWindowZoom(window, factor);
+	}
+	if(state->position_set)
+	{
+		state_position_restore(window, &(state->position));
+	}
+  }
 
   if (state->mark_set)
     {
@@ -192,11 +206,6 @@ void zmapWindowStateRestore(ZMapWindowState state, ZMapWindow window)
   else
     {
       zmapWindowMarkReset(window->mark) ;
-    }
-
-  if(state->position_set)
-    {
-      state_position_restore(window, &(state->position));
     }
 
 
@@ -211,6 +220,8 @@ void zmapWindowStateRestore(ZMapWindowState state, ZMapWindow window)
     }
 
   mark_queue_updating(window->history, FALSE);
+
+  zMapWindowRedraw(window);	/* include area off canvas */
 
   return ;
 }
@@ -598,8 +609,16 @@ static void state_position_restore(ZMapWindow window, ZMapWindowPositionStruct *
 			new_position.scroll_x1, new_position.scroll_y1,
 			new_position.scroll_x2, new_position.scroll_y2);
 
-      gtk_adjustment_set_value(v_adjuster, new_position.v_adjuster.value);
-      gtk_adjustment_set_value(h_adjuster, new_position.h_adjuster.value);
+#if 0
+printf("pos restore: %f %f %f %f\n",gtk_adjustment_get_value(v_adjuster), gtk_adjustment_get_value(h_adjuster),
+	      new_position.v_adjuster.value, new_position.h_adjuster.value);
+// old is 0, new y is 4000+: prevents expose events to the canvas
+
+//      gtk_adjustment_set_value(v_adjuster, new_position.v_adjuster.value);
+//      gtk_adjustment_set_value(h_adjuster, new_position.h_adjuster.value);
+#else
+	foo_canvas_scroll_to(FOO_CANVAS(window->canvas), new_position.scroll_offset_x, new_position.scroll_offset_y);
+#endif
 
       if(window_state_debug_G)
 	print_position(&new_position, "state_position_restore input");
@@ -722,13 +741,12 @@ static void state_bumped_columns_restore(ZMapWindow window, ZMapWindowBumpStateS
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
-	  if((container = zmapWindowFToIFindItemFull(window,window->context_to_item,
+	  if((container = zmapWindowFToIFindItemColumn(window,window->context_to_item,
 						     column_state->column.align_id,
 						     column_state->column.block_id,
 						     column_state->column.fset_id,
 						     column_state->column.strand,
-						     column_state->column.frame,
-						     0)))
+						     column_state->column.frame)))
 	    {
 	      ZMapWindowContainerFeatureSet container_set;
 
@@ -739,9 +757,6 @@ static void state_bumped_columns_restore(ZMapWindow window, ZMapWindowBumpStateS
 	      printf("bump restore col %s = %d\n", g_quark_to_string(container_set->original_id),zmapWindowContainerFeatureSetGetBumpMode(container_set));
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-#if OBSOLETE
-	      zmapWindowContainerFeatureSetSortFeatures(container_set, 0);
-#endif
 
 	      /* Only bump if it's different from current.
 	       * This _implicit_ test is the only way to currently check this as
@@ -771,7 +786,7 @@ static void state_bumped_columns_restore(ZMapWindow window, ZMapWindowBumpStateS
 	}
 
       if(changed)
-	zmapWindowFullReposition(window);
+	zmapWindowFullReposition(window->feature_root_group,TRUE, "bump state");
     }
 
   return ;
@@ -1005,7 +1020,7 @@ static void lockedDisplaySetScrollRegionCB(gpointer key, gpointer value, gpointe
   y1 = locked->y1;
   y2 = locked->y2;
 
-  zmapWindowSetScrollRegion(locked->window, &x1, &y1, &x2, &y2,"lockedDisplaySetScrollRegionCB");
+  zmapWindowSetScrollableArea(locked->window, &x1, &y1, &x2, &y2,"lockedDisplaySetScrollRegionCB");
 
   return ;
 }
@@ -1026,7 +1041,9 @@ static void set_scroll_region(ZMapWindow window, double x1, double y1, double x2
       g_hash_table_foreach(window->sibling_locked_windows, lockedDisplaySetScrollRegionCB, &locked);
     }
   else
-    zmapWindowSetScrollRegion(window, &x1, &y1, &x2, &y2,"set_scroll_region");
+    {
+      zmapWindowSetScrollableArea(window, &x1, &y1, &x2, &y2,"set_scroll_region");
+    }
 
   return ;
 }

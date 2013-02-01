@@ -27,7 +27,7 @@
  * Description: Implements the base functions of a zmap canvas item
  *              which is derived from a foocanvas item.
  *
- * Exported functions: See zmapWindowCanvas.h
+ * Exported functions: See zmapWindowCanvasItem.h
  *-------------------------------------------------------------------
  */
 
@@ -35,7 +35,7 @@
 
 
 #include <string.h>		/* memcpy */
-#include <zmapWindowCanvas.h>
+//#include <zmapWindowCanvas.h>
 #include <zmapWindowCanvasItem_I.h>
 
 
@@ -178,7 +178,15 @@ ZMapFeature zMapWindowCanvasItemGetFeature(FooCanvasItem *any_item)
 
 
 
-
+/* did the user click on a feature or the non existant background ? */
+gboolean zMapWindowCanvasItemHasPointFeature(FooCanvasItem *item)
+{
+  	if(ZMAP_IS_WINDOW_FEATURESET_ITEM(item))
+	{
+		return zMapWindowCanvasFeaturesetHasPointFeature(item);
+	}
+	return FALSE;
+}
 
 
 ZMapFeatureSubPartSpan zMapWindowCanvasItemIntervalGetData(FooCanvasItem *item, ZMapFeature feature, double x, double y)

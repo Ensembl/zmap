@@ -1,0 +1,106 @@
+<h2>ZMap Canvas Container Code</h2>
+
+<h3>Overview</h3>
+
+<p> ZMap uses the FooCanvas to host display items and allocated one for each ZMapWindow and scalebar.  The navigator is allocted another, which is cleared and repainted every time the current window changes.  Refer to <a href="Design/notes/new_model_canvas.shtml">New Model Canvas</a> for an explanation of how features are dsiplayed within each column, using a ZMapWindowCanvasFeatureset object, which is derived from a FooCanvasItem.
+</p>
+<p> Naked FooCanvasItems are no longer used to display features, and the former ZMapWindowCanavsItem (which used to be a FooCanvasGroup) sits between FooCanavsItem and ZMapWindowCanvasFeatureset.
+
+Window decorations such as the mark are implemented as ZMapWindowCanvasFeaturesets with no features = these are used to display a stippled background only. Column backgrounds are also implemented using empty CanvasFeaturesets and all of these are set up to be resized to thier containing FooCanvasGroups.
+</p>
+
+<p> All FooCanvasGroups in the foo canvas are ZMapWindowContainerGroups and these are now restored to a simple structure that reflects to bae FooCanvasGroup: they contain zero or more items in a GList which are alwayy displayed in that order. (ie first one in the list is at the back).
+</p>
+
+<p> Currently the window canvas contains a context, and align, a block and several column groups.  It should be relatively easy to remove the context and align groups sd they no longer have any function, although it is best to be aware that sometimes the exsiting code will refer to column parent and grandparent groups. However, any information that is used from these objects is available from the FeatureContext and therefore any code changes needed will be simple.
+</p>
+
+<p>Each column group may contain zero or more ZMapWindowCanvasFeatureset objects.  Most columns will contain exactly one, which is a prrequisite for bumping to work on all the features in the column - bumping is done by the CanvasFeatureset and if a column contains several of these they will overlap, whcih i what would be required eg for two sets of graph daty such as GC skew with rolling window sizes of 50 and 500 for example.
+</p>
+
+<h3>See also</h3>
+<a href="Design/notes/containers.shtml">Containers - recent work</a> <br />
+<a href="Design/notes/ContainerFeatureset.shtml">Containers - some older notes</a> <br />
+
+<h3>Canvas to Feature Context references</h3>
+<p>Formerly strand groups did not have a feature reference as there was no equivalent in the feature context.  Context Align and Block are still valid.  Column group does not have a featureset reference if there are no features, but may if there are. CanvasFeatureset (a FooCanvasItem not a Group) has either the first of last feature added or the last focus feature. Window decoration CanvasFeaturesets (mark, backgrounds, scale bar) have no feature refernces. Attmpting to follow these may crash ZMap.
+</p>
+
+<h3> Column implementation </h3>
+<p> A column may be given a style distinct from those used for its features and this style may be used to specify a background colour which defasults to white, but may be different eg for 3-Frame columns; these have hard coded styles to define these. (or via the [column-style] stanza in ZMap)
+</p>
+<p> Dissapointingly, each column must have a background ZMapWindowCanvasFeatureset to handle column highlight - if we used the CanvasFeatureset that holds the features and used that to draw the background the if we had seevral in a column they hide each others features.  There is also another reason - due to the way the foo canvas works (each foo canvas item is of undefined size till a FooCanvas update) it is not practical to operate column highlight without pre-allocating background objects.
+</p>
+
+<h4>Strand Separator</h4>
+<p>There are no longer any strand groups, and reverse strand columns are display on the left by a simple process of sorting columns into the correct order.  The strand separator is implemented as a hard coded forward strand column. It could be converted to ZMAPSTRAND_NONE easily but that would require adding some extra code to the sorting algorithm.  (Formerly there were three strand groups in each block).
+</p>
+<p>The strand separator column is hard coded to have a fixed width style with a yellow background, whcih means that is will always display, and in a break from original practice appears before any data is loaded.
+Strand separator features (search hit markers) are added to the column usign one of more CanavsFeaturesets - each search may be kept when perfoming another.
+</p>
+
+<h3>ContainerGroup implementation</h3>
+<p>
+Formerly, a number of different derived ContainerGroups were implemented and these operated various features of ZMap behaviour - the context (root) would resize the window width, the block would operate the mark, and ContainerGroups woudl do some complicated multi stage FooCanvas update.  This has all changed.
+</p>
+<p>All Container Groups have background CanvasFeaturesets allocated and to be more efficient on display if they are the same colur as the containing group's background they are hidden (FooCanvasItem not visible).
+These background CanvasFeaturesets may be configured to be fixed size in x and y and also to strecth to the size of the containing group, and this is implemented in the function <b>zmap_window_container_group_update()</b> (only 140 lines of code, about half of which is iffed out debugging).
+</p>
+<p> From zmapWindowCanvasItem.h:
+<pre>
+/* layering for canvas items... (ZMapWindowCanvasFeatureset)
+ * if not _FIXED_ will fit to containing group, which will be sized by normal features
+ * this replaces the overlay underlay and backgound container children
+ * display items are held in a group's item list in order of underlay, features and overlay,
+ * so layering can be implemented by using this ordered list
+ * flags are provided to make it easier to sort this
+ * ??? really stretchy items only refer to featureset backgrounds???
+ */
+#define ZMAP_CANVAS_LAYER_DECORATION	1	/* else is normal features */
+#define ZMAP_CANVAS_LAYER_OVERLAY		2	/* else is underlay if decoration */
+#define ZMAP_CANVAS_LAYER_STRETCH_X		4	/* fit to container? */
+#define ZMAP_CANVAS_LAYER_STRETCH_Y		8
+
+#define ZMAP_CANVAS_LAYER_ROOT_BACKGROUND		13
+#define ZMAP_CANVAS_LAYER_ALIGN_BACKGROUND	13
+#define ZMAP_CANVAS_LAYER_BLOCK_BACKGROUND	5
+#define ZMAP_CANVAS_LAYER_COL_BACKGROUND		5
+#define ZMAP_CANVAS_LAYER_SEPARATOR_BACKGROUND	1	/* fixed size according to style */
+#define ZMAP_CANVAS_LAYER_BLOCK_MARK		7	/* overlay, y can be set by user */
+#define ZMAP_CANVAS_LAYER_NAV_LOCATOR		5	/* underlay, y is set by zoom and scroll */
+#define ZMAP_CANVAS_LAYER_NAV_LOCATOR_DRAG	7	/* overlay, y is set by user*/
+</pre>
+</p>
+
+<p>
+Note that background CanvasFeatureset objects must appear at the head of each ContainerGroups item_list.  There is a function provided to help with this: <b>zMapWindowContainerGroupSortByLayer()</b>.  Note also that various function that process a ContainerGroup's item list must be aware of layering flags, as background CanvasFeaturesets do not have a feature reference.
+</p>
+
+<h3>The Mark</h3>
+<p>Previously that was implemented half by zmapWindowContainerBlock.c and zmapWindowMark.c.  This is now only implemented by zmapWindowMark.c and there is no need for a Block data structure to be implicated directly other than that the Mark code refers to a Block data structure for historical reasons.  A the mark decoration Canvas featuresets resize to thoer containing group (a block) in X and Y is set by the mouse there is no need for special callbacks in the block code.
+
+<h3>Window Width, Zoom and Scroll and foo_canvas_expose</h3>
+<p>See also: <a href="Design/notes/refresh.shtml">Screen Refresh</a>.</p>
+
+<p>Formerly the window width was set by a callback in the ContainerContext code as part of a FooCanvas update, which resulted in further expose events caused by the required set scroll region call.  Ths code has been removed and window width is set by foreground ZMap code called by <b>zMapWindowFullReposition()</b>, which has been optimised to expose less than the full window if possible.
+</p>
+
+<p>Zoom to functions now call a specific ZoomTo function whcih prevents extra expose events being generated, using a new <b> foo_canvas_busy()</b> function.  NOTE that the back button and possibly some other ZMap nuances may still have room for similar optimisation.
+</p>
+<p> The foo canvas still causes bouncing expose events due to foo_canvas_request_refresh() calling foo_canvas_update() which can queue further exposes.  it should be possible to reduce this to one expose per referesh call.  Currently ZMap will alsmost always pain each window twice for any Zoom operation, which is a lot better than the previous "eight or more" but still not perfect.
+</p>
+
+<h3>Ruler and Tooltip</h3>
+<p>These are the last naked FooCanvasItems left.  Ideally there should be none as that would give a uniform GDK interface and allow implementation of the screenshot functions, however these are not needed for most screen shots so could be left as is for the moment, but would have to be removed to reduce dependance on external libraries.
+</p>
+
+<h3>Source code tidy up</h3>
+<p>Most of the ZMapCanvasItems code has now been removed but containerGroup, canvasItem and a few other files are still needed.  There are in the zmapWindow/items directory and new code in zmapWindow/canvas.   It may be possible to combine CanvasItem and CanvasFeatureset and move container code into canvas.  However, how useful this could be has not been analysed.
+</p>
+
+
+
+
+
+
+

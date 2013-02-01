@@ -85,7 +85,7 @@ void zMapWindowCanvasLocusPaintFeature(ZMapWindowFeaturesetItem featureset, ZMap
 
 	zmapWindowCanvasLocusGetPango(drawable, featureset, lset);
 
-	x1 = featureset->dx;
+	x1 = featureset->dx + featureset->x_off;
 	x2 = x1 + locus->x_off;
 
 	text = (char *) g_quark_to_string(feature->feature->original_id);
@@ -363,7 +363,16 @@ static void zMapWindowCanvasLocusZoomSet(ZMapWindowFeaturesetItem featureset, Gd
 	}
 
 	if(f_width != featureset->width)
-		zMapWindowCanvasFeaturesetRequestReposition((FooCanvasItem *) featureset);
+	{
+		FooCanvasItem * foo = (FooCanvasItem *) featureset;
+
+		zMapWindowRequestReposition(foo);
+
+		/* we only know the width after drawing, so we need anotehr expose */
+		foo_canvas_update_now(foo->canvas);
+		foo_canvas_item_request_redraw(foo->canvas->root);
+	}
+
 
 
 	/* de-overlap the loci left over

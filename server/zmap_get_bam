@@ -19,7 +19,7 @@ use Bio::Server::BAM;
 
 # parameters
 my %params = ();
-my @options = qw ( help! man! gff_version=i chr_prefix=s file=s chr=s start=i end=i gff_feature_source=s gff_seqname=s roman! Roman! mapto=i);
+my @options = qw ( help! man! gff_version=i file=s chr=s start=i end=i gff_feature_source=s gff_seqname=s roman! Roman! mapto=i);
 my @required = qw ( file chr start end gff_feature_source );
 
 my $attributes_format;
@@ -33,7 +33,6 @@ sub get_params
 {
  	# defaults
 	$params {'gff_version'}= 2;		# default for now as ZMap doesn't do v3 yet
-	$params {'chr_prefix'} = '';
 
 	GetOptions(\%params, @options ) or pod2usage(2);
 
@@ -62,7 +61,7 @@ sub get_params
 	}
 	else
 	{
-		$sequence = $params {'chr_prefix'} . $params {'chr'};
+		$sequence = $params {'chr'};
 	}
 
 	if($params { 'gff_version' } == 2)
@@ -238,7 +237,7 @@ sub main
 {
 	get_params();
 
-	my $chr = $params { 'chr_prefix' } . $params { 'chr' } ;
+	my $chr = $params { 'chr' } ;
 	gff_escape_seqid for $sequence;
 
 	$source = $params { 'gff_feature_source' };
@@ -281,7 +280,7 @@ zmap_get_bam request data and output as GFF
 
 =head1 SYNOPSIS
 
-zmap_get_bam [--help] [--man] --file=[http:|ftp:]/path/to/file --start=123 --end=456 --gff_feature_source=name --chr=IV [--chr_prefix=CHROMOSOME_] [--gff_version=3] --gff_seqname=GFF_sequence_name [--roman] [--Roman] --mapto=offset
+zmap_get_bam [--help] [--man] --file=[http:|ftp:]/path/to/file --start=123 --end=456 --gff_feature_source=name --chr=CHROMOSOME_IV [--gff_version=3] --gff_seqname=GFF_sequence_name [--roman] [--Roman] --mapto=offset
 
 =head1 OPTIONS
 

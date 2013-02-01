@@ -154,6 +154,8 @@ typedef enum
 
     STYLE_PROP_FILTER,
 
+    STYLE_PROP_OFFSET,
+
     // mode dependant data
 
 
@@ -293,8 +295,9 @@ typedef enum
 #define ZMAPSTYLE_PROPERTY_FOO			  "foo"		/* normal foo canvas items or columns wide composite */
 
 
-
 #define ZMAPSTYLE_PROPERTY_FILTER			  "filter"		/*filter column by score */
+
+#define ZMAPSTYLE_PROPERTY_OFFSET			  "offset"		/* move contentt right by x pixels */
 
 
 /* glyph properties - can be for mode glyph or as sub-features */
@@ -878,6 +881,7 @@ typedef struct _zmapFeatureTypeStyleStruct
   gboolean collapse;					    /* for duplicated features */
   /* see also alignment.squash: even better form of collapse for short reads */
 
+  double offset;
 
   /*! GFF feature dumping, allows specifying of source/feature types independently of feature
    * attributes. */
@@ -1112,6 +1116,8 @@ void zMapStyleGetStrandAttrs(ZMapFeatureTypeStyle type,
 #define zMapStyleGetMinScore(style)   ((style)->min_score)
 //gboolean zMapStyleGetShowWhenEmpty(ZMapFeatureTypeStyle style);
 #define zMapStyleIsFilter(style)   ((style)->filter)
+
+#define zMapStyleOffset(style)   ((style)->offset)
 
 #define zMapStyleGetShowWhenEmpty(style)   ((style)->show_when_empty)
 

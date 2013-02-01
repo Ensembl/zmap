@@ -595,7 +595,7 @@ static ZMap createZMap(void *app_data, ZMapFeatureSequenceMap seq_map)
   zmap->zmap_cbs_G = zmap_cbs_G ;
 
   zmap_num++ ;
-  zmap->zmap_id = g_strdup_printf("ZMap.%d", zmap_num) ;
+  zmap->zmap_id = g_strdup_printf("%d", zmap_num) ;
 
   zmap->app_data = app_data ;
   zmap->default_sequence = seq_map;
@@ -643,26 +643,24 @@ static void dataLoadCB(ZMapView view, void *app_data, void *view_data)
 {
   ZMap zmap = (ZMap)app_data ;
 
-  //  if(!view_data)
-  /* need to update per column loaded for exciting feedback to the user */
-  {
-    /* Update title etc. */
-    updateControl(zmap, view) ;
+  /* Update title etc., need to update per column loaded for exciting feedback to the user */
+  updateControl(zmap, view) ;
 
-    zmapControlWindowSetGUIState(zmap) ;
-  }
+  zmapControlWindowSetGUIState(zmap) ;
 
-  //  else
+
   if (view_data)
     {
-      LoadFeaturesData lfd = (LoadFeaturesData )view_data ;
+      LoadFeaturesData lfd = (LoadFeaturesData)view_data ;
 
+
+      /* THIS NEEDS REVISITING AND IMPROVING..... */
       if (!(lfd->feature_sets))
 	{
-//	  zMapLogCritical("%s", "Data Load notification received but no datasets specified.") ;
-// if we have a file input then we may not know the featuresets if there is no data or an error
+	  //	  zMapLogCritical("%s", "Data Load notification received but no datasets specified.") ;
+	  // if we have a file input then we may not know the featuresets if there is no data or an error
 #warning better to patch in the server name here
-		lfd->feature_sets = g_list_append(NULL, GUINT_TO_POINTER(g_quark_from_string("_unknown_")));
+	  lfd->feature_sets = g_list_append(NULL, GUINT_TO_POINTER(g_quark_from_string("_unknown_")));
 	}
       else if (zmap->xremote_client)
 	{
@@ -689,27 +687,36 @@ static void dataLoadCB(ZMapView view, void *app_data, void *view_data)
 	      g_free(prev) ;
 	    }
 
-	  if(lfd->status)		/* see comment in zmapSlave.c/ RETURNCODE_QUIT, we are tied up in knots */
+
+	  if (lfd->status)		/* see comment in zmapSlave.c/ RETURNCODE_QUIT, we are tied up in knots */
 	    {
-	      ok_mess = g_strdup_printf("%d features loaded",lfd->num_features);
-	      emsg = html_quote_string(ok_mess);	/* see comment about really free() below */
-	      g_free(ok_mess);
+	      ok_mess = g_strdup_printf("%d features loaded", lfd->num_features) ;
+
+	      emsg = html_quote_string(ok_mess) ;	/* N.B. emsg allocated with xmalloc() */
+
+	      g_free(ok_mess) ;
 
 	      {
-		static long total = 0;
+		static long total = 0 ;
 
-		total += lfd->num_features;
-		zMapLogTime(TIMER_LOAD,TIMER_ELAPSED,total,"");	/* how long is startup... */
+		total += lfd->num_features ;
+		zMapLogTime(TIMER_LOAD, TIMER_ELAPSED, total, "") ;	/* how long is startup... */
 	      }
 	    }
 	  else
-	    emsg = html_quote_string(lfd->err_msg ? lfd->err_msg  : "");
-
-	  if(lfd->stderr_out)
 	    {
-	      gchar *old = lfd->stderr_out;
-	      lfd->stderr_out =  html_quote_string(old);
-    	      g_free(old);
+	      emsg = html_quote_string(lfd->err_msg ? lfd->err_msg  : "") ;
+	    }
+
+	  if (lfd->stderr_out)
+	    {
+	      gchar *old ;
+
+	      old = lfd->stderr_out ;
+
+	      lfd->stderr_out = html_quote_string(old) ;    /* N.B. lfd->stderr_out allocated with xmalloc() */
+
+    	      xfree(old) ;				    /* Must be free'd with xfree() */
 	    }
 
 
@@ -728,7 +735,7 @@ static void dataLoadCB(ZMapView view, void *app_data, void *view_data)
 				    emsg, lfd->exit_code,
 				    lfd->stderr_out ? lfd->stderr_out : "") ;
 
-	  free(emsg);  /* yes really free() not g_free()-> see zmapUrlUtils.c */
+	  xfree(emsg) ;					    /* Must be free'd with xfree() */
 
 	  if (zMapXRemoteSendRemoteCommand(zmap->xremote_client, request, &response)
 	      != ZMAPXREMOTE_SENDCOMMAND_SUCCEED)
@@ -741,8 +748,11 @@ static void dataLoadCB(ZMapView view, void *app_data, void *view_data)
 	  g_free(featurelist);
 
 	}
+
 #if 0
-	else
+      /* I DON'T KNOW WHY ALL THIS IS NOT INCLUDED....WHAT WAS THE PLAN ?? */
+
+      else
 	{
 	  char *featurelist = NULL;
 	  GList *features;
@@ -1147,13 +1157,15 @@ static void updateControl(ZMap zmap, ZMapView view)
       /* Update title bar of zmap window. */
       zMapViewGetSourceNameTitle(view, &db_name, &db_title) ;
       seq_name = zMapViewGetSequence(view) ;
-      title = g_strdup_printf("%s: %s%s%s - %s%s", zmap->zmap_id,
+
+      title = g_strdup_printf("%s%s%s - %s%s",
 			      db_name ? db_name : "",
 			      db_title ? " - ": "",
 			      db_title ? db_title : "",
 			      seq_name ? seq_name : "<no sequence>",
 			      features ? "" : " <no sequence loaded>") ;
-      gtk_window_set_title(GTK_WINDOW(zmap->toplevel), title) ;
+      zMapGUISetToplevelTitle(zmap->toplevel, zMapGetZMapID(zmap), title) ;
+
       g_free(title) ;
       g_free(seq_name);
 

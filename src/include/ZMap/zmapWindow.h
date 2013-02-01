@@ -138,6 +138,9 @@ typedef struct
 	int n_filtered;			/* how many we hid */
 	gboolean enable;
 
+	/* be good to implement this oe day, currently we look it up from config every time someone click the filter button */
+	GdkColor fill;			/* background for widget and also filtered column */
+
 } ZMapWindowFilterStruct, *ZMapWindowFilter;
 
 
@@ -355,8 +358,8 @@ void zMapWindowBusyFull(ZMapWindow window, gboolean busy, const char *file, cons
 
 void zMapWindowDisplayData(ZMapWindow window, ZMapWindowState state,
 			   ZMapFeatureContext current_features, ZMapFeatureContext new_features,
-                     ZMapFeatureContextMap context_map,
-                     GList *masked) ;
+			   ZMapFeatureContextMap context_map,
+			   GList *masked, ZMapFeature highlight_feature) ;
 void zMapWindowUnDisplayData(ZMapWindow window,
                              ZMapFeatureContext current_features,
                              ZMapFeatureContext new_features);
@@ -366,6 +369,7 @@ void zMapWindowUnDisplaySearchFeatureSets(ZMapWindow window,
 void zMapWindowMove(ZMapWindow window, double start, double end) ;
 void zMapWindowReset(ZMapWindow window) ;
 void zMapWindowRedraw(ZMapWindow window) ;
+void zMapWindowFeatureSaveState(ZMapWindow window, gboolean features_are_revcomped);
 void zMapWindowFeatureReset(ZMapWindow window, gboolean features_are_revcomped);
 void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_context,
 			     gboolean reversed) ;
@@ -393,9 +397,10 @@ gboolean zMapWindowMarkGetSequenceSpan(ZMapWindow window, int *start, int *end) 
 void zmapWindowMarkPrint(ZMapWindow window, char *title) ;
 gboolean zMapWindowMarkIsSet(ZMapWindow window);
 
-
 void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_mode, ZMapWindowCompressMode compress_mode) ;
-void zmapWindowFullReposition(ZMapWindow window) ;
+
+void zMapWindowRequestReposition(FooCanvasItem *foo);
+
 
 gboolean zMapWindowGetDNAStatus(ZMapWindow window);
 void zMapWindowStats(ZMapWindow window,GString *text) ;
@@ -464,7 +469,7 @@ void zMapWindowHighlightObject(ZMapWindow window, FooCanvasItem *feature,
 			       gboolean replace_highlight_item, gboolean highlight_same_names, gboolean sub_part) ;
 void zMapWindowHighlightObjects(ZMapWindow window, ZMapFeatureContext context, gboolean multiple_select);
 
-void zmapWindowHighlightSequenceItem(ZMapWindow window, FooCanvasItem *item, int start, int end);
+void zmapWindowHighlightSequenceItem(ZMapWindow window, FooCanvasItem *item, int start, int end, int flanking);
 
 char *zMapWindowGetHotColumnName(ZMapWindow window) ;
 

@@ -36,9 +36,6 @@
 
 #include <zmapWindow_P.h>
 #include <zmapWindowContainerUtils.h>
-#if USE_FACTORY
-#include <zmapWindowItemFactory.h>
-#endif
 #include <ZMap/zmapWindowNavigator.h>
 
 #define NAVIGATOR_SIZE 25000
@@ -59,21 +56,19 @@
 
 #define LOCATOR_BORDER    "darkred"
 #define LOCATOR_DRAG      "green"
-#define LOCATOR_FILL      "grey"
-#define LOCATOR_HIGHLIGHT "white"
+#define LOCATOR_FILL      "white"
+#define LOCATOR_HIGHLIGHT "cyan"
 #define LOCATOR_LINE_WIDTH 1
 
 typedef struct _ZMapWindowNavigatorStruct
 {
   ZMapWindowContainerGroup container_root ; /* what we'll raise and lower */
   ZMapWindowContainerGroup container_align; /* because I think we'll probably need it. */
-
-#if USE_FACTORY
-  ZMapWindowFToIFactory item_factory;
-#endif
+  ZMapWindowContainerGroup container_block; /* that's where the locator goes */
 
   ZMapWindow      current_window; /* the current window... */
 
+  FooCanvas 	*canvas;
   FooCanvasItem  *locator;
   FooCanvasItem  *locator_drag;
   GdkColor        locator_fill_gdk;
@@ -114,6 +109,11 @@ typedef struct _ZMapWindowNavigatorStruct
   gboolean draw_locator, is_reversed, is_focus;
 
   gulong draw_expose_handler_id;
+
+  gboolean locator_click;
+  double   click_correction;
+
+
 }ZMapWindowNavigatorStruct;
 
 

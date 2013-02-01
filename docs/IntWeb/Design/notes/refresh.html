@@ -1,0 +1,64 @@
+<h2>Some performance and usability gotchas</h2>
+
+<h3>Context</h3>
+<p>ZMap interacts with the foo canvas in order to display boxes on the screen.  Some user functions such as 3Frame cause major changes to the display layout and care need to be taken with code to prevent sub-standard performance - it is possible to trigger a full screen refersh several times but careless coding.
+</p>
+
+<h3>Functions and files...</h3>
+<p>An expose event is triggered by <b>foo_canvas_request_redraw()</b> or <b>foo_canvas_item_request_redraw()</b> (or can be done via <b>gdk_window_invalidate_rect()</b> but this is not recommended), and it is the latter that goves control over refreshing only part fo the display or queing a refresh before and item's coordinates have been updated.  Note thet if you change the width of a column then call foo_canvas_item_request_redraw() then this will use the previous bounding box as the foo canvas update functions only get called from an idle loop.
+</p>
+<p>To find all the code implicated in causing a screen refresh scan for:
+<ul>
+<li> foo_canvas_request_redraw
+<li> foo_canvas_item_request_redraw
+<li> zmap_window_canvas_featureset_expose_feature (focus only)
+<li> zMapWindowCanvasFeaturesetExpose (currently unused)
+<li> zMapWindowCanvasFeaturesetRedraw (used to update on filter change)
+<li> zmapWindowFullReposition	(exposes all columns that have moved)
+<li> zmapWindowHideEmpty (moves column right of columns that get hidden)
+</ul>
+Be aware also of these functions/ files:
+<ul>
+<li> myWindowSet3FrameMode
+<li> zMapWindowToggleDNAProteinColumns
+<li> zmapWindowColumnSetState
+<li> zmapWindowColumnsCompress
+<li> zmapWindowDrawZoom
+<li> zMapWindowRequestReposition (it would be good to loose this one)
+<li> zmapWindowDrawFeatures	(when rx a featureset)
+<li> zMapWindowDrawContext
+<li> zmapWindowHideEmpty
+<li> zmapWindow.c keyboard shortcuts
+<li> zmapWindowColConfig.c hide/show columns
+<li> zmapWindowfeature.c expand/ contract BAM
+<li> zmapWindowList.c hide/show masked feature
+<li> zmapWindowMenus.c eg bump/ compress/ hide column
+<li> zmapWindowNavigator.c NB has no window pointer, failure to handle will cause a crash
+<li> zmapWindowNavigatorMenus.c
+<li> zmapWindowState.c
+<li> zmapWindowStyle.c
+</ul>
+</p>
+
+<h3>Other notes</h3>
+
+<h4> Resize width and setting the scroll region</h4>
+<p>A screen refresh is trigggered relative to a foo canvas item or group.  If an group is resized or moved then the scroll region can change width but this in itself should not cause an expose event.  When setting the scroll region (width) we call a function called <b>zMapWindowResetWindowWidth()</b> which needs a window pointer for obscure reasons to do with limiting the window size to the sequence region. This may be tied up with the top and bottom border at min zoom.  It may be possible to recode this for width changes only, but NOTE <i>that the function zMapWindowSetScroll() has been coded to prevent multiple calls to foo_canvas_set_scroll_region() when it has not changed</i>.  Messing with this risk causing multiple refresh events: setting the scroll region sets the scrollbar thumbs which are connected to the viewable window.
+</p>
+
+<h4>GObject window pointers</h4>
+<p>A foo canvas item or group has no reference to a zmapWindow and to resolve this problems a GObject data pointer has been used to attach a ZMapWindow to each foo canvas group aka ZMapWindowContainerGroup. The Navigator code uses window code to draw columns such as genomic canonical and locus (and more recently scale bar) but it has no zmapWindow.  (Note that the navigator has a -&gt;current_window, which is the zmapWindow that it navigates and nothign to do with the navigator canvas). As the navigator has no window of its own then accessing the GObject window pointer will return NULL, whcijh will cause a crash if you do not handle this.
+</p>
+
+<h4>Balancing the screen refresh triggers</h4>
+<p>It's a common practice to trigger something necessary whereever it may be needed but this can cause significant (and comical) behaviours.  For example with 3Frame features/ translation, the function <b>zmapWindowColumnSetState()</b> is called when each new column is created and if this causes a screen refresh then we have each colum displayed in turn before they are re-ordered.  Coupled with zmapWindowFullReposition() not optimising the refersh to exclude columns on the left this reuslts in a performance hit of 10-20x.
+Folllowing this through, each user action that causes a screen layout change must be coded accurately to minimise the number fo refersh cycles.
+</p>
+<p>Legacy code: zmapWindowHideEmpty is one of the functions that calls zmapWindowFullReposition().  It was also called from zMapWindowDrawContext() which was called from zmapWindowDrawSeparatorFeatures() (why: i've no idea) and also zmapWindowDrawFeatures, thus cause a double expose, and worse, an initail expose before ordering the new columns, causing a full screen refresh (twice).  Fixing this removed all flickering from the main window - given that a full screen paint takes approx 100ms this is reasonable.
+</p>
+
+<h4>The mysterious navigator code</h4>
+<p>Commenting out all zmapWindowFullRepositon() calls has no effect. It's a mystery how columns are positioned....
+</p>
+
+

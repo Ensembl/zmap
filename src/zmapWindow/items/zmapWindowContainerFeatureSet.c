@@ -359,6 +359,8 @@ GQuark zmapWindowContainerFeatureSetColumnDisplayName(ZMapWindowContainerFeature
 
 GQuark zmapWindowContainerFeatureSetGetColumnId(ZMapWindowContainerFeatureSet container_set)
 {
+  if(!ZMAP_IS_CONTAINER_FEATURESET(container_set))
+	return 0;
   return container_set->unique_id;
 }
 
@@ -380,9 +382,8 @@ ZMapStrand zmapWindowContainerFeatureSetGetStrand(ZMapWindowContainerFeatureSet 
 {
   ZMapStrand strand = ZMAPSTRAND_NONE;
 
-  g_return_val_if_fail(ZMAP_IS_CONTAINER_FEATURESET(container_set), strand);
-
-  strand = container_set->strand;
+  if(ZMAP_IS_CONTAINER_FEATURESET(container_set))
+	strand = container_set->strand;
 
   return strand;
 }
@@ -516,8 +517,6 @@ void zmapWindowContainerFeatureSetSetDisplay(ZMapWindowContainerFeatureSet conta
 
   return ;
 }
-
-
 
 
 
@@ -837,152 +836,6 @@ void zmapWindowContainerFeatureSetRemoveAllItems(ZMapWindowContainerFeatureSet c
 }
 
 
-#if OBSOLETE
-
-/*!
- * \brief Sort all the features in a columns.
- *
- * \param container  The container to be sorted
- * \param direction  The order in which to sort them.
- *
- * \return nothing
- */
-
-void zmapWindowContainerFeatureSetSortFeatures(ZMapWindowContainerFeatureSet container_set,
-					       gint direction)
-{
-  ZMapWindowContainerFeatures container_features;
-  FooCanvasGroup *features_group;
-
-  if(container_set->sorted == FALSE)
-    {
-//zMapStartTimer("Featureset Sort","");
-
-      if((container_features = zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)container_set)))
-	{
-	  GCompareFunc compare_func;
-
-	  features_group = (FooCanvasGroup *)container_features;
-
-	  if(direction == 0) /* MH17: NOTE that direction is always 0 */
-	    compare_func = comparePosition;
-	  else
-	    compare_func = comparePositionRev;
-//zMapLogWarning("sort %d features in set",g_list_length(features_group->item_list));
-//	  zMap_foo_canvas_sort_items(features_group, compare_func);
-	}
-
-//zMapStopTimer("Featureset Sort","");
-      container_set->sorted = TRUE;
-    }
-
-  return ;
-}
-
-
-
-
-/* this never worked properly w/ more than one focus item
- * Canvas featureset handles ontopiness as a display function that does not affect the data
- */
-/*
-      take a focus item from the front of the container/foo canvas group item_list
-      and move it to where it should be when sorted
-      we skip over the first n items as these are the focus itmes and out of order
-      subsequent ones are sorted
-
-      this has to be in this file to use the same compare functions
-*/
-gboolean zmapWindowContainerFeatureSetItemLowerToMiddle(ZMapWindowContainerFeatureSet container_set,
-            ZMapWindowCanvasItem item,int n_focus,int direction)
-{
-  ZMapWindowContainerFeatures container_features;
-  FooCanvasGroup *features_group;
-  ZMapWindowCanvasItem list_item;
-  GList *item_list,*prev_list= NULL,*next_list,*my_list = NULL;
-
-  if(!(container_set->sorted))
-  {
-      /* we expect it should have been but extra data could have arrived ?? */
-      /* this could mess up the focus list */
-      zmapWindowContainerFeatureSetSortFeatures(container_set, direction);
-#if 1 // MH17_CHASING_FOCUS_CRASH
-      zMapLogWarning("Container set %s unsorted (re focus item)",g_quark_to_string(container_set->unique_id));
-#endif
-      return(FALSE);
-  }
-  else
-
-  if((container_features = zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)container_set)))
-    {
-      GCompareFunc compare_func;
-
-      features_group = (FooCanvasGroup *) container_features;
-
-      if(direction == 0)    /* MH17: NOTE that direction is always 0 */
-        compare_func = comparePosition;
-      else
-        compare_func = comparePositionRev;
-
-      /* initialise and skip the focus items */
-      for(item_list = features_group->item_list;n_focus-- && item_list;item_list = item_list->next)
-      {
-            if(item_list->data == item)
-                  my_list = item_list;
-            prev_list = item_list;
-      }
-      if(!(my_list))
-      {
-#if 1 // MH17_CHASING_FOCUS_CRASH
-      zMapLogWarning("Container set %s: cannot find focus item",g_quark_to_string(container_set->unique_id));
-#endif
-            return FALSE;
-      }
-      /* now find the item before the one that should go after this one */
-      for(;item_list;item_list = item_list->next)
-      {
-            list_item = ZMAP_CANVAS_ITEM(item_list->data);
-            /* unfortunately even though merge sort is stable
-             * at this point we have no way of knowing where this feature was
-             * to be rock solid we'd have to implement before pointers
-             * and handle all the nasty overlapping cases
-             * so we just choose the left most place
-             */
-            if(compare_func(item,list_item) <= 0)
-                  break;
-
-            prev_list = item_list;
-      }
-
-      /* now move item to after the previous */
-      /* there's a few case to consider but..
-       * - only one item total
-       * - one focus item that goes at the front of the list
-       * - focus item goes in the middle
-       * - focus item goes to the end
-       */
-      if(prev_list != my_list)
-      {
-            features_group->item_list = g_list_remove_link(features_group->item_list,my_list);
-
-            next_list = prev_list->next;
-            if(next_list)
-            {
-                  my_list->next = next_list;
-                  next_list->prev = my_list;
-            }
-            if(prev_list != my_list)      /* only one focus item */
-            {
-                  my_list->prev = prev_list;
-                  prev_list->next = my_list;
-            }
-      }
-    }
-
-  return TRUE ;
-}
-
-#endif
 
 ZMapWindow zMapWindowContainerFeatureSetGetWindow(ZMapWindowContainerFeatureSet container_set)
 {
@@ -999,30 +852,33 @@ void zMapWindowContainerFeatureSetShowHideMaskedFeatures(ZMapWindowContainerFeat
   ZMapStyleBumpMode bump_mode;      /* = container->settings.bump_mode; */
 
   container->masked = !show;
-
+//printf("show_hide 1\n");
   bump_mode = zMapWindowContainerFeatureSetGetContainerBumpMode(container);
 
+//printf("show_hide 2\n");
   if(bump_mode > ZMAPBUMP_UNBUMP)
     {
        zmapWindowColumnBump(FOO_CANVAS_ITEM(container),ZMAPBUMP_UNBUMP);
     }
 
+//printf("show_hide 3\n");
 
   if ((container_features = zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)container)))
     {
       FooCanvasGroup *group ;
 	GList *list;
-	ZMapWindowCanvasItem item;
-	ZMapFeature feature;
-	ZMapFeatureTypeStyle style;
+//	ZMapWindowCanvasItem item;
+//	ZMapFeature feature;
+//	ZMapFeatureTypeStyle style;
 
       group = FOO_CANVAS_GROUP(container_features) ;
 
       for(list = group->item_list;list;)
         {
-		item = ZMAP_CANVAS_ITEM(list->data);
-		feature = item->feature;
-		style = *feature->style;
+//printf("show_hide 3.1\n");
+//		item = ZMAP_CANVAS_ITEM(list->data);
+//		feature = item->feature;
+//		style = *feature->style;
 
         	if(ZMAP_IS_WINDOW_FEATURESET_ITEM(list->data))
         	{
@@ -1031,11 +887,14 @@ void zMapWindowContainerFeatureSetShowHideMaskedFeatures(ZMapWindowContainerFeat
         	}
         }
     }
+//printf("show_hide 4\n");
             /* if we are adding/ removing features we may need to compress and/or rebump */
     if(bump_mode > ZMAPBUMP_UNBUMP)
     {
       zmapWindowColumnBump(FOO_CANVAS_ITEM(container),bump_mode);
     }
+//printf("show_hide 5\n");
+
 }
 
 
@@ -1061,20 +920,8 @@ ZMapStyleBumpMode zMapWindowContainerFeatureSetGetContainerBumpMode(ZMapWindowCo
 
 
 
-#if OBSOLETE
-/*!
- * \brief Unset the sorted flag for the featureset to force a re-sort on display eg after adding a feature
- *
- * \param container  The container to be sorted
- *
- * \return nothing
- */
-
-void zMapWindowContainerFeatureSetMarkUnsorted(ZMapWindowContainerFeatureSet container_set)
-{
-      container_set->sorted = FALSE;
-}
-#endif
+#if 0
+// never called
 
 /*!
  * \brief Time to free the memory associated with the ZMapWindowContainerFeatureSet.
@@ -1099,7 +946,7 @@ ZMapWindowContainerFeatureSet zmapWindowContainerFeatureSetDestroy(ZMapWindowCon
 
   return item_feature_set;
 }
-
+#endif
 
 
 
@@ -1276,18 +1123,21 @@ static void zmap_window_item_feature_set_destroy(GtkObject *gtkobject)
       container_set->user_hidden_stack = NULL;
     }
 
+#if MH17_NO_IDEA_WHY
   {
     char *col_name ;
 
     col_name = (char *) g_quark_to_string(zmapWindowContainerFeatureSetColumnDisplayName(container_set)) ;
     if (g_ascii_strcasecmp("3 frame translation", col_name) !=0)
       {
+#else
+  {
+	{
+#endif
+
 	if (gtkobject_class->destroy)
 	  (gtkobject_class->destroy)(gtkobject);
       }
-
-
-
   }
 
   return ;
@@ -1299,60 +1149,7 @@ static void zmap_window_item_feature_set_destroy(GtkObject *gtkobject)
  *                               INTERNAL
  */
 
-#if OBSOLETE
-/* simple function to compare feature positions. */
-static gint comparePosition(gconstpointer a, gconstpointer b)
-{
-  ZMapWindowCanvasItem item1 = NULL, item2 = NULL;
-  ZMapFeature feature1, feature2 ;
-  gint result = -1 ;
 
-  /* it would appear that for lists of length == 1 one of the input pointers is NULL.....sigh.. */
-  if (a && b)
-    {
-      zMapAssert(ZMAP_IS_CANVAS_ITEM(a));
-      zMapAssert(ZMAP_IS_CANVAS_ITEM(b));
-
-      item1 = (ZMapWindowCanvasItem)a;
-      item2 = (ZMapWindowCanvasItem)b;
-
-      feature1 = item1->feature;
-      feature2 = item2->feature;
-
-      zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature1)) ;
-      zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature2)) ;
-
-
-      if (feature1->x1 > feature2->x1)
-	result = 1 ;
-      else if (feature1->x1 == feature2->x1)
-	{
-	  int diff1, diff2 ;
-
-	  diff1 = feature1->x2 - feature1->x1 ;
-	  diff2 = feature2->x2 - feature2->x1 ;
-
-	  if (diff1 < diff2)
-	    result = 1 ;
-	  else if (diff1 == diff2)
-	    result = 0 ;
-	}
-    }
-
-  return result ;
-}
-
-
-/* opposite order of comparePosition */
-static gint comparePositionRev(gconstpointer a, gconstpointer b)
-{
-  gint result = 1;
-
-  result = comparePosition(a, b) * -1;
-
-  return result;
-}
-#endif
 
 
 

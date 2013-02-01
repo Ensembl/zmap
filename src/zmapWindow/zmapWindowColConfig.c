@@ -486,12 +486,15 @@ static GtkWidget *configure_make_toplevel(ColConfigure configure_data)
 {
   GtkWidget *toplevel = NULL;
 
-  if(!configure_data->window->col_config_window)
+  if (!configure_data->window->col_config_window)
     {
-      char *title, *seq_name ;
+      char *seq_name ;
 
-      /* New toplevel */
-      toplevel = gtk_window_new(GTK_WINDOW_TOPLEVEL) ;
+      /* Get sequence name for the title */
+      seq_name = (char *)g_quark_to_string(configure_data->window->feature_context->sequence_name);
+
+      toplevel = zMapGUIToplevelNew("Column configuration", seq_name) ;
+
       /* Add destroy func - destroyCB */
       g_signal_connect(GTK_OBJECT(toplevel), "destroy",
 		       GTK_SIGNAL_FUNC(destroyCB), (gpointer)configure_data) ;
@@ -500,16 +503,6 @@ static GtkWidget *configure_make_toplevel(ColConfigure configure_data)
       g_object_set_data(G_OBJECT(toplevel), CONFIGURE_DATA, configure_data) ;
 
       gtk_container_border_width(GTK_CONTAINER(toplevel), 5) ;
-
-      /* Get sequence name for the title */
-      seq_name = (char *)g_quark_to_string(configure_data->window->feature_context->sequence_name);
-
-      /* make the title, and set */
-      if((title = zMapGUIMakeTitleString("Column configuration", seq_name)))
-	{
-	  gtk_window_set_title(GTK_WINDOW(toplevel), title) ;
-	  g_free(title) ;	/* free me now. */
-	}
     }
 
   return toplevel;
@@ -522,7 +515,6 @@ static void configure_get_column_lists(ColConfigure configure_data,
 				       GList **forward_columns_out, GList **reverse_columns_out)
 {
   ZMapWindowColConfigureMode configure_mode;
-  ZMapWindowContainerGroup container = (ZMapWindowContainerGroup)column_group;
   GList *forward_columns = NULL, *reverse_columns = NULL  ;
   ZMapWindow window;
 
@@ -533,7 +525,8 @@ static void configure_get_column_lists(ColConfigure configure_data,
     {
       ZMapStrand strand ;
 
-      strand = zmapWindowContainerGetStrand(container);
+	strand = zmapWindowContainerFeatureSetGetStrand((ZMapWindowContainerFeatureSet) column_group);
+
       zMapAssert(strand == ZMAPSTRAND_FORWARD || strand == ZMAPSTRAND_REVERSE) ;
 
       if (strand == ZMAPSTRAND_FORWARD)
@@ -692,7 +685,7 @@ static void loaded_page_apply  (NotebookPage notebook_page)
   show_hide_data->apply_now  = save_apply_now;
   show_hide_data->reposition = save_reposition;
 
-  zmapWindowFullReposition(configure_data->window);
+  zmapWindowFullReposition(configure_data->window->feature_root_group,TRUE, "show hide");
 
  return ;
 }
@@ -2103,7 +2096,7 @@ static void loaded_show_button_cb(GtkToggleButton *togglebutton, gpointer user_d
 			}
 
 		      if(page_data->reposition)
-			zmapWindowFullReposition(window);
+			zmapWindowFullReposition(window->feature_root_group,TRUE,"show button");
 		    }
 		  else
 		    {
@@ -2167,7 +2160,7 @@ static void select_all_buttons(GtkWidget *button, gpointer user_data)
 
 // unitiialised
 //      if((show_hide_data->reposition = needs_reposition))
-//	zmapWindowFullReposition(configure_data->window);
+//	zmapWindowFullReposition(configure_data->window->feature_root_group,TRUE);
     }
 
 

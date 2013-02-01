@@ -39,10 +39,10 @@
 /* It feels wrong that you can't compile this header without including this...the encapsution
  * is wrong at some level...perhaps more of the stuff from zmapWindowContainerChildren.h
  * should be in this header.... */
-#include <zmapWindowContainerChildren.h>
+//#include <zmapWindowContainerChildren.h>
 
 
-
+#if USE_CHILDREN
 
 /*!
  * ZMapWindowContainerGroup for containing and positioning of canvas items.
@@ -84,7 +84,7 @@
  * container level.
  *
  */
-
+#endif
 
 
 
@@ -115,7 +115,6 @@ typedef enum
     ZMAPCONTAINER_LEVEL_ROOT,
     ZMAPCONTAINER_LEVEL_ALIGN,
     ZMAPCONTAINER_LEVEL_BLOCK,
-    ZMAPCONTAINER_LEVEL_STRAND,
     ZMAPCONTAINER_LEVEL_FEATURESET,
     ZMAPCONTAINER_LEVEL_FEATURESET_GROUP
 } ZMapContainerLevelType ;
@@ -137,7 +136,7 @@ typedef gboolean (* ZMapWindowContainerUpdateHook)(ZMapWindowContainerGroup grou
 /* Public funcs */
 GType zmapWindowContainerGroupGetType(void);
 
-ZMapWindowContainerGroup zmapWindowContainerGroupCreate(ZMapWindowContainerFeatures parent,
+ZMapWindowContainerGroup zmapWindowContainerGroupCreate(FooCanvasGroup *parent,
 							ZMapContainerLevelType level,
 							double    child_spacing,
 							GdkColor *background_fill_colour,
@@ -147,10 +146,14 @@ ZMapWindowContainerGroup zmapWindowContainerGroupCreateFromFoo(FooCanvasGroup   
 							       double    child_spacing,
 							       GdkColor *background_fill_colour,
 							       GdkColor *background_border_colour);
+
+void zMapWindowContainerGroupSortByLayer(FooCanvasGroup * group);
+
+GdkColor *zmapWindowContainerGroupGetFill(ZMapWindowContainerGroup group);
+GdkColor *zmapWindowContainerGroupGetBorder(ZMapWindowContainerGroup group);
+
 gboolean zmapWindowContainerSetVisibility(FooCanvasGroup *container_parent, gboolean visible);
 void zmapWindowContainerRequestReposition(ZMapWindowContainerGroup container);
-void zmapWindowContainerGroupBackgroundSize(ZMapWindowContainerGroup container, double height) ;
-double zmapWindowContainerGroupGetBackgroundSize(ZMapWindowContainerGroup container) ;
 void zmapWindowContainerGroupChildRedrawRequired(ZMapWindowContainerGroup container,
 						 gboolean redraw_required);
 void zmapWindowContainerGroupSetBackgroundColour(ZMapWindowContainerGroup container,

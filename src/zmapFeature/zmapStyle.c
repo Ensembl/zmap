@@ -213,6 +213,10 @@ ZMapStyleParamStruct zmapStyleParams_G[_STYLE_PROP_N_ITEMS] =
             "filter by score", "filter column by score",
             offsetof(zmapFeatureTypeStyleStruct, filter),0 },
 
+    { STYLE_PROP_OFFSET, STYLE_PARAM_TYPE_DOUBLE, ZMAPSTYLE_PROPERTY_OFFSET,
+            "offset contents by x pixels", "offset contents by x pixels",
+            offsetof(zmapFeatureTypeStyleStruct, offset), 0 },
+
     { STYLE_PROP_GLYPH_NAME, STYLE_PARAM_TYPE_QUARK, ZMAPSTYLE_PROPERTY_GLYPH_NAME,
             "glyph-name", "Glyph name used to reference glyphs config stanza",
             offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph_name),ZMAPSTYLE_MODE_GLYPH },

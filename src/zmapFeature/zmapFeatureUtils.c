@@ -49,6 +49,8 @@ typedef struct
 } SimpleParent2ChildDataStruct, *SimpleParent2ChildData;
 
 static ZMapFrame feature_frame(ZMapFeature feature, int start_coord);
+static ZMapFrame feature_frame_coords(int start_coord, int offset);
+
 static void get_feature_list_extent(gpointer list_data, gpointer span_data);
 
 static gint findStyleName(gconstpointer list_data, gconstpointer user_data) ;
@@ -476,12 +478,12 @@ char *zMapFeatureCanonName(char *feature_name)
 /* This function creates a unique id for a feature. This is essential if we are to use the
  * g_hash_table package to hold and reference features. Code should _ALWAYS_ use this function
  * to produce these IDs.
- * 
+ *
  * Caller must g_free() returned string when finished with.
- * 
+ *
  * OK, I THINK THERE IS A PROBLEM HERE...WE COULD HAVE FEATURES WITH SAME COORDS ON
  * OPPOSITE STRAND WHILE AN ANNOTATOR IS EDITING FEATURES....DOH.....
- * 
+ *
  */
 char *zMapFeatureCreateName(ZMapStyleMode feature_type,
 			    char *feature,
@@ -1229,6 +1231,13 @@ ZMapFrame zMapFeatureFrame(ZMapFeature feature)
   return frame ;
 }
 
+ZMapFrame zMapFeatureFrameFromCoords(int block, int feature)
+{
+	return feature_frame_coords(block, feature);
+}
+
+
+
 
 ZMapFrame zMapFeatureSubPartFrame(ZMapFeature feature, int coord)
 {
@@ -1358,19 +1367,32 @@ char *zMapFeatureTranslation(ZMapFeature feature, int *length)
  * possibly wrong for forward.  Need to think about this one ;)
  *  */
 
+/*
+ * using block offset gives frame 1,2,3 in order on display
+ * the downside is that if we extend the block upwards we need to recalc translation columns
+ */
+
 static ZMapFrame feature_frame(ZMapFeature feature, int start_coord)
 {
   ZMapFrame frame;
   int offset;
   ZMapFeatureBlock block;
-  int fval;
 
   zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
   zMapAssert(feature->parent && feature->parent->parent);
 
   block = (ZMapFeatureBlock)(feature->parent->parent);
-
   offset = block->block_to_sequence.block.x1;   /* start of block in sequence/parent */
+
+  frame = feature_frame_coords(offset, start_coord);
+
+  return frame;
+}
+
+static ZMapFrame feature_frame_coords( int offset, int start_coord)
+{
+  int fval;
+  ZMapFrame frame;
 
   fval = ((start_coord - offset) % 3) + ZMAPFRAME_0 ;
   if(fval < ZMAPFRAME_0) 	/* eg feature starts before the block */
