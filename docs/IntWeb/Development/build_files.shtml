@@ -1,0 +1,230 @@
+<!--#set var="banner" value="zmap_build.sh"-->
+<!--#include virtual="/perl/header"-->
+
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+
+<!-- some colours for our boxes etc. -->
+<style>
+
+pre{ background-color: #DDDDDD; border-style: solid; border-width: 1px; padding: 10px }
+
+.request{ border-color: red;  border-width: medium }
+.response{ border-color: green; border-width: medium }
+.message{ border-color: blue; border-width: medium }
+
+table.zmap_actions{ background-color: #EFEFEF; border-width: 1px; border-style: solid; border-collapse: collapse }
+table.zmap_actions td{ border-width: 0px 1px 1px 0px; border-style: solid; padding: 2px }
+table.zmap_actions tr{ vertical-align: top; }
+table.zmap_actions th{ border-width: 0px 0px 1px 0px; border-style: solid; }
+
+fieldset
+{
+background-color: lightblue;
+border-style: solid; border-width: 3px; border-color: black;
+padding: 10px
+}
+
+legend{ font-weight: bold }
+
+</style>
+
+
+
+<h1>The ZMap Build System Files</h1>
+
+
+<h2>Overview</h2>
+
+<p>ZMap uses the autoconf system to produce system-specific makefiles with which to
+build zmap. This system while powerfull is complex and more so because zmap's use of
+autoconf has grown through experimentation rather than from a sound knowledge of
+autoconf which is a very large tool.</p>
+
+<p><b>When reading this document you must remember that zmap's use of autoconf may be
+less than optimal or just wrong, if you see things that can be simplified and made
+more easy to understand then get on with it BUT document the way the modified system
+works in this file !</b></p>
+
+<p>The following sections document the system and how to make some more common
+modifications to it:</p>
+
+
+<ul>
+  <li><p><a href="#adding_static_libs">Adding Statically-built Libraries</a>
+      Covers adding other library code to the zmap tree so that it is
+      built when zmap is built and then statically linked in. This if good for small libraries
+      as it means no separate installation of the library is required in order to build zmap
+      on a particular platform.</p></li>
+</ul>
+
+
+
+
+
+<a name="adding_static_libs"></a>
+<h2>Adding Statically-built Libraries</h2>
+
+<p>In common with most programs ZMap makes use of other code libraries.
+Sometimes these are commonly installed libraries and it makes sense to use
+dynamic linking to access them. Sometimes however if the libraries are small
+and not commonly available it makes more sense to import the library code into
+the zmap build tree compiling it locally and linking it in statically to avoid
+causing portability problems for users installing and compiling zmap. This
+section describes how to do this for a library which has it's own build
+system using the AceConn package as an example.</p>
+
+
+<p>Add a new directory to <b>src</b> to hold the new package (the actual
+directory is simply a convention in the zmap build system):</p>
+
+<pre>
+  -rwxr-xr-x  1 edgrif zmap     79 Jan  7 10:03 doxyhtml.hdr
+  drwxr-xr-x  3 edgrif zmap   4096 Jan  7 14:52 include
+  <b>drwxr-xr-x  3 edgrif zmap   4096 Jan  7 14:52 libAceConn</b>
+  -rwxr-xr-x  1 edgrif zmap   8238 Jan  7 10:03 libcurl.m4
+  drwxr-xr-x  2 edgrif zmap   4096 Jan  7 14:52 libcurlobject
+  drwxr-xr-x  3 edgrif zmap   4096 Jan  7 14:52 libpfetch
+  drwxr-xr-x  2 edgrif zmap   4096 Jan  7 14:52 libzmapfoocanvas
+  drwxr-xr-x  2 edgrif zmap   4096 Jan  7 10:19 m4
+</pre>
+
+
+<p>Copy the package into the new directory:</p>
+
+<pre>
+> ls -al libAceConn
+total 44
+drwxr-xr-x  3 edgrif zmap  4096 Jan  7 14:52 .
+drwxr-xr-x 34 edgrif zmap  8192 Jan  7 14:52 ..
+<b>drwxr-xr-x  8 edgrif zmap  4096 Jan  7 14:53 AceConn</b>
+</pre>
+
+
+<p>Add a Makefile.am to the new directory which executes the correct shell
+commands to build the package:</p>
+
+<pre>
+
+#
+# Build the aceconn package when a zmap make is executed.
+#
+
+include $(top_srcdir)/Makefile.common
+
+SUBDIRS = .
+
+ACECONN = AceConn
+ACECONN_DIR = $(ACECONN)
+
+all-local:
+	@echo "Starting building $(ACECONN)...."
+	@cd $(top_srcdir)/libAceConn/$(ACECONN_DIR) ; \
+	if ! test -f Makefile ; then \
+	echo 'No Makefile, creating Makefile....' ; \
+	autoreconf -i -v ; \
+	./configure --prefix=$(abs_top_builddir) ; \
+	fi ; \
+	echo "Running make for $(ACECONN)" ; \
+	make ; \
+	make install
+	@echo "Finished building $(ACECONN)...."
+</pre>
+
+<p>The shell code makes sure that AceConn's own autoconf is run if required and
+then does a 'make' followed by a 'make install' into the current build
+directory, e.g. build/linux, so that when zmap is built the compiler/linker
+will be able to find the AceConn headers and library.</p>
+
+<p>Note that the <b>--prefix</b> argument to the configure script is used to
+make sure that the header and include files for the package get installed into
+the 'include' and 'lib' subdirectories of the current build directory.
+
+<p>(N.B. the 'all-local' target is provided to allow users to add to the 'all'
+target that is generated by autoconf, it gets run directly after that
+target.)</p>
+
+
+<p>Add a .gitignore file to the new directory to exclude from git any files
+that are created when the package is built:</p>
+
+<pre>
+# Ignore any files created from the package build.
+*.o
+</pre>
+
+
+<p>Now add this new directory and its contents to the zmap git repository
+otherwise you will have to redo this each time you checkout zmap !! Note that
+this does imply that if the package files change when there is a new version
+this will result in a number of updates to the zmap git repository to reflect
+these changes.</p>
+
+
+<p>Add the path to the package library <b>.a</b> file to <b>src/Makefile.am</b> as below:</p>
+
+<pre>
+zmap_LDADD =                                                 \
+	$(top_builddir)/.libs/libZMapApp.a                   \
+	$(top_builddir)/.libs/libZMap.a                      \
+	$(top_builddir)/.libs/libZMapAppServices.a           \
+	$(top_builddir)/.libs/libZMapThr.a                   \
+	$(top_builddir)/.libs/libZMapXML.a                   \
+	$(top_builddir)/.libs/libZMapUtils.a                 \
+	$(top_builddir)/.libs/libzmapfoocanvas.a             \
+	$(top_builddir)/.libs/libPFetch.a                    \
+	<b>$(top_builddir)/lib/libAceConn.a		     \</b>
+        $(X_PRE_LIBS) $(X_LIBS) $(X_EXTRA_LIBS)              \
+	$(GTK_LIBS)			                     \
+	$(LIBCURL) -lexpat                                   \
+	@MACOSX_UNIVERSAL_FLAGS@ $(NULL)
+</pre>
+
+
+<p>Add the path (relative to src) to the package Makefile to
+<b>src/configure.ac</b> as below:</p>
+
+<pre>
+AC_CONFIG_FILES([Makefile
+zmapApp/Makefile
+zmapAppServices/Makefile
+zmapConfig/Makefile
+zmapControl/Makefile
+zmapControl/remote/Makefile
+zmapDocs/Makefile
+zmapDAS/Makefile
+zmapDraw/Makefile
+zmapFeature/Makefile
+zmapFeature/tests/Makefile
+zmapGFF/Makefile
+zmapMake/Makefile
+zmapManager/Makefile
+zmapServer/Makefile
+zmapServer/acedb/Makefile
+zmapServer/das/Makefile
+zmapServer/pipe/Makefile
+zmapThreads/Makefile
+zmapUtils/Makefile
+zmapUtils/tests/Makefile
+zmapView/Makefile
+zmapWindow/Makefile
+zmapXML/Makefile
+include/Makefile
+<b>libAceConn/Makefile</b>
+libzmapfoocanvas/Makefile
+libpfetch/Makefile
+libpfetch/tests/Makefile
+libcurlobject/Makefile
+zmap.pc
+dotZMap:dotZmap.in
+])
+</pre>
+
+
+<p>You should now see that the AceConn library is built as required whenever zmap
+is compiled from its build directory.</p>
+
+
+<!--#include virtual="/perl/footer"-->
+
+

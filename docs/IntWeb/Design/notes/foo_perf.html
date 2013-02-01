@@ -20,11 +20,11 @@ it it probably not feasable to continue with the current strategy which is to di
 </p>
 
 <h3>Moving the cursor seized up</h3>
-<p>This was due to the foo canvas passing the curcor motion event to every canvas group, resulting un eg 600k fucntion calls for each event. This has been commented out.
+<p>This was due to the foo canvas passing the cursor motion event to every canvas group, resulting in eg 600k function calls for each event. This has been commented out.
 </p>
 
 <h3>The Ruler and lasso can become unusably slow with high volume data</h3>
-<p>These are implemented by adding foo canvas items and in the current implementation this implies a repaint of all canvas groups overlapping the areas involved. For the ruler this means a line across the whole window for the old and new position, and subject to X behavaiour could result in an expose event to all groups between the two.
+<p>These are implemented by adding foo canvas items and in the current implementation this implies a repaint of all canvas groups overlapping the areas involved. For the ruler this means a line across the whole window for the old and new position, and subject to X behaviour could result in an expose event to all groups between the two.
 For the lasso there will be an expose event for the larger of the old and new rectangles.
 </p>
 <p>It's obvious the we have to prevent the expose events from repainting features and using some kind of bitmap to hold the image or persuading X to blit the ruler and lasso will solve this.
@@ -50,7 +50,7 @@ For the lasso there will be an expose event for the larger of the old and new re
 
 <h4>Accessing items to paint may be inefficient</h4>
 
-<p>This is certainly true. Due to the use of the foo canvas by ZMap (data arranged in column groups and stored unsorted) if we want to paint items in a small section of the column then these are searched for using GObject methods and every group in the column is asked if it it is in the region.  As every ZMapCanvasItem is a group then we search evry feature which will run in O(n) time rather than a more reasonable O(log n).  We know that this is a real performance problem as this was the cause of the cursor seizing up - this used the GObject signaling mechanism and this implies a double overhead - one fucntion call to send the signal and another to receive it for every item in the column.  Note that reverting ZMapCanvasItems to be simple foo_canvas_items will not affect this much as groups have to query each item.
+<p>This is certainly true. Due to the use of the foo canvas by ZMap (data arranged in column groups and stored unsorted) if we want to paint items in a small section of the column then these are searched for using GObject methods and every group in the column is asked if it it is in the region.  As every ZMapCanvasItem is a group then we search every feature which will run in O(n) time rather than a more reasonable O(log n).  We know that this is a real performance problem as this was the cause of the cursor seizing up - this used the GObject signaling mechanism and this implies a double overhead - one function call to send the signal and another to receive it for every item in the column.  Note that reverting ZMapCanvasItems to be simple foo_canvas_items will not affect this much as groups have to query each item.
 </p>
 
 </fieldset>
@@ -58,7 +58,7 @@ For the lasso there will be an expose event for the larger of the old and new re
 <fieldset><legend>Things to measure</legend>
 <p>The general approach will be to take exising code using a high volume column and selective remove various functions while timing operations.  Attempts using vtune for example have proved useful but are swamped by glib internbal routines and apply to a complete run of zmap and therefore provide imprecise data.
 </p>
-<p>We will use a large data set (eg 170k trembl features) so that non-linear fucntions appear more significant.
+<p>We will use a large data set (eg 170k trembl features) so that non-linear functions appear more significant.
 </p>
 <p>
 <ul>
@@ -355,7 +355,7 @@ for the initial display this allows a maximum time need to be determined as for 
 </p>
 <p> If we assume that for the initial Zmap display we only have to display 20k features, then we require only approx 2.5 seconds using existing foo canvas technology, no matter how many features some columns have.
 
-<h3>Ammending the foo canvas to not require the 'update' process</h3>
+<h3>Amending the foo canvas to not require the 'update' process</h3>
 <p>Is this possible or advisable?  Let's guess 5% improvement possible - further investigation is needed
 </p>
 
@@ -416,7 +416,7 @@ Tests on a smaller data set show 120k groups painted in 1.7 seconds.
 <tr><th>What</th> <th> Initial display </th><th> RevComp</th><th>Comments</th></tr>
 <tr> <td>Correct column state</td> <td>39% </td> <td>26%</td> <td>Better than expected - previous code redisplayed data even of the old and new visibility state was the same.
 <br />
-Note: we often get a double expose, and one cause is thought to be the title bar expanding as seq coordinates are shown. It should be possible to prevent this by displaying copordinates correctly before painting features but note that this is releveant only to ACEDB only configurations as with a pipe server configuration the sequence coordinates will be set by the first column loaded regardles of whether or not we can determine these from the config file.
+Note: we often get a double expose, and one cause is thought to be the title bar expanding as seq coordinates are shown. It should be possible to prevent this by displaying copordinates correctly before painting features but note that this is relevant only to ACEDB only configurations as with a pipe server configuration the sequence coordinates will be set by the first column loaded regardles of whether or not we can determine these from the config file.
 </td> </tr>
 
 </table>

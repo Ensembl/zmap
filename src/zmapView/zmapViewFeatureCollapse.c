@@ -877,9 +877,9 @@ printf("squash this: y, f, edge = %.1f,%.1f (%.1f) %d,%d  %.1f,%.1f\n",y1,y2, y2
 			f->flags.squashed = TRUE;
 		}
 
-		/* on account of a code review we decifed that a fucntion was too long
+		/* on account of a code review we decided that a function was too long
 		 * so i split the long function into easy to understand small ones
-		 * which means that i have tio write extra code to cope with the re-organisation
+		 * which means that i have to write extra code to cope with the re-organisation
 		 * NOTE this kind of edge effect is quite easy to miss and 'nice' code can be a source of bugs
 		 */
 
@@ -1097,9 +1097,9 @@ printf("join this:  %.1f %.1f\n",y1,y2);
 		}
 
 
-		/* on account of a code review we decifed that a fucntion was too long
+		/* on account of a code review we decided that a function was too long
 		 * so i split the long function into easy to understand small ones
-		 * which means that i have tio write extra code to cope with the re-organisation
+		 * which means that i have to write extra code to cope with the re-organisation
 		 * NOTE this kind of edge effect is quite easy to miss and 'nice' code can be a source of bugs
 		 */
 		fl = fl->next;

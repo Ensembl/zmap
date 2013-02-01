@@ -188,6 +188,7 @@
 #define ZMAPSTANZA_APP_END               "end"
 #define ZMAPSTANZA_APP_CSNAME            "csname"
 #define ZMAPSTANZA_APP_CSVER             "csver"
+#define ZMAPSTANZA_APP_CHR               "chr"
 
 #define ZMAPSTANZA_APP_PRINTER           "default-printer"
 #define ZMAPSTANZA_APP_SEQUENCE_SERVERS  "sequence-server"

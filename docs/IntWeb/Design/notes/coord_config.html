@@ -44,7 +44,7 @@ There is also a lot of code based on the idea of several blocks of sequence data
 </p>
 <h4>Multiple aligns and blocks - some historical notes</h4>
 <p>This was a ZMap feature that was started but not finished.</p>
-<p>A single align corresponds to data from a single organism and is displayed with blocks containing columns of features arranged vertically. The first align is known as the master align and block are displayed in order as specifed by configuration (when implemented). Any further aligns are displayed to the right and blocks are positioned as specified in configuration (when implemented).  These blocks map to the master align but as the sequences will include re-arrangements and indels it will not be possible to map the whole block accurately.  At present it is thought that multiple aligns  are too cumbersome for practical use as very large windows (and monitors) will be needed, and remarks here about configuration and use are speculative.  <i>For the moment we restrict ZMap to handle a single block in a single align.</i>
+<p>A single align corresponds to data from a single organism and is displayed with blocks containing columns of features arranged vertically. The first align is known as the master align and block are displayed in order as specified by configuration (when implemented). Any further aligns are displayed to the right and blocks are positioned as specified in configuration (when implemented).  These blocks map to the master align but as the sequences will include re-arrangements and indels it will not be possible to map the whole block accurately.  At present it is thought that multiple aligns  are too cumbersome for practical use as very large windows (and monitors) will be needed, and remarks here about configuration and use are speculative.  <i>For the moment we restrict ZMap to handle a single block in a single align.</i>
 </p>
 <p>NOTE: Requests for data from servers can be made for single blocks only.
 </p>
@@ -359,7 +359,7 @@ To implement request from mark (and the corresponding function via an XRemote re
 <pre>
   zmapWindowSeq2CanOffset(&amp;y1, &amp;y2, feature_offset);
 </pre>
-It is called from <b>zmapWindowFToIFactoryRunSingle()</b> via this fucntion call, and similar functions are used for other ZMapWindowCanvasItem types.
+It is called from <b>zmapWindowFToIFactoryRunSingle()</b> via this function call, and similar functions are used for other ZMapWindowCanvasItem types.
 <pre>
             /* get the block offset for the display contect not the load request context */
             offset = block->block_to_sequence.block.x1;

@@ -1,0 +1,27 @@
+#!/bin/sh
+
+. ./zmap_proxy.sh
+. ./zmap_perl.sh
+
+file=http://hgdownload-test.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeCshlLongRnaSeq/releaseLatest/wgEncodeCshlLongRnaSeqH1hescCellPapAlnRep1.bam
+gff_source=Tier1_H1-hESC_cell_longPolyA_rep1
+
+false && # comment out to enable
+./zmap_get_bam \
+    --file=${file}   \
+    --seq_id=chr16   \
+    --start=85591570 \
+    --end=87672398   \
+    --gff_seqname=chr16-03 \
+    --gff_feature_source=${gff_source} \
+    ;
+
+# false && # comment out to enable
+./zmap_get_bam \
+    --file=${file}   \
+    --seq_id=chr10   \
+    --start=31536329 \
+    --end=31721845   \
+    --gff_seqname=chr10-10 \
+    --gff_feature_source=${gff_source} \
+    ;

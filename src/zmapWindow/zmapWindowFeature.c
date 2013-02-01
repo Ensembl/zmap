@@ -491,7 +491,7 @@ gboolean zMapWindowGetDNAStatus(ZMapWindow window)
    */
 
   /* check for style too. */
-  /* sometimes we don't have a featrue_context ... ODD! */
+  /* sometimes we don't have a feature_context ... ODD! */
   if(window->feature_context
      && zMapFindStyle(window->context_map->styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME)))
     {
@@ -798,8 +798,8 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
 
       sub_item = zMapWindowCanvasItemGetInterval(canvas_item, but_event->x, but_event->y, &sub_feature);
 
-	if(feature->type != ZMAPSTYLE_MODE_ALIGNMENT || zMapStyleIsUnique(*feature->style))
-	  highlight_same_names = FALSE ;
+      if(feature->type != ZMAPSTYLE_MODE_ALIGNMENT || zMapStyleIsUnique(*feature->style))
+	highlight_same_names = FALSE ;
 
 
       if (zMapGUITestModifiers(but_event, control_mask))
@@ -818,7 +818,7 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
 	      featureCopySelectedItem(feature, &feature_copy, highlight_item);
 	      my_feature = (ZMapFeatureAny) &feature_copy;
 	    }
-      }
+	}
 
       if (zMapGUITestModifiers(but_event, shift_mask))
 	{
@@ -883,6 +883,7 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
 	  window->multi_select = FALSE ;
 	}
 
+
       {
 	/* mh17 Foo sequence features have a diff interface, but we wish to avoid that, see sequenceSelectionCB() above */
 	/* using a CanvasFeatureset we get here, first off just pass a single coord through so it does not crash */
@@ -897,14 +898,14 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
 	    end = sub_feature->end;
 	  }
 
-		/* Pass information about the object clicked on back to the application. */
-		zmapWindowUpdateInfoPanel(window, feature, NULL, item, sub_feature, start, end, start, end,
-				NULL, replace_highlight, highlight_same_names, control) ;
+	/* Pass information about the object clicked on back to the application. */
+	zmapWindowUpdateInfoPanel(window, feature, NULL, item, sub_feature, start, end, start, end,
+				    NULL, replace_highlight, highlight_same_names, control) ;
 
-			/* if we have an active dialog update it: they have to click on a feature not the column */
-		zmapWindowSetStyleFeatureset(window, item, feature);
+	/* if we have an active dialog update it: they have to click on a feature not the column */
+	zmapWindowSetStyleFeatureset(window, item, feature);
 
-	}
+      }
     }
 
 
@@ -1137,7 +1138,7 @@ static gboolean factoryFeatureSizeReq(ZMapFeature feature,
    * so guess what size we end up using....sigh...and in addition it's the block size
    * we should be using anyway.... */
 
-  if(featrue && feature->type == ZMAPSTYLE_MODE_RAW_SEQUENCE ||
+  if(feature && feature->type == ZMAPSTYLE_MODE_RAW_SEQUENCE ||
      feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
     {
       ZMapWindow window = (ZMapWindow)handler_data;

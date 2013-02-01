@@ -26,7 +26,7 @@
  *
  * Description:
  *
- * a simple implemenation of a skip list data structure
+ * a simple implementation of a skip list data structure
  * NOTE we expect the lists to be static except exceptionally
  * and the module is designed with this in mind
  * used initially by zmapWindowGraphDensityItem.c
@@ -185,7 +185,7 @@ ZMapSkipList zMapSkipListCreate(GList *data_in, GCompareFunc cmp)
 
 
 /* to avoid handling NULL in the cmp function we provide this to get the first leaf node
- * NOTE that it's possible to descend to ta leaf frpm the head ans still have previous leaves
+ * NOTE that it's possible to descend to a leaf from the head and still have previous leaves
  * depending on implementation details - this is due to add/ delete operations
  * but we do know that downward links go direct to a leaf
  * NOTE finding the last item efficiently is a bit harder - romm for more design here??
@@ -216,7 +216,7 @@ int zMapSkipListCount(ZMapSkipList head)
 
 
 /* we could had a tail pointer handy, but we'd need to wrap the data in a class thingy
- * keep it simple: we don't expect to call this fucntion repeatedly
+ * keep it simple: we don't expect to call this function repeatedly
  */
 ZMapSkipList zMapSkipListLast(ZMapSkipList head)
 {

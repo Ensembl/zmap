@@ -27,7 +27,7 @@ on how to use ZMap and the definitive guide to keyboard shortcuts.
   <li><b>Bumping:</b>
       <ul>
 	<li>bumping alignments is now ordered by score for protein hits and by longest match for dna hits.
-	<li>bumping of alignments now shows whether mutliple matches are colinear/perfect matches and whether
+	<li>bumping of alignments now shows whether multiple matches are colinear/perfect matches and whether
 	    the start/end of the match is missing.
       </ul>
   <li><b>3 Frame:</b> should be working as in fmap now, the backgrounds of the columns in each frame can

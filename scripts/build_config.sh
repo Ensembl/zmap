@@ -216,9 +216,6 @@ LDFLAGS_args=""
 COMMON_CONFIGURE_ARGS="--enable-share --disable-static --enable-debug --enable-shtml-doc"
 SPECIFIC_CONFIGURE_ARGS=""
 
-#
-FOOCANVAS_DEV=no
-FOOCANVAS_PREFIX=/var/tmp/rds/software
 # For machines that mount /software tree this should automatically be machine specific!
 #GTK_PREFIX=/software/acedb
 GTK_PREFIX=/usr

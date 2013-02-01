@@ -1,0 +1,17 @@
+#!/bin/sh
+
+. ./zmap_proxy.sh
+. ./zmap_perl.sh
+
+file=http://hgdownload-test.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeCshlLongRnaSeq/releaseLatest/wgEncodeCshlLongRnaSeqA549CytosolPapMinusRep3.bigWig
+gff_source=Tier1_H1-hESC_cell_longPolyA_rep1
+
+./zmap_get_bigwig \
+    --file=${file}   \
+    --seq_id=chr16   \
+    --start=85591570 \
+    --end=87672398   \
+    --gff_seqname=chr13-03 \
+    --gff_feature_source=${gff_source} \
+    --strand=1 \
+    ;

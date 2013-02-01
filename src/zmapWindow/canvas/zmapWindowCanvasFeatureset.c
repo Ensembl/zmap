@@ -434,7 +434,7 @@ void zMapWindowCanvasFeaturesetPaintFeature(ZMapWindowFeaturesetItem featureset,
 
 
   /* NOTE we can have diff types of features in a column eg alignments and basic features in Repeats
-   * if we use featureset->style then we get to call the wrong paint fucntion and crash
+   * if we use featureset->style then we get to call the wrong paint function and crash
    * NOTE that if we use PaintPrepare and PaintFlush we require one type of feature only in the column
    * (more complex behavious has not been programmed; alignemnts and basic features don't use this)
    */
@@ -770,7 +770,7 @@ void zMapWindowCanvasFeatureSetSetFuncs(int featuretype, gpointer *funcs, int fe
  */
 void featureset_init_funcs(void)
 {
-  /* set size of unspecifed features structs to just the base */
+  /* set size of unspecified features structs to just the base */
   featureset_class_G->struct_size[FEATURE_INVALID] = sizeof(zmapWindowCanvasFeatureStruct);
 
   zMapWindowCanvasBasicInit();		/* the order of these may be important */
@@ -907,7 +907,7 @@ printf("create canvas set %s\n",g_quark_to_string(featureset->id));
 	featureset->opt = g_malloc0(featureset_class_G->set_struct_size[type]);
 
       /* Maybe these should be subsumed into the feature_set_init_G mechanism..... */
-      /* mh17: via the set_init_G fucntion, already moved code from here for link_sideways */
+      /* mh17: via the set_init_G function, already moved code from here for link_sideways */
       if(type == FEATURE_ALIGN)
 	{
 	  featureset->link_sideways = TRUE;
@@ -1124,7 +1124,7 @@ void zMapWindowCanvasFeaturesetRedraw(ZMapWindowFeaturesetItem fi, double zoom)
   foo_canvas_w2c (foo->canvas, x1 + width + i2w_dx, fi->end - fi->start + i2w_dy, &cx2, &cy2);
 
   /* need to expose + 1, plus for glyphs add on a bit: bodged to 8 pixels
-   * really ought to work out max glyph size or rather have true featrue extent
+   * really ought to work out max glyph size or rather have true feature extent
    * NOTE this is only currently used via OTF remove exisitng features
    */
   foo_canvas_request_redraw (foo->canvas, cx1, cy1, cx2 + 1, cy2 + 1);
@@ -1570,7 +1570,7 @@ double  zmap_window_featureset_item_foo_point(FooCanvasItem *item,
       /* This all seems a bit hokey...who says the glyphs are in the middle of the column ? */
       /* NOTE histgrams are hooked onto the LHS, but we can click on the row and still get the feature */
 #warning change this to use featurex1 and x2 coords
-      /* NOTE warning even better if we express point() fucntion in pixel coordinates only */
+      /* NOTE warning even better if we express point() function in pixel coordinates only */
 
       x_off = fi->dx + fi->x_off;
 
@@ -1616,7 +1616,7 @@ double  zmap_window_featureset_item_foo_point(FooCanvasItem *item,
 	      fi->point_feature = gs->feature;
 	      *actual_item = item;
 	      //printf("overlaps x\n");
-#warning this could concievably cause a memory fault if we freed point_canvas_feature but that seems unlikely if we don-t nove the cursor
+#warning this could conceivably cause a memory fault if we freed point_canvas_feature but that seems unlikely if we don-t nove the cursor
 	      fi->point_canvas_feature = gs;
 	      best = this_one;
 
@@ -1661,7 +1661,7 @@ static double featurePoint(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature 
 
   /* Get feature extent on display. */
   /* NOTE cannot use feature coords as transcript exons all point to the same feature */
-  /* alignments have to implement a special fucntion to handle bumped features - the first exon gets expanded to cover the whole */
+  /* alignments have to implement a special function to handle bumped features - the first exon gets expanded to cover the whole */
   /* when we get upgraded to vulgar strings these can be like transcripts... except that there's a performance problem due to volume */
   /* perhaps better to add  extra display/ search coords to ZMapWindowCanvasFeature ?? */
   can_start = gs->y1; 	//feature->x1 ;
@@ -1778,7 +1778,7 @@ void zmap_window_featureset_item_link_sideways(ZMapWindowFeaturesetItem fi)
 
   /* if we ever need to link by something other than same name
    * then we can define a feature type specific sort function
-   * and revive the zMapWindowCanvasFeaturesetLinkFeature() fucntion
+   * and revive the zMapWindowCanvasFeaturesetLinkFeature() function
    */
 
   fi->features = g_list_sort(fi->features,zMapFeatureNameCmp);
@@ -1948,7 +1948,7 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
        * which means we could try to paint all the features
        * which would be slow
        * so we need to test again for the expose region and not call gdk
-       * for alignments the first feature in a set has the colinear lines and we clip in that paint fucntion too
+       * for alignments the first feature in a set has the colinear lines and we clip in that paint function too
        */
       /* erm... already did that */
 
@@ -2363,7 +2363,7 @@ gint zMapFeatureFullCmp(gconstpointer a, gconstpointer b)
 
 
 /* sort by genomic coordinate for display purposes */
-/* start coord then end coord reversed, mainly for summarise fucntion */
+/* start coord then end coord reversed, mainly for summarise function */
 /* also used by collapse code and locus de-overlap  */
 gint zMapFeatureCmp(gconstpointer a, gconstpointer b)
 {

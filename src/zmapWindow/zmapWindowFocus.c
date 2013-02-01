@@ -127,7 +127,7 @@ typedef struct
  * howver they can have flags (an integer) and we can use that to provide a blank interface
  * these structs are held in a module global list, set by zMapWindowFocusCreate()
  * due to implemntation if we split a window then we get another one of thse with identical data
- * but it's too much grief to ammend the window code just now
+ * but it's too much grief to amend the window code just now
  */
 typedef struct _zmapWindowFocusCacheStruct
 {

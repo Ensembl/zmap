@@ -1,0 +1,414 @@
+<HTML>
+
+<!--
+ *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
+ *  Copyright (c) Sanger Institute, 2002
+ *-------------------------------------------------------------------
+ * Acedb is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ * or see the on-line version at http://www.gnu.org/copyleft/gpl.txt
+ *-------------------------------------------------------------------
+-->
+
+<HEAD>
+<TITLE>AceConn - a C package for accessing the Acedb Server</TITLE>
+
+<LINK rel=stylesheet type="text/css"
+href="./wdoc.css"
+title="Style sheet for wdoc developer documents">
+
+</HEAD>
+
+<BODY bgcolor=white>
+
+<BLOCKQUOTE>
+<DIV ALIGN=CENTER>
+<HR>
+<B>ACEDB AceConn Library</B>
+<HR>
+</DIV>
+
+
+<DIV ALIGN=CENTER>
+<H1 align=center>AceConn - a C library for accessing the Acedb Server</H1>
+
+<ADDRESS>Originally written by<BR>
+Ed Griffiths &lt;edgrif@sanger.ac.uk&gt;, March 2002</ADDRESS>
+</DIV>
+
+<!-- ************************************************************* -->
+<H2>Background</H2>
+
+<P>The introduction of a sockets based server for Acedb has allowed perl, python
+and java based clients easy access to the server as these languages already
+provide good packages for using sockets. The AceConn library
+provides a simple C library which can be used to communicate with the server
+making it just as easy to write C programs that can access the Acedb server.
+
+<P>The AceConn library is independent of the main acedb code making it easy
+to compile on most machines. The AceConn package makes use of some public
+MD5 code for encrypting passwords and the test code makes use of the GNU getopt
+routines, both of these are included in the package. Otherwise the only
+external dependency is on the GTK glib library which is now widely installed on
+many machines and freely available from the
+<a href="http://www.gtk.org/">GTK web site</a>.
+
+
+<!-- ************************************************************* -->
+<H2>Programming Overview</H2>
+
+<H3>Requests and Replies</H3>
+
+<P>All requests must be valid C strings with the usual terminating NULL character.
+The request should be one of those supported by the command line variants of the
+acedb programs, see the
+<a href="http://www.acedb.org:80/Software/whelp/Tace.html">tace</a> or
+<a href="http://www.acedb.org:80/Software/whelp/Giface.html">giface</a>
+documentation for lists of these commands.
+
+<P>The reply can be either a valid C string or data in some other format such as
+a postscript image. Therefore the reply is in the form of a buffer with a separate
+length. Note that for a C string the returned length <b>includes</b> the terminating
+NULL character.
+
+<P>Note the implication of this: the calling program can only tell what sort of
+data is returned from the request that it sent over. It is the applications
+responsibility to keep track of this.
+
+<P>Neither the request string nor the reply buffer are ever free'd by the AceConn
+library, it is the applications responsibility to free them. The request string
+is allocated by the application and should be free'd accordingly. The reply buffer
+is allocated by the library using the 
+<A HREF="http://developer.gnome.org/doc/API/glib/index.html">glib</A>
+g_malloc() function and should be released with the g_free() function.
+
+
+
+<H3>Library errors</H3>
+
+<P>The error strategy employed in the library is to return an AceConnStatus for
+all interface functions to indicate any error. If the connection was not released
+by the interface function (e.g. as for <A HREF="#AceConnRequest">AceConnRequest()</A>)
+then a text string describing the error can be retrieved
+using <A HREF="#AceConnGetLastErrMsg">AceConnGetLastErrMsg()</A>.
+
+<P>Note that you should
+only use AceConnGetLastErrMsg() when there has been an error and the connection
+is still valid:
+
+<P><pre><code><b>    status = AceConnRequest(<params>) ;
+    if (status != ACECONN_OK && AceConnIsValid(connection))
+      err_msg = AceConnGetLastErrMsg(connection) ;
+</b></code></pre>
+
+<P>Once an error has been detected for a connection, that connection should
+be closed using <A HREF="#AceConnDisconnect">AceConnDisconnect()</A>. The results
+are undefined if you continue to try to use a connection after an error.
+
+<P>Where the library changed some global aspect of the applications state
+(e.g. signal handlers), the library restores that state before returning,
+even when there has been an error.
+
+<P>The functions can return the following AceConnStatus values:
+<dl>
+  <dt>ACECONN_OK
+  <dd>No error. 
+  <dt>ACECONN_QUIT
+  <dd>request sent to server was "quit" so connection is now closed. 
+  <dt>ACECONN_INVALIDCONN
+  <dd>connection points to invalid memory. 
+  <dt>ACECONN_BADARGS
+  <dd>caller has supplied bad args. 
+  <dt>ACECONN_NOSOCK
+  <dd>socket creation problem. 
+  <dt>ACECONN_UNKNOWNHOST
+  <dd>serrver host not known. 
+  <dt>ACECONN_NOCONNECT
+  <dd>could not connect to host. 
+  <dt>ACECONN_NOSELECT
+  <dd>select on socket failed. 
+  <dt>ACECONN_HANDSHAKE
+  <dd>handshake to server failed. 
+  <dt>ACECONN_READERROR
+  <dd>error in reading from socket. 
+  <dt>ACECONN_WRITEERROR
+  <dd>error in writing to socket. 
+  <dt>ACECONN_SIGSET
+  <dd>problem with signal setting. 
+  <dt>ACECONN_NONBLOCK
+  <dd>non-blocking for socket failed. 
+  <dt>ACECONN_TIMEDOUT
+  <dd>connection timed out. 
+  <dt>ACECONN_NOCREATE
+  <dd>could not create connection control block.
+  <dt>ACECONN_INTERNAL
+  <dd>Dire internal package error.
+</dl>
+
+
+<H3>Usage</H3>
+
+<P>See the test programs that come with the AceConn library which provide typical
+examples of how to use the library.
+
+
+
+<!-- ************************************************************* -->
+<H2>Interface Functions</H2>
+
+<H3>Header files</H3>
+
+<P>You must include the AceConn header file in your code:
+
+<p><code><b>#include &lt;AceConn.h&gt;</b></code>
+
+
+<H3><A name="AceConnConnect">AceConnConnect - Open a connection to the Acedb server.</A></H3>
+
+<p><B>Synopsis: </B>
+<pre><code><b>AceConnStatus AceConnConnect(AceConnection *connection,
+			     char *server_netid, int server_port,
+			     char *userid, char *passwd, int timeout) ;
+</b></code></pre>
+
+<p><B>Parameters: </B>
+<dl>
+<dt><b>connection</b>
+<dd>The returned valid connection to the server.
+<dt><b>server_netid</b>
+<dd>The network id of the Acedb server.
+<dt><b>server_port</b>
+<dd>The port on the server_netid machine where the Acedb server can be accessed.
+<dt><b>userid</b>
+<dd>The users Acedb userid as held in the acedb database.
+<dt><b>passwd</b>
+<dd>The users Acedb password as held in the acedb database.
+<dt><A name="timeout"><b>timeout</b></A>
+<dd>Time in seconds to wait for the Acedb server to respond, if this time is exceeded
+the call will return with a status of ACECONN_TIMEDOUT. Time out values have the following
+meanings:
+<dl>
+<dt><dd><b>&lt; 0</b> - reset timeout to default value (120 seconds).
+<dt><dd><b>0</b> - never timeout, i.e. wait indefinitely for a reply.
+<dt><dd><b>&gt; 0</b> - means set timeout to this value.
+</dl>
+</dl>
+
+
+<p><B>Description: </B>
+Connects to the server, does the user/password handshaking
+and returns a valid connection. The returned connection can be used to send
+Acedb commands to the server and get the returned replies.
+
+
+<p><B>Notes: </B>
+If the call fails, no connection is returned. This means the cause of the
+error can only be determined from the returned AceConnStatus value, the
+<A HREF="#AceConnGetLastErrMsg">AceConnGetLastErrMsg()</A> call cannot be used to
+get the associated error message.
+
+
+<p><B>Return Values: </B>
+Upon successful completion, the AceConnConnect() function returns ACECONN_OK
+and a valid AceConnection in the <b>*connection</b> parameter. If there was an
+error the AceConnStatus value will indicate the nature of the error and the
+<b>*connection</b> parameter will be unchanged.
+
+
+
+
+<H3><A name="AceConnRequest">AceConnRequest - Make a request to, and receive the reply from, the Acedb server.</A></H3>
+
+<p><B>Synopsis: </B>
+<pre><code><b>AceConnStatus AceConnConnect(AceConnection *connection,
+			     char *request,
+			     void **reply, int *reply_len) ;
+</b></code></pre>
+
+<p><B>Parameters: </B>
+<dl>
+<dt><b>connection</b>
+<dd>A valid connection.
+<dt><b>request</b>
+<dd>The Acedb command to send to the server.
+<dt><b>reply</b>
+<dd>The returned reply from the server.
+<dt><b>reply_len</b>
+<dd>The length of the reply from the server.
+</dl>
+
+<p><B>Description: </B>
+Sends a request to the server and then collects the reply. The Acedb server may send
+back the reply in a number of "slices", if this happens the call returns only when
+all the slices have been sent back and reassembled into a single reply.
+The call will time out after <A HREF="#timeout">timeout</A> seconds.
+
+<p><B>Return Values: </B>
+Upon successful completion, the AceConnConnect() function returns ACECONN_OK
+and returns the reply in the reply and reply_len parameters. 
+Otherwise an AceConnStatus value will indicating the nature of the error is
+returned and the reply and reply_len parameters are left unchanged.
+A text error message that can be retrieved with
+<A HREF="#AceConnGetLastErrMsg">AceConnGetLastErrMsg()</A>.
+
+
+
+<H3><A name="AceConnDisconnect">AceConnDisconnect - Disconnect from the Acedb server.</A></H3>
+
+<p><B>Synopsis: </B>
+<pre><code><b>AceConnStatus AceConnDisconnect(AceConnection connection) ;
+</b></code></pre>
+
+
+<p><B>Parameters: </B>
+<dl>
+  <dt><b>connection</b>
+  <dd>A valid connection.
+</dl>
+
+
+<p><B>Description: </B>
+Sends a termination request to the server, waits for the "end of session"
+message from the server and then tidies up the resources associated with the
+connection. The call will time out after <A HREF="#timeout">timeout</A> seconds.
+
+<p><B>Notes: </B>
+If the call fails (e.g. it times out), the resources associated with the
+connection are still released so it is <b>not</b> possible to use
+<A HREF="#AceConnGetLastErrMsg">AceConnGetLastErrMsg()</A> to retrieve the last error
+message, only the returned AceConnStatus value indicates the nature of the
+error.
+
+<p><B>Return Values: </B>
+Upon successful completion, the AceConnRequest() function returns ACECONN_OK.
+Whether there was an error or not all resources for the connection are released
+and the connection should not be used again.
+
+
+
+
+<!-- ************************************************************* -->
+<H2>Utility Functions</H2>
+
+
+<H3><A name="AceConnSetTimeout">AceConnSetTimeout - Set the timeout for calls to the server.</A></H3>
+
+
+<p><B>Synopsis: </B>
+<pre><code><b>AceConnStatus AceConnSetTimeout(AceConnection connection, int timeout) ;
+</b></code></pre>
+
+
+<p><B>Parameters: </B>
+<dl>
+  <dt><b>connection</b>
+  <dd>A valid connection.
+  <dt><b>timeout</b>
+  <dd>Time out in seconds, see <A HREF="#timeout">timeout</A> for a fuller description.
+</dl>
+
+
+<p><B>Description: </B>
+Sets a new timeout value for the connection, this will cause all subsequent
+interface functions to time out after that many seconds.
+
+<p><B>Notes: </B>
+Can only fail because connection is invalid in some way (e.g. NULL connection).
+
+<p><B>Return Values: </B>
+Upon successful completion, the AceConnSetTimeout() function returns ACECONN_OK,
+and the new timeout value is set for the connection. If there is an error it is
+because there is something wrong with the connection parameter and so no action
+is taken. A text error message that can be retrieved with
+<A HREF="#AceConnGetLastErrMsg">AceConnGetLastErrMsg()</A>.
+
+
+<H3><A name="AceConnGetLastErrMsg">AceConnGetLastErrMsg - Get a text description of the last error on the connection.</A></H3>
+
+
+<p><B>Synopsis: </B>
+<pre><code><b>char *AceConnGetLastErrMsg(AceConnection connection) ;
+</b></code></pre>
+
+
+<p><B>Parameters: </B>
+<dl>
+  <dt><b>connection</b>
+  <dd>A valid connection.
+</dl>
+
+
+<p><B>Description: </B>
+Returns a string which describes in text form the last error detected by the connection
+code. You should not call this function unless an AceConn function has returned an
+error, otherwise the string returned maybe NULL or refer to a previous error.
+
+<p><B>Notes: </B>
+Can only be used on a valid connection, the code will trap NULL or invalid connections and
+return NULL.
+
+<p><B>Return Values: </B>
+Upon successful completion, the AceConnGetLastErrMsg() function returns a valid
+C string, you should not free or alter this string but instead take a copy of it
+if you need to use it in any way. If the connection is invalid, or if called when there has been
+no error, NULL is returned.
+
+
+<H3><A name="AceConnGetVersion">AceConnGetVersion - Get AceConn library version information</A></H3>
+
+<p><B>Synopsis: </B>
+<pre><code><b>char *AceConnGetVersion(guint *version, guint *release, guint *update) ;
+</b></code></pre>
+
+
+<p><B>Parameters: </B>
+<dl>
+  <dt><b>version, release, update</b>
+  <dd>the returned version, release and update of the library respectively.
+</dl>
+
+
+<p><B>Description: </B>
+Returns as unsigned ints the version/release/update of the AceConn library.
+Allows testing of the library against the header and for overall release level,
+see the ACECONN_CHECK_VERSION() macro.
+
+<p><B>Return Values: </B>
+For non-NULL parameters, the version, release and update of the library respectively are
+returned as unsigned ints.
+
+
+
+<!-- ************************************************************* -->
+<H2>Comments/Bugs</H2>
+
+<P>Please mail comments/bugs to 
+<a href="mailto:acedb@sanger.ac.uk">Acedb Developers &lt;acedb@sanger.ac.uk&gt;</a>
+
+
+<!-- ************************************************************* -->
+<P>
+<DIV ALIGN=CENTER>
+<HR>
+<B>ACEDB AceConn Library</B>
+<HR>
+</DIV>
+
+<ADDRESS><a href="mailto:edgrif@sanger.ac.uk">Ed Griffiths &lt;edgrif@sanger.ac.uk&gt;</a></ADDRESS>
+<!-- hhmts start -->
+Last modified: Fri May 23 10:20:09 BST 2003
+<!-- hhmts end -->
+</BLOCKQUOTE>
+</BODY>
+</HTML>

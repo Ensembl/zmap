@@ -407,7 +407,7 @@ ZMapViewWindow zMapViewCreate(GtkWidget *xremote_widget, GtkWidget *view_contain
 
   if(!sequence_map->start)
     {
-      /* this should use coords extratced from ACEDB/smap or provided by otterlace
+      /* this should use coords extracted from ACEDB/smap or provided by otterlace
        * but unfortunately the info is not available
        * so we use this unsafe mechanism in the interim
        */
@@ -608,7 +608,7 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 		}
 #if 0
 	/* featuresets are absolutley not required as if so we could not autoconfigure
-	 * a file server wihtout reading the whole file first
+	 * a file server without reading the whole file first
 	 * which would require us to read it twice
 	 * NOTE also that some other code assumes that we know what featuresets
 	 * exist in a file before reading it or get told by the server
@@ -1123,33 +1123,6 @@ void zMapViewZoom(ZMapView zmap_view, ZMapViewWindow view_window, double zoom)
   return ;
 }
 
-#if MH17_NOT_USED
-void zMapViewHighlightFeatures(ZMapView view, ZMapViewWindow view_window, ZMapFeatureContext context, gboolean multiple)
-{
-  GList *list;
-
-  if (view->state == ZMAPVIEW_LOADED)
-    {
-      if (view_window)
-	{
-	  zMapLogWarning("%s", "What were you thinking");
-	}
-      else
-	{
-	  list = g_list_first(view->window_list);
-	  do
-	    {
-	      view_window = list->data;
-	      zMapWindowHighlightObjects(view_window->window, context, multiple);
-	    }
-	  while((list = g_list_next(list)));
-	}
-    }
-
-  return ;
-}
-#endif
-
 /*
  *    A set of accessor functions.
  */
@@ -1457,8 +1430,6 @@ char *zmapViewGetStatusAsStr(ZMapViewState state)
 
   return state_str ;
 }
-
-
 
 
 GList *zmapViewGetIniSources(char *config_file, char *config_str, char ** stylesfile)
@@ -1805,8 +1776,8 @@ void zMapViewShowLoadStatus(ZMapView view)
 
 
 
-/* request featuresets from a server, req_featuresets may be null in whcih case all are requested implicitly */
-/* called from zmapViewLoadfeatures() to preserve original fucntion
+/* request featuresets from a server, req_featuresets may be null in which case all are requested implicitly */
+/* called from zmapViewLoadfeatures() to preserve original function
  * called from zmapViewConnect() to handle autoconfigured file servers,
  * which cannot be delayed as there's no way to fit these into the columns dialog as it currrently exists
  */
@@ -2420,7 +2391,6 @@ static void viewSelectCB(ZMapWindow window, void *caller_data, void *window_data
   ZMapViewWindow view_window = (ZMapViewWindow)caller_data ;
   ZMapWindowSelect window_select = (ZMapWindowSelect)window_data ;
   ZMapViewSelectStruct view_select = {0} ;
-
 
   /* I DON'T UNDERSTAND HOW WE CAN BE CALLED IF THERE IS NO SELECT...SOUNDS DUBIOUS... */
 

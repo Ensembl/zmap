@@ -1,4 +1,3 @@
-/*  Last edited: Jul 23 14:45 2012 (edgrif) */
 /*  File: pipeServer.c
  *  Author: Malcolm Hinsley (mh17@sanger.ac.uk)
  *      derived from fileServer.c by Ed Griffiths (edgrif@sanger.ac.uk)
@@ -22,7 +21,7 @@
  * This file is part of the ZMap genome database package
  * originated by
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *         Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: These functions provide code to read the output of a script
@@ -37,7 +36,6 @@
  */
 
 #include <ZMap/zmap.h>
-
 
 
 /* WARNING, THIS DOES NOT COPE WITH MULTIPLE ALIGNS/BLOCKS AS IT STANDS, TO DO THAT REQUIRES
@@ -99,7 +97,7 @@ static ZMapServerResponseType getStatus(void *server_conn, gint *exit_code, gcha
 static ZMapServerResponseType closeConnection(void *server_in) ;
 static ZMapServerResponseType destroyConnection(void *server) ;
 
-static void addMapping(ZMapFeatureContext feature_context, ZMapGFFHeader header,int req_start,int req_end) ;
+static void addMapping(ZMapFeatureContext feature_context, int req_start, int req_end) ;
 static void eachAlignment(gpointer key, gpointer data, gpointer user_data) ;
 static void eachBlock(gpointer key, gpointer data, gpointer user_data) ;
 static gboolean sequenceRequest(PipeServer server, ZMapGFFParser parser, GString* gff_line,
@@ -534,43 +532,43 @@ zMapLogWarning("pipe server args: %s (%d,%d)",x,server->zmap_start,server->zmap_
 void pipe_server_get_stderr(PipeServer server)
 {
   GError *gff_pipe_err = NULL;
-//  GError *ignore = NULL;
+  //  GError *ignore = NULL;
 #if !MH17_SINGLE_LINE
   int status;
   gsize length;
 
   if(server->child_pid)
-  {
-  	g_io_channel_shutdown(server->gff_pipe,FALSE,NULL);	/* or else it may not exit */
-  	server->gff_pipe = NULL;	/* can't be 0 as we have that for stdin */
-	/* thst didn't work ! */
+    {
+      g_io_channel_shutdown(server->gff_pipe,FALSE,NULL);	/* or else it may not exit */
+      server->gff_pipe = NULL;	/* can't be 0 as we have that for stdin */
+      /* thst didn't work ! */
 
-//	kill(server->child_pid,9);
+      //	kill(server->child_pid,9);
       waitpid(server->child_pid,&status,0);
       server->child_pid = 0;
       if(WIFEXITED(status))
-      {
-            server->exit_code =  WEXITSTATUS(status);  /* 8 bits only */
-      }
+	{
+	  server->exit_code =  WEXITSTATUS(status);  /* 8 bits only */
+	}
       else
-      {
-            server->exit_code = 0x1ff;     /* abnormal exit */
-      }
-  }
-      /* if we are running a file:// then there's no gff_stderr */
+	{
+	  server->exit_code = 0x1ff;     /* abnormal exit */
+	}
+    }
+  /* if we are running a file:// then there's no gff_stderr */
   if(!server->gff_stderr || server->stderr_output)    /* only try once */
-      return;
+    return;
 
-      /* MH17: NOTE this is a Linux/Mac only function,
-       * GLib does not appear to wrap this stuff up in a portable way
-       * which is in fact the reason for using it
-       * if you can find a portable version of waitpid() then feel free to change this code
-       */
+  /* MH17: NOTE this is a Linux/Mac only function,
+   * GLib does not appear to wrap this stuff up in a portable way
+   * which is in fact the reason for using it
+   * if you can find a portable version of waitpid() then feel free to change this code
+   */
 
   if(g_io_channel_read_to_end (server->gff_stderr, &server->stderr_output, &length, &gff_pipe_err) != G_IO_STATUS_NORMAL)
-  {
-     	server->stderr_output = g_strdup_printf("failed to read pipe server STDERR: %s", gff_pipe_err? gff_pipe_err->message : "");
-  }
+    {
+      server->stderr_output = g_strdup_printf("failed to read pipe server STDERR: %s", gff_pipe_err? gff_pipe_err->message : "");
+    }
 #else
 
   GIOStatus status ;
@@ -582,31 +580,31 @@ void pipe_server_get_stderr(PipeServer server)
 
   while (1)
     {
-/* this doesn't work: doesn't hang, but doesn't read the error message anyway
- * there is a race condition on big files (i think) where on notsupported errors we look at stderr
- * and wait for ever as the script didn't finish yet as we didn't read the data.
- *      gc = g_io_channel_get_buffer_condition(server->gff_stderr);
- *      GIOCondition gc;
- *      if(!(gc & G_IO_IN))
- *            break;
- */
+      /* this doesn't work: doesn't hang, but doesn't read the error message anyway
+       * there is a race condition on big files (i think) where on notsupported errors we look at stderr
+       * and wait for ever as the script didn't finish yet as we didn't read the data.
+       *      gc = g_io_channel_get_buffer_condition(server->gff_stderr);
+       *      GIOCondition gc;
+       *      if(!(gc & G_IO_IN))
+       *            break;
+       */
       status = g_io_channel_read_line_string(server->gff_stderr, line,
-            &terminator_pos,&gff_pipe_err);
+					     &terminator_pos,&gff_pipe_err);
       if(status != G_IO_STATUS_NORMAL)
         break;
 
       *(line->str + terminator_pos) = '\0' ; /* Remove terminating newline. */
       if(terminator_pos > 0)              // can get blank lines at the end
-      {
-            if(msg)
-                  g_free(msg);
-            msg = g_strdup(line->str);
-            ZMAPPIPESERVER_LOG(Warning, server->protocol, server->script_path,server->query,"%s", msg) ;
-      }
+	{
+	  if(msg)
+	    g_free(msg);
+	  msg = g_strdup(line->str);
+	  ZMAPPIPESERVER_LOG(Warning, server->protocol, server->script_path,server->query,"%s", msg) ;
+	}
     }
 
-    g_string_free(line,TRUE);
-    return(msg);
+  g_string_free(line,TRUE);
+  return(msg);
 
 #endif
 }
@@ -661,11 +659,9 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
 	  server->parser = zMapGFFCreateParser(server->sequence_map->sequence, server->zmap_start, server->zmap_end) ;
 	  server->gff_line = g_string_sized_new(2000) ;	    /* Probably not many lines will be > 2k chars. */
 
-
 	  result = pipeGetHeader(server);
 
           if (result == ZMAP_SERVERRESPONSE_OK)
-
             {
               // always read it: have to skip over if not wanted
               // need a flag here to say if this is a sequence server
@@ -673,14 +669,14 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
               pipeGetSequence(server);
             }
           else
-		{
-			/* we should not do this but if we donlt we get an obscure crash on GFF errors */
-			/* this prevents reporting the error but it's better than crashing */
-			/* the crash is ultimately caused the the hopeless system of status codes
-			   in several layers that drives the server interface */
-			/* i'm trying to fix soemthing else right now */
-//		  result = ZMAP_SERVERRESPONSE_SERVERDIED ;
-		}
+	    {
+	      /* we should not do this but if we donlt we get an obscure crash on GFF errors */
+	      /* this prevents reporting the error but it's better than crashing */
+	      /* the crash is ultimately caused the the hopeless system of status codes
+		 in several layers that drives the server interface */
+	      /* i'm trying to fix soemthing else right now */
+	      //		  result = ZMAP_SERVERRESPONSE_SERVERDIED ;
+	    }
 
 	}
     }
@@ -703,7 +699,7 @@ static ZMapServerResponseType getInfo(void *server_in, ZMapServerInfo info)
     {
       result = ZMAP_SERVERRESPONSE_REQFAIL ;
       ZMAPPIPESERVER_LOG(Warning, server->protocol, server->script_path,server->query,
-		     "Could not get server info because: %s", server->last_err_msg) ;
+			 "Could not get server info because: %s", server->last_err_msg) ;
     }
 
   return result ;
@@ -820,14 +816,13 @@ static ZMapServerResponseType pipeGetHeader(PipeServer server)
   gsize terminator_pos = 0 ;
   GError *gff_pipe_err = NULL ;
   GError *error = NULL ;
-  gboolean done_header = FALSE ;	/* read all the header lines */
-  gboolean header_ok = FALSE ;	/* got al the ones we need */
-
+  gboolean done_header = FALSE ;			    /* read all the header lines */
+  ZMapGFFHeaderState header_state = GFF_HEADER_NONE ;	    /* got all the ones we need ? */
 
 
   server->result = ZMAP_SERVERRESPONSE_REQFAIL ;  // to catch empty file
 
-  if(server->sequence_server)
+  if (server->sequence_server)
     zMapGFFParserSetSequenceFlag(server->parser);  // reset done flag for seq else skip the data
 
   /* Read the header, needed for feature coord range. */
@@ -835,13 +830,11 @@ static ZMapServerResponseType pipeGetHeader(PipeServer server)
 						 &terminator_pos,
 						 &gff_pipe_err)) == G_IO_STATUS_NORMAL)
     {
-
       server->result = ZMAP_SERVERRESPONSE_OK;   // now we have data default is 'OK'
 
       *(server->gff_line->str + terminator_pos) = '\0' ; /* Remove terminating newline. */
 
-      if (zMapGFFParseHeader(server->parser, server->gff_line->str, &done_header, &header_ok))
-
+      if (zMapGFFParseHeader(server->parser, server->gff_line->str, &done_header, &header_state))
 	{
 	  if (done_header)
 	    break ;
@@ -903,16 +896,16 @@ static ZMapServerResponseType pipeGetHeader(PipeServer server)
   /* MH17: see RT 227185 -> good header plus no data means no data not a failure
    * so return ok
    */
-  if (!header_ok)
+  if (header_state == GFF_HEADER_ERROR)
     {
       char *err_msg ;
 
-	if(status == G_IO_STATUS_EOF)
+      if(status == G_IO_STATUS_EOF)
       	err_msg = g_strdup_printf("EOF reached while trying to read header, at line %d",
-				zMapGFFGetLineNumber(server->parser)) ;
-	else
+				  zMapGFFGetLineNumber(server->parser)) ;
+      else
       	err_msg = g_strdup_printf("Error in GFF header, at line %d",
-				zMapGFFGetLineNumber(server->parser)) ;
+				  zMapGFFGetLineNumber(server->parser)) ;
 
       setErrMsg(server, err_msg) ;
       g_free(err_msg) ;
@@ -927,9 +920,10 @@ static ZMapServerResponseType pipeGetHeader(PipeServer server)
   return(server->result) ;
 }
 
+
+
+
 // read any DNA data at the head of the stream and quit after error or ##end-dna
-
-
 static ZMapServerResponseType pipeGetSequence(PipeServer server)
 {
   GIOStatus status ;
@@ -992,12 +986,12 @@ static ZMapServerResponseType pipeGetSequence(PipeServer server)
 }
 
 
-/* Get features sequence. */
+/* Get features sequence.
+ * we assume we called pipeGetHeader() already and also pipeGetSequence()
+ * so we are at the start of the BODY part of the stream. */
 static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles, ZMapFeatureContext feature_context)
 {
   PipeServer server = (PipeServer)server_in ;
-
-  ZMapGFFHeader header ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   {
@@ -1011,9 +1005,6 @@ static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles, Z
   }
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-  // we assume we called pipeGetHeader() already and also pipeGetSequence()
-  // so we are at the start of the BODY part of the stream
-
   zMapGFFParseSetSourceHash(server->parser, server->featureset_2_column, server->source_2_sourcedata) ;
 
   zMapGFFParserInitForFeatures(server->parser, styles, FALSE) ;  // FALSE = create features
@@ -1025,11 +1016,7 @@ static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles, Z
 
   server->result = ZMAP_SERVERRESPONSE_OK;
     {
-      header = zMapGFFGetHeader(server->parser) ;
-
-      addMapping(feature_context, header, server->zmap_start, server->zmap_end) ;
-      zMapGFFFreeHeader(header) ;
-
+      addMapping(feature_context, server->zmap_start, server->zmap_end) ;
 
       /* Fetch all the alignment blocks for all the sequences, this all hacky right now as really.
        * we would have to parse and reparse the stream....can be done but not needed this second. */
@@ -1323,9 +1310,9 @@ static ZMapServerResponseType destroyConnection(void *server_in)
 /* A bit of a lash up for now, we need the parent->child mapping for a sequence and since
  * the code in this file so far simply reads a GFF stream for now, we just fake it by setting
  * everything to be the same for child/parent... */
-static void addMapping(ZMapFeatureContext feature_context, ZMapGFFHeader header, int req_start, int req_end)
+static void addMapping(ZMapFeatureContext feature_context, int req_start, int req_end)
 {
-  ZMapFeatureBlock feature_block = NULL;//feature_context->master_align->blocks->data ;
+  ZMapFeatureBlock feature_block = NULL;		    // feature_context->master_align->blocks->data ;
 
   feature_block = (ZMapFeatureBlock)(zMap_g_hash_table_nth(feature_context->master_align->blocks, 0)) ;
 
@@ -1333,35 +1320,32 @@ static void addMapping(ZMapFeatureContext feature_context, ZMapGFFHeader header,
    * are several streams.... */
   feature_context->parent_name = feature_context->sequence_name ;
 
-  /* I don't like having to do this right down here but user is allowed to specify "0" for
-   * end coord meaning "to the end of the sequence" and this is where we know the end... */
-
   // refer to comment in zmapFeature.h 'Sequences and Block Coordinates'
   // NB at time of writing parent_span not always initialised
   feature_context->parent_span.x1 = 1;
-  if(feature_context->parent_span.x2 < header->features_end)
-      feature_context->parent_span.x2 = header->features_end ;
+  if (feature_context->parent_span.x2 < req_end)
+    feature_context->parent_span.x2 = req_end ;
 
   // seq range  from parent sequence
-  if(!feature_context->master_align->sequence_span.x2)
-  {
-      feature_context->master_align->sequence_span.x1 = header->features_start;
-      feature_context->master_align->sequence_span.x2 = header->features_end;
-  }
+  if (!feature_context->master_align->sequence_span.x2)
+    {
+      feature_context->master_align->sequence_span.x1 = req_start ;
+      feature_context->master_align->sequence_span.x2 = req_end ;
+    }
 
-   // seq coords for our block NOTE must be block coords not features sub-sequence in case of req from mark
-  if(!feature_block->block_to_sequence.block.x2)
-  {
-      feature_block->block_to_sequence.block.x1 = header->features_start ;
-      feature_block->block_to_sequence.block.x2 = header->features_end ;
-  }
+  // seq coords for our block NOTE must be block coords not features sub-sequence in case of req from mark
+  if (!feature_block->block_to_sequence.block.x2)
+    {
+      feature_block->block_to_sequence.block.x1 = req_start ;
+      feature_block->block_to_sequence.block.x2 = req_end ;
+    }
 
   // parent sequence coordinates if not pre-specified
-  if(!feature_block->block_to_sequence.parent.x2)
-  {
-      feature_block->block_to_sequence.parent.x1 = header->features_start ;
-      feature_block->block_to_sequence.parent.x2 = header->features_end ;
-  }
+  if (!feature_block->block_to_sequence.parent.x2)
+    {
+      feature_block->block_to_sequence.parent.x1 = req_start ;
+      feature_block->block_to_sequence.parent.x2 = req_end ;
+    }
 
   return ;
 }

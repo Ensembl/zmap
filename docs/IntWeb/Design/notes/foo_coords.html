@@ -47,7 +47,7 @@ zmap_window_featureset_item_foo_point()
 
       /* NOTE histograms are hooked onto the LHS, but we can click on the row and still get the feature */
 #warning change this to use featurex1 and x2 coords
-      /* NOTE warning even better if we express point() fucntion in pixel coordinates only */
+      /* NOTE warning even better if we express point() function in pixel coordinates only */
 </pre>
 
 NOTE that if you change this it would be wise to check all CanvasFeatureset modules, not just the central code. Normal features (eg alignments, transcripts, basic) are typically centred, graphs are left justified, glyphs are centered but the glyph code implements offsets from the centre if configured.
@@ -65,11 +65,11 @@ Features are de-overlapped in Y and each sub colum's width is calculated and the
 
 <h5>Strand Separator - offset SHM features</h5>
 <p>
-The strand separator is a fixed wdth column and the search hit marker features appear in a CanvasFeatureset (or more) within that column.  By default these are left justified and a style option 'offset=3.0" has been added to the SHM style.
+The strand separator is a fixed width column and the search hit marker features appear in a CanvasFeatureset (or more) within that column.  By default these are left justified and a style option "offset=3.0" has been added to the SHM style.
 At various points in the code the featureset->x_off value has to be added into the  group x coordinate passs in by the foo canvas.  This is afflicted by the same problems relates to group relative coordinates as mentioned on this page.
-Most modules have had thioer display x-coordinates adjusted to match (NOTE only the SHM features use this option so this should have no effect. (SHM are Basic features).  Sequence features have not been offset like this.
+Most modules have had their display x-coordinates adjusted to match (NOTE only the SHM features use this option so this should have no effect. (SHM are Basic features).  Sequence features have not been offset like this.
 </p>
-<p>The DNA search fucntion remove_current_matches_from display() has also been ammended to expose the strand separator column to ensure all matches are cleared: there is a fault somewhere in the remove featrue code that does not expsoe relatiev to this offset.   It's more appropriate to  fix this when group relative coordinates are restored.
+<p>The DNA search function remove_current_matches_from display() has also been amended to expose the strand separator column to ensure all matches are cleared: there is a fault somewhere in the remove feature code that does not expose relative to this offset.   It's more appropriate to  fix this when group relative coordinates are restored.
 </p>
 
 
@@ -116,7 +116,7 @@ deskpro20407[mh17]3: gzf pango
 Theoretically, the canvas caode is now in state where all drawing code can be mapped to Cairo a) for printing only b) for screen painting too, but there is some doubt over whether or not Cairo will run fast enough for user interaction, and it is recommended that this is tried in a new feature branch and also made configurable.
 </p>
 <p>As there are no FooCanvas items left in ZMap except for the ruler and tooltip then it in only necessary to look at the following files:
-(NOTE that only the zmapWindowCanvas* file are releveant)
+(NOTE that only the zmapWindowCanvas* file are relevant)
 <pre>
 deskpro20407[mh17]9: gz gdk_draw
 ./zmapApp/zmapAppremote.c:1
@@ -161,13 +161,13 @@ NOTE that we could create and erase the CanvasFeatureset on press and release, b
 </p>
 <p> As locus features are normally only drawn in the navigator this neas we cannot size the navigator widget, or expose it fully, before first drawing the features, which is a bit of a catch 22.  However, we only need a canvas zoom event on the navigator to trigger this.  Unfortunately after doing this we have to call foo_canvas_update_now() and ask for another foo canvas refresh.
 </p>
-<p>This has been implemented and was only a problem on RevComp.  Zoom only rezises the locators and v/h-split work due to window set scroll region calls triggering a refresh.
+<p>This has been implemented and was only a problem on RevComp.  Zoom only resizes the locators and v/h-split work due to window set scroll region calls triggering a refresh.
 </p>
 
 <h4>Navigator coordinate systems</h4>
 <p>A few of these are operated in parallel: widget size , foo canvas scroll region, foo canvas extent (root item coordinates) and of course foo canvas pixel and world coordinates, and sequence coordinates.  The navigator widget code has a private class to hold some of this information and provides functions for the otehr file sin the module to query and set these.
 </p>
-<p>It should be possibly to simplfy this considerably but this is nto a trivial job.
+<p>It should be possible to simplify this considerably but this is not a trivial job.
 </p>
 
 <h4> Refer to </h4>
@@ -180,11 +180,11 @@ NOTE that we could create and erase the CanvasFeatureset on press and release, b
 <li> zMapWindowFullReposition()
 <li> zMapWindowNavigatorDrawLocator()
 </ul>
-Due to history some of the navigator fucntion may call some of these more often than necessary, but its not worth spending a lot if time experiemnting wihtout considreing rationalisation of the widget and drawing code;
+Due to history some of the navigator function may call some of these more often than necessary, but its not worth spending a lot of time experimenting without considering rationalisation of the widget and drawing code;
 </p>
 
 
-<h3>Navigator Column positioing</h3>
-<p>How this happens is a lttle obscure... nonimally there are 3 columns: scale, genomic canonocal and locus. Locus calls zMapWindowRequestReposition() on zoom, which is triggered by the first display event, and this calls the column ordering code in zmaopWindow.  Due to the fact that the navigator has a canvas with ZMapWindowContainerGroups (as for a normal window) but no ZMapWindow for its canvas, this code (zMapWindowFullReposition()) cannot call the foo canvas update and refresh code (look at the function to see why)
+<h3>Navigator Column positioning</h3>
+<p>How this happens is a little obscure... nominally there are 3 columns: scale, genomic canonocal and locus. Locus calls zMapWindowRequestReposition() on zoom, which is triggered by the first display event, and this calls the column ordering code in zmaopWindow.  Due to the fact that the navigator has a canvas with ZMapWindowContainerGroups (as for a normal window) but no ZMapWindow for its canvas, this code (zMapWindowFullReposition()) cannot call the foo canvas update and refresh code (look at the function to see why)
 </p>
 

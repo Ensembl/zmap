@@ -1395,7 +1395,7 @@ static gboolean sequenceRequest(DoAllAlignBlocks get_features, ZMapFeatureBlock 
 				       server->zmap_start, server->zmap_end) ;
 	  zMapGFFParserInitForFeatures(parser, styles, FALSE) ;
 
-        zMapGFFSetDefaultToBasic(parser, TRUE);
+	  zMapGFFSetDefaultToBasic(parser, TRUE);
 
 
 	  if (server->has_new_tags)

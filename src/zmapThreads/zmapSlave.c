@@ -265,7 +265,7 @@ void *zmapNewThread(void *thread_args)
 
 		// we've already closed the connection and cleaned up data
 		// but we still want to exit
-		// don't call the cleanup fucntion as it's there as an exception handler
+		// don't call the cleanup function as it's there as an exception handler
 		call_clean = 0;
 		break;
 	      }

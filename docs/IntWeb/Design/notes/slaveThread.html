@@ -35,7 +35,7 @@ There appears to be no way to tell the difference between this and thread killed
 </p>
 <h3>Slave has internal error and exits by design</h3>
 <p>
-On the assumption that the slave thread interfaces to an external server there are response codes such as 'BAD REQ' and 'SERVER DIED', and these generate a reply code of 'THREAD DIED'.  The main loop terminates via a break and the thread calls its cleanup fucntion.  ZMap will get this 'died' response and clear up it's own data.
+On the assumption that the slave thread interfaces to an external server there are response codes such as 'BAD REQ' and 'SERVER DIED', and these generate a reply code of 'THREAD DIED'.  The main loop terminates via a break and the thread calls its cleanup function.  ZMap will get this 'died' response and clear up it's own data.
 </p>
 
 

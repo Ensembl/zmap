@@ -49,6 +49,8 @@ sub get_params
 	pod2usage(1) if $missing;
 
 	$params{$_} = uri_unescape($params{$_}) for keys %params;
+
+	return;
 }
 
 
@@ -57,9 +59,9 @@ sub get_config
 {
 	my ($file) = @_;
 
-	return  "cannot open $file\n" if ! open IFILE, $file;
+	open my $file_h, '<', $file or return  "cannot open $file\n";
 
-	while (<IFILE>)
+	while (<$file_h>)
 	{
 		last if(! m/^\#\#/ );
 
@@ -81,7 +83,7 @@ sub get_config
 		}
 	}
 
-	close IFILE;
+	close $file_h;
 
 	return "$file: GFF version not specified\n"  if !defined $src_files { $file } -> { 'gff_version' };
 	return "$file: sequence not specified\n"  if !defined $src_files { $file } -> { 'sequence' };
@@ -89,11 +91,11 @@ sub get_config
 
 	$sequence = $src_files { $file } -> { 'sequence' } if !defined $sequence;
 	$start    = $src_files { $file } -> { 'start' }    if !defined $start;
-	$end      = $src_files { $file } -> { 'end' } 	   if !defined $end;
+	$end      = $src_files { $file } -> { 'end' }      if !defined $end;
 
 	return "$file: ignored - different sequence\n"  if  $src_files { $file } -> { 'sequence' } ne $sequence;
 
-	return 0;	# ie success
+	return 0; # ie success
 }
 
 
@@ -117,7 +119,7 @@ sub main
 		rename $file, $backfile;
 	}
 
-	open (OFILE, "> " . $file ) or die("cannot open $file\n");
+	open (my $file_h, '>', $file ) or die("cannot open $file\n");
 
 	my @sources = ();
 	foreach my $file (@ARGV)
@@ -136,8 +138,8 @@ sub main
 
 	}
 
-	$" = ';';
-	print OFILE <<ZMAP
+	local $" = ';';
+	print $file_h <<"ZMAP"
 [ZMap]
 show-mainwindow = true
 sequence = $sequence
@@ -150,7 +152,7 @@ ZMAP
 ;
 	# explicitly we do not create a columns list or stanza
 
-	 print OFILE <<ZMAP_WINDOW
+	 print $file_h <<'ZMAP_WINDOW'
 [ZMapWindow]
 colour-column-highlight = cornsilk
 colour-frame-2 = #e6e6ff
@@ -168,7 +170,7 @@ ZMAP_WINDOW
 	{
 		my $src = $src_files { $fname} -> { 'source' };
 		my $sep = ( $src =~ m/^\// ) ? '/' : '';
-		print OFILE <<MY_FILE
+		print $file_h <<"MY_FILE"
 [$src]
 delayed = false
 featuresets=
@@ -178,7 +180,9 @@ MY_FILE
 ;
 	}
 
-	close OFILE;
+	close $file_h;
+
+	return;
 }
 
 
@@ -230,7 +234,6 @@ gff files.
 
 =head1 COPYRIGHT
 
- Author: Malcolm Hinsley (mh17@sanger.ac.uk)
  Copyright (c) 2006-2012: Genome Research Ltd.
 ------------------------------------------------------------------
 ZMap is free software; you can redistribute it and/or
@@ -253,3 +256,7 @@ originated by
      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+
+=head1 AUTHOR
+
+Malcolm Hinsley B<email> mh17@sanger.ac.uk

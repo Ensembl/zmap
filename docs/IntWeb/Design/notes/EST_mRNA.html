@@ -203,7 +203,7 @@ As per normal we mask the new column and display unmasked features, but if the c
 <h3>Where to put the show/hide function and implementation</h3>
 <p><b>zmapWindowContainerFeatureset.c/zMapWindowContainerFeatureSetShowHideMaskedFeatures()</b>
 </p>
-<p>Hidden features were originally intended to be not displayed ans we would have added or removed items from the canvas according to display state.  However this is a relatively complicated process due to the item factory... and also the fact that featuresets can appear in several columns (not particularly releveant for current practice with ESTs and mRNAs but we have to code it properly).
+<p>Hidden features were originally intended to be not displayed as we would have added or removed items from the canvas according to display state.  However this is a relatively complicated process due to the item factory... and also the fact that featuresets can appear in several columns (not particularly relevant for current practice with ESTs and mRNAs but we have to code it properly).
 Instead we display as normal and use foo_canvas_item_show/hide().  Data volumes in this case are not huge, typically 1000 features total, so performance will not be affected much, and operating the show/hide menu will be quicker.
 </p>
 
@@ -223,7 +223,7 @@ As we perform the masking in the View's feature context not the window we cannot
 <fieldset><legend>Displaying new features</legend>
 <p>There is a logical possibility that we may receive a new feature from otterlace via XML, although we don't expect this to happen for EST or mRNA types (transcripts are more likely).  It's not immediately obvious from the code what would happen if this arose - it looks like we get a context with just the new features in to draw which refers to the merged context, in which case we would need to free the <b>masker_sorted_features</b> list for the affected featureset and re-mask.  As this is unlikely to occur this has not been done.
 </p>
-<p>Much more likely is requesting data for sub-regions and which case we can get large updates to a context featureset. On receiving any data for an existing featureset we will free the masker_sorted_features list, which implies a re-sort. adn all data in that featureset will be processed for masking.  Each feature has a masked and displayed flag and the masked flag will be reset before processsing.  Masking is performed from the <b>justMergeContext()</b> function in <b>zmapView.c</b> and display from <b>justDisplayContext()</b>.  It is valid to only mask with the new data.
+<p>Much more likely is requesting data for sub-regions and which case we can get large updates to a context featureset. On receiving any data for an existing featureset we will free the masker_sorted_features list, which implies a re-sort. and all data in that featureset will be processed for masking.  Each feature has a masked and displayed flag and the masked flag will be reset before processsing.  Masking is performed from the <b>justMergeContext()</b> function in <b>zmapView.c</b> and display from <b>justDisplayContext()</b>.  It is valid to only mask with the new data.
 </p>
 <h3>Displaying new data in an existing featureset</h3>
 <p>Using existing code the new data will be drawn via the 'diff_context' data structure, which contains references to all the new features in the merged context. These can be drawn as-is.
@@ -231,7 +231,7 @@ As we perform the masking in the View's feature context not the window we cannot
 
 <h3>Masking existing data</h3>
 <p>
-<b>zMapFeatureMaskFeatureSets()</b> can return a list of featuresets masked and this can be processed to re-display or modify existing columns (excluding new ones which display as normal). As we draw the context after masking we know that the feature context is in the correct state at this time. We will never need to draw existing features adn will only ever have to set features as masked, not the reverse.  We can scan each window's canvas tree and process only displayed items (new ones will not be displayed yet, so this will run at maximum efficiency, and as we process the window context not the features context there will be no errors matching active columns via a parallel set of code to the display functions.
+<b>zMapFeatureMaskFeatureSets()</b> can return a list of featuresets masked and this can be processed to re-display or modify existing columns (excluding new ones which display as normal). As we draw the context after masking we know that the feature context is in the correct state at this time. We will never need to draw existing features and will only ever have to set features as masked, not the reverse.  We can scan each window's canvas tree and process only displayed items (new ones will not be displayed yet, so this will run at maximum efficiency, and as we process the window context not the features context there will be no errors matching active columns via a parallel set of code to the display functions.
 </p>
 <p><b>NOTE</b>: If masked colours are not defined then we never show masked features, and if a featureset is masked after loading then we remove the features from the Canvas.
 </p>

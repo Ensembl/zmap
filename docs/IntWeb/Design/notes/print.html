@@ -25,7 +25,7 @@ What's interesting is that the same API can drive PNG and PDF and PS file format
 </p>
 <h3>What needs to be done in ZMap</h3>
 <h4>Encapsulate all remaining graphics code</h4>
-<p>We wish to avoid making major changes to the foo canvas (which uses gdk_ functions to paint the screen) and to make ZMap have control over how things are drawn we need to implement non-Foo code for the scale bar and the mark, and possible also for conatiner backgrounds, if these are drawn.  We may also have to recode the ruler in case there are any interaction between gdk and cairo.
+<p>We wish to avoid making major changes to the foo canvas (which uses gdk_ functions to paint the screen) and to make ZMap have control over how things are drawn we need to implement non-Foo code for the scale bar and the mark, and possible also for container backgrounds, if these are drawn.  We may also have to recode the ruler in case there are any interaction between gdk and cairo.
 </p>
 <p>The scale bar can be coded as a new type of CanvasFeatureset item - it can respond to zoom using existing practices and fits neatly into a column display.
 </p>
@@ -70,7 +70,7 @@ Other than this zmapDraw.c appears to be maily code that has fallen out of use, 
 <p>
 
 <h5>Experiments</h5>
-<p>As there is some doubt that cairo will run fast enough we make be faced with runnign GDK and cairo on parallel, one for the screen and one for the printer. It would be a good idea to write a simple test program to draw X thousand random boxes and compare the two.  Alternatively the cairo calls could be run via a compile time switch or a configuration parameter.
+<p>As there is some doubt that cairo will run fast enough we make be faced with running GDK and cairo on parallel, one for the screen and one for the printer. It would be a good idea to write a simple test program to draw X thousand random boxes and compare the two.  Alternatively the cairo calls could be run via a compile time switch or a configuration parameter.
 </p>
 
 
@@ -90,7 +90,7 @@ Other than this zmapDraw.c appears to be maily code that has fallen out of use, 
 <li> genomic features will work as is
 <li> graphics primitives will extend the base structure to include two x coordinates and colour information.
 <li> graphic primitives will not use styles even though the CFS code assumes that features do. Instead they will hold fill and outline colours which will be used directly.  (this requires two longs, as opposed to a style pointer plus added complexity)
-<li> the canvas featureset code will be ammended to handle NULL features and styles.
+<li> the canvas featureset code will be amended to handle NULL features and styles.
 <li> alternative interface functions will be provided to add and remove featureless graphics primitives
 <li> graphics primitives will not repsond to the mouse and as such will not accept focus.
 <li> the canvas featureset itself must have a style, if necessary a hard coded one.

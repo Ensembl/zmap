@@ -461,7 +461,7 @@ static gboolean zmap_window_canvas_set_glyph(FooCanvasItem *foo, ZMapWindowCanva
 
       if(col_width)
 	{
-	  // if niether of these are set we'll offset by zero and default to centred glyphs
+	  // if neither of these are set we'll offset by zero and default to centred glyphs
 	  // if config is poor they'll look silly so no need for an error message
 
 	  align = zMapStyleGetAlign(style);
@@ -970,7 +970,7 @@ static double glyphPoint(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature gs
   /* Glyphs only have shape when drawn (I think...) so it's possible when looking for nearby
    * glyphs for the point operation to be looking at glyphs that haven't been drawn and
    * do not have a shape. */
-  /* mh17: i added a GlyphAdd fucntion, so we can set the shape etc before paint, but this test is harmless */
+  /* mh17: i added a GlyphAdd function, so we can set the shape etc before paint, but this test is harmless */
   if (glyph->shape)
     {
       /* Get feature extent on display. */

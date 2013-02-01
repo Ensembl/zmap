@@ -88,7 +88,15 @@ typedef struct
 {
 
   ZMapViewValidXRemoteActions action ;
-  gboolean is_edit_action ;				    /* Does this action edit the feature context ? */
+
+  gboolean is_edit_action ;				    /* Does this action edit the feature
+							       context ? */
+
+
+  gboolean is_feature_action ;				    /* Does action work on a feature ? */
+  gboolean create_feature_action ;			    /* Does this action create an edit feature ? */
+
+  /* THIS DOESN'T EVEN LOOK SUPPORTED...SIGH.... */
   gboolean must_exist ;					    /* Does the target of the action need
 							       to exist ? e.g. columns may be
 							       dynamically loaded so may not exist yet. */
@@ -151,6 +159,10 @@ typedef struct
 {
   ZMapViewValidXRemoteActions action;
   ZMapFeatureContext edit_context;
+
+  ZMapFeature edit_feature ;
+  GList *feature_list ;
+
 } PostExecuteDataStruct, *PostExecuteData;
 
 
@@ -208,7 +220,6 @@ static gboolean executeRequest(ZMapXMLParser parser, ZMapXRemoteParseCommandData
 
 
 
-
 /*
  *               Globals
  */
@@ -216,17 +227,17 @@ static gboolean executeRequest(ZMapXMLParser parser, ZMapXRemoteParseCommandData
 /* Descriptor table of action attributes */
 static ActionDescriptorStruct action_table_G[] =
   {
-    {ZMAPVIEW_REMOTE_INVALID, FALSE, FALSE},
+    {ZMAPVIEW_REMOTE_INVALID,             FALSE, FALSE, FALSE, FALSE},
 
-    {ZMAPVIEW_REMOTE_FIND_FEATURE, FALSE, TRUE},
+    {ZMAPVIEW_REMOTE_FIND_FEATURE,        FALSE, TRUE, FALSE, TRUE},
 
-    {ZMAPVIEW_REMOTE_CREATE_FEATURE, TRUE, FALSE},
-    {ZMAPVIEW_REMOTE_REPLACE_FEATURE, TRUE, TRUE},
-    {ZMAPVIEW_REMOTE_DELETE_FEATURE, TRUE, TRUE},
+    {ZMAPVIEW_REMOTE_CREATE_FEATURE,      TRUE, TRUE, TRUE, FALSE},
+    {ZMAPVIEW_REMOTE_REPLACE_FEATURE,     TRUE, TRUE, TRUE, TRUE},
+    {ZMAPVIEW_REMOTE_DELETE_FEATURE,      TRUE, TRUE, TRUE, TRUE},
 
-    {ZMAPVIEW_REMOTE_HIGHLIGHT_FEATURE, FALSE, TRUE},
-    {ZMAPVIEW_REMOTE_HIGHLIGHT2_FEATURE, FALSE, TRUE},
-    {ZMAPVIEW_REMOTE_UNHIGHLIGHT_FEATURE, FALSE, TRUE},
+    {ZMAPVIEW_REMOTE_HIGHLIGHT_FEATURE,   FALSE, TRUE, FALSE, TRUE},
+    {ZMAPVIEW_REMOTE_HIGHLIGHT2_FEATURE,  FALSE, TRUE, FALSE, TRUE},
+    {ZMAPVIEW_REMOTE_UNHIGHLIGHT_FEATURE, FALSE, TRUE, FALSE, TRUE},
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     {ZMAPVIEW_REMOTE_ZOOM_TO, FALSE, TRUE},
@@ -234,20 +245,19 @@ static ActionDescriptorStruct action_table_G[] =
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
-    {ZMAPVIEW_REMOTE_GET_FEATURE_NAMES, FALSE, TRUE},
+    {ZMAPVIEW_REMOTE_GET_FEATURE_NAMES,   FALSE, TRUE, FALSE, TRUE},
 
-    {ZMAPVIEW_REMOTE_LOAD_FEATURES, TRUE, FALSE},
+    {ZMAPVIEW_REMOTE_LOAD_FEATURES,       TRUE,  FALSE, FALSE, FALSE},
+
+    {ZMAPVIEW_REMOTE_REGISTER_CLIENT,     FALSE, FALSE, FALSE, FALSE},
 
 
+    {ZMAPVIEW_REMOTE_LIST_WINDOWS,        FALSE, FALSE, FALSE, FALSE},
+    {ZMAPVIEW_REMOTE_NEW_WINDOW,          FALSE, FALSE, FALSE, FALSE},
 
-    {ZMAPVIEW_REMOTE_REGISTER_CLIENT, FALSE, FALSE},
+    {ZMAPVIEW_REMOTE_DUMP_CONTEXT,        FALSE, FALSE, FALSE, FALSE},
 
-    {ZMAPVIEW_REMOTE_LIST_WINDOWS, FALSE, FALSE},
-    {ZMAPVIEW_REMOTE_NEW_WINDOW, FALSE, FALSE},
-
-    {ZMAPVIEW_REMOTE_DUMP_CONTEXT, FALSE, FALSE},
-
-    {ZMAPVIEW_REMOTE_INVALID, FALSE, FALSE}
+    {ZMAPVIEW_REMOTE_INVALID,             FALSE, FALSE, FALSE, FALSE}
   } ;
 
 
@@ -482,38 +492,25 @@ static gboolean executeRequest(ZMapXMLParser parser, ZMapXRemoteParseCommandData
 
 	    if (sanityCheckContext(view, request_data))
 	      {
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-		ZMapFeatureAny feature ;
-
-		if ((feature = zMapFeatureContextFindFeatureFromFeature(view->features,
-									request_data.feature)))
+		if (drawNewFeatures(view, request_data)
+		    && (view->xremote_widget && request_data->edit_context))
 		  {
-		    g_string_append_printf(output_data.messages,
-					   "Feature \"%s\" already exists in view",
-					   g_quark_to_string(request_data.feature->original_id)) ;
-		    output_data.code = ZMAPXREMOTE_FAILED ;
+
+		    /* Copy some of request_data into post_data for view_post_execute(). */
+		    PostExecuteData post_data = g_new0(PostExecuteDataStruct, 1);
+		    post_data->action = input->common.action;
+		    post_data->edit_context = request_data->edit_context;
+		    post_data->edit_feature = request_data->edit_feature ;
+		    post_data->feature_list = request_data->feature_list ;
+
+		    g_object_set_data(G_OBJECT(view->xremote_widget),
+				      VIEW_POST_EXECUTE_DATA,
+				      post_data);
 		  }
-		else
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-		  if (drawNewFeatures(view, request_data)
-		      && (view->xremote_widget && request_data->edit_context))
-		    {
-		      /* slice the request_data into the post_data to make the view_post_execute happy. */
-		      PostExecuteData post_data = g_new0(PostExecuteDataStruct, 1);
-
-		      post_data->action       = input->common.action;
-		      post_data->edit_context = request_data->edit_context;
-
-		      g_object_set_data(G_OBJECT(view->xremote_widget),
-					VIEW_POST_EXECUTE_DATA,
-					post_data);
-		    }
 
 		request_data->edit_context = NULL;
 	      }
 	  }
-
 	break;
       }
     case ZMAPVIEW_REMOTE_LIST_WINDOWS:
@@ -585,18 +582,43 @@ static char *view_post_execute(char *command_text, gpointer user_data,
 	    {
 	    case ZMAPVIEW_REMOTE_CREATE_FEATURE:
 	      {
+		GList* list_item ;
+
 		status = zmapViewDrawDiffContext(view, &(post_data->edit_context));
 
-		if(!status)
+
+		if (!status)
 		  post_data->edit_context = NULL; /* So the view->features context doesn't get destroyed */
 
-		if(post_data->edit_context)
+		if (post_data->edit_context)
 		  zMapFeatureContextDestroy(post_data->edit_context, TRUE);
+
+		/* Need to highlight created feature.....in all windows..... */
+		list_item = g_list_first(view->window_list) ;
+		do
+		  {
+		    ZMapViewWindow view_window ;
+		    ZMapFeature feature ;
+
+		    if (post_data->edit_feature)
+		      feature = post_data->edit_feature ;
+		    else
+		      feature = (ZMapFeature)(post_data->feature_list->data) ;
+
+		    view_window = list_item->data ;
+
+		    zMapWindowFeatureSelect(view_window->window, feature) ;
+		  }
+		while ((list_item = g_list_next(list_item))) ;
+
+
+		break;
 	      }
-	      break;
 	    default:
-	      zMapAssertNotReached();
-	      break;
+	      {
+		zMapAssertNotReached();
+		break;
+	      }
 	    }
 
 	  g_free(post_data);
@@ -785,6 +807,9 @@ static void eraseFeatures(ZMapView view, RequestData request_data)
 	  ZMapFeature feature ;
 
 
+
+	  /* We need to just have a list of features...not either an edit feature or a list.... */
+
 	  /* I'm going to try a hack here...given all features should be unhighlighted perhaps
 	   * we only need do the first if it's a list of features.... */
 	  /* Also....sometimes the feature is in a list and sometimes on it's own....CHRIST....
@@ -800,7 +825,7 @@ static void eraseFeatures(ZMapView view, RequestData request_data)
 	  view_window = list_item->data ;
 
 	  /* If feature to be erased is highlighted then unhighlight it and tell our
-	   * parent that only column is no selected. */
+	   * parent that only column is now selected. */
 	  if (zMapWindowUnhighlightFeature(view_window->window, feature))
 	    {
 	      ZMapViewSelectStruct view_select = {0} ;
@@ -2023,9 +2048,9 @@ static gboolean xml_feature_end_cb(gpointer user_data, ZMapXMLElement sub_elemen
 
   if (xml_data->common.action != ZMAPVIEW_REMOTE_INVALID)
     {
-      switch(xml_data->common.action)
+      if (action_table_G[xml_data->common.action].is_feature_action)
 	{
-	  case ZMAPVIEW_REMOTE_CREATE_FEATURE:
+	  if (action_table_G[xml_data->common.action].create_feature_action)
 	    {
 	      if (!(request_data->edit_feature))
 		{
@@ -2035,20 +2060,15 @@ static gboolean xml_feature_end_cb(gpointer user_data, ZMapXMLElement sub_elemen
 		}
 	      else
 		{
-		  /* It's probably here that we need to revcomp the feature if the
-		   * view is revcomp'd.... */
+		  /* If we are revcomp'd then any feature passed to us by an external client will
+		   * be on the opposite strand from what we expect so we need to revcomp. */
 		  if (request_data->view->revcomped_features)
 		    {
 		      zMapFeatureReverseComplement(request_data->orig_context, request_data->edit_feature) ;
 		    }
 		}
-
-	      break ;
 	    }
-	default:
-	  break ;
 	}
-
       result = TRUE ;
     }
 

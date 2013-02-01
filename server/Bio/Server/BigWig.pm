@@ -15,7 +15,7 @@ sub new {
 }
 
 sub features {
-    my ($self, $chr, $start, $end) = @_;
+    my ($self, $seq_id, $start, $end) = @_;
 
     my ( $bigwig ) =
         @{$self}{ qw( -bigwig ) };
@@ -27,7 +27,7 @@ sub features {
     my ($summary) =
         $bigwig->features(
             -type   => 'summary',
-            -seq_id => $chr,
+            -seq_id => $seq_id,
             -start  => $start,
             -end    => $end,
         );

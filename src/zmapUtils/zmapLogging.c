@@ -153,7 +153,7 @@ static gboolean enable_core_dumping_G = TRUE;
 
 void foo_logger(char *x)
 {
-	/* can;t call this frpm foo as it's a macro */
+	/* can't call this from foo as it's a macro */
 	zMapLogWarning(x,"");
 }
 

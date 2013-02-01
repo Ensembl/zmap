@@ -2882,7 +2882,7 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data)
       break;
 
     case BLIX_SEQ_COVERAGE:		/* blixem from a selected item in a coverage featureset */
-#if RESTRICT_TO_MAKR
+#if RESTRICT_TO_MARK
       if (!zmapWindowMarkIsSet(menu_data->window->mark))
 	{
 	  zMapMessage("You must set the mark first to select this option","");
@@ -2906,7 +2906,7 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data)
 	  GList *l;
 	  int i;
 
-#if RESTRICT_TO_MAKR
+#if RESTRICT_TO_MARK
 	  if (!zmapWindowMarkIsSet(menu_data->window->mark))
 	    {
 	      zMapMessage("You must set the mark first to select this option","");

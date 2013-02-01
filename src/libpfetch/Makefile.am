@@ -31,6 +31,13 @@ EXTRA_DIST = $(libpfetch_la_marshal)
 
 GENMARSHAL_COMMAND = $(GLIB_GENMARSHAL) --prefix=libpfetch_cmarshal
 
+
+# Extra files to remove for the maintainer-clean target.
+#
+MAINTAINERCLEANFILES = $(top_srcdir)/libpfetch/Makefile.in
+
+
+
 .list.h:
 	$(GENMARSHAL_COMMAND) --header $< >$@
 

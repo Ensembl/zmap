@@ -77,7 +77,7 @@ This will allow the removal of 3 or 4 files with no loss of function.
 A quick inspection of the code suggests that there's a lot of editing to do....
 </p>
 <h4>After it's finsished</h4>
-<p>... we will be well set up to complete the zoom mutliple paint problem and also interface to Cairo for printing,
+<p>... we will be well set up to complete the zoom multiple paint problem and also interface to Cairo for printing,
 </p>
 
 
@@ -91,7 +91,7 @@ Code has been implemented to resize a CanvasFeatureset sideways - it's a bit ad 
 
 
 <h3>Reviving the Mark</h3>
-<p>This was temporarilty removed to help with removi9ng the cntainer children.  We wish to re-implement this using code in zmapWindowMark.c and removing code in the block - the Makr already has a item mark FooCanvas pointer and it seem pointless to impelement this in two places.  This will allow the removal of more code...
+<p>This was temporarily removed to help with removing the container children.  We wish to re-implement this using code in zmapWindowMark.c and removing code in the block - the Mark already has a item mark FooCanvas pointer and it seem pointless to impelement this in two places.  This will allow the removal of more code...
 </p>
-<p>It is also planned in future to simplify the canvas structure - we only ever use one block; however it's worth retaining the code in the zmapWindowMark that finds the releveant block in the FooCanvas, this can be ammended to find other groups if necessary.
-</p>To avoid any doubt, we define the window mark as being active in one place in any one window. If we ever implement mutliple blocks in one window then the mark may only be set in one:setting it in a second will unset it in the first.  This may seem retrograde in that if each block has mark items (as at present we could concievably have several active, but the controlling code uses a single ZMapWindowMark structure and cannot be used to operate two marks.  This is not thought to be a pressing operational problem as you mark bump and unmark and the features are still visible as marked.
+<p>It is also planned in future to simplify the canvas structure - we only ever use one block; however it's worth retaining the code in the zmapWindowMark that finds the relevant block in the FooCanvas, this can be amended to find other groups if necessary.
+</p>To avoid any doubt, we define the window mark as being active in one place in any one window. If we ever implement multiple blocks in one window then the mark may only be set in one:setting it in a second will unset it in the first.  This may seem retrograde in that if each block has mark items (as at present we could conceivably have several active, but the controlling code uses a single ZMapWindowMark structure and cannot be used to operate two marks.  This is not thought to be a pressing operational problem as you mark bump and unmark and the features are still visible as marked.

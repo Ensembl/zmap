@@ -2,7 +2,7 @@ zmapConfig
 
 This module handles configuration files for ZMap using the Glib GKeyFile functions.
 
-Previously there were two parallel implementations - an older version had been replaced but not removed, and many of the fucntions had migrated to other directories and the current source is an attempt to tidy this up without too much of a re-write.
+Previously there were two parallel implementations - an older version had been replaced but not removed, and many of the functions had migrated to other directories and the current source is an attempt to tidy this up without too much of a re-write.
 
 For a discussion of the history look at ZMap/docs/config.txt for some notes in the Dec 2009 implementation try ZMap/docs.config.README.
 

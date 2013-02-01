@@ -47,7 +47,7 @@ Be aware also of these functions/ files:
 </p>
 
 <h4>GObject window pointers</h4>
-<p>A foo canvas item or group has no reference to a zmapWindow and to resolve this problems a GObject data pointer has been used to attach a ZMapWindow to each foo canvas group aka ZMapWindowContainerGroup. The Navigator code uses window code to draw columns such as genomic canonical and locus (and more recently scale bar) but it has no zmapWindow.  (Note that the navigator has a -&gt;current_window, which is the zmapWindow that it navigates and nothign to do with the navigator canvas). As the navigator has no window of its own then accessing the GObject window pointer will return NULL, whcijh will cause a crash if you do not handle this.
+<p>A foo canvas item or group has no reference to a zmapWindow and to resolve this problems a GObject data pointer has been used to attach a ZMapWindow to each foo canvas group aka ZMapWindowContainerGroup. The Navigator code uses window code to draw columns such as genomic canonical and locus (and more recently scale bar) but it has no zmapWindow.  (Note that the navigator has a -&gt;current_window, which is the zmapWindow that it navigates and nothing to do with the navigator canvas). As the navigator has no window of its own then accessing the GObject window pointer will return NULL, whcijh will cause a crash if you do not handle this.
 </p>
 
 <h4>Balancing the screen refresh triggers</h4>

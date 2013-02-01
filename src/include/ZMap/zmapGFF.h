@@ -20,7 +20,8 @@
  * This file is part of the ZMap genome database package
  * originated by
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Interface to a GFF parser, the parser works in a
  *              "line at a time" way, the caller must pass complete
@@ -33,6 +34,7 @@
 #define ZMAP_GFF_H
 
 #include <glib.h>
+
 #include <ZMap/zmapFeature.h>
 
 
@@ -53,7 +55,12 @@ typedef enum
   } ZMapGFFClipMode ;
 
 
-/* Struct holding GFF file header info. */
+
+/* Types/Struct for GFF file header info., currently this is all we are interested
+ * in but this may expand as GFFv3 support is introduced. */
+
+typedef enum {GFF_HEADER_NONE, GFF_HEADER_ERROR, GFF_HEADER_INCOMPLETE, GFF_HEADER_COMPLETE} ZMapGFFHeaderState ;
+
 typedef struct
 {
   int gff_version ;
@@ -67,7 +74,8 @@ typedef struct
 
 ZMapGFFParser zMapGFFCreateParser(char *sequence, int features_start, int features_end) ;
 gboolean zMapGFFParserInitForFeatures(ZMapGFFParser parser, GHashTable *sources, gboolean parse_only) ;
-gboolean zMapGFFParseHeader(ZMapGFFParser parser, char *line, gboolean *header_finished, gboolean *header_ok) ;
+gboolean zMapGFFParseHeader(ZMapGFFParser parser, char *line,
+			    gboolean *header_finished, ZMapGFFHeaderState *header_state) ;
 gboolean zMapGFFParseLine(ZMapGFFParser parser, char *line) ;
 gboolean zMapGFFParseLineLength(ZMapGFFParser parser, char *line, gsize line_length) ;
 gboolean zMapGFFParseSequence(ZMapGFFParser parser, char *line, gboolean *sequence_finished) ;

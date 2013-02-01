@@ -68,7 +68,7 @@ Development path
 
 bam_get_align options
 
-csver (=Otter), dataset, chr, start, end for mapping
+csver (=Otter), dataset, seq_id, start, end for mapping
 beware $options and @options !
 
 

@@ -1,12 +1,8 @@
 #!/usr/bin/env perl
 
-# copied from Otterlace script bam_get_align and ammedned by mh17 to be otterlace free
-# you do however have to provide Bio::DB::Sam, i'm using the otterlace build for testing
-
 use strict;
 use warnings;
 
-use Carp;
 use Getopt::Long 'GetOptions';
 use Pod::Usage;
 use Roman;
@@ -19,8 +15,29 @@ use Bio::Server::BAM;
 
 # parameters
 my %params = ();
-my @options = qw ( help! man! gff_version=i file=s chr=s start=i end=i gff_feature_source=s gff_seqname=s roman! Roman! mapto=i);
-my @required = qw ( file chr start end gff_feature_source );
+
+my @options = qw(
+    help!
+    man!
+    gff_version=i
+    file=s
+    seq_id=s
+    start=i
+    end=i
+    gff_feature_source=s
+    gff_seqname=s
+    roman!
+    Roman!
+    mapto=i
+    );
+
+my @required = qw(
+    file
+    seq_id
+    start
+    end
+    gff_feature_source
+    );
 
 my $attributes_format;
 my $attributes_sep = ';';
@@ -31,55 +48,51 @@ my $sequence;
 
 sub get_params
 {
- 	# defaults
-	$params {'gff_version'}= 2;		# default for now as ZMap doesn't do v3 yet
+    # defaults
+    $params{'gff_version'} = 2; # default for now as ZMap doesn't do v3 yet
 
-	GetOptions(\%params, @options ) or pod2usage(2);
+    GetOptions(\%params, @options ) or pod2usage(2);
 
-	pod2usage(1) if defined $params { 'help' };
-	pod2usage(-exitstatus => 0, -verbose => 2) if defined $params {'man'} ;
+    pod2usage(1) if defined $params{'help'};
+    pod2usage(-exitstatus => 0, -verbose => 2) if defined $params{'man'} ;
 
-	my $missing = 0;
-	foreach my $param (@required)
-	{
-		if (!defined $params { $param })
-		{
-			print "$param not specified\n";
-			$missing++;
-		}
-	}
-	pod2usage(1) if $missing;
+    my $missing = 0;
+    foreach my $param (@required) {
+        if (!defined $params{$param}) {
+            print "$param not specified\n";
+            $missing++;
+        }
+    }
+    pod2usage(1) if $missing;
 
-	$params{$_} = uri_unescape($params{$_}) for keys %params;
+    $params{$_} = uri_unescape($params{$_}) for keys %params;
 
-	$params { 'chr' } = Roman($params { 'chr' }) if(defined $params { 'Roman' });
-	$params { 'chr' } = roman($params { 'chr' }) if(defined $params { 'roman' });
+    $params{'seq_id'} = Roman($params{'seq_id'}) if defined $params{'Roman'};
+    $params{'seq_id'} = roman($params{'seq_id'}) if defined $params{'roman'};
 
-	if(defined $params { 'gff_seqname' })
-	{
-		$sequence = $params { 'gff_seqname' };
-	}
-	else
-	{
-		$sequence = $params {'chr'};
-	}
+    if (defined $params{'gff_seqname'}) {
+        $sequence = $params{'gff_seqname'};
+    }
+    else {
+        $sequence = $params{'seq_id'};
+    }
 
-	if($params { 'gff_version' } == 2)
-	{
-		$attributes_format ='%s %s';
-		$attributes_sep = ' ; ';
-	}
-	else
-	{
-		$attributes_format = '%s=%s';
-		$attributes_sep = ';';
-	}
+    if ($params{'gff_version'} == 2) {
+        $attributes_format ='%s %s';
+        $attributes_sep = ' ; ';
+    }
+    else {
+        $attributes_format = '%s=%s';
+        $attributes_sep = ';';
+    }
+
+    return;
 }
 
 
 sub print_header
 {
-    printf "##gff-version %d\n##sequence-region %s %d %d\n", $params { 'gff_version' }, $sequence, $params { 'start' }, $params { 'end' } ;
+    printf "##gff-version %d\n##sequence-region %s %d %d\n", $params{'gff_version'}, $sequence, $params{'start'}, $params{'end'} ;
     return;
 }
 
@@ -122,14 +135,14 @@ sub print_feature {
     gff_escape_target for $name;
 
     # the --source flag overrides the source from the BAM file
-	# No: the BAM source is usually a bit useless
+    # No: the BAM source is usually a bit useless
     # my $source = $params { 'source' } ; # || $feature->source_tag;
 
     my ($score) = $feature->get_tag_values('AS');
 
     my @fields =
         (
-         $params { 'gff_version' } == 2 ? 'similarity' : 'read',
+         $params{'gff_version'} == 2 ? 'similarity' : 'read',
          (sprintf "%d", $start),
          (sprintf "%d", $end),
          (defined $score ? (sprintf "%f", $score) : '.'),
@@ -155,9 +168,8 @@ sub print_feature {
     my $q_length = $feature->l_qseq;
     my @attributes;
 
-    if($params { 'gff_version' } == 2)
-    {
-	  @attributes = (
+    if ($params{'gff_version'} == 2) {
+        @attributes = (
         Class       => qq{"Sequence"},
         Name        => qq{"$name"},
         Align       => join(' ', @align_fields),
@@ -166,11 +178,10 @@ sub print_feature {
         sequence    => $query->dna
         );
     }
-    else
-    {
-	  @attributes = (
+    else {
+        @attributes = (
         name        => $name,
-	  Target	  =>join(' ', ($name, @align_fields) ),
+        Target      =>join(' ', ($name, @align_fields) ),
         percentID   => 100,
         sequence    => $query->dna
         );
@@ -178,19 +189,15 @@ sub print_feature {
 
     my $cigar = $feature->cigar_str;
     $cigar =~ s/\d+S//g;    # Remove BAM "S" clipping strings from CIGAR
-    if ($cigar !~ /^\d+M$/)
-    {
-	if($params { 'gff_version' } == 2)
-	{
-		# It isn't a simple match string, so we do need CIGAR
-		push(@attributes, cigar_bam => qq{"$cigar"});
-	}
-	else
-	{
-		$cigar =~ s/(\d+)(\D+)/$2$1 /g;
-		push(@attributes, 'Gap' => $cigar );
-
-	}
+    if ($cigar !~ /^\d+M$/) {
+        if ($params { 'gff_version' } == 2) {
+            # It isn't a simple match string, so we do need CIGAR
+            push(@attributes, cigar_bam => qq{"$cigar"});
+        }
+        else {
+            $cigar =~ s/(\d+)(\D+)/$2$1 /g;
+            push(@attributes, 'Gap' => $cigar );
+        }
     }
 
     my @attribute_strings = ();
@@ -220,7 +227,7 @@ my $mapping_xml = $client->otter_response_content(
     'GET', 'get_mapping', {
         dataset => $dataset,
         cs      => $csver,
-        chr     => $chr,
+        seq_id  => $seq_id,
         start   => $start,
         end     => $end,
     });
@@ -235,39 +242,40 @@ $mapping->do_features($bam_fetch, $start, $end, \&_print_feature);
 
 sub main
 {
-	get_params();
+    get_params();
 
-	my $chr = $params { 'chr' } ;
-	gff_escape_seqid for $sequence;
+    my $seq_id = $params{'seq_id'};
+    gff_escape_seqid for $sequence;
 
-	$source = $params { 'gff_feature_source' };
-	gff_escape_source for $source;
+    $source = $params{'gff_feature_source'};
+    gff_escape_source for $source;
 
-	my $sam = Bio::DB::Sam->new
-	(
-		-bam   => uri_unescape($params { 'file' }),
-		# -fasta => $fasta_path,
-	);
+    my $sam = Bio::DB::Sam->new
+        (
+         -bam   => uri_unescape($params{'file'}),
+         # -fasta => $fasta_path,
+        );
 
-	my $bam_fetch = Bio::Server::BAM->new
-	(
-		-sam        => $sam
-	);
+    my $bam_fetch = Bio::Server::BAM->new
+        (
+         -sam        => $sam
+        );
 
 
-	# map first then request.... move this to inside the mapping function
-	my $features = $bam_fetch->features ( $chr, $params { 'start' },  $params { 'end' } );
+    # map first then request.... move this to inside the mapping function
+    my $features = $bam_fetch->features($seq_id, $params{'start'}, $params{'end'});
 
 # if it's a ref
-#	printf "found %d matches\n", scalar @{$$features}  ;
-	printf STDERR "found %d matches\n", scalar @{$features}  ;
+#   printf "found %d matches\n", scalar @{$$features}  ;
+    printf STDERR "found %d matches\n", scalar @{$features}  ;
 
-	print_header();
+    print_header();
 
-	foreach my $feat (@{$features})
-	{
-		print_feature($feat, $feat->start, $feat->end );
-	}
+    foreach my $feat (@{$features}) {
+        print_feature($feat, $feat->start, $feat->end );
+    }
+
+    return;
 }
 
 main;
@@ -280,7 +288,7 @@ zmap_get_bam request data and output as GFF
 
 =head1 SYNOPSIS
 
-zmap_get_bam [--help] [--man] --file=[http:|ftp:]/path/to/file --start=123 --end=456 --gff_feature_source=name --chr=CHROMOSOME_IV [--gff_version=3] --gff_seqname=GFF_sequence_name [--roman] [--Roman] --mapto=offset
+zmap_get_bam [--help] [--man] --file=[http:|ftp:]/path/to/file --start=123 --end=456 --gff_feature_source=name --seq_id=CHROMOSOME_IV [--gff_version=3] --gff_seqname=GFF_sequence_name [--roman] [--Roman] --mapto=offset
 
 =head1 OPTIONS
 
@@ -299,7 +307,6 @@ B<This program> will read the given input file(s) and generate GFF output as req
 
 =head1 COPYRIGHT
 
- Author: Malcolm Hinsley (mh17@sanger.ac.uk)
  Copyright (c) 2006-2012: Genome Research Ltd.
 ------------------------------------------------------------------
 ZMap is free software; you can redistribute it and/or
@@ -326,5 +333,6 @@ originated by
 This script was derived fron an Anacode script believed to have been
 written originally by Jeremy Henty (jh13@sanger.ac.uk)
 
+=head1 AUTHOR
 
-
+Malcolm Hinsley B<email> mh17@sanger.ac.uk

@@ -1,5 +1,6 @@
-Written up in ~mh17/doc/ZMap_int_db.txt
+Written up in ZMap/doc/ZMap_int_db.txt
 
-pipeServer provides an interface to allow ZMap to retrieve data from external sources in parallel.
-Data is requested via a script which is spawned and exec'd by a zMapServer thread and output sent via a pipe direct to ZMap.
+pipeServer provides an interface to allow ZMap to retrieve data from external
+sources in parallel.  Data is requested via a script which is spawned and
+exec'd by a zMapServer thread and output sent via a pipe direct to ZMap.
 

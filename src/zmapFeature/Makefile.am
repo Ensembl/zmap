@@ -26,3 +26,11 @@ zmapStyleUtils.c    \
 $(NULL)
 
 libZMapFeature_la_CFLAGS = $(INCLUDE_COMMON) -I$(top_srcdir)/zmapUtils
+
+
+
+# Extra files to remove for the maintainer-clean target.
+#
+MAINTAINERCLEANFILES = $(top_srcdir)/zmapFeature/Makefile.in
+
+

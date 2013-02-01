@@ -1,4 +1,3 @@
-/*  Last edited: Jul 13 14:30 2011 (edgrif) */
 /*  File: zmapWindowMark.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.

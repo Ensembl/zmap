@@ -1,4 +1,3 @@
-/*  Last edited: Jul 13 08:35 2011 (edgrif) */
 /*  File: zmapGFF_P.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -21,7 +20,7 @@
  * This file is part of the ZMap genome database package
  * originated by
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *         Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Internal types, functions etc. for the GFF parser,
@@ -37,9 +36,20 @@
 /* Default gff version parsed. */
 enum {GFF_DEFAULT_VERSION = 2} ;
 
+
+/* THESE MAX THINGS NEED TO GO...NEEDS TO BE TOTALLY DYNAMIC..... */
 /* Some defines for parsing the feature records....may need v2 and v3 versions of these. */
 enum {GFF_MANDATORY_FIELDS = 8, GFF_MAX_FIELD_CHARS = 50, GFF_MAX_FREETEXT_CHARS = 5000} ;
 
+
+/* Dynamically resizing buffers are good but they must have a limit to avoid malicious
+ * exploitation.
+ * 
+ * Note, our system here is that we set a limit to the length of line we will parse,
+ * each buffer is then extended to be this size so that no one gff field value can cause
+ * a buffer overrun.
+ */
+enum {GFF_MAX_LINE_LEN = 65536, GFF_MAX_DYNAMIC_BUFFER_LEN = GFF_MAX_LINE_LEN} ;
 
 
 /* possible states for parsing GFF file, rather trivial in fact.... */
@@ -137,6 +147,7 @@ typedef struct ZMapGFFParserStruct_
     unsigned int got_gff_version : 1 ;
     unsigned int got_sequence_region : 1 ;
   } header_flags ;
+  ZMapGFFHeaderState header_state ;
 
   int gff_version ;
 
