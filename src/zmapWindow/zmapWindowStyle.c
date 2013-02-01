@@ -688,7 +688,7 @@ void zmapWindowMenuSetStyleCB(int menu_item_id, gpointer callback_data)
 			/* if it's empty it will perform hari kiri */
 			if(ZMAP_IS_WINDOW_FEATURESET_ITEM(canvas_item))
 			{
-				zMapWindowFeaturesetItemRemoveSet(canvas_item, feature_set);
+				zMapWindowFeaturesetItemRemoveSet(canvas_item, feature_set, TRUE);
 			}
 
 			/* destroy set item if empty ? */
@@ -707,6 +707,6 @@ void zmapWindowMenuSetStyleCB(int menu_item_id, gpointer callback_data)
   zmapWindowRedrawFeatureSet(menu_data->window, feature_set);	/* does a complex context thing */
 
   zmapWindowColOrderColumns(menu_data->window) ;	/* put this column (deleted then created) back into the right place */
-  zmapWindowFullReposition(menu_data->window) ;		/* adjust sizing and shuffle left / right */
+  zmapWindowFullReposition(menu_data->window->feature_root_group,TRUE, "window style") ;		/* adjust sizing and shuffle left / right */
 }
 

@@ -81,6 +81,8 @@ int n_item_pick = 0;
 void (*foo_timer)(int,int) = NULL;
 
 void (*foo_log)(char *) = NULL;
+void (*foo_bug)(void *, char *) = NULL;
+
 
 #define SCALE_DEBUG	0
 #if SCALE_DEBUG
@@ -529,7 +531,7 @@ foo_canvas_item_invoke_update (FooCanvasItem *item,
 
 	/* If this fail you probably forgot to chain up to
 	 * FooCanvasItem::update from a derived class */
- 	g_return_if_fail (!(item->object.flags & FOO_CANVAS_ITEM_NEED_UPDATE));
+	g_return_if_fail (!(item->object.flags & FOO_CANVAS_ITEM_NEED_UPDATE));
 }
 
 /*
@@ -2489,6 +2491,8 @@ scroll_to (FooCanvas *canvas, int cx, int cy)
 	int changed_x = FALSE, changed_y = FALSE;
 	int canvas_width, canvas_height;
 
+if(foo_bug) foo_bug(canvas,"scroll");
+
 	canvas_width = GTK_WIDGET (canvas)->allocation.width;
 	canvas_height = GTK_WIDGET (canvas)->allocation.height;
 
@@ -2541,9 +2545,11 @@ scroll_to (FooCanvas *canvas, int cx, int cy)
 		/* More stuff - we have to mark root as needing fresh affine (Lauris) */
 		if (!(canvas->root->object.flags & FOO_CANVAS_ITEM_NEED_DEEP_UPDATE)) {
 			canvas->root->object.flags |= FOO_CANVAS_ITEM_NEED_DEEP_UPDATE;
-			foo_canvas_request_update (canvas);
+			if(!canvas->busy)
+				foo_canvas_request_update (canvas);
 		}
-		gtk_widget_queue_draw (GTK_WIDGET (canvas));
+		if(!canvas->busy)
+			gtk_widget_queue_draw (GTK_WIDGET (canvas));
 	}
 
 	if (((int) canvas->layout.hadjustment->value) != cx) {
@@ -2557,14 +2563,33 @@ scroll_to (FooCanvas *canvas, int cx, int cy)
 	}
 
 	if ((scroll_width != (int) canvas->layout.width) || (scroll_height != (int) canvas->layout.height)) {
-		gtk_layout_set_size (GTK_LAYOUT (canvas), scroll_width, scroll_height);
+		if(!canvas->busy)
+		{
+			/* probably this does not cause an expose, was just being paranoid */
+			gtk_layout_set_size (GTK_LAYOUT (canvas), scroll_width, scroll_height);
+		}
+		else
+		{
+			canvas->scroll_height = scroll_height;
+			canvas->scroll_width = scroll_width;
+		}
 	}
 
-	/* Signal GtkLayout that it should do a redraw. */
-	if (changed_x)
-		g_signal_emit_by_name (G_OBJECT (canvas->layout.hadjustment), "value_changed");
-	if (changed_y)
-		g_signal_emit_by_name (G_OBJECT (canvas->layout.vadjustment), "value_changed");
+	if(!canvas->busy)
+	{
+		/* Signal GtkLayout that it should do a redraw. */
+		if (changed_x)
+			g_signal_emit_by_name (G_OBJECT (canvas->layout.hadjustment), "value_changed");
+		if (changed_y)
+			g_signal_emit_by_name (G_OBJECT (canvas->layout.vadjustment), "value_changed");
+	}
+	else
+	{
+		if(changed_x)
+			canvas->x_changed = 1;
+		if(changed_y)
+			canvas->y_changed = 1;
+	}
 }
 
 /* Size allocation handler for the canvas */
@@ -3060,17 +3085,31 @@ foo_canvas_expose (GtkWidget *widget, GdkEventExpose *event)
 
 	canvas = FOO_CANVAS (widget);
 
-	if (!GTK_WIDGET_DRAWABLE (widget) || (event->window != canvas->layout.bin_window)) return FALSE;
+if(foo_bug) foo_bug(canvas,"expose");
+
+	if(canvas->busy)
+		return FALSE;
+
+if(foo_bug) foo_bug(canvas,"expose not busy");
+//printf("drawable: %d, %p %p\n",GTK_WIDGET_DRAWABLE (widget), event->window, canvas->layout.bin_window);
+	if (!GTK_WIDGET_DRAWABLE (widget) || (event->window != canvas->layout.bin_window))
+	{
+		return FALSE;
+	}
 
 #if SCALE_DEBUG
 if(foo_log)
 {
-	char *x = g_strdup_printf("Expose %p @ %d,%d-%d,%d  scroll =  %.1f,%.1f %.1f,%.1f\n", canvas, event->area.x, event->area.y,event->area.width, event->area.height, canvas->scroll_x1, canvas->scroll_y1, canvas->scroll_x2, canvas->scroll_y2);
+	FooCanvasItem *root = canvas->root;
+	char *x = g_strdup_printf("Expose %p @ %d,%d-%d,%d  scroll =  %.1f,%.1f %.1f,%.1f, root = %.1f %.1f %.1f %.1f\n", canvas,
+					  event->area.x, event->area.y, event->area.width, event->area.height,
+					  canvas->scroll_x1, canvas->scroll_y1, canvas->scroll_x2, canvas->scroll_y2,
+					  root->x1, root->y1, root->x2, root->y2);
 	foo_log(x);
 	g_free(x);
 
-	if(canvas == scale_thing)
-		scale_debug = TRUE;
+//	if(canvas == scale_thing)
+//		scale_debug = TRUE;
 }
 #endif
 
@@ -3165,6 +3204,8 @@ static void
 do_update (FooCanvas *canvas)
 {
 	/* Cause the update if necessary */
+//if(foo_bug) foo_bug(canvas,"update");
+//printf("width = %f, need = %d\n",canvas->root->x2 - canvas->root->x1, canvas->need_update);
 
 update_again:
 	if (canvas->need_update) {
@@ -3202,6 +3243,8 @@ update_again:
 	if (canvas->need_update) {
 		goto update_again;
 	}
+if(foo_bug) foo_bug(canvas,"update");
+//printf("width = %f\n",canvas->root->x2 - canvas->root->x1);
 }
 
 /* Idle handler for the canvas.  It deals with pending updates and redraws. */
@@ -3389,9 +3432,11 @@ foo_canvas_set_pixels_per_unit_xy (FooCanvas *canvas, double x, double y)
 	double cx, cy;
 	int x1, y1;
 	int center_x, center_y;
-	GdkWindow *window;
-	GdkWindowAttr attributes;
-	gint attributes_mask;
+//	GdkWindow *window;
+//	GdkWindowAttr attributes;
+//	gint attributes_mask;
+
+if(foo_bug) foo_bug(canvas,"zoom");
 
 	g_return_if_fail (FOO_IS_CANVAS (canvas));
 	/* guessing that the x factor is OK here.  RNCG */
@@ -3418,6 +3463,8 @@ foo_canvas_set_pixels_per_unit_xy (FooCanvas *canvas, double x, double y)
 		foo_canvas_request_update (canvas);
 	}
 
+#if USE_FOO_BODGE
+/* NOTE appears to maken o difference */
 	/* Map a background None window over the bin_window to avoid
 	 * scrolling the window scroll causing exposes.
 	 */
@@ -3442,9 +3489,11 @@ foo_canvas_set_pixels_per_unit_xy (FooCanvas *canvas, double x, double y)
 
 		gdk_window_show (window);
 	}
+#endif
 
 	scroll_to (canvas, x1, y1);
 
+#if USE_FOO_BODGE
 	/* If we created a an overlapping background None window, remove it how.
 	 *
 	 * TODO: We would like to temporarily set the bin_window background to
@@ -3457,6 +3506,7 @@ foo_canvas_set_pixels_per_unit_xy (FooCanvas *canvas, double x, double y)
 		gdk_window_set_user_data (window, NULL);
 		gdk_window_destroy (window);
 	}
+#endif
 
 	canvas->need_repick = TRUE;
       canvas->need_redraw = TRUE;
@@ -3515,6 +3565,8 @@ void
 foo_canvas_update_now (FooCanvas *canvas)
 {
 	g_return_if_fail (FOO_IS_CANVAS (canvas));
+
+if(foo_bug) foo_bug(canvas,"update now");
 
 	if (!(canvas->need_update || canvas->need_redraw))
 		return;
@@ -3585,6 +3637,10 @@ foo_canvas_request_redraw (FooCanvas *canvas, int x1, int y1, int x2, int y2)
 	GdkRectangle bbox;
 
 	g_return_if_fail (FOO_IS_CANVAS (canvas));
+
+	if(canvas->busy)
+		return;
+//if(foo_bug) foo_bug(canvas,"request redraw");
 
 	if (!GTK_WIDGET_DRAWABLE (canvas) || (x1 >= x2) || (y1 >= y2)) return;
 
@@ -4283,6 +4339,33 @@ foo_canvas_zmap(void)
 	/* dummy function, used simply to test that this is the zmap
 	 * version of foocanvas. */
 	return ;
+}
+
+
+void
+foo_canvas_busy(FooCanvas *canvas, gboolean busy)
+{
+	canvas->busy = busy;
+
+	if(!busy)
+	{
+if(foo_bug) foo_bug(canvas,"not busy");
+		/* Signal GtkLayout that it should do a redraw. */
+		if(canvas->x_changed || canvas->y_changed)
+			gtk_layout_set_size (GTK_LAYOUT (canvas), canvas->scroll_width, canvas->scroll_height);
+
+		if (canvas->x_changed)
+			g_signal_emit_by_name (G_OBJECT (canvas->layout.hadjustment), "value_changed");
+		if (canvas->y_changed)
+			g_signal_emit_by_name (G_OBJECT (canvas->layout.vadjustment), "value_changed");
+
+		canvas->x_changed = canvas->y_changed = 0;
+
+		foo_canvas_update_now(canvas);	/* must update before requesting redraw else rect will be wrong */
+		foo_canvas_item_request_redraw(canvas->root);
+	}
+else
+	if(foo_bug) foo_bug(canvas,"busy");
 }
 
 /*  Last edited: Mar  7 11:45 2011 (edgrif) */

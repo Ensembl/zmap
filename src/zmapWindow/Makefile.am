@@ -11,6 +11,7 @@ libZMapWindow_la_LDFLAGS = -all-static
 
 libZMapWindowGUI_la_SOURCES = \
 zmapWindow.c \
+zmapWindowCanvas.c \
 zmapWindowColBump.c \
 zmapWindowColConfig.c \
 zmapWindowColOrder.c \
@@ -30,7 +31,6 @@ zmapWindowFeatureList.h \
 zmapWindowFeatureList_I.h \
 zmapWindowFeatureShow.c \
 zmapWindowFocus.c \
-zmapWindowFrame.c \
 zmapWindowItem.c \
 zmapWindowItemDebug.c \
 zmapWindowItemHash.c \
@@ -42,8 +42,6 @@ zmapWindowNavigator.c \
 zmapWindowNavigatorMenus.c \
 zmapWindowNavigatorWidget.c \
 zmapWindowNavigator_P.h \
-zmapWindowOverlays.c \
-zmapWindowOverlays.h \
 zmapWindowPreferences.c \
 zmapWindowPrint.c \
 zmapWindowRemoteReceive.c \
@@ -100,21 +98,15 @@ $(NULL)
 libZMapWindowItems_la_SOURCES = \
 items/zmapWindowAllBase.c \
 items/zmapWindowAllBase.h \
-items/zmapWindowCanvas.c \
-items/zmapWindowCanvas.h \
 items/zmapWindowCanvasItem.c \
 items/zmapWindowCanvasItem.h \
 items/zmapWindowCanvasItem_I.h \
-items/zmapWindowCanvas_I.h \
 items/zmapWindowContainerAlignment.c \
 items/zmapWindowContainerAlignment.h \
 items/zmapWindowContainerAlignment_I.h \
 items/zmapWindowContainerBlock.c \
 items/zmapWindowContainerBlock.h \
 items/zmapWindowContainerBlock_I.h \
-items/zmapWindowContainerChildren.c \
-items/zmapWindowContainerChildren.h \
-items/zmapWindowContainerChildren_I.h \
 items/zmapWindowContainerContext.c \
 items/zmapWindowContainerContext.h \
 items/zmapWindowContainerContext_I.h \
@@ -124,9 +116,6 @@ items/zmapWindowContainerFeatureSet_I.h \
 items/zmapWindowContainerGroup.c \
 items/zmapWindowContainerGroup.h \
 items/zmapWindowContainerGroup_I.h \
-items/zmapWindowContainerStrand.c \
-items/zmapWindowContainerStrand.h \
-items/zmapWindowContainerStrand_I.h \
 items/zmapWindowContainerUtils.c \
 items/zmapWindowContainerUtils.h \
 items/zmapWindowContainerUtils_P.h \

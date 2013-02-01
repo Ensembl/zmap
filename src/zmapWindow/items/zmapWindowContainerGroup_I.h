@@ -72,18 +72,6 @@ typedef struct _zmapWindowContainerGroupClassStruct
   unsigned int obj_size ;
   unsigned int obj_total ;
 
-
-  /* Useful things that the interface provides... */
-
-  /* We want to use foo_canvas_item_new and have default items created.  These
-   * might not be the same for all our items... */
-  void            (* post_create) (ZMapWindowContainerGroup window_canvas_item);
-
-  void  (* reposition_group)(ZMapWindowContainerGroup container_group,
-			     double rect_x1, double rect_y1,
-			     double rect_x2, double rect_y2,
-			     double *x_repos, double *y_repos);
-
 } zmapWindowContainerGroupClassStruct;
 
 typedef struct _zmapWindowContainerGroupStruct
@@ -94,7 +82,8 @@ typedef struct _zmapWindowContainerGroupStruct
 
   GQueue *user_hidden_children;
 
-  GdkColor orig_background;
+  GdkColor *background_fill;
+  GdkColor *background_border;
 
   ZMapContainerLevelType level;
 
@@ -102,25 +91,19 @@ typedef struct _zmapWindowContainerGroupStruct
   ZMapWindowStats stats;
 #endif
 
-  GSList *pre_update_hooks;		/* list of ContainerUpdateHooks */
-  GSList *post_update_hooks;		/* list of ContainerUpdateHooks */
-
   double child_spacing;
   double this_spacing;
-  double height;
 
-  double reposition_x;		/* used to position child contianers */
-  double reposition_y;		/* currently unused */
+//  double reposition_x;		/* used to position child contianers */
+//  double reposition_y;		/* currently unused */
 
   struct
   {
     unsigned int max_width  : 1;
     unsigned int max_height : 1;
-    unsigned int column_redraw : 1;
     unsigned int need_reposition : 1;
-    unsigned int debug_xml : 1;
-    unsigned int debug_text : 1;
     unsigned int visible: 1;
+    unsigned int filtered: 1;
   } flags;
 
 } zmapWindowContainerGroupStruct;

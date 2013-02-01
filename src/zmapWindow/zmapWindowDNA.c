@@ -414,31 +414,34 @@ static void dnaMatchesToFeatures(ZMapWindow window, GList *match_list, ZMapFeatu
 
   style = zMapFeatureStyleCopy(orig_style);
 
-  separator_featureset->style = style ;
+      separator_featureset->style = style ;
 
-  /* set up featureset2_column and anything else needed */
-  f2c = g_hash_table_lookup(window->context_map->featureset_2_column, GUINT_TO_POINTER(separator_featureset->unique_id));
-  if(!f2c)	/* these just accumulate  and should be removed from the hash table on clear */
-    {
-      f2c = g_new0(ZMapFeatureSetDescStruct,1);
+	/* set up featureset2_column and anything else needed */
+	f2c = g_hash_table_lookup(window->context_map->featureset_2_column, GUINT_TO_POINTER(separator_featureset->unique_id));
+	if(!f2c)	/* these just accumulate  and should be removed from the hash table on clear */
+	{
+		f2c = g_new0(ZMapFeatureSetDescStruct,1);
 
-      f2c->column_id = zMapFeatureSetCreateID(ZMAP_FIXED_STYLE_SEARCH_MARKERS_NAME);
-      f2c->column_ID = g_quark_from_string(ZMAP_FIXED_STYLE_SEARCH_MARKERS_NAME);
-      f2c->feature_src_ID = g_quark_from_string(name);
-      f2c->feature_set_text = ZMAP_FIXED_STYLE_SEARCH_MARKERS_TEXT;
-      g_hash_table_insert(window->context_map->featureset_2_column, GUINT_TO_POINTER(separator_featureset->unique_id), f2c);
-    }
+		f2c->column_id = zMapFeatureSetCreateID(ZMAP_FIXED_STYLE_STRAND_SEPARATOR);
+		f2c->column_ID = g_quark_from_string(ZMAP_FIXED_STYLE_STRAND_SEPARATOR);
+		f2c->feature_src_ID = g_quark_from_string(name);
+		f2c->feature_set_text = ZMAP_FIXED_STYLE_SEARCH_MARKERS_TEXT;
+		g_hash_table_insert(window->context_map->featureset_2_column, GUINT_TO_POINTER(separator_featureset->unique_id), f2c);
+	}
 
-  src = g_hash_table_lookup(window->context_map->source_2_sourcedata, GUINT_TO_POINTER(separator_featureset->unique_id));
-  if(!src)
-    {
-      src = g_new0(ZMapFeatureSourceStruct,1);
-      src->source_id = f2c->feature_src_ID;
-      src->source_text = g_quark_from_string(ZMAP_FIXED_STYLE_SEARCH_MARKERS_TEXT);
-      src->style_id = style->unique_id;
-      src->maps_to = f2c->column_id;
-      g_hash_table_insert(window->context_map->source_2_sourcedata, GUINT_TO_POINTER(separator_featureset->unique_id), src);
-    }
+	src = g_hash_table_lookup(window->context_map->source_2_sourcedata, GUINT_TO_POINTER(separator_featureset->unique_id));
+	if(!src)
+	{
+		src = g_new0(ZMapFeatureSourceStruct,1);
+		src->source_id = f2c->feature_src_ID;
+		src->source_text = g_quark_from_string(ZMAP_FIXED_STYLE_SEARCH_MARKERS_TEXT);
+		src->style_id = style->unique_id;
+//		src->maps_to = f2c->column_id;	maps_to is for a vitrtual featureset not a column
+		src->maps_to = zMapFeatureSetCreateID(ZMAP_FIXED_STYLE_SEARCH_MARKERS_NAME);
+
+		g_hash_table_insert(window->context_map->source_2_sourcedata, GUINT_TO_POINTER(separator_featureset->unique_id), src);
+	}
+
 
   list = g_hash_table_lookup(window->context_map->column_2_styles,GUINT_TO_POINTER(f2c->column_id));
   if(!list)
@@ -1041,23 +1044,95 @@ static void matches_to_features(gpointer list_data, gpointer user_data)
   style       = fstyle->feature_style;
 
   if(!feature_set->style)
-  {
 	  feature_set->style = style;
-  }
 
   current_feature = zMapFeatureCreateFromStandardData(current_match->match,
 						      sequence,
 						      ontology,
 						      ZMAPSTYLE_MODE_BASIC,
-						      &fstyle->feature_set->style,
+						      &feature_set->style,
 						      start, end,
 						      has_score, score,
 						      current_match->strand) ;
 
   zMapFeatureSetAddFeature(feature_set, current_feature);
 
+  zMapFeatureAddText(current_feature, feature_set->original_id, ZMAP_FIXED_STYLE_SEARCH_MARKERS_NAME, style->description) ;
+
+
   return ;
 }
+
+
+
+typedef struct
+{
+	ZMapWindow window;
+	GQuark align_id;
+	GQuark block_id;
+
+}
+_contextStack, *contextStack;
+
+static ZMapFeatureContextExecuteStatus undisplaySearchFeatureSetsCB(GQuark key,
+                                                           gpointer data,
+                                                           gpointer user_data,
+                                                           char **err_out)
+{
+  contextStack stuff = (contextStack) user_data ;
+  ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
+  ZMapFeatureSet set;
+  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
+
+  switch(feature_any->struct_type)
+  {
+  case ZMAPFEATURE_STRUCT_ALIGN:
+	  stuff->align_id = feature_any->unique_id;
+	  break;
+  case ZMAPFEATURE_STRUCT_BLOCK:
+	  stuff->block_id = feature_any->unique_id;
+	  break;
+
+    case ZMAPFEATURE_STRUCT_FEATURESET:
+	set = (ZMapFeatureSet) feature_any;
+
+	FooCanvasItem *foo = zmapWindowFToIFindSetItem(stuff->window,stuff->window->context_to_item,
+     					 set,ZMAPSTRAND_NONE, ZMAPFRAME_NONE);
+
+	zmapWindowFToIRemoveSet(stuff->window->context_to_item,
+				  stuff->align_id, stuff->block_id, set->unique_id,
+				  ZMAPSTRAND_NONE, ZMAPFRAME_NONE, TRUE);
+
+	zMapWindowFeaturesetItemRemoveSet(foo, set, FALSE);
+
+      break;
+
+    default:
+      break;
+    }
+
+  return status;
+}
+
+
+/* this function is here to remove whole featuresets from the FtoiHash, which is a lot more effciecient than one feature at time */
+void zMapWindowUnDisplaySearchFeatureSets(ZMapWindow window,
+                             ZMapFeatureContext current_features,
+                             ZMapFeatureContext new_features)
+{
+  _contextStack stuff = { NULL };
+
+  stuff.window = window;
+
+  zMapFeatureContextExecute((ZMapFeatureAny)new_features,
+			    ZMAPFEATURE_STRUCT_FEATURESET,
+			    undisplaySearchFeatureSetsCB,
+			    &stuff);
+
+  return ;
+}
+
+
 
 static void remove_current_matches_from_display(DNASearchData search_data)
 {
@@ -1087,7 +1162,7 @@ static void remove_current_matches_from_display(DNASearchData search_data)
       /* Get the block matching the search_data->block */
       block = zMapFeatureAlignmentGetBlockByID(align, search_data->block->unique_id);
 
-	free_this = sets = zMapFeatureBlockGetMatchingSets(block,g_ascii_strdown(ZMAP_FIXED_STYLE_SEARCH_MARKERS_NAME,-1));
+	free_this = sets = zMapFeatureBlockGetMatchingSets(block,g_ascii_strdown(ZMAP_FIXED_STYLE_SEARCH_MARKERS_NAME"_",-1));
 
 
 	/* remove multiple featuresets matching the name, we have a diff set for each search */
@@ -1107,6 +1182,7 @@ static void remove_current_matches_from_display(DNASearchData search_data)
 	for( ; sets; sets = sets->next)
 	{
 		feature_set = (ZMapFeatureSet) sets->data;
+
 		/* its container, to hide it later */
 		if(!container)
 			container = zmapWindowFToIFindSetItem(search_data->window,search_data->window->context_to_item,
@@ -1121,6 +1197,8 @@ static void remove_current_matches_from_display(DNASearchData search_data)
 
 	if(container)
 	{
+		foo_canvas_item_request_redraw((FooCanvasItem *) container -> parent); /* that's the column */
+
 		if(!zMapFeatureContextErase(&(search_data->window->strand_separator_context),
 					erase_context,
 					&diff_context))
@@ -1133,9 +1211,9 @@ static void remove_current_matches_from_display(DNASearchData search_data)
 			zMapWindowUnDisplaySearchFeatureSets(search_data->window, NULL, diff_context);
 
 			/* this handles destroy of the (virtual) CanvasFeatureset */
-			zmapWindowContainerGroupDestroy((ZMapWindowContainerGroup)(container));
+//			zmapWindowContainerGroupDestroy((ZMapWindowContainerGroup)(container));
 
-			zmapWindowContainerRequestReposition(search_data->window->feature_root_group);
+//			zmapWindowFullReposition(search_data->window->feature_root_group,TRUE);
 
 			zMapFeatureContextDestroy(diff_context, TRUE);
 		}

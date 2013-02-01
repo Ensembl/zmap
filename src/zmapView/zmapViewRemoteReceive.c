@@ -455,12 +455,6 @@ static gboolean executeRequest(ZMapXMLParser parser, ZMapXRemoteParseCommandData
 	    if (drawNewFeatures(view, request_data)
 		&& (view->xremote_widget && request_data->edit_context))
 	      {
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 		/* Copy some of request_data into post_data for view_post_execute(). */
 		PostExecuteData post_data = g_new0(PostExecuteDataStruct, 1);
 
@@ -572,11 +566,16 @@ static char *view_post_execute(char *command_text, gpointer user_data,
 	    case ZMAPVIEW_REMOTE_CREATE_FEATURE:
 	      {
 		GList* list_item ;
+		ZMapFeature feature = NULL ;
 
-		status = zmapViewDrawDiffContext(view, &(post_data->edit_context));
+		if (post_data->edit_feature)
+		  feature = post_data->edit_feature ;
+		else
+		  feature = (ZMapFeature)(post_data->feature_list->data) ;
 
+		status = zmapViewDrawDiffContext(view, &(post_data->edit_context), feature) ;
 
-		if (!status)
+		if(!status)
 		  post_data->edit_context = NULL; /* So the view->features context doesn't get destroyed */
 
 		if (post_data->edit_context)
@@ -2410,5 +2409,4 @@ static void setXremoteCB(gpointer list_data, gpointer user_data)
 
   return ;
 }
-
 

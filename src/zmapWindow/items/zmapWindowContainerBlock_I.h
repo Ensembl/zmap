@@ -46,17 +46,6 @@ typedef struct _zmapWindowContainerBlockStruct
 
   GList      *compressed_cols, *bumped_cols ;
 
-#if MH17_NO_DEFERRED
-  GHashTable *loaded_region_hash;
-#endif
-
-  struct
-  {
-    FooCanvasItem *top_item;
-    FooCanvasItem *bottom_item;
-    double start, end;
-  }mark;
-
 } zmapWindowContainerBlockStruct;
 
 

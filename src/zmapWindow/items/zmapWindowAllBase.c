@@ -238,11 +238,8 @@ static MyGObjectInfo initObjectDescriptions(void)
       {zmapWindowContainerGroupGetType, 0, NULL, sizeof(zmapWindowContainerGroup)},
       {zmapWindowContainerAlignmentGetType, 0, NULL, sizeof(zmapWindowContainerAlignment)},
       {zmapWindowContainerBlockGetType, 0, NULL, sizeof(zmapWindowContainerBlock)},
-      {zmapWindowContainerFeaturesGetType, 0, NULL, sizeof(zmapWindowContainerFeatures)},
-      {zmapWindowContainerContextGetType, 0, NULL, sizeof(zmapWindowContainerContext)},
+     {zmapWindowContainerContextGetType, 0, NULL, sizeof(zmapWindowContainerContext)},
       {zmapWindowContainerFeatureSetGetType, 0, NULL, sizeof(zmapWindowContainerFeatureSet)},
-      {zmapWindowContainerStrandGetType, 0, NULL, sizeof(zmapWindowContainerStrand)},
-//      {zMapWindowLongItemGetType, 0, NULL, sizeof(zmapWindowLongItem)},
      /* end of array. */
       {NULL, 0, NULL, 0}
     } ;

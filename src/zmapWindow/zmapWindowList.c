@@ -686,7 +686,7 @@ static gboolean selection_func_cb(GtkTreeSelection *selection,
             zMapWindowContainerFeatureSetShowHideMaskedFeatures(cfs,TRUE,FALSE);
 
             /* un/bumped features might be wider */
-            zmapWindowFullReposition(window) ;
+            zmapWindowFullReposition(window->feature_root_group,TRUE, "show masked") ;
         }
 #else
         {
@@ -742,7 +742,7 @@ static gboolean selection_func_cb(GtkTreeSelection *selection,
                   zmapWindowColumnBump(FOO_CANVAS_ITEM(cfs),bump_mode);
 
                   /* un/bumped features might be wider */
-                  zmapWindowFullReposition(window) ;
+                  zmapWindowFullReposition(window->feature_root_group,TRUE, "selection func") ;
             }
         }
 #endif

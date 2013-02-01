@@ -70,7 +70,9 @@ typedef struct _ZMapWindowScaleCanvasStruct
   int default_position;
   gboolean freeze, text_left;
 //  double line_height;
+#if ZOOM_SCROLL
   gulong visibilityHandlerCB;
+#endif
 
   PangoFont *font;
   PangoFontDescription *font_desc;
@@ -108,10 +110,12 @@ typedef enum
 //static void positionLeftRight(FooCanvasGroup *left, FooCanvasGroup *right);
 static void paneNotifyPositionCB(GObject *pane, GParamSpec *scroll, gpointer user_data);
 //static gboolean rulerVisibilityHandlerCB(GtkWidget *widget, GdkEventExpose *expose, gpointer user_data);
+#if ZOOM_SCROLL
 static gboolean rulerMaxVisibilityHandlerCB(GtkWidget *widget, GdkEventExpose *expose, gpointer user_data);
+
 static void freeze_notify(ZMapWindowScaleCanvas ruler);
 static void thaw_notify(ZMapWindowScaleCanvas ruler);
-
+#endif
 
 
 
@@ -125,6 +129,8 @@ ZMapWindowScaleCanvas zmapWindowScaleCanvasCreate(ZMapWindowScaleCanvasCallbackL
 
   /* Now we make the ruler canvas */
   ruler->canvas    = FOO_CANVAS(foo_canvas_new());
+foo_bug_set(ruler->canvas,"scale");
+
   ruler->callbacks = g_new0(ZMapWindowScaleCanvasCallbackListStruct, 1);
   ruler->callbacks->paneResize = callbacks->paneResize;
   ruler->callbacks->user_data  = callbacks->user_data;
@@ -132,7 +138,9 @@ ZMapWindowScaleCanvas zmapWindowScaleCanvasCreate(ZMapWindowScaleCanvasCallbackL
   ruler->default_position = DEFAULT_PANE_POSITION;
   ruler->text_left        = TRUE; /* TRUE = put the text on the left! */
 
+#if ZOOM_SCROLL
   ruler->visibilityHandlerCB = 0;
+#endif
 
   ruler->last_draw_coords.y1 = ruler->last_draw_coords.y2 = 0.0;
   ruler->last_draw_coords.x1 = ruler->last_draw_coords.x2 = 0.0;
@@ -184,8 +192,9 @@ void zmapWindowScaleCanvasInit(ZMapWindowScaleCanvas ruler,
 
 void zmapWindowScaleCanvasOpenAndMaximise(ZMapWindowScaleCanvas ruler)
 {
-  int open = 10;
+  int open = zMapWindowScaleCanvasGetWidth(ruler) + 1;
 
+#if ZOOM_SCROLL
   /* If there's one set, disconnect it */
   if(ruler->visibilityHandlerCB)
     g_signal_handler_disconnect(G_OBJECT(ruler->canvas), ruler->visibilityHandlerCB);
@@ -196,6 +205,7 @@ void zmapWindowScaleCanvasOpenAndMaximise(ZMapWindowScaleCanvas ruler)
                      "visibility-notify-event",
                      G_CALLBACK(rulerMaxVisibilityHandlerCB),
                      (gpointer)ruler);
+#endif
 
   /* Now open it, which will result in the above getting called... */
   if(ruler->callbacks->paneResize &&
@@ -205,6 +215,8 @@ void zmapWindowScaleCanvasOpenAndMaximise(ZMapWindowScaleCanvas ruler)
   return ;
 }
 
+
+#if ZOOM_SCROLL
 void zmapWindowScaleCanvasMaximise(ZMapWindowScaleCanvas ruler, double y1, double y2)
 {
   double x2, max_x2,
@@ -251,7 +263,7 @@ void zmapWindowScaleCanvasMaximise(ZMapWindowScaleCanvas ruler, double y1, doubl
 
   return ;
 }
-
+#endif
 
 #if FOO_SCALE_DEBUG
 extern gpointer scale_thing;
@@ -264,7 +276,7 @@ gboolean zmapWindowScaleCanvasDraw(ZMapWindowScaleCanvas ruler, int start, int e
 {
   gboolean drawn = FALSE;
   double zoom_factor = 0.0;
-  double width;
+  double width = 0.0;
   gboolean zoomed = FALSE;
 
   zMapAssert(ruler && ruler->canvas);
@@ -282,7 +294,7 @@ gboolean zmapWindowScaleCanvasDraw(ZMapWindowScaleCanvas ruler, int start, int e
 	}
 
 #if SCALE_DEBUG
-debug("scaleCanvasDraw %d %d %d %d\n", start, end, seq_start, seq_end);
+printf("scaleCanvasDraw %d %d %d %d\n", start, end, seq_start, seq_end);
 #endif
 
 	ruler->scaleParent = foo_canvas_item_new(foo_canvas_root(ruler->canvas),
@@ -300,14 +312,26 @@ debug("scaleCanvasDraw %d %d %d %d\n", start, end, seq_start, seq_end);
 	width = zMapWindowDrawScaleBar(FOO_CANVAS_GROUP(ruler->scaleParent), start, end, seq_start, seq_end, zoom_factor, ruler->revcomped, zoomed);
 
       drawn = TRUE;
-    }
 
-  ruler->last_draw_coords.y1 = start;
-  ruler->last_draw_coords.y2 = end;
-  ruler->last_draw_coords.x1 = 0;
-  ruler->last_draw_coords.x2 = width;
-  ruler->last_draw_coords.pixels_per_unit_y = ruler->canvas->pixels_per_unit_y;
-  ruler->last_draw_coords.revcomped = ruler->revcomped;
+	ruler->last_draw_coords.y1 = start;
+	ruler->last_draw_coords.y2 = end;
+	ruler->last_draw_coords.x1 = 0;
+	ruler->last_draw_coords.x2 = width;
+	ruler->last_draw_coords.pixels_per_unit_y = ruler->canvas->pixels_per_unit_y;
+	ruler->last_draw_coords.revcomped = ruler->revcomped;
+
+#if 0	// this doesn't work, no idea why
+	/* somehow wihtout this we get an expose 1 pixel wide, prob due to the style not speciying width
+	 * canvasfeaturesets hide the width of features and thier width is onyl taken into account during and update
+	 * the foo canvas queue extra exposes on update but somehow this isn't working */
+	{
+		int x1,x2,y1,y2;
+		foo_canvas_w2c(ruler->canvas,0, start,&x1,&y1);
+		foo_canvas_w2c(ruler->canvas, width, end, &x2, &y2);
+		foo_canvas_request_redraw(ruler->canvas, x1, y1, x2, y2);
+	}
+#endif
+    }
 
 #if FOO_SCALE_DEBUG
 scale_thing = ruler->canvas;
@@ -316,6 +340,31 @@ scale_thing = ruler->canvas;
   return drawn;
 }
 
+
+double zMapWindowScaleCanvasGetWidth(ZMapWindowScaleCanvas ruler)
+{
+	return ruler->last_draw_coords.x2;
+}
+
+
+void zMapWindowScaleCanvasSetScroll(ZMapWindowScaleCanvas ruler, double x1, double y1, double x2, double y2)
+{
+//printf("scale set scroll %f %f %f %f\n", x1, y1, x2, y2);
+
+	/* NOTE this canvas has nothing except the scale bar */
+      foo_canvas_set_scroll_region(FOO_CANVAS(ruler->canvas), x1, y1, x2, y2);
+
+	/* we can't rely on scroll to queue an expose */
+	{
+		int ix1, ix2, iy1, iy2;
+		foo_canvas_w2c(ruler->canvas, x1, y1,&ix1,&iy1);
+		foo_canvas_w2c(ruler->canvas, x2, y2, &ix2, &iy2);
+		foo_canvas_request_redraw(ruler->canvas, ix1, iy1, ix2, iy2);
+	}
+
+}
+
+#if NOT_USED
 void zmapWindowScaleCanvasZoom(ZMapWindowScaleCanvas ruler, double x, double y)
 {
 
@@ -323,7 +372,7 @@ void zmapWindowScaleCanvasZoom(ZMapWindowScaleCanvas ruler, double x, double y)
 
   return ;
 }
-
+#endif
 
 
 void zmapWindowScaleCanvasSetRevComped(ZMapWindowScaleCanvas ruler, gboolean revcomped)
@@ -485,87 +534,23 @@ static void paneNotifyPositionCB(GObject *pane, GParamSpec *scroll, gpointer use
   return ;
 }
 
-#if LEGACY
-
-static void positionLeftRight(FooCanvasGroup *left, FooCanvasGroup *right)
-{
-  double x2 = 0.0;
-
-  my_foo_canvas_item_goto(FOO_CANVAS_ITEM(left), &x2, NULL);
-
-  foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(left),
-                             NULL, NULL, &x2, NULL);
-  my_foo_canvas_item_goto(FOO_CANVAS_ITEM(right), &x2, NULL);
-
-  return ;
-}
-
-static gboolean rulerVisibilityHandlerCB(GtkWidget *widget, GdkEventExpose *expose, gpointer user_data)
-{
-  ZMapWindowScaleCanvas ruler = (ZMapWindowScaleCanvas)user_data;
-  gboolean handled  = FALSE;
-
-#ifdef VERBOSE_1
-  printf("rulerVisibilityHandlerCB: enter\n");
-#endif /* VERBOSE_1 */
-  if(ruler->scaleParent)
-    {
-      GList *list = NULL;
-      FooCanvasGroup *left = NULL, *right = NULL;
-
-#ifdef VERBOSE_1
-      printf("rulerVisibilityHandlerCB: got a scale bar\n");
-#endif /* VERBOSE_1 */
-
-      list = FOO_CANVAS_GROUP(ruler->scaleParent)->item_list;
-      while(list)
-        {
-          ZMapScaleBarGroupType type = ZMAP_SCALE_BAR_GROUP_NONE;
-          type = GPOINTER_TO_INT( g_object_get_data(G_OBJECT(list->data), ZMAP_SCALE_BAR_GROUP_TYPE_KEY) );
-          switch(type)
-            {
-            case ZMAP_SCALE_BAR_GROUP_LEFT:
-              left = FOO_CANVAS_GROUP(list->data);
-              break;
-            case ZMAP_SCALE_BAR_GROUP_RIGHT:
-              right = FOO_CANVAS_GROUP(list->data);
-              break;
-            default:
-              break;
-            }
-          list = list->next;
-        }
-      if(left && right)
-        {
-          positionLeftRight(left, right);
-          g_signal_handler_disconnect(G_OBJECT(widget), ruler->visibilityHandlerCB);
-          ruler->visibilityHandlerCB = 0; /* Make sure we reset this! */
-        }
-    }
-#ifdef VERBOSE_1
-  printf("rulerVisibilityHandlerCB: leave, handled = %s\n", (handled ? "TRUE" : "FALSE"));
-#endif /* VERBOSE_1 */
-
-  return handled;
-}
-#endif
 
 
+#if ZOOM_SCROLL
 /* And a version which WILL maximise after calling the other one. */
 static gboolean rulerMaxVisibilityHandlerCB(GtkWidget *widget, GdkEventExpose *expose, gpointer user_data)
 {
   ZMapWindowScaleCanvas ruler = (ZMapWindowScaleCanvas)user_data;
   gboolean handled = FALSE;
 
-#if LEGACY
-  handled = rulerVisibilityHandlerCB(widget, expose, user_data);
-#endif
-
   zmapWindowScaleCanvasMaximise(ruler, 0.0, 0.0);
 
   return handled;
 }
+#endif
 
+
+#if ZOOM_SCROLL
 
 static void freeze_notify(ZMapWindowScaleCanvas ruler)
 {
@@ -578,7 +563,7 @@ static void thaw_notify(ZMapWindowScaleCanvas ruler)
   return ;
 }
 
-
+#endif
 
 
 
@@ -629,7 +614,9 @@ double zMapWindowDrawScaleBar(FooCanvasGroup *group, int scroll_start, int scrol
 	int n_pixels;	/* cannot be more than 30k due to foo */
 	int gap;		/* pixels between ticks */
 	int digit;		/* which tick out of 10 */
-//	int digits;		/* how many digits in fractional part */
+#if SCALE_DEBUG
+	int digits;		/* how many digits in fractional part */
+#endif
 	int nudge;		/* tick is 5th? make bigger */
 	char label [32];	/* only need ~8 but there you go */
 	char *unit;
@@ -684,7 +671,7 @@ debug("draw scale %p\n",((FooCanvasItem *) group)->canvas);
 	fid = g_quark_from_string(buf);
 
 	/* allocate featureset for whole sequence even if zoomed, if the feeatureset does not get re-created on zoom then the extent will be ok */
-	featureset = (ZMapWindowFeaturesetItem) zMapWindowCanvasItemFeaturesetGetFeaturesetItem(group, fid, seq_start, seq_end, scale_style, ZMAPSTRAND_NONE, ZMAPFRAME_0, 0);
+	featureset = (ZMapWindowFeaturesetItem) zMapWindowCanvasItemFeaturesetGetFeaturesetItem(group, fid, seq_start, seq_end, scale_style, ZMAPSTRAND_NONE, ZMAPFRAME_0, 0, 0);
 
 	seq_len = seq_end - seq_start + 1;
 	if(seq_len < 10)	/* we get called on start up w/ no sequence */
@@ -746,13 +733,20 @@ debug("hide = %d\n", n_hide);
 
 	/* choose units */
 	base = 1;
-//	digits = 1;
-	for(i = 1;base <= tick && i < 5;i++,base *= 1000 /*, digits += 2*/)
+#if SCALE_DEBUG
+	digits = 1;
+#endif
+	for(i = 1;base <= tick && i < 5;i++,base *= 1000
+#if SCALE_DEBUG
+			, digits += 2
+#endif
+			)
 		continue;
 	unit = units[--i];
 	base /= 1000;
-//	digits -= 2;
+
 #if SCALE_DEBUG
+	digits -= 2;
 debug("levels, hide = %d %d %d %d (%s)\n", n_levels,n_hide, base, digits, unit);
 #endif
 
@@ -780,9 +774,6 @@ debug("levels, hide = %d %d %d %d (%s)\n", n_levels,n_hide, base, digits, unit);
 
 	text_max *= font_width;
 
-#if SCALE_DEBUG
-	debug("text width: %.1f %.1f %d %d %s\n",font_width, text_max, i, base, unit);
-#endif
 
 	scale_width = text_max + tick_max;
 	zMapWindowCanvasFeaturesetSetWidth(featureset, scale_width);
@@ -790,6 +781,11 @@ debug("levels, hide = %d %d %d %d (%s)\n", n_levels,n_hide, base, digits, unit);
 		FooCanvasItem *foo = (FooCanvasItem *) group;
 		foo_canvas_item_request_update(foo);
 	}
+#if SCALE_DEBUG
+	printf("text width: %.1f %.1f %d %d %s\n",font_width, text_max, i, base, unit);
+	printf("tick width: %.1f %.1f\n",tick_max, scale_width);
+#endif
+
 
 	/* do we assume there are enough pixels for the highest order ticks?
 	 * no: if they shrink the window so that you can't read it then don't display
@@ -798,9 +794,9 @@ debug("levels, hide = %d %d %d %d (%s)\n", n_levels,n_hide, base, digits, unit);
 	gap = (int) (((double) n_pixels) * tick / scroll_len );	/* (double) or else would get overflow on big sequences */
 
 #if SCALE_DEBUG
-debug("scale bar: %d bases (%d-%d) @(%d,%d)  tick = %d, levels= %d,%d, %d pixels font %d, zoom %f\n",
+debug("scale bar: %d bases (%d-%d) @(%d,%d)  tick = %d, levels= %d,%d, %d pixels font %d, zoom %f, rev %d\n",
 seq_len, seq_start, seq_end,  scroll_start, scroll_end,
-tick, n_levels,n_hide, n_pixels, text_height,zoom_factor);
+tick, n_levels,n_hide, n_pixels, text_height, zoom_factor, revcomped);
 #endif
 
 

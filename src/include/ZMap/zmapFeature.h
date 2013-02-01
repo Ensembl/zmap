@@ -182,8 +182,11 @@ typedef struct ZMapSequenceStruct_
 {
   GQuark name ;						    /* optional name (zero if no name). */
   ZMapSequenceType type ;				    /* dna or peptide. */
-  ZMapFrame frame ;					    /* Where possible dna frame from which
-							     * peptide translated. */
+
+//  ZMapFrame frame ;
+/* Where possible dna frame from which peptide translated. */
+/* use zMapFeatureFrame() instead, this is based on seq coords and is stable even if we extend the seq upwards */
+
   int length ;						    /* length of sequence in bases or peptides. */
   char *sequence ;					    /* Actual sequence." */
 } ZMapSequenceStruct, *ZMapSequence ;
@@ -1124,6 +1127,8 @@ void zMapFeatureReverseComplement(ZMapFeatureContext context, ZMapFeature featur
 void zMapFeatureReverseComplementCoords(ZMapFeatureBlock block, int *start_inout, int *end_inout) ;
 
 ZMapFrame zMapFeatureFrame(ZMapFeature feature) ;
+ZMapFrame zMapFeatureFrameFromCoords(int block, int feature);
+
 gboolean zMapFeatureAddVariationString(ZMapFeature feature, char *variation_string) ;
 gboolean zMapFeatureAddURL(ZMapFeature feature, char *url) ;
 gboolean zMapFeatureAddLocus(ZMapFeature feature, GQuark locus_id) ;
@@ -1147,7 +1152,7 @@ ZMapFeature zMapFeatureSetGetFeatureByID(ZMapFeatureSet feature_set,
 gboolean zMapFeatureSetRemoveFeature(ZMapFeatureSet feature_set, ZMapFeature feature) ;
 void zMapFeatureSetDestroyFeatures(ZMapFeatureSet feature_set) ;
 void     zMapFeatureSetDestroy(ZMapFeatureSet feature_set, gboolean free_data) ;
-//void  zMapFeatureSetStyle(ZMapFeatureSet feature_set, ZMapFeatureTypeStyle *style) ;
+void  zMapFeatureSetStyle(ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style) ;
 char *zMapFeatureSetGetName(ZMapFeatureSet feature_set) ;
 GList *zMapFeatureSetGetRangeFeatures(ZMapFeatureSet feature_set, int start, int end) ;
 GList *zMapFeatureSetGetNamedFeatures(ZMapFeatureSet feature_set, GQuark original_id) ;

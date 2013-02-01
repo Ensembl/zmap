@@ -282,6 +282,9 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowFeaturesetItem featureset, ZMa
   if(!ZMAP_IS_WINDOW_FEATURESET_ITEM(featureset))
     return FALSE;
 
+  if(featureset->layer & ZMAP_CANVAS_LAYER_DECORATION)		/* eg is a background */
+     return TRUE;
+
   //printf("\nbump %s to %d\n",g_quark_to_string(featureset->id), bump_mode);
 
 #if MODULE_STATS
@@ -541,7 +544,6 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowFeaturesetItem featureset, ZMa
 
       return FALSE;
     }
-
 
   return TRUE;
 

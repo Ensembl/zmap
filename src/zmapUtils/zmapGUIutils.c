@@ -200,7 +200,7 @@ GtkWidget *zMapGUIFindTopLevel(GtkWidget *widget)
  * have this value and you should not use this value either (see gtk web page for dialogs).
  *
  * toplevel     This must be the dialog widget itself.
- * 
+ *
  * returns an integer which corresponds to the button pressed.
  *  */
 gint my_gtk_run_dialog_nonmodal(GtkWidget *toplevel)
@@ -228,7 +228,7 @@ gint my_gtk_run_dialog_nonmodal(GtkWidget *toplevel)
 
 
 
-/* Sets/gets abbreviated style for window title prefix, if TRUE then 
+/* Sets/gets abbreviated style for window title prefix, if TRUE then
  * instead of"ZMap (version)" just "Z" is displayed, if FALSE
  * then full prefix is restored. */
 void zMapGUISetAbbrevTitlePrefix(gboolean abbrev_prefix)
@@ -257,9 +257,9 @@ gboolean zMapGUIGetAbbrevTitlePrefix(void)
  * Both window_type and text can be NULL.
  *
  * The returned string should be free'd by the caller using g_free() when no longer required.
- * 
+ *
  * If abbreviated style has been set then prefix is just "Z",
- * see zMapGUISetAbbrevTitlePrefix(). 
+ * see zMapGUISetAbbrevTitlePrefix().
  *
  * window_type  The sort of window it is, e.g. "feature editor"
  * message      Very short text, e.g. "Please Reply" or a feature name or....
@@ -621,7 +621,7 @@ void zMapGUIShowMsgFull(GtkWindow *parent, char *msg,
 
 /*!
  * Show a message where user must select "ok" or "cancel".
- * 
+ *
  * Works differently from zMapGUIMsgGetText(), can only return
  * TRUE or FALSE, these are only choices for user.
  *

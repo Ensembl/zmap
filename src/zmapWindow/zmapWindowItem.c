@@ -259,8 +259,6 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
       break ;
     }
 
-   zmapWindowFocusClearOverlayManagers(window->focus) ;
-
 
 
   /* Highlight DNA and Peptide sequences corresponding to feature (if visible),
@@ -279,10 +277,10 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
 	ZMapFrame frame = ZMAPFRAME_NONE;
 	;
       zmapWindowItemHighlightDNARegion(window, TRUE, sub_part, item,
-				       ZMAPFRAME_NONE, ZMAPSEQUENCE_NONE, feature->x1, feature->x2);
+				       ZMAPFRAME_NONE, ZMAPSEQUENCE_NONE, feature->x1, feature->x2, 0) ;
 
       zmapWindowItemHighlightTranslationRegions(window, TRUE, sub_part, item,
-						ZMAPFRAME_NONE, ZMAPSEQUENCE_NONE, feature->x1, feature->x2) ;
+						ZMAPFRAME_NONE, ZMAPSEQUENCE_NONE, feature->x1, feature->x2, 0) ;
 
 
       /* PROBABLY NEED TO DISABLE THIS UNTIL I CAN GET IT ALL WORKING...... */
@@ -299,7 +297,7 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
 
 
       zmapWindowItemHighlightShowTranslationRegion(window, TRUE, sub_part, item,
-						   frame, ZMAPSEQUENCE_NONE, feature->x1, feature->x2) ;
+						   frame, ZMAPSEQUENCE_NONE, feature->x1, feature->x2, 0) ;
 
 
 
@@ -455,24 +453,6 @@ FooCanvasItem *zmapWindowItemGetTrueItem(FooCanvasItem *item)
   return true_item ;
 }
 
-
-
-/* Need to test whether this works for groups...it should do....
- *
- * For simple features or the parent of a compound feature the raise is done on the item
- * directly, for compound objects we want to raise the parent so that the whole item
- * is still raised.
- *  */
-void zmapWindowRaiseItem(FooCanvasItem *item)
-{
-
-  foo_canvas_item_raise_to_top(item) ;
-#ifdef RDS_DONT_INCLUDE
-  /* this raises the container features group! Not good. */
-  foo_canvas_item_raise_to_top(item->parent) ;
-#endif /* RDS_DONT_INCLUDE */
-  return ;
-}
 
 
 
@@ -639,6 +619,9 @@ gboolean zmapWindowItemIsOnScreen(ZMapWindow window, FooCanvasItem *item, gboole
 }
 
 
+#if 0
+only ever use by centre on sub_part below
+scroll down for alternate code (1 lines)
 /* if(!zmapWindowItemRegionIsVisible(window, item))
  *   zmapWindowItemCentreOnItem(window, item, changeRegionSize, boundarySize);
  */
@@ -662,7 +645,7 @@ gboolean zmapWindowItemRegionIsVisible(ZMapWindow window, FooCanvasItem *item)
   zMapFeature2MasterCoords(feature, &feature_x1, &feature_x2);
 
   /* Get scroll region (clamped to sequence coords) */
-  zmapWindowGetScrollRegion(window, &wx1, &wy1, &wx2, &wy2);
+  zmapWindowGetScrollableArea(window, &wx1, &wy1, &wx2, &wy2);
 
   wx2 = feature_x2 + 1;
   if(feature_x1 >= wx1 && feature_x2 <= wx2  &&
@@ -673,7 +656,7 @@ gboolean zmapWindowItemRegionIsVisible(ZMapWindow window, FooCanvasItem *item)
 
   return visible;
 }
-
+#endif
 
 
 /* Scroll to the specified item.
@@ -711,6 +694,10 @@ void zmapWindowItemCentreOnItem(ZMapWindow window, FooCanvasItem *item,
 
 /* Moves to a subpart of an item, note the coords sub_start/sub_end need to be item coords,
  * NOT world coords. If sub_start == sub_end == 0.0 then the whole item is centred on. */
+/* NOTE (mh17) must be sequence coordinates
+ * (not world)
+ */
+
 void zmapWindowItemCentreOnItemSubPart(ZMapWindow window, FooCanvasItem *item,
 				       gboolean alterScrollRegionSize,
 				       double boundaryAroundItem,
@@ -734,7 +721,8 @@ void zmapWindowItemCentreOnItemSubPart(ZMapWindow window, FooCanvasItem *item,
 
       foo_canvas_item_get_bounds(item, &ix1, &iy1, &ix2, &iy2) ;
 
-
+#if NOT_RELEVANT
+/* this will never be a group now */
       /* If the item is a group then we need to use its background to check in long items as the
        * group itself is not a long item. */
       if (FOO_IS_CANVAS_GROUP(item) && zmapWindowContainerUtilsIsValid(FOO_CANVAS_GROUP(item)))
@@ -742,12 +730,9 @@ void zmapWindowItemCentreOnItemSubPart(ZMapWindow window, FooCanvasItem *item,
 	  double height ;
 	  foo_canvas_item_get_bounds(item, &ix1, &iy1, &ix2, &iy2) ;
 
-	  /* If we are using the background then we should use it's height as originally set. */
-	  height = zmapWindowContainerGroupGetBackgroundSize(ZMAP_CONTAINER_GROUP(item)) ;
+	  height = iy2 - iy1 + 1;
+	  if (iy1 > 0)
 
-	  /* Clamp y extent to be within items background, note that sometimes background
-	   * may be negative.....afraid I don't know why.... */
-	  if (iy1 != 0)
 	    iy1 = 0 ;
 	  if (iy2 < height)
 	    iy2 = height ;
@@ -756,24 +741,31 @@ void zmapWindowItemCentreOnItemSubPart(ZMapWindow window, FooCanvasItem *item,
 	{
 	  foo_canvas_item_get_bounds(item, &ix1, &iy1, &ix2, &iy2) ;
 	}
+#endif
 
 
       /* If sub_part start/end are set then need to centre on that part of an item. */
       if (sub_start != 0.0 || sub_end != 0.0)
 	{
-	  zMapAssert(sub_start <= sub_end
+#if USING_ITEM_COORDS
+		zMapAssert(sub_start <= sub_end
 		     && (sub_start >= iy1 && sub_start <= iy2)
 		     && (sub_end >= iy1 && sub_end <= iy2)) ;
 
 	  iy2 = iy1 ;
 	  iy1 = iy1 + sub_start ;
 	  iy2 = iy2 + sub_end ;
+#else
+	  iy1 = sub_start;
+	  iy2 = sub_end;
+#endif
 	}
 
-
-      /* Fix the item coords to be in world coords for following calculations. */
+#if USING_ITEM_COORDS
+	/* Fix the item coords to be in world coords for following calculations. */
       foo_canvas_item_i2w(item, &ix1, &iy1);
       foo_canvas_item_i2w(item, &ix2, &iy2);
+#endif
 
 
       if (boundaryAroundItem > 0.0)
@@ -798,12 +790,13 @@ void zmapWindowItemCentreOnItemSubPart(ZMapWindow window, FooCanvasItem *item,
 	}
       else
 	{
-	  if (!zmapWindowItemRegionIsVisible(window, item))
-	    {
-	      double sx1, sx2, sy1, sy2, tmps, tmpi, diff;
-
+        double sx1, sx2, sy1, sy2, tmps, tmpi, diff;
 	      /* Get scroll region (clamped to sequence coords) */
-	      zmapWindowGetScrollRegion(window, &sx1, &sy1, &sx2, &sy2);
+	  zmapWindowGetScrollableArea(window, &sx1, &sy1, &sx2, &sy2);
+
+//	  if (!zmapWindowItemRegionIsVisible(window, item))
+	  if(iy1 < sy1 || iy2 > sy2)	/* as iy1 < iy2 that's all we need to test */
+	    {
 
 	      /* we now have scroll region coords */
 	      /* set tmp to centre of regions ... */
@@ -820,6 +813,7 @@ void zmapWindowItemCentreOnItemSubPart(ZMapWindow window, FooCanvasItem *item,
 	      zmapWindowClampSpan(window, &sy1, &sy2);
 
 	      /* Do the move ... */
+#warning this assumes the scroll region is big enough for the DNA match, but some people have searched for big sequences
 	      zMapWindowMove(window, sy1, sy2);
 	    }
 	}
@@ -841,7 +835,7 @@ void zmapWindowItemCentreOnItemSubPart(ZMapWindow window, FooCanvasItem *item,
 	}
 
       /* This should possibly be a function...YEH, WHAT DOES IT DO.....????? */
-      tmpx = cx2 - cx1; 
+      tmpx = cx2 - cx1;
       tmpy = cy2 - cy1;
 
       if(tmpx & 1)

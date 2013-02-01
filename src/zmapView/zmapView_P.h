@@ -360,7 +360,7 @@ gboolean zmapViewCallBlixem(ZMapView view, ZMapFeatureBlock block,
 			    GPid *child_pid, gboolean *kill_on_exit) ;
 
 ZMapFeatureContext zmapViewMergeInContext(ZMapView view, ZMapFeatureContext context);
-gboolean zmapViewDrawDiffContext(ZMapView view, ZMapFeatureContext *diff_context);
+gboolean zmapViewDrawDiffContext(ZMapView view, ZMapFeatureContext *diff_context, ZMapFeature highlight_feature) ;
 void zmapViewEraseFromContext(ZMapView replace_me, ZMapFeatureContext context_inout);
 
 void zmapViewSetupXRemote(ZMapView view, GtkWidget *widget);

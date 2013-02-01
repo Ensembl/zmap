@@ -579,14 +579,18 @@ ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
     case ZMAP_SERVERREQ_TERMINATE:
       {
         request->response = zMapServerCloseConnection(server);
+        *err_msg_out = g_strdup(zMapServerLastErrorMsg(server)) ; /* get error msg here because next call destroys the struct */
+
         if(request->response == ZMAP_SERVERRESPONSE_OK)
-	  request->response = zMapServerFreeConnection(server);
+          {
+            request->response = zMapServerFreeConnection(server);
+            server = NULL;
+          }
+        
         if(request->response == ZMAP_SERVERRESPONSE_OK)
 	  thread_rc = ZMAPTHREAD_RETURNCODE_QUIT ;
         else
 	  thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;     // server will likely evaporate and be detected
-
-	  *err_msg_out = g_strdup(zMapServerLastErrorMsg(server)) ;
 
         break ;
       }
