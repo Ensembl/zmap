@@ -223,6 +223,9 @@ void zmapControlWindowSetStatus(ZMap zmap)
     }
 
   gtk_entry_set_text(GTK_ENTRY(zmap->status_entry), status_text) ;
+
+#if UPDATES_SIBLING_WINDOWS  /* thought to be due to there being one event queue only */
+
   /* display instantly, else we don't update due to other stuff using idle time */
   /* except it doesn't work */
   {
@@ -236,6 +239,7 @@ void zmapControlWindowSetStatus(ZMap zmap)
       if(win)
            gdk_window_process_updates(win,TRUE);
   }
+#endif
 
   if(free_this)
       g_free(status_text);

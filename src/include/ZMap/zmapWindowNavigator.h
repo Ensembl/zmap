@@ -42,7 +42,9 @@ typedef void (*ZMapWindowNavigatorFunction)(ZMapWindowNavigator navigator);
 
 typedef struct _ZMapNavigatorCallbackStruct
 {
+#if RUN_AROUND
   ZMapWindowNavigatorValueChanged valueCB;
+#endif
   ZMapWindowNavigatorValueChanged widthCB;
   ZMapWindowNavigatorFunction resizeCB;
 

@@ -76,8 +76,8 @@ void zMapWindowCanvasBasicPaintFeature(ZMapWindowFeaturesetItem featureset, ZMap
 	if(featureset->bumped)
 		x1 += feature->bump_offset;
 
-	x1 += featureset->dx;
-	x2 = x1 + feature->width;
+	x1 += featureset->dx + featureset->x_off;
+	x2 = x1 + feature->width - 1;
 
 	zMapCanvasFeaturesetDrawBoxMacro(featureset,x1,x2, feature->y1, feature->y2, drawable, fill_set,outline_set,fill,outline);
 }

@@ -586,6 +586,11 @@ gboolean zmapViewCallBlixem(ZMapView view,
 	}
 
 
+
+      /* I'm inserting a lock here until I can check if g_spawn_async() shares code with
+       * g_spawn_async_with_pipes(). */
+      zMapThreadForkLock() ;
+
       if (!(g_spawn_async(cwd, &argv[0], envp, flags, pre_exec, pre_exec_data, &spawned_pid, &error)))
         {
           status = FALSE;
@@ -597,6 +602,8 @@ gboolean zmapViewCallBlixem(ZMapView view,
 	}
 
       zMapThreadForkUnlock();
+
+
 
       if (status && child_pid)
         *child_pid = spawned_pid ;

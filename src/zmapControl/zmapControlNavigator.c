@@ -53,12 +53,17 @@
 static void paneNotifyPositionCB(GObject *pane, GParamSpec *scroll, gpointer user_data);
 #endif
 
+#if RUN_AROUND
 static void canvas_value_cb(gpointer user_data, double top, double bottom);
+#endif
 static void canvas_width_cb(gpointer user_data, double left, double right);
 static void canvas_size_cb(ZMapWindowNavigator navigator);
 
 static ZMapWindowNavigatorCallbackStruct control_nav_cbs_G = {
-  canvas_value_cb, canvas_width_cb, canvas_size_cb
+#if RUN_AROUND
+  canvas_value_cb,
+#endif
+  canvas_width_cb, canvas_size_cb
 };
 
 /* Create an instance of the navigator, this currently has two scroll bars,
@@ -168,7 +173,7 @@ ZMapNavigator zMapNavigatorCreate(GtkWidget **top_widg_out, GtkWidget **canvas_o
 
 
 
-
+#if RUN_AROUND
 /* Set function + data that Navigator will call each time the position of the region window
  * is changed. */
 void zMapNavigatorSetWindowCallback(ZMapNavigator navigator,
@@ -179,6 +184,8 @@ void zMapNavigatorSetWindowCallback(ZMapNavigator navigator,
 
   return ;
 }
+#endif
+
 
 /* zmapControl.c:388 calls this! */
 
@@ -330,6 +337,7 @@ void zMapNavigatorDestroy(ZMapNavigator navigator)
  *              Internal functions
  */
 
+#if RUN_AROUND
 /* This used to be GtkAdjustment *, gpointer user_data... */
 static void canvas_value_cb(gpointer user_data, double top, double bottom)
 {
@@ -340,6 +348,7 @@ static void canvas_value_cb(gpointer user_data, double top, double bottom)
 
   return ;
 }
+#endif
 
 static void canvas_width_cb(gpointer user_data, double left, double right)
 {

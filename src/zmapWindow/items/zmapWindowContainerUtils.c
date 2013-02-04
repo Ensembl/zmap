@@ -39,17 +39,17 @@
 
 
 #include <ZMap/zmapUtilsFoo.h>
-#include <zmapWindowCanvas.h>
+//#include <zmapWindowCanvas.h>
 #include <zmapWindowCanvasItem.h>
 #include <zmapWindowContainerUtils.h>
 
 /* There's a lot of sharing here....is it wise or necessary ? */
 #include <zmapWindowContainerGroup_I.h>
-#include <zmapWindowContainerChildren_I.h>
+//#include <zmapWindowContainerChildren_I.h>
 
 /* It doesn't feel good that these are here.... */
 #include <zmapWindowContainerFeatureSet_I.h>
-#include <zmapWindowContainerStrand_I.h> /* access to ZMapWindowContainerStrand->strand */
+//#include <zmapWindowContainerStrand_I.h> /* access to ZMapWindowContainerStrand->strand */
 
 
 
@@ -64,8 +64,6 @@ typedef struct ContainerRecursionDataStruct_
   ZMapContainerUtilsExecFunc container_leave_cb   ;
   gpointer                   container_leave_data ;
 
-  gboolean                   redraw_during_recursion;
-
 } ContainerRecursionDataStruct, *ContainerRecursionData;
 
 
@@ -74,8 +72,6 @@ typedef struct
   GList *forward, *reverse;
 }ForwardReverseColumnListsStruct, *ForwardReverseColumnLists;
 
-
-static FooCanvasItem *container_get_child(ZMapWindowContainerGroup container, guint position);
 
 static void eachContainer(gpointer data, gpointer user_data);
 
@@ -125,7 +121,6 @@ void zmapWindowContainerUtilsPrint(FooCanvasGroup *any_group)
 	case ZMAPCONTAINER_LEVEL_ROOT:       printf("context: ");    break;
 	case ZMAPCONTAINER_LEVEL_ALIGN:      printf("align: ");      break;
 	case ZMAPCONTAINER_LEVEL_BLOCK:      printf("block: ");      break;
-	case ZMAPCONTAINER_LEVEL_STRAND:     printf("strand: ");     break;
 	case ZMAPCONTAINER_LEVEL_FEATURESET: printf("featureset: "); break;
 	default:
 	  break;
@@ -151,15 +146,6 @@ ZMapWindowContainerGroup zmapWindowContainerChildGetParent(FooCanvasItem *item)
     {
       container_group = ZMAP_CONTAINER_GROUP(item);
     }
-  else if (ZMAP_IS_CONTAINER_FEATURES(item)   ||
-	  ZMAP_IS_CONTAINER_BACKGROUND(item) ||
-	  ZMAP_IS_CONTAINER_OVERLAY(item)    ||
-	  ZMAP_IS_CONTAINER_UNDERLAY(item))
-    {
-      if ((item = item->parent) && ZMAP_IS_CONTAINER_GROUP(item))
-	container_group = ZMAP_CONTAINER_GROUP(item);
-    }
-
   return container_group;
 }
 
@@ -182,9 +168,9 @@ ZMapWindowContainerGroup zmapWindowContainerGetNextParent(FooCanvasItem *item)
 	{
 	  parent = FOO_CANVAS_ITEM(tmp_group);
 	}
-      else if(tmp_item->parent && tmp_item->parent->parent)
+      else if(tmp_item->parent)
 	{
-	  parent = tmp_item->parent->parent;
+	  parent = tmp_item->parent;
 	}
 
       if(parent && ZMAP_IS_CONTAINER_GROUP(parent))
@@ -194,19 +180,6 @@ ZMapWindowContainerGroup zmapWindowContainerGetNextParent(FooCanvasItem *item)
   return container_group;
 }
 
-ZMapWindowContainerFeatures zmapWindowContainerUtilsItemGetFeatures(FooCanvasItem         *item,
-								    ZMapContainerLevelType level)
-{
-  ZMapWindowContainerGroup container;
-  ZMapWindowContainerFeatures features = NULL;
-
-  if((container = zmapWindowContainerCanvasItemGetContainer(item)))
-    {
-      features = zmapWindowContainerGetFeatures(container);
-    }
-
-  return features;
-}
 
 ZMapWindowContainerGroup zmapWindowContainerUtilsGetParentLevel(ZMapWindowContainerGroup container_group,
 								ZMapContainerLevelType   level)
@@ -282,152 +255,11 @@ ZMapWindowContainerGroup zmapWindowContainerCanvasItemGetContainer(FooCanvasItem
   return container_group;
 }
 
-ZMapWindowContainerStrand zmapWindowContainerBlockGetContainerStrand(ZMapWindowContainerBlock container_block,
-								     ZMapStrand               strand)
-{
-  ZMapWindowContainerStrand container_strand = NULL;
-  GList *item_list;
-  int max = 3, llength;
-
-  if(ZMAP_IS_CONTAINER_BLOCK(container_block))
-    {
-      ZMapWindowContainerFeatures features;
-
-      features  = zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)container_block);
-
-      item_list = ((FooCanvasGroup *)features)->item_list;
-      llength   = g_list_length(item_list);
-
-      zMapAssert(llength <= max && llength > 0);
-
-      do
-	{
-	  container_strand = ZMAP_CONTAINER_STRAND(item_list->data);
-
-	  if(container_strand->strand == strand)
-	    break;
-	  else
-	    container_strand = NULL;
-	}
-      while((item_list = item_list->next));
-    }
-
-  return container_strand ;
-}
-
-ZMapWindowContainerStrand zmapWindowContainerBlockGetContainerSeparator(ZMapWindowContainerBlock container_block)
-{
-  ZMapWindowContainerStrand container_strand = NULL;
-
-  container_strand = zmapWindowContainerBlockGetContainerStrand(container_block,
-								(ZMapStrand)CONTAINER_STRAND_SEPARATOR);
-
-  return container_strand;
-}
 
 
-/* Child access. container group -> container <CHILD> */
-
-/* Note this returns the _canvasgroup_ containing the features, not the feature list. */
-ZMapWindowContainerFeatures zmapWindowContainerGetFeatures(ZMapWindowContainerGroup container)
-{
-  ZMapWindowContainerFeatures features = NULL;
-  FooCanvasItem *item;
-
-  if ((item = container_get_child(container, _CONTAINER_FEATURES_POSITION)))
-    {
-      if (ZMAP_IS_CONTAINER_FEATURES(item))
-        features = ZMAP_CONTAINER_FEATURES(item);
-
-#ifdef MH17_NEVER_INCLUDE_THIS_CODE // item is not a ZCF so treat it as one ?
-      else
-	{
-	  int i;
-	  features = ZMAP_CONTAINER_FEATURES(item);
-	  for(i = 0; i < 4; i++)
-	    {
-	      item = container_get_child(container, i);
-	      printf("item @ position %d is type %s\n", i, G_OBJECT_TYPE_NAME(item));
-	    }
-	}
-#endif //MH17_NEVER_INCLUDE_THIS_CODE
-    }
-
-  return features;
-}
 
 
-ZMapWindowContainerBackground zmapWindowContainerGetBackground(ZMapWindowContainerGroup container)
-{
-  ZMapWindowContainerBackground background = NULL;
-  FooCanvasItem *item;
 
-  if((item = container_get_child(container, _CONTAINER_BACKGROUND_POSITION)))
-    {
-      background = ZMAP_CONTAINER_BACKGROUND(item);
-    }
-
-  return background;
-}
-
-ZMapWindowContainerOverlay zmapWindowContainerGetOverlay(ZMapWindowContainerGroup container)
-{
-  ZMapWindowContainerOverlay overlay = NULL;
-  FooCanvasItem *item;
-
-  if((item = container_get_child(container, _CONTAINER_OVERLAY_POSITION)))
-    {
-      overlay = ZMAP_CONTAINER_OVERLAY(item);
-    }
-
-  return overlay;
-}
-
-ZMapWindowContainerUnderlay zmapWindowContainerGetUnderlay(ZMapWindowContainerGroup container)
-{
-  ZMapWindowContainerUnderlay underlay = NULL;
-  FooCanvasItem *item;
-
-  if((item = container_get_child(container, _CONTAINER_UNDERLAY_POSITION)))
-    {
-      underlay = ZMAP_CONTAINER_UNDERLAY(item);
-    }
-
-  return underlay;
-}
-
-/* Strand code */
-
-ZMapStrand zmapWindowContainerGetStrand(ZMapWindowContainerGroup container)
-{
-  ZMapStrand strand = ZMAPSTRAND_NONE;
-
-  container = zmapWindowContainerUtilsGetParentLevel(container,ZMAPCONTAINER_LEVEL_STRAND);
-  if(container && ZMAP_IS_CONTAINER_STRAND(container))
-    {
-      strand = (ZMAP_CONTAINER_STRAND(container))->strand;
-    }
-
-  return strand;
-}
-
-
-gboolean zmapWindowContainerIsStrandSeparator(ZMapWindowContainerGroup container)
-{
-  gboolean result = FALSE;
-
-  if(ZMAP_IS_CONTAINER_STRAND(container))
-    {
-      ZMapWindowContainerStrand strand;
-
-      strand = ZMAP_CONTAINER_STRAND(container);
-
-      if(strand->strand == CONTAINER_STRAND_SEPARATOR)
-	result = TRUE;
-    }
-
-  return result;
-}
 
 /* Get the index of an item in the feature list. */
 GList *zmapWindowContainerFindItemInList(ZMapWindowContainerGroup container_parent, FooCanvasItem *item)
@@ -646,7 +478,7 @@ gboolean zmapWindowContainerAttachFeatureAny(ZMapWindowContainerGroup container,
  * this is the only place this function gets called
  *
  * some months later ... when trying tp ding the block feature from a CanvasBlock ...
- * all the canvas items/groups have a feature_any (expect strand) and not attaching one might cause errors
+ * all the canvas items/groups have a feature_any (except strand) and not attaching one might cause errors
  * but as several featuresets can go in a column (featureset in canvas speak) then we don't get a 1-1 mapping
  */
 	  if((status = ZMAP_IS_CONTAINER_FEATURESET(container)))
@@ -685,11 +517,6 @@ gboolean zmapWindowContainerGetFeatureAny(ZMapWindowContainerGroup container, ZM
     {
       if(ZMAP_IS_CONTAINER_FEATURESET(container))
 	status = TRUE;
-      else if(ZMAP_IS_CONTAINER_STRAND(container))
-	{
-	  status = FALSE;		/* strands don't have feature context equivalent levels */
-	  zMapLogWarning("%s", "request for feature from a container strand");
-	}
       else if(ZMAP_IS_CONTAINER_BLOCK(container))
 	status = TRUE;
       else if(ZMAP_IS_CONTAINER_ALIGNMENT(container))
@@ -739,19 +566,38 @@ ZMapFeatureBlock zmapWindowContainerGetFeatureBlock(ZMapWindowContainerGroup fea
   return feature_block;
 }
 
+
+/* this used to be the features list as distinct from background item or underlay/overlay lists
+ * so to preserve the meaning we return TRUE if there are real features
+ * ie we ignore background
+ * there is a loop here but we expect only on background feature
+ * and there for we will not scan loads
+ */
 gboolean zmapWindowContainerHasFeatures(ZMapWindowContainerGroup container)
 {
   ZMapWindowContainerFeatures features;
-  gboolean has_features = FALSE;
+  GList *l;
+  gint layer;
 
   if((features = zmapWindowContainerGetFeatures(container)))
     {
-      if(((FooCanvasGroup *)features)->item_list)
-	has_features = TRUE;
+	for (l = ((FooCanvasGroup *)features)->item_list ; l ; l = l->next)
+	{
+		if(FOO_IS_CANVAS_GROUP(l->data))
+			continue;
+		if(!ZMAP_IS_WINDOW_FEATURESET_ITEM(l->data))	/* a real foo canvas item? should not happen */
+			return(TRUE);
+
+		layer = zMapWindowCanvasFeaturesetGetLayer((ZMapWindowFeaturesetItem) l->data);
+		if(!(layer & ZMAP_CANVAS_LAYER_DECORATION))
+			return TRUE;
+	}
     }
 
-  return has_features;
+  return FALSE;
 }
+
+
 
 gboolean zmapWindowContainerUtilsGetColumnLists(ZMapWindowContainerGroup block_or_strand_group,
 						GList **forward_columns_out,
@@ -781,33 +627,6 @@ gboolean zmapWindowContainerUtilsGetColumnLists(ZMapWindowContainerGroup block_o
 }
 
 
-void zmapWindowContainerSetOverlayResizing(ZMapWindowContainerGroup container_group,
-					   gboolean maximise_width, gboolean maximise_height)
-{
-  ZMapWindowContainerOverlay overlay;
-
-  if((overlay = zmapWindowContainerGetOverlay(container_group)))
-    {
-      overlay->flags.max_width  = maximise_width ;
-      overlay->flags.max_height = maximise_height ;
-    }
-
-  return ;
-}
-
-void zmapWindowContainerSetUnderlayResizing(ZMapWindowContainerGroup container_group,
-					    gboolean maximise_width, gboolean maximise_height)
-{
-  ZMapWindowContainerUnderlay underlay;
-
-  if((underlay = zmapWindowContainerGetUnderlay(container_group)))
-    {
-      underlay->flags.max_width  = maximise_width ;
-      underlay->flags.max_height = maximise_height ;
-    }
-
-  return ;
-}
 
 void zmapWindowContainerUtilsRemoveAllItems(FooCanvasGroup *group)
 {
@@ -843,11 +662,10 @@ void zmapWindowContainerUtilsExecuteFull(ZMapWindowContainerGroup   container_gr
 					 ZMapContainerUtilsExecFunc container_enter_cb,
 					 gpointer                   container_enter_data,
 					 ZMapContainerUtilsExecFunc container_leave_cb,
-					 gpointer                   container_leave_data,
-					 gboolean                   redraw_during_recursion)
+					 gpointer                   container_leave_data)
 {
   ContainerRecursionDataStruct data  = {0,NULL};
-  ZMapWindowCanvas zmap_canvas;
+//  ZMapWindowCanvas zmap_canvas;
   FooCanvasItem *parent;
 
   zMapAssert(stop_at_type >= ZMAPCONTAINER_LEVEL_ROOT &&
@@ -856,24 +674,15 @@ void zmapWindowContainerUtilsExecuteFull(ZMapWindowContainerGroup   container_gr
   parent = (FooCanvasItem *)container_group;
 
   data.stop                    = stop_at_type;
-  data.redraw_during_recursion = redraw_during_recursion;
 
   data.container_enter_cb   = container_enter_cb;
   data.container_enter_data = container_enter_data;
   data.container_leave_cb   = container_leave_cb;
   data.container_leave_data = container_leave_data;
 
-  if(redraw_during_recursion && ZMAP_IS_CANVAS(parent->canvas))
-    {
-      zmap_canvas = ZMAP_CANVAS(parent->canvas);
-      zMapWindowCanvasBusy(zmap_canvas);
-    }
+
 
   eachContainer((gpointer)container_group, &data) ;
-
-  if(redraw_during_recursion && ZMAP_IS_CANVAS(parent->canvas))
-    zMapWindowCanvasUnBusy(zmap_canvas);
-
 
   return ;
 }
@@ -887,7 +696,7 @@ void zmapWindowContainerUtilsExecute(ZMapWindowContainerGroup   parent,
   zmapWindowContainerUtilsExecuteFull(parent, stop_at_type,
 				      container_enter_cb,
 				      container_enter_data,
-				      NULL, NULL, FALSE);
+				      NULL, NULL);
   return ;
 }
 
@@ -898,7 +707,7 @@ void zmapWindowContainerUtilsExecute(ZMapWindowContainerGroup   parent,
  * - it has a strand layer under block
  * - 3-frame columns all have the same id, whereas in the FToI hash the names are mangled
  */
-static ZMapWindowContainerGroup getChildById(ZMapWindowContainerGroup group,GQuark id, ZMapFrame frame)
+static ZMapWindowContainerGroup getChildById(ZMapWindowContainerGroup group,GQuark id, ZMapStrand strand, ZMapFrame frame)
 {
       ZMapWindowContainerGroup g;
       GList *l;
@@ -907,21 +716,16 @@ static ZMapWindowContainerGroup getChildById(ZMapWindowContainerGroup group,GQua
 
       for(l = children->item_list;l;l = l->next)
       {
+		if(!ZMAP_IS_CONTAINER_GROUP(l->data))	/* now we can have background CanvasFeaturesets in top level groups, just one item list */
+			continue;
+
             g = (ZMapWindowContainerGroup) l->data;
 
-            if(g->level == ZMAPCONTAINER_LEVEL_STRAND)
-            {
-                  /* has no feature_any */
-                  ZMapWindowContainerStrand s = (ZMapWindowContainerStrand) g;
-
-                  if(s->strand == id)
-                        return(g);
-            }
-            else if(g->level == ZMAPCONTAINER_LEVEL_FEATURESET)
+		if(g->level == ZMAPCONTAINER_LEVEL_FEATURESET)
             {
                   ZMapWindowContainerFeatureSet set = ZMAP_CONTAINER_FEATURESET(g);;
 
-                  if(set->unique_id == id && set->frame == frame)
+                  if(set->unique_id == id && set->frame == frame && set->strand == strand)
                         return g;
             }
             else
@@ -939,40 +743,17 @@ FooCanvasItem *zMapFindCanvasColumn(ZMapWindowContainerGroup group,
       GQuark align, GQuark block, GQuark set, ZMapStrand strand, ZMapFrame frame)
 {
   if(group)
-      group = getChildById(group,align,ZMAPFRAME_NONE);
+      group = getChildById(group,align, ZMAPSTRAND_NONE, ZMAPFRAME_NONE);
   if(group)
-      group = getChildById(group,block,ZMAPFRAME_NONE);
+      group = getChildById(group,block,ZMAPSTRAND_NONE, ZMAPFRAME_NONE);
   if(group)
-      group = getChildById(group,strand,ZMAPFRAME_NONE);
-  if(group)
-      group = getChildById(group,set,frame);
+      group = getChildById(group,set, strand, frame);
 
   return FOO_CANVAS_ITEM(group);
 }
 
 
 /* Internal */
-
-static FooCanvasItem *container_get_child(ZMapWindowContainerGroup container, guint position)
-{
-  FooCanvasItem *child = NULL;
-
-  if(ZMAP_IS_CONTAINER_GROUP(container))
-    {
-      FooCanvasGroup *group;
-      GList *list;
-
-      group = FOO_CANVAS_GROUP(container);
-
-      if((list = g_list_nth(group->item_list, position)))
-	{
-	  child = FOO_CANVAS_ITEM(list->data);
-	}
-    }
-
-  return child;
-}
-
 
 
 /* Called for every container while descending.... */
@@ -985,6 +766,9 @@ static void eachContainer(gpointer data, gpointer user_data)
   FooCanvasPoints this_points_data = {NULL}, parent_points_data = {NULL};
   FooCanvasPoints *this_points = NULL, *parent_points = NULL;
   double *bound = NULL, spacing = 0.0, bound_data = 0.0, coords[4] = {0.0, 0.0, 0.0, 0.0};
+
+  if(!ZMAP_IS_CONTAINER_GROUP(container))	/* now we can have background CanvasFeaturesets in top level groups, just one item list */
+	  return;
 
   children = (FooCanvasGroup *)zmapWindowContainerGetFeatures(container) ;
 
@@ -1015,43 +799,6 @@ static void eachContainer(gpointer data, gpointer user_data)
 	}
     }
 
-  /* If we're redrawing then we need to do extra work... */
-  if (all_data->redraw_during_recursion)
-    {
-//      ZMapWindowContainerBackground container_background;
-
-//      container_background = zmapWindowContainerGetBackground(container);
-
-      switch(level)
-        {
-        case ZMAPCONTAINER_LEVEL_ROOT:
-	  zmapWindowContainerRequestReposition(container);
-          break;
-        case ZMAPCONTAINER_LEVEL_ALIGN:
-	  zmapWindowContainerRequestReposition(container);
-          break;
-        case ZMAPCONTAINER_LEVEL_BLOCK:
-	  zmapWindowContainerRequestReposition(container);
-          break;
-        case ZMAPCONTAINER_LEVEL_STRAND:
-	  zmapWindowContainerRequestReposition(container);
-          break;
-        case ZMAPCONTAINER_LEVEL_FEATURESET:
-          {
-            /* If this featureset requires a redraw... */
-            if (children && container->flags.column_redraw)
-              {
-		//redrawColumn(container, this_points);
-                container->height = 0.0; /* reset, although, maybe not sensible. see maximise_container_background */
-              }
-
-          }
-          break;
-        case ZMAPCONTAINER_LEVEL_INVALID:
-        default:
-          break;
-        }
-    }
 
   /* Execute post-recursion function. */
   if(all_data->container_leave_cb)

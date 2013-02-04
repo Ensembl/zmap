@@ -50,14 +50,19 @@ typedef struct
 
   ZMapFeatureBlock block ;
 
+  FooCanvasItem *feature_item;
+  FooCanvasItem *seq_item;
+
   GtkWidget *toplevel ;
   GtkWidget *dna_entry ;
   GtkSpinButton *start_spin ;
   GtkSpinButton *end_spin ;
   GtkSpinButton *flanking_spin ;
 
+#if OVERLAY
   double item_x1, item_y1, item_x2, item_y2 ;
   FooCanvasItem *overlay_box ;
+#endif
 
   gboolean enter_pressed ;
 
@@ -119,12 +124,9 @@ char *zmapWindowDNAChoose(ZMapWindow window, FooCanvasItem *feature_item, ZMapWi
   ZMapFeatureBlock block ;
   double x1, y1, x2, y2 ;
   ZMapWindowContainerGroup container;
-  ZMapWindowContainerOverlay overlay;
-  FooCanvasGroup *overlay_group ;
   FooCanvasItem *parent ;
   gint block_start, block_end ;
   char *button_text ;
-  GdkColor overlay_colour ;
   gint dialog_result ;
 
 
@@ -149,6 +151,8 @@ char *zmapWindowDNAChoose(ZMapWindow window, FooCanvasItem *feature_item, ZMapWi
   dna_data = g_new0(DNASearchDataStruct, 1) ;
   dna_data->window = window ;
   dna_data->block = block ;
+  dna_data->feature_item = feature_item;
+  dna_data->seq_item = zmapWindowItemGetDNATextItem(window,feature_item);
   dna_data->dna_start = feature->x1 ;
   dna_data->dna_end   = feature->x2 ;
   dna_data->dna_flanking = 0 ;
@@ -164,20 +168,22 @@ char *zmapWindowDNAChoose(ZMapWindow window, FooCanvasItem *feature_item, ZMapWi
 
   /* Draw an overlay box over the feature to show the extent of the dna selected. */
   container = zmapWindowContainerCanvasItemGetContainer(feature_item) ;
-  overlay   = zmapWindowContainerGetOverlay(container) ;
-  overlay_group = (FooCanvasGroup *)overlay;
-
   parent = zmapWindowItemGetTrueItem(feature_item) ;
   foo_canvas_item_get_bounds(parent, &x1, &y1, &x2, &y2) ;
+
+#if OVERLAY
+  GdkColor overlay_colour ;
 
   gdk_color_parse("red", &(overlay_colour)) ;
   dna_data->item_x1 = x1 ;
   dna_data->item_y1 = y1 ;
   dna_data->item_x2 = x2 ;
   dna_data->item_y2 = y2 ;
-  dna_data->overlay_box = zMapDrawBoxOverlay(overlay_group,
-					     x1, y1, x2, y2,
-					     &overlay_colour) ;
+#endif
+
+  zmapWindowHighlightSequenceItem(window, dna_data->seq_item,
+					    block->block_to_sequence.block.x1 + dna_data->dna_start,
+					    block->block_to_sequence.block.x1 + dna_data->dna_end, dna_data->dna_flanking);
 
 
   /* set up the top level window */
@@ -262,9 +268,6 @@ char *zmapWindowDNAChoose(ZMapWindow window, FooCanvasItem *feature_item, ZMapWi
   gtk_widget_destroy(toplevel) ;
 
   g_ptr_array_remove(window->dna_windows, (gpointer)toplevel) ;
-
-  gtk_object_destroy(GTK_OBJECT(dna_data->overlay_box)) ;
-
 
   return dna ;
 }
@@ -658,13 +661,18 @@ static void updateSpinners(DNASearchData dna_data)
   dna_data->dna_end      = gtk_spin_button_get_value_as_int(dna_data->end_spin) ;
   dna_data->dna_flanking = gtk_spin_button_get_value_as_int(dna_data->flanking_spin) ;
 
+#if OVERLAY
   /* Show the extent of the dna to be exported on the zmap window. */
   zMapDrawBoxChangeSize(dna_data->overlay_box,
 			dna_data->item_x1,
 			dna_data->dna_start - dna_data->dna_flanking,
 			dna_data->item_x2,
 			dna_data->dna_end + dna_data->dna_flanking) ;
-
+#else
+    zmapWindowHighlightSequenceItem(dna_data->window,  dna_data->seq_item,
+						dna_data->block->block_to_sequence.block.x1 + dna_data->dna_start,
+						dna_data->block->block_to_sequence.block.x1 + dna_data->dna_end, dna_data->dna_flanking);
+#endif
   return ;
 }
 

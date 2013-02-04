@@ -374,7 +374,7 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
   /* display code assumes a narrow column w/ overlapping features and does not process x-coord */
   /* this makes a huge difference to display speed */
 
-  mid_x = featureset->dx + (featureset->width / 2);
+  mid_x = featureset->dx + featureset->x_off + (featureset->width / 2);
   if(featureset->bumped)
     mid_x += feature->bump_offset;
   x1 = mid_x - feature->width / 2;
@@ -427,8 +427,8 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
       if(featureset->bumped)
 	x1 += feature->bump_offset;
 
-      x1 += featureset->dx;
-      x2 = x1 + feature->width;
+      x1 += featureset->dx + featureset->x_off;
+      x2 = x1 + feature->width - 1;
 
 	/* must use feature coords here as the first alignment in the series gets expanded to pick up colinear lines
 	 * if it's ungapped we'd draw a big box over the whole series
@@ -487,14 +487,14 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
 
 	      c.pixel = outline;
 	      gdk_gc_set_foreground (featureset->gc, &c);
-	      zMap_draw_line(drawable, featureset, cx1, gy1, cx2, gy2);
+	      zMap_draw_line(drawable, featureset, cx1, gy1, cx2 - 1, gy2);	/* GDK foible */
 	      break;
 
 	    case GAP_VLINE:		/* y coords differ, x is the same */
 	      if(!outline_set)	/* must be or else we are up the creek! */
 		break;
 
-	      gx = (int) mid_x;
+	      gx = (cx1 + cx2) / 2;
 	      c.pixel = outline;
 	      gdk_gc_set_foreground (featureset->gc, &c);
 	      zMap_draw_line(drawable, featureset, gx, gy1, gx, gy2);

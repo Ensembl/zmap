@@ -55,7 +55,8 @@
 
 #define TEXT_PREFIX "Predefined method: required for "
 
-/* mh17: rep0lace space by - to allow default styles via text file */
+#define ZMAP_FIXED_STYLE_PLAIN_NAME   "Plain"
+#define ZMAP_FIXED_STYLE_PLAIN_TEXT TEXT_PREFIX "miscellaneous."
 
 #define ZMAP_FIXED_STYLE_3FRAME   "3 Frame"
 #define ZMAP_FIXED_STYLE_3FRAME_TEXT TEXT_PREFIX "3 frame display."

@@ -1,4 +1,3 @@
-/*  Last edited: Jul  8 14:02 2011 (edgrif) */
 /*  File: zmapThreads.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -21,7 +20,8 @@
  * This file is part of the ZMap genome database package
  * originated by
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Interface to sub threads of the ZMap GUI thread.
  *
@@ -95,7 +95,6 @@ _(ZMAPTHREAD_RETURNCODE_QUIT,       , "server_quit",    "Server has quit. ", "")
 ZMAP_DEFINE_ENUM(ZMapThreadReturnCode, ZMAP_THREAD_RETURNCODE_LIST) ;
 
 
-/* rather oddly this used to be in zmapView.c */
 typedef enum
   {
     THREAD_STATUS_INVALID,
@@ -103,9 +102,6 @@ typedef enum
     THREAD_STATUS_PENDING,				    /* ????? */
     THREAD_STATUS_OK					    /* Thread functioning normally. */
   } ThreadStatus ;
-
-
-
 
 
 
@@ -133,10 +129,6 @@ typedef ZMapThreadReturnCode (*ZMapThreadTerminateHandler)(void **slave_data, ch
 typedef ZMapThreadReturnCode (*ZMapThreadDestroyHandler)(void **slave_data) ;
 
 
-void zMapThreadForkLock(void);
-void zMapThreadForkUnlock(void);
-
-
 ZMapThread zMapThreadCreate(ZMapThreadRequestHandlerFunc handler_func,
 			    ZMapThreadTerminateHandler terminate_func, ZMapThreadDestroyHandler destroy_func) ;
 void zMapThreadRequest(ZMapThread thread, void *request) ;
@@ -154,11 +146,16 @@ ZMAP_ENUM_AS_EXACT_STRING_DEC(zMapThreadRequest2ExactStr, ZMapThreadRequest) ;
 ZMAP_ENUM_AS_EXACT_STRING_DEC(zMapThreadReply2ExactStr, ZMapThreadReply) ;
 ZMAP_ENUM_AS_EXACT_STRING_DEC(zMapThreadReturnCode2ExactStr, ZMapThreadReturnCode) ;
 
-
-
-
 void zMapThreadKill(ZMapThread thread) ;
 gboolean zMapThreadExists(ZMapThread thread);
 void zMapThreadDestroy(ZMapThread thread) ;
+
+
+
+
+void zMapThreadForkLock(void) ;
+void zMapThreadForkUnlock(void) ;
+
+
 
 #endif /* !ZMAP_THREAD_H */

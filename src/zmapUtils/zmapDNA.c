@@ -264,7 +264,6 @@ gboolean zMapDNAFindMatch(char *cp, char *end, char *tp, int maxError, int maxN,
 
       if (match_str)
 	{
-//		*match_str = g_strndup(*start_out, *end_out - *start_out + 1) ;
 		*match_str = g_strdup_printf("%.*s%s", len < MAX_BASE ? len : MAX_BASE, *start_out,  len > MAX_BASE ? "..." : "");
 	}
 

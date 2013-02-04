@@ -583,11 +583,16 @@ static char *view_post_execute(char *command_text, gpointer user_data,
 	    case ZMAPVIEW_REMOTE_CREATE_FEATURE:
 	      {
 		GList* list_item ;
+		ZMapFeature feature = NULL ;
 
-		status = zmapViewDrawDiffContext(view, &(post_data->edit_context));
+		if (post_data->edit_feature)
+		  feature = post_data->edit_feature ;
+		else
+		  feature = (ZMapFeature)(post_data->feature_list->data) ;
 
+		status = zmapViewDrawDiffContext(view, &(post_data->edit_context), feature) ;
 
-		if (!status)
+		if(!status)
 		  post_data->edit_context = NULL; /* So the view->features context doesn't get destroyed */
 
 		if (post_data->edit_context)
@@ -2436,6 +2441,5 @@ static void setXremoteCB(gpointer list_data, gpointer user_data)
   return ;
 }
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
 

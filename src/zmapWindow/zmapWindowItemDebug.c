@@ -50,7 +50,6 @@
 static void printGroup(FooCanvasGroup *group, int indent, GString *buf) ;
 static void printItem(FooCanvasItem *item) ;
 static gboolean get_container_type_as_string(FooCanvasItem *item, char **str_out) ;
-static gboolean get_container_child_type_as_string(FooCanvasItem *item, char **str_out) ;
 static gboolean get_item_type_as_string(FooCanvasItem *item, char **str_out) ;
 static gboolean get_feature_type_as_string(FooCanvasItem *item, char **str_out) ;
 static GString *getItemCoords(GString *str, FooCanvasItem *item, gboolean local_only) ;
@@ -161,7 +160,7 @@ char *zmapWindowItemCoordsText(FooCanvasItem *item)
   str = g_string_sized_new(2048) ;
 
   str = getItemCoords(str, item, FALSE) ;
-  
+
   item_coords = g_string_free(str, FALSE) ;
 
   return item_coords ;
@@ -186,6 +185,8 @@ void zmapWindowPrintItemCoords(FooCanvasItem *item)
 }
 
 
+#if NOT_USED
+
 /* Converts given world coords to an items coord system and prints them. */
 void zmapWindowPrintW2I(FooCanvasItem *item, char *text, double x1_in, double y1_in)
 {
@@ -200,6 +201,7 @@ void zmapWindowPrintW2I(FooCanvasItem *item, char *text, double x1_in, double y1
 
   return ;
 }
+
 
 /* Converts coords in an items coord system into world coords and prints them. */
 /* Prints out item coords position in world and its parents coords.... */
@@ -218,6 +220,7 @@ void zmapWindowPrintI2W(FooCanvasItem *item, char *text, double x1_in, double y1
   return ;
 }
 
+#endif
 
 
 /*
@@ -266,28 +269,12 @@ static void printGroup(FooCanvasGroup *group, int indent, GString *buf)
 	{
 	  do
 	    {
-	      char *str ;
 	      FooCanvasGroup *sub_group = (FooCanvasGroup *)(item_list->data) ;
-	      FooCanvasItem *sub_item = (FooCanvasItem *)(item_list->data) ;
 
-
-	      if (get_container_child_type_as_string(sub_item, &str))
-		{
-		  for (i = 0 ; i < indent ; i++)
-		    printf("\t") ;
-		  printf("  ") ;
-
-		  printf("%s ", str) ;
-
-		  printItem(FOO_CANVAS_ITEM(sub_group)) ;
-		}
-	      else
-		{
 		  if (FOO_IS_CANVAS_GROUP(sub_group))
 		    printGroup(sub_group, indent + 1, buf) ;
 		  else
 		    printItem(FOO_CANVAS_ITEM(group)) ;
-		}
 	    }
 	  while((item_list = item_list->next)) ;
 	}
@@ -353,8 +340,6 @@ static gboolean get_container_type_as_string(FooCanvasItem *item, char **str_out
     *str_out = "ZMAP_CONTAINER_ALIGNMENT" ;
   else if (ZMAP_IS_CONTAINER_BLOCK(item))
     *str_out = "ZMAP_CONTAINER_BLOCK" ;
-  else if (ZMAP_IS_CONTAINER_STRAND(item))
-    *str_out = "ZMAP_CONTAINER_STRAND" ;
   else if (ZMAP_IS_CONTAINER_FEATURESET(item))
     *str_out = "ZMAP_CONTAINER_FEATURESET" ;
   else
@@ -364,21 +349,6 @@ static gboolean get_container_type_as_string(FooCanvasItem *item, char **str_out
 }
 
 
-static gboolean get_container_child_type_as_string(FooCanvasItem *item, char **str_out)
-{
-  gboolean has_type = TRUE ;
-
-  if (ZMAP_IS_CONTAINER_OVERLAY(item))
-    *str_out = "ZMAP_CONTAINER_OVERLAY" ;
-  else if (ZMAP_IS_CONTAINER_UNDERLAY(item))
-    *str_out = "ZMAP_CONTAINER_UNDERLAY" ;
-  else if (ZMAP_IS_CONTAINER_BACKGROUND(item))
-    *str_out = "ZMAP_CONTAINER_BACKGROUND" ;
-  else
-    has_type = FALSE ;
-
-  return has_type ;
-}
 
 
 static gboolean get_item_type_as_string(FooCanvasItem *item, char **str_out)

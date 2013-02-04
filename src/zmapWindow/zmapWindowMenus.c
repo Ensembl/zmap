@@ -2055,7 +2055,7 @@ static void unbumpAllCB(int menu_item_id, gpointer callback_data)
 
   zmapWindowColumnUnbumpAll(FOO_CANVAS_ITEM(column_group));
 
-  zmapWindowFullReposition(menu_data->window);
+  zmapWindowFullReposition(menu_data->window->feature_root_group,TRUE, "unbump all");
 
   g_free(menu_data) ;
 
@@ -2086,7 +2086,7 @@ static void bumpMenuCB(int menu_item_id, gpointer callback_data)
 
   zmapWindowColumnBumpRange(style_item, bump_type, compress_mode) ;
 
-  zmapWindowFullReposition(menu_data->window) ;
+  zmapWindowFullReposition(menu_data->window->feature_root_group,TRUE, "bump menu") ;
 
   g_free(menu_data) ;
 
@@ -2127,7 +2127,7 @@ static void bumpToggleMenuCB(int menu_item_id, gpointer callback_data)
 
       zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(column_group), bump_mode, compress_mode) ;
 
-      zmapWindowFullReposition(menu_data->window) ;
+      zmapWindowFullReposition(menu_data->window->feature_root_group,TRUE, "bump toggle menu") ;
     }
 
   g_free(menu_data) ;
@@ -2145,7 +2145,7 @@ static void maskToggleMenuCB(int menu_item_id, gpointer callback_data)
   zMapWindowContainerFeatureSetShowHideMaskedFeatures(container, container->masked, FALSE);
 
       /* un/bumped features might be wider */
-  zmapWindowFullReposition(menu_data->window) ;
+  zmapWindowFullReposition(menu_data->window->feature_root_group,TRUE, "mask toggle menu") ;
 
   g_free(menu_data) ;
 
@@ -2259,7 +2259,7 @@ static void developerMenuCB(int menu_item_id, gpointer callback_data)
     	  }
 	else if (feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
 	  {
-	    container = (ZMapWindowContainerFeatureSet)(menu_data->item->parent->parent) ;
+	    container = (ZMapWindowContainerFeatureSet)(menu_data->item->parent) ;
 	    if (container)
 	      {
 		ZMapFeatureTypeStyle style ;

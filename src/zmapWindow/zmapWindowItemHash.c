@@ -38,7 +38,7 @@
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapFeature.h>
 #include <zmapWindow_P.h>
-#include <zmapWindowCanvasItem.h> /* zMapWindowCanvasItemIntevalGetData() */
+//#include <zmapWindowCanvasItem.h> /* zMapWindowCanvasItemIntevalGetData() */
 #include <ZMap/zmapGLibUtils.h>
 
 #if MH17_NOT_USED
@@ -184,34 +184,51 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(GHashTable *ftoi_hash,
       char frame = '0';
       char *x;
 
-      if(zMapStyleIsStrandSpecific(*feature->style) && feature->strand == ZMAPSTRAND_REVERSE)
-	strand = '-';
-      if(feature_stack->frame != ZMAPFRAME_NONE)
-	frame += zmapWindowFeatureFrame(feature);
+			/* as we process both strands together strand is per feature not per set */
+            if(zMapStyleIsStrandSpecific(*feature->style))
+		{
+			if(feature->strand == ZMAPSTRAND_REVERSE)
+				strand = '-';
+			feature_stack->strand = feature->strand;
+		}
 
-      /* see comment by zMapWindowGraphDensityItemGetDensityItem() */
-      if(feature_stack->maps_to)
-	{
-	  /* a virtual featureset for combing several source into one display item */
-	  fset_id = feature_stack->maps_to;
-	  x = g_strdup_printf("%p_%s_%s_%c%c", foo->canvas, g_quark_to_string(col_id), g_quark_to_string(fset_id),strand,frame);
-	}
-      else
-	{
-	  /* a display column for combing one or several sources into one display item */
-	  x = g_strdup_printf("%p_%s_%c%c", foo->canvas, g_quark_to_string(col_id), strand,frame);
-	}
+            if(feature_stack->frame != ZMAPFRAME_NONE)
+		{
+			feature_stack->frame = zmapWindowFeatureFrame(feature);
+			frame += feature_stack->frame;
+		}
 
-      feature_stack->id = g_quark_from_string(x);
-      g_free(x);
+		/* see comment by zMapWindowGraphDensityItemGetDensityItem() */
+		if(feature_stack->maps_to)
+		{
+			/* a virtual featureset for combing several source into one display item */
+			fset_id = feature_stack->maps_to;
+			x = g_strdup_printf("%p_%s_%s_%c%c", foo->canvas, g_quark_to_string(col_id), g_quark_to_string(fset_id),strand,frame);
+		}
+		else
+		{
+			/* a display column for combing one or several sources into one display item */
+			x = g_strdup_printf("%p_%s_%c%c", foo->canvas, g_quark_to_string(col_id), strand,frame);
+		}
+
+            feature_stack->id = g_quark_from_string(x);
 
 
-      /* adds once per canvas+column+style, then returns that repeatedly */
-      /* also adds an 'interval' foo canvas item which we need to look up */
-      canvas_item = zMapWindowCanvasItemFeaturesetGetFeaturesetItem((FooCanvasGroup *) features_container, feature_stack->id,
-								    block->block_to_sequence.block.x1,block->block_to_sequence.block.x2, *feature->style,
-								    feature_stack->strand,feature_stack->frame,feature_stack->set_index);
-    }
+            /* adds once per canvas+column+style, then returns that repeatedly */
+		canvas_item = zMapWindowCanvasItemFeaturesetGetFeaturesetItem((FooCanvasGroup *) features_container, feature_stack->id,
+			block->block_to_sequence.block.x1,block->block_to_sequence.block.x2, *feature->style,
+			feature_stack->strand,feature_stack->frame,feature_stack->set_index, 0);
+
+#if !FEATURESET_AS_COLUMN
+		zmapWindowFToIAddSet(ftoi_hash,
+						feature_stack->align->unique_id, feature_stack->block->unique_id,
+						feature_stack->set->unique_id, feature_stack->strand, feature_stack->frame, (FooCanvasItem *) canvas_item) ;
+
+//if(zMapStyleGetMode(feature_stack->set->style) == ZMAPSTYLE_MODE_SEQUENCE)
+//	printf("added set %s (%s) to hash\n", g_quark_to_string(feature_stack->set->unique_id),x);
+#endif
+            g_free(x);
+      }
 
   feature_item = (FooCanvasItem *) canvas_item;
 
@@ -227,17 +244,17 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(GHashTable *ftoi_hash,
        */
       zMapWindowCanvasItemSetFeaturePointer(canvas_item, feature);
 
-      if(feature_stack->filter && (feature->flags.collapsed || feature->flags.squashed || feature->flags.joined))
-	{
-	  /* collapsed items are not displayed as they contain no new information
-	   * but they cam be searched for in the FToI hash
-	   * so return the item that they got collapsed into
-	   * if selected from the search they get assigned to the canvas item
-	   * and the population copied in.
-	   *
-	   * NOTE calling code will need to set the feature in the hash as the composite feature
-	   #warning need to set composite feature in lookup code
-	  */
+		if(feature_stack->filter && (feature->flags.collapsed || feature->flags.squashed || feature->flags.joined))
+		{
+			/* collapsed items are not displayed as they contain no new information
+			* but they cam be searched for in the FToI hash
+			* so return the item that they got collapsed into
+			* if selected from the search they get assigned to the canvas item
+			* and the population copied in.
+			*
+			* NOTE calling code will need to set the feature in the hash as the composite feature
+	#warning need to set composite feature in lookup code
+			*/
 
 	  return (FooCanvasItem *) feature_item;
 	}
@@ -249,19 +266,25 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(GHashTable *ftoi_hash,
       frame  = zmapWindowContainerFeatureSetGetFrame(parent_container);
       strand = zmapWindowContainerFeatureSetGetStrand(parent_container);
 
-      if(ftoi_hash)
-	{
-	  if(!feature_stack->col_hash[strand])
-	    {
-	      feature_stack->col_hash[strand] = zmapWindowFToIGetSetHash(ftoi_hash,
-									 feature_stack->align->unique_id, feature_stack->block->unique_id,
-									 feature_stack->set->unique_id, strand, frame);
-	    }
+		if(ftoi_hash)
+		{
+			if(!feature_stack->col_hash[strand])
+			{
+				feature_stack->col_hash[strand] = zmapWindowFToIGetSetHash(ftoi_hash,
+						feature_stack->align->unique_id, feature_stack->block->unique_id,
+						feature_stack->set->unique_id, feature_stack->strand, feature_stack->frame);
+			}
 
 	  status = zmapWindowFToIAddSetFeature(feature_stack->col_hash[strand], feature->unique_id, feature_item, feature);
 
+//if(zMapStyleGetMode(feature_stack->set->style) == ZMAPSTYLE_MODE_SEQUENCE)
+//	printf("added feature %s to hash\n", g_quark_to_string(feature->unique_id));
+
+//x = g_quark_to_string(feature->unique_id);
+//if(frame != ZMAPFRAME_NONE)
+//	printf("add to hash %p %s %s\n",feature_stack->col_hash[strand], x, g_quark_to_string(feature_stack->set->unique_id));
+		}
 	}
-    }
 
   return feature_item;
 }
@@ -441,7 +464,11 @@ gboolean zmapWindowFToIRemoveBlock(GHashTable *feature_context_to_item,
 gboolean zmapWindowFToIAddSet(GHashTable *feature_context_to_item,
 			      GQuark align_id, GQuark block_id, GQuark set_id,
 			      ZMapStrand set_strand, ZMapFrame set_frame,
+#if FEATURESET_AS_COLUMN
 			      FooCanvasGroup *set_group)
+#else
+				FooCanvasItem *set_item)
+#endif
 {
   gboolean result = FALSE ;
   ID2Canvas align ;
@@ -462,17 +489,18 @@ gboolean zmapWindowFToIAddSet(GHashTable *feature_context_to_item,
 	  ID2Canvas set ;
 	  ZMapFeatureAny item_feature ;
 
-	  item_feature = zmapWindowItemGetFeatureAny((FooCanvasItem *) set_group) ;
+	  item_feature = zmapWindowItemGetFeatureAny((FooCanvasItem *) set_item) ;
 // MH17: despite looking as if this is set up we still get an assert
 // i suspect this assert was added recently and now prevents the navigator from being displayed
 //	  zMapAssert(item_feature) ;
 
 	  set = g_new0(ID2CanvasStruct, 1) ;
-	  set->item = FOO_CANVAS_ITEM(set_group) ;
+	  set->item = set_item ;
 	  set->hash_table = g_hash_table_new_full(NULL, NULL, NULL, destroyIDHash) ;
 	  set->feature_any = item_feature ;
 
 	  g_hash_table_insert(block->hash_table, GUINT_TO_POINTER(set_id), set) ;
+//printf("added set %s to block\n",g_quark_to_string(set_id));
 	}
 
       result = TRUE ;
@@ -776,6 +804,10 @@ ID2Canvas zmapWindowFToIFindID2CFull(ZMapWindow window, GHashTable *feature_cont
 		    }
 		}
 	    }
+
+//printf("ftoi find feature: %p %p %s, %s\n", set, feature, g_quark_to_string(feature_id), g_quark_to_string(tmp_set_id));
+
+
 	}
     }
   else if(!align_id)
@@ -818,6 +850,33 @@ FooCanvasItem *zmapWindowFToIFindItemFull(ZMapWindow window, GHashTable *feature
 
 	return item;
 }
+
+
+FooCanvasItem *zmapWindowFToIFindItemColumn(ZMapWindow window, GHashTable *feature_context_to_item,
+					  GQuark align_id, GQuark block_id,
+					  GQuark set_id,
+					  ZMapStrand set_strand, ZMapFrame set_frame)
+{
+	ID2Canvas id2c;
+	FooCanvasItem *item = NULL ;
+
+	id2c = zmapWindowFToIFindID2CFull(window, feature_context_to_item,
+					  align_id, block_id,set_id,
+					  set_strand, set_frame, 0);
+
+	if(id2c)
+	{
+		item = id2c->item;
+
+		if(!ZMAP_IS_WINDOW_FEATURESET_ITEM(item))
+			item = NULL;
+		else
+			item = item->parent;
+	}
+
+	return item;
+}
+
 
 
 /* Use this function to find the _set_ of Foo canvas item/group corresponding to
@@ -1354,13 +1413,13 @@ static GQuark makeSetID(GQuark set_id, ZMapStrand strand, ZMapFrame frame)
   switch (frame)
     {
     case ZMAPFRAME_0:
-      frame_str = "0" ;
-      break ;
-    case ZMAPFRAME_1:
       frame_str = "1" ;
       break ;
-    case ZMAPFRAME_2:
+    case ZMAPFRAME_1:
       frame_str = "2" ;
+      break ;
+    case ZMAPFRAME_2:
+      frame_str = "3" ;
       break ;
     default:
       frame_str = "." ;

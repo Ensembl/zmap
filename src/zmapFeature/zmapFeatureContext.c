@@ -171,7 +171,7 @@ void zMapFeatureReverseComplement(ZMapFeatureContext context, ZMapFeature featur
 void zMapFeatureReverseComplementCoords(ZMapFeatureBlock block, int *start_inout, int *end_inout)
 {
   int start, end, my_start, my_end ;
-  ZMapFeatureContext context = (ZMapFeatureContext) block->parent->parent;
+	ZMapFeatureContext context = (ZMapFeatureContext) block->parent->parent;
 
   start = context->parent_span.x1 ;
   end   = context->parent_span.x2 ;
@@ -273,10 +273,10 @@ char *zMapFeatureGetFeatureDNA(ZMapFeature feature)
 
 /* Get a transcripts DNA, this is done by getting the unspliced DNA and then snipping
  * out the exons, CDS.
- * 
+ *
  * Returns unspliced/spliced/cds dna or NULL if there is no DNA in the feature context
  * or if CDS is requested and transcript does not have one or feature is not a transcript.
- * 
+ *
  */
 char *zMapFeatureGetTranscriptDNA(ZMapFeature transcript, gboolean spliced, gboolean cds_only)
 {
@@ -1004,16 +1004,8 @@ static void revCompFeature(ZMapFeature feature, int start_coord, int end_coord)
       /* Essentially this does nothing and needs removing... */
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      ZMapFrame curr_frame ;
-
-      curr_frame = zMapFeatureFrame(feature) ;
-      feature->feature.sequence.frame = curr_frame ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
       feature_name = zMapFeature3FrameTranslationFeatureName((ZMapFeatureSet)(feature->parent),
-							     feature->feature.sequence.frame) ;
+							     zMapFeatureFrame(feature)) ;
       feature_id = g_quark_from_string(feature_name) ;
       g_free(feature_name) ;
 

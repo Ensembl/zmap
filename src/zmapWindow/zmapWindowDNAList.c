@@ -80,7 +80,7 @@ static void freeDNAMatchCB(gpointer data, gpointer user_data_unused) ;
 
 
 
-/* 
+/*
  *                       Globals
  */
 
@@ -98,7 +98,7 @@ static GtkItemFactoryEntry menu_items_G[] = {
 
 
 
-/* 
+/*
  *                     External routines
  */
 
@@ -263,7 +263,7 @@ GtkWidget *makeMenuBar(DNAWindowListData wlist)
  * When the user selects a hit this function scrolls to the dna or peptide
  * in the dna and peptide columns _if_ they are visible, highlights the
  * matching sequence and scrolls to it.
- * 
+ *
  * The code is slightly complex because it may be passed either a dna or a
  * peptide match and has to highlight in either dna or peptide columns.
  */
@@ -313,11 +313,11 @@ static gboolean selectionFuncCB(GtkTreeSelection *selection,
 	  FooCanvasItem *item ;
 	  ZMapFrame tmp_frame ;
 	  ZMapStrand tmp_strand ;
-	  gboolean done_centring = FALSE ;
+//	  gboolean done_centring = FALSE ;
 
 	  block = window_list->block ;
 	  zMapAssert(block) ;
-	
+
 	  /* Scroll to treeview entry. */
 	  tree_view = gtk_tree_selection_get_tree_view(selection) ;
 	  gtk_tree_view_scroll_to_cell(tree_view, path, NULL, FALSE, 0.0, 0.0) ;
@@ -338,9 +338,10 @@ static gboolean selectionFuncCB(GtkTreeSelection *selection,
 	      /* Need to convert sequence coords to block for this call. */
 	      zMapFeature2BlockCoords(block, &dna_start, &dna_end) ;
 
-	      zmapWindowItemCentreOnItemSubPart(window, item, FALSE, 0.0, dna_start, dna_end) ;
+#warning FTM need seq coords, fix when fixing canvas featureset group relative coords
+	      zmapWindowItemCentreOnItemSubPart(window, item, FALSE, 0.0, start, end); // dna_start, dna_end) ;
 
-	      zmapWindowHighlightSequenceRegion(window, block, seq_type, frame, start, end, FALSE) ;
+	      zmapWindowHighlightSequenceRegion(window, block, seq_type, frame, start, end, FALSE, 0) ;
 	    }
         }
     }

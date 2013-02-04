@@ -45,6 +45,23 @@ typedef void (*ZMapContainerUtilsExecFunc)(ZMapWindowContainerGroup container,
 gboolean zmapWindowContainerUtilsIsValid(FooCanvasGroup *any_group);
 
 
+
+#define ZMapWindowContainerFeatures	ZMapWindowContainerGroup
+#define zmapWindowContainerGetFeatures(container)	container
+
+/* Used by zmapWindowContainer calls for going forward/backward through lists. */
+typedef enum
+  {
+    ZMAPCONTAINER_ITEM_FIRST = -1,			    /* These two _must_ be < 0 */
+    ZMAPCONTAINER_ITEM_LAST = -2,
+    ZMAPCONTAINER_ITEM_PREV,
+    ZMAPCONTAINER_ITEM_NEXT
+  } ZMapContainerItemDirection ;
+
+typedef gboolean (*zmapWindowContainerItemTestCallback)(FooCanvasItem *item, gpointer user_data) ;
+
+
+
 ZMapWindowContainerGroup zmapWindowContainerChildGetParent(FooCanvasItem *item);
 ZMapWindowContainerGroup zmapWindowContainerGetNextParent(FooCanvasItem *item);
 
@@ -63,17 +80,7 @@ gboolean zmapWindowContainerSetItemPosition(ZMapWindowContainerGroup container_p
 
 
 /* Block level utilities */
-ZMapWindowContainerStrand zmapWindowContainerBlockGetContainerStrand(ZMapWindowContainerBlock container_block,
-								     ZMapStrand               strand);
-ZMapWindowContainerStrand zmapWindowContainerBlockGetContainerSeparator(ZMapWindowContainerBlock container_block);
 
-ZMapWindowContainerFeatures   zmapWindowContainerGetFeatures  (ZMapWindowContainerGroup container);
-ZMapWindowContainerBackground zmapWindowContainerGetBackground(ZMapWindowContainerGroup container);
-ZMapWindowContainerOverlay    zmapWindowContainerGetOverlay   (ZMapWindowContainerGroup container);
-ZMapWindowContainerUnderlay   zmapWindowContainerGetUnderlay  (ZMapWindowContainerGroup container);
-
-ZMapStrand zmapWindowContainerGetStrand(ZMapWindowContainerGroup container);
-gboolean zmapWindowContainerIsStrandSeparator(ZMapWindowContainerGroup container);
 
 GList *zmapWindowContainerFindItemInList(ZMapWindowContainerGroup container_parent, FooCanvasItem *item);
 FooCanvasItem *zmapWindowContainerGetNthFeatureItem(ZMapWindowContainerGroup container, int nth_item);
@@ -105,8 +112,7 @@ void zmapWindowContainerUtilsExecuteFull(ZMapWindowContainerGroup   parent,
 					 ZMapContainerUtilsExecFunc container_enter_cb,
 					 gpointer                   container_enter_data,
 					 ZMapContainerUtilsExecFunc container_leave_cb,
-					 gpointer                   container_leave_data,
-					 gboolean                   redraw_during_recursion);
+					 gpointer                   container_leave_data);
 void zmapWindowContainerUtilsExecute(ZMapWindowContainerGroup   parent,
 				     ZMapContainerLevelType     stop_at_type,
 				     ZMapContainerUtilsExecFunc container_enter_cb,

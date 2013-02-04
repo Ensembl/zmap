@@ -191,6 +191,12 @@ default-bump-mode=all
 
 # former 'predefined' styles: note: names must be as in zmapConfigStyleDefaults.h
 
+#[style-Plain]
+#description=internal style used for decorations
+#mode=plain
+#colours=normal fill white; normal border black
+#displayable=true
+
 [style-3 Frame]
 description=3 frame display
 mode=meta
@@ -260,22 +266,28 @@ displayable=true
 
 [style-Strand Separator]
 description=strand separator display
-mode=meta
-displayable=false
-display-mode=hide
+#ideally mode would be plain but we want to add basic features (search hit markers) to this
+mode=basic
+width=17.0
+show-when-empty=true
+displayable=true
+display-mode=show
 bump-mode=unbump
 default-bump-mode=unbump
 bump-fixed=true
+show-only-in-separator=true
+colours = normal fill yellow; selected fill yellow
 
 [style-Search Hit Marker]
 description=display location of matches to query
 mode=basic
 displayable=true
-display-mode=hide
+display-mode=show
 bump-mode=unbump
 default-bump-mode=unbump
 bump-fixed=true
-width=15.0
+width=11.0
+offset=3.0
 strand-specific=false
 show-only-in-separator=true
 colours = normal fill red ; normal draw black ; selected fill red; selected draw black
@@ -296,4 +308,6 @@ non-assembly-colours = normal fill brown ; normal border black ; selected fill r
 [style-Assembly Path]
 description=assembly path for displayed sequence
 parent-style=assembly
+
+
 

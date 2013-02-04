@@ -83,18 +83,6 @@ gboolean zMapFeatureSequenceSetType(ZMapFeature feature, ZMapSequenceType type)
 }
 
 
-gboolean zMapFeatureAddFrame(ZMapFeature feature, ZMapFrame frame)
-{
-  gboolean result = FALSE ;
-
-  if (zMapFeatureSequenceIsPeptide(feature))
-    {
-      feature->feature.sequence.frame = frame ;
-      result = TRUE ;
-    }
-
-  return result ;
-}
 
 
 
@@ -156,13 +144,13 @@ char *zMapFeature3FrameTranslationFeatureName(ZMapFeatureSet feature_set, ZMapFr
   switch (frame)
     {
     case ZMAPFRAME_0:
-      frame_str = "0" ;
-      break ;
-    case ZMAPFRAME_1:
       frame_str = "1" ;
       break ;
-    case ZMAPFRAME_2:
+    case ZMAPFRAME_1:
       frame_str = "2" ;
+      break ;
+    case ZMAPFRAME_2:
+      frame_str = "3" ;
       break ;
     default:
       frame_str = "." ;
@@ -297,13 +285,14 @@ static void translation_set_populate(ZMapFeatureBlock feature_block,
     {
       ZMapPeptide pep ;
       ZMapFeature translation ;
-      char *feature_name = NULL ;			    /* Remember to free this */
+      char *feature_name = NULL ;		/* Remember to free this */
       GQuark feature_id ;
       ZMapFrame curr_frame ;
       char *peptide_str ;
       int peptide_length ;
 
-      curr_frame   = (ZMapFrame)i ;
+	// curr_frame = (ZMapFrame) i;
+      curr_frame   = zMapFeatureFrameFromCoords(block_start, block_position) ;	/* ref to zMapFeatureFrame(): these are block relative frames */
 
       feature_name = zMapFeature3FrameTranslationFeatureName(feature_set, curr_frame) ;
       feature_id   = g_quark_from_string(feature_name) ;
@@ -334,7 +323,7 @@ static void translation_set_populate(ZMapFeatureBlock feature_block,
         {
           int x1, x2 ;
 
-	  x1 = block_position ;
+	    x1 = block_position ;
           x2 = x1 + zMapPeptideFullSourceCodonLength(pep) - 1 ;
 
           translation = zMapFeatureCreateEmpty() ;
@@ -346,8 +335,7 @@ static void translation_set_populate(ZMapFeatureBlock feature_block,
                                      x1, x2, FALSE, 0.0,
                                      ZMAPSTRAND_NONE) ;
 
-	  zMapFeatureSequenceSetType(translation, ZMAPSEQUENCE_PEPTIDE) ;
-	  zMapFeatureAddFrame(translation, curr_frame) ;
+	    zMapFeatureSequenceSetType(translation, ZMAPSEQUENCE_PEPTIDE) ;
 
           zMapFeatureSetAddFeature(feature_set, translation) ;
         }
@@ -480,10 +468,6 @@ static void translationPopulate(ZMapFeatureBlock feature_block,
 				 ZMAPSTRAND_NONE) ;
 
       zMapFeatureSequenceSetType(translation, ZMAPSEQUENCE_PEPTIDE) ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      zMapFeatureAddFrame(translation, curr_frame) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
       zMapFeatureSetAddFeature(feature_set, translation) ;
     }

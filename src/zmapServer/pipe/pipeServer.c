@@ -26,7 +26,7 @@
  *
  * Description: These functions provide code to read the output of a script
  *		as though it were a server according to the interface defined
- *          for accessing servers. The aim is to allow ZMap to request
+ *              for accessing servers. The aim is to allow ZMap to request
  *		arbritary data from external sources as defined in the config files.
  *
  * NB:	As for the fileServer module the data is read as a single pass and then discarded.
@@ -36,13 +36,6 @@
  */
 
 #include <ZMap/zmap.h>
-
-
-/* WARNING, THIS DOES NOT COPE WITH MULTIPLE ALIGNS/BLOCKS AS IT STANDS, TO DO THAT REQUIRES
- * WORK BOTH ON THE GFF PARSER CODE (TO ACCEPT ALIGN/BLOCK ID/COORDS AND ON THIS CODE TO
- * GENERALISE IT MORE TO DEAL WITH BLOCKS...I'LL DO THAT NEXT....EG */
-
-
 
 #include <sys/types.h>  /* for waitpid() */
 #include <sys/wait.h>
@@ -408,26 +401,26 @@ static gboolean pipe_server_spawn(PipeServer server,GError **error)
 
   q_args = g_strsplit(server->query,"&",0);
   if(q_args && *q_args)
-  {
-	p = q_args[0];
-	minus = mm+2;
-	if(*p == '-')     /* optional -- allow single as well */
+    {
+      p = q_args[0];
+      minus = mm+2;
+      if(*p == '-')     /* optional -- allow single as well */
 	{
-		p++;
-		minus--;
+	  p++;
+	  minus--;
 	}
-	if(*p == '-')
+      if(*p == '-')
 	{
-		minus--;
+	  minus--;
 	}
-	n_q_args = g_strv_length(q_args);
-  }
+      n_q_args = g_strv_length(q_args);
+    }
   argv = (gchar **) g_malloc (sizeof(gchar *) * (PIPE_MAX_ARGS + n_q_args));
   argv[0] = server->script_path; // scripts can get exec'd, as long as they start w/ #!
 
 
   for(i = 1;q_args && q_args[i-1];i++)
-  {
+    {
       /* if we request from the mark we have to adjust the start/end coordinates
        * these are supplied in the url and really should be configured explicitly
        * ... now they are in [ZMap].  We now work with chromosome coords.
@@ -436,77 +429,82 @@ static gboolean pipe_server_spawn(PipeServer server,GError **error)
       char *q;
       p = q_args[i-1] + strlen(minus);
 
-	pipe_arg = server->is_otter ? otter_args : zmap_args;
+      pipe_arg = server->is_otter ? otter_args : zmap_args;
       for(; pipe_arg->type; pipe_arg++)
-      {
-            if(!g_ascii_strncasecmp(p,pipe_arg->arg,strlen(pipe_arg->arg)))
+	{
+	  if(!g_ascii_strncasecmp(p,pipe_arg->arg,strlen(pipe_arg->arg)))
             {
-                  arg_done |= pipe_arg->flag;
-                  q = make_arg(pipe_arg,minus,server);
-                  if(q)
-                  {
-                        g_free(q_args[i-1]);
-                        q_args[i-1] = q;
-                  }
+	      arg_done |= pipe_arg->flag;
+	      q = make_arg(pipe_arg,minus,server);
+	      if(q)
+		{
+		  g_free(q_args[i-1]);
+		  q_args[i-1] = q;
+		}
 
             }
-      }
+	}
 
       argv[i] = q_args[i-1];
-  }
+    }
 
-      /* add on if not defined already */
+  /* add on if not defined already */
   pipe_arg = server->is_otter ? otter_args : zmap_args;
   for(; pipe_arg->type; pipe_arg++)
-  {
+    {
       if(!(arg_done & pipe_arg->flag))
-      {
-            char *q;
-            q = make_arg(pipe_arg,minus,server);
-            if(q)
-                  argv[i++] = q;
+	{
+	  char *q;
+	  q = make_arg(pipe_arg,minus,server);
+	  if(q)
+	    argv[i++] = q;
 
-      }
-  }
+	}
+    }
 
-#define MH17_DEBUG_ARGS
+  //#define MH17_DEBUG_ARGS
 
   argv[i]= NULL;
 #if defined  MH17_DEBUG_ARGS
-{
-char *x = "";
-int j;
+  {
+    char *x = "";
+    int j;
 
-for(j = 0;argv[j] ;j++)
-{
-      x = g_strconcat(x," ",argv[j],NULL);
-}
-zMapLogWarning("pipe server args: %s (%d,%d)",x,server->zmap_start,server->zmap_end);
-}
+    for(j = 0;argv[j] ;j++)
+      {
+	x = g_strconcat(x," ",argv[j],NULL);
+      }
+    zMapLogWarning("pipe server args: %s (%d,%d)",x,server->zmap_start,server->zmap_end);
+  }
 #endif
+
+
+  /* Seems that g_spawn_async_with_pipes() is not thread safe so lock round it. */
   zMapThreadForkLock();
 
   result = g_spawn_async_with_pipes(server->script_dir,argv,NULL,
-//      G_SPAWN_SEARCH_PATH |	 doesnt work
-      G_SPAWN_DO_NOT_REAP_CHILD, // can't not give a flag!
-      NULL,NULL,&server->child_pid,NULL,&pipe_fd,&err_fd,&pipe_error);
+				    //      G_SPAWN_SEARCH_PATH |	 doesnt work
+				    G_SPAWN_DO_NOT_REAP_CHILD, // can't not give a flag!
+				    NULL,NULL,&server->child_pid,NULL,&pipe_fd,&err_fd,&pipe_error);
   if(result)
-  {
-    server->gff_pipe = g_io_channel_unix_new(pipe_fd);
-    server->gff_stderr = g_io_channel_unix_new(err_fd);
-    g_io_channel_set_flags(server->gff_stderr,G_IO_FLAG_NONBLOCK,&pipe_error);
-  }
+    {
+      server->gff_pipe = g_io_channel_unix_new(pipe_fd);
+      server->gff_stderr = g_io_channel_unix_new(err_fd);
+      g_io_channel_set_flags(server->gff_stderr,G_IO_FLAG_NONBLOCK,&pipe_error);
+    }
   else
-  {
-  	/* didn't run so can't have clean exit code; */
-  	server->exit_code = 0x2ff;	/* ref w/ pipe_server_get_stderr() */
-  }
+    {
+      /* didn't run so can't have clean exit code; */
+      server->exit_code = 0x2ff;	/* ref w/ pipe_server_get_stderr() */
+    }
 
   zMapThreadForkUnlock();
 
+
+
   g_free(argv);   // strings allocated and freed seperately
   if(q_args)
-  	g_strfreev(q_args);
+    g_strfreev(q_args);
 
 
   if(error)

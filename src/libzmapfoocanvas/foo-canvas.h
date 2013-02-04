@@ -429,6 +429,13 @@ struct _FooCanvas {
 
 	/* For use by internal pick_current_item() function */
 	unsigned int in_repick : 1;
+
+	/* prevent gdk action till we've finsihed big updates (mh17) */
+	unsigned int busy : 1;			/* don't refresh the screen */
+	unsigned int y_changed : 1;		/* need to adjust wdiget size */
+	unsigned int x_changed : 1;		/* need to adjust wdiget size */
+
+	int scroll_width, scroll_height;	/* of the parent layout widget */
 };
 
 struct _FooCanvasClass {
@@ -547,6 +554,8 @@ gulong foo_canvas_get_color_pixel (FooCanvas *canvas,
 void foo_canvas_set_stipple_origin (FooCanvas *canvas, GdkGC *gc);
 
 void foo_canvas_zmap(void);
+
+void foo_canvas_busy(FooCanvas *canvas, gboolean busy);
 
 G_END_DECLS
 

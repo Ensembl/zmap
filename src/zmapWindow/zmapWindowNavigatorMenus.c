@@ -87,7 +87,9 @@ void zmapWindowNavigatorGoToLocusExtents(ZMapWindowNavigator navigate, FooCanvas
         {
           /* x coords are HACKED!!!! */
           if(zMapFeatureGetFeatureListExtent(feature_list, &start, &end))
+	    {
             zmapWindowZoomToWorldPosition(window, TRUE, 0.0, start, 100.0, end);
+	    }
           g_list_free(feature_list);
         }
     }
@@ -341,7 +343,7 @@ static void navigatorBumpMenuCB(int menu_item_id, gpointer callback_data)
 
   zmapWindowColumnBump(style_item, bump_type) ;
 
-  zmapWindowNavigatorPositioning(menu_data->navigate);
+  zmapWindowFullReposition(menu_data->navigate->container_root,TRUE, "nav bump");
 
   g_free(menu_data) ;
 

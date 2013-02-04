@@ -340,7 +340,17 @@ static void cleanUpThread(void *thread_args)
 
   ZMAPTHREAD_DEBUG(("%s: thread clean-up routine starting....\n", zMapThreadGetThreadID(thread))) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* I think this is probably a very bad idea isn't it...what if this thread didn't have the lock,
+   * just seems like asking for trouble.... */
+
   zMapThreadForkUnlock(); // not needed, but play safe. See zmapThread.c
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+
 
   if (thread_cb->thread_died)
     {
