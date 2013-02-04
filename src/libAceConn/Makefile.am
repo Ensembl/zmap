@@ -9,13 +9,18 @@ SUBDIRS = .
 ACECONN = AceConn
 ACECONN_DIR = $(ACECONN)
 
+
+# Sadly this does not work: ./configure --prefix=$(abs_top_builddir)
+# because abs_top_builddir is only found in autoconf 2.59 onwards...
+# so I do a hack using the current directory....
 all-local:
 	@echo "Started building $(ACECONN)...."
-	@cd $(top_srcdir)/libAceConn/$(ACECONN_DIR) ; \
+	@export TMP_BUILD_DIR=`dirname $(PWD)` ; \
+	cd $(top_srcdir)/libAceConn/$(ACECONN_DIR) ; \
 	if ! test -f Makefile ; then \
 	echo 'No Makefile, creating Makefile....' ; \
 	autogen.sh ; \
-	./configure --prefix=$(abs_top_builddir) ; \
+	./configure --prefix=$$TMP_BUILD_DIR ; \
 	fi ; \
 	echo "Running make for $(ACECONN)" ; \
 	make ; \
