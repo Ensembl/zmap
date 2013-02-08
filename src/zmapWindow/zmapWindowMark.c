@@ -413,7 +413,7 @@ void zmapWindowToggleMark(ZMapWindow window, gboolean whole_feature)
 	  y1 += margin ;
 	  y2 -= margin ;
 	  /* We only ever want the mark as wide as the scroll region */
-	  zmapWindowGetScrollRegion(window, NULL, NULL, &x2, NULL);
+	  zmapWindowGetScrollableArea(window, NULL, NULL, &x2, NULL);
 
 	  zmapWindowMarkSetWorldRange(window->mark, x1, y1, x2, y2) ;
 	}
@@ -715,74 +715,6 @@ gboolean zmapWindowMarkGetSequenceRange(ZMapWindowMark mark, int *start, int *en
 }
 
 
-<<<<<<< HEAD
-#if MH17_NOT_NEEDED
-/* mh17: cut and paste from zmapWindowUtils.c */
-/* we revcomp on request not on get mark */
-gboolean zmapWindowGetMarkedSequenceRangeFwd(ZMapWindow       window,
-					     ZMapFeatureBlock block,
-					     int *start, int *end)
-{
-  gboolean result = FALSE ;
-  int x1,x2;
-
-  result = zmapWindowMarkGetSequenceRange(window->mark, &x1,&x2);
-
-  if(result)
-    {
-      if(window->revcomped_features)
-	{
-	  int temp;
-	  temp = x2;
-	  x2 = x1;
-	  x1 = temp;
-	}
-
-      *start = zmapWindowWorldToSequenceForward(window,x1);
-      *end   = zmapWindowWorldToSequenceForward(window,x2);
-
-      zMapAssert(*start <= *end); /* should be < but why bottle out in a limiting case ? */
-    }
-
-
-  zMapLogWarning("mark: %d %d, %d %d %d, %f -> %f, %d -> %d",
-		 x1,x2,*start,*end,window->origin, window->min_coord,window->max_coord,
-		 block->block_to_sequence.block.x1,block->block_to_sequence.block.x2);
-|||||||
-#if MH17_NOT_NEEDED
-/* mh17: cut and paste from zmapWindowUtils.c */
-/* we revcomp on request not on get mark */
-gboolean zmapWindowGetMarkedSequenceRangeFwd(ZMapWindow       window,
-                                   ZMapFeatureBlock block,
-                                   int *start, int *end)
-{
-  gboolean result = FALSE ;
-  int x1,x2;
-
-  result = zmapWindowMarkGetSequenceRange(window->mark, &x1,&x2);
-
-  if(result)
-  {
-      if(window->revcomped_features)
-      {
-            int temp;
-            temp = x2;
-            x2 = x1;
-            x1 = temp;
-      }
-
-      *start = zmapWindowWorldToSequenceForward(window,x1);
-      *end   = zmapWindowWorldToSequenceForward(window,x2);
-
-      zMapAssert(*start <= *end); /* should be < but why bottle out in a limiting case ? */
-  }
-
-
-zMapLogWarning("mark: %d %d, %d %d %d, %f -> %f, %d -> %d",
-      x1,x2,*start,*end,window->origin, window->min_coord,window->max_coord,
-      block->block_to_sequence.block.x1,block->block_to_sequence.block.x2);
-=======
->>>>>>> develop
 
 
 
