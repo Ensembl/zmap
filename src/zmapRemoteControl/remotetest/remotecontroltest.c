@@ -1790,6 +1790,15 @@ static void cmdCB(gpointer data, guint callback_action, GtkWidget *w)
 	       {ZMAPXML_END_ELEMENT_EVENT,   ZACP_SHUTDOWN_TAG,   ZMAPXML_EVENT_DATA_NONE,    {0}},
 	       {0}} ;
 
+
+  char *default_feature_set = "curated" ;
+  char *default_feature_name = "eds_feature" ;
+  char *default_replace_feature_name = "eds_replace_feature" ;
+  int default_start = 5000 ;
+  int default_end = 6000 ;
+  char *default_strand = "+" ;
+    
+
   RemoteData remote_data = (RemoteData)data;
   ZMapXMLUtilsEventStack data_ptr = NULL ;
   GQuark *action ;
@@ -2002,7 +2011,7 @@ static void cmdCB(gpointer data, guint callback_action, GtkWidget *w)
 
 
       /* set a load of default stuff.... */
-      featureset[1].value.q = g_quark_from_string("curated") ;
+      featureset[1].value.q = g_quark_from_string(default_feature_set) ;
 
 
       if (callback_action == XREMOTE_CREATE_SIMPLE)
@@ -2010,9 +2019,9 @@ static void cmdCB(gpointer data, guint callback_action, GtkWidget *w)
       else
 	xml = &feature[0] ;
 
-      xml[1].value.q = g_quark_from_string("eds_feature") ;
-      xml[2].value.i = 5000 ;
-      xml[3].value.i = 6000 ;
+      xml[1].value.q = g_quark_from_string(default_feature_name) ;
+      xml[2].value.i = default_start ;
+      xml[3].value.i = default_end ;
       xml[4].value.q = g_quark_from_string("+") ;
 
       request_stack = zMapXMLUtilsAddStackToEventsArrayToElement(request_stack,
@@ -2038,21 +2047,21 @@ static void cmdCB(gpointer data, guint callback_action, GtkWidget *w)
   if (do_replace_xml)
     {
       /* set a load of default stuff.... */
-      featureset[1].value.q = g_quark_from_string("history") ;
+      featureset[1].value.q = g_quark_from_string(default_feature_set) ;
 
-      feature[1].value.q = g_quark_from_string("eds_replace_feature") ;
+      feature[1].value.q = g_quark_from_string(default_replace_feature_name) ;
       feature[2].value.i = 5000 ;
       feature[3].value.i = 6000 ;
-      feature[4].value.q = g_quark_from_string("+") ;
+      feature[4].value.q = g_quark_from_string(default_strand) ;
 
       request_stack = zMapXMLUtilsAddStackToEventsArrayAfterElement(request_stack,
 								    ZACP_FEATURESET, 0,
-								    ZACP_SEQUENCE_NAME, "history",
+								    ZACP_SEQUENCE_NAME, default_feature_set,
 								    &featureset[0]) ;
 
       request_stack = zMapXMLUtilsAddStackToEventsArrayToElement(request_stack,
 								 ZACP_FEATURESET, 2,
-								 ZACP_SEQUENCE_NAME, "history",
+								 ZACP_SEQUENCE_NAME, default_feature_set,
 								 data_ptr) ;
 
 
