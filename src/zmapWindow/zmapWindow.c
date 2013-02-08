@@ -1989,26 +1989,32 @@ void zMapWindowSiblingWasRemoved(ZMapWindow window)
 
 void zMapWindowStateRecord(ZMapWindow window)
 {
-  ZMapWindowState state ;
+  ZMapWindowState state;
 
-  if ((state = zmapWindowStateCreate()))
+  if((state = zmapWindowStateCreate()))
     {
       zmapWindowStateSaveZoom(state, zMapWindowGetZoomFactor(window));
       zmapWindowStateSaveMark(state, window);
       zmapWindowStateSavePosition(state, window);
 
       if(!zmapWindowStateQueueStore(window, state, TRUE))
-	{
-	  zmapWindowStateDestroy(state);
-	}
+        state = zmapWindowStateDestroy(state);
+#if 0
+we-re recording the state not changing it
+if this function needs calling then it should be done by the caller
+NOTE StateRecord is only called by myWindowZoom (which calls SetScrollRegion which calls visibilityChange)
+or when setting the mark
+
       else
 	{
 	  invokeVisibilityChange(window);
 	}
+#endif
     }
 
   return ;
 }
+
 
 
 
@@ -2387,35 +2393,6 @@ static void invokeVisibilityChange(ZMapWindow window)
 
   return ;
 }
-
-void zMapWindowStateRecord(ZMapWindow window)
-{
-  ZMapWindowState state;
-
-  if((state = zmapWindowStateCreate()))
-    {
-      zmapWindowStateSaveZoom(state, zMapWindowGetZoomFactor(window));
-      zmapWindowStateSaveMark(state, window);
-      zmapWindowStateSavePosition(state, window);
-
-      if(!zmapWindowStateQueueStore(window, state, TRUE))
-        state = zmapWindowStateDestroy(state);
-#if 0
-we-re recording the state not changing it
-if this function needs calling then it should be done by the caller
-NOTE StateRecord is only called by myWindowZoom (which calls SetScrollRegion which calls visibilityChange)
-or when setting the mark
-
-      else
-	{
-	  invokeVisibilityChange(window);
-	}
-#endif
-    }
-
-  return ;
-}
-
 
 /* Zooming the canvas window in or out.
  * Note that zooming is only in the Y axis, the X axis is not zoomed at all as we don't need
