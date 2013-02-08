@@ -139,6 +139,7 @@ enum
     XREMOTE_CLOSE_VIEW,
 
     XREMOTE_CREATE,
+    XREMOTE_CREATE_SIMPLE,
     XREMOTE_REPLACE,
     XREMOTE_DELETE,
     XREMOTE_FIND,
@@ -514,6 +515,7 @@ static GtkItemFactoryEntry menu_items_G[] =
     {"/Commands/get_mark",       NULL,         cmdCB,      XREMOTE_GET_MARK,   NULL,       NULL},
     {"/Commands/rev_comp",       NULL,         cmdCB,      XREMOTE_REVCOMP,   NULL,       NULL},
 
+    {"/Commands/Feature Create (simple)", NULL,         cmdCB,      XREMOTE_CREATE_SIMPLE,   NULL,       NULL},
     {"/Commands/Feature Create", NULL,         cmdCB,      XREMOTE_CREATE,   NULL,       NULL},
     {"/Commands/Feature Replace",NULL,         cmdCB,      XREMOTE_REPLACE,     NULL,       NULL},
     {"/Commands/Feature Delete", NULL,         cmdCB,      XREMOTE_DELETE,   NULL,       NULL},
@@ -623,7 +625,12 @@ static GtkWidget *makeTestWindow(RemoteData remote_data)
   g_signal_connect(G_OBJECT(toplevel), "destroy",
 		   G_CALLBACK(quitCB), (gpointer)remote_data) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* old function.... */
   gtk_window_set_policy(GTK_WINDOW(toplevel), FALSE, TRUE, FALSE);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
   gtk_window_set_title(GTK_WINDOW(toplevel), "ZMap XRemote Test Suite");
   gtk_container_border_width(GTK_CONTAINER(toplevel), 5) ;
 
@@ -765,21 +772,21 @@ static GtkWidget *entry_box_widgets(RemoteData remote_data)
   if (remote_data->cmd_line_args->start)
     gtk_entry_set_text(GTK_ENTRY(sequence), remote_data->cmd_line_args->start) ;
 
-  label = gtk_label_new("start :");
+  label = gtk_label_new("end :");
   gtk_box_pack_start(GTK_BOX(entry_box), label, FALSE, FALSE, 5);
   remote_data->end_entry = sequence = gtk_entry_new();
   gtk_box_pack_start(GTK_BOX(entry_box), sequence, FALSE, FALSE, 5);
   if (remote_data->cmd_line_args->end)
     gtk_entry_set_text(GTK_ENTRY(sequence), remote_data->cmd_line_args->end) ;
 
-  label = gtk_label_new("config file :");
+  label = gtk_label_new("config file path :");
   gtk_box_pack_start(GTK_BOX(entry_box), label, FALSE, FALSE, 5);
   remote_data->config_entry  = sequence = gtk_entry_new();
   gtk_box_pack_start(GTK_BOX(entry_box), sequence, FALSE, FALSE, 5);
   if (remote_data->cmd_line_args->zmap_config_file)
     gtk_entry_set_text(GTK_ENTRY(sequence), remote_data->cmd_line_args->zmap_config_file) ;
 
-  label = gtk_label_new("zmap path :");
+  label = gtk_label_new("zmap executable path :");
   gtk_box_pack_start(GTK_BOX(entry_box), label, FALSE, FALSE, 5);
   remote_data->zmap_path_entry = path = gtk_entry_new();
   gtk_box_pack_start(GTK_BOX(entry_box), path, FALSE, FALSE, 5);
@@ -1729,6 +1736,14 @@ static void cmdCB(gpointer data, guint callback_action, GtkWidget *w)
 		    {ZMAPXML_END_ELEMENT_EVENT,   "featureset", ZMAPXML_EVENT_DATA_NONE,    {0}},
 		    {0}},
 
+    feature_simple[] = {{ZMAPXML_START_ELEMENT_EVENT, "feature",    ZMAPXML_EVENT_DATA_NONE,    {0}},
+			{ZMAPXML_ATTRIBUTE_EVENT,     "name",       ZMAPXML_EVENT_DATA_QUARK,   {0}},
+			{ZMAPXML_ATTRIBUTE_EVENT,     "start",      ZMAPXML_EVENT_DATA_INTEGER, {0}},
+			{ZMAPXML_ATTRIBUTE_EVENT,     "end",        ZMAPXML_EVENT_DATA_INTEGER, {0}},
+			{ZMAPXML_ATTRIBUTE_EVENT,     "strand",     ZMAPXML_EVENT_DATA_QUARK,   {0}},
+			{ZMAPXML_END_ELEMENT_EVENT,   "feature",    ZMAPXML_EVENT_DATA_NONE,    {0}},
+			{0}},
+
     feature[] = {{ZMAPXML_START_ELEMENT_EVENT, "feature",    ZMAPXML_EVENT_DATA_NONE,    {0}},
 		 {ZMAPXML_ATTRIBUTE_EVENT,     "name",       ZMAPXML_EVENT_DATA_QUARK,   {0}},
 		 {ZMAPXML_ATTRIBUTE_EVENT,     "start",      ZMAPXML_EVENT_DATA_INTEGER, {0}},
@@ -1825,8 +1840,7 @@ static void cmdCB(gpointer data, guint callback_action, GtkWidget *w)
 	sequence[1].value.s = g_strdup((char *)gtk_entry_get_text(GTK_ENTRY(remote_data->sequence_entry))) ;
 	sequence[2].value.i = atoi((char *)gtk_entry_get_text(GTK_ENTRY(remote_data->start_entry))) ;
 	sequence[3].value.i = atoi((char *)gtk_entry_get_text(GTK_ENTRY(remote_data->end_entry))) ;
-	sequence[4].value.s = g_strdup_printf("%sZMap",
-					      (char *)gtk_entry_get_text(GTK_ENTRY(remote_data->config_entry))) ;
+	sequence[4].value.s = g_strdup((char *)gtk_entry_get_text(GTK_ENTRY(remote_data->config_entry))) ;
 
 	break;
       }
@@ -1910,6 +1924,15 @@ static void cmdCB(gpointer data, guint callback_action, GtkWidget *w)
 	break;
       }
 
+    case XREMOTE_CREATE_SIMPLE:
+      *action  = g_quark_from_string(ZACP_CREATE_FEATURE) ;
+      command = ZACP_CREATE_FEATURE ;
+
+      data_ptr = &feature_simple[0];
+
+      do_feature_xml = TRUE ;
+      break;
+
     case XREMOTE_CREATE:
       *action  = g_quark_from_string(ZACP_CREATE_FEATURE) ;
       command = ZACP_CREATE_FEATURE ;
@@ -1975,13 +1998,22 @@ static void cmdCB(gpointer data, guint callback_action, GtkWidget *w)
   /* Feature or basic command ? */
   if (do_feature_xml)
     {
-      /* set a load of default stuff.... */
-      featureset[1].value.q = g_quark_from_string("history") ;
+      ZMapXMLUtilsEventStack xml ;
 
-      feature[1].value.q = g_quark_from_string("eds_feature") ;
-      feature[2].value.i = 5000 ;
-      feature[3].value.i = 6000 ;
-      feature[4].value.q = g_quark_from_string("+") ;
+
+      /* set a load of default stuff.... */
+      featureset[1].value.q = g_quark_from_string("curated") ;
+
+
+      if (callback_action == XREMOTE_CREATE_SIMPLE)
+	xml = &feature_simple[0] ;
+      else
+	xml = &feature[0] ;
+
+      xml[1].value.q = g_quark_from_string("eds_feature") ;
+      xml[2].value.i = 5000 ;
+      xml[3].value.i = 6000 ;
+      xml[4].value.q = g_quark_from_string("+") ;
 
       request_stack = zMapXMLUtilsAddStackToEventsArrayToElement(request_stack,
 								 ZACP_REQUEST, 0,
@@ -2770,6 +2802,7 @@ static GOptionEntry *get_main_entries(XRemoteCmdLineArgs arg_context)
     { NULL }
   };
 
+
   if (entries[0].arg_data == NULL)
     {
       entries[0].arg_data = &(arg_context->version);
@@ -2778,7 +2811,6 @@ static GOptionEntry *get_main_entries(XRemoteCmdLineArgs arg_context)
       entries[3].arg_data = &(arg_context->debugger) ;
       entries[4].arg_data = &(arg_context->xremote_debug) ;
       entries[5].arg_data = &(arg_context->cmd_debug) ;
-
       entries[6].arg_data = &(arg_context->zmap_config_file);
       entries[7].arg_data = &(arg_context->sequence) ;
       entries[8].arg_data = &(arg_context->start) ;
@@ -2830,8 +2862,17 @@ static XRemoteCmdLineArgs process_command_line_args(int argc, char *argv[])
 
   arg_context->sequence = XREMOTEARG_DEFAULT_SEQUENCE ;
 
+
   if (!makeOptionContext(arg_context))
-    appExit(FALSE) ;
+    {
+      appExit(FALSE) ;
+    }
+  else
+    {
+      if (!(arg_context->zmap_config_file))
+	arg_context->zmap_config_file = g_strdup_printf("%s/.ZMap/ZMap", g_get_home_dir()) ;
+
+    }
 
   return arg_context ;
 }
@@ -3173,21 +3214,16 @@ static gboolean start_zmap_cb(gpointer remote_data_data)
 			     ZMAPSTANZA_APP_PEER_CLIPBOARD,
 			     remote_data->unique_atom_str) ;
 
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      /* HACK.... */
       if (remote_data->cmd_line_args->zmap_config_file)
-	g_string_append_printf(cmd_str, " --%s=/nfs/users/nfs_e/edgrif/.ZMap/ --%s=ZMap",
-			       ZMAPARG_CONFIG_DIR, ZMAPARG_CONFIG_FILE) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+	{
+	  char *dirname ;
 
+	  dirname = g_path_get_dirname(remote_data->cmd_line_args->zmap_config_file) ;
 
-      if (remote_data->cmd_line_args->zmap_config_file)
-	g_string_append_printf(cmd_str, " --%s=%s", ZMAPARG_CONFIG_DIR,
-			       remote_data->cmd_line_args->zmap_config_file) ;
+	  g_string_append_printf(cmd_str, " --%s=%s", ZMAPARG_CONFIG_DIR, dirname) ;
 
-
+	  g_free(dirname) ;
+	}
 
       if (tmp_string)
 	g_string_append(cmd_str, tmp_string) ;
