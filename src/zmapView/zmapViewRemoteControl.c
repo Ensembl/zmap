@@ -491,7 +491,10 @@ static gboolean executeRequest(ZMapXMLParser parser, RequestData request_data)
 	  if (mergeNewFeatures(view, request_data,
 			       &(request_data->replace_context), &(request_data->replace_feature_list)))
 	    {
-	      zmapViewDrawDiffContext(view, &(request_data->replace_context)) ;
+
+	      /* THINGS HAVE CHANGED....FINAL FEATURE PARAMETER NEEDS TESTING.... */
+
+	      zmapViewDrawDiffContext(view, &(request_data->replace_context), request_data->replace_feature) ;
 	      request_data->msg = "Feature replaced ok !" ;
 	    }
 	  else
@@ -505,7 +508,10 @@ static gboolean executeRequest(ZMapXMLParser parser, RequestData request_data)
       /* mergeNewFeatures sets the request error code/msg if it fails. */
       if (mergeNewFeatures(view, request_data, &(request_data->edit_context), &(request_data->edit_feature_list)))
 	{
-	  zmapViewDrawDiffContext(view, &(request_data->edit_context)) ;
+
+	  /* THINGS HAVE CHANGED....FINAL FEATURE PARAMETER NEEDS TESTING.... */
+
+	  zmapViewDrawDiffContext(view, &(request_data->edit_context), request_data->edit_feature) ;
 
 	  request_data->msg = "Created feature ok !" ;
 	}
@@ -784,6 +790,7 @@ static void eraseFeatures(ZMapView view, RequestData request_data)
 
   /* If anything failed then delete_failed_make_message() will set command_rc and err_msg. */
   request_data->command_rc = REMOTE_COMMAND_RC_OK ;
+  request_data->msg = "Feature deleted ok !" ;
   if (g_list_length(request_data->edit_feature_list))
     g_list_foreach(request_data->edit_feature_list, delete_failed_make_message, request_data);
 
@@ -1996,6 +2003,15 @@ static gboolean xml_feature_end_cb(gpointer user_data, ZMapXMLElement sub_elemen
 	  zMapXMLParserCheckIfTrueErrorReturn(request_data->edit_feature == NULL,
 					      parser,
 					      "a feature end tag without a created feature.") ;
+
+	  result = FALSE ;
+	}
+      else if (ZMAPFEATURE_IS_TRANSCRIPT(request_data->edit_feature)
+	       && !(ZMAPFEATURE_HAS_EXONS(request_data->edit_feature)))
+	{
+	  request_data->command_rc = REMOTE_COMMAND_RC_FAILED ;
+
+	  zMapXMLParserRaiseParsingError(parser, "transcript has no exons.") ;
 
 	  result = FALSE ;
 	}
