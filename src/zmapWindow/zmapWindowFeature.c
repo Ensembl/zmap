@@ -1,4 +1,3 @@
-/*  Last edited: Jul 23 16:05 2012 (edgrif) */
 /*  File: zmapWindowFeature.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -230,26 +229,17 @@ gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_
 				  container_set->frame, feature))
     {
       /* check the feature is in featureset. */
-      if(zMapFeatureSetFindFeature(feature_set, feature))
+      if (zMapFeatureSetFindFeature(feature_set, feature))
         {
-#if SHOW_MARK_ITEM
-          double x1, x2, y1, y2;
-
-          if (zmapWindowMarkIsSet(zmap_window->mark)
-	      && feature_item == zmapWindowMarkGetItem(zmap_window->mark)
-	      && zmapWindowMarkGetWorldRange(zmap_window->mark, &x1, &y1, &x2, &y2))
-            {
-              zmapWindowMarkSetWorldRange(zmap_window->mark, x1, y1, x2, y2);
-            }
-#endif
-
-	  if(ZMAP_IS_WINDOW_FEATURESET_ITEM(feature_item))
-		zMapWindowFeaturesetItemRemoveFeature(feature_item,feature);
+	  if (ZMAP_IS_WINDOW_FEATURESET_ITEM(feature_item))
+	    {
+	      zMapWindowFeaturesetItemRemoveFeature(feature_item,feature);
+	    }
 	  else
-	  {
-		  /* destroy the canvas item...this will invoke canvasItemDestroyCB() */
-		  gtk_object_destroy(GTK_OBJECT(feature_item)) ;
-	  }
+	    {
+	      /* destroy the canvas item...this will invoke canvasItemDestroyCB() */
+	      gtk_object_destroy(GTK_OBJECT(feature_item)) ;
+	    }
 
 	  /* I think we shouldn't need to do this probably....on the other hand showing
 	   * empty cols is configurable.... */

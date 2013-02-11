@@ -313,15 +313,8 @@ gboolean zmapWindowStateSaveMark(ZMapWindowState state, ZMapWindow window)
 
   zMapAssert(state && ZMAP_MAGIC_IS_VALID(window_state_magic_G, state->magic)) ;
 
-  if((state->mark_set = zmapWindowMarkIsSet(mark)))
+  if ((state->mark_set = zmapWindowMarkIsSet(mark)))
     {
-      FooCanvasItem *mark_item;
-
-      if((mark_item = zmapWindowMarkGetItem(mark)))
-	{
-	  state->mark_set = serialize_item(mark_item, &(state->mark.item));
-	}
-
       /* Always get the world range, so that if feature can not be found on restore, we can still remark. */
       zmapWindowMarkGetWorldRange(mark,
 				  &(state->mark.x1), &(state->mark.y1),
@@ -506,53 +499,9 @@ static void state_mark_restore(ZMapWindow window, ZMapWindowMark mark, ZMapWindo
    * blocks horizontally but then so will a lot of things. */
   restore.x1 = 0.0 ;
 
-
-  if (serialized->item.align_id != 0 && serialized->item.feature_id != 0)
-    {
-      FooCanvasItem *mark_item;
-      GList *possible_mark_items;
-
-      /* We're not completely accurate here.  SubPart features are not remarked correctly. */
-      if ((mark_item = zmapWindowFToIFindItemFull(window,window->context_to_item,
-						  restore.item.align_id,
-						  restore.item.block_id,
-						  restore.item.fset_id,
-						  restore.item.strand,
-						  restore.item.frame,
-						  restore.item.feature_id)))
-	{
-	  zmapWindowMarkSetItem(mark, mark_item);
-	}
-      else if ((possible_mark_items = zmapWindowFToIFindItemSetFull(window,window->context_to_item,
-								    restore.item.align_id,
-								    restore.item.block_id,
-								    restore.item.column_id,
-								    0,
-								    "*",	/* reverse complement... */
-								    "*",	/* laziness */
-								    restore.item.feature_id,
-								    NULL, NULL)))
-	{
-	  ID2Canvas id2c = (ID2Canvas) possible_mark_items->data;
-	  ZMapWindowCanvasItem item = (ZMapWindowCanvasItem) id2c->item;
-	  	/* in case of composite item (eg GraphDensity) */
-	  	/* make sure item has the required feature, set */
-	  zMapWindowCanvasItemSetFeaturePointer(item, (ZMapFeature) id2c->feature_any);
-	  zmapWindowMarkSetItem(mark, id2c->item);
-	}
-      else
-	{
-	  zmapWindowMarkSetWorldRange(mark,
-				      restore.x1, restore.y1,
-				      restore.x2, restore.y2) ;
-	}
-    }
-  else
-    {
-      zmapWindowMarkSetWorldRange(mark,
-				  restore.x1, restore.y1,
-				  restore.x2, restore.y2) ;
-    }
+  zmapWindowMarkSetWorldRange(mark,
+			      restore.x1, restore.y1,
+			      restore.x2, restore.y2) ;
 
   return ;
 }
@@ -564,7 +513,7 @@ static void state_position_restore(ZMapWindow window, ZMapWindowPositionStruct *
   GtkScrolledWindow *scrolled_window;
   ZMapWindowPositionStruct new_position = {};
 
-  if(window->canvas && FOO_IS_CANVAS(window->canvas))
+  if (window->canvas && FOO_IS_CANVAS(window->canvas))
     {
       canvas = window->canvas;
 
