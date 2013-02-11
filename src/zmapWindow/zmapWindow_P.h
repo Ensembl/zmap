@@ -36,7 +36,7 @@
 #include <ZMap/zmapDraw.h>
 #include <ZMap/zmapIO.h>
 #include <ZMap/zmapWindow.h>
-#include <zmapWindowMark_P.h>
+#include <zmapWindowMark.h>
 #include <zmapWindowContainerGroup.h>
 #include <zmapWindowContainerUtils.h>
 
