@@ -50,17 +50,19 @@ void zmapWindowMarkReset(ZMapWindowMark mark) ;
 /* Get/Set Colour */
 void      zmapWindowMarkSetColour(ZMapWindowMark mark, char *colour) ;
 GdkColor *zmapWindowMarkGetColour(ZMapWindowMark mark) ;
+
 /* Get/Set Stipple */
 void       zmapWindowMarkSetStipple(ZMapWindowMark mark, GdkBitmap *stipple);
 GdkBitmap *zmapWindowMarkGetStipple(ZMapWindowMark mark);
 
-/* Get/Set the item to use as src for mark coords */
+/* Set mark from item */
 gboolean zmapWindowMarkSetItem(ZMapWindowMark mark, FooCanvasItem *item) ;
-FooCanvasItem *zmapWindowMarkGetItem(ZMapWindowMark mark) ;
 
-/* Get/Set the mark coords (_world_) */
+/* Set mark from coords (_world_) */
 gboolean zmapWindowMarkSetWorldRange(ZMapWindowMark mark,
 				     double world_x1, double world_y1, double world_x2, double world_y2) ;
+
+/* Get mark position (_world_ coords). */
 gboolean zmapWindowMarkGetWorldRange(ZMapWindowMark mark,
 				     double *world_x1, double *world_y1,
 				     double *world_x2, double *world_y2) ;
