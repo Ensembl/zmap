@@ -5036,8 +5036,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	FooCanvasItem *focus_item ;
 
 	/* If there is a focus item use that.  */
-	if ((focus_item = zmapWindowFocusGetHotItem(window->focus))
-	    || (focus_item = zmapWindowMarkGetItem(window->mark)))
+	if ((focus_item = zmapWindowFocusGetHotItem(window->focus)))
 	  {
 	    ZMapFeatureAny context ;
 	    ZMapFeature feature ;
@@ -5179,8 +5178,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	FooCanvasItem *focus_item ;
 
 	/* If there is a focus item use that.  */
-	if ((focus_item = zmapWindowFocusGetHotItem(window->focus))
-	    || (focus_item = zmapWindowMarkGetItem(window->mark)))
+	if ((focus_item = zmapWindowFocusGetHotItem(window->focus)))
 	  {
 	    ZMapFeatureAny context;
 	    ZMapFeature feature ;
