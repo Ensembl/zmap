@@ -283,10 +283,7 @@ ZMapWindowCallbacksStruct window_cbs_G =
 
 
 
-/*! @defgroup zmapview   zMapView: feature context display/processing
- * @{
- *
- * \brief  Feature Context View Handling.
+/*  Feature Context View Handling.
  *
  * zMapView routines receive requests to load, display and process
  * feature contexts. Each ZMapView corresponds to a single feature context.
@@ -296,13 +293,11 @@ ZMapWindowCallbacksStruct window_cbs_G =
 
 
 
-/*!
- * This routine must be called just once before any other views routine,
+/* This routine must be called just once before any other views routine,
  * the caller must supply all of the callback routines.
  *
- * @param callbacks   Caller registers callback functions that view will call
+ * callbacks   Caller registers callback functions that view will call
  *                    from the appropriate actions.
- * @return <nothing>
  *  */
 void zMapViewInit(ZMapViewCallbacks callbacks)
 {
@@ -354,8 +349,7 @@ ZMapViewCallbacks zmapViewGetCallbacks(void)
 
 
 
-/*!
- * Create a "view", this is the holder for a single feature context. The view may use
+/* Create a "view", this is the holder for a single feature context. The view may use
  * several threads to get this context and may display it in several windows.
  * A view _always_ has at least one window, this window may be blank but as long as
  * there is a view, there is a window. This makes the coding somewhat simpler and is
@@ -1474,13 +1468,10 @@ void zMapViewDestroy(ZMapView zmap_view, ZMapViewWindowTree destroyed_zmap_inout
 }
 
 
-/*! @} end of zmapview docs. */
-
-
 
 
 /*
- *             Functions internal to zmapView package.
+ *                          Internal routines
  */
 
 
@@ -1626,24 +1617,35 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
   req_start = features_start;
   req_end = features_end;
 
-  if(server)
+  if (server)
     {
-      ZMapViewConnection view_conn;
+      ZMapViewConnection view_conn ;
 
-      view_conn = zMapViewRequestServer(view, NULL, block_orig, req_sources, (gpointer) server,
-					req_start, req_end, dna_requested, terminate, !view->thread_fail_silent);
-      if(view_conn)
+
+      /* UGH....THIS NEEDS SORTING OUT.... */
+
+      /* THESE NEED TO GO WHEN STEP LIST STUFF IS DONE PROPERLY.... */
+      // this is an optimisation: the server supports DNA so no point in searching for it
+      // if we implement multiple sources then we can remove this
+      if ((zMap_g_list_find_quark(req_sources, zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME))))
+	{
+	  dna_requested = TRUE ;
+	}
+
+
+      if ((view_conn = zMapViewRequestServer(view, NULL, block_orig, req_sources, (gpointer)server,
+					     req_start, req_end, dna_requested, terminate, !view->thread_fail_silent)))
 	requested = TRUE;
     }
   else
-  {
-	/* OH DEAR...THINK WE MIGHT NEED THE CONFIG FILE HERE TOO.... */
+    {
+      /* OH DEAR...THINK WE MIGHT NEED THE CONFIG FILE HERE TOO.... */
 
-	/* mh17: this is tedious to do for each request esp on startup */
-	sources = zmapViewGetIniSources(view->view_sequence->config_file, NULL, NULL) ;
-	hash = zmapViewGetFeatureSourceHash(sources);
+      /* mh17: this is tedious to do for each request esp on startup */
+      sources = zmapViewGetIniSources(view->view_sequence->config_file, NULL, NULL) ;
+      hash = zmapViewGetFeatureSourceHash(sources);
 
-	for ( ; req_sources ; req_sources = g_list_next(req_sources))
+      for ( ; req_sources ; req_sources = g_list_next(req_sources))
 	{
 	  GQuark featureset = GPOINTER_TO_UINT(req_sources->data);
 	  char *unique_name ;
@@ -1795,38 +1797,34 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 	      // can optionally use an existing one -> pass in second arg
 	      view_conn = (make_new_connection ? NULL : (existing ? view_conn : NULL)) ;
 
-
-	    view_conn = zMapViewRequestServer(view, view_conn, block_orig, req_featuresets, (gpointer) server, req_start, req_end,
-					      dna_requested, (!existing && terminate), !view->thread_fail_silent);
-
-	      if(view_conn)
+	      if ((view_conn = zMapViewRequestServer(view, view_conn, block_orig, req_featuresets,
+						     (gpointer) server, req_start, req_end, dna_requested,
+						     (!existing && terminate), !view->thread_fail_silent)))
 		requested = TRUE;
 
-
-		// g_list_free(req_featuresets); no! this list gets used by threads
-		req_featuresets = NULL ;
-		}
+	      req_featuresets = NULL ;
+	    }
 	}
     }
 
   if (requested)
     {
 
-	// this is an optimisation: the server supports DNA so no point in searching for it
-	// if we implement multiple sources then we can remove this
-	if (dna_requested)	//(zMap_g_list_find_quark(req_featuresets, zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME))))
+      // this is an optimisation: the server supports DNA so no point in searching for it
+      // if we implement multiple sources then we can remove this
+      if (dna_requested)	//(zMap_g_list_find_quark(req_featuresets, zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME))))
 	{
-		view->sequence_server  = view_conn ;
+	  view->sequence_server  = view_conn ;
 	}
 
-	zMapViewShowLoadStatus(view);
+      zMapViewShowLoadStatus(view);
     }
 
   if (sources)
-      zMapConfigSourcesFreeList(sources);
+    zMapConfigSourcesFreeList(sources);
 
   if (hash)
-	g_hash_table_destroy(hash);
+    g_hash_table_destroy(hash);
 
   return ;
 }
@@ -1835,14 +1833,17 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 
 void zMapViewShowLoadStatus(ZMapView view)
 {
-	if (view->state < ZMAPVIEW_LOADING)
-	view->state = ZMAPVIEW_LOADING ;
-	if (view->state > ZMAPVIEW_LOADING)
-	view->state = ZMAPVIEW_UPDATING;
+  if (view->state < ZMAPVIEW_LOADING)
+    view->state = ZMAPVIEW_LOADING ;
+  if (view->state > ZMAPVIEW_LOADING)
+    view->state = ZMAPVIEW_UPDATING;
 
-	zmapViewBusy(view, TRUE) ;     // gets unset when all step lists finish
+  zmapViewBusy(view, TRUE) ;     // gets unset when all step lists finish
 
-	(*(view_cbs_G->state_change))(view, view->app_data, NULL) ;
+  (*(view_cbs_G->state_change))(view, view->app_data, NULL) ;
+
+
+  return ;
 }
 
 
@@ -1854,76 +1855,77 @@ void zMapViewShowLoadStatus(ZMapView view)
  */
 
 ZMapViewConnection zMapViewRequestServer(ZMapView view, ZMapViewConnection view_conn, ZMapFeatureBlock block_orig, GList *req_featuresets,
-				   gpointer _server, /* ZMapConfigSource */
-	   			   int req_start, int req_end,
-				   gboolean dna_requested, gboolean terminate, gboolean show_warning)
+					 gpointer _server, /* ZMapConfigSource */
+					 int req_start, int req_end,
+					 gboolean dna_requested, gboolean terminate, gboolean show_warning)
 {
-	ZMapFeatureContext context ;
-	ZMapFeatureBlock block ;
-	gboolean is_pipe;
+  ZMapFeatureContext context ;
+  ZMapFeatureBlock block ;
+  gboolean is_pipe;
 
-	/* things you have to do to get round scope and headers... */
-	ZMapConfigSource server = (ZMapConfigSource) _server;
+  /* things you have to do to get round scope and headers... */
+  ZMapConfigSource server = (ZMapConfigSource) _server;
 
-	/* Copy the original context from the target block upwards setting feature set names
-	* and the range of features to be copied.
-	* We need one for each featureset/ request
-	*/
-	if (block_orig)
+  /* Copy the original context from the target block upwards setting feature set names
+   * and the range of features to be copied.
+   * We need one for each featureset/ request
+   */
+  if (block_orig)
+    {
+      // using this as it may be necessary for Blixem ?
+      context = zMapFeatureContextCopyWithParents((ZMapFeatureAny)block_orig) ;
+      context->req_feature_set_names = req_featuresets ;
+
+      /* need request coords for ACEDB in case of no data returned
+       * so that we can record the actual range
+       */
+      block = zMapFeatureAlignmentGetBlockByID(context->master_align, block_orig->unique_id) ;
+      zMapFeatureBlockSetFeaturesCoords(block, req_start, req_end) ;
+
+
+      if (view->revcomped_features)
 	{
-	// using this as it may be necessary for Blixem ?
-	context = zMapFeatureContextCopyWithParents((ZMapFeatureAny)block_orig) ;
-	context->req_feature_set_names = req_featuresets ;
-
-	/* need request coords for ACEDB in case of no data returned
-		* so that we can record the actual range
-		*/
-	block = zMapFeatureAlignmentGetBlockByID(context->master_align, block_orig->unique_id) ;
-	zMapFeatureBlockSetFeaturesCoords(block, req_start, req_end) ;
-
-
-		if (view->revcomped_features)
-		{
-			/* revcomp our empty context to get external fwd strand coordinates */
-			zMapFeatureContextReverseComplement(context, view->context_map.styles);
-		}
+	  /* revcomp our empty context to get external fwd strand coordinates */
+	  zMapFeatureContextReverseComplement(context, view->context_map.styles);
 	}
-	else
-	{
-	/* Create data specific to this step list...and set it in the connection. */
-		context = createContext(view, req_featuresets, NULL) ;
-	}
+    }
+  else
+    {
+      /* Create data specific to this step list...and set it in the connection. */
+      context = createContext(view, req_featuresets, NULL) ;
+    }
 
-	//printf("request featureset %s from %s\n",g_quark_to_string(GPOINTER_TO_UINT(req_featuresets->data)),server->url);
-	zMapStartTimer("LoadFeatureSet",g_quark_to_string(GPOINTER_TO_UINT(req_featuresets->data)));
+  //printf("request featureset %s from %s\n",g_quark_to_string(GPOINTER_TO_UINT(req_featuresets->data)),server->url);
+  zMapStartTimer("LoadFeatureSet",g_quark_to_string(GPOINTER_TO_UINT(req_featuresets->data)));
 
-	/* force pipe servers to terminate, to fix mis-config error that causes a crash (RT 223055) */
-	is_pipe = g_str_has_prefix(server->url,"pipe://");
+  /* force pipe servers to terminate, to fix mis-config error that causes a crash (RT 223055) */
+  is_pipe = g_str_has_prefix(server->url,"pipe://");
 
 
-	if ((view_conn = createConnection(view, view_conn,
-					context, server->url,
-					(char *)server->format,
-					server->timeout,
-					(char *)server->version,
-					server->req_styles,
-					server->stylesfile,
-					req_featuresets,
-					dna_requested,
-					req_start,req_end,
-					terminate || is_pipe)))
-	{
-		if(!view->sources_loading)
-			view->sources_failed = 0;
-		view->sources_loading ++ ;
-		view_conn->show_warning = show_warning;
-	}
-	else
-	{
-		view->sources_failed++;
-	}
+  if ((view_conn = createConnection(view, view_conn,
+				    context, server->url,
+				    (char *)server->format,
+				    server->timeout,
+				    (char *)server->version,
+				    server->req_styles,
+				    server->stylesfile,
+				    req_featuresets,
+				    dna_requested,
+				    req_start,req_end,
+				    terminate || is_pipe)))
+    {
+      if(!view->sources_loading)
+	view->sources_failed = 0;
 
-	return view_conn;
+      view->sources_loading ++ ;
+      view_conn->show_warning = show_warning;
+    }
+  else
+    {
+      view->sources_failed++;
+    }
+
+  return view_conn;
 }
 
 
@@ -1995,9 +1997,9 @@ static void getIniData(ZMapView view, char *config_str, GList *req_sources)
 				     ZMAPSTANZA_APP_REPORT_THREAD, &view->thread_fail_silent);
 
       if (zMapConfigIniContextGetString(context,
-				       ZMAPSTANZA_APP_CONFIG,
-				       ZMAPSTANZA_APP_CONFIG,
-				       ZMAPSTANZA_APP_NAVIGATOR_SETS,&str))
+					ZMAPSTANZA_APP_CONFIG,
+					ZMAPSTANZA_APP_CONFIG,
+					ZMAPSTANZA_APP_NAVIGATOR_SETS,&str))
 	{
 	  view->navigator_set_names = zMapConfigString2QuarkList(str,FALSE);
  
@@ -2258,7 +2260,8 @@ static void getIniData(ZMapView view, char *config_str, GList *req_sources)
 
 
 #if 0
-	/* add 1-1 mappingg from colum to style where featureset->column is not defined and it's not sourced from acedb */
+	/* add 1-1 mappingg from colum to style where featureset->column is not defined
+	   and it's not sourced from acedb */
 	/* there's a race condtion... */
         for(sources = req_sources; sources ; sources = sources->next)
           {
@@ -2270,86 +2273,88 @@ static void getIniData(ZMapView view, char *config_str, GList *req_sources)
             if (!g_ascii_strncasecmp(src->url,"pipe", 4) || !g_ascii_strncasecmp(src->url,"file", 4) != 0)
 	      {
 	      }
+
+	  }
 #endif
 
 
-	    // add col specific styles
-	    col_styles  = zMapConfigIniGetQQHash(context,ZMAPSTANZA_COLUMN_STYLE_CONFIG,QQ_STYLE);
+	// add col specific styles
+	col_styles  = zMapConfigIniGetQQHash(context,ZMAPSTANZA_COLUMN_STYLE_CONFIG,QQ_STYLE);
 
-	    if (col_styles)
+	if (col_styles)
+	  {
+	    zMap_g_hash_table_iter_init (&iter, view->context_map.columns);
+	    while (zMap_g_hash_table_iter_next (&iter, &key, &value))
 	      {
-		zMap_g_hash_table_iter_init (&iter, view->context_map.columns);
-		while (zMap_g_hash_table_iter_next (&iter, &key, &value))
+		GQuark style_id;
+
+		column = (ZMapFeatureColumn) value;
+		style_id = GPOINTER_TO_UINT(g_hash_table_lookup(col_styles,GUINT_TO_POINTER(column->unique_id)));
+		// set the column style if there
+		if(style_id)
 		  {
-		    GQuark style_id;
-
-		    column = (ZMapFeatureColumn) value;
-		    style_id = GPOINTER_TO_UINT(g_hash_table_lookup(col_styles,GUINT_TO_POINTER(column->unique_id)));
-		    // set the column style if there
-		    if(style_id)
-		      {
-			column->style_id = style_id;
-			zMap_g_hashlist_insert(view->context_map.column_2_styles,
-					       column->unique_id,
-					       GUINT_TO_POINTER(style_id)) ;
-		      }
+		    column->style_id = style_id;
+		    zMap_g_hashlist_insert(view->context_map.column_2_styles,
+					   column->unique_id,
+					   GUINT_TO_POINTER(style_id)) ;
 		  }
-		g_hash_table_destroy(col_styles);
 	      }
+	    g_hash_table_destroy(col_styles);
+	  }
 
 
+	{
+
+	  GQuark col_id = zMapFeatureSetCreateID(ZMAP_FIXED_STYLE_STRAND_SEPARATOR) ;
+	  GQuark set_id = zMapFeatureSetCreateID(ZMAP_FIXED_STYLE_SEARCH_MARKERS_NAME) ;
+	  ZMapFeatureSetDesc f2c ;
+
+	  /* hard coded column style for strand separator */
+	  if ((column = g_hash_table_lookup(view->context_map.columns, GUINT_TO_POINTER(col_id))))
 	    {
+	      column->style_id = col_id ;
 
-	      GQuark col_id = zMapFeatureSetCreateID(ZMAP_FIXED_STYLE_STRAND_SEPARATOR) ;
-	      GQuark set_id = zMapFeatureSetCreateID(ZMAP_FIXED_STYLE_SEARCH_MARKERS_NAME) ;
-	      ZMapFeatureSetDesc f2c ;
+	      zMap_g_hashlist_insert(view->context_map.column_2_styles,
+				     column->unique_id,
+				     GUINT_TO_POINTER(col_id)) ;
+	      zMap_g_hashlist_insert(view->context_map.column_2_styles,
+				     column->unique_id,
+				     GUINT_TO_POINTER(set_id)) ;
+	    }
 
-	      /* hard coded column style for strand separator */
-	      if ((column = g_hash_table_lookup(view->context_map.columns, GUINT_TO_POINTER(col_id))))
+	  /* hard coded default column for search hit markers */
+	  if (view->context_map.featureset_2_column)
+	    {
+	      if (!(f2c = g_hash_table_lookup(view->context_map.featureset_2_column, GUINT_TO_POINTER(set_id))))
 		{
-		  column->style_id = col_id ;
+		  /* NOTE this is the strand separator column which used to be the third strand
+		   * it used to have a Search Hit Markers column in it sometimes
+		   * but now we load these featuresets into the strand sep. directly
+		   */
+		  f2c = g_new0(ZMapFeatureSetDescStruct,1);
+		  f2c->column_id = col_id;
+		  f2c->column_ID = g_quark_from_string(ZMAP_FIXED_STYLE_STRAND_SEPARATOR);
+		  f2c->feature_src_ID = g_quark_from_string(ZMAP_FIXED_STYLE_SEARCH_MARKERS_NAME);
+		  f2c->feature_set_text = ZMAP_FIXED_STYLE_SEARCH_MARKERS_NAME;
 
-		  zMap_g_hashlist_insert(view->context_map.column_2_styles,
-					 column->unique_id,
-					 GUINT_TO_POINTER(col_id)) ;
-		  zMap_g_hashlist_insert(view->context_map.column_2_styles,
-					 column->unique_id,
-					 GUINT_TO_POINTER(set_id)) ;
-		}
-
-	      /* hard coded default column for search hit markers */
-	      if (view->context_map.featureset_2_column)
-		{
-		  if (!(f2c = g_hash_table_lookup(view->context_map.featureset_2_column, GUINT_TO_POINTER(set_id))))
-		    {
-		      /* NOTE this is the strand separator column which used to be the third strand
-		       * it used to have a Search Hit Markers column in it sometimes
-		       * but now we load these featuresets into the strand sep. directly
-		       */
-		      f2c = g_new0(ZMapFeatureSetDescStruct,1);
-		      f2c->column_id = col_id;
-		      f2c->column_ID = g_quark_from_string(ZMAP_FIXED_STYLE_STRAND_SEPARATOR);
-		      f2c->feature_src_ID = g_quark_from_string(ZMAP_FIXED_STYLE_SEARCH_MARKERS_NAME);
-		      f2c->feature_set_text = ZMAP_FIXED_STYLE_SEARCH_MARKERS_NAME;
-
-		      g_hash_table_insert(view->context_map.featureset_2_column,GUINT_TO_POINTER(set_id), f2c);
-		    }
+		  g_hash_table_insert(view->context_map.featureset_2_column,GUINT_TO_POINTER(set_id), f2c);
 		}
 	    }
+	}
 
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	    printf("\nini fset2style\n");
-	    zMap_g_hashlist_print(view->context_map.column_2_styles);
+	printf("\nini fset2style\n");
+	zMap_g_hashlist_print(view->context_map.column_2_styles);
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-	  }
-
-	zMapConfigIniContextDestroy(context);
       }
 
-      return ;
+      zMapConfigIniContextDestroy(context);
     }
+
+  return ;
+}
 
 
 static gint colOrderCB(gconstpointer a, gconstpointer b,gpointer user_data)
@@ -4489,12 +4494,12 @@ static void getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature_req
 
 static gboolean zMapViewSortExons(ZMapFeatureContext diff_context)
 {
-      zMapFeatureContextExecute((ZMapFeatureAny) diff_context,
-                                   ZMAPFEATURE_STRUCT_FEATURESET,
-                                   zMapFeatureTranscriptSortExons,
-                                   NULL);
+  zMapFeatureContextExecute((ZMapFeatureAny) diff_context,
+			    ZMAPFEATURE_STRUCT_FEATURESET,
+			    zMapFeatureContextTranscriptSortExons,
+			    NULL);
 
-      return(TRUE);
+  return(TRUE);
 }
 
 
