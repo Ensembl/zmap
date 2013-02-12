@@ -64,11 +64,11 @@ void zmapWindowPrintCanvas(FooCanvas *canvas)
 
   foo_canvas_get_scroll_region(canvas, &x1, &y1, &x2, &y2);
 
-  printf("Canvas stats:\n\n") ;
+  printf("\nCanvas stats:\n\n") ;
 
-  printf("Zoom x,y: %f, %f\n", canvas->pixels_per_unit_x, canvas->pixels_per_unit_y) ;
+  printf("\nZoom x,y: %f, %f\n", canvas->pixels_per_unit_x, canvas->pixels_per_unit_y) ;
 
-  printf("Scroll region bounds: %f -> %f,  %f -> %f\n", x1, x2, y1, y2) ;
+  printf("\nScroll region bounds: %f -> %f,  %f -> %f\n", x1, x2, y1, y2) ;
 
   zmapWindowPrintGroups(canvas) ;
 
@@ -82,7 +82,7 @@ void zmapWindowPrintGroups(FooCanvas *canvas)
   int indent ;
   GString *buf ;
 
-  printf("Groups:\n") ;
+  printf("\nGroups:\n") ;
 
   root = foo_canvas_root(canvas) ;
 
@@ -108,7 +108,7 @@ void zmapWindowItemDebugItemToString(GString *string, FooCanvasItem *item)
     g_string_append_printf(string, "%s", str) ;
 
   if ((has_feature = get_feature_type_as_string(item, &str)))
-    g_string_append_printf(string, "%s", str) ;
+    g_string_append_printf(string, " %s", str) ;
 
   if (has_feature)
     {
@@ -304,20 +304,26 @@ static void printGroup(FooCanvasGroup *group, int indent, GString *buf)
 static void printItem(FooCanvasItem *item)
 {
   double x1, y1, x2, y2 ;
+  double wx1, wy1, wx2, wy2 ;
 
   foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2) ;
+
+  wx1 = x1 ; wy1 = y1 ; wx2 = x2 ; wy2 = y2 ;
+  foo_canvas_item_i2w(item, &wx1, &wy1) ;
+  foo_canvas_item_i2w(item, &wx2, &wy2) ;
+
 
   if (FOO_IS_CANVAS_GROUP(item))
     {
       FooCanvasGroup *group = (FooCanvasGroup *)item ;
 
-      printf("FOO_CANVAS_GROUP Parent->Group: %p -> %p    Pos: %f, %f    Bounds: %f -> %f,  %f -> %f\n",
-	     group->item.parent, group, group->xpos, group->ypos, x1, x2, y1, y2) ;
+      printf("FOO_CANVAS_GROUP Parent->Group: %p -> %p    Pos: %f, %f    Bounds: %f -> %f,  %f -> %f    World bounds: %f -> %f,  %f -> %f\n",
+	     group->item.parent, group, group->xpos, group->ypos, x1, x2, y1, y2, wx1, wy1, wx2, wy2) ;
     }
   else
     {
-      printf("FOO_CANVAS_ITEM Parent->Item: %p -> %p    Bounds: %f -> %f,  %f -> %f\n",
-	     item->parent, item, x1, x2, y1, y2) ;
+      printf("FOO_CANVAS_ITEM Parent->Item: %p -> %p    Bounds: %f -> %f,  %f -> %f    World bounds: %f -> %f,  %f -> %f\n",
+	     item->parent, item, x1, x2, y1, y2, wx1, wy1, wx2, wy2) ;
     }
 
   return ;
