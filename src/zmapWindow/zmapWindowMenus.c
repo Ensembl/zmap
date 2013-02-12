@@ -2181,6 +2181,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuDeveloperOps(int *start_index_inout,
       {ZMAPGUI_MENU_BRANCH, "_"DEVELOPER_STR,                   0, NULL,       NULL},
       {ZMAPGUI_MENU_NORMAL, DEVELOPER_STR"/Show Feature",       1, developerMenuCB, NULL},
       {ZMAPGUI_MENU_NORMAL, DEVELOPER_STR"/Show Feature Style", 2, developerMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, DEVELOPER_STR"/Print Canvas",       3, developerMenuCB, NULL},
       {ZMAPGUI_MENU_NONE, NULL               , 0, NULL, NULL}
     } ;
 
@@ -2271,6 +2272,15 @@ static void developerMenuCB(int menu_item_id, gpointer callback_data)
 		zmapWindowShowStyle(style) ;
 	      }
 	  }
+
+	break ;
+      }
+
+    case 3:
+      {
+
+	zmapWindowPrintCanvas(menu_data->window->canvas) ;
+
 
 	break ;
       }
