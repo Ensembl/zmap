@@ -90,7 +90,7 @@ static void getWindowMark(ZMapWindow window, RemoteCommandRCType *command_rc_out
 
 static ZMapXMLUtilsEventStack makeMessageElement(char *message_text) ;
 
-
+static void revcompTransChildCoordsCB(gpointer data, gpointer user_data) ;
 
 
 
@@ -188,7 +188,8 @@ gboolean zMapWindowProcessRemoteRequest(ZMapWindow window,
 /* MOVED FROM ZMAPWINDOW.C......FIX THIS UP TO WORK WITH NEW REMOTE CONTROL..... */
 
 
-/* ARE THESE CALLED ANY MORE..... */
+/* ARE THESE CALLED ANY MORE.....YES....NEED TO BE CONVERTED TO RUN LIKE ONES FOR VIEW
+ * ETC. TO BRING WINDOW INTO LINE WITH OTHER REMOTE CONTROL HANDLING SECTIONS OF CODE.... */
 
 void zmapWindowUpdateXRemoteData(ZMapWindow window, ZMapFeatureAny feature_any,
 				 char *action, FooCanvasItem *real_item)
@@ -211,11 +212,17 @@ void zmapWindowUpdateXRemoteDataFull(ZMapWindow window, ZMapFeatureAny feature_a
 {
   ZMapWindowCallbacks window_cbs_G = zmapWindowGetCBs() ;
   ZMapXMLUtilsEventStack xml_elements ;
-  ZMapWindowSelectStruct select = {0};
-  ZMapFeatureSetStruct feature_set = {0};
-  ZMapFeatureSet multi_set;
-  ZMapFeature feature;
+  ZMapWindowSelectStruct select = {0} ;
+  ZMapFeatureSetStruct feature_set = {0} ;
+  ZMapFeatureSet multi_set ;
+  ZMapFeature feature_copy ;
 
+
+
+  /* HACKY CODE....WHEN DO WE GET CALLED AS A FEATURE SET...SHOULDN'T HAPPEN.....
+   * 
+   * CHECK THIS OUT....
+   *  */
 
 
   /* hack to add feature stuff....... */
@@ -223,26 +230,80 @@ void zmapWindowUpdateXRemoteDataFull(ZMapWindow window, ZMapFeatureAny feature_a
   switch(feature_any->struct_type)
     {
     case ZMAPFEATURE_STRUCT_FEATURE:
+      {
+	int bp = 0 ;
+	int chr_bp ;
 
-      /* This is a quick HACK! */
-      feature = (ZMapFeature)feature_any;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	/* I DONT' KNOW WHAT THIS COMMENT MEANS AND WHAT IT'S IMPLICATIONS ARE.... */
+
+	/* This is a quick HACK! */
+
+	feature = (ZMapFeature)feature_any;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+	/* OK...IN HERE IS THE PLACE FOR THE HACK FOR COORDS....NEED TO COPY FEATURE
+	 * AND INSERT NEW CHROMOSOME COORDS...IF WE CAN DO THIS FOR THIS THEN WE
+	 * CAN HANDLE VIEW FEATURE STUFF IN SAME WAY...... */
+	feature_copy = (ZMapFeature)zMapFeatureAnyCopy(feature_any) ;
+	feature_copy->parent = feature_any->parent ;	    /* Copy does not do parents so we fill in. */
+
+
+	/* REVCOMP COORD HACK......THIS HACK IS BECAUSE OUR COORD SYSTEM IS MUCKED UP FOR
+	 * REVCOMP'T FEATURES..... */
+	/* Convert coords */
+	if (window->revcomped_features)
+	  {
+	    /* remap coords to forward strand range and also swop
+	     * them as they get reversed in revcomping.... */
+	    chr_bp = feature_copy->x1 ;
+	    chr_bp = zmapWindowWorldToSequenceForward(window, chr_bp) ;
+	    feature_copy->x1 = chr_bp ;
+
+
+	    chr_bp = feature_copy->x2 ;
+	    chr_bp = zmapWindowWorldToSequenceForward(window, chr_bp) ;
+	    feature_copy->x2 = chr_bp ;
+
+	    zMapUtilsSwop(int, feature_copy->x1, feature_copy->x2) ;
+
+
+	    if (ZMAPFEATURE_IS_TRANSCRIPT(feature_copy))
+	      {
+		if (!zMapFeatureTranscriptChildForeach(feature_copy, ZMAPFEATURE_SUBPART_EXON,
+						       revcompTransChildCoordsCB, window)
+		    || !zMapFeatureTranscriptChildForeach(feature_copy, ZMAPFEATURE_SUBPART_INTRON,
+							  revcompTransChildCoordsCB, window))
+		  zMapLogCritical("RemoteControl error revcomping coords for transcript %s",
+				  zMapFeatureName((ZMapFeatureAny)(feature_copy))) ;
+
+		zMapFeatureTranscriptSortExons(feature_copy) ;
+	      }
+	  }
+
+      /* Streuth...why doesn't this use a 'creator' function...... */
 #ifdef FEATURES_NEED_MAGIC
-      feature_set.magic       = feature->magic;
+      feature_set.magic       = feature_copy->magic ;
 #endif
       feature_set.struct_type = ZMAPFEATURE_STRUCT_FEATURESET;
-      feature_set.parent      = feature->parent->parent;
-      feature_set.unique_id   = feature->parent->unique_id;
-      feature_set.original_id = feature->parent->original_id;
+      feature_set.parent      = feature_copy->parent->parent;
+      feature_set.unique_id   = feature_copy->parent->unique_id;
+      feature_set.original_id = feature_copy->parent->original_id;
 
       feature_set.features = g_hash_table_new(NULL, NULL) ;
-      g_hash_table_insert(feature_set.features, GINT_TO_POINTER(feature->unique_id), feature);
+      g_hash_table_insert(feature_set.features, GINT_TO_POINTER(feature_copy->unique_id), feature_copy) ;
 
-      multi_set = &feature_set;
+      multi_set = &feature_set ;
       break;
+      }
 
     case ZMAPFEATURE_STRUCT_FEATURESET:
-      multi_set = (ZMapFeatureSet)feature_any;
-      break;
+      {
+	multi_set = (ZMapFeatureSet)feature_any ;
+	break;
+      }
 
     default:
       break;
@@ -269,7 +330,14 @@ void zmapWindowUpdateXRemoteDataFull(ZMapWindow window, ZMapFeatureAny feature_a
   select.xml_handler.handler_data = handler_data ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-  xml_elements = zMapFeatureAnyAsXMLEvents(feature) ;
+  xml_elements = zMapFeatureAnyAsXMLEvents(feature_copy) ;
+
+  /* free feature_copy, remove reference to parent otherwise we are removed from there. */
+  if (feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
+    {
+      feature_copy->parent = NULL ;
+      zMapFeatureDestroy(feature_copy) ;
+    }
 
 
   if (feature_set.unique_id)
@@ -941,8 +1009,27 @@ static gboolean xml_return_true_cb(gpointer user_data,
   return TRUE;
 }
 
+/* HACK....function to remap coords to forward strand range and also swop
+ * them as they get reversed in revcomping.... */
+static void revcompTransChildCoordsCB(gpointer data, gpointer user_data)
+{
+  ZMapSpan child = (ZMapSpan)data ;
+  ZMapWindow window = (ZMapWindow)user_data ;
+  int chr_bp ;
 
+  chr_bp = child->x1 ;
+  chr_bp = zmapWindowWorldToSequenceForward(window, chr_bp) ;
+  child->x1 = chr_bp ;
 
+ 
+  chr_bp = child->x2 ;
+  chr_bp = zmapWindowWorldToSequenceForward(window, chr_bp) ;
+  child->x2 = chr_bp ;
+
+  zMapUtilsSwop(int, child->x1, child->x2) ;
+
+  return ;
+}
 
 
 
