@@ -75,6 +75,11 @@ static ZMapGUIMenuItem makeMenuSequenceOps(ZMapWindow window,
                                            int *start_index_inout,
                                            ZMapGUIMenuItemCallbackFunc callback_func, gpointer callback_data) ;
 
+
+static void control_gtk_tooltips_set_tip(GtkTooltips *tooltip, GtkWidget *widget,
+					 char *simple, char *shortcut, char *full) ;
+
+static GtkWidget *zmap_new_spin_button (void) ;
 static void filterValueChangedCB(GtkSpinButton *spinbutton, gpointer user_data);
 static gboolean filterSpinButtonCB(GtkWidget *entry, GdkEvent *event, gpointer user_data);
 
@@ -85,22 +90,6 @@ static void fixSubMenuData(gpointer list_data, gpointer user_data) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 static void seqMenuCB(int menu_item_id, gpointer callback_data) ;
-
-
-
-
-GtkWidget *zmap_new_spin_button (void)
-{
-   GtkWidget *spinner;
-   GtkAdjustment *spinner_adj;
-
-   /* default to integer % */
-   spinner_adj = (GtkAdjustment *) gtk_adjustment_new (0.0, 0.0, 100.0, 1.0, 0.0, 0.0);
-   spinner = gtk_spin_button_new (spinner_adj, 1.0, 0);
-
-   return spinner;
-}
-
 
 
 
@@ -247,23 +236,6 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
   return hbox ;
 }
 
-static void control_gtk_tooltips_set_tip(GtkTooltips *tooltip, GtkWidget *widget,
-					 char *simple, char *shortcut, char *full)
-{
-  char *simple_with_shortcut = NULL;
-
-  if(shortcut)
-    simple_with_shortcut = g_strdup_printf("%s\t[%s]", simple, shortcut);
-  else
-    simple_with_shortcut = simple;
-
-  gtk_tooltips_set_tip(tooltip, widget, simple_with_shortcut, full);
-
-  if(shortcut && simple_with_shortcut)
-    g_free(simple_with_shortcut);
-
-  return ;
-}
 
 /* Add tooltips to main zmap buttons. */
 void zmapControlButtonTooltips(ZMap zmap)
@@ -381,27 +353,27 @@ void zmapControlWindowSetButtonState(ZMap zmap, ZMapWindowFilter window_filter)
 	switch(view_state)
 	  {
 	  case ZMAPVIEW_INIT:
-        case ZMAPVIEW_MAPPED:
+	  case ZMAPVIEW_MAPPED:
 	    reload = TRUE ;
 	    break ;
 	  case ZMAPVIEW_CONNECTING:
 	  case ZMAPVIEW_CONNECTED:
 	  case ZMAPVIEW_LOADING:
-        case ZMAPVIEW_UPDATING:
+	  case ZMAPVIEW_UPDATING:
 	    stop = TRUE ;
-          if(!zMapViewGetFeatures(view))       /* can revcomp one column while others are arriving */
+	    if(!zMapViewGetFeatures(view))       /* can revcomp one column while others are arriving */
 	      break ;
 
 	  case ZMAPVIEW_LOADED:
             if(view_state == ZMAPVIEW_LOADED)
-                  revcomp = TRUE;
-	      general = TRUE ;
+	      revcomp = TRUE;
+	    general = TRUE ;
             frame3 = TRUE;
             dna = TRUE;
-		if(window_filter)
-			zmap->filter = *window_filter; /* struct copy */
-		else
-			zmap->filter.enable = FALSE;
+	    if(window_filter)
+	      zmap->filter = *window_filter; /* struct copy */
+	    else
+	      zmap->filter.enable = FALSE;
 
 	    /* If we are down to the last view and that view has a single window then
 	     * disable unsplit button, stops user accidentally closing whole window. */
@@ -415,6 +387,7 @@ void zmapControlWindowSetButtonState(ZMap zmap, ZMapWindowFilter window_filter)
 	    unlock = zMapWindowIsLocked(window) ;
 	    back = zMapWindowHasHistory(window);
 	    break ;
+
 	  case ZMAPVIEW_RESETTING:
 	    /* Nothing to do. */
 	    break ;
@@ -439,45 +412,47 @@ void zmapControlWindowSetButtonState(ZMap zmap, ZMapWindowFilter window_filter)
   gtk_widget_set_sensitive(zmap->filter_but, zmap->filter.enable) ;
 
   {
-//	  GtkEntry *entry = (GtkEntry *) zmap->filter_but;
-	  GtkAdjustment *adj = gtk_spin_button_get_adjustment ((GtkSpinButton *) zmap->filter_but);
-	  double range, step;
-	  double min;
-//	  guint digits = 0;
+    //	  GtkEntry *entry = (GtkEntry *) zmap->filter_but;
+    GtkAdjustment *adj = gtk_spin_button_get_adjustment ((GtkSpinButton *) zmap->filter_but);
+    double range, step;
+    double min;
+    //	  guint digits = 0;
 
-	  /* this is the only place we set the step value */
-	  /* CanvasFeaturesets remember the current value */
-	  range = zmap->filter.max - zmap->filter.min;
-	  step = 1.0;
-	  while(range / step > 1000.0)
-		step *= 10.0;
-	  while (range / step < 10.0)
-	  {
-		  step /= 10;
-//		  digits++;
-	  }
+    /* this is the only place we set the step value */
+    /* CanvasFeaturesets remember the current value */
+    range = zmap->filter.max - zmap->filter.min;
+    step = 1.0;
 
-	  if(step < 5.0)
-		step = 5.0;
+    while(range / step > 1000.0)
+      step *= 10.0;
 
-		/* style min and max relate to display not feature scores, we can filter on score less than style min
-		 * we flag filtering if features are hidden, not if we are on the min score
-		 */
-	  min = 0.0;
-	  if(zmap->filter.min < min)
-		 zmap->filter.min = min;
+    while (range / step < 10.0)
+      {
+	step /= 10;
+	//		  digits++;
+      }
 
-	  if(zmap->filter.value < min)
-		zmap->filter.value = min;
-	  if(zmap->filter.value > zmap->filter.max)
-		zmap->filter.value = zmap->filter.max;
+    if(step < 5.0)
+      step = 5.0;
 
-	  gtk_adjustment_configure(adj,zmap->filter.value, min, zmap->filter.max, step, 0, 0);
+    /* style min and max relate to display not feature scores, we can filter on score less than style min
+     * we flag filtering if features are hidden, not if we are on the min score
+     */
+    min = 0.0;
+    if(zmap->filter.min < min)
+      zmap->filter.min = min;
 
-//	  if(digits)	/*  seems to be interpreted as a vast number */
-//		gtk_spin_button_set_digits ((GtkSpinButton *) zmap->filter_but, digits);
+    if(zmap->filter.value < min)
+      zmap->filter.value = min;
+    if(zmap->filter.value > zmap->filter.max)
+      zmap->filter.value = zmap->filter.max;
 
-        filterSetHighlight(zmap);
+    gtk_adjustment_configure(adj,zmap->filter.value, min, zmap->filter.max, step, 0, 0);
+
+    //	  if(digits)	/*  seems to be interpreted as a vast number */
+    //		gtk_spin_button_set_digits ((GtkSpinButton *) zmap->filter_but, digits);
+
+    filterSetHighlight(zmap);
   }
 
   gtk_widget_set_sensitive(zmap->unlock_but, unlock) ;
@@ -554,6 +529,27 @@ void zmapControlWindowSetZoomButtons(ZMap zmap, ZMapWindowZoomStatus zoom_status
  *  ------------------- Internal functions -------------------
  */
 
+
+
+static void control_gtk_tooltips_set_tip(GtkTooltips *tooltip, GtkWidget *widget,
+					 char *simple, char *shortcut, char *full)
+{
+  char *simple_with_shortcut = NULL;
+
+  if(shortcut)
+    simple_with_shortcut = g_strdup_printf("%s\t[%s]", simple, shortcut);
+  else
+    simple_with_shortcut = simple;
+
+  gtk_tooltips_set_tip(tooltip, widget, simple_with_shortcut, full);
+
+  if(shortcut && simple_with_shortcut)
+    g_free(simple_with_shortcut);
+
+  return ;
+}
+
+
 /* This function implements menus that can be reached by right clicking on either of the
  * zoom main buttons, probably should generalise to handle all menus on buttons. */
 static gboolean zoomEventCB(GtkWidget *wigdet, GdkEvent *event, gpointer data)
@@ -590,6 +586,20 @@ static gboolean zoomEventCB(GtkWidget *wigdet, GdkEvent *event, gpointer data)
     }
 
   return handled ;
+}
+
+
+
+static GtkWidget *zmap_new_spin_button (void)
+{
+  GtkWidget *spinner = NULL ;
+  GtkAdjustment *spinner_adj ;
+
+  /* default to integer % */
+  spinner_adj = (GtkAdjustment *)gtk_adjustment_new (0.0, 0.0, 100.0, 1.0, 0.0, 0.0) ;
+  spinner = gtk_spin_button_new(spinner_adj, 1.0, 0) ;
+
+  return spinner ;
 }
 
 
