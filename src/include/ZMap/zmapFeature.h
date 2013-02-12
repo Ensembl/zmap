@@ -50,6 +50,10 @@
 					    ((FEATURE)->feature.transcript.exons != NULL) && \
 					    ((FEATURE)->feature.transcript.exons->len > (guint)0))
 
+#define ZMAPFEATURE_HAS_INTRONS(FEATURE)    (ZMAPFEATURE_IS_TRANSCRIPT(FEATURE) &&            \
+					    ((FEATURE)->feature.transcript.introns != NULL) && \
+					    ((FEATURE)->feature.transcript.introns->len > (guint)0))
+
 #define ZMAPFEATURE_IS_ALIGNMENT(FEATURE)  ((FEATURE)->type == ZMAPSTYLE_MODE_ALIGNMENT)
 
 #define ZMAPFEATURE_SWOP_STRAND(STRAND) \
@@ -1078,7 +1082,7 @@ gboolean zMapFeatureAddStandardData(ZMapFeature feature, char *feature_name_id, 
 
 gboolean zMapFeatureAddKnownName(ZMapFeature feature, char *known_name) ;
 gboolean zMapFeatureAddSplice(ZMapFeature feature, ZMapBoundaryType boundary) ;
-
+gboolean zMapFeatureTranscriptSortExons(ZMapFeature feature) ;
 gboolean zMapFeatureTranscriptInit(ZMapFeature feature) ;
 gboolean zMapFeatureAddTranscriptCDS(ZMapFeature feature, gboolean cds, Coord cds_start, Coord cds_end) ;
 gboolean zMapFeatureAddTranscriptStartEnd(ZMapFeature feature,
@@ -1087,8 +1091,10 @@ gboolean zMapFeatureAddTranscriptStartEnd(ZMapFeature feature,
 gboolean zMapFeatureAddTranscriptExonIntron(ZMapFeature feature,
 					    ZMapSpanStruct *exon, ZMapSpanStruct *intron) ;
 gboolean zMapFeatureTranscriptNormalise(ZMapFeature feature) ;
-void zMapFeatureTranscriptExonForeach(ZMapFeature feature, GFunc function, gpointer user_data);
 
+gboolean zMapFeatureTranscriptExonForeach(ZMapFeature feature, GFunc function, gpointer user_data) ;
+gboolean zMapFeatureTranscriptChildForeach(ZMapFeature feature, ZMapFeatureSubpartType child_type,
+					   GFunc function, gpointer user_data) ;
 
 gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
 				     GQuark clone_id,
@@ -1370,10 +1376,10 @@ gboolean zMapFeatureExon2CDS(ZMapFeature feature,
 gboolean zMapFeatureAnnotatedExonsCreate(ZMapFeature feature, gboolean include_protein, GList **exon_list_out) ;
 void zMapFeatureAnnotatedExonsDestroy(GList *exon_list) ;
 
-ZMapFeatureContextExecuteStatus zMapFeatureTranscriptSortExons(GQuark key,
-                                                         gpointer data,
-                                                         gpointer user_data,
-                                                         char **error_out);
+ZMapFeatureContextExecuteStatus zMapFeatureContextTranscriptSortExons(GQuark key,
+								      gpointer data,
+								      gpointer user_data,
+								      char **error_out) ;
 
 
 /* ============================================================== for teh === */

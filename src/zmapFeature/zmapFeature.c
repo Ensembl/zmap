@@ -509,7 +509,6 @@ ZMapFeatureAny zmapFeatureAnyCopy(ZMapFeatureAny orig_feature_any, GDestroyNotif
 }
 
 
-#if MH17_NOT_CALLED
 void zMapFeatureAnyDestroy(ZMapFeatureAny feature_any)
 {
   gboolean result ;
@@ -521,7 +520,6 @@ void zMapFeatureAnyDestroy(ZMapFeatureAny feature_any)
 
   return ;
 }
-#endif
 
 
 /*!

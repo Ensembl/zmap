@@ -79,7 +79,6 @@ typedef struct
 } ItemShowTranslationTextDataStruct, *ItemShowTranslationTextData ;
 
 
-
 static void extendTranscript(ZMapFeature transcript, ZMapSpanStruct * span) ;
 
 static void getDetailedExon(gpointer exon_data, gpointer user_data) ;
@@ -326,35 +325,19 @@ void zMapFeatureAnnotatedExonsDestroy(GList *exon_list)
 
 
 
-static int span_compare (gconstpointer a, gconstpointer b)
-{
-	ZMapSpan sa = (ZMapSpan) a;
-	ZMapSpan sb = (ZMapSpan) b;
-
-	if(sa->x1 < sb->x1)
-		return(-1);
-	if(sa->x1 > sb->x1)
-		return( 1);
-	return(0);
-}
-
-
-
-
 /* ensure that exons are in fwd strand order
  * these come sorted from ACEDB and in reverse order for -ve strand from pipe servers (otterlace)
  * but GFF does not enforce this so to be safe we need to do this
  */
-ZMapFeatureContextExecuteStatus zMapFeatureTranscriptSortExons(GQuark key,
-                                                         gpointer data,
-                                                         gpointer user_data,
-                                                         char **error_out)
+ZMapFeatureContextExecuteStatus zMapFeatureContextTranscriptSortExons(GQuark key,
+								      gpointer data,
+								      gpointer user_data,
+								      char **error_out)
 {
-  ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
-  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
-
-  ZMapFeatureTypeStyle style;
-  GList *features = NULL;
+  ZMapFeatureAny feature_any = (ZMapFeatureAny)data ;
+  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK ;
+  ZMapFeatureTypeStyle style ;
+  GList *features = NULL ;
 
 
   zMapAssert(feature_any && zMapFeatureIsValid(feature_any)) ;
@@ -365,46 +348,47 @@ ZMapFeatureContextExecuteStatus zMapFeatureTranscriptSortExons(GQuark key,
       {
         ZMapFeatureAlignment feature_align = NULL;
         feature_align = (ZMapFeatureAlignment)feature_any;
+
+	break;
       }
-      break;
     case ZMAPFEATURE_STRUCT_BLOCK:
       {
         ZMapFeatureBlock feature_block = NULL;
         feature_block = (ZMapFeatureBlock)feature_any;
+
+	break;
       }
-      break;
-
     case ZMAPFEATURE_STRUCT_FEATURESET:
-    {
-		ZMapFeatureSet feature_set = NULL;
+      {
+	ZMapFeatureSet feature_set = NULL;
 
-		feature_set = (ZMapFeatureSet)feature_any;
-		style = feature_set->style;
+	feature_set = (ZMapFeatureSet)feature_any;
+	style = feature_set->style;
 
-		if(!style || zMapStyleGetMode(style) != ZMAPSTYLE_MODE_TRANSCRIPT)
-			break;
+	if(!style || zMapStyleGetMode(style) != ZMAPSTYLE_MODE_TRANSCRIPT)
+	  break;
 
-		zMap_g_hash_table_get_data(&features, feature_set->features);
+	zMap_g_hash_table_get_data(&features, feature_set->features);
 
-		for(; features; features = g_list_delete_link(features, features))
-		{
-			ZMapFeature feat = (ZMapFeature) features->data;
+	for ( ; features; features = g_list_delete_link(features, features))
+	  {
+	    ZMapFeature feat = (ZMapFeature) features->data;
 
-			g_array_sort(feat->feature.transcript.exons, span_compare);
-			g_array_sort(feat->feature.transcript.introns, span_compare);
-		}
+	    zMapFeatureTranscriptSortExons(feat) ;
+	  }
 
-		break;
-    }
+	break;
+      }
 
     case ZMAPFEATURE_STRUCT_FEATURE:
     case ZMAPFEATURE_STRUCT_INVALID:
     default:
       {
-      zMapAssertNotReached();
-      break;
+	zMapAssertNotReached();
+	break;
       }
     }
+
 
   return status;
 }
@@ -412,11 +396,11 @@ ZMapFeatureContextExecuteStatus zMapFeatureTranscriptSortExons(GQuark key,
 
 
 
+
+
 /*
  *               Internal functions.
  */
-
-
 
 
 static void getDetailedExon(gpointer exon_data, gpointer user_data)

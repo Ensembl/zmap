@@ -59,6 +59,8 @@ static void addTypeQuark(gpointer style_id, gpointer data, gpointer user_data) ;
 static void map_parent2child(gpointer exon_data, gpointer user_data);
 static int sortGapsByTarget(gconstpointer a, gconstpointer b) ;
 
+static int span_compare (gconstpointer a, gconstpointer b) ;
+
 static int findExon(ZMapFeature feature, int exon_start, int exon_end) ;
 static gboolean calcExonPhase(ZMapFeature feature, int exon_index,
 			      int *exon_cds_start, int *exon_cds_end, int *phase_out) ;
@@ -1064,51 +1066,106 @@ gboolean zMapFeatureWorld2Transcript(ZMapFeature feature,
 }
 
 
-void zMapFeatureTranscriptExonForeach(ZMapFeature feature, GFunc function, gpointer user_data)
+/* Sort introns/exons in ascending order. */
+gboolean zMapFeatureTranscriptSortExons(ZMapFeature feature)
 {
-  GArray *exons;
-  unsigned index;
-  int multiplier = 1, start = 0, end, i;
-  gboolean forward = TRUE;
+  gboolean result = FALSE ;
 
-  zMapAssert(feature->type == ZMAPSTYLE_MODE_TRANSCRIPT);
+  zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
 
-  exons = feature->feature.transcript.exons;
-
-  if(exons->len > 1)
+  if (ZMAPFEATURE_IS_TRANSCRIPT(feature)
+      && (ZMAPFEATURE_HAS_EXONS(feature) || ZMAPFEATURE_HAS_INTRONS(feature)))
     {
-      ZMapSpan first, last;
-      first = &(g_array_index(exons, ZMapSpanStruct, 0));
-      last  = &(g_array_index(exons, ZMapSpanStruct, exons->len - 1));
-      zMapAssert(first && last);
+      if (ZMAPFEATURE_HAS_EXONS(feature))
+	g_array_sort(feature->feature.transcript.exons, span_compare) ;
 
-      if(first->x1 > last->x1)
-        forward = FALSE;
+      if (ZMAPFEATURE_HAS_INTRONS(feature))
+	g_array_sort(feature->feature.transcript.introns, span_compare) ;
+
+      result = TRUE ;
     }
 
-  if(forward)
-    end = exons->len;
-  else
-    {
-      multiplier = -1;
-      start = (exons->len * multiplier) + 1;
-      end   = 1;
-    }
-
-  for(i = start; i < end; i++)
-    {
-      ZMapSpan exon_span;
-
-      index = i * multiplier;
-
-      exon_span = &(g_array_index(exons, ZMapSpanStruct, index));
-
-      (function)(exon_span, user_data);
-    }
-
-  return ;
+  return result ;
 }
 
+
+
+
+/* Returns FALSE if not a transcript feature or no exons, TRUE otherwise. */
+gboolean zMapFeatureTranscriptExonForeach(ZMapFeature feature, GFunc function, gpointer user_data)
+{
+  gboolean result = FALSE ;
+
+  result = zMapFeatureTranscriptChildForeach(feature, ZMAPFEATURE_SUBPART_EXON,
+					     function, user_data) ;
+
+  return result ;
+}
+
+
+/* Returns FALSE if not a transcript feature or no exons/introns, TRUE otherwise. */
+gboolean zMapFeatureTranscriptChildForeach(ZMapFeature feature, ZMapFeatureSubpartType child_type,
+					   GFunc function, gpointer user_data)
+{
+  gboolean result = FALSE ;
+
+  zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
+  zMapAssert(function) ;
+
+  if (ZMAPFEATURE_IS_TRANSCRIPT(feature)
+      && ((child_type == ZMAPFEATURE_SUBPART_EXON && ZMAPFEATURE_HAS_EXONS(feature))
+	  || (child_type == ZMAPFEATURE_SUBPART_INTRON && ZMAPFEATURE_HAS_INTRONS(feature))))
+    {
+      GArray *children ;
+      unsigned index ;
+      int multiplier = 1, start = 0, end, i ;
+      gboolean forward = TRUE ;
+
+      if (child_type == ZMAPFEATURE_SUBPART_EXON)
+	children = feature->feature.transcript.exons ;
+      else
+	children = feature->feature.transcript.introns ;
+
+
+      /* Sort this out...should be a much simpler way of doing this..... */
+      if (children->len > 1)
+	{
+	  ZMapSpan first, last ;
+
+	  first = &(g_array_index(children, ZMapSpanStruct, 0));
+	  last  = &(g_array_index(children, ZMapSpanStruct, children->len - 1));
+
+	  if (first->x1 > last->x1)
+	    forward = FALSE ;
+	}
+
+      if (forward)
+	{
+	  end = children->len ;
+	}
+      else
+	{
+	  multiplier = -1 ;
+	  start = (children->len * multiplier) + 1 ;
+	  end = 1 ;
+	}
+
+      for (i = start; i < end; i++)
+	{
+	  ZMapSpan child_span ;
+
+	  index = i * multiplier ;
+
+	  child_span = &(g_array_index(children, ZMapSpanStruct, index)) ;
+
+	  (function)(child_span, user_data) ;
+	}
+
+      result = TRUE ;
+    }
+
+  return result ;
+}
 
 
 
@@ -1634,3 +1691,26 @@ static gboolean calcExonPhase(ZMapFeature feature, int exon_index,
 
   return result ;
 }
+
+
+
+/* Compares span objects (e.g. introns or exons) and returns whether
+ * they are before or after each other according to their coords. */
+static int span_compare (gconstpointer a, gconstpointer b)
+{
+  int result = 0 ;
+  ZMapSpan sa = (ZMapSpan)a ;
+  ZMapSpan sb = (ZMapSpan)b ;
+
+  if (sa->x1 < sb->x1)
+    result = -1 ;
+  else if (sa->x1 > sb->x1)
+    result = 1 ;
+  else
+    result = 0 ;
+
+  return result ;
+}
+
+
+
