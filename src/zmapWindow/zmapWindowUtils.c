@@ -378,20 +378,20 @@ gboolean zMapWindowGetVisibleSeq(ZMapWindow window, FooCanvasItem *focus, int *t
 
 gboolean zMapWindowGetMaskedColour(ZMapWindow window,GdkColor **border,GdkColor **fill)
 {
-      *fill = &(window->colour_masked_feature_fill);
-      *border = &(window->colour_masked_feature_border);
-      return window->highlights_set.masked;
+  *fill = &(window->colour_masked_feature_fill);
+  *border = &(window->colour_masked_feature_border);
+  return window->highlights_set.masked;
 }
 
 
 gboolean zMapWindowGetFilteredColour(ZMapWindow window, GdkColor **fill)
 {
-	if(window && window->highlights_set.filtered)
-	{
-		*fill = &(window->colour_filtered_column);
-		return TRUE;
-	}
-	return FALSE;
+  if(window && window->highlights_set.filtered)
+    {
+      *fill = &(window->colour_filtered_column);
+      return TRUE;
+    }
+  return FALSE;
 }
 
 
@@ -403,66 +403,66 @@ gboolean zMapWindowGetFilteredColour(ZMapWindow window, GdkColor **fill)
 
 ZMapFeatureTypeStyle zmapWindowColumnMergeStyle(ZMapFeatureColumn column)
 {
-      ZMapFeatureTypeStyle style = NULL, s;
-      GList *iter;
-      ZMapStyleMode mode;
+  ZMapFeatureTypeStyle style = NULL, s;
+  GList *iter;
+  ZMapStyleMode mode;
 
-      if(!column->style_table)      /* mis-configuration */
+  if(!column->style_table)      /* mis-configuration */
+    {
+      return NULL;
+    }
+
+  if(!column->style_table->next)  /* only one style: use this directly */
+    {
+      style = (ZMapFeatureTypeStyle) column->style_table->data;
+    }
+  else
+    {
+      /* merge styles in reverse to give priority to first in the list as defined in config
+       * this models previous behaviour with a dynamic style table
+       * NB: sub feature styles come after their parents, see zmapWindowFeatureSetStyle() below
+       * but are likely to be a different style mode and will be ignored
+       */
+      s = (ZMapFeatureTypeStyle) column->style_table->data;
+      mode = s->mode;
+
+      for(iter = g_list_last(column->style_table);iter; iter = iter->prev)
 	{
-            return NULL;
+	  s = (ZMapFeatureTypeStyle) iter->data;
+
+	  if(!s->mode || s->mode == mode)
+	    {
+	      if(!style)
+		{
+		  style = zMapFeatureStyleCopy(s);
+		}
+	      else
+		{
+		  zMapStyleMerge(style, s);
+		}
+	    }
 	}
-
-      if(!column->style_table->next)  /* only one style: use this directly */
-      {
-            style = (ZMapFeatureTypeStyle) column->style_table->data;
-      }
-      else
-      {
-            /* merge styles in reverse to give priority to first in the list as defined in config
-             * this models previous behaviour with a dynamic style table
-             * NB: sub feature styles come after their parents, see zmapWindowFeatureSetStyle() below
-             * but are likely to be a different style mode and will be ignored
-             */
-		s = (ZMapFeatureTypeStyle) column->style_table->data;
-            mode = s->mode;
-
-            for(iter = g_list_last(column->style_table);iter; iter = iter->prev)
-            {
-                  s = (ZMapFeatureTypeStyle) iter->data;
-
-                  if(!s->mode || s->mode == mode)
-                  {
-				if(!style)
-                        {
-                              style = zMapFeatureStyleCopy(s);
-                        }
-                        else
-                        {
-                              zMapStyleMerge(style, s);
-                        }
-                  }
-            }
-/*  read-only locations, need to use GObject, use last style as that's easy, not used for lookup anyway
- *            style->unique_id = column->unique_id;
- *            style->original_id = column->column_id;
- *            can try creating empty style w/ column name and merge
- *            but it's not needed, this style will never be looked up
- */
-      }
-      return(style);
+      /*  read-only locations, need to use GObject, use last style as that's easy, not used for lookup anyway
+       *            style->unique_id = column->unique_id;
+       *            style->original_id = column->column_id;
+       *            can try creating empty style w/ column name and merge
+       *            but it's not needed, this style will never be looked up
+       */
+    }
+  return(style);
 }
 
 
 /* get the column struct for a featureset */
 ZMapFeatureColumn zMapWindowGetColumn(ZMapFeatureContextMap map,GQuark col_id)
 {
-      ZMapFeatureColumn column = NULL;
+  ZMapFeatureColumn column = NULL;
 
-      column = g_hash_table_lookup(map->columns,GUINT_TO_POINTER(col_id));
-      if(!column)
-            zMapLogWarning("no column for featureset %s",g_quark_to_string(col_id));
+  column = g_hash_table_lookup(map->columns,GUINT_TO_POINTER(col_id));
+  if(!column)
+    zMapLogWarning("no column for featureset %s",g_quark_to_string(col_id));
 
-      return column;
+  return column;
 }
 
 
@@ -473,26 +473,26 @@ ZMapFeatureColumn zMapWindowGetColumn(ZMapFeatureContextMap map,GQuark col_id)
  */
 void zmapWindowGenColumnStyle(ZMapWindow window,ZMapFeatureColumn column)
 {
-      if(!column->style)
-      {
-            column->style_table = zmapWindowFeatureColumnStyles(window->context_map,column->unique_id);
-            column->style = zmapWindowColumnMergeStyle(column);
+  if(!column->style)
+    {
+      column->style_table = zmapWindowFeatureColumnStyles(window->context_map,column->unique_id);
+      column->style = zmapWindowColumnMergeStyle(column);
 
-            if(column->style_id)
-            {
-                  ZMapFeatureTypeStyle s;
+      if(column->style_id)
+	{
+	  ZMapFeatureTypeStyle s;
 
-                  s = g_hash_table_lookup(window->context_map->styles,GUINT_TO_POINTER(column->style_id));
-                  if(column->style && s && (!s->mode || s->mode == column->style->mode))
-                  {
-                        zMapStyleMerge(column->style, s);
-                  }
-                  else
-                  {
-                        column->style = s;
-                  }
-            }
-      }
+	  s = g_hash_table_lookup(window->context_map->styles,GUINT_TO_POINTER(column->style_id));
+	  if(column->style && s && (!s->mode || s->mode == column->style->mode))
+	    {
+	      zMapStyleMerge(column->style, s);
+	    }
+	  else
+	    {
+	      column->style = s;
+	    }
+	}
+    }
 }
 
 
@@ -502,15 +502,15 @@ void zmapWindowGenColumnStyle(ZMapWindow window,ZMapFeatureColumn column)
  */
 ZMapFeatureTypeStyle zMapWindowGetSetColumnStyle(ZMapWindow window,GQuark set_id)
 {
-      ZMapFeatureColumn column = NULL;
+  ZMapFeatureColumn column = NULL;
 
-      column = zMapFeatureGetSetColumn(window->context_map,set_id);
-      if(!column)
-            return NULL;
+  column = zMapFeatureGetSetColumn(window->context_map,set_id);
+  if(!column)
+    return NULL;
 
-      zmapWindowGenColumnStyle(window,column);
+  zmapWindowGenColumnStyle(window,column);
 
-      return(column->style);
+  return(column->style);
 }
 
 /*
@@ -519,15 +519,15 @@ ZMapFeatureTypeStyle zMapWindowGetSetColumnStyle(ZMapWindow window,GQuark set_id
  */
 ZMapFeatureTypeStyle zMapWindowGetColumnStyle(ZMapWindow window,GQuark col_id)
 {
-      ZMapFeatureColumn column = NULL;
+  ZMapFeatureColumn column = NULL;
 
-      column = zMapWindowGetColumn(window->context_map,col_id);
-      if(!column)
-            return NULL;
+  column = zMapWindowGetColumn(window->context_map,col_id);
+  if(!column)
+    return NULL;
 
-      zmapWindowGenColumnStyle(window,column);
+  zmapWindowGenColumnStyle(window,column);
 
-      return(column->style);
+  return(column->style);
 }
 
 
