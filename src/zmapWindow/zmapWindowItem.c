@@ -413,17 +413,17 @@ ZMapFeatureAny zmapWindowItemGetFeatureAnyType(FooCanvasItem *item, ZMapFeatureS
 
   /* THE FIRST AND SECOND if's SHOULD BE MOVED TO THE items subdirectory which should have a
    * function that returns the feature given an item or a subitem... */
-  if (ZMAP_IS_CONTAINER_GROUP(item))
+  if (item && ZMAP_IS_CONTAINER_GROUP(item))
     {
       zmapWindowContainerGetFeatureAny((ZMapWindowContainerGroup)item, &feature_any) ;
     }
-  else if ((feature_item = zMapWindowCanvasItemIntervalGetObject(item)))
+  else if (item && (feature_item = zMapWindowCanvasItemIntervalGetObject(item)))
     {
       feature_any = (ZMapFeatureAny)zMapWindowCanvasItemGetFeature(FOO_CANVAS_ITEM(feature_item)) ;
     }
   else
     {
-      zMapLogMessage("Unexpected item [%s]", G_OBJECT_TYPE_NAME(item)) ;
+      zMapLogMessage("Unexpected item [%s]", (item ? G_OBJECT_TYPE_NAME(item) : "null")) ;
     }
 
   if (feature_any && expected_type != -1)
