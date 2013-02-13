@@ -252,7 +252,7 @@ void zmapWindowUpdateXRemoteDataFull(ZMapWindow window, ZMapFeatureAny feature_a
 
 
 	/* REVCOMP COORD HACK......THIS HACK IS BECAUSE OUR COORD SYSTEM IS MUCKED UP FOR
-	 * REVCOMP'T FEATURES..... */
+	 * REVCOMP'D FEATURES..... */
 	/* Convert coords */
 	if (window->revcomped_features)
 	  {
@@ -269,6 +269,11 @@ void zmapWindowUpdateXRemoteDataFull(ZMapWindow window, ZMapFeatureAny feature_a
 
 	    zMapUtilsSwop(int, feature_copy->x1, feature_copy->x2) ;
 
+	    if (feature_copy->strand == ZMAPSTRAND_FORWARD)
+	      feature_copy->strand = ZMAPSTRAND_REVERSE ;
+	    else
+	      feature_copy->strand = ZMAPSTRAND_FORWARD ;
+	      
 
 	    if (ZMAPFEATURE_IS_TRANSCRIPT(feature_copy))
 	      {
