@@ -44,7 +44,7 @@ BUILD_SCRIPT="$SCRIPTS_DIR/build_bootstrap.sh"
 FUNCTIONS_SCRIPT="$SCRIPTS_DIR/zmap_functions.sh"
 
 # Our project space where we store builds.
-PROJECT_DIR='/nfs/zmap'
+PROJECT_DIR='/nfs/zmap/ZMap'
 BUILDS_DIR="$PROJECT_DIR/BUILDS"
 
 
