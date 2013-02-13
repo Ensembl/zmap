@@ -563,7 +563,7 @@ static void makeSequenceViewCB(ZMapFeatureSequenceMap seq_map, gpointer user_dat
 
   if (!(view = zmapControlInsertView(zmap, seq_map, &err_msg)))
     {
-      zMapWarning("%", err_msg) ;
+      zMapWarning("%s", err_msg) ;
       g_free(err_msg) ;
     }
 
