@@ -55,8 +55,8 @@
  * Note: the FORMAT parameter MUST be a string literal which has the printf style
  * format syntax describing the rest of the arguments to the macro.
  *  */
-#define ZMAPTHREAD_DEBUG(THREAD, FORMAT, ...)		    \
-  zMapDebugPrint(zmap_thread_debug_G, "%s: " FORMAT, zMapThreadGetThreadID((THREAD)), __VA_ARGS__)
+#define ZMAPTHREAD_DEBUG(THREAD, FORMAT_STR, ...)		    \
+  zMapDebugPrint(zmap_thread_debug_G, "%s: " FORMAT_STR, zMapThreadGetThreadID((THREAD)), __VA_ARGS__)
 
 
 
