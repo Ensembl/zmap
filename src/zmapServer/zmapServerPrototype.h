@@ -97,7 +97,10 @@ typedef ZMapServerResponseType
 typedef ZMapServerResponseType
                  (*ZMapServerGetStatusFunc)(void *server_conn, gint *exit_code, gchar **stderr_out) ;
 
-typedef char *   (*ZMapServerGetErrorMsgFunc)(void *server_conn) ;
+typedef ZMapServerResponseType
+                 (*ZMapServerGetConnectStateFunc)(void *server_conn, ZMapServerConnectStateType *connect_state) ;
+
+typedef char *(*ZMapServerGetErrorMsgFunc)(void *server_conn) ;
 
 typedef ZMapServerResponseType (*ZMapServerCloseFunc)  (void *server_conn) ;
 
@@ -118,7 +121,8 @@ typedef struct _ZMapServerFuncsStruct
   ZMapServerGetFeatures get_features ;
   ZMapServerGetContextSequences get_context_sequences ;
   ZMapServerGetErrorMsgFunc errmsg ;
-  ZMapServerGetStatusFunc get_status;
+  ZMapServerGetStatusFunc get_status ;
+  ZMapServerGetConnectStateFunc get_connect_state ;
   ZMapServerCloseFunc close ;
   ZMapServerDestroyFunc destroy ;
 } ZMapServerFuncsStruct, *ZMapServerFuncs ;
