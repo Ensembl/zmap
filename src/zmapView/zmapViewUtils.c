@@ -271,8 +271,8 @@ ZMapViewConnectionRequest zmapViewStepListAddServerReq(ZMapViewConnectionStepLis
 // create a complete step list. each step will be processed is a request is added
 // steps default to STEPLIST_INVALID
 ZMapViewConnectionStepList zmapViewConnectionStepListCreate(StepListDispatchCB dispatch_func,
-                                      StepListProcessDataCB process_func,
-                                      StepListFreeDataCB free_func)
+							    StepListProcessDataCB process_func,
+							    StepListFreeDataCB free_func)
 {
       ZMapViewConnectionStepList step_list;
 
