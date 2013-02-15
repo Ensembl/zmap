@@ -49,11 +49,15 @@
 #define TIMESPEC timespec_t
 #endif
 
-#define ZMAPTHREAD_DEBUG(ALL_ARGS_WITH_BRACKETS) \
-do { \
-     if (zmap_thread_debug_G) \
-       printf ALL_ARGS_WITH_BRACKETS ; \
-   } while (0)
+
+
+/* Standard message macro for thread debug messages.
+ * Note: the FORMAT parameter MUST be a string literal which has the printf style
+ * format syntax describing the rest of the arguments to the macro.
+ *  */
+#define ZMAPTHREAD_DEBUG(THREAD, FORMAT, ...)		    \
+  zMapDebugPrint(zmap_thread_debug_G, "%s: " FORMAT, zMapThreadGetThreadID((THREAD)), __VA_ARGS__)
+
 
 
 /* Requests are via a cond var system. */
@@ -62,7 +66,7 @@ typedef struct
   pthread_mutex_t mutex ;				    /* controls access to this struct. */
   pthread_cond_t cond ;					    /* Slave waits on this. */
   ZMapThreadRequest state ;				    /* Thread request to slave. */
-  void *request ;						    /* Actual request from caller. */
+  void *request ;					    /* Request from caller. */
 } ZMapRequestStruct, *ZMapRequest ;
 
 
@@ -71,7 +75,7 @@ typedef struct
 {
   pthread_mutex_t mutex ;				    /* controls access to this struct. */
   ZMapThreadReply state ;				    /* Thread reply from slave. */
-  void *reply ;					    /* Actual reply from callee. */
+  void *reply ;						    /* Reply from callee. */
   gchar *error_msg ;					    /* Error message for when thread fails. */
 } ZMapReplyStruct, *ZMapReply ;
 
