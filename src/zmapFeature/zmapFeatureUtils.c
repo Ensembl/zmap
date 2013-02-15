@@ -425,11 +425,10 @@ ZMapFeatureAny zMapFeatureGetParentGroup(ZMapFeatureAny any_feature, ZMapFeature
 {
   ZMapFeatureAny result = NULL ;
 
-  zMapAssert(zMapFeatureIsValid(any_feature)
-	     && group_type >= ZMAPFEATURE_STRUCT_CONTEXT
-	     && group_type <= ZMAPFEATURE_STRUCT_FEATURE) ;
-
-  if (any_feature->struct_type >= group_type)
+  if (zMapFeatureIsValid(any_feature) &&
+      group_type >= ZMAPFEATURE_STRUCT_CONTEXT &&
+      group_type <= ZMAPFEATURE_STRUCT_FEATURE &&
+      any_feature->struct_type >= group_type)
     {
       ZMapFeatureAny group = any_feature ;
 
@@ -439,6 +438,11 @@ ZMapFeatureAny zMapFeatureGetParentGroup(ZMapFeatureAny any_feature, ZMapFeature
 	}
 
       result = group ;
+    }
+  else
+    {
+      g_warn_if_fail(zMapFeatureIsValid(any_feature));
+      g_warn_if_fail(group_type >= ZMAPFEATURE_STRUCT_CONTEXT && group_type <= ZMAPFEATURE_STRUCT_FEATURE);
     }
 
   return result ;

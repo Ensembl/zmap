@@ -1307,7 +1307,7 @@ void zMapWindowCanvasFeaturesetRedraw(ZMapWindowFeaturesetItem fi, double zoom)
 #endif
 
 // this code fails if we just added the item as it's not been updated yet
-  x1 = fi->dx + fi->x_off;
+  x1 = fi->x_off;
   /* x_off is for staggered columns - we can't just add it to our foo position as it's columns that get moved about */
   /* well maybe that would be possible but the rest of the code works this way */
 
