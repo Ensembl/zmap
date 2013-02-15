@@ -87,6 +87,7 @@ static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles, Z
 static ZMapServerResponseType getContextSequence(void *server_in, GHashTable *styles, ZMapFeatureContext feature_context_out) ;
 static char *lastErrorMsg(void *server) ;
 static ZMapServerResponseType getStatus(void *server_conn, gint *exit_code, gchar **stderr_out);
+static ZMapServerResponseType getConnectState(void *server_conn, ZMapServerConnectStateType *connect_state) ;
 static ZMapServerResponseType closeConnection(void *server_in) ;
 static ZMapServerResponseType destroyConnection(void *server) ;
 
@@ -123,6 +124,7 @@ void pipeGetServerFuncs(ZMapServerFuncs pipe_funcs)
   pipe_funcs->get_context_sequences = getContextSequence ;
   pipe_funcs->errmsg = lastErrorMsg ;
   pipe_funcs->get_status = getStatus;
+  pipe_funcs->get_connect_state = getConnectState ;
   pipe_funcs->close = closeConnection;
   pipe_funcs->destroy = destroyConnection ;
 
@@ -139,6 +141,7 @@ void pipeGetServerFuncs(ZMapServerFuncs pipe_funcs)
 static gboolean globalInit(void)
 {
   gboolean result = TRUE ;
+
   return result ;
 }
 
@@ -187,6 +190,8 @@ static void getConfiguration(PipeServer server)
 
       zMapConfigIniContextDestroy(context);
     }
+
+  return ;
 }
 
 
@@ -485,7 +490,7 @@ static gboolean pipe_server_spawn(PipeServer server,GError **error)
   result = g_spawn_async_with_pipes(server->script_dir,argv,NULL,
 				    //      G_SPAWN_SEARCH_PATH |	 doesnt work
 				    G_SPAWN_DO_NOT_REAP_CHILD, // can't not give a flag!
-				    NULL,NULL,&server->child_pid,NULL,&pipe_fd,&err_fd,&pipe_error);
+				    NULL, NULL, &server->child_pid, NULL, &pipe_fd, &err_fd, &pipe_error) ;
   if(result)
     {
       server->gff_pipe = g_io_channel_unix_new(pipe_fd);
@@ -1208,17 +1213,34 @@ static char *lastErrorMsg(void *server_in)
 
 static ZMapServerResponseType getStatus(void *server_conn, gint *exit_code, gchar **stderr_out)
 {
-      PipeServer server = (PipeServer)server_conn ;
+  PipeServer server = (PipeServer)server_conn ;
 
-            /* in case of a failure this may already have been done */
-      pipe_server_get_stderr(server);
+  /* in case of a failure this may already have been done */
+  pipe_server_get_stderr(server);
 
-      *exit_code = server->exit_code;
-      *stderr_out = server->stderr_output;
-//can't do this or else it won't be read
-//            if(server->exit_code)
-//                  return ZMAP_SERVERRESPONSE_SERVERDIED;
-      return ZMAP_SERVERRESPONSE_OK;
+  *exit_code = server->exit_code;
+  *stderr_out = server->stderr_output;
+
+  //can't do this or else it won't be read
+  //            if(server->exit_code)
+  //                  return ZMAP_SERVERRESPONSE_SERVERDIED;
+
+  return ZMAP_SERVERRESPONSE_OK;
+}
+
+
+/* Is the pipe server connected ? */
+static ZMapServerResponseType getConnectState(void *server_conn, ZMapServerConnectStateType *connect_state)
+{
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
+  PipeServer server = (PipeServer)server_conn ;
+
+  if (server->child_pid)
+    *connect_state = ZMAP_SERVERCONNECT_STATE_CONNECTED ;
+  else
+    *connect_state = ZMAP_SERVERCONNECT_STATE_UNCONNECTED ;
+
+  return result ;
 }
 
 
@@ -1228,48 +1250,51 @@ static ZMapServerResponseType closeConnection(void *server_in)
   PipeServer server = (PipeServer)server_in ;
   GError *gff_pipe_err = NULL ;
 
-  if(server->child_pid)
-    g_spawn_close_pid(server->child_pid);
+  if (server->child_pid)
+    g_spawn_close_pid(server->child_pid) ;
 
-  if(server->parser)
-      zMapGFFDestroyParser(server->parser) ;
-  if(server->gff_line)
-      g_string_free(server->gff_line, TRUE) ;
+  if (server->parser)
+    zMapGFFDestroyParser(server->parser) ;
+
+  if (server->gff_line)
+    g_string_free(server->gff_line, TRUE) ;
 
   if (server->gff_pipe)
-  {
-    if(g_io_channel_shutdown(server->gff_pipe, FALSE, &gff_pipe_err) != G_IO_STATUS_NORMAL)
-      {
-        zMapLogCritical("Could not close feature pipe \"%s\"", server->script_path) ;
+    {
+      if (g_io_channel_shutdown(server->gff_pipe, FALSE, &gff_pipe_err) != G_IO_STATUS_NORMAL)
+	{
+	  zMapLogCritical("Could not close feature pipe \"%s\"", server->script_path) ;
 
-        setLastErrorMsg(server, &gff_pipe_err) ;
+	  setLastErrorMsg(server, &gff_pipe_err) ;
 
-        result = ZMAP_SERVERRESPONSE_REQFAIL ;
-      }
-    else
-      {
-        /* this seems to be required to destroy the GIOChannel.... */
-        g_io_channel_unref(server->gff_pipe) ;
-        server->gff_pipe = NULL ;
-      }
-  }
+	  result = ZMAP_SERVERRESPONSE_REQFAIL ;
+	}
+      else
+	{
+	  /* this seems to be required to destroy the GIOChannel.... */
+	  g_io_channel_unref(server->gff_pipe) ;
+	  server->gff_pipe = NULL ;
+	}
+    }
+
   if (server->gff_stderr )
-  {
-    if(g_io_channel_shutdown(server->gff_stderr, FALSE, &gff_pipe_err) != G_IO_STATUS_NORMAL)
     {
-      zMapLogCritical("Could not close error pipe \"%s\"", server->script_path) ;
+      if(g_io_channel_shutdown(server->gff_stderr, FALSE, &gff_pipe_err) != G_IO_STATUS_NORMAL)
+	{
+	  zMapLogCritical("Could not close error pipe \"%s\"", server->script_path) ;
 
-      setLastErrorMsg(server, &gff_pipe_err) ;
+	  setLastErrorMsg(server, &gff_pipe_err) ;
 
-      result = ZMAP_SERVERRESPONSE_REQFAIL ;
+	  result = ZMAP_SERVERRESPONSE_REQFAIL ;
+	}
+      else
+	{
+	  /* this seems to be required to destroy the GIOChannel.... */
+	  g_io_channel_unref(server->gff_stderr) ;
+	  server->gff_stderr = NULL ;
+	}
     }
-  else
-    {
-      /* this seems to be required to destroy the GIOChannel.... */
-      g_io_channel_unref(server->gff_stderr) ;
-      server->gff_stderr = NULL ;
-    }
-  }
+
   return result ;
 }
 
