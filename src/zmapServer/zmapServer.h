@@ -20,8 +20,8 @@
  * This file is part of the ZMap genome database package
  * and was written by
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *         Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Generalised server interface, hides acedb/das/file
  *              details from caller.
@@ -32,6 +32,7 @@
 #define ZMAP_SERVER_H
 
 #include <glib.h>
+
 #include <ZMap/zmapFeature.h>
 #include <ZMap/zmapUrl.h>
 #include <ZMap/zmapServerProtocol.h>			    /*  Is this a good idea...see if there
@@ -76,6 +77,8 @@ ZMapServerResponseType zMapServerGetContextSequences(ZMapServer server,
 						     GHashTable *styles, ZMapFeatureContext feature_context) ;
 char *zMapServerLastErrorMsg(ZMapServer server) ;
 ZMapServerResponseType zMapServerGetStatus(ZMapServer server, gint *exit_code, gchar **stderr_out);
+
+ZMapServerResponseType zMapServerGetConnectState(ZMapServer server, ZMapServerConnectStateType *connect_state) ;
 
 ZMapServerResponseType zMapServerCloseConnection(ZMapServer server) ;
 ZMapServerResponseType zMapServerFreeConnection(ZMapServer server) ;
