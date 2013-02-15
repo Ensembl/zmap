@@ -381,8 +381,7 @@ to do this which include:</p>
 <pre><code>
   if (blah)
     {
-      /* This is quite a long block
-       * comment that runs to more than one
+      /* This is quite a long block comment that runs to more than one
        * line. */
       call_something() ;				    /* Starts at col. 60 */
     }
@@ -398,6 +397,10 @@ int func(void)
   return ;
 }
 </code></pre>
+
+<p>Please do <b>not</b> use the "//" style of C++, unfortunately it has been introduced in
+a few places and it jars with the standard style...i.e. it's too late to introduce
+this now, however handy it might be !</p>
 
 
 <a name="naming"></a>
@@ -523,6 +526,36 @@ gboolean someFunc(gboolean do_something)
 
 
 
+
+
+
+<a name="defining_declaring"></a>
+<h2>Defining and declaring structs, variables etc.</h2>
+
+<h3>Structs</h3>
+
+<P>Please follow the following convention for defining new structs:</p>
+
+<pre><code>typedef struct <b>MyNewStructName</b>
+{
+
+  struct contents
+
+} <b>MyNewStruct</b>, *<b>MyNew</b> ;
+
+
+use in your code like this:
+
+{
+  MyNewStruct a_new_struct_instance ;
+  MyNew new_struct_ptr ;
+
+  new_struct_ptr = &amp;a_new_struct_instance ;
+}
+</code></pre>
+
+<p>Adding <b>MyNewStructName</b> ensures that most debuggers will display the name of the
+struct so you don't have to expand the struct to what it is.</p>
 
 
 
