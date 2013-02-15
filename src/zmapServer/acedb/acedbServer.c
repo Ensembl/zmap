@@ -159,10 +159,13 @@ static ZMapServerResponseType getStyles(void *server, GHashTable **styles_out) ;
 static ZMapServerResponseType haveModes(void *server, gboolean *have_mode) ;
 static ZMapServerResponseType getSequences(void *server_in, GList *sequences_inout) ;
 static ZMapServerResponseType setContext(void *server, ZMapFeatureContext feature_context) ;
-static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles, ZMapFeatureContext feature_context_out) ;
-static ZMapServerResponseType getContextSequence(void *server_in, GHashTable *styles, ZMapFeatureContext feature_context_out) ;
+static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles,
+					  ZMapFeatureContext feature_context_out) ;
+static ZMapServerResponseType getContextSequence(void *server_in, GHashTable *styles,
+						 ZMapFeatureContext feature_context_out) ;
 static char *lastErrorMsg(void *server) ;
-static ZMapServerResponseType getStatus(void *server_conn, gint *exit_code, gchar **stderr_out);
+static ZMapServerResponseType getStatus(void *server_in, gint *exit_code, gchar **stderr_out) ;
+static ZMapServerResponseType getConnectState(void *server_in, ZMapServerConnectStateType *connect_state) ;
 static ZMapServerResponseType closeConnection(void *server_in) ;
 static ZMapServerResponseType destroyConnection(void *server) ;
 
@@ -268,6 +271,7 @@ void acedbGetServerFuncs(ZMapServerFuncs acedb_funcs)
   acedb_funcs->get_context_sequences = getContextSequence ;
   acedb_funcs->errmsg = lastErrorMsg ;
   acedb_funcs->get_status = getStatus ;
+  acedb_funcs->get_connect_state = getConnectState ;
   acedb_funcs->close = closeConnection;
   acedb_funcs->destroy = destroyConnection ;
 
@@ -690,11 +694,42 @@ static ZMapServerResponseType haveModes(void *server_in, gboolean *have_mode)
 }
 
 
-static ZMapServerResponseType getStatus(void *server_conn, gint *exit_code, gchar **stderr_out)
+static ZMapServerResponseType getStatus(void *server_in, gint *exit_code, gchar **stderr_out)
 {
   *exit_code = 0;
   *stderr_out = NULL;
+
   return ZMAP_SERVERRESPONSE_OK;
+}
+
+
+/* Is the acedb server connected ? */
+static ZMapServerResponseType getConnectState(void *server_in, ZMapServerConnectStateType *connect_state)
+{
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
+  AcedbServer server = (AcedbServer)server_in ;
+
+  resetErr(server) ;
+
+  server->last_err_status = AceConnConnectionOpen(server->connection) ;
+
+  switch(server->last_err_status)
+    {
+    case ACECONN_OK:
+      *connect_state = ZMAP_SERVERCONNECT_STATE_CONNECTED ;
+      result = ZMAP_SERVERRESPONSE_OK ;
+      break ;
+    case ACECONN_NOTOPEN:
+      *connect_state = ZMAP_SERVERCONNECT_STATE_UNCONNECTED ;
+      result = ZMAP_SERVERRESPONSE_OK ;
+      break ;
+    default:
+      *connect_state = ZMAP_SERVERCONNECT_STATE_ERROR ;
+      result = ZMAP_SERVERRESPONSE_REQFAIL ;
+      break ;
+    }
+
+  return result ;
 }
 
 
@@ -877,6 +912,7 @@ char *lastErrorMsg(void *server_in)
 }
 
 
+/* Try to close the connection. */
 static ZMapServerResponseType closeConnection(void *server_in)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
