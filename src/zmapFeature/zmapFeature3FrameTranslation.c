@@ -292,7 +292,7 @@ static void translation_set_populate(ZMapFeatureBlock feature_block,
       int peptide_length ;
 
 	// curr_frame = (ZMapFrame) i;
-      curr_frame   = zMapFeatureFrameFromCoords(block_start, block_position) ;	/* ref to zMapFeatureFrame(): these are block relative frames */
+      curr_frame   = zMapFeatureFrameFromCoords(feature_block->block_to_sequence.block.x1, block_position) ;	/* ref to zMapFeatureFrame(): these are block relative frames */
 
       feature_name = zMapFeature3FrameTranslationFeatureName(feature_set, curr_frame) ;
       feature_id   = g_quark_from_string(feature_name) ;
