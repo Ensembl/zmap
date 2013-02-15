@@ -74,9 +74,6 @@ void *zmapNewThread(void *thread_args)
   int call_clean = 1 ;   // call the cleanup function on exit?
 
 
-  zmap_thread_debug_G = TRUE ;
-
-
   ZMAPTHREAD_DEBUG(thread, "%s", "main thread routine starting....") ;
 
   /* We set up the thread struct and then immediately set up our pthread clean up routine
