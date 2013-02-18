@@ -64,7 +64,6 @@ static void dumpCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void redrawCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void preferencesCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void developerCB(gpointer cb_data, guint callback_action, GtkWidget *w);
-static void showStatsCB(gpointer cb_data, guint callback_action, GtkWidget *window) ;
 static void showSessionCB(gpointer cb_data, guint callback_action, GtkWidget *window) ;
 static void aboutCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void rtTicket(gpointer cb_data, guint callback_action, GtkWidget *w);
@@ -107,7 +106,6 @@ static GtkItemFactoryEntry menu_items[] = {
 #ifdef ALLOW_POPOUT_PANEL
  { "/View/'Pop Out' Control Info Panel", NULL, popout_panel, 0, NULL },
 #endif	/* ALLOW_POPOUT_PANEL */
- { "/View/Statistics", NULL,       showStatsCB, 0, NULL },
  { "/View/Session Details", NULL,  showSessionCB, 0, NULL },
  { "/_Raise ticket",  NULL,        NULL, 0, "<LastBranch>" },
  { "/Raise ticket/See ZMap tickets", NULL, rtTicket, RT_ZMAP_USER_TICKETS, NULL },
@@ -278,41 +276,6 @@ static void developerCB(gpointer cb_data, guint callback_action, GtkWidget *wind
 
   return ;
 }
-
-
-
-
-
-/* Display stats for currently focussed zmap window. */
-static void showStatsCB(gpointer cb_data, guint callback_action, GtkWidget *window)
-{
-  ZMap zmap = (ZMap)cb_data ;
-  ZMapViewSession view_data ;
-  GString *session_text ;
-  char *title ;
-
-  session_text = g_string_new(NULL) ;
-
-
-  g_string_append(session_text, "General\n") ;
-  g_string_append_printf(session_text, "\tProgram: %s\n\n", zMapGetAppTitle()) ;
-  g_string_append_printf(session_text, "\tUser: %s (%s)\n\n", g_get_user_name(), g_get_real_name()) ;
-  g_string_append_printf(session_text, "\tMachine: %s\n\n", g_get_host_name()) ;
-  view_data = zMapViewSessionGetData(zmap->focus_viewwindow) ;
-  g_string_append_printf(session_text, "\tSequence: %s\n\n", view_data->sequence) ;
-
-  g_string_append(session_text, "Session Statistics\n") ;
-  zMapViewStats(zmap->focus_viewwindow,session_text) ;
-
-  title = zMapGUIMakeTitleString(NULL, "Session Statistics") ;
-  zMapGUIShowText(title, session_text->str, FALSE) ;
-  g_free(title) ;
-  g_string_free(session_text, TRUE) ;
-
-
-  return ;
-}
-
 
 
 /* Display session data, this is a mixture of machine and per view data. */
