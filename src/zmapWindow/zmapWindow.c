@@ -2123,7 +2123,7 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
 				 GtkAdjustment *hadjustment,
                                  GtkAdjustment *vadjustment)
 {
-  ZMapWindow window ;
+  ZMapWindow window = NULL ;
   GtkWidget *canvas, *eventbox ;
 
   /* No callbacks, then no window creation. */
