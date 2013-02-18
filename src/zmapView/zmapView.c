@@ -953,29 +953,6 @@ void zMapViewRedraw(ZMapViewWindow view_window)
 }
 
 
-/* Show stats for this view. */
-void zMapViewStats(ZMapViewWindow view_window,GString *text)
-{
-  ZMapView view ;
-  GList* list_item ;
-
-  view = zMapViewGetView(view_window) ;
-  zMapAssert(view) ;
-
-  if (view->state == ZMAPVIEW_LOADED)
-    {
-      ZMapViewWindow view_window ;
-
-      list_item = g_list_first(view->window_list) ;
-      view_window = list_item->data ;
-
-      zMapWindowStats(view_window->window,text) ;
-    }
-
-  return ;
-}
-
-
 /* Reset the state for all windows in this view */
 static void zmapViewResetWindows(ZMapView zmap_view)
 {

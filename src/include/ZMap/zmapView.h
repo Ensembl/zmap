@@ -210,7 +210,6 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str) ;
 gboolean zMapViewReset(ZMapView zmap_view) ;
 gboolean zMapViewReverseComplement(ZMapView zmap_view) ;
 gboolean zMapViewGetRevCompStatus(ZMapView zmap_view) ;
-void zMapViewStats(ZMapViewWindow view_window,GString *text) ;
 ZMapViewSession zMapViewSessionGetData(ZMapViewWindow view_window) ;
 void zMapViewZoom(ZMapView zmap_view, ZMapViewWindow view_window, double zoom) ;
 char *zMapViewGetSequence(ZMapView zmap_view) ;
