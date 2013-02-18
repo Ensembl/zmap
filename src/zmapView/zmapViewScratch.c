@@ -61,7 +61,7 @@ static void handBuiltInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, Z
 
       /* Create the context, align and block, and add the featureset to it */
       if (!context)
-        context = zmapViewCreateContext(sequence, NULL, featureset);
+        context = zmapViewCreateContext(zmap_view, NULL, featureset);
 
 	/* set up featureset2_column and anything else needed */
       f2c = g_hash_table_lookup(context_map->featureset_2_column, GUINT_TO_POINTER(featureset->unique_id));
@@ -136,7 +136,7 @@ void zmapViewScratchInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence)
 
       /* Create the context, align and block, and add the featureset to it */
       if (!context)
-        context = zmapViewCreateContext(sequence, NULL, scratch_featureset);
+        context = zmapViewCreateContext(zmap_view, NULL, scratch_featureset);
 
 	/* set up featureset2_column and anything else needed */
       f2c = g_hash_table_lookup(context_map->featureset_2_column, GUINT_TO_POINTER(scratch_featureset->unique_id));
@@ -204,7 +204,7 @@ void zmapViewScratchInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence)
 
   /* Merge our context into the view's context and view the diff context */
   ZMapFeatureContext diff_context = zmapViewMergeInContext(zmap_view, context);
-  zmapViewDrawDiffContext(zmap_view, &diff_context);
+  zmapViewDrawDiffContext(zmap_view, &diff_context, NULL);
 }
 
 
@@ -221,11 +221,13 @@ gboolean zmapViewScratchUpdateFeature(ZMapView zmap_view,
   
   GList *list_item = NULL;
 
-  for (list_item = g_list_first(zmap_view->window_list); list_item; list_item = g_list_next(list_item))
-    {
-      ZMapViewWindow view_window = list_item->data ;
-      zMapWindowFeatureReset(view_window->window, zmap_view->revcomped_features) ;
-    }
+  //  zmapViewResetWindows(zmap_view, FALSE);
+
+//  for (list_item = g_list_first(zmap_view->window_list); list_item; list_item = g_list_next(list_item))
+//    {
+//      ZMapViewWindow view_window = list_item->data ;
+//      zMapWindowFeatureReset(view_window->window, zmap_view->revcomped_features) ;
+//    }
 
   //zMapWindowNavigatorReset(zmap_view->navigator_window);  
   //zMapWindowNavigatorSetStrand(zmap_view->navigator_window, zmap_view->revcomped_features);

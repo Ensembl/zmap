@@ -1420,7 +1420,7 @@ void zmapWindowGetScrollableArea(ZMapWindow window,
 
   if(y1_inout && y2_inout)
   {
-zMapAssert(*y1_inout <= *y2_inout);
+    zMapAssert(*y1_inout <= *y2_inout);
     zmapWindowClampedAtStartEnd(window, y1_inout, y2_inout);
   }
 
@@ -1437,7 +1437,8 @@ void zmapWindowSetScrollableArea(ZMapWindow window,
 
   zmapWindowGetBorderSize(window, &border);
 
-  // if(y1_inout && y2_inout) zMapAssert(*y1_inout <= *y2_inout);
+  if(y1_inout && y2_inout) 
+    zMapAssert(*y1_inout <= *y2_inout);
 
   foo_canvas_get_scroll_region(FOO_CANVAS(window->canvas),
                                &x1, &y1, &x2, &y2);
@@ -2608,33 +2609,33 @@ static void resetCanvas(ZMapWindow window, gboolean free_child_windows, gboolean
                                  0.0, 0.0,
                                  ZMAP_CANVAS_INIT_SIZE, ZMAP_CANVAS_INIT_SIZE) ;
 #else
-      /* better to use an explicit flag */
-      /* we need to reset this on revcomp as the scroll region can be completely different */
+  /* better to use an explicit flag */
+  /* we need to reset this on revcomp as the scroll region can be completely different */
   if(window->canvas)
-  {
-#if MH17_WASHINE_MACHINE_LOGIC
-      window->scroll_initialised = FALSE;
-#else
-	/* if we revcomp then what happens is we redisplay whe whole sequence at the previous zoom level
-	 * and then draw the scale bar at that zoom which makes it think we have 17 million pixels
-	 * which is wrong
-	 * resetting the zoom means we loose it so here we need to revcomp the scroll region
-	 * using the same logic as it is used in zmapWindowState.c
-	 * here we set the scroll region to reflect what we are drawing
-	 * and window state restore then later adjusts everything using the
-	 * previous saved coordinates that are revcomped to agree with this
-	 */
-    if(window->scroll_initialised)
     {
-	double y1,y2,x1,x2;
-
-    	foo_canvas_get_scroll_region(window->canvas,&x1,&y1,&x2,&y2);
-	zmapWindowStateRevCompRegion(window, &y1, &y2);
-
-	zmapWindowSetScrolledRegion(window, x1, x2, y1, y2) ;
+      /* if we revcomp then what happens is we redisplay whe whole sequence at the previous zoom level
+       * and then draw the scale bar at that zoom which makes it think we have 17 million pixels
+       * which is wrong
+       * resetting the zoom means we loose it so here we need to revcomp the scroll region
+       * using the same logic as it is used in zmapWindowState.c
+       * here we set the scroll region to reflect what we are drawing
+       * and window state restore then later adjusts everything using the
+       * previous saved coordinates that are revcomped to agree with this
+       */
+      if(window->scroll_initialised && free_revcomp_safe_windows)
+        {
+          double y1,y2,x1,x2;
+          
+          foo_canvas_get_scroll_region(window->canvas,&x1,&y1,&x2,&y2);
+          zmapWindowStateRevCompRegion(window, &y1, &y2);
+          
+          zmapWindowSetScrolledRegion(window, x1, x2, y1, y2) ;
+        }
+      else
+        {
+          window->scroll_initialised = FALSE;
+        }
     }
-#endif
-  }
 #endif
 
   zmapWindowFToIDestroy(window->context_to_item) ;

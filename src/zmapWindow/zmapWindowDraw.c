@@ -249,7 +249,7 @@ void zMapWindowToggleScratchColumn(ZMapWindow window,
   toggleColumnInMultipleBlocks(window, ZMAP_FIXED_STYLE_SCRATCH_NAME,
                                align_id, block_id, force_to, force);
 
-  zmapWindowFullReposition(window) ;
+  zmapWindowFullReposition(window->feature_root_group, TRUE, "toggle columns") ;
 
   zmapWindowBusy(window, FALSE) ;
 

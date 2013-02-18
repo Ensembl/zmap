@@ -403,6 +403,7 @@ gboolean zmapViewCallBlixem(ZMapView view, ZMapFeatureBlock block,
 
 ZMapFeatureContext zmapViewMergeInContext(ZMapView view, ZMapFeatureContext context);
 gboolean zmapViewDrawDiffContext(ZMapView view, ZMapFeatureContext *diff_context, ZMapFeature highlight_feature) ;
+void zmapViewResetWindows(ZMapView zmap_view, gboolean revcomp);
 void zmapViewEraseFromContext(ZMapView replace_me, ZMapFeatureContext context_inout);
 
 void zmapViewSetupXRemote(ZMapView view, GtkWidget *widget);
@@ -462,7 +463,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 GQuark zmapViewSrc2FSetGetID(GHashTable *source_2_featureset, char *source_name) ;
 GList *zmapViewSrc2FSetGetList(GHashTable *source_2_featureset, GList *source_list) ;
 
-ZMapFeatureContext zmapViewCreateContext(ZMapFeatureSequenceMap sequence, GList *feature_set_names, ZMapFeatureSet feature_set);
+ZMapFeatureContext zmapViewCreateContext(ZMapView view, GList *feature_set_names, ZMapFeatureSet feature_set);
 
 /* zmapViewFeatureMask.c */
 GList *zMapViewMaskFeatureSets(ZMapView view, GList *feature_set_names);

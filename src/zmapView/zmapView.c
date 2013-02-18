@@ -212,8 +212,6 @@ static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inou
 static void justDrawContext(ZMapView view, ZMapFeatureContext diff_context,
 			    GHashTable *styles, GList *masked, ZMapFeature highlight_feature);
 
-static ZMapFeatureContext createContext(ZMapView view, GList *feature_set_names, ZMapFeatureSet feature_set) ;
-
 static ZMapViewWindow addWindow(ZMapView zmap_view, GtkWidget *parent_widget) ;
 
 #if 0
@@ -564,6 +562,8 @@ gboolean zMapViewConnect(ZMapFeatureSequenceMap sequence_map, ZMapView zmap_view
       // read in a few ZMap stanzas
       getIniData(zmap_view, config_str, settings_list);
 
+      zmapViewScratchInit(zmap_view, sequence_map);
+
       if(!zmap_view->features)
 	{
 	  /* add a strand separator featureset, we need it for the yellow stripe in the middle of the screen */
@@ -591,9 +591,9 @@ gboolean zMapViewConnect(ZMapFeatureSequenceMap sequence_map, ZMapView zmap_view
 	      feature_set->loaded = g_list_append(NULL,loaded);
 
 	    }
-	  context = createContext(zmap_view, g_list_append(NULL,
-							   GUINT_TO_POINTER(zMapStyleCreateID(ZMAP_FIXED_STYLE_STRAND_SEPARATOR))),
-				  feature_set);	/* initialise to strand separator */
+	  context = zmapViewCreateContext(zmap_view, g_list_append(NULL,
+                                                                   GUINT_TO_POINTER(zMapStyleCreateID(ZMAP_FIXED_STYLE_STRAND_SEPARATOR))),
+                                          feature_set);	/* initialise to strand separator */
 
 	  /* now draw it */
 
@@ -751,9 +751,6 @@ gboolean zMapViewConnect(ZMapFeatureSequenceMap sequence_map, ZMapView zmap_view
   //  if(stylesfile)
   //    g_free(stylesfile);
 
-
-
-  zmapViewScratchInit(zmap_view, sequence_map);
 
   return result ;
 }
@@ -986,7 +983,7 @@ void zMapViewRedraw(ZMapViewWindow view_window)
 
 
 /* Reset the state for all windows in this view */
-static void zmapViewResetWindows(ZMapView zmap_view)
+void zmapViewResetWindows(ZMapView zmap_view, gboolean revcomp)
 {
   GList* list_item ;
   
@@ -1017,7 +1014,7 @@ static void zmapViewResetWindows(ZMapView zmap_view)
           
           view_window = list_item->data ;
           
-          zMapWindowFeatureReset(view_window->window, TRUE) ;
+          zMapWindowFeatureReset(view_window->window, revcomp) ;
         }
       while ((list_item = g_list_next(list_item))) ;
     }
@@ -1051,7 +1048,7 @@ gboolean zMapViewReverseComplement(ZMapView zmap_view)
 	zMapLogTime(TIMER_DRAW_CONTEXT,TIMER_CLEAR,0,"Revcomp");
 	zMapLogTime(TIMER_SETVIS,TIMER_CLEAR,0,"Revcomp");
 
-      zmapViewResetWindows(zmap_view);
+        zmapViewResetWindows(zmap_view, TRUE);
 
       zMapWindowNavigatorReset(zmap_view->navigator_window);
 

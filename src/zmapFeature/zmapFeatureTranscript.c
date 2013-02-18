@@ -548,8 +548,7 @@ void zMapFeatureTranscriptMergeExon(ZMapFeature transcript, Coord x1, Coord x2)
       new_exon->x2 = end;
       
       zMapFeatureAddTranscriptExonIntron(transcript, new_exon, NULL);
-    
-      g_array_sort(transcript->feature.transcript.exons, span_compare);
+      zMapFeatureTranscriptSortExons(transcript);
   
       /* If this is the first/last exon set the start/end coord */
       extendTranscript(transcript, new_exon);
