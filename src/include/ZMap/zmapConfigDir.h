@@ -21,7 +21,6 @@
  * originated by
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
  *
  * Description: Interface to get/set ZMap configuration directory
  *              and files.
@@ -43,7 +42,7 @@
 
 /* There is no context here because these commands create a global context for the whole
  * application so there is no point in returning it from the create. */
-gboolean zMapConfigDirCreate(char *config_dir, char *config_file, gboolean file_opt) ;
+gboolean zMapConfigDirCreate(char *config_dir, char *config_file) ;
 const char *zMapConfigDirDefaultName(void) ;
 char *zMapConfigDirGetDir(void) ;
 char *zMapConfigDirGetFile(void) ;
@@ -51,5 +50,7 @@ char *zMapConfigDirFindFile(char *filename) ;
 char *zMapConfigDirGetZmapHomeFile(void);
 char *zMapConfigDirGetSysFile(void);
 void zMapConfigDirDestroy(void) ;
+
+
 #endif /* !ZMAP_CONFIGDIR_H */
 
