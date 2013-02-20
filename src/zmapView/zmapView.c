@@ -562,8 +562,6 @@ gboolean zMapViewConnect(ZMapFeatureSequenceMap sequence_map, ZMapView zmap_view
       // read in a few ZMap stanzas
       getIniData(zmap_view, config_str, settings_list);
 
-      zmapViewScratchInit(zmap_view, sequence_map);
-
       if(!zmap_view->features)
 	{
 	  /* add a strand separator featureset, we need it for the yellow stripe in the middle of the screen */
@@ -594,6 +592,10 @@ gboolean zMapViewConnect(ZMapFeatureSequenceMap sequence_map, ZMapView zmap_view
 	  context = zmapViewCreateContext(zmap_view, g_list_append(NULL,
                                                                    GUINT_TO_POINTER(zMapStyleCreateID(ZMAP_FIXED_STYLE_STRAND_SEPARATOR))),
                                           feature_set);	/* initialise to strand separator */
+
+          ZMapFeatureBlock block = (ZMapFeatureBlock)(feature_set->parent);
+          zmapViewScratchInit(zmap_view, sequence_map, context, block);
+
 
 	  /* now draw it */
 

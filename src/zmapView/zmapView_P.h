@@ -471,7 +471,7 @@ GList *zMapViewMaskFeatureSets(ZMapView view, GList *feature_set_names);
 gboolean zMapViewCollapseFeatureSets(ZMapView view, ZMapFeatureContext diff_context);
 
 /* zmapViewScratch.c */
-void zmapViewScratchInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence);
+void zmapViewScratchInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, ZMapFeatureContext context, ZMapFeatureBlock block);
 gboolean zmapViewScratchUpdateFeature(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, ZMapFeature feature, ZMapFeatureSet feature_set, ZMapFeatureContext context);
 
 

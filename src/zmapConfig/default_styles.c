@@ -327,7 +327,6 @@ width=20\n\
 show-when-empty=false\n\
 colours=normal fill #ddeeff ; selected fill #eeffcc\n\
 width=20\n\
-show-when-empty=true\n\
 \n\
 [style-scratchcolumn]\n\
 show-when-empty=true\n\

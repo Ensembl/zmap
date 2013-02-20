@@ -115,7 +115,7 @@ static void handBuiltInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, Z
  *
  * \return void
  */
-void zmapViewScratchInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence)
+void zmapViewScratchInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, ZMapFeatureContext context_in, ZMapFeatureBlock block_in)
 {
   ZMapFeatureSet scratch_featureset = NULL ;
   ZMapFeatureTypeStyle style = NULL ;
@@ -125,7 +125,8 @@ void zmapViewScratchInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence)
   ZMapFeatureColumn column;
 
   ZMapFeatureContextMap context_map = &zmap_view->context_map;
-  ZMapFeatureContext context = NULL;
+  ZMapFeatureContext context = context_in;
+  ZMapFeatureBlock block = block_in;
 
   if((style = zMapFindStyle(context_map->styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_SCRATCH_NAME))))
     {
@@ -135,9 +136,11 @@ void zmapViewScratchInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence)
       scratch_featureset->style = style ;
 
       /* Create the context, align and block, and add the featureset to it */
-      if (!context)
+      if (!context || !block)
         context = zmapViewCreateContext(zmap_view, NULL, scratch_featureset);
-
+      else
+        zMapFeatureBlockAddFeatureSet(block, scratch_featureset);
+      
 	/* set up featureset2_column and anything else needed */
       f2c = g_hash_table_lookup(context_map->featureset_2_column, GUINT_TO_POINTER(scratch_featureset->unique_id));
       if(!f2c)	/* these just accumulate  and should be removed from the hash table on clear */
@@ -203,8 +206,11 @@ void zmapViewScratchInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence)
   handBuiltInit(zmap_view, sequence, context);
 
   /* Merge our context into the view's context and view the diff context */
-  ZMapFeatureContext diff_context = zmapViewMergeInContext(zmap_view, context);
-  zmapViewDrawDiffContext(zmap_view, &diff_context, NULL);
+  if (!context_in)
+    {
+      ZMapFeatureContext diff_context = zmapViewMergeInContext(zmap_view, context);
+      zmapViewDrawDiffContext(zmap_view, &diff_context, NULL);
+    }
 }
 
 
@@ -223,11 +229,11 @@ gboolean zmapViewScratchUpdateFeature(ZMapView zmap_view,
 
   //  zmapViewResetWindows(zmap_view, FALSE);
 
-//  for (list_item = g_list_first(zmap_view->window_list); list_item; list_item = g_list_next(list_item))
-//    {
-//      ZMapViewWindow view_window = list_item->data ;
-//      zMapWindowFeatureReset(view_window->window, zmap_view->revcomped_features) ;
-//    }
+  for (list_item = g_list_first(zmap_view->window_list); list_item; list_item = g_list_next(list_item))
+    {
+      ZMapViewWindow view_window = list_item->data ;
+      zMapWindowFeatureReset(view_window->window, zmap_view->revcomped_features) ;
+    }
 
   //zMapWindowNavigatorReset(zmap_view->navigator_window);  
   //zMapWindowNavigatorSetStrand(zmap_view->navigator_window, zmap_view->revcomped_features);
@@ -274,4 +280,17 @@ gboolean zmapViewScratchUpdateFeature(ZMapView zmap_view,
 //    }
 
   return TRUE;
+}
+
+
+/*!
+ * \brief Remove the given feature from the scratch column
+ */
+gboolean zmapViewScratchRemoveFeature(ZMapView zmap_view, 
+                                      ZMapFeatureSequenceMap sequence,
+                                      ZMapFeature feature,
+                                      ZMapFeatureSet feature_set,
+                                      ZMapFeatureContext context)
+{
+  zmapFeatureSetRemoveFeature(feature_set, feature);
 }
