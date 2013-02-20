@@ -1364,6 +1364,7 @@ void zMapWindowDestroy(ZMapWindow window)
   return ;
 }
 
+
 /*! @} end of zmapwindow docs. */
 
 
@@ -6782,4 +6783,74 @@ static gint sortCoordsCB(gconstpointer a, gconstpointer b)
     }
 
   return result ;
+}
+
+
+/*!
+ * \brief Redraw the background for the given strand/frame of the given featureset
+ */
+static void updateColumnBackground(ZMapWindow window, 
+                                   ZMapFeatureSet feature_set, 
+                                   gboolean highlight_filtered_columns,
+                                   ZMapStrand strand,
+                                   ZMapFrame frame)
+{
+  FooCanvasItem *foo = zmapWindowFToIFindSetItem(window,
+                                                 window->context_to_item,
+                                                 feature_set,
+                                                 strand,
+                                                 frame);
+
+  if (foo)
+    {
+      ZMapWindowContainerGroup column = (ZMapWindowContainerGroup)foo->parent;
+      GdkColor white = { 0xffffffff, 0xffff, 0xffff, 0xffff } ;		/* is there a column background config colour? */
+      GdkColor *fill = &white;
+
+      int n_filtered = zMapWindowFeaturesetItemGetNFiltered(foo);
+
+      /* Update the 'filtered' flag in the column based on whether this 
+       * column should be highlighted as filtered */
+      if (highlight_filtered_columns && n_filtered > 0)
+        column->flags.filtered = 1;
+      else
+        column->flags.filtered = 0;
+
+      /* Get the filter colour, if applicable */
+      if (column->flags.filtered)
+        zMapWindowGetFilteredColour(window, &fill);
+
+      zmapWindowDrawSetGroupBackground(column, 0, 1, 1.0, ZMAP_CANVAS_LAYER_COL_BACKGROUND, fill, NULL);
+      
+      foo_canvas_item_request_redraw(foo->parent);
+    }
+}
+
+
+/*!
+ * \brief Redraw the background for the given featureset in the given window
+ *
+ * Updates the column in all strands/frames
+ */
+void zMapWindowUpdateColumnBackground(ZMapWindow window, 
+                                      ZMapFeatureSet feature_set,
+                                      gboolean highlight_filtered_columns)
+{
+  updateColumnBackground(window, feature_set, highlight_filtered_columns, ZMAPSTRAND_FORWARD, ZMAPFRAME_NONE);
+  updateColumnBackground(window, feature_set, highlight_filtered_columns, ZMAPSTRAND_FORWARD, ZMAPFRAME_0);
+  updateColumnBackground(window, feature_set, highlight_filtered_columns, ZMAPSTRAND_FORWARD, ZMAPFRAME_1);
+  updateColumnBackground(window, feature_set, highlight_filtered_columns, ZMAPSTRAND_FORWARD, ZMAPFRAME_2);
+
+  updateColumnBackground(window, feature_set, highlight_filtered_columns, ZMAPSTRAND_REVERSE, ZMAPFRAME_NONE);
+  updateColumnBackground(window, feature_set, highlight_filtered_columns, ZMAPSTRAND_REVERSE, ZMAPFRAME_0);
+  updateColumnBackground(window, feature_set, highlight_filtered_columns, ZMAPSTRAND_REVERSE, ZMAPFRAME_1);
+  updateColumnBackground(window, feature_set, highlight_filtered_columns, ZMAPSTRAND_REVERSE, ZMAPFRAME_2);
+
+  updateColumnBackground(window, feature_set, highlight_filtered_columns, ZMAPSTRAND_NONE, ZMAPFRAME_NONE);
+  updateColumnBackground(window, feature_set, highlight_filtered_columns, ZMAPSTRAND_NONE, ZMAPFRAME_0);
+  updateColumnBackground(window, feature_set, highlight_filtered_columns, ZMAPSTRAND_NONE, ZMAPFRAME_1);
+  updateColumnBackground(window, feature_set, highlight_filtered_columns, ZMAPSTRAND_NONE, ZMAPFRAME_2);
+
+  /* Re-highlight the hot column, if any */
+  zmapWindowFocusHighlightHotColumn(window->focus);
 }

@@ -305,6 +305,8 @@ typedef struct _ZMapViewStruct
   gboolean columns_set;                   // if set from config style use config only
                                           // else use source featuresets in order as of old
 
+  gboolean highlight_filtered_columns;    /* True if filtered columns should be highlighted */
+  
   /* We need to know if the user has done a revcomp for a few reasons to do with coord
    * transforms and the way annotation is done....*/
   gboolean revcomped_features ;

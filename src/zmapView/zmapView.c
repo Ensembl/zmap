@@ -54,6 +54,8 @@
 #include <zmapView_P.h>
 
 
+#define ZMAP_NB_PAGE_GENERAL  "General"
+
 
 /* Define thread debug messages, used in checkStateConnections() mostly. */
 #define THREAD_DEBUG_MSG(CHILD_THREAD, FORMAT_STR, ...)	\
@@ -122,6 +124,7 @@ typedef struct DrawableDataStructType
   gboolean found_style ;
   GString *missing_styles ;
 } DrawableDataStruct, *DrawableData ;
+
 
 
 static void getIniData(ZMapView view, char *config_str, GList *sources) ;
@@ -254,7 +257,6 @@ void print_source_2_sourcedata(char * str,GHashTable *data) ;
 void print_fset2col(char * str,GHashTable *data) ;
 void print_col2fset(char * str,GHashTable *data) ;
 #endif
-
 
 
 
@@ -2634,6 +2636,8 @@ static ZMapView createZMapView(GtkWidget *xremote_widget, char *view_name, GList
   zmap_view->session_data = g_new0(ZMapViewSessionStruct, 1) ;
 
   zmap_view->session_data->sequence = zmap_view->view_sequence->sequence ;
+
+  zmap_view->highlight_filtered_columns = FALSE;
 
   return zmap_view ;
 }
@@ -5585,4 +5589,151 @@ void print_col2fset(char * str,GHashTable *data)
 
 #endif
 
+
+static void readChapter(ZMapGuiNotebookChapter chapter, ZMapView view)
+{
+  ZMapGuiNotebookPage page ;
+  gboolean bool_value = FALSE ;
+
+  if ((page = zMapGUINotebookFindPage(chapter, ZMAP_NB_PAGE_GENERAL)))
+    {
+      if (zMapGUINotebookGetTagValue(page, "Highlight filtered columns", "bool", &bool_value))
+	{
+	  if (view->highlight_filtered_columns != bool_value)
+	    {
+	      view->highlight_filtered_columns = bool_value ;
+              zMapViewUpdateColumnBackground(view);
+	    }
+	}
+    }
+
+  return ;
+}
+
+
+static void applyCB(ZMapGuiNotebookAny any_section, void *user_data)
+{
+  ZMapView view = (ZMapView)user_data;
+
+  readChapter((ZMapGuiNotebookChapter)any_section, view) ;
+
+  return ;
+}
+
+
+static void cancelCB(ZMapGuiNotebookAny any_section, void *user_data_unused)
+{
+  return ;
+}
+
+
+/*!
+ * \brief Does the work to create a chapter in the preferences notebook for general zmap settings
+ */
+static ZMapGuiNotebookChapter makeChapter(ZMapGuiNotebook note_book_parent, ZMapView view)
+{
+  ZMapGuiNotebookChapter chapter = NULL ;
+  ZMapGuiNotebookCBStruct user_CBs = {cancelCB, NULL, applyCB, view, NULL, NULL, NULL, NULL} ;
+  ZMapGuiNotebookPage page ;
+  ZMapGuiNotebookSubsection subsection ;
+  ZMapGuiNotebookParagraph paragraph ;
+  ZMapGuiNotebookTagValue tagvalue ;
+
+  chapter = zMapGUINotebookCreateChapter(note_book_parent, "General", &user_CBs) ;
+
+
+  page = zMapGUINotebookCreatePage(chapter, ZMAP_NB_PAGE_GENERAL) ;
+
+  subsection = zMapGUINotebookCreateSubsection(page, NULL) ;
+
+  paragraph = zMapGUINotebookCreateParagraph(subsection, NULL,
+					     ZMAPGUI_NOTEBOOK_PARAGRAPH_TAGVALUE_TABLE,
+					     NULL, NULL) ;
+
+  tagvalue = zMapGUINotebookCreateTagValue(paragraph, "Highlight filtered columns",
+					   ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX,
+					   "bool", view->highlight_filtered_columns) ;
+
+  return chapter ;
+}
+
+
+/*!
+ * \briefReturns a ZMapGuiNotebookChapter containing all general zmap preferences.
+ */
+ZMapGuiNotebookChapter zMapViewGetPrefsChapter(ZMapView view, ZMapGuiNotebook note_book_parent)
+{
+  ZMapGuiNotebookChapter chapter = NULL ;
+
+  chapter = makeChapter(note_book_parent, view) ;
+
+  return chapter ;
+}
+
+
+/*!
+ * \brief Returns true if filtered columns should be highlighted
+ */
+gboolean zMapViewGetHighlightFilteredColumns(ZMapView view)
+{
+  return view->highlight_filtered_columns;
+};
+
+
+/*! 
+ * \brief Callback to update the column background for a given item
+ *
+ * Only does anything if the item is a featureset
+ */
+static ZMapFeatureContextExecuteStatus updateColumnBackgroundCB(GQuark key,
+                                                                gpointer data,
+                                                                gpointer user_data,
+                                                                char **err_out)
+{
+  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK ;
+  ZMapView view = (ZMapView)user_data ;
+  ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
+
+  switch(feature_any->struct_type)
+    {
+    case ZMAPFEATURE_STRUCT_FEATURESET:
+      {
+        ZMapFeatureSet feature_set = (ZMapFeatureSet)feature_any;        
+        gboolean highlight_filtered_columns = zMapViewGetHighlightFilteredColumns(view);
+        GList *list_item = g_list_first(view->window_list);
+        
+        for ( ; list_item; list_item = g_list_next(list_item))
+          {
+            ZMapViewWindow view_window = list_item->data ;            
+            zMapWindowUpdateColumnBackground(view_window->window, feature_set, highlight_filtered_columns);
+          }
+
+        break;
+      }
+
+    default:
+      {
+	/* nothing to do for most of it */
+	break;
+      }
+    }
+
+  return status ;
+}
+
+
+/*!
+ * \brief Redraw the background for all columns in all windows in this view
+ * 
+ * This can be used to set/clear highlighting after changing filtering options
+ */
+void zMapViewUpdateColumnBackground(ZMapView view)
+{
+  zMapFeatureContextExecute((ZMapFeatureAny)view->features,
+			    ZMAPFEATURE_STRUCT_FEATURE,
+			    updateColumnBackgroundCB,
+			    view);
+
+  return ;
+}
 

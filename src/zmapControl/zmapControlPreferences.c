@@ -76,8 +76,11 @@ void zmapControlShowPreferences(ZMap zmap)
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   zMapViewRedraw(zmap->focus_viewwindow) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  
+  ZMapView zmap_view = zMapViewGetView(zmap->focus_viewwindow);
 
-  chapter = zMapViewBlixemGetConfigChapter(zMapViewGetView(zmap->focus_viewwindow), note_book) ;
+  zMapViewBlixemGetConfigChapter(zmap_view, note_book) ;
+  zMapViewGetPrefsChapter(zmap_view, note_book);
 
   if(0)
     {

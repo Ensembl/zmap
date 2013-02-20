@@ -263,5 +263,10 @@ ZMapFeatureContext zMapViewGetContextAsEmptyCopy(ZMapView do_not_use);
 
 ZMapGuiNotebookChapter zMapViewBlixemGetConfigChapter(ZMapView view, ZMapGuiNotebook note_book_parent) ;
 
+ZMapGuiNotebookChapter zMapViewGetPrefsChapter(ZMapView view, ZMapGuiNotebook note_book_parent);
+
+gboolean zMapViewGetHighlightFilteredColumns(ZMapView);
+
+void zMapViewUpdateColumnBackground(ZMapView view);
 
 #endif /* !ZMAPVIEW_H */
