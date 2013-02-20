@@ -2970,27 +2970,16 @@ int zMapWindowCanvasFeaturesetFilter(gpointer gfilter, double value, gboolean hi
       GdkColor *fill = &white;
 
       /* Set the 'filtered' flag. Note that this only gets set if 
-       * the user-preference highlight_filtered_columns is true. */
+       * the column is actually to be highlighted, i.e. if the 
+       * user-preference highlight_filtered_columns is true. */
       column->flags.filtered = (fi->n_filtered && filter->window && highlight_filtered_columns);
       
-      if (column->flags.filtered)
-        {
-          /* Highlight the column background */
-          zMapWindowGetFilteredColour(filter->window,&fill);          
-          
-          // NO:	zMapWindowCanvasFeaturesetSetBackground((FooCanvasItem *) fi, fill, NULL);
-          // must do the column not the featureset
-          zmapWindowDrawSetGroupBackground(column, 0, 1, 1.0, ZMAP_CANVAS_LAYER_COL_BACKGROUND, fill, NULL);
-          
-          foo_canvas_item_request_redraw(((FooCanvasItem *)fi)->parent);
-        }
-      else
-        {
-          /* Revert the background colour. Note that this must be the currently-selected
-           * column or else we could not operate its filter button, therefore we use
-           * the focused column background colour, not the normal background colour */
-          zmapWindowFocusHighlightHotColumn(filter->window->focus);
-        }
+      /* Revert the background colour. This is because this must be the 
+       * currently-selected column, otherwise we could not operate its filter
+       * button, therefore we use the focused column background colour, not the
+       * normal background colour (and not even the filter highlight colour, 
+       * because this is overriden by the focus colour) */
+      zmapWindowFocusHighlightHotColumn(filter->window->focus);
 
       if(fi->bumped)
 	{
