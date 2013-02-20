@@ -54,7 +54,8 @@
 #include <zmapView_P.h>
 
 
-#define ZMAP_NB_PAGE_GENERAL  "General"
+#define ZMAP_NB_CHAPTER_GENERAL  "ZMap"  /* preferences chapter relating to general zmap settings */
+#define ZMAP_NB_PAGE_DISPLAY  "Display"  /* preferences page relating to zmap display settings */
 
 
 /* Define thread debug messages, used in checkStateConnections() mostly. */
@@ -5595,7 +5596,7 @@ static void readChapter(ZMapGuiNotebookChapter chapter, ZMapView view)
   ZMapGuiNotebookPage page ;
   gboolean bool_value = FALSE ;
 
-  if ((page = zMapGUINotebookFindPage(chapter, ZMAP_NB_PAGE_GENERAL)))
+  if ((page = zMapGUINotebookFindPage(chapter, ZMAP_NB_PAGE_DISPLAY)))
     {
       if (zMapGUINotebookGetTagValue(page, "Highlight filtered columns", "bool", &bool_value))
 	{
@@ -5639,10 +5640,10 @@ static ZMapGuiNotebookChapter makeChapter(ZMapGuiNotebook note_book_parent, ZMap
   ZMapGuiNotebookParagraph paragraph ;
   ZMapGuiNotebookTagValue tagvalue ;
 
-  chapter = zMapGUINotebookCreateChapter(note_book_parent, "General", &user_CBs) ;
+  chapter = zMapGUINotebookCreateChapter(note_book_parent, ZMAP_NB_CHAPTER_GENERAL, &user_CBs) ;
 
 
-  page = zMapGUINotebookCreatePage(chapter, ZMAP_NB_PAGE_GENERAL) ;
+  page = zMapGUINotebookCreatePage(chapter, ZMAP_NB_PAGE_DISPLAY) ;
 
   subsection = zMapGUINotebookCreateSubsection(page, NULL) ;
 
