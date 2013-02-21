@@ -322,7 +322,6 @@ void zMapServerRequestDestroy(ZMapServerReqAny request)
       {
 	ZMapServerReqStyles styles = (ZMapServerReqStyles)request ;
 
-//	g_free(styles->styles_list_in) ;		what??
 	g_free(styles->styles_file_in) ;
 
 	break ;
@@ -431,7 +430,7 @@ ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
     case ZMAP_SERVERREQ_GETSERVERINFO:
       {
         ZMapServerReqGetServerInfo get_info = (ZMapServerReqGetServerInfo)request_in ;
-	ZMapServerInfoStruct info = {NULL} ;
+	ZMapServerReqGetServerInfoStruct info = {ZMAP_SERVERREQ_INVALID} ;
 
 	if ((request->response
 	     = zMapServerGetServerInfo(server, &info)) != ZMAP_SERVERRESPONSE_OK)
@@ -441,10 +440,10 @@ ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
 	  }
 	else
 	  {
-	    get_info->database_name_out = info.database_name ;
-	    get_info->database_title_out = info.database_title ;
-	    get_info->database_path_out = info.database_path ;
-	    get_info->request_as_columns = info.request_as_columns ;
+	    get_info->database_name_out = info.database_name_out  ;
+	    get_info->database_title_out = info.database_title_out  ;
+	    get_info->database_path_out = info.database_path_out  ;
+	    get_info->request_as_columns = info.request_as_columns  ;
 	  }
 
 	break ;
@@ -611,13 +610,21 @@ ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
 
   /* Return server. */
   *slave_data = (void *)server ;
+
 #if  MH_NEVER_INCLUDE_THIS_CODE
-// mysteriously falls over on terminate (request = 11)
-if(request->type != 11)
-{ char *emsg = "";
-  if (err_msg_out && *err_msg_out) emsg = *err_msg_out;
-  if(*slave_data) zMapLogMessage("req %s/%s req %d/%d returns %d (%s)", server->url->protocol,server->url->query,request->type,request->response,thread_rc,emsg);
-}
+  /* ERRR....so was this ever fixed ???????? EG */
+
+  // mysteriously falls over on terminate (request = 11)
+  if(request->type != 11)
+    {
+      char *emsg = "";
+      
+      if (err_msg_out && *err_msg_out)
+	emsg = *err_msg_out;
+
+      if(*slave_data)
+	zMapLogMessage("req %s/%s req %d/%d returns %d (%s)", server->url->protocol,server->url->query,request->type,request->response,thread_rc,emsg);
+    }
 #endif
 
   return thread_rc ;

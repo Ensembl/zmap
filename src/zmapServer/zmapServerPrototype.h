@@ -21,8 +21,8 @@
  * This file is part of the ZMap genome database package
  * and was written by
  *     Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk &,
- *         Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
- *      Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *       Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *  Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Describes the interface between zmapServer, the generalised
  *              server interface and the underlying server specific
@@ -35,21 +35,10 @@
 #define ZMAP_SERVER_PROTOTYPEP_H
 
 #include <glib.h>
+
 #include <ZMap/zmapFeature.h>
 #include <ZMap/zmapServerProtocol.h>
 
-
-
-/* Contains information about the server. */
-typedef struct
-{
-  char *database_name ;
-  char *database_title ;
-  char *database_path ;
-
-  gboolean request_as_columns;
-
-} ZMapServerInfoStruct, *ZMapServerInfo ;
 
 
 
@@ -65,7 +54,7 @@ typedef gboolean (*ZMapServerCreateFunc)(void **server_conn,
 
 typedef ZMapServerResponseType (*ZMapServerOpenFunc)(void *server_conn, ZMapServerReqOpen req_open) ;
 
-typedef ZMapServerResponseType (*ZMapServerGetServerInfo)(void *server_in, ZMapServerInfo info) ;
+typedef ZMapServerResponseType (*ZMapServerGetServerInfo)(void *server_in, ZMapServerReqGetServerInfo info) ;
 
 typedef ZMapServerResponseType (*ZMapServerGetFeatureSets)(void *server_in,
 							   GList **feature_sets_inout,

@@ -311,7 +311,7 @@ ZMapServerResponseType zMapServerGetSequence(ZMapServer server, GList *sequences
 }
 
 
-ZMapServerResponseType zMapServerGetServerInfo(ZMapServer server, ZMapServerInfo info)
+ZMapServerResponseType zMapServerGetServerInfo(ZMapServer server, ZMapServerReqGetServerInfo info)
 {
   ZMapServerResponseType result = server->last_response ;
 

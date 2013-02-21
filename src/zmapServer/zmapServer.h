@@ -59,7 +59,7 @@ ZMapServerResponseType zMapServerCreateConnection(ZMapServer *server_out, void *
 						  ZMapURL url,  char *format,
 						  int timeout, char *version_str);
 ZMapServerResponseType zMapServerOpenConnection(ZMapServer server,ZMapServerReqOpen req_open) ;
-ZMapServerResponseType zMapServerGetServerInfo(ZMapServer server, ZMapServerInfo info) ;
+ZMapServerResponseType zMapServerGetServerInfo(ZMapServer server, ZMapServerReqGetServerInfo info) ;
 ZMapServerResponseType zMapServerFeatureSetNames(ZMapServer server,
 						 GList **feature_sets_inout,
 						 GList *sources,
