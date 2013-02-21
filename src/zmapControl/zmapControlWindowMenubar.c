@@ -1,4 +1,3 @@
-/*  Last edited: Jul 23 10:33 2012 (edgrif) */
 /*  File: zmapControlWindowMenubar.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -68,7 +67,6 @@ static void showSessionCB(gpointer cb_data, guint callback_action, GtkWidget *wi
 static void aboutCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void rtTicket(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void allHelpCB(gpointer cb_data, guint callback_action, GtkWidget *w);
-static void formatSession(gpointer data, gpointer user_data) ;
 static void print_hello( gpointer data, guint callback_action, GtkWidget *w ) ;
 #ifdef ALLOW_POPOUT_PANEL
 static void popout_panel( gpointer data, guint callback_action, GtkWidget *w ) ;
@@ -282,9 +280,7 @@ static void developerCB(gpointer cb_data, guint callback_action, GtkWidget *wind
 static void showSessionCB(gpointer cb_data, guint callback_action, GtkWidget *window)
 {
   ZMap zmap = (ZMap)cb_data ;
-  ZMapViewSession view_data ;
   GString *session_text ;
-  char *title ;
 
   session_text = g_string_new(NULL) ;
 
@@ -293,67 +289,15 @@ static void showSessionCB(gpointer cb_data, guint callback_action, GtkWidget *wi
   g_string_append_printf(session_text, "\tUser: %s (%s)\n\n", g_get_user_name(), g_get_real_name()) ;
   g_string_append_printf(session_text, "\tMachine: %s\n\n", g_get_host_name()) ;
 
-  view_data = zMapViewSessionGetData(zmap->focus_viewwindow) ;
+  if (!zMapViewSessionGetAsText(zmap->focus_viewwindow, session_text))
+    g_string_append_printf(session_text, "\n\t<< %s >>\n\n", "No sessions currently.") ;
 
-  g_string_append_printf(session_text, "\tSequence: %s\n\n", view_data->sequence) ;
+  zMapGUIShowText("Session Details", session_text->str, FALSE) ;
 
-  if (view_data->servers)
-    {
-      g_list_foreach(view_data->servers, formatSession, session_text) ;
-    }
-
-  title = zMapGUIMakeTitleString(NULL, "Session Details") ;
-  zMapGUIShowText(title, session_text->str, FALSE) ;
-  g_free(title) ;
   g_string_free(session_text, TRUE) ;
 
   return ;
 }
-
-
-static void formatSession(gpointer data, gpointer user_data)
-{
-  ZMapViewSessionServer server_data = (ZMapViewSessionServer)data ;
-  GString *session_text = (GString *)user_data ;
-
-
-  g_string_append(session_text, "Server\n") ;
-
-  g_string_append_printf(session_text, "\tURL: %s\n\n", server_data->url) ;
-  g_string_append_printf(session_text, "\tProtocol: %s\n\n", server_data->protocol) ;
-
-  switch(server_data->scheme)
-    {
-    case SCHEME_ACEDB:
-      {
-	g_string_append_printf(session_text, "\tServer: %s\n\n", server_data->scheme_data.acedb.host) ;
-	g_string_append_printf(session_text, "\tPort: %d\n\n", server_data->scheme_data.acedb.port) ;
-	g_string_append_printf(session_text, "\tDatabase: %s\n\n", server_data->scheme_data.acedb.database) ;
-	break ;
-      }
-    case SCHEME_FILE:
-      {
-	g_string_append_printf(session_text, "\tFormat: %s\n\n", server_data->format) ;
-	g_string_append_printf(session_text, "\tFile: %s\n\n", server_data->scheme_data.file.path) ;
-	break ;
-      }
-    case SCHEME_PIPE:
-      {
-      g_string_append_printf(session_text, "\tFormat: %s\n\n", server_data->format) ;
-      g_string_append_printf(session_text, "\tScript: %s\n\n", server_data->scheme_data.pipe.path) ;
-      g_string_append_printf(session_text, "\tQuery: %s\n\n", server_data->scheme_data.pipe.query) ;
-      break ;
-      }
-    default:
-      {
-	g_string_append(session_text, "\tUnsupported server type !") ;
-	break ;
-      }
-    }
-
-  return ;
-}
-
 
 
 
