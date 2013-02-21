@@ -396,7 +396,7 @@ gboolean zmapViewCWHRemoveContextWindow(GHashTable *table, ZMapFeatureContext *c
 void zmapViewCWHDestroy(GHashTable **hash);
 
 void zmapViewSessionAddServer(ZMapViewSessionServer session_data, ZMapURL url, char *format) ;
-void zmapViewSessionAddServerInfo(ZMapViewSessionServer session_data, char *database_path) ;
+void zmapViewSessionAddServerInfo(ZMapViewSessionServer session_data, ZMapServerReqGetServerInfo session) ;
 void zmapViewSessionFreeServer(ZMapViewSessionServer session_data) ;
 
 ZMapViewConnection zmapViewRequestServer(ZMapView view, ZMapViewConnection view_conn,

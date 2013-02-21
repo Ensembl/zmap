@@ -698,13 +698,17 @@ void zmapViewSessionAddServer(ZMapViewSessionServer server_data, ZMapURL url, ch
 
 /* Record dynamic details for a session which can only be found out by later interrogation
  * of the server. */
-void zmapViewSessionAddServerInfo(ZMapViewSessionServer session_data, char *database_path)
+void zmapViewSessionAddServerInfo(ZMapViewSessionServer session_data, ZMapServerReqGetServerInfo session)
 {
+  if (session->data_format_out)
+    session_data->format = g_strdup(session->data_format_out) ;
+
+
   switch(session_data->scheme)
     {
     case SCHEME_ACEDB:
       {
-	session_data->scheme_data.acedb.database = g_strdup(database_path) ;
+	session_data->scheme_data.acedb.database = g_strdup(session->database_path_out) ;
 	break ;
       }
     case SCHEME_FILE:
@@ -822,18 +826,27 @@ static void cwh_destroy_value(gpointer cwh_data)
 
 
 
-/* Produce information for each session as formatted text. */
+/* Produce information for each session as formatted text.
+ * 
+ * NOTE: some information is only available once the server connection
+ * is established and the server can be queried for it. This is not formalised
+ * in a struct but could be if found necessary.
+ * 
+ *  */
 static void formatSession(gpointer data, gpointer user_data)
 {
   ZMapViewConnection view_con = (ZMapViewConnection)data ;
   ZMapViewSessionServer server_data = &(view_con->session) ;
   GString *session_text = (GString *)user_data ;
+  char *unavailable_txt = "<< not available yet >>" ;
 
 
   g_string_append(session_text, "Server\n") ;
 
   g_string_append_printf(session_text, "\tURL: %s\n\n", server_data->url) ;
   g_string_append_printf(session_text, "\tProtocol: %s\n\n", server_data->protocol) ;
+  g_string_append_printf(session_text, "\tFormat: %s\n\n",
+			 (server_data->format ? server_data->format : unavailable_txt)) ;
 
   switch(server_data->scheme)
     {
@@ -841,18 +854,18 @@ static void formatSession(gpointer data, gpointer user_data)
       {
 	g_string_append_printf(session_text, "\tServer: %s\n\n", server_data->scheme_data.acedb.host) ;
 	g_string_append_printf(session_text, "\tPort: %d\n\n", server_data->scheme_data.acedb.port) ;
-	g_string_append_printf(session_text, "\tDatabase: %s\n\n", server_data->scheme_data.acedb.database) ;
+	g_string_append_printf(session_text, "\tDatabase: %s\n\n",
+			       (server_data->scheme_data.acedb.database
+				? server_data->scheme_data.acedb.database : unavailable_txt)) ;
 	break ;
       }
     case SCHEME_FILE:
       {
-	g_string_append_printf(session_text, "\tFormat: %s\n\n", server_data->format) ;
 	g_string_append_printf(session_text, "\tFile: %s\n\n", server_data->scheme_data.file.path) ;
 	break ;
       }
     case SCHEME_PIPE:
       {
-      g_string_append_printf(session_text, "\tFormat: %s\n\n", server_data->format) ;
       g_string_append_printf(session_text, "\tScript: %s\n\n", server_data->scheme_data.pipe.path) ;
       g_string_append_printf(session_text, "\tQuery: %s\n\n", server_data->scheme_data.pipe.query) ;
       break ;

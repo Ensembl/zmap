@@ -87,10 +87,16 @@ typedef struct ConnectionDataStructType
 
 
   /* database data. */
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  char *data_format ;
   char *database_name ;
   char *database_title ;
   char *database_path ;
-  gboolean request_as_columns;      /* ie ACEDB featuresets must be translated into display columns to be requested */
+  gboolean request_as_columns;      /* ie ACEDB featuresets must be translated into display
+				       columns to be requested */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  ZMapServerReqGetServerInfoStruct session ;
+
 
   ZMapFeatureSequenceMap sequence_map;
   gint start,end;
@@ -3502,17 +3508,21 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
       {
 	ZMapServerReqGetServerInfo get_info = (ZMapServerReqGetServerInfo)req_any ;
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	connect_data->data_format = get_info->data_format_out ;
 	connect_data->database_name = get_info->database_name_out ;
 	connect_data->database_title = get_info->database_title_out ;
 	connect_data->database_path = get_info->database_path_out ;
 	connect_data->request_as_columns = get_info->request_as_columns;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+	connect_data->session = *get_info ;		    /* struct copy. */
 
 	/* Hacky....what if there are several source names etc...we need a flag to say "master" source... */
 	if (!(zmap_view->view_db_name))
-	  zmap_view->view_db_name = connect_data->database_name ;
+	  zmap_view->view_db_name = connect_data->session.database_name_out ;
 
 	if (!(zmap_view->view_db_title))
-	  zmap_view->view_db_title = connect_data->database_title ;
+	  zmap_view->view_db_title = connect_data->session.database_title_out ;
 
 	break ;
       }
@@ -3853,8 +3863,7 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 	/* ok...once we are here we can display stuff.... */
 	if (result && req_any->type == connect_data->display_after)
 	  {
-	    /* Isn't there a problem here...which bit of info goes with which server ???? */
-	    zmapViewSessionAddServerInfo(&(view_con->session), connect_data->database_path) ;
+	    zmapViewSessionAddServerInfo(&(view_con->session), &(connect_data->session)) ;
 
 	    if (connect_data->get_features)  /* may be nul if server died */
 	      {
@@ -4426,7 +4435,7 @@ static void getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature_req
       
       if ((merge_results = justMergeContext(zmap_view,
 					    &new_features, connect_data->curr_styles,
-					    &masked, connect_data->request_as_columns, TRUE)))   // && !view->serial_load)
+					    &masked, connect_data->session.request_as_columns, TRUE)))
         {
 	  diff_context = new_features;
 	  justDrawContext(zmap_view, diff_context, connect_data->curr_styles , masked, NULL) ;
