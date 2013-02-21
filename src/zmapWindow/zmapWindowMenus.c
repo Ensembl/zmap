@@ -460,7 +460,7 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
 
   /* Show translation on forward strand features only (also include 'none' strand 
    * features so we get it for the scratch column) */
-  if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT && feature->strand == ZMAPSTRAND_FORWARD)
+  if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT && feature->strand != ZMAPSTRAND_REVERSE)
     menu_sets = g_list_append(menu_sets, makeMenuShowTranslation(NULL, NULL, menu_data));
 
   if (feature->url)
