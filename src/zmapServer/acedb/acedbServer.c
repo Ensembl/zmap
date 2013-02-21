@@ -2241,6 +2241,9 @@ static gboolean getServerInfo(AcedbServer server, ZMapServerReqGetServerInfo inf
       char *next_line = NULL ;
       char *curr_pos = NULL ;
 
+      /* Acedb only exports feature data as gffv2 currently. */
+      info->data_format_out = g_strdup("GFF version 2") ;
+
       while ((next_line = strtok_r(scan_text, "\n", &curr_pos)))
 	{
 	  scan_text = NULL ;
@@ -2286,6 +2289,7 @@ static gboolean getServerInfo(AcedbServer server, ZMapServerReqGetServerInfo inf
 		}
 	    }
 	}
+     
 
       g_free(reply) ;
       reply = NULL ;

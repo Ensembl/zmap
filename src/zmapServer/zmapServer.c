@@ -52,42 +52,42 @@ gboolean zMapServerGlobalInit(ZMapURL url, void **server_global_data_out)
   gboolean result = TRUE ;
   ZMapServerFuncs serverfuncs ;
 
-  serverfuncs = g_new0(ZMapServerFuncsStruct, 1) ;	    /* n.b. crashes on failure. */
+  serverfuncs = g_new0(ZMapServerFuncsStruct, 1) ;
 
   /* Set up the server according to the protocol, this is all a bit hard coded but it
    * will do for now.... */
   /* Probably I should do this with a table of protocol and function stuff...perhaps
    * even using dynamically constructed function names....  */
-
-  switch(url->scheme){
-  case SCHEME_ACEDB:
-    acedbGetServerFuncs(serverfuncs) ;
-    break;
-  case SCHEME_HTTP:
-    /*  case SCHEME_HTTPS: */
-    /* Force http[s] to BE das at the moment, but later I think we should have FORMAT too */
-    /* Not that Format gets passed in here though!!! we'd need to pass the url struct */
-    /* if(strcasecmp(format, 'das') == 0) */
-    dasGetServerFuncs(serverfuncs);
-    break;
-  case SCHEME_FILE:     // DAS only: file gets handled by pipe
-    if(url->params)
+  switch(url->scheme)
     {
+    case SCHEME_ACEDB:
+      acedbGetServerFuncs(serverfuncs) ;
+      break;
+    case SCHEME_HTTP:
+      /*  case SCHEME_HTTPS: */
+      /* Force http[s] to BE das at the moment, but later I think we should have FORMAT too */
+      /* Not that Format gets passed in here though!!! we'd need to pass the url struct */
+      /* if(strcasecmp(format, 'das') == 0) */
       dasGetServerFuncs(serverfuncs);
       break;
+    case SCHEME_FILE:     // DAS only: file gets handled by pipe
+      if(url->params)
+	{
+	  dasGetServerFuncs(serverfuncs);
+	  break;
+	}
+      // fall through for real files
+    case SCHEME_PIPE:
+      pipeGetServerFuncs(serverfuncs);
+      break;
+    default:
+      /* Fatal coding error, we exit here..... Nothing more can happen
+	 without setting up serverfuncs! */
+      /* Getting here means somethings been added to ZMap/zmapUrl.h
+	 and not to the above protocol decision above. */
+      zMapLogFatal("Unsupported server protocol: %s", url->protocol) ;
+      break;
     }
-    // fall through for real files
-  case SCHEME_PIPE:
-    pipeGetServerFuncs(serverfuncs);
-    break;
-  default:
-    /* Fatal coding error, we exit here..... Nothing more can happen
-       without setting up serverfuncs! */
-    /* Getting here means somethings been added to ZMap/zmapUrl.h
-       and not to the above protocol decision above. */
-    zMapLogFatal("Unsupported server protocol: %s", url->protocol) ;
-    break;
-  }
 
   /* All functions MUST be specified. */
   zMapAssert(serverfuncs->global_init
@@ -102,7 +102,7 @@ gboolean zMapServerGlobalInit(ZMapURL url, void **server_global_data_out)
 	     && serverfuncs->get_features
 	     && serverfuncs->get_context_sequences
 	     && serverfuncs->errmsg
-           && serverfuncs->get_status
+	     && serverfuncs->get_status
 	     && serverfuncs->close
 	     && serverfuncs->destroy) ;
 
@@ -128,18 +128,13 @@ ZMapServerResponseType zMapServerCreateConnection(ZMapServer *server_out, void *
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   ZMapServer server ;
   ZMapServerFuncs serverfuncs = (ZMapServerFuncs)global_data ;
-  int parse_error;
+  int parse_error ;
+
   zMapAssert(server_out && global_data && url) ;
 
   server = g_new0(ZMapServerStruct, 1) ;
   *server_out = server ;
 
-  /* oh joy! OO programming strike again, or rather it doesn't
-   * as the sevrer protocol has many layers and data is duplicated (and often subtly changed or discarded between them)
-   * then we have to have several ciopied fothe same information
-   * i just spent a few hours loking for a bug cauise by this unititialised struct member
-   * which really has no buisness having a duplicate existance in the pipeServer or acedebServer code
-   */
   server->config_file = config_file;
 
   /* set function table. */

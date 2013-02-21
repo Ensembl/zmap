@@ -131,6 +131,7 @@ typedef struct ZMapServerReqGetServerInfoStructType
   ZMapServerReqType type ;
   ZMapServerResponseType response ;
 
+  char *data_format_out ;
   char *database_name_out ;
   char *database_title_out ;
   char *database_path_out ;

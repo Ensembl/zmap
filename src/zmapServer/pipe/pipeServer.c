@@ -1512,9 +1512,12 @@ static gboolean getServerInfo(PipeServer server, ZMapServerReqGetServerInfo info
 {
   gboolean result = FALSE ;
 
-  result = TRUE ;
+  /* Hard coded for now but may need to alter this later when version 3 supported. */
+  info->data_format_out = g_strdup("GFF version 2") ;
+
   info->database_path_out = g_strdup(server->script_path) ;
   info->request_as_columns = FALSE;
+  result = TRUE ;
 
   return result ;
 }

@@ -440,6 +440,7 @@ ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
 	  }
 	else
 	  {
+	    get_info->data_format_out = info.data_format_out ;
 	    get_info->database_name_out = info.database_name_out  ;
 	    get_info->database_title_out = info.database_title_out  ;
 	    get_info->database_path_out = info.database_path_out  ;
