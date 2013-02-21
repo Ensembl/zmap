@@ -71,7 +71,7 @@ static gboolean createConnection(void **server_out,
 
 static gboolean pipe_server_spawn(PipeServer server,GError **error);
 static ZMapServerResponseType openConnection(void *server, ZMapServerReqOpen req_open) ;
-static ZMapServerResponseType getInfo(void *server, ZMapServerInfo info) ;
+static ZMapServerResponseType getInfo(void *server, ZMapServerReqGetServerInfo info) ;
 static ZMapServerResponseType getFeatureSetNames(void *server,
 						 GList **feature_sets_out,
 						 GList *sources,
@@ -98,7 +98,7 @@ static gboolean sequenceRequest(PipeServer server, ZMapGFFParser parser, GString
 				ZMapFeatureBlock feature_block) ;
 static void setLastErrorMsg(PipeServer server, GError **gff_pipe_err_inout) ;
 
-static gboolean getServerInfo(PipeServer server, ZMapServerInfo info) ;
+static gboolean getServerInfo(PipeServer server, ZMapServerReqGetServerInfo info) ;
 static void setErrMsg(PipeServer server, char *new_msg) ;
 
 static ZMapServerResponseType pipeGetHeader(PipeServer server);
@@ -688,7 +688,7 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
 }
 
 
-static ZMapServerResponseType getInfo(void *server_in, ZMapServerInfo info)
+static ZMapServerResponseType getInfo(void *server_in, ZMapServerReqGetServerInfo info)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   PipeServer server = (PipeServer)server_in ;
@@ -1508,12 +1508,12 @@ static gboolean sequenceRequest(PipeServer server, ZMapGFFParser parser, GString
 }
 
 
-static gboolean getServerInfo(PipeServer server, ZMapServerInfo info)
+static gboolean getServerInfo(PipeServer server, ZMapServerReqGetServerInfo info)
 {
   gboolean result = FALSE ;
 
   result = TRUE ;
-  info->database_path = g_strdup(server->script_path) ;
+  info->database_path_out = g_strdup(server->script_path) ;
   info->request_as_columns = FALSE;
 
   return result ;

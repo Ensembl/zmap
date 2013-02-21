@@ -146,8 +146,8 @@ static gboolean globalInit(void) ;
 static gboolean createConnection(void **server_out,
 				 char *config_file, ZMapURL url, char *format,
                                  char *version_str, int timeout) ;
-static ZMapServerResponseType openConnection(void *server,ZMapServerReqOpen req_open) ;
-static ZMapServerResponseType getInfo(void *server, ZMapServerInfo info) ;
+static ZMapServerResponseType openConnection(void *server, ZMapServerReqOpen req_open) ;
+static ZMapServerResponseType getInfo(void *server, ZMapServerReqGetServerInfo info) ;
 static ZMapServerResponseType getFeatureSetNames(void *server,
 						 GList **feature_sets_out,
 						 GList *sources,
@@ -224,7 +224,7 @@ static void stylePrintCB(gpointer data, gpointer user_data) ;
 
 static gboolean getStyleColour(StyleFeatureColours style_colours, char **line_pos) ;
 static ZMapServerResponseType doGetSequences(AcedbServer server, GList *sequences_inout) ;
-static gboolean getServerInfo(AcedbServer server, ZMapServerInfo info) ;
+static gboolean getServerInfo(AcedbServer server, ZMapServerReqGetServerInfo info) ;
 
 static int equaliseLists(AcedbServer server, GList **feature_sets_inout, GList *method_names,
 			 char *query_name, char *reference_name) ;
@@ -373,8 +373,8 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
 
   resetErr(server) ;
 
-  server->zmap_start = req_open->zmap_start;
-  server->zmap_end   = req_open->zmap_end;
+  server->zmap_start = req_open->zmap_start ;
+  server->zmap_end = req_open->zmap_end ;
 
   if ((server->last_err_status = AceConnConnect(server->connection)) == ACECONN_OK)
     {
@@ -393,7 +393,7 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
 
 
 
-static ZMapServerResponseType getInfo(void *server_in, ZMapServerInfo info)
+static ZMapServerResponseType getInfo(void *server_in, ZMapServerReqGetServerInfo info)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   AcedbServer server = (AcedbServer)server_in ;
@@ -2220,7 +2220,7 @@ static gboolean setQuietMode(AcedbServer server)
  *
  *
  *  */
-static gboolean getServerInfo(AcedbServer server, ZMapServerInfo info)
+static gboolean getServerInfo(AcedbServer server, ZMapServerReqGetServerInfo info)
 {
   gboolean result = FALSE ;
   char *command ;
@@ -2256,7 +2256,7 @@ static gboolean getServerInfo(AcedbServer server, ZMapServerInfo info)
 	      if (target)
 		{
 		  result = TRUE ;
-		  info->database_path = g_strdup(target) ;
+		  info->database_path_out = g_strdup(target) ;
 		}
 	    }
 	  else if (strstr(next_line, "Title") != NULL)
@@ -2269,7 +2269,7 @@ static gboolean getServerInfo(AcedbServer server, ZMapServerInfo info)
 	      if (tag_pos && !(strstr(tag_pos, "<undefined>")))
 		{
 		  result = TRUE ;
-		  info->database_title = g_strstrip(g_strdup(tag_pos)) ;
+		  info->database_title_out = g_strstrip(g_strdup(tag_pos)) ;
 		}
 	    }
 	  else if (strstr(next_line, "Name") != NULL)
@@ -2282,7 +2282,7 @@ static gboolean getServerInfo(AcedbServer server, ZMapServerInfo info)
 	      if (tag_pos && !(strstr(tag_pos, "<undefined>")))
 		{
 		  result = TRUE ;
-		  info->database_name = g_strstrip(g_strdup(tag_pos)) ;
+		  info->database_name_out = g_strstrip(g_strdup(tag_pos)) ;
 		}
 	    }
 	}

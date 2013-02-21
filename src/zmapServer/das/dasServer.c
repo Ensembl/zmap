@@ -86,7 +86,7 @@ static gboolean createConnection(void **server_out,
 				 char *config_file, ZMapURL url, char *format,
                                  char *version_str, int timeout) ;
 static ZMapServerResponseType openConnection(void *server,ZMapServerReqOpen req_open) ;
-static ZMapServerResponseType getInfo(void *server, ZMapServerInfo info) ;
+static ZMapServerResponseType getInfo(void *server, ZMapServerReqGetServerInfo info) ;
 static ZMapServerResponseType getStyles(void *server, GHashTable **styles_out) ;
 static ZMapServerResponseType haveModes(void *server, gboolean *have_mode) ;
 static ZMapServerResponseType getSequences(void *server_in, GList *sequences_inout) ;
@@ -379,7 +379,7 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
 }
 
 
-static ZMapServerResponseType getInfo(void *server_in, ZMapServerInfo info)
+static ZMapServerResponseType getInfo(void *server_in, ZMapServerReqGetServerInfo info)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
