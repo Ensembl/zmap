@@ -247,7 +247,18 @@ gboolean zMapFeatureAddTranscriptExonIntron(ZMapFeature feature,
 }
 
 
-/* Removes a single exon and/or intron to an existing transcript feature. */
+/* Removes all exons */
+void zMapFeatureRemoveExons(ZMapFeature feature)
+{
+  if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT && feature->feature.transcript.exons)
+    {
+      g_array_free(feature->feature.transcript.exons, TRUE);
+      feature->feature.transcript.exons = g_array_sized_new(FALSE, TRUE, sizeof(ZMapSpanStruct), 30);
+    }
+}
+
+
+/* Removes all introns */
 void zMapFeatureRemoveIntrons(ZMapFeature feature)
 {
   if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT && feature->feature.transcript.introns)

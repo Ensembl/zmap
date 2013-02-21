@@ -473,6 +473,7 @@ gboolean zMapViewCollapseFeatureSets(ZMapView view, ZMapFeatureContext diff_cont
 /* zmapViewScratch.c */
 void zmapViewScratchInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, ZMapFeatureContext context, ZMapFeatureBlock block);
 gboolean zmapViewScratchUpdateFeature(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, ZMapFeature feature, ZMapFeatureSet feature_set, ZMapFeatureContext context);
+void zmapViewScratchClear(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, ZMapFeature feature, ZMapFeatureSet feature_set, ZMapFeatureContext context);
 
 
 #ifdef LOTS_OF_EXONS

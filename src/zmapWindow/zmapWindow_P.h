@@ -1337,6 +1337,9 @@ ZMapGUIMenuItem zmapWindowMakeMenuMarkExportOps(int *start_index_inout,
 ZMapGUIMenuItem zmapWindowMakeMenuFeatureOps(int *start_index_inout,
 					     ZMapGUIMenuItemCallbackFunc callback_func,
 					     gpointer callback_data) ;
+ZMapGUIMenuItem zmapWindowMakeMenuColumnOps(int *start_index_inout,
+                                            ZMapGUIMenuItemCallbackFunc callback_func,
+                                            gpointer callback_data) ;
 
 void zmapWindowFeatureExpand(ZMapWindow window, FooCanvasItem *foo,
 			     ZMapFeature feature, ZMapWindowContainerFeatureSet container_set) ;

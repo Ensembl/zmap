@@ -284,13 +284,22 @@ gboolean zmapViewScratchUpdateFeature(ZMapView zmap_view,
 
 
 /*!
- * \brief Remove the given feature from the scratch column
+ * \brief Clear the scratch column
+ *
+ * This removes the exons and introns from the feature.
+ * It doesn't remove the feature itself because this 
+ * singleton feature always exists.
  */
-gboolean zmapViewScratchRemoveFeature(ZMapView zmap_view, 
-                                      ZMapFeatureSequenceMap sequence,
-                                      ZMapFeature feature,
-                                      ZMapFeatureSet feature_set,
-                                      ZMapFeatureContext context)
-{
-  return zMapFeatureSetRemoveFeature(feature_set, feature);
+void zmapViewScratchClear(ZMapView zmap_view,
+                          ZMapFeatureSequenceMap sequence,
+                          ZMapFeature feature,
+                          ZMapFeatureSet feature_set,
+                          ZMapFeatureContext context)
+{ 
+  if (feature)
+    {
+      zMapFeatureRemoveExons(feature);
+      zMapFeatureRemoveIntrons(feature);
+      zmapViewScratchUpdateFeature(zmap_view, sequence, feature, feature_set, context);
+    }
 }

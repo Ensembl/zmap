@@ -175,6 +175,7 @@ enum
     ITEM_MENU_LIST_ALL_FEATURES,
     ITEM_MENU_MARK_ITEM,
     ITEM_MENU_COPY_TO_SCRATCH,
+    ITEM_MENU_CLEAR_SCRATCH,
     ITEM_MENU_SEARCH,
     ITEM_MENU_FEATURE_DETAILS,
     ITEM_MENU_PFETCH,
@@ -272,6 +273,7 @@ static ZMapGUIMenuItem makeMenuPfetchOps(int *start_index_inout,
 					 ZMapGUIMenuItemCallbackFunc callback_func,
 					 gpointer callback_data) ;
 static void itemMenuCB(int menu_item_id, gpointer callback_data) ;
+static void columnMenuCB(int menu_item_id, gpointer callback_data) ;
 
 static ZMapGUIMenuItem zmapWindowMakeMenuStyle(int *start_index_inout,
 				       ZMapGUIMenuItemCallbackFunc callback_func,
@@ -456,6 +458,8 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
   /* Feature ops. */
   menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuFeatureOps(NULL, NULL, menu_data)) ;
 
+  /* Show translation on forward strand features only (also include 'none' strand 
+   * features so we get it for the scratch column) */
   if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT && feature->strand == ZMAPSTRAND_FORWARD)
     menu_sets = g_list_append(menu_sets, makeMenuShowTranslation(NULL, NULL, menu_data));
 
@@ -598,7 +602,7 @@ void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
 	menu_sets = g_list_append(menu_sets, seq_menus) ;
     }
 
-  menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuFeatureOps(NULL, NULL, cbdata)) ;
+  menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuColumnOps(NULL, NULL, cbdata)) ;
 
   menu_sets = g_list_append(menu_sets, separator) ;
 
@@ -623,6 +627,20 @@ void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
 }
 
 
+ZMapGUIMenuItem zmapWindowMakeMenuColumnOps(int *start_index_inout,
+                                            ZMapGUIMenuItemCallbackFunc callback_func,
+                                            gpointer callback_data)
+{
+  static ZMapGUIMenuItemStruct menu[] =
+    {
+      {ZMAPGUI_MENU_NORMAL, "Clear Edit Column",    ITEM_MENU_CLEAR_SCRATCH,   columnMenuCB, NULL},
+      {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         NULL,         NULL}
+    } ;
+
+  zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
+
+  return menu;
+}
 
 
 /* This is in the general menu and needs to be handled separately perhaps as the index is a global
@@ -634,6 +652,12 @@ ZMapGUIMenuItem zmapWindowMakeMenuFeatureOps(int *start_index_inout,
 					     ZMapGUIMenuItemCallbackFunc callback_func,
 					     gpointer callback_data)
 {
+  /* Extra items are included in the menu struct which are dynamically
+   * added to the menu depending on the feature properties. This variable
+   * indicates the number of static items in the list and it MUST BE UPDATED
+   * if you add any more static menu items to the struct. */
+  int num_static_items = 2;
+
   static ZMapGUIMenuItemStruct menu[] =
     {
       /* extra items need for code below */
@@ -650,7 +674,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuFeatureOps(int *start_index_inout,
   int i ;
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
 
-  i = 2 ;
+  i = num_static_items; /* +1 to get the next item but also -1 because it's 0-indexed */
   menu[i].type = ZMAPGUI_MENU_NONE;
 
   /* add in evidence/ transcript items option to remove existing is in column menu */
@@ -728,6 +752,25 @@ ZMapGUIMenuItem zmapWindowMakeMenuFeatureOps(int *start_index_inout,
 }
 
 
+static void columnMenuCB(int menu_item_id, gpointer callback_data)
+{
+  ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
+
+  switch (menu_item_id)
+    {
+    case ITEM_MENU_CLEAR_SCRATCH:
+      zmapWindowScratchClear(menu_data->window);
+      break ;
+      
+    default:
+      zMapAssertNotReached();
+      break;
+    }
+
+  g_free(menu_data) ;  
+}
+
+
 static void itemMenuCB(int menu_item_id, gpointer callback_data)
 {
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
@@ -740,16 +783,23 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 
   /* Retrieve the feature item info from the canvas item. */
   feature = zmapWindowItemGetFeature(menu_data->item);
-  zMapAssert(feature) ;
+
+  if (!feature)
+    {
+      zMapMessage("%s", "Please right-click on a feature to use this option");
+      return;
+    }
 
   switch (menu_item_id)
     {
     case ITEM_MENU_MARK_ITEM:
       zmapWindowMarkSetItem(menu_data->window->mark, menu_data->item) ;
+      break;
 
     case ITEM_MENU_COPY_TO_SCRATCH:
-      zmapWindowScratchCopyFeature(menu_data->window, menu_data->feature, menu_data->item, (int)menu_data->y);
+      zmapWindowScratchCopyFeature(menu_data->window, feature, menu_data->item, (int)menu_data->y);
       break ;
+
     case ITEM_MENU_SEARCH:
       zmapWindowCreateSearchWindow(menu_data->window,
 				   NULL, NULL,

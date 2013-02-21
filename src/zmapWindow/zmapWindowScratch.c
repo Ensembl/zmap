@@ -304,3 +304,29 @@ void zmapWindowScratchCopyFeature(ZMapWindow window,
       zMapWarning("%s", "Error: no feature selected\n");
     }
 }
+
+
+/*!
+ * \brief Clear the scratch column
+ */
+void zmapWindowScratchClear(ZMapWindow window)
+{
+  /* Get the singleton featureset and feature that exist in the scatch column */
+  ZMapFeatureSet feature_set = scratchGetFeatureset(window);
+  ZMapFeature feature = scratchGetFeature(feature_set);
+
+  if (feature_set && feature)
+    {
+      ZMapWindowCallbacks window_cbs_G = zmapWindowGetCBs() ;
+      ZMapWindowCallbackCommandScratch scratch_cmd = g_new0(ZMapWindowCallbackCommandScratchStruct, 1) ;
+          
+      /* Set up general command field for callback. */
+      scratch_cmd->cmd = ZMAPWINDOW_CMD_CLEARSCRATCH ;
+      scratch_cmd->sequence = window->sequence;
+      scratch_cmd->feature = feature;
+      scratch_cmd->feature_set = feature_set;
+      scratch_cmd->context = window->feature_context;
+      
+      (*(window_cbs_G->command))(window, window->app_data, scratch_cmd) ;
+    }
+}
