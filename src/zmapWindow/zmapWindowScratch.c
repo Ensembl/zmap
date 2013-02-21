@@ -59,8 +59,8 @@ typedef struct _ScratchMergeDataStruct
 {
   ZMapWindow window;
   ZMapFeatureSet feature_set;
-  ZMapFeature orig_feature;
-  ZMapFeature new_feature;
+  ZMapFeature orig_feature;    /* the scratch column feature, i.e. the destination feature */
+  ZMapFeature new_feature;     /* the new feature to be merged in, i.e. the source feature */ 
   int y_pos;
 } ScratchMergeDataStruct, *ScratchMergeData;
   
@@ -195,6 +195,28 @@ static void scratchMergeExonCB(gpointer exon, gpointer user_data)
 
 
 /*! 
+ * \brief Merge a single alignment match into the scratch column feature
+ */
+static void scratchMergeMatchCB(gpointer match, gpointer user_data)
+{
+  ZMapAlignBlock match_block = (ZMapAlignBlock)match;
+  ScratchMergeData merge_data = (ScratchMergeData)user_data;
+
+  /* If this is the first/last match in the new feature set the start/end */
+  if (!start_end_set_G)
+    {
+      if (match_block->q1 == merge_data->new_feature->x1)
+        merge_data->orig_feature->x1 = match_block->q1;
+
+      if (match_block->q2 == merge_data->new_feature->x2)
+        merge_data->orig_feature->x2 = match_block->q2;
+    }
+  
+  zMapFeatureTranscriptMergeExon(merge_data->orig_feature, match_block->q1, match_block->q2);
+}
+
+
+/*! 
  * \brief Add/merge a single base into the scratch column
  */
 static void scratchMergeBase(ScratchMergeData merge_data)
@@ -203,6 +225,44 @@ static void scratchMergeBase(ScratchMergeData merge_data)
 
   /* Merge in the new exons */
   zMapFeatureTranscriptMergeBase(merge_data->orig_feature, merge_data->y_pos);
+
+  /* Recreate the introns */
+  zMapFeatureTranscriptRecreateIntrons(merge_data->orig_feature);
+}
+
+
+/*! 
+ * \brief Add/merge an alignment feature to the scratch column
+ */
+static void scratchMergeAlignment(ScratchMergeData merge_data)
+{
+  zMapFeatureRemoveIntrons(merge_data->orig_feature);
+
+  /* Loop through each match block and merge it in */
+  if (!zMapFeatureAlignmentMatchForeach(merge_data->new_feature, scratchMergeMatchCB, merge_data))
+    {
+      /* The above returns false if no match blocks were found. 
+       * If the alignment is gapped but we don't have this data
+       * then we can't process it. Otherwise, add the whole thing
+       * because it's an ungapped alignment. */
+      if (zMapFeatureAlignmentIsGapped(merge_data->new_feature))
+        {
+          zMapWarning("%s", "Cannot copy feature; gapped alignment data is not available");
+        }
+      else
+        {
+          if (!start_end_set_G)
+            {
+              merge_data->orig_feature->x1 = merge_data->new_feature->x1;
+              merge_data->orig_feature->x2 = merge_data->new_feature->x2;
+            }
+
+          zMapFeatureTranscriptMergeExon(merge_data->orig_feature, merge_data->new_feature->x1, merge_data->new_feature->x2);          
+        }
+    }
+
+  /* Copy CDS, if set */
+  //  zMapFeatureMergeTranscriptCDS(merge_data->new_feature, merge_data->orig_feature);
 
   /* Recreate the introns */
   zMapFeatureTranscriptRecreateIntrons(merge_data->orig_feature);
@@ -246,6 +306,8 @@ static void scratchMergeFeature(ZMapWindow window,
       case ZMAPSTYLE_MODE_BASIC:
         break;
       case ZMAPSTYLE_MODE_ALIGNMENT:
+        scratchMergeAlignment(&merge_data);
+        merged = TRUE;
         break;
       case ZMAPSTYLE_MODE_TRANSCRIPT:
         scratchMergeTranscript(&merge_data);

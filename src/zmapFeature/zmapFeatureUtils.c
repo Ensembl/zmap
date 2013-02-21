@@ -1221,6 +1221,33 @@ void zMapFeatureTranscriptIntronForeach(ZMapFeature feature, GFunc function, gpo
 }
 
 
+/* Returns FALSE if not an alignment feature or no matches, TRUE otherwise. */
+gboolean zMapFeatureAlignmentMatchForeach(ZMapFeature feature, GFunc function, gpointer user_data)
+{
+  gboolean result = FALSE ;
+
+  if (!zMapFeatureIsValid((ZMapFeatureAny)feature) ||
+      !function ||
+      !ZMAPFEATURE_IS_ALIGNMENT(feature) ||
+      !feature->feature.homol.align)
+    {
+      return result;
+    }
+  
+  result = TRUE;
+  
+  GArray *matches = feature->feature.homol.align;
+
+  int i = 0;
+  for ( ; i < matches->len; ++i)
+    {
+      ZMapAlignBlock match_block = &g_array_index(matches, ZMapAlignBlockStruct, 0) ;
+      (function)(match_block, user_data);
+    }
+
+  return result ;
+}
+
 
 GArray *zMapFeatureWorld2CDSArray(ZMapFeature feature)
 {
