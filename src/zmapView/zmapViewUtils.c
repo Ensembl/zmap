@@ -32,14 +32,9 @@
 
 #include <ZMap/zmap.h>
 
-
-
-
-
-
 #include <glib.h>
+
 #include <ZMap/zmapUtils.h>
-//#include <ZMap/zmapGFF.h>
 #include <zmapView_P.h>
 
 
@@ -53,7 +48,6 @@ typedef struct
 typedef struct
 {
   ZMapServerReqType request_type ;
-//  ZMapViewConnection connection ;
   ZMapViewConnectionStep step ;
   ZMapViewConnectionRequest request ;
 } StepListFindStruct, *StepListFind ;
@@ -80,26 +74,13 @@ static void cwh_destroy_key(gpointer cwh_data) ;
 static void cwh_destroy_value(gpointer cwh_data) ;
 static ZMapViewConnectionStep stepListFindStep(ZMapViewConnectionStepList step_list, ZMapServerReqType request_type) ;
 static void stepDestroy(gpointer data, gpointer user_data) ;
+static void formatSession(gpointer data, gpointer user_data) ;
 
 
-
-ZMapFeatureSource zMapViewGetFeatureSetSource(ZMapView view, GQuark f_id)
-{
-	ZMapFeatureSource src;
-
-	src = g_hash_table_lookup(view->context_map.source_2_sourcedata,GUINT_TO_POINTER(f_id));
-
-	return src;
-}
-
-void zMapViewSetFeatureSetSource(ZMapView view, GQuark f_id, ZMapFeatureSource src)
-{
-	g_hash_table_replace(view->context_map.source_2_sourcedata,GUINT_TO_POINTER(f_id), src);
-}
 
 
 /*
- *                  ZMapView interface functions.
+ *                  External interface functions.
  */
 
 
@@ -113,6 +94,53 @@ void zMapViewGetVisible(ZMapViewWindow view_window, double *top, double *bottom)
 }
 
 
+
+ZMapFeatureSource zMapViewGetFeatureSetSource(ZMapView view, GQuark f_id)
+{
+  ZMapFeatureSource src;
+
+  src = g_hash_table_lookup(view->context_map.source_2_sourcedata,GUINT_TO_POINTER(f_id)) ;
+
+  return src ;
+}
+
+void zMapViewSetFeatureSetSource(ZMapView view, GQuark f_id, ZMapFeatureSource src)
+{
+  g_hash_table_replace(view->context_map.source_2_sourcedata,GUINT_TO_POINTER(f_id), src) ;
+
+  return ;
+}
+
+
+
+/* Return, as text, details of all data connections for this view. Interface is not completely
+ * parameterised in that this function "knows" how to format the reply for its caller.
+ */
+gboolean zMapViewSessionGetAsText(ZMapViewWindow view_window, GString *session_data_inout)
+{
+  gboolean result = FALSE ;
+  ZMapView view ;
+
+  view = view_window->parent_view ;
+
+  if (view->connection_list)
+    {
+      g_string_append_printf(session_data_inout, "\tSequence: %s\n\n", view->view_sequence->sequence) ;
+
+      g_list_foreach(view->connection_list, formatSession, session_data_inout) ;
+
+      result = TRUE ;
+    }
+
+  return result ;
+}
+
+
+
+
+/*
+ *            ZMapView external package-level functions.
+ */
 
 void zmapViewBusyFull(ZMapView zmap_view, gboolean busy, const char *file, const char *function)
 {
@@ -136,31 +164,6 @@ void zmapViewBusyFull(ZMapView zmap_view, gboolean busy, const char *file, const
 
   return ;
 }
-
-
-ZMapViewSession zMapViewSessionGetData(ZMapViewWindow zmap_view_window)
-{
-  ZMapViewSession session_data = NULL ;
-  ZMapView zmap_view ;
-
-  zMapAssert(zmap_view_window) ;
-
-  zmap_view = zmap_view_window->parent_view ;
-
-  if (zmap_view->state != ZMAPVIEW_DYING && zmap_view->session_data)
-    session_data = zmap_view->session_data ;
-
-
-  return session_data ;
-}
-
-
-
-
-
-/*
- *            ZMapView internal package functions.
- */
 
 
 /* Not sure where this is used...check this out.... in checkStateConnections() zmapView.c*/
@@ -640,15 +643,22 @@ void zmapViewCWHDestroy(GHashTable **hash)
 
 
 
-void zmapViewSessionAddServer(ZMapViewSession session_data, ZMapURL url, char *format)
+
+/* 
+ * Server Session stuff: holds information about data server connections.
+ * 
+ * NOTE: the list of connection session data is dynamic, as a server
+ * connection is terminated the session data is free'd too so the final
+ * list may be very short or not even have any connections at all.
+ */
+
+/* Record initial details for a session, these are known when the session is created. */
+void zmapViewSessionAddServer(ZMapViewSessionServer server_data, ZMapURL url, char *format)
 {
-  ZMapViewSessionServer server_data ;
-
-  server_data = g_new0(ZMapViewSessionServerStruct, 1) ;
-
   server_data->scheme = url->scheme ;
   server_data->url = g_strdup(url->url) ;
   server_data->protocol = g_strdup(url->protocol) ;
+
   if (format)
     server_data->format = g_strdup(format) ;
 
@@ -683,23 +693,18 @@ void zmapViewSessionAddServer(ZMapViewSession session_data, ZMapURL url, char *f
       }
     }
 
-  session_data->servers = g_list_append(session_data->servers, server_data) ;
-
   return ;
 }
 
-void zmapViewSessionAddServerInfo(ZMapViewSession session_data, char *database_path)
+/* Record dynamic details for a session which can only be found out by later interrogation
+ * of the server. */
+void zmapViewSessionAddServerInfo(ZMapViewSessionServer session_data, char *database_path)
 {
-  ZMapViewSessionServer server_data ;
-
-  /* In practice we need to find the correct DB entry.... */
-  server_data = (ZMapViewSessionServer)(session_data->servers->data) ;
-
-  switch(server_data->scheme)
+  switch(session_data->scheme)
     {
     case SCHEME_ACEDB:
       {
-	server_data->scheme_data.acedb.database = g_strdup(database_path) ;
+	session_data->scheme_data.acedb.database = g_strdup(database_path) ;
 	break ;
       }
     case SCHEME_FILE:
@@ -723,11 +728,10 @@ void zmapViewSessionAddServerInfo(ZMapViewSession session_data, char *database_p
 }
 
 
-/* A GFunc to free a session server struct... */
-void zmapViewSessionFreeServer(gpointer data, gpointer user_data_unused)
+/* Free all the session data, NOTE: we did not allocate the original struct
+ * so we do not free it. */
+void zmapViewSessionFreeServer(ZMapViewSessionServer server_data)
 {
-  ZMapViewSessionServer server_data = (ZMapViewSessionServer)data ;
-
   g_free(server_data->url) ;
   g_free(server_data->protocol) ;
   g_free(server_data->format) ;
@@ -757,8 +761,6 @@ void zmapViewSessionFreeServer(gpointer data, gpointer user_data_unused)
 	break ;
       }
     }
-
-  g_free(server_data) ;
 
   return ;
 }
@@ -813,6 +815,54 @@ static void cwh_destroy_value(gpointer cwh_data)
 
   g_list_free(destroy_list->window_list);
   g_free(destroy_list);
+
+  return ;
+}
+
+
+
+
+/* Produce information for each session as formatted text. */
+static void formatSession(gpointer data, gpointer user_data)
+{
+  ZMapViewConnection view_con = (ZMapViewConnection)data ;
+  ZMapViewSessionServer server_data = &(view_con->session) ;
+  GString *session_text = (GString *)user_data ;
+
+
+  g_string_append(session_text, "Server\n") ;
+
+  g_string_append_printf(session_text, "\tURL: %s\n\n", server_data->url) ;
+  g_string_append_printf(session_text, "\tProtocol: %s\n\n", server_data->protocol) ;
+
+  switch(server_data->scheme)
+    {
+    case SCHEME_ACEDB:
+      {
+	g_string_append_printf(session_text, "\tServer: %s\n\n", server_data->scheme_data.acedb.host) ;
+	g_string_append_printf(session_text, "\tPort: %d\n\n", server_data->scheme_data.acedb.port) ;
+	g_string_append_printf(session_text, "\tDatabase: %s\n\n", server_data->scheme_data.acedb.database) ;
+	break ;
+      }
+    case SCHEME_FILE:
+      {
+	g_string_append_printf(session_text, "\tFormat: %s\n\n", server_data->format) ;
+	g_string_append_printf(session_text, "\tFile: %s\n\n", server_data->scheme_data.file.path) ;
+	break ;
+      }
+    case SCHEME_PIPE:
+      {
+      g_string_append_printf(session_text, "\tFormat: %s\n\n", server_data->format) ;
+      g_string_append_printf(session_text, "\tScript: %s\n\n", server_data->scheme_data.pipe.path) ;
+      g_string_append_printf(session_text, "\tQuery: %s\n\n", server_data->scheme_data.pipe.query) ;
+      break ;
+      }
+    default:
+      {
+	g_string_append(session_text, "\tUnsupported server type !") ;
+	break ;
+      }
+    }
 
   return ;
 }
