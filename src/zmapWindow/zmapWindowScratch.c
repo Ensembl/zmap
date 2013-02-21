@@ -39,6 +39,14 @@
 #include <zmapWindow_P.h>	/* ZMapWindow */
 #include <zmapWindowScratch_P.h>
 
+
+/* This indicates whether the start/end of the scratch transcript 
+ * has been set yet. If it's unset we set it from the new feature
+ * when a feature is copied in (subsequent times the new feature
+ * is merged so the transcript extent may not be updated if it
+ * already includes the new extent). */
+static gboolean start_end_set_G = FALSE; 
+
   
 typedef struct _GetFeaturesetCBDataStruct
 {
@@ -172,9 +180,8 @@ static void scratchMergeExonCB(gpointer exon, gpointer user_data)
   ZMapSpan exon_span = (ZMapSpan)exon;
   ScratchMergeData merge_data = (ScratchMergeData)user_data;
 
-  /* If this is the first/last exon in the new feature
-   * and the start/end is not set, set it now */
-  if (merge_data->orig_feature->x1 == 0 && merge_data->orig_feature->x2 == 0)
+  /* If this is the first/last exon in the new feature set the start/end */
+  if (!start_end_set_G)
     {
       if (exon_span->x1 == merge_data->new_feature->x1)
         merge_data->orig_feature->x1 = exon_span->x1;
@@ -230,6 +237,7 @@ static void scratchMergeFeature(ZMapWindow window,
                                 const int y_pos)
 {
   ScratchMergeDataStruct merge_data = {window, feature_set, orig_feature, new_feature, y_pos};
+  gboolean merged = FALSE;
 
   switch (new_feature->type)
     {
@@ -241,9 +249,11 @@ static void scratchMergeFeature(ZMapWindow window,
         break;
       case ZMAPSTYLE_MODE_TRANSCRIPT:
         scratchMergeTranscript(&merge_data);
+        merged = TRUE;
         break;
       case ZMAPSTYLE_MODE_SEQUENCE:
         scratchMergeBase(&merge_data);
+        merged = TRUE;
         break;
       case ZMAPSTYLE_MODE_ASSEMBLY_PATH:
         break;
@@ -261,6 +271,12 @@ static void scratchMergeFeature(ZMapWindow window,
         zMapWarning("Unrecognised feature type %d\n", new_feature->type);
         break;
     };
+
+  /* Once finished merging, the start/end should now be set */
+  if (merged)
+    start_end_set_G = TRUE;
+  else
+    zMapWarning("Cannot merge features of type %d", new_feature->type);
 }
 
 
@@ -328,5 +344,7 @@ void zmapWindowScratchClear(ZMapWindow window)
       scratch_cmd->context = window->feature_context;
       
       (*(window_cbs_G->command))(window, window->app_data, scratch_cmd) ;
+      
+      start_end_set_G = FALSE;
     }
 }
