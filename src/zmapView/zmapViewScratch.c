@@ -292,5 +292,5 @@ gboolean zmapViewScratchRemoveFeature(ZMapView zmap_view,
                                       ZMapFeatureSet feature_set,
                                       ZMapFeatureContext context)
 {
-  zmapFeatureSetRemoveFeature(feature_set, feature);
+  return zMapFeatureSetRemoveFeature(feature_set, feature);
 }
