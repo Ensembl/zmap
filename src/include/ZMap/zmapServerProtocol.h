@@ -89,7 +89,7 @@ ZMAP_DEFINE_ENUM(ZMapServerConnectStateType, ZMAP_SERVER_CONNECT_STATE_LIST) ;
  * ALL request/response structs must replicate the generic ZMapServerReqAnyStruct
  * so that they can all be treated as the canonical ZMapServerReqAny.
  */
-typedef struct
+typedef struct ZMapServerReqAnyStructType
 {
   ZMapServerReqType type ;
   ZMapServerResponseType response ;
@@ -126,7 +126,7 @@ typedef struct
 
 
 /* Request server attributes, these are mostly optional. */
-typedef struct
+typedef struct ZMapServerReqGetServerInfoStructType
 {
   ZMapServerReqType type ;
   ZMapServerResponseType response ;
@@ -142,6 +142,7 @@ typedef struct
                                      */
 
 } ZMapServerReqGetServerInfoStruct, *ZMapServerReqGetServerInfo ;
+
 
 
 
