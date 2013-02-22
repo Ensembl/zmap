@@ -58,12 +58,13 @@ typedef struct _GetFeaturesetCBDataStruct
 typedef struct _ScratchMergeDataStruct
 {
   ZMapWindow window;
-  FooCanvasItem *item;
-  ZMapFeatureSet feature_set;
-  ZMapFeature orig_feature;    /* the scratch column feature, i.e. the destination feature */
-  ZMapFeature new_feature;     /* the new feature to be merged in, i.e. the source feature */ 
+  FooCanvasItem *src_item;
+  ZMapFeature src_feature;     /* the new feature to be merged in, i.e. the source for the merge */ 
+  ZMapFeatureSet dest_featureset; /* the scratch column featureset */
+  ZMapFeature dest_feature;    /* the scratch column feature, i.e. the destination for the merge */
   double world_x;              /* clicked position */
   double world_y;              /* clicked position */
+  gboolean use_subfeature;     /* if true, just use the clicked subfeature, otherwise use the whole feature */
 } ScratchMergeDataStruct, *ScratchMergeData;
   
 
@@ -174,6 +175,26 @@ static ZMapFeature scratchGetFeature(ZMapFeatureSet feature_set)
 }
 
 
+/*!
+ * \brief Merge the given coords into the scratch column feature
+ */
+static void scratchMergeCoords(ScratchMergeData merge_data, const int coord1, const int coord2)
+{
+  /* If this is the first/last coord in the new feature 
+   * and the start/end has not yet been set, then set it now */
+  if (!start_end_set_G)
+    {
+      if (coord1 == merge_data->src_feature->x1)
+        merge_data->dest_feature->x1 = coord1;
+
+      if (coord2 == merge_data->src_feature->x2)
+        merge_data->dest_feature->x2 = coord2;
+    }
+  
+  zMapFeatureTranscriptMergeExon(merge_data->dest_feature, coord1, coord2);
+}
+
+
 /*! 
  * \brief Merge a single exon into the scratch column feature
  */
@@ -182,17 +203,7 @@ static void scratchMergeExonCB(gpointer exon, gpointer user_data)
   ZMapSpan exon_span = (ZMapSpan)exon;
   ScratchMergeData merge_data = (ScratchMergeData)user_data;
 
-  /* If this is the first/last exon in the new feature set the start/end */
-  if (!start_end_set_G)
-    {
-      if (exon_span->x1 == merge_data->new_feature->x1)
-        merge_data->orig_feature->x1 = exon_span->x1;
-
-      if (exon_span->x2 == merge_data->new_feature->x2)
-        merge_data->orig_feature->x2 = exon_span->x2;
-    }
-  
-  zMapFeatureTranscriptMergeExon(merge_data->orig_feature, exon_span->x1, exon_span->x2);
+  scratchMergeCoords(merge_data, exon_span->x1, exon_span->x2);
 }
 
 
@@ -204,17 +215,7 @@ static void scratchMergeMatchCB(gpointer match, gpointer user_data)
   ZMapAlignBlock match_block = (ZMapAlignBlock)match;
   ScratchMergeData merge_data = (ScratchMergeData)user_data;
 
-  /* If this is the first/last match in the new feature set the start/end */
-  if (!start_end_set_G)
-    {
-      if (match_block->q1 == merge_data->new_feature->x1)
-        merge_data->orig_feature->x1 = match_block->q1;
-
-      if (match_block->q2 == merge_data->new_feature->x2)
-        merge_data->orig_feature->x2 = match_block->q2;
-    }
-  
-  zMapFeatureTranscriptMergeExon(merge_data->orig_feature, match_block->q1, match_block->q2);
+  scratchMergeCoords(merge_data, match_block->q1, match_block->q2);
 }
 
 
@@ -223,25 +224,25 @@ static void scratchMergeMatchCB(gpointer match, gpointer user_data)
  */
 static void scratchMergeBase(ScratchMergeData merge_data)
 {
-  if (ZMAP_IS_WINDOW_FEATURESET_ITEM(merge_data->item))
+  if (ZMAP_IS_WINDOW_FEATURESET_ITEM(merge_data->src_item))
     {
       /* Convert the world coords to sequence coords */
       long seq_start=0.0, seq_end=0.0;
       
-      zMapWindowCanvasFeaturesetGetSeqCoord((ZMapWindowFeaturesetItem)(merge_data->item),
+      zMapWindowCanvasFeaturesetGetSeqCoord((ZMapWindowFeaturesetItem)(merge_data->src_item),
                                             TRUE,
                                             merge_data->world_x,
                                             merge_data->world_y, 
                                             &seq_start,
                                             &seq_end);
 
-      zMapFeatureRemoveIntrons(merge_data->orig_feature);
+      zMapFeatureRemoveIntrons(merge_data->dest_feature);
       
       /* Merge in the new exons */
-      zMapFeatureTranscriptMergeBase(merge_data->orig_feature, seq_start);
+      zMapFeatureTranscriptMergeBase(merge_data->dest_feature, seq_start);
       
       /* Recreate the introns */
-      zMapFeatureTranscriptRecreateIntrons(merge_data->orig_feature);
+      zMapFeatureTranscriptRecreateIntrons(merge_data->dest_feature);
     }
 }
 
@@ -251,36 +252,25 @@ static void scratchMergeBase(ScratchMergeData merge_data)
  */
 static void scratchMergeAlignment(ScratchMergeData merge_data)
 {
-  zMapFeatureRemoveIntrons(merge_data->orig_feature);
+  zMapFeatureRemoveIntrons(merge_data->dest_feature);
 
   /* Loop through each match block and merge it in */
-  if (!zMapFeatureAlignmentMatchForeach(merge_data->new_feature, scratchMergeMatchCB, merge_data))
+  if (!zMapFeatureAlignmentMatchForeach(merge_data->src_feature, scratchMergeMatchCB, merge_data))
     {
-      /* The above returns false if no match blocks were found. 
-       * If the alignment is gapped but we don't have this data
-       * then we can't process it. Otherwise, add the whole thing
-       * because it's an ungapped alignment. */
-      if (zMapFeatureAlignmentIsGapped(merge_data->new_feature))
-        {
-          zMapWarning("%s", "Cannot copy feature; gapped alignment data is not available");
-        }
+      /* The above returns false if no match blocks were found. If the alignment is 
+       * gapped but we don't have this data then we can't process it. Otherwise, it's
+       * an ungapped alignment so add the whole thing. */
+      if (zMapFeatureAlignmentIsGapped(merge_data->src_feature))
+        zMapWarning("%s", "Cannot copy feature; gapped alignment data is not available");
       else
-        {
-          if (!start_end_set_G)
-            {
-              merge_data->orig_feature->x1 = merge_data->new_feature->x1;
-              merge_data->orig_feature->x2 = merge_data->new_feature->x2;
-            }
-
-          zMapFeatureTranscriptMergeExon(merge_data->orig_feature, merge_data->new_feature->x1, merge_data->new_feature->x2);          
-        }
+        scratchMergeCoords(merge_data, merge_data->src_feature->x1, merge_data->src_feature->x2);
     }
 
   /* Copy CDS, if set */
-  //  zMapFeatureMergeTranscriptCDS(merge_data->new_feature, merge_data->orig_feature);
+  //  zMapFeatureMergeTranscriptCDS(merge_data->src_feature, merge_data->dest_feature);
 
   /* Recreate the introns */
-  zMapFeatureTranscriptRecreateIntrons(merge_data->orig_feature);
+  zMapFeatureTranscriptRecreateIntrons(merge_data->dest_feature);
 }
 
 
@@ -289,16 +279,38 @@ static void scratchMergeAlignment(ScratchMergeData merge_data)
  */
 static void scratchMergeTranscript(ScratchMergeData merge_data)
 {
-  zMapFeatureRemoveIntrons(merge_data->orig_feature);
+  zMapFeatureRemoveIntrons(merge_data->dest_feature);
 
-  /* Merge in the new exons */
-  zMapFeatureTranscriptExonForeach(merge_data->new_feature, scratchMergeExonCB, merge_data);
+  if (merge_data->use_subfeature)
+    {
+      /* Just merge the clicked subfeature */
+      ZMapFeatureSubPartSpan sub_feature = NULL;
+      ZMapWindowCanvasItem canvas_item = ZMAP_CANVAS_ITEM(merge_data->src_item);
 
-  /* Copy CDS, if set */
-  zMapFeatureMergeTranscriptCDS(merge_data->new_feature, merge_data->orig_feature);
+      zMapWindowCanvasItemGetInterval(canvas_item, merge_data->world_x, merge_data->world_y, &sub_feature);
+      
+      if (sub_feature)
+        {
+          scratchMergeCoords(merge_data, sub_feature->start, sub_feature->end);
+        }
+      else
+        {
+          zMapWarning("Could not find subfeature in feature '%s' at coords %d, %d", 
+                      g_quark_to_string(merge_data->src_feature->original_id),
+                      merge_data->world_x, merge_data->world_y);
+        }
+    }
+  else
+    {
+      /* Merge in all of the new exons from the new feature */
+      zMapFeatureTranscriptExonForeach(merge_data->src_feature, scratchMergeExonCB, merge_data);
+      
+      /* Copy CDS, if set */
+      zMapFeatureMergeTranscriptCDS(merge_data->src_feature, merge_data->dest_feature);    
+    }
 
   /* Recreate the introns */
-  zMapFeatureTranscriptRecreateIntrons(merge_data->orig_feature);
+  zMapFeatureTranscriptRecreateIntrons(merge_data->dest_feature);
 }
 
 
@@ -309,7 +321,7 @@ static void scratchMergeFeature(ScratchMergeData merge_data)
 {
   gboolean merged = FALSE;
 
-  switch (merge_data->new_feature->type)
+  switch (merge_data->src_feature->type)
     {
       case ZMAPSTYLE_MODE_INVALID:
         break;
@@ -340,7 +352,7 @@ static void scratchMergeFeature(ScratchMergeData merge_data)
       case ZMAPSTYLE_MODE_META:
         break;
       default:
-        zMapWarning("Unrecognised feature type %d\n", merge_data->new_feature->type);
+        zMapWarning("Unrecognised feature type %d\n", merge_data->src_feature->type);
         break;
     };
 
@@ -348,27 +360,35 @@ static void scratchMergeFeature(ScratchMergeData merge_data)
   if (merged)
     start_end_set_G = TRUE;
   else
-    zMapWarning("Cannot merge features of type %d", merge_data->new_feature->type);
+    zMapWarning("Cannot merge features of type %d", merge_data->src_feature->type);
 }
 
 
 /*!
- * \brief Copy the given feature to the scratch column 
+ * \brief Copy the given feature to the scratch column
+ *
+ * \param window
+ * \param feature The new feature to be copied in
+ * \param item The foo canvas item for the new feature
+ * \param world_x The clicked x coord
+ * \param world_y The clicked y coord
+ * \param merge_subfeature If true, just merge the clicked subfeature, otherwise merge the whole feature
  */
 void zmapWindowScratchCopyFeature(ZMapWindow window, 
-                                  ZMapFeature new_feature, 
+                                  ZMapFeature feature, 
                                   FooCanvasItem *item, 
                                   const double world_x,
-                                  const double world_y)
+                                  const double world_y,
+                                  const gboolean use_subfeature)
 {
-  if (new_feature)
+  if (feature)
     {
-      ZMapFeatureSet feature_set = scratchGetFeatureset(window);
-      ZMapFeature orig_feature = scratchGetFeature(feature_set);
+      ZMapFeatureSet scratch_featureset = scratchGetFeatureset(window);
+      ZMapFeature scratch_feature = scratchGetFeature(scratch_featureset);
 
-      if (feature_set && orig_feature)
+      if (scratch_featureset && scratch_feature)
         {
-          ScratchMergeDataStruct merge_data = {window, item, feature_set, orig_feature, new_feature, world_x, world_y};
+          ScratchMergeDataStruct merge_data = {window, item, feature, scratch_featureset, scratch_feature, world_x, world_y, use_subfeature};
           scratchMergeFeature(&merge_data);
 
           /* Call back to the View to update all windows */
@@ -378,8 +398,8 @@ void zmapWindowScratchCopyFeature(ZMapWindow window,
           /* Set up general command field for callback. */
           scratch_cmd->cmd = ZMAPWINDOW_CMD_COPYTOSCRATCH ;
           scratch_cmd->sequence = window->sequence;
-          scratch_cmd->feature = orig_feature;
-          scratch_cmd->feature_set = feature_set;
+          scratch_cmd->feature = scratch_feature;
+          scratch_cmd->feature_set = scratch_featureset;
           scratch_cmd->context = window->feature_context;
 
           (*(window_cbs_G->command))(window, window->app_data, scratch_cmd) ;

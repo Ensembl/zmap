@@ -175,6 +175,7 @@ enum
     ITEM_MENU_LIST_ALL_FEATURES,
     ITEM_MENU_MARK_ITEM,
     ITEM_MENU_COPY_TO_SCRATCH,
+    ITEM_MENU_COPY_SUBPART_TO_SCRATCH,
     ITEM_MENU_CLEAR_SCRATCH,
     ITEM_MENU_SEARCH,
     ITEM_MENU_FEATURE_DETAILS,
@@ -656,13 +657,15 @@ ZMapGUIMenuItem zmapWindowMakeMenuFeatureOps(int *start_index_inout,
    * added to the menu depending on the feature properties. This variable
    * indicates the number of static items in the list and it MUST BE UPDATED
    * if you add any more static menu items to the struct. */
-  int num_static_items = 2;
+  int num_static_items = 3;
 
   static ZMapGUIMenuItemStruct menu[] =
     {
       /* extra items need for code below */
       {ZMAPGUI_MENU_NORMAL, "Use Feature for Mark", ITEM_MENU_MARK_ITEM,       itemMenuCB, NULL},
       {ZMAPGUI_MENU_NORMAL, "Copy Feature to Edit Column", ITEM_MENU_COPY_TO_SCRATCH,itemMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Copy Sub-feature to Edit Column", ITEM_MENU_COPY_SUBPART_TO_SCRATCH,itemMenuCB, NULL},
+      /******* If you add items above, update 'num_static_items' accordingly!! *******/
       {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         itemMenuCB, NULL},
       {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         itemMenuCB, NULL},
       {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         itemMenuCB, NULL},
@@ -797,7 +800,11 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
       break;
 
     case ITEM_MENU_COPY_TO_SCRATCH:
-      zmapWindowScratchCopyFeature(menu_data->window, feature, menu_data->item, menu_data->x, menu_data->y);
+      zmapWindowScratchCopyFeature(menu_data->window, feature, menu_data->item, menu_data->x, menu_data->y, FALSE);
+      break ;
+
+    case ITEM_MENU_COPY_SUBPART_TO_SCRATCH:
+      zmapWindowScratchCopyFeature(menu_data->window, feature, menu_data->item, menu_data->x, menu_data->y, TRUE);
       break ;
 
     case ITEM_MENU_SEARCH:
