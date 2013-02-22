@@ -5497,6 +5497,8 @@ static gboolean mapEventCB(GtkWidget *widget, GdkEvent *event, gpointer user_dat
   ZMapViewCallbackFubarStruct fubar;
 
   zmap_view->xwid = zMapXRemoteWidgetGetXID(zmap_view->xremote_widget) ;
+  zmap_view->xwid_txt = g_strdup_printf("0x%lx", zmap_view->xwid) ;
+
 
 //  if(zmap_view->state == ZMAPVIEW_INIT)
   {
