@@ -720,7 +720,7 @@ static void dataLoadCB(ZMapView view, void *app_data, void *view_data)
 	    }
 
 
-	  request = g_strdup_printf("<zmap> <request action=\"features_loaded\">"
+	  request = g_strdup_printf("<zmap> <request action=\"features_loaded\" xwid=\"0x%lx\">"
 				    " <client xwid=\"0x%lx\" />"
 				    " <featureset names=\"%s\" />"
 				    " <start value=\"%d\" />"
@@ -729,7 +729,8 @@ static void dataLoadCB(ZMapView view, void *app_data, void *view_data)
 				    " <exit_code value=\"%d\" />"
 				    " <stderr value=\"%s\" />"
 				    "</request></zmap>",
-				    lfd->xwid, featurelist,
+				    lfd->xwid, lfd->xwid,
+				    featurelist,
 				    lfd->start, lfd->end,
 				    (int)lfd->status,
 				    emsg, lfd->exit_code,
@@ -1265,7 +1266,9 @@ static void remoteSendViewClosed(ZMapXRemoteObj client, unsigned long xwid)
   char *request ;
   char *response = NULL;
 
-  request = g_strdup_printf("<zmap> <request action=\"view_closed\"> <client xwid=\"0x%lx\" /> </request> </zmap>", xwid) ;
+  request = g_strdup_printf("<zmap> <request action=\"view_closed\" xwid=\"0x%lx\">"
+			    "<client xwid=\"0x%lx\" /> </request> </zmap>",
+			    xwid, xwid) ;
 
   if (zMapXRemoteSendRemoteCommand(client, request, &response) != ZMAPXREMOTE_SENDCOMMAND_SUCCEED)
     {
