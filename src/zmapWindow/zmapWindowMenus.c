@@ -274,7 +274,6 @@ static ZMapGUIMenuItem makeMenuPfetchOps(int *start_index_inout,
 					 ZMapGUIMenuItemCallbackFunc callback_func,
 					 gpointer callback_data) ;
 static void itemMenuCB(int menu_item_id, gpointer callback_data) ;
-static void columnMenuCB(int menu_item_id, gpointer callback_data) ;
 
 static ZMapGUIMenuItem zmapWindowMakeMenuStyle(int *start_index_inout,
 				       ZMapGUIMenuItemCallbackFunc callback_func,
@@ -469,6 +468,10 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
 
   menu_sets = g_list_append(menu_sets, separator) ;
 
+  /* Scratch column ops */
+  menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuScratchOps(NULL, NULL, menu_data)) ;
+  menu_sets = g_list_append(menu_sets, separator) ;
+
   /* Big bump menu.... */
   menu_sets = g_list_append(menu_sets,
 			    zmapWindowMakeMenuBump(NULL, NULL, menu_data,
@@ -603,8 +606,10 @@ void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
 	menu_sets = g_list_append(menu_sets, seq_menus) ;
     }
 
-  menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuColumnOps(NULL, NULL, cbdata)) ;
+  menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuFeatureOps(NULL, NULL, cbdata)) ;
+  menu_sets = g_list_append(menu_sets, separator) ;
 
+  menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuScratchOps(NULL, NULL, cbdata)) ;
   menu_sets = g_list_append(menu_sets, separator) ;
 
   menu_sets
@@ -628,19 +633,22 @@ void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
 }
 
 
-ZMapGUIMenuItem zmapWindowMakeMenuColumnOps(int *start_index_inout,
-                                            ZMapGUIMenuItemCallbackFunc callback_func,
-                                            gpointer callback_data)
+/* Utility to add an option to the given menu */
+static void addMenuItem(ZMapGUIMenuItem menu,
+                        int *i,
+                        ZMapGUIMenuType item_type,
+                        const char *item_text,
+                        int item_id,
+                        ZMapGUIMenuItemCallbackFunc callback_func,
+                        gpointer callback_data)
 {
-  static ZMapGUIMenuItemStruct menu[] =
-    {
-      {ZMAPGUI_MENU_NORMAL, "Clear Edit Column",    ITEM_MENU_CLEAR_SCRATCH,   columnMenuCB, NULL},
-      {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         NULL,         NULL}
-    } ;
+  menu[*i].type = item_type;
+  menu[*i].name = g_strdup(item_text);
+  menu[*i].id = item_id;
+  menu[*i].callback_func = callback_func;
+  menu[*i].callback_data = callback_data;
 
-  zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
-
-  return menu;
+  *i = *i + 1;
 }
 
 
@@ -653,37 +661,35 @@ ZMapGUIMenuItem zmapWindowMakeMenuFeatureOps(int *start_index_inout,
 					     ZMapGUIMenuItemCallbackFunc callback_func,
 					     gpointer callback_data)
 {
-  /* Extra items are included in the menu struct which are dynamically
-   * added to the menu depending on the feature properties. This variable
-   * indicates the number of static items in the list and it MUST BE UPDATED
-   * if you add any more static menu items to the struct. */
-  int num_static_items = 3;
-
   static ZMapGUIMenuItemStruct menu[] =
     {
-      /* extra items need for code below */
-      {ZMAPGUI_MENU_NORMAL, "Use Feature for Mark", ITEM_MENU_MARK_ITEM,       itemMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, "Copy Feature to Edit Column", ITEM_MENU_COPY_TO_SCRATCH,itemMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, "Copy Sub-feature to Edit Column", ITEM_MENU_COPY_SUBPART_TO_SCRATCH,itemMenuCB, NULL},
-      /******* If you add items above, update 'num_static_items' accordingly!! *******/
-      {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         itemMenuCB, NULL},
-      {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         itemMenuCB, NULL},
-      {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         itemMenuCB, NULL},
-      {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         itemMenuCB, NULL},
-      {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         itemMenuCB, NULL},
+      {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         NULL, NULL},
+      {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         NULL, NULL},
+      {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         NULL, NULL},
+      {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         NULL, NULL},
+      {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         NULL, NULL},
+      {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         NULL, NULL},
+      {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         NULL, NULL},
+      {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         NULL, NULL},
 
       {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         NULL,       NULL}
     } ;
   int i ;
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
 
-  i = num_static_items; /* +1 to get the next item but also -1 because it's 0-indexed */
+  i = 0;
   menu[i].type = ZMAPGUI_MENU_NONE;
+
+  if (menu_data->feature)
+    {
+      /* add in feature options */
+      addMenuItem(menu, &i, ZMAPGUI_MENU_NORMAL, "Use Feature for Mark", ITEM_MENU_MARK_ITEM, itemMenuCB, NULL);
+    }
 
   /* add in evidence/ transcript items option to remove existing is in column menu */
   if (menu_data->feature)
     {
-	ZMapFeatureTypeStyle style = *menu_data->feature->style;
+      ZMapFeatureTypeStyle style = *menu_data->feature->style;
 
       if (!style)
 	{
@@ -695,39 +701,21 @@ ZMapGUIMenuItem zmapWindowMakeMenuFeatureOps(int *start_index_inout,
 	{
 	  if(style->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
 	    {
-	      menu[i].type = ZMAPGUI_MENU_NORMAL;
-	      menu[i].name = "Highlight Evidence";
-	      menu[i].id = ITEM_MENU_SHOW_EVIDENCE;
-	      i++;
-	      menu[i].type = ZMAPGUI_MENU_NORMAL;
-	      menu[i].name = "Highlight Evidence (add more)";
-	      menu[i].id = ITEM_MENU_ADD_EVIDENCE;
-	      i++;
+              addMenuItem(menu, &i, ZMAPGUI_MENU_NORMAL, "Highlight Evidence", ITEM_MENU_SHOW_EVIDENCE, itemMenuCB, NULL);
+              addMenuItem(menu, &i, ZMAPGUI_MENU_NORMAL, "Highlight Evidence (add more)", ITEM_MENU_ADD_EVIDENCE, itemMenuCB, NULL);
 	    }
 	  else if (style->mode == ZMAPSTYLE_MODE_ALIGNMENT)
 	    {
-	      menu[i].type = ZMAPGUI_MENU_NORMAL;
-	      menu[i].name = "Highlight Transcript";
-	      menu[i].id = ITEM_MENU_SHOW_TRANSCRIPT;
-	      i++;
-	      menu[i].type = ZMAPGUI_MENU_NORMAL;
-	      menu[i].name = "Highlight Transcript (add more)";
-	      menu[i].id = ITEM_MENU_ADD_TRANSCRIPT;
-	      i++;
+              addMenuItem(menu, &i, ZMAPGUI_MENU_NORMAL, "Highlight Transcript", ITEM_MENU_SHOW_TRANSCRIPT, itemMenuCB, NULL);
+              addMenuItem(menu, &i, ZMAPGUI_MENU_NORMAL, "Highlight Transcript (add more)", ITEM_MENU_ADD_TRANSCRIPT, itemMenuCB, NULL);
 
 	      if(menu_data->feature->children)
 		{
-		  menu[i].type = ZMAPGUI_MENU_NORMAL;
-		  menu[i].name = "Expand Feature";
-		  menu[i].id = ITEM_MENU_EXPAND;
-		  i++;
+                  addMenuItem(menu, &i, ZMAPGUI_MENU_NORMAL, "Expand Feature", ITEM_MENU_EXPAND, itemMenuCB, NULL);
 		}
 	      else if(menu_data->feature->composite)
 		{
-		  menu[i].type = ZMAPGUI_MENU_NORMAL;
-		  menu[i].name = "Contract Features";
-		  menu[i].id = ITEM_MENU_CONTRACT;
-		  i++;
+                  addMenuItem(menu, &i, ZMAPGUI_MENU_NORMAL, "Contract Features", ITEM_MENU_CONTRACT, itemMenuCB, NULL);
 		}
 	    }
 	}
@@ -735,11 +723,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuFeatureOps(int *start_index_inout,
 
   if (zmapWindowFocusHasType(menu_data->window->focus, WINDOW_FOCUS_GROUP_EVIDENCE))
     {
-      menu[i].type = ZMAPGUI_MENU_TOGGLEACTIVE;
-      menu[i].name = "Hide Evidence/ Transcript";
-      menu[i].id = ZMAPWINDOW_HIDE_EVIDENCE ;
-      menu[i].callback_func = hideEvidenceMenuCB ;
-      i++ ;
+      addMenuItem(menu, &i, ZMAPGUI_MENU_TOGGLEACTIVE, "Hide Evidence/ Transcript", ZMAPWINDOW_HIDE_EVIDENCE, hideEvidenceMenuCB, NULL);
     }
   else
     {
@@ -755,22 +739,38 @@ ZMapGUIMenuItem zmapWindowMakeMenuFeatureOps(int *start_index_inout,
 }
 
 
-static void columnMenuCB(int menu_item_id, gpointer callback_data)
+/* Options for the scratch column */
+ZMapGUIMenuItem zmapWindowMakeMenuScratchOps(int *start_index_inout,
+					     ZMapGUIMenuItemCallbackFunc callback_func,
+					     gpointer callback_data)
 {
+  static ZMapGUIMenuItemStruct menu[] =
+    {
+      {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         NULL, NULL},
+      {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         NULL, NULL},
+      {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         NULL, NULL},
+
+      {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         NULL,       NULL}
+    } ;
+  int i ;
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
 
-  switch (menu_item_id)
-    {
-    case ITEM_MENU_CLEAR_SCRATCH:
-      zmapWindowScratchClear(menu_data->window);
-      break ;
-      
-    default:
-      zMapAssertNotReached();
-      break;
-    }
+  i = 0;
+  menu[i].type = ZMAPGUI_MENU_NONE;
 
-  g_free(menu_data) ;  
+  if (menu_data->feature)
+    {
+      /* add in feature options */
+      addMenuItem(menu, &i, ZMAPGUI_MENU_NORMAL, "Copy Feature to Edit Column", ITEM_MENU_COPY_TO_SCRATCH, itemMenuCB, NULL);
+      addMenuItem(menu, &i, ZMAPGUI_MENU_NORMAL, "Copy Sub-Feature to Edit Column", ITEM_MENU_COPY_SUBPART_TO_SCRATCH, itemMenuCB, NULL);
+    }
+  
+  /* add in column options */
+  addMenuItem(menu, &i, ZMAPGUI_MENU_NORMAL, "Clear Edit Column", ITEM_MENU_CLEAR_SCRATCH, itemMenuCB, NULL);
+
+  zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
+
+  return menu ;
 }
 
 
@@ -787,12 +787,6 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
   /* Retrieve the feature item info from the canvas item. */
   feature = zmapWindowItemGetFeature(menu_data->item);
 
-  if (!feature)
-    {
-      zMapMessage("%s", "Please right-click on a feature to use this option");
-      return;
-    }
-
   switch (menu_item_id)
     {
     case ITEM_MENU_MARK_ITEM:
@@ -805,6 +799,10 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 
     case ITEM_MENU_COPY_SUBPART_TO_SCRATCH:
       zmapWindowScratchCopyFeature(menu_data->window, feature, menu_data->item, menu_data->x, menu_data->y, TRUE);
+      break ;
+
+    case ITEM_MENU_CLEAR_SCRATCH:
+      zmapWindowScratchClear(menu_data->window);
       break ;
 
     case ITEM_MENU_SEARCH:
