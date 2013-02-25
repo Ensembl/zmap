@@ -20,7 +20,7 @@
  * This file is part of the ZMap genome database package
  * originated by
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *         Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Set of file handling utilities.
@@ -31,17 +31,13 @@
 
 #include <ZMap/zmap.h>
 
-
-
-
-
-
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <strings.h>
 #include <string.h>
 #include <wordexp.h>
+
 #include <zmapUtils_P.h>
 
 

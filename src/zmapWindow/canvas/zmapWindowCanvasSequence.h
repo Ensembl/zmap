@@ -1,4 +1,3 @@
-
 /*  File: zmapWindowCanvasTranscript.c
  *  Author: malcolm hinsley (mh17@sanger.ac.uk)
  *  Copyright (c) 2006-2010: Genome Research Ltd.
@@ -30,8 +29,11 @@
  * implements callback functions for FeaturesetItem transcript features
  *-------------------------------------------------------------------
  */
+#ifndef ZMAP_CANVAS_SEQUENCE_H
+#define ZMAP_CANVAS_SEQUENCE_H
 
 #include <ZMap/zmap.h>
 
-
 void zMapWindowCanvasSequenceInit(void);
+
+#endif /* !ZMAP_CANVAS_SEQUENCE_H */

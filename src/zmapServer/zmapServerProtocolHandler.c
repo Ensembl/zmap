@@ -71,10 +71,6 @@ ZMAPTHREAD_REPLY_INIT, ZMAPTHREAD_REPLY_WAIT, ZMAPTHREAD_REPLY_GOTDATA, ZMAPTHRE
 
 
 
-
-
-
-
 /* Some protocols have global init/cleanup functions that must only be called once, this type/list
  * allows us to do this. */
 typedef struct
@@ -106,13 +102,10 @@ static int findProtocol(gconstpointer list_protocol, gconstpointer protocol) ;
 static ZMapThreadReturnCode getSequence(ZMapServer server, ZMapServerReqGetSequence request, char **err_msg_out) ;
 static ZMapThreadReturnCode terminateServer(ZMapServer *server, char **err_msg_out) ;
 static ZMapThreadReturnCode destroyServer(ZMapServer *server) ;
-
-#if OLD_STYLES_CODE
-static gboolean getStylesFromFile(char *styles_list, char *styles_file, GHashTable **styles_out) ;
-#endif
 static ZMapThreadReturnCode getStyles(ZMapServer server, ZMapServerReqStyles styles, char **err_msg_out) ;
-
 static ZMapThreadReturnCode getStatus(ZMapServer server, ZMapServerReqGetStatus request, char **err_msg_out);
+static ZMapThreadReturnCode getConnectState(ZMapServer server,
+					    ZMapServerReqGetConnectState request, char **err_msg_out);
 static ZMapThreadReturnCode thread_RC(ZMapServerResponseType code) ;
 
 
@@ -120,11 +113,8 @@ static ZMapThreadReturnCode thread_RC(ZMapServerResponseType code) ;
  * any threads can use it. */
 static ZMapProtocolInitListStruct protocol_init_G = {PTHREAD_MUTEX_INITIALIZER, NULL} ;
 
-
-
-
-gboolean zmap_server_feature2style_debug_G = FALSE;
-gboolean zmap_server_styles_debug_G = FALSE;
+gboolean zmap_server_feature2style_debug_G = FALSE ;
+gboolean zmap_server_styles_debug_G = FALSE ;
 
 
 
@@ -142,7 +132,6 @@ ZMapServerReqAny zMapServerRequestCreate(ZMapServerReqType request_type, ...)
 
 
   /* Allocate struct. */
-  /* MH17: could just allocate sizeof ReqUnion and have less code */
   switch (request_type)
     {
     case ZMAP_SERVERREQ_CREATE:
@@ -202,6 +191,12 @@ ZMapServerReqAny zMapServerRequestCreate(ZMapServerReqType request_type, ...)
     case ZMAP_SERVERREQ_GETSTATUS:
       {
       size = sizeof(ZMapServerReqGetStatusStruct) ;
+
+      break ;
+      }
+    case ZMAP_SERVERREQ_GETCONNECT_STATE:
+      {
+      size = sizeof(ZMapServerReqGetConnectStateStruct) ;
 
       break ;
       }
@@ -281,6 +276,7 @@ ZMapServerReqAny zMapServerRequestCreate(ZMapServerReqType request_type, ...)
     case ZMAP_SERVERREQ_FEATURES:
     case ZMAP_SERVERREQ_SEQUENCE:
     case ZMAP_SERVERREQ_GETSTATUS:
+    case ZMAP_SERVERREQ_GETCONNECT_STATE:
     case ZMAP_SERVERREQ_TERMINATE:
       {
 	break ;
@@ -326,7 +322,6 @@ void zMapServerRequestDestroy(ZMapServerReqAny request)
       {
 	ZMapServerReqStyles styles = (ZMapServerReqStyles)request ;
 
-//	g_free(styles->styles_list_in) ;		what??
 	g_free(styles->styles_file_in) ;
 
 	break ;
@@ -339,6 +334,7 @@ void zMapServerRequestDestroy(ZMapServerReqAny request)
     case ZMAP_SERVERREQ_SEQUENCE:
     case ZMAP_SERVERREQ_GETSEQUENCE:
     case ZMAP_SERVERREQ_GETSTATUS:
+    case ZMAP_SERVERREQ_GETCONNECT_STATE:
     case ZMAP_SERVERREQ_TERMINATE:
       {
 	break ;
@@ -434,7 +430,7 @@ ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
     case ZMAP_SERVERREQ_GETSERVERINFO:
       {
         ZMapServerReqGetServerInfo get_info = (ZMapServerReqGetServerInfo)request_in ;
-	ZMapServerInfoStruct info = {NULL} ;
+	ZMapServerReqGetServerInfoStruct info = {ZMAP_SERVERREQ_INVALID} ;
 
 	if ((request->response
 	     = zMapServerGetServerInfo(server, &info)) != ZMAP_SERVERRESPONSE_OK)
@@ -444,10 +440,11 @@ ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
 	  }
 	else
 	  {
-	    get_info->database_name_out = info.database_name ;
-	    get_info->database_title_out = info.database_title ;
-	    get_info->database_path_out = info.database_path ;
-	    get_info->request_as_columns = info.request_as_columns ;
+	    get_info->data_format_out = info.data_format_out ;
+	    get_info->database_name_out = info.database_name_out  ;
+	    get_info->database_title_out = info.database_title_out  ;
+	    get_info->database_path_out = info.database_path_out  ;
+	    get_info->request_as_columns = info.request_as_columns  ;
 	  }
 
 	break ;
@@ -527,6 +524,7 @@ ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
 
 	break ;
       }
+
     case ZMAP_SERVERREQ_FEATURES:
       {
         ZMapServerReqGetFeatures features = (ZMapServerReqGetFeatures)request_in ;
@@ -535,11 +533,13 @@ ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
 	    != ZMAP_SERVERRESPONSE_OK)
 	  {
 	    *err_msg_out = g_strdup(zMapServerLastErrorMsg(server)) ;
-	    thread_rc = thread_RC(request->response);
+
+	    thread_rc = thread_RC(request->response) ;
 	  }
 
 	break ;
       }
+
     case ZMAP_SERVERREQ_SEQUENCE:
       {
         ZMapServerReqGetFeatures features = (ZMapServerReqGetFeatures)request_in ;
@@ -562,9 +562,10 @@ ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
     case ZMAP_SERVERREQ_GETSEQUENCE:
       {
         ZMapServerReqGetSequence get_sequence = (ZMapServerReqGetSequence)request_in ;
-    	  *err_msg_out = g_strdup(zMapServerLastErrorMsg(server)) ;
 
-	  thread_rc = getSequence(server, get_sequence, err_msg_out) ;
+	*err_msg_out = g_strdup(zMapServerLastErrorMsg(server)) ;
+
+	thread_rc = getSequence(server, get_sequence, err_msg_out) ;
 	break ;
       }
 
@@ -572,7 +573,15 @@ ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
       {
         ZMapServerReqGetStatus get_status = (ZMapServerReqGetStatus)request_in ;
 
-	  thread_rc = getStatus(server, get_status, err_msg_out) ;
+	thread_rc = getStatus(server, get_status, err_msg_out) ;
+	break ;
+      }
+
+    case ZMAP_SERVERREQ_GETCONNECT_STATE:
+      {
+        ZMapServerReqGetConnectState get_connect_state = (ZMapServerReqGetConnectState)request_in ;
+
+	thread_rc = getConnectState(server, get_connect_state, err_msg_out) ;
 	break ;
       }
 
@@ -581,13 +590,13 @@ ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
         request->response = zMapServerCloseConnection(server);
         *err_msg_out = g_strdup(zMapServerLastErrorMsg(server)) ; /* get error msg here because next call destroys the struct */
 
-        if(request->response == ZMAP_SERVERRESPONSE_OK)
+        if (request->response == ZMAP_SERVERRESPONSE_OK)
           {
-            request->response = zMapServerFreeConnection(server);
+            request->response = zMapServerFreeConnection(server) ;
             server = NULL;
           }
         
-        if(request->response == ZMAP_SERVERRESPONSE_OK)
+        if (request->response == ZMAP_SERVERRESPONSE_OK)
 	  thread_rc = ZMAPTHREAD_RETURNCODE_QUIT ;
         else
 	  thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;     // server will likely evaporate and be detected
@@ -602,13 +611,21 @@ ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
 
   /* Return server. */
   *slave_data = (void *)server ;
+
 #if  MH_NEVER_INCLUDE_THIS_CODE
-// mysteriously falls over on terminate (request = 11)
-if(request->type != 11)
-{ char *emsg = "";
-  if (err_msg_out && *err_msg_out) emsg = *err_msg_out;
-  if(*slave_data) zMapLogMessage("req %s/%s req %d/%d returns %d (%s)", server->url->protocol,server->url->query,request->type,request->response,thread_rc,emsg);
-}
+  /* ERRR....so was this ever fixed ???????? EG */
+
+  // mysteriously falls over on terminate (request = 11)
+  if(request->type != 11)
+    {
+      char *emsg = "";
+      
+      if (err_msg_out && *err_msg_out)
+	emsg = *err_msg_out;
+
+      if(*slave_data)
+	zMapLogMessage("req %s/%s req %d/%d returns %d (%s)", server->url->protocol,server->url->query,request->type,request->response,thread_rc,emsg);
+    }
 #endif
 
   return thread_rc ;
@@ -766,6 +783,30 @@ static ZMapThreadReturnCode getStatus(ZMapServer server, ZMapServerReqGetStatus 
 }
 
 
+/* Get current connection state of server. */
+static ZMapThreadReturnCode getConnectState(ZMapServer server,
+					    ZMapServerReqGetConnectState request, char **err_msg_out)
+{
+  ZMapThreadReturnCode thread_rc = ZMAPTHREAD_RETURNCODE_OK ;
+
+  if (thread_rc == ZMAPTHREAD_RETURNCODE_OK)
+    {
+      if ((request->response = zMapServerGetConnectState(server, &(request->connect_state)))
+	  != ZMAP_SERVERRESPONSE_OK)
+	{
+	  *err_msg_out = g_strdup(zMapServerLastErrorMsg(server)) ;
+	  thread_rc = thread_RC(request->response) ;
+	}
+      else
+	{
+	  /* nothing to do... */
+	}
+    }
+
+  return thread_rc ;
+}
+
+
 /* Get a specific sequences from the server. */
 static ZMapThreadReturnCode getSequence(ZMapServer server, ZMapServerReqGetSequence request, char **err_msg_out)
 {
@@ -793,8 +834,15 @@ static ZMapThreadReturnCode getSequence(ZMapServer server, ZMapServerReqGetSeque
 static ZMapThreadReturnCode terminateServer(ZMapServer *server, char **err_msg_out)
 {
   ZMapThreadReturnCode thread_rc = ZMAPTHREAD_RETURNCODE_OK ;
+  ZMapServerConnectStateType connect_state = ZMAP_SERVERCONNECT_STATE_INVALID ;
 
-  if (zMapServerCloseConnection(*server) == ZMAP_SERVERRESPONSE_OK)
+  if ((zMapServerGetConnectState(*server, &connect_state) == ZMAP_SERVERRESPONSE_OK)
+      && connect_state == ZMAP_SERVERCONNECT_STATE_CONNECTED
+      && (zMapServerCloseConnection(*server) == ZMAP_SERVERRESPONSE_OK))
+    {
+      *server = NULL ;
+    }
+  else if (connect_state == ZMAP_SERVERCONNECT_STATE_UNCONNECTED)
     {
       *server = NULL ;
     }

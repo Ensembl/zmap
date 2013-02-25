@@ -28,7 +28,6 @@
  * Exported functions: None
  *-------------------------------------------------------------------
  */
-
 #ifndef ZMAPXREMOTE_P_H
 #define ZMAPXREMOTE_P_H
 

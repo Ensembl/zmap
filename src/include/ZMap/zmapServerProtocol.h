@@ -18,9 +18,11 @@
  * or see the on-line version at http://www.gnu.org/copyleft/gpl.txt
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
- * originated by
+ * originally written by:
+ *              
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- * 	Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Interface for creating requests and passing them from
  *              the master thread to slave threads. Requests are via
@@ -38,12 +40,6 @@
 #include <ZMap/zmapThreads.h>
 
 
-/* Debug flags. */
-extern gboolean zmap_server_feature2style_debug_G;
-extern gboolean zmap_server_styles_debug_G;
-
-
-
 /* Requests can be of different types with different input parameters and returning
  * different types of results. */
 #define ZMAP_SERVER_REQ_LIST(_)                         \
@@ -58,6 +54,7 @@ extern gboolean zmap_server_styles_debug_G;
     _(ZMAP_SERVERREQ_SEQUENCE, , "sequence", "sequence", "Get the context sequence.") \
     _(ZMAP_SERVERREQ_GETSEQUENCE, , "getsequence", "getsequence", "Get an arbitrary (named) sequence.") \
     _(ZMAP_SERVERREQ_GETSTATUS, , "getstatus", "getstatus", "Get server exit code and STDERR.") \
+    _(ZMAP_SERVERREQ_GETCONNECT_STATE, , "getconnect_state", "getconnect_state", "Get server connection state.") \
     _(ZMAP_SERVERREQ_TERMINATE, , "terminate", "terminate", "Close and destroy the connection.")
 
 ZMAP_DEFINE_ENUM(ZMapServerReqType, ZMAP_SERVER_REQ_LIST) ;
@@ -76,12 +73,23 @@ ZMAP_DEFINE_ENUM(ZMapServerReqType, ZMAP_SERVER_REQ_LIST) ;
 ZMAP_DEFINE_ENUM(ZMapServerResponseType, ZMAP_SERVER_RESPONSE_LIST) ;
 
 
+/* Is server currently connected ? need error state here ??? */
+#define ZMAP_SERVER_CONNECT_STATE_LIST(_)                         \
+  _(ZMAP_SERVERCONNECT_STATE_INVALID, , "invalid", "", "")				\
+    _(ZMAP_SERVERCONNECT_STATE_UNCONNECTED, , "unconnected", "unconnected", "No connection to server.") \
+    _(ZMAP_SERVERCONNECT_STATE_CONNECTED, , "connected", "connected", "Connected to server.") \
+    _(ZMAP_SERVERCONNECT_STATE_ERROR, , "error", "error", "Server is in error, state undetermined.")
+
+ZMAP_DEFINE_ENUM(ZMapServerConnectStateType, ZMAP_SERVER_CONNECT_STATE_LIST) ;
+
+
+
 
 /*
  * ALL request/response structs must replicate the generic ZMapServerReqAnyStruct
  * so that they can all be treated as the canonical ZMapServerReqAny.
  */
-typedef struct
+typedef struct ZMapServerReqAnyStructType
 {
   ZMapServerReqType type ;
   ZMapServerResponseType response ;
@@ -118,11 +126,12 @@ typedef struct
 
 
 /* Request server attributes, these are mostly optional. */
-typedef struct
+typedef struct ZMapServerReqGetServerInfoStructType
 {
   ZMapServerReqType type ;
   ZMapServerResponseType response ;
 
+  char *data_format_out ;
   char *database_name_out ;
   char *database_title_out ;
   char *database_path_out ;
@@ -134,6 +143,7 @@ typedef struct
                                      */
 
 } ZMapServerReqGetServerInfoStruct, *ZMapServerReqGetServerInfo ;
+
 
 
 
@@ -247,10 +257,20 @@ typedef struct
   ZMapServerReqType type ;
   ZMapServerResponseType response ;
 
-  gint exit_code;
-  gchar *stderr_out;
+  gint exit_code ;
+  gchar *stderr_out ;
 
 } ZMapServerReqGetStatusStruct, *ZMapServerReqGetStatus ;
+
+
+typedef struct
+{
+  ZMapServerReqType type ;
+  ZMapServerResponseType response ;
+
+  ZMapServerConnectStateType connect_state ;
+
+} ZMapServerReqGetConnectStateStruct, *ZMapServerReqGetConnectState ;
 
 
 typedef struct
@@ -278,6 +298,7 @@ typedef union
 } ZMapServerReqUnion ;
 
 
+
 /* Enum -> String function decs: const char *zMapXXXX2ExactStr(ZMapXXXXX type);  */
 ZMAP_ENUM_AS_EXACT_STRING_DEC(zMapServerReqType2ExactStr, ZMapServerReqType) ;
 
@@ -288,6 +309,12 @@ ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
 					      char **err_msg_out) ;
 ZMapThreadReturnCode zMapServerTerminateHandler(void **slave_data, char **err_msg_out) ;
 ZMapThreadReturnCode zMapServerDestroyHandler(void **slave_data) ;
+
+
+/* Debug flags. */
+extern gboolean zmap_server_feature2style_debug_G;
+extern gboolean zmap_server_styles_debug_G;
+
 
 
 #endif /* !ZMAP_PROTOCOL_H */
