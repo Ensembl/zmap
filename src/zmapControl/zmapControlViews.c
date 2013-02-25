@@ -53,6 +53,14 @@ typedef struct
 
 
 
+typedef struct FindViewWindowStructName
+{
+  ZMapView view ;
+  ZMapViewWindow view_window ;
+} FindViewWindowStruct, *FindViewWindow ;
+
+
+
 /* GTK didn't introduce a function call to get at pane children until at least release 2.6,
  * I hope this is correct, no easy way to check exactly when function calls were introduced. */
 #if ((GTK_MAJOR_VERSION == 2) && (GTK_MINOR_VERSION == 6))
@@ -75,6 +83,8 @@ static ZMapViewWindow closeWindow(ZMap zmap, GtkWidget *close_container) ;
 static GtkWidget *addXremoteWidget(GtkWidget *child) ;
 static void removeXremoteWidget(GtkWidget *child) ;
 static void labelDestroyCB(GtkWidget *widget, gpointer cb_data) ;
+
+static void findViewWindowCB(gpointer key, gpointer value, gpointer user_data) ;
 
 
 /* New func for brand new view windows.... */
@@ -341,6 +351,93 @@ void zmapControlRemoveWindow(ZMap zmap)
 
   return ;
 }
+
+
+
+
+/* You need to remember that there may be more than one view in a zmap. This means that
+ * while a particular view may have lost all its windows and need closing, there might
+ * be other views that have windows that can be focussed on. */
+void zmapControlRemoveWindowView(ZMap zmap, ZMapView view)
+{
+  GtkWidget *close_container ;
+  ZMapViewWindow view_window, remaining_view ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  ZMapView view ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  gboolean remove ;
+  int num_views, num_windows ;
+  gboolean last_window = FALSE ;
+
+  FindViewWindowStruct find_viewwindow = {NULL} ;
+
+  num_views = zmapControlNumViews(zmap) ;
+  num_windows = zMapViewNumWindows(zmap->focus_viewwindow) ;
+
+  /* We shouldn't get called if there are no views or if there is only a single view with one window left. */
+  zMapAssert(num_views && zmap->focus_viewwindow
+	     && !(num_views == 1 && num_windows == 1)) ;
+
+  /* If this is the last window we will need to do some special clearing up. */
+  if (num_windows == 1)
+    last_window = TRUE ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* focus_viewwindow gets reset so hang on to view_window pointer and view.*/
+  view_window = zmap->focus_viewwindow ;
+  view = zMapViewGetView(view_window) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  /* Find the view_window for the view... */
+  find_viewwindow.view = view ;
+  g_hash_table_foreach(zmap->viewwindow_2_parent, findViewWindowCB, &find_viewwindow) ;
+  view_window = find_viewwindow.view_window ;
+
+
+  close_container = g_hash_table_lookup(zmap->viewwindow_2_parent, view_window) ;
+
+  /* Make sure we reset focus because we are removing the view it points to ! */
+  zmap->focus_viewwindow = NULL ;
+
+  if (num_windows > 1)
+    {
+      zMapViewRemoveWindow(view_window) ;
+    }
+  else
+    {
+      /* If its the last window the parent of the container is the event box that was added
+       * when the view was created. We need to hang on to it so we can destroy it after the window
+       * is closed. */
+      removeXremoteWidget(close_container) ;
+
+      zMapDeleteView(zmap, view) ;
+    }
+
+  /* this needs to remove the pane.....AND  set a new focuspane....if there is one.... */
+  remaining_view = closeWindow(zmap, close_container) ;
+
+  /* Remove from hash of viewwindows to frames */
+  remove = g_hash_table_remove(zmap->viewwindow_2_parent, view_window) ;
+  zMapAssert(remove) ;
+
+  /* Having removed one window we need to refocus on another, if there is one....... */
+  if (remaining_view)
+    {
+      zmapControlSetWindowFocus(zmap, remaining_view) ;
+      zMapWindowSiblingWasRemoved(zMapViewGetWindow(remaining_view));
+    }
+
+  /* We'll need to update the display..... */
+  gtk_widget_show_all(zmap->toplevel) ;
+
+  zmapControlWindowSetGUIState(zmap) ;
+
+  return ;
+}
+
 
 
 
@@ -808,3 +905,16 @@ static void labelDestroyCB(GtkWidget *widget, gpointer cb_data)
 
   return ;
 }
+
+
+static void findViewWindowCB(gpointer key, gpointer value, gpointer user_data)
+{
+  ZMapViewWindow view_window = key ;
+  FindViewWindow find_viewwindow = (FindViewWindow)user_data ;
+
+  if (zMapViewGetView(view_window) == find_viewwindow->view)
+    find_viewwindow->view_window = view_window ;
+
+  return ;
+}
+

@@ -188,6 +188,8 @@ void zmapControlSplitWindow(ZMap zmap, GtkOrientation orientation, ZMapControlSp
 
 void zmapControlClose(ZMap zmap) ;
 void zmapControlRemoveWindow(ZMap zmap) ;
+void zmapControlRemoveWindowView(ZMap zmap, ZMapView view) ;
+
 
 ZMapView zmapControlInsertView(ZMap zmap, ZMapFeatureSequenceMap sequence_map, char **err_msg) ;
 ZMapView zmapControlAddView(ZMap zmap, ZMapFeatureSequenceMap sequence_map) ;
