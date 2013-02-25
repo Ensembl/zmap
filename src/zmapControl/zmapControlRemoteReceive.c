@@ -362,13 +362,34 @@ static void closeView(ZMap zmap, ZMapXRemoteParseCommandData input_data, Respons
     {
       char *xml = NULL;
 
-      zmapControlRemoveView(zmap, view_data.view) ;
-
+      /* TRY THIS HERE.... */
       /* Is this correct ??? check with Roy..... */
       output_data->code = ZMAPXREMOTE_OK;
       xml = zMapViewRemoteReceiveAccepts(view_data.view);
       g_string_append(output_data->messages, xml);
       g_free(xml);
+
+
+
+      /* ok....here we need to do something more sophisticated.... */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      zmapControlRemoveView(zmap, view_data.view) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+      zmapControlRemoveWindowView(zmap, view_data.view) ;
+
+
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      /* Is this correct ??? check with Roy..... */
+      output_data->code = ZMAPXREMOTE_OK;
+      xml = zMapViewRemoteReceiveAccepts(view_data.view);
+      g_string_append(output_data->messages, xml);
+      g_free(xml);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
     }
 
   return ;
@@ -423,7 +444,7 @@ static void createClient(ZMap zmap, ZMapXRemoteParseCommandData input_data, Resp
 
 
 /*
- *                 XML Handlers
+ *                 XML Parse Handlers
  */
 
 
