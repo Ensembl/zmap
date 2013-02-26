@@ -606,22 +606,27 @@ static GtkWidget *zmap_new_spin_button (void)
 /* handle text input and spin buttons */
 static void filterValueChangedCB(GtkSpinButton *spinbutton, gpointer user_data)
 {
-	ZMap zmap = (ZMap) user_data;
-	double value;
+  ZMap zmap = (ZMap) user_data;
+  double value;
+  
+  /* if we don't do this then with a busy column we get the column updateds but the spin button is delayed
+   * so we don't get inertaction with the filter score.  It's better this way.
+   */
+  if(zmap->filter_spin_pressed)
+    return;
+  
+  value = gtk_spin_button_get_value(spinbutton);
+  //printf("filter value %f %f\n", zmap->filter.value, value);
+  zmap->filter.value = value;
 
-	/* if we don't do this then with a busy column we get the column updateds but the spin button is delayed
-	 * so we don't get inertaction with the filter score.  It's better this way.
-	 */
-	if(zmap->filter_spin_pressed)
-		return;
-
-	value = gtk_spin_button_get_value(spinbutton);
-//printf("filter value %f %f\n", zmap->filter.value, value);
-	zmap->filter.value = value;
-	if(zmap->filter.func)
-		zmap->filter.n_filtered = zmap->filter.func(&zmap->filter, value);
-
-	filterSetHighlight(zmap);
+  if(zmap->filter.func)
+    {
+      ZMapView zmap_view = zMapViewGetView(zmap->focus_viewwindow);
+      gboolean highlight_filtered_columns = zMapViewGetHighlightFilteredColumns(zmap_view);
+      zmap->filter.n_filtered = zmap->filter.func(&zmap->filter, value, highlight_filtered_columns);
+    }
+  
+  filterSetHighlight(zmap);
 }
 
 

@@ -29,6 +29,8 @@
  * implements callback functions for FeaturesetItem glyph features
  *-------------------------------------------------------------------
  */
+#ifndef ZMAP_CANVAS_GLYPH_I_H
+#define ZMAP_CANVAS_GLYPH_I_H
 
 #include <ZMap/zmap.h>
 
@@ -108,3 +110,4 @@ typedef struct _zmapWindowCanvasGlyphStruct
 
 
 
+#endif /* !ZMAP_CANVAS_GLYPH_I_H */

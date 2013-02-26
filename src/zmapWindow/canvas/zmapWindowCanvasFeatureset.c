@@ -1307,7 +1307,7 @@ void zMapWindowCanvasFeaturesetRedraw(ZMapWindowFeaturesetItem fi, double zoom)
 #endif
 
 // this code fails if we just added the item as it's not been updated yet
-  x1 = fi->dx + fi->x_off;
+  x1 = fi->x_off;
   /* x_off is for staggered columns - we can't just add it to our foo position as it's columns that get moved about */
   /* well maybe that would be possible but the rest of the code works this way */
 
@@ -2889,7 +2889,7 @@ int zMapWindowCanvasFeaturesetGetFilterCount(FooCanvasItem *foo)
   return featureset_item->n_filtered ;
 }
 
-int zMapWindowCanvasFeaturesetFilter(gpointer gfilter, double value)
+int zMapWindowCanvasFeaturesetFilter(gpointer gfilter, double value, gboolean highlight_filtered_columns)
 {
   ZMapWindowFilter filter	= (ZMapWindowFilter) gfilter;
   ZMapWindowFeaturesetItem fi = (ZMapWindowFeaturesetItem) filter->featureset;
@@ -2963,37 +2963,22 @@ int zMapWindowCanvasFeaturesetFilter(gpointer gfilter, double value)
        * NOTE if bumped we don-t calculate so no creeping inefficiency here
        */
       fi->zoom = 0;
+      
+      ZMapWindowContainerGroup column = (ZMapWindowContainerGroup)((FooCanvasItem *)fi)->parent;
+      GdkColor white = { 0xffffffff, 0xffff, 0xffff, 0xffff } ;		/* is there a column background config colour? */
+      GdkColor *fill = &white;
 
-#if HIGHLIGHT_FILTERED_COLUMNS 
-      /*!> \todo This code highlights columns that are filtered.
-       * It is requested functionality but it needs to be optional
-       * so that the user can turn it off. */
-	ZMapWindowContainerGroup column = (ZMapWindowContainerGroup)((FooCanvasItem *)fi)->parent;
-	GdkColor white = { 0xffffffff, 0xffff, 0xffff, 0xffff } ;		/* is there a column background config colour? */
-	GdkColor *fill = &white;
-
-	if(fi->n_filtered && filter->window)
-	{
-		zMapWindowGetFilteredColour(filter->window,&fill);
-
-		column->flags.filtered = 1;
-
-// NO:	zMapWindowCanvasFeaturesetSetBackground((FooCanvasItem *) fi, fill, NULL);
-// must do the column not the featureset
-		zmapWindowDrawSetGroupBackground(column, 0, 1, 1.0, ZMAP_CANVAS_LAYER_COL_BACKGROUND, fill, NULL);
-
-		foo_canvas_item_request_redraw(((FooCanvasItem *)fi)->parent);
-	}
-	else
-	{
-		column->flags.filtered = 0;
-		/*
-		this col is selected or else we could not operate its filter button
-		so we revert to select not normal background
-		*/
-		zmapWindowFocusHighlightHotColumn(filter->window->focus);
-	}
-#endif
+      /* Set the 'filtered' flag. Note that this only gets set if 
+       * the column is actually to be highlighted, i.e. if the 
+       * user-preference highlight_filtered_columns is true. */
+      column->flags.filtered = (fi->n_filtered && filter->window && highlight_filtered_columns);
+      
+      /* Revert the background colour. This is because this must be the 
+       * currently-selected column, otherwise we could not operate its filter
+       * button, therefore we use the focused column background colour, not the
+       * normal background colour (and not even the filter highlight colour, 
+       * because this is overriden by the focus colour) */
+      zmapWindowFocusHighlightHotColumn(filter->window->focus);
 
       if(fi->bumped)
 	{
@@ -3458,6 +3443,24 @@ int zMapWindowFeaturesetItemRemoveSet(FooCanvasItem *foo, ZMapFeatureSet feature
   return n_feat;
 }
 
+
+/*!
+ * \brief Return the number of filtered-out features in a featureset item
+ */
+int zMapWindowFeaturesetItemGetNFiltered(FooCanvasItem *item)
+{
+  int result = 0;
+  
+  if (item)
+    {
+      ZMapWindowFeaturesetItem fi = (ZMapWindowFeaturesetItem)item;
+      
+      if (fi)
+        result = fi->n_filtered;
+    }
+  
+  return result;
+}
 
 
 #warning make this into a foo canvas item class func

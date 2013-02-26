@@ -1381,6 +1381,7 @@ void zMapWindowDestroy(ZMapWindow window)
   return ;
 }
 
+
 /*! @} end of zmapwindow docs. */
 
 
@@ -2093,7 +2094,7 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
 				 GtkAdjustment *hadjustment,
                                  GtkAdjustment *vadjustment)
 {
-  ZMapWindow window ;
+  ZMapWindow window = NULL ;
   GtkWidget *canvas, *eventbox ;
 
   /* No callbacks, then no window creation. */
@@ -4141,7 +4142,7 @@ void zmapWindowZoomToWorldPosition(ZMapWindow window, gboolean border,
   return ;
 }
 
-#else
+#endif
 
 /*
 previous code was structured to zoom each windonw the scroll each window
@@ -4159,7 +4160,6 @@ static void myWindowZoomTo(ZMapWindow window, double zoom_factor, double start, 
   int x, y ;
   double x1, y1, x2, y2, width ;
   double new_canvas_span ;
-  int canvasx, canvasy;
 
 //printf("myWindowZoomTo 1\n");
 
@@ -4234,16 +4234,6 @@ static void myWindowZoomTo(ZMapWindow window, double zoom_factor, double start, 
 	zmapWindowReFocusHighlights(window);
 #endif
 
-	foo_canvas_w2c(window->canvas, x1, start, &canvasx, &canvasy);
-
-          /* If we had a border we need to take this into account,
-           * otherwise the feature just ends up at the top of the
-           * window with 2 border widths at the bottom! */
-       if(border)
-           canvasy -= border_size;
-
-       foo_canvas_scroll_to(FOO_CANVAS(window->canvas), canvasx, canvasy);
-
 	zMapWindowRedraw(window);	/* exposes the blank edges as well as the canvas */
     }
 
@@ -4261,91 +4251,137 @@ void zmapWindowZoomToWorldPosition(ZMapWindow window, gboolean border,
   double ydiff;
   double area_middle;
   int win_height;
-//  int canvasx, canvasy, beforex, beforey;
+  int canvasx, canvasy;
+  int beforex, beforey;
   /* Zoom factor */
   double zoom_by_factor, target_zoom_factor, current;
-//  double wx1, wx2, wy1, wy2;
+  double wx1, wx2, wy1, wy2;
   int two_times, border_size = ZMAP_WINDOW_FEATURE_ZOOM_BORDER;
-
+  
   v_adjuster = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window));
   win_height = v_adjuster->page_size;
-
+  
   /* If we want a border add it...
    * Actually take it away from the current height of the canvas, this
    * way that pixel size will automatically be ratioed by the zoom.
    */
   if(border && ((two_times = (border_size * 2)) < win_height))
     win_height -= two_times;
-
+  
   current = zMapWindowGetZoomFactor(window) ;
-
+  
   /* make them canvas so we can scroll there */
-//  foo_canvas_w2c(window->canvas, rootx1, rooty1, &beforex, &beforey);
-
+  foo_canvas_w2c(window->canvas, rootx1, rooty1, &beforex, &beforey);
+  
   /* work out the zoom factor to show all the area (vertically) and
      calculate how much we need to zoom by to achieve that. */
   ydiff = rooty2 - rooty1;
-
+  
   if (ydiff >= ZOOM_SENSITIVITY)
     {
       area_middle = rooty1 + (ydiff / 2.0) ; /* So we can make this the centre later */
-
+      
       target_zoom_factor = (double)(win_height / ydiff);
-
+      
       zoom_by_factor = (target_zoom_factor / current);
-
-
-	/* possible bug here with width and scrolling, need to check. */
-	if (window->locked_display)
+      
+      
+      /* Actually do the zoom */
+      /* possible bug here with width and scrolling, need to check. */
+      if (window->locked_display)
 	{
-//		ZMapWindowState prev_state;
-		LockedDisplayStruct locked_data = { NULL };
-//		gboolean use_queue = TRUE;
-
+          //		ZMapWindowState prev_state;
+          LockedDisplayStruct locked_data = { NULL };
+          //		gboolean use_queue = TRUE;
+          
 #if POINTLESS
-		double half_win_span = ((window->canvas_maxwin_size / target_zoom_factor) / 2.0);
-		double min_seq = area_middle - half_win_span;
-		double max_seq = area_middle + half_win_span - 1;
+          double half_win_span = ((window->canvas_maxwin_size / target_zoom_factor) / 2.0);
+          double min_seq = area_middle - half_win_span;
+          double max_seq = area_middle + half_win_span - 1;
 #endif
-		locked_data.window      = window ;
-		locked_data.type        = ZMAP_LOCKED_ZOOM_TO;
-		locked_data.zoom_factor = zoom_by_factor ;
-		locked_data.position    = area_middle ;
-		locked_data.border = border;
-		locked_data.start = rooty1;
-		locked_data.end = rooty2;
-		locked_data.border_size = border_size;
-
+          locked_data.window      = window ;
+          locked_data.type        = ZMAP_LOCKED_ZOOM_TO;
+          locked_data.zoom_factor = zoom_by_factor ;
+          locked_data.position    = area_middle ;
+          locked_data.border = border;
+          locked_data.start = rooty1;
+          locked_data.end = rooty2;
+          locked_data.border_size = border_size;
+          
 #if STUPID
-erm... if we are restoring a zoom position the we need to feed that into this function from the top
-this makes this function ignore its arguments
-
-		if(use_queue && zmapWindowStateQueueIsRestoring(window->history) &&
-			zmapWindowStateGetPrevious(window, &prev_state, FALSE))
-		{
-			double ry1, ry2;	/* restore scroll region */
-			zmapWindowStateGetScrollableArea(prev_state,
-							 NULL, &ry1,
-							 NULL, &ry2);
-			locked_data.position = ((ry2 - ry1) / 2 ) + ry1;
-		}
+          /* erm... if we are restoring a zoom position the we need to feed that into this function from the top
+             this makes this function ignore its arguments */
+             
+          if(use_queue && zmapWindowStateQueueIsRestoring(window->history) &&
+             zmapWindowStateGetPrevious(window, &prev_state, FALSE))
+            {
+              double ry1, ry2;	/* restore scroll region */
+              zmapWindowStateGetScrollableArea(prev_state,
+                                               NULL, &ry1,
+                                               NULL, &ry2);
+              locked_data.position = ((ry2 - ry1) / 2 ) + ry1;
+            }
 #endif
-
-		g_hash_table_foreach(window->sibling_locked_windows, lockedDisplayCB, (gpointer)&locked_data) ;
+          
+          g_hash_table_foreach(window->sibling_locked_windows, lockedDisplayCB, (gpointer)&locked_data) ;
 	}
-	else
+      else
 	{
-
-		foo_canvas_busy(window->canvas,TRUE);
-		myWindowZoomTo(window, zoom_by_factor, rooty1, rooty2, border, border_size) ;
-		foo_canvas_busy(window->canvas,FALSE);
+          
+          foo_canvas_busy(window->canvas,TRUE);
+          myWindowZoomTo(window, zoom_by_factor, rooty1, rooty2, border, border_size) ;
+          foo_canvas_busy(window->canvas,FALSE);
+	}
+      
+      
+      /* Now we need to find where the original top of the area is in
+       * canvas coords after the effect of the zoom. Hence the w2c calls
+       * below.
+       * And scroll there:
+       * We use this rather than zMapWindowScrollTo as we may have zoomed
+       * in so far that we can't just sroll the current canvas buffer to
+       * where we clicked. We actually need to check we haven't zoomed off.
+       * If we have then we need to move there first, otherwise scroll_to
+       * doesn't do anything.
+       */
+      foo_canvas_get_scroll_region(window->canvas, &wx1, &wy1, &wx2, &wy2); /* ok, but can we refactor? */
+      if (rooty1 > wy1 && rooty2 < wy2)
+	{                           /* We're still in the same area, */
+	  foo_canvas_w2c(window->canvas, rootx1, rooty1, &canvasx, &canvasy);
+          
+          /* If we had a border we need to take this into account,
+           * otherwise the feature just ends up at the top of the
+           * window with 2 border widths at the bottom! */
+          if(border)
+            canvasy -= border_size;
+          
+	  if(beforey != canvasy)
+	    foo_canvas_scroll_to(FOO_CANVAS(window->canvas), canvasx, canvasy);
+	}
+      else
+	{                           /* This takes a lot of time.... */
+	  double half_win_span = ((window->canvas_maxwin_size / target_zoom_factor) / 2.0);
+	  double min_seq = area_middle - half_win_span;
+	  double max_seq = area_middle + half_win_span - 1;
+          
+	  /* unfortunately freeze/thaw child-notify doesn't stop flicker */
+	  /* can we do something else to make it busy?? */
+	  zMapWindowMove(window, min_seq, max_seq);
+          
+	  foo_canvas_w2c(window->canvas, rootx1, rooty1, &canvasx, &canvasy);
+          
+          /* Do the right thing with the border again. */
+          if(border)
+            canvasy -= border_size;
+          
+          /* No need to worry about border here as we're using the centre of the window. */
+	  foo_canvas_scroll_to(FOO_CANVAS(window->canvas), canvasx, canvasy);
 	}
     }
-
+  
   return ;
 }
 
-#endif
 
 
 
@@ -5051,8 +5087,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	FooCanvasItem *focus_item ;
 
 	/* If there is a focus item use that.  */
-	if ((focus_item = zmapWindowFocusGetHotItem(window->focus))
-	    || (focus_item = zmapWindowMarkGetItem(window->mark)))
+	if ((focus_item = zmapWindowFocusGetHotItem(window->focus)))
 	  {
 	    ZMapFeatureAny context ;
 	    ZMapFeature feature ;
@@ -5194,8 +5229,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	FooCanvasItem *focus_item ;
 
 	/* If there is a focus item use that.  */
-	if ((focus_item = zmapWindowFocusGetHotItem(window->focus))
-	    || (focus_item = zmapWindowMarkGetItem(window->mark)))
+	if ((focus_item = zmapWindowFocusGetHotItem(window->focus)))
 	  {
 	    ZMapFeatureAny context;
 	    ZMapFeature feature ;
@@ -6764,4 +6798,74 @@ static gint sortCoordsCB(gconstpointer a, gconstpointer b)
     }
 
   return result ;
+}
+
+
+/*!
+ * \brief Redraw the background for the given strand/frame of the given featureset
+ */
+static void updateColumnBackground(ZMapWindow window, 
+                                   ZMapFeatureSet feature_set, 
+                                   gboolean highlight_filtered_columns,
+                                   ZMapStrand strand,
+                                   ZMapFrame frame)
+{
+  FooCanvasItem *foo = zmapWindowFToIFindSetItem(window,
+                                                 window->context_to_item,
+                                                 feature_set,
+                                                 strand,
+                                                 frame);
+
+  if (foo)
+    {
+      ZMapWindowContainerGroup column = (ZMapWindowContainerGroup)foo->parent;
+      GdkColor white = { 0xffffffff, 0xffff, 0xffff, 0xffff } ;		/* is there a column background config colour? */
+      GdkColor *fill = &white;
+
+      int n_filtered = zMapWindowFeaturesetItemGetNFiltered(foo);
+
+      /* Update the 'filtered' flag in the column based on whether this 
+       * column should be highlighted as filtered */
+      if (highlight_filtered_columns && n_filtered > 0)
+        column->flags.filtered = 1;
+      else
+        column->flags.filtered = 0;
+
+      /* Get the filter colour, if applicable */
+      if (column->flags.filtered)
+        zMapWindowGetFilteredColour(window, &fill);
+
+      zmapWindowDrawSetGroupBackground(column, 0, 1, 1.0, ZMAP_CANVAS_LAYER_COL_BACKGROUND, fill, NULL);
+      
+      foo_canvas_item_request_redraw(foo->parent);
+    }
+}
+
+
+/*!
+ * \brief Redraw the background for the given featureset in the given window
+ *
+ * Updates the column in all strands/frames
+ */
+void zMapWindowUpdateColumnBackground(ZMapWindow window, 
+                                      ZMapFeatureSet feature_set,
+                                      gboolean highlight_filtered_columns)
+{
+  updateColumnBackground(window, feature_set, highlight_filtered_columns, ZMAPSTRAND_FORWARD, ZMAPFRAME_NONE);
+  updateColumnBackground(window, feature_set, highlight_filtered_columns, ZMAPSTRAND_FORWARD, ZMAPFRAME_0);
+  updateColumnBackground(window, feature_set, highlight_filtered_columns, ZMAPSTRAND_FORWARD, ZMAPFRAME_1);
+  updateColumnBackground(window, feature_set, highlight_filtered_columns, ZMAPSTRAND_FORWARD, ZMAPFRAME_2);
+
+  updateColumnBackground(window, feature_set, highlight_filtered_columns, ZMAPSTRAND_REVERSE, ZMAPFRAME_NONE);
+  updateColumnBackground(window, feature_set, highlight_filtered_columns, ZMAPSTRAND_REVERSE, ZMAPFRAME_0);
+  updateColumnBackground(window, feature_set, highlight_filtered_columns, ZMAPSTRAND_REVERSE, ZMAPFRAME_1);
+  updateColumnBackground(window, feature_set, highlight_filtered_columns, ZMAPSTRAND_REVERSE, ZMAPFRAME_2);
+
+  updateColumnBackground(window, feature_set, highlight_filtered_columns, ZMAPSTRAND_NONE, ZMAPFRAME_NONE);
+  updateColumnBackground(window, feature_set, highlight_filtered_columns, ZMAPSTRAND_NONE, ZMAPFRAME_0);
+  updateColumnBackground(window, feature_set, highlight_filtered_columns, ZMAPSTRAND_NONE, ZMAPFRAME_1);
+  updateColumnBackground(window, feature_set, highlight_filtered_columns, ZMAPSTRAND_NONE, ZMAPFRAME_2);
+
+  /* Re-highlight the hot column, if any */
+  zmapWindowFocusHighlightHotColumn(window->focus);
 }

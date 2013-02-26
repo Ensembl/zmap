@@ -2182,6 +2182,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuDeveloperOps(int *start_index_inout,
       {ZMAPGUI_MENU_NORMAL, DEVELOPER_STR"/Show Feature",       1, developerMenuCB, NULL},
       {ZMAPGUI_MENU_NORMAL, DEVELOPER_STR"/Show Feature Style", 2, developerMenuCB, NULL},
       {ZMAPGUI_MENU_NORMAL, DEVELOPER_STR"/Print Canvas",       3, developerMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, DEVELOPER_STR"/Show Window Stats",  4, developerMenuCB, NULL},
       {ZMAPGUI_MENU_NONE, NULL               , 0, NULL, NULL}
     } ;
 
@@ -2218,7 +2219,6 @@ static void developerMenuCB(int menu_item_id, gpointer callback_data)
 	    char *feature_text ;
 	    ZMapFeature feature ;
 	    GString *item_text_str ;
-//	    char *item_text ;
 	    char *coord_text ;
 	    char *msg_text ;
 
@@ -2278,16 +2278,40 @@ static void developerMenuCB(int menu_item_id, gpointer callback_data)
 
     case 3:
       {
-
 	zmapWindowPrintCanvas(menu_data->window->canvas) ;
 
+	break ;
+      }
+
+    case 4:
+      {
+	GString *session_text ;
+	char *title ;
+
+	session_text = g_string_new(NULL) ;
+
+	g_string_append(session_text, "General\n") ;
+	g_string_append_printf(session_text, "\tProgram: %s\n\n", zMapGetAppTitle()) ;
+	g_string_append_printf(session_text, "\tUser: %s (%s)\n\n", g_get_user_name(), g_get_real_name()) ;
+	g_string_append_printf(session_text, "\tMachine: %s\n\n", g_get_host_name()) ;
+	g_string_append_printf(session_text, "\tSequence: %s\n\n", menu_data->window->sequence->sequence) ;
+
+	g_string_append(session_text, "Window Statistics\n") ;
+	zMapWindowStats(menu_data->window, session_text) ;
+
+	title = zMapGUIMakeTitleString(NULL, "Session Statistics") ;
+	zMapGUIShowText(title, session_text->str, FALSE) ;
+	g_free(title) ;
+	g_string_free(session_text, TRUE) ;
 
 	break ;
       }
 
     default:
-      zMapAssert("Coding error, unrecognised menu item number.") ; /* exits... */
-      break ;
+      {
+	zMapAssert("Coding error, unrecognised menu item number.") ; /* exits... */
+	break ;
+      }
     }
 
   g_free(menu_data) ;

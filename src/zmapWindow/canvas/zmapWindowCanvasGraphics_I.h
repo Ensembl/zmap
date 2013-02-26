@@ -1,4 +1,3 @@
-
 /*  File: zmapWindowCanvasGraphics_I.h
  *  Author: malcolm hinsley (mh17@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -30,9 +29,11 @@
  * implements callback functions for FeaturesetItem plain graphics
  *-------------------------------------------------------------------
  */
+#ifndef ZMAP_CANVAS_GRAPHICS_I_H
+#define ZMAP_CANVAS_GRAPHICS_I_H
 
 #include <ZMap/zmap.h>
 
 #include <zmapWindowCanvasGraphics.h>
 
-
+#endif /* !ZMAP_CANVAS_GRAPHICS_I_H */

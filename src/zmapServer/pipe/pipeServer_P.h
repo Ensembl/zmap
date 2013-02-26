@@ -1,4 +1,3 @@
-/*  Last edited: Jul 23 14:58 2012 (edgrif) */
 /*  File: pipeServer_P.h
  *  Author: Malcolm Hinsley (mh17@sanger.ac.uk)
  *      derived from fileServer_p.h by Ed Griffiths (edgrif@sanger.ac.uk)
@@ -22,8 +21,8 @@
  * This file is part of the ZMap genome database package
  * originated by
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *         Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Defines/types etc. for the file accessing version
  *              of the server code.

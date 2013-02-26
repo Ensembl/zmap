@@ -97,6 +97,8 @@ static ZMapServerResponseType setContext(void *server,  ZMapFeatureContext featu
 static ZMapServerResponseType getFeatures(void *server_in, GData *styles, ZMapFeatureContext feature_context_out) ;
 static ZMapServerResponseType getContextSequence(void *server_in, GData *styles, ZMapFeatureContext feature_context_out) ;
 static char *lastErrorMsg(void *server) ;
+static ZMapServerResponseType getStatus(void *server_conn, gint *exit_code, gchar **stderr_out) ;
+static ZMapServerResponseType getConnectState(void *server_conn, ZMapServerConnectStateType *connect_state) ;
 static ZMapServerResponseType closeConnection(void *server_in) ;
 static ZMapServerResponseType destroyConnection(void *server) ;
 
@@ -137,6 +139,8 @@ void fileGetServerFuncs(ZMapServerFuncs file_funcs)
   file_funcs->get_features = getFeatures ;
   file_funcs->get_context_sequences = getContextSequence ;
   file_funcs->errmsg = lastErrorMsg ;
+  file_funcs->get_status = getStatus ;
+  file_funcs->get_connect_state = getConnectState ;
   file_funcs->close = closeConnection;
   file_funcs->destroy = destroyConnection ;
 
@@ -619,6 +623,25 @@ static char *lastErrorMsg(void *server_in)
   return err_msg ;
 }
 
+
+static ZMapServerResponseType getStatus(void *server_conn, gint *exit_code, gchar **stderr_out)
+{
+
+  /* No implementation currently. */
+
+  return ZMAP_SERVERRESPONSE_OK;
+}
+
+
+/* Is the acedb server connected ? */
+static ZMapServerResponseType getConnectState(void *server_conn, ZMapServerConnectStateType *connect_state)
+{
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
+
+  /* No implementation currently. */
+
+  return result ;
+}
 
 
 static ZMapServerResponseType closeConnection(void *server_in)

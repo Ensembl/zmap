@@ -29,7 +29,7 @@
  *              user can limit certain operations to the marked zone
  *              which makes them much faster.
  *
- * Exported functions: See zmapWindow_P.h
+ * Exported functions: See zmapWindow.h
  *-------------------------------------------------------------------
  */
 
@@ -39,7 +39,7 @@
 
 #include <ZMap/zmapUtils.h>
 #include <zmapWindow_P.h>	/* ZMapWindow */
-#include <zmapWindowMark_P.h>
+#include <zmapWindowMark.h>
 #include <zmapWindowCanvasItem.h>
 #include <zmapWindowContainerUtils.h>
 #include <zmapWindowContainerBlock.h>
@@ -66,21 +66,17 @@ typedef struct GetBlockStructType
 
 typedef struct _ZMapWindowMarkStruct
 {
-  ZMapMagic       magic ;
+  ZMapMagic magic ;
 
-  ZMapWindow               window ;			    /* Mark needs access to the ZMapWindow
+  ZMapWindow window ;					    /* Mark needs access to the ZMapWindow
 							       without having to pass it in. */
 
-  ZMapWindowContainerBlock block_container ;	/* The group the mark is set on. ColConfig assumes this is a block */
+  ZMapWindowContainerBlock block_container ;		    /* The group the mark is set
+							       on. ColConfig assumes this is a block */
 
-  gboolean        mark_set ;				    /* internal flag for whether mark is set.  */
+  gboolean mark_set ;					    /* internal flag for whether mark is set.  */
 
-  FooCanvasItem           *mark_rectangle;      /* the item mark */
-  FooCanvasItem           *mark_src_item ;	/* This is the item that is the src of
-						   the mark. Can be NULL if mark set
-						   via rubber band. */
-
-  double          margin ;				    /* Sets a small margin so that the
+  double margin ;					    /* Sets a small margin so that the
 							       mark is drawn just outside a
 							       feature and not over the ends of it. */
 
@@ -109,13 +105,12 @@ typedef struct _ZMapWindowMarkStruct
 } ZMapWindowMarkStruct ;
 
 
-static void markItem(ZMapWindowMark mark, FooCanvasItem *item, gboolean set_mark) ;
-static void markRange(ZMapWindowMark mark) ;
 
+static void markRange(ZMapWindowMark mark) ;
 static ZMapWindowContainerBlock getBlock(ZMapWindow window, double world_y1, double world_y2) ;
 static void get_block_cb(ZMapWindowContainerGroup container, FooCanvasPoints *points,
 			 ZMapContainerLevelType level, gpointer user_data) ;
-
+static FooCanvasItem *set_mark_item(ZMapWindowMark mark, gboolean top) ;
 
 
 
@@ -212,8 +207,6 @@ ZMapWindowMark zmapWindowMarkCreate(ZMapWindow window)
 
   mark->window = window ;
 
-  mark->mark_src_item = NULL ;
-
   mark->seq_start = mark->seq_end = 0 ;
 
   mark->prev_start = mark->prev_end  = -1 ;
@@ -258,15 +251,8 @@ gboolean zmapWindowMarkIsSet(ZMapWindowMark mark)
   /* This is not a problem for MarkSetItem marks as the block_container is known before hand
    * and is therefore saved and available any time afterwards to save state. */
 //  result = (mark->mark_set && mark->block_container);
-  result = (mark->mark_set);
 
-  if(mark->mark_set)
-    {
-      if(mark->mark_src_item)
-	result = (mark->mark_set && mark->block_container);
-      else
-	result = (mark->mark_set);
-    }
+  result = (mark->mark_set);
 
   return result;
 }
@@ -292,13 +278,6 @@ void zmapWindowMarkReset(ZMapWindowMark mark)
 	if(mark->mark_bot)
 		gtk_object_destroy(GTK_OBJECT(mark->mark_bot));
 	mark->mark_bot = NULL;
-
-      if (mark->mark_src_item)
-	{
-	  /* undo highlighting */
-	  markItem(mark, mark->mark_src_item, FALSE) ;
-
-	}
 
       /* reset all the coords */
       mark->world_x1  = mark->world_x2 = 0.0;
@@ -423,6 +402,35 @@ void zmapWindowToggleMark(ZMapWindow window, gboolean whole_feature)
 }
 
 
+/* add overlay stuff to show where it is */
+/* this goes on to the marks block_container */
+void zmapWindowMarkShowMark(ZMapWindowMark mark)
+{
+  if(!mark->block_container)
+    return;
+
+  if(mark->seq_start != mark->prev_start)		/* only display if changed */
+    mark->mark_top = set_mark_item(mark, TRUE);
+
+  if(mark->seq_end != mark->prev_end)		/* only display if changed */
+    mark->mark_bot = set_mark_item(mark, FALSE);
+
+  mark->prev_start = mark->seq_start;
+  mark->prev_end = mark->seq_end;
+
+  /* dissapointingly it's quite difficult to request a redraw of an item until it's been updated,
+   * something that involves the containing groups
+   * we need to calc the future canvas coords and request a foo canvas redraw
+   * instead redraw the whole block
+   */
+  foo_canvas_item_request_redraw((FooCanvasItem *) mark->block_container);
+
+  return ;
+}
+
+
+
+
 /*!
  * \brief Set the colour for the mark
  *
@@ -478,12 +486,9 @@ gboolean zmapWindowMarkSetItem(ZMapWindowMark mark, FooCanvasItem *item)
 
       zmapWindowMarkReset(mark) ;
 
-      /* Put an overlay over the marked item. */
-      markItem(mark, item, TRUE) ;
-
       /* Get hold of the block this item sits in. */
       mark->block_container =
-	(ZMapWindowContainerBlock)zmapWindowContainerUtilsItemGetParentLevel(mark->mark_src_item,
+	(ZMapWindowContainerBlock)zmapWindowContainerUtilsItemGetParentLevel(item,
 									     ZMAPCONTAINER_LEVEL_BLOCK) ;
 
       zmapWindowContainerGetFeatureAny(ZMAP_CONTAINER_GROUP(mark->block_container), (ZMapFeatureAny *)&block) ;
@@ -512,19 +517,6 @@ gboolean zmapWindowMarkSetItem(ZMapWindowMark mark, FooCanvasItem *item)
 }
 
 
-/*!
- * \brief Get the item.
- *
- * \param mark  The mark
- *
- * \return FooCanvasItem that is the source of the mark.
- */
-FooCanvasItem *zmapWindowMarkGetItem(ZMapWindowMark mark)
-{
-  zMapAssert(mark && ZMAP_MAGIC_IS_VALID(mark_magic_G, mark->magic)) ;
-
-  return mark->mark_src_item ;
-}
 
 /*!
  * \brief Set the world range of the mark
@@ -799,11 +791,10 @@ void zmapWindowMarkPrint(ZMapWindow window, char *title)
 
   printf("%s -\n"
 	 "Block:\t%p\n"
-	 "Item:\t%p\n"
 	 "World:\tx1=%g, y1=%g, x2=%g, y2=%g\n"
 	 "Sequence:\tstart=%d, end=%d\n",
 	 (title ? title : "Current mark"),
-	 mark->block_container, mark->mark_src_item,
+	 mark->block_container,
 	 mark->world_x1, mark->world_y1, mark->world_x2, mark->world_y2,
 	 mark->seq_start, mark->seq_end) ;
 
@@ -845,54 +836,7 @@ void zmapWindowMarkDestroy(ZMapWindowMark mark)
  *               Internal functions
  */
 
-
-/* Mark/unmark an item with a highlight colour. */
-static void markItem(ZMapWindowMark mark, FooCanvasItem *item, gboolean set_mark)
-{
-  /* remove previous item/rectangle if set; we need to do whether clearing or setting the mark */
-  if (mark->mark_rectangle)     
-    {
-      //    zMapWindowCanvasItemUnmark((ZMapWindowCanvasItem)item);
-      gtk_object_destroy(GTK_OBJECT(mark->mark_rectangle));
-      mark->mark_rectangle = NULL;
-    }
-
-  if (mark->mark_src_item)
-    {
-      mark->mark_src_item = NULL ;
-    }
-
-  if (set_mark)
-    {
-#if SHOW_MARK_ITEM
-// NOTE this ode will no longer work
-// besides covering the item means you can't click on it
-
-      GdkColor  *mark_colour;
-      GdkBitmap *mark_stipple;
-      double x1, y1, x2, y2;
-      ZMapWindowContainerGroup parent;
-
-      mark_colour  = zmapWindowMarkGetColour(mark);
-      mark_stipple = mark->stipple;
-
-// previous code: convert to a ZMapWindoCanvasItem  to call a function that converts back to a FooCanvasItem
-      zMapWindowCanvasItemMark((ZMapWindowCanvasItem)item, mark_colour, mark_stipple);
-
-      foo_canvas_item_get_bounds(item,&x1, &y1, &x2, &y2);
-
-      parent = zmapWindowContainerUtilsItemGetParentLevel(item,ZMAPCONTAINER_LEVEL_FEATURESET);
-#endif
-
-      mark->mark_src_item = item;
-    }
-
-  return ;
-}
-
-
-
-FooCanvasItem *set_mark_item(ZMapWindowMark mark, gboolean top)
+static FooCanvasItem *set_mark_item(ZMapWindowMark mark, gboolean top)
 {
 	FooCanvasItem *foo = top ? mark->mark_top : mark->mark_bot;
 	int y1,y2;
@@ -951,31 +895,6 @@ FooCanvasItem *set_mark_item(ZMapWindowMark mark, gboolean top)
 
 	return foo;
 }
-
-/* add overlay stuff to show where it is */
-/* this goes on to the marks block_container */
-void zmapWindowMarkShowMark(ZMapWindowMark mark)
-{
-	if(!mark->block_container)
-		return;
-
-	if(mark->seq_start != mark->prev_start)		/* only display if changed */
-		mark->mark_top = set_mark_item(mark, TRUE);
-
-	if(mark->seq_end != mark->prev_end)		/* only display if changed */
-		mark->mark_bot = set_mark_item(mark, FALSE);
-
-	mark->prev_start = mark->seq_start;
-	mark->prev_end = mark->seq_end;
-
-	/* dissapointingly it's quite difficult to request a redraw of an item until it's been updated,
-	 * something that involves the containing groups
-	 * we need to calc the future canvas coords and request a foo canvas redraw
-	 * instead redraw the whole block
-	 */
-	foo_canvas_item_request_redraw((FooCanvasItem *) mark->block_container);
-}
-
 
 
 /* The range markers are implemented as overlays in the block container. This makes sense because
@@ -1047,7 +966,7 @@ static ZMapWindowContainerBlock getBlock(ZMapWindow window, double world_y1, dou
   GetBlockStruct get_block_data = {NULL} ;
 
  #if TEST_BLOCK
- get_block_data.window = window ;
+  get_block_data.window = window ;
   get_block_data.world_y1 = world_y1 ;
   get_block_data.world_y2 = world_y2 ;
 #endif

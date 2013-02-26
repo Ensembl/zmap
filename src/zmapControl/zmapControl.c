@@ -779,24 +779,23 @@ static void dataLoadCB(ZMapView view, void *app_data, void *view_data)
 	  char *response = NULL;
 	  GList *features;
 	  char *featurelist = NULL;
-	  char *f,*emsg;
+	  char *emsg;
 	  char *ok_mess = NULL;
+	  GString *feature_list_str ;
+
+	  /* Create a list of sources loaded so far. */
+	  feature_list_str = g_string_new(NULL) ;
 
 	  for (features = lfd->feature_sets ; features ; features = features->next)
 	    {
-	      char *prev ;
+	      char *feature_set_name ;
 
-	      f = (char *) g_quark_to_string(GPOINTER_TO_UINT(features->data)) ;
+	      feature_set_name = (char *)g_quark_to_string(GPOINTER_TO_UINT(features->data)) ;
 
-	      prev = featurelist ;
-
-	      if (!prev)
-		featurelist = g_strdup(f) ;
-	      else
-		featurelist = g_strjoin(";", prev, f, NULL) ;
-
-	      g_free(prev) ;
+	      g_string_append_printf(feature_list_str, "%s;", feature_set_name) ;
 	    }
+
+	  featurelist = g_string_free(feature_list_str, FALSE) ;
 
 
 	  if (lfd->status)		/* see comment in zmapSlave.c/ RETURNCODE_QUIT, we are tied up in knots */

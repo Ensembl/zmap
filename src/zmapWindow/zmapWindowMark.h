@@ -1,4 +1,4 @@
-/*  File: zmapWindowMark_P.h
+/*  File: zmapWindowMark.h
  *  Author: Roy Storey (roy@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
@@ -29,8 +29,8 @@
  *-------------------------------------------------------------------
  */
 
-#ifndef ZMAP_WINDOW_MARK_P_H
-#define ZMAP_WINDOW_MARK_P_H
+#ifndef ZMAP_WINDOW_MARK_H
+#define ZMAP_WINDOW_MARK_H
 
 #include <ZMap/zmapWindow.h>
 #include <zmapWindowContainerGroup.h>
@@ -50,17 +50,19 @@ void zmapWindowMarkReset(ZMapWindowMark mark) ;
 /* Get/Set Colour */
 void      zmapWindowMarkSetColour(ZMapWindowMark mark, char *colour) ;
 GdkColor *zmapWindowMarkGetColour(ZMapWindowMark mark) ;
+
 /* Get/Set Stipple */
 void       zmapWindowMarkSetStipple(ZMapWindowMark mark, GdkBitmap *stipple);
 GdkBitmap *zmapWindowMarkGetStipple(ZMapWindowMark mark);
 
-/* Get/Set the item to use as src for mark coords */
+/* Set mark from item */
 gboolean zmapWindowMarkSetItem(ZMapWindowMark mark, FooCanvasItem *item) ;
-FooCanvasItem *zmapWindowMarkGetItem(ZMapWindowMark mark) ;
 
-/* Get/Set the mark coords (_world_) */
+/* Set mark from coords (_world_) */
 gboolean zmapWindowMarkSetWorldRange(ZMapWindowMark mark,
 				     double world_x1, double world_y1, double world_x2, double world_y2) ;
+
+/* Get mark position (_world_ coords). */
 gboolean zmapWindowMarkGetWorldRange(ZMapWindowMark mark,
 				     double *world_x1, double *world_y1,
 				     double *world_x2, double *world_y2) ;
@@ -81,4 +83,4 @@ gboolean zmapWindowMarkSetBlockContainer(ZMapWindowMark mark,
 void zmapWindowMarkDestroy(ZMapWindowMark mark) ;
 
 
-#endif	/* ZMAP_WINDOW_MARK_P_H */
+#endif	/* ZMAP_WINDOW_MARK_H */

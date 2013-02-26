@@ -172,49 +172,6 @@ typedef struct _ZMapViewSplittingStruct
 
 
 
-/* A couple of structs to hold data for a view session. */
-typedef struct
-{
-  ZMapURLScheme scheme ;
-  char *url ;
-  char *protocol ;
-  char *format ;
-
-  union
-  {
-    struct {
-      char *host ;
-      int port ;
-      char *database ;
-    } acedb ;
-    struct {
-      char *path ;
-    } file ;
-    struct {
-      char *path ;
-      char *query ;
-    } pipe ;
-  } scheme_data ;
-
-} ZMapViewSessionServerStruct, *ZMapViewSessionServer ;
-
-
-typedef struct
-{
-  char *sequence ;					    /* View sequence. */
-
-
-  GList *servers ;					    /* A list of ZMapViewSessionServer,
-							       can be NULL. */
-
-
-} ZMapViewSessionStruct, *ZMapViewSession ;
-
-
-typedef struct _ZMapViewConnectionStruct *ZMapViewConnection;
-
-
-
 void zMapViewInit(ZMapViewCallbacks callbacks) ;
 ZMapViewWindow zMapViewCreate(GtkWidget *xremote_widget, GtkWidget *view_container,
 			      ZMapFeatureSequenceMap sequence_map, void *app_data) ;
@@ -228,8 +185,9 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str) ;
 gboolean zMapViewReset(ZMapView zmap_view) ;
 gboolean zMapViewReverseComplement(ZMapView zmap_view) ;
 gboolean zMapViewGetRevCompStatus(ZMapView zmap_view) ;
-void zMapViewStats(ZMapViewWindow view_window,GString *text) ;
-ZMapViewSession zMapViewSessionGetData(ZMapViewWindow view_window) ;
+
+gboolean zMapViewSessionGetAsText(ZMapViewWindow view_window, GString *session_data_inout) ;
+
 void zMapViewZoom(ZMapView zmap_view, ZMapViewWindow view_window, double zoom) ;
 char *zMapViewGetSequence(ZMapView zmap_view) ;
 char *zMapViewGetSequenceName(ZMapFeatureSequenceMap sequence_map);
@@ -254,10 +212,11 @@ ZMapFeatureSequenceMap zMapViewGetSequenceMap(ZMapView zmap_view);
 ZMapFeatureSource zMapViewGetFeatureSetSource(ZMapView view, GQuark f_id);
 void zMapViewSetFeatureSetSource(ZMapView view, GQuark f_id, ZMapFeatureSource src);
 GList *zmapViewGetIniSources(char *config_file, char *config_str,char **stylesfile);
-ZMapViewConnection zMapViewRequestServer(ZMapView view, ZMapViewConnection view_conn, ZMapFeatureBlock block_orig, GList *req_featuresets,
-				   gpointer server, /* ZMapConfigSource */
-	   			   int req_start, int req_end,
-				   gboolean dna_requested, gboolean terminate, gboolean show_warning) ;
+
+gboolean zMapViewRequestServer(ZMapView view, ZMapFeatureBlock block_orig, GList *req_featuresets,
+			       gpointer server, /* ZMapConfigSource */
+			       int req_start, int req_end,
+			       gboolean dna_requested, gboolean terminate, gboolean show_warning);
 
 void zMapViewShowLoadStatus(ZMapView view);
 
@@ -283,5 +242,10 @@ ZMapFeatureContext zMapViewGetContextAsEmptyCopy(ZMapView do_not_use);
 
 ZMapGuiNotebookChapter zMapViewBlixemGetConfigChapter(ZMapView view, ZMapGuiNotebook note_book_parent) ;
 
+ZMapGuiNotebookChapter zMapViewGetPrefsChapter(ZMapView view, ZMapGuiNotebook note_book_parent);
+
+gboolean zMapViewGetHighlightFilteredColumns(ZMapView);
+
+void zMapViewUpdateColumnBackground(ZMapView view);
 
 #endif /* !ZMAPVIEW_H */

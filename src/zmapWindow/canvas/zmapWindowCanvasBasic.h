@@ -1,4 +1,3 @@
-
 /*  File: zmapWindowCanvasBasic.c
  *  Author: malcolm hinsley (mh17@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -30,9 +29,13 @@
  * implements callback functions for FeaturesetItem basic features
  *-------------------------------------------------------------------
  */
+#ifndef ZMAP_CANVAS_BASIC_H
+#define ZMAP_CANVAS_BASIC_H
 
 #include <ZMap/zmap.h>
 
 
 void zMapWindowCanvasBasicPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable,GdkEventExpose *expose);
 void zMapWindowCanvasBasicInit(void);
+
+#endif /* !ZMAP_CANVAS_BASIC_H */

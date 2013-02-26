@@ -947,7 +947,7 @@ static char *checkConfigDir(void)
   zMapCmdLineArgsValue(ZMAPARG_CONFIG_FILE, &file) ;
 
 
-  if (!zMapConfigDirCreate(dir.s, file.s, FALSE))
+  if (!zMapConfigDirCreate(dir.s, file.s))
     {
 	fprintf(stderr, "Could not access either/both of configuration directory \"%s\" "
 	      "or file \"%s\" within that directory.\n",

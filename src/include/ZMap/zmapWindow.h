@@ -1,4 +1,3 @@
-/*  Last edited: Feb 14 20:31 2012 (edgrif) */
 /*  File: zmapWindow.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -132,7 +131,7 @@ typedef struct
 /* NOTE this works only with a ZMapWindowCanvasFeatureset, not with normal Foo items, on account of speed */
 
 
-typedef int (*ZMapWindowFilterCallbackFunc)(gpointer filter, double value) ;
+typedef int (*ZMapWindowFilterCallbackFunc)(gpointer filter, double value, gboolean highlight_filtered_columns) ;
 
 typedef struct
 {
@@ -578,5 +577,7 @@ void zMapWindowFocusCacheSetSelectedColours(ZMapWindow window);
 
 gboolean zmapWindowFocusHasType(ZMapWindowFocus focus, ZMapWindowFocusType type);
 gboolean zMapWindowFocusGetColour(ZMapWindow window,int mask, GdkColor *fill, GdkColor *border);
+
+void zMapWindowUpdateColumnBackground(ZMapWindow window, ZMapFeatureSet feature_set, gboolean highlight_column_background);
 
 #endif /* !ZMAP_WINDOW_H */

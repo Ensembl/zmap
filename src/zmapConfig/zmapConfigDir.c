@@ -23,7 +23,7 @@
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- * Description:
+ * Description: ZMap config file handling.
  *
  * Exported functions: See ZMap/zmapConfigDir.h
  *-------------------------------------------------------------------
@@ -40,88 +40,127 @@
 
 
 
-
+/* Holds the single instance of our configuration file stuff. */
 static ZMapConfigDir dir_context_G = NULL ;
 
 
+/* Actually this all needs revisiting....we may have multiple config files now.... */
+
+/* At one time we thought of having a default configuration string internally but
+ * it looks like it's fallen into disrepair...... */
+
 
 /* The context is only created the first time this function is called, after that
- * it just returns a reference to the existing context.
+ * it just returns a reference to the existing context. Checks to see if the
+ * configuration can be accessed.
  *
  * Note that as this routine should be called once per application it is not
  * thread safe, it could be made so but is overkill as the GUI/master thread is
  * not thread safe anyway.
+ * 
+ * Rules for producing the filepath for the configuration file are:
+ * 
+ * config_dir && config_file 
+ *    config_dir and config_file are concatenated
+ * 
+ * !config_dir && config_file
+ *    "~/.ZMap" and config_file are concatenated unless config_file
+ *    is a filepath in which case just config_file is used.
+ * 
+ * config_dir && !config_file 
+ *    config_dir and "Zmap" are concatenated
+ * 
+ * !config_dir && !config_file
+ *    "~/.ZMap" and "Zmap" are concatenated
+ * 
+ * If conf_dir or any _directory_ part of config_file are relative then
+ * they are expanded.
+ * 
+ * returns FALSE if the configuration file does not exist/read/writeable.
  *
- * If config_dir is NULL, the default ~/.ZMap directory is used.
- * If config_file is NULL, the default ZMap file is used.
- *
- * returns FALSE if the configuration directory does not exist/read/writeable.
- *
- * if file_opt then config files must be explicit and if not specified we run config free
- * which is done by creating a config string in memory as if it came from a file
- * there's code that assumes we have a file and directory so we get to keep this regardless
  */
-gboolean zMapConfigDirCreate(char *config_dir, char *config_file, gboolean file_opt)
+gboolean zMapConfigDirCreate(char *config_dir_in, char *config_file_in)
 {
   gboolean result = FALSE ;
-  ZMapConfigDir dir_context = NULL ;
-  gboolean home_relative = FALSE, make_dir = FALSE ;
-  char *zmap_home;
+  ZMapConfigDir dir_context ;
+  char *config_dir = NULL, *config_file = NULL ;
+  char *zmap_home ;
 
-  g_return_val_if_fail(dir_context_G == NULL, FALSE);
+  g_return_val_if_fail(dir_context_G == NULL, FALSE) ;
 
   dir_context_G = dir_context = g_new0(ZMapConfigDirStruct, 1) ;
 
-  if (!config_file && (config_dir || !file_opt))
-    config_file = ZMAP_USER_CONFIG_FILE ;
-
-  if (!config_dir)
+  if (!config_dir_in || !(*config_dir_in))
     {
-	   if(config_file || !file_opt)
-	   {
-		config_dir = ZMAP_USER_CONFIG_DIR ;
-		home_relative = TRUE ;
-	   }
-    }
-  else if(*config_dir == '~' && *(config_dir + 1) == '/')
-    {
-      config_dir += 2 ;
-      home_relative = TRUE ;
-    }
-
-  if(config_dir && config_file)
-  {
-	if ((dir_context->config_dir = zMapGetDir(config_dir, home_relative, make_dir))
-		&& (dir_context->config_file = zMapGetFile(dir_context->config_dir, config_file, FALSE)))
-	result = TRUE ;
-  }
-  else if(file_opt)
-  {
-	  result = TRUE;		/* we make up a config file internally */
-  }
-
-  if((zmap_home = getenv("ZMAP_HOME")))
-    {
-      zmap_home = g_strdup_printf("%s/etc", zmap_home);
-      if((dir_context->zmap_conf_dir  = zMapGetDir(zmap_home, FALSE, FALSE)))
-	dir_context->zmap_conf_file = zMapGetFile(dir_context->zmap_conf_dir, ZMAP_USER_CONFIG_FILE, FALSE);
-      g_free(zmap_home);
+      config_dir = zMapExpandFilePath("~/" ZMAP_USER_CONFIG_DIR) ;
     }
   else
-    dir_context->zmap_conf_dir = dir_context->zmap_conf_file = NULL;
+    {
+      if (g_path_is_absolute(config_dir_in))
+	config_dir = g_strdup(config_dir_in) ;
+      else
+	config_dir = zMapExpandFilePath(config_dir_in) ;
+    }
 
-  if(!((dir_context->sys_conf_dir  = zMapGetDir("/etc", FALSE, FALSE)) &&
-       (dir_context->sys_conf_file = zMapGetFile(dir_context->sys_conf_dir, ZMAP_USER_CONFIG_FILE, FALSE))))
+  if (!config_file_in || !(*config_file_in))
+    {
+      config_file = g_strdup(ZMAP_USER_CONFIG_FILE) ;
+    }
+  else
+    {
+      char *dirname ;
+
+      dirname = g_path_get_dirname(config_file_in) ;
+
+      if (g_ascii_strcasecmp(dirname, ".") == 0)
+	{
+	  config_file = g_strdup(config_file_in) ;
+	}
+      else
+	{
+	  g_free(config_dir) ;
+
+	  config_dir = zMapExpandFilePath(dirname) ;
+
+	  config_file = g_path_get_basename(config_file_in) ;
+	}
+
+      g_free(dirname) ;
+    }
+
+  if (config_dir && config_file)
+    {
+      if ((dir_context->config_dir = zMapGetDir(config_dir, FALSE, FALSE))
+	  && (dir_context->config_file = zMapGetFile(dir_context->config_dir, config_file, FALSE)))
+	result = TRUE ;
+    }
+
+  if ((zmap_home = getenv("ZMAP_HOME")))
+    {
+      zmap_home = g_strdup_printf("%s/etc", zmap_home) ;
+
+      if((dir_context->zmap_conf_dir  = zMapGetDir(zmap_home, FALSE, FALSE)))
+	dir_context->zmap_conf_file = zMapGetFile(dir_context->zmap_conf_dir, ZMAP_USER_CONFIG_FILE, FALSE) ;
+
+      g_free(zmap_home) ;
+    }
+  else
+    {
+      dir_context->zmap_conf_dir = dir_context->zmap_conf_file = NULL ;
+    }
+
+  if (!((dir_context->sys_conf_dir  = zMapGetDir("/etc", FALSE, FALSE))
+	&& (dir_context->sys_conf_file = zMapGetFile(dir_context->sys_conf_dir, ZMAP_USER_CONFIG_FILE, FALSE))))
     {
       dir_context->sys_conf_dir = dir_context->sys_conf_file = NULL;
     }
 
-  if(!result)
-  {
+  if (!result)
+    {
       //  for error reporting  NOTE these may be NULL if we run config free
       dir_context->config_dir = config_dir;
       dir_context->config_file = config_file;
-  }
+    }
 
   return result ;
 }

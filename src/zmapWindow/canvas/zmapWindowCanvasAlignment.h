@@ -1,4 +1,3 @@
-
 /*  File: zmapWindowCanvasAlignment.c
  *  Author: malcolm hinsley (mh17@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -30,8 +29,12 @@
  * implements callback functions for FeaturesetItem alignment features
  *-------------------------------------------------------------------
  */
+#ifndef ZMAP_CANVAS_ALIGNMENT_H
+#define ZMAP_CANVAS_ALIGNMENT_H
 
 #include <ZMap/zmap.h>
 
 
 void zMapWindowCanvasAlignmentInit(void);
+
+#endif /* !ZMAP_CANVAS_ALIGNMENT_H */

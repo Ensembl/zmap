@@ -28,6 +28,8 @@
  * Exported functions: See XXXXXXXXXXXXX.h
  *-------------------------------------------------------------------
  */
+#ifndef CURL_OBJ_I_H
+#define CURL_OBJ_I_H
 
 #include <libcurlobject/libcurlobject.h>
 
@@ -82,3 +84,7 @@ typedef struct _curlObjectClassStruct
   guint signals[LAST_SIGNAL];
 
 } curlObjectClassStruct;
+
+
+
+#endif	/* CURL_OBJ_I_H */

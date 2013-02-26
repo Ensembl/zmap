@@ -1,4 +1,3 @@
-
 /*  File: zmapWindowCanvasSequence_I.h
  *  Author: malcolm hinsley (mh17@sanger.ac.uk)
  *  Copyright (c) 2006-2010: Genome Research Ltd.
@@ -30,6 +29,8 @@
  * implements callback functions for FeaturesetItem sequence features
  *-------------------------------------------------------------------
  */
+#ifndef ZMAP_CANVAS_SEQUENCE_I_H
+#define ZMAP_CANVAS_SEQUENCE_I_H
 
 #include <ZMap/zmap.h>
 
@@ -87,3 +88,5 @@ typedef struct _zmapWindowCanvasSequenceStruct
 } zmapWindowCanvasSequenceStruct, *ZMapWindowCanvasSequence;
 
 
+
+#endif /* !ZMAP_CANVAS_SEQUENCE_I_H */

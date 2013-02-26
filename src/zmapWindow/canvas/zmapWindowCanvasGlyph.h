@@ -29,6 +29,8 @@
  * implements callback functions for FeaturesetItem glyph features
  *-------------------------------------------------------------------
  */
+#ifndef ZMAP_CANVAS_GLYPH_H
+#define ZMAP_CANVAS_GLYPH_H
 
 #include <ZMap/zmap.h>
 
@@ -46,3 +48,5 @@ void zMapWindowCanvasGlyphPaintSubFeature(ZMapWindowFeaturesetItem featureset, Z
 					  ZMapWindowCanvasGlyph glyph, GdkDrawable *drawable);
 
 void zMapWindowCanvasGlyphInit(void);
+
+#endif /* !ZMAP_CANVAS_GLYPH_H */
