@@ -3361,7 +3361,7 @@ static ZMapConfigIniContext get_configuration(RemoteData remote_data)
       dir  = g_path_get_dirname(remote_data->cmd_line_args->config_file);
       base = g_path_get_basename(remote_data->cmd_line_args->config_file);
 
-      zMapConfigDirCreate(dir, base, FALSE) ;
+      zMapConfigDirCreate(dir, base) ;
 
       if((context = zMapConfigIniContextCreate(NULL)))
 	{
