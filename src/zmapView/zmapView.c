@@ -1676,11 +1676,6 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 		}
 	    }
 
-	  if (server)
-	    {
-	      GList *req_featuresets = NULL;
-	      int existing = FALSE;
-	      ZMapViewConnection view_conn = NULL ;
 
 	  if (server)
 	    {
@@ -1806,10 +1801,6 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 	      if(view_conn)
 		requested = TRUE;
 
-	      if ((view_conn = zMapViewRequestServer(view, view_conn, block_orig, req_featuresets,
-						     (gpointer) server, req_start, req_end, dna_requested,
-						     (!existing && terminate), !view->thread_fail_silent)))
-		requested = TRUE;
 
 	      // g_list_free(req_featuresets); no! this list gets used by threads
 	      req_featuresets = NULL ;
