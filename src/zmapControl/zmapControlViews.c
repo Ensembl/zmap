@@ -95,7 +95,7 @@ ZMapView zmapControlNewWindow(ZMap zmap, ZMapFeatureSequenceMap sequence_map)
   ZMapViewWindow view_window ;
   char *view_title ;
   GtkOrientation orientation = GTK_ORIENTATION_VERTICAL ;   /* arbitrary for first window. */
-  GtkWidget *xremote_widget, *parent ;
+  GtkWidget *xremote_widget ;
 
   /* If there is a focus window then that will be the one we split and we need to find out
    * the container parent of that canvas. */
@@ -106,12 +106,12 @@ ZMapView zmapControlNewWindow(ZMap zmap, ZMapFeatureSequenceMap sequence_map)
 
   view_title = zMapViewGetSequenceName(sequence_map) ;
 
-  /* Record what your current parent is. */
-  if (curr_container)
-    parent = gtk_widget_get_parent(curr_container) ;
-  else
-    parent = zmap->pane_vbox ;
 
+  /* In the hash we keep the frames because there may be multiple frames per view but in
+   * this case we are adding a new view so we need to reparent the event box that was
+   * added as a parent of the frame. */
+  if (curr_container)
+    curr_container = gtk_widget_get_parent(curr_container) ;
 
   /* Add a new container that will hold the new view window. */
   view_container = zmapControlAddWindow(zmap, curr_container, orientation, ZMAPCONTROL_SPLIT_LAST, view_title) ;
