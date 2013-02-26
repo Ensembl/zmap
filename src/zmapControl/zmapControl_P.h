@@ -194,6 +194,7 @@ void zmapControlRemoveWindowView(ZMap zmap, ZMapView view) ;
 ZMapView zmapControlInsertView(ZMap zmap, ZMapFeatureSequenceMap sequence_map, char **err_msg) ;
 ZMapView zmapControlAddView(ZMap zmap, ZMapFeatureSequenceMap sequence_map) ;
 int zmapControlNumViews(ZMap zmap) ;
+ZMapViewWindow zmapControlFindViewWindow(ZMap zmap, ZMapView view) ;
 gboolean zmapControlRemoveView(ZMap zmap, ZMapView view) ;
 
 gboolean zmapConnectViewConfig(ZMap zmap, ZMapView view, char *config);

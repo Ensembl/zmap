@@ -122,7 +122,6 @@ ZMapView zmapControlNewWindow(ZMap zmap, ZMapFeatureSequenceMap sequence_map)
   xremote_widget = addXremoteWidget(view_container) ;
 
 
-
   if (!(view_window = zMapViewCreate(xremote_widget, view_container, sequence_map, (void *)zmap)))
     {
       /* remove window we just added....not sure we need to do anything with remaining view... */
@@ -134,11 +133,6 @@ ZMapView zmapControlNewWindow(ZMap zmap, ZMapFeatureSequenceMap sequence_map)
     {
       ZMapInfoPanelLabels labels;
       GtkWidget *infopanel;
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      /* For each new view stick an event box in between parent and the child (i.e. the view)
-       * this will be used to send/receive xremote commands. */
-      xremote_widget = addXremoteWidget(view_container) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
       zmap_view = zMapViewGetView(view_window) ;
 
@@ -283,6 +277,20 @@ int zmapControlNumViews(ZMap zmap)
 }
 
 
+ZMapViewWindow zmapControlFindViewWindow(ZMap zmap, ZMapView view)
+{
+  ZMapViewWindow view_window = NULL ;
+  FindViewWindowStruct find_viewwindow = {NULL} ;
+
+  /* Find the view_window for the view... */
+  find_viewwindow.view = view ;
+  g_hash_table_foreach(zmap->viewwindow_2_parent, findViewWindowCB, &find_viewwindow) ;
+  view_window = find_viewwindow.view_window ;
+
+  return view_window ;
+}
+
+
 
 /* You need to remember that there may be more than one view in a zmap. This means that
  * while a particular view may have lost all its windows and need closing, there might
@@ -371,7 +379,11 @@ void zmapControlRemoveWindowView(ZMap zmap, ZMapView view)
   int num_views, num_windows ;
   gboolean last_window = FALSE ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   FindViewWindowStruct find_viewwindow = {NULL} ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   num_views = zmapControlNumViews(zmap) ;
   num_windows = zMapViewNumWindows(zmap->focus_viewwindow) ;
@@ -391,11 +403,14 @@ void zmapControlRemoveWindowView(ZMap zmap, ZMapView view)
   view = zMapViewGetView(view_window) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* Find the view_window for the view... */
   find_viewwindow.view = view ;
   g_hash_table_foreach(zmap->viewwindow_2_parent, findViewWindowCB, &find_viewwindow) ;
   view_window = find_viewwindow.view_window ;
-
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  view_window = zmapControlFindViewWindow(zmap, view) ;
 
   close_container = g_hash_table_lookup(zmap->viewwindow_2_parent, view_window) ;
 
