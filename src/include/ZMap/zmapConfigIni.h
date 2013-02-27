@@ -162,9 +162,6 @@ GHashTable *zMapConfigIniGetFeatureset2Featureset(ZMapConfigIniContext context,
 GHashTable *zMapConfigIniGetColumns(ZMapConfigIniContext context);
 
 void zMapConfigSourcesFreeList(GList *config_sources_list);
-void zMapConfigStylesFreeList(GList *config_styles_list);
-
-
 
 
 
