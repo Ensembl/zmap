@@ -768,6 +768,8 @@ ZMapGUIMenuItem zmapWindowMakeMenuScratchOps(int *start_index_inout,
   /* add in column options */
   addMenuItem(menu, &i, ZMAPGUI_MENU_NORMAL, "Clear Edit Column", ITEM_MENU_CLEAR_SCRATCH, itemMenuCB, NULL);
 
+  menu[i].type = ZMAPGUI_MENU_NONE;
+
   zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
 
   return menu ;
