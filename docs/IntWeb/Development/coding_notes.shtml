@@ -10,18 +10,26 @@ pre{ width: 90%; background-color: lightblue; border-style: solid; border-width:
 .example{ border-color: #000000 }
 </style>
 
+<h1>Annotools Coding Style</h1>
 
+<p>No one coding style suits all, no one coding style is perfect. The coding style
+chosen for Annotools projects is based on experience of working with a number of other styles
+over the years and has several objectives:</p>
 
+<ul>
+  <li>To guard against coding errors, e.g. dangling else's, operator precedence errors.</li>
+  <li>To ensure that all developers can quickly and easily navigate through all source files.</li>
+  <li>To ensure that code is as readable as possible.</li>
+</ul>
 
+<p>All developers are expected to use this and only this style.</p>
 
-<p>No one coding style suits all, no one coding style is perfect. However,
-the style for the zmap project is described here and you must stick to this style
-so that we can all read each others code simply, easily and quickly.</p>
 
 
 <h2>Contents</h2>
 
 
+<p><a href="#file_naming">Directory/File Naming</a></p>
 <p><a href="#header_file_layout">Header File Layout</a></p>
 <p><a href="#code_file_layout">Code File Layout</a></p>
 <p><a href="#indenting">Indentation</a></p>
@@ -31,9 +39,72 @@ so that we can all read each others code simply, easily and quickly.</p>
 
 
 
+<a name="file_naming"></a>
+<h2>Directory/File Naming</h2>
+
+<p>Naming conventions for directories and files are:</p>
+
+
+<pre><code>     directory:  zmap&lt;Package&gt;
+
+ public header:  zmap&lt;Package&gt;&lt;Purpose&gt;.h
+
+private header:  zmap&lt;Package&gt;&lt;Purpose&gt;_P.h
+
+          code:  zmap&lt;Package&gt;&lt;Purpose&gt;.c
+
+e.g.
+
+     directory:  src/zmapView
+
+ public header:  src/include/ZMap/zmapView.h
+
+private header:  src/zmapView/zmapView_P.h
+
+          code:  src/zmapView/zmapViewCallBlixem.c
+</code></pre>
+
+<p>Private headers should be in their <b>package</b> directory, public headers
+should be in <b>src/include/ZMap</b>.</p>
+
+
 
 <a name="header_file_layout"></a>
-<h2>Header file layout</h2>
+<h2>Header file files</h2>
+
+
+<p>The standard for naming header files is:</p>
+
+<pre><code>  public header: zmapXXXX.h
+
+ private header: zmapXXXX_P.h
+</code></pre>
+
+
+<p><b>ALL</b> headers must be protected from multiple inclusion by an
+<b>#ifndef</b> macro, the standard is for the symbol for the macro to be
+derived from the filename of the header file:</p>
+
+<pre><code>  public header: zmapXXXX.h
+
+macro symbol: ZMAP_XXXX_H
+
+
+private header: zmapXXXX_P.h
+
+  macro symbol: ZMAP_XXXX_H
+
+
+So in the header file:
+
+#ifndef UNIQUE_DEF_SYMBOL
+#define UNIQUE_DEF_SYMBOL
+
+&lt; all header declares &gt;
+
+#endif /* !UNIQUE_DEF_SYMBOL */
+</code></pre>
+
 
 <p>The standard layout for header files is:</p>
 
