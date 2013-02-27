@@ -62,7 +62,6 @@ ZMapConfigIniContext zMapConfigIniContextCreate(char *config_file) ;
 gboolean zMapConfigIniContextIncludeBuffer(ZMapConfigIniContext context, char *buffer);
 gboolean zMapConfigIniContextIncludeFile(ZMapConfigIniContext context, char *file) ;
 gchar **zMapConfigIniContextGetAllStanzaNames(ZMapConfigIniContext context);
-//GList *zMapConfigIniContextGetStyleList(ZMapConfigIniContext context) ;
 
 gboolean zMapConfigIniContextAddGroup(ZMapConfigIniContext context,
 				      char *stanza_name, char *stanza_type,
@@ -129,11 +128,6 @@ GList *zMapConfigIniContextGetReferencedStanzas(ZMapConfigIniContext context,
 GList *zMapConfigIniContextGetListedStanzas(ZMapConfigIniContext context,
                                     ZMapConfigIniUserDataCreateFunc object_create_func,
                                     char *styles_list,char * child_type);
-GList *zMapConfigIniContextGetNamedStanzas(ZMapConfigIniContext context,
-                                    ZMapConfigIniUserDataCreateFunc object_create_func,
-                                    char *stanza_type);
-
-
 
 
 // zmapConfigLoader.c
@@ -145,13 +139,11 @@ gboolean zMapConfigIniHasStanza(ZMapConfigIni config,char *stanza_name,GKeyFile 
 
 GList *zMapConfigIniContextGetSources(ZMapConfigIniContext context) ;
 GList *zMapConfigIniContextGetNamed(ZMapConfigIniContext context, char *stanza_name) ;
-GList *zMapConfigIniContextGetStyleList(ZMapConfigIniContext context, char *styles_list_in);
 
 GHashTable * zmapConfigIniGetDefaultStyles(void);
 gboolean zMapConfigIniGetStylesFromFile(char *config_file,
 					char *styles_list, char *styles_file, GHashTable **styles_out, char *buffer);
 GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context,GHashTable *hash,GHashTable *columns);
-GHashTable *zMapConfigIniGetGlyph(ZMapConfigIniContext context);
 
 gboolean zMapConfigLegacyStyles(char *config_file) ;
 
