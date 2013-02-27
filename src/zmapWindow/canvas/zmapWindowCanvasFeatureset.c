@@ -61,10 +61,9 @@
 
 #include <ZMap/zmap.h>
 
-
-
 #include <math.h>
 #include <string.h>
+
 #include <ZMap/zmapUtilsLog.h>
 #include <ZMap/zmapGLibUtils.h>
 #include <ZMap/zmapUtilsLog.h>
@@ -73,7 +72,10 @@
 #include <zmapWindowCanvasItem.h>
 #include <zmapWindowCanvasFeatureset_I.h>
 #include <zmapWindowCanvasBasic.h>
-#include <zmapWindowCanvasGlyph.h>
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+/* for debugging..... */
+#include <zmapWindowCanvasGlyph_I.h>
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 #include <zmapWindowCanvasAlignment.h>
 #include <zmapWindowCanvasGraphItem.h>
 #include <zmapWindowCanvasTranscript.h>
@@ -82,6 +84,11 @@
 #include <zmapWindowCanvasLocus.h>
 
 #include <zmapWindowCanvasGraphics.h>
+
+
+
+
+
 
 //#include <zmapWindow_P.h>	// for debugging only
 //#include <zmapWindowContainerFeatureSet_I.h>
@@ -673,12 +680,13 @@ ZMapFeatureSubPartSpan zMapWindowCanvasFeaturesetGetSubPartSpan(FooCanvasItem *f
 
 gboolean zMapWindowCanvasFeaturesetHasPointFeature(FooCanvasItem *item)
 {
-	ZMapWindowFeaturesetItem featureset	= (ZMapWindowFeaturesetItem) item;
+  gboolean result = FALSE ;
+  ZMapWindowFeaturesetItem featureset = (ZMapWindowFeaturesetItem) item;
 
-	if(featureset->point_feature)
-		return TRUE;
+  if (featureset->point_feature)
+    result = TRUE ;
 
-	return FALSE;
+  return result ;
 }
 
 
@@ -1754,18 +1762,18 @@ static void zmap_window_featureset_item_item_update (FooCanvasItem *item, double
 /* when we call this we already know, but we have to set actual_item */
 double featureset_background_point(FooCanvasItem *item,int cx, int cy, FooCanvasItem **actual_item)
 {
-	double best = 1.0e36;
+  double best = 1.0e36;
 
-	if(item->y1 <= cy && item->y2 >= cy)
+  if(item->y1 <= cy && item->y2 >= cy)
+    {
+      if(item->x1 <= cx && item->x2 >= cx)
 	{
-		if(item->x1 <= cx && item->x2 >= cx)
-		{
-			best = 0.0;
-			*actual_item = item;
-		}
+	  best = 0.0;
+	  *actual_item = item;
 	}
+    }
 
-	return(best);
+  return(best);
 }
 
 
@@ -1793,8 +1801,9 @@ double  zmap_window_featureset_item_foo_point(FooCanvasItem *item,
   double x_off;
   static double save_best = 1.0e36, save_x = 0.0, save_y = 0.0 ;
   //int debug = fi->type >= FEATURE_GRAPHICS ;
-
   int n = 0;
+
+
   /*
    * need to scan internal list and apply close enough rules
    */
@@ -1807,17 +1816,19 @@ double  zmap_window_featureset_item_foo_point(FooCanvasItem *item,
   *actual_item = NULL;
 
 #if 0
-{
-ZMapWindowContainerFeatureSet x = (ZMapWindowContainerFeatureSet) item->parent;
+  {
+    ZMapWindowContainerFeatureSet x = (ZMapWindowContainerFeatureSet) item->parent;
 
-printf("CFS point %s(%p)/%s %x %ld\n",
-	 g_quark_to_string(zmapWindowContainerFeatureSetGetColumnId(x)),
-	 x, g_quark_to_string(fi->id),fi->layer, fi->n_features);
-}
+    printf("CFS point %s(%p)/%s %x %ld\n",
+	   g_quark_to_string(zmapWindowContainerFeatureSetGetColumnId(x)),
+	   x, g_quark_to_string(fi->id),fi->layer, fi->n_features);
+  }
 #endif
 
-  if((fi->layer & ZMAP_CANVAS_LAYER_DECORATION))	/* we don-t want to click on these ! */
-	  return(best);
+/* YES BUT WHAT ARE THEY !!!!!!!!!" */
+  if ((fi->layer & ZMAP_CANVAS_LAYER_DECORATION))	/* we don-t want to click on these ! */
+    return(best);
+
 
   /* optimise repeat calls: the foo canvas does 6 calls for a click event (3 down 3 up)
    * and if we are zoomed into a bumped peptide alignment column that means looking at a lot of features
@@ -1827,7 +1838,7 @@ printf("CFS point %s(%p)/%s %x %ld\n",
   //if(debug)
   //	zMapLogWarning("point: %.1f,%.1f %.1f %.1f\n", item_x, item_y, fi->start, fi->dy);
 
-  if(fi->point_canvas_feature && item_x == save_x && item_y == save_y)
+  if (fi->point_canvas_feature && item_x == save_x && item_y == save_y)
     {
       fi->point_feature = fi->point_canvas_feature->feature;
       *actual_item = item;
@@ -1838,7 +1849,7 @@ printf("CFS point %s(%p)/%s %x %ld\n",
       save_x = item_x;
       save_y = item_y;
       fi->point_canvas_feature = NULL;
-	fi->point_feature = NULL;
+      fi->point_feature = NULL;
 
       best = fi->end - fi->start + 1;
 
@@ -1854,6 +1865,7 @@ printf("CFS point %s(%p)/%s %x %ld\n",
       /* This all seems a bit hokey...who says the glyphs are in the middle of the column ? */
 
       /* NOTE histgrams are hooked onto the LHS, but we can click on the row and still get the feature */
+
 #warning change this to use featurex1 and x2 coords
       /* NOTE warning even better if we express point() function in pixel coordinates only */
 
@@ -1865,35 +1877,44 @@ printf("CFS point %s(%p)/%s %x %ld\n",
 
       //printf("point %s	%f,%f %d,%d: %p\n",g_quark_to_string(fi->id),x,y,cx,cy,sl);
       if (!sl)
-	  return featureset_background_point(item,cx,cy, actual_item);
+	return featureset_background_point(item, cx, cy, actual_item) ;
 
       for (; sl ; sl = sl->next)
 	{
-	  gs = (ZMapWindowCanvasFeature) sl->data;
 	  double this_one;
 	  double left;
+
+	  gs = (ZMapWindowCanvasFeature) sl->data;
 
 	  // printf("y1,2: %.1f %.1f,   gs: %s %lx %f %f\n",y1,y2, g_quark_to_string(gs->feature->unique_id), gs->flags, gs->y1,gs->y2);
 
 	  n++;
-	  if(gs->flags & FEATURE_HIDDEN)
+	  if (gs->flags & FEATURE_HIDDEN)
 	    continue;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	  /* Perhaps this works for normal features BUT it's completely broken for glyphs....if
+	     it's done at all it should be in the specific feature point routines. */
 
 	  // mh17: if best is 1e36 this is silly:
 	  //	  if (gs->y1 > y2  + best)
-	  if(gs->y1 > y2)		/* y2 has close_enough factored in */
+	  if (gs->y1 > y2)		/* y2 has close_enough factored in */
 	    break;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 	  /* check for feature type specific point code, otherwise default to standard point func. */
 	  point_func = NULL;
 
   	  if (gs->type > 0 && gs->type < FEATURE_N_TYPE)
 	    point_func = _featureset_point_G[gs->type] ;
+
 	  if (!point_func)
 	    point_func = gs->type < FEATURE_GRAPHICS ? featurePoint : graphicsPoint;
 
 	  left = x_off;
-	  if(zMapStyleGetMode(fi->style) != ZMAPSTYLE_MODE_GRAPH)
+	  if (zMapStyleGetMode(fi->style) != ZMAPSTYLE_MODE_GRAPH)
 		left += fi->width / 2 - gs->width / 2;
 
 	  if ((this_one = point_func(fi, gs, item_x, item_y, cx, cy, local_x, local_y, left)) < best)
@@ -1936,14 +1957,13 @@ printf("CFS point %s(%p)/%s %x %ld\n",
   }
 #endif
 
-	/* return found if cursor is in the coloumn, then we don't need invisble background rectangles */
-  if(!fi->point_feature)
-  {
-	  return featureset_background_point(item, cx, cy, actual_item);
-  }
+  /* return found if cursor is in the coloumn, then we don't need invisble background rectangles */
+  if (!fi->point_feature)
+    {
+      return featureset_background_point(item, cx, cy, actual_item) ;
+    }
 
-
-  return best;
+  return best ;
 }
 
 
