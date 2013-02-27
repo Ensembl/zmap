@@ -153,6 +153,10 @@ gboolean zMapConfigIniReadBuffer(ZMapConfigIni config, char *buffer)
   return red;
 }
 
+
+
+
+
 /* this is used for styles, NOTE not ever freed until the context is destroyed so can have only one file */
 gboolean zMapConfigIniReadFile(ZMapConfigIni config, char *file)
 {
