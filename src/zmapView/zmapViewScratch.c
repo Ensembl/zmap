@@ -190,7 +190,7 @@ void zmapViewScratchInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, ZM
                                  NULL, NULL,
                                  ZMAPSTYLE_MODE_TRANSCRIPT, &scratch_featureset->style,
                                  0, 0, FALSE, 0.0,
-                                 ZMAPSTRAND_NONE);
+                                 ZMAPSTRAND_FORWARD);
 
       zMapFeatureTranscriptInit(feature);
       zMapFeatureAddTranscriptStartEnd(feature, FALSE, 0, FALSE);

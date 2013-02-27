@@ -309,7 +309,7 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
 
   feature = zMapWindowCanvasItemGetFeature(feature_to_translate);
 
-  if (!(ZMAPFEATURE_IS_TRANSCRIPT(feature) && ZMAPFEATURE_HAS_CDS(feature) && !ZMAPFEATURE_REVERSE(feature)))
+  if (!(ZMAPFEATURE_IS_TRANSCRIPT(feature) && ZMAPFEATURE_HAS_CDS(feature) && ZMAPFEATURE_FORWARD(feature)))
     {
       zMapWarning("%s %s",
 		  zMapFeatureName((ZMapFeatureAny)feature),
