@@ -128,14 +128,14 @@ static ZMapFeatureSet scratchGetFeatureset(ZMapWindow window)
   GList *fs_list = zMapFeatureGetColumnFeatureSets(window->context_map, column_id, TRUE);
   
   /* There should be one (and only one) featureset in the column */
-  if (g_list_length(fs_list) == 1)
+  if (g_list_length(fs_list) > 0)
     {         
       GQuark set_id = (GQuark)(GPOINTER_TO_INT(fs_list->data));
       feature_set = zmapWindowGetFeaturesetFromId(window, set_id);
     }
   else
     {
-      zMapWarning("Expected 1 featureset in column '%s' but found %d\n", ZMAP_FIXED_STYLE_SCRATCH_NAME, g_list_length(fs_list));
+      zMapWarning("No featureset for column '%s'\n", ZMAP_FIXED_STYLE_SCRATCH_NAME);
     }
 
   return feature_set;
@@ -143,32 +143,27 @@ static ZMapFeatureSet scratchGetFeatureset(ZMapWindow window)
 
 
 /*! 
- * \brief Get the single feature that resides in the scratch column featureset
+ * \brief Get the single feature that resides in the scratch column featureset for this strand
  *
  * \returns The ZMapFeature, or NULL if there was a problem
  */
-static ZMapFeature scratchGetFeature(ZMapFeatureSet feature_set)
+static ZMapFeature scratchGetFeature(ZMapFeatureSet feature_set, ZMapStrand strand)
 {
   ZMapFeature feature = NULL;
   
   ZMapFeatureAny feature_any = (ZMapFeatureAny)feature_set;
 
-  if (g_hash_table_size(feature_any->children) != 1)
-    {
-      zMapWarning("Error merging feature into '%s' column; expected 1 existing feature but found %d\n", g_quark_to_string(feature_any->unique_id), g_hash_table_size(feature_any->children));
-    }
-  else
-    {
-      GHashTableIter iter;
-      gpointer key, value;
+  GHashTableIter iter;
+  gpointer key, value;
       
-      g_hash_table_iter_init (&iter, feature_any->children);
-      g_hash_table_iter_next (&iter, &key, &value);
+  g_hash_table_iter_init (&iter, feature_any->children);
+  
+  while (g_hash_table_iter_next (&iter, &key, &value) && !feature)
+    {
+      feature = (ZMapFeature)(value);
       
-      if (value)
-        {
-          feature = (ZMapFeature)(value);
-        }
+      if (feature->strand != strand)
+        feature = NULL;
     }
 
   return feature;
@@ -381,10 +376,11 @@ void zmapWindowScratchCopyFeature(ZMapWindow window,
                                   const double world_y,
                                   const gboolean use_subfeature)
 {
-  if (feature)
+  if (window && feature)
     {
+      ZMapStrand strand = ZMAPSTRAND_FORWARD;
       ZMapFeatureSet scratch_featureset = scratchGetFeatureset(window);
-      ZMapFeature scratch_feature = scratchGetFeature(scratch_featureset);
+      ZMapFeature scratch_feature = scratchGetFeature(scratch_featureset, strand);
 
       if (scratch_featureset && scratch_feature)
         {
@@ -413,14 +409,10 @@ void zmapWindowScratchCopyFeature(ZMapWindow window,
 
 
 /*!
- * \brief Clear the scratch column
+ * \brief Utility to delete all exons from the given feature
  */
-void zmapWindowScratchClear(ZMapWindow window)
+static void scratchDeleteFeatureExons(ZMapWindow window, ZMapFeature feature, ZMapFeatureSet feature_set)
 {
-  /* Get the singleton featureset and feature that exist in the scatch column */
-  ZMapFeatureSet feature_set = scratchGetFeatureset(window);
-  ZMapFeature feature = scratchGetFeature(feature_set);
-
   if (feature_set && feature)
     {
       ZMapWindowCallbacks window_cbs_G = zmapWindowGetCBs() ;
@@ -436,5 +428,23 @@ void zmapWindowScratchClear(ZMapWindow window)
       (*(window_cbs_G->command))(window, window->app_data, scratch_cmd) ;
       
       start_end_set_G = FALSE;
-    }
+    }  
+}
+
+
+/*!
+ * \brief Clear the scratch column
+ */
+void zmapWindowScratchClear(ZMapWindow window)
+{
+  if (!window)
+    return;
+  
+  /* Get the singleton features that exist in each strand of the scatch column */
+  ZMapFeatureSet feature_set = scratchGetFeatureset(window);
+  ZMapFeature feature_fwd = scratchGetFeature(feature_set, ZMAPSTRAND_FORWARD);
+  ZMapFeature feature_rev = scratchGetFeature(feature_set, ZMAPSTRAND_REVERSE);
+
+  scratchDeleteFeatureExons(window, feature_fwd, feature_set);
+  scratchDeleteFeatureExons(window, feature_rev, feature_set);
 }

@@ -182,23 +182,33 @@ void zmapViewScratchInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, ZM
 		g_hash_table_insert(context_map->columns, GUINT_TO_POINTER(f2c->column_id), column);
 	}
 
-      /* Create an empty feature */
-      ZMapFeature feature = zMapFeatureCreateEmpty() ;
+      /* Create two empty features, one for each strand */
+      ZMapFeature feature_fwd = zMapFeatureCreateEmpty() ;
+      ZMapFeature feature_rev = zMapFeatureCreateEmpty() ;
       char *feature_name = "scratch_feature";
       
-      zMapFeatureAddStandardData(feature, feature_name, feature_name,
+      zMapFeatureAddStandardData(feature_fwd, "scratch_feature_fwd", feature_name,
                                  NULL, NULL,
                                  ZMAPSTYLE_MODE_TRANSCRIPT, &scratch_featureset->style,
                                  0, 0, FALSE, 0.0,
                                  ZMAPSTRAND_FORWARD);
 
-      zMapFeatureTranscriptInit(feature);
-      zMapFeatureAddTranscriptStartEnd(feature, FALSE, 0, FALSE);
+      zMapFeatureAddStandardData(feature_rev, "scratch_feature_rev", feature_name,
+                                 NULL, NULL,
+                                 ZMAPSTYLE_MODE_TRANSCRIPT, &scratch_featureset->style,
+                                 0, 0, FALSE, 0.0,
+                                 ZMAPSTRAND_REVERSE);
+
+      zMapFeatureTranscriptInit(feature_fwd);
+      zMapFeatureTranscriptInit(feature_rev);
+      zMapFeatureAddTranscriptStartEnd(feature_fwd, FALSE, 0, FALSE);
+      zMapFeatureAddTranscriptStartEnd(feature_rev, FALSE, 0, FALSE);
       
       //zMapFeatureSequenceSetType(feature, ZMAPSEQUENCE_PEPTIDE);
       //zMapFeatureAddFrame(feature, ZMAPFRAME_NONE);
       
-      zMapFeatureSetAddFeature(scratch_featureset, feature);      
+      zMapFeatureSetAddFeature(scratch_featureset, feature_fwd);      
+      zMapFeatureSetAddFeature(scratch_featureset, feature_rev);      
     }  
 
   /* Also initialise the "hand_built" column. xace puts newly created
