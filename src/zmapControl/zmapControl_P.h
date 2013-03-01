@@ -192,7 +192,6 @@ void zmapControlSplitWindow(ZMap zmap, GtkOrientation orientation, ZMapControlSp
 
 void zmapControlClose(ZMap zmap) ;
 void zmapControlRemoveWindow(ZMap zmap, ZMapView view) ;
-void zmapControlRemoveWindowView(ZMap zmap, ZMapView view) ;
 void zmapControlCloseFull(ZMap zmap, ZMapView view) ;
 
 

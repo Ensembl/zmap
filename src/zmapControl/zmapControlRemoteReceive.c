@@ -372,18 +372,7 @@ static void closeView(ZMap zmap, ZMapXRemoteParseCommandData input_data, Respons
       g_free(xml);
 
 
-
-      /* ok....here we need to do something more sophisticated.... */
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      zmapControlRemoveView(zmap, view_data.view) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      zmapControlRemoveWindowView(zmap, view_data.view) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-      /* try this..... */
+      /* Remove the view. */
       zmapControlCloseFull(zmap, view_data.view) ;
 
 

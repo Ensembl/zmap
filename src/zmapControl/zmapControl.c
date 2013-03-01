@@ -334,7 +334,8 @@ gboolean zMapDestroy(ZMap zmap)
  */
 
 
-/* This function encapsulates logic about how to handle closing the last view or the last
+/* Interactive Version:
+ * This function encapsulates logic about how to handle closing the last view or the last
  * window in a view, we give the user the choice about whether to do this. */
 void zmapControlClose(ZMap zmap)
 {
@@ -383,7 +384,7 @@ void zmapControlClose(ZMap zmap)
 }
 
 
-
+/* Function call version of the above. */
 void zmapControlCloseFull(ZMap zmap, ZMapView view)
 {
   int num_views, num_windows ;
@@ -591,8 +592,11 @@ ZMapView zmapControlAddView(ZMap zmap, ZMapFeatureSequenceMap sequence_map)
       /* add to list of views.... */
       zmap->view_list = g_list_append(zmap->view_list, view) ;
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      /* debug... */
       zmapControlPrintView(zmap, view, "Added", TRUE) ;
       zmapControlPrintAllViews(zmap, TRUE) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
       zmap->state = ZMAP_VIEWS ;
     }
@@ -613,7 +617,7 @@ gboolean zmapControlRemoveView(ZMap zmap, ZMapView view)
 
 
 /*
- *  ------------------- Internal functions -------------------
+ *                      Internal functions
  */
 
 
@@ -1286,8 +1290,11 @@ static void removeView(ZMap zmap, ZMapView view, unsigned long xwid)
 
       zmap->view_list = g_list_remove(zmap->view_list, view) ;
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      /* debug. */
       zmapControlPrintView(zmap, view, "Removed", FALSE) ;
       zmapControlPrintAllViews(zmap, FALSE) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
       if (zmap->xremote_client)
 	remoteSendViewClosed(zmap->xremote_client, xwid) ;
