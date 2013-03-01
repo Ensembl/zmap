@@ -387,8 +387,6 @@ static void closeView(ZMap zmap, ZMapXRemoteParseCommandData input_data, Respons
       zmapControlCloseFull(zmap, view_data.view) ;
 
 
-
-
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       /* Is this correct ??? check with Roy..... */
       output_data->code = ZMAPXREMOTE_OK;

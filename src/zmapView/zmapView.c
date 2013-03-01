@@ -5532,19 +5532,12 @@ static gboolean mapEventCB(GtkWidget *widget, GdkEvent *event, gpointer user_dat
     if(zmap_view->state < ZMAPVIEW_MAPPED)
       zmap_view->state = ZMAPVIEW_MAPPED;
 
+
+    /* OH CRIKEY WHAT IS ALL THIS.....fubar...REALLY ??? */
+    /* force this state to make the view_ready message only appear once from the following callback */
     fubar.xwid  = zmap_view->xwid;
     fubar.state = ZMAPVIEW_MAPPED;
-      /* force this state to make the view_ready message only appear once from the following callback */
 
-
-      /* this is really quite confused:
-       * we have to use a fubar to pass data in the view that we also pass to this callback in the view
-       * on account of private and public headers. The callback cannot use the view data on account of scope.
-       * view->app_data is a blank pointer given to the view containing something unknown
-       * in the calling module there is a ZMap struct that contains a blank pointer called app_data
-       * and there is code that cast the ZMap->app_data into a ZMap
-       * the callback cannot access the view->app_data.
-       */
     (*(view_cbs_G->state_change))(zmap_view, zmap_view->app_data, &fubar) ;
   }
 

@@ -372,7 +372,7 @@ void zmapControlClose(ZMap zmap)
 
       if (num_windows > 1
 	  || zMapGUIMsgGetBool(GTK_WINDOW(zmap->toplevel), ZMAP_MSG_WARNING, msg))
-	zmapControlRemoveWindow(zmap) ;
+	zmapControlRemoveWindow(zmap, view) ;
 
       g_free(name);
       g_free(msg) ;
@@ -406,7 +406,7 @@ void zmapControlCloseFull(ZMap zmap, ZMapView view)
     }
   else
     {
-      zmapControlRemoveWindow(zmap) ;
+      zmapControlRemoveWindow(zmap, view) ;
     }
 
   return ;

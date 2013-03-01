@@ -34,8 +34,11 @@
 
 #include <ZMap/zmap.h>
 
-#include <zmapControl_P.h>
+
 #include <ZMap/zmapUtilsDebug.h>
+#include <ZMap/zmapUtilsXRemote.h>
+#include <zmapControl_P.h>
+
 
 
 
@@ -80,8 +83,8 @@ static GtkWidget *closePane(GtkWidget *close_frame) ;
 static ZMapViewWindow widget2ViewWindow(GHashTable* hash_table, GtkWidget *widget) ;
 static void findViewWindow(gpointer key, gpointer value, gpointer user_data) ;
 static ZMapViewWindow closeWindow(ZMap zmap, GtkWidget *close_container) ;
-static GtkWidget *addXremoteWidget(GtkWidget *child) ;
-static void removeXremoteWidget(GtkWidget *child) ;
+static GtkWidget *addXremoteWidget(GtkWidget *parent) ;
+static void removeXremoteWidget(GtkWidget *parent, GtkWidget *child) ;
 static void labelDestroyCB(GtkWidget *widget, gpointer cb_data) ;
 
 static void findViewWindowCB(gpointer key, gpointer value, gpointer user_data) ;
@@ -103,7 +106,7 @@ ZMapView zmapControlNewWindow(ZMap zmap, ZMapFeatureSequenceMap sequence_map)
   ZMapViewWindow view_window ;
   char *view_title ;
   GtkOrientation orientation = GTK_ORIENTATION_VERTICAL ;   /* arbitrary for first window. */
-  GtkWidget *xremote_widget ;
+  GtkWidget *xremote_widget, *parent ;
 
   /* If there is a focus window then that will be the one we split and we need to find out
    * the container parent of that canvas. */
@@ -114,12 +117,12 @@ ZMapView zmapControlNewWindow(ZMap zmap, ZMapFeatureSequenceMap sequence_map)
 
   view_title = zMapViewGetSequenceName(sequence_map) ;
 
-
-  /* In the hash we keep the frames because there may be multiple frames per view but in
-   * this case we are adding a new view so we need to reparent the event box that was
-   * added as a parent of the frame. */
+  /* Record what your current parent is. */
   if (curr_container)
-    curr_container = gtk_widget_get_parent(curr_container) ;
+    parent = gtk_widget_get_parent(curr_container) ;
+  else
+    parent = zmap->pane_vbox ;
+
 
   /* Add a new container that will hold the new view window. */
   view_container = zmapControlAddWindow(zmap, curr_container, orientation, ZMAPCONTROL_SPLIT_LAST, view_title) ;
@@ -127,7 +130,7 @@ ZMapView zmapControlNewWindow(ZMap zmap, ZMapFeatureSequenceMap sequence_map)
 
   /* For each new view stick an event box in between parent and the child (i.e. the view)
    * this will be used to send/receive xremote commands. */
-  xremote_widget = addXremoteWidget(view_container) ;
+  xremote_widget = addXremoteWidget(zmap->event_box_parent) ;
 
 
   if (!(view_window = zMapViewCreate(xremote_widget, view_container, sequence_map, (void *)zmap)))
@@ -295,13 +298,9 @@ void zmapControlPrintView(ZMap zmap, ZMapView view, char *action, gboolean print
 {
   gboolean debug = TRUE ;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   zMapDebugPrint(debug, "ZMap \"%p\"", zmap) ;
 
   printView(view, action, print_xid) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
   return ;
 }
@@ -310,13 +309,9 @@ void zmapControlPrintAllViews(ZMap zmap, gboolean print_xids)
 {
   gboolean debug = TRUE ;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   zMapDebugPrint(debug, "ZMap \"%p\"", zmap) ;
 
   printViewList(zmap->view_list) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
   return ;
 }
@@ -341,7 +336,7 @@ ZMapViewWindow zmapControlFindViewWindow(ZMap zmap, ZMapView view)
 /* You need to remember that there may be more than one view in a zmap. This means that
  * while a particular view may have lost all its windows and need closing, there might
  * be other views that have windows that can be focussed on. */
-void zmapControlRemoveWindow(ZMap zmap)
+void zmapControlRemoveWindow(ZMap zmap, ZMapView view_in)
 {
   GtkWidget *close_container ;
   ZMapViewWindow view_window, remaining_view ;
@@ -350,25 +345,40 @@ void zmapControlRemoveWindow(ZMap zmap)
   int num_views, num_windows ;
   gboolean last_window = FALSE ;
 
+  /* default to focus viewwindow. */
+  if (!view_in)
+    {
+      view_window = zmap->focus_viewwindow ;
+      view = zMapViewGetView(view_window) ;
+
+      /* Make sure we reset focus because we are removing the view it points to ! */
+      zmap->focus_viewwindow = NULL ;
+    }
+  else
+    {
+      view = view_in ;
+      view_window = zmapControlFindViewWindow(zmap, view) ;
+    }
+
   num_views = zmapControlNumViews(zmap) ;
-  num_windows = zMapViewNumWindows(zmap->focus_viewwindow) ;
+  num_windows = zMapViewNumWindows(view_window) ;
 
   /* We shouldn't get called if there are no views or if there is only a single view with one window left. */
-  zMapAssert(num_views && zmap->focus_viewwindow
-	     && !(num_views == 1 && num_windows == 1)) ;
+  zMapAssert(num_views && view_window && !(num_views == 1 && num_windows == 1)) ;
 
   /* If this is the last window we will need to do some special clearing up. */
   if (num_windows == 1)
     last_window = TRUE ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* focus_viewwindow gets reset so hang on to view_window pointer and view.*/
   view_window = zmap->focus_viewwindow ;
   view = zMapViewGetView(view_window) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   close_container = g_hash_table_lookup(zmap->viewwindow_2_parent, view_window) ;
-
-  /* Make sure we reset focus because we are removing the view it points to ! */
-  zmap->focus_viewwindow = NULL ;
 
   if (num_windows > 1)
     {
@@ -379,7 +389,11 @@ void zmapControlRemoveWindow(ZMap zmap)
       /* If its the last window the parent of the container is the event box that was added
        * when the view was created. We need to hang on to it so we can destroy it after the window
        * is closed. */
-      removeXremoteWidget(close_container) ;
+      GtkWidget *xremote_widg ;
+
+      xremote_widg = zMapViewGetXremote(view) ;
+
+      removeXremoteWidget(zmap->event_box_parent, xremote_widg) ;
 
       zMapDeleteView(zmap, view) ;
     }
@@ -472,7 +486,11 @@ void zmapControlRemoveWindowView(ZMap zmap, ZMapView view)
       /* If its the last window the parent of the container is the event box that was added
        * when the view was created. We need to hang on to it so we can destroy it after the window
        * is closed. */
-      removeXremoteWidget(close_container) ;
+      GtkWidget *xremote_widg ;
+
+      xremote_widg = zMapViewGetXremote(view) ;
+
+      removeXremoteWidget(zmap->event_box_parent, xremote_widg) ;
 
       zMapDeleteView(zmap, view) ;
     }
@@ -517,40 +535,15 @@ GtkWidget *zmapControlAddWindow(ZMap zmap, GtkWidget *curr_frame,
   /* Supplying NULL will remove the title if its too big. */
   new_frame = gtk_frame_new(view_title) ;
 
-
   /* If there is a parent then add this pane as a child of parent, otherwise it means
    * this is the first pane and it it just gets added to the zmap vbox. */
   if (curr_frame)
     {
-      GtkWidget *parent_pane, *child1, *child2 ;
-
-      parent_pane = gtk_widget_get_parent(curr_frame) ;
-
-      child1 = myGetChild(parent_pane, 1) ;
-      child2 = myGetChild(parent_pane, 2) ;
-
-      /* this is a hack for now so Jeremy can get on..... */
-      if (!child1 || !child2)
-	{
-	  if (child1)
-	    gtk_paned_pack2(GTK_PANED(parent_pane), new_frame, TRUE, TRUE) ;
-	  else
-	    gtk_paned_pack1(GTK_PANED(parent_pane), new_frame, TRUE, TRUE) ;
-	}
-      else
-	{
-	  /* Here we want to split the existing pane etc....... */
-	  splitPane(curr_frame, new_frame, orientation, window_order) ;
-	}
+      /* Here we want to split the existing pane etc....... */
+      splitPane(curr_frame, new_frame, orientation, window_order) ;
     }
   else
-    {
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      gtk_box_pack_start(GTK_BOX(zmap->pane_vbox), new_frame, TRUE, TRUE, 0) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-      gtk_paned_pack1(GTK_PANED(zmap->top_pane), new_frame, TRUE, TRUE) ;
-    }
+    gtk_box_pack_start(GTK_BOX(zmap->pane_vbox), new_frame, TRUE, TRUE, 0) ;
 
   return new_frame ;
 }
@@ -868,6 +861,8 @@ static ZMapPaneChild whichChildOfPane(GtkWidget *child)
 }
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* Adds an event box widget in between the supplied parent widget and that widgets child.
  * This event box is guaranteed to have a window which is then used for sending commands
  * to the zmapView that it represents. */
@@ -903,8 +898,37 @@ static GtkWidget *addXremoteWidget(GtkWidget *child)
 
   return event_box ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+static GtkWidget *addXremoteWidget(GtkWidget *parent)
+{
+  GtkWidget *event_box ;
+
+  event_box = gtk_event_box_new() ;
 
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  gtk_event_box_set_visible_window(GTK_EVENT_BOX(event_box), FALSE) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+  gtk_box_pack_start(GTK_BOX(parent), event_box, FALSE, FALSE, 0) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  gtk_container_add(GTK_CONTAINER(parent), event_box) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+
+  return event_box ;
+}
+
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* Remove the event box we inserted for the view. */
 static void removeXremoteWidget(GtkWidget *child)
 {
@@ -961,27 +985,15 @@ static void removeXremoteWidget(GtkWidget *child)
 
   return ;
 }
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static GtkWidget *addXremoteWidget(GtkWidget *view_container)
-{
-  GtkWidget *event_box ;
-  GList *children ;
-  GtkWidget *parent, *child ;
-
-  parent = gtk_widget_get_parent(view_container) ;
-
-  event_box = gtk_event_box_new() ;
-
-  gtk_widget_reparent(view_container, event_box) ;
-
-  gtk_container_add(GTK_CONTAINER(parent), event_box) ;
-
-  return event_box ;
-}
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+static void removeXremoteWidget(GtkWidget *parent, GtkWidget *child)
+{
+  zMapAssert(GTK_IS_EVENT_BOX(child)) ;
+
+  gtk_widget_destroy(child) ;				    /* Removes child from its parent. */
+
+  return ;
+}
 
 
 
@@ -1037,9 +1049,10 @@ static void printView(ZMapView view, char *action, gboolean print_xid)
       xid = zMapXRemoteWidgetGetXID(xremote_widg) ;
     }
 
-  zMapDebugPrint(debug, "%s view \"%p\", xwid=\"0x%lx\"",
+  zMapDebugPrint(debug, "%s view \"%p\", xwidg \"%p\", xwid=\"0x%lx\"",
 		 (action ? action : ""),
 		 view,
+		 xremote_widg,
 		 xid) ;
 
   return ;
