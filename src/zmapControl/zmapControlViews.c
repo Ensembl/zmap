@@ -86,6 +86,14 @@ static void labelDestroyCB(GtkWidget *widget, gpointer cb_data) ;
 
 static void findViewWindowCB(gpointer key, gpointer value, gpointer user_data) ;
 
+static void printViewList(GList *view_list) ;
+static void printViewCB(gpointer data, gpointer user_data_unused) ;
+static void printView(ZMapView view, char *action, gboolean print_xid) ;
+
+
+
+
+
 
 /* New func for brand new view windows.... */
 ZMapView zmapControlNewWindow(ZMap zmap, ZMapFeatureSequenceMap sequence_map)
@@ -275,6 +283,44 @@ int zmapControlNumViews(ZMap zmap)
 
   return num_views ;
 }
+
+
+/* DISABLE DEBUGGING FOR NOW.... */
+
+
+/* Debugging: prints single or all views and their xremote windows but also prints
+ * the actual remote windows to make sure they are consistent. */
+
+void zmapControlPrintView(ZMap zmap, ZMapView view, char *action, gboolean print_xid)
+{
+  gboolean debug = TRUE ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  zMapDebugPrint(debug, "ZMap \"%p\"", zmap) ;
+
+  printView(view, action, print_xid) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+  return ;
+}
+
+void zmapControlPrintAllViews(ZMap zmap, gboolean print_xids)
+{
+  gboolean debug = TRUE ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  zMapDebugPrint(debug, "ZMap \"%p\"", zmap) ;
+
+  printViewList(zmap->view_list) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+  return ;
+}
+
 
 
 ZMapViewWindow zmapControlFindViewWindow(ZMap zmap, ZMapView view)
@@ -471,15 +517,40 @@ GtkWidget *zmapControlAddWindow(ZMap zmap, GtkWidget *curr_frame,
   /* Supplying NULL will remove the title if its too big. */
   new_frame = gtk_frame_new(view_title) ;
 
+
   /* If there is a parent then add this pane as a child of parent, otherwise it means
    * this is the first pane and it it just gets added to the zmap vbox. */
   if (curr_frame)
     {
-      /* Here we want to split the existing pane etc....... */
-      splitPane(curr_frame, new_frame, orientation, window_order) ;
+      GtkWidget *parent_pane, *child1, *child2 ;
+
+      parent_pane = gtk_widget_get_parent(curr_frame) ;
+
+      child1 = myGetChild(parent_pane, 1) ;
+      child2 = myGetChild(parent_pane, 2) ;
+
+      /* this is a hack for now so Jeremy can get on..... */
+      if (!child1 || !child2)
+	{
+	  if (child1)
+	    gtk_paned_pack2(GTK_PANED(parent_pane), new_frame, TRUE, TRUE) ;
+	  else
+	    gtk_paned_pack1(GTK_PANED(parent_pane), new_frame, TRUE, TRUE) ;
+	}
+      else
+	{
+	  /* Here we want to split the existing pane etc....... */
+	  splitPane(curr_frame, new_frame, orientation, window_order) ;
+	}
     }
   else
-    gtk_box_pack_start(GTK_BOX(zmap->pane_vbox), new_frame, TRUE, TRUE, 0) ;
+    {
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      gtk_box_pack_start(GTK_BOX(zmap->pane_vbox), new_frame, TRUE, TRUE, 0) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+      gtk_paned_pack1(GTK_PANED(zmap->top_pane), new_frame, TRUE, TRUE) ;
+    }
 
   return new_frame ;
 }
@@ -548,7 +619,7 @@ static void splitPane(GtkWidget *curr_frame, GtkWidget *new_frame,
 {
   GtkWidget *pane_parent, *new_pane ;
   ZMapPaneChild curr_child = ZMAP_PANE_NONE ;
-
+  gboolean debug = TRUE ;
 
   /* Get current frames parent, if window is unsplit it will be a container, otherwise its a pane
    * and we need to know which child we are of the pane. */
@@ -559,11 +630,16 @@ static void splitPane(GtkWidget *curr_frame, GtkWidget *new_frame,
       curr_child = whichChildOfPane(curr_frame) ;
     }
 
+
+  zMapDebugPrint(debug, "curr_frame being removed: \"%p\"", curr_frame) ;
+
+
   /* Remove the current frame from its container so we can insert a new container as the child
    * of that container, we have to increase its reference counter to stop it being.
    * destroyed once its removed from its container. */
   curr_frame = gtk_widget_ref(curr_frame) ;
   gtk_container_remove(GTK_CONTAINER(pane_parent), curr_frame) ;
+
 
   /* Create the new pane, note that horizontal split => splitting the pane across the middle,
    * vertical split => splitting the pane down the middle. */
@@ -589,13 +665,13 @@ static void splitPane(GtkWidget *curr_frame, GtkWidget *new_frame,
   /* Add the frame views to the new pane. */
   if (window_order == ZMAPCONTROL_SPLIT_FIRST)
     {
-      gtk_paned_pack1(GTK_PANED(new_pane), curr_frame, TRUE, TRUE);
-      gtk_paned_pack2(GTK_PANED(new_pane), new_frame, TRUE, TRUE);
+      gtk_paned_pack1(GTK_PANED(new_pane), curr_frame, TRUE, TRUE) ;
+      gtk_paned_pack2(GTK_PANED(new_pane), new_frame, TRUE, TRUE) ;
     }
   else
     {
-      gtk_paned_pack1(GTK_PANED(new_pane), new_frame, TRUE, TRUE);
-      gtk_paned_pack2(GTK_PANED(new_pane), curr_frame, TRUE, TRUE);
+      gtk_paned_pack1(GTK_PANED(new_pane), new_frame, TRUE, TRUE) ;
+      gtk_paned_pack2(GTK_PANED(new_pane), curr_frame, TRUE, TRUE) ;
     }
 
 
@@ -929,6 +1005,59 @@ static void findViewWindowCB(gpointer key, gpointer value, gpointer user_data)
 
   if (zMapViewGetView(view_window) == find_viewwindow->view)
     find_viewwindow->view_window = view_window ;
+
+  return ;
+}
+
+
+
+/* Debugging: print out views, lists of views held by control. */
+static void printView(ZMapView view, char *action, gboolean print_xid)
+{
+  GtkWidget *xremote_widg ;
+  unsigned long xid = 0 ;
+  gboolean debug = TRUE ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  ZMapViewWindow view_window = NULL ;
+  FindViewWindowStruct find_viewwindow = {NULL} ;
+
+
+  /* Find the view_window for the view... */
+  find_viewwindow.view = view ;
+  g_hash_table_foreach(zmap->viewwindow_2_parent, findViewWindowCB, &find_viewwindow) ;
+  view_window = find_viewwindow.view_window ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+  if (print_xid)
+    {
+      xremote_widg = zMapViewGetXremote(view) ;
+      xid = zMapXRemoteWidgetGetXID(xremote_widg) ;
+    }
+
+  zMapDebugPrint(debug, "%s view \"%p\", xwid=\"0x%lx\"",
+		 (action ? action : ""),
+		 view,
+		 xid) ;
+
+  return ;
+}
+
+static void printViewList(GList *view_list)
+{
+  g_list_foreach(view_list, printViewCB, NULL) ;
+
+  return ;
+}
+
+/* GFunc90 callback to print out view data. */
+static void printViewCB(gpointer data, gpointer user_data_unused)
+{
+  ZMapView view = (ZMapView)data ;
+
+  printView(view, NULL, TRUE) ;
 
   return ;
 }

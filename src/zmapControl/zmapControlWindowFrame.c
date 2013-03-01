@@ -86,9 +86,13 @@ static void createNavViewWindow(ZMap zmap, GtkWidget *parent)
 
   /* This box contains what may be multiple views in paned widgets. */
   zmap->pane_vbox = gtk_vbox_new(FALSE,0) ;
+  gtk_paned_pack2(GTK_PANED(zmap->hpane), zmap->pane_vbox, TRUE, TRUE);
 
-  gtk_paned_pack2(GTK_PANED(zmap->hpane),
-		  zmap->pane_vbox, TRUE, TRUE);
+  /* Try adding a top pane..... */
+  zmap->top_pane = gtk_hpaned_new() ;
+  gtk_container_add(GTK_CONTAINER(zmap->pane_vbox), zmap->top_pane) ;
+
+
 
 
   /* Set left hand (sliders) pane closed by default. */

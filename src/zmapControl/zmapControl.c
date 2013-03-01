@@ -70,10 +70,6 @@ static void infoPanelLabelsHashCB(gpointer labels_data);
 static void removeView(ZMap zmap, ZMapView view, unsigned long xwid) ;
 static void remoteSendViewClosed(ZMapXRemoteObj client, unsigned long xwid) ;
 
-static void printViewList(GList *view_list) ;
-static void printViewCB(gpointer data, gpointer user_data_unused) ;
-static void printView(ZMapView view, char *action, gboolean print_xid) ;
-
 
 
 /* These variables holding callback routine information are static because they are
@@ -595,8 +591,8 @@ ZMapView zmapControlAddView(ZMap zmap, ZMapFeatureSequenceMap sequence_map)
       /* add to list of views.... */
       zmap->view_list = g_list_append(zmap->view_list, view) ;
 
-      printView(view, "Added", TRUE) ;
-      printViewList(zmap->view_list) ;
+      zmapControlPrintView(zmap, view, "Added", TRUE) ;
+      zmapControlPrintAllViews(zmap, TRUE) ;
 
       zmap->state = ZMAP_VIEWS ;
     }
@@ -1290,8 +1286,8 @@ static void removeView(ZMap zmap, ZMapView view, unsigned long xwid)
 
       zmap->view_list = g_list_remove(zmap->view_list, view) ;
 
-      printView(view, "Removed", FALSE) ;
-      printViewList(zmap->view_list) ;
+      zmapControlPrintView(zmap, view, "Removed", FALSE) ;
+      zmapControlPrintAllViews(zmap, FALSE) ;
 
       if (zmap->xremote_client)
 	remoteSendViewClosed(zmap->xremote_client, xwid) ;
@@ -1323,40 +1319,3 @@ static void remoteSendViewClosed(ZMapXRemoteObj client, unsigned long xwid)
 }
 
 
-/* Debugging: print out list of views held by control. */
-static void printViewList(GList *view_list)
-{
-  g_list_foreach(view_list, printViewCB, NULL) ;
-
-  return ;
-}
-
-/* GFunc90 callback to print out view data. */
-static void printViewCB(gpointer data, gpointer user_data_unused)
-{
-  ZMapView view = (ZMapView)data ;
-
-  printView(view, NULL, TRUE) ;
-
-  return ;
-}
-
-static void printView(ZMapView view, char *action, gboolean print_xid)
-{
-  GtkWidget *xremote_widg ;
-  unsigned long xid = 0 ;
-  gboolean debug = TRUE ;
-
-  if (print_xid)
-    {
-      xremote_widg = zMapViewGetXremote(view) ;
-      xid = zMapXRemoteWidgetGetXID(xremote_widg) ;
-    }
-
-  zMapDebugPrint(debug, "%s view \"%p\", xwid=\"0x%lx\"",
-		 (action ? action : ""),
-		 view,
-		 xid) ;
-
-  return ;
-}

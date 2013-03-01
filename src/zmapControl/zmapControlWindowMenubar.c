@@ -64,6 +64,7 @@ static void redrawCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void preferencesCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void developerCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void showSessionCB(gpointer cb_data, guint callback_action, GtkWidget *window) ;
+static void showViewsCB(gpointer cb_data, guint callback_action, GtkWidget *window) ;
 static void aboutCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void rtTicket(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void allHelpCB(gpointer cb_data, guint callback_action, GtkWidget *w);
@@ -78,20 +79,18 @@ GtkItemFactory *item_factory;
 static GtkItemFactoryEntry menu_items[] = {
  { "/_File",                        NULL,         NULL,                  0, "<Branch>" },
  { "/File/_New Sequence",           NULL,         newSequenceByConfigCB, 2, NULL },
-
-
  { "/File/sep1",     NULL,         NULL, 0, "<Separator>" },
  { "/File/_Import",  "<control>I", importCB, 0, NULL },		/* or Read ? */
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 { "/File/_Export",  "<control>E", exportCB, 0, NULL },
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
  { "/File/sep1",                     NULL,         NULL, 0, "<Separator>" },
  { "/File/_Save screen shot",        NULL,         dumpCB, 0, NULL },
  { "/File/_Print screen shot",       "<control>P", printCB, 0, NULL },
  { "/File/sep1",                     NULL,           NULL, 0, "<Separator>" },
  { "/File/Close",                    "<control>W", closeCB, 0, NULL },
  { "/File/Quit",                     "<control>Q", quitCB, 0, NULL },
+
  { "/_Edit",                         NULL,         NULL, 0, "<Branch>" },
  { "/Edit/Cu_t",                     "<control>X", print_hello, 0, NULL },
  { "/Edit/_Copy",                    "<control>C", print_hello, 0, NULL },
@@ -100,17 +99,21 @@ static GtkItemFactoryEntry menu_items[] = {
  { "/Edit/sep1",     NULL,         NULL, 0, "<Separator>" },
  { "/Edit/P_references",  NULL,    preferencesCB, 0, NULL },
  { "/Edit/_Set Developer status",  NULL,    developerCB, 0, NULL },
+
  { "/_View",         NULL,         NULL, 0, "<Branch>" },
+ { "/View/Session Details", NULL,  showSessionCB, 0, NULL },
+ { "/View/View Details", NULL,     showViewsCB, 0, NULL },
 #ifdef ALLOW_POPOUT_PANEL
  { "/View/'Pop Out' Control Info Panel", NULL, popout_panel, 0, NULL },
 #endif	/* ALLOW_POPOUT_PANEL */
- { "/View/Session Details", NULL,  showSessionCB, 0, NULL },
+
  { "/_Raise ticket",  NULL,        NULL, 0, "<LastBranch>" },
  { "/Raise ticket/See ZMap tickets", NULL, rtTicket, RT_ZMAP_USER_TICKETS, NULL },
  { "/Raise ticket/ZMap ticket",       NULL, rtTicket, RT_ZMAP, NULL },
  { "/Raise ticket/Anacode ticket",    NULL, rtTicket, RT_ANACODE, NULL },
  { "/Raise ticket/Blixem, Dotter or Belvu ticket",      NULL, rtTicket, RT_SEQTOOLS, NULL },
  { "/Raise ticket/Acedb ticket",      NULL, rtTicket, RT_ACEDB, NULL },
+
  { "/_Help",         NULL,         NULL, 0, "<LastBranch>" },
 // { "/Help/General Help", NULL,     allHelpCB, ZMAPGUI_HELP_GENERAL, NULL },
 // { "/Help/Keyboard & Mouse", NULL, allHelpCB, ZMAPGUI_HELP_KEYBOARD, NULL },
@@ -299,6 +302,17 @@ static void showSessionCB(gpointer cb_data, guint callback_action, GtkWidget *wi
   return ;
 }
 
+
+
+/* Display view data. */
+static void showViewsCB(gpointer cb_data, guint callback_action, GtkWidget *window)
+{
+  ZMap zmap = (ZMap)cb_data ;
+
+  zmapControlPrintAllViews(zmap, TRUE) ;
+
+  return ;
+}
 
 
 /* Show the usual tedious "About" dialog. */

@@ -134,7 +134,9 @@ typedef struct _ZMapStruct
 
 
   /* The panes and views and current focus window. */
-  GtkWidget      *pane_vbox ;				    /* Is the parent of all the panes. */
+  GtkWidget *pane_vbox ;				    /* Is the parent of all the panes. */
+  GtkWidget *top_pane ;					    /* Parent pane of all panes, child of pane_vbox */
+
 
   ZMapViewWindow focus_viewwindow ;
   GHashTable* viewwindow_2_parent ;			    /* holds hash to go from a view window
@@ -244,5 +246,8 @@ ZMapViewWindow zmapControlNewWidgetAndWindowForView(ZMap zmap,
                                                     GtkOrientation orientation,
 						    ZMapControlSplitOrder window_order,
                                                     char *view_title);
+
+void zmapControlPrintView(ZMap zmap, ZMapView view, char *action, gboolean print_xid) ;
+void zmapControlPrintAllViews(ZMap zmap, gboolean print_xids) ;
 
 #endif /* !ZMAP_CONTROL_P_H */
