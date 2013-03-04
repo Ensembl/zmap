@@ -217,8 +217,10 @@ static void scratchMergeMatchCB(gpointer match, gpointer user_data)
 /*! 
  * \brief Add/merge a single base into the scratch column
  */
-static void scratchMergeBase(ScratchMergeData merge_data)
+static gboolean scratchMergeBase(ScratchMergeData merge_data, GError **error)
 {
+  gboolean merged = FALSE;
+
   if (ZMAP_IS_WINDOW_FEATURESET_ITEM(merge_data->src_item))
     {
       /* Convert the world coords to sequence coords */
@@ -238,14 +240,22 @@ static void scratchMergeBase(ScratchMergeData merge_data)
       
       /* Recreate the introns */
       zMapFeatureTranscriptRecreateIntrons(merge_data->dest_feature);
+
+      merged = TRUE;
     }
+  else
+    {
+      g_set_error(error, g_quark_from_string("ZMap"), 99, "Program error: not a featureset item");
+    }
+
+  return merged;
 }
 
 
 /*! 
  * \brief Add/merge a basic feature to the scratch column
  */
-static gboolean scratchMergeBasic(ScratchMergeData merge_data)
+static gboolean scratchMergeBasic(ScratchMergeData merge_data, GError **error)
 {
   gboolean merged = TRUE;
   
@@ -264,7 +274,7 @@ static gboolean scratchMergeBasic(ScratchMergeData merge_data)
 /*! 
  * \brief Add/merge an alignment feature to the scratch column
  */
-static gboolean scratchMergeAlignment(ScratchMergeData merge_data)
+static gboolean scratchMergeAlignment(ScratchMergeData merge_data, GError **error)
 {
   gboolean merged = FALSE;
   
@@ -278,7 +288,7 @@ static gboolean scratchMergeAlignment(ScratchMergeData merge_data)
        * an ungapped alignment so add the whole thing. */
       if (zMapFeatureAlignmentIsGapped(merge_data->src_feature))
         {
-          zMapWarning("%s", "Cannot copy feature; gapped alignment data is not available");
+          g_set_error(error, g_quark_from_string("ZMap"), 99, "Cannot copy feature; gapped alignment data is not available");
         }
       else
         {
@@ -300,7 +310,7 @@ static gboolean scratchMergeAlignment(ScratchMergeData merge_data)
 /*! 
  * \brief Add/merge a transcript feature to the scratch column
  */
-static gboolean scratchMergeTranscript(ScratchMergeData merge_data)
+static gboolean scratchMergeTranscript(ScratchMergeData merge_data, GError **error)
 {
   gboolean merged = TRUE;
   
@@ -325,6 +335,7 @@ static gboolean scratchMergeTranscript(ScratchMergeData merge_data)
 static void scratchMergeFeature(ScratchMergeData merge_data)
 {
   gboolean merged = FALSE;
+  GError *error = NULL;
 
   if (merge_data->use_subfeature)
     {
@@ -341,53 +352,58 @@ static void scratchMergeFeature(ScratchMergeData merge_data)
         }
       else
         {
-          zMapWarning("Could not find subfeature in feature '%s' at coords %d, %d", 
+          g_set_error(&error, g_quark_from_string("ZMap"), 99, 
+                      "Could not find subfeature in feature '%s' at coords %d, %d", 
                       g_quark_to_string(merge_data->src_feature->original_id),
-                      merge_data->world_x, merge_data->world_y);
+                      (int)merge_data->world_x, (int)merge_data->world_y);
         }
     }
   else
     {
       switch (merge_data->src_feature->type)
         {
-        case ZMAPSTYLE_MODE_INVALID:
-          break;
         case ZMAPSTYLE_MODE_BASIC:
-          merged = scratchMergeBasic(merge_data);
+          merged = scratchMergeBasic(merge_data, &error);
           break;
         case ZMAPSTYLE_MODE_ALIGNMENT:
-          merged = scratchMergeAlignment(merge_data);
+          merged = scratchMergeAlignment(merge_data, &error);
           break;
         case ZMAPSTYLE_MODE_TRANSCRIPT:
-          merged = scratchMergeTranscript(merge_data);
+          merged = scratchMergeTranscript(merge_data, &error);
           break;
         case ZMAPSTYLE_MODE_SEQUENCE:
-          scratchMergeBase(merge_data);
-          merged = TRUE;
+          merged = scratchMergeBase(merge_data, &error);
           break;
-        case ZMAPSTYLE_MODE_ASSEMBLY_PATH:
-          break;
-        case ZMAPSTYLE_MODE_TEXT:
-          break;
-        case ZMAPSTYLE_MODE_GRAPH:
-          break;
-        case ZMAPSTYLE_MODE_GLYPH:
-          break;
-        case ZMAPSTYLE_MODE_PLAIN:
-          break;
-        case ZMAPSTYLE_MODE_META:
-          break;
+
+        case ZMAPSTYLE_MODE_INVALID:       /* fall through */
+        case ZMAPSTYLE_MODE_ASSEMBLY_PATH: /* fall through */
+        case ZMAPSTYLE_MODE_TEXT:          /* fall through */
+        case ZMAPSTYLE_MODE_GRAPH:         /* fall through */
+        case ZMAPSTYLE_MODE_GLYPH:         /* fall through */
+        case ZMAPSTYLE_MODE_PLAIN:         /* fall through */
+        case ZMAPSTYLE_MODE_META:          /* fall through */
         default:
-          zMapWarning("Unrecognised feature type %d\n", merge_data->src_feature->type);
+          g_set_error(&error, g_quark_from_string("ZMap"), 99, "copy of feature of type %d is not implemented.\n", merge_data->src_feature->type);
           break;
         };
     }
   
   /* Once finished merging, the start/end should now be set */
   if (merged)
-    start_end_set_G = TRUE;
-  else
-    zMapWarning("Cannot merge features of type %d", merge_data->src_feature->type);
+    {
+      start_end_set_G = TRUE;
+    }
+  
+  if (error)
+    {
+      if (merged)
+        zMapWarning("Warning while copying feature: %s", error->message);
+      else
+        zMapCritical("Error copying feature: %s", error->message);
+      
+      g_error_free(error);
+      error = NULL;
+    }
 }
 
 
