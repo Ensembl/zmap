@@ -245,8 +245,10 @@ static void scratchMergeBase(ScratchMergeData merge_data)
 /*! 
  * \brief Add/merge a basic feature to the scratch column
  */
-static void scratchMergeBasic(ScratchMergeData merge_data)
+static gboolean scratchMergeBasic(ScratchMergeData merge_data)
 {
+  gboolean merged = TRUE;
+  
   zMapFeatureRemoveIntrons(merge_data->dest_feature);
 
   /* Just merge the start/end of the feature */
@@ -254,14 +256,18 @@ static void scratchMergeBasic(ScratchMergeData merge_data)
 
   /* Recreate the introns */
   zMapFeatureTranscriptRecreateIntrons(merge_data->dest_feature);
+  
+  return merged;
 }
 
 
 /*! 
  * \brief Add/merge an alignment feature to the scratch column
  */
-static void scratchMergeAlignment(ScratchMergeData merge_data)
+static gboolean scratchMergeAlignment(ScratchMergeData merge_data)
 {
+  gboolean merged = FALSE;
+  
   zMapFeatureRemoveIntrons(merge_data->dest_feature);
 
   /* Loop through each match block and merge it in */
@@ -271,9 +277,14 @@ static void scratchMergeAlignment(ScratchMergeData merge_data)
        * gapped but we don't have this data then we can't process it. Otherwise, it's
        * an ungapped alignment so add the whole thing. */
       if (zMapFeatureAlignmentIsGapped(merge_data->src_feature))
-        zMapWarning("%s", "Cannot copy feature; gapped alignment data is not available");
+        {
+          zMapWarning("%s", "Cannot copy feature; gapped alignment data is not available");
+        }
       else
-        scratchMergeCoords(merge_data, merge_data->src_feature->x1, merge_data->src_feature->x2);
+        {
+          scratchMergeCoords(merge_data, merge_data->src_feature->x1, merge_data->src_feature->x2);
+          merged = TRUE;
+        }
     }
 
   /* Copy CDS, if set */
@@ -281,15 +292,39 @@ static void scratchMergeAlignment(ScratchMergeData merge_data)
 
   /* Recreate the introns */
   zMapFeatureTranscriptRecreateIntrons(merge_data->dest_feature);
+
+  return merged;
 }
 
 
 /*! 
  * \brief Add/merge a transcript feature to the scratch column
  */
-static void scratchMergeTranscript(ScratchMergeData merge_data)
+static gboolean scratchMergeTranscript(ScratchMergeData merge_data)
 {
+  gboolean merged = TRUE;
+  
   zMapFeatureRemoveIntrons(merge_data->dest_feature);
+
+  /* Merge in all of the new exons from the new feature */
+  zMapFeatureTranscriptExonForeach(merge_data->src_feature, scratchMergeExonCB, merge_data);
+  
+  /* Copy CDS, if set */
+  zMapFeatureMergeTranscriptCDS(merge_data->src_feature, merge_data->dest_feature);
+
+  /* Recreate the introns */
+  zMapFeatureTranscriptRecreateIntrons(merge_data->dest_feature);
+
+  return merged;
+}
+
+
+/*! 
+ * \brief Add/merge a feature to the scratch column
+ */
+static void scratchMergeFeature(ScratchMergeData merge_data)
+{
+  gboolean merged = FALSE;
 
   if (merge_data->use_subfeature)
     {
@@ -302,6 +337,7 @@ static void scratchMergeTranscript(ScratchMergeData merge_data)
       if (sub_feature)
         {
           scratchMergeCoords(merge_data, sub_feature->start, sub_feature->end);
+          merged = TRUE;
         }
       else
         {
@@ -312,62 +348,41 @@ static void scratchMergeTranscript(ScratchMergeData merge_data)
     }
   else
     {
-      /* Merge in all of the new exons from the new feature */
-      zMapFeatureTranscriptExonForeach(merge_data->src_feature, scratchMergeExonCB, merge_data);
-      
-      /* Copy CDS, if set */
-      zMapFeatureMergeTranscriptCDS(merge_data->src_feature, merge_data->dest_feature);    
+      switch (merge_data->src_feature->type)
+        {
+        case ZMAPSTYLE_MODE_INVALID:
+          break;
+        case ZMAPSTYLE_MODE_BASIC:
+          merged = scratchMergeBasic(merge_data);
+          break;
+        case ZMAPSTYLE_MODE_ALIGNMENT:
+          merged = scratchMergeAlignment(merge_data);
+          break;
+        case ZMAPSTYLE_MODE_TRANSCRIPT:
+          merged = scratchMergeTranscript(merge_data);
+          break;
+        case ZMAPSTYLE_MODE_SEQUENCE:
+          scratchMergeBase(merge_data);
+          merged = TRUE;
+          break;
+        case ZMAPSTYLE_MODE_ASSEMBLY_PATH:
+          break;
+        case ZMAPSTYLE_MODE_TEXT:
+          break;
+        case ZMAPSTYLE_MODE_GRAPH:
+          break;
+        case ZMAPSTYLE_MODE_GLYPH:
+          break;
+        case ZMAPSTYLE_MODE_PLAIN:
+          break;
+        case ZMAPSTYLE_MODE_META:
+          break;
+        default:
+          zMapWarning("Unrecognised feature type %d\n", merge_data->src_feature->type);
+          break;
+        };
     }
-
-  /* Recreate the introns */
-  zMapFeatureTranscriptRecreateIntrons(merge_data->dest_feature);
-}
-
-
-/*! 
- * \brief Add/merge a feature to the scratch column
- */
-static void scratchMergeFeature(ScratchMergeData merge_data)
-{
-  gboolean merged = FALSE;
-
-  switch (merge_data->src_feature->type)
-    {
-      case ZMAPSTYLE_MODE_INVALID:
-        break;
-      case ZMAPSTYLE_MODE_BASIC:
-        scratchMergeBasic(merge_data);
-        merged = TRUE;
-        break;
-      case ZMAPSTYLE_MODE_ALIGNMENT:
-        scratchMergeAlignment(merge_data);
-        merged = TRUE;
-        break;
-      case ZMAPSTYLE_MODE_TRANSCRIPT:
-        scratchMergeTranscript(merge_data);
-        merged = TRUE;
-        break;
-      case ZMAPSTYLE_MODE_SEQUENCE:
-        scratchMergeBase(merge_data);
-        merged = TRUE;
-        break;
-      case ZMAPSTYLE_MODE_ASSEMBLY_PATH:
-        break;
-      case ZMAPSTYLE_MODE_TEXT:
-        break;
-      case ZMAPSTYLE_MODE_GRAPH:
-        break;
-      case ZMAPSTYLE_MODE_GLYPH:
-        break;
-      case ZMAPSTYLE_MODE_PLAIN:
-        break;
-      case ZMAPSTYLE_MODE_META:
-        break;
-      default:
-        zMapWarning("Unrecognised feature type %d\n", merge_data->src_feature->type);
-        break;
-    };
-
+  
   /* Once finished merging, the start/end should now be set */
   if (merged)
     start_end_set_G = TRUE;
