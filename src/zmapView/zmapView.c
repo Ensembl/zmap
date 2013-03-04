@@ -1002,7 +1002,7 @@ void zmapViewResetWindows(ZMapView zmap_view, gboolean revcomp)
           
           view_window = list_item->data ;
           
-          zMapWindowFeatureSaveState(view_window->window, TRUE) ;
+          zMapWindowFeatureSaveState(view_window->window, revcomp) ;
         }
       while ((list_item = g_list_next(list_item))) ;
     }
