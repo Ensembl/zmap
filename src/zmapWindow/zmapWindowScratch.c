@@ -243,6 +243,21 @@ static void scratchMergeBase(ScratchMergeData merge_data)
 
 
 /*! 
+ * \brief Add/merge a basic feature to the scratch column
+ */
+static void scratchMergeBasic(ScratchMergeData merge_data)
+{
+  zMapFeatureRemoveIntrons(merge_data->dest_feature);
+
+  /* Just merge the start/end of the feature */
+  scratchMergeCoords(merge_data, merge_data->src_feature->x1, merge_data->src_feature->x2);
+
+  /* Recreate the introns */
+  zMapFeatureTranscriptRecreateIntrons(merge_data->dest_feature);
+}
+
+
+/*! 
  * \brief Add/merge an alignment feature to the scratch column
  */
 static void scratchMergeAlignment(ScratchMergeData merge_data)
@@ -321,6 +336,8 @@ static void scratchMergeFeature(ScratchMergeData merge_data)
       case ZMAPSTYLE_MODE_INVALID:
         break;
       case ZMAPSTYLE_MODE_BASIC:
+        scratchMergeBasic(merge_data);
+        merged = TRUE;
         break;
       case ZMAPSTYLE_MODE_ALIGNMENT:
         scratchMergeAlignment(merge_data);
