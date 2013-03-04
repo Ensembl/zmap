@@ -836,12 +836,9 @@ void zMapWindowFeatureSaveState(ZMapWindow window, gboolean features_are_revcomp
 	 */
   window->state = zmapWindowStateCreate();
 
-  if (features_are_revcomped)
-    {
-      /* Note that currently we lose the 3 frame state and other state such as columns */
-      window->display_3_frame = DISPLAY_3FRAME_NONE ;
-      window->show_3_frame_reverse = FALSE ;
-    }
+  /* Note that currently we lose the 3 frame state and other state such as columns */
+  window->display_3_frame = DISPLAY_3FRAME_NONE ;
+  window->show_3_frame_reverse = FALSE ;
 
   /* I think its ok to do this here ? this blanks out the info panel, we could hold on to the
    * originally highlighted feature...but only if its still visible if it ends up on the
