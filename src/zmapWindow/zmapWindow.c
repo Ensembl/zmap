@@ -324,6 +324,7 @@ static void printWindowSizeDebug(char *prefix, ZMapWindow window,
 static ZMapWindowCallbacks window_cbs_G = NULL ;
 static gboolean window_rev_comp_save_state_G = TRUE;
 static gboolean window_rev_comp_save_bumped_G = TRUE;
+static gboolean window_rev_comp_save_zoom_G = TRUE;
 static gboolean window_split_save_bumped_G = TRUE;
 
 
@@ -824,11 +825,6 @@ void zMapWindowStats(ZMapWindow window, GString *text)
  * all windows need to be saved/reset together */
 void zMapWindowFeatureSaveState(ZMapWindow window, gboolean features_are_revcomped)
 {
-  int x, y ;
-  double scroll_x1, scroll_y1, scroll_x2, scroll_y2 ;
-  gboolean state_saves_position = TRUE;
-
-
   zmapWindowBusy(window, TRUE) ;
 
   zMapStartTimer("WindowFeatureRedraw","");
@@ -840,65 +836,38 @@ void zMapWindowFeatureSaveState(ZMapWindow window, gboolean features_are_revcomp
 	 */
   window->state = zmapWindowStateCreate();
 
-  /* Note that currently we lose the 3 frame state and other state such as columns */
-  window->display_3_frame = DISPLAY_3FRAME_NONE ;
-  window->show_3_frame_reverse = FALSE ;
-
-
-  /* We need to hold on to some state and also to report the revcomp change to our callers
-   * _before_ we reset everything. */
   if (features_are_revcomped)
     {
-      double tmp ;
-      GtkAdjustment *adjust ;
-      int new_y ;
+      /* Note that currently we lose the 3 frame state and other state such as columns */
+      window->display_3_frame = DISPLAY_3FRAME_NONE ;
+      window->show_3_frame_reverse = FALSE ;
+    }
 
-      /* I think its ok to do this here ? this blanks out the info panel, we could hold on to the
-       * originally highlighted feature...but only if its still visible if it ends up on the
-       * reverse strand...for now we just blank it.... */
-      zmapWindowUpdateInfoPanel(window, NULL, NULL, NULL, NULL, 0, 0, 0, 0, NULL, TRUE, FALSE, FALSE) ;
-
-      if (state_saves_position)
-	{
-	  zmapWindowStateSavePosition(window->state, window);
-	}
-      else
-	{
-	  adjust = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window)) ;
-
-	  foo_canvas_get_scroll_offsets(window->canvas, &x, &y) ;
-
-	  new_y = adjust->upper - (y + adjust->page_size) ;
-
-	  y = new_y ;
-
-	  /* We need to get the current position, translate it to world coords, reverse it
-	   * and then scroll to that....needs some thought....  */
-
-	  /* Probably we should reverse the x position as well.... */
-
-	  foo_canvas_get_scroll_region(window->canvas, &scroll_x1, &scroll_y1, &scroll_x2, &scroll_y2) ;
-
-	  scroll_y1 = window->seqLength - scroll_y1 ;
-	  scroll_y2 = window->seqLength - scroll_y2 ;
-
-	  tmp = scroll_y1 ;
-	  scroll_y1 = scroll_y2 ;
-	  scroll_y2 = tmp ;
-	}
-
-      zmapWindowStateSaveFocusItems(window->state, window) ;
-
-      if (window_rev_comp_save_state_G)
-	{
-	  zmapWindowStateSaveMark(window->state, window);
-	}
-
-      if(window_rev_comp_save_bumped_G)
-	{
-	  zmapWindowStateSaveBumpedColumns(window->state, window);
-	}
-
+  /* I think its ok to do this here ? this blanks out the info panel, we could hold on to the
+   * originally highlighted feature...but only if its still visible if it ends up on the
+   * reverse strand...for now we just blank it.... */
+  zmapWindowUpdateInfoPanel(window, NULL, NULL, NULL, NULL, 0, 0, 0, 0, NULL, TRUE, FALSE, FALSE) ;
+  
+  zmapWindowStateSavePosition(window->state, window);
+  zmapWindowStateSaveFocusItems(window->state, window) ;
+  
+  if (window_rev_comp_save_state_G)
+    {
+      zmapWindowStateSaveMark(window->state, window);
+    }
+  
+  if(window_rev_comp_save_bumped_G)
+    {
+      zmapWindowStateSaveBumpedColumns(window->state, window);
+    }
+  
+  if(window_rev_comp_save_zoom_G)
+    {
+      zmapWindowStateSaveZoom(window->state, zMapWindowGetZoomFactor(window));
+    }
+  
+  if (features_are_revcomped)
+    {
       window->revcomped_features = !window->revcomped_features ;
     }
 
