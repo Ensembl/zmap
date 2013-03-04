@@ -613,116 +613,125 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
       FooCanvasItem *highlight_item = NULL ;
 
 
-	if(!zMapWindowCanvasItemHasPointFeature(item))
+      /* this is absolutely hateful coding.....the canvascolumn event func. should call this
+	 func... I should do that later......! */
+
+      /* NOTE, THIS POINT FUNCTION NEEDS INVESTIGATING....FURTHER DOWN ITS CALL CHAIN
+       * IT'S NOT DOING ENOUGH CHECKING ON ITEM.....it looks like item is not valid ??
+       * need to investigate this first.... */
+      if (!zMapWindowCanvasItemHasPointFeature(item))
 	{
-		/* click on column not feature */
-		return zmapWindowColumnBoundingBoxEventCB(item, event, data);
+	  /* click on column not feature */
+	  event_handled = zmapWindowColumnBoundingBoxEventCB(item, event, data) ;
 	}
-
-      zMapDebugPrint(mouse_debug_G, "Start: %s %d",
-		     (event->type == GDK_BUTTON_PRESS ? "button_press"
-		      : event->type == GDK_2BUTTON_PRESS ? "button_2press" : "button_release"),
-		     but_event->button) ;
-
-      if (!ZMAP_IS_CANVAS_ITEM(item))
+      else
 	{
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  g_warning("Not a ZMapWindowCanvasItem.");
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-	  zMapDebugPrint(mouse_debug_G, "Leave (Not canvas item): %s %d - return FALSE",
+	  zMapDebugPrint(mouse_debug_G, "Start: %s %d",
 			 (event->type == GDK_BUTTON_PRESS ? "button_press"
 			  : event->type == GDK_2BUTTON_PRESS ? "button_2press" : "button_release"),
 			 but_event->button) ;
 
-	  return FALSE;
-	}
-
-
-		/* freeze composite feature to current coords
-		 * seems a bit more semantic to do this in zMapWindowCanvasItemGetInterval()
-		 * but that's called by handleButton which doesn't do double click
-		 */
-	if(but_event->button == 1)
-		zMapWindowCanvasItemSetFeature((ZMapWindowCanvasItem) item, but_event->x, but_event->y);
-
-      /* Get the feature attached to the item, checking that its type is valid */
-      feature = zMapWindowCanvasItemGetFeature(item) ;
-
-      if (but_event->type == GDK_BUTTON_PRESS)
-	{
-	  if (but_event->button == 3)
+	  if (!ZMAP_IS_CANVAS_ITEM(item))
 	    {
-	      /* Pop up an item menu. */
-	      zmapMakeItemMenu(but_event, window, item) ;
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	      g_warning("Not a ZMapWindowCanvasItem.");
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+	      zMapDebugPrint(mouse_debug_G, "Leave (Not canvas item): %s %d - return FALSE",
+			     (event->type == GDK_BUTTON_PRESS ? "button_press"
+			      : event->type == GDK_2BUTTON_PRESS ? "button_2press" : "button_release"),
+			     but_event->button) ;
+
+	      return FALSE;
 	    }
 
-	  event_handled = TRUE ;
-	}
-      else if (but_event->type == GDK_2BUTTON_PRESS)
-	{
-	  second_press = TRUE ;
 
-	  event_handled = TRUE ;
-	}
-      else						    /* button release */
-	{
-	  /* Gdk defines double clicks as occuring within 250 milliseconds of each other
-	   * but unfortunately if on the first click we do a lot of processing,
-	   * STUPID Gdk no longer delivers the GDK_2BUTTON_PRESS so we have to do this
-	   * hack looking for the difference in time. This can happen if user clicks on
-	   * a very large feature causing us to paste a lot of text to the selection
-	   * buffer. */
-	  guint but_threshold = 500 ;			    /* Separation of clicks in milliseconds. */
+	  /* freeze composite feature to current coords
+	   * seems a bit more semantic to do this in zMapWindowCanvasItemGetInterval()
+	   * but that's called by handleButton which doesn't do double click
+	   */
+	  if(but_event->button == 1)
+	    zMapWindowCanvasItemSetFeature((ZMapWindowCanvasItem) item, but_event->x, but_event->y);
 
-	  if (second_press || but_event->time - last_but_release < but_threshold)
+	  /* Get the feature attached to the item, checking that its type is valid */
+	  feature = zMapWindowCanvasItemGetFeature(item) ;
+
+	  if (but_event->type == GDK_BUTTON_PRESS)
 	    {
-	      /* Second click of a double click means show feature details. */
-	      if (but_event->button == 1)
+	      if (but_event->button == 3)
 		{
-		  ZMapXRemoteSendCommandError externally_handled = ZMAPXREMOTE_SENDCOMMAND_UNAVAILABLE ;
-
-		  highlight_item = item;
-
-		  /* If external client then call them to do editing. */
-		  if (window->xremote_client)
-		    externally_handled = zmapWindowUpdateXRemoteData(window, (ZMapFeatureAny)feature,
-								     "edit", highlight_item) ;
-
-		  /* If there is no external client or the external client times out then show what we can. */
-		  if (externally_handled != ZMAPXREMOTE_SENDCOMMAND_SUCCEED)
-		    {
-		      if (externally_handled == ZMAPXREMOTE_SENDCOMMAND_TIMEOUT)
-			zMapWarning("Request failed to external client to edit feature \"%s\"",
-				    g_quark_to_string(feature->original_id)) ;
-
-		      zmapWindowFeatureShow(window, highlight_item) ;
-		    }
+		  /* Pop up an item menu. */
+		  zmapMakeItemMenu(but_event, window, item) ;
 		}
 
-	      second_press = FALSE ;
+	      event_handled = TRUE ;
 	    }
-	  else
+	  else if (but_event->type == GDK_2BUTTON_PRESS)
 	    {
+	      second_press = TRUE ;
+
+	      event_handled = TRUE ;
+	    }
+	  else						    /* button release */
+	    {
+	      /* Gdk defines double clicks as occuring within 250 milliseconds of each other
+	       * but unfortunately if on the first click we do a lot of processing,
+	       * STUPID Gdk no longer delivers the GDK_2BUTTON_PRESS so we have to do this
+	       * hack looking for the difference in time. This can happen if user clicks on
+	       * a very large feature causing us to paste a lot of text to the selection
+	       * buffer. */
+	      guint but_threshold = 500 ;			    /* Separation of clicks in milliseconds. */
+
+	      if (second_press || but_event->time - last_but_release < but_threshold)
+		{
+		  /* Second click of a double click means show feature details. */
+		  if (but_event->button == 1)
+		    {
+		      ZMapXRemoteSendCommandError externally_handled = ZMAPXREMOTE_SENDCOMMAND_UNAVAILABLE ;
+
+		      highlight_item = item;
+
+		      /* If external client then call them to do editing. */
+		      if (window->xremote_client)
+			externally_handled = zmapWindowUpdateXRemoteData(window, (ZMapFeatureAny)feature,
+									 "edit", highlight_item) ;
+
+		      /* If there is no external client or the external client times out then show what we can. */
+		      if (externally_handled != ZMAPXREMOTE_SENDCOMMAND_SUCCEED)
+			{
+			  if (externally_handled == ZMAPXREMOTE_SENDCOMMAND_TIMEOUT)
+			    zMapWarning("Request failed to external client to edit feature \"%s\"",
+					g_quark_to_string(feature->original_id)) ;
+
+			  zmapWindowFeatureShow(window, highlight_item) ;
+			}
+		    }
+
+		  second_press = FALSE ;
+		}
+	      else
+		{
 
 
-	      event_handled = handleButton(but_event, window, item, feature) ;
+		  event_handled = handleButton(but_event, window, item, feature) ;
+		}
+
+	      last_but_release = but_event->time ;
+
+	      event_handled = TRUE ;
 	    }
 
-	  last_but_release = but_event->time ;
+	  zMapDebugPrint(mouse_debug_G, "Leave: %s %d - return %s",
+			 (event->type == GDK_BUTTON_PRESS ? "button_press"
+			  : event->type == GDK_2BUTTON_PRESS ? "button_2press" : "button_release"),
+			 but_event->button,
+			 event_handled ? "TRUE" : "FALSE") ;
 
-	  event_handled = TRUE ;
+	  if (mouse_debug_G)
+	    fflush(stdout) ;
 	}
-
-      zMapDebugPrint(mouse_debug_G, "Leave: %s %d - return %s",
-		     (event->type == GDK_BUTTON_PRESS ? "button_press"
-		      : event->type == GDK_2BUTTON_PRESS ? "button_2press" : "button_release"),
-		     but_event->button,
-		     event_handled ? "TRUE" : "FALSE") ;
     }
 
-  if (mouse_debug_G)
-    fflush(stdout) ;
 
   return event_handled ;
 }
