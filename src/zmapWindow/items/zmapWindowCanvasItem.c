@@ -177,29 +177,17 @@ ZMapFeature zMapWindowCanvasItemGetFeature(FooCanvasItem *any_item)
 }
 
 
-
-/* did the user click on a feature or the non existant background ? */
-gboolean zMapWindowCanvasItemHasPointFeature(FooCanvasItem *item)
-{
-  	if(ZMAP_IS_WINDOW_FEATURESET_ITEM(item))
-	{
-		return zMapWindowCanvasFeaturesetHasPointFeature(item);
-	}
-	return FALSE;
-}
-
-
-ZMapFeatureSubPartSpan zMapWindowCanvasItemIntervalGetData(FooCanvasItem *item, ZMapFeature feature, double x, double y)
+ZMapFeatureSubPartSpan zMapWindowCanvasItemIntervalGetData(FooCanvasItem *item,
+							   ZMapFeature feature, double x, double y)
 {
   ZMapFeatureSubPartSpan sub_feature = NULL;
 
-  	if(ZMAP_IS_WINDOW_FEATURESET_ITEM(item))
-	{
-		  sub_feature =
-  			zMapWindowCanvasFeaturesetGetSubPartSpan(item , feature, x, y);
-	}
+  if(ZMAP_IS_WINDOW_FEATURESET_ITEM(item))
+    {
+      sub_feature = zMapWindowCanvasFeaturesetGetSubPartSpan(item , feature, x, y) ;
+    }
 
-  return sub_feature;
+  return sub_feature ;
 }
 
 FooCanvasItem *zMapWindowCanvasItemGetInterval(ZMapWindowCanvasItem canvas_item,
@@ -307,21 +295,22 @@ gboolean zMapWindowCanvasItemSetFeature(ZMapWindowCanvasItem item, double x, dou
 
 gboolean zMapWindowCanvasItemSetFeaturePointer(ZMapWindowCanvasItem item, ZMapFeature feature)
 {
-	int pop = 0;
+  int pop = 0;
 
-	/* collpased features have 0 population, the one that was displayed has the total
-	 * if we use window search then select a collapsed feature we have to update this
-	 * see zmapViewfeatureCollapse.c etc; scan for 'population' and 'collasped'
-	 */
+  /* collpased features have 0 population, the one that was displayed has the total
+   * if we use window search then select a collapsed feature we have to update this
+   * see zmapViewfeatureCollapse.c etc; scan for 'population' and 'collasped'
+   */
 
-	if(item->feature)
-		pop = item->feature->population;
+  if(item->feature)
+    pop = item->feature->population;
 
-	if(feature->flags.collapsed)
-		feature->population = pop;
+  if(feature->flags.collapsed)
+    feature->population = pop;
 
-	item->feature = feature;
-	return(TRUE);
+  item->feature = feature;
+
+  return(TRUE);
 }
 
 gboolean zMapWindowCanvasItemSetStyle(ZMapWindowCanvasItem item, ZMapFeatureTypeStyle style)
