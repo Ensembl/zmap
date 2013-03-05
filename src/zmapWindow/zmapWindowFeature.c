@@ -111,7 +111,7 @@ gboolean zMapWindowFeatureSelect(ZMapWindow window, ZMapFeature feature)
 						    feature->strand, ZMAPFRAME_NONE, feature)))
     {
 
-       zmapWindowUpdateInfoPanel(window, feature, NULL, feature_item, NULL, 0, 0,  0, 0,
+      zmapWindowUpdateInfoPanel(window, feature, NULL, feature_item, NULL, 0, 0,  0, 0,
 				NULL, TRUE, FALSE, FALSE) ;
       result = TRUE ;
     }
@@ -210,7 +210,7 @@ gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_
   gboolean result = FALSE ;
   ZMapFeatureSet feature_set ;
 
-//  feature = zmapWindowItemGetFeature(feature_item);
+  //  feature = zmapWindowItemGetFeature(feature_item);
   zMapAssert(feature && zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
   feature_set = (ZMapFeatureSet)(feature->parent) ;
 
@@ -294,7 +294,7 @@ ZMapStrand zmapWindowFeatureStrand(ZMapWindow window, ZMapFeature feature)
   ZMapFeatureTypeStyle style = NULL;
   ZMapStrand strand = ZMAPSTRAND_FORWARD ;
 
-//  style = zMapFindStyle(window->context_map.styles, feature->style_id) ;
+  //  style = zMapFindStyle(window->context_map.styles, feature->style_id) ;
   style = *feature->style;     // safe failure...
 
   g_return_val_if_fail(style != NULL, strand);
@@ -329,7 +329,7 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow      window,
   ZMapFeature feature = feature_stack->feature;
 
 #if MH17_REVCOMP_DEBUG
-      zMapLogWarning("FeatureDraw %d-%d",feature->x1,feature->x2);
+  zMapLogWarning("FeatureDraw %d-%d",feature->x1,feature->x2);
 #endif
 
 #if DONE_BY_CALLER
@@ -338,19 +338,19 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow      window,
   if ((zMapStyleIsStrandSpecific(style)) &&
       ((feature->strand == ZMAPSTRAND_REVERSE) && (!zMapStyleIsShowReverseStrand(style))))
     {
-zMapAssertNotReached();
+      zMapAssertNotReached();
       return NULL ;
     }
   if ((zMapStyleIsStrandSpecific(style)) && window->revcomped_features &&
       ((feature->strand == ZMAPSTRAND_FORWARD) && (zMapStyleIsHideForwardStrand(style))))
     {
-zMapAssertNotReached();
+      zMapAssertNotReached();
       return NULL ;
     }
 #endif
 
 #if MH17_REVCOMP_DEBUG
-      zMapLogWarning("right strand %d",feature->strand);
+  zMapLogWarning("right strand %d",feature->strand);
 #endif
 
 
@@ -358,32 +358,32 @@ zMapAssertNotReached();
   if(masked)
     {
       if(container->masked && !window->highlights_set.masked)
-      {
+	{
 #if MH17_REVCOMP_DEBUG
-      zMapLogWarning("masked","");
+	  zMapLogWarning("masked","");
 #endif
 
 
-        return NULL;
-      }
+	  return NULL;
+	}
     }
 
   new_feature = zmapWindowFToIFactoryRunSingle(window->context_to_item,
 #if RUN_SET
 					       NULL,
 #endif
-                                     set_group, set_features,
-						 foo_featureset,
+					       set_group, set_features,
+					       foo_featureset,
 					       feature_stack);
 
-//#warning could make this take a window not a gpointer, would be more readable
-//#warning ideally only call this first time canvasfeatureset is created
-//  if(!zMapWindowCanvasItemIsConnected((ZMapWindowCanvasItem) new_feature))
+  //#warning could make this take a window not a gpointer, would be more readable
+  //#warning ideally only call this first time canvasfeatureset is created
+  //  if(!zMapWindowCanvasItemIsConnected((ZMapWindowCanvasItem) new_feature))
   if(new_feature != foo_featureset)
-	factoryTopItemCreated (new_feature, feature_stack, (gpointer) window);
+    factoryTopItemCreated (new_feature, feature_stack, (gpointer) window);
 
   if(masked && container->masked && new_feature)
-      foo_canvas_item_hide(new_feature);
+    foo_canvas_item_hide(new_feature);
 
   return new_feature;
 }
@@ -482,37 +482,6 @@ gboolean zMapWindowGetDNAStatus(ZMapWindow window)
   return drawable;
 }
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-FooCanvasGroup *zmapWindowFeatureItemsMakeGroup(ZMapWindow window, GList *feature_items)
-{
-  FooCanvasGroup *new_group = NULL ;
-
-
-  /* Sort the list of items for position...this looks like a candidate for a general function. */
-  feature_items = zmapWindowItemSortByPostion(feature_items) ;
-
-  /* Now get the position of the top item and use that as the position of the new group. */
-  item = (FooCanvasItem *)(g_list_first(feature_items)->data) ;
-  reparent_data.x_origin = item->x1 ;
-  reparent_data.y_origin = item->x2 ;
-
-  /* Make the new group....remember to add an underlay/background....which is hidden by
-   * default..... */
-  reparent_data.new_parent = new_group = foo_canvas_item_new(FOO_CANVAS_GROUP(item->parent),
-							     foo_canvas_group_get_type(),
-							     "x", reparent_data.x_origin,
-							     "y", reparent_data.y_origin,
-							     NULL) ;
-
-  /* Add all the items to the new group correcting their coords. */
-  g_list_foreach(feature_items, reparentItemCB, &reparent_data) ;
-
-
-
-  return new_group ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
 /* Get the peptide as a fasta string.  All contained in a function so
  * there's no falling over phase values and stop codons... */
@@ -565,6 +534,7 @@ char *zmapWindowFeatureTranscriptFASTA(ZMapFeature feature, gboolean spliced, gb
  *                       Internal functions.
  */
 
+
 /* Callback for destroy of feature items... */
 static gboolean canvasItemDestroyCB(FooCanvasItem *feature_item, gpointer data)
 {
@@ -581,15 +551,12 @@ static gboolean canvasItemDestroyCB(FooCanvasItem *feature_item, gpointer data)
 
 
 
-static void featureCopySelectedItem(ZMapFeature feature_in,
-                                    ZMapFeature feature_out,
-                                    FooCanvasItem *selected)
+static void featureCopySelectedItem(ZMapFeature feature_in, ZMapFeature feature_out, FooCanvasItem *selected)
 {
+  zMapAssert(feature_in && feature_out) ;
 
   if (feature_in && feature_out)
     memcpy(feature_out, feature_in, sizeof(ZMapFeatureStruct));
-  else
-    zMapAssertNotReached();
 
   return ;
 }
@@ -613,130 +580,131 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
       FooCanvasItem *highlight_item = NULL ;
 
 
-	if(!zMapWindowCanvasItemHasPointFeature(item))
+      /* this is absolutely hateful coding.....the canvascolumn event func. should call this
+	 function, not the other way round....... I should do that later......! */
+
+      if (!zMapWindowCanvasFeaturesetHasPointFeature(item))
 	{
-		/* click on column not feature */
-		return zmapWindowColumnBoundingBoxEventCB(item, event, data);
+	  /* click on column not feature */
+	  event_handled = zmapWindowColumnBoundingBoxEventCB(item, event, data) ;
 	}
-
-      zMapDebugPrint(mouse_debug_G, "Start: %s %d",
-		     (event->type == GDK_BUTTON_PRESS ? "button_press"
-		      : event->type == GDK_2BUTTON_PRESS ? "button_2press" : "button_release"),
-		     but_event->button) ;
-
-      if (!ZMAP_IS_CANVAS_ITEM(item))
+      else
 	{
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  g_warning("Not a ZMapWindowCanvasItem.");
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-	  zMapDebugPrint(mouse_debug_G, "Leave (Not canvas item): %s %d - return FALSE",
+	  zMapDebugPrint(mouse_debug_G, "Start: %s %d",
 			 (event->type == GDK_BUTTON_PRESS ? "button_press"
 			  : event->type == GDK_2BUTTON_PRESS ? "button_2press" : "button_release"),
 			 but_event->button) ;
 
-	  return FALSE;
-	}
-
-
-		/* freeze composite feature to current coords
-		 * seems a bit more semantic to do this in zMapWindowCanvasItemGetInterval()
-		 * but that's called by handleButton which doesn't do double click
-		 */
-	if(but_event->button == 1)
-		zMapWindowCanvasItemSetFeature((ZMapWindowCanvasItem) item, but_event->x, but_event->y);
-
-      /* Get the feature attached to the item, checking that its type is valid */
-      feature = zMapWindowCanvasItemGetFeature(item) ;
-
-      if (but_event->type == GDK_BUTTON_PRESS)
-	{
-	  if (but_event->button == 3)
+	  if (!ZMAP_IS_CANVAS_ITEM(item))
 	    {
-	      /* Pop up an item menu. */
-	      zmapMakeItemMenu(but_event, window, item) ;
+	      zMapDebugPrint(mouse_debug_G, "Leave (Not canvas item): %s %d - return FALSE",
+			     (event->type == GDK_BUTTON_PRESS ? "button_press"
+			      : event->type == GDK_2BUTTON_PRESS ? "button_2press" : "button_release"),
+			     but_event->button) ;
+
+	      return FALSE ;
 	    }
 
-	  event_handled = TRUE ;
-	}
-      else if (but_event->type == GDK_2BUTTON_PRESS)
-	{
-	  second_press = TRUE ;
 
-	  event_handled = TRUE ;
-	}
-      else
-	{
-	  /*                            button release                             */
+	  /* freeze composite feature to current coords
+	   * seems a bit more semantic to do this in zMapWindowCanvasItemGetInterval()
+	   * but that's called by handleButton which doesn't do double click
+	   */
+	  if(but_event->button == 1)
+	    zMapWindowCanvasItemSetFeature((ZMapWindowCanvasItem) item, but_event->x, but_event->y);
 
-	  /* Gdk defines double clicks as occuring within 250 milliseconds of each other
-	   * but unfortunately if on the first click we do a lot of processing,
-	   * STUPID Gdk no longer delivers the GDK_2BUTTON_PRESS so we have to do this
-	   * hack looking for the difference in time. This can happen if user clicks on
-	   * a very large feature causing us to paste a lot of text to the selection
-	   * buffer. */
-	  guint but_threshold = 500 ;			    /* Separation of clicks in milliseconds. */
+	  /* Get the feature attached to the item, checking that its type is valid */
+	  feature = zMapWindowCanvasItemGetFeature(item) ;
 
-	  if (second_press || but_event->time - last_but_release < but_threshold)
+	  if (but_event->type == GDK_BUTTON_PRESS)
 	    {
-	      /* Second click of a double click means show feature details. */
-	      if (but_event->button == 1)
+	      if (but_event->button == 3)
 		{
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-		  ZMapXRemoteSendCommandError externally_handled = ZMAPXREMOTE_SENDCOMMAND_UNAVAILABLE ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-		  highlight_item = item ;
-
-		  /* If external client then call them to do editing. */
-		  if (window->xremote_client)
-		    {
-		      zmapWindowUpdateXRemoteData(window, (ZMapFeatureAny)feature,
-						  ZACP_EDIT_FEATURE, highlight_item) ;
-		    }
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-		  /* We can't do this like this any more.....leave it for now and if we need to do
-		   * this then code needs a restructure as for showFeature. */
-
-		  /* If there is no external client or the external client times out then show what we can. */
-		  if (externally_handled != ZMAPXREMOTE_SENDCOMMAND_SUCCEED)
-		    {
-		      if (externally_handled == ZMAPXREMOTE_SENDCOMMAND_TIMEOUT)
-			zMapWarning("\"%s\" request failed to external client for feature \"%s\"",
-				    ZACP_EDIT_FEATURE,
-				    g_quark_to_string(feature->original_id)) ;
-
-		      zmapWindowFeatureShow(window, highlight_item) ;
-		    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
+		  /* Pop up an item menu. */
+		  zmapMakeItemMenu(but_event, window, item) ;
 		}
 
-	      second_press = FALSE ;
+	      event_handled = TRUE ;
 	    }
-	  else
+	  else if (but_event->type == GDK_2BUTTON_PRESS)
 	    {
+	      second_press = TRUE ;
+
+	      event_handled = TRUE ;
+	    }
+	  else						    /* button release */
+	    {
+	      /*                            button release                             */
+
+	      /* Gdk defines double clicks as occuring within 250 milliseconds of each other
+	       * but unfortunately if on the first click we do a lot of processing,
+	       * STUPID Gdk no longer delivers the GDK_2BUTTON_PRESS so we have to do this
+	       * hack looking for the difference in time. This can happen if user clicks on
+	       * a very large feature causing us to paste a lot of text to the selection
+	       * buffer. */
+	      guint but_threshold = 500 ;			    /* Separation of clicks in milliseconds. */
+
+	      if (second_press || but_event->time - last_but_release < but_threshold)
+		{
+		  /* Second click of a double click means show feature details. */
+		  if (but_event->button == 1)
+		    {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+		      ZMapXRemoteSendCommandError externally_handled = ZMAPXREMOTE_SENDCOMMAND_UNAVAILABLE ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+		      highlight_item = item;
+
+		      /* If external client then call them to do editing. */
+		      if (window->xremote_client)
+			{
+			  zmapWindowUpdateXRemoteData(window, (ZMapFeatureAny)feature,
+						      ZACP_EDIT_FEATURE, highlight_item) ;
+			}
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+		      /* We can't do this like this any more.....leave it for now and if we need to do
+		       * this then code needs a restructure as for showFeature. */
+
+		      /* If there is no external client or the external client times out then show what we can. */
+		      if (externally_handled != ZMAPXREMOTE_SENDCOMMAND_SUCCEED)
+			{
+			  if (externally_handled == ZMAPXREMOTE_SENDCOMMAND_TIMEOUT)
+			    zMapWarning("Request failed to external client to edit feature \"%s\"",
+					g_quark_to_string(feature->original_id)) ;
+			  
+			  zmapWindowFeatureShow(window, highlight_item) ;
+			}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+		    }
+
+		  second_press = FALSE ;
+		}
+	      else
+		{
 
 
-	      event_handled = handleButton(but_event, window, item, feature) ;
+		  event_handled = handleButton(but_event, window, item, feature) ;
+		}
+
+	      last_but_release = but_event->time ;
+
+	      event_handled = TRUE ;
 	    }
 
-	  last_but_release = but_event->time ;
+	  zMapDebugPrint(mouse_debug_G, "Leave: %s %d - return %s",
+			 (event->type == GDK_BUTTON_PRESS ? "button_press"
+			  : event->type == GDK_2BUTTON_PRESS ? "button_2press" : "button_release"),
+			 but_event->button,
+			 event_handled ? "TRUE" : "FALSE") ;
 
-	  event_handled = TRUE ;
+	  if (mouse_debug_G)
+	    fflush(stdout) ;
 	}
-
-      zMapDebugPrint(mouse_debug_G, "Leave: %s %d - return %s",
-		     (event->type == GDK_BUTTON_PRESS ? "button_press"
-		      : event->type == GDK_2BUTTON_PRESS ? "button_2press" : "button_release"),
-		     but_event->button,
-		     event_handled ? "TRUE" : "FALSE") ;
     }
 
-  if (mouse_debug_G)
-    fflush(stdout) ;
 
   return event_handled ;
 }
@@ -779,7 +747,7 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
       ZMapWindowCanvasItem canvas_item ;
       ZMapFeatureStruct feature_copy = {};
       ZMapFeatureAny my_feature = (ZMapFeatureAny) feature;
-	gboolean control = FALSE;
+      gboolean control = FALSE;
 
       canvas_item = ZMAP_CANVAS_ITEM(item);
       highlight_item = item;
@@ -945,10 +913,10 @@ void zmapWindowFeatureExpand(ZMapWindow window, FooCanvasItem *foo,
       /* (mh17) NOTE we have to be careful that these features end up in the same (singleton) CanvasFeatureset else they overlap on bump */
       feature_stack.feature = (ZMapFeature) l->data;
       item = (ZMapWindowCanvasItem) zmapWindowFeatureDraw(window, *feature->style,  container_set,features, foo_featureset, &feature_stack);
-	foo_featureset = (FooCanvasItem *) item;
+      foo_featureset = (FooCanvasItem *) item;
       //printf(" show %s\n", g_quark_to_string(feature_stack.feature->original_id));
 #if MH17_DO_HIDE
-// ref to same #if in zmapWindowCanvasAlignment.c
+      // ref to same #if in zmapWindowCanvasAlignment.c
       zMapWindowCanvasItemShowHide(item, TRUE);
 #endif
     }
@@ -1087,9 +1055,9 @@ static gboolean factoryTopItemCreated(FooCanvasItem *top_item,
     case ZMAPSTYLE_MODE_GRAPH:
     case ZMAPSTYLE_MODE_SEQUENCE:
 
-//      gtk_widget_set_events(GTK_WIDGET(top_item),GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK);
-// not a widget it's a canvas item
-// see if this speeds up up! (no difference)
+      //      gtk_widget_set_events(GTK_WIDGET(top_item),GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK);
+      // not a widget it's a canvas item
+      // see if this speeds up up! (no difference)
       g_signal_connect(G_OBJECT(top_item), "event", G_CALLBACK(canvasItemEventCB), handler_data);
 
       break;
@@ -1162,7 +1130,7 @@ static gboolean factoryFeatureSizeReq(ZMapFeature feature,
         points_array_inout[3] = block_end;
     }
 
- return outside;
+  return outside;
 }
 #endif
 

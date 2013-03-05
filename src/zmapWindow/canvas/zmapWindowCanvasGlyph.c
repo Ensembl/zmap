@@ -560,30 +560,33 @@ static void calcSplicePos(ZMapWindowFeaturesetItem featureset, ZMapFeature featu
 //
 static void glyph_set_coords(ZMapWindowCanvasGlyph glyph)
 {
-  int i,j,coord;
+  int i, j, coord ;
 
   switch(glyph->shape->type)
     {
     case GLYPH_DRAW_ARC:
-      if(glyph->shape->n_coords > 2)       // bounding box, don't include the angles, these points get transformed
-	glyph->shape->n_coords = 2;        // x-ref to _draw()
+
+      // bounding box, don't include the angles, these points get transformed x-ref to _draw()
+      if(glyph->shape->n_coords > 2)
+	glyph->shape->n_coords = 2 ;
       // fall through
 
     case GLYPH_DRAW_LINES:
     case GLYPH_DRAW_BROKEN:
     case GLYPH_DRAW_POLYGON:
 
-      for(i = j = 0; i < glyph->shape->n_coords * 2;i++)
+      for (i = j = 0 ; i < glyph->shape->n_coords * 2 ; i++)
 	{
-	  coord = glyph->shape->coords[i];         // X coord
-	  if(coord == GLYPH_COORD_INVALID)
-	    coord = (int) GLYPH_CANVAS_COORD_INVALID; // zero, will be ignored
+	  coord = glyph->shape->coords[i];		    // X coord
 
-	  if(i & 1)			/* Y coord */
+	  if (coord == GLYPH_COORD_INVALID)
+	    coord = (int)GLYPH_CANVAS_COORD_INVALID ;	    // zero, will be ignored
+
+	  if (i & 1)					    /* Y coord */
 	    {
-	      coord *= glyph->height;
-      	      glyph->coords[j].y = coord;		 // points are centred around the anchor of 0,0
-      	      j++;
+	      coord *= glyph->height ;
+      	      glyph->coords[j].y = coord ;		    // points are centred around the anchor of 0,0
+      	      j++ ;
 	    }
 	  else
 	    {
@@ -602,14 +605,14 @@ static void glyph_set_coords(ZMapWindowCanvasGlyph glyph)
 }
 
 
-
-/* oh gosh...what do 'points' end up measuring ?????? */
-/* pixel coordinates, the glyph is based arounf cx,cy */
+/* Calculate actual pixel coordinates on the foocanvas window, the glyph is centred around cx,cy.
+ * 
+ * NOTE these coords are NOT the viewport coords but the coords on the zoomed foocanvas window. */
 static void glyph_to_canvas(GdkPoint *points, GdkPoint *coords, int count, int cx, int cy)
 {
-  int i;
+  int i ;
 
-  for (i = 0; i < count; i++, points++, coords++)
+  for (i = 0 ; i < count ; i++, points++, coords++)
     {
       points->x = coords->x + cx ;
       points->y = coords->y + cy ;
@@ -740,12 +743,11 @@ static void glyphColumnFree(ZMapWindowFeaturesetItem featureset)
 
 
 
-
-
 // x-ref with zmapWindowDump.c/dumpGlyph()
 /* handle sub feature and free standing glyphs */
 static void zmap_window_canvas_paint_feature_glyph(ZMapWindowFeaturesetItem featureset,
-						   ZMapWindowCanvasFeature canvas_feature, ZMapWindowCanvasGlyph glyph,
+						   ZMapWindowCanvasFeature canvas_feature,
+						   ZMapWindowCanvasGlyph glyph,
 						   double y1, GdkDrawable *drawable)
 {
   gulong fill,outline;
@@ -759,21 +761,22 @@ static void zmap_window_canvas_paint_feature_glyph(ZMapWindowFeaturesetItem feat
   /* just draw the glyph */
   /* must recalculate gdk coords as columns can move around */
 
-  x1 = featureset->dx + featureset->x_off;
-  if(featureset->bumped)
-    x1 += canvas_feature->bump_offset;
+  x1 = featureset->dx + featureset->x_off ;
 
-  y1 += featureset->dy - featureset->start;
+  if (featureset->bumped)
+    x1 += canvas_feature->bump_offset ;
+
+  y1 += featureset->dy - featureset->start ;
 
   /* get item canvas coords, following example from FOO_CANVAS_RE (used by graph items) */
-  foo_canvas_w2c(item->canvas, x1, y1, &cx1, &cy1);
-  glyph_to_canvas(glyph->points, glyph->coords, glyph->shape->n_coords, cx1, cy1);
+  foo_canvas_w2c(item->canvas, x1, y1, &cx1, &cy1) ;
+  glyph_to_canvas(glyph->points, glyph->coords, glyph->shape->n_coords, cx1, cy1) ;
 
 
   /* we have pre-calculated pixel colours */
-  colours_set = zMapWindowCanvasFeaturesetGetColours(featureset, canvas_feature, &fill, &outline);
-  fill_set = colours_set & WINDOW_FOCUS_CACHE_FILL;
-  outline_set = colours_set & WINDOW_FOCUS_CACHE_OUTLINE;
+  colours_set = zMapWindowCanvasFeaturesetGetColours(featureset, canvas_feature, &fill, &outline) ;
+  fill_set = colours_set & WINDOW_FOCUS_CACHE_FILL ;
+  outline_set = colours_set & WINDOW_FOCUS_CACHE_OUTLINE ;
 
   if (glyph->use_glyph_colours)
     {
@@ -784,19 +787,10 @@ static void zmap_window_canvas_paint_feature_glyph(ZMapWindowFeaturesetItem feat
       outline = glyph->line_pixel;
     }
 
-
   if (zMapStyleIsSpliceStyle(*feature->style))
-    gdk_gc_set_line_attributes(featureset->gc,
-			       SPLICE_LINE_WIDTH,
-			       GDK_LINE_SOLID,
-			       GDK_CAP_BUTT,
-			       GDK_JOIN_MITER) ;
+    gdk_gc_set_line_attributes(featureset->gc, SPLICE_LINE_WIDTH, GDK_LINE_SOLID, GDK_CAP_BUTT, GDK_JOIN_MITER) ;
   else
-    gdk_gc_set_line_attributes(featureset->gc,
-			       DEFAULT_LINE_WIDTH,
-			       GDK_LINE_SOLID,
-			       GDK_CAP_BUTT,
-			       GDK_JOIN_ROUND) ;
+    gdk_gc_set_line_attributes(featureset->gc, DEFAULT_LINE_WIDTH, GDK_LINE_SOLID, GDK_CAP_BUTT, GDK_JOIN_ROUND) ;
 
   if (fill_set)
     {
@@ -881,56 +875,67 @@ static void zmap_window_canvas_glyph_draw(ZMapWindowFeaturesetItem featureset,
   else
     {
 
-  switch (glyph->shape->type)
-    {
-    case GLYPH_DRAW_LINES:
-      {
-	gdk_draw_lines (drawable, featureset->gc, glyph->points, glyph->shape->n_coords);
+      switch (glyph->shape->type)
+	{
+	case GLYPH_DRAW_LINES:
+	  {
+	    int debug = FALSE ;
+	    int i ;
 
-	break;
-      }
-    case GLYPH_DRAW_BROKEN:
-      /*
-       * in the shape structure the array of coords has invalid values at the break
-       * and we draw lines between the points in between
-       * NB: GDK uses points we have coordinate pairs
-       */
-      for(start = 0;start < glyph->shape->n_coords;start = end+1)
-        {
-          for(end = start;end < glyph->shape->n_coords && glyph->shape->coords[end+end] != GLYPH_COORD_INVALID; end++)
-            continue;
+	    if (glyph->shape->n_coords)
+	      {
+		for (i = 0 ; i < glyph->shape->n_coords ; i++)
+		  {
+		    zMapDebugPrint(debug, "Point %d:\t%d, %d", i, glyph->points[i].x, glyph->points[i].y) ;
+		  }
+	      }
 
-          gdk_draw_lines(drawable, featureset->gc, glyph->points + start , end - start);
-        }
-      break;
+	    gdk_draw_lines (drawable, featureset->gc, glyph->points, glyph->shape->n_coords) ;
 
-    case GLYPH_DRAW_POLYGON:
-      {
-	gdk_draw_polygon(drawable, featureset->gc, fill,  glyph->points, glyph->shape->n_coords);
+	    break;
+	  }
+	case GLYPH_DRAW_BROKEN:
+	  /*
+	   * in the shape structure the array of coords has invalid values at the break
+	   * and we draw lines between the points in between
+	   * NB: GDK uses points we have coordinate pairs
+	   */
+	  for(start = 0;start < glyph->shape->n_coords;start = end+1)
+	    {
+	      for(end = start;end < glyph->shape->n_coords && glyph->shape->coords[end+end] != GLYPH_COORD_INVALID; end++)
+		continue;
 
-	break;
-      }
+	      gdk_draw_lines(drawable, featureset->gc, glyph->points + start , end - start);
+	    }
+	  break;
 
-    case GLYPH_DRAW_ARC:
-      {
-        double x1, y1, x2, y2;
-        int a1,a2;
+	case GLYPH_DRAW_POLYGON:
+	  {
+	    gdk_draw_polygon(drawable, featureset->gc, fill,  glyph->points, glyph->shape->n_coords);
 
-        x1 = glyph->points[0].x;
-        y1 = glyph->points[0].y;
-        x2 = glyph->points[1].x;
-        y2 = glyph->points[1].y;
-        a1 = (int) glyph->shape->coords[4] * 64;
-        a2 = (int) glyph->shape->coords[5] * 64;
+	    break;
+	  }
 
-        gdk_draw_arc(drawable, featureset->gc, fill, (int) x1, (int) y1, (int) (x2 - x1), (int) (y2 - y1), a1,a2);
-      }
-      break;
+	case GLYPH_DRAW_ARC:
+	  {
+	    double x1, y1, x2, y2;
+	    int a1,a2;
 
-    default:
-      g_warning("Unknown Glyph Style");
-      break;
-    }
+	    x1 = glyph->points[0].x;
+	    y1 = glyph->points[0].y;
+	    x2 = glyph->points[1].x;
+	    y2 = glyph->points[1].y;
+	    a1 = (int) glyph->shape->coords[4] * 64;
+	    a2 = (int) glyph->shape->coords[5] * 64;
+
+	    gdk_draw_arc(drawable, featureset->gc, fill, (int) x1, (int) y1, (int) (x2 - x1), (int) (y2 - y1), a1,a2);
+	  }
+	  break;
+
+	default:
+	  g_warning("Unknown Glyph Style");
+	  break;
+	}
     }
 
   return ;
@@ -948,30 +953,43 @@ static void zmap_window_canvas_glyph_draw(ZMapWindowFeaturesetItem featureset,
  *
  *
  * reimplementation based on coords of glyph, not the feature coords which may
- * be useless for glyph purposes. */
+ * be useless for glyph purposes.
+ * 
+ *  */
 
 /* NOTE: this could perhaps be simplified by adding canvas coord to the glyph feature struct
- * (which are necessarily calcuated on draw)
+ * (which are necessarily calculated on draw)
  * and then comparing these coords with the cursor position in this func
- * but maybe there's some intfercae to the draw code needed as well
+ * but maybe there's some intferface to the draw code needed as well
  * may have to swap canvas and feature coord to allow draw code to know which features to draw
  */
+
+/* THIS CODE HAS BEEN THROUGH SEVERAL (BROKEN) ITERATIONS, SO HERE'S HOW IT STANDS RIGHT NOW:
+ * 
+ * GLYPHS ARE NOT SUPPOSED TO SCALE AS THE CANVAS IS ZOOMED IN/OUT, THEY REMAIN A
+ * CONSTANT SIZE SO THEREFORE WE COMPARE THE FOOCANVAS WINDOW COORDS OF THE GLYPH
+ * WITH THE FOOCANVAS WINDOW POSITION OF THE CLICK (cx & cy).
+ * 
+ * IF AT A FUTURE DATE GLYPHS BECOME SCALABLE THEN THIS ROUTINE WILL NEED CHANGING
+ * TO COPE WITH BOTH TYPES OF GLYPHS.
+ * 
+ *  */
 static double glyphPoint(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature gs,
 			 double item_x, double item_y, int cx, int cy,
 			 double local_x, double local_y, double x_off)
 {
   double best = 1.0e36 ;
+  FooCanvasItem *foo = (FooCanvasItem *)fi ;
   ZMapWindowCanvasGlyph glyph = (ZMapWindowCanvasGlyph)gs ;
-  double can_start_x, can_end_x, can_start_y, can_end_y ;
+  int can_start_x, can_end_x, can_start_y, can_end_y ;
   double world_start_x, world_end_x, world_start_y, world_end_y ;
   int i, min_x, max_x, min_y, max_y, curr_x, curr_y ;
-  FooCanvasItem *foo = (FooCanvasItem *)fi ;
-
 
   /* Glyphs only have shape when drawn (I think...) so it's possible when looking for nearby
    * glyphs for the point operation to be looking at glyphs that haven't been drawn and
    * do not have a shape. */
   /* mh17: i added a GlyphAdd function, so we can set the shape etc before paint, but this test is harmless */
+
   if (glyph->shape)
     {
       /* Get feature extent on display. */
@@ -992,32 +1010,25 @@ static double glyphPoint(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature gs
 	}
 
 
-      foo_canvas_c2w(foo->canvas, min_x, min_y, &can_start_x, &can_start_y) ;
-      foo_canvas_c2w(foo->canvas, max_x, max_y, &can_end_x, &can_end_y) ;
-
-      world_start_x = can_start_x ;
-      world_end_x = can_end_x ;
-      world_start_y = can_start_y ;
-      world_end_y = can_end_y ;
-
-      foo_canvas_item_i2w(foo, &world_start_x, &world_start_y) ;
-      foo_canvas_item_i2w(foo, &world_end_x, &world_end_y) ;
-
-
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      printf("Item x,y: %g, %g\t canvas x,y: %d, %d\tlocal x.y: %g, %g"
-	     "\tCanvas x_start/x_end y_start/y_end: %g,%g %g,%g"
-	     "\tWorld: x_start/x_end y_start/y_end: %g,%g %g,%g",
-	     item_x, item_y, cx, cy, local_x, local_y,
-	     can_start_x, can_end_x, can_start_y, can_end_y,
-	     world_start_x, world_end_x, world_start_y, world_end_y) ;
+      zMapUtilsDebugPrintf(stdout,
+			   "Click - Item x,y: %g, %g\t canvas x,y: %d, %d\tlocal x.y: %g, %g\n"
+			   "Glyph - pos  x1, y1 -> x2, y2:\t%d, %d -> %d, %d\n\n",
+			   item_x, item_y, cx, cy, local_x, local_y,
+			   min_x, min_y, max_x, max_y) ;
+
+      {
+	gboolean debug = FALSE ;
+
+	zMapDebugPrint(debug, "Mouse (x,y): %d, %d\tGlyph (minx, maxx, miny, maxy): %d, %d, %d, %d",
+		       cx, cy, min_x, max_x, min_y, max_y) ;
+      }
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
-      if (can_start_x < local_x && can_end_x > local_x
-	  && can_start_y < local_y && can_end_y > local_y)			    /* overlaps cursor */
+      if ((cx >= min_x && cx <= max_x) && (cy >= min_y && cy <= max_y))
 	{
-	  best = 0.0;
+	  best = 0.0 ;
 	}
     }
 
@@ -1040,7 +1051,7 @@ static ZMapWindowCanvasFeature zMapWindowCanvasGlyphAddFeature(ZMapWindowFeature
 
   shape = get_glyph_shape(*feature->style, boundary_type, feature->strand)  ;
 
-  if (!shape || shape->type == GLYPH_DRAW_INVALID || !shape->n_coords)
+  if (!shape)
     {
       zMapLogWarning("Could not find glyph shape for feature \"%s\" at %d, %d",
 		     g_quark_to_string(feature->original_id), feature->x1, feature->x2) ;

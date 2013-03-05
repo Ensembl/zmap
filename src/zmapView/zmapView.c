@@ -1866,7 +1866,7 @@ gboolean zMapViewRequestServer(ZMapView view,
 					 req_start, req_end,
 					 dna_requested, terminate, show_warning)))
     result = TRUE ;
-
+  
   return result ;
 }
 

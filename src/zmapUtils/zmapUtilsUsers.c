@@ -32,11 +32,6 @@
 
 #include <ZMap/zmap.h>
 
-
-
-
-
-
 #include <string.h>
 #include <sys/utsname.h>
 #include <netdb.h>
@@ -52,7 +47,7 @@ static gboolean developer_status_G = FALSE ;
 
 
 /* Currently developers are limited to certain ids in certain domains. */
-static char *developers_G[] = {"edgrif", "zmap", "not_mh17", "gb10", NULL} ;      /* MH17: i need to see what the users get */
+static char *developers_G[] = {"edgrif", "zmap", "jh13", "gb10", NULL} ;      /* MH17: i need to see what the users get */
 static char *domain_G[] = {"local", "localhost", "sanger.ac.uk", NULL} ;
 
 
@@ -61,19 +56,12 @@ static char *domain_G[] = {"local", "localhost", "sanger.ac.uk", NULL} ;
 static char *passwd_G = "rubbish" ;
 
 
-extern gboolean zmap_development_G;
+
+
+
 /*
- *               Interface functions
+ *               External Interface functions
  */
-
-
-/*! @addtogroup zmaputils
- * @{
- *
- * \brief  Set of utilities for user-related functions.
- *
- *  */
-
 
 
 
