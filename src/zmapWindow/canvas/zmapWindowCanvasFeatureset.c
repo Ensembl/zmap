@@ -70,7 +70,6 @@
 #include <ZMap/zmapWindow.h>
 
 #include <zmapWindowCanvasItem.h>
-#include <zmapWindowCanvasFeatureset_I.h>
 #include <zmapWindowCanvasBasic.h>
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* for debugging..... */
@@ -82,8 +81,9 @@
 #include <zmapWindowCanvasAssembly.h>
 #include <zmapWindowCanvasSequence.h>
 #include <zmapWindowCanvasLocus.h>
-
 #include <zmapWindowCanvasGraphics.h>
+#include <zmapWindowCanvasFeatureset_I.h>
+
 
 
 
@@ -683,13 +683,43 @@ ZMapFeatureSubPartSpan zMapWindowCanvasFeaturesetGetSubPartSpan(FooCanvasItem *f
 gboolean zMapWindowCanvasFeaturesetHasPointFeature(FooCanvasItem *item)
 {
   gboolean result = FALSE ;
-  ZMapWindowFeaturesetItem featureset = (ZMapWindowFeaturesetItem) item ;
 
-  if (featureset->point_feature)
-    result = TRUE ;
+  if (ZMAP_IS_WINDOW_FEATURESET_ITEM(item))
+    {
+      ZMapWindowFeaturesetItem featureset = (ZMapWindowFeaturesetItem)item ;
+
+      /* Not sure how much checking we should do here...should we check the actual feature ptr...? */
+      if (featureset->point_feature)
+	{
+	  result = TRUE ;
+	}
+    }
 
   return result ;
 }
+
+/* For normal clicking by user the point_feature is reset automatically but 
+ * features can be removed programmatically (i.e. xremote) requiring the
+ * point_feature to be unset as the feature it points to is no longer valid. */
+gboolean zMapWindowCanvasFeaturesetUnsetPointFeature(FooCanvasItem *item)
+{
+  gboolean result = FALSE ;
+
+  if (ZMAP_IS_WINDOW_FEATURESET_ITEM(item))
+    {
+      ZMapWindowFeaturesetItem featureset = (ZMapWindowFeaturesetItem) item ;
+
+      if (featureset->point_feature)
+	{
+	  featureset->point_canvas_feature = NULL ;
+	  featureset->point_feature = NULL ;
+	  result = TRUE ;
+	}
+    }
+
+  return result ;
+}
+
 
 
 /*
@@ -927,7 +957,7 @@ GType zMapWindowFeaturesetItemGetType(void)
 	(GClassInitFunc) zmap_window_featureset_item_item_class_init,
 	NULL,           /* class_finalize */
 	NULL,           /* class_data */
-	sizeof (zmapWindowFeaturesetItem),
+	sizeof (ZMapWindowFeaturesetItemStruct),
 	0,              /* n_preallocs */
 	(GInstanceInitFunc) zmap_window_featureset_item_item_init,
 	NULL
@@ -1466,7 +1496,7 @@ GList *zMapWindowFeaturesetItemFindFeatures(FooCanvasItem **item, double y1, dou
   {
     char *fset_name ;
 
-    fset_name = g_quark_to_string(fset->id) ;
+    fset_name = (char *)g_quark_to_string(fset->id) ;
 
     printf("%s\n", fset_name) ;
 
@@ -1653,7 +1683,7 @@ static gboolean zmap_window_featureset_item_set_feature(FooCanvasItem *item, dou
       zMapLogWarning("set feature %p",fi->point_feature);
 #endif
 
-      if(fi->point_feature)
+      if (fi->point_feature)
 	{
 	  fi->__parent__.feature = fi->point_feature ;
 	  result = TRUE ;
@@ -1973,7 +2003,7 @@ double  zmap_window_featureset_item_foo_point(FooCanvasItem *item,
   /* return found if cursor is in the coloumn, then we don't need invisble background rectangles */
   if (!fi->point_feature)
     {
-      return featureset_background_point(item, cx, cy, actual_item) ;
+      best = featureset_background_point(item, cx, cy, actual_item) ;
     }
 
   return best ;
