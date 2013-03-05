@@ -362,6 +362,8 @@ int zMapWindowFocusCacheGetSelectedColours(int id_flags, gulong *fill, gulong *o
 }
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* a debug thing: print out the foo canvas parent string from the focussed item,
  * plus also the foo canvas current item 
  * we suspect a race condition on clear canvas and item destroy via queued callbacks
@@ -458,6 +460,8 @@ void zMapWindowFocusDump(char *str)
       hot = hot->parent;
     }
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
