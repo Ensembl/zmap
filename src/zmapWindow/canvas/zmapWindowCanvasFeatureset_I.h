@@ -313,7 +313,7 @@ typedef struct _zmapWindowFeaturesetItemStruct
 
   gpointer opt;			/* feature type optional set level data */
 
-} zmapWindowFeaturesetItemStruct;
+} ZMapWindowFeaturesetItemStruct ;
 
 
 
