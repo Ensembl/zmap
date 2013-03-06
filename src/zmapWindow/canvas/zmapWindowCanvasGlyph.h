@@ -32,21 +32,19 @@
 #ifndef ZMAP_CANVAS_GLYPH_H
 #define ZMAP_CANVAS_GLYPH_H
 
+
 #include <ZMap/zmap.h>
 
 
+typedef struct _zmapWindowCanvasGlyphStruct *ZMapWindowCanvasGlyph ;
 
-typedef struct _zmapWindowCanvasGlyphStruct *ZMapWindowCanvasGlyph;
-
-
-
-GQuark zMapWindowCanvasGlyphSignature(ZMapFeatureTypeStyle style, ZMapFeature feature, int which, double score);
+void zMapWindowCanvasGlyphInit(void) ;
+GQuark zMapWindowCanvasGlyphSignature(ZMapFeatureTypeStyle style, ZMapFeature feature, int which, double score) ;
 ZMapWindowCanvasGlyph zMapWindowCanvasGetGlyph(ZMapWindowFeaturesetItem featureset,
 					       ZMapFeatureTypeStyle style, ZMapFeature feature,
-					       int which, double score);
+					       int which, double score) ;
 void zMapWindowCanvasGlyphPaintSubFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
-					  ZMapWindowCanvasGlyph glyph, GdkDrawable *drawable);
+					  ZMapWindowCanvasGlyph glyph, GdkDrawable *drawable) ;
 
-void zMapWindowCanvasGlyphInit(void);
 
 #endif /* !ZMAP_CANVAS_GLYPH_H */

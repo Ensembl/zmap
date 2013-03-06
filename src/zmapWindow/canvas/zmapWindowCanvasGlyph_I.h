@@ -40,33 +40,29 @@
 
 
 
-
 /* 
  * Data common to particular types of glyph, stored using the per_column_data pointer
  * in zmapWindowFeaturesetItemStruct.
  */
 
 /* Splice marker column data. */
+#define ZERO_LINE_COLOUR   "dark slate grey"
+#define OTHER_LINE_COLOUR  "light grey"
+
 typedef struct GlyphSpliceColumnDataStructName
 {
-
   double glyph_len ;					    /* Standard glyph size, all scaled from this. */
   double col_width ;
   double min_size ;					    /* Min. size for glyph so it's easily clickable. */
   double scale_factor ;					    /* Scaling factor for glyphs. */
 
-
   double origin ;					    /* score == 0 position across column. */
-
 
   gboolean colours_set ;
   GdkColor zero_line_colour ;
   GdkColor other_line_colour ;
 
 } GlyphSpliceColumnDataStruct, *GlyphSpliceColumnData ;
-
-#define ZERO_LINE_COLOUR   "dark slate grey"
-#define OTHER_LINE_COLOUR  "light grey"
 
 
 
@@ -82,30 +78,30 @@ typedef struct GlyphSpliceColumnDataStructName
 
 typedef struct _zmapWindowCanvasGlyphStruct
 {
-  zmapWindowCanvasFeatureStruct feature;	/* all the common stuff */
+  zmapWindowCanvasFeatureStruct feature ;		    /* all the common stuff */
+  GQuark sig ;						    /* signature: for debugging */
 
-  int which;			/* generic or 5' or 3' ? */
-  GQuark sig;			/* signature: for debugging */
+  gboolean coords_set ;
+  gboolean use_glyph_colours ;				    /* only set if threshold ALT colour selected */
+  gboolean sub_feature ;				    /* or free standing? */
 
   /* Used for all glyphs except splices. */
-  double width, height; 	/* scale by this factor, -ve values imply flipping around the anchor point */
-  double origin;		/* relative to the centre of the column */
+  double width, height ; 	/* scale by this factor, -ve values imply flipping around the anchor point */
+  double origin ;		/* relative to the centre of the column */
 
-  ZMapStyleGlyphShape shape;			/* pointer to relevant style shape struct */
-  GdkPoint coords[GLYPH_SHAPE_MAX_COORD]; 	/* derived from style->shape struct but adjusted for scale etc */
-  GdkPoint points[GLYPH_SHAPE_MAX_COORD];	/* offset to the canvas for gdk_draw */
+  int which ;						    /* generic or 5' or 3' ? */
+  ZMapStyleGlyphShape shape ;				    /* pointer to relevant style shape struct */
+  GdkPoint coords[GLYPH_SHAPE_MAX_COORD] ;		    /* derived from style->shape struct
+							       but adjusted for scale etc */
+  GdkPoint points[GLYPH_SHAPE_MAX_COORD] ;		    /* offset to the canvas for gdk_draw */
 
-  gulong line_pixel;	/* non selected colours */
-  gulong area_pixel;
-  gboolean line_set;
-  gboolean area_set;
+  /* non selected colours */
+  gulong line_pixel ;
+  gulong area_pixel ;
+  gboolean line_set ;
+  gboolean area_set ;
 
-  gboolean coords_set;
-  gboolean use_glyph_colours;		/* only set if threshold ALT colour selected */
-  gboolean sub_feature;			/* or free standing? */
-
-
-} zmapWindowCanvasGlyphStruct;
+} zmapWindowCanvasGlyphStruct ;
 
 
 

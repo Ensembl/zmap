@@ -1,4 +1,3 @@
-/*  Last edited: Jul 23 10:00 2012 (edgrif) */
 /*  File: zmapConfFile.c
  *  Author: Malcolm Hinsley (mh17@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -33,17 +32,16 @@
 
 #include <ZMap/zmap.h>
 
-
-
-
-
-
-#include <string.h>		/* memset */
+#include <string.h>					    /* memset */
 #include <glib.h>
-#include <zmapConfigIni_P.h>
+
+
 #include <ZMap/zmapConfigDir.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapConfigIni.h>
+#include <zmapConfigIni_P.h>
+
+
 
 #undef WITH_LOGGING
 
@@ -155,6 +153,10 @@ gboolean zMapConfigIniReadBuffer(ZMapConfigIni config, char *buffer)
   return red;
 }
 
+
+
+
+
 /* this is used for styles, NOTE not ever freed until the context is destroyed so can have only one file */
 gboolean zMapConfigIniReadFile(ZMapConfigIni config, char *file)
 {
@@ -163,8 +165,7 @@ gboolean zMapConfigIniReadFile(ZMapConfigIni config, char *file)
   zMapAssert(config);
 
 
-  if ((g_path_is_absolute(file)
-       || (file = zMapConfigDirFindFile(file)))
+  if ((g_path_is_absolute(file) || (file = zMapConfigDirFindFile(file)))
       && (config->extra_key_file = read_file(file, &(config->extra_key_error))))
     {
       read = TRUE;
