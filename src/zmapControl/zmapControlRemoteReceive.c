@@ -362,13 +362,28 @@ static void closeView(ZMap zmap, ZMapXRemoteParseCommandData input_data, Respons
     {
       char *xml = NULL;
 
-      zmapControlRemoveView(zmap, view_data.view) ;
 
+      /* Is this where we signal back that we are killing the view....???? */
+      /* TRY THIS HERE.... */
       /* Is this correct ??? check with Roy..... */
       output_data->code = ZMAPXREMOTE_OK;
       xml = zMapViewRemoteReceiveAccepts(view_data.view);
       g_string_append(output_data->messages, xml);
       g_free(xml);
+
+
+      /* Remove the view. */
+      zmapControlCloseFull(zmap, view_data.view) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      /* Is this correct ??? check with Roy..... */
+      output_data->code = ZMAPXREMOTE_OK;
+      xml = zMapViewRemoteReceiveAccepts(view_data.view);
+      g_string_append(output_data->messages, xml);
+      g_free(xml);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
     }
 
   return ;
@@ -378,8 +393,14 @@ static void findView(gpointer data, gpointer user_data)
 {
   ZMapView view = (ZMapView)data ;
   FindViewData view_data = (FindViewData)user_data ;
+  GtkWidget *xremote_widg ;
+  unsigned long xid ;
 
-  if (!(view_data->view) && zMapXRemoteWidgetGetXID(zMapViewGetXremote(view)) == view_data->xwid)
+
+  xremote_widg = zMapViewGetXremote(view) ;
+  xid = zMapXRemoteWidgetGetXID(xremote_widg) ;
+
+  if (!(view_data->view) && xid == view_data->xwid)
     view_data->view = view ;
 
   return ;
@@ -423,7 +444,7 @@ static void createClient(ZMap zmap, ZMapXRemoteParseCommandData input_data, Resp
 
 
 /*
- *                 XML Handlers
+ *                 XML Parse Handlers
  */
 
 

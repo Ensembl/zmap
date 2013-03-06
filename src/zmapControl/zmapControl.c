@@ -37,6 +37,8 @@
 #include <ZMap/zmapView.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapUtilsGUI.h>
+#include <ZMap/zmapUtilsXRemote.h>
+
 
 /* THIS BREAKS SOME EXISTING ENCAPSULATION OF WHERE HEADERS ARE.... */
 /* need to be sorted out sometime */
@@ -67,6 +69,7 @@ static void viewKilledCB(ZMapView view, void *app_data, void *view_data) ;
 static void infoPanelLabelsHashCB(gpointer labels_data);
 static void removeView(ZMap zmap, ZMapView view, unsigned long xwid) ;
 static void remoteSendViewClosed(ZMapXRemoteObj client, unsigned long xwid) ;
+
 
 
 /* These variables holding callback routine information are static because they are
@@ -331,7 +334,8 @@ gboolean zMapDestroy(ZMap zmap)
  */
 
 
-/* This function encapsulates logic about how to handle closing the last view or the last
+/* Interactive Version:
+ * This function encapsulates logic about how to handle closing the last view or the last
  * window in a view, we give the user the choice about whether to do this. */
 void zmapControlClose(ZMap zmap)
 {
@@ -369,12 +373,42 @@ void zmapControlClose(ZMap zmap)
 
       if (num_windows > 1
 	  || zMapGUIMsgGetBool(GTK_WINDOW(zmap->toplevel), ZMAP_MSG_WARNING, msg))
-	zmapControlRemoveWindow(zmap) ;
+	zmapControlRemoveWindow(zmap, view) ;
 
       g_free(name);
       g_free(msg) ;
     }
 
+
+  return ;
+}
+
+
+/* Function call version of the above. */
+void zmapControlCloseFull(ZMap zmap, ZMapView view)
+{
+  int num_views, num_windows ;
+  ZMapViewWindow view_window ;
+
+  num_views = zmapControlNumViews(zmap) ;
+
+  /* We shouldn't get called if there are no views. */
+  zMapAssert(num_views) ;
+
+  /* focus_viewwindow gets reset so hang on to view_window pointer and view.*/
+  view_window = zmapControlFindViewWindow(zmap, view) ;
+
+
+  /* If there is just one view or just one window left in a view then we warn the user. */
+  num_windows = zMapViewNumWindows(view_window) ;
+  if (num_views == 1 && num_windows == 1)
+    {
+      zmapControlDoKill(zmap) ;
+    }
+  else
+    {
+      zmapControlRemoveWindow(zmap, view) ;
+    }
 
   return ;
 }
@@ -558,6 +592,12 @@ ZMapView zmapControlAddView(ZMap zmap, ZMapFeatureSequenceMap sequence_map)
       /* add to list of views.... */
       zmap->view_list = g_list_append(zmap->view_list, view) ;
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      /* debug... */
+      zmapControlPrintView(zmap, view, "Added", TRUE) ;
+      zmapControlPrintAllViews(zmap, TRUE) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
       zmap->state = ZMAP_VIEWS ;
     }
 
@@ -577,7 +617,7 @@ gboolean zmapControlRemoveView(ZMap zmap, ZMapView view)
 
 
 /*
- *  ------------------- Internal functions -------------------
+ *                      Internal functions
  */
 
 
@@ -602,7 +642,6 @@ static ZMap createZMap(void *app_data, ZMapFeatureSequenceMap seq_map)
 
   /* Use default hashing functions, but THINK ABOUT THIS, MAY NEED TO ATTACH DESTROY FUNCTIONS. */
   zmap->viewwindow_2_parent = g_hash_table_new(NULL, NULL) ;
-
 
   zmap->view2infopanel = g_hash_table_new_full(NULL, NULL, NULL, infoPanelLabelsHashCB);
 
@@ -719,7 +758,7 @@ static void dataLoadCB(ZMapView view, void *app_data, void *view_data)
 	    }
 
 
-	  request = g_strdup_printf("<zmap> <request action=\"features_loaded\">"
+	  request = g_strdup_printf("<zmap> <request action=\"features_loaded\" xwid=\"0x%lx\">"
 				    " <client xwid=\"0x%lx\" />"
 				    " <featureset names=\"%s\" />"
 				    " <start value=\"%d\" />"
@@ -728,7 +767,8 @@ static void dataLoadCB(ZMapView view, void *app_data, void *view_data)
 				    " <exit_code value=\"%d\" />"
 				    " <stderr value=\"%s\" />"
 				    "</request></zmap>",
-				    lfd->xwid, featurelist,
+				    lfd->xwid, lfd->xwid,
+				    featurelist,
 				    lfd->start, lfd->end,
 				    (int)lfd->status,
 				    emsg, lfd->exit_code,
@@ -839,20 +879,20 @@ static void controlSelectCB(ZMapViewWindow view_window, void *app_data, void *vi
   ZMap zmap = (ZMap)app_data ;
   ZMapViewSelect vselect = (ZMapViewSelect)view_data ;
 
-  if(vselect->type == ZMAPWINDOW_SELECT_SINGLE)
+  if (vselect->type == ZMAPWINDOW_SELECT_SINGLE)
     {
       ZMapInfoPanelLabels labels;
       labels = g_hash_table_lookup(zmap->view2infopanel, zMapViewGetView(view_window));
       /* Display the feature details in the info. panel. */
       if (vselect)
 	{
-		zmapControlInfoPanelSetText(zmap, labels, &(vselect->feature_desc)) ;
-		zmapControlWindowSetButtonState(zmap,&(vselect->filter) );	/* for filter button */
-      }
+	  zmapControlInfoPanelSetText(zmap, labels, &(vselect->feature_desc)) ;
+	  zmapControlWindowSetButtonState(zmap,&(vselect->filter) );	/* for filter button */
+	}
       else
 	{
-		zmapControlInfoPanelSetText(zmap, labels, NULL) ;
-		zmapControlWindowSetButtonState(zmap,&zmap->filter);	/* for filter button */
+	  zmapControlInfoPanelSetText(zmap, labels, NULL) ;
+	  zmapControlWindowSetButtonState(zmap,&zmap->filter);	/* for filter button */
 	}
     }
 
@@ -1250,6 +1290,12 @@ static void removeView(ZMap zmap, ZMapView view, unsigned long xwid)
 
       zmap->view_list = g_list_remove(zmap->view_list, view) ;
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      /* debug. */
+      zmapControlPrintView(zmap, view, "Removed", FALSE) ;
+      zmapControlPrintAllViews(zmap, FALSE) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
       if (zmap->xremote_client)
 	remoteSendViewClosed(zmap->xremote_client, xwid) ;
     }
@@ -1264,7 +1310,9 @@ static void remoteSendViewClosed(ZMapXRemoteObj client, unsigned long xwid)
   char *request ;
   char *response = NULL;
 
-  request = g_strdup_printf("<zmap> <request action=\"view_closed\"> <client xwid=\"0x%lx\" /> </request> </zmap>", xwid) ;
+  request = g_strdup_printf("<zmap> <request action=\"view_closed\" xwid=\"0x%lx\">"
+			    "<client xwid=\"0x%lx\" /> </request> </zmap>",
+			    xwid, xwid) ;
 
   if (zMapXRemoteSendRemoteCommand(client, request, &response) != ZMAPXREMOTE_SENDCOMMAND_SUCCEED)
     {
@@ -1276,3 +1324,5 @@ static void remoteSendViewClosed(ZMapXRemoteObj client, unsigned long xwid)
 
   return ;
 }
+
+

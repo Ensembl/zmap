@@ -236,6 +236,10 @@ typedef struct _ZMapViewStruct
   gulong map_event_handler ;				    /* map event handler id for xremote widget. */
   unsigned long xwid ;					    /* X Window id for the xremote widg. */
 
+  char *xwid_txt ;					    /* Text version of xwid. */
+
+
+
   guint idle_handle ;
 
   void *app_data ;					    /* Passed back to caller from view
