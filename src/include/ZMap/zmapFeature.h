@@ -1013,6 +1013,8 @@ typedef gboolean (*ZMapFeatureDumpFeatureFunc)(ZMapFeatureAny feature_any,
 					       gpointer       user_data);
 
 
+
+
 /* FeatureAny funcs. */
 
 ZMapFeatureAny zMapFeatureAnyCreate(ZMapStyleMode feature_type) ;
@@ -1022,6 +1024,12 @@ ZMapFeatureAny zMapFeatureAnyGetFeatureByID(ZMapFeatureAny feature_set, GQuark f
 gboolean zMapFeatureAnyAddModesToStyles(ZMapFeatureAny feature_any, GHashTable *styles) ;
 gboolean zMapFeatureAnyRemoveFeature(ZMapFeatureAny feature_set, ZMapFeatureAny feature) ;
 void zMapFeatureAnyDestroy(ZMapFeatureAny feature) ;
+gboolean zMapFeaturePrintChildNames(ZMapFeatureAny feature_any) ;
+
+
+
+
+
 
 void zMapCoords2FeatureCoords(ZMapFeatureBlock block, int *x1_inout, int *x2_inout) ;
 
