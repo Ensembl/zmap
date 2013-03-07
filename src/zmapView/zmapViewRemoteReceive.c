@@ -1679,7 +1679,6 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 
 	  feature_unique_id = zMapFeatureCreateID(mode, feature_name, strand, start, end, 0, 0) ;
 
-
 	  switch(xml_data->common.action)
 	    {
 	    case ZMAPVIEW_REMOTE_ZOOM_TO:
