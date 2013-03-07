@@ -36,6 +36,7 @@
 int zMapStringFindMatch(char *target, char *query) ;
 int zMapStringFindMatchCase(char *target, char *query, gboolean caseSensitive) ;
 gboolean zMapStringBlank(char *string) ;
+char *zMapStringCompress(char *txt) ;
 char *zMapStringFlatten(char *string_with_spaces) ;
 
 #endif /* ZMAP_STRING_H */
