@@ -165,9 +165,12 @@ static void exportCB(gpointer cb_data, guint callback_action, GtkWidget *window)
 
 static void controlImportFileCB(gpointer user_data)
 {
-	zMapWarning("controlImportFileCB not implemented","");
-	/* this is a callback to report something */
+  zMapWarning("controlImportFileCB not implemented","");
+  /* this is a callback to report something */
+
+  return ;
 }
+
 
 static void importCB(gpointer cb_data, guint callback_action, GtkWidget *window)
 {
@@ -191,17 +194,18 @@ static void importCB(gpointer cb_data, guint callback_action, GtkWidget *window)
   end   = view_seq->end;
 
   if(zMapWindowMarkIsSet(zMapViewGetWindow(vw)))
-  {
-	zMapWindowGetMark(zMapViewGetWindow(vw), &start, &end);	/* NOTE we get -fwd coords from this function if revcomped */
+    {
+      zMapWindowGetMark(zMapViewGetWindow(vw), &start, &end);
 
-	if(start < 0)
-		start = -start;
-	if(end < 0)
-		end = -end;
+      /* NOTE we get -fwd coords from this function if revcomped */
+      if(start < 0)
+	start = -start ;
+      if(end < 0)
+	end = -end ;
 
-	start += map->start;
-	end   += map->start;
-  }
+      start += map->start ;
+      end += map->start ;
+    }
 
   /* need sequence_map to set default seq coords and map sequence name */
   zMapControlImportFile(controlImportFileCB, cb_data, map, start, end);
