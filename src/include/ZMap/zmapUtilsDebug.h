@@ -88,9 +88,14 @@ G_STMT_START{                                             \
 #endif /* __GNUC__ */
 
 
-
-
-
+/* Define debug messages more easily. */
+#ifdef __GNUC__
+#define zMapDebugPrintf(FORMAT, ...)                      \
+  zMapUtilsDebugPrintf(stderr, "%s: " FORMAT "\n", __PRETTY_FUNCTION__, __VA_ARGS__) 
+#else /* __GNUC__ */
+#define zMapDebugPrintf(FORMAT, ...)		      \
+  zMapUtilsDebugPrintf(stderr, "%s: " FORMAT "\n", NULL, __VA_ARGS__) 
+#endif /* __GNUC__ */
 
 
 
