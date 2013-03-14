@@ -669,9 +669,8 @@ GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context, GHas
   gchar ** keys,**freethis;
   GList *sources;
   ZMapFeatureSetDesc GFFset;
-
   GQuark column,column_id;
-  char *names;
+  char *names = NULL ;
   gsize len;
   char *normalkey;
   ZMapFeatureColumn f_col;
@@ -683,10 +682,15 @@ GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context, GHas
 
       for( ; len-- ; keys++)
 	{
-	  names = g_key_file_get_string(gkf,ZMAPSTANZA_COLUMN_CONFIG,*keys,NULL);
+	  names = g_key_file_get_string(gkf,ZMAPSTANZA_COLUMN_CONFIG,*keys,NULL) ;
 
 	  if (!names || !*names)
-	    continue;
+	    {
+	      if (!*names)				    /* Can this even happen ? */
+		g_free(names) ;
+
+	      continue ;
+	    }
 
 	  normalkey = zMapConfigNormaliseWhitespace(*keys,FALSE); // changes in situ: get names first
 	  column = g_quark_from_string(normalkey);
@@ -724,6 +728,7 @@ GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context, GHas
 	  sources = zMapConfigString2QuarkList(names,FALSE);
 
 	  g_free(names);
+	  names = NULL ;
 
 	  while(sources)
 	    {
@@ -794,7 +799,12 @@ GHashTable *zMapConfigIniGetFeatureset2Featureset(ZMapConfigIniContext context,
 	  names = g_key_file_get_string(gkf,ZMAPSTANZA_FEATURESETS_CONFIG,*keys,NULL);
 
 	  if(!names || !*names)
-	    continue;
+	    {
+	      if (!*names)				    /* Can this even happen ? */
+		g_free(names) ;
+
+	      continue ;
+	    }
 
 	  /* this featureset will not actually exist, it's virtual */
 	  set_id = zMapFeatureSetCreateID(*keys);
@@ -808,6 +818,7 @@ GHashTable *zMapConfigIniGetFeatureset2Featureset(ZMapConfigIniContext context,
 
 	  sources = zMapConfigString2QuarkList(names,FALSE);
 	  g_free(names);
+	  names = NULL ;
 
 	  g_hash_table_insert(virtual_featuresets,GUINT_TO_POINTER(set_id), sources);
 
