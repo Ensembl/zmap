@@ -506,7 +506,6 @@ static void splitPane(GtkWidget *curr_frame, GtkWidget *new_frame,
 {
   GtkWidget *pane_parent, *new_pane ;
   ZMapPaneChild curr_child = ZMAP_PANE_NONE ;
-  gboolean debug = TRUE ;
 
   /* Get current frames parent, if window is unsplit it will be a container, otherwise its a pane
    * and we need to know which child we are of the pane. */
