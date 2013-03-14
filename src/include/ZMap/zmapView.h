@@ -161,7 +161,7 @@ ZMapViewWindow zMapViewCreate(GtkWidget *xremote_widget, GtkWidget *view_contain
 void zMapViewSetupNavigator(ZMapViewWindow view_window, GtkWidget *canvas_widget);
 ZMapViewWindow zMapViewCopyWindow(ZMapView zmap_view, GtkWidget *parent_widget,
 				  ZMapWindow copy_window, ZMapWindowLockType window_locking) ;
-void zMapViewRemoveWindow(ZMapViewWindow view_window) ;
+ZMapViewWindow zMapViewRemoveWindow(ZMapViewWindow view_window) ;
 void zMapViewRedraw(ZMapViewWindow view_window) ;
 gboolean zMapViewConnect(ZMapView zmap_view, char *config_str) ;
 gboolean zMapViewReset(ZMapView zmap_view) ;
