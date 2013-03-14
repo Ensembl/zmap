@@ -21,7 +21,7 @@
  * originated by
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Functions to implement column configuration.
  *
@@ -31,12 +31,8 @@
 
 #include <ZMap/zmap.h>
 
-
-
-
-
-
 #include <string.h>
+
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapGLibUtils.h>
 #include <zmapWindow_P.h>
@@ -1105,7 +1101,7 @@ gboolean column_is_loaded_in_range(ZMapFeatureContextMap map, ZMapFeatureBlock b
       gboolean loaded;
       loaded = zMapFeatureSetIsLoadedInRange(block,GPOINTER_TO_UINT(fsets->data), start, end);
 #if MH17_DEBUG
-      zMapLogWarning("%s loaded: %s,\n",g_quark_to_string(GPOINTER_TO_UINT(fsets->data)),loaded? "yes":"no");
+      zMapLogWarning("%s loaded: %s,",g_quark_to_string(GPOINTER_TO_UINT(fsets->data)),loaded? "yes":"no");
 #endif
 
       if(!loaded)

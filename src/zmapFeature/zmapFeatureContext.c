@@ -1279,7 +1279,7 @@ static void postExecuteProcess(ContextExecute execute_data)
 
   if(execute_data->status >= ZMAP_CONTEXT_EXEC_STATUS_ERROR)
     {
-      zMapLogCritical("ContextExecute: Error, function stopped @ level %d, message = %s\n",
+      zMapLogCritical("ContextExecute: Error, function stopped @ level %d, message = %s",
                       execute_data->stopped_at,
                       execute_data->error_string);
     }

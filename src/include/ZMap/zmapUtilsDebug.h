@@ -141,7 +141,7 @@ extern gboolean zmap_timing_G;
 // NULL args should be  ""
 #define zMapPrintTime(FUNC, ID, OPT)   \
    { if(ZMAP_GLOBAL_TIMER) \
-      zMapLogMessage("Timer %s\t%.3f\t%s\t%s\n", \
+      zMapLogMessage("Timer %s\t%.3f\t%s\t%s", \
             FUNC,\
             g_timer_elapsed(ZMAP_GLOBAL_TIMER, NULL),\
             ID,OPT); \

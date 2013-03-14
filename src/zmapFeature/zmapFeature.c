@@ -2217,7 +2217,7 @@ if(!view_set || !new_set)
 //      zMapLogWarning("merge: null set %p %p",view_set,new_set);
       return;
 }
-//zMapLogWarning("merge feature set loaded %s %s\n",g_quark_to_string(view_set->unique_id), //g_quark_to_string(new_set->unique_id));
+//zMapLogWarning("merge feature set loaded %s %s",g_quark_to_string(view_set->unique_id), //g_quark_to_string(new_set->unique_id));
 
 
       /* we expect to just add our seq region to the existing

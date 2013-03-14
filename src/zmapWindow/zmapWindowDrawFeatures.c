@@ -1268,7 +1268,7 @@ if(zMapStyleDisplayInSeparator(feature_set->style))
       if (add_to_hash)
 	{
 #if MH17_PRINT_CREATE_COL
-	  zMapLogWarning("adding hash %s -> %s\n",g_quark_to_string(feature_set_id),g_quark_to_string(column_id));
+	  zMapLogWarning("adding hash %s -> %s",g_quark_to_string(feature_set_id),g_quark_to_string(column_id));
 #endif
 	  ZMapWindowContainerFeatureSet container_set;
 
@@ -1326,7 +1326,7 @@ if(zMapStyleDisplayInSeparator(feature_set->style))
 	}
       else
 	{
-	  zMapLogWarning("foolish create %s: s,f = %d %d, v=%d %d\n",
+	  zMapLogWarning("foolish create %s: s,f = %d %d, v=%d %d",
 			 g_quark_to_string(feature_set_id),
 			 column_strand,column_frame,
 			 valid_strand,valid_frame);
@@ -1692,7 +1692,7 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 
 	if(!style)
 	  {
-            zMapLogCritical("no column style for featureset \"%s\"\n",g_quark_to_string(feature_set->unique_id));
+            zMapLogCritical("no column style for featureset \"%s\"",g_quark_to_string(feature_set->unique_id));
             break;
 	  }
 	canvas_data->style = style;
@@ -1765,7 +1765,7 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
     }
 #if MH17_REVCOMP_DEBUG
   if(feature_type != ZMAPFEATURE_STRUCT_FEATURE)
-    zMapLogWarning(" -> status %s\n",status == ZMAP_CONTEXT_EXEC_STATUS_OK ? "OK" : "error");
+    zMapLogWarning(" -> status %s",status == ZMAP_CONTEXT_EXEC_STATUS_OK ? "OK" : "error");
 #endif
 
   return status;
