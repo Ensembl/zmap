@@ -249,7 +249,7 @@ ZMapViewConnectionRequest zmapViewStepListAddServerReq(ZMapViewConnectionStepLis
 						       ZMapViewConnection view_con,
 						       ZMapServerReqType request_type,
 						       gpointer request_data,
-                                           StepListActionOnFailureType on_fail)
+						       StepListActionOnFailureType on_fail)
 {
   ZMapViewConnectionRequest request = NULL ;
   ZMapViewConnectionStep step ;
@@ -260,11 +260,11 @@ ZMapViewConnectionRequest zmapViewStepListAddServerReq(ZMapViewConnectionStepLis
       step->state = request->state = STEPLIST_PENDING ;           // some duplication here?
       request->request_data = request_data ;
       step->connection_req = request ;
-      if(on_fail != 0)
-            step->on_fail = on_fail ;
-//printf("add request %d to %s\n",request_type,view_con->url);
-    }
 
+      if(on_fail != 0)
+	step->on_fail = on_fail ;
+      //printf("add request %d to %s\n",request_type,view_con->url);
+    }
 
   return request ;
 }
@@ -277,23 +277,23 @@ ZMapViewConnectionStepList zmapViewConnectionStepListCreate(StepListDispatchCB d
 							    StepListProcessDataCB process_func,
 							    StepListFreeDataCB free_func)
 {
-      ZMapViewConnectionStepList step_list;
+  ZMapViewConnectionStepList step_list;
 
-      step_list = zmapViewStepListCreate(dispatch_func,
-                                          process_func,
-                                          free_func) ;
-      zmapViewStepListAddStep(step_list, ZMAP_SERVERREQ_CREATE,    REQUEST_ONFAIL_CANCEL_THREAD) ;
-      zmapViewStepListAddStep(step_list, ZMAP_SERVERREQ_OPEN,      REQUEST_ONFAIL_CANCEL_THREAD) ;
-      zmapViewStepListAddStep(step_list, ZMAP_SERVERREQ_GETSERVERINFO, REQUEST_ONFAIL_CANCEL_THREAD) ;
-      zmapViewStepListAddStep(step_list, ZMAP_SERVERREQ_FEATURESETS, REQUEST_ONFAIL_CANCEL_THREAD) ;
-      zmapViewStepListAddStep(step_list, ZMAP_SERVERREQ_STYLES,    REQUEST_ONFAIL_CANCEL_THREAD) ;
-      zmapViewStepListAddStep(step_list, ZMAP_SERVERREQ_NEWCONTEXT,REQUEST_ONFAIL_CANCEL_THREAD) ;
-      zmapViewStepListAddStep(step_list, ZMAP_SERVERREQ_FEATURES,  REQUEST_ONFAIL_CANCEL_THREAD) ;
-      zmapViewStepListAddStep(step_list, ZMAP_SERVERREQ_SEQUENCE,  REQUEST_ONFAIL_CANCEL_THREAD) ;
-      zmapViewStepListAddStep(step_list, ZMAP_SERVERREQ_GETSTATUS,  REQUEST_ONFAIL_CANCEL_THREAD) ;
-      zmapViewStepListAddStep(step_list, ZMAP_SERVERREQ_TERMINATE, REQUEST_ONFAIL_CANCEL_THREAD) ;
+  step_list = zmapViewStepListCreate(dispatch_func,
+				     process_func,
+				     free_func) ;
+  zmapViewStepListAddStep(step_list, ZMAP_SERVERREQ_CREATE,    REQUEST_ONFAIL_CANCEL_THREAD) ;
+  zmapViewStepListAddStep(step_list, ZMAP_SERVERREQ_OPEN,      REQUEST_ONFAIL_CANCEL_THREAD) ;
+  zmapViewStepListAddStep(step_list, ZMAP_SERVERREQ_GETSERVERINFO, REQUEST_ONFAIL_CANCEL_THREAD) ;
+  zmapViewStepListAddStep(step_list, ZMAP_SERVERREQ_FEATURESETS, REQUEST_ONFAIL_CANCEL_THREAD) ;
+  zmapViewStepListAddStep(step_list, ZMAP_SERVERREQ_STYLES,    REQUEST_ONFAIL_CANCEL_THREAD) ;
+  zmapViewStepListAddStep(step_list, ZMAP_SERVERREQ_NEWCONTEXT,REQUEST_ONFAIL_CANCEL_THREAD) ;
+  zmapViewStepListAddStep(step_list, ZMAP_SERVERREQ_FEATURES,  REQUEST_ONFAIL_CANCEL_THREAD) ;
+  zmapViewStepListAddStep(step_list, ZMAP_SERVERREQ_SEQUENCE,  REQUEST_ONFAIL_CANCEL_THREAD) ;
+  zmapViewStepListAddStep(step_list, ZMAP_SERVERREQ_GETSTATUS,  REQUEST_ONFAIL_CANCEL_THREAD) ;
+  zmapViewStepListAddStep(step_list, ZMAP_SERVERREQ_TERMINATE, REQUEST_ONFAIL_CANCEL_THREAD) ;
 
-      return(step_list);
+  return(step_list);
 
 }
 
@@ -430,13 +430,13 @@ static void stepDestroy(gpointer data, gpointer user_data)
   ZMapViewConnectionStepList step_list = (ZMapViewConnectionStepList)user_data ;
 
   if(step->connection_req)
-  {
+    {
       /* Call users free func. */
       if ((step_list->free_func))
-            step_list->free_func(step->connection_req->request_data) ;
+	step_list->free_func(step->connection_req->request_data) ;
 
       g_free(step->connection_req) ;
-  }
+    }
 
   step->connection_req = NULL ;
 
@@ -447,25 +447,33 @@ static void stepDestroy(gpointer data, gpointer user_data)
 
 
 /* Free the list of steps. */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 void zmapViewStepListDestroy(ZMapViewConnection view_con)
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+void zmapViewStepListDestroy(ZMapViewConnectionStepList step_list)
 {
-  ZMapViewConnectionStepList step_list = view_con->step_list;
+  g_list_foreach(step_list->steps, stepDestroy, step_list) ;
+  g_list_free(step_list->steps) ;
+  step_list->steps = NULL ;
+  g_free(step_list) ;
 
-  if(step_list)
-  {
-    g_list_foreach(step_list->steps, stepDestroy, step_list) ;
-    g_list_free(step_list->steps) ;
-    step_list->steps = NULL ;
 
-    g_free(step_list) ;
-  }
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   view_con->step_list = NULL;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* THIS IS COMPLETELY AND UTTERLY THE WRONG PLACE TO DO THIS....AGGGGGHHHHHHH...... */
 
   if(view_con->request_data)
-  {
-    g_free(view_con->request_data) ;
-    view_con->request_data = NULL ;
-  }
+    {
+      g_free(view_con->request_data) ;
+      view_con->request_data = NULL ;
+    }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   return ;
 }
@@ -680,8 +688,8 @@ void zmapViewSessionAddServer(ZMapViewSessionServer server_data, ZMapURL url, ch
 
     case SCHEME_FILE:
       {
-      // mgh: file:// is now handled by pipe://, but as this is a view struct it is unchanged
-      // consider also DAS, which is still known as a file://
+	// mgh: file:// is now handled by pipe://, but as this is a view struct it is unchanged
+	// consider also DAS, which is still known as a file://
 	server_data->scheme_data.file.path = g_strdup(url->path) ;
 	break ;
       }
@@ -812,6 +820,7 @@ static void cwh_destroy_key(gpointer cwh_data)
   return ;
 }
 
+
 /* g_hash_table value destroy func */
 static void cwh_destroy_value(gpointer cwh_data)
 {
@@ -866,9 +875,9 @@ static void formatSession(gpointer data, gpointer user_data)
       }
     case SCHEME_PIPE:
       {
-      g_string_append_printf(session_text, "\tScript: %s\n\n", server_data->scheme_data.pipe.path) ;
-      g_string_append_printf(session_text, "\tQuery: %s\n\n", server_data->scheme_data.pipe.query) ;
-      break ;
+	g_string_append_printf(session_text, "\tScript: %s\n\n", server_data->scheme_data.pipe.path) ;
+	g_string_append_printf(session_text, "\tQuery: %s\n\n", server_data->scheme_data.pipe.query) ;
+	break ;
       }
     default:
       {
