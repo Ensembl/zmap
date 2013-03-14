@@ -101,6 +101,10 @@ case $opsys in
 	    zmap_register_prefix_in_env $GTK_PREFIX
 	    zmap_register_prefix_as_rpath $GTK_PREFIX
 
+	    if [ "x$TVIEW_MEM" == "x$ZMAP_TRUE" ]; then
+	    LDFLAGS="-L/usr/toolworks/memoryscape.3.2.3-0/linux-x86/lib -ltvheap -Wl,-rpath=/usr/toolworks/memoryscape.3.2.3-0/linux-x86/lib"
+	    fi
+
 	    if [ "x$USE_GPROF" == "x$ZMAP_TRUE" ]; then
 		LDFLAGS="-pg $LDFLAGS"
                 CFLAGS="-pg $CFLAGS"
