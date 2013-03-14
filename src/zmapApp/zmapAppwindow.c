@@ -49,6 +49,13 @@
 #include <zmapApp_P.h>
 
 
+
+
+/* define this to get some memory debugging. */
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+#define ZMAP_MEMORY_DEBUG
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 #define CLEAN_EXIT_MSG "Exit clean - goodbye cruel world !"
 
 static void checkForCmdLineVersionArg(int argc, char *argv[]) ;
@@ -127,17 +134,14 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   char *err_msg = NULL ;
 
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-#define ZMAP_MEMORY_DEBUG
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 #ifdef ZMAP_MEMORY_DEBUG
+  if (g_mem_is_system_malloc())
+    zMapDebugPrintf("%s", "Using system malloc.") ;
+  else
+    zMapDebugPrintf("%s", "Using glib special malloc.") ;
+
   g_mem_set_vtable(glib_mem_profiler_table) ;
 #endif
-
-
 
 
 
