@@ -608,6 +608,12 @@ ZMapView zmapControlAddView(ZMap zmap, ZMapFeatureSequenceMap sequence_map)
 gboolean zmapControlRemoveView(ZMap zmap, ZMapView view)
 {
   gboolean result = TRUE ;
+  ZMapViewWindow view_window ;
+
+  view_window = zmapControlFindViewWindow(zmap, view) ;
+
+  if (view_window == zmap->focus_viewwindow)
+    zmap->focus_viewwindow = NULL ;
 
   zMapViewDestroy(view) ;
 
@@ -1119,6 +1125,7 @@ static void viewKilledCB(ZMapView view, void *app_data, void *view_data)
 static void killFinal(ZMap *zmap_out)
 {
   ZMap zmap = *zmap_out ;
+  void *app_data = zmap->app_data ;			    /* Hang on to app data. */
 
   zMapAssert(zmap->state == ZMAP_DYING) ;
 
@@ -1129,10 +1136,10 @@ static void killFinal(ZMap *zmap_out)
       zmap->toplevel = NULL ;
     }
 
-  destroyZMap(zmap) ;
+  destroyZMap(zmap) ;					    /* destroys zmap block. */
 
   /* Call the application callback so that they know we have finally died. */
-  (*(zmap_cbs_G->destroy))(zmap, zmap->app_data) ;
+  (*(zmap_cbs_G->destroy))(zmap, app_data) ;
 
   *zmap_out = NULL ;
 
@@ -1178,7 +1185,7 @@ static void updateControl(ZMap zmap, ZMapView view)
 {
 
   /* We only do this if the view is the current one. */
-  if ((view = zMapViewGetView(zmap->focus_viewwindow)))
+  if ((zmap->focus_viewwindow) && (view = zMapViewGetView(zmap->focus_viewwindow)))
     {
       ZMapFeatureContext features ;
       double top, bottom ;
@@ -1217,7 +1224,6 @@ static void updateControl(ZMap zmap, ZMapView view)
 	zmapControlWindowSetZoomButtons(zmap, zoom_status) ;
       }
     }
-
 
   return ;
 }
