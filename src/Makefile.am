@@ -43,7 +43,7 @@ MOSTLYCLEANFILES = $(DX_CLEANFILES)
 
 EXTRA_DIST = INSTALL \
 	README.zmap \
-	$(DX_CONFIG)
+	libAceConn \
 	$(NULL)
 
 
