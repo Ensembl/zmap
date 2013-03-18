@@ -43,12 +43,6 @@ MOSTLYCLEANFILES = $(DX_CLEANFILES)
 
 EXTRA_DIST = INSTALL \
 	README.zmap \
-<<<<<<< HEAD
-	libAceConn \
-|||||||
-	$(DX_CONFIG)
-=======
->>>>>>> develop
 	$(NULL)
 
 
