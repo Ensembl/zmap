@@ -435,7 +435,6 @@ zmapView/Makefile
 zmapWindow/Makefile
 zmapXML/Makefile
 include/Makefile
-libAceConn/Makefile
 libzmapfoocanvas/Makefile
 libpfetch/Makefile
 libpfetch/tests/Makefile
@@ -448,6 +447,11 @@ dotZMap:dotZmap.in
 #
 #$srcdir/$DX_CONFIG:Doxyfile.in
 #
+
+
+
+AC_CONFIG_SUBDIRS([AceConn])
+
 
 AC_OUTPUT
 
