@@ -2309,12 +2309,13 @@ if(featureset_data->frame != ZMAPFRAME_NONE)
 #endif
 
   style = *feature->style;
+
   /* if fails: no display. fixed for pipe via GFF2parser, ACE seems to call it???
    * features paint so it musk be ok! *
    * but if a user adds an object and we make a fetaure OTF then no style is attached
    * the above is an optimisation
    */
-  if(!style)
+  if (!style)
     {
       /* should only be a consideration for OTF data w/ no styles?? */
       /* xremote code should set this up anyway */
@@ -2326,11 +2327,10 @@ if(featureset_data->frame != ZMAPFRAME_NONE)
       /* NOTE: 3FT and DNA get supplied by acedbServer and pipeServer and are given temporary styles that are freed
        * which means thet that data is not usable.
        */
+      ZMapFeatureSet set = (ZMapFeatureSet)feature->parent ;
+      zMapAssert(set) ;
 
-      ZMapFeatureSet set = (ZMapFeatureSet) feature->parent;
-      zMapAssert(set);
-
-      if(!set->style)
+      if (!set->style)
 	{
 	  char *err_msg ;
 
@@ -2339,13 +2339,19 @@ if(featureset_data->frame != ZMAPFRAME_NONE)
 				    g_quark_to_string(feature->original_id),
 				    g_quark_to_string(feature->unique_id));
 
-	  //		set->style = zMapFindStyle(featureset_data->styles, feature->style_id) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	  /* Actually really annoying for the user so let's not do it... */
 	  zMapWarning("%s", err_msg) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 	  zMapLogWarning("%s", err_msg) ;
+
 	  zMapLogStack();
 
 	  g_free(err_msg) ;
 	}
+
       feature->style = &set->style;
     }
 
