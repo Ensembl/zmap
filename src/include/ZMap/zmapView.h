@@ -109,7 +109,7 @@ typedef struct
 
 
 // tried to put these into ConnectionData but as ever there's scope issues
-typedef struct
+typedef struct ZMapViewLoadFeaturesDataStructType
 {
   char *err_msg;        // from the server mainly
   gchar *stderr_out;
@@ -121,7 +121,7 @@ typedef struct
   gboolean status;      // load sucessful?
   unsigned long xwid ;  // X Window id for the xremote widg. */
 
-} LoadFeaturesDataStruct, *LoadFeaturesData ;
+} ZMapViewLoadFeaturesDataStruct, *ZMapViewLoadFeaturesData ;
 
 
 

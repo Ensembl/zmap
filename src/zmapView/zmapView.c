@@ -2873,7 +2873,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 	  gboolean steps_finished = FALSE ;
 	  gboolean is_continue = FALSE ;
 	  ConnectionData connect_data = NULL ;
-	  LoadFeaturesDataStruct load_features ;
+	  ZMapViewLoadFeaturesDataStruct load_features = {NULL} ;
 
 	  view_con = list_item->data ;
 	  thread = view_con->thread ;

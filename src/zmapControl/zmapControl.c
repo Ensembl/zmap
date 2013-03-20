@@ -696,7 +696,7 @@ static void dataLoadCB(ZMapView view, void *app_data, void *view_data)
 
   if (view_data)
     {
-      LoadFeaturesData lfd = (LoadFeaturesData)view_data ;
+      ZMapViewLoadFeaturesData lfd = (ZMapViewLoadFeaturesData)view_data ;
 
 
       /* THIS NEEDS REVISITING AND IMPROVING..... */
