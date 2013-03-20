@@ -52,17 +52,6 @@
 #include <ZMap/zmapConfigStrings.h>
 
 
-#ifdef MH_NOW_IN_PIPESERVER_STRUCT
-/* Used to control getting features in all alignments in all blocks... */
-typedef struct
-{
-  ZMapServerResponseType result ;
-  PipeServer server ;
-  ZMapGFFParser parser
-  GString * gff_line ;
-} GetFeaturesStruct, *GetFeatures ;
-#endif
-
 
 static gboolean globalInit(void) ;
 static gboolean createConnection(void **server_out,
