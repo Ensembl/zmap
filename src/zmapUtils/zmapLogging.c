@@ -397,7 +397,7 @@ void zMapLogMsg(char *domain, GLogLevelFlags log_level,
 	  double t = g_timer_elapsed(zmap_log_timer_G,NULL);
 
 	  sprintf(tbuf," %.3fsec",t);
-	  g_string_append_printf(format_str, "%s",tbuf);
+	  g_string_append_printf(format_str, "%s\t",tbuf);
 	}
 
 #endif
@@ -410,7 +410,7 @@ void zMapLogMsg(char *domain, GLogLevelFlags log_level,
 
       file_basename = g_path_get_basename(file) ;
 
-      g_string_append_printf(format_str, "\t%s[%s:%s%s:%d]",
+      g_string_append_printf(format_str, "%s[%s:%s%s:%d]",
 			     ZMAPLOG_CODE_TUPLE,
 			     file_basename,
 			     (function ? function : ""),
