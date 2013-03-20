@@ -53,6 +53,47 @@
 
 
 
+typedef struct pipe_arg
+{
+      char *arg;
+      char type;
+#define PA_INT    1
+#define PA_STRING   2
+/*
+ * this runs in a thread and can be accessed by several at once
+ * must use auto variables for state
+ */
+      char flag;
+} pipeArgStruct, *pipeArg;
+
+
+#define PA_START  1
+#define PA_END  2
+#define PA_DATASET  4
+#define PA_SEQUENCE  8
+
+pipeArgStruct otter_args[] =
+{
+      { "start", PA_INT,PA_START },
+      { "end", PA_INT,PA_END },
+      { "dataset", PA_STRING,PA_DATASET },
+      { "gff_seqname", PA_STRING,PA_SEQUENCE },
+      { NULL, 0, 0 }
+};
+
+pipeArgStruct zmap_args[] =
+{
+      { "start", PA_INT,PA_START },
+      { "end", PA_INT,PA_END },
+//      { "dataset", PA_STRING,PA_DATASET },	may need when mapping available
+      { "gff_seqname", PA_STRING,PA_SEQUENCE },
+      { NULL, 0, 0 }
+};
+
+#define PIPE_MAX_ARGS   8    // extra args we add on to the query, including the program and terminating NULL
+
+
+
 static gboolean globalInit(void) ;
 static gboolean createConnection(void **server_out,
 				 char *config_file, ZMapURL url, char *format,
@@ -303,303 +344,6 @@ static gboolean createConnection(void **server_out,
 }
 
 
-
-
-/*
- * fork and exec the script and read the output via a pipe
- * no data sent to STDIN and STDERR ignored
- * in case of errors or hangups eventually we will time out and an error popped up.
- * downside is limited to not having the data, which is what happens anyway
- */
-
-typedef struct pipe_arg
-{
-      char *arg;
-      char type;
-#define PA_INT    1
-#define PA_STRING   2
-/*
- * this runs in a thread and can be accessed by several at once
- * must use auto variables for state
- */
-      char flag;
-} pipeArgStruct, *pipeArg;
-
-
-#define PA_START  1
-#define PA_END  2
-#define PA_DATASET  4
-#define PA_SEQUENCE  8
-
-pipeArgStruct otter_args[] =
-{
-      { "start", PA_INT,PA_START },
-      { "end", PA_INT,PA_END },
-      { "dataset", PA_STRING,PA_DATASET },
-      { "gff_seqname", PA_STRING,PA_SEQUENCE },
-      { NULL, 0, 0 }
-};
-
-pipeArgStruct zmap_args[] =
-{
-      { "start", PA_INT,PA_START },
-      { "end", PA_INT,PA_END },
-//      { "dataset", PA_STRING,PA_DATASET },	may need when mapping available
-      { "gff_seqname", PA_STRING,PA_SEQUENCE },
-      { NULL, 0, 0 }
-};
-
-#define PIPE_MAX_ARGS   8    // extra args we add on to the query, including the program and terminating NULL
-
-static char *make_arg(pipeArg pipe_arg, char *prefix,PipeServer server)
-{
-      char *q = NULL;
-
-      switch(pipe_arg->flag)
-      {
-      case PA_START:
-            if(server->zmap_start && server->zmap_end)
-                  q = g_strdup_printf("%s%s=%d",prefix,pipe_arg->arg,server->zmap_start);
-            break;
-      case PA_END:
-            if(server->zmap_start && server->zmap_end)
-                  q = g_strdup_printf("%s%s=%d",prefix,pipe_arg->arg,server->zmap_end);
-            break;
-      case PA_DATASET:
-            /* if NULL will not work but won't crash either */
-            if(server->sequence_map->dataset)
-                  q = g_strdup_printf("%s%s=%s",prefix,pipe_arg->arg,server->sequence_map->dataset);
-            break;
-      case PA_SEQUENCE:
-            if(server->sequence_map->sequence)
-                  q = g_strdup_printf("%s%s=%s",prefix,pipe_arg->arg,server->sequence_map->sequence);
-            break;
-      }
-      return(q);
-}
-
-static gboolean pipe_server_spawn(PipeServer server,GError **error)
-{
-  gboolean result = FALSE;
-  gchar **argv, **q_args;
-  gint pipe_fd;
-  GError *pipe_error = NULL;
-  int i;
-  gint err_fd;
-  pipeArg pipe_arg;
-  char arg_done = 0;
-  char *mm = "--";
-  char *minus = mm+2;   /* this gets set as per the first arg */
-  char *p;
-  int n_q_args = 0;
-
-  q_args = g_strsplit(server->query,"&",0);
-  if(q_args && *q_args)
-    {
-      p = q_args[0];
-      minus = mm+2;
-      if(*p == '-')     /* optional -- allow single as well */
-	{
-	  p++;
-	  minus--;
-	}
-      if(*p == '-')
-	{
-	  minus--;
-	}
-      n_q_args = g_strv_length(q_args);
-    }
-  argv = (gchar **) g_malloc (sizeof(gchar *) * (PIPE_MAX_ARGS + n_q_args));
-  argv[0] = server->script_path; // scripts can get exec'd, as long as they start w/ #!
-
-
-  for(i = 1;q_args && q_args[i-1];i++)
-    {
-      /* if we request from the mark we have to adjust the start/end coordinates
-       * these are supplied in the url and really should be configured explicitly
-       * ... now they are in [ZMap].  We now work with chromosome coords.
-       */
-
-      char *q;
-      p = q_args[i-1] + strlen(minus);
-
-      pipe_arg = server->is_otter ? otter_args : zmap_args;
-      for(; pipe_arg->type; pipe_arg++)
-	{
-	  if(!g_ascii_strncasecmp(p,pipe_arg->arg,strlen(pipe_arg->arg)))
-            {
-	      arg_done |= pipe_arg->flag;
-	      q = make_arg(pipe_arg,minus,server);
-	      if(q)
-		{
-		  g_free(q_args[i-1]);
-		  q_args[i-1] = q;
-		}
-
-            }
-	}
-
-      argv[i] = q_args[i-1];
-    }
-
-  /* add on if not defined already */
-  pipe_arg = server->is_otter ? otter_args : zmap_args;
-  for(; pipe_arg->type; pipe_arg++)
-    {
-      if(!(arg_done & pipe_arg->flag))
-	{
-	  char *q;
-	  q = make_arg(pipe_arg,minus,server);
-	  if(q)
-	    argv[i++] = q;
-
-	}
-    }
-
-  //#define MH17_DEBUG_ARGS
-
-  argv[i]= NULL;
-#if defined  MH17_DEBUG_ARGS
-  {
-    char *x = "";
-    int j;
-
-    for(j = 0;argv[j] ;j++)
-      {
-	x = g_strconcat(x," ",argv[j],NULL);
-      }
-    zMapLogWarning("pipe server args: %s (%d,%d)",x,server->zmap_start,server->zmap_end);
-  }
-#endif
-
-
-  /* Seems that g_spawn_async_with_pipes() is not thread safe so lock round it. */
-  zMapThreadForkLock();
-
-  result = g_spawn_async_with_pipes(server->script_dir,argv,NULL,
-				    //      G_SPAWN_SEARCH_PATH |	 doesnt work
-				    G_SPAWN_DO_NOT_REAP_CHILD, // can't not give a flag!
-				    NULL, NULL, &server->child_pid, NULL, &pipe_fd, &err_fd, &pipe_error) ;
-  if(result)
-    {
-      server->gff_pipe = g_io_channel_unix_new(pipe_fd);
-      server->gff_stderr = g_io_channel_unix_new(err_fd);
-      g_io_channel_set_flags(server->gff_stderr,G_IO_FLAG_NONBLOCK,&pipe_error);
-    }
-  else
-    {
-      /* didn't run so can't have clean exit code; */
-      server->exit_code = 0x2ff;	/* ref w/ pipe_server_get_stderr() */
-    }
-
-  zMapThreadForkUnlock();
-
-
-
-  g_free(argv);   // strings allocated and freed seperately
-  if(q_args)
-    g_strfreev(q_args);
-
-
-  if(error)
-    *error = pipe_error;
-  return(result);
-}
-
-
-/*
- * read stderr from the external source and if non empty display and log some messages
- * use non-blocking i/o so we don't hang ???
- * gets called by setErrMsg() - if the server fails we read STDERR and possibly report why
- * if no failures we ignore STDERR
- * the last message is the one that gets popped up to the user
- */
-
-// NB: otterlace would prefer to get all of STDERR, which needs a slight rethink
-
-/* we read this on any explicit error and at the end of reading features (end of GFF)
- * This assumes we always do this and also that the script exits in a timely manner
- * we also get the exit code at this point as this is when we decide a script has finished
- */
-void pipe_server_get_stderr(PipeServer server)
-{
-  GError *gff_pipe_err = NULL;
-  //  GError *ignore = NULL;
-#if !MH17_SINGLE_LINE
-  int status;
-  gsize length;
-
-  if(server->child_pid)
-    {
-      g_io_channel_shutdown(server->gff_pipe,FALSE,NULL);	/* or else it may not exit */
-      server->gff_pipe = NULL;	/* can't be 0 as we have that for stdin */
-      /* thst didn't work ! */
-
-      //	kill(server->child_pid,9);
-      waitpid(server->child_pid,&status,0);
-      server->child_pid = 0;
-      if(WIFEXITED(status))
-	{
-	  server->exit_code =  WEXITSTATUS(status);  /* 8 bits only */
-	}
-      else
-	{
-	  server->exit_code = 0x1ff;     /* abnormal exit */
-	}
-    }
-  /* if we are running a file:// then there's no gff_stderr */
-  if(!server->gff_stderr || server->stderr_output)    /* only try once */
-    return;
-
-  /* MH17: NOTE this is a Linux/Mac only function,
-   * GLib does not appear to wrap this stuff up in a portable way
-   * which is in fact the reason for using it
-   * if you can find a portable version of waitpid() then feel free to change this code
-   */
-
-  if(g_io_channel_read_to_end (server->gff_stderr, &server->stderr_output, &length, &gff_pipe_err) != G_IO_STATUS_NORMAL)
-    {
-      server->stderr_output = g_strdup_printf("failed to read pipe server STDERR: %s", gff_pipe_err? gff_pipe_err->message : "");
-    }
-#else
-
-  GIOStatus status ;
-  gsize terminator_pos = 0;
-  gchar * msg = NULL;
-  GString *line;
-
-  line = g_string_sized_new(2000) ;      /* Probably not many lines will be > 2k chars. */
-
-  while (1)
-    {
-      /* this doesn't work: doesn't hang, but doesn't read the error message anyway
-       * there is a race condition on big files (i think) where on notsupported errors we look at stderr
-       * and wait for ever as the script didn't finish yet as we didn't read the data.
-       *      gc = g_io_channel_get_buffer_condition(server->gff_stderr);
-       *      GIOCondition gc;
-       *      if(!(gc & G_IO_IN))
-       *            break;
-       */
-      status = g_io_channel_read_line_string(server->gff_stderr, line,
-					     &terminator_pos,&gff_pipe_err);
-      if(status != G_IO_STATUS_NORMAL)
-        break;
-
-      *(line->str + terminator_pos) = '\0' ; /* Remove terminating newline. */
-      if(terminator_pos > 0)              // can get blank lines at the end
-	{
-	  if(msg)
-	    g_free(msg);
-	  msg = g_strdup(line->str);
-	  ZMAPPIPESERVER_LOG(Warning, server->protocol, server->script_path,server->query,"%s", msg) ;
-	}
-    }
-
-  g_string_free(line,TRUE);
-  return(msg);
-
-#endif
-}
 
 
 static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen req_open)
@@ -1317,6 +1061,271 @@ static ZMapServerResponseType destroyConnection(void *server_in)
 /*
  * ---------------------  Internal routines.  ---------------------
  */
+
+
+/*
+ * fork and exec the script and read the output via a pipe
+ * no data sent to STDIN and STDERR ignored
+ * in case of errors or hangups eventually we will time out and an error popped up.
+ * downside is limited to not having the data, which is what happens anyway
+ */
+static char *make_arg(pipeArg pipe_arg, char *prefix, PipeServer server)
+{
+  char *q = NULL;
+
+  switch(pipe_arg->flag)
+    {
+    case PA_START:
+      if(server->zmap_start && server->zmap_end)
+	q = g_strdup_printf("%s%s=%d",prefix,pipe_arg->arg,server->zmap_start);
+      break;
+    case PA_END:
+      if(server->zmap_start && server->zmap_end)
+	q = g_strdup_printf("%s%s=%d",prefix,pipe_arg->arg,server->zmap_end);
+      break;
+    case PA_DATASET:
+      /* if NULL will not work but won't crash either */
+      if(server->sequence_map->dataset)
+	q = g_strdup_printf("%s%s=%s",prefix,pipe_arg->arg,server->sequence_map->dataset);
+      break;
+    case PA_SEQUENCE:
+      if(server->sequence_map->sequence)
+	q = g_strdup_printf("%s%s=%s",prefix,pipe_arg->arg,server->sequence_map->sequence);
+      break;
+    }
+
+  return(q);
+}
+
+
+static gboolean pipe_server_spawn(PipeServer server,GError **error)
+{
+  gboolean result = FALSE;
+  gchar **argv, **q_args;
+  gint pipe_fd;
+  GError *pipe_error = NULL;
+  int i;
+  gint err_fd;
+  pipeArg pipe_arg;
+  char arg_done = 0;
+  char *mm = "--";
+  char *minus = mm + 2 ;				    /* this gets set as per the first arg */
+  char *p;
+  int n_q_args = 0;
+
+  q_args = g_strsplit(server->query,"&",0) ;
+
+  if (q_args && *q_args)
+    {
+      p = q_args[0];
+      minus = mm+2;
+      if(*p == '-')     /* optional -- allow single as well */
+	{
+	  p++;
+	  minus--;
+	}
+      if(*p == '-')
+	{
+	  minus--;
+	}
+      n_q_args = g_strv_length(q_args);
+    }
+
+  argv = (gchar **)g_malloc(sizeof(gchar *) * (PIPE_MAX_ARGS + n_q_args)) ;
+
+  argv[0] = server->script_path; // scripts can get exec'd, as long as they start w/ #!
+
+
+  for (i = 1 ; q_args && q_args[i-1] ; i++)
+    {
+      /* if we request from the mark we have to adjust the start/end coordinates
+       * these are supplied in the url and really should be configured explicitly
+       * ... now they are in [ZMap].  We now work with chromosome coords.
+       */
+      char *q ;
+
+      p = q_args[i-1] + strlen(minus) ;
+
+      pipe_arg = server->is_otter ? otter_args : zmap_args ;
+      for ( ; pipe_arg->type ; pipe_arg++)
+	{
+	  if (g_ascii_strncasecmp(p, pipe_arg->arg, strlen(pipe_arg->arg)) == 0)
+            {
+	      arg_done |= pipe_arg->flag ;
+
+	      if ((q = make_arg(pipe_arg, minus, server)))
+		{
+		  g_free(q_args[i-1]) ;
+		  q_args[i-1] = q ;
+
+		  break ;				    /* I believe we should break out here.... */
+		}
+
+            }
+	}
+
+      argv[i] = q_args[i-1];
+    }
+
+  /* add on if not defined already */
+  pipe_arg = server->is_otter ? otter_args : zmap_args;
+  for(; pipe_arg->type; pipe_arg++)
+    {
+      if(!(arg_done & pipe_arg->flag))
+	{
+	  char *q;
+	  q = make_arg(pipe_arg,minus,server);
+	  if(q)
+	    argv[i++] = q;
+
+	}
+    }
+
+  //#define MH17_DEBUG_ARGS
+
+  argv[i]= NULL;
+#if defined  MH17_DEBUG_ARGS
+  {
+    char *x = "";
+    int j;
+
+    for(j = 0;argv[j] ;j++)
+      {
+	x = g_strconcat(x," ",argv[j],NULL);
+      }
+    zMapLogWarning("pipe server args: %s (%d,%d)",x,server->zmap_start,server->zmap_end);
+  }
+#endif
+
+
+  /* Seems that g_spawn_async_with_pipes() is not thread safe so lock round it. */
+  zMapThreadForkLock();
+
+  result = g_spawn_async_with_pipes(server->script_dir,argv,NULL,
+				    //      G_SPAWN_SEARCH_PATH |	 doesnt work
+				    G_SPAWN_DO_NOT_REAP_CHILD, // can't not give a flag!
+				    NULL, NULL, &server->child_pid, NULL, &pipe_fd, &err_fd, &pipe_error) ;
+  if(result)
+    {
+      server->gff_pipe = g_io_channel_unix_new(pipe_fd);
+      server->gff_stderr = g_io_channel_unix_new(err_fd);
+      g_io_channel_set_flags(server->gff_stderr,G_IO_FLAG_NONBLOCK,&pipe_error);
+    }
+  else
+    {
+      /* didn't run so can't have clean exit code; */
+      server->exit_code = 0x2ff;	/* ref w/ pipe_server_get_stderr() */
+    }
+
+  zMapThreadForkUnlock();
+
+
+
+  g_free(argv);   // strings allocated and freed seperately
+  if(q_args)
+    g_strfreev(q_args);
+
+
+  if(error)
+    *error = pipe_error;
+  return(result);
+}
+
+
+/*
+ * read stderr from the external source and if non empty display and log some messages
+ * use non-blocking i/o so we don't hang ???
+ * gets called by setErrMsg() - if the server fails we read STDERR and possibly report why
+ * if no failures we ignore STDERR
+ * the last message is the one that gets popped up to the user
+ */
+
+// NB: otterlace would prefer to get all of STDERR, which needs a slight rethink
+
+/* we read this on any explicit error and at the end of reading features (end of GFF)
+ * This assumes we always do this and also that the script exits in a timely manner
+ * we also get the exit code at this point as this is when we decide a script has finished
+ */
+void pipe_server_get_stderr(PipeServer server)
+{
+  GError *gff_pipe_err = NULL;
+  //  GError *ignore = NULL;
+#if !MH17_SINGLE_LINE
+  int status;
+  gsize length;
+
+  if(server->child_pid)
+    {
+      g_io_channel_shutdown(server->gff_pipe,FALSE,NULL);	/* or else it may not exit */
+      server->gff_pipe = NULL;	/* can't be 0 as we have that for stdin */
+      /* thst didn't work ! */
+
+      //	kill(server->child_pid,9);
+      waitpid(server->child_pid,&status,0);
+      server->child_pid = 0;
+      if(WIFEXITED(status))
+	{
+	  server->exit_code =  WEXITSTATUS(status);  /* 8 bits only */
+	}
+      else
+	{
+	  server->exit_code = 0x1ff;     /* abnormal exit */
+	}
+    }
+  /* if we are running a file:// then there's no gff_stderr */
+  if(!server->gff_stderr || server->stderr_output)    /* only try once */
+    return;
+
+  /* MH17: NOTE this is a Linux/Mac only function,
+   * GLib does not appear to wrap this stuff up in a portable way
+   * which is in fact the reason for using it
+   * if you can find a portable version of waitpid() then feel free to change this code
+   */
+
+  if(g_io_channel_read_to_end (server->gff_stderr, &server->stderr_output, &length, &gff_pipe_err) != G_IO_STATUS_NORMAL)
+    {
+      server->stderr_output = g_strdup_printf("failed to read pipe server STDERR: %s", gff_pipe_err? gff_pipe_err->message : "");
+    }
+#else
+
+  GIOStatus status ;
+  gsize terminator_pos = 0;
+  gchar * msg = NULL;
+  GString *line;
+
+  line = g_string_sized_new(2000) ;      /* Probably not many lines will be > 2k chars. */
+
+  while (1)
+    {
+      /* this doesn't work: doesn't hang, but doesn't read the error message anyway
+       * there is a race condition on big files (i think) where on notsupported errors we look at stderr
+       * and wait for ever as the script didn't finish yet as we didn't read the data.
+       *      gc = g_io_channel_get_buffer_condition(server->gff_stderr);
+       *      GIOCondition gc;
+       *      if(!(gc & G_IO_IN))
+       *            break;
+       */
+      status = g_io_channel_read_line_string(server->gff_stderr, line,
+					     &terminator_pos,&gff_pipe_err);
+      if(status != G_IO_STATUS_NORMAL)
+        break;
+
+      *(line->str + terminator_pos) = '\0' ; /* Remove terminating newline. */
+      if(terminator_pos > 0)              // can get blank lines at the end
+	{
+	  if(msg)
+	    g_free(msg);
+	  msg = g_strdup(line->str);
+	  ZMAPPIPESERVER_LOG(Warning, server->protocol, server->script_path,server->query,"%s", msg) ;
+	}
+    }
+
+  g_string_free(line,TRUE);
+  return(msg);
+
+#endif
+}
+
 
 
 /* A bit of a lash up for now, we need the parent->child mapping for a sequence and since
