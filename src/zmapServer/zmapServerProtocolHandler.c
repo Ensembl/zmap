@@ -529,7 +529,8 @@ ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
       {
         ZMapServerReqGetFeatures features = (ZMapServerReqGetFeatures)request_in ;
 
-	if ((request->response = zMapServerGetFeatures(server, features->styles, features->context))
+	if ((request->response = zMapServerGetFeatures(server, features->styles,
+						       features->context, &(features->num_features)))
 	    != ZMAP_SERVERRESPONSE_OK)
 	  {
 	    *err_msg_out = g_strdup(zMapServerLastErrorMsg(server)) ;
