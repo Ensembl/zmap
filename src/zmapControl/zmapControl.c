@@ -696,31 +696,30 @@ static void dataLoadCB(ZMapView view, void *app_data, void *view_data)
 
   if (view_data)
     {
-      ZMapViewLoadFeaturesData lfd = (ZMapViewLoadFeaturesData)view_data ;
+      ZMapViewLoadFeaturesData load_features_data = (ZMapViewLoadFeaturesData)view_data ;
 
 
       /* THIS NEEDS REVISITING AND IMPROVING..... */
-      if (!(lfd->feature_sets))
+      if (!(load_features_data->feature_sets))
 	{
 	  //	  zMapLogCritical("%s", "Data Load notification received but no datasets specified.") ;
 	  // if we have a file input then we may not know the featuresets if there is no data or an error
 #warning better to patch in the server name here
-	  lfd->feature_sets = g_list_append(NULL, GUINT_TO_POINTER(g_quark_from_string("_unknown_")));
+	  load_features_data->feature_sets = g_list_append(NULL, GUINT_TO_POINTER(g_quark_from_string("_unknown_")));
 	}
       else if (zmap->xremote_client)
 	{
 	  char *request ;
 	  char *response = NULL;
-	  GList *features;
-	  char *featurelist = NULL;
-	  char *emsg;
-	  char *ok_mess = NULL;
+	  GList *features ;
+	  char *featurelist = NULL ;
+	  char *load_msg = NULL, *stderr_msg = NULL ;
 	  GString *feature_list_str ;
 
 	  /* Create a list of sources loaded so far. */
 	  feature_list_str = g_string_new(NULL) ;
 
-	  for (features = lfd->feature_sets ; features ; features = features->next)
+	  for (features = load_features_data->feature_sets ; features ; features = features->next)
 	    {
 	      char *feature_set_name ;
 
@@ -732,35 +731,34 @@ static void dataLoadCB(ZMapView view, void *app_data, void *view_data)
 	  featurelist = g_string_free(feature_list_str, FALSE) ;
 
 
-	  if (lfd->status)		/* see comment in zmapSlave.c/ RETURNCODE_QUIT, we are tied up in knots */
+	  /* see comment in zmapSlave.c/ RETURNCODE_QUIT, we are tied up in knots...UM, YOU SEEM
+	     TO HAVE MADE IT ALL WORSE MALCOLM....WHY NOT JUST WORK THROUGH THINGS AND UNDERSTAND THEM...SIGH... */
+	  if (load_features_data->status)		
 	    {
-	      ok_mess = g_strdup_printf("%d features loaded", lfd->num_features) ;
+	      char *tmp_msg ;
 
-	      emsg = html_quote_string(ok_mess) ;	/* N.B. emsg allocated with xmalloc() */
+	      tmp_msg = g_strdup_printf("%d features loaded", load_features_data->num_features) ;
 
-	      g_free(ok_mess) ;
+	      load_msg = html_quote_string(tmp_msg) ;	    /* N.B. load_msg allocated with xmalloc() */
+
+	      g_free(tmp_msg) ;
 
 	      {
 		static long total = 0 ;
 
-		total += lfd->num_features ;
-		zMapLogTime(TIMER_LOAD, TIMER_ELAPSED, total, "") ;	/* how long is startup... */
+		total += load_features_data->num_features ;
+		zMapLogTime(TIMER_LOAD, TIMER_ELAPSED, total, "") ; /* how long is startup... */
 	      }
 	    }
 	  else
 	    {
-	      emsg = html_quote_string(lfd->err_msg ? lfd->err_msg  : "") ;
+	      load_msg = html_quote_string((load_features_data->err_msg ? load_features_data->err_msg : xstrdup(""))) ;
 	    }
 
-	  if (lfd->stderr_out)
+	  if (load_features_data->stderr_out)
 	    {
-	      gchar *old ;
-
-	      old = lfd->stderr_out ;
-
-	      lfd->stderr_out = html_quote_string(old) ;    /* N.B. lfd->stderr_out allocated with xmalloc() */
-
-    	      xfree(old) ;				    /* Must be free'd with xfree() */
+	      stderr_msg = html_quote_string(load_features_data->stderr_out) ;
+							    /* Must be free'd with xfree() */
 	    }
 
 
@@ -773,20 +771,27 @@ static void dataLoadCB(ZMapView view, void *app_data, void *view_data)
 				    " <exit_code value=\"%d\" />"
 				    " <stderr value=\"%s\" />"
 				    "</request></zmap>",
-				    lfd->xwid, lfd->xwid,
+				    load_features_data->xwid, load_features_data->xwid,
 				    featurelist,
-				    lfd->start, lfd->end,
-				    (int)lfd->status,
-				    emsg, lfd->exit_code,
-				    lfd->stderr_out ? lfd->stderr_out : "") ;
+				    load_features_data->start, load_features_data->end,
+				    (int)load_features_data->status,
+				    load_msg, load_features_data->exit_code,
+				    stderr_msg ? stderr_msg : "") ;
 
-	  xfree(emsg) ;					    /* Must be free'd with xfree() */
+	  /* Must be free'd with xfree() as created by xmalloc() */
+	  xfree(load_msg) ;
+	  if (stderr_msg)
+	    xfree(stderr_msg) ;
 
 	  if (zMapXRemoteSendRemoteCommand(zmap->xremote_client, request, &response)
 	      != ZMAPXREMOTE_SENDCOMMAND_SUCCEED)
 	    {
 	      response = response ? response : zMapXRemoteGetResponse(zmap->xremote_client);
 	      zMapLogWarning("Notify of data loaded failed: \"%s\"", response) ;
+	    }
+	  else
+	    {
+	      zMapDebugPrintf("Message sent was: \"%s\"", request) ;
 	    }
 
 	  g_free(request);
@@ -802,7 +807,7 @@ static void dataLoadCB(ZMapView view, void *app_data, void *view_data)
 	  char *featurelist = NULL;
 	  GList *features;
 
-	  for (features = lfd->feature_sets ; features ; features = features->next)
+	  for (features = load_features_data->feature_sets ; features ; features = features->next)
 	    {
 	      char *prev,*f ;
 
@@ -817,7 +822,7 @@ static void dataLoadCB(ZMapView view, void *app_data, void *view_data)
 
 	      g_free(prev) ;
 	    }
-	  printf("%d features loaded from %s",lfd->num_features, featurelist);
+	  printf("%d features loaded from %s",load_features_data->num_features, featurelist);
 	  g_free(featurelist);
 	}
 #endif
