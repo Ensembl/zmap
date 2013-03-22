@@ -520,12 +520,12 @@ ZMapGFFHeader zMapGFFGetHeader(ZMapGFFParser parser)
 
 gboolean zMapGFFParserSetSequenceFlag(ZMapGFFParser parser)
 {
-  gboolean set = TRUE;
+  gboolean set = TRUE ;
 
-  parser->sequence_flags.done_start = FALSE;
-  parser->sequence_flags.done_finished = FALSE;
+  parser->sequence_flags.done_start = FALSE ;
+  parser->sequence_flags.done_finished = FALSE ;
 
-  return set;
+  return set ;
 }
 
 ZMapSequence zMapGFFGetSequence(ZMapGFFParser parser)
@@ -777,7 +777,7 @@ GError *zMapGFFGetError(ZMapGFFParser parser)
 
 int zMapGFFParserGetNumFeatures(ZMapGFFParser parser)
 {
-	return(parser->num_features);
+  return(parser->num_features) ;
 }
 
 /* Returns TRUE if the parser has encountered an error from which it cannot recover and hence will
@@ -1758,16 +1758,6 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 	}
     }
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  else if ((feature_type == ZMAPSTYLE_MODE_BASIC || feature_type == ZMAPSTYLE_MODE_GLYPH)
-	   && (g_str_has_prefix(source, "GF_") || (g_ascii_strcasecmp(source, "hexexon") == 0)))
-    {
-      /* Genefinder features, we use the ontology as the name.... */
-      name_string = g_strdup(ontology) ;
-    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
   /* Was there a url for the feature ? */
   url = getURL(attributes) ;
 
@@ -1789,15 +1779,6 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 				    &feature_name, &feature_name_id) ;
 
 
-
-  if (g_ascii_strcasecmp(feature_name, "ENST00000240499") == 0)
-    printf("found it\n") ;
-
-
-
-
-
-
   /* Check if the feature name for this feature is already known, if it is then check if there
    * is already a multiline feature with the same name as we will need to augment it with this data. */
   if (!parser->parse_only) // && parser_feature_set)
@@ -1813,7 +1794,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
   if (parser->parse_only || !feature)
     {
       new_feature = zMapFeatureCreateEmpty() ;
-      parser->num_features++;
+      parser->num_features++ ;
     }
 
 
