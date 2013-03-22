@@ -55,15 +55,15 @@
 
 typedef struct pipe_arg
 {
-      char *arg;
-      char type;
+  char *arg;
+  char type;
 #define PA_INT    1
 #define PA_STRING   2
-/*
- * this runs in a thread and can be accessed by several at once
- * must use auto variables for state
- */
-      char flag;
+  /*
+   * this runs in a thread and can be accessed by several at once
+   * must use auto variables for state
+   */
+  char flag;
 } pipeArgStruct, *pipeArg;
 
 
@@ -73,22 +73,22 @@ typedef struct pipe_arg
 #define PA_SEQUENCE  8
 
 pipeArgStruct otter_args[] =
-{
-      { "start", PA_INT,PA_START },
-      { "end", PA_INT,PA_END },
-      { "dataset", PA_STRING,PA_DATASET },
-      { "gff_seqname", PA_STRING,PA_SEQUENCE },
-      { NULL, 0, 0 }
-};
+  {
+    { "start", PA_INT,PA_START },
+    { "end", PA_INT,PA_END },
+    { "dataset", PA_STRING,PA_DATASET },
+    { "gff_seqname", PA_STRING,PA_SEQUENCE },
+    { NULL, 0, 0 }
+  };
 
 pipeArgStruct zmap_args[] =
-{
-      { "start", PA_INT,PA_START },
-      { "end", PA_INT,PA_END },
-//      { "dataset", PA_STRING,PA_DATASET },	may need when mapping available
-      { "gff_seqname", PA_STRING,PA_SEQUENCE },
-      { NULL, 0, 0 }
-};
+  {
+    { "start", PA_INT,PA_START },
+    { "end", PA_INT,PA_END },
+    //      { "dataset", PA_STRING,PA_DATASET },	may need when mapping available
+    { "gff_seqname", PA_STRING,PA_SEQUENCE },
+    { NULL, 0, 0 }
+  };
 
 #define PIPE_MAX_ARGS   8    // extra args we add on to the query, including the program and terminating NULL
 
@@ -113,7 +113,8 @@ static ZMapServerResponseType getStyles(void *server, GHashTable **styles_out) ;
 static ZMapServerResponseType haveModes(void *server, gboolean *have_mode) ;
 static ZMapServerResponseType getSequences(void *server_in, GList *sequences_inout) ;
 static ZMapServerResponseType setContext(void *server,  ZMapFeatureContext feature_context) ;
-static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles, ZMapFeatureContext feature_context_out) ;
+static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles,
+					  ZMapFeatureContext feature_context_out, int *num_features_out) ;
 static ZMapServerResponseType getContextSequence(void *server_in, GHashTable *styles, ZMapFeatureContext feature_context_out) ;
 static char *lastErrorMsg(void *server) ;
 static ZMapServerResponseType getStatus(void *server_conn, gint *exit_code, gchar **stderr_out);
@@ -133,7 +134,15 @@ static void setErrMsg(PipeServer server, char *new_msg) ;
 
 static ZMapServerResponseType pipeGetHeader(PipeServer server);
 static ZMapServerResponseType pipeGetSequence(PipeServer server);
+static void pipe_server_get_stderr(PipeServer server) ;
 
+
+
+/* 
+ *              External interface routines
+ *
+ * (many of these are static but are the server interface)
+ */
 
 
 /* Compulsory routine, without this we can't do anything....returns a list of functions
@@ -460,15 +469,15 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
 
   zMapAssert(server) ;
 
-      // these are needed by the GFF parser
+  // these are needed by the GFF parser
   server->source_2_sourcedata = *source_2_sourcedata_inout;
   server->featureset_2_column = *featureset_2_column_inout;
 
-/*
-  setErrMsg(server, g_strdup("Feature Sets cannot be read from GFF stream.")) ;
-  ZMAPPIPESERVER_LOG(Warning, server->protocol, server->script_path,server->query,
-		 "%s", server->last_err_msg) ;
-*/
+  /*
+    setErrMsg(server, g_strdup("Feature Sets cannot be read from GFF stream.")) ;
+    ZMAPPIPESERVER_LOG(Warning, server->protocol, server->script_path,server->query,
+    "%s", server->last_err_msg) ;
+  */
   result = ZMAP_SERVERRESPONSE_UNSUPPORTED ;
 
   return result ;
@@ -488,10 +497,10 @@ static ZMapServerResponseType getStyles(void *server_in, GHashTable **styles_out
 
   zMapAssert(server) ;
 
-      // can take this warning out as zmapView should now read the styles file globally
+  // can take this warning out as zmapView should now read the styles file globally
   setErrMsg(server, "Reading styles from a GFF stream is not supported.") ;
   ZMAPPIPESERVER_LOG(Warning, server->protocol, server->script_path, server->query,
-		 "%s", server->last_err_msg) ;
+		     "%s", server->last_err_msg) ;
 
   result = ZMAP_SERVERRESPONSE_UNSUPPORTED ;
 
@@ -672,12 +681,12 @@ static ZMapServerResponseType pipeGetSequence(PipeServer server)
   // read the sequence if it's there
   server->result = ZMAP_SERVERRESPONSE_OK;   // now we have data default is 'OK'
 
-	/* we have already read the first non header line in pipeGetheader */
+  /* we have already read the first non header line in pipeGetheader */
   do
     {
-	if(!first)
-		*(server->gff_line->str + terminator_pos) = '\0' ; /* Remove terminating newline. */
-	first = FALSE;
+      if(!first)
+	*(server->gff_line->str + terminator_pos) = '\0' ; /* Remove terminating newline. */
+      first = FALSE;
 
       if(!zMapGFFParseSequence(server->parser, server->gff_line->str, &sequence_finished) || sequence_finished)
 	break;
@@ -725,8 +734,10 @@ static ZMapServerResponseType pipeGetSequence(PipeServer server)
 /* Get features sequence.
  * we assume we called pipeGetHeader() already and also pipeGetSequence()
  * so we are at the start of the BODY part of the stream. */
-static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles, ZMapFeatureContext feature_context)
+static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles,
+					  ZMapFeatureContext feature_context, int *num_features_out)
 {
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   PipeServer server = (PipeServer)server_in ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -751,38 +762,40 @@ static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles, Z
   // if no DNA was provided
 
   server->result = ZMAP_SERVERRESPONSE_OK;
-    {
-      addMapping(feature_context, server->zmap_start, server->zmap_end) ;
+  {
+    addMapping(feature_context, server->zmap_start, server->zmap_end) ;
 
-      /* Fetch all the alignment blocks for all the sequences, this all hacky right now as really.
-       * we would have to parse and reparse the stream....can be done but not needed this second. */
-      /* can only have one alignment and one block ?? */
-      g_hash_table_foreach(feature_context->alignments, eachAlignment, (gpointer)server) ;
+    /* Fetch all the alignment blocks for all the sequences, this all hacky right now as really.
+     * we would have to parse and reparse the stream....can be done but not needed this second. */
+    /* can only have one alignment and one block ?? */
+    g_hash_table_foreach(feature_context->alignments, eachAlignment, (gpointer)server) ;
 
-      /* get the list of source featuresets */
-      feature_context->src_feature_set_names = zMapGFFGetFeaturesets(server->parser);
+    /* get the list of source featuresets */
+    feature_context->src_feature_set_names = zMapGFFGetFeaturesets(server->parser);
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      {
-	GError *error = NULL ;
-            server->parser->state == ZMAPGFF_PARSE_BODY;
-	zMapFeatureDumpStdOutFeatures(feature_context, &error) ;
+    {
+      GError *error = NULL ;
+      server->parser->state == ZMAPGFF_PARSE_BODY;
+      zMapFeatureDumpStdOutFeatures(feature_context, &error) ;
 
-      }
+    }
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
-    }
+  }
 
-	// see comment in zmapFeature,h/ ref: num_features
-  feature_context->num_features = zMapGFFParserGetNumFeatures(server->parser);
+  *num_features_out = zMapGFFParserGetNumFeatures(server->parser) ;
+  result = server->result ;
 
+
+  /* WHAT HAPPENED HERE......IS THIS A MEMORY LEAK ?? */
   /* Clear up. -> in destroyConnection() */
-//  zMapGFFDestroyParser(server->parser) ;
-//  g_sring_free(server->gff_line, TRUE) ;
+  //  zMapGFFDestroyParser(server->parser) ;
+  //  g_sring_free(server->gff_line, TRUE) ;
 
 
-  return server->result ;
+  return result ;
 }
 
 
@@ -812,8 +825,8 @@ static void eachBlockSequence(gpointer key, gpointer data, gpointer user_data)
 	  setErrMsg(server, estr) ;
 
 	  ZMAPPIPESERVER_LOG(Warning, server->protocol,
-			 server->script_path,server->query,
-			 "%s", server->last_err_msg);
+			     server->script_path,server->query,
+			     "%s", server->last_err_msg);
 	}
       else
 	{
@@ -824,7 +837,7 @@ static void eachBlockSequence(gpointer key, gpointer data, gpointer user_data)
 	    {
 	      ZMapFeatureTypeStyle dna_style = NULL;
 	      ZMapFeature feature;
-		GHashTable *hash = zMapGFFParserGetStyles(server->parser);
+	      GHashTable *hash = zMapGFFParserGetStyles(server->parser);
 
 #if 0
 	      /* This temp style creation feels wrong, and probably is,
@@ -838,23 +851,23 @@ static void eachBlockSequence(gpointer key, gpointer data, gpointer user_data)
 
 	      zMapStyleDestroy(dna_style);
 #else
-		/* the servers need styles to add DNA and 3FT
-		 * they used to create temp style and then destroy these but that's not very good
-		 * they don't have styles info directly but this is stored in the parser
-		 * during the protocol steps, so i wrote a GFF function to supply that info
-		 * Now that features have style ref'd indirectly via the featureset we can't use temp data
-		 */
+	      /* the servers need styles to add DNA and 3FT
+	       * they used to create temp style and then destroy these but that's not very good
+	       * they don't have styles info directly but this is stored in the parser
+	       * during the protocol steps, so i wrote a GFF function to supply that info
+	       * Now that features have style ref'd indirectly via the featureset we can't use temp data
+	       */
 
-		if(hash)
-			dna_style = g_hash_table_lookup(hash, GUINT_TO_POINTER(g_quark_from_string(ZMAP_FIXED_STYLE_DNA_NAME)));
-		if(dna_style)
-			feature = zMapFeatureDNACreateFeature(feature_block, dna_style,
-						    sequence->sequence, sequence->length);
+	      if(hash)
+		dna_style = g_hash_table_lookup(hash, GUINT_TO_POINTER(g_quark_from_string(ZMAP_FIXED_STYLE_DNA_NAME)));
+	      if(dna_style)
+		feature = zMapFeatureDNACreateFeature(feature_block, dna_style,
+						      sequence->sequence, sequence->length);
 #endif
 	    }
 
 
-// this is insane: asking a pipe server for 3FT, however some old code might expect it
+	  // this is insane: asking a pipe server for 3FT, however some old code might expect it
 	  context = (ZMapFeatureContext)zMapFeatureGetParentGroup((ZMapFeatureAny)feature_block,
 								  ZMAPFEATURE_STRUCT_CONTEXT) ;
 
@@ -862,11 +875,11 @@ static void eachBlockSequence(gpointer key, gpointer data, gpointer user_data)
 	  if (zMap_g_list_find_quark(context->req_feature_set_names, zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME)))
 	    {
 	      if ((zMapFeature3FrameTranslationCreateSet(feature_block, &feature_set)))
-	      {
+		{
 		  ZMapFeatureTypeStyle frame_style = NULL;
 		  ZMapFeature feature;
 #if 0
-		/* NOTE: this old code has the wrong style name ! */
+		  /* NOTE: this old code has the wrong style name ! */
 		  frame_style = zMapStyleCreate(ZMAP_FIXED_STYLE_DNA_NAME,
 						ZMAP_FIXED_STYLE_DNA_NAME_TEXT);
 
@@ -874,19 +887,19 @@ static void eachBlockSequence(gpointer key, gpointer data, gpointer user_data)
 
 		  zMapStyleDestroy(frame_style);
 #else
-		/* the servers need styles to add DNA and 3FT
-		 * they used to create temp style and then destroy these but that's not very good
-		 * they don't have styles info directly but this is stored in the parser
-		 * during the protocol steps, so i wrote a GFF function to supply that info
-		 * Now that features have style ref'd indirectly via the featureset we can't use temp data
-		 */
-		GHashTable *hash = zMapGFFParserGetStyles(server->parser);
+		  /* the servers need styles to add DNA and 3FT
+		   * they used to create temp style and then destroy these but that's not very good
+		   * they don't have styles info directly but this is stored in the parser
+		   * during the protocol steps, so i wrote a GFF function to supply that info
+		   * Now that features have style ref'd indirectly via the featureset we can't use temp data
+		   */
+		  GHashTable *hash = zMapGFFParserGetStyles(server->parser);
 
-		if(hash)
-			frame_style = g_hash_table_lookup(hash, GUINT_TO_POINTER(g_quark_from_string(ZMAP_FIXED_STYLE_3FT_NAME)));
-		if(frame_style)
-			feature = zMapFeatureDNACreateFeature(feature_block, frame_style,
-						    sequence->sequence, sequence->length);
+		  if(hash)
+		    frame_style = g_hash_table_lookup(hash, GUINT_TO_POINTER(g_quark_from_string(ZMAP_FIXED_STYLE_3FT_NAME)));
+		  if(frame_style)
+		    feature = zMapFeatureDNACreateFeature(feature_block, frame_style,
+							  sequence->sequence, sequence->length);
 #endif
 		}
 	    }
@@ -1036,7 +1049,7 @@ static ZMapServerResponseType destroyConnection(void *server_in)
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   PipeServer server = (PipeServer)server_in ;
 
-//printf("pipeserver destroy_connection\n");
+  //printf("pipeserver destroy_connection\n");
   if (server->script_path)
     g_free(server->script_path) ;
 
@@ -1044,12 +1057,12 @@ static ZMapServerResponseType destroyConnection(void *server_in)
     g_free(server->last_err_msg) ;
 
   /* Clear up. -> in destroyConnection() */
-/* crashes...
-  if(server->parser)
-      zMapGFFDestroyParser(server->parser) ;
-  if(server->gff_line)
-      g_string_free(server->gff_line, TRUE) ;
-*/
+  /* crashes...
+     if(server->parser)
+     zMapGFFDestroyParser(server->parser) ;
+     if(server->gff_line)
+     g_string_free(server->gff_line, TRUE) ;
+  */
 
   g_free(server) ;
 
@@ -1246,10 +1259,11 @@ static gboolean pipe_server_spawn(PipeServer server,GError **error)
  * This assumes we always do this and also that the script exits in a timely manner
  * we also get the exit code at this point as this is when we decide a script has finished
  */
-void pipe_server_get_stderr(PipeServer server)
+static void pipe_server_get_stderr(PipeServer server)
 {
   GError *gff_pipe_err = NULL;
   //  GError *ignore = NULL;
+
 #if !MH17_SINGLE_LINE
   int status;
   gsize length;
@@ -1398,10 +1412,10 @@ static void eachBlock(gpointer key, gpointer data, gpointer user_data)
 			   server->gff_line, feature_block))
 	{
 	  ZMAPPIPESERVER_LOG(Warning, server->protocol, server->script_path,
-                  server->query,
-			 "Could not map %s because: %s",
-			 g_quark_to_string(server->req_context->sequence_name),
-			 server->last_err_msg) ;
+			     server->query,
+			     "Could not map %s because: %s",
+			     g_quark_to_string(server->req_context->sequence_name),
+			     server->last_err_msg) ;
 	}
     }
 
@@ -1427,12 +1441,12 @@ static gboolean sequenceRequest(PipeServer server, ZMapGFFParser parser, GString
    * feature start/end from the block, not the gff stream start/end. */
 
   if(server->zmap_end)
-  {
+    {
       zMapGFFSetFeatureClipCoords(parser,
-			      server->zmap_start,
-			      server->zmap_end) ;
+				  server->zmap_start,
+				  server->zmap_end) ;
       zMapGFFSetFeatureClip(parser,GFF_CLIP_ALL);       // mh17: needs config added to server stanza for clip type
-  }
+    }
 
   first = TRUE ;
   do
@@ -1452,7 +1466,7 @@ static gboolean sequenceRequest(PipeServer server, ZMapGFFParser parser, GString
 		g_strdup_printf("zMapGFFParseLine() failed with no GError for line %d: %s",
 				zMapGFFGetLineNumber(parser), gff_line->str) ;
 	      ZMAPPIPESERVER_LOG(Critical, server->protocol, server->script_path,server->query,
-			     "%s", server->last_err_msg) ;
+				 "%s", server->last_err_msg) ;
 
 	      result = FALSE ;
 	    }
@@ -1468,7 +1482,7 @@ static gboolean sequenceRequest(PipeServer server, ZMapGFFParser parser, GString
 	      else
 		{
 		  ZMAPPIPESERVER_LOG(Warning, server->protocol, server->script_path,server->query,
-				 "%s", error->message) ;
+				     "%s", error->message) ;
 		}
 	    }
 	}
