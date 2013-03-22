@@ -2870,7 +2870,9 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 	  void *data = NULL ;
 	  char *err_msg = NULL ;
 	  gboolean thread_has_died = FALSE ;
-	  gboolean steps_finished = FALSE ;
+	  gboolean all_steps_finished = FALSE ;
+	  gboolean this_step_finished = FALSE ;
+	  ZMapServerReqType request_type = ZMAP_SERVERREQ_INVALID ;
 	  gboolean is_continue = FALSE ;
 	  ConnectionData connect_data = NULL ;
 	  ZMapViewLoadFeaturesDataStruct load_features = {NULL} ;
@@ -2893,8 +2895,14 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
 	  if (connect_data)
 	    {
-	      load_features.feature_sets = connect_data->feature_sets;
-	      load_features.xwid = zmap_view->xwid;
+	      char *feature_sets ;
+
+	      load_features.feature_sets = connect_data->feature_sets ;
+
+	      /* debug only...leaks memory... */
+	      feature_sets = zMap_g_list_quark_to_string(load_features.feature_sets) ;
+
+	      load_features.xwid = zmap_view->xwid ;
 	    }
 
 	  if (!(zMapThreadGetReplyWithData(thread, &reply, &data, &err_msg)))
@@ -2986,8 +2994,16 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
 			    zmapViewStepListStepProcessRequest(view_con, request) ;
 
-			    if (request->state != STEPLIST_FINISHED)    // ie there was an error
-			      reply = ZMAPTHREAD_REPLY_REQERROR;
+			    if (request->state == STEPLIST_FINISHED)
+			      {
+				this_step_finished = TRUE ;
+				request_type = req_any->type ;
+				view_con->thread_status = THREAD_STATUS_OK ;
+			      }
+			    else
+			      {
+				reply = ZMAPTHREAD_REPLY_REQERROR;    // ie there was an error
+			      }
  			  }
 		      }
 
@@ -3156,7 +3172,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 		  view_con->thread_status = THREAD_STATUS_FAILED ;
 		}
 
- 	      steps_finished = TRUE ;		/* destroy connection kills the step list */
+ 	      all_steps_finished = TRUE ;		/* destroy connection kills the step list */
 	    }
 
 	  /* Check for more connection steps and dispatch them or clear up if finished. */
@@ -3170,7 +3186,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 		  zmapViewStepListIter(view_con) ;
 		  has_step_list++;
 
-		  steps_finished = FALSE ;
+		  all_steps_finished = FALSE ;
 		}
 	      else
 		{
@@ -3182,7 +3198,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
                   if (view_con->thread_status != THREAD_STATUS_FAILED)
 		    view_con->thread_status = THREAD_STATUS_OK ;
 
-		  steps_finished = TRUE ;
+		  all_steps_finished = TRUE ;
 		}
 	    }
 
@@ -3190,7 +3206,11 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 	  // otterlace
 
 	  /* Try this...shouldn't be doing this if we are dying....I think ? */
-	  if (zmap_view->state != ZMAPVIEW_DYING && steps_finished)
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	  if (zmap_view->state != ZMAPVIEW_DYING && all_steps_finished)
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+	  if (this_step_finished || all_steps_finished)
 	    {
 	      if (connect_data)      // ie was valid at the start of the loop
 		{
@@ -3220,17 +3240,20 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 		      (zmap_view->sources_failed)++ ;
 		    }
 
+		  if (request_type == ZMAP_SERVERREQ_FEATURES)
+		    {
+		      /* Once used how is load_features cleaned up ??????????????????????????? */
 
-		  load_features.status = (view_con->thread_status == THREAD_STATUS_OK ? TRUE : FALSE) ;
-		  load_features.err_msg = err_msg ;
-		  load_features.start = connect_data->start;
-		  load_features.end = connect_data->end;
+		      load_features.status = (view_con->thread_status == THREAD_STATUS_OK ? TRUE : FALSE) ;
+		      load_features.err_msg = err_msg ;
+		      load_features.start = connect_data->start;
+		      load_features.end = connect_data->end;
+		      load_features.num_features = connect_data->num_features ;
+		      load_features.exit_code = connect_data->exit_code ;
+		      load_features.stderr_out = connect_data->stderr_out ;
 
-		  load_features.num_features = connect_data->num_features;
-		  load_features.exit_code = connect_data->exit_code;
-		  load_features.stderr_out = connect_data->stderr_out;
-
-		  (*(view_cbs_G->load_data))(zmap_view, zmap_view->app_data, &load_features) ;
+		      (*(view_cbs_G->load_data))(zmap_view, zmap_view->app_data, &load_features) ;
+		    }
 		}
 	    }
 
@@ -3245,7 +3268,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 	    }
 
 
-	  if (thread_has_died || steps_finished)
+	  if (thread_has_died || all_steps_finished)
 	    {
 	      zmapViewBusy(zmap_view, FALSE) ;
 	    }
@@ -4462,7 +4485,7 @@ static void getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature_req
       new_features = feature_req->context ;
       zMapAssert(!new_features->no_parent);
       
-      connect_data->num_features = feature_req->context->num_features;
+      connect_data->num_features = feature_req->num_features ;
       
       if ((merge_results = justMergeContext(zmap_view,
 					    &new_features, connect_data->curr_styles,
