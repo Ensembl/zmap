@@ -1,4 +1,3 @@
-/*  Last edited: Jul 23 11:33 2012 (edgrif) */
 /*  File: zmapServerPrototype.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -71,27 +70,26 @@ typedef ZMapServerResponseType (*ZMapServerStylesHaveModes)(void *server_in, gbo
 
 typedef ZMapServerResponseType (*ZMapServerGetSequence)(void *server_in, GList *sequences_inout) ;
 
-typedef ZMapServerResponseType
-                 (*ZMapServerSetContextFunc)(void *server_conn, ZMapFeatureContext feature_context)  ;
+typedef ZMapServerResponseType (*ZMapServerSetContextFunc)(void *server_conn, ZMapFeatureContext feature_context)  ;
 
-typedef ZMapFeatureContext
-                 (*ZMapServerCopyContextFunc)(void *server_conn) ;
+typedef ZMapFeatureContext (*ZMapServerCopyContextFunc)(void *server_conn) ;
 
-typedef ZMapServerResponseType
-                 (*ZMapServerGetFeatures)(void *server_conn, GHashTable *styles, ZMapFeatureContext feature_context) ;
+typedef ZMapServerResponseType (*ZMapServerGetFeatures)(void *server_conn,
+							GHashTable *styles,
+							ZMapFeatureContext feature_context, int *num_features_out) ;
 
-typedef ZMapServerResponseType
-                 (*ZMapServerGetContextSequences)(void *server_conn, GHashTable *styles, ZMapFeatureContext feature_context) ;
+typedef ZMapServerResponseType (*ZMapServerGetContextSequences)(void *server_conn,
+								GHashTable *styles,
+								ZMapFeatureContext feature_context) ;
 
-typedef ZMapServerResponseType
-                 (*ZMapServerGetStatusFunc)(void *server_conn, gint *exit_code, gchar **stderr_out) ;
+typedef ZMapServerResponseType (*ZMapServerGetStatusFunc)(void *server_conn, gint *exit_code, gchar **stderr_out) ;
 
-typedef ZMapServerResponseType
-                 (*ZMapServerGetConnectStateFunc)(void *server_conn, ZMapServerConnectStateType *connect_state) ;
+typedef ZMapServerResponseType (*ZMapServerGetConnectStateFunc)(void *server_conn,
+								ZMapServerConnectStateType *connect_state) ;
 
 typedef char *(*ZMapServerGetErrorMsgFunc)(void *server_conn) ;
 
-typedef ZMapServerResponseType (*ZMapServerCloseFunc)  (void *server_conn) ;
+typedef ZMapServerResponseType (*ZMapServerCloseFunc)(void *server_conn) ;
 
 typedef ZMapServerResponseType (*ZMapServerDestroyFunc)(void *server_conn) ;
 
