@@ -382,17 +382,6 @@ typedef struct ZMapFeatureContextStruct_
 
   /* Context only data. */
 
-  int num_features;
-  /* MH17: it may be reasonable to have a count of the number of features in a context
-   * but that is not why this is here.
-   * i need to get the number of features returned from a pipe server (or other request)
-   * and this is the only way i can find that does not involve either writing two different ways of counting them
-   * (a) for the first context received b) for subesequent ones .. which will be error prone
-   * or editing many layers of functions and data structures that prevent any information being passed
-   * from a server to the calling code.  The last time I tried to do that it took two entire days and
-   * i've got other things i should be doing.
-   * NOTE this count is not maintained and is only vaild from a server getFeatures() call
-   */
 
   /* Hack...forced on us because GHash has a global destroy function per hash table, not one
    * per element of the hashtable (datalists have one per node but they have their own
