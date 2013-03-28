@@ -1,4 +1,3 @@
-/*  Last edited: Apr 11 10:43 2012 (edgrif) */
 /*  File: zmapAppRemote.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2011: Genome Research Ltd.
@@ -91,6 +90,9 @@ typedef struct ZMapViewWindowTreeStructName
  * the existing sub-system callback mechanism to avoid introducing circular 
  * compile dependencies.
  */
+
+
+
 
 /* 
  *  Functions that sub-systems must provide/call to _RESPOND_ to requests from a peer.
