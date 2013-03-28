@@ -694,6 +694,9 @@ static ZMapServerResponseType haveModes(void *server_in, gboolean *have_mode)
 }
 
 
+
+
+/* Truly pointless operation revealing that this function is a bad idea..... */
 static ZMapServerResponseType getStatus(void *server_in, gint *exit_code, gchar **stderr_out)
 {
   *exit_code = 0;
@@ -701,6 +704,9 @@ static ZMapServerResponseType getStatus(void *server_in, gint *exit_code, gchar 
 
   return ZMAP_SERVERRESPONSE_OK;
 }
+
+
+
 
 
 /* Is the acedb server connected ? */
