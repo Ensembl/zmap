@@ -145,8 +145,8 @@ ZMapServerResponseType zMapServerCreateConnection(ZMapServer *server_out, void *
     {
       result = ZMAP_SERVERRESPONSE_REQFAIL ;
       zMapServerSetErrorMsg(server, ZMAPSERVER_MAKEMESSAGE(url->protocol,
-                                                      url->host, "%s",
-                                                      url_error(parse_error))) ;
+							   url->host, "%s",
+							   url_error(parse_error))) ;
     }
 
   if (result == ZMAP_SERVERRESPONSE_OK)
@@ -160,8 +160,8 @@ ZMapServerResponseType zMapServerCreateConnection(ZMapServer *server_out, void *
       else
 	{
 	  zMapServerSetErrorMsg(server,ZMAPSERVER_MAKEMESSAGE(server->url->protocol,
-                                                          server->url->host, "%s",
-							  (server->funcs->errmsg)(server->server_conn))) ;
+							      server->url->host, "%s",
+							      (server->funcs->errmsg)(server->server_conn))) ;
 	  result = ZMAP_SERVERRESPONSE_REQFAIL ;
 	}
     }
@@ -180,8 +180,8 @@ ZMapServerResponseType zMapServerOpenConnection(ZMapServer server, ZMapServerReq
 
   if (result != ZMAP_SERVERRESPONSE_OK)
     zMapServerSetErrorMsg(server,ZMAPSERVER_MAKEMESSAGE(server->url->protocol,
-                                                    server->url->host, "%s",
-						    (server->funcs->errmsg)(server->server_conn))) ;
+							server->url->host, "%s",
+							(server->funcs->errmsg)(server->server_conn))) ;
 
   return result ;
 }
@@ -198,24 +198,24 @@ ZMapServerResponseType zMapServerFeatureSetNames(ZMapServer server,
 {
   ZMapServerResponseType result = server->last_response ;
 
-//  zMapAssert(server && *feature_sets_inout && !*required_styles_out) ;
+  //  zMapAssert(server && *feature_sets_inout && !*required_styles_out) ;
   zMapAssert(server && !*required_styles_out) ;	// need to request all if not specified
 
   if (server->last_response != ZMAP_SERVERRESPONSE_SERVERDIED && server->last_response != ZMAP_SERVERRESPONSE_REQFAIL)
     {
-  result = server->last_response
-    = (server->funcs->feature_set_names)(server->server_conn,
-					 feature_sets_inout,
-					 sources,
-					 required_styles_out,
-					 featureset_2_stylelist_out,
-					 featureset_2_column_out,
-					 source_2_sourcedata_out) ;
+      result = server->last_response
+	= (server->funcs->feature_set_names)(server->server_conn,
+					     feature_sets_inout,
+					     sources,
+					     required_styles_out,
+					     featureset_2_stylelist_out,
+					     featureset_2_column_out,
+					     source_2_sourcedata_out) ;
 
-  if (result != ZMAP_SERVERRESPONSE_OK)
-    zMapServerSetErrorMsg(server, ZMAPSERVER_MAKEMESSAGE(server->url->protocol,
-                                                    server->url->host, "%s",
-						    (server->funcs->errmsg)(server->server_conn))) ;
+      if (result != ZMAP_SERVERRESPONSE_OK)
+	zMapServerSetErrorMsg(server, ZMAPSERVER_MAKEMESSAGE(server->url->protocol,
+							     server->url->host, "%s",
+							     (server->funcs->errmsg)(server->server_conn))) ;
     }
   return result ;
 }
@@ -227,12 +227,12 @@ ZMapServerResponseType zMapServerGetStyles(ZMapServer server, GHashTable **style
 
   if (server->last_response != ZMAP_SERVERRESPONSE_SERVERDIED && server->last_response != ZMAP_SERVERRESPONSE_REQFAIL)
     {
-  result = server->last_response = (server->funcs->get_styles)(server->server_conn, styles_out) ;
+      result = server->last_response = (server->funcs->get_styles)(server->server_conn, styles_out) ;
 
-  if (result != ZMAP_SERVERRESPONSE_OK)
-    zMapServerSetErrorMsg(server, ZMAPSERVER_MAKEMESSAGE(server->url->protocol,
-                                                    server->url->host, "%s",
-						    (server->funcs->errmsg)(server->server_conn))) ;
+      if (result != ZMAP_SERVERRESPONSE_OK)
+	zMapServerSetErrorMsg(server, ZMAPSERVER_MAKEMESSAGE(server->url->protocol,
+							     server->url->host, "%s",
+							     (server->funcs->errmsg)(server->server_conn))) ;
     }
   return result ;
 }
@@ -244,12 +244,12 @@ ZMapServerResponseType zMapServerStylesHaveMode(ZMapServer server, gboolean *hav
 
   if (server->last_response != ZMAP_SERVERRESPONSE_SERVERDIED && server->last_response != ZMAP_SERVERRESPONSE_REQFAIL)
     {
-  result = server->last_response = (server->funcs->have_modes)(server->server_conn, have_mode) ;
+      result = server->last_response = (server->funcs->have_modes)(server->server_conn, have_mode) ;
 
-  if (result != ZMAP_SERVERRESPONSE_OK)
-    zMapServerSetErrorMsg(server,ZMAPSERVER_MAKEMESSAGE(server->url->protocol,
-                                                    server->url->host, "%s",
-						    (server->funcs->errmsg)(server->server_conn))) ;
+      if (result != ZMAP_SERVERRESPONSE_OK)
+	zMapServerSetErrorMsg(server,ZMAPSERVER_MAKEMESSAGE(server->url->protocol,
+							    server->url->host, "%s",
+							    (server->funcs->errmsg)(server->server_conn))) ;
     }
   return result ;
 }
@@ -259,7 +259,7 @@ ZMapServerResponseType zMapServerGetStatus(ZMapServer server, gint *exit_code, g
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
 
-      /* always do this, it must return a died status if appropriate */
+  /* always do this, it must return a died status if appropriate */
   result = server->last_response = (server->funcs->get_status)(server->server_conn,exit_code, stderr_out) ;
 
   if (result != ZMAP_SERVERRESPONSE_OK)
@@ -295,12 +295,12 @@ ZMapServerResponseType zMapServerGetSequence(ZMapServer server, GList *sequences
   if (server->last_response != ZMAP_SERVERRESPONSE_SERVERDIED && server->last_response != ZMAP_SERVERRESPONSE_REQFAIL)
     {
 
-  result = server->last_response = (server->funcs->get_sequence)(server->server_conn, sequences_inout) ;
+      result = server->last_response = (server->funcs->get_sequence)(server->server_conn, sequences_inout) ;
 
-  if (result != ZMAP_SERVERRESPONSE_OK)
-    zMapServerSetErrorMsg(server, ZMAPSERVER_MAKEMESSAGE(server->url->protocol,
-							 server->url->host, "%s",
-							 (server->funcs->errmsg)(server->server_conn))) ;
+      if (result != ZMAP_SERVERRESPONSE_OK)
+	zMapServerSetErrorMsg(server, ZMAPSERVER_MAKEMESSAGE(server->url->protocol,
+							     server->url->host, "%s",
+							     (server->funcs->errmsg)(server->server_conn))) ;
     }
   return result ;
 }
@@ -313,12 +313,12 @@ ZMapServerResponseType zMapServerGetServerInfo(ZMapServer server, ZMapServerReqG
   if (server->last_response != ZMAP_SERVERRESPONSE_SERVERDIED && server->last_response != ZMAP_SERVERRESPONSE_REQFAIL)
     {
 
-  result = server->last_response = (server->funcs->get_info)(server->server_conn, info) ;
+      result = server->last_response = (server->funcs->get_info)(server->server_conn, info) ;
 
-  if (result != ZMAP_SERVERRESPONSE_OK)
-    zMapServerSetErrorMsg(server, ZMAPSERVER_MAKEMESSAGE(server->url->protocol,
-                                                    server->url->host, "%s",
-						    (server->funcs->errmsg)(server->server_conn))) ;
+      if (result != ZMAP_SERVERRESPONSE_OK)
+	zMapServerSetErrorMsg(server, ZMAPSERVER_MAKEMESSAGE(server->url->protocol,
+							     server->url->host, "%s",
+							     (server->funcs->errmsg)(server->server_conn))) ;
     }
   return result ;
 }
@@ -336,9 +336,9 @@ ZMapServerResponseType zMapServerSetContext(ZMapServer server, ZMapFeatureContex
 	= (server->funcs->set_context)(server->server_conn, feature_context) ;
 
       if (result != ZMAP_SERVERRESPONSE_OK)
-	    zMapServerSetErrorMsg(server, ZMAPSERVER_MAKEMESSAGE(server->url->protocol,
-                                                        server->url->host, "%s",
-							(server->funcs->errmsg)(server->server_conn))) ;
+	zMapServerSetErrorMsg(server, ZMAPSERVER_MAKEMESSAGE(server->url->protocol,
+							     server->url->host, "%s",
+							     (server->funcs->errmsg)(server->server_conn))) ;
     }
 
   return result ;
@@ -358,9 +358,9 @@ ZMapServerResponseType zMapServerGetFeatures(ZMapServer server,
 
 
       if (result != ZMAP_SERVERRESPONSE_OK)
-	      zMapServerSetErrorMsg(server, ZMAPSERVER_MAKEMESSAGE(server->url->protocol,
-                                                        server->url->host, "%s",
-							(server->funcs->errmsg)(server->server_conn))) ;
+	zMapServerSetErrorMsg(server, ZMAPSERVER_MAKEMESSAGE(server->url->protocol,
+							     server->url->host, "%s",
+							     (server->funcs->errmsg)(server->server_conn))) ;
     }
 
   return result ;
@@ -379,8 +379,8 @@ ZMapServerResponseType zMapServerGetContextSequences(ZMapServer server, GHashTab
 
       if (result != ZMAP_SERVERRESPONSE_OK)
 	zMapServerSetErrorMsg(server, ZMAPSERVER_MAKEMESSAGE(server->url->protocol,
-                                                        server->url->host, "%s",
-							(server->funcs->errmsg)(server->server_conn))) ;
+							     server->url->host, "%s",
+							     (server->funcs->errmsg)(server->server_conn))) ;
     }
 
   return result ;
@@ -393,10 +393,10 @@ ZMapServerResponseType zMapServerCloseConnection(ZMapServer server)
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
 
   result = server->last_response
-	= (server->funcs->close)(server->server_conn) ;
+    = (server->funcs->close)(server->server_conn) ;
 
   if (result != ZMAP_SERVERRESPONSE_OK)
-	      zMapServerSetErrorMsg(server,ZMAPSERVER_MAKEMESSAGE(server->url->protocol,
+    zMapServerSetErrorMsg(server,ZMAPSERVER_MAKEMESSAGE(server->url->protocol,
                                                         server->url->host, "%s",
 							(server->funcs->errmsg)(server->server_conn))) ;
 
@@ -410,6 +410,7 @@ ZMapServerResponseType zMapServerFreeConnection(ZMapServer server)
   /* This function is a bit different, as we free the server struct the only thing we can do
    * is return the status from the destroy call. */
   result = (server->funcs->destroy)(server->server_conn) ;
+
   /* Free ZMapURL!!!! url_free(server->url)*/
   g_free(server) ;
 
@@ -422,9 +423,13 @@ char *zMapServerLastErrorMsg(ZMapServer server)
   return server->last_error_msg ;
 }
 
-static void zMapServerSetErrorMsg(ZMapServer server,char *message)
+
+static void zMapServerSetErrorMsg(ZMapServer server, char *message)
 {
-  if(server->last_error_msg)
-      g_free(server->last_error_msg);
-  server->last_error_msg  = message;
+  if (server->last_error_msg)
+    g_free(server->last_error_msg) ;
+
+  server->last_error_msg = message ;
+
+  return ;
 }
