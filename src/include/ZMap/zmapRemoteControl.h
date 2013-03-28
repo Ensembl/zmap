@@ -40,7 +40,7 @@
 
 #include <gtk/gtk.h>
 
-#include <ZMap/zmapEnum.h>
+#include <ZMap/zmapEnum.h>				    /* for the XXX_LIST macros. */
 #include <ZMap/zmapRemoteProtocol.h>
 
 
@@ -52,6 +52,8 @@ typedef struct ZMapRemoteControlStructName *ZMapRemoteControl ;
 
 
 /* Using the XXX_LIST macros to declare enums means we get lots of enum functions for free (see zmapEnum.h). */
+
+
 
 /* Error code values for Remote Control errors. */
 #define ZMAP_REMOTECONTROL_RC_LIST(_)					                                \
