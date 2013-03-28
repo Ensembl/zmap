@@ -458,11 +458,12 @@ static ZMapServerResponseType haveModes(void *server_in, gboolean *have_mode)
 }
 
 
+/* UTTERLY POINTLESS....GET RID OF THIS.... */
 static ZMapServerResponseType getStatus(void *server_conn, gint *exit_code, gchar **stderr_out)
 {
-      *exit_code = 0;
-      *stderr_out = NULL;
-      return ZMAP_SERVERRESPONSE_OK;
+  *exit_code = 0;
+  *stderr_out = NULL;
+  return ZMAP_SERVERRESPONSE_OK;
 }
 
 
