@@ -231,7 +231,13 @@ typedef struct ZMapServerReqGetFeaturesStructType
 
   ZMapFeatureContext context ;				    /* Returned feature sets. */
 
-  int num_features;
+  int num_features ;
+
+  /* Move from getstatus...seems better to report it here....maybe we need these as part of the
+     requestany struct ?? */
+  gint exit_code ;
+  gchar *stderr_out ;
+
 } ZMapServerReqGetFeaturesStruct, *ZMapServerReqGetFeatures ;
 
 
