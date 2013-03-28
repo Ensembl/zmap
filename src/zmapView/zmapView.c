@@ -1744,8 +1744,10 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 	      view_conn = (make_new_connection ? NULL : (existing ? view_conn : NULL)) ;
 
 
-	      view_conn = zmapViewRequestServer(view, view_conn, block_orig, req_featuresets, (gpointer) server, req_start, req_end,
-						dna_requested, (!existing && terminate), !view->thread_fail_silent);
+	      view_conn = zmapViewRequestServer(view, view_conn, block_orig, req_featuresets,
+						(gpointer)server, req_start, req_end,
+						dna_requested,
+						(!existing && terminate), !view->thread_fail_silent) ;
 
 	      if(view_conn)
 		requested = TRUE;
@@ -2808,6 +2810,8 @@ static void startStateConnectionChecking(ZMapView zmap_view)
   zmap_view->idle_handle = gtk_idle_add(zmapIdleCB, (gpointer)zmap_view) ;
 #endif /* UTILISE_ALL_CPU_ON_DESKPRO203 */
 
+
+
   zmap_view->idle_handle = gtk_timeout_add(100, zmapIdleCB, (gpointer)zmap_view) ;
   // WARNING: gtk_timeout_add is deprecated and should not be used in newly-written code. Use g_timeout_add() instead.
 
@@ -2817,6 +2821,10 @@ static void startStateConnectionChecking(ZMapView zmap_view)
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+/* WE do need to do this in fact......we should do it when all connections have died...
+ * ADD CODE TO call this.... */
+
+
 /* I think that probably I won't need this most of the time, it could be used to remove the idle
  * function in a kind of unilateral way as a last resort, otherwise the idle function needs
  * to cancel itself.... */
@@ -2895,12 +2903,21 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
 	  if (connect_data)
 	    {
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	      char *feature_sets ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 	      load_features.feature_sets = connect_data->feature_sets ;
 
-	      /* debug only...leaks memory... */
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	      /* NEEDS REMOVING.... */
+	      /* DEBUG ONLY...LEAKS MEMORY... */
 	      feature_sets = zMap_g_list_quark_to_string(load_features.feature_sets) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 	      load_features.xwid = zmap_view->xwid ;
 	    }
@@ -2952,6 +2969,10 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 		    /* Recover the request from the thread data. */
 		    req_any = (ZMapServerReqAny)data ;
 
+		    /* Not sure why I need this..... */
+		    request_type = req_any->type ;
+
+
 		    /* Recover the stepRequest from the view connection and process the data from
 		     * the request. */
 		    if (!(request = zmapViewStepListFindRequest(view_con->step_list, req_any->type, view_con)))
@@ -2983,6 +3004,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 				zMapLogCritical(format_str, view_con->url, err_msg) ;
 			      }
 
+			    this_step_finished = TRUE ;
 			  }
 			else
 			  {
@@ -3025,6 +3047,8 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
 			if (step->on_fail == REQUEST_ONFAIL_CANCEL_THREAD)
 			  kill_connection = TRUE ;
+
+			
 		      }
 
 		    if (kill_connection)
@@ -3234,7 +3258,8 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 		        {
 			  /* we get here at the end of a step list, prev errors not reported till now */
 			  zMapWarning("Data request failed: %s\n%s%s",err_msg,
-				      connect_data->stderr_out && *connect_data->stderr_out ? "Server reports:\n": "", connect_data->stderr_out);
+				      ((connect_data->stderr_out && *connect_data->stderr_out)
+				       ? "Server reports:\n": "", connect_data->stderr_out)) ;
 		        }
 
 		      (zmap_view->sources_failed)++ ;
@@ -3848,6 +3873,7 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 
 	break ;
       }
+
     case ZMAP_SERVERREQ_NEWCONTEXT:
       {
 	break ;
@@ -3862,10 +3888,12 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 	ZMapServerReqGetFeatures get_features = (ZMapServerReqGetFeatures)req_any ;
 
 	if (req_any->response != ZMAP_SERVERRESPONSE_OK)
-	  result = FALSE;
+	  result = FALSE ;
 
 	if (result && req_any->type == ZMAP_SERVERREQ_FEATURES)
 	  {
+
+	    /* WHAT !!!!! THIS DOESN'T SOUND RIGHT AT ALL.... */
 #if MH17_ADDED_IN_GFF_PARSER
 	    if (!(connect_data->server_styles_have_mode)
 		&& !zMapFeatureAnyAddModesToStyles((ZMapFeatureAny)(connect_data->curr_context),
@@ -3877,9 +3905,9 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 		result = FALSE ;
 	      }
 #endif
+
 	    /* I'm not sure if this couldn't come much earlier actually....something
 	     * to investigate.... */
-
 	    if (!makeStylesDrawable(zmap_view->view_sequence->config_file,
 				    zmap_view->context_map.styles, &missing_styles))
 	      {
@@ -3888,7 +3916,21 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 		result = FALSE ;
 	      }
 
-	    connect_data->get_features = get_features;
+	    /* Why is this needed....to cache for the getstatus call ???? */
+	    connect_data->get_features = get_features ;
+
+	    connect_data->num_features = get_features->num_features ;
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	    /* not ready for these yet.... */
+
+            connect_data->exit_code = get_features->exit_code ;
+            connect_data->stderr_out = get_features->stderr_out ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
 	  }
 	else if (result && req_any->type == ZMAP_SERVERREQ_GETSTATUS)
 	  {
