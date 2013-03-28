@@ -1,4 +1,3 @@
-/*  Last edited: Oct 28 14:05 2011 (edgrif) */
 /*  File: zmapViewRemoteSend.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -128,6 +127,7 @@ ZMapXRemoteSendCommandError zmapViewRemoteSendCommand(ZMapView view,
       if (!xml_events)
         xml_events = g_array_sized_new(FALSE, FALSE, sizeof(ZMapXMLWriterEventStruct), 5);
 
+
       wrap_ptr = &wrap_request_G[1] ;
       wrap_ptr->value.s = g_strdup(action) ;
 
@@ -168,6 +168,11 @@ ZMapXRemoteSendCommandError zmapViewRemoteSendCommand(ZMapView view,
   
   return result ;
 }
+
+
+/* 
+ *                 Internal routines.
+ */
 
 
 static ZMapXRemoteSendCommandError send_client_command(ZMapXRemoteObj client, ZMapXMLParser parser, 

@@ -2,6 +2,13 @@
 #
 # Noddy script to run configure as alphas + Roys machine are far from standard.
 #
+#
+# PLEASE READ THIS BEFORE ALTERING THIS SCRIPT.....
+#
+# This script is called by the build scripts (in <zmap>/scripts) so you should
+# NOT start adding command line flags and args or you will mess up the build !!!!
+#
+#
 
 INSTALL_DIR=$1
 
@@ -29,38 +36,6 @@ zmap_message_out "Running in $INITIAL_DIR on $(hostname) under $(uname)"
 zmap_message_out "cmd line options = '$*'"
 
 
-#
-# THIS IS A BAD IDEA....SCRIPT HAS TO BE RUNNABLE WITHOUT __ANY__ ARGS OTHERWISE
-# OTHER SCRIPTS THAT CALL THIS GET MESSED UP.....
-#
-# Cmd line options....
-#
-# Do args.
-#
-#usage="$SCRIPT_NAME [ -c ]"
-#
-#while getopts ":c" opt ; do
-#    case $opt in
-#	c  ) clean_dirs='yes' ;;
-#	\? ) zmap_message_exit "Bad arg flag: $usage" ;;
-#    esac
-#done
-#
-#
-#
-#
-# Remove any previously generated files in this dir.
-#
-#if [ -n "$clean_dirs" ] ; then
-#
-#  zmap_message_out "Removing previously generated files...."
-#
-#  generated_files='./.deps ./.libs ./Makefile ./config.* dotZMap gffparser* ./include ./lib* ./stamp-h1 ./xml_* \
-#./xremote* ./zmap*'
-#  rm -rf $generated_files
-#
-#fi
-#
 
 opsys=`uname`
 
@@ -101,9 +76,20 @@ case $opsys in
 	    zmap_register_prefix_in_env $GTK_PREFIX
 	    zmap_register_prefix_as_rpath $GTK_PREFIX
 
+	    # add totalview memory debugging.
+	    if [ "x$TVIEW_MEM" == "x$ZMAP_TRUE" ]; then
+	      LDFLAGS="-L/usr/toolworks/memoryscape.3.2.3-0/linux-x86/lib -ltvheap -Wl,-rpath=/usr/toolworks/memoryscape.3.2.3-0/linux-x86/lib"
+	    fi
+
+	    # Add electric fence memory debugging lib.
+	    if [ "x$ELECTRIC_MEM" == "x$ZMAP_TRUE" ]; then
+              LDFLAGS="$HOME/downloads/electric-fence-2.1.13/libefence.a $LDFLAGS"
+            fi
+
+
 	    if [ "x$USE_GPROF" == "x$ZMAP_TRUE" ]; then
-		LDFLAGS="-pg $LDFLAGS"
-                CFLAGS="-pg $CFLAGS"
+	      LDFLAGS="-pg $LDFLAGS"
+              CFLAGS="-pg $CFLAGS"
 	    fi
 
 

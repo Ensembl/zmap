@@ -131,9 +131,9 @@ void *zmapNewThread(void *thread_args)
 	}
       else if (signalled_state == ZMAPTHREAD_REQUEST_EXECUTE)
 	{
-
 	  void *reply ;
 	  char *slave_error = NULL ;
+
 
 	  /* Must have a request at this stage.... */
 	  zMapAssert(request) ;
@@ -145,6 +145,8 @@ void *zmapNewThread(void *thread_args)
 
 	  /* Call the registered slave handler function. */
 	  slave_response = (*(thread->handler_func))(&(thread_cb->slave_data), request, &reply, &slave_error) ;
+
+
 
 	  zMapPrintTimer(NULL, "In thread, returned from handler function") ;
 
@@ -159,7 +161,7 @@ void *zmapNewThread(void *thread_args)
 	    {
 	    case ZMAPTHREAD_RETURNCODE_OK:
 	      {
-		ZMAPTHREAD_DEBUG(thread, "%s", "got all data....") ;
+		ZMAPTHREAD_DEBUG(thread, "%s: %s", zMapThreadReturnCode2ExactStr(slave_response), "got all data....") ;
 
 		/* Signal that we got some data. */
 		zmapVarSetValueWithData(&(thread->reply), ZMAPTHREAD_REPLY_GOTDATA, request) ;
@@ -174,7 +176,8 @@ void *zmapNewThread(void *thread_args)
 
 		ZMAPTHREAD_DEBUG(thread, "%s", "request failed....") ;
 
-		error_msg = g_strdup_printf("(a) %s - %s", ZMAPTHREAD_SLAVEREQUEST, slave_error) ;
+		error_msg = g_strdup_printf("%s %s - %s", ZMAPTHREAD_SLAVEREQUEST,
+					    zMapThreadReturnCode2ExactStr(slave_response), slave_error) ;
 
 		/* Signal that we failed. */
 		zmapVarSetValueWithErrorAndData(&(thread->reply), ZMAPTHREAD_REPLY_REQERROR, error_msg, request) ;
@@ -189,7 +192,8 @@ void *zmapNewThread(void *thread_args)
 
 		ZMAPTHREAD_DEBUG(thread, "%s", "request failed....") ;
 
-		error_msg = g_strdup_printf("(b) %s - %s", ZMAPTHREAD_SLAVEREQUEST, slave_error) ;
+		error_msg = g_strdup_printf("%s %s - %s", ZMAPTHREAD_SLAVEREQUEST,
+					    zMapThreadReturnCode2ExactStr(slave_response), slave_error) ;
 
 		/* Signal that we failed. */
 		zmapVarSetValueWithError(&(thread->reply), ZMAPTHREAD_REPLY_REQERROR, error_msg) ;
@@ -208,7 +212,8 @@ void *zmapNewThread(void *thread_args)
 
 		ZMAPTHREAD_DEBUG(thread, "%s", "bad request....") ;
 
-		error_msg = g_strdup_printf("(c) %s - %s", ZMAPTHREAD_SLAVEREQUEST, slave_error) ;
+		error_msg = g_strdup_printf("%s %s - %s", ZMAPTHREAD_SLAVEREQUEST,
+					    zMapThreadReturnCode2ExactStr(slave_response), slave_error) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 		/* Should revisit use of pthread_cancel.....for clearing up.... */
@@ -237,7 +242,8 @@ void *zmapNewThread(void *thread_args)
 
 		ZMAPTHREAD_DEBUG(thread, "%s", "server died....") ;
 
-		error_msg = g_strdup_printf("(d) %s - %s", ZMAPTHREAD_SLAVEREQUEST, slave_error) ;
+		error_msg = g_strdup_printf("%s %s - %s", ZMAPTHREAD_SLAVEREQUEST,
+					    zMapThreadReturnCode2ExactStr(slave_response), slave_error) ;
 
 		/* a misnomer, it's the server that the thread talks to */
 		if (!thread_cb->thread_died)
@@ -270,8 +276,10 @@ void *zmapNewThread(void *thread_args)
 		   its unfeasably difficult to detect a sucessful server here and we can only report
 		   "(no error: ( no error ( no error)))"
 		 */
-		error_msg = g_strdup_printf("(e) %s - %s (%s)",
-					    ZMAPTHREAD_SLAVEREQUEST, "server terminated", slave_error) ;
+		error_msg = g_strdup_printf("%s %s - %s (%s)",
+					    ZMAPTHREAD_SLAVEREQUEST,
+					    zMapThreadReturnCode2ExactStr(slave_response),
+					    "server terminated", slave_error) ;
 		zmapVarSetValueWithError(&(thread->reply), ZMAPTHREAD_REPLY_QUIT, error_msg) ;
 
 		// we've already closed the connection and cleaned up data

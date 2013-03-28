@@ -94,6 +94,39 @@
 #define XREMOTE_PROG_SERVER_OPTS "sgifaceserver-options"
 
 
+
+enum
+  {
+    XREMOTE_NEW_ZMAP,
+    XREMOTE_NEW_VIEW,
+    XREMOTE_CLOSE_VIEW,
+    XREMOTE_REGISTER_CLIENT,
+    XREMOTE_ZOOMIN,
+    XREMOTE_ZOOMOUT,
+    XREMOTE_CREATE,
+    XREMOTE_DELETE,
+    XREMOTE_ZOOMTO,
+    XREMOTE_SHUTDOWN
+  };
+
+
+
+/* Testbed for ZMapXRemoteAPI */
+/* ...Roys remark....BUT I'M NOT SURE IF THIS IS ACTUALLY USED ANYWHERE..... */
+
+typedef struct
+{
+  XRemoteMessage message_out;
+  ZMapXMLParser xml_parser;
+  char *xml_message;
+  unsigned int arrest_processing;
+  unsigned int full_processing;
+  unsigned int xml_length;
+} APIProcessingStruct, *APIProcessing;
+
+
+
+
 typedef struct
 {
   int argc;
@@ -223,35 +256,6 @@ static void process_command_file(XRemoteTestSuiteData suite, char *command_file)
 static ZMapConfigIniContext get_configuration(XRemoteTestSuiteData suite);
 static ZMapConfigIniContextKeyEntry get_programs_group_data(char **stanza_name, char **stanza_type);
 
-enum
-  {
-    XREMOTE_NEW_ZMAP,
-    XREMOTE_NEW_VIEW,
-    XREMOTE_REGISTER_CLIENT,
-    XREMOTE_ZOOMIN,
-    XREMOTE_ZOOMOUT,
-    XREMOTE_CREATE,
-    XREMOTE_DELETE,
-    XREMOTE_ZOOMTO,
-    XREMOTE_SHUTDOWN
-  };
-
-
-
-/* Testbed for ZMapXRemoteAPI */
-/* ...Roys remark....BUT I'M NOT SURE IF THIS IS ACTUALLY USED ANYWHERE..... */
-
-typedef struct
-{
-  XRemoteMessage message_out;
-  ZMapXMLParser xml_parser;
-  char *xml_message;
-  unsigned int arrest_processing;
-  unsigned int full_processing;
-  unsigned int xml_length;
-} APIProcessingStruct, *APIProcessing;
-
-
 
 
 
@@ -266,6 +270,7 @@ static GtkItemFactoryEntry menu_items_G[] =
     {"/_Commands",               NULL,         NULL,       0,                "<Branch>", NULL},
     {"/Commands/new_zmap",            NULL,         cmdCB,      XREMOTE_NEW_ZMAP,      NULL,       NULL},
     {"/Commands/new_view",            NULL,         cmdCB,      XREMOTE_NEW_VIEW,      NULL,       NULL},
+    {"/Commands/close_view",            NULL,         cmdCB,      XREMOTE_CLOSE_VIEW,      NULL,       NULL},
     {"/Commands/register client",     NULL,         cmdCB,      XREMOTE_REGISTER_CLIENT,   NULL,       NULL},
     {"/Commands/Zoom In",        NULL,         cmdCB,      XREMOTE_ZOOMIN,   NULL,       NULL},
     {"/Commands/Zoom Out",       NULL,         cmdCB,      XREMOTE_ZOOMOUT,  NULL,       NULL},
@@ -739,12 +744,17 @@ static void cmdCB( gpointer data, guint callback_action, GtkWidget *w )
 		     {ZMAPXML_ATTRIBUTE_EVENT,     "sequence", ZMAPXML_EVENT_DATA_QUARK,   {NULL}},
 		     {ZMAPXML_ATTRIBUTE_EVENT,     "start",    ZMAPXML_EVENT_DATA_INTEGER, {(char *)1}},
 		     {ZMAPXML_ATTRIBUTE_EVENT,     "end",      ZMAPXML_EVENT_DATA_INTEGER, {0}},
+		     {ZMAPXML_ATTRIBUTE_EVENT,     "config_file", ZMAPXML_EVENT_DATA_QUARK, {0}},
 		     {ZMAPXML_END_ELEMENT_EVENT,   "segment",  ZMAPXML_EVENT_DATA_NONE,    {0}},
 		 {0}},
     client[] = {{ZMAPXML_START_ELEMENT_EVENT, "client",  ZMAPXML_EVENT_DATA_NONE,    {0}},
 		{ZMAPXML_ATTRIBUTE_EVENT,     "xwid", ZMAPXML_EVENT_DATA_QUARK,   {NULL}},
 		{ZMAPXML_ATTRIBUTE_EVENT,     "request_atom",    ZMAPXML_EVENT_DATA_QUARK, {NULL}},
 		{ZMAPXML_ATTRIBUTE_EVENT,     "response_atom",      ZMAPXML_EVENT_DATA_QUARK, {NULL}},
+		{ZMAPXML_END_ELEMENT_EVENT,   "client",  ZMAPXML_EVENT_DATA_NONE,    {0}},
+		{0}},
+      client_short[] = {{ZMAPXML_START_ELEMENT_EVENT, "client",  ZMAPXML_EVENT_DATA_NONE,    {0}},
+		{ZMAPXML_ATTRIBUTE_EVENT,     "xwid", ZMAPXML_EVENT_DATA_QUARK,   {NULL}},
 		{ZMAPXML_END_ELEMENT_EVENT,   "client",  ZMAPXML_EVENT_DATA_NONE,    {0}},
 		{0}};
   XRemoteTestSuiteData suite = (XRemoteTestSuiteData)data;
@@ -753,6 +763,18 @@ static void cmdCB( gpointer data, guint callback_action, GtkWidget *w )
   GArray *events;
   char **action;
   gboolean do_feature_xml = FALSE ;
+
+
+  /* add config_file to view creation and add a close view:
+
+  <zmap>
+  <request action="close_view">
+  <client xwid="0x5c00231" />
+  </request>
+  </zmap>
+
+  */
+
 
 
   action = &(req_start[1].value.s);
@@ -767,9 +789,29 @@ static void cmdCB( gpointer data, guint callback_action, GtkWidget *w )
     case XREMOTE_NEW_VIEW:
       *action  = "new_view";
       data_ptr = &segment[0];
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       segment[1].value.s = (char *)gtk_entry_get_text(GTK_ENTRY(suite->sequence));
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+      segment[1].value.s = "SUPERLINK_CB_V" ;
+      segment[2].value.i = 10995378 ;
+      segment[3].value.i = 11034593 ;
+      segment[4].value.s = "/nfs/users/nfs_e/edgrif/.ZMap/ZMap" ;
 
       break;
+
+    case XREMOTE_CLOSE_VIEW:
+      {
+	char *client_id ;
+
+	*action  = "close_view";
+	data_ptr = &client_short[0] ;
+
+	client_id = suite->window_id ;
+	client_short[1].value.s = client_id ;
+
+	break;
+      }
 
     case XREMOTE_REGISTER_CLIENT:
       {

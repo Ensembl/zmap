@@ -98,7 +98,7 @@ typedef struct ZMapServerReqAnyStructType
 
 
 /* Create a connection object. */
-typedef struct
+typedef struct ZMapServerReqCreateStructType
 {
   ZMapServerReqType type ;
   ZMapServerResponseType response ;
@@ -114,7 +114,7 @@ typedef struct
 
 
 /* Open the connection to the server. */
-typedef struct
+typedef struct ZMapServerReqOpenStructType
 {
   ZMapServerReqType type ;
   ZMapServerResponseType response ;
@@ -149,7 +149,7 @@ typedef struct ZMapServerReqGetServerInfoStructType
 
 /* Used to specify which feature sets should be retrieved or to get the list of all feature sets
  * available. */
-typedef struct
+typedef struct ZMapServerReqFeatureSetsStructType
 {
   ZMapServerReqType type ;
   ZMapServerResponseType response ;
@@ -184,7 +184,7 @@ typedef struct
 
 /* Inout struct used and/or to tell a server what styles are available or retrieve styles
  * from a server. */
-typedef struct
+typedef struct ZMapServerReqStylesStructType
 {
   ZMapServerReqType type ;
   ZMapServerResponseType response ;
@@ -210,7 +210,7 @@ typedef struct
 
 
 /* Set a context/region in a server. */
-typedef struct
+typedef struct ZMapServerReqNewContextStructType
 {
   ZMapServerReqType type ;
   ZMapServerResponseType response ;
@@ -221,7 +221,7 @@ typedef struct
 
 
 /* Get features from a server. */
-typedef struct
+typedef struct ZMapServerReqGetFeaturesStructType
 {
   ZMapServerReqType type ;
   ZMapServerResponseType response ;
@@ -229,9 +229,14 @@ typedef struct
   GHashTable *styles ;					    /* Needed for some features to control
 							       how they are fetched. */
 
-  ZMapFeatureContext context ;		    /* Returned feature sets. */
+  ZMapFeatureContext context ;				    /* Returned feature sets. */
 
-  int num_features;
+  int num_features ;
+
+  /* Move from getstatus...seems better to report it here....maybe we need these as part of the
+     requestany struct ?? */
+  gint exit_code ;
+  gchar *stderr_out ;
 
 } ZMapServerReqGetFeaturesStruct, *ZMapServerReqGetFeatures ;
 
@@ -239,7 +244,7 @@ typedef struct
 /* Used to ask for a specific sequence(s), currently this is targetted at blixem and so some stuff
  * is probably tailored to that usage, although knowing the selected feature is useful for a number of
  * operations. */
-typedef struct
+typedef struct ZMapServerReqGetSequenceStructType
 {
   ZMapServerReqType type ;
   ZMapServerResponseType response ;
@@ -252,7 +257,7 @@ typedef struct
 } ZMapServerReqGetSequenceStruct, *ZMapServerReqGetSequence ;
 
 
-typedef struct
+typedef struct ZMapServerReqGetStatusStructType
 {
   ZMapServerReqType type ;
   ZMapServerResponseType response ;
@@ -263,7 +268,7 @@ typedef struct
 } ZMapServerReqGetStatusStruct, *ZMapServerReqGetStatus ;
 
 
-typedef struct
+typedef struct ZMapServerReqGetConnectStateStructType
 {
   ZMapServerReqType type ;
   ZMapServerResponseType response ;
@@ -273,7 +278,7 @@ typedef struct
 } ZMapServerReqGetConnectStateStruct, *ZMapServerReqGetConnectState ;
 
 
-typedef struct
+typedef struct ZMapServerReqTerminateStructType
 {
   ZMapServerReqType type ;
   ZMapServerResponseType response ;

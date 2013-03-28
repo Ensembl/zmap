@@ -1878,7 +1878,7 @@ double  zmap_window_featureset_item_foo_point(FooCanvasItem *item,
    * then if we move the lassoo that gets silly (button down: calls point())
    */
   //if(debug)
-  //	zMapLogWarning("point: %.1f,%.1f %.1f %.1f\n", item_x, item_y, fi->start, fi->dy);
+  //	zMapLogWarning("point: %.1f,%.1f %.1f %.1f", item_x, item_y, fi->start, fi->dy);
 
   if (fi->point_canvas_feature && item_x == save_x && item_y == save_y)
     {
@@ -1995,7 +1995,7 @@ double  zmap_window_featureset_item_foo_point(FooCanvasItem *item,
 
     if(fi->point_feature) x = (char *) g_quark_to_string(fi->point_feature->unique_id);
 
-    zMapLogWarning("point tried %d/ %d features (%.1f,%.1f) @ %s (picked = %d)\n",
+    zMapLogWarning("point tried %d/ %d features (%.1f,%.1f) @ %s (picked = %d)",
 		   n,fi->n_features, item_x, item_y, x, n_item_pick);
   }
 #endif

@@ -32,9 +32,12 @@
 #include <ZMap/zmap.h>
 
 #include <string.h>
+
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapCmdLineArgs.h>
 #include <zmapControl_P.h>
+
+
 
 static void setTooltips(ZMap zmap) ;
 static void makeStatusTooltips(ZMap zmap) ;
@@ -43,9 +46,14 @@ static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data) ;
 
 static void myWindowMaximize(GtkWidget *toplevel, ZMap zmap) ;
 
-
 static gboolean zmap_shrink_G = FALSE;
 
+
+
+
+/* 
+ *                  Package External routines.
+ */
 
 
 /* Makes the toplevel window and control panels for an individual zmap. */
@@ -81,7 +89,6 @@ gboolean zmapControlWindowCreate(ZMap zmap)
   zmap->map_handler = g_signal_connect(G_OBJECT(toplevel), "map",
 				       G_CALLBACK(myWindowMaximize), (gpointer)zmap);
 
-
   gtk_signal_connect(GTK_OBJECT(toplevel), "destroy",
 		     GTK_SIGNAL_FUNC(toplevelDestroyCB), (gpointer)zmap) ;
 
@@ -89,9 +96,10 @@ gboolean zmapControlWindowCreate(ZMap zmap)
   vbox = gtk_vbox_new(FALSE, 0) ;
   gtk_container_add(GTK_CONTAINER(toplevel), vbox) ;
 
+  zmap->event_box_parent = vbox ;
+
   menubar = zmapControlWindowMakeMenuBar(zmap) ;
   gtk_box_pack_start(GTK_BOX(vbox), menubar, FALSE, TRUE, 0);
-
 
   frame = gtk_frame_new(NULL);
   gtk_container_border_width(GTK_CONTAINER(frame), 5);

@@ -144,9 +144,7 @@ AM_INIT_AUTOMAKE
 
 AC_LANG(C)
 
-# for some reason AC_PATH_XTRA doesn't set up -lX11
-AC_PATH_XTRA
-X_LIBS="$X_LIBS -lX11"
+
 
 
 # The check libraries are NOT installed by default on most peoples linux
@@ -158,13 +156,6 @@ X_LIBS="$X_LIBS -lX11"
 #
 # PKG_CHECK_MODULES([CHECK], [check >= 0.9.4])
 
-
-# Leopard and tiger have different versions of X11 installed in different places.
-# Leopard has a softlink for the tiger directory and as the tiger version is older we go
-# with that one, of which there's a copy in the 10.4u sdk.
-if test "x$with_macosx_sdk_path" != "x$ZMAP_FALSE" ; then
-   X_LIBS="-L$with_macosx_sdk_path/usr/X11R6/lib -lX11"
-fi
 
 AC_ARG_ENABLE(debug,
         AS_HELP_STRING(--enable-debug,enable debug info compilation (no)),
@@ -202,6 +193,9 @@ AC_SUBST(LDFLAGS)
 
 AC_PROG_CXX
 AC_PROG_CC
+
+AM_PROG_CC_C_O
+
 AC_PATH_PROGS(PERL, perl perl5)
 AC_PROG_LN_S
 
@@ -444,7 +438,6 @@ zmapView/Makefile
 zmapWindow/Makefile
 zmapXML/Makefile
 include/Makefile
-libAceConn/Makefile
 libzmapfoocanvas/Makefile
 libpfetch/Makefile
 libpfetch/tests/Makefile
@@ -457,6 +450,11 @@ dotZMap:dotZmap.in
 #
 #$srcdir/$DX_CONFIG:Doxyfile.in
 #
+
+
+
+AC_CONFIG_SUBDIRS([AceConn])
+
 
 AC_OUTPUT
 

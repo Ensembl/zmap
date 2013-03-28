@@ -1,5 +1,5 @@
 /*  File: zmapFeature.c
- *  Author: Rob Clack (rnc@sanger.ac.uk)
+ *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
@@ -64,6 +64,9 @@ static int span_compare (gconstpointer a, gconstpointer b) ;
 static int findExon(ZMapFeature feature, int exon_start, int exon_end) ;
 static gboolean calcExonPhase(ZMapFeature feature, int exon_index,
 			      int *exon_cds_start, int *exon_cds_end, int *phase_out) ;
+
+static void printChildCB(gpointer key, gpointer value, gpointer user_data_unused) ;
+
 
 /*!
  * Function to do some validity checking on a ZMapFeatureAny struct. Always more you
@@ -774,7 +777,7 @@ gboolean zMapFeatureIsSeqColumn(ZMapFeatureContextMap map,GQuark column_id)
 gboolean zMapFeatureIsSeqFeatureSet(ZMapFeatureContextMap map,GQuark fset_id)
 {
 	ZMapFeatureSource src = g_hash_table_lookup(map->source_2_sourcedata,GUINT_TO_POINTER(fset_id));
-//zMapLogWarning("feature is_seq: %s -> %p\n",g_quark_to_string(fset_id),src);
+	//zMapLogWarning("feature is_seq: %s -> %p", g_quark_to_string(fset_id),src);
 
 	if(src && src->is_seq)
 		return TRUE;
@@ -1407,6 +1410,23 @@ char *zMapFeatureTranslation(ZMapFeature feature, int *length)
 }
 
 
+gboolean zMapFeaturePrintChildNames(ZMapFeatureAny feature_any)
+{
+  gboolean result = FALSE ;
+
+  if (zMapFeatureIsValid(feature_any) && (feature_any->children))
+    {
+      g_hash_table_foreach(feature_any->children, printChildCB, NULL) ;
+
+      result = TRUE ;
+    }
+
+  return result ;
+}
+
+
+
+
 
 
 
@@ -1697,7 +1717,6 @@ static gboolean calcExonPhase(ZMapFeature feature, int exon_index,
 }
 
 
-
 /* Compares span objects (e.g. introns or exons) and returns whether
  * they are before or after each other according to their coords. */
 static int span_compare (gconstpointer a, gconstpointer b)
@@ -1716,5 +1735,19 @@ static int span_compare (gconstpointer a, gconstpointer b)
   return result ;
 }
 
+
+/* A GHFunc() */
+static void printChildCB(gpointer key, gpointer value, gpointer user_data_unused)
+{
+  gboolean debug = TRUE ;
+  ZMapFeatureAny feature_any = (ZMapFeatureAny)value ;
+
+  zMapDebugPrint(debug, "Feature %s - %s (%s)",
+		 zMapFeatureStructType2Str(feature_any->struct_type),
+		 zMapFeatureName(feature_any),
+		 g_quark_to_string(feature_any->unique_id)) ;
+
+  return ;
+}
 
 

@@ -22,7 +22,7 @@
  *
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description:
  *
@@ -75,7 +75,7 @@ static GType get_stanza_key_type(ZMapConfigIniContext context,
                          char *stanza_type,
                          char *key_name);
 static gint match_name_type(gconstpointer list_data, gconstpointer user_data);
-static void zmapConfigIniContextSetErrorMessage(ZMapConfigIniContext context,char *error_message);
+static void setErrorMessage(ZMapConfigIniContext context,char *error_message);
 
 
 
@@ -166,7 +166,7 @@ gchar *zMapConfigIniContextErrorMessage(ZMapConfigIniContext context)
   return e ;
 }
 
-static void zmapConfigIniContextSetErrorMessage(ZMapConfigIniContext context,char *error_message)
+static void setErrorMessage(ZMapConfigIniContext context,char *error_message)
 {
   if (context->error_message)
     g_free(context->error_message);
@@ -281,17 +281,17 @@ gboolean zMapConfigIniContextGetValue(ZMapConfigIniContext context,
 	    *value_out = value;
 	  else
 	    {
-	      zmapConfigIniContextSetErrorMessage(context,
-						  g_strdup_printf("failed to get value for %s, %s",
-								  stanza_name, key_name));
+	      setErrorMessage(context,
+			      g_strdup_printf("failed to get value for %s, %s",
+					      stanza_name, key_name));
 	      *value_out = NULL;
 	    }
 	}
       else
 	{
-	  zmapConfigIniContextSetErrorMessage(context,
-					      g_strdup_printf("failed to get type for %s, %s",
-							      stanza_name, key_name));
+	  setErrorMessage(context,
+			  g_strdup_printf("failed to get type for %s, %s",
+					  stanza_name, key_name));
 	  *value_out = NULL;
 	}
     }
@@ -311,7 +311,7 @@ gboolean zMapConfigIniContextGetBoolean(ZMapConfigIniContext context,
 
   if(zMapConfigIniContextGetValue(context,
 				  stanza_name, stanza_type,
-				  key_name,    &value_out))
+				  key_name, &value_out))
     {
       if(value)
 	{
@@ -322,7 +322,9 @@ gboolean zMapConfigIniContextGetBoolean(ZMapConfigIniContext context,
 	    }
 
 	  g_value_unset(value_out);
+
 	  g_free(value_out);
+
 	  value_out = NULL;
 	}
     }
@@ -555,9 +557,9 @@ static void check_required(gpointer list_data, gpointer user_data)
       else
 	{
 	  checking_data->result = FALSE;
-	  zmapConfigIniContextSetErrorMessage(context,
-					      g_strdup_printf("Failed to get required key '%s' in stanza %s",
-							      key->key, stanza->stanza_name));
+	  setErrorMessage(context,
+			  g_strdup_printf("Failed to get required key '%s' in stanza %s",
+					  key->key, stanza->stanza_name));
 	}
     }
 

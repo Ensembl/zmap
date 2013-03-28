@@ -147,6 +147,18 @@ G_STMT_START{                                             \
   } G_STMT_END
 #endif /* __GNUC__ */
 
+
+/* Define debug messages more easily. */
+#ifdef __GNUC__
+#define zMapDebugPrintf(FORMAT, ...)                      \
+  zMapUtilsDebugPrintf(stderr, "%s: " FORMAT "\n", __PRETTY_FUNCTION__, __VA_ARGS__) 
+#else /* __GNUC__ */
+#define zMapDebugPrintf(FORMAT, ...)		      \
+  zMapUtilsDebugPrintf(stderr, "%s: " FORMAT "\n", NULL, __VA_ARGS__) 
+#endif /* __GNUC__ */
+
+
+
 /* Timer functions, just simplifies printing etc a bit and provides a global timer if required.
  * Just comment out #define ZMAP_DISABLE_TIMER to turn it all on.
  */
@@ -194,7 +206,7 @@ extern gboolean zmap_timing_G;
 // NULL args should be  ""
 #define zMapPrintTime(FUNC, ID, OPT)   \
    { if(ZMAP_GLOBAL_TIMER) \
-      zMapLogMessage("Timer %s\t%.3f\t%s\t%s\n", \
+      zMapLogMessage("Timer %s\t%.3f\t%s\t%s", \
             FUNC,\
             g_timer_elapsed(ZMAP_GLOBAL_TIMER, NULL),\
             ID,OPT); \
@@ -238,6 +250,7 @@ extern gboolean zmap_timing_G;
 void zMapLogTime(int what, int how, long data, char *string);
 
 #endif /* ZMAP_DISABLE_TIMER */
+
 
 
 void zMapUtilsDebugPrintf(FILE *stream, char *format, ...) ;

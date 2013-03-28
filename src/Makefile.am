@@ -28,7 +28,7 @@ ACLOCAL_AMFLAGS = -I m4
 
 # ZMAP_SRC_DIRS See configure.ac
 
-SUBDIRS = libAceConn libpfetch libcurlobject libzmapfoocanvas include $(ZMAP_SRC_DIRS) $(CANVAS_TESTING)
+SUBDIRS = AceConn libpfetch libcurlobject libzmapfoocanvas include $(ZMAP_SRC_DIRS) $(CANVAS_TESTING)
 
 CLEANFILES = $(pkgconfig_DATA)
 
@@ -43,7 +43,6 @@ MOSTLYCLEANFILES = $(DX_CLEANFILES)
 
 EXTRA_DIST = INSTALL \
 	README.zmap \
-	$(DX_CONFIG)
 	$(NULL)
 
 
@@ -156,7 +155,7 @@ zmap_LDADD =                                                 \
 	$(top_builddir)/.libs/libZMapUtils.a                 \
 	$(top_builddir)/.libs/libzmapfoocanvas.a             \
 	$(top_builddir)/.libs/libPFetch.a                    \
-	$(top_builddir)/lib/libAceConn.a		     \
+	$(top_builddir)/AceConn/src/.libs/libAceConn.a       \
         $(X_PRE_LIBS) $(X_LIBS) $(X_EXTRA_LIBS)              \
 	$(GTK_LIBS)			                     \
 	$(LIBCURL) -lexpat                                   \

@@ -21,7 +21,7 @@
  * originated by
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description:
  *-------------------------------------------------------------------
@@ -451,7 +451,7 @@ void zmapViewStepListStepConnectionDeleteAll(ZMapViewConnection connection) ;
 gboolean zmapViewStepListAreConnections(ZMapViewConnectionStepList step_list) ;
 gboolean zmapViewStepListIsNext(ZMapViewConnectionStepList step_list) ;
 void zmapViewStepDestroy(gpointer data, gpointer user_data) ;
-void zmapViewStepListDestroy(ZMapViewConnection view_conn) ;
+void zmapViewStepListDestroy(ZMapViewConnectionStepList step_list) ;
 
 void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req_featuresets,
 			  ZMapConfigSource server,

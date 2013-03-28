@@ -1,4 +1,3 @@
-/*  Last edited: Jul 23 16:12 2012 (edgrif) */
 /*  File: zmapWindowUtils.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -21,7 +20,7 @@
  * This file is part of the ZMap genome database package
  * originated by
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *         Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Utility functions for the zMapWindow code.
@@ -566,7 +565,7 @@ GList *zmapWindowFeatureColumnStyles(ZMapFeatureContextMap map, GQuark column_id
 		}
 	      else
 		{
-                  zMapLogWarning("Could not find style %s for column \"%s\" in table of %d\n",
+                  zMapLogWarning("Could not find style %s for column \"%s\" in table of %d",
 				 g_quark_to_string(style_id),g_quark_to_string(column_id),
 				 g_hash_table_size(map->styles));
 		}

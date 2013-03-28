@@ -20,11 +20,13 @@
  * This file is part of the ZMap genome database package
  * originated by
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *         Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- * Description:
- * Exported functions: See XXXXXXXXXXXXX.h
+ * Description: Used to be about making a frame for a view but seems
+ *              poluted by other stuff now ?
+ *              
+ * Exported functions: See zmapControl_P.h
  *-------------------------------------------------------------------
  */
 
@@ -32,23 +34,23 @@
 
 
 
-
-
-
-
 #include <zmapControl_P.h>
 
 
 static void createNavViewWindow(ZMap zmap, GtkWidget *parent) ;
-
-
 #if RUN_AROUND
 static void valueCB(void *user_data, double start, double end) ;
 #endif
-
 static void pane_position_callback(GObject *pane, GParamSpec *scroll, gpointer user_data);
-
 static gboolean double_to_open(GtkWidget *widget, GdkEventButton *button, gpointer user_data);
+
+
+
+/* 
+ *                   Package external routines
+ */
+
+
 
 GtkWidget *zmapControlWindowMakeFrame(ZMap zmap)
 {
@@ -86,9 +88,9 @@ static void createNavViewWindow(ZMap zmap, GtkWidget *parent)
 
   /* This box contains what may be multiple views in paned widgets. */
   zmap->pane_vbox = gtk_vbox_new(FALSE,0) ;
+  gtk_paned_pack2(GTK_PANED(zmap->hpane), zmap->pane_vbox, TRUE, TRUE);
 
-  gtk_paned_pack2(GTK_PANED(zmap->hpane),
-		  zmap->pane_vbox, TRUE, TRUE);
+
 
 
   /* Set left hand (sliders) pane closed by default. */
@@ -139,6 +141,7 @@ static void pane_position_callback(GObject *pane, GParamSpec *scroll, gpointer u
 
   return ;
 }
+
 
 static gboolean double_to_open(GtkWidget *widget, GdkEventButton *button, gpointer user_data)
 {

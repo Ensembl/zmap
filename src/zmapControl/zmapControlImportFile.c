@@ -41,6 +41,8 @@
 
 #include <string.h>
 
+#include <ZMap/zmapString.h>				    /* testing only. */
+
 #include <ZMap/zmapConfigIni.h>
 #include <ZMap/zmapConfigStanzaStructs.h>
 #include <ZMap/zmapConfigStrings.h>
@@ -840,11 +842,11 @@ static void fileChangedCB(GtkWidget *widget, gpointer user_data)
  *  */
 static void importFileCB(GtkWidget *widget, gpointer cb_data)
 {
-
-  MainFrame main_frame = (MainFrame)cb_data ;
   gboolean status = TRUE ;
+  MainFrame main_frame = (MainFrame)cb_data ;
   char *err_msg = NULL ;
-  char *sequence = "", *start_txt, *end_txt, *file_txt, *script_txt, *args_txt, *req_start_txt, *req_end_txt, *offset_txt, *source_txt, *style_txt, *strand_txt, *assembly_txt ;
+  char *sequence = "", *start_txt, *end_txt, *file_txt, *script_txt, *args_txt,
+    *req_start_txt, *req_end_txt, *offset_txt, *source_txt, *style_txt, *strand_txt, *assembly_txt ;
   int start = 1, end = 0 ;
   gboolean map_seq = FALSE;
   int seq_offset = 0;
@@ -853,7 +855,8 @@ static void importFileCB(GtkWidget *widget, gpointer cb_data)
   fileType file_type = main_frame->file_type;
   ZMapView view;
   ZMap zmap = (ZMap) main_frame->user_data;
-  int strand = 0;
+  int strand = 0 ;
+
 
   view = zMapViewGetView(zmap->focus_viewwindow);
 
@@ -874,60 +877,52 @@ static void importFileCB(GtkWidget *widget, gpointer cb_data)
   offset_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->offset_widg)) ;
   assembly_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->assembly_widg)) ;
 
-  if (!*file_txt)
+  if (status)
     {
-      status = FALSE ;
-      err_msg = "Please choose a file to import." ;
+      if (!(*file_txt))
+	{
+	  status = FALSE ;
+	  err_msg = "Please choose a file to import." ;
+	}
     }
-  else
+
+  if (status)
     {
       if (*sequence && *start_txt && *end_txt)
         {
-          if (status)
-            {
-              if (!(*start_txt) || !zMapStr2Int(start_txt, &start) || start < 1)
-                {
-                  status = FALSE ;
-                  err_msg = "Invalid start specified." ;
-                }
-            }
+	  if (!zMapStr2Int(start_txt, &start) || start < 1)
+	    {
+	      status = FALSE ;
+	      err_msg = "Invalid start specified." ;
+	    }
+	  else if (!zMapStr2Int(end_txt, &end) || end <= start)
+	    {
+	      status = FALSE ;
+	      err_msg = "Invalid end specified." ;
+	    }
+	}
+    }
 
-          if (status)
-            {
-              if (!(*end_txt) || !zMapStr2Int(end_txt, &end) || end <= start)
-                {
-                  status = FALSE ;
-                  err_msg = "Invalid end specified." ;
-                }
-            }
-        }
-
+  if (status)
+    {
       if (*req_sequence && *req_start_txt && *req_end_txt)
         {
-          if (status)
-            {
-              if (!(*req_start_txt) || !zMapStr2Int(req_start_txt, &req_start) || req_start < 1)
-                {
-                  status = FALSE ;
-                  err_msg = "Invalid request start specified." ;
-                }
-            }
-
-          if (status)
-            {
-              if (!(*req_end_txt) || !zMapStr2Int(req_end_txt, &req_end) || req_end <= start)
-                {
-                  status = FALSE ;
-                  err_msg = "Invalid request end specified." ;
-                }
-            }
-        }
+	  if (!zMapStr2Int(req_start_txt, &req_start) || req_start < 1)
+	    {
+	      status = FALSE ;
+	      err_msg = "Invalid request start specified." ;
+	    }
+	  else if (!zMapStr2Int(req_end_txt, &req_end) || req_end <= start)
+	    {
+	      status = FALSE ;
+	      err_msg = "Invalid request end specified." ;
+	    }
+	}
       else
         {
           status = FALSE;
           err_msg = "Please specify request sequence start and end";
         }
-
     }
 
   if (status)
@@ -937,16 +932,24 @@ static void importFileCB(GtkWidget *widget, gpointer cb_data)
           status = FALSE ;
           err_msg = "Invalid offset specified." ;
         }
+    }
 
+  if (status)
+    {
       map_seq = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON(main_frame->map_widg));
+    }
 
-      strand_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->strand_widg)) ;
-      if (strand_txt)
+  if (status)
+    {
+      if ((strand_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->strand_widg)))
+	  && *strand_txt)
         {
-          while (*strand_txt  && *strand_txt <= ' ')
-            strand_txt++;
-          strand = (*strand_txt == '-') ? -1 : (*strand_txt == '+') ? 1 : 0;
-          if (!strand_txt)
+	  /* NOTE this is not +/- as presented to the user but 1 or -1. */
+	  if ((strchr(strand_txt, '+')))
+	    strand = 1 ;
+	  else if ((strchr(strand_txt, '-')))
+	    strand = -1 ;
+	  else
             {
               status = FALSE ;
               err_msg = "Strand must be + or -";
@@ -993,52 +996,41 @@ static void importFileCB(GtkWidget *widget, gpointer cb_data)
           src->is_seq = TRUE;
         }
 
-      if (*args_txt) /* prep user defined args */
+      /* prep user defined args */
+      if (*args_txt)
         {
-          gchar ** vector;
-          char *p,*q;
+          gchar **vector ;
 
-          /* strip out multiple whitespace to avoid null args from strsplit */
-          for(p = q = args_txt; *q && *q <= ' ' ; q++)
-            continue;
-          for(*p = *q ; *q; q++)
-            {
-              if (*q <= ' ') /* don't trip over tabs */
-                {
-                  if (p[-1] <= ' ')
-                    continue;
-                  *q = ' ';
-                }
-              *p++ = *q;
-            }
-          *p = 0;
+	  args_txt = zMapStringCompress(args_txt) ;
 
-          vector = g_strsplit(args_txt," ",0);
-          args_txt = g_strjoinv("&", vector);
-          g_strfreev(vector);
+          vector = g_strsplit(args_txt, " ", 0) ;
 
-          and = "&";
+          args_txt = g_strjoinv("&", vector) ;
+
+          g_strfreev(vector) ;
+
+          and = "&" ;
         }
 
       /* prep dialog defined args according to file type and session */
       /* some are mandatory: */
-      *argp++ = g_strdup_printf("--file=%s",file_txt);
-      *argp++ = g_strdup_printf("--gff_seqname=%s",sequence);
-      *argp++ = g_strdup_printf("--start=%d",req_start);
-      *argp++ = g_strdup_printf("--end=%d",req_end);
+      *argp++ = g_strdup_printf("--file=%s", file_txt);
+      *argp++ = g_strdup_printf("--gff_seqname=%s", sequence);
+      *argp++ = g_strdup_printf("--start=%d", req_start);
+      *argp++ = g_strdup_printf("--end=%d", req_end);
 
       if ((seq_offset || map_seq) && !main_frame->is_otter)
-        *argp++ = g_strdup_printf("--mapto=%d",seq_offset);
+        *argp++ = g_strdup_printf("--mapto=%d", seq_offset);
 
       if (main_frame->is_otter)
         {
-          *argp++ = g_strdup_printf("--csver=%s",assembly_txt);
+          *argp++ = g_strdup_printf("--csver=%s", assembly_txt);
           if (main_frame->chr)
-            *argp++ = g_strdup_printf("--chr=%s",main_frame->chr);
+            *argp++ = g_strdup_printf("--chr=%s", main_frame->chr);
         }
 
       if (req_sequence && !main_frame->is_otter)
-        *argp++ = g_strdup_printf("--seq_id=%s",req_sequence);
+        *argp++ = g_strdup_printf("--seq_id=%s", req_sequence);
 
       /* some depend on file type */
       switch(file_type)
@@ -1046,20 +1038,20 @@ static void importFileCB(GtkWidget *widget, gpointer cb_data)
         case FILE_NONE:
           /* add in any that have data */
           if (source_txt)
-            *argp++ = g_strdup_printf("--gff_feature_source=%s",source_txt);
+            *argp++ = g_strdup_printf("--gff_feature_source=%s", source_txt) ;
           if (strand)
-            *argp++ = g_strdup_printf("--strand=%d",strand); /* NOTE this is not +/- as presented to the user */
+            *argp++ = g_strdup_printf("--strand=%d", strand) ;
           break;
 
         case FILE_GFF:
           break;
 
         case FILE_BIGWIG:
-          *argp++ = g_strdup_printf("--strand=%d",strand); /* NOTE this is not +/- as presented to the user */
+          *argp++ = g_strdup_printf("--strand=%d", strand) ;
           /* fall through */
 
         case FILE_BAM:
-          *argp++ = g_strdup_printf("--gff_feature_source=%s",source_txt);
+          *argp++ = g_strdup_printf("--gff_feature_source=%s", source_txt);
           break;
         }
 
@@ -1071,21 +1063,34 @@ static void importFileCB(GtkWidget *widget, gpointer cb_data)
       config_str = g_strdup_printf("[ZMap]\nsources = temp\n\n[temp]\nfeaturesets=\nurl=pipe://%s/%s?%s%s%s",
                                    *script_txt == '/' ? "/" :"", script_txt, args_txt, and, opt_args_txt);
 
-      servers = zmapViewGetIniSources(NULL, config_str, NULL);
-      zMapAssert(servers);
+      servers = zmapViewGetIniSources(NULL, config_str, NULL) ;
+      zMapAssert(servers) ;
 
-      server = (ZMapConfigSource) servers->data;
+      server = (ZMapConfigSource) servers->data ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      /* SEEMS LIKE A BUG TO ME...THE req_start/end ARE IGNORED HERE ! */
+      /* Leave this here until it's tested..... */
 
       if (zMapViewRequestServer(view, NULL, req_featuresets, (gpointer) server, start, end, FALSE, TRUE, TRUE))
         zMapViewShowLoadStatus(view);
       else
         zMapWarning("could not request %s",file_txt);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+      if (zMapViewRequestServer(view, NULL, req_featuresets, (gpointer)server, req_start, req_end, FALSE, TRUE, TRUE))
+        zMapViewShowLoadStatus(view);
+      else
+        zMapWarning("could not request %s",file_txt);
+
 
 
       zMapConfigSourcesFreeList(servers);
 
       g_free(config_str);
 
+
+      /* I'VE NO IDEA WHAT THIS IS SUPPOSED TO MEAN....EG */
       /* call user func if you like.... */
     }
 

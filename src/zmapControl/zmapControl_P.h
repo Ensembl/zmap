@@ -88,10 +88,14 @@ typedef struct _ZMapStruct
 
 
   /* Widget stuff for the Zmap. */
-  GtkTooltips     *tooltips ;
-
   GtkWidget       *toplevel ;				    /* top level widget of zmap window. */
 
+  /* info panel tooltips to show meaning of info panel fields. */
+  GtkTooltips     *tooltips ;
+
+  /* parent of event boxes used to monitor xremote stuff...not needed in new xremote....
+   * must be a container type widget. */
+  GtkWidget *event_box_parent ;
 
   /* Show status of focus view sequence as:  <strand> <seq_coords> <zmap/view status> */
   GtkWidget       *status_revcomp ;
@@ -137,7 +141,7 @@ typedef struct _ZMapStruct
 
 
   /* The panes and views and current focus window. */
-  GtkWidget      *pane_vbox ;				    /* Is the parent of all the panes. */
+  GtkWidget *pane_vbox ;				    /* Is the parent of all the panes. */
 
   ZMapViewWindow focus_viewwindow ;
   GHashTable* viewwindow_2_parent ;			    /* holds hash to go from a view window
@@ -195,11 +199,14 @@ void zmapControlSplitWindow(ZMap zmap, GtkOrientation orientation, ZMapControlSp
 
 void zmapControlClose(ZMap zmap) ;
 void zmapControlRemoveWindow(ZMap zmap, ZMapViewWindowTree destroyed_zmap) ;
+void zmapControlCloseFull(ZMap zmap, ZMapView view) ;
+
 
 ZMapView zmapControlInsertView(ZMap zmap, ZMapFeatureSequenceMap sequence_map, char **err_msg) ;
 ZMapViewWindow zmapControlAddView(ZMap zmap, ZMapFeatureSequenceMap sequence_map) ;
 int zmapControlNumViews(ZMap zmap) ;
 void zmapControlRemoveView(ZMap zmap, ZMapView view, ZMapViewWindowTree destroyed_zmap_inout) ;
+ZMapViewWindow zmapControlFindViewWindow(ZMap zmap, ZMapView view) ;
 
 gboolean zmapConnectViewConfig(ZMap zmap, ZMapView view, char *config);
 void zmapControlShowPreferences(ZMap zmap) ;
@@ -261,5 +268,8 @@ ZMapViewWindow zmapControlNewWidgetAndWindowForView(ZMap zmap,
                                                     GtkOrientation orientation,
 						    ZMapControlSplitOrder window_order,
                                                     char *view_title);
+
+void zmapControlPrintView(ZMap zmap, ZMapView view, char *action, gboolean print_xid) ;
+void zmapControlPrintAllViews(ZMap zmap, gboolean print_xids) ;
 
 #endif /* !ZMAP_CONTROL_P_H */

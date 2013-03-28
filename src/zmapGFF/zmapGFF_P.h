@@ -160,7 +160,11 @@ typedef struct ZMapGFFParserStruct_
   GQuark locus_set_id ;					    /* If not zero then make a locus set from
 							       locus tags in sequence objects. */
 
-      // NOTE for sources read styles
+  GHashTable *excluded_features ;			    /* Records all features that should be
+							       excluded (e.g. because they are
+							       outside corods of ref. sequence). */
+
+  // NOTE for sources read styles
   GHashTable *sources ;					    /* If present, only make features from
 							       GFF records with a source from this
 							       list. */

@@ -1,5 +1,5 @@
 
-AM_CPPFLAGS = -I../include @GLIB_CFLAGS@
+AM_CPPFLAGS = -I$(top_srcdir)/include @GLIB_CFLAGS@
 LDADD = @GLIB_LIBS@
 
 lib_LTLIBRARIES = libAceConn.la

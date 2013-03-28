@@ -214,11 +214,9 @@ for this use in <b>~zmap/BUILD_CHECKOUT</b>:</p>
 &gt; ls
 Author			    build_config.tviewsrv.sh	set_dev_description.pl	      zmap_handle_release_tar.sh
 CopyRight		    build_run.sh		setup_libs_otter.sh	      zmap_machine_perf.sh
-CopyRight.txt		    buildaceconn		versioner		      zmap_make_SOURCES_list.sh
 
 etc. etc.
 
-build_config.mac18480i.sh   methods2style.pl		zmap_foocanvas_tasks.sh       zmap_x11_helper.sh
 build_config.mpb101217i.sh  process_rt_tickets_file.pl	zmap_functions.sh
 build_config.sh		    process_stack_dump.pl	zmap_functions_web.sh
 </pre>
@@ -539,31 +537,6 @@ setenv PKG_CONFIG_PATH /opt/local/lib/pkgconfig/
 <h2>Installing ZMap's Dependencies</h2>
 
 
-<h3>AceConn Install</h3>
-
-<pre>
-For a MacPorts /opt/local system glibtoolize and the path to aclocal
-need to be set as environment variables before bootstrapping and building:
-
-> export LIBTOOLIZE=glibtoolize
-
-> export AC_LOCAL_INC=/opt/local/share/aclocal
-
-
-and then for all systems:
-
-> bootstrap -b
-
-> ./configure --prefix=/opt/local
-
-> make
-
-> sudo make install
-
-</pre>
-
-
-
 <h2>MacPort Install</h2>
 
 
@@ -861,15 +834,6 @@ Scripts cover the following tasks:
     <th>Task</th>
     <th>Script</th>
   </tr>
-
-  <tr>
-    <td>Get lastest CVS copy of Ace-Con package
-	used by zmap, compile and put libs in
-	correct ~zmap/prefix/XXXX/lib dirs.</td>
-
-    <td>buildaceconn</td>
-  </tr>
-
 
   <tr>
     <td>Make a zmap release directory containing

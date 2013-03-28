@@ -160,7 +160,7 @@ static ZMapServerResponseType haveModes(void *server, gboolean *have_mode) ;
 static ZMapServerResponseType getSequences(void *server_in, GList *sequences_inout) ;
 static ZMapServerResponseType setContext(void *server, ZMapFeatureContext feature_context) ;
 static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles,
-					  ZMapFeatureContext feature_context_out) ;
+					  ZMapFeatureContext feature_context_out, int *num_features_out) ;
 static ZMapServerResponseType getContextSequence(void *server_in, GHashTable *styles,
 						 ZMapFeatureContext feature_context_out) ;
 static char *lastErrorMsg(void *server) ;
@@ -694,6 +694,9 @@ static ZMapServerResponseType haveModes(void *server_in, gboolean *have_mode)
 }
 
 
+
+
+/* Truly pointless operation revealing that this function is a bad idea..... */
 static ZMapServerResponseType getStatus(void *server_in, gint *exit_code, gchar **stderr_out)
 {
   *exit_code = 0;
@@ -701,6 +704,9 @@ static ZMapServerResponseType getStatus(void *server_in, gint *exit_code, gchar 
 
   return ZMAP_SERVERRESPONSE_OK;
 }
+
+
+
 
 
 /* Is the acedb server connected ? */
@@ -798,8 +804,11 @@ static ZMapServerResponseType setContext(void *server_in, ZMapFeatureContext fea
 
 
 /* Get features sequence. */
-static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles, ZMapFeatureContext feature_context)
+static ZMapServerResponseType getFeatures(void *server_in,
+					  GHashTable *styles, ZMapFeatureContext feature_context,
+					  int *num_features_out)
 {
+  ZMapServerResponseType response = ZMAP_SERVERRESPONSE_OK ;
   AcedbServer server = (AcedbServer)server_in ;
   DoAllAlignBlocksStruct get_features ;
 
@@ -814,7 +823,6 @@ static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles, Z
   get_features.src_feature_set_names = NULL;
   get_features.eachBlock = eachBlockSequenceRequest;
   get_features.num_features = 0;
-
 
 
   zMapPrintTimer(NULL, "In thread, getting features") ;
@@ -866,11 +874,10 @@ static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles, Z
   }
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-  // see comment in zmapFeature,h/ ref: num_features
-  feature_context->num_features = get_features.num_features;
+  *num_features_out = get_features.num_features ;
+  response = get_features.result ;
 
-
-  return get_features.result ;
+  return response ;
 }
 
 

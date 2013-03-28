@@ -198,7 +198,7 @@ gboolean zMapConfigIniSaveUser(ZMapConfigIni config)
 	  /* Ok we can write the file contents to disk */
 	  char *filename = NULL;
 
-	  if((filename = zMapConfigDirGetFile()))
+	  if ((filename = zMapConfigDirGetFile()))
 	    {
 	      GIOChannel *output = NULL;
 	      GError *error = NULL;
@@ -236,12 +236,6 @@ gboolean zMapConfigIniSaveUser(ZMapConfigIni config)
 		      error = NULL;
 		    }
 		}
-
-	      if(filename != zMapConfigDirGetFile())
-		{
-		  g_free(filename);
-		  filename = NULL;
-		}
 	    }
 	  else
 	    {
@@ -252,7 +246,6 @@ gboolean zMapConfigIniSaveUser(ZMapConfigIni config)
       if(file_contents)
 	{
 	  g_free(file_contents);
-	  file_contents = NULL;
 	}
     }
 

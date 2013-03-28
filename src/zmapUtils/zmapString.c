@@ -92,17 +92,82 @@ gboolean zMapStringBlank(char *string)
 }
 
 
+/* Takes a string and translates all multiple whitespace into single
+ * whitespaces. This is done in place so the resulting string will
+ * be shorter but still uses the same amount of memory.
+ * 
+ * Note: although the operation is done in place the function returns
+ * the string so it can be used in expressions.
+ */
+char *zMapStringCompress(char *txt)
+{
+  char *compressed_txt = txt ;
+
+  if (txt && *txt)
+    {
+      char *curr ;
+      int len ;
+
+      /* Use glib function to strip leading and trailing space. */
+      compressed_txt = g_strstrip(compressed_txt) ;
+
+
+      /* Remove internal multiple spaces by finding them and then moving
+       * the remaining string to overlay them. */
+      len = strlen(compressed_txt) + 1 ;		    /* + 1 to make sure our memcpy's
+							       include the terminating NULL. */
+      curr = compressed_txt ;
+      while (*curr)
+	{
+	  if (!g_ascii_isspace(*curr))
+	    {
+	      curr++ ;
+	      len-- ;
+	    }
+	  else
+	    {
+	      char *curr_space, *next_char ;
+
+	      next_char = curr_space = curr ;
+
+	      /* chug through the space. */
+	      while (g_ascii_isspace(*next_char))
+		{
+		  next_char++ ;
+		  len-- ;
+		}
+
+	      /* Only do memcpy if there are multiple spaces. */
+	      if (next_char > (curr_space + 1))
+		{
+		  memcpy((curr_space + 1), next_char, len) ;
+		}
+
+	      /* bump us on to char after this space. */
+	      curr = (curr_space + 1) ;
+	    }
+	}
+    }
+
+  return compressed_txt ;
+}
+
+
+
+
+
 /* Takes a string and removes all spaces and control chars. This is
  * done in place so the resulting string will be shorter but still
  * uses the same amount of memory.
  * 
- * This function is not derived from acedb.
  */
 char *zMapStringFlatten(char *query_txt)
 {
   char *query_ptr;
-  int len = strlen(query_txt);
-  int i, n;
+  int len ;
+  int i, n ;
+
+  len = strlen(query_txt) ;
 
   /* Use glib function to strip leading and trailing space. */
   query_ptr = query_txt = g_strstrip(query_txt);
@@ -110,7 +175,7 @@ char *zMapStringFlatten(char *query_txt)
   /* step through the string replacing spaces with the next non-space
    * character. */
 
-  for(i = 0, n = 0; i < len; i++, n++, query_ptr++)
+  for(i = 0, n = 0 ; i < len ; i++, n++, query_ptr++)
     {
       if (g_ascii_isspace(*query_ptr) || g_ascii_iscntrl(*query_ptr))
 	n++ ;

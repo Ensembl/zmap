@@ -691,7 +691,7 @@ static ZMapFeatureContextExecuteStatus undisplayFeaturesCB(GQuark key,
 	  }
 	else
 	  {
-	    zMapLogWarning("Failed to find feature '%s'\n", g_quark_to_string(feature->original_id));
+	    zMapLogWarning("Failed to find feature '%s'", g_quark_to_string(feature->original_id));
 	    status = ZMAP_CONTEXT_EXEC_STATUS_ERROR ;
 	  }
 
@@ -3110,7 +3110,7 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
     }
   else
     {
-      zMapLogCritical("%s", "unknown client event in dataEventCB() handler\n") ;
+      zMapLogCritical("%s", "unknown client event in dataEventCB() handler") ;
 
       event_handled = FALSE ;
     }

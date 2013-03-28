@@ -124,7 +124,7 @@ typedef struct
 /* MOVED TO zmapView_P.h */
 
 // tried to put these into ConnectionData but as ever there's scope issues
-typedef struct
+typedef struct ZMapViewLoadFeaturesDataStructType
 {
   char *err_msg;        // from the server mainly
   gchar *stderr_out;
@@ -136,9 +136,7 @@ typedef struct
   gboolean status;      // load sucessful?
   unsigned long xwid ;  // X Window id for the xremote widg. */
 
-} LoadFeaturesDataStruct, *LoadFeaturesData ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
+} ZMapViewLoadFeaturesDataStruct, *ZMapViewLoadFeaturesData ;
 
 
 
@@ -179,7 +177,7 @@ void zMapViewSetupNavigator(ZMapViewWindow view_window, GtkWidget *canvas_widget
 gboolean zMapViewGetDefaultWindow(ZMapAppRemoteViewID view_inout) ;
 ZMapViewWindow zMapViewCopyWindow(ZMapView zmap_view, GtkWidget *parent_widget,
 				  ZMapWindow copy_window, ZMapWindowLockType window_locking) ;
-void zMapViewRemoveWindow(ZMapViewWindow view_window) ;
+ZMapViewWindow zMapViewRemoveWindow(ZMapViewWindow view_window) ;
 void zMapViewRedraw(ZMapViewWindow view_window) ;
 gboolean zMapViewConnect(ZMapView zmap_view, char *config_str) ;
 gboolean zMapViewReset(ZMapView zmap_view) ;

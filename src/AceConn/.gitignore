@@ -1,0 +1,17 @@
+# Ignore files created by build.....note when AceConn goes into a git repository
+# these will not be needed.
+AceConn-1.1.pc
+Makefile
+include
+libtool
+doc/Makefile
+src/.deps
+src/.libs
+src/Makefile
+src/*.lo
+src/libAceConn.la
+stamp-h1
+test/.deps
+test/Makefile
+test/simple*
+m4/*.m4

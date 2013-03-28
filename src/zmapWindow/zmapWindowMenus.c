@@ -775,7 +775,7 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 
 	if (!(result = zMapLaunchWebBrowser(feature->url, &error)))
 	  {
-	    zMapWarning("Error: %s\n", error->message) ;
+	    zMapWarning("Error: %s", error->message) ;
 
 	    g_error_free(error) ;
 	  }
@@ -842,7 +842,7 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
                              NULL,NULL);
 
 
-                  /* zMapLogWarning("evidence %s returns %d features\n", feature_name, g_list_length(items_free));*/
+                  /* zMapLogWarning("evidence %s returns %d features", feature_name, g_list_length(items_free));*/
                   g_free(feature_name);
 
                   for(items = items_free; items; items = items->next)
@@ -2532,7 +2532,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuBlixemBAM(int *start_index_inout,
 
       if ((f2c = g_hash_table_lookup(cbdata->window->context_map->featureset_2_column,GUINT_TO_POINTER(fset_id))))
   	{
-	  //zMapLogWarning("menu is_seq: %s -> %p\n",g_quark_to_string(fset_id),f2c);
+	  //zMapLogWarning("menu is_seq: %s -> %p",g_quark_to_string(fset_id),f2c);
 	  cbdata->req_id = f2c->column_id;
 	  blixem_col = get_menu_string(f2c->column_ID,'-');
   	}
@@ -2657,7 +2657,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuRequestBAM(int *start_index_inout,
 
       if ((f2c = g_hash_table_lookup(cbdata->window->context_map->featureset_2_column,GUINT_TO_POINTER(fset_id))))
   	{
-	  //zMapLogWarning("menu is_seq: %s -> %p\n",g_quark_to_string(fset_id),f2c);
+	  //zMapLogWarning("menu is_seq: %s -> %p",g_quark_to_string(fset_id),f2c);
 	  cbdata->req_id = f2c->column_id;
 	  blixem_col = get_menu_string(f2c->column_ID,'-');
   	}
@@ -2780,7 +2780,7 @@ GQuark related_column(ZMapFeatureContextMap map,GQuark fset_id)
   if(src)
     q = src->related_column;
   else
-    zMapLogWarning("Can't find src data for %s\n",g_quark_to_string(fset_id));
+    zMapLogWarning("Can't find src data for %s",g_quark_to_string(fset_id));
 
   return q;
 }

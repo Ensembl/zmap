@@ -32,7 +32,6 @@
 
 #include <ZMap/zmap.h>
 
-
 #include <string.h>		/* memset */
 #include <glib.h>
 
@@ -40,6 +39,8 @@
 #include <ZMap/zmapConfigDir.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapConfigIni.h>
+
+
 
 #define FILE_COUNT 5
 #define IMPORTANT_COUNT 2
@@ -321,6 +322,8 @@ static gboolean get_value(GKeyFile *key_file,
 						    &error);
 	  }
 	  break;
+
+	  /* WOW, CAN THIS POSSIBLY BE SAFE...???? */
 	case G_TYPE_STRING:
 	default:
 	  tmp_string = g_key_file_get_value (key_file,
@@ -349,6 +352,7 @@ static gboolean get_value(GKeyFile *key_file,
 	case G_KEY_FILE_ERROR_INVALID_VALUE: /* a value could not be parsed  */
 	  {
 	    char *try_again = NULL;
+
 	    /* This is reasonably serious, type didn't match in
 	     * the get_string/integer/double */
 	    if(type != G_TYPE_STRING)
@@ -404,6 +408,7 @@ static gboolean get_value(GKeyFile *key_file,
   /* Just free tmp_string... */
   if(tmp_string)
     g_free(tmp_string);
+
   if(error)
       g_error_free(error);
 

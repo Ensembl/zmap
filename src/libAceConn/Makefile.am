@@ -17,11 +17,10 @@ all-local:
 	@echo "Started building $(ACECONN)...."
 	@export TMP_BUILD_DIR=`dirname $(PWD)` ; \
 	cd $(top_srcdir)/libAceConn/$(ACECONN_DIR) ; \
-	if ! test -f Makefile ; then \
+	cd $(top_srcdir)/libAceConn/$(ACECONN_DIR) ; \
 	echo 'No Makefile, creating Makefile....' ; \
 	./autogen.sh ; \
 	./configure --prefix=$$TMP_BUILD_DIR ; \
-	fi ; \
 	echo "Running make for $(ACECONN)" ; \
 	make ; \
 	make install

@@ -6,7 +6,7 @@ NULL =
 ARFLAGS = cru
 
 AM_CPPFLAGS = -g -I$(top_srcdir)/include \
-	-I$(top_builddir)  -I$(top_builddir)/include \
+	-I$(top_builddir)  -I$(top_srcdir)/AceConn/include \
 	@GTK_CFLAGS@ \
         @LIBCURL_CPPFLAGS@ \
         $(NULL)
