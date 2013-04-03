@@ -44,8 +44,8 @@ typedef void (*ZMapAppGetSequenceViewCB)(ZMapFeatureSequenceMap sequence_map, gp
 
 gboolean zMapAppGetSequenceConfig(ZMapFeatureSequenceMap seq_map) ;
 void zMapAppGetSequenceView(ZMapAppGetSequenceViewCB user_func, gpointer user_data,
-			    ZMapFeatureSequenceMap sequence_map) ;
+			    ZMapFeatureSequenceMap sequence_map, gboolean display_sequence) ;
 GtkWidget *zMapCreateSequenceViewWidg(ZMapAppGetSequenceViewCB user_func, gpointer user_data,
-				      ZMapFeatureSequenceMap sequence_map) ;
+				      ZMapFeatureSequenceMap sequence_map, gboolean display_sequence) ;
 
 #endif /* !ZMAP_APP_SERVICES_H */

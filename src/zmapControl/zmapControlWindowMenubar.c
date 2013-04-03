@@ -460,7 +460,7 @@ static void newSequenceByConfigCB(gpointer cb_data, guint callback_action, GtkWi
 {
   ZMap zmap = (ZMap)cb_data ;
 
-  zMapAppGetSequenceView(makeSequenceViewCB, zmap, NULL) ;
+  zMapAppGetSequenceView(makeSequenceViewCB, zmap, zmap->default_sequence, FALSE) ;
 
   return ;
 }
