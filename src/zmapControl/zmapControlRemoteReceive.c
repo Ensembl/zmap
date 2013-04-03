@@ -414,7 +414,11 @@ static void closeView(ZMap zmap, ZMapXRemoteParseCommandData input_data, Respons
     {
       char *xml = NULL;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       zmapControlRemoveView(zmap, view_data.view, NULL) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
       /* Is this where we signal back that we are killing the view....???? */
       /* TRY THIS HERE.... */
