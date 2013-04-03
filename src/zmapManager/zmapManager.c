@@ -294,8 +294,7 @@ gboolean zMapManagerGetDefaultView(ZMapManager manager, ZMapAppRemoteViewID view
 /* Delete a view from within a zmap. */
 void zMapManagerDestroyView(ZMapManager zmaps, ZMap zmap, ZMapView view)
 {
-  /* code needed here to return deleted views ??? */
-  zMapDeleteView(zmap, view, NULL) ;
+  zMapControlCloseView(zmap, view) ;
 
   return ;
 }
