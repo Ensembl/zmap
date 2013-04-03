@@ -57,14 +57,12 @@ static void importCB(gpointer cb_data, guint callback_action, GtkWidget *window)
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void exportCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 static void printCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void dumpCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void redrawCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void preferencesCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void developerCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void showSessionCB(gpointer cb_data, guint callback_action, GtkWidget *window) ;
-static void showViewsCB(gpointer cb_data, guint callback_action, GtkWidget *window) ;
 static void aboutCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void rtTicket(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void allHelpCB(gpointer cb_data, guint callback_action, GtkWidget *w);
@@ -102,7 +100,7 @@ static GtkItemFactoryEntry menu_items[] = {
 
  { "/_View",         NULL,         NULL, 0, "<Branch>" },
  { "/View/Session Details", NULL,  showSessionCB, 0, NULL },
- { "/View/View Details", NULL,     showViewsCB, 0, NULL },
+
 #ifdef ALLOW_POPOUT_PANEL
  { "/View/'Pop Out' Control Info Panel", NULL, popout_panel, 0, NULL },
 #endif	/* ALLOW_POPOUT_PANEL */
@@ -302,18 +300,6 @@ static void showSessionCB(gpointer cb_data, guint callback_action, GtkWidget *wi
   zMapGUIShowText("Session Details", session_text->str, FALSE) ;
 
   g_string_free(session_text, TRUE) ;
-
-  return ;
-}
-
-
-
-/* Display view data. */
-static void showViewsCB(gpointer cb_data, guint callback_action, GtkWidget *window)
-{
-  ZMap zmap = (ZMap)cb_data ;
-
-  zmapControlPrintAllViews(zmap, TRUE) ;
 
   return ;
 }
