@@ -75,6 +75,7 @@ gboolean zMapGetDefaultView(ZMapAppRemoteViewID view_inout) ;
 gboolean zMapConnectView(ZMap zmap, ZMapView view) ;
 gboolean zMapLoadView(ZMap zmap, ZMapView view) ;
 gboolean zMapStopView(ZMap zmap, ZMapView view) ;
+gboolean zMapControlCloseView(ZMap zmap, ZMapView view) ;
 void zMapDeleteView(ZMap zmap, ZMapView view, ZMapViewWindowTree destroyed_zmaps_inout) ;
 gboolean zMapRaise(ZMap zmap);
 char *zMapGetZMapID(ZMap zmap) ;
