@@ -283,6 +283,16 @@ gboolean zMapStopView(ZMap zmap, ZMapView view)
 }
 
 
+gboolean zMapControlCloseView(ZMap zmap, ZMapView view)
+{
+  /* NEED RETURN CODE HERE............!!!!!!!!!!!! */
+
+  zmapControlCloseFull(zmap, view) ;
+
+  return TRUE ;
+}
+
+
 
 void zMapDeleteView(ZMap zmap, ZMapView view, ZMapViewWindowTree destroyed_zmaps_inout)
 {
@@ -442,7 +452,7 @@ void zmapControlClose(ZMap zmap)
 	  destroyed_zmap = g_new0(ZMapViewWindowTreeStruct, 1) ;
 	  destroyed_zmap->parent = zmap ;
 
-	  zmapControlRemoveWindow(zmap, destroyed_zmap) ;
+	  zmapControlRemoveWindow(zmap, view_window, destroyed_zmap) ;
 	}
 
       g_free(name);
@@ -465,6 +475,7 @@ void zmapControlCloseFull(ZMap zmap, ZMapView view)
 {
   int num_views, num_windows ;
   ZMapViewWindow view_window ;
+  ZMapViewWindowTree destroyed_zmap = NULL ;
 
   num_views = zmapControlNumViews(zmap) ;
 
@@ -479,12 +490,19 @@ void zmapControlCloseFull(ZMap zmap, ZMapView view)
   num_windows = zMapViewNumWindows(view_window) ;
   if (num_views == 1 && num_windows == 1)
     {
-      zmapControlDoKill(zmap) ;
+      zmapControlDoKill(zmap, &destroyed_zmap) ;
     }
   else
     {
-      zmapControlRemoveWindow(zmap, view) ;
+      destroyed_zmap = g_new0(ZMapViewWindowTreeStruct, 1) ;
+      destroyed_zmap->parent = zmap ;
+
+      zmapControlRemoveWindow(zmap, view_window, destroyed_zmap) ;
     }
+
+
+  /* shouldn't we reporting a view was destroyed here ???? */
+
 
   return ;
 }
