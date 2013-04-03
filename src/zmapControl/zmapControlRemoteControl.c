@@ -761,6 +761,11 @@ static void closeView(ZMap zmap, ZMapXRemoteParseCommandData input_data, Respons
     {
       char *xml = NULL;
 
+      /* Remove the view. */
+      zmapControlCloseFull(zmap, view_data.view) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       zmapControlRemoveView(zmap, view_data.view) ;
 
       /* Is this correct ??? check with Roy..... */
@@ -768,6 +773,8 @@ static void closeView(ZMap zmap, ZMapXRemoteParseCommandData input_data, Respons
       xml = zMapViewRemoteReceiveAccepts(view_data.view);
       g_string_append(output_data->messages, xml);
       g_free(xml);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
     }
 
   return ;
