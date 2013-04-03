@@ -47,6 +47,7 @@
 #include <ZMap/zmapAppRemote.h>
 
 
+
 /* Opaque type, represents an instance of a ZMapView. */
 typedef struct _ZMapViewStruct *ZMapView ;
 
@@ -137,6 +138,8 @@ typedef struct ZMapViewLoadFeaturesDataStructType
   unsigned long xwid ;  // X Window id for the xremote widg. */
 
 } ZMapViewLoadFeaturesDataStruct, *ZMapViewLoadFeaturesData ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
@@ -171,7 +174,7 @@ typedef struct _ZMapViewSplittingStruct
 
 
 void zMapViewInit(ZMapViewCallbacks callbacks) ;
-ZMapViewWindow zMapViewCreate(GtkWidget *xremote_widget, GtkWidget *view_container,
+ZMapViewWindow zMapViewCreate(GtkWidget *view_container,
 			      ZMapFeatureSequenceMap sequence_map, void *app_data) ;
 void zMapViewSetupNavigator(ZMapViewWindow view_window, GtkWidget *canvas_widget);
 gboolean zMapViewGetDefaultWindow(ZMapAppRemoteViewID view_inout) ;
