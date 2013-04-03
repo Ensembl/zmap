@@ -96,14 +96,6 @@ typedef struct ConnectionDataStructType
 
 
   /* database data. */
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  char *data_format ;
-  char *database_name ;
-  char *database_title ;
-  char *database_path ;
-  gboolean request_as_columns;      /* ie ACEDB featuresets must be translated into display
-				       columns to be requested */
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
   ZMapServerReqGetServerInfoStruct session ;
 
 
@@ -150,8 +142,7 @@ typedef struct DrawableDataStructType
 static void getIniData(ZMapView view, char *config_str, GList *sources) ;
 static void zmapViewCreateColumns(ZMapView view,GList *featuresets) ;
 static ZMapConfigSource zmapViewGetSourceFromFeatureset(GHashTable *hash,GQuark featurequark);
-static ZMapView createZMapView(GtkWidget *xremote_widget, char *view_name,
-			       GList *sequences, void *app_data) ;
+static ZMapView createZMapView(char *view_name, GList *sequences, void *app_data) ;
 static void destroyZMapView(ZMapView *zmap) ;
 
 static gint zmapIdleCB(gpointer cb_data) ;
@@ -194,7 +185,7 @@ static ZMapViewConnection createViewConnection(ZMapView zmap_view,
 					   gboolean dna_requested,
 					   gint start,gint end,
 					   gboolean terminate);
-static void destroyConnection(ZMapView view, ZMapViewConnection view_conn) ;
+static void destroyViewConnection(ZMapView view, ZMapViewConnection view_conn) ;
 static void killGUI(ZMapView zmap_view, ZMapViewWindowTree destroyed_view_inout) ;
 static void killConnections(ZMapView zmap_view) ;
 
@@ -253,7 +244,6 @@ static void styleCB(gpointer key_id, gpointer data, gpointer user_data) ;
 
 static void invoke_merge_in_names(gpointer list_data, gpointer user_data);
 
-static gboolean mapEventCB(GtkWidget *widget, GdkEvent *event, gpointer user_data) ;
 static gint colOrderCB(gconstpointer a, gconstpointer b,gpointer user_data) ;
 
 static void sendViewLoaded(ZMapView zmap_view, ZMapViewLoadFeaturesData lfd) ;
@@ -392,9 +382,7 @@ ZMapViewCallbacks zmapViewGetCallbacks(void)
  * @param app_data         data that will be passed to the callers callback routines.
  * @return a new ZMapViewWindow (= view + a window)
  *  */
-ZMapViewWindow zMapViewCreate(GtkWidget *xremote_widget, GtkWidget *view_container,
-			      ZMapFeatureSequenceMap sequence_map,
-			      void *app_data)
+ZMapViewWindow zMapViewCreate(GtkWidget *view_container, ZMapFeatureSequenceMap sequence_map, void *app_data)
 {
   ZMapViewWindow view_window = NULL ;
   ZMapView zmap_view = NULL ;
@@ -458,7 +446,7 @@ ZMapViewWindow zMapViewCreate(GtkWidget *xremote_widget, GtkWidget *view_contain
     }
 
 
-  zmap_view = createZMapView(xremote_widget, view_name, sequences_list, app_data) ; /* N.B. this step can't fail. */
+  zmap_view = createZMapView(view_name, sequences_list, app_data) ; /* N.B. this step can't fail. */
 
   if (view_cbs_G->remote_request_func)
     zmap_view->remote_control = TRUE ;
@@ -2617,29 +2605,8 @@ static void viewSelectCB(ZMapWindow window, void *caller_data, void *window_data
 	}
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  /*  THIS NEEDS TO GO...SHOULD BE A CALL TO REMOTE DIRECTLY FROM WINDOW LEVEL....MAKE THIS HAPPEN....*/
-
-      if (window_select->xml_handler.zmap_action)
-	{
-	  window_select->remote_result = zmapViewRemoteSendCommand(view_window->parent_view,
-								   window_select->xml_handler.zmap_action,
-								   window_select->xml_handler.xml_events,
-								   window_select->xml_handler.start_handlers,
-								   window_select->xml_handler.end_handlers,
-								   window_select->xml_handler.handler_data) ;
-
-	}
-
-      /* temporary.... */
-      window_select->xml_handler.handled = FALSE ;
-
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-      
       /* Pass back a ZMapViewWindow as it has both the View and the window to our caller. */
       (*(view_cbs_G->select))(view_window, view_window->parent_view->app_data, &view_select) ;
-
     }
 
   return ;
@@ -2697,7 +2664,7 @@ static void splitMagic(gpointer data, gpointer user_data)
 
 
 
-static ZMapView createZMapView(GtkWidget *xremote_widget, char *view_name, GList *sequences, void *app_data)
+static ZMapView createZMapView(char *view_name, GList *sequences, void *app_data)
 {
   ZMapView zmap_view = NULL ;
   GList *first ;
@@ -2711,13 +2678,6 @@ static ZMapView createZMapView(GtkWidget *xremote_widget, char *view_name, GList
   zmap_view->state = ZMAPVIEW_INIT ;
   zmap_view->busy = FALSE ;
 
-  zmap_view->xremote_widget = xremote_widget ;
-
-  /* Only after map-event are we guaranteed that there's a window for us to work with. */
-  zmap_view->map_event_handler = g_signal_connect(G_OBJECT(zmap_view->xremote_widget), "map-event",
-						  G_CALLBACK(mapEventCB), (gpointer)zmap_view) ;
-
-  zmapViewSetupXRemote(zmap_view, xremote_widget);
 
   zmap_view->view_name = g_strdup(view_name) ;
 
@@ -2771,26 +2731,6 @@ static ZMapViewWindow addWindow(ZMapView zmap_view, GtkWidget *parent_widget)
 
   /* add to list of windows.... */
   zmap_view->window_list = g_list_append(zmap_view->window_list, view_window) ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-
-  /* This seems redundant now....old code ???? */
-
-  /* There is a bit of a hole in the "busy" state here in that we do the windowcreate
-   * but have not signalled that we are busy, I suppose we could do the busy stuff twice,
-   * once before the windowCreate and once here to make sure we set cursors everywhere.. */
-  zmapViewBusy(zmap_view, TRUE) ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* Start polling function that checks state of this view and its connections, note
-   * that at this stage there is no data to display. */
-  startStateConnectionChecking(zmap_view) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-  zmapViewBusy(zmap_view, FALSE) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
   return view_window ;
@@ -2941,7 +2881,6 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 	{
 	  ZMapViewConnection view_con ;
 	  ZMapThread thread ;
-	  ConnectionData cd;	 
 	  ZMapThreadReply reply = ZMAPTHREAD_REPLY_DIED ;
 	  void *data = NULL ;
 	  char *err_msg = NULL ;
@@ -3307,8 +3246,9 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 	  // (thread_status == THREAD_STATUS_FAILED || thread_status == THREAD_STATUS_OK), tell
 	  // otterlace
 
-	  /* Try this...shouldn't be doing this if we are dying....I think ? */
-
+	  /* Try this...shouldn't be doing this if we are dying....I think ? we should
+	   * have disconnected this handler....that's why we need the stopConnectionState call
+	   * add it in.... */
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  if (zmap_view->state != ZMAPVIEW_DYING && all_steps_finished)
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
@@ -3337,7 +3277,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 			  /* we get here at the end of a step list, prev errors not reported till now */
 			  zMapWarning("Data request failed: %s\n%s%s",err_msg,
 				      ((connect_data->stderr_out && *connect_data->stderr_out)
-				       ? "Server reports:\n": "", connect_data->stderr_out)) ;
+				       ? "Server reports:\n": ""), connect_data->stderr_out) ;
 		        }
 
 		      (zmap_view->sources_failed)++ ;
@@ -3355,7 +3295,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 		      load_features.exit_code = connect_data->exit_code ;
 		      load_features.stderr_out = connect_data->stderr_out ;
 
-		      sendViewLoaded(zmap_view, &lfd) ;
+		      sendViewLoaded(zmap_view, &load_features) ;
 		    }
 
 
@@ -4567,11 +4507,9 @@ static void destroyWindow(ZMapView zmap_view, ZMapViewWindow view_window, ZMapVi
 
   zmap_view->window_list = g_list_remove(zmap_view->window_list, view_window) ;
 
-  zMapWindowDestroy((*view_window_inout)->window) ;
+  zMapWindowDestroy(view_window->window) ;
 
-  g_free(*view_window_inout) ;
-
-  *view_window_inout = NULL ;
+  g_free(view_window) ;
 
   return ;
 }
@@ -5695,45 +5633,6 @@ static void styleCB(gpointer key, gpointer data, gpointer user_data)
 
 
 
-/* Called when the xremote widget for View is mapped, we can then set the X Window id
- * for the xremote widget and then remove the handler so we don't get called anymore. */
-static gboolean mapEventCB(GtkWidget *widget, GdkEvent *event, gpointer user_data)
-{
-  gboolean handled = FALSE ;				    /* Allow others to handle. */
-  ZMapView zmap_view = (ZMapView)user_data ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  ZMapViewCallbackFubarStruct fubar ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-  /* I don't think we need this any more.......so we may not even need this handler any more.... */
-  zmap_view->xwid = zMapXRemoteWidgetGetXID(zmap_view->xremote_widget) ;
-  zmap_view->xwid_txt = g_strdup_printf("0x%lx", zmap_view->xwid) ;
-
-
-//  if(zmap_view->state == ZMAPVIEW_INIT)
-  {
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-    /* I THINK THIS IS ALL REDUNDANT NOW.... */
-
-    /* OH CRIKEY WHAT IS ALL THIS.....fubar...REALLY ??? */
-    /* force this state to make the view_ready message only appear once from the following callback */
-    fubar.xwid  = zmap_view->xwid;
-    fubar.state = ZMAPVIEW_MAPPED;
-
-    (*(view_cbs_G->state_change))(zmap_view, zmap_view->app_data, &fubar) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-  }
-
-  /* We don't want to be called again. */
-  g_signal_handler_disconnect(zmap_view->xremote_widget, zmap_view->map_event_handler) ;
-
-  return handled ;
-}
-
-
 #if DEBUG_CONTEXT_MAP
 
 void print_source_2_sourcedata(char * str,GHashTable *data)
@@ -5891,27 +5790,6 @@ static void sendViewLoaded(ZMapView zmap_view, ZMapViewLoadFeaturesData lfd)
       viewloaded[i].value.s = lfd->stderr_out ? lfd->stderr_out : "" ;
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      request = g_strdup_printf("<zmap> <request action=\"features_loaded\">"
-				" <client xwid=\"0x%lx\" />"
-				" <featureset names=\"%s\" />"
-				" <start value=\"%d\" />"
-				" <end value=\"%d\" />"
-				" <status value=\"%d\" message=\"%s\" />"
-				" <exit_code value=\"%d\" />"
-				" <stderr value=\"%s\" />"
-				"</request></zmap>",
-				lfd->xwid, featurelist,
-				lfd->start, lfd->end,
-				(int)lfd->status,
-				emsg, lfd->exit_code,
-				lfd->stderr_out ? lfd->stderr_out : "") ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-
-
       /* Send request to peer program. */
       /* NOTE WELL....returns a pointer to a static struct in this function, not ideal but will
        * have to do for now. */
@@ -5919,12 +5797,7 @@ static void sendViewLoaded(ZMapView zmap_view, ZMapViewLoadFeaturesData lfd)
 					   view_cbs_G->remote_request_func_data,
 					   localProcessReplyFunc, zmap_view) ;
 
-
       free(emsg);  /* yes really free() not g_free()-> see zmapUrlUtils.c */
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      g_free(request);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
       g_free(featurelist);
 
