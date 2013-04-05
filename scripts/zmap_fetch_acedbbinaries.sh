@@ -48,7 +48,7 @@ fi
 zmap_message_out "Running $0 script on $host_type node $this_host...."
 
 
-zmap_message_out "Starting copying acedb source/binaries, Seqtools and AceConn dist files."
+zmap_message_out "Starting copying acedb source/binaries and Seqtools dist files."
 
 
 if [ "x$ACEDB_MACHINE" == "x" ]; then
@@ -306,24 +306,6 @@ done
 
 zmap_message_out "Running scp -r $seqtools_share_dir $BASE_TARGET"
 scp -r $seqtools_share_dir $BASE_TARGET  || zmap_message_exit "Failed to copy $seqtools_share_dir"
-
-
-#
-# The AceConn library.
-#
-
-if [ "$ZMAP_MASTER_HOST" == "$this_host" ]; then
-
-    zmap_message_out "Copying AceConn dist file..."
-
-    aceconn_dist_dir="$ZMAP_ACECONN_RELEASE_CONTAINER/$ZMAP_ACECONN_RELEASE_DIR"
-    aceconn_dist_file=`ls $aceconn_dist_dir/libAceConn-*.tar.gz` # Should match only one file.
-
-    zmap_message_out "Running cp $aceconn_dist_file $DIST_DIR"
-    cp $aceconn_dist_file $DIST_DIR || zmap_message_exit "Failed to copy $aceconn_dist_file"
-
-fi
-
 
 
 zmap_message_out "Finished copying acedb source/binaries, Seqtools and AceConn dist files."
