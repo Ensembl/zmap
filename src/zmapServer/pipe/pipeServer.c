@@ -152,7 +152,7 @@ static void pipe_server_get_stderr(PipeServer server) ;
 /* 
  *              External interface routines
  *
- *    Although these routines are static they form the external interface to the pipe server.
+ *    Although most of these routines are static they form the external interface to the pipe server.
  *
  */
 
@@ -322,7 +322,7 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   PipeServer server = (PipeServer)server_in ;
-  int retval = FALSE;
+  int retval = FALSE ;
 
   if (server->gff_pipe)
     {
@@ -337,16 +337,15 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
 
       server->sequence_map = req_open->sequence_map;
 
-      if(server->scheme == SCHEME_FILE)   // could spawn /bin/cat but there is no need
+      if (server->scheme == SCHEME_FILE)   // could spawn /bin/cat but there is no need
 	{
-	  if((server->gff_pipe = g_io_channel_new_file(server->script_path, "r", &gff_pipe_err)))
-
-            retval = TRUE;
+	  if ((server->gff_pipe = g_io_channel_new_file(server->script_path, "r", &gff_pipe_err)))
+            retval = TRUE ;
 	}
       else
 	{
 	  if (pipe_server_spawn(server,&gff_pipe_err))
-            retval = TRUE;
+            retval = TRUE ;
 	}
 
       if (!retval)
@@ -363,11 +362,11 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
 	}
       else
 	{
-	  server->sequence_server = req_open->sequence_server; /* if not then drop any DNA data */
+	  server->sequence_server = req_open->sequence_server ; /* if not then drop any DNA data */
 	  server->parser = zMapGFFCreateParser(server->sequence_map->sequence, server->zmap_start, server->zmap_end) ;
 	  server->gff_line = g_string_sized_new(2000) ;	    /* Probably not many lines will be > 2k chars. */
 
-	  result = pipeGetHeader(server);
+	  result = pipeGetHeader(server) ;
 
           if (result == ZMAP_SERVERRESPONSE_OK)
             {
@@ -380,10 +379,9 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
 	    {
 	      /* we should not do this but if we donlt we get an obscure crash on GFF errors */
 	      /* this prevents reporting the error but it's better than crashing */
-	      /* the crash is ultimately caused the the hopeless system of status codes
-		 in several layers that drives the server interface */
-	      /* i'm trying to fix soemthing else right now */
+
 	      //		  result = ZMAP_SERVERRESPONSE_SERVERDIED ;
+
 
 	      /* AH OK....SO THIS IS WHY NOTHING COMES THROUGH ON ERROR..... */
 
@@ -401,7 +399,6 @@ static ZMapServerResponseType getInfo(void *server_in, ZMapServerReqGetServerInf
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   PipeServer server = (PipeServer)server_in ;
-
 
   if (getServerInfo(server, info))
     {
