@@ -820,10 +820,11 @@ if [ -d $RELEASE_LOCATION ]; then
     if [ -x $zmap_uname_location ]; then
 	zmap_message_out "Checking zmap binary version..."
 
-	bin_version=$($zmap_uname_location --version) || zmap_message_err "*** CRITICAL: Cannot execute binary at '$zmap_uname_location' [1] *** "
+	bin_version=$($zmap_uname_location --raw_version) || zmap_message_err "*** CRITICAL: Cannot execute binary at '$zmap_uname_location' [1] *** "
 	zmap_message_out "Binary reports version=$bin_version"
 
-	# Not sure now why we did this...but not needed now...
+        # THIS SHOULD NOT NOW BE NEEDED....
+	# Need to clip ZMap off the front...easier to add it to the other one ?...
 	#bin_version=$(echo $bin_version | sed -e 's!\.!-!g; s!ZMap !!')
 
 	if [ "x$bin_version" != "x$ZMAP_RELEASE_VERSION" ]; then
