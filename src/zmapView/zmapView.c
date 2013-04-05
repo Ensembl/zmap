@@ -1271,19 +1271,20 @@ char *zMapViewGetStatusStr(ZMapView view)
 			       "Resetting", "Dying"} ;
   char *state_str ;
   ZMapViewState state = view->state;
-  char failed[32] = "";
+  char failed[32] = "" ;
 
   zMapAssert(state >= ZMAPVIEW_INIT);
   zMapAssert(state <= ZMAPVIEW_DYING) ;
 
-  if(view->sources_failed)
-	  sprintf(failed," (%d failed)",view->sources_failed);
-  if(state == ZMAPVIEW_LOADING || state == ZMAPVIEW_UPDATING)
-      state_str = g_strdup_printf("%s (%d)%s", zmapStates[state], view->sources_loading,failed);
+  if (view->sources_failed)
+    sprintf(failed," (%d failed)", view->sources_failed) ;
+
+  if (state == ZMAPVIEW_LOADING || state == ZMAPVIEW_UPDATING)
+    state_str = g_strdup_printf("%s (%d)%s", zmapStates[state], view->sources_loading, failed) ;
   else if(state == ZMAPVIEW_LOADED)
-	state_str = g_strdup_printf("%s%s", zmapStates[state], failed);
+    state_str = g_strdup_printf("%s%s", zmapStates[state], failed) ;
   else
-      state_str = g_strdup(zmapStates[state]) ;
+    state_str = g_strdup(zmapStates[state]) ;
 
 
   return state_str ;
@@ -1894,14 +1895,18 @@ ZMapViewConnection zmapViewRequestServer(ZMapView view, ZMapViewConnection view_
 				    req_start,req_end,
 				    terminate || is_pipe)))
     {
-      if(!view->sources_loading)
+      if (!view->sources_loading)
 	view->sources_failed = 0;
-      view->sources_loading ++ ;
-      view_conn->show_warning = show_warning;
+
+      (view->sources_loading)++ ;
+
+      view_conn->show_warning = show_warning ;
     }
   else
     {
-      view->sources_failed++;
+      (view->sources_failed)++ ;
+
+      zMapLogWarning("createViewConnection() failed, failed sources now %d", view->sources_failed) ;
     }
 
   return view_conn ;
@@ -3243,6 +3248,8 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
 		  if (view_con->thread_status == THREAD_STATUS_FAILED)
 		    {
+		      char *request_type_str = zMapServerReqType2ExactStr(request_type) ;
+
 		      if (!err_msg)
 			{
 			  /* NOTE on TERMINATE OK/REPLY_QUIT we get thread_has_died and NULL the error message */
@@ -3257,12 +3264,16 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 		      if (view_con->show_warning && is_continue)
 		        {
 			  /* we get here at the end of a step list, prev errors not reported till now */
-			  zMapWarning("Data request failed: %s\n%s%s",err_msg,
+			  zMapWarning("Data request failed: %s\n%s%s", err_msg,
 				      ((connect_data->stderr_out && *connect_data->stderr_out)
-				       ? "Server reports:\n": "", connect_data->stderr_out)) ;
+				       ? "Server reports:\n": ""),
+				      connect_data->stderr_out) ;
 		        }
 
 		      (zmap_view->sources_failed)++ ;
+		      zMapLogWarning("Thread failed, request = %s, failed sources now %d",
+				     request_type_str,
+				     zmap_view->sources_failed) ;
 		    }
 
 		  if (request_type == ZMAP_SERVERREQ_FEATURES)

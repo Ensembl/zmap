@@ -90,6 +90,18 @@ typedef struct ZMapViewSessionServerStructName
 } ZMapViewSessionServerStruct, *ZMapViewSessionServer ;
 
 
+/* Malcolm has introduced this and put it in the threads package where it is NOT used.
+ * Is it necessary.....revisit this...... */
+typedef enum
+  {
+    THREAD_STATUS_INVALID,
+    THREAD_STATUS_FAILED,				    /* Thread has failed (and needs killing ?). */
+    THREAD_STATUS_PENDING,				    /* ????? */
+    THREAD_STATUS_OK					    /* Thread functioning normally. */
+  } ZMapViewThreadStatus ;
+
+
+
 typedef struct _ZMapViewConnectionStepListStruct *ZMapViewConnectionStepList ;
 
 
@@ -102,9 +114,7 @@ typedef struct ZMapViewConnectionStructName
 
   char *url ;						    /* For displaying in error messages etc. */
 
-
   ZMapViewSessionServerStruct session ;			    /* Session data. */
-
 
   ZMapThreadRequest curr_request ;
 
@@ -114,8 +124,13 @@ typedef struct ZMapViewConnectionStructName
 
   ZMapViewConnectionStepList step_list ;		    /* List of steps required to get data from server. */
 
-  ThreadStatus thread_status ;				    /* probably this is badly placed, but not as badly as before */
-							    /* at least it has some persistance now */
+
+  /* UM...IS THIS THE RIGHT PLACE FOR THIS....DOES A VIEWCONNECTION REPRESENT A SINGLE THREAD....
+   * CHECK THIS OUT.......
+   *  */
+  ZMapViewThreadStatus thread_status ;			    /* probably this is badly placed,
+							       but not as badly as before 
+							       at least it has some persistance now */
 
   gboolean show_warning ;
 
@@ -248,11 +263,13 @@ typedef struct _ZMapViewStruct
   char *view_name ;					    /* An overall label for the view,
 							       defaults to the master sequence name. */
 
+  /* These seem like they are redundant and not sensible anyway...there won't just be one name.... */
   char *view_db_name ;
   char *view_db_title ;
 
 
   ZMapFeatureSequenceMap view_sequence ;
+
 
   /* This will need to be a full mapping of sequences, blocks etc in the end which will
    * be used both to set up the feature context so the right bits of feature get fetched
@@ -338,14 +355,17 @@ typedef struct _ZMapViewStruct
 
   ZMapXRemoteObj xremote_client;
 
+  /* Crikey, why is this here...??? Maybe it's ok...but seems more like a window thing..... */
   GList *navigator_set_names;
+
 
   /* view spawns blixem processes when requested, kill_blixems flag controls whether they are
    * killed when view dies (default is TRUE). */
   gboolean kill_blixems ;
-  GList *spawned_processes;
+  GList *spawned_processes ;
 
-  GHashTable *cwh_hash;
+
+  GHashTable *cwh_hash ;
 
 
 } ZMapViewStruct ;
