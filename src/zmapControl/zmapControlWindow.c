@@ -189,31 +189,21 @@ void zmapControlWindowSetStatus(ZMap zmap)
 	gtk_label_set_text(GTK_LABEL(zmap->status_revcomp), strand_txt) ;
 
 
-      /* MH17: how tedious...
-       * due to scope issues we can't see the view of the window
-       * the view can return the sequence span which is in fwd strand
-       * but the windowcoordpairtodisplay func assumes 'current fwd strand'
-       * so we get to write another function to access the same data
-       * and introduce yet more repetition of code
-       * these functions were written to provide a reliable single point of access
-       * but you have to feed them the right data or else they don't work
-       */
-
 #if NO_SCOPE_FOR_IMPROVEMENT
 //	if (zMapViewGetFeaturesSpan(view, &start, &end))
 	  {
 	    zmapWindowCoordPairToDisplay(window,
 //					 start, end,
-                              window->min_coord,window->max_coord,
+					 window->min_coord,window->max_coord,
 					 &start, &end) ;
 #else
       if(zmapWindowGetCurrentSpan(window,&start,&end))
-      {
+	{
 #endif
           coord_txt = g_strdup_printf(" %d  %d ", start, end) ;
           gtk_label_set_text(GTK_LABEL(zmap->status_coords), coord_txt) ;
           g_free(coord_txt) ;
-      }
+	}
 
 	free_this = status_text = zMapViewGetStatusStr(view) ;
 
@@ -237,7 +227,7 @@ void zmapControlWindowSetStatus(ZMap zmap)
       GdkWindow * win;
 
 #if GTK_MAJOR_VERSION == 2 && GTK_MINOR_VERSION < 14
-            win = zmap->status_entry->window;
+            win = zmap->status_entry->window ;
 #else
       win = gtk_widget_get_window(zmap->status_entry);
 #endif
@@ -246,8 +236,8 @@ void zmapControlWindowSetStatus(ZMap zmap)
   }
 #endif
 
-  if(free_this)
-      g_free(status_text);
+  if (free_this)
+    g_free(status_text) ;
 
   return ;
 }
