@@ -3175,7 +3175,9 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
 	      is_continue = FALSE ;
 
-	      if (view_con->step_list)
+	      if (view_con->step_list && 
+                  view_con->step_list->current &&
+                  view_con->step_list->current->data)
 		{
 		  step = (ZMapViewConnectionStep) view_con->step_list->current->data;
 		  is_continue = (step->on_fail == REQUEST_ONFAIL_CONTINUE);
