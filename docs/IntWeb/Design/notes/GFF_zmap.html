@@ -211,7 +211,7 @@ bigWig = short-read-coverage
 </p>
 
 <h4>User Chosen Styles</h4>
-<p>This will be implemented in stages: first the user may choose another predefined style, second colours may be assigned and (possibly) third a dialog will be provided to allow more detailed changes. Initially user defined style choices will not be saved ans after a restart they will have to reset these.
+<p>This will be implemented in stages: first the user may choose another predefined style, second colours may be assigned and (possibly) third a dialog will be provided to allow more detailed changes. Initially user defined style choices will not be saved as after a restart they will have to reset these.
 </p>
 <h5>Choosing another existing style</h5>
 <p>A right click menu will allow the user to use any given style for a set of features - as features have thier style defined by thier containing featureset this will always affect all the other features in that set on display.  Note that if several featuresets are displayed in one column this will not affect the other features.
@@ -237,7 +237,7 @@ bigWig = short-read-coverage
 
 <a name="scripts"></a>
 <h3>Handling server script interfaces </h3>
-<p>File/Import has been implemented using some hard coded scripts and arguments, and Otterlace pipe servers use script and arg combinations specifed in server stanzas.  Each of these have parameters added or substituted on demand (eg coordinates), and the zmap scripts take slightly different arguments from the otterlace ones (this is triggered by the cvser=Otter option in [ZMap]).
+<p>File/Import has been implemented using some hard coded scripts and arguments, and Otterlace pipe servers use script and arg combinations specified in server stanzas.  Each of these have parameters added or substituted on demand (eg coordinates), and the zmap scripts take slightly different arguments from the otterlace ones (this is triggered by the cvser=Otter option in [ZMap]).
 </p>
 
 <p>OTF file requests are implemented by creating a config file in memory and feeding this into the server code, and the scripts and parameters are hard coded.  This is partly because the script operation requires specific information and this varies according to the type of file, but we would like to allow for extra flexibility, to allow modified scripts to be used to read in data in other formats currently unspecified.
@@ -263,13 +263,32 @@ bigwig_get = bigwig; -csver=GRCh37; -gff_version=2
 <p>
 <p>Scripts will be run with the following arguments added:
 <ul>
-<li><b>GFF</b>--file --start, --end, --gff_seqname --mapto
-<li><b>bigWig</b>--file --start, --end, --gff_feature_source --chr  --gff_seqname --strand
-<li><b>BAM</b>--file --start, --end, --gff_feature_source --chr --gff_seqname
+<li><b>GFF</b>
+  --file,
+  --start,
+  --end,
+  --seq_id,
+  --gff_seqname,
+  --mapto,
+<li><b>bigWig</b>
+  --file,
+  --start,
+  --end,
+  --gff_feature_source,
+  --seq_id,
+  --gff_seqname,
+  --strand,
+<li><b>BAM</b>
+  --file,
+  --start,
+  --end,
+  --gff_feature_source,
+  --seq_id,
+  --gff_seqname,
 </ul>
 </p>
 <h4>A note about the mapto argument</h4>
-<p>This was inteneded for use in a standalone ZMap to cater for GFF and ACE sessions where sequences can be 1-based, (or even subsequences of clones).  In the Otterlace environnent it makes little sense, except in the case of importing a 1-based GFF file into an Otter session.  Therefore in an Otterlace session it will be omitted from BAM abd bigWig requests.
+<p>This was intended for use in a standalone ZMap to cater for GFF and ACE sessions where sequences can be 1-based, (or even subsequences of clones).  In the Otterlace environnent it makes little sense, except in the case of importing a 1-based GFF file into an Otter session.  Therefore in an Otterlace session it will be omitted from BAM and bigWig requests.
 </p>
 
 <h4>Otterlace script interface summarised</h4>

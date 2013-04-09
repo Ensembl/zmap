@@ -15,7 +15,7 @@ Window decorations such as the mark are implemented as ZMapWindowCanvasFeaturese
 <p> Currently the window canvas contains a context, and align, a block and several column groups.  It should be relatively easy to remove the context and align groups sd they no longer have any function, although it is best to be aware that sometimes the exsiting code will refer to column parent and grandparent groups. However, any information that is used from these objects is available from the FeatureContext and therefore any code changes needed will be simple.
 </p>
 
-<p>Each column group may contain zero or more ZMapWindowCanvasFeatureset objects.  Most columns will contain exactly one, which is a prrequisite for bumping to work on all the features in the column - bumping is done by the CanvasFeatureset and if a column contains several of these they will overlap, whcih i what would be required eg for two sets of graph daty such as GC skew with rolling window sizes of 50 and 500 for example.
+<p>Each column group may contain zero or more ZMapWindowCanvasFeatureset objects.  Most columns will contain exactly one, which is a prrequisite for bumping to work on all the features in the column - bumping is done by the CanvasFeatureset and if a column contains several of these they will overlap, which is what would be required eg for two sets of graph daty such as GC skew with rolling window sizes of 50 and 500 for example.
 </p>
 
 <h3>See also</h3>
@@ -35,7 +35,7 @@ Window decorations such as the mark are implemented as ZMapWindowCanvasFeaturese
 <h4>Strand Separator</h4>
 <p>There are no longer any strand groups, and reverse strand columns are display on the left by a simple process of sorting columns into the correct order.  The strand separator is implemented as a hard coded forward strand column. It could be converted to ZMAPSTRAND_NONE easily but that would require adding some extra code to the sorting algorithm.  (Formerly there were three strand groups in each block).
 </p>
-<p>The strand separator column is hard coded to have a fixed width style with a yellow background, whcih means that is will always display, and in a break from original practice appears before any data is loaded.
+<p>The strand separator column is hard coded to have a fixed width style with a yellow background, which means that it will always display, and in a break from original practice appears before any data is loaded.
 Strand separator features (search hit markers) are added to the column usign one of more CanavsFeaturesets - each search may be kept when perfoming another.
 </p>
 
@@ -85,7 +85,7 @@ Note that background CanvasFeatureset objects must appear at the head of each Co
 <p>Formerly the window width was set by a callback in the ContainerContext code as part of a FooCanvas update, which resulted in further expose events caused by the required set scroll region call.  Ths code has been removed and window width is set by foreground ZMap code called by <b>zMapWindowFullReposition()</b>, which has been optimised to expose less than the full window if possible.
 </p>
 
-<p>Zoom to functions now call a specific ZoomTo function whcih prevents extra expose events being generated, using a new <b> foo_canvas_busy()</b> function.  NOTE that the back button and possibly some other ZMap nuances may still have room for similar optimisation.
+<p>Zoom to functions now call a specific ZoomTo function which prevents extra expose events being generated, using a new <b> foo_canvas_busy()</b> function.  NOTE that the back button and possibly some other ZMap nuances may still have room for similar optimisation.
 </p>
 <p> The foo canvas still causes bouncing expose events due to foo_canvas_request_refresh() calling foo_canvas_update() which can queue further exposes.  it should be possible to reduce this to one expose per referesh call.  Currently ZMap will alsmost always pain each window twice for any Zoom operation, which is a lot better than the previous "eight or more" but still not perfect.
 </p>

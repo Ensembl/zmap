@@ -5,9 +5,431 @@
 <!--#include virtual="/perl/header"-->
 
 
-<p>This is simply a collection of notes about coding stuff to maintain consistency.</p>
+<style>
+pre{ width: 90%; background-color: lightblue; border-style: solid; border-width: 1px; padding: 10px }
+.example{ border-color: #000000 }
+</style>
 
-<h2>Indenting</h2>
+<h1>Annotools Coding Style</h1>
+
+<p>No one coding style suits all, no one coding style is perfect. The coding style
+chosen for Annotools projects is based on experience of working with a number of other styles
+over the years and has several objectives:</p>
+
+<ul>
+  <li>To guard against coding errors, e.g. dangling else's, operator precedence errors.</li>
+  <li>To ensure that all developers can quickly and easily navigate through all source files.</li>
+  <li>To ensure that code is as readable as possible.</li>
+</ul>
+
+<p>All developers are expected to use this and only this style.</p>
+
+
+
+<h2>Contents</h2>
+
+
+<p><a href="#file_naming">Directory/File Naming</a></p>
+<p><a href="#header_file_layout">Header File Layout</a></p>
+<p><a href="#code_file_layout">Code File Layout</a></p>
+<p><a href="#indenting">Indentation</a></p>
+<p><a href="#commenting">Commenting</a></p>
+<p><a href="#naming">Type, Function and variable naming</a></p>
+<p><a href="#return_values">Function return values</a></p>
+
+
+
+<a name="file_naming"></a>
+<h2>Directory/File Naming</h2>
+
+<p>Naming conventions for directories and files are:</p>
+
+
+<pre><code>     directory:  zmap&lt;Package&gt;
+
+ public header:  zmap&lt;Package&gt;&lt;Purpose&gt;.h
+
+private header:  zmap&lt;Package&gt;&lt;Purpose&gt;_P.h
+
+          code:  zmap&lt;Package&gt;&lt;Purpose&gt;.c
+
+e.g.
+
+     directory:  src/zmapView
+
+ public header:  src/include/ZMap/zmapView.h
+
+private header:  src/zmapView/zmapView_P.h
+
+          code:  src/zmapView/zmapViewCallBlixem.c
+</code></pre>
+
+<p>Private headers should be in their <b>package</b> directory, public headers
+should be in <b>src/include/ZMap</b>.</p>
+
+
+
+<a name="header_file_layout"></a>
+<h2>Header file files</h2>
+
+
+<p>The standard for naming header files is:</p>
+
+<pre><code>  public header: zmapXXXX.h
+
+ private header: zmapXXXX_P.h
+</code></pre>
+
+
+<p><b>ALL</b> headers must be protected from multiple inclusion by an
+<b>#ifndef</b> macro, the standard is for the symbol for the macro to be
+derived from the filename of the header file:</p>
+
+<pre><code>  public header: zmapXXXX.h
+
+macro symbol: ZMAP_XXXX_H
+
+
+private header: zmapXXXX_P.h
+
+  macro symbol: ZMAP_XXXX_H
+
+
+So in the header file:
+
+#ifndef UNIQUE_DEF_SYMBOL
+#define UNIQUE_DEF_SYMBOL
+
+&lt; all header declares &gt;
+
+#endif /* !UNIQUE_DEF_SYMBOL */
+</code></pre>
+
+
+<p>The standard layout for header files is:</p>
+
+
+<pre><code>/*  File: FILE NAME
+ *  Author: YOUR NAME (YOUR EMAIL ADDRESS)
+ *  Copyright (c) 2006-2013: Genome Research Ltd.
+ *-------------------------------------------------------------------
+ * ZMap is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ * or see the on-line version at http://www.gnu.org/copyleft/gpl.txt
+ *-------------------------------------------------------------------
+ * CREDITS
+ *
+ * Description: 
+ *
+ *-------------------------------------------------------------------
+ */
+#ifndef UNIQUE_DEF_SYMBOL
+#define UNIQUE_DEF_SYMBOL
+
+other #includes
+
+macros
+
+typedefs
+
+function prototypes
+
+#endif /* !UNIQUE_DEF_SYMBOL */
+</code></pre>
+
+<p>An abbreviated example for zmap code:</p>
+
+<pre><code>/*  File: zmapGFF.h
+ *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
+ *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *-------------------------------------------------------------------
+ * ZMap is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ * or see the on-line version at http://www.gnu.org/copyleft/gpl.txt
+ *-------------------------------------------------------------------
+ * This file is part of the ZMap genome database package
+ * originated by
+ * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *
+ * Description: Interface to a GFF parser, the parser works in a
+ *              "line at a time" way, the caller must pass complete
+ *              GFF lines to the parser which then builds up arrays
+ *              of ZMapFeatureStruct's, one for each GFF source.
+ *
+ *-------------------------------------------------------------------
+ */
+#ifndef ZMAP_GFF_H
+#define ZMAP_GFF_H
+
+#include &lt;glib.h&gt;
+
+#include &lt;ZMap/zmapFeature.h&gt;
+
+
+/* An instance of a parser. */
+typedef struct ZMapGFFParserStruct_ *ZMapGFFParser ;
+
+
+/* Feature clip mode, selects how individual feature coords should be clipped in relation
+ * to the requested feature range (the gff file may contain features that are outside the
+ * requested range. */
+typedef enum
+  {
+    GFF_CLIP_NONE,					    /* Don't clip feature coords at all. */
+    GFF_CLIP_OVERLAP,					    /* Exclude features outside the range,
+							       clip anything that overlaps (default). */
+    GFF_CLIP_ALL					    /* Exclude features outside or
+							       overlapping. */
+  } ZMapGFFClipMode ;
+
+
+
+ZMapGFFParser zMapGFFCreateParser(char *sequence, int features_start, int features_end) ;
+gboolean zMapGFFParserInitForFeatures(ZMapGFFParser parser, GHashTable *sources, gboolean parse_only) ;
+
+
+#endif /* ZMAP_GFF_H */
+</code></pre>
+
+
+
+<a name="code_file_layout"></a>
+<h2>Code file layout</h2>
+
+
+<pre><code>/*  File: FILE NAME
+ *  Author: YOUR NAME (YOUR EMAIL ADDRESS)
+ *  Copyright (c) 2006-2013: Genome Research Ltd.
+ *-------------------------------------------------------------------
+ * ZMap is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ * or see the on-line version at http://www.gnu.org/copyleft/gpl.txt
+ *-------------------------------------------------------------------
+ * CREDITS
+ *
+ * Description: 
+ *
+ * Exported functions: See XXXXXXXXXXXXX.h
+ *
+ *-------------------------------------------------------------------
+ */
+
+INCLUDES SECTION
+
+#include  &lt;ZMap/zmap.h&gt;
+
+system includes
+
+ZMap includes
+
+local includes
+
+
+MACRO/TYPDEF/PROTYPE SECTION
+
+local macro definitions
+
+local typedef definitions
+
+local function prototypes
+
+
+GLOBAL VARIABLE SECTION
+
+external global variables
+
+local global variables
+
+
+FUNCTION SECTION
+
+External package interface functions
+
+External package internal functions
+
+local functions
+
+
+</code></pre>
+
+<p>An abbreviated example:</p>
+
+<pre><code>/*  File: zmapAppconnect.c
+ *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
+ *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *-------------------------------------------------------------------
+ * ZMap is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ * or see the on-line version at http://www.gnu.org/copyleft/gpl.txt
+ *-------------------------------------------------------------------
+ * This file is part of the ZMap genome database package
+ * and was written by
+ *     Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk and,
+ *       Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *  Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *
+ * Description: Creates sequence chooser panel of zmap application
+ *              window.
+ *
+ * Exported functions: See zmapApp_P.h
+ *-------------------------------------------------------------------
+ */
+
+#include &lt;ZMap/zmap.h&gt;
+
+#include &lt;stdlib.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;string.h&gt;
+
+#include &lt;ZMap/zmapUtils.h&gt;
+#include &lt;ZMap/zmapAppServices.h&gt;
+#include &lt;zmapApp_P.h&gt;
+
+
+/*
+ *                 External interface.
+ */
+
+GtkWidget *zmapMainMakeConnect(ZMapAppContext app_context, ZMapFeatureSequenceMap sequence_map)
+{
+  GtkWidget *frame ;
+
+  frame = zMapCreateSequenceViewWidg(createThreadCB, app_context, sequence_map) ;
+
+  return frame ;
+}
+
+
+
+/*
+ *         Internal routines.
+ */
+
+static void createThreadCB(ZMapFeatureSequenceMap sequence_map, gpointer user_data)
+{
+  ZMapAppContext app_context = (ZMapAppContext)user_data ;
+
+  zmapAppCreateZMap(app_context, sequence_map) ;
+
+  return ;
+}
+</code></pre>
+
+
+
+<a name="public_private_headers"></a>
+<h2>Public and Private Headers</h2>
+
+
+
+
+
+
+
+
+
+<a name="indenting"></a>
+<h2>Indentation</h2>
+
+
+
+<P>The standard for code has been to indent by two for each block, there seems
+no reason to change it. Line length should be kept to somewhere between 80 up to
+a maximum of 120 chars, i.e. something that will fit comfortably on to a screen with a reasonable
+font size. Do not exceed lines of length 120 chars.</p>
+
+
+<p>Here is the standard indentation for a function:</p>
+
+<pre><code>int func(void)
+{
+  int some_var ;
+
+  if (blah)
+    {
+      call_something() ;
+    }
+
+
+  switch (dialog_type)
+    {
+    case ZMAP_DIALOG_SHOW:
+      dialog_text = "Show" ;
+      break ;
+    case ZMAP_DIALOG_EXPORT:
+      dialog_text = "Export" ;
+      break ;
+    default:
+      zMapAssertNotReached() ;
+      break ;
+    }
+
+
+  while (window_array->len)
+    {
+      stuff....
+    }
+
+
+  do
+    {
+      stuff......
+    }
+  while((list = g_list_next(list)));
+
+
+  return ;
+}
+</code></pre>
+
+
+
 
 <P>A good way to maintain consistency is have the editor do the indenting/commenting
 etc. If you use the right profile code then there are some emacs functions
@@ -20,101 +442,192 @@ to do this which include:</p>
 </ul>
 
 
-<P>The standard for code has been to indent by two for each block, there seems
-no reason to change it. Line length should be kept to somewhere between 80 and
-120 chars, i.e. something that will fit comfortably on to a screen with a reasonable
-font size. <b>BUT</b> exceeding this length occasionally is not a problem.</p>
 
 
-<pre><code>int func(void)
-{
-int some_var ;
-
-if (blah)
-{
-call_something() ;
-}
-
-return ;
-}
-</code></pre>
-
-
-
-<h2>Commenting Style</h2>
+<a name="commenting"></a>
+<h2>Commenting</h2>
 
 <P>Block comments and line comments should be in this style:</P>
 
-
 <pre><code>
-if (blah)
+  if (blah)
+    {
+      /* This is quite a long block comment that runs to more than one
+       * line. */
+      call_something() ;				    /* Starts at col. 60 */
+    }
+</code></pre>
+
+<P><b>All</b> functions should be directly preceded by a block comment that
+describes what the function does:</P>
+
+
+<pre><code>/* This function does absolutely nothing. */
+int func(void)
 {
-/* This is quite a long block
-* comment that runs to more than one
-* line. */
-call_something() ;				    /* unknown function */
+  return ;
+}
+</code></pre>
+
+<p>Please do <b>not</b> use the "//" style of C++, unfortunately it has been introduced in
+a few places and it jars with the standard style...i.e. it's too late to introduce
+this now, however handy it might be !</p>
+
+
+<a name="naming"></a>
+<h2>Type, Function and variable naming</h2>
+
+<h4>General naming conventions:</h4>
+
+
+<pre><code>Types are capitalised and always start uppercased:
+
+typedef struct MyObjStructName
+{
+  stuff....
+} MyObjStruct, *MyObj ;
+
+
+Functions are capitalised and start lowercased:
+
+void myFunctionName(params)
+{
+  return ;
+}
+
+
+
+Variables are lower cased with internal '_' to separate parts:
+
+{
+  int my_int = 0 ;
+  char *my_stupidly_extremely_long_variable_name ;
+
+  and so on....
 }
 </code></pre>
 
 
 
-<h2>Type, Function and variable naming</h2>
+<h4>Names and Scope</h4>
 
-<P>General naming conventions:</p>
+<P>It's useful to adopt different naming styles for external interface functions, internal interface
+functions and static functions so that name space collisions are minimised and the external symbols
+kept tidy:</p>
 
+<pre><code>External interface typedefs should always be prefixed with "<b>ZMap</b>":
 
-<ul>
-  <li><b>Types:</b> ThisIsATypeName
-  <li><b>Functions:</b> aFunctionName
-  <li><b>Variables:</b> a_variable_name
-</ul>
-
-
-
-<h3>Function names</h3>
-
-<P>Its useful to adopt different naming styles for external interface functions, internal interface
-functions and static functions:</p>
-
-
-<ul>
-  <li><b>External interface functions</b> have external linkage, are declared in <b>public</b>
-      headers and should be named:
-      <ul>
-	<li><b>zMapXXXXX</b>
-      </ul>
-  <li><b>Internal interface functions</b> have external linkage, are declared in <b>private</b>
-      headers and should be named:
-      <ul>
-	<li><b>zmapXXXXX</b>
-      </ul>
-  <li><b>static functions</b> have internal linkage only, are declared within the file
-      where they are defined and should be named:
-      <ul>
-	<li><b>anythingYouLike</b>
-      </ul>
-</ul>
+typdef struct ZMapObjStructName
+{
+  stuff....
+} ZMapObjStruct, *ZMapObj ;
 
 
 
-<h3>Function return values</h3>
+Package external interface functions should be prefixed with "<b>zMapPackage</b>":
 
-<P>By convention the first local variable declared in a function should be the return value
-which should be correctly initialised:</p>
+int zMapWindowCreate(params) ;
 
-<pre><code>
-gboolean someFunc(void)
+
+
+Package internal interface functions with external linkage should be prefixed with "<b>zmapPackage</b>":
+
+int zmapWindowCreateButton(params) ;
+
+
+
+Internal functions should have <b>no</b> prefix:
+
+static int makeNewWindow(params) ;
+</code></pre>
+
+
+
+
+<a name="return_values"></a>
+<h2>Function return values</h2>
+
+<P>By convention the first variable declared in a function should be the return value
+which should <b>ALWAYS</b> be correctly initialised:</p>
+
+<pre><code>gboolean someFunc(void)
 {
   gboolean result = FALSE ;
-
-
 
   return result ;
 }
 </code></pre>
 
 
-<p>This helps a lot with scanning the code.</p>
+<p>This helps a lot with scanning the code and ensures that the return variable will always
+have been initialised even if the body of the function is changed.</p>
+
+<p>Try to avoid multiple return statements in a function:</p>
+
+<pre><code>Write functions like this:
+
+gboolean someFunc(gboolean do_something)
+{
+  gboolean result = FALSE ;
+
+  if (do_something)
+    {
+      if (some_factor)
+        result = TRUE ;
+    }
+
+  return result ;
+}
+
+rather than this:
+
+gboolean someFunc(gboolean do_something)
+{
+  if (!do_something)
+    return FALSE ;
+
+  if (some_factor)
+    return TRUE ;
+  else
+    return FALSE ;
+}
+</code></pre>
+
+
+
+
+
+
+
+
+<a name="defining_declaring"></a>
+<h2>Defining and declaring structs, variables etc.</h2>
+
+<h3>Structs</h3>
+
+<P>Please follow the following convention for defining new structs:</p>
+
+<pre><code>typedef struct <b>MyNewStructName</b>
+{
+
+  struct contents
+
+} <b>MyNewStruct</b>, *<b>MyNew</b> ;
+
+
+use in your code like this:
+
+{
+  MyNewStruct a_new_struct_instance ;
+  MyNew new_struct_ptr ;
+
+  new_struct_ptr = &amp;a_new_struct_instance ;
+}
+</code></pre>
+
+<p>Adding <b>MyNewStructName</b> ensures that most debuggers will display the name of the
+struct so you don't have to expand the struct to what it is.</p>
+
 
 
 

@@ -1,4 +1,3 @@
-
 /*  File: zmapWindowCanvasLocus.c
  *  Author: malcolm hinsley (mh17@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -30,6 +29,8 @@
  * implements callback functions for FeaturesetItem locus features
  *-------------------------------------------------------------------
  */
+#ifndef ZMAP_CANVAS_LOCUS_H
+#define ZMAP_CANVAS_LOCUS_H
 
 #include <ZMap/zmap.h>
 
@@ -38,3 +39,5 @@
 void zMapWindowCanvasLocusInit(void);
 
 void zMapWindowCanvasLocusSetFilter(ZMapWindowFeaturesetItem featureset, GList * filter);
+
+#endif /* !ZMAP_CANVAS_LOCUS_H */

@@ -4,7 +4,6 @@
 use strict;
 use warnings;
 
-use Carp;
 use Getopt::Long 'GetOptions';
 use Pod::Usage;
 
@@ -39,6 +38,8 @@ sub get_params
 	pod2usage(1) if $missing;
 
 	$params{$_} = uri_unescape($params{$_}) for keys %params;
+
+	return;
 }
 
 
@@ -52,7 +53,7 @@ sub main
 	{
 		my $sam = Bio::DB::Sam->new
 		(
-			-bam   => uri_unescape( $file ),	# unescape probably not needed, was copied from other script
+			-bam   => uri_unescape( $file ), # unescape probably not needed, was copied from other script
 			# -fasta => $fasta_path,
 		);
 
@@ -67,6 +68,8 @@ sub main
 			printf("%s\t%d\n", $seq,  $sam->length($seq));
 		}
 	}
+
+	return;
 }
 
 main();
@@ -98,7 +101,6 @@ B<This program> will read the given input file and list the reference sequences 
 
 =head1 COPYRIGHT
 
- Author: Malcolm Hinsley (mh17@sanger.ac.uk)
  Copyright (c) 2006-2012: Genome Research Ltd.
 ------------------------------------------------------------------
 ZMap is free software; you can redistribute it and/or
@@ -122,6 +124,6 @@ originated by
        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
 
+=head1 AUTHOR
 
-
-
+Malcolm Hinsley B<email> mh17@sanger.ac.uk

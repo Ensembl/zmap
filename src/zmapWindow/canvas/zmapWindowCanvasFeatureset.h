@@ -306,11 +306,12 @@ double zMapWindowCanvasFeatureGetNormalisedScore(ZMapFeatureTypeStyle style, dou
 
 double zMapWindowCanvasFeaturesetGetFilterValue(FooCanvasItem *foo);
 int zMapWindowCanvasFeaturesetGetFilterCount(FooCanvasItem *foo);
-int zMapWindowCanvasFeaturesetFilter(gpointer filter, double value);
+int zMapWindowCanvasFeaturesetFilter(gpointer filter, double value, gboolean highlight_filtered_columns);
 
 
 void zMapWindowCanvasFeaturesetRequestReposition(FooCanvasItem *foo);
 
+int zMapWindowFeaturesetItemGetNFiltered(FooCanvasItem *item);
 
 
 #endif /* ZMAP_WINDOW_FEATURESET_H */

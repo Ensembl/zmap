@@ -26,7 +26,7 @@
  *
  * Description:
  *
- * a simple implemenation of a skip list data structure
+ * a simple implementation of a skip list data structure
  * NOTE we expect the lists to be static except exceptionally
  * and the module is designed with this in mind
  * used initially by zmapWindowGraphDensityItem.c

@@ -1,4 +1,3 @@
-/*  Last edited: Jul 23 14:45 2012 (edgrif) */
 /*  File: zmapView_P.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -22,7 +21,7 @@
  * originated by
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description:
  *-------------------------------------------------------------------
@@ -41,20 +40,6 @@
 
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-typedef enum
-  {
-    BLIXEM_NO_MATCHES,
-    BLIXEM_FEATURE_SINGLE_MATCH,			    /* Single match of a single sequence. */
-    BLIXEM_FEATURE_ALL_MATCHES,				    /* All matches of a single sequence. */
-    BLIXEM_FEATURESET_MATCHES,				    /* All matches of all sequences of a set. */
-    BLIXEM_MULTI_FEATURESET_MATCHES,			    /* All matches of all sequences in several sets. */
-    BLIXEM_ALL_FEATURESET_MATCHES			    /* All matches of all sequences in all sets. */
-  } ZMapViewBlixemAlignSet ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
 
 /* IF WE REFACTORED VIEW TO HAVE NO WINDOWS ETC THEN THIS COULD GO.... */
 /* We have this because it enables callers to call on a window but us to get the corresponding view. */
@@ -66,6 +51,90 @@ typedef struct _ZMapViewWindowStruct
 
 } ZMapViewWindowStruct ;
 
+
+
+
+/* 
+ * Session data, each connection has various bits of information recorded about it
+ * depending on what type of connection it is (http, acedb, pipe etc).
+ */
+
+typedef struct ZMapViewSessionServerStructName
+{
+  ZMapURLScheme scheme ;
+  char *url ;
+  char *protocol ;
+  char *format ;
+
+  union							    /* Keyed by scheme field above. */
+  {
+    struct
+    {
+      char *host ;
+      int port ;
+      char *database ;
+    } acedb ;
+
+    struct
+    {
+      char *path ;
+    } file ;
+
+    struct
+    {
+      char *path ;
+      char *query ;
+    } pipe ;
+  } scheme_data ;
+
+} ZMapViewSessionServerStruct, *ZMapViewSessionServer ;
+
+
+/* Malcolm has introduced this and put it in the threads package where it is NOT used.
+ * Is it necessary.....revisit this...... */
+typedef enum
+  {
+    THREAD_STATUS_INVALID,
+    THREAD_STATUS_FAILED,				    /* Thread has failed (and needs killing ?). */
+    THREAD_STATUS_PENDING,				    /* ????? */
+    THREAD_STATUS_OK					    /* Thread functioning normally. */
+  } ZMapViewThreadStatus ;
+
+
+
+typedef struct _ZMapViewConnectionStepListStruct *ZMapViewConnectionStepList ;
+
+
+/* Represents a single connection to a data source. 
+ * We maintain state for our connections otherwise we will try to issue requests that
+ * they may not see. curr_request flip-flops between ZMAP_REQUEST_GETDATA and ZMAP_REQUEST_WAIT */
+typedef struct ZMapViewConnectionStructName
+{
+  ZMapView parent_view ;
+
+  char *url ;						    /* For displaying in error messages etc. */
+
+  ZMapViewSessionServerStruct session ;			    /* Session data. */
+
+  ZMapThreadRequest curr_request ;
+
+  ZMapThread thread ;
+
+  gpointer request_data ;				    /* User data pointer, needed for step implementation. */
+
+  ZMapViewConnectionStepList step_list ;		    /* List of steps required to get data from server. */
+
+
+  /* UM...IS THIS THE RIGHT PLACE FOR THIS....DOES A VIEWCONNECTION REPRESENT A SINGLE THREAD....
+   * CHECK THIS OUT.......
+   *  */
+  ZMapViewThreadStatus thread_status ;			    /* probably this is badly placed,
+							       but not as badly as before 
+							       at least it has some persistance now */
+
+  gboolean show_warning ;
+
+} ZMapViewConnectionStruct, *ZMapViewConnection ;
 
 
 
@@ -93,14 +162,8 @@ typedef enum
   } StepListActionOnFailureType ;
 
 
-
-/*
- * Callbacks returning a boolean should return TRUE if the connection should continue,
- * FALSE if it's failed, in this case the connection is immediately removed from the steplist.
- *
- */
-
-
+/* Callbacks returning a boolean should return TRUE if the connection should continue,
+ * FALSE if it's failed, in this case the connection is immediately removed from the steplist. */
 
 /* Callback for dispatching step requests. */
 typedef gboolean (*StepListDispatchCB)(ZMapViewConnection connection, ZMapServerReqAny req_any) ;
@@ -110,9 +173,6 @@ typedef gboolean (*StepListProcessDataCB)(ZMapViewConnection connection, ZMapSer
 
 /* Callback for freeing step requests. */
 typedef void (*StepListFreeDataCB)(ZMapServerReqAny req_any) ;
-
-
-
 
 
 /* Represents a request composed of a list of dispatchable steps
@@ -132,7 +192,7 @@ typedef struct _ZMapViewConnectionStepListStruct
   StepListFreeDataCB free_func ;                    /* Called to free requests. */
 
   /* we may need a list of all connections here. */
-} ZMapViewConnectionStepListStruct, *ZMapViewConnectionStepList ;
+} ZMapViewConnectionStepListStruct ;
 
 
 /* Represents a sub-step to a connection that forms part of a step. */
@@ -168,33 +228,6 @@ typedef struct _ZMapViewConnectionStepStruct
 
 
 
-/* Represents a single connection to a data source. */
-/* We need to maintain state for our connections otherwise we will try to issue requests that
- * they may not see. curr_request flip-flops between ZMAP_REQUEST_GETDATA and ZMAP_REQUEST_WAIT */
-typedef struct _ZMapViewConnectionStruct
-{
-  /* I think we need some sort of status here.... */
-
-  char *url ;                                       /* For displaying in error messages etc. */
-
-  ZMapView parent_view ;
-
-  ZMapThreadRequest curr_request ;
-
-  ZMapThread thread ;
-
-  gpointer request_data ;                           /* User data pointer, needed for step implementation. */
-
-  ZMapViewConnectionStepList step_list ;            /* List of steps required to get data from server. */
-
-  ThreadStatus thread_status;				    /* probably this is badly placed, but not as badly as before */
-  								    /* at least it has some persistance now */
-
-  gboolean show_warning;
-
-} ZMapViewConnectionStruct;
-
-
 
 /* A "View" is a set of one or more windows that display data retrieved from one or
  * more servers. Note that the "View" windows are _not_ top level windows, they are panes
@@ -218,6 +251,10 @@ typedef struct _ZMapViewStruct
   gulong map_event_handler ;				    /* map event handler id for xremote widget. */
   unsigned long xwid ;					    /* X Window id for the xremote widg. */
 
+  char *xwid_txt ;					    /* Text version of xwid. */
+
+
+
   guint idle_handle ;
 
   void *app_data ;					    /* Passed back to caller from view
@@ -226,19 +263,13 @@ typedef struct _ZMapViewStruct
   char *view_name ;					    /* An overall label for the view,
 							       defaults to the master sequence name. */
 
+  /* These seem like they are redundant and not sensible anyway...there won't just be one name.... */
   char *view_db_name ;
   char *view_db_title ;
 
 
+  ZMapFeatureSequenceMap view_sequence ;
 
-  /* THIS NEEDS TO GO I THINK, IT WILL BE REDUNDANT IN THE WORLD OF MULTIPLE BLOCKS ETC....
-   * WE NEED A VIEW NAME INSTEAD.... */
-  /* NOTE TO EG....DO WE NEED THESE HERE ANY MORE ???? */
-  /* This specifies the "context" of the view, i.e. which section of virtual sequence we are
-   * interested in. */
-//  gchar *sequence ;
-//  int start, end ;
-  ZMapFeatureSequenceMap view_sequence;       /* use complier to pinpoint use of sequence */
 
   /* This will need to be a full mapping of sequences, blocks etc in the end which will
    * be used both to set up the feature context so the right bits of feature get fetched
@@ -248,14 +279,19 @@ typedef struct _ZMapViewStruct
 							       of sequences to be displayed. */
 
 #ifdef NOT_REQUIRED_ATM
+  /* OH YES IT IS......WE DO NEED TO KNOW THIS..... */
+
   GList *sequence_2_server ;				    /* Some sequences may only be
 							       fetchable from some servers. */
 #endif /* NOT_REQUIRED_ATM */
 
 
-  int sources_loading;        /* how many active/ queued requests */
-                              /* this is not very neat as failures are dealt with in a complex way */
-  int sources_failed;		/* a count of the number that failed since the last data request, is reset on next load command */
+  int sources_loading ;					    /* how many active/queued requests,
+							       this is not very neat as failures
+							       are dealt with in a complex way */
+  int sources_failed ;					    /* A count of the number that failed
+							       since the last data request, is
+							       reset on next load command */
 
 
   GList *connection_list ;				    /* Of ZMapViewConnection. */
@@ -305,6 +341,8 @@ typedef struct _ZMapViewStruct
   gboolean columns_set;                   // if set from config style use config only
                                           // else use source featuresets in order as of old
 
+  gboolean highlight_filtered_columns;    /* True if filtered columns should be highlighted */
+  
   /* We need to know if the user has done a revcomp for a few reasons to do with coord
    * transforms and the way annotation is done....*/
   gboolean revcomped_features ;
@@ -317,21 +355,24 @@ typedef struct _ZMapViewStruct
 
   ZMapXRemoteObj xremote_client;
 
+  /* Crikey, why is this here...??? Maybe it's ok...but seems more like a window thing..... */
   GList *navigator_set_names;
+
 
   /* view spawns blixem processes when requested, kill_blixems flag controls whether they are
    * killed when view dies (default is TRUE). */
   gboolean kill_blixems ;
-  GList *spawned_processes;
-
-  GHashTable *cwh_hash;
+  GList *spawned_processes ;
 
 
-  /* Struct to hold textual information about all connected data sources. */
-  ZMapViewSession session_data ;
+  GHashTable *cwh_hash ;
 
 
 } ZMapViewStruct ;
+
+
+
+
 
 
 
@@ -378,9 +419,15 @@ gboolean zmapViewCWHRemoveContextWindow(GHashTable *table, ZMapFeatureContext *c
                                         ZMapWindow window, gboolean *is_only_context);
 void zmapViewCWHDestroy(GHashTable **hash);
 
-void zmapViewSessionAddServer(ZMapViewSession session_data, ZMapURL url, char *format) ;
-void zmapViewSessionAddServerInfo(ZMapViewSession session_data, char *database_path) ;
-void zmapViewSessionFreeServer(gpointer data, gpointer user_data_unused) ;
+void zmapViewSessionAddServer(ZMapViewSessionServer session_data, ZMapURL url, char *format) ;
+void zmapViewSessionAddServerInfo(ZMapViewSessionServer session_data, ZMapServerReqGetServerInfo session) ;
+void zmapViewSessionFreeServer(ZMapViewSessionServer session_data) ;
+
+ZMapViewConnection zmapViewRequestServer(ZMapView view, ZMapViewConnection view_conn,
+					 ZMapFeatureBlock block_orig, GList *req_featuresets,
+					 gpointer server, /* ZMapConfigSource */
+					 int req_start, int req__end,
+					 gboolean dna_requested, gboolean terminate, gboolean show_warning) ;
 
 ZMapViewConnectionStepList zmapViewStepListCreate(StepListDispatchCB dispatch_func,
 						  StepListProcessDataCB request_func,
@@ -403,7 +450,7 @@ void zmapViewStepListStepConnectionDeleteAll(ZMapViewConnection connection) ;
 gboolean zmapViewStepListAreConnections(ZMapViewConnectionStepList step_list) ;
 gboolean zmapViewStepListIsNext(ZMapViewConnectionStepList step_list) ;
 void zmapViewStepDestroy(gpointer data, gpointer user_data) ;
-void zmapViewStepListDestroy(ZMapViewConnection view_conn) ;
+void zmapViewStepListDestroy(ZMapViewConnectionStepList step_list) ;
 
 void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req_featuresets,
 		        ZMapConfigSource server,

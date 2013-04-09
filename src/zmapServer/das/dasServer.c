@@ -20,8 +20,8 @@
  * This file is part of the ZMap genome database package
  * and was written by
  *     Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk and,
- *          Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *       Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *       Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *  Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Connects to DAS v2 server to get data.
  *
@@ -30,11 +30,6 @@
  */
 
 #include <ZMap/zmap.h>
-
-
-
-
-
 
 #include <string.h>					    /* only for testing... */
 
@@ -47,6 +42,7 @@ typedef struct
   ZMapServerResponseType result ;
   DasServer server ;
   GHashTable *styles ;
+  int num_features ;
 } GetFeaturesStruct, *GetFeatures ;
 
 typedef struct
@@ -91,7 +87,7 @@ static gboolean createConnection(void **server_out,
 				 char *config_file, ZMapURL url, char *format,
                                  char *version_str, int timeout) ;
 static ZMapServerResponseType openConnection(void *server,ZMapServerReqOpen req_open) ;
-static ZMapServerResponseType getInfo(void *server, ZMapServerInfo info) ;
+static ZMapServerResponseType getInfo(void *server, ZMapServerReqGetServerInfo info) ;
 static ZMapServerResponseType getStyles(void *server, GHashTable **styles_out) ;
 static ZMapServerResponseType haveModes(void *server, gboolean *have_mode) ;
 static ZMapServerResponseType getSequences(void *server_in, GList *sequences_inout) ;
@@ -103,10 +99,12 @@ static ZMapServerResponseType getFeatureSets(void *server,
 					     GHashTable **featureset_2_column_inout,
 					     GHashTable **source_2_sourcedata_inout) ;
 static ZMapServerResponseType setContext(void *server, ZMapFeatureContext feature_context);
-static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles, ZMapFeatureContext feature_context) ;
+static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles,
+					  ZMapFeatureContext feature_context, int *num_features_out) ;
 static ZMapServerResponseType getContextSequence(void *server_in, GHashTable *styles, ZMapFeatureContext feature_context) ;
 static char *lastErrorMsg(void *server) ;
 static ZMapServerResponseType getStatus(void *server_conn, gint *exit_code, gchar **stderr_out);
+static ZMapServerResponseType getConnectState(void *server_conn, ZMapServerConnectStateType *connect_state) ;
 static ZMapServerResponseType closeConnection(void *server) ;
 static ZMapServerResponseType destroyConnection(void *server) ;
 
@@ -192,6 +190,7 @@ void dasGetServerFuncs(ZMapServerFuncs das_funcs)
   das_funcs->get_context_sequences = getContextSequence ;
   das_funcs->errmsg       = lastErrorMsg ;
   das_funcs->get_status   = getStatus ;
+  das_funcs->get_connect_state = getConnectState ;
   das_funcs->close        = closeConnection;
   das_funcs->destroy      = destroyConnection ;
 
@@ -382,7 +381,7 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
 }
 
 
-static ZMapServerResponseType getInfo(void *server_in, ZMapServerInfo info)
+static ZMapServerResponseType getInfo(void *server_in, ZMapServerReqGetServerInfo info)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -459,11 +458,23 @@ static ZMapServerResponseType haveModes(void *server_in, gboolean *have_mode)
 }
 
 
+/* UTTERLY POINTLESS....GET RID OF THIS.... */
 static ZMapServerResponseType getStatus(void *server_conn, gint *exit_code, gchar **stderr_out)
 {
-      *exit_code = 0;
-      *stderr_out = NULL;
-      return ZMAP_SERVERRESPONSE_OK;
+  *exit_code = 0;
+  *stderr_out = NULL;
+  return ZMAP_SERVERRESPONSE_OK;
+}
+
+
+/* Is the acedb server connected ? */
+static ZMapServerResponseType getConnectState(void *server_conn, ZMapServerConnectStateType *connect_state)
+{
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
+
+  /* No implementation currently. */
+
+  return result ;
 }
 
 
@@ -513,7 +524,8 @@ static ZMapServerResponseType setContext(void *server, ZMapFeatureContext featur
 }
 
 
-static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles, ZMapFeatureContext feature_context)
+static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles,
+					  ZMapFeatureContext feature_context, int *num_features_out)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK;
   DasServer server = (DasServer)server_in;
@@ -525,7 +537,10 @@ static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles, Z
 
   g_hash_table_foreach(feature_context->alignments, getFeatures4Aligns, (gpointer)&get_features);
 
-  return get_features.result;
+  result = get_features.result ;
+  *num_features_out = get_features.num_features ;
+
+  return result ;
 }
 
 

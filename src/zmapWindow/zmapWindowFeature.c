@@ -472,7 +472,7 @@ gboolean zMapWindowGetDNAStatus(ZMapWindow window)
    */
 
   /* check for style too. */
-  /* sometimes we don't have a featrue_context ... ODD! */
+  /* sometimes we don't have a feature_context ... ODD! */
   if(window->feature_context
      && zMapFindStyle(window->context_map->styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME)))
     {
@@ -1052,7 +1052,7 @@ static gboolean factoryFeatureSizeReq(ZMapFeature feature,
    * so guess what size we end up using....sigh...and in addition it's the block size
    * we should be using anyway.... */
 
-  if(featrue && feature->type == ZMAPSTYLE_MODE_RAW_SEQUENCE ||
+  if(feature && feature->type == ZMAPSTYLE_MODE_RAW_SEQUENCE ||
      feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
     {
       ZMapWindow window = (ZMapWindow)handler_data;

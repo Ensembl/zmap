@@ -1,4 +1,3 @@
-/*  Last edited: Jul 13 16:04 2011 (edgrif) */
 /*  File: zmapWindow.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -77,7 +76,7 @@ static ZMapGUIMenuItem makeMenuSequenceOps(ZMapWindow window,
 
 static void filterValueChangedCB(GtkSpinButton *spinbutton, gpointer user_data);
 static gboolean filterSpinButtonCB(GtkWidget *entry, GdkEvent *event, gpointer user_data);
-
+static GtkWidget *newSpinButton(void) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* Will be needed if we go back to complicated align/dna for each block menu system. */
@@ -85,21 +84,6 @@ static void fixSubMenuData(gpointer list_data, gpointer user_data) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 static void seqMenuCB(int menu_item_id, gpointer callback_data) ;
-
-
-
-
-GtkWidget *zmap_new_spin_button (void)
-{
-   GtkWidget *spinner;
-   GtkAdjustment *spinner_adj;
-
-   /* default to integer % */
-   spinner_adj = (GtkAdjustment *) gtk_adjustment_new (0.0, 0.0, 100.0, 1.0, 0.0, 0.0);
-   spinner = gtk_spin_button_new (spinner_adj, 1.0, 0);
-
-   return spinner;
-}
 
 
 
@@ -218,8 +202,8 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
   gtk_button_set_focus_on_click(GTK_BUTTON(zoomout_button), FALSE);
   gtk_box_pack_start(GTK_BOX(hbox), zoomout_button, FALSE, FALSE, 0) ;
 
-	/* filter selected column by score */
-  zmap->filter_but = filter_button = zmap_new_spin_button();
+  /* filter selected column by score */
+  zmap->filter_but = filter_button = newSpinButton();
   g_signal_connect(G_OBJECT(filter_button), "value-changed",
                    G_CALLBACK(filterValueChangedCB), (gpointer)zmap);
 
@@ -230,8 +214,6 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
 
 
   gtk_box_pack_start(GTK_BOX(hbox), filter_button, FALSE, FALSE, 0) ;
-
-
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 
@@ -246,6 +228,7 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
 
   return hbox ;
 }
+
 
 static void control_gtk_tooltips_set_tip(GtkTooltips *tooltip, GtkWidget *widget,
 					 char *simple, char *shortcut, char *full)
@@ -554,6 +537,20 @@ void zmapControlWindowSetZoomButtons(ZMap zmap, ZMapWindowZoomStatus zoom_status
  *  ------------------- Internal functions -------------------
  */
 
+
+static GtkWidget *newSpinButton(void)
+{
+  GtkWidget *spinner = NULL ;
+  GtkAdjustment *spinner_adj ;
+
+  /* default to integer % */
+  spinner_adj = (GtkAdjustment *) gtk_adjustment_new (0.0, 0.0, 100.0, 1.0, 0.0, 0.0) ;
+  spinner = gtk_spin_button_new (spinner_adj, 1.0, 0) ;
+
+  return spinner ;
+}
+
+
 /* This function implements menus that can be reached by right clicking on either of the
  * zoom main buttons, probably should generalise to handle all menus on buttons. */
 static gboolean zoomEventCB(GtkWidget *wigdet, GdkEvent *event, gpointer data)
@@ -596,22 +593,27 @@ static gboolean zoomEventCB(GtkWidget *wigdet, GdkEvent *event, gpointer data)
 /* handle text input and spin buttons */
 static void filterValueChangedCB(GtkSpinButton *spinbutton, gpointer user_data)
 {
-	ZMap zmap = (ZMap) user_data;
-	double value;
+  ZMap zmap = (ZMap) user_data;
+  double value;
+  
+  /* if we don't do this then with a busy column we get the column updateds but the spin button is delayed
+   * so we don't get inertaction with the filter score.  It's better this way.
+   */
+  if(zmap->filter_spin_pressed)
+    return;
+  
+  value = gtk_spin_button_get_value(spinbutton);
+  //printf("filter value %f %f\n", zmap->filter.value, value);
+  zmap->filter.value = value;
 
-	/* if we don't do this then with a busy column we get the column updateds but the spin button is delayed
-	 * so we don't get inertaction with the filter score.  It's better this way.
-	 */
-	if(zmap->filter_spin_pressed)
-		return;
-
-	value = gtk_spin_button_get_value(spinbutton);
-//printf("filter value %f %f\n", zmap->filter.value, value);
-	zmap->filter.value = value;
-	if(zmap->filter.func)
-		zmap->filter.n_filtered = zmap->filter.func(&zmap->filter, value);
-
-	filterSetHighlight(zmap);
+  if(zmap->filter.func)
+    {
+      ZMapView zmap_view = zMapViewGetView(zmap->focus_viewwindow);
+      gboolean highlight_filtered_columns = zMapViewGetHighlightFilteredColumns(zmap_view);
+      zmap->filter.n_filtered = zmap->filter.func(&zmap->filter, value, highlight_filtered_columns);
+    }
+  
+  filterSetHighlight(zmap);
 }
 
 

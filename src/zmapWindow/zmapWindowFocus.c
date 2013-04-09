@@ -117,7 +117,7 @@ typedef struct
  * howver they can have flags (an integer) and we can use that to provide a blank interface
  * these structs are held in a module global list, set by zMapWindowFocusCreate()
  * due to implemntation if we split a window then we get another one of thse with identical data
- * but it's too much grief to ammend the window code just now
+ * but it's too much grief to amend the window code just now
  */
 typedef struct _zmapWindowFocusCacheStruct
 {
@@ -1065,29 +1065,34 @@ static ZMapWindowFocusItem add_unique(ZMapWindowFocus focus,
 
 static void freeFocusItems(ZMapWindowFocus focus, ZMapWindowFocusType type)
 {
-  GList *l,*del;
-  ZMapWindowFocusItem li;
+  GList *l ;
 
-
-  for(l = focus->focus_item_set; l;)
+  for (l = focus->focus_item_set ; l ; )
     {
-      li = (ZMapWindowFocusItem) l->data;
-      del = l;
-      l = l->next;
+      ZMapWindowFocusItem focus_item ;
+      GList *del ;
+
+      focus_item = (ZMapWindowFocusItem)(l->data) ;
+      del = l ;
+      l = l->next ;
 
       if(type == WINDOW_FOCUS_GROUP_FOCUSSED)
-	li->flags &= ~WINDOW_FOCUS_GROUP_FOCUSSED;
+	focus_item->flags &= ~WINDOW_FOCUS_GROUP_FOCUSSED ;
       else
-	li->flags &= ~focus_group_mask[type];
+	focus_item->flags &= ~focus_group_mask[type] ;
 
-      highlightItem(focus->window,li);
+      highlightItem(focus->window, focus_item) ;
 
-      if(!(li->flags & WINDOW_FOCUS_GROUP_FOCUSSED))
+      if (!(focus_item->flags & WINDOW_FOCUS_GROUP_FOCUSSED))
 	{
-	  focusItemDestroy(del->data);
-	  focus->focus_item_set = g_list_delete_link(focus->focus_item_set,del) ;
-	  if(focus->hot_item == li->item)
-	    focus->hot_item = NULL;
+	  if (focus->hot_item == focus_item->item)
+	    focus->hot_item = NULL ;
+
+	  focusItemDestroy(focus_item) ;
+
+	  focus->focus_item_set = g_list_delete_link(focus->focus_item_set, del) ;
+
+	  l = focus->focus_item_set ;			    /* shouldn't this be reset !!!! */
 	}
     }
 

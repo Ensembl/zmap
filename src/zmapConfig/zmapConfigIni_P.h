@@ -1,4 +1,3 @@
-/*  Last edited: Jul 23 09:59 2012 (edgrif) */
 /*  File: zmapConfigIni_P.h
  *  Author: malcolm hinsley (mh17@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -22,8 +21,7 @@
  * originated by
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *         Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description:
  *
@@ -34,7 +32,7 @@
 #define ZMAP_CONFIGINI_P_H
 
 #include <ZMap/zmapConfigIni.h>
-#include <ZMap/zmapConfigStrings.h>       // hmmm... private header include global defines... cane be justfied perhaps?
+#include <ZMap/zmapConfigStrings.h>
 #include <ZMap/zmapConfigKeyboard.h>
 #include <ZMap/zmapConfigStyleDefaults.h>
 
@@ -62,22 +60,21 @@ typedef struct _ZMapConfigIniStruct
 
 } ZMapConfigIniStruct;
 
+
+
+
+
+/* OH CHRIST....WHAT IS THIS....FOR GOODNESS SAKE....RUBBISH, RUBBISH, RUBBISH.... */
 #ifdef MH17_IN_CONFIG_H
 
 
-/*! @addtogroup zmapconfig
- * @{
- *  */
 
-
-/*!
- * Supported data types for stanza elements. (see ZMapConfigStanzaElementStruct). */
+/* Supported data types for stanza elements. (see ZMapConfigStanzaElementStruct). */
 typedef enum {ZMAPCONFIG_INVALID, ZMAPCONFIG_BOOL, ZMAPCONFIG_INT,
             ZMAPCONFIG_FLOAT, ZMAPCONFIG_STRING} ZMapConfigElementType ;
 
 
-/*!
- * Defines an element of a stanza, is used both to specify a stanza spec (in which
+/* Defines an element of a stanza, is used both to specify a stanza spec (in which
  * case the "data" field must be used to give a default value), and also to return actual stanzas,
  * e.g. see zMapConfigGetStanzas().
  *
@@ -94,13 +91,11 @@ typedef struct
     int      i ;
     double   f ;
   } data ;                                    /*!< element data.  */
-} ZMapConfigStanzaElementStruct,
-  *ZMapConfigStanzaElement ;                        /*!< pointer to element struct. */
+} ZMapConfigStanzaElementStruct, *ZMapConfigStanzaElement ;
 
 
-/*@{*/
-/*!
- * A set of macros for accessing the data field of a particular element of an array
+
+/* A set of macros for accessing the data field of a particular element of an array
  * of ZMapConfigStanzaElementStruct. Very useful for initialising the array with data values
  * in preparation for creating a stanza.
  *
@@ -116,13 +111,11 @@ typedef struct
 (zMapConfigFindStruct((ARRAY), (ELEMENT_NAME)))->data.f
 #define zMapConfigGetStructString(ARRAY, ELEMENT_NAME)           \
 (zMapConfigFindStruct((ARRAY), (ELEMENT_NAME)))->data.s
-/*@}*/
 
 
 
-/*@{*/
-/*!
- * A set of macros for retrieving the data for a named element from the given stanza.
+
+/* A set of macros for retrieving the data for a named element from the given stanza.
  *
  * @param STANZA       The stanza containing the element.
  * @param ELEMENT_NAME The name of the element containing the data.
@@ -136,34 +129,25 @@ typedef struct
 (zMapConfigFindElement((STANZA), (ELEMENT_NAME)))->data.f
 #define zMapConfigGetElementString(STANZA, ELEMENT_NAME)           \
 (zMapConfigFindElement((STANZA), (ELEMENT_NAME)))->data.s
-/*@}*/
 
 
 
-/*!
- * Config data available to application. */
+
+/* Config data available to application. */
 typedef struct _ZMapConfigStruct *ZMapConfig ;
 
-/*!
- * A set of stanzas, probably read from a config. */
+/* A set of stanzas, probably read from a config. */
 typedef struct _ZMapConfigStanzaSetStruct *ZMapConfigStanzaSet ;
 
-/*!
- * A single stanza, containing elements with associated data.
+/* A single stanza, containing elements with associated data.
  *
  * Used both to specify a stanza to retrieve from a config and to return stanzas found in the config. */
 typedef struct _ZMapConfigStanzaStruct *ZMapConfigStanza ;
 
 
-/*!
- * Note that currently the package does _not_ support having multiple elements within a stanza
+/* Note that currently the package does _not_ support having multiple elements within a stanza
  * with the same name.
  *  */
-
-
-/*! @} end of zmapconfig docs. */
-
-
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 

@@ -146,8 +146,8 @@ static gboolean globalInit(void) ;
 static gboolean createConnection(void **server_out,
 				 char *config_file, ZMapURL url, char *format,
                                  char *version_str, int timeout) ;
-static ZMapServerResponseType openConnection(void *server,ZMapServerReqOpen req_open) ;
-static ZMapServerResponseType getInfo(void *server, ZMapServerInfo info) ;
+static ZMapServerResponseType openConnection(void *server, ZMapServerReqOpen req_open) ;
+static ZMapServerResponseType getInfo(void *server, ZMapServerReqGetServerInfo info) ;
 static ZMapServerResponseType getFeatureSetNames(void *server,
 						 GList **feature_sets_out,
 						 GList *sources,
@@ -159,10 +159,13 @@ static ZMapServerResponseType getStyles(void *server, GHashTable **styles_out) ;
 static ZMapServerResponseType haveModes(void *server, gboolean *have_mode) ;
 static ZMapServerResponseType getSequences(void *server_in, GList *sequences_inout) ;
 static ZMapServerResponseType setContext(void *server, ZMapFeatureContext feature_context) ;
-static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles, ZMapFeatureContext feature_context_out) ;
-static ZMapServerResponseType getContextSequence(void *server_in, GHashTable *styles, ZMapFeatureContext feature_context_out) ;
+static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles,
+					  ZMapFeatureContext feature_context_out, int *num_features_out) ;
+static ZMapServerResponseType getContextSequence(void *server_in, GHashTable *styles,
+						 ZMapFeatureContext feature_context_out) ;
 static char *lastErrorMsg(void *server) ;
-static ZMapServerResponseType getStatus(void *server_conn, gint *exit_code, gchar **stderr_out);
+static ZMapServerResponseType getStatus(void *server_in, gint *exit_code, gchar **stderr_out) ;
+static ZMapServerResponseType getConnectState(void *server_in, ZMapServerConnectStateType *connect_state) ;
 static ZMapServerResponseType closeConnection(void *server_in) ;
 static ZMapServerResponseType destroyConnection(void *server) ;
 
@@ -221,7 +224,7 @@ static void stylePrintCB(gpointer data, gpointer user_data) ;
 
 static gboolean getStyleColour(StyleFeatureColours style_colours, char **line_pos) ;
 static ZMapServerResponseType doGetSequences(AcedbServer server, GList *sequences_inout) ;
-static gboolean getServerInfo(AcedbServer server, ZMapServerInfo info) ;
+static gboolean getServerInfo(AcedbServer server, ZMapServerReqGetServerInfo info) ;
 
 static int equaliseLists(AcedbServer server, GList **feature_sets_inout, GList *method_names,
 			 char *query_name, char *reference_name) ;
@@ -268,6 +271,7 @@ void acedbGetServerFuncs(ZMapServerFuncs acedb_funcs)
   acedb_funcs->get_context_sequences = getContextSequence ;
   acedb_funcs->errmsg = lastErrorMsg ;
   acedb_funcs->get_status = getStatus ;
+  acedb_funcs->get_connect_state = getConnectState ;
   acedb_funcs->close = closeConnection;
   acedb_funcs->destroy = destroyConnection ;
 
@@ -369,8 +373,8 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
 
   resetErr(server) ;
 
-  server->zmap_start = req_open->zmap_start;
-  server->zmap_end   = req_open->zmap_end;
+  server->zmap_start = req_open->zmap_start ;
+  server->zmap_end = req_open->zmap_end ;
 
   if ((server->last_err_status = AceConnConnect(server->connection)) == ACECONN_OK)
     {
@@ -389,7 +393,7 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
 
 
 
-static ZMapServerResponseType getInfo(void *server_in, ZMapServerInfo info)
+static ZMapServerResponseType getInfo(void *server_in, ZMapServerReqGetServerInfo info)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   AcedbServer server = (AcedbServer)server_in ;
@@ -690,11 +694,48 @@ static ZMapServerResponseType haveModes(void *server_in, gboolean *have_mode)
 }
 
 
-static ZMapServerResponseType getStatus(void *server_conn, gint *exit_code, gchar **stderr_out)
+
+
+/* Truly pointless operation revealing that this function is a bad idea..... */
+static ZMapServerResponseType getStatus(void *server_in, gint *exit_code, gchar **stderr_out)
 {
   *exit_code = 0;
   *stderr_out = NULL;
+
   return ZMAP_SERVERRESPONSE_OK;
+}
+
+
+
+
+
+/* Is the acedb server connected ? */
+static ZMapServerResponseType getConnectState(void *server_in, ZMapServerConnectStateType *connect_state)
+{
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
+  AcedbServer server = (AcedbServer)server_in ;
+
+  resetErr(server) ;
+
+  server->last_err_status = AceConnConnectionOpen(server->connection) ;
+
+  switch(server->last_err_status)
+    {
+    case ACECONN_OK:
+      *connect_state = ZMAP_SERVERCONNECT_STATE_CONNECTED ;
+      result = ZMAP_SERVERRESPONSE_OK ;
+      break ;
+    case ACECONN_NOTOPEN:
+      *connect_state = ZMAP_SERVERCONNECT_STATE_UNCONNECTED ;
+      result = ZMAP_SERVERRESPONSE_OK ;
+      break ;
+    default:
+      *connect_state = ZMAP_SERVERCONNECT_STATE_ERROR ;
+      result = ZMAP_SERVERRESPONSE_REQFAIL ;
+      break ;
+    }
+
+  return result ;
 }
 
 
@@ -763,8 +804,11 @@ static ZMapServerResponseType setContext(void *server_in, ZMapFeatureContext fea
 
 
 /* Get features sequence. */
-static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles, ZMapFeatureContext feature_context)
+static ZMapServerResponseType getFeatures(void *server_in,
+					  GHashTable *styles, ZMapFeatureContext feature_context,
+					  int *num_features_out)
 {
+  ZMapServerResponseType response = ZMAP_SERVERRESPONSE_OK ;
   AcedbServer server = (AcedbServer)server_in ;
   DoAllAlignBlocksStruct get_features ;
 
@@ -779,7 +823,6 @@ static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles, Z
   get_features.src_feature_set_names = NULL;
   get_features.eachBlock = eachBlockSequenceRequest;
   get_features.num_features = 0;
-
 
 
   zMapPrintTimer(NULL, "In thread, getting features") ;
@@ -831,11 +874,10 @@ static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles, Z
   }
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-  // see comment in zmapFeature,h/ ref: num_features
-  feature_context->num_features = get_features.num_features;
+  *num_features_out = get_features.num_features ;
+  response = get_features.result ;
 
-
-  return get_features.result ;
+  return response ;
 }
 
 
@@ -877,6 +919,7 @@ char *lastErrorMsg(void *server_in)
 }
 
 
+/* Try to close the connection. */
 static ZMapServerResponseType closeConnection(void *server_in)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
@@ -1387,7 +1430,7 @@ static gboolean sequenceRequest(DoAllAlignBlocks get_features, ZMapFeatureBlock 
 				       server->zmap_start, server->zmap_end) ;
 	  zMapGFFParserInitForFeatures(parser, styles, FALSE) ;
 
-        zMapGFFSetDefaultToBasic(parser, TRUE);
+	  zMapGFFSetDefaultToBasic(parser, TRUE);
 
 
 	  if (server->has_new_tags)
@@ -2184,7 +2227,7 @@ static gboolean setQuietMode(AcedbServer server)
  *
  *
  *  */
-static gboolean getServerInfo(AcedbServer server, ZMapServerInfo info)
+static gboolean getServerInfo(AcedbServer server, ZMapServerReqGetServerInfo info)
 {
   gboolean result = FALSE ;
   char *command ;
@@ -2205,6 +2248,9 @@ static gboolean getServerInfo(AcedbServer server, ZMapServerInfo info)
       char *next_line = NULL ;
       char *curr_pos = NULL ;
 
+      /* Acedb only exports feature data as gffv2 currently. */
+      info->data_format_out = g_strdup("GFF version 2") ;
+
       while ((next_line = strtok_r(scan_text, "\n", &curr_pos)))
 	{
 	  scan_text = NULL ;
@@ -2220,7 +2266,7 @@ static gboolean getServerInfo(AcedbServer server, ZMapServerInfo info)
 	      if (target)
 		{
 		  result = TRUE ;
-		  info->database_path = g_strdup(target) ;
+		  info->database_path_out = g_strdup(target) ;
 		}
 	    }
 	  else if (strstr(next_line, "Title") != NULL)
@@ -2233,7 +2279,7 @@ static gboolean getServerInfo(AcedbServer server, ZMapServerInfo info)
 	      if (tag_pos && !(strstr(tag_pos, "<undefined>")))
 		{
 		  result = TRUE ;
-		  info->database_title = g_strstrip(g_strdup(tag_pos)) ;
+		  info->database_title_out = g_strstrip(g_strdup(tag_pos)) ;
 		}
 	    }
 	  else if (strstr(next_line, "Name") != NULL)
@@ -2246,10 +2292,11 @@ static gboolean getServerInfo(AcedbServer server, ZMapServerInfo info)
 	      if (tag_pos && !(strstr(tag_pos, "<undefined>")))
 		{
 		  result = TRUE ;
-		  info->database_name = g_strstrip(g_strdup(tag_pos)) ;
+		  info->database_name_out = g_strstrip(g_strdup(tag_pos)) ;
 		}
 	    }
 	}
+     
 
       g_free(reply) ;
       reply = NULL ;

@@ -29,9 +29,12 @@
  * Exported functions: See XXXXXXXXXXXXX.h
  *-------------------------------------------------------------------
  */
+#ifndef ZMAP_ZMAP_H
+#define ZMAP_ZMAP_H
 
 
 /* global #defines */
 
 #define GOBJ_CAST      1      // use static casts where possible
 
+#endif /* !ZMAP_ZMAP_H */

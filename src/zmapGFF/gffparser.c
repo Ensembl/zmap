@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
   if (!g_thread_supported())
     g_thread_init(NULL);
 
-  zMapConfigDirCreate(NULL, NULL, FALSE) ;
+  zMapConfigDirCreate(NULL, NULL) ;
 
   zMapLogCreate(NULL) ;
 
@@ -142,7 +142,7 @@ static int readHeader(parserFile data)
 						 &gff_file_err)) == G_IO_STATUS_NORMAL)
     {
       gboolean done_header = FALSE ;
-      gboolean header_ok = FALSE ;
+      ZMapGFFHeaderState header_ok = FALSE ;
 
       *(data->gff_line->str + terminator_pos) = '\0';
 // MH17 -> there seems to be a stutter in this source code!

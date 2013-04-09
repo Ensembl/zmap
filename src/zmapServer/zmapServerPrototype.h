@@ -1,4 +1,3 @@
-/*  Last edited: Jul 23 11:33 2012 (edgrif) */
 /*  File: zmapServerPrototype.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -21,8 +20,8 @@
  * This file is part of the ZMap genome database package
  * and was written by
  *     Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk &,
- *         Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
- *      Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *       Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *  Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Describes the interface between zmapServer, the generalised
  *              server interface and the underlying server specific
@@ -35,21 +34,10 @@
 #define ZMAP_SERVER_PROTOTYPEP_H
 
 #include <glib.h>
+
 #include <ZMap/zmapFeature.h>
 #include <ZMap/zmapServerProtocol.h>
 
-
-
-/* Contains information about the server. */
-typedef struct
-{
-  char *database_name ;
-  char *database_title ;
-  char *database_path ;
-
-  gboolean request_as_columns;
-
-} ZMapServerInfoStruct, *ZMapServerInfo ;
 
 
 
@@ -65,7 +53,7 @@ typedef gboolean (*ZMapServerCreateFunc)(void **server_conn,
 
 typedef ZMapServerResponseType (*ZMapServerOpenFunc)(void *server_conn, ZMapServerReqOpen req_open) ;
 
-typedef ZMapServerResponseType (*ZMapServerGetServerInfo)(void *server_in, ZMapServerInfo info) ;
+typedef ZMapServerResponseType (*ZMapServerGetServerInfo)(void *server_in, ZMapServerReqGetServerInfo info) ;
 
 typedef ZMapServerResponseType (*ZMapServerGetFeatureSets)(void *server_in,
 							   GList **feature_sets_inout,
@@ -82,24 +70,26 @@ typedef ZMapServerResponseType (*ZMapServerStylesHaveModes)(void *server_in, gbo
 
 typedef ZMapServerResponseType (*ZMapServerGetSequence)(void *server_in, GList *sequences_inout) ;
 
-typedef ZMapServerResponseType
-                 (*ZMapServerSetContextFunc)(void *server_conn, ZMapFeatureContext feature_context)  ;
+typedef ZMapServerResponseType (*ZMapServerSetContextFunc)(void *server_conn, ZMapFeatureContext feature_context)  ;
 
-typedef ZMapFeatureContext
-                 (*ZMapServerCopyContextFunc)(void *server_conn) ;
+typedef ZMapFeatureContext (*ZMapServerCopyContextFunc)(void *server_conn) ;
 
-typedef ZMapServerResponseType
-                 (*ZMapServerGetFeatures)(void *server_conn, GHashTable *styles, ZMapFeatureContext feature_context) ;
+typedef ZMapServerResponseType (*ZMapServerGetFeatures)(void *server_conn,
+							GHashTable *styles,
+							ZMapFeatureContext feature_context, int *num_features_out) ;
 
-typedef ZMapServerResponseType
-                 (*ZMapServerGetContextSequences)(void *server_conn, GHashTable *styles, ZMapFeatureContext feature_context) ;
+typedef ZMapServerResponseType (*ZMapServerGetContextSequences)(void *server_conn,
+								GHashTable *styles,
+								ZMapFeatureContext feature_context) ;
 
-typedef ZMapServerResponseType
-                 (*ZMapServerGetStatusFunc)(void *server_conn, gint *exit_code, gchar **stderr_out) ;
+typedef ZMapServerResponseType (*ZMapServerGetStatusFunc)(void *server_conn, gint *exit_code, gchar **stderr_out) ;
 
-typedef char *   (*ZMapServerGetErrorMsgFunc)(void *server_conn) ;
+typedef ZMapServerResponseType (*ZMapServerGetConnectStateFunc)(void *server_conn,
+								ZMapServerConnectStateType *connect_state) ;
 
-typedef ZMapServerResponseType (*ZMapServerCloseFunc)  (void *server_conn) ;
+typedef char *(*ZMapServerGetErrorMsgFunc)(void *server_conn) ;
+
+typedef ZMapServerResponseType (*ZMapServerCloseFunc)(void *server_conn) ;
 
 typedef ZMapServerResponseType (*ZMapServerDestroyFunc)(void *server_conn) ;
 
@@ -118,7 +108,8 @@ typedef struct _ZMapServerFuncsStruct
   ZMapServerGetFeatures get_features ;
   ZMapServerGetContextSequences get_context_sequences ;
   ZMapServerGetErrorMsgFunc errmsg ;
-  ZMapServerGetStatusFunc get_status;
+  ZMapServerGetStatusFunc get_status ;
+  ZMapServerGetConnectStateFunc get_connect_state ;
   ZMapServerCloseFunc close ;
   ZMapServerDestroyFunc destroy ;
 } ZMapServerFuncsStruct, *ZMapServerFuncs ;

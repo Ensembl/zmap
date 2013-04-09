@@ -95,29 +95,21 @@ _(ZMAPTHREAD_RETURNCODE_QUIT,       , "server_quit",    "Server has quit. ", "")
 ZMAP_DEFINE_ENUM(ZMapThreadReturnCode, ZMAP_THREAD_RETURNCODE_LIST) ;
 
 
-typedef enum
-  {
-    THREAD_STATUS_INVALID,
-    THREAD_STATUS_FAILED,				    /* Thread has failed (and needs killing ?). */
-    THREAD_STATUS_PENDING,				    /* ????? */
-    THREAD_STATUS_OK					    /* Thread functioning normally. */
-  } ThreadStatus ;
 
-
-
-
-/* One per connection to a thread, an opaque private type. */
-typedef struct _ZMapThreadStruct *ZMapThread ;
-
+/* 
+ * Callbacks that the application (slave code) must register when creating a thread
+ * to handle requests/data and error conditions.
+ */
 
 /* Function to handle requests received by the thread.
+ * 
  * slave_data will be passed into the handler function each time it is called to provide a
  *            mechanism for the slave to get at its own state data.
  * request is the request from the controlling thread
- * replay  is the reply from the slave code. */
+ * reply   is the reply from the slave code. */
 typedef ZMapThreadReturnCode (*ZMapThreadRequestHandlerFunc)(void **slave_data,
-							     void *request, void **reply,
-							     char **err_msg_out) ;
+							     void *request,
+							     void **reply, char **err_msg_out) ;
 
 /* Function that the thread code will call when the thread gets terminated abnormally by an
  * error or thread cancel, this gives the slave code the chance to close down properly. */
@@ -129,6 +121,11 @@ typedef ZMapThreadReturnCode (*ZMapThreadTerminateHandler)(void **slave_data, ch
 typedef ZMapThreadReturnCode (*ZMapThreadDestroyHandler)(void **slave_data) ;
 
 
+
+/* The thread, one per connection, an opaque private type. */
+typedef struct _ZMapThreadStruct *ZMapThread ;
+
+
 ZMapThread zMapThreadCreate(ZMapThreadRequestHandlerFunc handler_func,
 			    ZMapThreadTerminateHandler terminate_func, ZMapThreadDestroyHandler destroy_func) ;
 void zMapThreadRequest(ZMapThread thread, void *request) ;
@@ -137,18 +134,16 @@ void zMapThreadSetReply(ZMapThread thread, ZMapThreadReply state) ;
 gboolean zMapThreadGetReplyWithData(ZMapThread thread, ZMapThreadReply *state,
 				    void **data, char **err_msg) ;
 char *zMapThreadGetThreadID(ZMapThread thread) ;
-
-
 char *zMapThreadGetRequestString(ZMapThreadRequest signalled_state) ;
 char *zMapThreadGetReplyString(ZMapThreadReply signalled_state) ;
+void zMapThreadKill(ZMapThread thread) ;
+gboolean zMapThreadExists(ZMapThread thread);
+void zMapThreadDestroy(ZMapThread thread) ;
+
 
 ZMAP_ENUM_AS_EXACT_STRING_DEC(zMapThreadRequest2ExactStr, ZMapThreadRequest) ;
 ZMAP_ENUM_AS_EXACT_STRING_DEC(zMapThreadReply2ExactStr, ZMapThreadReply) ;
 ZMAP_ENUM_AS_EXACT_STRING_DEC(zMapThreadReturnCode2ExactStr, ZMapThreadReturnCode) ;
-
-void zMapThreadKill(ZMapThread thread) ;
-gboolean zMapThreadExists(ZMapThread thread);
-void zMapThreadDestroy(ZMapThread thread) ;
 
 
 

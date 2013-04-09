@@ -1,4 +1,3 @@
-
 /*  File: zmapWindowCanvasAssembly.h
  *  Author: malcolm hinsley (mh17@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -30,8 +29,12 @@
  * implements callback functions for FeaturesetItem assembly features
  *-------------------------------------------------------------------
  */
+#ifndef ZMAP_CANVAS_ASSEMBLY_H
+#define ZMAP_CANVAS_ASSEMBLY_H
 
 #include <ZMap/zmap.h>
 
 
 void zMapWindowCanvasAssemblyInit(void);
+
+#endif /* !ZMAP_CANVAS_ASSEMBLY_H */

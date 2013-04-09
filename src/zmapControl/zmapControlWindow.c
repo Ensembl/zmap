@@ -31,15 +31,12 @@
 
 #include <ZMap/zmap.h>
 
-
-
-
-
-
-
 #include <string.h>
+
 #include <ZMap/zmapUtils.h>
 #include <zmapControl_P.h>
+
+
 
 static void setTooltips(ZMap zmap) ;
 static void makeStatusTooltips(ZMap zmap) ;
@@ -48,7 +45,17 @@ static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data) ;
 
 static void myWindowMaximize(GtkWidget *toplevel, ZMap zmap) ;
 
+
+
 gboolean zmap_shrink_G = FALSE;
+
+
+
+
+/* 
+ *                  Package External routines.
+ */
+
 
 /* Makes the toplevel window and control panels for an individual zmap. */
 gboolean zmapControlWindowCreate(ZMap zmap)
@@ -76,7 +83,6 @@ gboolean zmapControlWindowCreate(ZMap zmap)
   zmap->map_handler = g_signal_connect(G_OBJECT(toplevel), "map",
 				       G_CALLBACK(myWindowMaximize), (gpointer)zmap);
 
-
   gtk_signal_connect(GTK_OBJECT(toplevel), "destroy",
 		     GTK_SIGNAL_FUNC(toplevelDestroyCB), (gpointer)zmap) ;
 
@@ -84,9 +90,10 @@ gboolean zmapControlWindowCreate(ZMap zmap)
   vbox = gtk_vbox_new(FALSE, 0) ;
   gtk_container_add(GTK_CONTAINER(toplevel), vbox) ;
 
+  zmap->event_box_parent = vbox ;
+
   menubar = zmapControlWindowMakeMenuBar(zmap) ;
   gtk_box_pack_start(GTK_BOX(vbox), menubar, FALSE, TRUE, 0);
-
 
   frame = gtk_frame_new(NULL);
   gtk_container_border_width(GTK_CONTAINER(frame), 5);
@@ -179,31 +186,21 @@ void zmapControlWindowSetStatus(ZMap zmap)
 	gtk_label_set_text(GTK_LABEL(zmap->status_revcomp), strand_txt) ;
 
 
-      /* MH17: how tedious...
-       * due to scope issues we can't see the view of the window
-       * the view can return the sequence span which is in fwd strand
-       * but the windowcoordpairtodisplay func assumes 'current fwd strand'
-       * so we get to write another goddam fucntion to access the same data
-       * and introduce yet more repetition of code
-       * these functions were written to provide a reliable single point of access
-       * but you have to feed them the right data of else they don't work
-       */
-
 #if NO_SCOPE_FOR_IMPROVEMENT
 //	if (zMapViewGetFeaturesSpan(view, &start, &end))
 	  {
 	    zmapWindowCoordPairToDisplay(window,
 //					 start, end,
-                              window->min_coord,window->max_coord,
+					 window->min_coord,window->max_coord,
 					 &start, &end) ;
 #else
       if(zmapWindowGetCurrentSpan(window,&start,&end))
-      {
+	{
 #endif
           coord_txt = g_strdup_printf(" %d  %d ", start, end) ;
           gtk_label_set_text(GTK_LABEL(zmap->status_coords), coord_txt) ;
           g_free(coord_txt) ;
-      }
+	}
 
 	free_this = status_text = zMapViewGetStatusStr(view) ;
 
@@ -227,7 +224,7 @@ void zmapControlWindowSetStatus(ZMap zmap)
       GdkWindow * win;
 
 #if GTK_MAJOR_VERSION == 2 && GTK_MINOR_VERSION < 14
-            win = zmap->status_entry->window;
+            win = zmap->status_entry->window ;
 #else
       win = gtk_widget_get_window(zmap->status_entry);
 #endif
@@ -236,8 +233,8 @@ void zmapControlWindowSetStatus(ZMap zmap)
   }
 #endif
 
-  if(free_this)
-      g_free(status_text);
+  if (free_this)
+    g_free(status_text) ;
 
   return ;
 }

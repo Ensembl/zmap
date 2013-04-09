@@ -1,9 +1,9 @@
 <h2>New Model Canvas</h2>
 <p>An attempt to speed things up a bit.  <i>Note</i> that here 'new model' refers more to Oliver Cromwell than MVC, although it is one of the design aims to make the view and window have less model and more view.
 </p>
-<p>This design follows an initial experiment with coverage displays which involved creating a single ZMapWindowCanvasItem (foo canvas group) conatining a single ZMapWindowGraphDensityItem (foo canvas item) for each featureset.  Features were represented by simple data structure accessed by a skip list from the ZMapWindowGraphDensityItem and were not added directly to the foo canvas.  Expose events were handled by calling GDK fucntions for the relevant feature structures.
+<p>This design follows an initial experiment with coverage displays which involved creating a single ZMapWindowCanvasItem (foo canvas group) containing a single ZMapWindowGraphDensityItem (foo canvas item) for each featureset.  Features were represented by simple data structure accessed by a skip list from the ZMapWindowGraphDensityItem and were not added directly to the foo canvas.  Expose events were handled by calling GDK functions for the relevant feature structures.
 </p>
-<p>This initial experiment relates to handling the foo canvas at a level below the column objetcs and the new model canvas is to be implemented first by replacing data and code at that level and then by revisiting the container design but for clarity here we present a top down discussion from canvas root to indivudual sub-feature.
+<p>This initial experiment relates to handling the foo canvas at a level below the column objects and the new model canvas is to be implemented first by replacing data and code at that level and then by revisiting the container design but for clarity here we present a top down discussion from canvas root to indivudual sub-feature.
 </p>
 
 <h4>Problems being addressed</h4>
@@ -52,7 +52,7 @@ Each container will hold data to specify strand and frame and also borders if an
 
 
 <h3>Canvas Featureset container:foo canvas item</h3>
-<p>A canvas column contains a set of features that the user can request and show/hide and this may include data from several sources.  (But note that the user interacts with one or both strands together dependign on circumstances). Examples include Repeats, Uniprot (= Swissprot + TrEMBL) ext_curated (~400 potential sources), BAM paired reads (experimental repeats etc).    The column foo canvas group implements the overall layout and positioning of features in the window and within that we have  foo canvas items that implement the display of features (canvas featuresets).
+<p>A canvas column contains a set of features that the user can request and show/hide and this may include data from several sources.  (But note that the user interacts with one or both strands together depending on circumstances). Examples include Repeats, Uniprot (= Swissprot + TrEMBL) ext_curated (~400 potential sources), BAM paired reads (experimental repeats etc).    The column foo canvas group implements the overall layout and positioning of features in the window and within that we have  foo canvas items that implement the display of features (canvas featuresets).
 </p>
 <p> A canvas featureset is not the same as a context featureset in that is is used to organise the presentation of features to the user wherease a context featureset is simply a collection of features of the same type which can be displayed in several colums eg via strand and frame (the data model).
 </p>
@@ -161,7 +161,7 @@ This gives a single linear scan: all features are processed (bumped) once only, 
 <p> Initial experiments with coverage displays have worked by adding a single canvas item for each featureset which has a width defined by the style and a height corresponding to the whole sequence. Clipping has not been coded for high zoom as we only paint objects within the scroll region.  X coordinates have been ignored as there has been little benefit.
 </p>
 <p>For a bumped alignment column we have significant X coordinates and need to ensure that expose events are handled efficiently.
-Displayable objects are found using a skip list whcih is sorted by Y corordinate and this provides effective selection of the vertical region of interest.  Features within that region are scanned from the top downwards and we can simply ignore features that lie left or right of the expose area.
+Displayable objects are found using a skip list which is sorted by Y coordinate and this provides effective selection of the vertical region of interest.  Features within that region are scanned from the top downwards and we can simply ignore features that lie left or right of the expose area.
 </p>
 <p>If we take as a reasonable worst case a protein alignment column with 200k features that is bumped without setting the mark and also that the bumped display is 200 features wide, and we are at minimun zoom and we expose one column of the bumped data then the overhead of scanning the X coordinates is 199k feature comparisons and list links.  This can be measured quite easily, and for 100k features we have 4ms user time to run a test program, increasing this to 1000k gives 8ms.  4ms is required to run the test program with no data - this implies that 250k comparisons take approx 1ms user time.
 </p>
@@ -223,12 +223,12 @@ This gives: a) efficient memory use for stable glyph styles, b) once only calcul
 
 <h4>Transcripts</h4>
 <h5>Compared with alignments</h5>
-<p>Due to historical constraints alignments are soucred from multiple features and then linked together and in future we expect this to change, with a single cigar string and sequence for a whole series.  Transcripts appear in several lines of GFF but are assembled on input into complex features.  These then have to be added to the canvas as a series of simple features linked together.  Data volumes are much lower and they are normally viewed bumped, and there is no difference in the display format whether bumped or not.
+<p>Due to historical constraints alignments are sourced from multiple features and then linked together and in future we expect this to change, with a single cigar string and sequence for a whole series.  Transcripts appear in several lines of GFF but are assembled on input into complex features.  These then have to be added to the canvas as a series of simple features linked together.  Data volumes are much lower and they are normally viewed bumped, and there is no difference in the display format whether bumped or not.
 </p>
-<p>Alignments were implmented by having all decorations (such as co-linear lines) as virtual canvas items a) to handle alternate display formats without deleting and adding large amounts of data to the canvas on bumping. and b) to reduce the amount of features in the canvas.  Niether of these constraints are relevant to transcripts.
+<p>Alignments were implemented by having all decorations (such as co-linear lines) as virtual canvas items a) to handle alternate display formats without deleting and adding large amounts of data to the canvas on bumping. and b) to reduce the amount of features in the canvas.  Neither of these constraints are relevant to transcripts.
 </p>
 <h5>Displaying a Transcript</h5>
-<p>A new feature specific fucntion will be written to handle adding transcripts to the canvas, whcih will display each exon and intron as simple canvas features and ink these together via the existing left and right links.  CDS and UTR regions could be added as distinct canvas features but this would make selection of a complete exon more complex and ths will not be done. An exon with a CDS/UTR split will be dislayed as a single feature but my consist of 1, 2, or 3 boxes.  Unlike alignments intron lines will be added as explicit canvas features.
+<p>A new feature specific function will be written to handle adding transcripts to the canvas, which will display each exon and intron as simple canvas features and ink these together via the existing left and right links.  CDS and UTR regions could be added as distinct canvas features but this would make selection of a complete exon more complex and ths will not be done. An exon with a CDS/UTR split will be dislayed as a single feature but my consist of 1, 2, or 3 boxes.  Unlike alignments intron lines will be added as explicit canvas features.
 </p>
 <p>There will be no data structure in the canvas for a composite transcript object, just an intron/exon structure, each of which will refer to the transcript feature in the feature context and be linked to its siblings.
 </p>

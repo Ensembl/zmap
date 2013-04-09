@@ -37,7 +37,7 @@
 #include <libzmapfoocanvas/libfoocanvas.h>
 #include <zmapWindowContainerGroup_I.h>
 #include <zmapWindowContainerFeatureSet.h>
-#include <zmapWindowMark_P.h>	/* ZMapWindowMark ... */
+#include <zmapWindowMark.h>	/* ZMapWindowMark ... */
 
 #define ZMAP_WINDOW_CONTAINER_BLOCK_NAME 	"ZMapWindowContainerBlock"
 

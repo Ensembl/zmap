@@ -1,4 +1,3 @@
-/*  Last edited: Jul 23 10:00 2012 (edgrif) */
 /*  File: zmapConfFile.c
  *  Author: Malcolm Hinsley (mh17@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -33,17 +32,16 @@
 
 #include <ZMap/zmap.h>
 
-
-
-
-
-
-#include <string.h>		/* memset */
+#include <string.h>					    /* memset */
 #include <glib.h>
-#include <zmapConfigIni_P.h>
+
+
 #include <ZMap/zmapConfigDir.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapConfigIni.h>
+#include <zmapConfigIni_P.h>
+
+
 
 #undef WITH_LOGGING
 
@@ -103,7 +101,7 @@ gboolean zMapConfigIniReadAll(ZMapConfigIni config, char *config_file)
 //  red = zMapConfigIniReadUser(config, file_name) ;
 
 //  if(config_file)
-	/* rather helpfully this function accepts a null arg and then chooses the config file specifed on the command line */
+	/* rather helpfully this function accepts a null arg and then chooses the config file specified on the command line */
 	/* which is much clearer than having that passed through to this function. Yeah right. */
 	red = zMapConfigIniReadUser(config, config_file) ;
 
@@ -155,6 +153,10 @@ gboolean zMapConfigIniReadBuffer(ZMapConfigIni config, char *buffer)
   return red;
 }
 
+
+
+
+
 /* this is used for styles, NOTE not ever freed until the context is destroyed so can have only one file */
 gboolean zMapConfigIniReadFile(ZMapConfigIni config, char *file)
 {
@@ -163,8 +165,7 @@ gboolean zMapConfigIniReadFile(ZMapConfigIni config, char *file)
   zMapAssert(config);
 
 
-  if ((g_path_is_absolute(file)
-       || (file = zMapConfigDirFindFile(file)))
+  if ((g_path_is_absolute(file) || (file = zMapConfigDirFindFile(file)))
       && (config->extra_key_file = read_file(file, &(config->extra_key_error))))
     {
       read = TRUE;
@@ -197,7 +198,7 @@ gboolean zMapConfigIniSaveUser(ZMapConfigIni config)
 	  /* Ok we can write the file contents to disk */
 	  char *filename = NULL;
 
-	  if((filename = zMapConfigDirGetFile()))
+	  if ((filename = zMapConfigDirGetFile()))
 	    {
 	      GIOChannel *output = NULL;
 	      GError *error = NULL;
@@ -235,12 +236,6 @@ gboolean zMapConfigIniSaveUser(ZMapConfigIni config)
 		      error = NULL;
 		    }
 		}
-
-	      if(filename != zMapConfigDirGetFile())
-		{
-		  g_free(filename);
-		  filename = NULL;
-		}
 	    }
 	  else
 	    {
@@ -251,7 +246,6 @@ gboolean zMapConfigIniSaveUser(ZMapConfigIni config)
       if(file_contents)
 	{
 	  g_free(file_contents);
-	  file_contents = NULL;
 	}
     }
 

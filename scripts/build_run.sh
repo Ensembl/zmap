@@ -23,8 +23,6 @@ GLOBAL_LOG=''
 
 # SRC_MACHINE= The machine to log into to start everything going
 SRC_MACHINE='tviewsrv'
-#SRC_MACHINE='deskpro021045'
-
 
 # SSH_ID is userid which we use to ssh in for other machines.
 SSH_ID='zmap'
@@ -44,7 +42,7 @@ BUILD_SCRIPT="$SCRIPTS_DIR/build_bootstrap.sh"
 FUNCTIONS_SCRIPT="$SCRIPTS_DIR/zmap_functions.sh"
 
 # Our project space where we store builds.
-PROJECT_DIR='/nfs/zmap'
+PROJECT_DIR='/nfs/zmap/ZMap'
 BUILDS_DIR="$PROJECT_DIR/BUILDS"
 
 
@@ -147,7 +145,7 @@ if [ $# == 1 ]; then
     # redo _default_ mail subject now we have a name for the build.
     MAIL_SUBJECT="ZMap $BUILD_PREFIX Build Failed (control script)"
 else
-  message_exit "No build prefix specifed: $usage"
+  message_exit "No build prefix specified: $usage"
 fi
 
 

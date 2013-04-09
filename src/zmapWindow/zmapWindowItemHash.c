@@ -155,35 +155,34 @@ static gboolean window_ftoi_debug_G = FALSE;
 /* this one function is the remains of zmapWindowItemFactory.c */
 
 FooCanvasItem *zmapWindowFToIFactoryRunSingle(GHashTable *ftoi_hash,
-							    ZMapWindowContainerFeatureSet parent_container,
-							    ZMapWindowContainerFeatures features_container,
-							    FooCanvasItem * foo_featureset,
+					      ZMapWindowContainerFeatureSet parent_container,
+					      ZMapWindowContainerFeatures features_container,
+					      FooCanvasItem * foo_featureset,
                                               ZMapWindowFeatureStack     feature_stack)
 {
-	FooCanvasItem   *feature_item = NULL;
-	ZMapFeature feature = feature_stack->feature;
-	ZMapWindowCanvasItem canvas_item = (ZMapWindowCanvasItem) foo_featureset;
-      ZMapFeatureBlock block = feature_stack->block;
-//char *x;
+  FooCanvasItem   *feature_item = NULL;
+  ZMapFeature feature = feature_stack->feature;
+  ZMapWindowCanvasItem canvas_item = (ZMapWindowCanvasItem) foo_featureset;
+  ZMapFeatureBlock block = feature_stack->block;
 
-	/* NOTE
-	 * parent is the features group in the conatiner featureset
-	 * fset is the parent of that (the column) which has the column id
-	 * foo_featureset is NULL or an existing CanvasFeatureset whcih is the (normally) single foo canvas item in the column
-	 */
-	if(!canvas_item)
-      {
-      	/* for frame spcecific data process_feature() in zmapWindowDrawFeatures.c extracts
-      	 * all of one type at a time
-      	 * so frame and strand are stable NOTE only frame, strand will wobble
-      	 * we save the id here to optimise the code
-      	 */
-            GQuark col_id = zmapWindowContainerFeatureSetGetColumnId(parent_container);
-            FooCanvasItem * foo = FOO_CANVAS_ITEM(parent_container);
-            GQuark fset_id = feature_stack->set->unique_id;
-            char strand = '+';
-            char frame = '0';
-		char *x;
+  /* NOTE
+   * parent is the features group in the container featureset
+   * fset is the parent of that (the column) which has the column id
+   * foo_featureset is NULL or an existing CanvasFeatureset which is the (normally) single foo canvas item in the column
+   */
+  if(!canvas_item)
+    {
+      /* for frame spcecific data process_feature() in zmapWindowDrawFeatures.c extracts
+       * all of one type at a time
+       * so frame and strand are stable NOTE only frame, strand will wobble
+       * we save the id here to optimise the code
+       */
+      GQuark col_id = zmapWindowContainerFeatureSetGetColumnId(parent_container);
+      FooCanvasItem * foo = FOO_CANVAS_ITEM(parent_container);
+      GQuark fset_id = feature_stack->set->unique_id;
+      char strand = '+';
+      char frame = '0';
+      char *x;
 
 			/* as we process both strands together strand is per feature not per set */
             if(zMapStyleIsStrandSpecific(*feature->style))
@@ -208,7 +207,7 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(GHashTable *ftoi_hash,
 		}
 		else
 		{
-			/* a display column for combining one or several sources into one display item */
+			/* a display column for combing one or several sources into one display item */
 			x = g_strdup_printf("%p_%s_%c%c", foo->canvas, g_quark_to_string(col_id), strand,frame);
 		}
 
@@ -231,19 +230,19 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(GHashTable *ftoi_hash,
             g_free(x);
       }
 
-      feature_item = (FooCanvasItem *) canvas_item;
+  feature_item = (FooCanvasItem *) canvas_item;
 
-      if(feature_item)	// will always work
-	{
-          gboolean status = FALSE;
-          ZMapFrame frame;
-	    ZMapStrand strand;
+  if(feature_item)	// will always work
+    {
+      gboolean status = FALSE;
+      ZMapFrame frame;
+      ZMapStrand strand;
 
-		/* NOTE the item hash used canvas _item->feature to set up a pointer to the feature
-		* so I changed FToIAddfeature to take the feature explicitly
-		* setting the feature here every time also fixes the problem but by fluke
-		*/
-		zMapWindowCanvasItemSetFeaturePointer(canvas_item, feature);
+      /* NOTE the item hash used canvas _item->feature to set up a pointer to the feature
+       * so I changed FToIAddfeature to take the feature explicitly
+       * setting the feature here every time also fixes the problem but by fluke
+       */
+      zMapWindowCanvasItemSetFeaturePointer(canvas_item, feature);
 
 		if(feature_stack->filter && (feature->flags.collapsed || feature->flags.squashed || feature->flags.joined))
 		{
@@ -254,18 +253,18 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(GHashTable *ftoi_hash,
 			* and the population copied in.
 			*
 			* NOTE calling code will need to set the feature in the hash as the composite feature
-#warning need to set composite feature in lookup code
+	#warning need to set composite feature in lookup code
 			*/
 
-			return (FooCanvasItem *) feature_item;
-		}
+	  return (FooCanvasItem *) feature_item;
+	}
 
-		zMapWindowCanvasFeaturesetAddFeature((ZMapWindowFeaturesetItem) canvas_item, feature, feature->x1, feature->x2);
+      zMapWindowCanvasFeaturesetAddFeature((ZMapWindowFeaturesetItem) canvas_item, feature, feature->x1, feature->x2);
 
-		feature_item = (FooCanvasItem *)canvas_item;
+      feature_item = (FooCanvasItem *)canvas_item;
 
-		frame  = zmapWindowContainerFeatureSetGetFrame(parent_container);
-		strand = zmapWindowContainerFeatureSetGetStrand(parent_container);
+      frame  = zmapWindowContainerFeatureSetGetFrame(parent_container);
+      strand = zmapWindowContainerFeatureSetGetStrand(parent_container);
 
 		if(ftoi_hash)
 		{
@@ -276,7 +275,7 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(GHashTable *ftoi_hash,
 						feature_stack->set->unique_id, feature_stack->strand, feature_stack->frame);
 			}
 
-			status = zmapWindowFToIAddSetFeature(feature_stack->col_hash[strand], feature->unique_id, feature_item, feature);
+	  status = zmapWindowFToIAddSetFeature(feature_stack->col_hash[strand], feature->unique_id, feature_item, feature);
 
 //if(zMapStyleGetMode(feature_stack->set->style) == ZMAPSTYLE_MODE_SEQUENCE)
 //	printf("added feature %s to hash\n", g_quark_to_string(feature->unique_id));
@@ -531,13 +530,13 @@ gboolean zmapWindowFToIRemoveSet(GHashTable *feature_context_to_item,
     {
       if(remove_features)
         {
-            g_hash_table_remove_all(set->hash_table);
-            result = TRUE;
+	  g_hash_table_remove_all(set->hash_table);
+	  result = TRUE;
         }
       else
         {
-            result = g_hash_table_remove(block->hash_table, GUINT_TO_POINTER(set_id)) ;
-            zMapAssert(result) ;
+	  result = g_hash_table_remove(block->hash_table, GUINT_TO_POINTER(set_id)) ;
+	  zMapAssert(result) ;
         }
     }
 
@@ -553,6 +552,7 @@ GHashTable *zmapWindowFToIGetSetHash(GHashTable *feature_context_to_item,
 				  GQuark align_id, GQuark block_id,
 				  GQuark set_id, ZMapStrand set_strand, ZMapFrame set_frame)
 {
+  GHashTable *hash_table = NULL ;
   ID2Canvas align = NULL ;
   ID2Canvas block = NULL ;
   ID2Canvas set = NULL ;
@@ -568,45 +568,46 @@ GHashTable *zmapWindowFToIGetSetHash(GHashTable *feature_context_to_item,
       && (set = (ID2Canvas)g_hash_table_lookup(block->hash_table,
                                                    GUINT_TO_POINTER(tmp_set_id))))
     {
-	    return set->hash_table;
+      hash_table = set->hash_table ;
     }
-  return NULL ;
+
+  return hash_table ;
 }
 
 
 
 gboolean zmapWindowFToIAddSetFeature(GHashTable *set,	GQuark feature_id, FooCanvasItem *feature_item, ZMapFeature feature)
 {
-	ID2Canvas ID2C ;
-	/* mh17: changed insert to replace to allow bumping of compressed features
-	* if compressed, underlying data points to the compressed feature
-	* if not they are on display
-	*/
-	if(!set)
-		return FALSE;
+  ID2Canvas ID2C ;
+  /* mh17: changed insert to replace to allow bumping of compressed features
+   * if compressed, underlying data points to the compressed feature
+   * if not they are on display
+   */
+  if(!set)
+    return FALSE;
 #if 0
-if (!(g_hash_table_lookup(set->hash_table, GUINT_TO_POINTER(feature_id))))
-	{
-	ID2C = g_new0(ID2CanvasStruct, 1) ;
-	ID2C->item = feature_item ;
-	ID2C->hash_table = NULL; // we don't need g_hash_table_new_full(NULL, NULL, NULL, destroyIDHash) ;
-	ID2C->feature_any = (ZMapFeatureAny) feature ;
+  if (!(g_hash_table_lookup(set->hash_table, GUINT_TO_POINTER(feature_id))))
+    {
+      ID2C = g_new0(ID2CanvasStruct, 1) ;
+      ID2C->item = feature_item ;
+      ID2C->hash_table = NULL; // we don't need g_hash_table_new_full(NULL, NULL, NULL, destroyIDHash) ;
+      ID2C->feature_any = (ZMapFeatureAny) feature ;
 
-	g_hash_table_insert(set->hash_table, GUINT_TO_POINTER(feature_id), ID2C) ;
-	}
+      g_hash_table_insert(set->hash_table, GUINT_TO_POINTER(feature_id), ID2C) ;
+    }
 #else
-	ID2C = g_hash_table_lookup(set, GUINT_TO_POINTER(feature_id));
-	if(!ID2C)
-	{
-		ID2C = g_new0(ID2CanvasStruct, 1) ;
-		g_hash_table_insert(set, GUINT_TO_POINTER(feature_id), ID2C) ;
-	}
+  ID2C = g_hash_table_lookup(set, GUINT_TO_POINTER(feature_id));
+  if(!ID2C)
+    {
+      ID2C = g_new0(ID2CanvasStruct, 1) ;
+      g_hash_table_insert(set, GUINT_TO_POINTER(feature_id), ID2C) ;
+    }
 
-	ID2C->item = feature_item ;
-	ID2C->hash_table = NULL; // we don't need g_hash_table_new_full(NULL, NULL, NULL, destroyIDHash) ;
-	ID2C->feature_any = (ZMapFeatureAny) feature ;
+  ID2C->item = feature_item ;
+  ID2C->hash_table = NULL; // we don't need g_hash_table_new_full(NULL, NULL, NULL, destroyIDHash) ;
+  ID2C->feature_any = (ZMapFeatureAny) feature ;
 #endif
-	return TRUE;
+  return TRUE;
 }
 
 
@@ -770,7 +771,6 @@ ID2Canvas zmapWindowFToIFindID2CFull(ZMapWindow window, GHashTable *feature_cont
   /* Required for minimum query. */
   zMapAssert(feature_context_to_item) ; /* && align_id */
 
-
   /* Cascade down through the hashes until we reach the point the caller wants to stop at. */
   if (align_id && (align = (ID2Canvas)g_hash_table_lookup(feature_context_to_item,
                                                           GUINT_TO_POINTER(align_id))))
@@ -799,10 +799,9 @@ ID2Canvas zmapWindowFToIFindID2CFull(ZMapWindow window, GHashTable *feature_cont
 		{
 		  if((feature = (ID2Canvas)g_hash_table_lookup(set->hash_table,
                                                                GUINT_TO_POINTER(feature_id))))
-                {
-                  id2c = feature ;
-
- 	          }
+		    {
+		      id2c = feature ;
+		    }
 		}
 	    }
 
@@ -1240,7 +1239,7 @@ printf("ftoisetsearchcreate: %s\n",g_quark_to_string(column_id));
 	  search_data->align_id   = feature->parent->parent->parent->unique_id;
 	  search_data->block_id   = feature->parent->parent->unique_id;
 	  search_data->column_id  = column_id;
-        search_data->set_id     = set_id;
+	  search_data->set_id     = set_id;
 	  search_data->feature_id = feature->unique_id;
 	  search_data->strand_str = strand_str;
 	  search_data->frame_str  = frame_str;
@@ -1250,7 +1249,7 @@ printf("ftoisetsearchcreate: %s\n",g_quark_to_string(column_id));
 	  search_data->align_id   = align_id;
 	  search_data->block_id   = block_id;
 	  search_data->column_id  = column_id;
-        search_data->set_id     = set_id;
+	  search_data->set_id     = set_id;
 	  search_data->feature_id = feature_id;
 	  search_data->strand_str = strand_str;
 	  search_data->frame_str  = frame_str;
@@ -1269,7 +1268,7 @@ printf("ftoisetsearchcreate: %s\n",g_quark_to_string(column_id));
 	  search_data->align_id   = feature->parent->parent->parent->unique_id;
 	  search_data->block_id   = feature->parent->parent->unique_id;
 	  search_data->column_id  = column_id;
-        search_data->set_id     = set_id;
+	  search_data->set_id     = set_id;
 	  search_data->feature_id = same_name_id;
 	  search_data->strand_str = strand_str;
 	  search_data->frame_str  = frame_str;

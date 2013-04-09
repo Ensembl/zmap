@@ -1,0 +1,4 @@
+Overview of Changes from AceConn 1.1.0 to 1.2.0
+===============================================
+
+* AceConn moved to autoconf-based build system.

@@ -57,7 +57,7 @@ It would be possible to identify the type of each feature, but not to access all
 <p>Currently each featureset has one style and a column (previously know as a featureset) can contain multiple featuresets. It is also possible for a column to have an extra style of its own. The column container canavs item has a single featureset 'attached', which was previously used for column ordering.
 When displaying a column for each feature the entire list of styles is scanned for particular style parameters and the first one found applies to all features in the column.
 </p>
-<p>This is not deterministic, except in terms of incidental patterns of use, and we may find that one set of data is affected by the style of another set.  Proper configuration implies that each style is fully specified for its features and it would be better to refer directly to the correct style.  Column specific paramters (such as strand-sensitive can be specified for individual featuresets, or if desired, in the column specific style.  It is hoped to ammend the ContainerFeatureSet code to reflect this.  If a column specific style is not configured, then as at present the first featureset to be displayed will define the column specific parameters (similar to the present situation). It will only be necessary to lookup one style instead of scanning a list.
+<p>This is not deterministic, except in terms of incidental patterns of use, and we may find that one set of data is affected by the style of another set.  Proper configuration implies that each style is fully specified for its features and it would be better to refer directly to the correct style.  Column specific paramters (such as strand-sensitive can be specified for individual featuresets, or if desired, in the column specific style.  It is hoped to amend the ContainerFeatureSet code to reflect this.  If a column specific style is not configured, then as at present the first featureset to be displayed will define the column specific parameters (similar to the present situation). It will only be necessary to lookup one style instead of scanning a list.
 </p>
 <p>There is some redundancy in the data used to construct columns of features. zmapView->featureset_2_style gives a list of the style needed to display all the features in a column, and zmapView->featureset_2_column maps each featureset to the required column and zmapView->source_2_sourcedata specifies the style.
 </p>
@@ -68,7 +68,7 @@ It may be wise to review the columns dialog in terms of 'available columns', and
 </p>
 
 <h3>Column sorting</h3>
-<p>The windowFocus code sorts the canvas itens in a column to handle feature tabbing.New fucntions (such as <a href="Design_notes/notes/EST_mRNA.shtml">EST masking</a>) need to sort individual feature sets and thsi can be done in the features context without affecting fucntion such as feature tabbing.
+<p>The windowFocus code sorts the canvas itens in a column to handle feature tabbing.New functions (such as <a href="Design_notes/notes/EST_mRNA.shtml">EST masking</a>) need to sort individual feature sets and thsi can be done in the features context without affecting function such as feature tabbing.
 <i>Good News: no work required!</i>
 </p>
 

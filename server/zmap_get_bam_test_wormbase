@@ -1,0 +1,17 @@
+#!/bin/sh
+
+. ./zmap_proxy.sh
+. ./zmap_perl.sh
+
+file=ftp://ftp.sanger.ac.uk/pub2/wormbase/STAFF/klh/accepted_hits.bam
+gff_source=accepted_hits
+
+./zmap_get_bam \
+    --file=${file}      \
+    --seq_id=CHROMOSOME_IV \
+    --start=1           \
+    --end=37801         \
+    --gff_version=3 \
+    --gff_seqname=AH6 \
+    --gff_feature_source=${gff_source} \
+    ;

@@ -209,7 +209,6 @@ static gboolean executeRequest(ZMapXMLParser parser, ZMapXRemoteParseCommandData
 
 
 
-
 /*
  *               Globals
  */
@@ -468,6 +467,29 @@ static gboolean executeRequest(ZMapXMLParser parser, ZMapXRemoteParseCommandData
 		g_object_set_data(G_OBJECT(view->xremote_widget),
 				  VIEW_POST_EXECUTE_DATA,
 				  post_data);
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+		/* Need to highlight created feature.....in all windows..... */
+		list_item = g_list_first(view->window_list) ;
+		do
+		  {
+		    ZMapViewWindow view_window ;
+		    ZMapFeature feature ;
+
+		    if (request_data->edit_feature)
+		      feature = request_data->edit_feature ;
+		    else
+		      feature = (ZMapFeature)(request_data->feature_list->data) ;
+
+		    view_window = list_item->data ;
+
+		    zMapWindowFeatureSelect(view_window->window, feature) ;
+		  }
+		while ((list_item = g_list_next(list_item))) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
 	      }
 
 	    request_data->edit_context = NULL;
@@ -543,6 +565,7 @@ static char *view_post_execute(char *command_text, gpointer user_data,
 	    {
 	    case ZMAPVIEW_REMOTE_CREATE_FEATURE:
 	      {
+		GList* list_item ;
 		ZMapFeature feature = NULL ;
 
 		if (post_data->edit_feature)
@@ -552,11 +575,30 @@ static char *view_post_execute(char *command_text, gpointer user_data,
 
 		status = zmapViewDrawDiffContext(view, &(post_data->edit_context), feature) ;
 
-		if (!status)
+		if(!status)
 		  post_data->edit_context = NULL; /* So the view->features context doesn't get destroyed */
 
 		if (post_data->edit_context)
 		  zMapFeatureContextDestroy(post_data->edit_context, TRUE);
+
+		/* Need to highlight created feature.....in all windows..... */
+		list_item = g_list_first(view->window_list) ;
+		do
+		  {
+		    ZMapViewWindow view_window ;
+		    ZMapFeature feature ;
+
+		    if (post_data->edit_feature)
+		      feature = post_data->edit_feature ;
+		    else
+		      feature = (ZMapFeature)(post_data->feature_list->data) ;
+
+		    view_window = list_item->data ;
+
+		    zMapWindowFeatureSelect(view_window->window, feature) ;
+		  }
+		while ((list_item = g_list_next(list_item))) ;
+
 
 		break;
 	      }
@@ -1636,7 +1678,6 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 	{
 
 	  feature_unique_id = zMapFeatureCreateID(mode, feature_name, strand, start, end, 0, 0) ;
-
 
 	  switch(xml_data->common.action)
 	    {

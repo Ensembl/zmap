@@ -36,7 +36,7 @@
 #include <ZMap/zmapDraw.h>
 #include <ZMap/zmapIO.h>
 #include <ZMap/zmapWindow.h>
-#include <zmapWindowMark_P.h>
+#include <zmapWindowMark.h>
 #include <zmapWindowContainerGroup.h>
 #include <zmapWindowContainerUtils.h>
 
@@ -695,16 +695,16 @@ typedef struct _ZMapWindowStruct
 							       even if they have no features. */
 
 
-  GtkWidget     *text ;
-  GdkAtom        zmap_atom ;
-  void          *app_data ;
-  gulong         exposeHandlerCB ;
+  GtkWidget *text ;
+  GdkAtom zmap_atom ;
+  void *app_data ;
+  gulong exposeHandlerCB ;
 
 
   /* The length, start and end of the segment of sequence to be shown, there will be _no_
    * features outside of the start/end. */
-  double         seqLength;
-  ZMapFeatureSequenceMap sequence;  /* has name start and end */
+  double seqLength ;
+  ZMapFeatureSequenceMap sequence ;			    /* has name, start and end */
 
   ZMapFeatureContext feature_context ;			    /* Currently displayed features. */
 

@@ -61,4 +61,8 @@ ZMap/zmapXMLHandler.h \
 ZMap/zmapXRemote.h \
 $(NULL)
 
+# Extra files to remove for the maintainer-clean target.
+#
+MAINTAINERCLEANFILES = $(top_srcdir)/include/Makefile.in
+
 

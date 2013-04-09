@@ -775,7 +775,7 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 
 	if (!(result = zMapLaunchWebBrowser(feature->url, &error)))
 	  {
-	    zMapWarning("Error: %s\n", error->message) ;
+	    zMapWarning("Error: %s", error->message) ;
 
 	    g_error_free(error) ;
 	  }
@@ -842,7 +842,7 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
                              NULL,NULL);
 
 
-                  /* zMapLogWarning("evidence %s returns %d features\n", feature_name, g_list_length(items_free));*/
+                  /* zMapLogWarning("evidence %s returns %d features", feature_name, g_list_length(items_free));*/
                   g_free(feature_name);
 
                   for(items = items_free; items; items = items->next)
@@ -2181,6 +2181,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuDeveloperOps(int *start_index_inout,
       {ZMAPGUI_MENU_BRANCH, "_"DEVELOPER_STR,                   0, NULL,       NULL},
       {ZMAPGUI_MENU_NORMAL, DEVELOPER_STR"/Show Feature",       1, developerMenuCB, NULL},
       {ZMAPGUI_MENU_NORMAL, DEVELOPER_STR"/Show Feature Style", 2, developerMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, DEVELOPER_STR"/Show Window Stats",  3, developerMenuCB, NULL},
       {ZMAPGUI_MENU_NONE, NULL               , 0, NULL, NULL}
     } ;
 
@@ -2217,7 +2218,6 @@ static void developerMenuCB(int menu_item_id, gpointer callback_data)
 	    char *feature_text ;
 	    ZMapFeature feature ;
 	    GString *item_text_str ;
-//	    char *item_text ;
 	    char *coord_text ;
 	    char *msg_text ;
 
@@ -2275,9 +2275,35 @@ static void developerMenuCB(int menu_item_id, gpointer callback_data)
 	break ;
       }
 
+    case 3:
+      {
+	GString *session_text ;
+	char *title ;
+
+	session_text = g_string_new(NULL) ;
+
+	g_string_append(session_text, "General\n") ;
+	g_string_append_printf(session_text, "\tProgram: %s\n\n", zMapGetAppTitle()) ;
+	g_string_append_printf(session_text, "\tUser: %s (%s)\n\n", g_get_user_name(), g_get_real_name()) ;
+	g_string_append_printf(session_text, "\tMachine: %s\n\n", g_get_host_name()) ;
+	g_string_append_printf(session_text, "\tSequence: %s\n\n", menu_data->window->sequence->sequence) ;
+
+	g_string_append(session_text, "Window Statistics\n") ;
+	zMapWindowStats(menu_data->window, session_text) ;
+
+	title = zMapGUIMakeTitleString(NULL, "Session Statistics") ;
+	zMapGUIShowText(title, session_text->str, FALSE) ;
+	g_free(title) ;
+	g_string_free(session_text, TRUE) ;
+
+	break ;
+      }
+
     default:
-      zMapAssert("Coding error, unrecognised menu item number.") ; /* exits... */
-      break ;
+      {
+	zMapAssert("Coding error, unrecognised menu item number.") ; /* exits... */
+	break ;
+      }
     }
 
   g_free(menu_data) ;
@@ -2498,7 +2524,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuBlixemBAM(int *start_index_inout,
 
       if ((f2c = g_hash_table_lookup(cbdata->window->context_map->featureset_2_column,GUINT_TO_POINTER(fset_id))))
   	{
-	  //zMapLogWarning("menu is_seq: %s -> %p\n",g_quark_to_string(fset_id),f2c);
+	  //zMapLogWarning("menu is_seq: %s -> %p",g_quark_to_string(fset_id),f2c);
 	  cbdata->req_id = f2c->column_id;
 	  blixem_col = get_menu_string(f2c->column_ID,'-');
   	}
@@ -2623,7 +2649,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuRequestBAM(int *start_index_inout,
 
       if ((f2c = g_hash_table_lookup(cbdata->window->context_map->featureset_2_column,GUINT_TO_POINTER(fset_id))))
   	{
-	  //zMapLogWarning("menu is_seq: %s -> %p\n",g_quark_to_string(fset_id),f2c);
+	  //zMapLogWarning("menu is_seq: %s -> %p",g_quark_to_string(fset_id),f2c);
 	  cbdata->req_id = f2c->column_id;
 	  blixem_col = get_menu_string(f2c->column_ID,'-');
   	}
@@ -2746,7 +2772,7 @@ GQuark related_column(ZMapFeatureContextMap map,GQuark fset_id)
   if(src)
     q = src->related_column;
   else
-    zMapLogWarning("Can't find src data for %s\n",g_quark_to_string(fset_id));
+    zMapLogWarning("Can't find src data for %s",g_quark_to_string(fset_id));
 
   return q;
 }
@@ -2882,7 +2908,7 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data)
       break;
 
     case BLIX_SEQ_COVERAGE:		/* blixem from a selected item in a coverage featureset */
-#if RESTRICT_TO_MAKR
+#if RESTRICT_TO_MARK
       if (!zmapWindowMarkIsSet(menu_data->window->mark))
 	{
 	  zMapMessage("You must set the mark first to select this option","");
@@ -2906,7 +2932,7 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data)
 	  GList *l;
 	  int i;
 
-#if RESTRICT_TO_MAKR
+#if RESTRICT_TO_MARK
 	  if (!zmapWindowMarkIsSet(menu_data->window->mark))
 	    {
 	      zMapMessage("You must set the mark first to select this option","");

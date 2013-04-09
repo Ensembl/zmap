@@ -139,9 +139,7 @@ AM_INIT_AUTOMAKE
 
 AC_LANG(C)
 
-# for some reason AC_PATH_XTRA doesn't set up -lX11
-AC_PATH_XTRA
-X_LIBS="$X_LIBS -lX11"
+
 
 
 # The check libraries are NOT installed by default on most peoples linux
@@ -153,13 +151,6 @@ X_LIBS="$X_LIBS -lX11"
 #
 # PKG_CHECK_MODULES([CHECK], [check >= 0.9.4])
 
-
-# Leopard and tiger have different versions of X11 installed in different places.
-# Leopard has a softlink for the tiger directory and as the tiger version is older we go
-# with that one, of which there's a copy in the 10.4u sdk.
-if test "x$with_macosx_sdk_path" != "x$ZMAP_FALSE" ; then
-   X_LIBS="-L$with_macosx_sdk_path/usr/X11R6/lib -lX11"
-fi
 
 AC_ARG_ENABLE(debug,
         AS_HELP_STRING(--enable-debug,enable debug info compilation (no)),
@@ -197,6 +188,9 @@ AC_SUBST(LDFLAGS)
 
 AC_PROG_CXX
 AC_PROG_CC
+
+AM_PROG_CC_C_O
+
 AC_PATH_PROGS(PERL, perl perl5)
 AC_PROG_LN_S
 
@@ -259,28 +253,33 @@ fi
 # now foocanvas
 #PKG_CHECK_MODULES([FOOCANVAS], [libzmapfoocanvas = 0.1],,AC_MSG_ERROR(zmap version of foocanvas is required))
 
+
 # needs curl, we'll be looking using curl-config
 # LIBCURL_CHECK_CONFIG ([DEFAULT-ACTION], [MINIMUM-VERSION],
 #                       [ACTION-IF-YES], [ACTION-IF-NO])
 LIBCURL_CHECK_CONFIG([],7.11.0,[AC_MSG_RESULT(LIBCURL FLAGS ${LIBCURL})],[AC_MSG_ERROR(Sorry we need at least version 7.11.0)])
 
-PKG_CHECK_MODULES([ACECONN], [AceConn-1.1],,AC_MSG_ERROR(AceConn is required))
 
-CPPFLAGS="$CPPFLAGS $ACECONN_CFLAGS"
-LDFLAGS="$LDFLAGS $ACECONN_LIBS"
+#
+# Remove aceconn from here....
+#
+#PKG_CHECK_MODULES([ACECONN], [AceConn-1.1],,AC_MSG_ERROR(AceConn is required))
 
-AC_CHECK_LIB(AceConn, [main],
-  [ have_ace_conn='true' ],
-  [ have_ace_conn='false';
-    AC_MSG_ERROR(AceConn package is required) ])
+#CPPFLAGS="$CPPFLAGS $ACECONN_CFLAGS"
+#LDFLAGS="$LDFLAGS $ACECONN_LIBS"
+
+#AC_CHECK_LIB(AceConn, [main],
+#  [ have_ace_conn='true' ],
+#  [ have_ace_conn='false';
+#    AC_MSG_ERROR(AceConn package is required) ])
 
 
 # and substitute values....
 # Should be able to use @VARIABLE@ in Makefile.am
 #AC_SUBST(FOOCANVAS_CFLAGS)
 #AC_SUBST(FOOCANVAS_LIBS)
-AC_SUBST(ACECONN_CFLAGS)
-AC_SUBST(ACECONN_LIBS)
+#AC_SUBST(ACECONN_CFLAGS)
+#AC_SUBST(ACECONN_LIBS)
 AC_SUBST(GTK_CFLAGS)
 AC_SUBST(GTK_LIBS)
 AC_SUBST(DEMO_CANVAS_CFLAGS)
@@ -312,7 +311,8 @@ AC_SUBST(DEMO_CANVAS_LIBS)
 ################################################################################
 AC_HEADER_STDC
 AC_CHECK_HEADERS([fcntl.h locale.h stdlib.h string.h strings.h sys/param.h unistd.h])
-AC_CHECK_HEADER([AceConn.h])
+
+#AC_CHECK_HEADER([AceConn.h])
 
 ################################################################################
 ################################################################################
@@ -331,7 +331,7 @@ AC_FUNC_STAT
 AC_CHECK_FUNCS([gethostname memmove memset mkdir strcasecmp strstr strtol])
 
 #LDFLAGS="$LDFLAGS $FOOCANVAS_LIBS $ACECONN_LIBS"
-LDFLAGS="$LDFLAGS $ACECONN_LIBS"
+#LDFLAGS="$LDFLAGS $ACECONN_LIBS"
 
 #if test "x$with_macosx_sdk_path" == "x$ZMAP_FALSE" ; then
 #  AC_CHECK_LIB(zmapfoocanvas, foo_canvas_zmap,:, AC_MSG_ERROR(no patched libfoocanvas!))
@@ -379,11 +379,9 @@ zmapConfig \
 zmapControl \
 zmapControl/remote \
 zmapDAS \
-zmapDocs \
 zmapDraw \
 zmapFeature \
 zmapGFF \
-zmapMake \
 zmapManager \
 zmapServer \
 zmapThreads \
@@ -414,13 +412,11 @@ zmapAppServices/Makefile
 zmapConfig/Makefile
 zmapControl/Makefile
 zmapControl/remote/Makefile
-zmapDocs/Makefile
 zmapDAS/Makefile
 zmapDraw/Makefile
 zmapFeature/Makefile
 zmapFeature/tests/Makefile
 zmapGFF/Makefile
-zmapMake/Makefile
 zmapManager/Makefile
 zmapServer/Makefile
 zmapServer/acedb/Makefile
@@ -445,6 +441,11 @@ dotZMap:dotZmap.in
 #
 #$srcdir/$DX_CONFIG:Doxyfile.in
 #
+
+
+
+AC_CONFIG_SUBDIRS([AceConn])
+
 
 AC_OUTPUT
 

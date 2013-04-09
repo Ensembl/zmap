@@ -118,7 +118,9 @@ ZMapThread zMapThreadCreate(ZMapThreadRequestHandlerFunc handler_func,
     }
 
   if (status == 0)
-    thread->thread_id = thread_id ;
+    {
+      thread->thread_id = thread_id ;
+    }
   else
     {
       /* Ok to just destroy thread here as the thread was not successfully created so
@@ -170,6 +172,10 @@ gboolean zMapThreadGetReplyWithData(ZMapThread thread, ZMapThreadReply *state,
 }
 
 
+
+/* Surely we can use the autoconf stuff for this.....sigh.....actually this may just be
+ * impossible as pthread_t can be anything from an int to a pointer to a struct... */
+
 /* User must free returned string, note that we need this routine because pthread_t is defined
  * in very different ways on different systems...... */
 char *zMapThreadGetThreadID(ZMapThread thread)
@@ -205,7 +211,7 @@ void zMapThreadKill(ZMapThread thread)
 {
   int status ;
 
-  ZMAPTHREAD_DEBUG(("GUI: killing and destroying thread for thread %s\n", zMapThreadGetThreadID(thread))) ;
+  ZMAPTHREAD_DEBUG(thread, "Issuing pthread_cancel on this thread (%s)", zMapThreadGetThreadID(thread)) ;
 
   /* we could signal an exit here by setting a condvar of EXIT...but that might lead to
    * deadlocks, think about this bit.. */
@@ -230,7 +236,7 @@ gboolean zMapThreadExists(ZMapThread thread)
 /* Release the threads resources, don't do this until the slave thread has gone. */
 void zMapThreadDestroy(ZMapThread thread)
 {
-  ZMAPTHREAD_DEBUG(("GUI: destroying thread for thread %s\n", zMapThreadGetThreadID(thread))) ;
+  ZMAPTHREAD_DEBUG(thread, "Destroying control block/condvar for this thread (%s)", zMapThreadGetThreadID(thread)) ;
 
   zmapVarDestroy(&thread->reply) ;
   zmapCondVarDestroy(&(thread->request)) ;

@@ -76,11 +76,11 @@ A more salient point is the the GList implementation is a bit esoteric and conta
 Implementation by #define mostly, a bit messy but the calling code is identical.
 
 
-A more interesting comparsion is with the original foo based code:
+A more interesting comparison is with the original foo based code:
 # /nfs/users/nfs_m/mh17/.ZMap/ZMap_bins    26/09/2011
 1k features: featureset bump in 0.000 seconds
 10k features: featureset bump in 0.013 seconds
-30k features: featrueset bump on 0.066 seconds
+30k features: featureset bump on 0.066 seconds
 100k features: featureset bump in 0.740 seconds
 
 deskpro17848[mh17]56: zmap --conf_file=ZMap_bins

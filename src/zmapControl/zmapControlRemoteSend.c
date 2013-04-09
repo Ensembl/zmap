@@ -22,7 +22,7 @@
  *
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: 
  *
@@ -33,16 +33,13 @@
 
 #include <ZMap/zmap.h>
 
-
-
-
-
-
 #include <string.h>
 
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapUtilsXRemote.h>
 #include <zmapControl_P.h>
+
+
 
 typedef struct
 {
@@ -98,6 +95,13 @@ static ZMapXMLObjTagFunctionsStruct response_ends_G[] = {
 };
 static gboolean alert_client_debug_G = FALSE;
 
+
+
+/* 
+ *                  External interface.
+ */
+
+/* NONE OF THIS APPEARS TO BE CALLED ANYWHERE....SIGH..... */
 
 gboolean zmapControlRemoteAlertClient(ZMap zmap,
                                       char *action, GArray *xml_events,
@@ -175,14 +179,22 @@ gboolean zmapControlRemoteAlertClients(ZMap zmap, GList *clients,
   return yield;
 }
 
-static void send_client_command(gpointer client_data, gpointer user_data) /*  */
+
+
+/* 
+ *                  Internal interface.
+ */
+
+
+
+static void send_client_command(gpointer client_data, gpointer user_data)
 {
   ZMapXRemoteObj      client = (ZMapXRemoteObj)client_data;
   SendClientCommand message_data = (SendClientCommand)user_data;
   char *response = NULL, *command = NULL;
   int result;
 
-  command = message_data->full_text->str;
+  command = message_data->full_text->str ;
 
   if(alert_client_debug_G)
     {
@@ -259,6 +271,7 @@ static gboolean xml_zmap_start_cb(gpointer user_data, ZMapXMLElement element,
 {
   if(alert_client_debug_G)
     zMapLogWarning("%s", "In zmap Start Handler");
+
   return TRUE;
 }
 
@@ -268,6 +281,7 @@ static gboolean xml_zmap_end_cb(gpointer user_data, ZMapXMLElement element,
 {
   if(alert_client_debug_G)
     zMapLogWarning("In zmap %s Handler.", "End");
+
   return TRUE;
 }
 

@@ -258,7 +258,7 @@ static ZMapFeatureContextExecuteStatus maskNewFeaturesetByAll(GQuark key,
             break;
 
         style = feature_set->style;
-#warning should not be necessary: scan for all featureset create fucntion calls and fix
+#warning should not be necessary: scan for all featureset create function calls and fix
         if(!style)
         {
             zMapLogWarning("looking up style for featureset %s",g_quark_to_string(feature_set->unique_id));

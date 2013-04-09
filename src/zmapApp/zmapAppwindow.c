@@ -49,6 +49,13 @@
 #include <zmapApp_P.h>
 
 
+
+
+/* define this to get some memory debugging. */
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+#define ZMAP_MEMORY_DEBUG
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 #define CLEAN_EXIT_MSG "Exit clean - goodbye cruel world !"
 
 static void checkForCmdLineVersionArg(int argc, char *argv[]) ;
@@ -126,22 +133,31 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   ZMapFeatureSequenceMap seq_map;
   char *err_msg = NULL ;
 
-  /* AppRealiseData app_data = g_new0(AppRealiseDataStruct, 1); */
+
+#ifdef ZMAP_MEMORY_DEBUG
+  if (g_mem_is_system_malloc())
+    zMapDebugPrintf("%s", "Using system malloc.") ;
+  else
+    zMapDebugPrintf("%s", "Using glib special malloc.") ;
+
+  g_mem_set_vtable(glib_mem_profiler_table) ;
+#endif
+
 
 
   /*       Application initialisation.        */
-
-  /* Since thread support is crucial we do compile and run time checks that its all intialised.
-   * the function calls look obscure but its what's recommended in the glib docs. */
-#if !defined G_THREADS_ENABLED || defined G_THREADS_IMPL_NONE || !defined G_THREADS_IMPL_POSIX
-#error "Cannot compile, threads not properly enabled."
-#endif
 
 
   /* User can ask for an immediate sleep, useful for attaching a debugger. */
   if ((sleep_seconds = checkForCmdLineSleep(argc, argv)))
     sleep(sleep_seconds) ;
 
+
+  /* Since thread support is crucial we do compile and run time checks that its all intialised.
+   * the function calls look obscure but its what's recommended in the glib docs. */
+#if !defined G_THREADS_ENABLED || defined G_THREADS_IMPL_NONE || !defined G_THREADS_IMPL_POSIX
+#error "Cannot compile, threads not properly enabled."
+#endif
 
   /* Make sure glib threading is supported and initialised. */
   g_thread_init(NULL) ;
@@ -228,6 +244,10 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
   initGnomeGTK(argc, argv) ;					    /* May exit if checks fail. */
 
+#ifdef ZMAP_MEMORY_DEBUG
+  g_mem_profile() ;
+#endif
+
   app_context->app_widg = toplevel = zMapGUIToplevelNew(NULL, NULL) ;
 
   gtk_window_set_policy(GTK_WINDOW(toplevel), FALSE, TRUE, FALSE ) ;
@@ -273,7 +293,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
   /* Check that log file has not got too big... */
   if ((log_size = zMapLogFileSize()) > (ZMAP_DEFAULT_MAX_LOG_SIZE * 1048576))
-    zMapWarning("Log file was grown to %d bytes, you should think about archiving or removing it.\n", log_size) ;
+    zMapWarning("Log file was grown to %d bytes, you should think about archiving or removing it.", log_size) ;
 
 
   /* Only show default sequence if we are _not_ controlled via XRemote */
@@ -347,8 +367,8 @@ static void initGnomeGTK(int argc, char *argv[])
 
   if ((err_msg = (char *)gtk_check_version(ZMAP_GTK_MAJOR, ZMAP_GTK_MINOR, ZMAP_GTK_MICRO)))
     {
-      zMapLogCritical("%s\n", err_msg) ;
-      zMapExitMsg("%s\n", err_msg) ;
+      zMapLogCritical("%s", err_msg) ;
+      zMapExitMsg("%s", err_msg) ;
 
       gtk_exit(EXIT_FAILURE) ;
     }
@@ -457,7 +477,7 @@ void removeZMapCB(void *app_data, void *zmap_data)
      doesn't as the first found one that matches, gets removed an
      returns true. See
      http://scentric.net/tutorial/sec-treemodel-remove-many-rows.html
-     for an implementation of mutliple deletes */
+     for an implementation of multiple deletes */
   gtk_tree_model_foreach(GTK_TREE_MODEL(app_context->tree_store_widg),
                          (GtkTreeModelForeachFunc)removeZMapRowForeachFunc,
                          (gpointer)zmap);
@@ -711,7 +731,7 @@ static char *checkConfigDir(void)
   zMapCmdLineArgsValue(ZMAPARG_CONFIG_FILE, &file) ;
 
 
-  if (!zMapConfigDirCreate(dir.s, file.s, FALSE))
+  if (!zMapConfigDirCreate(dir.s, file.s))
     {
 	fprintf(stderr, "Could not access either/both of configuration directory \"%s\" "
 	      "or file \"%s\" within that directory.\n",
@@ -859,13 +879,13 @@ static gboolean configureLog(char *config_file)
 
   /* default values */
   logging = TRUE ;
-  log_to_file = TRUE ;
-  show_code_details = TRUE;
-  show_time = TRUE;
-  catch_glib = TRUE;
-  echo_glib = TRUE;
+  log_to_file = TRUE  ;
+  show_code_details = TRUE ;
+  show_time = FALSE ;
+  catch_glib = TRUE ;
+  echo_glib = TRUE ;
   /* if we run config free we put the log file in the cwd */
-  full_dir = g_strdup("./");
+  full_dir = g_strdup("./") ;
   log_name = g_strdup(ZMAPLOG_FILENAME) ;
 
 
@@ -882,53 +902,55 @@ static gboolean configureLog(char *config_file)
 
       /* logging to the file */
       if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_LOG_CONFIG,
-					ZMAPSTANZA_LOG_CONFIG,
-					ZMAPSTANZA_LOG_FILE, &tmp_bool))
+					 ZMAPSTANZA_LOG_CONFIG,
+					 ZMAPSTANZA_LOG_FILE, &tmp_bool))
 	log_to_file = tmp_bool ;
 
       /* how much detail to show...code... */
       if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_LOG_CONFIG,
-					ZMAPSTANZA_LOG_CONFIG,
-					ZMAPSTANZA_LOG_SHOW_CODE, &tmp_bool))
+					 ZMAPSTANZA_LOG_CONFIG,
+					 ZMAPSTANZA_LOG_SHOW_CODE, &tmp_bool))
 	show_code_details = tmp_bool;
 
       /* how much detail to show...time... */
       if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_LOG_CONFIG,
-					ZMAPSTANZA_LOG_CONFIG,
-					ZMAPSTANZA_LOG_SHOW_TIME, &tmp_bool))
+					 ZMAPSTANZA_LOG_CONFIG,
+					 ZMAPSTANZA_LOG_SHOW_TIME, &tmp_bool))
 	show_time = tmp_bool;
 
       /* catch GLib errors, else they stay on stdout */
       if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_LOG_CONFIG,
-					ZMAPSTANZA_LOG_CONFIG,
-					ZMAPSTANZA_LOG_CATCH_GLIB, &tmp_bool))
+					 ZMAPSTANZA_LOG_CONFIG,
+					 ZMAPSTANZA_LOG_CATCH_GLIB, &tmp_bool))
 	catch_glib = tmp_bool;
 
       /* catch GLib errors, else they stay on stdout */
       if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_LOG_CONFIG,
-					ZMAPSTANZA_LOG_CONFIG,
-					ZMAPSTANZA_LOG_ECHO_GLIB, &tmp_bool))
+					 ZMAPSTANZA_LOG_CONFIG,
+					 ZMAPSTANZA_LOG_ECHO_GLIB, &tmp_bool))
 	echo_glib = tmp_bool;
 
       /* user specified dir, default to config dir */
       if (zMapConfigIniContextGetString(context, ZMAPSTANZA_LOG_CONFIG,
-				       ZMAPSTANZA_LOG_CONFIG,
-				       ZMAPSTANZA_LOG_DIRECTORY, &tmp_string))
-	full_dir = zMapGetDir(tmp_string, TRUE, TRUE) ;
+					ZMAPSTANZA_LOG_CONFIG,
+					ZMAPSTANZA_LOG_DIRECTORY, &tmp_string))
+	{
+	  full_dir = zMapGetDir(tmp_string, TRUE, TRUE) ;
+	}
       else
 	{
-		g_free (full_dir);
-		full_dir = g_strdup(zMapConfigDirGetDir()) ;
+	  g_free (full_dir);
+	  full_dir = g_strdup(zMapConfigDirGetDir()) ;
 	}
 
 
       /* user specified file, default to zmap.log */
       if (zMapConfigIniContextGetString(context, ZMAPSTANZA_LOG_CONFIG,
-				       ZMAPSTANZA_LOG_CONFIG,
-				       ZMAPSTANZA_LOG_FILENAME, &tmp_string))
+					ZMAPSTANZA_LOG_CONFIG,
+					ZMAPSTANZA_LOG_FILENAME, &tmp_string))
 	{
-		g_free(log_name) ;
-		log_name = tmp_string;
+	  g_free(log_name) ;
+	  log_name = tmp_string;
 	}
 
       /* config context needs freeing */
@@ -938,14 +960,14 @@ static gboolean configureLog(char *config_file)
 
   logfile_path = zMapGetFile(full_dir, log_name, TRUE) ;
 
-      /* all our strings need freeing */
+  /* all our strings need freeing */
   g_free(log_name) ;
   g_free(full_dir) ;
 
   result = zMapLogConfigure(logging, log_to_file,
-				show_code_details, show_time,
-				catch_glib, echo_glib,
-				logfile_path) ;
+			    show_code_details, show_time,
+			    catch_glib, echo_glib,
+			    logfile_path) ;
 
   return result ;
 }

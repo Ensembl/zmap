@@ -1,14 +1,11 @@
 #!/usr/bin/env perl
 
-# copied from Otterlace script bam_get_align and ammedned by mh17 to be otterlace free
-# you do however have to provide Bio::DB::Sam, i'm using the otterlace build for testing
-
 use strict;
 use warnings;
 
-use Carp;
 use Getopt::Long 'GetOptions';
 use Pod::Usage;
+use Roman;
 
 use URI::Escape qw(uri_unescape);
 
@@ -18,9 +15,31 @@ use Bio::Server::BigWig;
 
 # parameters
 my %params = ();
-my @options = qw ( help man gff_version=i file=s chr=s start=i end=i gff_feature_source=s strand=s gff_seqname=s roman! Roman! mapto=i);
 
-my @required = qw ( file chr start end gff_feature_source strand );
+my @options = qw(
+    help!
+    man!
+    gff_version=i
+    file=s
+    seq_id=s
+    start=i
+    end=i
+    gff_feature_source=s
+    strand=s
+    gff_seqname=s
+    roman!
+    Roman!
+    mapto=i
+    );
+
+my @required = qw(
+    file
+    seq_id
+    start
+    end
+    gff_feature_source
+    strand
+    );
 
 my $attributes_format;
 my $strands = { 1  => '+', -1 => '-' };
@@ -31,46 +50,44 @@ my $source;
 
 sub get_params
 {
- 	# defaults
-	$params {'gff_version'} = 2;		# default for now as ZMap doesn't do v3 yet
+    # defaults
+    $params{'gff_version'} = 2; # default for now as ZMap doesn't do v3 yet
 
-	GetOptions(\%params, @options ) or pod2usage(2);
+    GetOptions(\%params, @options ) or pod2usage(2);
 
-	pod2usage(1) if defined $params { 'help' };
-	pod2usage(-exitstatus => 0, -verbose => 2) if defined $params {'man'} ;
+    pod2usage(1) if defined $params { 'help' };
+    pod2usage(-exitstatus => 0, -verbose => 2) if defined $params {'man'} ;
 
-	my $missing = 0;
-	foreach my $param (@required)
-	{
-		if (!defined $params { $param })
-		{
-			print "$param not specified\n";
-			$missing++;
-		}
-	}
-	pod2usage(1) if $missing;
+    my $missing = 0;
+    foreach my $param (@required) {
+        if (!defined $params { $param }) {
+            print "$param not specified\n";
+            $missing++;
+        }
+    }
+    pod2usage(1) if $missing;
 
-	$strand_field = ( $params { 'strand' } == 1 ) ? '+' : ( $params { 'strand' } == -1 ) ? '-' : '.';
+    $strand_field = ($params{'strand'} == 1 ) ? '+' : ($params{'strand'} == -1 ) ? '-' : '.';
 
-	$params { 'chr' } = Roman($params { 'chr' }) if(defined $params { 'Roman' });
-	$params { 'chr' } = roman($params { 'chr' }) if(defined $params { 'roman' });
+    $params{'seq_id'} = Roman($params{'seq_id'}) if defined $params{'Roman'};
+    $params{'seq_id'} = roman($params{'seq_id'}) if defined $params{'roman'};
 
-	if(defined $params { 'gff_seqname' })
-	{
-		$sequence = $params { 'gff_seqname' };
-	}
-	else
-	{
-		$sequence = $params {'chr'};
-	}
+    if (defined $params{'gff_seqname'}) {
+        $sequence = $params{'gff_seqname'};
+    }
+    else {
+        $sequence = $params{'seq_id'};
+    }
 
-	$attributes_format = $params { 'gff_version' } == 3 ? '%s=%s' : '%s %s';
+    $attributes_format = $params{'gff_version'} == 3 ? '%s=%s' : '%s %s';
+
+    return;
 }
 
 
 sub print_header
 {
-    printf "##gff-version %d\n##sequence-region %s %d %d\n", $params { 'gff_version' }, $sequence, $params { 'start' }, $params { 'end' } ;
+    printf "##gff-version %d\n##sequence-region %s %d %d\n", $params{'gff_version'}, $sequence, $params{'start'}, $params{'end'};
     return;
 }
 
@@ -136,7 +153,7 @@ my $mapping_xml = $client->otter_response_content(
     'GET', 'get_mapping', {
         dataset => $dataset,
         cs      => $csver,
-        chr     => $chr,
+        seq_id  => $seq_id,
         start   => $start,
         end     => $end,
     });
@@ -151,30 +168,31 @@ $mapping->do_features($bam_fetch, $start, $end, \&_print_feature);
 
 sub main
 {
-	get_params();
+    get_params();
 
-	my $chr = $params { 'chr' } ;
-	gff_escape_seqid for $sequence;
+    my $seq_id = $params{'seq_id'};
+    gff_escape_seqid for $sequence;
 
-	$source = $params { 'gff_feature_source' };
-	gff_escape_source for $source;
+    $source = $params{'gff_feature_source'};
+    gff_escape_source for $source;
 
-	my $bigwig = Bio::DB::BigWig->new( -bigwig => $params { 'file'} );
-	my $bigwig_fetch = Bio::Server::BigWig->new( -bigwig => $bigwig );
+    my $bigwig = Bio::DB::BigWig->new( -bigwig => $params{'file'} );
+    my $bigwig_fetch = Bio::Server::BigWig->new( -bigwig => $bigwig );
 
-	# map first then request.... move this to inside the mapping function
-	my $features = $bigwig_fetch->features ( $chr, $params { 'start' },  $params { 'end' } );
+    # map first then request.... move this to inside the mapping function
+    my $features = $bigwig_fetch->features( $seq_id, $params{'start'}, $params{'end'});
 
 # if it's a ref
-#	printf "found %d matches\n", scalar @{$$features}  ;
-	printf STDERR "found %d matches\n", scalar @{$features}  ;
+#   printf "found %d matches\n", scalar @{$$features}  ;
+    printf STDERR "found %d matches\n", scalar @{$features}  ;
 
-	print_header();
+    print_header();
 
-	foreach my $feat (@{$features})
-	{
-		print_feature($feat, $feat->start, $feat->end );
-	}
+    foreach my $feat (@{$features}) {
+        print_feature($feat, $feat->start, $feat->end);
+    }
+
+    return;
 }
 
 main;
@@ -187,7 +205,7 @@ zmap_get_bigwig request coverage data and output as GFF
 
 =head1 SYNOPSIS
 
-zmap_get_bigwig [--help] [--man] --file=[http:|ftp:]/path/to/file --start=123 --end=456 --gff_feature_source=name --chr=CHROMOSOME_IV --strand=1 [--gff_version=3]  [--roman] [--Roman] --gff_seqname=sequence
+zmap_get_bigwig [--help] [--man] --file=[http:|ftp:]/path/to/file --start=123 --end=456 --gff_feature_source=name --seq_id=CHROMOSOME_IV --strand=1 [--gff_version=3]  [--roman] [--Roman] --gff_seqname=sequence
 
 =head1 OPTIONS
 
@@ -206,7 +224,7 @@ B<This program> will read the given input file(s) and do someting
 useful with the contents thereof.
 
 =head1 COPYRIGHT
- Author: Malcolm Hinsley (mh17@sanger.ac.uk)
+
  Copyright (c) 2006-2012: Genome Research Ltd.
 ------------------------------------------------------------------
 ZMap is free software; you can redistribute it and/or
@@ -233,4 +251,6 @@ originated by
 This script was derived fron an Anacode script believed to have been
 written originally by Jeremy Henty (jh13@sanger.ac.uk)
 
+=head1 AUTHOR
 
+Malcolm Hinsley B<email> mh17@sanger.ac.uk

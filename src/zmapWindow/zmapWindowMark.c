@@ -29,7 +29,7 @@
  *              user can limit certain operations to the marked zone
  *              which makes them much faster.
  *
- * Exported functions: See zmapWindow_P.h
+ * Exported functions: See zmapWindow.h
  *-------------------------------------------------------------------
  */
 
@@ -39,7 +39,7 @@
 
 #include <ZMap/zmapUtils.h>
 #include <zmapWindow_P.h>	/* ZMapWindow */
-#include <zmapWindowMark_P.h>
+#include <zmapWindowMark.h>
 #include <zmapWindowCanvasItem.h>
 #include <zmapWindowContainerUtils.h>
 #include <zmapWindowContainerBlock.h>

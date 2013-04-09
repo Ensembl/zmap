@@ -35,16 +35,49 @@
 #include <ZMap/zmap.h>
 
 #include <string.h>
-//#include <unistd.h>
 #include <glib.h>
 
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapStyle.h>
-#include <zmapConfigIni_P.h>
 #include <ZMap/zmapConfigIni.h>
 #include <ZMap/zmapConfigStrings.h>
 #include <ZMap/zmapConfigStanzaStructs.h>
 #include <ZMap/zmapFeature.h>
+#include <zmapConfigIni_P.h>
+
+
+
+typedef struct
+{
+  char *stanza_name;
+  char *stanza_type;
+  GList *keys;
+} ZMapConfigIniContextStanzaEntryStruct, *ZMapConfigIniContextStanzaEntry ;
+
+
+typedef struct
+{
+  ZMapConfigIniContext context;
+  ZMapConfigIniContextStanzaEntry stanza;
+  gboolean result;
+} CheckRequiredKeysStruct, *CheckRequiredKeys ;
+
+
+/* Context Config Loading */
+typedef struct
+{
+  ZMapConfigIniContext context;
+  ZMapConfigIniContextStanzaEntry stanza;
+
+  char *current_stanza_name;
+
+  ZMapConfigIniUserDataCreateFunc object_create_func;
+  gpointer current_object;
+
+  GList *object_list_out;
+} FetchReferencedStanzasStruct, *FetchReferencedStanzas ;
+
+
 
 
 static ZMapConfigIniContextKeyEntry get_app_group_data(char **stanza_name, char **stanza_type);
@@ -58,29 +91,34 @@ static gpointer create_config_source();
 static void free_source_list_item(gpointer list_data, gpointer unused_data);
 static void source_set_property(char *current_stanza_name, char *key, GType type,
 				gpointer parent_data, GValue *property_value) ;
-
-
 static gpointer create_config_style() ;
 static void style_set_property(char *current_stanza_name, char *key, GType type,
 			       gpointer parent_data, GValue *property_value) ;
 static void free_style_list_item(gpointer list_data, gpointer unused_data)  ;
+static void free_source_names(gpointer list_data, gpointer unused_user_data) ;
 static gint match_type(gconstpointer list_data, gconstpointer user_data);
+static void fetch_referenced_stanzas(gpointer list_data, gpointer user_data) ;
+static void fetchStanzas(FetchReferencedStanzas full_data, GKeyFile *key_file, char *stanza_name) ;
+static ZMapConfigIniContextStanzaEntry get_stanza_with_type(ZMapConfigIniContext context, char *stanza_type) ;
+static GList *get_child_stanza_names_as_list(ZMapConfigIniContext context, char *parent_name, char *parent_key) ;
+static ZMapConfigIniContextStanzaEntry get_stanza_with_type(ZMapConfigIniContext context, char *stanza_type) ;
+static void set_is_default(gpointer key, gpointer value, gpointer data) ;
+static ZMapConfigIniContextStanzaEntry get_stanza_with_type(ZMapConfigIniContext context, char *stanza_type) ;
+static GList *get_names_as_list(char *styles) ;
+static GList *contextGetNamedStanzas(ZMapConfigIniContext context,
+				     ZMapConfigIniUserDataCreateFunc object_create_func,
+				     char *stanza_type, GKeyFile *extra_styles_keyfile) ;
+static GList *contextGetStyleList(ZMapConfigIniContext context, char *styles_list, GKeyFile *extra_styles_keyfile) ;
+static GHashTable *configIniGetGlyph(ZMapConfigIniContext context, GKeyFile *extra_styles_keyfile) ;
+static void stylesFreeList(GList *config_styles_list) ;
 
-typedef struct
-{
-  char *stanza_name;
-  char *stanza_type;
-  GList *keys;
-}ZMapConfigIniContextStanzaEntryStruct, *ZMapConfigIniContextStanzaEntry;
 
 
-typedef struct
-{
-  ZMapConfigIniContext context;
-  ZMapConfigIniContextStanzaEntry stanza;
-  gboolean result;
-} CheckRequiredKeysStruct, *CheckRequiredKeys;
 
+
+/* 
+ *                  External Interface routines
+ */
 
 
 ZMapConfigIniContext zMapConfigIniContextProvide(char *config_file)
@@ -140,12 +178,12 @@ ZMapConfigIniContext zMapConfigIniContextProvideNamed(char *config_file, char *s
 	  if((stanza_group = get_source_group_data(&stanza_name, &stanza_type)))
 	    zMapConfigIniContextAddGroup(context, stanza_name,
 					 stanza_type, stanza_group);
-      }
+	}
 
       if (g_ascii_strcasecmp(stanza_name_in, ZMAPSTANZA_STYLE_CONFIG) == 0)
-      {
-        // this requires [glyphs] from main config file
-        // but it's not a standard key-value format where we know the keys
+	{
+	  // this requires [glyphs] from main config file
+	  // but it's not a standard key-value format where we know the keys
 	  if ((stanza_group = get_style_group_data(&stanza_name, &stanza_type)))
 	    zMapConfigIniContextAddGroup(context, stanza_name,
 					 stanza_type, stanza_group) ;
@@ -189,18 +227,6 @@ GList *zMapConfigIniContextGetNamed(ZMapConfigIniContext context, char *stanza_n
   return list ;
 }
 
-GList *zMapConfigIniContextGetStyleList(ZMapConfigIniContext context,char *styles_list)
-{
-  GList *list = NULL;
-
-  if(styles_list)
-      list = zMapConfigIniContextGetListedStanzas(context, create_config_style,styles_list,"style"); // get the named stanzas
-  else
-      list = zMapConfigIniContextGetNamedStanzas(context, create_config_style,"style") ; // get all the stanzas
-  return list ;
-}
-
-
 
 void zMapConfigSourcesFreeList(GList *config_sources_list)
 {
@@ -210,195 +236,13 @@ void zMapConfigSourcesFreeList(GList *config_sources_list)
   return ;
 }
 
-void zMapConfigStylesFreeList(GList *config_styles_list)
-{
-  g_list_foreach(config_styles_list, free_style_list_item, NULL);
-  g_list_free(config_styles_list);
-
-  return ;
-}
-
-
-
-/*
- *                    Context internals
- */
-
-
-/* here we want to prefer exact matches of name and type */
-/* then we'll only match types with a name == * already in the list */
-static gint match_type(gconstpointer list_data, gconstpointer user_data)
-{
-  ZMapConfigIniContextStanzaEntry query = (ZMapConfigIniContextStanzaEntry)user_data;
-  ZMapConfigIniContextStanzaEntry list_entry = (ZMapConfigIniContextStanzaEntry)list_data;
-  gint result = -1;
-
-  /* not an exact name match, do the types match? */
-  if(g_ascii_strcasecmp( query->stanza_type, list_entry->stanza_type ) == 0)
-    {
-      /* make sure the stanza_name == * in the list the context
-       * has. This is so stanzas with different names can have the
-       * same basic type. e.g. the same list of keys/info/G_TYPE data
-       * for keys... */
-      if(g_ascii_strcasecmp(list_entry->stanza_name, "*") == 0)
-      {
-        query->keys = list_entry->keys;
-        result = 0;           /* zero == found */
-      }
-      else
-      result = 1;
-    }
-  else
-    result = -1;
-
-  return result;
-}
-
-
-
-static ZMapConfigIniContextStanzaEntry get_stanza_with_type(ZMapConfigIniContext context,
-                                              char *stanza_type)
-{
-  ZMapConfigIniContextStanzaEntryStruct user_request = {NULL};
-  ZMapConfigIniContextStanzaEntry stanza = NULL;
-  GList *entry_found;
-
-  user_request.stanza_name = "*";
-  user_request.stanza_type = stanza_type;
-
-  if((entry_found = g_list_find_custom(context->groups, &user_request, match_type)))
-    {
-      stanza = (ZMapConfigIniContextStanzaEntry)(entry_found->data);
-    }
-
-  return stanza;
-}
-
-
-
-
-/* Context Config Loading */
-typedef struct
-{
-  ZMapConfigIniContext context;
-  ZMapConfigIniContextStanzaEntry stanza;
-
-  char *current_stanza_name;
-
-  ZMapConfigIniUserDataCreateFunc object_create_func;
-  gpointer current_object;
-
-  GList *object_list_out;
-} FetchReferencedStanzasStruct, *FetchReferencedStanzas;
-
-static void fill_stanza_key_value(gpointer list_data, gpointer user_data)
-{
-  FetchReferencedStanzas full_data = (FetchReferencedStanzas)user_data;
-  ZMapConfigIniContextKeyEntry key = (ZMapConfigIniContextKeyEntry)list_data;
-  GValue *value = NULL;
-
-  if (zMapConfigIniGetValue(full_data->context->config,
-                      full_data->current_stanza_name,
-                      key->key,
-                      &value,
-                      key->type))
-    {
-      if (key->set_property)
-      (key->set_property)(full_data->current_stanza_name, key->key, key->type, full_data->current_object, value);
-      else
-      zMapLogWarning("No set_property function for key '%s'", key->key);
-
-      g_free(value);
-    }
-
-  return ;
-}
-
-static void fetch_referenced_stanzas(gpointer list_data, gpointer user_data)
-{
-  FetchReferencedStanzas full_data = (FetchReferencedStanzas)user_data;
-  char *stanza_name = (char *)list_data;
-
-  full_data->current_stanza_name = stanza_name;
-
-  if (zMapConfigIniHasStanza(full_data->context->config, stanza_name,NULL) && (full_data->object_create_func))
-    {
-      if ((full_data->current_object = (full_data->object_create_func)()))
-      {
-        /* get stanza keys */
-        g_list_foreach(full_data->stanza->keys, fill_stanza_key_value, user_data);
-
-        full_data->object_list_out = g_list_append(full_data->object_list_out,
-                                         full_data->current_object);
-      }
-      else
-      zMapLogWarning("Object Create Function for stanza '%s'"
-                   " failed to return anything", stanza_name);
-    }
-
-  return ;
-}
-
-GList *get_child_stanza_names_as_list(ZMapConfigIniContext context,
-                              char *parent_name,
-                              char *parent_key)
-{
-  GList *list = NULL;
-  GValue *value = NULL;
-
-  if (parent_name && parent_key &&  zMapConfigIniGetValue(context->config,
-                                            parent_name, parent_key,
-                                            &value, G_TYPE_POINTER))
-    {
-      char **strings_list = NULL;
-
-      if ((strings_list = g_value_get_pointer(value)))
-      {
-        char **ptr = strings_list;
-
-        while (ptr && *ptr)
-          {
-            *ptr = g_strstrip(*ptr) ;
-            list = g_list_append(list, *ptr) ;
-            ptr++ ;
-          }
-
-        g_free(strings_list);
-      }
-    }
-
-  return list;
-}
-
-static void free_source_names(gpointer list_data, gpointer unused_user_data)
-{
-  g_free(list_data);
-  return ;
-}
-
-#if NOT_USED
-GList *zMapConfigIniContextGetStanza(ZMapConfigIniContext context,
-                             ZMapConfigIniUserDataCreateFunc create,
-                             char *stanza_name, char *stanza_type)
-{
-  GList *list = NULL;
-
-  if(strcmp(stanza_name, stanza_type) == 0)
-    list = zMapConfigIniContextGetReferencedStanzas(context, create,
-                                        NULL, NULL,
-                                        NULL, stanza_type);
-
-  return list;
-}
-
-#endif
 
 GList *zMapConfigIniContextGetReferencedStanzas(ZMapConfigIniContext context,
-                                    ZMapConfigIniUserDataCreateFunc object_create_func,
-                                    char *parent_name,
-                                    char *parent_type,
-                                    char *parent_key,
-                                    char *child_type)
+						ZMapConfigIniUserDataCreateFunc object_create_func,
+						char *parent_name,
+						char *parent_type,
+						char *parent_key,
+						char *child_type)
 {
   FetchReferencedStanzasStruct data = {NULL};
   GList *sources      = NULL;
@@ -409,8 +253,8 @@ GList *zMapConfigIniContextGetReferencedStanzas(ZMapConfigIniContext context,
   data.object_create_func = object_create_func;
 
   source_names = get_child_stanza_names_as_list(context,
-                                    parent_name,
-                                    parent_key);
+						parent_name,
+						parent_key);
 
   if(!source_names)
     source_names = g_list_append(source_names, g_strdup(child_type));
@@ -427,30 +271,6 @@ GList *zMapConfigIniContextGetReferencedStanzas(ZMapConfigIniContext context,
 
 
 
-
-GList *get_names_as_list(char *styles)
-{
-  GList *list = NULL;
-
-  char **strings_list = NULL;
-
-  if ((strings_list = g_strsplit(styles,";",0)))
-  {
-    char **ptr = strings_list;
-
-    while (ptr && *ptr)
-      {
-       *ptr = g_strstrip(*ptr) ;
-       list = g_list_append(list, *ptr);
-       ptr++ ;
-      }
-
-    g_free(strings_list);
-  }
-  return list;
-}
-
-
 /* see zMapConfigIniContextGetNamed(ZMapConfigIniContext context, char *stanza_name)
  * in zmapConfigIni.c, which is a wrapper for GetReferencedStanzas() above
  * For a list of styles in a source stanza we can't get these easily as we don't know the name
@@ -459,8 +279,8 @@ GList *get_names_as_list(char *styles)
  */
 
 GList *zMapConfigIniContextGetListedStanzas(ZMapConfigIniContext context,
-                                    ZMapConfigIniUserDataCreateFunc object_create_func,
-                                    char *styles_list,char *child_type)
+					    ZMapConfigIniUserDataCreateFunc object_create_func,
+					    char *styles_list,char *child_type)
 {
   FetchReferencedStanzasStruct data = {NULL};
   GList *styles      = NULL;
@@ -476,7 +296,7 @@ GList *zMapConfigIniContextGetListedStanzas(ZMapConfigIniContext context,
 
   g_list_foreach(style_names, fetch_referenced_stanzas, &data);
 
-//  g_list_foreach(style_names, free_source_names, NULL);
+  //  g_list_foreach(style_names, free_source_names, NULL);
   g_list_free(style_names);
 
   styles = data.object_list_out;
@@ -485,48 +305,6 @@ GList *zMapConfigIniContextGetListedStanzas(ZMapConfigIniContext context,
 }
 
 
-/* return list of all stanzas in context->extra_key_file */
-/* used when we don't have a styles list */
-GList *zMapConfigIniContextGetNamedStanzas(ZMapConfigIniContext context,
-                                    ZMapConfigIniUserDataCreateFunc object_create_func,
-                                    char *stanza_type)
-{
-  FetchReferencedStanzasStruct data = {NULL};
-  GList *styles      = NULL;
-  gchar **names;
-  gchar **np;
-  data.context = context;
-  data.stanza  = get_stanza_with_type(context, stanza_type);
-  data.object_create_func = object_create_func;
-
-  names = zMapConfigIniContextGetAllStanzaNames(context);
-
-  for(np = names;*np;np++)
-  {
-      fetch_referenced_stanzas((gpointer) *np,&data);
-  }
-
-  g_strfreev(names);
-
-  styles = data.object_list_out;
-
-  return styles;
-}
-
-
-GQuark zMapStyleQuark(gchar *str)
-{
-  GQuark q = g_quark_from_string(str);
-  return( q);
-}
-
-
-void set_is_default(gpointer key, gpointer value, gpointer data)
-{
-	ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle) value;
-
-	zMapStyleSetIsDefault(style);
-}
 
 /* get default styles w/ no reference to the styles file
  * NOTE keep this separate from zMapConfigIniGetStylesFromFile() as the config ini code
@@ -538,7 +316,7 @@ GHashTable * zmapConfigIniGetDefaultStyles(void)
   GHashTable *styles = NULL ;
   extern char * default_styles;		/* in a generated source file */
 
-  zMapConfigIniGetStylesFromFile(NULL, NULL, NULL, &styles, default_styles);
+  zMapConfigIniGetStylesFromFile(NULL, NULL, NULL, &styles, default_styles) ;
 
   g_hash_table_foreach(styles, set_is_default, NULL);
 
@@ -547,8 +325,8 @@ GHashTable * zmapConfigIniGetDefaultStyles(void)
 
 
 // get style stanzas in styles_list of all from the file
-gboolean zMapConfigIniGetStylesFromFile(char *config_file,
-					char *styles_list, char *styles_file, GHashTable **styles_out, char * buffer)
+gboolean zMapConfigIniGetStylesFromFile(char *config_file, char *styles_list, char *styles_file,
+					GHashTable **styles_out, char * buffer)
 {
   gboolean result = FALSE ;
   GHashTable *styles = NULL ;
@@ -559,24 +337,31 @@ gboolean zMapConfigIniGetStylesFromFile(char *config_file,
 
   if ((context = zMapConfigIniContextProvideNamed(config_file, ZMAPSTANZA_STYLE_CONFIG)))
     {
-	if(buffer)		/* default styles */
+      GKeyFile *extra_styles_keyfile = NULL ;
+
+      if (buffer)		/* default styles */
 	{
-		zMapConfigIniContextIncludeBuffer(context, buffer);
+	  zMapConfigIniContextIncludeBuffer(context, buffer);
 	}
-	else if(styles_file)		/* separate styles file */
-      {
-		/* NOTE this only uses the extra_key key file */
-	  zMapConfigIniContextIncludeFile(context,styles_file);
+      else if (styles_file)		/* separate styles file */
+	{
+	  zMapConfigIniContextIncludeFile(context, styles_file) ;
+
+	  /* This mucky....the above call puts whatever the file is into config->extra_key_file,
+	   * really truly not good...should all be explicit....for now we do this here so at
+	   * least the calls in this file are more explicit... */
+	  extra_styles_keyfile = context->config->extra_key_file ;
 	}
       /* else styles are in main config named [style-xxx] */
 
-	settings_list = zMapConfigIniContextGetStyleList(context,styles_list);
-		/* style list is legacy and we don-t expect it to be used */
-		/* this gets a list of all the stanzas in the file */
+      /* style list is legacy and we don't expect it to be used */
+      /* this gets a list of all the stanzas in the file */
+      settings_list = contextGetStyleList(context, styles_list, extra_styles_keyfile) ;
 
-      shapes = zMapConfigIniGetGlyph(context);		/* these could be predef'd for default styles or provided/ overridden in user config */
+      shapes = configIniGetGlyph(context, extra_styles_keyfile) ; /* these could be predef'd for default
+								     styles or provided/ overridden in user config */
 
-	zMapConfigIniContextDestroy(context) ;
+      zMapConfigIniContextDestroy(context) ;
       context = NULL;
     }
 
@@ -587,188 +372,179 @@ gboolean zMapConfigIniGetStylesFromFile(char *config_file,
       styles = g_hash_table_new(NULL,NULL);
 
       do
-      {
-        ZMapKeyValue curr_config_style ;
-        ZMapFeatureTypeStyle new_style ;
-        GParameter params[_STYLE_PROP_N_ITEMS + 20] ; // + 20 for good luck :-)
-        guint num_params ;
-        GParameter *curr_param ;
+	{
+	  ZMapKeyValue curr_config_style ;
+	  ZMapFeatureTypeStyle new_style ;
+	  GParameter params[_STYLE_PROP_N_ITEMS + 20] ; // + 20 for good luck :-)
+	  guint num_params ;
+	  GParameter *curr_param ;
 	  char *name;
 
 	  /* Reset params memory.... */
-        memset(&params, 0, sizeof(params)) ;
-        curr_param = params ;
-        num_params = 0 ;
-        curr_config_style = (ZMapKeyValue)(settings_list->data) ;
+	  memset(&params, 0, sizeof(params)) ;
+	  curr_param = params ;
+	  num_params = 0 ;
+	  curr_config_style = (ZMapKeyValue)(settings_list->data) ;
 
 
-        /* The first item is special, the "name" field is the name of the style and
-         * is derived from the name of the stanza and so must be treated specially. */
-        zMapAssert(curr_config_style->name && *(curr_config_style->name)) ;
-        g_value_init(&(curr_param->value), G_TYPE_STRING) ;
+	  /* The first item is special, the "name" field is the name of the style and
+	   * is derived from the name of the stanza and so must be treated specially. */
+	  zMapAssert(curr_config_style->name && *(curr_config_style->name)) ;
+	  g_value_init(&(curr_param->value), G_TYPE_STRING) ;
 
 	  curr_param->name = curr_config_style->name ;
 
 
-        // if no parameters are specified the we get NULL for the name
-        // quite how will take hours to unravel
-        // either way the style is not usable
-        if(!curr_config_style->data.str)
+	  // if no parameters are specified the we get NULL for the name
+	  // quite how will take hours to unravel
+	  // either way the style is not usable
+	  if(!curr_config_style->data.str)
             continue;
 
   	  name = curr_config_style->data.str;
 	  if(!g_ascii_strncasecmp(curr_config_style->data.str,"style-",6))
-		name += 6;
+	    name += 6;
 	  else if(!styles_file)		/* not the styles file: must be explicitly [style-] */
-		  continue;
+	    continue;
 
 	  g_value_set_string(&(curr_param->value), name) ;
 
-        num_params++ ;
-        curr_param++ ;
-        curr_config_style++ ;
+	  num_params++ ;
+	  curr_param++ ;
+	  curr_config_style++ ;
 
-        while (curr_config_style->name)
-          {
-            enum_value = 0;
+	  while (curr_config_style->name)
+	    {
+	      enum_value = 0;
 
-            if (curr_config_style->has_value)
-            {
-              curr_param->name = curr_config_style->name ;
+	      if (curr_config_style->has_value)
+		{
+		  curr_param->name = curr_config_style->name ;
 
-              switch (curr_config_style->type)
-                {
-/*                case ZMAPCONF_STR_ARRAY:
-                  {
-                  if (curr_config_style->conv_type == ZMAPCONV_STR2COLOUR)
-                    {
-                      g_value_init(&(curr_param->value), G_TYPE_STRING) ;
-                      g_value_set_string(&(curr_param->value), curr_config_style->data.str) ;
-                    }
-                  break ;
-                  }
-*/
-                case ZMAPCONF_STR:
-                  {
-                  if (curr_config_style->conv_type == ZMAPCONV_STR2ENUM)
-                    {
-                      enum_value = (curr_config_style->conv_func.str2enum)(curr_config_style->data.str) ;
+		  switch (curr_config_style->type)
+		    {
+		    case ZMAPCONF_STR:
+		      {
+			if (curr_config_style->conv_type == ZMAPCONV_STR2ENUM)
+			  {
+			    enum_value = (curr_config_style->conv_func.str2enum)(curr_config_style->data.str) ;
 
-                      g_value_init(&(curr_param->value), G_TYPE_INT) ;
-                      g_value_set_int(&(curr_param->value), enum_value) ;
-                    }
-                  else
-                    {
-                      g_value_init(&(curr_param->value), G_TYPE_STRING) ;
-                      g_value_set_string(&(curr_param->value), curr_config_style->data.str) ;
-                    }
+			    g_value_init(&(curr_param->value), G_TYPE_INT) ;
+			    g_value_set_int(&(curr_param->value), enum_value) ;
+			  }
+			else
+			  {
+			    g_value_init(&(curr_param->value), G_TYPE_STRING) ;
+			    g_value_set_string(&(curr_param->value), curr_config_style->data.str) ;
+			  }
 
-                  break ;
-                  }
-                case ZMAPCONF_DOUBLE:
-                  {
-                  g_value_init(&(curr_param->value), G_TYPE_DOUBLE) ;
-                  g_value_set_double(&(curr_param->value), curr_config_style->data.d) ;
-                  break ;
-                  }
-                case ZMAPCONF_INT:
-                  {
-                  g_value_init(&(curr_param->value), G_TYPE_INT) ;
-                  g_value_set_int(&(curr_param->value), curr_config_style->data.i) ;
-                  break ;
-                  }
-                case ZMAPCONF_BOOLEAN:
-                  {
-                  g_value_init(&(curr_param->value), G_TYPE_BOOLEAN) ;
-                  g_value_set_boolean(&(curr_param->value), curr_config_style->data.b) ;
-                  break ;
-                  }
-                default:
-                  {
-                  zMapAssertNotReached() ;
-                  break ;
-                  }
-                }
-              num_params++ ;
-              curr_param++ ;
+			break ;
+		      }
+		    case ZMAPCONF_DOUBLE:
+		      {
+			g_value_init(&(curr_param->value), G_TYPE_DOUBLE) ;
+			g_value_set_double(&(curr_param->value), curr_config_style->data.d) ;
+			break ;
+		      }
+		    case ZMAPCONF_INT:
+		      {
+			g_value_init(&(curr_param->value), G_TYPE_INT) ;
+			g_value_set_int(&(curr_param->value), curr_config_style->data.i) ;
+			break ;
+		      }
+		    case ZMAPCONF_BOOLEAN:
+		      {
+			g_value_init(&(curr_param->value), G_TYPE_BOOLEAN) ;
+			g_value_set_boolean(&(curr_param->value), curr_config_style->data.b) ;
+			break ;
+		      }
+		    default:
+		      {
+			zMapAssertNotReached() ;
+			break ;
+		      }
+		    }
+		  num_params++ ;
+		  curr_param++ ;
 
-              // if we have a glyph shape defined by name we need to add the shape data as well
-              if(enum_value)
-                {
-                  char *shape_param = NULL;
+		  // if we have a glyph shape defined by name we need to add the shape data as well
+		  if (enum_value)
+		    {
+		      char *shape_param = NULL;
 
-                  if(!strcmp(ZMAPSTYLE_PROPERTY_GLYPH_NAME,curr_config_style->name))
-                    shape_param = ZMAPSTYLE_PROPERTY_GLYPH_SHAPE;
+		      if(!strcmp(ZMAPSTYLE_PROPERTY_GLYPH_NAME,curr_config_style->name))
+			shape_param = ZMAPSTYLE_PROPERTY_GLYPH_SHAPE;
 
-                  else if(!strcmp(ZMAPSTYLE_PROPERTY_GLYPH_NAME_5,curr_config_style->name))
-                    shape_param = ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_5;
+		      else if(!strcmp(ZMAPSTYLE_PROPERTY_GLYPH_NAME_5,curr_config_style->name))
+			shape_param = ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_5;
 
-                  else if(!strcmp(ZMAPSTYLE_PROPERTY_GLYPH_NAME_5_REV,curr_config_style->name))
-                    shape_param = ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_5_REV;
+		      else if(!strcmp(ZMAPSTYLE_PROPERTY_GLYPH_NAME_5_REV,curr_config_style->name))
+			shape_param = ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_5_REV;
 
-                  else if(!strcmp(ZMAPSTYLE_PROPERTY_GLYPH_NAME_3,curr_config_style->name))
-                    shape_param = ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_3;
+		      else if(!strcmp(ZMAPSTYLE_PROPERTY_GLYPH_NAME_3,curr_config_style->name))
+			shape_param = ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_3;
 
-                  else if(!strcmp(ZMAPSTYLE_PROPERTY_GLYPH_NAME_3_REV,curr_config_style->name))
-                    shape_param = ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_3_REV;
+		      else if(!strcmp(ZMAPSTYLE_PROPERTY_GLYPH_NAME_3_REV,curr_config_style->name))
+			shape_param = ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_3_REV;
 
-                  if(shape_param)
-                    {
-                      GQuark q = (GQuark) enum_value; // ie the name of the shape
-                      ZMapStyleGlyphShape shape = NULL;
+		      if(shape_param)
+			{
+			  GQuark q = (GQuark) enum_value; // ie the name of the shape
+			  ZMapStyleGlyphShape shape = NULL;
 
-                      if(shapes)
-                         shape = g_hash_table_lookup(shapes,GINT_TO_POINTER(q));
+			  if(shapes)
+			    shape = g_hash_table_lookup(shapes,GINT_TO_POINTER(q));
 
-                      if(shape)
-                        {
-                          curr_param->name = shape_param;
-                          g_value_init(&(curr_param->value), zMapStyleGlyphShapeGetType()) ;
-                          g_value_set_boxed(&(curr_param->value),shape ) ;
-                          num_params++ ;
-                          curr_param++ ;
-                        }
-                    }
-                }
-            }
-            curr_config_style++ ;
-          }
+			  if(shape)
+			    {
+			      curr_param->name = shape_param;
+			      g_value_init(&(curr_param->value), zMapStyleGlyphShapeGetType()) ;
+			      g_value_set_boxed(&(curr_param->value),shape ) ;
+			      num_params++ ;
+			      curr_param++ ;
+			    }
+			}
+		    }
+		}
+	      curr_config_style++ ;
+	    }
 
 
-        if ((new_style = zMapStyleCreateV(num_params, params)))
-          {
-            if (!zMapStyleSetAdd(styles, new_style))
-            {
-              /* Free style, report error and move on. */
-              zMapStyleDestroy(new_style) ;
+	  if ((new_style = zMapStyleCreateV(num_params, params)))
+	    {
+	      if (!zMapStyleSetAdd(styles, new_style))
+		{
+		  /* Free style, report error and move on. */
+		  zMapStyleDestroy(new_style) ;
 
 #if MH17_useless_message
-// only occurs if there are no parameters specified
-              zMapLogWarning("Styles file \"%s\", stanza %s could not be added.",
-                         styles_file, curr_config_style->name) ;
+		  // only occurs if there are no parameters specified
+		  zMapLogWarning("Styles file \"%s\", stanza %s could not be added.",
+				 styles_file, curr_config_style->name) ;
 #endif
-            }
-          }
+		}
+	    }
 
-      } while((settings_list = g_list_next(settings_list)));
+	} while((settings_list = g_list_next(settings_list)));
 
     }
 
-  zMapConfigStylesFreeList(free_this_list) ;
+  stylesFreeList(free_this_list) ;
+
   if(shapes)
-      g_hash_table_destroy(shapes);
+    g_hash_table_destroy(shapes);
 
   /* NOTE we can only inherit default styles not those from another source */
   if(!zMapStyleInheritAllStyles(styles))
-	zMapLogWarning("%s", "There were errors in inheriting styles.") ;
+    zMapLogWarning("%s", "There were errors in inheriting styles.") ;
 
   zMapStyleSetSubStyles( styles); /* this is not effective as a subsequent style copy will not copy this internal data */
 
   if(styles)
-  {
+    {
       *styles_out = styles ;
       result = TRUE ;
-  }
+    }
 
   return result ;
 }
@@ -780,23 +556,23 @@ gboolean zMapConfigIniGetStylesFromFile(char *config_file,
 /* do not free the returned string */
 char *zMapConfigNormaliseWhitespace(char *str,gboolean cannonical)
 {
-      char *p,*q;
+  char *p,*q;
 
-      for(q = str;*q && *q <= ' ';q++)
-            continue;
+  for(q = str;*q && *q <= ' ';q++)
+    continue;
 
-      for(p = str;*q;)
-      {
-            while(*q > ' ')
-                  *p++ = cannonical ? g_ascii_tolower(*q++) : *q++;
-            while(*q && *q <= ' ')
-                  q++;
-             if(*q)
-                  *p++ = ' ';
-      }
-      *p = 0;     // there will always be room
+  for(p = str;*q;)
+    {
+      while(*q > ' ')
+	*p++ = cannonical ? g_ascii_tolower(*q++) : *q++;
+      while(*q && *q <= ' ')
+	q++;
+      if(*q)
+	*p++ = ' ';
+    }
+  *p = 0;     // there will always be room
 
-      return(str);
+  return(str);
 }
 
 /* Take a string containing ; separated  names (which may include whitespace)
@@ -824,14 +600,14 @@ GList *zmapConfigString2QuarkListExtra(char *string_list, gboolean cannonical,gb
       for (strv = str_array;*strv;strv++)
 	{
 	  if ((name = zMapConfigNormaliseWhitespace(*strv, cannonical)) && *name)
-	  {
-	    if(unique_id)
-            val = zMapStyleCreateID(name);
-          else
-            val = g_quark_from_string(name);
+	    {
+	      if(unique_id)
+		val = zMapStyleCreateID(name);
+	      else
+		val = g_quark_from_string(name);
 
-	    list = g_list_prepend(list,GUINT_TO_POINTER(val)) ;
-	  }
+	      list = g_list_prepend(list,GUINT_TO_POINTER(val)) ;
+	    }
 	}
     }
 
@@ -850,23 +626,23 @@ GList *zmapConfigString2QuarkListExtra(char *string_list, gboolean cannonical,gb
 
 GList *zMapConfigString2QuarkList(char *string_list, gboolean cannonical)
 {
-	return zmapConfigString2QuarkListExtra(string_list,cannonical,FALSE);
+  return zmapConfigString2QuarkListExtra(string_list,cannonical,FALSE);
 }
 
 GList *zMapConfigString2QuarkIDList(char *string_list)
 {
-	return zmapConfigString2QuarkListExtra(string_list,TRUE,TRUE);
+  return zmapConfigString2QuarkListExtra(string_list,TRUE,TRUE);
 }
 
 
 
 /*
-#define ZMAPSTANZA_COLUMN_CONFIG              "columns"
-#define ZMAPSTANZA_COLUMN_STYLE_CONFIG        "column-style"
-#define ZMAPSTANZA_COLUMN_DESCRIPTION_CONFIG  "column-description"
-#define ZMAPSTANZA_FEATURESET_STYLE_CONFIG    "featureset-style"
-#define ZMAPSTANZA_GFF_SOURCE_CONFIG          "GFF-source"
-#define ZMAPSTANZA_GFF_DESCRIPTION_CONFIG     "GFF-description"
+  #define ZMAPSTANZA_COLUMN_CONFIG              "columns"
+  #define ZMAPSTANZA_COLUMN_STYLE_CONFIG        "column-style"
+  #define ZMAPSTANZA_COLUMN_DESCRIPTION_CONFIG  "column-description"
+  #define ZMAPSTANZA_FEATURESET_STYLE_CONFIG    "featureset-style"
+  #define ZMAPSTANZA_GFF_SOURCE_CONFIG          "GFF-source"
+  #define ZMAPSTANZA_GFF_DESCRIPTION_CONFIG     "GFF-description"
 */
 
 /*
@@ -893,9 +669,8 @@ GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context, GHas
   gchar ** keys,**freethis;
   GList *sources;
   ZMapFeatureSetDesc GFFset;
-
   GQuark column,column_id;
-  char *names;
+  char *names = NULL ;
   gsize len;
   char *normalkey;
   ZMapFeatureColumn f_col;
@@ -907,10 +682,15 @@ GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context, GHas
 
       for( ; len-- ; keys++)
 	{
-	  names = g_key_file_get_string(gkf,ZMAPSTANZA_COLUMN_CONFIG,*keys,NULL);
+	  names = g_key_file_get_string(gkf,ZMAPSTANZA_COLUMN_CONFIG,*keys,NULL) ;
 
 	  if (!names || !*names)
-	    continue;
+	    {
+	      if (!*names)				    /* Can this even happen ? */
+		g_free(names) ;
+
+	      continue ;
+	    }
 
 	  normalkey = zMapConfigNormaliseWhitespace(*keys,FALSE); // changes in situ: get names first
 	  column = g_quark_from_string(normalkey);
@@ -948,6 +728,7 @@ GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context, GHas
 	  sources = zMapConfigString2QuarkList(names,FALSE);
 
 	  g_free(names);
+	  names = NULL ;
 
 	  while(sources)
 	    {
@@ -1018,7 +799,12 @@ GHashTable *zMapConfigIniGetFeatureset2Featureset(ZMapConfigIniContext context,
 	  names = g_key_file_get_string(gkf,ZMAPSTANZA_FEATURESETS_CONFIG,*keys,NULL);
 
 	  if(!names || !*names)
-	    continue;
+	    {
+	      if (!*names)				    /* Can this even happen ? */
+		g_free(names) ;
+
+	      continue ;
+	    }
 
 	  /* this featureset will not actually exist, it's virtual */
 	  set_id = zMapFeatureSetCreateID(*keys);
@@ -1032,6 +818,7 @@ GHashTable *zMapConfigIniGetFeatureset2Featureset(ZMapConfigIniContext context,
 
 	  sources = zMapConfigString2QuarkList(names,FALSE);
 	  g_free(names);
+	  names = NULL ;
 
 	  g_hash_table_insert(virtual_featuresets,GUINT_TO_POINTER(set_id), sources);
 
@@ -1075,53 +862,53 @@ GHashTable *zMapConfigIniGetFeatureset2Featureset(ZMapConfigIniContext context,
 // somewhere this gets mangled by strandedness
 GHashTable *zMapConfigIniGetColumns(ZMapConfigIniContext context)
 {
-      GKeyFile *gkf;
-      GList *columns = NULL,*col;
-      gchar *colstr;
-      ZMapFeatureColumn f_col;
-      GHashTable *hash = NULL;
-      GHashTable *col_desc;
-      char *desc;
+  GKeyFile *gkf;
+  GList *columns = NULL,*col;
+  gchar *colstr;
+  ZMapFeatureColumn f_col;
+  GHashTable *hash = NULL;
+  GHashTable *col_desc;
+  char *desc;
 
-      hash = g_hash_table_new(NULL,NULL);
+  hash = g_hash_table_new(NULL,NULL);
 
-      // nb there is a small memory leak if we config description for non-existant columns
-      col_desc   = zMapConfigIniGetQQHash(context,ZMAPSTANZA_COLUMN_DESCRIPTION_CONFIG,QQ_STRING);
+  // nb there is a small memory leak if we config description for non-existant columns
+  col_desc   = zMapConfigIniGetQQHash(context,ZMAPSTANZA_COLUMN_DESCRIPTION_CONFIG,QQ_STRING);
 
 
-      if(zMapConfigIniHasStanza(context->config,ZMAPSTANZA_APP_CONFIG,&gkf))
-      {
-            colstr = g_key_file_get_string(gkf, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_COLUMNS,NULL);
+  if(zMapConfigIniHasStanza(context->config,ZMAPSTANZA_APP_CONFIG,&gkf))
+    {
+      colstr = g_key_file_get_string(gkf, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_COLUMNS,NULL);
 
-            if(colstr && *colstr)
-                  columns = zMapConfigString2QuarkList(colstr,FALSE);
+      if(colstr && *colstr)
+	columns = zMapConfigString2QuarkList(colstr,FALSE);
 
-		/* add in a hard coded column first */
-		col = g_list_prepend(columns, GUINT_TO_POINTER(g_quark_from_string(ZMAP_FIXED_STYLE_STRAND_SEPARATOR)));
+      /* add in a hard coded column first */
+      col = g_list_prepend(columns, GUINT_TO_POINTER(g_quark_from_string(ZMAP_FIXED_STYLE_STRAND_SEPARATOR)));
 
-            for(; col;col = col->next)
-            {
-                  f_col = g_new0(ZMapFeatureColumnStruct,1);
-                  f_col->column_id = GPOINTER_TO_UINT(col->data);
+      for(; col;col = col->next)
+	{
+	  f_col = g_new0(ZMapFeatureColumnStruct,1);
+	  f_col->column_id = GPOINTER_TO_UINT(col->data);
 
-                  desc = (char *) g_quark_to_string(f_col->column_id);
-                  f_col->unique_id = zMapFeatureSetCreateID(desc);
+	  desc = (char *) g_quark_to_string(f_col->column_id);
+	  f_col->unique_id = zMapFeatureSetCreateID(desc);
 
-                  f_col->column_desc = g_hash_table_lookup(col_desc,
-                        GUINT_TO_POINTER(f_col->column_id));
-                  if(!f_col->column_desc)
-                        f_col->column_desc = desc;
+	  f_col->column_desc = g_hash_table_lookup(col_desc,
+						   GUINT_TO_POINTER(f_col->column_id));
+	  if(!f_col->column_desc)
+	    f_col->column_desc = desc;
 
-			f_col->order = zMapFeatureColumnOrderNext() ;
+	  f_col->order = zMapFeatureColumnOrderNext() ;
 
-                  g_hash_table_insert(hash,GUINT_TO_POINTER(f_col->unique_id),f_col);
-            }
-      }
+	  g_hash_table_insert(hash,GUINT_TO_POINTER(f_col->unique_id),f_col);
+	}
+    }
 
-      if(col_desc)
-            g_hash_table_destroy(col_desc);
+  if(col_desc)
+    g_hash_table_destroy(col_desc);
 
-      return(hash);
+  return(hash);
 }
 
 
@@ -1136,48 +923,48 @@ GHashTable *zMapConfigIniGetColumns(ZMapConfigIniContext context)
  * used for [featureset_styles] [GFF_source] and [column_styles]
  */
 
- // how: string for throwaway values, or styleId or quark
+// how: string for throwaway values, or styleId or quark
 GHashTable *zMapConfigIniGetQQHash(ZMapConfigIniContext context,char *stanza, int how)
 {
-      GHashTable *hash = NULL;
-      GKeyFile *gkf;
-      gchar ** keys = NULL;
-      gsize len;
-      gchar *value,*strval;
+  GHashTable *hash = NULL;
+  GKeyFile *gkf;
+  gchar ** keys = NULL;
+  gsize len;
+  gchar *value,*strval;
 
-      hash = g_hash_table_new(NULL,NULL);
+  hash = g_hash_table_new(NULL,NULL);
 
-      if(zMapConfigIniHasStanza(context->config,stanza,&gkf))
-      {
+  if(zMapConfigIniHasStanza(context->config,stanza,&gkf))
+    {
 
-            keys = g_key_file_get_keys(gkf,stanza,&len,NULL);
+      keys = g_key_file_get_keys(gkf,stanza,&len,NULL);
 
-            for(;len--;keys++)
-            {
-                  value = g_key_file_get_string(gkf,stanza,*keys,NULL);
-                  if(value && *value)
-                  {
-                        gpointer gval;
-                        gpointer kval;
+      for(;len--;keys++)
+	{
+	  value = g_key_file_get_string(gkf,stanza,*keys,NULL);
+	  if(value && *value)
+	    {
+	      gpointer gval;
+	      gpointer kval;
 
-                              // strips leading spaces by skipping
-                        strval = zMapConfigNormaliseWhitespace(value,FALSE);
+	      // strips leading spaces by skipping
+	      strval = zMapConfigNormaliseWhitespace(value,FALSE);
 
-                        if(how == QQ_STRING)
-                              gval = g_strdup(strval);
-                        else if(how == QQ_QUARK)
-                              gval =  GUINT_TO_POINTER(g_quark_from_string(strval));
-                        else
-                              gval = GUINT_TO_POINTER(zMapStyleCreateID(strval));
+	      if(how == QQ_STRING)
+		gval = g_strdup(strval);
+	      else if(how == QQ_QUARK)
+		gval =  GUINT_TO_POINTER(g_quark_from_string(strval));
+	      else
+		gval = GUINT_TO_POINTER(zMapStyleCreateID(strval));
 
-                        kval = GUINT_TO_POINTER(zMapFeatureSetCreateID(*keys));     // keys are fully normalised
-                        g_hash_table_insert(hash,kval,gval);
-                        g_free(value);
-                  }
-            }
-      }
+	      kval = GUINT_TO_POINTER(zMapFeatureSetCreateID(*keys));     // keys are fully normalised
+	      g_hash_table_insert(hash,kval,gval);
+	      g_free(value);
+	    }
+	}
+    }
 
-      return(hash);
+  return(hash);
 }
 
 
@@ -1195,96 +982,54 @@ GHashTable *zMapConfigIniGetQQHash(ZMapConfigIniContext context,char *stanza, in
  */
 
 
-GHashTable *zMapConfigIniGetGlyph(ZMapConfigIniContext context)
-{
-      GHashTable *hash = NULL;
-      GKeyFile *gkf;
-      gchar ** keys = NULL;
-      gsize len;
-      char *shape;
-      ZMapStyleGlyphShape glyph_shape;
-      GQuark q;
-
-      if(zMapConfigIniHasStanza(context->config,ZMAPSTANZA_GLYPH_CONFIG,&gkf))
-      {
-            hash = g_hash_table_new(NULL,NULL);
-
-            keys = g_key_file_get_keys(gkf,ZMAPSTANZA_GLYPH_CONFIG,&len,NULL);
-
-            for(;len--;keys++)
-            {
-                  q = g_quark_from_string(*keys);
-                  shape = g_key_file_get_string(gkf,ZMAPSTANZA_GLYPH_CONFIG,*keys,NULL);
-
-			if(!shape)
-				continue;
-			glyph_shape = zMapStyleGetGlyphShape(shape,q);
-
-			if(!glyph_shape)
-			{
-				zMapLogWarning("Glyph shape %s: syntax error in %s",*keys,shape);
-			}
-			else
-			{
-				g_hash_table_insert(hash,GUINT_TO_POINTER(q),glyph_shape);
-			}
-			g_free(shape);
-            }
-      }
-
-      return(hash);
-}
-
-
-
 /* return a hash table of GArray of GdkColor indexed by the GQuark of the name */
 /* (there are limits to honw many colours we can use and GArrays are tedious) */
 GHashTable *zMapConfigIniGetHeatmaps(ZMapConfigIniContext context)
 {
-     GHashTable *hash = NULL;
-      GKeyFile *gkf;
-      gchar ** keys = NULL;
-      gsize len;
-      GQuark name;
-	char *colours, *p,*q;
-	GArray *col_array;
-	GdkColor col;
+  GHashTable *hash = NULL;
+  GKeyFile *gkf;
+  gchar ** keys = NULL;
+  gsize len;
+  GQuark name;
+  char *colours, *p,*q;
+  GArray *col_array;
+  GdkColor col;
 
-      if(zMapConfigIniHasStanza(context->config,ZMAPSTANZA_HEATMAP_CONFIG,&gkf))
-      {
-            hash = g_hash_table_new(NULL,NULL);
+  if(zMapConfigIniHasStanza(context->config,ZMAPSTANZA_HEATMAP_CONFIG,&gkf))
+    {
+      hash = g_hash_table_new(NULL,NULL);
 
-            keys = g_key_file_get_keys(gkf,ZMAPSTANZA_HEATMAP_CONFIG,&len,NULL);
+      keys = g_key_file_get_keys(gkf,ZMAPSTANZA_HEATMAP_CONFIG,&len,NULL);
 
-            for(;len--;keys++)
-            {
-                  name = g_quark_from_string(*keys);
-                  colours = g_key_file_get_string(gkf,ZMAPSTANZA_HEATMAP_CONFIG,*keys,NULL);
-			if(!colours)
-				continue;
+      for(;len--;keys++)
+	{
+	  name = g_quark_from_string(*keys);
+	  colours = g_key_file_get_string(gkf,ZMAPSTANZA_HEATMAP_CONFIG,*keys,NULL);
+	  if(!colours)
+	    continue;
 
-			col_array = g_array_sized_new(FALSE,FALSE,sizeof(GdkColor),8);
+	  col_array = g_array_sized_new(FALSE,FALSE,sizeof(GdkColor),8);
 
-			for(p = colours; *p; p = q)
-			{
-				for(q = p; *q && *q != ';'; q++)
-					continue;
-				if(*q)
-					*q++ = 0;
-				else
-					*q = 0;
+	  for(p = colours; *p; p = q)
+	    {
+	      for(q = p; *q && *q != ';'; q++)
+		continue;
+	      if(*q)
+		*q++ = 0;
+	      else
+		*q = 0;
 
-				gdk_color_parse(p,&col);
-				g_array_append_val(col_array,col);
-			}
+	      gdk_color_parse(p,&col);
+	      g_array_append_val(col_array,col);
+	    }
 
-                  g_hash_table_insert(hash,GUINT_TO_POINTER(name),col_array);
+	  g_hash_table_insert(hash,GUINT_TO_POINTER(name),col_array);
 
-			g_free(colours);
-            }
-      }
+	  g_free(colours);
+	}
+    }
 
-      return(hash);
+  return(hash);
 }
 
 
@@ -1311,6 +1056,334 @@ gboolean zMapConfigLegacyStyles(char *config_file)
 
 
 
+
+
+
+/*
+ *                    Internal routines
+ */
+
+
+
+static GList *contextGetStyleList(ZMapConfigIniContext context, char *styles_list, GKeyFile *extra_styles_keyfile)
+{
+  GList *list = NULL;
+
+  if (styles_list)
+    {
+      // get the named stanzas
+      list = zMapConfigIniContextGetListedStanzas(context, create_config_style,styles_list,"style");
+    }
+  else
+    {
+      // get all the stanzas
+      list = contextGetNamedStanzas(context, create_config_style, "style", extra_styles_keyfile) ;
+    }
+
+  return list ;
+}
+
+
+/* return list of all stanzas in context->extra_key_file */
+/* used when we don't have a styles list */
+static GList *contextGetNamedStanzas(ZMapConfigIniContext context,
+				     ZMapConfigIniUserDataCreateFunc object_create_func,
+				     char *stanza_type, GKeyFile *extra_styles_keyfile)
+{
+  GList *styles = NULL ;
+  FetchReferencedStanzasStruct data = {NULL} ;
+  gchar **names ;
+  gchar **np ;
+
+
+  data.context = context ;
+
+  data.stanza  = get_stanza_with_type(context, stanza_type) ;
+
+  data.object_create_func = object_create_func ;
+
+  names = zMapConfigIniContextGetAllStanzaNames(context);
+
+  if (extra_styles_keyfile)
+    {
+      /* If there's a styles file then only read that. */
+
+      for (np = names; *np; np++)
+	{
+	  fetchStanzas(&data, extra_styles_keyfile, *np) ;
+	}
+    }
+  else
+    {
+      /* Otherwise read all available config files. */
+
+      for (np = names; *np; np++)
+	{
+	  fetch_referenced_stanzas((gpointer) *np, &data) ;
+	}
+    }
+
+  g_strfreev(names);
+
+  styles = data.object_list_out ;
+
+  return styles;
+}
+
+
+
+static GHashTable *configIniGetGlyph(ZMapConfigIniContext context, GKeyFile *extra_styles_keyfile)
+{
+  GHashTable *hash = NULL;
+  GKeyFile *gkf;
+  gchar ** keys = NULL;
+  gsize len;
+  char *shape;
+  ZMapStyleGlyphShape glyph_shape;
+  GQuark q;
+
+  if (((gkf = extra_styles_keyfile) && g_key_file_has_group(gkf, ZMAPSTANZA_GLYPH_CONFIG))
+      || (zMapConfigIniHasStanza(context->config, ZMAPSTANZA_GLYPH_CONFIG, &gkf)))
+    {
+      hash = g_hash_table_new(NULL,NULL);
+
+      keys = g_key_file_get_keys(gkf,ZMAPSTANZA_GLYPH_CONFIG,&len,NULL);
+
+      for(;len--;keys++)
+	{
+	  q = g_quark_from_string(*keys);
+	  shape = g_key_file_get_string(gkf,ZMAPSTANZA_GLYPH_CONFIG,*keys,NULL);
+
+	  if(!shape)
+	    continue;
+	  glyph_shape = zMapStyleGetGlyphShape(shape,q);
+
+	  if(!glyph_shape)
+	    {
+	      zMapLogWarning("Glyph shape %s: syntax error in %s",*keys,shape);
+	    }
+	  else
+	    {
+	      g_hash_table_insert(hash,GUINT_TO_POINTER(q),glyph_shape);
+	    }
+	  g_free(shape);
+	}
+    }
+
+  return(hash);
+}
+
+
+static void stylesFreeList(GList *config_styles_list)
+{
+  g_list_foreach(config_styles_list, free_style_list_item, NULL);
+  g_list_free(config_styles_list);
+
+  return ;
+}
+
+
+
+/* here we want to prefer exact matches of name and type */
+/* then we'll only match types with a name == * already in the list */
+static gint match_type(gconstpointer list_data, gconstpointer user_data)
+{
+  ZMapConfigIniContextStanzaEntry query = (ZMapConfigIniContextStanzaEntry)user_data;
+  ZMapConfigIniContextStanzaEntry list_entry = (ZMapConfigIniContextStanzaEntry)list_data;
+  gint result = -1;
+
+  /* not an exact name match, do the types match? */
+  if(g_ascii_strcasecmp( query->stanza_type, list_entry->stanza_type ) == 0)
+    {
+      /* make sure the stanza_name == * in the list the context
+       * has. This is so stanzas with different names can have the
+       * same basic type. e.g. the same list of keys/info/G_TYPE data
+       * for keys... */
+      if(g_ascii_strcasecmp(list_entry->stanza_name, "*") == 0)
+	{
+	  query->keys = list_entry->keys;
+	  result = 0;           /* zero == found */
+	}
+      else
+	result = 1;
+    }
+  else
+    result = -1;
+
+  return result;
+}
+
+
+
+static ZMapConfigIniContextStanzaEntry get_stanza_with_type(ZMapConfigIniContext context, char *stanza_type)
+{
+  ZMapConfigIniContextStanzaEntryStruct user_request = {NULL};
+  ZMapConfigIniContextStanzaEntry stanza = NULL;
+  GList *entry_found;
+
+  user_request.stanza_name = "*";
+  user_request.stanza_type = stanza_type;
+
+  if((entry_found = g_list_find_custom(context->groups, &user_request, match_type)))
+    {
+      stanza = (ZMapConfigIniContextStanzaEntry)(entry_found->data);
+    }
+
+  return stanza;
+}
+
+
+
+
+static void fill_stanza_key_value(gpointer list_data, gpointer user_data)
+{
+  FetchReferencedStanzas full_data = (FetchReferencedStanzas)user_data;
+  ZMapConfigIniContextKeyEntry key = (ZMapConfigIniContextKeyEntry)list_data;
+  GValue *value = NULL;
+
+  if (zMapConfigIniGetValue(full_data->context->config,
+			    full_data->current_stanza_name,
+			    key->key,
+			    &value,
+			    key->type))
+    {
+      if (key->set_property)
+	(key->set_property)(full_data->current_stanza_name, key->key, key->type, full_data->current_object, value);
+      else
+	zMapLogWarning("No set_property function for key '%s'", key->key);
+
+      g_free(value);
+    }
+
+  return ;
+}
+
+
+
+/* A GFunc() called directly but also by g_list_foreach() for a list of stanza names. */
+static void fetch_referenced_stanzas(gpointer list_data, gpointer user_data)
+{
+  FetchReferencedStanzas full_data = (FetchReferencedStanzas)user_data;
+  char *stanza_name = (char *)list_data;
+
+  full_data->current_stanza_name = stanza_name;
+
+  if (zMapConfigIniHasStanza(full_data->context->config, stanza_name,NULL) && (full_data->object_create_func))
+    {
+      if ((full_data->current_object = (full_data->object_create_func)()))
+	{
+	  /* get stanza keys */
+	  g_list_foreach(full_data->stanza->keys, fill_stanza_key_value, user_data);
+
+	  full_data->object_list_out = g_list_append(full_data->object_list_out, full_data->current_object);
+	}
+      else
+	zMapLogWarning("Object Create Function for stanza '%s'"
+		       " failed to return anything", stanza_name);
+    }
+
+  return ;
+}
+
+
+
+/* Duplicates above function...rationalise....!!!!
+ * in this case we don't want to search in all files as zMapConfigIniHasStanza() does, but just the given one. */
+static void fetchStanzas(FetchReferencedStanzas full_data, GKeyFile *key_file, char *stanza_name)
+{
+  full_data->current_stanza_name = stanza_name ;
+
+  if (g_key_file_has_group(key_file, stanza_name) && (full_data->object_create_func))
+    {
+      if ((full_data->current_object = (full_data->object_create_func)()))
+	{
+	  /* get stanza keys */
+	  g_list_foreach(full_data->stanza->keys, fill_stanza_key_value, full_data) ;
+
+	  full_data->object_list_out = g_list_append(full_data->object_list_out, full_data->current_object);
+	}
+      else
+	zMapLogWarning("Object Create Function for stanza '%s'"
+		       " failed to return anything", stanza_name);
+    }
+
+  return ;
+}
+
+
+
+
+
+static GList *get_child_stanza_names_as_list(ZMapConfigIniContext context, char *parent_name, char *parent_key)
+{
+  GList *list = NULL;
+  GValue *value = NULL;
+
+  if (parent_name && parent_key &&  zMapConfigIniGetValue(context->config,
+							  parent_name, parent_key,
+							  &value, G_TYPE_POINTER))
+    {
+      char **strings_list = NULL;
+
+      if ((strings_list = g_value_get_pointer(value)))
+	{
+	  char **ptr = strings_list;
+
+	  while (ptr && *ptr)
+	    {
+	      *ptr = g_strstrip(*ptr) ;
+	      list = g_list_append(list, *ptr) ;
+	      ptr++ ;
+	    }
+
+	  g_free(strings_list);
+	}
+    }
+
+  return list;
+}
+
+static void free_source_names(gpointer list_data, gpointer unused_user_data)
+{
+  g_free(list_data);
+
+  return ;
+}
+
+static GList *get_names_as_list(char *styles)
+{
+  GList *list = NULL;
+
+  char **strings_list = NULL;
+
+  if ((strings_list = g_strsplit(styles,";",0)))
+    {
+      char **ptr = strings_list;
+
+      while (ptr && *ptr)
+	{
+	  *ptr = g_strstrip(*ptr) ;
+	  list = g_list_append(list, *ptr);
+	  ptr++ ;
+	}
+
+      g_free(strings_list);
+    }
+  return list;
+}
+
+
+static void set_is_default(gpointer key, gpointer value, gpointer data)
+{
+  ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle) value;
+
+  zMapStyleSetIsDefault(style);
+
+  return ;
+}
+
+
+
 static ZMapConfigIniContextKeyEntry get_app_group_data(char **stanza_name, char **stanza_type)
 {
   static ZMapConfigIniContextKeyEntryStruct stanza_keys[] = {
@@ -1324,6 +1397,7 @@ static ZMapConfigIniContextKeyEntry get_app_group_data(char **stanza_name, char 
      */
     { ZMAPSTANZA_APP_CSNAME,       G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_APP_CSVER,        G_TYPE_STRING,  NULL, FALSE },
+    { ZMAPSTANZA_APP_CHR,          G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_APP_START,        G_TYPE_INT,     NULL, FALSE },
     { ZMAPSTANZA_APP_END,          G_TYPE_INT,     NULL, FALSE },
     { ZMAPSTANZA_APP_HELP_URL,     G_TYPE_STRING,  NULL, FALSE },
@@ -1331,7 +1405,7 @@ static ZMapConfigIniContextKeyEntry get_app_group_data(char **stanza_name, char 
     { ZMAPSTANZA_APP_COOKIE_JAR,   G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_APP_PFETCH_MODE,  G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_APP_PFETCH_LOCATION, G_TYPE_STRING, NULL, FALSE },
-//    { ZMAPSTANZA_APP_SCRIPTS,      G_TYPE_STRING, NULL, FALSE },
+    //    { ZMAPSTANZA_APP_SCRIPTS,      G_TYPE_STRING, NULL, FALSE },
     { ZMAPSTANZA_APP_DATA,         G_TYPE_STRING, NULL, FALSE },
     { ZMAPSTANZA_APP_STYLESFILE,   G_TYPE_STRING, NULL, FALSE },
     { ZMAPSTANZA_APP_LEGACY_STYLES,   G_TYPE_BOOLEAN, NULL, FALSE },
@@ -1401,11 +1475,6 @@ static ZMapConfigIniContextKeyEntry get_debug_group_data(char **stanza_name, cha
 
 
 
-/*
- *                 ZMapConfigStyle
- */
-
-
 static gpointer create_config_style()
 {
   gpointer config_struct = NULL ;
@@ -1413,9 +1482,11 @@ static gpointer create_config_style()
   ZMapKeyValueStruct style_conf[] =
     {
       { ZMAPSTYLE_PROPERTY_NAME, FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_NONE, {NULL} },
-      { ZMAPSTYLE_PROPERTY_PARENT_STYLE, FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleCreateID} },
+      { ZMAPSTYLE_PROPERTY_PARENT_STYLE, FALSE, ZMAPCONF_STR, {FALSE},
+	ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleCreateID} },
       { ZMAPSTYLE_PROPERTY_DESCRIPTION, FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_NONE, {NULL} },
-      { ZMAPSTYLE_PROPERTY_MODE, FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleStr2Mode} },
+      { ZMAPSTYLE_PROPERTY_MODE, FALSE, ZMAPCONF_STR, {FALSE},
+	ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleStr2Mode} },
 
       { ZMAPSTYLE_PROPERTY_COLOURS, FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2COLOUR, {NULL} },
       { ZMAPSTYLE_PROPERTY_FRAME0_COLOURS, FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2COLOUR, {NULL} },
@@ -1423,9 +1494,12 @@ static gpointer create_config_style()
       { ZMAPSTYLE_PROPERTY_FRAME2_COLOURS, FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2COLOUR, {NULL} },
       { ZMAPSTYLE_PROPERTY_REV_COLOURS, FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2COLOUR, {NULL} },
 
-      { ZMAPSTYLE_PROPERTY_DISPLAY_MODE, FALSE,  ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleStr2ColDisplayState} },
-      { ZMAPSTYLE_PROPERTY_BUMP_MODE, FALSE,  ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleStr2BumpMode} },
-      { ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE, FALSE,  ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleStr2BumpMode} },
+      { ZMAPSTYLE_PROPERTY_DISPLAY_MODE, FALSE,  ZMAPCONF_STR, {FALSE},
+	ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleStr2ColDisplayState} },
+      { ZMAPSTYLE_PROPERTY_BUMP_MODE, FALSE,  ZMAPCONF_STR, {FALSE},
+	ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleStr2BumpMode} },
+      { ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE, FALSE,  ZMAPCONF_STR, {FALSE},
+	ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleStr2BumpMode} },
       { ZMAPSTYLE_PROPERTY_BUMP_SPACING, FALSE,  ZMAPCONF_DOUBLE, {FALSE}, ZMAPCONV_NONE, {NULL} },
       { ZMAPSTYLE_PROPERTY_BUMP_STYLE, FALSE,  ZMAPCONF_STR, {FALSE}, ZMAPCONV_NONE, {NULL} },
 
@@ -1433,10 +1507,12 @@ static gpointer create_config_style()
       { ZMAPSTYLE_PROPERTY_MAX_MAG, FALSE,  ZMAPCONF_DOUBLE, {FALSE}, ZMAPCONV_NONE, {NULL} },
       { ZMAPSTYLE_PROPERTY_WIDTH, FALSE,  ZMAPCONF_DOUBLE, {FALSE}, ZMAPCONV_NONE, {NULL} },
 
-      { ZMAPSTYLE_PROPERTY_SCORE_MODE, FALSE,  ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleStr2ScoreMode} },
+      { ZMAPSTYLE_PROPERTY_SCORE_MODE, FALSE,  ZMAPCONF_STR, {FALSE},
+	ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleStr2ScoreMode} },
       { ZMAPSTYLE_PROPERTY_MIN_SCORE, FALSE,  ZMAPCONF_DOUBLE, {FALSE}, ZMAPCONV_NONE, {NULL} },
       { ZMAPSTYLE_PROPERTY_MAX_SCORE, FALSE,  ZMAPCONF_DOUBLE, {FALSE}, ZMAPCONV_NONE, {NULL} },
-      { ZMAPSTYLE_PROPERTY_SCORE_SCALE,  FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleStr2GraphScale} },	/* yes: GraphScale */
+      { ZMAPSTYLE_PROPERTY_SCORE_SCALE,  FALSE, ZMAPCONF_STR, {FALSE},
+	ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleStr2GraphScale} },	/* yes: GraphScale */
 
       { ZMAPSTYLE_PROPERTY_SUMMARISE, FALSE, ZMAPCONF_DOUBLE, {FALSE}, ZMAPCONV_NONE, {NULL} },
       { ZMAPSTYLE_PROPERTY_COLLAPSE, FALSE, ZMAPCONF_BOOLEAN, {FALSE}, ZMAPCONV_NONE, {NULL} },
@@ -1452,7 +1528,8 @@ static gpointer create_config_style()
       { ZMAPSTYLE_PROPERTY_STRAND_SPECIFIC,   FALSE, ZMAPCONF_BOOLEAN, {FALSE}, ZMAPCONV_NONE, {NULL} },
       { ZMAPSTYLE_PROPERTY_SHOW_REVERSE_STRAND,   FALSE, ZMAPCONF_BOOLEAN, {FALSE}, ZMAPCONV_NONE, {NULL} },
       { ZMAPSTYLE_PROPERTY_HIDE_FORWARD_STRAND,   FALSE, ZMAPCONF_BOOLEAN, {FALSE}, ZMAPCONV_NONE, {NULL} },
-      { ZMAPSTYLE_PROPERTY_FRAME_MODE,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleStr23FrameMode} },
+      { ZMAPSTYLE_PROPERTY_FRAME_MODE,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2ENUM,
+	{(ZMapConfStr2EnumFunc)zMapStyleStr23FrameMode} },
 
       { ZMAPSTYLE_PROPERTY_SHOW_ONLY_IN_SEPARATOR,   FALSE, ZMAPCONF_BOOLEAN, {FALSE}, ZMAPCONV_NONE, {NULL} },
       { ZMAPSTYLE_PROPERTY_DIRECTIONAL_ENDS,   FALSE, ZMAPCONF_BOOLEAN, {FALSE}, ZMAPCONV_NONE, {NULL} },
@@ -1462,27 +1539,36 @@ static gpointer create_config_style()
       { ZMAPSTYLE_PROPERTY_OFFSET,FALSE, ZMAPCONF_DOUBLE, {FALSE}, ZMAPCONV_NONE, {NULL} },
 
 
-      { ZMAPSTYLE_PROPERTY_GLYPH_NAME, FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleQuark} },
+      { ZMAPSTYLE_PROPERTY_GLYPH_NAME, FALSE, ZMAPCONF_STR, {FALSE},
+	ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)g_quark_from_string} },
       { ZMAPSTYLE_PROPERTY_GLYPH_SHAPE,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_NONE, {NULL} },
-      { ZMAPSTYLE_PROPERTY_GLYPH_NAME_5, FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleQuark} },
+      { ZMAPSTYLE_PROPERTY_GLYPH_NAME_5, FALSE, ZMAPCONF_STR, {FALSE},
+	ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)g_quark_from_string} },
       { ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_5,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_NONE, {NULL} },
-      { ZMAPSTYLE_PROPERTY_GLYPH_NAME_5_REV, FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleQuark} },
+      { ZMAPSTYLE_PROPERTY_GLYPH_NAME_5_REV, FALSE, ZMAPCONF_STR, {FALSE},
+	ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)g_quark_from_string} },
       { ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_5_REV,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_NONE, {NULL} },
-      { ZMAPSTYLE_PROPERTY_GLYPH_NAME_3, FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleQuark} },
+      { ZMAPSTYLE_PROPERTY_GLYPH_NAME_3, FALSE, ZMAPCONF_STR, {FALSE},
+	ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)g_quark_from_string} },
       { ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_3,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_NONE, {NULL} },
-      { ZMAPSTYLE_PROPERTY_GLYPH_NAME_3_REV, FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleQuark} },
+      { ZMAPSTYLE_PROPERTY_GLYPH_NAME_3_REV, FALSE, ZMAPCONF_STR, {FALSE},
+	ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)g_quark_from_string} },
       { ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_3_REV,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_NONE, {NULL} },
 
       { ZMAPSTYLE_PROPERTY_GLYPH_ALT_COLOURS,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2COLOUR, {NULL} },
 
       { ZMAPSTYLE_PROPERTY_GLYPH_THRESHOLD,   FALSE, ZMAPCONF_INT, {FALSE}, ZMAPCONV_NONE, {NULL} },
 
-      { ZMAPSTYLE_PROPERTY_GLYPH_STRAND,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleStr2GlyphStrand} },
-      { ZMAPSTYLE_PROPERTY_GLYPH_ALIGN,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleStr2GlyphAlign} },
+      { ZMAPSTYLE_PROPERTY_GLYPH_STRAND,   FALSE, ZMAPCONF_STR, {FALSE},
+	ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleStr2GlyphStrand} },
+      { ZMAPSTYLE_PROPERTY_GLYPH_ALIGN,   FALSE, ZMAPCONF_STR, {FALSE},
+	ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleStr2GlyphAlign} },
 
-      { ZMAPSTYLE_PROPERTY_GRAPH_MODE,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleStr2GraphMode} },
+      { ZMAPSTYLE_PROPERTY_GRAPH_MODE,   FALSE, ZMAPCONF_STR, {FALSE},
+	ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleStr2GraphMode} },
       { ZMAPSTYLE_PROPERTY_GRAPH_BASELINE,   FALSE, ZMAPCONF_DOUBLE, {FALSE}, ZMAPCONV_NONE, {NULL} },
-      { ZMAPSTYLE_PROPERTY_GRAPH_SCALE,  FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleStr2GraphScale} },
+      { ZMAPSTYLE_PROPERTY_GRAPH_SCALE,  FALSE, ZMAPCONF_STR, {FALSE},
+	ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleStr2GraphScale} },
       { ZMAPSTYLE_PROPERTY_GRAPH_DENSITY,   FALSE, ZMAPCONF_BOOLEAN, {FALSE}, ZMAPCONV_NONE, {NULL} },
       { ZMAPSTYLE_PROPERTY_GRAPH_DENSITY_FIXED,   FALSE, ZMAPCONF_BOOLEAN, {FALSE}, ZMAPCONV_NONE, {NULL} },
       { ZMAPSTYLE_PROPERTY_GRAPH_DENSITY_MIN_BIN,   FALSE, ZMAPCONF_INT, {FALSE}, ZMAPCONV_NONE, {NULL} },
@@ -1494,13 +1580,15 @@ static gpointer create_config_style()
       { ZMAPSTYLE_PROPERTY_ALIGNMENT_ALWAYS_GAPPED,   FALSE, ZMAPCONF_BOOLEAN, {FALSE}, ZMAPCONV_NONE, {NULL} },
       { ZMAPSTYLE_PROPERTY_ALIGNMENT_UNIQUE,   FALSE, ZMAPCONF_BOOLEAN, {FALSE}, ZMAPCONV_NONE, {NULL} },
       { ZMAPSTYLE_PROPERTY_ALIGNMENT_PFETCHABLE,   FALSE, ZMAPCONF_BOOLEAN, {FALSE}, ZMAPCONV_NONE, {NULL} },
-      { ZMAPSTYLE_PROPERTY_ALIGNMENT_BLIXEM,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc) zMapStyleStr2BlixemType } },
+      { ZMAPSTYLE_PROPERTY_ALIGNMENT_BLIXEM,   FALSE, ZMAPCONF_STR, {FALSE},
+	ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc) zMapStyleStr2BlixemType } },
       { ZMAPSTYLE_PROPERTY_ALIGNMENT_JOIN_ALIGN,   FALSE, ZMAPCONF_INT, {FALSE}, ZMAPCONV_NONE, {NULL} },
       { ZMAPSTYLE_PROPERTY_ALIGNMENT_ALLOW_MISALIGN,   FALSE, ZMAPCONF_BOOLEAN, {FALSE}, ZMAPCONV_NONE, {NULL} },
       { ZMAPSTYLE_PROPERTY_ALIGNMENT_PERFECT_COLOURS,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2COLOUR, {NULL} },
       { ZMAPSTYLE_PROPERTY_ALIGNMENT_COLINEAR_COLOURS,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2COLOUR, {NULL} },
       { ZMAPSTYLE_PROPERTY_ALIGNMENT_NONCOLINEAR_COLOURS,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2COLOUR, {NULL} },
-      { ZMAPSTYLE_PROPERTY_ALIGNMENT_UNMARKED_COLINEAR, FALSE,  ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleStr2ColDisplayState} },
+      { ZMAPSTYLE_PROPERTY_ALIGNMENT_UNMARKED_COLINEAR, FALSE,  ZMAPCONF_STR, {FALSE},
+	ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleStr2ColDisplayState} },
       { ZMAPSTYLE_PROPERTY_ALIGNMENT_GAP_COLOURS,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2COLOUR, {NULL} },
       { ZMAPSTYLE_PROPERTY_ALIGNMENT_COMMON_COLOURS,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2COLOUR, {NULL} },
       { ZMAPSTYLE_PROPERTY_ALIGNMENT_MIXED_COLOURS,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2COLOUR, {NULL} },
@@ -1551,11 +1639,11 @@ static void free_style_list_item(gpointer list_data, gpointer unused_data)
 	  if (style_conf->has_value)
 	    g_free(style_conf->data.str) ;
 	  break ;
-/*	case ZMAPCONF_STR_ARRAY:
-	  if (style_conf->has_value)
+	  /*	case ZMAPCONF_STR_ARRAY:
+	    if (style_conf->has_value)
 	    g_strfreev(style_conf->data.str_array) ;
-	  break ;
-*/
+	    break ;
+	  */
 	default:
 	  break ;
 	}
@@ -1625,8 +1713,8 @@ static ZMapConfigIniContextKeyEntry get_style_group_data(char **stanza_name, cha
     { ZMAPSTYLE_PROPERTY_OFFSET,G_TYPE_DOUBLE, style_set_property, FALSE },
 
 
-      // these three names relate to 3 more real parameters
-      // the names specify a shape string to be extracted from [glyphs]
+    // these three names relate to 3 more real parameters
+    // the names specify a shape string to be extracted from [glyphs]
     { ZMAPSTYLE_PROPERTY_GLYPH_NAME,   G_TYPE_STRING, style_set_property, FALSE },
     { ZMAPSTYLE_PROPERTY_GLYPH_NAME_5,   G_TYPE_STRING, style_set_property, FALSE },
     { ZMAPSTYLE_PROPERTY_GLYPH_NAME_5_REV,   G_TYPE_STRING, style_set_property, FALSE },
@@ -1742,12 +1830,6 @@ static void style_set_property(char *current_stanza_name, char *key, GType type,
 
 
 
-
-
-/*
- * ZMapConfigSource
- */
-
 static gpointer create_config_source()
 {
   ZMapConfigSource src = g_new0(ZMapConfigSourceStruct, 1);
@@ -1766,12 +1848,12 @@ static void free_source_list_item(gpointer list_data, gpointer unused_data)
     g_free(source_to_free->version);
   if(source_to_free->featuresets)
     g_free(source_to_free->featuresets);
-//  if(source_to_free->navigatorsets)
-//    g_free(source_to_free->navigatorsets);
+  //  if(source_to_free->navigatorsets)
+  //    g_free(source_to_free->navigatorsets);
   if(source_to_free->stylesfile)
     g_free(source_to_free->stylesfile);
-//  if(source_to_free->styles_list)
-//    g_free(source_to_free->styles_list);
+  //  if(source_to_free->styles_list)
+  //    g_free(source_to_free->styles_list);
   if(source_to_free->format)
     g_free(source_to_free->format);
 
@@ -1787,11 +1869,11 @@ static ZMapConfigIniContextKeyEntry get_source_group_data(char **stanza_name, ch
     { ZMAPSTANZA_SOURCE_TIMEOUT,       G_TYPE_INT,     source_set_property, FALSE },
     { ZMAPSTANZA_SOURCE_VERSION,       G_TYPE_STRING,  source_set_property, FALSE },
     { ZMAPSTANZA_SOURCE_FEATURESETS,   G_TYPE_STRING,  source_set_property, FALSE },
-//    { ZMAPSTANZA_SOURCE_STYLES,        G_TYPE_STRING,  source_set_property, FALSE },
+    //    { ZMAPSTANZA_SOURCE_STYLES,        G_TYPE_STRING,  source_set_property, FALSE },
     { ZMAPSTANZA_SOURCE_REQSTYLES,     G_TYPE_BOOLEAN, source_set_property, FALSE },
     { ZMAPSTANZA_SOURCE_STYLESFILE,    G_TYPE_STRING,  source_set_property, FALSE },
-//    { ZMAPSTANZA_SOURCE_NAVIGATORSETS, G_TYPE_STRING,  source_set_property, FALSE },
-//    { ZMAPSTANZA_SOURCE_SEQUENCE,      G_TYPE_BOOLEAN, source_set_property, FALSE },
+    //    { ZMAPSTANZA_SOURCE_NAVIGATORSETS, G_TYPE_STRING,  source_set_property, FALSE },
+    //    { ZMAPSTANZA_SOURCE_SEQUENCE,      G_TYPE_BOOLEAN, source_set_property, FALSE },
     { ZMAPSTANZA_SOURCE_FORMAT,        G_TYPE_STRING,  source_set_property, FALSE },
     { ZMAPSTANZA_SOURCE_DELAYED,       G_TYPE_BOOLEAN, source_set_property, FALSE },
     { ZMAPSTANZA_SOURCE_MAPPING,       G_TYPE_BOOLEAN, source_set_property, FALSE },
@@ -1817,7 +1899,7 @@ static void source_set_property(char *current_stanza_name, char *key, GType type
   ZMapConfigSource config_source = (ZMapConfigSource)parent_data ;
   gboolean *bool_ptr ;
   int *int_ptr ;
-//  double *double_ptr ;
+  //  double *double_ptr ;
   char **str_ptr ;
 
   if (key && *key)
@@ -1828,53 +1910,53 @@ static void source_set_property(char *current_stanza_name, char *key, GType type
 	str_ptr = &(config_source->version) ;
       else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_FEATURESETS) == 0)
 	str_ptr = &(config_source->featuresets) ;
-//      else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_STYLES) == 0)
-//	str_ptr = &(config_source->styles_list) ;
+      //      else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_STYLES) == 0)
+      //	str_ptr = &(config_source->styles_list) ;
       else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_REQSTYLES) == 0)
 	bool_ptr = &(config_source->req_styles) ;
       else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_STYLESFILE) == 0)
-      str_ptr = &(config_source->stylesfile) ;
-//      else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_NAVIGATORSETS) == 0)
-//	str_ptr = &(config_source->navigatorsets) ;
+	str_ptr = &(config_source->stylesfile) ;
+      //      else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_NAVIGATORSETS) == 0)
+      //	str_ptr = &(config_source->navigatorsets) ;
       else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_TIMEOUT) == 0)
 	int_ptr = &(config_source->timeout) ;
-//      else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_SEQUENCE) == 0)
-//	bool_ptr = &(config_source->sequence) ;
+      //      else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_SEQUENCE) == 0)
+      //	bool_ptr = &(config_source->sequence) ;
       else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_FORMAT) == 0)
 	str_ptr = &(config_source->format) ;
       else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_DELAYED) == 0)
-      bool_ptr = &(config_source->delayed) ;
+	bool_ptr = &(config_source->delayed) ;
       else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_MAPPING) == 0)
-      bool_ptr = &(config_source->provide_mapping) ;
+	bool_ptr = &(config_source->provide_mapping) ;
       else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_GROUP) == 0)
-      {
-        int_ptr = &(config_source->group) ;
+	{
+	  int_ptr = &(config_source->group) ;
 
-        // painful bit of code but there you go
-        *int_ptr = SOURCE_GROUP_NEVER;
-        char *value = "";
-        if(type == G_TYPE_STRING)
+	  // painful bit of code but there you go
+	  *int_ptr = SOURCE_GROUP_NEVER;
+	  char *value = "";
+	  if(type == G_TYPE_STRING)
             value = (char *)g_value_get_string(property_value);
 
-        if     (!strcmp(value,ZMAPSTANZA_SOURCE_GROUP_ALWAYS))
-          *int_ptr = SOURCE_GROUP_ALWAYS;
-        else if(!strcmp(value,ZMAPSTANZA_SOURCE_GROUP_START))
-          *int_ptr = SOURCE_GROUP_START;
-        else if(!strcmp(value,ZMAPSTANZA_SOURCE_GROUP_DELAYED))
-          *int_ptr = SOURCE_GROUP_DELAYED;
-        else if(strcmp(value,ZMAPSTANZA_SOURCE_GROUP_NEVER))
-          zMapLogWarning("Server stanza %s group option invalid",current_stanza_name);
+	  if     (!strcmp(value,ZMAPSTANZA_SOURCE_GROUP_ALWAYS))
+	    *int_ptr = SOURCE_GROUP_ALWAYS;
+	  else if(!strcmp(value,ZMAPSTANZA_SOURCE_GROUP_START))
+	    *int_ptr = SOURCE_GROUP_START;
+	  else if(!strcmp(value,ZMAPSTANZA_SOURCE_GROUP_DELAYED))
+	    *int_ptr = SOURCE_GROUP_DELAYED;
+	  else if(strcmp(value,ZMAPSTANZA_SOURCE_GROUP_NEVER))
+	    zMapLogWarning("Server stanza %s group option invalid",current_stanza_name);
 
-        return;
-      }
+	  return;
+	}
 
       if (type == G_TYPE_BOOLEAN && G_VALUE_TYPE(property_value) == type)
 	*bool_ptr = g_value_get_boolean(property_value);
       else if (type == G_TYPE_INT && G_VALUE_TYPE(property_value) == type)
 	*int_ptr = g_value_get_int(property_value);
-// there are no doubles
-//      else if (type == G_TYPE_DOUBLE && G_VALUE_TYPE(property_value) == type)
-//	*double_ptr = g_value_get_double(property_value);
+      // there are no doubles
+      //      else if (type == G_TYPE_DOUBLE && G_VALUE_TYPE(property_value) == type)
+      //	*double_ptr = g_value_get_double(property_value);
       else if (type == G_TYPE_STRING && G_VALUE_TYPE(property_value) == type)
 	*str_ptr = (char *)g_value_get_string(property_value);
     }
@@ -1969,5 +2051,4 @@ static ZMapConfigIniContextKeyEntry get_blixem_group_data(char **stanza_name, ch
 
   return stanza_keys;
 }
-
 

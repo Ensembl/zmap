@@ -36,7 +36,7 @@ zmapWindowItemDebug.c \
 zmapWindowItemHash.c \
 zmapWindowList.c \
 zmapWindowMark.c \
-zmapWindowMark_P.h \
+zmapWindowMark.h \
 zmapWindowMenus.c \
 zmapWindowNavigator.c \
 zmapWindowNavigatorMenus.c \
@@ -133,5 +133,10 @@ libZMapWindowItems_la_DEPENDENCIES = $(nodist_libZMapWindowItems_la_SOURCES)
 libZMapWindowCanvas_la_CFLAGS = $(INCLUDE_COMMON) -I$(top_srcdir)/zmapUtils  -I$(top_srcdir)/zmapWindow/canvas -I$(top_srcdir)/zmapWindow/items
 
 libZMapWindowCanvas_la_DEPENDENCIES = $(nodist_libZMapWindowCanvas_la_SOURCES)
+
+
+# Extra files to remove for the maintainer-clean target.
+#
+MAINTAINERCLEANFILES = $(top_srcdir)/zmapWindow/Makefile.in
 
 

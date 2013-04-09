@@ -1,0 +1,8 @@
+#!/bin/sh
+
+. ./zmap_proxy.sh
+. ./zmap_perl.sh
+
+file=http://hgdownload-test.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeCshlLongRnaSeq/releaseLatest/wgEncodeCshlLongRnaSeqHuvecCellPapAlnRep1.bam
+
+./zmap_bam_get_sequence ${file}

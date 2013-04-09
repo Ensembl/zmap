@@ -12,3 +12,8 @@ $(NULL)
 
 libcurlobject_la_CPPFLAGS = $(INCLUDE_COMMON) -I$(AM_CPPFLAGS)
 
+
+
+# Extra files to remove for the maintainer-clean target.
+#
+MAINTAINERCLEANFILES = $(top_srcdir)/libcurlobject/Makefile.in

@@ -1,4 +1,3 @@
-/*  Last edited: Jul  8 14:05 2011 (edgrif) */
 /*  File: zmapThreadsUtils.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -436,7 +435,7 @@ static void releaseCondvarMutex(void *thread_data)
   ZMapRequest condvar = (ZMapRequest)thread_data ;
   int status ;
 
-  ZMAPTHREAD_DEBUG(("releaseCondvarMutex cleanup handler\n")) ;
+  zMapDebugPrint(zmap_thread_debug_G, "%s", "thread cancelled while waiting on mutex, in cleanup handler") ;
 
   if ((status = pthread_mutex_unlock(&(condvar->mutex))) != 0)
     {

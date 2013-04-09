@@ -35,7 +35,7 @@ The major problem to solve is one of passing round information regarding what da
 <h3>[Blixem] configuration - new options</h3>
 <h4>Configuration file</h4>
 <p>
-The blixem configuration file <b>blixemrc</b> will be ammended to include a stanza for fetching short-read data, which will include a script with optional arguments, not including the sequence name or start or end coordinates. Refer <a href="Design/notes/standalone.shtml">here</a> for some relevant comments regarding other pipe-server arguments which may affect this configuration in future.
+The blixem configuration file <b>blixemrc</b> will be amended to include a stanza for fetching short-read data, which will include a script with optional arguments, not including the sequence name or start or end coordinates. Refer <a href="Design/notes/standalone.shtml">here</a> for some relevant comments regarding other pipe-server arguments which may affect this configuration in future.
 </p>
 <p>
 The config file already specifies the default pfetch mode for our current data type (EMBL sequences).  This fetch mode relates to fetching missing data for sequences that Blixem already knows about (i.e. those in its &lt;datafile&gt; input file).  The new fetch method will fetch all sequences within a particular region from a particular source, without any prior knowledge of what those sequences are.  We could in the future want additional fetch methods for different data types that we don't yet know about, which may fetch sequences or just sequence data.
@@ -76,7 +76,7 @@ args=-bam_path=path_to_data_file =bam_cs=NBCIM37
 description=Adult Liver
 etc
 </pre>
-and Blixem with know to read the relevant stanza by referring to the GFF file provided by ZMap with a single line for each short-reads request.  The name of each stanza will be exactly as specifed in the source field.  For Blixem the name and description items are optional.
+and Blixem with know to read the relevant stanza by referring to the GFF file provided by ZMap with a single line for each short-reads request.  The name of each stanza will be exactly as specified in the source field.  For Blixem the name and description items are optional.
 </p>
 </p>
 <p>Note that this implies that the blixem configuration file must not be generated for each invocation of Blixem if the dataset changes.
@@ -128,8 +128,8 @@ ZMap will hold this list in the View's context_map (accessable to the Window cod
 <p>Blixem will find the script path and fixed arguments from a stanza in its configuration file 'blixemrc'.
 Other arguments will be appended as follows:
 <table border="1"  cellpadding="3" cellspacing="3">
-<tr> <td> -chr</td> <td> the name of the reference sequence eg 'chr6-18'</td> </tr>
-<tr> <td> -gff_seqname</td> <td> (alternative format of '-chr' for use by ZMap)</td> </tr>
+<tr> <td> -seq_id</td> <td> the name of the reference sequence eg 'chr6-18'</td> </tr>
+<tr> <td> -gff_seqname</td> <td> (alternative format of '-seq_id for use by ZMap)</td> </tr>
 <tr> <td> -start</td> <td> request start coordinate</td> </tr>
 <tr> <td> -end</td> <td> request end coordinate</td> </tr>
 <tr> <td> -bam_path</td> <td> path to the BAM file </td></tr>

@@ -62,7 +62,7 @@ done
 shift $(($OPTIND - 1))
 
 if [ $# != 0 ]; then
-  zmap_message_exit "Bad args specifed: $usage"
+  zmap_message_exit "Bad args specified: $usage"
 fi
 
 
