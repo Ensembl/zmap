@@ -49,28 +49,6 @@
 
 
 
-/*
-  Note that these are not even in the same order!
-
-  ZMAPTHREAD_RETURNCODE_OK, ZMAPTHREAD_RETURNCODE_TIMEDOUT,
-  ZMAPTHREAD_RETURNCODE_REQFAIL, ZMAPTHREAD_RETURNCODE_BADREQ,
-  ZMAPTHREAD_RETURNCODE_SERVERDIED, ZMAPTHREAD_RETURNCODE_QUIT
-
-  _(ZMAP_SERVERRESPONSE_OK, , "ok", "", "")                              \
-  _(ZMAP_SERVERRESPONSE_BADREQ, , "error in request args", "", "")          \
-  _(ZMAP_SERVERRESPONSE_UNSUPPORTED, , "unsupported request", "", "")       \
-  _(ZMAP_SERVERRESPONSE_REQFAIL, , "request failed", "", "")                \
-  _(ZMAP_SERVERRESPONSE_TIMEDOUT, , "timed out", "", "")              \
-  _(ZMAP_SERVERRESPONSE_SERVERDIED, , "server died", "", "")
-
-  ZMAPTHREAD_REPLY_INIT, ZMAPTHREAD_REPLY_WAIT, ZMAPTHREAD_REPLY_GOTDATA, ZMAPTHREAD_REPLY_REQERROR,
-  ZMAPTHREAD_REPLY_DIED, ZMAPTHREAD_REPLY_CANCELLED, ZMAPTHREAD_REPLY_QUIT } ZMapThreadReply ;
-
-*/
-
-
-
-
 /* Some protocols have global init/cleanup functions that must only be called once, this type/list
  * allows us to do this. */
 typedef struct

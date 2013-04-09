@@ -118,7 +118,9 @@ ZMapThread zMapThreadCreate(ZMapThreadRequestHandlerFunc handler_func,
     }
 
   if (status == 0)
-    thread->thread_id = thread_id ;
+    {
+      thread->thread_id = thread_id ;
+    }
   else
     {
       /* Ok to just destroy thread here as the thread was not successfully created so
@@ -169,6 +171,10 @@ gboolean zMapThreadGetReplyWithData(ZMapThread thread, ZMapThreadReply *state,
   return got_value ;
 }
 
+
+
+/* Surely we can use the autoconf stuff for this.....sigh.....actually this may just be
+ * impossible as pthread_t can be anything from an int to a pointer to a struct... */
 
 /* User must free returned string, note that we need this routine because pthread_t is defined
  * in very different ways on different systems...... */

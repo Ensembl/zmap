@@ -53,6 +53,11 @@ typedef struct MainFrameStructName
   GtkWidget *end_widg ;
   GtkWidget *config_widg ;
 
+  GtkWidget *chooser_widg ;
+
+  ZMapFeatureSequenceMapStruct sequence_map ;
+  gboolean display_sequence ;
+
   ZMapAppGetSequenceViewCB user_func ;
   gpointer user_data ;
 } MainFrameStruct, *MainFrame ;
@@ -61,23 +66,28 @@ typedef struct MainFrameStructName
 
 static GtkWidget *makePanel(GtkWidget *toplevel, gpointer *seqdata_out,
 			    ZMapAppGetSequenceViewCB user_func, gpointer user_data,
-			    ZMapFeatureSequenceMap sequence_map) ;
-static GtkWidget *makeMainFrame(MainFrame main_frame, ZMapFeatureSequenceMap sequence_map) ;
-static GtkWidget *makeButtonBox(MainFrame main_frame) ;
-
+			    ZMapFeatureSequenceMap sequence_map, gboolean display_sequence) ;
+static GtkWidget *makeMainFrame(MainFrame main_data, ZMapFeatureSequenceMap sequence_map) ;
+static GtkWidget *makeButtonBox(MainFrame main_data) ;
+static void setSequenceEntries(MainFrame main_data) ;
 static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data) ;
 static void createViewCB(GtkWidget *widget, gpointer cb_data) ;
 static void chooseConfigCB(GtkFileChooserButton *widget, gpointer user_data) ;
+static void defaultsCB(GtkWidget *widget, gpointer cb_data) ;
 static void closeCB(GtkWidget *widget, gpointer cb_data) ;
 
 
+
+/*
+ *                   External interface routines.
+ */
 
 
 
 /* Display a dialog to get from the reader a sequence to be displayed with a start/end
  * and optionally a config file. */
 void zMapAppGetSequenceView(ZMapAppGetSequenceViewCB user_func, gpointer user_data,
-			    ZMapFeatureSequenceMap sequence_map)
+			    ZMapFeatureSequenceMap sequence_map, gboolean display_sequence)
 {
   GtkWidget *toplevel, *container ;
   gpointer seq_data = NULL ;
@@ -89,7 +99,7 @@ void zMapAppGetSequenceView(ZMapAppGetSequenceViewCB user_func, gpointer user_da
   gtk_window_set_policy(GTK_WINDOW(toplevel), FALSE, TRUE, FALSE ) ;
   gtk_container_border_width(GTK_CONTAINER(toplevel), 0) ;
 
-  container = makePanel(toplevel, &seq_data, user_func, user_data, sequence_map) ;
+  container = makePanel(toplevel, &seq_data, user_func, user_data, sequence_map, display_sequence) ;
 
   gtk_container_add(GTK_CONTAINER(toplevel), container) ;
   gtk_signal_connect(GTK_OBJECT(toplevel), "destroy",
@@ -104,14 +114,16 @@ void zMapAppGetSequenceView(ZMapAppGetSequenceViewCB user_func, gpointer user_da
 /* As for zMapAppGetSequenceView() except that returns a GtkWidget that can be
  * incorporated into a window. */
 GtkWidget *zMapCreateSequenceViewWidg(ZMapAppGetSequenceViewCB user_func, gpointer user_data,
-				      ZMapFeatureSequenceMap sequence_map)
+				      ZMapFeatureSequenceMap sequence_map, gboolean display_sequence)
 {
   GtkWidget *container = NULL ;
 
-  container = makePanel(NULL, NULL, user_func, user_data, sequence_map) ;
+  container = makePanel(NULL, NULL, user_func, user_data, sequence_map, display_sequence) ;
 
   return container ;
 }
+
+
 
 
 /*
@@ -122,7 +134,7 @@ GtkWidget *zMapCreateSequenceViewWidg(ZMapAppGetSequenceViewCB user_func, gpoint
 /* Make the whole panel returning the top container of the panel. */
 static GtkWidget *makePanel(GtkWidget *toplevel, gpointer *our_data,
 			    ZMapAppGetSequenceViewCB user_func, gpointer user_data,
-			    ZMapFeatureSequenceMap sequence_map)
+			    ZMapFeatureSequenceMap sequence_map, gboolean display_sequence)
 {
   GtkWidget *frame = NULL ;
   GtkWidget *vbox, *main_frame, *button_box ;
@@ -132,6 +144,10 @@ static GtkWidget *makePanel(GtkWidget *toplevel, gpointer *our_data,
 
   main_data->user_func = user_func ;
   main_data->user_data = user_data ;
+  main_data->sequence_map = *sequence_map ;
+  main_data->sequence_map.sequence = g_strdup(main_data->sequence_map.sequence) ;
+  main_data->sequence_map.config_file = g_strdup(main_data->sequence_map.config_file) ;
+  main_data->display_sequence = display_sequence ;
 
   if (toplevel)
     {
@@ -158,23 +174,10 @@ static GtkWidget *makePanel(GtkWidget *toplevel, gpointer *our_data,
 
 
 /* Make the label/entry fields frame. */
-static GtkWidget *makeMainFrame(MainFrame main_frame, ZMapFeatureSequenceMap sequence_map)
+static GtkWidget *makeMainFrame(MainFrame main_data, ZMapFeatureSequenceMap sequence_map)
 {
   GtkWidget *frame ;
   GtkWidget *topbox, *hbox, *entrybox, *labelbox, *entry, *label ;
-  char *sequence = "", *start = "", *end = "", *config_file = "" ;
-
-  if (sequence_map)
-    {
-      if (sequence_map->sequence)
-	sequence = sequence_map->sequence ;
-      if (sequence_map->start)
-	start = g_strdup_printf("%d", sequence_map->start) ;
-      if (sequence_map->end)
-	end = g_strdup_printf("%d", sequence_map->end) ;
-      if (sequence_map->config_file)
-	config_file = sequence_map->config_file ;
-    }
 
   frame = gtk_frame_new( "New Sequence: " );
   gtk_container_border_width(GTK_CONTAINER(frame), 5);
@@ -212,45 +215,35 @@ static GtkWidget *makeMainFrame(MainFrame main_frame, ZMapFeatureSequenceMap seq
   entrybox = gtk_vbox_new(TRUE, 0) ;
   gtk_box_pack_start(GTK_BOX(hbox), entrybox, TRUE, TRUE, 0) ;
 
-  main_frame->sequence_widg = entry = gtk_entry_new() ;
-  gtk_entry_set_text(GTK_ENTRY(entry), sequence) ;
+  main_data->sequence_widg = entry = gtk_entry_new() ;
   gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, TRUE, 0) ;
 
-  main_frame->start_widg = entry = gtk_entry_new() ;
-  gtk_entry_set_text(GTK_ENTRY(entry), start) ;
+  main_data->start_widg = entry = gtk_entry_new() ;
   gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;
 
-  main_frame->end_widg = entry = gtk_entry_new() ;
-  gtk_entry_set_text(GTK_ENTRY(entry), end) ;
+  main_data->end_widg = entry = gtk_entry_new() ;
   gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;
 
-  main_frame->config_widg = entry = gtk_entry_new() ;
-  gtk_entry_set_text(GTK_ENTRY(entry), config_file) ;
+  main_data->config_widg = entry = gtk_entry_new() ;
   gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;
 
-  /* Free resources. */
-  if (sequence_map)
-    {
-      if (*start)
-	g_free(start) ;
-      if (*end)
-	g_free(end) ;
-    }
-
+  /* Set the entry fields if required. */
+  if (sequence_map && main_data->display_sequence)
+    setSequenceEntries(main_data) ;
 
   return frame ;
 }
 
 
 /* Make the action buttons frame. */
-static GtkWidget *makeButtonBox(MainFrame main_frame)
+static GtkWidget *makeButtonBox(MainFrame main_data)
 {
   GtkWidget *frame ;
-  GtkWidget *button_box, *create_button, *config_button, *close_button ;
+  GtkWidget *button_box, *create_button, *chooser_button, *defaults_button, *close_button ;
   char *home_dir ;
 
   frame = gtk_frame_new(NULL) ;
@@ -262,29 +255,42 @@ static GtkWidget *makeButtonBox(MainFrame main_frame)
 
   create_button = gtk_button_new_with_label("Create ZMap") ;
   gtk_signal_connect(GTK_OBJECT(create_button), "clicked",
-		     GTK_SIGNAL_FUNC(createViewCB), (gpointer)main_frame) ;
+		     GTK_SIGNAL_FUNC(createViewCB), (gpointer)main_data) ;
   gtk_box_pack_start(GTK_BOX(button_box), create_button, FALSE, TRUE, 0) ;
 
   /* N.B. we use the gtk "built-in" file chooser stuff. */
-  config_button = gtk_file_chooser_button_new("Choose A Config File", GTK_FILE_CHOOSER_ACTION_OPEN) ;
-  gtk_signal_connect(GTK_OBJECT(config_button), "file-set",
-		     GTK_SIGNAL_FUNC(chooseConfigCB), (gpointer)main_frame) ;
-  gtk_box_pack_start(GTK_BOX(button_box), config_button, FALSE, TRUE, 0) ;
+  main_data->chooser_widg = chooser_button = gtk_file_chooser_button_new("Choose A Config File",
+									 GTK_FILE_CHOOSER_ACTION_OPEN) ;
+  gtk_signal_connect(GTK_OBJECT(chooser_button), "file-set",
+		     GTK_SIGNAL_FUNC(chooseConfigCB), (gpointer)main_data) ;
+  gtk_box_pack_start(GTK_BOX(button_box), chooser_button, FALSE, TRUE, 0) ;
   home_dir = (char *)g_get_home_dir() ;
-  gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(config_button), home_dir) ;
-  gtk_file_chooser_set_show_hidden(GTK_FILE_CHOOSER(config_button), TRUE) ;
+  gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(chooser_button), home_dir) ;
+  gtk_file_chooser_set_show_hidden(GTK_FILE_CHOOSER(chooser_button), TRUE) ;
+
+
+  /* If a sequence is provided then make a button to set it in the entries fields,
+   * saves the user tedious typing. */
+  if ((main_data->sequence_map.sequence))
+    {
+      defaults_button = gtk_button_new_with_label("Set Defaults") ;
+      gtk_signal_connect(GTK_OBJECT(defaults_button), "clicked",
+			 GTK_SIGNAL_FUNC(defaultsCB), (gpointer)main_data) ;
+      gtk_box_pack_start(GTK_BOX(button_box), defaults_button, FALSE, TRUE, 0) ;
+    }
+
 
   /* Only add a close button and set a default button if this is a standalone dialog. */
-  if (main_frame->toplevel)
+  if (main_data->toplevel)
     {
       close_button = gtk_button_new_with_label("Close") ;
       gtk_signal_connect(GTK_OBJECT(close_button), "clicked",
-			 GTK_SIGNAL_FUNC(closeCB), (gpointer)main_frame) ;
+			 GTK_SIGNAL_FUNC(closeCB), (gpointer)main_data) ;
       gtk_box_pack_start(GTK_BOX(button_box), close_button, FALSE, TRUE, 0) ;
 
       /* set create button as default. */
       GTK_WIDGET_SET_FLAGS(create_button, GTK_CAN_DEFAULT) ;
-      gtk_window_set_default(GTK_WINDOW(main_frame->toplevel), create_button) ;
+      gtk_window_set_default(GTK_WINDOW(main_data->toplevel), create_button) ;
     }
 
   return frame ;
@@ -298,11 +304,15 @@ static GtkWidget *makeButtonBox(MainFrame main_frame)
  */
 static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data)
 {
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  MainFrame main_frame = (MainFrame)cb_data ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  MainFrame main_data = (MainFrame)cb_data ;
 
-  /* Nothing to do currently. */
+  /* Free resources. */
+  if (main_data->sequence_map.sequence)
+    g_free(main_data->sequence_map.sequence) ;
+  if (main_data->sequence_map.config_file)
+    g_free(main_data->sequence_map.config_file) ;
+
+  g_free(main_data) ;
 
   return ;
 }
@@ -311,9 +321,22 @@ static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data)
 /* Kill the dialog. */
 static void closeCB(GtkWidget *widget, gpointer cb_data)
 {
-  MainFrame main_frame = (MainFrame)cb_data ;
+  MainFrame main_data = (MainFrame)cb_data ;
 
-  gtk_widget_destroy(main_frame->toplevel) ;
+  gtk_widget_destroy(main_data->toplevel) ;
+
+  return ;
+}
+
+
+/* Set default values in dialog. */
+static void defaultsCB(GtkWidget *widget, gpointer cb_data)
+{
+  MainFrame main_data = (MainFrame)cb_data ;
+
+  setSequenceEntries(main_data) ;
+
+  gtk_file_chooser_set_filename(GTK_FILE_CHOOSER(main_data->chooser_widg), main_data->sequence_map.config_file) ;
 
   return ;
 }
@@ -322,14 +345,41 @@ static void closeCB(GtkWidget *widget, gpointer cb_data)
 /* Called when user chooses a file via the file dialog. */
 static void chooseConfigCB(GtkFileChooserButton *widget, gpointer user_data)
 {
-  MainFrame main_frame = (MainFrame)user_data ;
+  MainFrame main_data = (MainFrame)user_data ;
   char *filename ;
 
   filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(widget)) ;
 
-  gtk_entry_set_text(GTK_ENTRY(main_frame->config_widg), filename) ;
+  gtk_entry_set_text(GTK_ENTRY(main_data->config_widg), filename) ;
 
   g_free(filename) ;
+
+  return ;
+}
+
+/* Insert start/end etc. into entry fields for sequence to be displayed. */
+static void setSequenceEntries(MainFrame main_data)
+{
+  char *sequence = "", *start = "", *end = "", *config_file = "" ;
+
+  if (main_data->sequence_map.sequence)
+    sequence = main_data->sequence_map.sequence ;
+  if (main_data->sequence_map.start)
+    start = g_strdup_printf("%d", main_data->sequence_map.start) ;
+  if (main_data->sequence_map.end)
+    end = g_strdup_printf("%d", main_data->sequence_map.end) ;
+  if (main_data->sequence_map.config_file)
+    config_file = main_data->sequence_map.config_file ;
+
+  gtk_entry_set_text(GTK_ENTRY(main_data->sequence_widg), sequence) ;
+  gtk_entry_set_text(GTK_ENTRY(main_data->start_widg), start) ;
+  gtk_entry_set_text(GTK_ENTRY(main_data->end_widg), end) ;
+  gtk_entry_set_text(GTK_ENTRY(main_data->config_widg), config_file) ;
+
+  if (*start)
+    g_free(start) ;
+  if (*end)
+    g_free(end) ;
 
   return ;
 }
@@ -346,7 +396,7 @@ static void chooseConfigCB(GtkFileChooserButton *widget, gpointer user_data)
  *  */
 static void createViewCB(GtkWidget *widget, gpointer cb_data)
 {
-  MainFrame main_frame = (MainFrame)cb_data ;
+  MainFrame main_data = (MainFrame)cb_data ;
   gboolean status = TRUE ;
   char *err_msg = NULL ;
   char *sequence = "", *start_txt, *end_txt, *config_txt ;
@@ -354,10 +404,10 @@ static void createViewCB(GtkWidget *widget, gpointer cb_data)
 
 
   /* Note gtk_entry returns the empty string "" _not_ NULL when there is no text. */
-  sequence = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->sequence_widg)) ;
-  start_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->start_widg)) ;
-  end_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->end_widg)) ;
-  config_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->config_widg)) ;
+  sequence = (char *)gtk_entry_get_text(GTK_ENTRY(main_data->sequence_widg)) ;
+  start_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_data->start_widg)) ;
+  end_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_data->end_widg)) ;
+  config_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_data->config_widg)) ;
 
 
   if (!(*sequence) && !(*start_txt) && !(*end_txt) && *config_txt)
@@ -444,7 +494,7 @@ static void createViewCB(GtkWidget *widget, gpointer cb_data)
       else
 	{
 	  /* Call back with users parameters for new sequence display. */
-	  (main_frame->user_func)(seq_map, main_frame->user_data) ;
+	  (main_data->user_func)(seq_map, main_data->user_data) ;
 	}
     }
 
