@@ -821,11 +821,6 @@ if [ -d $RELEASE_LOCATION ]; then
 	zmap_message_out "Checking zmap binary version..."
 
 	bin_version=$($zmap_uname_location --raw_version) || zmap_message_err "*** CRITICAL: Cannot execute binary at '$zmap_uname_location' [1] *** "
-	zmap_message_out "Binary reports version=$bin_version"
-
-        # THIS SHOULD NOT NOW BE NEEDED....
-	# Need to clip ZMap off the front...easier to add it to the other one ?...
-	#bin_version=$(echo $bin_version | sed -e 's!\.!-!g; s!ZMap !!')
 
 	if [ "x$bin_version" != "x$ZMAP_RELEASE_VERSION" ]; then
 	    zmap_message_err "*** WARNING: Executable reports _different_ version to Source Code! ***"
@@ -851,7 +846,7 @@ zmap_message_out ""
 zmap_message_out "Results:"
 zmap_message_out "--------"
 zmap_message_out "Build run on $ZMAP_BUILD_MACHINES"
-zmap_message_out "Version according to binaries should be $ZMAP_RELEASE_VERSION"
+zmap_message_out "ZMap Version is $ZMAP_RELEASE_VERSION"
 zmap_message_out "Binaries, code, doc, dist etc can be found in $RELEASE_LOCATION"
 zmap_message_out "For more information see $RELEASE_LOCATION/README"
 zmap_message_out "--------"
