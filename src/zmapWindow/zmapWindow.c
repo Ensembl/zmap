@@ -453,11 +453,11 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, ZMapFeatureSequenceMap seque
 
   new_window->seqLength = original_window->seqLength ;
 
-  /* As we are looking at the same data as the original window this should all just work... */
+  /* Set revcomp'd features. */
   new_window->revcomped_features = original_window->revcomped_features ;
   new_window->display_forward_coords = original_window->display_forward_coords ;
-//  new_window->origin = original_window->origin ;
-
+  zmapWindowScaleCanvasSetRevComped(new_window->ruler, original_window->revcomped_features) ;
+							    /* Sets display_forward too... */
 
   zmapWindowZoomControlCopyTo(original_window->zoom, new_window->zoom);
 
