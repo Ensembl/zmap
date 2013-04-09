@@ -122,7 +122,7 @@ void zmapAppProcessAnyRequest(ZMapAppContext app_context,
 {
   ZMapAppRemote remote = app_context->remote_control ;
   RemoteValidateRCType valid_rc ;
-  gboolean result ;
+  gboolean result = TRUE ;
   char *command_name = NULL ;
   char *id_str = NULL ;
   ZMapAppRemoteViewIDStruct view_id = {NULL}, *view_id_ptr ;
