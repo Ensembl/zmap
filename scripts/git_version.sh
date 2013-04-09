@@ -28,7 +28,7 @@ RC=0
 
 script_name=$(basename $0)
 
-abbrev='--abbrev=1'
+abbrev=''
 branch=''
 
 # do the command line thing....
