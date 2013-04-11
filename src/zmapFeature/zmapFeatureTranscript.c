@@ -574,9 +574,7 @@ void zMapFeatureTranscriptMergeExon(ZMapFeature transcript, Coord x1, Coord x2)
  * \brief Ask the user whether to trim the start/end of the given exon
  * or, if in_intron is true, the previous intron.
  */
-static ZMapBoundaryType showTrimStartEndConfirmation(ZMapSpan exon,
-                                                     ZMapSpan prev_exon, 
-                                                     const int x)
+static ZMapBoundaryType showTrimStartEndConfirmation()
 {
   ZMapBoundaryType result = ZMAPBOUNDARY_NONE;
   
@@ -639,7 +637,10 @@ gboolean zMapFeatureTranscriptMergeCoord(ZMapFeature transcript,
     g_set_error(&tmp_error, g_quark_from_string("ZMap"), 99, "Transcript has no exons");
 
   if (tmp_error)
-    return merged;
+    {
+      g_propagate_error(error, tmp_error);
+      return merged;
+    }
 
   GArray *array = transcript->feature.transcript.exons;
   ZMapSpan exon = NULL;
@@ -650,20 +651,58 @@ gboolean zMapFeatureTranscriptMergeCoord(ZMapFeature transcript,
     {
       exon = &(g_array_index(array, ZMapSpanStruct, i));
       
-      if (!prev_exon && x <= exon->x2)
+      if (!prev_exon && i == array->len && x >= exon->x1 && x <= exon->x2)
         {
-          /* x lies inside or before the first exon: trim/extend its start */
-          exon->x1 = x;
-          transcript->x1 = x;
-          merged = TRUE;
+          /* special case: we only have one exon and x lies inside it */
+          if (boundary == ZMAPBOUNDARY_NONE)
+            boundary = showTrimStartEndConfirmation();
+          
+          if (boundary == ZMAPBOUNDARY_5_SPLICE)
+            {
+              /* extend the start of the next intron i.e. trim the end of this exon */
+              exon->x2 = x;
+              merged = TRUE;
+            }
+          else if (boundary == ZMAPBOUNDARY_3_SPLICE)
+            {
+              /* extend the end of prev intron i.e. trim the start of this exon */
+              exon->x1 = x;
+              merged = TRUE;
+            }
+          
+          break;
+        }
+      else if (!prev_exon && x <= exon->x2)
+        {
+          /* x lies inside or before the first exon: trim/extend its start
+           * check that the boundary type matches (i.e. modify 3' end of adjacent intron) */
+          if (boundary == ZMAPBOUNDARY_NONE || boundary == ZMAPBOUNDARY_3_SPLICE)
+            {
+              exon->x1 = x;
+              transcript->x1 = x;
+              merged = TRUE;
+            }
+          else
+            {
+              g_set_error(&tmp_error, g_quark_from_string("ZMap"), 99, "Invalid boundary type for this operation");
+            }
+ 
           break;
         }
       else if (i == array->len - 1 && x >= exon->x1)
         {
           /* x lies inside or after the last exon: trim/extend its end */
-          exon->x2 = x;
-          transcript->x2 = x;
-          merged = TRUE;
+          if (boundary == ZMAPBOUNDARY_NONE || boundary == ZMAPBOUNDARY_5_SPLICE)
+            {
+              exon->x2 = x;
+              transcript->x2 = x;
+              merged = TRUE;
+            }
+          else 
+            {
+              g_set_error(&tmp_error, g_quark_from_string("ZMap"), 99, "Invalid boundary type for this operation");
+            }
+          
           break;
         }
       else if (x < exon->x1)
@@ -671,7 +710,7 @@ gboolean zMapFeatureTranscriptMergeCoord(ZMapFeature transcript,
           /* x lies in the intron before this exon: ask whether 
            * to trim the start or end of the intron */
           if (boundary == ZMAPBOUNDARY_NONE)
-            boundary = showTrimStartEndConfirmation(exon, prev_exon, x);
+            boundary = showTrimStartEndConfirmation();
 
           if (boundary == ZMAPBOUNDARY_5_SPLICE)
             {
@@ -692,7 +731,7 @@ gboolean zMapFeatureTranscriptMergeCoord(ZMapFeature transcript,
         {
           /* x lies in this exon: ask whether to trim the start or end*/
           if (boundary == ZMAPBOUNDARY_NONE)
-            boundary = showTrimStartEndConfirmation(exon, prev_exon, x);          
+            boundary = showTrimStartEndConfirmation();  
 
           if (boundary == ZMAPBOUNDARY_5_SPLICE)
             {
@@ -711,6 +750,7 @@ gboolean zMapFeatureTranscriptMergeCoord(ZMapFeature transcript,
         }
     }
   
+  g_propagate_error(error, tmp_error);
   return merged;
 }
 
