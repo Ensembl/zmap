@@ -208,6 +208,58 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   /* Set any global debug flags from config file. */
   zMapUtilsConfigDebug(NULL) ;
 
+  /* Check if a peer program was specified. */
+  if (!checkPeerID(&peer_name, &peer_clipboard))
+    {
+      /* CAN'T LOG HERE....log has not been init'd.... */
+
+      /* obscure...only an error if just one is specified... */
+      if (!(!peer_name && !peer_clipboard))
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	zMapLogWarning("No %s name for remote connection specified so remote interface cannot be created.",
+		       (!peer_name ? "peer" : "clipboard")) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+      consoleMsg(TRUE, "No %s name for remote connection specified so remote interface cannot be created.",
+		 (!peer_name ? "peer" : "clipboard")) ;
+    }
+  else
+    {
+      /* set up the remote_request_func, subsystems check for this routine to determine
+       * if they should make/service xremote calls. */
+      app_window_cbs_G.remote_request_func = zmapAppRemoteControlGetRequestCB() ;
+      app_window_cbs_G.remote_request_func_data = (void *)app_context ;
+
+      remote_control = TRUE ;
+      app_context->defer_hiding = TRUE ;
+    }
+
+
+  /* Init manager, must happen just once in application. */
+  zMapManagerInit(&app_window_cbs_G) ;
+
+  /* Add the ZMaps manager. */
+  app_context->zmap_manager = zMapManagerCreate((void *)app_context) ;
+
+  /* Set up logging for application....NO LOGGING BEFORE THIS. */
+  if (!zMapLogCreate(NULL) || !configureLog(seq_map->config_file))
+    {
+      consoleMsg(TRUE, "%s", "ZMap cannot create log file.") ;
+      doTheExit(EXIT_FAILURE) ;
+    }
+  else
+    {
+      zMapWriteStartMsg() ;
+    }
+
+  /* Get general zmap configuration from config. file. */
+  getConfiguration(app_context) ;
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* this doesn't work here...not sure why..... */
+
+  /* Check if a peer program was specified. */
   if (!checkPeerID(&peer_name, &peer_clipboard))
     {
       /* obscure...only an error if just one is specified... */
@@ -225,27 +277,8 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
       remote_control = TRUE ;
       app_context->defer_hiding = TRUE ;
     }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-
-  /* Init manager, just happen just once in application. */
-  zMapManagerInit(&app_window_cbs_G) ;
-
-  /* Add the ZMaps manager. */
-  app_context->zmap_manager = zMapManagerCreate((void *)app_context) ;
-
-  /* Set up logging for application. */
-  if (!zMapLogCreate(NULL) || !configureLog(seq_map->config_file))
-    {
-      consoleMsg(TRUE, "%s", "ZMap cannot create log file.") ;
-      doTheExit(EXIT_FAILURE) ;
-    }
-  else
-    {
-      zMapWriteStartMsg() ;
-    }
-
-  /* Get general zmap configuration from config. file. */
-  getConfiguration(app_context) ;
 
 
   {
