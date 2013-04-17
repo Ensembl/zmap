@@ -973,7 +973,7 @@ Score_by_width
 
 </p>
 
-<p>By default, xace will look for the styles file in <code>~/.xace/styles.ini</code>. An alternative location can be specified in the <code>[ZMap]</code> stanza in an xace config file. The xace config file should be <code>~/.xace/xacerc</code>. Further information to customise zmap can also be specified in this stanza, e.g.:</p>
+<p>By default, xace will look for the styles file in <code>~/.xace/styles.ini</code>. An alternative location can be specified in the <code>[ZMap]</code> stanza in an xace config file. The default location for the xace config file is <code>~/.xace/xacerc</code>. You can specify a different location with the XACE_CONFIG_FILE environment variable. Further information to customise zmap can also be specified in this stanza, e.g.:</p>
 <pre>
 [ZMap]
 script = zmap
