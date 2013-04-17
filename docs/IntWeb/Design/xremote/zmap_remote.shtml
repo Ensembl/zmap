@@ -703,7 +703,7 @@ clipboard id to that peer so they can start two-way communication.</p>
 
 
 <pre class="request">
-&lt;zmap version="2.0" type="request" app_id="ZMap" clipboard_id="ZMap-15853-1327414674" request_id="1"&gt;
+&lt;zmap version="2.0" type="request" app_id="ZMap" clipboard_id="remotecontrol-10469-1366038532" request_id="1"&gt;
   &lt;request command="handshake"&gt;
     &lt;peer app_id="ZMap" unique_id="ZMap-15853-1327414674"/&gt;
   &lt;/request&gt;
@@ -716,7 +716,7 @@ back an "ok" return code and its own id which the first peer can use as a "belt
 and braces" check that all is well:</p> 
 
 <pre class="reply">
-&lt;zmap version="2.0" type="reply" app_id="peer_app" clipboard_id="ZMap-15853-1327414674" request_id="1"&gt;
+&lt;zmap version="2.0" type="reply" app_id="peer_app" clipboard_id="remotecontrol-10469-1366038532" request_id="1"&gt;
   &lt;reply command="handshake" return_code="ok"&gt;
     &lt;message&gt; Handshake successful with peer "ZMap", id "ZMap-15853-1327414674".&lt;/message&gt;
   &lt;/reply&gt;
