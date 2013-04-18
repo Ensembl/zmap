@@ -306,6 +306,8 @@ int main(int argc, char *argv[])
 {
   int main_rc;
 
+  externalPerl = TRUE ;
+
   main_rc = zmapXremoteTestSuite(argc, argv);
 
   return main_rc;
@@ -462,8 +464,6 @@ static void installPropertyNotify(GtkWidget *widget, GdkEvent *event, XRemoteTes
   zMapXRemoteInitialiseWidget(widget, "xremote_gui_test",
                               "_CLIENT_REQUEST_NAME", "_CLIENT_RESPONSE_NAME",
                               handle_register_client, suite);
-  externalPerl = TRUE;
-
   if (suite->cmd_line_args && suite->cmd_line_args->command_file)
     {
       process_command_file(suite, suite->cmd_line_args->command_file);
