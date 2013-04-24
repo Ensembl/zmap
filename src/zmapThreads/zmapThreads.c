@@ -315,7 +315,7 @@ void zMapThreadForkUnlock(void)
 {
   int unlocked ;
 
-  unlocked = !pthread_mutex_unlock(&thread_fork_mutex_G) ;
+  unlocked = pthread_mutex_unlock(&thread_fork_mutex_G) ;
 
   switch (unlocked)
     {
