@@ -726,7 +726,7 @@ gboolean zMapRemoteCommandReplyGetAttributes(char *reply,
     {
       *command_out = command_data.command ;
       *return_code_out = command_data.return_code ;
-      *reason_out = command_data.reason ;
+      *reason_out = zMapXMLUtilsEscapeStr(command_data.reason) ;
       *reply_body_out = command_data.reply_body ;
       
       result = TRUE ;

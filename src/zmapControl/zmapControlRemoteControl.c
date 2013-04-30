@@ -381,7 +381,7 @@ static void processRequest(ZMap zmap,
 
     {
       *command_rc_out = request_data.command_rc ;
-      *reason_out = g_strdup(zMapXMLParserLastErrorMsg(parser)) ;
+      *reason_out = zMapXMLUtilsEscapeStr(zMapXMLParserLastErrorMsg(parser)) ;
     }
   else
     {
@@ -400,7 +400,8 @@ static void processRequest(ZMap zmap,
 	  if (!zMapAppRemoteViewIsValidID(view_id))
 	    {
 	      *command_rc_out = REMOTE_COMMAND_RC_BAD_ARGS ;
-	      *reason_out = g_strdup("New view is to be added to existing view but no existing view_id specified.") ;
+	      *reason_out = zMapXMLUtilsEscapeStr("New view is to be added to existing view"
+						  "but no existing view_id specified.") ;
 	    }
 	  else
 	    {

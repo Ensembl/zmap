@@ -483,7 +483,7 @@ static void processRequest(ZMapWindow window,
   if (!(parse_ok = zMapXMLParserParseBuffer(parser, request, strlen(request))))
     {
       *command_rc_out = request_data.command_rc ;
-      *reason_out = g_strdup(zMapXMLParserLastErrorMsg(parser)) ;
+      *reason_out = zMapXMLUtilsEscapeStr(zMapXMLParserLastErrorMsg(parser)) ;
     }
   else
     {
@@ -515,8 +515,8 @@ static void zoomWindowToFeature(ZMapWindow window, RequestData request_data,
     {
       *command_rc_out = REMOTE_COMMAND_RC_FAILED ;
 
-      *reason_out = g_strdup_printf("Zoom feature %s failed",
-				    (char *)g_quark_to_string(feature->original_id));
+      *reason_out = zMapXMLUtilsEscapeStrPrintf("Zoom feature %s failed",
+						(char *)g_quark_to_string(feature->original_id));
     }
   else
     {
@@ -524,8 +524,8 @@ static void zoomWindowToFeature(ZMapWindow window, RequestData request_data,
 	{
 	  *command_rc_out = REMOTE_COMMAND_RC_FAILED ;
 
-	  *reason_out = g_strdup_printf("Select feature %s failed",
-					(char *)g_quark_to_string(feature->original_id)) ;
+	  *reason_out = zMapXMLUtilsEscapeStrPrintf("Select feature %s failed",
+						    (char *)g_quark_to_string(feature->original_id)) ;
 	}
       else
 	{
@@ -560,7 +560,7 @@ static void getWindowMark(ZMapWindow window, RemoteCommandRCType *command_rc_out
     {
       *command_rc_out = REMOTE_COMMAND_RC_FAILED ;
 
-      *reason_out = g_strdup_printf("No mark.") ;
+      *reason_out = zMapXMLUtilsEscapeStr("No mark.") ;
     }
   else
     {

@@ -564,7 +564,7 @@ static void processRequest(ZMapManager manager,
 
     {
       *command_rc_out = request_data.command_rc ;
-      *reason_out = g_strdup(zMapXMLParserLastErrorMsg(parser)) ;
+      *reason_out = zMapXMLUtilsEscapeStr(zMapXMLParserLastErrorMsg(parser)) ;
     }
   else
     {
@@ -583,7 +583,8 @@ static void processRequest(ZMapManager manager,
 	  if (!zMapAppRemoteViewIsValidID(view_id))
 	    {
 	      *command_rc_out = REMOTE_COMMAND_RC_BAD_ARGS ;
-	      *reason_out = g_strdup("New view is to be added to existing view but no existing view_id specified.") ;
+	      *reason_out = zMapXMLUtilsEscapeStr("New view is to be added to existing view"
+						  "but no existing view_id specified.") ;
 	    }
 	  else
 	    {
@@ -632,7 +633,7 @@ static void createZMap(ZMapManager manager, ZMapAppRemoteViewID view_id_inout,
   if (zMapAppRemoteViewIsValidID(view_id) && !(g_list_find(manager->zmap_list, view_id->zmap)))
     {
       *command_rc_out = REMOTE_COMMAND_RC_FAILED ;
-      *reason_out = g_strdup_printf("Could not find zmap %p to add view to.", view_id->zmap) ;
+      *reason_out = zMapXMLUtilsEscapeStrPrintf("Could not find zmap %p to add view to.", view_id->zmap) ;
     }
   else
     {
@@ -648,7 +649,8 @@ static void createZMap(ZMapManager manager, ZMapAppRemoteViewID view_id_inout,
 
       if (sequence_map->sequence && (sequence_map->start < 1 || sequence_map->end < sequence_map->start))
 	{
-	  *reason_out = g_strdup_printf("Bad start/end coords: %d, %d", sequence_map->start, sequence_map->end) ;
+	  *reason_out = zMapXMLUtilsEscapeStrPrintf("Bad start/end coords: %d, %d",
+						    sequence_map->start, sequence_map->end) ;
 
 	  zMapWarning("%s", *reason_out) ;
 	}
@@ -660,14 +662,15 @@ static void createZMap(ZMapManager manager, ZMapAppRemoteViewID view_id_inout,
 
 	  if (add_result == ZMAPMANAGER_ADD_DISASTER)
 	    {
-	      *reason_out = g_strdup_printf("%s", "Failed to create ZMap and then failed to clean up properly,"
-					    " save your work and exit now !") ;
+	      *reason_out = zMapXMLUtilsEscapeStrPrintf("%s",
+							"Failed to create ZMap and then failed to clean up properly,"
+							" save your work and exit now !") ;
 
 	      zMapWarning("%s", *reason_out) ;
 	    }
 	  else if (add_result == ZMAPMANAGER_ADD_FAIL)
 	    {
-	      *reason_out = g_strdup_printf("%s", "Failed to create ZMap") ;
+	      *reason_out = zMapXMLUtilsEscapeStrPrintf("%s", "Failed to create ZMap") ;
 
 	      zMapWarning("%s", *reason_out) ;
 	    }

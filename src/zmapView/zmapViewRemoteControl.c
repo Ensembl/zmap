@@ -423,7 +423,7 @@ static void processRequest(ZMapView view,
 
     {
       *command_rc_out = request_data.command_rc ;
-      *reason_out = g_strdup(zMapXMLParserLastErrorMsg(parser)) ;
+      *reason_out = zMapXMLUtilsEscapeStr(zMapXMLParserLastErrorMsg(parser)) ;
     }
   else
     {
@@ -431,7 +431,7 @@ static void processRequest(ZMapView view,
 
       if (!executeRequest(parser, &request_data))
 	{
-	  *reason_out = request_data.err_msg->str ;
+	  *reason_out = zMapXMLUtilsEscapeStr(request_data.err_msg->str) ;
 	}
       else
 	{
