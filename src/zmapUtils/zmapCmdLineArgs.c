@@ -348,6 +348,8 @@ static GOptionEntry *get_main_entries(ZMapCmdLineArgs arg_context)
     /* long_name, short_name, flags, arg, arg_data, description, arg_description */
 
     { ZMAPARG_VERSION, 0, G_OPTION_FLAG_NO_ARG, G_OPTION_ARG_NONE, NULL, ZMAPARG_VERSION_DESC, ZMAPARG_NO_ARG },
+    { ZMAPARG_RAW_VERSION, 0, G_OPTION_FLAG_NO_ARG, G_OPTION_ARG_NONE, NULL,
+      ZMAPARG_RAW_VERSION_DESC, ZMAPARG_NO_ARG },
 
     { ZMAPARG_SERIAL,  0, G_OPTION_FLAG_NO_ARG, G_OPTION_ARG_NONE, NULL, ZMAPARG_SERIAL_DESC,  ZMAPARG_NO_ARG },
 

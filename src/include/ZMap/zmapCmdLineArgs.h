@@ -115,6 +115,7 @@ typedef union
 
 
 #define ZMAPARG_VERSION        "version"
+#define ZMAPARG_RAW_VERSION    "raw_version"
 #define ZMAPARG_SERIAL         "serial"
 #define ZMAPARG_SLEEP          "sleep"
 #define ZMAPARG_SEQUENCE_START "start"
@@ -124,8 +125,8 @@ typedef union
 #define ZMAPARG_WINDOW_ID      "win_id"
 #define ZMAPARG_TIMING         "timing"
 #define ZMAPARG_SHRINK         "shrink"	// to allow the window to shrink: gives too small size by default
-#define ZMAPARG_SEQUENCE	 "sequence"	// [dataset/]sequence
-#define ZMAPARG_FILES		 "<file(s)>"
+#define ZMAPARG_SEQUENCE       "sequence"	// [dataset/]sequence
+#define ZMAPARG_FILES          "<file(s)>"
 
 
 void zMapCmdLineArgsCreate(int *argc, char *argv[]) ;

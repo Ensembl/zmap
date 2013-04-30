@@ -35,6 +35,7 @@
 
 
 #define ZMAPARG_VERSION_DESC        "Program version."
+#define ZMAPARG_RAW_VERSION_DESC    "Code version."
 #define ZMAPARG_SLEEP_DESC          "Makes ZMap sleep for 15 secs at start-up to give time to attach a debugger."
 #define ZMAPARG_SEQUENCE_START_DESC "Start coord in sequence, must be in range 1 -> seq_length."
 #define ZMAPARG_SEQUENCE_END_DESC   "End coord in sequence, must be in range start -> seq_length, but end == 0 means show to end of sequence."

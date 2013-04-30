@@ -143,6 +143,11 @@ static gboolean pipe_server_spawn(PipeServer server,GError **error);
 static void pipe_server_get_stderr(PipeServer server) ;
 
 
+/* 
+ *              External interface routines
+ *
+ * (many of these are static but are the server interface)
+ */
 
 /* 
  *              External interface routines

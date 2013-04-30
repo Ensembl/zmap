@@ -688,6 +688,12 @@ static void checkForCmdLineVersionArg(int argc, char *argv[])
 
       exit(EXIT_SUCCESS) ;
     }
+  else if (zMapCmdLineArgsValue(ZMAPARG_RAW_VERSION, &value) && value.b)
+    {
+      printf("%s\n", zMapGetAppVersionString()) ;
+
+      exit(EXIT_SUCCESS) ;
+    }
 
 
   return ;
