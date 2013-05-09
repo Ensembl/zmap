@@ -129,7 +129,7 @@ ZMapWindowScaleCanvas zmapWindowScaleCanvasCreate(ZMapWindowScaleCanvasCallbackL
 
   /* Now we make the ruler canvas */
   ruler->canvas    = FOO_CANVAS(foo_canvas_new());
-foo_bug_set(ruler->canvas,"scale");
+  foo_bug_set(ruler->canvas,"scale");
 
   ruler->callbacks = g_new0(ZMapWindowScaleCanvasCallbackListStruct, 1);
   ruler->callbacks->paneResize = callbacks->paneResize;
