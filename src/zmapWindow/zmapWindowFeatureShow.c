@@ -387,7 +387,7 @@ static void remoteShowFeature(ZMapWindowFeatureShow show)
   /* Most of this we do not want to pass in now..... */
   zmapWindowUpdateXRemoteDataFull(show->zmapWindow,
 				  (ZMapFeatureAny)(show->feature),
-				  "feature_details",
+				  ZACP_DETAILS_FEATURE,
 				  show->item,
 				  starts_G, ends_G, show) ;
 
