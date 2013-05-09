@@ -84,9 +84,49 @@ static void labelDestroyCB(GtkWidget *widget, gpointer cb_data) ;
 
 static void findViewWindowCB(gpointer key, gpointer value, gpointer user_data) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void printViewList(GList *view_list) ;
 static void printViewCB(gpointer data, gpointer user_data_unused) ;
 static void printView(ZMapView view, char *action, gboolean print_xid) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+
+/* 
+ *                         External routines
+ */
+
+
+
+gpointer zMapControlFindView(ZMap zmap, gpointer view_id)
+{
+  gpointer view = NULL ;
+
+  if (zmap->view_list)
+    {
+      GList *list_view ;
+
+      /* Try to find the view_id in the current zmaps. */
+      list_view = g_list_first(zmap->view_list) ;
+      do
+	{
+	  ZMapView next_view = (ZMapView)(list_view->data) ;
+
+	  if (next_view == view_id
+	      || (zMapViewFindView(next_view, view_id)))
+	    {
+	      view = next_view ;
+
+	      break ;
+	    }
+	}
+      while ((list_view = g_list_next(list_view))) ;
+    }
+
+  return view ;
+}
 
 
 
@@ -171,6 +211,8 @@ ZMapViewWindow zmapControlNewWindow(ZMap zmap, ZMapFeatureSequenceMap sequence_m
 
   return view_window ;
 }
+
+
 
 ZMapViewWindow zmapControlNewWidgetAndWindowForView(ZMap zmap,
                                                     ZMapView zmap_view,
@@ -257,9 +299,16 @@ void zmapControlSplitWindow(ZMap zmap, GtkOrientation orientation, ZMapControlSp
 
   zmapControlWindowSetGUIState(zmap) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* CURRENTLY WE ARE NOT REPORTING WHEN THE USER SPLITS THE WINDOW, IT DOESN'T CREATE
+   * A NEW VIEW SO LOGICALLY WE CAN'T SAY MUCH ABOUT IT, THIS MAY CHANGE THOUGH. */
+
   /* If there's a remote peer we need to tell them a window's been created.... */
   if (zmap->remote_control)
     zmapControlSendViewCreated(zmap, zMapViewGetView(view_window), zMapViewGetWindow(view_window)) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   return ;
 }
@@ -326,7 +375,7 @@ GtkWidget *zmapControlAddWindow(ZMap zmap, GtkWidget *curr_frame,
 /* You need to remember that there may be more than one view in a zmap. This means that
  * while a particular view may have lost all its windows and need closing, there might
  * be other views that have windows that can be focussed on. */
-void zmapControlRemoveWindow(ZMap zmap, ZMapViewWindow view_window, ZMapViewWindowTree destroyed_zmap)
+void zmapControlRemoveWindow(ZMap zmap, ZMapViewWindow view_window, GList **destroyed_views_inout)
 {
   GtkWidget *close_container ;
   ZMapViewWindow remaining_view ;
@@ -359,26 +408,20 @@ void zmapControlRemoveWindow(ZMap zmap, ZMapViewWindow view_window, ZMapViewWind
   if (num_windows > 1)
     {
       /* Record view and window deleted if required. */
-      if (destroyed_zmap)
+      if (destroyed_views_inout)
 	{
-	  ZMapViewWindowTree destroyed_view, destroyed_window ;
+	  GList *destroyed_views = NULL ;
 
-	  destroyed_view = g_new0(ZMapViewWindowTreeStruct, 1) ;
-	  destroyed_view->parent = view ;
+	  destroyed_views = g_list_append(destroyed_views, view) ;
 
-	  destroyed_zmap->children = g_list_append(destroyed_zmap->children, destroyed_view) ;
-
-	  destroyed_window = g_new0(ZMapViewWindowTreeStruct, 1) ;
-	  destroyed_window->parent = zMapViewGetWindow(view_window) ;
-
-	  destroyed_view->children = g_list_append(destroyed_view->children, destroyed_window) ;
+	  *destroyed_views_inout = destroyed_views ;
 	}
 
       zMapViewRemoveWindow(view_window) ;
     }
   else
     {
-      zMapDeleteView(zmap, view, destroyed_zmap) ;
+      zMapDeleteView(zmap, view, destroyed_views_inout) ;
     }
 
   /* this needs to remove the pane.....AND  set a new focuspane....if there is one.... */
@@ -635,6 +678,11 @@ static GtkWidget *closePane(GtkWidget *close_frame)
  * window when we enter a different view window. Hence in the leave callback we just
  * record a window to be unfocussed if we subsequently enter a different view window. */
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+
+
 
 
 void zmapControlSetWindowFocus(ZMap zmap, ZMapViewWindow new_viewwindow)
