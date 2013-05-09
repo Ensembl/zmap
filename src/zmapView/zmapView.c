@@ -186,7 +186,7 @@ static ZMapViewConnection createViewConnection(ZMapView zmap_view,
 					   gint start,gint end,
 					   gboolean terminate);
 static void destroyViewConnection(ZMapView view, ZMapViewConnection view_conn) ;
-static void killGUI(ZMapView zmap_view, ZMapViewWindowTree destroyed_view_inout) ;
+static void killGUI(ZMapView zmap_view) ;
 static void killConnections(ZMapView zmap_view) ;
 
 static void resetWindows(ZMapView zmap_view) ;
@@ -196,7 +196,7 @@ static void displayDataWindows(ZMapView zmap_view,
                                gboolean undisplay, GList *masked, ZMapFeature highlight_feature) ;
 
 static ZMapViewWindow createWindow(ZMapView zmap_view, ZMapWindow window) ;
-static void destroyWindow(ZMapView zmap_view, ZMapViewWindow view_window, ZMapViewWindowTree destroyed_view_inout) ;
+static void destroyWindow(ZMapView zmap_view, ZMapViewWindow view_window) ;
 
 static void getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature_req, ConnectionData styles) ;
 
@@ -262,6 +262,13 @@ static void localProcessReplyFunc(char *command,
 				  char *reason,
 				  char *reply,
 				  gpointer reply_handler_func_data) ;
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+static void getWindowList(gpointer data, gpointer user_data) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
@@ -847,7 +854,7 @@ ZMapViewWindow zMapViewRemoveWindow(ZMapViewWindow view_window_in)
     {
       if (g_list_length(zmap_view->window_list) > 1)
 	{
-	  destroyWindow(zmap_view, view_window, NULL) ;
+	  destroyWindow(zmap_view, view_window) ;
 	}
     }
 
@@ -1134,27 +1141,20 @@ gboolean zMapViewReset(ZMapView zmap_view)
 }
 
 
-/* User passes in a view ID struct which this function fills in with the first view in
- * its list and the first window within that view and returns TRUE. Returns FALSE if
- * the view or window are missing.
- *  */
-gboolean zMapViewGetDefaultWindow(ZMapAppRemoteViewID view_inout)
+/* User passes in a view and we return the first window from our window list,
+ * returns NULL if view has no windows. */
+ZMapViewWindow zMapViewGetDefaultViewWindow(ZMapView view)
 {
-  gboolean result = FALSE ;
-  ZMapView view = view_inout->view ;
+  ZMapViewWindow view_window = NULL ;
 
   if (view->window_list)
     {
-      ZMapAppRemoteViewIDStruct tmp_view = *view_inout ;
-
-      tmp_view.window = ((ZMapViewWindow)(view->window_list->data))->window ;
-
-      *view_inout = tmp_view ;
-      result = TRUE ;
+      view_window = (ZMapViewWindow)(view->window_list->data) ;
     }
 
-  return result ;
+  return view_window ;
 }
+
 
 
 /*
@@ -1415,32 +1415,16 @@ void zmapViewFeatureDump(ZMapViewWindow view_window, char *file)
  * that really clears up and when everything has died signals the caller via the
  * callback routine that they supplied when the view was created.
  *
- * NOTE: if the function returns FALSE it means the view has signalled its threads
- * and is waiting for them to die, the caller should thus wait until view signals
- * via the killedcallback that the view has really died before doing final clear up.
- *
- * If the function returns TRUE it means that the view has been killed immediately
- * because it had no threads so the caller can clear up immediately.
  */
-void zMapViewDestroy(ZMapView zmap_view, ZMapViewWindowTree destroyed_zmap_inout)
+void zMapViewDestroy(ZMapView zmap_view)
 {
 
   if (zmap_view->state != ZMAPVIEW_DYING)
     {
-      ZMapViewWindowTree destroyed_view = NULL ;
-
       zmapViewBusy(zmap_view, TRUE) ;
 
-      if (destroyed_zmap_inout)
-	{
-	  destroyed_view = g_new0(ZMapViewWindowTreeStruct, 1) ;
-	  destroyed_view->parent = zmap_view ;
-
-	  destroyed_zmap_inout->children = g_list_append(destroyed_zmap_inout->children, destroyed_view) ;
-	}
-
       /* All states have GUI components which need to be destroyed. */
-      killGUI(zmap_view, destroyed_view) ;
+      killGUI(zmap_view) ;
 
       if (zmap_view->state <= ZMAPVIEW_MAPPED)
 	{
@@ -2915,19 +2899,15 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
 	  if (zmap_view->remote_control && connect_data)
 	    {
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	      char *feature_sets ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 	      load_features.feature_sets = connect_data->feature_sets ;
 
-
-
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	      /* NEEDS REMOVING.... */
 	      /* DEBUG ONLY...LEAKS MEMORY... */
-	      feature_sets = zMap_g_list_quark_to_string(load_features.feature_sets) ;
+	      {
+		char *feature_sets ;
+
+		feature_sets = zMap_g_list_quark_to_string(load_features.feature_sets) ;
+	      }
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
@@ -3266,7 +3246,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
 		  if (view_con->thread_status == THREAD_STATUS_FAILED)
 		    {
-		      char *request_type_str = zMapServerReqType2ExactStr(request_type) ;
+		      char *request_type_str = (char *)zMapServerReqType2ExactStr(request_type) ;
 
 		      if (!err_msg)
 			{
@@ -4073,7 +4053,7 @@ static gboolean processGetSeqRequests(ZMapViewConnection view_con, ZMapServerReq
 
 
 /* Kill all the windows... */
-static void killGUI(ZMapView view, ZMapViewWindowTree destroyed_view)
+static void killGUI(ZMapView view)
 {
   while (view->window_list)
     {
@@ -4081,7 +4061,7 @@ static void killGUI(ZMapView view, ZMapViewWindowTree destroyed_view)
 
       view_window = view->window_list->data ;
 
-      destroyWindow(view, view_window, destroyed_view) ;
+      destroyWindow(view, view_window) ;
     }
 
   return ;
@@ -4504,18 +4484,8 @@ static ZMapViewWindow createWindow(ZMapView zmap_view, ZMapWindow window)
 }
 
 
-static void destroyWindow(ZMapView zmap_view, ZMapViewWindow view_window, ZMapViewWindowTree destroyed_view_inout)
+static void destroyWindow(ZMapView zmap_view, ZMapViewWindow view_window)
 {
-  if (destroyed_view_inout)
-    {
-      ZMapViewWindowTree destroyed_window ;
-
-      destroyed_window = g_new0(ZMapViewWindowTreeStruct, 1) ;
-      destroyed_window->parent = view_window->window ;
-
-      destroyed_view_inout->children = g_list_append(destroyed_view_inout->children, destroyed_window) ;
-    }
-
   zmap_view->window_list = g_list_remove(zmap_view->window_list, view_window) ;
 
   zMapWindowDestroy(view_window->window) ;
@@ -5266,42 +5236,6 @@ static void addAlignments(ZMapFeatureContext context)
 
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* Creates a copy of a context from the given block upwards and sets the start/end
- * of features within the block. */
-
-#warning MH17: scan for zMapFeatureBlockSetFeaturesCoords to find some simliar code  (near line 1876)
-
-static ZMapFeatureContext createContextCopyFromBlock(ZMapFeatureBlock block, GList *feature_set_names,
-						     int features_start, int features_end)
-{
-  ZMapFeatureContext context = NULL ;
-  gboolean master = TRUE ;
-  ZMapFeatureAlignment alignment ;
-
-
-  context = zMapFeatureContextCreate(sequence, start, end, feature_set_names) ;
-
-  /* Add the master alignment and block. */
-  alignment = zMapFeatureAlignmentCreate(sequence, master) ; /* TRUE => master alignment. */
-
-  zMapFeatureContextAddAlignment(context, alignment, master) ;
-
-  block = zMapFeatureBlockCreate(sequence,
-				 start, end, ZMAPSTRAND_FORWARD,
-				 start, end, ZMAPSTRAND_FORWARD) ;
-
-  zMapFeatureBlockSetFeaturesCoords(block, features_start, features_end) ;
-
-  zMapFeatureAlignmentAddBlock(alignment, block) ;
-
-
-  return context ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
 
 
 
@@ -5481,7 +5415,7 @@ static gboolean checkContinue(ZMapView zmap_view)
 
 	/* OK...WE MAY NEED TO SIGNAL THAT VIEWS HAVE DIED HERE..... */
 	/* Do we need to return what's been killed here ???? */
-	killGUI(zmap_view, NULL) ;
+	killGUI(zmap_view) ;
 
 	destroy_data = g_new(ZMapViewCallbackDestroyDataStruct, 1) ; /* Caller must free. */
 	destroy_data->xwid = zmap_view->xwid ;
@@ -5742,7 +5676,7 @@ static void sendViewLoaded(ZMapView zmap_view, ZMapViewLoadFeaturesData lfd)
       char *featurelist = NULL;
       char *f ;
       char *emsg = NULL ;
-      char *ok_mess = NULL;
+      char *ok_mess = NULL ;
       int i ;
 
       for (features = lfd->feature_sets ; features ; features = features->next)
@@ -5804,8 +5738,9 @@ static void sendViewLoaded(ZMapView zmap_view, ZMapViewLoadFeaturesData lfd)
       /* Send request to peer program. */
       /* NOTE WELL....returns a pointer to a static struct in this function, not ideal but will
        * have to do for now. */
-      (*(view_cbs_G->remote_request_func))(ZACP_FEATURES_LOADED, &viewloaded[0],
-					   view_cbs_G->remote_request_func_data,
+      (*(view_cbs_G->remote_request_func))(view_cbs_G->remote_request_func_data,
+					   zmap_view,
+					   ZACP_FEATURES_LOADED, &viewloaded[0],
 					   localProcessReplyFunc, zmap_view) ;
 
       free(emsg);  /* yes really free() not g_free()-> see zmapUrlUtils.c */
@@ -5985,4 +5920,7 @@ void zMapViewUpdateColumnBackground(ZMapView view)
 
   return ;
 }
+
+
+
 

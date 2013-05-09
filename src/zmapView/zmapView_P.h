@@ -371,6 +371,8 @@ typedef struct _ZMapViewStruct
 
   /* Be good to get rid of this window stuff in any restructure..... */
   GList *window_list ;					    /* Of ZMapViewWindow. */
+
+
   ZMapWindowNavigator navigator_window ;
 
 

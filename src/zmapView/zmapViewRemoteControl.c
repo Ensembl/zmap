@@ -127,10 +127,7 @@ typedef struct RequestDataStructName
   GString *err_msg ;
 
 
-  /* View, window to apply command to. */
-  ZMapAppRemoteViewID view_id ;
-
-  ZMapView           view;
+  ZMapViewWindow view_window ;
 
 
   /* some operations are "read only" and hence can use the orig_context, others require edits and
@@ -208,11 +205,11 @@ typedef struct
 
 
 
-static void localProcessRemoteRequest(ZMapView view,
-				      char *command_name, ZMapAppRemoteViewID view_id, char *request,
+static void localProcessRemoteRequest(ZMapViewWindow view_window,
+				      char *command_name, char *request,
 				      ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data) ;
-static void processRequest(ZMapView view,
-			   char *command_name, ZMapAppRemoteViewID view_id, char *request,
+static void processRequest(ZMapViewWindow view_window,
+			   char *command_name, char *request,
 			   RemoteCommandRCType *command_rc_out, char **reason_out,
 			   ZMapXMLUtilsEventStack *reply_out) ;
 static CommandDescriptor cmdGetDesc(GQuark command_id) ;
@@ -251,7 +248,7 @@ static ZMapFeatureContextExecuteStatus mark_matching_invalid(GQuark key,
                                                              gpointer user_data,
                                                              char **error_out) ;
 static void loadFeatures(ZMapView view, RequestData request_data) ;
-static void getFeatureNames(ZMapView view, RequestData request_data) ;
+static void getFeatureNames(ZMapViewWindow view_window, RequestData request_data) ;
 static void findUniqueCB(gpointer data, gpointer user_data) ;
 static void makeUniqueListCB(gpointer key, gpointer value, gpointer user_data) ;
 
@@ -316,8 +313,8 @@ static ZMapXMLObjTagFunctionsStruct view_ends_G[] =
 
 
 /* See if view can process the command, if not then try all the windows to see if one can process the request. */
-gboolean zMapViewProcessRemoteRequest(ZMapView view,
-				      char *command_name, ZMapAppRemoteViewID view_id, char *request,
+gboolean zMapViewProcessRemoteRequest(ZMapViewWindow view_window,
+				      char *command_name, char *request,
 				      ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data)
 {
   gboolean result = FALSE ;
@@ -329,46 +326,17 @@ gboolean zMapViewProcessRemoteRequest(ZMapView view,
       || strcmp(command_name, ZACP_LOAD_FEATURES) == 0
       || strcmp(command_name, ZACP_REVCOMP) == 0)
     {
-      localProcessRemoteRequest(view, command_name, view_id, request,
+      localProcessRemoteRequest(view_window,
+				command_name, request,
 				app_reply_func, app_reply_data) ;
 
       result = TRUE ;					    /* Signal we have handled the request. */
     }
   else
     {
-      GList* list_item ;
-      gboolean window_found = FALSE ;
-
-      list_item = g_list_first(view->window_list) ;
-      do
-	{
-	  ZMapViewWindow view_window ;
-
-	  view_window = list_item->data ;
-
-	  if (view_window->window == view_id->window)
-	    {
-	      window_found = TRUE ;
-	      result = zMapWindowProcessRemoteRequest(view_window->window, command_name, view_id, request,
-						      app_reply_func, app_reply_data) ;
-	      break ;
-	    }
-	}
-      while ((list_item = g_list_next(list_item))) ;
-
-      /* If we were passed a window but did not find it this is an error... */
-      if (!window_found)
-	{
-	  RemoteCommandRCType command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
-	  char *reason ;
-	  ZMapXMLUtilsEventStack reply = NULL ;
-
-	  reason = g_strdup_printf("window id %p not found.", view_id->window) ;
-
-	  (app_reply_func)(command_name, FALSE, command_rc, reason, reply, app_reply_data) ;
-
-	  result = TRUE ;				    /* Signal we have handled the request. */
-	}
+      result = zMapWindowProcessRemoteRequest(view_window->window,
+					      command_name, request,
+					      app_reply_func, app_reply_data) ;
     }
 
   return result ;
@@ -377,16 +345,15 @@ gboolean zMapViewProcessRemoteRequest(ZMapView view,
 
 
 /* Process all peer requests that apply to view. */
-static void localProcessRemoteRequest(ZMapView view,
-				      char *command_name, ZMapAppRemoteViewID view_id, char *request,
-				      ZMapRemoteAppReturnReplyFunc app_reply_func,
-				      gpointer app_reply_data)
+static void localProcessRemoteRequest(ZMapViewWindow view_window,
+				      char *command_name, char *request,
+				      ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data)
 {
   RemoteCommandRCType command_rc = REMOTE_COMMAND_RC_FAILED ;
   char *reason = NULL ;
   ZMapXMLUtilsEventStack reply = NULL ;
 
-  processRequest(view, command_name, view_id, request, &command_rc, &reason, &reply) ;
+  processRequest(view_window, command_name, request, &command_rc, &reason, &reply) ;
 
   (app_reply_func)(command_name, FALSE, command_rc, reason, reply, app_reply_data) ;
 
@@ -395,8 +362,8 @@ static void localProcessRemoteRequest(ZMapView view,
 
 
 /* Commands by this routine need the xml to be parsed for arguments etc. */
-static void processRequest(ZMapView view,
-			   char *command_name, ZMapAppRemoteViewID view_id, char *request,
+static void processRequest(ZMapViewWindow view_window,
+			   char *command_name, char *request,
 			   RemoteCommandRCType *command_rc_out, char **reason_out,
 			   ZMapXMLUtilsEventStack *reply_out)
 {
@@ -412,8 +379,7 @@ static void processRequest(ZMapView view,
   request_data.command_rc = REMOTE_COMMAND_RC_OK ;
   request_data.request = request ;
 
-  request_data.view = view ;
-  request_data.view_id = view_id ;
+  request_data.view_window = view_window ;
 
   parser = zMapXMLParserCreate(&request_data, FALSE, cmd_debug) ;
 
@@ -458,7 +424,7 @@ static void processRequest(ZMapView view,
 static gboolean executeRequest(ZMapXMLParser parser, RequestData request_data)
 {
   gboolean result = TRUE ;
-  ZMapView view = request_data->view ;
+  ZMapView view = request_data->view_window->parent_view ;
 
 
   /* We should be doing some checking here, like....does a transcript have exon(s) ?? */
@@ -466,7 +432,7 @@ static gboolean executeRequest(ZMapXMLParser parser, RequestData request_data)
 
   if (request_data->command_id == g_quark_from_string(ZACP_GET_FEATURE_NAMES))
     {
-      getFeatureNames(view, request_data) ;
+      getFeatureNames(request_data->view_window, request_data) ;
     }
   else if (request_data->command_id == g_quark_from_string(ZACP_LOAD_FEATURES))
     {
@@ -996,7 +962,7 @@ static void loadFeatures(ZMapView view, RequestData request_data)
     {
       ZMapWindow window ;
 
-      window = request_data->view_id->window ;
+      window = request_data->view_window->window ;
 
       if ((zMapWindowMarkGetSequenceSpan(window, &start, &end)))
 	{
@@ -1025,15 +991,12 @@ static void loadFeatures(ZMapView view, RequestData request_data)
 
 
 /* Get the names of all features within a given range. */
-static void getFeatureNames(ZMapView view, RequestData request_data)
+static void getFeatureNames(ZMapViewWindow view_window, RequestData request_data)
 {
-  ZMapViewWindow view_window ;
   ZMapWindow window ;
 
   request_data->command_rc = ZMAPXREMOTE_OK ;
 
-  /* Hack, just grab first window...work out what to do about this.... */
-  view_window = (ZMapViewWindow)(request_data->view->window_list->data) ;
   window = view_window->window ;
 
 
@@ -1154,7 +1117,7 @@ static gboolean xml_request_start_cb(gpointer user_data, ZMapXMLElement set_elem
   zMapAssert(request_data->cmd_desc) ;
 
 
-  request_data->orig_context = zMapViewGetFeatures(request_data->view) ;
+  request_data->orig_context = zMapViewGetFeatures(request_data->view_window->parent_view) ;
 
 
   /* For actions that change the feature context create an "edit" context. */
@@ -1550,7 +1513,7 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
     {
       ZMapFeatureSource source_data ;
 
-      if (!(source_data = g_hash_table_lookup(request_data->view->context_map.source_2_sourcedata,
+      if (!(source_data = g_hash_table_lookup(request_data->view_window->parent_view->context_map.source_2_sourcedata,
 					      GINT_TO_POINTER(unique_set_id))))
 	{
 	  char *err_msg ;
@@ -2019,7 +1982,7 @@ static gboolean xml_feature_end_cb(gpointer user_data, ZMapXMLElement sub_elemen
 	{
 	  /* It's probably here that we need to revcomp the feature if the
 	   * view is revcomp'd.... */
-	  if (request_data->view->revcomped_features)
+	  if (request_data->view_window->parent_view->revcomped_features)
 	    {
 	      zMapFeatureReverseComplement(request_data->orig_context, request_data->edit_feature) ;
 	    }
