@@ -190,10 +190,6 @@ static void killGUI(ZMapView zmap_view, ZMapViewWindowTree destroyed_view_inout)
 static void killConnections(ZMapView zmap_view) ;
 
 static void resetWindows(ZMapView zmap_view) ;
-static void displayDataWindows(ZMapView zmap_view,
-			       ZMapFeatureContext all_features,
-                               ZMapFeatureContext new_features, GHashTable *new_styles,
-                               gboolean undisplay, GList *masked, ZMapFeature highlight_feature) ;
 
 static ZMapViewWindow createWindow(ZMapView zmap_view, ZMapWindow window) ;
 static void destroyWindow(ZMapView zmap_view, ZMapViewWindow view_window, ZMapViewWindowTree destroyed_view_inout) ;
@@ -4418,9 +4414,9 @@ static void resetWindows(ZMapView zmap_view)
 
 
 /* Signal all windows there is data to draw. */
-static void displayDataWindows(ZMapView zmap_view, ZMapFeatureContext all_features, ZMapFeatureContext new_features,
-			       GHashTable *new_styles,
-			       gboolean undisplay, GList *masked, ZMapFeature highlight_feature)
+void zmapViewDisplayDataWindows(ZMapView zmap_view, ZMapFeatureContext all_features, ZMapFeatureContext new_features,
+                                GHashTable *new_styles,
+                                gboolean undisplay, GList *masked, ZMapFeature highlight_feature, gboolean allow_clean)
 {
   GList *list_item, *window_list  = NULL;
   gboolean clean_required = FALSE;
@@ -4429,7 +4425,7 @@ static void displayDataWindows(ZMapView zmap_view, ZMapFeatureContext all_featur
 
   /* when the new features aren't the stored features i.e. not the first draw */
   /* un-drawing the features doesn't work the same way as drawing */
-  if(all_features != new_features && !undisplay)
+  if(all_features != new_features && !undisplay && allow_clean)
     {
       clean_required = TRUE;
     }
@@ -4887,7 +4883,7 @@ static void justDrawContext(ZMapView view, ZMapFeatureContext diff_context,
 			    GHashTable *new_styles, GList *masked, ZMapFeature highlight_feature)
 {
   /* Signal the ZMap that there is work to be done. */
-  displayDataWindows(view, view->features, diff_context, new_styles, FALSE, masked, highlight_feature) ;
+  zmapViewDisplayDataWindows(view, view->features, diff_context, new_styles, FALSE, masked, NULL, TRUE) ;
 
   /* Not sure about the timing of the next bit. */
 
@@ -4916,7 +4912,7 @@ static void eraseAndUndrawContext(ZMapView view, ZMapFeatureContext context_inou
     zMapLogCritical("%s", "Cannot erase feature data from...");
   else
     {
-      displayDataWindows(view, view->features, diff_context, NULL, TRUE, NULL, NULL);
+      zmapViewDisplayDataWindows(view, view->features, diff_context, NULL, TRUE, NULL, NULL, TRUE);
 
       zMapFeatureContextDestroy(diff_context, TRUE);
     }

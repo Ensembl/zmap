@@ -225,6 +225,19 @@ void zmapViewScratchInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, ZM
 
 
 /*!
+ * \brief Does the work to update any changes to the given featureset
+ */
+void scratchUpdateFeature(ZMapView zmap_view, 
+                          ZMapFeature feature,
+                          ZMapFeatureSet feature_set,
+                          ZMapFeatureContext context)
+{
+  zmapViewDisplayDataWindows(zmap_view, zmap_view->features, zmap_view->features, NULL, TRUE, NULL, NULL, FALSE) ;
+  zmapViewDisplayDataWindows(zmap_view, zmap_view->features, zmap_view->features, NULL, FALSE, NULL, NULL, FALSE) ;
+}
+
+
+/*!
  * \brief Update any changes to the given featureset
  */
 gboolean zmapViewScratchUpdateFeature(ZMapView zmap_view, 
@@ -233,20 +246,7 @@ gboolean zmapViewScratchUpdateFeature(ZMapView zmap_view,
                                       ZMapFeatureSet feature_set,
                                       ZMapFeatureContext context)
 {
-  zmapViewResetWindows(zmap_view, FALSE);
-
-  //zMapWindowNavigatorReset(zmap_view->navigator_window);  
-  //zMapWindowNavigatorSetStrand(zmap_view->navigator_window, zmap_view->revcomped_features);
-  //zMapWindowNavigatorDrawFeatures(zmap_view->navigator_window, zmap_view->features, zmap_view->context_map.styles);
-  
-  GList *list_item;
-  
-  for (list_item = g_list_first(zmap_view->window_list); list_item; list_item = g_list_next(list_item))
-    {
-      ZMapViewWindow view_window = list_item->data ;
-      zMapWindowFeatureRedraw(view_window->window, zmap_view->features, zmap_view->revcomped_features) ;
-    }
-
+  scratchUpdateFeature(zmap_view, feature, feature_set, context);
   return TRUE;
 }
 
@@ -258,16 +258,16 @@ gboolean zmapViewScratchUpdateFeature(ZMapView zmap_view,
  * It doesn't remove the feature itself because this 
  * singleton feature always exists.
  */
-void zmapViewScratchClear(ZMapView zmap_view,
-                          ZMapFeatureSequenceMap sequence,
-                          ZMapFeature feature,
-                          ZMapFeatureSet feature_set,
-                          ZMapFeatureContext context)
+gboolean zmapViewScratchClear(ZMapView zmap_view,
+                              ZMapFeatureSequenceMap sequence,
+                              ZMapFeature feature,
+                              ZMapFeatureSet feature_set,
+                              ZMapFeatureContext context)
 { 
   if (feature)
     {
-      zMapFeatureRemoveExons(feature);
-      zMapFeatureRemoveIntrons(feature);
-      zmapViewScratchUpdateFeature(zmap_view, sequence, feature, feature_set, context);
+      scratchUpdateFeature(zmap_view, feature, feature_set, context);
     }
+
+  return TRUE;
 }

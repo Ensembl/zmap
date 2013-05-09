@@ -425,6 +425,9 @@ ZMapFeatureContext zmapViewMergeInContext(ZMapView view, ZMapFeatureContext cont
 gboolean zmapViewDrawDiffContext(ZMapView view, ZMapFeatureContext *diff_context, ZMapFeature highlight_feature) ;
 void zmapViewResetWindows(ZMapView zmap_view, gboolean revcomp);
 void zmapViewEraseFromContext(ZMapView replace_me, ZMapFeatureContext context_inout);
+void zmapViewDisplayDataWindows(ZMapView zmap_view, ZMapFeatureContext all_features, ZMapFeatureContext new_features,
+                                GHashTable *new_styles,
+                                gboolean undisplay, GList *masked, ZMapFeature highlight_feature, gboolean allow_clean);
 
 void zmapViewSetupXRemote(ZMapView view, GtkWidget *widget);
 ZMapXRemoteSendCommandError zmapViewRemoteSendCommand(ZMapView view,
@@ -493,7 +496,7 @@ gboolean zMapViewCollapseFeatureSets(ZMapView view, ZMapFeatureContext diff_cont
 /* zmapViewScratch.c */
 void zmapViewScratchInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, ZMapFeatureContext context, ZMapFeatureBlock block);
 gboolean zmapViewScratchUpdateFeature(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, ZMapFeature feature, ZMapFeatureSet feature_set, ZMapFeatureContext context);
-void zmapViewScratchClear(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, ZMapFeature feature, ZMapFeatureSet feature_set, ZMapFeatureContext context);
+gboolean zmapViewScratchClear(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, ZMapFeature feature, ZMapFeatureSet feature_set, ZMapFeatureContext context);
 
 
 #ifdef LOTS_OF_EXONS

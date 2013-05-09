@@ -45,8 +45,11 @@
  * has been set yet. If it's unset we set it from the new feature
  * when a feature is copied in (subsequent times the new feature
  * is merged so the transcript extent may not be updated if it
- * already includes the new extent). */
+ * already includes the new extent). 
+ * Note that we have two features - one for each strand - so we 
+ * need two flags. */
 static gboolean start_end_set_G = FALSE; 
+static gboolean start_end_set_rev_G = FALSE; 
 
   
 typedef struct _GetFeaturesetCBDataStruct
@@ -68,6 +71,39 @@ typedef struct _ScratchMergeDataStruct
   gboolean use_subfeature;     /* if true, just use the clicked subfeature, otherwise use the whole feature */
 } ScratchMergeDataStruct, *ScratchMergeData;
   
+
+
+/*!
+ * \brief Update the flag which indicates whether the start/end
+ * of the feature have been set
+ */
+static void scratchSetStartEndFlag(ZMapWindow window, gboolean value)
+{
+  /* Update the relevant flag for the current strand */
+  if (window->revcomped_features)
+    start_end_set_rev_G = value;
+  else
+    start_end_set_G = value;
+}
+
+
+/*!
+ * \brief Get the flag which indicates whether the start/end
+ * of the feature have been set
+ */
+static gboolean scratchGetStartEndFlag(ZMapWindow window)
+{
+  gboolean value = FALSE;
+  
+  /* Update the relevant flag for the current strand */
+  if (window->revcomped_features)
+    value = start_end_set_rev_G;
+  else
+    value = start_end_set_G;
+  
+  return value;
+}
+
 
 /*!
  * \brief Callback called on every child in a FeatureAny.
@@ -178,7 +214,7 @@ static void scratchMergeCoords(ScratchMergeData merge_data, const int coord1, co
 {
   /* If this is the first/last coord in the new feature 
    * and the start/end has not yet been set, then set it now */
-  if (!start_end_set_G)
+  if (!scratchGetStartEndFlag(merge_data->window))
     {
       if (coord1 == merge_data->src_feature->x1)
         merge_data->dest_feature->x1 = coord1;
@@ -424,7 +460,7 @@ static void scratchMergeFeature(ScratchMergeData merge_data)
   /* Once finished merging, the start/end should now be set */
   if (merged)
     {
-      start_end_set_G = TRUE;
+      scratchSetStartEndFlag(merge_data->window, TRUE);
     }
   
   if (error)
@@ -465,6 +501,10 @@ void zmapWindowScratchCopyFeature(ZMapWindow window,
 
       if (scratch_featureset && scratch_feature)
         {
+          //ZMapFeature new_feature = (ZMapFeatureSet)zMapFeatureAnyCopy((ZMapFeatureAny)scratch_feature);
+          //zMapFeatureSetRemoveFeature(scratch_featureset, scratch_feature);
+          //zMapFeatureSetAddFeature(scratch_featureset, new_feature);
+          
           ScratchMergeDataStruct merge_data = {window, item, feature, scratch_featureset, scratch_feature, world_x, world_y, use_subfeature};
           scratchMergeFeature(&merge_data);
 
@@ -494,21 +534,10 @@ void zmapWindowScratchCopyFeature(ZMapWindow window,
  */
 static void scratchDeleteFeatureExons(ZMapWindow window, ZMapFeature feature, ZMapFeatureSet feature_set)
 {
-  if (feature_set && feature)
+  if (feature)
     {
-      ZMapWindowCallbacks window_cbs_G = zmapWindowGetCBs() ;
-      ZMapWindowCallbackCommandScratch scratch_cmd = g_new0(ZMapWindowCallbackCommandScratchStruct, 1) ;
-          
-      /* Set up general command field for callback. */
-      scratch_cmd->cmd = ZMAPWINDOW_CMD_CLEARSCRATCH ;
-      scratch_cmd->sequence = window->sequence;
-      scratch_cmd->feature = feature;
-      scratch_cmd->feature_set = feature_set;
-      scratch_cmd->context = window->feature_context;
-      
-      (*(window_cbs_G->command))(window, window->app_data, scratch_cmd) ;
-      
-      start_end_set_G = FALSE;
+      zMapFeatureRemoveExons(feature);
+      zMapFeatureRemoveIntrons(feature);
     }  
 }
 
@@ -523,9 +552,25 @@ void zmapWindowScratchClear(ZMapWindow window)
   
   /* Get the singleton features that exist in each strand of the scatch column */
   ZMapFeatureSet feature_set = scratchGetFeatureset(window);
-  ZMapFeature feature_fwd = scratchGetFeature(feature_set, ZMAPSTRAND_FORWARD);
-  ZMapFeature feature_rev = scratchGetFeature(feature_set, ZMAPSTRAND_REVERSE);
+  ZMapFeature feature = scratchGetFeature(feature_set, ZMAPSTRAND_FORWARD);
 
-  scratchDeleteFeatureExons(window, feature_fwd, feature_set);
-  scratchDeleteFeatureExons(window, feature_rev, feature_set);
+  /* Delete the exons and introns (the singleton feature always
+   * exists so we don't delete the whole thing). */
+  scratchDeleteFeatureExons(window, feature, feature_set);
+
+  /* Reset the start-/end-set flag */
+  scratchSetStartEndFlag(window, FALSE);
+  
+  /* Call the callback to the view to redraw everything */
+  ZMapWindowCallbacks window_cbs_G = zmapWindowGetCBs() ;
+  ZMapWindowCallbackCommandScratch scratch_cmd = g_new0(ZMapWindowCallbackCommandScratchStruct, 1) ;
+  
+  /* Set up general command field for callback. */
+  scratch_cmd->cmd = ZMAPWINDOW_CMD_CLEARSCRATCH ;
+  scratch_cmd->sequence = window->sequence;
+  scratch_cmd->feature = feature;
+  scratch_cmd->feature_set = feature_set;
+  scratch_cmd->context = window->feature_context;
+  
+  (*(window_cbs_G->command))(window, window->app_data, scratch_cmd) ;
 }
