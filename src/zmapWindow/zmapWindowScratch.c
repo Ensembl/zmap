@@ -501,10 +501,6 @@ void zmapWindowScratchCopyFeature(ZMapWindow window,
 
       if (scratch_featureset && scratch_feature)
         {
-          //ZMapFeature new_feature = (ZMapFeatureSet)zMapFeatureAnyCopy((ZMapFeatureAny)scratch_feature);
-          //zMapFeatureSetRemoveFeature(scratch_featureset, scratch_feature);
-          //zMapFeatureSetAddFeature(scratch_featureset, new_feature);
-          
           ScratchMergeDataStruct merge_data = {window, item, feature, scratch_featureset, scratch_feature, world_x, world_y, use_subfeature};
           scratchMergeFeature(&merge_data);
 
