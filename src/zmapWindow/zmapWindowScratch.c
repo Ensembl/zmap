@@ -212,17 +212,17 @@ static ZMapFeature scratchGetFeature(ZMapFeatureSet feature_set, ZMapStrand stra
  */
 static void scratchMergeCoords(ScratchMergeData merge_data, const int coord1, const int coord2)
 {
-  /* If this is the first/last coord in the new feature 
-   * and the start/end has not yet been set, then set it now */
-  if (!scratchGetStartEndFlag(merge_data->window))
+  /* If the start and end have not been set and we're merging in a single subfeature
+   * then set the start/end from the subfeature (for a single subfeature, this function
+   * only gets called once, so it's safe to set it here; when merging a 'full' feature
+   * e.g. a transcript this will get called for each exon, so we need to set the feature
+   * extent from a higher level). */
+  if (merge_data->use_subfeature && !scratchGetStartEndFlag(merge_data->window))
     {
-      if (coord1 == merge_data->src_feature->x1)
-        merge_data->dest_feature->x1 = coord1;
-
-      if (coord2 == merge_data->src_feature->x2)
-        merge_data->dest_feature->x2 = coord2;
+      merge_data->dest_feature->x1 = coord1;
+      merge_data->dest_feature->x2 = coord2;
     }
-  
+
   zMapFeatureTranscriptMergeExon(merge_data->dest_feature, coord1, coord2);
 }
 
@@ -427,6 +427,13 @@ static void scratchMergeFeature(ScratchMergeData merge_data)
     }
   else
     {
+      /* If the start/end is not set, set it now from the feature extent */
+      if (!scratchGetStartEndFlag(merge_data->window))
+        {
+          merge_data->dest_feature->x1 = merge_data->src_feature->x1;
+          merge_data->dest_feature->x2 = merge_data->src_feature->x2;
+        }
+
       switch (merge_data->src_feature->type)
         {
         case ZMAPSTYLE_MODE_BASIC:
