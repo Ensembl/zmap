@@ -352,8 +352,14 @@ typedef struct _ZMapWindowCallbacksStruct
   ZMapWindowCallbackFunc command ;			    /* Request to exit given command. */
   ZMapWindowCallbackFunc drawn_data ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* WHAT..... */
   ZMapRemoteAppMakeRequestFunc remote_request_func ;
   ZMapRemoteAppMakeRequestFunc remote_request_func_data ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  ZMapRemoteAppMakeRequestFunc remote_request_func ;
+  gpointer remote_request_func_data ;
 
 } ZMapWindowCallbacksStruct, *ZMapWindowCallbacks ;
 
@@ -372,7 +378,7 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, ZMapFeatureSequenceMap seque
 			  ZMapWindowLockType window_locking) ;
 
 gboolean zMapWindowProcessRemoteRequest(ZMapWindow window,
-					char *command_name, ZMapAppRemoteViewID view_id, char *request,
+					char *command_name, char *request,
 					ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data) ;
 
 
