@@ -394,8 +394,6 @@ void zMapDestroy(ZMap zmap, GList **destroyed_views_inout)
   if (destroyed_views_inout)
     *destroyed_views_inout = destroyed_views ;
 
-  zmapControlDoKill(zmap, destroyed_views_inout) ;
-
   return ;
 }
 
