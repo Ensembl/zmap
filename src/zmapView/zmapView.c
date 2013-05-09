@@ -3268,8 +3268,20 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 				      connect_data->stderr_out) ;
 		        }
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+		      /* results in overreporting of failed connections.... */
 		      (zmap_view->sources_failed)++ ;
-		      zMapLogWarning("Thread failed, request = %s, failed sources now %d",
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+		  if (request_type == ZMAP_SERVERREQ_FEATURES)
+		    {
+		      /* hack until server stuff properly sorted out..only report when feature request fails... */
+		      (zmap_view->sources_failed)++ ;
+		    }
+
+
+		      zMapLogWarning("Thread %p failed, request = %s, failed sources now %d",
+				     thread,
 				     request_type_str,
 				     zmap_view->sources_failed) ;
 		    }

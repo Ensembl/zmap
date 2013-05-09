@@ -421,7 +421,7 @@ font size. Do not exceed lines of length 120 chars.</p>
     {
       stuff......
     }
-  while((list = g_list_next(list)));
+  while((list = g_list_next(list))) ;
 
 
   return ;

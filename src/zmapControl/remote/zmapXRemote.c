@@ -61,16 +61,21 @@ typedef struct
  * logging system and that is called to output the message.
  *
  *  */
-#define REMOTELOGMSG(SEVERITY, FORMAT_STR, ...)	     \
-  do                                                 \
-    {	\
-      if(debug_G)			                     \
-      { \
-        if (externalPerl)                              \
-	    fprintf(stderr, FORMAT_STR, __VA_ARGS__) ;   \
-        else                                           \
-	    zMapLog##SEVERITY(FORMAT_STR, __VA_ARGS__) ; \
-     } \
+#define REMOTELOGMSG(SEVERITY, FORMAT_STR, ...)	               \
+  do							       \
+    {							       \
+      if(debug_G)					       \
+	{						       \
+	  if (externalPerl)				       \
+	    {						       \
+	      fprintf(stderr, FORMAT_STR, __VA_ARGS__) ;       \
+	    }						       \
+	  else						       \
+	    {						       \
+	      zMapLog##SEVERITY(FORMAT_STR, __VA_ARGS__) ;     \
+	      fprintf(stderr, FORMAT_STR, __VA_ARGS__) ;       \
+	    }						       \
+	}						       \
     } while (0)
 
 
@@ -170,8 +175,14 @@ ZMapXRemoteObj zMapXRemoteNew(Display *curr_display)
 {
   ZMapXRemoteObj object = NULL ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* Can we now dispense with this...??? */
+
   zMapAssert((!externalPerl && (curr_display))
 	     || (externalPerl && (!curr_display))) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   if (externalPerl)
     {
