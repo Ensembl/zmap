@@ -44,34 +44,6 @@
 
 #include <ZMap/zmapRemoteCommand.h>
 #include <ZMap/zmapXML.h>
-#include <ZMap/zmapFeature.h>
-
-
-
-
-/* To make sure that commands are delivered to the right component of zmap
- * (ZMap, ZMapView or ZMapWindow) a struct containing pointers to these
- * components is passed to the request handling functions. If the component
- * does not exist then this is an error. */
-typedef struct ZMapAppRemoteViewIDStructName
-{
-  void *zmap ;
-  void *view ;
-  void *window ;
-} ZMapAppRemoteViewIDStruct, *ZMapAppRemoteViewID ;
-
-
-
-/* DOES THIS NEED TO BE EXPOSED HERE.....CHECK AGAIN... */
-/* A nested tree struct of list of zmaps with each zmap containing a list of zmapviews
- * and each zmapview containing a list of zmapwindows. */
-typedef struct ZMapViewWindowTreeStructName
-{
-  void *parent ;
-  GList *children ;
-} ZMapViewWindowTreeStruct, *ZMapViewWindowTree ;
-
-
 
 
 
@@ -90,8 +62,6 @@ typedef struct ZMapViewWindowTreeStructName
  * the existing sub-system callback mechanism to avoid introducing circular 
  * compile dependencies.
  */
-
-
 
 
 /* 
@@ -120,10 +90,8 @@ typedef void (*ZMapRemoteAppReturnReplyFunc)(char *command,
  * 
  * Note that the local_data pointer will be a ZMapView, ZMapWindow etc depending
  * on the sub-system. */
-typedef void (*ZMapRemoteAppProcessRequestFunc)(gpointer local_data,
-						char *command_name,
-						ZMapAppRemoteViewID view_id,
-						char *command,
+typedef void (*ZMapRemoteAppProcessRequestFunc)(gpointer sub_system,
+						char *command_name, char *command,
 						ZMapRemoteAppReturnReplyFunc app_reply_func,
 						gpointer app_reply_data) ;
 
@@ -146,31 +114,21 @@ typedef void (*ZMapRemoteAppProcessReplyFunc)(char *command,
  * When a reply is received from the peer the sub-systems reply_func will be called back
  * with the command_rc, reason or reply and the reply_func_data as per the
  * ZMapRemoteAppProcessReplyFunc prototype. */
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-typedef void (*ZMapRemoteAppMakeRequestFunc)(char *command, ZMapXMLUtilsEventStack request_body,
-					     gpointer app_request_data,
+typedef void (*ZMapRemoteAppMakeRequestFunc)(gpointer caller_data,
+					     gpointer sub_system_ptr,
+					     char *command, ZMapXMLUtilsEventStack request_body,
 					     ZMapRemoteAppProcessReplyFunc reply_handler_func,
 					     gpointer reply_handler_func_data) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-typedef void (*ZMapRemoteAppMakeRequestFunc)(char *command, ZMapXMLUtilsEventStack request_body,
-					     gpointer app_request_data,
-					     ZMapRemoteAppProcessReplyFunc reply_handler_func,
-					     gpointer reply_handler_func_data) ;
-
-
 
 
 
 
 /* Defines IDs that represent a "view" of the data, there is one of these for every
- * single window that displays data. */
-gboolean zMapAppRemoteViewCreateIDStr(ZMapAppRemoteViewID remote_view_id, char **view_id_str_out) ;
-gboolean zMapAppRemoteViewCreateID(ZMapAppRemoteViewID remote_view_id, GQuark *view_id_out) ;
-gboolean zMapAppRemoteViewParseIDStr(char *view_id_str, ZMapAppRemoteViewID *remote_view_id_inout) ;
-gboolean zMapAppRemoteViewParseID(GQuark view_id, ZMapAppRemoteViewID *remote_view_id_inout) ;
-gboolean zMapAppRemoteViewIsValidID(ZMapAppRemoteViewID remote_view_id) ;
-gboolean zMapAppRemoteViewResetID(ZMapAppRemoteViewID remote_view_id) ;
+ * view, i.e. set of sequence data/features. */
+gboolean zMapAppRemoteViewCreateIDStr(gpointer remote_view_id, char **view_id_str_out) ;
+gboolean zMapAppRemoteViewCreateID(gpointer remote_view_id, GQuark *view_id_out) ;
+gboolean zMapAppRemoteViewParseIDStr(char *view_id_str, gpointer *remote_view_id_inout) ;
+gboolean zMapAppRemoteViewParseID(GQuark view_id, gpointer *remote_view_id_inout) ;
 
 
 #endif /* ZMAP_APP_REMOTE_H */
