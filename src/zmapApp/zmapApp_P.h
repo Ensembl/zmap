@@ -96,8 +96,7 @@ typedef struct _ZMapAppRemoteStruct
   char *curr_peer_command ;
   char *curr_peer_request ;				    /* DO WE NEED TO CACHE THIS ?? */
 
-
-  ZMapAppRemoteViewIDStruct curr_view_id ;
+  ZMapView curr_view_id ;
 
 
   /* Remote Control callback function that we call with our reply to a request. */

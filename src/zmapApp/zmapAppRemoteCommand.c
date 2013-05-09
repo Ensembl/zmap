@@ -91,13 +91,13 @@ typedef struct
 
 
 
-static void localProcessRemoteRequest(gpointer local_data,
-				      char *command_name, ZMapAppRemoteViewID view_id, char *request,
+static void localProcessRemoteRequest(gpointer sub_system,
+				      char *command_name, char *request,
 				      ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data) ;
 static void localProcessReplyFunc(char *command, RemoteCommandRCType command_rc, char *reason, char *reply,
 				  gpointer reply_handler_func_data) ;
 static void processRequest(ZMapAppContext app_context,
-			   char *command_name, ZMapAppRemoteViewID view_id, char *request,
+			   char *command_name, char *request,
 			   RemoteCommandRCType *command_rc_out, char **reason_out, ZMapXMLUtilsEventStack *reply_out) ;
 
 static ZMapXMLUtilsEventStack createPeerElement(char *app_id, char *app_unique_id) ;
@@ -124,12 +124,16 @@ void zmapAppProcessAnyRequest(ZMapAppContext app_context,
   RemoteValidateRCType valid_rc ;
   gboolean result = TRUE ;
   char *command_name = NULL ;
-  char *id_str = NULL ;
-  ZMapAppRemoteViewIDStruct view_id = {NULL}, *view_id_ptr ;
+
+  ZMap zmap = NULL ;
+  gpointer view_id = NULL ;
+
   char *err_msg = NULL ;
   RemoteCommandRCType command_rc = REMOTE_COMMAND_RC_OK ;
   char *reason = NULL ;
   ZMapXMLUtilsEventStack reply = NULL ;
+
+
 
   /* Hold on to original request, need it later. */
   if (remote->curr_peer_request)
@@ -137,9 +141,9 @@ void zmapAppProcessAnyRequest(ZMapAppContext app_context,
   remote->curr_peer_request = g_strdup(request) ;
 
 
-  /* Validate the request envelope. */
+  /* Validate the request envelope. */ 
   if ((valid_rc = zMapRemoteCommandValidateEnvelope(remote->remote_controller, request, &err_msg))
-       != REMOTE_VALIDATE_RC_OK)
+      != REMOTE_VALIDATE_RC_OK)
     {
       gboolean abort ;
 
@@ -158,33 +162,45 @@ void zmapAppProcessAnyRequest(ZMapAppContext app_context,
 
       g_free(reason) ;
       g_free(err_msg) ;
-    }
-  else if (!(command_name = zMapRemoteCommandRequestGetCommand(remote->curr_peer_request)))
-    {
-      command_rc = REMOTE_COMMAND_RC_BAD_XML ;
-      reason = "Command is a required attribute for the \"request\" attribute." ;
-      reply = NULL ;
 
-      (replyHandlerFunc)(command_name, FALSE, command_rc, reason, reply, app_context) ;
+      result = FALSE ;
     }
-  else
-    {
-      if (remote->curr_peer_command)
-	g_free(remote->curr_peer_command) ;
-      remote->curr_peer_command = g_strdup(command_name) ;
 
-      /* Check to see if caller provided a view_id id, if not then set the default
-       * view_id if there is one, otherwise pass an empty one (empty one means we don't.
-       * have a zmap displayed yet. */
-      view_id_ptr = &view_id ;
+  /* Make sure there's a command specified. */
+  if (result)
+    {
+      if (!(command_name = zMapRemoteCommandRequestGetCommand(remote->curr_peer_request)))
+	{
+	  command_rc = REMOTE_COMMAND_RC_BAD_XML ;
+	  reason = "Command is a required attribute for the \"request\" attribute." ;
+	  reply = NULL ;
+
+	  (replyHandlerFunc)(command_name, FALSE, command_rc, reason, reply, app_context) ;
+
+	  result = FALSE ;
+	}
+      else
+	{
+	  if (remote->curr_peer_command)
+	    g_free(remote->curr_peer_command) ;
+
+	  remote->curr_peer_command = g_strdup(command_name) ;
+	}
+    }
+
+
+  /* check for a view id and parse it out if there is one. */
+  if (result)
+    {
+      char *id_str = NULL ;
 
       if (zMapRemoteCommandGetAttribute(remote->curr_peer_request,
 					ZACP_REQUEST, ZACP_VIEWID, &(id_str),
 					&err_msg))
 	{
-	  if (zMapAppRemoteViewParseIDStr(id_str, &view_id_ptr))
+	  if (zMapAppRemoteViewParseIDStr(id_str, (void **)&view_id))
 	    {
-	      remote->curr_view_id = view_id ;		    /* struct copy. */
+	      remote->curr_view_id = view_id ;
 	    }
 	  else
 	    {
@@ -197,39 +213,57 @@ void zmapAppProcessAnyRequest(ZMapAppContext app_context,
 	      result = FALSE ;
 	    }
 	}
-      else if (zMapManagerGetDefaultView(app_context->zmap_manager, &view_id))
-	{
-	  remote->curr_view_id = view_id ;		    /* struct copies. */
-	}
+    }
 
 
-      /* If the command is known at this level then call the command processing code for
-       * this (App) level. If the command is not known then pass it down to the next level
-       * and so on, if the command is not known at any level then we send back an error message. */
-      if (result)
+  /* If a view_id was specified then check it actually exists. */
+  if (result)
+    {
+      if (view_id)
 	{
-	  if ((strcmp(command_name, ZACP_PING) == 0
-	       || strcmp(command_name, ZACP_SHUTDOWN) == 0
-	       || strcmp(command_name, ZACP_GOODBYE) == 0))
+	  if (!(zmap = zMapManagerFindZMap(app_context->zmap_manager, view_id)))
 	    {
-	      localProcessRemoteRequest(app_context,
-					command_name, &view_id, request, replyHandlerFunc, app_context) ;
-	    }
-	  else if (!(result = zMapManagerProcessRemoteRequest(app_context->zmap_manager,
-							      command_name, &view_id, request,
-							      replyHandlerFunc, app_context)))
-	    {
-	      RemoteCommandRCType command_rc = REMOTE_COMMAND_RC_CMD_UNKNOWN ;
-	      char *reason = "Command not known !" ;
+	      RemoteCommandRCType command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
+	      char *reason ;
 	      ZMapXMLUtilsEventStack reply = NULL ;
 
+	      reason = g_strdup_printf("view id %p not found.", view_id) ;
+
 	      (replyHandlerFunc)(command_name, FALSE, command_rc, reason, reply, app_context) ;
+
+	      result = FALSE ;
 	    }
 	}
-
-      /* Reset current stuff. */
-      remote->curr_view_id.zmap = remote->curr_view_id.view = remote->curr_view_id.window = NULL ;
     }
+
+  /* If the command is known at this level then call the command processing code for
+   * this (App) level. If the command is not known then pass it down to the next level
+   * and so on, if the command is not known at any level then we send back an error message. */
+  if (result)
+    {
+      if ((strcmp(command_name, ZACP_PING) == 0
+	   || strcmp(command_name, ZACP_SHUTDOWN) == 0
+	   || strcmp(command_name, ZACP_GOODBYE) == 0))
+	{
+	  localProcessRemoteRequest(app_context,
+				    command_name, request,
+				    replyHandlerFunc, app_context) ;
+	}
+      else if (!(result = zMapManagerProcessRemoteRequest(app_context->zmap_manager,
+							  command_name, request,
+							  zmap, view_id,
+							  replyHandlerFunc, app_context)))
+	{
+	  RemoteCommandRCType command_rc = REMOTE_COMMAND_RC_CMD_UNKNOWN ;
+	  char *reason = "Command not known !" ;
+	  ZMapXMLUtilsEventStack reply = NULL ;
+
+	  (replyHandlerFunc)(command_name, FALSE, command_rc, reason, reply, app_context) ;
+	}
+    }
+
+  /* Reset current stuff. */
+  remote->curr_view_id = NULL ;
 
   return ;
 }
@@ -290,7 +324,10 @@ gboolean zmapAppRemoteControlConnect(ZMapAppContext app_context)
 
   request_body = createPeerElement(remote->app_id, remote->app_unique_id) ;
 
-  (request_func)(ZACP_HANDSHAKE, request_body, app_context, localProcessReplyFunc, app_context) ;
+  (request_func)(app_context,
+		 NULL,
+		 ZACP_HANDSHAKE, request_body,
+		 localProcessReplyFunc, app_context) ;
 
   return result ;
 }
@@ -304,7 +341,10 @@ gboolean zmapAppRemoteControlPing(ZMapAppContext app_context)
 
   request_func = zmapAppRemoteControlGetRequestCB() ;
 
-  (request_func)(ZACP_PING, NULL, app_context, localProcessReplyFunc, app_context) ;
+  (request_func)(app_context,
+		 NULL,
+		 ZACP_PING, NULL,
+		 localProcessReplyFunc, app_context) ;
 
   return result ;
 }
@@ -328,7 +368,10 @@ gboolean zmapAppRemoteControlDisconnect(ZMapAppContext app_context, gboolean app
     }
 
   /* Sets app_context->remote_ok to FALSE if disconnect fails. */
-  (request_func)(ZACP_GOODBYE, goodbye_type, app_context, localProcessReplyFunc, app_context) ;
+  (request_func)(app_context,
+		 NULL,
+		 ZACP_GOODBYE, goodbye_type,
+		 localProcessReplyFunc, app_context) ;
   result = app_context->remote_ok ;
 
   return result ;
@@ -437,7 +480,7 @@ static gboolean deferredRequestHandler(gpointer data)
 /* This is where we process a command and return the result via the callback which allows
  * for asynch returning of values where needed. */
 static void localProcessRemoteRequest(gpointer local_data,
-				      char *command_name, ZMapAppRemoteViewID view_id, char *request,
+				      char *command_name, char *request,
 				      ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data)
 {
   ZMapAppContext app_context = (ZMapAppContext)local_data ;
@@ -445,7 +488,7 @@ static void localProcessRemoteRequest(gpointer local_data,
   char *reason = NULL ;
   ZMapXMLUtilsEventStack reply = NULL ;
 
-  processRequest(app_context, command_name, view_id, request, &command_rc, &reason, &reply) ;
+  processRequest(app_context, command_name, request, &command_rc, &reason, &reply) ;
 
   (app_reply_func)(command_name, FALSE, command_rc, reason, reply, app_reply_data) ;
 
@@ -490,7 +533,7 @@ static void localProcessReplyFunc(char *command,
  * Note that some commands (ping, shutdown) have no arguments do not need parsing.
  *  */
 static void processRequest(ZMapAppContext app_context,
-			   char *command_name, ZMapAppRemoteViewID view_id, char *request,
+			   char *command_name, char *request,
 			   RemoteCommandRCType *command_rc_out, char **reason_out,
 			   ZMapXMLUtilsEventStack *reply_out)
 {

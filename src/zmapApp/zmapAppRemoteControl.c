@@ -67,7 +67,9 @@ static void replyHandlerCB(ZMapRemoteControl remote_control, char *reply, void *
 
 static void handleZMapRepliesCB(char *command, gboolean abort, RemoteCommandRCType result, char *reason,
 				ZMapXMLUtilsEventStack reply, gpointer app_reply_data) ;
-static void handleZMapRequestsCB(char *command, ZMapXMLUtilsEventStack request_body, gpointer app_request_data,
+static void handleZMapRequestsCB(gpointer caller_data,
+				 gpointer sub_system_ptr,
+				 char *command, ZMapXMLUtilsEventStack request_body,
 				 ZMapRemoteAppProcessReplyFunc reply_func, gpointer reply_func_data) ;
 
 
@@ -510,22 +512,24 @@ static void handleZMapRepliesCB(char *command,
  * that wish to send a request.
  * 
  *  */
-static void handleZMapRequestsCB(char *command, ZMapXMLUtilsEventStack request_body, gpointer app_request_data,
+static void handleZMapRequestsCB(gpointer caller_data,
+				 gpointer sub_system_ptr,
+				 char *command, ZMapXMLUtilsEventStack request_body,
 				 ZMapRemoteAppProcessReplyFunc process_reply_func, gpointer process_reply_func_data)
 {
-  gboolean result = FALSE ;
-  ZMapAppContext app_context = (ZMapAppContext)app_request_data ;
+  ZMapAppContext app_context = (ZMapAppContext)caller_data ;
   ZMapAppRemote remote = app_context->remote_control ;
 
 
-  /* If we have a remote control peer then build the request. */
+  /* If we have a remote control peer then build the request.....surely this should be in assert.... */
   if (remote)
     {
+      gboolean result = TRUE ;
       GArray *request_stack ;
       char *request ;
       char *err_msg = NULL ;
       char *view = NULL ;					    /* to be filled in later..... */
-
+      gpointer view_id = NULL ;
 
       /* TRY ALL THIS HERE.... */
       /* Test to see if we are processing a remote command....and then set that we are active. */
@@ -533,64 +537,87 @@ static void handleZMapRequestsCB(char *command, ZMapXMLUtilsEventStack request_b
       requestSetActive() ;
 
 
-      if (!err_msg && !(request_stack = zMapRemoteCommandCreateRequest(remote->remote_controller, command, view, -1)))
+      /* If request came from a subsystem (zmap, view, window) find the corresponding view_id
+       * so we can return it to the caller. */
+      if (sub_system_ptr)
 	{
-	  err_msg = g_strdup_printf("Could not create request for command \"%s\"", command) ;
-	}
-
-      /* for debugging... */
-      request = zMapXMLUtilsStack2XML(request_stack, &err_msg, FALSE) ;
-      
-      if (request_body)
-	{
-	  if (!err_msg && !(request_stack = zMapRemoteCommandAddBody(request_stack, "request", request_body)))
-	    err_msg = g_strdup_printf("Could not add request body for command \"%s\"", command) ;
-	}
-
-      if (!err_msg && !(request = zMapXMLUtilsStack2XML(request_stack, &err_msg, FALSE)))
-	{
-	  err_msg = g_strdup_printf("Could not create raw xml from request for command \"%s\"", command) ;
-	}
-
-      if (!err_msg)
-	{
-	  /* cache the command and request, need them later. */
-	  if (remote->curr_zmap_command)
-	    g_free(remote->curr_zmap_command) ;
-	  remote->curr_zmap_command = g_strdup(command) ;
-	  if (remote->curr_zmap_request)
-	    g_free(remote->curr_zmap_request) ;
-	  remote->curr_zmap_request = g_strdup(request) ;
-
-	  /* Cache app function to be called when we receive a reply from the peer. */
-	  remote->process_reply_func = process_reply_func ;
-	  remote->process_reply_func_data = process_reply_func_data ;
-
-
-	  if (!(result = zMapRemoteControlSendRequest(remote->remote_controller, remote->curr_zmap_request)))
+	  if (!(view_id = zMapManagerFindView(app_context->zmap_manager, sub_system_ptr)))
 	    {
-	      err_msg = g_strdup_printf("Could not send request to peer: \"%s\"", request) ;
+	      zMapLogCritical("Cannot find sub_system_ptr %p in zmaps/views/windows, remote call has failed.",
+			      sub_system_ptr) ;
+	      result = FALSE ;
+	    }
+	  else if (!zMapAppRemoteViewCreateIDStr(view_id, &view))
+	    {
+	      zMapLogCritical("Cannot convert sub_system_ptr %p to view_id, remote call has failed.",
+			      sub_system_ptr) ;
+	      result = FALSE ;
 	    }
 	}
 
-      /* Serious failure, record that remote is no longer working properly. */
-      if (err_msg)
+      if (result)
 	{
-	  app_context->remote_ok = FALSE ;
+	  if (!err_msg && !(request_stack = zMapRemoteCommandCreateRequest(remote->remote_controller,
+									   command, view, -1)))
+	    {
+	      err_msg = g_strdup_printf("Could not create request for command \"%s\"", command) ;
+	    }
 
-	  zMapLogCritical("%s", err_msg) ;
+	  /* for debugging... */
+	  request = zMapXMLUtilsStack2XML(request_stack, &err_msg, FALSE) ;
+      
+	  if (request_body)
+	    {
+	      if (!err_msg && !(request_stack = zMapRemoteCommandAddBody(request_stack, "request", request_body)))
+		err_msg = g_strdup_printf("Could not add request body for command \"%s\"", command) ;
+	    }
+
+	  if (!err_msg && !(request = zMapXMLUtilsStack2XML(request_stack, &err_msg, FALSE)))
+	    {
+	      err_msg = g_strdup_printf("Could not create raw xml from request for command \"%s\"", command) ;
+	    }
+
+	  if (!err_msg)
+	    {
+	      /* cache the command and request, need them later. */
+	      if (remote->curr_zmap_command)
+		g_free(remote->curr_zmap_command) ;
+	      remote->curr_zmap_command = g_strdup(command) ;
+	      if (remote->curr_zmap_request)
+		g_free(remote->curr_zmap_request) ;
+	      remote->curr_zmap_request = g_strdup(request) ;
+
+	      /* Cache app function to be called when we receive a reply from the peer. */
+	      remote->process_reply_func = process_reply_func ;
+	      remote->process_reply_func_data = process_reply_func_data ;
+
+
+	      if (!(result = zMapRemoteControlSendRequest(remote->remote_controller, remote->curr_zmap_request)))
+		{
+		  err_msg = g_strdup_printf("Could not send request to peer: \"%s\"", request) ;
+		}
+	    }
+
+	  /* Serious failure, record that remote is no longer working properly. */
+	  if (err_msg)
+	    {
+	      app_context->remote_ok = FALSE ;
+
+	      zMapLogCritical("%s", err_msg) ;
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  /* TOO MANY WARNINGS.... */
+	      /* TOO MANY WARNINGS.... */
 
-	  zMapCritical("%s", err_msg) ;
-	  zMapWarning("%s", err_msg) ;
+	      zMapCritical("%s", err_msg) ;
+	      zMapWarning("%s", err_msg) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
-	  g_free(err_msg) ;
+	      g_free(err_msg) ;
+	    }
 	}
+
     }
 
   return ;
