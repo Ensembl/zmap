@@ -344,21 +344,37 @@ static GOptionEntry *get_main_entries(ZMapCmdLineArgs arg_context)
     { NULL }
   } ;
 
-
+  /* Crucially these entries must be kept in the same order as the array above....otherwise you get
+   * the wrong command line values for command line flags.... */
   if (entries[0].arg_data == NULL)
     {
-      entries[0].arg_data = &(arg_context->version);
-      entries[1].arg_data = &(arg_context->serial);
-      entries[2].arg_data = &(arg_context->remote_debug);
-      entries[3].arg_data = &(arg_context->peer_name);
-      entries[4].arg_data = &(arg_context->peer_clipboard);
-      entries[5].arg_data = &(arg_context->start);
-      entries[6].arg_data = &(arg_context->end);
-      entries[7].arg_data = &(arg_context->sleep);
-      entries[8].arg_data = &(zmap_timing_G);
-      entries[9].arg_data = &(arg_context->shrink) ;
-      entries[10].arg_data = &(arg_context->sequence_arg);
-      entries[11].arg_data = &(arg_context->files_arg);
+      int i = 0 ;					    /* using index saves having to renumber. */
+
+      entries[i].arg_data = &(arg_context->version) ;
+      i++ ;
+      entries[i].arg_data = &(arg_context->raw_version) ;
+      i++ ;
+      entries[i].arg_data = &(arg_context->serial) ;
+      i++ ;
+      entries[i].arg_data = &(arg_context->remote_debug) ;
+      i++ ;
+      entries[i].arg_data = &(arg_context->peer_name) ;
+      i++ ;
+      entries[i].arg_data = &(arg_context->peer_clipboard) ;
+      i++ ;
+      entries[i].arg_data = &(arg_context->start) ;
+      i++ ;
+      entries[i].arg_data = &(arg_context->end) ;
+      i++ ;
+      entries[i].arg_data = &(arg_context->sleep) ;
+      i++ ;
+      entries[i].arg_data = &(zmap_timing_G) ;
+      i++ ;
+      entries[i].arg_data = &(arg_context->shrink) ;
+      i++ ;
+      entries[i].arg_data = &(arg_context->sequence_arg) ;
+      i++ ;
+      entries[i].arg_data = &(arg_context->files_arg) ;
     }
 
   return &entries[0] ;

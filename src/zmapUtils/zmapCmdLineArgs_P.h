@@ -68,17 +68,6 @@
 #define ZMAPARG_INVALID_STR NULL
 #define ZMAPARG_INVALID_FLOAT 0.0
 
-enum
-  {
-    ARG_SET = 1,					    /* Special value, do not alter. */
-    ARG_VERSION,
-    ARG_SERIAL,
-    ARG_START, ARG_END,
-    ARG_CONF_FILE, ARG_CONF_DIR,
-    ARG_WINID,
-    ARG_REMOTE_DEBUG, ARG_PEER_NAME, ARG_PEER_CLIPBOARD,
-    ARG_TIMING
-  } ;
 
 
 typedef struct _ZMapCmdLineArgsStruct
@@ -94,6 +83,7 @@ typedef struct _ZMapCmdLineArgsStruct
   char **files_arg ;	/* non options/ remainder args */
 
   /* All option values are stored here for later reference. */
+  gboolean raw_version ;
   gboolean version ;
   gboolean serial ;
   gboolean timing ;
