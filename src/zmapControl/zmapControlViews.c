@@ -695,7 +695,7 @@ void zmapControlSetWindowFocus(ZMap zmap, ZMapViewWindow new_viewwindow)
 
 	  /* Swop the frames label text colour back to "inactive" */
 	  label = gtk_frame_get_label_widget(GTK_FRAME(unfocus_frame)) ;
-	  label_txt = gtk_label_get_text(GTK_LABEL(label)) ;
+	  label_txt = (char *)gtk_label_get_text(GTK_LABEL(label)) ;
 	  label_txt = g_strdup_printf("<span foreground=\"black\">%s</span>", label_txt) ;
 	  gtk_label_set_markup(GTK_LABEL(label), label_txt) ;
 	  g_free(label_txt) ;
@@ -716,7 +716,7 @@ void zmapControlSetWindowFocus(ZMap zmap, ZMapViewWindow new_viewwindow)
 
       /* Swop the frames label text colour to "active" */
       label = gtk_frame_get_label_widget(GTK_FRAME(viewwindow_frame)) ;
-      label_txt = gtk_label_get_text(GTK_LABEL(label)) ;
+      label_txt = (char *)gtk_label_get_text(GTK_LABEL(label)) ;
       label_txt = g_strdup_printf("<span foreground=\"red\">%s</span>", label_txt) ;
       gtk_label_set_markup(GTK_LABEL(label), label_txt) ;
       g_free(label_txt) ;
