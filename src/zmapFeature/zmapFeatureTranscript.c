@@ -494,6 +494,25 @@ ZMapFeatureContextExecuteStatus zMapFeatureContextTranscriptSortExons(GQuark key
 
 
 /*!
+ * \brief Get the number of exons in the given transcript.
+ *
+ * /return The number of exons, or -1 if the feature is not a transcript.
+ */
+int zMapFeatureTranscriptGetNumExons(ZMapFeature transcript)
+{
+  int result = -1;
+  
+  if (transcript && transcript->type == ZMAPSTYLE_MODE_TRANSCRIPT)
+    {
+      if (transcript->feature.transcript.exons)
+        result = transcript->feature.transcript.exons->len;
+    }
+  
+  return result;
+}
+
+
+/*!
  * \brief Merge a new exon into the given transcript.
  *
  * The given coords represent the start/end of the new exon to be

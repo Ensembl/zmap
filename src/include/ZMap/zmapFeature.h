@@ -1385,6 +1385,7 @@ ZMapFeatureContextExecuteStatus zMapFeatureContextTranscriptSortExons(GQuark key
 								      gpointer user_data,
 								      char **error_out) ;
 
+int zMapFeatureTranscriptGetNumExons(ZMapFeature transcript);
 void zMapFeatureTranscriptMergeExon(ZMapFeature feature, Coord x1, Coord x2);
 gboolean zMapFeatureTranscriptMergeCoord(ZMapFeature transcript, const int x, const ZMapBoundaryType boundary, GError **error);
 
