@@ -127,6 +127,7 @@ void zmapAppProcessAnyRequest(ZMapAppContext app_context,
 
   ZMap zmap = NULL ;
   gpointer view_id = NULL ;
+  gpointer view_ptr = NULL ;
 
   char *err_msg = NULL ;
   RemoteCommandRCType command_rc = REMOTE_COMMAND_RC_OK ;
@@ -221,7 +222,7 @@ void zmapAppProcessAnyRequest(ZMapAppContext app_context,
     {
       if (view_id)
 	{
-	  if (!(zmap = zMapManagerFindZMap(app_context->zmap_manager, view_id)))
+	  if (!(zmap = zMapManagerFindZMap(app_context->zmap_manager, view_id, &view_ptr)))
 	    {
 	      RemoteCommandRCType command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
 	      char *reason ;
@@ -251,7 +252,7 @@ void zmapAppProcessAnyRequest(ZMapAppContext app_context,
 	}
       else if (!(result = zMapManagerProcessRemoteRequest(app_context->zmap_manager,
 							  command_name, request,
-							  zmap, view_id,
+							  zmap, view_ptr,
 							  replyHandlerFunc, app_context)))
 	{
 	  RemoteCommandRCType command_rc = REMOTE_COMMAND_RC_CMD_UNKNOWN ;

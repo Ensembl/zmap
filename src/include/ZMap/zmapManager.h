@@ -75,7 +75,7 @@ ZMapManager zMapManagerCreate(void *gui_data) ;
 ZMapManagerAddResult zMapManagerAdd(ZMapManager zmaps, ZMapFeatureSequenceMap sequence_map,
 				    ZMap *zmap_out, ZMapView *view_out, gboolean load_view) ;
 
-ZMap zMapManagerFindZMap(ZMapManager zmaps, gpointer view_id) ;
+ZMap zMapManagerFindZMap(ZMapManager manager, gpointer view_id, gpointer *view_ptr_out) ;
 gpointer zMapManagerFindView(ZMapManager manager, gpointer view_id) ;
 
 void zMapManagerDestroyView(ZMapManager zmaps, ZMap zmap, ZMapView view) ;

@@ -260,10 +260,12 @@ ZMapManagerAddResult zMapManagerAdd(ZMapManager zmaps, ZMapFeatureSequenceMap se
 
 
 
-/* Given a remote control type view id find the zmap for it. */
-ZMap zMapManagerFindZMap(ZMapManager manager, gpointer view_id)
+/* Given a remote control type view id find the zmap for it and if
+ * view_ptr_out is not NULL then return the view in that. */
+ZMap zMapManagerFindZMap(ZMapManager manager, gpointer view_id, gpointer *view_ptr_out)
 {
   ZMap zmap = NULL ;
+  gpointer view_ptr = NULL ;
 
   if (manager->zmap_list)
     {
@@ -275,9 +277,11 @@ ZMap zMapManagerFindZMap(ZMapManager manager, gpointer view_id)
 	{
 	  ZMap next_zmap = (ZMap)(list_zmap->data) ;
 
-	  if ((zMapControlFindView(next_zmap, view_id)))
+	  if ((view_ptr = zMapControlFindView(next_zmap, view_id)))
 	    {
 	      zmap = next_zmap ;			    /* Found view so return this zmap. */
+	      if (view_ptr_out)
+		*view_ptr_out = view_ptr ;
 
 	      break ;
 	    }
@@ -391,16 +395,16 @@ gboolean zMapManagerProcessRemoteRequest(ZMapManager manager,
     }
   else if (manager->zmap_list)
     {
-      GList *next_zmap ;
+      GList *list_zmap ;
       gboolean zmap_found = FALSE ;
 
       /* Look for the right zmap. */
-      next_zmap = g_list_first(manager->zmap_list) ;
+      list_zmap = g_list_first(manager->zmap_list) ;
       do
 	{
-	  ZMap zmap = (ZMap)(next_zmap->data) ;
+	  ZMap next_zmap = (ZMap)(list_zmap->data) ;
 
-	  if (zmap == view_id)
+	  if (next_zmap == zmap)
 	    {
 	      zmap_found = TRUE ;
 	      result = zMapControlProcessRemoteRequest(zmap,
@@ -409,7 +413,7 @@ gboolean zMapManagerProcessRemoteRequest(ZMapManager manager,
 	      break ;
 	    }
 	}
-      while ((next_zmap = g_list_next(next_zmap))) ;
+      while ((list_zmap = g_list_next(list_zmap))) ;
 
       /* If we were passed a zmap but did not find it this is an error... */
       if (!zmap_found)
