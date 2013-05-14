@@ -108,6 +108,9 @@ typedef struct ZMapWindowFeatureShowStruct_
 
   ZMapGuiNotebook feature_book ;
 
+
+
+  /* OH GOSH....... */
   /*
    * MH17: re-using code, this is a bit of a hack
    * as this code was written to drive a dialog not to extract data from XML
@@ -371,6 +374,72 @@ void zmapWindowFeatureShow(ZMapWindow window, FooCanvasItem *item)
 
 
 
+/* 
+ *                    Package routines
+ */
+
+
+/* OH gosh....I'm not sure what's going on here !!!!!!!!!!! */
+
+/* get evidence feature names from otterlace, reusing code from createFeatureBook() above
+ * the show code does some complex stuff with reusable lists of windows,
+ * probably to stop these accumulating
+ * but as we don't display a window we don't care
+ */
+
+GList *zmapWindowFeatureGetEvidence(ZMapWindow window, ZMapFeature feature)
+{
+  GList *evidence = NULL ;
+  ZMapWindowFeatureShow show ;
+
+  show = g_new0(ZMapWindowFeatureShowStruct, 1) ;
+  show->reusable = windowIsReusable() ;
+  show->zmapWindow = window ;
+
+  show->xml_parsing_status = TRUE ;
+  show->xml_curr_tag = ZMAPGUI_NOTEBOOK_INVALID ;
+  show->xml_curr_chapter = NULL ;
+  show->xml_curr_page = NULL ;
+  show->item = NULL;  /* is not used anyway */
+
+  show->get_evidence = WANT_EVIDENCE;
+  show->evidence_column = -1;     /* invalid */
+  show->evidence = NULL;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+#warning show evidence needs recoding for new xremote....
+
+  externally_handled = zmapWindowUpdateXRemoteDataFull(show->zmapWindow,
+						       (ZMapFeatureAny)feature,
+						       "feature_details",
+						       show->item,
+						       starts, ends, show) ;
+
+  if (externally_handled == ZMAPXREMOTE_SENDCOMMAND_TIMEOUT)
+    zMapWarning("Fetching of feature data from external client failed for feature \"%s\","
+		" only incomplete feature details will be displayed",
+		g_quark_to_string(feature->original_id)) ;
+  else if (externally_handled == ZMAPXREMOTE_SENDCOMMAND_SUCCEED)
+    evidence = show->evidence ;
+
+  if (show->xml_curr_notebook)
+    zMapGUINotebookDestroyAny((ZMapGuiNotebookAny)(show->xml_curr_notebook)) ;
+
+  g_free(show) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+
+  return(evidence) ;
+}
+
+
+
+
+
 /*
  *                   Internal routines.
  */
@@ -453,6 +522,13 @@ static void replyShowFeature(ZMapWindow window, gpointer user_data,
 
       /* Free the parser!!! */
       zMapXMLParserDestroy(parser) ;
+
+      /* Oh my goodness, undo this... */
+      show->zmapWindow->xremote_reply_handler = NULL ;
+      show->zmapWindow->xremote_reply_data = NULL ;
+    
+
+
     }
 
   return ;
@@ -776,61 +852,6 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
 }
 
 
-
-/* get evidence feature names from otterlace, reusing code from createFeatureBook() above
- * the show code does some complex stuff with reusable lists of windows,
- * probably to stop these accumulating
- * but as we don't display a window we don't care
- */
-
-GList *zmapWindowFeatureGetEvidence(ZMapWindow window, ZMapFeature feature)
-{
-  GList *evidence = NULL ;
-  ZMapWindowFeatureShow show ;
-
-  show = g_new0(ZMapWindowFeatureShowStruct, 1) ;
-  show->reusable = windowIsReusable() ;
-  show->zmapWindow = window ;
-
-  show->xml_parsing_status = TRUE ;
-  show->xml_curr_tag = ZMAPGUI_NOTEBOOK_INVALID ;
-  show->xml_curr_chapter = NULL ;
-  show->xml_curr_page = NULL ;
-  show->item = NULL;  /* is not used anyway */
-
-  show->get_evidence = WANT_EVIDENCE;
-  show->evidence_column = -1;     /* invalid */
-  show->evidence = NULL;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-
-#warning show evidence needs recoding for new xremote....
-
-  externally_handled = zmapWindowUpdateXRemoteDataFull(show->zmapWindow,
-						       (ZMapFeatureAny)feature,
-						       "feature_details",
-						       show->item,
-						       starts, ends, show) ;
-
-  if (externally_handled == ZMAPXREMOTE_SENDCOMMAND_TIMEOUT)
-    zMapWarning("Fetching of feature data from external client failed for feature \"%s\","
-		" only incomplete feature details will be displayed",
-		g_quark_to_string(feature->original_id)) ;
-  else if (externally_handled == ZMAPXREMOTE_SENDCOMMAND_SUCCEED)
-    evidence = show->evidence ;
-
-  if (show->xml_curr_notebook)
-    zMapGUINotebookDestroyAny((ZMapGuiNotebookAny)(show->xml_curr_notebook)) ;
-
-  g_free(show) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-
-  return(evidence) ;
-}
 
 
 /* Hide this away to make the exposed function smaller... */
