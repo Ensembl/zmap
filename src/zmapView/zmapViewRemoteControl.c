@@ -172,7 +172,7 @@ typedef struct RequestDataStructName
 
   GQuark source_id ;
   GQuark style_id ;
-  ZMapFeatureTypeStyle *style ;
+  ZMapFeatureTypeStyle style ;
 
   GList *locations ;
 
@@ -1330,6 +1330,7 @@ static gboolean xml_block_start_cb(gpointer user_data, ZMapXMLElement set_elemen
 }
 
 
+/* AGH SEEMS REALLY MANGLED FOR LOAD FEATURES..... */
 
 /* For most operations we will only come in here once but for replace we will come in
  * once for the feature to be deleted and once for the feature to be recreated. */
@@ -1343,8 +1344,23 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
   char *featureset_name ;
   GQuark unique_set_id ;
   char *unique_set_name ;
+  gboolean load_features = FALSE ;
+
 
   request_data->source_id = 0 ;			    /* reset needed for remove features. */
+
+
+
+  /* ok...we need to create the feature set if it doesn't exist......check this in debugger with
+     old version......
+  */
+
+
+  /* Load features is different, while we will already know the feature set name,
+   * the style may need loading and the feature set creating and then the
+   * features loading so processing is different. */
+  if (request_data->command_id == g_quark_from_string(ZACP_LOAD_FEATURES))
+    load_features = TRUE ;
 
 
   /* Default to master align if client did not specify one. */
@@ -1414,12 +1430,11 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 	    request_data->replace_stage = REPLACE_CREATE_FEATURE ;
 	  else
 	    {
-	      /* If we can't find the featureset but it's meant to exist then it's a serious error
-	       * and we can't carry on. */
+	      /* Something is out of sync in the replace operation. */
 	      char *err_msg ;
 
 	      request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
-	      err_msg = g_strdup_printf("Too many featuresets for replace operation: \"%s\"",
+	      err_msg = g_strdup_printf("Error in syntax of replace command: \"%s\"",
 					request_data->request) ;
 	      zMapXMLParserRaiseParsingError(parser, err_msg) ;
 	      g_free(err_msg) ;
@@ -1455,9 +1470,33 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 	    }
 	  else
 	    {
-	      result = TRUE ;
+	      if (request_data->orig_feature_set)
+		{
+		  feature_set
+		    = (ZMapFeatureSet)zMapFeatureAnyCopy((ZMapFeatureAny)(request_data->orig_feature_set)) ;
+		}
+	      else
+		{
+		  /* Make sure this feature set is a child of the block........ */
+		  if (!(feature_set = zMapFeatureBlockGetSetByID(request_data->edit_block, unique_set_id)))
+		    {
+		      feature_set = zMapFeatureSetCreate(featureset_name, NULL) ;
 
-	      request_data->style = &(request_data->orig_feature_set->style) ;
+
+		      /* At this point we need the style.....(from column ????) */
+		      /* See below.... */
+			  
+
+		    }
+
+		}
+
+	      zMapFeatureBlockAddFeatureSet(request_data->edit_block, feature_set) ;
+
+	      
+	      request_data->orig_feature_set = request_data->edit_feature_set = feature_set ;
+
+	      result = TRUE ;
 	    }
 	}
 
@@ -1531,16 +1570,22 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 	  request_data->style_id = source_data->style_id ;
 	}
 
-      if (result && (request_data->command_id != g_quark_from_string(ZACP_LOAD_FEATURES)))
+      if (result && !load_features)
 	{
 	  // check style for all command except load_features
 	  // as load features processes a complete step list that inludes requesting the style
 	  // then if the style is not there then we'll drop the features
+	  ZMapFeatureTypeStyle style ;
+	  
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	  /* errr...yes.... */
 	  /* DO WE NEED TO DO THIS NOW....... */
-	  if (!(request_data->style = &(zMapFindStyle(request_data->view->context_map.styles, request_data->style_id))))
+	  if ((style = zMapFindStyle(request_data->view_window->parent_view->context_map.styles, 
+				     request_data->style_id)))
+	    {
+	      request_data->style = style ;
+	    }
+	  else
 	    {
 	      char *err_msg ;
 
@@ -1552,11 +1597,11 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 
 	      result = FALSE ;
 	    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	  /* check if we could have just done this... */
+
 	  /* New way of styles..... */
 	  request_data->style = &(feature_set->style) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
@@ -1708,7 +1753,7 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 
   /* Need the style to get hold of the feature mode, better would be for
    * xml to contain SO term ?? Maybe not....not sure. */
-  if (result && ((mode = zMapStyleGetMode(*(request_data->style))) == ZMAPSTYLE_MODE_INVALID))
+  if (result && ((mode = zMapStyleGetMode(request_data->style)) == ZMAPSTYLE_MODE_INVALID))
     {
       request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
       zMapXMLParserRaiseParsingError(parser, "\"style\" must have a valid feature mode.");
@@ -1857,7 +1902,7 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 	  if (result
 	      && (feature = zMapFeatureCreateFromStandardData(feature_name, NULL, "",
 							      mode,
-							      request_data->style,
+							      &(request_data->style),
 							      start, end, has_score,
 							      score, strand)))
 	    {
