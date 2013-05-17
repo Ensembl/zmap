@@ -231,9 +231,9 @@ gboolean zMapControlProcessRemoteRequest(ZMap zmap,
 
 
       /* Get the view from the request, if no view specified then use focus_viewwindow. */
-      if (!zMapRemoteCommandGetAttribute(request,
-					 ZACP_REQUEST, ZACP_VIEWID, &(id_str),
-					 &err_msg))
+      if (zMapRemoteCommandGetAttribute(request,
+					ZACP_REQUEST, ZACP_VIEWID, &(id_str),
+					&err_msg))
 	
 	{
 	  ZMapView request_view = NULL ;
