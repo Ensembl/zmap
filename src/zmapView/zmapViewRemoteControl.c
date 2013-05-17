@@ -1482,11 +1482,7 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 		    {
 		      feature_set = zMapFeatureSetCreate(featureset_name, NULL) ;
 
-
-		      /* At this point we need the style.....(from column ????) */
-		      /* See below.... */
-			  
-
+		      request_data->orig_feature_set = feature_set ;
 		    }
 
 		}
@@ -1494,7 +1490,7 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 	      zMapFeatureBlockAddFeatureSet(request_data->edit_block, feature_set) ;
 
 	      
-	      request_data->orig_feature_set = request_data->edit_feature_set = feature_set ;
+	      request_data->edit_feature_set = feature_set ;
 
 	      result = TRUE ;
 	    }
