@@ -1311,18 +1311,15 @@ char *zMapViewGetStatusStr(ZMapView view)
 			       "Resetting", "Dying"} ;
   char *state_str ;
   ZMapViewState state = view->state;
-  char failed[32] = "" ;
 
   zMapAssert(state >= ZMAPVIEW_INIT);
   zMapAssert(state <= ZMAPVIEW_DYING) ;
 
-  if (view->sources_failed)
-    sprintf(failed," (%d failed)", view->sources_failed) ;
-
   if (state == ZMAPVIEW_LOADING || state == ZMAPVIEW_UPDATING)
-    state_str = g_strdup_printf("%s (%d)%s", zmapStates[state], view->sources_loading, failed) ;
+    state_str = g_strdup_printf("%s (%d to go) (%d failed)", zmapStates[state],
+				view->sources_loading, view->sources_failed) ;
   else if(state == ZMAPVIEW_LOADED)
-    state_str = g_strdup_printf("%s%s", zmapStates[state], failed) ;
+    state_str = g_strdup_printf("%s (%d failed)", zmapStates[state], view->sources_failed) ;
   else
     state_str = g_strdup(zmapStates[state]) ;
 
