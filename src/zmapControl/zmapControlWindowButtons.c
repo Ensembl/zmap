@@ -31,12 +31,14 @@
 #include <ZMap/zmap.h>
 
 #include <string.h>
+
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapWindow.h>
 #include <ZMap/zmapUtilsGUI.h>
 #include <zmapControl_P.h>
 
-typedef struct
+
+typedef struct ZoomMenuCBDataStructName
 {
   ZMapWindow window ;
 } ZoomMenuCBDataStruct, *ZoomMenuCBData ;
@@ -45,6 +47,7 @@ typedef struct
 enum {ZOOM_MAX, ZOOM_ALLDNA, ZOOM_10, ZOOM_100, ZOOM_1000, ZOOM_MIN} ;
 
 enum{ SHOW_DNA, HIDE_DNA, HIDE_3ALL, SHOW_3FEATURES, SHOW_3FT, SHOW_3ALL };
+
 
 static void reloadCB(GtkWidget *widget, gpointer cb_data) ;
 static void stopCB(GtkWidget *widget, gpointer cb_data) ;
@@ -308,14 +311,14 @@ void zmapControlButtonTooltips(ZMap zmap)
 
 void filterSetHighlight(ZMap zmap)
 {
-	GdkColor white = { 0xffffffff, 0xffff, 0xffff, 0xffff } ;
-	GdkColor *fill = &white;
+  GdkColor white = { 0xffffffff, 0xffff, 0xffff, 0xffff } ;
+  GdkColor *fill = &white;
 
-	/* highlight if filtering occrured */
-	if(zmap->filter.n_filtered && zmap->filter.window)
-		zMapWindowGetFilteredColour(zmap->filter.window,&fill);
+  /* highlight if filtering occrured */
+  if(zmap->filter.n_filtered && zmap->filter.window)
+    zMapWindowGetFilteredColour(zmap->filter.window,&fill);
 
-	gtk_widget_modify_base ((GtkWidget *) zmap->filter_but, GTK_STATE_NORMAL, fill);
+  gtk_widget_modify_base ((GtkWidget *) zmap->filter_but, GTK_STATE_NORMAL, fill);
 }
 
 
@@ -632,22 +635,22 @@ static gboolean filterSpinButtonCB(GtkWidget *spin, GdkEvent *event, gpointer us
   gboolean handled = FALSE ;
   ZMap zmap = (ZMap) user_data;
 
-//printf("filter spin %d\n", event->type == GDK_BUTTON_PRESS ? 1 : event->type == GDK_BUTTON_RELEASE ? 2 : 0);
+  //printf("filter spin %d\n", event->type == GDK_BUTTON_PRESS ? 1 : event->type == GDK_BUTTON_RELEASE ? 2 : 0);
 
   switch(event->type)
     {
     case GDK_BUTTON_PRESS:
-	zmap->filter_spin_pressed = TRUE;
+      zmap->filter_spin_pressed = TRUE;
 
-	break;
+      break;
 
     case GDK_BUTTON_RELEASE:
-	zmap->filter_spin_pressed = FALSE;
-	filterValueChangedCB((GtkSpinButton *) spin, user_data);
-	break;
+      zmap->filter_spin_pressed = FALSE;
+      filterValueChangedCB((GtkSpinButton *) spin, user_data);
+      break;
 
     default:
-	handled = FALSE;
+      handled = FALSE;
       break;
     }
 
@@ -852,8 +855,8 @@ static void makeZoomMenu(GdkEventButton *button_event, ZMapWindow window)
  * AROUND...OTHERWISE WE WILL HAVE TO KEEP ALLOCATING/DEALLOCATING THEM.....
  */
 static ZMapGUIMenuItem makeMenuZoomOps(int *start_index_inout,
-					  ZMapGUIMenuItemCallbackFunc callback_func,
-					  gpointer callback_data)
+				       ZMapGUIMenuItemCallbackFunc callback_func,
+				       gpointer callback_data)
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
@@ -1071,14 +1074,13 @@ static void seqMenuCB(int menu_item_id, gpointer callback_data)
 	  || menu_item_id == SHOW_3FT || menu_item_id == HIDE_3ALL
 	  || menu_item_id == SHOW_3ALL)
 	{
-
 	  ZMapWindow3FrameMode frame_mode ;
 
 	  switch(menu_item_id)
 	    {
-          case HIDE_3ALL:
-            frame_mode = ZMAP_WINDOW_3FRAME_INVALID ;
-            break;
+	    case HIDE_3ALL:
+	      frame_mode = ZMAP_WINDOW_3FRAME_INVALID ;
+	      break;
 	    case SHOW_3FEATURES:
 	      frame_mode = ZMAP_WINDOW_3FRAME_COLS ;
 	      break ;
