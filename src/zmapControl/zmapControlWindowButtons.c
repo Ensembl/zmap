@@ -609,19 +609,6 @@ static gboolean zoomEventCB(GtkWidget *wigdet, GdkEvent *event, gpointer data)
 
 
 
-static GtkWidget *zmap_new_spin_button (void)
-{
-  GtkWidget *spinner = NULL ;
-  GtkAdjustment *spinner_adj ;
-
-  /* default to integer % */
-  spinner_adj = (GtkAdjustment *)gtk_adjustment_new (0.0, 0.0, 100.0, 1.0, 0.0, 0.0) ;
-  spinner = gtk_spin_button_new(spinner_adj, 1.0, 0) ;
-
-  return spinner ;
-}
-
-
 /* handle text input and spin buttons */
 static void filterValueChangedCB(GtkSpinButton *spinbutton, gpointer user_data)
 {

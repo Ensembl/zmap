@@ -463,11 +463,11 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, ZMapFeatureSequenceMap seque
 
   new_window->seqLength = original_window->seqLength ;
 
-  /* As we are looking at the same data as the original window this should all just work... */
+  /* Set revcomp'd features. */
   new_window->revcomped_features = original_window->revcomped_features ;
   new_window->display_forward_coords = original_window->display_forward_coords ;
-//  new_window->origin = original_window->origin ;
-
+  zmapWindowScaleCanvasSetRevComped(new_window->ruler, original_window->revcomped_features) ;
+							    /* Sets display_forward too... */
 
   zmapWindowZoomControlCopyTo(original_window->zoom, new_window->zoom);
 
@@ -594,7 +594,7 @@ void zMapWindowDisplayData(ZMapWindow window, ZMapWindowState state,
     {
       sendClientEvent(window, feature_sets) ;
     }
-  else if(!window->exposeHandlerCB)
+  else if (!window->exposeHandlerCB)
     {
       RealiseData realiseData ;
 
@@ -2170,7 +2170,7 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
   canvas = foo_canvas_new();
   window->canvas = FOO_CANVAS(canvas);
 
-foo_bug_set(canvas,"window");
+  foo_bug_set(canvas,"window");
 
   /* This will be removed when RT:1589 is resolved */
   g_object_set_data(G_OBJECT(canvas), ZMAP_WINDOW_POINTER, window);
@@ -2188,6 +2188,8 @@ foo_bug_set(canvas,"window");
   /* Make the canvas focussable, we want the canvas to be the focus widget of its "window"
    * otherwise keyboard input (i.e. short cuts) will be delivered to some other widget. */
   GTK_WIDGET_SET_FLAGS(canvas, GTK_CAN_FOCUS) ;
+
+
 
   if (!(window->zoom = zmapWindowZoomControlCreate(window)))
     {
@@ -6836,4 +6838,10 @@ void zMapWindowUpdateColumnBackground(ZMapWindow window,
 
   /* Re-highlight the hot column, if any */
   zmapWindowFocusHighlightHotColumn(window->focus);
+
+
+  return ;
 }
+
+
+

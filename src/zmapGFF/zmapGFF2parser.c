@@ -53,7 +53,8 @@ typedef enum {NAME_FIND, NAME_USE_SOURCE, NAME_USE_SEQUENCE, NAME_USE_GIVEN, NAM
  *
  *                  sscanf(ptr_to_tag, "Tag " VALUE_FORMAT_STR, rest of args) ;
  *  */
-#define VALUE_FORMAT_STR "%*[\"]%50[^\"]%*[\"]%*s"
+#define VALUE_FORMAT_STR "%*[\"]%" ZMAP_MAKESTRING(GFF_MAX_FIELD_CHARS) "[^\"]%*[\"]%*s"
+
 
 
 static gboolean parseHeaderLine(ZMapGFFParser parser, char *line) ;
@@ -905,7 +906,7 @@ static gboolean parseHeaderLine(ZMapGFFParser parser, char *line)
 		  int version ;
 
 		  fields = 1 ;
-		  format_str = "%*13s%d" ;
+		  format_str = "%*13s%d" ;		    /* 13 = "##gff-version" */
 
 		  if ((fields = sscanf(line, format_str, &version)) != 1)
 		    {
@@ -944,7 +945,7 @@ static gboolean parseHeaderLine(ZMapGFFParser parser, char *line)
 	      int start = 0, end = 0 ;
 
 	      fields = 4 ;
-	      format_str = "%*s%1000s%d%d" ;
+	      format_str = "%*s%" ZMAP_MAKESTRING(GFF_MAX_FREETEXT_CHARS) "s%d%d" ;
 
 	      if ((fields = sscanf(line, format_str, &sequence_name[0], &start, &end)) != 3)
 		{
@@ -2275,7 +2276,7 @@ static gboolean getFeatureName(NameFindType name_find, char *sequence, char *att
 	    {
 	      /* In acedb output at least, homologies all have the same format. */
 	      int attr_fields ;
-	      char *attr_format_str = "Target %*[\"]%*[^:]%*[:]%50[^\"]%*[\"]%*s" ;
+	      char *attr_format_str = "Target %*[\"]%*[^:]%*[:]%" ZMAP_MAKESTRING(GFF_MAX_FIELD_CHARS) "[^\"]%*[\"]%*s" ;
 	      char name[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
 
 	      attr_fields = sscanf(tag_pos, attr_format_str, &name[0]) ;
@@ -2294,7 +2295,7 @@ static gboolean getFeatureName(NameFindType name_find, char *sequence, char *att
 	  if ((tag_pos = strstr(attributes, "Assembly_source")))
 	    {
 	      int attr_fields ;
-	      char *attr_format_str = "Assembly_source %*[\"]%*[^:]%*[:]%50[^\"]%*[\"]%*s" ;
+	      char *attr_format_str = "Assembly_source %*[\"]%*[^:]%*[:]%" ZMAP_MAKESTRING(GFF_MAX_FIELD_CHARS) "[^\"]%*[\"]%*s" ;
 	      char name[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
 
 	      attr_fields = sscanf(tag_pos, attr_format_str, &name[0]) ;
@@ -2348,7 +2349,7 @@ static gboolean getFeatureName(NameFindType name_find, char *sequence, char *att
 	    {
 	      /* Named feature such as a gene. */
 	      int attr_fields ;
-	      char *attr_format_str = "%50s %*[\"]%50[^\"]%*[\"]%*s" ;
+	      char *attr_format_str = "%" ZMAP_MAKESTRING(GFF_MAX_FIELD_CHARS) "s %*[\"]%" ZMAP_MAKESTRING(GFF_MAX_FIELD_CHARS) "[^\"]%*[\"]%*s" ;
 	      char class[GFF_MAX_FIELD_CHARS + 1] = {'\0'}, name[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
 
 	      attr_fields = sscanf(attributes, attr_format_str, &class[0], &name[0]) ;
@@ -2416,9 +2417,6 @@ static gboolean getFeatureName(NameFindType name_find, char *sequence, char *att
  * Format string extracts url and returns it as a string that must be g_free'd when
  * no longer required.
  *
- * Currently the _maximum_ size for the URL is 256 chars. This has already
- * been upped from the GFF_MAX_FIELD_CHARS of 50. attributes is 5000
- * (GFF_MAX_FREETEXT_CHARS), but that's probably a bit silly.
  *
  *  */
 static char *getURL(char *attributes)
@@ -2429,7 +2427,7 @@ static char *getURL(char *attributes)
   if ((tag_pos = strstr(attributes, "URL")))
     {
       int attr_fields ;
-      char *attr_format_str = "%*s %*[\"]%256[^\"]%*s[;]" ;
+      char *attr_format_str = "%*s %*[\"]%" ZMAP_MAKESTRING(GFF_MAX_FREETEXT_CHARS) "[^\"]%*s[;]" ;
       char url_field[257] = {'\0'} ;
 
       if ((attr_fields = sscanf(tag_pos, attr_format_str, &url_field[0])) == 1)
@@ -2457,7 +2455,7 @@ static GQuark getLocus(char *attributes)
   if ((tag_pos = strstr(attributes, "Locus")))
     {
       int attr_fields ;
-      char *attr_format_str = "%*s %*[\"]%50[^\"]%*s[;]" ;
+      char *attr_format_str = "%*s %*[\"]%" ZMAP_MAKESTRING(GFF_MAX_FIELD_CHARS) "[^\"]%*s[;]" ;
       char locus_field[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
 
       if ((attr_fields = sscanf(tag_pos, attr_format_str, &locus_field[0])) == 1)
@@ -2485,7 +2483,7 @@ static GQuark getClone(char *attributes)
   if ((tag_pos = strstr(attributes, "Clone")))
     {
       int attr_fields ;
-      char *attr_format_str = "%*s %*[\"]%50[^\"]%*s[;]" ;
+      char *attr_format_str = "%*s %*[\"]%" ZMAP_MAKESTRING(GFF_MAX_FIELD_CHARS) "[^\"]%*s[;]" ;
       char clone_field[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
 
       if ((attr_fields = sscanf(tag_pos, attr_format_str, &clone_field[0])) == 1)
@@ -2513,7 +2511,7 @@ static gboolean getKnownName(char *attributes, char **known_name_out)
   if ((tag_pos = strstr(attributes, "Known_name")))
     {
       int attr_fields ;
-      char *attr_format_str = "%*s %*[\"]%50[^\"]%*s[;]" ;
+      char *attr_format_str = "%*s %*[\"]%" ZMAP_MAKESTRING(GFF_MAX_FIELD_CHARS) "[^\"]%*s[;]" ;
       char known_field[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
 
       if ((attr_fields = sscanf(tag_pos, attr_format_str, &known_field[0])) == 1)
@@ -2905,7 +2903,7 @@ static gboolean getVariationString(char *attributes,
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       char *attr_format_str = "Name " "%*[\"]%*s - %50[^\"]%*[\"]%*s" ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-      char *attr_format_str = "Name " "%*[\"]%s - %50[^\"]%*[\"]%*s" ;
+      char *attr_format_str = "Name " "%*[\"]%s - %" ZMAP_MAKESTRING(GFF_MAX_FIELD_CHARS) "[^\"]%*[\"]%*s" ;
 
       char name_str[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
       char variation_str[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
@@ -3034,9 +3032,9 @@ static gboolean getNameFromNote(char *attributes, char **name)
 {
   gboolean result = FALSE ;
   int attr_fields ;
-  char *note_format_str = "Note %*[\"]%5000[^\"]" ;
+  char *note_format_str = "Note %*[\"]%" ZMAP_MAKESTRING(GFF_MAX_FREETEXT_CHARS) "[^\"]" ;
   char note[GFF_MAX_FREETEXT_CHARS + 1] = {'\0'} ;
-  char *name_format_str = "%50s%50s" ;
+  char *name_format_str = "%" ZMAP_MAKESTRING(GFF_MAX_FIELD_CHARS) "s%" ZMAP_MAKESTRING(GFF_MAX_FIELD_CHARS) "s" ;
   char feature_name[GFF_MAX_FIELD_CHARS + 1] = {'\0'}, rest[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
 
   /* I couldn't find a way to do this in one sscanf() so I do it in two, getting the note text
@@ -3087,8 +3085,8 @@ static char *getNoteText(char *attributes)
 {
   char *note_text = NULL ;
   int attr_fields ;
-  char *note_format_str = "Note %*[\"]%5000[^\"]" ;
-  char note[5000 + 1] = {'\0'} ;
+  char *note_format_str = "Note %*[\"]%" ZMAP_MAKESTRING(GFF_MAX_FREETEXT_CHARS) "[^\"]" ;
+  char note[GFF_MAX_FREETEXT_CHARS + 1] = {'\0'} ;
 
 
   if (g_str_has_prefix(attributes, "Note")

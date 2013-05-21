@@ -62,7 +62,8 @@ typedef struct FindViewWindowStructName
 
 
 /* GTK didn't introduce a function call to get at pane children until at least release 2.6,
- * I hope this is correct, no easy way to check exactly when function calls were introduced. */
+ * I hope this is correct, no easy way to check exactly when function calls were introduced.
+ */
 #if ((GTK_MAJOR_VERSION == 2) && (GTK_MINOR_VERSION == 6))
 #define myGetChild(WIDGET, CHILD_NUMBER)         \
   (gtk_paned_get_child##CHILD_NUMBER(GTK_PANED(WIDGET)))
@@ -84,11 +85,41 @@ static void labelDestroyCB(GtkWidget *widget, gpointer cb_data) ;
 
 static void findViewWindowCB(gpointer key, gpointer value, gpointer user_data) ;
 
-static void printViewList(GList *view_list) ;
-static void printViewCB(gpointer data, gpointer user_data_unused) ;
-static void printView(ZMapView view, char *action, gboolean print_xid) ;
 
 
+/* 
+ *                         External routines
+ */
+
+
+
+gpointer zMapControlFindView(ZMap zmap, gpointer view_id)
+{
+  gpointer view = NULL ;
+
+  if (zmap->view_list)
+    {
+      GList *list_view ;
+
+      /* Try to find the view_id in the current zmaps. */
+      list_view = g_list_first(zmap->view_list) ;
+      do
+	{
+	  ZMapView next_view = (ZMapView)(list_view->data) ;
+
+	  if (next_view == view_id
+	      || (zMapViewFindView(next_view, view_id)))
+	    {
+	      view = next_view ;
+
+	      break ;
+	    }
+	}
+      while ((list_view = g_list_next(list_view))) ;
+    }
+
+  return view ;
+}
 
 
 
@@ -122,7 +153,7 @@ ZMapViewWindow zmapControlNewWindow(ZMap zmap, ZMapFeatureSequenceMap sequence_m
     parent = zmap->pane_vbox ;
 
 
-  /* Add a new container that will hold the new view window. */
+  /* Create a new container that will hold the new view window. */
   view_container = zmapControlAddWindow(zmap, curr_container, orientation, ZMAPCONTROL_SPLIT_LAST, view_title) ;
 
   if (!(view_window = zMapViewCreate(view_container, sequence_map, (void *)zmap)))
@@ -171,6 +202,8 @@ ZMapViewWindow zmapControlNewWindow(ZMap zmap, ZMapFeatureSequenceMap sequence_m
 
   return view_window ;
 }
+
+
 
 ZMapViewWindow zmapControlNewWidgetAndWindowForView(ZMap zmap,
                                                     ZMapView zmap_view,
@@ -257,9 +290,16 @@ void zmapControlSplitWindow(ZMap zmap, GtkOrientation orientation, ZMapControlSp
 
   zmapControlWindowSetGUIState(zmap) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* CURRENTLY WE ARE NOT REPORTING WHEN THE USER SPLITS THE WINDOW, IT DOESN'T CREATE
+   * A NEW VIEW SO LOGICALLY WE CAN'T SAY MUCH ABOUT IT, THIS MAY CHANGE THOUGH. */
+
   /* If there's a remote peer we need to tell them a window's been created.... */
   if (zmap->remote_control)
     zmapControlSendViewCreated(zmap, zMapViewGetView(view_window), zMapViewGetWindow(view_window)) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   return ;
 }
@@ -294,6 +334,7 @@ ZMapViewWindow zmapControlFindViewWindow(ZMap zmap, ZMapView view)
 
 
 
+/* Make this internal to this file.....not called from elsewhere.... */
 /*
  * view_window is the view to add, this must be supplied.
  * orientation is GTK_ORIENTATION_HORIZONTAL or GTK_ORIENTATION_VERTICAL
@@ -316,7 +357,9 @@ GtkWidget *zmapControlAddWindow(ZMap zmap, GtkWidget *curr_frame,
       splitPane(curr_frame, new_frame, orientation, window_order) ;
     }
   else
-    gtk_box_pack_start(GTK_BOX(zmap->pane_vbox), new_frame, TRUE, TRUE, 0) ;
+    {
+      gtk_box_pack_start(GTK_BOX(zmap->pane_vbox), new_frame, TRUE, TRUE, 0) ;
+    }
 
   return new_frame ;
 }
@@ -326,7 +369,7 @@ GtkWidget *zmapControlAddWindow(ZMap zmap, GtkWidget *curr_frame,
 /* You need to remember that there may be more than one view in a zmap. This means that
  * while a particular view may have lost all its windows and need closing, there might
  * be other views that have windows that can be focussed on. */
-void zmapControlRemoveWindow(ZMap zmap, ZMapViewWindow view_window, ZMapViewWindowTree destroyed_zmap)
+void zmapControlRemoveWindow(ZMap zmap, ZMapViewWindow view_window, GList **destroyed_views_inout)
 {
   GtkWidget *close_container ;
   ZMapViewWindow remaining_view ;
@@ -359,26 +402,20 @@ void zmapControlRemoveWindow(ZMap zmap, ZMapViewWindow view_window, ZMapViewWind
   if (num_windows > 1)
     {
       /* Record view and window deleted if required. */
-      if (destroyed_zmap)
+      if (destroyed_views_inout)
 	{
-	  ZMapViewWindowTree destroyed_view, destroyed_window ;
+	  GList *destroyed_views = NULL ;
 
-	  destroyed_view = g_new0(ZMapViewWindowTreeStruct, 1) ;
-	  destroyed_view->parent = view ;
+	  destroyed_views = g_list_append(destroyed_views, view) ;
 
-	  destroyed_zmap->children = g_list_append(destroyed_zmap->children, destroyed_view) ;
-
-	  destroyed_window = g_new0(ZMapViewWindowTreeStruct, 1) ;
-	  destroyed_window->parent = zMapViewGetWindow(view_window) ;
-
-	  destroyed_view->children = g_list_append(destroyed_view->children, destroyed_window) ;
+	  *destroyed_views_inout = destroyed_views ;
 	}
 
       zMapViewRemoveWindow(view_window) ;
     }
   else
     {
-      zMapDeleteView(zmap, view, destroyed_zmap) ;
+      zMapDeleteView(zmap, view, destroyed_views_inout) ;
     }
 
   /* this needs to remove the pane.....AND  set a new focuspane....if there is one.... */
@@ -388,7 +425,7 @@ void zmapControlRemoveWindow(ZMap zmap, ZMapViewWindow view_window, ZMapViewWind
   remove = g_hash_table_remove(zmap->viewwindow_2_parent, view_window) ;
   zMapAssert(remove) ;
 
-  /* Having removed one window we need to refocus on another, if there is one....... */
+  /* Having removed one window we nwublastx_humaneed to refocus on another, if there is one....... */
   if (remaining_view)
     {
       zmapControlSetWindowFocus(zmap, remaining_view) ;
@@ -625,18 +662,8 @@ static GtkWidget *closePane(GtkWidget *close_frame)
 }
 
 
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* replaced by "click to focus" */
-
-/* The enter and leave stuff is slightly convoluted in that we don't want to unfocus
- * a window just because the pointer leaves it. We only want to unfocus a previous
- * window when we enter a different view window. Hence in the leave callback we just
- * record a window to be unfocussed if we subsequently enter a different view window. */
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
+/* Makes sure that everything that needs to happen does happen as a result
+ * of a view window becoming the keyboard focus. */
 void zmapControlSetWindowFocus(ZMap zmap, ZMapViewWindow new_viewwindow)
 {
   GtkWidget *viewwindow_frame ;
@@ -649,6 +676,10 @@ void zmapControlSetWindowFocus(ZMap zmap, ZMapViewWindow new_viewwindow)
 
   if (new_viewwindow != zmap->focus_viewwindow)
     {
+      GtkWidget *label ;
+      char *label_txt ;
+
+
       /* Unfocus the old window. */
       if (zmap->focus_viewwindow)
 	{
@@ -656,7 +687,18 @@ void zmapControlSetWindowFocus(ZMap zmap, ZMapViewWindow new_viewwindow)
 
 	  unfocus_frame = g_hash_table_lookup(zmap->viewwindow_2_parent, zmap->focus_viewwindow) ;
           gtk_frame_set_shadow_type(GTK_FRAME(unfocus_frame), GTK_SHADOW_OUT) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	  /* This does not work currently because we not have a event box as a parent of the frame... */
           gtk_widget_set_name(GTK_WIDGET(unfocus_frame), "GtkFrame");
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+	  /* Swop the frames label text colour back to "inactive" */
+	  label = gtk_frame_get_label_widget(GTK_FRAME(unfocus_frame)) ;
+	  label_txt = (char *)gtk_label_get_text(GTK_LABEL(label)) ;
+	  label_txt = g_strdup_printf("<span foreground=\"black\">%s</span>", label_txt) ;
+	  gtk_label_set_markup(GTK_LABEL(label), label_txt) ;
+	  g_free(label_txt) ;
 	}
 
       /* focus the new one. */
@@ -666,7 +708,19 @@ void zmapControlSetWindowFocus(ZMap zmap, ZMapViewWindow new_viewwindow)
 
       viewwindow_frame = g_hash_table_lookup(zmap->viewwindow_2_parent, zmap->focus_viewwindow) ;
       gtk_frame_set_shadow_type(GTK_FRAME(viewwindow_frame), GTK_SHADOW_IN);
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      /* This does not work currently because we not have a event box as a parent of the frame... */
       gtk_widget_set_name(GTK_WIDGET(viewwindow_frame), "zmap-focus-view");
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+      /* Swop the frames label text colour to "active" */
+      label = gtk_frame_get_label_widget(GTK_FRAME(viewwindow_frame)) ;
+      label_txt = (char *)gtk_label_get_text(GTK_LABEL(label)) ;
+      label_txt = g_strdup_printf("<span foreground=\"red\">%s</span>", label_txt) ;
+      gtk_label_set_markup(GTK_LABEL(label), label_txt) ;
+      g_free(label_txt) ;
+
 
       /* make sure zoom buttons etc. appropriately sensitised for this window. */
       zmapControlWindowSetGUIState(zmap) ;
@@ -679,22 +733,6 @@ void zmapControlSetWindowFocus(ZMap zmap, ZMapViewWindow new_viewwindow)
 
   return ;
 }
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* now we've changed to "click to focus" this is redundant. */
-
-/* When we get notified that the pointer has left a window, mark that window to
- * be unfocussed if we subsequently enter another view window. */
-void zmapControlUnSetWindowFocus(ZMap zmap, ZMapViewWindow new_viewwindow)
-{
-  zmap->unfocus_viewwindow = new_viewwindow ;
-
-  return ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
 
 
@@ -741,5 +779,41 @@ static void findViewWindowCB(gpointer key, gpointer value, gpointer user_data)
 
   return ;
 }
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+/* I'D LIKE TO USE A STYLE TO SET THE FRAME COLOURS AUTOMATICALLY WHEN THE CANVAS IS SELECTED
+ * BUT WE NEED AN EVENT BOX AS A PARENT TO THE FRAME....WE USED TO HAVE THIS BUT FOR RECEIVING
+ * XREMOTE COMMANDS _AND_ FOR THIS STYLE STUFF WHICH I DIDN'T REALISE SO I MOVED THE EVENT
+ * BOX TO FIX A BUG IN THE SPLITTING/XREMOTE STUFF. I'LL GET ROUND TO THE EVENT BOX STUFF
+ * IF IT BECOMES NEEDED. CURRENTLY WE AT LEAST HAVE THE TITLE CHANGING COLOUR. */
+#define FRAME_WIDG_STYLE "ZMap_View_Frame_Style"
+#define FRAME_WIDG_NAME  "ZMap_View_Frame"
+
+static void *addFrameRCconfig(GtkWidget *widg)
+{
+  static char *rc_text =
+    "style \""FRAME_WIDG_STYLE"\"\n"
+    "{\n"
+    "text[NORMAL] = \"red\"\n"
+    "text[ACTIVE] = \"red\"\n"
+    "fg[NORMAL] = \"red\"\n"
+    "bg[NORMAL] = \"red\"\n"
+    "fg[ACTIVE] = \"red\"\n"
+    "bg[ACTIVE] = \"red\"\n"
+    "fg[SELECTED] = \"red\"\n"
+    "bg[SELECTED] = \"red\"\n"
+    "xthickness = 100\n"
+    "}\n"
+    "\n"
+    "widget \""FRAME_WIDG_NAME"\" style \""FRAME_WIDG_STYLE"\"\n" ;
+
+  gtk_rc_parse_string(rc_text) ;
+
+  gtk_widget_set_name(widg, FRAME_WIDG_NAME) ;
+
+  return ;
+}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 

@@ -20,7 +20,7 @@
  * This file is part of the ZMap genome database package
  * and was written by
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk and
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
  * Description:
  *-------------------------------------------------------------------
@@ -74,13 +74,18 @@ void zMapManagerInit(ZMapManagerCallbacks callbacks) ;
 ZMapManager zMapManagerCreate(void *gui_data) ;
 ZMapManagerAddResult zMapManagerAdd(ZMapManager zmaps, ZMapFeatureSequenceMap sequence_map,
 				    ZMap *zmap_out, ZMapView *view_out, gboolean load_view) ;
-gboolean zMapManagerGetDefaultView(ZMapManager zmaps, ZMapAppRemoteViewID view_inout) ;
+
+ZMap zMapManagerFindZMap(ZMapManager manager, gpointer view_id, gpointer *view_ptr_out) ;
+gpointer zMapManagerFindView(ZMapManager manager, gpointer view_id) ;
+
 void zMapManagerDestroyView(ZMapManager zmaps, ZMap zmap, ZMapView view) ;
 guint zMapManagerCount(ZMapManager zmaps);
 gboolean zMapManagerReset(ZMap zmap) ;
 gboolean zMapManagerRaise(ZMap zmap) ;
+
 gboolean zMapManagerProcessRemoteRequest(ZMapManager manager,
-					 char *command_name, ZMapAppRemoteViewID view_id, char *request,
+					 char *command_name, char *request,
+					 ZMap zmap, gpointer view_id,
 					 ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data) ;
 
 void zMapManagerKill(ZMapManager zmaps, ZMap zmap) ;

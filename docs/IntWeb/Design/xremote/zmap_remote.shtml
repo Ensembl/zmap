@@ -673,59 +673,33 @@ parseable format. They are likely to be refined as the interface is more widely 
 <a name="commands"></a>
 <h2>Commands</h2>
 
-<p>The following sections give details of all the available commands:</p>
+<p>The following sections give details of all the available commands issued
+either by ZMap or by its peer:</p>
 
 <ul>
-  <li><a href="#Application_Commands"><b>Application Commands</b></a>
-  <li><a href="#View_Commands"><b>View Commands</b></a>
-  <li><a href="#Feature_Commands"><b>Feature Commands</b></a>
+  <li><a href="#Common_Commands"><b>Common Commands</b></a>
+  <li><a href="#Peer_Commands"><b>Peer Commands</b></a>
+      <ul>
+	<li><a href="#Peer_Application_Commands"><b>Application Commands</b></a>
+	<li><a href="#Peer_View_Commands"><b>View Commands</b></a>
+	<li><a href="#Peer_Feature_Commands"><b>Feature Commands</b></a>
+      </ul>
+  <li><a href="#ZMap_Commands"><b>ZMap Commands</b></a>
+      <ul>
+	<li><a href="#ZMap_Application_Commands"><b>Application Commands</b></a>
+	<li><a href="#ZMap_View_Commands"><b>View Commands</b></a>
+	<li><a href="#ZMap_Feature_Commands"><b>Feature Commands</b></a>
+      </ul>
 </ul>
+
 
 <p>In each section the full xml is given for the request and reply along with
 notes explaining the command. The sender is given for each command, "zmap",
 "peer" or "either", the receiver is by inference the other program.</p>
 
 
-
-
-<a name="Application_Commands"></a>
-<h3>Application Commands</h3>
-
-<p>The "Application" commands provide basic control of zmap and its peer program.</p>
-
-<fieldset>
-<legend>"handshake"</legend>
-
-<p><b>Sender: either</b></p>
-
-<p>Used when one peer knows the clipboard id of another and wants to pass its own
-clipboard id to that peer so they can start two-way communication.</p>
-
-
-<pre class="request">
-&lt;zmap version="2.0" type="request" app_id="ZMap" clipboard_id="remotecontrol-10469-1366038532" request_id="1"&gt;
-  &lt;request command="handshake"&gt;
-    &lt;peer app_id="ZMap" unique_id="ZMap-15853-1327414674"/&gt;
-  &lt;/request&gt;
-&lt;/zmap&gt;
-</pre>
-
-<p>The peer passes the id of it's own clipboard to the other peer and also an application
-id that it's peer can use in messages/logging etc. In reply the other peer passes
-back an "ok" return code and its own id which the first peer can use as a "belt
-and braces" check that all is well:</p> 
-
-<pre class="reply">
-&lt;zmap version="2.0" type="reply" app_id="peer_app" clipboard_id="remotecontrol-10469-1366038532" request_id="1"&gt;
-  &lt;reply command="handshake" return_code="ok"&gt;
-    &lt;message&gt; Handshake successful with peer "ZMap", id "ZMap-15853-1327414674".&lt;/message&gt;
-  &lt;/reply&gt;
-&lt;/zmap&gt;
-</pre>
-
-</fieldset>
-<br />
-
+<a name="Common_Commands"></a>
+<h3>Common Commands</h3>
 
 
 <fieldset>
@@ -754,49 +728,18 @@ handshake as a "belt and braces" check that two-way communication has been estab
 </fieldset>
 <br />
 
-<fieldset>
-<legend>"goodbye"</legend>
-
-<p><b>Sender: either</b></p>
-
-<p>Used to tell the other peer that you are closing the connection to them:</p>
-
-<pre class="request">
-&lt;zmap version="2.0" type="request" app_id="ZMap" clipboard_id="ZMap-15853-1327414674" request_id="4"&gt;
-  &lt;request command="goodbye"/&gt;
-&lt;/zmap&gt;
-</pre>
-
-<p>It can also be used to tell the other peer that you will exit <b>after</b> you have
-received their reply to the command or that you are simply closing the connection:</p>
-
-<pre class="request">
-&lt;zmap version="2.0" type="request" app_id="ZMap" clipboard_id="ZMap-15853-1327414674" request_id="4"&gt;
-  &lt;request command="goodbye"&gt;
-    &lt;goodbye type=[ "close" | "exit" ]/&gt;
-  &lt;/request command&gt;
-&lt;/zmap&gt;
-</pre>
-
-<pre class="reply">
-&lt;zmap version="2.0" type="reply" app_id="peer_app" clipboard_id="ZMap-15853-1327414674" request_id="4"&gt;
-  &lt;reply command="goodbye" return_code="ok"&gt;
-    &lt;message&gt;goodbye received, goodbye !&lt;/message&gt;
-  &lt;/reply&gt;
-&lt;/zmap&gt;
-</pre>
-
-<p>The simple form of the "goodbye" message does not imply that the peer that issued it is going to exit simply
-that it is terminating the remote control connection and will neither respond to nor make
-any further requests unless it is a fresh "handshake". In this form the "goodbye" command can be seen as
-the opposite of the "handshake" request and is the default "goodbye" action.</p>
-
-</fieldset>
-<br />
 
 
 
 
+<a name="Peer_Commands"></a>
+<h3>Peer Commands</h3>
+
+
+<a name="Peer_Application_Commands"></a>
+<h4>Peer Application Commands</h4>
+
+<p>The "Application" commands provide basic control of zmap by its peer program.</p>
 
 <fieldset>
 <legend>"shutdown"</legend>
@@ -845,10 +788,10 @@ for a reply.</p>
 
 
 
-<a name="View_Commands"></a>
-<h3>View Commands</h3>
+<a name="Peer_View_Commands"></a>
+<h4>View Commands</h4>
 
-<p>The "View" commands create, augment, query and delete sequence/feature views.</p>
+<p>The "View" commands allow the peer to create, augment, query and delete zmap's sequence/feature views.</p>
 
 <fieldset>
 <legend>"new_view"</legend>
@@ -963,36 +906,6 @@ just that view is removed from the window.</p>
 
 
 <fieldset>
-<legend>"view_deleted"</legend>
-
-<p><b>Sender: zmap</b></p>
-
-<p>brief description</p>
-
-
-<pre class="request">
-&lt;zmap type="request" version="2.0" app_id="ZMap" clipboard_id="remotecontrol-31375-1339077666" request_id="19"&gt;
-  &lt;request command="view_deleted"&gt;
-    &lt;view view_id="0x82d1b98.0x83044f8.0x8304d88"/&gt;
-  &lt;/request&gt;
-&lt;/zmap&gt;
-</pre>
-
-<p>description of paramsm, reply etc. </p>
-
-<pre class="reply">
-&lt;zmap type="reply" version="2.0" app_id="remotecontrol" clipboard_id="remotecontrol-31375-1339077666" request_id="19"&gt;
-  &lt;reply command="view_deleted" return_code="ok"&gt;
-    &lt;message&gt;view deleted...thanks !    &lt;/message&gt;
-  &lt;/reply&gt;
-&lt;/zmap&gt;
-</pre>
-
-</fieldset>
-<br />
-
-
-<fieldset>
 <legend>"load_features"</legend>
 
 <p><b>Sender: peer</b></p>
@@ -1002,7 +915,7 @@ just that view is removed from the window.</p>
 
 <pre class="request">
 &lt;zmap type="request" version="2.0" app_id="remotecontrol" clipboard_id="ZMap-27331-1339141750" request_id="2"&gt;
-  &lt;request command="load_features"&gt;
+  &lt;request command="load_features" view="NNNNN"&gt;
     &lt;featureset name="genomic_canonical"/&gt;
   &lt;/request&gt;
 &lt;/zmap&gt;
@@ -1015,44 +928,6 @@ request, <b>not</b> that the features are loaded yet (see
 <pre class="reply">
 &lt;zmap type="reply" version="2.0" app_id="ZMap" clipboard_id="ZMap-27331-1339141750" request_id="2"&gt;
   &lt;reply command="load_features" return_code="ok"/&gt;
-&lt;/zmap&gt;
-</pre>
-
-</fieldset>
-<br />
-
-
-<fieldset>
-<legend>"features_loaded"</legend>
-
-<p><b>Sender: zmap</b></p>
-
-<p><b>FORMAT OF THIS COMMAND IS LIKELY TO CHANGE.</b></p>
-
-<p>Sent by zmap to its peer to signal that it has loaded all requested features.</p>
-
-<pre class="request">
-&lt;zmap type="request" version="2.0" app_id="ZMap" clipboard_id="remotecontrol-27328-1339141746" request_id="8"&gt;
-  &lt;request command="features_loaded"&gt;
-    &lt;featureset names="genomic_canonical"/&gt;
-    &lt;start value="1"/&gt;
-    &lt;end value="37801"/&gt;
-    &lt;status value="1" message="1&#32;features&#32;loaded"/&gt;
-    &lt;exit_code value="0"/&gt;
-    &lt;stderr value=""/&gt;
-  &lt;/request&gt;
-&lt;/zmap&gt;
-</pre>
-
-<p>Names of all feature sets that zmap loaded are listed. The start/end range over which the features
-were loaded is given as well as the total number of features loaded. When there are errors they
-are also given.</p>
-
-<pre class="reply">
-&lt;zmap type="reply" version="2.0" app_id="remotecontrol" clipboard_id="remotecontrol-27328-1339141746" request_id="8"&gt;
-  &lt;reply command="features_loaded" return_code="ok"&gt;
-    &lt;message&gt;got features loaded...thanks !    &lt;/message&gt;
-  &lt;/reply&gt;
 &lt;/zmap&gt;
 </pre>
 
@@ -1100,7 +975,7 @@ view, <b>note</b> that all windows of that view will be reverse complemented:</p
 
 <pre class="request">
 &lt;zmap type="request" version="2.0" app_id="remotecontrol" clipboard_id="ZMap-31378-1339077671" request_id="4"&gt;
-  &lt;request command="get_mark"/&gt;
+  &lt;request command="get_mark" view="NNNNN"/&gt;
 &lt;/zmap&gt;
 </pre>
 
@@ -1117,8 +992,8 @@ view, <b>note</b> that all windows of that view will be reverse complemented:</p
 
 
 
-<a name="Feature_Commands"></a>
-<h3>Feature Commands</h3>
+<a name="Peer_Feature_Commands"></a>
+<h4>Feature Commands</h4>
 
 <p>The "Feature" commands create, query, select and delete individual features.</p>
 
@@ -1131,7 +1006,7 @@ view, <b>note</b> that all windows of that view will be reverse complemented:</p
 
 <pre class="request">
 &lt;zmap type="request" version="2.0" app_id="remotecontrol" clipboard_id="ZMap-31378-1339077671" request_id="3"&gt;
-  &lt;request command="zoom_to"&gt;
+  &lt;request command="zoom_to" view="NNNNN"&gt;
     &lt;featureset name="GenePairs"&gt;
       &lt;feature name="sjj_AH6.2" start="5113" end="6276" strand="+"&gt;
      &lt;/feature&gt;
@@ -1166,7 +1041,7 @@ at the specified position with the given attributes.</p>
 
 <pre class="request">
 &lt;zmap type="request" version="2.0" app_id="remotecontrol" clipboard_id="ZMap-31378-1339077671" request_id="6"&gt;
-  &lt;request command="create_feature"&gt;
+  &lt;request command="create_feature" view="NNNNN"&gt;
     &lt;featureset name="history"&gt;
       &lt;feature name="eds_feature" start="5000" end="6000" strand="+"&gt;
         &lt;subfeature start="0" end="0" ontology="(null)"/&gt;
@@ -1198,7 +1073,7 @@ recognised then zmap creates and displays the feature.</p>
 
 <pre class="request">
 &lt;zmap type="request" version="2.0" app_id="remotecontrol" clipboard_id="ZMap-5068-1339084012" request_id="2"&gt;
-  &lt;request command="find_feature"&gt;
+  &lt;request command="find_feature" view="NNNNN"&gt;
     &lt;featureset name="Orfeome"&gt;
       &lt;feature name="mv_AH6.5" start="11524" end="13305" strand="+"&gt;
       &lt;/feature&gt;
@@ -1227,7 +1102,7 @@ recognised then zmap creates and displays the feature.</p>
 
 <pre class="request">
 &lt;zmap type="request" version="2.0" app_id="remotecontrol" clipboard_id="ZMap-31378-1339077671" request_id="7"&gt;
-  &lt;request command="delete_feature"&gt;
+  &lt;request command="delete_feature" view="NNNNN"&gt;
     &lt;featureset name="history"&gt;
       &lt;feature name="eds_feature" start="5000" end="6000" strand="+"&gt;
         &lt;subfeature start="0" end="0" ontology="(null)"/&gt;
@@ -1250,6 +1125,176 @@ feature is deleted.</p>
 <br />
 
 
+
+
+
+<a name="ZMap_Commands"></a>
+<h3>ZMap Commands</h3>
+
+
+<a name="ZMap_Application_Commands"></a>
+<h4>Application Commands</h4>
+
+<p>The "Application" commands provide basic communication between zmap and its peer program.</p>
+
+<fieldset>
+<legend>"handshake"</legend>
+
+<p><b>Sender: zmap</b></p>
+
+<p>Used when one peer knows the clipboard id of another and wants to pass its own
+clipboard id to that peer so they can start two-way communication.</p>
+
+
+<pre class="request">
+&lt;zmap version="2.0" type="request" app_id="ZMap" clipboard_id="remotecontrol-10469-1366038532" request_id="1"&gt;
+  &lt;request command="handshake"&gt;
+    &lt;peer app_id="ZMap" unique_id="ZMap-15853-1327414674"/&gt;
+  &lt;/request&gt;
+&lt;/zmap&gt;
+</pre>
+
+<p>The peer passes the id of it's own clipboard to the other peer and also an application
+id that it's peer can use in messages/logging etc. In reply the other peer passes
+back an "ok" return code and its own id which the first peer can use as a "belt
+and braces" check that all is well:</p> 
+
+<pre class="reply">
+&lt;zmap version="2.0" type="reply" app_id="peer_app" clipboard_id="remotecontrol-10469-1366038532" request_id="1"&gt;
+  &lt;reply command="handshake" return_code="ok"&gt;
+    &lt;message&gt; Handshake successful with peer "ZMap", id "ZMap-15853-1327414674".&lt;/message&gt;
+  &lt;/reply&gt;
+&lt;/zmap&gt;
+</pre>
+
+</fieldset>
+<br />
+
+
+
+<fieldset>
+<legend>"goodbye"</legend>
+
+<p><b>Sender: zmap</b></p>
+
+<p>Used to tell the other peer that you are closing the connection to them:</p>
+
+<pre class="request">
+&lt;zmap version="2.0" type="request" app_id="ZMap" clipboard_id="ZMap-15853-1327414674" request_id="4"&gt;
+  &lt;request command="goodbye"/&gt;
+&lt;/zmap&gt;
+</pre>
+
+<p>It can also be used to tell the other peer that you will exit <b>after</b> you have
+received their reply to the command or that you are simply closing the connection:</p>
+
+<pre class="request">
+&lt;zmap version="2.0" type="request" app_id="ZMap" clipboard_id="ZMap-15853-1327414674" request_id="4"&gt;
+  &lt;request command="goodbye"&gt;
+    &lt;goodbye type=[ "close" | "exit" ]/&gt;
+  &lt;/request command&gt;
+&lt;/zmap&gt;
+</pre>
+
+<pre class="reply">
+&lt;zmap version="2.0" type="reply" app_id="peer_app" clipboard_id="ZMap-15853-1327414674" request_id="4"&gt;
+  &lt;reply command="goodbye" return_code="ok"&gt;
+    &lt;message&gt;goodbye received, goodbye !&lt;/message&gt;
+  &lt;/reply&gt;
+&lt;/zmap&gt;
+</pre>
+
+<p>The simple form of the "goodbye" message does not imply that the peer that issued it is going to exit simply
+that it is terminating the remote control connection and will neither respond to nor make
+any further requests unless it is a fresh "handshake". In this form the "goodbye" command can be seen as
+the opposite of the "handshake" request and is the default "goodbye" action.</p>
+
+</fieldset>
+<br />
+
+
+
+<a name="ZMap_View_Commands"></a>
+<h4>View Commands</h4>
+
+<p>The zmap "View" commands send information about view updates to the peer.</p>
+
+<fieldset>
+<legend>"view_deleted"</legend>
+
+<p><b>Sender: zmap</b></p>
+
+<p>brief description</p>
+
+
+<pre class="request">
+&lt;zmap type="request" version="2.0" app_id="ZMap" clipboard_id="remotecontrol-31375-1339077666" request_id="19"&gt;
+  &lt;request command="view_deleted" view="NNNNN"/&gt;
+&lt;/zmap&gt;
+</pre>
+
+<p>description of params, reply etc. </p>
+
+<pre class="reply">
+&lt;zmap type="reply" version="2.0" app_id="remotecontrol" clipboard_id="remotecontrol-31375-1339077666" request_id="19"&gt;
+  &lt;reply command="view_deleted" return_code="ok"&gt;
+    &lt;message&gt;view deleted...thanks !    &lt;/message&gt;
+  &lt;/reply&gt;
+&lt;/zmap&gt;
+</pre>
+
+</fieldset>
+<br />
+
+
+<fieldset>
+<legend>"features_loaded"</legend>
+
+<p><b>Sender: zmap</b></p>
+
+<p><b>FORMAT OF THIS COMMAND IS LIKELY TO CHANGE.</b></p>
+
+<p>Sent by zmap to its peer to signal that it has loaded all requested features.</p>
+
+<pre class="request">
+&lt;zmap type="request" version="2.0" app_id="ZMap" clipboard_id="remotecontrol-27328-1339141746" request_id="8"&gt;
+  &lt;request command="features_loaded" view="NNNNN"&gt;
+    &lt;featureset names="genomic_canonical"/&gt;
+    &lt;start value="1"/&gt;
+    &lt;end value="37801"/&gt;
+    &lt;status value="1" message="1&#32;features&#32;loaded"/&gt;
+    &lt;exit_code value="0"/&gt;
+    &lt;stderr value=""/&gt;
+  &lt;/request&gt;
+&lt;/zmap&gt;
+</pre>
+
+<p>Names of all feature sets that zmap loaded are listed. The start/end range over which the features
+were loaded is given as well as the total number of features loaded. When there are errors they
+are also given.</p>
+
+<pre class="reply">
+&lt;zmap type="reply" version="2.0" app_id="remotecontrol" clipboard_id="remotecontrol-27328-1339141746" request_id="8"&gt;
+  &lt;reply command="features_loaded" return_code="ok"&gt;
+    &lt;message&gt;got features loaded...thanks !    &lt;/message&gt;
+  &lt;/reply&gt;
+&lt;/zmap&gt;
+</pre>
+
+</fieldset>
+<br />
+
+
+
+<a name="ZMap_Feature_Commands"></a>
+<h4>Feature Commands</h4>
+
+<p>The "Feature" commands allow zmap to send the peer information about which features
+the user selected or wishes to edit.</p>
+
+
+
+
 <fieldset>
 <legend>"single_select"</legend>
 
@@ -1260,7 +1305,7 @@ feature is deleted.</p>
 
 <pre class="request">
 &lt;zmap type="request" version="2.0" app_id="ZMap" clipboard_id="remotecontrol-31375-1339077666" request_id="7"&gt;
-  &lt;request command="single_select"&gt;
+  &lt;request command="single_select" view="NNNNN"&gt;
     &lt;featureset name="curated"&gt;
       &lt;feature name="AH6.5" start="11613" end="13307" strand="+"&gt;
         &lt;subfeature start="11613" end="11741" ontology="exon"/&gt;
@@ -1308,7 +1353,7 @@ peer an arbitrary number of selected features, e.g. alignments for building a pr
 
 <pre class="request">
 &lt;zmap type="request" version="2.0" app_id="ZMap" clipboard_id="remotecontrol-31375-1339077666" request_id="11"&gt;
-  &lt;request command="multiple_select"&gt;
+  &lt;request command="multiple_select" view="NNNNN"&gt;
     &lt;featureset name="Gene"&gt;
       &lt;feature name="WBGene00003231" start="11604" end="13798" strand="+"/&gt;
     &lt;/featureset&gt;
@@ -1347,7 +1392,7 @@ to pass complete details to the peer.</p>
 
 <pre class="request">
 &lt;zmap type="request" version="2.0" app_id="ZMap" clipboard_id="remotecontrol-31375-1339077666" request_id="17"&gt;
-  &lt;request command="edit"&gt;
+  &lt;request command="edit" view="NNNNN"&gt;
     &lt;featureset name="curated"&gt;
       &lt;feature name="AH6.5" start="11613" end="13307" strand="+"&gt;
         &lt;subfeature start="11613" end="11741" ontology="exon"/&gt;
@@ -1397,7 +1442,7 @@ zmap then incorporates into it's "notebook" style display of feature information
 
 <pre class="request">
 &lt;zmap type="request" version="2.0" app_id="ZMap" clipboard_id="remotecontrol-31375-1339077666" request_id="18"&gt;
-  &lt;request command="feature_details"&gt;
+  &lt;request command="feature_details" view="NNNNN"&gt;
     &lt;featureset name="curated"&gt;
       &lt;feature name="AH6.5" start="11613" end="13307" strand="+"&gt;
         &lt;subfeature start="11613" end="11741" ontology="exon"/&gt;
@@ -1538,15 +1583,6 @@ zmap then incorporates into it's "notebook" style display of feature information
 
 </fieldset>
 <br />
-
-
-
-
-
-
-
-
-
 
 
 

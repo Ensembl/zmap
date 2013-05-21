@@ -40,10 +40,6 @@
 #include <ZMap/zmapWindowNavigator.h>
 #include <ZMap/zmapXMLHandler.h>
 #include <ZMap/zmapUrl.h>
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-#include <ZMap/zmapRemoteCommand.h>
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 #include <ZMap/zmapAppRemote.h>
 
 
@@ -120,27 +116,6 @@ typedef struct
 
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-
-/* MOVED TO zmapView_P.h */
-
-// tried to put these into ConnectionData but as ever there's scope issues
-typedef struct ZMapViewLoadFeaturesDataStructType
-{
-  char *err_msg;        // from the server mainly
-  gchar *stderr_out;
-  gint exit_code;
-  int num_features;
-
-  GList *feature_sets ;
-  int start,end;        // requested coords
-  gboolean status;      // load sucessful?
-  unsigned long xwid ;  // X Window id for the xremote widg. */
-
-} ZMapViewLoadFeaturesDataStruct, *ZMapViewLoadFeaturesData ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 
 
 /* Holds a sequence to be fetched and the server it should be fetched from. */
@@ -177,10 +152,12 @@ void zMapViewInit(ZMapViewCallbacks callbacks) ;
 ZMapViewWindow zMapViewCreate(GtkWidget *view_container,
 			      ZMapFeatureSequenceMap sequence_map, void *app_data) ;
 void zMapViewSetupNavigator(ZMapViewWindow view_window, GtkWidget *canvas_widget);
-gboolean zMapViewGetDefaultWindow(ZMapAppRemoteViewID view_inout) ;
+gboolean zMapViewGetDefaultWindow(ZMapWindow *window_out) ;
 ZMapViewWindow zMapViewCopyWindow(ZMapView zmap_view, GtkWidget *parent_widget,
 				  ZMapWindow copy_window, ZMapWindowLockType window_locking) ;
+ZMapViewWindow zMapViewGetDefaultViewWindow(ZMapView view) ;
 ZMapViewWindow zMapViewRemoveWindow(ZMapViewWindow view_window) ;
+
 void zMapViewRedraw(ZMapViewWindow view_window) ;
 gboolean zMapViewConnect(ZMapFeatureSequenceMap sequence_map, ZMapView zmap_view, char *config_str) ;
 gboolean zMapViewReset(ZMapView zmap_view) ;
@@ -206,9 +183,12 @@ ZMapWindowNavigator zMapViewGetNavigator(ZMapView view);
 int zMapViewNumWindows(ZMapViewWindow view_window) ;
 GList *zMapViewGetWindowList(ZMapViewWindow view_window);
 void   zMapViewSetWindowList(ZMapViewWindow view_window, GList *list);
-gboolean zMapViewProcessRemoteRequest(ZMapView user_data,
-				      char *command_name, ZMapAppRemoteViewID view_id, char *request,
+
+gboolean zMapViewProcessRemoteRequest(ZMapViewWindow view_window,
+				      char *command_name, char *request,
 				      ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data) ;
+gpointer zMapViewFindView(ZMapView view, gpointer view_id) ;
+
 ZMapFeatureSequenceMap zMapViewGetSequenceMap(ZMapView zmap_view);
 ZMapFeatureSource zMapViewGetFeatureSetSource(ZMapView view, GQuark f_id);
 void zMapViewSetFeatureSetSource(ZMapView view, GQuark f_id, ZMapFeatureSource src);
@@ -230,7 +210,8 @@ void zMapViewReadConfigBuffer(ZMapView zmap_view, char *buffer);
 
 char *zMapViewRemoteReceiveAccepts(ZMapView view);
 
-void zMapViewDestroy(ZMapView zmap_view, ZMapViewWindowTree destroyed_zmap_inout) ;
+void zMapViewDestroy(ZMapView zmap_view) ;
+
 
 
 

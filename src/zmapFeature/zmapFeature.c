@@ -465,8 +465,8 @@ ZMapFeatureAny zmapFeatureAnyCopy(ZMapFeatureAny orig_feature_any, GDestroyNotif
 	    ZMapSpanStruct span;
 	    int i ;
 
-	    if (orig_feature->feature.transcript.exons != NULL
-		&& orig_feature->feature.transcript.exons->len > (guint)0)
+
+	    if (orig_feature->feature.transcript.exons != NULL)
 	      {
 		new_feature->feature.transcript.exons =
 		  g_array_sized_new(FALSE, TRUE,
@@ -481,8 +481,7 @@ ZMapFeatureAny zmapFeatureAnyCopy(ZMapFeatureAny orig_feature_any, GDestroyNotif
 		  }
 	      }
 
-	    if (orig_feature->feature.transcript.introns != NULL
-		&& orig_feature->feature.transcript.introns->len > (guint)0)
+	    if (orig_feature->feature.transcript.introns != NULL)
 	      {
 		new_feature->feature.transcript.introns =
 		  g_array_sized_new(FALSE, TRUE,

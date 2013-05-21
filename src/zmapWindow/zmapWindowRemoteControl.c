@@ -132,7 +132,7 @@ static ZMapXMLObjTagFunctionsStruct mark_ends_G[] =
 
 
 static void localProcessRemoteRequest(ZMapWindow window,
-				      char *command_name, ZMapAppRemoteViewID view_id, char *request,
+				      char *command_name, char *request,
 				      ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data) ;
 static void localProcessReplyFunc(char *command, RemoteCommandRCType command_rc, char *reason, char *reply,
 				  gpointer reply_handler_func_data) ;
@@ -158,7 +158,7 @@ static void processRequest(ZMapWindow window,
 /* Entry point to handle requests from a peer program, process the command if we recognise it,
  * otherwise return FALSE to indicate we don't know that command. */
 gboolean zMapWindowProcessRemoteRequest(ZMapWindow window,
-					char *command_name, ZMapAppRemoteViewID view_id, char *request,
+					char *command_name, char *request,
 					ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data)
 {
   gboolean result = FALSE ;
@@ -166,7 +166,7 @@ gboolean zMapWindowProcessRemoteRequest(ZMapWindow window,
   if (strcmp(command_name, ZACP_ZOOM_TO) == 0
       || strcmp(command_name, ZACP_GET_MARK) == 0)
     {
-      localProcessRemoteRequest(window, command_name, view_id, request,
+      localProcessRemoteRequest(window, command_name, request,
 				app_reply_func, app_reply_data) ;
 
       result = TRUE ;
@@ -218,7 +218,6 @@ void zmapWindowUpdateXRemoteDataFull(ZMapWindow window, ZMapFeatureAny feature_a
   ZMapFeature feature_copy ;
 
 
-
   /* HACKY CODE....WHEN DO WE GET CALLED AS A FEATURE SET...SHOULDN'T HAPPEN.....
    * 
    * CHECK THIS OUT....
@@ -231,7 +230,6 @@ void zmapWindowUpdateXRemoteDataFull(ZMapWindow window, ZMapFeatureAny feature_a
     {
     case ZMAPFEATURE_STRUCT_FEATURE:
       {
-	int bp = 0 ;
 	int chr_bp ;
 
 
@@ -358,9 +356,11 @@ void zmapWindowUpdateXRemoteDataFull(ZMapWindow window, ZMapFeatureAny feature_a
   (*(window->caller_cbs->select))(window, window->app_data, &select) ;
 
 
+
   /* Send request to peer program. */
-  (*(window_cbs_G->remote_request_func))(action, xml_elements,
-					 window_cbs_G->remote_request_func_data,
+  (*(window_cbs_G->remote_request_func))(window_cbs_G->remote_request_func_data,
+					 window,
+					 action, xml_elements,
 					 localProcessReplyFunc, window) ;
 
 
@@ -402,7 +402,7 @@ void zmapWindowUpdateXRemoteDataFull(ZMapWindow window, ZMapFeatureAny feature_a
 
 /* Process requests from remote programs and calls app_reply_func to return the result. */
 static void localProcessRemoteRequest(ZMapWindow window,
-				      char *command_name, ZMapAppRemoteViewID view_id, char *request,
+				      char *command_name, char *request,
 				      ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data)
 {
   RemoteCommandRCType command_rc = REMOTE_COMMAND_RC_FAILED ;
@@ -483,7 +483,7 @@ static void processRequest(ZMapWindow window,
   if (!(parse_ok = zMapXMLParserParseBuffer(parser, request, strlen(request))))
     {
       *command_rc_out = request_data.command_rc ;
-      *reason_out = g_strdup(zMapXMLParserLastErrorMsg(parser)) ;
+      *reason_out = zMapXMLUtilsEscapeStr(zMapXMLParserLastErrorMsg(parser)) ;
     }
   else
     {
@@ -515,8 +515,8 @@ static void zoomWindowToFeature(ZMapWindow window, RequestData request_data,
     {
       *command_rc_out = REMOTE_COMMAND_RC_FAILED ;
 
-      *reason_out = g_strdup_printf("Zoom feature %s failed",
-				    (char *)g_quark_to_string(feature->original_id));
+      *reason_out = zMapXMLUtilsEscapeStrPrintf("Zoom feature %s failed",
+						(char *)g_quark_to_string(feature->original_id));
     }
   else
     {
@@ -524,8 +524,8 @@ static void zoomWindowToFeature(ZMapWindow window, RequestData request_data,
 	{
 	  *command_rc_out = REMOTE_COMMAND_RC_FAILED ;
 
-	  *reason_out = g_strdup_printf("Select feature %s failed",
-					(char *)g_quark_to_string(feature->original_id)) ;
+	  *reason_out = zMapXMLUtilsEscapeStrPrintf("Select feature %s failed",
+						    (char *)g_quark_to_string(feature->original_id)) ;
 	}
       else
 	{
@@ -560,7 +560,7 @@ static void getWindowMark(ZMapWindow window, RemoteCommandRCType *command_rc_out
     {
       *command_rc_out = REMOTE_COMMAND_RC_FAILED ;
 
-      *reason_out = g_strdup_printf("No mark.") ;
+      *reason_out = zMapXMLUtilsEscapeStr("No mark.") ;
     }
   else
     {

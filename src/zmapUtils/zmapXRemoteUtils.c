@@ -308,7 +308,13 @@ static gboolean begin_handler(GtkWidget *widget, GdkEvent  *event, gpointer begi
     printf("Widget %p, X Window 0x%lx  received " BEGIN_EVENT_TYPE " event\n",
 	   widget, GDK_DRAWABLE_XID(widget->window)) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* WHICH COMPLETE IDIOT PUT THIS HERE.......??????? */
+
   externalPerl = FALSE;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   if(events_debug_G)
     printf("Widget %p Received " BEGIN_EVENT_TYPE " event\n", widget);

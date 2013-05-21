@@ -294,16 +294,16 @@ static GtkWidget *makeStatusPanel(ZMap zmap)
 static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data)
 {
   ZMap zmap = (ZMap)cb_data ;
-  ZMapViewWindowTree destroyed_zmaps = NULL ;
+  GList *destroyed_views = NULL ;
   
   /* WHY DO WE DO THIS....I DON'T KNOW.... */
   zmap->toplevel = NULL ;
 
-  zmapControlDoKill(zmap, &destroyed_zmaps) ;
+  zmapControlDoKill(zmap, &destroyed_views) ;
 
   /* Need to tell peer (if there is one) that all is destroyed.... */
   if (zmap->remote_control)
-    zmapControlSendViewDeleted(zmap, destroyed_zmaps) ;
+    zmapControlSendViewDeleted(zmap, destroyed_views) ;
 
   return ;
 }

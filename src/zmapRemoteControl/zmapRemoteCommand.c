@@ -376,7 +376,7 @@ GArray *zMapRemoteCommandCreateReplyEnvelopeFromRequest(ZMapRemoteControl remote
  * 
  *  */
 GArray *zMapRemoteCommandAddBody(GArray *request_in_out, char *req_or_reply,
-					ZMapXMLUtilsEventStack request_body)
+				 ZMapXMLUtilsEventStack request_body)
 {
   GArray *xml_stack = request_in_out ;
 
@@ -726,7 +726,6 @@ gboolean zMapRemoteCommandReplyGetAttributes(char *reply,
     {
       *command_out = command_data.command ;
       *return_code_out = command_data.return_code ;
-      *reason_out = command_data.reason ;
       *reply_body_out = command_data.reply_body ;
       
       result = TRUE ;

@@ -384,6 +384,9 @@ char *zMapXMLUtilsStack2XML(GArray *xml_stack, char **err_msg_out, gboolean full
 char *zMapXMLUtilsEvent2Txt(ZMapXMLUtilsEventStack event) ;
 char *zMapXMLWriterEvent2Txt(ZMapXMLWriterEvent event) ;
 
+char *zMapXMLUtilsEscapeStr(char *str) ;
+char *zMapXMLUtilsEscapeStrPrintf(char *format, ...) ;
 char *zMapXMLUtilsUnescapeStrdup(char *str);	/* NOTE: incomplete */
+
 
 #endif /* ZMAP_XML_H */

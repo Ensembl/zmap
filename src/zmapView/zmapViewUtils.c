@@ -84,6 +84,37 @@ static void formatSession(gpointer data, gpointer user_data) ;
  */
 
 
+gpointer zMapViewFindView(ZMapView view_in, gpointer view_id)
+{
+  gpointer view = NULL ;
+
+  if (view_in->window_list)
+    {
+      GList *list_view_window ;
+
+      /* Try to find the view_id in the current zmaps. */
+      list_view_window = g_list_first(view_in->window_list) ;
+      do
+	{
+	  ZMapViewWindow next_view_window = (ZMapViewWindow)(list_view_window->data) ;
+
+	  if (next_view_window->window == view_id)
+	    {
+	      view = next_view_window->parent_view ;
+
+	      break ;
+	    }
+	}
+      while ((list_view_window = g_list_next(list_view_window))) ;
+    }
+
+  return view ;
+}
+
+
+
+
+
 void zMapViewGetVisible(ZMapViewWindow view_window, double *top, double *bottom)
 {
   zMapAssert(view_window && top && bottom) ;

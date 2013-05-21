@@ -957,28 +957,26 @@ static void revcompSpan(GArray *spans, int seq_start, int seq_end)
 {
   int i, j;
 
-
   for (i = 0; i < spans->len; i++)
     {
-	ZMapSpan span ;
+      ZMapSpan span ;
 
-	span = &g_array_index(spans, ZMapSpanStruct, i) ;
+      span = &g_array_index(spans, ZMapSpanStruct, i) ;
 
       zmapFeatureRevComp(Coord, seq_start, seq_end, span->x1, span->x2) ;
     }
 
-   for(i = 0, j = spans->len - 1; i < j; i++,j--)
-   {
-	ZMapSpanStruct x;
-	ZMapSpan si,sj;
+  for(i = 0, j = spans->len - 1; i < j; i++,j--)
+    {
+      ZMapSpanStruct x;
+      ZMapSpan si,sj;
 
       si = &g_array_index(spans, ZMapSpanStruct, i) ;
       sj = &g_array_index(spans, ZMapSpanStruct, j) ;
-	x = *si;		/* struct copy */
-	*si = *sj;
-	*sj = x;
-   }
-
+      x = *si;		/* struct copy */
+      *si = *sj;
+      *sj = x;
+    }
 
   return ;
 }

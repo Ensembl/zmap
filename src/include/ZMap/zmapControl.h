@@ -71,20 +71,28 @@ void zMapInit(ZMapCallbacks callbacks) ;
 ZMap zMapCreate(void *app_data, ZMapFeatureSequenceMap sequence_map) ;
 int zMapNumViews(ZMap zmap) ;
 ZMapViewWindow zMapAddView(ZMap zmap, ZMapFeatureSequenceMap sequence_map) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 gboolean zMapGetDefaultView(ZMapAppRemoteViewID view_inout) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 gboolean zMapConnectView(ZMap zmap, ZMapView view) ;
 gboolean zMapLoadView(ZMap zmap, ZMapView view) ;
+
 gboolean zMapStopView(ZMap zmap, ZMapView view) ;
 gboolean zMapControlCloseView(ZMap zmap, ZMapView view) ;
-void zMapDeleteView(ZMap zmap, ZMapView view, ZMapViewWindowTree destroyed_zmaps_inout) ;
+void zMapDeleteView(ZMap zmap, ZMapView view, GList **destroyed_views_inout) ;
+gpointer zMapControlFindView(ZMap zmap, gpointer view_id) ;
 gboolean zMapRaise(ZMap zmap);
 char *zMapGetZMapID(ZMap zmap) ;
 char *zMapGetZMapStatus(ZMap zmap) ;
 gboolean zMapReset(ZMap zmap) ;
-void zMapDestroy(ZMap zmap, ZMapViewWindowTree *destroyed_zmaps_inout) ;
+void zMapDestroy(ZMap zmap, GList **destroyed_views_inout) ;
+
 gboolean zMapControlProcessRemoteRequest(ZMap zmap,
-					 char *command_name, ZMapAppRemoteViewID view_id, char *request,
+					 char *command_name, char *request, gpointer view_id,
 					 ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data) ;
+
 void zMapAddClient(ZMap zmap, void *client);
 char *zMapControlRemoteReceiveAccepts(ZMap zmap);
 

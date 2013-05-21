@@ -1510,7 +1510,7 @@ void processRequest(RemoteData remote_data, char *request,
   *return_code_out = remote_data->reply_rc ;
 
   if (remote_data->error)
-    *reason_out = remote_data->error ;
+    *reason_out = zMapXMLUtilsEscapeStr(remote_data->error) ;
   else if (remote_data->reply)
     *reply_out = remote_data->reply ;
   else

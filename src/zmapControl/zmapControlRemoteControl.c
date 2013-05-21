@@ -52,68 +52,13 @@
 
 
 
-/*                     NEW STUFF..................               */
-
-/* Used to build xml giving the list of deleted views. */
-typedef struct GetViewNamesStructName
-{
-  gboolean result ;
-
-  void *curr_zmap ;
-  void *curr_view ;
-
-  ZMapXMLUtilsEventStack view_elements ;
-  ZMapXMLUtilsEventStack curr_element ;
-} GetViewNamesStruct, *GetViewNames ;
-
-
-
-
-
-static void localProcessRemoteRequest(ZMap zmap,
-				      char *command_name, ZMapAppRemoteViewID view_id, char *request,
-				      ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data) ;
-
-static void processRequest(ZMap zmap,
-			   char *command_name, ZMapAppRemoteViewID view_id, char *request,
-			   RemoteCommandRCType *command_rc_out, char **reason_out,
-			   ZMapXMLUtilsEventStack *reply_out) ;
-
-
-static void handlePeerReply(char *command,
-			    RemoteCommandRCType command_rc, char *reason, char *reply,
-			    gpointer reply_handler_func_data) ;
-
-static void doViews(gpointer data, gpointer user_data) ;
-static void doWindows(gpointer data, gpointer user_data) ;
-
-static ZMapXMLUtilsEventStack makeViewElement(ZMap zmap, ZMapView view, ZMapWindow window) ;
-
-
-
-
-/*                 OLD STUFF...............                          */
-
-
-/* IT'S LOOKING LIKE THERE ARE NO COMMANDS AT THE CONTROL LEVEL AT THE MOMENT.... */
-
-
 enum
   {
     ZMAPCONTROL_REMOTE_INVALID,
     /* Add below here... */
 
+    /* No commands currently. */
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-    /* These appear to be totally unknown.....sigh.... */
-    ZMAPCONTROL_REMOTE_ZOOM_IN,
-    ZMAPCONTROL_REMOTE_ZOOM_OUT,
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-    /* REGISTER_CLIENT IS NOT NEEDED AND THE OTHER TWO ARE HANDLED AT THE APP LEVEL. */
-    ZMAPCONTROL_REMOTE_REGISTER_CLIENT,
-    ZMAPCONTROL_REMOTE_NEW_VIEW,
-    ZMAPCONTROL_REMOTE_CLOSE_VIEW,
 
     /* ...but above here */
     ZMAPCONTROL_REMOTE_UNKNOWN
@@ -152,6 +97,47 @@ typedef struct
 
   ZMapView view ;
 } FindViewDataStruct, *FindViewData ;
+
+
+
+/* Used to build xml giving the list of deleted views. */
+typedef struct GetViewNamesStructName
+{
+  gboolean result ;
+
+  GList *windows ;
+
+  ZMapXMLUtilsEventStack view_elements ;
+  ZMapXMLUtilsEventStack curr_element ;
+} GetViewNamesStruct, *GetViewNames ;
+
+
+
+
+
+static void localProcessRemoteRequest(ZMap zmap,
+				      char *command_name, char *request,
+				      ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data) ;
+
+static void processRequest(ZMap zmap,
+			   char *command_name, char *request,
+			   RemoteCommandRCType *command_rc_out, char **reason_out,
+			   ZMapXMLUtilsEventStack *reply_out) ;
+
+
+static void handlePeerReply(char *command,
+			    RemoteCommandRCType command_rc, char *reason, char *reply,
+			    gpointer reply_handler_func_data) ;
+
+static void doViews(gpointer data, gpointer user_data) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+static void doWindows(gpointer data, gpointer user_data) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+static ZMapXMLUtilsEventStack makeViewElement(ZMapView view) ;
+
 
 
 
@@ -213,54 +199,140 @@ static gboolean control_execute_debug_G = FALSE;
 /* Receives peer program requests from layer above and either handles them or forwards them
  * to ZMapView. */
 gboolean zMapControlProcessRemoteRequest(ZMap zmap,
-					 char *command_name, ZMapAppRemoteViewID view_id, char *request,
+					 char *command_name, char *request, gpointer view_id,
 					 ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data)
 {
   gboolean result = FALSE ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* CURRENTLY THERE ARE NO CONTROL LEVEL COMMANDS, ADD THEM LIKE THIS WHEN
+   * WE NEED THEM...JUST REMOVE THE UNDEF'S AND JOIN UP THE  else if (zmap->view_list) */
+
   if (strcmp(command_name, ZACP_NEWVIEW) == 0
       || strcmp(command_name, ZACP_CLOSEVIEW) == 0)
     {
-      localProcessRemoteRequest(zmap, command_name, view_id, request,
+      localProcessRemoteRequest(zmap, command_name, request,
 				app_reply_func, app_reply_data) ;
 
       result = TRUE ;
     }
-  else if (zmap->view_list)
+  else
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  if (zmap->view_list)
     {
-      GList *next_view ;
-      gboolean view_found = FALSE ;
+      char *id_str = NULL ;
+      char *err_msg = NULL ;
+      ZMapViewWindow view_window = NULL ;
+      ZMapView view = NULL ;
+      ZMapView request_view = NULL ;
+      gboolean parse_view_id = TRUE ;
+      gboolean view_found = TRUE ;
 
-      /* Try all the views. */
-      next_view = g_list_first(zmap->view_list) ;
-      do
+
+      /* Get the view from the request, if no view specified then use focus_viewwindow. */
+      if (zMapRemoteCommandGetAttribute(request,
+					ZACP_REQUEST, ZACP_VIEWID, &(id_str),
+					&err_msg))
+	
 	{
-	  ZMapView view = (ZMapView)(next_view->data) ;
+	  ZMapView request_view = NULL ;
 
-	  if (view == view_id->view)
+	  /* Parse the view and check that it exists in our list of views. */
+	  if ((parse_view_id = zMapAppRemoteViewParseIDStr(id_str, (void **)&request_view)))
 	    {
-	      view_found = TRUE ;
-	      result = zMapViewProcessRemoteRequest(view, command_name, view_id, request,
-						    app_reply_func, app_reply_data) ;
+	      GList *list_ptr ;
 
-	      break ;
+	      /* Find the view in our list of views. */
+	      view_found = FALSE ;
+	      list_ptr = g_list_first(zmap->view_list) ;
+	      do
+		{
+		  ZMapView next_view = (ZMapView)(list_ptr->data) ;
+
+		  if (next_view == request_view)
+		    {
+		      view = request_view ;
+		      view_found = TRUE ;
+
+		      break ;
+		    }
+		}
+	      while ((list_ptr = g_list_next(list_ptr))) ;
 	    }
 	}
-      while ((next_view = g_list_next(next_view))) ;
+      else
+	{
+	  /* No view specified in request so use the focus view or if there isn't one yet
+	   * then use the first view in the list....a bit hacky... */
+	  if (zmap->focus_viewwindow)
+	    {
+	      view = zMapViewGetView(zmap->focus_viewwindow) ;
 
-      /* If we were passed a view but did not find it this is an error... */
-      if (!view_found)
+	      view_window = zmap->focus_viewwindow ;
+	    }
+	  else
+	    {
+	      /* This is a bit hacky, if there is no focus view/window we default to the first one.
+	       * .....do some logging. */
+	      view = (ZMapView)(zmap->view_list->data) ; /* default to first view. */
+
+	      zMapLogWarning("%s",
+			     "Received remote view command with no view specified,"
+			     " there is no focus view so defaulted to first view in list.") ;
+	    }
+	}
+
+
+
+      /* Find the view_window for the request or the default view .... */
+      if (view && !view_window)
+	{
+	  if ((view == zMapViewGetView(zmap->focus_viewwindow)))
+	    {
+	      /* view is the focus view. */
+	      view_window = zmap->focus_viewwindow ;
+	    }
+	  else
+	    {
+	      /* If the view is not the focus_viewwindow we get the first view_window
+	       * of the view, feels hacky and needs revising..... */
+	      view_window = zMapViewGetDefaultViewWindow(view) ;
+	    }
+	}
+
+
+
+
+      /* If we have a view then we can carry on and call the view request processor. */
+      if (view_window)
+	{
+
+	  /* Found a view, send the command on to it. */
+	  result = zMapViewProcessRemoteRequest(view_window, command_name, request,
+						app_reply_func, app_reply_data) ;
+	}
+      else
 	{
 	  RemoteCommandRCType command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
 	  char *reason ;
 	  ZMapXMLUtilsEventStack reply = NULL ;
 
-	  reason = g_strdup_printf("view id %p not found.", view_id->view) ;
+	  /* Something went wrong. */
+	  if (!parse_view_id)
+	    {
+	      reason = "Badly formed view_id !" ;
+	      result = FALSE ;
+	    }
+	  else						    /* !view_found */
+	    {
+	      reason = g_strdup_printf("view_id %p not found.", request_view) ;
+	      result = TRUE ;				    /* Signals we have handled the request. */
+	    }
 
 	  (app_reply_func)(command_name, FALSE, command_rc, reason, reply, app_reply_data) ;
-
-	  result = TRUE ;				    /* Signals we have handled the request. */
 	}
+
     }
 
   return result ;
@@ -274,24 +346,26 @@ gboolean zMapControlProcessRemoteRequest(ZMap zmap,
  */
 
 
-/* User interaction has created a new view (by splitting an existing one). */
+/* User interaction has created a new view/window (by splitting an existing one). */
 void zmapControlSendViewCreated(ZMap zmap, ZMapView view, ZMapWindow window)
 {
   ZMapXMLUtilsEventStack view_element ;
 
-  view_element = makeViewElement(zmap, view, window) ;
+  view_element = makeViewElement(view) ;
 
-  (*(zmap->zmap_cbs_G->remote_request_func))(ZACP_VIEW_CREATED, view_element,
-					     zmap->app_data,
+  /* Not sure if this should be view or what....probably should pass view.... */
+  (*(zmap->zmap_cbs_G->remote_request_func))(zmap->app_data,
+					     view,
+					     ZACP_VIEW_CREATED, view_element,
 					     handlePeerReply, zmap) ;
 
   return ;
 }
 
 
-/* User interaction has resulted in view(s)/window(s) being deleted, send message
- * to peer giving ids of views/windows that have gone. */
-void zmapControlSendViewDeleted(ZMap zmap, ZMapViewWindowTree destroyed_zmaps)
+/* User interaction has resulted in a zmap toplevel window being deleted,
+ * so we need to report which views were destroyed. */
+void zmapControlSendViewDeleted(ZMap zmap, GList *destroyed_views)
 {
   GetViewNamesStruct get_view_names = {TRUE, NULL} ;
   static ZMapXMLUtilsEventStackStruct			    /* Should dynamically allocate... */
@@ -300,13 +374,20 @@ void zmapControlSendViewDeleted(ZMap zmap, ZMapViewWindowTree destroyed_zmaps)
       {ZMAPXML_NULL_EVENT}
     } ;
 
-  /* collect all the names.... */
-  get_view_names.curr_zmap = destroyed_zmaps->parent ;
-  get_view_names.curr_element = get_view_names.view_elements = &(view_reply[0]) ;
-  g_list_foreach(destroyed_zmaps->children, doViews, &get_view_names) ;
 
-  (*(zmap->zmap_cbs_G->remote_request_func))(ZACP_VIEW_DELETED, &(view_reply[0]),
-					     zmap->app_data,
+  /* collect all the views that have been destroyed. */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  get_view_names.curr_zmap = destroyed_zmaps->parent ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  get_view_names.curr_element = get_view_names.view_elements = &(view_reply[0]) ;
+  g_list_foreach(destroyed_views, doViews, &get_view_names) ;
+
+
+  (*(zmap->zmap_cbs_G->remote_request_func))(zmap->app_data,
+					     NULL,
+					     ZACP_VIEW_DELETED, &(view_reply[0]),
 					     handlePeerReply, zmap) ;
 
   return ;
@@ -335,9 +416,10 @@ static void handlePeerReply(char *command,
 }
 
 
-/* THIS FUNCTION COULD CALL control_execute_command...... */
+/* CURRENTLY UNUSED AS WE DO NOT HAVE CONTROL LEVEL COMMANDS, I'M LEAVING THE CODE
+ * CODE HERE BECAUSE IT'S VERY LIKELY WE WILL ADD COMMANDS. */
 static void localProcessRemoteRequest(ZMap zmap,
-				      char *command_name, ZMapAppRemoteViewID view_id, char *request,
+				      char *command_name, char *request,
 				      ZMapRemoteAppReturnReplyFunc app_reply_func,
 				      gpointer app_reply_data)
 {
@@ -345,7 +427,8 @@ static void localProcessRemoteRequest(ZMap zmap,
   char *reason = NULL ;
   ZMapXMLUtilsEventStack reply = NULL ;
 
-  processRequest(zmap, command_name, view_id, request, &command_rc, &reason, &reply) ;
+
+  processRequest(zmap, command_name, request, &command_rc, &reason, &reply) ;
 
   (app_reply_func)(command_name, FALSE, command_rc, reason, reply, app_reply_data) ;
 
@@ -353,12 +436,17 @@ static void localProcessRemoteRequest(ZMap zmap,
 }
 
 
-/* Commands by this routine need the xml to be parsed for arguments etc. */
+/* CURRENTLY UNUSED AS WE DO NOT HAVE CONTROL LEVEL COMMANDS, I'M LEAVING THE CODE
+ * CODE HERE BECAUSE IT'S VERY LIKELY WE WILL ADD COMMANDS. */
 static void processRequest(ZMap zmap,
-			   char *command_name, ZMapAppRemoteViewID view_id, char *request,
+			   char *command_name, char *request,
 			   RemoteCommandRCType *command_rc_out, char **reason_out,
 			   ZMapXMLUtilsEventStack *reply_out)
 {
+
+  /* DISABLED CODE....DUH.......MOVED TO MANAGER ???? */
+
+
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   ZMapXMLParser parser ;
   gboolean cmd_debug = FALSE ;
@@ -381,7 +469,7 @@ static void processRequest(ZMap zmap,
 
     {
       *command_rc_out = request_data.command_rc ;
-      *reason_out = g_strdup(zMapXMLParserLastErrorMsg(parser)) ;
+      *reason_out = zMapXMLUtilsEscapeStr(zMapXMLParserLastErrorMsg(parser)) ;
     }
   else
     {
@@ -400,7 +488,8 @@ static void processRequest(ZMap zmap,
 	  if (!zMapAppRemoteViewIsValidID(view_id))
 	    {
 	      *command_rc_out = REMOTE_COMMAND_RC_BAD_ARGS ;
-	      *reason_out = g_strdup("New view is to be added to existing view but no existing view_id specified.") ;
+	      *reason_out = zMapXMLUtilsEscapeStr("New view is to be added to existing view"
+						  "but no existing view_id specified.") ;
 	    }
 	  else
 	    {
@@ -427,34 +516,21 @@ static void processRequest(ZMap zmap,
 
 
 
-/* GFunc() to record zmap ptr and step through view pointer children. */
-static void doViews(gpointer data, gpointer user_data)
-{
-  ZMapViewWindowTree view = (ZMapViewWindowTree)data ;
-  GetViewNames get_view_names = (GetViewNames)user_data ;
-
-  get_view_names->curr_view = view->parent ;
-  g_list_foreach(view->children, doWindows, get_view_names) ;
-
-  return ;
-}
-
-
-/* GFunc() to record zmap ptr and step through view pointer children.
+/* GFunc() to make an xml view element each time it is called.
  * 
  * We use the local element array to initialise the final view element array
  * via struct copies.
  *  */
-static void doWindows(gpointer data, gpointer user_data)
+static void doViews(gpointer data, gpointer user_data)
 {
-  ZMapViewWindowTree window = (ZMapViewWindowTree)data ;
+  ZMapView view = (ZMapView)data ;
   GetViewNames get_view_names = (GetViewNames)user_data ;
 
   if (get_view_names->result)
     {
       ZMapXMLUtilsEventStack view_element ;
 
-      if (!(view_element = makeViewElement(get_view_names->curr_zmap, get_view_names->curr_view, window->parent)))
+      if (!(view_element = makeViewElement(view)))
 	{
 	  get_view_names->result = FALSE ;
 	}
@@ -482,7 +558,6 @@ static void doWindows(gpointer data, gpointer user_data)
 	}
     }
 
-
   return ;
 }
 
@@ -491,7 +566,7 @@ static void doWindows(gpointer data, gpointer user_data)
 /* Returns a pointer to a static struct containing the stack to make a view id. If you
  * need to call this multiple times or alter the stack then you need to take a copy
  * of the returned struct as it will be overwritten by subsequent calls. */
-static ZMapXMLUtilsEventStack makeViewElement(ZMap zmap, ZMapView view, ZMapWindow window)
+static ZMapXMLUtilsEventStack makeViewElement(ZMapView view)
 {
   ZMapXMLUtilsEventStack element = NULL ;
   static ZMapXMLUtilsEventStackStruct
@@ -502,14 +577,9 @@ static ZMapXMLUtilsEventStack makeViewElement(ZMap zmap, ZMapView view, ZMapWind
       {ZMAPXML_END_ELEMENT_EVENT,   ZACP_VIEW,      ZMAPXML_EVENT_DATA_NONE,  {0}},
       {ZMAPXML_NULL_EVENT}
     } ;
-  ZMapAppRemoteViewIDStruct remote_view = {NULL} ;
   GQuark view_id ;
 
-  remote_view.zmap = zmap ;
-  remote_view.view = view ;
-  remote_view.window = window ;
-
-  if (zMapAppRemoteViewCreateID(&remote_view, &view_id))
+  if (zMapAppRemoteViewCreateID(view, &view_id))
     {
       element = &(view_element[0]) ;      
 

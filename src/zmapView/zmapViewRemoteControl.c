@@ -127,10 +127,7 @@ typedef struct RequestDataStructName
   GString *err_msg ;
 
 
-  /* View, window to apply command to. */
-  ZMapAppRemoteViewID view_id ;
-
-  ZMapView           view;
+  ZMapViewWindow view_window ;
 
 
   /* some operations are "read only" and hence can use the orig_context, others require edits and
@@ -175,7 +172,7 @@ typedef struct RequestDataStructName
 
   GQuark source_id ;
   GQuark style_id ;
-  ZMapFeatureTypeStyle *style ;
+  ZMapFeatureTypeStyle style ;
 
   GList *locations ;
 
@@ -208,11 +205,11 @@ typedef struct
 
 
 
-static void localProcessRemoteRequest(ZMapView view,
-				      char *command_name, ZMapAppRemoteViewID view_id, char *request,
+static void localProcessRemoteRequest(ZMapViewWindow view_window,
+				      char *command_name, char *request,
 				      ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data) ;
-static void processRequest(ZMapView view,
-			   char *command_name, ZMapAppRemoteViewID view_id, char *request,
+static void processRequest(ZMapViewWindow view_window,
+			   char *command_name, char *request,
 			   RemoteCommandRCType *command_rc_out, char **reason_out,
 			   ZMapXMLUtilsEventStack *reply_out) ;
 static CommandDescriptor cmdGetDesc(GQuark command_id) ;
@@ -251,7 +248,7 @@ static ZMapFeatureContextExecuteStatus mark_matching_invalid(GQuark key,
                                                              gpointer user_data,
                                                              char **error_out) ;
 static void loadFeatures(ZMapView view, RequestData request_data) ;
-static void getFeatureNames(ZMapView view, RequestData request_data) ;
+static void getFeatureNames(ZMapViewWindow view_window, RequestData request_data) ;
 static void findUniqueCB(gpointer data, gpointer user_data) ;
 static void makeUniqueListCB(gpointer key, gpointer value, gpointer user_data) ;
 
@@ -316,8 +313,8 @@ static ZMapXMLObjTagFunctionsStruct view_ends_G[] =
 
 
 /* See if view can process the command, if not then try all the windows to see if one can process the request. */
-gboolean zMapViewProcessRemoteRequest(ZMapView view,
-				      char *command_name, ZMapAppRemoteViewID view_id, char *request,
+gboolean zMapViewProcessRemoteRequest(ZMapViewWindow view_window,
+				      char *command_name, char *request,
 				      ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data)
 {
   gboolean result = FALSE ;
@@ -329,46 +326,17 @@ gboolean zMapViewProcessRemoteRequest(ZMapView view,
       || strcmp(command_name, ZACP_LOAD_FEATURES) == 0
       || strcmp(command_name, ZACP_REVCOMP) == 0)
     {
-      localProcessRemoteRequest(view, command_name, view_id, request,
+      localProcessRemoteRequest(view_window,
+				command_name, request,
 				app_reply_func, app_reply_data) ;
 
       result = TRUE ;					    /* Signal we have handled the request. */
     }
   else
     {
-      GList* list_item ;
-      gboolean window_found = FALSE ;
-
-      list_item = g_list_first(view->window_list) ;
-      do
-	{
-	  ZMapViewWindow view_window ;
-
-	  view_window = list_item->data ;
-
-	  if (view_window->window == view_id->window)
-	    {
-	      window_found = TRUE ;
-	      result = zMapWindowProcessRemoteRequest(view_window->window, command_name, view_id, request,
-						      app_reply_func, app_reply_data) ;
-	      break ;
-	    }
-	}
-      while ((list_item = g_list_next(list_item))) ;
-
-      /* If we were passed a window but did not find it this is an error... */
-      if (!window_found)
-	{
-	  RemoteCommandRCType command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
-	  char *reason ;
-	  ZMapXMLUtilsEventStack reply = NULL ;
-
-	  reason = g_strdup_printf("window id %p not found.", view_id->window) ;
-
-	  (app_reply_func)(command_name, FALSE, command_rc, reason, reply, app_reply_data) ;
-
-	  result = TRUE ;				    /* Signal we have handled the request. */
-	}
+      result = zMapWindowProcessRemoteRequest(view_window->window,
+					      command_name, request,
+					      app_reply_func, app_reply_data) ;
     }
 
   return result ;
@@ -377,16 +345,15 @@ gboolean zMapViewProcessRemoteRequest(ZMapView view,
 
 
 /* Process all peer requests that apply to view. */
-static void localProcessRemoteRequest(ZMapView view,
-				      char *command_name, ZMapAppRemoteViewID view_id, char *request,
-				      ZMapRemoteAppReturnReplyFunc app_reply_func,
-				      gpointer app_reply_data)
+static void localProcessRemoteRequest(ZMapViewWindow view_window,
+				      char *command_name, char *request,
+				      ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data)
 {
   RemoteCommandRCType command_rc = REMOTE_COMMAND_RC_FAILED ;
   char *reason = NULL ;
   ZMapXMLUtilsEventStack reply = NULL ;
 
-  processRequest(view, command_name, view_id, request, &command_rc, &reason, &reply) ;
+  processRequest(view_window, command_name, request, &command_rc, &reason, &reply) ;
 
   (app_reply_func)(command_name, FALSE, command_rc, reason, reply, app_reply_data) ;
 
@@ -395,8 +362,8 @@ static void localProcessRemoteRequest(ZMapView view,
 
 
 /* Commands by this routine need the xml to be parsed for arguments etc. */
-static void processRequest(ZMapView view,
-			   char *command_name, ZMapAppRemoteViewID view_id, char *request,
+static void processRequest(ZMapViewWindow view_window,
+			   char *command_name, char *request,
 			   RemoteCommandRCType *command_rc_out, char **reason_out,
 			   ZMapXMLUtilsEventStack *reply_out)
 {
@@ -412,8 +379,7 @@ static void processRequest(ZMapView view,
   request_data.command_rc = REMOTE_COMMAND_RC_OK ;
   request_data.request = request ;
 
-  request_data.view = view ;
-  request_data.view_id = view_id ;
+  request_data.view_window = view_window ;
 
   parser = zMapXMLParserCreate(&request_data, FALSE, cmd_debug) ;
 
@@ -423,7 +389,7 @@ static void processRequest(ZMapView view,
 
     {
       *command_rc_out = request_data.command_rc ;
-      *reason_out = g_strdup(zMapXMLParserLastErrorMsg(parser)) ;
+      *reason_out = zMapXMLUtilsEscapeStr(zMapXMLParserLastErrorMsg(parser)) ;
     }
   else
     {
@@ -431,7 +397,7 @@ static void processRequest(ZMapView view,
 
       if (!executeRequest(parser, &request_data))
 	{
-	  *reason_out = request_data.err_msg->str ;
+	  *reason_out = zMapXMLUtilsEscapeStr(request_data.err_msg->str) ;
 	}
       else
 	{
@@ -458,7 +424,7 @@ static void processRequest(ZMapView view,
 static gboolean executeRequest(ZMapXMLParser parser, RequestData request_data)
 {
   gboolean result = TRUE ;
-  ZMapView view = request_data->view ;
+  ZMapView view = request_data->view_window->parent_view ;
 
 
   /* We should be doing some checking here, like....does a transcript have exon(s) ?? */
@@ -466,7 +432,7 @@ static gboolean executeRequest(ZMapXMLParser parser, RequestData request_data)
 
   if (request_data->command_id == g_quark_from_string(ZACP_GET_FEATURE_NAMES))
     {
-      getFeatureNames(view, request_data) ;
+      getFeatureNames(request_data->view_window, request_data) ;
     }
   else if (request_data->command_id == g_quark_from_string(ZACP_LOAD_FEATURES))
     {
@@ -996,7 +962,7 @@ static void loadFeatures(ZMapView view, RequestData request_data)
     {
       ZMapWindow window ;
 
-      window = request_data->view_id->window ;
+      window = request_data->view_window->window ;
 
       if ((zMapWindowMarkGetSequenceSpan(window, &start, &end)))
 	{
@@ -1025,15 +991,12 @@ static void loadFeatures(ZMapView view, RequestData request_data)
 
 
 /* Get the names of all features within a given range. */
-static void getFeatureNames(ZMapView view, RequestData request_data)
+static void getFeatureNames(ZMapViewWindow view_window, RequestData request_data)
 {
-  ZMapViewWindow view_window ;
   ZMapWindow window ;
 
   request_data->command_rc = ZMAPXREMOTE_OK ;
 
-  /* Hack, just grab first window...work out what to do about this.... */
-  view_window = (ZMapViewWindow)(request_data->view->window_list->data) ;
   window = view_window->window ;
 
 
@@ -1154,7 +1117,7 @@ static gboolean xml_request_start_cb(gpointer user_data, ZMapXMLElement set_elem
   zMapAssert(request_data->cmd_desc) ;
 
 
-  request_data->orig_context = zMapViewGetFeatures(request_data->view) ;
+  request_data->orig_context = zMapViewGetFeatures(request_data->view_window->parent_view) ;
 
 
   /* For actions that change the feature context create an "edit" context. */
@@ -1367,6 +1330,7 @@ static gboolean xml_block_start_cb(gpointer user_data, ZMapXMLElement set_elemen
 }
 
 
+/* AGH SEEMS REALLY MANGLED FOR LOAD FEATURES..... */
 
 /* For most operations we will only come in here once but for replace we will come in
  * once for the feature to be deleted and once for the feature to be recreated. */
@@ -1380,8 +1344,23 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
   char *featureset_name ;
   GQuark unique_set_id ;
   char *unique_set_name ;
+  gboolean load_features = FALSE ;
+
 
   request_data->source_id = 0 ;			    /* reset needed for remove features. */
+
+
+
+  /* ok...we need to create the feature set if it doesn't exist......check this in debugger with
+     old version......
+  */
+
+
+  /* Load features is different, while we will already know the feature set name,
+   * the style may need loading and the feature set creating and then the
+   * features loading so processing is different. */
+  if (request_data->command_id == g_quark_from_string(ZACP_LOAD_FEATURES))
+    load_features = TRUE ;
 
 
   /* Default to master align if client did not specify one. */
@@ -1451,12 +1430,11 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 	    request_data->replace_stage = REPLACE_CREATE_FEATURE ;
 	  else
 	    {
-	      /* If we can't find the featureset but it's meant to exist then it's a serious error
-	       * and we can't carry on. */
+	      /* Something is out of sync in the replace operation. */
 	      char *err_msg ;
 
 	      request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
-	      err_msg = g_strdup_printf("Too many featuresets for replace operation: \"%s\"",
+	      err_msg = g_strdup_printf("Error in syntax of replace command: \"%s\"",
 					request_data->request) ;
 	      zMapXMLParserRaiseParsingError(parser, err_msg) ;
 	      g_free(err_msg) ;
@@ -1492,9 +1470,29 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 	    }
 	  else
 	    {
-	      result = TRUE ;
+	      if (request_data->orig_feature_set)
+		{
+		  feature_set
+		    = (ZMapFeatureSet)zMapFeatureAnyCopy((ZMapFeatureAny)(request_data->orig_feature_set)) ;
+		}
+	      else
+		{
+		  /* Make sure this feature set is a child of the block........ */
+		  if (!(feature_set = zMapFeatureBlockGetSetByID(request_data->edit_block, unique_set_id)))
+		    {
+		      feature_set = zMapFeatureSetCreate(featureset_name, NULL) ;
 
-	      request_data->style = &(request_data->orig_feature_set->style) ;
+		      request_data->orig_feature_set = feature_set ;
+		    }
+
+		}
+
+	      zMapFeatureBlockAddFeatureSet(request_data->edit_block, feature_set) ;
+
+	      
+	      request_data->edit_feature_set = feature_set ;
+
+	      result = TRUE ;
 	    }
 	}
 
@@ -1550,7 +1548,7 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
     {
       ZMapFeatureSource source_data ;
 
-      if (!(source_data = g_hash_table_lookup(request_data->view->context_map.source_2_sourcedata,
+      if (!(source_data = g_hash_table_lookup(request_data->view_window->parent_view->context_map.source_2_sourcedata,
 					      GINT_TO_POINTER(unique_set_id))))
 	{
 	  char *err_msg ;
@@ -1568,16 +1566,22 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 	  request_data->style_id = source_data->style_id ;
 	}
 
-      if (result && (request_data->command_id != g_quark_from_string(ZACP_LOAD_FEATURES)))
+      if (result && !load_features)
 	{
 	  // check style for all command except load_features
 	  // as load features processes a complete step list that inludes requesting the style
 	  // then if the style is not there then we'll drop the features
+	  ZMapFeatureTypeStyle style ;
+	  
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	  /* errr...yes.... */
 	  /* DO WE NEED TO DO THIS NOW....... */
-	  if (!(request_data->style = &(zMapFindStyle(request_data->view->context_map.styles, request_data->style_id))))
+	  if ((style = zMapFindStyle(request_data->view_window->parent_view->context_map.styles, 
+				     request_data->style_id)))
+	    {
+	      request_data->style = style ;
+	    }
+	  else
 	    {
 	      char *err_msg ;
 
@@ -1589,11 +1593,11 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 
 	      result = FALSE ;
 	    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	  /* check if we could have just done this... */
+
 	  /* New way of styles..... */
 	  request_data->style = &(feature_set->style) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
@@ -1745,7 +1749,7 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 
   /* Need the style to get hold of the feature mode, better would be for
    * xml to contain SO term ?? Maybe not....not sure. */
-  if (result && ((mode = zMapStyleGetMode(*(request_data->style))) == ZMAPSTYLE_MODE_INVALID))
+  if (result && ((mode = zMapStyleGetMode(request_data->style)) == ZMAPSTYLE_MODE_INVALID))
     {
       request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
       zMapXMLParserRaiseParsingError(parser, "\"style\" must have a valid feature mode.");
@@ -1894,7 +1898,7 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 	  if (result
 	      && (feature = zMapFeatureCreateFromStandardData(feature_name, NULL, "",
 							      mode,
-							      request_data->style,
+							      &(request_data->style),
 							      start, end, has_score,
 							      score, strand)))
 	    {
@@ -2019,7 +2023,7 @@ static gboolean xml_feature_end_cb(gpointer user_data, ZMapXMLElement sub_elemen
 	{
 	  /* It's probably here that we need to revcomp the feature if the
 	   * view is revcomp'd.... */
-	  if (request_data->view->revcomped_features)
+	  if (request_data->view_window->parent_view->revcomped_features)
 	    {
 	      zMapFeatureReverseComplement(request_data->orig_context, request_data->edit_feature) ;
 	    }
