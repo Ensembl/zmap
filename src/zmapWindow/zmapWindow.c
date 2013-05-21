@@ -4765,116 +4765,124 @@ static void scrollToCB(gpointer key, gpointer value_unused, gpointer user_data)
 }
 
 
-
-void zmapWindowFetchData(ZMapWindow window, ZMapFeatureBlock block,
-			 GList *featureset_name_list, gboolean use_mark,gboolean is_column)
+void zmapWindowFetchData(ZMapWindow window,
+			 ZMapFeatureBlock block, GList *featureset_name_list,
+			 gboolean use_mark, gboolean is_column)
 {
   ZMapWindowCallbacks window_cbs_G = zmapWindowGetCBs() ;
   ZMapWindowCallbackCommandGetFeaturesStruct get_data = {ZMAPWINDOW_CMD_INVALID} ;
   ZMapWindowCallbackGetFeatures fetch_data;
   gboolean load = TRUE;
-  int start, end;
+  int start, end ;
 
-  /* Can we get away without allocating this? */
-  fetch_data        = &get_data;
-
-  fetch_data->cmd   = ZMAPWINDOW_CMD_GETFEATURES ;
-  fetch_data->block = block ;
-
-  if (!use_mark || (use_mark && !(zmapWindowMarkIsSet(window->mark))))
+  if (featureset_name_list)
     {
-      fetch_data->start = block->block_to_sequence.block.x1 ;
-      fetch_data->end   = block->block_to_sequence.block.x2 ;
-      //zMapLogWarning("fetch all: %d %d %d",use_mark,fetch_data->start,fetch_data->end);
+      fetch_data = &get_data ;
 
-    }
-  else if (zmapWindowMarkIsSet(window->mark) &&
-	   zmapWindowMarkGetSequenceRange(window->mark, &start, &end))
-    {
-      fetch_data->start = start;
-      fetch_data->end   = end;
-      //zMapLogWarning("fetch mark: %d %d %d",use_mark,fetch_data->start,fetch_data->end);
-    }
-  else
-    load = FALSE;
+      fetch_data->cmd   = ZMAPWINDOW_CMD_GETFEATURES ;
+      fetch_data->block = block ;
 
-  if(load && featureset_name_list)
-    {
-      FooCanvasItem *block_group;
-
-      if((block_group = zmapWindowFToIFindItemFull(window,window->context_to_item,
-						   block->parent->unique_id,
-						   block->unique_id, 0, 0, 0, 0)))
+      if (!use_mark || (use_mark && !(zmapWindowMarkIsSet(window->mark))))
 	{
+	  fetch_data->start = block->block_to_sequence.block.x1 ;
+	  fetch_data->end   = block->block_to_sequence.block.x2 ;
+	  //zMapLogWarning("fetch all: %d %d %d",use_mark,fetch_data->start,fetch_data->end);
+
+	}
+      else if (zmapWindowMarkIsSet(window->mark) &&
+	       zmapWindowMarkGetSequenceRange(window->mark, &start, &end))
+	{
+	  fetch_data->start = start;
+	  fetch_data->end   = end;
+	  //zMapLogWarning("fetch mark: %d %d %d",use_mark,fetch_data->start,fetch_data->end);
+	}
+      else
+	{
+	  load = FALSE;
+	}
+
+      if (load)
+	{
+	  FooCanvasItem *block_group;
+
+	  if((block_group = zmapWindowFToIFindItemFull(window,window->context_to_item,
+						       block->parent->unique_id,
+						       block->unique_id, 0, 0, 0, 0)))
+	    {
 
 #warning need to optimise requests so as to not req data we already have
-	  /* for the moment just re-request */
-	  /*
-	    ideally we should optimise the requests to only cover empty regions
-	    but we need to cater for repeat loaded features anyway at the edges
-	    so just request whatever region is requested regardless
-	  */
+	      /* for the moment just re-request */
+	      /*
+		ideally we should optimise the requests to only cover empty regions
+		but we need to cater for repeat loaded features anyway at the edges
+		so just request whatever region is requested regardless
+	      */
+	    }
 	}
-    }
 
-  if(load && featureset_name_list)
-    {
-      /* the user requests columns but zmap requests featuresets, so expand the list */
-      GList * fset_list = NULL;
-      GList *col_list;
-
-      if(is_column)	/* user requests a column */
+      if (load)
 	{
-	  for(col_list = featureset_name_list;col_list;col_list = col_list->next)
-	    fset_list = g_list_concat(
-				      /* must copy as this is a static list */
-				      g_list_copy(zMapFeatureGetColumnFeatureSets(window->context_map, GPOINTER_TO_UINT(col_list->data),TRUE)),
-				      fset_list);
-	}
-      else			/* zmap requests data via column menu */
-	{
-	  fset_list = featureset_name_list;
-	}
+	  /* the user requests columns but zmap requests featuresets, so expand the list */
+	  GList * fset_list = NULL;
+	  GList *col_list;
 
-      /* mh17 NOTE
-       *
-       * this block copied to zmapWindowMenus.c/add_column_featuresets()
-       */
-      /* expand any virtual featursets into real ones */
-      {
-      	GList *virtual;
+	  if (is_column)	/* user requests a column */
+	    {
+	      for (col_list = featureset_name_list;col_list;col_list = col_list->next)
+		{
+		  /* must copy as this is a static list */
+		  fset_list
+		    = g_list_concat(g_list_copy(zMapFeatureGetColumnFeatureSets(window->context_map,
+										GPOINTER_TO_UINT(col_list->data),
+										TRUE)),
+				    fset_list);
+		}
+	    }
+	  else			/* zmap requests data via column menu */
+	    {
+	      fset_list = featureset_name_list;
+	    }
 
-      	for(virtual = fset_list;virtual; virtual = virtual->next)
+	  /* mh17 NOTE
+	   *
+	   * this block copied to zmapWindowMenus.c/add_column_featuresets()
+	   */
+	  /* expand any virtual featursets into real ones */
 	  {
-	    GList *real = g_hash_table_lookup(window->context_map->virtual_featuresets,virtual->data);
+	    GList *virtual;
 
-	    if(real)
+	    for(virtual = fset_list;virtual; virtual = virtual->next)
 	      {
-		GList *copy = g_list_copy(real);	/* so it can be freed with the rest later */
-		GList *l = virtual;
+		GList *real = g_hash_table_lookup(window->context_map->virtual_featuresets,virtual->data);
 
-		copy->prev = virtual->prev;
-		if(copy->prev)
-		  copy->prev->next = copy;
-		else
-		  fset_list = copy;
+		if(real)
+		  {
+		    GList *copy = g_list_copy(real);	/* so it can be freed with the rest later */
+		    GList *l = virtual;
 
-		copy = g_list_last(copy);
-		copy->next = virtual->next;
-		if(copy->next)
-		  copy->next->prev = copy;
+		    copy->prev = virtual->prev;
+		    if(copy->prev)
+		      copy->prev->next = copy;
+		    else
+		      fset_list = copy;
 
-		virtual = copy;
+		    copy = g_list_last(copy);
+		    copy->next = virtual->next;
+		    if(copy->next)
+		      copy->next->prev = copy;
 
-		g_list_free_1(l);
+		    virtual = copy;
+
+		    g_list_free_1(l);
+		  }
 	      }
 	  }
-      }
 
 
-      fetch_data->feature_set_ids = fset_list;
+	  fetch_data->feature_set_ids = fset_list;
 
-      (*(window_cbs_G->command))(window, window->app_data, fetch_data) ;
+	  (*(window_cbs_G->command))(window, window->app_data, fetch_data) ;
+	}
     }
 
   return ;
