@@ -773,26 +773,26 @@ static void getConfiguration(PipeServer server)
 	}
       else
 #endif
-      {
-        server->script_dir = g_get_current_dir();
-      }
-
-       /* default directory to use */
-      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
-                               ZMAPSTANZA_APP_DATA, &tmp_string))
-      {
-        server->data_dir = tmp_string;
-      }
-      else
-      {
-        server->data_dir = g_get_current_dir();
-      }
-
-      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
-                               ZMAPSTANZA_APP_CSVER, &tmp_string))
 	{
-		if(!g_ascii_strcasecmp(tmp_string,"Otter"))
-			server->is_otter = TRUE;
+	  server->script_dir = g_get_current_dir();
+	}
+
+      /* default directory to use */
+      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+				       ZMAPSTANZA_APP_DATA, &tmp_string))
+	{
+	  server->data_dir = tmp_string;
+	}
+      else
+	{
+	  server->data_dir = g_get_current_dir();
+	}
+
+      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+				       ZMAPSTANZA_APP_CSVER, &tmp_string))
+	{
+	  if(!g_ascii_strcasecmp(tmp_string,"Otter"))
+	    server->is_otter = TRUE;
 	}
 
 
@@ -1078,21 +1078,24 @@ static ZMapServerResponseType pipeGetHeader(PipeServer server)
   gsize terminator_pos = 0 ;
   GError *gff_pipe_err = NULL ;
   GError *error = NULL ;
+  gboolean empty_file ;
   gboolean done_header = FALSE ;			    /* read all the header lines */
   ZMapGFFHeaderState header_state = GFF_HEADER_NONE ;	    /* got all the ones we need ? */
 
 
-  server->result = ZMAP_SERVERRESPONSE_REQFAIL ;  // to catch empty file
+  server->result = ZMAP_SERVERRESPONSE_REQFAIL ;
 
   if (server->sequence_server)
     zMapGFFParserSetSequenceFlag(server->parser);  // reset done flag for seq else skip the data
 
   /* Read the header, needed for feature coord range. */
+  empty_file = TRUE ;
   while ((status = g_io_channel_read_line_string(server->gff_pipe, server->gff_line,
 						 &terminator_pos,
 						 &gff_pipe_err)) == G_IO_STATUS_NORMAL)
     {
-      server->result = ZMAP_SERVERRESPONSE_OK;   // now we have data default is 'OK'
+      empty_file = FALSE ;				    /* We have at least some data. */
+      server->result = ZMAP_SERVERRESPONSE_OK;		    // now we have data default is 'OK'
 
       *(server->gff_line->str + terminator_pos) = '\0' ; /* Remove terminating newline. */
 
@@ -1145,6 +1148,7 @@ static ZMapServerResponseType pipeGetHeader(PipeServer server)
 					 "%s", server->last_err_msg) ;
 		    }
 		}
+
 	      server->result = ZMAP_SERVERRESPONSE_REQFAIL ;
 	    }
 
@@ -1158,11 +1162,11 @@ static ZMapServerResponseType pipeGetHeader(PipeServer server)
   /* MH17: see RT 227185 -> good header plus no data means no data not a failure
    * so return ok
    */
-  if (header_state == GFF_HEADER_ERROR)
+  if (header_state == GFF_HEADER_ERROR || empty_file)
     {
       char *err_msg ;
 
-      if(status == G_IO_STATUS_EOF)
+      if (status == G_IO_STATUS_EOF)
       	err_msg = g_strdup_printf("EOF reached while trying to read header, at line %d",
 				  zMapGFFGetLineNumber(server->parser)) ;
       else
@@ -1179,7 +1183,7 @@ static ZMapServerResponseType pipeGetHeader(PipeServer server)
       server->result = ZMAP_SERVERRESPONSE_REQFAIL ;
     }
 
-  return(server->result) ;
+  return (server->result) ;
 }
 
 
