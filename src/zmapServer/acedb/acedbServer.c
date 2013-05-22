@@ -2210,7 +2210,7 @@ static gboolean setQuietMode(AcedbServer server)
 }
 
 
-/* Makes "msglog -msg -off" request to stop acedb outputting all info and error
+/* Makes "msglog -msg off" request to stop acedb outputting all info and error
  * messages. Returns TRUE if request ok, returns FALSE otherwise.
  *
  * (n.b. if the request was successful then there is no output from the command !)
@@ -2219,7 +2219,7 @@ static gboolean setQuietMode(AcedbServer server)
 static gboolean setMsgLogOff(AcedbServer server)
 {
   gboolean result = FALSE ;
-  char *command = "msglog -msg -off" ;
+  char *command = "msglog -msg off" ;
   char *acedb_request = NULL ;
   void *reply = NULL ;
   int reply_len = 0 ;
