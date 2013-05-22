@@ -193,6 +193,7 @@ static gboolean getSMapLength(AcedbServer server, char *obj_class, char *obj_nam
 static gboolean checkServerVersion(AcedbServer server) ;
 static gboolean findSequence(AcedbServer server, char *sequence_name) ;
 static gboolean setQuietMode(AcedbServer server) ;
+static gboolean setMsgLogOff(AcedbServer server) ;
 
 static gboolean parseTypes(AcedbServer server, GHashTable **styles_out,
 			   ParseMethodNamesFunc parse_func_in, gpointer user_data) ;
@@ -378,7 +379,7 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
 
   if ((server->last_err_status = AceConnConnect(server->connection)) == ACECONN_OK)
     {
-      if (checkServerVersion(server) && setQuietMode(server))
+      if (checkServerVersion(server) && setQuietMode(server) && setMsgLogOff(server))
 	result = ZMAP_SERVERRESPONSE_OK ;
       else
 	{
@@ -2184,6 +2185,41 @@ static gboolean setQuietMode(AcedbServer server)
 {
   gboolean result = FALSE ;
   char *command = "quiet -on" ;
+  char *acedb_request = NULL ;
+  void *reply = NULL ;
+  int reply_len = 0 ;
+
+  acedb_request =  g_strdup_printf("%s", command) ;
+
+  if ((server->last_err_status = AceConnRequest(server->connection, acedb_request,
+						&reply, &reply_len)) == ACECONN_OK)
+    {
+      result = TRUE ;
+
+      if (reply_len != 0)
+	{
+	  zMapLogWarning("Replay to \"%s\" should have been NULL but was: \"%s\"",
+			 command, (char *)reply) ;
+	  g_free(reply) ;
+	}
+    }
+
+  g_free(acedb_request) ;
+
+  return result ;
+}
+
+
+/* Makes "msglog -msg -off" request to stop acedb outputting all info and error
+ * messages. Returns TRUE if request ok, returns FALSE otherwise.
+ *
+ * (n.b. if the request was successful then there is no output from the command !)
+ *
+ */
+static gboolean setMsgLogOff(AcedbServer server)
+{
+  gboolean result = FALSE ;
+  char *command = "msglog -msg -off" ;
   char *acedb_request = NULL ;
   void *reply = NULL ;
   int reply_len = 0 ;
