@@ -437,6 +437,7 @@ void zMapGUIRaiseToTop(GtkWidget *widget);
 GtkWidget *zMapGUIFindTopLevel(GtkWidget *widget) ;
 
 void zMapGUIGetMaxWindowSize(GtkWidget *toplevel, gint *width_out, gint *height_out) ;
+void zMapGUIMaximiseWindow(GtkWidget *toplevel) ;
 
 void zMapGUIMakeMenu(char *menu_title, GList *menu_sets, GdkEventButton *button_event) ;
 void zMapGUIPopulateMenu(ZMapGUIMenuItem menu,
