@@ -250,7 +250,7 @@ gboolean zmapWindowMarkIsSet(ZMapWindowMark mark)
    */
   /* This is not a problem for MarkSetItem marks as the block_container is known before hand
    * and is therefore saved and available any time afterwards to save state. */
-//  result = (mark->mark_set && mark->block_container);
+  //  result = (mark->mark_set && mark->block_container);
 
   result = (mark->mark_set);
 
@@ -272,12 +272,12 @@ void zmapWindowMarkReset(ZMapWindowMark mark)
     {
       mark->mark_set = FALSE ;
 
-	if(mark->mark_top)
-		gtk_object_destroy(GTK_OBJECT(mark->mark_top));
-	mark->mark_top = NULL;
-	if(mark->mark_bot)
-		gtk_object_destroy(GTK_OBJECT(mark->mark_bot));
-	mark->mark_bot = NULL;
+      if(mark->mark_top)
+	gtk_object_destroy(GTK_OBJECT(mark->mark_top));
+      mark->mark_top = NULL;
+      if(mark->mark_bot)
+	gtk_object_destroy(GTK_OBJECT(mark->mark_bot));
+      mark->mark_bot = NULL;
 
       /* reset all the coords */
       mark->world_x1  = mark->world_x2 = 0.0;
@@ -572,8 +572,8 @@ gboolean zmapWindowMarkSetWorldRange(ZMapWindowMark mark,
   mark->world_x2 = world_x2 ;
   mark->world_y2 = world_y2 ;
 
-//  mark->seq_start = 0;  /* if set is from set mark from feature, if we move the mark we need to recalc this */
-//  mark->seq_end = 0;
+  //  mark->seq_start = 0;  /* if set is from set mark from feature, if we move the mark we need to recalc this */
+  //  mark->seq_end = 0;
 
   /* Now sort out the seq coords which should be inside the world coords. */
   mark->seq_start = ceil(world_y1 - mark->margin) ;
@@ -838,62 +838,62 @@ void zmapWindowMarkDestroy(ZMapWindowMark mark)
 
 static FooCanvasItem *set_mark_item(ZMapWindowMark mark, gboolean top)
 {
-	FooCanvasItem *foo = top ? mark->mark_top : mark->mark_bot;
-	int y1,y2;
-	static GQuark id_top, id_bot;
-	GQuark id;
-	static ZMapFeatureTypeStyle style = NULL;
-	ZMapFeatureBlock block;
-	char buf[128];
+  FooCanvasItem *foo = top ? mark->mark_top : mark->mark_bot;
+  int y1,y2;
+  static GQuark id_top, id_bot;
+  GQuark id;
+  static ZMapFeatureTypeStyle style = NULL;
+  ZMapFeatureBlock block;
+  char buf[128];
 
-      zmapWindowContainerGetFeatureAny(ZMAP_CONTAINER_GROUP(mark->block_container), (ZMapFeatureAny *)&block) ;
+  zmapWindowContainerGetFeatureAny(ZMAP_CONTAINER_GROUP(mark->block_container), (ZMapFeatureAny *)&block) ;
 
-	sprintf(buf,"mark_top_%p", mark->window->canvas);
-	id_top =  g_quark_from_string(buf);
-	sprintf(buf,"mark_bot_%p", mark->window->canvas);
-	id_bot =  g_quark_from_string(buf);
+  sprintf(buf,"mark_top_%p", mark->window->canvas);
+  id_top =  g_quark_from_string(buf);
+  sprintf(buf,"mark_bot_%p", mark->window->canvas);
+  id_bot =  g_quark_from_string(buf);
 
-	if(!style)
-	{
-		style = zMapStyleCreate("mark", "mark");
+  if(!style)
+    {
+      style = zMapStyleCreate("mark", "mark");
 
-		g_object_set(G_OBJECT(style),
-		       ZMAPSTYLE_PROPERTY_MODE, ZMAPSTYLE_MODE_PLAIN,
-		       ZMAPSTYLE_PROPERTY_COLOURS, "normal draw cyan; normal border cyan",
-		       NULL);
-		zMapStyleSetDisplayable(style, TRUE);	/* (always drawable) */
-	}
+      g_object_set(G_OBJECT(style),
+		   ZMAPSTYLE_PROPERTY_MODE, ZMAPSTYLE_MODE_PLAIN,
+		   ZMAPSTYLE_PROPERTY_COLOURS, "normal draw cyan; normal border cyan",
+		   NULL);
+      zMapStyleSetDisplayable(style, TRUE);	/* (always drawable) */
+    }
 
-	if(top)
-	{
-		y1 = block->block_to_sequence.block.x1;
-		y2 = mark->seq_start - 1;
-		if(y2 < y1)
-			y2 = y1;
-		id = id_top;
-	}
-	else
-	{
-		y2 = block->block_to_sequence.block.x2;
-		y1 = mark->seq_end + 1;
-		if(y1 > y2)
-			y1 = y2;
-		id = id_bot;
-	}
+  if(top)
+    {
+      y1 = block->block_to_sequence.block.x1;
+      y2 = mark->seq_start - 1;
+      if(y2 < y1)
+	y2 = y1;
+      id = id_top;
+    }
+  else
+    {
+      y2 = block->block_to_sequence.block.x2;
+      y1 = mark->seq_end + 1;
+      if(y1 > y2)
+	y1 = y2;
+      id = id_bot;
+    }
 
-	if(!foo)
-	{
-		foo = (FooCanvasItem *) zMapWindowCanvasItemFeaturesetGetFeaturesetItem((FooCanvasGroup *) mark->block_container, id, y1, y2, style, ZMAPSTRAND_NONE, ZMAPFRAME_NONE, 0, ZMAP_CANVAS_LAYER_BLOCK_MARK);
-	}
+  if(!foo)
+    {
+      foo = (FooCanvasItem *) zMapWindowCanvasItemFeaturesetGetFeaturesetItem((FooCanvasGroup *) mark->block_container, id, y1, y2, style, ZMAPSTRAND_NONE, ZMAPFRAME_NONE, 0, ZMAP_CANVAS_LAYER_BLOCK_MARK);
+    }
 
-	zMapWindowCanvasFeaturesetSetSequence((ZMapWindowFeaturesetItem) foo, y1, y2);
-	zMapWindowCanvasFeaturesetSetBackground(foo, &mark->colour, NULL );
-	zMapWindowCanvasFeaturesetSetStipple((ZMapWindowFeaturesetItem) foo, mark->stipple);
+  zMapWindowCanvasFeaturesetSetSequence((ZMapWindowFeaturesetItem) foo, y1, y2);
+  zMapWindowCanvasFeaturesetSetBackground(foo, &mark->colour, NULL );
+  zMapWindowCanvasFeaturesetSetStipple((ZMapWindowFeaturesetItem) foo, mark->stipple);
 
-	foo_canvas_item_request_update(foo);
-	foo_canvas_item_show(foo);
+  foo_canvas_item_request_update(foo);
+  foo_canvas_item_show(foo);
 
-	return foo;
+  return foo;
 }
 
 
@@ -911,38 +911,38 @@ static void markRange(ZMapWindowMark mark)
     mark->block_container = getBlock(mark->window, mark->world_y1, mark->world_y2) ;
 
   if(mark->block_container)
-  {
-	  /* mh17: block_container can be null in whiich can block will be invalid */
-	zmapWindowContainerGetFeatureAny(ZMAP_CONTAINER_GROUP(mark->block_container), (ZMapFeatureAny *)&block) ;
-  }
+    {
+      /* mh17: block_container can be null in whiich can block will be invalid */
+      zmapWindowContainerGetFeatureAny(ZMAP_CONTAINER_GROUP(mark->block_container), (ZMapFeatureAny *)&block) ;
+    }
   if(block)
-  {
-	block_y1 = block->block_to_sequence.block.x1 ;
-	block_y2 = block->block_to_sequence.block.x2 ;
+    {
+      block_y1 = block->block_to_sequence.block.x1 ;
+      block_y2 = block->block_to_sequence.block.x2 ;
 
 
-	/* This seems wierd but it only really happens when we get marks very close to the end of blocks
-	* and it's because items can be slightly bigger than blocks because of the thickness of their
-	* lines and foocanvas does not pick this up. So by reversing coords we can calculate these
-	* marks zones correctly at the very ends of the blocks. */
-	if (tmp_y1 < block_y1)
+      /* This seems wierd but it only really happens when we get marks very close to the end of blocks
+       * and it's because items can be slightly bigger than blocks because of the thickness of their
+       * lines and foocanvas does not pick this up. So by reversing coords we can calculate these
+       * marks zones correctly at the very ends of the blocks. */
+      if (tmp_y1 < block_y1)
 	{
-		double tmp ;
+	  double tmp ;
 
-		tmp = tmp_y1 ;
-		tmp_y1 = block_y1 ;
-		block_y1 = tmp ;
+	  tmp = tmp_y1 ;
+	  tmp_y1 = block_y1 ;
+	  block_y1 = tmp ;
 	}
 
-	if (block_y2 < tmp_y2)
+      if (block_y2 < tmp_y2)
 	{
-		double tmp ;
+	  double tmp ;
 
-		tmp = tmp_y2 ;
-		tmp_y2 = block_y2 ;
-		block_y2 = tmp ;
+	  tmp = tmp_y2 ;
+	  tmp_y2 = block_y2 ;
+	  block_y2 = tmp ;
 	}
-  }
+    }
   mark->world_y1 = tmp_y1;
   mark->world_y2 = tmp_y2;
   mark->mark_set = TRUE ;
@@ -965,7 +965,7 @@ static ZMapWindowContainerBlock getBlock(ZMapWindow window, double world_y1, dou
   ZMapWindowContainerBlock block = NULL ;
   GetBlockStruct get_block_data = {NULL} ;
 
- #if TEST_BLOCK
+#if TEST_BLOCK
   get_block_data.window = window ;
   get_block_data.world_y1 = world_y1 ;
   get_block_data.world_y2 = world_y2 ;
@@ -992,14 +992,14 @@ static void get_block_cb(ZMapWindowContainerGroup container, FooCanvasPoints *po
 
       GetBlock get_block_data = (GetBlock)user_data ;
 #if 0
-	ZMapFeatureBlock b;
+      ZMapFeatureBlock b;
 
-	b = (ZMapFeatureBlock) container->feature_any;
+      b = (ZMapFeatureBlock) container->feature_any;
 
 
-	/* this is a bit pedantic, we only have one block */
+      /* this is a bit pedantic, we only have one block */
 
-	if(get_block_data->world_x1 < block->block_to_sequence.block.x2 && get_block_data->world_x2 > block->block_to_sequence.block.x1)
+      if(get_block_data->world_x1 < block->block_to_sequence.block.x2 && get_block_data->world_x2 > block->block_to_sequence.block.x1)
 #endif
 
 	get_block_data->block = block ;
