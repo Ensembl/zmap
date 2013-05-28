@@ -321,12 +321,7 @@ show-when-empty=true\n\
 [style-hand_built]\n\
 description=default column for hand-built features\n\
 parent-style=transcript\n\
-width=20\n\
-\n\
-[style-hand_built_column]\n\
-show-when-empty=false\n\
-colours=normal fill #ddeeff ; selected fill #eeffcc\n\
-width=20\n\
+width=6\n\
 \n\
 [style-scratchcolumn]\n\
 show-when-empty=true\n\
