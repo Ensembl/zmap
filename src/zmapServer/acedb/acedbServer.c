@@ -2187,9 +2187,9 @@ static gboolean setQuietMode(AcedbServer server)
     {
       result = TRUE ;
 
-      if (reply_len != 0)
+      if (reply_len != 0 && reply && *reply)
 	{
-	  zMapLogWarning("Replay to \"%s\" should have been NULL but was: \"%s\"",
+	  zMapLogWarning("Reply to \"%s\" should have been NULL but was: \"%s\"",
 			 command, (char *)reply) ;
 	  g_free(reply) ;
 	}
