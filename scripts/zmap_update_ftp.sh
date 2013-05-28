@@ -35,13 +35,11 @@ msg_prefix="(`basename $0` on `hostname`)"
 
 repo_name=zmap                           		     # repository name
 website_svn_subdir=zmap_web                          # subdirectory of home_dir that contains the website svn repositories
-# NOTE this is initialised manually via:
-# cd ~zmap/BUILD_CHECKOUT
-# svn co svn+ssh://web-svn.internal.sanger.ac.uk/repos/svn/www-sanger-ac-uk/trunk/htdocs/resources/software/zmap zmap_web zmap_web
-# we assume they are not edited by hand and therefoere we won't get merge conflicts
+# NOTE the svn repository was initialised manually via the following commands. This should not need doing again.
+#   cd ~zmap/BUILD_CHECKOUT
+#   websvn co svn+ssh://www-sanger-ac-uk@web-wwwsvn.internal.sanger.ac.uk/repos/svn/sites/www-sanger-ac-uk/trunk/htdocs/resources/software/zmap zmap_web 
+# We assume that files in the repository are not edited by hand and therefore we won't get merge conflicts
 
-#intweb_root=/nfs/WWWdev/INTWEB_docs/htdocs/Software  # root directory for intweb docs
-#intweb_source_docs_dir=source_code_docs              # subdirectory on the intweb where the source docs live
 
 ########################### subroutines ###################################
 
@@ -268,12 +266,12 @@ check_status "Error updating $inc_file"
 
 # Commit the changes to svn
 cd $website_svn_dir
-svn_status=`svn up`
+svn_status=`websvn up`
 echo "$msg_prefix SVN status: $svn_status"
 
-svn_status=`svn st`
+svn_status=`websvn st`
 
-result=`svn ci -m "Updated link to $inc_file_name build." $inc_file`
+result=`websvn ci -m "Updated link to $inc_file_name build." $inc_file`
 check_status "Error committing changes for $inc_file; website will not be updated"
 
 # Publish the changes
@@ -285,7 +283,6 @@ echo "$msg_prefix Pushing website changes to live site"
 result=`/software/www/bin/publish -m "Updated link to $inc_file_name build." $inc_file`
 check_status "Error pushing website changes to live website"
 
-# (intweb documents removed)
 
 
 print_with_dividers "Update of website completed successfully..."
