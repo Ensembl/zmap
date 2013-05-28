@@ -77,6 +77,7 @@ static void handleZMapRequestsCB(gpointer caller_data,
 static void requestblockIfActive(void) ;
 static void requestSetActive(void) ;
 static void requestSetInActive(void) ;
+static gboolean requestIsActive(void) ;
 
 static void setDebugLevel(void) ;
 
@@ -133,8 +134,11 @@ gboolean zmapAppRemoteControlCreate(ZMapAppContext app_context, char *peer_name,
 
       remote->remote_controller = remote_control ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       /* set no timeout for now... */
       zMapRemoteControlSetTimeout(remote->remote_controller, 0) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
       /* Only set debug from cmdline the first time around otherwise it overrides what
@@ -280,13 +284,16 @@ static void requestSetInActive(void)
 {
   is_active_G = FALSE ;
 
-  zMapDebugPrint(is_active_debug_G, "%s", "Unsetting Block: Request Inactive") ;
+  zMapDebugPrint(is_active_debug_G, "%s", "Setting Block: Request InActive") ;
 
   return ;
 }
 
 
-
+static gboolean requestIsActive(void)
+{
+  return is_active_G ;
+}
 
 
 
@@ -423,10 +430,14 @@ static void errorHandlerCB(ZMapRemoteControl remote_control,
   ZMapAppContext app_context = (ZMapAppContext)user_data ;
 
 
-  /* ok...what do we need to do here....... */
+  /* Unblock if we are blocked. */
+  if (requestIsActive())
+    requestSetInActive() ;
 
-
-  /* Probably we need to call the level that made the original command request ?? */
+  /* Probably we need to call the level that made the original command request ??
+   * Do we have an error handler for each level...need to do this....
+   *  */
+  
 
   /* and go back to waiting for a request...... */
   if (!zMapRemoteControlReceiveWaitForRequest(app_context->remote_control->remote_controller))

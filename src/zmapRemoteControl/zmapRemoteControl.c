@@ -279,11 +279,11 @@ ZMapRemoteControl zMapRemoteControlCreate(char *app_id,
       remote_control->request_id = g_string_new("") ;
 
       /* Set a default timeout of 0.5 seconds, probably reasonable. */
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       remote_control->timeout_ms = DEFAULT_TIMEOUT ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       remote_control->timeout_ms = NULL_TIMEOUT ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
       remote_control->app_error_func = error_func ;
       remote_control->app_error_func_data = error_func_data ;
@@ -730,6 +730,9 @@ char *zmapRemoteControlMakeReqID(ZMapRemoteControl remote_control)
   return id ;
 }
 
+
+/* Autogenerate function to return string version of enum. */
+ZMAP_ENUM_AS_EXACT_STRING_FUNC(zMapRemoteControlRCType2ExactStr, ZMapRemoteControlRCType, ZMAP_REMOTECONTROL_RC_LIST) ;
 
 
 
@@ -1859,16 +1862,28 @@ static void errorHandler(ZMapRemoteControl remote_control,
 			 const char *file_name, const char *func_name,
 			 ZMapRemoteControlRCType error_rc, char *format_str, ...)
 {
-  va_list args ;
+  va_list args1, args2 ;
+  int bytes_printed ;
+  char *err_msg = NULL ;
+  char *full_err_msg = NULL ;
 
-  /* pass error_rc to log handler ???? should do really.... */
 
   /* Log the error, must be done first so current state etc. is recorded in log message. */
-  va_start(args, format_str) ;
+  va_start(args1, format_str) ;
+  G_VA_COPY(args2, args1) ;
 
-  logMsg(remote_control, file_name, func_name, format_str, args) ;
+  /* Should have a common message...need rc for failure too.... */
+  logMsg(remote_control, file_name, func_name, format_str, args1) ;
 
-  va_end(args) ;
+  va_end(args1) ;
+
+  bytes_printed = g_vasprintf(&err_msg, format_str, args2) ; /* should check bytes.... */
+
+  va_end(args2) ;
+
+
+  full_err_msg = g_strdup_printf("Error code: %s, error: %s", zMapRemoteControlRCType2ExactStr(error_rc),
+				 err_msg) ;
 
 
   /* Reset remote control to idle before calling user error handler, user may want to go
@@ -1880,13 +1895,15 @@ static void errorHandler(ZMapRemoteControl remote_control,
 
   REMOTELOGMSG(remote_control, "%s", "About to call apps ZMapRemoteControlErrorHandlerFunc().") ;
 
-  /* bother we need the error string from above to pass to the app..... */
   /* we need to call the apps error handler func here..... */
   (remote_control->app_error_func)(remote_control,
-				   error_rc, "dummy",
+				   error_rc, full_err_msg,
 				   remote_control->app_error_func_data) ;
 
   REMOTELOGMSG(remote_control, "%s", "Back from apps ZMapRemoteControlErrorHandlerFunc().") ;
+
+  g_free(err_msg) ;
+  g_free(full_err_msg) ;
 
 
   return ;

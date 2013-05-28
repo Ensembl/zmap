@@ -652,6 +652,7 @@ typedef struct
 typedef struct ZMapFeatureStruct_
 {
   /* FeatureAny section. */
+
 #ifdef FEATURES_NEED_MAGIC
   ZMapMagic magic;
 #endif

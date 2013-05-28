@@ -163,4 +163,6 @@ gboolean zMapRemoteControlUnSetErrorCB(ZMapRemoteControl remote_control) ;
 gboolean zMapRemoteControlDestroy(ZMapRemoteControl remote_control) ;
 
 
+ZMAP_ENUM_AS_EXACT_STRING_DEC(zMapRemoteControlRCType2ExactStr, ZMapRemoteControlRCType) ;
+
 #endif /* ZMAP_REMOTE_CONTROL_H */

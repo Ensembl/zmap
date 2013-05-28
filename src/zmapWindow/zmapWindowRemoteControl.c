@@ -185,11 +185,9 @@ gboolean zMapWindowProcessRemoteRequest(ZMapWindow window,
 
 
 
-/* MOVED FROM ZMAPWINDOW.C......FIX THIS UP TO WORK WITH NEW REMOTE CONTROL..... */
+/* MOVED FROM ZMAPWINDOW.C......BEING FIXED THIS UP TO WORK WITH NEW REMOTE CONTROL.....
+ * NEED TO BROUGHT IN LINE WITH OTHER REMOTE CONTROL HANDLING SECTIONS OF CODE... */
 
-
-/* ARE THESE CALLED ANY MORE.....YES....NEED TO BE CONVERTED TO RUN LIKE ONES FOR VIEW
- * ETC. TO BRING WINDOW INTO LINE WITH OTHER REMOTE CONTROL HANDLING SECTIONS OF CODE.... */
 
 void zmapWindowUpdateXRemoteData(ZMapWindow window, ZMapFeatureAny feature_any,
 				 char *action, FooCanvasItem *real_item)
@@ -216,101 +214,69 @@ void zmapWindowUpdateXRemoteDataFull(ZMapWindow window, ZMapFeatureAny feature_a
   ZMapFeatureSetStruct feature_set = {0} ;
   ZMapFeatureSet multi_set ;
   ZMapFeature feature_copy ;
+  int chr_bp ;
+
+  /* We should only ever be called with a feature, not a set or anything else. */
+  zMapAssert(feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURE) ;
 
 
-  /* HACKY CODE....WHEN DO WE GET CALLED AS A FEATURE SET...SHOULDN'T HAPPEN.....
-   * 
-   * CHECK THIS OUT....
-   *  */
+  /* OK...IN HERE IS THE PLACE FOR THE HACK FOR COORDS....NEED TO COPY FEATURE
+   * AND INSERT NEW CHROMOSOME COORDS...IF WE CAN DO THIS FOR THIS THEN WE
+   * CAN HANDLE VIEW FEATURE STUFF IN SAME WAY...... */
+  feature_copy = (ZMapFeature)zMapFeatureAnyCopy(feature_any) ;
+  feature_copy->parent = feature_any->parent ;	    /* Copy does not do parents so we fill in. */
 
 
-  /* hack to add feature stuff....... */
-
-  switch(feature_any->struct_type)
+  /* REVCOMP COORD HACK......THIS HACK IS BECAUSE OUR COORD SYSTEM IS MUCKED UP FOR
+   * REVCOMP'D FEATURES..... */
+  /* Convert coords */
+  if (window->revcomped_features)
     {
-    case ZMAPFEATURE_STRUCT_FEATURE:
-      {
-	int chr_bp ;
+      /* remap coords to forward strand range and also swop
+       * them as they get reversed in revcomping.... */
+      chr_bp = feature_copy->x1 ;
+      chr_bp = zmapWindowWorldToSequenceForward(window, chr_bp) ;
+      feature_copy->x1 = chr_bp ;
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	/* I DONT' KNOW WHAT THIS COMMENT MEANS AND WHAT IT'S IMPLICATIONS ARE.... */
+      chr_bp = feature_copy->x2 ;
+      chr_bp = zmapWindowWorldToSequenceForward(window, chr_bp) ;
+      feature_copy->x2 = chr_bp ;
 
-	/* This is a quick HACK! */
+      zMapUtilsSwop(int, feature_copy->x1, feature_copy->x2) ;
 
-	feature = (ZMapFeature)feature_any;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-	/* OK...IN HERE IS THE PLACE FOR THE HACK FOR COORDS....NEED TO COPY FEATURE
-	 * AND INSERT NEW CHROMOSOME COORDS...IF WE CAN DO THIS FOR THIS THEN WE
-	 * CAN HANDLE VIEW FEATURE STUFF IN SAME WAY...... */
-	feature_copy = (ZMapFeature)zMapFeatureAnyCopy(feature_any) ;
-	feature_copy->parent = feature_any->parent ;	    /* Copy does not do parents so we fill in. */
-
-
-	/* REVCOMP COORD HACK......THIS HACK IS BECAUSE OUR COORD SYSTEM IS MUCKED UP FOR
-	 * REVCOMP'D FEATURES..... */
-	/* Convert coords */
-	if (window->revcomped_features)
-	  {
-	    /* remap coords to forward strand range and also swop
-	     * them as they get reversed in revcomping.... */
-	    chr_bp = feature_copy->x1 ;
-	    chr_bp = zmapWindowWorldToSequenceForward(window, chr_bp) ;
-	    feature_copy->x1 = chr_bp ;
-
-
-	    chr_bp = feature_copy->x2 ;
-	    chr_bp = zmapWindowWorldToSequenceForward(window, chr_bp) ;
-	    feature_copy->x2 = chr_bp ;
-
-	    zMapUtilsSwop(int, feature_copy->x1, feature_copy->x2) ;
-
-	    if (feature_copy->strand == ZMAPSTRAND_FORWARD)
-	      feature_copy->strand = ZMAPSTRAND_REVERSE ;
-	    else
-	      feature_copy->strand = ZMAPSTRAND_FORWARD ;
+      if (feature_copy->strand == ZMAPSTRAND_FORWARD)
+	feature_copy->strand = ZMAPSTRAND_REVERSE ;
+      else
+	feature_copy->strand = ZMAPSTRAND_FORWARD ;
 	      
 
-	    if (ZMAPFEATURE_IS_TRANSCRIPT(feature_copy))
-	      {
-		if (!zMapFeatureTranscriptChildForeach(feature_copy, ZMAPFEATURE_SUBPART_EXON,
-						       revcompTransChildCoordsCB, window)
-		    || !zMapFeatureTranscriptChildForeach(feature_copy, ZMAPFEATURE_SUBPART_INTRON,
-							  revcompTransChildCoordsCB, window))
-		  zMapLogCritical("RemoteControl error revcomping coords for transcript %s",
-				  zMapFeatureName((ZMapFeatureAny)(feature_copy))) ;
+      if (ZMAPFEATURE_IS_TRANSCRIPT(feature_copy))
+	{
+	  if (!zMapFeatureTranscriptChildForeach(feature_copy, ZMAPFEATURE_SUBPART_EXON,
+						 revcompTransChildCoordsCB, window)
+	      || !zMapFeatureTranscriptChildForeach(feature_copy, ZMAPFEATURE_SUBPART_INTRON,
+						    revcompTransChildCoordsCB, window))
+	    zMapLogCritical("RemoteControl error revcomping coords for transcript %s",
+			    zMapFeatureName((ZMapFeatureAny)(feature_copy))) ;
 
-		zMapFeatureTranscriptSortExons(feature_copy) ;
-	      }
-	  }
-
-      /* Streuth...why doesn't this use a 'creator' function...... */
-#ifdef FEATURES_NEED_MAGIC
-      feature_set.magic       = feature_copy->magic ;
-#endif
-      feature_set.struct_type = ZMAPFEATURE_STRUCT_FEATURESET;
-      feature_set.parent      = feature_copy->parent->parent;
-      feature_set.unique_id   = feature_copy->parent->unique_id;
-      feature_set.original_id = feature_copy->parent->original_id;
-
-      feature_set.features = g_hash_table_new(NULL, NULL) ;
-      g_hash_table_insert(feature_set.features, GINT_TO_POINTER(feature_copy->unique_id), feature_copy) ;
-
-      multi_set = &feature_set ;
-      break;
-      }
-
-    case ZMAPFEATURE_STRUCT_FEATURESET:
-      {
-	multi_set = (ZMapFeatureSet)feature_any ;
-	break;
-      }
-
-    default:
-      break;
+	  zMapFeatureTranscriptSortExons(feature_copy) ;
+	}
     }
+
+  /* Streuth...why doesn't this use a 'creator' function...... */
+#ifdef FEATURES_NEED_MAGIC
+  feature_set.magic       = feature_copy->magic ;
+#endif
+  feature_set.struct_type = ZMAPFEATURE_STRUCT_FEATURESET;
+  feature_set.parent      = feature_copy->parent->parent;
+  feature_set.unique_id   = feature_copy->parent->unique_id;
+  feature_set.original_id = feature_copy->parent->original_id;
+
+  feature_set.features = g_hash_table_new(NULL, NULL) ;
+  g_hash_table_insert(feature_set.features, GINT_TO_POINTER(feature_copy->unique_id), feature_copy) ;
+
+  multi_set = &feature_set ;
 
 
   /* I don't get this at all... */
