@@ -40,6 +40,7 @@ website_svn_subdir=zmap_web                          # subdirectory of home_dir 
 #   websvn co svn+ssh://www-sanger-ac-uk@web-wwwsvn.internal.sanger.ac.uk/repos/svn/sites/www-sanger-ac-uk/trunk/htdocs/resources/software/zmap zmap_web 
 # We assume that files in the repository are not edited by hand and therefore we won't get merge conflicts
 
+alias websvn='SSH_AUTH_SOCK="" /usr/bin/svn --config-option config:tunnels:ssh=ssh\ -i\ ${HOME}/.ssh/pagesmith/svn-ssh'
 
 ########################### subroutines ###################################
 
