@@ -438,7 +438,7 @@ typedef struct ZMapFeatureAlignmentStruct_
   GQuark unique_id ;					    /* Unique id this alignment. */
   GQuark original_id ;					    /* Original id of this sequence. */
 
-  GHashTable *blocks ;					    /* A set of ZMapFeatureStruct. */
+  GHashTable *blocks ;					    /* A set of ZMapFeatureBlockStruct. */
 
   /* Alignment only data should go here. */
 

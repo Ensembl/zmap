@@ -41,6 +41,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <gtk/gtk.h>
+#include <glib/gprintf.h>
 
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapCmdLineArgs.h>
@@ -136,7 +137,7 @@
 enum
   {
     NULL_TIMEOUT = 0,					    /* Turns timeouts off. */
-    DEFAULT_TIMEOUT = 500,				    /* Standard timeout, needs testing. */
+    DEFAULT_TIMEOUT = 2000,				    /* Standard timeout, needs testing. */
     DEBUG_TIMEOUT = 3600000				    /* Debug timeout of an hour.... */
   } ;
 
@@ -278,12 +279,8 @@ ZMapRemoteControl zMapRemoteControlCreate(char *app_id,
       remote_control->request_id_num = 0 ;
       remote_control->request_id = g_string_new("") ;
 
-      /* Set a default timeout of 0.5 seconds, probably reasonable. */
+      /* Set default timeout. */
       remote_control->timeout_ms = DEFAULT_TIMEOUT ;
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      remote_control->timeout_ms = NULL_TIMEOUT ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
       remote_control->app_error_func = error_func ;
       remote_control->app_error_func_data = error_func_data ;

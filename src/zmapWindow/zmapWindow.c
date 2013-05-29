@@ -3798,7 +3798,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 
 	    removeRuler(window->mark_guide_line, NULL);
 
-	    if(in_window && mark_updater.mark_y1 < mark_updater.mark_y2)
+	    if (in_window && mark_updater.mark_y1 < mark_updater.mark_y2)
 	      {
 		zmapWindowClampedAtStartEnd(window, &(mark_updater.mark_y1), &(mark_updater.mark_y2));
 		zMapWindowStateRecord(window);

@@ -170,8 +170,8 @@ void zMapFeatureReverseComplement(ZMapFeatureContext context, ZMapFeature featur
 
 void zMapFeatureReverseComplementCoords(ZMapFeatureBlock block, int *start_inout, int *end_inout)
 {
+  ZMapFeatureContext context = (ZMapFeatureContext)(block->parent->parent) ;
   int start, end, my_start, my_end ;
-	ZMapFeatureContext context = (ZMapFeatureContext) block->parent->parent;
 
   start = context->parent_span.x1 ;
   end   = context->parent_span.x2 ;
@@ -191,7 +191,7 @@ void zMapFeatureReverseComplementCoords(ZMapFeatureBlock block, int *start_inout
 /* provide access to private macro, NB start is not used but defined by the macro */
 int zmapFeatureRevCompCoord(int coord, int start, int end)
 {
-      return(zmapFeatureInvert(coord,start,end));
+  return(zmapFeatureInvert(coord,start,end));
 }
 
 
