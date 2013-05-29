@@ -83,12 +83,12 @@ typedef struct _ZMapWindowMarkStruct
   /* Bases _wholly_ contained in mark, this is the definitive range of sequence coords that are
    * within the marked range. If set from an item then they are -/+ margin sequence coords
    * either side of the feature to ensure mark does not clip feature. */
-  int             seq_start ;				    /* start of the mark in seq coords (of block)  */
-  int             seq_end   ;				    /* end of the mark in seq coords (of block)  */
+  int seq_start ;					    /* start of the mark in seq coords (of block)  */
+  int seq_end   ;					    /* end of the mark in seq coords (of block)  */
 
-  int			prev_start, prev_end;		/* where it used to be */
+  int			prev_start, prev_end;		    /* where it used to be */
 
-  /* World coords of the mark, these are used to draw the mark, they should be graphical
+  /* World coords of the mark, these are used to draw the mark, they should be for graphical
    * use only, e.g. is an canvas item within the mark ? etc. They are ALWAYS derived
    * directly from the sequence start/end coords */
   double          world_x1 ;
@@ -96,10 +96,11 @@ typedef struct _ZMapWindowMarkStruct
   double          world_x2 ;
   double          world_y2 ;
 
-  GdkColor        colour ;				    /* colour used for the mark  */
-  GdkBitmap      *stipple ;				    /* stipple used for the mark  */
 
-  FooCanvasItem *mark_top, *mark_bot;
+  /* The stippled areas above and below the mark. */
+  GdkColor colour ;					    /* colour */
+  GdkBitmap *stipple ;					    /* stipple pattern */
+  FooCanvasItem *mark_top, *mark_bot ;
 
 
 } ZMapWindowMarkStruct ;
@@ -483,6 +484,7 @@ gboolean zmapWindowMarkSetItem(ZMapWindowMark mark, FooCanvasItem *item)
   else
     {
       ZMapFeatureBlock block ;
+      double draw_start, draw_end ;
 
       zmapWindowMarkReset(mark) ;
 
@@ -500,6 +502,12 @@ gboolean zmapWindowMarkSetItem(ZMapWindowMark mark, FooCanvasItem *item)
        * so we need to clip to the block. */
       mark->seq_start = feature->x1 - mark->margin ;
       mark->seq_end = feature->x2 + mark->margin ;
+
+      draw_start = (double)(mark->seq_start) ;
+      draw_end = (double)(mark->seq_end) ;
+      zmapWindowSeq2CanExt(&draw_start, &draw_end) ;
+      mark->seq_start =  (int)draw_start ;
+      mark->seq_end = (int)draw_end ;
 
 
       if (mark->seq_start < block->block_to_sequence.block.x1)
@@ -844,14 +852,17 @@ static FooCanvasItem *set_mark_item(ZMapWindowMark mark, gboolean top)
   GQuark id;
   static ZMapFeatureTypeStyle style = NULL;
   ZMapFeatureBlock block;
-  char buf[128];
+  char *tmp_name ;
 
   zmapWindowContainerGetFeatureAny(ZMAP_CONTAINER_GROUP(mark->block_container), (ZMapFeatureAny *)&block) ;
 
-  sprintf(buf,"mark_top_%p", mark->window->canvas);
-  id_top =  g_quark_from_string(buf);
-  sprintf(buf,"mark_bot_%p", mark->window->canvas);
-  id_bot =  g_quark_from_string(buf);
+  tmp_name = g_strdup_printf("mark_top_%p", mark->window->canvas) ;
+  id_top =  g_quark_from_string(tmp_name) ;
+  g_free(tmp_name) ;
+
+  tmp_name = g_strdup_printf("mark_bot_%p", mark->window->canvas) ;
+  id_bot = g_quark_from_string(tmp_name) ;
+  g_free(tmp_name) ;
 
   if(!style)
     {
