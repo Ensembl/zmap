@@ -41,6 +41,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <gtk/gtk.h>
+#include <glib/gprintf.h>
 
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapCmdLineArgs.h>
