@@ -137,7 +137,7 @@
 enum
   {
     NULL_TIMEOUT = 0,					    /* Turns timeouts off. */
-    DEFAULT_TIMEOUT = 2000,				    /* Standard timeout, needs testing. */
+    DEFAULT_TIMEOUT = 10000,				    /* Standard timeout, needs testing. */
     DEBUG_TIMEOUT = 3600000				    /* Debug timeout of an hour.... */
   } ;
 
