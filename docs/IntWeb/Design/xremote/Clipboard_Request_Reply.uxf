@@ -96,10 +96,12 @@
       <x>152</x>
       <y>256</y>
       <w>272</w>
-      <h>56</h>
+      <h>74</h>
     </coordinates>
     <panel_attributes>lt=&lt;
-Take Ownership Peer2 Clipboard </panel_attributes>
+Take Ownership Peer2 Clipboard
+"REQUEST"
+fg=#986018</panel_attributes>
     <additional_attributes>256;40;24;40</additional_attributes>
   </element>
   <element>
@@ -166,10 +168,12 @@ Lose Ownership event</panel_attributes>
       <x>400</x>
       <y>288</y>
       <w>272</w>
-      <h>56</h>
+      <h>74</h>
     </coordinates>
     <panel_attributes>lt=&lt;
-Request Peer2 Clipboard contents</panel_attributes>
+Request Peer2 Clipboard contents
+Read request
+fg=#00a040</panel_attributes>
     <additional_attributes>24;40;256;40</additional_attributes>
   </element>
   <element>
@@ -181,7 +185,8 @@ Request Peer2 Clipboard contents</panel_attributes>
       <h>56</h>
     </coordinates>
     <panel_attributes>lt=&lt;
-Clipboard "request contents" event</panel_attributes>
+Clipboard "request contents" event
+fg=#205000</panel_attributes>
     <additional_attributes>24;40;256;40</additional_attributes>
   </element>
   <element>
@@ -193,7 +198,8 @@ Clipboard "request contents" event</panel_attributes>
       <h>56</h>
     </coordinates>
     <panel_attributes>lt=&lt;
-Clipboard "contents received" event</panel_attributes>
+Clipboard "contents received" event
+fg=#205000</panel_attributes>
     <additional_attributes>256;40;24;40</additional_attributes>
   </element>
   <element>
@@ -202,10 +208,12 @@ Clipboard "contents received" event</panel_attributes>
       <x>400</x>
       <y>360</y>
       <w>272</w>
-      <h>56</h>
+      <h>74</h>
     </coordinates>
     <panel_attributes>lt=&lt;
-Retake ownership of Peer2 clipboard</panel_attributes>
+Retake ownership of Peer2 clipboard
+"REQUEST ACK"
+fg=#986018</panel_attributes>
     <additional_attributes>24;40;256;40</additional_attributes>
   </element>
   <element>
@@ -295,7 +303,8 @@ Clipboard "lose ownership" event</panel_attributes>
       <h>56</h>
     </coordinates>
     <panel_attributes>lt=&lt;
-Put Request on Peer2 clipboard</panel_attributes>
+Put Request on Peer2 clipboard
+fg=#205000</panel_attributes>
     <additional_attributes>256;40;24;40</additional_attributes>
   </element>
   <element>
@@ -387,10 +396,12 @@ Lose Ownership Peer1 Clipboard</panel_attributes>
       <x>152</x>
       <y>392</y>
       <w>272</w>
-      <h>56</h>
+      <h>74</h>
     </coordinates>
     <panel_attributes>lt=&lt;
-Retake Ownership Peer2 clipboard</panel_attributes>
+Retake Ownership Peer2 clipboard
+"REPLY WAIT"
+fg=#986018</panel_attributes>
     <additional_attributes>256;40;24;40</additional_attributes>
   </element>
   <element>
@@ -457,10 +468,12 @@ return reply</panel_attributes>
       <x>400</x>
       <y>576</y>
       <w>272</w>
-      <h>56</h>
+      <h>74</h>
     </coordinates>
     <panel_attributes>lt=&lt;
-Signal Reply ready on Peer2 Clipboard </panel_attributes>
+Signal Reply ready on Peer2 Clipboard
+"REPLY"
+fg=#986018</panel_attributes>
     <additional_attributes>24;40;256;40</additional_attributes>
   </element>
   <element>
@@ -492,10 +505,12 @@ Clipboard "lose ownership" event</panel_attributes>
       <x>152</x>
       <y>616</y>
       <w>272</w>
-      <h>56</h>
+      <h>74</h>
     </coordinates>
     <panel_attributes>lt=&lt;
-Request Peer2 Clipboard contents</panel_attributes>
+Request Peer2 Clipboard contents
+Read reply
+fg=#00a040</panel_attributes>
     <additional_attributes>256;40;24;40</additional_attributes>
   </element>
   <element>
@@ -518,7 +533,8 @@ Request Peer2 Clipboard contents</panel_attributes>
       <h>56</h>
     </coordinates>
     <panel_attributes>lt=&lt;
-Clipboard "request contents" event</panel_attributes>
+Clipboard "request contents" event
+fg=#205000</panel_attributes>
     <additional_attributes>256;40;24;40</additional_attributes>
   </element>
   <element>
@@ -530,7 +546,8 @@ Clipboard "request contents" event</panel_attributes>
       <h>56</h>
     </coordinates>
     <panel_attributes>lt=&lt;
-Put Request on Peer2 clipboard</panel_attributes>
+Put Request on Peer2 clipboard
+fg=#205000</panel_attributes>
     <additional_attributes>24;40;256;40</additional_attributes>
   </element>
   <element>
@@ -553,7 +570,8 @@ Put Request on Peer2 clipboard</panel_attributes>
       <h>56</h>
     </coordinates>
     <panel_attributes>lt=&lt;
-Clipboard "contents received" event</panel_attributes>
+Clipboard "contents received" event
+fg=#205000</panel_attributes>
     <additional_attributes>24;40;256;40</additional_attributes>
   </element>
   <element>
@@ -573,10 +591,12 @@ Clipboard "contents received" event</panel_attributes>
       <x>152</x>
       <y>680</y>
       <w>272</w>
-      <h>56</h>
+      <h>74</h>
     </coordinates>
     <panel_attributes>lt=&lt;
-Retake Ownership Peer2 clipboard</panel_attributes>
+Retake Ownership Peer2 clipboard
+"REPLY ACK"
+fg=#986018</panel_attributes>
     <additional_attributes>256;40;24;40</additional_attributes>
   </element>
   <element>
@@ -608,10 +628,12 @@ Lose Ownership event</panel_attributes>
       <x>400</x>
       <y>720</y>
       <w>272</w>
-      <h>56</h>
+      <h>74</h>
     </coordinates>
     <panel_attributes>lt=&lt;
-Clear Peer2 clipboard</panel_attributes>
+Clear Peer2 clipboard
+"READY"
+fg=#986018</panel_attributes>
     <additional_attributes>24;40;256;40</additional_attributes>
   </element>
   <element>
