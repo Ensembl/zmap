@@ -306,7 +306,7 @@ void zmapAppProcessAnyReply(ZMapAppContext app_context, char *reply)
 
   /* Return the reply to the relevant zmap sub-system, note if the reply could not be parsed then
    * command will be NULL, all called functions must cope with this. */
-  (remote->process_reply_func)(command, command_rc, reason, reply_body, remote->process_reply_func_data) ;
+  (remote->process_reply_func)(command, command_rc, reason, reply, remote->process_reply_func_data) ;
 
 
   return ;
@@ -537,7 +537,8 @@ static void localProcessReplyFunc(char *command,
 	  /* Note...it's legal not to give a window id, we just don't do any window checking. */
 	  if (!(result = zMapRemoteCommandGetAttribute(reply,
 						       ZACP_PEER, ZACP_WINDOW_ID, &window_id_str,
-						       &xml_err_msg) && *xml_err_msg))
+						       &xml_err_msg))
+	      && (xml_err_msg))
 	    {
 	      full_err_str = g_strdup_printf("Error in \"%s\" xml: %s", ZACP_PEER, xml_err_msg) ;
 
