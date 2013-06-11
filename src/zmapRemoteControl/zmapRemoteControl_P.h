@@ -27,7 +27,7 @@
  * Description: Private header for remote control package.
  *
  * HISTORY:
- * Last edited: Dec 16 10:13 2011 (edgrif)
+ * Last edited: Jun  3 10:38 2013 (edgrif)
  * Created: Fri Sep 24 14:44:59 2010 (edgrif)
  * CVS info:   $Id$
  *-------------------------------------------------------------------
@@ -224,9 +224,13 @@ typedef struct ZMapRemoteControlStructName
   guint32 timeout_ms ;					    /* timeout in milliseconds. */
 
 
-  /* App function to call when there is an error, e.g. timeout. */
+  /* App function to call when there is an error, e.g. peer not responding. */
   ZMapRemoteControlErrorHandlerFunc app_error_func ;
   gpointer app_error_func_data ;
+
+  /* App function to call when there is a timeout. */
+  ZMapRemoteControlTimeoutHandlerFunc app_timeout_func ;
+  gpointer app_timeout_func_data ;
 
   /* where to send error messages, can be overridden by app. */
   ZMapRemoteControlErrorReportFunc app_err_report_func ;

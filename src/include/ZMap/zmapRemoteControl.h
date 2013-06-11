@@ -79,12 +79,15 @@ typedef enum {ZMAP_REMOTECONTROL_DEBUG_OFF,
 
 /* Error Handling: */
 
-/* Apps callback for handling errors from remote_control, e.g. timeouts. */
+/* Apps callback that remote_control should call to allow app to handle errors, e.g. peer not responding. */
 typedef void (*ZMapRemoteControlErrorHandlerFunc)(ZMapRemoteControl remote_control,
 						  ZMapRemoteControlRCType error_type, char *err_msg,
 						  void *user_data) ;
 
-/* Apps callback that remote_control should call to report errors. */
+/* Apps callback that remote_control should call to allow app to handle timeouts. */
+typedef gboolean (*ZMapRemoteControlTimeoutHandlerFunc)(ZMapRemoteControl remote_control, void *user_data) ;
+
+/* Apps callback that remote_control should call to output/log errors. */
 typedef gboolean (*ZMapRemoteControlErrorReportFunc)(void *user_data, char *err_msg) ;
 
 
@@ -135,7 +138,8 @@ typedef void (*ZMapRemoteControlReplyHandlerFunc)(ZMapRemoteControl remote_contr
  */
 ZMapRemoteControl zMapRemoteControlCreate(char *app_id,
 					  ZMapRemoteControlErrorHandlerFunc error_func, gpointer error_data,
-					  ZMapRemoteControlErrorReportFunc err_func, gpointer err_data) ;
+					  ZMapRemoteControlTimeoutHandlerFunc timeout_func, gpointer timeout_data,
+					  ZMapRemoteControlErrorReportFunc err_report_func, gpointer err_report_data) ;
 
 gboolean zMapRemoteControlReceiveInit(ZMapRemoteControl remote_control,
 				      char *app_str,

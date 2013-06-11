@@ -137,7 +137,9 @@
 enum
   {
     NULL_TIMEOUT = 0,					    /* Turns timeouts off. */
+
     DEFAULT_TIMEOUT = 2000,				    /* Standard timeout, needs testing. */
+
     DEBUG_TIMEOUT = 3600000				    /* Debug timeout of an hour.... */
   } ;
 
@@ -210,6 +212,7 @@ static gboolean stderrOutputCB(gpointer user_data, char *err_msg) ;
 
 
 
+
 /* 
  *        Globals.
  */
@@ -253,6 +256,7 @@ static ZMapRemoteControlDebugLevelType remote_debug_G = ZMAP_REMOTECONTROL_DEBUG
  */
 ZMapRemoteControl zMapRemoteControlCreate(char *app_id,
 					  ZMapRemoteControlErrorHandlerFunc error_func, gpointer error_func_data,
+					  ZMapRemoteControlTimeoutHandlerFunc timeout_func, gpointer timeout_data,
 					  ZMapRemoteControlErrorReportFunc err_report_func, gpointer err_report_data)
 {
   ZMapRemoteControl remote_control = NULL ;
@@ -284,6 +288,9 @@ ZMapRemoteControl zMapRemoteControlCreate(char *app_id,
 
       remote_control->app_error_func = error_func ;
       remote_control->app_error_func_data = error_func_data ;
+
+      remote_control->app_timeout_func = timeout_func ;
+      remote_control->app_timeout_func_data = timeout_data ;
 
       if (err_report_func)
 	{
@@ -730,6 +737,7 @@ char *zmapRemoteControlMakeReqID(ZMapRemoteControl remote_control)
 
 /* Autogenerate function to return string version of enum. */
 ZMAP_ENUM_AS_EXACT_STRING_FUNC(zMapRemoteControlRCType2ExactStr, ZMapRemoteControlRCType, ZMAP_REMOTECONTROL_RC_LIST) ;
+
 
 
 
@@ -2027,8 +2035,11 @@ static void removeTimeout(ZMapRemoteControl remote_control)
 
 /* A GSourceFunc() for time outs.
  * 
- * Note that this function returns FALSE which automatically removes us from gtk so no need
+ * Note that if this function returns FALSE this automatically removes us from gtk so no need
  * to call removeTimeout().
+ * 
+ * Note that if the application decides to ignore the timeout (returns TRUE) then we 
+ * ask gtk to call us again if we timeout again.
  *  */
 static gboolean timeOutCB(gpointer user_data)
 {
@@ -2037,13 +2048,26 @@ static gboolean timeOutCB(gpointer user_data)
 
   DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", ENTER_TXT) ;
 
-  CALL_ERR_HANDLER(remote_control,
-		   ZMAP_REMOTECONTROL_RC_TIMED_OUT,
-		   "Timed out waiting for peer to reply while in state \"%s\".",
-		   remoteState2ExactStr(remote_control->state)) ;
+  /* If App returns TRUE then it has decided to ignore the timeout so we return TRUE so gtk
+   * will call us back again if we timeout again, otherwise it's an error and we call the apps
+   * error handler. */
+  if ((remote_control->app_timeout_func)
+      && (remote_control->app_timeout_func)(remote_control, remote_control->app_timeout_func_data))
+    {
+      result = TRUE ;
+    }
+  else
+    {
+      CALL_ERR_HANDLER(remote_control,
+		       ZMAP_REMOTECONTROL_RC_TIMED_OUT,
+		       "Timed out waiting for peer to reply while in state \"%s\".",
+		       remoteState2ExactStr(remote_control->state)) ;
 
-  /* This callback is removed automatically by gtk so reset the source_id. */
-  remote_control->timer_source_id = 0 ;
+      /* This callback is removed automatically by gtk so reset the source_id. */
+      remote_control->timer_source_id = 0 ;
+
+      result = FALSE ;
+    }
 
   DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", EXIT_TXT) ;
 
