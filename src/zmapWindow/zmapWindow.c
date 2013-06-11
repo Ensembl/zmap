@@ -1109,6 +1109,7 @@ void zmapWindowZoom(ZMapWindow window, double zoom_factor, gboolean stay_centere
 	  foo_canvas_busy(window->canvas,FALSE);
 	}
 
+
       /* We need to scroll to the previous position. This is dependent on
        * not having split horizontal windows. We only do this once per
        * potential multiple windows as the vertically split windows share
@@ -1121,6 +1122,7 @@ void zmapWindowZoom(ZMapWindow window, double zoom_factor, gboolean stay_centere
 	  foo_canvas_w2c(window->canvas, width, curr_pos, &x, &y);
 	  foo_canvas_scroll_to(window->canvas, x, y - (adjust->page_size/2));
 	}
+
 
       zmapWindowBusy(window, FALSE) ;
     }
