@@ -31,6 +31,7 @@
 #define ZMAP_APP_PRIV_H
 
 #include <gtk/gtk.h>
+#include <gdk/gdkx.h>
 
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapRemoteControl.h>
@@ -74,11 +75,20 @@ typedef void (*ZMapAppCBFunc)(void *cb_data) ;
 
 typedef struct _ZMapAppRemoteStruct
 {
+  /* Our names/text etc. */
   char *app_id ;					    /* zmap app name. */
   char *app_unique_id ;
 
+  Window app_window ;
+  char *app_window_str ;
+
+  /* Peer's names/text etc. */
   char *peer_name ;
   char *peer_clipboard ;
+
+  Window peer_window ;
+  char *peer_window_str ;
+
 
   /* There are some requests that can only be serviced _after_ we are sure the peer
    * has received our reply to their request e.g. "shutdown" where we can't exit

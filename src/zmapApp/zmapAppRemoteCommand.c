@@ -29,7 +29,7 @@
  *
  * Exported functions: See zmapApp_P.h
  * HISTORY:
- * Last edited: Apr 11 10:51 2012 (edgrif)
+ * Last edited: Jun  3 15:46 2013 (edgrif)
  * Created: Mon Jan 16 14:04:43 2012 (edgrif)
  * CVS info:   $Id$
  *-------------------------------------------------------------------
@@ -38,6 +38,7 @@
 #include <ZMap/zmap.h>
 
 #include <string.h>
+#include <errno.h>
 #include <glib.h>
 
 #include <ZMap/zmapRemoteCommand.h>
@@ -100,7 +101,7 @@ static void processRequest(ZMapAppContext app_context,
 			   char *command_name, char *request,
 			   RemoteCommandRCType *command_rc_out, char **reason_out, ZMapXMLUtilsEventStack *reply_out) ;
 
-static ZMapXMLUtilsEventStack createPeerElement(char *app_id, char *app_unique_id) ;
+static ZMapXMLUtilsEventStack createPeerElement(char *app_id, char *app_unique_id, char *app_window_id) ;
 static gboolean deferredRequestHandler(gpointer data) ;
 
 
@@ -323,7 +324,7 @@ gboolean zmapAppRemoteControlConnect(ZMapAppContext app_context)
 
   request_func = zmapAppRemoteControlGetRequestCB() ;
 
-  request_body = createPeerElement(remote->app_id, remote->app_unique_id) ;
+  request_body = createPeerElement(remote->app_id, remote->app_unique_id, remote->app_window_str) ;
 
   (request_func)(app_context,
 		 NULL,
@@ -433,21 +434,23 @@ void zmapAppRemoteControlTheirRequestEndedCB(void *user_data)
  *       <peer app_id="ZMap" unique_id="ZMap-13385-1328020970"/>
  * 
  *  */
-static ZMapXMLUtilsEventStack createPeerElement(char *app_id, char *app_unique_id)
+static ZMapXMLUtilsEventStack createPeerElement(char *app_id, char *app_unique_id, char *app_window_id)
 {
   static ZMapXMLUtilsEventStackStruct
     peer[] =
     {
-      {ZMAPXML_START_ELEMENT_EVENT, "peer",      ZMAPXML_EVENT_DATA_NONE,  {0}},
-      {ZMAPXML_ATTRIBUTE_EVENT,     "app_id",    ZMAPXML_EVENT_DATA_QUARK, {0}},
-      {ZMAPXML_ATTRIBUTE_EVENT,     "unique_id", ZMAPXML_EVENT_DATA_QUARK, {0}},
-      {ZMAPXML_END_ELEMENT_EVENT,   "peer",      ZMAPXML_EVENT_DATA_NONE,  {0}},
+      {ZMAPXML_START_ELEMENT_EVENT, ZACP_PEER,      ZMAPXML_EVENT_DATA_NONE,  {0}},
+      {ZMAPXML_ATTRIBUTE_EVENT,     ZACP_APP_ID,    ZMAPXML_EVENT_DATA_QUARK, {0}},
+      {ZMAPXML_ATTRIBUTE_EVENT,     ZACP_UNIQUE_ID, ZMAPXML_EVENT_DATA_QUARK, {0}},
+      {ZMAPXML_ATTRIBUTE_EVENT,     ZACP_WINDOW_ID, ZMAPXML_EVENT_DATA_QUARK, {0}},
+      {ZMAPXML_END_ELEMENT_EVENT,   ZACP_PEER,      ZMAPXML_EVENT_DATA_NONE,  {0}},
       {ZMAPXML_NULL_EVENT}
     } ;
 
   /* Fill in peer element attributes. */
   peer[1].value.q = g_quark_from_string(app_id) ;
   peer[2].value.q = g_quark_from_string(app_unique_id) ;
+  peer[3].value.q = g_quark_from_string(app_window_id) ;
 
   return &peer[0] ;
 }
@@ -506,24 +509,90 @@ static void localProcessReplyFunc(char *command,
 				  gpointer reply_handler_func_data)
 {
   ZMapAppContext app_context = (ZMapAppContext)reply_handler_func_data ;
+  char *command_err_msg = NULL ;
 
+
+  if (command_rc != REMOTE_COMMAND_RC_OK)
+    {
+      command_err_msg = g_strdup_printf("Peer reported error in reply for command \"%s\":"
+					" %s, \"%s\"",
+					command, zMapRemoteCommandRC2Str(command_rc), reason) ;
+    }
 
   if (strcmp(command, ZACP_HANDSHAKE) == 0)
     {
+      gboolean result = FALSE ;
+      char *window_id_str = NULL, *xml_err_msg = NULL ;
+      char *full_err_str = NULL ;
+      Window window_id ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      zmapAppPingStart(app_context) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+      if (command_rc != REMOTE_COMMAND_RC_OK)
+	{
+	  full_err_str = g_strdup(command_err_msg) ;
 
+	  result = FALSE ;
+	}
+      else
+	{
+	  /* Note...it's legal not to give a window id, we just don't do any window checking. */
+	  if (!(result = zMapRemoteCommandGetAttribute(reply,
+						       ZACP_PEER, ZACP_WINDOW_ID, &window_id_str,
+						       &xml_err_msg) && *xml_err_msg))
+	    {
+	      full_err_str = g_strdup_printf("Error in \"%s\" xml: %s", ZACP_PEER, xml_err_msg) ;
+
+	      zMapLogWarning("No window_id attribute specified in command %s, reason: %s",
+			     ZACP_HANDSHAKE, full_err_str) ;
+
+	      result = TRUE ;
+	    }
+	  else if (result)
+	    {
+	      char *rest_str = NULL ;
+
+	      errno = 0 ;
+	      if (!(window_id = strtoul(window_id_str, &rest_str, 16)))
+		{
+		  char *full_err_str ;
+
+		  full_err_str = g_strdup_printf("Conversion of \"%s = %s\" to X Window id"
+						 "failed: %s",
+						 ZACP_WINDOW_ID, window_id_str,  g_strerror(errno)) ;
+
+		  result = FALSE ;
+		}
+	      else
+		{
+		  app_context->remote_control->peer_window = window_id ;
+		  app_context->remote_control->peer_window_str = g_strdup_printf("0x%lx", app_context->remote_control->peer_window) ;
+
+		  result = TRUE ;
+		}
+	    }
+	}
+
+      if (!result)
+	{
+	  zMapLogCritical("Cannot continue because %s failed: %s", ZACP_HANDSHAKE, full_err_str) ;
+
+	  zMapCritical("Cannot continue because %s failed: %s", ZACP_HANDSHAKE, full_err_str) ;
+
+	  g_free(full_err_str) ;
+
+	  (app_context->remote_control->exit_routine)(app_context) ;
+	}
     }
   else if (strcmp(command, ZACP_GOODBYE) == 0)
     {
-      /* should log any good bye problems here...... */
+      if (command_rc != REMOTE_COMMAND_RC_OK)
+	zMapLogCritical("%s", command_err_msg) ;
 
-      /* Peer has replied so now we need to exit. */
+      /* Peer has replied to our goodbye message so now we need to exit. */
       (app_context->remote_control->exit_routine)(app_context) ;
     }
 
+  if (command_err_msg)
+    g_free(command_err_msg) ;
 
   return ;
 }

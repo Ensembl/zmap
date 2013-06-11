@@ -36,13 +36,17 @@
  *
  * Exported functions: See zmapApp_P.h
  * HISTORY:
+ * Last edited: Jun  3 15:54 2013 (edgrif)
  * Created: Mon Nov  1 10:32:56 2010 (edgrif)
  * CVS info:   $Id$
  *-------------------------------------------------------------------
  */
 
 #include <string.h>
+
 #include <glib.h>
+#include <gdk/gdk.h>
+
 
 #include <ZMap/zmapRemoteCommand.h>
 #include <ZMap/zmapAppRemote.h>
@@ -55,6 +59,8 @@
 static void errorHandlerCB(ZMapRemoteControl remote_control,
 			   ZMapRemoteControlRCType error_type, char *err_msg,
 			   void *user_data) ;
+static gboolean timeoutHandlerCB(ZMapRemoteControl remote_control, void *user_data) ;
+
 
 static void requestHandlerCB(ZMapRemoteControl remote_control,
 			     ZMapRemoteControlReturnReplyFunc remote_reply_func, void *remote_reply_data,
@@ -80,6 +86,8 @@ static void requestSetInActive(void) ;
 static gboolean requestIsActive(void) ;
 
 static void setDebugLevel(void) ;
+
+
 
 /* 
  *                Globals. 
@@ -123,6 +131,7 @@ gboolean zmapAppRemoteControlCreate(ZMapAppContext app_context, char *peer_name,
   app_id = zMapGetAppName() ;
   if ((remote_control = zMapRemoteControlCreate(app_id,
 						errorHandlerCB, app_context,
+						timeoutHandlerCB, app_context,
 						NULL, NULL)))
     {
       remote = g_new0(ZMapAppRemoteStruct, 1) ;
@@ -173,6 +182,28 @@ gboolean zmapAppRemoteControlInit(ZMapAppContext app_context)
 {
   gboolean result = TRUE ;
   ZMapAppRemote remote = app_context->remote_control ;
+
+  if (result)
+    {
+      GdkWindow *gdk_window ;
+      Window x_window ;
+
+      if ((gdk_window = gtk_widget_get_window(app_context->app_widg))
+	  && (x_window = GDK_WINDOW_XID(gdk_window)))
+	{
+	  app_context->remote_control->app_window = x_window ;
+	  app_context->remote_control->app_window_str = g_strdup_printf("0x%lx", app_context->remote_control->app_window) ;
+
+	  result = TRUE ;
+	}
+      else
+	{
+	  zMapLogCritical("%s",
+			  "Could not retrieve X Window of app_window, remote control initialisation has failed.") ;
+
+	  result = FALSE ;
+	}
+    }
 
   if (result)
     result = zMapRemoteControlReceiveInit(remote->remote_controller,
@@ -421,7 +452,8 @@ static void replyHandlerCB(ZMapRemoteControl remote_control, char *reply, void *
 
 
 /* 
- *         Called by ZMapRemoteControl: Receives all errors (e.g. timeouts).
+ *         Called by ZMapRemoteControl: Receives all errors (n.b. only gets timeouts
+ *         if timeoutHandlerCB returns FALSE).
  */
 static void errorHandlerCB(ZMapRemoteControl remote_control,
 			   ZMapRemoteControlRCType error_type, char *err_msg,
@@ -449,6 +481,53 @@ static void errorHandlerCB(ZMapRemoteControl remote_control,
 
 
   return ;
+}
+
+
+/* 
+ *         Called by ZMapRemoteControl: Receives all timeouts, returns TRUE if 
+ *         timeout is ok and should be continued, FALSE otherwise. If FALSE
+ *         is returned the errorHandlerCB will be called by ZMapRemoteControl.
+ */
+static gboolean timeoutHandlerCB(ZMapRemoteControl remote_control, void *user_data)
+{
+  gboolean result = FALSE ;
+  ZMapAppContext app_context = (ZMapAppContext)user_data ;
+  GdkWindow *gdk_window ; 
+  Display *x_display ;
+  Window x_window ;
+
+  gdk_window = gtk_widget_get_window(app_context->app_widg) ;
+  x_display = GDK_WINDOW_XDISPLAY(gdk_window) ;
+
+  x_window = app_context->remote_control->peer_window ;
+
+  /* If there is a peer window then we continue to wait by resetting the timeout,
+   * otherwise it's an error and our error handler will be called. */
+  if (x_window)
+    {
+      char *err_msg = NULL ;      
+
+      /* This is our way of testing to see if the peer application is alive, if the window id
+       * they gave us is still good then we assume they are still alive. */
+      if (!(result = zMapGUIXWindowExists(x_display, x_window, &err_msg)))
+	{
+	  char *full_err_msg ;
+
+	  full_err_msg = g_strdup_printf("Peer window (0x%lx) has gone, stopping remote control because: \"%s\".",
+					 x_window, err_msg) ;
+
+	  zMapLogCritical("%s", full_err_msg) ;
+
+	  zMapCritical("%s", full_err_msg) ;
+
+	  g_free(full_err_msg) ;
+	}
+
+      g_free(err_msg) ;
+    }
+
+  return result ;
 }
 
 
@@ -615,15 +694,6 @@ static void handleZMapRequestsCB(gpointer caller_data,
 	      app_context->remote_ok = FALSE ;
 
 	      zMapLogCritical("%s", err_msg) ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	      /* TOO MANY WARNINGS.... */
-
-	      zMapCritical("%s", err_msg) ;
-	      zMapWarning("%s", err_msg) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
 	      g_free(err_msg) ;
 	    }
