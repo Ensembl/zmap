@@ -215,12 +215,8 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
       /* obscure...only an error if just one is specified... */
       if (!(!peer_name && !peer_clipboard))
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	zMapLogWarning("No %s name for remote connection specified so remote interface cannot be created.",
-		       (!peer_name ? "peer" : "clipboard")) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-      consoleMsg(TRUE, "No %s name for remote connection specified so remote interface cannot be created.",
-		 (!peer_name ? "peer" : "clipboard")) ;
+	consoleMsg(TRUE, "No %s name for remote connection specified so remote interface cannot be created.",
+		   (!peer_name ? "peer" : "clipboard")) ;
     }
   else
     {
@@ -345,6 +341,9 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 	  app_context->mapCB_id = g_signal_connect(G_OBJECT(toplevel), "map-event",
 						   G_CALLBACK(remoteInstaller),
 						   (gpointer)app_context) ;
+
+
+	  zmapAppRemoteControlSetExitRoutine(app_context, appExit) ;
 	}
       else
 	{
@@ -415,44 +414,6 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* the old app exit. */
-/* Signals zmap to clean up and exit, this may be asynchronous if there are underlying threads. */
-void zmapAppExit(ZMapAppContext app_context)
-{
-  /* Record we are dying so we know when to quit as last zmap dies. */
-  app_context->state = ZMAPAPP_DYING ;
-
-  /* If there are no zmaps left we can exit here, otherwise we must signal all the zmaps
-   * to die and wait for them to signal they have died or timeout and exit. */
-  if (!(zMapManagerCount(app_context->zmap_manager)))
-    {
-      signalFinalCleanUp(app_context, EXIT_SUCCESS, CLEAN_EXIT_MSG) ;
-    }
-  else
-    {
-      guint timeout_func_id ;
-      int interval = app_context->exit_timeout * 1000 ;	    /* glib needs time in milliseconds. */
-
-      zMapLogMessage("%s", "Issuing requests to all ZMaps to disconnect from servers and quit.") ;
-
-      /* N.B. we block for 2 seconds here to make sure user can see message. */
-      zMapGUIShowMsgFull(NULL, "ZMap is disconnecting from its servers and quitting, please wait.",
-			 ZMAP_MSG_EXIT,
-			 GTK_JUSTIFY_CENTER, 2, FALSE) ;
-
-      /* time out func makes sure that we exit if threads fail to report back. */
-      timeout_func_id = g_timeout_add(interval, timeoutHandler, (gpointer)app_context) ;
-      zMapAssert(timeout_func_id) ;
-
-      /* Tell all our zmaps to die, they will tell all their threads to die. */
-      zMapManagerKillAllZMaps(app_context->zmap_manager) ;
-    }
-
-  return ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 void zmapAppExit(ZMapAppContext app_context)
 {
   gboolean remote_disconnecting = FALSE ;
@@ -465,8 +426,6 @@ void zmapAppExit(ZMapAppContext app_context)
   if (app_context->remote_control)
     {
       gboolean app_exit = TRUE ;
-
-      zmapAppRemoteControlSetExitRoutine(app_context, appExit) ;
 
       remote_disconnecting = zmapAppRemoteControlDisconnect(app_context, app_exit) ;
     }
@@ -780,20 +739,6 @@ static void signalFinalCleanUp(ZMapAppContext app_context, int exit_rc, char *ex
 {
   app_context->exit_rc = exit_rc ;
   app_context->exit_msg = exit_msg ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* Surely should not be called any more..... */
-
-  if (app_context->xremote_client)
-    {
-      zmapAppRemoteSendFinalised(app_context);
-
-      zMapXRemoteDestroy(app_context->xremote_client) ;
-    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 
   /* **NEW XREMOTE** destroy, Note that at this point we have already told the peer
    * that we are quitting so now we just need to clear up. */
@@ -1206,6 +1151,10 @@ static void remoteInstaller(GtkWidget *widget, GdkEvent *event, gpointer user_da
     {
       zMapLogCritical("%s", "Cannot initialise zmap remote control interface.") ;
     }
+
+
+
+
 
   /* Hide main window if required. */
   if (!(app_context->show_mainwindow) && app_context->defer_hiding)
