@@ -80,10 +80,10 @@ static void handleZMapRequestsCB(gpointer caller_data,
 
 
 /* TRY PUTTING AT APP LEVEL.... */
-static void requestblockIfActive(void) ;
-static void requestSetActive(void) ;
-static void requestSetInActive(void) ;
-static gboolean requestIsActive(void) ;
+static void requestBlockingTestAndBlock(void) ;
+static void requestBlockingSetActive(void) ;
+static void requestBlockingSetInActive(void) ;
+static gboolean requestBlockingIsActive(void) ;
 
 static void setDebugLevel(void) ;
 
@@ -275,7 +275,7 @@ void zmapAppRemoteControlDestroy(ZMapAppContext app_context)
  * until the previous action is complete.
  * 
  *  */
-static void requestblockIfActive(void)
+static void requestBlockingTestAndBlock(void)
 {
 
 
@@ -284,11 +284,11 @@ static void requestblockIfActive(void)
   return ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-
-
-
   zMapDebugPrint(is_active_debug_G, "Entering blocking code: %s",
 		 (is_active_G ? "Request Active" : "No Request Active")) ;
+
+  zMapDebugPrint(is_active_debug_G, "%s",
+		 (is_active_G ? "Request Active, now blocking." : "No Request Active, no blocking")) ;
 
   while (is_active_G)
     {
@@ -301,7 +301,7 @@ static void requestblockIfActive(void)
   return ;
 }
 
-static void requestSetActive(void)
+static void requestBlockingSetActive(void)
 {
   is_active_G = TRUE ;
 
@@ -311,17 +311,17 @@ static void requestSetActive(void)
 }
 
 
-static void requestSetInActive(void)
+static void requestBlockingSetInActive(void)
 {
   is_active_G = FALSE ;
 
-  zMapDebugPrint(is_active_debug_G, "%s", "Setting Block: Request InActive") ;
+  zMapDebugPrint(is_active_debug_G, "%s", "Unsetting Block: Request InActive") ;
 
   return ;
 }
 
 
-static gboolean requestIsActive(void)
+static gboolean requestBlockingIsActive(void)
 {
   return is_active_G ;
 }
@@ -436,7 +436,8 @@ static void replyHandlerCB(ZMapRemoteControl remote_control, char *reply, void *
 
   /* TRY THIS HERE.... */
   /* Now we know that the request/reply is over unset our "request active" flag. */
-  requestSetInActive() ;
+  zMapDebugPrint(is_active_debug_G, "%s", "got reply from peer so unsetting our block.") ;
+  requestBlockingSetInActive() ;
 
 
 
@@ -463,8 +464,11 @@ static void errorHandlerCB(ZMapRemoteControl remote_control,
 
 
   /* Unblock if we are blocked. */
-  if (requestIsActive())
-    requestSetInActive() ;
+  if (requestBlockingIsActive())
+    {
+      zMapDebugPrint(is_active_debug_G, "%s", "error in command/reply processing so unsetting our block.") ;
+      requestBlockingSetInActive() ;
+    }
 
   /* Probably we need to call the level that made the original command request ??
    * Do we have an error handler for each level...need to do this....
@@ -623,8 +627,10 @@ static void handleZMapRequestsCB(gpointer caller_data,
 
       /* TRY ALL THIS HERE.... */
       /* Test to see if we are processing a remote command....and then set that we are active. */
-      requestblockIfActive() ;
-      requestSetActive() ;
+      zMapDebugPrint(is_active_debug_G, "%s", "About to test for blocking.") ;
+      requestBlockingTestAndBlock() ;
+      zMapDebugPrint(is_active_debug_G, "%s", "Setting our own block.") ;
+      requestBlockingSetActive() ;
 
 
       /* If request came from a subsystem (zmap, view, window) find the corresponding view_id
@@ -685,6 +691,10 @@ static void handleZMapRequestsCB(gpointer caller_data,
 	      if (!(result = zMapRemoteControlSendRequest(remote->remote_controller, remote->curr_zmap_request)))
 		{
 		  err_msg = g_strdup_printf("Could not send request to peer: \"%s\"", request) ;
+
+
+		  zMapDebugPrint(is_active_debug_G, "%s", "Send request failed so unsetting our block.") ;
+		  requestBlockingSetInActive() ;
 		}
 	    }
 
