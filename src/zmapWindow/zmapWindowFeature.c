@@ -738,15 +738,10 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
     {
       FooCanvasItem *sub_item = NULL, *highlight_item = NULL ;
       gboolean replace_highlight = TRUE, highlight_same_names = TRUE ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      ZMapXRemoteSendCommandError externally_handled = ZMAPXREMOTE_SENDCOMMAND_UNAVAILABLE ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
       ZMapFeatureSubPartSpan sub_feature ;
       ZMapWindowCanvasItem canvas_item ;
       ZMapFeatureStruct feature_copy = {};
-      ZMapFeatureAny my_feature = (ZMapFeatureAny) feature;
+      ZMapFeatureAny my_feature = (ZMapFeatureAny) feature ;
       gboolean control = FALSE;
 
       canvas_item = ZMAP_CANVAS_ITEM(item);
@@ -754,7 +749,7 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
 
       sub_item = zMapWindowCanvasItemGetInterval(canvas_item, but_event->x, but_event->y, &sub_feature);
 
-      if(feature->type != ZMAPSTYLE_MODE_ALIGNMENT || zMapStyleIsUnique(*feature->style))
+      if (feature->type != ZMAPSTYLE_MODE_ALIGNMENT || zMapStyleIsUnique(*feature->style))
 	highlight_same_names = FALSE ;
 
 
@@ -782,62 +777,9 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
 	  if (zmapWindowFocusIsItemInHotColumn(window->focus, item))      //      && window->multi_select)
 	    {
 	      replace_highlight = FALSE ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	      /* CAN'T HAPPEN LIKE THIS ANY MORE, XREMOTE CALL IS ASYNC NOW.... */
-	      if ((window->xremote_client)
-		  && ((externally_handled = zmapWindowUpdateXRemoteData(window, my_feature,
-									ZACP_SELECT_MULTI_FEATURE, highlight_item))
-		      == ZMAPXREMOTE_SENDCOMMAND_TIMEOUT))
-		zMapWarning("\"%s\" call to external client failed for feature \"%s\"",
-			    ZACP_SELECT_MULTI_FEATURE,
-			    g_quark_to_string(feature->original_id)) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-	      if (window->xremote_client)
-		zmapWindowUpdateXRemoteData(window, my_feature,
-					    ZACP_SELECT_MULTI_FEATURE, highlight_item) ;
-	    }
-	  else
-	    {
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	      /* CAN'T HAPPEN LIKE THIS ANY MORE, XREMOTE CALL IS ASYNC NOW.... */
-	      if ((window->xremote_client)
-		  && ((externally_handled = zmapWindowUpdateXRemoteData(window, my_feature,
-									ZACP_SELECT_FEATURE, highlight_item))
-		      == ZMAPXREMOTE_SENDCOMMAND_TIMEOUT))
-		zMapWarning("\"%s\" to external client failed for feature \"%s\"",
-			    ZACP_SELECT_FEATURE,
-			    g_quark_to_string(feature->original_id)) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-	      if (window->xremote_client)
-		zmapWindowUpdateXRemoteData(window, my_feature,
-					    ZACP_SELECT_FEATURE, highlight_item) ;
-
-	      window->multi_select = TRUE ;
 	    }
 	}
-      else
-	{
-	  /* single select */
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  /* CAN'T HAPPEN LIKE THIS ANY MORE, XREMOTE CALL IS ASYNC NOW.... */
-	  if ((window->xremote_client)
-	      && ((externally_handled = zmapWindowUpdateXRemoteData(window, my_feature,
-								    ZACP_SELECT_FEATURE, highlight_item))
-		  == ZMAPXREMOTE_SENDCOMMAND_TIMEOUT))
-	    zMapWarning("\"%s\" call to external client failed for feature \"%s\"",
-			ZACP_SELECT_FEATURE,
-			g_quark_to_string(feature->original_id)) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-	  if (window->xremote_client)
-	    zmapWindowUpdateXRemoteData(window, my_feature,
-					ZACP_SELECT_FEATURE, highlight_item) ;
-
-	  window->multi_select = FALSE ;
-	}
 
 
       {
@@ -848,7 +790,7 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
 
 	int start = feature->x1, end = feature->x2;
 
-	if(sub_feature)
+	if (sub_feature)
 	  {
 	    start = sub_feature->start;
 	    end = sub_feature->end;
@@ -862,6 +804,69 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
 	zmapWindowSetStyleFeatureset(window, item, feature);
 
       }
+
+
+
+
+
+      if (zMapGUITestModifiers(but_event, shift_mask))
+	{
+	  /* multiple selections */
+	  if (zmapWindowFocusIsItemInHotColumn(window->focus, item))      //      && window->multi_select)
+	    {
+	      replace_highlight = FALSE ;
+
+	      if (window->xremote_client)
+		zmapWindowUpdateXRemoteData(window, my_feature,
+					    ZACP_SELECT_MULTI_FEATURE, highlight_item) ;
+	    }
+	  else
+	    {
+	      if (window->xremote_client)
+		zmapWindowUpdateXRemoteData(window, my_feature,
+					    ZACP_SELECT_FEATURE, highlight_item) ;
+
+	      window->multi_select = TRUE ;
+	    }
+	}
+      else
+	{
+	  /* single select */
+
+	  if (window->xremote_client)
+	    zmapWindowUpdateXRemoteData(window, my_feature,
+					ZACP_SELECT_FEATURE, highlight_item) ;
+
+	  window->multi_select = FALSE ;
+	}
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      {
+	/* mh17 Foo sequence features have a diff interface, but we wish to avoid that, see sequenceSelectionCB() above */
+	/* using a CanvasFeatureset we get here, first off just pass a single coord through so it does not crash */
+	/* InfoPanel has two sets of coords, but they appear the same in totalview */
+	/* possibly we can hide region selection in the GetInterval call above: we can certainly use the X coordinate ?? */
+
+	int start = feature->x1, end = feature->x2;
+
+	if (sub_feature)
+	  {
+	    start = sub_feature->start;
+	    end = sub_feature->end;
+	  }
+
+	/* Pass information about the object clicked on back to the application. */
+	zmapWindowUpdateInfoPanel(window, feature, NULL, item, sub_feature, start, end, start, end,
+				    NULL, replace_highlight, highlight_same_names, control) ;
+
+	/* if we have an active dialog update it: they have to click on a feature not the column */
+	zmapWindowSetStyleFeatureset(window, item, feature);
+
+      }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
     }
 
 
