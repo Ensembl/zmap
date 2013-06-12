@@ -1,4 +1,3 @@
-/*  Last edited: Apr 11 10:02 2012 (edgrif) */
 /*  File: zmapRemoteCommand.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2010: Genome Research Ltd.
@@ -109,8 +108,6 @@ gboolean zMapRemoteCommandReplyGetAttributes(char *reply,
 					     RemoteCommandRCType *return_code_out, char **reason_out,
 					     char **reply_body_out,
 					     char **error_out) ;
-
-
 gboolean zMapRemoteCommandGetAttribute(char *message,
 				       char *element, char *attribute, char **attribute_value_out,
 				       char **error_out) ;

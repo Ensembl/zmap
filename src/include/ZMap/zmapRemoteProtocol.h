@@ -27,7 +27,7 @@
  * Description: External interface to remote control package.
  *
  * HISTORY:
- * Last edited: Feb  1 19:01 2012 (edgrif)
+ * Last edited: Jun  3 11:18 2013 (edgrif)
  * Created: Fri Sep 24 14:51:35 2010 (edgrif)
  * CVS info:   $Id$
  *-------------------------------------------------------------------
@@ -121,6 +121,12 @@
 
 #define ZACP_VIEWID  "view_id"
 #define ZACP_TIMEOUT "timeout"
+
+#define ZACP_PEER      "peer"
+#define ZACP_APP_ID    "app_id"
+#define ZACP_UNIQUE_ID "unique_id"
+#define ZACP_WINDOW_ID "window_id"
+
 
 
 #define ZACP_SEQUENCE_TAG     "sequence"

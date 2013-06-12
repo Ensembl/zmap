@@ -1191,7 +1191,7 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line, gsize line_lengt
   if (line_length > GFF_MAX_LINE_LEN)
     {
       parser->error = g_error_new(parser->error_domain, ZMAP_GFF_ERROR_BODY,
-				  "Line length too long, line %d has length %d",
+				  "Line length too long, line %d has length %lu",
 				  parser->line_count, line_length) ;
       result = FALSE ;
     }

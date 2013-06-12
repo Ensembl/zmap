@@ -1,4 +1,3 @@
-/*  Last edited: Nov  3 11:55 2011 (edgrif) */
 /*  File: zmapGUIutils.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -34,8 +33,6 @@
 #include <ZMap/zmap.h>
 
 #include <string.h>
-#include <gdk/gdkx.h>					    /* For X Windows stuff. */
-#include <gtk/gtk.h>
 #include <math.h>
 
 #include <ZMap/zmapUtilsGUI.h>
@@ -201,8 +198,55 @@ void zMapGUIRaiseToTop(GtkWidget *widget)
 }
 
 
-/*!
- * Find GtkWindow (i.e. ultimate) parent of given widget.
+
+
+
+/* Check whether the given X Window exists on the given display.
+ * 
+ * Returns TRUE if the window is still there, FALSE otherwise. If FALSE is returned 
+ * the x error is returned in err_msg_out, should be g_free'd when finished with. 
+ */
+gboolean zMapGUIXWindowExists(Display *x_display, Window x_window, char **err_msg_out)
+{
+  gboolean result = TRUE ;				    /* default to window ok. */
+  Status status ;
+  XWindowAttributes x_attributes ;
+  int x_error_code ;
+
+  /* The gdk way of trapping an X error, seems to work ok. */
+  gdk_error_trap_push() ;
+
+  status = XGetWindowAttributes(x_display, x_window, &x_attributes) ;  
+
+  gdk_flush() ;
+
+  if (!status)
+    {
+      /* If there was an error then check what sort. */
+      if ((x_error_code = gdk_error_trap_pop()))
+	{
+	  enum {TEXT_BUF_SIZE = 1024} ;
+	  char *error_text ;
+
+	  error_text = g_malloc(TEXT_BUF_SIZE) ;
+
+	  XGetErrorText(x_display, x_error_code, error_text, TEXT_BUF_SIZE) ;
+
+	  *err_msg_out = error_text ;
+
+	  result = FALSE ;
+	}
+      else
+	{
+	  *err_msg_out = g_strdup("XGetWindowAttributes() failed but there was no X error code.") ;
+	}
+    }
+
+  return result ;
+}
+
+
+/* Find GtkWindow (i.e. ultimate) parent of given widget.
  * Can return NULL if widget is not part of a proper widget tree.
  *
  * @param widget     The child widget.

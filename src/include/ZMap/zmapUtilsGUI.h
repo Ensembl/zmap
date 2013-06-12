@@ -32,6 +32,8 @@
 #define ZMAP_UTILS_GUI_H
 
 #include <gtk/gtk.h>
+#include <gdk/gdkx.h>
+
 #include <libzmapfoocanvas/libfoocanvas.h>
 #include <ZMap/zmapUtilsMesg.h>
 #include <ZMap/zmapFeature.h>
@@ -442,6 +444,7 @@ gint my_gtk_run_dialog_nonmodal(GtkWidget *toplevel) ;
 
 void zMapGUIRaiseToTop(GtkWidget *widget);
 GtkWidget *zMapGUIFindTopLevel(GtkWidget *widget) ;
+gboolean zMapGUIXWindowExists(Display *x_display, Window x_window, char **err_msg_out) ;
 
 char *zMapGUIGetEventAsText(GdkEventMask exclude_mask, GdkEventAny *any_event) ;
 
