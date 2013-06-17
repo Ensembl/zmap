@@ -56,20 +56,12 @@
 
 
 
-static void errorHandlerCB(ZMapRemoteControl remote_control,
-			   ZMapRemoteControlRCType error_type, char *err_msg,
-			   void *user_data) ;
-static gboolean timeoutHandlerCB(ZMapRemoteControl remote_control, void *user_data) ;
-
-
 static void requestHandlerCB(ZMapRemoteControl remote_control,
 			     ZMapRemoteControlReturnReplyFunc remote_reply_func, void *remote_reply_data,
 			     char *request, void *user_data) ;
 static void replySentCB(void *user_data) ;
-
 static void requestSentCB(void *user_data) ;
 static void replyHandlerCB(ZMapRemoteControl remote_control, char *reply, void *user_data) ;
-
 
 static void handleZMapRepliesCB(char *command, gboolean abort, RemoteCommandRCType result, char *reason,
 				ZMapXMLUtilsEventStack reply, gpointer app_reply_data) ;
@@ -78,8 +70,11 @@ static void handleZMapRequestsCB(gpointer caller_data,
 				 char *command, ZMapXMLUtilsEventStack request_body,
 				 ZMapRemoteAppProcessReplyFunc reply_func, gpointer reply_func_data) ;
 
+static void errorHandlerCB(ZMapRemoteControl remote_control,
+			   ZMapRemoteControlRCType error_type, char *err_msg,
+			   void *user_data) ;
+static gboolean timeoutHandlerCB(ZMapRemoteControl remote_control, void *user_data) ;
 
-/* TRY PUTTING AT APP LEVEL.... */
 static void requestBlockingTestAndBlock(void) ;
 static void requestBlockingSetActive(void) ;
 static void requestBlockingSetInActive(void) ;
@@ -120,7 +115,8 @@ ZMapRemoteAppMakeRequestFunc zmapAppRemoteControlGetRequestCB(void)
 
 
 /* Set up the remote controller object. */
-gboolean zmapAppRemoteControlCreate(ZMapAppContext app_context, char *peer_name, char *peer_clipboard)
+gboolean zmapAppRemoteControlCreate(ZMapAppContext app_context, char *peer_name, char *peer_clipboard,
+				    int peer_retries, int peer_timeout)
 {
   gboolean result = FALSE ;
   ZMapAppRemote remote ;
@@ -143,11 +139,13 @@ gboolean zmapAppRemoteControlCreate(ZMapAppContext app_context, char *peer_name,
 
       remote->remote_controller = remote_control ;
 
+      if (peer_retries > 0)
+	remote->window_retries_left = peer_retries ;
+      else
+	remote->window_retries_left = ZMAP_WINDOW_RETRIES ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      /* set no timeout for now... */
-      zMapRemoteControlSetTimeout(remote->remote_controller, 0) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+      if (peer_timeout > 0)
+	zMapRemoteControlSetTimeout(remote->remote_controller, peer_timeout) ;
 
 
       /* Only set debug from cmdline the first time around otherwise it overrides what
@@ -243,6 +241,9 @@ void zmapAppRemoteControlDestroy(ZMapAppContext app_context)
   g_free(remote->app_id) ;
   g_free(remote->app_unique_id) ;
 
+  g_free(remote->peer_name) ;
+  g_free(remote->peer_clipboard) ;
+
   /* Reset the interface and then destroy it. */
   zMapRemoteControlReset(remote->remote_controller) ;
 
@@ -266,71 +267,9 @@ void zmapAppRemoteControlDestroy(ZMapAppContext app_context)
  */
 
 
-/* We need to keep a "lock" flag because for some actions, e.g. double click,
- * we can end up trying to send two requests, in this case a "single_select"
- * followed by an "edit" too quickly, i.e. we haven't finished the "single_select"
- * before we try to send the "edit".
- * 
- * So we test this flag and if we are processing we block (but process events)
- * until the previous action is complete.
- * 
- *  */
-static void requestBlockingTestAndBlock(void)
-{
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* turn off for now.... */
-  return ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-  zMapDebugPrint(is_active_debug_G, "Entering blocking code: %s",
-		 (is_active_G ? "Request Active" : "No Request Active")) ;
-
-  zMapDebugPrint(is_active_debug_G, "%s",
-		 (is_active_G ? "Request Active, now blocking." : "No Request Active, no blocking")) ;
-
-  while (is_active_G)
-    {
-      gtk_main_iteration() ;
-    }
-
-  zMapDebugPrint(is_active_debug_G, "Leaving blocking code: %s",
-		 (is_active_G ? "Request Active" : "No Request Active")) ;
-
-  return ;
-}
-
-static void requestBlockingSetActive(void)
-{
-  is_active_G = TRUE ;
-
-  zMapDebugPrint(is_active_debug_G, "%s", "Setting Block: Request Active") ;
-
-  return ;
-}
-
-
-static void requestBlockingSetInActive(void)
-{
-  is_active_G = FALSE ;
-
-  zMapDebugPrint(is_active_debug_G, "%s", "Unsetting Block: Request InActive") ;
-
-  return ;
-}
-
-
-static gboolean requestBlockingIsActive(void)
-{
-  return is_active_G ;
-}
-
-
-
-
-/*             Functions called directly by ZMapRemoteControl.                */
-
+/*
+ * Functions called to service requests from a peer.
+ */
 
 /* 
  * Called by ZMapRemoteControl: receives all requests sent to zmap by a peer.
@@ -347,201 +286,14 @@ static void requestHandlerCB(ZMapRemoteControl remote_control,
   remote->return_reply_func = return_reply_func ;
   remote->return_reply_func_data = return_reply_func_data ;
 
+  /* Start of a series of messages with host so set window retries */
+  remote->window_retries_left = ZMAP_WINDOW_RETRIES ;
+
   /* Call the command processing code.... */
   zmapAppProcessAnyRequest(app_context, request, handleZMapRepliesCB) ;
 
   return ;
 }
-
-
-/* Called by remote control when peer has signalled that it has received reply,
- * i.e. the transaction has ended. */
-static void replySentCB(void *user_data)
-{
-  ZMapAppContext app_context = (ZMapAppContext)user_data ;
-  
-  zmapAppRemoteControlTheirRequestEndedCB(user_data) ;
-
-
-  /* Need to return to waiting here..... */
-  if (!zMapRemoteControlReceiveWaitForRequest(app_context->remote_control->remote_controller))
-    zMapLogCritical("%s", "Cannot set remote controller to wait for requests.") ;
-
-  return ;
-}
-
-
-
-/* Called by remote control when peer has signalled that it has received request. */
-static void requestSentCB(void *user_data)
-{
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  ZMapAppContext app_context = (ZMapAppContext)user_data ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-  return ;
-}
-
-
-/* 
- * Called by ZMapRemoteControl: Receives all replies sent to zmap by a peer.
- */
-static void replyHandlerCB(ZMapRemoteControl remote_control, char *reply, void *user_data)
-{
-  ZMapAppContext app_context = (ZMapAppContext)user_data ;
-  ZMapAppRemote remote = app_context->remote_control ;
-  gboolean result ;
-  char *error_out = NULL ;
-
-
-
-
-
-  /* Again.....is this a good idea....the app callback needs to be called whatever happens
-   * to reset state...fine to log a bad message but we still need to call the app func. */
-
-  if (!(result = zMapRemoteCommandValidateReply(remote->remote_controller,
-						remote->curr_zmap_request, reply, &error_out)))
-    {
-       /* error message etc...... */
-      zMapLogWarning("Bad remote message from peer: %s", error_out) ;
-
-      g_free(error_out) ;
-    }
-  else
-    {
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      remote->reply_done_func = remote_reply_done_func ;
-      remote->reply_done_data = remote_reply_done_data ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-      /* Call the command processing code, there's no return code here because only the function
-       * ultimately handling the problem knows how to handle the error. */
-      zmapAppProcessAnyReply(app_context, reply) ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      /* I THINK NOW THAT WE SHOULD NOT BE DOING THIS..... */
-
-      /* We could just call back to remotecontrol from here....alternative is pass functions
-       * right down to reply handler....and have them call back to appcommand level and then
-       * app command level calls back here...needed if asynch....  */
-      (remote_reply_done_func)(remote_reply_done_data) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-    }
-
-
-  /* TRY THIS HERE.... */
-  /* Now we know that the request/reply is over unset our "request active" flag. */
-  zMapDebugPrint(is_active_debug_G, "%s", "got reply from peer so unsetting our block.") ;
-  requestBlockingSetInActive() ;
-
-
-
-  /* I think this is the place to go back to waiting again.... */
-  if (!zMapRemoteControlReceiveWaitForRequest(remote->remote_controller))
-    zMapLogCritical("%s", "Cannot set remote object to waiting for new request.") ;
-
-
-  return ;
-}
-
-
-
-
-/* 
- *         Called by ZMapRemoteControl: Receives all errors (n.b. only gets timeouts
- *         if timeoutHandlerCB returns FALSE).
- */
-static void errorHandlerCB(ZMapRemoteControl remote_control,
-			   ZMapRemoteControlRCType error_type, char *err_msg,
-			   void *user_data)
-{
-  ZMapAppContext app_context = (ZMapAppContext)user_data ;
-
-
-  /* Unblock if we are blocked. */
-  if (requestBlockingIsActive())
-    {
-      zMapDebugPrint(is_active_debug_G, "%s", "error in command/reply processing so unsetting our block.") ;
-      requestBlockingSetInActive() ;
-    }
-
-  /* Probably we need to call the level that made the original command request ??
-   * Do we have an error handler for each level...need to do this....
-   *  */
-  
-
-  /* and go back to waiting for a request...... */
-  if (!zMapRemoteControlReceiveWaitForRequest(app_context->remote_control->remote_controller))
-    {
-      zMapLogCritical("%s", "Call to wait for peer requests failed, cannot communicate with peer.") ;
-      zMapWarning("%s", "Call to wait for peer requests failed, cannot communicate with peer.") ;
-    }
-
-
-
-  return ;
-}
-
-
-/* 
- *         Called by ZMapRemoteControl: Receives all timeouts, returns TRUE if 
- *         timeout is ok and should be continued, FALSE otherwise. If FALSE
- *         is returned the errorHandlerCB will be called by ZMapRemoteControl.
- */
-static gboolean timeoutHandlerCB(ZMapRemoteControl remote_control, void *user_data)
-{
-  gboolean result = FALSE ;
-  ZMapAppContext app_context = (ZMapAppContext)user_data ;
-  GdkWindow *gdk_window ; 
-  Display *x_display ;
-  Window x_window ;
-
-  gdk_window = gtk_widget_get_window(app_context->app_widg) ;
-  x_display = GDK_WINDOW_XDISPLAY(gdk_window) ;
-
-  x_window = app_context->remote_control->peer_window ;
-
-  /* If there is a peer window then we continue to wait by resetting the timeout,
-   * otherwise it's an error and our error handler will be called. */
-  if (x_window)
-    {
-      char *err_msg = NULL ;      
-
-      /* This is our way of testing to see if the peer application is alive, if the window id
-       * they gave us is still good then we assume they are still alive. */
-      if (!(result = zMapGUIXWindowExists(x_display, x_window, &err_msg)))
-	{
-	  char *full_err_msg ;
-
-	  full_err_msg = g_strdup_printf("Peer window (0x%lx) has gone, stopping remote control because: \"%s\".",
-					 x_window, err_msg) ;
-
-	  zMapLogCritical("%s", full_err_msg) ;
-
-	  zMapCritical("%s", full_err_msg) ;
-
-	  g_free(full_err_msg) ;
-	}
-
-      g_free(err_msg) ;
-    }
-
-  return result ;
-}
-
-
-
-
-
-/*
- *        Functions called by ZMap sub-components, e.g. Control, View, Window
- */
-
 
 /* Called by any component of ZMap (e.g. control, view etc) which has processed a command
  * and needs to return the reply for sending to the peer program.
@@ -591,6 +343,8 @@ static void handleZMapRepliesCB(char *command,
 	}
     }
 
+  /* Next phase of messages with host so reset window retries */
+  remote->window_retries_left = ZMAP_WINDOW_RETRIES ;
 
   /* Must ALWAYS call back to ZMapRemoteControl to return reply to peer. */
   (remote->return_reply_func)(remote->return_reply_func_data, abort, full_reply) ;
@@ -599,7 +353,28 @@ static void handleZMapRepliesCB(char *command,
   return ;
 }
 
+/* Called by remote control when peer has signalled that it has received reply,
+ * i.e. the transaction has ended. */
+static void replySentCB(void *user_data)
+{
+  ZMapAppContext app_context = (ZMapAppContext)user_data ;
+  
+  zmapAppRemoteControlTheirRequestEndedCB(user_data) ;
 
+
+  /* Need to return to waiting here..... */
+  if (!zMapRemoteControlReceiveWaitForRequest(app_context->remote_control->remote_controller))
+    zMapLogCritical("%s", "Cannot set remote controller to wait for requests.") ;
+
+  return ;
+}
+
+
+
+
+/*
+ * Functions called to send requests to a peer.
+ */
 
 /* Called by any component of ZMap (e.g. control, view etc) which needs a request
  * to be sent to the peer program. This is the entry point for zmap sub-systems
@@ -624,6 +399,7 @@ static void handleZMapRequestsCB(gpointer caller_data,
       char *err_msg = NULL ;
       char *view = NULL ;					    /* to be filled in later..... */
       gpointer view_id = NULL ;
+
 
       /* TRY ALL THIS HERE.... */
       /* Test to see if we are processing a remote command....and then set that we are active. */
@@ -687,6 +463,8 @@ static void handleZMapRequestsCB(gpointer caller_data,
 	      remote->process_reply_func = process_reply_func ;
 	      remote->process_reply_func_data = process_reply_func_data ;
 
+	      /* Start of a series of messages with host so set window retries */
+	      remote->window_retries_left = ZMAP_WINDOW_RETRIES ;
 
 	      if (!(result = zMapRemoteControlSendRequest(remote->remote_controller, remote->curr_zmap_request)))
 		{
@@ -712,6 +490,234 @@ static void handleZMapRequestsCB(gpointer caller_data,
     }
 
   return ;
+}
+
+/* Called by remote control when peer has signalled that it has received request. */
+static void requestSentCB(void *user_data)
+{
+  ZMapAppContext app_context = (ZMapAppContext)user_data ;
+
+  /* Next phase of messages with host will start after this so reset window retries */
+  app_context->remote_control->window_retries_left = ZMAP_WINDOW_RETRIES ;
+
+  return ;
+}
+
+/* 
+ * Called by ZMapRemoteControl: Receives all replies sent to zmap by a peer.
+ */
+static void replyHandlerCB(ZMapRemoteControl remote_control, char *reply, void *user_data)
+{
+  ZMapAppContext app_context = (ZMapAppContext)user_data ;
+  ZMapAppRemote remote = app_context->remote_control ;
+  gboolean result ;
+  char *error_out = NULL ;
+
+
+
+  /* I've put this here because the app may issue another request when
+   * we call it from below...so we must clear our active flag first. */
+  /* Now we know that the request/reply is over unset our "request active" flag. */
+  zMapDebugPrint(is_active_debug_G, "%s", "got reply from peer so unsetting our block.") ;
+  requestBlockingSetInActive() ;
+
+
+
+
+
+
+  /* Again.....is this a good idea....the app callback needs to be called whatever happens
+   * to reset state...fine to log a bad message but we still need to call the app func. */
+
+  if (!(result = zMapRemoteCommandValidateReply(remote->remote_controller,
+						remote->curr_zmap_request, reply, &error_out)))
+    {
+       /* error message etc...... */
+      zMapLogWarning("Bad remote message from peer: %s", error_out) ;
+
+      g_free(error_out) ;
+    }
+  else
+    {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      remote->reply_done_func = remote_reply_done_func ;
+      remote->reply_done_data = remote_reply_done_data ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+      /* Call the command processing code, there's no return code here because only the function
+       * ultimately handling the problem knows how to handle the error. */
+      zmapAppProcessAnyReply(app_context, reply) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      /* I THINK NOW THAT WE SHOULD NOT BE DOING THIS..... */
+
+      /* We could just call back to remotecontrol from here....alternative is pass functions
+       * right down to reply handler....and have them call back to appcommand level and then
+       * app command level calls back here...needed if asynch....  */
+      (remote_reply_done_func)(remote_reply_done_data) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+    }
+
+
+  /* I think this is the place to go back to waiting again.... */
+  if (!zMapRemoteControlReceiveWaitForRequest(remote->remote_controller))
+    zMapLogCritical("%s", "Cannot set remote object to waiting for new request.") ;
+
+
+  return ;
+}
+
+
+
+
+/* 
+ *         Called by ZMapRemoteControl: Receives all errors (n.b. only gets timeouts
+ *         if timeoutHandlerCB returns FALSE).
+ */
+static void errorHandlerCB(ZMapRemoteControl remote_control,
+			   ZMapRemoteControlRCType error_type, char *err_msg,
+			   void *user_data)
+{
+  ZMapAppContext app_context = (ZMapAppContext)user_data ;
+
+
+  /* Unblock if we are blocked. */
+  if (requestBlockingIsActive())
+    {
+      zMapDebugPrint(is_active_debug_G, "%s", "error in command/reply processing so unsetting our block.") ;
+      requestBlockingSetInActive() ;
+    }
+
+  /* Probably we need to call the level that made the original command request ??
+   * Do we have an error handler for each level...need to do this....
+   *  */
+  
+
+  /* and go back to waiting for a request...... */
+  if (!zMapRemoteControlReceiveWaitForRequest(app_context->remote_control->remote_controller))
+    {
+      zMapLogCritical("%s", "Call to wait for peer requests failed, cannot communicate with peer.") ;
+      zMapWarning("%s", "Call to wait for peer requests failed, cannot communicate with peer.") ;
+    }
+
+
+
+  return ;
+}
+
+
+/* Called by ZMapRemoteControl: Receives all timeouts, returns TRUE if 
+ * timeout should be continued, FALSE otherwise.
+ * 
+ * If FALSE is returned the errorHandlerCB will be called by ZMapRemoteControl.
+ */
+static gboolean timeoutHandlerCB(ZMapRemoteControl remote_control, void *user_data)
+{
+  gboolean result = FALSE ;
+  ZMapAppContext app_context = (ZMapAppContext)user_data ;
+  GdkWindow *gdk_window ; 
+  Display *x_display ;
+  Window x_window ;
+
+  gdk_window = gtk_widget_get_window(app_context->app_widg) ;
+  x_display = GDK_WINDOW_XDISPLAY(gdk_window) ;
+
+  x_window = app_context->remote_control->peer_window ;
+
+  /* If there is a peer window then we continue to wait by resetting the timeout,
+   * otherwise it's an error and our error handler will be called, we only do this
+   * up to a max of ZMAP_WINDOW_RETRIES for each phase of a transaction. */
+  if (x_window && app_context->remote_control->window_retries_left)
+    {
+      char *err_msg = NULL ;      
+
+      (app_context->remote_control->window_retries_left)-- ;
+
+      /* This is our way of testing to see if the peer application is alive, if the window id
+       * they gave us is still good then we assume they are still alive. */
+      if (!(result = zMapGUIXWindowExists(x_display, x_window, &err_msg)))
+	{
+	  char *full_err_msg ;
+
+	  full_err_msg = g_strdup_printf("Peer window (0x%lx) has gone, stopping remote control because: \"%s\".",
+					 x_window, err_msg) ;
+
+	  zMapLogCritical("%s", full_err_msg) ;
+
+	  zMapCritical("%s", full_err_msg) ;
+
+	  g_free(full_err_msg) ;
+	}
+
+      g_free(err_msg) ;
+    }
+
+  return result ;
+}
+
+
+/* We need to keep a "lock" flag because for some actions, e.g. double click,
+ * we can end up trying to send two requests, in this case a "single_select"
+ * followed by an "edit" too quickly, i.e. we haven't finished the "single_select"
+ * before we try to send the "edit".
+ * 
+ * So we test this flag and if we are processing we block (but process events)
+ * until the previous action is complete.
+ * 
+ *  */
+static void requestBlockingTestAndBlock(void)
+{
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* turn off for now.... */
+  return ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  zMapDebugPrint(is_active_debug_G, "Entering blocking code: %s",
+		 (is_active_G ? "Request Active" : "No Request Active")) ;
+
+  zMapDebugPrint(is_active_debug_G, "%s",
+		 (is_active_G ? "Request Active, now blocking." : "No Request Active, no blocking")) ;
+
+  while (is_active_G)
+    {
+      gtk_main_iteration() ;
+    }
+
+  zMapDebugPrint(is_active_debug_G, "Leaving blocking code: %s",
+		 (is_active_G ? "Request Active" : "No Request Active")) ;
+
+  return ;
+}
+
+static void requestBlockingSetActive(void)
+{
+  is_active_G = TRUE ;
+
+  zMapDebugPrint(is_active_debug_G, "%s", "Setting Block: Request Active") ;
+
+  return ;
+}
+
+
+static void requestBlockingSetInActive(void)
+{
+  is_active_G = FALSE ;
+
+  zMapDebugPrint(is_active_debug_G, "%s", "Unsetting Block: Request InActive") ;
+
+  return ;
+}
+
+
+static gboolean requestBlockingIsActive(void)
+{
+  return is_active_G ;
 }
 
 
