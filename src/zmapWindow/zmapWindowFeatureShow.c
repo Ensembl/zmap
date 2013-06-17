@@ -187,6 +187,8 @@ typedef struct GetEvidenceDataStructType
   ZMapWindowFeatureShow show ;
   ZMapWindowGetEvidenceCB evidence_cb ;
   gpointer evidence_cb_data ;
+  ZMapXMLObjTagFunctions starts ;
+  ZMapXMLObjTagFunctions ends ;
 } GetEvidenceDataStruct, *GetEvidenceData ;
 
 
@@ -409,12 +411,12 @@ void zmapWindowFeatureShow(ZMapWindow window, FooCanvasItem *item)
  */
 
 
-/* OH gosh....I'm not sure what's going on here !!!!!!!!!!! */
-
-/* get evidence feature names from otterlace, reusing code from createFeatureBook() above
+/* mh17: get evidence feature names from otterlace, reusing code from createFeatureBook() above
  * the show code does some complex stuff with reusable lists of windows,
- * probably to stop these accumulating
- * but as we don't display a window we don't care
+ * probably to stop these accumulating but as we don't display a window we don't care
+ * 
+ * edgrif: I've restructured this to use the new xremote.
+ * 
  */
 
 void zmapWindowFeatureGetEvidence(ZMapWindow window, ZMapFeature feature,
@@ -441,6 +443,8 @@ void zmapWindowFeatureGetEvidence(ZMapWindow window, ZMapFeature feature,
   evidence_data->show = show ;
   evidence_data->evidence_cb = evidence_cb ;
   evidence_data->evidence_cb_data = evidence_cb_data ;
+  evidence_data->starts = starts_G ;
+  evidence_data->ends = ends_G ;
 
   callXRemote(show->zmapWindow,
 	      (ZMapFeatureAny)feature,
@@ -461,18 +465,6 @@ void zmapWindowFeatureGetEvidence(ZMapWindow window, ZMapFeature feature,
 
 static void remoteShowFeature(ZMapWindowFeatureShow show)
 {
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* In fact we are almost there...just need to pass in a callback that will call showFeature.... */
-
-  /* Set up callback to handle result. */
-  show->zmapWindow->xremote_reply_handler = replyShowFeature ;
-  show->zmapWindow->xremote_reply_data = show ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-  /* Most of this we do not want to pass in now..... */
   callXRemote(show->zmapWindow,
 	      (ZMapFeatureAny)(show->feature),
 	      ZACP_DETAILS_FEATURE,
@@ -1877,7 +1869,7 @@ static ZMapGuiNotebook makeTranscriptExtras(ZMapWindow window, ZMapFeature featu
  * that may need revisiting.... */
 static void callXRemote(ZMapWindow window, ZMapFeatureAny feature_any,
 			char *action, FooCanvasItem *real_item,
-			ZMapRemoteAppProcessReplyFunc handler_func, gpointer handler_data)
+ 			ZMapRemoteAppProcessReplyFunc handler_func, gpointer handler_data)
 {
   ZMapWindowCallbacks window_cbs_G = zmapWindowGetCBs() ;
   ZMapXMLUtilsEventStack xml_elements ;
@@ -2014,7 +2006,9 @@ static void localProcessReplyFunc(char *command,
 
 
 
-
+/* zmapWindowFeatureGetEvidence() makes an xremote call to the zmap peer to get evidence
+ * for a feature, once the peer replies the reply is sent here and we parse out the
+ * evidence data and then pass that back to our callers callback routine. */
 static void getEvidenceReplyFunc(char *command,
 				 RemoteCommandRCType command_rc,
 				 char *reason,
@@ -2025,7 +2019,28 @@ static void getEvidenceReplyFunc(char *command,
 
   if (command_rc == REMOTE_COMMAND_RC_OK)
     {
-      (evidence_data->evidence_cb)(evidence_data->show->evidence, evidence_data->evidence_cb_data) ;
+      ZMapXMLParser parser ;
+      gboolean parses_ok ;
+
+      /* Create the parser and call set up our start/end handlers to parse the xml reply. */
+      parser = zMapXMLParserCreate(evidence_data->show, FALSE, FALSE);
+
+      zMapXMLParserSetMarkupObjectTagHandlers(parser, evidence_data->starts, evidence_data->ends) ;
+ 
+       if ((parses_ok = zMapXMLParserParseBuffer(parser, 
+                                                 reply, 
+                                                 strlen(reply))) != TRUE)
+         {
+	   zMapLogWarning("Parsing error : %s", zMapXMLParserLastErrorMsg(parser));
+
+         }
+       else
+	 {
+	   /* The parse worked so pass back the list of evidence to our caller. */
+	   (evidence_data->evidence_cb)(evidence_data->show->evidence, evidence_data->evidence_cb_data) ;
+	 }
+
+      zMapXMLParserDestroy(parser);
 
       g_free(evidence_data->show) ;
       g_free(evidence_data) ;
