@@ -620,11 +620,17 @@ typedef struct _ZMapWindowStruct
   FooCanvasItem  *mark_guide_line;
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* xremote stuff....xremote_reply_handler is set dynamically by functions that make a remote
    * request to handle any reply, the data they require is in xremote_reply_data. */
   gboolean xremote_client ;				    /* Is there a remote client ? */
   ZMapWindowRemoteReplyHandlerFunc xremote_reply_handler ;
   gpointer xremote_reply_data ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  /* xremote, TRUE => there is a remote client. */
+  gboolean xremote_client ;
+
 
   /* Handle cursor changes showing when zmap is busy. */
   GdkCursor *normal_cursor ;
@@ -874,6 +880,9 @@ typedef void (*ZMapWindowStyleTableCallback)(ZMapFeatureTypeStyle style, gpointe
 
 typedef GHashTable * (*ZMapWindowListGetFToIHash)(gpointer user_data);
 typedef GList * (*ZMapWindowListSearchHashFunc)(ZMapWindow widnow, GHashTable *hash_table, gpointer user_data);
+
+typedef void (*ZMapWindowGetEvidenceCB)(GList *evidence, gpointer user_data) ;
+
 
 
 
@@ -1234,7 +1243,8 @@ void zmapWindowFreeWindowArray(GPtrArray **window_array_inout, gboolean free_arr
 
 void zmapWindowFeatureShow(ZMapWindow zmapWindow, FooCanvasItem *item) ;
 
-GList *zmapWindowFeatureGetEvidence(ZMapWindow window,ZMapFeature feature);
+void zmapWindowFeatureGetEvidence(ZMapWindow window,ZMapFeature feature,
+				  ZMapWindowGetEvidenceCB evidence_cb, gpointer user_data) ;
 
 /* summarise busy column by not displaying invisible features */
 gboolean zmapWindowContainerSummariseIsItemVisible(ZMapWindow window, double dx1,double dy1,double dx2, double dy2);
@@ -1343,6 +1353,7 @@ void zmapWindowFeatureExpand(ZMapWindow window, FooCanvasItem *foo,
 void zmapWindowFeatureContract(ZMapWindow window, FooCanvasItem *foo,
 			       ZMapFeature feature, ZMapWindowContainerFeatureSet container_set) ;
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 void zmapWindowUpdateXRemoteData(ZMapWindow window,
 				 ZMapFeatureAny feature_any,
 				 char *action,
@@ -1352,15 +1363,15 @@ void zmapWindowUpdateXRemoteDataFull(ZMapWindow window, ZMapFeatureAny feature_a
 				     ZMapXMLObjTagFunctions start_handlers,
 				     ZMapXMLObjTagFunctions end_handlers,
 				     gpointer handler_data) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+/* UM....WHY ON EARTH IS THIS IN HERE....????? */
 ZMapXMLUtilsEventStack zMapFeatureAnyAsXMLEvents(ZMapFeature feature) ;
-
-
 
 void zmapWindowShowStyleDialog( ItemMenuCBData menu_data );
 void zmapWindowMenuSetStyleCB(int menu_item_id, gpointer callback_data);
 gboolean zmapWindowSetStyleFeatureset(ZMapWindow window, FooCanvasItem *foo, ZMapFeature feature);
 void zmapStyleWindowDestroy(ZMapWindow window);
-
 
 /* ================= in zmapWindowZoomControl.c ========================= */
 ZMapWindowZoomControl zmapWindowZoomControlCreate(ZMapWindow window) ;
@@ -1385,8 +1396,8 @@ void zmapWindowBusyInternal(ZMapWindow window,  gboolean external_call,
 #endif
 
 
-void zmapGetFeatureStack(ZMapWindowFeatureStack feature_stack,ZMapFeatureSet feature_set, ZMapFeature feature, ZMapFrame frame);
-
+void zmapGetFeatureStack(ZMapWindowFeatureStack feature_stack,
+			 ZMapFeatureSet feature_set, ZMapFeature feature, ZMapFrame frame);
 
 ZMapStrand zmapWindowFeatureStrand(ZMapWindow window, ZMapFeature feature) ;
 ZMapFrame zmapWindowFeatureFrame(ZMapFeature feature) ;
