@@ -189,6 +189,8 @@ gboolean zMapWindowProcessRemoteRequest(ZMapWindow window,
  * NEED TO BROUGHT IN LINE WITH OTHER REMOTE CONTROL HANDLING SECTIONS OF CODE... */
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 void zmapWindowUpdateXRemoteData(ZMapWindow window, ZMapFeatureAny feature_any,
 				 char *action, FooCanvasItem *real_item)
 
@@ -356,6 +358,8 @@ void zmapWindowUpdateXRemoteDataFull(ZMapWindow window, ZMapFeatureAny feature_a
 
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
@@ -384,6 +388,8 @@ static void localProcessRemoteRequest(ZMapWindow window,
 }
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* Handles replies from remote program to commands sent from this layer. */
 static void localProcessReplyFunc(char *command,
 				  RemoteCommandRCType command_rc,
@@ -400,14 +406,10 @@ static void localProcessReplyFunc(char *command,
 				    command, command_rc, reason, reply) ;
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* Now we know that the request/reply is over unset our "request active" flag. */
-  requestSetInActive() ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
@@ -1003,6 +1005,10 @@ static gboolean xml_return_true_cb(gpointer user_data,
   return TRUE;
 }
 
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* HACK....function to remap coords to forward strand range and also swop
  * them as they get reversed in revcomping.... */
 static void revcompTransChildCoordsCB(gpointer data, gpointer user_data)
@@ -1024,6 +1030,8 @@ static void revcompTransChildCoordsCB(gpointer data, gpointer user_data)
 
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
