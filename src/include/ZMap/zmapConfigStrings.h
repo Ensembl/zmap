@@ -180,6 +180,8 @@
 #define ZMAPSTANZA_APP_SLEEP             "sleep"
 #define ZMAPSTANZA_APP_PEER_NAME         "peer-name"
 #define ZMAPSTANZA_APP_PEER_CLIPBOARD    "peer-clipboard"
+#define ZMAPSTANZA_APP_PEER_RETRIES      "peer-retries"
+#define ZMAPSTANZA_APP_PEER_TIMEOUT      "peer-timeout"
 #define ZMAPSTANZA_APP_HELP_URL          "help-url"
 
 #define ZMAPSTANZA_APP_DATASET           "dataset"

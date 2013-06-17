@@ -56,8 +56,17 @@ typedef enum
   } ZMapAppState ;
 
 
-/* Default time out (in seconds) for zmap to wait to quit, if exceeded we crash out. */
-enum {ZMAP_DEFAULT_EXIT_TIMEOUT = 10, ZMAP_DEFAULT_PING_TIMEOUT = 10} ;
+/* Some basic defines/defaults.. */
+enum
+  {
+    ZMAP_DEFAULT_EXIT_TIMEOUT = 10,			    /* Default time out (in seconds) for
+							       zmap to wait to quit, if exceeded we crash out */
+    ZMAP_DEFAULT_PING_TIMEOUT = 10,
+
+    ZMAP_WINDOW_RETRIES = 10				    /* How many retries of window id when
+							       we timeout for a command. */
+
+  } ;
 
 
 /* Max size of log file before we start warning user that log file is very big (in megabytes). */
@@ -86,8 +95,13 @@ typedef struct _ZMapAppRemoteStruct
   char *peer_name ;
   char *peer_clipboard ;
 
+  /* If our peer gave us a window id in the handshake then we check that window
+   * id to see if it is still there if we have timed out. 
+   * We only do this a configurable number of times before really timing out (to avoid deadlock),
+   * but note that counter is reset for each phase of sending/receiving. */
   Window peer_window ;
   char *peer_window_str ;
+  int window_retries_left ;
 
 
   /* There are some requests that can only be serviced _after_ we are sure the peer
@@ -244,7 +258,8 @@ void zmapAppRemoteSendFinalised(ZMapAppContext app_context);
 
 /* New remote control interface */
 ZMapRemoteAppMakeRequestFunc zmapAppRemoteControlGetRequestCB(void) ;
-gboolean zmapAppRemoteControlCreate(ZMapAppContext app_context, char *peer_name, char *peer_clipboard) ;
+gboolean zmapAppRemoteControlCreate(ZMapAppContext app_context,
+				    char *peer_name, char *peer_clipboard, int peer_retries, int peer_timeout) ;
 gboolean zmapAppRemoteControlInit(ZMapAppContext app_context) ;
 gboolean zmapAppRemoteControlConnect(ZMapAppContext app_context) ;
 gboolean zmapAppRemoteControlDisconnect(ZMapAppContext app_context, gboolean app_exit) ;
