@@ -178,10 +178,6 @@
 #define ZMAPSTANZA_APP_ABBREV_TITLE      "abbrev-window-title"
 #define ZMAPSTANZA_APP_EXIT_TIMEOUT      "exit-timeout"
 #define ZMAPSTANZA_APP_SLEEP             "sleep"
-#define ZMAPSTANZA_APP_PEER_NAME         "peer-name"
-#define ZMAPSTANZA_APP_PEER_CLIPBOARD    "peer-clipboard"
-#define ZMAPSTANZA_APP_PEER_RETRIES      "peer-retries"
-#define ZMAPSTANZA_APP_PEER_TIMEOUT      "peer-timeout"
 #define ZMAPSTANZA_APP_HELP_URL          "help-url"
 
 #define ZMAPSTANZA_APP_DATASET           "dataset"
@@ -211,6 +207,19 @@
 #define ZMAPSTANZA_APP_SEQ_DATA          "seq-data"
 
 #define ZMAPSTANZA_APP_EDIT_STYLES       "edit-styles"
+
+
+
+#define ZMAPSTANZA_PEER_CONFIG       "Peer"
+#define ZMAPSTANZA_PEER_NAME         "name"
+#define ZMAPSTANZA_PEER_CLIPBOARD    "clipboard"
+#define ZMAPSTANZA_PEER_RETRIES      "timeout-retries"
+#define ZMAPSTANZA_PEER_TIMEOUT      "timeout_ms"
+
+
+
+
+
 
 /*! @addtogroup config_stanzas
  *

@@ -963,27 +963,27 @@ static gboolean checkPeerID(ZMapAppContext app_context,
       /* If peer app name/clipboard not set then look in the config file... */
       if (!(*peer_name_out))
 	{
-	  if (zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
-					    ZMAPSTANZA_APP_PEER_NAME, &tmp_string))
+	  if (zMapConfigIniContextGetString(context, ZMAPSTANZA_PEER_CONFIG, ZMAPSTANZA_PEER_CONFIG,
+					    ZMAPSTANZA_PEER_NAME, &tmp_string))
 	    *peer_name_out = g_strdup(tmp_string) ;
 
 
 	  /* peer unique id to use in remote control. */
-	  if (zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
-					    ZMAPSTANZA_APP_PEER_CLIPBOARD, &tmp_string))
+	  if (zMapConfigIniContextGetString(context, ZMAPSTANZA_PEER_CONFIG, ZMAPSTANZA_PEER_CONFIG,
+					    ZMAPSTANZA_PEER_CLIPBOARD, &tmp_string))
 	    *peer_clipboard_out = g_strdup(tmp_string) ;
 	}
 
 
       /* How many times to retry the peer on timeout. */
-      if (zMapConfigIniContextGetInt(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
-				     ZMAPSTANZA_APP_PEER_RETRIES, &tmp_int))
+      if (zMapConfigIniContextGetInt(context, ZMAPSTANZA_PEER_CONFIG, ZMAPSTANZA_PEER_CONFIG,
+				     ZMAPSTANZA_PEER_RETRIES, &tmp_int))
 	*peer_retries = tmp_int ;
 
 
       /* How long to wait in ms before timeout waiting for peer. */
-      if (zMapConfigIniContextGetInt(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
-				     ZMAPSTANZA_APP_PEER_RETRIES, &tmp_int))
+      if (zMapConfigIniContextGetInt(context, ZMAPSTANZA_PEER_CONFIG, ZMAPSTANZA_PEER_CONFIG,
+				     ZMAPSTANZA_PEER_RETRIES, &tmp_int))
 	*peer_timeout_ms = tmp_int ;
 
 
