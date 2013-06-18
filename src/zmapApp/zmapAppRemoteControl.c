@@ -190,7 +190,8 @@ gboolean zmapAppRemoteControlInit(ZMapAppContext app_context)
 	  && (x_window = GDK_WINDOW_XID(gdk_window)))
 	{
 	  app_context->remote_control->app_window = x_window ;
-	  app_context->remote_control->app_window_str = g_strdup_printf("0x%lx", app_context->remote_control->app_window) ;
+	  app_context->remote_control->app_window_str
+	    = g_strdup_printf(ZMAP_XWINDOW_FORMAT_STR, app_context->remote_control->app_window) ;
 
 	  result = TRUE ;
 	}
@@ -643,8 +644,8 @@ static gboolean timeoutHandlerCB(ZMapRemoteControl remote_control, void *user_da
 	{
 	  char *full_err_msg ;
 
-	  full_err_msg = g_strdup_printf("Peer window (0x%lx) has gone, stopping remote control because: \"%s\".",
-					 x_window, err_msg) ;
+	  full_err_msg = g_strdup_printf("Peer window ("ZMAP_XWINDOW_FORMAT_STR") has gone,"
+					 " stopping remote control because: \"%s\".", x_window, err_msg) ;
 
 	  zMapLogCritical("%s", full_err_msg) ;
 

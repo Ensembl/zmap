@@ -825,7 +825,7 @@ static void closeView(ZMap zmap, ZMapXRemoteParseCommandData input_data, Respons
     {
       output_data->code = ZMAPXREMOTE_INTERNAL ;
       g_string_append_printf(output_data->messages,
-			     "could not find view with xwid=\"0x%lx\"", view_data.xwid) ;
+			     "could not find view with xwid=\""ZMAP_XWINDOW_FORMAT_STR"\"", view_data.xwid) ;
     }
   else
     {
@@ -867,7 +867,7 @@ static void createClient(ZMap zmap, ZMapXRemoteParseCommandData input_data, Resp
 {
   ZMapXRemoteObj client;
   ClientParameters client_params = &(input_data->common.client_params);
-  char *format_response = "<client xwid=\"0x%lx\" created=\"%d\" exists=\"%d\" />";
+  char *format_response = "<client xwid=\""ZMAP_XWINDOW_FORMAT_STR"\" created=\"%d\" exists=\"%d\" />";
   int created, exists;
 
   if (!(zmap->xremote_client) && (client = zMapXRemoteNew(GDK_DISPLAY())) != NULL)

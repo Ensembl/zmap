@@ -897,7 +897,7 @@ static void dataLoadCB(ZMapView view, void *app_data, void *view_data)
 
 
 	  request = g_strdup_printf("<zmap> <request action=\"" ZACP_FEATURES_LOADED "\">"
-				    " <client xwid=\"0x%lx\" />"
+				    " <client xwid=\""ZMAP_XWINDOW_FORMAT_STR"\" />"
 				    " <featureset names=\"%s\" />"
 				    " <start value=\"%d\" />"
 				    " <end value=\"%d\" />"
@@ -1457,8 +1457,8 @@ static void remoteSendViewClosed(ZMapXRemoteObj client, unsigned long xwid)
   char *request ;
   char *response = NULL;
 
-  request = g_strdup_printf("<zmap> <request action=\"view_closed\" xwid=\"0x%lx\">"
-			    "<client xwid=\"0x%lx\" /> </request> </zmap>",
+  request = g_strdup_printf("<zmap> <request action=\"view_closed\" xwid=\""ZMAP_XWINDOW_FORMAT_STR"\">"
+			    "<client xwid=\""ZMAP_XWINDOW_FORMAT_STR"\" /> </request> </zmap>",
 			    xwid, xwid) ;
 
   if (zMapXRemoteSendRemoteCommand(client, request, &response) != ZMAPXREMOTE_SENDCOMMAND_SUCCEED)

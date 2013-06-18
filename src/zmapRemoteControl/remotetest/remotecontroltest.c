@@ -977,7 +977,8 @@ static void installPropertyNotify(GtkWidget *widget, GdkEvent *event, gpointer u
       process_command_file(remote_data, remote_data->cmd_line_args->command_file);
     }
 
-  remote_data->window_id = g_strdup_printf("0x%lx", GDK_DRAWABLE_XID(remote_data->app_toplevel->window)) ;
+  remote_data->window_id = g_strdup_printf(ZMAP_XWINDOW_FORMAT_STR,
+					   GDK_DRAWABLE_XID(remote_data->app_toplevel->window)) ;
 
   return ;
 }
@@ -1010,7 +1011,7 @@ static void mapCB(GtkWidget *widget, GdkEvent *event, gpointer user_data)
 	  && (x_window = GDK_WINDOW_XID(gdk_window)))
 	{
 	  remote_data->x_window_id = x_window ;
-	  remote_data->x_window_id_str = g_strdup_printf("0x%lx", remote_data->x_window_id) ;
+	  remote_data->x_window_id_str = g_strdup_printf(ZMAP_XWINDOW_FORMAT_STR, remote_data->x_window_id) ;
 
 	  result = TRUE ;
 	}
@@ -1404,7 +1405,7 @@ static gboolean timeoutCB(ZMapRemoteControl remote_control, void *user_data)
 	{
 	  char *full_err_msg ;
 
-	  full_err_msg = g_strdup_printf("Peer window (0x%lx) has gone, stopping remote control because: \"%s\".",
+	  full_err_msg = g_strdup_printf("Peer window (\""ZMAP_XWINDOW_FORMAT_STR"\") has gone, stopping remote control because: \"%s\".",
 					 x_window, err_msg) ;
 
 	  zMapLogCritical("%s", full_err_msg) ;
@@ -1669,7 +1670,8 @@ static gboolean handleHandshake(char *command_text, RemoteData remote_data)
 
 		  remote_data->peer_x_window_id = strtoul(peer_data.window_id, &rest_str, 16) ;
 
-		  remote_data->peer_x_window_id_str = g_strdup_printf("0x%lx", remote_data->peer_x_window_id) ;
+		  remote_data->peer_x_window_id_str = g_strdup_printf(ZMAP_XWINDOW_FORMAT_STR,
+								      remote_data->peer_x_window_id) ;
 		}
 
 
@@ -2738,7 +2740,8 @@ static gboolean send_command_cb(gpointer key, gpointer hash_data, gpointer user_
       else
 	{
 	  char *message;
-	  message = g_strdup_printf("send command failed, deleting client (0x%x)...", GPOINTER_TO_INT(key));
+	  message = g_strdup_printf("send command failed, deleting client (\""ZMAP_XWINDOW_FORMAT_STR"\")...",
+				    GPOINTER_TO_INT(key));
 	  zMapGUIShowMsg(ZMAP_MSG_WARNING, message);
 	  g_free(message);
 	  message = zMapXRemoteGetResponse(NULL);
