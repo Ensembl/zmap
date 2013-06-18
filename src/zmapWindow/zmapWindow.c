@@ -2592,7 +2592,7 @@ static void resetCanvas(ZMapWindow window, gboolean free_child_windows, gboolean
        * and window state restore then later adjusts everything using the
        * previous saved coordinates that are revcomped to agree with this
        */
-      if(window->scroll_initialised && free_revcomp_safe_windows)
+      if(window->revcomped_features && window->scroll_initialised && free_revcomp_safe_windows)
         {
           double y1,y2,x1,x2;
           
