@@ -96,6 +96,13 @@ typedef struct
 } LockedDisplayStruct, *LockedDisplay ;
 
 
+typedef struct ScrollToStructType
+{
+  int x ;
+  int y ;
+} ScrollToStruct, *ScrollTo ;
+
+
 
 /* Used for showing ruler on all windows that are in a vertically locked group. */
 typedef enum
@@ -216,6 +223,7 @@ static void zoomWindow(ZMapWindow window, GdkEventKey *key_event) ;
 static void setCurrLock(ZMapWindowLockType window_locking, ZMapWindow window,
 			GtkAdjustment **hadjustment, GtkAdjustment **vadjustment) ;
 static void lockedDisplayCB(gpointer key, gpointer value, gpointer user_data) ;
+static void scrollToCB(gpointer key, gpointer value, gpointer user_data) ;
 static void copyLockWindow(ZMapWindow original_window, ZMapWindow new_window) ;
 static void lockWindow(ZMapWindow window, ZMapWindowLockType window_locking) ;
 static void unlockWindow(ZMapWindow window, gboolean no_destroy_if_empty) ;
@@ -1033,19 +1041,29 @@ void zMapWindowZoomToMin(ZMapWindow window)
 
 
 
-
-
-
 /* try out the new zoom window.... */
 void zmapWindowZoom(ZMapWindow window, double zoom_factor, gboolean stay_centered)
 {
   int x, y;
   double width, curr_pos = 0.0, sensitivity = 0.001 ;
-  GtkAdjustment *adjust;
+  GtkAdjustment *adjust ;
 
 
-  if((zoom_factor < (1.0 - sensitivity)) || (zoom_factor > (1.0 + sensitivity)))
+  if ((zoom_factor < (1.0 - sensitivity)) || (zoom_factor > (1.0 + sensitivity)))
     {
+      static gboolean debug = FALSE ;
+      GdkWindow *gdk_window ;
+      Display *x_display ;
+
+      if (debug)
+	{
+	  gdk_window = gtk_widget_get_window(window->toplevel) ;
+	  x_display = GDK_DRAWABLE_XDISPLAY(gdk_window) ;
+
+	  XSynchronize(x_display, TRUE) ;
+	}
+
+
       zmapWindowBusy(window, TRUE) ;	/* just does the hour glass cursor */
 
       adjust = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window)) ;
@@ -1098,14 +1116,41 @@ void zmapWindowZoom(ZMapWindow window, double zoom_factor, gboolean stay_centere
        * an adjuster.  If we try to work out position within myWindowZoom
        * we end up getting the wrong position the second ... times round
        * and not scrolling to the right position.
-       */
+      
+       * NO...THIS DOESN'T WORK....THEY MIGHT SHARE AN ADJUSTER BUT THIS
+       * DOESN'T END UP SIGNALLING ALL THE OTHER CANVASES TO REDRAW PROPERLY.
+       * SO I'VE ADDED CODE TO CALL ALL THE CANVASES....THIS WORKS...BUT
+       * THERE IS STILL A PROBLEM WITH THE SEQUENCE REDRAW....I.E. IF DNA
+       * IS SHOWN....
+       * 
+       *  */
       if (stay_centered && window->curr_locking != ZMAP_WINLOCK_HORIZONTAL)
 	{
-	  foo_canvas_w2c(window->canvas, width, curr_pos, &x, &y);
-	  foo_canvas_scroll_to(window->canvas, x, y - (adjust->page_size/2));
+	  ScrollToStruct scroll_to_data ;
+
+
+	  foo_canvas_w2c(window->canvas, width, curr_pos, &x, &y) ;
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	  foo_canvas_scroll_to(window->canvas, x, y - (adjust->page_size / 2)) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+	  scroll_to_data.x = x ;
+	  scroll_to_data.y =  y - (adjust->page_size / 2) ;
+	  g_hash_table_foreach(window->sibling_locked_windows, scrollToCB, (gpointer)&scroll_to_data) ;
+
+
 	}
 
       zmapWindowBusy(window, FALSE) ;
+
+
+      if (debug)
+	{
+	  XSynchronize(x_display, FALSE) ;
+	}
     }
 
   return ;
@@ -4675,8 +4720,8 @@ static GtkAdjustment *copyAdjustmentObj(GtkAdjustment *orig_adj)
 
 static void lockedDisplayCB(gpointer key, gpointer value, gpointer user_data)
 {
-  LockedDisplay locked_data = (LockedDisplay)user_data ;
   ZMapWindow window = (ZMapWindow)key ;
+  LockedDisplay locked_data = (LockedDisplay)user_data ;
 
   foo_canvas_busy(window->canvas,TRUE);
 
@@ -4693,6 +4738,18 @@ static void lockedDisplayCB(gpointer key, gpointer value, gpointer user_data)
 
   return ;
 }
+
+
+static void scrollToCB(gpointer key, gpointer value, gpointer user_data)
+{
+  ZMapWindow window = (ZMapWindow)key ;
+  ScrollTo scroll_to_data = (ScrollTo)scroll_to_data ;
+
+  foo_canvas_scroll_to(window->canvas, scroll_to_data->x, scroll_to_data->y) ;
+
+  return ;
+}
+
 
 
 void zmapWindowFetchData(ZMapWindow window, ZMapFeatureBlock block,
