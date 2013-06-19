@@ -390,6 +390,8 @@ typedef struct _ZMapViewStruct
 
   GHashTable *cwh_hash ;
 
+  GList *scratch_features ;             /* List of feature data that has been copied into the scratch column on the fwd strand */
+  GList *scratch_features_rev ;         /* List of feature data that has been copied into the scratch column on the rev strand */
   gboolean scratch_start_end_set ;     /* TRUE if the scratch-column forward-strand feature start/end has been set */
   gboolean scratch_start_end_set_rev ; /* TRUE if the scratch-column reverse-strand feature start/end has been set */
 

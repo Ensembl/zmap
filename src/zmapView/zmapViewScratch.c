@@ -49,17 +49,30 @@ typedef struct _GetFeaturesetCBDataStruct
 } GetFeaturesetCBDataStruct, *GetFeaturesetCBData;
 
 
-typedef struct _ScratchMergeDataStruct
+/* Data about each feature that has been merged into the scratch column */
+typedef struct _ScratchMergedFeatureStruct
 {
-  ZMapView view;
   FooCanvasItem *src_item;
   ZMapFeature src_feature;     /* the new feature to be merged in, i.e. the source for the merge */ 
-  ZMapFeatureSet dest_featureset; /* the scratch column featureset */
-  ZMapFeature dest_feature;    /* the scratch column feature, i.e. the destination for the merge */
   double world_x;              /* clicked position */
   double world_y;              /* clicked position */
   gboolean use_subfeature;     /* if true, just use the clicked subfeature, otherwise use the whole feature */
-  GError **error;              /* gets set if any problems */
+} ScratchMergedFeatureStruct, *ScratchMergedFeature;
+
+
+/* Data about the current merge process */
+typedef struct _ScratchMergeDataStruct
+{
+  ZMapView view;
+  ZMapFeatureSet dest_featureset;        /* the scratch column featureset */
+  ZMapFeature dest_feature;              /* the scratch column feature, i.e. the destination for the merge */
+  GError **error;                        /* gets set if any problems */
+
+  FooCanvasItem *src_item;
+  ZMapFeature src_feature;     /* the new feature to be merged in, i.e. the source for the merge */ 
+  double world_x;              /* clicked position */
+  double world_y;              /* clicked position */
+  gboolean use_subfeature;     /* if true, just use the clicked subfeature, otherwise use the whole feature */
 } ScratchMergeDataStruct, *ScratchMergeData;
   
 
@@ -691,6 +704,61 @@ void scratchRedrawFeature(ZMapView zmap_view,
   zmapViewDisplayDataWindows(zmap_view, zmap_view->features, zmap_view->features, NULL, FALSE, NULL, NULL, FALSE) ;
 }
 
+/*!
+ * /brief Reset the scratch feature
+ */
+void scratchFeatureReset(ZMapView view)
+{
+  /* Get the singleton features that exist in each strand of the scatch column */
+  ZMapFeatureSet scratch_featureset = scratchGetFeatureset(view);
+  ZMapFeature scratch_feature = scratchGetFeature(scratch_featureset, ZMAPSTRAND_FORWARD);
+
+  /* Delete the exons and introns (the singleton feature always
+   * exists so we don't delete the whole thing). */
+  scratchDeleteFeatureExons(view, scratch_feature, scratch_featureset);
+
+  /* Reset the start-/end-set flag */
+  scratchSetStartEndFlag(view, FALSE);
+}
+
+
+/*!
+ * /brief Recreate the scratch feature from the list of merged features
+ */
+void scratchFeatureRecreate(ZMapView view)
+{
+  /* First reset the scratch feature */
+  scratchFeatureReset(view);
+
+  /* Get the singleton features that exist in each strand of the scatch column */
+  ZMapStrand strand = ZMAPSTRAND_FORWARD;      
+  ZMapFeatureSet scratch_featureset = scratchGetFeatureset(view);
+  ZMapFeature scratch_feature = scratchGetFeature(scratch_featureset, strand);
+
+  /* Loop through each feature in the merge list and merge it in */
+  GError *error = NULL;
+  ScratchMergeDataStruct merge_data = {view, scratch_featureset, scratch_feature, &error, NULL, NULL, 0, 0, FALSE};
+  GList *list_item = view->revcomped_features ? view->scratch_features_rev : view->scratch_features;
+  
+  for ( ; list_item; list_item = list_item->next)
+    {
+      /* Add info about the current feature to the merge data
+       * \todo Could tidy this and just point to the merge_feature */
+      ScratchMergedFeature merge_feature = (ScratchMergedFeature)(list_item->data);
+      
+      merge_data.src_feature = merge_feature->src_feature;
+      merge_data.src_item = merge_feature->src_item;
+      merge_data.world_x = merge_feature->world_x;
+      merge_data.world_y = merge_feature->world_y;
+      merge_data.use_subfeature = merge_feature->use_subfeature;
+
+      /* Do the merge */
+      scratchMergeFeature(&merge_data);
+    }
+
+  scratchRedrawFeature(view, scratch_feature, scratch_featureset, view->features);
+}
+
 
 /*!
  * \brief Update any changes to the given featureset
@@ -702,19 +770,24 @@ gboolean zmapViewScratchCopyFeature(ZMapView view,
                                     const double world_y,
                                     const gboolean use_subfeature)
 {
-
-  ZMapStrand strand = ZMAPSTRAND_FORWARD;
-  ZMapFeatureSet scratch_featureset = scratchGetFeatureset(view);
-  ZMapFeature scratch_feature = scratchGetFeature(scratch_featureset, strand);
-  
-  if (scratch_featureset && scratch_feature)
+  if (feature)
     {
-      GError *error = NULL;
-      ScratchMergeDataStruct merge_data = {view, item, feature, scratch_featureset, scratch_feature, world_x, world_y, use_subfeature, &error};
-      scratchMergeFeature(&merge_data);
+      ScratchMergedFeature merge_feature = g_new0(ScratchMergedFeatureStruct, 1);
+      merge_feature->src_feature = feature;
+      merge_feature->src_item = item;
+      merge_feature->world_x = world_x;
+      merge_feature->world_y = world_y;
+      merge_feature->use_subfeature = use_subfeature;
+
+      /* Add this feature to the list of merged features and recreate the scratch feature */
+      if (view->revcomped_features)
+        view->scratch_features_rev = g_list_append(view->scratch_features_rev, merge_feature);
+      else
+        view->scratch_features = g_list_append(view->scratch_features, merge_feature);
+
+      scratchFeatureRecreate(view);
     }
-  
-  scratchRedrawFeature(view, scratch_feature, scratch_featureset, view->features);
+
   return TRUE;
 }
 
@@ -728,21 +801,19 @@ gboolean zmapViewScratchCopyFeature(ZMapView view,
  */
 gboolean zmapViewScratchClear(ZMapView view)
 { 
-  /* Get the singleton features that exist in each strand of the scatch column */
-  ZMapFeatureSet scratch_featureset = scratchGetFeatureset(view);
-  ZMapFeature scratch_feature = scratchGetFeature(scratch_featureset, ZMAPSTRAND_FORWARD);
-
-  /* Delete the exons and introns (the singleton feature always
-   * exists so we don't delete the whole thing). */
-  scratchDeleteFeatureExons(view, scratch_feature, scratch_featureset);
-
-  /* Reset the start-/end-set flag */
-  scratchSetStartEndFlag(view, FALSE);
-
-  if (scratch_feature)
+  /* Clear the list of features in the scratch column */
+  if (view->revcomped_features)
     {
-      scratchRedrawFeature(view, scratch_feature, scratch_featureset, view->features);
+      g_list_free_full(view->scratch_features_rev, g_free);
+      view->scratch_features_rev = NULL;
     }
+  else
+    {
+      g_list_free_full(view->scratch_features, g_free);
+      view->scratch_features = NULL;
+    }
+
+  scratchFeatureRecreate(view);
 
   return TRUE;
 }
