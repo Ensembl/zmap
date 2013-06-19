@@ -390,6 +390,8 @@ typedef struct _ZMapViewStruct
 
   GHashTable *cwh_hash ;
 
+  gboolean scratch_start_end_set ;     /* TRUE if the scratch-column forward-strand feature start/end has been set */
+  gboolean scratch_start_end_set_rev ; /* TRUE if the scratch-column reverse-strand feature start/end has been set */
 
 } ZMapViewStruct ;
 
@@ -497,8 +499,8 @@ gboolean zMapViewCollapseFeatureSets(ZMapView view, ZMapFeatureContext diff_cont
 
 /* zmapViewScratch.c */
 void zmapViewScratchInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, ZMapFeatureContext context, ZMapFeatureBlock block);
-gboolean zmapViewScratchUpdateFeature(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, ZMapFeature feature, ZMapFeatureSet feature_set, ZMapFeatureContext context);
-gboolean zmapViewScratchClear(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, ZMapFeature feature, ZMapFeatureSet feature_set, ZMapFeatureContext context);
+gboolean zmapViewScratchCopyFeature(ZMapView zmap_view, ZMapFeature feature, FooCanvasItem *item, const double world_x, const double world_y, const gboolean use_subfeature);
+gboolean zmapViewScratchClear(ZMapView zmap_view);
 
 
 #ifdef LOTS_OF_EXONS

@@ -41,6 +41,461 @@
 #include <zmapView_P.h>
 
 
+  
+typedef struct _GetFeaturesetCBDataStruct
+{
+  GQuark set_id;
+  ZMapFeatureSet featureset;
+} GetFeaturesetCBDataStruct, *GetFeaturesetCBData;
+
+
+typedef struct _ScratchMergeDataStruct
+{
+  ZMapView view;
+  FooCanvasItem *src_item;
+  ZMapFeature src_feature;     /* the new feature to be merged in, i.e. the source for the merge */ 
+  ZMapFeatureSet dest_featureset; /* the scratch column featureset */
+  ZMapFeature dest_feature;    /* the scratch column feature, i.e. the destination for the merge */
+  double world_x;              /* clicked position */
+  double world_y;              /* clicked position */
+  gboolean use_subfeature;     /* if true, just use the clicked subfeature, otherwise use the whole feature */
+  GError **error;              /* gets set if any problems */
+} ScratchMergeDataStruct, *ScratchMergeData;
+  
+
+
+
+/*!
+ * \brief Get the flag which indicates whether the start/end
+ * of the feature have been set
+ */
+static gboolean scratchGetStartEndFlag(ZMapView view)
+{
+  gboolean value = FALSE;
+  
+  /* Update the relevant flag for the current strand */
+  if (view->revcomped_features)
+    value = view->scratch_start_end_set_rev;
+  else
+    value = view->scratch_start_end_set;
+  
+  return value;
+}
+
+
+/*!
+ * \brief Update the flag which indicates whether the start/end
+ * of the feature have been set
+ */
+static void scratchSetStartEndFlag(ZMapView view, gboolean value)
+{
+  /* Update the relevant flag for the current strand */
+  if (view->revcomped_features)
+    view->scratch_start_end_set_rev = value;
+  else
+    view->scratch_start_end_set = value;
+}
+
+
+/*!
+ * \brief Callback called on every child in a FeatureAny.
+ * 
+ * For each featureset, compares its id to the id in the user
+ * data and if it matches it sets the result in the user data.
+ */
+static ZMapFeatureContextExecuteStatus getFeaturesetFromIdCB(GQuark key,
+                                                             gpointer data,
+                                                             gpointer user_data,
+                                                             char **err_out)
+{
+  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
+  
+  GetFeaturesetCBData cb_data = (GetFeaturesetCBData) user_data ;
+  ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
+
+  switch(feature_any->struct_type)
+    {
+    case ZMAPFEATURE_STRUCT_FEATURESET:
+      if (feature_any->unique_id == cb_data->set_id)
+        cb_data->featureset = (ZMapFeatureSet)feature_any;
+      break;
+      
+    default:
+      break;
+    };
+  
+  return status;
+}
+
+
+/*!
+ * \brief Find the featureset with the given id in the given view's context
+ */
+static ZMapFeatureSet getFeaturesetFromId(ZMapView view, GQuark set_id)
+{
+  GetFeaturesetCBDataStruct cb_data = { set_id, NULL };
+  
+  zMapFeatureContextExecute((ZMapFeatureAny)view->features,
+                            ZMAPFEATURE_STRUCT_FEATURESET,
+                            getFeaturesetFromIdCB,
+                            &cb_data);
+
+  return cb_data.featureset ;
+}
+
+
+/*!
+ * \brief Get the single featureset that resides in the scratch column
+ *
+ * \returns The ZMapFeatureSet, or NULL if there was a problem
+ */
+static ZMapFeatureSet scratchGetFeatureset(ZMapView view)
+{
+  ZMapFeatureSet feature_set = NULL;
+
+  GQuark column_id = zMapFeatureSetCreateID(ZMAP_FIXED_STYLE_SCRATCH_NAME);
+  GList *fs_list = zMapFeatureGetColumnFeatureSets(&view->context_map, column_id, TRUE);
+  
+  /* There should be one (and only one) featureset in the column */
+  if (g_list_length(fs_list) > 0)
+    {         
+      GQuark set_id = (GQuark)(GPOINTER_TO_INT(fs_list->data));
+      feature_set = getFeaturesetFromId(view, set_id);
+    }
+  else
+    {
+      zMapWarning("No featureset for column '%s'\n", ZMAP_FIXED_STYLE_SCRATCH_NAME);
+    }
+
+  return feature_set;
+}
+
+
+/*! 
+ * \brief Get the single feature that resides in the scratch column featureset for this strand
+ *
+ * \returns The ZMapFeature, or NULL if there was a problem
+ */
+static ZMapFeature scratchGetFeature(ZMapFeatureSet feature_set, ZMapStrand strand)
+{
+  ZMapFeature feature = NULL;
+  
+  ZMapFeatureAny feature_any = (ZMapFeatureAny)feature_set;
+
+  GHashTableIter iter;
+  gpointer key, value;
+      
+  g_hash_table_iter_init (&iter, feature_any->children);
+  
+  while (g_hash_table_iter_next (&iter, &key, &value) && !feature)
+    {
+      feature = (ZMapFeature)(value);
+      
+      if (feature->strand != strand)
+        feature = NULL;
+    }
+
+  return feature;
+}
+
+
+/*!
+ * \brief Merge the given start/end coords into the scratch column feature
+ */
+static gboolean scratchMergeCoords(ScratchMergeData merge_data, const int coord1, const int coord2)
+{
+  gboolean result = FALSE;
+  
+  /* If the start and end have not been set and we're merging in a single subfeature
+   * then set the start/end from the subfeature (for a single subfeature, this function
+   * only gets called once, so it's safe to set it here; when merging a 'full' feature
+   * e.g. a transcript this will get called for each exon, so we need to set the feature
+   * extent from a higher level). */
+  if (merge_data->use_subfeature && !scratchGetStartEndFlag(merge_data->view))
+    {
+      merge_data->dest_feature->x1 = coord1;
+      merge_data->dest_feature->x2 = coord2;
+    }
+
+  zMapFeatureTranscriptMergeExon(merge_data->dest_feature, coord1, coord2);
+  result = TRUE;
+  
+  return result;
+}
+
+
+/*!
+ * \brief Merge a single coord into the scratch column feature
+ */
+static gboolean scratchMergeCoord(ScratchMergeData merge_data, const int coord, const ZMapBoundaryType boundary)
+{
+  gboolean merged = FALSE;
+
+  /* Check that the scratch feature already contains at least one
+   * exon, otherwise we cannot merge a single coord. */
+  if (zMapFeatureTranscriptGetNumExons(merge_data->dest_feature) > 0)
+    {
+      zMapFeatureRemoveIntrons(merge_data->dest_feature);
+      
+      /* Merge in the new exons */
+      merged = zMapFeatureTranscriptMergeCoord(merge_data->dest_feature, coord, boundary, merge_data->error);
+    }
+  else
+    {
+      g_set_error(merge_data->error, g_quark_from_string("ZMap"), 99, "Cannot merge a single coordinate");
+    }
+
+  zMapFeatureTranscriptRecreateIntrons(merge_data->dest_feature);
+  
+  return merged;
+}
+
+
+/*! 
+ * \brief Merge a single exon into the scratch column feature
+ */
+static void scratchMergeExonCB(gpointer exon, gpointer user_data)
+{
+  ZMapSpan exon_span = (ZMapSpan)exon;
+  ScratchMergeData merge_data = (ScratchMergeData)user_data;
+
+  scratchMergeCoords(merge_data, exon_span->x1, exon_span->x2);
+}
+
+
+/*! 
+ * \brief Merge a single alignment match into the scratch column feature
+ */
+static void scratchMergeMatchCB(gpointer match, gpointer user_data)
+{
+  ZMapAlignBlock match_block = (ZMapAlignBlock)match;
+  ScratchMergeData merge_data = (ScratchMergeData)user_data;
+
+  scratchMergeCoords(merge_data, match_block->q1, match_block->q2);
+}
+
+
+/*! 
+ * \brief Add/merge a single base into the scratch column
+ */
+static gboolean scratchMergeBase(ScratchMergeData merge_data)
+{
+  gboolean merged = FALSE;
+  long seq_start=0.0, seq_end=0.0;      
+
+  /* Convert the world coords to sequence coords */
+  if (zMapWindowItemGetSeqCoord(merge_data->src_item, TRUE, merge_data->world_x, merge_data->world_y, &seq_start, &seq_end))
+    {
+      merged = scratchMergeCoord(merge_data, seq_start, ZMAPBOUNDARY_NONE);
+    }
+  else
+    {
+      g_set_error(merge_data->error, g_quark_from_string("ZMap"), 99, "Program error: not a featureset item");
+    }
+
+
+  return merged;
+}
+
+
+/*! 
+ * \brief Add/merge a basic feature to the scratch column
+ */
+static gboolean scratchMergeBasic(ScratchMergeData merge_data)
+{
+  gboolean merged = TRUE;
+  
+  zMapFeatureRemoveIntrons(merge_data->dest_feature);
+
+  /* Just merge the start/end of the feature */
+  merged = scratchMergeCoords(merge_data, merge_data->src_feature->x1, merge_data->src_feature->x2);
+
+  /* Recreate the introns */
+  zMapFeatureTranscriptRecreateIntrons(merge_data->dest_feature);
+  
+  return merged;
+}
+
+
+/*! 
+ * \brief Add/merge a splice feature to the scratch column
+ */
+static gboolean scratchMergeSplice(ScratchMergeData merge_data)
+{
+  gboolean merged = FALSE;
+  
+  zMapFeatureRemoveIntrons(merge_data->dest_feature);
+
+  /* Just merge the start/end of the feature */
+  merged = scratchMergeCoord(merge_data, merge_data->src_feature->x1, merge_data->src_feature->boundary_type);
+
+  /* Recreate the introns */
+  zMapFeatureTranscriptRecreateIntrons(merge_data->dest_feature);
+  
+  return merged;
+}
+
+
+/*! 
+ * \brief Add/merge an alignment feature to the scratch column
+ */
+static gboolean scratchMergeAlignment(ScratchMergeData merge_data)
+{
+  gboolean merged = FALSE;
+  
+  zMapFeatureRemoveIntrons(merge_data->dest_feature);
+
+  /* Loop through each match block and merge it in */
+  if (!zMapFeatureAlignmentMatchForeach(merge_data->src_feature, scratchMergeMatchCB, merge_data))
+    {
+      /* The above returns false if no match blocks were found. If the alignment is 
+       * gapped but we don't have this data then we can't process it. Otherwise, it's
+       * an ungapped alignment so add the whole thing. */
+      if (zMapFeatureAlignmentIsGapped(merge_data->src_feature))
+        {
+          g_set_error(merge_data->error, g_quark_from_string("ZMap"), 99, "Cannot copy feature; gapped alignment data is not available");
+        }
+      else
+        {
+          merged = scratchMergeCoords(merge_data, merge_data->src_feature->x1, merge_data->src_feature->x2);
+        }
+    }
+
+  /* Copy CDS, if set */
+  //  zMapFeatureMergeTranscriptCDS(merge_data->src_feature, merge_data->dest_feature);
+
+  /* Recreate the introns */
+  zMapFeatureTranscriptRecreateIntrons(merge_data->dest_feature);
+
+  return merged;
+}
+
+
+/*! 
+ * \brief Add/merge a transcript feature to the scratch column
+ */
+static gboolean scratchMergeTranscript(ScratchMergeData merge_data)
+{
+  gboolean merged = TRUE;
+  
+  zMapFeatureRemoveIntrons(merge_data->dest_feature);
+
+  /* Merge in all of the new exons from the new feature */
+  zMapFeatureTranscriptExonForeach(merge_data->src_feature, scratchMergeExonCB, merge_data);
+  
+  /* Copy CDS, if set */
+  zMapFeatureMergeTranscriptCDS(merge_data->src_feature, merge_data->dest_feature);
+
+  /* Recreate the introns */
+  zMapFeatureTranscriptRecreateIntrons(merge_data->dest_feature);
+
+  return merged;
+}
+
+
+/*! 
+ * \brief Add/merge a feature to the scratch column
+ */
+static void scratchMergeFeature(ScratchMergeData merge_data)
+{
+  gboolean merged = FALSE;
+
+  if (merge_data->use_subfeature)
+    {
+      /* Just merge the clicked subfeature */
+      ZMapFeatureSubPartSpan sub_feature = NULL;
+      zMapWindowItemGetInterval(merge_data->src_item, merge_data->world_x, merge_data->world_y, &sub_feature);
+      
+      if (sub_feature)
+        {
+          if (sub_feature->start == sub_feature->end)
+            merged = scratchMergeCoord(merge_data, sub_feature->start, ZMAPBOUNDARY_NONE);
+          else
+            merged = scratchMergeCoords(merge_data, sub_feature->start, sub_feature->end);
+
+          zMapFeatureTranscriptRecreateIntrons(merge_data->dest_feature);
+        }
+      else
+        {
+          g_set_error(merge_data->error, g_quark_from_string("ZMap"), 99, 
+                      "Could not find subfeature in feature '%s' at coords %d, %d", 
+                      g_quark_to_string(merge_data->src_feature->original_id),
+                      (int)merge_data->world_x, (int)merge_data->world_y);
+        }
+    }
+  else
+    {
+      /* If the start/end is not set, set it now from the feature extent */
+      if (!scratchGetStartEndFlag(merge_data->view))
+        {
+          merge_data->dest_feature->x1 = merge_data->src_feature->x1;
+          merge_data->dest_feature->x2 = merge_data->src_feature->x2;
+        }
+
+      switch (merge_data->src_feature->type)
+        {
+        case ZMAPSTYLE_MODE_BASIC:
+          merged = scratchMergeBasic(merge_data);
+          break;
+        case ZMAPSTYLE_MODE_ALIGNMENT:
+          merged = scratchMergeAlignment(merge_data);
+          break;
+        case ZMAPSTYLE_MODE_TRANSCRIPT:
+          merged = scratchMergeTranscript(merge_data);
+          break;
+        case ZMAPSTYLE_MODE_SEQUENCE:
+          merged = scratchMergeBase(merge_data);
+          break;
+        case ZMAPSTYLE_MODE_GLYPH:
+          merged = scratchMergeSplice(merge_data);
+          break;
+
+        case ZMAPSTYLE_MODE_INVALID:       /* fall through */
+        case ZMAPSTYLE_MODE_ASSEMBLY_PATH: /* fall through */
+        case ZMAPSTYLE_MODE_TEXT:          /* fall through */
+        case ZMAPSTYLE_MODE_GRAPH:         /* fall through */
+        case ZMAPSTYLE_MODE_PLAIN:         /* fall through */
+        case ZMAPSTYLE_MODE_META:          /* fall through */
+        default:
+          g_set_error(merge_data->error, g_quark_from_string("ZMap"), 99, "copy of feature of type %d is not implemented.\n", merge_data->src_feature->type);
+          break;
+        };
+    }
+  
+  /* Once finished merging, the start/end should now be set */
+  if (merged)
+    {
+      scratchSetStartEndFlag(merge_data->view, TRUE);
+    }
+  
+  if (*(merge_data->error))
+    {
+      if (merged)
+        zMapWarning("Warning while copying feature: %s", (*(merge_data->error))->message);
+      else
+        zMapCritical("Error copying feature: %s", (*(merge_data->error))->message);
+      
+      g_error_free(*(merge_data->error));
+      merge_data->error = NULL;
+    }
+}
+
+
+/*!
+ * \brief Utility to delete all exons from the given feature
+ */
+static void scratchDeleteFeatureExons(ZMapView view, ZMapFeature feature, ZMapFeatureSet feature_set)
+{
+  if (feature)
+    {
+      zMapFeatureRemoveExons(feature);
+      zMapFeatureRemoveIntrons(feature);
+    }  
+}
+
+
+
+
 static void handBuiltInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, ZMapFeatureContext context)
 {
   ZMapFeatureSet featureset = NULL ;
@@ -227,7 +682,7 @@ void zmapViewScratchInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, ZM
 /*!
  * \brief Does the work to update any changes to the given featureset
  */
-void scratchUpdateFeature(ZMapView zmap_view, 
+void scratchRedrawFeature(ZMapView zmap_view, 
                           ZMapFeature feature,
                           ZMapFeatureSet feature_set,
                           ZMapFeatureContext context)
@@ -240,13 +695,26 @@ void scratchUpdateFeature(ZMapView zmap_view,
 /*!
  * \brief Update any changes to the given featureset
  */
-gboolean zmapViewScratchUpdateFeature(ZMapView zmap_view, 
-                                      ZMapFeatureSequenceMap sequence,
-                                      ZMapFeature feature,
-                                      ZMapFeatureSet feature_set,
-                                      ZMapFeatureContext context)
+gboolean zmapViewScratchCopyFeature(ZMapView view, 
+                                    ZMapFeature feature,
+                                    FooCanvasItem *item,
+                                    const double world_x,
+                                    const double world_y,
+                                    const gboolean use_subfeature)
 {
-  scratchUpdateFeature(zmap_view, feature, feature_set, context);
+
+  ZMapStrand strand = ZMAPSTRAND_FORWARD;
+  ZMapFeatureSet scratch_featureset = scratchGetFeatureset(view);
+  ZMapFeature scratch_feature = scratchGetFeature(scratch_featureset, strand);
+  
+  if (scratch_featureset && scratch_feature)
+    {
+      GError *error = NULL;
+      ScratchMergeDataStruct merge_data = {view, item, feature, scratch_featureset, scratch_feature, world_x, world_y, use_subfeature, &error};
+      scratchMergeFeature(&merge_data);
+    }
+  
+  scratchRedrawFeature(view, scratch_feature, scratch_featureset, view->features);
   return TRUE;
 }
 
@@ -258,15 +726,22 @@ gboolean zmapViewScratchUpdateFeature(ZMapView zmap_view,
  * It doesn't remove the feature itself because this 
  * singleton feature always exists.
  */
-gboolean zmapViewScratchClear(ZMapView zmap_view,
-                              ZMapFeatureSequenceMap sequence,
-                              ZMapFeature feature,
-                              ZMapFeatureSet feature_set,
-                              ZMapFeatureContext context)
+gboolean zmapViewScratchClear(ZMapView view)
 { 
-  if (feature)
+  /* Get the singleton features that exist in each strand of the scatch column */
+  ZMapFeatureSet scratch_featureset = scratchGetFeatureset(view);
+  ZMapFeature scratch_feature = scratchGetFeature(scratch_featureset, ZMAPSTRAND_FORWARD);
+
+  /* Delete the exons and introns (the singleton feature always
+   * exists so we don't delete the whole thing). */
+  scratchDeleteFeatureExons(view, scratch_feature, scratch_featureset);
+
+  /* Reset the start-/end-set flag */
+  scratchSetStartEndFlag(view, FALSE);
+
+  if (scratch_feature)
     {
-      scratchUpdateFeature(zmap_view, feature, feature_set, context);
+      scratchRedrawFeature(view, scratch_feature, scratch_featureset, view->features);
     }
 
   return TRUE;

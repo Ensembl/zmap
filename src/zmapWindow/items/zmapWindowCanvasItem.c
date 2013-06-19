@@ -190,6 +190,25 @@ ZMapFeatureSubPartSpan zMapWindowCanvasItemIntervalGetData(FooCanvasItem *item,
   return sub_feature ;
 }
 
+
+/* Wrapper around zMapWindowCanvasItemGetInterval to take a generic item
+ * and call the former if it's a canvas item. */
+FooCanvasItem *zMapWindowItemGetInterval(FooCanvasItem *item,
+                                         double x, double y,
+                                         ZMapFeatureSubPartSpan *sub_feature_out)
+{
+  FooCanvasItem *result = NULL;
+  
+  if (ZMAP_IS_CANVAS_ITEM(item))
+    {
+      ZMapWindowCanvasItem canvas_item = ZMAP_CANVAS_ITEM(item);
+      result = zMapWindowCanvasItemGetInterval(canvas_item, x, y, sub_feature_out);
+    }
+    
+  return result;
+}
+
+
 FooCanvasItem *zMapWindowCanvasItemGetInterval(ZMapWindowCanvasItem canvas_item,
 					       double x, double y,
 					       ZMapFeatureSubPartSpan *sub_feature_out)

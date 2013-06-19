@@ -4967,14 +4967,13 @@ static void commandCB(ZMapWindow window, void *caller_data, void *window_data)
     case ZMAPWINDOW_CMD_COPYTOSCRATCH:
       {
 	ZMapWindowCallbackCommandScratch scratch_cmd = (ZMapWindowCallbackCommandScratch)cmd_any ;
-        zmapViewScratchUpdateFeature(view, scratch_cmd->sequence, scratch_cmd->feature, scratch_cmd->feature_set, scratch_cmd->context);
+        zmapViewScratchCopyFeature(view, scratch_cmd->feature, scratch_cmd->item, scratch_cmd->world_x, scratch_cmd->world_y, scratch_cmd->use_subfeature);
         break;
       }
       
     case ZMAPWINDOW_CMD_CLEARSCRATCH:
       {
-	ZMapWindowCallbackCommandScratch scratch_cmd = (ZMapWindowCallbackCommandScratch)cmd_any ;
-        zmapViewScratchClear(view, scratch_cmd->sequence, scratch_cmd->feature, scratch_cmd->feature_set, scratch_cmd->context);
+        zmapViewScratchClear(view);
         break;
       }
       

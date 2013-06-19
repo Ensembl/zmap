@@ -340,10 +340,12 @@ typedef struct ZMapWindowCallbackCommandScratchStructName
   ZMapFeatureBlock block ;
 
   /* Scratch specific section. */
-  ZMapFeatureSequenceMap sequence;
-  ZMapFeature feature;
-  ZMapFeatureSet feature_set;
-  ZMapFeatureContext context;
+  ZMapFeature feature;  /* clicked feature */
+  FooCanvasItem *item;  /* clicked item */
+  double world_x;       /* clicked x pos in world coords */
+  double world_y;       /* clicked y pos in world coords */
+  gboolean use_subfeature; /* whether use selected a subfeature; false if selected whole feature */
+
 } ZMapWindowCallbackCommandScratchStruct, *ZMapWindowCallbackCommandScratch ;
 
 
@@ -433,6 +435,10 @@ double zMapWindowGetZoomMax(ZMapWindow window) ;
 double zMapWindowGetZoomMagnification(ZMapWindow window);
 double zMapWindowGetZoomMagAsBases(ZMapWindow window) ;
 double zMapWindowGetZoomMaxDNAInWrappedColumn(ZMapWindow window);
+gboolean zMapWindowItemGetSeqCoord(FooCanvasItem *item, gboolean set, double x, double y, long *seq_start, long *seq_end);
+FooCanvasItem *zMapWindowItemGetInterval(FooCanvasItem *item,
+                                         double x, double y,
+                                         ZMapFeatureSubPartSpan *sub_feature_out);
 
 gboolean zMapWindowZoomToFeature(ZMapWindow window, ZMapFeature feature) ;
 void zMapWindowZoomToWorldPosition(ZMapWindow window, gboolean border,
