@@ -5326,78 +5326,91 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
       break;
 #endif
 
+    case GDK_Y:
+    case GDK_y:
+      {
+        zmapWindowScratchRedo(window);
+        break;
+      }
+
     case GDK_Z:
     case GDK_z:
       {
-	/* Zoom to an item or subpart of an item. */
-      FooCanvasItem *focus_item ;
-	gboolean mark_set ;
+        if (zMapGUITestModifiers(key_event, GDK_CONTROL_MASK))
+          {
+            zmapWindowScratchUndo(window);
+          }
+        else
+          {
+            /* Zoom to an item or subpart of an item. */
+            FooCanvasItem *focus_item ;
+            gboolean mark_set ;
 
 
-	/* If there is a focus item(s) we zoom to that, if not we zoom to
-	 * any marked feature or area.  */
-	if ((focus_item = zmapWindowFocusGetHotItem(window->focus)))
-	  {
-	    ZMapFeature feature ;
+            /* If there is a focus item(s) we zoom to that, if not we zoom to
+             * any marked feature or area.  */
+            if ((focus_item = zmapWindowFocusGetHotItem(window->focus)))
+              {
+                ZMapFeature feature ;
+                
+                feature = zmapWindowItemGetFeature(focus_item);
+                zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
+                
+                /* If there is a marked feature(s), for "z" we zoom just to the highlighted
+                 * feature, for "Z" we zoom to the whole transcript/HSP's */
+                if (key_event->keyval == GDK_z)
+                  {
+                    GList *focus_items ;
+                    
+                    if ((focus_items = zmapWindowFocusGetFocusItems(window->focus)))
+                      {
+                        zmapWindowZoomToItems(window, focus_items) ;
+                        
+                        g_list_free(focus_items) ;
+                      }
+                  }
+                else
+                  {
+                    if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
+                      {
+                        zmapWindowZoomToItem(window, zmapWindowItemGetTrueItem(focus_item)) ;
+                      }
+                    else if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
+                      {
+                        GList *list = NULL;
+                        ZMapStrand set_strand ;
+                        ZMapFrame set_frame ;
+                        gboolean result ;
+                        
+                        result = zmapWindowItemGetStrandFrame(focus_item, &set_strand, &set_frame) ;
+                        zMapAssert(result) ;
+                        
+                        list = zmapWindowFToIFindSameNameItems(window,window->context_to_item,
+                                                               zMapFeatureStrand2Str(set_strand),
+                                                               zMapFeatureFrame2Str(set_frame),
+                                                               feature) ;
+                        
+                        zmapWindowZoomToItems(window, list) ;
+                        
+                        g_list_free(list) ;
+                      }
+                    else
+                      {
+                        zmapWindowZoomToItem(window, focus_item) ;
+                      }
+                  }
+              }
+            else if ((mark_set = zmapWindowMarkIsSet(window->mark)))
+              {
+                double rootx1, rooty1, rootx2, rooty2 ;
+                
+                zmapWindowMarkGetWorldRange(window->mark, &rootx1, &rooty1, &rootx2, &rooty2) ;
+                
+                zmapWindowZoomToWorldPosition(window, TRUE, rootx1, rooty1, rootx2, rooty2) ;
+              }
 
-	    feature = zmapWindowItemGetFeature(focus_item);
-	    zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
-
-	    /* If there is a marked feature(s), for "z" we zoom just to the highlighted
-	     * feature, for "Z" we zoom to the whole transcript/HSP's */
-	    if (key_event->keyval == GDK_z)
-	      {
-		GList *focus_items ;
-
-		if ((focus_items = zmapWindowFocusGetFocusItems(window->focus)))
-		  {
-		    zmapWindowZoomToItems(window, focus_items) ;
-
-		    g_list_free(focus_items) ;
-		  }
-	      }
-	    else
-	      {
-		if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
-		  {
-		    zmapWindowZoomToItem(window, zmapWindowItemGetTrueItem(focus_item)) ;
-		  }
-		else if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
-		  {
-		    GList *list = NULL;
-		    ZMapStrand set_strand ;
-		    ZMapFrame set_frame ;
-		    gboolean result ;
-
-		    result = zmapWindowItemGetStrandFrame(focus_item, &set_strand, &set_frame) ;
-		    zMapAssert(result) ;
-
-		    list = zmapWindowFToIFindSameNameItems(window,window->context_to_item,
-							   zMapFeatureStrand2Str(set_strand),
-							   zMapFeatureFrame2Str(set_frame),
-							   feature) ;
-
-		    zmapWindowZoomToItems(window, list) ;
-
-		    g_list_free(list) ;
-		  }
-		else
-		  {
-		    zmapWindowZoomToItem(window, focus_item) ;
-		  }
-	      }
-	  }
-	else if ((mark_set = zmapWindowMarkIsSet(window->mark)))
-	  {
-	    double rootx1, rooty1, rootx2, rooty2 ;
-
-	    zmapWindowMarkGetWorldRange(window->mark, &rootx1, &rooty1, &rootx2, &rooty2) ;
-
-	    zmapWindowZoomToWorldPosition(window, TRUE, rootx1, rooty1, rootx2, rooty2) ;
-	  }
-
-
-	event_handled = TRUE ;
+            event_handled = TRUE ;
+          }
 	break ;
       }
 
