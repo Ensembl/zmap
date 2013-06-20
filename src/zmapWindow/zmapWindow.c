@@ -5167,6 +5167,29 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
         break;
       }
 
+    case GDK_k:
+    case GDK_K:
+      {
+        if (zMapGUITestModifiers(key_event, GDK_CONTROL_MASK))
+          {
+            /* Copy the selected feature to the scratch column */
+            FooCanvasItem *item = zmapWindowFocusGetHotItem(window->focus);
+            ZMapFeature feature = NULL;
+            
+            if (item && (feature = zmapWindowItemGetFeature(item)))
+              {
+                /* \todo It would be good to have a shortcut do copy just the subfeature
+                 * but I'm not sure how to find it without mouse click coords */
+//		double y_pos = (double)((feature->x1 + feature->x2) / 2) ;
+//                if (zMapGUITestModifiers(key_event, GDK_SHIFT_MASK))
+//                  zmapWindowScratchCopyFeature(window, feature, item, 0, y_pos, TRUE); /* subfeature */
+//                else
+                zmapWindowScratchCopyFeature(window, feature, item, 0, 0, FALSE); /* whole feature */
+              }
+          }
+
+        break;
+      }
 
     case GDK_m:
     case GDK_M:
