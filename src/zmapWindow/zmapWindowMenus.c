@@ -109,7 +109,12 @@
 #define COLUMN_THIS_ONE            "Configure This Column"
 #define COLUMN_ALL                 "Configure All Columns"
 #define COLUMN_BUMP_OPTS           "Column Bump More Opts"
-
+#define SCRATCH_CONFIG_STR         "Edit Column"
+#define SCRATCH_COPY_FEATURE       "Copy selected feature"
+#define SCRATCH_COPY_SUBFEATURE    "Copy selected subfeature"
+#define SCRATCH_UNDO               "Undo"
+#define SCRATCH_REDO               "Redo"
+#define SCRATCH_CLEAR              "Clear"
 
 #define PAIRED_READS_RELATED       "Request %s paired reads"
 #define PAIRED_READS_ALL           "Request all paired reads"
@@ -177,6 +182,8 @@ enum
     ITEM_MENU_COPY_TO_SCRATCH,
     ITEM_MENU_COPY_SUBPART_TO_SCRATCH,
     ITEM_MENU_CLEAR_SCRATCH,
+    ITEM_MENU_UNDO_SCRATCH,
+    ITEM_MENU_REDO_SCRATCH,
     ITEM_MENU_SEARCH,
     ITEM_MENU_FEATURE_DETAILS,
     ITEM_MENU_PFETCH,
@@ -746,6 +753,9 @@ ZMapGUIMenuItem zmapWindowMakeMenuScratchOps(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
+      {ZMAPGUI_MENU_BRANCH, SCRATCH_CONFIG_STR, 0, NULL, NULL, NULL},
+
+      {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         NULL, NULL},
       {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         NULL, NULL},
       {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         NULL, NULL},
       {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         NULL, NULL},
@@ -755,18 +765,20 @@ ZMapGUIMenuItem zmapWindowMakeMenuScratchOps(int *start_index_inout,
   int i ;
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
 
-  i = 0;
+  i = 1;
   menu[i].type = ZMAPGUI_MENU_NONE;
 
   if (menu_data->feature)
     {
       /* add in feature options */
-      addMenuItem(menu, &i, ZMAPGUI_MENU_NORMAL, "Copy Feature to Edit Column", ITEM_MENU_COPY_TO_SCRATCH, itemMenuCB, NULL);
-      addMenuItem(menu, &i, ZMAPGUI_MENU_NORMAL, "Copy Sub-Feature to Edit Column", ITEM_MENU_COPY_SUBPART_TO_SCRATCH, itemMenuCB, NULL);
+      addMenuItem(menu, &i, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR"/"SCRATCH_COPY_FEATURE, ITEM_MENU_COPY_TO_SCRATCH, itemMenuCB, NULL);
+      addMenuItem(menu, &i, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR"/"SCRATCH_COPY_SUBFEATURE, ITEM_MENU_COPY_SUBPART_TO_SCRATCH, itemMenuCB, NULL);
     }
-  
+
   /* add in column options */
-  addMenuItem(menu, &i, ZMAPGUI_MENU_NORMAL, "Clear Edit Column", ITEM_MENU_CLEAR_SCRATCH, itemMenuCB, NULL);
+  addMenuItem(menu, &i, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR"/"SCRATCH_UNDO, ITEM_MENU_UNDO_SCRATCH, itemMenuCB, NULL);
+  addMenuItem(menu, &i, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR"/"SCRATCH_REDO, ITEM_MENU_REDO_SCRATCH, itemMenuCB, NULL);
+  addMenuItem(menu, &i, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR"/"SCRATCH_CLEAR, ITEM_MENU_CLEAR_SCRATCH, itemMenuCB, NULL);
 
   menu[i].type = ZMAPGUI_MENU_NONE;
 
@@ -801,6 +813,14 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 
     case ITEM_MENU_COPY_SUBPART_TO_SCRATCH:
       zmapWindowScratchCopyFeature(menu_data->window, feature, menu_data->item, menu_data->x, menu_data->y, TRUE);
+      break ;
+
+    case ITEM_MENU_UNDO_SCRATCH:
+      zmapWindowScratchUndo(menu_data->window);
+      break ;
+
+    case ITEM_MENU_REDO_SCRATCH:
+      zmapWindowScratchRedo(menu_data->window);
       break ;
 
     case ITEM_MENU_CLEAR_SCRATCH:

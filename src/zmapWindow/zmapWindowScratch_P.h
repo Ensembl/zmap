@@ -36,6 +36,8 @@
 
 /* Copy the given feature into the scratch column */
 void zmapWindowScratchCopyFeature(ZMapWindow window, ZMapFeature new_feature, FooCanvasItem *item, const double x_pos_in, const double y_pos_in, const gboolean use_subfeature);
+void zmapWindowScratchUndo(ZMapWindow window);
+void zmapWindowScratchRedo(ZMapWindow window);
 void zmapWindowScratchClear(ZMapWindow window);
 
 

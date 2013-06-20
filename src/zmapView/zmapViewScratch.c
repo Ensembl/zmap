@@ -57,6 +57,8 @@ typedef struct _ScratchMergedFeatureStruct
   double world_x;              /* clicked position */
   double world_y;              /* clicked position */
   gboolean use_subfeature;     /* if true, just use the clicked subfeature, otherwise use the whole feature */
+  
+  gboolean ignore;            /* set to false to ignore this feature i.e. so it's not part of the scratch feature */
 } ScratchMergedFeatureStruct, *ScratchMergedFeature;
 
 
@@ -107,6 +109,125 @@ static void scratchSetStartEndFlag(ZMapView view, gboolean value)
     view->scratch_start_end_set_rev = value;
   else
     view->scratch_start_end_set = value;
+}
+
+
+/*!
+* \brief Get the list of merged features for the current strand 
+* */
+static GList* scratchGetMergedFeatures(ZMapView view)
+{
+  GList *list = NULL;
+  
+  if (view->revcomped_features && view->scratch_features_rev)
+    list = view->scratch_features_rev;
+  else if (view->scratch_features)
+    list = view->scratch_features;
+
+  return list;
+}
+
+
+/*!
+* \brief Get pointer to the list of merged features for the current strand 
+* */
+static GList** scratchGetMergedFeaturesPtr(ZMapView view)
+{
+  GList **list = NULL;
+  
+  if (view->revcomped_features)
+    list = &view->scratch_features_rev;
+  else
+    list = &view->scratch_features;
+
+  return list;
+}
+
+
+/*!
+* \brief Get the first ignored item in the list of merged features
+* */
+static ScratchMergedFeature scratchGetFirstIgnoredFeature(ZMapView view)
+{
+  ScratchMergedFeature found_feature = NULL;
+
+  GList *list = scratchGetMergedFeatures(view);
+  GList *list_item = g_list_first(list);
+
+  for ( ; list_item && !found_feature; list_item = list_item->next)
+    {
+      ScratchMergedFeature merge_feature = (ScratchMergedFeature)(list_item->data);
+      if (merge_feature->ignore)
+        found_feature = merge_feature;
+    }
+
+  return found_feature;
+}
+
+
+/*!
+* \brief Get the last visible item in the list of merged features
+* */
+static ScratchMergedFeature scratchGetLastVisibleFeature(ZMapView view)
+{
+  ScratchMergedFeature found_feature = NULL;
+
+  GList *list = scratchGetMergedFeatures(view);
+  GList *list_item = g_list_last(list);
+
+  for ( ; list_item && !found_feature; list_item = list_item->prev)
+    {
+      ScratchMergedFeature merge_feature = (ScratchMergedFeature)(list_item->data);
+      if (!merge_feature->ignore)
+        found_feature = merge_feature;
+    }
+
+  return found_feature;
+}
+
+
+/*!
+* \brief Same as scratchGetLastVisibleFeature but returns the GList item
+* */
+static GList* scratchGetLastVisibleFeatureItem(ZMapView view)
+{
+  GList *found_item = NULL;
+
+  GList *list = scratchGetMergedFeatures(view);
+  GList *list_item = g_list_last(list);
+
+  for ( ; list_item && !found_item; list_item = list_item->prev)
+    {
+      ScratchMergedFeature merge_feature = (ScratchMergedFeature)(list_item->data);
+      if (!merge_feature->ignore)
+        found_item = list_item;
+    }
+
+  return found_item;
+}
+
+
+/*!
+* \brief Add a feature to the list of merged features
+* */
+static void scratchAddFeature(ZMapView view, ScratchMergedFeature new_feature)
+{
+  GList **list_ptr = scratchGetMergedFeaturesPtr(view);
+  GList *list = list_ptr ? *list_ptr : NULL;
+
+  /* We may have ignored features at the end of the list. Insert
+   * the new item after the last visible feature in the list otherwise
+   * the undo/redo order will get messed up. */
+  GList *sibling = scratchGetLastVisibleFeatureItem(view);
+
+  if (sibling && sibling->next)
+    *list_ptr = g_list_insert_before(list, sibling->next, new_feature);
+  else if (sibling)
+    *list_ptr = g_list_append(list, new_feature); /* sibling is last in list, so just append */
+  else if (list_ptr && list)
+    *list_ptr = g_list_prepend(list, new_feature); /* list only contains ignored items, so add new item at start */
+  else
+    *list_ptr = g_list_append(list, new_feature); /* empty list so append */
 }
 
 
@@ -481,7 +602,7 @@ static void scratchMergeFeature(ScratchMergeData merge_data)
       scratchSetStartEndFlag(merge_data->view, TRUE);
     }
   
-  if (*(merge_data->error))
+  if (merge_data->error && *(merge_data->error))
     {
       if (merged)
         zMapWarning("Warning while copying feature: %s", (*(merge_data->error))->message);
@@ -506,6 +627,20 @@ static void scratchDeleteFeatureExons(ZMapView view, ZMapFeature feature, ZMapFe
     }  
 }
 
+
+
+
+/*!
+ * \brief Does the work to update any changes to the given featureset
+ */
+static void scratchRedrawFeature(ZMapView zmap_view, 
+                          ZMapFeature feature,
+                          ZMapFeatureSet feature_set,
+                          ZMapFeatureContext context)
+{
+  zmapViewDisplayDataWindows(zmap_view, zmap_view->features, zmap_view->features, NULL, TRUE, NULL, NULL, FALSE) ;
+  zmapViewDisplayDataWindows(zmap_view, zmap_view->features, zmap_view->features, NULL, FALSE, NULL, NULL, FALSE) ;
+}
 
 
 
@@ -573,6 +708,9 @@ static void handBuiltInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, Z
 	}
     }  
 }
+
+
+/************ PUBLIC FUNCTIONS **************/
 
 
 /*!
@@ -693,18 +831,6 @@ void zmapViewScratchInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, ZM
 
 
 /*!
- * \brief Does the work to update any changes to the given featureset
- */
-void scratchRedrawFeature(ZMapView zmap_view, 
-                          ZMapFeature feature,
-                          ZMapFeatureSet feature_set,
-                          ZMapFeatureContext context)
-{
-  zmapViewDisplayDataWindows(zmap_view, zmap_view->features, zmap_view->features, NULL, TRUE, NULL, NULL, FALSE) ;
-  zmapViewDisplayDataWindows(zmap_view, zmap_view->features, zmap_view->features, NULL, FALSE, NULL, NULL, FALSE) ;
-}
-
-/*!
  * /brief Reset the scratch feature
  */
 void scratchFeatureReset(ZMapView view)
@@ -742,18 +868,21 @@ void scratchFeatureRecreate(ZMapView view)
   
   for ( ; list_item; list_item = list_item->next)
     {
-      /* Add info about the current feature to the merge data
-       * \todo Could tidy this and just point to the merge_feature */
       ScratchMergedFeature merge_feature = (ScratchMergedFeature)(list_item->data);
       
-      merge_data.src_feature = merge_feature->src_feature;
-      merge_data.src_item = merge_feature->src_item;
-      merge_data.world_x = merge_feature->world_x;
-      merge_data.world_y = merge_feature->world_y;
-      merge_data.use_subfeature = merge_feature->use_subfeature;
-
-      /* Do the merge */
-      scratchMergeFeature(&merge_data);
+      if (!merge_feature->ignore)
+        {
+          /* Add info about the current feature to the merge data
+           * \todo Could tidy this and just point to the merge_feature */
+          merge_data.src_feature = merge_feature->src_feature;
+          merge_data.src_item = merge_feature->src_item;
+          merge_data.world_x = merge_feature->world_x;
+          merge_data.world_y = merge_feature->world_y;
+          merge_data.use_subfeature = merge_feature->use_subfeature;
+          
+          /* Do the merge */
+          scratchMergeFeature(&merge_data);
+        }
     }
 
   scratchRedrawFeature(view, scratch_feature, scratch_featureset, view->features);
@@ -778,13 +907,10 @@ gboolean zmapViewScratchCopyFeature(ZMapView view,
       merge_feature->world_x = world_x;
       merge_feature->world_y = world_y;
       merge_feature->use_subfeature = use_subfeature;
+      merge_feature->ignore = FALSE;
 
       /* Add this feature to the list of merged features and recreate the scratch feature */
-      if (view->revcomped_features)
-        view->scratch_features_rev = g_list_append(view->scratch_features_rev, merge_feature);
-      else
-        view->scratch_features = g_list_append(view->scratch_features, merge_feature);
-
+      scratchAddFeature(view, merge_feature);
       scratchFeatureRecreate(view);
     }
 
@@ -802,12 +928,12 @@ gboolean zmapViewScratchCopyFeature(ZMapView view,
 gboolean zmapViewScratchClear(ZMapView view)
 { 
   /* Clear the list of features in the scratch column */
-  if (view->revcomped_features)
+  if (view->revcomped_features && view->scratch_features_rev)
     {
       g_list_free_full(view->scratch_features_rev, g_free);
       view->scratch_features_rev = NULL;
     }
-  else
+  else if (view->scratch_features)
     {
       g_list_free_full(view->scratch_features, g_free);
       view->scratch_features = NULL;
@@ -815,5 +941,49 @@ gboolean zmapViewScratchClear(ZMapView view)
 
   scratchFeatureRecreate(view);
 
+  return TRUE;
+}
+
+
+/*!
+ * \brief Undo the last feature-copy into the scratch column
+ */
+gboolean zmapViewScratchUndo(ZMapView view)
+{ 
+  /* Find the last visible item and disable it */
+  ScratchMergedFeature feature = scratchGetLastVisibleFeature(view);
+  
+  if (feature)
+    {
+      feature->ignore = TRUE;
+      scratchFeatureRecreate(view);
+    }
+  else
+    {
+      g_critical("No operations to redo");
+    }
+  
+  return TRUE;
+}
+
+
+/*!
+ * \brief Redo the last operation
+ */
+gboolean zmapViewScratchRedo(ZMapView view)
+{ 
+  /* Get the first ignored feature and re-enable it */
+  ScratchMergedFeature feature = scratchGetFirstIgnoredFeature(view);
+  
+  if (feature)
+    {
+      feature->ignore = FALSE;
+      scratchFeatureRecreate(view);
+    }
+  else
+    {
+      g_critical("No operations to redo\n");
+    }
+  
   return TRUE;
 }

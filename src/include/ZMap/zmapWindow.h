@@ -237,7 +237,9 @@ typedef enum
     ZMAPWINDOW_CMD_SHOWALIGN,
     ZMAPWINDOW_CMD_REVERSECOMPLEMENT,
     ZMAPWINDOW_CMD_COPYTOSCRATCH,
-    ZMAPWINDOW_CMD_CLEARSCRATCH
+    ZMAPWINDOW_CMD_CLEARSCRATCH,
+    ZMAPWINDOW_CMD_UNDOSCRATCH,
+    ZMAPWINDOW_CMD_REDOSCRATCH
   } ZMapWindowCommandType ;
 
 
@@ -345,7 +347,6 @@ typedef struct ZMapWindowCallbackCommandScratchStructName
   double world_x;       /* clicked x pos in world coords */
   double world_y;       /* clicked y pos in world coords */
   gboolean use_subfeature; /* whether use selected a subfeature; false if selected whole feature */
-
 } ZMapWindowCallbackCommandScratchStruct, *ZMapWindowCallbackCommandScratch ;
 
 

@@ -98,3 +98,42 @@ void zmapWindowScratchClear(ZMapWindow window)
   
   (*(window_cbs_G->command))(window, window->app_data, scratch_cmd) ;
 }
+
+
+/*!
+ * \brief Undo the last copy into the scratch column
+ */
+void zmapWindowScratchUndo(ZMapWindow window)
+{
+  if (!window)
+    return;
+
+  /* Call the callback to the view to redraw everything */
+  ZMapWindowCallbacks window_cbs_G = zmapWindowGetCBs() ;
+  ZMapWindowCallbackCommandScratch scratch_cmd = g_new0(ZMapWindowCallbackCommandScratchStruct, 1) ;
+  
+  /* Set up general command field for callback. */
+  scratch_cmd->cmd = ZMAPWINDOW_CMD_UNDOSCRATCH ;
+  
+  (*(window_cbs_G->command))(window, window->app_data, scratch_cmd) ;
+}
+
+
+/*!
+ * \brief Redo the last operation
+ */
+void zmapWindowScratchRedo(ZMapWindow window)
+{
+  if (!window)
+    return;
+
+  /* Call the callback to the view to redraw everything */
+  ZMapWindowCallbacks window_cbs_G = zmapWindowGetCBs() ;
+  ZMapWindowCallbackCommandScratch scratch_cmd = g_new0(ZMapWindowCallbackCommandScratchStruct, 1) ;
+  
+  /* Set up general command field for callback. */
+  scratch_cmd->cmd = ZMAPWINDOW_CMD_REDOSCRATCH ;
+  
+  (*(window_cbs_G->command))(window, window->app_data, scratch_cmd) ;
+}
+

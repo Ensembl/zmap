@@ -4976,6 +4976,18 @@ static void commandCB(ZMapWindow window, void *caller_data, void *window_data)
         zmapViewScratchClear(view);
         break;
       }
+
+    case ZMAPWINDOW_CMD_UNDOSCRATCH:
+      {
+        zmapViewScratchUndo(view);
+        break;
+      }
+
+    case ZMAPWINDOW_CMD_REDOSCRATCH:
+      {
+        zmapViewScratchRedo(view);
+        break;
+      }
       
     default:
       {
