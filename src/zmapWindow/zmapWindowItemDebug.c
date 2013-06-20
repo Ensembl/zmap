@@ -64,11 +64,11 @@ void zmapWindowPrintCanvas(FooCanvas *canvas)
 
   foo_canvas_get_scroll_region(canvas, &x1, &y1, &x2, &y2);
 
-  printf("\nCanvas stats:\n\n") ;
+  zMapDebugPrintf("%s", "\nCanvas stats:\n\n") ;
 
-  printf("\nZoom x,y: %f, %f\n", canvas->pixels_per_unit_x, canvas->pixels_per_unit_y) ;
+  zMapDebugPrintf("\nZoom x,y: %f, %f\n", canvas->pixels_per_unit_x, canvas->pixels_per_unit_y) ;
 
-  printf("\nScroll region bounds: %f -> %f,  %f -> %f\n", x1, x2, y1, y2) ;
+  zMapDebugPrintf("\nScroll region bounds: %f -> %f,  %f -> %f\n", x1, x2, y1, y2) ;
 
   zmapWindowPrintGroups(canvas) ;
 
@@ -82,7 +82,7 @@ void zmapWindowPrintGroups(FooCanvas *canvas)
   int indent ;
   GString *buf ;
 
-  printf("\nGroups:\n") ;
+  zMapDebugPrintf("%s", "\nGroups:\n") ;
 
   root = foo_canvas_root(canvas) ;
 
@@ -144,7 +144,7 @@ void zmapWindowPrintLocalCoords(char *msg_prefix, FooCanvasItem *item)
 
   str = getItemCoords(str, item, TRUE) ;
 
-  printf("%s %s\n", msg_prefix, str->str) ;
+  zMapDebugPrintf("%s %s\n", msg_prefix, str->str) ;
 
   g_string_free(str, TRUE) ;
 
@@ -177,7 +177,7 @@ void zmapWindowPrintItemCoords(FooCanvasItem *item)
 
   str = getItemCoords(str, item, FALSE) ;
 
-  printf("%s\n", str->str) ;
+  zMapDebugPrintf("%s\n", str->str) ;
 
   g_string_free(str, TRUE) ;
 
@@ -197,7 +197,7 @@ void zmapWindowPrintW2I(FooCanvasItem *item, char *text, double x1_in, double y1
   if (!text)
     text = "Item" ;
 
-  printf("%s -  world(%f, %f)  ->  item(%f, %f)\n", text, x1_in, y1_in, x1, y1) ;
+  zMapDebugPrintf("%s -  world(%f, %f)  ->  item(%f, %f)\n", text, x1_in, y1_in, x1, y1) ;
 
   return ;
 }
@@ -214,7 +214,7 @@ void zmapWindowPrintI2W(FooCanvasItem *item, char *text, double x1_in, double y1
   if (!text)
     text = "Item" ;
 
-  printf("%s -  item(%f, %f)  ->  world(%f, %f)\n", text, x1_in, y1_in, x1, y1) ;
+  zMapDebugPrintf("%s -  item(%f, %f)  ->  world(%f, %f)\n", text, x1_in, y1_in, x1, y1) ;
 
 
   return ;
@@ -237,26 +237,26 @@ static void printGroup(FooCanvasGroup *group, int indent, GString *buf)
   buf = g_string_set_size(buf, 0) ;
 
   for (i = 0 ; i < indent ; i++)
-    printf("\t") ;
+    zMapDebugPrintf("%s", "\t") ;
 
 
   /* Print this group. */
   if (ZMAP_IS_CONTAINER_GROUP(group) || ZMAP_IS_CANVAS_ITEM(group))
     {
       zmapWindowItemDebugItemToString(buf, (FooCanvasItem *)group) ;
-      printf("%s", buf->str) ;
+      zMapDebugPrintf("%s", buf->str) ;
     }
   else if (FOO_IS_CANVAS_GROUP(group))
     {
-      printf("%s ", "FOOCANVAS_GROUP") ;
+      zMapDebugPrintf("%s ", "FOOCANVAS_GROUP") ;
     }
   else if (FOO_IS_CANVAS_ITEM(group))
     {
-      printf("%s ", "FOOCANVAS_ITEM") ;
+      zMapDebugPrintf("%s ", "FOOCANVAS_ITEM") ;
     }
   else
     {
-      printf("%s ", "**UNKNOWN ITEM TYPE**") ;
+      zMapDebugPrintf("%s ", "**UNKNOWN ITEM TYPE**") ;
     }
 
   printItem(FOO_CANVAS_ITEM(group)) ;
@@ -317,13 +317,13 @@ static void printItem(FooCanvasItem *item)
     {
       FooCanvasGroup *group = (FooCanvasGroup *)item ;
 
-      printf("FOO_CANVAS_GROUP Parent->Group: %p -> %p    Pos: %f, %f    Bounds: %f -> %f,  %f -> %f    World bounds: %f -> %f,  %f -> %f\n",
-	     group->item.parent, group, group->xpos, group->ypos, x1, x2, y1, y2, wx1, wy1, wx2, wy2) ;
+      zMapDebugPrintf("FOO_CANVAS_GROUP Parent->Group: %p -> %p    Pos: %f, %f    Bounds: %f -> %f,  %f -> %f    World bounds: %f -> %f,  %f -> %f\n",
+	     group->item.parent, group, group->xpos, group->ypos, x1, x2, y1, y2, wx1, wx2, wy1, wy2) ;
     }
   else
     {
-      printf("FOO_CANVAS_ITEM Parent->Item: %p -> %p    Bounds: %f -> %f,  %f -> %f    World bounds: %f -> %f,  %f -> %f\n",
-	     item->parent, item, x1, x2, y1, y2, wx1, wy1, wx2, wy2) ;
+      zMapDebugPrintf("FOO_CANVAS_ITEM Parent->Item: %p -> %p    Bounds: %f -> %f,  %f -> %f    World bounds: %f -> %f,  %f -> %f\n",
+	     item->parent, item, x1, x2, y1, y2, wx1, wx2, wy1, wy2) ;
     }
 
   return ;
