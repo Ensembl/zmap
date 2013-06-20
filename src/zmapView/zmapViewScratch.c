@@ -885,6 +885,9 @@ void scratchFeatureRecreate(ZMapView view)
         }
     }
 
+  zMapFeatureRemoveIntrons(scratch_feature);  
+  zMapFeatureTranscriptRecreateIntrons(scratch_feature);
+
   scratchRedrawFeature(view, scratch_feature, scratch_featureset, view->features);
 }
 
