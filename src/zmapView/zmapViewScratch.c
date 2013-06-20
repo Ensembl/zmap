@@ -369,8 +369,6 @@ static gboolean scratchMergeCoord(ScratchMergeData merge_data, const int coord, 
    * exon, otherwise we cannot merge a single coord. */
   if (zMapFeatureTranscriptGetNumExons(merge_data->dest_feature) > 0)
     {
-      zMapFeatureRemoveIntrons(merge_data->dest_feature);
-      
       /* Merge in the new exons */
       merged = zMapFeatureTranscriptMergeCoord(merge_data->dest_feature, coord, boundary, merge_data->error);
     }
@@ -378,8 +376,6 @@ static gboolean scratchMergeCoord(ScratchMergeData merge_data, const int coord, 
     {
       g_set_error(merge_data->error, g_quark_from_string("ZMap"), 99, "Cannot merge a single coordinate");
     }
-
-  zMapFeatureTranscriptRecreateIntrons(merge_data->dest_feature);
   
   return merged;
 }
@@ -439,13 +435,8 @@ static gboolean scratchMergeBasic(ScratchMergeData merge_data)
 {
   gboolean merged = TRUE;
   
-  zMapFeatureRemoveIntrons(merge_data->dest_feature);
-
   /* Just merge the start/end of the feature */
   merged = scratchMergeCoords(merge_data, merge_data->src_feature->x1, merge_data->src_feature->x2);
-
-  /* Recreate the introns */
-  zMapFeatureTranscriptRecreateIntrons(merge_data->dest_feature);
   
   return merged;
 }
@@ -458,13 +449,8 @@ static gboolean scratchMergeSplice(ScratchMergeData merge_data)
 {
   gboolean merged = FALSE;
   
-  zMapFeatureRemoveIntrons(merge_data->dest_feature);
-
   /* Just merge the start/end of the feature */
   merged = scratchMergeCoord(merge_data, merge_data->src_feature->x1, merge_data->src_feature->boundary_type);
-
-  /* Recreate the introns */
-  zMapFeatureTranscriptRecreateIntrons(merge_data->dest_feature);
   
   return merged;
 }
@@ -477,8 +463,6 @@ static gboolean scratchMergeAlignment(ScratchMergeData merge_data)
 {
   gboolean merged = FALSE;
   
-  zMapFeatureRemoveIntrons(merge_data->dest_feature);
-
   /* Loop through each match block and merge it in */
   if (!zMapFeatureAlignmentMatchForeach(merge_data->src_feature, scratchMergeMatchCB, merge_data))
     {
@@ -498,9 +482,6 @@ static gboolean scratchMergeAlignment(ScratchMergeData merge_data)
   /* Copy CDS, if set */
   //  zMapFeatureMergeTranscriptCDS(merge_data->src_feature, merge_data->dest_feature);
 
-  /* Recreate the introns */
-  zMapFeatureTranscriptRecreateIntrons(merge_data->dest_feature);
-
   return merged;
 }
 
@@ -512,16 +493,11 @@ static gboolean scratchMergeTranscript(ScratchMergeData merge_data)
 {
   gboolean merged = TRUE;
   
-  zMapFeatureRemoveIntrons(merge_data->dest_feature);
-
   /* Merge in all of the new exons from the new feature */
   zMapFeatureTranscriptExonForeach(merge_data->src_feature, scratchMergeExonCB, merge_data);
   
   /* Copy CDS, if set */
   zMapFeatureMergeTranscriptCDS(merge_data->src_feature, merge_data->dest_feature);
-
-  /* Recreate the introns */
-  zMapFeatureTranscriptRecreateIntrons(merge_data->dest_feature);
 
   return merged;
 }
@@ -546,8 +522,6 @@ static void scratchMergeFeature(ScratchMergeData merge_data)
             merged = scratchMergeCoord(merge_data, sub_feature->start, ZMAPBOUNDARY_NONE);
           else
             merged = scratchMergeCoords(merge_data, sub_feature->start, sub_feature->end);
-
-          zMapFeatureTranscriptRecreateIntrons(merge_data->dest_feature);
         }
       else
         {
@@ -885,7 +859,6 @@ void scratchFeatureRecreate(ZMapView view)
         }
     }
 
-  zMapFeatureRemoveIntrons(scratch_feature);  
   zMapFeatureTranscriptRecreateIntrons(scratch_feature);
 
   scratchRedrawFeature(view, scratch_feature, scratch_featureset, view->features);
