@@ -153,7 +153,7 @@ void zmapAppRemoteInstaller(GtkWidget *widget, gpointer app_context_data)
 
               req = g_strdup_printf("<zmap>\n"
 				    "  <request action=\"register_client\">\n"
-                                    "    <client xwid=\"0x%lx\" request_atom=\"%s\" response_atom=\"%s\" >\n"
+                                    "    <client xwid=\""ZMAP_XWINDOW_FORMAT_STR"\" request_atom=\"%s\" response_atom=\"%s\" >\n"
                                     "      <action>%s</action>\n"
                                     "      <action>%s</action>\n"
                                     "    </client>\n"
@@ -167,7 +167,8 @@ void zmapAppRemoteInstaller(GtkWidget *widget, gpointer app_context_data)
 
               if ((ret_code = zMapXRemoteSendRemoteCommand(client, req, &resp)) != 0)
                 {
-                  zMapLogWarning("Could not communicate with client '0x%lx'. code %d", clientId, ret_code) ;
+                  zMapLogWarning("Could not communicate with client \""ZMAP_XWINDOW_FORMAT_STR"\". code %d",
+				 clientId, ret_code) ;
 
                   if (resp)
                     {

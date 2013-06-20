@@ -1,4 +1,3 @@
-/*  Last edited: Nov  3 11:28 2011 (edgrif) */
 /*  File: zmapUtilsGUI.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -39,7 +38,14 @@
 #include <ZMap/zmapFeature.h>
 
 
-/* font used fpr seqeunece and zoom control */
+
+/* Standard way to format an X window id is "0x%lx", e.g. "0x5000023" */
+#define ZMAP_XWINDOW_FORMAT_STR "0x%lx"
+
+
+
+
+/* font used fpr sequence and zoom control */
 #define ZMAP_ZOOM_FONT_FAMILY "Monospace"
 #define ZMAP_ZOOM_FONT_SIZE (10)
 

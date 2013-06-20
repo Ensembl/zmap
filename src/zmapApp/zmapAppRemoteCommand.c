@@ -565,7 +565,8 @@ static void localProcessReplyFunc(char *command,
 	      else
 		{
 		  app_context->remote_control->peer_window = window_id ;
-		  app_context->remote_control->peer_window_str = g_strdup_printf("0x%lx", app_context->remote_control->peer_window) ;
+		  app_context->remote_control->peer_window_str
+		    = g_strdup_printf(ZMAP_XWINDOW_FORMAT_STR, app_context->remote_control->peer_window) ;
 
 		  result = TRUE ;
 		}

@@ -182,6 +182,16 @@ typedef struct
 
 
 
+typedef struct GetEvidenceDataStructType
+{
+  ZMapWindowFeatureShow show ;
+  ZMapWindowGetEvidenceCB evidence_cb ;
+  gpointer evidence_cb_data ;
+  ZMapXMLObjTagFunctions starts ;
+  ZMapXMLObjTagFunctions ends ;
+} GetEvidenceDataStruct, *GetEvidenceData ;
+
+
 
 
 
@@ -255,6 +265,28 @@ static void getAllMatches(ZMapWindow window,
 			  ZMapFeature feature, FooCanvasItem *item, ZMapGuiNotebookSubsection subsection) ;
 static void addTagValue(gpointer data, gpointer user_data) ;
 static ZMapGuiNotebook makeTranscriptExtras(ZMapWindow window, ZMapFeature feature) ;
+
+static void callXRemote(ZMapWindow window, ZMapFeatureAny feature_any,
+			char *action, FooCanvasItem *real_item,
+			ZMapRemoteAppProcessReplyFunc handler_func, gpointer handler_data) ;
+static void localProcessReplyFunc(char *command,
+				  RemoteCommandRCType command_rc,
+				  char *reason,
+				  char *reply,
+				  gpointer reply_handler_func_data) ;
+static void getEvidenceReplyFunc(char *command,
+				 RemoteCommandRCType command_rc,
+				 char *reason,
+				 char *reply,
+				 gpointer reply_handler_func_data) ;
+
+static void revcompTransChildCoordsCB(gpointer data, gpointer user_data) ;
+
+
+
+
+
+
 
 
 /*
@@ -379,17 +411,18 @@ void zmapWindowFeatureShow(ZMapWindow window, FooCanvasItem *item)
  */
 
 
-/* OH gosh....I'm not sure what's going on here !!!!!!!!!!! */
-
-/* get evidence feature names from otterlace, reusing code from createFeatureBook() above
+/* mh17: get evidence feature names from otterlace, reusing code from createFeatureBook() above
  * the show code does some complex stuff with reusable lists of windows,
- * probably to stop these accumulating
- * but as we don't display a window we don't care
+ * probably to stop these accumulating but as we don't display a window we don't care
+ * 
+ * edgrif: I've restructured this to use the new xremote.
+ * 
  */
 
-GList *zmapWindowFeatureGetEvidence(ZMapWindow window, ZMapFeature feature)
+void zmapWindowFeatureGetEvidence(ZMapWindow window, ZMapFeature feature,
+				  ZMapWindowGetEvidenceCB evidence_cb, gpointer evidence_cb_data)
 {
-  GList *evidence = NULL ;
+  GetEvidenceData evidence_data ;
   ZMapWindowFeatureShow show ;
 
   show = g_new0(ZMapWindowFeatureShowStruct, 1) ;
@@ -406,34 +439,20 @@ GList *zmapWindowFeatureGetEvidence(ZMapWindow window, ZMapFeature feature)
   show->evidence_column = -1;     /* invalid */
   show->evidence = NULL;
 
+  evidence_data = g_new0(GetEvidenceDataStruct, 1) ;
+  evidence_data->show = show ;
+  evidence_data->evidence_cb = evidence_cb ;
+  evidence_data->evidence_cb_data = evidence_cb_data ;
+  evidence_data->starts = starts_G ;
+  evidence_data->ends = ends_G ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  callXRemote(show->zmapWindow,
+	      (ZMapFeatureAny)feature,
+	      ZACP_DETAILS_FEATURE,
+	      show->item,
+	      getEvidenceReplyFunc, evidence_data) ;
 
-#warning show evidence needs recoding for new xremote....
-
-  externally_handled = zmapWindowUpdateXRemoteDataFull(show->zmapWindow,
-						       (ZMapFeatureAny)feature,
-						       "feature_details",
-						       show->item,
-						       starts, ends, show) ;
-
-  if (externally_handled == ZMAPXREMOTE_SENDCOMMAND_TIMEOUT)
-    zMapWarning("Fetching of feature data from external client failed for feature \"%s\","
-		" only incomplete feature details will be displayed",
-		g_quark_to_string(feature->original_id)) ;
-  else if (externally_handled == ZMAPXREMOTE_SENDCOMMAND_SUCCEED)
-    evidence = show->evidence ;
-
-  if (show->xml_curr_notebook)
-    zMapGUINotebookDestroyAny((ZMapGuiNotebookAny)(show->xml_curr_notebook)) ;
-
-  g_free(show) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-
-  return(evidence) ;
+  return ;
 }
 
 
@@ -446,19 +465,11 @@ GList *zmapWindowFeatureGetEvidence(ZMapWindow window, ZMapFeature feature)
 
 static void remoteShowFeature(ZMapWindowFeatureShow show)
 {
-
-  /* In fact we are almost there...just need to pass in a callback that will call showFeature.... */
-
-  /* Set up callback to handle result. */
-  show->zmapWindow->xremote_reply_handler = replyShowFeature ;
-  show->zmapWindow->xremote_reply_data = show ;
-
-  /* Most of this we do not want to pass in now..... */
-  zmapWindowUpdateXRemoteDataFull(show->zmapWindow,
-				  (ZMapFeatureAny)(show->feature),
-				  ZACP_DETAILS_FEATURE,
-				  show->item,
-				  starts_G, ends_G, show) ;
+  callXRemote(show->zmapWindow,
+	      (ZMapFeatureAny)(show->feature),
+	      ZACP_DETAILS_FEATURE,
+	      show->item,
+	      localProcessReplyFunc, show) ;
 
   return ;
 }
@@ -522,13 +533,6 @@ static void replyShowFeature(ZMapWindow window, gpointer user_data,
 
       /* Free the parser!!! */
       zMapXMLParserDestroy(parser) ;
-
-      /* Oh my goodness, undo this... */
-      show->zmapWindow->xremote_reply_handler = NULL ;
-      show->zmapWindow->xremote_reply_data = NULL ;
-    
-
-
     }
 
   return ;
@@ -1859,6 +1863,224 @@ static ZMapGuiNotebook makeTranscriptExtras(ZMapWindow window, ZMapFeature featu
 
 
 
+
+
+/* It is probably just about worth having this here as a unified place to handle requests but
+ * that may need revisiting.... */
+static void callXRemote(ZMapWindow window, ZMapFeatureAny feature_any,
+			char *action, FooCanvasItem *real_item,
+ 			ZMapRemoteAppProcessReplyFunc handler_func, gpointer handler_data)
+{
+  ZMapWindowCallbacks window_cbs_G = zmapWindowGetCBs() ;
+  ZMapXMLUtilsEventStack xml_elements ;
+  ZMapWindowSelectStruct select = {0} ;
+  ZMapFeatureSetStruct feature_set = {0} ;
+  ZMapFeatureSet multi_set ;
+  ZMapFeature feature_copy ;
+  int chr_bp ;
+
+  /* We should only ever be called with a feature, not a set or anything else. */
+  zMapAssert(feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURE) ;
+
+
+  /* OK...IN HERE IS THE PLACE FOR THE HACK FOR COORDS....NEED TO COPY FEATURE
+   * AND INSERT NEW CHROMOSOME COORDS...IF WE CAN DO THIS FOR THIS THEN WE
+   * CAN HANDLE VIEW FEATURE STUFF IN SAME WAY...... */
+  feature_copy = (ZMapFeature)zMapFeatureAnyCopy(feature_any) ;
+  feature_copy->parent = feature_any->parent ;	    /* Copy does not do parents so we fill in. */
+
+
+  /* REVCOMP COORD HACK......THIS HACK IS BECAUSE OUR COORD SYSTEM IS MUCKED UP FOR
+   * REVCOMP'D FEATURES..... */
+  /* Convert coords */
+  if (window->revcomped_features)
+    {
+      /* remap coords to forward strand range and also swop
+       * them as they get reversed in revcomping.... */
+      chr_bp = feature_copy->x1 ;
+      chr_bp = zmapWindowWorldToSequenceForward(window, chr_bp) ;
+      feature_copy->x1 = chr_bp ;
+
+
+      chr_bp = feature_copy->x2 ;
+      chr_bp = zmapWindowWorldToSequenceForward(window, chr_bp) ;
+      feature_copy->x2 = chr_bp ;
+
+      zMapUtilsSwop(int, feature_copy->x1, feature_copy->x2) ;
+
+      if (feature_copy->strand == ZMAPSTRAND_FORWARD)
+	feature_copy->strand = ZMAPSTRAND_REVERSE ;
+      else
+	feature_copy->strand = ZMAPSTRAND_FORWARD ;
+	      
+
+      if (ZMAPFEATURE_IS_TRANSCRIPT(feature_copy))
+	{
+	  if (!zMapFeatureTranscriptChildForeach(feature_copy, ZMAPFEATURE_SUBPART_EXON,
+						 revcompTransChildCoordsCB, window)
+	      || !zMapFeatureTranscriptChildForeach(feature_copy, ZMAPFEATURE_SUBPART_INTRON,
+						    revcompTransChildCoordsCB, window))
+	    zMapLogCritical("RemoteControl error revcomping coords for transcript %s",
+			    zMapFeatureName((ZMapFeatureAny)(feature_copy))) ;
+
+	  zMapFeatureTranscriptSortExons(feature_copy) ;
+	}
+    }
+
+  /* Streuth...why doesn't this use a 'creator' function...... */
+#ifdef FEATURES_NEED_MAGIC
+  feature_set.magic       = feature_copy->magic ;
+#endif
+  feature_set.struct_type = ZMAPFEATURE_STRUCT_FEATURESET;
+  feature_set.parent      = feature_copy->parent->parent;
+  feature_set.unique_id   = feature_copy->parent->unique_id;
+  feature_set.original_id = feature_copy->parent->original_id;
+
+  feature_set.features = g_hash_table_new(NULL, NULL) ;
+  g_hash_table_insert(feature_set.features, GINT_TO_POINTER(feature_copy->unique_id), feature_copy) ;
+
+  multi_set = &feature_set ;
+
+
+  /* I don't get this at all... */
+  select.type = ZMAPWINDOW_SELECT_DOUBLE;
+
+  /* Set up xml/xremote request. */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  select.xml_handler.zmap_action = g_strdup(action);
+
+  select.xml_handler.xml_events = zMapFeatureAnyAsXMLEvents((ZMapFeatureAny)(multi_set), ZMAPFEATURE_XML_XREMOTE) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+  xml_elements = zMapFeatureAnyAsXMLEvents(feature_copy) ;
+
+  /* free feature_copy, remove reference to parent otherwise we are removed from there. */
+  if (feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
+    {
+      feature_copy->parent = NULL ;
+      zMapFeatureDestroy(feature_copy) ;
+    }
+
+
+  if (feature_set.unique_id)
+    {
+      g_hash_table_destroy(feature_set.features) ;
+      feature_set.features = NULL ;
+    }
+
+
+  /* HERE VIEW IS CALLED WHICH IS FINE.....BUT.....WE NOW NEED ANOTHER CALL WHERE
+     WINDOW CALLS REMOTE TO MAKE THE REQUEST.....BECAUSE VIEW WILL NO LONGER BE
+     DOING THIS...*/
+  (*(window->caller_cbs->select))(window, window->app_data, &select) ;
+
+
+
+  /* Send request to peer program. */
+  (*(window_cbs_G->remote_request_func))(window_cbs_G->remote_request_func_data,
+					 window,
+					 action, xml_elements,
+					 handler_func, handler_data) ;
+
+  return ;
+}
+
+
+
+/* Handles replies from remote program to commands sent from this layer. */
+static void localProcessReplyFunc(char *command,
+				  RemoteCommandRCType command_rc,
+				  char *reason,
+				  char *reply,
+				  gpointer reply_handler_func_data)
+{
+  ZMapWindowFeatureShow show = (ZMapWindowFeatureShow)reply_handler_func_data ;
+
+  replyShowFeature(show->zmapWindow, show,
+		   command, command_rc, reason, reply) ;
+
+  return ;
+}
+
+
+
+/* zmapWindowFeatureGetEvidence() makes an xremote call to the zmap peer to get evidence
+ * for a feature, once the peer replies the reply is sent here and we parse out the
+ * evidence data and then pass that back to our callers callback routine. */
+static void getEvidenceReplyFunc(char *command,
+				 RemoteCommandRCType command_rc,
+				 char *reason,
+				 char *reply,
+				 gpointer reply_handler_func_data)
+{
+  GetEvidenceData evidence_data = (GetEvidenceData)reply_handler_func_data ;
+
+  if (command_rc == REMOTE_COMMAND_RC_OK)
+    {
+      ZMapXMLParser parser ;
+      gboolean parses_ok ;
+
+      /* Create the parser and call set up our start/end handlers to parse the xml reply. */
+      parser = zMapXMLParserCreate(evidence_data->show, FALSE, FALSE);
+
+      zMapXMLParserSetMarkupObjectTagHandlers(parser, evidence_data->starts, evidence_data->ends) ;
+ 
+       if ((parses_ok = zMapXMLParserParseBuffer(parser, 
+                                                 reply, 
+                                                 strlen(reply))) != TRUE)
+         {
+	   zMapLogWarning("Parsing error : %s", zMapXMLParserLastErrorMsg(parser));
+
+         }
+       else
+	 {
+	   /* The parse worked so pass back the list of evidence to our caller. */
+	   (evidence_data->evidence_cb)(evidence_data->show->evidence, evidence_data->evidence_cb_data) ;
+	 }
+
+      zMapXMLParserDestroy(parser);
+
+      g_free(evidence_data->show) ;
+      g_free(evidence_data) ;
+    }
+  else
+    {
+      char *err_msg ;
+
+      err_msg = g_strdup_printf("Fetching of feature data from external client failed: %s",
+				reason) ;
+
+      zMapWarning("%s", err_msg) ;
+      zMapLogWarning("%s", err_msg) ;
+    }
+
+  return ;
+}
+
+
+/* HACK....function to remap coords to forward strand range and also swop
+ * them as they get reversed in revcomping.... */
+static void revcompTransChildCoordsCB(gpointer data, gpointer user_data)
+{
+  ZMapSpan child = (ZMapSpan)data ;
+  ZMapWindow window = (ZMapWindow)user_data ;
+  int chr_bp ;
+
+  chr_bp = child->x1 ;
+  chr_bp = zmapWindowWorldToSequenceForward(window, chr_bp) ;
+  child->x1 = chr_bp ;
+
+ 
+  chr_bp = child->x2 ;
+  chr_bp = zmapWindowWorldToSequenceForward(window, chr_bp) ;
+  child->x2 = chr_bp ;
+
+  zMapUtilsSwop(int, child->x1, child->x2) ;
+
+  return ;
+}
 
 
 /********************* end of file ********************************/

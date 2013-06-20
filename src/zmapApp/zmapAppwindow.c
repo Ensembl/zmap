@@ -70,7 +70,8 @@ static char *checkConfigDir(void) ;
 static gboolean checkSequenceArgs(int argc, char *argv[],
 				  ZMapFeatureSequenceMap seq_map_inout, char **err_msg_out) ;
 
-static gboolean checkPeerID(char **peer_name_out, char **peer_clipboard_out) ;
+static gboolean checkPeerID(ZMapAppContext app_context,
+			    char **peer_name_out, char **peer_clipboard_out, int *peer_retries, int *peer_timeout_ms) ;
 
 static gboolean removeZMapRowForeachFunc(GtkTreeModel *model, GtkTreePath *path,
                                          GtkTreeIter *iter, gpointer data);
@@ -139,7 +140,8 @@ char *obj_copyright_G = ZMAP_OBJ_COPYRIGHT_STRING(ZMAP_TITLE,
 int zmapMainMakeAppWindow(int argc, char *argv[])
 {
   ZMapAppContext app_context ;
-  char *peer_name = NULL, *peer_clipboard = NULL ;
+  char *peer_name, *peer_clipboard ;
+  int peer_retries, peer_timeout_ms ;
   GtkWidget *toplevel, *vbox, *menubar, *connect_frame, *manage_frame ;
   GtkWidget *quit_button ;
   int log_size ;
@@ -208,8 +210,10 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   /* Set any global debug flags from config file. */
   zMapUtilsConfigDebug(NULL) ;
 
-  /* Check if a peer program was specified. */
-  if (!checkPeerID(&peer_name, &peer_clipboard))
+  /* Check if a peer program was specified on the command line or in the config file. */
+  peer_name = peer_clipboard = NULL ;
+  peer_retries = peer_timeout_ms = -1 ;
+  if (!checkPeerID(app_context, &peer_name, &peer_clipboard, &peer_retries, &peer_timeout_ms))
     {
       /* CAN'T LOG HERE....log has not been init'd.... */
 
@@ -249,32 +253,6 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
   /* Get general zmap configuration from config. file. */
   getConfiguration(app_context) ;
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* this doesn't work here...not sure why..... */
-
-  /* Check if a peer program was specified. */
-  if (!checkPeerID(&peer_name, &peer_clipboard))
-    {
-      /* obscure...only an error if just one is specified... */
-      if (!(!peer_name && !peer_clipboard))
-	zMapLogWarning("No %s name for remote connection specified so remote interface cannot be created.",
-		       (!peer_name ? "peer" : "clipboard")) ;
-    }
-  else
-    {
-      /* set up the remote_request_func, subsystems check for this routine to determine
-       * if they should make/service xremote calls. */
-      app_window_cbs_G.remote_request_func = zmapAppRemoteControlGetRequestCB() ;
-      app_window_cbs_G.remote_request_func_data = (void *)app_context ;
-
-      remote_control = TRUE ;
-      app_context->defer_hiding = TRUE ;
-    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
 
   {
@@ -317,6 +295,8 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
   gtk_window_set_policy(GTK_WINDOW(toplevel), FALSE, TRUE, FALSE ) ;
   gtk_container_border_width(GTK_CONTAINER(toplevel), 0) ;
+
+
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* THIS IS THE OLD REMOTE HANDLER.... */
   /* This ensures that the widget *really* has a X Window id when it
@@ -331,7 +311,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   /* **NEW XREMOTE** THIS IS THE NEW HANDLER... */
   if (remote_control)
     {
-      if (zmapAppRemoteControlCreate(app_context, peer_name, peer_clipboard))
+      if (zmapAppRemoteControlCreate(app_context, peer_name, peer_clipboard, peer_retries, peer_timeout_ms))
 	{
 	  /* Rest of initialisation requires a window so code is in a map callback
 	   * where we are guaranteed to have a window. */
@@ -965,18 +945,63 @@ static char *checkConfigDir(void)
 }
 
 
-/* Did caller specify a peer program id ? */
-static gboolean checkPeerID(char **peer_name_out, char **peer_clipboard_out)
+/* Did caller specify a peer program id on the command line or in a config file. */
+static gboolean checkPeerID(ZMapAppContext app_context,
+			    char **peer_name_out, char **peer_clipboard_out, int *peer_retries, int *peer_timeout_ms)
 {
   gboolean result = FALSE ;
   ZMapCmdLineArgsType name_value = {FALSE}, clipboard_value = {FALSE} ;
+  ZMapConfigIniContext context ;
 
-  if (zMapCmdLineArgsValue(ZMAPARG_PEER_NAME, &name_value))
-    *peer_name_out = name_value.s ;
 
-  if (zMapCmdLineArgsValue(ZMAPARG_PEER_CLIPBOARD, &clipboard_value))
-    *peer_clipboard_out = clipboard_value.s ;
+  /* Command line params override config file. */
+  if (zMapCmdLineArgsValue(ZMAPARG_PEER_NAME, &name_value)
+      && zMapCmdLineArgsValue(ZMAPARG_PEER_CLIPBOARD, &clipboard_value))
+    {
+      if (name_value.s && clipboard_value.s)
+	{
+	  *peer_name_out = g_strdup(name_value.s) ;
+	  *peer_clipboard_out = g_strdup(clipboard_value.s) ;
+	}
+    }
+  
+  if ((context = zMapConfigIniContextProvide(app_context->default_sequence->config_file)))
+    {
+      char *tmp_string  = NULL;
+      int tmp_int = 0;
 
+      /* If peer app name/clipboard not set then look in the config file... */
+      if (!(*peer_name_out))
+	{
+	  if (zMapConfigIniContextGetString(context, ZMAPSTANZA_PEER_CONFIG, ZMAPSTANZA_PEER_CONFIG,
+					    ZMAPSTANZA_PEER_NAME, &tmp_string))
+	    *peer_name_out = g_strdup(tmp_string) ;
+
+
+	  /* peer unique id to use in remote control. */
+	  if (zMapConfigIniContextGetString(context, ZMAPSTANZA_PEER_CONFIG, ZMAPSTANZA_PEER_CONFIG,
+					    ZMAPSTANZA_PEER_CLIPBOARD, &tmp_string))
+	    *peer_clipboard_out = g_strdup(tmp_string) ;
+	}
+
+
+      /* How many times to retry the peer on timeout. */
+      if (zMapConfigIniContextGetInt(context, ZMAPSTANZA_PEER_CONFIG, ZMAPSTANZA_PEER_CONFIG,
+				     ZMAPSTANZA_PEER_RETRIES, &tmp_int))
+	*peer_retries = tmp_int ;
+
+
+      /* How long to wait in ms before timeout waiting for peer. */
+      if (zMapConfigIniContextGetInt(context, ZMAPSTANZA_PEER_CONFIG, ZMAPSTANZA_PEER_CONFIG,
+				     ZMAPSTANZA_PEER_RETRIES, &tmp_int))
+	*peer_timeout_ms = tmp_int ;
+
+
+      zMapConfigIniContextDestroy(context);
+    }
+
+
+  /* Both must be specified...... */
   if (*peer_name_out && *peer_clipboard_out)
     result = TRUE ;
 
@@ -1057,17 +1082,6 @@ static gboolean getConfiguration(ZMapAppContext app_context)
       if (app_context->exit_timeout < 0)
 	app_context->exit_timeout = ZMAP_DEFAULT_EXIT_TIMEOUT ;
 
-
-      /* peer app name to use in remote control. */
-      if (zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
-					ZMAPSTANZA_APP_PEER_NAME, &tmp_string))
-	app_context->remote_control->peer_name = tmp_string ;
-
-
-      /* peer unique id to use in remote control. */
-      if (zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
-					ZMAPSTANZA_APP_PEER_CLIPBOARD, &tmp_string))
-	app_context->remote_control->peer_clipboard = tmp_string ;
 
       /* help url to use */
       if (zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,

@@ -49,12 +49,13 @@
 
 #include <ZMap/zmapThreads.h> // for ForkLock functions
 
+
+
 #define PFETCH_READ_SIZE 80	/* about a line */
 #define PFETCH_FAILED_PREFIX "PFetch failed:"
 #define PFETCH_TITLE_FORMAT "ZMap - pfetch \"%s\""
 
-
-typedef struct
+typedef struct PFetchDataStructType
 {
   GtkWidget *dialog;
   GtkTextBuffer *text_buffer;
@@ -62,7 +63,21 @@ typedef struct
   gulong widget_destroy_handler_id;
   PFetchHandle pfetch;
   gboolean got_response;
-}PFetchDataStruct, *PFetchData;
+} PFetchDataStruct, *PFetchData ;
+
+
+/* Used in handling callbacks from xremote requests. */
+typedef struct RemoteDataStructType
+{
+  ZMapWindow window ;
+
+  char *command ;
+
+  ZMapFeatureAny feature_any ;
+
+  FooCanvasItem *real_item ;
+
+} RemoteDataStruct,  *RemoteData ;
 
 
 
@@ -77,21 +92,27 @@ static void handle_dialog_close(GtkWidget *dialog, gpointer user_data);
 static gboolean factoryTopItemCreated(FooCanvasItem *top_item,
                                       ZMapWindowFeatureStack feature_stack,
                                       gpointer handler_data);
-#if FEATURE_SIZE_REQUEST
-static gboolean factoryFeatureSizeReq(ZMapFeature feature,
-                                      double *limits_array,
-                                      double *points_array_inout,
-                                      gpointer handler_data);
-#endif
 
 static PFetchStatus pfetch_reader_func(PFetchHandle *handle, char *text, guint *actual_read,
 				       GError *error, gpointer user_data) ;
 static PFetchStatus pfetch_closed_func(gpointer user_data) ;
 
+static void callXRemote(ZMapWindow window, ZMapFeatureAny feature_any,
+			char *action, FooCanvasItem *real_item) ;
+static void handleXRemoteReply(char *command,
+			       RemoteCommandRCType command_rc,
+			       char *reason,
+			       char *reply,
+			       gpointer reply_handler_func_data) ;
+static void revcompTransChildCoordsCB(gpointer data, gpointer user_data) ;
 
 
 
-/* Local globals for debugging. */
+/* 
+ *                        Globals
+ */
+
+/* debugging. */
 static gboolean mouse_debug_G = FALSE ;
 
 
@@ -406,27 +427,6 @@ char *zmapWindowFeatureSetDescription(ZMapFeatureSet feature_set)
 }
 
 
-#if MH17_NOT_USED
-// see zmapWindow/zMapWindowUpdateInfoPanel()
-void zmapWindowFeatureGetSetTxt(ZMapFeature feature, char **set_name_out, char **set_description_out)
-{
-  if (feature->parent)
-    {
-      ZMapFeatureSet feature_set = (ZMapFeatureSet)feature->parent ;
-
-      *set_name_out = g_strdup(g_quark_to_string(feature_set->original_id)) ;
-
-      if (feature_set->description)
-	*set_description_out = g_strdup(feature_set->description) ;
-    }
-
-  return ;
-}
-#endif
-
-
-
-
 /* Get various aspects of features source... */
 void zmapWindowFeatureGetSourceTxt(ZMapFeature feature, char **source_name_out, char **source_description_out)
 {
@@ -438,9 +438,6 @@ void zmapWindowFeatureGetSourceTxt(ZMapFeature feature, char **source_name_out, 
 
   return ;
 }
-
-
-
 
 
 char *zmapWindowFeatureDescription(ZMapFeature feature)
@@ -457,10 +454,6 @@ char *zmapWindowFeatureDescription(ZMapFeature feature)
 
   return description ;
 }
-
-
-
-
 
 
 gboolean zMapWindowGetDNAStatus(ZMapWindow window)
@@ -652,35 +645,13 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 		  /* Second click of a double click means show feature details. */
 		  if (but_event->button == 1)
 		    {
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-		      ZMapXRemoteSendCommandError externally_handled = ZMAPXREMOTE_SENDCOMMAND_UNAVAILABLE ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 		      highlight_item = item;
 
 		      /* If external client then call them to do editing. */
 		      if (window->xremote_client)
 			{
-			  zmapWindowUpdateXRemoteData(window, (ZMapFeatureAny)feature,
-						      ZACP_EDIT_FEATURE, highlight_item) ;
+			  callXRemote(window, (ZMapFeatureAny)feature, ZACP_EDIT_FEATURE, highlight_item) ;
 			}
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-		      /* We can't do this like this any more.....leave it for now and if we need to do
-		       * this then code needs a restructure as for showFeature. */
-
-		      /* If there is no external client or the external client times out then show what we can. */
-		      if (externally_handled != ZMAPXREMOTE_SENDCOMMAND_SUCCEED)
-			{
-			  if (externally_handled == ZMAPXREMOTE_SENDCOMMAND_TIMEOUT)
-			    zMapWarning("Request failed to external client to edit feature \"%s\"",
-					g_quark_to_string(feature->original_id)) ;
-			  
-			  zmapWindowFeatureShow(window, highlight_item) ;
-			}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 		    }
 
 		  second_press = FALSE ;
@@ -783,8 +754,6 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
 	    }
 	}
 
-
-
       {
 	/* mh17 Foo sequence features have a diff interface, but we wish to avoid that, see sequenceSelectionCB() above */
 	/* using a CanvasFeatureset we get here, first off just pass a single coord through so it does not crash */
@@ -807,10 +776,6 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
 	zmapWindowSetStyleFeatureset(window, item, feature);
 
       }
-
-
-
-
 
       if (zMapGUITestModifiers(but_event, shift_mask))
 	{
@@ -820,14 +785,12 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
 	      replace_highlight = FALSE ;
 
 	      if (window->xremote_client)
-		zmapWindowUpdateXRemoteData(window, my_feature,
-					    ZACP_SELECT_MULTI_FEATURE, highlight_item) ;
+		callXRemote(window, my_feature, ZACP_SELECT_MULTI_FEATURE, highlight_item) ;
 	    }
 	  else
 	    {
 	      if (window->xremote_client)
-		zmapWindowUpdateXRemoteData(window, my_feature,
-					    ZACP_SELECT_FEATURE, highlight_item) ;
+		callXRemote(window, my_feature, ZACP_SELECT_FEATURE, highlight_item) ;
 
 	      window->multi_select = TRUE ;
 	    }
@@ -835,41 +798,11 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
       else
 	{
 	  /* single select */
-
 	  if (window->xremote_client)
-	    zmapWindowUpdateXRemoteData(window, my_feature,
-					ZACP_SELECT_FEATURE, highlight_item) ;
+	    callXRemote(window, my_feature, ZACP_SELECT_FEATURE, highlight_item) ;
 
 	  window->multi_select = FALSE ;
 	}
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      {
-	/* mh17 Foo sequence features have a diff interface, but we wish to avoid that, see sequenceSelectionCB() above */
-	/* using a CanvasFeatureset we get here, first off just pass a single coord through so it does not crash */
-	/* InfoPanel has two sets of coords, but they appear the same in totalview */
-	/* possibly we can hide region selection in the GetInterval call above: we can certainly use the X coordinate ?? */
-
-	int start = feature->x1, end = feature->x2;
-
-	if (sub_feature)
-	  {
-	    start = sub_feature->start;
-	    end = sub_feature->end;
-	  }
-
-	/* Pass information about the object clicked on back to the application. */
-	zmapWindowUpdateInfoPanel(window, feature, NULL, item, sub_feature, start, end, start, end,
-				    NULL, replace_highlight, highlight_same_names, control) ;
-
-	/* if we have an active dialog update it: they have to click on a feature not the column */
-	zmapWindowSetStyleFeatureset(window, item, feature);
-
-      }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
     }
 
 
@@ -1034,9 +967,6 @@ static void handle_dialog_close(GtkWidget *dialog, gpointer user_data)
 }
 
 
-
-
-
 static gboolean factoryTopItemCreated(FooCanvasItem *top_item,
                                       ZMapWindowFeatureStack feature_stack,
                                       gpointer handler_data)
@@ -1081,64 +1011,180 @@ static gboolean factoryTopItemCreated(FooCanvasItem *top_item,
 }
 
 
-
-#if FEATURE_SIZE_REQUEST
-/* NOTE feature may be null */
-static gboolean factoryFeatureSizeReq(ZMapFeature feature,
-                                      double *limits_array,
-                                      double *points_array_inout,
-                                      gpointer handler_data)
+/* THIS FUNCTION NEEDS CLEANING UP, HACKED FROM OLD XREMOTE CODE..... */
+/* Called by select and edit code to call xremote with "select", "edit" etc commands
+ * for peer. The peers reply is handled in handleXRemoteReply() */
+static void callXRemote(ZMapWindow window, ZMapFeatureAny feature_any,
+			char *command, FooCanvasItem *real_item)
 {
-  gboolean outside = FALSE;
-  double x1_in = points_array_inout[1];
-  double x2_in = points_array_inout[3];
-  int start_end_crossing = 0;
-  double block_start, block_end;
+  ZMapWindowCallbacks window_cbs_G = zmapWindowGetCBs() ;
+  ZMapXMLUtilsEventStack xml_elements ;
+  ZMapWindowSelectStruct select = {0} ;
+  ZMapFeatureSetStruct feature_set = {0} ;
+  ZMapFeatureSet multi_set ;
+  ZMapFeature feature_copy ;
+  int chr_bp ;
+  RemoteData remote_data ;
+  
+
+  /* We should only ever be called with a feature, not a set or anything else. */
+  zMapAssert(feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURE) ;
+
+  /* OK...IN HERE IS THE PLACE FOR THE HACK FOR COORDS....NEED TO COPY FEATURE
+   * AND INSERT NEW CHROMOSOME COORDS...IF WE CAN DO THIS FOR THIS THEN WE
+   * CAN HANDLE VIEW FEATURE STUFF IN SAME WAY...... */
+  feature_copy = (ZMapFeature)zMapFeatureAnyCopy(feature_any) ;
+  feature_copy->parent = feature_any->parent ;	    /* Copy does not do parents so we fill in. */
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-
-  /* There is a least one problem with this...early on the canvas is only 100 pixels square
-   * so guess what size we end up using....sigh...and in addition it's the block size
-   * we should be using anyway.... */
-
-  if(feature && feature->type == ZMAPSTYLE_MODE_RAW_SEQUENCE ||
-     feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
+  /* REVCOMP COORD HACK......THIS HACK IS BECAUSE OUR COORD SYSTEM IS MUCKED UP FOR
+   * REVCOMP'D FEATURES..... */
+  /* Convert coords */
+  if (window->revcomped_features)
     {
-      ZMapWindow window = (ZMapWindow)handler_data;
-      double x1, x2;
+      /* remap coords to forward strand range and also swop
+       * them as they get reversed in revcomping.... */
+      chr_bp = feature_copy->x1 ;
+      chr_bp = zmapWindowWorldToSequenceForward(window, chr_bp) ;
+      feature_copy->x1 = chr_bp ;
 
-      points_array_inout[1] = points_array_inout[3] = x1 = x2 = 0.0;
-      /* Get scrolled region (clamped to sequence coords)  */
-      zmapWindowGetScrollableArea(window,
-				  &x1, &(points_array_inout[1]),
-				  &x2, &(points_array_inout[3]));
+
+      chr_bp = feature_copy->x2 ;
+      chr_bp = zmapWindowWorldToSequenceForward(window, chr_bp) ;
+      feature_copy->x2 = chr_bp ;
+
+      zMapUtilsSwop(int, feature_copy->x1, feature_copy->x2) ;
+
+      if (feature_copy->strand == ZMAPSTRAND_FORWARD)
+	feature_copy->strand = ZMAPSTRAND_REVERSE ;
+      else
+	feature_copy->strand = ZMAPSTRAND_FORWARD ;
+	      
+
+      if (ZMAPFEATURE_IS_TRANSCRIPT(feature_copy))
+	{
+	  if (!zMapFeatureTranscriptChildForeach(feature_copy, ZMAPFEATURE_SUBPART_EXON,
+						 revcompTransChildCoordsCB, window)
+	      || !zMapFeatureTranscriptChildForeach(feature_copy, ZMAPFEATURE_SUBPART_INTRON,
+						    revcompTransChildCoordsCB, window))
+	    zMapLogCritical("RemoteControl error revcomping coords for transcript %s",
+			    zMapFeatureName((ZMapFeatureAny)(feature_copy))) ;
+
+	  zMapFeatureTranscriptSortExons(feature_copy) ;
+	}
     }
-  else
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-    {
-      block_start = limits_array[1];
-      block_end   = limits_array[3];
-
-      /* shift according to how we cross, like this for ease of debugging, not speed */
-      start_end_crossing |= ((x1_in < block_start) << 1);
-      start_end_crossing |= ((x2_in > block_end)   << 2);
-      start_end_crossing |= ((x1_in > block_end)   << 3);
-      start_end_crossing |= ((x2_in < block_start) << 4);
-
-      /* Now check whether we cross! */
-      if(start_end_crossing & 8 ||
-         start_end_crossing & 16) /* everything is out of range don't display! */
-        outside = TRUE;
-
-      if(start_end_crossing & 2)
-        points_array_inout[1] = block_start;
-      if(start_end_crossing & 4)
-        points_array_inout[3] = block_end;
-    }
-
-  return outside;
-}
+  /* Streuth...why doesn't this use a 'creator' function...... */
+#ifdef FEATURES_NEED_MAGIC
+  feature_set.magic       = feature_copy->magic ;
 #endif
+  feature_set.struct_type = ZMAPFEATURE_STRUCT_FEATURESET;
+  feature_set.parent      = feature_copy->parent->parent;
+  feature_set.unique_id   = feature_copy->parent->unique_id;
+  feature_set.original_id = feature_copy->parent->original_id;
+
+  feature_set.features = g_hash_table_new(NULL, NULL) ;
+  g_hash_table_insert(feature_set.features, GINT_TO_POINTER(feature_copy->unique_id), feature_copy) ;
+
+  multi_set = &feature_set ;
+
+
+  /* I don't get this at all... */
+  select.type = ZMAPWINDOW_SELECT_DOUBLE;
+
+
+  /* Set up xml/xremote request. */
+  xml_elements = zMapFeatureAnyAsXMLEvents(feature_copy) ;
+
+  /* free feature_copy, remove reference to parent otherwise we are removed from there. */
+  if (feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
+    {
+      feature_copy->parent = NULL ;
+      zMapFeatureDestroy(feature_copy) ;
+    }
+
+
+  if (feature_set.unique_id)
+    {
+      g_hash_table_destroy(feature_set.features) ;
+      feature_set.features = NULL ;
+    }
+
+
+  /* HERE VIEW IS CALLED WHICH IS FINE.....BUT.....WE NOW NEED ANOTHER CALL WHERE
+     WINDOW CALLS REMOTE TO MAKE THE REQUEST.....BECAUSE VIEW WILL NO LONGER BE
+     DOING THIS...*/
+  (*(window->caller_cbs->select))(window, window->app_data, &select) ;
+
+
+  /* Send request to peer program. */
+  remote_data = g_new0(RemoteDataStruct, 1) ;		    /* free'd in handleXRemoteReply() */
+  remote_data->window = window ;
+  remote_data->feature_any = feature_any ;
+  remote_data->command = command ;
+  remote_data->real_item = real_item ;
+
+  (*(window_cbs_G->remote_request_func))(window_cbs_G->remote_request_func_data,
+					 window,
+					 command, xml_elements,
+					 handleXRemoteReply, remote_data) ;
+
+  return ;
+}
+
+
+
+
+/* Handles replies received by zmap from the peer remote program to commands sent from this file. */
+static void handleXRemoteReply(char *command,
+			       RemoteCommandRCType command_rc,
+			       char *reason,
+			       char *reply,
+			       gpointer reply_handler_func_data)
+{
+  RemoteData remote_data = (RemoteData)reply_handler_func_data ;
+
+
+  if (g_ascii_strcasecmp(command, ZACP_EDIT_FEATURE) == 0)
+    {
+      /* If the remote edit command fails then we do our best to show the feature
+       * locally, this is just display, not editing. */
+      if (command_rc == REMOTE_COMMAND_RC_OK)
+	{
+	  /* Don't do anything. */
+	}
+      else if (command_rc == REMOTE_COMMAND_RC_FAILED)
+	{
+	  zmapWindowFeatureShow(remote_data->window, remote_data->real_item) ;
+	}
+    }
+
+  g_free(remote_data) ;					    /* Allocated in callXRemote() */
+
+  return ;
+}
+
+
+
+/* HACK....function to remap coords to forward strand range and also swop
+ * them as they get reversed in revcomping.... */
+static void revcompTransChildCoordsCB(gpointer data, gpointer user_data)
+{
+  ZMapSpan child = (ZMapSpan)data ;
+  ZMapWindow window = (ZMapWindow)user_data ;
+  int chr_bp ;
+
+  chr_bp = child->x1 ;
+  chr_bp = zmapWindowWorldToSequenceForward(window, chr_bp) ;
+  child->x1 = chr_bp ;
+
+ 
+  chr_bp = child->x2 ;
+  chr_bp = zmapWindowWorldToSequenceForward(window, chr_bp) ;
+  child->x2 = chr_bp ;
+
+  zMapUtilsSwop(int, child->x1, child->x2) ;
+
+  return ;
+}
 
