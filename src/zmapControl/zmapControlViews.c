@@ -703,24 +703,19 @@ void zmapControlSetWindowFocus(ZMap zmap, ZMapViewWindow new_viewwindow)
       viewwindow_frame = g_hash_table_lookup(zmap->viewwindow_2_parent, zmap->focus_viewwindow) ;
       gtk_frame_set_shadow_type(GTK_FRAME(viewwindow_frame), GTK_SHADOW_IN);
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      /* This does not work currently because we not have a event box as a parent of the frame... */
-      gtk_widget_set_name(GTK_WIDGET(viewwindow_frame), "zmap-focus-view");
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-      /* Swop the frames label text colour to "active" */
+      /* Swop the frames label text colour to "active", gosh gtk makes this hard work... */
       label = gtk_frame_get_label_widget(GTK_FRAME(viewwindow_frame)) ;
       label_txt = gtk_label_get_text(GTK_LABEL(label)) ;
       label_txt = g_strdup_printf("<span foreground=\"red\">%s</span>", label_txt) ;
       gtk_label_set_markup(GTK_LABEL(label), label_txt) ;
       g_free(label_txt) ;
 
-
       /* make sure zoom buttons etc. appropriately sensitised for this window. */
       zmapControlWindowSetGUIState(zmap) ;
 
+      /* Set up navigator with new view. */
+      zMapWindowNavigatorSetCurrentWindow(zmap->navigator, window) ;
 
-      /* NOTE HOW NONE OF THE NAVIGATOR STUFF IS SET HERE....BUT NEEDS TO BE.... */
       zMapWindowGetVisible(window, &top, &bottom) ;
       zMapNavigatorSetView(zmap->navigator, zMapViewGetFeatures(view), top, bottom) ;
     }
