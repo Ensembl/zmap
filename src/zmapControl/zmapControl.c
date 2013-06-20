@@ -1003,7 +1003,7 @@ static void controlFocusCB(ZMapViewWindow view_window, void *app_data, void *vie
   /* The view_window->view's navigator */
   navigator = zMapViewGetNavigator(view);
 
-  if(navigator)
+  if (navigator)
     {
       ZMapWindow window    = zMapViewGetWindow(view_window);
       /* Make sure that this is the one we see */
