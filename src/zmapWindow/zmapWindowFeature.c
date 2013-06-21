@@ -235,50 +235,52 @@ gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_
   zMapAssert(feature && zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
   feature_set = (ZMapFeatureSet)(feature->parent) ;
 
-  container_set = (ZMapWindowContainerFeatureSet)zmapWindowContainerCanvasItemGetContainer(feature_item) ;
-
-  /* Need to delete the feature from the feature set and from the hash and destroy the
-   * canvas item....NOTE this is very order dependent. */
-
-  /* I'm still not sure this is all correct.
-   * canvasItemDestroyCB has a FToIRemove!
-   */
-
-  /* Firstly remove from the FToI hash... */
-  if (zmapWindowFToIRemoveFeature(zmap_window->context_to_item,
-				  container_set->strand,
-				  container_set->frame, feature))
+  if (ZMAP_IS_CONTAINER_FEATURESET(feature_item))
     {
-      /* check the feature is in featureset. */
-      if (zMapFeatureSetFindFeature(feature_set, feature))
+      container_set = (ZMapWindowContainerFeatureSet)zmapWindowContainerCanvasItemGetContainer(feature_item) ;
+      
+      /* Need to delete the feature from the feature set and from the hash and destroy the
+       * canvas item....NOTE this is very order dependent. */
+      
+      /* I'm still not sure this is all correct.
+       * canvasItemDestroyCB has a FToIRemove!
+       */
+      
+      /* Firstly remove from the FToI hash... */
+      if (zmapWindowFToIRemoveFeature(zmap_window->context_to_item,
+                                      container_set->strand,
+                                      container_set->frame, feature))
         {
-	  if (ZMAP_IS_WINDOW_FEATURESET_ITEM(feature_item))
-	    {
-	      zMapWindowFeaturesetItemRemoveFeature(feature_item,feature);
-	    }
-	  else
-	    {
-	      /* destroy the canvas item...this will invoke canvasItemDestroyCB() */
-	      gtk_object_destroy(GTK_OBJECT(feature_item)) ;
-	    }
-
-	  /* I think we shouldn't need to do this probably....on the other hand showing
-	   * empty cols is configurable.... */
-	  if (!zmapWindowContainerHasFeatures(ZMAP_CONTAINER_GROUP(container_set)) &&
-              !zmapWindowContainerFeatureSetShowWhenEmpty(container_set))
+          /* check the feature is in featureset. */
+          if (zMapFeatureSetFindFeature(feature_set, feature))
             {
-              zmapWindowContainerSetVisibility(FOO_CANVAS_GROUP(container_set), FALSE) ;
+              if (ZMAP_IS_WINDOW_FEATURESET_ITEM(feature_item))
+                {
+                  zMapWindowFeaturesetItemRemoveFeature(feature_item,feature);
+                }
+              else
+                {
+                  /* destroy the canvas item...this will invoke canvasItemDestroyCB() */
+                  gtk_object_destroy(GTK_OBJECT(feature_item)) ;
+                }
+              
+              /* I think we shouldn't need to do this probably....on the other hand showing
+               * empty cols is configurable.... */
+              if (!zmapWindowContainerHasFeatures(ZMAP_CONTAINER_GROUP(container_set)) &&
+                  !zmapWindowContainerFeatureSetShowWhenEmpty(container_set))
+                {
+                  zmapWindowContainerSetVisibility(FOO_CANVAS_GROUP(container_set), FALSE) ;
+                }
+              
+              /* destroy the feature... deletes record in the featureset. */
+              if (destroy_feature)
+                zMapFeatureDestroy(feature);
+              
+              result = TRUE ;
             }
-          
-	  /* destroy the feature... deletes record in the featureset. */
-          if (destroy_feature)
-            zMapFeatureDestroy(feature);
-
-          result = TRUE ;
         }
     }
-
-
+      
   return result ;
 }
 

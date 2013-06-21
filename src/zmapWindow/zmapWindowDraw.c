@@ -603,30 +603,33 @@ gboolean zmapWindowColumnIs3frameDisplayed(ZMapWindow window, FooCanvasGroup *co
 gboolean zmapWindowColumnIsMagVisible(ZMapWindow window, FooCanvasGroup *col_group)
 {
   gboolean visible = TRUE ;
-  ZMapWindowContainerGroup container = ZMAP_CONTAINER_GROUP(col_group);
-  ZMapWindowContainerFeatureSet featureset = ZMAP_CONTAINER_FEATURESET(col_group);
-
-  zMapAssert(window && FOO_IS_CANVAS_GROUP(col_group)) ;
-
-
-  if ((visible = (zmapWindowContainerHasFeatures(container) || zmapWindowContainerFeatureSetShowWhenEmpty(featureset))))
+  
+  if (ZMAP_IS_CONTAINER_FEATURESET(col_group))
     {
-      double min_mag = 0.0, max_mag = 0.0 ;
-      double curr_bases ;
+      ZMapWindowContainerGroup container = ZMAP_CONTAINER_GROUP(col_group);
+      ZMapWindowContainerFeatureSet featureset = ZMAP_CONTAINER_FEATURESET(col_group);
 
-      curr_bases = zMapWindowGetZoomMagAsBases(window) ;
-
-      if (zmapWindowContainerFeatureSetGetMagValues(featureset, &min_mag, &max_mag))
-	{
-	  if ((min_mag && curr_bases < min_mag)
-	      || (max_mag && curr_bases > max_mag))
-	    {
-	      visible = FALSE ;
-	    }
-	}
-
+      if(window && FOO_IS_CANVAS_GROUP(col_group))
+        {
+          if ((visible = (zmapWindowContainerHasFeatures(container) || zmapWindowContainerFeatureSetShowWhenEmpty(featureset))))
+            {
+              double min_mag = 0.0, max_mag = 0.0 ;
+              double curr_bases ;
+              
+              curr_bases = zMapWindowGetZoomMagAsBases(window) ;
+              
+              if (zmapWindowContainerFeatureSetGetMagValues(featureset, &min_mag, &max_mag))
+                {
+                  if ((min_mag && curr_bases < min_mag)
+                      || (max_mag && curr_bases > max_mag))
+                    {
+                      visible = FALSE ;
+                    }
+                }
+            }      
+        }
     }
-
+    
   return visible ;
 }
 

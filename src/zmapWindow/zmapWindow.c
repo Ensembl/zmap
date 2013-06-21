@@ -6145,6 +6145,7 @@ static void getFirstForwardCol(ZMapWindowContainerGroup container, FooCanvasPoin
 	      column = (FooCanvasGroup *)(col_ptr->data) ;
 
 	      if (checkItem(FOO_CANVAS_ITEM(column), GINT_TO_POINTER(FALSE))
+                  ZMAP_IS_CONTAINER_GROUP(column) && 
 		  && (zmapWindowContainerHasFeatures(ZMAP_CONTAINER_GROUP(column)) ||
                       zmapWindowContainerFeatureSetShowWhenEmpty(ZMAP_CONTAINER_FEATURESET(column))))
 		{

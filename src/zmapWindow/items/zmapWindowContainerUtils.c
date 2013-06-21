@@ -214,7 +214,7 @@ ZMapContainerLevelType zmapWindowContainerUtilsGetLevel(FooCanvasItem *item)
   ZMapWindowContainerGroup container_group = NULL;
   ZMapContainerLevelType level = ZMAPCONTAINER_LEVEL_INVALID;
 
-  if((container_group = ZMAP_CONTAINER_GROUP(item)))
+  if(ZMAP_IS_CONTAINER_GROUP(item) && (container_group = ZMAP_CONTAINER_GROUP(item)))
     level = container_group->level;
 
   return level;
