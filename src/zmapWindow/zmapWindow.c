@@ -1061,16 +1061,17 @@ void zMapWindowZoomToMin(ZMapWindow window)
 /* try out the new zoom window.... */
 void zmapWindowZoom(ZMapWindow window, double zoom_factor, gboolean stay_centered)
 {
-  int x, y;
-  double width, curr_pos = 0.0, sensitivity = 0.001 ;
-  GtkAdjustment *adjust ;
-
+  double sensitivity = 0.001 ;
 
   if ((zoom_factor < (1.0 - sensitivity)) || (zoom_factor > (1.0 + sensitivity)))
     {
       static gboolean debug = FALSE ;
       GdkWindow *gdk_window ;
       Display *x_display ;
+      int x, y ;
+      double width, curr_pos = 0.0 ;
+      GtkAdjustment *adjust ;
+      int adjust_centre ;
 
       if (debug)
 	{
@@ -1094,9 +1095,16 @@ void zmapWindowZoom(ZMapWindow window, double zoom_factor, gboolean stay_centere
        * We end up working this out again in myWindowZoom, if and only if we're horizontally
        * split windows, but I don't thik it'll be a big issue.
        */
+
+      adjust_centre = (int)((adjust->page_size / 2) + 0.5) ;
+
       foo_canvas_get_scroll_offsets(window->canvas, &x, &y);
-      y += adjust->page_size / 2 ;
+      y += adjust_centre ;
       foo_canvas_c2w(window->canvas, x, y, &width, &curr_pos) ;
+
+      zmapWindowPrintCanvas(window->canvas) ;
+      fflush(stdout) ;
+
 
       /* possible bug here with width and scrolling, need to check. */
       if (window->locked_display)
@@ -1129,42 +1137,27 @@ void zmapWindowZoom(ZMapWindow window, double zoom_factor, gboolean stay_centere
 
 
       /* We need to scroll to the previous position. This is dependent on
-       * not having split horizontal windows. We only do this once per
-       * potential multiple windows as the vertically split windows share
-       * an adjuster.  If we try to work out position within myWindowZoom
-       * we end up getting the wrong position the second ... times round
-       * and not scrolling to the right position.
-      
-       * NO...THIS DOESN'T WORK....THEY MIGHT SHARE AN ADJUSTER BUT THIS
-       * DOESN'T END UP SIGNALLING ALL THE OTHER CANVASES TO REDRAW PROPERLY.
-       * SO I'VE ADDED CODE TO CALL ALL THE CANVASES....THIS WORKS...BUT
-       * THERE IS STILL A PROBLEM WITH THE SEQUENCE REDRAW....I.E. IF DNA
-       * IS SHOWN....
-       * 
+       * not having split horizontal windows. If we try to work out position
+       * within myWindowZoom we end up getting the wrong position the second
+       * times round and not scrolling to the right position.
        *  */
       if (stay_centered && window->curr_locking != ZMAP_WINLOCK_HORIZONTAL)
 	{
 	  ScrollToStruct scroll_to_data ;
 
-
 	  foo_canvas_w2c(window->canvas, width, curr_pos, &x, &y) ;
 
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  foo_canvas_scroll_to(window->canvas, x, y - (adjust->page_size / 2)) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 	  scroll_to_data.x = x ;
-	  scroll_to_data.y =  y - (adjust->page_size / 2) ;
-	  g_hash_table_foreach(window->sibling_locked_windows, scrollToCB, (gpointer)&scroll_to_data) ;
+	  scroll_to_data.y = y - adjust_centre ;
 
-
+	  /* With multiple windows must scroll them all to get redraws in all of them. */
+	  if (window->sibling_locked_windows)
+	    g_hash_table_foreach(window->sibling_locked_windows, scrollToCB, (gpointer)&scroll_to_data) ;
+	  else
+	    scrollToCB(window, NULL, &scroll_to_data) ;
 	}
 
-
       zmapWindowBusy(window, FALSE) ;
-
 
       if (debug)
 	{
@@ -4757,10 +4750,10 @@ static void lockedDisplayCB(gpointer key, gpointer value, gpointer user_data)
 }
 
 
-static void scrollToCB(gpointer key, gpointer value, gpointer user_data)
+static void scrollToCB(gpointer key, gpointer value_unused, gpointer user_data)
 {
   ZMapWindow window = (ZMapWindow)key ;
-  ScrollTo scroll_to_data = (ScrollTo)scroll_to_data ;
+  ScrollTo scroll_to_data = (ScrollTo)user_data ;
 
   foo_canvas_scroll_to(window->canvas, scroll_to_data->x, scroll_to_data->y) ;
 
