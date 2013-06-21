@@ -125,9 +125,13 @@ static void zmapWindowCanvasSequenceSetRow(ZMapWindowFeaturesetItem featureset, 
 
       seq->factor = seq->feature.feature->feature.sequence.type == ZMAPSEQUENCE_PEPTIDE ? 3 : 1;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       zMapDebugPrintf("%s n_bases: %ld %ld %.5f %ld, %d %d %ld = %ld %ld\n",
 		      g_quark_to_string(featureset->id), n_bases, length, featureset->zoom,
 		      pixels, width, n_disp, n_rows, seq->row_size, seq->spacing);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
       /* allocate space for the text */
       if(seq->n_text <= seq->row_size)
@@ -358,17 +362,25 @@ static void zmapWindowCanvasSequencePaintFeature(ZMapWindowFeaturesetItem featur
   if(cy > featureset->clip_y2)
     cy = featureset->clip_y2 + seq->spacing - 1 ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   zMapDebugPrintf("Expose: %d %d (%d %d) -> %d %d\n",
 		  expose->area.y - 1, expose->area.y + expose->area.height + 1,
 		  featureset->clip_y1, featureset->clip_y2,
 		  cx, cy) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   /* get the expose area: copied from calling code, we have one item here and it's normally bigger
    * than the expose area */
   foo_canvas_c2w(foo->canvas, 0, floor(cx), NULL, &y1) ;
   foo_canvas_c2w(foo->canvas, 0, ceil(cy), NULL, &y2) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   zMapDebugPrintf("Paint from %.1f to %.1f\n", y1, y2) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   //	NOTE need to sort highlight list here if it's not added in ascending coord order */
 
@@ -442,7 +454,12 @@ static void zmapWindowCanvasSequencePaintFeature(ZMapWindowFeaturesetItem featur
       pango_renderer_draw_layout(pango->renderer, pango->layout,
 				 cx * PANGO_SCALE, (cy + seq->offset) * PANGO_SCALE) ;
 
-      //zMapDebugPrintf("frame %d text %s at %ld, canvas %.1f, %.1f = %d, %d \n", zMapFeatureFrame(seq->feature), seq->text, y, featureset->dx, y + featureset->dy, cx, cy);
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      zMapDebugPrintf("text %s at %ld, canvas %.1f, %.1f = %d, %d \n",
+		      seq->text, y, featureset->dx, y + featureset->dy, cx, cy) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
     }
 }
 
