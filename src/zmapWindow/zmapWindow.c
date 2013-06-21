@@ -1102,8 +1102,12 @@ void zmapWindowZoom(ZMapWindow window, double zoom_factor, gboolean stay_centere
       y += adjust_centre ;
       foo_canvas_c2w(window->canvas, x, y, &width, &curr_pos) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       zmapWindowPrintCanvas(window->canvas) ;
       fflush(stdout) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
       /* possible bug here with width and scrolling, need to check. */
