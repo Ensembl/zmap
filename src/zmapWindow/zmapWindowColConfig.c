@@ -2085,6 +2085,7 @@ static void loaded_show_button_cb(GtkToggleButton *togglebutton, gpointer user_d
 								   zmapWindowContainerFeatureSetGetStrand(container), frame);
 
 			  if(frame_column && 
+                             ZMAP_IS_CONTAINER_GROUP(frame_column) &&
                              (zmapWindowContainerHasFeatures(ZMAP_CONTAINER_GROUP(frame_column)) ||
                               zmapWindowContainerFeatureSetShowWhenEmpty(ZMAP_CONTAINER_FEATURESET(frame_column))))
                             {

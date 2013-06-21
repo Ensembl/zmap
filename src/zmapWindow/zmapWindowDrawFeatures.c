@@ -734,16 +734,19 @@ gboolean zmapWindowRemoveIfEmptyCol(FooCanvasGroup **col_group)
   ZMapWindowContainerGroup container;
   gboolean removed = FALSE ;
 
-  container = (ZMapWindowContainerGroup)(*col_group);
-
-  if ((!zmapWindowContainerHasFeatures(container)) &&
-      (!zmapWindowContainerFeatureSetShowWhenEmpty(ZMAP_CONTAINER_FEATURESET(container))))
+  if (ZMAP_IS_CONTAINER_GROUP(*col_group))
     {
-      container = zmapWindowContainerGroupDestroy(container) ;
+      container = ZMAP_CONTAINER_GROUP(*col_group);
 
-      *col_group = (FooCanvasGroup *)container;
-
-      removed = TRUE ;
+      if ((!zmapWindowContainerHasFeatures(container)) &&
+          (!zmapWindowContainerFeatureSetShowWhenEmpty(ZMAP_CONTAINER_FEATURESET(container))))
+        {
+          container = zmapWindowContainerGroupDestroy(container) ;
+          
+          *col_group = (FooCanvasGroup *)container;
+          
+          removed = TRUE ;
+        }
     }
 
   return removed ;
