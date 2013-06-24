@@ -332,10 +332,9 @@ show-when-empty=true\n\
 [style-ORF]\n\
 colours=normal fill #ffffff ; normal border #898994 ; selected fill gold ; selected border #000000\n \
 width=11\n\
-frame-mode=always\n\
+frame-mode=only-3\n\
 strand-specific=true\n\
-show-reverse-strand=true\n\
-show-when-empty=true\n\
+show-reverse-strand=false\n\
 \n\
 \n\
 ";
