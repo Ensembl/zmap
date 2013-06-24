@@ -95,6 +95,8 @@ static void seqMenuCB(int menu_item_id, gpointer callback_data) ;
 
 
 
+
+
 GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
 {
   GtkWidget *hbox,

@@ -345,15 +345,6 @@ int n_foo_wins = 0;
 
 
 
-/*! @defgroup zmapwindow   zMapWindow: The feature display window.
- * @{
- *
- * \brief  Feature Display Window
- *
- * zMapWindow routines create, modify, manipulate and destroy feature display windows.
- *
- *
- *  */
 
 
 

@@ -307,6 +307,7 @@ void zMapWindowColumnList(ZMapWindow window)
 
 
 
+
 /*
  *          External Package functions.
  */
