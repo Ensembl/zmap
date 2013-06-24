@@ -23,30 +23,35 @@
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- * Description: 
+ * Description: Provides xml parsing, under the covers uses the expat
+ *              parser.
  *
- * Exported functions: See XXXXXXXXXXXXX.h
+ * Exported functions: See ZMap/zmapXML.h
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmap.h>
 
-
-
-
-
-
 #include <stdio.h>
 #include <expat.h>
 #include <glib.h>
+
 #include <ZMap/zmapUtils.h>
 #include <zmapXML_P.h>
+
+
+
+/* These limits should be removed...see comments at start of code. */
+enum {PARSE_ELEMENT_LIMIT = 300, PARSE_ATTRIBUTE_LIMIT = PARSE_ELEMENT_LIMIT * 2} ;
+
 
 typedef struct _tagHandlerItemStruct
 {
   GQuark id;
   ZMapXMLMarkupObjectHandler handler;
 } tagHandlerItemStruct, *tagHandlerItem;
+
+
 
 static void setupExpat(ZMapXMLParser parser);
 static void initElements(GArray *array);
@@ -87,9 +92,20 @@ static void setupAutomagicCleanup(ZMapXMLParser parser, ZMapXMLElement element);
 static gboolean defaultAlwaysTrueHandler(void *ignored_data,
                                          ZMapXMLElement element,
                                          ZMapXMLParser parser);
+
+
+
+
+
+/* OK....SO THIS LIMIT IS FUNDAMENTALLY A BAD IDEA.....I'VE BUMPED IT UP
+ * AS AN INITIAL FIX BUT IT NEEDS FIXING PROPERLY..... SEE ENUM ABOVE
+ * 
+ * What happens of course is that sooner or later we exceed the limit and then
+ * the code crashes..... */
+
 /* So what does this do?
  * ---------------------
-
+ *
  * A zmapXMLParser wraps an expat parser so all the settings for the
  * parser are in the one place making it simpler to create, hold on
  * to, destroy an expat parser with the associated start and end
@@ -105,13 +121,13 @@ static gboolean defaultAlwaysTrueHandler(void *ignored_data,
  * the complete zmapXMLdocument has been parsed and iterate through the 
  * zmapXMLElements yourself. Recommended ONLY if document is small 
  * (< 100 elements, < 200 attributes).
-
+ *
  * I've imposed this limit to make memory use small.
-
+ *
  * size of object is dependent on the depth of the object. e.g a list
  * can be 99 elements in size if it's only contained, by one other.  But
  * if it's 10 levels deep the limit is 90
-
+ *
  */
 
 ZMapXMLParser zMapXMLParserCreate(void *user_data, gboolean validating, gboolean debug)
@@ -142,10 +158,10 @@ ZMapXMLParser zMapXMLParserCreate(void *user_data, gboolean validating, gboolean
   /* This should probably be done with a NS parser */
   parser->xmlbase = g_quark_from_string(ZMAP_XML_BASE_ATTR);
 
-  parser->max_size_e = 100;
-  parser->max_size_a = parser->max_size_e * 2;
-  parser->elements   = g_array_sized_new(TRUE, TRUE, sizeof(zmapXMLElementStruct),   parser->max_size_e);
-  parser->attributes = g_array_sized_new(TRUE, TRUE, sizeof(zmapXMLAttributeStruct), parser->max_size_a);
+  parser->max_size_e = PARSE_ELEMENT_LIMIT ;
+  parser->max_size_a =  PARSE_ATTRIBUTE_LIMIT ;
+  parser->elements   = g_array_sized_new(TRUE, TRUE, sizeof(zmapXMLElementStruct),   parser->max_size_e) ;
+  parser->attributes = g_array_sized_new(TRUE, TRUE, sizeof(zmapXMLAttributeStruct), parser->max_size_a) ;
 
   g_array_set_size(parser->elements, parser->max_size_e);
   g_array_set_size(parser->attributes, parser->max_size_a);
@@ -160,31 +176,43 @@ void zMapXMLParserSetUserData(ZMapXMLParser parser, void *user_data)
 {
   zMapAssert(parser);
   parser->user_data = user_data;
+
   return ;
 }
 
 ZMapXMLElement zMapXMLParserGetRoot(ZMapXMLParser parser)
 {
   ZMapXMLElement root = NULL;
+
   if(parser->document)
     root = parser->document->root;
+
   return root;
 }
 
 char *zMapXMLParserGetBase(ZMapXMLParser parser)
 {
   char *base = NULL;
+
   if(parser->expat != NULL)
     base = (char *)XML_GetBase(parser->expat);
+
   return base;
 }
+
+
+
 long zMapXMLParserGetCurrentByteIndex(ZMapXMLParser parser)
 {
   long index = 0;
+
   if(parser->expat != NULL)
     index = XML_GetCurrentByteIndex(parser->expat);
+
   return index;
 }
+
+
 /* If return is non null it needs freeing sometime in the future! */
 char *zMapXMLParserGetFullXMLTwig(ZMapXMLParser parser, int offset)
 {
@@ -205,12 +233,14 @@ char *zMapXMLParserGetFullXMLTwig(ZMapXMLParser parser, int offset)
   return copy;                  /* PLEASE free me later */
 }
 
-#define BUFFER_SIZE 200
+
+
 gboolean zMapXMLParserParseFile(ZMapXMLParser parser,
-                                  FILE *file)
+				FILE *file)
 {
   int len = 0;
   int done = 0;
+  enum {BUFFER_SIZE = 200} ;
   char buffer[BUFFER_SIZE];
   
   while (!done)
@@ -345,50 +375,50 @@ gboolean zMapXMLParserParseBuffer(ZMapXMLParser parser,
   if (processing_status != XML_STATUS_OK)
 
 #ifdef NEW_STYLE
-  if ((processing_status = XML_Parse(parser->expat, (char *)data, size, isFinal)) != XML_STATUS_OK)
+    if ((processing_status = XML_Parse(parser->expat, (char *)data, size, isFinal)) != XML_STATUS_OK)
 #endif
-    {
-      enum XML_Error error;
-      char *offend = NULL;
+      {
+	enum XML_Error error;
+	char *offend = NULL;
 
-      if (parser->last_errmsg)
-        g_free(parser->last_errmsg);
+	if (parser->last_errmsg)
+	  g_free(parser->last_errmsg);
 
-      error = XML_GetErrorCode(parser->expat);
+	error = XML_GetErrorCode(parser->expat);
       
-      if(error == XML_ERROR_ABORTED && parser->error_free_abort)
-	result = TRUE;
-      else
-        {                       /* processing_status == XML_STATUS_ERROR */
-	  int line_num, col_num;
+	if(error == XML_ERROR_ABORTED && parser->error_free_abort)
+	  result = TRUE;
+	else
+	  {                       /* processing_status == XML_STATUS_ERROR */
+	    int line_num, col_num;
 
-	  line_num = (int)XML_GetCurrentLineNumber(parser->expat);
-	  col_num  = (int)XML_GetCurrentColumnNumber(parser->expat);
+	    line_num = (int)XML_GetCurrentLineNumber(parser->expat);
+	    col_num  = (int)XML_GetCurrentColumnNumber(parser->expat);
 
-          offend = getOffendingXML(parser, ZMAP_XML_ERROR_CONTEXT_SIZE);
-          switch(error)
-            {
-            case XML_ERROR_ABORTED:
-              parser->last_errmsg = g_strdup_printf("[ZMapXMLParse] Parse error line %d column %d\n"
-                                                    "[ZMapXMLParse] Aborted: %s\n",
-						    line_num, col_num,
-                                                    parser->aborted_msg);
-              break;
-            default:
-              parser->last_errmsg = g_strdup_printf("[ZMapXMLParse] Parse error line %d column %d\n"
-                                                    "[ZMapXMLParse] Expat reports: %s\n"
-                                                    "[ZMapXMLParse] XML near error <!-- >>>>%s<<<< -->\n",
-						    line_num, col_num,
-                                                    XML_ErrorString(error),
-                                                    offend) ;
-              break;
-            }
-	  result = FALSE ;
-        }
+	    offend = getOffendingXML(parser, ZMAP_XML_ERROR_CONTEXT_SIZE);
+	    switch(error)
+	      {
+	      case XML_ERROR_ABORTED:
+		parser->last_errmsg = g_strdup_printf("[ZMapXMLParse] Parse error line %d column %d\n"
+						      "[ZMapXMLParse] Aborted: %s\n",
+						      line_num, col_num,
+						      parser->aborted_msg);
+		break;
+	      default:
+		parser->last_errmsg = g_strdup_printf("[ZMapXMLParse] Parse error line %d column %d\n"
+						      "[ZMapXMLParse] Expat reports: %s\n"
+						      "[ZMapXMLParse] XML near error <!-- >>>>%s<<<< -->\n",
+						      line_num, col_num,
+						      XML_ErrorString(error),
+						      offend) ;
+		break;
+	      }
+	    result = FALSE ;
+	  }
 
-      if(offend)
-        g_free(offend);
-    }
+	if(offend)
+	  g_free(offend);
+      }
 
 #ifndef ZMAP_USING_EXPAT_1_95_8_OR_ABOVE
   /* Because XML_ParsingStatus XML_GetParsingStatus aren't on alphas! */
@@ -789,7 +819,7 @@ static void end_handler(void *userData,
           /* We can free the current_ele and all its children */
           /* First we need to tell the parent that its child is being freed. */
           if(!(zmapXMLElementSignalParentChildFree(current_ele)))
-             printf("[zmapXMLParser] XML Document free? Memory leak ?\n");
+	    printf("[zmapXMLParser] XML Document free? Memory leak ?\n");
 
           zmapXMLElementMarkDirty(current_ele);
         }
@@ -855,15 +885,15 @@ static void xmldecl_handler(void* data,
                             XML_Char const* encoding,
                             int standalone)
 {
-    ZMapXMLParser parser = (ZMapXMLParser)data;
+  ZMapXMLParser parser = (ZMapXMLParser)data;
 
-    if (parser == NULL)
-      return ;
-
-    if (!(parser->document))
-      parser->document = zMapXMLDocumentCreate(version, encoding, standalone);
-
+  if (parser == NULL)
     return ;
+
+  if (!(parser->document))
+    parser->document = zMapXMLDocumentCreate(version, encoding, standalone);
+
+  return ;
 }
 
 static ZMapXMLMarkupObjectHandler getObjHandler(ZMapXMLElement element,
@@ -902,24 +932,27 @@ static ZMapXMLAttribute parserFetchNewAttribute(ZMapXMLParser parser,
 
   zMapAssert(parser->attributes);
 
-  for(i = 0; i < parser->attributes->len; i++)
-  {
-    /* This is hideous. Ed has a written a zMap_g_array_index, but it auto expands  */
-    if(((&(g_array_index(parser->attributes, zmapXMLAttributeStruct, i))))->dirty == TRUE)
-      { save = i; break; }
-  }
+  for (i = 0; i < parser->attributes->len; i++)
+    {
+      /* This is hideous. Ed has a written a zMap_g_array_index, but it auto expands  */
+      if (((&(g_array_index(parser->attributes, zmapXMLAttributeStruct, i))))->dirty == TRUE)
+	{
+	  save = i;
+	  break;
+	}
+    }
 
-  if((save != -1) && (attr = &(g_array_index(parser->attributes, zmapXMLAttributeStruct, save))) != NULL)
+  if ((save != -1) && (attr = &(g_array_index(parser->attributes, zmapXMLAttributeStruct, save))) != NULL)
     {
       attr->dirty = FALSE;
       attr->name  = g_quark_from_string(g_ascii_strdown((char *)name, -1));
       attr->value = g_quark_from_string((char *)value);
     }
 
-  if(attr == NULL)
-    abortParsing(parser, "Exhausted allocated (%d) attributes.", parser->attributes->len);
+  if (attr == NULL)
+    abortParsing(parser, "Exhausted allocated (%d) attributes.", parser->attributes->len) ;
 
-  return attr;
+  return attr ;
 }
 
 static ZMapXMLElement parserFetchNewElement(ZMapXMLParser parser, 
@@ -930,12 +963,15 @@ static ZMapXMLElement parserFetchNewElement(ZMapXMLParser parser,
 
   zMapAssert(parser->elements);
 
-  for(i = 0; i < parser->elements->len; i++)
-  {
-    /* This is hideous. Ed has a written a zMap_g_array_index, but it auto expands  */
-    if(((&(g_array_index(parser->elements, zmapXMLElementStruct, i))))->dirty == TRUE)
-      { save = i; break; }
-  }
+  for (i = 0; i < parser->elements->len; i++)
+    {
+      /* This is hideous. Ed has a written a zMap_g_array_index, but it auto expands  */
+      if (((&(g_array_index(parser->elements, zmapXMLElementStruct, i))))->dirty == TRUE)
+	{
+	  save = i;
+	  break;
+	}
+    }
 
   if((save != -1) && (element = &(g_array_index(parser->elements, zmapXMLElementStruct, save))) != NULL)
     {
@@ -980,13 +1016,13 @@ static void initAttributes(GArray *array)
 
 /* getOffendingXML - parser, context - Returns a string (free it!)
 
- * This returns a string from the current input context which will
- * roughly be 1 tag or context bytes either side of the current
- * position.  
+* This returns a string from the current input context which will
+* roughly be 1 tag or context bytes either side of the current
+* position.  
 
- * e.g. getOffendingXML(parser, 10) context = <alpha><beta><gamma>...
- * will return <alpha><beta><gamma> if current position is start beta
- */
+* e.g. getOffendingXML(parser, 10) context = <alpha><beta><gamma>...
+* will return <alpha><beta><gamma> if current position is start beta
+*/
 /* If return is non null it needs freeing sometime in the future! */
 /* slightly inspired by xml parsers which display errors like
  * <this isnt="valid"><xml></uknow>
@@ -1072,9 +1108,13 @@ static void setupAutomagicCleanup(ZMapXMLParser parser, ZMapXMLElement element)
       parser->endTagHandlers = 
         g_list_append(parser->endTagHandlers, automagic);
     }
+
   return ;
 }
+
 static gboolean defaultAlwaysTrueHandler(void *ignored_data,
                                          ZMapXMLElement element,
                                          ZMapXMLParser parser)
-{ return TRUE; }
+{
+  return TRUE;
+}
