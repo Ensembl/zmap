@@ -1365,6 +1365,7 @@ gboolean zMapFeatureGetFeatureListExtent(GList *feature_list, int *start_out, in
 char *zMapFeature3FrameTranslationFeatureName(ZMapFeatureSet feature_set, ZMapFrame frame);
 void zMapFeature3FrameTranslationPopulate(ZMapFeatureSet feature_set);
 gboolean zMapFeature3FrameTranslationCreateSet(ZMapFeatureBlock block, ZMapFeatureSet *set_out);
+gboolean zMapFeatureORFCreateSet(ZMapFeatureBlock block, ZMapFeatureSet *set_out);
 
 
 gboolean zMapFeatureWorld2Transcript(ZMapFeature feature,
@@ -1426,6 +1427,7 @@ ZMapFeature zMapFeatureDNACreateFeature(ZMapFeatureBlock     block,
 
 void zMapFeature3FrameTranslationSetCreateFeatures(ZMapFeatureSet feature_set,
 						   ZMapFeatureTypeStyle style);
+void zMapFeatureORFSetCreateFeatures(ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style, ZMapFeatureSet translation_fs);
 
 
 

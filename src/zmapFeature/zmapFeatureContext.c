@@ -85,6 +85,7 @@ typedef struct
   int block_start, block_end ;
   int start;
   int end ;
+  ZMapFeatureSet translation_fs ;
 } RevCompDataStruct, *RevCompData ;
 
 
@@ -94,6 +95,10 @@ static ZMapFeatureContextExecuteStatus revCompFeaturesCB(GQuark key,
                                                          gpointer data,
                                                          gpointer user_data,
                                                          char **error_out);
+static ZMapFeatureContextExecuteStatus revCompORFFeaturesCB(GQuark key,
+                                                            gpointer data,
+                                                            gpointer user_data,
+                                                            char **error_out);
 static void revcompSpan(GArray *spans, int start_coord, int seq_end) ;
 
 static char *getFeatureBlockDNA(ZMapFeatureAny feature_any, int start_in, int end_in, gboolean revcomp) ;
@@ -148,6 +153,15 @@ void zMapFeatureContextReverseComplement(ZMapFeatureContext context, GHashTable 
   zMapFeatureContextExecute((ZMapFeatureAny)context,
                             ZMAPFEATURE_STRUCT_FEATURE,
                             revCompFeaturesCB,
+                            &cb_data);
+
+  
+  //GQuark featureset_id = g_quark_from_string(ZMAP_FIXED_STYLE_ORF_NAME);
+  //zMapFeatureAnyGetFeatureByID(context, featureset_id) ;
+
+  zMapFeatureContextExecute((ZMapFeatureAny)context,
+                            ZMAPFEATURE_STRUCT_FEATURE,
+                            revCompORFFeaturesCB,
                             &cb_data);
 
   return ;
@@ -924,8 +938,10 @@ static ZMapFeatureContextExecuteStatus revCompFeaturesCB(GQuark key,
 	/* OK...THIS IS CRAZY....SHOULD BE PART OF THE FEATURE REVCOMP....FIX THIS.... */
 	/* Now redo the 3 frame translations from the dna (if they exist). */
 	if (feature_set->original_id == g_quark_from_string(ZMAP_FIXED_STYLE_3FT_NAME))
-	  zMapFeature3FrameTranslationSetRevComp(feature_set, cb_data->block_start, cb_data->block_end) ;
-
+          {
+            cb_data->translation_fs = feature_set;
+            zMapFeature3FrameTranslationSetRevComp(feature_set, cb_data->block_start, cb_data->block_end) ;
+          }
 
 	break;
       }
@@ -943,6 +959,41 @@ static ZMapFeatureContextExecuteStatus revCompFeaturesCB(GQuark key,
     default:
       {
 	zMapAssertNotReached();
+	break;
+      }
+    }
+
+  return status;
+}
+
+
+static ZMapFeatureContextExecuteStatus revCompORFFeaturesCB(GQuark key,
+                                                            gpointer data,
+                                                            gpointer user_data,
+                                                            char **error_out)
+{
+  ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
+  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
+  RevCompData cb_data = (RevCompData)user_data;
+
+  zMapAssert(feature_any && zMapFeatureIsValid(feature_any)) ;
+
+  switch(feature_any->struct_type)
+    {
+    case ZMAPFEATURE_STRUCT_FEATURESET:
+      {
+        ZMapFeatureSet feature_set = NULL;
+
+        feature_set = (ZMapFeatureSet)feature_any;
+
+	if (feature_set->original_id == g_quark_from_string(ZMAP_FIXED_STYLE_ORF_NAME))
+	  zMapFeatureORFSetRevComp(feature_set, cb_data->translation_fs);
+
+
+	break;
+      }
+    default:
+      {
 	break;
       }
     }

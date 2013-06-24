@@ -259,7 +259,6 @@ void zMapWindowToggleScratchColumn(ZMapWindow window,
 
 
 
-
 /*
  *                         some column functions....
  */

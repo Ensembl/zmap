@@ -67,6 +67,7 @@ void zmapPrintFeatureContext(ZMapFeatureContext context) ;
 gboolean zmapStr2Enum(ZMapFeatureStr2Enum type_table, char *type_str, int *type_out) ;
 
 void zMapFeature3FrameTranslationSetRevComp(ZMapFeatureSet feature_set, int block_start, int block_end) ;
+void zMapFeatureORFSetRevComp(ZMapFeatureSet feature_set, ZMapFeatureSet translation_fs) ;
 
 
 #endif /* !ZMAP_FEATURE_P_H */

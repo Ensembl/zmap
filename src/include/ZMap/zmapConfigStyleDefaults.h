@@ -86,6 +86,8 @@
 #define ZMAP_FIXED_STYLE_SCRATCH_TEXT TEXT_PREFIX "scratch-pad column for creating/editing temporary features."
 #define ZMAP_FIXED_STYLE_HAND_BUILT_NAME "hand_built"
 #define ZMAP_FIXED_STYLE_HAND_BUILT_TEXT TEXT_PREFIX "column for displaying hand-built features."
+#define ZMAP_FIXED_STYLE_ORF_NAME "ORF"
+#define ZMAP_FIXED_STYLE_ORF_TEXT TEXT_PREFIX "open reading frame display"
 
 /* The opts struct */
 #define ZMAP_STYLE_DEFAULT_HIDE_INITIALLY  FALSE
