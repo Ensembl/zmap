@@ -118,8 +118,8 @@ ZMAP_MASTER_BUILD_CANVAS_DIST=no
 
 ZMAP_CLUSTER_CONFIG_FILE=~zmap/cluster.config.sh
 
-# tviewsrv is now ubuntu, but cbi4 is still lenny....
-ZMAP_BUILD_MACHINES="tviewsrv mac18480i cbi4"
+# tviewsrv and lucid-dev64 are now ubuntu....
+ZMAP_BUILD_MACHINES="tviewsrv mac18480i lucid-dev64"
 #ZMAP_BUILD_MACHINES="deskpro021045 mac18480i lucid-dev64"
 
 
