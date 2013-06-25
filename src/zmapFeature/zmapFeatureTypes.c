@@ -96,11 +96,11 @@ typedef struct
 static void checkListName(gpointer data, gpointer user_data) ;
 static gint compareNameToStyle(gconstpointer glist_data, gconstpointer user_data) ;
 
+static void mergeColours(ZMapStyleFullColour curr, ZMapStyleFullColour new) ;
 static void mergeStyle(gpointer style_id, gpointer data, gpointer user_data_unused) ;
 static gboolean destroyStyle(gpointer style_id, gpointer data, gpointer user_data_unused) ;
 
 static void copySetCB(gpointer key_id, gpointer data, gpointer user_data) ;
-
 
 static void setStrandFrameAttrs(ZMapFeatureTypeStyle type,
 				gboolean *strand_specific_in,
@@ -108,18 +108,14 @@ static void setStrandFrameAttrs(ZMapFeatureTypeStyle type,
 				ZMapStyle3FrameMode *frame_mode_in) ;
 static void mergeColours(ZMapStyleFullColour curr, ZMapStyleFullColour new) ;
 
+static ZMapFeatureTypeStyle inherit_parent(ZMapFeatureTypeStyle style, GHashTable *root_styles, int depth) ;
+static void clear_inherited(gpointer key, gpointer item, gpointer user) ;
 
-/*! @defgroup zmapstyles   zMapStyle: Feature Style handling for ZMap
- * @{
- *
- * \brief  Feature Style handling for ZMap.
- *
- * zMapStyle routines provide functions to create/modify/destroy individual
- * styles, the styles control how features are processed and displayed. They
- * control aspects such as foreground colour, column bumping mode etc.
- *
- *  */
 
+
+/* 
+ *                   External interface
+ */
 
 
 /* Add a style to a set of styles, if the style is already there no action is taken
@@ -145,12 +141,12 @@ gboolean zMapStyleSetAdd(GHashTable *style_set, ZMapFeatureTypeStyle style)
 
 void zMapStyleSetIsDefault(ZMapFeatureTypeStyle style)
 {
-	style->is_default = TRUE;
+  style->is_default = TRUE;
 }
 
 void zMapStyleSetOverridden(ZMapFeatureTypeStyle style, gboolean truth)
 {
-	style->overridden = truth;
+  style->overridden = truth;
 }
 
 
@@ -163,132 +159,40 @@ void zMapStyleSetOverridden(ZMapFeatureTypeStyle style, gboolean truth)
  * If there are errors in trying to inherit styles (e.g. non-existent parents)
  * then this function returns FALSE and there will be log messages identifying
  * the errors.
- *
+ * 
  * re-written by mh17 May 2010 to use a more efficient way of finding parent styles and inheriting then
- * (previous version performed badly on sorted data...erm got an infinite list due to self-parenting styles)
  * ..anyway this version runs as fast as a single datalist or hash table function
  * & does strictly less inherit operations than the number of styles
  */
-
-
-
-// inherit the parent style, recursively inheriting its ancestors first
-// replaces and frees the old style with the new one and returns the new
-// or NULL on failure
-static ZMapFeatureTypeStyle inherit_parent(ZMapFeatureTypeStyle style, GHashTable *root_styles, int depth)
-{
-  ZMapFeatureTypeStyle parent, tmp_style = NULL;
-
-  if(depth > 20)
-    {
-      zMapLogWarning("Style %s has more than 20 ancestors - suspected mutually recursive definition of parent style", g_quark_to_string(style->original_id));
-
-      style->inherited = TRUE;      // prevent repeated messages
-      return(NULL);
-    }
-  if (zMapStyleIsPropertySetId(style,STYLE_PROP_PARENT_STYLE) && !style->inherited)
-    {
-      if(style->parent_id == style->unique_id)
-        {
-            zMapLogWarning("Style %s is its own parent",g_quark_to_string(style->original_id));
-            style->inherited = TRUE;
-            return(NULL);
-        }
-
-      parent = (ZMapFeatureTypeStyle) g_hash_table_lookup(root_styles,GUINT_TO_POINTER(style->parent_id));
-      if(!parent)
-        {
-          zMapLogWarning("Style \"%s\" has the parent style \"%s\" "
-                  "but the latter cannot be found in the styles set so cannot be inherited.",
-                  g_quark_to_string(style->original_id), g_quark_to_string(style->parent_id)) ;
-          return(NULL);
-        }
-
-      if(!parent->inherited)
-          parent = inherit_parent(parent,root_styles,depth+1);
-
-      if(parent)
-        {
-          tmp_style = zMapFeatureStyleCopy(parent) ;
-
-          if (zMapStyleMerge(tmp_style, style))
-            {
-              tmp_style->inherited = TRUE;
-
-#if MH17_CHECK_INHERITANCE
-printf("%s inherited  %s, (%d/%d -> %d)\n",
-g_quark_to_string(style->unique_id),
-g_quark_to_string(parent->unique_id),
-parent->default_bump_mode, style->default_bump_mode, tmp_style->default_bump_mode);
-#endif
-                  // keep this up to date
-              g_hash_table_replace(root_styles,GUINT_TO_POINTER(style->unique_id),tmp_style);
-              zMapStyleDestroy(style);
-            }
-          else
-            {
-              zMapLogWarning("Merge of style \"%s\" into style \"%s\" failed.",
-                  g_quark_to_string(parent->original_id),
-                  g_quark_to_string(style->original_id)) ;
-
-               zMapStyleDestroy(tmp_style);
-               tmp_style = style;
-            }
-        }
-    }
-  else
-  {
-      // nothing to do return: input style
-      style->inherited = TRUE;
-	tmp_style = style;
-  }
-
-  return tmp_style;
-}
-
-
-
-// add a style to a hash table
-static void clear_inherited(gpointer key, gpointer item, gpointer user)
-{
-  ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle) item;
-
-  style->inherited = FALSE;
-}
-
-
-
 gboolean zMapStyleInheritAllStyles(GHashTable *style_set)
 {
   gboolean result = TRUE ;
-//  GHashTable *root_styles;
-  GList *iter;
-  ZMapFeatureTypeStyle old,new;
+  GList *iter ;
+  ZMapFeatureTypeStyle old, new ;
 
+  g_hash_table_foreach(style_set, clear_inherited, style_set) ;
 
-  g_hash_table_foreach(style_set,clear_inherited,style_set);
+  // we need to process the hash table and alter the data pointers
 
-      // we need to process the hash table and alter the data pointers
+  // get a list of keys
+  zMap_g_hash_table_get_keys(&iter, style_set) ;
 
-      // get a list of keys
-  zMap_g_hash_table_get_keys(&iter,style_set);
-
-      // lookup each one and replace in turn, update the output datalist
-  for(;iter;iter = iter->next)
+  // lookup each one and replace in turn, update the output datalist
+  for( ; iter ; iter = iter->next)
     {
-            // lookup the style: must do this for each as
-            // these may be changed by inheritance of previous styles
-      old = (ZMapFeatureTypeStyle) g_hash_table_lookup(style_set,iter->data);
-      zMapAssert(old);
+      // lookup the style: must do this for each as
+      // these may be changed by inheritance of previous styles
+      old = (ZMapFeatureTypeStyle)g_hash_table_lookup(style_set, iter->data) ;
+      zMapAssert(old) ;
 
-            // recursively inherit parent while not already done
-      new = inherit_parent(old,style_set,0);
+      // recursively inherit parent while not already done
+      new = inherit_parent(old, style_set, 0) ;
       if(!new)
-            result = FALSE;
+	result = FALSE ;
     }
 
-      // tidy up
-  g_list_free(iter);
+  // tidy up
+  g_list_free(iter) ;
 
   return result ;
 }
@@ -446,47 +350,6 @@ gboolean zMapStyleMerge(ZMapFeatureTypeStyle curr_style, ZMapFeatureTypeStyle ne
     }
 
   return result ;
-}
-
-
-static void mergeColours(ZMapStyleFullColour curr, ZMapStyleFullColour new)
-{
-
-  if (new->normal.fields_set.fill)
-    {
-      curr->normal.fill = new->normal.fill ;
-      curr->normal.fields_set.fill = TRUE ;
-    }
-  if (new->normal.fields_set.draw)
-    {
-      curr->normal.draw = new->normal.draw ;
-      curr->normal.fields_set.draw = TRUE ;
-    }
-  if (new->normal.fields_set.border)
-    {
-      curr->normal.border = new->normal.border ;
-      curr->normal.fields_set.border = TRUE ;
-    }
-
-
-  if (new->selected.fields_set.fill)
-    {
-      curr->selected.fill = new->selected.fill ;
-      curr->selected.fields_set.fill = TRUE ;
-    }
-  if (new->selected.fields_set.draw)
-    {
-      curr->selected.draw = new->selected.draw ;
-      curr->selected.fields_set.draw = TRUE ;
-    }
-  if (new->selected.fields_set.border)
-    {
-      curr->selected.border = new->selected.border ;
-      curr->selected.fields_set.border = TRUE ;
-    }
-
-
-  return ;
 }
 
 
@@ -1142,19 +1005,10 @@ void zMapStyleDestroyStyles(GHashTable *styles)
 
 
 
-/*! @} end of zmapstyles docs. */
-
-
-
-
-
 
 /*
  *                  Internal routines
  */
-
-
-
 
 /* A GFunc() called from zMapSetListEqualStyles() to check that a given feature_set name
  * has a corresponding style. */
@@ -1287,6 +1141,143 @@ static void copySetCB(gpointer key_id, gpointer data, gpointer user_data)
   return ;
 }
 
+
+
+
+/* actually the return value comment is not true....see code towards
+ * end of function....should correct that and test. */
+/* inherit the parent style, recursively inheriting its ancestors first
+ * replaces and frees the old style with the new one and returns the new
+ * or NULL on failure */
+static ZMapFeatureTypeStyle inherit_parent(ZMapFeatureTypeStyle style, GHashTable *root_styles, int depth)
+{
+  ZMapFeatureTypeStyle new_style = NULL ;
+  ZMapFeatureTypeStyle parent, tmp_style = NULL;
+
+
+  /* I REALLY HATE THIS...RETURNS ALL OVER THE PLACE...... */
+
+  if (depth > 20)
+    {
+      zMapLogWarning("Style %s has more than 20 ancestors - suspected mutually recursive definition of parent style",
+		     g_quark_to_string(style->original_id));
+
+      style->inherited = TRUE;      // prevent repeated messages
+
+      return(NULL);
+    }
+
+  if (zMapStyleIsPropertySetId(style, STYLE_PROP_PARENT_STYLE) && !style->inherited)
+    {
+      if (style->parent_id == style->unique_id)
+        {
+	  zMapLogWarning("Style %s is its own parent", g_quark_to_string(style->original_id)) ;
+	  style->inherited = TRUE ;
+
+	  return(NULL) ;
+        }
+
+      if (!(parent = (ZMapFeatureTypeStyle) g_hash_table_lookup(root_styles,GUINT_TO_POINTER(style->parent_id))))
+        {
+          zMapLogWarning("Style \"%s\" has the parent style \"%s\" "
+			 "but the latter cannot be found in the styles set so cannot be inherited.",
+			 g_quark_to_string(style->original_id), g_quark_to_string(style->parent_id)) ;
+
+          return(NULL);
+        }
+
+      if(!parent->inherited)
+	parent = inherit_parent(parent,root_styles,depth+1);
+
+      if(parent)
+        {
+          tmp_style = zMapFeatureStyleCopy(parent) ;
+
+          if (zMapStyleMerge(tmp_style, style))
+            {
+              tmp_style->inherited = TRUE;
+
+#if MH17_CHECK_INHERITANCE
+	      printf("%s inherited  %s, (%d/%d -> %d)\n",
+		     g_quark_to_string(style->unique_id),
+		     g_quark_to_string(parent->unique_id),
+		     parent->default_bump_mode, style->default_bump_mode, tmp_style->default_bump_mode);
+#endif
+	      // keep this up to date
+              g_hash_table_replace(root_styles,GUINT_TO_POINTER(style->unique_id),tmp_style);
+              zMapStyleDestroy(style);
+            }
+          else
+            {
+              zMapLogWarning("Merge of style \"%s\" into style \"%s\" failed.",
+			     g_quark_to_string(parent->original_id),
+			     g_quark_to_string(style->original_id)) ;
+
+	      zMapStyleDestroy(tmp_style);
+	      tmp_style = style;
+            }
+        }
+    }
+  else
+    {
+      // nothing to do return: input style
+      style->inherited = TRUE;
+      tmp_style = style;
+    }
+
+  return tmp_style;
+}
+
+
+
+// add a style to a hash table
+static void clear_inherited(gpointer key, gpointer item, gpointer user)
+{
+  ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle) item;
+
+  style->inherited = FALSE;
+}
+
+
+static void mergeColours(ZMapStyleFullColour curr, ZMapStyleFullColour new)
+{
+
+  if (new->normal.fields_set.fill)
+    {
+      curr->normal.fill = new->normal.fill ;
+      curr->normal.fields_set.fill = TRUE ;
+    }
+  if (new->normal.fields_set.draw)
+    {
+      curr->normal.draw = new->normal.draw ;
+      curr->normal.fields_set.draw = TRUE ;
+    }
+  if (new->normal.fields_set.border)
+    {
+      curr->normal.border = new->normal.border ;
+      curr->normal.fields_set.border = TRUE ;
+    }
+
+
+  if (new->selected.fields_set.fill)
+    {
+      curr->selected.fill = new->selected.fill ;
+      curr->selected.fields_set.fill = TRUE ;
+    }
+  if (new->selected.fields_set.draw)
+    {
+      curr->selected.draw = new->selected.draw ;
+      curr->selected.fields_set.draw = TRUE ;
+    }
+  if (new->selected.fields_set.border)
+    {
+      curr->selected.border = new->selected.border ;
+      curr->selected.fields_set.border = TRUE ;
+    }
+
+
+  return ;
+}
 
 
 

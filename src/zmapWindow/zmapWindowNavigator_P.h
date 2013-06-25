@@ -62,11 +62,11 @@
 
 typedef struct _ZMapWindowNavigatorStruct
 {
-  ZMapWindowContainerGroup container_root ; /* what we'll raise and lower */
-  ZMapWindowContainerGroup container_align; /* because I think we'll probably need it. */
-  ZMapWindowContainerGroup container_block; /* that's where the locator goes */
+  ZMapWindowContainerGroup container_root ;		    /* what we'll raise and lower */
+  ZMapWindowContainerGroup container_align;		    /* because I think we'll probably need it. */
+  ZMapWindowContainerGroup container_block;		    /* that's where the locator goes */
 
-  ZMapWindow      current_window; /* the current window... */
+  ZMapWindow      current_window;			    /* the current window... */
 
   FooCanvas 	*canvas;
   FooCanvasItem  *locator;

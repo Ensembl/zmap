@@ -1488,7 +1488,6 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 		}
 
 	      zMapFeatureBlockAddFeatureSet(request_data->edit_block, feature_set) ;
-
 	      
 	      request_data->edit_feature_set = feature_set ;
 
@@ -1519,6 +1518,7 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 
 		  feature_set->loaded = g_list_append(NULL, span) ;
 		}
+
 	      request_data->edit_feature_set = feature_set ;
 	    }
 
@@ -1573,13 +1573,12 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 	  // then if the style is not there then we'll drop the features
 	  ZMapFeatureTypeStyle style ;
 	  
-
-	  /* errr...yes.... */
-	  /* DO WE NEED TO DO THIS NOW....... */
 	  if ((style = zMapFindStyle(request_data->view_window->parent_view->context_map.styles, 
 				     request_data->style_id)))
 	    {
-	      request_data->style = style ;
+	      /* Make sure style is correct for what might be a new column. */
+
+	      feature_set->style = request_data->style = style ;
 	    }
 	  else
 	    {
@@ -1593,15 +1592,6 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 
 	      result = FALSE ;
 	    }
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  /* check if we could have just done this... */
-
-	  /* New way of styles..... */
-	  request_data->style = &(feature_set->style) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 	}
     }
 
@@ -1693,7 +1683,6 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
   GQuark feature_name_id, feature_unique_id ;
   int start = 0, end = 0 ;
   double score = 0.0 ;
-  ZMapFeature feature ;
   ZMapStyleMode mode ;
 
 
@@ -1760,6 +1749,7 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
   /* Check if feature exists, for some commands it must do, for others it must not. */
   if (result)
     {
+      ZMapFeature feature ;
       FeatureExistsType feature_exists ;
 
       feature_unique_id = zMapFeatureCreateID(mode, feature_name, strand, start, end, 0, 0) ;

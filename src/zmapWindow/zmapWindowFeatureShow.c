@@ -505,6 +505,9 @@ static void replyShowFeature(ZMapWindow window, gpointer user_data,
 	  zMapLogCritical("%s", err_msg) ;
 	  zMapCritical("%s", err_msg) ;
 	  g_free(err_msg) ;
+
+	  /* Now clear up. */
+	  gtk_widget_destroy(GTK_WIDGET(show->window)) ;
 	}
     }
   else
@@ -894,8 +897,9 @@ static void destroyCB(GtkWidget *widget, gpointer data)
 
   g_ptr_array_remove(feature_show->zmapWindow->feature_show_windows, (gpointer)feature_show->window);
 
-  /* Now free the feature_book..not wanted after display ?? */
-  zMapGUINotebookDestroyNotebook(feature_show->feature_book) ;
+  /* Now free the feature_book, may be NULL if there was an error during creation. */
+  if (feature_show->feature_book)
+    zMapGUINotebookDestroyNotebook(feature_show->feature_book) ;
 
   g_free(feature_show) ;
 

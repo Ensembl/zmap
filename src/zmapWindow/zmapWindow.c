@@ -346,15 +346,6 @@ int n_foo_wins = 0;
 
 
 
-/*! @defgroup zmapwindow   zMapWindow: The feature display window.
- * @{
- *
- * \brief  Feature Display Window
- *
- * zMapWindow routines create, modify, manipulate and destroy feature display windows.
- *
- *
- *  */
 
 
 
@@ -1027,16 +1018,17 @@ void zMapWindowZoomToMin(ZMapWindow window)
 /* try out the new zoom window.... */
 void zmapWindowZoom(ZMapWindow window, double zoom_factor, gboolean stay_centered)
 {
-  int x, y;
-  double width, curr_pos = 0.0, sensitivity = 0.001 ;
-  GtkAdjustment *adjust ;
-
+  double sensitivity = 0.001 ;
 
   if ((zoom_factor < (1.0 - sensitivity)) || (zoom_factor > (1.0 + sensitivity)))
     {
       static gboolean debug = FALSE ;
       GdkWindow *gdk_window ;
       Display *x_display ;
+      int x, y ;
+      double width, curr_pos = 0.0 ;
+      GtkAdjustment *adjust ;
+      int adjust_centre ;
 
       if (debug)
 	{
@@ -1060,9 +1052,20 @@ void zmapWindowZoom(ZMapWindow window, double zoom_factor, gboolean stay_centere
        * We end up working this out again in myWindowZoom, if and only if we're horizontally
        * split windows, but I don't thik it'll be a big issue.
        */
+
+      adjust_centre = (int)((adjust->page_size / 2) + 0.5) ;
+
       foo_canvas_get_scroll_offsets(window->canvas, &x, &y);
-      y += adjust->page_size / 2 ;
+      y += adjust_centre ;
       foo_canvas_c2w(window->canvas, x, y, &width, &curr_pos) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      zmapWindowPrintCanvas(window->canvas) ;
+      fflush(stdout) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
 
       /* possible bug here with width and scrolling, need to check. */
       if (window->locked_display)
@@ -1095,42 +1098,27 @@ void zmapWindowZoom(ZMapWindow window, double zoom_factor, gboolean stay_centere
 
 
       /* We need to scroll to the previous position. This is dependent on
-       * not having split horizontal windows. We only do this once per
-       * potential multiple windows as the vertically split windows share
-       * an adjuster.  If we try to work out position within myWindowZoom
-       * we end up getting the wrong position the second ... times round
-       * and not scrolling to the right position.
-      
-       * NO...THIS DOESN'T WORK....THEY MIGHT SHARE AN ADJUSTER BUT THIS
-       * DOESN'T END UP SIGNALLING ALL THE OTHER CANVASES TO REDRAW PROPERLY.
-       * SO I'VE ADDED CODE TO CALL ALL THE CANVASES....THIS WORKS...BUT
-       * THERE IS STILL A PROBLEM WITH THE SEQUENCE REDRAW....I.E. IF DNA
-       * IS SHOWN....
-       * 
+       * not having split horizontal windows. If we try to work out position
+       * within myWindowZoom we end up getting the wrong position the second
+       * times round and not scrolling to the right position.
        *  */
       if (stay_centered && window->curr_locking != ZMAP_WINLOCK_HORIZONTAL)
 	{
 	  ScrollToStruct scroll_to_data ;
 
-
 	  foo_canvas_w2c(window->canvas, width, curr_pos, &x, &y) ;
 
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  foo_canvas_scroll_to(window->canvas, x, y - (adjust->page_size / 2)) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 	  scroll_to_data.x = x ;
-	  scroll_to_data.y =  y - (adjust->page_size / 2) ;
-	  g_hash_table_foreach(window->sibling_locked_windows, scrollToCB, (gpointer)&scroll_to_data) ;
+	  scroll_to_data.y = y - adjust_centre ;
 
-
+	  /* With multiple windows must scroll them all to get redraws in all of them. */
+	  if (window->sibling_locked_windows)
+	    g_hash_table_foreach(window->sibling_locked_windows, scrollToCB, (gpointer)&scroll_to_data) ;
+	  else
+	    scrollToCB(window, NULL, &scroll_to_data) ;
 	}
 
-
       zmapWindowBusy(window, FALSE) ;
-
 
       if (debug)
 	{
@@ -4724,10 +4712,10 @@ static void lockedDisplayCB(gpointer key, gpointer value, gpointer user_data)
 }
 
 
-static void scrollToCB(gpointer key, gpointer value, gpointer user_data)
+static void scrollToCB(gpointer key, gpointer value_unused, gpointer user_data)
 {
   ZMapWindow window = (ZMapWindow)key ;
-  ScrollTo scroll_to_data = (ScrollTo)scroll_to_data ;
+  ScrollTo scroll_to_data = (ScrollTo)user_data ;
 
   foo_canvas_scroll_to(window->canvas, scroll_to_data->x, scroll_to_data->y) ;
 
@@ -4735,116 +4723,124 @@ static void scrollToCB(gpointer key, gpointer value, gpointer user_data)
 }
 
 
-
-void zmapWindowFetchData(ZMapWindow window, ZMapFeatureBlock block,
-			 GList *featureset_name_list, gboolean use_mark,gboolean is_column)
+void zmapWindowFetchData(ZMapWindow window,
+			 ZMapFeatureBlock block, GList *featureset_name_list,
+			 gboolean use_mark, gboolean is_column)
 {
   ZMapWindowCallbacks window_cbs_G = zmapWindowGetCBs() ;
   ZMapWindowCallbackCommandGetFeaturesStruct get_data = {ZMAPWINDOW_CMD_INVALID} ;
   ZMapWindowCallbackGetFeatures fetch_data;
   gboolean load = TRUE;
-  int start, end;
+  int start, end ;
 
-  /* Can we get away without allocating this? */
-  fetch_data        = &get_data;
-
-  fetch_data->cmd   = ZMAPWINDOW_CMD_GETFEATURES ;
-  fetch_data->block = block ;
-
-  if (!use_mark || (use_mark && !(zmapWindowMarkIsSet(window->mark))))
+  if (featureset_name_list)
     {
-      fetch_data->start = block->block_to_sequence.block.x1 ;
-      fetch_data->end   = block->block_to_sequence.block.x2 ;
-      //zMapLogWarning("fetch all: %d %d %d",use_mark,fetch_data->start,fetch_data->end);
+      fetch_data = &get_data ;
 
-    }
-  else if (zmapWindowMarkIsSet(window->mark) &&
-	   zmapWindowMarkGetSequenceRange(window->mark, &start, &end))
-    {
-      fetch_data->start = start;
-      fetch_data->end   = end;
-      //zMapLogWarning("fetch mark: %d %d %d",use_mark,fetch_data->start,fetch_data->end);
-    }
-  else
-    load = FALSE;
+      fetch_data->cmd   = ZMAPWINDOW_CMD_GETFEATURES ;
+      fetch_data->block = block ;
 
-  if(load && featureset_name_list)
-    {
-      FooCanvasItem *block_group;
-
-      if((block_group = zmapWindowFToIFindItemFull(window,window->context_to_item,
-						   block->parent->unique_id,
-						   block->unique_id, 0, 0, 0, 0)))
+      if (!use_mark || (use_mark && !(zmapWindowMarkIsSet(window->mark))))
 	{
+	  fetch_data->start = block->block_to_sequence.block.x1 ;
+	  fetch_data->end   = block->block_to_sequence.block.x2 ;
+	  //zMapLogWarning("fetch all: %d %d %d",use_mark,fetch_data->start,fetch_data->end);
+
+	}
+      else if (zmapWindowMarkIsSet(window->mark) &&
+	       zmapWindowMarkGetSequenceRange(window->mark, &start, &end))
+	{
+	  fetch_data->start = start;
+	  fetch_data->end   = end;
+	  //zMapLogWarning("fetch mark: %d %d %d",use_mark,fetch_data->start,fetch_data->end);
+	}
+      else
+	{
+	  load = FALSE;
+	}
+
+      if (load)
+	{
+	  FooCanvasItem *block_group;
+
+	  if((block_group = zmapWindowFToIFindItemFull(window,window->context_to_item,
+						       block->parent->unique_id,
+						       block->unique_id, 0, 0, 0, 0)))
+	    {
 
 #warning need to optimise requests so as to not req data we already have
-	  /* for the moment just re-request */
-	  /*
-	    ideally we should optimise the requests to only cover empty regions
-	    but we need to cater for repeat loaded features anyway at the edges
-	    so just request whatever region is requested regardless
-	  */
+	      /* for the moment just re-request */
+	      /*
+		ideally we should optimise the requests to only cover empty regions
+		but we need to cater for repeat loaded features anyway at the edges
+		so just request whatever region is requested regardless
+	      */
+	    }
 	}
-    }
 
-  if(load && featureset_name_list)
-    {
-      /* the user requests columns but zmap requests featuresets, so expand the list */
-      GList * fset_list = NULL;
-      GList *col_list;
-
-      if(is_column)	/* user requests a column */
+      if (load)
 	{
-	  for(col_list = featureset_name_list;col_list;col_list = col_list->next)
-	    fset_list = g_list_concat(
-				      /* must copy as this is a static list */
-				      g_list_copy(zMapFeatureGetColumnFeatureSets(window->context_map, GPOINTER_TO_UINT(col_list->data),TRUE)),
-				      fset_list);
-	}
-      else			/* zmap requests data via column menu */
-	{
-	  fset_list = featureset_name_list;
-	}
+	  /* the user requests columns but zmap requests featuresets, so expand the list */
+	  GList * fset_list = NULL;
+	  GList *col_list;
 
-      /* mh17 NOTE
-       *
-       * this block copied to zmapWindowMenus.c/add_column_featuresets()
-       */
-      /* expand any virtual featursets into real ones */
-      {
-      	GList *virtual;
+	  if (is_column)	/* user requests a column */
+	    {
+	      for (col_list = featureset_name_list;col_list;col_list = col_list->next)
+		{
+		  /* must copy as this is a static list */
+		  fset_list
+		    = g_list_concat(g_list_copy(zMapFeatureGetColumnFeatureSets(window->context_map,
+										GPOINTER_TO_UINT(col_list->data),
+										TRUE)),
+				    fset_list);
+		}
+	    }
+	  else			/* zmap requests data via column menu */
+	    {
+	      fset_list = featureset_name_list;
+	    }
 
-      	for(virtual = fset_list;virtual; virtual = virtual->next)
+	  /* mh17 NOTE
+	   *
+	   * this block copied to zmapWindowMenus.c/add_column_featuresets()
+	   */
+	  /* expand any virtual featursets into real ones */
 	  {
-	    GList *real = g_hash_table_lookup(window->context_map->virtual_featuresets,virtual->data);
+	    GList *virtual;
 
-	    if(real)
+	    for(virtual = fset_list;virtual; virtual = virtual->next)
 	      {
-		GList *copy = g_list_copy(real);	/* so it can be freed with the rest later */
-		GList *l = virtual;
+		GList *real = g_hash_table_lookup(window->context_map->virtual_featuresets,virtual->data);
 
-		copy->prev = virtual->prev;
-		if(copy->prev)
-		  copy->prev->next = copy;
-		else
-		  fset_list = copy;
+		if(real)
+		  {
+		    GList *copy = g_list_copy(real);	/* so it can be freed with the rest later */
+		    GList *l = virtual;
 
-		copy = g_list_last(copy);
-		copy->next = virtual->next;
-		if(copy->next)
-		  copy->next->prev = copy;
+		    copy->prev = virtual->prev;
+		    if(copy->prev)
+		      copy->prev->next = copy;
+		    else
+		      fset_list = copy;
 
-		virtual = copy;
+		    copy = g_list_last(copy);
+		    copy->next = virtual->next;
+		    if(copy->next)
+		      copy->next->prev = copy;
 
-		g_list_free_1(l);
+		    virtual = copy;
+
+		    g_list_free_1(l);
+		  }
 	      }
 	  }
-      }
 
 
-      fetch_data->feature_set_ids = fset_list;
+	  fetch_data->feature_set_ids = fset_list;
 
-      (*(window_cbs_G->command))(window, window->app_data, fetch_data) ;
+	  (*(window_cbs_G->command))(window, window->app_data, fetch_data) ;
+	}
     }
 
   return ;
