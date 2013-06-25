@@ -894,6 +894,17 @@ gboolean zmapViewScratchCopyFeature(ZMapView view,
 }
 
 
+/* Does the same as g_list_free_full, which requires gtk 2.28 */
+static void freeListFull(GList *list, GDestroyNotify free_func)
+{
+  GList *item = list;
+  for ( ; item; item = item->next)
+    g_free(item->data);
+  
+  g_list_free(list);
+}
+
+
 /*!
  * \brief Clear the scratch column
  *
@@ -906,12 +917,12 @@ gboolean zmapViewScratchClear(ZMapView view)
   /* Clear the list of features in the scratch column */
   if (view->revcomped_features && view->scratch_features_rev)
     {
-      g_list_free_full(view->scratch_features_rev, g_free);
+      freeListFull(view->scratch_features_rev, g_free);
       view->scratch_features_rev = NULL;
     }
   else if (view->scratch_features)
     {
-      g_list_free_full(view->scratch_features, g_free);
+      freeListFull(view->scratch_features, g_free);
       view->scratch_features = NULL;
     }
 
