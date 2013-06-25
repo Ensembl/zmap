@@ -82,7 +82,7 @@ static void createNavViewWindow(ZMap zmap, GtkWidget *parent)
   gtk_container_add(GTK_CONTAINER(parent), zmap->hpane) ;
 
   /* Make the navigator which shows user where they are on the sequence. */
-  zmap->navigator = zMapNavigatorCreate(&nav_top, &(zmap->nav_canvas)) ;
+  zmap->navigator = zmapNavigatorCreate(&nav_top, &(zmap->nav_canvas)) ;
   gtk_paned_pack1(GTK_PANED(zmap->hpane), nav_top, FALSE, TRUE) ;
 
 
@@ -134,7 +134,7 @@ static void pane_position_callback(GObject *pane, GParamSpec *scroll, gpointer u
   pos = gtk_paned_get_position(GTK_PANED(pane));
 
   /* find the position of the navigator pane + the width of the navigator canvas. */
-  max = zMapNavigatorGetMaxWidth(zmap->navigator);
+  max = zmapNavigatorGetMaxWidth(zmap->navigator);
 
   if(max < pos)
     gtk_paned_set_position(GTK_PANED(pane), max);
@@ -154,11 +154,14 @@ static gboolean double_to_open(GtkWidget *widget, GdkEventButton *button, gpoint
 	case GDK_2BUTTON_PRESS:
 	  {
 	    GtkPaned *pane = GTK_PANED(widget);
-	    if(button->window == pane->handle)
+
+	    if (button->window == pane->handle)
 	      {
-		ZMap zmap = (ZMap)user_data;
-		int max_position = zMapNavigatorGetMaxWidth(zmap->navigator);
-		int cur_position = gtk_paned_get_position(pane);
+		ZMap zmap = (ZMap)user_data ;
+		int max_position, cur_position ;
+
+		max_position = zmapNavigatorGetMaxWidth(zmap->navigator);
+		cur_position = gtk_paned_get_position(pane);
 
 		if(gdk_pointer_is_grabbed())
 		  {

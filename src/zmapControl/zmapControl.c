@@ -549,7 +549,7 @@ void zmapControlSetGUIVisChange(ZMap zmap, ZMapWindowVisibilityChange vis_change
 
   /* If the user has zoomed in so far that we cannot show the whole sequence in one window
    * then open the pane that shows the window navigator scroll bar. */
-  pane_width = zMapNavigatorSetWindowPos(zmap->navigator,
+  pane_width = zmapNavigatorSetWindowPos(zmap->navigator,
 					 vis_change->scrollable_top, vis_change->scrollable_bot) ;
   if(automatic_open)
     gtk_paned_set_position(GTK_PANED(zmap->hpane), pane_width) ;
@@ -1336,7 +1336,7 @@ static void updateControl(ZMap zmap, ZMapView view)
 
       zMapViewGetVisible(zmap->focus_viewwindow, &top, &bottom) ;
 
-      zMapNavigatorSetView(zmap->navigator, features, top, bottom) ;
+      zmapNavigatorSetView(zmap->navigator, features, top, bottom) ;
 							    /* n.b. features may be NULL for
 							       blank views. */
 
