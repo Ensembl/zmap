@@ -32,11 +32,9 @@
 #ifndef ZMAP_CANVAS_LOCUS_I_H
 #define ZMAP_CANVAS_LOCUS_I_H
 
-#include <ZMap/zmap.h>
-
-
 #include <zmapWindowCanvasFeatureset_I.h>
 #include <zmapWindowCanvasLocus.h>
+
 
 /* we display loci like this:  (# is area of locus, not displayed)
    in case of no overlap, then no need to offset the text
@@ -58,11 +56,16 @@
 	x-offset of the text (can vary if bumped)
 */
 
+
+#define ZMAP_LOCUS_LINE_WIDTH	20
+
+
+
 typedef struct
 {
-	double y1,y2;
-	double height;
-	int id;
+  double y1,y2;
+  double height;
+  int id;
 
 } LocusGroupStruct, *LocusGroup;
 
@@ -70,26 +73,25 @@ typedef struct
 
 typedef struct _zmapWindowCanvasLocusStruct
 {
-	zmapWindowCanvasFeatureStruct feature;	/* all the common stuff, has locus extent as feature->feature->x1,x2 */
-								/* has canvas feature extent as feature->y1,y2 */
+  zmapWindowCanvasFeatureStruct feature;	/* all the common stuff, has locus extent as feature->feature->x1,x2 */
+  /* has canvas feature extent as feature->y1,y2 */
 
-	double ylocus, ytext;		/* line coordinates, text appears around y2 */
-	double x_off;			/* of the text = RH x coord of line */
-	double x_wid;
-#define ZMAP_LOCUS_LINE_WIDTH	20
+  double ylocus, ytext;		/* line coordinates, text appears around y2 */
+  double x_off;			/* of the text = RH x coord of line */
+  double x_wid;
 
-	LocusGroup group;
+  LocusGroup group;
 
 } zmapWindowCanvasLocusStruct, *ZMapWindowCanvasLocus;
 
 
 typedef struct _zmapWindowCanvasLocusSetStruct
 {
-	zmapWindowCanvasPangoStruct pango;
-	/* allow for addition of other pango things eg diff font for diff locus types */
+  zmapWindowCanvasPangoStruct pango;
+  /* allow for addition of other pango things eg diff font for diff locus types */
 
-	double text_h;			/* height of text in world coords */
-	GList *filter;			/* list of prefixes to filter by */
+  double text_h;			/* height of text in world coords */
+  GList *filter;			/* list of prefixes to filter by */
 
 } zmapWindowCanvasLocusSetStruct, *ZMapWindowCanvasLocusSet;
 

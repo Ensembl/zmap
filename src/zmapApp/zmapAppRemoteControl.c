@@ -140,12 +140,15 @@ gboolean zmapAppRemoteControlCreate(ZMapAppContext app_context, char *peer_name,
       remote->remote_controller = remote_control ;
 
       if (peer_retries > 0)
-	remote->window_retries_left = peer_retries ;
+	remote->window_retries_max = remote->window_retries_left = peer_retries ;
       else
-	remote->window_retries_left = ZMAP_WINDOW_RETRIES ;
+	remote->window_retries_max = remote->window_retries_left = ZMAP_WINDOW_RETRIES ;
 
       if (peer_timeout > 0)
 	zMapRemoteControlSetTimeout(remote->remote_controller, peer_timeout) ;
+      else
+	zMapRemoteControlSetTimeout(remote->remote_controller, ZMAP_WINDOW_TIMEOUT_MS) ;
+	
 
 
       /* Only set debug from cmdline the first time around otherwise it overrides what
@@ -620,32 +623,21 @@ static gboolean timeoutHandlerCB(ZMapRemoteControl remote_control, void *user_da
 {
   gboolean result = FALSE ;
   ZMapAppContext app_context = (ZMapAppContext)user_data ;
-  GdkWindow *gdk_window ; 
-  Display *x_display ;
+  ZMapAppRemote app_remote_control = app_context->remote_control ;
   Window x_window ;
 
-  gdk_window = gtk_widget_get_window(app_context->app_widg) ;
-  x_display = GDK_WINDOW_XDISPLAY(gdk_window) ;
-
-  x_window = app_context->remote_control->peer_window ;
 
   /* If there is a peer window then we continue to wait by resetting the timeout,
    * otherwise it's an error and our error handler will be called, we only do this
    * up to a max of ZMAP_WINDOW_RETRIES for each phase of a transaction. */
-  if (x_window && app_context->remote_control->window_retries_left)
+  if ((x_window = app_remote_control->peer_window))
     {
-      char *err_msg = NULL ;      
-
-      (app_context->remote_control->window_retries_left)-- ;
-
-      /* This is our way of testing to see if the peer application is alive, if the window id
-       * they gave us is still good then we assume they are still alive. */
-      if (!(result = zMapGUIXWindowExists(x_display, x_window, &err_msg)))
+      if (!(app_remote_control->window_retries_left))
 	{
 	  char *full_err_msg ;
 
-	  full_err_msg = g_strdup_printf("Peer window ("ZMAP_XWINDOW_FORMAT_STR") has gone,"
-					 " stopping remote control because: \"%s\".", x_window, err_msg) ;
+	  full_err_msg = g_strdup_printf("Peer has still not responded after %d timeouts, transaction has timed out",
+					 app_remote_control->window_retries_max) ;
 
 	  zMapLogCritical("%s", full_err_msg) ;
 
@@ -653,8 +645,36 @@ static gboolean timeoutHandlerCB(ZMapRemoteControl remote_control, void *user_da
 
 	  g_free(full_err_msg) ;
 	}
+      else
+	{
+	  GdkWindow *gdk_window ; 
+	  Display *x_display ;
+	  char *err_msg = NULL ;      
 
-      g_free(err_msg) ;
+	  gdk_window = gtk_widget_get_window(app_context->app_widg) ;
+	  x_display = GDK_WINDOW_XDISPLAY(gdk_window) ;
+
+
+	  (app_remote_control->window_retries_left)-- ;
+
+	  /* This is our way of testing to see if the peer application is alive, if the window id
+	   * they gave us is still good then we assume they are still alive. */
+	  if (!(result = zMapGUIXWindowExists(x_display, x_window, &err_msg)))
+	    {
+	      char *full_err_msg ;
+
+	      full_err_msg = g_strdup_printf("Peer window ("ZMAP_XWINDOW_FORMAT_STR") has gone,"
+					     " stopping remote control because: \"%s\".", x_window, err_msg) ;
+
+	      zMapLogCritical("%s", full_err_msg) ;
+
+	      zMapCritical("%s", full_err_msg) ;
+
+	      g_free(full_err_msg) ;
+	    }
+
+	  g_free(err_msg) ;
+	}
     }
 
   return result ;

@@ -34,13 +34,10 @@
 
 #include <ZMap/zmap.h>
 
-
-
-
-
-
 #include <math.h>
 #include <gtk/gtk.h>
+
+#include <ZMap/zmapWindowNavigator.h>
 #include <zmapNavigator_P.h>
 
 
@@ -59,6 +56,13 @@ static void canvas_value_cb(gpointer user_data, double top, double bottom);
 static void canvas_width_cb(gpointer user_data, double left, double right);
 static void canvas_size_cb(ZMapWindowNavigator navigator);
 
+
+
+/* 
+ *                    Globals
+ */
+
+
 static ZMapWindowNavigatorCallbackStruct control_nav_cbs_G = {
 #if RUN_AROUND
   canvas_value_cb,
@@ -66,26 +70,33 @@ static ZMapWindowNavigatorCallbackStruct control_nav_cbs_G = {
   canvas_width_cb, canvas_size_cb
 };
 
+
+
+
+/* 
+ *                  External Package routines.
+ */
+
 /* Create an instance of the navigator, this currently has two scroll bars,
  * one to show the position of the region in its parent assembly and
  * one to show the position of the window within the canvas.
  * The function returns the navigator instance but also its top container
  * widget in top_widg_out. */
-ZMapNavigator zMapNavigatorCreate(GtkWidget **top_widg_out, GtkWidget **canvas_out)
+ZMapNavigator zmapNavigatorCreate(GtkWidget **top_widg_out, GtkWidget **canvas_out)
 {
   ZMapNavigator navigator ;
 #if USE_REGION
   GtkObject *adjustment ;
   GtkWidget *label,
 #endif
-  GtkWidget *pane,
+    GtkWidget *pane,
     *locator_frame  = NULL,
     *locator_canvas = NULL,
     *locator_vbox   = NULL,
     *locator_label  = NULL,
     *locator_sw     = NULL;
 
-  if((navigator = g_new0(ZMapNavStruct, 1)))
+  if((navigator = g_new0(ZMapNavigatorStruct, 1)))
     {
 #ifdef NAVIGATOR_USES_PANES
       /* gb10: this code was originally if'd out except that it was still
@@ -133,20 +144,29 @@ ZMapNavigator zMapNavigatorCreate(GtkWidget **top_widg_out, GtkWidget **canvas_o
 
       /* A frame */
       locator_frame = gtk_frame_new(NULL);
-      gtk_frame_set_shadow_type(GTK_FRAME(locator_frame), GTK_SHADOW_NONE);
       gtk_box_pack_start(GTK_BOX(locator_vbox), locator_frame, TRUE, TRUE, 0);
+      gtk_frame_set_shadow_type(GTK_FRAME(locator_frame), GTK_SHADOW_NONE);
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      gtk_container_set_border_width(GTK_CONTAINER(locator_frame), 0);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+      /* Not sure why we have this...spacing only ? */
+      locator_sw = gtk_scrolled_window_new(NULL, NULL);
+      gtk_container_add(GTK_CONTAINER(locator_frame), locator_sw);
+      gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(locator_sw),
+                                     GTK_POLICY_ALWAYS, GTK_POLICY_NEVER);
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      gtk_container_set_border_width(GTK_CONTAINER(locator_sw), 0);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
       /* A canvas */
       locator_canvas = navigator->locator_widget =
         zMapWindowNavigatorCreateCanvas(&control_nav_cbs_G, navigator);
-
-      locator_sw = gtk_scrolled_window_new(NULL, NULL);
-      gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(locator_sw),
-                                     GTK_POLICY_ALWAYS, GTK_POLICY_NEVER);
       gtk_container_add(GTK_CONTAINER(locator_sw), locator_canvas);
-      gtk_container_add(GTK_CONTAINER(locator_frame), locator_sw);
-      gtk_container_set_border_width(GTK_CONTAINER(locator_sw), 0);
-      gtk_container_set_border_width(GTK_CONTAINER(locator_frame), 0);
+
 
       /* pack into the pane */
 #ifdef NAVIGATOR_USES_PANES
@@ -162,9 +182,9 @@ ZMapNavigator zMapNavigatorCreate(GtkWidget **top_widg_out, GtkWidget **canvas_o
       gtk_paned_set_position(GTK_PANED(pane), 0) ;
 #endif
 
-      if(canvas_out)
-        *canvas_out = locator_canvas;
-      if(top_widg_out)
+      if (canvas_out)
+        *canvas_out = locator_canvas ;
+      if (top_widg_out)
         *top_widg_out = pane ;
     }
 
@@ -176,7 +196,7 @@ ZMapNavigator zMapNavigatorCreate(GtkWidget **top_widg_out, GtkWidget **canvas_o
 #if RUN_AROUND
 /* Set function + data that Navigator will call each time the position of the region window
  * is changed. */
-void zMapNavigatorSetWindowCallback(ZMapNavigator navigator,
+void zmapNavigatorSetWindowCallback(ZMapNavigator navigator,
 				    ZMapNavigatorScrollValue cb_func, void *user_data)
 {
   navigator->cb_func = cb_func ;
@@ -197,7 +217,7 @@ void zMapNavigatorSetWindowCallback(ZMapNavigator navigator,
  * slider so the user sees it.....then they can use this to navigate when we can't show the whole
  * sequence in one window.
  * Returns an integer which is the width in pixels of the window scrollbar. */
-int zMapNavigatorSetWindowPos(ZMapNavigator navigator, double top_pos, double bot_pos)
+int zmapNavigatorSetWindowPos(ZMapNavigator navigator, double top_pos, double bot_pos)
 {
   gboolean always_maximised = FALSE;
   int pane_width = 0 ;
@@ -207,7 +227,7 @@ int zMapNavigatorSetWindowPos(ZMapNavigator navigator, double top_pos, double bo
   seq_end   = navigator->sequence_span.x2;
 
   if(always_maximised || top_pos > seq_start || bot_pos < seq_end)
-    pane_width = zMapNavigatorGetMaxWidth(navigator);
+    pane_width = zmapNavigatorGetMaxWidth(navigator);
 
   return pane_width;
 }
@@ -215,7 +235,7 @@ int zMapNavigatorSetWindowPos(ZMapNavigator navigator, double top_pos, double bo
 
 
 /* updates size/range to coords of the new view. */
-void zMapNavigatorSetView(ZMapNavigator navigator, ZMapFeatureContext features,
+void zmapNavigatorSetView(ZMapNavigator navigator, ZMapFeatureContext features,
 			  double top, double bottom)
 {
 #if UNUSED_MEMORY_LEAK
@@ -252,7 +272,7 @@ void zMapNavigatorSetView(ZMapNavigator navigator, ZMapFeatureContext features,
        */
 
       GTK_ADJUSTMENT(region_adjuster)->value = (((gdouble)(navigator->sequence_span.x1
-						    + navigator->sequence_span.x2)) / 2.0) ;
+							   + navigator->sequence_span.x2)) / 2.0) ;
 
       GTK_ADJUSTMENT(region_adjuster)->lower = (gdouble)navigator->sequence_span.x1 ;
       GTK_ADJUSTMENT(region_adjuster)->upper = (gdouble)navigator->sequence_span.x2 ;
@@ -264,10 +284,10 @@ void zMapNavigatorSetView(ZMapNavigator navigator, ZMapFeatureContext features,
 
 #endif
 #if UNUSED_MEMORY_LEAK
-	window_top_str = g_strdup_printf("%d", navigator->sequence_span.x1) ;
+      window_top_str = g_strdup_printf("%d", navigator->sequence_span.x1) ;
       window_bot_str = g_strdup_printf("%d", navigator->sequence_span.x2) ;
 #endif
-      zMapNavigatorSetWindowPos(navigator, top, bottom) ;
+      zmapNavigatorSetWindowPos(navigator, top, bottom) ;
     }
   else
     {
@@ -308,7 +328,7 @@ void zMapNavigatorSetView(ZMapNavigator navigator, ZMapFeatureContext features,
   return ;
 }
 
-int zMapNavigatorGetMaxWidth(ZMapNavigator navigator)
+int zmapNavigatorGetMaxWidth(ZMapNavigator navigator)
 {
 #ifdef NAVIGATOR_USES_PANES
   int handle_size = gtk_widget_style_get(navigator->pane, "handle-size", &handle_size, NULL);
@@ -324,12 +344,14 @@ int zMapNavigatorGetMaxWidth(ZMapNavigator navigator)
 /* Destroys a navigator instance, note there is not much to do here because we
  * assume that our caller will destroy our parent widget will in turn destroy
  * all our widgets. */
-void zMapNavigatorDestroy(ZMapNavigator navigator)
+void zmapNavigatorDestroy(ZMapNavigator navigator)
 {
   g_free(navigator) ;
 
   return ;
 }
+
+
 
 
 

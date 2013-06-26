@@ -63,7 +63,9 @@ enum
 							       zmap to wait to quit, if exceeded we crash out */
     ZMAP_DEFAULT_PING_TIMEOUT = 10,
 
-    ZMAP_WINDOW_RETRIES = 10				    /* How many retries of window id when
+    ZMAP_WINDOW_TIMEOUT_MS = 2000,			    /* Length of timeout in milliseconds.  */
+
+    ZMAP_WINDOW_RETRIES = 20				    /* How many retries of window id when
 							       we timeout for a command. */
 
   } ;
@@ -101,6 +103,7 @@ typedef struct _ZMapAppRemoteStruct
    * but note that counter is reset for each phase of sending/receiving. */
   Window peer_window ;
   char *peer_window_str ;
+  int window_retries_max ;
   int window_retries_left ;
 
 

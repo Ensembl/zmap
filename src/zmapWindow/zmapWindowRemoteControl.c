@@ -90,7 +90,6 @@ static void getWindowMark(ZMapWindow window, RemoteCommandRCType *command_rc_out
 
 static ZMapXMLUtilsEventStack makeMessageElement(char *message_text) ;
 
-static void revcompTransChildCoordsCB(gpointer data, gpointer user_data) ;
 
 
 
