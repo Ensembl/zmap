@@ -2866,6 +2866,11 @@ static gboolean getHomolLength(char *attributes, int *length_out)
  *   SNP:
  *
  *   Name "rs28847272 - A/G"
+ * 
+ * 
+ *   Mutation:
+ *
+ *   Name "CM093744 - HGMD_MUTATION"
  *
  *
  *   deletion:
@@ -2873,7 +2878,8 @@ static gboolean getHomolLength(char *attributes, int *length_out)
  *   Name "rs35621402 - -/G"
  *   Name "rs3047232 - -/AA"
  *   Name "rs57043843 - -/CTTA"
- *   Name "rs33945458 - -/(LARGEINSERTION)"
+ *   Name "rs71143420 - -/(339 BP DELETION)"
+ *   Name "rs71757437 - -/(LARGEDELETION)"
  *
  *
  *   insertion:
@@ -2881,6 +2887,7 @@ static gboolean getHomolLength(char *attributes, int *length_out)
  *   Name "rs35022483 - T/-"
  *   Name "rs61033774 - TAAA/-"
  *   Name "rs58131816 - AAAAAAGTTCCTTGCATGATTAAAAAAGTATT/-"
+ *   Name "rs33945458 - -/(LARGEINSERTION)"
  *
  *
  *   CNV:
@@ -2899,12 +2906,7 @@ static gboolean getVariationString(char *attributes,
   if ((target = strstr(attributes, "Name")))
     {
       int attr_fields ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      char *attr_format_str = "Name " "%*[\"]%*s - %50[^\"]%*[\"]%*s" ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
       char *attr_format_str = "Name " "%*[\"]%s - %" ZMAP_MAKESTRING(GFF_MAX_FIELD_CHARS) "[^\"]%*[\"]%*s" ;
-
       char name_str[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
       char variation_str[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
 
