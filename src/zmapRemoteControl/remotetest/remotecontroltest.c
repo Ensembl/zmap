@@ -3364,11 +3364,11 @@ static gboolean start_zmap_cb(gpointer remote_data_data)
 	g_string_append_printf(cmd_str, " --remote-debug=%s", remote_debug) ;
 
       g_string_append_printf(cmd_str, " --%s=%s",
-			     ZMAPSTANZA_PEER_NAME,
+			     ZMAPARG_PEER_NAME,
 			     remote_data->app_name) ;
 
       g_string_append_printf(cmd_str, " --%s=%s",
-			     ZMAPSTANZA_PEER_CLIPBOARD,
+			     ZMAPARG_PEER_CLIPBOARD,
 			     remote_data->unique_atom_str) ;
 
       if (remote_data->cmd_line_args->zmap_config_file)
