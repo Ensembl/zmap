@@ -35,8 +35,10 @@ zmapRadixSort.c \
 zmapReadLine.c \
 zmapReadLine_P.h \
 zmapSO.c \
+zmapSignals.c \
 zmapSequence.c \
 zmapSkipList.c \
+zmapStackTrace.c \
 zmapString.c \
 zmapUrl.c \
 zmapUrlUtils.c \
