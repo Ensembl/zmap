@@ -1948,13 +1948,20 @@ static void logMsg(ZMapRemoteControl remote_control,
 {				
   GString *msg ;
   char *name ;
+  gboolean add_time = TRUE ;
+  char *time_str = NULL ;
   gboolean add_filename = FALSE ;			    /* no point currently. */
 
   name = g_path_get_basename(file_name) ;
 
+  if (add_time)
+    time_str = zMapGetTimeString(ZMAPTIME_LOG, NULL) ;
+
   msg = g_string_sized_new(500) ;				
 
-  g_string_append_printf(msg, "%s:%s%s%s()\tActing as: %s  State: %s\tMessage: ",			
+  g_string_append_printf(msg, "%s%s%s:%s%s%s()\tActing as: %s  State: %s\tMessage: ",
+			 (add_time ? time_str : ""),
+			 (add_time ? "\t" : ""),
 			 g_quark_to_string(remote_control->app_id),
 			 (add_filename ? name : ""),
 			 (add_filename ? ":" : ""),
@@ -1963,6 +1970,9 @@ static void logMsg(ZMapRemoteControl remote_control,
 			 remoteState2ExactStr(remote_control->state)) ;
 
   g_string_append_vprintf(msg, format_str, args) ;
+
+  if (time_str)
+    g_free(time_str) ;
 
   (remote_control->app_err_report_func)(remote_control->app_err_report_data, msg->str) ;			
 									
