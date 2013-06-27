@@ -174,8 +174,10 @@ gboolean zMapLogStop(void) ;
 void zMapLogStack(void);
 void zMapLogDestroy(void) ;
 
-void zMapPrintStack(void);
-void zMapSignalHandler(int sig_no);
+void zMapStackPrint(void) ;
+gboolean zMapStack2fd(unsigned int remove, int fd) ;
+
+void zMapSignalHandler(int sig_no) ;
 
 char *zMapGetDir(char *directory_in, gboolean home_relative, gboolean make_dir) ;
 char *zMapGetFile(char *directory, char *filename, gboolean make_file) ;
