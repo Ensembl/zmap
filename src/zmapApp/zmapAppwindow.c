@@ -1170,13 +1170,14 @@ static gboolean configureLog(char *config_file)
 {
   gboolean result = TRUE ;	/* if no config, we can't fail to configure */
   ZMapConfigIniContext context ;
-  gboolean logging, log_to_file, show_code_details, show_time, catch_glib, echo_glib ;
+  gboolean logging, log_to_file, show_process, show_code, show_time, catch_glib, echo_glib ;
   char *full_dir, *log_name, *logfile_path ;
 
-  /* default values */
+  /* ZMap's default values (as opposed to the logging packages...). */
   logging = TRUE ;
   log_to_file = TRUE  ;
-  show_code_details = TRUE ;
+  show_process = FALSE ;
+  show_code = TRUE ;
   show_time = FALSE ;
   catch_glib = TRUE ;
   echo_glib = TRUE ;
@@ -1202,11 +1203,17 @@ static gboolean configureLog(char *config_file)
 					 ZMAPSTANZA_LOG_FILE, &tmp_bool))
 	log_to_file = tmp_bool ;
 
+      /* how much detail to show...process/pid... */
+      if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_LOG_CONFIG,
+					 ZMAPSTANZA_LOG_CONFIG,
+					 ZMAPSTANZA_LOG_SHOW_PROCESS, &tmp_bool))
+	show_process = tmp_bool ;
+
       /* how much detail to show...code... */
       if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_LOG_CONFIG,
 					 ZMAPSTANZA_LOG_CONFIG,
 					 ZMAPSTANZA_LOG_SHOW_CODE, &tmp_bool))
-	show_code_details = tmp_bool;
+	show_code = tmp_bool;
 
       /* how much detail to show...time... */
       if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_LOG_CONFIG,
@@ -1261,7 +1268,7 @@ static gboolean configureLog(char *config_file)
   g_free(full_dir) ;
 
   result = zMapLogConfigure(logging, log_to_file,
-			    show_code_details, show_time,
+			    show_process, show_code, show_time,
 			    catch_glib, echo_glib,
 			    logfile_path) ;
 
