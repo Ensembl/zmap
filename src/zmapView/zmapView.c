@@ -1038,6 +1038,12 @@ gboolean zMapViewReverseComplement(ZMapView zmap_view)
 {
   gboolean result = FALSE ;
 
+
+  /* Clear any features in the scratch column (only required because
+   * its undo/redo stack has pointers to features which will become
+   * invalidated after the revcomp) */
+  zmapViewScratchClear(zmap_view);
+
 //  if (zmap_view->state == ZMAPVIEW_LOADED)
 // data is processed only when idle so this should be safe
     if(zmap_view->features)
@@ -1092,7 +1098,7 @@ gboolean zMapViewReverseComplement(ZMapView zmap_view)
 
       result = TRUE ;
     }
-
+    
   return result ;
 }
 
