@@ -37,12 +37,14 @@
 
 #include <sys/wait.h>
 #include <time.h>
+#include <sys/time.h>
 #include <string.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <config.h>
 #include <unistd.h>
+
 
 #include <zmapUtils_P.h>
 
@@ -283,8 +285,7 @@ char *zMapGetCompileString(void)
 
 
 
-/*!
- * Returns a string representing a format of the current time or NULL on error.
+/* Returns a string representing a format of the current time or NULL on error.
  * The returned string should be free'd with g_free() when no longer needed.
  *
  * If  format == ZMAPTIME_USERFORMAT  then time is formatted according to format_str.
@@ -294,52 +295,61 @@ char *zMapGetCompileString(void)
  * (N.B. just gets the current time, but could be altered to more generally get any time
  * and the time now by default.)
  *
- * @param   format    ZMAPTIME_STANDARD || ZMAPTIME_YMD || ZMAPTIME_USERFORMAT
- * @param   format_str  Format string in strftime() time format or NULL.
- * @return  Time according to format parameter or NULL on error.
+ * format =   ZMAPTIME_STANDARD || ZMAPTIME_YMD || ZMAPTIME_LOG || ZMAPTIME_USERFORMAT
+ * format_str = Format string in strftime() time format or NULL.
+ * 
+ * returns  Time according to format parameter or NULL on error.
  *  */
 char *zMapGetTimeString(ZMapTimeFormat format, char *format_str_in)
 {
-  enum {MAX_TIMESTRING = 1024} ;
   char *time_str = NULL ;
-  time_t now ;
-  struct tm *time_struct ;
-  char *format_str ;
-  char buffer[MAX_TIMESTRING] = {0} ;
-  size_t buf_size = MAX_TIMESTRING, bytes_written ;
 
-
-  zMapAssert(format == ZMAPTIME_STANDARD || format == ZMAPTIME_YMD
-	     || (format == ZMAPTIME_USERFORMAT && format_str_in && *format_str_in)) ;
-
-
-  /* Get time ready for formatting. */
-  now = time((time_t *)NULL) ;
-  time_struct = localtime(&now) ;
-
-  switch(format)
+  if (format == ZMAPTIME_STANDARD || format == ZMAPTIME_YMD || format == ZMAPTIME_LOG
+      || (format == ZMAPTIME_USERFORMAT && format_str_in && *format_str_in))
     {
-    case ZMAPTIME_STANDARD:
-      format_str = "%a %b %d %X %Y" ;
-      break ;
-    case ZMAPTIME_YMD:
-      format_str = "%Y-%m-%d" ;
-      break ;
-    case ZMAPTIME_USERFORMAT:
-      format_str = format_str_in ;
-      break ;
+      enum {MAX_TIMESTRING = 1024} ;
+      struct timeval tv;
+      char *format_str ;
+      char buffer[MAX_TIMESTRING] = {0} ;
+      size_t buf_size = MAX_TIMESTRING ;
+      time_t curtime ;
+
+      /* Get time of day as secs & microsecs. */
+      gettimeofday(&tv, NULL) ; 
+      curtime = tv.tv_sec ;
+
+      switch(format)
+	{
+	case ZMAPTIME_STANDARD:
+	  /* e.g. "Thu Sep 30 10:05:27 2004" */
+	  format_str = "%a %b %d %X %Y" ;
+	  break ;
+	case ZMAPTIME_YMD:
+	  /* e.g. "1997-11-08" */
+	  format_str = "%Y-%m-%d" ;
+	  break ;
+	case ZMAPTIME_LOG:
+	  /* e.g. "2013/06/11 13:18:27.121129", i.e. includes milliseconds. */
+	  format_str = "%m/%d/%Y  %T." ;
+	  break ;
+	case ZMAPTIME_USERFORMAT:
+	  /* User provides format string which must be in strftime() format. */
+	  format_str = format_str_in ;
+	  break ;
+	}
+
+      /* format the secs and then tack on the microsecs. */
+      if ((strftime(&(buffer[0]), buf_size, format_str, localtime(&curtime))) > 0)
+	{
+	  if (format == ZMAPTIME_LOG)
+	    time_str = g_strdup_printf("%s%ld", buffer, tv.tv_usec) ;
+	  else
+	    time_str = g_strdup(buffer) ;
+	}
     }
-
-
-  if ((bytes_written = strftime(&(buffer[0]), buf_size, format_str, time_struct)) > 0)
-    {
-      time_str = g_strdup(&(buffer[0])) ;
-    }
-
 
   return time_str ;
 }
-
 
 
 

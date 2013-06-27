@@ -136,13 +136,15 @@ TYPE _c = (A);                       \
     (B) = (_c);                      \
 }
 
-/*!
- * Types of date formats that can be returned by zMapGetTimeString(). */
+
+
+/* Types of date formats that can be returned by zMapGetTimeString(). */
 typedef enum
   {
-    ZMAPTIME_STANDARD,					    /*!< "Thu Sep 30 10:05:27 2004" */
-    ZMAPTIME_YMD,					    /*!< "1997-11-08" */
-    ZMAPTIME_USERFORMAT					    /*!< Users provides format string. */
+    ZMAPTIME_STANDARD,					    /* "Thu Sep 30 10:05:27 2004" */
+    ZMAPTIME_YMD,					    /* "1997-11-08" */
+    ZMAPTIME_LOG,					    /* "2013/06/11 13:18:27.121129" */
+    ZMAPTIME_USERFORMAT					    /* Users provides format string. */
   } ZMapTimeFormat ;
 
 
@@ -161,7 +163,7 @@ typedef struct
 
 gboolean zMapLogCreate(char *logname) ;
 gboolean zMapLogConfigure(gboolean logging, gboolean log_to_file,
-			  gboolean show_code_details, gboolean show_time,
+			  gboolean show_process, gboolean show_code, gboolean show_time,
 			  gboolean catch_glib, gboolean echo_glib,
 			  char *logfile_path) ;
 void zMapWriteStartMsg(void) ;

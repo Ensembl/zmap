@@ -214,7 +214,7 @@
 #define ZMAPSTANZA_PEER_NAME         "name"
 #define ZMAPSTANZA_PEER_CLIPBOARD    "clipboard"
 #define ZMAPSTANZA_PEER_RETRIES      "timeout-retries"
-#define ZMAPSTANZA_PEER_TIMEOUT      "timeout_ms"
+#define ZMAPSTANZA_PEER_TIMEOUT      "timeout-ms"
 
 
 
@@ -266,15 +266,16 @@
  * </table>
  *
  *  */
-#define ZMAPSTANZA_LOG_CONFIG    "logging"
-#define ZMAPSTANZA_LOG_LOGGING   "logging"
-#define ZMAPSTANZA_LOG_FILE      "file"
-#define ZMAPSTANZA_LOG_DIRECTORY "directory"
-#define ZMAPSTANZA_LOG_FILENAME  "filename"
-#define ZMAPSTANZA_LOG_SHOW_CODE "show-code"
-#define ZMAPSTANZA_LOG_SHOW_TIME "show-time"    // mgh: didn't complete this so didn't put it in the help
-#define ZMAPSTANZA_LOG_CATCH_GLIB "catch-glib"
-#define ZMAPSTANZA_LOG_ECHO_GLIB  "echo-glib"
+#define ZMAPSTANZA_LOG_CONFIG        "logging"
+#define ZMAPSTANZA_LOG_LOGGING       "logging"
+#define ZMAPSTANZA_LOG_FILE          "file"
+#define ZMAPSTANZA_LOG_DIRECTORY     "directory"
+#define ZMAPSTANZA_LOG_FILENAME      "filename"
+#define ZMAPSTANZA_LOG_SHOW_PROCESS  "show-process"
+#define ZMAPSTANZA_LOG_SHOW_CODE     "show-code"
+#define ZMAPSTANZA_LOG_SHOW_TIME     "show-time"
+#define ZMAPSTANZA_LOG_CATCH_GLIB    "catch-glib"
+#define ZMAPSTANZA_LOG_ECHO_GLIB     "echo-glib"
 
 
 /*! @addtogroup config_stanzas

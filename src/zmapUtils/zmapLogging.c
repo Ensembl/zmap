@@ -63,6 +63,8 @@
 
 #define ZMAPLOG_MAX_TRACE_SIZE 50
 
+
+
 /* Must be zero for xremote compile. */
 #define FOO_LOG 0
 
@@ -99,9 +101,12 @@ typedef struct  _ZMapLogStruct
   gchar *userid ;
   gchar *nodeid ;
   int pid ;
-  gboolean show_code_details ;				    /* If TRUE then the file, function and
-							       line are displayed for every message. */
-  gboolean show_time;					    /* if TRUE the the time is included */
+
+  /* Controls whether to display process, code and time details in the log.
+   * There are all off by default. */
+  gboolean show_process ;
+  gboolean show_code ;
+  gboolean show_time;
 
   gboolean catch_glib;
   gboolean echo_glib;   /* to stdout if caught */
@@ -146,7 +151,11 @@ static void logTime(int what, int how) ;
 /* We only ever have one log so its kept internally here. */
 static ZMapLog log_G = NULL ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static GTimer *zmap_log_timer_G = NULL;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 static gboolean enable_core_dumping_G = TRUE;
 
@@ -212,7 +221,11 @@ gboolean zMapLogCreate(char *logname)
   else
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
     {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       zmap_log_timer_G = g_timer_new();
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
       result = TRUE ;
     }
 
@@ -245,7 +258,7 @@ void zMapWriteStopMsg(void)
 
 /* Configure the log. */
 gboolean zMapLogConfigure(gboolean logging, gboolean log_to_file,
-			  gboolean show_code_details, gboolean show_time,
+			  gboolean show_process, gboolean show_code, gboolean show_time,
 			  gboolean catch_glib, gboolean echo_glib,
 			  char *logfile_path)
 {
@@ -259,7 +272,9 @@ gboolean zMapLogConfigure(gboolean logging, gboolean log_to_file,
   log->log_to_file = log_to_file ;
 
   /* How much detail to show in log records ? */
-  log->show_code_details = show_code_details ;
+  log->show_process = show_process ;
+
+  log->show_code = show_code ;
 
   log->show_time = show_time ;
 
@@ -372,45 +387,22 @@ void zMapLogMsg(char *domain, GLogLevelFlags log_level,
 
   format_str = g_string_sized_new(2000) ;		    /* Not too many records longer than this. */
 
-  /* All messages have the nodeid and pid as qualifiers to help with logfile analysis. */
-//  g_string_append_printf(format_str, "%s[%s:%s:%d]",
-//			 ZMAPLOG_PROCESS_TUPLE, log->userid, log->nodeid, log->pid) ;
 
-  /* include a timestamp? */
-  if (log->show_time)
+  /* include nodeid/pid ? */
+  if (log->show_process)
     {
-      char tbuf[32];
-#if 0
-      // this is a mess of incompatable structs....
-      // Glib does not do time!
-      // they provide a 'portable' interface to gettimeofday  but then don't provide any functions to use it
-      struct timeval time;
-      struct timezone tz = {0,0};
-
-      gettimeofday(&time,&tz);
-      strftime(tbuf,32,"%H:%M:%S",&time);
-      g_string_append_printf(format_str, "%s",tbuf);
-#else
-
-      if (zmap_log_timer_G)
-	{
-	  double t = g_timer_elapsed(zmap_log_timer_G,NULL);
-
-	  sprintf(tbuf," %.3fsec",t);
-	  g_string_append_printf(format_str, "%s\t",tbuf);
-	}
-
-#endif
+      g_string_append_printf(format_str, "%s[%s:%s:%d]",
+			     ZMAPLOG_PROCESS_TUPLE, log->userid, log->nodeid, log->pid) ;
     }
 
   /* If code details are wanted then output them in the log. */
-  if (log->show_code_details)
+  if (log->show_code)
     {
       char *file_basename ;
 
       file_basename = g_path_get_basename(file) ;
 
-      g_string_append_printf(format_str, "%s[%s:%s%s:%d]",
+      g_string_append_printf(format_str, "%s[%s:%s%s:%d]\t",
 			     ZMAPLOG_CODE_TUPLE,
 			     file_basename,
 			     (function ? function : ""),
@@ -420,7 +412,17 @@ void zMapLogMsg(char *domain, GLogLevelFlags log_level,
       g_free(file_basename) ;
     }
 
+  /* include a timestamp? */
+  if (log->show_time)
+    {
+      char *time_str ;
 
+      time_str = zMapGetTimeString(ZMAPTIME_LOG, NULL) ;
+
+      g_string_append_printf(format_str, "%s[%s]\t", ZMAPLOG_TIME_TUPLE, time_str) ;
+    }
+
+  /* Now show the actual message. */
   switch(log_level)
     {
     case G_LOG_LEVEL_MESSAGE:
@@ -439,7 +441,7 @@ void zMapLogMsg(char *domain, GLogLevelFlags log_level,
       zMapAssertNotReached() ;
       break ;
     }
-  g_string_append_printf(format_str, "\t%s[%s:%s]\n",
+  g_string_append_printf(format_str, "%s[%s:%s]\n",
 			 ZMAPLOG_MESSAGE_TUPLE, msg_level, format) ;
 
   va_start(args, format) ;
