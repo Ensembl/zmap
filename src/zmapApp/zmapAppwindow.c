@@ -65,17 +65,14 @@ static void checkForCmdLineVersionArg(int argc, char *argv[]) ;
 static int checkForCmdLineSleep(int argc, char *argv[]) ;
 static void checkForCmdLineSequenceArg(int argc, char *argv[], char **dataset_out, char **sequence_out) ;
 static void checkForCmdLineStartEndArg(int argc, char *argv[], int *start_inout, int *end_inout) ;
-
 static char *checkConfigDir(void) ;
 static gboolean checkSequenceArgs(int argc, char *argv[],
 				  ZMapFeatureSequenceMap seq_map_inout, char **err_msg_out) ;
-
 static gboolean checkPeerID(ZMapAppContext app_context,
 			    char **peer_name_out, char **peer_clipboard_out, int *peer_retries, int *peer_timeout_ms) ;
 
 static gboolean removeZMapRowForeachFunc(GtkTreeModel *model, GtkTreePath *path,
                                          GtkTreeIter *iter, gpointer data);
-
 
 
 static void initGnomeGTK(int argc, char *argv[]) ;
@@ -99,11 +96,10 @@ static void exitApp(ZMapAppContext app_context) ;
 static void crashExitApp(ZMapAppContext app_context) ;
 static void finalCleanUp(ZMapAppContext app_context) ;
 static void doTheExit(int exit_code) ;
-static void setup_signal_handlers(void);
 
+static void setupSignalHandlers(void);
 
 static void remoteInstaller(GtkWidget *widget, GdkEvent *event, gpointer app_context_data) ;
-
 static gboolean pingHandler(gpointer data) ;
 
 static gboolean configureLog(char *config_file) ;
@@ -177,22 +173,29 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 #error "Cannot compile, threads not properly enabled."
 #endif
 
+
   /* Make sure glib threading is supported and initialised. */
   g_thread_init(NULL) ;
   if (!g_thread_supported())
     g_thread_init(NULL);
 
-  setup_signal_handlers();
+
+  /* Set up stack tracing for when we get killed by a signal. */
+  setupSignalHandlers() ;
+
 
   /* Set up user type, i.e. developer or normal user. */
   zMapUtilsUserInit() ;
+
 
   /* Set up command line parsing object, globally available anywhere, this function exits if
    * there are bad command line args. */
   zMapCmdLineArgsCreate(&argc, argv) ;
 
+
   /* If user specified version flag, show zmap version and exit with zero return code. */
   checkForCmdLineVersionArg(argc, argv) ;
+
 
   /* The main control block. */
   app_context = createAppContext() ;
@@ -209,6 +212,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
   /* Set any global debug flags from config file. */
   zMapUtilsConfigDebug(NULL) ;
+
 
   /* Check if a peer program was specified on the command line or in the config file. */
   peer_name = peer_clipboard = NULL ;
@@ -1102,7 +1106,7 @@ static gboolean getConfiguration(ZMapAppContext app_context)
 
 
 /* Called  */
-static void setup_signal_handlers(void)
+static void setupSignalHandlers(void)
 {
   /* Not much point if there's no sigaction! */
 #ifndef NO_SIGACTION
