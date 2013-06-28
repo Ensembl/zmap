@@ -268,15 +268,15 @@ FooCanvasItem *zMapWindowCanvasItemGetInterval(ZMapWindowCanvasItem canvas_item,
   if(matching_interval == NULL)
     g_warning("No matching interval!");
   else if(sub_feature_out)
-  {
-  	if(ZMAP_IS_WINDOW_FEATURESET_ITEM(matching_interval))
-  	{
-  		/* returns a static data structure */
-  		*sub_feature_out =
-  			zMapWindowCanvasFeaturesetGetSubPartSpan(matching_interval, zMapWindowCanvasItemGetFeature(item) ,x,y);
+    {
+      if(ZMAP_IS_WINDOW_FEATURESET_ITEM(matching_interval) && zMapWindowCanvasItemGetFeature(item))
+        {
+          /* returns a static data structure */
+          *sub_feature_out =
+            zMapWindowCanvasFeaturesetGetSubPartSpan(matching_interval, zMapWindowCanvasItemGetFeature(item) ,x,y);
   	}
-  }
-
+    }
+  
   return matching_interval;
 }
 
