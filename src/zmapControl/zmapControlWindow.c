@@ -43,8 +43,13 @@ static void setTooltips(ZMap zmap) ;
 static void makeStatusTooltips(ZMap zmap) ;
 static GtkWidget *makeStatusPanel(ZMap zmap) ;
 static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data) ;
+gboolean myWindowMaximize(GtkWidget *widget, GdkEvent  *event, gpointer user_data) ;
 
-static void myWindowMaximize(GtkWidget *toplevel, ZMap zmap) ;
+
+
+/* 
+ *                  Globals
+ */
 
 static gboolean zmap_shrink_G = FALSE;
 
@@ -74,20 +79,15 @@ gboolean zmapControlWindowCreate(ZMap zmap)
   /* allow shrink for charlie'ss RT 215415, ref to GTK help: it says 'don't allow shrink' */
   if (zMapCmdLineArgsValue(ZMAPARG_SHRINK, &shrink_arg))
     zmap_shrink_G = shrink_arg.b ;
-  gtk_window_set_policy(GTK_WINDOW(toplevel), zmap_shrink_G, TRUE, FALSE ) ;	// allow shrink for charlie'ss RT 215415
-								/* ref to GTK help: it says 'don't allow shrink' */
+  gtk_window_set_policy(GTK_WINDOW(toplevel), zmap_shrink_G, TRUE, FALSE ) ;
 
   gtk_container_border_width(GTK_CONTAINER(toplevel), 5) ;
 
-  /* Only after map-event are we guaranteed that there's a window for us to work with. */
-  g_signal_connect(G_OBJECT(toplevel), "map-event",
-                   G_CALLBACK(zmapControlRemoteInstaller), (gpointer)zmap);
-
   /* We can leave width to default sensibly but height does not because zmap is in a scrolled
-   * window, we try to maximise it to the screen depth but have to do this after window is mapped.
-   * SHOULD WE BE REMOVING THIS HANDLER ??? TAKE A LOOK AT THIS LATER.... */
-  zmap->map_handler = g_signal_connect(G_OBJECT(toplevel), "map",
-				       G_CALLBACK(myWindowMaximize), (gpointer)zmap);
+   * window, we try to maximise it to the screen depth but have to do this after window is
+   * mapped. */
+  zmap->map_handler = g_signal_connect(G_OBJECT(toplevel), "map-event",
+				       G_CALLBACK(myWindowMaximize), (gpointer)zmap) ;
 
   gtk_signal_connect(GTK_OBJECT(toplevel), "destroy",
 		     GTK_SIGNAL_FUNC(toplevelDestroyCB), (gpointer)zmap) ;
@@ -369,8 +369,10 @@ static void makeStatusTooltips(ZMap zmap)
  * but this will be rare.
  *
  */
-static void myWindowMaximize(GtkWidget *toplevel, ZMap zmap)
+gboolean myWindowMaximize(GtkWidget *widget, GdkEvent  *event, gpointer user_data)
 {
+  GtkWidget *toplevel = widget ;
+  ZMap zmap = (ZMap)user_data ;
   GdkAtom geometry_atom, workarea_atom, max_atom_vert ;
   GdkScreen *screen ;
 
