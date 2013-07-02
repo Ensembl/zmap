@@ -268,4 +268,6 @@ ZMapViewWindow zmapControlNewWidgetAndWindowForView(ZMap zmap,
 void zmapControlPrintView(ZMap zmap, ZMapView view, char *action, gboolean print_xid) ;
 void zmapControlPrintAllViews(ZMap zmap, gboolean print_xids) ;
 
+void zmapControlWindowMaximize(GtkWidget *widget, ZMap map) ;
+
 #endif /* !ZMAP_CONTROL_P_H */

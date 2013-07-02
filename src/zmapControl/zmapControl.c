@@ -149,6 +149,8 @@ ZMap zMapCreate(void *app_data, ZMapFeatureSequenceMap seq_map)
 
   zmapControlWindowSetGUIState(zmap) ;
 
+  zmapControlWindowMaximize(zmap->toplevel, zmap);
+
   return zmap ;
 }
 
