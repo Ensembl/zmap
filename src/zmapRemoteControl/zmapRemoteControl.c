@@ -1951,6 +1951,10 @@ static void logMsg(ZMapRemoteControl remote_control,
   gboolean add_time = TRUE ;
   char *time_str = NULL ;
   gboolean add_filename = FALSE ;			    /* no point currently. */
+  const char *curr_clipboard = "<null>";
+
+  if (remote_control && remote_control->curr_remote && remote_control->curr_remote->any_atom_string)
+    curr_clipboard = remote_control->curr_remote->any_atom_string;
 
   name = g_path_get_basename(file_name) ;
 
@@ -1959,7 +1963,7 @@ static void logMsg(ZMapRemoteControl remote_control,
 
   msg = g_string_sized_new(500) ;				
 
-  g_string_append_printf(msg, "%s%s%s:%s%s%s()\tActing as: %s  State: %s\tMessage: ",
+  g_string_append_printf(msg, "%s%s%s:%s%s%s()\tActing as: %s  State: %s  Clipboard: %s\tMessage: ",
 			 (add_time ? time_str : ""),
 			 (add_time ? "\t" : ""),
 			 g_quark_to_string(remote_control->app_id),
@@ -1967,7 +1971,8 @@ static void logMsg(ZMapRemoteControl remote_control,
 			 (add_filename ? ":" : ""),
 			 func_name,
 			 remoteType2ExactStr(remote_control->curr_remote->remote_type),
-			 remoteState2ExactStr(remote_control->state)) ;
+			 remoteState2ExactStr(remote_control->state),
+                         curr_clipboard) ;
 
   g_string_append_vprintf(msg, format_str, args) ;
 
