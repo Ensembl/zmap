@@ -519,16 +519,6 @@ static void replyHandlerCB(ZMapRemoteControl remote_control, char *reply, void *
 
 
 
-  /* I've put this here because the app may issue another request when
-   * we call it from below...so we must clear our active flag first. */
-  /* Now we know that the request/reply is over unset our "request active" flag. */
-  zMapDebugPrint(is_active_debug_G, "%s", "got reply from peer so unsetting our block.") ;
-  requestBlockingSetInActive() ;
-
-
-
-
-
 
   /* Again.....is this a good idea....the app callback needs to be called whatever happens
    * to reset state...fine to log a bad message but we still need to call the app func. */
@@ -565,6 +555,14 @@ static void replyHandlerCB(ZMapRemoteControl remote_control, char *reply, void *
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
     }
+
+
+  /* gb10: this was done at the start of this function in case another call needed to be
+   * made from this function. That doesn't seem to ever happen and, anyway, if another call 
+   * needs to be made as part of the reply, it should probably be put in the gtk main loop 
+   * and performed after we've exited this function. */
+  zMapDebugPrint(is_active_debug_G, "%s", "got reply from peer so unsetting our block.") ;
+  requestBlockingSetInActive() ;
 
 
   /* I think this is the place to go back to waiting again.... */
