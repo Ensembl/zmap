@@ -488,6 +488,14 @@ static void handleZMapRequestsCB(gpointer caller_data,
 
 		  zMapDebugPrint(is_active_debug_G, "%s", "Send request failed so unsetting our block.") ;
 		  requestBlockingSetInActive() ;
+
+
+                  /* and go back to waiting for a request...... */
+                  if (!zMapRemoteControlReceiveWaitForRequest(app_context->remote_control->remote_controller))
+                    {
+                      zMapLogCritical("%s", "Call to wait for peer requests failed, cannot communicate with peer.") ;
+                      zMapWarning("%s", "Call to wait for peer requests failed, cannot communicate with peer.") ;
+                    }
 		}
 	    }
 
