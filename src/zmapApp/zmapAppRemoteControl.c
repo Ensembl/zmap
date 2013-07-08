@@ -286,6 +286,13 @@ static void requestHandlerCB(ZMapRemoteControl remote_control,
   ZMapAppContext app_context = (ZMapAppContext)user_data ;
   ZMapAppRemote remote = app_context->remote_control ;
 
+  /* TRY ALL THIS HERE.... */
+  /* Test to see if we are processing a remote command....and then set that we are active. */
+  zMapDebugPrint(is_active_debug_G, "%s", "About to test for blocking.") ;
+  requestBlockingTestAndBlock() ;
+  zMapDebugPrint(is_active_debug_G, "%s", "Setting our own block.") ;
+  requestBlockingSetActive() ;
+
   /* Cache these, must be called from handleZMapRepliesCB() */
   remote->return_reply_func = return_reply_func ;
   remote->return_reply_func_data = return_reply_func_data ;
@@ -364,6 +371,10 @@ static void replySentCB(void *user_data)
   ZMapAppContext app_context = (ZMapAppContext)user_data ;
   
   zmapAppRemoteControlTheirRequestEndedCB(user_data) ;
+
+
+  zMapDebugPrint(is_active_debug_G, "%s", "Received confirmation that they have our reply so unsetting our block.") ;
+  requestBlockingSetInActive() ;
 
 
   /* Need to return to waiting here..... */
