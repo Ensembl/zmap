@@ -125,6 +125,7 @@ static GtkResponseType messageFull(GtkWindow *parent, char *title_in, char *msg,
 				   gboolean modal, int display_timeout, gboolean close_button,
 				   ZMapMsgType msg_type, GtkJustification justify,
 				   ZMapGUIMsgUserData user_data) ;
+static void printMessage(char *message) ;
 static void butClick(GtkButton *button, gpointer user_data) ;
 static gboolean timeoutHandlerModal(gpointer data) ;
 static gboolean timeoutHandler(gpointer data) ;
@@ -804,6 +805,9 @@ void zMapShowMsg(ZMapMsgType msg_type, char *format, ...)
   va_end(args) ;
 
   zMapGUIShowMsg(msg_type, msg_string) ;
+
+  /* Also print the message to stdout/stderr */
+  printMessage(msg_string);
 
   g_free(msg_string) ;
 
@@ -1586,6 +1590,29 @@ static gboolean modalFromMsgType(ZMapMsgType msg_type)
   return modal ;
 }
 
+
+
+/* Called by all the zmap gui message functions to print a message to stdout 
+ * or stderr (depending on its type) */
+static void printMessage(char *message, ZMapMsgType msg_type)
+{
+  switch (msg_type)
+    {
+      case ZMAP_MSG_WARNING:
+      case ZMAP_MSG_CRITICAL: /* fall through */
+      case ZMAP_MSG_CRASH:    /* fall through */
+        fprintf(stderr, "%s", message) ;
+        break ;
+
+      case ZMAP_MSG_INFORMATION:
+      case ZMAP_MSG_EXIT:
+        printf("%s", message) ;
+        break ;
+        
+      default:
+        break ;
+    } ;
+}
 
 
 /* Called by all the zmap gui message functions to display a short message in
