@@ -987,7 +987,7 @@ static gboolean checkPeerID(ZMapAppContext app_context,
 
       /* How long to wait in ms before timeout waiting for peer. */
       if (zMapConfigIniContextGetInt(context, ZMAPSTANZA_PEER_CONFIG, ZMAPSTANZA_PEER_CONFIG,
-				     ZMAPSTANZA_PEER_RETRIES, &tmp_int))
+				     ZMAPSTANZA_PEER_TIMEOUT, &tmp_int))
 	*peer_timeout_ms = tmp_int ;
 
 

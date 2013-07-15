@@ -606,18 +606,18 @@ gboolean zMapRemoteControlSetDebug(ZMapRemoteControl remote_control, ZMapRemoteC
 
 
 
-/* Set timeout, if timeout_secs <= 0 then no timeouts are set,
+/* Set timeout, if timeout_ms <= 0 then no timeouts are set,
  * good for testing, not for real life ! */
-gboolean zMapRemoteControlSetTimeout(ZMapRemoteControl remote_control, int timeout_secs)
+gboolean zMapRemoteControlSetTimeout(ZMapRemoteControl remote_control, int timeout_ms)
 {
   gboolean result = TRUE ;
 
   ZMAP_MAGIC_ASSERT(remote_control_magic_G, remote_control->magic) ;
 
-  if (timeout_secs < 0)
+  if (timeout_ms < 0)
     remote_control->timeout_ms = 0 ;
   else
-    remote_control->timeout_ms = timeout_secs * 1000 ;
+    remote_control->timeout_ms = timeout_ms ;
 
   return result ;
  }

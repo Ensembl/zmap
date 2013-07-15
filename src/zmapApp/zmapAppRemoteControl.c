@@ -116,7 +116,7 @@ ZMapRemoteAppMakeRequestFunc zmapAppRemoteControlGetRequestCB(void)
 
 /* Set up the remote controller object. */
 gboolean zmapAppRemoteControlCreate(ZMapAppContext app_context, char *peer_name, char *peer_clipboard,
-				    int peer_retries, int peer_timeout)
+				    int peer_retries, int peer_timeout_ms)
 {
   gboolean result = FALSE ;
   ZMapAppRemote remote ;
@@ -144,8 +144,8 @@ gboolean zmapAppRemoteControlCreate(ZMapAppContext app_context, char *peer_name,
       else
 	remote->window_retries_max = remote->window_retries_left = ZMAP_WINDOW_RETRIES ;
 
-      if (peer_timeout > 0)
-	zMapRemoteControlSetTimeout(remote->remote_controller, peer_timeout) ;
+      if (peer_timeout_ms > 0)
+	zMapRemoteControlSetTimeout(remote->remote_controller, peer_timeout_ms) ;
       else
 	zMapRemoteControlSetTimeout(remote->remote_controller, ZMAP_WINDOW_TIMEOUT_MS) ;
 	
