@@ -125,7 +125,7 @@ static GtkResponseType messageFull(GtkWindow *parent, char *title_in, char *msg,
 				   gboolean modal, int display_timeout, gboolean close_button,
 				   ZMapMsgType msg_type, GtkJustification justify,
 				   ZMapGUIMsgUserData user_data) ;
-static void printMessage(char *message) ;
+static void printMessage(ZMapMsgType msg_type, char *message) ;
 static void butClick(GtkButton *button, gpointer user_data) ;
 static gboolean timeoutHandlerModal(gpointer data) ;
 static gboolean timeoutHandler(gpointer data) ;
@@ -807,7 +807,7 @@ void zMapShowMsg(ZMapMsgType msg_type, char *format, ...)
   zMapGUIShowMsg(msg_type, msg_string) ;
 
   /* Also print the message to stdout/stderr */
-  printMessage(msg_string);
+  printMessage(msg_type, msg_string);
 
   g_free(msg_string) ;
 
@@ -1594,7 +1594,7 @@ static gboolean modalFromMsgType(ZMapMsgType msg_type)
 
 /* Called by all the zmap gui message functions to print a message to stdout 
  * or stderr (depending on its type) */
-static void printMessage(char *message, ZMapMsgType msg_type)
+static void printMessage(ZMapMsgType msg_type, char *message)
 {
   switch (msg_type)
     {
