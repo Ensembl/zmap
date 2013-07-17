@@ -628,7 +628,8 @@ static void errorHandlerCB(ZMapRemoteControl remote_control,
       zMapWarning("%s", "Call to wait for peer requests failed, cannot communicate with peer.") ;
     }
 
-
+  /* Perform the next request in the queue, if there are any */
+  performNextRequest(request_queue_G);
 
   return ;
 }
@@ -814,6 +815,9 @@ static gboolean sendRequestCB(GtkWidget *widget, GdkEventClient *event, gpointer
       
       /* Go back to waiting for a request...... */
       zMapRemoteControlReceiveWaitForRequest(remote->remote_controller) ;
+
+      /* Perform the next request in the queue, if there are any */
+      performNextRequest(request_queue_G);
     }
 
   /* Now remove the current command from the queue and perform the next, if any. */
