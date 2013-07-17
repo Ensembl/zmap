@@ -804,10 +804,11 @@ void zMapShowMsg(ZMapMsgType msg_type, char *format, ...)
   msg_string = g_strdup_vprintf(format, args) ;
   va_end(args) ;
 
-  zMapGUIShowMsg(msg_type, msg_string) ;
-
-  /* Also print the message to stdout/stderr */
+  /* print the message to stdout/stderr */
   printMessage(msg_type, msg_string);
+
+  /* show the dialog */
+  zMapGUIShowMsg(msg_type, msg_string) ;
 
   g_free(msg_string) ;
 

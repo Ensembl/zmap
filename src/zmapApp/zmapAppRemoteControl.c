@@ -656,7 +656,7 @@ static gboolean timeoutHandlerCB(ZMapRemoteControl remote_control, void *user_da
 	{
 	  char *full_err_msg ;
 
-	  full_err_msg = g_strdup_printf("Peer has still not responded after %d timeouts, transaction has timed out",
+	  full_err_msg = g_strdup_printf("Peer has still not responded after %d timeouts, transaction has timed out\n",
 					 app_remote_control->window_retries_max) ;
 
 	  zMapLogCritical("%s", full_err_msg) ;
