@@ -855,15 +855,20 @@ static void finishAndPerformNextRequest(GQueue *request_queue)
       /* If this is the last request in the priority section of the queue, reset the
        * pointer to the tail of the priority section */
       if (request_queue_priority_tail_G && (RequestQueueData*)(request_queue_priority_tail_G->data) == request_data)
-        {
-          request_queue_priority_tail_G = NULL ;
-          zMapDebugPrint(is_active_debug_G, "%s", "Priority queue is now empty") ;
-        }
+        request_queue_priority_tail_G = NULL ;
       
       g_queue_remove(request_queue, request_data) ;
       //zMapDebugPrint(is_active_debug_G, "Request %d was not found in the queue", request_data->request_num) ;
 
       g_free(request_data);
+      
+      int priority_queue_len = 0;
+  
+      if (request_queue_priority_tail_G)
+        priority_queue_len = g_queue_index(request_queue, (RequestQueueData*)(request_queue_priority_tail_G->data)) + 1 ;
+
+      zMapDebugPrint(is_active_debug_G, "Priority queue length=%d", priority_queue_len) ;
+      zMapDebugPrint(is_active_debug_G, "Total queue length=%d", g_queue_get_length(request_queue)) ;
     }
 
   current_request = NULL ;
@@ -978,8 +983,14 @@ static void addRequestToQueue(RequestQueueData *request_data)
       g_queue_push_tail(request_queue_G, request_data) ;
       zMapDebugPrint(is_active_debug_G, "Request %d added to tail of queue", request_data->request_num) ;
     }
+
+  int priority_queue_len = 0;
   
-  zMapDebugPrint(is_active_debug_G, "Queue length=%d", g_queue_get_length(request_queue_G));
+  if (request_queue_priority_tail_G)
+    priority_queue_len = g_queue_index(request_queue_G, (RequestQueueData*)(request_queue_priority_tail_G->data)) + 1 ;
+
+  zMapDebugPrint(is_active_debug_G, "Priority queue length=%d", priority_queue_len) ;
+  zMapDebugPrint(is_active_debug_G, "Total queue length=%d", g_queue_get_length(request_queue_G)) ;
 }
 
 
