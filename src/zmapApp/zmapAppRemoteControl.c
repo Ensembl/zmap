@@ -97,6 +97,7 @@ static void requestBlockingSetInActive(void) ;
 static gboolean requestBlockingIsActive(void) ;
 
 static gboolean sendRequestCB(GtkWidget *widget, GdkEventClient *event, gpointer cb_data) ;
+static void finishAndPerformNextRequest(GQueue *request_queue);
 static void performNextRequest(GQueue *request_queue);
 static gboolean sendOrQueueRequest(ZMapAppRemote remote, const char *command, const char *request, ZMapRemoteAppProcessReplyFunc process_reply_func, gpointer process_reply_func_data, int num_retries, GtkWidget *widget) ;
 
@@ -115,6 +116,13 @@ static gboolean is_active_debug_G = TRUE ;
 /* This maintain a queue of requests so that we can execute them in 
  * the order that they were requested */
 static GQueue *request_queue_G = NULL;
+
+/* Slight hack: we push high priority requests to the start of the 
+ * queue (but behind any previous high priority requests). This pointer
+ * points to the tail of the high-priority section of the queue. */
+static GList *request_queue_priority_tail_G = NULL ;
+
+static RequestQueueData *current_request = NULL ;
 
 /* Set debug level in remote control. */
 static ZMapRemoteControlDebugLevelType remote_debug_G = ZMAP_REMOTECONTROL_DEBUG_OFF ;
@@ -590,7 +598,7 @@ static void replyHandlerCB(ZMapRemoteControl remote_control, char *reply, void *
 
 
   /* Perform the next request in the queue, if there are any */
-  performNextRequest(request_queue_G);
+  finishAndPerformNextRequest(request_queue_G);
 
   return ;
 }
@@ -629,7 +637,7 @@ static void errorHandlerCB(ZMapRemoteControl remote_control,
     }
 
   /* Perform the next request in the queue, if there are any */
-  performNextRequest(request_queue_G);
+  finishAndPerformNextRequest(request_queue_G);
 
   return ;
 }
@@ -770,11 +778,17 @@ static gboolean sendRequestCB(GtkWidget *widget, GdkEventClient *event, gpointer
 
   if (g_queue_is_empty(request_queue))
     {
-      zMapDebugPrint(is_active_debug_G, "%s", "Request queue is empty.");
-      return TRUE;
+      zMapDebugPrint(is_active_debug_G, "%s", "Program error: attempting to send request but request queue is empty");
     }
 
-  RequestQueueData *request_data = (RequestQueueData*)g_queue_peek_head(request_queue);
+  RequestQueueData *request_data = current_request ;
+
+  if (!request_data)
+    {
+      zMapDebugPrint(is_active_debug_G, "%s", "Tried to send request but current_request is not set") ; 
+      return TRUE ;
+    }
+
   zMapDebugPrint(is_active_debug_G, "Attempting to send request %d", request_data->request_num) ;
 
   /* Test to see if we are processing a remote command.... and then set that we are active. */
@@ -789,7 +803,7 @@ static gboolean sendRequestCB(GtkWidget *widget, GdkEventClient *event, gpointer
       return TRUE;
     }
 
-  request_data = (RequestQueueData*)g_queue_peek_head(request_queue);
+  request_data = current_request ;
   ZMapAppRemote remote = request_data->remote ;
   zMapDebugPrint(is_active_debug_G, "Executing request %d", request_data->request_num);
   
@@ -817,15 +831,44 @@ static gboolean sendRequestCB(GtkWidget *widget, GdkEventClient *event, gpointer
       zMapRemoteControlReceiveWaitForRequest(remote->remote_controller) ;
 
       /* Perform the next request in the queue, if there are any */
-      performNextRequest(request_queue_G);
+      finishAndPerformNextRequest(request_queue_G);
     }
 
-  /* Now remove the current command from the queue and perform the next, if any. */
-  zMapDebugPrint(is_active_debug_G, "Removing request %d from queue", request_data->request_num) ;
-  g_queue_pop_head(request_queue);
-  g_free(request_data);
-
   return TRUE;  
+}
+
+
+/* Finish the current request and perform the next request in the queue, if any. */
+static void finishAndPerformNextRequest(GQueue *request_queue)
+{
+  /* Remove the last request */
+  RequestQueueData *request_data = current_request ;
+
+  if (!request_data)
+    {
+      zMapDebugPrint(is_active_debug_G, "%s", "Program error: Asked to remove request from queue, but current_request is not set");
+    }
+  else
+    {
+      zMapDebugPrint(is_active_debug_G, "Removing request %d from queue", request_data->request_num) ;
+
+      /* If this is the last request in the priority section of the queue, reset the
+       * pointer to the tail of the priority section */
+      if (request_queue_priority_tail_G && (RequestQueueData*)(request_queue_priority_tail_G->data) == request_data)
+        {
+          request_queue_priority_tail_G = NULL ;
+          zMapDebugPrint(is_active_debug_G, "%s", "Priority queue is now empty") ;
+        }
+      
+      g_queue_remove(request_queue, request_data) ;
+      //zMapDebugPrint(is_active_debug_G, "Request %d was not found in the queue", request_data->request_num) ;
+
+      g_free(request_data);
+    }
+
+  current_request = NULL ;
+  
+  performNextRequest(request_queue);
 }
 
 
@@ -851,6 +894,7 @@ static void performNextRequest(GQueue *request_queue)
 
   /* Get the next request in the queue */
   RequestQueueData *request_data = (RequestQueueData*)g_queue_peek_head(request_queue);
+  current_request = request_data ;
   zMapDebugPrint(is_active_debug_G, "Performing request %d", request_data->request_num);
 
   static gboolean first_time = TRUE;
@@ -881,6 +925,64 @@ static void performNextRequest(GQueue *request_queue)
 }
 
 
+/* Determine whether a request is high priority or not */
+static gboolean requestIsHighPriority(RequestQueueData *request_data)
+{
+  gboolean result = FALSE ;
+
+  /* Interactive commands are high priority */
+  if (!request_data || !request_data->command)
+    result = FALSE ;
+  else if (!strcmp(request_data->command, ZACP_SELECT_FEATURE))
+    result = TRUE ;
+  else if (!strcmp(request_data->command, ZACP_EDIT_FEATURE))
+    result = TRUE ;
+  else if (!strcmp(request_data->command, ZACP_SELECT_MULTI_FEATURE))
+    result = TRUE ;
+  
+  return result ;
+}
+
+
+/* Add the given request to the request queue. Slight hack: higher priority
+ * interactive messages such as single_select and edit are added to the 
+ * head of the queue. */
+static void addRequestToQueue(RequestQueueData *request_data)
+{
+  /* First time round, create the request queue */
+  if (!request_queue_G)
+    request_queue_G = g_queue_new() ;
+
+  zMapDebugPrint(is_active_debug_G, "Adding request %d to queue:\n%s", request_data->request_num, request_data->request);
+
+  if (requestIsHighPriority(request_data))
+    {
+      /* Add to the start of the queue, BUT after any other high priority 
+       * requests */
+      if (request_queue_priority_tail_G)
+        {
+          g_queue_insert_after(request_queue_G, request_queue_priority_tail_G, request_data) ;
+          request_queue_priority_tail_G = request_queue_priority_tail_G->next ;
+          zMapDebugPrint(is_active_debug_G, "Request %d added to tail of priority queue", request_data->request_num) ;
+        }
+      else
+        {
+          g_queue_push_head(request_queue_G, request_data) ;
+          request_queue_priority_tail_G = request_queue_G->head ;
+          zMapDebugPrint(is_active_debug_G, "Request %d added to head of priority queue", request_data->request_num) ;
+        }
+    }
+  else
+    {
+      /* Just add to the end of the queue */
+      g_queue_push_tail(request_queue_G, request_data) ;
+      zMapDebugPrint(is_active_debug_G, "Request %d added to tail of queue", request_data->request_num) ;
+    }
+  
+  zMapDebugPrint(is_active_debug_G, "Queue length=%d", g_queue_get_length(request_queue_G));
+}
+
+
 /* Entry point for caller to send a request. The request is either put into
  * a queue (if we're already processing a transaction) or into the gtk main loop.
  * 
@@ -901,12 +1003,6 @@ static gboolean sendOrQueueRequest(ZMapAppRemote remote,
                                    int num_retries,
                                    GtkWidget *widget)
 {
-  /* First time round, create the request queue */
-  if (!request_queue_G)
-    request_queue_G = g_queue_new();
-
-  GQueue *request_queue = request_queue_G;
-
   /* request_num is a count that's used to provide a unique id, as well as the order
    * number, for each request we add to the queue. Note that it doesn't need to be 
    * the same as the request_id that is used in the xml, but in practice 
@@ -928,13 +1024,11 @@ static gboolean sendOrQueueRequest(ZMapAppRemote remote,
   /* Add the request to the queue (even if we're going to perform it
    * straight away, because it's easiest to pass the global queue as
    * data to sendRequestCB) */
-  g_queue_push_tail(request_queue, request_data);
-
-  zMapDebugPrint(is_active_debug_G, "Added request %d to queue (length=%d): %s", request_data->request_num, g_queue_get_length(request_queue), request);
+  addRequestToQueue(request_data);
 
   /* If this is the only request in the queue, execute it now */
-  if (g_queue_get_length(request_queue) == 1)
-    performNextRequest(request_queue);
+  if (g_queue_get_length(request_queue_G) == 1)
+    performNextRequest(request_queue_G);
 
   return TRUE;
 }
