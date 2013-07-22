@@ -122,7 +122,7 @@ static GQueue *request_queue_G = NULL;
  * points to the tail of the high-priority section of the queue. */
 static GList *request_queue_priority_tail_G = NULL ;
 
-static RequestQueueData *current_request = NULL ;
+static RequestQueueData *current_request_G = NULL ;
 
 /* Set debug level in remote control. */
 static ZMapRemoteControlDebugLevelType remote_debug_G = ZMAP_REMOTECONTROL_DEBUG_OFF ;
@@ -782,7 +782,7 @@ static gboolean sendRequestCB(GtkWidget *widget, GdkEventClient *event, gpointer
       zMapDebugPrint(is_active_debug_G, "%s", "Program error: attempting to send request but request queue is empty");
     }
 
-  RequestQueueData *request_data = current_request ;
+  RequestQueueData *request_data = current_request_G ;
 
   if (!request_data)
     {
@@ -795,16 +795,23 @@ static gboolean sendRequestCB(GtkWidget *widget, GdkEventClient *event, gpointer
   /* Test to see if we are processing a remote command.... and then set that we are active. */
   zMapDebugPrint(is_active_debug_G, "%s", "About to test for blocking.") ;
   requestBlockingTestAndBlock() ;
-  zMapDebugPrint(is_active_debug_G, "%s", "Setting our own block.") ;
-  requestBlockingSetActive() ;
 
   if (g_queue_is_empty(request_queue))
     {
-      zMapDebugPrint(is_active_debug_G, "%s", "Request queue is empty.");
-      return TRUE;
+      zMapDebugPrint(is_active_debug_G, "%s", "Program error: attempting to send request but request queue is empty");
     }
 
-  request_data = current_request ;
+  request_data = current_request_G ;
+  
+  if (!request_data)
+    {
+      zMapDebugPrint(is_active_debug_G, "%s", "Tried to send request but current_request is not set") ; 
+      return TRUE ;
+    }
+
+  zMapDebugPrint(is_active_debug_G, "%s", "Setting our own block.") ;
+  requestBlockingSetActive() ;
+
   ZMapAppRemote remote = request_data->remote ;
   zMapDebugPrint(is_active_debug_G, "Executing request %d", request_data->request_num);
   
@@ -843,11 +850,11 @@ static gboolean sendRequestCB(GtkWidget *widget, GdkEventClient *event, gpointer
 static void finishAndPerformNextRequest(GQueue *request_queue)
 {
   /* Remove the last request */
-  RequestQueueData *request_data = current_request ;
+  RequestQueueData *request_data = current_request_G ;
 
   if (!request_data)
     {
-      zMapDebugPrint(is_active_debug_G, "%s", "Program error: Asked to remove request from queue, but current_request is not set");
+      zMapDebugPrint(is_active_debug_G, "%s", "Program error: Asked to remove request from queue, but current_request_G is not set");
     }
   else
     {
@@ -872,7 +879,7 @@ static void finishAndPerformNextRequest(GQueue *request_queue)
       zMapDebugPrint(is_active_debug_G, "Total queue length=%d", g_queue_get_length(request_queue)) ;
     }
 
-  current_request = NULL ;
+  current_request_G = NULL ;
   
   performNextRequest(request_queue);
 }
@@ -900,7 +907,7 @@ static void performNextRequest(GQueue *request_queue)
 
   /* Get the next request in the queue */
   RequestQueueData *request_data = (RequestQueueData*)g_queue_peek_head(request_queue);
-  current_request = request_data ;
+  current_request_G = request_data ;
   zMapDebugPrint(is_active_debug_G, "Performing request %d", request_data->request_num);
 
   static gboolean first_time = TRUE;
@@ -955,10 +962,6 @@ static gboolean requestIsHighPriority(RequestQueueData *request_data)
  * head of the queue. */
 static void addRequestToQueue(RequestQueueData *request_data)
 {
-  /* First time round, create the request queue */
-  if (!request_queue_G)
-    request_queue_G = g_queue_new() ;
-
   zMapDebugPrint(is_active_debug_G, "Adding request %d to queue:\n%s", request_data->request_num, request_data->request);
 
   if (requestIsHighPriority(request_data))
@@ -1032,14 +1035,20 @@ static gboolean sendOrQueueRequest(ZMapAppRemote remote,
   request_data->widget = widget;
 
   ++request_num;
-  
+
+  /* First time round, create the request queue */
+  if (!request_queue_G)
+    request_queue_G = g_queue_new() ;
+
+  /* If the queue is empty, we'll process the new command straight away */
+  gboolean process_now = (g_queue_get_length(request_queue_G) < 1) ;
+        
   /* Add the request to the queue (even if we're going to perform it
    * straight away, because it's easiest to pass the global queue as
    * data to sendRequestCB) */
   addRequestToQueue(request_data);
 
-  /* If this is the only request in the queue, execute it now */
-  if (g_queue_get_length(request_queue_G) == 1)
+  if (process_now)
     performNextRequest(request_queue_G);
 
   return TRUE;
