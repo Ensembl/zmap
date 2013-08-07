@@ -232,9 +232,10 @@ gboolean zmapAppRemoteControlInit(ZMapAppContext app_context)
           /* Set a property on the x window named for the peer clipboard (the value
            * isn't used). This is used by the peer to check that they have our correct x window. */
 	  x_display = GDK_WINDOW_XDISPLAY(gdk_window) ;
-          printf("TEST: setting window proeprty %s\n", remote->app_unique_id);
-          
-          result = zMapGUIXWindowChangeProperty(x_display, x_window, remote->app_unique_id, remote->app_unique_id) ;
+
+          char *pid = g_strdup_printf("%d", getpid());
+          zMapDebugPrint(is_active_debug_G, "Setting property '%s' to value '%s'\n", remote->app_unique_id, pid);
+          result = zMapGUIXWindowChangeProperty(x_display, x_window, remote->app_unique_id, pid) ;
 	}
       else
 	{

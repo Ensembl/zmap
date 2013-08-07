@@ -356,6 +356,7 @@ static gboolean zmapGUIXWindowValid(Display *x_display, Window x_window, char *c
   gchar *property_data;
   char *atom_id ;
   Atom xproperty = XInternAtom(x_display, clipboard_name, False);
+  GString *output = g_string_sized_new(1 << 8); /* 1 << 8 = 256 */
 
   atom_id = g_strdup_printf("Atom = %x", (unsigned int)xproperty) ;
   zmapXTrapErrors((char *)__PRETTY_FUNCTION__, "XGetWindowProperty", atom_id) ;
@@ -394,10 +395,26 @@ static gboolean zmapGUIXWindowValid(Display *x_display, Window x_window, char *c
     }
   else 
     {
-      /* We found the property, so this is our window. */
       success = TRUE ;
-    }
 
+      switch(format_return)
+        {
+        case 8:
+          g_string_append_len(output, property_data, nitems_return) ;
+          //REMOTELOGMSG(Warning,"Property '%s' has value: %s", clipboard_name, output->str ? output->str : "null") ;
+          g_string_free(output, TRUE) ;
+          break;
+          
+        case 16:
+        case 32:
+        default:
+          if (err_msg_out)
+            *err_msg_out = g_strdup_printf("Unexpected format size %d for string", format_return);
+          success = FALSE;
+          break;
+        }
+    }
+  
   if (property_data)
     XFree(property_data) ;
 
