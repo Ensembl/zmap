@@ -220,7 +220,8 @@ gboolean zmapAppRemoteControlInit(ZMapAppContext app_context)
     {
       GdkWindow *gdk_window ;
       Window x_window ;
-
+      Display *x_display ;
+      
       if ((gdk_window = gtk_widget_get_window(app_context->app_widg))
 	  && (x_window = GDK_WINDOW_XID(gdk_window)))
 	{
@@ -228,7 +229,12 @@ gboolean zmapAppRemoteControlInit(ZMapAppContext app_context)
 	  app_context->remote_control->app_window_str
 	    = g_strdup_printf(ZMAP_XWINDOW_FORMAT_STR, app_context->remote_control->app_window) ;
 
-	  result = TRUE ;
+          /* Set a property on the x window named for the peer clipboard (the value
+           * isn't used). This is used by the peer to check that they have our correct x window. */
+	  x_display = GDK_WINDOW_XDISPLAY(gdk_window) ;
+          printf("TEST: setting window proeprty %s\n", remote->app_unique_id);
+          
+          result = zMapGUIXWindowChangeProperty(x_display, x_window, remote->app_unique_id, remote->app_unique_id) ;
 	}
       else
 	{
@@ -689,7 +695,7 @@ static gboolean timeoutHandlerCB(ZMapRemoteControl remote_control, void *user_da
 
 	  /* This is our way of testing to see if the peer application is alive, if the window id
 	   * they gave us is still good then we assume they are still alive. */
-	  if (!(result = zMapGUIXWindowExists(x_display, x_window, &err_msg)))
+	  if (!(result = zMapGUIXWindowExists(x_display, x_window, app_remote_control->peer_clipboard, &err_msg)))
 	    {
 	      char *full_err_msg ;
 

@@ -32,6 +32,7 @@
 
 #include <ZMap/zmap.h>
 
+#include <X11/Xatom.h>
 #include <string.h>
 #include <math.h>
 
@@ -115,9 +116,11 @@ typedef struct eventTxtStructName
 
 
 
-
-
-
+/* Used in detecting X windows call errors... */
+static Bool window_error_G = False ;
+static char *trap_txt_G = NULL ;
+static char *zmapXRemoteRawErrorText = NULL ;
+static char *zmapXRemoteErrorText = NULL;
 
 
 static gboolean modalFromMsgType(ZMapMsgType msg_type) ;
@@ -149,6 +152,7 @@ static void setTextAttrs(gpointer data, gpointer user_data) ;
 static void aboutLinkOldCB(GtkAboutDialog *about, const gchar *link, gpointer data) ;
 static gboolean aboutLinkNewCB(GtkAboutDialog *label, gchar *uri, gpointer user_data_unused) ;
 
+static int zmapXErrorHandler(Display *dpy, XErrorEvent *e ) ;
 
 
 
@@ -200,6 +204,205 @@ void zMapGUIRaiseToTop(GtkWidget *widget)
 
 
 
+/*
+ * If store == TRUE, store e unless stored != NULL or e == zmapXErrorHandler
+ * If clear == TRUE, reset stored to NULL
+ */
+static XErrorHandler stored_xerror_handler(XErrorHandler e, gboolean store, gboolean clear)
+{
+  static XErrorHandler stored = NULL;
+
+  if(e == zmapXErrorHandler)
+    store = FALSE;              /* We mustn't store this */
+
+  if(clear)
+    stored = NULL;
+
+  if(store)
+    {
+      if(stored == NULL)
+        stored = e;
+      else
+        {
+          //REMOTELOGMSG(Warning,"I'm not forgetting %p, but not storing %p either!", stored, e);
+
+	  //REMOTELOGMSG(Warning, "I'm not forgetting %p, but not storing %p either!", stored, e);
+        }
+    }
+
+  return stored;
+}
+
+
+
+/*!
+ * \brief Set the XErrorHandler to be zmapXErrorHandler, saving whichever is the current one.
+ *
+ * It should be noted that nested calls to this and untrap will _not_ function correctly!
+ */
+static void zmapXTrapErrors(char *where, char *what, char *text)
+{
+  XErrorHandler current = NULL ;
+
+  window_error_G = False ;
+
+  trap_txt_G = g_strdup_printf("X Error in \"%s\" calling \"%s\"() with \"%s\"",
+			       where, what, text) ;
+
+  if ((current = XSetErrorHandler(zmapXErrorHandler)))
+    {
+      stored_xerror_handler(current, TRUE, FALSE) ;
+    }
+
+  return ;
+}
+
+
+static int zmapXErrorHandler(Display *dpy, XErrorEvent *e )
+{
+  char errorText[1024] ;
+
+  window_error_G = True ;
+
+  XGetErrorText(dpy, e->error_code, errorText, sizeof(errorText)) ;
+
+  zmapXRemoteErrorText = g_strdup_printf("Error %s  Reason: %s", errorText, trap_txt_G) ;
+
+  /* This is due to some non-ideal coding that means we sometimes (1 case)
+   * double process the error with the meta and error format strings. If
+   * there is ever more than one case (see zmapXRemoteGetPropertyFullString)
+   * find a better solution.
+   */
+  if(zmapXRemoteRawErrorText != NULL)
+    g_free(zmapXRemoteRawErrorText);
+
+  zmapXRemoteRawErrorText = g_strdup(errorText) ;
+
+  //REMOTELOGMSG(Warning, "**** X11 Error: %s **** Reason: %s", errorText, trap_txt_G) ;
+
+  return 1 ;						    /* This seems to be ignored by the server (!) */
+}
+
+
+static void zmapXUntrapErrors(void)
+{
+  XErrorHandler restore = NULL;
+
+  restore = stored_xerror_handler(NULL, FALSE, FALSE) ;
+  XSetErrorHandler(restore) ;
+
+  stored_xerror_handler(NULL, TRUE, TRUE) ;
+
+  g_free(trap_txt_G) ;
+  trap_txt_G = NULL ;
+
+  return ;
+}
+
+
+/* Set the given property on the given x window */
+gboolean zMapGUIXWindowChangeProperty(Display *x_display, Window x_window, char *property, char *change_to)
+{
+  gboolean success = FALSE;
+
+  char *err_txt = NULL ;
+  Atom xproperty = XInternAtom(x_display, property, False);  
+  
+  zmapXTrapErrors((char *)__PRETTY_FUNCTION__, "XChangeProperty", err_txt) ;
+
+  XChangeProperty(x_display, x_window,
+		  xproperty, XA_STRING, 8,
+		  PropModeReplace, (unsigned char *)change_to,
+		  strlen(change_to));
+
+  XSync(x_display, False) ;
+
+  zmapXUntrapErrors() ;
+
+  if (window_error_G)
+    {
+      success = FALSE;
+
+      //REMOTELOGMSG(Critical,"Failed sending to window '0x%lx' on atom '%s': '%s'", win, atom_name, change_to) ;
+    }
+  else
+    {
+      success = TRUE;
+      //REMOTELOGMSG(Message,"Finished sending to window '0x%lx' on atom '%s': '%s'", win, atom_name, change_to) ;
+    }
+
+  if (err_txt)
+    g_free(err_txt) ;
+
+  return success ;
+}
+
+
+/* Check whether the given X Window is valid. It should have a property
+ * named for the clipboard. If this property doesn't exist then
+ * this is not the correct window. (This extra check is necessary because even
+ * if a window with the correct xid exists, the xid might have been 
+ * re-used.) */
+static gboolean zmapGUIXWindowValid(Display *x_display, Window x_window, char *clipboard_name, char **err_msg_out)
+{
+  gboolean success = FALSE;
+  
+  gulong req_offset = 0, req_length = 0;
+  gboolean atomic_delete = FALSE;
+  Atom xtype = XA_STRING;
+  Atom xtype_return;
+  gint result, format_return;
+  gulong nitems_return, bytes_after;
+  gchar *property_data;
+  char *atom_id ;
+  Atom xproperty = XInternAtom(x_display, clipboard_name, False);
+
+  atom_id = g_strdup_printf("Atom = %x", (unsigned int)xproperty) ;
+  zmapXTrapErrors((char *)__PRETTY_FUNCTION__, "XGetWindowProperty", atom_id) ;
+  g_free(atom_id) ;
+
+  result = XGetWindowProperty(x_display, x_window,
+                              xproperty, /* requested property */
+                              req_offset, req_length, /* offset and length */
+                              atomic_delete, xtype,
+                              &xtype_return, &format_return,
+                              &nitems_return, &bytes_after,
+                              (guchar **)&property_data) ;
+  zmapXUntrapErrors() ;
+  
+  /* First test for an X Error */
+  if(window_error_G)
+    {
+      *err_msg_out = g_strdup_printf("XError %s", zmapXRemoteRawErrorText);
+      success = FALSE;
+    }
+  else if (result != Success || !xtype_return)	    /* make sure we use "Success" from the X11 definition for success... */
+    {
+      /* The property doesn't exist, so this isn't the correct window */
+      success = FALSE ;
+      
+      if (err_msg_out)
+        *err_msg_out = g_strdup_printf("Property does not exist on window") ;
+    }
+  else if ((xtype != AnyPropertyType) && (xtype_return != xtype))
+    {
+      /* Property found but type is not as expected */
+      success = FALSE ;
+
+      if (err_msg_out)
+        *err_msg_out = g_strdup_printf("Property type mismatch when trying to validate peer window") ;
+    }
+  else 
+    {
+      /* We found the property, so this is our window. */
+      success = TRUE ;
+    }
+
+  if (property_data)
+    XFree(property_data) ;
+
+  return success ;
+}
 
 
 /* Check whether the given X Window exists on the given display.
@@ -207,7 +410,7 @@ void zMapGUIRaiseToTop(GtkWidget *widget)
  * Returns TRUE if the window is still there, FALSE otherwise. If FALSE is returned 
  * the x error is returned in err_msg_out, should be g_free'd when finished with. 
  */
-gboolean zMapGUIXWindowExists(Display *x_display, Window x_window, char **err_msg_out)
+gboolean zMapGUIXWindowExists(Display *x_display, Window x_window, char *clipboard_name, char **err_msg_out)
 {
   gboolean result = TRUE ;				    /* default to window ok. */
   Status status ;
@@ -241,6 +444,10 @@ gboolean zMapGUIXWindowExists(Display *x_display, Window x_window, char **err_ms
 	{
 	  *err_msg_out = g_strdup("XGetWindowAttributes() failed but there was no X error code.") ;
 	}
+    }
+  else
+    {
+      result = zmapGUIXWindowValid(x_display, x_window, clipboard_name, err_msg_out);
     }
 
   return result ;

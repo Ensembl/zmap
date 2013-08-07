@@ -93,6 +93,7 @@ typedef enum
 
 
 
+
 /* Struct to hold text attributes for zMapGUIShowTextFull(), the attributes are applied
  * to text in the range  start -> end  (zero-based coords). */
 typedef struct ZMapGuiTextAttrStructName
@@ -450,7 +451,7 @@ gint my_gtk_run_dialog_nonmodal(GtkWidget *toplevel) ;
 
 void zMapGUIRaiseToTop(GtkWidget *widget);
 GtkWidget *zMapGUIFindTopLevel(GtkWidget *widget) ;
-gboolean zMapGUIXWindowExists(Display *x_display, Window x_window, char **err_msg_out) ;
+gboolean zMapGUIXWindowExists(Display *x_display, Window x_window, char *peer_clipboard, char **err_msg_out) ;
 
 char *zMapGUIGetEventAsText(GdkEventMask exclude_mask, GdkEventAny *any_event) ;
 
@@ -540,7 +541,7 @@ void zMapGUINotebookMergeNotebooks(ZMapGuiNotebook notebook, ZMapGuiNotebook not
 GtkWidget *zMapGUINotebookCreateDialog(ZMapGuiNotebook notebook_spec, char *help_title, char *help_text) ;
 GtkWidget *zMapGUINotebookCreateWidget(ZMapGuiNotebook notebook_spec) ;
 
-
+gboolean zMapGUIXWindowChangeProperty(Display *x_display, Window x_window, char *property, char *change_to) ;
 
 
 
