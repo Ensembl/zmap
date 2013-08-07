@@ -860,7 +860,7 @@ static void finishAndPerformNextRequest(GQueue *request_queue)
 
   if (!request_data)
     {
-      zMapDebugPrint(is_active_debug_G, "%s", "Program error: Asked to remove request from queue, but current_request_G is not set");
+      zMapDebugPrint(is_active_debug_G, "%s", "No current request");
     }
   else
     {
