@@ -224,9 +224,9 @@ static XErrorHandler stored_xerror_handler(XErrorHandler e, gboolean store, gboo
         stored = e;
       else
         {
-          //REMOTELOGMSG(Warning,"I'm not forgetting %p, but not storing %p either!", stored, e);
+          zMapLogWarning("I'm not forgetting %p, but not storing %p either!", stored, e);
 
-	  //REMOTELOGMSG(Warning, "I'm not forgetting %p, but not storing %p either!", stored, e);
+	  zMapLogWarning("I'm not forgetting %p, but not storing %p either!", stored, e);
         }
     }
 
@@ -278,7 +278,7 @@ static int zmapXErrorHandler(Display *dpy, XErrorEvent *e )
 
   zmapXRemoteRawErrorText = g_strdup(errorText) ;
 
-  //REMOTELOGMSG(Warning, "**** X11 Error: %s **** Reason: %s", errorText, trap_txt_G) ;
+  zMapLogWarning("**** X11 Error: %s **** Reason: %s", errorText, trap_txt_G) ;
 
   return 1 ;						    /* This seems to be ignored by the server (!) */
 }
@@ -323,12 +323,12 @@ gboolean zMapGUIXWindowChangeProperty(Display *x_display, Window x_window, char 
     {
       success = FALSE;
 
-      //REMOTELOGMSG(Critical,"Failed sending to window '0x%lx' on atom '%s': '%s'", win, atom_name, change_to) ;
+      zMapLogCritical("Failed sending to window '0x%lx': '%s'", x_window, change_to) ;
     }
   else
     {
       success = TRUE;
-      //REMOTELOGMSG(Message,"Finished sending to window '0x%lx' on atom '%s': '%s'", win, atom_name, change_to) ;
+      zMapLogMessage("Finished sending to window '0x%lx': '%s'", x_window, change_to) ;
     }
 
   if (err_txt)
@@ -355,69 +355,90 @@ static gboolean zmapGUIXWindowValid(Display *x_display, Window x_window, char *c
   gulong nitems_return, bytes_after;
   gchar *property_data;
   char *atom_id ;
+  int i = 0, attempts = 2;
   Atom xproperty = XInternAtom(x_display, clipboard_name, False);
   GString *output = g_string_sized_new(1 << 8); /* 1 << 8 = 256 */
 
-  atom_id = g_strdup_printf("Atom = %x", (unsigned int)xproperty) ;
-  zmapXTrapErrors((char *)__PRETTY_FUNCTION__, "XGetWindowProperty", atom_id) ;
-  g_free(atom_id) ;
-
-  result = XGetWindowProperty(x_display, x_window,
-                              xproperty, /* requested property */
-                              req_offset, req_length, /* offset and length */
-                              atomic_delete, xtype,
-                              &xtype_return, &format_return,
-                              &nitems_return, &bytes_after,
-                              (guchar **)&property_data) ;
-  zmapXUntrapErrors() ;
-  
-  /* First test for an X Error */
-  if(window_error_G)
+  /* We need to go through at least once, i controls a second time */
+  do
     {
-      *err_msg_out = g_strdup_printf("XError %s", zmapXRemoteRawErrorText);
-      success = FALSE;
-    }
-  else if (result != Success || !xtype_return)	    /* make sure we use "Success" from the X11 definition for success... */
-    {
-      /* The property doesn't exist, so this isn't the correct window */
-      success = FALSE ;
+      atom_id = g_strdup_printf("Atom = %x", (unsigned int)xproperty) ;
+      zmapXTrapErrors((char *)__PRETTY_FUNCTION__, "XGetWindowProperty", atom_id) ;
+      g_free(atom_id) ;
       
-      if (err_msg_out)
-        *err_msg_out = g_strdup_printf("Property does not exist on window") ;
-    }
-  else if ((xtype != AnyPropertyType) && (xtype_return != xtype))
-    {
-      /* Property found but type is not as expected */
-      success = FALSE ;
-
-      if (err_msg_out)
-        *err_msg_out = g_strdup_printf("Property type mismatch when trying to validate peer window") ;
-    }
-  else 
-    {
-      success = TRUE ;
-
-      switch(format_return)
+      result = XGetWindowProperty(x_display, x_window,
+                                  xproperty, /* requested property */
+                                  req_offset, req_length, /* offset and length */
+                                  atomic_delete, xtype,
+                                  &xtype_return, &format_return,
+                                  &nitems_return, &bytes_after,
+                                  (guchar **)&property_data) ;
+      zmapXUntrapErrors() ;
+      
+      /* First test for an X Error */
+      if(window_error_G)
         {
-        case 8:
-          g_string_append_len(output, property_data, nitems_return) ;
-          //REMOTELOGMSG(Warning,"Property '%s' has value: %s", clipboard_name, output->str ? output->str : "null") ;
-          g_string_free(output, TRUE) ;
-          break;
-          
-        case 16:
-        case 32:
-        default:
-          if (err_msg_out)
-            *err_msg_out = g_strdup_printf("Unexpected format size %d for string", format_return);
+          *err_msg_out = g_strdup_printf("XError %s", zmapXRemoteRawErrorText);
           success = FALSE;
-          break;
+          i += attempts; /* no more attempts */
         }
-    }
-  
-  if (property_data)
-    XFree(property_data) ;
+      else if (result != Success || !xtype_return)	    /* make sure we use "Success" from the X11 definition for success... */
+        {
+          /* The property doesn't exist, so this isn't the correct window */
+          success = FALSE ;
+          
+          if (err_msg_out)
+            *err_msg_out = g_strdup_printf("Property does not exist on window") ;
+        }
+      else if ((xtype != AnyPropertyType) && (xtype_return != xtype))
+        {
+          /* Property found but type is not as expected */
+          success = FALSE ;
 
+          if (err_msg_out)
+            *err_msg_out = g_strdup_printf("Property type mismatch when trying to validate peer window") ;
+        }
+      else if (i == 0)
+        {
+          /* First time just update offset and length... */
+          req_offset = 0;
+          req_length = bytes_after;
+        }
+      else if(property_data && *property_data && nitems_return && format_return)
+        {
+          success = TRUE ;
+          
+          switch(format_return)
+            {
+            case 8:
+              g_string_append_len(output, property_data, nitems_return) ;
+              zMapLogMessage("Property '%s' has value: %s", clipboard_name, output->str ? output->str : "null") ;
+              g_string_free(output, TRUE) ;
+              break;
+              
+            case 16:
+            case 32:
+            default:
+              if (err_msg_out)
+                *err_msg_out = g_strdup_printf("Unexpected format size %d for string", format_return);
+        
+              success = FALSE;
+              i += attempts; /* no more attempts */
+
+              break;
+            }
+        }
+      else
+        {
+          zMapAssertNotReached();
+        }
+
+      if (property_data)
+        XFree(property_data) ;
+
+      ++i;
+    } while (i < attempts);
+  
   return success ;
 }
 
