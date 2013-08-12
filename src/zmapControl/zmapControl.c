@@ -1332,7 +1332,7 @@ static void updateControl(ZMap zmap, ZMapView view)
     {
       ZMapFeatureContext features ;
       double top, bottom ;
-      char *title, *db_name = NULL, *db_title = NULL, *seq_name ;
+      char *title, *db_name = NULL, *db_title = NULL, *seq_name, *dataset = NULL ;
 
       features = zMapViewGetFeatures(view) ;
 
@@ -1346,11 +1346,15 @@ static void updateControl(ZMap zmap, ZMapView view)
       /* Update title bar of zmap window. */
       zMapViewGetSourceNameTitle(view, &db_name, &db_title) ;
       seq_name = zMapViewGetSequence(view) ;
+      dataset = zMapViewGetDataset(view) ;
 
-      title = g_strdup_printf("%s%s%s - %s%s",
+      title = g_strdup_printf("%s%s%s%s%.3s%s%s%s",
 			      db_name ? db_name : "",
 			      db_title ? " - ": "",
 			      db_title ? db_title : "",
+                              db_name || db_title ? "-" : "",
+                              dataset ? dataset : "",
+                              dataset ? " " : "",
 			      seq_name ? seq_name : "<no sequence>",
 			      features ? "" : " <no sequence loaded>") ;
       zMapGUISetToplevelTitle(zmap->toplevel, zMapGetZMapID(zmap), title) ;

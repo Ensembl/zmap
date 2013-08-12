@@ -5873,6 +5873,19 @@ gboolean zMapViewGetHighlightFilteredColumns(ZMapView view)
 };
 
 
+char *zMapViewGetDataset(ZMapView zmap_view)
+{
+  char *dataset = NULL ;
+
+  if (zmap_view && zmap_view->view_sequence)
+  {
+    dataset = zmap_view->view_sequence->dataset ;
+  }
+
+  return dataset ;
+}
+
+
 /*! 
  * \brief Callback to update the column background for a given item
  *

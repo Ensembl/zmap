@@ -183,6 +183,7 @@ ZMapWindowNavigator zMapViewGetNavigator(ZMapView view);
 int zMapViewNumWindows(ZMapViewWindow view_window) ;
 GList *zMapViewGetWindowList(ZMapViewWindow view_window);
 void   zMapViewSetWindowList(ZMapViewWindow view_window, GList *list);
+char *zMapViewGetDataset(ZMapView zmap_view) ;
 
 gboolean zMapViewProcessRemoteRequest(ZMapViewWindow view_window,
 				      char *command_name, char *request,
