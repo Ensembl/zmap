@@ -764,8 +764,8 @@ double zMapWindowDrawScaleBar(FooCanvasGroup *group, int scroll_start, int scrol
     continue;
   text_max--;
 
-  if(*unit)		/* for decimal point */
-    text_max++;
+  if(*unit)		/* for decimal point and suffix */
+    text_max += 2;
 
   if(revcomped)	/* for - sign */
     text_max++;
@@ -917,7 +917,15 @@ double zMapWindowDrawScaleBar(FooCanvasGroup *group, int scroll_start, int scrol
 			  for(digits = 1; f < base ; f *= 10)
 			    digits++;
 
-			  p = label + sprintf(label,"%s%d.%0*d",sign,num,digits,frac);
+                          /* gb10: the original printf which treats the fraction 
+                           * separately doesn't always work (RT333321) so I've
+                           * changed it to use a decimal instead. Not sure if there
+                           * are drawbacks with this that the original code intended
+                           * to avoid... */
+                          //p = label + sprintf(label,"%s%d.%0*d",sign,num,digits,frac);
+                          float val = (float)slice_coord / (float)base;
+                          p = label + sprintf(label,"%s%0*f",sign, digits, val);
+
 			  while(*--p == '0')
 			    continue;
 			  if(*p != '.')
