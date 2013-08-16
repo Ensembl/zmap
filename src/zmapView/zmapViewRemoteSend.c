@@ -68,8 +68,7 @@ static ZMapXMLUtilsEventStackStruct wrap_end_G[] =
 static ZMapXMLUtilsEventStackStruct wrap_request_G[] =
   {
     {ZMAPXML_START_ELEMENT_EVENT, "request",   ZMAPXML_EVENT_DATA_NONE,  {0}},
-    {ZMAPXML_ATTRIBUTE_EVENT,     "action", ZMAPXML_EVENT_DATA_QUARK, {NULL}},
-    {ZMAPXML_ATTRIBUTE_EVENT,     "xwid", ZMAPXML_EVENT_DATA_QUARK, {NULL}},
+    {ZMAPXML_ATTRIBUTE_EVENT,     "action", ZMAPXML_EVENT_DATA_QUARK, {0}},
     {0}
   } ;
 
@@ -130,17 +129,15 @@ ZMapXRemoteSendCommandError zmapViewRemoteSendCommand(ZMapView view,
 
 
       wrap_ptr = &wrap_request_G[1] ;
-      wrap_ptr->value.s = action ;
-      wrap_ptr = &wrap_request_G[2] ;
-      wrap_ptr->value.s = view->xwid_txt ;
+      wrap_ptr->value.s = g_strdup(action) ;
 
-      xml_events = zMapXMLUtilsAddStackToEventsArrayStart(&wrap_request_G[0], xml_events);
+      xml_events = zMapXMLUtilsAddStackToEventsArrayStart(xml_events, &wrap_request_G[0]);
 
-      xml_events = zMapXMLUtilsAddStackToEventsArrayStart(&wrap_start_G[0], xml_events);
+      xml_events = zMapXMLUtilsAddStackToEventsArrayStart(xml_events, &wrap_start_G[0]);
 
-      xml_events = zMapXMLUtilsAddStackToEventsArray(&wrap_request_end_G[0], xml_events);
+      xml_events = zMapXMLUtilsAddStackToEventsArrayEnd(xml_events, &wrap_request_end_G[0]);
 
-      xml_events = zMapXMLUtilsAddStackToEventsArray(&wrap_end_G[0], xml_events);
+      xml_events = zMapXMLUtilsAddStackToEventsArrayEnd(xml_events, &wrap_end_G[0]);
 
       xml_creator = zMapXMLWriterCreate(xml_event_to_buffer, full_text);
 
@@ -152,7 +149,7 @@ ZMapXRemoteSendCommandError zmapViewRemoteSendCommand(ZMapView view,
 
       zMapXMLParserSetMarkupObjectTagHandlers(parser, start_handlers, end_handlers);
 
-      if ((zMapXMLWriterProcessEvents(xml_creator, xml_events)) == ZMAPXMLWRITER_OK)
+      if ((zMapXMLWriterProcessEvents(xml_creator, xml_events, FALSE)) == ZMAPXMLWRITER_OK)
         {
           result = send_client_command(xremote, parser, full_text, &common_data);
         }

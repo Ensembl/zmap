@@ -20,7 +20,7 @@
  * This file is part of the ZMap genome database package
  * and was written by
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk and
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
  * Description:
  *-------------------------------------------------------------------
@@ -29,6 +29,7 @@
 #define ZMAP_MANAGER_H
 
 #include <ZMap/zmapControl.h>
+#include <ZMap/zmapAppRemote.h>
 
 
 /* Specifies result of trying to add a new zmap to manager. */
@@ -58,21 +59,36 @@ typedef void (*ZMapManagerCallbackFunc)(void *app_data, void * zmap) ;
  * to manager. */
 typedef struct
 {
+  ZMapManagerCallbackFunc zmap_added_func ;
   ZMapManagerCallbackFunc zmap_deleted_func ;
-  ZMapManagerCallbackFunc zmap_set_info_func ;
+  ZMapManagerCallbackFunc zmap_set_info_func ;		    /* CAN WE DELETE THIS NOW ??? */
   ZMapManagerCallbackFunc quit_req_func ;
+
+  ZMapRemoteAppMakeRequestFunc remote_request_func ;
+  void *remote_request_func_data ;
 } ZMapManagerCallbacksStruct, *ZMapManagerCallbacks ;
 
 
 
 void zMapManagerInit(ZMapManagerCallbacks callbacks) ;
 ZMapManager zMapManagerCreate(void *gui_data) ;
-ZMapManagerAddResult zMapManagerAdd(ZMapManager zmaps, ZMapFeatureSequenceMap sequence_map, ZMap *zmap_out,
-				    gboolean load_view) ;
+ZMapManagerAddResult zMapManagerAdd(ZMapManager zmaps, ZMapFeatureSequenceMap sequence_map,
+				    ZMap *zmap_out, ZMapView *view_out, gboolean load_view) ;
+
+ZMap zMapManagerFindZMap(ZMapManager manager, gpointer view_id, gpointer *view_ptr_out) ;
+gpointer zMapManagerFindView(ZMapManager manager, gpointer view_id) ;
+
+void zMapManagerDestroyView(ZMapManager zmaps, ZMap zmap, ZMapView view) ;
 guint zMapManagerCount(ZMapManager zmaps);
 gboolean zMapManagerReset(ZMap zmap) ;
 gboolean zMapManagerRaise(ZMap zmap) ;
-gboolean zMapManagerKill(ZMapManager zmaps, ZMap zmap) ;
+
+gboolean zMapManagerProcessRemoteRequest(ZMapManager manager,
+					 char *command_name, char *request,
+					 ZMap zmap, gpointer view_id,
+					 ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data) ;
+
+void zMapManagerKill(ZMapManager zmaps, ZMap zmap) ;
 gboolean zMapManagerKillAllZMaps(ZMapManager zmaps);
 gboolean zMapManagerDestroy(ZMapManager zmaps) ;
 

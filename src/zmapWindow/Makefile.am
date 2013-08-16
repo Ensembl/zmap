@@ -44,6 +44,8 @@ zmapWindowNavigatorWidget.c \
 zmapWindowNavigator_P.h \
 zmapWindowPreferences.c \
 zmapWindowPrint.c \
+zmapWindowRemoteControl.c \
+zmapWindowRemoteControlUtils.c \
 zmapWindowRemoteReceive.c \
 zmapWindowScale.c \
 zmapWindowSearch.c \

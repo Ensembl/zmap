@@ -927,9 +927,17 @@ static ZMapServerResponseType closeConnection(void *server_in)
 
   resetErr(server) ;
 
-  if ((server->last_err_status = AceConnConnectionOpen(server->connection)) == ACECONN_OK
-      && (server->last_err_status = AceConnDisconnect(server->connection)) == ACECONN_OK)
-    result = ZMAP_SERVERRESPONSE_OK ;
+  if ((server->last_err_status = AceConnConnectionOpen(server->connection)) == ACECONN_OK)
+    {
+      if ((server->last_err_status = AceConnDisconnect(server->connection)) == ACECONN_OK)
+	result = ZMAP_SERVERRESPONSE_OK ;
+    }
+  else
+    {
+      result = ZMAP_SERVERRESPONSE_OK ;
+    }
+  
+
 
   return result ;
 }

@@ -39,12 +39,6 @@
 #include <ZMap/zmapUtilsGUI.h>
 #include <ZMap/zmapUtilsXRemote.h>
 
-
-/* THIS BREAKS SOME EXISTING ENCAPSULATION OF WHERE HEADERS ARE.... */
-/* need to be sorted out sometime */
-/* but we need this header for an html escaping function */
-#include <ZMap/zmapUrlUtils.h>
-
 #include <zmapControl_P.h>
 
 
@@ -53,10 +47,9 @@
 static ZMap createZMap(void *app_data, ZMapFeatureSequenceMap seq_map) ;
 static void destroyZMap(ZMap zmap) ;
 static void killFinal(ZMap *zmap) ;
-static void killViews(ZMap zmap) ;
+static void killViews(ZMap zmap, GList **destroyed_views_inout) ;
 static gboolean findViewInZMap(ZMap zmap, ZMapView view) ;
 static void updateControl(ZMap zmap, ZMapView view) ;
-
 static void dataLoadCB(ZMapView view, void *app_data, void *view_data) ;
 static void enterCB(ZMapViewWindow view_window, void *app_data, void *view_data) ;
 static void leaveCB(ZMapViewWindow view_window, void *app_data, void *view_data) ;
@@ -79,24 +72,26 @@ static void remoteSendViewClosed(ZMapXRemoteObj client, unsigned long xwid) ;
 static ZMapCallbacks zmap_cbs_G = NULL ;
 
 /* Holds callbacks we set in the level below us to be called back on. */
-ZMapViewCallbacksStruct view_cbs_G = {
-  enterCB,
-  leaveCB,
-  dataLoadCB,
-  controlFocusCB,
-  controlSelectCB,
-  controlSplitToPatternCB,
-  controlVisibilityChangeCB,
-  viewStateChangeCB,
-  viewKilledCB
-} ;
+ZMapViewCallbacksStruct view_cbs_G =
+  {
+    enterCB,
+    leaveCB,
+    dataLoadCB,
+    controlFocusCB,
+    controlSelectCB,
+    controlSplitToPatternCB,
+    controlVisibilityChangeCB,
+    viewStateChangeCB,
+    viewKilledCB,
+    NULL,						    /* Filled in by caller for xremote stuff. */
+    NULL
+  } ;
 
 
 
 
 /*
- *  ------------------- External functions -------------------
- *   (includes callbacks)
+ *                         External functions
  */
 
 
@@ -111,15 +106,23 @@ void zMapInit(ZMapCallbacks callbacks)
 {
   zMapAssert(!zmap_cbs_G) ;
 
-  zMapAssert(callbacks && callbacks->destroy && callbacks->quit_req) ;
+  zMapAssert(callbacks && callbacks->add &&& callbacks->destroy && callbacks->quit_req) ;
 
   zmap_cbs_G = g_new0(ZMapCallbacksStruct, 1) ;
 
+  zmap_cbs_G->add = callbacks->add ;
   zmap_cbs_G->destroy = callbacks->destroy ;
   zmap_cbs_G->quit_req = callbacks->quit_req ;
 
+  zmap_cbs_G->remote_request_func = callbacks->remote_request_func ;
+  zmap_cbs_G->remote_request_func_data = callbacks->remote_request_func_data ;
+
+
   /* Init view.... */
+  view_cbs_G.remote_request_func = callbacks->remote_request_func ;
+  view_cbs_G.remote_request_func_data = callbacks->remote_request_func_data ;
   zMapViewInit(&view_cbs_G) ;
+
 
   return ;
 }
@@ -134,14 +137,19 @@ ZMap zMapCreate(void *app_data, ZMapFeatureSequenceMap seq_map)
   /* No callbacks, then no zmap creation. */
   zMapAssert(zmap_cbs_G) ;
 
-  zmap = createZMap(app_data,seq_map) ;
+  zmap = createZMap(app_data, seq_map) ;
 
   /* Make the main/toplevel window for the ZMap. */
   zmapControlWindowCreate(zmap) ;
 
   zmap->state = ZMAP_INIT ;
 
+  if (zmap_cbs_G->remote_request_func)
+    zmap->remote_control = TRUE ;
+
   zmapControlWindowSetGUIState(zmap) ;
+
+  zmapControlWindowMaximize(zmap->toplevel, zmap);
 
   return zmap ;
 }
@@ -162,25 +170,65 @@ gboolean zMapRaise(ZMap zmap)
 }
 
 
+/* Noddy function to return number of current views. */
+int zMapNumViews(ZMap zmap)
+{
+  int num_views ;
+
+  num_views = g_list_length(zmap->view_list) ;
+
+  return num_views ;
+}
+
+
 
 /* Might rename this to be more meaningful maybe.... */
-ZMapView zMapAddView(ZMap zmap, ZMapFeatureSequenceMap sequence_map)
+ZMapViewWindow zMapAddView(ZMap zmap, ZMapFeatureSequenceMap sequence_map)
 {
-  ZMapView view = NULL ;
+  ZMapViewWindow view_window = NULL ;
 
   zMapAssert(zmap && sequence_map->sequence && *sequence_map->sequence
-	     && (sequence_map->start > 0 &&
-           (sequence_map->end == 0 || sequence_map->end > sequence_map->start))) ;
+	     && (sequence_map->start > 0 && sequence_map->end > sequence_map->start)) ;
 
   g_return_val_if_fail((zmap->state != ZMAP_DYING), NULL) ;
 
-  if ((view = zmapControlAddView(zmap, sequence_map)))
+  if ((view_window = zmapControlAddView(zmap, sequence_map)))
     {
       zmapControlWindowSetGUIState(zmap) ;
     }
 
-  return view ;
+  return view_window ;
 }
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+/* User passes in a view ID struct which this function fills in with the first view in
+ * its list and the first window within that view and returns TRUE. Returns FALSE if
+ * the view or window are missing.
+ *  */
+gboolean zMapGetDefaultView(ZMapAppRemoteViewID view_inout)
+{
+  gboolean result = FALSE ;
+  ZMap zmap = view_inout->zmap ;
+
+  if (zmap->view_list)
+    {
+      ZMapAppRemoteViewIDStruct tmp_view = *view_inout ;
+
+      tmp_view.view = (ZMapView)(zmap->view_list->data) ;
+
+      if (zMapViewGetDefaultWindow(&tmp_view))
+	{
+	  *view_inout = tmp_view ;
+	  result = TRUE ;
+	}
+    }
+
+  return result ;
+}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 gboolean zmapConnectViewConfig(ZMap zmap, ZMapView view, char *config)
@@ -230,18 +278,36 @@ gboolean zMapStopView(ZMap zmap, ZMapView view)
 }
 
 
-
-gboolean zMapDeleteView(ZMap zmap, ZMapView view)
+gboolean zMapControlCloseView(ZMap zmap, ZMapView view)
 {
-  gboolean result = FALSE ;
+  /* NEED RETURN CODE HERE............!!!!!!!!!!!! */
 
-  zMapAssert(zmap && view && findViewInZMap(zmap, view)) ;
+  zmapControlCloseFull(zmap, view) ;
 
-  g_return_val_if_fail((zmap->state != ZMAP_DYING), FALSE) ;
+  return TRUE ;
+}
 
-  result = zmapControlRemoveView(zmap, view) ;
 
-  return result ;
+void zMapDeleteView(ZMap zmap, ZMapView view, GList **destroyed_views_inout)
+{
+  gboolean view_found ;
+
+  if (zmap && view && (view_found = findViewInZMap(zmap, view)))
+    {
+      if (zmap->state != ZMAP_DYING)
+	{
+	  zmapControlRemoveView(zmap, view, destroyed_views_inout) ;
+	}
+    }
+  else
+    {
+      zMapLogCritical("Bad Parameters: %s%s%s",
+		      (zmap ? "" : "NULL ZMap"),
+		      (view ? "" : "NULL View"),
+		      (view_found ? "" : "View not found in zmap")) ;
+    }
+
+  return ;
 }
 
 
@@ -261,6 +327,11 @@ gboolean zMapReset(ZMap zmap)
 {
   gboolean result = FALSE ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+  /* not implemented or needed even ?? */
+
   g_return_val_if_fail((zmap->state != ZMAP_DYING), FALSE) ;
 
   if (zmap->state == ZMAP_VIEWS)
@@ -271,6 +342,8 @@ gboolean zMapReset(ZMap zmap)
 
       result = TRUE ;
     }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   return result ;
 }
@@ -310,13 +383,20 @@ char *zMapGetZMapStatus(ZMap zmap)
 
 /* Called to kill a zmap window and get all associated windows/threads destroyed.
  */
-gboolean zMapDestroy(ZMap zmap)
+void zMapDestroy(ZMap zmap, GList **destroyed_views_inout)
 {
-  g_return_val_if_fail((zmap->state != ZMAP_DYING), FALSE) ;
+  GList *destroyed_views = NULL ;
 
-  zmapControlDoKill(zmap) ;
+  if (destroyed_views_inout)
+    destroyed_views = *destroyed_views_inout ;
 
-  return TRUE ;
+  /* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! */
+  zmapControlDoKill(zmap, &destroyed_views) ;
+
+  if (destroyed_views_inout)
+    *destroyed_views_inout = destroyed_views ;
+
+  return ;
 }
 
 
@@ -329,12 +409,12 @@ gboolean zMapDestroy(ZMap zmap)
 
 
 /*
- * These functions are internal to zmapControl.
- *
+ *                Package routines.
  */
 
 
 /* Interactive Version:
+ * 
  * This function encapsulates logic about how to handle closing the last view or the last
  * window in a view, we give the user the choice about whether to do this. */
 void zmapControlClose(ZMap zmap)
@@ -342,6 +422,8 @@ void zmapControlClose(ZMap zmap)
   int num_views, num_windows ;
   ZMapViewWindow view_window ;
   ZMapView view ;
+  GList *destroyed_views = NULL ;
+  gboolean view_destroyed = FALSE ;
 
   num_views = zmapControlNumViews(zmap) ;
 
@@ -361,7 +443,11 @@ void zmapControlClose(ZMap zmap)
       if (zMapGUIMsgGetBool(GTK_WINDOW(zmap->toplevel), ZMAP_MSG_WARNING,
 			    "Closing this window will close this zmap window, "
 			    "do you really want to do this ?"))
-	zmapControlDoKill(zmap) ;
+	{
+	  zmapControlDoKill(zmap, &destroyed_views) ;
+
+	  view_destroyed = TRUE ;
+	}
     }
   else
     {
@@ -371,14 +457,26 @@ void zmapControlClose(ZMap zmap)
       msg = g_strdup_printf("Closing this window will remove view \"%s\", "
 			    "do you really want to do this ?", name) ;
 
-      if (num_windows > 1
-	  || zMapGUIMsgGetBool(GTK_WINDOW(zmap->toplevel), ZMAP_MSG_WARNING, msg))
-	zmapControlRemoveWindow(zmap, view) ;
+      if (num_windows > 1 || zMapGUIMsgGetBool(GTK_WINDOW(zmap->toplevel), ZMAP_MSG_WARNING, msg))
+	{
+	  zmapControlRemoveWindow(zmap, view_window, &destroyed_views) ;
+
+	  if (num_windows == 1)
+	    view_destroyed = TRUE ;
+	}
 
       g_free(name);
       g_free(msg) ;
     }
 
+  /* CURRENTLY WE ARE NOT REPORTING WHEN THE USER UNSPLITS THE WINDOW, IT DOESN'T CREATE
+   * A NEW VIEW SO LOGICALLY WE CAN'T SAY MUCH ABOUT IT, THIS MAY CHANGE THOUGH.
+   * HENCE CURRENT REDUNDANCY WITH view_destroyed FLAG, WE MAY NEED TO REINSTATE REPORTING. */
+  /* If stuff was destroyed then report it....... */
+  if (view_destroyed && destroyed_views && zmap->remote_control)
+    {
+      zmapControlSendViewDeleted(zmap, destroyed_views) ;
+    }
 
   return ;
 }
@@ -389,6 +487,8 @@ void zmapControlCloseFull(ZMap zmap, ZMapView view)
 {
   int num_views, num_windows ;
   ZMapViewWindow view_window ;
+  GList *destroyed_views = NULL ;
+
 
   num_views = zmapControlNumViews(zmap) ;
 
@@ -403,12 +503,20 @@ void zmapControlCloseFull(ZMap zmap, ZMapView view)
   num_windows = zMapViewNumWindows(view_window) ;
   if (num_views == 1 && num_windows == 1)
     {
-      zmapControlDoKill(zmap) ;
+      zmapControlDoKill(zmap, &destroyed_views) ;
     }
   else
     {
-      zmapControlRemoveWindow(zmap, view) ;
+      zmapControlRemoveWindow(zmap, view_window, &destroyed_views) ;
     }
+
+
+  /* shouldn't we reporting a view was destroyed here ???? */
+  if (destroyed_views && zmap->remote_control)
+    {
+      zmapControlSendViewDeleted(zmap, destroyed_views) ;
+    }
+
 
   return ;
 }
@@ -443,7 +551,7 @@ void zmapControlSetGUIVisChange(ZMap zmap, ZMapWindowVisibilityChange vis_change
 
   /* If the user has zoomed in so far that we cannot show the whole sequence in one window
    * then open the pane that shows the window navigator scroll bar. */
-  pane_width = zMapNavigatorSetWindowPos(zmap->navigator,
+  pane_width = zmapNavigatorSetWindowPos(zmap->navigator,
 					 vis_change->scrollable_top, vis_change->scrollable_bot) ;
   if(automatic_open)
     gtk_paned_set_position(GTK_PANED(zmap->hpane), pane_width) ;
@@ -476,13 +584,14 @@ void zmapControlSignalKill(ZMap zmap)
  * to die, when they die they call our view_detroyed_cb and this will eventually destroy the rest
  * of the ZMap when all the views have gone. At this point we will be able to signal to the
  * layer above us that we have died. */
-void zmapControlDoKill(ZMap zmap)
+void zmapControlDoKill(ZMap zmap, GList **destroyed_views_out)
 {
+  /* this should be an assert.....test it before commiting the change.... */
   g_return_if_fail((zmap->state != ZMAP_DYING)) ;
 
 
-  /* set our state to DYING....so we don't respond to anything anymore.... */
-  /* Must set this as this will prevent any further interaction with the ZMap as
+  /* set our state to DYING....so we don't respond to anything anymore....
+   * Must set this as this will prevent any further interaction with the ZMap as
    * a result of both the ZMap window and the threads dying asynchronously.  */
   zmap->state = ZMAP_DYING ;
 
@@ -495,7 +604,12 @@ void zmapControlDoKill(ZMap zmap)
     }
   else
     {
-      killViews(zmap) ;
+      GList *destroyed_views = NULL ;
+
+      killViews(zmap, &destroyed_views) ;
+
+      if (destroyed_views_out)
+	*destroyed_views_out = destroyed_views ;
     }
 
   return ;
@@ -563,14 +677,22 @@ void zmapControlResetCB(ZMap zmap)
 ZMapView zmapControlInsertView(ZMap zmap, ZMapFeatureSequenceMap sequence_map, char **err_msg)
 {
   ZMapView view = NULL ;
+  ZMapViewWindow view_window ;
 
-  if ((view = zmapControlAddView(zmap, sequence_map)))
+
+  if ((view_window = zmapControlAddView(zmap, sequence_map)))
     {
+      view = zMapViewGetView(view_window) ;
+
       if (!zMapViewConnect(view, NULL))
 	{
 	  *err_msg = g_strdup_printf("Display of sequence \"%s\" failed, see log for details.",
 				     sequence_map->sequence) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	  zMapViewDestroy(view, NULL) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 	  zMapViewDestroy(view) ;
 
 	  view = NULL ;
@@ -583,12 +705,16 @@ ZMapView zmapControlInsertView(ZMap zmap, ZMapFeatureSequenceMap sequence_map, c
 
 
 
-ZMapView zmapControlAddView(ZMap zmap, ZMapFeatureSequenceMap sequence_map)
+ZMapViewWindow zmapControlAddView(ZMap zmap, ZMapFeatureSequenceMap sequence_map)
 {
-  ZMapView view = NULL ;
+  ZMapViewWindow view_window = NULL ;
 
-  if ((view = zmapControlNewWindow(zmap, sequence_map)))
+  if ((view_window = zmapControlNewWindow(zmap, sequence_map)))
     {
+      ZMapView view ;
+
+      view = zMapViewGetView(view_window) ;
+
       /* add to list of views.... */
       zmap->view_list = g_list_append(zmap->view_list, view) ;
 
@@ -601,23 +727,19 @@ ZMapView zmapControlAddView(ZMap zmap, ZMapFeatureSequenceMap sequence_map)
       zmap->state = ZMAP_VIEWS ;
     }
 
-  return view ;
+  return view_window ;
 }
 
 
-gboolean zmapControlRemoveView(ZMap zmap, ZMapView view)
+
+void zmapControlRemoveView(ZMap zmap, ZMapView view, GList **destroyed_views_inout)
 {
-  gboolean result = TRUE ;
-  ZMapViewWindow view_window ;
-
-  view_window = zmapControlFindViewWindow(zmap, view) ;
-
-  if (view_window == zmap->focus_viewwindow)
-    zmap->focus_viewwindow = NULL ;
-
   zMapViewDestroy(view) ;
 
-  return result ;
+  if (destroyed_views_inout)
+    *destroyed_views_inout = g_list_append(*destroyed_views_inout, view) ;
+
+  return ;
 }
 
 
@@ -650,6 +772,10 @@ static ZMap createZMap(void *app_data, ZMapFeatureSequenceMap seq_map)
   zmap->viewwindow_2_parent = g_hash_table_new(NULL, NULL) ;
 
   zmap->view2infopanel = g_hash_table_new_full(NULL, NULL, NULL, infoPanelLabelsHashCB);
+
+
+  /* Is this the place to do this ??? Let's see.... */
+  (*(zmap_cbs_G->add))(zmap, zmap->app_data) ;
 
   return zmap ;
 }
@@ -688,12 +814,18 @@ static void dataLoadCB(ZMapView view, void *app_data, void *view_data)
 {
   ZMap zmap = (ZMap)app_data ;
 
+
   /* Update title etc., need to update per column loaded for exciting feedback to the user */
   updateControl(zmap, view) ;
 
   zmapControlWindowSetGUIState(zmap) ;
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* Moved to View where it should always have been..... */
+
+  //  else
   if (view_data)
     {
       ZMapViewLoadFeaturesData load_features_data = (ZMapViewLoadFeaturesData)view_data ;
@@ -707,7 +839,11 @@ static void dataLoadCB(ZMapView view, void *app_data, void *view_data)
 #warning better to patch in the server name here
 	  load_features_data->feature_sets = g_list_append(NULL, GUINT_TO_POINTER(g_quark_from_string("_unknown_")));
 	}
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       else if (zmap->xremote_client)
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+      else if (zmap->remote_control)
 	{
 	  char *request ;
 	  char *response = NULL;
@@ -762,8 +898,8 @@ static void dataLoadCB(ZMapView view, void *app_data, void *view_data)
 	    }
 
 
-	  request = g_strdup_printf("<zmap> <request action=\"features_loaded\" xwid=\"0x%lx\">"
-				    " <client xwid=\"0x%lx\" />"
+	  request = g_strdup_printf("<zmap> <request action=\"" ZACP_FEATURES_LOADED "\">"
+				    " <client xwid=\""ZMAP_XWINDOW_FORMAT_STR"\" />"
 				    " <featureset names=\"%s\" />"
 				    " <start value=\"%d\" />"
 				    " <end value=\"%d\" />"
@@ -783,16 +919,18 @@ static void dataLoadCB(ZMapView view, void *app_data, void *view_data)
 	  if (stderr_msg)
 	    xfree(stderr_msg) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+	  /* OLD STUFF.......REPLACE WITH THE NEW.... */
+
 	  if (zMapXRemoteSendRemoteCommand(zmap->xremote_client, request, &response)
 	      != ZMAPXREMOTE_SENDCOMMAND_SUCCEED)
 	    {
 	      response = response ? response : zMapXRemoteGetResponse(zmap->xremote_client);
 	      zMapLogWarning("Notify of data loaded failed: \"%s\"", response) ;
 	    }
-	  else
-	    {
-	      zMapDebugPrintf("Message sent was: \"%s\"", request) ;
-	    }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 	  g_free(request);
 	  g_free(featurelist);
@@ -827,6 +965,8 @@ static void dataLoadCB(ZMapView view, void *app_data, void *view_data)
 	}
 #endif
     }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
   return ;
@@ -865,7 +1005,7 @@ static void controlFocusCB(ZMapViewWindow view_window, void *app_data, void *vie
   /* The view_window->view's navigator */
   navigator = zMapViewGetNavigator(view);
 
-  if(navigator)
+  if (navigator)
     {
       ZMapWindow window    = zMapViewGetWindow(view_window);
       /* Make sure that this is the one we see */
@@ -1035,7 +1175,7 @@ static void viewStateChangeCB(ZMapView view, void *app_data, void *view_data)
     zmapControlWindowSetGUIState(zmap) ;
 
 #if 1
-  if(zmap->xremote_server)
+  if(zmap->remote_control)
     {
       if(fubar && fubar->state == ZMAPVIEW_MAPPED)
       {
@@ -1152,11 +1292,9 @@ static void killFinal(ZMap *zmap_out)
 }
 
 
-static void killViews(ZMap zmap)
+static void killViews(ZMap zmap, GList **destroyed_views_inout)
 {
-  GList* list_item ;
-
-  zMapAssert(zmap->view_list) ;
+  GList *list_item ;
 
   list_item = zmap->view_list ;
   do
@@ -1165,7 +1303,7 @@ static void killViews(ZMap zmap)
 
       view = list_item->data ;
 
-      zmapControlRemoveView(zmap, view) ;
+      zmapControlRemoveView(zmap, view, destroyed_views_inout) ;
     }
   while ((list_item = g_list_next(list_item))) ;
 
@@ -1200,7 +1338,7 @@ static void updateControl(ZMap zmap, ZMapView view)
 
       zMapViewGetVisible(zmap->focus_viewwindow, &top, &bottom) ;
 
-      zMapNavigatorSetView(zmap->navigator, features, top, bottom) ;
+      zmapNavigatorSetView(zmap->navigator, features, top, bottom) ;
 							    /* n.b. features may be NULL for
 							       blank views. */
 
@@ -1321,8 +1459,8 @@ static void remoteSendViewClosed(ZMapXRemoteObj client, unsigned long xwid)
   char *request ;
   char *response = NULL;
 
-  request = g_strdup_printf("<zmap> <request action=\"view_closed\" xwid=\"0x%lx\">"
-			    "<client xwid=\"0x%lx\" /> </request> </zmap>",
+  request = g_strdup_printf("<zmap> <request action=\"view_closed\" xwid=\""ZMAP_XWINDOW_FORMAT_STR"\">"
+			    "<client xwid=\""ZMAP_XWINDOW_FORMAT_STR"\" /> </request> </zmap>",
 			    xwid, xwid) ;
 
   if (zMapXRemoteSendRemoteCommand(client, request, &response) != ZMAPXREMOTE_SENDCOMMAND_SUCCEED)

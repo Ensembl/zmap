@@ -81,6 +81,7 @@ typedef struct
 
 
 static ZMapConfigIniContextKeyEntry get_app_group_data(char **stanza_name, char **stanza_type);
+static ZMapConfigIniContextKeyEntry get_peer_group_data(char **stanza_name, char **stanza_type);
 static ZMapConfigIniContextKeyEntry get_logging_group_data(char **stanza_name, char **stanza_type);
 static ZMapConfigIniContextKeyEntry get_debug_group_data(char **stanza_name, char **stanza_type);
 static ZMapConfigIniContextKeyEntry get_style_group_data(char **stanza_name, char **stanza_type) ;
@@ -135,6 +136,10 @@ ZMapConfigIniContext zMapConfigIniContextProvide(char *config_file)
 				     stanza_type, stanza_group);
 
       if((stanza_group = get_app_group_data(&stanza_name, &stanza_type)))
+	zMapConfigIniContextAddGroup(context, stanza_name,
+				     stanza_type, stanza_group);
+
+      if((stanza_group = get_peer_group_data(&stanza_name, &stanza_type)))
 	zMapConfigIniContextAddGroup(context, stanza_name,
 				     stanza_type, stanza_group);
 
@@ -335,6 +340,8 @@ gboolean zMapConfigIniGetStylesFromFile(char *config_file, char *styles_list, ch
   GHashTable *shapes = NULL;
   int enum_value ;
 
+
+  /* ERROR HANDLING ???? */
   if ((context = zMapConfigIniContextProvideNamed(config_file, ZMAPSTANZA_STYLE_CONFIG)))
     {
       GKeyFile *extra_styles_keyfile = NULL ;
@@ -1411,6 +1418,8 @@ static ZMapConfigIniContextKeyEntry get_app_group_data(char **stanza_name, char 
     { ZMAPSTANZA_APP_CHR,          G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_APP_START,        G_TYPE_INT,     NULL, FALSE },
     { ZMAPSTANZA_APP_END,          G_TYPE_INT,     NULL, FALSE },
+    { ZMAPSTANZA_APP_SLEEP,        G_TYPE_INT,     NULL, FALSE },
+    { ZMAPSTANZA_APP_EXIT_TIMEOUT, G_TYPE_INT,     NULL, FALSE },
     { ZMAPSTANZA_APP_HELP_URL,     G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_APP_LOCALE,       G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_APP_COOKIE_JAR,   G_TYPE_STRING,  NULL, FALSE },
@@ -1438,17 +1447,39 @@ static ZMapConfigIniContextKeyEntry get_app_group_data(char **stanza_name, char 
   return stanza_keys;
 }
 
+
+static ZMapConfigIniContextKeyEntry get_peer_group_data(char **stanza_name, char **stanza_type)
+{
+  static ZMapConfigIniContextKeyEntryStruct stanza_keys[] = {
+    { ZMAPSTANZA_PEER_NAME,    G_TYPE_STRING,  NULL, FALSE },
+    { ZMAPSTANZA_PEER_CLIPBOARD,    G_TYPE_STRING,  NULL, FALSE },
+    { ZMAPSTANZA_PEER_RETRIES, G_TYPE_INT,     NULL, FALSE },
+    { ZMAPSTANZA_PEER_TIMEOUT, G_TYPE_INT,     NULL, FALSE },
+    {NULL}
+  };
+  static char *name = ZMAPSTANZA_PEER_CONFIG ;
+  static char *type = ZMAPSTANZA_PEER_CONFIG ;
+
+  if(stanza_name)
+    *stanza_name = name;
+  if(stanza_type)
+    *stanza_type = type;
+
+  return stanza_keys ;
+}
+
 static ZMapConfigIniContextKeyEntry get_logging_group_data(char **stanza_name, char **stanza_type)
 {
   static ZMapConfigIniContextKeyEntryStruct stanza_keys[] = {
-    { ZMAPSTANZA_LOG_LOGGING,   G_TYPE_BOOLEAN, NULL, FALSE },
-    { ZMAPSTANZA_LOG_FILE,      G_TYPE_BOOLEAN, NULL, FALSE },
-    { ZMAPSTANZA_LOG_SHOW_CODE, G_TYPE_BOOLEAN, NULL, FALSE },
-    { ZMAPSTANZA_LOG_DIRECTORY, G_TYPE_STRING,  NULL, FALSE },
-    { ZMAPSTANZA_LOG_FILENAME,  G_TYPE_STRING,  NULL, FALSE },
-    { ZMAPSTANZA_LOG_SHOW_TIME, G_TYPE_STRING,  NULL, FALSE },
-    { ZMAPSTANZA_LOG_CATCH_GLIB, G_TYPE_BOOLEAN,  NULL, FALSE },
-    { ZMAPSTANZA_LOG_ECHO_GLIB, G_TYPE_BOOLEAN,  NULL, FALSE },
+    { ZMAPSTANZA_LOG_LOGGING,      G_TYPE_BOOLEAN, NULL, FALSE },
+    { ZMAPSTANZA_LOG_FILE,         G_TYPE_BOOLEAN, NULL, FALSE },
+    { ZMAPSTANZA_LOG_SHOW_PROCESS, G_TYPE_BOOLEAN, NULL, FALSE },
+    { ZMAPSTANZA_LOG_SHOW_CODE,    G_TYPE_BOOLEAN, NULL, FALSE },
+    { ZMAPSTANZA_LOG_SHOW_TIME,    G_TYPE_BOOLEAN, NULL, FALSE },
+    { ZMAPSTANZA_LOG_DIRECTORY,    G_TYPE_STRING,  NULL, FALSE },
+    { ZMAPSTANZA_LOG_FILENAME,     G_TYPE_STRING,  NULL, FALSE },
+    { ZMAPSTANZA_LOG_CATCH_GLIB,   G_TYPE_BOOLEAN, NULL, FALSE },
+    { ZMAPSTANZA_LOG_ECHO_GLIB,    G_TYPE_BOOLEAN, NULL, FALSE },
     {NULL}
   };
 

@@ -20,7 +20,8 @@
  * This file is part of the ZMap genome database package
  * originated by
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Interface to retrieve command line args given to the
  *              program.
@@ -33,13 +34,7 @@
 #include <glib.h>
 
 
-/*! @addtogroup cmdline_args
- * @{
- */
-
-
-/*!
- * The value (if any) for the command line option is returned in this union.
+/* The value (if any) for the command line option is returned in this union.
  * NOTE that since the code that uses the option _must_ know what sort of data it is, there
  * is no type field here to record which member of the union is valid. */
 typedef union
@@ -52,67 +47,8 @@ typedef union
 } ZMapCmdLineArgsType ;
 
 
-/*!
- *
- * @section cmdline_flags   Command line flags
- *
- * <table>
- *  <tr>
- *  <th colspan=4 align=center>"ZMap Command Line Flags"</th>
- *  </tr>
- *  <tr>
- *  <th>Flag</th>
- *  <th>Datatype</th>
- *  <th>Default</th>
- *  <th>Description</th>
- *  </tr>
- *  <tr>
- *  <th>"version"</th>
- *  <td>none</td>
- *  <td>none</td>
- *  <td>--version, causes zmap to print its version information to stdout and then exit.</td>
- *  </tr>
- *  <tr>
- *  <th>"start"</th>
- *  <td>Int</td>
- *  <td>1</td>
- *  <td>--start=nnnn, sets start coordinate of section of sequence to be displayed.</td>
- *  </tr>
- *  <tr>
- *  <th>"end"</th>
- *  <td>Int</td>
- *  <td>end of sequence</td>
- *  <td>--end=nnnn, sets end coordinate of section of sequence to be displayed.</td>
- *  </tr>
- *  <tr>
- *  <th>"conf_dir"</th>
- *  <td>String</td>
- *  <td>$HOME/ZMap</td>
- *  <td>--conf_dir=directory, zmap will read all configuration information from "directory" instead of
- *      from $HOME/ZMap</td>
- *  </tr>
- *  <tr>
- *  <th>"conf_file"</th>
- *  <td>String</td>
- *  <td>$HOME/ZMap/.ZMap</td>
- *  <td>--conf_file=filename, zmap will read configuration information from "filename" instead of
- *      from $HOME/ZMap/.ZMap</td>
- *  </tr>
- *  <tr>
- *  <th>"win_id"</th>
- *  <td>Int</td>
- *  <td>none</td>
- *  <td>--win_id=nnnn, zmap will send xremote commands to the X window with window id "nnnn".</td>
- *  </tr>
- * </table>
- *
- *  */
 
-
-
-/*! @} end of cmdline_args docs. */
-
-
+/* Common args that user may give. */
 
 #define ZMAPARG_VERSION        "version"
 #define ZMAPARG_RAW_VERSION    "raw_version"
@@ -122,7 +58,18 @@ typedef union
 #define ZMAPARG_SEQUENCE_END   "end"
 #define ZMAPARG_CONFIG_FILE    "conf_file"
 #define ZMAPARG_CONFIG_DIR     "conf_dir"
+
+
+/* Soon to be removed. */
 #define ZMAPARG_WINDOW_ID      "win_id"
+
+
+/* Developer or programmer args. */
+#define ZMAPARG_REMOTE_DEBUG   "remote-debug"
+#define ZMAPARG_PEER_NAME      "peer-name"
+#define ZMAPARG_PEER_CLIPBOARD "peer-clipboard"
+#define ZMAPARG_SERIAL         "serial"
+#define ZMAPARG_SLEEP          "sleep"
 #define ZMAPARG_TIMING         "timing"
 #define ZMAPARG_SHRINK         "shrink"	// to allow the window to shrink: gives too small size by default
 #define ZMAPARG_SEQUENCE       "sequence"	// [dataset/]sequence

@@ -33,10 +33,11 @@
 #include <gtk/gtk.h>
 
 #include <ZMap/zmapView.h>
-#include <ZMap/zmapNavigator.h>
 #include <ZMap/zmapControl.h>
 #include <ZMap/zmapControlImportFile.h>
 #include <ZMap/zmapXRemote.h>
+#include <zmapNavigator_P.h>
+
 
 
 #define USE_REGION	0	/* scroll bar pane on left that does nothing */
@@ -77,7 +78,10 @@ typedef struct _ZMapStruct
   void            *app_data ;				    /* Data passed back to all callbacks
 							       registered for this ZMap. */
 
-  ZMapFeatureSequenceMap default_sequence;             /* piinter to app_context default_sequence */
+  gboolean remote_control ;
+
+  ZMapFeatureSequenceMap default_sequence;		    /* pointer to app_context default_sequence */
+
 
   /* Widget stuff for the Zmap. */
   GtkWidget       *toplevel ;				    /* top level widget of zmap window. */
@@ -115,14 +119,6 @@ typedef struct _ZMapStruct
   ZMapWindowFilterStruct filter;
   gboolean filter_spin_pressed;			/* flag to prevent value changed signal handling when spinning button */
 
-#ifdef SEE_INFOPANEL_STRUCT
-  /* Feature details display. */
-  GtkWidget *feature_name, *feature_strand,
-    *feature_coords, *sub_feature_coords,
-    *feature_frame, *feature_score, *feature_type,
-    *feature_set, *feature_style ;
-#endif /* SEE_INFOPANEL_STRUCT */
-
   GtkTooltips *feature_tooltips ;
 
   GtkWidget *info_panel_vbox;
@@ -135,25 +131,32 @@ typedef struct _ZMapStruct
   /* The panes and views and current focus window. */
   GtkWidget *pane_vbox ;				    /* Is the parent of all the panes. */
 
-  ZMapViewWindow focus_viewwindow ;
-  GHashTable* viewwindow_2_parent ;			    /* holds hash to go from a view window
-							       to that windows parent widget
-							       (currently a frame). */
-
   /* List of views in this zmap. */
   GList          *view_list ;
 
+  ZMapViewWindow focus_viewwindow ;
+
+
+  GHashTable* viewwindow_2_parent ;			    /* holds hash to go from a view window
+							       to that windows parent widget
+							       (currently a frame). */
 
   GError         *info;                 /* This is an object to hold a code
                                          * and a message as info for the
                                          * remote control simple IPC stuff */
 
+
+  /* Old stuff...??? */
   ZMapXRemoteObj xremote_client;
   ZMapXRemoteObj xremote_server;          /* that we reply to */
+
+
 
   gulong map_handler ;					    /* Needed for disconnecting map handler cb. */
 
 } ZMapStruct ;
+
+
 
 typedef struct
 {
@@ -165,6 +168,7 @@ typedef struct
   GtkWidget *hbox;
 
 } ZMapInfoPanelLabelsStruct, *ZMapInfoPanelLabels;
+
 
 #define VIEW_XREMOTE_WIDGET "view_xremote_widget"	    /* Key used for setting/getting view
 							       on xremote widget. */
@@ -182,40 +186,48 @@ void zmapControlButtonTooltips(ZMap zmap) ;
 void zmapControlInfoPanelTooltips(ZMap zmap, ZMapFeatureDesc feature_desc) ;
 void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeatureDesc feature_desc) ;
 
-ZMapView zmapControlNewWindow(ZMap zmap, ZMapFeatureSequenceMap sequence_map) ;
+ZMapViewWindow zmapControlNewWindow(ZMap zmap, ZMapFeatureSequenceMap sequence_map) ;
 void zmapControlSplitWindow(ZMap zmap, GtkOrientation orientation, ZMapControlSplitOrder window_order) ;
 
 void zmapControlClose(ZMap zmap) ;
-void zmapControlRemoveWindow(ZMap zmap, ZMapView view) ;
-void zmapControlCloseFull(ZMap zmap, ZMapView view) ;
-
-
-ZMapView zmapControlInsertView(ZMap zmap, ZMapFeatureSequenceMap sequence_map, char **err_msg) ;
-ZMapView zmapControlAddView(ZMap zmap, ZMapFeatureSequenceMap sequence_map) ;
-int zmapControlNumViews(ZMap zmap) ;
-ZMapViewWindow zmapControlFindViewWindow(ZMap zmap, ZMapView view) ;
-gboolean zmapControlRemoveView(ZMap zmap, ZMapView view) ;
-
-gboolean zmapConnectViewConfig(ZMap zmap, ZMapView view, char *config);
-void zmapControlShowPreferences(ZMap zmap) ;
 
 /* these may not need to be exposed.... */
 GtkWidget *zmapControlAddWindow(ZMap zmap, GtkWidget *curr_frame,
 				GtkOrientation orientation,
 				ZMapControlSplitOrder window_order,
 				char *view_title) ;
+void zmapControlRemoveWindow(ZMap zmap, ZMapViewWindow view_window, GList **destroyed_views_inout) ;
+
+void zmapControlCloseFull(ZMap zmap, ZMapView view) ;
+
+
+ZMapView zmapControlInsertView(ZMap zmap, ZMapFeatureSequenceMap sequence_map, char **err_msg) ;
+ZMapViewWindow zmapControlAddView(ZMap zmap, ZMapFeatureSequenceMap sequence_map) ;
+void zmapControlRemoveView(ZMap zmap, ZMapView view, GList **destroyed_views_inout) ;
+ZMapViewWindow zmapControlFindViewWindow(ZMap zmap, ZMapView view) ;
+int zmapControlNumViews(ZMap zmap) ;
+
+gboolean zmapConnectViewConfig(ZMap zmap, ZMapView view, char *config);
+void zmapControlShowPreferences(ZMap zmap) ;
 
 
 gboolean zmapControlWindowDoTheZoom(ZMap zmap, double zoom) ;
 void zmapControlWindowSetZoomButtons(ZMap zmap, ZMapWindowZoomStatus zoom_status) ;
+
 void zmapControlSetWindowFocus(ZMap zmap, ZMapViewWindow new_viewwindow) ;
 void zmapControlUnSetWindowFocus(ZMap zmap, ZMapViewWindow new_viewwindow) ;
+
 void zmapControlSignalKill(ZMap zmap) ;
-void zmapControlDoKill(ZMap zmap) ;
+void zmapControlDoKill(ZMap zmap, GList **destroyed_views_out) ;
 
 void zmapControlLoadCB        (ZMap zmap) ;
 void zmapControlResetCB       (ZMap zmap) ;
 
+/* new remote stuff.... */
+void zmapControlSendViewCreated(ZMap zmap, ZMapView view, ZMapWindow window) ;
+void zmapControlSendViewDeleted(ZMap zmap, GList *destroyed_views_inout) ;
+
+/* old remote stuff.... */
 void zmapControlRemoteInstaller(GtkWidget *widget, GdkEvent  *event, gpointer user_data) ;
 gboolean zmapControlRemoteAlertClient(ZMap zmap,
                                       char *action, GArray *xml_events,
@@ -227,6 +239,10 @@ gboolean zmapControlRemoteAlertClients(ZMap zmap, GList *clients,
 				       ZMapXMLObjTagFunctions start_handlers,
 				       ZMapXMLObjTagFunctions end_handlers,
 				       gpointer *handler_data);
+
+
+
+
 void zmapControlWriteWindowIdFile(Window id, char *window_name);
 
 void zmapControlInfoOverwrite(void *data, int code, char *format, ...);
@@ -246,5 +262,7 @@ ZMapViewWindow zmapControlNewWidgetAndWindowForView(ZMap zmap,
 
 void zmapControlPrintView(ZMap zmap, ZMapView view, char *action, gboolean print_xid) ;
 void zmapControlPrintAllViews(ZMap zmap, gboolean print_xids) ;
+
+void zmapControlWindowMaximize(GtkWidget *widget, ZMap map) ;
 
 #endif /* !ZMAP_CONTROL_P_H */

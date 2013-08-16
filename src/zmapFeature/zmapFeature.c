@@ -133,6 +133,7 @@ static ZMapFeatureAny featureAnyCreateFeature(ZMapFeatureStructType feature_type
 					      GQuark original_id, GQuark unique_id,
 					      GHashTable *children) ;
 static gboolean featureAnyAddFeature(ZMapFeatureAny feature_set, ZMapFeatureAny feature) ;
+static ZMapFeatureAny featureAnyCopy(ZMapFeatureAny orig_feature_any, GDestroyNotify destroy_cb) ;
 static gboolean destroyFeatureAnyWithChildren(ZMapFeatureAny feature_any, gboolean free_children) ;
 static void featureAnyAddToDestroyList(ZMapFeatureContext context, ZMapFeatureAny feature_any) ;
 
@@ -211,7 +212,8 @@ ZMapFeatureAny zMapFeatureAnyCopy(ZMapFeatureAny orig_feature_any)
 {
   ZMapFeatureAny new_feature_any  = NULL ;
 
-  new_feature_any  = zmapFeatureAnyCopy(orig_feature_any, destroyFeatureAny) ;
+  if (orig_feature_any && zMapFeatureIsValid(orig_feature_any))
+    new_feature_any = featureAnyCopy(orig_feature_any, destroyFeatureAny) ;
 
   return new_feature_any ;
 }
@@ -315,201 +317,13 @@ gboolean zMapFeatureAnyAddModesToStyles(ZMapFeatureAny feature_any, GHashTable *
 #endif
 
 
-ZMapFeatureAny zmapFeatureAnyCopy(ZMapFeatureAny orig_feature_any, GDestroyNotify destroy_cb)
-{
-  ZMapFeatureAny new_feature_any  = NULL ;
-  guint bytes ;
 
-//  zMapAssert(zMapFeatureIsValid(orig_feature_any)) ;
-
-// mh17: trying to load features via xremote asserted if no features were already loaded
-// this assert should not be here, as this module should handle incorrect input from external places
-// other bits of code will assert if they need features present
-// cross fingers and hope it works
-// certainly should pose no problem for previous use as it didn't assert then
-  if(!orig_feature_any)
-    return(NULL);
-
-
-  /* Copy the original struct and set common fields. */
-  switch(orig_feature_any->struct_type)
-    {
-    case ZMAPFEATURE_STRUCT_CONTEXT:
-      bytes = sizeof(ZMapFeatureContextStruct) ;
-      break ;
-    case ZMAPFEATURE_STRUCT_ALIGN:
-      bytes = sizeof(ZMapFeatureAlignmentStruct) ;
-      break ;
-    case ZMAPFEATURE_STRUCT_BLOCK:
-      bytes = sizeof(ZMapFeatureBlockStruct) ;
-      break ;
-    case ZMAPFEATURE_STRUCT_FEATURESET:
-      bytes = sizeof(ZMapFeatureSetStruct) ;
-      break ;
-    case ZMAPFEATURE_STRUCT_FEATURE:
-      bytes = sizeof(ZMapFeatureStruct) ;
-      break ;
-    default:
-      zMapAssertNotReached();
-      break;
-    }
-
-
-  /* What I don't like about this way of doing things is that the default behaviour
-   * is to copy things that we either shouldn't be copying or should be making a
-   * deep copy of.... */
-  if (USE_SLICE_ALLOC)
-    {
-      new_feature_any = g_slice_alloc0(bytes) ;
-      g_memmove(new_feature_any, orig_feature_any, bytes) ;
-    }
-  else
-    {
-      new_feature_any = g_memdup(orig_feature_any, bytes) ;
-    }
-  logMemCalls(TRUE, new_feature_any) ;
+/* 
+ *                               External package routines.
+ */
 
 
 
-  /* We DO NOT copy children or parents... */
-  new_feature_any->parent = NULL ;
-  if (new_feature_any->struct_type != ZMAPFEATURE_STRUCT_FEATURE)
-    new_feature_any->children = g_hash_table_new_full(NULL, NULL, NULL, destroy_cb) ;
-
-
-  /* Fill in the fields unique to each struct type. */
-  switch(new_feature_any->struct_type)
-    {
-    case ZMAPFEATURE_STRUCT_CONTEXT:
-      {
-	ZMapFeatureContext new_context = (ZMapFeatureContext)new_feature_any ;
-
-	new_context->elements_to_destroy = NULL ;
-
-	new_context->req_feature_set_names = NULL ;
-
-	new_context->src_feature_set_names = NULL ;
-
-	new_context->master_align = NULL ;
-
-	break ;
-      }
-    case ZMAPFEATURE_STRUCT_ALIGN:
-      {
-	break;
-      }
-    case ZMAPFEATURE_STRUCT_BLOCK:
-      {
-	ZMapFeatureBlock new_block = (ZMapFeatureBlock)new_feature_any ;
-
-	new_block->sequence.type = ZMAPSEQUENCE_NONE ;
-	new_block->sequence.length = 0 ;
-	new_block->sequence.sequence = NULL ;
-
-	break;
-      }
-    case ZMAPFEATURE_STRUCT_FEATURESET:
-      {
-	ZMapFeatureSet new_set = (ZMapFeatureSet) new_feature_any;
-
-	/* MH17: this is for a copy of the featureset to be added to the diff context on merge
-	 * we could set this to NULL to avoid a double free
-	 * but there are a few calls here from WindowRemoteReceive, viewRemoteReceive, WindowDNA, WindowDraw
-	 * and while it's tedious to copy the list it save a lot of staring at code
-	 */
-
-	GList *l,*copy = NULL;
-	ZMapSpan span;
-
-	for(l = new_set->loaded;l;l = l->next)
-	  {
-	    span = g_memdup(l->data,sizeof(ZMapSpanStruct));
-	    copy = g_list_append(copy,span);    /* must preserve the order */
-	  }
-
-	new_set->loaded = copy;
-
-	break;
-      }
-    case ZMAPFEATURE_STRUCT_FEATURE:
-      {
-	ZMapFeature new_feature = (ZMapFeature)new_feature_any,
-	  orig_feature = (ZMapFeature)orig_feature_any ;
-
-	new_feature->description = NULL;
-
-	if (new_feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
-	  {
-	    ZMapAlignBlockStruct align;
-
-	    if (orig_feature->feature.homol.align != NULL
-		&& orig_feature->feature.homol.align->len > (guint)0)
-	      {
-		int i ;
-
-		new_feature->feature.homol.align =
-		  g_array_sized_new(FALSE, TRUE,
-				    sizeof(ZMapAlignBlockStruct),
-				    orig_feature->feature.homol.align->len);
-
-		for (i = 0; i < orig_feature->feature.homol.align->len; i++)
-		  {
-		    align = g_array_index(orig_feature->feature.homol.align, ZMapAlignBlockStruct, i);
-		    new_feature->feature.homol.align =
-		      g_array_append_val(new_feature->feature.homol.align, align);
-		  }
-	      }
-	  }
-	else if (new_feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
-	  {
-	    ZMapSpanStruct span;
-	    int i ;
-
-	    if (orig_feature->feature.transcript.exons != NULL
-		&& orig_feature->feature.transcript.exons->len > (guint)0)
-	      {
-		new_feature->feature.transcript.exons =
-		  g_array_sized_new(FALSE, TRUE,
-				    sizeof(ZMapSpanStruct),
-				    orig_feature->feature.transcript.exons->len);
-
-		for (i = 0; i < orig_feature->feature.transcript.exons->len; i++)
-		  {
-		    span = g_array_index(orig_feature->feature.transcript.exons, ZMapSpanStruct, i);
-		    new_feature->feature.transcript.exons =
-		      g_array_append_val(new_feature->feature.transcript.exons, span);
-		  }
-	      }
-
-	    if (orig_feature->feature.transcript.introns != NULL
-		&& orig_feature->feature.transcript.introns->len > (guint)0)
-	      {
-		new_feature->feature.transcript.introns =
-		  g_array_sized_new(FALSE, TRUE,
-				    sizeof(ZMapSpanStruct),
-				    orig_feature->feature.transcript.introns->len);
-
-		for (i = 0; i < orig_feature->feature.transcript.introns->len; i++)
-		  {
-		    span = g_array_index(orig_feature->feature.transcript.introns, ZMapSpanStruct, i);
-		    new_feature->feature.transcript.introns =
-		      g_array_append_val(new_feature->feature.transcript.introns, span);
-		  }
-	      }
-	  }
-
-	break ;
-      }
-    default:
-      zMapAssertNotReached();
-      break;
-    }
-
-  return new_feature_any ;
-}
-
-
-#if MH17_NOT_CALLED
 void zMapFeatureAnyDestroy(ZMapFeatureAny feature_any)
 {
   gboolean result ;
@@ -521,7 +335,6 @@ void zMapFeatureAnyDestroy(ZMapFeatureAny feature_any)
 
   return ;
 }
-#endif
 
 
 /*!
@@ -1580,7 +1393,7 @@ ZMapFeatureContextMergeCode zMapFeatureContextMerge(ZMapFeatureContext *merged_c
       /* Note we make the diff context point at the feature list and styles of the new context,
        * I guess we could copy them but doesn't seem worth it...see code below where we NULL them
        * in new_context so they are not thrown away.... */
-      diff_context = (ZMapFeatureContext)zmapFeatureAnyCopy((ZMapFeatureAny)new_context, NULL) ;
+      diff_context = (ZMapFeatureContext)featureAnyCopy((ZMapFeatureAny)new_context, NULL) ;
       diff_context->diff_context = TRUE ;
       diff_context->elements_to_destroy = g_hash_table_new_full(NULL, NULL, NULL, destroyFeatureAny) ;
       diff_context->req_feature_set_names = g_list_copy(new_context->req_feature_set_names) ;
@@ -1796,7 +1609,7 @@ void zMapFeatureContextDestroy(ZMapFeatureContext feature_context, gboolean free
 }
 
 
-/*! @} end of zmapfeatures docs. */
+
 
 
 
@@ -1804,6 +1617,211 @@ void zMapFeatureContextDestroy(ZMapFeatureContext feature_context, gboolean free
  *            Internal routines.
  */
 
+
+/* Copy any type of feature.....a copy contructor only not as good.... */
+static ZMapFeatureAny featureAnyCopy(ZMapFeatureAny orig_feature_any, GDestroyNotify destroy_cb)
+{
+  ZMapFeatureAny new_feature_any  = NULL ;
+  guint bytes ;
+
+//  zMapAssert(zMapFeatureIsValid(orig_feature_any)) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+  /* THIS IS COMPLETELY THE WRONG PLACE TO DO THIS...BY THE TIME WE GET HERE THERE _HAS_
+   * TO BE A FEATURE...AGGGHHHHHH */
+
+// mh17: trying to load features via xremote asserted if no features were already loaded
+// this assert should not be here, as this module should handle incorrect input from external places
+// other bits of code will assert if they need features present
+// cross fingers and hope it works
+// certainly should pose no problem for previous use as it didn't assert then
+  if(!orig_feature_any)
+    return(NULL);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+  /* Copy the original struct and set common fields. */
+  switch(orig_feature_any->struct_type)
+    {
+    case ZMAPFEATURE_STRUCT_CONTEXT:
+      bytes = sizeof(ZMapFeatureContextStruct) ;
+      break ;
+    case ZMAPFEATURE_STRUCT_ALIGN:
+      bytes = sizeof(ZMapFeatureAlignmentStruct) ;
+      break ;
+    case ZMAPFEATURE_STRUCT_BLOCK:
+      bytes = sizeof(ZMapFeatureBlockStruct) ;
+      break ;
+    case ZMAPFEATURE_STRUCT_FEATURESET:
+      bytes = sizeof(ZMapFeatureSetStruct) ;
+      break ;
+    case ZMAPFEATURE_STRUCT_FEATURE:
+      bytes = sizeof(ZMapFeatureStruct) ;
+      break ;
+    default:
+      zMapAssertNotReached();
+      break;
+    }
+
+
+  /* What I don't like about this way of doing things is that the default behaviour
+   * is to copy things that we either shouldn't be copying or should be making a
+   * deep copy of.... */
+  if (USE_SLICE_ALLOC)
+    {
+      new_feature_any = g_slice_alloc0(bytes) ;
+      g_memmove(new_feature_any, orig_feature_any, bytes) ;
+    }
+  else
+    {
+      new_feature_any = g_memdup(orig_feature_any, bytes) ;
+    }
+  logMemCalls(TRUE, new_feature_any) ;
+
+
+
+  /* We DO NOT copy children or parents... */
+  new_feature_any->parent = NULL ;
+  if (new_feature_any->struct_type != ZMAPFEATURE_STRUCT_FEATURE)
+    new_feature_any->children = g_hash_table_new_full(NULL, NULL, NULL, destroy_cb) ;
+
+
+  /* Fill in the fields unique to each struct type. */
+  switch(new_feature_any->struct_type)
+    {
+    case ZMAPFEATURE_STRUCT_CONTEXT:
+      {
+	ZMapFeatureContext new_context = (ZMapFeatureContext)new_feature_any ;
+
+	new_context->elements_to_destroy = NULL ;
+
+	new_context->req_feature_set_names = NULL ;
+
+	new_context->src_feature_set_names = NULL ;
+
+	new_context->master_align = NULL ;
+
+	break ;
+      }
+    case ZMAPFEATURE_STRUCT_ALIGN:
+      {
+	break;
+      }
+    case ZMAPFEATURE_STRUCT_BLOCK:
+      {
+	ZMapFeatureBlock new_block = (ZMapFeatureBlock)new_feature_any ;
+
+	new_block->sequence.type = ZMAPSEQUENCE_NONE ;
+	new_block->sequence.length = 0 ;
+	new_block->sequence.sequence = NULL ;
+
+	break;
+      }
+    case ZMAPFEATURE_STRUCT_FEATURESET:
+      {
+	ZMapFeatureSet new_set = (ZMapFeatureSet) new_feature_any;
+
+	/* MH17: this is for a copy of the featureset to be added to the diff context on merge
+	 * we could set this to NULL to avoid a double free
+	 * but there are a few calls here from WindowRemoteReceive, viewRemoteReceive, WindowDNA, WindowDraw
+	 * and while it's tedious to copy the list it save a lot of staring at code
+	 */
+
+	GList *l,*copy = NULL;
+	ZMapSpan span;
+
+	for(l = new_set->loaded;l;l = l->next)
+	  {
+	    span = g_memdup(l->data,sizeof(ZMapSpanStruct));
+	    copy = g_list_append(copy,span);    /* must preserve the order */
+	  }
+
+	new_set->loaded = copy;
+
+	break;
+      }
+    case ZMAPFEATURE_STRUCT_FEATURE:
+      {
+	ZMapFeature new_feature = (ZMapFeature)new_feature_any,
+	  orig_feature = (ZMapFeature)orig_feature_any ;
+
+	if (orig_feature->description)
+	  new_feature->description = g_strdup(orig_feature->description) ;
+
+	if (orig_feature->url)
+	  new_feature->url = g_strdup(orig_feature->url) ;
+
+	if (new_feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
+	  {
+	    ZMapAlignBlockStruct align;
+
+	    if (orig_feature->feature.homol.align != NULL
+		&& orig_feature->feature.homol.align->len > (guint)0)
+	      {
+		int i ;
+
+		new_feature->feature.homol.align =
+		  g_array_sized_new(FALSE, TRUE,
+				    sizeof(ZMapAlignBlockStruct),
+				    orig_feature->feature.homol.align->len);
+
+		for (i = 0; i < orig_feature->feature.homol.align->len; i++)
+		  {
+		    align = g_array_index(orig_feature->feature.homol.align, ZMapAlignBlockStruct, i);
+		    new_feature->feature.homol.align =
+		      g_array_append_val(new_feature->feature.homol.align, align);
+		  }
+	      }
+	  }
+	else if (new_feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
+	  {
+	    ZMapSpanStruct span;
+	    int i ;
+
+
+	    if (orig_feature->feature.transcript.exons != NULL)
+	      {
+		new_feature->feature.transcript.exons =
+		  g_array_sized_new(FALSE, TRUE,
+				    sizeof(ZMapSpanStruct),
+				    orig_feature->feature.transcript.exons->len);
+
+		for (i = 0; i < orig_feature->feature.transcript.exons->len; i++)
+		  {
+		    span = g_array_index(orig_feature->feature.transcript.exons, ZMapSpanStruct, i);
+		    new_feature->feature.transcript.exons =
+		      g_array_append_val(new_feature->feature.transcript.exons, span);
+		  }
+	      }
+
+	    if (orig_feature->feature.transcript.introns != NULL)
+	      {
+		new_feature->feature.transcript.introns =
+		  g_array_sized_new(FALSE, TRUE,
+				    sizeof(ZMapSpanStruct),
+				    orig_feature->feature.transcript.introns->len);
+
+		for (i = 0; i < orig_feature->feature.transcript.introns->len; i++)
+		  {
+		    span = g_array_index(orig_feature->feature.transcript.introns, ZMapSpanStruct, i);
+		    new_feature->feature.transcript.introns =
+		      g_array_append_val(new_feature->feature.transcript.introns, span);
+		  }
+	      }
+	  }
+
+	break ;
+      }
+    default:
+      zMapAssertNotReached();
+      break;
+    }
+
+  return new_feature_any ;
+}
 
 
 /* Frees resources that are unique to a context, resources common to all features
@@ -2647,11 +2665,13 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
 		new = FALSE;	/* Nothing new here */
 		/* If the feature is there we need to copy it and then recurse down until
 		 * we get to the individual feature level. */
-		diff_feature_any = zmapFeatureAnyCopy(feature_any, NULL);
+		diff_feature_any = featureAnyCopy(feature_any, NULL);
 //printf("creating copy for diff: %p, found = %s %d\n", diff_feature_any,g_quark_to_string((*view_path_ptr)->unique_id),(*view_path_ptr)->struct_type);
 
 		featureAnyAddToDestroyList(merge_data->diff_context, diff_feature_any);
 	      }
+
+
             // mh17:
             // 1) featureAnyAddFeature checks to see if it's there first, which we just did :-(
             // 2) look at the comment 25 lines above about not using featureAnyAddFeature

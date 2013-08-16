@@ -31,12 +31,21 @@
 #define ZMAP_UTILS_GUI_H
 
 #include <gtk/gtk.h>
+#include <gdk/gdkx.h>
+
 #include <libzmapfoocanvas/libfoocanvas.h>
 #include <ZMap/zmapUtilsMesg.h>
 #include <ZMap/zmapFeature.h>
 
 
-/* font used fpr seqeunece and zoom control */
+
+/* Standard way to format an X window id is "0x%lx", e.g. "0x5000023" */
+#define ZMAP_XWINDOW_FORMAT_STR "0x%lx"
+
+
+
+
+/* font used fpr sequence and zoom control */
 #define ZMAP_ZOOM_FONT_FAMILY "Monospace"
 #define ZMAP_ZOOM_FONT_SIZE (10)
 
@@ -81,6 +90,7 @@ typedef enum
 #define ZMAPGUI_CURSOR_CROSSHAIR      "zmap_crosshair"
 #define ZMAPGUI_CURSOR_CIRCLE         "zmap_circle"
 #define ZMAPGUI_CURSOR_NOENTRY        "zmap_noentry"
+
 
 
 
@@ -431,10 +441,14 @@ typedef void (*ZMapFileChooserContentAreaCB)(GtkWidget *vbox, gpointer user_data
 
 
 
-
+gint my_gtk_run_dialog_nonmodal(GtkWidget *toplevel) ;
 
 void zMapGUIRaiseToTop(GtkWidget *widget);
+
 GtkWidget *zMapGUIFindTopLevel(GtkWidget *widget) ;
+gboolean zMapGUIXWindowExists(Display *x_display, Window x_window, char *peer_clipboard, char **err_msg_out) ;
+
+char *zMapGUIGetEventAsText(GdkEventMask exclude_mask, GdkEventAny *any_event) ;
 
 void zMapGUIGetMaxWindowSize(GtkWidget *toplevel, gint *width_out, gint *height_out) ;
 void zMapGUIMaximiseWindow(GtkWidget *toplevel) ;
@@ -527,7 +541,7 @@ GtkWidget *zMapGUINotebookCreateDialog(ZMapGuiNotebook notebook_spec, char *help
 GtkWidget *zMapGUINotebookCreateWidget(ZMapGuiNotebook notebook_spec) ;
 GtkWidget *zMapGUINotebookGetNoteBookWidg(GtkWidget *compound_note_widget) ;
 
-
+gboolean zMapGUIXWindowChangeProperty(Display *x_display, Window x_window, char *property, char *change_to) ;
 
 
 

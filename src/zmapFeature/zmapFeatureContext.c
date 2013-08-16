@@ -170,8 +170,8 @@ void zMapFeatureReverseComplement(ZMapFeatureContext context, ZMapFeature featur
 
 void zMapFeatureReverseComplementCoords(ZMapFeatureBlock block, int *start_inout, int *end_inout)
 {
+  ZMapFeatureContext context = (ZMapFeatureContext)(block->parent->parent) ;
   int start, end, my_start, my_end ;
-	ZMapFeatureContext context = (ZMapFeatureContext) block->parent->parent;
 
   start = context->parent_span.x1 ;
   end   = context->parent_span.x2 ;
@@ -191,7 +191,7 @@ void zMapFeatureReverseComplementCoords(ZMapFeatureBlock block, int *start_inout
 /* provide access to private macro, NB start is not used but defined by the macro */
 int zmapFeatureRevCompCoord(int coord, int start, int end)
 {
-      return(zmapFeatureInvert(coord,start,end));
+  return(zmapFeatureInvert(coord,start,end));
 }
 
 
@@ -957,28 +957,26 @@ static void revcompSpan(GArray *spans, int seq_start, int seq_end)
 {
   int i, j;
 
-
   for (i = 0; i < spans->len; i++)
     {
-	ZMapSpan span ;
+      ZMapSpan span ;
 
-	span = &g_array_index(spans, ZMapSpanStruct, i) ;
+      span = &g_array_index(spans, ZMapSpanStruct, i) ;
 
       zmapFeatureRevComp(Coord, seq_start, seq_end, span->x1, span->x2) ;
     }
 
-   for(i = 0, j = spans->len - 1; i < j; i++,j--)
-   {
-	ZMapSpanStruct x;
-	ZMapSpan si,sj;
+  for(i = 0, j = spans->len - 1; i < j; i++,j--)
+    {
+      ZMapSpanStruct x;
+      ZMapSpan si,sj;
 
       si = &g_array_index(spans, ZMapSpanStruct, i) ;
       sj = &g_array_index(spans, ZMapSpanStruct, j) ;
-	x = *si;		/* struct copy */
-	*si = *sj;
-	*sj = x;
-   }
-
+      x = *si;		/* struct copy */
+      *si = *sj;
+      *sj = x;
+    }
 
   return ;
 }

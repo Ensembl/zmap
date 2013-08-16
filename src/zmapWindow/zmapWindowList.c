@@ -850,6 +850,9 @@ static void operateSelectionForeachFunc(GtkTreeModel *model,
 {
   /* we ignore the return as we can't duck out of a selectionForeach
    * :( */
+  /* That maybe true but the code could be written to be a no-op once an error
+   * occurs and then clean up once the foreach stops...... */
+
   operateTreeModelForeachFunc(model, path,
                               iter, data) ;
   return ;

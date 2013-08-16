@@ -1,5 +1,5 @@
-/*  File: zmapFeatureXML.c
- *  Author: Roy Storey (rds@sanger.ac.uk)
+/*  File: zmapRemoteFeatureXML.c
+ *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
@@ -22,27 +22,34 @@
  *
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- * Description:
+ * Description: Takes a feature and returns an xml version of it
+ *              that when wrapped in the remote protocol envelope
+ *              can be sent to a peer.
  *
- * Exported functions: See XXXXXXXXXXXXX.h
+ * Exported functions: See ZMap/zmap?????.h
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmap.h>
 
-
-
-
-
-
 #include <glib.h>
+#include <ZMap/zmapFeature.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapXML.h>
-#include <zmapFeature_P.h>
 
 
+/* 
+ * NOT SURE IF THIS FILE IS THE CORRECT PLACE....perhaps it should
+ * just be in zmapwindow.....
+ * 
+ *  */
+
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 typedef struct
 {
   struct
@@ -60,26 +67,282 @@ typedef struct
 } XMLContextDumpStruct, *XMLContextDump;
 
 
-void generateContextXMLEvents   (ZMapFeatureContext feature_context, XMLContextDump xml_data);
-void generateAlignXMLEvents     (ZMapFeatureAlignment feature_align, XMLContextDump xml_data);
-void generateBlockXMLEvents     (ZMapFeatureBlock feature_block,     XMLContextDump xml_data);
-void generateFeatureSetXMLEvents(ZMapFeatureSet feature_set,         XMLContextDump xml_data);
-void generateFeatureXMLEvents   (ZMapFeature feature,                XMLContextDump xml_data);
-void generateClosingEvents      (ZMapFeatureAny feature_any,         XMLContextDump xml_data);
-void generateFeatureSpanEventsXremote(ZMapFeature feature,           XMLContextDump xml_data);
-void generateContextXMLEndEvent   (XMLContextDump xml_data);
-void generateAlignXMLEndEvent     (XMLContextDump xml_data);
-void generateBlockXMLEndEvent     (XMLContextDump xml_data);
-void generateFeatureSetXMLEndEvent(XMLContextDump xml_data);
-void generateFeatureXMLEndEvent   (XMLContextDump xml_data);
+static void generateContextXMLEvents   (ZMapFeatureContext feature_context, XMLContextDump xml_data);
+static void generateAlignXMLEvents     (ZMapFeatureAlignment feature_align, XMLContextDump xml_data);
+static void generateBlockXMLEvents     (ZMapFeatureBlock feature_block,     XMLContextDump xml_data);
+static void generateFeatureSetXMLEvents(ZMapFeatureSet feature_set,         XMLContextDump xml_data);
+static void generateFeatureXMLEvents   (ZMapFeature feature,                XMLContextDump xml_data);
+static void generateClosingEvents      (ZMapFeatureAny feature_any,         XMLContextDump xml_data);
+static void generateFeatureSpanEventsXremote(ZMapFeature feature,           XMLContextDump xml_data);
+static void generateContextXMLEndEvent   (XMLContextDump xml_data);
+static void generateAlignXMLEndEvent     (XMLContextDump xml_data);
+static void generateBlockXMLEndEvent     (XMLContextDump xml_data);
+static void generateFeatureSetXMLEndEvent(XMLContextDump xml_data);
+static void generateFeatureXMLEndEvent   (XMLContextDump xml_data);
 
-ZMapFeatureContextExecuteStatus xmlDumpCB(GQuark key,
-                                          gpointer data,
-                                          gpointer user_data,
-                                          char **error);
+static ZMapFeatureContextExecuteStatus xmlDumpCB(GQuark key, gpointer data, gpointer user_data, char **error);
+
+static gboolean zMapFeatureAnyAsXML(ZMapFeatureAny feature_any, 
+				    ZMapXMLWriter xml_writer, GArray **xml_events_out,
+				    int xml_type) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
-GArray *zMapFeatureAnyAsXMLEvents(ZMapFeatureAny feature_any,
+
+GArray *addFeatureSet(GArray *xml_array, ZMapFeature feature) ;
+GArray *addFeature(GArray *xml_array, ZMapFeature feature) ;
+GArray *addTranscriptSubFeatures(GArray *xml_array, ZMapFeature feature) ;
+
+
+
+/* 
+ *            External interface.
+ */
+
+
+
+/* New function to xml-ise a feature....it is the responsibility of the caller to free
+ * the returned array using g_free() when finished with.
+ * 
+ *  */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+ZMapXMLUtilsEventStack zMapFeatureAnyAsXMLEvents(ZMapFeature feature)
+{
+  ZMapXMLUtilsEventStack feature_xml = NULL ;
+  static ZMapXMLUtilsEventStackStruct
+    feature_and_set[] = {{ZMAPXML_START_ELEMENT_EVENT, "featureset", ZMAPXML_EVENT_DATA_NONE,    {0}},
+			 {ZMAPXML_ATTRIBUTE_EVENT,     "name",       ZMAPXML_EVENT_DATA_QUARK,   {0}},
+			 {ZMAPXML_START_ELEMENT_EVENT, "feature",    ZMAPXML_EVENT_DATA_NONE,    {0}},
+			 {ZMAPXML_ATTRIBUTE_EVENT,     "name",       ZMAPXML_EVENT_DATA_QUARK,   {0}},
+			 {ZMAPXML_ATTRIBUTE_EVENT,     "start",      ZMAPXML_EVENT_DATA_INTEGER, {0}},
+			 {ZMAPXML_ATTRIBUTE_EVENT,     "end",        ZMAPXML_EVENT_DATA_INTEGER, {0}},
+			 {ZMAPXML_ATTRIBUTE_EVENT,     "strand",     ZMAPXML_EVENT_DATA_QUARK,   {0}},
+			 {ZMAPXML_START_ELEMENT_EVENT, "subfeature", ZMAPXML_EVENT_DATA_NONE,    {0}},
+			 {ZMAPXML_ATTRIBUTE_EVENT,     "start",      ZMAPXML_EVENT_DATA_INTEGER, {0}},
+			 {ZMAPXML_ATTRIBUTE_EVENT,     "end",        ZMAPXML_EVENT_DATA_INTEGER, {0}},
+			 {ZMAPXML_ATTRIBUTE_EVENT,     "ontology",   ZMAPXML_EVENT_DATA_QUARK,   {0}},
+			 {ZMAPXML_END_ELEMENT_EVENT,   "subfeature", ZMAPXML_EVENT_DATA_NONE,    {0}},
+			 {ZMAPXML_END_ELEMENT_EVENT,   "feature",    ZMAPXML_EVENT_DATA_NONE,    {0}},
+			 {ZMAPXML_END_ELEMENT_EVENT,   "featureset", ZMAPXML_EVENT_DATA_NONE,    {0}},
+			 {0}} ;
+  int index ;
+  GQuark featureset_id ;
+
+
+  index = 1 ;
+  featureset_id = feature->parent->original_id ;
+  feature_and_set[index].value.q = featureset_id ;
+  
+  index = 3 ;
+  feature_and_set[index++].value.q = feature->original_id ;
+  feature_and_set[index++].value.i = feature->x1 ;
+  feature_and_set[index++].value.i = feature->x2 ;
+  feature_and_set[index++].value.q = g_quark_from_string(zMapFeatureStrand2Str(feature->strand)) ;
+
+
+  feature_xml = feature_and_set ;
+
+  return feature_xml ;
+}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+
+/* This function takes a feature and produces an xml version for sending
+ * via the xremote protocol.
+ * 
+ * NOTE, the function does not currently add "align" and "block" xml
+ * elements as they seem superfluous. They could easily be added in 
+ * if necessary.
+ * 
+ *  */
+ZMapXMLUtilsEventStack zMapFeatureAnyAsXMLEvents(ZMapFeature feature)
+{
+  ZMapXMLUtilsEventStack feature_xml = NULL ;
+  GArray *xml_array ;
+
+  /* Allocate a zero terminated and zero'd array of eventstacks, 100 is probably much bigger than
+   * it will ever need to be. */
+  xml_array = g_array_sized_new(TRUE, TRUE, sizeof(ZMapXMLUtilsEventStackStruct), 100) ;
+
+  /* Add featureset */
+  xml_array = addFeatureSet(xml_array, feature) ;
+
+  /* return just the xml array. */
+  feature_xml = (ZMapXMLUtilsEventStack)g_array_free(xml_array, FALSE) ;
+
+  return feature_xml ;
+}
+
+
+
+
+GArray *addFeatureSet(GArray *xml_array, ZMapFeature feature)
+{
+  static ZMapXMLUtilsEventStackStruct
+    featureset[] = {{ZMAPXML_START_ELEMENT_EVENT, "featureset", ZMAPXML_EVENT_DATA_NONE,    {0}},
+		    {ZMAPXML_ATTRIBUTE_EVENT,     "name",       ZMAPXML_EVENT_DATA_QUARK,   {0}},
+		    {ZMAPXML_END_ELEMENT_EVENT,   "featureset", ZMAPXML_EVENT_DATA_NONE,    {0}},
+		    {0}} ;
+  int index ;
+  GQuark featureset_id ;
+
+  /* Add featureset start */
+  index = 0 ;
+  g_array_append_val(xml_array, featureset[index++]) ;
+
+  featureset_id = feature->parent->original_id ;
+  featureset[index].value.q = featureset_id ;
+  g_array_append_val(xml_array, featureset[index++]) ;
+
+  /* Add feature */
+  xml_array = addFeature(xml_array, feature) ;
+
+  /* add feature end. */
+  g_array_append_val(xml_array, featureset[index]) ;
+
+  return xml_array ;
+}
+
+
+
+GArray *addFeature(GArray *xml_array, ZMapFeature feature)
+{
+  static ZMapXMLUtilsEventStackStruct
+    feature_element[] = {{ZMAPXML_START_ELEMENT_EVENT, "feature",    ZMAPXML_EVENT_DATA_NONE,    {0}},
+		 {ZMAPXML_ATTRIBUTE_EVENT,     "name",       ZMAPXML_EVENT_DATA_QUARK,   {0}},
+		 {ZMAPXML_ATTRIBUTE_EVENT,     "start",      ZMAPXML_EVENT_DATA_INTEGER, {0}},
+		 {ZMAPXML_ATTRIBUTE_EVENT,     "end",        ZMAPXML_EVENT_DATA_INTEGER, {0}},
+		 {ZMAPXML_ATTRIBUTE_EVENT,     "strand",     ZMAPXML_EVENT_DATA_QUARK,   {0}},
+		 {ZMAPXML_END_ELEMENT_EVENT,   "feature",    ZMAPXML_EVENT_DATA_NONE,    {0}},
+		 {0}} ;
+  int index ;
+
+  /* Add feature start */
+  index = 0 ;
+  g_array_append_val(xml_array, feature_element[index++]) ;
+
+  feature_element[index].value.q = feature->original_id ;
+  g_array_append_val(xml_array, feature_element[index++]) ;
+
+  feature_element[index].value.i = feature->x1 ;
+  g_array_append_val(xml_array, feature_element[index++]) ;
+
+
+  feature_element[index].value.i = feature->x2 ;
+  g_array_append_val(xml_array, feature_element[index++]) ;
+
+  feature_element[index].value.q = g_quark_from_string(zMapFeatureStrand2Str(feature->strand)) ;
+  g_array_append_val(xml_array, feature_element[index++]) ;
+
+
+  /* Add subfeature stuff. */
+  if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
+    xml_array = addTranscriptSubFeatures(xml_array, feature) ;
+
+
+  /* Add feature end. */
+  g_array_append_val(xml_array, feature_element[index]) ;
+
+
+  return xml_array ;
+}
+
+
+
+GArray *addTranscriptSubFeatures(GArray *xml_array, ZMapFeature feature)
+{
+  static ZMapXMLUtilsEventStackStruct
+    subfeature[] = {{ZMAPXML_START_ELEMENT_EVENT, "subfeature", ZMAPXML_EVENT_DATA_NONE,    {0}},
+		    {ZMAPXML_ATTRIBUTE_EVENT,     "start",      ZMAPXML_EVENT_DATA_INTEGER, {0}},
+		    {ZMAPXML_ATTRIBUTE_EVENT,     "end",        ZMAPXML_EVENT_DATA_INTEGER, {0}},
+		    {ZMAPXML_ATTRIBUTE_EVENT,     "ontology",   ZMAPXML_EVENT_DATA_QUARK,   {0}},
+		    {ZMAPXML_END_ELEMENT_EVENT,   "subfeature", ZMAPXML_EVENT_DATA_NONE,    {0}},
+		    {0}} ;
+  enum {OPEN_INDEX, START_INDEX, END_INDEX, ONT_INDEX, CLOSE_INDEX} ; /* keep in step with subfeature array ! */
+  GArray *span_array = NULL;
+  int i;
+
+  /* CDS ???????? */
+
+  /* subfeature elements. */
+  if ((span_array = feature->feature.transcript.exons))
+    {
+      for (i = 0; i < span_array->len ; i++)
+        {
+          ZMapSpan exon ;
+
+	  /* subfeature start. */
+	  g_array_append_val(xml_array, subfeature[OPEN_INDEX]) ;
+
+          exon = &(g_array_index(span_array, ZMapSpanStruct, i)) ;
+
+          /* start */
+          subfeature[START_INDEX].value.i = exon->x1 ;
+	  g_array_append_val(xml_array, subfeature[START_INDEX]) ;
+
+          /* end */
+          subfeature[END_INDEX].value.i = exon->x2 ;
+	  g_array_append_val(xml_array, subfeature[END_INDEX]) ;
+
+          /* ontology */
+          subfeature[ONT_INDEX].value.q = g_quark_from_string("exon") ;
+	  g_array_append_val(xml_array, subfeature[ONT_INDEX]) ;
+
+	  /* subfeature end. */
+	  g_array_append_val(xml_array, subfeature[CLOSE_INDEX]) ;
+        }
+    }
+
+  if ((span_array = feature->feature.transcript.introns))
+    {
+      for (i = 0; i < span_array->len; i++)
+        {
+          ZMapSpan intron ;
+
+	  /* subfeature start. */
+	  g_array_append_val(xml_array, subfeature[OPEN_INDEX]) ;
+
+          intron = &(g_array_index(span_array, ZMapSpanStruct, i)) ;
+
+          /* start */
+          subfeature[1].value.i = intron->x1 ;
+	  g_array_append_val(xml_array, subfeature[START_INDEX]) ;
+
+          /* end */
+          subfeature[2].value.i = intron->x2;
+	  g_array_append_val(xml_array, subfeature[END_INDEX]) ;
+
+          /* ontology */
+          subfeature[3].value.q = g_quark_from_string("intron") ;
+	  g_array_append_val(xml_array, subfeature[ONT_INDEX]) ;
+
+	  /* subfeature end. */
+	  g_array_append_val(xml_array, subfeature[CLOSE_INDEX]) ;
+        }
+    }
+
+  return xml_array ;
+}
+
+
+
+
+
+
+
+
+
+
+
+/* I DON'T THINK WE NEED ALL THIS REALLY..... */
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+GArray *zMapFeatureAnyAsXMLEvents(ZMapFeatureAny feature_any, 
                                   /* ZMapFeatureXMLType xml_type */
                                   int xml_type)
 {
@@ -91,16 +354,26 @@ GArray *zMapFeatureAnyAsXMLEvents(ZMapFeatureAny feature_any,
   return array;
 }
 
+
+
+
+/* 
+ *            Internal interface.
+ */
+
+
+/* THIS FUNCTION IS NOT CALLED FROM ANYWHERE EXCEPT IN THIS FILE SO I'M MAKING IT STATIC....
+ * THE BELOW COMMENTS IMPLY THAT NONE OF THIS IS VERY WELL THOUGHT OUT........ */
+
 /* don't like this interface of either or with xml_writer and xml_events_out!!!
  *
  * Yes...there's quite a lot that needs changing to make things easier in the
  * future....
  *
  *  */
-gboolean zMapFeatureAnyAsXML(ZMapFeatureAny feature_any,
-                             ZMapXMLWriter xml_writer,
-                             GArray **xml_events_out,
-                             int xml_type)
+static gboolean zMapFeatureAnyAsXML(ZMapFeatureAny feature_any, 
+				    ZMapXMLWriter xml_writer, GArray **xml_events_out,
+				    int xml_type)
 {
   XMLContextDumpStruct xmlDumpData = {{0},0};
 
@@ -139,9 +412,11 @@ gboolean zMapFeatureAnyAsXML(ZMapFeatureAny feature_any,
   return xmlDumpData.status;
 }
 
-ZMapFeatureContextExecuteStatus xmlDumpCB(GQuark key,
-                                          gpointer data,
-                                          gpointer user_data,
+
+
+ZMapFeatureContextExecuteStatus xmlDumpCB(GQuark key, 
+                                          gpointer data, 
+                                          gpointer user_data, 
                                           char **error)
 {
   ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
@@ -233,7 +508,7 @@ ZMapFeatureContextExecuteStatus xmlDumpCB(GQuark key,
   return cs;
 }
 
-void generateClosingEvents(ZMapFeatureAny feature_any,
+static void generateClosingEvents(ZMapFeatureAny feature_any, 
                            XMLContextDump xml_data)
 {
   ZMapFeatureStructType start_point = ZMAPFEATURE_STRUCT_FEATURE,
@@ -278,7 +553,7 @@ void generateClosingEvents(ZMapFeatureAny feature_any,
 }
 
 
-void generateContextXMLEvents(ZMapFeatureContext feature_context,
+static void generateContextXMLEvents(ZMapFeatureContext feature_context,
                               XMLContextDump xml_data)
 {
 #ifdef RDS_KEEP_GCC_QUIET
@@ -297,7 +572,7 @@ void generateContextXMLEvents(ZMapFeatureContext feature_context,
   return ;
 }
 
-void generateAlignXMLEvents(ZMapFeatureAlignment feature_align,
+static void generateAlignXMLEvents(ZMapFeatureAlignment feature_align,
                             XMLContextDump xml_data)
 {
 #ifdef RDS_KEEP_GCC_QUIET
@@ -323,7 +598,7 @@ void generateAlignXMLEvents(ZMapFeatureAlignment feature_align,
   return ;
 }
 
-void generateBlockXMLEvents(ZMapFeatureBlock feature_block,
+static void generateBlockXMLEvents(ZMapFeatureBlock feature_block,
                             XMLContextDump xml_data)
 {
 #ifdef RDS_KEEP_GCC_QUIET
@@ -348,8 +623,8 @@ void generateBlockXMLEvents(ZMapFeatureBlock feature_block,
   return ;
 }
 
-void generateFeatureSetXMLEvents(ZMapFeatureSet feature_set,
-                                 XMLContextDump xml_data)
+static void generateFeatureSetXMLEvents(ZMapFeatureSet feature_set, 
+					XMLContextDump xml_data)
 {
   ZMapXMLWriterEventStruct event = {0};
 
@@ -407,7 +682,7 @@ void generateFeatureSetXMLEvents(ZMapFeatureSet feature_set,
   return ;
 }
 
-void generateFeatureXMLEvents(ZMapFeature feature,
+static void generateFeatureXMLEvents(ZMapFeature feature,
                               XMLContextDump xml_data)
 {
   ZMapXMLWriterEventStruct event = {0};
@@ -431,8 +706,7 @@ void generateFeatureXMLEvents(ZMapFeature feature,
         event.data.comp.value.quark = g_quark_from_string(zMapFeatureStrand2Str(feature->strand));
         xml_data->xml_events_out = g_array_append_val(xml_data->xml_events_out, event);
 
-//        if(feature->style_id)
-	  if(*feature->style)
+	if (*(feature->style))
           {
             event.data.comp.name = g_quark_from_string("style");
             event.data.comp.data = ZMAPXML_EVENT_DATA_QUARK;
@@ -477,8 +751,10 @@ void generateFeatureXMLEvents(ZMapFeature feature,
   return ;
 }
 
-void generateFeatureSpanEventsXremote(ZMapFeature feature,
-                                      XMLContextDump xml_data)
+
+
+
+static void generateFeatureSpanEventsXremote(ZMapFeature feature, XMLContextDump xml_data)
 {
   GArray *span_array = NULL;
   static ZMapXMLUtilsEventStackStruct elements[] =
@@ -486,7 +762,7 @@ void generateFeatureSpanEventsXremote(ZMapFeature feature,
       {ZMAPXML_START_ELEMENT_EVENT, "subfeature", ZMAPXML_EVENT_DATA_NONE,    {0}},
       {ZMAPXML_ATTRIBUTE_EVENT,     "start",      ZMAPXML_EVENT_DATA_INTEGER, {0}},
       {ZMAPXML_ATTRIBUTE_EVENT,     "end",        ZMAPXML_EVENT_DATA_INTEGER, {0}},
-      {ZMAPXML_ATTRIBUTE_EVENT,     "ontology",   ZMAPXML_EVENT_DATA_QUARK,   {NULL}},
+      {ZMAPXML_ATTRIBUTE_EVENT,     "ontology",   ZMAPXML_EVENT_DATA_QUARK,   {0}},
       {ZMAPXML_END_ELEMENT_EVENT,   "subfeature", ZMAPXML_EVENT_DATA_NONE,    {0}},
       {0}
     };
@@ -510,9 +786,9 @@ void generateFeatureSpanEventsXremote(ZMapFeature feature,
 
           /* ontology */
           event = &elements[3];
-          event->value.s = "exon";
-
-          xml_data->xml_events_out = zMapXMLUtilsAddStackToEventsArray(&elements[0], xml_data->xml_events_out);
+          event->value.q = g_quark_from_string("exon") ;
+          
+          xml_data->xml_events_out = zMapXMLUtilsAddStackToEventsArrayEnd(xml_data->xml_events_out, &elements[0]);
         }
     }
 
@@ -533,16 +809,18 @@ void generateFeatureSpanEventsXremote(ZMapFeature feature,
 
           /* ontology */
           event = &elements[3];
-          event->value.s = "intron";
-
-          xml_data->xml_events_out = zMapXMLUtilsAddStackToEventsArray(&elements[0], xml_data->xml_events_out);
+          event->value.q = g_quark_from_string("intron") ;
+          
+          xml_data->xml_events_out = zMapXMLUtilsAddStackToEventsArrayEnd(xml_data->xml_events_out, &elements[0]);
         }
     }
 
   return ;
 }
 
-void generateContextXMLEndEvent(XMLContextDump xml_data)
+
+
+static void generateContextXMLEndEvent(XMLContextDump xml_data)
 {
   ZMapXMLWriterEventStruct event = {0};
 
@@ -560,7 +838,7 @@ void generateContextXMLEndEvent(XMLContextDump xml_data)
   return ;
 }
 
-void generateAlignXMLEndEvent(XMLContextDump xml_data)
+static void generateAlignXMLEndEvent(XMLContextDump xml_data)
 {
   ZMapXMLWriterEventStruct event = {0};
 
@@ -580,7 +858,7 @@ void generateAlignXMLEndEvent(XMLContextDump xml_data)
   return ;
 }
 
-void generateBlockXMLEndEvent(XMLContextDump xml_data)
+static void generateBlockXMLEndEvent(XMLContextDump xml_data)
 {
   ZMapXMLWriterEventStruct event = {0};
 
@@ -600,7 +878,7 @@ void generateBlockXMLEndEvent(XMLContextDump xml_data)
   return ;
 }
 
-void generateFeatureSetXMLEndEvent(XMLContextDump xml_data)
+static void generateFeatureSetXMLEndEvent(XMLContextDump xml_data)
 {
   ZMapXMLWriterEventStruct event = {0};
 
@@ -620,7 +898,7 @@ void generateFeatureSetXMLEndEvent(XMLContextDump xml_data)
   return ;
 }
 
-void generateFeatureXMLEndEvent(XMLContextDump xml_data)
+static void generateFeatureXMLEndEvent(XMLContextDump xml_data)
 {
   ZMapXMLWriterEventStruct event = {0};
 
@@ -640,3 +918,5 @@ void generateFeatureXMLEndEvent(XMLContextDump xml_data)
   return ;
 }
 
+
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */

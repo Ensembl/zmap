@@ -32,6 +32,7 @@
 
 #include <ZMap/zmap.h>
 
+#include <X11/Xatom.h>
 #include <string.h>
 #include <gdk/gdkx.h>
 #include <gtk/gtk.h>
@@ -89,6 +90,42 @@ typedef struct TextAttrsStructName
 
 
 
+/*
+ * For printing out events.
+ */
+
+/* Irritatingly the 'time' field is in different places in different events or even completely
+ * absent, these structs deal with getting hold of it....obviously they need to be kept in step
+ * with the gdk event structs but they won't be changing much ! */
+typedef enum {EVENT_NO_TIME, EVENT_COMMON_TIME,
+	      EVENT_CROSSING_TIME, EVENT_ATOM_TIME,
+	      EVENT_SELECTION_TIME, EVENT_DND_TIME, EVENT_OWNER_TIME} TimeStuctType ;
+
+typedef struct EventCommonTimeStructName
+{
+  GdkEventType type;
+  GdkWindow *window;
+  gint8 send_event;
+  guint32 time;
+} EventCommonTimeStruct, *EventCommonTime ;
+
+
+/* Descriptor struct for handling producing text description of events. */
+typedef struct eventTxtStructName
+{
+  char* text ;
+  GdkEventMask mask ;
+  TimeStuctType time_struct_type ;
+} eventTxtStruct, *eventTxt ;
+
+
+
+
+/* Used in detecting X windows call errors... */
+static Bool window_error_G = False ;
+static char *trap_txt_G = NULL ;
+static char *zmapXRemoteRawErrorText = NULL ;
+static char *zmapXRemoteErrorText = NULL;
 
 
 static gboolean modalFromMsgType(ZMapMsgType msg_type) ;
@@ -96,6 +133,7 @@ static GtkResponseType messageFull(GtkWindow *parent, char *title_in, char *msg,
 				   gboolean modal, int display_timeout, gboolean close_button,
 				   ZMapMsgType msg_type, GtkJustification justify,
 				   ZMapGUIMsgUserData user_data) ;
+static void printMessage(ZMapMsgType msg_type, char *message) ;
 static void butClick(GtkButton *button, gpointer user_data) ;
 static gboolean timeoutHandlerModal(gpointer data) ;
 static gboolean timeoutHandler(gpointer data) ;
@@ -119,6 +157,7 @@ static void setTextAttrs(gpointer data, gpointer user_data) ;
 static void aboutLinkOldCB(GtkAboutDialog *about, const gchar *link, gpointer data) ;
 static gboolean aboutLinkNewCB(GtkAboutDialog *label, gchar *uri, gpointer user_data_unused) ;
 
+static int zmapXErrorHandler(Display *dpy, XErrorEvent *e ) ;
 
 
 
@@ -169,8 +208,296 @@ void zMapGUIRaiseToTop(GtkWidget *widget)
 }
 
 
+
+/*
+ * If store == TRUE, store e unless stored != NULL or e == zmapXErrorHandler
+ * If clear == TRUE, reset stored to NULL
+ */
+static XErrorHandler stored_xerror_handler(XErrorHandler e, gboolean store, gboolean clear)
+{
+  static XErrorHandler stored = NULL;
+
+  if(e == zmapXErrorHandler)
+    store = FALSE;              /* We mustn't store this */
+
+  if(clear)
+    stored = NULL;
+
+  if(store)
+    {
+      if(stored == NULL)
+        stored = e;
+      else
+        {
+          zMapLogWarning("I'm not forgetting %p, but not storing %p either!", stored, e);
+
+	  zMapLogWarning("I'm not forgetting %p, but not storing %p either!", stored, e);
+        }
+    }
+
+  return stored;
+}
+
+
+
 /*!
- * Find GtkWindow (i.e. ultimate) parent of given widget.
+ * \brief Set the XErrorHandler to be zmapXErrorHandler, saving whichever is the current one.
+ *
+ * It should be noted that nested calls to this and untrap will _not_ function correctly!
+ */
+static void zmapXTrapErrors(char *where, char *what, char *text)
+{
+  XErrorHandler current = NULL ;
+
+  window_error_G = False ;
+
+  trap_txt_G = g_strdup_printf("X Error in \"%s\" calling \"%s\"() with \"%s\"",
+			       where, what, text) ;
+
+  if ((current = XSetErrorHandler(zmapXErrorHandler)))
+    {
+      stored_xerror_handler(current, TRUE, FALSE) ;
+    }
+
+  return ;
+}
+
+
+static int zmapXErrorHandler(Display *dpy, XErrorEvent *e )
+{
+  char errorText[1024] ;
+
+  window_error_G = True ;
+
+  XGetErrorText(dpy, e->error_code, errorText, sizeof(errorText)) ;
+
+  zmapXRemoteErrorText = g_strdup_printf("Error %s  Reason: %s", errorText, trap_txt_G) ;
+
+  /* This is due to some non-ideal coding that means we sometimes (1 case)
+   * double process the error with the meta and error format strings. If
+   * there is ever more than one case (see zmapXRemoteGetPropertyFullString)
+   * find a better solution.
+   */
+  if(zmapXRemoteRawErrorText != NULL)
+    g_free(zmapXRemoteRawErrorText);
+
+  zmapXRemoteRawErrorText = g_strdup(errorText) ;
+
+  zMapLogWarning("**** X11 Error: %s **** Reason: %s", errorText, trap_txt_G) ;
+
+  return 1 ;						    /* This seems to be ignored by the server (!) */
+}
+
+
+static void zmapXUntrapErrors(void)
+{
+  XErrorHandler restore = NULL;
+
+  restore = stored_xerror_handler(NULL, FALSE, FALSE) ;
+  XSetErrorHandler(restore) ;
+
+  stored_xerror_handler(NULL, TRUE, TRUE) ;
+
+  g_free(trap_txt_G) ;
+  trap_txt_G = NULL ;
+
+  return ;
+}
+
+
+/* Set the given property on the given x window */
+gboolean zMapGUIXWindowChangeProperty(Display *x_display, Window x_window, char *property, char *change_to)
+{
+  gboolean success = FALSE;
+
+  char *err_txt = NULL ;
+  Atom xproperty = XInternAtom(x_display, property, False);  
+  
+  zmapXTrapErrors((char *)__PRETTY_FUNCTION__, "XChangeProperty", err_txt) ;
+
+  XChangeProperty(x_display, x_window,
+		  xproperty, XA_STRING, 8,
+		  PropModeReplace, (unsigned char *)change_to,
+		  strlen(change_to));
+
+  XSync(x_display, False) ;
+
+  zmapXUntrapErrors() ;
+
+  if (window_error_G)
+    {
+      success = FALSE;
+
+      zMapLogCritical("Failed sending to window '0x%lx': '%s'", x_window, change_to) ;
+    }
+  else
+    {
+      success = TRUE;
+      zMapLogMessage("Finished sending to window '0x%lx': '%s'", x_window, change_to) ;
+    }
+
+  if (err_txt)
+    g_free(err_txt) ;
+
+  return success ;
+}
+
+
+/* Check whether the given X Window is valid. It should have a property
+ * named for the clipboard. If this property doesn't exist then
+ * this is not the correct window. (This extra check is necessary because even
+ * if a window with the correct xid exists, the xid might have been 
+ * re-used.) */
+static gboolean zmapGUIXWindowValid(Display *x_display, Window x_window, char *clipboard_name, char **err_msg_out)
+{
+  gboolean success = FALSE;
+  
+  gulong req_offset = 0, req_length = 0;
+  gboolean atomic_delete = FALSE;
+  Atom xtype = XA_STRING;
+  Atom xtype_return;
+  gint result, format_return;
+  gulong nitems_return, bytes_after;
+  gchar *property_data;
+  char *atom_id ;
+  int i = 0, attempts = 2;
+  Atom xproperty = XInternAtom(x_display, clipboard_name, False);
+  GString *output = g_string_sized_new(1 << 8); /* 1 << 8 = 256 */
+
+  /* We need to go through at least once, i controls a second time */
+  do
+    {
+      atom_id = g_strdup_printf("Atom = %x", (unsigned int)xproperty) ;
+      zmapXTrapErrors((char *)__PRETTY_FUNCTION__, "XGetWindowProperty", atom_id) ;
+      g_free(atom_id) ;
+      
+      result = XGetWindowProperty(x_display, x_window,
+                                  xproperty, /* requested property */
+                                  req_offset, req_length, /* offset and length */
+                                  atomic_delete, xtype,
+                                  &xtype_return, &format_return,
+                                  &nitems_return, &bytes_after,
+                                  (guchar **)&property_data) ;
+      zmapXUntrapErrors() ;
+      
+      /* First test for an X Error */
+      if(window_error_G)
+        {
+          *err_msg_out = g_strdup_printf("XError %s", zmapXRemoteRawErrorText);
+          success = FALSE;
+          i += attempts; /* no more attempts */
+        }
+      else if (result != Success || !xtype_return)	    /* make sure we use "Success" from the X11 definition for success... */
+        {
+          /* The property doesn't exist, so this isn't the correct window */
+          success = FALSE ;
+          
+          if (err_msg_out)
+            *err_msg_out = g_strdup_printf("Property does not exist on window") ;
+        }
+      else if ((xtype != AnyPropertyType) && (xtype_return != xtype))
+        {
+          /* Property found but type is not as expected */
+          success = FALSE ;
+
+          if (err_msg_out)
+            *err_msg_out = g_strdup_printf("Property type mismatch when trying to validate peer window") ;
+        }
+      else if (i == 0)
+        {
+          /* First time just update offset and length... */
+          req_offset = 0;
+          req_length = bytes_after;
+        }
+      else if(property_data && *property_data && nitems_return && format_return)
+        {
+          success = TRUE ;
+          
+          switch(format_return)
+            {
+            case 8:
+              g_string_append_len(output, property_data, nitems_return) ;
+              zMapLogMessage("Property '%s' has value: %s", clipboard_name, output->str ? output->str : "null") ;
+              g_string_free(output, TRUE) ;
+              break;
+              
+            case 16:
+            case 32:
+            default:
+              if (err_msg_out)
+                *err_msg_out = g_strdup_printf("Unexpected format size %d for string", format_return);
+        
+              success = FALSE;
+              i += attempts; /* no more attempts */
+
+              break;
+            }
+        }
+      else
+        {
+          zMapAssertNotReached();
+        }
+
+      if (property_data)
+        XFree(property_data) ;
+
+      ++i;
+    } while (i < attempts);
+  
+  return success ;
+}
+
+
+/* Check whether the given X Window exists on the given display.
+ * 
+ * Returns TRUE if the window is still there, FALSE otherwise. If FALSE is returned 
+ * the x error is returned in err_msg_out, should be g_free'd when finished with. 
+ */
+gboolean zMapGUIXWindowExists(Display *x_display, Window x_window, char *clipboard_name, char **err_msg_out)
+{
+  gboolean result = TRUE ;				    /* default to window ok. */
+  Status status ;
+  XWindowAttributes x_attributes ;
+  int x_error_code ;
+
+  /* The gdk way of trapping an X error, seems to work ok. */
+  gdk_error_trap_push() ;
+
+  status = XGetWindowAttributes(x_display, x_window, &x_attributes) ;  
+
+  gdk_flush() ;
+
+  if (!status)
+    {
+      /* If there was an error then check what sort. */
+      if ((x_error_code = gdk_error_trap_pop()))
+	{
+	  enum {TEXT_BUF_SIZE = 1024} ;
+	  char *error_text ;
+
+	  error_text = g_malloc(TEXT_BUF_SIZE) ;
+
+	  XGetErrorText(x_display, x_error_code, error_text, TEXT_BUF_SIZE) ;
+
+	  *err_msg_out = error_text ;
+
+	  result = FALSE ;
+	}
+      else
+	{
+	  *err_msg_out = g_strdup("XGetWindowAttributes() failed but there was no X error code.") ;
+	}
+    }
+  else
+    {
+      result = zmapGUIXWindowValid(x_display, x_window, clipboard_name, err_msg_out);
+    }
+
+  return result ;
+}
+
+
+/* Find GtkWindow (i.e. ultimate) parent of given widget.
  * Can return NULL if widget is not part of a proper widget tree.
  *
  * @param widget     The child widget.
@@ -190,309 +517,6 @@ GtkWidget *zMapGUIFindTopLevel(GtkWidget *widget)
   return toplevel ;
 }
 
-
-
-/* Returns the maximum size that a toplevel window can be to fit on a users screen.
- * 
- * Horizontally this is usually the actual screen width but vertically is likely to 
- * have to accomodate tool bars and other desktop like stuff.
- *
- * If the window manager supports _NET_WORKAREA then we get that property and use it to
- * set the height/width.
- *
- * Otherwise we are back to guessing some kind of size.
- * If someone displays a really short piece of dna this will make the window
- * too big so really we should readjust the window size to fit the sequence
- * but this will be rare.
- *
- */
-void zMapGUIGetMaxWindowSize(GtkWidget *toplevel, gint *width_out, gint *height_out)
-{
-  GdkAtom geometry_atom, workarea_atom, max_atom_horz, max_atom_vert ;
-  GdkScreen *screen ;
-  int window_width_guess, window_height_guess ;
-
-  /* Get the atoms for _NET_* properties. */
-  geometry_atom = gdk_atom_intern("_NET_DESKTOP_GEOMETRY", FALSE) ;
-  workarea_atom = gdk_atom_intern("_NET_WORKAREA", FALSE) ;
-  max_atom_horz = gdk_atom_intern("_NET_WM_STATE_MAXIMIZED_HORZ", FALSE) ;
-  max_atom_vert = gdk_atom_intern("_NET_WM_STATE_MAXIMIZED_VERT", FALSE) ;
-
-  screen = gtk_widget_get_screen(toplevel) ;
-
-  if (gdk_x11_screen_supports_net_wm_hint(screen, geometry_atom)
-      && gdk_x11_screen_supports_net_wm_hint(screen, workarea_atom))
-    {
-      /* We want to get these properties....
-       *   _NET_DESKTOP_GEOMETRY(CARDINAL) = 1600, 1200
-       *   _NET_WORKAREA(CARDINAL) = 0, 0, 1600, 1154, 0, 0, 1600, 1154,...repeated for all workspaces.
-       *
-       * In fact we don't use the geometry (i.e. screen size) but its useful
-       * to see it.
-       *
-       * When retrieving 32 bit items, these items will be stored in _longs_, this means
-       * that on a 32 bit machine they come back in 32 bits BUT on 64 bit machines they
-       * come back in 64 bits.
-       *
-       *  */
-      gboolean result ;
-      GdkWindow *root_window ;
-      gulong offset, length ;
-      gint pdelete = FALSE ;				    /* Never delete the property data. */
-      GdkAtom actual_property_type ;
-      gint actual_format, actual_length, field_size, num_fields ;
-      guchar *data, *curr ;
-      guint width, height, left, top, right, bottom ;
-
-      field_size = sizeof(glong) ;			    /* see comment above re. 32 vs. 64 bits. */
-
-      root_window = gdk_screen_get_root_window(screen) ;
-
-      offset = 0 ;
-      num_fields = 2 ;
-      length = num_fields * 4 ;				    /* Get two unsigned ints worth of data. */
-      actual_format = actual_length = 0 ;
-      data = NULL ;
-      result = gdk_property_get(root_window,
-				geometry_atom,
-				GDK_NONE,
-				offset,
-				length,
-				pdelete,
-				&actual_property_type,
-				&actual_format,
-				&actual_length,
-				&data) ;
-
-      if (num_fields == actual_length/sizeof(glong))
-	{
-	  curr = data ;
-	  memcpy(&width, curr, field_size) ;
-	  memcpy(&height, (curr += field_size), field_size) ;
-	  g_free(data) ;
-	}
-
-      offset = 0 ;
-      num_fields = 4 ;
-      length = num_fields * 4 ;				    /* Get four unsigned ints worth of data. */
-      actual_format = actual_length = 0 ;
-      data = NULL ;
-      result = gdk_property_get(root_window,
-				workarea_atom,
-				GDK_NONE,
-				offset,
-				length,
-				pdelete,
-				&actual_property_type,
-				&actual_format,
-				&actual_length,
-				&data) ;
-
-      if (num_fields == actual_length/sizeof(glong))
-	{
-	  curr = data ;
-	  memcpy(&left, curr, field_size) ;
-	  memcpy(&top, (curr += field_size), field_size) ;
-	  memcpy(&right, (curr += field_size), field_size) ;
-	  memcpy(&bottom, (curr += field_size), field_size) ;
-	  g_free(data) ;
-	}
-
-      window_width_guess = right - left ;
-      window_height_guess = bottom - top ;
-    }
-  else
-    {
-      /* OK, here we just guess some appropriate size, and knock off a bit to allow for
-       * tool bars etc., need to do this for the mac currently. */
-      float toolbar_allowance = TOOLBAR_ALLOWANCE ;
-
-      window_width_guess = (int)((float)(gdk_screen_get_width(screen)) * toolbar_allowance) ;
-      window_height_guess = (int)((float)(gdk_screen_get_height(screen)) * toolbar_allowance) ;
-    }
-
-  /* Return our best guesses. */
-  *width_out = window_width_guess ;
-  *height_out = window_height_guess ;
-
-  return ;
-}
-
-
-/* Should rationalise with the above routine..... */
-/* Sets the supplied toplevel window to the maximum size that it can be to fit on a users screen.
- * 
- * Horizontally this is usually the actual screen width but vertically is likely to 
- * have to accomodate tool bars and other desktop like stuff.
- *
- * If the window manager supports _NET_WORKAREA then we get that property and use it to
- * set the height/width.
- *
- * Otherwise if the window manager supports the _NET_WM_ stuff then we use that to set the window max
- * as it will automatically take into account any menubars etc. created by the window manager.
- * But it doesn't work that reliably....under KDE it does the right thing, but _not_ under GNOME
- * where the window is maximised in both directions which is very annoying. Later versions of
- * GNOME do work correctly though.
- *
- * Otherwise we are back to guessing some kind of size.
- * If someone displays a really short piece of dna this will make the window
- * too big so really we should readjust the window size to fit the sequence
- * but this will be rare.
- *
- */
-void zMapGUIMaximiseWindow(GtkWidget *toplevel)
-{
-  GdkAtom geometry_atom, workarea_atom, max_atom_vert ;
-  GdkScreen *screen ;
-
-  /* Get the atoms for _NET_* properties. */
-  geometry_atom = gdk_atom_intern("_NET_DESKTOP_GEOMETRY", FALSE) ;
-  workarea_atom = gdk_atom_intern("_NET_WORKAREA", FALSE) ;
-  max_atom_vert = gdk_atom_intern("_NET_WM_STATE_MAXIMIZED_VERT", FALSE) ;
-
-  screen = gtk_widget_get_screen(toplevel) ;
-
-  if (gdk_x11_screen_supports_net_wm_hint(screen, geometry_atom)
-      && gdk_x11_screen_supports_net_wm_hint(screen, workarea_atom))
-    {
-      /* We want to get these properties....
-       *   _NET_DESKTOP_GEOMETRY(CARDINAL) = 1600, 1200
-       *   _NET_WORKAREA(CARDINAL) = 0, 0, 1600, 1154, 0, 0, 1600, 1154,...repeated for all workspaces.
-       *
-       * In fact we don't use the geometry (i.e. screen size) but its useful
-       * to see it.
-       *
-       * When retrieving 32 bit items, these items will be stored in _longs_, this means
-       * that on a 32 bit machine they come back in 32 bits BUT on 64 bit machines they
-       * come back in 64 bits.
-       *
-       *  */
-      int window_width_guess = 300, window_height_guess ;
-      gboolean result ;
-      GdkWindow *root_window ;
-      gulong offset, length ;
-      gint pdelete = FALSE ;				    /* Never delete the property data. */
-      GdkAtom actual_property_type ;
-      gint actual_format, actual_length, field_size, num_fields ;
-      guchar *data, *curr ;
-      guint width, height, left, top, right, bottom ;
-
-      field_size = sizeof(glong) ;			    /* see comment above re. 32 vs. 64 bits. */
-
-      root_window = gdk_screen_get_root_window(screen) ;
-
-      offset = 0 ;
-      num_fields = 2 ;
-      length = num_fields * 4 ;				    /* Get two unsigned ints worth of data. */
-      actual_format = actual_length = 0 ;
-      data = NULL ;
-      result = gdk_property_get(root_window,
-				geometry_atom,
-				GDK_NONE,
-				offset,
-				length,
-				pdelete,
-				&actual_property_type,
-				&actual_format,
-				&actual_length,
-				&data) ;
-
-      if (num_fields == actual_length/sizeof(glong))
-	{
-	  curr = data ;
-	  memcpy(&width, curr, field_size) ;
-	  memcpy(&height, (curr += field_size), field_size) ;
-	  g_free(data) ;
-	}
-
-      offset = 0 ;
-      num_fields = 4 ;
-      length = num_fields * 4 ;				    /* Get four unsigned ints worth of data. */
-      actual_format = actual_length = 0 ;
-      data = NULL ;
-      result = gdk_property_get(root_window,
-				workarea_atom,
-				GDK_NONE,
-				offset,
-				length,
-				pdelete,
-				&actual_property_type,
-				&actual_format,
-				&actual_length,
-				&data) ;
-
-      if (num_fields == actual_length/sizeof(glong))
-	{
-	  curr = data ;
-	  memcpy(&left, curr, field_size) ;
-	  memcpy(&top, (curr += field_size), field_size) ;
-	  memcpy(&right, (curr += field_size), field_size) ;
-	  memcpy(&bottom, (curr += field_size), field_size) ;
-	  g_free(data) ;
-	}
-
-      window_height_guess = bottom - top ;
-
-      /* We now know the screen size and the work area size so we can set the window accordingly,
-       * note how we set the width small knowing that gtk will make it only as big as it needs
-       * to be. */
-      gtk_window_resize(GTK_WINDOW(toplevel), window_width_guess, window_height_guess) ;
-    }
-  else if (gdk_x11_screen_supports_net_wm_hint(screen, max_atom_vert))
-    {
-      /* This code was taken from following the code through in gtk_maximise_window()
-       * to gdk_window_maximise() etc.
-       * We construct an event that the window manager will see that will cause it to correctly
-       * maximise the window. */
-      GtkWindow *gtk_window = GTK_WINDOW(toplevel) ;
-      GdkDisplay *display = gtk_widget_get_display(toplevel) ;
-      GdkWindow *window = toplevel->window ;
-      GdkWindow *root_window = gtk_widget_get_root_window(toplevel) ;
-      XEvent xev ;
-
-      if (gtk_window->frame)
-	window = gtk_window->frame;
-      else
-	window = toplevel->window ;
-
-      xev.xclient.type = ClientMessage;
-      xev.xclient.serial = 0;
-      xev.xclient.send_event = True;
-      xev.xclient.window = GDK_WINDOW_XID (window);
-      xev.xclient.message_type = gdk_x11_get_xatom_by_name_for_display (display, "_NET_WM_STATE");
-      xev.xclient.format = 32 ;
-      xev.xclient.data.l[0] = TRUE ;
-      xev.xclient.data.l[1] = gdk_x11_atom_to_xatom_for_display(display, max_atom_vert) ;
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      /* undefine for a window maximised in both directions.... */
-      xev.xclient.data.l[2] = gdk_x11_atom_to_xatom_for_display(display, max_atom_horz) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-      xev.xclient.data.l[2] = 0 ;
-      xev.xclient.data.l[3] = 0;
-      xev.xclient.data.l[4] = 0;
-
-      XSendEvent(GDK_WINDOW_XDISPLAY(window),
-		 GDK_WINDOW_XID(root_window),
-		 False,
-		 SubstructureRedirectMask | SubstructureNotifyMask,
-		 &xev) ;
-    }
-  else
-    {
-      /* OK, here we just guess some appropriate size, note that the window width is kind
-       * of irrelevant, we just set it to be a bit less than it will finally be and the
-       * widgets will resize it to the correct width. We don't use gtk_window_set_default_size()
-       * because it doesn't seem to work. */
-      int window_width_guess = 300, window_height_guess ;
-      float toolbar_allowance = TOOLBAR_ALLOWANCE ;
-
-      window_height_guess = (int)((float)(gdk_screen_get_height(screen)) * toolbar_allowance) ;
-
-      gtk_window_resize(GTK_WINDOW(toplevel), window_width_guess, window_height_guess) ;
-    }
-
-  return ;
-}
 
 
 /* For use with custom built dialogs.
@@ -878,6 +902,10 @@ void zMapShowMsg(ZMapMsgType msg_type, char *format, ...)
   msg_string = g_strdup_vprintf(format, args) ;
   va_end(args) ;
 
+  /* print the message to stdout/stderr */
+  printMessage(msg_type, msg_string);
+
+  /* show the dialog */
   zMapGUIShowMsg(msg_type, msg_string) ;
 
   g_free(msg_string) ;
@@ -1661,6 +1689,29 @@ static gboolean modalFromMsgType(ZMapMsgType msg_type)
   return modal ;
 }
 
+
+
+/* Called by all the zmap gui message functions to print a message to stdout 
+ * or stderr (depending on its type) */
+static void printMessage(ZMapMsgType msg_type, char *message)
+{
+  switch (msg_type)
+    {
+      case ZMAP_MSG_WARNING:
+      case ZMAP_MSG_CRITICAL: /* fall through */
+      case ZMAP_MSG_CRASH:    /* fall through */
+        fprintf(stderr, "%s", message) ;
+        break ;
+
+      case ZMAP_MSG_INFORMATION:
+      case ZMAP_MSG_EXIT:
+        printf("%s", message) ;
+        break ;
+        
+      default:
+        break ;
+    } ;
+}
 
 
 /* Called by all the zmap gui message functions to display a short message in

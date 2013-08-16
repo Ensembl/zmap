@@ -20,8 +20,8 @@
  * This file is part of the ZMap genome database package
  * originated by
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *         Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: Private header for the navigator code which displays
  *              positional information for sequences.
@@ -32,11 +32,14 @@
 #define ZMAP_NAVIGATOR_P_H
 
 #include <ZMap/zmapFeature.h>
-#include <ZMap/zmapNavigator.h>
-#include <ZMap/zmapWindowNavigator.h>
+
+
+/* callback registered with zmapnavigator, gets called when user releases the scrollbar for
+ * the window locator. */
+typedef void (*ZMapNavigatorScrollValue)(void *user_data, double start, double end) ;
 
 /* Data associated with the navigator. */
-typedef struct _ZMapNavStruct
+typedef struct ZMapNavigatorStructType
 {
   ZMapSpanStruct parent_span ;		    /* Start/end of parent of sequence. */
   ZMapSpanStruct sequence_span ;		    /* where this sequence maps to parent. */
@@ -66,7 +69,19 @@ typedef struct _ZMapNavStruct
   ZMapNavigatorScrollValue cb_func ;
   void *user_data ;
 
-} ZMapNavStruct ;
+} ZMapNavigatorStruct, *ZMapNavigator ;
+
+
+
+
+ZMapNavigator zmapNavigatorCreate(GtkWidget **top_widg_out, GtkWidget **canvas_out) ;
+void zmapNavigatorSetWindowCallback(ZMapNavigator navigator,
+					   ZMapNavigatorScrollValue cb_func, void *user_data) ;
+int zmapNavigatorGetMaxWidth(ZMapNavigator navigator);
+int zmapNavigatorSetWindowPos(ZMapNavigator navigator, double top_pos, double bot_pos) ;
+void zmapNavigatorSetView(ZMapNavigator navigator, ZMapFeatureContext features,
+			  double top, double bottom) ;
+void zmapNavigatorDestroy(ZMapNavigator navigator) ;
 
 
 

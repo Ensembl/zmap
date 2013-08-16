@@ -229,6 +229,24 @@ typedef struct _ZMapViewConnectionStepStruct
 
 
 
+/* Holds data about feature sets loaded. */
+typedef struct ZMapViewLoadFeaturesDataStructName
+{
+  char *err_msg;        // from the server mainly
+  gchar *stderr_out;
+  gint exit_code;
+  int num_features;
+
+  GList *feature_sets ;
+  int start,end;        // requested coords
+  gboolean status;      // load sucessful?
+  unsigned long xwid ;  // X Window id for the xremote widg. */
+
+} ZMapViewLoadFeaturesDataStruct, *ZMapViewLoadFeaturesData ;
+
+
+
+
 /* A "View" is a set of one or more windows that display data retrieved from one or
  * more servers. Note that the "View" windows are _not_ top level windows, they are panes
  * within a container widget that is supplied as a parent of the View then the View
@@ -242,18 +260,21 @@ typedef struct _ZMapViewStruct
 
   gboolean busy ;					    /* Records when we are busy so can
 							       block user interaction. */
-  gboolean thread_fail_silent;                /* don't report failures on screen */
-  gboolean serial_load;                   /* load pipe servers in series on startup */
+  gboolean thread_fail_silent;				    /* don't report failures on screen */
+  gboolean serial_load;					    /* load pipe servers in series on startup */
 
+
+  gboolean remote_control ;
+
+
+  /* THESE WILL NOT BE NEEDED ANY MORE.. */
   GtkWidget *xremote_widget ;				    /* Widget that receives xremote
 							       commands from external program
 							       running zmap. */
-  gulong map_event_handler ;				    /* map event handler id for xremote widget. */
   unsigned long xwid ;					    /* X Window id for the xremote widg. */
 
-  char *xwid_txt ;					    /* Text version of xwid. */
 
-
+  gulong map_event_handler ;				    /* map event handler id for xremote widget. */
 
   guint idle_handle ;
 
@@ -350,6 +371,8 @@ typedef struct _ZMapViewStruct
 
   /* Be good to get rid of this window stuff in any restructure..... */
   GList *window_list ;					    /* Of ZMapViewWindow. */
+
+
   ZMapWindowNavigator navigator_window ;
 
 
@@ -453,7 +476,7 @@ void zmapViewStepDestroy(gpointer data, gpointer user_data) ;
 void zmapViewStepListDestroy(ZMapViewConnectionStepList step_list) ;
 
 void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req_featuresets,
-		        ZMapConfigSource server,
+			  ZMapConfigSource server,
 			  int features_start, int features_end,
 			  gboolean group, gboolean make_new_connection, gboolean terminate) ;
 

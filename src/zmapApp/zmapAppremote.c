@@ -21,7 +21,7 @@
  * originated by
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description:
  *
@@ -32,11 +32,13 @@
 #include <ZMap/zmap.h>
 
 #include <string.h>
+
 #include <zmapApp_P.h>
 #include <ZMap/zmapXML.h>
 #include <ZMap/zmapCmdLineArgs.h>
 #include <ZMap/zmapConfigDir.h>
 #include <ZMap/zmapUtilsXRemote.h>
+
 
 typedef enum {
   ZMAP_APP_REMOTE_ALL = 1
@@ -80,7 +82,7 @@ static gboolean end(void *userData, ZMapXMLElement element, ZMapXMLParser parser
 static gboolean req_start(void *userData, ZMapXMLElement element, ZMapXMLParser parser);
 static gboolean req_end(void *userData, ZMapXMLElement element, ZMapXMLParser parser);
 
-static void createZMap(ZMapAppContext app, RequestData request_data, ResponseContext response);
+
 static void send_finalised(ZMapXRemoteObj client);
 static gboolean finalExit(gpointer data) ;
 
@@ -151,7 +153,7 @@ void zmapAppRemoteInstaller(GtkWidget *widget, gpointer app_context_data)
 
               req = g_strdup_printf("<zmap>\n"
 				    "  <request action=\"register_client\">\n"
-                                    "    <client xwid=\"0x%lx\" request_atom=\"%s\" response_atom=\"%s\" >\n"
+                                    "    <client xwid=\""ZMAP_XWINDOW_FORMAT_STR"\" request_atom=\"%s\" response_atom=\"%s\" >\n"
                                     "      <action>%s</action>\n"
                                     "      <action>%s</action>\n"
                                     "    </client>\n"
@@ -165,7 +167,8 @@ void zmapAppRemoteInstaller(GtkWidget *widget, gpointer app_context_data)
 
               if ((ret_code = zMapXRemoteSendRemoteCommand(client, req, &resp)) != 0)
                 {
-                  zMapLogWarning("Could not communicate with client '0x%lx'. code %d", clientId, ret_code) ;
+                  zMapLogWarning("Could not communicate with client \""ZMAP_XWINDOW_FORMAT_STR"\". code %d",
+				 clientId, ret_code) ;
 
                   if (resp)
                     {
@@ -240,9 +243,10 @@ static char *application_execute_command(char *command_text, gpointer app_contex
         {
         case ZMAPAPP_REMOTE_OPEN_ZMAP:
 
-          createZMap(app_context_data, &request_data, &response_data);
-          if (app_context->info)
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+          if(app_context->info)
             response_data.code = app_context->info->code;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
           break;
 
@@ -298,6 +302,7 @@ static char *application_execute_command(char *command_text, gpointer app_contex
 }
 
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void createZMap(ZMapAppContext app, RequestData request_data, ResponseContext response_data)
 {
   ZMapFeatureSequenceMap seq_map = g_new0(ZMapFeatureSequenceMapStruct,1);
@@ -324,6 +329,8 @@ static void createZMap(ZMapAppContext app, RequestData request_data, ResponseCon
 
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 static void send_finalised(ZMapXRemoteObj client)
 {

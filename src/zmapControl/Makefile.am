@@ -9,6 +9,7 @@ libZMapControl_la_SOURCES = zmapControl.c \
 zmapControlImportFile.c\
 zmapControlNavigator.c \
 zmapControlPreferences.c \
+zmapControlRemoteControl.c \
 zmapControlRemoteReceive.c \
 zmapControlRemoteSend.c \
 zmapControlViews.c \

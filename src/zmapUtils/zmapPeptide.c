@@ -136,8 +136,7 @@ per base:
 
 */
 
-char complementBase[] =
- { 0, T_,A_,W_,C_,Y_,M_,H_,G_,K_,R_,D_,S_,B_,V_,N_ } ;
+static char complementBase[] = { 0, T_,A_,W_,C_,Y_,M_,H_,G_,K_,R_,D_,S_,B_,V_,N_ } ;
 
 
 
