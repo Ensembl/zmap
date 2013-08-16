@@ -60,12 +60,13 @@ typedef struct
 
 
 static gboolean checkForPerfectAlign(GArray *gaps, unsigned int align_error) ;
+static void featureAlignmentAddGapsData(ZMapFeature feature, GArray *gaps, unsigned int align_error) ;
 
 static AlignStrCanonical alignStrMakeCanonical(char *match_str, ZMapFeatureAlignFormat align_format) ;
 static void alignStrDestroyCanonical(AlignStrCanonical canon) ;
 static gboolean alignStrCanon2Homol(AlignStrCanonical canon, ZMapStrand ref_strand, ZMapStrand match_strand,
 				    int p_start, int p_end, int c_start, int c_end,
-				    GArray **local_map_out) ;
+				    GArray **gaps_arrays_out) ;
 #if NOT_USED
 static gboolean alignStrVerifyStr(char *match_str, ZMapFeatureAlignFormat align_format) ;
 static gboolean exonerateVerifyVulgar(char *match_str) ;
@@ -95,6 +96,9 @@ static gboolean gotoLastSpace(char **cp_inout) ;
 
 ZMAP_ENUM_AS_NAME_STRING_FUNC(zMapFeatureAlignFormat2ShortText, ZMapFeatureAlignFormat, ZMAP_ALIGN_GAP_FORMAT_LIST) ;
 
+
+
+                               
 
 
 /* Adds homology data to a feature which may be empty or may already have partial features. */
@@ -142,15 +146,7 @@ gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
   feature->feature.homol.flags.has_sequence = has_local_sequence ;
   feature->feature.homol.sequence = sequence ;
 
-
-  if (gaps)
-    {
-      zMapFeatureSortGaps(gaps) ;
-
-      feature->feature.homol.align = gaps ;
-
-      feature->feature.homol.flags.perfect = checkForPerfectAlign(feature->feature.homol.align, align_error) ;
-    }
+  featureAlignmentAddGapsData(feature, gaps, align_error) ;
 
   return result ;
 }
@@ -233,6 +229,57 @@ gboolean zMapFeatureAlignmentString2Gaps(ZMapFeatureAlignFormat align_format,
 /*
  *               Internal functions.
  */
+
+
+/* Adds the given gaps array(s) to the given feature. The input is an 
+ * array of gaps arrays, one for each match in the sequence. If there are
+ * multiple gaps arrays, new features are created for all but the first one
+ * and the coordinates of each feature are set to the coordinate range for
+ * its gaps array. */
+static void featureAlignmentAddGapsData(ZMapFeature feature, GArray *gaps, unsigned int align_error)
+{
+  GArray *cur_gaps = NULL ;
+
+  if (gaps && (cur_gaps = g_array_index(gaps, GArray*, 0)))
+    {
+      int i = 0;
+      
+      for ( ; i < gaps->len ; cur_gaps = g_array_index(gaps, GArray*, ++i))
+        {
+          ZMapAlignBlock first_align = &g_array_index(cur_gaps, ZMapAlignBlockStruct, 0) ;
+          ZMapAlignBlock last_align = &g_array_index(cur_gaps, ZMapAlignBlockStruct, cur_gaps->len - 1) ;
+          int match_start = (first_align->q_strand == ZMAPSTRAND_FORWARD ? first_align->q1 : last_align->q2 ) ;
+          int match_end   = (first_align->q_strand == ZMAPSTRAND_FORWARD ? last_align->q2  : first_align->q1) ;
+          int query_start = (first_align->t_strand == ZMAPSTRAND_FORWARD ? first_align->t1 : last_align->t1 ) ;
+          int query_end   = (first_align->t_strand == ZMAPSTRAND_FORWARD ? last_align->t2  : first_align->t2) ;
+          
+          if (i != 0)
+            {
+              /* For subsequent matches we need to create a duplicate 
+               * feature to put this gaps array in. */
+              ZMapFeatureSet featureset = (ZMapFeatureSet)feature->parent ;
+              const char *feature_name = g_quark_to_string(feature->original_id) ;
+              
+              GQuark unique_id = zMapFeatureCreateID(feature->type, (char*)feature_name, feature->strand,
+                                                     match_start, match_end, query_start, query_end ) ;
+
+              feature = (ZMapFeature)zMapFeatureAnyCopy((ZMapFeatureAny)feature) ;
+              feature->unique_id = unique_id ;
+
+              zMapFeatureSetAddFeature(featureset, feature) ; 
+            }
+
+          feature->feature.homol.y1 = match_start ;
+          feature->x1 = query_start ;
+          feature->feature.homol.y2 = match_end ;
+          feature->x2 = query_end ;
+          
+          zMapFeatureSortGaps(cur_gaps) ;
+          feature->feature.homol.align = cur_gaps ;
+          feature->feature.homol.flags.perfect = checkForPerfectAlign(feature->feature.homol.align, align_error) ;
+        }
+    }
+}
 
 
 /* Returns TRUE if the target blocks match coords are within align_error bases of each other, if
@@ -354,19 +401,24 @@ static void alignStrDestroyCanonical(AlignStrCanonical canon)
  *  */
 static gboolean alignStrCanon2Homol(AlignStrCanonical canon, ZMapStrand ref_strand, ZMapStrand match_strand,
 				    int p_start, int p_end, int c_start, int c_end,
-				    GArray **local_map_out)
+				    GArray **gaps_arrays_out)
 {
   gboolean result = TRUE ;
   int curr_ref, curr_match ;
   int i, j ;
   GArray *local_map = NULL ;
   GArray *align = canon->align ;
+  GArray *gaps_arrays = NULL ;
 
   /* is there a call to do this in feature code ??? or is the array passed in...check gff..... */
   local_map = g_array_sized_new(FALSE, FALSE, sizeof(ZMapAlignBlockStruct), 10) ;
 
+  /* We'll get multiple gaps arrays if we come across any introns. Put each
+   * gaps array into a container array. */
+  gaps_arrays = g_array_sized_new(FALSE, FALSE, sizeof(GArray*), 1) ;
+  gaps_arrays = g_array_append_val(gaps_arrays, local_map) ;
 
-  if (ref_strand == ZMAPSTRAND_FORWARD)
+ if (ref_strand == ZMAPSTRAND_FORWARD)
     curr_ref = p_start ;
   else
     curr_ref = p_end ;
@@ -437,6 +489,19 @@ static gboolean alignStrCanon2Homol(AlignStrCanonical canon, ZMapStrand ref_stra
 
 	    break ;
 	  }
+        case 'N' :                                          /* Intron. */
+          {
+            /* Create a new gaps array for the next exon */
+            local_map = g_array_sized_new(FALSE, FALSE, sizeof(ZMapAlignBlockStruct), 10) ;
+            gaps_arrays = g_array_append_val(gaps_arrays, local_map) ;
+            
+            if (ref_strand == ZMAPSTRAND_FORWARD)
+	      curr_ref += curr_length ;
+	    else
+	      curr_ref -= curr_length ;
+            
+	    break ;
+          }
 	default:
 	  {
 	    zMapAssertNotReached() ;
@@ -446,7 +511,7 @@ static gboolean alignStrCanon2Homol(AlignStrCanonical canon, ZMapStrand ref_stra
 	}
     }
 
-  *local_map_out = local_map ;
+  *gaps_arrays_out = gaps_arrays ;
 
   return result ;
 }
@@ -799,9 +864,6 @@ static gboolean bamCigar2Canon(char *match_str, AlignStrCanonical canon)
       else
 	op.length = 1 ;
 
-      if (*cp == 'N')
-	op.op = 'D' ;
-      else
 	op.op = *cp ;
 
       canon->align = g_array_append_val(canon->align, op) ;
