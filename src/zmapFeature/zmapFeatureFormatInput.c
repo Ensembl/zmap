@@ -226,7 +226,7 @@ gboolean zMapFeatureFormatType(gboolean SO_compliant, gboolean default_to_basic,
 	{
 	  type = ZMAPSTYLE_MODE_BASIC ;
 	}
-      else if (default_to_basic)
+      else if (type == ZMAPSTYLE_MODE_INVALID && default_to_basic)
 	{
 	  /* If we allow defaulting of unrecognised features, the default is a "basic" feature. */
 	  type = ZMAPSTYLE_MODE_BASIC ;
