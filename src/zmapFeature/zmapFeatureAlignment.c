@@ -848,7 +848,14 @@ static gboolean ensemblCigar2Canon(char *match_str, AlignStrCanonical canon)
 
 
 /* Blindly converts, assumes match_str is a valid BAM cigar string.
- * Currently we just convert all N's into D's, not really good enough... */
+ * Currently we convert:
+ * 
+ * X -> M
+ * P -> ignored
+ * S -> ignored
+ * H -> not handled
+ * 
+ */
 static gboolean bamCigar2Canon(char *match_str, AlignStrCanonical canon)
 {
   gboolean result = TRUE ;
@@ -864,10 +871,26 @@ static gboolean bamCigar2Canon(char *match_str, AlignStrCanonical canon)
       else
 	op.length = 1 ;
 
-	op.op = *cp ;
+      if (*cp == 'H')
+        {
+          /* We don't handle hard-clipping */
+          result = FALSE ;
+          break ;
+        }
+      else if (*cp == 'P' || *cp == 'S')
+        {
+          /* Padding and soft-clipping: should be fine to ignore these */
+        }
+      else 
+        {
+          if (*cp == 'X') /* Mismatch. Treat it like a match. */
+            op.op = 'M' ;
+          else            /* Everything else we handle */
+            op.op = *cp ;
 
-      canon->align = g_array_append_val(canon->align, op) ;
-
+          canon->align = g_array_append_val(canon->align, op) ;
+        }
+      
       cp++ ;
     } while (*cp) ;
 
