@@ -263,12 +263,12 @@ static ZMapWindowFeatureShow findReusableShow(GPtrArray *window_list) ;
 static gboolean windowIsReusable(void) ;
 static ZMapFeature getFeature(FooCanvasItem *item) ;
 
-static gboolean changePageHandler(GtkNotebook *notebook, gint arg1, gpointer user_data) ;
-static void switchPageHandler(GtkNotebook *notebook, gpointer new_page, guint new_page_index, gpointer user_data) ;
-static gboolean notebookExposeHandlerCB(GtkWidget *widget, GdkEventExpose *expose, gpointer user_data) ;
-static gboolean notebookMapEventCB(GtkWidget *widget, GdkEvent *event, gpointer user_data)   ;
-static gboolean mapEventCB(GtkWidget *widget, GdkEvent *event, gpointer user_data)  ;
-static gboolean exposeHandlerCB(GtkWidget *widget, GdkEventExpose *expose, gpointer user_data) ;
+//static gboolean changePageHandler(GtkNotebook *notebook, gint arg1, gpointer user_data) ;
+//static void switchPageHandler(GtkNotebook *notebook, gpointer new_page, guint new_page_index, gpointer user_data) ;
+//static gboolean notebookExposeHandlerCB(GtkWidget *widget, GdkEventExpose *expose, gpointer user_data) ;
+//static gboolean notebookMapEventCB(GtkWidget *widget, GdkEvent *event, gpointer user_data)   ;
+//static gboolean mapEventCB(GtkWidget *widget, GdkEvent *event, gpointer user_data)  ;
+//static gboolean exposeHandlerCB(GtkWidget *widget, GdkEventExpose *expose, gpointer user_data) ;
 static void destroyCB(GtkWidget *widget, gpointer data);
 
 static void preserveCB(gpointer data, guint cb_action, GtkWidget *widget);
@@ -589,17 +589,15 @@ static void showFeature(ZMapWindowFeatureShow show, ZMapGuiNotebook extras_noteb
 
   feature_name = (char *)g_quark_to_string(show->feature->original_id) ;
 
-      /* Make the notebook. */
-      show->feature_book = createFeatureBook(show, feature_name, feature, item) ;
+  /* Make the notebook. */
+  show->feature_book = createFeatureBook(show, feature_name, show->feature, show->item, extras_notebook) ;
 
-
-      /* Now display the pages..... */
-      show->notebook = zMapGUINotebookCreateWidget(show->feature_book) ;
-
-      gtk_box_pack_start(GTK_BOX(show->vbox), show->notebook, TRUE, TRUE, 0) ;
-
-      gtk_widget_show_all(show->window) ;
-    }
+  /* Now display the pages..... */
+  show->notebook = zMapGUINotebookCreateWidget(show->feature_book) ;
+  
+  gtk_box_pack_start(GTK_BOX(show->vbox), show->notebook, TRUE, TRUE, 0) ;
+  
+  gtk_widget_show_all(show->window) ;
 
   zMapGUIRaiseToTop(show->window);
 
@@ -921,91 +919,91 @@ static void createEditWindow(ZMapWindowFeatureShow feature_show, char *title)
 }
 
 
-/* Called when the notebook section of the feature details window is exposed,
- * this is an attempt to display the window at a sensible size. */
-static gboolean notebookExposeHandlerCB(GtkWidget *widget, GdkEventExpose *expose, gpointer user_data)
-{
-  gboolean event_handled = FALSE ;			    /* make sure event is propagated. */
-  ZMapWindowFeatureShow feature_show = (ZMapWindowFeatureShow)user_data ;
-  int top_width, top_height, vbox_width, vbox_height ;
-  GtkRequisition size_req ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  printf("in notebook expose handler\n") ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-  top_width = top_height = vbox_width = vbox_height = 0 ;
-
-  /* Get size of top level window. */
-  gtk_window_get_size(GTK_WINDOW(feature_show->window), &top_width, &top_height) ;
-
-  /* Get size of our vbox containing all the info. allowing for the external border
-   * we set for the vbox. */
-  gtk_widget_size_request(feature_show->vbox, &size_req) ;
-  vbox_width = size_req.width + (2 * TOP_BORDER_WIDTH) ;
-  vbox_height = size_req.height + (2 * TOP_BORDER_WIDTH) ;
-
-  /* Unfortunately there seems to be some extra border, perhaps from the scrolled window
-   * or viewport....and in fact the scrolled window frequently is shown....not sure why,
-   * big fudge factor here...seems to require more on the mac than gnu desktop. */
-  vbox_width += 40 ;
-  vbox_height +=40 ;
-
-
-  /* If vbox is a different size than top window then we should expand/contract top window to
-   * be a more sensible size on the screen. */
-  if (vbox_width != top_width || vbox_height != top_height)
-    {
-      int max_width, max_height ;
-
-      zMapGUIGetMaxWindowSize(feature_show->window, &max_width, &max_height) ;
-
-      if (vbox_width != top_width)
-	top_width = vbox_width ;
-
-      if (top_width > max_width)
-	top_width = max_width ;
-
-      if (vbox_height != top_height)
-	top_height = vbox_height ;
-
-      if (top_height > max_height)
-	top_height = max_height ;
-
-      gtk_window_resize(GTK_WINDOW(feature_show->window), top_width, top_height) ;
-    }
-
-  /* Disconnect otherwise we reset the window height every time we are re-mapped. */
-  g_signal_handler_disconnect(feature_show->notebook, feature_show->notebook_expose_handler) ;
-  feature_show->notebook_expose_handler = 0 ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  printf("leaving notebook expose handler\n") ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-  return event_handled ;
-}
-
-
-
-/* For some reason this function is only called on the intial expose which is very boring....
- * I want to resize when the notebook page is swopped, that would be cool..... */
-static void switchPageHandler(GtkNotebook *notebook, gpointer new_page, guint new_page_index, gpointer user_data)
-{
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* TEST ON LINUX AND SEE IF I CAN GET IT WORKING... */
-
-  ZMapWindowFeatureShow feature_show = (ZMapWindowFeatureShow)user_data ;
-
-  printf("in notebook switch page handler\n") ;
-
-  printf("leaving notebook switch page handler\n") ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+///* Called when the notebook section of the feature details window is exposed,
+// * this is an attempt to display the window at a sensible size. */
+//static gboolean notebookExposeHandlerCB(GtkWidget *widget, GdkEventExpose *expose, gpointer user_data)
+//{
+//  gboolean event_handled = FALSE ;			    /* make sure event is propagated. */
+//  ZMapWindowFeatureShow feature_show = (ZMapWindowFeatureShow)user_data ;
+//  int top_width, top_height, vbox_width, vbox_height ;
+//  GtkRequisition size_req ;
+//
+//#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+//  printf("in notebook expose handler\n") ;
+//#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+//
+//  top_width = top_height = vbox_width = vbox_height = 0 ;
+//
+//  /* Get size of top level window. */
+//  gtk_window_get_size(GTK_WINDOW(feature_show->window), &top_width, &top_height) ;
+//
+//  /* Get size of our vbox containing all the info. allowing for the external border
+//   * we set for the vbox. */
+//  gtk_widget_size_request(feature_show->vbox, &size_req) ;
+//  vbox_width = size_req.width + (2 * TOP_BORDER_WIDTH) ;
+//  vbox_height = size_req.height + (2 * TOP_BORDER_WIDTH) ;
+//
+//  /* Unfortunately there seems to be some extra border, perhaps from the scrolled window
+//   * or viewport....and in fact the scrolled window frequently is shown....not sure why,
+//   * big fudge factor here...seems to require more on the mac than gnu desktop. */
+//  vbox_width += 40 ;
+//  vbox_height +=40 ;
+//
+//
+//  /* If vbox is a different size than top window then we should expand/contract top window to
+//   * be a more sensible size on the screen. */
+//  if (vbox_width != top_width || vbox_height != top_height)
+//    {
+//      int max_width, max_height ;
+//
+//      zMapGUIGetMaxWindowSize(feature_show->window, &max_width, &max_height) ;
+//
+//      if (vbox_width != top_width)
+//	top_width = vbox_width ;
+//
+//      if (top_width > max_width)
+//	top_width = max_width ;
+//
+//      if (vbox_height != top_height)
+//	top_height = vbox_height ;
+//
+//      if (top_height > max_height)
+//	top_height = max_height ;
+//
+//      gtk_window_resize(GTK_WINDOW(feature_show->window), top_width, top_height) ;
+//    }
+//
+//  /* Disconnect otherwise we reset the window height every time we are re-mapped. */
+//  g_signal_handler_disconnect(feature_show->notebook, feature_show->notebook_expose_handler) ;
+//  feature_show->notebook_expose_handler = 0 ;
+//
+//#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+//  printf("leaving notebook expose handler\n") ;
+//#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+//
+//  return event_handled ;
+//}
 
 
-  return ;
-}
+
+///* For some reason this function is only called on the intial expose which is very boring....
+// * I want to resize when the notebook page is swopped, that would be cool..... */
+//static void switchPageHandler(GtkNotebook *notebook, gpointer new_page, guint new_page_index, gpointer user_data)
+//{
+//
+//#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+//  /* TEST ON LINUX AND SEE IF I CAN GET IT WORKING... */
+//
+//  ZMapWindowFeatureShow feature_show = (ZMapWindowFeatureShow)user_data ;
+//
+//  printf("in notebook switch page handler\n") ;
+//
+//  printf("leaving notebook switch page handler\n") ;
+//#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+//
+//
+//  return ;
+//}
 
 
 
