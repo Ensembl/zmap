@@ -60,7 +60,7 @@ typedef struct
 
 
 static gboolean checkForPerfectAlign(GArray *gaps, unsigned int align_error) ;
-static void featureAlignmentAddGapsData(ZMapFeature feature, GArray *gaps, unsigned int align_error) ;
+static void featureAlignmentAddGapsData(ZMapFeature feature, GArray *gaps_arrays, unsigned int align_error) ;
 
 static AlignStrCanonical alignStrMakeCanonical(char *match_str, ZMapFeatureAlignFormat align_format) ;
 static void alignStrDestroyCanonical(AlignStrCanonical canon) ;
@@ -110,7 +110,7 @@ gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
 				     int query_length,
 				     ZMapStrand query_strand,
 				     ZMapPhase target_phase,
-				     GArray *gaps, unsigned int align_error,
+				     GArray *gaps_arrays, unsigned int align_error,
 				     gboolean has_local_sequence, char *sequence)
 				     /* NOTE has_local mean in ACEBD, sequence is from GFF */
 {
@@ -146,7 +146,7 @@ gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
   feature->feature.homol.flags.has_sequence = has_local_sequence ;
   feature->feature.homol.sequence = sequence ;
 
-  featureAlignmentAddGapsData(feature, gaps, align_error) ;
+  featureAlignmentAddGapsData(feature, gaps_arrays, align_error) ;
 
   return result ;
 }
@@ -188,11 +188,11 @@ gboolean zMapFeatureAlignmentIsGapped(ZMapFeature feature)
 gboolean zMapFeatureAlignmentString2Gaps(ZMapFeatureAlignFormat align_format,
 					 ZMapStrand ref_strand, int ref_start, int ref_end,
 					 ZMapStrand match_strand, int match_start, int match_end,
-					 char *align_string, GArray **gaps_out)
+					 char *align_string, GArray **gaps_arrays_out)
 {
   gboolean result = FALSE ;
   AlignStrCanonical canon = NULL ;
-  GArray *gaps = NULL ;
+  GArray *gaps_arrays = NULL ;
 
  if (!(canon = alignStrMakeCanonical(align_string, align_format)))
     {
@@ -202,7 +202,7 @@ gboolean zMapFeatureAlignmentString2Gaps(ZMapFeatureAlignFormat align_format,
   else if (!(result = (alignStrCanon2Homol(canon, ref_strand, match_strand,
 					   ref_start, ref_end,
 					   match_start, match_end,
-					   &gaps))))
+					   &gaps_arrays))))
     {
       zMapLogWarning("Cannot convert alignment string to gaps array: s", align_string) ;
     }
@@ -214,7 +214,7 @@ gboolean zMapFeatureAlignmentString2Gaps(ZMapFeatureAlignFormat align_format,
     }
   else
     {
-      *gaps_out = gaps ;
+      *gaps_arrays_out = gaps_arrays ;
     }
 
   return result ;
@@ -236,18 +236,20 @@ gboolean zMapFeatureAlignmentString2Gaps(ZMapFeatureAlignFormat align_format,
  * multiple gaps arrays, new features are created for all but the first one
  * and the coordinates of each feature are set to the coordinate range for
  * its gaps array. */
-static void featureAlignmentAddGapsData(ZMapFeature feature, GArray *gaps, unsigned int align_error)
+static void featureAlignmentAddGapsData(ZMapFeature feature, GArray *gaps_arrays, unsigned int align_error)
 {
-  GArray *cur_gaps = NULL ;
+  GArray *gaps = NULL ;
 
-  if (gaps && (cur_gaps = g_array_index(gaps, GArray*, 0)))
+  if (gaps_arrays && 
+      gaps_arrays->len > 0 &&
+      (gaps = g_array_index(gaps_arrays, GArray*, 0)))
     {
       int i = 0;
       
-      for ( ; i < gaps->len ; cur_gaps = g_array_index(gaps, GArray*, ++i))
+      for ( ; i < gaps_arrays->len ; gaps = g_array_index(gaps_arrays, GArray*, ++i))
         {
-          ZMapAlignBlock first_align = &g_array_index(cur_gaps, ZMapAlignBlockStruct, 0) ;
-          ZMapAlignBlock last_align = &g_array_index(cur_gaps, ZMapAlignBlockStruct, cur_gaps->len - 1) ;
+          ZMapAlignBlock first_align = &g_array_index(gaps, ZMapAlignBlockStruct, 0) ;
+          ZMapAlignBlock last_align = &g_array_index(gaps, ZMapAlignBlockStruct, gaps->len - 1) ;
           int match_start = (first_align->q_strand == ZMAPSTRAND_FORWARD ? first_align->q1 : last_align->q2 ) ;
           int match_end   = (first_align->q_strand == ZMAPSTRAND_FORWARD ? last_align->q2  : first_align->q1) ;
           int query_start = (first_align->t_strand == ZMAPSTRAND_FORWARD ? first_align->t1 : last_align->t1 ) ;
@@ -274,8 +276,8 @@ static void featureAlignmentAddGapsData(ZMapFeature feature, GArray *gaps, unsig
           feature->feature.homol.y2 = match_end ;
           feature->x2 = query_end ;
           
-          zMapFeatureSortGaps(cur_gaps) ;
-          feature->feature.homol.align = cur_gaps ;
+          zMapFeatureSortGaps(gaps) ;
+          feature->feature.homol.align = gaps ;
           feature->feature.homol.flags.perfect = checkForPerfectAlign(feature->feature.homol.align, align_error) ;
         }
     }

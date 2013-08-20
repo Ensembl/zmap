@@ -91,7 +91,7 @@ static void destroyFeatureArray(gpointer data) ;
 static gboolean loadGaps(char *currentPos, GArray *gaps,
 			 ZMapStrand ref_strand, ZMapStrand match_strand) ;
 static gboolean loadAlignString(ZMapGFFParser parser,
-				ZMapFeatureAlignFormat align_format, char *attributes, GArray **gaps_out,
+				ZMapFeatureAlignFormat align_format, char *attributes, GArray **gaps_arrays_out,
 				ZMapStrand ref_strand, int ref_start, int ref_end,
 				ZMapStrand match_strand, int match_start, int match_end) ;
 static void mungeFeatureType(char *source, ZMapStyleMode *type_inout);
@@ -1504,7 +1504,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
   double percent_id = 0 ;
   char *url ;
   GQuark locus_id = 0 ;
-  GArray *gaps = NULL;
+  GArray *gaps_arrays = NULL;
   GArray *path = NULL ;
   char *gaps_onwards = NULL;
   char *note_text, *source_text = NULL ;
@@ -1909,7 +1909,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 
 	      if ((gaps_onwards = strstr(attributes, gaps_tag)) != NULL)
 		{
-		  gaps = g_array_new(FALSE, FALSE, sizeof(ZMapAlignBlockStruct));
+		  GArray *gaps = g_array_new(FALSE, FALSE, sizeof(ZMapAlignBlockStruct));
 		  gaps_onwards += GAP_STR_LEN ;  /* skip over Gaps tag and parse "1 12 12 122, ..." incl "" not
 						    terminated */
 
@@ -1918,6 +1918,14 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 		      g_array_free(gaps, TRUE) ;
 		      gaps = NULL ;
 		    }
+                  else
+                    {
+                      /* Put the gaps array into the container array (we only ever get
+                       * one gaps array here, but for other types of gaps string there
+                       * can be multiple gaps arrays). */
+                      gaps_arrays = g_array_new(FALSE, FALSE, sizeof(GArray*)) ;
+                      g_array_append_val(gaps_arrays, gaps) ;
+                    }
 		}
 	      else
 		{
@@ -1939,7 +1947,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 		  if (align_format)
 		    {
 		      if (!loadAlignString(parser, align_format,
-					   gaps_onwards, &gaps,
+					   gaps_onwards, &gaps_arrays,
 					   strand, start, end,
 					   query_strand, query_start, query_end))
 			{
@@ -1974,7 +1982,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 					       percent_id,
 					       query_start, query_end,
 					       homol_type, query_length, query_strand, ZMAPPHASE_0,
-					       gaps,
+					       gaps_arrays,
 					       zMapStyleGetWithinAlignError(feature_style),
 					       local_sequence, seq_str) ;
 	}
@@ -2116,7 +2124,7 @@ static gboolean loadGaps(char *attributes, GArray *gaps, ZMapStrand ref_strand, 
  * but this function fills in gaps data from a cigar or vulgar string
  */
 static gboolean loadAlignString(ZMapGFFParser parser,
-				ZMapFeatureAlignFormat align_format, char *attributes, GArray **gaps_out,
+				ZMapFeatureAlignFormat align_format, char *attributes, GArray **gaps_arrays_out,
 				ZMapStrand ref_strand, int ref_start, int ref_end,
 				ZMapStrand match_strand, int match_start, int match_end)
 {
@@ -2138,7 +2146,7 @@ static gboolean loadAlignString(ZMapGFFParser parser,
       valid = zMapFeatureAlignmentString2Gaps(align_format,
 					      ref_strand, ref_start, ref_end,
 					      match_strand, match_start, match_end,
-					      (char *)(parser->buffers[GFF_BUF_TMP]), gaps_out) ;
+					      (char *)(parser->buffers[GFF_BUF_TMP]), gaps_arrays_out) ;
     }
 
   g_string_free(format_str, TRUE) ;
