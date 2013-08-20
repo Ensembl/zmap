@@ -40,6 +40,10 @@
 
 
 
+/* Windows are 90% of screen height by default...but normally we automatically set window to fill screen taking
+ * into account window manager tool bars etc. */
+#define ZMAPWINDOW_VERT_PROP 0.90
+
 #define USE_REGION	0	/* scroll bar pane on left that does nothing */
 
 /* The overall state of the zmap, we need this because both the zmap window and the its threads
