@@ -737,11 +737,12 @@ static gboolean ensemblVerifyCigar(char *match_str)
 
 /* Format of an BAM cigar string (the ones we handle) is:
  *
- * "[optional number]operator" repeated as necessary. Operators are N or M.
+ * "[optional number]operator" repeated as necessary. Operators are N, M, D, I, X, S, P.
+ * We don't handle H (hard-clipping)
  *
  * A regexp (without dealing with greedy matches) would be something like:
  *
- *                           (([0-9]+)([NMDI]))*
+ *                           (([0-9]+)([NMDIXSP]))*
  *
  *  */
 static gboolean bamVerifyCigar(char *match_str)
@@ -763,7 +764,7 @@ static gboolean bamVerifyCigar(char *match_str)
 	  state = STATE_OP ;
 	  break ;
 	case STATE_OP:
-	  if (*cp == 'M' || *cp == 'N' || *cp == 'D' || *cp == 'I')
+	  if (*cp == 'M' || *cp == 'N' || *cp == 'D' || *cp == 'I' || *cp == 'X' || *cp == 'S' || *cp == 'P')
 	    state = STATE_NUM ;
 	  else
 	    result = FALSE ;
