@@ -411,8 +411,8 @@ gboolean zMapConfigIniGetStylesFromFile(char *config_file, char *styles_list, ch
 
   	  name = curr_config_style->data.str;
 
-	  if (g_ascii_strcasecmp(name, "retained_intron") == 0)
-	    printf("found it\n") ;
+	  //if (g_ascii_strcasecmp(name, "retained_intron") == 0)
+	  //  printf("found it\n") ;
 
 	  if(!g_ascii_strncasecmp(curr_config_style->data.str,"style-",6))
 	    name += 6;
