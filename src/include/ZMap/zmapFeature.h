@@ -1102,13 +1102,13 @@ gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
 				     int query_length,
 				     ZMapStrand query_strand,
 				     ZMapPhase target_phase,
-				     GArray *gaps_arrays, unsigned int align_error,
+				     GArray *gaps, unsigned int align_error,
 				     gboolean has_local_sequence, char * sequence) ;
 gboolean zMapFeatureAlignmentIsGapped(ZMapFeature feature) ;
 gboolean zMapFeatureAlignmentString2Gaps(ZMapFeatureAlignFormat align_format,
 					 ZMapStrand ref_strand, int ref_start, int ref_end,
 					 ZMapStrand match_strand, int match_start, int match_end,
-					 char *align_string, GArray **gaps_arrays_out) ;
+					 char *align_string, GArray **gaps_out) ;
 ZMAP_ENUM_AS_NAME_STRING_DEC(zMapFeatureAlignFormat2ShortText, ZMapFeatureAlignFormat) ;
 
 
