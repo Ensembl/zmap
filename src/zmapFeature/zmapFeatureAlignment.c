@@ -42,7 +42,6 @@
 #include <zmapFeature_P.h>
 
 
-
 /* We get align strings in several variants and then convert them into this common format. */
 typedef struct
 {
@@ -361,6 +360,7 @@ static gboolean alignStrCanon2Homol(AlignStrCanonical canon, ZMapStrand ref_stra
   int i, j ;
   GArray *local_map = NULL ;
   GArray *align = canon->align ;
+  AlignBlockBoundaryType boundary_type = ALIGN_BLOCK_BOUNDARY_EDGE ;
 
   /* is there a call to do this in feature code ??? or is the array passed in...check gff..... */
   local_map = g_array_sized_new(FALSE, FALSE, sizeof(ZMapAlignBlockStruct), 10) ;
@@ -390,6 +390,16 @@ static gboolean alignStrCanon2Homol(AlignStrCanonical canon, ZMapStrand ref_stra
 
       switch (op->op)
 	{
+        case 'N':                                           /* Intron */
+	  {
+            if (ref_strand == ZMAPSTRAND_FORWARD)
+	      curr_ref += curr_length ;
+	    else
+	      curr_ref -= curr_length ;
+
+            boundary_type = ALIGN_BLOCK_BOUNDARY_INTRON ;	    
+	    break ;
+	  }
 	case 'D':					    /* Deletion in reference sequence. */
 	case 'G':
 	  {
@@ -398,6 +408,7 @@ static gboolean alignStrCanon2Homol(AlignStrCanonical canon, ZMapStrand ref_stra
 	    else
 	      curr_ref -= curr_length ;
 
+            boundary_type = ALIGN_BLOCK_BOUNDARY_DELETION ;
 	    break ;
 	  }
 	case 'I':					    /* Insertion from match sequence. */
@@ -407,6 +418,7 @@ static gboolean alignStrCanon2Homol(AlignStrCanonical canon, ZMapStrand ref_stra
 	    else
 	      curr_match -= curr_length ;
 
+            boundary_type = ALIGN_BLOCK_BOUNDARY_MATCH ; /* it is shown butted up to the previous align block */
 	    break ;
 	  }
 	case 'M':					    /* Match. */
@@ -435,6 +447,7 @@ static gboolean alignStrCanon2Homol(AlignStrCanonical canon, ZMapStrand ref_stra
 
 	    j++ ;					    /* increment for next gap element. */
 
+            boundary_type = ALIGN_BLOCK_BOUNDARY_MATCH ;
 	    break ;
 	  }
 	default:
