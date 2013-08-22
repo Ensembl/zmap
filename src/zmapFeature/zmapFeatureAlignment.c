@@ -425,6 +425,7 @@ static gboolean alignStrCanon2Homol(AlignStrCanonical canon, ZMapStrand ref_stra
 	  {
 	    gap.t_strand = ref_strand ;
 	    gap.q_strand = match_strand ;
+            gap.boundary_type = boundary_type ;
 
 	    if (ref_strand == ZMAPSTRAND_FORWARD)
 	      {

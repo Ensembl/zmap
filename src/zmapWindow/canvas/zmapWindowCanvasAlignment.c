@@ -257,7 +257,7 @@ AlignGap align_gap_alloc(void)
  * in this case the first and last blocks are a diff colour, so we flag this if the colour is visible and add another box not a line. Yuk
  *
  */
-AlignGap make_gapped(ZMapFeature feature, double offset, FooCanvasItem *foo)
+AlignGap make_gapped(ZMapFeature feature, double offset, FooCanvasItem *foo, gboolean forward)
 {
 	int i;
 	AlignGap ag;
@@ -316,13 +316,31 @@ AlignGap make_gapped(ZMapFeature feature, double offset, FooCanvasItem *foo)
 
 			else if(last_box->y2 < cy1 - 1)
 			{
-				/* visible gap between boxes: add a colinear line */
-				ag = align_gap_alloc();
-				ag->y1 = last_box->y2;
-				ag->y2 = cy1;
-				ag->type = (ab->boundary_type == ALIGN_BLOCK_BOUNDARY_INTRON ? GAP_VLINE_INTRON : GAP_VLINE);
-				last_ag->next = ag;
-				last_ag = ag;
+                          /* visible gap between boxes: add a colinear line */
+
+                          AlignBlockBoundaryType boundary_type = ab->boundary_type;                          
+
+                          if (!forward)
+                            {
+                              /* gaps are in the reverse order so we need the boundary type
+                               * from the previous gap rather than the current one */
+                              if (i > 0)
+                                {
+                                  ab = &g_array_index(gaps, ZMapAlignBlockStruct, i-1);
+                                  boundary_type = ab->boundary_type;
+                                }
+                              else
+                                {
+                                  boundary_type = ALIGN_BLOCK_BOUNDARY_EDGE;
+                                }
+                            }
+                            
+                          ag = align_gap_alloc();
+                          ag->y1 = last_box->y2;
+                          ag->y2 = cy1;
+                          ag->type = (boundary_type == ALIGN_BLOCK_BOUNDARY_INTRON ? GAP_VLINE_INTRON : GAP_VLINE);
+                          last_ag->next = ag;
+                          last_ag = ag;
 			}
 
 			if(last_box->y2 < cy1)
@@ -445,7 +463,13 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
       /* create a list of things to draw at this zoom taking onto account bases per pixel */
       if(!align->gapped)
 	{
-	  align->gapped = make_gapped(feature->feature, featureset->dy - featureset->start, foo);
+          ZMapHomol homol = &feature->feature->feature.homol;
+          gboolean forward = (feature->feature->strand == homol->strand);
+          
+          if (homol->strand == ZMAPSTRAND_REVERSE)
+            forward = !forward;
+          
+	  align->gapped = make_gapped(feature->feature, featureset->dy - featureset->start, foo, forward);
 	}
 
       /* draw them */
