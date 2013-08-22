@@ -64,13 +64,12 @@ pkgconfig_DATA = zmap.pc
 #
 
 noinst_LTLIBRARIES = libZMapApp.la libZMap.la libZMapAppServices.la \
-                     libZMapThr.la libZMapXML.la libZMapUtils.la \
+                     libZMapThr.la libZMapRemoteControl.la libZMapXML.la libZMapUtils.la \
                      libzmapfoocanvas.la libPFetch.la
 
 libZMapApp_la_SOURCES =
 libZMapApp_la_LIBADD  = zmapApp/libZMapApp.la
 
-# try moving server stuff to here....
 libZMap_la_SOURCES =
 libZMap_la_LIBADD  = \
 zmapControl/libZMapControl.la \
@@ -86,7 +85,7 @@ zmapServer/libZMapServer.la   \
 zmapServer/libZMapServers.la  \
 $(NULL)
 
-libZMapAppServices_la_SOURCES =
+libZMapAppServices_la_SOURCES = 
 libZMapAppServices_la_LIBADD  = zmapAppServices/libZMapAppServices.la
 
 libZMapThr_la_SOURCES =
@@ -94,13 +93,16 @@ libZMapThr_la_LIBADD  =       \
 zmapThreads/libZMapThreads.la \
 $(NULL)
 
-libZMapXML_la_SOURCES =
+libZMapRemoteControl_la_SOURCES = 
+libZMapRemoteControl_la_LIBADD  = zmapRemoteControl/libZMapRemoteControl.la
+
+libZMapXML_la_SOURCES = 
 libZMapXML_la_LIBADD  = zmapXML/libZMapXML.la
 
-libZMapUtils_la_SOURCES =
+libZMapUtils_la_SOURCES = 
 libZMapUtils_la_LIBADD  = zmapUtils/libZMapUtils.la
 
-libPFetch_la_SOURCES =
+libPFetch_la_SOURCES = 
 libPFetch_la_LIBADD  = libpfetch/libpfetch.la libcurlobject/libcurlobject.la
 
 libzmapfoocanvas_la_SOURCES =
@@ -109,11 +111,14 @@ libzmapfoocanvas_la_LIBADD  = libzmapfoocanvas/libzmapfoocanvas.la
 
 # Programs we're going to compile.
 
-bin_PROGRAMS = zmap gffparser xml_writer xremote_gui
+#bin_PROGRAMS = zmap gffparser xml_writer xremote_gui remotecontrol
+bin_PROGRAMS = zmap gffparser xml_writer remotecontrol
 
 
-# Try Jeremy's new build stuff....
+# I am perturbed by the fact that the x libs are before the gtk libs....
 #
+
+# Search path version.....
 #zmap_LDADD = $(X_PRE_LIBS) $(X_LIBS) $(X_EXTRA_LIBS)         \
 #	-L$(top_builddir)/.libs                              \
 #	-lZMapApp -lZMap -lZMapThr -lZMap -lZMapXML -lPFetch \
@@ -122,6 +127,7 @@ bin_PROGRAMS = zmap gffparser xml_writer xremote_gui
 #	@MACOSX_UNIVERSAL_FLAGS@ $(NULL)
 
 
+# Try Jeremy's new build stuff....
 # Give .a files explicitly to ensure we link the right ones.
 #
 #zmap_LDADD =                                                 \
@@ -144,6 +150,7 @@ zmap_LDADD =                                                 \
 	$(top_builddir)/.libs/libZMap.a                      \
 	$(top_builddir)/.libs/libZMapAppServices.a           \
 	$(top_builddir)/.libs/libZMapThr.a                   \
+	$(top_builddir)/.libs/libZMapRemoteControl.a         \
 	$(top_builddir)/.libs/libZMapXML.a                   \
 	$(top_builddir)/.libs/libZMapUtils.a                 \
 	$(top_builddir)/.libs/libzmapfoocanvas.a             \
@@ -155,8 +162,7 @@ zmap_LDADD =                                                 \
 	@MACOSX_UNIVERSAL_FLAGS@ $(NULL)
 
 zmap_SOURCES      = $(top_srcdir)/zmapApp/zmapAppmain_c.c
-zmap_LDFLAGS      =
-
+zmap_LDFLAGS      = 
 # We need this so as not to have libtool prune out multiple -lZMap so we can resolve our dependency cycle :(
 zmap_LINK         = $(CC) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 zmap_CFLAGS       = $(AM_CPPFLAGS) -I$(top_srcdir)/zmapApp
@@ -179,12 +185,19 @@ xml_writer_DEPENDENCIES = $(noinst_LTLIBRARIES)
 xml_writer_CPPFLAGS     = $(AM_CPPFLAGS) -I$(top_srcdir)/zmapApp
 
 # program that knows about the xremote protocol.
-xremote_gui_SOURCES      = $(top_srcdir)/zmapControl/remote/xremote_gui_test.c
-xremote_gui_LDFLAGS      =
-xremote_gui_LDADD        = $(zmap_LDADD)
-xremote_gui_DEPENDENCIES = $(noinst_LTLIBRARIES)
-xremote_gui_CPPFLAGS     = $(AM_CPPFLAGS) -I$(top_srcdir)/zmapApp
+#xremote_gui_SOURCES      = $(top_srcdir)/zmapControl/remote/xremote_gui_test.c
+#xremote_gui_LDFLAGS      = 
+#xremote_gui_LDADD        = $(zmap_LDADD)
+#xremote_gui_DEPENDENCIES = $(noinst_LTLIBRARIES)
+#xremote_gui_CPPFLAGS     = $(AM_CPPFLAGS) -I$(top_srcdir)/zmapApp
 
+
+# The new program that knows about the xremote protocol.
+remotecontrol_SOURCES      = $(top_srcdir)/zmapRemoteControl/remotetest/remotecontroltest.c
+remotecontrol_LDFLAGS      = 
+remotecontrol_LDADD        = $(zmap_LDADD)
+remotecontrol_DEPENDENCIES = $(noinst_LTLIBRARIES)
+remotecontrol_CPPFLAGS     = $(AM_CPPFLAGS) -I$(top_srcdir)/zmapApp
 
 
 #

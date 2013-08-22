@@ -37,6 +37,7 @@
 #include <ZMap/zmapView.h>
 #include <ZMap/zmapFeature.h>
 #include <ZMap/zmapWindow.h>
+#include <ZMap/zmapAppRemote.h>
 
 /* Opaque type, represents an instance of a ZMap. */
 typedef struct _ZMapStruct *ZMap ;
@@ -51,25 +52,46 @@ typedef void (*ZMapCallbackFunc)(ZMap zmap, void *app_data) ;
  * to a ZMap. */
 typedef struct _ZMapCallbacksStruct
 {
+  ZMapCallbackFunc add ;				    /* Reports that zmap has been
+							       created. */
   ZMapCallbackFunc destroy ;				    /* Reports that this zmap instance has
 							       been destroyed. */
-  ZMapCallbackFunc quit_req ;				    /* Requests application termination. */
+  ZMapCallbackFunc quit_req ;				    /* Requests application
+							       termination. */
+
+  /* App level function (+ its data) to call to make remote requests. */
+  ZMapRemoteAppMakeRequestFunc remote_request_func ;
+  void *remote_request_func_data ;
+
 } ZMapCallbacksStruct, *ZMapCallbacks ;
 
 
 
 void zMapInit(ZMapCallbacks callbacks) ;
 ZMap zMapCreate(void *app_data, ZMapFeatureSequenceMap sequence_map) ;
-ZMapView zMapAddView(ZMap zmap, ZMapFeatureSequenceMap sequence_map) ;
+int zMapNumViews(ZMap zmap) ;
+ZMapViewWindow zMapAddView(ZMap zmap, ZMapFeatureSequenceMap sequence_map) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+gboolean zMapGetDefaultView(ZMapAppRemoteViewID view_inout) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 gboolean zMapConnectView(ZMap zmap, ZMapView view) ;
 gboolean zMapLoadView(ZMap zmap, ZMapView view) ;
+
 gboolean zMapStopView(ZMap zmap, ZMapView view) ;
-gboolean zMapDeleteView(ZMap zmap, ZMapView view) ;
+gboolean zMapControlCloseView(ZMap zmap, ZMapView view) ;
+void zMapDeleteView(ZMap zmap, ZMapView view, GList **destroyed_views_inout) ;
+gpointer zMapControlFindView(ZMap zmap, gpointer view_id) ;
 gboolean zMapRaise(ZMap zmap);
 char *zMapGetZMapID(ZMap zmap) ;
 char *zMapGetZMapStatus(ZMap zmap) ;
 gboolean zMapReset(ZMap zmap) ;
-gboolean zMapDestroy(ZMap zmap) ;
+void zMapDestroy(ZMap zmap, GList **destroyed_views_inout) ;
+
+gboolean zMapControlProcessRemoteRequest(ZMap zmap,
+					 char *command_name, char *request, gpointer view_id,
+					 ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data) ;
 
 void zMapAddClient(ZMap zmap, void *client);
 char *zMapControlRemoteReceiveAccepts(ZMap zmap);

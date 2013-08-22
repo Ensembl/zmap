@@ -39,15 +39,26 @@
 #include <ZMap/zmapFeature.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapUtilsXRemote.h>
+#include <ZMap/zmapRemoteCommand.h>
 #include <zmapControl_P.h>
+
+
+/* IT'S LOOKING LIKE THERE ARE NO COMMANDS AT THE CONTROL LEVEL AT THE MOMENT.... */
+
 
 enum
   {
     ZMAPCONTROL_REMOTE_INVALID,
     /* Add below here... */
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+    /* These appear to be totally unknown.....sigh.... */
     ZMAPCONTROL_REMOTE_ZOOM_IN,
     ZMAPCONTROL_REMOTE_ZOOM_OUT,
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+    /* REGISTER_CLIENT IS NOT NEEDED AND THE OTHER TWO ARE HANDLED AT THE APP LEVEL. */
     ZMAPCONTROL_REMOTE_REGISTER_CLIENT,
     ZMAPCONTROL_REMOTE_NEW_VIEW,
     ZMAPCONTROL_REMOTE_CLOSE_VIEW,
@@ -124,6 +135,21 @@ static gboolean xml_return_true_cb(gpointer user_data,
                                    ZMapXMLElement zmap_element,
                                    ZMapXMLParser parser);
 
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+/* Not needed at the moment.... */
+static gboolean localProcessRemoteRequest(gpointer local_data,
+					  char *command_name, ZMapAppRemoteViewID view_id, char *request,
+					  ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+
+
+
 static gboolean control_execute_debug_G = FALSE;
 
 static ZMapXMLObjTagFunctionsStruct control_starts_G[] = {
@@ -154,15 +180,30 @@ static ZMapXMLObjTagFunctionsStruct control_ends_G[] = {
   {NULL, NULL}
 };
 
+
+/* NONE OF THESE LOOK RELEVANT ANY MORE..... */
+
 static char *actions_G[ZMAPCONTROL_REMOTE_UNKNOWN + 1] =
   {
     NULL,
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     "zoom_in", "zoom_out",
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
     "register_client",
     "new_view", "close_view",
     NULL
   };
 
+
+/* 
+ * 
+ * 
+ *             OLD CODE......................WILL BE REMOVED SHORTLY....
+ * 
+ * 
+ */
 
 
 
@@ -189,9 +230,17 @@ char *zMapControlRemoteReceiveAccepts(ZMap zmap)
 }
 
 
+
+
 /* ========================= */
 /* ONLY INTERNALS BELOW HERE */
 /* ========================= */
+
+
+
+
+
+
 
 /* Handle commands sent from xremote. */
 /* Return is string in the style of ZMAP_XREMOTE_REPLY_FORMAT (see ZMap/zmapXRemote.h) */
@@ -223,6 +272,8 @@ static char *control_execute_command(char *command_text, gpointer user_data,
 
   zmap->xremote_server = owner;     /* so we can do a delayed reply */
 
+
+
   parser = zMapXMLParserCreate(&input, FALSE, FALSE);
 
   zMapXMLParserSetMarkupObjectTagHandlers(parser, &control_starts_G[0], &control_ends_G[0]);
@@ -245,6 +296,7 @@ static char *control_execute_command(char *command_text, gpointer user_data,
         case ZMAPCONTROL_REMOTE_CLOSE_VIEW:
           closeView(zmap, &input, &output_data);
           break;
+
         case ZMAPCONTROL_REMOTE_INVALID:
         case ZMAPCONTROL_REMOTE_UNKNOWN:
         default:
@@ -361,6 +413,11 @@ static void closeView(ZMap zmap, ZMapXRemoteParseCommandData input_data, Respons
   else
     {
       char *xml = NULL;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      zmapControlRemoveView(zmap, view_data.view, NULL) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
       /* Is this where we signal back that we are killing the view....???? */
@@ -595,3 +652,15 @@ static gboolean xml_return_true_cb(gpointer user_data,
 {
   return TRUE;
 }
+
+
+
+
+
+
+
+
+
+
+
+

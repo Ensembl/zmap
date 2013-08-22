@@ -37,9 +37,11 @@
 enum {GFF_DEFAULT_VERSION = 2} ;
 
 
-/* THESE MAX THINGS NEED TO GO...NEEDS TO BE TOTALLY DYNAMIC..... */
+/* THE TWO MAX CHAR LIMITS NEED TO GO...NEEDS TO BE TOTALLY DYNAMIC..... */
 /* Some defines for parsing the feature records....may need v2 and v3 versions of these. */
-enum {GFF_MANDATORY_FIELDS = 8, GFF_MAX_FIELD_CHARS = 50, GFF_MAX_FREETEXT_CHARS = 5000} ;
+#define GFF_MANDATORY_FIELDS      8
+#define GFF_MAX_FIELD_CHARS     500
+#define GFF_MAX_FREETEXT_CHARS 5000
 
 
 /* Dynamically resizing buffers are good but they must have a limit to avoid malicious

@@ -34,6 +34,7 @@
 #include <string.h>
 
 #include <ZMap/zmapUtils.h>
+#include <ZMap/zmapCmdLineArgs.h>
 #include <zmapControl_P.h>
 
 
@@ -43,11 +44,20 @@ static void makeStatusTooltips(ZMap zmap) ;
 static GtkWidget *makeStatusPanel(ZMap zmap) ;
 static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data) ;
 
-static void myWindowMaximize(GtkWidget *toplevel, ZMap zmap) ;
+#ifdef MAXIMIZE_ON_MAP_EVENT
+/*! \todo gb10: I'm not sure if we need to maximise on map-event. I've 
+ * removed the code for now but left this here for reference in case we do
+ * need it. I've added a call to maximise in zMapControlWindowCreate instead 
+ * to fix RT340147 but not 100% sure if that's right. */
+gboolean myWindowMaximize(GtkWidget *widget, GdkEvent  *event, gpointer user_data) ;
+#endif 
 
 
+/* 
+ *                  Globals
+ */
 
-gboolean zmap_shrink_G = FALSE;
+static gboolean zmap_shrink_G = FALSE;
 
 
 
@@ -63,34 +73,35 @@ gboolean zmapControlWindowCreate(ZMap zmap)
   gboolean result = TRUE ;
   GtkWidget *toplevel, *vbox, *menubar, *frame, *controls_box, *button_box, *status_box,
     *info_panel_box, *info_box ;
+  ZMapCmdLineArgsType shrink_arg = {FALSE} ;
+
 
   /* Make tooltips groups for the main zmap controls and the feature information. */
   zmap->tooltips = gtk_tooltips_new() ;
   zmap->feature_tooltips = gtk_tooltips_new() ;
 
   zmap->toplevel = toplevel = zMapGUIToplevelNew(zMapGetZMapID(zmap), NULL) ;
-  gtk_window_set_policy(GTK_WINDOW(toplevel), zmap_shrink_G, TRUE, FALSE ) ;	// allow shrink for charlie'ss RT 215415
-								/* ref to GTK help: it says 'don't allow shrink' */
+
+  /* allow shrink for charlie'ss RT 215415, ref to GTK help: it says 'don't allow shrink' */
+  if (zMapCmdLineArgsValue(ZMAPARG_SHRINK, &shrink_arg))
+    zmap_shrink_G = shrink_arg.b ;
+  gtk_window_set_policy(GTK_WINDOW(toplevel), zmap_shrink_G, TRUE, FALSE ) ;
+
   gtk_container_border_width(GTK_CONTAINER(toplevel), 5) ;
 
-  /* Only after map-event are we guaranteed that there's a window for us to work with. */
-  g_signal_connect(G_OBJECT(toplevel), "map-event",
-                   G_CALLBACK(zmapControlRemoteInstaller), (gpointer)zmap);
-
+#ifdef MAXIMIZE_ON_MAP_EVENT
   /* We can leave width to default sensibly but height does not because zmap is in a scrolled
-   * window, we try to maximise it to the screen depth but have to do this after window is mapped.
-   * SHOULD WE BE REMOVING THIS HANDLER ??? TAKE A LOOK AT THIS LATER.... */
-  zmap->map_handler = g_signal_connect(G_OBJECT(toplevel), "map",
-				       G_CALLBACK(myWindowMaximize), (gpointer)zmap);
+   * window, we try to maximise it to the screen depth but have to do this after window is
+   * mapped. */
+  zmap->map_handler = g_signal_connect(G_OBJECT(toplevel), "map-event",
+				       G_CALLBACK(myWindowMaximize), (gpointer)zmap) ;
+#endif 
 
   gtk_signal_connect(GTK_OBJECT(toplevel), "destroy",
 		     GTK_SIGNAL_FUNC(toplevelDestroyCB), (gpointer)zmap) ;
 
-
   vbox = gtk_vbox_new(FALSE, 0) ;
   gtk_container_add(GTK_CONTAINER(toplevel), vbox) ;
-
-  zmap->event_box_parent = vbox ;
 
   menubar = zmapControlWindowMakeMenuBar(zmap) ;
   gtk_box_pack_start(GTK_BOX(vbox), menubar, FALSE, TRUE, 0);
@@ -183,24 +194,24 @@ void zmapControlWindowSetStatus(ZMap zmap)
 	  strand_txt = " - " ;
 	else
 	  strand_txt = " + " ;
-	gtk_label_set_text(GTK_LABEL(zmap->status_revcomp), strand_txt) ;
+        gtk_label_set_text(GTK_LABEL(zmap->status_revcomp), strand_txt) ;
 
 
 #if NO_SCOPE_FOR_IMPROVEMENT
 //	if (zMapViewGetFeaturesSpan(view, &start, &end))
-	  {
+//	  {
 	    zmapWindowCoordPairToDisplay(window,
 //					 start, end,
 					 window->min_coord,window->max_coord,
 					 &start, &end) ;
 #else
-      if(zmapWindowGetCurrentSpan(window,&start,&end))
-	{
+        if(zmapWindowGetCurrentSpan(window,&start,&end))
+          {
 #endif
-          coord_txt = g_strdup_printf(" %d  %d ", start, end) ;
-          gtk_label_set_text(GTK_LABEL(zmap->status_coords), coord_txt) ;
-          g_free(coord_txt) ;
-	}
+            coord_txt = g_strdup_printf(" %d  %d ", start, end) ;
+            gtk_label_set_text(GTK_LABEL(zmap->status_coords), coord_txt) ;
+            g_free(coord_txt) ;
+          }
 
 	free_this = status_text = zMapViewGetStatusStr(view) ;
 
@@ -291,10 +302,16 @@ static GtkWidget *makeStatusPanel(ZMap zmap)
 static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data)
 {
   ZMap zmap = (ZMap)cb_data ;
-
+  GList *destroyed_views = NULL ;
+  
+  /* WHY DO WE DO THIS....I DON'T KNOW.... */
   zmap->toplevel = NULL ;
 
-  zmapControlDoKill(zmap) ;
+  zmapControlDoKill(zmap, &destroyed_views) ;
+
+  /* Need to tell peer (if there is one) that all is destroyed.... */
+  if (zmap->remote_control)
+    zmapControlSendViewDeleted(zmap, destroyed_views) ;
 
   return ;
 }
@@ -360,8 +377,9 @@ static void makeStatusTooltips(ZMap zmap)
  * but this will be rare.
  *
  */
-static void myWindowMaximize(GtkWidget *toplevel, ZMap zmap)
+void zmapControlWindowMaximize(GtkWidget *widget, ZMap zmap)
 {
+  GtkWidget *toplevel = widget ;
   GdkAtom geometry_atom, workarea_atom, max_atom_vert ;
   GdkScreen *screen ;
 
@@ -510,13 +528,22 @@ static void myWindowMaximize(GtkWidget *toplevel, ZMap zmap)
 
       gtk_window_resize(GTK_WINDOW(toplevel), window_width_guess, window_height_guess) ;
     }
+}
 
+
+#ifdef MAXIMIZE_ON_MAP_EVENT
+gboolean myWindowMaximize(GtkWidget *widget, GdkEvent  *event, gpointer user_data)
+{
+  ZMap zmap = (ZMap)user_data ;
+
+  zmapControlWindowMaximize(widget, zmap);
+  
   /* I think we need to disconnect this now otherwise we reset the window height every time we
    * are re-mapped. */
   g_signal_handler_disconnect(zmap->toplevel, zmap->map_handler) ;
 
 
-  return ;
+  return FALSE;
 }
-
+#endif
 

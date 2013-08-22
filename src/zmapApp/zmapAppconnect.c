@@ -54,13 +54,16 @@ GtkWidget *zmapMainMakeConnect(ZMapAppContext app_context, ZMapFeatureSequenceMa
   GtkWidget *frame ;
 
 
-  frame = zMapCreateSequenceViewWidg(createThreadCB, app_context, sequence_map) ;
+  frame = zMapCreateSequenceViewWidg(createThreadCB, app_context, sequence_map, TRUE) ;
 
 
   return frame ;
 }
 
 
+/* Make a new zmap, if sequence is unspecified then the zmap will be blank and view
+ * will not be set. */
+/* sequence etc can be unspecified to create a blank zmap. */
 /* Sequence must be fully specified in seq_map as sequence/start/end
  *
  * and config_file....investigate more thoroughly....probably needs setting....
@@ -71,28 +74,30 @@ GtkWidget *zmapMainMakeConnect(ZMapAppContext app_context, ZMapFeatureSequenceMa
  *
  *
  *  */
-gboolean zmapAppCreateZMap(ZMapAppContext app_context, ZMapFeatureSequenceMap seq_map)
+gboolean zmapAppCreateZMap(ZMapAppContext app_context, ZMapFeatureSequenceMap sequence_map,
+			   ZMap *zmap_out, ZMapView *view_out, char **err_msg_out)
 {
   gboolean result = FALSE ;
-  ZMap zmap ;
+  ZMap zmap = *zmap_out ;
+  ZMapView view = NULL ;
   ZMapManagerAddResult add_result ;
 
   /* Nothing specified on command line so check config file. */
-  if (!(seq_map->sequence) && !(seq_map->start) && !(seq_map->end))
-    zMapAppGetSequenceConfig(seq_map) ;
+  if (!(sequence_map->sequence) && !(sequence_map->start) && !(sequence_map->end))
+    zMapAppGetSequenceConfig(sequence_map) ;
 
 
   /* Everything must be specified or nothing otherwise it's an error. */
-  if (!((seq_map->sequence && seq_map->start && seq_map->end)
-	|| (!(seq_map->sequence) && !(seq_map->start) && !(seq_map->end))))
+  if (!((sequence_map->sequence && sequence_map->start && sequence_map->end)
+	|| (!(sequence_map->sequence) && !(sequence_map->start) && !(sequence_map->end))))
     {
       result = FALSE ;
 
       zMapWarning("Sequence not specified properly: %s",
-		  (!seq_map->sequence ? "no sequence name"
-		   : (seq_map->start <= 1 ? "start less than 1" : "end less than start"))) ;
+		  (!sequence_map->sequence ? "no sequence name"
+		   : (sequence_map->start <= 1 ? "start less than 1" : "end less than start"))) ;
     }
-  else if ((!app_context->xremote_client) && (!(seq_map->sequence) && !(seq_map->start) && !(seq_map->end)))
+  else if ((!app_context->xremote_client) && (!(sequence_map->sequence) && !(sequence_map->start) && !(sequence_map->end)))
     {
       result = TRUE ;
     }
@@ -101,13 +106,14 @@ gboolean zmapAppCreateZMap(ZMapAppContext app_context, ZMapFeatureSequenceMap se
       gboolean load_view = TRUE ;
 
 
+      /* MAY NOT NEED THIS FOR NEW XREMOTE..... */
       /* HACK...WE NEED TO MAKE SURE MANAGER DOES _NOT_ LOAD THE VIEW WITH THE OLD XREMOTE.
        * THE LOAD_VIEW FLAG CAN GO ONCE WE SWOP TO THE NEW XREMOTE. */
       if (app_context->xremote_client)
 	load_view = FALSE ;
 
 
-      add_result = zMapManagerAdd(app_context->zmap_manager, seq_map, &zmap, load_view) ;
+      add_result = zMapManagerAdd(app_context->zmap_manager, sequence_map, &zmap, &view, load_view) ;
       if (add_result == ZMAPMANAGER_ADD_DISASTER)
 	{
 	  zMapWarning("%s", "Failed to create ZMap and then failed to clean up properly,"
@@ -116,6 +122,8 @@ gboolean zmapAppCreateZMap(ZMapAppContext app_context, ZMapFeatureSequenceMap se
       else if (add_result == ZMAPMANAGER_ADD_FAIL)
 	{
 	  zMapWarning("%s", "Failed to create ZMap") ;
+	  /* DO WE NEED THIS ERR_MSG_OUT STUFF....CHECK.... */
+	  *err_msg_out = g_strdup_printf("Bad start/end coords: %d, %d", sequence_map->start, sequence_map->end) ;
 	}
       else
 	{
@@ -135,14 +143,16 @@ gboolean zmapAppCreateZMap(ZMapAppContext app_context, ZMapFeatureSequenceMap se
 		    (row + 1), row_text[0], row_text[1]) ;
 #endif /* RDS_NEVER_INCLUDE_THIS_CODE */
 
+	  *zmap_out = zmap ;
+	  if (view)
+	    *view_out = view ;
+
 	  result = TRUE ;
 	}
     }
 
   return result ;
 }
-
-
 
 
 
@@ -154,11 +164,12 @@ gboolean zmapAppCreateZMap(ZMapAppContext app_context, ZMapFeatureSequenceMap se
 static void createThreadCB(ZMapFeatureSequenceMap sequence_map, gpointer user_data)
 {
   ZMapAppContext app_context = (ZMapAppContext)user_data ;
+  ZMap zmap = NULL ;
+  ZMapView view = NULL ;
+  char *err_msg = NULL ;
 
-  zmapAppCreateZMap(app_context, sequence_map) ;
+  if (!zmapAppCreateZMap(app_context, sequence_map, &zmap, &view, &err_msg))
+    zMapWarning("%s", err_msg) ;
 
   return ;
 }
-
-
-

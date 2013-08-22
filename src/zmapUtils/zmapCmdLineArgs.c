@@ -43,68 +43,36 @@
 #include <zmapUtils_P.h>
 
 
+
 #define ARG_NO_FLAGS 0
 
 
+
+typedef GOptionEntry *(* get_entries_func)(ZMapCmdLineArgs context) ;
+
+
+
 static void makeContext(int argc, char *argv[]) ;
-
 static void makeOptionContext(ZMapCmdLineArgs arg_context);
-
-typedef GOptionEntry *(* get_entries_func)(ZMapCmdLineArgs context);
-
 static GOptionEntry *get_main_entries(ZMapCmdLineArgs arg_context);
 static GOptionEntry *get_config_entries(ZMapCmdLineArgs arg_context);
+
+
+
+extern gboolean zmap_timing_G;
+
 
 
 static ZMapCmdLineArgs arg_context_G = NULL ;
 
 
 
-/*! @defgroup cmdline_args   ZMap command line parsing
- * @{
- *
- * @section Overview
- *
- * Zmap supports the standard Unix command line format:
- *
- * <PRE>
- *            zmap  [command flags] [sequence name]
- * </PRE>
- *
- *
- * Command line flags are specified using the standard "long" format:
- *
- * <PRE>
- *              --flag          e.g. --start
- * </PRE>
- *
- * Some flags require an argument which must be specified as follows:
- *
- * <PRE>
- *               --flag=value   e.g. --start=10000
- * </PRE>
- *
- * The final (optional) argument on the command line specifies the name
- * of a sequence to be displayed, this must not be preceded by "--".
- *
- * ZMap uses the Glib g_option calls to do command line parsing, the functions
- * provided in the zmap interface supply a simplified interface.
- *
- *  */
-
-
-
-/*!
- * There is no context returned here because these commands create a single global context for the whole
+/* There is no context returned here because these commands create a single global context for the whole
  * application which is held internally.
  *
  * Note that as this routine should be called once per application it is not
  * thread safe, it could be made so but is overkill as the GUI/master thread is
  * not thread safe anyway.
- *
- * @param argc       The number of arguments in the argv array.
- * @param argv       A string array holding the command line arguments.
- * @return           nothing
  *
  *  */
 void zMapCmdLineArgsCreate(int *argc, char *argv[])
@@ -128,8 +96,7 @@ void zMapCmdLineArgsCreate(int *argc, char *argv[])
 
 
 
-/*!
- * Retrieves the final commandline argument, if there is one. This is different
+/* Retrieves the final commandline argument, if there is one. This is different
  * in that by unix convention it is not preceded with a "--". The string
  * must not be freed by the application.
  *
@@ -164,11 +131,11 @@ char **zMapCmdLineFinalArg(void)
  * @return           TRUE if arg_name was found in the args array, FALSE otherwise.
  *
  *  */
-#define GET_ENTRIES_COUNT 2
 gboolean zMapCmdLineArgsValue(char *arg_name, ZMapCmdLineArgsType *result)
 {
   gboolean val_set = FALSE ;
   ZMapCmdLineArgs arg_context ;
+  enum {GET_ENTRIES_COUNT = 2} ;
   get_entries_func get_entries[GET_ENTRIES_COUNT] = { get_main_entries, get_config_entries };
   int i;
 
@@ -185,41 +152,41 @@ gboolean zMapCmdLineArgsValue(char *arg_name, ZMapCmdLineArgsType *result)
 	    {
 	      if(g_quark_from_string(entries->long_name) == g_quark_from_string(arg_name))
 		{
-		      if(entries->arg == G_OPTION_ARG_NONE &&
-                       ZMAPARG_INVALID_BOOL != *(gboolean *)entries->arg_data)
-                  {
-                        if(result)
-      		            result->b = *(gboolean *)(entries->arg_data);
-                        val_set = TRUE;
-                  }
-		      else if(entries->arg == G_OPTION_ARG_INT &&
-      			ZMAPARG_INVALID_INT != *(int *)entries->arg_data)
-                  {
-                        if(result)
-            		      result->i = *(int *)(entries->arg_data);
-                        val_set = TRUE;
-                  }
-		      else if(entries->arg == G_OPTION_ARG_DOUBLE &&
-      			ZMAPARG_INVALID_FLOAT != *(double *)entries->arg_data)
-                        {
-                        if(result)
-            		      result->f = *(double *)(entries->arg_data);
-                        val_set = TRUE;
-                  }
-		      else if(entries->arg == G_OPTION_ARG_STRING &&
-      			ZMAPARG_INVALID_STR != *(char **)entries->arg_data)
-                  {
-                        if(result)
-            		      result->s = *(char **)(entries->arg_data);
-                        val_set = TRUE;
-                  }
-		      else if(entries->arg == G_OPTION_ARG_STRING_ARRAY &&
-      			ZMAPARG_INVALID_STR != entries->arg_data)
-                  {
-                        if(result)
-            		      result->sa = (char **)(entries->arg_data);
-                        val_set = TRUE;
-                  }
+		  if(entries->arg == G_OPTION_ARG_NONE &&
+		     ZMAPARG_INVALID_BOOL != *(gboolean *)entries->arg_data)
+		    {
+		      if(result)
+			result->b = *(gboolean *)(entries->arg_data);
+		      val_set = TRUE;
+		    }
+		  else if(entries->arg == G_OPTION_ARG_INT &&
+			  ZMAPARG_INVALID_INT != *(int *)entries->arg_data)
+		    {
+		      if(result)
+			result->i = *(int *)(entries->arg_data);
+		      val_set = TRUE;
+		    }
+		  else if(entries->arg == G_OPTION_ARG_DOUBLE &&
+			  ZMAPARG_INVALID_FLOAT != *(double *)entries->arg_data)
+		    {
+		      if(result)
+			result->f = *(double *)(entries->arg_data);
+		      val_set = TRUE;
+		    }
+		  else if(entries->arg == G_OPTION_ARG_STRING &&
+			  ZMAPARG_INVALID_STR != *(char **)entries->arg_data)
+		    {
+		      if(result)
+			result->s = *(char **)(entries->arg_data);
+		      val_set = TRUE;
+		    }
+		  else if(entries->arg == G_OPTION_ARG_STRING_ARRAY &&
+			  ZMAPARG_INVALID_STR != entries->arg_data)
+		    {
+		      if(result)
+			result->sa = (char **)(entries->arg_data);
+		      val_set = TRUE;
+		    }
 		}
 	      entries++;
 	    }
@@ -255,15 +222,10 @@ void zMapCmdLineArgsDestroy(void)
 
 
 
-/*! @} end of cmdline_args docs. */
-
-
 
 /*
  *                     Internal routines.
- *
  */
-
 
 static void makeContext(int argc, char *argv[])
 {
@@ -276,6 +238,9 @@ static void makeContext(int argc, char *argv[])
   /* Set default values. */
   arg_context->version = ZMAPARG_INVALID_BOOL;
   arg_context->serial = ZMAPARG_INVALID_BOOL;
+  arg_context->remote_debug = ZMAPARG_INVALID_STR ;
+  arg_context->peer_name  = ZMAPARG_INVALID_STR ;
+  arg_context->peer_clipboard  = ZMAPARG_INVALID_STR ;
   arg_context->start   = ZMAPARG_INVALID_INT;
   arg_context->end     = ZMAPARG_INVALID_INT ;
   arg_context->config_file_path = arg_context->config_dir = ZMAPARG_INVALID_STR;
@@ -345,23 +310,29 @@ static void makeOptionContext(ZMapCmdLineArgs arg_context)
 static GOptionEntry *get_main_entries(ZMapCmdLineArgs arg_context)
 {
   static GOptionEntry entries[] = {
+
     /* long_name, short_name, flags, arg, arg_data, description, arg_description */
 
-    { ZMAPARG_VERSION, 0, G_OPTION_FLAG_NO_ARG, G_OPTION_ARG_NONE, NULL, ZMAPARG_VERSION_DESC, ZMAPARG_NO_ARG },
+    { ZMAPARG_VERSION, 0, 0, G_OPTION_ARG_NONE, NULL, ZMAPARG_VERSION_DESC, ZMAPARG_NO_ARG },
+
     { ZMAPARG_RAW_VERSION, 0, G_OPTION_FLAG_NO_ARG, G_OPTION_ARG_NONE, NULL,
       ZMAPARG_RAW_VERSION_DESC, ZMAPARG_NO_ARG },
 
-    { ZMAPARG_SERIAL,  0, G_OPTION_FLAG_NO_ARG, G_OPTION_ARG_NONE, NULL, ZMAPARG_SERIAL_DESC,  ZMAPARG_NO_ARG },
+    { ZMAPARG_SERIAL,  0, 0, G_OPTION_ARG_NONE, NULL, ZMAPARG_SERIAL_DESC,  ZMAPARG_NO_ARG },
 
-    { ZMAPARG_SEQUENCE_START, 0, ARG_NO_FLAGS, G_OPTION_ARG_INT, NULL,
-      ZMAPARG_SEQUENCE_START_DESC, ZMAPARG_COORD_ARG },
+    { ZMAPARG_REMOTE_DEBUG, 0, 0, G_OPTION_ARG_STRING, NULL, ZMAPARG_REMOTE_DEBUG_DESC, ZMAPARG_REMOTE_DEBUG_ARG },
 
-    { ZMAPARG_SEQUENCE_END,   0, ARG_NO_FLAGS, G_OPTION_ARG_INT, NULL,
-      ZMAPARG_SEQUENCE_END_DESC, ZMAPARG_COORD_ARG },
+    { ZMAPARG_PEER_NAME, 0, 0, G_OPTION_ARG_STRING, NULL, ZMAPARG_PEER_NAME_DESC, ZMAPARG_PEER_NAME_ARG },
 
-    { ZMAPARG_SLEEP, 0, G_OPTION_FLAG_NO_ARG, G_OPTION_ARG_NONE, NULL, ZMAPARG_SLEEP_DESC, ZMAPARG_NO_ARG },
+    { ZMAPARG_PEER_CLIPBOARD, 0, 0, G_OPTION_ARG_STRING, NULL, ZMAPARG_PEER_CLIPBOARD_DESC, ZMAPARG_PEER_CLIPBOARD_ARG },
 
-    { ZMAPARG_TIMING,  0, G_OPTION_FLAG_NO_ARG, G_OPTION_ARG_NONE, NULL, ZMAPARG_TIMING_DESC,  ZMAPARG_NO_ARG },
+    { ZMAPARG_SEQUENCE_START, 0, 0, G_OPTION_ARG_INT, NULL, ZMAPARG_SEQUENCE_START_DESC, ZMAPARG_COORD_ARG },
+
+    { ZMAPARG_SEQUENCE_END,   0, 0, G_OPTION_ARG_INT, NULL, ZMAPARG_SEQUENCE_END_DESC, ZMAPARG_COORD_ARG },
+
+    { ZMAPARG_SLEEP, 0, 0, G_OPTION_ARG_INT, NULL, ZMAPARG_SLEEP_DESC, ZMAPARG_NO_ARG },
+
+    { ZMAPARG_TIMING,  0, 0, G_OPTION_ARG_NONE, NULL, ZMAPARG_TIMING_DESC,  ZMAPARG_NO_ARG },
 
     { ZMAPARG_SHRINK,  0, G_OPTION_FLAG_NO_ARG, G_OPTION_ARG_NONE, NULL, ZMAPARG_SHRINK_DESC,  ZMAPARG_NO_ARG },
 
@@ -373,21 +344,37 @@ static GOptionEntry *get_main_entries(ZMapCmdLineArgs arg_context)
     { NULL }
   } ;
 
-
+  /* Crucially these entries must be kept in the same order as the array above....otherwise you get
+   * the wrong command line values for command line flags.... */
   if (entries[0].arg_data == NULL)
     {
-      extern gboolean zmap_timing_G;
-      extern gboolean zmap_shrink_G;
+      int i = 0 ;					    /* using index saves having to renumber. */
 
-      entries[0].arg_data = &(arg_context->version);
-      entries[1].arg_data = &(arg_context->serial);
-      entries[2].arg_data = &(arg_context->start);
-      entries[3].arg_data = &(arg_context->end);
-      entries[4].arg_data = &(arg_context->sleep);
-      entries[5].arg_data = &(zmap_timing_G);
-      entries[6].arg_data = &(zmap_shrink_G);
-      entries[7].arg_data = &(arg_context->sequence_arg);
-      entries[8].arg_data = &(arg_context->files_arg);
+      entries[i].arg_data = &(arg_context->version) ;
+      i++ ;
+      entries[i].arg_data = &(arg_context->raw_version) ;
+      i++ ;
+      entries[i].arg_data = &(arg_context->serial) ;
+      i++ ;
+      entries[i].arg_data = &(arg_context->remote_debug) ;
+      i++ ;
+      entries[i].arg_data = &(arg_context->peer_name) ;
+      i++ ;
+      entries[i].arg_data = &(arg_context->peer_clipboard) ;
+      i++ ;
+      entries[i].arg_data = &(arg_context->start) ;
+      i++ ;
+      entries[i].arg_data = &(arg_context->end) ;
+      i++ ;
+      entries[i].arg_data = &(arg_context->sleep) ;
+      i++ ;
+      entries[i].arg_data = &(zmap_timing_G) ;
+      i++ ;
+      entries[i].arg_data = &(arg_context->shrink) ;
+      i++ ;
+      entries[i].arg_data = &(arg_context->sequence_arg) ;
+      i++ ;
+      entries[i].arg_data = &(arg_context->files_arg) ;
     }
 
   return &entries[0] ;
@@ -396,15 +383,24 @@ static GOptionEntry *get_main_entries(ZMapCmdLineArgs arg_context)
 static GOptionEntry *get_config_entries(ZMapCmdLineArgs arg_context)
 {
   static GOptionEntry entries[] = {
-    { ZMAPARG_CONFIG_FILE, 0, ARG_NO_FLAGS,
+    { ZMAPARG_CONFIG_FILE, 0, 0,
       G_OPTION_ARG_STRING, NULL,
       ZMAPARG_CONFIG_FILE_DESC, ZMAPARG_FILE_ARG },
-    { ZMAPARG_CONFIG_DIR, 0, ARG_NO_FLAGS,
+    { ZMAPARG_CONFIG_DIR, 0, 0,
       G_OPTION_ARG_STRING, NULL,
       ZMAPARG_CONFIG_DIR_DESC, ZMAPARG_DIR_ARG },
-    { ZMAPARG_WINDOW_ID, 0, ARG_NO_FLAGS,
+    { ZMAPARG_WINDOW_ID, 0, 0,
       G_OPTION_ARG_STRING, NULL,
       ZMAPARG_WINDOW_ID_DESC, ZMAPARG_WINID_ARG },
+    { ZMAPARG_REMOTE_DEBUG, 0, 0, 
+      G_OPTION_ARG_STRING, NULL,
+      ZMAPARG_REMOTE_DEBUG_DESC, ZMAPARG_REMOTE_DEBUG_ARG },
+    { ZMAPARG_PEER_NAME, 0, 0, 
+      G_OPTION_ARG_STRING, NULL,
+      ZMAPARG_PEER_NAME_DESC, ZMAPARG_PEER_NAME_ARG },
+    { ZMAPARG_PEER_CLIPBOARD, 0, 0, 
+      G_OPTION_ARG_STRING, NULL,
+      ZMAPARG_PEER_CLIPBOARD_DESC, ZMAPARG_PEER_CLIPBOARD_ARG },
     { NULL }
   };
 
@@ -413,6 +409,9 @@ static GOptionEntry *get_config_entries(ZMapCmdLineArgs arg_context)
       entries[0].arg_data = &(arg_context->config_file_path);
       entries[1].arg_data = &(arg_context->config_dir);
       entries[2].arg_data = &(arg_context->window);
+      entries[3].arg_data = &(arg_context->remote_debug);
+      entries[4].arg_data = &(arg_context->peer_name);
+      entries[5].arg_data = &(arg_context->peer_clipboard);
     }
 
   return &entries[0];

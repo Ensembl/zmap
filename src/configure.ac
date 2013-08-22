@@ -2,8 +2,8 @@
 # Process this file with autoconf to produce a configure script.
 
 
-# the bootstrap script makes the file zmap_version.m4 and puts zmaps current
-# version in it as the macro VERSION_NUMBER
+# the bootstrap script makes the file zmap_version.m4 and puts zmap's current
+# version in it as the macro VERSION_NUMBER which is used in ac_init below.
 m4_include([zmap_version.m4])
 
 
@@ -32,19 +32,23 @@ fi
 
 
 
-echo "************************************************************"
-echo "* Welcome to ./configure for $PACKAGE_STRING"
-echo "* Cmd: $0 $@"
-echo "* Environment:"
-echo "*   LDFLAGS          : $LDFLAGS"
-echo "*   CFLAGS           : $CFLAGS"
-echo "*   CC               : $CC"
-echo "*   PATH             : $PATH"
-echo "*   PACKAGE_CFG      : $PKG_CONFIG"
-echo "*   PACKAGE_CFG_PATH : $PKG_CONFIG_PATH"
-echo "*   LD_LIBRARY_PATH  : $LD_LIBRARY_PATH"
-echo "* continuing..."
-echo "*"
+echo \
+"---------------------------------------------------------------------
+ Welcome to ./configure for $PACKAGE_STRING
+ Cmd: $0 $@
+ Environment:
+   LDFLAGS          : $LDFLAGS
+   CFLAGS           : $CFLAGS
+   CC               : $CC
+   PATH             : $PATH
+   PACKAGE_CFG      : $PKG_CONFIG
+   PACKAGE_CFG_PATH : $PKG_CONFIG_PATH
+   LD_LIBRARY_PATH  : $LD_LIBRARY_PATH
+ continuing...
+"
+echo "---------------------------------------------------------------------
+"
+
 
 
 # what are we building on?
@@ -90,6 +94,7 @@ ZMAP_TRUE=yes
 AC_ARG_WITH([macosx-sdk-path],
         AS_HELP_STRING([--with-maxosx-sdk-path=path], [enable building of mac osx universal binary using 'path' to SDK]),
         [], [with_macosx_sdk_path=$ZMAP_FALSE])
+
 
 MACOSX_UNIVERSAL_FILE=".deps/zmap.c"
 MACOSX_UNIVERSAL_FLAGS=""
@@ -383,6 +388,8 @@ zmapDraw \
 zmapFeature \
 zmapGFF \
 zmapManager \
+zmapRemoteControl \
+zmapRemoteControl/remotetest \
 zmapServer \
 zmapThreads \
 zmapUtils \
@@ -418,6 +425,8 @@ zmapFeature/Makefile
 zmapFeature/tests/Makefile
 zmapGFF/Makefile
 zmapManager/Makefile
+zmapRemoteControl/Makefile
+zmapRemoteControl/remotetest/Makefile
 zmapServer/Makefile
 zmapServer/acedb/Makefile
 zmapServer/das/Makefile
@@ -455,7 +464,7 @@ AC_OUTPUT
 
 
 echo \
-"-------------------------------------------------
+"---------------------------------------------------------------------
 
  ${PACKAGE_NAME} Version ${PACKAGE_VERSION}
 
@@ -469,5 +478,5 @@ echo \
      <program> - build specific program
 "
 
-echo "-------------------------------------------------
+echo "---------------------------------------------------------------------
 "

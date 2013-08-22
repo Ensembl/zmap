@@ -109,24 +109,24 @@ GList *zmapWindowItemListToFeatureListExpanded(GList *item_list, int expand)
   ZMapFeature feature;
 
   for(;item_list;item_list = item_list->next)
-  {
-  	id2c = (ID2Canvas) item_list->data;
-	feature = (ZMapFeature) id2c->feature_any;
+    {
+      id2c = (ID2Canvas) item_list->data;
+      feature = (ZMapFeature) id2c->feature_any;
 
-	if(expand && feature->children)
+      if(expand && feature->children)
 	{
-		GList * l;
+	  GList * l;
 
-		for(l = feature->children; l; l = l->next)
-		{
-			feature_list = g_list_prepend(feature_list,(gpointer) l->data);
-		}
+	  for(l = feature->children; l; l = l->next)
+	    {
+	      feature_list = g_list_prepend(feature_list,(gpointer) l->data);
+	    }
 	}
-	else
+      else
 	{
-		feature_list = g_list_prepend(feature_list,(gpointer) id2c->feature_any);
+	  feature_list = g_list_prepend(feature_list,(gpointer) id2c->feature_any);
 	}
-  }
+    }
 
   return feature_list;
 }

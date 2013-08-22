@@ -33,7 +33,6 @@
 #include <gdk/gdkcolor.h>
 
 #include <ZMap/zmapConfigStyleDefaults.h>
-#include <ZMap/zmapXML.h>
 #include <ZMap/zmapStyle.h>
 #include <ZMap/zmapUtils.h>
 
@@ -50,6 +49,10 @@
 #define ZMAPFEATURE_HAS_EXONS(FEATURE)     (ZMAPFEATURE_IS_TRANSCRIPT(FEATURE) &&            \
 					    ((FEATURE)->feature.transcript.exons != NULL) && \
 					    ((FEATURE)->feature.transcript.exons->len > (guint)0))
+
+#define ZMAPFEATURE_HAS_INTRONS(FEATURE)    (ZMAPFEATURE_IS_TRANSCRIPT(FEATURE) &&            \
+					    ((FEATURE)->feature.transcript.introns != NULL) && \
+					    ((FEATURE)->feature.transcript.introns->len > (guint)0))
 
 #define ZMAPFEATURE_IS_ALIGNMENT(FEATURE)  ((FEATURE)->type == ZMAPSTYLE_MODE_ALIGNMENT)
 
@@ -435,7 +438,7 @@ typedef struct ZMapFeatureAlignmentStruct_
   GQuark unique_id ;					    /* Unique id this alignment. */
   GQuark original_id ;					    /* Original id of this sequence. */
 
-  GHashTable *blocks ;					    /* A set of ZMapFeatureStruct. */
+  GHashTable *blocks ;					    /* A set of ZMapFeatureBlockStruct. */
 
   /* Alignment only data should go here. */
 
@@ -649,6 +652,7 @@ typedef struct
 typedef struct ZMapFeatureStruct_
 {
   /* FeatureAny section. */
+
 #ifdef FEATURES_NEED_MAGIC
   ZMapMagic magic;
 #endif
@@ -1076,7 +1080,7 @@ gboolean zMapFeatureAddStandardData(ZMapFeature feature, char *feature_name_id, 
 
 gboolean zMapFeatureAddKnownName(ZMapFeature feature, char *known_name) ;
 gboolean zMapFeatureAddSplice(ZMapFeature feature, ZMapBoundaryType boundary) ;
-
+gboolean zMapFeatureTranscriptSortExons(ZMapFeature feature) ;
 gboolean zMapFeatureTranscriptInit(ZMapFeature feature) ;
 gboolean zMapFeatureAddTranscriptCDS(ZMapFeature feature, gboolean cds, Coord cds_start, Coord cds_end) ;
 gboolean zMapFeatureAddTranscriptStartEnd(ZMapFeature feature,
@@ -1085,8 +1089,10 @@ gboolean zMapFeatureAddTranscriptStartEnd(ZMapFeature feature,
 gboolean zMapFeatureAddTranscriptExonIntron(ZMapFeature feature,
 					    ZMapSpanStruct *exon, ZMapSpanStruct *intron) ;
 gboolean zMapFeatureTranscriptNormalise(ZMapFeature feature) ;
-void zMapFeatureTranscriptExonForeach(ZMapFeature feature, GFunc function, gpointer user_data);
 
+gboolean zMapFeatureTranscriptExonForeach(ZMapFeature feature, GFunc function, gpointer user_data) ;
+gboolean zMapFeatureTranscriptChildForeach(ZMapFeature feature, ZMapFeatureSubpartType child_type,
+					   GFunc function, gpointer user_data) ;
 
 gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
 				     GQuark clone_id,
@@ -1368,10 +1374,10 @@ gboolean zMapFeatureExon2CDS(ZMapFeature feature,
 gboolean zMapFeatureAnnotatedExonsCreate(ZMapFeature feature, gboolean include_protein, GList **exon_list_out) ;
 void zMapFeatureAnnotatedExonsDestroy(GList *exon_list) ;
 
-ZMapFeatureContextExecuteStatus zMapFeatureTranscriptSortExons(GQuark key,
-                                                         gpointer data,
-                                                         gpointer user_data,
-                                                         char **error_out);
+ZMapFeatureContextExecuteStatus zMapFeatureContextTranscriptSortExons(GQuark key,
+								      gpointer data,
+								      gpointer user_data,
+								      char **error_out) ;
 
 
 /* ============================================================== for teh === */
@@ -1417,14 +1423,6 @@ char *zMapFeatureTranscriptTranslation(ZMapFeature feature, int *length) ;
 char *zMapFeatureTranslation(ZMapFeature feature, int *length) ;
 gboolean zMapFeatureShowTranslationCreateSet(ZMapFeatureBlock block, ZMapFeatureSet *set_out) ;
 void zMapFeatureShowTranslationSetCreateFeatures(ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style) ;
-
-GArray *zMapFeatureAnyAsXMLEvents(ZMapFeatureAny feature_any,
-                                  /* ZMapFeatureXMLType xml_type */
-                                  int xml_type);
-gboolean zMapFeatureAnyAsXML(ZMapFeatureAny feature_any,
-                             ZMapXMLWriter xml_writer,
-                             GArray **xml_events_out,
-                             int xml_type);
 
 gboolean zMapFeatureAnyHasMagic(ZMapFeatureAny feature_any);
 

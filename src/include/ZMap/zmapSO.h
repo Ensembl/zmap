@@ -45,6 +45,7 @@
 #define SO_ACC_POLYA_SITE    "SO:0000553"
 #define SO_ACC_SEQ_ALT       "SO:0001059"
 #define SO_ACC_SNP           "SO:0000694"
+#define SO_ACC_MUTATION      "SO:0000109"
 #define SO_ACC_SUBSTITUTION  "SO:1000002"
 #define SO_ACC_TRANSCRIPT    "SO:0000673"
 

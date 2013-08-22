@@ -36,25 +36,31 @@
 
 #define ZMAPARG_VERSION_DESC        "Program version."
 #define ZMAPARG_RAW_VERSION_DESC    "Code version."
-#define ZMAPARG_SLEEP_DESC          "Makes ZMap sleep for 15 secs at start-up to give time to attach a debugger."
+#define ZMAPARG_SLEEP_DESC          "Makes ZMap sleep for given number of secs at start-up to give time to attach a debugger."
 #define ZMAPARG_SEQUENCE_START_DESC "Start coord in sequence, must be in range 1 -> seq_length."
 #define ZMAPARG_SEQUENCE_END_DESC   "End coord in sequence, must be in range start -> seq_length, but end == 0 means show to end of sequence."
 #define ZMAPARG_CONFIG_FILE_DESC    "Relative or full path to configuration file."
 #define ZMAPARG_CONFIG_DIR_DESC     "Relative or full path to configuration directory."
 #define ZMAPARG_WINDOW_ID_DESC      "Window ID of the controlling application."
+#define ZMAPARG_REMOTE_DEBUG_DESC   "Set RemoteControl debug level."
+#define ZMAPARG_PEER_NAME_DESC      "Peer Remote Control app name."
+#define ZMAPARG_PEER_CLIPBOARD_DESC "Peer Remote Control clipboard name."
 #define ZMAPARG_SEQUENCE_DESC       "Sequence name."
 #define ZMAPARG_SERIAL_DESC         "Operate pipe servers in serial on startup"
 #define ZMAPARG_TIMING_DESC         "switch on timing functions"
 #define ZMAPARG_SHRINK_DESC         "allow shrinkable ZMap window"
 #define ZMAPARG_FILES_DESC         "allow shrinkable ZMap window"
 
-#define ZMAPARG_NO_ARG         "<none>"
-#define ZMAPARG_COORD_ARG      "coord"
-#define ZMAPARG_FILE_ARG       "file path"
-#define ZMAPARG_DIR_ARG        "directory"
-#define ZMAPARG_WINID_ARG      "0x0000000"
-#define ZMAPARG_SEQUENCE_ARG   "<sequence name>"
-#define ZMAPARG_SERIAL_ARG     "<none>"
+#define ZMAPARG_NO_ARG              "<none>"
+#define ZMAPARG_COORD_ARG           "coord"
+#define ZMAPARG_FILE_ARG            "file path"
+#define ZMAPARG_DIR_ARG             "directory"
+#define ZMAPARG_WINID_ARG           "0x0000000"
+#define ZMAPARG_SEQUENCE_ARG        "<sequence name>"
+#define ZMAPARG_REMOTE_DEBUG_ARG    "debug level: off | normal | verbose"
+#define ZMAPARG_PEER_NAME_ARG       "peer app name"
+#define ZMAPARG_PEER_CLIPBOARD_ARG  "peer clipboard unique id"
+#define ZMAPARG_SERIAL_ARG          "<none>"
 #define ZMAPARG_FILES_ARG      "<file(s)>"
 
 #define ZMAPARG_INVALID_INT -1
@@ -62,17 +68,6 @@
 #define ZMAPARG_INVALID_STR NULL
 #define ZMAPARG_INVALID_FLOAT 0.0
 
-
-#if NOT_USED
-enum {ARG_SET = 1,					    /* Special value, do not alter. */
-      ARG_VERSION,
-      ARG_SERIAL,
-      ARG_START, ARG_END,
-      ARG_CONF_FILE, ARG_CONF_DIR,
-      ARG_WINID,
-      ARG_TIMING
-} ;
-#endif
 
 
 typedef struct _ZMapCmdLineArgsStruct
@@ -88,16 +83,25 @@ typedef struct _ZMapCmdLineArgsStruct
   char **files_arg ;	/* non options/ remainder args */
 
   /* All option values are stored here for later reference. */
+  gboolean raw_version ;
   gboolean version ;
   gboolean serial ;
   gboolean timing ;
 
+  int sleep ;
+
   int start, end ;
-  int sleep;      /* not used but needed */
 
   char *config_dir ;
   char *config_file_path ;
   char *window ;
+
+  char *remote_debug ;
+  char *peer_name ;
+  char *peer_clipboard ;
+
+  gboolean shrink ;
+
 } ZMapCmdLineArgsStruct, *ZMapCmdLineArgs ;
 
 

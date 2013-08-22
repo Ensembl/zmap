@@ -784,7 +784,7 @@ static void fileChangedCB(GtkWidget *widget, gpointer user_data)
 	name--;
       if(*name == '/')
 	name++;
-      source_txt = g_strdup_printf("%.*s",extent - name,name);
+      source_txt = g_strdup_printf("%.*s", (int)(extent - name), name) ;
 
       gtk_entry_set_text(GTK_ENTRY(main_frame->source_widg), source_txt) ;
 

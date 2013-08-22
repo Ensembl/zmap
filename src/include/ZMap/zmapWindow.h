@@ -41,7 +41,16 @@
 
 #include <ZMap/zmapUtilsGUI.h>
 #include <ZMap/zmapFeature.h>
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+#include <ZMap/zmapRemoteCommand.h>
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+#include <ZMap/zmapAppRemote.h>
+
+/* should be able to get rid of this shortly... */
 #include <ZMap/zmapXRemote.h>
+
 #include <ZMap/zmapXMLHandler.h>
 
 
@@ -175,10 +184,22 @@ typedef struct
 
   ZMapWindowFilterStruct filter;
 
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* MUST ALL GO NOW.... */
+
+  /* Old xremote stuff.... */
+
   /* For Xremote XML actions/events. */
   ZMapXRemoteSendCommandError remote_result ;
 
   ZMapXMLHandlerStruct xml_handler ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
 
 } ZMapWindowSelectStruct, *ZMapWindowSelect ;
 
@@ -330,6 +351,16 @@ typedef struct _ZMapWindowCallbacksStruct
   ZMapWindowCallbackFunc visibilityChange ;
   ZMapWindowCallbackFunc command ;			    /* Request to exit given command. */
   ZMapWindowCallbackFunc drawn_data ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* WHAT..... */
+  ZMapRemoteAppMakeRequestFunc remote_request_func ;
+  ZMapRemoteAppMakeRequestFunc remote_request_func_data ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  ZMapRemoteAppMakeRequestFunc remote_request_func ;
+  gpointer remote_request_func_data ;
+
 } ZMapWindowCallbacksStruct, *ZMapWindowCallbacks ;
 
 
@@ -345,6 +376,11 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, ZMapFeatureSequenceMap seque
 			  void *app_data, ZMapWindow old,
 			  ZMapFeatureContext features, GHashTable *all_styles, GHashTable *new_styles,
 			  ZMapWindowLockType window_locking) ;
+
+gboolean zMapWindowProcessRemoteRequest(ZMapWindow window,
+					char *command_name, char *request,
+					ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data) ;
+
 
 void zMapWindowBusyFull(ZMapWindow window, gboolean busy, const char *file, const char *func) ;
 #ifdef __GNUC__

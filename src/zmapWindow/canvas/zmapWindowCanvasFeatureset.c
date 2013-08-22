@@ -919,6 +919,8 @@ void featureset_init_funcs(void)
 
 
 
+/* UM...THIS IS ALREADY IN ANOTHER PLACE....WHY THE REPLICATION..... */
+
 /* Converts a sequence extent into a canvas extent.
  *
  *
@@ -987,7 +989,11 @@ GType zMapWindowFeaturesetItemGetType(void)
  * **** This assumes that we only have a few items in the group ****
  * which is ok as it's typically 1, occasionally 2 (focus)  and sometimes serveral eg 4 or 12
  */
-ZMapWindowCanvasItem zMapWindowCanvasItemFeaturesetGetFeaturesetItem(FooCanvasGroup *parent, GQuark id, int start,int end, ZMapFeatureTypeStyle style, ZMapStrand strand, ZMapFrame frame, int index, guint layer)
+ZMapWindowCanvasItem zMapWindowCanvasItemFeaturesetGetFeaturesetItem(FooCanvasGroup *parent, GQuark id,
+								     int start, int end,
+								     ZMapFeatureTypeStyle style,
+								     ZMapStrand strand, ZMapFrame frame,
+								     int index, guint layer)
 {
   ZMapWindowFeaturesetItem featureset = NULL;
   zmapWindowCanvasFeatureType type;

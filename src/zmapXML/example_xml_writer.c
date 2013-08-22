@@ -1,3 +1,4 @@
+/*  Last edited: Oct 28 14:14 2011 (edgrif) */
 /*  File: example_xml_writer.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -32,18 +33,18 @@
 
 #include <ZMap/zmap.h>
 
-
-
-
-
-
 #include <ZMap/zmapXML.h>
+
+
 
 static GArray *simple_xml_document(void);
 static GArray *complex_xml_document(void);
 static GArray *xml_document_from_xml(void);
 static GArray *multiple_elements(GArray *document);
 static int event_handler(ZMapXMLWriter writer, char *xml, int len, gpointer user_data);
+
+
+
 
 int main(int argc, char **argv)
 {
@@ -60,8 +61,8 @@ int main(int argc, char **argv)
       /* A SIMPLE XML DOCUMENT */
       events = simple_xml_document();
 
-      if((xml_status = zMapXMLWriterProcessEvents(writer, events)) == ZMAPXMLWRITER_OK)
-        printf("XMLDocument:\n\n%s", buffer->str);
+      if((xml_status = zMapXMLWriterProcessEvents(writer, events, FALSE)) == ZMAPXMLWRITER_OK)
+        printf("\nXMLDocument:\n%s", buffer->str);
       else
         printf("%s\n", zMapXMLWriterErrorMsg(writer));
 
@@ -71,8 +72,8 @@ int main(int argc, char **argv)
       /* A MORE COMPLEX XML DOCUMENT */
       events = complex_xml_document();
 
-      if((xml_status = zMapXMLWriterProcessEvents(writer, events)) == ZMAPXMLWRITER_OK)
-        printf("XMLDocument:\n\n%s", buffer->str);
+      if((xml_status = zMapXMLWriterProcessEvents(writer, events, FALSE)) == ZMAPXMLWRITER_OK)
+        printf("\nXMLDocument:\n%s", buffer->str);
       else
         printf("%s\n", zMapXMLWriterVerboseErrorMsg(writer));
 
@@ -80,17 +81,15 @@ int main(int argc, char **argv)
       g_string_truncate(buffer, 0);
 
 
-
       /* PARSE AND OUTPUT AN XML DOCUMENT */
       if(0)
         events = xml_document_from_xml();
 
-#ifdef RDS_KEEP_GCC_QUIET
-      if((xml_status = zMapXMLWriterProcessEvents(writer, events)) == ZMAPXMLWRITER_OK)
+
+      if((xml_status = zMapXMLWriterProcessEvents(writer, events, FALSE)) == ZMAPXMLWRITER_OK)
         printf("XMLDocument:\n\n%s", buffer->str);
       else
         printf("%s\n", zMapXMLWriterVerboseErrorMsg(writer));
-#endif
     }
 
   return status;
@@ -104,10 +103,12 @@ static GArray *simple_xml_document(void)
     {
       /* event type,                attr/ele name,  data type,        qdata, idata, ddata */
       {ZMAPXML_START_ELEMENT_EVENT, "zmap",   ZMAPXML_EVENT_DATA_NONE,  {0}},
-      {ZMAPXML_ATTRIBUTE_EVENT,     "action", ZMAPXML_EVENT_DATA_QUARK, {"run"}},
+      {ZMAPXML_ATTRIBUTE_EVENT,     "action", ZMAPXML_EVENT_DATA_QUARK, {0}},
       {ZMAPXML_END_ELEMENT_EVENT,   "zmap",   ZMAPXML_EVENT_DATA_NONE,  {0}},
       {0}
     };
+
+  document[1].value.s = g_strdup("run") ;
 
   events = zMapXMLUtilsStackToEventsArray(&document[0]);
 
@@ -121,8 +122,8 @@ static GArray *complex_xml_document(void)
     {
       /* event type,                attr/ele name,  data type,         {data} */
       {ZMAPXML_START_ELEMENT_EVENT, "set",    ZMAPXML_EVENT_DATA_QUARK, {0}},
-      {ZMAPXML_ATTRIBUTE_EVENT,     "align",  ZMAPXML_EVENT_DATA_QUARK, {"chrX.1000-10000"}},
-      {ZMAPXML_ATTRIBUTE_EVENT,     "block",  ZMAPXML_EVENT_DATA_QUARK, {"1.0_1.0"}},
+      {ZMAPXML_ATTRIBUTE_EVENT,     "align",  ZMAPXML_EVENT_DATA_QUARK, {0}},
+      {ZMAPXML_ATTRIBUTE_EVENT,     "block",  ZMAPXML_EVENT_DATA_QUARK, {0}},
       {ZMAPXML_END_ELEMENT_EVENT,   "set",    ZMAPXML_EVENT_DATA_QUARK, {0}},
       {0}
     };
@@ -135,17 +136,20 @@ static GArray *complex_xml_document(void)
     {
       /* event type,                attr/ele name,  data type,         {data} */
       {ZMAPXML_START_ELEMENT_EVENT, "zmap",   ZMAPXML_EVENT_DATA_NONE,  {0}},
-      {ZMAPXML_ATTRIBUTE_EVENT,     "action", ZMAPXML_EVENT_DATA_QUARK, {"paint"}},
+      {ZMAPXML_ATTRIBUTE_EVENT,     "action", ZMAPXML_EVENT_DATA_QUARK, {0}},
       {0}
     };
 
+  document_start[1].value.s = g_strdup("chrX.1000-10000") ;
+  document_start[2].value.s = g_strdup("1.0_1.0") ;
   events = zMapXMLUtilsStackToEventsArray(&document_start[0]);
 
   events = multiple_elements(events);
 
-  events = zMapXMLUtilsAddStackToEventsArray(&document_end[0], events);
+  events = zMapXMLUtilsAddStackToEventsArrayEnd(events, &document_end[0]);
 
-  events = zMapXMLUtilsAddStackToEventsArrayStart(&document_start_start[0], events);
+  document_start[1].value.s = g_strdup("paint") ;
+  events = zMapXMLUtilsAddStackToEventsArrayStart(events, &document_start_start[0]);
 
   return events;
 }
@@ -168,7 +172,7 @@ static GArray *xml_document_from_xml(void)
 
   events = multiple_elements(events);
 
-  events = zMapXMLUtilsAddStackToEventsArray(&document_end[0], events);
+  events = zMapXMLUtilsAddStackToEventsArrayEnd(events, &document_end[0]);
 
   return events;
 #else
@@ -183,12 +187,14 @@ static GArray *multiple_elements(GArray *document)
       {ZMAPXML_START_ELEMENT_EVENT, "feature",  ZMAPXML_EVENT_DATA_NONE,    {0}},
       {ZMAPXML_ATTRIBUTE_EVENT,     "start",    ZMAPXML_EVENT_DATA_INTEGER, {0}},
       {ZMAPXML_ATTRIBUTE_EVENT,     "end",      ZMAPXML_EVENT_DATA_INTEGER, {0}},
-      {ZMAPXML_ATTRIBUTE_EVENT,     "ontology", ZMAPXML_EVENT_DATA_QUARK,   {"exon"}},
+      {ZMAPXML_ATTRIBUTE_EVENT,     "ontology", ZMAPXML_EVENT_DATA_QUARK,   {0}},
       {ZMAPXML_END_ELEMENT_EVENT,   "feature",  ZMAPXML_EVENT_DATA_NONE,    {0}},
       {0}
     }, *event;
   static int features[] =
     {12345, 12555, 23456, 23666, 34567, 34777, 0, 0}, *tmp;
+
+  elements[3].value.s = g_strdup("exon") ;
 
   tmp = &features[0];
 
@@ -204,7 +210,7 @@ static GArray *multiple_elements(GArray *document)
 
       event->value.i = *tmp;
 
-      document = zMapXMLUtilsAddStackToEventsArray(&elements[0], document);
+      document = zMapXMLUtilsAddStackToEventsArrayEnd(document, &elements[0]);
       tmp++;
     }
 

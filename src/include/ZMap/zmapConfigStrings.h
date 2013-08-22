@@ -177,6 +177,7 @@
 #define ZMAPSTANZA_APP_MAINWINDOW        "show-mainwindow"
 #define ZMAPSTANZA_APP_ABBREV_TITLE      "abbrev-window-title"
 #define ZMAPSTANZA_APP_EXIT_TIMEOUT      "exit-timeout"
+#define ZMAPSTANZA_APP_SLEEP             "sleep"
 #define ZMAPSTANZA_APP_HELP_URL          "help-url"
 
 #define ZMAPSTANZA_APP_DATASET           "dataset"
@@ -206,6 +207,19 @@
 #define ZMAPSTANZA_APP_SEQ_DATA          "seq-data"
 
 #define ZMAPSTANZA_APP_EDIT_STYLES       "edit-styles"
+
+
+
+#define ZMAPSTANZA_PEER_CONFIG       "Peer"
+#define ZMAPSTANZA_PEER_NAME         "name"
+#define ZMAPSTANZA_PEER_CLIPBOARD    "clipboard"
+#define ZMAPSTANZA_PEER_RETRIES      "timeout-retries"
+#define ZMAPSTANZA_PEER_TIMEOUT      "timeout-ms"
+
+
+
+
+
 
 /*! @addtogroup config_stanzas
  *
@@ -252,15 +266,16 @@
  * </table>
  *
  *  */
-#define ZMAPSTANZA_LOG_CONFIG    "logging"
-#define ZMAPSTANZA_LOG_LOGGING   "logging"
-#define ZMAPSTANZA_LOG_FILE      "file"
-#define ZMAPSTANZA_LOG_DIRECTORY "directory"
-#define ZMAPSTANZA_LOG_FILENAME  "filename"
-#define ZMAPSTANZA_LOG_SHOW_CODE "show-code"
-#define ZMAPSTANZA_LOG_SHOW_TIME "show-time"    // mgh: didn't complete this so didn't put it in the help
-#define ZMAPSTANZA_LOG_CATCH_GLIB "catch-glib"
-#define ZMAPSTANZA_LOG_ECHO_GLIB  "echo-glib"
+#define ZMAPSTANZA_LOG_CONFIG        "logging"
+#define ZMAPSTANZA_LOG_LOGGING       "logging"
+#define ZMAPSTANZA_LOG_FILE          "file"
+#define ZMAPSTANZA_LOG_DIRECTORY     "directory"
+#define ZMAPSTANZA_LOG_FILENAME      "filename"
+#define ZMAPSTANZA_LOG_SHOW_PROCESS  "show-process"
+#define ZMAPSTANZA_LOG_SHOW_CODE     "show-code"
+#define ZMAPSTANZA_LOG_SHOW_TIME     "show-time"
+#define ZMAPSTANZA_LOG_CATCH_GLIB    "catch-glib"
+#define ZMAPSTANZA_LOG_ECHO_GLIB     "echo-glib"
 
 
 /*! @addtogroup config_stanzas

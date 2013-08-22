@@ -115,6 +115,8 @@ gboolean zMapConfigIniContextSetBoolean(ZMapConfigIniContext context,
 gboolean zMapConfigIniContextSave(ZMapConfigIniContext context);
 
 gchar *zMapConfigIniContextErrorMessage(ZMapConfigIniContext context);
+gchar *zMapConfigIniContextKeyFileErrorMessage(ZMapConfigIniContext context);
+
 ZMapConfigIniContext zMapConfigIniContextDestroy(ZMapConfigIniContext context);
 
 

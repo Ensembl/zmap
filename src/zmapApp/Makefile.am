@@ -12,6 +12,8 @@ zmapAppmanage.c \
 zmapAppmenubar.c \
 zmapAppremote.c \
 zmapAppwindow.c \
+zmapAppRemoteControl.c \
+zmapAppRemoteCommand.c \
 $(NULL)
 
 libZMapApp_la_CFLAGS = $(INCLUDE_COMMON)

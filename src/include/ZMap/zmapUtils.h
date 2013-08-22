@@ -106,13 +106,20 @@ typedef struct  _ZMapLogStruct *ZMapLog ;
  *
  * The address of the string is then used as the unique identifier and the string
  * can be used during debugging.
+ * 
+ * If you use the magic in heap allocated structs then you _must_ reset the magic
+ * on deallocating the struct to invalidate the memory and hence catch when callers
+ * try to erroneously continue to reference it:
+ * 
+ * ZMAP_MAGIC_RESET(struct->magic) ;
+ * 
  */
 typedef char* ZMapMagic ;
 
 #define ZMAP_MAGIC_NEW(magic_var_name, type_name) static ZMapMagic magic_var_name = ZMAP_MAKESTRING((type_name))  " in file " __FILE__
 #define ZMAP_MAGIC_IS_VALID(magic_var_name, magic_ptr) ((magic_var_name) == (magic_ptr))
 #define ZMAP_MAGIC_ASSERT(magic_var_name, magic_ptr) zMapAssert(ZMAP_MAGIC_IS_VALID((magic_var_name), (magic_ptr)))
-
+#define ZMAP_MAGIC_RESET(magic_ptr) (magic_ptr) = NULL
 
 
 #define ZMAP_PTR_ZERO_FREE(ptr, struct_type) \
@@ -129,13 +136,15 @@ TYPE _c = (A);                       \
     (B) = (_c);                      \
 }
 
-/*!
- * Types of date formats that can be returned by zMapGetTimeString(). */
+
+
+/* Types of date formats that can be returned by zMapGetTimeString(). */
 typedef enum
   {
-    ZMAPTIME_STANDARD,					    /*!< "Thu Sep 30 10:05:27 2004" */
-    ZMAPTIME_YMD,					    /*!< "1997-11-08" */
-    ZMAPTIME_USERFORMAT					    /*!< Users provides format string. */
+    ZMAPTIME_STANDARD,					    /* "Thu Sep 30 10:05:27 2004" */
+    ZMAPTIME_YMD,					    /* "1997-11-08" */
+    ZMAPTIME_LOG,					    /* "2013/06/11 13:18:27.121129" */
+    ZMAPTIME_USERFORMAT					    /* Users provides format string. */
   } ZMapTimeFormat ;
 
 
@@ -154,7 +163,7 @@ typedef struct
 
 gboolean zMapLogCreate(char *logname) ;
 gboolean zMapLogConfigure(gboolean logging, gboolean log_to_file,
-			  gboolean show_code_details, gboolean show_time,
+			  gboolean show_process, gboolean show_code, gboolean show_time,
 			  gboolean catch_glib, gboolean echo_glib,
 			  char *logfile_path) ;
 void zMapWriteStartMsg(void) ;
@@ -165,8 +174,10 @@ gboolean zMapLogStop(void) ;
 void zMapLogStack(void);
 void zMapLogDestroy(void) ;
 
-void zMapPrintStack(void);
-void zMapSignalHandler(int sig_no);
+void zMapStackPrint(void) ;
+gboolean zMapStack2fd(unsigned int remove, int fd) ;
+
+void zMapSignalHandler(int sig_no) ;
 
 char *zMapGetDir(char *directory_in, gboolean home_relative, gboolean make_dir) ;
 char *zMapGetFile(char *directory, char *filename, gboolean make_file) ;
@@ -190,7 +201,12 @@ char *zMapGetCompileString(void) ;
 
 gboolean zMapUtilsConfigDebug(char *config_file) ;
 
+char *zMapMakeUniqueID(char *prefix) ;
+
 char *zMapGetTimeString(ZMapTimeFormat format, char *format_str_in) ;
+
+const char *zMapUtilsPtr2Str(void *ptr) ;
+void *zMapUtilsStr2Ptr(char *ptr_str) ;
 
 char zMapInt2Char(int num) ;
 

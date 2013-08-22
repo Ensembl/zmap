@@ -66,8 +66,6 @@ typedef struct
 void zmapPrintFeatureContext(ZMapFeatureContext context) ;
 gboolean zmapStr2Enum(ZMapFeatureStr2Enum type_table, char *type_str, int *type_out) ;
 
-ZMapFeatureAny zmapFeatureAnyCopy(ZMapFeatureAny orig_feature_any, GDestroyNotify destroy_cb) ;
-
 void zMapFeature3FrameTranslationSetRevComp(ZMapFeatureSet feature_set, int block_start, int block_end) ;
 
 

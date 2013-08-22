@@ -41,6 +41,8 @@ typedef struct _ZMapManagerStruct
   GList *zmap_list ;
 
   void *gui_data ;
+
+  gboolean remote_control ;
 } ZMapManagerStruct ;
 
 

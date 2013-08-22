@@ -583,18 +583,20 @@ ZMapFeatureTypeStyle zMapStyleCreateV(guint n_parameters, GParameter *parameters
 {
   ZMapFeatureTypeStyle style = NULL;
 
-  style = styleCreate(n_parameters, parameters) ;
-
-  if(style->mode ==ZMAPSTYLE_MODE_BASIC || style->mode == ZMAPSTYLE_MODE_ALIGNMENT)
+  if ((style = styleCreate(n_parameters, parameters)))
     {
-      /* default summarise to 1000 to get round lack of configuration, can aloways set to zero if wanted */
-      if(!zMapStyleIsPropertySetId(style,STYLE_PROP_SUMMARISE))
+
+      /* should be in styleCreate function surely..... */
+      if (style->mode ==ZMAPSTYLE_MODE_BASIC || style->mode == ZMAPSTYLE_MODE_ALIGNMENT)
 	{
-	  zmapStyleSetIsSet(style,STYLE_PROP_SUMMARISE);
-	  style->summarise = 1000.0 ;
+	  /* default summarise to 1000 to get round lack of configuration, can always set to zero if wanted */
+	  if (!zMapStyleIsPropertySetId(style,STYLE_PROP_SUMMARISE))
+	    {
+	      zmapStyleSetIsSet(style,STYLE_PROP_SUMMARISE);
+	      style->summarise = 1000.0 ;
+	    }
 	}
     }
-
 
   return style ;
 }

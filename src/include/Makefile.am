@@ -3,6 +3,7 @@ NULL =
 nobase_include_HEADERS = ZMap/sysdep.h \
 ZMap/safe-ctype.h \
 ZMap/zmap.h \
+ZMap/zmapAppRemote.h \
 ZMap/zmapAppServices.h \
 ZMap/zmapBase.h \
 ZMap/zmapCmdLineArgs.h \
@@ -26,10 +27,12 @@ ZMap/zmapGLibUtils.h \
 ZMap/zmapGUITreeView.h \
 ZMap/zmapIO.h \
 ZMap/zmapManager.h \
-ZMap/zmapNavigator.h \
 ZMap/zmapNavigatorStippleG.xbm \
 ZMap/zmapPeptide.h \
 ZMap/zmapReadLine.h \
+ZMap/zmapRemoteCommand.h \
+ZMap/zmapRemoteControl.h \
+ZMap/zmapRemoteProtocol.h \
 ZMap/zmapSeqBitmap.h \
 ZMap/zmapSequence.h \
 ZMap/zmapServerProtocol.h \

@@ -31,6 +31,10 @@
  */
 
 
+/* THIS FILE IS BECOMING REDUNDANT....AND BEING REPLACED BY zmapWindowRemoteControl.c */
+
+
+
 #include <ZMap/zmap.h>
 
 #include <string.h>
@@ -90,6 +94,11 @@ char *zMapWindowRemoteReceiveAccepts(ZMapWindow window)
 
   return xml;
 }
+
+
+
+
+
 
 #if MH17_UNUSED_CODE_FOR_WINDOW_XML
 
@@ -202,6 +211,7 @@ static ZMapXMLObjTagFunctionsStruct window_ends_G[] =
 
     {NULL, NULL}
   };
+
 
 
 void zMapWindowSetupXRemote(ZMapWindow window, GtkWidget *widget)

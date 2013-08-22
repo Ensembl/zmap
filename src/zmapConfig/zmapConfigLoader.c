@@ -81,6 +81,7 @@ typedef struct
 
 
 static ZMapConfigIniContextKeyEntry get_app_group_data(char **stanza_name, char **stanza_type);
+static ZMapConfigIniContextKeyEntry get_peer_group_data(char **stanza_name, char **stanza_type);
 static ZMapConfigIniContextKeyEntry get_logging_group_data(char **stanza_name, char **stanza_type);
 static ZMapConfigIniContextKeyEntry get_debug_group_data(char **stanza_name, char **stanza_type);
 static ZMapConfigIniContextKeyEntry get_style_group_data(char **stanza_name, char **stanza_type) ;
@@ -135,6 +136,10 @@ ZMapConfigIniContext zMapConfigIniContextProvide(char *config_file)
 				     stanza_type, stanza_group);
 
       if((stanza_group = get_app_group_data(&stanza_name, &stanza_type)))
+	zMapConfigIniContextAddGroup(context, stanza_name,
+				     stanza_type, stanza_group);
+
+      if((stanza_group = get_peer_group_data(&stanza_name, &stanza_type)))
 	zMapConfigIniContextAddGroup(context, stanza_name,
 				     stanza_type, stanza_group);
 
@@ -324,7 +329,7 @@ GHashTable * zmapConfigIniGetDefaultStyles(void)
 }
 
 
-// get style stanzas in styles_list of all from the file
+/* get style stanzas in styles_list of all from the file */
 gboolean zMapConfigIniGetStylesFromFile(char *config_file, char *styles_list, char *styles_file,
 					GHashTable **styles_out, char * buffer)
 {
@@ -335,6 +340,8 @@ gboolean zMapConfigIniGetStylesFromFile(char *config_file, char *styles_list, ch
   GHashTable *shapes = NULL;
   int enum_value ;
 
+
+  /* ERROR HANDLING ???? */
   if ((context = zMapConfigIniContextProvideNamed(config_file, ZMAPSTANZA_STYLE_CONFIG)))
     {
       GKeyFile *extra_styles_keyfile = NULL ;
@@ -347,7 +354,7 @@ gboolean zMapConfigIniGetStylesFromFile(char *config_file, char *styles_list, ch
 	{
 	  zMapConfigIniContextIncludeFile(context, styles_file) ;
 
-	  /* This mucky....the above call puts whatever the file is into config->extra_key_file,
+	  /* This is mucky....the above call puts whatever the file is into config->extra_key_file,
 	   * really truly not good...should all be explicit....for now we do this here so at
 	   * least the calls in this file are more explicit... */
 	  extra_styles_keyfile = context->config->extra_key_file ;
@@ -362,7 +369,7 @@ gboolean zMapConfigIniGetStylesFromFile(char *config_file, char *styles_list, ch
 								     styles or provided/ overridden in user config */
 
       zMapConfigIniContextDestroy(context) ;
-      context = NULL;
+      context = NULL ;
     }
 
   if (settings_list)
@@ -390,6 +397,7 @@ gboolean zMapConfigIniGetStylesFromFile(char *config_file, char *styles_list, ch
 	  /* The first item is special, the "name" field is the name of the style and
 	   * is derived from the name of the stanza and so must be treated specially. */
 	  zMapAssert(curr_config_style->name && *(curr_config_style->name)) ;
+
 	  g_value_init(&(curr_param->value), G_TYPE_STRING) ;
 
 	  curr_param->name = curr_config_style->name ;
@@ -402,6 +410,7 @@ gboolean zMapConfigIniGetStylesFromFile(char *config_file, char *styles_list, ch
             continue;
 
   	  name = curr_config_style->data.str;
+
 	  if(!g_ascii_strncasecmp(curr_config_style->data.str,"style-",6))
 	    name += 6;
 	  else if(!styles_file)		/* not the styles file: must be explicitly [style-] */
@@ -510,37 +519,43 @@ gboolean zMapConfigIniGetStylesFromFile(char *config_file, char *styles_list, ch
 	    }
 
 
-	  if ((new_style = zMapStyleCreateV(num_params, params)))
+	  if (!(new_style = zMapStyleCreateV(num_params, params)))
 	    {
+	      zMapLogWarning("Styles file \"%s\": could not create new style %s.",
+			     styles_file, curr_config_style->name) ;
+	    }
+	  else
+	    {
+	      /* Try to add the new style, can fail if a style with that name already
+	       * exists. */
 	      if (!zMapStyleSetAdd(styles, new_style))
 		{
 		  /* Free style, report error and move on. */
 		  zMapStyleDestroy(new_style) ;
 
-#if MH17_useless_message
-		  // only occurs if there are no parameters specified
-		  zMapLogWarning("Styles file \"%s\", stanza %s could not be added.",
+		  zMapLogWarning("Styles file \"%s\": could not add style %s to styles set.",
 				 styles_file, curr_config_style->name) ;
-#endif
 		}
 	    }
-
 	} while((settings_list = g_list_next(settings_list)));
-
     }
 
   stylesFreeList(free_this_list) ;
 
-  if(shapes)
-    g_hash_table_destroy(shapes);
+  if (shapes)
+    g_hash_table_destroy(shapes) ;
+
 
   /* NOTE we can only inherit default styles not those from another source */
-  if(!zMapStyleInheritAllStyles(styles))
+  if (!zMapStyleInheritAllStyles(styles))
     zMapLogWarning("%s", "There were errors in inheriting styles.") ;
 
-  zMapStyleSetSubStyles( styles); /* this is not effective as a subsequent style copy will not copy this internal data */
 
-  if(styles)
+  /* this is not effective as a subsequent style copy will not copy this internal data */
+  zMapStyleSetSubStyles(styles);
+
+
+  if (styles)
     {
       *styles_out = styles ;
       result = TRUE ;
@@ -1400,6 +1415,8 @@ static ZMapConfigIniContextKeyEntry get_app_group_data(char **stanza_name, char 
     { ZMAPSTANZA_APP_CHR,          G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_APP_START,        G_TYPE_INT,     NULL, FALSE },
     { ZMAPSTANZA_APP_END,          G_TYPE_INT,     NULL, FALSE },
+    { ZMAPSTANZA_APP_SLEEP,        G_TYPE_INT,     NULL, FALSE },
+    { ZMAPSTANZA_APP_EXIT_TIMEOUT, G_TYPE_INT,     NULL, FALSE },
     { ZMAPSTANZA_APP_HELP_URL,     G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_APP_LOCALE,       G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_APP_COOKIE_JAR,   G_TYPE_STRING,  NULL, FALSE },
@@ -1427,17 +1444,39 @@ static ZMapConfigIniContextKeyEntry get_app_group_data(char **stanza_name, char 
   return stanza_keys;
 }
 
+
+static ZMapConfigIniContextKeyEntry get_peer_group_data(char **stanza_name, char **stanza_type)
+{
+  static ZMapConfigIniContextKeyEntryStruct stanza_keys[] = {
+    { ZMAPSTANZA_PEER_NAME,    G_TYPE_STRING,  NULL, FALSE },
+    { ZMAPSTANZA_PEER_CLIPBOARD,    G_TYPE_STRING,  NULL, FALSE },
+    { ZMAPSTANZA_PEER_RETRIES, G_TYPE_INT,     NULL, FALSE },
+    { ZMAPSTANZA_PEER_TIMEOUT, G_TYPE_INT,     NULL, FALSE },
+    {NULL}
+  };
+  static char *name = ZMAPSTANZA_PEER_CONFIG ;
+  static char *type = ZMAPSTANZA_PEER_CONFIG ;
+
+  if(stanza_name)
+    *stanza_name = name;
+  if(stanza_type)
+    *stanza_type = type;
+
+  return stanza_keys ;
+}
+
 static ZMapConfigIniContextKeyEntry get_logging_group_data(char **stanza_name, char **stanza_type)
 {
   static ZMapConfigIniContextKeyEntryStruct stanza_keys[] = {
-    { ZMAPSTANZA_LOG_LOGGING,   G_TYPE_BOOLEAN, NULL, FALSE },
-    { ZMAPSTANZA_LOG_FILE,      G_TYPE_BOOLEAN, NULL, FALSE },
-    { ZMAPSTANZA_LOG_SHOW_CODE, G_TYPE_BOOLEAN, NULL, FALSE },
-    { ZMAPSTANZA_LOG_DIRECTORY, G_TYPE_STRING,  NULL, FALSE },
-    { ZMAPSTANZA_LOG_FILENAME,  G_TYPE_STRING,  NULL, FALSE },
-    { ZMAPSTANZA_LOG_SHOW_TIME, G_TYPE_STRING,  NULL, FALSE },
-    { ZMAPSTANZA_LOG_CATCH_GLIB, G_TYPE_BOOLEAN,  NULL, FALSE },
-    { ZMAPSTANZA_LOG_ECHO_GLIB, G_TYPE_BOOLEAN,  NULL, FALSE },
+    { ZMAPSTANZA_LOG_LOGGING,      G_TYPE_BOOLEAN, NULL, FALSE },
+    { ZMAPSTANZA_LOG_FILE,         G_TYPE_BOOLEAN, NULL, FALSE },
+    { ZMAPSTANZA_LOG_SHOW_PROCESS, G_TYPE_BOOLEAN, NULL, FALSE },
+    { ZMAPSTANZA_LOG_SHOW_CODE,    G_TYPE_BOOLEAN, NULL, FALSE },
+    { ZMAPSTANZA_LOG_SHOW_TIME,    G_TYPE_BOOLEAN, NULL, FALSE },
+    { ZMAPSTANZA_LOG_DIRECTORY,    G_TYPE_STRING,  NULL, FALSE },
+    { ZMAPSTANZA_LOG_FILENAME,     G_TYPE_STRING,  NULL, FALSE },
+    { ZMAPSTANZA_LOG_CATCH_GLIB,   G_TYPE_BOOLEAN, NULL, FALSE },
+    { ZMAPSTANZA_LOG_ECHO_GLIB,    G_TYPE_BOOLEAN, NULL, FALSE },
     {NULL}
   };
 

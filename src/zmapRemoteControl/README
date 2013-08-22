@@ -1,0 +1,7 @@
+================================================================================   
+zmapRemoteControl
+
+Code to support the remote control interface to ZMap and an application to test
+that interface.
+
+The code is referenced from zmapApp.

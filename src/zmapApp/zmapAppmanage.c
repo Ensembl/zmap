@@ -31,13 +31,9 @@
 
 #include <ZMap/zmap.h>
 
-
-
-
-
-
 #include <stdlib.h>
 #include <stdio.h>
+
 #include <ZMap/zmapUtils.h>
 #include <zmapApp_P.h>
 

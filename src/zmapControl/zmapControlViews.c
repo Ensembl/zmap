@@ -34,12 +34,9 @@
 
 #include <ZMap/zmap.h>
 
-
+#include <ZMap/zmapUtilsXRemote.h>			    /* remove when new xremote finally done. */
 #include <ZMap/zmapUtilsDebug.h>
-#include <ZMap/zmapUtilsXRemote.h>
 #include <zmapControl_P.h>
-
-
 
 
 
@@ -65,7 +62,8 @@ typedef struct FindViewWindowStructName
 
 
 /* GTK didn't introduce a function call to get at pane children until at least release 2.6,
- * I hope this is correct, no easy way to check exactly when function calls were introduced. */
+ * I hope this is correct, no easy way to check exactly when function calls were introduced.
+ */
 #if ((GTK_MAJOR_VERSION == 2) && (GTK_MINOR_VERSION == 6))
 #define myGetChild(WIDGET, CHILD_NUMBER)         \
   (gtk_paned_get_child##CHILD_NUMBER(GTK_PANED(WIDGET)))
@@ -87,11 +85,41 @@ static void labelDestroyCB(GtkWidget *widget, gpointer cb_data) ;
 
 static void findViewWindowCB(gpointer key, gpointer value, gpointer user_data) ;
 
-static void printViewList(GList *view_list) ;
-static void printViewCB(gpointer data, gpointer user_data_unused) ;
-static void printView(ZMapView view, char *action, gboolean print_xid) ;
 
 
+/* 
+ *                         External routines
+ */
+
+
+
+gpointer zMapControlFindView(ZMap zmap, gpointer view_id)
+{
+  gpointer view = NULL ;
+
+  if (zmap->view_list)
+    {
+      GList *list_view ;
+
+      /* Try to find the view_id in the current zmaps. */
+      list_view = g_list_first(zmap->view_list) ;
+      do
+	{
+	  ZMapView next_view = (ZMapView)(list_view->data) ;
+
+	  if (next_view == view_id
+	      || (zMapViewFindView(next_view, view_id)))
+	    {
+	      view = next_view ;
+
+	      break ;
+	    }
+	}
+      while ((list_view = g_list_next(list_view))) ;
+    }
+
+  return view ;
+}
 
 
 
@@ -101,14 +129,13 @@ static void printView(ZMapView view, char *action, gboolean print_xid) ;
 
 
 /* New func for brand new view windows.... */
-ZMapView zmapControlNewWindow(ZMap zmap, ZMapFeatureSequenceMap sequence_map)
+ZMapViewWindow zmapControlNewWindow(ZMap zmap, ZMapFeatureSequenceMap sequence_map)
 {
-  ZMapView zmap_view = NULL ;
+  ZMapViewWindow view_window = NULL ;
   GtkWidget *curr_container, *view_container ;
-  ZMapViewWindow view_window ;
   char *view_title ;
   GtkOrientation orientation = GTK_ORIENTATION_VERTICAL ;   /* arbitrary for first window. */
-  GtkWidget *xremote_widget, *parent ;
+  GtkWidget *parent ;
 
   /* If there is a focus window then that will be the one we split and we need to find out
    * the container parent of that canvas. */
@@ -126,19 +153,10 @@ ZMapView zmapControlNewWindow(ZMap zmap, ZMapFeatureSequenceMap sequence_map)
     parent = zmap->pane_vbox ;
 
 
-  /* Add a new container that will hold the new view window. */
+  /* Create a new container that will hold the new view window. */
   view_container = zmapControlAddWindow(zmap, curr_container, orientation, ZMAPCONTROL_SPLIT_LAST, view_title) ;
 
-
-  /* For each new view stick an event box into a parent zmap box, this event box
-   * will get any xremote events targetted at the view. By having a separate parent
-   * box that is always mapped we ensure that the xremote_widget will keep a constant
-   * window id for the events. */
-  xremote_widget = GTK_WIDGET(gtk_event_box_new()) ;
-  gtk_box_pack_start(GTK_BOX(zmap->event_box_parent), xremote_widget, FALSE, FALSE, 0) ;
-
-
-  if (!(view_window = zMapViewCreate(xremote_widget, view_container, sequence_map, (void *)zmap)))
+  if (!(view_window = zMapViewCreate(view_container, sequence_map, (void *)zmap)))
     {
       /* remove window we just added....not sure we need to do anything with remaining view... */
       ZMapViewWindow remaining_view ;
@@ -149,8 +167,9 @@ ZMapView zmapControlNewWindow(ZMap zmap, ZMapFeatureSequenceMap sequence_map)
     {
       ZMapInfoPanelLabels labels;
       GtkWidget *infopanel;
+      ZMapView view ;
 
-      zmap_view = zMapViewGetView(view_window) ;
+      view = zMapViewGetView(view_window) ;
 
       labels = g_new0(ZMapInfoPanelLabelsStruct, 1);
 
@@ -160,16 +179,9 @@ ZMapView zmapControlNewWindow(ZMap zmap, ZMapFeatureSequenceMap sequence_map)
       gtk_signal_connect(GTK_OBJECT(labels->hbox), "destroy",
 			 GTK_SIGNAL_FUNC(labelDestroyCB), (gpointer)labels) ;
 
-
-
-      g_hash_table_insert(zmap->view2infopanel, zmap_view, labels);
+      g_hash_table_insert(zmap->view2infopanel, view, labels);
 
       gtk_box_pack_end(GTK_BOX(zmap->info_panel_vbox), infopanel, FALSE, FALSE, 0);
-
-      /* Add view to the xremote widget so it can be recovered later. */
-      /* no need for this call ...
-       * g_object_set_data(G_OBJECT(xremote_widget), VIEW_XREMOTE_WIDGET, zmap_view) ;
-       */
 
       zMapViewSetupNavigator(view_window, zmap->nav_canvas) ;
 
@@ -188,8 +200,10 @@ ZMapView zmapControlNewWindow(ZMap zmap, ZMapFeatureSequenceMap sequence_map)
       zmapControlWindowSetGUIState(zmap) ;
     }
 
-  return zmap_view ;
+  return view_window ;
 }
+
+
 
 ZMapViewWindow zmapControlNewWidgetAndWindowForView(ZMap zmap,
                                                     ZMapView zmap_view,
@@ -276,6 +290,17 @@ void zmapControlSplitWindow(ZMap zmap, GtkOrientation orientation, ZMapControlSp
 
   zmapControlWindowSetGUIState(zmap) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* CURRENTLY WE ARE NOT REPORTING WHEN THE USER SPLITS THE WINDOW, IT DOESN'T CREATE
+   * A NEW VIEW SO LOGICALLY WE CAN'T SAY MUCH ABOUT IT, THIS MAY CHANGE THOUGH. */
+
+  /* If there's a remote peer we need to tell them a window's been created.... */
+  if (zmap->remote_control)
+    zmapControlSendViewCreated(zmap, zMapViewGetView(view_window), zMapViewGetWindow(view_window)) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
   return ;
 }
 
@@ -290,31 +315,6 @@ int zmapControlNumViews(ZMap zmap)
     num_views = g_list_length(zmap->view_list) ;
 
   return num_views ;
-}
-
-
-
-/* Debugging: prints single or all views and their xremote windows. */
-void zmapControlPrintView(ZMap zmap, ZMapView view, char *action, gboolean print_xid)
-{
-  gboolean debug = TRUE ;
-
-  zMapDebugPrint(debug, "ZMap \"%p\"", zmap) ;
-
-  printView(view, action, print_xid) ;
-
-  return ;
-}
-
-void zmapControlPrintAllViews(ZMap zmap, gboolean print_xids)
-{
-  gboolean debug = TRUE ;
-
-  zMapDebugPrint(debug, "ZMap \"%p\"", zmap) ;
-
-  printViewList(zmap->view_list) ;
-
-  return ;
 }
 
 
@@ -334,6 +334,7 @@ ZMapViewWindow zmapControlFindViewWindow(ZMap zmap, ZMapView view)
 
 
 
+/* Make this internal to this file.....not called from elsewhere.... */
 /*
  * view_window is the view to add, this must be supplied.
  * orientation is GTK_ORIENTATION_HORIZONTAL or GTK_ORIENTATION_VERTICAL
@@ -356,7 +357,9 @@ GtkWidget *zmapControlAddWindow(ZMap zmap, GtkWidget *curr_frame,
       splitPane(curr_frame, new_frame, orientation, window_order) ;
     }
   else
-    gtk_box_pack_start(GTK_BOX(zmap->pane_vbox), new_frame, TRUE, TRUE, 0) ;
+    {
+      gtk_box_pack_start(GTK_BOX(zmap->pane_vbox), new_frame, TRUE, TRUE, 0) ;
+    }
 
   return new_frame ;
 }
@@ -366,51 +369,53 @@ GtkWidget *zmapControlAddWindow(ZMap zmap, GtkWidget *curr_frame,
 /* You need to remember that there may be more than one view in a zmap. This means that
  * while a particular view may have lost all its windows and need closing, there might
  * be other views that have windows that can be focussed on. */
-void zmapControlRemoveWindow(ZMap zmap, ZMapView view)
+void zmapControlRemoveWindow(ZMap zmap, ZMapViewWindow view_window, GList **destroyed_views_inout)
 {
   GtkWidget *close_container ;
-  ZMapViewWindow view_window, remaining_view ;
+  ZMapViewWindow remaining_view ;
+  ZMapView view = NULL ;
   gboolean remove ;
   int num_views, num_windows ;
   gboolean last_window = FALSE ;
 
-  zMapAssert(zmap && view) ;
-
-  view_window = zmapControlFindViewWindow(zmap, view) ;
-
-  /* if this is the focus view_window then reset. */
-  if (view_window == zmap->focus_viewwindow)
-    zmap->focus_viewwindow = NULL ;
-
-
   num_views = zmapControlNumViews(zmap) ;
   num_windows = zMapViewNumWindows(view_window) ;
-
-  /* We shouldn't get called if there are no views or if there is only a single view with one window left. */
-  zMapAssert(num_views && view_window && !(num_views == 1 && num_windows == 1)) ;
 
   /* If this is the last window we will need to do some special clearing up. */
   if (num_windows == 1)
     last_window = TRUE ;
 
+  view = zMapViewGetView(view_window) ;
+
+  /* We shouldn't get called if there are no views or if there is only a single view with one window left. */
+  zMapAssert(num_views && view_window && !(num_views == 1 && num_windows == 1)) ;
+
+
   close_container = g_hash_table_lookup(zmap->viewwindow_2_parent, view_window) ;
+
+
+  /* Make sure we reset focus because we are removing the view it points to ! */
+  if (view_window == zmap->focus_viewwindow)
+    zmap->focus_viewwindow = NULL ;
+
 
   if (num_windows > 1)
     {
+      /* Record view and window deleted if required. */
+      if (destroyed_views_inout)
+	{
+	  GList *destroyed_views = NULL ;
+
+	  destroyed_views = g_list_append(destroyed_views, view) ;
+
+	  *destroyed_views_inout = destroyed_views ;
+	}
+
       zMapViewRemoveWindow(view_window) ;
     }
   else
     {
-      /* If its the last window the parent of the container is the event box that was added
-       * when the view was created. We need to hang on to it so we can destroy it after the window
-       * is closed. */
-      GtkWidget *xremote_widg ;
-
-      xremote_widg = zMapViewGetXremote(view) ;
-
-      gtk_widget_destroy(xremote_widg) ;
-
-      zMapDeleteView(zmap, view) ;
+      zMapDeleteView(zmap, view, destroyed_views_inout) ;
     }
 
   /* this needs to remove the pane.....AND  set a new focuspane....if there is one.... */
@@ -420,7 +425,7 @@ void zmapControlRemoveWindow(ZMap zmap, ZMapView view)
   remove = g_hash_table_remove(zmap->viewwindow_2_parent, view_window) ;
   zMapAssert(remove) ;
 
-  /* Having removed one window we need to refocus on another, if there is one....... */
+  /* Having removed one window we nwublastx_humaneed to refocus on another, if there is one....... */
   if (remaining_view)
     {
       zmapControlSetWindowFocus(zmap, remaining_view) ;
@@ -657,18 +662,8 @@ static GtkWidget *closePane(GtkWidget *close_frame)
 }
 
 
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* replaced by "click to focus" */
-
-/* The enter and leave stuff is slightly convoluted in that we don't want to unfocus
- * a window just because the pointer leaves it. We only want to unfocus a previous
- * window when we enter a different view window. Hence in the leave callback we just
- * record a window to be unfocussed if we subsequently enter a different view window. */
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
+/* Makes sure that everything that needs to happen does happen as a result
+ * of a view window becoming the keyboard focus. */
 void zmapControlSetWindowFocus(ZMap zmap, ZMapViewWindow new_viewwindow)
 {
   GtkWidget *viewwindow_frame ;
@@ -681,6 +676,10 @@ void zmapControlSetWindowFocus(ZMap zmap, ZMapViewWindow new_viewwindow)
 
   if (new_viewwindow != zmap->focus_viewwindow)
     {
+      GtkWidget *label ;
+      char *label_txt ;
+
+
       /* Unfocus the old window. */
       if (zmap->focus_viewwindow)
 	{
@@ -688,7 +687,18 @@ void zmapControlSetWindowFocus(ZMap zmap, ZMapViewWindow new_viewwindow)
 
 	  unfocus_frame = g_hash_table_lookup(zmap->viewwindow_2_parent, zmap->focus_viewwindow) ;
           gtk_frame_set_shadow_type(GTK_FRAME(unfocus_frame), GTK_SHADOW_OUT) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	  /* This does not work currently because we not have a event box as a parent of the frame... */
           gtk_widget_set_name(GTK_WIDGET(unfocus_frame), "GtkFrame");
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+	  /* Swop the frames label text colour back to "inactive" */
+	  label = gtk_frame_get_label_widget(GTK_FRAME(unfocus_frame)) ;
+	  label_txt = (char *)gtk_label_get_text(GTK_LABEL(label)) ;
+	  label_txt = g_strdup_printf("<span foreground=\"black\">%s</span>", label_txt) ;
+	  gtk_label_set_markup(GTK_LABEL(label), label_txt) ;
+	  g_free(label_txt) ;
 	}
 
       /* focus the new one. */
@@ -698,35 +708,24 @@ void zmapControlSetWindowFocus(ZMap zmap, ZMapViewWindow new_viewwindow)
 
       viewwindow_frame = g_hash_table_lookup(zmap->viewwindow_2_parent, zmap->focus_viewwindow) ;
       gtk_frame_set_shadow_type(GTK_FRAME(viewwindow_frame), GTK_SHADOW_IN);
-      gtk_widget_set_name(GTK_WIDGET(viewwindow_frame), "zmap-focus-view");
+
+      /* Swop the frames label text colour to "active", gosh gtk makes this hard work... */
+      label = gtk_frame_get_label_widget(GTK_FRAME(viewwindow_frame)) ;
+      label_txt = (char *)gtk_label_get_text(GTK_LABEL(label)) ;
+      label_txt = g_strdup_printf("<span foreground=\"red\">%s</span>", label_txt) ;
+      gtk_label_set_markup(GTK_LABEL(label), label_txt) ;
+      g_free(label_txt) ;
 
       /* make sure zoom buttons etc. appropriately sensitised for this window. */
       zmapControlWindowSetGUIState(zmap) ;
 
-
-      /* NOTE HOW NONE OF THE NAVIGATOR STUFF IS SET HERE....BUT NEEDS TO BE.... */
+      /* Set up navigator with new view. */
       zMapWindowGetVisible(window, &top, &bottom) ;
-      zMapNavigatorSetView(zmap->navigator, zMapViewGetFeatures(view), top, bottom) ;
+      zmapNavigatorSetView(zmap->navigator, zMapViewGetFeatures(view), top, bottom) ;
     }
 
   return ;
 }
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* now we've changed to "click to focus" this is redundant. */
-
-/* When we get notified that the pointer has left a window, mark that window to
- * be unfocussed if we subsequently enter another view window. */
-void zmapControlUnSetWindowFocus(ZMap zmap, ZMapViewWindow new_viewwindow)
-{
-  zmap->unfocus_viewwindow = new_viewwindow ;
-
-  return ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
 
 
@@ -775,43 +774,39 @@ static void findViewWindowCB(gpointer key, gpointer value, gpointer user_data)
 }
 
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+/* I'D LIKE TO USE A STYLE TO SET THE FRAME COLOURS AUTOMATICALLY WHEN THE CANVAS IS SELECTED
+ * BUT WE NEED AN EVENT BOX AS A PARENT TO THE FRAME....WE USED TO HAVE THIS BUT FOR RECEIVING
+ * XREMOTE COMMANDS _AND_ FOR THIS STYLE STUFF WHICH I DIDN'T REALISE SO I MOVED THE EVENT
+ * BOX TO FIX A BUG IN THE SPLITTING/XREMOTE STUFF. I'LL GET ROUND TO THE EVENT BOX STUFF
+ * IF IT BECOMES NEEDED. CURRENTLY WE AT LEAST HAVE THE TITLE CHANGING COLOUR. */
+#define FRAME_WIDG_STYLE "ZMap_View_Frame_Style"
+#define FRAME_WIDG_NAME  "ZMap_View_Frame"
 
-/* Debugging: print out views, lists of views held by control. */
-static void printView(ZMapView view, char *action, gboolean print_xid)
+static void *addFrameRCconfig(GtkWidget *widg)
 {
-  GtkWidget *xremote_widg ;
-  unsigned long xid = 0 ;
-  gboolean debug = TRUE ;
+  static char *rc_text =
+    "style \""FRAME_WIDG_STYLE"\"\n"
+    "{\n"
+    "text[NORMAL] = \"red\"\n"
+    "text[ACTIVE] = \"red\"\n"
+    "fg[NORMAL] = \"red\"\n"
+    "bg[NORMAL] = \"red\"\n"
+    "fg[ACTIVE] = \"red\"\n"
+    "bg[ACTIVE] = \"red\"\n"
+    "fg[SELECTED] = \"red\"\n"
+    "bg[SELECTED] = \"red\"\n"
+    "xthickness = 100\n"
+    "}\n"
+    "\n"
+    "widget \""FRAME_WIDG_NAME"\" style \""FRAME_WIDG_STYLE"\"\n" ;
 
-  if (print_xid)
-    {
-      xremote_widg = zMapViewGetXremote(view) ;
-      xid = zMapXRemoteWidgetGetXID(xremote_widg) ;
-    }
+  gtk_rc_parse_string(rc_text) ;
 
-  zMapDebugPrint(debug, "%s view \"%p\", xwidg \"%p\", xwid=\"0x%lx\"",
-		 (action ? action : ""),
-		 view,
-		 xremote_widg,
-		 xid) ;
+  gtk_widget_set_name(widg, FRAME_WIDG_NAME) ;
 
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-static void printViewList(GList *view_list)
-{
-  g_list_foreach(view_list, printViewCB, NULL) ;
-
-  return ;
-}
-
-/* GFunc90 callback to print out view data. */
-static void printViewCB(gpointer data, gpointer user_data_unused)
-{
-  ZMapView view = (ZMapView)data ;
-
-  printView(view, NULL, TRUE) ;
-
-  return ;
-}
 

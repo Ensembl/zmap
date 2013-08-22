@@ -224,6 +224,8 @@ void *zmapNewThread(void *thread_args)
 		zmapVarSetValueWithError(&(thread->reply), ZMAPTHREAD_REPLY_DIED, error_msg) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+		zMapLogWarning("Bad Request: %s", error_msg) ;
+
 
 		thread_cb->thread_died = TRUE ;
 
@@ -243,8 +245,9 @@ void *zmapNewThread(void *thread_args)
 		error_msg = g_strdup_printf("%s %s - %s", ZMAPTHREAD_SLAVEREQUEST,
 					    zMapThreadReturnCode2ExactStr(slave_response), slave_error) ;
 
-		if (!thread_cb->thread_died)		/* a misnomer, it's the server that the thread talks to */
-		  zMapLogWarning("server died","") ;
+		/* a misnomer, it's the server that the thread talks to */
+		if (!thread_cb->thread_died)
+		  zMapLogWarning("Server died: %s", error_msg) ;
 
 		thread_cb->thread_died = TRUE ;
 

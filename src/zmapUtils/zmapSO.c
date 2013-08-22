@@ -102,18 +102,22 @@ GQuark zMapSOAcc2TermID(GQuark SO_accession)
  *
  *   SNP:             "A/G"
  *   
- *   insertion:       "-/G"
+ *   Mutation:        "HGMD_MUTATION"
+ *
+ *   deletion:        "-/G"
  *                    "-/CTTA"
- *                    "-/(LARGEINSERTION)"
+ *                    "-/(339 BP DELETION)"
+ *                    "-/(LARGEDELETION)"
  *   
- *   deletion:        "T/-"
+ *   insertion:       "T/-"
  *                    "TAAA/-"
  *                    "AAAAAAGTTCCTTGCATGATTAAAAAAGTATT/-"
+ *                    "(339 BP INSERTION)/-"
+ *                    "(LARGEINSERTION)/-"
  *   
  *   CNV:             "CNV_PROBE"
  * 
  *   Mixed:           "A/T/-"
- * 
  *
  *  */
 GQuark zMapSOVariation2SO(char *variation_str)
@@ -125,14 +129,17 @@ GQuark zMapSOVariation2SO(char *variation_str)
    * version 14. */
 #if GLIB_MINOR_VERSION > 13
 
-  static GRegex *insertion_exp = NULL, *deletion_exp, *snp_exp, *substitution_exp, *alteration_exp ;
+  static GRegex *insertion_exp = NULL, *lots_insertion_exp, *deletion_exp, *lots_deletion_exp,
+    *snp_exp, *substitution_exp, *alteration_exp ;
   GMatchInfo *match_info ;
   GQuark var_id ;
 
   if (!insertion_exp)
     {
-      insertion_exp = g_regex_new("-/[ACGT]+", 0, 0, NULL) ;
-      deletion_exp = g_regex_new("[ACGT]+/-", 0, 0, NULL) ;
+      deletion_exp = g_regex_new("-/[ACGT]+", 0, 0, NULL) ;
+      lots_deletion_exp = g_regex_new("-/\\([0-9]+ BP DELETION\\)", 0, 0, NULL) ;
+      insertion_exp = g_regex_new("\\([0-9]+ BP INSERTION\\/-", 0, 0, NULL) ;
+      lots_insertion_exp = g_regex_new("[ACGT]+/-", 0, 0, NULL) ;
       snp_exp = g_regex_new("[ACGT]/[ACGT]", 0, 0, NULL) ;
       substitution_exp = g_regex_new("[ACGT]+/[ACGT]+", 0, 0, NULL) ;
       alteration_exp = g_regex_new("([ACGT]*|-)/([ACGT]*|-)/([ACGT]*|-)", 0, 0, NULL) ;
@@ -141,9 +148,12 @@ GQuark zMapSOVariation2SO(char *variation_str)
   if (g_regex_match(alteration_exp, variation_str, 0, &match_info))
     var_id = g_quark_from_string(SO_ACC_SEQ_ALT) ;
   else if (g_regex_match(insertion_exp, variation_str, 0, &match_info)
-      || g_ascii_strcasecmp("-/(LARGEINSERTION)", variation_str) ==0)
+	   || g_regex_match(lots_insertion_exp, variation_str, 0, &match_info)
+	   || g_ascii_strcasecmp("(LARGEINSERTION)/-", variation_str) == 0)
     var_id = g_quark_from_string(SO_ACC_INSERTION) ;
-  else if (g_regex_match(deletion_exp, variation_str, 0, &match_info))
+  else if (g_regex_match(deletion_exp, variation_str, 0, &match_info)
+	   || g_regex_match(lots_deletion_exp, variation_str, 0, &match_info)
+	   || g_ascii_strcasecmp("-/(LARGEDELETION)", variation_str) == 0)
     var_id = g_quark_from_string(SO_ACC_DELETION) ;
   else if (g_regex_match(snp_exp, variation_str, 0, &match_info))
     var_id = g_quark_from_string(SO_ACC_SNP) ;
@@ -151,6 +161,8 @@ GQuark zMapSOVariation2SO(char *variation_str)
     var_id = g_quark_from_string(SO_ACC_SUBSTITUTION) ;
   else if (g_ascii_strcasecmp("CNV_PROBE", variation_str) == 0)
     var_id = g_quark_from_string(SO_ACC_CNV) ;
+  else if (g_ascii_strcasecmp("HGMD_MUTATION", variation_str) == 0) /* Not too sure about this. */
+    var_id = g_quark_from_string(SO_ACC_MUTATION) ;
 
   /* belt and braces to make sure that we know about this id. */
   if (var_id && (findSOentry(var_id)))
@@ -225,6 +237,7 @@ static void fillHashTable(GHashTable *acc2SO)
       {SO_ACC_POLYA_SITE, "polyA_site"},
       {SO_ACC_SEQ_ALT, "sequence_alteration"},
       {SO_ACC_SNP, "SNP"},
+      {SO_ACC_MUTATION, "sequence_variant_obs"},
       {SO_ACC_SUBSTITUTION, "substitution"},
       {SO_ACC_TRANSCRIPT, "transcript"},
       {NULL, NULL}					    /* Must be last value. */

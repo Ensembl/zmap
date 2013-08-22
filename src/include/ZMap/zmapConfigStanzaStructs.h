@@ -50,7 +50,7 @@ typedef struct _ZMapConfigSourceStruct
 #define SOURCE_GROUP_START    1
 #define SOURCE_GROUP_DELAYED  2
 #define SOURCE_GROUP_ALWAYS   3
-} ZMapConfigSourceStruct, *ZMapConfigSource;
+} ZMapConfigSourceStruct, *ZMapConfigSource ;
 
 
 typedef enum {ZMAPCONF_INVALID, ZMAPCONF_BOOLEAN, ZMAPCONF_INT, ZMAPCONF_DOUBLE,

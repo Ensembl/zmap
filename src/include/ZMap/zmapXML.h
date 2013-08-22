@@ -20,15 +20,13 @@
  * This file is part of the ZMap genome database package
  * originated by
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- * Description:
+ * Description: Interface to xml handling routines.
  *
- * Exported functions: See XXXXXXXXXXXXX.h
  *-------------------------------------------------------------------
  */
-
 #ifndef ZMAP_XML_H
 #define ZMAP_XML_H
 
@@ -36,16 +34,11 @@
 #include <expat.h>
 #include <glib.h>
 
-/*! @addtogroup zmapXML
- * @{
- * */
-
-/*!
- * \brief macro to abort parsing if expression is true.
- * \param expression to test
- * \param zmapXMLParser parser object
- * \param char *message which will be returned to user
- * \retval TRUE also returning from calling function
+/* macro to abort parsing if expression is true.
+ * expression to test
+ * zmapXMLParser parser object
+ * char *message which will be returned to user
+ * returns TRUE also returning from calling function
 
  * Without a validating parser it's difficult to ensure everything is
  * as it seems.  When writing start and end handlers for nested
@@ -82,11 +75,13 @@ G_STMT_START{                                                      \
     zMapXMLIsTrue(STRING) ? TRUE : FALSE)
 
 #define zMapXMLElementContentsToInt(ELEMENT)        \
-(strtol(ELEMENT->contents->str, (char **)NULL, 10))
+(strtol((ELEMENT)->contents->str, (char **)NULL, 10))
 #define zMapXMLElementContentsToDouble(ELEMENT)     \
-(g_ascii_strtod(ELEMENT->contents->str, (char **)NULL))
+(g_ascii_strtod((ELEMENT)->contents->str, (char **)NULL))
 #define zMapXMLElementContentsToBool(ELEMENT)       \
-(zMapXMLStringToBool(ELEMENT->contents->str))
+(zMapXMLStringToBool((ELEMENT)->contents->str))
+#define zMapXMLElementContentsToString(ELEMENT)       \
+((ELEMENT)->contents->str)
 
 #define zMapXMLAttributeValueToStr(ATTRIBUTE)       \
   ((char *)g_quark_to_string(zMapXMLAttributeGetValue(ATTRIBUTE)))
@@ -103,6 +98,9 @@ G_STMT_START{                                                      \
  * \brief A XML element object
  */
 typedef struct _zmapXMLElementStruct   *ZMapXMLElement;
+
+
+/* DOES THIS NEED TO BE EXPOSED.....?????? */
 typedef struct _zmapXMLElementStruct
 {
   gboolean dirty;               /* internal flag */
@@ -160,24 +158,30 @@ typedef enum
   {
     ZMAPXML_EVENT_DATA_NONE,
     ZMAPXML_EVENT_DATA_QUARK,
+    ZMAPXML_EVENT_DATA_STRING,
     ZMAPXML_EVENT_DATA_INTEGER,
     ZMAPXML_EVENT_DATA_DOUBLE,
     ZMAPXML_EVENT_DATA_INVALID
   } ZMapXMLWriterEventDataType;
+
+
 
 typedef struct _ZMapXMLUtilsEventStackStruct
 {
   ZMapXMLWriterEventType event_type;
   char *name;
   ZMapXMLWriterEventDataType data_type;
+
   union
   {
-    char  *s;
-    int    i;
-    double d;
-  }value;
+    int     i ;
+    double  d ;
+    GQuark  q ;
+    char   *s ;
+  } value ;
 
-}ZMapXMLUtilsEventStackStruct, *ZMapXMLUtilsEventStack;
+} ZMapXMLUtilsEventStackStruct, *ZMapXMLUtilsEventStack;
+
 
 typedef struct _ZMapXMLWriterEventStruct
 {
@@ -191,11 +195,13 @@ typedef struct _ZMapXMLWriterEventStruct
     {
       GQuark name;
       ZMapXMLWriterEventDataType data;
+
       union
       {
-        GQuark quark   ;
         int    integer ;
-        double flt;
+        double flt ;
+        GQuark quark ;
+	char *s ;
       } value;
     } comp ;                    /* complex for attributes and namespaced elements */
 
@@ -204,9 +210,11 @@ typedef struct _ZMapXMLWriterEventStruct
 } ZMapXMLWriterEventStruct, *ZMapXMLWriterEvent ;
 
 
-/*!
- * \brief XML object handler.
 
+
+
+/* XML object handler.
+ * 
  * If XML is broken into a series of objects, a collection of
  * properties between like elements then it's sensible to get your
  * handler called when an object is created (start handler) and
@@ -214,52 +222,52 @@ typedef struct _ZMapXMLWriterEventStruct
  * within that object.  Of course there may be internal dependencies
  * within the xml document that can't be resolved until the end of the
  * document, but these links maybe resolved in the last end handler.
-
+ *
  * Viewing XML as a collection of objects you may limit the number of
  * handlers that get called. Internally the handlers are still called,
  * it's just that as a user of this package you don't need to handle
  * everything in your handlers.
-
+ *
  */
-typedef gboolean
-(*ZMapXMLMarkupObjectHandler)(void *userData, ZMapXMLElement element, ZMapXMLParser parser);
-
-typedef int
-(*ZMapXMLWriterOutputCallback)(ZMapXMLWriter writer, char *flushed_xml, int flushed_length, gpointer user_data);
 
 
-/*!
- * \brief Small struct to link element names to their handlers
+/* Small struct to link element names to their handlers
  * pass a pointer to an array of these to
- * zMapXMLParser_setMarkupObjectTagHandlers
+ * zMapXMLParser_setMarkupObjectTagHandlers()
  */
+
+/* THIS ROUTINE RETURNS A BOOLEAN BUT IT'S _NOT_ USED BY XML HANDLING CODE AT ALL !!!!!!!!!!!
+ * POINTLESS AND ANNOYING......LOOKS LIKE IT SHOULD SUSPEND PROCESSING.... */
+typedef gboolean (*ZMapXMLMarkupObjectHandler)(void *userData, ZMapXMLElement element, ZMapXMLParser parser) ;
+
 typedef struct ZMapXMLObjTagFunctionsStruct_
 {
-  char *element_name;
-  ZMapXMLMarkupObjectHandler handler;
-} ZMapXMLObjTagFunctionsStruct, *ZMapXMLObjTagFunctions;
+  char *element_name ;
+  ZMapXMLMarkupObjectHandler handler ;
+} ZMapXMLObjTagFunctionsStruct, *ZMapXMLObjTagFunctions ;
+
+
+
+
+
+/* Used in writing xml docs. */
+typedef int (*ZMapXMLWriterOutputCallback)(ZMapXMLWriter writer,
+					   char *flushed_xml, int flushed_length, gpointer user_data) ;
 
 
 /* ATTRIBUTES */
-/*!
- * \brief get an attribute's value
- * \param attribute
- */
 GQuark zMapXMLAttributeGetValue(ZMapXMLAttribute attr);
 
 
 
 /* DOCUMENTS */
-ZMapXMLDocument zMapXMLDocumentCreate(const XML_Char *version,
-                                       const XML_Char *encoding,
-                                       int standalone);
-void zMapXMLDocumentSetRoot(ZMapXMLDocument doc,
-                              ZMapXMLElement root);
-char *zMapXMLDocumentVersion(ZMapXMLDocument doc);
-char *zMapXMLDocumentEncoding(ZMapXMLDocument doc);
-gboolean zMapXMLDocumentIsStandalone(ZMapXMLDocument doc);
-void zMapXMLDocumentReset(ZMapXMLDocument doc);
-void zMapXMLDocumentDestroy(ZMapXMLDocument doc);
+ZMapXMLDocument zMapXMLDocumentCreate(const XML_Char *version, const XML_Char *encoding, int standalone) ;
+void zMapXMLDocumentSetRoot(ZMapXMLDocument doc, ZMapXMLElement root) ;
+char *zMapXMLDocumentVersion(ZMapXMLDocument doc) ;
+char *zMapXMLDocumentEncoding(ZMapXMLDocument doc) ;
+gboolean zMapXMLDocumentIsStandalone(ZMapXMLDocument doc) ;
+void zMapXMLDocumentReset(ZMapXMLDocument doc) ;
+void zMapXMLDocumentDestroy(ZMapXMLDocument doc) ;
 
 
 
@@ -282,6 +290,7 @@ ZMapXMLAttribute zMapXMLElementGetAttributeByName(ZMapXMLElement ele,
 ZMapXMLAttribute zMapXMLElementGetAttributeByName1(ZMapXMLElement ele,
                                                     GQuark name);
 char *zMapXMLElementStealContent(ZMapXMLElement element);
+
 
 
 /* PARSER */
@@ -321,11 +330,9 @@ void zMapXMLParserDestroy(ZMapXMLParser parser);
  * \retval char * as XML_GetBase would
  */
 char *zMapXMLParserGetBase(ZMapXMLParser parser);
-/*!
- * \brief calls XML_GetCurrentByteIndex assuming parser is valid
- * \param parser
- * \retval long as XML_GetCurrentByteIndex would
- */
+
+
+/* calls XML_GetCurrentByteIndex assuming parser is valid */
 long zMapXMLParserGetCurrentByteIndex(ZMapXMLParser parser);
 
 
@@ -342,30 +349,44 @@ char *zMapXMLParserGetFullXMLTwig(ZMapXMLParser parser, int offset);
 
 
 /* WRITER */
-ZMapXMLWriter zMapXMLWriterCreate(ZMapXMLWriterOutputCallback flush_callback,
-                                  gpointer flush_data);
+ZMapXMLWriter zMapXMLWriterCreate(ZMapXMLWriterOutputCallback flush_callback, gpointer flush_data) ;
 ZMapXMLWriterErrorCode zMapXMLWriterStartElement(ZMapXMLWriter writer, char *element_name);
 ZMapXMLWriterErrorCode zMapXMLWriterAttribute(ZMapXMLWriter writer, char *name, char *value);
 ZMapXMLWriterErrorCode zMapXMLWriterElementContent(ZMapXMLWriter writer, char *content);
-ZMapXMLWriterErrorCode zMapXMLWriterEndElement(ZMapXMLWriter writer, char *element);
+ZMapXMLWriterErrorCode zMapXMLWriterEndElement(ZMapXMLWriter writer, char *element, gboolean full_format);
 ZMapXMLWriterErrorCode zMapXMLWriterEndDocument(ZMapXMLWriter writer);
 ZMapXMLWriterErrorCode zMapXMLWriterStartDocument(ZMapXMLWriter writer, char *document_root_tag);
-ZMapXMLWriterErrorCode zMapXMLWriterProcessEvents(ZMapXMLWriter writer, GArray *events);
+ZMapXMLWriterErrorCode zMapXMLWriterProcessEvents(ZMapXMLWriter writer, GArray *events, gboolean full_format);
+char *zMapXMLWriterGetXMLStr(ZMapXMLWriter writer) ;
 ZMapXMLWriterErrorCode zMapXMLWriterDestroy(ZMapXMLWriter writer);
 char *zMapXMLWriterErrorMsg(ZMapXMLWriter writer);
 char *zMapXMLWriterVerboseErrorMsg(ZMapXMLWriter writer);
 
-/* UTILS */
 
-GArray *zMapXMLUtilsCreateEventsArray(void);
-GArray *zMapXMLUtilsAddStackToEventsArray(ZMapXMLUtilsEventStackStruct *event_stack,
-                                          GArray *events_array);
-GArray *zMapXMLUtilsAddStackToEventsArrayStart(ZMapXMLUtilsEventStackStruct *event_stack,
-                                               GArray *events_array);
-GArray *zMapXMLUtilsStackToEventsArray(ZMapXMLUtilsEventStackStruct *event_stack);
+/* Functions to build arrays of xml "events" and turn them into xml. */
+GArray *zMapXMLUtilsCreateEventsArray(void) ;
+GArray *zMapXMLUtilsStackToEventsArray(ZMapXMLUtilsEventStack event_stack) ;
+GArray *zMapXMLUtilsAddStackToEventsArrayStart(GArray *events_array, ZMapXMLUtilsEventStack event_stack) ;
+GArray *zMapXMLUtilsAddStackToEventsArrayEnd(GArray *events_array, ZMapXMLUtilsEventStack event_stack) ;
 
+GArray *zMapXMLUtilsAddStackToEventsArrayToElement(GArray *events_array,
+						   char *element_name, int element_index,
+						   char *attribute_name, char *attribute_value,
+						   ZMapXMLUtilsEventStack event_stack) ;
+GArray *zMapXMLUtilsAddStackToEventsArrayAfterElement(GArray *events_array,
+						      char *element_name,  int element_index,
+						      char *attribute_name, char *attribute_value,
+						      ZMapXMLUtilsEventStackStruct *event_stack) ;
+
+char *zMapXMLUtilsStack2XML(GArray *xml_stack, char **err_msg_out, gboolean full_format) ;
+
+
+char *zMapXMLUtilsEvent2Txt(ZMapXMLUtilsEventStack event) ;
+char *zMapXMLWriterEvent2Txt(ZMapXMLWriterEvent event) ;
+
+char *zMapXMLUtilsEscapeStr(char *str) ;
+char *zMapXMLUtilsEscapeStrPrintf(char *format, ...) ;
 char *zMapXMLUtilsUnescapeStrdup(char *str);	/* NOTE: incomplete */
 
-#endif /* ZMAP_XML_H */
 
-/*! @} end of zmapXML docs  */
+#endif /* ZMAP_XML_H */

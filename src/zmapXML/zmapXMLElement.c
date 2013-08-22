@@ -21,8 +21,7 @@
  * originated by
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *         Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: 
  *
@@ -220,22 +219,25 @@ GList *zMapXMLElementGetChildrenByName(ZMapXMLElement parent,
   return children;
 }
 
-ZMapXMLAttribute zMapXMLElementGetAttributeByName(ZMapXMLElement ele,
-                                                   char *name)
+ZMapXMLAttribute zMapXMLElementGetAttributeByName(ZMapXMLElement ele, char *name)
 {
   ZMapXMLAttribute attr = NULL;
   GList *item = g_list_first(ele->attributes);
   GQuark want = g_quark_from_string(g_ascii_strdown(name, -1));
+
   while(item)
     {
       ZMapXMLAttribute cur = (ZMapXMLAttribute)item->data;
+
       if(want == cur->name)
         {
           attr = cur;
           break;
         }
+
       item = g_list_next(item);
     }
+
   return attr;
 }
 

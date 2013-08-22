@@ -32,6 +32,10 @@
  *-------------------------------------------------------------------
  */
 
+/* THIS WHOLE FILE WILL BECOME REDUNDANT ONCE THE NEW XREMOTE IS THERE........ */
+
+
+
 #include <ZMap/zmap.h>
 
 #include <string.h>
@@ -41,6 +45,7 @@
 #include <ZMap/zmapUtilsXRemote.h>
 #include <ZMap/zmapGLibUtils.h>
 #include <ZMap/zmapXML.h>
+#include <ZMap/zmapXRemote.h>
 #include <zmapView_P.h>
 #include <ZMap/zmapConfigStanzaStructs.h>
 
@@ -53,6 +58,7 @@ typedef enum
 
     ZMAPVIEW_REMOTE_FIND_FEATURE,
     ZMAPVIEW_REMOTE_CREATE_FEATURE,
+    ZMAPVIEW_REMOTE_REPLACE_FEATURE,
     ZMAPVIEW_REMOTE_DELETE_FEATURE,
 
     ZMAPVIEW_REMOTE_HIGHLIGHT_FEATURE,
@@ -202,8 +208,13 @@ static void findUniqueCB(gpointer data, gpointer user_data) ;
 static void makeUniqueListCB(gpointer key, gpointer value, gpointer user_data) ;
 static void copyAddFeature(gpointer key, gpointer value, gpointer user_data) ;
 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void setWindowXremote(ZMapView view) ;
 static void setXremoteCB(gpointer list_data, gpointer user_data) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 static gboolean executeRequest(ZMapXMLParser parser, ZMapXRemoteParseCommandData input_data) ;
 
@@ -221,22 +232,29 @@ static ActionDescriptorStruct action_table_G[] =
     {ZMAPVIEW_REMOTE_FIND_FEATURE,        FALSE, TRUE, FALSE, TRUE},
 
     {ZMAPVIEW_REMOTE_CREATE_FEATURE,      TRUE, TRUE, TRUE, FALSE},
+    {ZMAPVIEW_REMOTE_REPLACE_FEATURE,     TRUE, TRUE, TRUE, TRUE},
     {ZMAPVIEW_REMOTE_DELETE_FEATURE,      TRUE, TRUE, TRUE, TRUE},
 
     {ZMAPVIEW_REMOTE_HIGHLIGHT_FEATURE,   FALSE, TRUE, FALSE, TRUE},
     {ZMAPVIEW_REMOTE_HIGHLIGHT2_FEATURE,  FALSE, TRUE, FALSE, TRUE},
     {ZMAPVIEW_REMOTE_UNHIGHLIGHT_FEATURE, FALSE, TRUE, FALSE, TRUE},
-    {ZMAPVIEW_REMOTE_ZOOM_TO,             FALSE, TRUE, FALSE, TRUE},
 
-    {ZMAPVIEW_REMOTE_GET_MARK,            FALSE, FALSE, FALSE, FALSE},
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+    {ZMAPVIEW_REMOTE_ZOOM_TO, FALSE, TRUE},
+    {ZMAPVIEW_REMOTE_GET_MARK, FALSE, FALSE},
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
     {ZMAPVIEW_REMOTE_GET_FEATURE_NAMES,   FALSE, TRUE, FALSE, TRUE},
 
     {ZMAPVIEW_REMOTE_LOAD_FEATURES,       TRUE,  FALSE, FALSE, FALSE},
+
     {ZMAPVIEW_REMOTE_REGISTER_CLIENT,     FALSE, FALSE, FALSE, FALSE},
+
 
     {ZMAPVIEW_REMOTE_LIST_WINDOWS,        FALSE, FALSE, FALSE, FALSE},
     {ZMAPVIEW_REMOTE_NEW_WINDOW,          FALSE, FALSE, FALSE, FALSE},
+
     {ZMAPVIEW_REMOTE_DUMP_CONTEXT,        FALSE, FALSE, FALSE, FALSE},
 
     {ZMAPVIEW_REMOTE_INVALID,             FALSE, FALSE, FALSE, FALSE}
@@ -274,15 +292,31 @@ static ZMapXMLObjTagFunctionsStruct view_ends_G[] =
 static char *actions_G[ZMAPVIEW_REMOTE_UNKNOWN + 1] =
   {
   NULL,
-  "find_feature", "create_feature", "delete_feature",
 
+  /* create and delete must go at this level, code "replace" at the same time. find could
+   * be at the window level but it might as well be here I guess...but hang on... */
+  "find_feature", "create_feature", "replace_feature", "delete_feature",
+
+
+  /* I don't know why these are this level..this seems really suspect...they are clearly
+   * window level... */
   "single_select", "multiple_select", "unselect",
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* Moved to zmapwindow where they belong.... */
+
   "zoom_to",
+  "get_mark", 
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-  "get_mark", "get_feature_names", "load_features",
+  "get_feature_names", "load_features",
 
-  "register_client", "list_windows", "new_window",
+
+  /* register must now be redundant, list_windows should go probably... */
+  "register_client", "list_windows",
+
+  /* Not executed at this level now.... */
+  "new_window",
 
   "export_context",
   NULL
@@ -440,59 +474,42 @@ static gboolean executeRequest(ZMapXMLParser parser, ZMapXRemoteParseCommandData
     case ZMAPVIEW_REMOTE_FIND_FEATURE:
       break ;
 
+    case ZMAPVIEW_REMOTE_CREATE_FEATURE:
+    case ZMAPVIEW_REMOTE_REPLACE_FEATURE:
     case ZMAPVIEW_REMOTE_DELETE_FEATURE:
       {
-	eraseFeatures(view, request_data) ;
-	break ;
-      }
 
-    case ZMAPVIEW_REMOTE_CREATE_FEATURE:
-      {
-	/* why is context only sanity checked for this operation and not for others...???? */
-
-	if (sanityCheckContext(view, request_data))
+	if (input->common.action == ZMAPVIEW_REMOTE_REPLACE_FEATURE
+	    || input->common.action == ZMAPVIEW_REMOTE_DELETE_FEATURE)
 	  {
-	    if (drawNewFeatures(view, request_data)
-		&& (view->xremote_widget && request_data->edit_context))
+	    eraseFeatures(view, request_data) ;
+	  }
+
+	if (input->common.action == ZMAPVIEW_REMOTE_REPLACE_FEATURE
+	    || input->common.action == ZMAPVIEW_REMOTE_CREATE_FEATURE)
+	  {
+	    /* why is context only sanity checked for this operation and not for others...???? */
+
+	    if (sanityCheckContext(view, request_data))
 	      {
-		/* Copy some of request_data into post_data for view_post_execute(). */
-		PostExecuteData post_data = g_new0(PostExecuteDataStruct, 1);
-
-		post_data->action = input->common.action;
-		post_data->edit_context = request_data->edit_context;
-		post_data->edit_feature = request_data->edit_feature ;
-		post_data->feature_list = request_data->feature_list ;
-
-
-		g_object_set_data(G_OBJECT(view->xremote_widget),
-				  VIEW_POST_EXECUTE_DATA,
-				  post_data);
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-		/* Need to highlight created feature.....in all windows..... */
-		list_item = g_list_first(view->window_list) ;
-		do
+		if (drawNewFeatures(view, request_data)
+		    && (view->xremote_widget && request_data->edit_context))
 		  {
-		    ZMapViewWindow view_window ;
-		    ZMapFeature feature ;
 
-		    if (request_data->edit_feature)
-		      feature = request_data->edit_feature ;
-		    else
-		      feature = (ZMapFeature)(request_data->feature_list->data) ;
+		    /* Copy some of request_data into post_data for view_post_execute(). */
+		    PostExecuteData post_data = g_new0(PostExecuteDataStruct, 1);
+		    post_data->action = input->common.action;
+		    post_data->edit_context = request_data->edit_context;
+		    post_data->edit_feature = request_data->edit_feature ;
+		    post_data->feature_list = request_data->feature_list ;
 
-		    view_window = list_item->data ;
-
-		    zMapWindowFeatureSelect(view_window->window, feature) ;
+		    g_object_set_data(G_OBJECT(view->xremote_widget),
+				      VIEW_POST_EXECUTE_DATA,
+				      post_data);
 		  }
-		while ((list_item = g_list_next(list_item))) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-
+		request_data->edit_context = NULL;
 	      }
-
-	    request_data->edit_context = NULL;
 	  }
 	break;
       }
@@ -635,8 +652,10 @@ static void createClient(ZMapView view, ZMapXRemoteParseCommandData input)
 
       view->xremote_client = client ;
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       /* We need to tell any windows we have that there is now an external client. */
       setWindowXremote(view) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
       created = 1 ;
       exists = 0 ;
@@ -1105,6 +1124,7 @@ static gboolean xml_request_start_cb(gpointer user_data, ZMapXMLElement set_elem
 	    case ZMAPVIEW_REMOTE_ZOOM_TO:
 	    case ZMAPVIEW_REMOTE_FIND_FEATURE:
 	    case ZMAPVIEW_REMOTE_CREATE_FEATURE:
+	    case ZMAPVIEW_REMOTE_REPLACE_FEATURE:
 	    case ZMAPVIEW_REMOTE_DELETE_FEATURE:
 	    case ZMAPVIEW_REMOTE_HIGHLIGHT_FEATURE:
 	    case ZMAPVIEW_REMOTE_HIGHLIGHT2_FEATURE:
@@ -1184,6 +1204,7 @@ static gboolean xml_request_end_cb(gpointer user_data, ZMapXMLElement set_elemen
 {
   gboolean result = FALSE ;
   ZMapXRemoteParseCommandData xml_data = (ZMapXRemoteParseCommandData)user_data ;
+
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   RequestData request_data = (RequestData)(xml_data->user_data) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
@@ -1682,6 +1703,7 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 	  switch(xml_data->common.action)
 	    {
 	    case ZMAPVIEW_REMOTE_ZOOM_TO:
+	    case ZMAPVIEW_REMOTE_REPLACE_FEATURE:
 	    case ZMAPVIEW_REMOTE_DELETE_FEATURE:
 	    case ZMAPVIEW_REMOTE_FIND_FEATURE:
 	    case ZMAPVIEW_REMOTE_HIGHLIGHT_FEATURE:
@@ -1740,6 +1762,7 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 	    {
 	    case ZMAPVIEW_REMOTE_ZOOM_TO:
 	    case ZMAPVIEW_REMOTE_CREATE_FEATURE:
+	    case ZMAPVIEW_REMOTE_REPLACE_FEATURE:
 	    case ZMAPVIEW_REMOTE_DELETE_FEATURE:
 	    case ZMAPVIEW_REMOTE_FIND_FEATURE:
 	    case ZMAPVIEW_REMOTE_HIGHLIGHT_FEATURE:
@@ -1824,12 +1847,14 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 			}
 
 		      case ZMAPVIEW_REMOTE_CREATE_FEATURE:
+		      case ZMAPVIEW_REMOTE_REPLACE_FEATURE:
 		      case ZMAPVIEW_REMOTE_DELETE_FEATURE:
 		      case ZMAPVIEW_REMOTE_FIND_FEATURE:
 		      case ZMAPVIEW_REMOTE_HIGHLIGHT_FEATURE:
 		      case ZMAPVIEW_REMOTE_HIGHLIGHT2_FEATURE:
 		      case ZMAPVIEW_REMOTE_UNHIGHLIGHT_FEATURE:
 			{
+
 			  zMapXMLParserCheckIfTrueErrorReturn(request_data->edit_block == NULL,
 							      parser,
 							      "feature tag not contained within featureset tag");
@@ -2391,6 +2416,8 @@ static void copyAddFeature(gpointer key, gpointer value, gpointer user_data)
 
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* run through windows registering that there is a remote client with each. */
 static void setWindowXremote(ZMapView view)
 {
@@ -2398,7 +2425,11 @@ static void setWindowXremote(ZMapView view)
 
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void setXremoteCB(gpointer list_data, gpointer user_data)
 {
   ZMapViewWindow view_window = (ZMapViewWindow)list_data ;
@@ -2408,4 +2439,6 @@ static void setXremoteCB(gpointer list_data, gpointer user_data)
 
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
