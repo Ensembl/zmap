@@ -263,7 +263,8 @@ typedef struct
   ZMapStrand q_strand ;
   int t1, t2 ;						    /* coords in target sequence */
   ZMapStrand t_strand ;
-  AlignBlockBoundaryType boundary_type ;
+  AlignBlockBoundaryType start_boundary ;                   /* whether the start of this align abuts onto an intron, deletion, etc. */
+  AlignBlockBoundaryType end_boundary ;                     /* whether the end of this align abuts onto an intron, deletion, etc. */
 } ZMapAlignBlockStruct, *ZMapAlignBlock ;
 
 

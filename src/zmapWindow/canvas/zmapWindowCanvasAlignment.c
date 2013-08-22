@@ -317,24 +317,7 @@ AlignGap make_gapped(ZMapFeature feature, double offset, FooCanvasItem *foo, gbo
 			else if(last_box->y2 < cy1 - 1)
 			{
                           /* visible gap between boxes: add a colinear line */
-
-                          AlignBlockBoundaryType boundary_type = ab->boundary_type;                          
-
-                          if (!forward)
-                            {
-                              /* gaps are in the reverse order so we need the boundary type
-                               * from the previous gap rather than the current one */
-                              if (i > 0)
-                                {
-                                  ab = &g_array_index(gaps, ZMapAlignBlockStruct, i-1);
-                                  boundary_type = ab->boundary_type;
-                                }
-                              else
-                                {
-                                  boundary_type = ALIGN_BLOCK_BOUNDARY_EDGE;
-                                }
-                            }
-                            
+                          AlignBlockBoundaryType boundary_type = (forward ? ab->start_boundary : ab->end_boundary);
                           ag = align_gap_alloc();
                           ag->y1 = last_box->y2;
                           ag->y2 = cy1;

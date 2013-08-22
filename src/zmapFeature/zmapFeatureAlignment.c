@@ -361,6 +361,7 @@ static gboolean alignStrCanon2Homol(AlignStrCanonical canon, ZMapStrand ref_stra
   GArray *local_map = NULL ;
   GArray *align = canon->align ;
   AlignBlockBoundaryType boundary_type = ALIGN_BLOCK_BOUNDARY_EDGE ;
+  ZMapAlignBlock prev_gap = NULL ;
 
   /* is there a call to do this in feature code ??? or is the array passed in...check gff..... */
   local_map = g_array_sized_new(FALSE, FALSE, sizeof(ZMapAlignBlockStruct), 10) ;
@@ -425,7 +426,8 @@ static gboolean alignStrCanon2Homol(AlignStrCanonical canon, ZMapStrand ref_stra
 	  {
 	    gap.t_strand = ref_strand ;
 	    gap.q_strand = match_strand ;
-            gap.boundary_type = boundary_type ;
+            gap.start_boundary = boundary_type ;
+            gap.end_boundary = ALIGN_BLOCK_BOUNDARY_EDGE ; /* this may get updated as we parse subsequent operators */
 
 	    if (ref_strand == ZMAPSTRAND_FORWARD)
 	      {
@@ -458,6 +460,14 @@ static gboolean alignStrCanon2Homol(AlignStrCanonical canon, ZMapStrand ref_stra
 	    break ;
 	  }
 	}
+
+      if (prev_gap)
+        prev_gap->end_boundary = boundary_type ;
+
+      if (op->op == 'M')
+        prev_gap = &g_array_index(local_map, ZMapAlignBlockStruct, local_map->len - 1) ;
+      else
+        prev_gap = NULL ;
     }
 
   *local_map_out = local_map ;
