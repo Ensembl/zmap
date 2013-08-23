@@ -2856,6 +2856,53 @@ gulong zMapWindowCanvasFeatureGetHeatColour(gulong a, gulong b, double score)
 
 
 
+/* basic feature draw a box
+ * defined as a macro for efficiency to avoid multple copies of cut and paste
+ * otherwise would need 10 args which is silly
+ * used by basc feature, alignments, graphs, maybe transcripts... and what else??
+ *
+ * NOTE x1 and x2 passed as args as normal features are centred but graphs maybe not
+ */
+void zMapCanvasFeaturesetDrawBoxMacro(ZMapWindowFeaturesetItem featureset, 
+                                      double x1,
+                                      double x2, 
+                                      double y1,
+                                      double y2,
+                                      GdkDrawable * drawable,
+                                      gboolean fill_set,
+                                      gboolean outline_set,
+                                      gulong fill,
+                                      gulong outline)
+{
+  FooCanvasItem *item = (FooCanvasItem *) featureset;
+  GdkColor c;
+  int cx1, cy1, cx2, cy2;
+  
+  /* get item canvas coords, following example from FOO_CANVAS_RE (used by graph items) */
+  /* NOTE CanvasFeature coords are the extent including decorations so we get coords from the feature */
+  foo_canvas_w2c (item->canvas, x1, y1 - featureset->start + featureset->dy, &cx1, &cy1);
+  foo_canvas_w2c (item->canvas, x2, y2 - featureset->start + featureset->dy + 1, &cx2, &cy2);
+  /* + 1 to draw to the end of the last base */
+  
+  /* NOTE that the gdk_draw_rectangle interface is a bit esoteric	
+   * and it doesn't like rectangles that have no depth
+   */
+  if(fill_set && (!outline_set || (cy2 - cy1 > 1)))	/* fill will be visible */
+    {
+      c.pixel = fill;
+      gdk_gc_set_foreground (featureset->gc, &c);
+      zMap_draw_rect (drawable, featureset, cx1, cy1, cx2, cy2, TRUE);
+    }
+  
+  if(outline_set)
+    {
+      c.pixel = outline;
+      gdk_gc_set_foreground(featureset->gc, &c);
+      /* +1 due to gdk_draw_rect and zMap_draw_rect */
+      zMap_draw_rect(drawable, featureset, cx1, cy1, cx2+1, cy2+1, FALSE);
+    }
+}
+
 
 
 /* cribbed from zmapWindowGetPosFromScore(() which is called 3x from Item Factory and will eventaully get removed */
