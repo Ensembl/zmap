@@ -2032,6 +2032,16 @@ static void getIniData(ZMapView view, char *config_str, GList *req_sources)
 	}
 
       /*-------------------------------------
+       * the dataset
+       *-------------------------------------
+       */
+      if (zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+					ZMAPSTANZA_APP_DATASET, &str))
+	{
+	  view->view_sequence->dataset = str;
+	}
+
+      /*-------------------------------------
        * the display columns in L -> R order
        *-------------------------------------
        */
@@ -5907,6 +5917,19 @@ gboolean zMapViewGetHighlightFilteredColumns(ZMapView view)
 {
   return view->highlight_filtered_columns;
 };
+
+
+char *zMapViewGetDataset(ZMapView zmap_view)
+{
+  char *dataset = NULL ;
+
+  if (zmap_view && zmap_view->view_sequence)
+  {
+    dataset = zmap_view->view_sequence->dataset ;
+  }
+
+  return dataset ;
+}
 
 
 /*! 

@@ -329,8 +329,8 @@ char *zMapGetTimeString(ZMapTimeFormat format, char *format_str_in)
 	  format_str = "%Y-%m-%d" ;
 	  break ;
 	case ZMAPTIME_LOG:
-	  /* e.g. "2013/06/11 13:18:27.121129", i.e. includes milliseconds. */
-	  format_str = "%m/%d/%Y  %T." ;
+	  /* e.g. "2013/06/11 13:18:27.021129", i.e. includes milliseconds. */
+	  format_str = "%Y/%m/%d %T," ;
 	  break ;
 	case ZMAPTIME_USERFORMAT:
 	  /* User provides format string which must be in strftime() format. */
@@ -342,7 +342,7 @@ char *zMapGetTimeString(ZMapTimeFormat format, char *format_str_in)
       if ((strftime(&(buffer[0]), buf_size, format_str, localtime(&curtime))) > 0)
 	{
 	  if (format == ZMAPTIME_LOG)
-	    time_str = g_strdup_printf("%s%ld", buffer, tv.tv_usec) ;
+	    time_str = g_strdup_printf("%s%06d", buffer, tv.tv_usec) ; /* pad to make sure we don't miss leading 0's */
 	  else
 	    time_str = g_strdup(buffer) ;
 	}

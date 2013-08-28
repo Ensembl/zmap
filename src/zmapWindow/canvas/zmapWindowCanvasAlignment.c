@@ -257,7 +257,7 @@ AlignGap align_gap_alloc(void)
  * in this case the first and last blocks are a diff colour, so we flag this if the colour is visible and add another box not a line. Yuk
  *
  */
-AlignGap make_gapped(ZMapFeature feature, double offset, FooCanvasItem *foo)
+AlignGap make_gapped(ZMapFeature feature, double offset, FooCanvasItem *foo, gboolean forward)
 {
 	int i;
 	AlignGap ag;
@@ -316,13 +316,14 @@ AlignGap make_gapped(ZMapFeature feature, double offset, FooCanvasItem *foo)
 
 			else if(last_box->y2 < cy1 - 1)
 			{
-				/* visible gap between boxes: add a colinear line ? */
-				ag = align_gap_alloc();
-				ag->y1 = last_box->y2;
-				ag->y2 = cy1;
-				ag->type = GAP_VLINE;
-				last_ag->next = ag;
-				last_ag = ag;
+                          /* visible gap between boxes: add a colinear line */
+                          AlignBlockBoundaryType boundary_type = (forward ? ab->start_boundary : ab->end_boundary);
+                          ag = align_gap_alloc();
+                          ag->y1 = last_box->y2;
+                          ag->y2 = cy1;
+                          ag->type = (boundary_type == ALIGN_BLOCK_BOUNDARY_INTRON ? GAP_VLINE_INTRON : GAP_VLINE);
+                          last_ag->next = ag;
+                          last_ag = ag;
 			}
 
 			if(last_box->y2 < cy1)
@@ -445,7 +446,13 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
       /* create a list of things to draw at this zoom taking onto account bases per pixel */
       if(!align->gapped)
 	{
-	  align->gapped = make_gapped(feature->feature, featureset->dy - featureset->start, foo);
+          ZMapHomol homol = &feature->feature->feature.homol;
+          gboolean forward = (feature->feature->strand == homol->strand);
+          
+          if (homol->strand == ZMAPSTRAND_REVERSE)
+            forward = !forward;
+          
+	  align->gapped = make_gapped(feature->feature, featureset->dy - featureset->start, foo, forward);
 	}
 
       /* draw them */
@@ -476,7 +483,7 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
 		{
 		  c.pixel = outline;
 		  gdk_gc_set_foreground (featureset->gc, &c);
-		  zMap_draw_rect(drawable, featureset, cx1, gy1, cx2, gy2, FALSE);
+		  zMap_draw_rect(drawable, featureset, cx1, gy1, cx2, gy2 + 1, FALSE);
 		}
 
 	      break;
@@ -490,6 +497,7 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
 	      zMap_draw_line(drawable, featureset, cx1, gy1, cx2 - 1, gy2);	/* GDK foible */
 	      break;
 
+            case GAP_VLINE_INTRON:      /* fall through */
 	    case GAP_VLINE:		/* y coords differ, x is the same */
 	      if(!outline_set)	/* must be or else we are up the creek! */
 		break;
@@ -497,7 +505,11 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
 	      gx = (cx1 + cx2) / 2;
 	      c.pixel = outline;
 	      gdk_gc_set_foreground (featureset->gc, &c);
-	      zMap_draw_line(drawable, featureset, gx, gy1, gx, gy2);
+              
+              if (ag->type == GAP_VLINE_INTRON)
+                zMap_draw_broken_line(drawable, featureset, gx, gy1, gx, gy2);
+              else
+                zMap_draw_line(drawable, featureset, gx, gy1, gx, gy2);
 	      break;
 	    }
 	}

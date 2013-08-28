@@ -569,8 +569,14 @@ void zMapGUINotebookMergeNotebooks(ZMapGuiNotebook notebook, ZMapGuiNotebook not
 }
 
 
+/* THIS INTERFACE IS NOT GREAT AND NEEDS RENAMING SO IT'S MORE OBVIOUS
+ * WHAT IS RETURNED.... */
 
-/*! Create the compound notebook widget from the notebook tree.
+/* Create the compound notebook widget from the notebook tree.
+ * 
+ * NOTE: returns a vobx containing a notebook widg, use
+ * zMapGUINotebookGetNoteBookWidg() to get the actual notebook widget.
+ * 
  *
  * @param notebook_spec  The notebook tree.
  * @return               top container widget of notebook
@@ -589,6 +595,17 @@ GtkWidget *zMapGUINotebookCreateWidget(ZMapGuiNotebook notebook_spec)
   note_widg = makeNotebookWidget(make_notebook) ;
 
   return note_widg ;
+}
+
+
+/* Returns the actual notebook widget. */
+GtkWidget *zMapGUINotebookGetNoteBookWidg(GtkWidget *compound_note_widget)
+{
+  GtkWidget *notebook_widg = NULL ;
+
+  notebook_widg = g_object_get_data(G_OBJECT(compound_note_widget), GUI_NOTEBOOK_STACK_SETDATA) ;
+
+  return notebook_widg ;
 }
 
 
@@ -982,8 +999,10 @@ static GtkWidget *makeNotebookWidget(MakeNotebook make_notebook)
   gtk_notebook_set_show_tabs(GTK_NOTEBOOK(make_notebook->notebook_stack), FALSE) ;
   gtk_container_add(GTK_CONTAINER(frame), make_notebook->notebook_stack) ;
 
-  g_list_foreach(make_notebook->notebook_spec->chapters, makeChapterCB, make_notebook) ;
+  /* Record notebook widg on toplevel widg. */
+  g_object_set_data(G_OBJECT(top_widg), GUI_NOTEBOOK_STACK_SETDATA, make_notebook->notebook_stack) ;
 
+  g_list_foreach(make_notebook->notebook_spec->chapters, makeChapterCB, make_notebook) ;
 
   return top_widg ;
 }
@@ -1119,14 +1138,39 @@ static void makeParagraphCB(gpointer data, gpointer user_data)
       gtk_container_add(GTK_CONTAINER(make_notebook->curr_paragraph_vbox), make_notebook->curr_paragraph_table) ;
 
     }
-  else if (paragraph->display_type == ZMAPGUI_NOTEBOOK_PARAGRAPH_COMPOUND_TABLE)
+  else if (paragraph->display_type == ZMAPGUI_NOTEBOOK_PARAGRAPH_COMPOUND_TABLE
+	   || paragraph->display_type == ZMAPGUI_NOTEBOOK_PARAGRAPH_COMPOUND_HORZ_TABLE
+	   || paragraph->display_type == ZMAPGUI_NOTEBOOK_PARAGRAPH_COMPOUND_VERT_TABLE)
     {
       GtkWidget *scrolled_window ;
+      GtkPolicyType horiz_policy, vert_policy ;
 
       scrolled_window = gtk_scrolled_window_new(NULL, NULL) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      /* I'd like to do this but either HORZ or VERT result in a blank paragraph..I don't know why. */
+      if (paragraph->display_type == ZMAPGUI_NOTEBOOK_PARAGRAPH_COMPOUND_TABLE)
+	{
+	  horiz_policy = vert_policy = GTK_POLICY_AUTOMATIC ;
+	}
+      else if (paragraph->display_type == ZMAPGUI_NOTEBOOK_PARAGRAPH_COMPOUND_HORZ_TABLE)
+	{
+	  horiz_policy = GTK_POLICY_AUTOMATIC ;
+	  vert_policy = GTK_POLICY_NEVER ;
+	}
+      else
+	{
+	  horiz_policy = GTK_POLICY_NEVER ;
+	  vert_policy = GTK_POLICY_AUTOMATIC ;
+	}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+      horiz_policy = vert_policy = GTK_POLICY_AUTOMATIC ;
+
       gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled_window),
-				     GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC) ;
+				     horiz_policy, vert_policy) ;
+
       gtk_container_add(GTK_CONTAINER(make_notebook->curr_paragraph_vbox), scrolled_window) ;
+
 
       make_notebook->zmap_tree_view = zMapGUITreeViewCreate();
 

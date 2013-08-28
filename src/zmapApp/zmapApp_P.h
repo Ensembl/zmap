@@ -262,7 +262,7 @@ void zmapAppRemoteSendFinalised(ZMapAppContext app_context);
 /* New remote control interface */
 ZMapRemoteAppMakeRequestFunc zmapAppRemoteControlGetRequestCB(void) ;
 gboolean zmapAppRemoteControlCreate(ZMapAppContext app_context,
-				    char *peer_name, char *peer_clipboard, int peer_retries, int peer_timeout) ;
+				    char *peer_name, char *peer_clipboard, int peer_retries, int peer_timeout_ms) ;
 gboolean zmapAppRemoteControlInit(ZMapAppContext app_context) ;
 gboolean zmapAppRemoteControlConnect(ZMapAppContext app_context) ;
 gboolean zmapAppRemoteControlDisconnect(ZMapAppContext app_context, gboolean app_exit) ;

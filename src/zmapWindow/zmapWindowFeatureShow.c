@@ -44,9 +44,8 @@
 #include <zmapWindow_P.h>
 
 
-/* THERE IS QUITE A BIT OF DEBUGGING CODE IN HERE WHICH ATTEMPTS TO GET THIS WIDGET
- * TO BE A GOOD SIZE...HOWEVER IT SEEMS A LOST CAUSE AS GTK SEEMS ACTIVELY TO
- * PREVENT THIS...SIGH.....WHEN I HAVE THE URGE I'LL HAVE ANOTHER GO... */
+
+#define TOP_BORDER_WIDTH 5
 
 
 #define LIST_COLUMN_WIDTH 50
@@ -96,6 +95,15 @@ typedef struct AddParaStructName
 } AddParaStruct, *AddPara ;
 
 
+/* Malcolm's stuff more properly defined....... */
+typedef enum 
+  {
+    INVALID_EVIDENCE,
+    WANT_EVIDENCE,					    /* constructing the list */
+    GOT_EVIDENCE					    /* in the right paragraph */
+  } EvidenceType ;
+
+
 typedef struct ZMapWindowFeatureShowStruct_
 {
   ZMapWindow zmapWindow ;
@@ -108,9 +116,8 @@ typedef struct ZMapWindowFeatureShowStruct_
 
   ZMapGuiNotebook feature_book ;
 
-
-
-  /* OH GOSH....... */
+  /* EG: This makes me quite cross...polluting a stand alone file with other stuff....
+   * now someone else will have to spend time cleaning it up..... */
   /*
    * MH17: re-using code, this is a bit of a hack
    * as this code was written to drive a dialog not to extract data from XML
@@ -131,9 +138,7 @@ typedef struct ZMapWindowFeatureShowStruct_
    * as the tag handlers assume the are making a notebook, we have to do this and free it afterwards
    */
 
-  gboolean get_evidence;
-#define WANT_EVIDENCE   1     /* constructing the list */
-#define GOT_EVIDENCE    2     /* in the right paragraph */
+  EvidenceType get_evidence ;
   int evidence_column;        /* in the composite free-text data */
   GList *evidence;
 
@@ -158,8 +163,12 @@ typedef struct ZMapWindowFeatureShowStruct_
 
   /* dialog widgets */
   GtkWidget *window ;
+  GtkWidget *scrolled_window ;
   GtkWidget *vbox ;
+  GtkWidget *vbox_notebook ;
   GtkWidget *notebook ;
+  gulong notebook_expose_handler ;
+  gulong notebook_switch_page_handler ;
 
   GtkWidget *curr_notebook ;
   GtkWidget *curr_page_vbox ;
@@ -254,6 +263,12 @@ static ZMapWindowFeatureShow findReusableShow(GPtrArray *window_list) ;
 static gboolean windowIsReusable(void) ;
 static ZMapFeature getFeature(FooCanvasItem *item) ;
 
+//static gboolean changePageHandler(GtkNotebook *notebook, gint arg1, gpointer user_data) ;
+//static void switchPageHandler(GtkNotebook *notebook, gpointer new_page, guint new_page_index, gpointer user_data) ;
+//static gboolean notebookExposeHandlerCB(GtkWidget *widget, GdkEventExpose *expose, gpointer user_data) ;
+//static gboolean notebookMapEventCB(GtkWidget *widget, GdkEvent *event, gpointer user_data)   ;
+//static gboolean mapEventCB(GtkWidget *widget, GdkEvent *event, gpointer user_data)  ;
+//static gboolean exposeHandlerCB(GtkWidget *widget, GdkEventExpose *expose, gpointer user_data) ;
 static void destroyCB(GtkWidget *widget, gpointer data);
 
 static void preserveCB(gpointer data, guint cb_action, GtkWidget *widget);
@@ -579,9 +594,9 @@ static void showFeature(ZMapWindowFeatureShow show, ZMapGuiNotebook extras_noteb
 
   /* Now display the pages..... */
   show->notebook = zMapGUINotebookCreateWidget(show->feature_book) ;
-
+  
   gtk_box_pack_start(GTK_BOX(show->vbox), show->notebook, TRUE, TRUE, 0) ;
-
+  
   gtk_widget_show_all(show->window) ;
 
   zMapGUIRaiseToTop(show->window);
@@ -619,7 +634,7 @@ static void featureShowReset(ZMapWindowFeatureShow show, ZMapWindow window, char
   show->zmapWindow = window ;
 
   show->curr_paragraph = NULL ;
-  show->notebook = show->curr_notebook = show->curr_page_vbox = show->curr_paragraph_vbox = NULL ;
+  show->vbox_notebook = show->curr_notebook = show->curr_page_vbox = show->curr_paragraph_vbox = NULL ;
   show->curr_paragraph_rows = show->curr_paragraph_columns = 0 ;
 
   show->item = NULL ;
@@ -745,7 +760,7 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
 
   /* General Feature Descriptions. */
   paragraph = zMapGUINotebookCreateParagraph(subsection, NULL,
-					     ZMAPGUI_NOTEBOOK_PARAGRAPH_SIMPLE, NULL, NULL) ;
+					     ZMAPGUI_NOTEBOOK_PARAGRAPH_TAGVALUE_TABLE, NULL, NULL) ;
 
   tag_value = zMapGUINotebookCreateTagValue(paragraph, "Feature Name",
 					    ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
@@ -818,14 +833,14 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
 						tmp,
 						NULL) ;
 
-	/* NOTE
-	 * in Otterlace start not found is displayed as <not set> or 1 or 2 or 3
-	 * GFF specifies . or 0/1/2
-	 * so we present a 'human' number here not what's specified in GFF
-	 * See RT 271175 if this is wrong then that ticket needs to be revived and otterlace changed
-	 * or for havana to accept the different numbers
-	 * refer to other calls to zMapFeaturePhase2Str()
-	 */
+      /* NOTE
+       * in Otterlace start not found is displayed as <not set> or 1 or 2 or 3
+       * GFF specifies . or 0/1/2
+       * so we present a 'human' number here not what's specified in GFF
+       * See RT 271175 if this is wrong then that ticket needs to be revived and otterlace changed
+       * or for havana to accept the different numbers
+       * refer to other calls to zMapFeaturePhase2Str()
+       */
       if (feature->feature.transcript.flags.start_not_found)
 	tmp = g_strdup_printf("%s", zMapFeaturePhase2Str(feature->feature.transcript.start_not_found)) ;
       else
@@ -861,27 +876,42 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
 
 
 
-/* Hide this away to make the exposed function smaller... */
+/* Create the feature display window, this can get very long if our peer (e.g. otterlace)
+ * returns a lot of information so we need scrolling. */
 static void createEditWindow(ZMapWindowFeatureShow feature_show, char *title)
 {
-  GtkWidget *vbox ;
+  GtkWidget *scrolled_window, *vbox ;
 
   /* Create the edit window. */
   feature_show->window = zMapGUIToplevelNew(NULL, title) ;
 
   g_object_set_data(G_OBJECT(feature_show->window), "zmap_feature_show", feature_show) ;
-  gtk_container_set_border_width(GTK_CONTAINER (feature_show->window), 10);
+  gtk_container_set_border_width(GTK_CONTAINER (feature_show->window), TOP_BORDER_WIDTH);
   g_signal_connect(G_OBJECT (feature_show->window), "destroy",
 		   G_CALLBACK (destroyCB), feature_show);
-  gtk_window_set_default_size(GTK_WINDOW(feature_show->window), 500, -1) ; /* Stop window being too squashed. */
 
-  /* Add ptrs so parent knows about us */
+
+  /* Making the initial size sensible is not easy..stupid Gtk, we try to set a good
+   * initial default size and then attach a handler which is called when the notebook
+   * is "switched" (== exposed as well) from which we try to set a more sensible size
+   * related to what is actually being displayed. */
+  gtk_window_set_default_size(GTK_WINDOW(feature_show->window), 500, 300) ;
+
+
+  /* Add ptr so our parent ZMapWindow knows about us and can destroy us when its deleted. */
   g_ptr_array_add(feature_show->zmapWindow->feature_show_windows, (gpointer)(feature_show->window)) ;
 
 
+  /* Annotators asked for an overall scrolled window. */
+  feature_show->scrolled_window = scrolled_window = gtk_scrolled_window_new(NULL, NULL) ;
+  gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled_window), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC) ;
+  gtk_container_add(GTK_CONTAINER(feature_show->window), scrolled_window) ;
+
+  /* vbox contains all details, must be added with a viewport because vbox does not have
+   * its own window. */
   feature_show->vbox = vbox = gtk_vbox_new(FALSE, 0) ;
   gtk_box_set_spacing(GTK_BOX(vbox), 5) ;
-  gtk_container_add(GTK_CONTAINER(feature_show->window), vbox) ;
+  gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(scrolled_window), vbox) ;
 
   gtk_box_pack_start(GTK_BOX(vbox), makeMenuBar(feature_show), FALSE, FALSE, 0);
 
@@ -889,8 +919,96 @@ static void createEditWindow(ZMapWindowFeatureShow feature_show, char *title)
 }
 
 
+///* Called when the notebook section of the feature details window is exposed,
+// * this is an attempt to display the window at a sensible size. */
+//static gboolean notebookExposeHandlerCB(GtkWidget *widget, GdkEventExpose *expose, gpointer user_data)
+//{
+//  gboolean event_handled = FALSE ;			    /* make sure event is propagated. */
+//  ZMapWindowFeatureShow feature_show = (ZMapWindowFeatureShow)user_data ;
+//  int top_width, top_height, vbox_width, vbox_height ;
+//  GtkRequisition size_req ;
+//
+//#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+//  printf("in notebook expose handler\n") ;
+//#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+//
+//  top_width = top_height = vbox_width = vbox_height = 0 ;
+//
+//  /* Get size of top level window. */
+//  gtk_window_get_size(GTK_WINDOW(feature_show->window), &top_width, &top_height) ;
+//
+//  /* Get size of our vbox containing all the info. allowing for the external border
+//   * we set for the vbox. */
+//  gtk_widget_size_request(feature_show->vbox, &size_req) ;
+//  vbox_width = size_req.width + (2 * TOP_BORDER_WIDTH) ;
+//  vbox_height = size_req.height + (2 * TOP_BORDER_WIDTH) ;
+//
+//  /* Unfortunately there seems to be some extra border, perhaps from the scrolled window
+//   * or viewport....and in fact the scrolled window frequently is shown....not sure why,
+//   * big fudge factor here...seems to require more on the mac than gnu desktop. */
+//  vbox_width += 40 ;
+//  vbox_height +=40 ;
+//
+//
+//  /* If vbox is a different size than top window then we should expand/contract top window to
+//   * be a more sensible size on the screen. */
+//  if (vbox_width != top_width || vbox_height != top_height)
+//    {
+//      int max_width, max_height ;
+//
+//      zMapGUIGetMaxWindowSize(feature_show->window, &max_width, &max_height) ;
+//
+//      if (vbox_width != top_width)
+//	top_width = vbox_width ;
+//
+//      if (top_width > max_width)
+//	top_width = max_width ;
+//
+//      if (vbox_height != top_height)
+//	top_height = vbox_height ;
+//
+//      if (top_height > max_height)
+//	top_height = max_height ;
+//
+//      gtk_window_resize(GTK_WINDOW(feature_show->window), top_width, top_height) ;
+//    }
+//
+//  /* Disconnect otherwise we reset the window height every time we are re-mapped. */
+//  g_signal_handler_disconnect(feature_show->notebook, feature_show->notebook_expose_handler) ;
+//  feature_show->notebook_expose_handler = 0 ;
+//
+//#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+//  printf("leaving notebook expose handler\n") ;
+//#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+//
+//  return event_handled ;
+//}
 
 
+
+///* For some reason this function is only called on the intial expose which is very boring....
+// * I want to resize when the notebook page is swopped, that would be cool..... */
+//static void switchPageHandler(GtkNotebook *notebook, gpointer new_page, guint new_page_index, gpointer user_data)
+//{
+//
+//#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+//  /* TEST ON LINUX AND SEE IF I CAN GET IT WORKING... */
+//
+//  ZMapWindowFeatureShow feature_show = (ZMapWindowFeatureShow)user_data ;
+//
+//  printf("in notebook switch page handler\n") ;
+//
+//  printf("leaving notebook switch page handler\n") ;
+//#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+//
+//
+//  return ;
+//}
+
+
+
+/* Called when feature details window is destroyed, either by user or by
+ * ZMapWindow being destroyed. */
 static void destroyCB(GtkWidget *widget, gpointer data)
 {
   ZMapWindowFeatureShow feature_show = (ZMapWindowFeatureShow)data ;
@@ -1700,11 +1818,6 @@ static void getAllMatches(ZMapWindow window,
       GList *headers = NULL, *types = NULL ;
       AddParaStruct para_data ;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      headers = g_list_append(headers, GINT_TO_POINTER(g_quark_from_string("Sequence"))) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
       headers = g_list_append(headers, GINT_TO_POINTER(g_quark_from_string("Strand: Sequence/Match"))) ;
       headers = g_list_append(headers, GINT_TO_POINTER(g_quark_from_string("Sequence Start"))) ;
       headers = g_list_append(headers, GINT_TO_POINTER(g_quark_from_string("Sequence End"))) ;
@@ -1713,11 +1826,6 @@ static void getAllMatches(ZMapWindow window,
       headers = g_list_append(headers, GINT_TO_POINTER(g_quark_from_string("Score"))) ;
       headers = g_list_append(headers, GINT_TO_POINTER(g_quark_from_string("Percent ID"))) ;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      types = g_list_append(types, GINT_TO_POINTER(g_quark_from_string("string"))) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
       types = g_list_append(types, GINT_TO_POINTER(g_quark_from_string("string"))) ;
       types = g_list_append(types, GINT_TO_POINTER(g_quark_from_string("int"))) ;
       types = g_list_append(types, GINT_TO_POINTER(g_quark_from_string("int"))) ;
@@ -1726,6 +1834,10 @@ static void getAllMatches(ZMapWindow window,
       types = g_list_append(types, GINT_TO_POINTER(g_quark_from_string("float"))) ;
       types = g_list_append(types, GINT_TO_POINTER(g_quark_from_string("float"))) ;
 
+
+      /* Would like to have the option to make this just a vertically scrolled window but
+       * that results in a blank area....I'm not sure why....searching on the web
+       * shows nothing, see comments for this function in zmapGUINotebook.c  */
       paragraph = zMapGUINotebookCreateParagraph(subsection, "Matches",
 						 ZMAPGUI_NOTEBOOK_PARAGRAPH_COMPOUND_TABLE, headers, types) ;
 

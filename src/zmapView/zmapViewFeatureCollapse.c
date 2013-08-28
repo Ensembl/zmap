@@ -561,6 +561,12 @@ printf("(extra,diff) = %d,%d %d,%d\n", extra1,diff1, extra2, diff2);
 			edge->t_strand = first->t_strand;
 			edge->q_strand = first->q_strand;
 
+                        /* I think this struct spans from the start to somewhere in 
+                         * the first align block of the composite feature,
+                         * which would make the boundaries as folows. */
+                        edge->start_boundary = ALIGN_BLOCK_BOUNDARY_EDGE;
+                        edge->end_boundary = ALIGN_BLOCK_BOUNDARY_MATCH;
+
 			g_array_append_val(new_gaps,*edge);
 		}
 
@@ -586,6 +592,12 @@ printf("(extra,diff) = %d,%d %d,%d\n", extra1,diff1, extra2, diff2);
 			edge->t2 = y2;
 			edge->t_strand = ab->t_strand;
 			edge->q_strand = ab->q_strand;
+
+                        /* I think this struct spans from somewhere in the last
+                         * align block to the end of the feature, which would
+                         * make the boundaries as follows. */
+                        edge->start_boundary = ALIGN_BLOCK_BOUNDARY_MATCH;
+                        edge->end_boundary = ALIGN_BLOCK_BOUNDARY_EDGE;
 
 			g_array_append_val(new_gaps,*edge);
 			ab->t2 = ab->t1 + diff;

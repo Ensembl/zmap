@@ -720,6 +720,8 @@ void zmapControlSetWindowFocus(ZMap zmap, ZMapViewWindow new_viewwindow)
       zmapControlWindowSetGUIState(zmap) ;
 
       /* Set up navigator with new view. */
+      zMapWindowNavigatorSetCurrentWindow(zmap->navigator, window) ;
+
       zMapWindowGetVisible(window, &top, &bottom) ;
       zmapNavigatorSetView(zmap->navigator, zMapViewGetFeatures(view), top, bottom) ;
     }

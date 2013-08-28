@@ -1401,7 +1401,7 @@ static gboolean timeoutCB(ZMapRemoteControl remote_control, void *user_data)
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
       /* This is our way of testing to see if the peer application is alive, if the window id
        * they gave us is still good then we assume they are still alive. */
-      if (!(result = zMapGUIXWindowExists(x_display, x_window, &err_msg)))
+      if (!(result = zMapGUIXWindowExists(x_display, x_window, remote_data->peer_unique_id, &err_msg)))
 	{
 	  char *full_err_msg ;
 

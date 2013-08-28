@@ -32,13 +32,19 @@
 
 #include <ZMap/zmap.h>
 
+#include <X11/Xatom.h>
 #include <string.h>
+#include <gdk/gdkx.h>
+#include <gtk/gtk.h>
 #include <math.h>
 
 #include <ZMap/zmapUtilsGUI.h>
 #include <ZMap/zmapWebPages.h>
 #include <zmapUtils_P.h>
 
+
+/* When we guess max window size we allow this much space for desktop toolbars on the screen. */
+#define TOOLBAR_ALLOWANCE 0.90
 
 /* Because we need to cast to the function type to call it without debugger complaints... */
 typedef void (*g_object_notify_callback)(GObject *pane, GParamSpec *scroll, gpointer user_data);
@@ -115,9 +121,11 @@ typedef struct eventTxtStructName
 
 
 
-
-
-
+/* Used in detecting X windows call errors... */
+static Bool window_error_G = False ;
+static char *trap_txt_G = NULL ;
+static char *zmapXRemoteRawErrorText = NULL ;
+static char *zmapXRemoteErrorText = NULL;
 
 
 static gboolean modalFromMsgType(ZMapMsgType msg_type) ;
@@ -125,6 +133,7 @@ static GtkResponseType messageFull(GtkWindow *parent, char *title_in, char *msg,
 				   gboolean modal, int display_timeout, gboolean close_button,
 				   ZMapMsgType msg_type, GtkJustification justify,
 				   ZMapGUIMsgUserData user_data) ;
+static void printMessage(ZMapMsgType msg_type, char *message) ;
 static void butClick(GtkButton *button, gpointer user_data) ;
 static gboolean timeoutHandlerModal(gpointer data) ;
 static gboolean timeoutHandler(gpointer data) ;
@@ -148,6 +157,7 @@ static void setTextAttrs(gpointer data, gpointer user_data) ;
 static void aboutLinkOldCB(GtkAboutDialog *about, const gchar *link, gpointer data) ;
 static gboolean aboutLinkNewCB(GtkAboutDialog *label, gchar *uri, gpointer user_data_unused) ;
 
+static int zmapXErrorHandler(Display *dpy, XErrorEvent *e ) ;
 
 
 
@@ -199,6 +209,243 @@ void zMapGUIRaiseToTop(GtkWidget *widget)
 
 
 
+/*
+ * If store == TRUE, store e unless stored != NULL or e == zmapXErrorHandler
+ * If clear == TRUE, reset stored to NULL
+ */
+static XErrorHandler stored_xerror_handler(XErrorHandler e, gboolean store, gboolean clear)
+{
+  static XErrorHandler stored = NULL;
+
+  if(e == zmapXErrorHandler)
+    store = FALSE;              /* We mustn't store this */
+
+  if(clear)
+    stored = NULL;
+
+  if(store)
+    {
+      if(stored == NULL)
+        stored = e;
+      else
+        {
+          zMapLogWarning("I'm not forgetting %p, but not storing %p either!", stored, e);
+
+	  zMapLogWarning("I'm not forgetting %p, but not storing %p either!", stored, e);
+        }
+    }
+
+  return stored;
+}
+
+
+
+/*!
+ * \brief Set the XErrorHandler to be zmapXErrorHandler, saving whichever is the current one.
+ *
+ * It should be noted that nested calls to this and untrap will _not_ function correctly!
+ */
+static void zmapXTrapErrors(char *where, char *what, char *text)
+{
+  XErrorHandler current = NULL ;
+
+  window_error_G = False ;
+
+  trap_txt_G = g_strdup_printf("X Error in \"%s\" calling \"%s\"() with \"%s\"",
+			       where, what, text) ;
+
+  if ((current = XSetErrorHandler(zmapXErrorHandler)))
+    {
+      stored_xerror_handler(current, TRUE, FALSE) ;
+    }
+
+  return ;
+}
+
+
+static int zmapXErrorHandler(Display *dpy, XErrorEvent *e )
+{
+  char errorText[1024] ;
+
+  window_error_G = True ;
+
+  XGetErrorText(dpy, e->error_code, errorText, sizeof(errorText)) ;
+
+  zmapXRemoteErrorText = g_strdup_printf("Error %s  Reason: %s", errorText, trap_txt_G) ;
+
+  /* This is due to some non-ideal coding that means we sometimes (1 case)
+   * double process the error with the meta and error format strings. If
+   * there is ever more than one case (see zmapXRemoteGetPropertyFullString)
+   * find a better solution.
+   */
+  if(zmapXRemoteRawErrorText != NULL)
+    g_free(zmapXRemoteRawErrorText);
+
+  zmapXRemoteRawErrorText = g_strdup(errorText) ;
+
+  zMapLogWarning("**** X11 Error: %s **** Reason: %s", errorText, trap_txt_G) ;
+
+  return 1 ;						    /* This seems to be ignored by the server (!) */
+}
+
+
+static void zmapXUntrapErrors(void)
+{
+  XErrorHandler restore = NULL;
+
+  restore = stored_xerror_handler(NULL, FALSE, FALSE) ;
+  XSetErrorHandler(restore) ;
+
+  stored_xerror_handler(NULL, TRUE, TRUE) ;
+
+  g_free(trap_txt_G) ;
+  trap_txt_G = NULL ;
+
+  return ;
+}
+
+
+/* Set the given property on the given x window */
+gboolean zMapGUIXWindowChangeProperty(Display *x_display, Window x_window, char *property, char *change_to)
+{
+  gboolean success = FALSE;
+
+  char *err_txt = NULL ;
+  Atom xproperty = XInternAtom(x_display, property, False);  
+  
+  zmapXTrapErrors((char *)__PRETTY_FUNCTION__, "XChangeProperty", err_txt) ;
+
+  XChangeProperty(x_display, x_window,
+		  xproperty, XA_STRING, 8,
+		  PropModeReplace, (unsigned char *)change_to,
+		  strlen(change_to));
+
+  XSync(x_display, False) ;
+
+  zmapXUntrapErrors() ;
+
+  if (window_error_G)
+    {
+      success = FALSE;
+
+      zMapLogCritical("Failed sending to window '0x%lx': '%s'", x_window, change_to) ;
+    }
+  else
+    {
+      success = TRUE;
+      zMapLogMessage("Finished sending to window '0x%lx': '%s'", x_window, change_to) ;
+    }
+
+  if (err_txt)
+    g_free(err_txt) ;
+
+  return success ;
+}
+
+
+/* Check whether the given X Window is valid. It should have a property
+ * named for the clipboard. If this property doesn't exist then
+ * this is not the correct window. (This extra check is necessary because even
+ * if a window with the correct xid exists, the xid might have been 
+ * re-used.) */
+static gboolean zmapGUIXWindowValid(Display *x_display, Window x_window, char *clipboard_name, char **err_msg_out)
+{
+  gboolean success = FALSE;
+  
+  gulong req_offset = 0, req_length = 0;
+  gboolean atomic_delete = FALSE;
+  Atom xtype = XA_STRING;
+  Atom xtype_return;
+  gint result, format_return;
+  gulong nitems_return, bytes_after;
+  gchar *property_data;
+  char *atom_id ;
+  int i = 0, attempts = 2;
+  Atom xproperty = XInternAtom(x_display, clipboard_name, False);
+  GString *output = g_string_sized_new(1 << 8); /* 1 << 8 = 256 */
+
+  /* We need to go through at least once, i controls a second time */
+  do
+    {
+      atom_id = g_strdup_printf("Atom = %x", (unsigned int)xproperty) ;
+      zmapXTrapErrors((char *)__PRETTY_FUNCTION__, "XGetWindowProperty", atom_id) ;
+      g_free(atom_id) ;
+      
+      result = XGetWindowProperty(x_display, x_window,
+                                  xproperty, /* requested property */
+                                  req_offset, req_length, /* offset and length */
+                                  atomic_delete, xtype,
+                                  &xtype_return, &format_return,
+                                  &nitems_return, &bytes_after,
+                                  (guchar **)&property_data) ;
+      zmapXUntrapErrors() ;
+      
+      /* First test for an X Error */
+      if(window_error_G)
+        {
+          *err_msg_out = g_strdup_printf("XError %s", zmapXRemoteRawErrorText);
+          success = FALSE;
+          i += attempts; /* no more attempts */
+        }
+      else if (result != Success || !xtype_return)	    /* make sure we use "Success" from the X11 definition for success... */
+        {
+          /* The property doesn't exist, so this isn't the correct window */
+          success = FALSE ;
+          
+          if (err_msg_out)
+            *err_msg_out = g_strdup_printf("Property does not exist on window") ;
+        }
+      else if ((xtype != AnyPropertyType) && (xtype_return != xtype))
+        {
+          /* Property found but type is not as expected */
+          success = FALSE ;
+
+          if (err_msg_out)
+            *err_msg_out = g_strdup_printf("Property type mismatch when trying to validate peer window") ;
+        }
+      else if (i == 0)
+        {
+          /* First time just update offset and length... */
+          req_offset = 0;
+          req_length = bytes_after;
+        }
+      else if(property_data && *property_data && nitems_return && format_return)
+        {
+          success = TRUE ;
+          
+          switch(format_return)
+            {
+            case 8:
+              g_string_append_len(output, property_data, nitems_return) ;
+              zMapLogMessage("Property '%s' has value: %s", clipboard_name, output->str ? output->str : "null") ;
+              g_string_free(output, TRUE) ;
+              break;
+              
+            case 16:
+            case 32:
+            default:
+              if (err_msg_out)
+                *err_msg_out = g_strdup_printf("Unexpected format size %d for string", format_return);
+        
+              success = FALSE;
+              i += attempts; /* no more attempts */
+
+              break;
+            }
+        }
+      else
+        {
+          zMapAssertNotReached();
+        }
+
+      if (property_data)
+        XFree(property_data) ;
+
+      ++i;
+    } while (i < attempts);
+  
+  return success ;
+}
 
 
 /* Check whether the given X Window exists on the given display.
@@ -206,7 +453,7 @@ void zMapGUIRaiseToTop(GtkWidget *widget)
  * Returns TRUE if the window is still there, FALSE otherwise. If FALSE is returned 
  * the x error is returned in err_msg_out, should be g_free'd when finished with. 
  */
-gboolean zMapGUIXWindowExists(Display *x_display, Window x_window, char **err_msg_out)
+gboolean zMapGUIXWindowExists(Display *x_display, Window x_window, char *clipboard_name, char **err_msg_out)
 {
   gboolean result = TRUE ;				    /* default to window ok. */
   Status status ;
@@ -241,6 +488,10 @@ gboolean zMapGUIXWindowExists(Display *x_display, Window x_window, char **err_ms
 	  *err_msg_out = g_strdup("XGetWindowAttributes() failed but there was no X error code.") ;
 	}
     }
+  else
+    {
+      result = zmapGUIXWindowValid(x_display, x_window, clipboard_name, err_msg_out);
+    }
 
   return result ;
 }
@@ -268,159 +519,7 @@ GtkWidget *zMapGUIFindTopLevel(GtkWidget *widget)
 
 
 
-/* Given a gdkEventAny, return a string name for the event.
- * 
- * NOTE, the other event masks need filling in, I've only done the ones I'm interested in...
- * 
- * If exclude_mask is zero all events are processed, otherwise events to be excluded should
- * be specified like this:
- *
- * static GdkEventMask msg_exclude_mask_G = (GDK_POINTER_MOTION_MASK | GDK_EXPOSURE_MASK
- *                                           | GDK_FOCUS_CHANGE_MASK | GDK_VISIBILITY_NOTIFY_MASK
- *					     | GDK_ENTER_NOTIFY_MASK | GDK_LEAVE_NOTIFY_MASK) ;
- *
- */
-char *zMapGUIGetEventAsText(GdkEventMask exclude_mask, GdkEventAny *any_event)
-{
-  char *event_as_text = NULL ;
-  int true_index ;
-  eventTxtStruct event_txt[] =
-    {
-      {"GDK_NOTHING", 0, EVENT_COMMON_TIME},				    /* = -1 */
-      {"GDK_DELETE", 0, EVENT_COMMON_TIME},				    /* = 0 */
-      {"GDK_DESTROY", 0, EVENT_COMMON_TIME},				    /* = 1 */
-      {"GDK_EXPOSE", GDK_EXPOSURE_MASK, EVENT_NO_TIME},		    /* = 2 */
-
-      {"GDK_MOTION_NOTIFY", GDK_POINTER_MOTION_MASK, EVENT_COMMON_TIME},	    /* = 3 */
-      {"GDK_BUTTON_PRESS", 0, EVENT_COMMON_TIME},				    /* = 4 */
-      {"GDK_2BUTTON_PRESS", 0, EVENT_COMMON_TIME},				    /* = 5 */
-      {"GDK_3BUTTON_PRESS", 0, EVENT_COMMON_TIME},				    /* = 6 */
-      {"GDK_BUTTON_RELEASE", 0, EVENT_COMMON_TIME},			    /* = 7 */
-
-      {"GDK_KEY_PRESS", 0, EVENT_COMMON_TIME},				    /* = 8 */
-      {"GDK_KEY_RELEASE", 0, EVENT_COMMON_TIME},				    /* = 9 */
-
-      {"GDK_ENTER_NOTIFY", GDK_ENTER_NOTIFY_MASK, EVENT_CROSSING_TIME},	    /* = 10 */
-      {"GDK_LEAVE_NOTIFY", GDK_LEAVE_NOTIFY_MASK, EVENT_CROSSING_TIME},	    /* = 11 */
-
-      {"GDK_FOCUS_CHANGE", GDK_FOCUS_CHANGE_MASK, EVENT_NO_TIME},	    /* = 12 */
-      {"GDK_CONFIGURE", 0, EVENT_NO_TIME},				    /* = 13 */
-
-      {"GDK_MAP", 0, EVENT_COMMON_TIME},					    /* = 14 */
-      {"GDK_UNMAP", 0, EVENT_COMMON_TIME},					    /* = 15 */
-
-      {"GDK_PROPERTY_NOTIFY", 0, EVENT_ATOM_TIME},			    /* = 16 */
-
-      {"GDK_SELECTION_CLEAR", 0, EVENT_SELECTION_TIME},			    /* = 17 */
-      {"GDK_SELECTION_REQUEST", 0, EVENT_SELECTION_TIME},			    /* = 18 */
-      {"GDK_SELECTION_NOTIFY", 0, EVENT_SELECTION_TIME},			    /* = 19 */
-
-      {"GDK_PROXIMITY_IN", 0, EVENT_COMMON_TIME},				    /* = 20 */
-      {"GDK_PROXIMITY_OUT", 0, EVENT_COMMON_TIME},				    /* = 21 */
-
-      {"GDK_DRAG_ENTER", 0, EVENT_DND_TIME},				    /* = 22 */
-      {"GDK_DRAG_LEAVE", 0, EVENT_DND_TIME},				    /* = 23 */
-      {"GDK_DRAG_MOTION", 0, EVENT_DND_TIME},				    /* = 24 */
-      {"GDK_DRAG_STATUS", 0, EVENT_DND_TIME},				    /* = 25 */
-      {"GDK_DROP_START", 0, EVENT_DND_TIME},				    /* = 26 */
-      {"GDK_DROP_FINISHED", 0, EVENT_DND_TIME},				    /* = 27 */
-
-      {"GDK_CLIENT_EVENT", 0, EVENT_NO_TIME},				    /* = 28 */
-
-      {"GDK_VISIBILITY_NOTIFY", GDK_VISIBILITY_NOTIFY_MASK, EVENT_NO_TIME}, /* = 29 */
-      {"GDK_NO_EXPOSE", 0, EVENT_NO_TIME},				    /* = 30 */
-      {"GDK_SCROLL", 0, EVENT_COMMON_TIME},				    /* = 31 */
-      {"GDK_WINDOW_STATE", 0, EVENT_NO_TIME},				    /* = 32 */
-      {"GDK_SETTING", 0, EVENT_NO_TIME},				    /* = 33 */
-      {"GDK_OWNER_CHANGE", 0, EVENT_OWNER_TIME},				    /* = 34 */
-      {"GDK_GRAB_BROKEN", 0, EVENT_NO_TIME},				    /* = 35 */
-      {"GDK_DAMAGE", 0, EVENT_NO_TIME},				    /* = 36 */
-      {"GDK_EVENT_LAST", 0, EVENT_NO_TIME}				    /* helper variable for decls */
-    } ;
-
-
-  true_index = any_event->type + 1 ;			    /* yuch, see enum values in comments above. */
-
-  if (!exclude_mask || !(event_txt[true_index].mask & exclude_mask))
-    {
-      guint32 time ;
-
-      switch (event_txt[true_index].time_struct_type)
-	{
-	case EVENT_COMMON_TIME:
-	  {
-	    EventCommonTime common = (EventCommonTime)any_event ;
-
-	    time = common->time ;
-
-	    break ;
-	  }
-
-	case EVENT_CROSSING_TIME:
-	  {
-	    GdkEventCrossing *crossing = (GdkEventCrossing *)any_event ;
-
-	    time = crossing->time ;
-
-	    break ;
-	  }
-
-	case EVENT_ATOM_TIME:
-	  {
-	    GdkEventProperty *atom_time = (GdkEventProperty *)any_event ;
-
-	    time = atom_time->time ;
-
-	    break ;
-	  }
-
-	case EVENT_SELECTION_TIME:
-	  {
-	    GdkEventSelection *select_time = (GdkEventSelection *)any_event ;
-
-	    time = select_time->time ;
-
-	    break ;
-	  }
-
-	case EVENT_DND_TIME:
-	  {
-	    GdkEventDND *dnd_time = (GdkEventDND *)any_event ;
-
-	    time = dnd_time->time ;
-
-	    break ;
-	  }
-
-	case EVENT_OWNER_TIME:
-	  {
-	    GdkEventOwnerChange *owner_time = (GdkEventOwnerChange *)any_event ;
-
-	    time = owner_time->time ;
-
-	    break ;
-	  }
-
-	case EVENT_NO_TIME:
-	default:
-	  {
-	    time = 0 ;
-	    break ;
-	  }
-	}
-
-      event_as_text = g_strdup_printf("Event: \"%s\"\tXWindow: %x\tTime: %u.",
-				      event_txt[true_index].text,
-				      (unsigned int)GDK_WINDOW_XWINDOW(any_event->window),
-				      time) ;
-    }
-
-  return event_as_text ;
-}
-
-
-
-/*! For use with custom built dialogs.
+/* For use with custom built dialogs.
  *
  * Gtk provides a function called  gtk_dialog_run() which blocks until the user presses
  * a button on the dialog, the function returns an int indicating which button was
@@ -803,6 +902,10 @@ void zMapShowMsg(ZMapMsgType msg_type, char *format, ...)
   msg_string = g_strdup_vprintf(format, args) ;
   va_end(args) ;
 
+  /* print the message to stdout/stderr */
+  printMessage(msg_type, msg_string);
+
+  /* show the dialog */
   zMapGUIShowMsg(msg_type, msg_string) ;
 
   g_free(msg_string) ;
@@ -1586,6 +1689,29 @@ static gboolean modalFromMsgType(ZMapMsgType msg_type)
   return modal ;
 }
 
+
+
+/* Called by all the zmap gui message functions to print a message to stdout 
+ * or stderr (depending on its type) */
+static void printMessage(ZMapMsgType msg_type, char *message)
+{
+  switch (msg_type)
+    {
+      case ZMAP_MSG_WARNING:
+      case ZMAP_MSG_CRITICAL: /* fall through */
+      case ZMAP_MSG_CRASH:    /* fall through */
+        fprintf(stderr, "%s", message) ;
+        break ;
+
+      case ZMAP_MSG_INFORMATION:
+      case ZMAP_MSG_EXIT:
+        printf("%s", message) ;
+        break ;
+        
+      default:
+        break ;
+    } ;
+}
 
 
 /* Called by all the zmap gui message functions to display a short message in

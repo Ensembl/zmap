@@ -40,7 +40,6 @@
 
 
 
-
 /* Windows are 90% of screen height by default...but normally we automatically set window to fill screen taking
  * into account window manager tool bars etc. */
 #define ZMAPWINDOW_VERT_PROP 0.90
@@ -267,5 +266,7 @@ ZMapViewWindow zmapControlNewWidgetAndWindowForView(ZMap zmap,
 
 void zmapControlPrintView(ZMap zmap, ZMapView view, char *action, gboolean print_xid) ;
 void zmapControlPrintAllViews(ZMap zmap, gboolean print_xids) ;
+
+void zmapControlWindowMaximize(GtkWidget *widget, ZMap map) ;
 
 #endif /* !ZMAP_CONTROL_P_H */

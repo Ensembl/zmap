@@ -159,7 +159,7 @@ gboolean zMapRemoteControlSendRequest(ZMapRemoteControl remote_control, char *pe
 
 void zMapRemoteControlReset(ZMapRemoteControl remote_control) ;
 gboolean zMapRemoteControlSetDebug(ZMapRemoteControl remote_control, ZMapRemoteControlDebugLevelType debug_level) ;
-gboolean zMapRemoteControlSetTimeout(ZMapRemoteControl remote_control, int timeout_secs) ;
+gboolean zMapRemoteControlSetTimeout(ZMapRemoteControl remote_control, int timeout_ms) ;
 gboolean zMapRemoteControlSetErrorCB(ZMapRemoteControl remote_control,
 				     ZMapRemoteControlErrorReportFunc err_func, gpointer err_data) ;
 gboolean zMapRemoteControlUnSetErrorCB(ZMapRemoteControl remote_control) ;
