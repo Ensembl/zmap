@@ -337,11 +337,13 @@ int zMap_draw_rect(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, g
     }
   else
     {
+      /* outline rects are 1 pixel bigger than filled ones */
       if (fill)
-	{
-	  cx2++;	/* outline rects are 1 pixel bigger than filled ones */
-	  cy2++;
-	}
+        cx2++;
+
+      if (!fill)
+        cy2--;
+
       gdk_draw_rectangle (drawable, featureset->gc, fill, cx1, cy1, cx2 - cx1, cy2 - cy1);
       result = 1;
     }
