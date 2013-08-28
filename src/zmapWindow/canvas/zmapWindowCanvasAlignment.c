@@ -483,7 +483,7 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
 		{
 		  c.pixel = outline;
 		  gdk_gc_set_foreground (featureset->gc, &c);
-		  zMap_draw_rect(drawable, featureset, cx1, gy1, cx2, gy2, FALSE);
+		  zMap_draw_rect(drawable, featureset, cx1, gy1, cx2, gy2 + 1, FALSE);
 		}
 
 	      break;
