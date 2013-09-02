@@ -410,6 +410,35 @@ static GList *zmapWindowCanvasSequencePaintHighlight(GdkDrawable *drawable, ZMap
 }
 
 
+static ZMapFrame featureCoordFindFrame(int coord, ZMapFeature feature)
+{
+  ZMapFrame frame = zMapFeatureFrame(feature);
+
+  if (feature->type == FEATURE_SEQUENCE && 
+      feature->feature.sequence.exon_list)
+    {
+      GList *item = feature->feature.sequence.exon_list;
+      for ( ; item; item = item->next)
+        {
+          ZMapFullExon exon = (ZMapFullExon)(item->data);
+          int x1 = exon->sequence_span.x1;
+          int x2 = exon->sequence_span.x2;
+          
+          if (coord >= x1 - 2 && coord <= x2 + 2)
+            {
+              int fval = (x1 % 3) ;
+
+              if(fval < ZMAPFRAME_0)
+                fval += 3;
+
+              frame = (ZMapFrame) fval;              
+            }
+        }
+    }
+  
+  return frame;
+}
+
 
 /* calculate strings on demand and run them through pango
  * for the example code this was derived from look at:
@@ -529,6 +558,8 @@ static void zmapWindowCanvasSequencePaintFeature(ZMapWindowFeaturesetItem featur
       char *p,*q;
       int i;
 
+      frame = featureCoordFindFrame(y + feature->y1, feature->feature);
+
       y_base = y / seq->factor;
       if(y_base >= sequence->length)
         break;
@@ -569,7 +600,6 @@ static void zmapWindowCanvasSequencePaintFeature(ZMapWindowFeaturesetItem featur
       
       pango_renderer_draw_layout(pango->renderer, pango->layout,
                                  cx * PANGO_SCALE, (cy + seq->offset) * PANGO_SCALE) ;
-
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
