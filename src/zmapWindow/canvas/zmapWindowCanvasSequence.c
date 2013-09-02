@@ -565,6 +565,8 @@ static void zmapWindowCanvasSequencePaintFeature(ZMapWindowFeaturesetItem featur
 
       //if(sequence->frame == ZMAPFRAME_2) zMapDebugPrintf("3FT paint dna %s @ %ld = %d (%ld)\n",seq->text, y_paint, cy, seq->offset);
 
+      int offset = seq->offset;
+      
       pango_renderer_draw_layout(pango->renderer, pango->layout,
                                  cx * PANGO_SCALE, (cy + seq->offset) * PANGO_SCALE) ;
 
@@ -847,11 +849,99 @@ gboolean zMapWindowCanvasFeaturesetGetSeqCoord(ZMapWindowFeaturesetItem features
 
   //zMapDebugPrintf("seq coord %.1f, %.1f, %.1f -> %ld\n",x,y,featureset->dy, seq_y);
 
+  /* gb10: the frame calculations below do not allow for ZMAPFRAME_NONE,
+   * which results in a negative (i.e. corrupt!) enum value, so I've changed it
+   * to ZMAPFRAME_0. This isn't correct either but I don't think this ever
+   * worked. I think we need to find the frame of the particular exon that this
+   * section of the translation is in. */
+
+  ZMapFrame frame = featureset->frame;
+  
+  if (frame == ZMAPFRAME_NONE)
+    {
+      /* We get here for the Show Translation column, where all 3 frames are in 
+       * the same column. We need to know which exon we're in to find the frame 
+       * for this particular section, but that's difficult because we can't work
+       * out exactly which coord we're at until we know the frame! For now just find 
+       * the closest exon and hope that's good enough. */
+      ZMapFeature feature = zmapWindowItemGetFeature((FooCanvasItem*)featureset) ;
+
+      gboolean first_time = TRUE;
+      gboolean found = FALSE;
+      int closest_dist = 0;
+      GList *exon_item = feature->feature.sequence.exon_list;
+
+      for ( ; exon_item; exon_item = exon_item->next)
+        {
+	  ZMapFullExon current_exon = (ZMapFullExon)(exon_item->data) ;
+          int x1 = current_exon->sequence_span.x1 - seq->start + 1;
+          int x2 = current_exon->sequence_span.x2 - seq->start + 1;
+          int y = seq_y;
+
+          /* Only consider coding exons */
+          if (current_exon->region_type == EXON_CODING ||
+              current_exon->region_type == EXON_SPLIT_CODON_5 ||
+              current_exon->region_type == EXON_SPLIT_CODON_3)
+            {
+              if (y >= x1 && y <= x2)
+                {
+                  /* Inside the exon - done */
+                  frame = x1 % 3;
+                  
+                  if (frame < ZMAPFRAME_0)
+                    frame += ZMAPFRAME_2;
+
+                  zMapDebugPrintf("Coord %d found in exon %d,%d (frame=%d)", y, x1, x2, frame);
+                  found = TRUE;                  
+                  break;
+                }
+              else if (y < x1)
+                {
+                  int cur_dist = x1 - y;
+              
+                  if (first_time || cur_dist < closest_dist)
+                    {
+                      first_time = FALSE;
+                      closest_dist = cur_dist;
+                      frame = x1 % 3;
+                  
+                      if (frame < ZMAPFRAME_0)
+                        frame += ZMAPFRAME_2;
+                    }
+                }
+              else /* y > x2 */
+                {
+                  int cur_dist = y - x2;
+                  
+                  if (first_time || cur_dist < closest_dist)
+                    {
+                      first_time = FALSE;
+                      closest_dist = cur_dist;
+                      frame = x1 % 3;
+                  
+                      if (frame < ZMAPFRAME_0)
+                        frame += ZMAPFRAME_2;
+                    }
+                }
+            }
+        }
+
+      if (frame == ZMAPFRAME_NONE)
+        {
+          zMapDebugPrintf("Could not find frame for Translation at coordinate %d", seq_y);
+          frame = ZMAPFRAME_0;
+        }
+      else if (!found)
+        {
+          zMapDebugPrintf("Coord %d nearest exon has frame=%d (dist=%d)", seq_y, frame, closest_dist);
+        }
+    }
+
 
   seq_y -= 1;                                                    /* zero base */
   if(seq->factor > 1)                                            /* bias to first base of residue */
     {
-      seq_y -= featureset->frame - ZMAPFRAME_0;                    /* remove frame offset */
+      seq_y -= frame - ZMAPFRAME_0;                    /* remove frame offset */
       seq_y -= seq_y % seq->factor;                            /* bias to start of residue */
     }
 
@@ -866,7 +956,7 @@ gboolean zMapWindowCanvasFeaturesetGetSeqCoord(ZMapWindowFeaturesetItem features
   seq_y += 1;                                                    /* start of this row in seq coords,
                                                                as we have 1-based coordinates */
   if(seq->factor > 1)
-    seq_y += featureset->frame - ZMAPFRAME_0;                    /* back to frame offset coords */
+    seq_y += frame - ZMAPFRAME_0;                    /* back to frame offset coords */
 
   //zMapDebugPrintf("row coord %ld\n", seq_y);
 
@@ -902,7 +992,7 @@ gboolean zMapWindowCanvasFeaturesetGetSeqCoord(ZMapWindowFeaturesetItem features
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  zMapDebugPrintf("seq_y = %ld %d\n",seq_y,featureset->frame);
+  zMapDebugPrintf("seq_y = %ld %d\n",seq_y,frame);
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 

@@ -192,8 +192,9 @@ typedef struct ZMapSequenceStruct_
 /* Where possible dna frame from which peptide translated. */
 /* use zMapFeatureFrame() instead, this is based on seq coords and is stable even if we extend the seq upwards */
 
-  int length ;                                             /* length of sequence in bases or peptides. */
-  char *sequence ;                                         /* Actual sequence." */
+  int length ;						    /* length of sequence in bases or peptides. */
+  char *sequence ;					    /* Actual sequence." */
+  GList *exon_list ;                                        /* If this sequence is a translation, this is the exon list it was translated from */
 } ZMapSequenceStruct, *ZMapSequence ;
 
 

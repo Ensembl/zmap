@@ -329,7 +329,7 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
       gboolean force = TRUE, force_to = TRUE, do_dna = FALSE, do_aa = FALSE, do_trans = TRUE ;
       char *seq ;
       int len ;
-      GList *exon_list = NULL, *exon_list_member;
+      GList *exon_list_member;
       ZMapFullExon current_exon ;
       char *pep_ptr ;
       int pep_start = 0, pep_end = 0 ;
@@ -382,6 +382,13 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
       /* Brute force, reinit the whole peptide string. */
       memset(seq, (int)SHOW_TRANS_BACKGROUND, trans_feature->feature.sequence.length) ;
 
+      /* Destroy any previous exon list */
+      if (trans_feature->feature.sequence.exon_list)
+        {
+          g_list_free(trans_feature->feature.sequence.exon_list);
+          trans_feature->feature.sequence.exon_list = NULL;
+        }
+      
       /* NOTE
        * to display exons well we need to offset the the phse in each one at high zoom
        * however, this code is not set up to do that so we are stuck with frame 1
@@ -389,9 +396,10 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
        */
 
       /* Get the exon descriptions from the feature. */
-      zMapFeatureAnnotatedExonsCreate(feature, TRUE, &exon_list) ;
+      zMapFeatureAnnotatedExonsCreate(feature, TRUE, &trans_feature->feature.sequence.exon_list) ;
 
       /* Get first/last members and set background of whole transcript to '-' */
+      GList *exon_list = trans_feature->feature.sequence.exon_list;
       exon_list_member = g_list_first(exon_list) ;
       do
         {
@@ -466,6 +474,29 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
 
                   pep_start = (pep_start + 2) / 3 ;
 
+#ifdef GB10_TEMP
+              int factor = ZMAPFRAME_2;
+              int frame = pep_start % factor;
+
+              if (frame < ZMAPFRAME_0)
+                frame += factor;
+              
+	      pep_start = (pep_start + factor - 1) / factor;
+
+              /* How many chars/bases overlap there is on either side of the peptide char
+               * (in practice this is always 1) */
+              int overlap = (factor - 1) / 2;
+              
+              /* The difference between the current frame and the display frame (always display in frame 1) */
+              int display_frame = ZMAPFRAME_0; 
+              int diff = frame - display_frame;
+
+              /* Shift our sequence so that it overlaps the corresponding peptide in 
+               * the display frame (in practice all this does is +1 when we're in 
+               * frame 3, because the difference then is 2 and the overlap is 1). */
+              pep_start += diff - overlap;
+#endif
+
                   pep_ptr = (seq + pep_start) - 1 ;
 
                   if (current_exon->peptide)
@@ -474,9 +505,8 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
             }
           while ((exon_list_member = g_list_next(exon_list_member))) ;
 
-
-          /* Revist whether we need to do this call or just a redraw...... */
-          zMapWindowToggleDNAProteinColumns(window, align_id, block_id, do_dna, do_aa, do_trans, force_to, force) ;
+      /* Revist whether we need to do this call or just a redraw...... */
+      zMapWindowToggleDNAProteinColumns(window, align_id, block_id, do_dna, do_aa, do_trans, force_to, force) ;
 
 #if 0
           /* i tried, but this does not highlight */
@@ -492,6 +522,7 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
 
   return ;
 }
+
 
 
 
@@ -549,12 +580,6 @@ static void highlightSequenceItems(ZMapWindow window, ZMapFeatureBlock block,
   tmp_frame = ZMAPFRAME_NONE ;
   set_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME) ;
 
-#if 0
-  if ((item = zmapWindowFToIFindItemFull(window,window->context_to_item,
-                                         block->parent->unique_id, block->unique_id,
-                                         set_id, tmp_strand, tmp_frame, 0)))
-    ;
-#endif
   {
     int frame_num, pep_start, pep_end ;
 
