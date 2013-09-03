@@ -2255,11 +2255,8 @@ static gboolean getFeatureName(NameFindType name_find, char *sequence, char *att
 	   * clarity in the GFFv2 spec....needs some attention.... */
 	  if (g_str_has_prefix(attributes, "Note"))
 	    {
-	      char *name = NULL ;
-
-	      if (getNameFromNote(attributes, &name))
+	      if (getNameFromNote(attributes, feature_name))
 		{
-		  *feature_name = g_strdup(name) ;
 		  *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
 							   start, end, query_start, query_end) ;
 
@@ -2328,11 +2325,8 @@ static gboolean getFeatureName(NameFindType name_find, char *sequence, char *att
 	   * clarity in the GFFv2 spec....needs some attention.... */
 	  if (g_str_has_prefix(attributes, "Note"))
 	    {
-	      char *name = NULL ;
-
-	      if (getNameFromNote(attributes, &name))
+	      if (getNameFromNote(attributes, feature_name))
 		{
-		  *feature_name = g_strdup(name) ;
 		  *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
 							   start, end, query_start, query_end) ;
 
@@ -3065,7 +3059,7 @@ static gboolean getNameFromNote(char *attributes, char **name)
 		}
 
 	      if (result)
-		*name = &(feature_name[0]) ;
+		*name = g_strdup(feature_name) ;
 	    }
 	}
     }
