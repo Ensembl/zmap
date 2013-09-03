@@ -957,6 +957,10 @@ static gboolean requestIsHighPriority(RequestQueueData *request_data)
     result = TRUE ;
   else if (!strcmp(request_data->command, ZACP_EDIT_FEATURE))
     result = TRUE ;
+  else if (!strcmp(request_data->command, ZACP_CREATE_FEATURE))
+    result = TRUE ;
+  else if (!strcmp(request_data->command, ZACP_DELETE_FEATURE))
+    result = TRUE ;
   else if (!strcmp(request_data->command, ZACP_SELECT_MULTI_FEATURE))
     result = TRUE ;
   else if (!strcmp(request_data->command, ZACP_FIND_FEATURE))
