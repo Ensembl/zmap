@@ -1376,9 +1376,7 @@ ZMapView zMapViewGetView(ZMapViewWindow view_window)
 {
   ZMapView view = NULL ;
 
-  zMapAssert(view_window) ;
-
-  if (view_window->parent_view->state != ZMAPVIEW_DYING)
+  if (view_window && view_window->parent_view && view_window->parent_view->state != ZMAPVIEW_DYING)
     view = view_window->parent_view ;
 
   return view ;
