@@ -333,9 +333,10 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
       GList *exon_list = NULL, *exon_list_member;
       ZMapFullExon current_exon ;
       char *pep_ptr ;
-      int pep_start, pep_end ;
+      int pep_start = 0, pep_end = 0 ;
       double seq_start;
       ZMapWindowFeaturesetItem fset;
+      gboolean found_cds = FALSE ;
 
       wild_id = zMapStyleCreateID("*") ;
 
@@ -397,86 +398,99 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
 	{
 	  current_exon = (ZMapFullExon)(exon_list_member->data) ;
 
-	  if (current_exon->region_type == EXON_CODING)
+	  if (current_exon->region_type == EXON_CODING ||
+              current_exon->region_type == EXON_SPLIT_CODON_5 ||
+              current_exon->region_type == EXON_SPLIT_CODON_3)
 	    {
 	      pep_start = current_exon->sequence_span.x1 - seq_start + 1;
+              found_cds = TRUE ; /* sanity check that a CDS exists */
 	      break ;
 	    }
 	}
       while ((exon_list_member = g_list_next(exon_list_member))) ;
 
+      if (!found_cds)
+        {
+          zMapWarning("%s %s", zMapFeatureName((ZMapFeatureAny)feature), "has no cds exons") ;
+        }
+      else
+        {
+          exon_list_member =  g_list_last(exon_list) ;
+          do
+            {
+              current_exon = (ZMapFullExon)(exon_list_member->data) ;
+              
+              if (current_exon->region_type == EXON_CODING ||
+                  current_exon->region_type == EXON_SPLIT_CODON_5 ||
+                  current_exon->region_type == EXON_SPLIT_CODON_3)
+                {
+                  pep_end = current_exon->sequence_span.x2 - seq_start + 1;
+                  
+                  break ;
+                }
+            }
+          while ((exon_list_member = g_list_previous(exon_list_member))) ;
+          
+          
+          if(!ZMAP_IS_WINDOW_FEATURESET_ITEM(trans_item))
+            zMapFeature2BlockCoords(block, &pep_start, &pep_end) ;
+          
+          pep_start = (pep_start + 2) / 3 ;	/* we assume frame 1, bias other frames backwards */
+          pep_end = (pep_end + 2) / 3 ;
+          
+          memset(((seq + pep_start) - 1), (int)SHOW_TRANS_INTRON, ((pep_end - pep_start))) ;
+          
+          /* Now memcpy peptide strings into appropriate places, remember to divide seq positions
+           * by 3 !!!!!! */
+          exon_list_member = g_list_first(exon_list) ;
+          do
+            {
+              gboolean show;
+              
+              current_exon = (ZMapFullExon)(exon_list_member->data) ;
+              
+              show = current_exon->region_type == EXON_CODING;
+              if (current_exon->region_type == EXON_SPLIT_CODON_3 || current_exon->region_type == EXON_SPLIT_CODON_5)
+                {
+                  if(current_exon->sequence_span.x2 - current_exon->sequence_span.x1 > 0)
+                    show = TRUE;
+                }
+              
+              if(show)
+                {
+                  int tmp = 0 ;
+                  
+                  pep_start = current_exon->sequence_span.x1 - seq_start + 1 ;
+                  
+                  if(!ZMAP_IS_WINDOW_FEATURESET_ITEM(trans_item))
+                    zMapFeature2BlockCoords(block, &pep_start, &tmp) ;
+                  
+                  pep_start = (pep_start + 2) / 3 ;
+                  
+                  pep_ptr = (seq + pep_start) - 1 ;
+                  
+                  if (current_exon->peptide)
+                    memcpy(pep_ptr, current_exon->peptide, strlen(current_exon->peptide)) ;
+                }
+            }
+          while ((exon_list_member = g_list_next(exon_list_member))) ;
+          
 
-      exon_list_member =  g_list_last(exon_list) ;
-      do
-	{
-	  current_exon = (ZMapFullExon)(exon_list_member->data) ;
-
-	  if (current_exon->region_type == EXON_CODING)
-	    {
-	      pep_end = current_exon->sequence_span.x2 - seq_start + 1;
-
-	      break ;
-	    }
-	}
-      while ((exon_list_member = g_list_previous(exon_list_member))) ;
-
-
-      if(!ZMAP_IS_WINDOW_FEATURESET_ITEM(trans_item))
-	zMapFeature2BlockCoords(block, &pep_start, &pep_end) ;
-
-      pep_start = (pep_start + 2) / 3 ;	/* we assume frame 1, bias other frames backwards */
-      pep_end = (pep_end + 2) / 3 ;
-
-      memset(((seq + pep_start) - 1), (int)SHOW_TRANS_INTRON, ((pep_end - pep_start))) ;
-
-      /* Now memcpy peptide strings into appropriate places, remember to divide seq positions
-       * by 3 !!!!!! */
-      exon_list_member = g_list_first(exon_list) ;
-      do
-	{
-	  gboolean show;
-
-	  current_exon = (ZMapFullExon)(exon_list_member->data) ;
-
-	  show = current_exon->region_type == EXON_CODING;
-	  if (current_exon->region_type == EXON_SPLIT_CODON_3 || current_exon->region_type == EXON_SPLIT_CODON_5)
-	    {
-	      if(current_exon->sequence_span.x2 - current_exon->sequence_span.x1 > 0)
-		show = TRUE;
-	    }
-
-	  if(show)
-	    {
-	      int tmp = 0 ;
-
-	      pep_start = current_exon->sequence_span.x1 - seq_start + 1 ;
-
-	      if(!ZMAP_IS_WINDOW_FEATURESET_ITEM(trans_item))
-		zMapFeature2BlockCoords(block, &pep_start, &tmp) ;
-
-	      pep_start = (pep_start + 2) / 3 ;
-
-	      pep_ptr = (seq + pep_start) - 1 ;
-	      memcpy(pep_ptr, current_exon->peptide, strlen(current_exon->peptide)) ;
-	    }
-	}
-      while ((exon_list_member = g_list_next(exon_list_member))) ;
-
-
-      /* Revist whether we need to do this call or just a redraw...... */
-      zMapWindowToggleDNAProteinColumns(window, align_id, block_id, do_dna, do_aa, do_trans, force_to, force) ;
+          /* Revist whether we need to do this call or just a redraw...... */
+          zMapWindowToggleDNAProteinColumns(window, align_id, block_id, do_dna, do_aa, do_trans, force_to, force) ;
 
 #if 0
-      /* i tried, but this does not highlight */
-      /* but previous implementation didn't either */
-      zmapWindowItemHighlightShowTranslationRegion(window, TRUE, FALSE,
-						   feature_to_translate,
-						   zMapFeatureFrame(feature),
-						   ZMAPSEQUENCE_PEPTIDE,
-						   feature->x1, feature->x2);
+          /* i tried, but this does not highlight */
+          /* but previous implementation didn't either */
+          zmapWindowItemHighlightShowTranslationRegion(window, TRUE, FALSE,
+                                                       feature_to_translate,
+                                                       zMapFeatureFrame(feature),
+                                                       ZMAPSEQUENCE_PEPTIDE,
+                                                       feature->x1, feature->x2);
 #endif
+        }
     }
-
+  
   return ;
 }
 
