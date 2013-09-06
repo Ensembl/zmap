@@ -5842,6 +5842,15 @@ static void readChapter(ZMapGuiNotebookChapter chapter, ZMapView view)
               zMapViewUpdateColumnBackground(view);
 	    }
 	}
+
+      if (zMapGUINotebookGetTagValue(page, "Enable Annotation column", "bool", &bool_value))
+	{
+	  if (view->show_scratch_column != bool_value)
+	    {
+	      view->show_scratch_column = bool_value ;
+              zMapViewUpdateColumnBackground(view); /*! \todo May need more than this to get the column to refresh */
+	    }
+	}
     }
 
   return ;
@@ -5890,6 +5899,10 @@ static ZMapGuiNotebookChapter makeChapter(ZMapGuiNotebook note_book_parent, ZMap
   tagvalue = zMapGUINotebookCreateTagValue(paragraph, "Highlight filtered columns",
 					   ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX,
 					   "bool", view->highlight_filtered_columns) ;
+
+  tagvalue = zMapGUINotebookCreateTagValue(paragraph, "Enable Annotation column",
+					   ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX,
+					   "bool", view->show_scratch_column) ;
 
   return chapter ;
 }

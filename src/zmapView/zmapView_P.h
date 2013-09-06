@@ -363,6 +363,8 @@ typedef struct _ZMapViewStruct
                                           // else use source featuresets in order as of old
 
   gboolean highlight_filtered_columns;    /* True if filtered columns should be highlighted */
+
+  gboolean show_scratch_column;           /* True if the scratch column should be enabled */
   
   /* We need to know if the user has done a revcomp for a few reasons to do with coord
    * transforms and the way annotation is done....*/

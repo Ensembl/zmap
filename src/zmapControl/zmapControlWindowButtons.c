@@ -62,7 +62,6 @@ static void columnConfigCB(GtkWidget *widget, gpointer data) ;
 static gboolean zoomEventCB(GtkWidget *wigdet, GdkEvent *event, gpointer data);
 static void frame3CB(GtkWidget *wigdet, gpointer data);
 static void dnaCB(GtkWidget *wigdet, gpointer data);
-static void scratchCB(GtkWidget *wigdet, gpointer data);
 static gboolean sequenceEventCB(GtkWidget *wigdet, GdkEvent *event, gpointer data);
 static void backButtonCB(GtkWidget *wigdet, gpointer data);
 
@@ -108,7 +107,6 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
     *unlock_button, *revcomp_button,
     *unsplit_button, *column_button,
     *frame3_button, *dna_button,
-    *scratch_button,
     *back_button, *separator ;
 
   hbox = gtk_hbox_new(FALSE, 0) ;
@@ -186,15 +184,6 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
   gtk_button_set_focus_on_click(GTK_BUTTON(dna_button), FALSE);
   gtk_box_pack_start(GTK_BOX(hbox), dna_button, FALSE, FALSE, 0) ;
-
-
-  zmap->scratch_but = scratch_button = gtk_button_new_with_label("Scratch");
-  gtk_signal_connect(GTK_OBJECT(scratch_button), "clicked",
-		     GTK_SIGNAL_FUNC(scratchCB), (gpointer)zmap);
-  gtk_button_set_focus_on_click(GTK_BUTTON(scratch_button), FALSE);
-  gtk_box_pack_start(GTK_BOX(hbox), scratch_button, FALSE, FALSE, 0) ;
-
-
 
   zmap->column_but = column_button = gtk_button_new_with_label("Columns");
   gtk_signal_connect(GTK_OBJECT(column_button), "clicked",
@@ -706,24 +695,6 @@ static void dnaCB(GtkWidget *wigdet, gpointer cb_data)
   window = zMapViewGetWindow(zmap->focus_viewwindow) ;
 
   zMapWindowToggleDNAProteinColumns(window, align_id, block_id, do_dna, do_aa, do_trans, force_to, force);
-
-  return ;
-}
-
-
-static void scratchCB(GtkWidget *wigdet, gpointer cb_data)
-{
-  ZMap zmap = (ZMap)cb_data ;
-  ZMapWindow window ;
-  GQuark align_id = 0, block_id = 0;
-  gboolean force = FALSE,
-    force_to     = TRUE;
-
-  zMapAssert(zmap->focus_viewwindow) ;
-
-  window = zMapViewGetWindow(zmap->focus_viewwindow) ;
-
-  zMapWindowToggleScratchColumn(window, align_id, block_id, force_to, force);
 
   return ;
 }
