@@ -110,7 +110,7 @@
 #define COLUMN_THIS_ONE            "Configure This Column"
 #define COLUMN_ALL                 "Configure All Columns"
 #define COLUMN_BUMP_OPTS           "Column Bump More Opts"
-#define SCRATCH_CONFIG_STR         "Edit Column"
+#define SCRATCH_CONFIG_STR         "Annotation Column"
 #define SCRATCH_COPY_FEATURE       "Copy selected feature"
 #define SCRATCH_COPY_SUBFEATURE    "Copy selected subfeature"
 #define SCRATCH_UNDO               "Undo"
