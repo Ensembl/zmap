@@ -254,11 +254,6 @@ void zmapAppExit(ZMapAppContext app_context) ;
 void zmapAppPingStart(ZMapAppContext app_context) ;
 void zmapAppPingStop(ZMapAppContext app_context) ;
 
-/* old remote stuff.... */
-void zmapAppRemoteInstaller(GtkWidget *widget, gpointer app_context_data);
-void zmapAppRemoteSendFinalised(ZMapAppContext app_context);
-
-
 /* New remote control interface */
 ZMapRemoteAppMakeRequestFunc zmapAppRemoteControlGetRequestCB(void) ;
 gboolean zmapAppRemoteControlCreate(ZMapAppContext app_context,
