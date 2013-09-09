@@ -333,6 +333,9 @@ static char *actions_G[ZMAPVIEW_REMOTE_UNKNOWN + 1] =
 
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
 /* Where is all starts from. Everything else should be static */
 void zmapViewSetupXRemote(ZMapView view, GtkWidget *widget)
 {
@@ -346,6 +349,10 @@ void zmapViewSetupXRemote(ZMapView view, GtkWidget *widget)
   return ;
 }
 
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+/* this still seems to be called damn it..... */
 
 char *zMapViewRemoteReceiveAccepts(ZMapView view)
 {
@@ -357,6 +364,9 @@ char *zMapViewRemoteReceiveAccepts(ZMapView view)
 
   return xml;
 }
+
+
+
 
 
 

@@ -10,8 +10,6 @@ zmapControlImportFile.c\
 zmapControlNavigator.c \
 zmapControlPreferences.c \
 zmapControlRemoteControl.c \
-zmapControlRemoteReceive.c \
-zmapControlRemoteSend.c \
 zmapControlViews.c \
 zmapControlWindow.c \
 zmapControlWindowButtons.c \

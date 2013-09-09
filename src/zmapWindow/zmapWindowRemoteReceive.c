@@ -84,6 +84,10 @@ static char *actions_G[ZMAPWINDOW_REMOTE_UNKNOWN + 1] =
 
 
 
+
+/* THIS STILL SEEMS TO BE NEEDED BUT SHOULDN'T BE CALLED..... */
+
+
 char *zMapWindowRemoteReceiveAccepts(ZMapWindow window)
 {
   char *xml = NULL;
@@ -94,6 +98,8 @@ char *zMapWindowRemoteReceiveAccepts(ZMapWindow window)
 
   return xml;
 }
+
+
 
 
 

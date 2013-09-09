@@ -594,53 +594,6 @@ static ZMapXMLUtilsEventStack makeViewElement(ZMapView view)
 
 
 
-
-
-
-
-/* 
- * 
- * 
- *             OLD CODE......................
- * 
- * 
- */
-
-
-
-void zmapControlRemoteInstaller(GtkWidget *widget, GdkEvent *event, gpointer user_data)
-{
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  ZMap zmap = (ZMap)user_data ;
-
-  zMapXRemoteInitialiseWidget(widget, PACKAGE_NAME,
-                              ZMAP_DEFAULT_REQUEST_ATOM_NAME,
-                              ZMAP_DEFAULT_RESPONSE_ATOM_NAME,
-                              control_execute_command, zmap) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-  return ;
-}
-
-char *zMapControlRemoteReceiveAccepts(ZMap zmap)
-{
-  char *xml = NULL;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  xml = zMapXRemoteClientAcceptsActionsXML(zMapXRemoteWidgetGetXID(zmap->toplevel),
-                                           &actions_G[ZMAPCONTROL_REMOTE_INVALID + 1],
-                                           ZMAPCONTROL_REMOTE_UNKNOWN - 1);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-  return xml;
-}
-
-
-
-
 /* ========================= */
 /* ONLY INTERNALS BELOW HERE */
 /* ========================= */

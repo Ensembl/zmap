@@ -13,7 +13,6 @@ zmapViewFeatureMask.c \
 zmapViewFeatureCollapse.c \
 zmapViewRemoteControl.c \
 zmapViewRemoteReceive.c \
-zmapViewRemoteSend.c \
 $(NULL)
 
 libZMapView_la_CFLAGS = $(INCLUDE_COMMON)
