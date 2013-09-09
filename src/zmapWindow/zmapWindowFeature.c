@@ -367,7 +367,7 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow      window,
       zMapAssertNotReached();
       return NULL ;
     }
-  if ((zMapStyleIsStrandSpecific(style)) && window->revcomped_features &&
+  if ((zMapStyleIsStrandSpecific(style)) && window->flags[ZMAPFLAG_REVCOMPED_FEATURES] &&
       ((feature->strand == ZMAPSTRAND_FORWARD) && (zMapStyleIsHideForwardStrand(style))))
     {
       zMapAssertNotReached();
@@ -1058,7 +1058,7 @@ static void callXRemote(ZMapWindow window, ZMapFeatureAny feature_any,
   /* REVCOMP COORD HACK......THIS HACK IS BECAUSE OUR COORD SYSTEM IS MUCKED UP FOR
    * REVCOMP'D FEATURES..... */
   /* Convert coords */
-  if (window->revcomped_features)
+  if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
     {
       /* remap coords to forward strand range and also swop
        * them as they get reversed in revcomping.... */

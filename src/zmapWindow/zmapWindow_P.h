@@ -810,9 +810,7 @@ typedef struct _ZMapWindowStruct
 
   ZMapWindowState state;	/* need to store this see revcomp, RT 229703 */
 
-  /* We need to be able to find out if the user has done a revcomp for coordinate display
-   * and other reasons. */
-  gboolean revcomped_features ;
+  gboolean *flags ; /* array of flags from the view level */
 
   /* The display_forward_coords flag controls whether coords are displayed
    * always as if for the original forward strand or for the whichever is the current forward

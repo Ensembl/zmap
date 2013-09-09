@@ -89,7 +89,7 @@ static gboolean scratchGetStartEndFlag(ZMapView view)
   gboolean value = FALSE;
   
   /* Update the relevant flag for the current strand */
-  if (view->revcomped_features)
+  if (view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
     value = view->scratch_start_end_set_rev;
   else
     value = view->scratch_start_end_set;
@@ -105,7 +105,7 @@ static gboolean scratchGetStartEndFlag(ZMapView view)
 static void scratchSetStartEndFlag(ZMapView view, gboolean value)
 {
   /* Update the relevant flag for the current strand */
-  if (view->revcomped_features)
+  if (view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
     view->scratch_start_end_set_rev = value;
   else
     view->scratch_start_end_set = value;
@@ -119,7 +119,7 @@ static GList* scratchGetMergedFeatures(ZMapView view)
 {
   GList *list = NULL;
   
-  if (view->revcomped_features && view->scratch_features_rev)
+  if (view->flags[ZMAPFLAG_REVCOMPED_FEATURES] && view->scratch_features_rev)
     list = view->scratch_features_rev;
   else if (view->scratch_features)
     list = view->scratch_features;
@@ -135,7 +135,7 @@ static GList** scratchGetMergedFeaturesPtr(ZMapView view)
 {
   GList **list = NULL;
   
-  if (view->revcomped_features)
+  if (view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
     list = &view->scratch_features_rev;
   else
     list = &view->scratch_features;
@@ -838,7 +838,7 @@ void scratchFeatureRecreate(ZMapView view)
   /* Loop through each feature in the merge list and merge it in */
   GError *error = NULL;
   ScratchMergeDataStruct merge_data = {view, scratch_featureset, scratch_feature, &error, NULL, NULL, 0, 0, FALSE};
-  GList *list_item = view->revcomped_features ? view->scratch_features_rev : view->scratch_features;
+  GList *list_item = view->flags[ZMAPFLAG_REVCOMPED_FEATURES] ? view->scratch_features_rev : view->scratch_features;
   
   for ( ; list_item; list_item = list_item->next)
     {
@@ -915,7 +915,7 @@ static void freeListFull(GList *list, GDestroyNotify free_func)
 gboolean zmapViewScratchClear(ZMapView view)
 { 
   /* Clear the list of features in the scratch column */
-  if (view->revcomped_features && view->scratch_features_rev)
+  if (view->flags[ZMAPFLAG_REVCOMPED_FEATURES] && view->scratch_features_rev)
     {
       freeListFull(view->scratch_features_rev, g_free);
       view->scratch_features_rev = NULL;

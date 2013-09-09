@@ -111,6 +111,16 @@ typedef enum
     ZMAP_WINDOW_3FRAME_ALL				    /* All 3 frame cols. */
   } ZMapWindow3FrameMode ;
 
+typedef enum 
+  {
+    ZMAPFLAG_REVCOMPED_FEATURES,         /* True if the user has done a revcomp */
+    ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS, /* True if filtered columns should be highlighted */
+    ZMAPFLAG_SHOW_SCRATCH_COLUMN,        /* True if the scratch column should be enabled */
+    
+    ZMAPFLAG_NUM_FLAGS                   /* Must be last in list */
+  } ZMapFlag;
+
+
 
 /*! ZMap Window has various callbacks which will return different types of data for various actions. */
 
@@ -391,7 +401,7 @@ typedef struct _ZMapWindowCallbacksStruct
 void zMapWindowInit(ZMapWindowCallbacks callbacks) ;
 ZMapWindow zMapWindowCreate(GtkWidget *parent_widget,
                             ZMapFeatureSequenceMap sequence, void *app_data,
-                            GList *feature_set_names) ;
+                            GList *feature_set_names, gboolean *flags) ;
 ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, ZMapFeatureSequenceMap sequence,
 			  void *app_data, ZMapWindow old,
 			  ZMapFeatureContext features, GHashTable *all_styles, GHashTable *new_styles,

@@ -362,14 +362,7 @@ typedef struct _ZMapViewStruct
   gboolean columns_set;                   // if set from config style use config only
                                           // else use source featuresets in order as of old
 
-  gboolean highlight_filtered_columns;    /* True if filtered columns should be highlighted */
-
-  gboolean show_scratch_column;           /* True if the scratch column should be enabled */
-  
-  /* We need to know if the user has done a revcomp for a few reasons to do with coord
-   * transforms and the way annotation is done....*/
-  gboolean revcomped_features ;
-
+  gboolean flags[ZMAPFLAG_NUM_FLAGS] ;    /* boolean flags */
 
   /* Be good to get rid of this window stuff in any restructure..... */
   GList *window_list ;					    /* Of ZMapViewWindow. */

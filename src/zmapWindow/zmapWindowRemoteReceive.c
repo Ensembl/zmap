@@ -334,7 +334,7 @@ static void zoomWindowToFeature(ZMapWindow window, RequestData input_data, Respo
       ZMapFeature feature = (ZMapFeature)(list->data);
       input_data->zoomed  = FALSE;
 
-      if (window->revcomped_features)
+      if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
 	zMapFeatureContextReverseComplement(input_data->edit_context, window->context_map->styles) ;
 
       zMapFeatureContextExecute((ZMapFeatureAny)(input_data->edit_context), ZMAPFEATURE_STRUCT_FEATURE,

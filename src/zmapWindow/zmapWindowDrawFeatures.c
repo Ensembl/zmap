@@ -248,7 +248,7 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
 
   window->seqLength = zmapWindowExt(window->sequence->start, window->sequence->end) ;
 
-  zmapWindowScaleCanvasSetRevComped(window->ruler, window->revcomped_features) ;
+  zmapWindowScaleCanvasSetRevComped(window->ruler, window->flags[ZMAPFLAG_REVCOMPED_FEATURES]) ;
 /*
  * MH17: after a revcomp we end up with 1-based coords if we have no official parent span
  * which is very confusing but valid. To display the ruler properly we need to use those coordinates
@@ -270,7 +270,7 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
   zMapLogWarning("drawFeatures window: %d-%d (%d,%d), %d (%f,%f), canvas = %p",
   window->sequence->start,window->sequence->end,
   seq_start,seq_end,
-  window->revcomped_features,
+  window->flags[ZMAPFLAG_REVCOMPED_FEATURES],
   window->min_coord,window->max_coord,
   window->canvas);
 #endif

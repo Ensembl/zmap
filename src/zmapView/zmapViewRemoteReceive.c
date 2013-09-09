@@ -2066,7 +2066,7 @@ static gboolean xml_feature_end_cb(gpointer user_data, ZMapXMLElement sub_elemen
 		{
 		  /* If we are revcomp'd then any feature passed to us by an external client will
 		   * be on the opposite strand from what we expect so we need to revcomp. */
-		  if (request_data->view->revcomped_features)
+		  if (request_data->view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
 		    {
 		      zMapFeatureReverseComplement(request_data->orig_context, request_data->edit_feature) ;
 		    }

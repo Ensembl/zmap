@@ -81,7 +81,7 @@ int zmapWindowCoordToDisplay(ZMapWindow window, int coord)
        * but note that max_coord has been incremented to cover beyoned the last base
        */
       coord = coord - window->min_coord + 1;
-      if(window->revcomped_features)
+      if(window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
 //          coord -= window->max_coord  - window->min_coord + 2;
             coord -= window->sequence->end - window->sequence->start + 2;
 
@@ -99,7 +99,7 @@ void zmapWindowCoordPairToDisplay(ZMapWindow window,
 
   /* Note that the start/ends get swopped if we are reversed complemented and
    * display forwards coords so their order fits the "forwards" display. */
-  if (window->revcomped_features && window->display_forward_coords)
+  if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES] && window->display_forward_coords)
     ZMAP_SWAP_TYPE(int, start, end) ;
 
   *display_start_out = start ;
@@ -128,7 +128,7 @@ int zmapWindowWorldToSequenceForward(ZMapWindow window, int coord)
 
   /* new coord is the 'current forward strand' sequence coordinate */
 
-  if(window->revcomped_features)
+  if(window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
   {
       span = &window->feature_context->parent_span;
 //      new_coord -= span->x2 - span->x1 + 1;
@@ -147,7 +147,7 @@ int zmapWindowCoordFromDisplay(ZMapWindow window, int coord)
  * coords get converted to display then converted back to sequence
  * better to fix in the caller by not calling this!
  */
-  if(window->revcomped_features)
+  if(window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
 //      coord += window->max_coord - window->min_coord + 2;
 // max coord was seq_end+1 before revcomp
       coord += window->sequence->end - window->sequence->start + 2;
@@ -165,7 +165,7 @@ ZMapStrand zmapWindowStrandToDisplay(ZMapWindow window, ZMapStrand strand_in)
 {
   ZMapStrand strand = ZMAPSTRAND_NONE ;
 
-  if (window->revcomped_features && window->display_forward_coords)
+  if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES] && window->display_forward_coords)
     {
       if (strand_in == ZMAPSTRAND_FORWARD)
 	strand = ZMAPSTRAND_REVERSE ;

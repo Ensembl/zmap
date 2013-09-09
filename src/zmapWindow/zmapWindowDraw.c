@@ -1195,7 +1195,7 @@ static void toggleColumnInMultipleBlocks(ZMapWindow window, char *name,
 							featureset_unique,
 // DNA is reverse but ST is fwd when revcomped
 // this is very tedious
-//							window->revcomped_features ? ZMAPSTRAND_REVERSE: ZMAPSTRAND_FORWARD,
+//							window->flags[ZMAPFLAG_REVCOMPED_FEATURES] ? ZMAPSTRAND_REVERSE: ZMAPSTRAND_FORWARD,
 							ZMAPSTRAND_FORWARD,
 							frame) ;
 

@@ -190,7 +190,8 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
                                  ZMapFeatureSequenceMap sequence, void *app_data,
                                  GList *feature_set_names,
 				 GtkAdjustment *hadjustment,
-                                 GtkAdjustment *vadjustment) ;
+                                 GtkAdjustment *vadjustment,
+                                 gboolean *flags) ;
 static void myWindowZoom(ZMapWindow window, double zoom_factor, double curr_pos) ;
 static void myWindowMove(ZMapWindow window, double start, double end) ;
 
@@ -394,13 +395,13 @@ ZMapWindowCallbacks zmapWindowGetCBs(void)
 
 ZMapWindow zMapWindowCreate(GtkWidget *parent_widget,
                             ZMapFeatureSequenceMap sequence, void *app_data,
-                            GList *feature_set_names)
+                            GList *feature_set_names, gboolean *flags)
 {
   ZMapWindow window ;
 
   window = myWindowCreate(parent_widget, sequence, app_data,
                           feature_set_names,
-                          NULL, NULL) ;
+                          NULL, NULL, flags) ;
 
   return window ;
 }
@@ -437,7 +438,8 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, ZMapFeatureSequenceMap seque
 
   new_window = myWindowCreate(parent_widget, sequence, app_data,
                               original_window->feature_set_names,
-                              hadjustment, vadjustment) ;
+                              hadjustment, vadjustment, 
+                              original_window->flags) ;
   zMapAssert(new_window) ;
 
   zmapWindowBusy(new_window, TRUE) ;
@@ -463,9 +465,8 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, ZMapFeatureSequenceMap seque
   new_window->seqLength = original_window->seqLength ;
 
   /* Set revcomp'd features. */
-  new_window->revcomped_features = original_window->revcomped_features ;
   new_window->display_forward_coords = original_window->display_forward_coords ;
-  zmapWindowScaleCanvasSetRevComped(new_window->ruler, original_window->revcomped_features) ;
+  zmapWindowScaleCanvasSetRevComped(new_window->ruler, original_window->flags[ZMAPFLAG_REVCOMPED_FEATURES]) ;
 							    /* Sets display_forward too... */
 
   zmapWindowZoomControlCopyTo(original_window->zoom, new_window->zoom);
@@ -862,11 +863,6 @@ void zMapWindowFeatureSaveState(ZMapWindow window, gboolean features_are_revcomp
       zmapWindowStateSaveZoom(window->state, zMapWindowGetZoomFactor(window));
     }
   
-  if (features_are_revcomped)
-    {
-      window->revcomped_features = !window->revcomped_features ;
-    }
-
   zMapStopTimer("WindowFeatureRedraw","Revcomp");
 
   return ;
@@ -2094,7 +2090,8 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
                                  ZMapFeatureSequenceMap sequence, void *app_data,
                                  GList *feature_set_names,
 				 GtkAdjustment *hadjustment,
-                                 GtkAdjustment *vadjustment)
+                                 GtkAdjustment *vadjustment,
+                                 gboolean *flags)
 {
   ZMapWindow window = NULL ;
   GtkWidget *canvas, *eventbox ;
@@ -2128,7 +2125,6 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
   window->app_data = app_data ;
   window->parent_widget = parent_widget ;
 
-  window->revcomped_features = FALSE ;
   window->display_forward_coords = TRUE ;
 //  window->origin = 1 ;
 
@@ -2168,6 +2164,7 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
   /* Add a hash table to map features to their canvas items. */
   window->context_to_item = zmapWindowFToICreate() ;
 
+  window->flags = flags ;
 
   /* Init. lists of dialog windows attached to this zmap window. */
   window->featureListWindows = g_ptr_array_new() ;
@@ -2625,7 +2622,7 @@ static void resetCanvas(ZMapWindow window, gboolean free_child_windows, gboolean
        * and window state restore then later adjusts everything using the
        * previous saved coordinates that are revcomped to agree with this
        */
-      if(window->revcomped_features && window->scroll_initialised && free_revcomp_safe_windows)
+      if(window->flags[ZMAPFLAG_REVCOMPED_FEATURES] && window->scroll_initialised && free_revcomp_safe_windows)
         {
           double y1,y2,x1,x2;
           
@@ -5919,7 +5916,7 @@ static char *makePrimarySelectionText(ZMapWindow window) //, FooCanvasItem *high
 	      FeatureCoordStruct feature_coord ;
 	      int index ;
 
-	      if (window->revcomped_features)
+	      if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
 		index = item_feature->feature.transcript.exons->len - (i + 1) ;
 	      else
 		index = i ;

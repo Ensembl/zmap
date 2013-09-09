@@ -1071,9 +1071,9 @@ gboolean zMapViewReverseComplement(ZMapView zmap_view)
 	zMapLogTime(TIMER_REVCOMP,TIMER_STOP,0,"Context");
 
       /* Set our record of reverse complementing. */
-      zmap_view->revcomped_features = !(zmap_view->revcomped_features) ;
+      zmap_view->flags[ZMAPFLAG_REVCOMPED_FEATURES] = !(zmap_view->flags[ZMAPFLAG_REVCOMPED_FEATURES]) ;
 
-      zMapWindowNavigatorSetStrand(zmap_view->navigator_window, zmap_view->revcomped_features);
+      zMapWindowNavigatorSetStrand(zmap_view->navigator_window, zmap_view->flags[ZMAPFLAG_REVCOMPED_FEATURES]);
       zMapWindowNavigatorDrawFeatures(zmap_view->navigator_window, zmap_view->features, zmap_view->context_map.styles);
 
       if((list_item = g_list_first(zmap_view->window_list)))
@@ -1105,7 +1105,7 @@ gboolean zMapViewReverseComplement(ZMapView zmap_view)
 /* Return which strand we are showing viz-a-viz reverse complementing. */
 gboolean zMapViewGetRevCompStatus(ZMapView zmap_view)
 {
-  return zmap_view->revcomped_features ;
+  return zmap_view->flags[ZMAPFLAG_REVCOMPED_FEATURES] ;
 }
 
 
@@ -1895,7 +1895,7 @@ ZMapViewConnection zmapViewRequestServer(ZMapView view, ZMapViewConnection view_
       zMapFeatureBlockSetFeaturesCoords(block, req_start, req_end) ;
 
 
-		if (view->revcomped_features)
+		if (view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
 		{
 			/* revcomp our empty context to get external fwd strand coordinates */
 			zMapFeatureContextReverseComplement(context, view->context_map.styles);
@@ -2704,11 +2704,12 @@ static ZMapView createZMapView(char *view_name, GList *sequences, void *app_data
 
   zmap_view->app_data = app_data ;
 
-  zmap_view->revcomped_features = FALSE ;
-
   zmap_view->kill_blixems = TRUE ;
 
-  zmap_view->highlight_filtered_columns = FALSE;
+  /* Set all flags to false by default */ 
+  int flag = 0 ;
+  for ( ; flag < ZMAPFLAG_NUM_FLAGS; ++flag)
+    zmap_view->flags[flag] = FALSE ;
 
   return zmap_view ;
 }
@@ -2723,7 +2724,7 @@ static ZMapViewWindow addWindow(ZMapView zmap_view, GtkWidget *parent_widget)
   view_window = createWindow(zmap_view, NULL) ;
 
   /* There are no steps where this can fail at the moment. */
-  window = zMapWindowCreate(parent_widget, zmap_view->view_sequence, view_window, NULL) ;
+  window = zMapWindowCreate(parent_widget, zmap_view->view_sequence, view_window, NULL, zmap_view->flags) ;
   zMapAssert(window) ;
 
   view_window->window = window ;
@@ -4710,7 +4711,7 @@ static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inou
 
 
   /* When coming from xremote we don't need to do this. */
-  if (revcomp_if_needed && view->revcomped_features)
+  if (revcomp_if_needed && view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
     {
       zMapFeatureContextReverseComplement(new_features, view->context_map.styles);
     }
@@ -4887,7 +4888,7 @@ static void justDrawContext(ZMapView view, ZMapFeatureContext diff_context,
    * negates the need to keep state as to the length of the sequence,
    * the number of times the scale bar has been drawn, etc... */
   zMapWindowNavigatorReset(view->navigator_window); /* So reset */
-  zMapWindowNavigatorSetStrand(view->navigator_window, view->revcomped_features);
+  zMapWindowNavigatorSetStrand(view->navigator_window, view->flags[ZMAPFLAG_REVCOMPED_FEATURES]);
   /* and draw with _all_ the view's features. */
   zMapWindowNavigatorDrawFeatures(view->navigator_window, view->features, view->context_map.styles);
 
@@ -4938,7 +4939,7 @@ static void commandCB(ZMapWindow window, void *caller_data, void *window_data)
 	int req_start = get_data->start;
 	int req_end = get_data->end;
 
-	if (view->revcomped_features)
+	if (view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
 	  {
             int tmp;
 
@@ -5836,18 +5837,18 @@ static void readChapter(ZMapGuiNotebookChapter chapter, ZMapView view)
     {
       if (zMapGUINotebookGetTagValue(page, "Highlight filtered columns", "bool", &bool_value))
 	{
-	  if (view->highlight_filtered_columns != bool_value)
+	  if (view->flags[ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS] != bool_value)
 	    {
-	      view->highlight_filtered_columns = bool_value ;
+              view->flags[ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS] = bool_value ;
               zMapViewUpdateColumnBackground(view);
 	    }
 	}
 
       if (zMapGUINotebookGetTagValue(page, "Enable Annotation column", "bool", &bool_value))
 	{
-	  if (view->show_scratch_column != bool_value)
+	  if (view->flags[ZMAPFLAG_SHOW_SCRATCH_COLUMN] != bool_value)
 	    {
-	      view->show_scratch_column = bool_value ;
+	      view->flags[ZMAPFLAG_SHOW_SCRATCH_COLUMN] = bool_value ;
               zMapViewUpdateColumnBackground(view); /*! \todo May need more than this to get the column to refresh */
 	    }
 	}
@@ -5898,11 +5899,11 @@ static ZMapGuiNotebookChapter makeChapter(ZMapGuiNotebook note_book_parent, ZMap
 
   tagvalue = zMapGUINotebookCreateTagValue(paragraph, "Highlight filtered columns",
 					   ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX,
-					   "bool", view->highlight_filtered_columns) ;
+					   "bool", view->flags[ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS]) ;
 
   tagvalue = zMapGUINotebookCreateTagValue(paragraph, "Enable Annotation column",
 					   ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX,
-					   "bool", view->show_scratch_column) ;
+					   "bool", view->flags[ZMAPFLAG_SHOW_SCRATCH_COLUMN]) ;
 
   return chapter ;
 }
@@ -5926,7 +5927,7 @@ ZMapGuiNotebookChapter zMapViewGetPrefsChapter(ZMapView view, ZMapGuiNotebook no
  */
 gboolean zMapViewGetHighlightFilteredColumns(ZMapView view)
 {
-  return view->highlight_filtered_columns;
+  return view->flags[ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS];
 };
 
 
@@ -5962,7 +5963,7 @@ static ZMapFeatureContextExecuteStatus updateColumnBackgroundCB(GQuark key,
     case ZMAPFEATURE_STRUCT_FEATURESET:
       {
         ZMapFeatureSet feature_set = (ZMapFeatureSet)feature_any;        
-        gboolean highlight_filtered_columns = zMapViewGetHighlightFilteredColumns(view);
+        gboolean highlight_filtered_columns = view->flags[ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS] ;
         GList *list_item = g_list_first(view->window_list);
         
         for ( ; list_item; list_item = g_list_next(list_item))

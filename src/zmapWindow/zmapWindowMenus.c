@@ -492,10 +492,13 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
 
   menu_sets = g_list_append(menu_sets, separator) ;
 
-  /* Scratch column ops */
-  menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuScratchOps(NULL, NULL, menu_data)) ;
-  menu_sets = g_list_append(menu_sets, separator) ;
-
+  if (window->flags[ZMAPFLAG_SHOW_SCRATCH_COLUMN])
+    {
+      /* Scratch column ops */
+      menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuScratchOps(NULL, NULL, menu_data)) ;
+      menu_sets = g_list_append(menu_sets, separator) ;
+    }
+  
   /* Big bump menu.... */
   menu_sets = g_list_append(menu_sets,
 			    zmapWindowMakeMenuBump(NULL, NULL, menu_data,
@@ -633,9 +636,12 @@ void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
   menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuFeatureOps(NULL, NULL, cbdata)) ;
   menu_sets = g_list_append(menu_sets, separator) ;
 
-  menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuScratchOps(NULL, NULL, cbdata)) ;
-  menu_sets = g_list_append(menu_sets, separator) ;
-
+  if (window->flags[ZMAPFLAG_SHOW_SCRATCH_COLUMN])
+    {
+      menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuScratchOps(NULL, NULL, cbdata)) ;
+      menu_sets = g_list_append(menu_sets, separator) ;
+    }
+  
   menu_sets
     = g_list_append(menu_sets,
 		    zmapWindowMakeMenuBump(NULL, NULL, cbdata,

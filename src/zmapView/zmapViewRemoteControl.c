@@ -2013,7 +2013,7 @@ static gboolean xml_feature_end_cb(gpointer user_data, ZMapXMLElement sub_elemen
 	{
 	  /* It's probably here that we need to revcomp the feature if the
 	   * view is revcomp'd.... */
-	  if (request_data->view_window->parent_view->revcomped_features)
+	  if (request_data->view_window->parent_view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
 	    {
 	      zMapFeatureReverseComplement(request_data->orig_context, request_data->edit_feature) ;
 	    }

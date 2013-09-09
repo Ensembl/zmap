@@ -622,7 +622,7 @@ static void filterValueChangedCB(GtkSpinButton *spinbutton, gpointer user_data)
   if(zmap->filter.func)
     {
       ZMapView zmap_view = zMapViewGetView(zmap->focus_viewwindow);
-      gboolean highlight_filtered_columns = zMapViewGetHighlightFilteredColumns(zmap_view);
+      gboolean highlight_filtered_columns = zMapViewGetHighlightFilteredColumns(zmap_view) ;
       zmap->filter.n_filtered = zmap->filter.func(&zmap->filter, value, highlight_filtered_columns);
       zMapViewUpdateColumnBackground(zmap_view);
     }

@@ -231,7 +231,7 @@ void zmapWindowUpdateXRemoteDataFull(ZMapWindow window, ZMapFeatureAny feature_a
   /* REVCOMP COORD HACK......THIS HACK IS BECAUSE OUR COORD SYSTEM IS MUCKED UP FOR
    * REVCOMP'D FEATURES..... */
   /* Convert coords */
-  if (window->revcomped_features)
+  if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
     {
       /* remap coords to forward strand range and also swop
        * them as they get reversed in revcomping.... */
@@ -532,7 +532,7 @@ static void getWindowMark(ZMapWindow window, RemoteCommandRCType *command_rc_out
   else
     {
       /* Need to check for revcomp..... */
-      if (window->revcomped_features)
+      if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
 	{
 	  ZMapFeatureAlignment align ;
 	  ZMapFeatureBlock block ;
