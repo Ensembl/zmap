@@ -1083,7 +1083,14 @@ static gint find_name_cb(gconstpointer list_data, gconstpointer user_data)
   list_column_name  = (const char *)list_data;
   query_column_name = (const char *)user_data;
 
-  match = g_ascii_strcasecmp(list_column_name, query_column_name);
+  if (!list_column_name && !query_column_name)
+    match = 0 ;
+  else if (!list_column_name)
+    match = -1 ;
+  else if (!query_column_name)
+    match = 1 ;
+  else
+    match = g_ascii_strcasecmp(list_column_name, query_column_name);
 
   return match;
 }
@@ -1391,8 +1398,19 @@ static FooCanvasGroup *configure_get_point_block_container(ColConfigure configur
 
 gint col_sort_by_name(gconstpointer a, gconstpointer b)
 {
+  int result = 0 ;
+  
   /* we sort by unique but display original; the result should be the same */
-  return(g_ascii_strcasecmp(g_quark_to_string(GPOINTER_TO_UINT(a)),g_quark_to_string(GPOINTER_TO_UINT(b))));
+  if (!a && !b)
+    result = 0 ;
+  else if (!a)
+    result = -1 ;
+  else if (!b)
+    result = 1 ;
+  else
+    result = (g_ascii_strcasecmp(g_quark_to_string(GPOINTER_TO_UINT(a)),g_quark_to_string(GPOINTER_TO_UINT(b))));
+
+  return result ;
 }
 
 /* get all deferered columns or just the one specified */
