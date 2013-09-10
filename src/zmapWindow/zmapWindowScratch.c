@@ -25,8 +25,8 @@
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- * Description: Implements the "scratch" or "edit" column in zmap. This
- *              is a column where the user can create and edit temporary 
+ * Description: Implements the Annotation column in zmap. This is a 
+ *              column where the user can create and edit temporary 
  *              gene model objects.
  *
  * Exported functions: See zmapWindow_P.h

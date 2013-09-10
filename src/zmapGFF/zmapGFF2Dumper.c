@@ -524,7 +524,7 @@ static gboolean dump_gff_cb(ZMapFeatureAny feature_any,
       if(fset->original_id == g_quark_from_string("3 Frame Translation"))
             break;
       /* this is made up data: do not dump */
-      if(fset->original_id == g_quark_from_string("Scratch"))
+      if(fset->original_id == g_quark_from_string("Annotation"))
             break;
       /* better to dump DNA to a FASTA file */
       if(fset->original_id == g_quark_from_string("DNA"))

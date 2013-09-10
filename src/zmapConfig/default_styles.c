@@ -312,8 +312,8 @@ non-assembly-colours = normal fill brown ; normal border black ; selected fill r
 description=assembly path for displayed sequence\n\
 parent-style=assembly\n\
 \n\
-[style-Scratch]\n\
-description=scratch-pad column for creating/editing temporary features\n\
+[style-Annotation]\n\
+description=annotation column for creating and editing temporary features\n\
 parent-style=transcript\n\
 width=20\n\
 show-when-empty=true\n\
@@ -324,7 +324,7 @@ description=default column for hand-built features\n\
 parent-style=transcript\n\
 width=6\n\
 \n\
-[style-scratchcolumn]\n\
+[style-annotationcolumn]\n\
 show-when-empty=true\n\
 colours=normal fill #ddeeff ; selected fill #eeffcc\n\
 width=20\n\

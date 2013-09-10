@@ -765,15 +765,15 @@ void zmapViewScratchInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, ZM
       /* Create two empty features, one for each strand */
       ZMapFeature feature_fwd = zMapFeatureCreateEmpty() ;
       ZMapFeature feature_rev = zMapFeatureCreateEmpty() ;
-      char *feature_name = "scratch_feature";
+      char *feature_name = "temp_feature";
       
-      zMapFeatureAddStandardData(feature_fwd, "scratch_feature_fwd", feature_name,
+      zMapFeatureAddStandardData(feature_fwd, "temp_feature_fwd", feature_name,
                                  NULL, NULL,
                                  ZMAPSTYLE_MODE_TRANSCRIPT, &scratch_featureset->style,
                                  0, 0, FALSE, 0.0,
                                  ZMAPSTRAND_FORWARD);
 
-      zMapFeatureAddStandardData(feature_rev, "scratch_feature_rev", feature_name,
+      zMapFeatureAddStandardData(feature_rev, "temp_feature_rev", feature_name,
                                  NULL, NULL,
                                  ZMAPSTYLE_MODE_TRANSCRIPT, &scratch_featureset->style,
                                  0, 0, FALSE, 0.0,
