@@ -358,7 +358,7 @@ void zmapWindowColumnSetState(ZMapWindow window, FooCanvasGroup *column_group,
             cur_visible = group->flags.visible; /* actual current state */
       }
 
-      zmapWindowContainerFeatureSetSetDisplay(container, new_col_state) ;
+      zmapWindowContainerFeatureSetSetDisplay(container, new_col_state, window) ;
 
       new_visible = zmapWindowGetColumnVisibility(window,column_group);
             /* state we want rather than what's current */

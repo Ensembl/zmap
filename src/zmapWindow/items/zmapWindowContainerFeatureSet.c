@@ -511,10 +511,28 @@ ZMapStyleColumnDisplayState zmapWindowContainerFeatureSetGetDisplay(ZMapWindowCo
  * \return void
  */
 void zmapWindowContainerFeatureSetSetDisplay(ZMapWindowContainerFeatureSet container_set,
-					     ZMapStyleColumnDisplayState state)
+					     ZMapStyleColumnDisplayState state,
+                                             ZMapWindow window)
 {
-      container_set->display_state = state;
+  container_set->display_state = state;
 
+  /* If updating the scratch column, we also need to set the flag that indicates
+   * this column is enabled/disable. This is used to enable the Annotation
+   * functionality in the right-click menu and for now we want to enable it whenever
+   * the column is visible. */
+  static GQuark scratch_column_id = 0 ;
+
+  if (!scratch_column_id)
+    scratch_column_id = g_quark_from_string(ZMAP_FIXED_STYLE_SCRATCH_NAME) ;
+
+  if (container_set->original_id == scratch_column_id && window && window->flags)
+    {
+      if (state == ZMAPSTYLE_COLDISPLAY_SHOW || state == ZMAPSTYLE_COLDISPLAY_SHOW_HIDE)
+        window->flags[ZMAPFLAG_SHOW_SCRATCH_COLUMN] = TRUE;
+      else
+        window->flags[ZMAPFLAG_SHOW_SCRATCH_COLUMN] = FALSE;
+    }
+  
   return ;
 }
 
