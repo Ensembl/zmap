@@ -713,6 +713,7 @@ void zmapViewScratchInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, ZM
       /* Create the featureset */
       scratch_featureset = zMapFeatureSetCreate(ZMAP_FIXED_STYLE_SCRATCH_NAME, NULL);
       style = zMapFeatureStyleCopy(style);
+      zMapStyleSetDisplay(style, ZMAPSTYLE_COLDISPLAY_HIDE);
       scratch_featureset->style = style ;
 
       /* Create the context, align and block, and add the featureset to it */
@@ -801,6 +802,27 @@ void zmapViewScratchInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, ZM
       ZMapFeatureContext diff_context = zmapViewMergeInContext(zmap_view, context);
       zmapViewDrawDiffContext(zmap_view, &diff_context, NULL);
     }
+}
+
+
+void zMapViewToggleScratchColumn(ZMapView view, gboolean force_to, gboolean force)
+{
+  GList* list_item ;
+  
+  if((list_item = g_list_first(view->window_list)))
+    {
+      do
+        {
+          ZMapViewWindow view_window ;
+          
+          view_window = list_item->data ;
+          
+          zMapWindowToggleScratchColumn(view_window->window, 0, 0, force_to, force) ;
+        }
+      while ((list_item = g_list_next(list_item))) ;
+    }
+  
+  
 }
 
 

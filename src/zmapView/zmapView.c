@@ -5849,7 +5849,7 @@ static void readChapter(ZMapGuiNotebookChapter chapter, ZMapView view)
 	  if (view->flags[ZMAPFLAG_SHOW_SCRATCH_COLUMN] != bool_value)
 	    {
 	      view->flags[ZMAPFLAG_SHOW_SCRATCH_COLUMN] = bool_value ;
-              zMapViewUpdateColumnBackground(view); /*! \todo May need more than this to get the column to refresh */
+              zMapViewToggleScratchColumn(view, bool_value, TRUE) ;
 	    }
 	}
     }
