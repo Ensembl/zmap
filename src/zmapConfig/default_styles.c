@@ -317,6 +317,7 @@ description=scratch-pad column for creating/editing temporary features\n\
 parent-style=transcript\n\
 width=20\n\
 show-when-empty=true\n\
+display-mode=hide\n\
 \n\
 [style-hand_built]\n\
 description=default column for hand-built features\n\

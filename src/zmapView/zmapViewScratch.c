@@ -713,7 +713,6 @@ void zmapViewScratchInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, ZM
       /* Create the featureset */
       scratch_featureset = zMapFeatureSetCreate(ZMAP_FIXED_STYLE_SCRATCH_NAME, NULL);
       style = zMapFeatureStyleCopy(style);
-      zMapStyleSetDisplay(style, ZMAPSTYLE_COLDISPLAY_HIDE);
       scratch_featureset->style = style ;
 
       /* Create the context, align and block, and add the featureset to it */
