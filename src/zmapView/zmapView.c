@@ -5843,17 +5843,8 @@ static void readChapter(ZMapGuiNotebookChapter chapter, ZMapView view)
               zMapViewUpdateColumnBackground(view);
 	    }
 	}
-
-      if (zMapGUINotebookGetTagValue(page, "Enable Annotation column", "bool", &bool_value))
-	{
-	  if (view->flags[ZMAPFLAG_SHOW_SCRATCH_COLUMN] != bool_value)
-	    {
-	      view->flags[ZMAPFLAG_SHOW_SCRATCH_COLUMN] = bool_value ;
-              zMapViewToggleScratchColumn(view, bool_value, TRUE) ;
-	    }
-	}
     }
-
+  
   return ;
 }
 
@@ -5900,10 +5891,6 @@ static ZMapGuiNotebookChapter makeChapter(ZMapGuiNotebook note_book_parent, ZMap
   tagvalue = zMapGUINotebookCreateTagValue(paragraph, "Highlight filtered columns",
 					   ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX,
 					   "bool", view->flags[ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS]) ;
-
-  tagvalue = zMapGUINotebookCreateTagValue(paragraph, "Enable Annotation column",
-					   ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX,
-					   "bool", view->flags[ZMAPFLAG_SHOW_SCRATCH_COLUMN]) ;
 
   return chapter ;
 }

@@ -115,7 +115,6 @@ typedef enum
   {
     ZMAPFLAG_REVCOMPED_FEATURES,         /* True if the user has done a revcomp */
     ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS, /* True if filtered columns should be highlighted */
-    ZMAPFLAG_SHOW_SCRATCH_COLUMN,        /* True if the scratch column should be enabled */
     
     ZMAPFLAG_NUM_FLAGS                   /* Must be last in list */
   } ZMapFlag;
