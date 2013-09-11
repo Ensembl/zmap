@@ -209,7 +209,7 @@ OOPS...THIS ALL DOESN'T WORK LIKE THAT NOW....
  * 
  *  */
 ZMapManagerAddResult zMapManagerAdd(ZMapManager zmaps, ZMapFeatureSequenceMap sequence_map,
-				    ZMap *zmap_inout, ZMapView *view_out, gboolean load_view)
+				    ZMap *zmap_inout, ZMapView *view_out)
 {
   ZMapManagerAddResult result = ZMAPMANAGER_ADD_FAIL ;
   ZMap zmap = *zmap_inout ;
@@ -221,25 +221,18 @@ ZMapManagerAddResult zMapManagerAdd(ZMapManager zmaps, ZMapFeatureSequenceMap se
 
   if (zmap)
     {
-      if (!load_view)
+      ZMapViewWindow view_window ;
+
+      /* Try to load the sequence. */
+      if ((view_window = zMapAddView(zmap, sequence_map)) && zMapConnectView(zmap, zMapViewGetView(view_window)))
 	{
 	  result = ZMAPMANAGER_ADD_OK ;
 	}
       else
 	{
-	  ZMapViewWindow view_window ;
-
-	  /* Try to load the sequence. */
-	  if ((view_window = zMapAddView(zmap, sequence_map)) && zMapConnectView(zmap, zMapViewGetView(view_window)))
-	    {
-	      result = ZMAPMANAGER_ADD_OK ;
-	    }
-	  else
-	    {
-	      /* Remove zmap we just created. */
-	      zMapDestroy(zmap, NULL) ;
-	      result = ZMAPMANAGER_ADD_FAIL ;
-	    }
+	  /* Remove zmap we just created. */
+	  zMapDestroy(zmap, NULL) ;
+	  result = ZMAPMANAGER_ADD_FAIL ;
 	}
     }
 

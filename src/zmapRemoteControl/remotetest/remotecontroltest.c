@@ -36,13 +36,13 @@
 
 #include <ZMap/zmap.h>
 
+#include <string.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <signal.h>
+
 #include <gtk/gtk.h>
 #include <gdk/gdkx.h>
-
-#include <string.h>
 
 #include <ZMap/zmapConfigStrings.h>			    /* For peer-id etc. */
 #include <ZMap/zmapCmdLineArgs.h>			    /* For cmd line args. */
@@ -50,16 +50,10 @@
 #include <ZMap/zmapConfigDir.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapUtilsGUI.h>
-
 #include <ZMap/zmapRemoteControl.h>
 #include <ZMap/zmapRemoteCommand.h>
-
-
-/* Some of these need to go.... */
-#include <ZMap/zmapXRemote.h>
 #include <ZMap/zmapXML.h>
-#include <ZMap/zmapUtilsXRemote.h>
-#include <zmapControl/remote/zmapXRemoteAPI.h>
+
 
 
 /* appname we want to report. */
@@ -304,7 +298,11 @@ typedef struct
 
 typedef struct
 {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   ZMapXRemoteObj client;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
   GList *actions;
   gboolean is_main_window;
 }HashEntryStruct, *HashEntry;
@@ -490,12 +488,8 @@ static ZMapConfigIniContextKeyEntry get_programs_group_data(char **stanza_name, 
 
 
 
-/* Testbed for ZMapXRemoteAPI */
-/* ...Roys remark....BUT I'M NOT SURE IF THIS IS ACTUALLY USED ANYWHERE..... */
-
 typedef struct
 {
-  XRemoteMessage message_out;
   ZMapXMLParser xml_parser;
   char *xml_message;
   unsigned int arrest_processing;
@@ -2854,8 +2848,15 @@ static void destroyHashEntry(gpointer entry_data)
 {
   HashEntry entry = (HashEntry)entry_data;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   zMapXRemoteDestroy(entry->client);
+
+
   entry->client = NULL;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
   g_free(entry);
 
   return ;

@@ -41,16 +41,7 @@
 
 #include <ZMap/zmapUtilsGUI.h>
 #include <ZMap/zmapFeature.h>
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-#include <ZMap/zmapRemoteCommand.h>
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 #include <ZMap/zmapAppRemote.h>
-
-/* should be able to get rid of this shortly... */
-#include <ZMap/zmapXRemote.h>
-
 #include <ZMap/zmapXMLHandler.h>
 
 
