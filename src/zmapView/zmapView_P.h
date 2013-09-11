@@ -36,7 +36,11 @@
 #include <ZMap/zmapView.h>
 #include <ZMap/zmapWindow.h>
 #include <ZMap/zmapWindowNavigator.h>
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #include <ZMap/zmapXRemote.h>
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
@@ -376,7 +380,11 @@ typedef struct _ZMapViewStruct
   ZMapWindowNavigator navigator_window ;
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   ZMapXRemoteObj xremote_client;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   /* Crikey, why is this here...??? Maybe it's ok...but seems more like a window thing..... */
   GList *navigator_set_names;
