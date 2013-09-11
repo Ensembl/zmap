@@ -38,7 +38,11 @@
 #include <ZMap/zmapAppRemote.h>
 #include <ZMap/zmapManager.h>
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #include <ZMap/zmapXRemote.h>
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 #include <ZMap/zmapAppServices.h>
 
 
@@ -203,11 +207,15 @@ typedef struct _ZMapAppContextStruct
   ZMapAppRemote remote_control ;
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* old xremote stuff... */
   gulong property_notify_event_id;
   ZMapXRemoteObj xremote_client ;			    /* The external program we are sending
 							       commands to. */
   gboolean sent_finalised ;				    /* ?????? */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
