@@ -283,7 +283,8 @@ static ZMapFeatureSet getFeaturesetFromId(ZMapView view, GQuark set_id)
  *
  * \returns The ZMapFeatureSet, or NULL if there was a problem
  */
-static ZMapFeatureSet scratchGetFeatureset(ZMapView view)
+
+ZMapFeatureSet zmapViewScratchGetFeatureset(ZMapView view)
 {
   ZMapFeatureSet feature_set = NULL;
 
@@ -310,7 +311,7 @@ static ZMapFeatureSet scratchGetFeatureset(ZMapView view)
  *
  * \returns The ZMapFeature, or NULL if there was a problem
  */
-static ZMapFeature scratchGetFeature(ZMapFeatureSet feature_set, ZMapStrand strand)
+ZMapFeature zmapViewScratchGetFeature(ZMapFeatureSet feature_set, ZMapStrand strand)
 {
   ZMapFeature feature = NULL;
   
@@ -831,8 +832,8 @@ void zMapViewToggleScratchColumn(ZMapView view, gboolean force_to, gboolean forc
 void scratchFeatureReset(ZMapView view)
 {
   /* Get the singleton features that exist in each strand of the scatch column */
-  ZMapFeatureSet scratch_featureset = scratchGetFeatureset(view);
-  ZMapFeature scratch_feature = scratchGetFeature(scratch_featureset, ZMAPSTRAND_FORWARD);
+  ZMapFeatureSet scratch_featureset = zmapViewScratchGetFeatureset(view);
+  ZMapFeature scratch_feature = zmapViewScratchGetFeature(scratch_featureset, ZMAPSTRAND_FORWARD);
 
   /* Delete the exons and introns (the singleton feature always
    * exists so we don't delete the whole thing). */
@@ -853,8 +854,8 @@ void scratchFeatureRecreate(ZMapView view)
 
   /* Get the singleton features that exist in each strand of the scatch column */
   ZMapStrand strand = ZMAPSTRAND_FORWARD;      
-  ZMapFeatureSet scratch_featureset = scratchGetFeatureset(view);
-  ZMapFeature scratch_feature = scratchGetFeature(scratch_featureset, strand);
+  ZMapFeatureSet scratch_featureset = zmapViewScratchGetFeatureset(view);
+  ZMapFeature scratch_feature = zmapViewScratchGetFeature(scratch_featureset, strand);
 
   /* Loop through each feature in the merge list and merge it in */
   GError *error = NULL;

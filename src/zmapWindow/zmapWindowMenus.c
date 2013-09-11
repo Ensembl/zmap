@@ -381,6 +381,31 @@ static void highlightEvidenceCB(GList *evidence, gpointer user_data) ;
 
 
 
+/*!
+ * \brief Get the ZMapWindowContainerFeatureSet for the scratch column
+ */
+static ZMapWindowContainerFeatureSet getScratchContainerFeatureset(ZMapWindow window)
+{
+  ZMapWindowContainerFeatureSet scratch_container = NULL ;
+  
+  ZMapFeatureSet scratch_featureset = zmapWindowScratchGetFeatureset(window) ;
+
+  FooCanvasItem *scratch_column_item = zmapWindowFToIFindItemFull(window, window->context_to_item, 
+                                                                  scratch_featureset->parent->parent->unique_id,
+                                                                  scratch_featureset->parent->unique_id,
+                                                                  scratch_featureset->unique_id, 
+                                                                  ZMAPSTRAND_NONE, ZMAPFRAME_NONE, 0) ;
+  
+  ZMapWindowContainerGroup scratch_group  = zmapWindowContainerCanvasItemGetContainer(scratch_column_item) ;
+
+  if (scratch_group && ZMAP_IS_CONTAINER_FEATURESET(scratch_group))
+    {
+      scratch_container = ZMAP_CONTAINER_FEATURESET(scratch_group) ;
+    }
+
+  return scratch_container ;
+}
+
 
 /*
  * In the end this should be merged with column menu code so one function does both...
@@ -492,13 +517,18 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
 
   menu_sets = g_list_append(menu_sets, separator) ;
 
-  if (window->flags[ZMAPFLAG_SHOW_SCRATCH_COLUMN])
+  /* Scratch column ops */
+  ZMapWindowContainerFeatureSet scratch_container = getScratchContainerFeatureset(window) ;
+  
+  if (scratch_container &&
+      (scratch_container->display_state == ZMAPSTYLE_COLDISPLAY_SHOW ||
+       scratch_container->display_state == ZMAPSTYLE_COLDISPLAY_SHOW))
     {
-      /* Scratch column ops */
       menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuScratchOps(NULL, NULL, menu_data)) ;
       menu_sets = g_list_append(menu_sets, separator) ;
     }
-  
+
+    
   /* Big bump menu.... */
   menu_sets = g_list_append(menu_sets,
 			    zmapWindowMakeMenuBump(NULL, NULL, menu_data,
@@ -636,7 +666,12 @@ void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
   menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuFeatureOps(NULL, NULL, cbdata)) ;
   menu_sets = g_list_append(menu_sets, separator) ;
 
-  if (window->flags[ZMAPFLAG_SHOW_SCRATCH_COLUMN])
+  /* Scratch column ops */
+  ZMapWindowContainerFeatureSet scratch_container = getScratchContainerFeatureset(window) ;
+  
+  if (scratch_container &&
+      (scratch_container->display_state == ZMAPSTYLE_COLDISPLAY_SHOW ||
+       scratch_container->display_state == ZMAPSTYLE_COLDISPLAY_SHOW))
     {
       menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuScratchOps(NULL, NULL, cbdata)) ;
       menu_sets = g_list_append(menu_sets, separator) ;

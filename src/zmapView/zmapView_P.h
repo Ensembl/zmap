@@ -501,6 +501,8 @@ gboolean zmapViewScratchCopyFeature(ZMapView zmap_view, ZMapFeature feature, Foo
 gboolean zmapViewScratchUndo(ZMapView zmap_view);
 gboolean zmapViewScratchRedo(ZMapView zmap_view);
 gboolean zmapViewScratchClear(ZMapView zmap_view);
+ZMapFeatureSet zmapViewScratchGetFeatureset(ZMapView view);
+ZMapFeature zmapViewScratchGetFeature(ZMapFeatureSet feature_set, ZMapStrand strand);
 
 
 #ifdef LOTS_OF_EXONS

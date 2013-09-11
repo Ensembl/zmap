@@ -39,6 +39,6 @@ void zmapWindowScratchCopyFeature(ZMapWindow window, ZMapFeature new_feature, Fo
 void zmapWindowScratchUndo(ZMapWindow window);
 void zmapWindowScratchRedo(ZMapWindow window);
 void zmapWindowScratchClear(ZMapWindow window);
-
+ZMapFeatureSet zmapWindowScratchGetFeatureset(ZMapWindow window);
 
 #endif	/* ZMAP_WINDOW_MARK_P_H */
