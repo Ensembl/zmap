@@ -35,7 +35,11 @@
 #include <ZMap/zmapView.h>
 #include <ZMap/zmapControl.h>
 #include <ZMap/zmapControlImportFile.h>
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #include <ZMap/zmapXRemote.h>
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 #include <zmapNavigator_P.h>
 
 
@@ -150,9 +154,13 @@ typedef struct _ZMapStruct
                                          * remote control simple IPC stuff */
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* Old stuff...??? */
   ZMapXRemoteObj xremote_client;
   ZMapXRemoteObj xremote_server;          /* that we reply to */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 

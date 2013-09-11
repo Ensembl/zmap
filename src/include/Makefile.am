@@ -53,7 +53,6 @@ ZMap/zmapUtilsHandle.h \
 ZMap/zmapUtilsLog.h \
 ZMap/zmapUtilsLogical.h \
 ZMap/zmapUtilsMesg.h \
-ZMap/zmapUtilsXRemote.h \
 ZMap/zmapView.h \
 ZMap/zmapWebPages.h \
 ZMap/zmapWindow.h \
@@ -61,7 +60,6 @@ ZMap/zmapWindowDrawFeatures.h \
 ZMap/zmapWindowNavigator.h \
 ZMap/zmapXML.h \
 ZMap/zmapXMLHandler.h \
-ZMap/zmapXRemote.h \
 $(NULL)
 
 # Extra files to remove for the maintainer-clean target.

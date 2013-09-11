@@ -97,23 +97,17 @@ gboolean zmapAppCreateZMap(ZMapAppContext app_context, ZMapFeatureSequenceMap se
 		  (!sequence_map->sequence ? "no sequence name"
 		   : (sequence_map->start <= 1 ? "start less than 1" : "end less than start"))) ;
     }
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   else if ((!app_context->xremote_client) && (!(sequence_map->sequence) && !(sequence_map->start) && !(sequence_map->end)))
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  else if ((!(sequence_map->sequence) && !(sequence_map->start) && !(sequence_map->end)))
     {
       result = TRUE ;
     }
   else
     {
-      gboolean load_view = TRUE ;
-
-
-      /* MAY NOT NEED THIS FOR NEW XREMOTE..... */
-      /* HACK...WE NEED TO MAKE SURE MANAGER DOES _NOT_ LOAD THE VIEW WITH THE OLD XREMOTE.
-       * THE LOAD_VIEW FLAG CAN GO ONCE WE SWOP TO THE NEW XREMOTE. */
-      if (app_context->xremote_client)
-	load_view = FALSE ;
-
-
-      add_result = zMapManagerAdd(app_context->zmap_manager, sequence_map, &zmap, &view, load_view) ;
+      add_result = zMapManagerAdd(app_context->zmap_manager, sequence_map, &zmap, &view) ;
       if (add_result == ZMAPMANAGER_ADD_DISASTER)
 	{
 	  zMapWarning("%s", "Failed to create ZMap and then failed to clean up properly,"
