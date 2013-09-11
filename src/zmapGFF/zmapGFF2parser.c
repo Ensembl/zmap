@@ -711,9 +711,9 @@ void zMapGFFSetSOCompliance(ZMapGFFParser parser, gboolean SO_compliant)
 void zMapGFFSetFeatureClip(ZMapGFFParser parser, ZMapGFFClipMode clip_mode)
 {
   if (parser->state != ZMAPGFF_PARSE_ERROR)
-  {
+    {
       parser->clip_mode = clip_mode ;
-  }
+    }
 
   return ;
 }
