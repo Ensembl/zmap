@@ -493,8 +493,6 @@ static ZMapAppContext createAppContext(void)
   app_context->exit_timeout = ZMAP_DEFAULT_EXIT_TIMEOUT ;
   app_context->ping_timeout = ZMAP_DEFAULT_PING_TIMEOUT ;
 
-  app_context->sent_finalised = FALSE;
-
   return app_context ;
 }
 
@@ -1102,7 +1100,6 @@ static gboolean getConfiguration(ZMapAppContext app_context)
 					 ZMAPSTANZA_APP_XREMOTE_DEBUG, &tmp_bool))
 	{
 	  app_context->xremote_debug = tmp_bool ;
-	  zMapXRemoteSetDebug(app_context->xremote_debug) ;
 	}
 
       zMapConfigIniContextDestroy(context);

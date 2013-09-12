@@ -45,6 +45,7 @@
 #include <execinfo.h>		/* backtrace() & backtrace_symbols_fd() */
 #endif /* HAVE_GNUC_BACKTRACE */
 
+#include <ZMap/zmapUtils.h>
 #include <ZMap/zmapUtilsDebug.h>
 
 
@@ -71,7 +72,7 @@ void zMapStackPrint(void)
  * logging but not sure why Malcolm didn't do that.
  * 
  * 
-/* Given access to gnu glibc with backtrace and backtrace_symbols_fd
+ * Given access to gnu glibc with backtrace and backtrace_symbols_fd
  * this function will log the current stack to the log file. An
  * example of the output is
 

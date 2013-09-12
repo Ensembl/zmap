@@ -2016,7 +2016,19 @@ or when setting the mark
 
 
 
+/* One of Malcolm's routines...breaking our naming conventions completely.... */
+void foo_bug_set(void *key,char *id)
+{
+#if 0
+  struct fooBug * fb = foo_wins + n_foo_wins++;
+  extern void (*foo_bug)(void *, char *);
 
+  fb->key = key;
+  fb->id = id;
+  printf("foo bug set %s %d\n",fb->id, n_foo_wins - 1);
+  foo_bug = foo_bug_print;
+#endif
+}
 
 
 
@@ -2064,20 +2076,6 @@ static void foo_bug_print(void *key, char *where)
 
   return ;
 }
-
-void foo_bug_set(void *key,char *id)
-{
-#if 0
-	struct fooBug * fb = foo_wins + n_foo_wins++;
-	extern void (*foo_bug)(void *, char *);
-
-	fb->key = key;
-	fb->id = id;
-	printf("foo bug set %s %d\n",fb->id, n_foo_wins - 1);
-	foo_bug = foo_bug_print;
-#endif
-}
-
 
 
 /* We will need to allow caller to specify a routine that gets called whenever the user

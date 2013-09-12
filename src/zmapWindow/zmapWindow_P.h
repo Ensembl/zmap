@@ -1639,4 +1639,7 @@ void zmapWindowStateRevCompRegion(ZMapWindow window, double *a, double *b);
 
 void zmapWindowStateRevCompRegion(ZMapWindow window, double *a, double *b);
 
+/* Malcolms.... */
+void foo_bug_set(void *key,char *id) ;
+
 #endif /* !ZMAP_WINDOW_P_H */

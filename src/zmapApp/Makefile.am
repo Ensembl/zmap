@@ -10,7 +10,6 @@ zmapAppconnect.c \
 zmapAppmain_c.c \
 zmapAppmanage.c \
 zmapAppmenubar.c \
-zmapAppremote.c \
 zmapAppwindow.c \
 zmapAppRemoteControl.c \
 zmapAppRemoteCommand.c \

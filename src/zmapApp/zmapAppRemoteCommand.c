@@ -95,7 +95,8 @@ typedef struct
 static void localProcessRemoteRequest(gpointer sub_system,
 				      char *command_name, char *request,
 				      ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data) ;
-static void localProcessReplyFunc(char *command, RemoteCommandRCType command_rc, char *reason, char *reply,
+static void localProcessReplyFunc(gboolean reply_ok, char *reply_error,
+				  char *command, RemoteCommandRCType command_rc, char *reason, char *reply,
 				  gpointer reply_handler_func_data) ;
 static void processRequest(ZMapAppContext app_context,
 			   char *command_name, char *request,
@@ -125,11 +126,9 @@ void zmapAppProcessAnyRequest(ZMapAppContext app_context,
   RemoteValidateRCType valid_rc ;
   gboolean result = TRUE ;
   char *command_name = NULL ;
-
   ZMap zmap = NULL ;
   gpointer view_id = NULL ;
   gpointer view_ptr = NULL ;
-
   char *err_msg = NULL ;
   RemoteCommandRCType command_rc = REMOTE_COMMAND_RC_OK ;
   char *reason = NULL ;
@@ -279,34 +278,35 @@ void zmapAppProcessAnyRequest(ZMapAppContext app_context,
 void zmapAppProcessAnyReply(ZMapAppContext app_context, char *reply)
 {
   ZMapAppRemote remote = app_context->remote_control ;
+  gboolean reply_ok ;
   char *command = NULL ;
-  RemoteCommandRCType command_rc ;
+  RemoteCommandRCType command_rc = REMOTE_COMMAND_RC_FAILED ;
   char *reason = NULL ;
   char *reply_body = NULL ;
-  char *error_out = NULL ;
+  char *error = NULL ;
 
   /* Revisit this .....we are creating a problem for ourselves in that the process_reply_func
    * needs to be be called even if the reply is badly formed so that it can reset state etc.... */
 
   /* Need to parse out reply components..... */
-  if (!(zMapRemoteCommandReplyGetAttributes(reply,
-					    &command,
-					    &command_rc, &reason,
-					    &reply_body,
-					    &error_out)))
+  if (!(reply_ok = zMapRemoteCommandReplyGetAttributes(reply,
+						       &command,
+						       &command_rc, &reason,
+						       &reply_body,
+						       &error)))
     {
-      /* Log the bad format reply. */
+      /* Log the problem with the reply. */
       zMapLogCritical("Could not parse peer programs reply because \"%s\", their reply was: \"%s\"",
-		      error_out, reply) ;
-
-      /* MAKE SURE IT'S OK TO DO THIS..... */
-      g_free(error_out) ;
+		      error, reply) ;
     }
 
 
   /* Return the reply to the relevant zmap sub-system, note if the reply could not be parsed then
    * command will be NULL, all called functions must cope with this. */
-  (remote->process_reply_func)(command, command_rc, reason, reply, remote->process_reply_func_data) ;
+  (remote->process_reply_func)(reply_ok, error, command, command_rc, reason, reply, remote->process_reply_func_data) ;
+
+  if (error)
+    g_free(error) ;
 
 
   return ;
@@ -502,99 +502,103 @@ static void localProcessRemoteRequest(gpointer local_data,
 
 
 /* This is where we process a reply received from a peer. */
-static void localProcessReplyFunc(char *command,
-				  RemoteCommandRCType command_rc,
-				  char *reason,
-				  char *reply,
+static void localProcessReplyFunc(gboolean reply_ok, char *reply_error,
+				  char *command, RemoteCommandRCType command_rc, char *reason, char *reply,
 				  gpointer reply_handler_func_data)
 {
   ZMapAppContext app_context = (ZMapAppContext)reply_handler_func_data ;
   char *command_err_msg = NULL ;
 
-
-  if (command_rc != REMOTE_COMMAND_RC_OK)
+  if (!reply_ok)
     {
-      command_err_msg = g_strdup_printf("Peer reported error in reply for command \"%s\":"
-					" %s, \"%s\"",
-					command, zMapRemoteCommandRC2Str(command_rc), reason) ;
+      zMapLogCritical("Bad reply from peer: \"%s\"", reply_error) ;
     }
-
-  if (strcmp(command, ZACP_HANDSHAKE) == 0)
+  else
     {
-      gboolean result = FALSE ;
-      char *window_id_str = NULL, *xml_err_msg = NULL ;
-      char *full_err_str = NULL ;
-      Window window_id ;
-
       if (command_rc != REMOTE_COMMAND_RC_OK)
 	{
-	  full_err_str = g_strdup(command_err_msg) ;
-
-	  result = FALSE ;
+	  command_err_msg = g_strdup_printf("Peer reported error in reply for command \"%s\":"
+					    " %s, \"%s\"",
+					    command, zMapRemoteCommandRC2Str(command_rc), reason) ;
 	}
-      else
+
+      if (strcmp(command, ZACP_HANDSHAKE) == 0)
 	{
-	  /* Note...it's legal not to give a window id, we just don't do any window checking. */
-	  if (!(result = zMapRemoteCommandGetAttribute(reply,
-						       ZACP_PEER, ZACP_WINDOW_ID, &window_id_str,
-						       &xml_err_msg))
-	      && (xml_err_msg))
+	  gboolean result = FALSE ;
+	  char *window_id_str = NULL, *xml_err_msg = NULL ;
+	  char *full_err_str = NULL ;
+	  Window window_id ;
+
+	  if (command_rc != REMOTE_COMMAND_RC_OK)
 	    {
-	      full_err_str = g_strdup_printf("Error in \"%s\" xml: %s", ZACP_PEER, xml_err_msg) ;
+	      full_err_str = g_strdup(command_err_msg) ;
 
-	      zMapLogWarning("No window_id attribute specified in command %s, reason: %s",
-			     ZACP_HANDSHAKE, full_err_str) ;
-
-	      result = TRUE ;
+	      result = FALSE ;
 	    }
-	  else if (result)
+	  else
 	    {
-	      char *rest_str = NULL ;
-
-	      errno = 0 ;
-	      if (!(window_id = strtoul(window_id_str, &rest_str, 16)))
+	      /* Note...it's legal not to give a window id, we just don't do any window checking. */
+	      if (!(result = zMapRemoteCommandGetAttribute(reply,
+							   ZACP_PEER, ZACP_WINDOW_ID, &window_id_str,
+							   &xml_err_msg))
+		  && (xml_err_msg))
 		{
-		  char *full_err_str ;
+		  full_err_str = g_strdup_printf("Error in \"%s\" xml: %s", ZACP_PEER, xml_err_msg) ;
 
-		  full_err_str = g_strdup_printf("Conversion of \"%s = %s\" to X Window id"
-						 "failed: %s",
-						 ZACP_WINDOW_ID, window_id_str,  g_strerror(errno)) ;
-
-		  result = FALSE ;
-		}
-	      else
-		{
-		  app_context->remote_control->peer_window = window_id ;
-		  app_context->remote_control->peer_window_str
-		    = g_strdup_printf(ZMAP_XWINDOW_FORMAT_STR, app_context->remote_control->peer_window) ;
+		  zMapLogWarning("No window_id attribute specified in command %s, reason: %s",
+				 ZACP_HANDSHAKE, full_err_str) ;
 
 		  result = TRUE ;
 		}
+	      else if (result)
+		{
+		  char *rest_str = NULL ;
+
+		  errno = 0 ;
+		  if (!(window_id = strtoul(window_id_str, &rest_str, 16)))
+		    {
+		      char *full_err_str ;
+
+		      full_err_str = g_strdup_printf("Conversion of \"%s = %s\" to X Window id"
+						     "failed: %s",
+						     ZACP_WINDOW_ID, window_id_str,  g_strerror(errno)) ;
+
+		      result = FALSE ;
+		    }
+		  else
+		    {
+		      app_context->remote_control->peer_window = window_id ;
+		      app_context->remote_control->peer_window_str
+			= g_strdup_printf(ZMAP_XWINDOW_FORMAT_STR, app_context->remote_control->peer_window) ;
+
+		      result = TRUE ;
+		    }
+		}
+	    }
+
+	  if (!result)
+	    {
+	      zMapLogCritical("Cannot continue because %s failed: %s", ZACP_HANDSHAKE, full_err_str) ;
+
+	      zMapCritical("Cannot continue because %s failed: %s", ZACP_HANDSHAKE, full_err_str) ;
+
+	      g_free(full_err_str) ;
+
+	      (app_context->remote_control->exit_routine)(app_context) ;
 	    }
 	}
-
-      if (!result)
+      else if (strcmp(command, ZACP_GOODBYE) == 0)
 	{
-	  zMapLogCritical("Cannot continue because %s failed: %s", ZACP_HANDSHAKE, full_err_str) ;
+	  if (command_rc != REMOTE_COMMAND_RC_OK)
+	    zMapLogCritical("%s", command_err_msg) ;
 
-	  zMapCritical("Cannot continue because %s failed: %s", ZACP_HANDSHAKE, full_err_str) ;
-
-	  g_free(full_err_str) ;
-
+	  /* Peer has replied to our goodbye message so now we need to exit. */
 	  (app_context->remote_control->exit_routine)(app_context) ;
 	}
-    }
-  else if (strcmp(command, ZACP_GOODBYE) == 0)
-    {
-      if (command_rc != REMOTE_COMMAND_RC_OK)
-	zMapLogCritical("%s", command_err_msg) ;
 
-      /* Peer has replied to our goodbye message so now we need to exit. */
-      (app_context->remote_control->exit_routine)(app_context) ;
+      if (command_err_msg)
+	g_free(command_err_msg) ;
     }
-
-  if (command_err_msg)
-    g_free(command_err_msg) ;
 
   return ;
 }

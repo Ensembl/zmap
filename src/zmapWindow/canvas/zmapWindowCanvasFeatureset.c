@@ -82,6 +82,7 @@
 #include <zmapWindowCanvasSequence.h>
 #include <zmapWindowCanvasLocus.h>
 #include <zmapWindowCanvasGraphics.h>
+#include <zmapWindowCanvasGlyph.h>
 #include <zmapWindowCanvasFeatureset_I.h>
 
 

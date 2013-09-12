@@ -32,7 +32,6 @@
 
 #include <ZMap/zmap.h>
 
-
 #define _ISOC99_SOURCE
 
 #include <sys/wait.h>
@@ -44,7 +43,6 @@
 #include <stdlib.h>
 #include <config.h>
 #include <unistd.h>
-
 
 #include <zmapUtils_P.h>
 
@@ -342,7 +340,7 @@ char *zMapGetTimeString(ZMapTimeFormat format, char *format_str_in)
       if ((strftime(&(buffer[0]), buf_size, format_str, localtime(&curtime))) > 0)
 	{
 	  if (format == ZMAPTIME_LOG)
-	    time_str = g_strdup_printf("%s%06d", buffer, tv.tv_usec) ; /* pad to make sure we don't miss leading 0's */
+	    time_str = g_strdup_printf("%s%06ld", buffer, tv.tv_usec) ; /* pad to make sure we don't miss leading 0's */
 	  else
 	    time_str = g_strdup(buffer) ;
 	}

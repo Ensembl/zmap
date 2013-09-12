@@ -102,8 +102,14 @@ typedef void (*ZMapRemoteAppProcessRequestFunc)(gpointer sub_system,
  */
 
 /* All sub-systems must provide a function with this prototype to process replies to
- * their requests. */
-typedef void (*ZMapRemoteAppProcessReplyFunc)(char *command,
+ * their requests.
+ * 
+ * If the reply could be parsed then reply_ok == TRUE and command, command_rc,
+ * reason and reply are set appropriately otherwise reply_ok == FALSE and reply_error
+ * gives an error string the function can display to the user if required.
+ *  */
+typedef void (*ZMapRemoteAppProcessReplyFunc)(gboolean reply_ok, char *reply_error,
+					      char *command,
 					      RemoteCommandRCType command_rc,
 					      char *reason,
 					      char *reply,

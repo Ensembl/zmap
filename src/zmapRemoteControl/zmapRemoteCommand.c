@@ -698,6 +698,29 @@ char *zMapRemoteCommandRequestGetCommand(char *request)
 }
 
 
+/* Pulls out various parts of the reply which is in one if two formats:
+ * 
+ * If command successful:
+ * 
+ * <zmap version="N.N" type="request" app_id="XXXX" clipboard_id="XXXX" request_id="YYYY">
+ *   <reply command="ZZZZ"  return_code="ok">
+ *           .
+ *          body
+ *           .
+ *   </reply>
+ * </zmap>
+ * 
+ * If command unsuccessful:
+ * 
+ * <zmap version="N.N" type="request" app_id="XXXX" clipboard_id="XXXX" request_id="YYYY">
+ *   <reply command="ZZZZ" return_code="ok" reason="short error description"/>
+ * </zmap>
+ * 
+ * Return TRUE if parsing was successful and fills in command_out, return_code_out
+ * and either reason_out or reply_body_out. Otherwise returns FALSE, sets return_code_out
+ * to REMOTE_COMMAND_RC_BAD_XML and gives the error in error_out.
+ * 
+ */
 gboolean zMapRemoteCommandReplyGetAttributes(char *reply,
 					     char **command_out,
 					     RemoteCommandRCType *return_code_out, char **reason_out,
@@ -721,12 +744,19 @@ gboolean zMapRemoteCommandReplyGetAttributes(char *reply,
   if (!(result = zMapXMLParserParseBuffer(parser, reply, strlen(reply))))
     {
       *error_out = zMapXMLParserLastErrorMsg(parser) ;
+
+      result = FALSE ;
     }
   else
     {
+      /* Parsing was successful but the command may have suceeded or not.... */
+
       *command_out = command_data.command ;
       *return_code_out = command_data.return_code ;
-      *reply_body_out = command_data.reply_body ;
+      if (command_data.reason)
+	*reason_out = command_data.reason ;
+      else if (command_data.reply_body)
+	*reply_body_out = command_data.reply_body ;
       
       result = TRUE ;
     }
@@ -1484,9 +1514,7 @@ static gboolean xml_reply_body_cb(gpointer user_data, ZMapXMLElement request_ele
 	      char *err_msg ;
 
 	      err_msg = g_strdup("no reply body.") ;
-
 	      zMapXMLParserRaiseParsingError(parser, err_msg) ;
-
 	      g_free(err_msg) ;
 
 	      result = FALSE ;

@@ -711,9 +711,9 @@ void zMapGFFSetSOCompliance(ZMapGFFParser parser, gboolean SO_compliant)
 void zMapGFFSetFeatureClip(ZMapGFFParser parser, ZMapGFFClipMode clip_mode)
 {
   if (parser->state != ZMAPGFF_PARSE_ERROR)
-  {
+    {
       parser->clip_mode = clip_mode ;
-  }
+    }
 
   return ;
 }
@@ -1191,7 +1191,7 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line, gsize line_lengt
   if (line_length > GFF_MAX_LINE_LEN)
     {
       parser->error = g_error_new(parser->error_domain, ZMAP_GFF_ERROR_BODY,
-				  "Line length too long, line %d has length %lu",
+				  "Line length too long, line %d has length %"G_GSIZE_FORMAT,
 				  parser->line_count, line_length) ;
       result = FALSE ;
     }

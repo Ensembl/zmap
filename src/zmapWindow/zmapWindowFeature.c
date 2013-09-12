@@ -99,10 +99,8 @@ static PFetchStatus pfetch_closed_func(gpointer user_data) ;
 
 static void callXRemote(ZMapWindow window, ZMapFeatureAny feature_any,
 			char *action, FooCanvasItem *real_item) ;
-static void handleXRemoteReply(char *command,
-			       RemoteCommandRCType command_rc,
-			       char *reason,
-			       char *reply,
+static void handleXRemoteReply(gboolean reply_ok, char *reply_error,
+			       char *command, RemoteCommandRCType command_rc, char *reason, char *reply,
 			       gpointer reply_handler_func_data) ;
 static void revcompTransChildCoordsCB(gpointer data, gpointer user_data) ;
 
@@ -1154,26 +1152,31 @@ static void callXRemote(ZMapWindow window, ZMapFeatureAny feature_any,
 
 
 /* Handles replies received by zmap from the peer remote program to commands sent from this file. */
-static void handleXRemoteReply(char *command,
-			       RemoteCommandRCType command_rc,
-			       char *reason,
-			       char *reply,
+static void handleXRemoteReply(gboolean reply_ok, char *reply_error,
+			       char *command, RemoteCommandRCType command_rc, char *reason, char *reply,
 			       gpointer reply_handler_func_data)
 {
   RemoteData remote_data = (RemoteData)reply_handler_func_data ;
 
 
-  if (g_ascii_strcasecmp(command, ZACP_EDIT_FEATURE) == 0)
+  if (!reply_ok)
     {
-      /* If the remote edit command fails then we do our best to show the feature
-       * locally, this is just display, not editing. */
-      if (command_rc == REMOTE_COMMAND_RC_OK)
+      zMapLogCritical("Bad reply from peer: \"%s\"", reply_error) ;
+    }
+  else
+    {
+      if (g_ascii_strcasecmp(command, ZACP_EDIT_FEATURE) == 0)
 	{
-	  /* Don't do anything. */
-	}
-      else if (command_rc == REMOTE_COMMAND_RC_FAILED)
-	{
-	  zmapWindowFeatureShow(remote_data->window, remote_data->real_item) ;
+	  /* If the remote edit command fails then we do our best to show the feature
+	   * locally, this is just display, not editing. */
+	  if (command_rc == REMOTE_COMMAND_RC_OK)
+	    {
+	      /* Don't do anything. */
+	    }
+	  else if (command_rc == REMOTE_COMMAND_RC_FAILED)
+	    {
+	      zmapWindowFeatureShow(remote_data->window, remote_data->real_item) ;
+	    }
 	}
     }
 

@@ -375,7 +375,7 @@ void zMapWindowNavigatorSetCurrentWindow(ZMapWindowNavigator navigate, ZMapWindo
  /* mh17: should also twiddle revcomped? but as revcomp applies to the view
      in violation of MVC then all the windows will follow
   */
-  navigate->current_window = window;
+  navigate->current_window = window ;
 
   return ;
 }

@@ -37,7 +37,6 @@
 #include <ZMap/zmapView.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapUtilsGUI.h>
-#include <ZMap/zmapUtilsXRemote.h>
 
 #include <zmapControl_P.h>
 
@@ -61,7 +60,11 @@ static void viewStateChangeCB(ZMapView view, void *app_data, void *view_data) ;
 static void viewKilledCB(ZMapView view, void *app_data, void *view_data) ;
 static void infoPanelLabelsHashCB(gpointer labels_data);
 static void removeView(ZMap zmap, ZMapView view, unsigned long xwid) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void remoteSendViewClosed(ZMapXRemoteObj client, unsigned long xwid) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
@@ -1169,16 +1172,22 @@ static void leaveCB(ZMapViewWindow view_window, void *app_data, void *view_data)
 static void viewStateChangeCB(ZMapView view, void *app_data, void *view_data)
 {
   ZMap zmap = (ZMap)app_data ;
-  ZMapViewCallbackFubar fubar = (ZMapViewCallbackFubar) view_data;
 
   if (zmap->state != ZMAP_DYING)
     zmapControlWindowSetGUIState(zmap) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+  /* AS FAR AS I CAN TELL THIS IS NEVER CALLED BECAUSE fubar IS NEVER PASSED IN BY OUR CALLER.... */
+
 #if 1
   if(zmap->remote_control)
     {
+      ZMapViewCallbackFubar fubar = (ZMapViewCallbackFubar)view_data ;
+
       if(fubar && fubar->state == ZMAPVIEW_MAPPED)
-      {
+	{
         gchar *response = NULL;
         gchar *xml_text, *xml_stub;
 
@@ -1201,7 +1210,6 @@ static void viewStateChangeCB(ZMapView view, void *app_data, void *view_data)
         g_free(xml_stub) ;
       }
 
-
 /*
       ZMapXRemoteSendCommandError result;
 
@@ -1222,6 +1230,9 @@ static void viewStateChangeCB(ZMapView view, void *app_data, void *view_data)
 */
     }
 #endif
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
 
   return ;
 }
@@ -1449,8 +1460,12 @@ static void removeView(ZMap zmap, ZMapView view, unsigned long xwid)
       zmapControlPrintAllViews(zmap, FALSE) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       if (zmap->xremote_client)
 	remoteSendViewClosed(zmap->xremote_client, xwid) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
     }
 
   return ;
@@ -1458,6 +1473,8 @@ static void removeView(ZMap zmap, ZMapView view, unsigned long xwid)
 
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void remoteSendViewClosed(ZMapXRemoteObj client, unsigned long xwid)
 {
   char *request ;
@@ -1477,5 +1494,7 @@ static void remoteSendViewClosed(ZMapXRemoteObj client, unsigned long xwid)
 
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 

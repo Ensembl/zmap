@@ -43,8 +43,12 @@
 #include <ZMap/zmapUtilsDebug.h>
 #include <ZMap/zmapGLibUtils.h>
 #include <ZMap/zmapGFF.h>
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #include <ZMap/zmapUtilsXRemote.h>
 #include <ZMap/zmapXRemote.h>
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 #include <ZMap/zmapCmdLineArgs.h>
 #include <ZMap/zmapConfigDir.h>
 #include <ZMap/zmapConfigIni.h>
@@ -251,10 +255,8 @@ void print_fset2col(char * str,GHashTable *data) ;
 void print_col2fset(char * str,GHashTable *data) ;
 #endif
 
-static void localProcessReplyFunc(char *command,
-				  RemoteCommandRCType command_rc,
-				  char *reason,
-				  char *reply,
+static void localProcessReplyFunc(gboolean reply_ok, char *reply_error,
+				  char *command, RemoteCommandRCType command_rc, char *reason, char *reply,
 				  gpointer reply_handler_func_data) ;
 
 
@@ -5808,20 +5810,25 @@ static void sendViewLoaded(ZMapView zmap_view, ZMapViewLoadFeaturesData lfd)
 
 
 /* Receives peers reply to our "features_loaded" message. */
-static void localProcessReplyFunc(char *command,
-				  RemoteCommandRCType command_rc,
-				  char *reason,
-				  char *reply,
+static void localProcessReplyFunc(gboolean reply_ok, char *reply_error,
+				  char *command, RemoteCommandRCType command_rc, char *reason, char *reply,
 				  gpointer reply_handler_func_data)
 {
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   ZMapView view = (ZMapView)reply_handler_func_data ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-  if (command_rc != REMOTE_COMMAND_RC_OK)
+  if (!reply_ok)
     {
-      zMapLogCritical("%s command to peer program returned %s: \"%s\".",
-		      ZACP_FEATURES_LOADED, zMapRemoteCommandRC2Str(command_rc), reason) ;
+      zMapLogCritical("Bad reply from peer: \"%s\"", reply_error) ;
+    }
+  else
+    {
+      if (command_rc != REMOTE_COMMAND_RC_OK)
+	{
+	  zMapLogCritical("%s command to peer program returned %s: \"%s\".",
+			  ZACP_FEATURES_LOADED, zMapRemoteCommandRC2Str(command_rc), reason) ;
+	}
     }
 
   return ;

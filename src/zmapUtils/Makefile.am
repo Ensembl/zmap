@@ -47,7 +47,6 @@ zmapUtilsSpawn.c \
 zmapUtilsUsers.c \
 zmapUtils_P.h \
 zmapWebBrowser.c \
-zmapXRemoteUtils.c \
 $(NULL)
 
 libZMapUtils_la_CFLAGS = $(INCLUDE_COMMON)

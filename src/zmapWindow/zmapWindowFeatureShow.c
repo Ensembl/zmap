@@ -284,15 +284,11 @@ static ZMapGuiNotebook makeTranscriptExtras(ZMapWindow window, ZMapFeature featu
 static void callXRemote(ZMapWindow window, ZMapFeatureAny feature_any,
 			char *action, FooCanvasItem *real_item,
 			ZMapRemoteAppProcessReplyFunc handler_func, gpointer handler_data) ;
-static void localProcessReplyFunc(char *command,
-				  RemoteCommandRCType command_rc,
-				  char *reason,
-				  char *reply,
+static void localProcessReplyFunc(gboolean reply_ok, char *reply_error,
+				  char *command, RemoteCommandRCType command_rc, char *reason, char *reply,
 				  gpointer reply_handler_func_data) ;
-static void getEvidenceReplyFunc(char *command,
-				 RemoteCommandRCType command_rc,
-				 char *reason,
-				 char *reply,
+static void getEvidenceReplyFunc(gboolean reply_ok, char *reply_error,
+				 char *command, RemoteCommandRCType command_rc, char *reason, char *reply,
 				 gpointer reply_handler_func_data) ;
 
 static void revcompTransChildCoordsCB(gpointer data, gpointer user_data) ;
@@ -2106,16 +2102,21 @@ static void callXRemote(ZMapWindow window, ZMapFeatureAny feature_any,
 
 
 /* Handles replies from remote program to commands sent from this layer. */
-static void localProcessReplyFunc(char *command,
-				  RemoteCommandRCType command_rc,
-				  char *reason,
-				  char *reply,
+static void localProcessReplyFunc(gboolean reply_ok, char *reply_error,
+				  char *command, RemoteCommandRCType command_rc, char *reason, char *reply,
 				  gpointer reply_handler_func_data)
 {
   ZMapWindowFeatureShow show = (ZMapWindowFeatureShow)reply_handler_func_data ;
 
-  replyShowFeature(show->zmapWindow, show,
-		   command, command_rc, reason, reply) ;
+  if (!reply_ok)
+    {
+      zMapCritical("Bad reply from peer: \"%s\"", reply_error) ;
+    }
+  else
+    {
+      replyShowFeature(show->zmapWindow, show,
+		       command, command_rc, reason, reply) ;
+    }
 
   return ;
 }
@@ -2125,51 +2126,56 @@ static void localProcessReplyFunc(char *command,
 /* zmapWindowFeatureGetEvidence() makes an xremote call to the zmap peer to get evidence
  * for a feature, once the peer replies the reply is sent here and we parse out the
  * evidence data and then pass that back to our callers callback routine. */
-static void getEvidenceReplyFunc(char *command,
-				 RemoteCommandRCType command_rc,
-				 char *reason,
-				 char *reply,
+static void getEvidenceReplyFunc(gboolean reply_ok, char *reply_error,
+				 char *command, RemoteCommandRCType command_rc, char *reason, char *reply,
 				 gpointer reply_handler_func_data)
 {
   GetEvidenceData evidence_data = (GetEvidenceData)reply_handler_func_data ;
 
-  if (command_rc == REMOTE_COMMAND_RC_OK)
+  if (!reply_ok)
     {
-      ZMapXMLParser parser ;
-      gboolean parses_ok ;
-
-      /* Create the parser and call set up our start/end handlers to parse the xml reply. */
-      parser = zMapXMLParserCreate(evidence_data->show, FALSE, FALSE);
-
-      zMapXMLParserSetMarkupObjectTagHandlers(parser, evidence_data->starts, evidence_data->ends) ;
- 
-       if ((parses_ok = zMapXMLParserParseBuffer(parser, 
-                                                 reply, 
-                                                 strlen(reply))) != TRUE)
-         {
-	   zMapLogWarning("Parsing error : %s", zMapXMLParserLastErrorMsg(parser));
-
-         }
-       else
-	 {
-	   /* The parse worked so pass back the list of evidence to our caller. */
-	   (evidence_data->evidence_cb)(evidence_data->show->evidence, evidence_data->evidence_cb_data) ;
-	 }
-
-      zMapXMLParserDestroy(parser);
-
-      g_free(evidence_data->show) ;
-      g_free(evidence_data) ;
+      zMapLogCritical("Bad reply from peer: \"%s\"", reply_error) ;
     }
   else
     {
-      char *err_msg ;
+      if (command_rc == REMOTE_COMMAND_RC_OK)
+	{
+	  ZMapXMLParser parser ;
+	  gboolean parses_ok ;
 
-      err_msg = g_strdup_printf("Fetching of feature data from external client failed: %s",
-				reason) ;
+	  /* Create the parser and call set up our start/end handlers to parse the xml reply. */
+	  parser = zMapXMLParserCreate(evidence_data->show, FALSE, FALSE);
 
-      zMapWarning("%s", err_msg) ;
-      zMapLogWarning("%s", err_msg) ;
+	  zMapXMLParserSetMarkupObjectTagHandlers(parser, evidence_data->starts, evidence_data->ends) ;
+ 
+	  if ((parses_ok = zMapXMLParserParseBuffer(parser, 
+						    reply, 
+						    strlen(reply))) != TRUE)
+	    {
+	      zMapLogWarning("Parsing error : %s", zMapXMLParserLastErrorMsg(parser));
+
+	    }
+	  else
+	    {
+	      /* The parse worked so pass back the list of evidence to our caller. */
+	      (evidence_data->evidence_cb)(evidence_data->show->evidence, evidence_data->evidence_cb_data) ;
+	    }
+
+	  zMapXMLParserDestroy(parser);
+
+	  g_free(evidence_data->show) ;
+	  g_free(evidence_data) ;
+	}
+      else
+	{
+	  char *err_msg ;
+
+	  err_msg = g_strdup_printf("Fetching of feature data from external client failed: %s",
+				    reason) ;
+
+	  zMapWarning("%s", err_msg) ;
+	  zMapLogWarning("%s", err_msg) ;
+	}
     }
 
   return ;

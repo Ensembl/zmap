@@ -382,7 +382,6 @@ ZMAP_SRC_DIRS="zmapApp \
 zmapAppServices \
 zmapConfig \
 zmapControl \
-zmapControl/remote \
 zmapDAS \
 zmapDraw \
 zmapFeature \
@@ -418,7 +417,6 @@ zmapApp/Makefile
 zmapAppServices/Makefile
 zmapConfig/Makefile
 zmapControl/Makefile
-zmapControl/remote/Makefile
 zmapDAS/Makefile
 zmapDraw/Makefile
 zmapFeature/Makefile

@@ -57,7 +57,7 @@ void zMapWindowNavigatorFocus(ZMapWindowNavigator navigate,
 void zMapWindowNavigatorSetCurrentWindow(ZMapWindowNavigator navigate, ZMapWindow window);
 void zMapWindowNavigatorMergeInFeatureSetNames(ZMapWindowNavigator navigate,
                                                GList *navigator_sets);
-void zMapWindowNavigatorSetStrand(ZMapWindowNavigator navigate, gboolean is_revesed);
+void zMapWindowNavigatorSetStrand(ZMapWindowNavigator navigate, gboolean is_reversed);
 void zMapWindowNavigatorDrawFeatures(ZMapWindowNavigator navigate,
                                      ZMapFeatureContext  full_context,
 				     GHashTable              *styles);
