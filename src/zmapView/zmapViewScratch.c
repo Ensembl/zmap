@@ -759,6 +759,7 @@ void zmapViewScratchInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, ZM
 		column = g_new0(ZMapFeatureColumnStruct,1);
 		column->unique_id = f2c->column_id;
 		column->style_table = g_list_prepend(NULL, (gpointer)  style);
+                column->order = zMapFeatureColumnOrderNext();
 		/* the rest shoudl get filled in elsewhere */
 		g_hash_table_insert(context_map->columns, GUINT_TO_POINTER(f2c->column_id), column);
 	}
