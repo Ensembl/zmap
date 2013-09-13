@@ -1462,7 +1462,7 @@ static gboolean writeFeatureFiles(blixemData blixem_data)
   else
 #endif
 
-#warning legacy blixem file format code iffed out!
+    /*! \todo #warning legacy blixem file format code iffed out! */
     {
       start = blixem_data->features_min ;
       end = blixem_data->features_max ;

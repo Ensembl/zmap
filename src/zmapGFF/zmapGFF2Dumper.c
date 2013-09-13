@@ -799,7 +799,7 @@ static gboolean dump_transcript_foreach_subpart(ZMapFeature feature,
   for (i = 0 ; i < subparts->len && result ; i++)
     {
       ZMapSpanStruct span = g_array_index(subparts, ZMapSpanStruct, i) ;
-#warning Need to do something about phase here!
+      /*! \todo #warning Need to do something about phase here! */
       ZMapPhase phase = ZMAPPHASE_NONE ;
 
       /* 16.2810538-2863623      Transcript      intron  19397   20627   .       -       .       Sequence "AC005361.6-003" */

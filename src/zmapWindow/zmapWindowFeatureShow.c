@@ -1850,7 +1850,7 @@ static void addTagValue(gpointer data, gpointer user_data)
 {
   ID2Canvas id2c = (ID2Canvas) data;
   //  FooCanvasItem *item = (FooCanvasItem *) id2c->item ;
-#warning need to revisit this when alignments get done as composite/ column items, need function for item/feature bounds
+  /*! \todo #warning need to revisit this when alignments get done as composite/ column items, need function for item/feature bounds */
 
   AddPara para_data = (AddPara)user_data ;
   ZMapGuiNotebookParagraph paragraph = para_data->paragraph ;

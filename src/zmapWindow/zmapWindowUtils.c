@@ -142,7 +142,7 @@ int zmapWindowWorldToSequenceForward(ZMapWindow window, int coord)
 
 int zmapWindowCoordFromDisplay(ZMapWindow window, int coord)
 {
-#warning this needs testing/fixing: called from -> zmapWindowDNA.c/searchCB()
+  /*! \todo #warning this needs testing/fixing: called from -> zmapWindowDNA.c/searchCB() */
 /* turns out it's the converse of zmapWindowCoordPairToDisplay()
  * coords get converted to display then converted back to sequence
  * better to fix in the caller by not calling this!

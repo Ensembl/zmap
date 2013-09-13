@@ -114,15 +114,15 @@ typedef struct GetViewNamesStructName
 
 
 
+#ifdef UNUSED
 static void localProcessRemoteRequest(ZMap zmap,
 				      char *command_name, char *request,
 				      ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data) ;
-
 static void processRequest(ZMap zmap,
 			   char *command_name, char *request,
 			   RemoteCommandRCType *command_rc_out, char **reason_out,
 			   ZMapXMLUtilsEventStack *reply_out) ;
-
+#endif
 
 static void handlePeerReply(gboolean reply_ok, char *reply_error,
 			    char *command, RemoteCommandRCType command_rc, char *reason, char *reply,
@@ -420,6 +420,7 @@ static void handlePeerReply(gboolean reply_ok, char *reply_error,
 }
 
 
+#ifdef UNUSED
 /* CURRENTLY UNUSED AS WE DO NOT HAVE CONTROL LEVEL COMMANDS, I'M LEAVING THE CODE
  * CODE HERE BECAUSE IT'S VERY LIKELY WE WILL ADD COMMANDS. */
 static void localProcessRemoteRequest(ZMap zmap,
@@ -438,8 +439,10 @@ static void localProcessRemoteRequest(ZMap zmap,
 
   return ;
 }
+#endif
 
 
+#ifdef UNUSED
 /* CURRENTLY UNUSED AS WE DO NOT HAVE CONTROL LEVEL COMMANDS, I'M LEAVING THE CODE
  * CODE HERE BECAUSE IT'S VERY LIKELY WE WILL ADD COMMANDS. */
 static void processRequest(ZMap zmap,
@@ -517,7 +520,7 @@ static void processRequest(ZMap zmap,
 
   return ;
 }
-
+#endif
 
 
 /* GFunc() to make an xml view element each time it is called.

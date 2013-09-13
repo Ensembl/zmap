@@ -406,7 +406,7 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
 	{
 	  edge = 0x808080ff;
 	  edge_set = TRUE;
-#warning get alignment colour for edge
+          /*! \todo #warning get alignment colour for edge */
 	}
     }
 

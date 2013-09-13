@@ -1135,7 +1135,7 @@ static void toggleColumnInMultipleBlocks(ZMapWindow window, char *name,
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-#warning "Test doesn't find 3 frame column, work out why after annotation test."
+  /*! \todo #warning "Test doesn't find 3 frame column, work out why after annotation test." */
 
   /* check we have the style... */
   if (!(zmapWindowFToIFindItemFull(window,window->context_to_item,

@@ -172,7 +172,7 @@ static void zMapWindowCanvasLocusPaintFeature(ZMapWindowFeaturesetItem featurese
  * so it looks better with the downside of some overlap it it's a bit crowded.
  * we get groups overlapping, could do zebra stripe colour coding....
  */
-#warning this function need shaking down a bit
+/*! \todo #warning this function need shaking down a bit */
 
 
 static double deOverlap(GList *visible,int n_loci, double text_h, double start, double end)

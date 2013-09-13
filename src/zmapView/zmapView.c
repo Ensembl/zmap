@@ -396,7 +396,7 @@ ZMapViewWindow zMapViewCreate(GtkWidget *view_container, ZMapFeatureSequenceMap 
   /* No callbacks, then no view creation. */
   zMapAssert(view_cbs_G);
   zMapAssert(GTK_IS_WIDGET(view_container));
-#warning need to assert dataset too
+  /*! \todo #warning need to assert dataset too */
   zMapAssert(sequence_map->sequence);
 //  zMapAssert(start > 0);
   zMapAssert((sequence_map->end == 0 || sequence_map->end >= sequence_map->start)) ;
@@ -3825,7 +3825,7 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 			{
 			  /* NOTE this is an ordered list */
 			  column->featuresets_unique_ids = g_list_append(column->featuresets_unique_ids,key);
-#warning this code gets run for all featuresets for every server which is silly
+                          /*! \todo #warning this code gets run for all featuresets for every server which is silly */
 			}
 		    }
 		}

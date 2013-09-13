@@ -759,7 +759,7 @@ gboolean zmapWindowMarkSetBlockContainer(ZMapWindowMark mark, ZMapWindowContaine
 	{
 	  block_container       = (ZMapWindowContainerBlock)container;
 	  mark->block_container = block_container;
-#warning Need to implement block relative coordinates for this to work
+          /*! \todo #warning Need to implement block relative coordinates for this to work */
 	  /* MH17: features are at absolute coordinates and we cannot have multiple blocks
 	   * we need to use world coordinates for the mark to be able to request external data
 	   * sequence_start and _end are block relative

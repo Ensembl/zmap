@@ -440,7 +440,7 @@ ZMapFeatureAny zmapWindowItemGetFeatureAnyType(FooCanvasItem *item, ZMapFeatureS
 }
 
 
-#warning this function does nothing but is called five times and should be removed
+/*! \todo #warning this function does nothing but is called five times and should be removed */
 /* Get "parent" item of feature, for simple features, this is just the item itself but
  * for compound features we need the parent group.
  *  */
@@ -813,7 +813,7 @@ void zmapWindowItemCentreOnItemSubPart(ZMapWindow window, FooCanvasItem *item,
 	      zmapWindowClampSpan(window, &sy1, &sy2);
 
 	      /* Do the move ... */
-#warning this assumes the scroll region is big enough for the DNA match, but some people have searched for big sequences
+              /*! \todo #warning this assumes the scroll region is big enough for the DNA match, but some people have searched for big sequences */
 	      zMapWindowMove(window, sy1, sy2);
 	    }
 	}

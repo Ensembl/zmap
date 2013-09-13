@@ -710,7 +710,7 @@ static void generateFeatureXMLEvents(ZMapFeature feature,
           {
             event.data.comp.name = g_quark_from_string("style");
             event.data.comp.data = ZMAPXML_EVENT_DATA_QUARK;
-#warning STYLE_ID wrong, needs to be Original id instead
+            /*! \todo #warning STYLE_ID wrong, needs to be Original id instead */
 //           event.data.comp.value.quark = feature->style_id ;
 		{
 			ZMapFeatureTypeStyle style = *feature->style;
