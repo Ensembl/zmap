@@ -646,7 +646,7 @@ double zMapWindowDrawScaleBar(FooCanvasGroup *group, int scroll_start, int scrol
   int first;
 
   static ZMapFeatureTypeStyle scale_style = NULL;
-#warning move this to predefined styles code in featureTyoes.c
+  /*! \todo #warning move this to predefined styles code in featureTyoes.c */
   /* temporarily create pre-defined style here (needed by Canvasfeatureset)
    * we don't actually use the colours here, maybe we should */
   if(!scale_style)
@@ -690,7 +690,7 @@ double zMapWindowDrawScaleBar(FooCanvasGroup *group, int scroll_start, int scrol
       font_width = 8.0;
       text_height = 14;
       //		zMapLogWarning("DrawScale get font size failed","");
-#warning fix the font size to work centrally
+      /*! \todo #warning fix the font size to work centrally */
     }
 
   /* get the highest order ticks:  sequence and scroll are in chromosome coordinates but we display slice coordinates.... */

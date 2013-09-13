@@ -614,7 +614,7 @@ static ZMapFeatureSubPartSpan zmapWindowCanvasSequenceGetSubPartSpan (FooCanvasI
 {
   static ZMapFeatureSubPartSpanStruct sub_part;
 
-#warning revisit this when canvas items are simplified
+  /*! \todo #warning revisit this when canvas items are simplified */
 
   sub_part.start = y;
   sub_part.end = y;

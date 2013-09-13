@@ -2944,7 +2944,7 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data)
       else
 #endif
 	{
-#warning if we ever have paired reads data in a virtual featureset we need to expand that here
+          /*! \todo #warning if we ever have paired reads data in a virtual featureset we need to expand that here */
 	  seq_sets = add_column_featuresets(menu_data->window->context_map,seq_sets,menu_data->req_id,FALSE);
 	  requested_homol_set = ZMAPWINDOW_ALIGNCMD_SEQ ;
 	}

@@ -381,7 +381,7 @@ void zmapWindowCanvasFeaturesetInitPango(GdkDrawable *drawable, ZMapWindowFeatur
 
       //		font = findFixedWidthFontFamily(seq->pango.context);
       desc = pango_font_description_from_string (family);
-#warning mod this function and call from both places
+      /*! \todo #warning mod this function and call from both places */
 #if 0
       /* this must be identical to the one get by the ZoomControl */
       if(zMapGUIGetFixedWidthFont(view,
@@ -1904,10 +1904,10 @@ double  zmap_window_featureset_item_foo_point(FooCanvasItem *item,
 
       best = fi->end - fi->start + 1;
 
-#warning need to check these coordinate calculations
+      /*! \todo #warning need to check these coordinate calculations */
       local_x = item_x + fi->dx;
       local_y = item_y + fi->dy;
-#warning this code is in the wrong place, review when containers rationalised
+      /*! \todo #warning this code is in the wrong place, review when containers rationalised */
 
       y1 = local_y - item->canvas->close_enough;
       y2 = local_y + item->canvas->close_enough;
@@ -1917,7 +1917,7 @@ double  zmap_window_featureset_item_foo_point(FooCanvasItem *item,
 
       /* NOTE histgrams are hooked onto the LHS, but we can click on the row and still get the feature */
 
-#warning change this to use featurex1 and x2 coords
+      /*! \todo #warning change this to use featurex1 and x2 coords */
       /* NOTE warning even better if we express point() function in pixel coordinates only */
 
       x_off = fi->dx + fi->x_off;
@@ -3314,7 +3314,7 @@ ZMapWindowCanvasGraphics zMapWindowFeaturesetAddGraphics(ZMapWindowFeaturesetIte
 int zMapWindowFeaturesetRemoveGraphics(ZMapWindowFeaturesetItem featureset_item, ZMapWindowCanvasGraphics feat)
 {
 
-#warning zMapWindowFeaturesetRemoveGraphics not implemented
+  /*! \todo #warning zMapWindowFeaturesetRemoveGraphics not implemented */
   /* is this needed? yes: diff struct, yes: gets called on revcomp */
 
 #if 0
@@ -3357,7 +3357,7 @@ int zMapWindowFeaturesetRemoveGraphics(ZMapWindowFeaturesetItem featureset_item,
 
   we really need to rethink this: deleting was not considered
 */
-#warning need to revist this code and make it more efficient
+/*! \todo #warning need to revist this code and make it more efficient */
 // ideas:
 // use a skip list exclusively ??
 // use features list for loading, convert to skip list and remove features
@@ -3408,7 +3408,7 @@ int zMapWindowFeaturesetItemRemoveFeature(FooCanvasItem *foo, ZMapFeature featur
 	  fi->features = g_list_delete_link(fi->features,del);
 	  fi->n_features--;
 
-#warning review this (feature remove)
+          /*! \todo #warning review this (feature remove) */
 	  // not sure what this is here for: we-d have to process the sideways list??
 	  // and that does not give us the features list instsead the canvasfeature structs so no workee
 	  // perhaps the ultimate caller calls several times??
@@ -3598,7 +3598,7 @@ int zMapWindowFeaturesetItemGetNFiltered(FooCanvasItem *item)
 }
 
 
-#warning make this into a foo canvas item class func
+/*! \todo #warning make this into a foo canvas item class func */
 
 /* get the bounds of the current feature which has been set by the caller */
 void zMapWindowCanvasFeaturesetGetFeatureBounds(FooCanvasItem *foo, double *rootx1, double *rooty1, double *rootx2, double *rooty2)

@@ -1003,7 +1003,7 @@ void zMapWindowBack(ZMapWindow window)
 
       /* somehow this does not paint till we get a window/widget resise if back from big zoom in a vsplit window */
       /* unless we call this, but we also need to handle the blank bits at the edges */
-#warning still doesn-t work, possibly a race condition, it-s not 100% producable
+      /*! \todo #warning still doesn-t work, possibly a race condition, it-s not 100% producable */
 /* only appears to apply to v-split */
 //	sleep(4);		/* still goes wrong as before */
       zMapWindowRedraw(window);
@@ -3581,14 +3581,14 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 
 		    if(window->sequence)
 		      {
-#warning need a flag here to say chromosome coords have been set
+                        /*! \todo #warning need a flag here to say chromosome coords have been set */
 			if(window->sequence->start == 1)
 			  /* not using chromo coords internally?? */
 			  {
 			    int start;
 			    char *p;
 
-#warning move this to seq req/load and set sequence coords, then remove from here
+                            /*! \todo #warning move this to seq req/load and set sequence coords, then remove from here */
 			    /* using zmap coords internally */
 			    for(p = window->sequence->sequence; *p && *p != '_'; p++)
                               continue;
@@ -4799,7 +4799,7 @@ void zmapWindowFetchData(ZMapWindow window,
 						       block->unique_id, 0, 0, 0, 0)))
 	    {
 
-#warning need to optimise requests so as to not req data we already have
+              /*! \todo #warning need to optimise requests so as to not req data we already have */
 	      /* for the moment just re-request */
 	      /*
 		ideally we should optimise the requests to only cover empty regions
@@ -5705,7 +5705,7 @@ static void jumpFeature(ZMapWindow window, guint keyval)
 /* Jump to the previous/next column according to which arrow key was pressed. */
 static void jumpColumn(ZMapWindow window, guint keyval)
 {
-#warning jumpColumn commented out temporarily
+  /*! \todo #warning jumpColumn commented out temporarily */
 #if 0
   FooCanvasGroup *focus_column;
   gboolean move_focus = FALSE, highlight_column = FALSE ;
@@ -6129,7 +6129,7 @@ static void getFirstForwardCol(ZMapWindowContainerGroup container, FooCanvasPoin
 	  else
 	    col_ptr = (strand_columns->item_list_end) ;
 
-#warning getFirstForwarsCol() code needs adjusting, commented out temporarily
+          /*! \todo #warning getFirstForwarsCol() code needs adjusting, commented out temporarily */
 #if 0
 	  while (col_ptr)
 	    {

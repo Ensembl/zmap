@@ -1051,7 +1051,7 @@ static void revCompFeature(ZMapFeature feature, int start_coord, int end_coord)
           align = &g_array_index(feature->feature.homol.align, ZMapAlignBlockStruct, i) ;
 
           zmapFeatureRevComp(Coord, start_coord, end_coord, align->t1, align->t2) ;
-#warning why does this not change t_strand?
+          /*! \todo #warning why does this not change t_strand? */
         }
 
       zMapFeatureSortGaps(feature->feature.homol.align) ;

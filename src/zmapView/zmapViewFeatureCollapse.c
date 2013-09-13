@@ -191,7 +191,7 @@ static int splice_sort(gconstpointer ga,gconstpointer gb)
 /* simple concensus sequence for a composite feature */
 /* taking the most common base and not translating variable positions */
 /* initially annotators will be warned to check dbSNP or 1000 genomes */
-#warning interim solution for concensus sequence
+/*! \todo #warning interim solution for concensus sequence */
 
 # if 0
 Some data from GFF:

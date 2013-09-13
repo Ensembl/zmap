@@ -675,7 +675,7 @@ gboolean zMapWindowSeqDispSelectByFeature(FooCanvasItem *sequence_feature,
                 break;
               }
             
-#warning single exon select is broken
+            /*! \bug #warning single exon select is broken */
 #if 0
             if (sub_feature)
               {

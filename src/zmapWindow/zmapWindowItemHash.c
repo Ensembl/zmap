@@ -253,9 +253,9 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(GHashTable *ftoi_hash,
 			* and the population copied in.
 			*
 			* NOTE calling code will need to set the feature in the hash as the composite feature
-	#warning need to set composite feature in lookup code
 			*/
-
+                  /*! \todo #warning need to set composite feature in lookup code */
+                  
 	  return (FooCanvasItem *) feature_item;
 	}
 

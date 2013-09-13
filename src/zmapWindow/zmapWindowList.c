@@ -751,7 +751,7 @@ static gboolean selection_func_cb(GtkTreeSelection *selection,
          * we have to find the item from the feature as the item is not the same one
          * see RT 205912 and 205744
          */
-#warning possible memory allocation error here if the item was changed eg by bumping
+        /*! \todo #warning possible memory allocation error here if the item was changed eg by bumping */
 
         item = zmapWindowFToIFindFeatureItem(window,window->context_to_item,
                         zmapWindowContainerFeatureSetGetStrand(cfs),

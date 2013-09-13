@@ -672,7 +672,7 @@ static gboolean setSequenceMapping(DasServer server, ZMapFeatureContext feature_
 
           if(pspan.x1 && pspan.x2)
             {
-#warning need to check this code
+              /*! \todo #warning need to check this code */
               /* Just adjust for the user's request. */
 #if 0
               if(feature_context->sequence_to_parent.c1 >= pspan.x1)
@@ -759,7 +759,7 @@ static gboolean setSequenceMapping(DasServer server, ZMapFeatureContext feature_
       /* Copy the structs we made to the feature context */
 //    feature_context->length                = seq2p.c2 - seq2p.c1 + 1;
 
-#warning need to check this code
+/*! \todo #warning need to check this code */
 #if !OLD_VERSION
       feature_context->master_align->sequence_span.x1 = seq2p.block.x1;
       feature_context->master_align->sequence_span.x2 = seq2p.block.x2;

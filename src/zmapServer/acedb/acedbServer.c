@@ -844,7 +844,7 @@ static ZMapServerResponseType getFeatures(void *server_in,
    * necessary implement multiple block requests from the main ZMap code
    * as this would be compatable with pipeServers
    */
-#warning review this if multiple blocks are implemented
+  /*! \todo #warning review this if multiple blocks are implemented */
   GList *req_names,*req_cols;
   req_cols = feature_context->req_feature_set_names;
   req_names = NULL;

@@ -205,7 +205,7 @@ ZMapXMLWriterErrorCode zMapXMLWriterEndElement(ZMapXMLWriter writer, char *eleme
         }
 
 #ifdef RDS_DONT_INCLUDE_UNUSED
-#warning FIX MEM LEAK
+      /*! \todo #warning FIX MEM LEAK */
       if(stack_head->attribute_list)
         g_array_free(stack_head->attribute_list, TRUE);
 

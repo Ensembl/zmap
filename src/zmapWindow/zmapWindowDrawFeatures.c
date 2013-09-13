@@ -333,7 +333,7 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
 	}
 
 
-#warning seq offset should be in block and/or align? shouldn-t this should go into drawContextCB??
+      /*! \todo #warning seq offset should be in block and/or align? shouldn-t this should go into drawContextCB?? */
 
       /* Add a background to the root window, must be as long as entire sequence... */
       root_group = zmapWindowContainerGroupCreate((FooCanvasGroup *) foo_canvas_root(window->canvas),
@@ -1306,7 +1306,7 @@ if(zMapStyleDisplayInSeparator(feature_set->style))
     {
       ZMapStyle3FrameMode frame_mode ;
 
-#warning logically we should not get here unless these conditions are met
+      /*! \todo #warning logically we should not get here unless these conditions are met */
 
       if (column_strand == ZMAPSTRAND_FORWARD)
       	valid_strand = TRUE;
@@ -2529,7 +2529,7 @@ gboolean zmapWindowColumnBoundingBoxEventCB(FooCanvasItem *foo, GdkEvent *event,
 	    /* shift adds to the selection so we don't unhighlight if nothing's there */
 	    {
 
-#warning COLUMN_HIGHLIGHT_NEEDS_TO_WORK_WITH_MULTIPLE_WINDOWS
+              /*! \todo #warning COLUMN_HIGHLIGHT_NEEDS_TO_WORK_WITH_MULTIPLE_WINDOWS */
 
 	      /* Swop focus from previous item(s)/columns to this column. */
 	      zmapWindowUnHighlightFocusItems(window) ;
