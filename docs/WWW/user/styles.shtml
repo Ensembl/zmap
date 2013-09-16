@@ -982,7 +982,7 @@ stylesfile = ~/.xace/stylesfile
 url = acedb://any:any@127.0.0.1:23500?use_methods=false
 </pre>
 
-Further ZMap and Blixem configuration can also be included in stanzas in the xace config file. These fields will be copied directly to the relevant fields in the ZMap/Blixem configuration file, or concatenated with dynamic data if required. The example below shows additional columns that have been added to the "columns" field, including a bam source (wormbase-accepted-hits) as well as the hard-coded ZMap columns such as DNA and 3 Frame Translation. Additional columns for all of the acedb methods will be added to this list dynamically by xace when it creates the ZMap config file.
+Further ZMap and Blixem configuration can also be included in stanzas in the xace config file. These fields will be copied directly to the relevant fields in the ZMap/Blixem configuration file, or concatenated with dynamic data if required. The example below shows additional columns that have been added to the "columns" field, including a bam source (wormbase-accepted-hits) as well as the hard-coded ZMap columns such as DNA, 3 Frame, Annotation etc.. Additional columns for all of the acedb methods will be added to this list dynamically by xace when it creates the ZMap config file.
 <pre>
 [ZMap]
 script = zmap
@@ -990,11 +990,14 @@ args = --sleep=0 ; --shrink ;
 stylesfile = ~/.xace/stylesfile
 url = acedb://any:any@127.0.0.1:23500?use_methods=false
 sources = wormbase-accepted-hits
-columns = wormbase-accepted-hits ; Scratch ; DNA ; 3 Frame ; 3 Frame Translation ; Locus ; GeneFinderFeatures ; Show Translation ; Assembly path ; ATG ; hexExon ; hexIntron ; GF_coding_seg ; GF_ATG ; hexExon_span ; RNA ; SPLICED_cDNA ; GF_splice
+columns = wormbase-accepted-hits ; Annotation ; DNA ; 3 Frame ; 3 Frame Translation ; Locus ; GeneFinderFeatures ; Show Translation ; Assembly path ; ATG ; hexExon ; hexIntron ; GF_coding_seg ; GF_ATG ; hexExon_span ; RNA ; SPLICED_cDNA ; GF_splice
 seq-data = wormbase-accepted-hits
 
 [columns]
 accepted_hits = wormbase-accepted-hits
+
+[column-style]
+annotation=annotationcolumn
 
 [featureset-style]
 accepted_hits = short-read
