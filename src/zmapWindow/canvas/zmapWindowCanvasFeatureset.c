@@ -2414,7 +2414,7 @@ void zmapWindowCanvasFeaturesetSetColours(ZMapWindowFeaturesetItem fi, ZMapWindo
 			 g_quark_to_string(feature->original_id), g_quark_to_string(feature->unique_id)) ;
 
 
-  zMapAssert(*feat->feature->style);
+  g_return_if_fail(*feat->feature->style);
 
   if((fi->featurestyle != *feat->feature->style) || !(fi->frame && zMapStyleIsFrameSpecific(*feat->feature->style)))
     /* diff style: set colour from style */
