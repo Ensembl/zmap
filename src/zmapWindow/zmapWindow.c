@@ -726,7 +726,14 @@ void zMapWindowUnDisplayData(ZMapWindow window,
 }
 
 
+void zMapWindowRemoveFeatureset(ZMapWindow window, ZMapFeatureSet featureset)
+{
+  FooCanvasItem *item = zmapWindowFToIFindFeatureItem(window, window->context_to_item,
+                                                              ZMAPSTRAND_NONE, ZMAPFRAME_NONE, featureset) ;
 
+  if (item)
+    zMapWindowFeaturesetItemRemoveSet(item, featureset, TRUE) ;
+}
 
 
 /* completely reset window. */

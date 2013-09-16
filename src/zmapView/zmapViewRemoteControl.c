@@ -238,15 +238,6 @@ static gboolean mergeNewFeatures(ZMapView view, RequestData request_data,
 				 ZMapFeatureContext *merge_context, GList **feature_list) ;
 static void draw_failed_make_message(gpointer list_data, gpointer user_data) ;
 static void delete_failed_make_message(gpointer list_data, gpointer user_data) ;
-static gint matching_unique_id(gconstpointer list_data, gconstpointer user_data) ;
-static ZMapFeatureContextExecuteStatus delete_from_list(GQuark key,
-                                                        gpointer data,
-                                                        gpointer user_data,
-                                                        char **error_out) ;
-static ZMapFeatureContextExecuteStatus mark_matching_invalid(GQuark key,
-                                                             gpointer data,
-                                                             gpointer user_data,
-                                                             char **error_out) ;
 static void loadFeatures(ZMapView view, RequestData request_data) ;
 static void getFeatureNames(ZMapViewWindow view_window, RequestData request_data) ;
 static void findUniqueCB(gpointer data, gpointer user_data) ;
@@ -747,12 +738,7 @@ static void viewDumpContextToFile(ZMapView view, RequestData request_data)
 /* Remove a list of features from the context. */
 static void eraseFeatures(ZMapView view, RequestData request_data)
 {
-  zmapViewEraseFromContext(view, request_data->edit_context);
-
-  zMapFeatureContextExecute((ZMapFeatureAny)(request_data->edit_context),
-                            ZMAPFEATURE_STRUCT_FEATURE,
-                            mark_matching_invalid,
-                            &(request_data->edit_feature_list));
+  zmapViewEraseFeatures(view, request_data->edit_context, &(request_data->edit_feature_list)) ;
 
   /* If anything failed then delete_failed_make_message() will set command_rc and err_msg. */
   request_data->command_rc = REMOTE_COMMAND_RC_OK ;
@@ -792,7 +778,9 @@ static gboolean mergeNewFeatures(ZMapView view, RequestData request_data,
 {
   gboolean result = FALSE ;
 
-  if (!(*merge_context = zmapViewMergeInContext(view, *merge_context)))
+  result = zmapViewMergeNewFeatures(view, merge_context, feature_list) ;
+
+  if (!result)
     {
       request_data->command_rc = REMOTE_COMMAND_RC_FAILED ;
 
@@ -800,16 +788,6 @@ static gboolean mergeNewFeatures(ZMapView view, RequestData request_data,
     }
   else
     {
-      zMapFeatureContextExecute((ZMapFeatureAny)(*merge_context),
-				ZMAPFEATURE_STRUCT_FEATURE,
-				delete_from_list,
-				feature_list);
-
-      zMapFeatureContextExecute((ZMapFeatureAny)(view->features),
-				ZMAPFEATURE_STRUCT_FEATURE,
-				mark_matching_invalid,
-				feature_list);
-
       request_data->command_rc = REMOTE_COMMAND_RC_OK ;
 
       if (g_list_length(*feature_list))
@@ -868,57 +846,6 @@ static void delete_failed_make_message(gpointer list_data, gpointer user_data)
     }
 
   return ;
-}
-
-static gint matching_unique_id(gconstpointer list_data, gconstpointer user_data)
-{
-  gint match = -1;
-  ZMapFeatureAny a = (ZMapFeatureAny)list_data, b = (ZMapFeatureAny)user_data ;
-
-  match = !(a->unique_id == b->unique_id);
-
-  return match;
-}
-
-static ZMapFeatureContextExecuteStatus delete_from_list(GQuark key,
-                                                        gpointer data,
-                                                        gpointer user_data,
-                                                        char **error_out)
-{
-  ZMapFeatureAny any = (ZMapFeatureAny)data;
-  GList **list = (GList **)user_data, *match;
-
-  if (any->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
-    {
-      if ((match = g_list_find_custom(*list, any, matching_unique_id)))
-        {
-          *list = g_list_remove(*list, match->data);
-        }
-    }
-
-  return ZMAP_CONTEXT_EXEC_STATUS_OK;
-}
-
-
-
-static ZMapFeatureContextExecuteStatus mark_matching_invalid(GQuark key,
-                                                             gpointer data,
-                                                             gpointer user_data,
-                                                             char **error_out)
-{
-  ZMapFeatureAny any = (ZMapFeatureAny)data;
-  GList **list = (GList **)user_data, *match;
-
-  if (any->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
-    {
-      if ((match = g_list_find_custom(*list, any, matching_unique_id)))
-        {
-          any = (ZMapFeatureAny)(match->data);
-          any->struct_type = ZMAPFEATURE_STRUCT_INVALID;
-        }
-    }
-
-  return ZMAP_CONTEXT_EXEC_STATUS_OK;
 }
 
 

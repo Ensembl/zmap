@@ -246,6 +246,16 @@ static gint colOrderCB(gconstpointer a, gconstpointer b,gpointer user_data) ;
 
 static void sendViewLoaded(ZMapView zmap_view, ZMapViewLoadFeaturesData lfd) ;
 
+static gint matching_unique_id(gconstpointer list_data, gconstpointer user_data) ;
+static ZMapFeatureContextExecuteStatus delete_from_list(GQuark key,
+                                                        gpointer data,
+                                                        gpointer user_data,
+                                                        char **error_out) ;
+static ZMapFeatureContextExecuteStatus mark_matching_invalid(GQuark key,
+                                                             gpointer data,
+                                                             gpointer user_data,
+                                                             char **error_out) ;
+
 
 #define DEBUG_CONTEXT_MAP	0
 
@@ -959,6 +969,95 @@ gboolean zmapViewDrawDiffContext(ZMapView view, ZMapFeatureContext *diff_context
     *diff_context = NULL ;
 
   return context_freed ;
+}
+
+
+static gint matching_unique_id(gconstpointer list_data, gconstpointer user_data)
+{
+  gint match = -1;
+  ZMapFeatureAny a = (ZMapFeatureAny)list_data, b = (ZMapFeatureAny)user_data ;
+
+  match = !(a->unique_id == b->unique_id);
+
+  return match;
+}
+
+
+static ZMapFeatureContextExecuteStatus delete_from_list(GQuark key,
+                                                        gpointer data,
+                                                        gpointer user_data,
+                                                        char **error_out)
+{
+  ZMapFeatureAny any = (ZMapFeatureAny)data;
+  GList **list = (GList **)user_data, *match;
+
+  if (any->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
+    {
+      if ((match = g_list_find_custom(*list, any, matching_unique_id)))
+        {
+          *list = g_list_remove(*list, match->data);
+        }
+    }
+
+  return ZMAP_CONTEXT_EXEC_STATUS_OK;
+}
+
+
+static ZMapFeatureContextExecuteStatus mark_matching_invalid(GQuark key,
+                                                             gpointer data,
+                                                             gpointer user_data,
+                                                             char **error_out)
+{
+  ZMapFeatureAny any = (ZMapFeatureAny)data;
+  GList **list = (GList **)user_data, *match;
+
+  if (any->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
+    {
+      if ((match = g_list_find_custom(*list, any, matching_unique_id)))
+        {
+          any = (ZMapFeatureAny)(match->data);
+          any->struct_type = ZMAPFEATURE_STRUCT_INVALID;
+        }
+    }
+
+  return ZMAP_CONTEXT_EXEC_STATUS_OK;
+}
+
+
+gboolean zmapViewMergeNewFeatures(ZMapView view, ZMapFeatureContext *context, GList **feature_list)
+{
+  gboolean result = FALSE ;
+  
+  *context = zmapViewMergeInContext(view, *context) ;
+  
+  if (*context)
+    {
+      result = TRUE ;
+      
+      zMapFeatureContextExecute((ZMapFeatureAny)(*context),
+				ZMAPFEATURE_STRUCT_FEATURE,
+				delete_from_list,
+				feature_list);
+
+      zMapFeatureContextExecute((ZMapFeatureAny)(view->features),
+				ZMAPFEATURE_STRUCT_FEATURE,
+				mark_matching_invalid,
+				feature_list);
+    }
+
+  return result ;
+}
+
+void zmapViewEraseFeatures(ZMapView view, ZMapFeatureContext context, GList **feature_list)
+{
+  zmapViewEraseFromContext(view, context);
+
+  zMapFeatureContextExecute((ZMapFeatureAny)(context),
+                            ZMAPFEATURE_STRUCT_FEATURE,
+                            mark_matching_invalid,
+                            feature_list);
+
+  return ;
 }
 
 /* Force a redraw of all the windows in a view, may be reuqired if it looks like

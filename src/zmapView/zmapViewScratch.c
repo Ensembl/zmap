@@ -604,6 +604,24 @@ static void scratchDeleteFeatureExons(ZMapView view, ZMapFeature feature, ZMapFe
 
 
 
+static void zmapViewWindowsRemoveFeatureset(ZMapView zmap_view, ZMapFeatureSet feature_set)
+{
+  GList *list_item, *window_list  = NULL;
+
+  list_item = g_list_first(zmap_view->window_list) ;
+
+  do
+    {
+      ZMapViewWindow view_window ;
+      view_window = list_item->data ;
+      
+      zMapWindowRemoveFeatureset(view_window->window, feature_set) ;
+    }
+  while ((list_item = g_list_next(list_item))) ;
+
+  return ;
+}
+
 
 /*!
  * \brief Does the work to update any changes to the given featureset
@@ -613,7 +631,9 @@ static void scratchRedrawFeature(ZMapView zmap_view,
                           ZMapFeatureSet feature_set,
                           ZMapFeatureContext context)
 {
-  zmapViewDisplayDataWindows(zmap_view, zmap_view->features, zmap_view->features, NULL, TRUE, NULL, NULL, FALSE) ;
+  zmapViewWindowsRemoveFeatureset(zmap_view, feature_set) ;
+  
+  //  zmapViewDisplayDataWindows(zmap_view, zmap_view->features, zmap_view->features, NULL, TRUE, NULL, NULL, FALSE) ;
   zmapViewDisplayDataWindows(zmap_view, zmap_view->features, zmap_view->features, NULL, FALSE, NULL, NULL, FALSE) ;
 }
 
@@ -836,9 +856,11 @@ void scratchFeatureReset(ZMapView view)
   ZMapFeatureSet scratch_featureset = zmapViewScratchGetFeatureset(view);
   ZMapFeature scratch_feature = zmapViewScratchGetFeature(scratch_featureset, ZMAPSTRAND_FORWARD);
 
+  zmapViewWindowsRemoveFeatureset(view, scratch_featureset) ;
+
   /* Delete the exons and introns (the singleton feature always
    * exists so we don't delete the whole thing). */
-  scratchDeleteFeatureExons(view, scratch_feature, scratch_featureset);
+  //scratchDeleteFeatureExons(view, scratch_feature, scratch_featureset);
 
   /* Reset the start-/end-set flag */
   scratchSetStartEndFlag(view, FALSE);
