@@ -501,6 +501,9 @@ GList *zmapViewSrc2FSetGetList(GHashTable *source_2_featureset, GList *source_li
 
 ZMapFeatureContext zmapViewCreateContext(ZMapView view, GList *feature_set_names, ZMapFeatureSet feature_set);
 
+gboolean zmapViewMergeNewFeatures(ZMapView view, ZMapFeatureContext *context, GList **feature_list) ;
+void zmapViewEraseFeatures(ZMapView view, ZMapFeatureContext context, GList **feature_list) ;
+
 /* zmapViewFeatureMask.c */
 GList *zMapViewMaskFeatureSets(ZMapView view, GList *feature_set_names);
 

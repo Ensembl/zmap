@@ -39,7 +39,10 @@
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapFeature.h>
 #include <zmapView_P.h>
+#include <ZMap/zmapGLibUtils.h>
 
+
+#define SCRATCH_FEATURE_NAME "temp_feature"
 
   
 typedef struct _GetFeaturesetCBDataStruct
@@ -76,7 +79,11 @@ typedef struct _ScratchMergeDataStruct
   double world_y;              /* clicked position */
   gboolean use_subfeature;     /* if true, just use the clicked subfeature, otherwise use the whole feature */
 } ScratchMergeDataStruct, *ScratchMergeData;
-  
+
+
+/* Local function declarations */
+static void scratchFeatureRecreateExons(ZMapView view, ZMapFeature feature) ;
+
 
 
 
@@ -604,39 +611,132 @@ static void scratchDeleteFeatureExons(ZMapView view, ZMapFeature feature, ZMapFe
 
 
 
-static void zmapViewWindowsRemoveFeatureset(ZMapView zmap_view, ZMapFeatureSet feature_set)
+//static void zmapViewWindowsRemoveFeatureset(ZMapView zmap_view, ZMapFeatureSet feature_set)
+//{
+//  GList *list_item = NULL;
+//
+//  list_item = g_list_first(zmap_view->window_list) ;
+//
+//  do
+//    {
+//      ZMapViewWindow view_window ;
+//      view_window = list_item->data ;
+//      
+//      zMapWindowRemoveFeatureset(view_window->window, feature_set) ;
+//    }
+//  while ((list_item = g_list_next(list_item))) ;
+//
+//  return ;
+//}
+
+
+static ZMapFeatureContext copyContextAll(ZMapFeatureContext context, 
+                                         ZMapFeature feature,
+                                         ZMapFeatureSet feature_set,
+                                         GList **feature_list,
+                                         ZMapFeature *feature_copy_out)
 {
-  GList *list_item, *window_list  = NULL;
-
-  list_item = g_list_first(zmap_view->window_list) ;
-
-  do
-    {
-      ZMapViewWindow view_window ;
-      view_window = list_item->data ;
-      
-      zMapWindowRemoveFeatureset(view_window->window, feature_set) ;
-    }
-  while ((list_item = g_list_next(list_item))) ;
-
-  return ;
-}
-
-
-/*!
- * \brief Does the work to update any changes to the given featureset
- */
-static void scratchRedrawFeature(ZMapView zmap_view, 
-                          ZMapFeature feature,
-                          ZMapFeatureSet feature_set,
-                          ZMapFeatureContext context)
-{
-  zmapViewWindowsRemoveFeatureset(zmap_view, feature_set) ;
+  ZMapFeatureContext context_copy = NULL ;
+ 
+  g_return_val_if_fail(context && context->master_align && feature && feature_set, NULL) ;
+ 
+  context_copy = (ZMapFeatureContext)zMapFeatureAnyCopy((ZMapFeatureAny)context) ;
+  context_copy->req_feature_set_names = g_list_append(context_copy->req_feature_set_names, GINT_TO_POINTER(feature_set->unique_id)) ;
   
-  //  zmapViewDisplayDataWindows(zmap_view, zmap_view->features, zmap_view->features, NULL, TRUE, NULL, NULL, FALSE) ;
-  zmapViewDisplayDataWindows(zmap_view, zmap_view->features, zmap_view->features, NULL, FALSE, NULL, NULL, FALSE) ;
+  ZMapFeatureAlignment align_copy = (ZMapFeatureAlignment)zMapFeatureAnyCopy((ZMapFeatureAny)context->master_align) ;
+  zMapFeatureContextAddAlignment(context_copy, align_copy, FALSE) ;
+  
+  ZMapFeatureBlock block = zMap_g_hash_table_nth(context->master_align->blocks, 0) ;
+  g_return_val_if_fail(block, NULL) ;
+
+  ZMapFeatureBlock block_copy = (ZMapFeatureBlock)zMapFeatureAnyCopy((ZMapFeatureAny)block) ;
+  zMapFeatureAlignmentAddBlock(align_copy, block_copy) ;
+  
+  ZMapFeatureSet feature_set_copy = (ZMapFeatureSet)zMapFeatureAnyCopy((ZMapFeatureAny)feature_set) ;
+  zMapFeatureBlockAddFeatureSet(block_copy, feature_set_copy) ;
+  
+  ZMapFeature feature_copy = (ZMapFeature)zMapFeatureAnyCopy((ZMapFeatureAny)feature) ;
+  zMapFeatureSetAddFeature(feature_set_copy, feature_copy) ;
+  
+  if (feature_list)
+    *feature_list = g_list_append(*feature_list, feature_copy) ;
+  
+  if (feature_copy_out)
+    *feature_copy_out = feature_copy ;
+  
+  return context_copy ;
 }
 
+
+static void scratchEraseFeature(ZMapView zmap_view)
+{
+  g_return_if_fail(zmap_view && zmap_view->features) ;
+  ZMapFeatureContext context = zmap_view->features ;
+  
+  /* Get the singleton features that exist in each strand of the scatch column */
+  ZMapFeatureSet feature_set = zmapViewScratchGetFeatureset(zmap_view);
+  g_return_if_fail(feature_set) ;
+
+  ZMapFeature feature = zmapViewScratchGetFeature(feature_set, ZMAPSTRAND_FORWARD);
+  g_return_if_fail(feature) ;
+
+  GList *feature_list = NULL ;
+  ZMapFeatureContext context_copy = copyContextAll(context, feature, feature_set, &feature_list, NULL) ;
+  
+  if (context_copy && feature_list)
+    zmapViewEraseFeatures(zmap_view, context_copy, &feature_list) ;
+}
+
+
+static ZMapFeature scratchCreateNewFeature(ZMapView zmap_view)
+{
+  g_return_val_if_fail(zmap_view, NULL) ;
+  
+  ZMapFeatureSet feature_set = zmapViewScratchGetFeatureset(zmap_view);
+  g_return_val_if_fail(feature_set, NULL) ;
+
+  /* Create the feature with default values */
+  ZMapFeature feature = zMapFeatureCreateFromStandardData(SCRATCH_FEATURE_NAME,
+                                                          NULL,
+                                                          NULL,
+                                                          ZMAPSTYLE_MODE_TRANSCRIPT,
+                                                          &feature_set->style,
+                                                          0, 
+                                                          0,
+                                                          FALSE,
+                                                          0.0,
+                                                          ZMAPSTRAND_FORWARD);
+
+  zMapFeatureTranscriptInit(feature);
+  zMapFeatureAddTranscriptStartEnd(feature, FALSE, 0, FALSE);    
+  zMapFeatureSetAddFeature(feature_set, feature);  
+
+  /* Create the exons */
+  scratchFeatureRecreateExons(zmap_view, feature) ;
+  
+  return feature ;
+}
+
+
+static void scratchMergeNewFeature(ZMapView zmap_view, ZMapFeature feature)
+{
+  g_return_if_fail(zmap_view) ;
+  g_return_if_fail(feature) ;
+
+  /* Get the current featureset and context */
+  ZMapFeatureSet feature_set = zmapViewScratchGetFeatureset(zmap_view);
+  ZMapFeatureContext context = zmap_view->features ;
+
+  GList *feature_list = NULL ;
+  ZMapFeature feature_copy = NULL ;
+  ZMapFeatureContext context_copy = copyContextAll(context, feature, feature_set, &feature_list, &feature_copy) ;
+
+  if (context_copy && feature_list)
+    zmapViewMergeNewFeatures(zmap_view, &context_copy, &feature_list) ;
+  
+  if (context_copy)
+    zmapViewDrawDiffContext(zmap_view, &context_copy, feature_copy) ;
+}
 
 
 static void handBuiltInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, ZMapFeatureContext context)
@@ -787,15 +887,14 @@ void zmapViewScratchInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, ZM
       /* Create two empty features, one for each strand */
       ZMapFeature feature_fwd = zMapFeatureCreateEmpty() ;
       ZMapFeature feature_rev = zMapFeatureCreateEmpty() ;
-      char *feature_name = "temp_feature";
       
-      zMapFeatureAddStandardData(feature_fwd, "temp_feature_fwd", feature_name,
+      zMapFeatureAddStandardData(feature_fwd, "temp_feature_fwd", SCRATCH_FEATURE_NAME,
                                  NULL, NULL,
                                  ZMAPSTYLE_MODE_TRANSCRIPT, &scratch_featureset->style,
                                  0, 0, FALSE, 0.0,
                                  ZMAPSTRAND_FORWARD);
 
-      zMapFeatureAddStandardData(feature_rev, "temp_feature_rev", feature_name,
+      zMapFeatureAddStandardData(feature_rev, "temp_feature_rev", SCRATCH_FEATURE_NAME,
                                  NULL, NULL,
                                  ZMAPSTYLE_MODE_TRANSCRIPT, &scratch_featureset->style,
                                  0, 0, FALSE, 0.0,
@@ -856,11 +955,11 @@ void scratchFeatureReset(ZMapView view)
   ZMapFeatureSet scratch_featureset = zmapViewScratchGetFeatureset(view);
   ZMapFeature scratch_feature = zmapViewScratchGetFeature(scratch_featureset, ZMAPSTRAND_FORWARD);
 
-  zmapViewWindowsRemoveFeatureset(view, scratch_featureset) ;
+  //zmapViewWindowsRemoveFeatureset(view, scratch_featureset) ;
 
   /* Delete the exons and introns (the singleton feature always
    * exists so we don't delete the whole thing). */
-  //scratchDeleteFeatureExons(view, scratch_feature, scratch_featureset);
+  scratchDeleteFeatureExons(view, scratch_feature, scratch_featureset);
 
   /* Reset the start-/end-set flag */
   scratchSetStartEndFlag(view, FALSE);
@@ -868,17 +967,12 @@ void scratchFeatureReset(ZMapView view)
 
 
 /*!
- * /brief Recreate the scratch feature from the list of merged features
+ * /brief Recreate the scratch feature's list of exons from the list of merged features
  */
-void scratchFeatureRecreate(ZMapView view)
+static void scratchFeatureRecreateExons(ZMapView view, ZMapFeature scratch_feature)
 {
-  /* First reset the scratch feature */
-  scratchFeatureReset(view);
-
   /* Get the singleton features that exist in each strand of the scatch column */
-  ZMapStrand strand = ZMAPSTRAND_FORWARD;      
   ZMapFeatureSet scratch_featureset = zmapViewScratchGetFeatureset(view);
-  ZMapFeature scratch_feature = zmapViewScratchGetFeature(scratch_featureset, strand);
 
   /* Loop through each feature in the merge list and merge it in */
   GError *error = NULL;
@@ -905,8 +999,22 @@ void scratchFeatureRecreate(ZMapView view)
     }
 
   zMapFeatureTranscriptRecreateIntrons(scratch_feature);
+}
 
-  scratchRedrawFeature(view, scratch_feature, scratch_featureset, view->features);
+
+/*!
+ * /brief Recreate the scratch feature from the list of merged features
+ */
+void scratchFeatureRecreate(ZMapView view)
+{
+  /* Erase the existing scratch feature */
+  scratchEraseFeature(view) ;
+
+  /* Create the new feature */
+  ZMapFeature feature = scratchCreateNewFeature(view) ;
+
+  /* Merge it in */
+  scratchMergeNewFeature(view, feature) ;
 }
 
 
