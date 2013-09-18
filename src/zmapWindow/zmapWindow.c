@@ -1670,7 +1670,7 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
 
       feature_group   = zmapWindowItemGetParentContainer(FOO_CANVAS_ITEM(top_canvas_item)) ;
 
-      style = *feature->style;
+      style = feature && feature->style ? *feature->style : NULL ;
       select.feature_desc.struct_type = feature->struct_type ;
       select.feature_desc.type        = feature->type ;
 
@@ -1863,8 +1863,9 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
 
 	}
 
-
-      select.feature_desc.feature_type = (char *)zMapStyleMode2ExactStr(zMapStyleGetMode(style)) ;
+      
+      if (style)
+        select.feature_desc.feature_type = (char *)zMapStyleMode2ExactStr(zMapStyleGetMode(style)) ;
 
 	select.highlight_item = item ;
 

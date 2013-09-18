@@ -1532,8 +1532,8 @@ static ZMapFrame feature_frame(ZMapFeature feature, int start_coord)
   int offset;
   ZMapFeatureBlock block;
 
-  zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
-  zMapAssert(feature->parent && feature->parent->parent);
+  g_return_val_if_fail(zMapFeatureIsValid((ZMapFeatureAny)feature), ZMAPFRAME_NONE) ;
+  g_return_val_if_fail(feature->parent && feature->parent->parent, ZMAPFRAME_NONE);
 
   block = (ZMapFeatureBlock)(feature->parent->parent);
   offset = block->block_to_sequence.block.x1;   /* start of block in sequence/parent */
