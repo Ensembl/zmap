@@ -712,7 +712,7 @@ static ZMapFeature scratchCreateNewFeature(ZMapView zmap_view)
 
   zMapFeatureTranscriptInit(feature);
   zMapFeatureAddTranscriptStartEnd(feature, FALSE, 0, FALSE);    
-  zMapFeatureSetAddFeature(feature_set, feature);  
+  //zMapFeatureSetAddFeature(feature_set, feature);  
 
   /* Create the exons */
   scratchFeatureRecreateExons(zmap_view, feature) ;
@@ -721,7 +721,7 @@ static ZMapFeature scratchCreateNewFeature(ZMapView zmap_view)
 }
 
 
-static void scratchMergeNewFeature(ZMapView zmap_view, ZMapFeature feature_in)
+static void scratchMergeNewFeature(ZMapView zmap_view, ZMapFeature feature)
 {
   g_return_if_fail(zmap_view && zmap_view->features) ;
   //g_return_if_fail(feature) ;
@@ -730,7 +730,7 @@ static void scratchMergeNewFeature(ZMapView zmap_view, ZMapFeature feature_in)
   ZMapFeatureSet feature_set = zmapViewScratchGetFeatureset(zmap_view);
   g_return_if_fail(feature_set) ;
   
-  ZMapFeature feature = zmapViewScratchGetFeature(feature_set, ZMAPSTRAND_FORWARD);
+  //ZMapFeature feature = zmapViewScratchGetFeature(feature_set, ZMAPSTRAND_FORWARD);
   g_return_if_fail(feature) ;
   
   ZMapFeatureContext context = zmap_view->features ;
