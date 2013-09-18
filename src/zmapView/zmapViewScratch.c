@@ -685,6 +685,9 @@ static void scratchEraseFeature(ZMapView zmap_view)
   
   if (context_copy && feature_list)
     zmapViewEraseFeatures(zmap_view, context_copy, &feature_list) ;
+
+  if (context_copy)
+    zMapFeatureContextDestroy(context_copy, TRUE) ;
 }
 
 
@@ -718,13 +721,18 @@ static ZMapFeature scratchCreateNewFeature(ZMapView zmap_view)
 }
 
 
-static void scratchMergeNewFeature(ZMapView zmap_view, ZMapFeature feature)
+static void scratchMergeNewFeature(ZMapView zmap_view, ZMapFeature feature_in)
 {
-  g_return_if_fail(zmap_view) ;
-  g_return_if_fail(feature) ;
+  g_return_if_fail(zmap_view && zmap_view->features) ;
+  //g_return_if_fail(feature) ;
 
   /* Get the current featureset and context */
   ZMapFeatureSet feature_set = zmapViewScratchGetFeatureset(zmap_view);
+  g_return_if_fail(feature_set) ;
+  
+  ZMapFeature feature = zmapViewScratchGetFeature(feature_set, ZMAPSTRAND_FORWARD);
+  g_return_if_fail(feature) ;
+  
   ZMapFeatureContext context = zmap_view->features ;
 
   GList *feature_list = NULL ;
@@ -734,8 +742,11 @@ static void scratchMergeNewFeature(ZMapView zmap_view, ZMapFeature feature)
   if (context_copy && feature_list)
     zmapViewMergeNewFeatures(zmap_view, &context_copy, &feature_list) ;
   
-  if (context_copy)
+  if (context_copy && feature_copy)
     zmapViewDrawDiffContext(zmap_view, &context_copy, feature_copy) ;
+
+  if (context_copy)
+    zMapFeatureContextDestroy(context_copy, TRUE) ;
 }
 
 
