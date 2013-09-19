@@ -102,7 +102,7 @@ typedef struct _zmapWindowCanvasFeatureStruct
 #endif
 
   ZMapFeature feature;
-//  GList *from;		/* the list node that holds the feature */
+  //  GList *from;		/* the list node that holds the feature */
   /* refer to comment above zmapWindowCanvasFeatureset.c/zMapWindowFeaturesetItemRemoveFeature() */
 
   double score;		/* determines feature width */
@@ -166,11 +166,18 @@ typedef struct _pixRect
 #define N_PIXRECT_ALLOC		20
 
 
-PixRect zmapWindowCanvasFeaturesetSummarise(PixRect pix, ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature);
+PixRect zmapWindowCanvasFeaturesetSummarise(PixRect pix,
+					    ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature);
 void zmapWindowCanvasFeaturesetSummariseFree(ZMapWindowFeaturesetItem featureset, PixRect pix);
 
 
-typedef struct _zmapWindowFeaturesetItemClassStruct
+
+
+
+
+#define N_FEAT_ALLOC      1000
+
+typedef struct zmapWindowFeaturesetItemClassStructType
 {
   zmapWindowCanvasItemClass __parent__;
 
@@ -178,9 +185,9 @@ typedef struct _zmapWindowFeaturesetItemClassStruct
   /* NOTE duplicated in container canvas item till we get rid of that */
 
   GList *feature_free_list[FEATURE_N_TYPE];
-#define N_FEAT_ALLOC      1000
-	/* these are allocated for all columns, so it does not matter if we have a column with 1 feature */
-	/* NOTE we have free lists foe each featuretype; this will waste only a few K of memory */
+
+  /* these are allocated for all columns, so it does not matter if we have a column with 1 feature */
+  /* NOTE we have free lists foe each featuretype; this will waste only a few K of memory */
 
   int struct_size[FEATURE_N_TYPE];
   int set_struct_size[FEATURE_N_TYPE];
@@ -207,7 +214,7 @@ typedef struct _zmapWindowFeaturesetItemStruct
 
   zmapWindowCanvasFeatureType type;
 
-  gint layer;			/* underlay features or overlay (flags) */
+  gint layer;						    /* underlay features or overlay (flags) */
 
   ZMapStrand strand;
   ZMapFrame frame;
@@ -218,9 +225,14 @@ typedef struct _zmapWindowFeaturesetItemStruct
   gpointer per_column_data ;
 
 
+  /* Some stuff for handling zooming, not straight forward because we have to deal
+   * with our canvas window being much smaller than our sequence making drawing/scrolling
+   * difficult. */
 
   double zoom;			/* current units per pixel */
   double bases_per_pixel;
+  GtkWidget *canvas_scrolled_window ;			    /* needed to get ajuster for exposes. */
+
 
   /* stuff for column summarise */
   PixRect *col_cover;    	/* temp. data structs */
@@ -239,11 +251,11 @@ typedef struct _zmapWindowFeaturesetItemStruct
   gboolean linked_sideways;	/* that have been constructed */
 
   gboolean highlight_sideways;/* temp bodge to allow old code to drive this */
-					/* transcripts do alignments don't they get highlit by calling code */
+  /* transcripts do alignments don't they get highlit by calling code */
 
   GList *features;		/* we add features to a simple list and create the index on demand when we get an expose */
-					/* NOTE elsewhere we don't use GList as we get a 30% performance improvement
-					 * but we need to sort features so GList is more convenient */
+  /* NOTE elsewhere we don't use GList as we get a 30% performance improvement
+   * but we need to sort features so GList is more convenient */
 
   long n_features;
   gboolean features_sorted;	/* by start coord */
@@ -328,13 +340,13 @@ void zmapWindowFeaturesetS2Ccoords(double *start_inout, double *end_inout) ;
 
 typedef struct _zmapWindowCanvasPangoStruct
 {
-	GdkDrawable *drawable;		/* used to tell if a new window has been created and our pango is not valid */
+  GdkDrawable *drawable;		/* used to tell if a new window has been created and our pango is not valid */
 
-	PangoRenderer *renderer;	/* we use one per column to draw each line seperatly */
-	PangoContext *context;
-	PangoLayout *layout;
+  PangoRenderer *renderer;	/* we use one per column to draw each line seperatly */
+  PangoContext *context;
+  PangoLayout *layout;
 
-	int text_height, text_width;
+  int text_height, text_width;
 } zmapWindowCanvasPangoStruct ;
 
 
