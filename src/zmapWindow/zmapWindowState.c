@@ -33,8 +33,8 @@
 
 #include <ZMap/zmap.h>
 
-
 #include <string.h>
+
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapGLibUtils.h>
 #include <zmapWindow_P.h>
@@ -64,6 +64,8 @@ typedef struct
   gboolean rev_comp_state;
 } ZMapWindowFocusSerialStruct;
 
+
+/* Problem with these comments is that it doesn't say why we need to be careful.... */
 typedef struct
 {
   double scroll_x1, scroll_x2;
