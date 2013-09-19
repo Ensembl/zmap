@@ -191,12 +191,49 @@ static gpointer _featureset_paint_G[FEATURE_N_TYPE] = { 0 };
 static gpointer _featureset_flush_G[FEATURE_N_TYPE] = { 0 };
 static gpointer _featureset_extent_G[FEATURE_N_TYPE] = { 0 };
 static gpointer _featureset_free_G[FEATURE_N_TYPE] = { 0 };
+static gpointer _featureset_pre_zoom_G[FEATURE_N_TYPE] = { 0 };
 static gpointer _featureset_zoom_G[FEATURE_N_TYPE] = { 0 };
 static gpointer _featureset_point_G[FEATURE_N_TYPE] = { 0 };
 static gpointer _featureset_add_G[FEATURE_N_TYPE] = { 0 };
 static gpointer _featureset_subpart_G[FEATURE_N_TYPE] = { 0 };
 static gpointer _featureset_colour_G[FEATURE_N_TYPE] = { 0 };
 
+
+
+
+
+
+/* 
+ *                         External routines
+ */
+
+
+/* each feature type defines its own functions */
+/* if they inherit from another type then they must include that type's headers and call code directly */
+
+void zMapWindowCanvasFeatureSetSetFuncs(int featuretype, gpointer *funcs, int feature_struct_size, int set_struct_size)
+{
+
+  _featureset_set_init_G[featuretype] = funcs[FUNC_SET_INIT];
+  _featureset_prepare_G[featuretype] = funcs[FUNC_PREPARE];
+  _featureset_set_paint_G[featuretype] = funcs[FUNC_SET_PAINT];
+  _featureset_paint_G[featuretype] = funcs[FUNC_PAINT];
+  _featureset_flush_G[featuretype] = funcs[FUNC_FLUSH];
+  _featureset_extent_G[featuretype] = funcs[FUNC_EXTENT];
+  _featureset_colour_G[featuretype]  = funcs[FUNC_COLOUR];
+  _featureset_pre_zoom_G[featuretype] = funcs[FUNC_PRE_ZOOM];
+  _featureset_zoom_G[featuretype] = funcs[FUNC_ZOOM];
+  _featureset_free_G[featuretype] = funcs[FUNC_FREE];
+  _featureset_point_G[featuretype] = funcs[FUNC_POINT];
+  _featureset_add_G[featuretype]     = funcs[FUNC_ADD];
+  _featureset_subpart_G[featuretype] = funcs[FUNC_SUBPART];
+
+
+  featureset_class_G->struct_size[featuretype] = feature_struct_size;
+  featureset_class_G->set_struct_size[featuretype] = set_struct_size;
+
+  return ;
+}
 
 
 
@@ -334,18 +371,19 @@ int zMap_draw_rect(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, g
     {
       /* We expect the second coord to be greater than the first so
        * if we get here it's an error. */
-      zMapWarning("Program error: Tried to draw a rectangle with negative width/height (width=%d, height=%d)", cx2 - cx1, cy2 - cy1);
+      zMapWarning("Program error: Tried to draw a rectangle with negative width/height (width=%d, height=%d)",
+		  cx2 - cx1, cy2 - cy1) ;
     }
   else
     {
-      /* outline rects are 1 pixel bigger than filled ones */
-      if (fill)
-        cx2++;
-
       if (!fill)
-        cy2--;
+	{
+	  cx2--;	/* outline rects are 1 pixel bigger than filled ones */
+	  cy2--;
+	}
 
       gdk_draw_rectangle (drawable, featureset->gc, fill, cx1, cy1, cx2 - cx1, cy2 - cy1);
+
       result = 1;
     }
 
@@ -353,10 +391,22 @@ int zMap_draw_rect(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, g
 }
 
 
+gboolean zMapWindowCanvasIsFeatureSet(ZMapWindowFeaturesetItem feature_list)
+{
+  gboolean is_featureset_item = FALSE ;
+
+  if (feature_list->layer == 0)
+    is_featureset_item = TRUE ;
+
+  return is_featureset_item ;
+}
+
 
 
 /* get all the pango stuff we need for a font on a drawable */
-void zmapWindowCanvasFeaturesetInitPango(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasPango pango, char *family, int size, GdkColor *draw)
+void zmapWindowCanvasFeaturesetInitPango(GdkDrawable *drawable,
+					 ZMapWindowFeaturesetItem featureset,
+					 ZMapWindowCanvasPango pango, char *family, int size, GdkColor *draw)
 {
   GdkScreen *screen = gdk_drawable_get_screen (drawable);
   PangoFontDescription *desc;
@@ -441,6 +491,9 @@ void zmapWindowCanvasFeaturesetFreePango(ZMapWindowCanvasPango pango)
 
 
 
+/* WHY DO ALL THESE FUNCTIONS HAVE THESE PROTOTYPES....SHOULD BE IN A HEADER SOMEWHERE.... */
+
+
 /* define feature specific functions here */
 /* only access via wrapper functions to allow type checking */
 
@@ -464,9 +517,12 @@ void zMapWindowCanvasFeaturesetPaintPrepare(ZMapWindowFeaturesetItem featureset,
 
 /* paint one feature, all context needed is in the FeaturesetItem */
 /* we need the expose region to clip at high zoom esp with peptide alignments */
-void zMapWindowCanvasFeaturesetPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable, GdkEventExpose *expose)
+void zMapWindowCanvasFeaturesetPaintFeature(ZMapWindowFeaturesetItem featureset,
+					    ZMapWindowCanvasFeature feature,
+					    GdkDrawable *drawable, GdkEventExpose *expose)
 {
-  void (*func) (ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable, GdkEventExpose *expose) = NULL;
+  void (*func) (ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
+		GdkDrawable *drawable, GdkEventExpose *expose) = NULL;
 
 
   /* NOTE we can have diff types of features in a column eg alignments and basic features in Repeats
@@ -485,7 +541,8 @@ void zMapWindowCanvasFeaturesetPaintFeature(ZMapWindowFeaturesetItem featureset,
 /* output any buffered paints: useful eg for poly-line */
 /* paint function and flush must access data via FeaturesetItem or globally in thier module */
 /* feaature is the last feature painted */
-void zMapWindowCanvasFeaturesetPaintFlush(ZMapWindowFeaturesetItem featureset,ZMapWindowCanvasFeature feature, GdkDrawable *drawable, GdkEventExpose *expose)
+void zMapWindowCanvasFeaturesetPaintFlush(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
+					  GdkDrawable *drawable, GdkEventExpose *expose)
 {
   void (*func) (ZMapWindowFeaturesetItem featureset,ZMapWindowCanvasFeature feature, GdkDrawable *drawable, GdkEventExpose *expose) = NULL;
 
@@ -513,7 +570,8 @@ void zMapWindowCanvasFeaturesetPaintFlush(ZMapWindowFeaturesetItem featureset,ZM
 
 /* get the total sequence extent of a simple or complex feature */
 /* used by bumping; we allow force to simple for optional but silly bump modes */
-gboolean zMapWindowCanvasFeaturesetGetFeatureExtent(ZMapWindowCanvasFeature feature, gboolean complex, ZMapSpan span, double *width)
+gboolean zMapWindowCanvasFeaturesetGetFeatureExtent(ZMapWindowCanvasFeature feature,
+						    gboolean complex, ZMapSpan span, double *width)
 {
   void (*func) (ZMapWindowCanvasFeature feature, ZMapSpan span, double *width) = NULL;
 
@@ -668,7 +726,8 @@ void zMapWindowCanvasFeaturesetFree(ZMapWindowFeaturesetItem featureset)
 }
 
 /* return a span struct for the feature */
-ZMapFeatureSubPartSpan zMapWindowCanvasFeaturesetGetSubPartSpan(FooCanvasItem *foo, ZMapFeature feature, double x,double y)
+ZMapFeatureSubPartSpan zMapWindowCanvasFeaturesetGetSubPartSpan(FooCanvasItem *foo, ZMapFeature feature,
+								double x, double y)
 {
   ZMapFeatureSubPartSpan (*func) (FooCanvasItem *foo,ZMapFeature feature,double x,double y) = NULL;
   //	ZMapWindowFeaturesetItem featureset = (ZMapWindowFeaturesetItem) foo;
@@ -723,6 +782,24 @@ gboolean zMapWindowCanvasFeaturesetUnsetPointFeature(FooCanvasItem *item)
   return result ;
 }
 
+
+/* Do anythings we need to _before_ the zooming of features. */
+void zMapWindowCanvasFeaturesetPreZoom(ZMapWindowFeaturesetItem featureset)
+{
+
+  if (featureset)
+    {
+      ZMapWindowFeatureItemPreZoomFunc func ;
+
+      if ((featureset->type > 0 && featureset->type < FEATURE_N_TYPE)
+	  && (func = _featureset_pre_zoom_G[featureset->type]))
+	{
+	  func(featureset) ;
+	}
+    }
+
+  return ;
+}
 
 
 /*
@@ -855,36 +932,6 @@ static void zMapWindowCanvasFeaturesetPaintSet(ZMapWindowFeaturesetItem fi,
 
 
 
-/* each feature type defines its own functions */
-/* if they inherit from another type then they must include that type's headers and call code directly */
-
-void zMapWindowCanvasFeatureSetSetFuncs(int featuretype, gpointer *funcs, int feature_struct_size, int set_struct_size)
-{
-
-  _featureset_set_init_G[featuretype] = funcs[FUNC_SET_INIT];
-  _featureset_prepare_G[featuretype] = funcs[FUNC_PREPARE];
-  _featureset_set_paint_G[featuretype] = funcs[FUNC_SET_PAINT];
-  _featureset_paint_G[featuretype] = funcs[FUNC_PAINT];
-  _featureset_flush_G[featuretype] = funcs[FUNC_FLUSH];
-  _featureset_extent_G[featuretype] = funcs[FUNC_EXTENT];
-  _featureset_colour_G[featuretype]  = funcs[FUNC_COLOUR];
-  _featureset_zoom_G[featuretype] = funcs[FUNC_ZOOM];
-  _featureset_free_G[featuretype] = funcs[FUNC_FREE];
-  _featureset_point_G[featuretype] = funcs[FUNC_POINT];
-  _featureset_add_G[featuretype]     = funcs[FUNC_ADD];
-  _featureset_subpart_G[featuretype] = funcs[FUNC_SUBPART];
-
-
-  featureset_class_G->struct_size[featuretype] = feature_struct_size;
-  featureset_class_G->set_struct_size[featuretype] = set_struct_size;
-
-  return ;
-}
-
-
-
-
-
 /* fetch all the funcs we know about
  * there's no clean way to do this without everlasting overhead per feature
  * NB: canvas featuresets could get more than one type of feature
@@ -993,6 +1040,7 @@ GType zMapWindowFeaturesetItemGetType(void)
  * which is ok as it's typically 1, occasionally 2 (focus)  and sometimes serveral eg 4 or 12
  */
 ZMapWindowCanvasItem zMapWindowCanvasItemFeaturesetGetFeaturesetItem(FooCanvasGroup *parent, GQuark id,
+								     GtkWidget *scr_win,
 								     int start, int end,
 								     ZMapFeatureTypeStyle style,
 								     ZMapStrand strand, ZMapFrame frame,
@@ -1006,11 +1054,11 @@ ZMapWindowCanvasItem zMapWindowCanvasItemFeaturesetGetFeaturesetItem(FooCanvasGr
 
   /* class not intialised till we make an item in foo_canvas_item_new() below */
   if(featureset_class_G && featureset_class_G->featureset_items)
-    foo = (FooCanvasItem *) g_hash_table_lookup( featureset_class_G->featureset_items, GUINT_TO_POINTER(id));
+    foo = (FooCanvasItem *)g_hash_table_lookup( featureset_class_G->featureset_items, GUINT_TO_POINTER(id));
 
-  if(foo)
+  if (foo)
     {
-      return((ZMapWindowCanvasItem) foo);
+      return((ZMapWindowCanvasItem)foo) ;
     }
   else
     {
@@ -1087,6 +1135,12 @@ ZMapWindowCanvasItem zMapWindowCanvasItemFeaturesetGetFeaturesetItem(FooCanvasGr
       featureset->start = start;
       featureset->end = end;
 
+      /* We need the scrolled window to get at the vertical adjuster to make sure we redraw
+       * the entire window after scrolling somewhere because we may have altered the window
+       * under the adjusters feet. */
+      featureset->canvas_scrolled_window = scr_win ;
+
+
       /* initialise zoom to prevent double index create on first draw (coverage graphs) */
       featureset->zoom = foo->canvas->pixels_per_unit_y;
       featureset->bases_per_pixel = 1.0 / featureset->zoom;
@@ -1112,6 +1166,16 @@ guint zMapWindowCanvasFeaturesetGetId(ZMapWindowFeaturesetItem featureset)
 {
   return(featureset->id);
 }
+
+
+void zMapWindowCanvasFeaturesetSetZoomY(ZMapWindowFeaturesetItem fi, double zoom_y)
+{
+  fi->zoom = zoom_y ;
+
+  return ;
+}
+
+
 
 
 void zMapWindowCanvasFeaturesetSetStipple(ZMapWindowFeaturesetItem featureset, GdkBitmap *stipple)
@@ -2210,9 +2274,8 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
   double width;
   GList *highlight = NULL;	/* must paint selected on top ie last */
   gboolean is_line;
+  ZMapWindowFeaturesetItem fi = (ZMapWindowFeaturesetItem)item;
   //gboolean debug = FALSE;
-
-  ZMapWindowFeaturesetItem fi = (ZMapWindowFeaturesetItem) item;
 
 
   /* get visible scroll region in gdk coordinates to clip features that overlap and possibly extend beyond actual scroll
@@ -2220,20 +2283,39 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
    * NOTE we cannot calc this post zoom as we get scroll afterwards
    * except possibly if we combine the zoom and scroll operation
    * but this code cannot assume that
+   * 
+   * ACTUALLY SOMETHING GOES WRONG HERE...STUFF GET'S CLIPPED WHEN IT SHOULDN'T IN THE CASE WHERE
+   * WE'VE SCROLLED OFF THE CURRENT POSITION OF THE FOO CANVAS WINDOW......
+   * 
+   * 
    */
   {
     GdkRegion *region;
     GdkRectangle rect;
+    GtkAdjustment *adjust ;
+
+
 
     region = gdk_drawable_get_visible_region(drawable);
     gdk_region_get_clipbox ((const GdkRegion *) region, &rect);
     gdk_region_destroy(region);
+
+
+    adjust = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(fi->canvas_scrolled_window)) ;
+    if (rect.height < adjust->page_size)
+      rect.height = adjust->page_size + 1000 ;		    /* hack...try it.... */
+
 
     fi->clip_x1 = rect.x - 1;
     fi->clip_y1 = rect.y - 1;
     fi->clip_x2 = rect.x + rect.width + 1;
     fi->clip_y2 = rect.y + rect.height + 1;
   }
+
+
+
+
+
 
   if(!fi->gc && (item->object.flags & FOO_CANVAS_ITEM_REALIZED))
     fi->gc = gdk_gc_new (item->canvas->layout.bin_window);
@@ -2859,6 +2941,9 @@ gulong zMapWindowCanvasFeatureGetHeatColour(gulong a, gulong b, double score)
 
 
 
+
+/* I HAD REMOVED THIS....CHECK OUT WHY IT IS STILL HERE.... */
+
 /* basic feature draw a box
  * defined as a macro for efficiency to avoid multple copies of cut and paste
  * otherwise would need 10 args which is silly
@@ -2905,6 +2990,7 @@ void zMapCanvasFeaturesetDrawBoxMacro(ZMapWindowFeaturesetItem featureset,
       zMap_draw_rect(drawable, featureset, cx1, cy1, cx2+1, cy2+1, FALSE);
     }
 }
+
 
 
 
