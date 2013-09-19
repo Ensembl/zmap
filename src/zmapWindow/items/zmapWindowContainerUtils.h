@@ -46,8 +46,18 @@ gboolean zmapWindowContainerUtilsIsValid(FooCanvasGroup *any_group);
 
 
 
+/* this seems completely broken by Malcolm's changes and left half-finished..shame...
+ * I don't even see what the point of these two macros is...what are they supposed to
+ * do ???? */
+
 #define ZMapWindowContainerFeatures	ZMapWindowContainerGroup
 #define zmapWindowContainerGetFeatures(container)	container
+
+
+
+ZMapWindowFeaturesetItem ZMapWindowContainerGetFeatureSetItem(ZMapWindowContainerGroup container) ;
+
+
 
 /* Used by zmapWindowContainer calls for going forward/backward through lists. */
 typedef enum
