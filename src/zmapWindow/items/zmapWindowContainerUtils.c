@@ -33,13 +33,7 @@
 
 #include <ZMap/zmap.h>
 
-
-
-
-
-
 #include <ZMap/zmapUtilsFoo.h>
-//#include <zmapWindowCanvas.h>
 #include <zmapWindowCanvasItem.h>
 #include <zmapWindowContainerUtils.h>
 
@@ -47,11 +41,8 @@
 #include <zmapWindowContainerGroup_I.h>
 //#include <zmapWindowContainerChildren_I.h>
 
-/* It doesn't feel good that these are here.... */
+/* It doesn't feel good that this is here.... */
 #include <zmapWindowContainerFeatureSet_I.h>
-//#include <zmapWindowContainerStrand_I.h> /* access to ZMapWindowContainerStrand->strand */
-
-
 
 
 typedef struct ContainerRecursionDataStruct_
@@ -86,6 +77,43 @@ static FooCanvasItem *getNextFeatureItem(FooCanvasGroup *group,
 					 gpointer user_data) ;
 
 
+
+
+
+/* 
+ *                            External routines
+ */
+
+
+
+/* Return the feature set item which has zoom and much else....
+ * 
+ * There is no checking here as it's a trial function...I need to add lots
+ * if I keep this function.
+ * 
+ *  */
+ZMapWindowFeaturesetItem ZMapWindowContainerGetFeatureSetItem(ZMapWindowContainerGroup container)
+{
+  ZMapWindowFeaturesetItem container_feature_list = NULL ;
+  FooCanvasGroup *group = (FooCanvasGroup *)container ;
+  GList *l ;
+
+  for (l = group->item_list ; l ; l = l->next)
+    {
+      ZMapWindowFeaturesetItem temp ;
+
+      temp = (ZMapWindowFeaturesetItem)(l->data) ;
+
+      if (zMapWindowCanvasIsFeatureSet(container_feature_list))
+	{
+	  container_feature_list = temp ;
+
+	  break ;
+	}
+    }
+
+  return container_feature_list ;
+}
 
 
 
