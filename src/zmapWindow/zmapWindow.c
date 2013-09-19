@@ -225,6 +225,7 @@ static void setCurrLock(ZMapWindowLockType window_locking, ZMapWindow window,
 			GtkAdjustment **hadjustment, GtkAdjustment **vadjustment) ;
 static void lockedDisplayCB(gpointer key, gpointer value, gpointer user_data) ;
 static void scrollToCB(gpointer key, gpointer value, gpointer user_data) ;
+
 static void copyLockWindow(ZMapWindow original_window, ZMapWindow new_window) ;
 static void lockWindow(ZMapWindow window, ZMapWindowLockType window_locking) ;
 static void unlockWindow(ZMapWindow window, gboolean no_destroy_if_empty) ;
@@ -319,6 +320,10 @@ static void foo_bug_print(void *key, char *where) ;
 static void printWindowSizeDebug(char *prefix, ZMapWindow window,
 				 GtkWidget *widget, GtkAllocation *allocation) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+static void printAdjusters(ZMapWindow window) ;
+
+
 
 
 
@@ -1064,6 +1069,13 @@ void zmapWindowZoom(ZMapWindow window, double zoom_factor, gboolean stay_centere
       GtkAdjustment *adjust ;
       int adjust_centre ;
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      zMapDebugPrintf("\n\n\nAbout to Zoom %s.....",
+		      (zoom_factor > 1.0 ? "in" : "out")) ;
+
+      printAdjusters(window) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
       if (debug)
 	{
 	  gdk_window = gtk_widget_get_window(window->toplevel) ;
@@ -1140,6 +1152,8 @@ void zmapWindowZoom(ZMapWindow window, double zoom_factor, gboolean stay_centere
 	{
 	  ScrollToStruct scroll_to_data ;
 
+	  zMapDebugPrintf("%s", "About to recentre.....") ;
+
 	  foo_canvas_w2c(window->canvas, width, curr_pos, &x, &y) ;
 
 	  scroll_to_data.x = x ;
@@ -1158,6 +1172,14 @@ void zmapWindowZoom(ZMapWindow window, double zoom_factor, gboolean stay_centere
 	{
 	  XSynchronize(x_display, FALSE) ;
 	}
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      printAdjusters(window) ;
+
+      zMapDebugPrintf("Finished Zoom %s.....\n",
+		      (zoom_factor > 1.0 ? "in" : "out")) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
     }
 
   return ;
@@ -4665,7 +4687,7 @@ static void unlockWindow(ZMapWindow window, gboolean no_destroy_if_empty)
 
   if (!g_hash_table_size(window->sibling_locked_windows))
     {
-      if(!no_destroy_if_empty)
+      if (!no_destroy_if_empty)
 	g_hash_table_destroy(window->sibling_locked_windows) ;
     }
   else
@@ -4682,16 +4704,19 @@ static void unlockWindow(ZMapWindow window, gboolean no_destroy_if_empty)
       adjuster = copyAdjustmentObj(adjuster) ;
 
       if (window->curr_locking == ZMAP_WINLOCK_HORIZONTAL)
-	gtk_scrolled_window_set_hadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window), adjuster) ;
+	{
+	  gtk_scrolled_window_set_hadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window), adjuster) ;
+	}
       else
         {
           gtk_scrolled_window_set_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window), adjuster) ;
+
           /* Need to set the scalebar one too if vertical locked */
           zmapWindowScaleCanvasSetVAdjustment(window->ruler, adjuster);
         }
     }
 
- if(g_hash_table_size(window->sibling_locked_windows) == 1)
+ if (g_hash_table_size(window->sibling_locked_windows) == 1)
     {
       g_hash_table_foreach(window->sibling_locked_windows,
 			   unlock_last_window, GUINT_TO_POINTER(TRUE));
@@ -4880,8 +4905,8 @@ void zmapWindowFetchData(ZMapWindow window,
 
 
 
-/* Handles all keyboard events for the ZMap window, returns TRUE if it handled
- * the event, FALSE otherwise. */
+/* Handles all keyboard events for the ZMap window, as per gtk callback rules
+ * returns TRUE if it handled the event, FALSE otherwise. */
 static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 {
   gboolean event_handled = FALSE ;
@@ -6890,7 +6915,9 @@ static void updateColumnBackground(ZMapWindow window,
       if (column->flags.filtered)
         zMapWindowGetFilteredColour(window, &fill);
 
-      zmapWindowDrawSetGroupBackground(column, 0, 1, 1.0, ZMAP_CANVAS_LAYER_COL_BACKGROUND, fill, NULL);
+      zmapWindowDrawSetGroupBackground(window, column,
+				       0, 1, 1.0,
+				       ZMAP_CANVAS_LAYER_COL_BACKGROUND, fill, NULL);
       
       foo_canvas_item_request_redraw(foo->parent);
     }
@@ -6929,4 +6956,17 @@ void zMapWindowUpdateColumnBackground(ZMapWindow window,
 }
 
 
+
+
+static void printAdjusters(ZMapWindow window)
+{
+  GtkAdjustment *v_adjust, *h_adjust ;
+
+  v_adjust = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window)) ;
+  h_adjust = gtk_scrolled_window_get_hadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window)) ;
+      
+  zMapDebugPrintf("\nv_adjust = %p, h_adjust = %p\n", v_adjust, h_adjust) ;
+
+  return ;
+}
 
