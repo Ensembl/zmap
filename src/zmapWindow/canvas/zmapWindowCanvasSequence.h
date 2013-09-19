@@ -34,6 +34,8 @@
 
 #include <ZMap/zmap.h>
 
-void zMapWindowCanvasSequenceInit(void);
+void zMapWindowCanvasSequenceInit(void) ;
+
+void zMapWindowCanvasSequenceZoomSet(ZMapWindowFeaturesetItem featureset) ;
 
 #endif /* !ZMAP_CANVAS_SEQUENCE_H */
