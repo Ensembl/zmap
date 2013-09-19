@@ -307,7 +307,8 @@ gboolean zmapWindowScaleCanvasDraw(ZMapWindowScaleCanvas ruler, int start, int e
       if(start > seq_start || end < seq_end)
 	zoomed = TRUE;
 
-      width = zMapWindowDrawScaleBar(FOO_CANVAS_GROUP(ruler->scaleParent), start, end, seq_start, seq_end, zoom_factor, ruler->revcomped, zoomed);
+      width = zMapWindowDrawScaleBar(ruler->scrolled_window,
+				     FOO_CANVAS_GROUP(ruler->scaleParent), start, end, seq_start, seq_end, zoom_factor, ruler->revcomped, zoomed);
 
       drawn = TRUE;
 
@@ -577,7 +578,11 @@ static void thaw_notify(ZMapWindowScaleCanvas ruler)
    text height (font)
 */
 /* we draw the scale on the right and text to the left */
-double zMapWindowDrawScaleBar(FooCanvasGroup *group, int scroll_start, int scroll_end, int seq_start, int seq_end, double zoom_factor, gboolean revcomped, gboolean zoomed)
+double zMapWindowDrawScaleBar(GtkWidget *canvas_scrolled_window,
+			      FooCanvasGroup *group,
+			      int scroll_start, int scroll_end,
+			      int seq_start, int seq_end,
+			      double zoom_factor, gboolean revcomped, gboolean zoomed)
 /*
  * scroll start and end are as displayed (NB navigator always has whole sequence)
  * seq start and end are whole sequence in fwd strand coodinates
@@ -669,7 +674,11 @@ double zMapWindowDrawScaleBar(FooCanvasGroup *group, int scroll_start, int scrol
   fid = g_quark_from_string(buf);
 
   /* allocate featureset for whole sequence even if zoomed, if the feeatureset does not get re-created on zoom then the extent will be ok */
-  featureset = (ZMapWindowFeaturesetItem) zMapWindowCanvasItemFeaturesetGetFeaturesetItem(group, fid, seq_start, seq_end, scale_style, ZMAPSTRAND_NONE, ZMAPFRAME_0, 0, 0);
+  featureset = (ZMapWindowFeaturesetItem)zMapWindowCanvasItemFeaturesetGetFeaturesetItem(group, fid,
+											 canvas_scrolled_window,
+											 seq_start, seq_end,
+											 scale_style,
+											 ZMAPSTRAND_NONE, ZMAPFRAME_0, 0, 0);
 
   seq_len = seq_end - seq_start + 1;
   if(seq_len < 10)	/* we get called on start up w/ no sequence */
@@ -777,6 +786,7 @@ double zMapWindowDrawScaleBar(FooCanvasGroup *group, int scroll_start, int scrol
   zMapWindowCanvasFeaturesetSetWidth(featureset, scale_width);
   {
     FooCanvasItem *foo = (FooCanvasItem *) group;
+
     foo_canvas_item_request_update(foo);
   }
 #if SCALE_DEBUG
