@@ -104,7 +104,7 @@ ZMapWindowFeaturesetItem ZMapWindowContainerGetFeatureSetItem(ZMapWindowContaine
 
       temp = (ZMapWindowFeaturesetItem)(l->data) ;
 
-      if (zMapWindowCanvasIsFeatureSet(container_feature_list))
+      if (zMapWindowCanvasIsFeatureSet(temp))
 	{
 	  container_feature_list = temp ;
 

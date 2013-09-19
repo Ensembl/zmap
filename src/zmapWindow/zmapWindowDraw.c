@@ -1072,11 +1072,12 @@ static void preZoomCB(ZMapWindowContainerGroup container, FooCanvasPoints *point
 
 	/* Get the feature set item and set the canvas zoom and call any col. functions
 	 * needed to prepare for zooming (e.g. to set text width etc. */
-	cfs = ZMapWindowContainerGetFeatureSetItem(container) ;
+	if ((cfs = ZMapWindowContainerGetFeatureSetItem(container)))
+	  {
+	    zMapWindowCanvasFeaturesetSetZoomY(cfs, item->canvas->pixels_per_unit_y) ;
 
-	zMapWindowCanvasFeaturesetSetZoomY(cfs, item->canvas->pixels_per_unit_y) ;
-
-	zMapWindowCanvasFeaturesetPreZoom(cfs) ;
+	    zMapWindowCanvasFeaturesetPreZoom(cfs) ;
+	  }
 
 	break ;
       }
