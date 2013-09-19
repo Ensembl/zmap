@@ -32,6 +32,10 @@
 #ifndef ZMAP_WINDOW_FEATURESET_H
 #define ZMAP_WINDOW_FEATURESET_H
 
+#include <libzmapfoocanvas/libfoocanvas.h>
+#include <zmapWindowCanvasItem.h>
+
+
 
 #define ZMAP_WINDOW_FEATURESET_ITEM_NAME "ZMapWindowFeaturesetItem"
 
@@ -50,6 +54,49 @@
 
 
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+/* basic feature draw a box
+ * defined as a macro for efficiency to avoid multple copies of cut and paste
+ * otherwise would need 10 args which is silly
+ * used by basc feature, alignments, graphs, maybe transcripts... and what else??
+ *
+ * NOTE x1 and x2 passed as args as normal features are centred but graphs maybe not
+ */
+#define zMapCanvasFeaturesetDrawBoxMacro(featureset, x1,x2, y1,y2,  drawable,fill_set,outline_set,fill,outline)\
+  {									\
+    FooCanvasItem *item = (FooCanvasItem *) featureset;			\
+    GdkColor c;								\
+    int cx1, cy1, cx2, cy2;						\
+\
+    /* get item canvas coords, following example from FOO_CANVAS_RE (used by graph items) */ \
+    /* NOTE CanvasFeature coords are the extent including decorations so we get coords from the feature */ \
+    foo_canvas_w2c (item->canvas, x1, y1 - featureset->start + featureset->dy, &cx1, &cy1); \
+    foo_canvas_w2c (item->canvas, x2, y2 - featureset->start + featureset->dy + 1, &cx2, &cy2);	\
+      						/* + 1 to draw to the end of the last base */\
+\
+    /* NOTE that the gdk_draw_rectangle interface is a bit esoteric	\
+     * and it doesn't like rectangles that have no depth\
+     */							\
+\
+    if(fill_set && (!outline_set || (cy2 - cy1 > 1)))	/* fill will be visible */ \
+      {									\
+	c.pixel = fill;							\
+	gdk_gc_set_foreground (featureset->gc, &c);			\
+	zMap_draw_rect (drawable, featureset, cx1, cy1, cx2, cy2, TRUE); \
+      }									\
+\
+    if(outline_set)				\
+      {						\
+	c.pixel = outline;					\
+	gdk_gc_set_foreground(featureset->gc, &c);			\
+	/* +1 due to gdk_draw_rect and zMap_draw_rect */		\
+	zMap_draw_rect(drawable, featureset, cx1, cy1, cx2+1, cy2+1, FALSE); \
+      }									\
+  }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
 
 /* Instance */
 typedef struct _zmapWindowFeaturesetItemStruct *ZMapWindowFeaturesetItem ;
@@ -60,9 +107,10 @@ typedef struct _zmapWindowCanvasGraphicsStruct *ZMapWindowCanvasGraphics;
 
 
 /* Class */
-typedef struct _zmapWindowFeaturesetItemClassStruct  zmapWindowFeaturesetItemClass, *ZMapWindowFeaturesetItemClass ;
+typedef struct zmapWindowFeaturesetItemClassStructType  zmapWindowFeaturesetItemClass, *ZMapWindowFeaturesetItemClass ;
 
 
+/* Why is this public ???? */
 /* enums for function type */
 typedef enum
   {
@@ -71,7 +119,8 @@ typedef enum
     FUNC_SET_PAINT, FUNC_PAINT,
     FUNC_FLUSH, FUNC_EXTENT,
     FUNC_COLOUR,
-    FUNC_STYLE, FUNC_ZOOM,
+    FUNC_STYLE,
+    FUNC_PRE_ZOOM, FUNC_ZOOM,
     FUNC_INDEX, FUNC_FREE,
     FUNC_POINT,
     FUNC_ADD, FUNC_SUBPART,
@@ -86,6 +135,7 @@ typedef void (*ZMapWindowFeatureItemSetInitFunc)(ZMapWindowFeaturesetItem featur
 typedef void (*ZMapWindowFeatureItemSetPaintFunc)(ZMapWindowFeaturesetItem featureset,
 						  GdkDrawable *drawable, GdkEventExpose *expose) ;
 
+typedef void (*ZMapWindowFeatureItemPreZoomFunc)(ZMapWindowFeaturesetItem featureset) ;
 typedef void (*ZMapWindowFeatureItemZoomFunc)(ZMapWindowFeaturesetItem featureset, GdkDrawable *drawable) ;
 
 typedef double (*ZMapWindowFeatureItemPointFunc)(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature gs,
@@ -129,30 +179,30 @@ typedef enum
   } zmapWindowCanvasFeatureType ;
 
 typedef enum
-{
-	ZMWCF_HIDE_INVALID,
-	ZMWCF_HIDE_USER,			/* user hides feature */
-	ZMWCF_HIDE_EXPAND			/* user expands/ contracts feature */
+  {
+    ZMWCF_HIDE_INVALID,
+    ZMWCF_HIDE_USER,			/* user hides feature */
+    ZMWCF_HIDE_EXPAND			/* user expands/ contracts feature */
 
-} ZMapWindowCanvasFeaturesetHideType;
+  } ZMapWindowCanvasFeaturesetHideType;
 
 /* holds all data need to drive exotic bump modes */
 typedef struct
 {
-	double start,end;	/* eg mark */
-	double spacing;	/* between sub columns */
-	double offset;	/* current offset */
-	double incr;	/* per sub column */
-	double width;	/* max column width */
-	GList *pos_list;	/* list of features in bumped sub-columns */
-	ZMapSpanStruct span;	/* of current feature(s) */
-	gboolean complex;
-	gboolean mark_set;
+  double start,end;	/* eg mark */
+  double spacing;	/* between sub columns */
+  double offset;	/* current offset */
+  double incr;	/* per sub column */
+  double width;	/* max column width */
+  GList *pos_list;	/* list of features in bumped sub-columns */
+  ZMapSpanStruct span;	/* of current feature(s) */
+  gboolean complex;
+  gboolean mark_set;
 
-	/* effciency stats */
-	int features;
-	int comps;
-	int n_col;
+  /* effciency stats */
+  int features;
+  int comps;
+  int n_col;
 
 } BumpFeaturesetStruct, *BumpFeatureset;
 
@@ -163,6 +213,11 @@ GType zMapWindowFeaturesetItemGetType(void) ;
 
 
 void zMapWindowCanvasFeatureSetSetFuncs(int featuretype,gpointer *funcs, int feature_size, int set_size) ;
+
+
+gboolean zMapWindowCanvasIsFeatureSet(ZMapWindowFeaturesetItem) ;
+
+
 
 /* GDK wrappers to clip features */
 
@@ -175,11 +230,17 @@ void zmapWindowCanvasFeaturesetInitPango(GdkDrawable *drawable, ZMapWindowFeatur
 
 void zmapWindowCanvasFeaturesetFreePango(ZMapWindowCanvasPango pango);
 
+
+void zMapWindowCanvasFeaturesetSetZoomY(ZMapWindowFeaturesetItem fi, double zoom_y) ;
+
 void zMapWindowCanvasFeaturesetExpose(ZMapWindowFeaturesetItem fi);
 void zMapWindowCanvasFeaturesetRedraw(ZMapWindowFeaturesetItem fi, double zoom);
 
 
-ZMapWindowCanvasItem zMapWindowCanvasItemFeaturesetGetFeaturesetItem(FooCanvasGroup *parent, GQuark id, int start,int end, ZMapFeatureTypeStyle style, ZMapStrand strand, ZMapFrame frame, int index, guint layer);
+ZMapWindowCanvasItem zMapWindowCanvasItemFeaturesetGetFeaturesetItem(FooCanvasGroup *parent, GQuark id,
+								     GtkWidget *parent_scrolled_window,
+								     int start, int end, ZMapFeatureTypeStyle style,
+								     ZMapStrand strand, ZMapFrame frame, int index, guint layer);
 
 guint zMapWindowCanvasFeaturesetGetId(ZMapWindowFeaturesetItem featureset);
 
@@ -240,6 +301,7 @@ void zMapWindowCanvasFeaturesetPaintFlush(ZMapWindowFeaturesetItem featureset, Z
 					  GdkDrawable *drawable, GdkEventExpose *expose);
 gboolean zMapWindowCanvasFeaturesetGetFeatureExtent(ZMapWindowCanvasFeature feature, gboolean complex,
 						    ZMapSpan span, double *width);
+void zMapWindowCanvasFeaturesetPreZoom(ZMapWindowFeaturesetItem featureset) ;
 void zMapWindowCanvasFeaturesetZoom(ZMapWindowFeaturesetItem featureset, GdkDrawable *drawable);
 
 
