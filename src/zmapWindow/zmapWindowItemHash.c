@@ -42,10 +42,10 @@
 #include <ZMap/zmapGLibUtils.h>
 
 #if MH17_NOT_USED
-#define zmapWindowFToIFindAlignById(WINDOW,FTOI_HASH, ID)                                 \
-zmapWindowFToIFindItemFull(WINDOW.FTOI_HASH, ID, 0, 0, ZMAPSTRAND_NONE, ZMAPFRAME_NONE, 0)
-#define zmapWindowFToIFindBlockById(WINDOW,FTOI_HASH, ALIGN, BLOCK)                              \
-zmapWindowFToIFindItemFull(WINDOW.FTOI_HASH, ALIGN, BLOCK, 0, ZMAPSTRAND_NONE, ZMAPFRAME_NONE, 0)
+#define zmapWindowFToIFindAlignById(WINDOW,FTOI_HASH, ID)		\
+  zmapWindowFToIFindItemFull(WINDOW.FTOI_HASH, ID, 0, 0, ZMAPSTRAND_NONE, ZMAPFRAME_NONE, 0)
+#define zmapWindowFToIFindBlockById(WINDOW,FTOI_HASH, ALIGN, BLOCK)	\
+  zmapWindowFToIFindItemFull(WINDOW.FTOI_HASH, ALIGN, BLOCK, 0, ZMAPSTRAND_NONE, ZMAPFRAME_NONE, 0)
 #endif
 
 /* A small problemeto is that the GQuark interface does not allow the removal of strings
@@ -183,6 +183,10 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(GHashTable *ftoi_hash,
       char strand = '+';
       char frame = '0';
       char *x;
+      ZMapWindow window ;
+
+      window = zMapWindowContainerFeatureSetGetWindow(parent_container) ;
+
 
       /* as we process both strands together strand is per feature not per set */
       if(zMapStyleIsStrandSpecific(*feature->style))
@@ -215,9 +219,15 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(GHashTable *ftoi_hash,
 
 
       /* adds once per canvas+column+style, then returns that repeatedly */
-      canvas_item = zMapWindowCanvasItemFeaturesetGetFeaturesetItem((FooCanvasGroup *) features_container, feature_stack->id,
-								    block->block_to_sequence.block.x1,block->block_to_sequence.block.x2, *feature->style,
-								    feature_stack->strand,feature_stack->frame,feature_stack->set_index, 0);
+      canvas_item = zMapWindowCanvasItemFeaturesetGetFeaturesetItem((FooCanvasGroup *)features_container,
+								    feature_stack->id,
+								    window->scrolled_window,
+								    block->block_to_sequence.block.x1,
+								    block->block_to_sequence.block.x2,
+								    *feature->style,
+								    feature_stack->strand,
+								    feature_stack->frame,
+								    feature_stack->set_index, 0);
 
 #if !FEATURESET_AS_COLUMN
       zmapWindowFToIAddSet(ftoi_hash,
@@ -371,7 +381,7 @@ gboolean zmapWindowFToIAddAlign(GHashTable *feature_context_to_item,
       ZMapFeatureAny item_feature ;
 
       item_feature = zmapWindowItemGetFeatureAny((FooCanvasItem *) align_group) ;
-//      zMapAssert(item_feature) ;
+      //      zMapAssert(item_feature) ;
 
       align = g_new0(ID2CanvasStruct, 1) ;
       align->item = FOO_CANVAS_ITEM(align_group) ;
@@ -386,7 +396,7 @@ gboolean zmapWindowFToIAddAlign(GHashTable *feature_context_to_item,
 
 
 gboolean zmapWindowFToIRemoveAlign(GHashTable *feature_context_to_item,
-				    GQuark align_id)
+				   GQuark align_id)
 {
   gboolean result = TRUE ;
   ID2Canvas align ;
@@ -421,7 +431,7 @@ gboolean zmapWindowFToIAddBlock(GHashTable *feature_context_to_item,
 	  ZMapFeatureAny item_feature ;
 
 	  item_feature = zmapWindowItemGetFeatureAny((FooCanvasItem *) block_group) ;
-//	  zMapAssert(item_feature) ;
+	  //	  zMapAssert(item_feature) ;
 
 	  block = g_new0(ID2CanvasStruct, 1) ;
 	  block->item = FOO_CANVAS_ITEM(block_group) ;
@@ -439,7 +449,7 @@ gboolean zmapWindowFToIAddBlock(GHashTable *feature_context_to_item,
 
 
 gboolean zmapWindowFToIRemoveBlock(GHashTable *feature_context_to_item,
-				    GQuark align_id, GQuark block_id)
+				   GQuark align_id, GQuark block_id)
 {
   gboolean result = FALSE;
   ID2Canvas align, block;
@@ -467,7 +477,7 @@ gboolean zmapWindowFToIAddSet(GHashTable *feature_context_to_item,
 #if FEATURESET_AS_COLUMN
 			      FooCanvasGroup *set_group)
 #else
-				FooCanvasItem *set_item)
+  FooCanvasItem *set_item)
 #endif
 {
   gboolean result = FALSE ;
