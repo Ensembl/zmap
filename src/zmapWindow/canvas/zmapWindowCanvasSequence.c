@@ -189,9 +189,13 @@ static void zmapWindowCanvasSequenceSetRow(ZMapWindowFeaturesetItem featureset, 
       seq->factor = seq->feature.feature->feature.sequence.type == ZMAPSEQUENCE_PEPTIDE ? 3 : 1;
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       zMapDebugPrintf("%s n_bases: %ld %ld %.5f %ld, %d %d %ld = %ld %ld\n",
 		      g_quark_to_string(featureset->id), n_bases, length, featureset->zoom,
 		      pixels, width, n_disp, n_rows, seq->row_size, seq->spacing);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
       /* allocate space for the text */
