@@ -319,9 +319,10 @@ static void foo_bug_print(void *key, char *where) ;
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void printWindowSizeDebug(char *prefix, ZMapWindow window,
 				 GtkWidget *widget, GtkAllocation *allocation) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 static void printAdjusters(ZMapWindow window) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
@@ -1151,8 +1152,6 @@ void zmapWindowZoom(ZMapWindow window, double zoom_factor, gboolean stay_centere
       if (stay_centered && window->curr_locking != ZMAP_WINLOCK_HORIZONTAL)
 	{
 	  ScrollToStruct scroll_to_data ;
-
-	  zMapDebugPrintf("%s", "About to recentre.....") ;
 
 	  foo_canvas_w2c(window->canvas, width, curr_pos, &x, &y) ;
 
@@ -6958,6 +6957,8 @@ void zMapWindowUpdateColumnBackground(ZMapWindow window,
 
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void printAdjusters(ZMapWindow window)
 {
   GtkAdjustment *v_adjust, *h_adjust ;
@@ -6969,4 +6970,6 @@ static void printAdjusters(ZMapWindow window)
 
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 

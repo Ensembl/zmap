@@ -31,6 +31,7 @@
  *-------------------------------------------------------------------
  */
 
+#include <ZMap/zmap.h>
 
 #include <math.h>
 #include <glib.h>
@@ -43,12 +44,6 @@
 #include <zmapWindowContainerUtils.h>
 #include <zmapWindowContainerBlock.h>
 #include <zmapWindowCanvasSequence.h>
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* Why does file require the internals of featureset...check this out... ?? */
-#include <zmapWindowContainerFeatureSet_I.h>
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 #include <zmapWindowContainerFeatureSet.h>
 
 
@@ -886,6 +881,8 @@ static void positionColumnCB(ZMapWindowContainerGroup container, FooCanvasPoints
   ZMapWindowContainerBlock block;
   ZMapWindowContainerFeatureSet featureset;
   double col_width, width;
+  gboolean debug = FALSE ;
+
 
   /* columns start at 0, container backgrounds can go -ve */
   switch(level)
@@ -908,8 +905,7 @@ static void positionColumnCB(ZMapWindowContainerGroup container, FooCanvasPoints
     case ZMAPCONTAINER_LEVEL_FEATURESET:
       /* each column is a ContainerFeatureSet is a foo canvas group and contains 0 or more Canvasfeaturesets */
 
-
-      zMapDebugPrintf("About to do pos col \"%s\"\n", g_quark_to_string((container->feature_any->unique_id))) ;
+      zMapDebugPrint(debug, "About to do pos col \"%s\"\n", g_quark_to_string((container->feature_any->unique_id))) ;
 
       foo = (FooCanvasItem *) container;
 
@@ -959,16 +955,16 @@ static void positionColumnCB(ZMapWindowContainerGroup container, FooCanvasPoints
 	  if(!pc->left)
 	    pc->left = pc->last_left;	//pc->block_cur_x;
 
-	  zMapDebugPrintf("pos col %s %f %f %f\n", g_quark_to_string((container->feature_any->unique_id)),
-			  pc->block_cur_x, pc->block_spacing_x, width) ;
+	  zMapDebugPrint(debug, "pos col %s %f %f %f\n", g_quark_to_string((container->feature_any->unique_id)),
+			 pc->block_cur_x, pc->block_spacing_x, width) ;
 	}
 
       g_object_set(G_OBJECT(group), "x",pc->block_cur_x, NULL);	/* this sets deep update flags */
 
       pc->block_cur_x += col_width;
       pc->last_right = pc->block_cur_x;
-      zMapDebugPrintf("pos col %s %f %f %f %f %f\n", g_quark_to_string((container->feature_any->unique_id)),
-		      pc->block_cur_x, pc->block_spacing_x, width, pc->last_left, pc->last_right) ;
+      zMapDebugPrint(debug, "pos col %s %f %f %f %f %f\n", g_quark_to_string((container->feature_any->unique_id)),
+		     pc->block_cur_x, pc->block_spacing_x, width, pc->last_left, pc->last_right) ;
 
       break;
 
