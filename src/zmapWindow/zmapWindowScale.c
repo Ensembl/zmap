@@ -934,7 +934,7 @@ double zMapWindowDrawScaleBar(GtkWidget *canvas_scrolled_window,
                            * to avoid... */
                           //p = label + sprintf(label,"%s%d.%0*d",sign,num,digits,frac);
                           float val = (float)slice_coord / (float)base;
-                          p = label + sprintf(label,"%s%0*f",sign, digits, val);
+                          p = label + sprintf(label,"%s%.*f",sign, digits, val);
 
 			  while(*--p == '0')
 			    continue;
