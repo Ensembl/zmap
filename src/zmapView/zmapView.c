@@ -3971,7 +3971,6 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
             ZMapServerReqGetStatus get_status = (ZMapServerReqGetStatus)req_any ;
 
             connect_data->exit_code = get_status->exit_code;
-            connect_data->stderr_out = get_status->stderr_out;
 	  }
 
 

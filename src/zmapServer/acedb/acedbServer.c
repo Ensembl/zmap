@@ -164,7 +164,7 @@ static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles,
 static ZMapServerResponseType getContextSequence(void *server_in, GHashTable *styles,
 						 ZMapFeatureContext feature_context_out) ;
 static char *lastErrorMsg(void *server) ;
-static ZMapServerResponseType getStatus(void *server_in, gint *exit_code, gchar **stderr_out) ;
+static ZMapServerResponseType getStatus(void *server_in, gint *exit_code) ;
 static ZMapServerResponseType getConnectState(void *server_in, ZMapServerConnectStateType *connect_state) ;
 static ZMapServerResponseType closeConnection(void *server_in) ;
 static ZMapServerResponseType destroyConnection(void *server) ;
@@ -697,10 +697,9 @@ static ZMapServerResponseType haveModes(void *server_in, gboolean *have_mode)
 
 
 /* Truly pointless operation revealing that this function is a bad idea..... */
-static ZMapServerResponseType getStatus(void *server_in, gint *exit_code, gchar **stderr_out)
+static ZMapServerResponseType getStatus(void *server_in, gint *exit_code)
 {
-  *exit_code = 0;
-  *stderr_out = NULL;
+  *exit_code = 0 ;
 
   return ZMAP_SERVERRESPONSE_OK;
 }

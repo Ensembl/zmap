@@ -82,7 +82,7 @@ typedef ZMapServerResponseType (*ZMapServerGetContextSequences)(void *server_con
 								GHashTable *styles,
 								ZMapFeatureContext feature_context) ;
 
-typedef ZMapServerResponseType (*ZMapServerGetStatusFunc)(void *server_conn, gint *exit_code, gchar **stderr_out) ;
+typedef ZMapServerResponseType (*ZMapServerGetStatusFunc)(void *server_conn, gint *exit_code) ;
 
 typedef ZMapServerResponseType (*ZMapServerGetConnectStateFunc)(void *server_conn,
 								ZMapServerConnectStateType *connect_state) ;

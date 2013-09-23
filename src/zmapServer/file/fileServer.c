@@ -97,7 +97,7 @@ static ZMapServerResponseType setContext(void *server,  ZMapFeatureContext featu
 static ZMapServerResponseType getFeatures(void *server_in, GData *styles, ZMapFeatureContext feature_context_out) ;
 static ZMapServerResponseType getContextSequence(void *server_in, GData *styles, ZMapFeatureContext feature_context_out) ;
 static char *lastErrorMsg(void *server) ;
-static ZMapServerResponseType getStatus(void *server_conn, gint *exit_code, gchar **stderr_out) ;
+static ZMapServerResponseType getStatus(void *server_conn, gint *exit_code) ;
 static ZMapServerResponseType getConnectState(void *server_conn, ZMapServerConnectStateType *connect_state) ;
 static ZMapServerResponseType closeConnection(void *server_in) ;
 static ZMapServerResponseType destroyConnection(void *server) ;
@@ -624,10 +624,9 @@ static char *lastErrorMsg(void *server_in)
 }
 
 
-static ZMapServerResponseType getStatus(void *server_conn, gint *exit_code, gchar **stderr_out)
+static ZMapServerResponseType getStatus(void *server_conn, gint *exit_code)
 {
-
-  /* No implementation currently. */
+  *exit_code = 0 ;
 
   return ZMAP_SERVERRESPONSE_OK;
 }
