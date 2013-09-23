@@ -37,45 +37,41 @@
 #define FILE_PROTOCOL_STR "GFF File"
 
 
-
-
-
 /* Holds all the state we need to create and access the script output. */
 typedef struct _PipeServerStruct
 {
   gchar *config_file ;
-  gchar *script_dir;		// default location for relative paths
-  gchar *script_path ;	      // where our configured script is, including script-dir
-  gchar *query;		    	// from query string
-  GIOChannel *gff_pipe ;      // the pipe we read the script's output from
-  GIOChannel *gff_stderr ;    // the pipe we read the script's error output from
-  GPid child_pid;
-  gint zmap_start,zmap_end;   // display coordinates of interesting region
-  gint wait;                  // delay before getting data, mainly for testing
+  gchar *script_dir ;					    /* default location for relative paths */
+  gchar *script_path ;					    /* where our configured script is, including script-dir */
+  gchar *query ;					    /* from query string */
 
-  ZMapURLScheme scheme;       // pipe:// or file://
-  gchar *data_dir;            // default location for data files (when protocol is file://)
+  GIOChannel *gff_pipe ;				    /* the pipe we read the script's output from */
 
-  char *styles_file ;
+  GPid child_pid ;
+  gint wait ;						    /* delay before getting data, mainly for testing */
 
-  gboolean error ;            /* TRUE if any error occurred. */
-  char *last_err_msg ;
-  gchar *stderr_output;        // all of it
-  gint exit_code;
+  char *protocol ;					    /* GFF Pipe or File */
+  ZMapURLScheme scheme ;				    /* pipe:// or file:// */
+  gchar *data_dir ;					    /* default location for data files
+							       (when protocol is file://) */
 
-  char *protocol;             // GFF Pipe or File
-
-  ZMapFeatureContext req_context ;
-  ZMapGFFParser parser ;      // holds header features and sequence data till requested
-  GString * gff_line ;
   ZMapServerResponseType result ;
+  gboolean error ;					    /* TRUE if any error occurred. */
+  char *last_err_msg ;
+  gint exit_code ;
 
-  ZMapFeatureSequenceMap sequence_map;
-  gboolean sequence_server;
-  gboolean is_otter;
+  gboolean sequence_server ;
+  gboolean is_otter ;
 
-  GHashTable *source_2_sourcedata;  // mapping data as per config file
-  GHashTable *featureset_2_column;
+  ZMapGFFParser parser ;				    /* holds header features and sequence data till requested */
+  GString *gff_line ;
+
+  gint zmap_start, zmap_end ;				    /* display coordinates of interesting region */
+  ZMapFeatureContext req_context ;
+  ZMapFeatureSequenceMap sequence_map ;
+  char *styles_file ;
+  GHashTable *source_2_sourcedata ;			    /* mapping data as per config file */
+  GHashTable *featureset_2_column ;
 
 } PipeServerStruct, *PipeServer ;
 
