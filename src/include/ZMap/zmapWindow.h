@@ -404,7 +404,6 @@ void zMapWindowDisplayData(ZMapWindow window, ZMapWindowState state,
 void zMapWindowUnDisplayData(ZMapWindow window,
                              ZMapFeatureContext current_features,
                              ZMapFeatureContext new_features);
-void zMapWindowRemoveFeatureset(ZMapWindow window, ZMapFeatureSet featureset) ;
 void zMapWindowUnDisplaySearchFeatureSets(ZMapWindow window,
                              ZMapFeatureContext current_features,
                              ZMapFeatureContext new_features);

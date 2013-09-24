@@ -610,26 +610,6 @@ static void scratchDeleteFeatureExons(ZMapView view, ZMapFeature feature, ZMapFe
 }
 
 
-
-//static void zmapViewWindowsRemoveFeatureset(ZMapView zmap_view, ZMapFeatureSet feature_set)
-//{
-//  GList *list_item = NULL;
-//
-//  list_item = g_list_first(zmap_view->window_list) ;
-//
-//  do
-//    {
-//      ZMapViewWindow view_window ;
-//      view_window = list_item->data ;
-//      
-//      zMapWindowRemoveFeatureset(view_window->window, feature_set) ;
-//    }
-//  while ((list_item = g_list_next(list_item))) ;
-//
-//  return ;
-//}
-
-
 static ZMapFeatureContext copyContextAll(ZMapFeatureContext context, 
                                          ZMapFeature feature,
                                          ZMapFeatureSet feature_set,
