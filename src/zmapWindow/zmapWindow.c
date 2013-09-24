@@ -1579,7 +1579,7 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
   select.type = ZMAPWINDOW_SELECT_SINGLE;
 
   /* If feature_arg is NULL then this implies "reset the info data/panel". */
-  if (!feature_arg)
+  if (!feature_arg || feature_arg->type == ZMAPSTYLE_MODE_INVALID)
     {
       (*(window->caller_cbs->select))(window, window->app_data, NULL) ;
 

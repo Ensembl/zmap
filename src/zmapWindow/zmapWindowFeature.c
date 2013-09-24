@@ -1044,7 +1044,7 @@ static void callXRemote(ZMapWindow window, ZMapFeatureAny feature_any,
   
 
   /* We should only ever be called with a feature, not a set or anything else. */
-  zMapAssert(feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURE) ;
+  g_return_if_fail(feature_any && feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURE) ;
 
   /* OK...IN HERE IS THE PLACE FOR THE HACK FOR COORDS....NEED TO COPY FEATURE
    * AND INSERT NEW CHROMOSOME COORDS...IF WE CAN DO THIS FOR THIS THEN WE
