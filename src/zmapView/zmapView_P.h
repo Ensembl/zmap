@@ -232,25 +232,6 @@ typedef struct _ZMapViewConnectionStepStruct
 
 
 
-
-/* Holds data about feature sets loaded. */
-typedef struct ZMapViewLoadFeaturesDataStructName
-{
-  char *err_msg;        // from the server mainly
-  gchar *stderr_out;
-  gint exit_code;
-  int num_features;
-
-  GList *feature_sets ;
-  int start,end;        // requested coords
-  gboolean status;      // load sucessful?
-  unsigned long xwid ;  // X Window id for the xremote widg. */
-
-} ZMapViewLoadFeaturesDataStruct, *ZMapViewLoadFeaturesData ;
-
-
-
-
 /* A "View" is a set of one or more windows that display data retrieved from one or
  * more servers. Note that the "View" windows are _not_ top level windows, they are panes
  * within a container widget that is supplied as a parent of the View then the View
@@ -434,9 +415,11 @@ ZMapFeatureContext zmapViewMergeInContext(ZMapView view, ZMapFeatureContext cont
 gboolean zmapViewDrawDiffContext(ZMapView view, ZMapFeatureContext *diff_context, ZMapFeature highlight_feature) ;
 void zmapViewResetWindows(ZMapView zmap_view, gboolean revcomp);
 void zmapViewEraseFromContext(ZMapView replace_me, ZMapFeatureContext context_inout);
-void zmapViewDisplayDataWindows(ZMapView zmap_view, ZMapFeatureContext all_features, ZMapFeatureContext new_features,
-                                GHashTable *new_styles,
-                                gboolean undisplay, GList *masked, ZMapFeature highlight_feature, gboolean allow_clean);
+void zmapViewDisplayDataWindows(ZMapView zmap_view,
+				ZMapFeatureContext all_features, ZMapFeatureContext new_features,
+                                GHashTable *new_styles, ZMapViewLoadFeaturesData loaded_features,
+                                gboolean undisplay, GList *masked,
+				ZMapFeature highlight_feature, gboolean allow_clean);
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
