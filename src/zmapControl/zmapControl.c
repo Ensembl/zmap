@@ -37,7 +37,7 @@
 #include <ZMap/zmapView.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapUtilsGUI.h>
-
+#include <ZMap/zmapUrlUtils.h>
 #include <zmapControl_P.h>
 
 
@@ -60,12 +60,6 @@ static void viewStateChangeCB(ZMapView view, void *app_data, void *view_data) ;
 static void viewKilledCB(ZMapView view, void *app_data, void *view_data) ;
 static void infoPanelLabelsHashCB(gpointer labels_data);
 static void removeView(ZMap zmap, ZMapView view, unsigned long xwid) ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static void remoteSendViewClosed(ZMapXRemoteObj client, unsigned long xwid) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 
 
 /* These variables holding callback routine information are static because they are
@@ -806,171 +800,14 @@ static void destroyZMap(ZMap zmap)
 
 
 /* Called when a view has loaded data. */
-/*
- * mh17: this appear to be only for the GUI
- * but we need to tell x-remote about this and also to give some data about what data got loaded
- * as view_data is NULL in all existing calls I'll specify the following:
- * - if view_data == NULL then update GUI stuff
- * - else send a message to x-remote
-  */
 static void dataLoadCB(ZMapView view, void *app_data, void *view_data)
 {
   ZMap zmap = (ZMap)app_data ;
-
 
   /* Update title etc., need to update per column loaded for exciting feedback to the user */
   updateControl(zmap, view) ;
 
   zmapControlWindowSetGUIState(zmap) ;
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* Moved to View where it should always have been..... */
-
-  //  else
-  if (view_data)
-    {
-      ZMapViewLoadFeaturesData load_features_data = (ZMapViewLoadFeaturesData)view_data ;
-
-
-      /* THIS NEEDS REVISITING AND IMPROVING..... */
-      if (!(load_features_data->feature_sets))
-	{
-	  //	  zMapLogCritical("%s", "Data Load notification received but no datasets specified.") ;
-	  // if we have a file input then we may not know the featuresets if there is no data or an error
-          /*! \todo #warning better to patch in the server name here */
-	  load_features_data->feature_sets = g_list_append(NULL, GUINT_TO_POINTER(g_quark_from_string("_unknown_")));
-	}
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      else if (zmap->xremote_client)
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-      else if (zmap->remote_control)
-	{
-	  char *request ;
-	  char *response = NULL;
-	  GList *features ;
-	  char *featurelist = NULL ;
-	  char *load_msg = NULL, *stderr_msg = NULL ;
-	  GString *feature_list_str ;
-
-	  /* Create a list of sources loaded so far. */
-	  feature_list_str = g_string_new(NULL) ;
-
-	  for (features = load_features_data->feature_sets ; features ; features = features->next)
-	    {
-	      char *feature_set_name ;
-
-	      feature_set_name = (char *)g_quark_to_string(GPOINTER_TO_UINT(features->data)) ;
-
-	      g_string_append_printf(feature_list_str, "%s;", feature_set_name) ;
-	    }
-
-	  featurelist = g_string_free(feature_list_str, FALSE) ;
-
-
-	  /* see comment in zmapSlave.c/ RETURNCODE_QUIT, we are tied up in knots...UM, YOU SEEM
-	     TO HAVE MADE IT ALL WORSE MALCOLM....WHY NOT JUST WORK THROUGH THINGS AND UNDERSTAND THEM...SIGH... */
-	  if (load_features_data->status)		
-	    {
-	      char *tmp_msg ;
-
-	      tmp_msg = g_strdup_printf("%d features loaded", load_features_data->num_features) ;
-
-	      load_msg = html_quote_string(tmp_msg) ;	    /* N.B. load_msg allocated with xmalloc() */
-
-	      g_free(tmp_msg) ;
-
-	      {
-		static long total = 0 ;
-
-		total += load_features_data->num_features ;
-		zMapLogTime(TIMER_LOAD, TIMER_ELAPSED, total, "") ; /* how long is startup... */
-	      }
-	    }
-	  else
-	    {
-	      load_msg = html_quote_string((load_features_data->err_msg ? load_features_data->err_msg : xstrdup(""))) ;
-	    }
-
-	  if (load_features_data->stderr_out)
-	    {
-	      stderr_msg = html_quote_string(load_features_data->stderr_out) ;
-							    /* Must be free'd with xfree() */
-	    }
-
-
-	  request = g_strdup_printf("<zmap> <request action=\"" ZACP_FEATURES_LOADED "\">"
-				    " <client xwid=\""ZMAP_XWINDOW_FORMAT_STR"\" />"
-				    " <featureset names=\"%s\" />"
-				    " <start value=\"%d\" />"
-				    " <end value=\"%d\" />"
-				    " <status value=\"%d\" message=\"%s\" />"
-				    " <exit_code value=\"%d\" />"
-				    " <stderr value=\"%s\" />"
-				    "</request></zmap>",
-				    load_features_data->xwid, load_features_data->xwid,
-				    featurelist,
-				    load_features_data->start, load_features_data->end,
-				    (int)load_features_data->status,
-				    load_msg, load_features_data->exit_code,
-				    stderr_msg ? stderr_msg : "") ;
-
-	  /* Must be free'd with xfree() as created by xmalloc() */
-	  xfree(load_msg) ;
-	  if (stderr_msg)
-	    xfree(stderr_msg) ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-
-	  /* OLD STUFF.......REPLACE WITH THE NEW.... */
-
-	  if (zMapXRemoteSendRemoteCommand(zmap->xremote_client, request, &response)
-	      != ZMAPXREMOTE_SENDCOMMAND_SUCCEED)
-	    {
-	      response = response ? response : zMapXRemoteGetResponse(zmap->xremote_client);
-	      zMapLogWarning("Notify of data loaded failed: \"%s\"", response) ;
-	    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-	  g_free(request);
-	  g_free(featurelist);
-
-	}
-
-#if 0
-      /* I DON'T KNOW WHY ALL THIS IS NOT INCLUDED....WHAT WAS THE PLAN ?? */
-
-      else
-	{
-	  char *featurelist = NULL;
-	  GList *features;
-
-	  for (features = load_features_data->feature_sets ; features ; features = features->next)
-	    {
-	      char *prev,*f ;
-
-	      f = (char *) g_quark_to_string(GPOINTER_TO_UINT(features->data)) ;
-
-	      prev = featurelist ;
-
-	      if (!prev)
-		featurelist = g_strdup(f) ;
-	      else
-		featurelist = g_strjoin(";", prev, f, NULL) ;
-
-	      g_free(prev) ;
-	    }
-	  printf("%d features loaded from %s",load_features_data->num_features, featurelist);
-	  g_free(featurelist);
-	}
-#endif
-    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 
   return ;
 }
@@ -1460,41 +1297,9 @@ static void removeView(ZMap zmap, ZMapView view, unsigned long xwid)
       zmapControlPrintAllViews(zmap, FALSE) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      if (zmap->xremote_client)
-	remoteSendViewClosed(zmap->xremote_client, xwid) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
     }
 
   return ;
 }
-
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static void remoteSendViewClosed(ZMapXRemoteObj client, unsigned long xwid)
-{
-  char *request ;
-  char *response = NULL;
-
-  request = g_strdup_printf("<zmap> <request action=\"view_closed\" xwid=\""ZMAP_XWINDOW_FORMAT_STR"\">"
-			    "<client xwid=\""ZMAP_XWINDOW_FORMAT_STR"\" /> </request> </zmap>",
-			    xwid, xwid) ;
-
-  if (zMapXRemoteSendRemoteCommand(client, request, &response) != ZMAPXREMOTE_SENDCOMMAND_SUCCEED)
-    {
-      response = response ? response : zMapXRemoteGetResponse(client);
-      zMapLogWarning("Notify of view closing failed: \"%s\"", response) ;
-    }
-
-  g_free(request);
-
-  return ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
 
