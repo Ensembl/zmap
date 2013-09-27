@@ -381,7 +381,11 @@ void zmapWindowFeatureShow(ZMapWindow window, FooCanvasItem *item)
       show = findReusableShow(window->feature_show_windows) ;
 
       feature_name = (char *)g_quark_to_string(feature->original_id) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       title = zMapGUIMakeTitleString("Feature Show", feature_name) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+      title = g_strdup(feature_name) ;
       if (!show)
 	{
 	  show = featureShowCreate(window, item) ;
