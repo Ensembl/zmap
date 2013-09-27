@@ -184,23 +184,6 @@ typedef struct
 
   ZMapWindowFilterStruct filter;
 
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* MUST ALL GO NOW.... */
-
-  /* Old xremote stuff.... */
-
-  /* For Xremote XML actions/events. */
-  ZMapXRemoteSendCommandError remote_result ;
-
-  ZMapXMLHandlerStruct xml_handler ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-
 } ZMapWindowSelectStruct, *ZMapWindowSelect ;
 
 
@@ -358,6 +341,9 @@ typedef struct ZMapWindowCallbackCommandScratchStructName
 /* Callback functions that can be registered with ZMapWindow, functions are registered all in one.
  * go via the ZMapWindowCallbacksStruct. */
 typedef void (*ZMapWindowCallbackFunc)(ZMapWindow window, void *caller_data, void *window_data) ;
+typedef void (*ZMapWindowLoadCallbackFunc)(ZMapWindow window,
+					   void *caller_data, gpointer load_cb_data, void *window_data) ;
+
 
 typedef struct _ZMapWindowCallbacksStruct
 {
@@ -370,7 +356,7 @@ typedef struct _ZMapWindowCallbacksStruct
   ZMapWindowCallbackFunc setZoomStatus ;
   ZMapWindowCallbackFunc visibilityChange ;
   ZMapWindowCallbackFunc command ;			    /* Request to exit given command. */
-  ZMapWindowCallbackFunc drawn_data ;
+  ZMapWindowLoadCallbackFunc drawn_data ;
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -414,7 +400,7 @@ void zMapWindowBusyFull(ZMapWindow window, gboolean busy, const char *file, cons
 void zMapWindowDisplayData(ZMapWindow window, ZMapWindowState state,
 			   ZMapFeatureContext current_features, ZMapFeatureContext new_features,
 			   ZMapFeatureContextMap context_map,
-			   GList *masked, ZMapFeature highlight_feature) ;
+			   GList *masked, ZMapFeature highlight_feature, gpointer loaded_cb_user_data) ;
 void zMapWindowUnDisplayData(ZMapWindow window,
                              ZMapFeatureContext current_features,
                              ZMapFeatureContext new_features);
