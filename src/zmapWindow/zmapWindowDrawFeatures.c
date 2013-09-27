@@ -1851,16 +1851,18 @@ static gboolean feature_set_matches_frame_drawing_mode(ZMapWindow window,
 
 
 
-GQuark zMapWindowGetFeaturesetContainerID(ZMapWindow window,GQuark featureset_id)
+GQuark zMapWindowGetFeaturesetContainerID(ZMapWindow window, GQuark featureset_id)
 {
-  ZMapFeatureSetDesc gffset;
-  GQuark container_id = featureset_id;
+  GQuark container_id = featureset_id ;
+  ZMapFeatureSetDesc gffset ;
 
-  gffset = (ZMapFeatureSetDesc) g_hash_table_lookup(window->context_map->featureset_2_column, GUINT_TO_POINTER(featureset_id));
-  if(gffset)
-      container_id = gffset->column_id;
 
-  return container_id;
+  gffset = (ZMapFeatureSetDesc)g_hash_table_lookup(window->context_map->featureset_2_column,
+						   GUINT_TO_POINTER(featureset_id)) ;
+  if (gffset)
+    container_id = gffset->column_id ;
+
+  return container_id ;
 }
 
 
