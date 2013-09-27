@@ -312,35 +312,6 @@ non-assembly-colours = normal fill brown ; normal border black ; selected fill r
 description=assembly path for displayed sequence\n\
 parent-style=assembly\n\
 \n\
-[style-Annotation]\n\
-description=annotation column for creating and editing temporary features\n\
-parent-style=transcript\n\
-width=20\n\
-show-when-empty=true\n\
-display-mode=hide\n\
-frame-mode=always\n\
-colours=normal border #000000 ; selected border #000000 ; selected fill #ffddcc\n\
-transcript-cds-colours=normal fill white ; normal border SlateBlue ; selected fill gold\n\
-strand-specific=false\n\
-frame-specific=false\n\
-show-reverse-strand=false\n\
-\n\
-[style-hand_built]\n\
-description=default column for hand-built features\n\
-parent-style=transcript\n\
-width=6\n\
-\n\
-[style-annotationcolumn]\n\
-colours=normal fill #ddeeff ; selected fill #eeffcc\n\
-width=20\n\
-show-when-empty=true\n\
-\n\
-[style-ORF]\n\
-colours=normal fill #ffffff ; normal border #898994 ; selected fill gold ; selected border #000000\n \
-width=11\n\
-frame-mode=only-3\n\
-strand-specific=true\n\
-show-reverse-strand=false\n\
 \n\
 \n\
 ";
