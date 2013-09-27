@@ -839,6 +839,7 @@ typedef struct
 {
   ZMapWindow window ;
   void *data ;
+  gpointer loaded_cb_user_data ;
 } zmapWindowDataStruct, *zmapWindowData ;
 
 typedef struct
@@ -1065,7 +1066,7 @@ FooCanvasItem *zmapWindowFToIFindSetItem(ZMapWindow window,GHashTable *feature_t
 					 ZMapFeatureSet feature_set,
 					 ZMapStrand strand, ZMapFrame frame) ;
 FooCanvasItem *zmapWindowFToIFindFeatureItem(ZMapWindow window,GHashTable *feature_to_context_hash,
-                               ZMapStrand set_strand, ZMapFrame set_frame, ZMapFeature feature) ;
+					     ZMapStrand set_strand, ZMapFrame set_frame, ZMapFeature feature) ;
 FooCanvasItem *zmapWindowFToIFindItemChild(ZMapWindow window,GHashTable *feature_to_context_hash,
 					   ZMapStrand set_strand, ZMapFrame set_frame,
 					   ZMapFeature feature, int child_start, int child_end) ;
