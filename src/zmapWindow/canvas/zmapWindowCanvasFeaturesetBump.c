@@ -365,6 +365,9 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowFeaturesetItem featureset, ZMa
       ZMapWindowCanvasFeature feature = (ZMapWindowCanvasFeature) sl->data;	/* base struct of all features */
       double extra;
 
+      if (!zmapWindowCanvasFeatureValid(feature))
+        continue;
+
       //printf("bump feature %s %lx\n", g_quark_to_string(feature->feature->original_id),feature->flags);
       if(bump_mode == ZMAPBUMP_UNBUMP)
 	{
@@ -507,7 +510,7 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowFeaturesetItem featureset, ZMa
 	{
 	  ZMapWindowCanvasFeature feature = (ZMapWindowCanvasFeature) sl->data;	/* base struct of all features */
 
-	  if(!(feature->flags & FEATURE_HIDDEN))
+	  if(zmapWindowCanvasFeatureValid(feature) && !(feature->flags & FEATURE_HIDDEN))
 	    {
 	      width = (double) GPOINTER_TO_UINT( g_hash_table_lookup( sub_col_width_G, GUINT_TO_POINTER( feature->bump_col)));
 	      feature->bump_offset = (double) GPOINTER_TO_UINT( g_hash_table_lookup( sub_col_offset_G, GUINT_TO_POINTER( feature->bump_col))) ;
