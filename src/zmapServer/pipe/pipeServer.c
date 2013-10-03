@@ -97,6 +97,8 @@ static ZMapServerResponseType getConnectState(void *server_conn, ZMapServerConne
 static ZMapServerResponseType closeConnection(void *server_in) ;
 static ZMapServerResponseType destroyConnection(void *server) ;
 
+static gboolean pipeSpawn(PipeServer server,GError **error);
+static void waitForChild(PipeServer server) ;
 
 static void getConfiguration(PipeServer server) ;
 static void addMapping(ZMapFeatureContext feature_context, int req_start, int req_end) ;
@@ -114,9 +116,7 @@ static void setErrMsg(PipeServer server, char *new_msg) ;
 
 static ZMapServerResponseType pipeGetHeader(PipeServer server);
 static ZMapServerResponseType pipeGetSequence(PipeServer server);
-static gboolean pipe_server_spawn(PipeServer server,GError **error);
 
-static void waitForChild(PipeServer server) ;
 
 
 
@@ -203,82 +203,146 @@ static gboolean createConnection(void **server_out,
 				 char *config_file, ZMapURL url, char *format,
                                  char *version_str, int timeout_unused)
 {
-  gboolean result = TRUE ;
+  gboolean result = FALSE ;
   PipeServer server ;
-  gchar *dir;
 
-  zMapAssert(url->path) ;
-
-
-  /* THERE SEEMS TO NO ERROR HANDLING HERE WHATSOEVER WHICH IS DISAPPOINTING....EG */
-
-
-  /* Always return a server struct as it contains error message stuff. */
   server = (PipeServer)g_new0(PipeServerStruct, 1) ;
-  *server_out = (void *)server ;
 
-  server->config_file = g_strdup(config_file) ;
-
-  getConfiguration(server);	// get scripts directory
-
-  server->scheme = url->scheme;
-
-  server->script_path = zMapGetPath(url->path) ;	/* if absolute */
-
-  if (server->scheme == SCHEME_FILE)
+  if ((url->scheme != SCHEME_FILE || url->scheme != SCHEME_PIPE) && (!(url->path) || !(*(url->path))))
     {
-      char *tmp_path ;
+      server->last_err_msg = g_strdup_printf("Connection failed because pipe url had wrong scheme or no path: %s.",
+					     url->url) ;
+      ZMAPPIPESERVER_LOG(Warning, server->protocol, server->script_path, server->script_args,
+			 "%s", server->last_err_msg) ;
 
-      getConfiguration(server) ;	// get data directory for files
-      dir = server->data_dir ;
-
-      if (*(url->path) != '/' && dir && *dir)
-	{
-	  tmp_path = g_strdup_printf("%s/%s", dir,url->path) ;		/* NB '//' works as '/' */
-	  server->script_path = zMapGetPath(tmp_path) ;
-	  g_free(tmp_path) ;
-	}
+      result = FALSE ;
     }
-  else if (server->scheme == SCHEME_PIPE && *(url->path) != '/')	/* find the script on our path env */
+  else
     {
-      char *path_str = NULL ;
+      char *url_script_path ;
 
-      if ((path_str = getenv("PATH")))
+      /* Get configuration parameters. */
+      server->config_file = g_strdup(config_file) ;
+      getConfiguration(server) ;
+
+      /* Get url parameters. */
+      server->scheme = url->scheme ;
+      url_script_path = url->path ;
+
+      if (server->scheme == SCHEME_FILE)
 	{
-	  char **paths ;
-
-	  if ((paths = g_strsplit((path_str + 4), ":", 0)))
+	  if (g_path_is_absolute(url_script_path))
 	    {
-	      char **pathp = paths ;
+	      server->script_path = g_strdup(url_script_path) ;
 
-	      while (*pathp)
+	      result = TRUE ;
+	    }
+	  else
+	    {
+	      gchar *dir;
+	      char *tmp_path ;
+
+	      dir = server->data_dir ;
+
+	      if (dir && *dir)
 		{
-		  dir = g_strdup_printf("%s/%s", *pathp, url->path) ;
+		  tmp_path = g_strdup_printf("%s/%s", dir, url_script_path) ;		/* NB '//' works as '/' */
 
-		  if (g_file_test(dir, G_FILE_TEST_IS_EXECUTABLE))
-		    {
-		      server->script_path = zMapGetPath(dir) ;
-		      g_free(dir) ;
+		  server->script_path = zMapGetPath(tmp_path) ;
 
-		      break ;
-		    }
+		  g_free(tmp_path) ;
 
-		  pathp++ ;
+		  result = TRUE ;
 		}
+	      else
+		{
+		  server->last_err_msg = g_strdup_printf("Cannot find path to relative file specified by url"
+							 " because no data directory was specified in config file,"
+							 " url was: \"%s\"",
+							 url->url) ;
+		  ZMAPPIPESERVER_LOG(Warning, server->protocol, server->script_path, server->script_args,
+				     "%s", server->last_err_msg) ;
 
-	      g_strfreev(paths) ;
+		  result = FALSE ;
+		}
 	    }
 	}
+      else						    /* SCHEME_PIPE */
+	{
+	  if (g_path_is_absolute(url_script_path))
+	    {
+	      server->script_path = g_strdup(url_script_path) ;
+
+	      result = TRUE ;
+	    }
+	  else
+	    {
+	      /* Look for an _executable_ script on our path. */
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	      char *path_str = NULL ;
+
+	      if ((path_str = getenv("PATH")))
+		{
+		  char **paths ;
+
+		  if ((paths = g_strsplit((path_str + 4), ":", 0)))
+		    {
+		      char **pathp = paths ;
+
+		      while (*pathp)
+			{
+			  gchar *dir ;
+
+			  dir = g_strdup_printf("%s/%s", *pathp, url_script_path) ;
+
+			  if (g_file_test(dir, G_FILE_TEST_IS_EXECUTABLE))
+			    {
+			      server->script_path = zMapGetPath(dir) ;
+			      g_free(dir) ;
+
+			      break ;
+			    }
+
+			  pathp++ ;
+			}
+
+		      g_strfreev(paths) ;
+		    }
+		}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+	      if ((server->script_path = g_find_program_in_path(url_script_path)))
+		{
+		  result = TRUE ;
+		}
+	      else
+		{
+		  server->last_err_msg = g_strdup_printf("Cannot find executable script %s in PATH",
+							 url_script_path) ;
+		  ZMAPPIPESERVER_LOG(Warning, server->protocol, server->script_path, server->script_args,
+				     "%s", server->last_err_msg) ;
+		  
+		  result = FALSE ;
+		}
+	    }
+	}
+
+      if (result)
+	{
+	  if (url->query)
+	    server->script_args = g_strdup_printf("%s",url->query) ;
+	  else
+	    server->script_args = g_strdup("") ;
+
+	  if (server->scheme == SCHEME_FILE)
+	    server->protocol = FILE_PROTOCOL_STR ;
+	  else
+	    server->protocol = PIPE_PROTOCOL_STR ;
+	}
     }
 
-  if (url->query)
-    server->query = g_strdup_printf("%s",url->query) ;
-  else
-    server->query = g_strdup("") ;
-
-  server->protocol = PIPE_PROTOCOL_STR ;
-  if (server->scheme == SCHEME_FILE)
-    server->protocol = FILE_PROTOCOL_STR ;
+  /* Always return a server struct as it contains error message stuff. */
+  *server_out = (void *)server ;
 
   return result ;
 }
@@ -320,8 +384,7 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
 	}
       else
 	{
-	  if (pipe_server_spawn(server, &gff_pipe_err))
-            status = TRUE ;
+	  status = pipeSpawn(server, &gff_pipe_err) ;
 	}
 
       if (!status)
@@ -384,7 +447,7 @@ static ZMapServerResponseType getInfo(void *server_in, ZMapServerReqGetServerInf
     {
       result = ZMAP_SERVERRESPONSE_REQFAIL ;
 
-      ZMAPPIPESERVER_LOG(Warning, server->protocol, server->script_path,server->query,
+      ZMAPPIPESERVER_LOG(Warning, server->protocol, server->script_path,server->script_args,
 			 "Could not get server info because: %s", server->last_err_msg) ;
     }
 
@@ -419,7 +482,7 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   setErrMsg(server, g_strdup("Feature Sets cannot be read from GFF stream.")) ;
-  ZMAPPIPESERVER_LOG(Warning, server->protocol, server->script_path, server->query,
+  ZMAPPIPESERVER_LOG(Warning, server->protocol, server->script_path, server->script_args,
 		     "%s", server->last_err_msg) ;
   result = ZMAP_SERVERRESPONSE_UNSUPPORTED ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
@@ -446,7 +509,7 @@ static ZMapServerResponseType getStyles(void *server_in, GHashTable **styles_out
 
   // can take this warning out as zmapView should now read the styles file globally
   setErrMsg(server, "Reading styles from a GFF stream is not supported.") ;
-  ZMAPPIPESERVER_LOG(Warning, server->protocol, server->script_path, server->query,
+  ZMAPPIPESERVER_LOG(Warning, server->protocol, server->script_path, server->script_args,
 		     "%s", server->last_err_msg) ;
 
   result = ZMAP_SERVERRESPONSE_UNSUPPORTED ;
@@ -476,7 +539,7 @@ static ZMapServerResponseType getSequences(void *server_in, GList *sequences_ino
   PipeServer server = (PipeServer)server_in ;
 
   setErrMsg(server, "Reading sequences from a GFF stream is not supported.") ;
-  ZMAPPIPESERVER_LOG(Warning, server->protocol, server->script_path, server->query,
+  ZMAPPIPESERVER_LOG(Warning, server->protocol, server->script_path, server->script_args,
 		     "%s", server->last_err_msg) ;
 
   result = ZMAP_SERVERRESPONSE_UNSUPPORTED ;
@@ -716,22 +779,9 @@ static void getConfiguration(PipeServer server)
 {
   ZMapConfigIniContext context;
 
-  if((context = zMapConfigIniContextProvide(server->config_file)))
+  if ((context = zMapConfigIniContextProvide(server->config_file)))
     {
       char *tmp_string  = NULL;
-
-#if MH17_REMOVED_BY_POPULAR_REQUEST
-      /* default script directory to use */
-      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
-				       ZMAPSTANZA_APP_SCRIPTS, &tmp_string))
-	{
-	  server->script_dir = tmp_string;
-	}
-      else
-#endif
-	{
-	  server->script_dir = g_get_current_dir();
-	}
 
       /* default directory to use */
       if(zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
@@ -750,7 +800,6 @@ static void getConfiguration(PipeServer server)
 	  if(!g_ascii_strcasecmp(tmp_string,"Otter"))
 	    server->is_otter = TRUE;
 	}
-
 
       zMapConfigIniContextDestroy(context);
     }
@@ -798,13 +847,13 @@ static char *make_arg(PipeArg pipe_arg, char *prefix, PipeServer server)
 }
 
 
-static gboolean pipe_server_spawn(PipeServer server, GError **error)
+static gboolean pipeSpawn(PipeServer server, GError **error)
 {
-  gboolean result = FALSE;
-  gchar **argv, **q_args;
-  gint pipe_fd;
-  GError *pipe_error = NULL;
-  int i;
+  gboolean result = FALSE ;
+  gchar **argv, **q_args ;
+  gint pipe_fd ;
+  GError *pipe_error = NULL ;
+  int i ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   gint err_fd;
@@ -817,7 +866,7 @@ static gboolean pipe_server_spawn(PipeServer server, GError **error)
   char *p;
   int n_q_args = 0;
 
-  q_args = g_strsplit(server->query,"&",0) ;
+  q_args = g_strsplit(server->script_args,"&",0) ;
 
   if (q_args && *q_args)
     {
@@ -884,10 +933,9 @@ static gboolean pipe_server_spawn(PipeServer server, GError **error)
 
 	}
     }
+  argv[i]= NULL ;
 
   //#define MH17_DEBUG_ARGS
-
-  argv[i]= NULL;
 #if defined  MH17_DEBUG_ARGS
   {
     char *x = "";
@@ -905,16 +953,21 @@ static gboolean pipe_server_spawn(PipeServer server, GError **error)
   /* Seems that g_spawn_async_with_pipes() is not thread safe so lock round it. */
   zMapThreadForkLock();
 
-  result = g_spawn_async_with_pipes(server->script_dir,argv,NULL,
-				    //      G_SPAWN_SEARCH_PATH |	 doesnt work
-				    G_SPAWN_DO_NOT_REAP_CHILD, // can't not give a flag!
-				    NULL, NULL, &server->child_pid, NULL, &pipe_fd, NULL, &pipe_error) ;
-  if (result)
+  /* After we spawn we need to control when child exits so set G_SPAWN_DO_NOT_REAP_CHILD. */
+  if ((result = g_spawn_async_with_pipes(NULL, argv, NULL,
+					 G_SPAWN_DO_NOT_REAP_CHILD, NULL, NULL, &server->child_pid,
+					 NULL, &pipe_fd, NULL,
+					 &pipe_error)))
     {
+      /* Set up reading of stdout pipe. */
       server->gff_pipe = g_io_channel_unix_new(pipe_fd) ;
     }
   else
     {
+      /* If there was an error then return it. */
+      if (error)
+	*error = pipe_error ;
+
       /* didn't run so can't have clean exit code; */
       server->exit_code = EXIT_FAILURE ;
     }
@@ -922,16 +975,13 @@ static gboolean pipe_server_spawn(PipeServer server, GError **error)
   /* Unlock ! */
   zMapThreadForkUnlock();
 
+  /* Clear up */
+  g_free(argv) ;
+  if (q_args)
+    g_strfreev(q_args) ;
 
-  g_free(argv);   // strings allocated and freed seperately
-  if(q_args)
-    g_strfreev(q_args);
 
-  /* If there was an error then return it. */
-  if (error)
-    *error = pipe_error ;
-
-  return(result) ;
+  return result ;
 }
 
 
@@ -1038,7 +1088,7 @@ static ZMapServerResponseType pipeGetHeader(PipeServer server)
 		  setErrMsg(server, err_msg) ;
 		  g_free(err_msg) ;
 
-		  ZMAPPIPESERVER_LOG(Critical, server->protocol, server->script_path,server->query,
+		  ZMAPPIPESERVER_LOG(Critical, server->protocol, server->script_path,server->script_args,
 				     "%s", server->last_err_msg) ;
 		}
 	      else
@@ -1061,7 +1111,7 @@ static ZMapServerResponseType pipeGetHeader(PipeServer server)
 		      setErrMsg(server, err_msg) ;
 		      g_free(err_msg) ;
 
-		      ZMAPPIPESERVER_LOG(Critical, server->protocol, server->script_path,server->query,
+		      ZMAPPIPESERVER_LOG(Critical, server->protocol, server->script_path,server->script_args,
 					 "%s", server->last_err_msg) ;
 		    }
 		}
@@ -1094,7 +1144,7 @@ static ZMapServerResponseType pipeGetHeader(PipeServer server)
       g_free(err_msg) ;
 
 
-      ZMAPPIPESERVER_LOG(Critical, server->protocol, server->script_path, server->query,
+      ZMAPPIPESERVER_LOG(Critical, server->protocol, server->script_path, server->script_args,
 			 "%s", server->last_err_msg) ;
 
       server->result = ZMAP_SERVERRESPONSE_REQFAIL ;
@@ -1155,7 +1205,7 @@ static ZMapServerResponseType pipeGetSequence(PipeServer server)
           setErrMsg(server, err_msg) ;
 	  g_free(err_msg) ;
 
-          ZMAPPIPESERVER_LOG(Critical, server->protocol, server->script_path,server->query,
+          ZMAPPIPESERVER_LOG(Critical, server->protocol, server->script_path,server->script_args,
 			     "%s", server->last_err_msg) ;
 	}
       server->result = ZMAP_SERVERRESPONSE_REQFAIL;
@@ -1240,7 +1290,7 @@ static void eachBlock(gpointer key, gpointer data, gpointer user_data)
 			   server->gff_line, feature_block))
 	{
 	  ZMAPPIPESERVER_LOG(Warning, server->protocol, server->script_path,
-			     server->query,
+			     server->script_args,
 			     "Could not map %s because: %s",
 			     g_quark_to_string(server->req_context->sequence_name),
 			     server->last_err_msg) ;
@@ -1294,7 +1344,7 @@ static gboolean sequenceRequest(PipeServer server, ZMapGFFParser parser, GString
 	      server->last_err_msg =
 		g_strdup_printf("zMapGFFParseLine() failed with no GError for line %d: %s",
 				zMapGFFGetLineNumber(parser), gff_line->str) ;
-	      ZMAPPIPESERVER_LOG(Critical, server->protocol, server->script_path,server->query,
+	      ZMAPPIPESERVER_LOG(Critical, server->protocol, server->script_path,server->script_args,
 				 "%s", server->last_err_msg) ;
 
 	      result = FALSE ;
@@ -1310,7 +1360,7 @@ static gboolean sequenceRequest(PipeServer server, ZMapGFFParser parser, GString
 		}
 	      else
 		{
-		  ZMAPPIPESERVER_LOG(Warning, server->protocol, server->script_path,server->query,
+		  ZMAPPIPESERVER_LOG(Warning, server->protocol, server->script_path,server->script_args,
 				     "%s", error->message) ;
 		}
 	    }
@@ -1387,7 +1437,7 @@ static void eachBlockSequence(gpointer key, gpointer data, gpointer user_data)
 	  setErrMsg(server, estr) ;
 
 	  ZMAPPIPESERVER_LOG(Warning, server->protocol,
-			     server->script_path,server->query,
+			     server->script_path,server->script_args,
 			     "%s", server->last_err_msg);
 	}
       else
@@ -1525,7 +1575,7 @@ static void setErrMsg(PipeServer server, char *new_msg)
     g_free(server->last_err_msg) ;
 
   error_msg = g_strdup_printf("SERVER: \"%s\",   REQUEST: \"%s\",   ERROR: \"%s\"",
-			      server->script_path, server->query, new_msg) ;
+			      server->script_path, server->script_args, new_msg) ;
 
   server->last_err_msg = error_msg ;
 
