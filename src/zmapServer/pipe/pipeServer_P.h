@@ -37,23 +37,33 @@
 #define FILE_PROTOCOL_STR "GFF File"
 
 
+
+/* Helpful to see script args in all error messages so add these to standard messages. */
+#define ZMAPPIPESERVER_LOG(LOGTYPE, PROTOCOL, HOST, ARGS, FORMAT, ...) \
+  ZMAPSERVER_LOG(LOGTYPE, PROTOCOL, HOST, ", script_args: \"%s\" ", FORMAT, __VA_ARGS__)
+
+
+
+
 /* Holds all the state we need to create and access the script output. */
 typedef struct _PipeServerStruct
 {
   gchar *config_file ;
-  gchar *script_dir ;					    /* default location for relative paths */
-  gchar *script_path ;					    /* where our configured script is, including script-dir */
-  gchar *query ;					    /* from query string */
-
-  GIOChannel *gff_pipe ;				    /* the pipe we read the script's output from */
-
-  GPid child_pid ;
-  gint wait ;						    /* delay before getting data, mainly for testing */
 
   char *protocol ;					    /* GFF Pipe or File */
   ZMapURLScheme scheme ;				    /* pipe:// or file:// */
+
+  gchar *script_path ;					    /* Path to the script OR file. */
+  gchar *script_args ;					    /* Args to the script derived from the url string */
+
   gchar *data_dir ;					    /* default location for data files
 							       (when protocol is file://) */
+
+  GIOChannel *gff_pipe ;				    /* the pipe we read the script's stdout from */
+
+  GPid child_pid ;
+
+  gint wait ;						    /* delay before getting data, mainly for testing */
 
   ZMapServerResponseType result ;
   gboolean error ;					    /* TRUE if any error occurred. */

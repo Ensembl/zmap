@@ -127,17 +127,10 @@ void pipeGetServerFuncs(ZMapServerFuncs pipe_funcs) ;
 
 /* Try to give consistent messages/logging.... */
 #define ZMAP_SERVER_MSGPREFIX "Server %s:%s - "
-#define ZMAP_PIPESERVER_MSGPREFIX "Server %s - "
-#define ZMAP_PIPESERVER_MSG2FMT "Host URL was: %s %s"
 
 /* LOGTYPE just be one of the zMapLogXXXX types, i.e. Message, Warning, Critical or Fatal */
 #define ZMAPSERVER_LOG(LOGTYPE, PROTOCOL, HOST, FORMAT, ...) \
 zMapLog##LOGTYPE(ZMAP_SERVER_MSGPREFIX FORMAT, PROTOCOL, HOST, __VA_ARGS__)
-
-#define ZMAPPIPESERVER_LOG(LOGTYPE, PROTOCOL, HOST, ARG, FORMAT, ...) \
-zMapLog##LOGTYPE(ZMAP_PIPESERVER_MSGPREFIX FORMAT, PROTOCOL, __VA_ARGS__);\
-zMapLogMessage(ZMAP_PIPESERVER_MSG2FMT,  HOST, ARG)
-
 
 #define ZMAPSERVER_MAKEMESSAGE(PROTOCOL, HOST, FORMAT, ...) \
 g_strdup_printf(ZMAP_SERVER_MSGPREFIX FORMAT, PROTOCOL, HOST, __VA_ARGS__)
