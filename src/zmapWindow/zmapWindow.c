@@ -723,6 +723,7 @@ void zMapWindowUnDisplayData(ZMapWindow window,
 }
 
 
+#ifdef NOT_USED 
 void zMapWindowRemoveFeatureset(ZMapWindow window, ZMapFeatureSet featureset)
 {
 #warning: "what's going on here, this function takes a feature, not a feature set..."
@@ -736,6 +737,7 @@ void zMapWindowRemoveFeatureset(ZMapWindow window, ZMapFeatureSet featureset)
 
   return ;
 }
+#endif
 
 
 /* completely reset window. */

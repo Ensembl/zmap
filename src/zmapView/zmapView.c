@@ -2255,7 +2255,6 @@ static void getIniData(ZMapView view, char *config_str, GList *req_sources)
 	      {
 		GQuark q ;
 		char *set_name ;
-		ZMapFeatureSource orig_source ;
 
 		set_name = (char *)g_quark_to_string(GPOINTER_TO_UINT(key)) ;
 

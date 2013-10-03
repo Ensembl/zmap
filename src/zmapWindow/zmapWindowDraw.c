@@ -180,27 +180,6 @@ void zMapWindowToggleDNAProteinColumns(ZMapWindow window,
 }
 
 
-/* to resize ourselves and reposition stuff to the right of a CanvasFeatureset we have to resize the root */
-/* There's a lot of container code that labouriously trundles up the tree, but each canvas item knows the root. so let's use that */
-/* hmmmm... you need to call special invocations that set properties that then set flags... yet another run-around. */
-
-/* after removing a fair bit of code you should now be able to call FullReposition from canvas->root */
-/* this is called from canvasLocus & Sequence and ColBump */
-void zMapWindowRequestReposition(FooCanvasItem *foo)
-{
-  ZMapWindowContainerGroup container;
-
-  /* container and item code is separate despite all of them having parent pointers */
-  container = zmapWindowContainerCanvasItemGetContainer(foo);
-
-  container = zmapWindowContainerUtilsGetParentLevel(container, ZMAPCONTAINER_LEVEL_ROOT);
-
-  zmapWindowFullReposition((ZMapWindowContainerGroup) container, FALSE, "request reposition");
-
-  return ;
-}
-
-
 void zMapWindowToggleScratchColumn(ZMapWindow window,
                                    GQuark align_id,   GQuark block_id,
                                    gboolean force_to, gboolean force)
