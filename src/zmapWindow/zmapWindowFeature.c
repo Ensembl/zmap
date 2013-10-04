@@ -226,6 +226,7 @@ void zmapWindowPfetchEntry(ZMapWindow window, char *sequence_name)
 gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_item, ZMapFeature feature, gboolean destroy_feature)
 {
   ZMapWindowContainerFeatureSet container_set;
+  ZMapWindowContainerGroup column_group ;
   gboolean result = FALSE ;
   ZMapFeatureSet feature_set ;
 
@@ -233,9 +234,11 @@ gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_
   zMapAssert(feature && zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
   feature_set = (ZMapFeatureSet)(feature->parent) ;
 
-  if (ZMAP_IS_CONTAINER_FEATURESET(feature_item))
+  column_group = zmapWindowContainerCanvasItemGetContainer(feature_item) ;
+
+  if (ZMAP_IS_CONTAINER_FEATURESET(column_group))
     {
-      container_set = (ZMapWindowContainerFeatureSet)zmapWindowContainerCanvasItemGetContainer(feature_item) ;
+      container_set = (ZMapWindowContainerFeatureSet)column_group ;
       
       /* Need to delete the feature from the feature set and from the hash and destroy the
        * canvas item....NOTE this is very order dependent. */
