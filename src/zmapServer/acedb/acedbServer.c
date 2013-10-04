@@ -1433,6 +1433,12 @@ static gboolean sequenceRequest(DoAllAlignBlocks get_features, ZMapFeatureBlock 
 
 	  /* Set up the parser, if we are doing cols/styles then set hash tables
 	   * in parser to map the gff source name to the Feature Set (== Column) and a Style. */
+   if (!zMapGFFGetVersionFromString(next_line, &iGFFVersion))
+   {
+     setErrMsg(server,  g_strdup_printf("Could not determine GFF version from line: %s", next_line)) ;
+     ZMAPSERVER_LOG(Critical, ACEDB_PROTOCOL_STR, server->host, "%s", server->last_err_msg) ;
+   }
+
 	  parser = zMapGFFCreateParser(iGFFVersion, (char *) g_quark_to_string(feature_block->original_id),
 
 				       server->zmap_start, server->zmap_end) ;

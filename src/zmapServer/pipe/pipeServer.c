@@ -403,6 +403,15 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
       else
 	{
 	  server->sequence_server = req_open->sequence_server ; /* if not then drop any DNA data */
+	  /*
+    * (sm23) Modification to interface to find version from data stream before beginning
+    * formal parsing of data.
+    */
+   if (!zMapGFFGetVersionFromString(server->gff_pipe, &iGFFVersion))
+   {
+     result = ZMAP_SERVERRESPONSE_SERVERDIED ;
+   }
+
 	  server->parser = zMapGFFCreateParser(iGFFVersion, server->sequence_map->sequence, server->zmap_start, server->zmap_end) ;
 	  server->gff_line = g_string_sized_new(2000) ;	    /* Probably not many lines will be > 2k chars. */
 
