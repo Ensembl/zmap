@@ -255,12 +255,12 @@ ZMapServerResponseType zMapServerStylesHaveMode(ZMapServer server, gboolean *hav
 }
 
 
-ZMapServerResponseType zMapServerGetStatus(ZMapServer server, gint *exit_code, gchar **stderr_out)
+ZMapServerResponseType zMapServerGetStatus(ZMapServer server, gint *exit_code)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
 
   /* always do this, it must return a died status if appropriate */
-  result = server->last_response = (server->funcs->get_status)(server->server_conn,exit_code, stderr_out) ;
+  result = server->last_response = (server->funcs->get_status)(server->server_conn, exit_code) ;
 
   if (result != ZMAP_SERVERRESPONSE_OK)
     zMapServerSetErrorMsg(server, ZMAPSERVER_MAKEMESSAGE(server->url->protocol,

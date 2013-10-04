@@ -1211,14 +1211,14 @@ static void toggleColumnInMultipleBlocks(ZMapWindow window, char *name,
 	      ZMapFrame frame = (ZMapFrame)i ;
 
 	      frame_column = zmapWindowFToIFindItemColumn(window, window->context_to_item,
-							feature_block->parent->unique_id,
-							feature_block->unique_id,
-							featureset_unique,
-// DNA is reverse but ST is fwd when revcomped
-// this is very tedious
-//							window->flags[ZMAPFLAG_REVCOMPED_FEATURES] ? ZMAPSTRAND_REVERSE: ZMAPSTRAND_FORWARD,
-							ZMAPSTRAND_FORWARD,
-							frame) ;
+							  feature_block->parent->unique_id,
+					  		  feature_block->unique_id,
+							  featureset_unique,
+                                                          // DNA is reverse but ST is fwd when revcomped
+                                                          // this is very tedious
+                                                          //							window->flags[ZMAPFLAG_REVCOMPED_FEATURES] ? ZMAPSTRAND_REVERSE: ZMAPSTRAND_FORWARD,
+							  ZMAPSTRAND_FORWARD,
+							  frame) ;
 
 
 	      if (frame_column && ZMAP_IS_CONTAINER_FEATURESET(frame_column) &&

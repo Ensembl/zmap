@@ -57,12 +57,8 @@
 #include <ZMap/zmapReadLine.h>
 
 
-/*! @addtogroup zmaputils
- * @{
- *  */
 
-
-/*! You can use ZMAP_MAKESTRING() to create a string version of a number:
+/* You can use ZMAP_MAKESTRING() to create a string version of a number:
  *
  *         ZMAP_MAKESTRING(6)  produces "6"
  *
@@ -148,14 +144,25 @@ typedef enum
   } ZMapTimeFormat ;
 
 
+/* Gives process termination type. */
+typedef enum
+  {
+    ZMAP_PROCTERM_OK,					    /* Process exited normally. */
+    ZMAP_PROCTERM_ERROR,				    /* Process exited normally but with
+							       non-zero return code. */
+    ZMAP_PROCTERM_SIGNAL,				    /* Unhandled signal terminated the process. */
+    ZMAP_PROCTERM_STOPPED				    /* Process was stopped by another process. */
+  } ZMapProcessTerminationType ;
+
+
+
+
 typedef struct
 {
   guint    source_id;
   gpointer user_data;
 }ZMapUtilsChildWatchDataStruct, *ZMapUtilsChildWatchData;
 
-
-/*! @} end of zmaputils docs. */
 
 
 #define ZMAPLOG_STANZA  "logging"			    /* Does this need to be public ? */
@@ -219,6 +226,11 @@ gboolean zMapStr2Double(char *str, double *double_out) ;
 
 #define zMapUtilsSwop(TYPE, FIRST, SECOND)   \
   { TYPE tmp = (FIRST) ; (FIRST) = (SECOND) ; (SECOND) = tmp ; }
+
+
+ZMapProcessTerminationType zMapUtilsProcessTerminationStatus(int status) ;
+gboolean zMapUtilsProcessTerminationStr(int status, char **termination_str_out) ;
+
 
 
 gboolean zMapUtilsSysCall(char *cmd_str, char **err_msg_out) ;

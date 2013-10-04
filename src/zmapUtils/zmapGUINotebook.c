@@ -43,7 +43,8 @@
 
 /* Defines for strings for setting/getting our data from GtkWidgets. */
 #define GUI_NOTEBOOK_SETDATA "zMapGuiNotebookData"
-#define GUI_NOTEBOOK_STACK_SETDATA "zMapGuiNotebookStackData"
+#define GUI_NOTEBOOK_STACK_SETDATA  "zMapGuiNotebookStackData"
+#define GUI_NOTEBOOK_CURR_SETDATA   "zMapGuiNotebookCurrData"
 #define GUI_NOTEBOOK_BUTTON_SETDATA "zMapGuiNotebookButtonData"
 
 #define GUI_NOTEBOOK_DEFAULT_BORDER   0
@@ -203,13 +204,8 @@ typedef enum
   } ZMapWindowListType ;
 
 
-/*! @addtogroup zmapguiutils
- * @{
- *  */
 
-
-/*!
- * The model for building a notebook for displaying/editting resources/data etc is:
+/* The model for building a notebook for displaying/editting resources/data etc is:
  *
  * 1) Use zMapGUINotebookCreateXXX() functions to build up a tree representing your data.
  *
@@ -598,12 +594,23 @@ GtkWidget *zMapGUINotebookCreateWidget(ZMapGuiNotebook notebook_spec)
 }
 
 
-/* Returns the actual notebook widget. */
+/* Returns the stack notebook widget. */
 GtkWidget *zMapGUINotebookGetNoteBookWidg(GtkWidget *compound_note_widget)
 {
   GtkWidget *notebook_widg = NULL ;
 
   notebook_widg = g_object_get_data(G_OBJECT(compound_note_widget), GUI_NOTEBOOK_STACK_SETDATA) ;
+
+  return notebook_widg ;
+}
+
+
+/* Returns the Chapter notebook widget. */
+GtkWidget *zMapGUINotebookGetCurrChapterWidg(GtkWidget *compound_note_widget)
+{
+  GtkWidget *notebook_widg = NULL ;
+
+  notebook_widg = g_object_get_data(G_OBJECT(compound_note_widget), GUI_NOTEBOOK_CURR_SETDATA) ;
 
   return notebook_widg ;
 }
@@ -634,10 +641,11 @@ GtkWidget *zMapGUINotebookCreateDialog(ZMapGuiNotebook notebook_spec, char *help
    * Make dialog
    */
   make_notebook->toplevel = dialog = zMapGUIToplevelNew(NULL, (char *)g_quark_to_string(notebook_spec->name)) ;
-
-  g_object_set_data(G_OBJECT(dialog), GUI_NOTEBOOK_SETDATA, make_notebook) ;
   gtk_container_set_border_width(GTK_CONTAINER (dialog), 10);
   g_signal_connect(G_OBJECT(dialog), "destroy", G_CALLBACK(destroyCB), make_notebook) ;
+
+  /* Record our state on the dialog widget. */
+  g_object_set_data(G_OBJECT(dialog), GUI_NOTEBOOK_SETDATA, make_notebook) ;
 
   make_notebook->vbox = vbox = gtk_vbox_new(FALSE, GUI_NOTEBOOK_BOX_SPACING) ;
   gtk_box_set_spacing(GTK_BOX(vbox), 5) ;
@@ -999,7 +1007,7 @@ static GtkWidget *makeNotebookWidget(MakeNotebook make_notebook)
   gtk_notebook_set_show_tabs(GTK_NOTEBOOK(make_notebook->notebook_stack), FALSE) ;
   gtk_container_add(GTK_CONTAINER(frame), make_notebook->notebook_stack) ;
 
-  /* Record notebook widg on toplevel widg. */
+  /* Record stack notebook widg on top vbox widg. */
   g_object_set_data(G_OBJECT(top_widg), GUI_NOTEBOOK_STACK_SETDATA, make_notebook->notebook_stack) ;
 
   g_list_foreach(make_notebook->notebook_spec->chapters, makeChapterCB, make_notebook) ;
@@ -1043,6 +1051,9 @@ static void makeChapterCB(gpointer data, gpointer user_data)
    * so it can be raised to the top of the notebook stack when the button is clicked. */
   make_notebook->curr_notebook = notebook_widget = gtk_notebook_new() ;
   g_object_set_data(G_OBJECT(notebook_widget), GUI_NOTEBOOK_STACK_SETDATA, make_notebook->notebook_stack) ;
+
+  /* Record current chapter notebook on top widget of notebook (currently a vbox). */
+  g_object_set_data(G_OBJECT(make_notebook->notebook_vbox), GUI_NOTEBOOK_CURR_SETDATA, notebook_widget) ;
 
   button = gtk_radio_button_new_with_label_from_widget((make_notebook->prev_button
 							? GTK_RADIO_BUTTON(make_notebook->prev_button)
@@ -1516,6 +1527,9 @@ static void changeNotebookCB(GtkWidget *widget, gpointer make_notebook_data)
 
       /* Set this notebook to show the first page. */
       gtk_notebook_set_current_page(GTK_NOTEBOOK(notebook), 0) ;
+
+      /* Set this notebook widget on the top notebook. */
+      g_object_set_data(G_OBJECT(make_notebook->notebook_vbox), GUI_NOTEBOOK_CURR_SETDATA, notebook) ;
     }
 
   return ;

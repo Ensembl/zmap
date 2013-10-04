@@ -660,6 +660,78 @@ gboolean zMapUtilsSysCall(char *cmd_str, char **err_msg_out)
   return result ;
 }
 
+
+
+/* Takes an integer that is the termination status of a process (e.g. as generated
+ * by waitpid() etc) and returns what type of termination it was.
+ * 
+ * See ZMapProcessTerminationType in zmapUtils.h for meaning of value returned.
+ *  */
+ZMapProcessTerminationType zMapUtilsProcessTerminationStatus(int status)
+{
+  ZMapProcessTerminationType termination_type = ZMAP_PROCTERM_OK ;
+
+  if (WIFEXITED(status))
+    {
+      if (WEXITSTATUS(status))
+	termination_type = ZMAP_PROCTERM_ERROR ;
+    }
+  else if (WIFSIGNALED(status))
+    {
+      termination_type = ZMAP_PROCTERM_SIGNAL ;
+    }
+  else if (WIFSTOPPED(status))
+    {
+      termination_type = ZMAP_PROCTERM_STOPPED ;
+    }
+
+  return termination_type ;
+}
+
+
+/* Takes an integer that is the termination status of a process (e.g. as generated
+ * by waitpid() etc) and returns a string describing that status.
+ * 
+ * Returns FALSE without setting termination_str_out if the process terminated
+ * normally with a zero return code otherwise returns TRUE and returns the
+ * termination status as a string in termination_str_out, this string should
+ * be g_free'd by the caller when no longer required.
+ * 
+ *  */
+gboolean zMapUtilsProcessTerminationStr(int status, char **termination_str_out)
+{
+  gboolean has_termination_str = FALSE ;
+
+  if (WIFEXITED(status))
+    {
+      int exit_status ;
+
+      if ((exit_status = WEXITSTATUS(status)))
+	{
+	  *termination_str_out = g_strdup_printf("Child terminated normally, exit status: %d", exit_status) ;
+
+	  has_termination_str = TRUE ;
+	}
+    }
+  else if (WIFSIGNALED(status))
+    {
+      *termination_str_out = g_strdup_printf("Child terminated by signal number %d - \"%s\".",
+					     WTERMSIG(status), g_strsignal(WTERMSIG(status))) ;
+
+      has_termination_str = TRUE ;
+    }
+  else if (WIFSTOPPED(status))
+    {
+      *termination_str_out = g_strdup_printf("Child terminated by signal, signal number: %d", WSTOPSIG(status)) ;
+
+      has_termination_str = TRUE ;
+    }
+
+  return has_termination_str ;
+}
+
+
+
 /* make printing from totalview evaluations a lot easier... */
 void zMapPrintQuark(GQuark quark)
 {

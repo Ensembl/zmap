@@ -53,7 +53,7 @@
     _(ZMAP_SERVERREQ_FEATURES, , "features", "features", "Get the context features.") \
     _(ZMAP_SERVERREQ_SEQUENCE, , "sequence", "sequence", "Get the context sequence.") \
     _(ZMAP_SERVERREQ_GETSEQUENCE, , "getsequence", "getsequence", "Get an arbitrary (named) sequence.") \
-    _(ZMAP_SERVERREQ_GETSTATUS, , "getstatus", "getstatus", "Get server exit code and STDERR.") \
+    _(ZMAP_SERVERREQ_GETSTATUS, , "getstatus", "getstatus", "Get server process exit code.") \
     _(ZMAP_SERVERREQ_GETCONNECT_STATE, , "getconnect_state", "getconnect_state", "Get server connection state.") \
     _(ZMAP_SERVERREQ_TERMINATE, , "terminate", "terminate", "Close and destroy the connection.")
 
@@ -263,7 +263,6 @@ typedef struct ZMapServerReqGetStatusStructType
   ZMapServerResponseType response ;
 
   gint exit_code ;
-  gchar *stderr_out ;
 
 } ZMapServerReqGetStatusStruct, *ZMapServerReqGetStatus ;
 

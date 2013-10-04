@@ -103,7 +103,7 @@ static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles,
 					  ZMapFeatureContext feature_context, int *num_features_out) ;
 static ZMapServerResponseType getContextSequence(void *server_in, GHashTable *styles, ZMapFeatureContext feature_context) ;
 static char *lastErrorMsg(void *server) ;
-static ZMapServerResponseType getStatus(void *server_conn, gint *exit_code, gchar **stderr_out);
+static ZMapServerResponseType getStatus(void *server_conn, gint *exit_code) ;
 static ZMapServerResponseType getConnectState(void *server_conn, ZMapServerConnectStateType *connect_state) ;
 static ZMapServerResponseType closeConnection(void *server) ;
 static ZMapServerResponseType destroyConnection(void *server) ;
@@ -459,10 +459,10 @@ static ZMapServerResponseType haveModes(void *server_in, gboolean *have_mode)
 
 
 /* UTTERLY POINTLESS....GET RID OF THIS.... */
-static ZMapServerResponseType getStatus(void *server_conn, gint *exit_code, gchar **stderr_out)
+static ZMapServerResponseType getStatus(void *server_conn, gint *exit_code)
 {
   *exit_code = 0;
-  *stderr_out = NULL;
+
   return ZMAP_SERVERRESPONSE_OK;
 }
 

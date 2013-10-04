@@ -209,6 +209,133 @@ void zMapGUIRaiseToTop(GtkWidget *widget)
 
 
 
+gboolean zMapGUIGetMaxWindowSize(GtkWidget *toplevel, gint *width_out, gint *height_out)
+{
+  gboolean result = TRUE ;
+  GdkAtom geometry_atom, workarea_atom, max_atom_vert ;
+  GdkScreen *screen ;
+  int window_width = 0, window_height = 0 ;
+  float ZMAPWINDOW_HORIZ_PROP = 0.9, ZMAPWINDOW_VERT_PROP = 0.9 ;
+
+
+  /* Get the atoms for _NET_* properties. */
+  geometry_atom = gdk_atom_intern("_NET_DESKTOP_GEOMETRY", FALSE) ;
+  workarea_atom = gdk_atom_intern("_NET_WORKAREA", FALSE) ;
+  max_atom_vert = gdk_atom_intern("_NET_WM_STATE_MAXIMIZED_VERT", FALSE) ;
+
+  screen = gtk_widget_get_screen(toplevel) ;
+
+  if (gdk_x11_screen_supports_net_wm_hint(screen, geometry_atom)
+      && gdk_x11_screen_supports_net_wm_hint(screen, workarea_atom))
+    {
+      /* We want to get these properties....
+       *   _NET_DESKTOP_GEOMETRY(CARDINAL) = 1600, 1200
+       *   _NET_WORKAREA(CARDINAL) = 0, 0, 1600, 1154, 0, 0, 1600, 1154,...repeated for all workspaces.
+       *
+       * In fact we don't use the geometry (i.e. screen size) but its useful
+       * to see it.
+       *
+       * When retrieving 32 bit items, these items will be stored in _longs_, this means
+       * that on a 32 bit machine they come back in 32 bits BUT on 64 bit machines they
+       * come back in 64 bits.
+       *
+       *  */
+      gboolean result ;
+      GdkWindow *root_window ;
+      gulong offset, length ;
+      gint pdelete = FALSE ;				    /* Never delete the property data. */
+      GdkAtom actual_property_type ;
+      gint actual_format, actual_length, field_size, num_fields ;
+      guchar *data, *curr ;
+      guint width, height, left, top, right, bottom ;
+
+      field_size = sizeof(glong) ;			    /* see comment above re. 32 vs. 64 bits. */
+
+      root_window = gdk_screen_get_root_window(screen) ;
+
+      offset = 0 ;
+      num_fields = 2 ;
+      length = num_fields * 4 ;				    /* Get two unsigned ints worth of data. */
+      actual_format = actual_length = 0 ;
+      data = NULL ;
+      result = gdk_property_get(root_window,
+				geometry_atom,
+				GDK_NONE,
+				offset,
+				length,
+				pdelete,
+				&actual_property_type,
+				&actual_format,
+				&actual_length,
+				&data) ;
+
+      if (num_fields == actual_length/sizeof(glong))
+	{
+	  curr = data ;
+	  memcpy(&width, curr, field_size) ;
+	  memcpy(&height, (curr += field_size), field_size) ;
+	  g_free(data) ;
+	}
+
+      offset = 0 ;
+      num_fields = 4 ;
+      length = num_fields * 4 ;				    /* Get four unsigned ints worth of data. */
+      actual_format = actual_length = 0 ;
+      data = NULL ;
+      result = gdk_property_get(root_window,
+				workarea_atom,
+				GDK_NONE,
+				offset,
+				length,
+				pdelete,
+				&actual_property_type,
+				&actual_format,
+				&actual_length,
+				&data) ;
+
+      if (num_fields == actual_length/sizeof(glong))
+	{
+	  curr = data ;
+	  memcpy(&left, curr, field_size) ;
+	  memcpy(&top, (curr += field_size), field_size) ;
+	  memcpy(&right, (curr += field_size), field_size) ;
+	  memcpy(&bottom, (curr += field_size), field_size) ;
+	  g_free(data) ;
+	}
+
+      /* off by one ? */
+      window_height = bottom - top ;
+      window_width = right - left ;
+    }
+  else
+    {
+      /* OK, here we just get the raw screen size and return that.uess some appropriate size, note that the window width is kind
+       * of irrelevant, we just set it to be a bit less than it will finally be and the
+       * widgets will resize it to the correct width. We don't use gtk_window_set_default_size()
+       * because it doesn't seem to work. */
+
+      window_width = (int)((float)(gdk_screen_get_width(screen)) * ZMAPWINDOW_HORIZ_PROP) ;
+      window_height = (int)((float)(gdk_screen_get_height(screen)) * ZMAPWINDOW_VERT_PROP) ;
+
+
+    }
+
+  *width_out = window_width ;
+  *height_out = window_height ;
+
+  return result ;
+}
+
+
+
+
+
+
+
+
+
+/* OH MY GOODNESS...THIS IS ALL JUST SHOVED IN HERE....WILLY, NILLY.... */
+
 /*
  * If store == TRUE, store e unless stored != NULL or e == zmapXErrorHandler
  * If clear == TRUE, reset stored to NULL
