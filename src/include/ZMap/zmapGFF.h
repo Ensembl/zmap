@@ -92,7 +92,7 @@ gboolean zMapGFFGetVersionFromGIO(GIOChannel * const pChannel, int * const piOut
 
 
 
-ZMapGFFParser zMapGFFCreateParser(char *sequence, int features_start, int features_end) ;
+ZMapGFFParser zMapGFFCreateParser(int iGFFVersion, char *sequence, int features_start, int features_end) ;
 gboolean zMapGFFParserInitForFeatures(ZMapGFFParser parser, GHashTable *sources, gboolean parse_only) ;
 gboolean zMapGFFParseHeader(ZMapGFFParser parser, char *line,
 			    gboolean *header_finished, ZMapGFFHeaderState *header_state) ;

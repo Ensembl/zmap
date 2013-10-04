@@ -120,7 +120,7 @@ static ZMapServerResponseType pipeGetSequence(PipeServer server);
 
 
 
-/* 
+/*
  *                   Globals
  */
 
@@ -144,7 +144,7 @@ PipeArgStruct zmap_args[] =
 
 
 
-/* 
+/*
  *              External interface routines
  *
  *    Although most of these routines are static they form the external interface to the pipe server.
@@ -321,7 +321,7 @@ static gboolean createConnection(void **server_out,
 							 url_script_path) ;
 		  ZMAPPIPESERVER_LOG(Warning, server->protocol, server->script_path, server->script_args,
 				     "%s", server->last_err_msg) ;
-		  
+
 		  result = FALSE ;
 		}
 	    }
@@ -355,6 +355,7 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   PipeServer server = (PipeServer)server_in ;
   GError *gff_pipe_err = NULL ;
+  int iGFFVersion = 2 ;
 
   if (server->gff_pipe)
     {
@@ -402,7 +403,7 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
       else
 	{
 	  server->sequence_server = req_open->sequence_server ; /* if not then drop any DNA data */
-	  server->parser = zMapGFFCreateParser(server->sequence_map->sequence, server->zmap_start, server->zmap_end) ;
+	  server->parser = zMapGFFCreateParser(iGFFVersion, server->sequence_map->sequence, server->zmap_start, server->zmap_end) ;
 	  server->gff_line = g_string_sized_new(2000) ;	    /* Probably not many lines will be > 2k chars. */
 
 	  result = pipeGetHeader(server) ;
@@ -619,7 +620,7 @@ static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles,
     GError *error = NULL ;
     server->parser->state == ZMAPGFF_PARSE_BODY;
     zMapFeatureDumpStdOutFeatures(feature_context, &error) ;
-    
+
   }
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
