@@ -407,7 +407,7 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
     * (sm23) Modification to interface to find version from data stream before beginning
     * formal parsing of data.
     */
-   if (!zMapGFFGetVersionFromString(server->gff_pipe, &iGFFVersion))
+   if (!zMapGFFGetVersionFromGIO(server->gff_pipe, &iGFFVersion))
    {
      result = ZMAP_SERVERRESPONSE_SERVERDIED ;
    }
