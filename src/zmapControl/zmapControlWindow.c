@@ -176,7 +176,7 @@ void zmapControlWindowSetStatus(ZMap zmap)
   static int idle_handle = 0 ;
   enum {ROTATION_DELAY = 500} ;				    /* delay in microseconds for each text move. */
   ZMapViewState view_state = ZMAPVIEW_INIT ;
-
+  char *sources_loading = NULL, *sources_failing = NULL ;
 
   switch(zmap->state)
     {
@@ -215,7 +215,7 @@ void zmapControlWindowSetStatus(ZMap zmap)
             g_free(coord_txt) ;
           }
 
-	tmp = zMapViewGetLoadStatusStr(view) ;
+	tmp = zMapViewGetLoadStatusStr(view, &sources_loading, &sources_failing) ;
 	status_text = g_strdup_printf("%s.......", tmp) ;   /* Add spacing...better for rotating text. */
 	g_free(tmp) ;
 
@@ -230,22 +230,65 @@ void zmapControlWindowSetStatus(ZMap zmap)
     }
 
 
-
-  /* While we are loading we want the text to rotate but then we stop once
-   * we've finished loading. */
-  if (view_state == ZMAPVIEW_LOADED)
+  if (zmap->state == ZMAP_VIEWS)
     {
-      /* hack to stop the timeout...seems to be no way of removing it even though we have a handle..... */
-      rotateTextCB(NULL) ;
+      /* While we are loading we want the text to rotate but then we stop once
+       * we've finished loading. */
+      if (view_state == ZMAPVIEW_LOADED || view_state == ZMAPVIEW_LOADING || view_state == ZMAPVIEW_UPDATING)
+	{
+	  char *status ;
 
-      idle_handle = 0 ;
-    }
-  else
-    {
-      if (!idle_handle)
-	idle_handle = g_timeout_add(ROTATION_DELAY, rotateTextCB, zmap->status_entry) ;
-    }
+	  if (sources_loading || sources_failing)
+	    {
+	      GString *load_status_str ;
 
+	      load_status_str = g_string_new("Selected View\n\n") ;
+
+	      if (sources_loading)
+		g_string_append_printf(load_status_str, "Columns still loading:\n %s\n", sources_loading) ;
+
+	      if (sources_failing)
+		g_string_append_printf(load_status_str, "Columns failed to load:\n %s", sources_failing) ;
+
+	      gtk_tooltips_set_tip(zmap->tooltips, zmap->status_entry,
+				   load_status_str->str,
+				   "") ;
+
+	      g_string_free(load_status_str, TRUE) ;
+	      g_free(sources_loading) ;
+	      g_free(sources_failing) ;
+	    }
+	  else
+	    {
+	      gtk_tooltips_set_tip(zmap->tooltips, zmap->status_entry, /* reset. */
+				   "Status of selected view",
+				   "") ;
+	    }
+
+
+	  if ( view_state == ZMAPVIEW_LOADED)
+	    {
+	      /* hack to stop the timeout...seems to be no way of removing it even though we have a handle..... */
+	      rotateTextCB(NULL) ;
+
+	      idle_handle = 0 ;
+	    }
+	  else if (view_state == ZMAPVIEW_LOADING || view_state == ZMAPVIEW_UPDATING)
+	    {
+	      /* Start the timeout if it's not already going. */
+	      if (!idle_handle)
+		idle_handle = g_timeout_add(ROTATION_DELAY, rotateTextCB, zmap->status_entry) ;
+	    }
+	}
+      else
+	{
+	  gtk_tooltips_set_tip(zmap->tooltips, zmap->status_entry, /* reset. */
+			       "Status of selected view",
+			       "") ;
+	}
+
+
+    }
 
   /* Update the status with the next text. */
   gtk_entry_set_text(GTK_ENTRY(zmap->status_entry), status_text) ;
