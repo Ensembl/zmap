@@ -3476,7 +3476,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 			{
 			  zmap_view->sources_failed
 			    = zMap_g_list_insert_list_after(zmap_view->sources_failed,
-							    load_features.feature_sets,
+							    connect_data->loaded_features.feature_sets,
 							    g_list_length(zmap_view->sources_failed),
 							    TRUE) ;
 			}
