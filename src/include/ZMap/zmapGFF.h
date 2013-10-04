@@ -84,6 +84,13 @@ typedef struct
 } ZMapGFFHeaderStruct, *ZMapGFFHeader ;
 
 
+/*
+ * Some new GFF interface functions.
+ */
+gboolean zMapGFFGetVersionFromString(const char* const sString, int * const piOut) ;
+gboolean zMapGFFGetVersionFromGIO(GIOChannel * const pChannel, int * const piOut ) ;
+
+
 
 ZMapGFFParser zMapGFFCreateParser(char *sequence, int features_start, int features_end) ;
 gboolean zMapGFFParserInitForFeatures(ZMapGFFParser parser, GHashTable *sources, gboolean parse_only) ;
