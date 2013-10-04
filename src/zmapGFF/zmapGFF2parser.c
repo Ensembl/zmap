@@ -125,7 +125,7 @@ static void checkFeatureCB(GQuark key_id, gpointer data, gpointer user_data_unus
  * Optionally a feature start/end range may be specified, if start and end are 0 then
  * all features for the reference sequence are parsed from the gff.
  */
-ZMapGFFParser zMapGFFCreateParser(char *sequence, int features_start, int features_end)
+ZMapGFFParser zMapGFFCreateParser(int iGFFVersion, char *sequence, int features_start, int features_end)
 {
   ZMapGFFParser parser = NULL ;
 
@@ -861,7 +861,7 @@ void zMapGFFDestroyParser(ZMapGFFParser parser)
 /* This function expects a null-terminated C string that contains a GFF header line
  * which is a special form of comment line starting with a "##" in column 1.
  *
- * Currently we parse gff-version and sequence-region comments as they are 
+ * Currently we parse gff-version and sequence-region comments as they are
  * the only ones we are really interested in for now, for other header lines
  * we simply return TRUE.
  *
@@ -959,10 +959,10 @@ static gboolean parseHeaderLine(ZMapGFFParser parser, char *line)
 		  /* Parser is created with sequence name and a start/end range for
 		   * the features it wants to read from the file, this is compared
 		   * to any sequence-region pragma found.
-		   * 
+		   *
 		   * If a different sequence name is found it is ignored (may have mulitple
 		   * sequences in same file).
-		   * 
+		   *
 		   * If the sequence name is found but the given start/end of features is outside
 		   * the parsers start/end that is an error, otherwise the parser reads all features
 		   * that overlap its start/end.....IMPLIES WE MAY NEED TO REMOVE FEATURES IF
@@ -1151,7 +1151,7 @@ static gboolean parseSequenceLine(ZMapGFFParser parser, char *line)
  * If <sequence> does not match the name held by the parser the line is ignored (may be multiple
  * sequences per file).
  * If start/end are outside the start/end held in the parser the line is ignored.
- * 
+ *
  * For ZMap, we've modified the acedb gff dumper to output homology alignments after the
  * attributes, marked by a tag " Gaps ".  They're in groups of 4 space-separated coordinates,
  * successive groups being comma-separated.
@@ -1163,7 +1163,7 @@ static gboolean parseSequenceLine(ZMapGFFParser parser, char *line)
 
 /* THIS IS THE WRONG WAY TO HANDLE THIS...THE BAM gff data should be fixed to URL escape the '#'
  * AND THEN THE PROBLEM GOES AWAY !!
- * 
+ *
  * NOTE to handle BAM data that includes # inside attribute strings we take attributes and comments as one section
  * (comments are not processed anywhere)
  * Then we scan attributes and split this on an unquoted # and put the reamainder into commments
@@ -1376,7 +1376,7 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line, gsize line_lengt
 		{
 
 		  g_hash_table_insert(parser->excluded_features, GINT_TO_POINTER(name_id), GINT_TO_POINTER(name_id)) ;
-		      
+
 		  result = TRUE ;
 		}
 	      else if ((g_hash_table_lookup(parser->excluded_features, GINT_TO_POINTER(name_id))))
@@ -2383,7 +2383,7 @@ static gboolean getFeatureName(NameFindType name_find, char *sequence, char *att
     }
 
 
-  /* EXCELLENT...IN APPLYING AN ADHOC FIX YOU'VE BROKEN THE CODE BECAUSE YOU DIDN'T 
+  /* EXCELLENT...IN APPLYING AN ADHOC FIX YOU'VE BROKEN THE CODE BECAUSE YOU DIDN'T
    * UNDERSTAND...NOT HELPFUL..... */
 
   /* mh17: catch all to create names for totally anonymous features
@@ -2860,8 +2860,8 @@ static gboolean getHomolLength(char *attributes, int *length_out)
  *   SNP:
  *
  *   Name "rs28847272 - A/G"
- * 
- * 
+ *
+ *
  *   Mutation:
  *
  *   Name "CM093744 - HGMD_MUTATION"
@@ -3007,7 +3007,7 @@ static gboolean getNameFromAttr(char *attributes, char **name_out)
 	    }
 	}
     }
- 
+
   return result ;
 }
 
