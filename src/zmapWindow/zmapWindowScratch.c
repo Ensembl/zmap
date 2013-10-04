@@ -98,9 +98,8 @@ static ZMapFeatureSet getFeaturesetFromId(ZMapWindow window, GQuark set_id)
 /*!
  * \brief Get the single featureset that resides in the scratch column
  *
- * \returns The ZMapFeatureSet, or NULL if there was a problem
+ * \returns The ZMapFeatureSet, or NULL if the column doesn't exist
  */
-
 ZMapFeatureSet zmapWindowScratchGetFeatureset(ZMapWindow window)
 {
   ZMapFeatureSet feature_set = NULL;
@@ -115,10 +114,6 @@ ZMapFeatureSet zmapWindowScratchGetFeatureset(ZMapWindow window)
         {         
           GQuark set_id = (GQuark)(GPOINTER_TO_INT(fs_list->data));
           feature_set = getFeaturesetFromId(window, set_id);
-        }
-      else
-        {
-          zMapWarning("No featureset for column '%s'\n", ZMAP_FIXED_STYLE_SCRATCH_NAME);
         }
     }
   

@@ -390,19 +390,22 @@ static ZMapWindowContainerFeatureSet getScratchContainerFeatureset(ZMapWindow wi
   
   ZMapFeatureSet scratch_featureset = zmapWindowScratchGetFeatureset(window) ;
 
-  FooCanvasItem *scratch_column_item = zmapWindowFToIFindItemFull(window, window->context_to_item, 
-                                                                  scratch_featureset->parent->parent->unique_id,
-                                                                  scratch_featureset->parent->unique_id,
-                                                                  scratch_featureset->unique_id, 
-                                                                  ZMAPSTRAND_NONE, ZMAPFRAME_NONE, 0) ;
-  
-  ZMapWindowContainerGroup scratch_group  = zmapWindowContainerCanvasItemGetContainer(scratch_column_item) ;
-
-  if (scratch_group && ZMAP_IS_CONTAINER_FEATURESET(scratch_group))
+  if (scratch_featureset)
     {
-      scratch_container = ZMAP_CONTAINER_FEATURESET(scratch_group) ;
+      FooCanvasItem *scratch_column_item = zmapWindowFToIFindItemFull(window, window->context_to_item, 
+                                                                      scratch_featureset->parent->parent->unique_id,
+                                                                      scratch_featureset->parent->unique_id,
+                                                                      scratch_featureset->unique_id, 
+                                                                      ZMAPSTRAND_NONE, ZMAPFRAME_NONE, 0) ;
+  
+      ZMapWindowContainerGroup scratch_group  = zmapWindowContainerCanvasItemGetContainer(scratch_column_item) ;
+      
+      if (scratch_group && ZMAP_IS_CONTAINER_FEATURESET(scratch_group))
+        {
+          scratch_container = ZMAP_CONTAINER_FEATURESET(scratch_group) ;
+        }
     }
-
+  
   return scratch_container ;
 }
 
