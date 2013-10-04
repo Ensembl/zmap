@@ -2806,30 +2806,29 @@ gint zMapFeatureFullCmp(gconstpointer a, gconstpointer b)
   /* this code is pedantic, but I prefer stable sorting */
   if(!featb)
     {
-      if(!zmapWindowCanvasFeatureValid(feata))
+      if(!feata)
 	return(0);
       return(1);
     }
-  else if(!zmapWindowCanvasFeatureValid(feata))
+  else if(!feata)
     {
       return(-1);
     }
   else
     {
-      ZMapFeature feature = feata->feature ;
       int real_start, real_end ;
 
       real_start = feata->y1 ;
       real_end = feata->y2 ;
 
-      if (feata->type == FEATURE_GLYPH && feature->flags.has_boundary)
+      if (feata->type == FEATURE_GLYPH && feata->feature->flags.has_boundary)
 	{
-	  if (feature->boundary_type == ZMAPBOUNDARY_5_SPLICE)
+	  if (feata->feature->boundary_type == ZMAPBOUNDARY_5_SPLICE)
 	    {
 	      real_start = feata->y1 + 0.5 ;
 	      real_end = feata->y2 + 2 ;
 	    }
-	  else if (feature->boundary_type == ZMAPBOUNDARY_3_SPLICE)
+	  else if (feata->feature->boundary_type == ZMAPBOUNDARY_3_SPLICE)
 	    {
 	      real_start = feata->y1 - 2 ;
 	      real_end = feata->y2 - 0.5 ;
