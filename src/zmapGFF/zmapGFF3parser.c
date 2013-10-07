@@ -5,12 +5,9 @@ static gboolean resizeBuffers3(ZMapGFFParser parser, gsize line_length) ;
 static gboolean resizeFormatStrs3(ZMapGFFParser parser) ;
 
 
-ZMapGFFParser zMapGFFCreateParser3(int iGFFVersion, char *sequence, int features_start, int features_end)
+ZMapGFFParser zMapGFFCreateParser3(char *sequence, int features_start, int features_end)
 {
   ZMapGFFParser parser = NULL ;
-
-  if (iGFFVersion != ZMAPGFF_VERSION_3 )
-    return parser;
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -23,7 +20,7 @@ ZMapGFFParser zMapGFFCreateParser3(int iGFFVersion, char *sequence, int features
     {
       parser = g_new0(ZMapGFFParserStruct, 1) ;
 
-      parser->gff_version = iGFFVersion ;
+      parser->gff_version = ZMAPGFF_VERSION_3 ;
 
       parser->state = ZMAPGFF_PARSE_HEADER ;
       parser->error = NULL ;
@@ -55,9 +52,9 @@ ZMapGFFParser zMapGFFCreateParser3(int iGFFVersion, char *sequence, int features
       parser->sequence_flags.done_finished = TRUE ;	    /* default we don't parse the dna/protein */
 
       /* Set initial buffer & format string size to something that will probably be big enough. */
-      resizeBuffers(parser, BUF_INIT_SIZE) ;
+      resizeBuffers3(parser, BUF_INIT_SIZE) ;
 
-      resizeFormatStrs(parser) ;
+      resizeFormatStrs3(parser) ;
     }
 
   return parser ;
