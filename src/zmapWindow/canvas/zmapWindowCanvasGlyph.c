@@ -979,10 +979,14 @@ static double glyphPoint(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature gs
 			 double local_x, double local_y, double x_off)
 {
   double best = 1.0e36 ;
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   FooCanvasItem *foo = (FooCanvasItem *)fi ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
   ZMapWindowCanvasGlyph glyph = (ZMapWindowCanvasGlyph)gs ;
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   int can_start_x, can_end_x, can_start_y, can_end_y ;
   double world_start_x, world_end_x, world_start_y, world_end_y ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
   int i, min_x, max_x, min_y, max_y, curr_x, curr_y ;
 
   /* Glyphs only have shape when drawn (I think...) so it's possible when looking for nearby

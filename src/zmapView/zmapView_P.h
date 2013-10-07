@@ -36,7 +36,11 @@
 #include <ZMap/zmapView.h>
 #include <ZMap/zmapWindow.h>
 #include <ZMap/zmapWindowNavigator.h>
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #include <ZMap/zmapXRemote.h>
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
@@ -376,7 +380,11 @@ typedef struct _ZMapViewStruct
   ZMapWindowNavigator navigator_window ;
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   ZMapXRemoteObj xremote_client;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   /* Crikey, why is this here...??? Maybe it's ok...but seems more like a window thing..... */
   GList *navigator_set_names;
@@ -427,12 +435,16 @@ ZMapFeatureContext zmapViewMergeInContext(ZMapView view, ZMapFeatureContext cont
 gboolean zmapViewDrawDiffContext(ZMapView view, ZMapFeatureContext *diff_context, ZMapFeature highlight_feature) ;
 void zmapViewEraseFromContext(ZMapView replace_me, ZMapFeatureContext context_inout);
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 void zmapViewSetupXRemote(ZMapView view, GtkWidget *widget);
 ZMapXRemoteSendCommandError zmapViewRemoteSendCommand(ZMapView view,
 						      char *action, GArray *xml_events,
 						      ZMapXMLObjTagFunctions start_handlers,
 						      ZMapXMLObjTagFunctions end_handlers,
 						      gpointer *handler_data);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 /* Context Window Hash (CWH) for the correct timing of the call to zMapFeatureContextDestroy */
 GHashTable *zmapViewCWHHashCreate(void);

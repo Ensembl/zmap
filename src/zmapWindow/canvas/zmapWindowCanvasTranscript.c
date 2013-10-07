@@ -295,7 +295,7 @@ static ZMapFeatureSubPartSpan zmapWindowCanvasTranscriptGetSubPartSpan (FooCanva
   static ZMapFeatureSubPartSpanStruct sub_part;
 
   /* the interface to this is via zMapWindowCanvasItemGetInterval(), so here we have to look up the feature again */
-#warning revisit this when canvas items are simplified
+  /*! \todo #warning revisit this when canvas items are simplified */
   /* and then we find the transcript data in the feature context which has a list of exons and introms */
   /* or we could find the exons/introns in the canvas and process those */
 

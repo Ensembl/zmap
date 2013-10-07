@@ -146,7 +146,15 @@ void zMapControlImportFile(ZMapControlImportFileCB user_func, gpointer user_data
 
   zMapAssert(user_func) ;
 
+  ZMap zmap = (ZMap)user_data;
+
   toplevel = zMapGUIToplevelNew(NULL, "Please choose a file to import.") ;
+  
+  /* Make sure the dialog is destroyed if the zmap window is closed */
+  /*! \todo For some reason this doesn't work and the dialog hangs around
+   * after zmap->toplevel is destroyed */
+  if (zmap && zmap->toplevel && GTK_IS_WINDOW(zmap->toplevel))
+    gtk_window_set_transient_for(GTK_WINDOW(toplevel), GTK_WINDOW(zmap->toplevel)) ;
 
   gtk_window_set_policy(GTK_WINDOW(toplevel), FALSE, TRUE, FALSE ) ;
   gtk_container_border_width(GTK_CONTAINER(toplevel), 0) ;
@@ -747,6 +755,12 @@ static void fileChangedCB(GtkWidget *widget, gpointer user_data)
   char *args_txt = "";
   ZMapImportScript scripts;
 
+  /* Check that the zmap window has not been closed (currently
+   * the import dialog isn't closed with it, which will cause
+   * problems if we don't exit early here ) */
+  if (!zmap->toplevel)
+    return;
+  
   view = zMapViewGetView(zmap->focus_viewwindow);
 
   filename = (char *) gtk_entry_get_text(GTK_ENTRY(widget)) ;
@@ -857,6 +871,11 @@ static void importFileCB(GtkWidget *widget, gpointer cb_data)
   ZMap zmap = (ZMap) main_frame->user_data;
   int strand = 0 ;
 
+  /* Check that the zmap window hasn't been closed (currently the dialog
+   * isn't closed automatically with it, so we'll have problems if we don't 
+   * exit early here) */
+  if (!zmap->toplevel)
+    return;
 
   view = zMapViewGetView(zmap->focus_viewwindow);
 

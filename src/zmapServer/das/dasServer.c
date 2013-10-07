@@ -103,7 +103,7 @@ static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles,
 					  ZMapFeatureContext feature_context, int *num_features_out) ;
 static ZMapServerResponseType getContextSequence(void *server_in, GHashTable *styles, ZMapFeatureContext feature_context) ;
 static char *lastErrorMsg(void *server) ;
-static ZMapServerResponseType getStatus(void *server_conn, gint *exit_code, gchar **stderr_out);
+static ZMapServerResponseType getStatus(void *server_conn, gint *exit_code) ;
 static ZMapServerResponseType getConnectState(void *server_conn, ZMapServerConnectStateType *connect_state) ;
 static ZMapServerResponseType closeConnection(void *server) ;
 static ZMapServerResponseType destroyConnection(void *server) ;
@@ -459,10 +459,10 @@ static ZMapServerResponseType haveModes(void *server_in, gboolean *have_mode)
 
 
 /* UTTERLY POINTLESS....GET RID OF THIS.... */
-static ZMapServerResponseType getStatus(void *server_conn, gint *exit_code, gchar **stderr_out)
+static ZMapServerResponseType getStatus(void *server_conn, gint *exit_code)
 {
   *exit_code = 0;
-  *stderr_out = NULL;
+
   return ZMAP_SERVERRESPONSE_OK;
 }
 
@@ -672,7 +672,7 @@ static gboolean setSequenceMapping(DasServer server, ZMapFeatureContext feature_
 
           if(pspan.x1 && pspan.x2)
             {
-#warning need to check this code
+              /*! \todo #warning need to check this code */
               /* Just adjust for the user's request. */
 #if 0
               if(feature_context->sequence_to_parent.c1 >= pspan.x1)
@@ -759,7 +759,7 @@ static gboolean setSequenceMapping(DasServer server, ZMapFeatureContext feature_
       /* Copy the structs we made to the feature context */
 //    feature_context->length                = seq2p.c2 - seq2p.c1 + 1;
 
-#warning need to check this code
+/*! \todo #warning need to check this code */
 #if !OLD_VERSION
       feature_context->master_align->sequence_span.x1 = seq2p.block.x1;
       feature_context->master_align->sequence_span.x2 = seq2p.block.x2;

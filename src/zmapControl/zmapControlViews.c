@@ -34,7 +34,6 @@
 
 #include <ZMap/zmap.h>
 
-#include <ZMap/zmapUtilsXRemote.h>			    /* remove when new xremote finally done. */
 #include <ZMap/zmapUtilsDebug.h>
 #include <zmapControl_P.h>
 
@@ -719,7 +718,18 @@ void zmapControlSetWindowFocus(ZMap zmap, ZMapViewWindow new_viewwindow)
       /* make sure zoom buttons etc. appropriately sensitised for this window. */
       zmapControlWindowSetGUIState(zmap) ;
 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      /* not needed here I think.....see controlFocusCB()...may not be the best place...??  */
+
+      /* WRONG POINTER PASSED IN HERE !!!!! */
       /* Set up navigator with new view. */
+      zMapWindowNavigatorSetCurrentWindow(zmap->navigator, window) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
       zMapWindowGetVisible(window, &top, &bottom) ;
       zmapNavigatorSetView(zmap->navigator, zMapViewGetFeatures(view), top, bottom) ;
     }

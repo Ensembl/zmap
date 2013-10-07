@@ -354,8 +354,6 @@ static void makeStatusTooltips(ZMap zmap)
 }
 
 
-
-
 /* Users have asked us to make the zmap window as big as possible vertically, the horizontal size
  * is not usually an issue, we can set it small and then gtk will expand it to accomodate all the
  * buttons etc along the top of the window which results in a good horizontal size. The vertical

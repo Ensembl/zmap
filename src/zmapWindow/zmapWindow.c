@@ -225,6 +225,7 @@ static void setCurrLock(ZMapWindowLockType window_locking, ZMapWindow window,
 			GtkAdjustment **hadjustment, GtkAdjustment **vadjustment) ;
 static void lockedDisplayCB(gpointer key, gpointer value, gpointer user_data) ;
 static void scrollToCB(gpointer key, gpointer value, gpointer user_data) ;
+
 static void copyLockWindow(ZMapWindow original_window, ZMapWindow new_window) ;
 static void lockWindow(ZMapWindow window, ZMapWindowLockType window_locking) ;
 static void unlockWindow(ZMapWindow window, gboolean no_destroy_if_empty) ;
@@ -318,7 +319,12 @@ static void foo_bug_print(void *key, char *where) ;
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void printWindowSizeDebug(char *prefix, ZMapWindow window,
 				 GtkWidget *widget, GtkAllocation *allocation) ;
+
+static void printAdjusters(ZMapWindow window) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
 
 
 
@@ -1003,7 +1009,7 @@ void zMapWindowBack(ZMapWindow window)
 
       /* somehow this does not paint till we get a window/widget resise if back from big zoom in a vsplit window */
       /* unless we call this, but we also need to handle the blank bits at the edges */
-#warning still doesn-t work, possibly a race condition, it-s not 100% producable
+      /*! \todo #warning still doesn-t work, possibly a race condition, it-s not 100% producable */
 /* only appears to apply to v-split */
 //	sleep(4);		/* still goes wrong as before */
       zMapWindowRedraw(window);
@@ -1063,6 +1069,13 @@ void zmapWindowZoom(ZMapWindow window, double zoom_factor, gboolean stay_centere
       double width, curr_pos = 0.0 ;
       GtkAdjustment *adjust ;
       int adjust_centre ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      zMapDebugPrintf("\n\n\nAbout to Zoom %s.....",
+		      (zoom_factor > 1.0 ? "in" : "out")) ;
+
+      printAdjusters(window) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
       if (debug)
 	{
@@ -1158,6 +1171,14 @@ void zmapWindowZoom(ZMapWindow window, double zoom_factor, gboolean stay_centere
 	{
 	  XSynchronize(x_display, FALSE) ;
 	}
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      printAdjusters(window) ;
+
+      zMapDebugPrintf("Finished Zoom %s.....\n",
+		      (zoom_factor > 1.0 ? "in" : "out")) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
     }
 
   return ;
@@ -2053,7 +2074,19 @@ or when setting the mark
 
 
 
+/* One of Malcolm's routines...breaking our naming conventions completely.... */
+void foo_bug_set(void *key,char *id)
+{
+#if 0
+  struct fooBug * fb = foo_wins + n_foo_wins++;
+  extern void (*foo_bug)(void *, char *);
 
+  fb->key = key;
+  fb->id = id;
+  printf("foo bug set %s %d\n",fb->id, n_foo_wins - 1);
+  foo_bug = foo_bug_print;
+#endif
+}
 
 
 
@@ -2101,20 +2134,6 @@ static void foo_bug_print(void *key, char *where)
 
   return ;
 }
-
-void foo_bug_set(void *key,char *id)
-{
-#if 0
-	struct fooBug * fb = foo_wins + n_foo_wins++;
-	extern void (*foo_bug)(void *, char *);
-
-	fb->key = key;
-	fb->id = id;
-	printf("foo bug set %s %d\n",fb->id, n_foo_wins - 1);
-	foo_bug = foo_bug_print;
-#endif
-}
-
 
 
 /* We will need to allow caller to specify a routine that gets called whenever the user
@@ -3583,14 +3602,14 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 
 		    if(window->sequence)
 		      {
-#warning need a flag here to say chromosome coords have been set
+                        /*! \todo #warning need a flag here to say chromosome coords have been set */
 			if(window->sequence->start == 1)
 			  /* not using chromo coords internally?? */
 			  {
 			    int start;
 			    char *p;
 
-#warning move this to seq req/load and set sequence coords, then remove from here
+                            /*! \todo #warning move this to seq req/load and set sequence coords, then remove from here */
 			    /* using zmap coords internally */
 			    for(p = window->sequence->sequence; *p && *p != '_'; p++)
                               continue;
@@ -4667,7 +4686,7 @@ static void unlockWindow(ZMapWindow window, gboolean no_destroy_if_empty)
 
   if (!g_hash_table_size(window->sibling_locked_windows))
     {
-      if(!no_destroy_if_empty)
+      if (!no_destroy_if_empty)
 	g_hash_table_destroy(window->sibling_locked_windows) ;
     }
   else
@@ -4684,16 +4703,19 @@ static void unlockWindow(ZMapWindow window, gboolean no_destroy_if_empty)
       adjuster = copyAdjustmentObj(adjuster) ;
 
       if (window->curr_locking == ZMAP_WINLOCK_HORIZONTAL)
-	gtk_scrolled_window_set_hadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window), adjuster) ;
+	{
+	  gtk_scrolled_window_set_hadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window), adjuster) ;
+	}
       else
         {
           gtk_scrolled_window_set_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window), adjuster) ;
+
           /* Need to set the scalebar one too if vertical locked */
           zmapWindowScaleCanvasSetVAdjustment(window->ruler, adjuster);
         }
     }
 
- if(g_hash_table_size(window->sibling_locked_windows) == 1)
+ if (g_hash_table_size(window->sibling_locked_windows) == 1)
     {
       g_hash_table_foreach(window->sibling_locked_windows,
 			   unlock_last_window, GUINT_TO_POINTER(TRUE));
@@ -4801,7 +4823,7 @@ void zmapWindowFetchData(ZMapWindow window,
 						       block->unique_id, 0, 0, 0, 0)))
 	    {
 
-#warning need to optimise requests so as to not req data we already have
+              /*! \todo #warning need to optimise requests so as to not req data we already have */
 	      /* for the moment just re-request */
 	      /*
 		ideally we should optimise the requests to only cover empty regions
@@ -4882,8 +4904,8 @@ void zmapWindowFetchData(ZMapWindow window,
 
 
 
-/* Handles all keyboard events for the ZMap window, returns TRUE if it handled
- * the event, FALSE otherwise. */
+/* Handles all keyboard events for the ZMap window, as per gtk callback rules
+ * returns TRUE if it handled the event, FALSE otherwise. */
 static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 {
   gboolean event_handled = FALSE ;
@@ -5707,7 +5729,7 @@ static void jumpFeature(ZMapWindow window, guint keyval)
 /* Jump to the previous/next column according to which arrow key was pressed. */
 static void jumpColumn(ZMapWindow window, guint keyval)
 {
-#warning jumpColumn commented out temporarily
+  /*! \todo #warning jumpColumn commented out temporarily */
 #if 0
   FooCanvasGroup *focus_column;
   gboolean move_focus = FALSE, highlight_column = FALSE ;
@@ -6131,7 +6153,7 @@ static void getFirstForwardCol(ZMapWindowContainerGroup container, FooCanvasPoin
 	  else
 	    col_ptr = (strand_columns->item_list_end) ;
 
-#warning getFirstForwarsCol() code needs adjusting, commented out temporarily
+          /*! \todo #warning getFirstForwarsCol() code needs adjusting, commented out temporarily */
 #if 0
 	  while (col_ptr)
 	    {
@@ -6892,7 +6914,9 @@ static void updateColumnBackground(ZMapWindow window,
       if (column->flags.filtered)
         zMapWindowGetFilteredColour(window, &fill);
 
-      zmapWindowDrawSetGroupBackground(column, 0, 1, 1.0, ZMAP_CANVAS_LAYER_COL_BACKGROUND, fill, NULL);
+      zmapWindowDrawSetGroupBackground(window, column,
+				       0, 1, 1.0,
+				       ZMAP_CANVAS_LAYER_COL_BACKGROUND, fill, NULL);
       
       foo_canvas_item_request_redraw(foo->parent);
     }
@@ -6930,5 +6954,22 @@ void zMapWindowUpdateColumnBackground(ZMapWindow window,
   return ;
 }
 
+
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+static void printAdjusters(ZMapWindow window)
+{
+  GtkAdjustment *v_adjust, *h_adjust ;
+
+  v_adjust = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window)) ;
+  h_adjust = gtk_scrolled_window_get_hadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window)) ;
+      
+  zMapDebugPrintf("\nv_adjust = %p, h_adjust = %p\n", v_adjust, h_adjust) ;
+
+  return ;
+}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 

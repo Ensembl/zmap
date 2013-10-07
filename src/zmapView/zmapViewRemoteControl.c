@@ -40,7 +40,7 @@
 
 #include <ZMap/zmapGLibUtils.h>
 #include <ZMap/zmapXML.h>
-
+#include <ZMap/zmapRemoteCommand.h>
 /* We are forced to include this to get SOURCE_GROUP_DELAYED, given that this symbol is only
  * used in zmapView that's where it should be defined.....I'll move it some other time. */
 #include <ZMap/zmapConfigStanzaStructs.h>
@@ -995,7 +995,7 @@ static void getFeatureNames(ZMapViewWindow view_window, RequestData request_data
 {
   ZMapWindow window ;
 
-  request_data->command_rc = ZMAPXREMOTE_OK ;
+  request_data->command_rc = REMOTE_COMMAND_RC_OK ;
 
   window = view_window->window ;
 
@@ -1010,7 +1010,7 @@ static void getFeatureNames(ZMapViewWindow view_window, RequestData request_data
 			     request_data->edit_block->block_to_sequence.block.x1,
 			     request_data->edit_block->block_to_sequence.block.x2) ;
 
-      request_data->command_rc = ZMAPXREMOTE_BADREQUEST;
+      request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
     }
   else
     {
@@ -1024,7 +1024,7 @@ static void getFeatureNames(ZMapViewWindow view_window, RequestData request_data
 				 zMapFeatureSetGetName(request_data->edit_feature_set),
 				 request_data->start, request_data->end) ;
 
-	  request_data->command_rc = ZMAPXREMOTE_NOCONTENT ;
+	  request_data->command_rc = REMOTE_COMMAND_RC_FAILED ;
 	}
       else
 	{

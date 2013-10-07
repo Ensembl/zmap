@@ -10,8 +10,6 @@ zmapControlImportFile.c\
 zmapControlNavigator.c \
 zmapControlPreferences.c \
 zmapControlRemoteControl.c \
-zmapControlRemoteReceive.c \
-zmapControlRemoteSend.c \
 zmapControlViews.c \
 zmapControlWindow.c \
 zmapControlWindowButtons.c \
@@ -20,9 +18,6 @@ zmapControlWindowInfoPanel.c \
 zmapControlWindowMenubar.c \
 zmapControl_P.h \
 zmapNavigator_P.h \
-remote/zmapXRemote.c \
-remote/zmapXRemoteAPI.h \
-remote/zmapXRemote_P.h \
 $(NULL)
 
 libZMapControl_la_CFLAGS = $(INCLUDE_COMMON)

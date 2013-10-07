@@ -43,7 +43,8 @@
  */
 
 #include <string.h>
-
+#include <sys/types.h>
+#include <unistd.h>
 #include <glib.h>
 #include <gdk/gdk.h>
 
@@ -225,6 +226,8 @@ gboolean zmapAppRemoteControlInit(ZMapAppContext app_context)
       if ((gdk_window = gtk_widget_get_window(app_context->app_widg))
 	  && (x_window = GDK_WINDOW_XID(gdk_window)))
 	{
+          char *pid ;
+
 	  app_context->remote_control->app_window = x_window ;
 	  app_context->remote_control->app_window_str
 	    = g_strdup_printf(ZMAP_XWINDOW_FORMAT_STR, app_context->remote_control->app_window) ;
@@ -233,8 +236,8 @@ gboolean zmapAppRemoteControlInit(ZMapAppContext app_context)
            * isn't used). This is used by the peer to check that they have our correct x window. */
 	  x_display = GDK_WINDOW_XDISPLAY(gdk_window) ;
 
-          char *pid = g_strdup_printf("%d", getpid());
-          zMapDebugPrint(is_active_debug_G, "Setting property '%s' to value '%s'\n", remote->app_unique_id, pid);
+          pid = g_strdup_printf("%d", getpid()) ;
+          zMapDebugPrint(is_active_debug_G, "Setting property '%s' to value '%s'\n", remote->app_unique_id, pid) ;
           result = zMapGUIXWindowChangeProperty(x_display, x_window, remote->app_unique_id, pid) ;
 	}
       else

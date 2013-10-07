@@ -42,7 +42,6 @@
 #include <zmapFeature_P.h>
 
 
-
 /* We get align strings in several variants and then convert them into this common format. */
 typedef struct
 {
@@ -361,6 +360,8 @@ static gboolean alignStrCanon2Homol(AlignStrCanonical canon, ZMapStrand ref_stra
   int i, j ;
   GArray *local_map = NULL ;
   GArray *align = canon->align ;
+  AlignBlockBoundaryType boundary_type = ALIGN_BLOCK_BOUNDARY_EDGE ;
+  ZMapAlignBlock prev_gap = NULL ;
 
   /* is there a call to do this in feature code ??? or is the array passed in...check gff..... */
   local_map = g_array_sized_new(FALSE, FALSE, sizeof(ZMapAlignBlockStruct), 10) ;
@@ -390,6 +391,16 @@ static gboolean alignStrCanon2Homol(AlignStrCanonical canon, ZMapStrand ref_stra
 
       switch (op->op)
 	{
+        case 'N':                                           /* Intron */
+	  {
+            if (ref_strand == ZMAPSTRAND_FORWARD)
+	      curr_ref += curr_length ;
+	    else
+	      curr_ref -= curr_length ;
+
+            boundary_type = ALIGN_BLOCK_BOUNDARY_INTRON ;	    
+	    break ;
+	  }
 	case 'D':					    /* Deletion in reference sequence. */
 	case 'G':
 	  {
@@ -398,6 +409,7 @@ static gboolean alignStrCanon2Homol(AlignStrCanonical canon, ZMapStrand ref_stra
 	    else
 	      curr_ref -= curr_length ;
 
+            boundary_type = ALIGN_BLOCK_BOUNDARY_DELETION ;
 	    break ;
 	  }
 	case 'I':					    /* Insertion from match sequence. */
@@ -407,12 +419,15 @@ static gboolean alignStrCanon2Homol(AlignStrCanonical canon, ZMapStrand ref_stra
 	    else
 	      curr_match -= curr_length ;
 
+            boundary_type = ALIGN_BLOCK_BOUNDARY_MATCH ; /* it is shown butted up to the previous align block */
 	    break ;
 	  }
 	case 'M':					    /* Match. */
 	  {
 	    gap.t_strand = ref_strand ;
 	    gap.q_strand = match_strand ;
+            gap.start_boundary = boundary_type ;
+            gap.end_boundary = ALIGN_BLOCK_BOUNDARY_EDGE ; /* this may get updated as we parse subsequent operators */
 
 	    if (ref_strand == ZMAPSTRAND_FORWARD)
 	      {
@@ -435,6 +450,7 @@ static gboolean alignStrCanon2Homol(AlignStrCanonical canon, ZMapStrand ref_stra
 
 	    j++ ;					    /* increment for next gap element. */
 
+            boundary_type = ALIGN_BLOCK_BOUNDARY_MATCH ;
 	    break ;
 	  }
 	default:
@@ -444,6 +460,14 @@ static gboolean alignStrCanon2Homol(AlignStrCanonical canon, ZMapStrand ref_stra
 	    break ;
 	  }
 	}
+
+      if (prev_gap)
+        prev_gap->end_boundary = boundary_type ;
+
+      if (op->op == 'M')
+        prev_gap = &g_array_index(local_map, ZMapAlignBlockStruct, local_map->len - 1) ;
+      else
+        prev_gap = NULL ;
     }
 
   *local_map_out = local_map ;
@@ -670,11 +694,12 @@ static gboolean ensemblVerifyCigar(char *match_str)
 
 /* Format of an BAM cigar string (the ones we handle) is:
  *
- * "[optional number]operator" repeated as necessary. Operators are N or M.
+ * "[optional number]operator" repeated as necessary. Operators are N, M, D, I, X, S, P.
+ * We don't handle H (hard-clipping)
  *
  * A regexp (without dealing with greedy matches) would be something like:
  *
- *                           (([0-9]+)([NMDI]))*
+ *                           (([0-9]+)([NMDIXSP]))*
  *
  *  */
 static gboolean bamVerifyCigar(char *match_str)
@@ -696,7 +721,7 @@ static gboolean bamVerifyCigar(char *match_str)
 	  state = STATE_OP ;
 	  break ;
 	case STATE_OP:
-	  if (*cp == 'M' || *cp == 'N' || *cp == 'D' || *cp == 'I')
+	  if (*cp == 'M' || *cp == 'N' || *cp == 'D' || *cp == 'I' || *cp == 'X' || *cp == 'S' || *cp == 'P')
 	    state = STATE_NUM ;
 	  else
 	    result = FALSE ;
@@ -783,7 +808,14 @@ static gboolean ensemblCigar2Canon(char *match_str, AlignStrCanonical canon)
 
 
 /* Blindly converts, assumes match_str is a valid BAM cigar string.
- * Currently we just convert all N's into D's, not really good enough... */
+ * Currently we convert:
+ * 
+ * X -> M
+ * P -> ignored
+ * S -> ignored
+ * H -> not handled
+ * 
+ */
 static gboolean bamCigar2Canon(char *match_str, AlignStrCanonical canon)
 {
   gboolean result = TRUE ;
@@ -799,13 +831,26 @@ static gboolean bamCigar2Canon(char *match_str, AlignStrCanonical canon)
       else
 	op.length = 1 ;
 
-      if (*cp == 'N')
-	op.op = 'D' ;
-      else
-	op.op = *cp ;
+      if (*cp == 'H')
+        {
+          /* We don't handle hard-clipping */
+          result = FALSE ;
+          break ;
+        }
+      else if (*cp == 'P' || *cp == 'S')
+        {
+          /* Padding and soft-clipping: should be fine to ignore these */
+        }
+      else 
+        {
+          if (*cp == 'X') /* Mismatch. Treat it like a match. */
+            op.op = 'M' ;
+          else            /* Everything else we handle */
+            op.op = *cp ;
 
-      canon->align = g_array_append_val(canon->align, op) ;
-
+          canon->align = g_array_append_val(canon->align, op) ;
+        }
+      
       cp++ ;
     } while (*cp) ;
 

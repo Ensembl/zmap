@@ -37,7 +37,6 @@
 #include <ZMap/zmapView.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapUtilsGUI.h>
-#include <ZMap/zmapUtilsXRemote.h>
 
 #include <zmapControl_P.h>
 
@@ -61,7 +60,11 @@ static void viewStateChangeCB(ZMapView view, void *app_data, void *view_data) ;
 static void viewKilledCB(ZMapView view, void *app_data, void *view_data) ;
 static void infoPanelLabelsHashCB(gpointer labels_data);
 static void removeView(ZMap zmap, ZMapView view, unsigned long xwid) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void remoteSendViewClosed(ZMapXRemoteObj client, unsigned long xwid) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
@@ -836,7 +839,7 @@ static void dataLoadCB(ZMapView view, void *app_data, void *view_data)
 	{
 	  //	  zMapLogCritical("%s", "Data Load notification received but no datasets specified.") ;
 	  // if we have a file input then we may not know the featuresets if there is no data or an error
-#warning better to patch in the server name here
+          /*! \todo #warning better to patch in the server name here */
 	  load_features_data->feature_sets = g_list_append(NULL, GUINT_TO_POINTER(g_quark_from_string("_unknown_")));
 	}
 
@@ -1169,16 +1172,22 @@ static void leaveCB(ZMapViewWindow view_window, void *app_data, void *view_data)
 static void viewStateChangeCB(ZMapView view, void *app_data, void *view_data)
 {
   ZMap zmap = (ZMap)app_data ;
-  ZMapViewCallbackFubar fubar = (ZMapViewCallbackFubar) view_data;
 
   if (zmap->state != ZMAP_DYING)
     zmapControlWindowSetGUIState(zmap) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+  /* AS FAR AS I CAN TELL THIS IS NEVER CALLED BECAUSE fubar IS NEVER PASSED IN BY OUR CALLER.... */
+
 #if 1
   if(zmap->remote_control)
     {
+      ZMapViewCallbackFubar fubar = (ZMapViewCallbackFubar)view_data ;
+
       if(fubar && fubar->state == ZMAPVIEW_MAPPED)
-      {
+	{
         gchar *response = NULL;
         gchar *xml_text, *xml_stub;
 
@@ -1201,7 +1210,6 @@ static void viewStateChangeCB(ZMapView view, void *app_data, void *view_data)
         g_free(xml_stub) ;
       }
 
-
 /*
       ZMapXRemoteSendCommandError result;
 
@@ -1222,6 +1230,9 @@ static void viewStateChangeCB(ZMapView view, void *app_data, void *view_data)
 */
     }
 #endif
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
 
   return ;
 }
@@ -1332,7 +1343,7 @@ static void updateControl(ZMap zmap, ZMapView view)
     {
       ZMapFeatureContext features ;
       double top, bottom ;
-      char *title, *db_name = NULL, *db_title = NULL, *seq_name ;
+      char *title, *db_name = NULL, *db_title = NULL, *seq_name, *dataset = NULL ;
 
       features = zMapViewGetFeatures(view) ;
 
@@ -1346,11 +1357,15 @@ static void updateControl(ZMap zmap, ZMapView view)
       /* Update title bar of zmap window. */
       zMapViewGetSourceNameTitle(view, &db_name, &db_title) ;
       seq_name = zMapViewGetSequence(view) ;
+      dataset = zMapViewGetDataset(view) ;
 
-      title = g_strdup_printf("%s%s%s - %s%s",
+      title = g_strdup_printf("%s%s%s%s%.3s%s%s%s",
 			      db_name ? db_name : "",
 			      db_title ? " - ": "",
 			      db_title ? db_title : "",
+                              db_name || db_title ? "-" : "",
+                              dataset ? dataset : "",
+                              dataset ? " " : "",
 			      seq_name ? seq_name : "<no sequence>",
 			      features ? "" : " <no sequence loaded>") ;
       zMapGUISetToplevelTitle(zmap->toplevel, zMapGetZMapID(zmap), title) ;
@@ -1445,8 +1460,12 @@ static void removeView(ZMap zmap, ZMapView view, unsigned long xwid)
       zmapControlPrintAllViews(zmap, FALSE) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       if (zmap->xremote_client)
 	remoteSendViewClosed(zmap->xremote_client, xwid) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
     }
 
   return ;
@@ -1454,6 +1473,8 @@ static void removeView(ZMap zmap, ZMapView view, unsigned long xwid)
 
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void remoteSendViewClosed(ZMapXRemoteObj client, unsigned long xwid)
 {
   char *request ;
@@ -1473,5 +1494,7 @@ static void remoteSendViewClosed(ZMapXRemoteObj client, unsigned long xwid)
 
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 

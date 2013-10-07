@@ -33,10 +33,10 @@
 #define ZMAP_WINDOW_CANVAS_ITEM_H
 
 #include <glib-object.h>
+
 #include <libzmapfoocanvas/libfoocanvas.h>
 #include <ZMap/zmapFeature.h>
 #include <ZMap/zmapStyle.h>
-
 
 
 /* The type name for the ZMapWindowCanvasItem GType */
@@ -68,8 +68,14 @@ typedef struct _zmapWindowCanvasItemStruct  zmapWindowCanvasItem, *ZMapWindowCan
 /* Class */
 typedef struct _zmapWindowCanvasItemClassStruct  zmapWindowCanvasItemClass, *ZMapWindowCanvasItemClass ;
 
-
+/* the fact this comes here shows that something is amiss with the headers...oh dear...this file
+   needs the above two typedefs..... */
 #include <zmapWindowCanvasFeatureset.h>	/* need typedefs to stop gcc from barfing */
+
+
+
+
+
 
 
 /* layering for canvas items... (ZMapWindowCanvasFeatureset)

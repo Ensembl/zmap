@@ -752,7 +752,7 @@ static ZMapThreadReturnCode getStatus(ZMapServer server, ZMapServerReqGetStatus 
 
   if (thread_rc == ZMAPTHREAD_RETURNCODE_OK)
     {
-      if ((request->response = zMapServerGetStatus(server, &request->exit_code, &request->stderr_out))
+      if ((request->response = zMapServerGetStatus(server, &request->exit_code))
 	  != ZMAP_SERVERRESPONSE_OK)
 	{
 	  *err_msg_out = g_strdup(zMapServerLastErrorMsg(server)) ;

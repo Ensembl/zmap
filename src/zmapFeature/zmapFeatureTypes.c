@@ -1151,7 +1151,6 @@ static void copySetCB(gpointer key_id, gpointer data, gpointer user_data)
  * or NULL on failure */
 static ZMapFeatureTypeStyle inherit_parent(ZMapFeatureTypeStyle style, GHashTable *root_styles, int depth)
 {
-  ZMapFeatureTypeStyle new_style = NULL ;
   ZMapFeatureTypeStyle parent, tmp_style = NULL;
 
 

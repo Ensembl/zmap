@@ -133,8 +133,10 @@ static ZMapXMLObjTagFunctionsStruct mark_ends_G[] =
 static void localProcessRemoteRequest(ZMapWindow window,
 				      char *command_name, char *request,
 				      ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data) ;
+#ifdef UNUSED
 static void localProcessReplyFunc(char *command, RemoteCommandRCType command_rc, char *reason, char *reply,
 				  gpointer reply_handler_func_data) ;
+#endif 
 
 static void processRequest(ZMapWindow window,
 			   char *command_name, char *request,

@@ -759,7 +759,7 @@ gboolean zmapWindowMarkSetBlockContainer(ZMapWindowMark mark, ZMapWindowContaine
 	{
 	  block_container       = (ZMapWindowContainerBlock)container;
 	  mark->block_container = block_container;
-#warning Need to implement block relative coordinates for this to work
+          /*! \todo #warning Need to implement block relative coordinates for this to work */
 	  /* MH17: features are at absolute coordinates and we cannot have multiple blocks
 	   * we need to use world coordinates for the mark to be able to request external data
 	   * sequence_start and _end are block relative
@@ -894,7 +894,12 @@ static FooCanvasItem *set_mark_item(ZMapWindowMark mark, gboolean top)
 
   if(!foo)
     {
-      foo = (FooCanvasItem *) zMapWindowCanvasItemFeaturesetGetFeaturesetItem((FooCanvasGroup *) mark->block_container, id, y1, y2, style, ZMAPSTRAND_NONE, ZMAPFRAME_NONE, 0, ZMAP_CANVAS_LAYER_BLOCK_MARK);
+      foo = (FooCanvasItem *)zMapWindowCanvasItemFeaturesetGetFeaturesetItem((FooCanvasGroup *)mark->block_container,
+									     id,
+									     mark->window->scrolled_window,
+									     y1, y2, style,
+									     ZMAPSTRAND_NONE, ZMAPFRAME_NONE,
+									     0, ZMAP_CANVAS_LAYER_BLOCK_MARK);
     }
 
   zMapWindowCanvasFeaturesetSetSequence((ZMapWindowFeaturesetItem) foo, y1, y2);

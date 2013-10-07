@@ -217,7 +217,7 @@ typedef struct
 
 
 
-/*! Convenience routines for creating GTK notebooks and their pages and fields.
+/* Convenience routines for creating GTK notebooks and their pages and fields.
  *
  * The idea is that the caller creates a "tree" of pages and fields and then
  * this package creates/manages the notebook from this tree. The tree must have
@@ -225,7 +225,7 @@ typedef struct
  *
  */
 
-/*! Subparts of NoteBook */
+/* Subparts of NoteBook */
 typedef enum
   {
     ZMAPGUI_NOTEBOOK_INVALID,
@@ -238,7 +238,7 @@ typedef enum
   } ZMapGuiNotebookType ;
 
 
-/*! Types of paragraph. */
+/* Types of paragraph. */
 typedef enum
   {
     ZMAPGUI_NOTEBOOK_PARAGRAPH_INVALID,
@@ -246,12 +246,14 @@ typedef enum
     ZMAPGUI_NOTEBOOK_PARAGRAPH_TAGVALUE_TABLE,		    /* Aligned table of tag value pairs. */
     ZMAPGUI_NOTEBOOK_PARAGRAPH_HOMOGENOUS,		    /* All tag value pairs have same tag
 							       which is only displayed once. */
+    ZMAPGUI_NOTEBOOK_PARAGRAPH_COMPOUND_HORZ_TABLE,	    /* Disabled for now, see zmapGUINotebook.c */
+    ZMAPGUI_NOTEBOOK_PARAGRAPH_COMPOUND_VERT_TABLE,	    /* Disabled for now, see zmapGUINotebook.c */
     ZMAPGUI_NOTEBOOK_PARAGRAPH_COMPOUND_TABLE		    /* One or more values per tag in
 							       multi-column list. */
   } ZMapGuiNotebookParagraphDisplayType ;
 
 
-/*! Types of display for tag value pair. */
+/* Types of display for tag value pair. */
 typedef enum
   {
     ZMAPGUI_NOTEBOOK_TAGVALUE_INVALID,
@@ -261,18 +263,10 @@ typedef enum
     ZMAPGUI_NOTEBOOK_TAGVALUE_COMPOUND,			    /* Multiple values per tag (only for
 							       compound table paragraph). */
     ZMAPGUI_NOTEBOOK_TAGVALUE_SCROLLED_TEXT,		    /* frame with scrolled text area. */
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-    /* THIS HAS TO GO.....AND BECOME SOMETHING LIKE TREEVIEW.... */
-    ZMAPGUI_NOTEBOOK_TAGVALUE_ITEM			    /* treeview of feature fundamentals */
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
   } ZMapGuiNotebookTagValueDisplayType ;
 
 
-/*! Types of value for the tag value pair. */
+/* Types of value for the tag value pair. */
 typedef enum
   {
     ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_INVALID,
@@ -450,10 +444,14 @@ typedef void (*ZMapFileChooserContentAreaCB)(GtkWidget *vbox, gpointer user_data
 gint my_gtk_run_dialog_nonmodal(GtkWidget *toplevel) ;
 
 void zMapGUIRaiseToTop(GtkWidget *widget);
+
 GtkWidget *zMapGUIFindTopLevel(GtkWidget *widget) ;
 gboolean zMapGUIXWindowExists(Display *x_display, Window x_window, char *peer_clipboard, char **err_msg_out) ;
 
 char *zMapGUIGetEventAsText(GdkEventMask exclude_mask, GdkEventAny *any_event) ;
+
+void zMapGUIGetMaxWindowSize(GtkWidget *toplevel, gint *width_out, gint *height_out) ;
+void zMapGUIMaximiseWindow(GtkWidget *toplevel) ;
 
 void zMapGUIMakeMenu(char *menu_title, GList *menu_sets, GdkEventButton *button_event) ;
 void zMapGUIPopulateMenu(ZMapGUIMenuItem menu,
@@ -474,10 +472,11 @@ char *zMapGUIMakeTitleString(char *window_type, char *message) ;
 void zMapGUISetToplevelTitle(GtkWidget *toplevel, char *zmap_win_type, char *zmap_win_text) ;
 GtkWidget *zMapGUIToplevelNew(char *zmap_win_type, char *zmap_win_text) ;
 
-
 GdkCursor *zMapGUIGetCursor(char *cursor_name) ;
 
 GtkWidget *zMapGUIPopOutWidget(GtkWidget *popout, char *title);
+
+gint my_gtk_run_dialog_nonmodal(GtkWidget *toplevel) ;
 
 void zMapGUIShowMsg(ZMapMsgType msg_type, char *msg) ;
 void zMapGUIShowMsgFull(GtkWindow *parent, char *msg,
@@ -540,6 +539,7 @@ void zMapGUINotebookDestroyAny(ZMapGuiNotebookAny note_any) ;
 void zMapGUINotebookMergeNotebooks(ZMapGuiNotebook notebook, ZMapGuiNotebook notebook_new) ;
 GtkWidget *zMapGUINotebookCreateDialog(ZMapGuiNotebook notebook_spec, char *help_title, char *help_text) ;
 GtkWidget *zMapGUINotebookCreateWidget(ZMapGuiNotebook notebook_spec) ;
+GtkWidget *zMapGUINotebookGetNoteBookWidg(GtkWidget *compound_note_widget) ;
 
 gboolean zMapGUIXWindowChangeProperty(Display *x_display, Window x_window, char *property, char *change_to) ;
 

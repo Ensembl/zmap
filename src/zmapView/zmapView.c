@@ -43,8 +43,12 @@
 #include <ZMap/zmapUtilsDebug.h>
 #include <ZMap/zmapGLibUtils.h>
 #include <ZMap/zmapGFF.h>
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #include <ZMap/zmapUtilsXRemote.h>
 #include <ZMap/zmapXRemote.h>
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 #include <ZMap/zmapCmdLineArgs.h>
 #include <ZMap/zmapConfigDir.h>
 #include <ZMap/zmapConfigIni.h>
@@ -257,10 +261,8 @@ void print_fset2col(char * str,GHashTable *data) ;
 void print_col2fset(char * str,GHashTable *data) ;
 #endif
 
-static void localProcessReplyFunc(char *command,
-				  RemoteCommandRCType command_rc,
-				  char *reason,
-				  char *reply,
+static void localProcessReplyFunc(gboolean reply_ok, char *reply_error,
+				  char *command, RemoteCommandRCType command_rc, char *reason, char *reply,
 				  gpointer reply_handler_func_data) ;
 
 
@@ -400,7 +402,7 @@ ZMapViewWindow zMapViewCreate(GtkWidget *view_container, ZMapFeatureSequenceMap 
   /* No callbacks, then no view creation. */
   zMapAssert(view_cbs_G);
   zMapAssert(GTK_IS_WIDGET(view_container));
-#warning need to assert dataset too
+  /*! \todo #warning need to assert dataset too */
   zMapAssert(sequence_map->sequence);
 //  zMapAssert(start > 0);
   zMapAssert((sequence_map->end == 0 || sequence_map->end >= sequence_map->start)) ;
@@ -1376,9 +1378,7 @@ ZMapView zMapViewGetView(ZMapViewWindow view_window)
 {
   ZMapView view = NULL ;
 
-  zMapAssert(view_window) ;
-
-  if (view_window->parent_view->state != ZMAPVIEW_DYING)
+  if (view_window && view_window->parent_view && view_window->parent_view->state != ZMAPVIEW_DYING)
     view = view_window->parent_view ;
 
   return view ;
@@ -2024,6 +2024,16 @@ static void getIniData(ZMapView view, char *config_str, GList *req_sources)
  
 	  if (view->navigator_window)
 	    zMapWindowNavigatorMergeInFeatureSetNames(view->navigator_window, view->navigator_set_names);
+	}
+
+      /*-------------------------------------
+       * the dataset
+       *-------------------------------------
+       */
+      if (zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+					ZMAPSTANZA_APP_DATASET, &str))
+	{
+	  view->view_sequence->dataset = str;
 	}
 
       /*-------------------------------------
@@ -3807,7 +3817,7 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 			{
 			  /* NOTE this is an ordered list */
 			  column->featuresets_unique_ids = g_list_append(column->featuresets_unique_ids,key);
-#warning this code gets run for all featuresets for every server which is silly
+                          /*! \todo #warning this code gets run for all featuresets for every server which is silly */
 			}
 		    }
 		}
@@ -3961,7 +3971,6 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
             ZMapServerReqGetStatus get_status = (ZMapServerReqGetStatus)req_any ;
 
             connect_data->exit_code = get_status->exit_code;
-            connect_data->stderr_out = get_status->stderr_out;
 	  }
 
 
@@ -5763,20 +5772,25 @@ static void sendViewLoaded(ZMapView zmap_view, ZMapViewLoadFeaturesData lfd)
 
 
 /* Receives peers reply to our "features_loaded" message. */
-static void localProcessReplyFunc(char *command,
-				  RemoteCommandRCType command_rc,
-				  char *reason,
-				  char *reply,
+static void localProcessReplyFunc(gboolean reply_ok, char *reply_error,
+				  char *command, RemoteCommandRCType command_rc, char *reason, char *reply,
 				  gpointer reply_handler_func_data)
 {
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   ZMapView view = (ZMapView)reply_handler_func_data ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-  if (command_rc != REMOTE_COMMAND_RC_OK)
+  if (!reply_ok)
     {
-      zMapLogCritical("%s command to peer program returned %s: \"%s\".",
-		      ZACP_FEATURES_LOADED, zMapRemoteCommandRC2Str(command_rc), reason) ;
+      zMapLogCritical("Bad reply from peer: \"%s\"", reply_error) ;
+    }
+  else
+    {
+      if (command_rc != REMOTE_COMMAND_RC_OK)
+	{
+	  zMapLogCritical("%s command to peer program returned %s: \"%s\".",
+			  ZACP_FEATURES_LOADED, zMapRemoteCommandRC2Str(command_rc), reason) ;
+	}
     }
 
   return ;
@@ -5871,6 +5885,19 @@ gboolean zMapViewGetHighlightFilteredColumns(ZMapView view)
 {
   return view->highlight_filtered_columns;
 };
+
+
+char *zMapViewGetDataset(ZMapView zmap_view)
+{
+  char *dataset = NULL ;
+
+  if (zmap_view && zmap_view->view_sequence)
+  {
+    dataset = zmap_view->view_sequence->dataset ;
+  }
+
+  return dataset ;
+}
 
 
 /*! 

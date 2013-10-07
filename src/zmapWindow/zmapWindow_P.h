@@ -953,12 +953,14 @@ void zmapWindowreDrawContainerExecute(ZMapWindow                 window,
 gboolean zmapWindowDumpFile(ZMapWindow window, char *filename) ;
 
 
-FooCanvasItem *zmapWindowDrawSetGroupBackground(ZMapWindowContainerGroup group, int start, int end, double width, gint layer, GdkColor *fill, GdkColor *border);
-ZMapWindowContainerGroup zmapWindowContainerGroupCreateWithBackground(FooCanvasGroup        *parent,
-							       ZMapContainerLevelType level,
-							       double                 child_spacing,
-							       GdkColor              *background_fill_colour,
-							       GdkColor              *background_border_colour);
+FooCanvasItem *zmapWindowDrawSetGroupBackground(ZMapWindow window, ZMapWindowContainerGroup group,
+						int start, int end, double width,
+						gint layer, GdkColor *fill, GdkColor *border);
+ZMapWindowContainerGroup zmapWindowContainerGroupCreateWithBackground(FooCanvasGroup *parent,
+								      ZMapContainerLevelType level,
+								      double child_spacing,
+								      GdkColor *background_fill_colour,
+								      GdkColor *background_border_colour);
 
 
 int zmapWindowCoordToDisplay(ZMapWindow window, int coord) ;
@@ -1424,8 +1426,10 @@ void zmapWindowDebugWindowCopy(ZMapWindow window);
 void zmapWindowGetBorderSize(ZMapWindow window, double *border);
 /* End of zmapWindowZoomControl.c functions */
 
-double zMapWindowDrawScaleBar(FooCanvasGroup *group, int scroll_start, int scroll_end,
-	int seq_start, int seq_end, double zoom_factor, gboolean revcomped, gboolean zoomed);
+double zMapWindowDrawScaleBar(GtkWidget *canvas_scrolled_window, FooCanvasGroup *group,
+			      int scroll_start, int scroll_end,
+			      int seq_start, int seq_end,
+			      double zoom_factor, gboolean revcomped, gboolean zoomed);
 
 double zMapWindowScaleCanvasGetWidth(ZMapWindowScaleCanvas ruler);
 void zMapWindowScaleCanvasSetScroll(ZMapWindowScaleCanvas ruler, double x1, double y1, double x2, double y2);
@@ -1634,5 +1638,8 @@ void zmapWindowFetchData(ZMapWindow window, ZMapFeatureBlock block, GList *colum
 void zmapWindowStateRevCompRegion(ZMapWindow window, double *a, double *b);
 
 void zmapWindowStateRevCompRegion(ZMapWindow window, double *a, double *b);
+
+/* Malcolms.... */
+void foo_bug_set(void *key,char *id) ;
 
 #endif /* !ZMAP_WINDOW_P_H */

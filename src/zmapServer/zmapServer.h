@@ -78,7 +78,7 @@ ZMapServerResponseType zMapServerGetFeatures(ZMapServer server,
 ZMapServerResponseType zMapServerGetContextSequences(ZMapServer server,
 						     GHashTable *styles, ZMapFeatureContext feature_context) ;
 char *zMapServerLastErrorMsg(ZMapServer server) ;
-ZMapServerResponseType zMapServerGetStatus(ZMapServer server, gint *exit_code, gchar **stderr_out);
+ZMapServerResponseType zMapServerGetStatus(ZMapServer server, gint *exit_code);
 
 ZMapServerResponseType zMapServerGetConnectState(ZMapServer server, ZMapServerConnectStateType *connect_state) ;
 

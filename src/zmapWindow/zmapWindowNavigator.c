@@ -375,7 +375,7 @@ void zMapWindowNavigatorSetCurrentWindow(ZMapWindowNavigator navigate, ZMapWindo
  /* mh17: should also twiddle revcomped? but as revcomp applies to the view
      in violation of MVC then all the windows will follow
   */
-  navigate->current_window = window;
+  navigate->current_window = window ;
 
   return ;
 }
@@ -635,11 +635,11 @@ static ZMapFeatureContextExecuteStatus drawContext(GQuark key_id,
                                                    char **error_out)
 {
   ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
+  NavigateDraw draw_data = (NavigateDraw)user_data;
   ZMapFeatureBlock     feature_block = NULL;
   ZMapFeatureSet       feature_set   = NULL;
   ZMapFeatureStructType feature_type = ZMAPFEATURE_STRUCT_INVALID;
   ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
-  NavigateDraw draw_data = (NavigateDraw)user_data;
   ZMapWindowNavigator navigate = NULL;
   gboolean hash_status = FALSE;
 
@@ -650,13 +650,13 @@ static ZMapFeatureContextExecuteStatus drawContext(GQuark key_id,
   switch(feature_type)
     {
     case ZMAPFEATURE_STRUCT_CONTEXT:
-    {
+      {
 	FooCanvasItem *root = (FooCanvasItem *) navigate->container_root;
 	double x,y;
 
 	zmapWindowContainerAttachFeatureAny(navigate->container_root, feature_any);
 
-      foo_canvas_set_scroll_region(root->canvas, 0.0, navigate->full_span.x1, 1.0, navigate->full_span.x2);
+	foo_canvas_set_scroll_region(root->canvas, 0.0, navigate->full_span.x1, 1.0, navigate->full_span.x2);
 
 	/* Set root group to start where sequence starts... */
 	y = navigate->full_span.x1 ;
@@ -665,7 +665,7 @@ static ZMapFeatureContextExecuteStatus drawContext(GQuark key_id,
 
 	foo_canvas_item_set(root, "y", y, NULL) ;
 
-    }
+      }
       break;
 
     case ZMAPFEATURE_STRUCT_ALIGN:
@@ -686,11 +686,11 @@ static ZMapFeatureContextExecuteStatus drawContext(GQuark key_id,
 	    container_group_add_highlight_area_item(navigate, navigate->container_align);
 #endif
 
-		/* mh17: has to add thsi to avoid an assert in FtoIAddAlign() */
+	    /* mh17: has to add thsi to avoid an assert in FtoIAddAlign() */
 	    zmapWindowContainerAlignmentAugment((ZMapWindowContainerAlignment) navigate->container_align,
 						(ZMapFeatureAlignment) feature_any);
 
-//		zmapWindowDrawSetGroupBackground(navigate->container_align, 0, 1, 1.0, ZMAP_CANVAS_LAYER_ALIGN_BACKGROUND, NULL, NULL);
+	    //		zmapWindowDrawSetGroupBackground(navigate->container_align, 0, 1, 1.0, ZMAP_CANVAS_LAYER_ALIGN_BACKGROUND, NULL, NULL);
 
             hash_status = zmapWindowFToIAddAlign(navigate->ftoi_hash, key_id, (FooCanvasGroup *)(navigate->container_align));
 
@@ -711,8 +711,8 @@ static ZMapFeatureContextExecuteStatus drawContext(GQuark key_id,
         /* create the block and add the item to the hash */
         features    = zmapWindowContainerGetFeatures(draw_data->navigate->container_align);
         navigate->container_block = draw_data->container_block = zmapWindowContainerGroupCreate((FooCanvasGroup *) features, ZMAPCONTAINER_LEVEL_BLOCK,
-								    BLOCK_CHILD_SPACING,
-								    &(navigate->block_background), NULL);
+												BLOCK_CHILD_SPACING,
+												&(navigate->block_background), NULL);
 
 	g_object_set_data(G_OBJECT(draw_data->container_block),
 			  ZMAP_WINDOW_POINTER, draw_data->navigate->current_window) ;
@@ -727,61 +727,67 @@ static ZMapFeatureContextExecuteStatus drawContext(GQuark key_id,
 	zmapWindowContainerBlockAugment((ZMapWindowContainerBlock)draw_data->container_block,
 					(ZMapFeatureBlock) feature_any) ;
 
-//	zmapWindowDrawSetGroupBackground(draw_data->container_block, 0, 1, 1.0, ZMAP_CANVAS_LAYER_BLOCK_BACKGROUND, NULL, NULL);
+	//	zmapWindowDrawSetGroupBackground(draw_data->container_block, 0, 1, 1.0, ZMAP_CANVAS_LAYER_BLOCK_BACKGROUND, NULL, NULL);
 
         hash_status = zmapWindowFToIAddBlock(navigate->ftoi_hash, draw_data->current_align->unique_id,
                                              key_id, (FooCanvasGroup *)(draw_data->container_block));
         zMapAssert(hash_status);
 
-	  navigate->locator = zmapWindowDrawSetGroupBackground(navigate->container_block, block_start,block_end, 1.0, ZMAP_CANVAS_LAYER_NAV_LOCATOR, &navigate->locator_fill_gdk, &navigate->locator_border_gdk);
+	navigate->locator = zmapWindowDrawSetGroupBackground(navigate->current_window, navigate->container_block,
+							     block_start, block_end, 1.0,
+							     ZMAP_CANVAS_LAYER_NAV_LOCATOR,
+							     &navigate->locator_fill_gdk, &navigate->locator_border_gdk);
 
-	  navigate->locator_drag = zmapWindowDrawSetGroupBackground(navigate->container_block, block_start,block_end, 1.0, ZMAP_CANVAS_LAYER_NAV_LOCATOR_DRAG, NULL, &navigate->locator_drag_gdk);
-	  foo_canvas_item_hide(navigate->locator_drag);
+	navigate->locator_drag = zmapWindowDrawSetGroupBackground(navigate->current_window, navigate->container_block,
+								  block_start, block_end, 1.0,
+								  ZMAP_CANVAS_LAYER_NAV_LOCATOR_DRAG,
+								  NULL, &navigate->locator_drag_gdk);
+	foo_canvas_item_hide(navigate->locator_drag);
 
         /* create a column per set ... */
         initialiseScaleIfNotExists(draw_data->current_block);
 
         g_list_foreach(draw_data->navigate->feature_set_names, createColumnCB, (gpointer)draw_data);
 
-       if(drawScaleRequired(draw_data))
+	if(drawScaleRequired(draw_data))
           drawScale(draw_data);
       }
       break;
     case ZMAPFEATURE_STRUCT_FEATURESET:
       {
         FooCanvasItem *item = NULL;
-	  ZMapFeatureSetDesc gffset;
+	ZMapFeatureSetDesc gffset;
         feature_set = (ZMapFeatureSet)feature_any;
-	  GQuark col_id = feature_set->unique_id;
+	GQuark col_id = feature_set->unique_id;
 
         gffset = g_hash_table_lookup(draw_data->navigate->current_window->context_map->featureset_2_column,
-					 GUINT_TO_POINTER(feature_set->unique_id));
+				     GUINT_TO_POINTER(feature_set->unique_id));
 
-	  if (gffset)
-		  col_id = gffset->column_id;
+	if (gffset)
+	  col_id = gffset->column_id;
 
         draw_data->current_set = feature_set;
 
         status = ZMAP_CONTEXT_EXEC_STATUS_DONT_DESCEND;
 
-	  if ((item = zMapFindCanvasColumn(draw_data->navigate->container_root,
-					   draw_data->current_align->unique_id,
-					   draw_data->current_block->unique_id,
-					   col_id,
-					   ZMAPSTRAND_FORWARD, ZMAPFRAME_NONE)))
+	if ((item = zMapFindCanvasColumn(draw_data->navigate->container_root,
+					 draw_data->current_align->unique_id,
+					 draw_data->current_block->unique_id,
+					 col_id,
+					 ZMAPSTRAND_FORWARD, ZMAPFRAME_NONE)))
           {
-	      ZMapWindowContainerFeatureSet container_feature_set;
+	    ZMapWindowContainerFeatureSet container_feature_set;
             FooCanvasGroup *group_feature_set;
-	      ZMapStyleBumpMode bump_mode;
+	    ZMapStyleBumpMode bump_mode;
 
             group_feature_set = FOO_CANVAS_GROUP(item);
-	      container_feature_set = (ZMapWindowContainerFeatureSet)item;
+	    container_feature_set = (ZMapWindowContainerFeatureSet)item;
 
             navigatorRunSet(feature_set, group_feature_set, ZMAPFRAME_NONE, draw_data->navigate) ;
 
-	      if ((bump_mode = zmapWindowContainerFeatureSetGetBumpMode(container_feature_set)) != ZMAPBUMP_UNBUMP)
-			zmapWindowColumnBumpRange(item, bump_mode, ZMAPWINDOW_COMPRESS_ALL) ;
-//printf("nav draw context %p -> %p %s %s\n", draw_data->navigate, draw_data->navigate->current_window, g_quark_to_string(feature_set->unique_id), g_quark_to_string(col_id));
+	    if ((bump_mode = zmapWindowContainerFeatureSetGetBumpMode(container_feature_set)) != ZMAPBUMP_UNBUMP)
+	      zmapWindowColumnBumpRange(item, bump_mode, ZMAPWINDOW_COMPRESS_ALL) ;
+	    //printf("nav draw context %p -> %p %s %s\n", draw_data->navigate, draw_data->navigate->current_window, g_quark_to_string(feature_set->unique_id), g_quark_to_string(col_id));
           }
         else
           {
@@ -829,10 +835,10 @@ static gboolean drawScaleRequired(NavigateDraw draw_data)
   scale_id = g_quark_from_string(ZMAP_FIXED_STYLE_SCALE_NAME);
 
   item = zmapWindowFToIFindItemFull(draw_data->navigate->current_window,
-                                        draw_data->navigate->ftoi_hash,
-                                        draw_data->current_align->unique_id,
-                                        draw_data->current_block->unique_id,
-                                        scale_id, ZMAPSTRAND_FORWARD, ZMAPFRAME_NONE, 0);
+				    draw_data->navigate->ftoi_hash,
+				    draw_data->current_align->unique_id,
+				    draw_data->current_block->unique_id,
+				    scale_id, ZMAPSTRAND_FORWARD, ZMAPFRAME_NONE, 0);
   required = !item;
 
   return required;
@@ -849,12 +855,13 @@ static void drawScale(NavigateDraw draw_data)
 
   /* HACK...  */
   scale_id = g_quark_from_string(ZMAP_FIXED_STYLE_SCALE_NAME);
+
   /* less of a hack ... */
   if ((item = zMapFindCanvasColumn(draw_data->navigate->container_root,
-					   draw_data->current_align->unique_id,
-					   draw_data->current_block->unique_id,
-					   scale_id,	/* is same as column id */
-					   ZMAPSTRAND_FORWARD, ZMAPFRAME_NONE)))
+				   draw_data->current_align->unique_id,
+				   draw_data->current_block->unique_id,
+				   scale_id,	/* is same as column id */
+				   ZMAPSTRAND_FORWARD, ZMAPFRAME_NONE)))
     {
       FooCanvasGroup *scale_group = NULL;
       FooCanvasGroup *features    = NULL;
@@ -865,9 +872,10 @@ static void drawScale(NavigateDraw draw_data)
 
       min = draw_data->context->master_align->sequence_span.x1;
       max = draw_data->context->master_align->sequence_span.x2;
+      zoom_factor = item->canvas->pixels_per_unit_y;
 
-	zoom_factor = item->canvas->pixels_per_unit_y;
-      zMapWindowDrawScaleBar(features,  min, max, min, max, zoom_factor, draw_data->navigate->is_reversed, FALSE);
+      zMapWindowDrawScaleBar(draw_data->navigate->current_window->scrolled_window,
+			     features, min, max, min, max, zoom_factor, draw_data->navigate->is_reversed, FALSE);
     }
 
   return ;
@@ -905,8 +913,8 @@ static void createColumnCB(gpointer data, gpointer user_data)
     }
   else if(draw_data->current_set)
     {
-	ZMapFeatureSetDesc gffset;
-	GQuark col_id = set_unique_id;
+      ZMapFeatureSetDesc gffset;
+      GQuark col_id = set_unique_id;
       ZMapWindowContainerFeatureSet container_set;
 
       features = zmapWindowContainerGetFeatures(ZMAP_CONTAINER_GROUP(draw_data->container_block));
@@ -920,9 +928,9 @@ static void createColumnCB(gpointer data, gpointer user_data)
 			ZMAP_WINDOW_POINTER, draw_data->navigate->current_window) ;
 
       gffset = g_hash_table_lookup(draw_data->navigate->current_window->context_map->featureset_2_column,
-					 GUINT_TO_POINTER(set_unique_id));
-	if(gffset)
-		col_id = gffset->column_id;
+				   GUINT_TO_POINTER(set_unique_id));
+      if(gffset)
+	col_id = gffset->column_id;
 
       container_set = (ZMapWindowContainerFeatureSet)draw_data->container_feature_set;
 
@@ -937,25 +945,25 @@ static void createColumnCB(gpointer data, gpointer user_data)
 
       zmapWindowContainerSetVisibility(FOO_CANVAS_GROUP(draw_data->container_feature_set), TRUE);
 
-//	zmapWindowDrawSetGroupBackground(draw_data->container_feature_set, 0, 1, 1.0, ZMAP_CANVAS_LAYER_COL_BACKGROUND,  NULL, NULL);
+      //	zmapWindowDrawSetGroupBackground(draw_data->container_feature_set, 0, 1, 1.0, ZMAP_CANVAS_LAYER_COL_BACKGROUND,  NULL, NULL);
     }
 #if 0
-// we'll get this pointless error if the set has not loaded yet
+  // we'll get this pointless error if the set has not loaded yet
   else
-  {
+    {
       GList *l;
-	char *x = "";
+      char *x = "";
 
-	printf("Failed to find navigator featureset '%s'\n", g_quark_to_string(set_id));
+      printf("Failed to find navigator featureset '%s'\n", g_quark_to_string(set_id));
 
-	zMap_g_hash_table_get_keys(&l,draw_data->current_block->feature_sets);
-	for(;l;l = l->next)
+      zMap_g_hash_table_get_keys(&l,draw_data->current_block->feature_sets);
+      for(;l;l = l->next)
 	{
-		char *y = (char *) g_quark_to_string(GPOINTER_TO_UINT(l->data));
-		x = g_strconcat(x," ",y,NULL);
+	  char *y = (char *) g_quark_to_string(GPOINTER_TO_UINT(l->data));
+	  x = g_strconcat(x," ",y,NULL);
 	}
-	printf("available are: %s\n",x);
-  }
+      printf("available are: %s\n",x);
+    }
 #endif
 
   return ;
@@ -1003,7 +1011,7 @@ static void updateLocatorDragger(ZMapWindowNavigator navigate, double button_y, 
   double a, b;
 
   if(!navigate->locator_drag)
-	  return;
+    return;
 
   a = button_y;
   b = button_y + size;
@@ -1017,11 +1025,11 @@ static void updateLocatorDragger(ZMapWindowNavigator navigate, double button_y, 
   zMapWindowCanvasFeaturesetSetSequence((ZMapWindowFeaturesetItem) navigate->locator_drag, a, b);
   foo_canvas_item_request_update(navigate->locator_drag);
 
-// this fails to draw the top line if dragging upwards
-//  foo_canvas_item_request_redraw(navigate->locator_drag);
+  // this fails to draw the top line if dragging upwards
+  //  foo_canvas_item_request_redraw(navigate->locator_drag);
 
-// this works but is a bodge
-//  foo_canvas_item_request_redraw(navigate->canvas->root);
+  // this works but is a bodge
+  //  foo_canvas_item_request_redraw(navigate->canvas->root);
 
   /* need to expose where we moved to */
   zMapWindowCanvasFeaturesetExpose((ZMapWindowFeaturesetItem) navigate->locator_drag);
@@ -1040,7 +1048,7 @@ static gboolean rootBGEventCB(FooCanvasItem *item, GdkEvent *event, gpointer dat
   double locator_size = navigate->locator_y_coords.x2 - navigate->locator_y_coords.x1;
 
   if(!navigate->locator || !navigate->locator_drag)
-	  return FALSE;
+    return FALSE;
 
   foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(navigate->locator), NULL, &locator_y1, NULL, &locator_y2);
   foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(navigate->locator_drag), NULL, &drag_y1, NULL, &drag_y2);
@@ -1074,11 +1082,11 @@ static gboolean rootBGEventCB(FooCanvasItem *item, GdkEvent *event, gpointer dat
                 foo_canvas_item_show(navigate->locator_drag);
 
                 navigate->click_correction = button->y - locator_y1;
-		    foo_canvas_c2w(navigate->canvas, 0, locator_y1, NULL, &y_coord);
+		foo_canvas_c2w(navigate->canvas, 0, locator_y1, NULL, &y_coord);
 
                 updateLocatorDragger(navigate, y_coord, locator_size);
 
-		    navigate->locator_click = event_handled = TRUE;
+		navigate->locator_click = event_handled = TRUE;
               }
           }
       }
@@ -1091,7 +1099,7 @@ static gboolean rootBGEventCB(FooCanvasItem *item, GdkEvent *event, gpointer dat
         if(navigate->locator_click == TRUE)
           {
             y_coord = (double) button->y - navigate->click_correction;
-		foo_canvas_c2w(navigate->canvas, 0, y_coord, NULL, &y_coord);
+	    foo_canvas_c2w(navigate->canvas, 0, y_coord, NULL, &y_coord);
 
             updateLocatorDragger(navigate, y_coord, locator_size);
 
@@ -1109,32 +1117,32 @@ static gboolean rootBGEventCB(FooCanvasItem *item, GdkEvent *event, gpointer dat
             foo_canvas_item_hide(navigate->locator_drag);
 
             if(button->y != (locator_y1 + navigate->click_correction))	// why bother testing?
-		{
-			y_coord = (double) button->y - navigate->click_correction;
-			foo_canvas_c2w(navigate->canvas, 0, y_coord, NULL, &y_coord);
+	      {
+		y_coord = (double) button->y - navigate->click_correction;
+		foo_canvas_c2w(navigate->canvas, 0, y_coord, NULL, &y_coord);
 
 
 #if 0
-this will be called by zMapWindowMove()
-	            zMapWindowNavigatorDrawLocator(navigate, y_coord, y_coord + locator_size);
+		this will be called by zMapWindowMove()
+		  zMapWindowNavigatorDrawLocator(navigate, y_coord, y_coord + locator_size);
 #endif
 
 #if RUN_AROUND
-			/*
-			* this follows an obscure callback meander that ends up calling zMapWindowMove()
-			* with a window parameter stored elsewhere
-			* we could just call zMapWindowMove(navigate->current_window) from here
-			* but instead jump into zmapNavigatorWidget.c which calls class_data->callbacks.valueCB()
-			* which equates to canvas_value_cb() in zmapControlNavigator.c
-			* which then calls a ZMapNavigator (NOTE: not the same as ZMapWindowNavigator) callback
-			* (set up by zMapNavigatorSetWindowCallback() in zmapControlWindowMakeFrame() in zmapControlWindowFrame.c)
-			* which then calls zMapWindowMove() with that mysterious window pointer
-			*/
-			zmapWindowNavigatorValueChanged(NAVIGATOR_WIDGET(navigate), y_coord, y_coord + locator_size);
+		/*
+		 * this follows an obscure callback meander that ends up calling zMapWindowMove()
+		 * with a window parameter stored elsewhere
+		 * we could just call zMapWindowMove(navigate->current_window) from here
+		 * but instead jump into zmapNavigatorWidget.c which calls class_data->callbacks.valueCB()
+		 * which equates to canvas_value_cb() in zmapControlNavigator.c
+		 * which then calls a ZMapNavigator (NOTE: not the same as ZMapWindowNavigator) callback
+		 * (set up by zMapNavigatorSetWindowCallback() in zmapControlWindowMakeFrame() in zmapControlWindowFrame.c)
+		 * which then calls zMapWindowMove() with that mysterious window pointer
+		 */
+		zmapWindowNavigatorValueChanged(NAVIGATOR_WIDGET(navigate), y_coord, y_coord + locator_size);
 #else
-			zMapWindowMove(navigate->current_window, y_coord, y_coord + locator_size);
+		zMapWindowMove(navigate->current_window, y_coord, y_coord + locator_size);
 #endif
-		}
+	      }
 
             navigate->locator_click = FALSE;
 
@@ -1281,15 +1289,15 @@ static gboolean navCanvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpoin
       {
 	GdkEventButton *button = (GdkEventButton *)event ;
 
-		/* freeze the selected feature from the point function */
-	  zMapWindowCanvasItemSetFeature((ZMapWindowCanvasItem) item, button->x, button->y);
+	/* freeze the selected feature from the point function */
+	zMapWindowCanvasItemSetFeature((ZMapWindowCanvasItem) item, button->x, button->y);
 
-		/* Retrieve the feature item info from the canvas item. */
+	/* Retrieve the feature item info from the canvas item. */
         feature = zmapWindowItemGetFeature(item);
         zMapAssert(feature) ;
 
 
-       if(button->type == GDK_BUTTON_PRESS)
+	if(button->type == GDK_BUTTON_PRESS)
           {
             if (button->time - last_but_press > 250)
               {
@@ -1301,7 +1309,7 @@ static gboolean navCanvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpoin
                   {
                     /* make item menu */
                     makeMenuFromCanvasItem(button, item, navigate);
-			  event_handled = TRUE ;
+		    event_handled = TRUE ;
                   }
               }
             last_but_press = button->time ;
@@ -1309,14 +1317,14 @@ static gboolean navCanvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpoin
         else
           {
             if (button->button == 1  /* && feature->feature.transcript.locus_id != 0) */
-                  && feature->type == ZMAPSTYLE_MODE_TEXT)
+		&& feature->type == ZMAPSTYLE_MODE_TEXT)
               {
-                  /*used to get a transcript feature? no idea how, but the locus feature is a text item */
+		/*used to get a transcript feature? no idea how, but the locus feature is a text item */
                 zmapWindowNavigatorGoToLocusExtents(navigate, item);
 
-		    foo_canvas_item_hide(navigate->locator_drag);	/* stupid GTK give a press and 2-press, so i'm depressed */
+		foo_canvas_item_hide(navigate->locator_drag);	/* stupid GTK give a press and 2-press, so i'm depressed */
 
-		    navigate->locator_click = FALSE;	/* can get mixed signals ??, end up moving somewhere else ?? */
+		navigate->locator_click = FALSE;	/* can get mixed signals ??, end up moving somewhere else ?? */
                 event_handled = TRUE;
               }
           }
@@ -1361,7 +1369,7 @@ static gboolean variantFeature(ZMapFeature feature, ZMapWindowNavigator navigate
   if(feature && navigate->locus_id == feature->parent->unique_id)
     {
       if(zmapWindowNavigatorLDHFind(navigate->locus_display_hash,
-                                                  feature->original_id))
+				    feature->original_id))
         {
           /* we only ever draw the first one of these. */
           outside = TRUE;
@@ -1521,9 +1529,9 @@ static void default_locus_names_filter(GList **filter_out)
 
 
 void navigatorRunSet(  ZMapFeatureSet set,
-                                 FooCanvasGroup *container,
-                                 ZMapFrame frame,
-					   ZMapWindowNavigator navigate)
+		       FooCanvasGroup *container,
+		       ZMapFrame frame,
+		       ZMapWindowNavigator navigate)
 {
   ZMapWindowFeatureStackStruct feature_stack = { NULL };
   GList *l;
@@ -1555,23 +1563,23 @@ void navigatorRunSet(  ZMapFeatureSet set,
 	    feature_stack.frame = zmapWindowFeatureFrame(feature);
 	}
 
-//	if(zMapStyleGetMode(*feature->style) == ZMAPSTYLE_MODE_TEXT)	variant feature handles this
+      //	if(zMapStyleGetMode(*feature->style) == ZMAPSTYLE_MODE_TEXT)	variant feature handles this
+      {
+	if(variantFeature(feature, navigate))
+	  continue;
+      }
+
+      foo = zmapWindowFToIFactoryRunSingle(navigate->ftoi_hash, (ZMapWindowContainerFeatureSet) container, features, foo, &feature_stack);
+
+      if(!zMapWindowCanvasItemIsConnected((ZMapWindowCanvasItem) foo))
+	factoryItemHandler (foo, &feature_stack, (gpointer) navigate);
+
+      if(zMapStyleGetMode(*feature->style) == ZMAPSTYLE_MODE_TEXT && !locus_featureset && foo)
 	{
-		if(variantFeature(feature, navigate))
-			continue;
-	}
+	  locus_featureset = (ZMapWindowFeaturesetItem) foo;
+	  zMapWindowCanvasLocusSetFilter(locus_featureset, navigate->hide_filter);
 
-	foo = zmapWindowFToIFactoryRunSingle(navigate->ftoi_hash, (ZMapWindowContainerFeatureSet) container, features, foo, &feature_stack);
-
-	if(!zMapWindowCanvasItemIsConnected((ZMapWindowCanvasItem) foo))
-				factoryItemHandler (foo, &feature_stack, (gpointer) navigate);
-
-	if(zMapStyleGetMode(*feature->style) == ZMAPSTYLE_MODE_TEXT && !locus_featureset && foo)
-	{
-		locus_featureset = (ZMapWindowFeaturesetItem) foo;
-		zMapWindowCanvasLocusSetFilter(locus_featureset, navigate->hide_filter);
-
-		navigate->locus_featureset = locus_featureset;
+	  navigate->locus_featureset = locus_featureset;
 	}
 
     }

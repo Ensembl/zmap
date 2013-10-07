@@ -73,7 +73,7 @@ typedef struct
 void zMapManagerInit(ZMapManagerCallbacks callbacks) ;
 ZMapManager zMapManagerCreate(void *gui_data) ;
 ZMapManagerAddResult zMapManagerAdd(ZMapManager zmaps, ZMapFeatureSequenceMap sequence_map,
-				    ZMap *zmap_out, ZMapView *view_out, gboolean load_view) ;
+				    ZMap *zmap_out, ZMapView *view_out) ;
 
 ZMap zMapManagerFindZMap(ZMapManager manager, gpointer view_id, gpointer *view_ptr_out) ;
 gpointer zMapManagerFindView(ZMapManager manager, gpointer view_id) ;

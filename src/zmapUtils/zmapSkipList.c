@@ -279,7 +279,7 @@ ZMapSkipList zMapSkipListAdd(ZMapSkipList head, GCompareFunc cmp, gpointer data)
 	if(head)
 	{
 		here = zMapSkipListFind(head,cmp,data);
-#warning SkipListAdd balancing upper layers not implemented
+                /*! \todo #warning SkipListAdd balancing upper layers not implemented */
 
 		/* this is less critical than remove */
 
@@ -357,7 +357,7 @@ ZMapSkipList zMapSkipListRemove(ZMapSkipList head, ZMapSkipListFreeFunc free_fun
 	{
 		freeSkipList(sl);
 
-#warning SkipListRemove upper layer balancing not implemented
+                /*! \todo #warning SkipListRemove upper layer balancing not implemented */
 		/* just remove offending downward pointers */
 		/* if we remove a deep key then we double the skip distance */
 		/* and the list starts to go degnerate */

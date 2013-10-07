@@ -307,7 +307,8 @@ gboolean zmapWindowScaleCanvasDraw(ZMapWindowScaleCanvas ruler, int start, int e
       if(start > seq_start || end < seq_end)
 	zoomed = TRUE;
 
-      width = zMapWindowDrawScaleBar(FOO_CANVAS_GROUP(ruler->scaleParent), start, end, seq_start, seq_end, zoom_factor, ruler->revcomped, zoomed);
+      width = zMapWindowDrawScaleBar(ruler->scrolled_window,
+				     FOO_CANVAS_GROUP(ruler->scaleParent), start, end, seq_start, seq_end, zoom_factor, ruler->revcomped, zoomed);
 
       drawn = TRUE;
 
@@ -577,7 +578,11 @@ static void thaw_notify(ZMapWindowScaleCanvas ruler)
    text height (font)
 */
 /* we draw the scale on the right and text to the left */
-double zMapWindowDrawScaleBar(FooCanvasGroup *group, int scroll_start, int scroll_end, int seq_start, int seq_end, double zoom_factor, gboolean revcomped, gboolean zoomed)
+double zMapWindowDrawScaleBar(GtkWidget *canvas_scrolled_window,
+			      FooCanvasGroup *group,
+			      int scroll_start, int scroll_end,
+			      int seq_start, int seq_end,
+			      double zoom_factor, gboolean revcomped, gboolean zoomed)
 /*
  * scroll start and end are as displayed (NB navigator always has whole sequence)
  * seq start and end are whole sequence in fwd strand coodinates
@@ -646,7 +651,7 @@ double zMapWindowDrawScaleBar(FooCanvasGroup *group, int scroll_start, int scrol
   int first;
 
   static ZMapFeatureTypeStyle scale_style = NULL;
-#warning move this to predefined styles code in featureTyoes.c
+  /*! \todo #warning move this to predefined styles code in featureTyoes.c */
   /* temporarily create pre-defined style here (needed by Canvasfeatureset)
    * we don't actually use the colours here, maybe we should */
   if(!scale_style)
@@ -669,7 +674,11 @@ double zMapWindowDrawScaleBar(FooCanvasGroup *group, int scroll_start, int scrol
   fid = g_quark_from_string(buf);
 
   /* allocate featureset for whole sequence even if zoomed, if the feeatureset does not get re-created on zoom then the extent will be ok */
-  featureset = (ZMapWindowFeaturesetItem) zMapWindowCanvasItemFeaturesetGetFeaturesetItem(group, fid, seq_start, seq_end, scale_style, ZMAPSTRAND_NONE, ZMAPFRAME_0, 0, 0);
+  featureset = (ZMapWindowFeaturesetItem)zMapWindowCanvasItemFeaturesetGetFeaturesetItem(group, fid,
+											 canvas_scrolled_window,
+											 seq_start, seq_end,
+											 scale_style,
+											 ZMAPSTRAND_NONE, ZMAPFRAME_0, 0, 0);
 
   seq_len = seq_end - seq_start + 1;
   if(seq_len < 10)	/* we get called on start up w/ no sequence */
@@ -690,7 +699,7 @@ double zMapWindowDrawScaleBar(FooCanvasGroup *group, int scroll_start, int scrol
       font_width = 8.0;
       text_height = 14;
       //		zMapLogWarning("DrawScale get font size failed","");
-#warning fix the font size to work centrally
+      /*! \todo #warning fix the font size to work centrally */
     }
 
   /* get the highest order ticks:  sequence and scroll are in chromosome coordinates but we display slice coordinates.... */
@@ -764,8 +773,8 @@ double zMapWindowDrawScaleBar(FooCanvasGroup *group, int scroll_start, int scrol
     continue;
   text_max--;
 
-  if(*unit)		/* for decimal point */
-    text_max++;
+  if(*unit)		/* for decimal point and suffix */
+    text_max += 2;
 
   if(revcomped)	/* for - sign */
     text_max++;
@@ -777,6 +786,7 @@ double zMapWindowDrawScaleBar(FooCanvasGroup *group, int scroll_start, int scrol
   zMapWindowCanvasFeaturesetSetWidth(featureset, scale_width);
   {
     FooCanvasItem *foo = (FooCanvasItem *) group;
+
     foo_canvas_item_request_update(foo);
   }
 #if SCALE_DEBUG
@@ -917,7 +927,15 @@ double zMapWindowDrawScaleBar(FooCanvasGroup *group, int scroll_start, int scrol
 			  for(digits = 1; f < base ; f *= 10)
 			    digits++;
 
-			  p = label + sprintf(label,"%s%d.%0*d",sign,num,digits,frac);
+                          /* gb10: the original printf which treats the fraction 
+                           * separately doesn't always work (RT333321) so I've
+                           * changed it to use a decimal instead. Not sure if there
+                           * are drawbacks with this that the original code intended
+                           * to avoid... */
+                          //p = label + sprintf(label,"%s%d.%0*d",sign,num,digits,frac);
+                          float val = (float)slice_coord / (float)base;
+                          p = label + sprintf(label,"%s%.*f",sign, digits, val);
+
 			  while(*--p == '0')
 			    continue;
 			  if(*p != '.')

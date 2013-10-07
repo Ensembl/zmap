@@ -31,7 +31,7 @@ fi
 # These defaults should probably _not_ be here!
 zmap_check ${ZMAP_WEBSITE_TARGET:=/nfs/WWWdev/SANGER_docs/htdocs/Software/analysis/ZMap}
 zmap_check ${WEBUSER:=zmap}
-zmap_check ${WEBHOST:=lucid-dev64}
+zmap_check ${WEBHOST:=tviewsrv}
 
 zmap_cd $BASE_DIR
 

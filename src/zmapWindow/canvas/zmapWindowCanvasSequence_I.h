@@ -34,55 +34,58 @@
 
 #include <ZMap/zmap.h>
 
-
 #include <zmapWindowCanvasFeatureset_I.h>
 #include <zmapWindowCanvasSequence.h>
+
+
 
 #define MAX_SEQ_TEXT	32	/* it's nominally 20 i think */
 
 
 
 typedef enum
-{
-	SEQUENCE_INVALID,
-	SEQUENCE_DNA,
-	SEQUENCE_PEPTIDE
+  {
+    SEQUENCE_INVALID,
+    SEQUENCE_DNA,
+    SEQUENCE_PEPTIDE
 
-} ZMapWindowCanvasSequenceType;
+  } ZMapWindowCanvasSequenceType;
 
 
 typedef struct
 {
-	long start,end;
-	gulong colour;
-	ZMapFeatureSubpartType type;
+  long start,end;
+  gulong colour;
+  ZMapFeatureSubpartType type;
 
 } zmapSequenceHighlightStruct, *ZMapSequenceHighlight;
 
 
-typedef struct _zmapWindowCanvasSequenceStruct
+typedef struct zmapWindowCanvasSequenceStructType
 {
-	zmapWindowCanvasFeatureStruct feature;	/* all the common stuff */
+  zmapWindowCanvasFeatureStruct feature;	/* all the common stuff */
 
-	/* this->feature->feature.sequence has the useful info, see zmapFeature.h/ZMapSequenceStruct_ */
+  /* this->feature->feature.sequence has the useful info, see zmapFeature.h/ZMapSequenceStruct_ */
 
-	gulong background;
-	GList *highlight;		/* of ZMapSequenceHighlight */
+  gulong background;
+  GList *highlight;					    /* of ZMapSequenceHighlight */
 
-	char *text;			/* a buffer for one line */
-	int n_text;
+  char *text;						    /* a buffer for one line */
+  int n_text;
 
-	long start;			/* first coord, normally equals featureset start but for show translation in zmap not so */
-	long end;
-	long row_size;		/* no of bases/ residues between rows */
-	long row_disp; 		/* no to display in each row */
-	long n_bases;		/* actual bases excluding ... */
-	long spacing;		/* between rows */
-	long offset;		/* to centre rows in spacing */
-	char *truncated;		/* show ... if we run out of space */
-	int factor;			/* for dna or peptide */
+  /* first coord, normally equals featureset start but for show translation in zmap not so */
+  long start;
+  long end;
 
-	gboolean background_set;
+  long row_size;					    /* no of bases/ residues between rows */
+  long row_disp;					    /* no to display in each row */
+  long n_bases;						    /* actual bases excluding ... */
+  long spacing;						    /* between rows */
+  long offset;						    /* to centre rows in spacing */
+  char *truncated;					    /* show ... if we run out of space */
+  int factor;						    /* for dna or peptide */
+
+  gboolean background_set;
 
 
 } zmapWindowCanvasSequenceStruct, *ZMapWindowCanvasSequence;

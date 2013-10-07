@@ -33,8 +33,8 @@
 
 #include <ZMap/zmap.h>
 
-
 #include <string.h>
+
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapGLibUtils.h>
 #include <zmapWindow_P.h>
@@ -64,6 +64,8 @@ typedef struct
   gboolean rev_comp_state;
 } ZMapWindowFocusSerialStruct;
 
+
+/* Problem with these comments is that it doesn't say why we need to be careful.... */
 typedef struct
 {
   double scroll_x1, scroll_x2;
@@ -750,7 +752,7 @@ static void state_bumped_columns_restore(ZMapWindow window, ZMapWindowBumpStateS
 	      /* Also if the bump is not different from the current the compress mode
 	       * will almost certainly mean there will be odd results...
 	       */
-#warning WRONG_NEED_INITIAL_BUMP_MODE
+              /*! \todo #warning WRONG_NEED_INITIAL_BUMP_MODE */
 	      if(zmapWindowContainerFeatureSetGetBumpMode(container_set) != column_state->bump_mode)
 		{
 

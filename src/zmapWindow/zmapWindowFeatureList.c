@@ -467,7 +467,7 @@ static void feature_frame_to_value(GValue *value, gpointer feature_data)
       switch(feature_any->struct_type)
       {
       case ZMAPFEATURE_STRUCT_FEATURE:
-#warning this used to use strand!  and this function i think has never been called
+        /*! \todo #warning this used to use strand!  and this function i think has never been called */
         g_value_set_string(value, zMapFeatureFrame2Str(zMapFeatureFrame(feature_any)));
         break;
       default:
@@ -491,8 +491,8 @@ static void feature_phase_to_value(GValue *value, gpointer feature_data)
       switch(feature_any->struct_type)
       {
       case ZMAPFEATURE_STRUCT_FEATURE:
-#warning refer to other calls to zMapFeaturePhase2Str()
-#warning this used to say strand! phase is buried in obscure places and this function i think has never been called
+        /*! \todo #warning refer to other calls to zMapFeaturePhase2Str() */
+        /*! \todo #warning this used to say strand! phase is buried in obscure places and this function i think has never been called */
         g_value_set_string(value, zMapFeaturePhase2Str(zMapFeatureFrame(feature_any)));
         break;
       default:

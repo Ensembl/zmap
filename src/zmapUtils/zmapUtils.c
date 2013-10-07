@@ -32,7 +32,6 @@
 
 #include <ZMap/zmap.h>
 
-
 #define _ISOC99_SOURCE
 
 #include <sys/wait.h>
@@ -44,7 +43,6 @@
 #include <stdlib.h>
 #include <config.h>
 #include <unistd.h>
-
 
 #include <zmapUtils_P.h>
 
@@ -342,7 +340,7 @@ char *zMapGetTimeString(ZMapTimeFormat format, char *format_str_in)
       if ((strftime(&(buffer[0]), buf_size, format_str, localtime(&curtime))) > 0)
 	{
 	  if (format == ZMAPTIME_LOG)
-	    time_str = g_strdup_printf("%s%06d", buffer, tv.tv_usec) ; /* pad to make sure we don't miss leading 0's */
+	    time_str = g_strdup_printf("%s%06ld", buffer, (long int)(tv.tv_usec)) ; /* pad to make sure we don't miss leading 0's */
 	  else
 	    time_str = g_strdup(buffer) ;
 	}
@@ -661,6 +659,78 @@ gboolean zMapUtilsSysCall(char *cmd_str, char **err_msg_out)
 
   return result ;
 }
+
+
+
+/* Takes an integer that is the termination status of a process (e.g. as generated
+ * by waitpid() etc) and returns what type of termination it was.
+ * 
+ * See ZMapProcessTerminationType in zmapUtils.h for meaning of value returned.
+ *  */
+ZMapProcessTerminationType zMapUtilsProcessTerminationStatus(int status)
+{
+  ZMapProcessTerminationType termination_type = ZMAP_PROCTERM_OK ;
+
+  if (WIFEXITED(status))
+    {
+      if (WEXITSTATUS(status))
+	termination_type = ZMAP_PROCTERM_ERROR ;
+    }
+  else if (WIFSIGNALED(status))
+    {
+      termination_type = ZMAP_PROCTERM_SIGNAL ;
+    }
+  else if (WIFSTOPPED(status))
+    {
+      termination_type = ZMAP_PROCTERM_STOPPED ;
+    }
+
+  return termination_type ;
+}
+
+
+/* Takes an integer that is the termination status of a process (e.g. as generated
+ * by waitpid() etc) and returns a string describing that status.
+ * 
+ * Returns FALSE without setting termination_str_out if the process terminated
+ * normally with a zero return code otherwise returns TRUE and returns the
+ * termination status as a string in termination_str_out, this string should
+ * be g_free'd by the caller when no longer required.
+ * 
+ *  */
+gboolean zMapUtilsProcessTerminationStr(int status, char **termination_str_out)
+{
+  gboolean has_termination_str = FALSE ;
+
+  if (WIFEXITED(status))
+    {
+      int exit_status ;
+
+      if ((exit_status = WEXITSTATUS(status)))
+	{
+	  *termination_str_out = g_strdup_printf("Child terminated normally, exit status: %d", exit_status) ;
+
+	  has_termination_str = TRUE ;
+	}
+    }
+  else if (WIFSIGNALED(status))
+    {
+      *termination_str_out = g_strdup_printf("Child terminated by signal number %d - \"%s\".",
+					     WTERMSIG(status), g_strsignal(WTERMSIG(status))) ;
+
+      has_termination_str = TRUE ;
+    }
+  else if (WIFSTOPPED(status))
+    {
+      *termination_str_out = g_strdup_printf("Child terminated by signal, signal number: %d", WSTOPSIG(status)) ;
+
+      has_termination_str = TRUE ;
+    }
+
+  return has_termination_str ;
+}
+
+
 
 /* make printing from totalview evaluations a lot easier... */
 void zMapPrintQuark(GQuark quark)

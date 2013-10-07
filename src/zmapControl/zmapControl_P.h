@@ -35,9 +35,12 @@
 #include <ZMap/zmapView.h>
 #include <ZMap/zmapControl.h>
 #include <ZMap/zmapControlImportFile.h>
-#include <ZMap/zmapXRemote.h>
-#include <zmapNavigator_P.h>
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+#include <ZMap/zmapXRemote.h>
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+#include <zmapNavigator_P.h>
 
 
 
@@ -151,9 +154,13 @@ typedef struct _ZMapStruct
                                          * remote control simple IPC stuff */
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* Old stuff...??? */
   ZMapXRemoteObj xremote_client;
   ZMapXRemoteObj xremote_server;          /* that we reply to */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
@@ -228,31 +235,13 @@ void zmapControlDoKill(ZMap zmap, GList **destroyed_views_out) ;
 void zmapControlLoadCB        (ZMap zmap) ;
 void zmapControlResetCB       (ZMap zmap) ;
 
-/* new remote stuff.... */
 void zmapControlSendViewCreated(ZMap zmap, ZMapView view, ZMapWindow window) ;
 void zmapControlSendViewDeleted(ZMap zmap, GList *destroyed_views_inout) ;
-
-/* old remote stuff.... */
-void zmapControlRemoteInstaller(GtkWidget *widget, GdkEvent  *event, gpointer user_data) ;
-gboolean zmapControlRemoteAlertClient(ZMap zmap,
-                                      char *action, GArray *xml_events,
-                                      ZMapXMLObjTagFunctions start_handlers,
-                                      ZMapXMLObjTagFunctions end_handlers,
-                                      gpointer *handler_data);
-gboolean zmapControlRemoteAlertClients(ZMap zmap, GList *clients,
-                                       char *action, GArray *xml_events,
-				       ZMapXMLObjTagFunctions start_handlers,
-				       ZMapXMLObjTagFunctions end_handlers,
-				       gpointer *handler_data);
-
-
-
 
 void zmapControlWriteWindowIdFile(Window id, char *window_name);
 
 void zmapControlInfoOverwrite(void *data, int code, char *format, ...);
 void zmapControlInfoSet(void *data, int code, char *format, ...);
-
 
 void zmapControlWindowSetStatus(ZMap zmap) ;
 void zmapControlWindowSetGUIState(ZMap zmap) ;
