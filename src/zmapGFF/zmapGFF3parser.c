@@ -62,7 +62,6 @@ ZMapGFFParser zMapGFFCreateParser3(char *sequence, int features_start, int featu
 
 
 
-
 /* Given a line length, will allocate buffers so they cannot overflow when parsing a line of this
  * length. The rationale here is that we might get handed a line that had just one field in it
  * that was the length of the line. By allocating buffers that are the line length we cannot
