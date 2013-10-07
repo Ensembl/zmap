@@ -125,9 +125,12 @@ static void checkFeatureCB(GQuark key_id, gpointer data, gpointer user_data_unus
  * Optionally a feature start/end range may be specified, if start and end are 0 then
  * all features for the reference sequence are parsed from the gff.
  */
-ZMapGFFParser zMapGFFCreateParser2(char *sequence, int features_start, int features_end)
+ZMapGFFParser zMapGFFCreateParser2(int iGFFVersion, char *sequence, int features_start, int features_end)
 {
   ZMapGFFParser parser = NULL ;
+
+  if (iGFFVersion != ZMAPGFF_VERSION_2 )
+    return parser;
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -140,7 +143,7 @@ ZMapGFFParser zMapGFFCreateParser2(char *sequence, int features_start, int featu
     {
       parser = g_new0(ZMapGFFParserStruct, 1) ;
 
-      parser->gff_version = ZMAPGFF_VERSION_2 ;
+      parser->gff_version = iGFFVersion ;
 
       parser->state = ZMAPGFF_PARSE_HEADER ;
       parser->error = NULL ;
