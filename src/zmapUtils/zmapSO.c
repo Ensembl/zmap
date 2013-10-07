@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -27,7 +27,7 @@
  * Description: Functions to handle SO stuff.
  *
  * Exported functions: See zmapSO.h
- *              
+ *
  *-------------------------------------------------------------------
  */
 
@@ -55,7 +55,7 @@ static SOEntry findSOentry(GQuark SO_acc) ;
 
 
 
-/* 
+/*
  *                 External interface.
  */
 
@@ -101,22 +101,22 @@ GQuark zMapSOAcc2TermID(GQuark SO_accession)
  * for that type of variation. Supported string formats are:
  *
  *   SNP:             "A/G"
- *   
+ *
  *   Mutation:        "HGMD_MUTATION"
  *
  *   deletion:        "-/G"
  *                    "-/CTTA"
  *                    "-/(339 BP DELETION)"
  *                    "-/(LARGEDELETION)"
- *   
+ *
  *   insertion:       "T/-"
  *                    "TAAA/-"
  *                    "AAAAAAGTTCCTTGCATGATTAAAAAAGTATT/-"
  *                    "(339 BP INSERTION)/-"
  *                    "(LARGEINSERTION)/-"
- *   
+ *
  *   CNV:             "CNV_PROBE"
- * 
+ *
  *   Mixed:           "A/T/-"
  *
  *  */
@@ -131,7 +131,7 @@ GQuark zMapSOVariation2SO(char *variation_str)
 
   static GRegex *insertion_exp = NULL, *lots_insertion_exp, *deletion_exp, *lots_deletion_exp,
     *snp_exp, *substitution_exp, *alteration_exp ;
-  GMatchInfo *match_info ;
+  /* GMatchInfo *match_info ; */
   GQuark var_id ;
 
   if (!insertion_exp)
@@ -145,19 +145,19 @@ GQuark zMapSOVariation2SO(char *variation_str)
       alteration_exp = g_regex_new("([ACGT]*|-)/([ACGT]*|-)/([ACGT]*|-)", 0, 0, NULL) ;
     }
 
-  if (g_regex_match(alteration_exp, variation_str, 0, &match_info))
+  if (g_regex_match(alteration_exp, variation_str, 0, NULL))
     var_id = g_quark_from_string(SO_ACC_SEQ_ALT) ;
-  else if (g_regex_match(insertion_exp, variation_str, 0, &match_info)
-	   || g_regex_match(lots_insertion_exp, variation_str, 0, &match_info)
+  else if (g_regex_match(insertion_exp, variation_str, 0, NULL)
+	   || g_regex_match(lots_insertion_exp, variation_str, 0, NULL)
 	   || g_ascii_strcasecmp("(LARGEINSERTION)/-", variation_str) == 0)
     var_id = g_quark_from_string(SO_ACC_INSERTION) ;
-  else if (g_regex_match(deletion_exp, variation_str, 0, &match_info)
-	   || g_regex_match(lots_deletion_exp, variation_str, 0, &match_info)
+  else if (g_regex_match(deletion_exp, variation_str, 0, NULL)
+	   || g_regex_match(lots_deletion_exp, variation_str, 0, NULL)
 	   || g_ascii_strcasecmp("-/(LARGEDELETION)", variation_str) == 0)
     var_id = g_quark_from_string(SO_ACC_DELETION) ;
-  else if (g_regex_match(snp_exp, variation_str, 0, &match_info))
+  else if (g_regex_match(snp_exp, variation_str, 0, NULL))
     var_id = g_quark_from_string(SO_ACC_SNP) ;
-  else if (g_regex_match(substitution_exp, variation_str, 0, &match_info))
+  else if (g_regex_match(substitution_exp, variation_str, 0, NULL))
     var_id = g_quark_from_string(SO_ACC_SUBSTITUTION) ;
   else if (g_ascii_strcasecmp("CNV_PROBE", variation_str) == 0)
     var_id = g_quark_from_string(SO_ACC_CNV) ;
@@ -197,7 +197,7 @@ GQuark zMapSOFeature2SO(ZMapFeature feature)
 
 
 
-/* 
+/*
  *                    Internal functions.
  */
 
