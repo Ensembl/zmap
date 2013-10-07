@@ -26,19 +26,16 @@
  *
  * Description: 
  *
- * Exported functions: See XXXXXXXXXXXXX.h
+ * Exported functions: See zmapWindowContainerAlignment.h
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmap.h>
 
-
-
-
-
-
 #include <zmapWindowContainerAlignment_I.h>
 #include <zmapWindowContainerUtils.h>
+
+
 
 static void zmap_window_container_alignment_class_init  (ZMapWindowContainerAlignmentClass container_align_class);
 static void zmap_window_container_alignment_init        (ZMapWindowContainerAlignment container_align);
@@ -58,6 +55,14 @@ static void zmap_window_container_alignment_finalize    (GObject *object);
 #ifdef CHAINING_REQUIRED
 static GObjectClass *parent_class_G = NULL;
 #endif /* CHAINING_REQUIRED */
+
+
+
+/* 
+ *                             External interface
+ */
+
+
 
 GType zmapWindowContainerAlignmentGetType(void)
 {
@@ -88,9 +93,10 @@ GType zmapWindowContainerAlignmentGetType(void)
 }
 
 
+/* ????????????????????????????????????????????????????????????? */
 ZMapWindowContainerAlignment zmapWindowContainerAlignmentCreate(FooCanvasGroup *parent)
 {
-  ZMapWindowContainerAlignment container_align = NULL;
+  ZMapWindowContainerAlignment container_align = NULL ;
 
   return container_align;
 }
@@ -114,9 +120,10 @@ ZMapWindowContainerAlignment zmapWindowContainerAlignmentDestroy(ZMapWindowConta
 }
 
 
-/* INTERNAL */
+/* 
+ *                  Internal routines
+ */
 
-/* Object code */
 static void zmap_window_container_alignment_class_init(ZMapWindowContainerAlignmentClass container_align_class)
 {
   GObjectClass *gobject_class;
