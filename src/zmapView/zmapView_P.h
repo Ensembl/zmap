@@ -311,13 +311,13 @@ typedef struct _ZMapViewStruct
 #endif /* NOT_REQUIRED_ATM */
 
 
-  int sources_loading ;					    /* how many active/queued requests,
-							       this is not very neat as failures
-							       are dealt with in a complex way */
-  int sources_failed ;					    /* A count of the number that failed
-							       since the last data request, is
-							       reset on next load command */
-
+  /* Data recording which sources are loading and which failed. */
+  GList *sources_loading ;					    /* how many active/queued requests,
+								       this is not very neat as failures
+								       are dealt with in a complex way */
+  GList *sources_failed ;					    /* A count of the number that failed
+								       since the last data request, is
+								       reset on next load command */
 
   GList *connection_list ;				    /* Of ZMapViewConnection. */
   ZMapViewConnection sequence_server ;			    /* Which connection to get raw
