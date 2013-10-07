@@ -236,8 +236,6 @@ void zmapControlWindowSetStatus(ZMap zmap)
        * we've finished loading. */
       if (view_state == ZMAPVIEW_LOADED || view_state == ZMAPVIEW_LOADING || view_state == ZMAPVIEW_UPDATING)
 	{
-	  char *status ;
-
 	  if (sources_loading || sources_failing)
 	    {
 	      GString *load_status_str ;
@@ -605,8 +603,6 @@ static gboolean rotateTextCB(gpointer user_data)
   static gboolean call_again = TRUE ;			    /* Keep calling us. */
   GtkWidget *entry_widg = GTK_WIDGET(user_data) ;
   static GString *buffer = NULL ;
-  char *entry_text ;
-  int text_len ;
 
   if (!user_data)
     {
@@ -614,18 +610,13 @@ static gboolean rotateTextCB(gpointer user_data)
     }
   else if (call_again)
     {
+      char *entry_text ;
+
       if (!buffer)
 	buffer = g_string_sized_new(1000) ;
 
       entry_text = (char *)gtk_entry_get_text(GTK_ENTRY(entry_widg)) ;
 
-      text_len = strlen(entry_text) ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      memcpy(&buffer, entry_text + 1, text_len - 1) ;
-
-      buffer[text_len - 1] = *entry_text ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
       buffer = g_string_assign(buffer, (entry_text + 1)) ;
       buffer = g_string_append_c(buffer, *entry_text) ;
 
