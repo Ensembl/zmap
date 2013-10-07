@@ -310,4 +310,32 @@ description=assembly path for displayed sequence
 parent-style=assembly
 
 
+[style-Annotation]
+description=annotation column for creating and editing temporary features
+parent-style=transcript
+width=20
+show-when-empty=true
+display-mode=hide
+frame-mode=always
+colours=normal border #000000 ; selected border #000000 ; selected fill #ffddcc
+transcript-cds-colours=normal fill white ; normal border SlateBlue ; selected fill gold
+strand-specific=false
+frame-specific=false
+show-reverse-strand=false
 
+[style-hand_built]
+description=default column for hand-built features
+parent-style=transcript
+width=6
+
+[style-annotationcolumn]
+colours=normal fill #ddeeff ; selected fill #eeffcc
+width=20
+show-when-empty=true
+
+[style-ORF]
+colours=normal fill #ffffff ; normal border #898994 ; selected fill gold ; selected border #000000\n \
+width=11
+frame-mode=only-3
+strand-specific=true
+show-reverse-strand=false
