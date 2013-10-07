@@ -42,19 +42,6 @@
 typedef struct ZMapGFFParserStruct_ *ZMapGFFParser ;
 
 
-/*
- * Version of GFF in use; only these symbols should be used. These are used
- * as numerical values at some points, so must not be changed!
- */
-typedef enum
-{
-  ZMAPGFF_VERSION_2 = 2,
-  ZMAPGFF_VERSION_3 = 3,
-  ZMAPGFF_VERSION_UNKNOWN
-}  ZMapGFFVersion ;
-
-
-
 /* Feature clip mode, selects how individual feature coords should be clipped in relation
  * to the requested feature range (the gff file may contain features that are outside the
  * requested range. */
@@ -84,17 +71,8 @@ typedef struct
 } ZMapGFFHeaderStruct, *ZMapGFFHeader ;
 
 
-/*
- * Some new GFF interface functions.
- */
-gboolean zMapGFFGetVersionFromString(const char* const sString, int * const piOut) ;
-gboolean zMapGFFGetVersionFromGIO(GIOChannel * const pChannel, int * const piOut ) ;
 
-
-
-ZMapGFFParser zMapGFFCreateParser(int iGFFVersion, char *sequence, int features_start, int features_end) ;
-
-
+ZMapGFFParser zMapGFFCreateParser(char *sequence, int features_start, int features_end) ;
 gboolean zMapGFFParserInitForFeatures(ZMapGFFParser parser, GHashTable *sources, gboolean parse_only) ;
 gboolean zMapGFFParseHeader(ZMapGFFParser parser, char *line,
 			    gboolean *header_finished, ZMapGFFHeaderState *header_state) ;

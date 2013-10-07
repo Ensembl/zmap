@@ -100,7 +100,7 @@ static int parseFile(char *filename, char *sequence, GHashTable *styles)
 
   data.file     = openFileOrDie(filename);
 
-  data.parser   = zMapGFFCreateParser(2, sequence, 0, 0) ;
+  data.parser   = zMapGFFCreateParser(sequence, 0, 0) ;
 
   zMapGFFParserInitForFeatures(data.parser, styles, FALSE) ;
   data.gff_line = g_string_sized_new(2000);

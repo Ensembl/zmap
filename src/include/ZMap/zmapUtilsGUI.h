@@ -450,7 +450,8 @@ gboolean zMapGUIXWindowExists(Display *x_display, Window x_window, char *peer_cl
 
 char *zMapGUIGetEventAsText(GdkEventMask exclude_mask, GdkEventAny *any_event) ;
 
-gboolean zMapGUIGetMaxWindowSize(GtkWidget *toplevel, gint *width_out, gint *height_out) ;
+void zMapGUIGetMaxWindowSize(GtkWidget *toplevel, gint *width_out, gint *height_out) ;
+void zMapGUIMaximiseWindow(GtkWidget *toplevel) ;
 
 void zMapGUIMakeMenu(char *menu_title, GList *menu_sets, GdkEventButton *button_event) ;
 void zMapGUIPopulateMenu(ZMapGUIMenuItem menu,
@@ -538,9 +539,7 @@ void zMapGUINotebookDestroyAny(ZMapGuiNotebookAny note_any) ;
 void zMapGUINotebookMergeNotebooks(ZMapGuiNotebook notebook, ZMapGuiNotebook notebook_new) ;
 GtkWidget *zMapGUINotebookCreateDialog(ZMapGuiNotebook notebook_spec, char *help_title, char *help_text) ;
 GtkWidget *zMapGUINotebookCreateWidget(ZMapGuiNotebook notebook_spec) ;
-
 GtkWidget *zMapGUINotebookGetNoteBookWidg(GtkWidget *compound_note_widget) ;
-GtkWidget *zMapGUINotebookGetCurrChapterWidg(GtkWidget *compound_note_widget) ;
 
 gboolean zMapGUIXWindowChangeProperty(Display *x_display, Window x_window, char *property, char *change_to) ;
 

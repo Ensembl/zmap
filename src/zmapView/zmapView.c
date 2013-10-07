@@ -43,6 +43,12 @@
 #include <ZMap/zmapUtilsDebug.h>
 #include <ZMap/zmapGLibUtils.h>
 #include <ZMap/zmapGFF.h>
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+#include <ZMap/zmapUtilsXRemote.h>
+#include <ZMap/zmapXRemote.h>
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 #include <ZMap/zmapCmdLineArgs.h>
 #include <ZMap/zmapConfigDir.h>
 #include <ZMap/zmapConfigIni.h>
@@ -55,6 +61,8 @@
 /* need to be sorted out sometime */
 /* but we need this header for an html escaping function */
 #include <ZMap/zmapUrlUtils.h>
+
+
 
 #include <zmapView_P.h>
 
@@ -1296,52 +1304,29 @@ ZMapViewState zMapViewGetStatus(ZMapView zmap_view)
   return zmap_view->state ;
 }
 
-/* auto define of function to return view state as a string, see zmapEnum.h. */
-ZMAP_ENUM_AS_NAME_STRING_FUNC(zMapView2Str, ZMapViewState, VIEW_STATE_LIST) ;
-
-
-
-/* Get status of view and of feature set loading in view.
- * 
- * A summary string is returned but if state is
- * 
- * ZMAPVIEW_LOADED || state == ZMAPVIEW_UPDATING || state == ZMAPVIEW_LOADED
- * 
- * then lists of sources loading or that have failed to load will be returned
- * if loading_sources_out and/or failed_sources_out are non-NULL.
- * 
- *  */
-char *zMapViewGetLoadStatusStr(ZMapView view, char **loading_sources_out, char **failed_sources_out)
+char *zMapViewGetStatusStr(ZMapView view)
 {
-  char *load_state_str = NULL ;
-  ZMapViewState state = view->state ;
+  /* Array must be kept in synch with ZmapState enum in zmapView.h */
+  static char *zmapStates[] = {"Initialising", "Mapped",
+			       "Connecting", "Connected",
+			       "Data loading", "Data loaded","Columns loading",
+			       "Resetting", "Dying"} ;
   char *state_str ;
+  ZMapViewState state = view->state;
 
-  state_str = (char *)zMapView2Str(state) ;
+  zMapAssert(state >= ZMAPVIEW_INIT);
+  zMapAssert(state <= ZMAPVIEW_DYING) ;
 
-  if (state == ZMAPVIEW_LOADING || state == ZMAPVIEW_UPDATING || state == ZMAPVIEW_LOADED)
-    {
-      if (state == ZMAPVIEW_LOADING || state == ZMAPVIEW_UPDATING)
-	load_state_str = g_strdup_printf("%s (%d to go) (%d failed)", state_str,
-					 g_list_length(view->sources_loading),
-					 g_list_length(view->sources_failed)) ;
-      else
-	load_state_str = g_strdup_printf("%s (%d failed)", state_str,
-					 g_list_length(view->sources_failed)) ;
-
-      if (loading_sources_out)
-	*loading_sources_out = zMap_g_list_quark_to_string(view->sources_loading, NULL) ;
-
-      if (failed_sources_out)
-	*failed_sources_out = zMap_g_list_quark_to_string(view->sources_failed, NULL) ;
-    }
+  if (state == ZMAPVIEW_LOADING || state == ZMAPVIEW_UPDATING)
+    state_str = g_strdup_printf("%s (%d to go) (%d failed)", zmapStates[state],
+				view->sources_loading, view->sources_failed) ;
+  else if(state == ZMAPVIEW_LOADED)
+    state_str = g_strdup_printf("%s (%d failed)", zmapStates[state], view->sources_failed) ;
   else
-    {
-      load_state_str = g_strdup(state_str) ;
-    }
+    state_str = g_strdup(zmapStates[state]) ;
 
 
-  return load_state_str ;
+  return state_str ;
 }
 
 
@@ -1920,46 +1905,36 @@ ZMapViewConnection zmapViewRequestServer(ZMapView view, ZMapViewConnection view_
     }
 
   //printf("request featureset %s from %s\n",g_quark_to_string(GPOINTER_TO_UINT(req_featuresets->data)),server->url);
-  zMapStartTimer("LoadFeatureSet", g_quark_to_string(GPOINTER_TO_UINT(req_featuresets->data)));
+  zMapStartTimer("LoadFeatureSet",g_quark_to_string(GPOINTER_TO_UINT(req_featuresets->data)));
 
   /* force pipe servers to terminate, to fix mis-config error that causes a crash (RT 223055) */
   is_pipe = g_str_has_prefix(server->url,"pipe://");
 
-  if ((view_conn = createViewConnection(view, view_conn,
-					context, server->url,
-					(char *)server->format,
-					server->timeout,
-					(char *)server->version,
-					server->req_styles,
-					server->stylesfile,
-					req_featuresets,
-					dna_requested,
-					req_start,req_end,
-					terminate || is_pipe)))
-    {
-      /* Why does this need reiniting ? */
-      if (!view->sources_loading)
-	{
-	  g_list_free(view->sources_failed) ;
-	  view->sources_failed = NULL ;
-	}
 
-      view->sources_loading = zMap_g_list_insert_list_after(view->sources_loading, req_featuresets,
-							    g_list_length(view->sources_loading),
-							    TRUE) ;
+  if ((view_conn = createViewConnection(view, view_conn,
+				    context, server->url,
+				    (char *)server->format,
+				    server->timeout,
+				    (char *)server->version,
+				    server->req_styles,
+				    server->stylesfile,
+				    req_featuresets,
+				    dna_requested,
+				    req_start,req_end,
+				    terminate || is_pipe)))
+    {
+      if (!view->sources_loading)
+	view->sources_failed = 0;
+
+      (view->sources_loading)++ ;
 
       view_conn->show_warning = show_warning ;
     }
   else
     {
-      view->sources_failed = zMap_g_list_insert_list_after(view->sources_failed, req_featuresets,
-							   g_list_length(view->sources_failed),
-							   TRUE) ;
+      (view->sources_failed)++ ;
 
-      zMap_g_list_quark_print(req_featuresets, "req_featuresets", FALSE) ;
-
-      zMapLogWarning("createViewConnection() failed, failed sources now %d",
-		     g_list_length(view->sources_failed)) ;
+      zMapLogWarning("createViewConnection() failed, failed sources now %d", view->sources_failed) ;
     }
 
   return view_conn ;
@@ -2880,12 +2855,7 @@ static void stopStateConnectionChecking(ZMapView zmap_view)
  * NOTE that you cannot use a condvar here, if the connection thread signals us using a
  * condvar we will probably miss it, that just doesn't work, we have to pole for changes
  * and this is possible because this routine is called from the idle function of the GUI.
- * 
- * 
- * There are now too many state variables here, it's all confusing, this routine needs
- * a big tidy up.
- * 
- * 
+ *
  *  */
 static gboolean checkStateConnections(ZMapView zmap_view)
 {
@@ -2938,20 +2908,14 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 	    {
 	      load_features.feature_sets = connect_data->feature_sets ;
 
-
-
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	      /* DEBUG ONLY...LEAKS MEMORY... */
 	      {
 		char *feature_sets ;
 
 		feature_sets = zMap_g_list_quark_to_string(load_features.feature_sets) ;
-
-		zMapDebugPrintf("%s\n", feature_sets) ;
 	      }
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 
 
 	      load_features.xwid = zmap_view->xwid ;
@@ -3212,7 +3176,6 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 	      list_item = zmap_view->connection_list ;
 
 
-	      /* GOSH....I DON'T UNDERSTAND THIS..... */
 	      if (view_con->step_list)
       		reqs_finished = TRUE;
 
@@ -3314,25 +3277,20 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-		      /* 
-			 results in overreporting of failed connections....hardly surprising as it
-			 counts ALL the requests that failed, e.g. unsupported ones.... */
+		      /* results in overreporting of failed connections.... */
 		      (zmap_view->sources_failed)++ ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-		      if (request_type == ZMAP_SERVERREQ_FEATURES)
-			{
-			  zmap_view->sources_failed
-			    = zMap_g_list_insert_list_after(zmap_view->sources_failed,
-							    load_features.feature_sets,
-							    g_list_length(zmap_view->sources_failed),
-							    TRUE) ;
-			}
+		  if (request_type == ZMAP_SERVERREQ_FEATURES)
+		    {
+		      /* hack until server stuff properly sorted out..only report when feature request fails... */
+		      (zmap_view->sources_failed)++ ;
+		    }
 
 
 		      zMapLogWarning("Thread %p failed, request = %s, failed sources now %d",
 				     thread,
 				     request_type_str,
-				     g_list_length(zmap_view->sources_failed)) ;
+				     zmap_view->sources_failed) ;
 		    }
 
 		  if (request_type == ZMAP_SERVERREQ_FEATURES)
@@ -3376,48 +3334,38 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
 
 
-  /* ok...there's some problem here, the loaded counter gets decremented in
-   * processDataRequests() and it can reach zero but we don't enter this section
-   * of code so we don't record the state as "loaded"....agh.....
-   * 
-   * One problem might be that has_step_list is only ever incremented ??
-   * 
-   * Looks like reqs_finished == TRUE but there is still a step_list. 
-   * 
-   *  */
-
+  if (!has_step_list && reqs_finished)
+    {
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* Use this to trap this problem..... */
-  if ((has_step_list || !reqs_finished) && !(zmap_view->sources_loading))
-    printf("found it\n") ;
+      zmapViewBusy(zmap_view, FALSE) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-  /* Once a view is loaded there won't be any more column changes until the user elects
-   * to load a new column. */
-  if (zmap_view->state != ZMAPVIEW_LOADED)
-    {
-      if (!has_step_list && reqs_finished)
+
+      /*
+       * rather than count up the number loaded we say 'LOADED' if there's no LOADING active
+       * This accounts for failures as well as completed loads
+       */
+      zmap_view->state = ZMAPVIEW_LOADED ;
+      zmap_view->sources_loading = 0;
+      state_change = TRUE;
+
+
+#if 0
+      /* MH17 NOTE: I'm re-using this flag for the moment just to see if it's effective
+       * if restarting a session then load pipes in series (from cached files)
+       * then display the lot once only instead of moving columns sideways many times
+       */
+      if(zmap_view->serial_load)
 	{
-	  /*
-	   * rather than count up the number loaded we say 'LOADED' if there's no LOADING active
-	   * This accounts for failures as well as completed loads
+	  /* 4th arg is a list of masked featuresets which are relevant if updating
+	   * here we display the lot so no problem
 	   */
-	  zmap_view->state = ZMAPVIEW_LOADED ;
-	  g_list_free(zmap_view->sources_loading) ;
-	  zmap_view->sources_loading = NULL ;
-
-	  state_change = TRUE ;
+	  justDrawContext(zmap_view, zmap_view->features, zmap_view->context_map.styles , NULL);
+	  zmap_view->serial_load = FALSE;
 	}
-      else if (!(zmap_view->sources_loading))
-	{
-	  /* We shouldn't need to do this if reqs_finished and has_step_list were consistent. */
-
-	  zmap_view->state = ZMAPVIEW_LOADED ;
-	  state_change = TRUE ;
-	}
+#endif
     }
-
 
   /* Inform the layer about us that our state has changed. */
   if (state_change)
@@ -4033,8 +3981,6 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 
 	    if (connect_data->get_features)  /* may be nul if server died */
 	      {
-
-		/* Gosh...what a dereference.... */
 		zMapStopTimer("LoadFeatureSet",
 			      g_quark_to_string(GPOINTER_TO_UINT(connect_data->get_features->context->req_feature_set_names->data)));
 
@@ -4043,13 +3989,10 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 		  connect_data->feature_sets = g_list_copy(connect_data->get_features->context->src_feature_set_names) ;
 
 		getFeatures(zmap_view, connect_data->get_features, connect_data) ;
+
 	      }
-
-	    /* Is this the right place to decrement....dunno.... */
             /* we record succcessful requests, if some fail they will get zapped in checkstateconnections() */
-	    zmap_view->sources_loading = zMap_g_list_remove_quarks(zmap_view->sources_loading,
-								   connect_data->feature_sets) ;
-
+	    zmap_view->sources_loading--;
 	  }
 
 	break ;

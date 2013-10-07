@@ -34,10 +34,7 @@
 
 
 /* Default gff version parsed. */
-enum
-{
-  GFF_DEFAULT_VERSION = ZMAPGFF_VERSION_2
-} ;
+enum {GFF_DEFAULT_VERSION = 2} ;
 
 
 /* THE TWO MAX CHAR LIMITS NEED TO GO...NEEDS TO BE TOTALLY DYNAMIC..... */
@@ -49,7 +46,7 @@ enum
 
 /* Dynamically resizing buffers are good but they must have a limit to avoid malicious
  * exploitation.
- *
+ * 
  * Note, our system here is that we set a limit to the length of line we will parse,
  * each buffer is then extended to be this size so that no one gff field value can cause
  * a buffer overrun.
@@ -119,8 +116,6 @@ typedef struct ZMapGFFParserFeatureSetStruct_
 /* The main parser struct, this represents an instance of a parser. */
 typedef struct ZMapGFFParserStruct_
 {
-  ZMapGFFVersion gff_version ;
-
   ZMapGFFParseState state ;
   GError *error ;					    /* Holds last parser error. */
   GQuark error_domain ;
@@ -156,6 +151,7 @@ typedef struct ZMapGFFParserStruct_
   } header_flags ;
   ZMapGFFHeaderState header_state ;
 
+  int gff_version ;
 
   char *sequence_name ;
   int features_start, features_end ;			    /* in GFF these are based from 1 */

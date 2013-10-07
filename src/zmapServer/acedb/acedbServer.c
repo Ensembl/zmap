@@ -935,7 +935,7 @@ static ZMapServerResponseType closeConnection(void *server_in)
     {
       result = ZMAP_SERVERRESPONSE_OK ;
     }
-
+  
 
 
   return result ;
@@ -1284,7 +1284,6 @@ static gboolean sequenceRequest(DoAllAlignBlocks get_features, ZMapFeatureBlock 
   GList *loadable_methods = NULL ;
   char *methods = "" ;
   gboolean no_clip = TRUE ;
-  int iGFFVersion = 2 ;
 
 
 
@@ -1433,13 +1432,7 @@ static gboolean sequenceRequest(DoAllAlignBlocks get_features, ZMapFeatureBlock 
 
 	  /* Set up the parser, if we are doing cols/styles then set hash tables
 	   * in parser to map the gff source name to the Feature Set (== Column) and a Style. */
-   if (!zMapGFFGetVersionFromString(next_line, &iGFFVersion))
-   {
-     setErrMsg(server,  g_strdup_printf("Could not determine GFF version from line: %s", next_line)) ;
-     ZMAPSERVER_LOG(Critical, ACEDB_PROTOCOL_STR, server->host, "%s", server->last_err_msg) ;
-   }
-
-	  parser = zMapGFFCreateParser(iGFFVersion, (char *) g_quark_to_string(feature_block->original_id),
+	  parser = zMapGFFCreateParser((char *) g_quark_to_string(feature_block->original_id),
 
 				       server->zmap_start, server->zmap_end) ;
 	  zMapGFFParserInitForFeatures(parser, styles, FALSE) ;
@@ -1951,7 +1944,7 @@ static gboolean getSMapping(AcedbServer server, char *class,
     {
       child_to_parent.parent.x1 = child_to_parent.block.x1 = start ;
       child_to_parent.parent.x2 = child_to_parent.block.x2 = end ;
-
+      
       *child_to_parent_out = child_to_parent ;    /* n.b. struct copy. */
     }
 
@@ -2310,7 +2303,7 @@ static gboolean getServerInfo(AcedbServer server, ZMapServerReqGetServerInfo inf
 		}
 	    }
 	}
-
+     
 
       g_free(reply) ;
       reply = NULL ;
