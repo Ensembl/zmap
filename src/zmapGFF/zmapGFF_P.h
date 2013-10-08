@@ -116,91 +116,78 @@ typedef struct ZMapGFFParserFeatureSetStruct_
 
 
 
-/* The main parser struct, this represents an instance of a parser. */
+/*
+ * Definition for common data for all parser struct types. I have put this in as a macro
+ * definition to make sure the same thing is used and the order of the data is preserved.
+ * Original definitions with associated comments were as follows:
+
+
+  ZMapGFFVersion gff_version ;
+  int line_count ;					                          Contains number of lines processed.
+  char *sequence_name ;
+  int features_start, features_end ;			          In GFF these are based from 1
+
+  int clip_start, clip_end ;				                 Coords used for clipping.
+  GHashTable *sources ;		                        NOTE for sources read styles; If present, only make features from
+                                                 GFF records with a source from this list.
+  gboolean parse_only ;					                     TRUE => just parse the GFF for correctness, don't create feature arrays.
+  ZMapFeatureTypeStyle locus_set_style ;	   	    cached locus style.
+  GQuark locus_set_id ;					                     if not zero then make a locus set from locus tags in sequence objects.
+  gboolean free_on_destroy ;				                 TRUE => free all feature arrays when parser is destroyed.
+  GData *feature_sets ;					                     A list of ZMapGFFParserFeatureSetStruct. There is one of these structs per
+							                                          "source". The struct contains among other things an array of all features for that source.
+  GError *error ;					                           Holds last parser error.
+  GHashTable *excluded_features ;			             Records all features that should be excluded (e.g. because they are outside coords of ref. sequence).
+  GHashTable *source_2_feature_set ;			          Optionally maps source to a feature set.
+  GHashTable *source_2_sourcedata ;			           Optionally maps source to extra source data.
+  gboolean stop_on_error ;				                   Stop parsing if there is an error.
+  gboolean default_to_basic ;			           	     TRUE => Unrecognised feature types will be created as basic features.
+
+  GList *src_feature_sets;                       list of quarks of actual feature sets in the context
+
+ */
+
+#define ZMAPGFF_PARSER_STRUCT_COMMON_DATA                                                            \
+                                              ZMapGFFVersion gff_version ;                           \
+                                              ZMapGFFParseState state ;                              \
+                                              int features_start,                                    \
+                                                  features_end,                                      \
+                                                  line_count ,                                       \
+                                                  num_features,                                      \
+                                                  clip_start,                                        \
+                                                  clip_end ;                                         \
+                                              char *sequence_name ;                                  \
+                                              gboolean parse_only,                                   \
+                                                free_on_destroy,                                     \
+                                                stop_on_error,                                       \
+                                                default_to_basic ;                                   \
+                                              GString *raw_line_data ;                               \
+                                              GHashTable *sources,                                   \
+                                                         *excluded_features,                         \
+                                                         *source_2_feature_set,                      \
+                                                         *source_2_sourcedata;                       \
+                                              ZMapFeatureTypeStyle locus_set_style ;	             	  \
+                                              GQuark locus_set_id, error_domain ;                    \
+                                              GData *feature_sets ;                                  \
+                                              GError *error ;                                        \
+                                              GList *src_feature_sets;
+
+
+
+
+/*
+ * Base "class" for the parser. The declarations of the derived ones are in
+ * the files "zmapGFF2_P.h" and "zmapGFF3_P.h".
+ *
+ */
 typedef struct ZMapGFFParserStruct_
 {
-  ZMapGFFVersion gff_version ;
-
-  ZMapGFFParseState state ;
-  GError *error ;					    /* Holds last parser error. */
-  GQuark error_domain ;
-  int line_count ;					    /* Contains number of lines
-							       processed. */
-  int num_features;
-
-  GHashTable *source_2_feature_set ;			    /* Optionally maps source to a feature set. */
-  GHashTable *source_2_sourcedata ;			    /* Optionally maps source to extra
-							       source data. */
-  gboolean stop_on_error ;				    /* Stop parsing if there is an error. */
-  gboolean parse_only ;					    /* TRUE => just parse the GFF for
-							       correctness, don't create feature arrays. */
-  gboolean default_to_basic ;				    /* TRUE => Unrecognised feature types will
-							       be created as basic features. */
-  gboolean SO_compliant ;				    /* TRUE => use only SO terms for
-							       feature types. */
-  gboolean free_on_destroy ;				    /* TRUE => free all feature arrays
-							       when parser is destroyed. */
-  ZMapGFFClipMode clip_mode ;				    /* Decides how features that overlap
-							       or are outside the start/end are
-							       handled. */
-  int clip_start, clip_end ;				    /* Coords used for clipping. */
+  /*
+   * Data common to both versions.
+   */
+  ZMAPGFF_PARSER_STRUCT_COMMON_DATA
 
 
-  /* File data: some derived from the file directly. */
-  struct
-  {
-    unsigned int done_header : 1 ;			    /* Is the header processed ? */
-
-    unsigned int got_gff_version : 1 ;
-    unsigned int got_sequence_region : 1 ;
-  } header_flags ;
-  ZMapGFFHeaderState header_state ;
-
-
-  char *sequence_name ;
-  int features_start, features_end ;			    /* in GFF these are based from 1 */
-
-
-  /* Parsing feature data. */
-  ZMapFeatureTypeStyle locus_set_style ;		    /* cached locus style. */
-  GQuark locus_set_id ;					    /* If not zero then make a locus set from
-							       locus tags in sequence objects. */
-
-  GHashTable *excluded_features ;			    /* Records all features that should be
-							       excluded (e.g. because they are
-							       outside corods of ref. sequence). */
-
-  // NOTE for sources read styles
-  GHashTable *sources ;					    /* If present, only make features from
-							       GFF records with a source from this
-							       list. */
-
-  GData *feature_sets ;					    /* A list of ZMapGFFParserFeatureSetStruct.
-							       There is one of these structs per
-							       "source". The struct contains among
-							       other things an array of all
-							       features for that source. */
-
-  GList *src_feature_sets;                      /* list of quarks of actual feature sets in the context */
-
-  /* Parsing buffers, since lines can be long we allocate these dynamically from the
-   * known line length and construct a format string for the scanf using this length. */
-  gsize buffer_length ;
-  char **buffers[GFF_BUF_NUM] ;
-  char *format_str ;
-  char *cigar_string_format_str ;
-
-  /* Parsing DNA sequence data, used when DNA sequence is embedded in the file. */
-  struct
-  {
-    unsigned int done_start : 1 ;
-    unsigned int in_sequence_block : 1 ;
-    unsigned int done_finished :1 ;
-  } sequence_flags ;
-
-  GString *raw_line_data ;
-
-  ZMapSequenceStruct seq_data ;
 
 } ZMapGFFParserStruct ;
 

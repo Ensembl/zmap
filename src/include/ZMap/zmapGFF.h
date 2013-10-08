@@ -72,7 +72,13 @@ typedef enum
 /* Types/Struct for GFF file header info., currently this is all we are interested
  * in but this may expand as GFFv3 support is introduced. */
 
-typedef enum {GFF_HEADER_NONE, GFF_HEADER_ERROR, GFF_HEADER_INCOMPLETE, GFF_HEADER_COMPLETE} ZMapGFFHeaderState ;
+typedef enum
+{
+  GFF_HEADER_NONE,
+  GFF_HEADER_ERROR,
+  GFF_HEADER_INCOMPLETE,
+  GFF_HEADER_COMPLETE
+} ZMapGFFHeaderState ;
 
 typedef struct
 {
@@ -91,16 +97,19 @@ gboolean zMapGFFGetVersionFromString(const char* const sString, int * const piOu
 gboolean zMapGFFGetVersionFromGIO(GIOChannel * const pChannel, int * const piOut ) ;
 
 
-
+/*
+ * Modified old interface.
+ */
 ZMapGFFParser zMapGFFCreateParser(int iGFFVersion, char *sequence, int features_start, int features_end) ;
-
-
 gboolean zMapGFFParserInitForFeatures(ZMapGFFParser parser, GHashTable *sources, gboolean parse_only) ;
-gboolean zMapGFFParseHeader(ZMapGFFParser parser, char *line,
-			    gboolean *header_finished, ZMapGFFHeaderState *header_state) ;
+gboolean zMapGFFParseHeader(ZMapGFFParser parser, char *line, gboolean *header_finished, ZMapGFFHeaderState *header_state) ;
+gboolean zMapGFFParseSequence(ZMapGFFParser parser, char *line, gboolean *sequence_finished) ;
 gboolean zMapGFFParseLine(ZMapGFFParser parser, char *line) ;
 gboolean zMapGFFParseLineLength(ZMapGFFParser parser, char *line, gsize line_length) ;
-gboolean zMapGFFParseSequence(ZMapGFFParser parser, char *line, gboolean *sequence_finished) ;
+
+/*
+ * Unchanged old interface.
+ */
 gboolean zMapGFFParserSetSequenceFlag(ZMapGFFParser parser);
 ZMapSequence zMapGFFGetSequence(ZMapGFFParser parser);
 GHashTable *zMapGFFParserGetStyles(ZMapGFFParser parser);
