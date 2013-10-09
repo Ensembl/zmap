@@ -653,7 +653,8 @@ static void scratchEraseFeature(ZMapView zmap_view)
   ZMapFeatureSet feature_set = zmapViewScratchGetFeatureset(zmap_view);
   g_return_if_fail(feature_set) ;
 
-  ZMapFeature feature = zmapViewScratchGetFeature(feature_set, ZMAPSTRAND_FORWARD);
+  ZMapStrand strand = (zmap_view->flags[ZMAPFLAG_REVCOMPED_FEATURES] ? ZMAPSTRAND_REVERSE : ZMAPSTRAND_FORWARD) ;
+  ZMapFeature feature = zmapViewScratchGetFeature(feature_set, strand) ;
   g_return_if_fail(feature) ;
 
   GList *feature_list = NULL ;
@@ -674,6 +675,8 @@ static ZMapFeature scratchCreateNewFeature(ZMapView zmap_view)
   ZMapFeatureSet feature_set = zmapViewScratchGetFeatureset(zmap_view);
   g_return_val_if_fail(feature_set, NULL) ;
 
+  ZMapStrand strand = (zmap_view->flags[ZMAPFLAG_REVCOMPED_FEATURES] ? ZMAPSTRAND_REVERSE : ZMAPSTRAND_FORWARD) ;
+
   /* Create the feature with default values */
   ZMapFeature feature = zMapFeatureCreateFromStandardData(SCRATCH_FEATURE_NAME,
                                                           NULL,
@@ -684,7 +687,7 @@ static ZMapFeature scratchCreateNewFeature(ZMapView zmap_view)
                                                           0,
                                                           FALSE,
                                                           0.0,
-                                                          ZMAPSTRAND_FORWARD);
+                                                          strand);
 
   zMapFeatureTranscriptInit(feature);
   zMapFeatureAddTranscriptStartEnd(feature, FALSE, 0, FALSE);    
@@ -938,9 +941,11 @@ void zMapViewToggleScratchColumn(ZMapView view, gboolean force_to, gboolean forc
  */
 void scratchFeatureReset(ZMapView view)
 {
+  ZMapStrand strand = (view->flags[ZMAPFLAG_REVCOMPED_FEATURES] ? ZMAPSTRAND_REVERSE : ZMAPSTRAND_FORWARD) ;
+
   /* Get the singleton features that exist in each strand of the scatch column */
   ZMapFeatureSet scratch_featureset = zmapViewScratchGetFeatureset(view);
-  ZMapFeature scratch_feature = zmapViewScratchGetFeature(scratch_featureset, ZMAPSTRAND_FORWARD);
+  ZMapFeature scratch_feature = zmapViewScratchGetFeature(scratch_featureset, strand);
 
   //zmapViewWindowsRemoveFeatureset(view, scratch_featureset) ;
 

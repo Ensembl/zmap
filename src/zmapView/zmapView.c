@@ -1145,11 +1145,6 @@ gboolean zMapViewReverseComplement(ZMapView zmap_view)
   gboolean result = FALSE ;
 
 
-  /* Clear any features in the scratch column (only required because
-   * its undo/redo stack has pointers to features which will become
-   * invalidated after the revcomp) */
-  zmapViewScratchClear(zmap_view);
-
 //  if (zmap_view->state == ZMAPVIEW_LOADED)
 // data is processed only when idle so this should be safe
     if(zmap_view->features)
@@ -1181,6 +1176,11 @@ gboolean zMapViewReverseComplement(ZMapView zmap_view)
 
       zMapWindowNavigatorSetStrand(zmap_view->navigator_window, zmap_view->flags[ZMAPFLAG_REVCOMPED_FEATURES]);
       zMapWindowNavigatorDrawFeatures(zmap_view->navigator_window, zmap_view->features, zmap_view->context_map.styles);
+
+      /* Clear any features in the scratch column (only required because
+       * its undo/redo stack has pointers to features which will become
+       * invalidated after the revcomp) */
+      zmapViewScratchClear(zmap_view);
 
       if((list_item = g_list_first(zmap_view->window_list)))
 	{
