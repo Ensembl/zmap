@@ -22,9 +22,10 @@
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk
  *
- * Description: Internal types, functions etc. for the GFF parser,
- *              currently this parser only does GFF v2.
+ * Description: Internal types, functions etc. for the GFF parser.
+ *              This contains functionality common to v2 and v3 of GFF.
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_GFF_P_H

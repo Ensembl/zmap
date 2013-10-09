@@ -21,7 +21,8 @@
  * originated by
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk,
+ *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk
  *
  * Description: Interface to a GFF parser, the parser works in a
  *              "line at a time" way, the caller must pass complete
