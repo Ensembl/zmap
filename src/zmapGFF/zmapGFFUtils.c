@@ -1,6 +1,46 @@
+/*  File: zmapGFFUtils.c
+ *  Author: Steve Miller (sm23@sanger.ac.uk)
+ *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *-------------------------------------------------------------------
+ * ZMap is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ * or see the on-line version at http://www.gnu.org/copyleft/gpl.txt
+ *-------------------------------------------------------------------
+ * This file is part of the ZMap genome database package
+ * originated by
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk,
+ *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk
+ *
+ * Description: Some functions that are used in parser construction and
+ * interfaces. It is necessary to query the input stream for the version
+ * of GFF being passed in _before_ creating the parser - because we use
+ * different data structure and associated functions for each of
+ * versions 2 and 3. Note that this is a little more complex when passed
+ * a GIOStream.
+ *-------------------------------------------------------------------
+ */
+
+
+
 #include <glib.h>
 #include <string.h>
 #include <ZMap/zmapGFF.h>
+
+
+
 /*
  * This function expects a string of the form
  *
