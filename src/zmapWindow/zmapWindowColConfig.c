@@ -1217,7 +1217,10 @@ static GtkWidget *deferred_cols_panel(NotebookPage notebook_page,
                   col = g_hash_table_lookup(window->context_map->columns, GUINT_TO_POINTER(zMapFeatureSetCreateID(column_name)));
                   zMapAssert(col);
 
-                  loaded_in_mark = column_is_loaded_in_range(window->context_map,page_data->block,col->unique_id,mark1,mark2);
+                  if (col)
+                    loaded_in_mark = column_is_loaded_in_range(window->context_map,page_data->block,col->unique_id,mark1,mark2);
+                  else
+                    zMapWarning("Column lookup failed for '%s'\n", column_name ? column_name : "") ;
 		}
 
 	      col_id = zMapFeatureSetCreateID(column_name);
