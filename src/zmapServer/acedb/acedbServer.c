@@ -1658,13 +1658,24 @@ static gboolean blockDNARequest(AcedbServer server, GHashTable *styles, ZMapFeat
 
       if (zMap_g_list_find_quark(context->req_feature_set_names, zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME)))
 	{
+          ZMapFeatureSet translation_fs = NULL;
+          
 	  if ((zMapFeature3FrameTranslationCreateSet(feature_block, &feature_set)))
 	    {
+              translation_fs = feature_set;
 	      ZMapFeatureTypeStyle frame_style = NULL;
 
 	      if((frame_style = zMapFindStyle(styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME))))
-			zMapFeature3FrameTranslationSetCreateFeatures(feature_set, frame_style);
+                zMapFeature3FrameTranslationSetCreateFeatures(feature_set, frame_style);
 	    }
+
+          if ((zMapFeatureORFCreateSet(feature_block, &feature_set)))
+            {
+              ZMapFeatureTypeStyle frame_style = NULL;
+              
+              if ((frame_style = zMapFindStyle(styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_ORF_NAME))))
+                zMapFeatureORFSetCreateFeatures(feature_set, frame_style, translation_fs);
+            }
 	}
 
 

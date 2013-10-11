@@ -37,6 +37,7 @@
 #include <ZMap/zmapIO.h>
 #include <ZMap/zmapWindow.h>
 #include <zmapWindowMark.h>
+#include <zmapWindowScratch_P.h>
 #include <zmapWindowContainerGroup.h>
 #include <zmapWindowContainerUtils.h>
 
@@ -484,8 +485,7 @@ typedef enum
  *           Default colours.
  */
 
-#define ZMAP_WINDOW_BACKGROUND_COLOUR "white"	    /* main canvas background */
-
+#define ZMAP_WINDOW_BACKGROUND_COLOUR "white"		    /* main canvas background */
 #define ZMAP_WINDOW_BLOCK_BACKGROUND_COLOUR "white"	    /* main canvas background */
 
 #define ZMAP_WINDOW_STRAND_DIVIDE_COLOUR "yellow"	    /* Marks boundary of forward/reverse strands. */
@@ -810,9 +810,7 @@ typedef struct _ZMapWindowStruct
 
   ZMapWindowState state;	/* need to store this see revcomp, RT 229703 */
 
-  /* We need to be able to find out if the user has done a revcomp for coordinate display
-   * and other reasons. */
-  gboolean revcomped_features ;
+  gboolean *flags ; /* array of flags from the view level */
 
   /* The display_forward_coords flag controls whether coords are displayed
    * always as if for the original forward strand or for the whichever is the current forward
@@ -841,6 +839,7 @@ typedef struct
 {
   ZMapWindow window ;
   void *data ;
+  gpointer loaded_cb_user_data ;
 } zmapWindowDataStruct, *zmapWindowData ;
 
 typedef struct
@@ -1069,7 +1068,7 @@ FooCanvasItem *zmapWindowFToIFindSetItem(ZMapWindow window,GHashTable *feature_t
 					 ZMapFeatureSet feature_set,
 					 ZMapStrand strand, ZMapFrame frame) ;
 FooCanvasItem *zmapWindowFToIFindFeatureItem(ZMapWindow window,GHashTable *feature_to_context_hash,
-                               ZMapStrand set_strand, ZMapFrame set_frame, ZMapFeature feature) ;
+					     ZMapStrand set_strand, ZMapFrame set_frame, ZMapFeature feature) ;
 FooCanvasItem *zmapWindowFToIFindItemChild(ZMapWindow window,GHashTable *feature_to_context_hash,
 					   ZMapStrand set_strand, ZMapFrame set_frame,
 					   ZMapFeature feature, int child_start, int child_end) ;
@@ -1349,6 +1348,12 @@ ZMapGUIMenuItem zmapWindowMakeMenuMarkExportOps(int *start_index_inout,
 ZMapGUIMenuItem zmapWindowMakeMenuFeatureOps(int *start_index_inout,
 					     ZMapGUIMenuItemCallbackFunc callback_func,
 					     gpointer callback_data) ;
+ZMapGUIMenuItem zmapWindowMakeMenuScratchOps(int *start_index_inout,
+					     ZMapGUIMenuItemCallbackFunc callback_func,
+					     gpointer callback_data) ;
+ZMapGUIMenuItem zmapWindowMakeMenuColumnOps(int *start_index_inout,
+                                            ZMapGUIMenuItemCallbackFunc callback_func,
+                                            gpointer callback_data) ;
 
 void zmapWindowFeatureExpand(ZMapWindow window, FooCanvasItem *foo,
 			     ZMapFeature feature, ZMapWindowContainerFeatureSet container_set) ;

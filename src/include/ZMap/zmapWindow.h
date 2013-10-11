@@ -102,6 +102,15 @@ typedef enum
     ZMAP_WINDOW_3FRAME_ALL				    /* All 3 frame cols. */
   } ZMapWindow3FrameMode ;
 
+typedef enum 
+  {
+    ZMAPFLAG_REVCOMPED_FEATURES,         /* True if the user has done a revcomp */
+    ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS, /* True if filtered columns should be highlighted */
+    
+    ZMAPFLAG_NUM_FLAGS                   /* Must be last in list */
+  } ZMapFlag;
+
+
 
 /*! ZMap Window has various callbacks which will return different types of data for various actions. */
 
@@ -175,23 +184,6 @@ typedef struct
 
   ZMapWindowFilterStruct filter;
 
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* MUST ALL GO NOW.... */
-
-  /* Old xremote stuff.... */
-
-  /* For Xremote XML actions/events. */
-  ZMapXRemoteSendCommandError remote_result ;
-
-  ZMapXMLHandlerStruct xml_handler ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-
 } ZMapWindowSelectStruct, *ZMapWindowSelect ;
 
 
@@ -226,7 +218,11 @@ typedef enum
     ZMAPWINDOW_CMD_INVALID,
     ZMAPWINDOW_CMD_GETFEATURES,
     ZMAPWINDOW_CMD_SHOWALIGN,
-    ZMAPWINDOW_CMD_REVERSECOMPLEMENT
+    ZMAPWINDOW_CMD_REVERSECOMPLEMENT,
+    ZMAPWINDOW_CMD_COPYTOSCRATCH,
+    ZMAPWINDOW_CMD_CLEARSCRATCH,
+    ZMAPWINDOW_CMD_UNDOSCRATCH,
+    ZMAPWINDOW_CMD_REDOSCRATCH
   } ZMapWindowCommandType ;
 
 
@@ -321,6 +317,22 @@ typedef struct
 } ZMapWindowCallbackCommandRevCompStruct, *ZMapWindowCallbackCommandRevComp ;
 
 
+typedef struct ZMapWindowCallbackCommandScratchStructName
+{
+  /* Common section. */
+  ZMapWindowCommandType cmd ;
+
+  ZMapFeatureBlock block ;
+
+  /* Scratch specific section. */
+  ZMapFeature feature;  /* clicked feature */
+  FooCanvasItem *item;  /* clicked item */
+  double world_x;       /* clicked x pos in world coords */
+  double world_y;       /* clicked y pos in world coords */
+  gboolean use_subfeature; /* whether use selected a subfeature; false if selected whole feature */
+} ZMapWindowCallbackCommandScratchStruct, *ZMapWindowCallbackCommandScratch ;
+
+
 
 
 
@@ -329,6 +341,9 @@ typedef struct
 /* Callback functions that can be registered with ZMapWindow, functions are registered all in one.
  * go via the ZMapWindowCallbacksStruct. */
 typedef void (*ZMapWindowCallbackFunc)(ZMapWindow window, void *caller_data, void *window_data) ;
+typedef void (*ZMapWindowLoadCallbackFunc)(ZMapWindow window,
+					   void *caller_data, gpointer load_cb_data, void *window_data) ;
+
 
 typedef struct _ZMapWindowCallbacksStruct
 {
@@ -341,7 +356,7 @@ typedef struct _ZMapWindowCallbacksStruct
   ZMapWindowCallbackFunc setZoomStatus ;
   ZMapWindowCallbackFunc visibilityChange ;
   ZMapWindowCallbackFunc command ;			    /* Request to exit given command. */
-  ZMapWindowCallbackFunc drawn_data ;
+  ZMapWindowLoadCallbackFunc drawn_data ;
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -362,7 +377,7 @@ typedef struct _ZMapWindowCallbacksStruct
 void zMapWindowInit(ZMapWindowCallbacks callbacks) ;
 ZMapWindow zMapWindowCreate(GtkWidget *parent_widget,
                             ZMapFeatureSequenceMap sequence, void *app_data,
-                            GList *feature_set_names) ;
+                            GList *feature_set_names, gboolean *flags) ;
 ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, ZMapFeatureSequenceMap sequence,
 			  void *app_data, ZMapWindow old,
 			  ZMapFeatureContext features, GHashTable *all_styles, GHashTable *new_styles,
@@ -385,7 +400,7 @@ void zMapWindowBusyFull(ZMapWindow window, gboolean busy, const char *file, cons
 void zMapWindowDisplayData(ZMapWindow window, ZMapWindowState state,
 			   ZMapFeatureContext current_features, ZMapFeatureContext new_features,
 			   ZMapFeatureContextMap context_map,
-			   GList *masked, ZMapFeature highlight_feature) ;
+			   GList *masked, ZMapFeature highlight_feature, gpointer loaded_cb_user_data) ;
 void zMapWindowUnDisplayData(ZMapWindow window,
                              ZMapFeatureContext current_features,
                              ZMapFeatureContext new_features);
@@ -407,6 +422,10 @@ double zMapWindowGetZoomMax(ZMapWindow window) ;
 double zMapWindowGetZoomMagnification(ZMapWindow window);
 double zMapWindowGetZoomMagAsBases(ZMapWindow window) ;
 double zMapWindowGetZoomMaxDNAInWrappedColumn(ZMapWindow window);
+gboolean zMapWindowItemGetSeqCoord(FooCanvasItem *item, gboolean set, double x, double y, long *seq_start, long *seq_end);
+FooCanvasItem *zMapWindowItemGetInterval(FooCanvasItem *item,
+                                         double x, double y,
+                                         ZMapFeatureSubPartSpan *sub_feature_out);
 
 gboolean zMapWindowZoomToFeature(ZMapWindow window, ZMapFeature feature) ;
 void zMapWindowZoomToWorldPosition(ZMapWindow window, gboolean border,
@@ -439,6 +458,9 @@ void zMapWindowToggleDNAProteinColumns(ZMapWindow window,
                                        GQuark align_id,   GQuark block_id,
                                        gboolean dna,      gboolean protein, gboolean trans,
                                        gboolean force_to, gboolean force);
+void zMapWindowToggleScratchColumn(ZMapWindow window,
+                                   GQuark align_id,   GQuark block_id,
+                                   gboolean force_to, gboolean force);
 
 void zMapWindowStateRecord(ZMapWindow window);
 void zMapWindowBack(ZMapWindow window);

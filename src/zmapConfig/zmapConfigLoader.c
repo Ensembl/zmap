@@ -1061,7 +1061,7 @@ gboolean zMapConfigLegacyStyles(char *config_file)
   if (!got)
     {
       got = TRUE ;
-      if ((context = zMapConfigIniContextProvide(NULL)))
+      if ((context = zMapConfigIniContextProvide(config_file)))
 	{
 	  zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
 					 ZMAPSTANZA_APP_LEGACY_STYLES, &result);

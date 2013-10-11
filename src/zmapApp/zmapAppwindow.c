@@ -298,8 +298,18 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   app_context->app_widg = toplevel = zMapGUIToplevelNew(NULL, NULL) ;
 
   gtk_window_set_policy(GTK_WINDOW(toplevel), FALSE, TRUE, FALSE ) ;
-
   gtk_container_border_width(GTK_CONTAINER(toplevel), 0) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* THIS IS THE OLD REMOTE HANDLER.... */
+  /* This ensures that the widget *really* has a X Window id when it
+   * comes to doing XChangeProperty.  Using realize doesn't and the
+   * expose_event means we can't hide the mainwindow. */
+  g_signal_connect(G_OBJECT(toplevel), "map-event",
+                   G_CALLBACK(zmapAppRemoteInstaller),
+                   (gpointer)app_context);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
   /* **NEW XREMOTE** THIS IS THE NEW HANDLER... */
@@ -1065,7 +1075,6 @@ static gboolean getConfiguration(ZMapAppContext app_context)
 	app_context->abbrev_title_prefix = tmp_bool ;
       zMapGUISetAbbrevTitlePrefix(app_context->abbrev_title_prefix) ;
       
-
 
       /* How long to wait when closing, before timeout */
       if (zMapConfigIniContextGetInt(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,

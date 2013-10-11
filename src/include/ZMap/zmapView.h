@@ -45,6 +45,23 @@
 
 
 
+/* Struct describing features loaded. */
+typedef struct ZMapViewLoadFeaturesDataStructName
+{
+  char *err_msg;        // from the server mainly
+  gchar *stderr_out;
+  gint exit_code;
+  int num_features;
+
+  GList *feature_sets ;
+  int start,end;        // requested coords
+  gboolean status;      // load sucessful?
+  unsigned long xwid ;  // X Window id for the xremote widg. */
+
+} ZMapViewLoadFeaturesDataStruct, *ZMapViewLoadFeaturesData ;
+
+
+
 /* Opaque type, represents an instance of a ZMapView. */
 typedef struct _ZMapViewStruct *ZMapView ;
 
@@ -158,7 +175,7 @@ ZMapViewWindow zMapViewGetDefaultViewWindow(ZMapView view) ;
 ZMapViewWindow zMapViewRemoveWindow(ZMapViewWindow view_window) ;
 
 void zMapViewRedraw(ZMapViewWindow view_window) ;
-gboolean zMapViewConnect(ZMapView zmap_view, char *config_str) ;
+gboolean zMapViewConnect(ZMapFeatureSequenceMap sequence_map, ZMapView zmap_view, char *config_str) ;
 gboolean zMapViewReset(ZMapView zmap_view) ;
 gboolean zMapViewReverseComplement(ZMapView zmap_view) ;
 gboolean zMapViewGetRevCompStatus(ZMapView zmap_view) ;

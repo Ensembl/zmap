@@ -188,184 +188,187 @@ printf("\n");
 
 PixRect zmapWindowCanvasFeaturesetSummarise(PixRect pix, ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature)
 {
-	FooCanvasItem *foo = (FooCanvasItem *) &featureset->__parent__;
-	PixRect this;
-	PixRect blocks = NULL;
-	PixRect pr,del,last = NULL;
-	gboolean always_gapped = (zMapStyleGetMode(featureset->style) == ZMAPSTYLE_MODE_ALIGNMENT) &&
-		zMapStyleIsAlwaysGapped(featureset->style) && feature->feature->feature.homol.align;
-
-	/*
-	 * NOTE this was originally written for simple features, and alignments split into separate features
-	 * for always gapped alignments (ditags and short reads) we have to expand the match blocks and process each one
-	 * so we have a pix_rect for each match block and each one of these points to a feature
-	 * this requires us to set features visible explicilty as one feature appears in several blocks
-	 *
-	 * good news is that this process can be extended to other complex features
-	 * eg (vulgar alignments and transcripts) when they are implemented
-	 */
-
-	feature->flags |= FEATURE_SUMMARISED | FEATURE_HIDDEN;
-
-	/* NOTE we don't care about exact canvas coords, just the size and relative position */
-
-	if(always_gapped)
+  if (zmapWindowCanvasFeatureValid(feature))
+    {
+      FooCanvasItem *foo = (FooCanvasItem *) &featureset->__parent__;
+      PixRect this;
+      PixRect blocks = NULL;
+      PixRect pr,del,last = NULL;
+      gboolean always_gapped = (zMapStyleGetMode(featureset->style) == ZMAPSTYLE_MODE_ALIGNMENT) &&
+        zMapStyleIsAlwaysGapped(featureset->style) && feature->feature->feature.homol.align;
+      
+      /*
+       * NOTE this was originally written for simple features, and alignments split into separate features
+       * for always gapped alignments (ditags and short reads) we have to expand the match blocks and process each one
+       * so we have a pix_rect for each match block and each one of these points to a feature
+       * this requires us to set features visible explicilty as one feature appears in several blocks
+       *
+       * good news is that this process can be extended to other complex features
+       * eg (vulgar alignments and transcripts) when they are implemented
+       */
+      
+      feature->flags |= FEATURE_SUMMARISED | FEATURE_HIDDEN;
+      
+      /* NOTE we don't care about exact canvas coords, just the size and relative position */
+      
+      if(always_gapped)
 	{
-		/* make list of blocks */
-		ZMapAlignBlock ab;
-		int i;
-		GArray *gaps;	/* actually blocks */
-
-		/* this is less efficient as we get a long dangly list of blocks at the other side of the gap */
-		/* however, due to the nature of the data we will get a lot of hits */
-		/* see reults at the bottom of this file */
-                /*! \todo #warning review this for efficiency when complex alignments (VULGAR) are implemented */
-		for(gaps = feature->feature->feature.homol.align, i = 0; i < gaps->len; i++)
-		{
-			ab = & g_array_index(gaps,ZMapAlignBlockStruct, i);
-
-			this = alloc_pix_rect();
-
-			foo_canvas_w2c (foo->canvas, 0,ab->t1, NULL, &this->y1);
-//			this->start = this->y1;
-			foo_canvas_w2c (foo->canvas, feature->width, ab->t2, &this->x2, &this->y2);
-			this->feature = feature;
-
-			if(last)
-				last->next = this;
-			/* we don't care about the prev pointer */
-
-			last = this;
-			if(!blocks)
-				blocks = this;
-		}
+          /* make list of blocks */
+          ZMapAlignBlock ab;
+          int i;
+          GArray *gaps;	/* actually blocks */
+          
+          /* this is less efficient as we get a long dangly list of blocks at the other side of the gap */
+          /* however, due to the nature of the data we will get a lot of hits */
+          /* see reults at the bottom of this file */
+          /*! \todo #warning review this for efficiency when complex alignments (VULGAR) are implemented */
+          for(gaps = feature->feature->feature.homol.align, i = 0; i < gaps->len; i++)
+            {
+              ab = & g_array_index(gaps,ZMapAlignBlockStruct, i);
+              
+              this = alloc_pix_rect();
+              
+              foo_canvas_w2c (foo->canvas, 0,ab->t1, NULL, &this->y1);
+              //			this->start = this->y1;
+              foo_canvas_w2c (foo->canvas, feature->width, ab->t2, &this->x2, &this->y2);
+              this->feature = feature;
+              
+              if(last)
+                last->next = this;
+              /* we don't care about the prev pointer */
+              
+              last = this;
+              if(!blocks)
+                blocks = this;
+            }
 	}
-	else
+      else
 	{
-		this = alloc_pix_rect();
-
-		foo_canvas_w2c (foo->canvas, 0,feature->y1, NULL, &this->y1);
-//		this->start = this->y1;
-		foo_canvas_w2c (foo->canvas, feature->width, feature->y2, &this->x2, &this->y2);
-		this->feature = feature;
-		blocks = this;
+          this = alloc_pix_rect();
+          
+          foo_canvas_w2c (foo->canvas, 0,feature->y1, NULL, &this->y1);
+          //		this->start = this->y1;
+          foo_canvas_w2c (foo->canvas, feature->width, feature->y2, &this->x2, &this->y2);
+          this->feature = feature;
+          blocks = this;
 	}
-
-	/* new revised algorithm !
-	 *
-	 * we emulate the existing drawing order and only hide features that are covered by ones drawn later
-	 * which gives us the exact same picture as we would have had, but is slower than the previous effort
-	 * this is still a hypothetical max of about 1000 features per column to be displayed whatever the zoom
-	 *
-	 * if the current feature start is beyond anything left in the list then that's visible
-	 * (features are sorted in start coord order)
-	 * as features get covered then thier pixbuf struct gets shrunk
-	 * if it shrinks to 0 then that feature is hidden.
-	 */
-
-	last = NULL;
-
-	while(blocks)
+      
+      /* new revised algorithm !
+       *
+       * we emulate the existing drawing order and only hide features that are covered by ones drawn later
+       * which gives us the exact same picture as we would have had, but is slower than the previous effort
+       * this is still a hypothetical max of about 1000 features per column to be displayed whatever the zoom
+       *
+       * if the current feature start is beyond anything left in the list then that's visible
+       * (features are sorted in start coord order)
+       * as features get covered then thier pixbuf struct gets shrunk
+       * if it shrinks to 0 then that feature is hidden.
+       */
+      
+      last = NULL;
+      
+      while(blocks)
 	{
-		this = blocks;
-		blocks = blocks->next;		/* one feature only, or a list of always gapped blocks in the feature */
-		this->next = this->prev = NULL;
-		last = NULL;
-
+          this = blocks;
+          blocks = blocks->next;		/* one feature only, or a list of always gapped blocks in the feature */
+          this->next = this->prev = NULL;
+          last = NULL;
+          
 #if PIX_LIST_DEBUG
-printf("this = %d\n",this->which);
+          printf("this = %d\n",this->which);
 #endif
-
-		/* original code now in a loop */
-
-		/* trim out of scope visible rectangles off the start of the list */
-		while(pix && pix->y1 < this->y1)
-		{
-			/* feature is visible */
-			n_summarise_show++;
-			n_summarise_list--;
-
-			pr = pix;
-
-				/* one block of the feature is visible so it all is  (if always_gapped)... flag the feature*/
-			pr->feature->flags &= ~FEATURE_SUMMARISED;
-			if(!(pr->feature->flags & FEATURE_HIDE_REASON))
-				pr->feature->flags &= ~FEATURE_HIDDEN;
-
+          
+          /* original code now in a loop */
+          
+          /* trim out of scope visible rectangles off the start of the list */
+          while(pix && pix->y1 < this->y1)
+            {
+              /* feature is visible */
+              n_summarise_show++;
+              n_summarise_list--;
+              
+              pr = pix;
+              
+              /* one block of the feature is visible so it all is  (if always_gapped)... flag the feature*/
+              pr->feature->flags &= ~FEATURE_SUMMARISED;
+              if(!(pr->feature->flags & FEATURE_HIDE_REASON))
+                pr->feature->flags &= ~FEATURE_HIDDEN;
+              
 #if PIX_LIST_DEBUG
-printf("visible %d\n",pr->which);
+              printf("visible %d\n",pr->which);
 #endif
-
-			pix = pix->next;
-			if(pix)
-				pix->prev = NULL;
-			pix_rect_free(pr);
-		}
-
-		for(pr = pix; pr; )
-		{
-			del = NULL;
-			last = pr;
+              
+              pix = pix->next;
+              if(pix)
+                pix->prev = NULL;
+              pix_rect_free(pr);
+            }
+          
+          for(pr = pix; pr; )
+            {
+              del = NULL;
+              last = pr;
 #if PIX_LIST_DEBUG
-printf("testing %d\n",pr->which);
+              printf("testing %d\n",pr->which);
 #endif
-
-			if(this->x2 >= pr->x2)		/* enough overlap to care about */
-			{
-                        if(pr->y1 >= this->y1)
-					 pr->y1 = this->y2 + 1;	/* shrink visible region: hidden cannot be after start */
-
-				if(pr->y1 > pr->y2)	/* feature is hidden by features on top of it */
-				{
-					del = pr;
-					pr = pr->next;
+              
+              if(this->x2 >= pr->x2)		/* enough overlap to care about */
+                {
+                  if(pr->y1 >= this->y1)
+                    pr->y1 = this->y2 + 1;	/* shrink visible region: hidden cannot be after start */
+                  
+                  if(pr->y1 > pr->y2)	/* feature is hidden by features on top of it */
+                    {
+                      del = pr;
+                      pr = pr->next;
 #if PIX_LIST_DEBUG
-printf("hidden %d\n",del->which);
+                      printf("hidden %d\n",del->which);
 #endif
-
-					n_summarise_hidden++;
-					n_summarise_list--;
-
-					if(del->next)
-						del->next->prev = del->prev;
-					else
-						last = del->prev;
-
-					if(del->prev)
-						del->prev->next = del->next;
-					else
-						pix = del->next;
-				}
-			}
-
-			if(del)
-			{
-				pix_rect_free(del);
+                      
+                      n_summarise_hidden++;
+                      n_summarise_list--;
+                      
+                      if(del->next)
+                        del->next->prev = del->prev;
+                      else
+                        last = del->prev;
+                      
+                      if(del->prev)
+                        del->prev->next = del->next;
+                      else
+                        pix = del->next;
+                    }
+                }
+              
+              if(del)
+                {
+                  pix_rect_free(del);
 #if PIX_LIST_DEBUG
-printf("del %d\n",del->which);
+                  printf("del %d\n",del->which);
 #endif
-			}
-
-			else
-				pr = pr->next;
-		}
-
-		n_summarise_list++;
-		if(n_summarise_list > n_summarise_max)
-			n_summarise_max = n_summarise_list;
-
-		if(last)
-		{
-			last->next = this;
-			this->prev = last;
-		}
-		else
-		{
-			pix = this;
-		}
+                }
+              
+              else
+                pr = pr->next;
+            }
+          
+          n_summarise_list++;
+          if(n_summarise_list > n_summarise_max)
+            n_summarise_max = n_summarise_list;
+          
+          if(last)
+            {
+              last->next = this;
+              this->prev = last;
+            }
+          else
+            {
+              pix = this;
+            }
 	}
-
-	return pix;
+    }
+  
+  return pix;
 }
 
 

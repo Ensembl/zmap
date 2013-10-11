@@ -511,9 +511,10 @@ ZMapStyleColumnDisplayState zmapWindowContainerFeatureSetGetDisplay(ZMapWindowCo
  * \return void
  */
 void zmapWindowContainerFeatureSetSetDisplay(ZMapWindowContainerFeatureSet container_set,
-					     ZMapStyleColumnDisplayState state)
+					     ZMapStyleColumnDisplayState state,
+                                             ZMapWindow window)
 {
-      container_set->display_state = state;
+  container_set->display_state = state;
 
   return ;
 }

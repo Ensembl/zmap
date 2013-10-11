@@ -811,7 +811,7 @@ gboolean zMapStyleIsPropertySetId(ZMapFeatureTypeStyle style, ZMapStyleParamId i
   ZMapStyleParam param;
 
   param = &zmapStyleParams_G [id];
-  if((style->is_set[param->flag_ind] & param->flag_bit))
+  if(style && (style->is_set[param->flag_ind] & param->flag_bit))
     is_set = TRUE;
 
   return(is_set);

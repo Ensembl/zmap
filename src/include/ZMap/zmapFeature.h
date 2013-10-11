@@ -1094,16 +1094,21 @@ gboolean zMapFeatureAddSplice(ZMapFeature feature, ZMapBoundaryType boundary) ;
 gboolean zMapFeatureTranscriptSortExons(ZMapFeature feature) ;
 gboolean zMapFeatureTranscriptInit(ZMapFeature feature) ;
 gboolean zMapFeatureAddTranscriptCDS(ZMapFeature feature, gboolean cds, Coord cds_start, Coord cds_end) ;
+gboolean zMapFeatureMergeTranscriptCDS(ZMapFeature src_feature, ZMapFeature dest_feature);
 gboolean zMapFeatureAddTranscriptStartEnd(ZMapFeature feature,
 					  gboolean start_not_found_flag, int start_not_found,
 					  gboolean end_not_found_flag) ;
 gboolean zMapFeatureAddTranscriptExonIntron(ZMapFeature feature,
 					    ZMapSpanStruct *exon, ZMapSpanStruct *intron) ;
+void zMapFeatureRemoveExons(ZMapFeature feature);
+void zMapFeatureRemoveIntrons(ZMapFeature feature);
+void zMapFeatureTranscriptRecreateIntrons(ZMapFeature feature);
 gboolean zMapFeatureTranscriptNormalise(ZMapFeature feature) ;
 
 gboolean zMapFeatureTranscriptExonForeach(ZMapFeature feature, GFunc function, gpointer user_data) ;
 gboolean zMapFeatureTranscriptChildForeach(ZMapFeature feature, ZMapFeatureSubpartType child_type,
 					   GFunc function, gpointer user_data) ;
+void zMapFeatureTranscriptIntronForeach(ZMapFeature feature, GFunc function, gpointer user_data);
 
 gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
 				     GQuark clone_id,
@@ -1120,10 +1125,12 @@ gboolean zMapFeatureAlignmentString2Gaps(ZMapFeatureAlignFormat align_format,
 					 ZMapStrand ref_strand, int ref_start, int ref_end,
 					 ZMapStrand match_strand, int match_start, int match_end,
 					 char *align_string, GArray **gaps_out) ;
+gboolean zMapFeatureAlignmentMatchForeach(ZMapFeature feature, GFunc function, gpointer user_data);
 ZMAP_ENUM_AS_NAME_STRING_DEC(zMapFeatureAlignFormat2ShortText, ZMapFeatureAlignFormat) ;
 
 
 gboolean zMapFeatureSequenceSetType(ZMapFeature feature, ZMapSequenceType type) ;
+gboolean zMapFeatureAddFrame(ZMapFeature feature, ZMapFrame frame);
 gboolean zMapFeatureSequenceIsDNA(ZMapFeature feature) ;
 gboolean zMapFeatureSequenceIsPeptide(ZMapFeature feature) ;
 
@@ -1369,6 +1376,7 @@ gboolean zMapFeatureGetFeatureListExtent(GList *feature_list, int *start_out, in
 char *zMapFeature3FrameTranslationFeatureName(ZMapFeatureSet feature_set, ZMapFrame frame);
 void zMapFeature3FrameTranslationPopulate(ZMapFeatureSet feature_set);
 gboolean zMapFeature3FrameTranslationCreateSet(ZMapFeatureBlock block, ZMapFeatureSet *set_out);
+gboolean zMapFeatureORFCreateSet(ZMapFeatureBlock block, ZMapFeatureSet *set_out);
 
 
 gboolean zMapFeatureWorld2Transcript(ZMapFeature feature,
@@ -1390,6 +1398,9 @@ ZMapFeatureContextExecuteStatus zMapFeatureContextTranscriptSortExons(GQuark key
 								      gpointer user_data,
 								      char **error_out) ;
 
+int zMapFeatureTranscriptGetNumExons(ZMapFeature transcript);
+void zMapFeatureTranscriptMergeExon(ZMapFeature feature, Coord x1, Coord x2);
+gboolean zMapFeatureTranscriptMergeCoord(ZMapFeature transcript, const int x, const ZMapBoundaryType boundary, GError **error);
 
 /* ============================================================== for teh === */
 /* functions in zmapFeatureFormatInput.c */
@@ -1427,6 +1438,7 @@ ZMapFeature zMapFeatureDNACreateFeature(ZMapFeatureBlock     block,
 
 void zMapFeature3FrameTranslationSetCreateFeatures(ZMapFeatureSet feature_set,
 						   ZMapFeatureTypeStyle style);
+void zMapFeatureORFSetCreateFeatures(ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style, ZMapFeatureSet translation_fs);
 
 
 

@@ -232,25 +232,6 @@ typedef struct _ZMapViewConnectionStepStruct
 
 
 
-
-/* Holds data about feature sets loaded. */
-typedef struct ZMapViewLoadFeaturesDataStructName
-{
-  char *err_msg;        // from the server mainly
-  gchar *stderr_out;
-  gint exit_code;
-  int num_features;
-
-  GList *feature_sets ;
-  int start,end;        // requested coords
-  gboolean status;      // load sucessful?
-  unsigned long xwid ;  // X Window id for the xremote widg. */
-
-} ZMapViewLoadFeaturesDataStruct, *ZMapViewLoadFeaturesData ;
-
-
-
-
 /* A "View" is a set of one or more windows that display data retrieved from one or
  * more servers. Note that the "View" windows are _not_ top level windows, they are panes
  * within a container widget that is supplied as a parent of the View then the View
@@ -366,12 +347,7 @@ typedef struct _ZMapViewStruct
   gboolean columns_set;                   // if set from config style use config only
                                           // else use source featuresets in order as of old
 
-  gboolean highlight_filtered_columns;    /* True if filtered columns should be highlighted */
-  
-  /* We need to know if the user has done a revcomp for a few reasons to do with coord
-   * transforms and the way annotation is done....*/
-  gboolean revcomped_features ;
-
+  gboolean flags[ZMAPFLAG_NUM_FLAGS] ;    /* boolean flags */
 
   /* Be good to get rid of this window stuff in any restructure..... */
   GList *window_list ;					    /* Of ZMapViewWindow. */
@@ -398,6 +374,10 @@ typedef struct _ZMapViewStruct
 
   GHashTable *cwh_hash ;
 
+  GList *scratch_features ;             /* List of feature data that has been copied into the scratch column on the fwd strand */
+  GList *scratch_features_rev ;         /* List of feature data that has been copied into the scratch column on the rev strand */
+  gboolean scratch_start_end_set ;     /* TRUE if the scratch-column forward-strand feature start/end has been set */
+  gboolean scratch_start_end_set_rev ; /* TRUE if the scratch-column reverse-strand feature start/end has been set */
 
 } ZMapViewStruct ;
 
@@ -433,7 +413,13 @@ gboolean zmapViewCallBlixem(ZMapView view, ZMapFeatureBlock block,
 
 ZMapFeatureContext zmapViewMergeInContext(ZMapView view, ZMapFeatureContext context);
 gboolean zmapViewDrawDiffContext(ZMapView view, ZMapFeatureContext *diff_context, ZMapFeature highlight_feature) ;
+void zmapViewResetWindows(ZMapView zmap_view, gboolean revcomp);
 void zmapViewEraseFromContext(ZMapView replace_me, ZMapFeatureContext context_inout);
+void zmapViewDisplayDataWindows(ZMapView zmap_view,
+				ZMapFeatureContext all_features, ZMapFeatureContext new_features,
+                                GHashTable *new_styles, ZMapViewLoadFeaturesData loaded_features,
+                                gboolean undisplay, GList *masked,
+				ZMapFeature highlight_feature, gboolean allow_clean);
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -496,11 +482,25 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 GQuark zmapViewSrc2FSetGetID(GHashTable *source_2_featureset, char *source_name) ;
 GList *zmapViewSrc2FSetGetList(GHashTable *source_2_featureset, GList *source_list) ;
 
+ZMapFeatureContext zmapViewCreateContext(ZMapView view, GList *feature_set_names, ZMapFeatureSet feature_set);
+
+gboolean zmapViewMergeNewFeatures(ZMapView view, ZMapFeatureContext *context, GList **feature_list) ;
+void zmapViewEraseFeatures(ZMapView view, ZMapFeatureContext context, GList **feature_list) ;
+
 /* zmapViewFeatureMask.c */
 GList *zMapViewMaskFeatureSets(ZMapView view, GList *feature_set_names);
 
 gboolean zMapViewCollapseFeatureSets(ZMapView view, ZMapFeatureContext diff_context);
 
+/* zmapViewScratch.c */
+void zmapViewScratchInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, ZMapFeatureContext context, ZMapFeatureBlock block);
+void zMapViewToggleScratchColumn(ZMapView view, gboolean force_to, gboolean force);
+gboolean zmapViewScratchCopyFeature(ZMapView zmap_view, ZMapFeature feature, FooCanvasItem *item, const double world_x, const double world_y, const gboolean use_subfeature);
+gboolean zmapViewScratchUndo(ZMapView zmap_view);
+gboolean zmapViewScratchRedo(ZMapView zmap_view);
+gboolean zmapViewScratchClear(ZMapView zmap_view);
+ZMapFeatureSet zmapViewScratchGetFeatureset(ZMapView view);
+ZMapFeature zmapViewScratchGetFeature(ZMapFeatureSet feature_set, ZMapStrand strand);
 
 
 #ifdef LOTS_OF_EXONS

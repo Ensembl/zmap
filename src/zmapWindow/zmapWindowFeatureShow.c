@@ -1920,7 +1920,7 @@ static ZMapGuiNotebook makeTranscriptExtras(ZMapWindow window, ZMapFeature featu
       ZMapGuiNotebookTagValue tag_value ;
       int display_start, display_end, index ;
 
-      if (window->revcomped_features)
+      if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
 	index = feature->feature.transcript.exons->len - (i + 1) ;
       else
 	index = i ;
@@ -1983,7 +1983,7 @@ static void callXRemote(ZMapWindow window, ZMapFeatureAny feature_any,
   /* REVCOMP COORD HACK......THIS HACK IS BECAUSE OUR COORD SYSTEM IS MUCKED UP FOR
    * REVCOMP'D FEATURES..... */
   /* Convert coords */
-  if (window->revcomped_features)
+  if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
     {
       /* remap coords to forward strand range and also swop
        * them as they get reversed in revcomping.... */

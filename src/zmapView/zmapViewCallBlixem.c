@@ -316,6 +316,7 @@ static gboolean makeTmpfiles(blixemData blixem_data) ;
 gboolean makeTmpfile(char *tmp_dir, char *file_prefix, char **tmp_file_name_out) ;
 static gboolean setTmpPerms(char *path, gboolean directory) ;
 
+static void processSetHash(gpointer key, gpointer data, gpointer user_data) ;
 static void processSetList(gpointer data, gpointer user_data) ;
 
 static void writeHashEntry(gpointer key, gpointer data, gpointer user_data) ;
@@ -1275,7 +1276,7 @@ static gboolean buildParamString(blixemData blixem_data, char **paramString)
 
       start = end = blixem_data->position ;
 
-      if (blixem_data->view->revcomped_features)
+      if (blixem_data->view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
 	zMapFeatureReverseComplementCoords(blixem_data->block, &start, &end) ;
 
       paramString[BLX_ARGV_START_FLAG - missed] = g_strdup("-s") ;
@@ -1297,7 +1298,7 @@ static gboolean buildParamString(blixemData blixem_data, char **paramString)
       paramString[BLX_ARGV_OFFSET_FLAG - missed] = g_strdup("-m") ;
 #if MH17_WONT_WORK_POST_CHROMO_COORDS
       /* NOTE this function swaps start and end and inverts them, you have to provide both */
-      if (blixem_data->view->revcomped_features)
+      if (blixem_data->view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
 	zMapFeatureReverseComplementCoords(blixem_data->block, &offset, &tmp1) ;
 #endif
 
@@ -1317,7 +1318,7 @@ static gboolean buildParamString(blixemData blixem_data, char **paramString)
     start = blixem_data->window_start ;
     end = blixem_data->window_end ;
 
-    if (blixem_data->view->revcomped_features)
+    if (blixem_data->view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
       zMapFeatureReverseComplementCoords(blixem_data->block, &start, &end) ;
 
     paramString[BLX_ARGV_ZOOM_FLAG - missed] = g_strdup("-z") ;
@@ -1339,7 +1340,7 @@ static gboolean buildParamString(blixemData blixem_data, char **paramString)
     missed += 1 ;
 
   /* Start with reverse strand showing. */
-  if (blixem_data->view->revcomped_features)
+  if (blixem_data->view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
     paramString[BLX_ARGV_REVERSE_STRAND - missed] = g_strdup("-r") ;
   else
     missed += 1 ;
@@ -1466,7 +1467,7 @@ static gboolean writeFeatureFiles(blixemData blixem_data)
       start = blixem_data->features_min ;
       end = blixem_data->features_max ;
 
-      if (blixem_data->view->revcomped_features)
+      if (blixem_data->view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
 	zMapFeatureReverseComplementCoords(blixem_data->block, &start, &end) ;
 
 
@@ -1615,7 +1616,7 @@ static gboolean writeFeatureFiles(blixemData blixem_data)
 	}
       else
 	{
-	  g_hash_table_foreach(blixem_data->block->feature_sets, writeHashEntry, blixem_data) ;
+	  g_hash_table_foreach(blixem_data->block->feature_sets, processSetHash, blixem_data) ;
 	}
     }
 
@@ -1691,9 +1692,28 @@ static gboolean initFeatureFile(char *filename, char *file_header, GString *buff
 }
 
 
+/* GFunc()'s to step through the named feature sets and write them out for passing
+ * to blixem. One function to process hash table entries, the other list entries */
+static void processSetHash(gpointer key, gpointer data, gpointer user_data)
+{
+  GQuark set_id = GPOINTER_TO_UINT(data) ;
+  GQuark canon_id ;
+  blixemData blixem_data = (blixemData)user_data ;
+  ZMapFeatureSet feature_set ;
 
-/* A GFunc() to step through the named feature sets and write them out for passing
- * to blixem. */
+  canon_id = zMapFeatureSetCreateID((char *)g_quark_to_string(set_id)) ;
+
+  feature_set = g_hash_table_lookup(blixem_data->block->feature_sets, GINT_TO_POINTER(canon_id));
+
+  if (feature_set)
+    {
+//printf("do blixem set %s\n",g_quark_to_string(canon_id));
+      g_hash_table_foreach(feature_set->features, writeHashEntry, blixem_data);
+    }
+
+  return ;
+}
+
 static void processSetList(gpointer data, gpointer user_data)
 {
   GQuark set_id = GPOINTER_TO_UINT(data) ;
@@ -1865,7 +1885,7 @@ static gboolean printAlignment(ZMapFeature feature, blixemData  blixem_data)
 
 
   /* If view is revcomp'd then recomp back so we always pass forward coords. */
-  if (blixem_data->view->revcomped_features)
+  if (blixem_data->view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
     zMapFeatureReverseComplement(blixem_data->view->features, feature) ;
 
 
@@ -1997,7 +2017,7 @@ static gboolean printAlignment(ZMapFeature feature, blixemData  blixem_data)
 
 
   /* If view is recomp'd we should swop back again now. */
-  if (blixem_data->view->revcomped_features)
+  if (blixem_data->view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
     zMapFeatureReverseComplement(blixem_data->view->features, feature) ;
 
 
@@ -2251,7 +2271,7 @@ static gboolean printTranscript(ZMapFeature feature, blixemData  blixem_data)
   gboolean cds_only = TRUE ;
 
   /* Swop to other strand..... */
-  if (blixem_data->view->revcomped_features)
+  if (blixem_data->view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
     zMapFeatureReverseComplement(blixem_data->view->features, feature) ;
 
 
@@ -2276,7 +2296,7 @@ static gboolean printTranscript(ZMapFeature feature, blixemData  blixem_data)
 
 
    /* And swop it back again. */
-  if (blixem_data->view->revcomped_features)
+  if (blixem_data->view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
     zMapFeatureReverseComplement(blixem_data->view->features, feature) ;
 
   return status ;
@@ -2713,7 +2733,7 @@ static gboolean printBasic(ZMapFeature feature, blixemData  blixem_data)
 
 
   /* Swop to other strand..... */
-  if (blixem_data->view->revcomped_features)
+  if (blixem_data->view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
     zMapFeatureReverseComplement(blixem_data->view->features, feature) ;
 
 
@@ -2740,7 +2760,7 @@ static gboolean printBasic(ZMapFeature feature, blixemData  blixem_data)
 
 
    /* And swop it back again. */
-  if (blixem_data->view->revcomped_features)
+  if (blixem_data->view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
     zMapFeatureReverseComplement(blixem_data->view->features, feature) ;
 
 
@@ -3029,7 +3049,7 @@ static gboolean writeFastAFile(blixemData blixem_data)
 	  start = blixem_data->scope_min ;
 	  end = blixem_data->scope_max ;
 
-	  if (blixem_data->view->revcomped_features)
+	  if (blixem_data->view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
 	    zMapFeatureReverseComplementCoords(blixem_data->block, &start, &end) ;
 
 //zMapLogWarning("FastA %d,%d (scope is %d %d",start, end, blixem_data->scope_min, blixem_data->scope_max);
@@ -3065,7 +3085,7 @@ static gboolean writeFastAFile(blixemData blixem_data)
 	  end = blixem_data->scope_max ;
 
 	  dna = zMapFeatureGetDNA((ZMapFeatureAny)(blixem_data->block),
-				  start, end, blixem_data->view->revcomped_features) ;
+				  start, end, blixem_data->view->flags[ZMAPFLAG_REVCOMPED_FEATURES]) ;
 
 	  total_chars = (end - start + 1) ;
 

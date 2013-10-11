@@ -248,14 +248,14 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
 
   window->seqLength = zmapWindowExt(window->sequence->start, window->sequence->end) ;
 
-  zmapWindowScaleCanvasSetRevComped(window->ruler, window->revcomped_features) ;
-  /*
-   * MH17: after a revcomp we end up with 1-based coords if we have no official parent span
-   * which is very confusing but valid. To display the ruler properly we need to use those coordinates
-   * and not the original sequence coordinates.
-   * the code just above sets sequence->start,end, but only on the first display, which is not revcomped
-   */
-  //  zmapWindowScaleCanvasSetSpan(window->ruler, seq_start, seq_end) ;
+  zmapWindowScaleCanvasSetRevComped(window->ruler, window->flags[ZMAPFLAG_REVCOMPED_FEATURES]) ;
+/*
+ * MH17: after a revcomp we end up with 1-based coords if we have no official parent span
+ * which is very confusing but valid. To display the ruler properly we need to use those coordinates
+ * and not the original sequence coordinates.
+ * the code just above sets sequence->start,end, but only on the first display, which is not revcomped
+ */
+//  zmapWindowScaleCanvasSetSpan(window->ruler, seq_start, seq_end) ;
 
   zmapWindowZoomControlInitialise(window);		    /* Sets min/max/zf */
 
@@ -268,11 +268,11 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
 
 #if MH17_REVCOMP_DEBUG
   zMapLogWarning("drawFeatures window: %d-%d (%d,%d), %d (%f,%f), canvas = %p",
-		 window->sequence->start,window->sequence->end,
-		 seq_start,seq_end,
-		 window->revcomped_features,
-		 window->min_coord,window->max_coord,
-		 window->canvas);
+  window->sequence->start,window->sequence->end,
+  seq_start,seq_end,
+  window->flags[ZMAPFLAG_REVCOMPED_FEATURES],
+  window->min_coord,window->max_coord,
+  window->canvas);
 #endif
 
   h_adj = gtk_scrolled_window_get_hadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window)) ;
@@ -735,16 +735,19 @@ gboolean zmapWindowRemoveIfEmptyCol(FooCanvasGroup **col_group)
   ZMapWindowContainerGroup container;
   gboolean removed = FALSE ;
 
-  container = (ZMapWindowContainerGroup)(*col_group);
-
-  if ((!zmapWindowContainerHasFeatures(container)) &&
-      (!zmapWindowContainerFeatureSetShowWhenEmpty((ZMapWindowContainerFeatureSet)container)))
+  if (ZMAP_IS_CONTAINER_GROUP(*col_group))
     {
-      container = zmapWindowContainerGroupDestroy(container) ;
+      container = ZMAP_CONTAINER_GROUP(*col_group);
 
-      *col_group = (FooCanvasGroup *)container;
-
-      removed = TRUE ;
+      if ((!zmapWindowContainerHasFeatures(container)) &&
+          (!zmapWindowContainerFeatureSetShowWhenEmpty(ZMAP_CONTAINER_FEATURESET(container))))
+        {
+          container = zmapWindowContainerGroupDestroy(container) ;
+          
+          *col_group = (FooCanvasGroup *)container;
+          
+          removed = TRUE ;
+        }
     }
 
   return removed ;
@@ -828,8 +831,8 @@ static void hideEmptyCB(ZMapWindowContainerGroup container, FooCanvasPoints *poi
     {
     case ZMAPCONTAINER_LEVEL_FEATURESET:
       {
-	if ((!zmapWindowContainerHasFeatures(container)) &&
-	    (!zmapWindowContainerFeatureSetShowWhenEmpty((ZMapWindowContainerFeatureSet)container)))
+	  if (!zmapWindowContainerHasFeatures(container) &&
+              !zmapWindowContainerFeatureSetShowWhenEmpty(ZMAP_CONTAINER_FEATURESET(container)))
     	  {
 	    zmapWindowColumnHide((FooCanvasGroup *)container) ;
     	  }
@@ -1853,16 +1856,18 @@ static gboolean feature_set_matches_frame_drawing_mode(ZMapWindow window,
 
 
 
-GQuark zMapWindowGetFeaturesetContainerID(ZMapWindow window,GQuark featureset_id)
+GQuark zMapWindowGetFeaturesetContainerID(ZMapWindow window, GQuark featureset_id)
 {
-  ZMapFeatureSetDesc gffset;
-  GQuark container_id = featureset_id;
+  GQuark container_id = featureset_id ;
+  ZMapFeatureSetDesc gffset ;
 
-  gffset = (ZMapFeatureSetDesc) g_hash_table_lookup(window->context_map->featureset_2_column, GUINT_TO_POINTER(featureset_id));
-  if(gffset)
-    container_id = gffset->column_id;
 
-  return container_id;
+  gffset = (ZMapFeatureSetDesc)g_hash_table_lookup(window->context_map->featureset_2_column,
+						   GUINT_TO_POINTER(featureset_id)) ;
+  if (gffset)
+    container_id = gffset->column_id ;
+
+  return container_id ;
 }
 
 

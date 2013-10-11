@@ -910,9 +910,9 @@ the predefined styles:
 <fieldset>
 <legend id="acedb_styles">ZMap Styles and Acedb</legend>
 
-<p>When using ZMap from xace, the zmap styles file can be specified by setting the ZMAP_STYLES_FILE environment variable.</p>
+<p>When using ZMap from xace, you can provide a styles file for zmap, which specifies how each featureset will be drawn.</p>
 
-<p>Alternatively, <a href="#zmap_style_objects">?ZMap_Style</a> objects or <a href="#acedb_method_objects">?Method</a> objects can be used to specify the styles.</p>
+<p>Alternatively, <a href="#zmap_style_objects">?ZMap_Style</a> objects or <a href="#acedb_method_objects">?Method</a> objects can be used to specify the styles. However, a styles file is preferred.</p>
 
 <p>A script is available to do a first-pass conversion to create a styles file for an acedb database. This will require some hand editing but is a good start:</p>
 
@@ -972,6 +972,44 @@ Score_by_width
 </ol>
 
 </p>
+
+<p>By default, xace will look for the styles file in <code>~/.xace/styles.ini</code>. An alternative location can be specified in the <code>[ZMap]</code> stanza in an xace config file. The default location for the xace config file is <code>~/.xace/xacerc</code>. You can specify a different location with the XACE_CONFIG_FILE environment variable. Further information to customise zmap can also be specified in this stanza, e.g.:</p>
+<pre>
+[ZMap]
+script = zmap
+args = --sleep=0 ; --shrink ;
+stylesfile = ~/.xace/stylesfile
+url = acedb://any:any@127.0.0.1:23500?use_methods=false
+</pre>
+
+Further ZMap and Blixem configuration can also be included in stanzas in the xace config file. These fields will be copied directly to the relevant fields in the ZMap/Blixem configuration file, or concatenated with dynamic data if required. The example below shows additional columns that have been added to the "columns" field, including a bam source (wormbase-accepted-hits) as well as the hard-coded ZMap columns such as DNA, 3 Frame, Annotation etc.. Additional columns for all of the acedb methods will be added to this list dynamically by xace when it creates the ZMap config file.
+<pre>
+[ZMap]
+script = zmap
+args = --sleep=0 ; --shrink ;
+stylesfile = ~/.xace/stylesfile
+url = acedb://any:any@127.0.0.1:23500?use_methods=false
+sources = wormbase-accepted-hits
+columns = wormbase-accepted-hits ; Annotation ; DNA ; 3 Frame ; 3 Frame Translation ; Locus ; GeneFinderFeatures ; Show Translation ; Assembly path ; ATG ; hexExon ; hexIntron ; GF_coding_seg ; GF_ATG ; hexExon_span ; RNA ; SPLICED_cDNA ; GF_splice
+seq-data = wormbase-accepted-hits
+
+[columns]
+accepted_hits = wormbase-accepted-hits
+
+[column-style]
+annotation=annotationcolumn
+
+[featureset-style]
+accepted_hits = short-read
+
+[wormbase-accepted-hits]
+featuresets = accepted_hits
+delayed = true
+url = pipe:///zmap_get_bam?--file=ftp://ftp.sanger.ac.uk/pub2/wormbase/STAFF/klh/accepted_hits.bam&--gff_version=2&--source=accepted_hits&--chr_prefix=CHROMOSOME_&chr=2&--sequence=CHROMOSOME_II
+file = ftp://ftp.sanger.ac.uk/pub2/wormbase/STAFF/klh/accepted_hits.bam
+description = Wormbase accepted hits
+</pre>
+
 
 
 <p>

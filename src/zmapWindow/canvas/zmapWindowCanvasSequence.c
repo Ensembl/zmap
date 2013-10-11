@@ -753,6 +753,21 @@ static ZMapFeatureSubPartSpan zmapWindowCanvasSequenceGetSubPartSpan(FooCanvasIt
 }
 
 
+/* Wrapper for zMapWindowCanvasFeaturesetGetSeqCoord, taking a generic feature. Returns the same as 
+* that function if feature is a ZMapWindowFeaturesetItem, else does nothing and returns FALSE. */
+gboolean zMapWindowItemGetSeqCoord(FooCanvasItem *item, gboolean set, double x, double y, long *seq_start, long *seq_end)
+{
+  gboolean result = FALSE;
+  
+  if (ZMAP_IS_WINDOW_FEATURESET_ITEM(item))
+    {
+      result = zMapWindowCanvasFeaturesetGetSeqCoord((ZMapWindowFeaturesetItem)(item), set, x, y, seq_start, seq_end);
+    }
+
+  return result;
+}
+
+
 /* return sequence coordinate corresponding to a mouse cursor */
 /* NOTE unusually, we call the function directly rather than going through an array of functions
  * it's only relevant for sequence features, but could be added as a virtual function/wrapper

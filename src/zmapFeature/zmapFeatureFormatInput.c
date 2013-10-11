@@ -162,11 +162,9 @@ gboolean zMapFeatureFormatType(gboolean SO_compliant, gboolean default_to_basic,
     {
       type = ZMAPSTYLE_MODE_BASIC ;
     }
-
-
-  /* Currently there will be lots of non-SO terms in any GFFv2 dump. */
-  if (!SO_compliant)
+  else if (!SO_compliant)
     {
+      /* Currently there will be lots of non-SO terms in any GFFv2 dump. */
       if (g_ascii_strcasecmp(feature_type, "transcript") == 0
 	  || g_ascii_strcasecmp(feature_type, "protein-coding_primary_transcript") == 0
 	  /* N.B. "protein-coding_primary_transcript" is a typo in wormDB currently, should

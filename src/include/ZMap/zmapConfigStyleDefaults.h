@@ -50,6 +50,10 @@
  * - GeneFinderFeatures       controls fetching/display of gene finder features
  *
  * - Assembly_path            display of clone/tiling path for virtual sequence
+ * 
+ * - Annotation               display an annotation column for editing temporary features
+ *
+ * - hand_built               a column used by acedb as a default place for newly created features
  *
  */
 
@@ -78,6 +82,12 @@
 #define ZMAP_FIXED_STYLE_SEARCH_MARKERS_TEXT TEXT_PREFIX "display location of matches to query."
 #define ZMAP_FIXED_STYLE_ASSEMBLY_PATH_NAME "Assembly path"
 #define ZMAP_FIXED_STYLE_ASSEMBLY_PATH_TEXT TEXT_PREFIX "assembly path for displayed sequence."
+#define ZMAP_FIXED_STYLE_SCRATCH_NAME "Annotation"
+#define ZMAP_FIXED_STYLE_SCRATCH_TEXT TEXT_PREFIX "annotation column for creating and editing temporary features."
+#define ZMAP_FIXED_STYLE_HAND_BUILT_NAME "hand_built"
+#define ZMAP_FIXED_STYLE_HAND_BUILT_TEXT TEXT_PREFIX "column for displaying hand-built features."
+#define ZMAP_FIXED_STYLE_ORF_NAME "ORF"
+#define ZMAP_FIXED_STYLE_ORF_TEXT TEXT_PREFIX "open reading frame display"
 
 /* The opts struct */
 #define ZMAP_STYLE_DEFAULT_HIDE_INITIALLY  FALSE
