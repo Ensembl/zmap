@@ -95,11 +95,7 @@ static gboolean scratchGetStartEndFlag(ZMapView view)
 {
   gboolean value = FALSE;
   
-  /* Update the relevant flag for the current strand */
-  if (view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
-    value = view->scratch_start_end_set_rev;
-  else
-    value = view->scratch_start_end_set;
+  value = view->scratch_start_end_set;
   
   return value;
 }
@@ -111,24 +107,18 @@ static gboolean scratchGetStartEndFlag(ZMapView view)
  */
 static void scratchSetStartEndFlag(ZMapView view, gboolean value)
 {
-  /* Update the relevant flag for the current strand */
-  if (view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
-    view->scratch_start_end_set_rev = value;
-  else
-    view->scratch_start_end_set = value;
+  view->scratch_start_end_set = value;
 }
 
 
 /*!
-* \brief Get the list of merged features for the current strand 
+* \brief Get the list of merged features
 * */
 static GList* scratchGetMergedFeatures(ZMapView view)
 {
   GList *list = NULL;
   
-  if (view->flags[ZMAPFLAG_REVCOMPED_FEATURES] && view->scratch_features_rev)
-    list = view->scratch_features_rev;
-  else if (view->scratch_features)
+  if (view->scratch_features)
     list = view->scratch_features;
 
   return list;
@@ -136,16 +126,13 @@ static GList* scratchGetMergedFeatures(ZMapView view)
 
 
 /*!
-* \brief Get pointer to the list of merged features for the current strand 
+* \brief Get pointer to the list of merged features
 * */
 static GList** scratchGetMergedFeaturesPtr(ZMapView view)
 {
   GList **list = NULL;
   
-  if (view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
-    list = &view->scratch_features_rev;
-  else
-    list = &view->scratch_features;
+  list = &view->scratch_features;
 
   return list;
 }
@@ -310,11 +297,11 @@ ZMapFeatureSet zmapViewScratchGetFeatureset(ZMapView view)
 
 
 /*! 
- * \brief Get the single feature that resides in the scratch column featureset for this strand
+ * \brief Get the single feature that resides in the scratch column featureset
  *
  * \returns The ZMapFeature, or NULL if there was a problem
  */
-ZMapFeature zmapViewScratchGetFeature(ZMapFeatureSet feature_set, ZMapStrand strand)
+ZMapFeature zmapViewScratchGetFeature(ZMapFeatureSet feature_set)
 {
   ZMapFeature feature = NULL;
   
@@ -325,12 +312,10 @@ ZMapFeature zmapViewScratchGetFeature(ZMapFeatureSet feature_set, ZMapStrand str
       
   g_hash_table_iter_init (&iter, feature_any->children);
   
+  /* Should only be one, so just get the first */
   while (g_hash_table_iter_next (&iter, &key, &value) && !feature)
     {
       feature = (ZMapFeature)(value);
-      
-      if (feature->strand != strand)
-        feature = NULL;
     }
 
   return feature;
@@ -653,8 +638,7 @@ static void scratchEraseFeature(ZMapView zmap_view)
   ZMapFeatureSet feature_set = zmapViewScratchGetFeatureset(zmap_view);
   g_return_if_fail(feature_set) ;
 
-  ZMapStrand strand = (zmap_view->flags[ZMAPFLAG_REVCOMPED_FEATURES] ? ZMAPSTRAND_REVERSE : ZMAPSTRAND_FORWARD) ;
-  ZMapFeature feature = zmapViewScratchGetFeature(feature_set, strand) ;
+  ZMapFeature feature = zmapViewScratchGetFeature(feature_set) ;
   g_return_if_fail(feature) ;
 
   GList *feature_list = NULL ;
@@ -675,7 +659,7 @@ static ZMapFeature scratchCreateNewFeature(ZMapView zmap_view)
   ZMapFeatureSet feature_set = zmapViewScratchGetFeatureset(zmap_view);
   g_return_val_if_fail(feature_set, NULL) ;
 
-  ZMapStrand strand = (zmap_view->flags[ZMAPFLAG_REVCOMPED_FEATURES] ? ZMAPSTRAND_REVERSE : ZMAPSTRAND_FORWARD) ;
+  ZMapStrand strand = ZMAPSTRAND_FORWARD ;
 
   /* Create the feature with default values */
   ZMapFeature feature = zMapFeatureCreateFromStandardData(SCRATCH_FEATURE_NAME,
@@ -876,7 +860,6 @@ void zmapViewScratchInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, ZM
 
       /* Create two empty features, one for each strand */
       ZMapFeature feature_fwd = zMapFeatureCreateEmpty() ;
-      ZMapFeature feature_rev = zMapFeatureCreateEmpty() ;
       
       zMapFeatureAddStandardData(feature_fwd, "temp_feature_fwd", SCRATCH_FEATURE_NAME,
                                  NULL, NULL,
@@ -884,22 +867,13 @@ void zmapViewScratchInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, ZM
                                  0, 0, FALSE, 0.0,
                                  ZMAPSTRAND_FORWARD);
 
-      zMapFeatureAddStandardData(feature_rev, "temp_feature_rev", SCRATCH_FEATURE_NAME,
-                                 NULL, NULL,
-                                 ZMAPSTYLE_MODE_TRANSCRIPT, &scratch_featureset->style,
-                                 0, 0, FALSE, 0.0,
-                                 ZMAPSTRAND_REVERSE);
-
       zMapFeatureTranscriptInit(feature_fwd);
-      zMapFeatureTranscriptInit(feature_rev);
       zMapFeatureAddTranscriptStartEnd(feature_fwd, FALSE, 0, FALSE);
-      zMapFeatureAddTranscriptStartEnd(feature_rev, FALSE, 0, FALSE);
       
       //zMapFeatureSequenceSetType(feature, ZMAPSEQUENCE_PEPTIDE);
       //zMapFeatureAddFrame(feature, ZMAPFRAME_NONE);
       
       zMapFeatureSetAddFeature(scratch_featureset, feature_fwd);      
-      zMapFeatureSetAddFeature(scratch_featureset, feature_rev);      
     }  
 
   /* Also initialise the "hand_built" column. xace puts newly created
@@ -941,11 +915,9 @@ void zMapViewToggleScratchColumn(ZMapView view, gboolean force_to, gboolean forc
  */
 void scratchFeatureReset(ZMapView view)
 {
-  ZMapStrand strand = (view->flags[ZMAPFLAG_REVCOMPED_FEATURES] ? ZMAPSTRAND_REVERSE : ZMAPSTRAND_FORWARD) ;
-
   /* Get the singleton features that exist in each strand of the scatch column */
   ZMapFeatureSet scratch_featureset = zmapViewScratchGetFeatureset(view);
-  ZMapFeature scratch_feature = zmapViewScratchGetFeature(scratch_featureset, strand);
+  ZMapFeature scratch_feature = zmapViewScratchGetFeature(scratch_featureset);
 
   //zmapViewWindowsRemoveFeatureset(view, scratch_featureset) ;
 
@@ -969,7 +941,7 @@ static void scratchFeatureRecreateExons(ZMapView view, ZMapFeature scratch_featu
   /* Loop through each feature in the merge list and merge it in */
   GError *error = NULL;
   ScratchMergeDataStruct merge_data = {view, scratch_featureset, scratch_feature, &error, NULL, NULL, 0, 0, FALSE};
-  GList *list_item = view->flags[ZMAPFLAG_REVCOMPED_FEATURES] ? view->scratch_features_rev : view->scratch_features;
+  GList *list_item = view->scratch_features;
   
   for ( ; list_item; list_item = list_item->next)
     {
@@ -1060,12 +1032,7 @@ static void freeListFull(GList *list, GDestroyNotify free_func)
 gboolean zmapViewScratchClear(ZMapView view)
 { 
   /* Clear the list of features in the scratch column */
-  if (view->flags[ZMAPFLAG_REVCOMPED_FEATURES] && view->scratch_features_rev)
-    {
-      freeListFull(view->scratch_features_rev, g_free);
-      view->scratch_features_rev = NULL;
-    }
-  else if (view->scratch_features)
+  if (view->scratch_features)
     {
       freeListFull(view->scratch_features, g_free);
       view->scratch_features = NULL;
