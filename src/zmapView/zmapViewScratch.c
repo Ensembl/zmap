@@ -641,6 +641,12 @@ static void scratchEraseFeature(ZMapView zmap_view)
   ZMapFeature feature = zmapViewScratchGetFeature(feature_set) ;
   g_return_if_fail(feature) ;
 
+  /* Delete the exons and introns */
+  scratchDeleteFeatureExons(zmap_view, feature, feature_set);
+
+  /* Reset the start-/end-set flag */
+  scratchSetStartEndFlag(zmap_view, FALSE);
+
   GList *feature_list = NULL ;
   ZMapFeatureContext context_copy = copyContextAll(context, feature, feature_set, &feature_list, NULL) ;
   
@@ -907,26 +913,6 @@ void zMapViewToggleScratchColumn(ZMapView view, gboolean force_to, gboolean forc
     }
   
   
-}
-
-
-/*!
- * /brief Reset the scratch feature
- */
-void scratchFeatureReset(ZMapView view)
-{
-  /* Get the singleton features that exist in each strand of the scatch column */
-  ZMapFeatureSet scratch_featureset = zmapViewScratchGetFeatureset(view);
-  ZMapFeature scratch_feature = zmapViewScratchGetFeature(scratch_featureset);
-
-  //zmapViewWindowsRemoveFeatureset(view, scratch_featureset) ;
-
-  /* Delete the exons and introns (the singleton feature always
-   * exists so we don't delete the whole thing). */
-  scratchDeleteFeatureExons(view, scratch_feature, scratch_featureset);
-
-  /* Reset the start-/end-set flag */
-  scratchSetStartEndFlag(view, FALSE);
 }
 
 
