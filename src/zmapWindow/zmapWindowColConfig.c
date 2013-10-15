@@ -1198,7 +1198,7 @@ static GtkWidget *deferred_cols_panel(NotebookPage notebook_page,
 
 	  column_name = (char *) g_quark_to_string(GPOINTER_TO_UINT(column->data));     //label_text_from_column(column_group);
 
-	  if(!g_list_find_custom(make_unique, column_name, find_name_cb))
+	  if(column_name && !g_list_find_custom(make_unique, column_name, find_name_cb))
 	    {
 	      label = create_label(label_box, column_name);
 
