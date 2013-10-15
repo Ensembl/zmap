@@ -3125,10 +3125,6 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
       else
 //	zMapLogMessage("%s", "event handler for canvas already registered.");
 
-      g_free(feature_sets) ;
-      g_free(window_data) ;				    /* Free the WindowData struct. */
-
-
       /* If features were already displayed and one was highlighted then rehighlight it. */
       if (highlight_feature)
 	zMapWindowFeatureSelect(window, highlight_feature) ;
@@ -3136,6 +3132,10 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
       /* Tell layer above that we have finished loading/displaying features. */
       (*(window_cbs_G->drawn_data))(window,
 				    window->app_data, window_data->loaded_cb_user_data, diff_context) ;
+
+
+      g_free(feature_sets) ;
+      g_free(window_data) ;				    /* Free the WindowData struct. */
 
       zmapWindowBusy(window, FALSE) ;
 
