@@ -3123,8 +3123,10 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
 				       GTK_SIGNAL_FUNC(canvasWindowEventCB), (gpointer)window) ;
 	}
       else
+        {
 //	zMapLogMessage("%s", "event handler for canvas already registered.");
-
+        }
+      
       /* If features were already displayed and one was highlighted then rehighlight it. */
       if (highlight_feature)
 	zMapWindowFeatureSelect(window, highlight_feature) ;
