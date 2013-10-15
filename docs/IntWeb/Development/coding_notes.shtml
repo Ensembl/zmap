@@ -17,12 +17,24 @@ chosen for Annotools projects is based on experience of working with a number of
 over the years and has several objectives:</p>
 
 <ul>
-  <li>To guard against coding errors, e.g. dangling else's, operator precedence errors.</li>
+  <li>To guard against coding errors, e.g. dangling else's, operator precedence errors etc.</li>
   <li>To ensure that all developers can quickly and easily navigate through all source files.</li>
-  <li>To ensure that code is as readable as possible.</li>
+  <li>To ensure that code is as readable/intelligible as possible.</li>
 </ul>
 
-<p>All developers are expected to use this and only this style.</p>
+<p>Please stick to this style, over the years developers have after a while ignored
+this guide with the result that there are at least three different styles in zmap
+(and even more in acedb !) which is annoying to work with.</p>
+
+<p><i>(While it is not practical to spend ages going through all code to correct the style,
+you are encouraged to correct individual files as you work on them as far as is practical:
+if you need to work on a single function in a file then you are not expected to
+correct the whole file, if you are making major changes to a file then you should try
+to correct the whole file.)</i></p>
+
+<p>If you feel that some part of the style could be improved then produce some examples
+and we'll put it to the vote but you should be aware that changes that involve large
+whole scale changes to the code are unlikely to be approved.</p>
 
 
 
@@ -257,7 +269,7 @@ system includes
 
 ZMap includes
 
-local includes
+private includes
 
 
 MACRO/TYPDEF/PROTYPE SECTION
@@ -271,18 +283,18 @@ local function prototypes
 
 GLOBAL VARIABLE SECTION
 
-external global variables
+external global variables (shouldn't be any !!)
 
 local global variables
 
 
 FUNCTION SECTION
 
-External package interface functions
+External interface routines
 
-External package internal functions
+Internal package routines with external linkage
 
-local functions
+local routines
 
 
 </code></pre>
@@ -379,10 +391,14 @@ static void createThreadCB(ZMapFeatureSequenceMap sequence_map, gpointer user_da
 
 
 
-<P>The standard for code has been to indent by two for each block, there seems
-no reason to change it. Line length should be kept to somewhere between 80 up to
+<P>The standard for code is to indent by two for each block which gives a good
+balance between ease of scanning of code blocks and not taking up too much space.
+Line length should be kept to somewhere between 80 up to
 a maximum of 120 chars, i.e. something that will fit comfortably on to a screen with a reasonable
 font size. Do not exceed lines of length 120 chars.</p>
+
+<p>All developers are expected to follow this standard rigorously, one of the most annoying,
+concentration-breaking style problems is having to read code with wildly different indentation.</p>
 
 
 <p>Here is the standard indentation for a function:</p>
@@ -426,6 +442,10 @@ font size. Do not exceed lines of length 120 chars.</p>
 
   return ;
 }
+
+<p>Please note the space before the terminating ";" which aids legibility.</p>
+
+
 </code></pre>
 
 
@@ -441,11 +461,57 @@ to do this which include:</p>
       indentation on a blank line.
 </ul>
 
+<p>If you use emacs then ask other developers how to set this up. If you use a
+different editor then the onus is on you to sort this out.</p>
+
 
 
 
 <a name="commenting"></a>
 <h2>Commenting</h2>
+
+<p><b>All</b> files should have a brief description in the header comment
+at the start of the file. This should describe what the purpose of the
+code in that file is. If this proves difficult it probably indicates
+that the code in that file needs splitting out into a number of separate
+files:</p>
+
+<pre><code>/*  File: zmapGFF.h
+ *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
+ *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *-------------------------------------------------------------------
+ * ZMap is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ * or see the on-line version at http://www.gnu.org/copyleft/gpl.txt
+ *-------------------------------------------------------------------
+ * This file is part of the ZMap genome database package
+ * originated by
+ * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *
+ * Description: Interface to the GFF parser, the parser works in a
+ *              stream-oriented, "line at a time" way, the caller must
+ *              pass complete GFF lines to the parser which then
+ *              builds up arrays of ZMapFeatureStruct's, one for each
+ *              GFF source. These arrays can then be retrieved from
+ *              the parser once parsing is finished.
+ *
+ *-------------------------------------------------------------------
+ */
+</code></pre>
+
 
 <P>Block comments and line comments should be in this style:</P>
 
@@ -458,20 +524,9 @@ to do this which include:</p>
     }
 </code></pre>
 
-<P><b>All</b> functions should be directly preceded by a block comment that
-describes what the function does:</P>
-
-
-<pre><code>/* This function does absolutely nothing. */
-int func(void)
-{
-  return ;
-}
-</code></pre>
 
 <p>Please do <b>not</b> use the "//" style of C++, unfortunately it has been introduced in
-a few places and it jars with the standard style...i.e. it's too late to introduce
-this now, however handy it might be !</p>
+a few places and it jars with the standard style and is not supported by all C compilers.</p>
 
 
 <a name="naming"></a>
@@ -562,7 +617,8 @@ which should <b>ALWAYS</b> be correctly initialised:</p>
 <p>This helps a lot with scanning the code and ensures that the return variable will always
 have been initialised even if the body of the function is changed.</p>
 
-<p>Try to avoid multiple return statements in a function:</p>
+<p>Please avoid multiple return statements in a function and especially avoid returning from
+the middle of a large body of code:</p>
 
 <pre><code>Write functions like this:
 
@@ -626,7 +682,7 @@ use in your code like this:
 </code></pre>
 
 <p>Adding <b>MyNewStructName</b> ensures that most debuggers will display the name of the
-struct so you don't have to expand the struct to what it is.</p>
+struct so you don't have to expand the struct to see what it is.</p>
 
 
 
@@ -657,7 +713,7 @@ within the package.</p>
 
 <p>Currently ZMap code has not adherred to this philosopy rigidly enough with
 the result that ZMap crashes in places where it should be handling errors 
-and ultimately logging an error and/or displaying an error to the user.</p>
+and logging and/or displaying an error to the user.</p>
 
 
 
