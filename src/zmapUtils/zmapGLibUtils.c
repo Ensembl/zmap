@@ -40,8 +40,6 @@
 
 
 
-
-
 /* Holds a single quark set. */
 typedef struct _ZMapQuarkSetStruct
 {
@@ -53,27 +51,12 @@ typedef struct _ZMapQuarkSetStruct
 
 
 
-/* Needed to get at private array struct. */
-typedef struct _GRealArray  GRealArray;
-
-struct _GRealArray
-{
-  guint8 *data;
-  guint   len;
-  guint   alloc;
-  guint   elt_size;
-  guint   zero_terminated : 1;
-  guint   clear : 1;
-};
-
-#define g_array_elt_len(array,i) ((array)->elt_size * (i))
-#define g_array_elt_pos(array,i) ((array)->data + g_array_elt_len((array),(i)))
-
-
 typedef struct
 {
   GQuark id;
 }DatalistFirstIDStruct, *DatalistFirstID;
+
+
 
 static inline GQuark g_quark_new(ZMapQuarkSet quark_set, gchar *string) ;
 static void printCB(gpointer data, gpointer user_data) ;
@@ -819,6 +802,7 @@ gint zMap_g_datalist_length(GData **datalist)
 
 #endif
 
+
 /*
  *                Additions to GArray
  */
@@ -826,26 +810,43 @@ gint zMap_g_datalist_length(GData **datalist)
 
 /* My new routine for returning a pointer to an element in the array, the array will be
  * expanded to include the requested element if necessary. If "clear" was not set when
- * the array was created then the element may contain random junk instead of zeros. */
-GArray* zMap_g_array_element (GArray *farray, guint index, gpointer *element_out)
+ * the array was created then the element may contain random junk instead of zeros.
+ * 
+ * NOTE, sadly user has to pass a pointer to a GArray point because the underlying
+ * glib g_array_set_size () function returns an array pointer so we have to return
+ * one too. You would imagine the struct would remain the same but you never know... */
+gpointer zMap_g_array_element(GArray **array_inout, guint index)
 {
-  GRealArray *array = (GRealArray*) farray;
-  gint length;
+  gpointer element_ptr = NULL ;
+  GArray *array = *array_inout ;
+  gint new_length, element_size ;
 
-  length = (index + 1) - array->len;
+  new_length = index + 1 ;				    /* Note it's a zero-based index. */
 
-  if (length > 0)
+  /* If we need to expand the array then bump it up quite a bit to avoid repeated reallocation. */
+  if (new_length > array->len)
     {
-      farray = g_array_set_size (farray, length);
+      new_length *= 0.5 ;
+
+      array = g_array_set_size(array, new_length) ;
+
+      *array_inout = array ;				    /* Return new pointer if array resized. */
     }
 
-  *element_out = g_array_elt_pos (array, index);
+  element_size = g_array_get_element_size(array) ;
 
-  return farray;
+  element_ptr = array->data + (element_size * index) ;
+
+  return element_ptr ;
 }
 
 
-/*!
+
+
+
+
+
+/*
  *                Additions to GString
  *
  * GString is a very good package but there are some more operations it could usefully do.

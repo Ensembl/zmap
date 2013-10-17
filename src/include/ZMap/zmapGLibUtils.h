@@ -108,15 +108,11 @@ void zMap_g_hash_table_iter_free(GList **list);       // not implemented
 void  zMap_g_hash_table_get_keys(GList **iter, GHashTable *h);
 void  zMap_g_hash_table_get_data(GList **iter, GHashTable *h);
 
+
 /* Returns a pointer to an element of the array instead of the element itself. */
 #define zMap_g_array_index_ptr(a, t, i)      (&(((t*) (a)->data) [(i)]))
 
-
-
-GArray *zMap_g_array_element(GArray           *array,
-			     guint             index,
-			     gpointer *element
-			     );
+gpointer zMap_g_array_element(GArray **array_inout, guint index) ;
 
 
 /* This is our version of the Glib Quark code (see www.gtk.org for more information).
