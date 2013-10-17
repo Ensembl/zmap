@@ -42,7 +42,7 @@
 
 
 /* These limits should be removed...see comments at start of code. */
-enum {PARSE_ELEMENT_LIMIT = 300, PARSE_ATTRIBUTE_LIMIT = PARSE_ELEMENT_LIMIT * 2} ;
+enum {PARSE_ELEMENT_LIMIT = 3000, PARSE_ATTRIBUTE_LIMIT = PARSE_ELEMENT_LIMIT * 2} ;
 
 
 typedef struct _tagHandlerItemStruct
@@ -99,6 +99,13 @@ static gboolean defaultAlwaysTrueHandler(void *ignored_data,
 
 /* OK....SO THIS LIMIT IS FUNDAMENTALLY A BAD IDEA.....I'VE BUMPED IT UP
  * AS AN INITIAL FIX BUT IT NEEDS FIXING PROPERLY..... SEE ENUM ABOVE
+ * 
+ * NOTE...YOU _CANNOT_ FIX THIS PROBLEM JUST SIMPLY BY INCREASING THE SIZE
+ * OF THE ATTRIBUTE AND ELEMENT ARRAYS DYNAMICALLY BECAUSE OTHER CODE HOLDS
+ * POINTERS INTO THESE ARRAYS WHICH BECOME INVALID WHEN THE ARRAY IS RELOCATED
+ * DURING THE RESIZE. SEE RT 59402
+ * 
+ * 
  * 
  * What happens of course is that sooner or later we exceed the limit and then
  * the code crashes..... */
