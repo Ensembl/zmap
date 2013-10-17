@@ -102,9 +102,10 @@ gpointer zMap_g_datalist_first(GData **datalist);
 gint zMap_g_datalist_length(GData **datalist);
 
 
+
 /* Returns a pointer to an element of the array instead of the element itself. */
 #define zMap_g_array_index_ptr(a, t, i)      (&(((t*) (a)->data) [(i)]))
-GArray *zMap_g_array_element(GArray *array, guint index, gpointer *element) ;
+gpointer zMap_g_array_element(GArray **array_inout, guint index) ;
 
 
 /* This is our version of the Glib Quark code (see www.gtk.org for more information).
