@@ -170,14 +170,11 @@ static void zmapViewCreateColumns(ZMapView view,GList *featuresets) ;
 static ZMapConfigSource zmapViewGetSourceFromFeatureset(GHashTable *hash,GQuark featurequark);
 static ZMapView createZMapView(char *view_name, GList *sequences, void *app_data) ;
 static void destroyZMapView(ZMapView *zmap) ;
-
 static void displayDataWindows(ZMapView zmap_view,
 				       ZMapFeatureContext all_features, ZMapFeatureContext new_features,
 				       GHashTable *new_styles, LoadFeaturesData loaded_features,
 				       gboolean undisplay, GList *masked,
 				       ZMapFeature highlight_feature, gboolean allow_clean) ;
-
-
 static gint zmapIdleCB(gpointer cb_data) ;
 static void enterCB(ZMapWindow window, void *caller_data, void *window_data) ;
 static void leaveCB(ZMapWindow window, void *caller_data, void *window_data) ;
@@ -189,10 +186,8 @@ static void setZoomStatusCB(ZMapWindow window, void *caller_data, void *window_d
 static void commandCB(ZMapWindow window, void *caller_data, void *window_data) ;
 static void loadedDataCB(ZMapWindow window, void *caller_data, gpointer loaded_data, void *window_data) ;
 static void viewSplitToPatternCB(ZMapWindow window, void *caller_data, void *window_data);
-
 static void setZoomStatus(gpointer data, gpointer user_data);
 static void splitMagic(gpointer data, gpointer user_data);
-
 static void doBlixemCmd(ZMapView view, ZMapWindowCallbackCommandAlign align_cmd) ;
 
 static void startStateConnectionChecking(ZMapView zmap_view) ;
@@ -286,6 +281,11 @@ static ZMapFeatureContextExecuteStatus mark_matching_invalid(GQuark key,
                                                              gpointer user_data,
                                                              char **error_out) ;
 
+static LoadFeaturesData createLoadFeatures(GList *feature_sets) ;
+static LoadFeaturesData copyLoadFeatures(LoadFeaturesData loaded_features_in) ;
+static void destroyLoadFeatures(LoadFeaturesData loaded_features) ;
+
+
 
 #define DEBUG_CONTEXT_MAP	0
 
@@ -314,13 +314,11 @@ static void getWindowList(gpointer data, gpointer user_data) ;
  */
 
 
-
 /* These callback routines are global because they are set just once for the lifetime of the
  * process. */
 
 /* Callbacks we make back to the level above us. */
 static ZMapViewCallbacks view_cbs_G = NULL ;
-
 
 /* Callbacks back we set in the level below us, i.e. zMapWindow. */
 ZMapWindowCallbacksStruct window_cbs_G =
@@ -2315,14 +2313,8 @@ static void getIniData(ZMapView view, char *config_str, GList *req_sources)
 
 		set_name = (char *)g_quark_to_string(GPOINTER_TO_UINT(key)) ;
 
-		printf("Next set: %s\n", set_name) ;
-
-
 		// start with a 1-1 default mapping
 		gffset = (ZMapFeatureSetDesc)value ;
-
-		if (zMapLogQuarkIsStr(gffset->feature_src_ID, "genomic_canonical"))
-		  printf("found it\n") ;
 
 		gff_source = g_new0(ZMapFeatureSourceStruct,1) ;
 
@@ -3112,8 +3104,11 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 	  if (zmap_view->remote_control && connect_data)
 	    {
 	      if (!(connect_data->loaded_features))
-		connect_data->loaded_features = g_new0(LoadFeaturesDataStruct, 1) ;
+		{
+		  connect_data->loaded_features = createLoadFeatures(NULL) ;
+		}
 
+	      /* Does this need to be separate....?? probably not.... */
 	      connect_data->loaded_features->feature_sets = g_list_copy(connect_data->feature_sets) ;
 
 
@@ -4593,9 +4588,18 @@ static void destroyViewConnection(ZMapView view, ZMapViewConnection view_conn)
 
   if (view_conn->request_data)
     {
-      /* Minimum, much more needs doing than this.... */
+      /* There is more to do here but proceed carefully, sometimes parts of the code are still
+       * referring to this because of asynchronous returns from zmapWindow and other code. */
+      ConnectionData connect_data = (ConnectionData)(view_conn->request_data) ;
 
-      g_free(view_conn->request_data) ;
+      if (connect_data->loaded_features)
+	{
+	  destroyLoadFeatures(connect_data->loaded_features) ;
+
+	  connect_data->loaded_features = NULL ;
+	}
+
+      g_free(connect_data) ;
       view_conn->request_data = NULL ;
     }
 
@@ -4641,7 +4645,7 @@ static void resetWindows(ZMapView zmap_view)
 /* Signal all windows there is data to draw. */
 void displayDataWindows(ZMapView zmap_view,
 			ZMapFeatureContext all_features, ZMapFeatureContext new_features,
-			GHashTable *new_styles, LoadFeaturesData loaded_features,
+			GHashTable *new_styles, LoadFeaturesData loaded_features_in,
 			gboolean undisplay, GList *masked, ZMapFeature highlight_feature, gboolean allow_clean)
 {
   GList *list_item, *window_list  = NULL;
@@ -4664,6 +4668,16 @@ void displayDataWindows(ZMapView zmap_view,
 
       if (!undisplay)
 	{
+	  LoadFeaturesData loaded_features = NULL ;
+
+	  /* we need to tell the user what features were loaded but this struct needs to 
+	   * persist as the information may be passed to loadedDataCB() _after_ we have
+	   * destroyed the connection. */
+	  if (loaded_features_in)
+	    {
+	      loaded_features = copyLoadFeatures(loaded_features_in) ;
+	    }
+
 	  zMapWindowDisplayData(view_window->window, NULL,
 				all_features, new_features,
 				&zmap_view->context_map,
@@ -4692,7 +4706,6 @@ static void loadedDataCB(ZMapWindow window, void *caller_data, gpointer loaded_d
   ZMapViewWindow view_window = (ZMapViewWindow)caller_data;
   LoadFeaturesData loaded_features = (LoadFeaturesData)loaded_data ;
   ZMapFeatureContext context = (ZMapFeatureContext)window_data;
-
   ZMapView view;
   gboolean removed, debug = FALSE, unique_context;
 
@@ -4718,7 +4731,125 @@ static void loadedDataCB(ZMapWindow window, void *caller_data, gpointer loaded_d
 
 
   if (loaded_features)
-    sendViewLoaded(view, loaded_features) ;
+    {
+      zMapLogMessage("Received LoadFeaturesDataStruct to pass to sendViewLoaded() at: %p, ", loaded_features) ;
+
+      sendViewLoaded(view, loaded_features) ;
+
+      /* We were passed a copy of this by displayDataWindows() and now we can delete it. */
+      destroyLoadFeatures(loaded_features) ;
+    }
+
+  return ;
+}
+
+
+/* Sends a message to our peer that all features are now loaded. */
+static void sendViewLoaded(ZMapView zmap_view, LoadFeaturesData loaded_features)
+{
+  static ZMapXMLUtilsEventStackStruct
+    viewloaded[] = {{ZMAPXML_START_ELEMENT_EVENT, "featureset", ZMAPXML_EVENT_DATA_NONE,    {0}},
+		    {ZMAPXML_ATTRIBUTE_EVENT,     "names",      ZMAPXML_EVENT_DATA_STRING,   {0}},
+		    {ZMAPXML_END_ELEMENT_EVENT,   "featureset", ZMAPXML_EVENT_DATA_NONE,    {0}},
+		    {ZMAPXML_START_ELEMENT_EVENT, "start", ZMAPXML_EVENT_DATA_NONE,    {0}},
+		    {ZMAPXML_ATTRIBUTE_EVENT,     "value",      ZMAPXML_EVENT_DATA_INTEGER,   {0}},
+		    {ZMAPXML_END_ELEMENT_EVENT,   "start", ZMAPXML_EVENT_DATA_NONE,    {0}},
+		    {ZMAPXML_START_ELEMENT_EVENT, "end", ZMAPXML_EVENT_DATA_NONE,    {0}},
+		    {ZMAPXML_ATTRIBUTE_EVENT,     "value",      ZMAPXML_EVENT_DATA_INTEGER,   {0}},
+		    {ZMAPXML_END_ELEMENT_EVENT,   "end", ZMAPXML_EVENT_DATA_NONE,    {0}},
+		    {ZMAPXML_START_ELEMENT_EVENT, "status", ZMAPXML_EVENT_DATA_NONE,    {0}},
+		    {ZMAPXML_ATTRIBUTE_EVENT,     "value",      ZMAPXML_EVENT_DATA_INTEGER,   {0}},
+		    {ZMAPXML_ATTRIBUTE_EVENT,     "message",      ZMAPXML_EVENT_DATA_STRING,   {0}},
+		    {ZMAPXML_END_ELEMENT_EVENT,   "status", ZMAPXML_EVENT_DATA_NONE,    {0}},
+		    {ZMAPXML_START_ELEMENT_EVENT, "exit_code", ZMAPXML_EVENT_DATA_NONE,    {0}},
+		    {ZMAPXML_ATTRIBUTE_EVENT,     "value",      ZMAPXML_EVENT_DATA_INTEGER,   {0}},
+		    {ZMAPXML_END_ELEMENT_EVENT,   "exit_code", ZMAPXML_EVENT_DATA_NONE,    {0}},
+		    {ZMAPXML_START_ELEMENT_EVENT, "stderr", ZMAPXML_EVENT_DATA_NONE,    {0}},
+		    {ZMAPXML_ATTRIBUTE_EVENT,     "value",      ZMAPXML_EVENT_DATA_STRING,   {0}},
+		    {ZMAPXML_END_ELEMENT_EVENT,   "stderr", ZMAPXML_EVENT_DATA_NONE,    {0}},
+		    {0}} ;
+
+  if (!loaded_features || !(loaded_features->feature_sets))
+    {
+      zMapLogCritical("%s", "Data Load notification received but no datasets specified.") ;
+    }
+  else
+    {
+      GList *features;
+      char *featurelist = NULL;
+      char *f ;
+      char *emsg = NULL ;
+      char *ok_mess = NULL ;
+      int i ;
+
+      for (features = loaded_features->feature_sets ; features ; features = features->next)
+	{
+	  char *prev ;
+
+	  f = (char *) g_quark_to_string(GPOINTER_TO_UINT(features->data)) ;
+	  prev = featurelist ;
+
+	  if (!prev)
+	    featurelist = g_strdup(f) ;
+	  else
+	    featurelist = g_strjoin(";", prev, f, NULL) ;
+
+	  g_free(prev) ;
+	}
+
+      if(loaded_features->status)		/* see comment in zmapSlave.c/ RETURNCODE_QUIT, we are tied up in knots */
+	{
+	  ok_mess = g_strdup_printf("%d features loaded",loaded_features->num_features);
+	  emsg = html_quote_string(ok_mess);	/* see comment about really free() below */
+	  g_free(ok_mess);
+
+	  {
+	    static long total = 0;
+
+	    total += loaded_features->num_features;
+	    zMapLogTime(TIMER_LOAD,TIMER_ELAPSED,total,"");	/* how long is startup... */
+	  }
+	}
+      else
+	{
+	  emsg = html_quote_string(loaded_features->err_msg ? loaded_features->err_msg  : "");
+	}
+
+      if (loaded_features->stderr_out)
+	{
+	  gchar *old = loaded_features->stderr_out;
+	  loaded_features->stderr_out =  html_quote_string(old);
+	  g_free(old);
+	}
+
+      i = 1 ;
+      viewloaded[i].value.s = featurelist ;
+      i += 3 ;
+      viewloaded[i].value.i = loaded_features->start ;
+      i += 3 ;
+      viewloaded[i].value.i = loaded_features->end ;
+      i += 3 ;
+      viewloaded[i].value.i = (int)loaded_features->status ;
+      i++ ;
+      viewloaded[i].value.s = emsg ;
+      i += 3 ;
+      viewloaded[i].value.i = loaded_features->exit_code ;
+      i += 3 ;
+      viewloaded[i].value.s = loaded_features->stderr_out ? loaded_features->stderr_out : "" ;
+
+
+      /* Send request to peer program. */
+      /* NOTE WELL....returns a pointer to a static struct in this function, not ideal but will
+       * have to do for now. */
+      (*(view_cbs_G->remote_request_func))(view_cbs_G->remote_request_func_data,
+					   zmap_view,
+					   ZACP_FEATURES_LOADED, &viewloaded[0],
+					   localProcessReplyFunc, zmap_view) ;
+
+      free(emsg);  /* yes really free() not g_free()-> see zmapUrlUtils.c */
+
+      g_free(featurelist);
+    }
 
   return ;
 }
@@ -5108,12 +5239,15 @@ static void justDrawContext(ZMapView view, ZMapFeatureContext diff_context,
 {
   LoadFeaturesData loaded_features = NULL ;
 
+  /* THIS CAN GO ONCE IT'S WORKING.... */
   /* we need to tell the user what features were loaded but this struct needs to 
    * persist as the information may be passed _after_ the connection has gone. */
   if (connect_data && connect_data->loaded_features)
     {
-      loaded_features = g_new0(LoadFeaturesDataStruct, 1) ;
-      *loaded_features = *(connect_data->loaded_features) ;
+      loaded_features = connect_data->loaded_features ;
+      zMapLogMessage("copied pointer of ConnectData LoadFeaturesDataStruct"
+		     " to pass to displayDataWindows(): %p -> %p",
+		     connect_data->loaded_features, loaded_features) ;
     }
 
   /* Signal the ZMap that there is work to be done. */
@@ -5938,124 +6072,6 @@ void print_col2fset(char * str,GHashTable *data)
 #endif
 
 
-/* Sends a message to our peer that all features are now loaded. */
-static void sendViewLoaded(ZMapView zmap_view, LoadFeaturesData loaded_features)
-{
-  static ZMapXMLUtilsEventStackStruct
-    viewloaded[] = {{ZMAPXML_START_ELEMENT_EVENT, "featureset", ZMAPXML_EVENT_DATA_NONE,    {0}},
-		    {ZMAPXML_ATTRIBUTE_EVENT,     "names",      ZMAPXML_EVENT_DATA_STRING,   {0}},
-		    {ZMAPXML_END_ELEMENT_EVENT,   "featureset", ZMAPXML_EVENT_DATA_NONE,    {0}},
-		    {ZMAPXML_START_ELEMENT_EVENT, "start", ZMAPXML_EVENT_DATA_NONE,    {0}},
-		    {ZMAPXML_ATTRIBUTE_EVENT,     "value",      ZMAPXML_EVENT_DATA_INTEGER,   {0}},
-		    {ZMAPXML_END_ELEMENT_EVENT,   "start", ZMAPXML_EVENT_DATA_NONE,    {0}},
-		    {ZMAPXML_START_ELEMENT_EVENT, "end", ZMAPXML_EVENT_DATA_NONE,    {0}},
-		    {ZMAPXML_ATTRIBUTE_EVENT,     "value",      ZMAPXML_EVENT_DATA_INTEGER,   {0}},
-		    {ZMAPXML_END_ELEMENT_EVENT,   "end", ZMAPXML_EVENT_DATA_NONE,    {0}},
-		    {ZMAPXML_START_ELEMENT_EVENT, "status", ZMAPXML_EVENT_DATA_NONE,    {0}},
-		    {ZMAPXML_ATTRIBUTE_EVENT,     "value",      ZMAPXML_EVENT_DATA_INTEGER,   {0}},
-		    {ZMAPXML_ATTRIBUTE_EVENT,     "message",      ZMAPXML_EVENT_DATA_STRING,   {0}},
-		    {ZMAPXML_END_ELEMENT_EVENT,   "status", ZMAPXML_EVENT_DATA_NONE,    {0}},
-		    {ZMAPXML_START_ELEMENT_EVENT, "exit_code", ZMAPXML_EVENT_DATA_NONE,    {0}},
-		    {ZMAPXML_ATTRIBUTE_EVENT,     "value",      ZMAPXML_EVENT_DATA_INTEGER,   {0}},
-		    {ZMAPXML_END_ELEMENT_EVENT,   "exit_code", ZMAPXML_EVENT_DATA_NONE,    {0}},
-		    {ZMAPXML_START_ELEMENT_EVENT, "stderr", ZMAPXML_EVENT_DATA_NONE,    {0}},
-		    {ZMAPXML_ATTRIBUTE_EVENT,     "value",      ZMAPXML_EVENT_DATA_STRING,   {0}},
-		    {ZMAPXML_END_ELEMENT_EVENT,   "stderr", ZMAPXML_EVENT_DATA_NONE,    {0}},
-		    {0}} ;
-
-  if (!loaded_features || !(loaded_features->feature_sets))
-    {
-      zMapLogCritical("%s", "Data Load notification received but no datasets specified.") ;
-    }
-  else
-    {
-      GList *features;
-      char *featurelist = NULL;
-      char *f ;
-      char *emsg = NULL ;
-      char *ok_mess = NULL ;
-      int i ;
-
-      for (features = loaded_features->feature_sets ; features ; features = features->next)
-	{
-	  char *prev ;
-
-	  f = (char *) g_quark_to_string(GPOINTER_TO_UINT(features->data)) ;
-	  prev = featurelist ;
-
-	  if (!prev)
-	    featurelist = g_strdup(f) ;
-	  else
-	    featurelist = g_strjoin(";", prev, f, NULL) ;
-
-	  g_free(prev) ;
-	}
-
-      if(loaded_features->status)		/* see comment in zmapSlave.c/ RETURNCODE_QUIT, we are tied up in knots */
-	{
-	  ok_mess = g_strdup_printf("%d features loaded",loaded_features->num_features);
-	  emsg = html_quote_string(ok_mess);	/* see comment about really free() below */
-	  g_free(ok_mess);
-
-	  {
-	    static long total = 0;
-
-	    total += loaded_features->num_features;
-	    zMapLogTime(TIMER_LOAD,TIMER_ELAPSED,total,"");	/* how long is startup... */
-	  }
-	}
-      else
-	{
-	  emsg = html_quote_string(loaded_features->err_msg ? loaded_features->err_msg  : "");
-	}
-
-      if (loaded_features->stderr_out)
-	{
-	  gchar *old = loaded_features->stderr_out;
-	  loaded_features->stderr_out =  html_quote_string(old);
-	  g_free(old);
-	}
-
-      i = 1 ;
-      viewloaded[i].value.s = featurelist ;
-      i += 3 ;
-      viewloaded[i].value.i = loaded_features->start ;
-      i += 3 ;
-      viewloaded[i].value.i = loaded_features->end ;
-      i += 3 ;
-      viewloaded[i].value.i = (int)loaded_features->status ;
-      i++ ;
-      viewloaded[i].value.s = emsg ;
-      i += 3 ;
-      viewloaded[i].value.i = loaded_features->exit_code ;
-      i += 3 ;
-      viewloaded[i].value.s = loaded_features->stderr_out ? loaded_features->stderr_out : "" ;
-
-
-      /* Send request to peer program. */
-      /* NOTE WELL....returns a pointer to a static struct in this function, not ideal but will
-       * have to do for now. */
-      (*(view_cbs_G->remote_request_func))(view_cbs_G->remote_request_func_data,
-					   zmap_view,
-					   ZACP_FEATURES_LOADED, &viewloaded[0],
-					   localProcessReplyFunc, zmap_view) ;
-
-      free(emsg);  /* yes really free() not g_free()-> see zmapUrlUtils.c */
-
-      g_free(featurelist);
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      g_free(loaded_features) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-    }
-
-  return ;
-}
-
-
 /* Receives peers reply to our "features_loaded" message. */
 static void localProcessReplyFunc(gboolean reply_ok, char *reply_error,
 				  char *command, RemoteCommandRCType command_rc, char *reason, char *reply,
@@ -6244,4 +6260,40 @@ void zMapViewUpdateColumnBackground(ZMapView view)
 
 
 
+/* Create/copy/delete load_features structs. */
+static LoadFeaturesData createLoadFeatures(GList *feature_sets)
+{
+  LoadFeaturesData loaded_features = NULL ;
 
+  loaded_features = g_new0(LoadFeaturesDataStruct, 1) ;
+
+  if (feature_sets)
+    loaded_features->feature_sets = g_list_copy(feature_sets) ;
+
+  return loaded_features ;
+}
+
+
+static LoadFeaturesData copyLoadFeatures(LoadFeaturesData loaded_features_in)
+{
+  LoadFeaturesData loaded_features = NULL ;
+
+  loaded_features = g_new0(LoadFeaturesDataStruct, 1) ;
+
+  *loaded_features = *loaded_features_in ;
+
+  if (loaded_features_in->feature_sets)
+    loaded_features->feature_sets = g_list_copy(loaded_features_in->feature_sets) ;
+
+  return loaded_features ;
+}
+
+static void destroyLoadFeatures(LoadFeaturesData loaded_features)
+{
+  if (loaded_features->feature_sets)
+    g_list_free(loaded_features->feature_sets) ;
+
+  g_free(loaded_features) ;
+
+  return ;
+}
