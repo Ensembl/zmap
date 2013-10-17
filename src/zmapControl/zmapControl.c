@@ -387,7 +387,6 @@ void zMapDestroy(ZMap zmap, GList **destroyed_views_inout)
   if (destroyed_views_inout)
     destroyed_views = *destroyed_views_inout ;
 
-  /* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! */
   zmapControlDoKill(zmap, &destroyed_views) ;
 
   if (destroyed_views_inout)
@@ -583,30 +582,29 @@ void zmapControlSignalKill(ZMap zmap)
  * layer above us that we have died. */
 void zmapControlDoKill(ZMap zmap, GList **destroyed_views_out)
 {
-  /* this should be an assert.....test it before commiting the change.... */
-  g_return_if_fail((zmap->state != ZMAP_DYING)) ;
-
-
-  /* set our state to DYING....so we don't respond to anything anymore....
-   * Must set this as this will prevent any further interaction with the ZMap as
-   * a result of both the ZMap window and the threads dying asynchronously.  */
-  zmap->state = ZMAP_DYING ;
-
-  /* There may be no views if we are killed early on before connecting in which case
-   * we can just kill the zmap.If there are no views we can just go ahead and kill everything, otherwise we just
-   * signal all the views to die. */
-  if (!(zmap->view_list))
+  if (zmap->state != ZMAP_DYING)
     {
-      killFinal(&zmap) ;
-    }
-  else
-    {
-      GList *destroyed_views = NULL ;
+      /* set our state to DYING....so we don't respond to anything anymore....
+       * Must set this as this will prevent any further interaction with the ZMap as
+       * a result of both the ZMap window and the threads dying asynchronously.  */
+      zmap->state = ZMAP_DYING ;
 
-      killViews(zmap, &destroyed_views) ;
+      /* There may be no views if we are killed early on before connecting in which case
+       * we can just kill the zmap.If there are no views we can just go ahead and kill everything, otherwise we just
+       * signal all the views to die. */
+      if (!(zmap->view_list))
+	{
+	  killFinal(&zmap) ;
+	}
+      else
+	{
+	  GList *destroyed_views = NULL ;
 
-      if (destroyed_views_out)
-	*destroyed_views_out = destroyed_views ;
+	  killViews(zmap, &destroyed_views) ;
+
+	  if (destroyed_views_out)
+	    *destroyed_views_out = destroyed_views ;
+	}
     }
 
   return ;
