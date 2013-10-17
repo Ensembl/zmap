@@ -243,7 +243,7 @@ void zmapControlWindowSetStatus(ZMap zmap)
 	      load_status_str = g_string_new("Selected View\n\n") ;
 
 	      if (sources_loading)
-		g_string_append_printf(load_status_str, "Columns still loading:\n %s\n", sources_loading) ;
+		g_string_append_printf(load_status_str, "Columns still loading:\n %s\n\n", sources_loading) ;
 
 	      if (sources_failing)
 		g_string_append_printf(load_status_str, "Columns failed to load:\n %s", sources_failing) ;
@@ -601,8 +601,6 @@ gboolean myWindowMaximize(GtkWidget *widget, GdkEvent  *event, gpointer user_dat
 static gboolean rotateTextCB(gpointer user_data)
 {
   static gboolean call_again = TRUE ;			    /* Keep calling us. */
-  GtkWidget *entry_widg = GTK_WIDGET(user_data) ;
-  static GString *buffer = NULL ;
 
   if (!user_data)
     {
@@ -610,17 +608,21 @@ static gboolean rotateTextCB(gpointer user_data)
     }
   else if (call_again)
     {
+      static GString *buffer = NULL ;
+      GtkWidget *entry_widg = GTK_WIDGET(user_data) ;
       char *entry_text ;
 
       if (!buffer)
 	buffer = g_string_sized_new(1000) ;
 
-      entry_text = (char *)gtk_entry_get_text(GTK_ENTRY(entry_widg)) ;
+      /* If zmap window is closed before any loading then entry_text can be NULL. */
+      if ((entry_text = (char *)gtk_entry_get_text(GTK_ENTRY(entry_widg))))
+	{
+	  buffer = g_string_assign(buffer, (entry_text + 1)) ;
+	  buffer = g_string_append_c(buffer, *entry_text) ;
 
-      buffer = g_string_assign(buffer, (entry_text + 1)) ;
-      buffer = g_string_append_c(buffer, *entry_text) ;
-
-      gtk_entry_set_text(GTK_ENTRY(entry_widg), buffer->str) ;
+	  gtk_entry_set_text(GTK_ENTRY(entry_widg), buffer->str) ;
+	}
     }
 
   return call_again ;
