@@ -202,7 +202,7 @@ static ZMapWindowCanvasFeature zMapWindowCanvasTranscriptAddFeature(ZMapWindowFe
       ne = exons->len ;
 
       if ((introns = feature->feature.transcript.introns))
-	ni = introns->len;
+	ni = introns->len ;
 
 #if USE_DOTTED_LINES
       if(feature->feature.transcript.flags.start_not_found)	/* add dotted line fading away into the distance */
@@ -242,9 +242,10 @@ static ZMapWindowCanvasFeature zMapWindowCanvasTranscriptAddFeature(ZMapWindowFe
 	  tr->sub_type = TRANSCRIPT_EXON;
 	  tr->index = i;
 
-	  if(i < ni)
+	  if (i < ni)
 	    {
-	      intron = &g_array_index(introns,ZMapSpanStruct,i);
+	      intron = &g_array_index(introns, ZMapSpanStruct, i) ;
+
 	      fy1 = y1 - feature->x1 + intron->x1;
 	      fy2 = y1 - feature->x1 + intron->x2;
 
