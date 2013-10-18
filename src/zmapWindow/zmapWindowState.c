@@ -807,34 +807,41 @@ static gboolean serialize_item(FooCanvasItem *item, SerializedItemStruct *serial
   if ((container_group = zmapWindowContainerCanvasItemGetContainer(item))
       && (feature = zMapWindowCanvasItemGetFeature(item)))
     {
-      ZMapWindowContainerFeatureSet container_set;
-
-      container_set = (ZMapWindowContainerFeatureSet)container_group ;
-
-      /* we need to record strand stuff here.......otherwise we can't set strand correctly later.....*/
-      serialize->strand_specific = zMapStyleIsStrandSpecific(*feature->style) ;
-
-
-      serialize->strand     = container_set->strand;
-      serialize->frame      = container_set->frame;
-      serialize->column_id  = container_set->unique_id;
-
-      serialize->feature_id = feature->unique_id;
-      
-      if (feature->parent)
+      if (zMapFeatureIsValid((ZMapFeatureAny)feature))
         {
-          serialize->fset_id    = feature->parent->unique_id;
-      
-          if (feature->parent->parent)
-            {
-              serialize->block_id   = feature->parent->parent->unique_id;
+          ZMapWindowContainerFeatureSet container_set;
           
-              if (feature->parent->parent->parent)
-                serialize->align_id   = feature->parent->parent->parent->unique_id;
+          container_set = (ZMapWindowContainerFeatureSet)container_group ;
+          
+          /* we need to record strand stuff here.......otherwise we can't set strand correctly later.....*/
+          if (feature->style)
+            serialize->strand_specific = zMapStyleIsStrandSpecific(*feature->style) ;
+
+          serialize->strand     = container_set->strand;
+          serialize->frame      = container_set->frame;
+          serialize->column_id  = container_set->unique_id;
+
+          serialize->feature_id = feature->unique_id;
+          
+          if (feature->parent)
+            {
+              serialize->fset_id    = feature->parent->unique_id;
+              
+              if (feature->parent->parent)
+                {
+                  serialize->block_id   = feature->parent->parent->unique_id;
+                  
+                  if (feature->parent->parent->parent)
+                    serialize->align_id   = feature->parent->parent->parent->unique_id;
+                }
             }
+          
+          serialized = TRUE;
         }
-      
-      serialized = TRUE;
+      else
+        {
+          zMapLogWarning("%s", "serialize_item failed: invalid feature") ;
+        }
     }
 
   return serialized;
