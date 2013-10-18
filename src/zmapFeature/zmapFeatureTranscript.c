@@ -638,12 +638,11 @@ static ZMapBoundaryType showTrimStartEndConfirmation()
  */
 gboolean zMapFeatureTranscriptMergeCoord(ZMapFeature transcript, 
                                          const int x,
-                                         const ZMapBoundaryType boundary_in,
+                                         ZMapBoundaryType *boundary_inout,
                                          GError **error)
 {
   gboolean merged = FALSE;
   GError *tmp_error = NULL;
-  ZMapBoundaryType boundary = boundary_in;
   
   /* Check if this is a valid transcript and has exons */
   if (!transcript)
@@ -673,16 +672,16 @@ gboolean zMapFeatureTranscriptMergeCoord(ZMapFeature transcript,
       if (!prev_exon && i == array->len && x >= exon->x1 && x <= exon->x2)
         {
           /* special case: we only have one exon and x lies inside it */
-          if (boundary == ZMAPBOUNDARY_NONE)
-            boundary = showTrimStartEndConfirmation();
+          if (*boundary_inout == ZMAPBOUNDARY_NONE)
+            *boundary_inout = showTrimStartEndConfirmation();
           
-          if (boundary == ZMAPBOUNDARY_5_SPLICE)
+          if (*boundary_inout == ZMAPBOUNDARY_5_SPLICE)
             {
               /* extend the start of the next intron i.e. trim the end of this exon */
               exon->x2 = x;
               merged = TRUE;
             }
-          else if (boundary == ZMAPBOUNDARY_3_SPLICE)
+          else if (*boundary_inout == ZMAPBOUNDARY_3_SPLICE)
             {
               /* extend the end of prev intron i.e. trim the start of this exon */
               exon->x1 = x;
@@ -695,7 +694,7 @@ gboolean zMapFeatureTranscriptMergeCoord(ZMapFeature transcript,
         {
           /* x lies inside or before the first exon: trim/extend its start
            * check that the boundary type matches (i.e. modify 3' end of adjacent intron) */
-          if (boundary == ZMAPBOUNDARY_NONE || boundary == ZMAPBOUNDARY_3_SPLICE)
+          if (*boundary_inout == ZMAPBOUNDARY_NONE || *boundary_inout == ZMAPBOUNDARY_3_SPLICE)
             {
               exon->x1 = x;
               transcript->x1 = x;
@@ -711,7 +710,7 @@ gboolean zMapFeatureTranscriptMergeCoord(ZMapFeature transcript,
       else if (i == array->len - 1 && x >= exon->x1)
         {
           /* x lies inside or after the last exon: trim/extend its end */
-          if (boundary == ZMAPBOUNDARY_NONE || boundary == ZMAPBOUNDARY_5_SPLICE)
+          if (*boundary_inout == ZMAPBOUNDARY_NONE || *boundary_inout == ZMAPBOUNDARY_5_SPLICE)
             {
               exon->x2 = x;
               transcript->x2 = x;
@@ -728,16 +727,16 @@ gboolean zMapFeatureTranscriptMergeCoord(ZMapFeature transcript,
         {
           /* x lies in the intron before this exon: ask whether 
            * to trim the start or end of the intron */
-          if (boundary == ZMAPBOUNDARY_NONE)
-            boundary = showTrimStartEndConfirmation();
+          if (*boundary_inout == ZMAPBOUNDARY_NONE)
+            *boundary_inout = showTrimStartEndConfirmation();
 
-          if (boundary == ZMAPBOUNDARY_5_SPLICE)
+          if (*boundary_inout == ZMAPBOUNDARY_5_SPLICE)
             {
               /* to trim the intron start, we extend the prev exon end */
               prev_exon->x2 = x;
               merged = TRUE;
             }
-          else if (boundary == ZMAPBOUNDARY_3_SPLICE)
+          else if (*boundary_inout == ZMAPBOUNDARY_3_SPLICE)
             {
               /* to trim the intron end, extend the current exon start */
               exon->x1 = x;
@@ -749,16 +748,16 @@ gboolean zMapFeatureTranscriptMergeCoord(ZMapFeature transcript,
       else if (x <= exon->x2)
         {
           /* x lies in this exon: ask whether to trim the start or end*/
-          if (boundary == ZMAPBOUNDARY_NONE)
-            boundary = showTrimStartEndConfirmation();  
+          if (*boundary_inout == ZMAPBOUNDARY_NONE)
+            *boundary_inout = showTrimStartEndConfirmation();  
 
-          if (boundary == ZMAPBOUNDARY_5_SPLICE)
+          if (*boundary_inout == ZMAPBOUNDARY_5_SPLICE)
             {
               /* extend the start of the next intron i.e. trim the end of this exon */
               exon->x2 = x;
               merged = TRUE;
             }
-          else if (boundary == ZMAPBOUNDARY_3_SPLICE)
+          else if (*boundary_inout == ZMAPBOUNDARY_3_SPLICE)
             {
               /* extend the end of prev intron i.e. trim the start of this exon */
               exon->x1 = x;
