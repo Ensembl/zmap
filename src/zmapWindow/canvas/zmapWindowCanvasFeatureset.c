@@ -1362,8 +1362,7 @@ gboolean zmapWindowCanvasFeatureValid(ZMapWindowCanvasFeature feature)
   /*! \todo Add an assert if this fails because it would be useful to 
    * debug when this happens - but only once we are able to disable asserts
    * in release code! */
-  #warning Remove this assert before committing
-  zMapAssert(result) ;
+  //zMapAssert(result) ;
   
   return result ;
 }
