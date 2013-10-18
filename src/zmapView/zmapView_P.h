@@ -413,11 +413,6 @@ ZMapFeatureContext zmapViewMergeInContext(ZMapView view, ZMapFeatureContext cont
 gboolean zmapViewDrawDiffContext(ZMapView view, ZMapFeatureContext *diff_context, ZMapFeature highlight_feature) ;
 void zmapViewResetWindows(ZMapView zmap_view, gboolean revcomp);
 void zmapViewEraseFromContext(ZMapView replace_me, ZMapFeatureContext context_inout);
-void zmapViewDisplayDataWindows(ZMapView zmap_view,
-				ZMapFeatureContext all_features, ZMapFeatureContext new_features,
-                                GHashTable *new_styles, ZMapViewLoadFeaturesData loaded_features,
-                                gboolean undisplay, GList *masked,
-				ZMapFeature highlight_feature, gboolean allow_clean);
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE

@@ -105,6 +105,7 @@ gint zMap_g_datalist_length(GData **datalist);
 
 /* Returns a pointer to an element of the array instead of the element itself. */
 #define zMap_g_array_index_ptr(a, t, i)      (&(((t*) (a)->data) [(i)]))
+
 gpointer zMap_g_array_element(GArray **array_inout, guint index) ;
 
 

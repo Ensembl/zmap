@@ -1590,14 +1590,6 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
 
 
 
-  /* This appears to be a bit of hack by Roy to get the zmapFeatureData class initialised, can't
-   * help feeling we should be calling an init function somewhere. This class essentially
-   * exports feature data in human readable form. */
-  if (!g_type_class_peek(ZMAP_TYPE_FEATURE_DATA))
-    g_type_class_ref(ZMAP_TYPE_FEATURE_DATA);
-
-
-
   /*
    * Need to merge sequence and non-sequence feature code....too much repetition...
    */
