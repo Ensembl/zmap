@@ -340,6 +340,7 @@ gboolean zMapFeatureTranscriptNormalise(ZMapFeature feature)
 	{
 	  zMapFeatureTranscriptRecreateIntrons(feature) ;
 	}
+    }
 
   return result ;
 }
