@@ -3101,17 +3101,19 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
 	  // need to copy this info in case of thread death which clears it up
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  if (zmap_view->remote_control && connect_data)
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+	  if (connect_data)
 	    {
 	      if (!(connect_data->loaded_features))
 		{
 		  connect_data->loaded_features = createLoadFeatures(NULL) ;
 		}
-
 	      /* Does this need to be separate....?? probably not.... */
 	      connect_data->loaded_features->feature_sets = g_list_copy(connect_data->feature_sets) ;
-
-
+	      connect_data->loaded_features->xwid = zmap_view->xwid ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	      /* DEBUG ONLY...LEAKS MEMORY... */
@@ -3124,8 +3126,6 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 	      }
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-
-	      connect_data->loaded_features->xwid = zmap_view->xwid ;
 	    }
 
 	  if (!(zMapThreadGetReplyWithData(thread, &reply, &data, &err_msg)))
@@ -3485,14 +3485,9 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 				      connect_data->stderr_out) ;
 		        }
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-		      /* 
-			 results in overreporting of failed connections....hardly surprising as it
-			 counts ALL the requests that failed, e.g. unsupported ones.... */
-		      (zmap_view->sources_failed)++ ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-		      if (request_type == ZMAP_SERVERREQ_FEATURES)
+		      /* Add any new sources that have failed. */
+		      if (request_type == ZMAP_SERVERREQ_FEATURES
+			  && connect_data->loaded_features->feature_sets)
 			{
 			  zmap_view->sources_failed
 			    = zMap_g_list_insert_list_after(zmap_view->sources_failed,
@@ -3500,7 +3495,6 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 							    g_list_length(zmap_view->sources_failed),
 							    TRUE) ;
 			}
-
 
 		      zMapLogWarning("Thread %p failed, request = %s, failed sources now %d",
 				     thread,
@@ -4730,7 +4724,7 @@ static void loadedDataCB(ZMapWindow window, void *caller_data, gpointer loaded_d
     (*(view_cbs_G->load_data))(view, view->app_data, NULL) ;
 
 
-  if (loaded_features)
+  if (view->remote_control && loaded_features)
     {
       zMapLogMessage("Received LoadFeaturesDataStruct to pass to sendViewLoaded() at: %p, ", loaded_features) ;
 
