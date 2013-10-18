@@ -176,6 +176,15 @@ GType zMapFeatureDataGetType(void)
       type = g_type_register_static (G_TYPE_OBJECT,
 				     ZMAP_FEATURE_DATA_NAME,
 				     &info, 0);
+
+      /* gb10: moved g_type_class_ref from zmapWindowUpdateInfoPanel. Not sure why it was there
+       * but it was causing assertions in glib. Seems to make more sense to do 
+       * it here and it fixes the assertions. */
+      /* This appears to be a bit of hack by Roy to get the zmapFeatureData class initialised, can't
+       * help feeling we should be calling an init function somewhere. This class essentially
+       * exports feature data in human readable form. */
+      if (!g_type_class_peek(type))
+        g_type_class_ref(type);
     }
 
   return type;
