@@ -495,7 +495,7 @@ static gboolean scratchMergeTranscript(ScratchMergeData merge_data)
 /*! 
  * \brief Add/merge a feature to the scratch column
  */
-static void scratchMergeFeature(ScratchMergeData merge_data)
+static gboolean scratchMergeFeature(ScratchMergeData merge_data)
 {
   gboolean merged = FALSE;
 
@@ -575,6 +575,8 @@ static void scratchMergeFeature(ScratchMergeData merge_data)
       g_error_free(*(merge_data->error));
       merge_data->error = NULL;
     }
+
+  return merged;
 }
 
 
@@ -822,48 +824,60 @@ void zmapViewScratchInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, ZM
       else
         zMapFeatureBlockAddFeatureSet(block, scratch_featureset);
       
-	/* set up featureset2_column and anything else needed */
-      f2c = g_hash_table_lookup(context_map->featureset_2_column, GUINT_TO_POINTER(scratch_featureset->unique_id));
-      if(!f2c)	/* these just accumulate  and should be removed from the hash table on clear */
-	{
-		f2c = g_new0(ZMapFeatureSetDescStruct,1);
-
-		f2c->column_id = zMapFeatureSetCreateID(ZMAP_FIXED_STYLE_SCRATCH_NAME);
-		f2c->column_ID = g_quark_from_string(ZMAP_FIXED_STYLE_SCRATCH_NAME);
-		f2c->feature_src_ID = g_quark_from_string(ZMAP_FIXED_STYLE_SCRATCH_NAME);
-		f2c->feature_set_text = ZMAP_FIXED_STYLE_SCRATCH_TEXT;
-		g_hash_table_insert(context_map->featureset_2_column, GUINT_TO_POINTER(scratch_featureset->unique_id), f2c);
-	}
-
-      src = g_hash_table_lookup(context_map->source_2_sourcedata, GUINT_TO_POINTER(scratch_featureset->unique_id));
-      if(!src)
-	{
-		src = g_new0(ZMapFeatureSourceStruct,1);
-		src->source_id = f2c->feature_src_ID;
-		src->source_text = g_quark_from_string(ZMAP_FIXED_STYLE_SCRATCH_TEXT);
-		src->style_id = style->unique_id;
-		src->maps_to = f2c->column_id;
-		g_hash_table_insert(context_map->source_2_sourcedata, GUINT_TO_POINTER(scratch_featureset->unique_id), src);
-	}
-
-      list = g_hash_table_lookup(context_map->column_2_styles,GUINT_TO_POINTER(f2c->column_id));
-      if(!list)
-	{
-		list = g_list_prepend(list,GUINT_TO_POINTER(src->style_id));
-		g_hash_table_insert(context_map->column_2_styles,GUINT_TO_POINTER(f2c->column_id), list);
-	}
-
-      column = g_hash_table_lookup(context_map->columns,GUINT_TO_POINTER(f2c->column_id));
-      if(!column)
-	{
-		column = g_new0(ZMapFeatureColumnStruct,1);
-		column->unique_id = f2c->column_id;
-		column->style_table = g_list_prepend(NULL, (gpointer)  style);
-                column->order = zMapFeatureColumnOrderNext();
-		/* the rest shoudl get filled in elsewhere */
-		g_hash_table_insert(context_map->columns, GUINT_TO_POINTER(f2c->column_id), column);
-	}
-
+      /* set up featureset2_column and anything else needed */
+      if (context_map->featureset_2_column)
+        {
+          f2c = g_hash_table_lookup(context_map->featureset_2_column, GUINT_TO_POINTER(scratch_featureset->unique_id));
+          if(!f2c)	/* these just accumulate  and should be removed from the hash table on clear */
+            {
+              f2c = g_new0(ZMapFeatureSetDescStruct,1);
+              
+              f2c->column_id = zMapFeatureSetCreateID(ZMAP_FIXED_STYLE_SCRATCH_NAME);
+              f2c->column_ID = g_quark_from_string(ZMAP_FIXED_STYLE_SCRATCH_NAME);
+              f2c->feature_src_ID = g_quark_from_string(ZMAP_FIXED_STYLE_SCRATCH_NAME);
+              f2c->feature_set_text = ZMAP_FIXED_STYLE_SCRATCH_TEXT;
+              g_hash_table_insert(context_map->featureset_2_column, GUINT_TO_POINTER(scratch_featureset->unique_id), f2c);
+            }
+        }
+      
+      if (context_map->source_2_sourcedata)
+        {
+          src = g_hash_table_lookup(context_map->source_2_sourcedata, GUINT_TO_POINTER(scratch_featureset->unique_id));
+          if(!src)
+            {
+              src = g_new0(ZMapFeatureSourceStruct,1);
+              src->source_id = f2c->feature_src_ID;
+              src->source_text = g_quark_from_string(ZMAP_FIXED_STYLE_SCRATCH_TEXT);
+              src->style_id = style->unique_id;
+              src->maps_to = f2c->column_id;
+              g_hash_table_insert(context_map->source_2_sourcedata, GUINT_TO_POINTER(scratch_featureset->unique_id), src);
+            }
+        }
+      
+      if (context_map->column_2_styles)
+        {
+          list = g_hash_table_lookup(context_map->column_2_styles,GUINT_TO_POINTER(f2c->column_id));
+          if(!list)
+            {
+              list = g_list_prepend(list,GUINT_TO_POINTER(src->style_id));
+              g_hash_table_insert(context_map->column_2_styles,GUINT_TO_POINTER(f2c->column_id), list);
+            }
+        }
+      
+      if (context_map->columns)
+        {
+          column = g_hash_table_lookup(context_map->columns,GUINT_TO_POINTER(f2c->column_id));
+          if(!column)
+            {
+              column = g_new0(ZMapFeatureColumnStruct,1);
+              column->unique_id = f2c->column_id;
+              column->style_table = g_list_prepend(NULL, (gpointer)  style);
+              column->order = zMapFeatureColumnOrderNext();
+              /* the rest shoudl get filled in elsewhere */
+              g_hash_table_insert(context_map->columns, GUINT_TO_POINTER(f2c->column_id), column);
+            }
+        }
+      
       /* Create two empty features, one for each strand */
       ZMapFeature feature_fwd = zMapFeatureCreateEmpty() ;
       
@@ -944,7 +958,7 @@ static void scratchFeatureRecreateExons(ZMapView view, ZMapFeature scratch_featu
           merge_data.use_subfeature = merge_feature->use_subfeature;
           
           /* Do the merge */
-          scratchMergeFeature(&merge_data);
+          gboolean merged = scratchMergeFeature(&merge_data);
         }
     }
 
