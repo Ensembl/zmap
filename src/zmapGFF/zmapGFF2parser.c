@@ -594,8 +594,8 @@ gboolean zMapGFFGetFeatures(ZMapGFFParser parser_base, ZMapFeatureBlock feature_
 			     feature_block) ;
 	}
 
-      /* It is possible for features to be incomplete from GFF (e.g. transcripts without
-       * an exon), we attempt to normalise them where possible...currently only
+      /* It is possible and legal for features to be incomplete from GFF (e.g. transcripts without
+       * an exon or without intron records), we attempt to normalise them where possible...currently only
        * transcripts/exons. */
       normaliseFeatures(&(parser->feature_sets)) ;
 
