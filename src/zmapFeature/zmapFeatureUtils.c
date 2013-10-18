@@ -1186,7 +1186,7 @@ void zMapFeatureTranscriptIntronForeach(ZMapFeature feature, GFunc function, gpo
 
   introns = feature->feature.transcript.introns;
 
-  if(introns->len > 1)
+  if (introns->len > 1)
     {
       ZMapSpan first, last;
       first = &(g_array_index(introns, ZMapSpanStruct, 0));
@@ -1197,8 +1197,10 @@ void zMapFeatureTranscriptIntronForeach(ZMapFeature feature, GFunc function, gpo
         forward = FALSE;
     }
 
-  if(forward)
-    end = introns->len;
+  if (forward)
+    {
+      end = introns->len;
+    }
   else
     {
       multiplier = -1;
@@ -1206,7 +1208,7 @@ void zMapFeatureTranscriptIntronForeach(ZMapFeature feature, GFunc function, gpo
       end   = 1;
     }
 
-  for(i = start; i < end; i++)
+  for (i = start; i < end; i++)
     {
       ZMapSpan intron_span;
 
@@ -1791,8 +1793,12 @@ static gboolean calcExonPhase(ZMapFeature feature, int exon_index,
 
 
 /* Compares span objects (e.g. introns or exons) and returns whether
- * they are before or after each other according to their coords. */
-static int span_compare (gconstpointer a, gconstpointer b)
+ * they are before or after each other according to their coords.
+ * 
+ * Note that this assumes that span objects do not overlap.
+ * 
+ *  */
+static int span_compare(gconstpointer a, gconstpointer b)
 {
   int result = 0 ;
   ZMapSpan sa = (ZMapSpan)a ;
