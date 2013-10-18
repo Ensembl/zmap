@@ -109,10 +109,6 @@ gboolean zMapFeatureTranscriptInit(ZMapFeature feature)
 {
   gboolean result = FALSE ;
 
-  zMapAssert(feature->type == ZMAPSTYLE_MODE_TRANSCRIPT
-	     && ((!(feature->feature.transcript.exons) && !(feature->feature.transcript.introns))
-		 || (feature->feature.transcript.exons && feature->feature.transcript.introns))) ;
-
   if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT
       && (!(feature->feature.transcript.exons) && !(feature->feature.transcript.introns)))
     {
@@ -215,13 +211,6 @@ gboolean zMapFeatureAddTranscriptExonIntron(ZMapFeature feature,
     {
       if (exon)
 	{
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  if (!feature->feature.transcript.exons)
-	    feature->feature.transcript.exons = g_array_sized_new(FALSE, TRUE,
-							      sizeof(ZMapSpanStruct), 30) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 	  g_array_append_val(feature->feature.transcript.exons, *exon) ;
 
 	  extendTranscript(feature, exon) ;
@@ -231,13 +220,6 @@ gboolean zMapFeatureAddTranscriptExonIntron(ZMapFeature feature,
 
       if (intron)
 	{
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  if (!feature->feature.transcript.introns)
-	    feature->feature.transcript.introns = g_array_sized_new(FALSE, TRUE,
-								    sizeof(ZMapSpanStruct), 30) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 	  g_array_append_val(feature->feature.transcript.introns, *intron) ;
 
 	  extendTranscript(feature, intron) ;
@@ -284,7 +266,7 @@ void zMapFeatureTranscriptRecreateIntrons(ZMapFeature feature)
 
   exons = feature->feature.transcript.exons;
 
-  if(exons->len > 1)
+  if (exons->len > 1)
     {
       ZMapSpan first, last;
       first = &(g_array_index(exons, ZMapSpanStruct, 0));
@@ -295,8 +277,10 @@ void zMapFeatureTranscriptRecreateIntrons(ZMapFeature feature)
         forward = FALSE;
     }
 
-  if(forward)
-    end = exons->len;
+  if (forward)
+    {
+      end = exons->len;
+    }
   else
     {
       multiplier = -1;
@@ -304,16 +288,23 @@ void zMapFeatureTranscriptRecreateIntrons(ZMapFeature feature)
       end   = 1;
     }
 
-  for(i = start; i < end - 1; i++)
+  for (i = start; i < end - 1; i++)
     {
-      int index = i * multiplier;
-      ZMapSpan exon1 = &(g_array_index(exons, ZMapSpanStruct, index));
-      ZMapSpan exon2 = &(g_array_index(exons, ZMapSpanStruct, index + multiplier));      
-      
-      ZMapSpan intron = g_malloc0(sizeof *intron);
-      intron->x1 = exon1->x2 + 1;
-      intron->x2 = exon2->x1 - 1;
-      zMapFeatureAddTranscriptExonIntron(feature, NULL, intron);      
+      int index = i * multiplier ;
+      ZMapSpan exon1 = &(g_array_index(exons, ZMapSpanStruct, index)) ;
+      ZMapSpan exon2 = &(g_array_index(exons, ZMapSpanStruct, index + multiplier)) ;
+
+      /* Only create an intron if exons are not butted up against one another. */
+      if (exon1->x2 + 1 < exon2->x1)
+	{
+	  ZMapSpan intron ;
+
+	  intron = g_malloc0(sizeof *intron);
+	  intron->x1 = exon1->x2 + 1 ;
+	  intron->x2 = exon2->x1 - 1 ;
+
+	  zMapFeatureAddTranscriptExonIntron(feature, NULL, intron) ;
+	}
     }
 
   return ;  
@@ -322,6 +313,9 @@ void zMapFeatureTranscriptRecreateIntrons(ZMapFeature feature)
 
 /* Checks that transcript has at least one exon, if not then adds an exon to
  * cover entire extent of transcript.
+ * 
+ * If there are no introns then it adds introns derived from the existing
+ * exons.
  *
  * Returns TRUE if the transcript did not need normalising or if it was
  * normalised successfully, FALSE otherwise.
@@ -330,17 +324,22 @@ gboolean zMapFeatureTranscriptNormalise(ZMapFeature feature)
 {
   gboolean result = TRUE ;
 
-  if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT
-      && !(feature->feature.transcript.exons->len))
+  if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
     {
-      ZMapSpanStruct exon = {0}, *exon_ptr = NULL ;
+      if (!(feature->feature.transcript.exons->len))
+	{
+	  ZMapSpanStruct exon = {0}, *exon_ptr = NULL ;
 
-      exon.x1 = feature->x1 ;
-      exon.x2 = feature->x2 ;
-      exon_ptr = &exon ;
+	  exon.x1 = feature->x1 ;
+	  exon.x2 = feature->x2 ;
+	  exon_ptr = &exon ;
 
-      result = zMapFeatureAddTranscriptExonIntron(feature, exon_ptr, NULL) ;
-    }
+	  result = zMapFeatureAddTranscriptExonIntron(feature, exon_ptr, NULL) ;
+	}
+      else if (!(feature->feature.transcript.introns->len))
+	{
+	  zMapFeatureTranscriptRecreateIntrons(feature) ;
+	}
 
   return result ;
 }
