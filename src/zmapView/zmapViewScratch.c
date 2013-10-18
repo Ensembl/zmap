@@ -943,10 +943,11 @@ static void scratchFeatureRecreateExons(ZMapView view, ZMapFeature scratch_featu
   ScratchMergeDataStruct merge_data = {view, scratch_featureset, scratch_feature, &error, NULL, NULL, 0, 0, FALSE};
   GList *list_item = view->scratch_features;
   
-  for ( ; list_item; list_item = list_item->next)
+  while (list_item)
     {
       ScratchMergedFeature merge_feature = (ScratchMergedFeature)(list_item->data);
-      
+      gboolean merged = FALSE;
+
       if (!merge_feature->ignore)
         {
           /* Add info about the current feature to the merge data
@@ -958,8 +959,15 @@ static void scratchFeatureRecreateExons(ZMapView view, ZMapFeature scratch_featu
           merge_data.use_subfeature = merge_feature->use_subfeature;
           
           /* Do the merge */
-          gboolean merged = scratchMergeFeature(&merge_data);
+          merged = scratchMergeFeature(&merge_data);
         }
+      
+      list_item = list_item->next;
+
+      /* If we attempted to merge but it failed, remove the feature from the list.
+       * Do this after setting the next pointer because the current item will be removed. */
+      if (!merge_feature->ignore && !merged)
+        view->scratch_features = g_list_remove(view->scratch_features, merge_feature);
     }
 
   zMapFeatureTranscriptRecreateIntrons(scratch_feature);
