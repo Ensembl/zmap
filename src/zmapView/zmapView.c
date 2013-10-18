@@ -3100,32 +3100,16 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 	  err_msg = NULL ;
 
 	  // need to copy this info in case of thread death which clears it up
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  if (zmap_view->remote_control && connect_data)
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 	  if (connect_data)
 	    {
 	      if (!(connect_data->loaded_features))
 		{
 		  connect_data->loaded_features = createLoadFeatures(NULL) ;
 		}
+
 	      /* Does this need to be separate....?? probably not.... */
 	      connect_data->loaded_features->feature_sets = g_list_copy(connect_data->feature_sets) ;
 	      connect_data->loaded_features->xwid = zmap_view->xwid ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	      /* DEBUG ONLY...LEAKS MEMORY... */
-	      {
-		char *feature_sets ;
-
-		feature_sets = zMap_g_list_quark_to_string(load_features.feature_sets) ;
-
-		zMapDebugPrintf("%s\n", feature_sets) ;
-	      }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 	    }
 
 	  if (!(zMapThreadGetReplyWithData(thread, &reply, &data, &err_msg)))
