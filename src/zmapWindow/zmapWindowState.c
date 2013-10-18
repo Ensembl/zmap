@@ -819,11 +819,21 @@ static gboolean serialize_item(FooCanvasItem *item, SerializedItemStruct *serial
       serialize->frame      = container_set->frame;
       serialize->column_id  = container_set->unique_id;
 
-      serialize->align_id   = feature->parent->parent->parent->unique_id;
-      serialize->block_id   = feature->parent->parent->unique_id;
-      serialize->fset_id    = feature->parent->unique_id;
       serialize->feature_id = feature->unique_id;
-
+      
+      if (feature->parent)
+        {
+          serialize->fset_id    = feature->parent->unique_id;
+      
+          if (feature->parent->parent)
+            {
+              serialize->block_id   = feature->parent->parent->unique_id;
+          
+              if (feature->parent->parent->parent)
+                serialize->align_id   = feature->parent->parent->parent->unique_id;
+            }
+        }
+      
       serialized = TRUE;
     }
 
