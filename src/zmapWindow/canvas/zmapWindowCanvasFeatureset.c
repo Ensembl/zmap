@@ -3330,26 +3330,27 @@ ZMapWindowCanvasFeature zMapWindowFeaturesetAddFeature(ZMapWindowFeaturesetItem 
   ZMapFeatureTypeStyle style = *feature->style;
   zmapWindowCanvasFeatureType type = FEATURE_INVALID;
 
-  zMapAssert(zMapFeatureIsValid((ZMapFeatureAny) feature));
-
-  if(style)
-    type = feature_types[zMapStyleGetMode(style)];
-  if(type == FEATURE_INVALID)		/* no style or feature type not implemented */
-    return NULL;
-
-  feat = zmapWindowCanvasFeatureAlloc(type);
-
-  feat->feature = feature;
-  feat->type = type;
-
-  feat->y1 = y1;
-  feat->y2 = y2;
-
-  if(y2 - y1 > featureset_item->longest)
-    featureset_item->longest = y2 - y1;
-
-  zmapWindowFeaturesetAddToIndex(featureset_item, feat);
-
+  if (zMapFeatureIsValid((ZMapFeatureAny) feature))
+    {
+      if(style)
+        type = feature_types[zMapStyleGetMode(style)];
+      if(type == FEATURE_INVALID)		/* no style or feature type not implemented */
+        return NULL;
+      
+      feat = zmapWindowCanvasFeatureAlloc(type);
+      
+      feat->feature = feature;
+      feat->type = type;
+      
+      feat->y1 = y1;
+      feat->y2 = y2;
+      
+      if(y2 - y1 > featureset_item->longest)
+        featureset_item->longest = y2 - y1;
+      
+      zmapWindowFeaturesetAddToIndex(featureset_item, feat);
+    }
+  
   return feat;
 }
 

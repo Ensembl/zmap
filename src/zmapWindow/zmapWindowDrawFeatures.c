@@ -1431,8 +1431,8 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 
     case ZMAPFEATURE_STRUCT_ALIGN:
       {
-        ZMapWindowContainerGroup align_parent;
-        FooCanvasItem  *align_hash_item;
+        ZMapWindowContainerGroup align_parent = NULL;
+        FooCanvasItem  *align_hash_item = NULL;
         double x, y;
         int start,end;
 
@@ -1456,8 +1456,10 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 							  0, 0, ZMAPSTRAND_NONE,
 							  ZMAPFRAME_NONE, 0)))
           {
-            zMapAssert(ZMAP_IS_CONTAINER_GROUP(align_hash_item));
-            align_parent = (ZMapWindowContainerGroup)(align_hash_item);
+            if (ZMAP_IS_CONTAINER_GROUP(align_hash_item))
+              {
+                align_parent = (ZMapWindowContainerGroup)(align_hash_item);
+              }
           }
         else
           {
@@ -1497,7 +1499,7 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 	      }
 	  }
 
-	if (status == ZMAP_CONTEXT_EXEC_STATUS_OK)
+	if (align_parent && status == ZMAP_CONTEXT_EXEC_STATUS_OK)
 	  canvas_data->curr_align_group = zmapWindowContainerGetFeatures(align_parent) ;
 
 	break;
@@ -1505,11 +1507,11 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 
     case ZMAPFEATURE_STRUCT_BLOCK:
       {
-	ZMapWindowContainerGroup block_group;
+	ZMapWindowContainerGroup block_group = NULL;
 	//    ZMapWindowContainerGroup forward_group, reverse_group ;
 	//	ZMapWindowContainerGroup strand_separator;
-	ZMapWindowContainerBlock container_block;
-	FooCanvasItem *block_hash_item;
+	ZMapWindowContainerBlock container_block = NULL;
+	FooCanvasItem *block_hash_item = NULL;
 	//    GdkColor *for_bg_colour, *rev_bg_colour ;
 	double x, y;
 	gboolean block_created = FALSE;
@@ -1542,12 +1544,13 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 							  feature_block->unique_id, 0, ZMAPSTRAND_NONE,
 							  ZMAPFRAME_NONE, 0)))
           {
-            zMapAssert(ZMAP_IS_CONTAINER_GROUP(block_hash_item));
-
-            block_group = (ZMapWindowContainerGroup)(block_hash_item);
+            if (ZMAP_IS_CONTAINER_GROUP(block_hash_item))
+              {
+                block_group = (ZMapWindowContainerGroup)(block_hash_item);
 #if MH17_REVCOMP_DEBUG
             zMapLogWarning(" old","");
 #endif
+              }
           }
         else
           {
@@ -1601,15 +1604,16 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 	      }
 	  }
 
-	container_block = (ZMapWindowContainerBlock)block_group;
+        if (block_group)
+          { 
+            container_block = (ZMapWindowContainerBlock)block_group;
 
-
-
-	if (status == ZMAP_CONTEXT_EXEC_STATUS_OK)
-	  {
-	    canvas_data->curr_block_group = zmapWindowContainerGetFeatures(block_group) ;
-	  }
-
+            if (status == ZMAP_CONTEXT_EXEC_STATUS_OK)
+              {
+                canvas_data->curr_block_group = zmapWindowContainerGetFeatures(block_group) ;
+              }
+          }
+        
 	zMapStopTimer("DrawBlock","");
 
 	break;
