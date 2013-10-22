@@ -27,8 +27,8 @@
  * Description: Implements textual display of feature details in a
  *              gtk notebook widget.
  *
- *              Intention is to have contents of notebook dynamically
- *              configurable by the controller application via our xremote
+ *              Contents of notebook are dynamically configurable
+ *              by the controller application via our xremote
  *              interface.
  *
  * Exported functions: See ZMap/zmapWindow.h
@@ -804,6 +804,15 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
       /* Get a list of all the matches for this sequence.... */
       getAllMatches(show->zmapWindow, feature, item, subsection) ;
     }
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+  /* ORIGINAL FEATURE SHOW CODE....I'M LEAVING THIS HERE UNTIL HAVANA DECIDE EXACTLY WHAT THEY
+   * WANT...THEY ASKED TO HAVE PROPERTIES AT THE BOTTOM SO I'VE DONE THAT BY MOVING THIS SECTION
+   * TO BE LAST...SEE BELOW...BUT THEY NOW THINK THIS WON'T SUIT EVERYONE.... 22/10/2013 EG */
+
   else if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
     {
       paragraph = zMapGUINotebookCreateParagraph(subsection, "Properties",
@@ -850,12 +859,71 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
 						tmp,
 						NULL) ;
     }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
   /* If there is any extra information then do the merge. */
   if (extras_notebook)
     zMapGUINotebookMergeNotebooks(feature_book, extras_notebook) ;
 
+
+
+  /* TRY DOING IT HERE FOR HAVANA REQUEST....SEE COMMENTS ABOVE... */
+  if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
+    {
+      /* Report cds, start/end not found if they are set. */
+      if (feature->feature.transcript.flags.cds
+	  || feature->feature.transcript.flags.start_not_found || feature->feature.transcript.flags.end_not_found)
+	{
+	  subsection = zMapGUINotebookCreateSubsection(page, "Properties") ;
+
+
+	  paragraph = zMapGUINotebookCreateParagraph(subsection, NULL,
+						     ZMAPGUI_NOTEBOOK_PARAGRAPH_TAGVALUE_TABLE, NULL, NULL) ;
+
+	  if (feature->feature.transcript.flags.cds)
+	    tmp = g_strdup_printf("%d -> %d", feature->feature.transcript.cds_start, feature->feature.transcript.cds_end) ;
+	  else
+	    tmp = g_strdup_printf("%s", NOT_SET_TEXT) ;
+
+	  tag_value = zMapGUINotebookCreateTagValue(paragraph, "CDS",
+						    ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+						    "string",
+						    tmp,
+						    NULL) ;
+
+	  /* NOTE
+	   * in Otterlace start not found is displayed as <not set> or 1 or 2 or 3
+	   * GFF specifies . or 0/1/2
+	   * so we present a 'human' number here not what's specified in GFF
+	   * See RT 271175 if this is wrong then that ticket needs to be revived and otterlace changed
+	   * or for havana to accept the different numbers
+	   * refer to other calls to zMapFeaturePhase2Str()
+	   */
+	  if (feature->feature.transcript.flags.start_not_found)
+	    tmp = g_strdup_printf("%s", zMapFeaturePhase2Str(feature->feature.transcript.start_not_found)) ;
+	  else
+	    tmp = g_strdup_printf("%s", NOT_SET_TEXT) ;
+
+	  tag_value = zMapGUINotebookCreateTagValue(paragraph, "Start Not Found",
+						    ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+						    "string",
+						    tmp,
+						    NULL) ;
+
+	  if (feature->feature.transcript.flags.end_not_found)
+	    tmp = g_strdup_printf("%s", SET_TEXT) ;
+	  else
+	    tmp = g_strdup_printf("%s", NOT_SET_TEXT) ;
+
+	  tag_value = zMapGUINotebookCreateTagValue(paragraph, "End Not Found",
+						    ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+						    "string",
+						    tmp,
+						    NULL) ;
+	}
+    }
 
   return feature_book ;
 }
@@ -885,18 +953,28 @@ static void createEditWindow(ZMapWindowFeatureShow feature_show, char *title)
   /* Add ptr so our parent ZMapWindow knows about us and can destroy us when its deleted. */
   g_ptr_array_add(feature_show->zmapWindow->feature_show_windows, (gpointer)(feature_show->window)) ;
 
-  /* Annotators asked for an overall scrolled window. */
+
+  /* Top level vbox containing the menu bar and below it in a scrolled window all
+   * the feature details. */
+  vbox = gtk_vbox_new(FALSE, 0) ;
+  gtk_container_add(GTK_CONTAINER(feature_show->window), vbox) ;
+
+
+  gtk_box_pack_start(GTK_BOX(vbox), makeMenuBar(feature_show), FALSE, FALSE, 0);
+
+
+  /* Annotators asked for an overall scrolled window for feature details. */
   feature_show->scrolled_window = scrolled_window = gtk_scrolled_window_new(NULL, NULL) ;
   gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled_window), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC) ;
-  gtk_container_add(GTK_CONTAINER(feature_show->window), scrolled_window) ;
+  gtk_container_add(GTK_CONTAINER(vbox), scrolled_window) ;
 
-  /* vbox contains all details, must be added with a viewport because vbox does not have
+
+  /* vbox contains all feature details, must be added with a viewport because vbox does not have
    * its own window. */
   feature_show->vbox = vbox = gtk_vbox_new(FALSE, 0) ;
   gtk_box_set_spacing(GTK_BOX(vbox), 5) ;
   gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(scrolled_window), vbox) ;
 
-  gtk_box_pack_start(GTK_BOX(vbox), makeMenuBar(feature_show), FALSE, FALSE, 0);
 
   return ;
 }
