@@ -2289,8 +2289,17 @@ static gboolean getFeatureName(NameFindType name_find, char *sequence, char *att
       *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
 					       start, end, query_start, query_end) ;
     }
-  else if ((tag_pos = strstr(attributes, "Name")))
+  else if ((tag_pos = strstr(attributes, " Name")) ||
+           (tag_pos = strstr(attributes, ";Name")) ||
+           (tag_pos = strstr(attributes, "\tName")))
     {
+      /* Unfortunately the text "Name" appears also in the tag "DB_Name"
+       * and if that tag appears first then that's the one that's picked up. The 
+       * real Name tag should only ever be preceeded by a space, semi-colon or tab
+       * so we check for that. Once found, increment tag_pos so it's pointing
+       * at the start of the text "Name...". */
+      ++tag_pos;
+
       /* Parse out "Name <objname> ;" */
       int attr_fields ;
       char name[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
@@ -2963,8 +2972,17 @@ static gboolean getVariationString(char *attributes,
   gboolean result = FALSE ;
   char *target ;
 
-  if ((target = strstr(attributes, "Name")))
+  if ((target = strstr(attributes, " Name")) ||
+      (target = strstr(attributes, ";Name")) ||
+      (target = strstr(attributes, "\tName")))
     {
+      /* Unfortunately the text "Name" appears also in the tag "DB_Name"
+       * and if that tag appears first then that's the one that's picked up. The 
+       * real Name tag should only ever be preceeded by a space, semi-colon or tab
+       * so we check for that. Once found, increment target so it's pointing
+       * at the start of the text "Name...". */
+      ++target;
+
       int attr_fields ;
       char *attr_format_str = "Name " "%*[\"]%s - %" ZMAP_MAKESTRING(GFF_MAX_FIELD_CHARS) "[^\"]%*[\"]%*s" ;
       char name_str[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
@@ -3055,8 +3073,17 @@ static gboolean getNameFromAttr(char *attributes, char **name_out)
   gboolean result = FALSE ;
   char *tag_pos ;
 
-  if ((tag_pos = strstr(attributes, "Name")))
+  if ((tag_pos = strstr(attributes, " Name")) ||
+      (tag_pos = strstr(attributes, ";Name")) ||
+      (tag_pos = strstr(attributes, "\tName")))
     {
+      /* Unfortunately the text "Name" appears also in the tag "DB_Name"
+       * and if that tag appears first then that's the one that's picked up. The 
+       * real Name tag should only ever be preceeded by a space, semi-colon or tab
+       * so we check for that. Once found, increment tag_pos so it's pointing
+       * at the start of the text "Name...". */
+      ++tag_pos;
+
       /* Parse out "Name <objname> ;" */
       int attr_fields ;
       char name[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
