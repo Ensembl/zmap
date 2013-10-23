@@ -244,7 +244,7 @@ gboolean zMapFeatureFormatType(gboolean SO_compliant, gboolean default_to_basic,
 }
 
 
-char *zMapFeatureStructType2Str(ZMapFeatureStructType type)
+char *zMapFeatureLevelType2Str(ZMapFeatureLevelType type)
 {
   static char *struct_types[] = {".", "Context", "Alignment", "Block", "FeatureSet", "Feature"} ;
   char *type_str ;

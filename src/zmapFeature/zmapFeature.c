@@ -128,7 +128,7 @@ typedef struct
 
 void print_loaded(GList *l,char *fred);
 
-static ZMapFeatureAny featureAnyCreateFeature(ZMapFeatureStructType feature_type,
+static ZMapFeatureAny featureAnyCreateFeature(ZMapFeatureLevelType feature_type,
 					      ZMapFeatureAny parent,
 					      GQuark original_id, GQuark unique_id,
 					      GHashTable *children) ;
@@ -2801,14 +2801,14 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
 
   if (merge_debug_G)
     zMapLogWarning("%s (%p) '%s' is %s and has %s",
-               zMapFeatureStructType2Str(feature_any->struct_type),
+               zMapFeatureLevelType2Str(feature_any->struct_type),
                feature_any,
                g_quark_to_string(feature_any->unique_id),
                (new == TRUE ? "new" : "old"),
                (children ? "children and was added" : "no children and was not added"));
 #if 0
     printf("%s (%p) '%s' is %s and has %s\n",
-               zMapFeatureStructType2Str(feature_any->struct_type),
+               zMapFeatureLevelType2Str(feature_any->struct_type),
                feature_any,
                g_quark_to_string(feature_any->unique_id),
                (new == TRUE ? "new" : "old"),
@@ -2828,7 +2828,7 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
 
 
 /* Allocate a feature structure of the requested type, filling in the feature any fields. */
-static ZMapFeatureAny featureAnyCreateFeature(ZMapFeatureStructType struct_type,
+static ZMapFeatureAny featureAnyCreateFeature(ZMapFeatureLevelType struct_type,
 					      ZMapFeatureAny parent,
 					      GQuark original_id, GQuark unique_id,
 					      GHashTable *children)
@@ -3128,7 +3128,7 @@ static void logMemCalls(gboolean alloc, ZMapFeatureAny feature_any)
 	    func = "g_free" ;
 	}
 
-      zMapLogWarning("%s: %s at %p", func, zMapFeatureStructType2Str(feature_any->struct_type), feature_any) ;
+      zMapLogWarning("%s: %s at %p", func, zMapFeatureLevelType2Str(feature_any->struct_type), feature_any) ;
     }
 
   return ;

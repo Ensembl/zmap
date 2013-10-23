@@ -234,7 +234,7 @@ static ZMapFeatureContextExecuteStatus oneBlockHasDNA(GQuark key,
 {
   ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
   ZMapFeatureBlock     feature_block = NULL;
-  ZMapFeatureStructType feature_type = ZMAPFEATURE_STRUCT_INVALID;
+  ZMapFeatureLevelType feature_type = ZMAPFEATURE_STRUCT_INVALID;
 
   BlockHasDNA dna = (BlockHasDNA)user_data;
 
