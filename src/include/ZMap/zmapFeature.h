@@ -87,7 +87,7 @@ typedef int Coord ;					    /* we do need this here.... */
 typedef enum {ZMAPFEATURE_STRUCT_INVALID = 0,
 	      ZMAPFEATURE_STRUCT_CONTEXT, ZMAPFEATURE_STRUCT_ALIGN,
 	      ZMAPFEATURE_STRUCT_BLOCK, ZMAPFEATURE_STRUCT_FEATURESET,
-	      ZMAPFEATURE_STRUCT_FEATURE} ZMapFeatureStructType ;
+	      ZMAPFEATURE_STRUCT_FEATURE} ZMapFeatureLevelType ;
 
 
 /* GET RID OF THIS AND USE OUR ENUM UTILS STUFF. */
@@ -96,20 +96,20 @@ typedef enum {TYPE_ENUM, STRAND_ENUM, PHASE_ENUM, HOMOLTYPE_ENUM } ZMapEnumType 
 
 
 
-typedef enum {
-  ZMAPFEATURE_SUBPART_INVALID    = 0,
-  ZMAPFEATURE_SUBPART_INTRON     = 1 << 0,
-  ZMAPFEATURE_SUBPART_INTRON_CDS = 1 << 1,
-  ZMAPFEATURE_SUBPART_EXON       = 1 << 2,
-  ZMAPFEATURE_SUBPART_EXON_CDS   = 1 << 3,
-  ZMAPFEATURE_SUBPART_GAP        = 1 << 4,
-  ZMAPFEATURE_SUBPART_MATCH      = 1 << 5,
-
-  /* following added by mh17 to allow easier snazzy display of split codons */
-  ZMAPFEATURE_SUBPART_SPLIT_3_CODON = 1 << 6,		/*NOTE: is 3' end of exon = 5' end of split codon */
-  ZMAPFEATURE_SUBPART_SPLIT_5_CODON = 1 << 7,
-
-} ZMapFeatureSubpartType ;
+typedef enum
+  {
+    ZMAPFEATURE_SUBPART_INVALID    = 0,
+    ZMAPFEATURE_SUBPART_INTRON     = 1 << 0,
+    ZMAPFEATURE_SUBPART_INTRON_CDS = 1 << 1,
+    ZMAPFEATURE_SUBPART_EXON       = 1 << 2,
+    ZMAPFEATURE_SUBPART_EXON_CDS   = 1 << 3,
+    ZMAPFEATURE_SUBPART_GAP        = 1 << 4,
+    ZMAPFEATURE_SUBPART_MATCH      = 1 << 5,
+    
+    /* following added by mh17 to allow easier snazzy display of split codons */
+    ZMAPFEATURE_SUBPART_SPLIT_3_CODON = 1 << 6,		/*NOTE: is 3' end of exon = 5' end of split codon */
+    ZMAPFEATURE_SUBPART_SPLIT_5_CODON = 1 << 7,
+  } ZMapFeatureSubpartType ;
 
 typedef enum {ZMAPSTRAND_NONE = 0, ZMAPSTRAND_FORWARD, ZMAPSTRAND_REVERSE} ZMapStrand ;
 #define N_STRAND_ALLOC	3	/* we get to handle NONE as a strand */
@@ -226,7 +226,7 @@ typedef enum {EXON_INVALID,
 	      EXON_SPLIT_CODON_5, EXON_SPLIT_CODON_3,
 	      EXON_START_NOT_FOUND} ExonRegionType ;
 
-typedef struct
+typedef struct ZMapFullExonStructType
 {
   ExonRegionType region_type ;
 
@@ -257,7 +257,7 @@ typedef enum
 
 
 /* the following is used to store alignment gap information */
-typedef struct
+typedef struct ZMapAlignBlockStructType
 {
   int q1, q2 ;						    /* coords in query sequence */
   ZMapStrand q_strand ;
@@ -273,7 +273,7 @@ typedef struct
  * a particular relationship... */
 /* the following is used to store mapping information of one span on to another, if we have
  * SMap in ZMap we can use SMap structs instead....BUT strand is needed here too !!!!! */
-typedef struct
+typedef struct ZMapMapBlockStructType
 {
   /* NOTE even if reversed coords are as start < end */
   ZMapSpanStruct parent;				    /* start/end in parent span (context) */
@@ -337,8 +337,9 @@ typedef struct
 
 
 /* We need some forward declarations for pointers we include in some structs. */
-typedef struct ZMapFeatureAlignmentStruct_ *ZMapFeatureAlignment ;
-typedef struct ZMapFeatureAnyStruct_ *ZMapFeatureAny ;
+typedef struct ZMapFeatureAlignmentStructType *ZMapFeatureAlignment ;
+typedef struct ZMapFeatureAnyStructType *ZMapFeatureAny ;
+typedef struct ZMapFeatureStructType *ZMapFeature ;
 
 
 
@@ -357,12 +358,12 @@ typedef struct ZMapFeatureAnyStruct_ *ZMapFeatureAny ;
  * original_id is used for displaying a human readable name for the struct, e.g. the feature
  * name.
  *  */
-typedef struct ZMapFeatureAnyStruct_
+typedef struct ZMapFeatureAnyStructType
 {
 #ifdef FEATURES_NEED_MAGIC
   ZMapMagic magic;
 #endif
-  ZMapFeatureStructType struct_type ;			    /* context or align or block etc. */
+  ZMapFeatureLevelType struct_type ;			    /* context or align or block etc. */
   ZMapFeatureAny parent ;				    /* The parent struct of this one, NULL
 							     * if this is a feature context. */
   GQuark unique_id ;					    /* Unique id of this feature. */
@@ -379,14 +380,14 @@ typedef struct ZMapFeatureAnyStruct_
  * will be a single alignment containing a single block.
  *
  */
-typedef struct ZMapFeatureContextStruct_
+typedef struct ZMapFeatureContextStructType
 {
   /* FeatureAny section. */
 #ifdef FEATURES_NEED_MAGIC
   ZMapMagic magic;
 #endif
 
-  ZMapFeatureStructType struct_type ;			    /* context or align or block etc. */
+  ZMapFeatureLevelType struct_type ;			    /* context or align or block etc. */
   ZMapFeatureAny no_parent ;				    /* Always NULL in a context. */
   GQuark unique_id ;					    /* Unique id of this feature. */
   GQuark original_id ;					    /* Sequence name. */
@@ -437,14 +438,14 @@ typedef struct ZMapFeatureContextStruct_
 
 
 
-typedef struct ZMapFeatureAlignmentStruct_
+typedef struct ZMapFeatureAlignmentStructType
 {
   /* FeatureAny section. */
 #ifdef FEATURES_NEED_MAGIC
   ZMapMagic magic;
 #endif
 
-  ZMapFeatureStructType struct_type ;			    /* context or align or block etc. */
+  ZMapFeatureLevelType struct_type ;			    /* context or align or block etc. */
   ZMapFeatureAny parent ;				    /* Our parent context. */
   GQuark unique_id ;					    /* Unique id this alignment. */
   GQuark original_id ;					    /* Original id of this sequence. */
@@ -461,17 +462,17 @@ typedef struct ZMapFeatureAlignmentStruct_
 
 
 
-} ZMapFeatureAlignmentStruct;
+} ZMapFeatureAlignmentStruct ;
 
 
 
-typedef struct ZMapFeatureBlockStruct_
+typedef struct ZMapFeatureBlockStructType
 {
   /* FeatureAny section. */
 #ifdef FEATURES_NEED_MAGIC
   ZMapMagic magic;
 #endif
-  ZMapFeatureStructType struct_type ;	/* context or align or block etc. */
+  ZMapFeatureLevelType struct_type ;	/* context or align or block etc. */
   ZMapFeatureAny parent ;				    /* Our parent alignment. */
   GQuark unique_id ;					    /* Unique id for this block. */
   GQuark original_id ;					    /* Original id, probably not needed ? */
@@ -495,19 +496,19 @@ typedef struct ZMapFeatureBlockStruct_
 
 
 
-/*!\struct ZMapFeatureSetStruct_
+/*!\struct ZMapFeatureSetStructType
  * \brief a set of ZMapFeature structs.
  * Holds a set of ZMapFeature structs, note that the id for the set is by default the same name
  * as the style for all features in the set. BUT it may not be, the set may consist of
  * features with many types/styles. The set id is completely independent of the style name.
  */
-typedef struct ZMapFeatureSetStruct_
+typedef struct ZMapFeatureSetStructType
 {
   /* FeatureAny section. */
 #ifdef FEATURES_NEED_MAGIC
   ZMapMagic magic;
 #endif
-  ZMapFeatureStructType struct_type ;			    /* context or align or block etc. */
+  ZMapFeatureLevelType struct_type ;			    /* context or align or block etc. */
   ZMapFeatureAny parent ;				    /* Our parent block. */
   GQuark unique_id ;					    /* Unique id of this feature set. */
   GQuark original_id ;					    /* Original name,
@@ -541,7 +542,7 @@ typedef struct ZMapFeatureSetStruct_
 
 
 /* Basic feature: a "box" on the screen. */
-typedef struct
+typedef struct ZMapBasicStructType
 {
   /* Used to detect when data fields are set. */
   struct
@@ -560,7 +561,7 @@ typedef struct
 
 
 /* Homology feature. */
-typedef struct
+typedef struct ZMapHomolStructType
 {
   ZMapHomolType type ;					    /* as in Blast* */
 
@@ -611,7 +612,7 @@ typedef struct
 
 
 /* Transcript feature. */
-typedef struct
+typedef struct ZMapTranscriptStructType
 {
   GQuark known_name ;					    /* Known or external name for transcript. */
 
@@ -638,7 +639,7 @@ typedef struct
 
 
 /* Assembly feature. */
-typedef struct
+typedef struct ZMapAssemblyPathStructType
 {
   /* May not need this.... */
   GQuark clone_id ;					    /* Clone name. */
@@ -660,14 +661,14 @@ typedef struct
 /* The Feature structure itsself. Describes a single feature, the feature may be compound
  * (e.g. have exons/introns *  etc.) or a single span or point, e.g. an allele.
  *  */
-typedef struct ZMapFeatureStruct_
+typedef struct ZMapFeatureStructType
 {
   /* FeatureAny section. */
 
 #ifdef FEATURES_NEED_MAGIC
   ZMapMagic magic;
 #endif
-  ZMapFeatureStructType struct_type ;			    /* context or align or block etc. */
+  ZMapFeatureLevelType struct_type ;			    /* context or align or block etc. */
   ZMapFeatureAny parent ;				    /* Our containing set. */
   GQuark unique_id ;					    /* Unique id for just this feature for
 							       use by ZMap. */
@@ -705,7 +706,11 @@ typedef struct ZMapFeatureStruct_
    * for composite features this is a list of underlying features that are hidden from view
    */
   GList *children;
-  struct ZMapFeatureStruct_ *composite;	/* daddy feature that gets displayed */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  struct ZMapFeatureStructType *composite;	/* daddy feature that gets displayed */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  ZMapFeature composite;	/* daddy feature that gets displayed */
 
 
 
@@ -771,7 +776,7 @@ typedef struct ZMapFeatureStruct_
     ZMapAssemblyPathStruct assembly_path ;
   } feature ;
 
-} ZMapFeatureStruct, *ZMapFeature ;
+} ZMapFeatureStruct ;
 
 
 
@@ -780,7 +785,7 @@ typedef struct ZMapFeatureStruct_
 typedef struct ZMapFeatureDescStructName
 {
   /* Use these fields to interpret and give more info. for the feature parts. */
-  ZMapFeatureStructType struct_type ;
+  ZMapFeatureLevelType struct_type ;
   ZMapStyleMode type ;
   ZMapFeatureSubpartType subpart_type ;	/* want to remove so that the strings are self describing */
 
@@ -1262,29 +1267,29 @@ GList *zMapFeatureString2QuarkList(char *string_list) ;
 GList *zMapFeatureCopyQuarkList(GList *quark_list_orig) ;
 
 void zMapFeatureContextExecute(ZMapFeatureAny feature_any,
-                               ZMapFeatureStructType stop,
+                               ZMapFeatureLevelType stop,
                                ZMapGDataRecurseFunc callback,
                                gpointer data);
 void zMapFeatureContextExecuteFull(ZMapFeatureAny feature_any,
-                                   ZMapFeatureStructType stop,
+                                   ZMapFeatureLevelType stop,
                                    ZMapGDataRecurseFunc callback,
                                    gpointer data);
 void zMapFeatureContextExecuteComplete(ZMapFeatureAny feature_any,
-                                       ZMapFeatureStructType stop,
+                                       ZMapFeatureLevelType stop,
                                        ZMapGDataRecurseFunc start_callback,
                                        ZMapGDataRecurseFunc end_callback,
                                        gpointer data);
 void zMapFeatureContextExecuteSubset(ZMapFeatureAny feature_any,
-                                     ZMapFeatureStructType stop,
+                                     ZMapFeatureLevelType stop,
                                      ZMapGDataRecurseFunc callback,
                                      gpointer data);
 void zMapFeatureContextExecuteRemoveSafe(ZMapFeatureAny feature_any,
-					 ZMapFeatureStructType stop,
+					 ZMapFeatureLevelType stop,
 					 ZMapGDataRecurseFunc start_callback,
 					 ZMapGDataRecurseFunc end_callback,
 					 gpointer data);
 void zMapFeatureContextExecuteStealSafe(ZMapFeatureAny feature_any,
-					ZMapFeatureStructType stop,
+					ZMapFeatureLevelType stop,
 					ZMapGDataRecurseFunc start_callback,
 					ZMapGDataRecurseFunc end_callback,
 					gpointer data);
@@ -1307,12 +1312,12 @@ int zMapFeatureColumnOrderNext(void);	/* order of columns L -> R */
 
 
 gboolean zMapFeatureIsValid(ZMapFeatureAny any_feature) ;
-gboolean zMapFeatureIsValidFull(ZMapFeatureAny any_feature, ZMapFeatureStructType type) ;
+gboolean zMapFeatureIsValidFull(ZMapFeatureAny any_feature, ZMapFeatureLevelType type) ;
 gboolean zMapFeatureNameCompare(ZMapFeatureAny any_feature, char *name) ;
-gboolean zMapFeatureTypeIsValid(ZMapFeatureStructType group_type) ;
+gboolean zMapFeatureTypeIsValid(ZMapFeatureLevelType group_type) ;
 gboolean zMapFeatureAnyIsSane(ZMapFeatureAny feature, char **insanity_explained);
 gboolean zMapFeatureIsSane(ZMapFeature feature, char **insanity_explained);
-ZMapFeatureAny zMapFeatureGetParentGroup(ZMapFeatureAny any_feature, ZMapFeatureStructType group_type) ;
+ZMapFeatureAny zMapFeatureGetParentGroup(ZMapFeatureAny any_feature, ZMapFeatureLevelType group_type) ;
 char *zMapFeatureName(ZMapFeatureAny any_feature) ;
 char *zMapFeatureCanonName(char *feature_name) ;
 //ZMapFeatureTypeStyle *zMapFeatureGetStyle(ZMapFeatureAny feature) ;
@@ -1397,7 +1402,7 @@ ZMapFeatureContextExecuteStatus zMapFeatureContextTranscriptSortExons(GQuark key
 
 gboolean zMapFeatureFormatType(gboolean SO_compliant, gboolean default_to_basic,
                                char *feature_type, ZMapStyleMode *type_out);
-char *zMapFeatureStructType2Str(ZMapFeatureStructType type) ;
+char *zMapFeatureLevelType2Str(ZMapFeatureLevelType type) ;
 char *zMapFeatureType2Str(ZMapStyleMode type) ;
 char *zMapFeatureSubPart2Str(ZMapFeatureSubpartType subpart) ;
 gboolean zMapFeatureFormatStrand(char *strand_str, ZMapStrand *strand_out);
