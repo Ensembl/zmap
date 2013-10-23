@@ -299,7 +299,7 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
 
 	  tooltip[4] = "Frame" ;
 
-	  tooltip[5] = "Population" ;
+	  tooltip[5] = "Number of clustered features" ;
 
 	  if (feature_desc->type == ZMAPSTYLE_MODE_ALIGNMENT && feature_desc->feature_percent_id)
 	    tooltip[6] = g_strdup("Score / percent ID") ;

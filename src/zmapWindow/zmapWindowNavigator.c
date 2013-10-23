@@ -638,7 +638,7 @@ static ZMapFeatureContextExecuteStatus drawContext(GQuark key_id,
   NavigateDraw draw_data = (NavigateDraw)user_data;
   ZMapFeatureBlock     feature_block = NULL;
   ZMapFeatureSet       feature_set   = NULL;
-  ZMapFeatureStructType feature_type = ZMAPFEATURE_STRUCT_INVALID;
+  ZMapFeatureLevelType feature_type = ZMAPFEATURE_STRUCT_INVALID;
   ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
   ZMapWindowNavigator navigate = NULL;
   gboolean hash_status = FALSE;
