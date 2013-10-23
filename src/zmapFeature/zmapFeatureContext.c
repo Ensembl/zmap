@@ -69,8 +69,8 @@ typedef struct
   ZMapGDataRecurseFunc  end_callback;
   gpointer              callback_data;
   char                 *error_string;
-  ZMapFeatureStructType stop;
-  ZMapFeatureStructType stopped_at;
+  ZMapFeatureLevelType stop;
+  ZMapFeatureLevelType stopped_at;
   unsigned int          use_remove : 1;
   unsigned int          use_steal  : 1;
   unsigned int          catch_hash : 1;
@@ -107,7 +107,7 @@ static void postExecuteProcess(ContextExecute execute_data);
 static void copyQuarkCB(gpointer data, gpointer user_data) ;
 
 static void feature_context_execute_full(ZMapFeatureAny feature_any,
-					 ZMapFeatureStructType stop,
+					 ZMapFeatureLevelType stop,
 					 ZMapGDataRecurseFunc start_callback,
 					 ZMapGDataRecurseFunc end_callback,
 					 gboolean use_remove,
@@ -540,7 +540,7 @@ ZMapFeatureContext zMapFeatureContextCopyWithParents(ZMapFeatureAny orig_feature
  */
 
 void zMapFeatureContextExecute(ZMapFeatureAny feature_any,
-                               ZMapFeatureStructType stop,
+                               ZMapFeatureLevelType stop,
                                ZMapGDataRecurseFunc callback,
                                gpointer data)
 {
@@ -573,7 +573,7 @@ void zMapFeatureContextExecute(ZMapFeatureAny feature_any,
 }
 
 void zMapFeatureContextExecuteSubset(ZMapFeatureAny feature_any,
-                                     ZMapFeatureStructType stop,
+                                     ZMapFeatureLevelType stop,
                                      ZMapGDataRecurseFunc callback,
                                      gpointer data)
 {
@@ -605,7 +605,7 @@ void zMapFeatureContextExecuteSubset(ZMapFeatureAny feature_any,
 }
 
 void zMapFeatureContextExecuteFull(ZMapFeatureAny feature_any,
-                                   ZMapFeatureStructType stop,
+                                   ZMapFeatureLevelType stop,
                                    ZMapGDataRecurseFunc callback,
                                    gpointer data)
 {
@@ -616,7 +616,7 @@ void zMapFeatureContextExecuteFull(ZMapFeatureAny feature_any,
 }
 
 void zMapFeatureContextExecuteComplete(ZMapFeatureAny feature_any,
-                                       ZMapFeatureStructType stop,
+                                       ZMapFeatureLevelType stop,
                                        ZMapGDataRecurseFunc start_callback,
                                        ZMapGDataRecurseFunc end_callback,
                                        gpointer data)
@@ -629,7 +629,7 @@ void zMapFeatureContextExecuteComplete(ZMapFeatureAny feature_any,
 
 /* Use this when the feature_any tree gets modified during traversal */
 void zMapFeatureContextExecuteRemoveSafe(ZMapFeatureAny feature_any,
-					 ZMapFeatureStructType stop,
+					 ZMapFeatureLevelType stop,
 					 ZMapGDataRecurseFunc start_callback,
 					 ZMapGDataRecurseFunc end_callback,
 					 gpointer data)
@@ -641,7 +641,7 @@ void zMapFeatureContextExecuteRemoveSafe(ZMapFeatureAny feature_any,
 }
 
 void zMapFeatureContextExecuteStealSafe(ZMapFeatureAny feature_any,
-					ZMapFeatureStructType stop,
+					ZMapFeatureLevelType stop,
 					ZMapGDataRecurseFunc start_callback,
 					ZMapGDataRecurseFunc end_callback,
 					gpointer data)
@@ -1085,7 +1085,7 @@ static ZMapFeatureContextExecuteStatus print_featureset_name(GQuark key,
 {
   ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
   ZMapFeatureSet       feature_set   = NULL;
-  ZMapFeatureStructType feature_type = ZMAPFEATURE_STRUCT_INVALID;
+  ZMapFeatureLevelType feature_type = ZMAPFEATURE_STRUCT_INVALID;
   ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_DONT_DESCEND;
 
   feature_type = feature_any->struct_type;
@@ -1128,7 +1128,7 @@ static ZMapFeatureContextExecuteStatus templateDataListForeach(GQuark key,
   ZMapFeatureBlock     feature_block = NULL;
   ZMapFeatureSet       feature_set   = NULL;
   ZMapFeature          feature_ft    = NULL;
-  ZMapFeatureStructType feature_type = ZMAPFEATURE_STRUCT_INVALID;
+  ZMapFeatureLevelType feature_type = ZMAPFEATURE_STRUCT_INVALID;
   ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
 
 
@@ -1168,7 +1168,7 @@ static gboolean  executeDataForeachFunc(gpointer key_ptr, gpointer data, gpointe
   GQuark key = GPOINTER_TO_INT(key_ptr) ;
   ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
   ContextExecute full_data = (ContextExecute)user_data;
-  ZMapFeatureStructType feature_type = ZMAPFEATURE_STRUCT_INVALID;
+  ZMapFeatureLevelType feature_type = ZMAPFEATURE_STRUCT_INVALID;
   gboolean  remove_from_hash = FALSE;
 
   zMapAssert(zMapFeatureAnyHasMagic(feature_any));
@@ -1325,7 +1325,7 @@ gboolean zMapFeatureContextGetMasterAlignSpan(ZMapFeatureContext context,int *st
 
 
 static void feature_context_execute_full(ZMapFeatureAny feature_any,
-					 ZMapFeatureStructType stop,
+					 ZMapFeatureLevelType stop,
 					 ZMapGDataRecurseFunc start_callback,
 					 ZMapGDataRecurseFunc end_callback,
 					 gboolean use_remove,

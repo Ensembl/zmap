@@ -3289,7 +3289,7 @@ static ZMapFeatureContextExecuteStatus alignBlockMenusDataListForeach(GQuark key
                                                                       char **error_out)
 {
   ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
-  ZMapFeatureStructType feature_type = ZMAPFEATURE_STRUCT_INVALID;
+  ZMapFeatureLevelType feature_type = ZMAPFEATURE_STRUCT_INVALID;
   GString *item_name = NULL;
   ZMapGUIMenuItem item = NULL, align_items = NULL, block_items = NULL;
   GArray **items_array = NULL;

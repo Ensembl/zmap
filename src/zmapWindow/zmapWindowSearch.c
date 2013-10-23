@@ -1129,7 +1129,7 @@ static ZMapFeatureContextExecuteStatus fillAllComboList(GQuark key, gpointer dat
 {
   ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
   AllComboLists all_data = (AllComboLists)user_data;
-  ZMapFeatureStructType feature_type = ZMAPFEATURE_STRUCT_INVALID;
+  ZMapFeatureLevelType feature_type = ZMAPFEATURE_STRUCT_INVALID;
   ZMapFeatureAlignment align = NULL;
   ZMapFeatureBlock     block = NULL;
   ZMapFeatureSet         set = NULL;
