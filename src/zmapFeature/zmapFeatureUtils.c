@@ -178,7 +178,7 @@ gboolean zMapFeatureIsDrawable(ZMapFeatureAny any_feature)
  * @param   type           The type that the feature must be.
  * @return  gboolean       TRUE if feature is valid, FALSE otherwise.
  *  */
-gboolean zMapFeatureIsValidFull(ZMapFeatureAny any_feature, ZMapFeatureStructType type)
+gboolean zMapFeatureIsValidFull(ZMapFeatureAny any_feature, ZMapFeatureLevelType type)
 {
   gboolean result = FALSE ;
 
@@ -188,7 +188,7 @@ gboolean zMapFeatureIsValidFull(ZMapFeatureAny any_feature, ZMapFeatureStructTyp
   return result ;
 }
 
-gboolean zMapFeatureTypeIsValid(ZMapFeatureStructType group_type)
+gboolean zMapFeatureTypeIsValid(ZMapFeatureLevelType group_type)
 {
   gboolean result = FALSE ;
 
@@ -426,7 +426,7 @@ gboolean zMapFeatureNameCompare(ZMapFeatureAny any_feature, char *name)
  * @param   group_type     The type/level of the parent group you want to find.
  * @return  ZMapFeatureAny The parent group or NULL.
  *  */
-ZMapFeatureAny zMapFeatureGetParentGroup(ZMapFeatureAny any_feature, ZMapFeatureStructType group_type)
+ZMapFeatureAny zMapFeatureGetParentGroup(ZMapFeatureAny any_feature, ZMapFeatureLevelType group_type)
 {
   ZMapFeatureAny result = NULL ;
 
@@ -1816,7 +1816,7 @@ static void printChildCB(gpointer key, gpointer value, gpointer user_data_unused
   ZMapFeatureAny feature_any = (ZMapFeatureAny)value ;
 
   zMapDebugPrint(debug, "Feature %s - %s (%s)",
-		 zMapFeatureStructType2Str(feature_any->struct_type),
+		 zMapFeatureLevelType2Str(feature_any->struct_type),
 		 zMapFeatureName(feature_any),
 		 g_quark_to_string(feature_any->unique_id)) ;
 

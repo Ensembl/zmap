@@ -1400,7 +1400,7 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
   ZMapFeatureAlignment feature_align;
   ZMapFeatureBlock     feature_block;
   ZMapFeatureSet         feature_set;
-  ZMapFeatureStructType feature_type;
+  ZMapFeatureLevelType feature_type;
   ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
   //  int start,end;
 

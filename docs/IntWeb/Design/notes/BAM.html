@@ -1,20 +1,33 @@
 <h2>BAM file data (short reads)</h2>
 
-<fieldset><legend>Initial Use by ZMap</legend>
-<p>It is thought that the volume of data is too great for direct use by ZMap as the time needed to load and display woud be impractical.  Instead ZMap will load summary data and display data volumes in fixed size bins over the sequence in view.  The actual data will be displayed by Blixem and requested over shorter regions defined by the mark.
-</p>
-<p>In the short term we do not expect to be able to handle summary data and instead provide a menu driven interface to run Blixem.  This will involve adding a 'Blixem Short Reads' option to the column menu for each configured short-reads data sources.  Later on when summary data is available the summary columns can be Blixem'ed directly.  This menu option will be interpreted as if the user clicked on a summary column and not a feature.
-</p>
-<p>By default Blixem operates with a region of 200k bases centred on the mouse (which can be set by the Edit/Preferences main menu item) but for short reads data this will be different: the user must set the mark and if not set the menu options for short reads data will not appear.
-</p>
-</fieldset>
+<h3>Initial Use by ZMap</h3>
 
-<fieldset><legend>Initial Use by ZMap: stage 2</legend>
+<p>It is thought that the volume of data is too great for direct use by ZMap as
+the time needed to load and display woud be impractical.  Instead ZMap will
+load summary data and display data volumes in fixed size bins over the sequence
+in view.  The actual data will be displayed by Blixem and requested over
+shorter regions defined by the mark.  </p>
+
+<p>In the short term we do not expect to be able to handle summary data and
+instead provide a menu driven interface to run Blixem.  This will involve
+adding a 'Blixem Short Reads' option to the column menu for each configured
+short-reads data sources.  Later on when summary data is available the summary
+columns can be Blixem'ed directly.  This menu option will be interpreted as if
+the user clicked on a summary column and not a feature.  </p>
+
+<p>By default Blixem operates with a region of 200k bases centred on the mouse
+(which can be set by the Edit/Preferences main menu item) but for short reads
+data this will be different: the user must set the mark and if not set the menu
+options for short reads data will not appear.  </p>
+
+
+
+<h3>Initial Use by ZMap: stage 2</h3>
 <p>Using ENCODE data as a abasis for development we choose a subset of this and make it avaialble via a column menu.
 </p>
 <p> more text needed here... </p>
 
-<fieldset><legend>Configuration</legend>
+<h3>Configuration</h3>
 <p>
 The major problem to solve is one of passing round information regarding what data to request.  Otterlace has to supply enough configuration information to ZMap and Zmap has to pass on this plus sequence information to Blixem.
 </p>
@@ -120,11 +133,11 @@ ZMap will hold this list in the View's context_map (accessable to the Window cod
 </table>
 </p>
 
-</fieldset>
 
 
 
-<fieldset><legend>Interface to the Request script for Short Reads data</legend>
+
+<h3>Interface to the Request script for Short Reads data</h3>
 <p>Blixem will find the script path and fixed arguments from a stanza in its configuration file 'blixemrc'.
 Other arguments will be appended as follows:
 <table border="1"  cellpadding="3" cellspacing="3">
@@ -161,11 +174,11 @@ and right clicking on a coverage column will display an option to display the re
 <p>Referring to the <a href="Design/notes/RNAseq.shtml">request</a> for a new pane on the load columns dialog, the existance of a [Coverage] mapping may be used to include featuresets in this page or not, and also the existing load columns pane.
 </p>
 
-</fieldset>
+
 
 
 <a name="blixem_bam"></a>
-<fieldset><legend>Passing short reads dataset choice to blixem</legend>
+<h3>Passing short reads dataset choice to blixem</h3>
 <h3>Window Menus</h3>
 <p>Depending on where the user clicks a differnt choice of Blixem menu option appear and in the short term all cases will include access to short reads data as configured, but only if the mark is set. It would be preferable to display these as disabled/ greyed out  but this option has not been programmed and would require extra work to include.
 </p>
@@ -181,7 +194,7 @@ and right clicking on a coverage column will display an option to display the re
 <b>ZMapWindowCallbackCommandAlign</b> structure and calls zmapViewCallBlixem() passing as arguments each of the members of that structure. doBlixemCommand() copies these arguments to another data structure <b>blixemDataStruct</b> which is private to zmapViewCallBlixem.c.
 </p>
 
-</fieldset>
+
 
 <h2>Compressing the display of Short Reads data</h2>
 <p>Many features are duplicated and when bumped take up a lot of space on the screen, and we can compress this by collapsing identical features into a single display item with a score, which can be dislayed by width or heat colour.

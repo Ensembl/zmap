@@ -404,7 +404,7 @@ ZMapFeatureAny zmapWindowItemGetFeatureAny(FooCanvasItem *item)
 }
 
 
-ZMapFeatureAny zmapWindowItemGetFeatureAnyType(FooCanvasItem *item, ZMapFeatureStructType expected_type)
+ZMapFeatureAny zmapWindowItemGetFeatureAnyType(FooCanvasItem *item, ZMapFeatureLevelType expected_type)
 {
   ZMapFeatureAny feature_any = NULL ;
   ZMapWindowCanvasItem feature_item ;
