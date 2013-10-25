@@ -1762,6 +1762,9 @@ static gboolean makeNewFeature(ZMapGFFParser parser_base, NameFindType name_find
     }
 
 
+  if (g_ascii_strcasecmp(source, "genomic_canonical") == 0)
+    printf("found it\n") ;
+
   /* We load some mode specific data which is needed in making a unique feature name. */
   if (feature_type == ZMAPSTYLE_MODE_ALIGNMENT)
     {
@@ -2260,6 +2263,7 @@ static gboolean getFeatureName(NameFindType name_find, char *sequence, char *att
 {
   gboolean has_name = FALSE ;
   char *tag_pos ;
+  gboolean name_at_start ;
 
   /* Probably we should do some checking to make sure start/end are in correct order....and
    * that other fields are correct....errr...shouldn't that already have been done ???? */
@@ -2289,20 +2293,24 @@ static gboolean getFeatureName(NameFindType name_find, char *sequence, char *att
       *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
 					       start, end, query_start, query_end) ;
     }
-  else if ((tag_pos = strstr(attributes, " Name")) ||
-           (tag_pos = strstr(attributes, ";Name")) ||
-           (tag_pos = strstr(attributes, "\tName")))
+  else if ((name_at_start = g_str_has_prefix(attributes, "Name"))
+	   || (tag_pos = strstr(attributes, " Name"))
+	   || (tag_pos = strstr(attributes, ";Name"))
+	   || (tag_pos = strstr(attributes, "\tName")))
     {
+      /* Parse out "Name <objname> ;" */
       /* Unfortunately the text "Name" appears also in the tag "DB_Name"
        * and if that tag appears first then that's the one that's picked up. The 
        * real Name tag should only ever be preceeded by a space, semi-colon or tab
        * so we check for that. Once found, increment tag_pos so it's pointing
        * at the start of the text "Name...". */
-      ++tag_pos;
-
-      /* Parse out "Name <objname> ;" */
       int attr_fields ;
       char name[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
+
+      if (name_at_start)
+	tag_pos = attributes ;
+      else
+	++tag_pos ;
 
       attr_fields = sscanf(tag_pos, "Name " VALUE_FORMAT_STR, &name[0]) ;
 
