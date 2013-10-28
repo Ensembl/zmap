@@ -1266,10 +1266,9 @@ static void addTypeName(gpointer data, gpointer user_data)
  * ##date 2004-09-21
  * ##sequence-region F22D3 1 35712
  * F22D3	Genomic_canonical	region	1	200	.	+	.	Sequence "B0252"
- *
- * so what to do...agh....
- *
- * I guess the best thing is to shove the errors out to the log and look for the gff start...
+ * 
+ * These error lines can also occur interleaved with valid gff...not ideal. Currently we shove
+ * the errors out to our log file so they get seen.
  *
  */
 static gboolean sequenceRequest(DoAllAlignBlocks get_features, ZMapFeatureBlock feature_block)
@@ -1284,15 +1283,7 @@ static gboolean sequenceRequest(DoAllAlignBlocks get_features, ZMapFeatureBlock 
   GList *loadable_methods = NULL ;
   char *methods = "" ;
   gboolean no_clip = TRUE ;
-  int iGFFVersion = 2 ;
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* Get any styles stored in the context. */
-  styles = ((ZMapFeatureContext)(feature_block->parent->parent))->styles ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
+  int iGFFVersion = 2 ;					    /* Default to version 2. */
 
 
   /* Exclude any methods that have "deferred loading" set in their styles, if no styles then
@@ -1375,10 +1366,10 @@ static gboolean sequenceRequest(DoAllAlignBlocks get_features, ZMapFeatureBlock 
 	      else
 		{
 		  if (first_error)
-		    setErrMsg(server,  g_strdup_printf("No GFF found in server reply,"
+		    setErrMsg(server, g_strdup_printf("No GFF found in server reply,"
 						       "but did find: \"%s\"", first_error)) ;
 		  else
-		    setErrMsg(server,  g_strdup_printf("%s", "No GFF found in server reply.")) ;
+		    setErrMsg(server, g_strdup_printf("%s", "No GFF found in server reply.")) ;
 		}
 
 	      ZMAPSERVER_LOG(Critical, ACEDB_PROTOCOL_STR, server->host,
@@ -1386,39 +1377,25 @@ static gboolean sequenceRequest(DoAllAlignBlocks get_features, ZMapFeatureBlock 
 	    }
 	  else
 	    {
-	      /* The ace server first gives us all the errors from the seqget/seqfeatures as
-	       * comments as then finally we get to the gff. */
+	      /* The ace server first gives us any errors from the seqget/seqfeatures as
+	       * comments, the first line of gff is always the version line. */
 	      if (g_str_has_prefix((char *)next_line, "##gff-version"))
 		{
 		  break ;
 		}
 	      else
 		{
-		  if (g_str_has_prefix((char *)next_line, "// ERROR"))
-		    {
-		      setErrMsg(server,  g_strdup_printf("Error fetching features: %s",
-							 next_line)) ;
-		      ZMAPSERVER_LOG(Warning, ACEDB_PROTOCOL_STR, server->host,
-				     "%s", server->last_err_msg) ;
-		    }
-		  else if (g_str_has_prefix((char *)next_line, "//"))
-		    {
-		      setErrMsg(server,  g_strdup_printf("Information from server: %s",
-							 next_line)) ;
-		      ZMAPSERVER_LOG(Message, ACEDB_PROTOCOL_STR, server->host,
-				     "%s", server->last_err_msg) ;
-		    }
-		  else
-		    {
-		      setErrMsg(server,  g_strdup_printf("Bad GFF line: %s",
-							 next_line)) ;
-		      ZMAPSERVER_LOG(Critical, ACEDB_PROTOCOL_STR, server->host,
-				     "%s", server->last_err_msg) ;
-		    }
+		  ZMAPSERVER_LOG(Warning, ACEDB_PROTOCOL_STR, server->host,
+				 "%s: %s",
+				 (g_str_has_prefix((char *)next_line, "// ERROR")
+				  ? "Error fetching features"
+				  : (g_str_has_prefix((char *)next_line, "//") 
+				     ? "Information from server" : "Bad GFF line")),
+				 next_line) ;
 
+		  /* Remember line in case this is the last/only line of file. */
 		  if (!first_error)
-		    first_error = next_line ;		    /* Remember first line for later error
-							       message.*/
+		    first_error = next_line ;		    
 		}
 	    }
 	}
@@ -1430,17 +1407,17 @@ static gboolean sequenceRequest(DoAllAlignBlocks get_features, ZMapFeatureBlock 
 	  ZMapGFFParser parser ;
 	  gboolean free_on_destroy ;
 
+	  /* Check for version. */
+	  if (!zMapGFFGetVersionFromString(next_line, &iGFFVersion))
+	    {
+	      setErrMsg(server,  g_strdup_printf("Could not determine GFF version from line: %s", next_line)) ;
+	      ZMAPSERVER_LOG(Critical, ACEDB_PROTOCOL_STR, server->host, "%s", server->last_err_msg) ;
+	    }
+
 
 	  /* Set up the parser, if we are doing cols/styles then set hash tables
 	   * in parser to map the gff source name to the Feature Set (== Column) and a Style. */
-   if (!zMapGFFGetVersionFromString(next_line, &iGFFVersion))
-   {
-     setErrMsg(server,  g_strdup_printf("Could not determine GFF version from line: %s", next_line)) ;
-     ZMAPSERVER_LOG(Critical, ACEDB_PROTOCOL_STR, server->host, "%s", server->last_err_msg) ;
-   }
-
 	  parser = zMapGFFCreateParser(iGFFVersion, (char *) g_quark_to_string(feature_block->original_id),
-
 				       server->zmap_start, server->zmap_end) ;
 	  zMapGFFParserInitForFeatures(parser, styles, FALSE) ;
 
@@ -1454,50 +1431,51 @@ static gboolean sequenceRequest(DoAllAlignBlocks get_features, ZMapFeatureBlock 
 
 
 	  /* We probably won't have to deal with part lines here acedb should only return whole lines
-	   * ....but should check for sure...bomb out for now.... */
+	   * ....but should check for sure...bomb out for now....
+	   * Note that we already have the first line from the loop above. */
 	  result = TRUE ;
 	  do
 	    {
-	      /* Note that we already have the first line from the loop above. */
-	      if (!zMapGFFParseLineLength(parser, next_line, line_length))
+	      /* acedb server can return "error" and "comment" lines interleaved with gff output,
+	       * otherwise we assume it's gff. */
+	      if (g_str_has_prefix((char *)next_line, "//"))
 		{
-		  /* This is a hack, I would like to make the acedb code have a quiet mode but
-		   * as usual this is not straight forward and will take a bit of fixing...
-		   * The problem for us is that the gff output is terminated with with a couple
-		   * of acedb comment lines which then screw up our parsing....so we ignore
-		   * lines starting with "//" hoping this doesn't conflict with gff.... */
-		  if (!g_str_has_prefix(next_line, "//"))
+		  ZMAPSERVER_LOG(Message, ACEDB_PROTOCOL_STR, server->host,
+				 "%s: %s", 
+				 (g_str_has_prefix((char *)next_line, "// ERROR")
+				  ? "Error fetching features" : "Information from server"),
+				 next_line) ;
+		}
+	      else if (!zMapGFFParseLineLength(parser, next_line, line_length))
+		{
+		  GError *error = zMapGFFGetError(parser) ;
+
+		  if (!error)
 		    {
-		      GError *error = zMapGFFGetError(parser) ;
+		      setErrMsg(server,
+				g_strdup_printf("zMapGFFParseLine() failed with no GError for line %d: %s",
+						zMapGFFGetLineNumber(parser), next_line)) ;
+		      ZMAPSERVER_LOG(Critical, ACEDB_PROTOCOL_STR, server->host,
+				     "%s", server->last_err_msg) ;
 
-		      if (!error)
+		      result = FALSE ;
+		    }
+		  else
+		    {
+		      /* If the error was serious we stop processing and return the error,
+		       * otherwise we just log the error. */
+		      if (zMapGFFTerminated(parser))
 			{
-			  setErrMsg(server,
-				    g_strdup_printf("zMapGFFParseLine() failed with no GError for line %d: %s",
-						    zMapGFFGetLineNumber(parser), next_line)) ;
-			  ZMAPSERVER_LOG(Critical, ACEDB_PROTOCOL_STR, server->host,
-					 "%s", server->last_err_msg) ;
-
 			  result = FALSE ;
+			  setErrMsg(server,  g_strdup_printf("%s", error->message)) ;
 			}
 		      else
 			{
-			  /* If the error was serious we stop processing and return the error,
-			   * otherwise we just log the error. */
-			  if (zMapGFFTerminated(parser))
-			    {
-			      result = FALSE ;
-			      setErrMsg(server,  g_strdup_printf("%s", error->message)) ;
-			    }
-			  else
-			    {
-			      ZMAPSERVER_LOG(Warning, ACEDB_PROTOCOL_STR, server->host,
-					     "%s", error->message) ;
-			    }
+			  ZMAPSERVER_LOG(Warning, ACEDB_PROTOCOL_STR, server->host,
+					 "%s", error->message) ;
 			}
 		    }
 		}
-
 
 	      if (!(result = zMapReadLineNext(line_reader, &next_line, &line_length)))
 		{
@@ -1511,7 +1489,9 @@ static gboolean sequenceRequest(DoAllAlignBlocks get_features, ZMapFeatureBlock 
 				     "%s", server->last_err_msg) ;
 		    }
 		  else
-		    result = TRUE ;
+		    {
+		      result = TRUE ;
+		    }
 		}
 
 	    }
