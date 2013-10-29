@@ -334,7 +334,7 @@ width=20
 show-when-empty=true
 
 [style-ORF]
-colours=normal fill #ffffff ; normal border #898994 ; selected fill gold ; selected border #000000\n \
+colours=normal fill #ffffff ; normal border #898994 ; selected fill gold ; selected border #000000
 width=11
 frame-mode=only-3
 strand-specific=true
