@@ -32,13 +32,27 @@
 #ifndef ZMAP_FEATURE_LOAD_DISPLAY_H
 #define ZMAP_FEATURE_LOAD_DISPLAY_H
 
-
 #include <ZMap/zmapStyle.h>
 
 
-/* 
- * Structs/types for associating sets of features with their descriptions/columns/styles etc
+/* Overview:
+ * 
+ * A "Featureset" is a set of one type of features (e.g. EST alignments from mouse),
+ * this set is derived from a single data source. The meta data for the featureset
+ * and the source is held in a  ZMapFeatureSourceStruct.
+ * 
+ * Featuresets are displayed in columns and there can be more than one featureset
+ * in any one column. Data about which column a feature set is held in is held in
+ * a ZMapFeatureSetDescStruct (bad name for it).
+ * 
+ * Columns hold one-to-many featuresets and information about columns is held in
+ * a ZMapFeatureColumnStruct.
+ * 
+ * All these structs need to associated with each other and this information is
+ * held in a ZMapFeatureContextMapStruct (again, not a good name).
+ * 
  */
+
 
 /* Struct holding information about sets of features. Can be used to look up the
  * style for a feature plus other stuff. */
@@ -52,6 +66,7 @@ typedef struct ZMapFeatureSourceStructType
   GQuark style_id ;     /* The style for processing the source. */
 
   GQuark related_column;	/* eg real data from coverage */
+
   GQuark maps_to;			/* composite featureset many->one
   					 * composite does not exist but all are displayed as one
   					 * requires ZMapWindowGraphDensityItem
@@ -66,7 +81,6 @@ typedef struct ZMapFeatureSourceStructType
 /* Struct for "feature set" information. Used to look up "meta" information for each feature set. */
 typedef struct ZMapFeatureSetDescStructType
 {
-      // really need to change feature_set to column: it's confusing
   GQuark column_id ;           /* The set name. (the display column) as a key value*/
   GQuark column_ID ;           /* The set name. (the display column) as display text*/
 
@@ -150,7 +164,8 @@ typedef struct ZMapFeatureContextMapStructType
 
 
 
-/* Holds data abouta sequence to be fetched.
+/* THIS IS THE WRONG PLACE FOR THIS I THINK...EG */
+/* Holds data about a sequence to be fetched.
  * Used for the 'default-sequence' from the config file or one loaded later
  * via a peer program, e.g. otterlace. */
 typedef struct ZMapFeatureSequenceMapStructType
