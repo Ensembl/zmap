@@ -38,6 +38,7 @@
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapString.h>
 #include <ZMap/zmapFeature.h>
+#include <ZMap/zmapFeatureLoadDisplay.h>
 #include <ZMap/zmapSO.h>
 #include <zmapGFF_P.h>
 #include "zmapGFF2_P.h"

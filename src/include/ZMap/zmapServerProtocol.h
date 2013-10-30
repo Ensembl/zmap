@@ -37,6 +37,7 @@
 #include <ZMap/zmapEnum.h>
 #include <ZMap/zmapUrl.h>
 #include <ZMap/zmapFeature.h>
+#include <ZMap/zmapFeatureLoadDisplay.h>
 #include <ZMap/zmapThreads.h>
 
 

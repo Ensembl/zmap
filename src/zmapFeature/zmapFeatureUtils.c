@@ -39,6 +39,10 @@
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapGLibUtils.h>
 
+/* presence of this header suggests that there are routines here that need to be
+ * be moved into a separate feature "load display" file */
+#include <ZMap/zmapFeatureLoadDisplay.h>
+
 
 typedef struct
 {

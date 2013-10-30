@@ -32,7 +32,7 @@
 #ifndef ZMAP_CONTROL_IMPORT_H
 #define ZMAP_CONTROL_IMPORT_H
 
-#include <ZMap/zmapFeature.h>
+#include <ZMap/zmapFeatureLoadDisplay.h>
 
 typedef void (*ZMapControlImportFileCB)(gpointer user_data) ;
 

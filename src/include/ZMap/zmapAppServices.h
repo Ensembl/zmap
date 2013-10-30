@@ -32,7 +32,9 @@
 #ifndef ZMAP_APP_SERVICES_H
 #define ZMAP_APP_SERVICES_H
 
-#include <ZMap/zmapFeature.h>
+#include <gtk/gtk.h>
+
+#include <ZMap/zmapFeatureLoadDisplay.h>
 
 
 

@@ -43,6 +43,7 @@
 #include <ZMap/zmapConfigStrings.h>
 #include <ZMap/zmapConfigStanzaStructs.h>
 #include <ZMap/zmapFeature.h>
+#include <ZMap/zmapFeatureLoadDisplay.h>
 #include <zmapConfigIni_P.h>
 
 

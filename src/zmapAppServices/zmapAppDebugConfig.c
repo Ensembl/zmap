@@ -34,6 +34,8 @@
 
 #include <ZMap/zmap.h>
 
+
+#include <ZMap/zmapFeatureLoadDisplay.h>
 #include <ZMap/zmapConfigIni.h>
 #include <ZMap/zmapConfigStrings.h>
 

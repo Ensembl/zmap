@@ -41,6 +41,7 @@
 
 #include <ZMap/zmapUtilsGUI.h>
 #include <ZMap/zmapFeature.h>
+#include <ZMap/zmapFeatureLoadDisplay.h>
 #include <ZMap/zmapAppRemote.h>
 #include <ZMap/zmapXMLHandler.h>
 

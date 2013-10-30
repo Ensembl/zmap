@@ -780,6 +780,23 @@ typedef struct ZMapFeatureStructType
 
 
 
+
+/* 
+ *          Structs/types for outputting information about features.
+ */
+
+typedef struct ZMapFeatureSubPartSpanStructType
+{
+  ZMapFeatureSubpartType subpart ;			    /* Exon, Intron etc. */
+
+  int index ;						    /* Index number of intron/exon
+							       etc. starts at 1. */
+
+  int start, end ;					    /* start/end of subpart in sequence coords. */
+
+} ZMapFeatureSubPartSpanStruct, *ZMapFeatureSubPartSpan ;
+
+
 /* Struct that supplies text descriptions of the parts of a feature, which fields are filled
  * in depends on the feature type. */
 typedef struct ZMapFeatureDescStructName
@@ -845,161 +862,9 @@ typedef struct ZMapFeatureDescStructName
 
 
 
-typedef struct
-{
-  /* I'm not completely sure this is a good idea but somehow we do need to be able to find out
-   * whether something is in intron/exon or whatever.... */
-
-  /* Having thought about it, it's pretty much essential without
-   * altering the features to have addressable spans, which themselves
-   * need a type too. The previous version of this struct was in the
-   * ZMapWindow code, but a couple of ZMapFeature calls need to know
-   * about subpart types, start and end too, so it's moved here. */
-
-  ZMapFeatureSubpartType subpart ;			    /* Exon, Intron etc. */
-
-  int index ;						    /* Index number of intron/exon
-							       etc. starts at 1. */
-
-  int start, end ;					    /* start/end of subpart in sequence coords. */
-
-} ZMapFeatureSubPartSpanStruct, *ZMapFeatureSubPartSpan ;
-
-
-
-
-
-/* stuff to handle GFF input and config stanzas that map featurests styles and columns */
-
-/* Struct for "feature set" information. Used to look up "meta" information for each feature set. */
-typedef struct
-{
-      // really need to change feature_set to column: it's confusing
-  GQuark column_id ;           /* The set name. (the display column) as a key value*/
-  GQuark column_ID ;           /* The set name. (the display column) as display text*/
-
-  GQuark feature_src_ID;            // the name of the source featureset (with upper case)
-                                    // struct is keyed with normalised name
-  char *feature_set_text;           // renamed so we can search for this
-
-} ZMapFeatureSetDescStruct, *ZMapFeatureSetDesc ;
-
-
-/* all the info about a display column */
-/* NOTE these are logical columns, real display columns get munged with strand and frame */
-typedef struct
-{
-  GQuark unique_id ;                /* column name as a key value*/
-  GQuark column_id ;                /* column name as display text*/
-
-  char *column_desc;                /* description */
-
-  int order;                        /* column ordering */
-
-  ZMapFeatureTypeStyle style;       /* column specific style data
-                                     * may be config'd explicitly or derived from contained featuresets
-                                     */
-  GQuark style_id;                  /* this can be set before we get the style itself */
-
-  GList *style_table;               /* all the styles needed by the column */
-
-  GList * featuresets_names;              /* list of those configured
-                                     * these get filled in when servers request featureset-names
-                                     * for pipe servers we could do this during server config
-                                     * but for ACE (and possibly DAS) we have to wait till they provide data
-                                     */
-  GList * featuresets_unique_ids;	/* we need both user style and unique id's */
-  						/* both are filled in by lazy evaluation if not configured explicitly
-  						 * (featuresets is set by the [columns] config)
-  						 * NOTE we now have virtual featuresets for BAM coverage that do not exist
-						 * servers that provide a mapping must delete these lists
-  						 */
-
-} ZMapFeatureColumnStruct, *ZMapFeatureColumn ;
-
-
-
-
-/* Struct holding "per source" information for GFF data. Can be used to look up the
- * style for a GFF feature plus other stuff. */
-typedef struct
-{
-  GQuark source_id ;    /* The source name. From ACE this is the key used to ref this struct */
-                        /* but we can config an alternate name (requested by graham) */
-
-  GQuark source_text ;  /* Description. */
-
-  GQuark style_id ;     /* The style for processing the source. */
-
-  GQuark related_column;	/* eg real data from coverage */
-  GQuark maps_to;			/* composite featureset many->one
-  					 * composite does not exist but all are displayed as one
-  					 * requires ZMapWindowGraphDensityItem
-  					 * only relevant to coverage data
-  					 */
-
-  gboolean is_seq;		/* true for coverage and real seq-data */
-
-} ZMapFeatureSourceStruct, *ZMapFeatureSource ;
-
-
-/* all the featureset mapping data - used by view and window */
-
-typedef struct
-{
-  GHashTable *styles;                     /* All the styles known to the view or window */
-
-  GHashTable *column_2_styles ;           /* Mapping of each column to all the styles
-                                           * it requires. using a GHashTable of
-                                           * GLists of style quark id's.
-                                           *
-                                           * NB: this stores data from ZMap config
-                                           * sections [featureset_styles] _and_ [column_styles]
-                                           * _and_ ACEDB
-                                           * collisions are merged
-                                           * Columns treated as fake featuresets so as to have a style
-                                           */
-
-  GHashTable *featureset_2_column ;       /* Mapping of a feature source to a column using ZMapFeatureSetDesc
-                                           * NB: this contains data from ZMap config
-                                           * sections [columns] [featureset_description] _and_ ACEDB
-                                           */
-
-  GHashTable *source_2_sourcedata ;       /* Mapping of a feature source to its data using ZMapFeatureSource
-                                           * This consists of style id and description and source id
-                                           * NB: the GFFSource.source  (quark) is the GFF_source name
-                                           * the hash table is indexed by the featureset name quark
-                                           */
-
-  GHashTable *columns;                    /* All the columns that ZMap will display
-                                           * stored as ZMapFeatureColumn
-                                           * These may contain several featuresets each
-                                           * They are in display order left to right
-                                           */
-
-  GList * seq_data_featuresets;           /* sources of BAM data  as unique id's, use source_2_sourcedata  for display name */
-
-  GHashTable *virtual_featuresets;		/* place holder for lists of featuresets */
-
-} ZMapFeatureContextMapStruct, *ZMapFeatureContextMap;
-
-
-
-/* Holds a sequence to be fetched, in the end this will include aligns/blocks etc. */
-/* MH17: moved from zmapView.h */
-/* currently (Apr 2011) this is used for the 'default-sequence' or the one loaded via Otterlace */
-/* multiple aligns must also include this if used */
-typedef struct
-{
-  char *config_file ;
-
-  char *dataset ;       /* eg human */
-  char *sequence ;      /* eg chr6-18 */
-  int start, end ;      /* chromosome coordinates */
-} ZMapFeatureSequenceMapStruct, *ZMapFeatureSequenceMap ;
-
-
-
+/* 
+ *            For recursing down through the feature hierachy.
+ */
 typedef enum
   {
     ZMAP_CONTEXT_EXEC_STATUS_OK           = 0,
@@ -1008,18 +873,18 @@ typedef enum
     ZMAP_CONTEXT_EXEC_STATUS_ERROR        = 1 << 2
   } ZMapFeatureContextExecuteStatus;
 
-
-
 typedef ZMapFeatureContextExecuteStatus (*ZMapGDataRecurseFunc)(GQuark   key_id,
                                                                 gpointer list_data,
                                                                 gpointer user_data,
                                                                 char   **error);
 
+/* For custom feature context dumping. */
 typedef gboolean (*ZMapFeatureDumpFeatureFunc)(ZMapFeatureAny feature_any,
 					       GHashTable    *styles,
 					       GString       *dump_string_in_out,
 					       GError       **error,
-					       gpointer       user_data);
+					       gpointer       user_data) ;
+
 
 
 
@@ -1052,19 +917,6 @@ void zMapFeatureAddStyleMode(ZMapFeatureTypeStyle style, ZMapStyleMode f_type);
  */
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-char *zMapFeatureCreateName(ZMapFeatureType feature_type,
-                            char *feature_name,
-			    ZMapStrand strand,
-                            int start, int end,
-                            int query_start, int query_end) ;
-GQuark zMapFeatureCreateID(ZMapFeatureType feature_type,
-                           char *feature_name,
-			   ZMapStrand strand,
-                           int start, int end,
-			   int query_start, int query_end) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 char *zMapFeatureCreateName(ZMapStyleMode feature_type,
                             char *feature_name,
 			    ZMapStrand strand,
@@ -1075,9 +927,6 @@ GQuark zMapFeatureCreateID(ZMapStyleMode feature_type,
 			   ZMapStrand strand,
                            int start, int end,
 			   int query_start, int query_end) ;
-
-
-
 ZMapFeature zMapFeatureCreateEmpty(void) ;
 ZMapFeature zMapFeatureCreateFromStandardData(char *name, char *sequence, char *ontology,
 					      ZMapStyleMode feature_type,
@@ -1085,7 +934,6 @@ ZMapFeature zMapFeatureCreateFromStandardData(char *name, char *sequence, char *
                                               int start, int end,
                                               gboolean has_score, double score,
 					      ZMapStrand strand) ;
-
 gboolean zMapFeatureAddStandardData(ZMapFeature feature, char *feature_name_id, char *name,
 				    char *sequence, char *ontology,
 				    ZMapStyleMode feature_type,
@@ -1093,7 +941,6 @@ gboolean zMapFeatureAddStandardData(ZMapFeature feature, char *feature_name_id, 
 				    int start, int end,
 				    gboolean has_score, double score,
 				    ZMapStrand strand) ;
-
 gboolean zMapFeatureAddKnownName(ZMapFeature feature, char *known_name) ;
 gboolean zMapFeatureAddSplice(ZMapFeature feature, ZMapBoundaryType boundary) ;
 gboolean zMapFeatureTranscriptSortExons(ZMapFeature feature) ;
@@ -1114,7 +961,6 @@ gboolean zMapFeatureTranscriptExonForeach(ZMapFeature feature, GFunc function, g
 gboolean zMapFeatureTranscriptChildForeach(ZMapFeature feature, ZMapFeatureSubpartType child_type,
 					   GFunc function, gpointer user_data) ;
 void zMapFeatureTranscriptIntronForeach(ZMapFeature feature, GFunc function, gpointer user_data);
-
 gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
 				     GQuark clone_id,
 				     double percent_id,
@@ -1187,7 +1033,7 @@ ZMapFeatureSet zMapFeatureSetCopy(ZMapFeatureSet feature_set);
 
 gboolean zMapFeatureSetIsLoadedInRange(ZMapFeatureBlock block, GQuark unique_id,int start, int end);
 
-ZMapFeatureColumn zMapFeatureGetSetColumn(ZMapFeatureContextMap map,GQuark set_id);
+
 
 
 /* *********************
@@ -1330,12 +1176,6 @@ char *zMapFeatureCanonName(char *feature_name) ;
 //ZMapFeatureTypeStyle *zMapFeatureGetStyle(ZMapFeatureAny feature) ;
 gboolean zMapSetListEqualStyles(GList **feature_set_names, GList **styles) ;
 gboolean zMapFeatureAnyForceModesToStyles(ZMapFeatureAny feature_any, GHashTable *styles) ;
-
-gboolean zMapFeatureIsCoverageColumn(ZMapFeatureContextMap map,GQuark column_id);
-gboolean zMapFeatureIsSeqColumn(ZMapFeatureContextMap map,GQuark column_id);
-gboolean zMapFeatureIsSeqFeatureSet(ZMapFeatureContextMap map,GQuark fset_id);
-
-GList *zMapFeatureGetColumnFeatureSets(ZMapFeatureContextMap map,GQuark column_id,gboolean unique_id);
 
 
 /* Probably should be merged at some time.... */
