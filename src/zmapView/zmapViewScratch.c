@@ -516,8 +516,10 @@ static gboolean scratchMergeFeature(ScratchMergeData merge_data)
     {
       /* Just merge the clicked subfeature */
       ZMapFeatureSubPartSpan sub_feature = NULL;
-      zMapWindowItemGetInterval(merge_feature->src_item, merge_feature->world_x, merge_feature->world_y, &sub_feature);
-      
+
+      zMapWindowCanvasItemGetInterval(merge_feature->src_item,
+				      merge_feature->world_x, merge_feature->world_y, &sub_feature) ;
+
       if (sub_feature)
         {
           if (sub_feature->start == sub_feature->end)
