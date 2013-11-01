@@ -47,7 +47,7 @@ static gboolean developer_status_G = FALSE ;
 
 
 /* Currently developers are limited to certain ids in certain domains. */
-static char *developers_G[] = {"edgrif", "zmap", "jh13", "gb10", NULL} ;      /* MH17: i need to see what the users get */
+static char *developers_G[] = {"edgrif", "zmap", "jh13", "gb10", "sm23", NULL} ;      /* MH17: i need to see what the users get */
 static char *domain_G[] = {"local", "localhost", "sanger.ac.uk", NULL} ;
 
 
