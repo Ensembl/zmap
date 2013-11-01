@@ -208,6 +208,54 @@ static gpointer _featureset_colour_G[FEATURE_N_TYPE] = { 0 };
  */
 
 
+/* Moved from items/zmapWindowContainerGroup.c */
+/* NOTE don-t _EVER_ let this get called by a Foo Canvas callback */
+/* let's use a filter sort here, stability is a good thing and volumes are small */
+void zMapWindowContainerGroupSortByLayer(FooCanvasGroup * group)
+{
+	GList *old;
+	ZMapWindowFeaturesetItem item;
+	guint layer;
+	/* we only implement 3 layers */
+	GList *back = NULL, *features = NULL, *overlay = NULL;
+
+	if(!group || !ZMAP_IS_CONTAINER_GROUP(group))
+		return;
+
+	for(old = group->item_list; old; old = old->next)
+	{
+		if(!ZMAP_IS_WINDOW_FEATURESET_ITEM(old->data))
+		{
+			layer = 0;		/* is another group eg a column */
+		}
+		else
+		{
+			item = (ZMapWindowFeaturesetItem) old->data;
+			layer = zMapWindowCanvasFeaturesetGetLayer(item);
+		}
+
+		if(!(layer & ZMAP_CANVAS_LAYER_DECORATION))	/* normal features */
+			features = g_list_append(features, old->data);
+		else if((layer & ZMAP_CANVAS_LAYER_OVERLAY))
+			overlay = g_list_append(overlay, old->data);
+		else
+			back = g_list_append(back, old->data);
+	}
+
+	features = g_list_concat(features, overlay);
+	back = g_list_concat(back, features);
+
+	g_list_free(group->item_list);
+
+	group->item_list = back;
+	group->item_list_end = g_list_last(back);
+}
+
+
+
+
+
+
 /* each feature type defines its own functions */
 /* if they inherit from another type then they must include that type's headers and call code directly */
 
