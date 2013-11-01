@@ -932,9 +932,9 @@ static char *checkConfigDir(void)
 
   if (!zMapConfigDirCreate(dir.s, file.s))
     {
-	fprintf(stderr, "Could not access either/both of configuration directory \"%s\" "
-	      "or file \"%s\" within that directory.\n",
-	      zMapConfigDirGetDir(), zMapConfigDirGetFile()) ;
+      fprintf(stderr, "Could not access either/both of configuration directory \"%s\" "
+              "or file \"%s\" within that directory.\n",
+              zMapConfigDirGetDir(), zMapConfigDirGetFile()) ;
       doTheExit(EXIT_FAILURE) ;
 
     }
