@@ -1,9 +1,0 @@
-Changes
-lib/X11/XRemote.pm
-XRemote.xs
-Makefile.PL
-MANIFEST
-README
-test.pl
-tk_test.pl
-typemap
