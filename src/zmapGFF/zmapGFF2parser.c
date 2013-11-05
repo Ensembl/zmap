@@ -1301,6 +1301,11 @@ static gboolean parseBodyLine(ZMapGFFParser parser_base, char *line, gsize line_
 	}
       else
 	{
+
+          if ((strstr(source, "funcgen_H1ESC")))
+            printf("found it\n") ;
+
+
 	  /* Do some sanity checking... */
 	  if (g_ascii_strcasecmp(sequence, ".") == 0)
 	    err_text = g_strdup("sequence cannot be '.'") ;
