@@ -355,7 +355,7 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   PipeServer server = (PipeServer)server_in ;
   GError *gff_pipe_err = NULL ;
-  int iGFFVersion = 2 ;
+  int gff_version = 2 ;
 
   if (server->gff_pipe)
     {
@@ -407,12 +407,12 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
     * (sm23) Modification to interface to find version from data stream before beginning
     * formal parsing of data.
     */
-   if (!zMapGFFGetVersionFromGIO(server->gff_pipe, &iGFFVersion))
+   if (!zMapGFFGetVersionFromGIO(server->gff_pipe, &gff_version))
    {
      result = ZMAP_SERVERRESPONSE_SERVERDIED ;
    }
 
-	  server->parser = zMapGFFCreateParser(iGFFVersion, server->sequence_map->sequence, server->zmap_start, server->zmap_end) ;
+	  server->parser = zMapGFFCreateParser(gff_version, server->sequence_map->sequence, server->zmap_start, server->zmap_end) ;
 	  server->gff_line = g_string_sized_new(2000) ;	    /* Probably not many lines will be > 2k chars. */
 
 	  result = pipeGetHeader(server) ;
