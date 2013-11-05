@@ -264,10 +264,12 @@ void zmapControlWindowSetStatus(ZMap zmap)
 	    }
 
 
-	  if ( view_state == ZMAPVIEW_LOADED)
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	  if (view_state == ZMAPVIEW_LOADED)
 	    {
 	      /* hack to stop the timeout...seems to be no way of removing it even though we have a handle..... */
-	      rotateTextCB(NULL) ;
+	      rotateTextCB(zmap) ;
 
 	      idle_handle = 0 ;
 	    }
@@ -276,6 +278,14 @@ void zmapControlWindowSetStatus(ZMap zmap)
 	      /* Start the timeout if it's not already going. */
 	      if (!idle_handle)
 		idle_handle = g_timeout_add(ROTATION_DELAY, rotateTextCB, zmap->status_entry) ;
+	    }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+	  /* Start the timeout if it's not already going. */
+	  if ((view_state == ZMAPVIEW_LOADING || view_state == ZMAPVIEW_UPDATING)
+	      && !idle_handle)
+	    {
+		idle_handle = g_timeout_add(ROTATION_DELAY, rotateTextCB, zmap) ;
 	    }
 	}
       else
@@ -349,7 +359,8 @@ static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data)
   ZMap zmap = (ZMap)cb_data ;
   GList *destroyed_views = NULL ;
   
-  /* WHY DO WE DO THIS....I DON'T KNOW.... */
+  /* This function is called when gtk has sent a destroy signal to our toplevel window,
+   * setting this to NULL ensures that we don't try to destroy the window again. */
   zmap->toplevel = NULL ;
 
   zmapControlDoKill(zmap, &destroyed_views) ;
@@ -600,22 +611,28 @@ gboolean myWindowMaximize(GtkWidget *widget, GdkEvent  *event, gpointer user_dat
  *  */
 static gboolean rotateTextCB(gpointer user_data)
 {
-  static gboolean call_again = TRUE ;			    /* Keep calling us. */
+  gboolean call_again = TRUE ;				    /* Keep calling us. */
+  ZMap zmap = (ZMap)user_data ;
 
-  if (!user_data)
+  if (zmap->state == ZMAP_DYING)
     {
       call_again = FALSE ;				    /* Stop calling us. */
     }
-  else if (call_again)
+  else
     {
       static GString *buffer = NULL ;
-      GtkWidget *entry_widg = GTK_WIDGET(user_data) ;
+      ZMapView view ;
+      ZMapViewState view_state ;
+      GtkWidget *entry_widg ;
       char *entry_text ;
 
       if (!buffer)
 	buffer = g_string_sized_new(1000) ;
 
-      /* If zmap window is closed before any loading then entry_text can be NULL. */
+      view = zMapViewGetView(zmap->focus_viewwindow) ;
+      view_state = zMapViewGetStatus(view) ;
+
+      entry_widg = zmap->status_entry ;
       if ((entry_text = (char *)gtk_entry_get_text(GTK_ENTRY(entry_widg))))
 	{
 	  buffer = g_string_assign(buffer, (entry_text + 1)) ;
@@ -623,6 +640,9 @@ static gboolean rotateTextCB(gpointer user_data)
 
 	  gtk_entry_set_text(GTK_ENTRY(entry_widg), buffer->str) ;
 	}
+
+      if (view_state == ZMAPVIEW_LOADED)
+	call_again = FALSE ;				    /* Stop calling us. */
     }
 
   return call_again ;

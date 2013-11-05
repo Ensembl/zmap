@@ -84,6 +84,11 @@ static void formatSession(gpointer data, gpointer user_data) ;
  */
 
 
+/* This wierd macro creates a function that will return string literals for each num in the ZMAP_XXXX_LIST's. */
+ZMAP_ENUM_AS_EXACT_STRING_FUNC(zMapViewThreadStatus2ExactStr, ZMapViewThreadStatus, ZMAP_VIEW_THREAD_STATE_LIST) ;
+
+
+
 gpointer zMapViewFindView(ZMapView view_in, gpointer view_id)
 {
   gpointer view = NULL ;
