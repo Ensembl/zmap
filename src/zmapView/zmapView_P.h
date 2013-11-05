@@ -30,18 +30,13 @@
 #define ZMAP_VIEW_P_H
 
 #include <glib.h>
+
 #include <ZMap/zmapConfigStanzaStructs.h>
 #include <ZMap/zmapServerProtocol.h>
 #include <ZMap/zmapThreads.h>
 #include <ZMap/zmapView.h>
 #include <ZMap/zmapWindow.h>
 #include <ZMap/zmapWindowNavigator.h>
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-#include <ZMap/zmapXRemote.h>
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 
 
 
@@ -94,25 +89,29 @@ typedef struct ZMapViewSessionServerStructName
 } ZMapViewSessionServerStruct, *ZMapViewSessionServer ;
 
 
-/* Malcolm has introduced this and put it in the threads package where it is NOT used.
+
+/* Malcolm has introduced this and put it in the threads package where it is NOT used
+ * so I have moved it here....but is this necessary....revisit his logic....
  * Is it necessary.....revisit this...... */
-typedef enum
-  {
-    THREAD_STATUS_INVALID,
-    THREAD_STATUS_FAILED,				    /* Thread has failed (and needs killing ?). */
-    THREAD_STATUS_PENDING,				    /* ????? */
-    THREAD_STATUS_OK					    /* Thread functioning normally. */
-  } ZMapViewThreadStatus ;
+#define ZMAP_VIEW_THREAD_STATE_LIST(_)                                                           \
+_(THREAD_STATUS_INVALID,    , "Invalid",       "In valid thread state.",            "") \
+_(THREAD_STATUS_OK,         , "OK",            "Thread ok.",               "") \
+_(THREAD_STATUS_PENDING,    , "Pending",       "Thread pending....means what ?",       "") \
+_(THREAD_STATUS_FAILED,     , "Failed",        "Thread has failed (needs killing ?).", "")
+
+ZMAP_DEFINE_ENUM(ZMapViewThreadStatus, ZMAP_VIEW_THREAD_STATE_LIST) ;
 
 
 
+
+/* Forward declaration need for viewconnection. */
 typedef struct _ZMapViewConnectionStepListStruct *ZMapViewConnectionStepList ;
 
 
 /* Represents a single connection to a data source. 
  * We maintain state for our connections otherwise we will try to issue requests that
  * they may not see. curr_request flip-flops between ZMAP_REQUEST_GETDATA and ZMAP_REQUEST_WAIT */
-typedef struct ZMapViewConnectionStructName
+typedef struct ZMapViewConnectionStructType
 {
   ZMapView parent_view ;
 
@@ -355,13 +354,6 @@ typedef struct _ZMapViewStruct
 
   ZMapWindowNavigator navigator_window ;
 
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  ZMapXRemoteObj xremote_client;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
   /* Crikey, why is this here...??? Maybe it's ok...but seems more like a window thing..... */
   GList *navigator_set_names;
 
@@ -413,16 +405,6 @@ ZMapFeatureContext zmapViewMergeInContext(ZMapView view, ZMapFeatureContext cont
 gboolean zmapViewDrawDiffContext(ZMapView view, ZMapFeatureContext *diff_context, ZMapFeature highlight_feature) ;
 void zmapViewResetWindows(ZMapView zmap_view, gboolean revcomp);
 void zmapViewEraseFromContext(ZMapView replace_me, ZMapFeatureContext context_inout);
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-void zmapViewSetupXRemote(ZMapView view, GtkWidget *widget);
-ZMapXRemoteSendCommandError zmapViewRemoteSendCommand(ZMapView view,
-						      char *action, GArray *xml_events,
-						      ZMapXMLObjTagFunctions start_handlers,
-						      ZMapXMLObjTagFunctions end_handlers,
-						      gpointer *handler_data);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 /* Context Window Hash (CWH) for the correct timing of the call to zMapFeatureContextDestroy */
@@ -688,5 +670,12 @@ cds.</tagvalue><!--\
 </response> \
 </zmap>"
 #endif /* FULL_LACE_EXAMPLE */
+
+
+
+ZMAP_ENUM_AS_EXACT_STRING_DEC(zMapViewThreadStatus2ExactStr, ZMapViewThreadStatus) ;
+
+
+
 
 #endif /* !ZMAP_VIEW_P_H */
