@@ -74,6 +74,7 @@ typedef struct _PipeServerStruct
   gboolean is_otter ;
 
   ZMapGFFParser parser ;				    /* holds header features and sequence data till requested */
+  int gff_version ;                                         /* Cached because parser may be freed on error. */
   GString *gff_line ;
 
   gint zmap_start, zmap_end ;				    /* display coordinates of interesting region */
