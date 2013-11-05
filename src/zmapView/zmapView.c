@@ -66,6 +66,8 @@
 
 
 /* Define thread debug messages, used in checkStateConnections() mostly. */
+#define THREAD_DEBUG_MSG_PREFIX "GUI - Slave thread %s: "
+
 #define THREAD_DEBUG_MSG(CHILD_THREAD, FORMAT_STR, ...)	\
   G_STMT_START								\
   {									\
@@ -73,10 +75,32 @@
 									\
     thread_str = zMapThreadGetThreadID((CHILD_THREAD)) ;		\
 									\
-    zMapDebugPrint(thread_debug_G, "GUI - child thread %s: " FORMAT_STR, thread_str, __VA_ARGS__) ; \
+    zMapDebugPrint(thread_debug_G, THREAD_DEBUG_MSG_PREFIX FORMAT_STR, thread_str, __VA_ARGS__) ; \
+									\
+    zMapLogMessage(THREAD_DEBUG_MSG_PREFIX FORMAT_STR, thread_str, __VA_ARGS__) ; \
 									\
     g_free(thread_str) ;						\
 									\
+  } G_STMT_END
+
+/* Define thread debug messages with extra information, used in checkStateConnections() mostly. */
+#define THREAD_DEBUG_MSG_FULL(CHILD_THREAD, VIEW_CON, REQUEST_TYPE, REPLY, FORMAT_STR, ...) \
+  G_STMT_START								\
+  {									\
+    char *msg_str ;							\
+									\
+    msg_str = g_strdup_printf("reply = \"%s\", status = \"%s\","	\
+			      "request = \"%s\", url = \"%s\" " FORMAT_STR, \
+			      zMapThreadReply2ExactStr((REPLY)),	\
+			      zMapViewThreadStatus2ExactStr((VIEW_CON)->thread_status), \
+			      zMapServerReqType2ExactStr((REQUEST_TYPE)), \
+			      (VIEW_CON)->url,				\
+			      __VA_ARGS__) ;				\
+									\
+    THREAD_DEBUG_MSG((CHILD_THREAD), "%s", msg_str) ;			\
+    									\
+    g_free(msg_str) ;							\
+    									\
   } G_STMT_END
 
 
@@ -3062,6 +3086,8 @@ static gboolean checkStateConnections(ZMapView zmap_view)
   gboolean reqs_finished = FALSE ;			    /* at least one thread just finished */
   int has_step_list = 0 ;				    /* any requests still active? */
 
+
+  /* We should fix this so the function is not called unless there are connections... */
   if (zmap_view->connection_list)
     {
       GList *list_item ;
@@ -3088,6 +3114,11 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 	  view_con = list_item->data ;
 	  thread = view_con->thread ;
 
+
+	  data = NULL ;
+	  err_msg = NULL ;
+
+
 	  if (view_con->request_data)
 	    connect_data = (ConnectionData)(view_con->request_data) ;
 
@@ -3095,9 +3126,6 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 	   * MEANS THAT WE SHOULD BE PASSING A HEADER WITH THE DATA SO WE CAN SAY WHERE
 	   * THE INFORMATION CAME FROM AND WHAT SORT OF REQUEST IT WAS.....ACTUALLY WE
 	   * GET A LOT OF INFO FROM THE CONNECTION ITSELF, E.G. SERVER NAME ETC. */
-
-	  data = NULL ;
-	  err_msg = NULL ;
 
 	  // need to copy this info in case of thread death which clears it up
 	  if (connect_data)
@@ -3130,10 +3158,15 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 	    }
 	  else
 	    {
-	      if (reply != ZMAPTHREAD_REPLY_WAIT)
+	      ZMapServerReqAny req_any ;
+
+	      /* Recover the request from the thread data....is there always data ? check this... */
+	      if (data)
 		{
-		  THREAD_DEBUG_MSG(thread, "child thread reply %d/%d, %s", reply, view_con->thread_status, err_msg) ;
+		  req_any = (ZMapServerReqAny)data ;
+		  request_type = req_any->type ;
 		}
+
 
 	      switch (reply)
 		{
@@ -3146,26 +3179,25 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 		case ZMAPTHREAD_REPLY_GOTDATA:
 		case ZMAPTHREAD_REPLY_REQERROR:
 		  {
-		    ZMapServerReqAny req_any ;
 		    ZMapViewConnectionRequest request ;
 		    ZMapViewConnectionStep step = NULL ;
 		    gboolean kill_connection = FALSE ;
 
 
-		    THREAD_DEBUG_MSG(thread, "child thread reply = %d", zMapThreadReply2ExactStr(reply)) ;
+                    if ((strstr(view_con->url, "ensembl_premerge_genes")))
+                      printf("found it\n") ;
 
+
+		    /* WHY IS THIS DONE ?? */
 		    view_con->curr_request = ZMAPTHREAD_REQUEST_WAIT ;
 
-		    /* Recover the request from the thread data. */
-		    req_any = (ZMapServerReqAny)data ;
 
-		    /* Not sure why I need this..... */
-		    request_type = req_any->type ;
-
+		    THREAD_DEBUG_MSG_FULL(thread, view_con, request_type, reply, "%s", "thread replied") ;
+		    
 
 		    /* Recover the stepRequest from the view connection and process the data from
 		     * the request. */
-		    if (!(request = zmapViewStepListFindRequest(view_con->step_list, req_any->type, view_con)))
+                    if (!(request = zmapViewStepListFindRequest(view_con->step_list, req_any->type, view_con)))
 		      {
 			zMapLogCritical("Request of type %s for connection %s not found in view %s step list !",
 					zMapServerReqType2ExactStr(req_any->type),
@@ -3181,17 +3213,10 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 			if (reply == ZMAPTHREAD_REPLY_REQERROR)
 			  {
 			    /* This means the request failed for some reason. */
-			    THREAD_DEBUG_MSG(thread, "%s", "request to child thread failed....") ;
-
 			    if (err_msg  && step->on_fail != REQUEST_ONFAIL_CONTINUE)
 			      {
-				char *format_str =
-				  "Source \"%s\" has returned an error, request that failed was: %s" ;
-
-				if (view_con->show_warning)
-				  zMapWarning(format_str, view_con->url, err_msg) ;
-
-				zMapLogCritical(format_str, view_con->url, err_msg) ;
+				THREAD_DEBUG_MSG_FULL(thread, view_con, request_type, reply,
+						      "Source has returned error \"%s\"", err_msg) ;
 			      }
 
 			    this_step_finished = TRUE ;
@@ -3211,6 +3236,11 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 				this_step_finished = TRUE ;
 				request_type = req_any->type ;
 				view_con->thread_status = THREAD_STATUS_OK ;
+
+                                if (req_any->type == ZMAP_SERVERREQ_FEATURES)
+                                  zmap_view->sources_loading = zMap_g_list_remove_quarks(zmap_view->sources_loading,
+                                                                                         connect_data->feature_sets) ;
+
 			      }
 			    else
 			      {
@@ -3224,38 +3254,53 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 			if (step->on_fail == REQUEST_ONFAIL_CANCEL_THREAD
 			    || step->on_fail == REQUEST_ONFAIL_CANCEL_STEPLIST)
 			  {
+			    if (step->on_fail == REQUEST_ONFAIL_CANCEL_THREAD)
+			      kill_connection = TRUE ;
+
 			    /* Remove request from all steps.... */
 			    zmapViewStepListDestroy(view_con->step_list) ;
 			    view_con->step_list = NULL ;
+
+                            zmap_view->sources_loading = zMap_g_list_remove_quarks(zmap_view->sources_loading,
+                                                                                   connect_data->feature_sets) ;
 			  }
 			else
 			  {
 			    step->state = STEPLIST_FINISHED ;
 			  }
 
+
+
 			view_con->thread_status = THREAD_STATUS_FAILED;	/* so that we report an error */
-
-			if (step->on_fail == REQUEST_ONFAIL_CANCEL_THREAD)
-			  kill_connection = TRUE ;
-
-			
 		      }
 
 		    if (kill_connection)
 		      {
+
+                        zmap_view->sources_failed
+                          = zMap_g_list_insert_list_after(zmap_view->sources_failed,
+                                                          connect_data->loaded_features->feature_sets,
+                                                          g_list_length(zmap_view->sources_failed),
+                                                          TRUE) ;
+
+
+
 			/* Do not reset reply from slave, we need to wait for slave to reply
+
+
 			 * to the cancel. */
 
 			/* Warn the user ! */
 			if (view_con->show_warning)
 			  zMapWarning("Source \"%s\" is being cancelled, check log for details.", view_con->url) ;
 
-			zMapLogCritical("Source \"%s\" is being cancelled"//
-					" because a request to it has failed,"
-					" error was: %s", view_con->url, err_msg) ;
+			THREAD_DEBUG_MSG_FULL(thread, view_con, request_type, reply,
+					      "Thread being cancelled because of error \"%s\"",
+					      err_msg) ;
 
 			/* Signal thread to die. */
-			THREAD_DEBUG_MSG(thread, "%s", "signalling child thread to die....") ;
+			THREAD_DEBUG_MSG_FULL(thread, view_con, request_type, reply,
+					      "%s", "signalling child thread to die....") ;
 			zMapThreadKill(thread) ;
 		      }
 		    else
@@ -3272,6 +3317,8 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
 		    step = (ZMapViewConnectionStep) view_con->step_list->current->data;
 
+		    /* THIS LOGIC CAN'T BE RIGHT....IF WE COME IN HERE IT'S BECAUSE THE THREAD
+		     * HAS ACTUALLY DIED AND NOT JUST QUIT....CHECK STATUS SET IN SLAVES... */
 		    if (step->on_fail != REQUEST_ONFAIL_CONTINUE)
 		      {
 			/* Thread has failed for some reason and we should clean up. */
@@ -3280,7 +3327,8 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
 			thread_has_died = TRUE ;
 
-			THREAD_DEBUG_MSG(thread, "%s", "child thread has died so cleaning up....") ;
+			THREAD_DEBUG_MSG_FULL(thread, view_con, request_type, reply,
+					      "cleaning up because child thread has died with: \"%s\"", err_msg) ;
 		      }
 		    else
 		      {
@@ -3302,7 +3350,8 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 		    thread_has_died = TRUE ;
 
 		    /* This means the thread was cancelled so we should clean up..... */
-		    THREAD_DEBUG_MSG(thread, "%s", "child thread has been cancelled so cleaning up....\n") ;
+		    THREAD_DEBUG_MSG_FULL(thread, view_con, request_type, reply,
+					  "%s", "child thread has been cancelled so cleaning up....") ;
 
 		    break ;
 		  }
@@ -3310,7 +3359,8 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 		  {
 		    thread_has_died = TRUE;
 
-		    THREAD_DEBUG_MSG(thread, "%s", "child thread has quit so cleaning up....") ;
+		    THREAD_DEBUG_MSG_FULL(thread, view_con, request_type, reply,
+					  "%s", "child thread has quit so cleaning up....") ;
 
 		    break;
 		  }
@@ -3352,6 +3402,19 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 	  if (thread_has_died)
 	    {
 	      ZMapViewConnectionStep step;
+
+              /* TRY THIS HERE.... */
+              /* Add any new sources that have failed. */
+              if (connect_data->loaded_features->feature_sets
+                  && reply == ZMAPTHREAD_REPLY_DIED)
+                {
+                  zmap_view->sources_failed
+                    = zMap_g_list_insert_list_after(zmap_view->sources_failed,
+                                                    connect_data->loaded_features->feature_sets,
+                                                    g_list_length(zmap_view->sources_failed),
+                                                    TRUE) ;
+                }
+
 
 	      is_continue = FALSE ;
 
@@ -3426,24 +3489,20 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 		}
 	    }
 
-	  /* WE ARE COMING IN HERE TOO OFTEN.....SHOULD ONLY BE RIGHT AT END, CHECK LOGIC FOR
-	     STEPS FINIHSED.... */
 
-	  // (thread_status == THREAD_STATUS_FAILED || thread_status == THREAD_STATUS_OK), tell
-	  // otterlace
-
-	  /* Try this...shouldn't be doing this if we are dying....I think ? we should
+	  /* ...shouldn't be doing this if we are dying....I think ? we should
 	   * have disconnected this handler....that's why we need the stopConnectionState call
 	   * add it in.... */
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  if (zmap_view->state != ZMAPVIEW_DYING && all_steps_finished)
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 	  if (this_step_finished || all_steps_finished)
 	    {
 	      if (connect_data)      // ie was valid at the start of the loop
 		{
 		  if (connect_data->exit_code)
 		    view_con->thread_status = THREAD_STATUS_FAILED ;
+
+		  if (reply == ZMAPTHREAD_REPLY_DIED)
+		    connect_data->exit_code = 1 ;
 
 		  if (view_con->thread_status == THREAD_STATUS_FAILED)
 		    {
@@ -3469,9 +3528,11 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 				      connect_data->stderr_out) ;
 		        }
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 		      /* Add any new sources that have failed. */
-		      if (request_type == ZMAP_SERVERREQ_FEATURES
-			  && connect_data->loaded_features->feature_sets)
+		      if (connect_data->loaded_features->feature_sets
+			  && reply == ZMAPTHREAD_REPLY_DIED)
 			{
 			  zmap_view->sources_failed
 			    = zMap_g_list_insert_list_after(zmap_view->sources_failed,
@@ -3480,6 +3541,9 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 							    TRUE) ;
 			}
 
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
 		      zMapLogWarning("Thread %p failed, request = %s, failed sources now %d",
 				     thread,
 				     request_type_str,
@@ -3487,9 +3551,13 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 		    }
 
 
-		  if (request_type == ZMAP_SERVERREQ_FEATURES)
+
+		  if (reply == ZMAPTHREAD_REPLY_GOTDATA && request_type == ZMAP_SERVERREQ_FEATURES
+		      || reply == ZMAPTHREAD_REPLY_REQERROR)
 		    {
-		      /* Once used how is load_features cleaned up ??????????????????????????? */
+		      LoadFeaturesData loaded_features ;
+
+		      /* Note that load_features is cleaned up by sendViewLoaded() */
 
 		      connect_data->loaded_features->status = (view_con->thread_status == THREAD_STATUS_OK ? TRUE : FALSE) ;
 		      connect_data->loaded_features->err_msg = err_msg ;
@@ -3498,7 +3566,13 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 		      connect_data->loaded_features->num_features = connect_data->num_features ;
 		      connect_data->loaded_features->exit_code = connect_data->exit_code ;
 		      connect_data->loaded_features->stderr_out = connect_data->stderr_out ;
+
+		      loaded_features = copyLoadFeatures(connect_data->loaded_features) ;
+		      
+		      sendViewLoaded(zmap_view, loaded_features) ;
 		    }
+
+
 
 		}
 	    }
@@ -4189,10 +4263,14 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 		getFeatures(zmap_view, connect_data->get_features, connect_data) ;
 	      }
 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	    /* Is this the right place to decrement....dunno.... */
             /* we record succcessful requests, if some fail they will get zapped in checkstateconnections() */
 	    zmap_view->sources_loading = zMap_g_list_remove_quarks(zmap_view->sources_loading,
 								   connect_data->feature_sets) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 	  }
 
@@ -4425,9 +4503,13 @@ static ZMapViewConnection createViewConnection(ZMapView zmap_view,
       ZMapServerReqAny req_any;
       StepListActionOnFailureType on_fail = REQUEST_ONFAIL_CANCEL_THREAD;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       // take out as now not needed and besides didn't work
       if (terminate)
 	on_fail = REQUEST_ONFAIL_CONTINUE;  /* to get pipe server external script status */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
       view_con->curr_request = ZMAPTHREAD_REQUEST_EXECUTE ;
 
