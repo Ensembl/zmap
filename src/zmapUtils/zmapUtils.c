@@ -673,8 +673,14 @@ ZMapProcessTerminationType zMapUtilsProcessTerminationStatus(int status)
 
   if (WIFEXITED(status))
     {
-      if (WEXITSTATUS(status))
+      int exit_status ;
+
+      exit_status = WEXITSTATUS(status) ;
+
+      if (exit_status)
 	termination_type = ZMAP_PROCTERM_ERROR ;
+      else
+	termination_type =  ZMAP_PROCTERM_OK ;
     }
   else if (WIFSIGNALED(status))
     {
