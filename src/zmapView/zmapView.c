@@ -3552,7 +3552,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
 
 
-		  if (reply == ZMAPTHREAD_REPLY_GOTDATA && request_type == ZMAP_SERVERREQ_FEATURES
+		  if ((reply == ZMAPTHREAD_REPLY_GOTDATA && request_type == ZMAP_SERVERREQ_FEATURES)
 		      || reply == ZMAPTHREAD_REPLY_REQERROR)
 		    {
 		      LoadFeaturesData loaded_features ;
@@ -3568,8 +3568,9 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 		      connect_data->loaded_features->stderr_out = connect_data->stderr_out ;
 
 		      loaded_features = copyLoadFeatures(connect_data->loaded_features) ;
-		      
-		      sendViewLoaded(zmap_view, loaded_features) ;
+
+                      if (zmap_view->remote_control)
+                        sendViewLoaded(zmap_view, loaded_features) ;
 		    }
 
 
@@ -4794,7 +4795,8 @@ static void loadedDataCB(ZMapWindow window, void *caller_data, gpointer loaded_d
     {
       zMapLogMessage("Received LoadFeaturesDataStruct to pass to sendViewLoaded() at: %p, ", loaded_features) ;
 
-      sendViewLoaded(view, loaded_features) ;
+      if (view->remote_control)
+        sendViewLoaded(view, loaded_features) ;
 
       /* We were passed a copy of this by displayDataWindows() and now we can delete it. */
       destroyLoadFeatures(loaded_features) ;
