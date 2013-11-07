@@ -106,10 +106,13 @@ canvas/zmapWindowContainerBlock.h \
 canvas/zmapWindowContainerBlock_I.h \
 canvas/zmapWindowContainerContext.h \
 canvas/zmapWindowContainerContext_I.h \
+canvas/zmapWindowContainerFeatureSet.c \
 canvas/zmapWindowContainerFeatureSet.h \
 canvas/zmapWindowContainerFeatureSet_I.h \
+canvas/zmapWindowContainerGroup.c \
 canvas/zmapWindowContainerGroup.h \
 canvas/zmapWindowContainerGroup_I.h \
+canvas/zmapWindowContainerItem.c \
 canvas/zmapWindowContainerUtils.h \
 canvas/zmapWindowContainers.h \
 canvas/zmapWindowOldItems.c \
