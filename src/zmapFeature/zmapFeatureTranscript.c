@@ -125,6 +125,42 @@ gboolean zMapFeatureTranscriptInit(ZMapFeature feature)
   return result ;
 }
 
+/*
+ * Adds CDS start and end to a feature but tests values as we go along to make sure
+ * that the coordinates are only changed if the range is being expanded.
+ */
+gboolean zMapFeatureAddTranscriptCDSDynamic(ZMapFeature feature, Coord start, Coord end)
+{
+  gboolean result = FALSE ;
+
+  if (!feature || (feature_type != ZMAPSTYLE_MODE_TRANSCRIPT))
+    return result ;
+  if (!start || !end)
+    return result ;
+  if (end < start)
+    return result ;
+  Coord start_s = feature->feature.transcript.cds_start,
+        end_s   = feature->feature.transcript.cds_end ;
+
+  /* first case is if the data have not yet been set, and were initialized to zero */
+  if (!start_s || !end_s)
+  {
+    feature->feature.transcript.cds_start = start ;
+    feature->feature.transcript.cds_end = end ;
+    result = TRUE ;
+  }
+  else /* we have non-zero values for cds_start and cds_end */
+  {
+    if (start < start_s)
+      feature->feature.transcript.cds_start = start ;
+    if (end > end_s)
+      feature->feature.transcript.cds_end = end ;
+    result = TRUE ;
+  }
+
+  return result ;
+}
+
 
 /* Adds initial data to a transcript feature, will overwrite any existing settings. */
 gboolean zMapFeatureAddTranscriptCDS(ZMapFeature feature,
@@ -307,13 +343,13 @@ void zMapFeatureTranscriptRecreateIntrons(ZMapFeature feature)
 	}
     }
 
-  return ;  
+  return ;
 }
 
 
 /* Checks that transcript has at least one exon, if not then adds an exon to
  * cover entire extent of transcript.
- * 
+ *
  * If there are no introns then it adds introns derived from the existing
  * exons.
  *
@@ -501,13 +537,13 @@ ZMapFeatureContextExecuteStatus zMapFeatureContextTranscriptSortExons(GQuark key
 int zMapFeatureTranscriptGetNumExons(ZMapFeature transcript)
 {
   int result = -1;
-  
+
   if (transcript && transcript->type == ZMAPSTYLE_MODE_TRANSCRIPT)
     {
       if (transcript->feature.transcript.exons)
         result = transcript->feature.transcript.exons->len;
     }
-  
+
   return result;
 }
 
@@ -524,7 +560,7 @@ void zMapFeatureTranscriptMergeExon(ZMapFeature transcript, Coord x1, Coord x2)
   if (!transcript || transcript->type != ZMAPSTYLE_MODE_TRANSCRIPT)
     return;
 
-  /* Loop through existing exons to determine how to do the merge. 
+  /* Loop through existing exons to determine how to do the merge.
    * Simple logic at the moment: if the new exon overlaps existing
    * exon(s) then replace them, otherwise insert a new exon. */
   gboolean replace = FALSE;
@@ -543,20 +579,20 @@ void zMapFeatureTranscriptMergeExon(ZMapFeature transcript, Coord x1, Coord x2)
       if (x2 >= compare_exon->x1 && x1 <= compare_exon->x2)
         {
           overlaps = TRUE;
-          
+
           /* Check if it's different to the existing exon (otherwise we just ignore it) */
           if (x1 != compare_exon->x1 || x2 != compare_exon->x2)
             {
               replace = TRUE;
-              
+
               /* Adjust new start/end to include the existing exon */
               if (compare_exon->x1 < start)
                 start = compare_exon->x1;
-              
+
               if (compare_exon->x2 > end)
                 end = compare_exon->x2;
-              
-              /* Remove the existing exon. Note that we don't 
+
+              /* Remove the existing exon. Note that we don't
                * increment the index because the subsequent array
                * elements are shuffled down one. */
               g_array_remove_index(array, i);
@@ -580,23 +616,23 @@ void zMapFeatureTranscriptMergeExon(ZMapFeature transcript, Coord x1, Coord x2)
       ZMapSpan new_exon = g_malloc0(sizeof *new_exon);
       new_exon->x1 = start;
       new_exon->x2 = end;
-      
+
       zMapFeatureAddTranscriptExonIntron(transcript, new_exon, NULL);
       zMapFeatureTranscriptSortExons(transcript);
-  
+
       /* If this is the first/last exon set the start/end coord */
       extendTranscript(transcript, new_exon);
     }
 }
 
-/*! 
+/*!
  * \brief Ask the user whether to trim the start/end of the given exon
  * or, if in_intron is true, the previous intron.
  */
 static ZMapBoundaryType showTrimStartEndConfirmation()
 {
   ZMapBoundaryType result = ZMAPBOUNDARY_NONE;
-  
+
   GtkWidget *dialog = gtk_dialog_new_with_buttons("Confirm edit operation",
                                                   NULL,
                                                   GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
@@ -609,15 +645,15 @@ static ZMapBoundaryType showTrimStartEndConfirmation()
 
   GtkWidget *message = gtk_label_new(message_text);
   gtk_box_pack_start(GTK_BOX(GTK_DIALOG(dialog)->vbox), message, FALSE, FALSE, 10);
-  
+
   g_free(message_text);
 
   gtk_widget_show_all(dialog);
-  
+
   gint response = gtk_dialog_run(GTK_DIALOG(dialog));
-  
+
   gtk_widget_destroy(dialog);
-  
+
   if (response == ZMAP_TRIM_RESPONSE_START)
     {
       result = ZMAPBOUNDARY_5_SPLICE;
@@ -626,24 +662,24 @@ static ZMapBoundaryType showTrimStartEndConfirmation()
     {
       result = ZMAPBOUNDARY_3_SPLICE;
     }
-  
+
   return result;
 }
 
 
 /*!
  * \brief Merge a single coordinate into the given transcript.
- * 
+ *
  * \return TRUE if merged, FALSE if cancelled or not possible
  */
-gboolean zMapFeatureTranscriptMergeCoord(ZMapFeature transcript, 
+gboolean zMapFeatureTranscriptMergeCoord(ZMapFeature transcript,
                                          const int x,
                                          ZMapBoundaryType *boundary_inout,
                                          GError **error)
 {
   gboolean merged = FALSE;
   GError *tmp_error = NULL;
-  
+
   /* Check if this is a valid transcript and has exons */
   if (!transcript)
     g_set_error(&tmp_error, g_quark_from_string("ZMap"), 99, "Transcript is null");
@@ -660,17 +696,17 @@ gboolean zMapFeatureTranscriptMergeCoord(ZMapFeature transcript,
       ZMapSpan exon = NULL;
       ZMapSpan prev_exon = NULL;
       int i = 0;
-      
+
       for ( ; i < array->len; ++i, prev_exon = exon)
         {
           exon = &(g_array_index(array, ZMapSpanStruct, i));
-          
+
           if (!prev_exon && i == array->len && x >= exon->x1 && x <= exon->x2)
             {
               /* special case: we only have one exon and x lies inside it */
               if (*boundary_inout == ZMAPBOUNDARY_NONE)
                 *boundary_inout = showTrimStartEndConfirmation();
-              
+
               if (*boundary_inout == ZMAPBOUNDARY_5_SPLICE)
                 {
                   /* extend the start of the next intron i.e. trim the end of this exon */
@@ -683,7 +719,7 @@ gboolean zMapFeatureTranscriptMergeCoord(ZMapFeature transcript,
                   exon->x1 = x;
                   merged = TRUE;
                 }
-              
+
               break;
             }
           else if (!prev_exon && x <= exon->x2)
@@ -700,7 +736,7 @@ gboolean zMapFeatureTranscriptMergeCoord(ZMapFeature transcript,
                 {
                   g_set_error(&tmp_error, g_quark_from_string("ZMap"), 99, "Invalid boundary type for this operation");
                 }
-              
+
               break;
             }
           else if (i == array->len - 1 && x >= exon->x1)
@@ -712,20 +748,20 @@ gboolean zMapFeatureTranscriptMergeCoord(ZMapFeature transcript,
                   transcript->x2 = x;
                   merged = TRUE;
                 }
-              else 
+              else
                 {
                   g_set_error(&tmp_error, g_quark_from_string("ZMap"), 99, "Invalid boundary type for this operation");
                 }
-              
+
               break;
             }
           else if (x < exon->x1)
             {
-              /* x lies in the intron before this exon: ask whether 
+              /* x lies in the intron before this exon: ask whether
                * to trim the start or end of the intron */
               if (*boundary_inout == ZMAPBOUNDARY_NONE)
                 *boundary_inout = showTrimStartEndConfirmation();
-              
+
               if (*boundary_inout == ZMAPBOUNDARY_5_SPLICE)
                 {
                   /* to trim the intron start, we extend the prev exon end */
@@ -738,15 +774,15 @@ gboolean zMapFeatureTranscriptMergeCoord(ZMapFeature transcript,
                   exon->x1 = x;
                   merged = TRUE;
                 }
-              
+
               break;
             }
           else if (x <= exon->x2)
             {
               /* x lies in this exon: ask whether to trim the start or end*/
               if (*boundary_inout == ZMAPBOUNDARY_NONE)
-                *boundary_inout = showTrimStartEndConfirmation();  
-              
+                *boundary_inout = showTrimStartEndConfirmation();
+
               if (*boundary_inout == ZMAPBOUNDARY_5_SPLICE)
                 {
                   /* extend the start of the next intron i.e. trim the end of this exon */
@@ -759,15 +795,15 @@ gboolean zMapFeatureTranscriptMergeCoord(ZMapFeature transcript,
                   exon->x1 = x;
                   merged = TRUE;
                 }
-              
+
               break;
             }
         }
     }
-  
+
   if (tmp_error)
     g_propagate_error(error, tmp_error);
-  
+
   return merged;
 }
 
