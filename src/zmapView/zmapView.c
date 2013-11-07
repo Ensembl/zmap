@@ -3183,10 +3183,24 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 		    ZMapViewConnectionStep step = NULL ;
 		    gboolean kill_connection = FALSE ;
 
+                    /* this is not good and shows this function needs rewriting....
+                     * if we get this it means the thread has already failed and been
+                     * asked by us to die, it dies but something goes wrong in the dying
+                     * so we get an error in clearing up...need to check why...so
+                     * we should not go on and process this request in the normal way.
+                     *  */
+                    if (reply == ZMAPTHREAD_REPLY_REQERROR && view_con->thread_status == THREAD_STATUS_FAILED)
+                      {
+                        if (!(view_con->step_list))
+                          THREAD_DEBUG_MSG_FULL(thread, view_con, request_type, reply,
+                                                "%s", "thread asked to quit but failed in clearing up.") ;
+                        else
+                          THREAD_DEBUG_MSG_FULL(thread, view_con, request_type, reply,
+                                                "%s", "LOGIC ERROR....CHECK WHAT'S HAPPENING !") ;
 
-                    if ((strstr(view_con->url, "ensembl_premerge_genes")))
-                      printf("found it\n") ;
-
+                        /* I'm loathe to do this but all this badly needs a rewrite... */
+                        continue ;
+                      }
 
 		    /* WHY IS THIS DONE ?? */
 		    view_con->curr_request = ZMAPTHREAD_REQUEST_WAIT ;
@@ -4859,17 +4873,17 @@ static void sendViewLoaded(ZMapView zmap_view, LoadFeaturesData loaded_features)
               g_free(prev) ;
             }
 
-          if(loaded_features->status)		/* see comment in zmapSlave.c/ RETURNCODE_QUIT, we are tied up in knots */
+          if (loaded_features->status)          /* see comment in zmapSlave.c/ RETURNCODE_QUIT, we are tied up in knots */
             {
               ok_mess = g_strdup_printf("%d features loaded",loaded_features->num_features);
-              emsg = html_quote_string(ok_mess);	/* see comment about really free() below */
+              emsg = html_quote_string(ok_mess);                /* see comment about really free() below */
               g_free(ok_mess);
-
+              
               {
                 static long total = 0;
 
                 total += loaded_features->num_features;
-                zMapLogTime(TIMER_LOAD,TIMER_ELAPSED,total,"");	/* how long is startup... */
+                zMapLogTime(TIMER_LOAD,TIMER_ELAPSED,total,""); /* how long is startup... */
               }
             }
           else
@@ -4901,14 +4915,14 @@ static void sendViewLoaded(ZMapView zmap_view, LoadFeaturesData loaded_features)
 
 
           /* Send request to peer program. */
-          /* NOTE WELL....returns a pointer to a static struct in this function, not ideal but will
+          /* NOTE WELL....gives a pointer to a static struct in this function, not ideal but will
            * have to do for now. */
           (*(view_cbs_G->remote_request_func))(view_cbs_G->remote_request_func_data,
                                                zmap_view,
                                                ZACP_FEATURES_LOADED, &viewloaded[0],
                                                localProcessReplyFunc, zmap_view) ;
 
-          free(emsg);  /* yes really free() not g_free()-> see zmapUrlUtils.c */
+          free(emsg);                                           /* yes really free() not g_free()-> see zmapUrlUtils.c */
 
           g_free(featurelist);
         }
