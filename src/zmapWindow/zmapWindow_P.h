@@ -687,7 +687,7 @@ typedef struct _ZMapWindowStruct
   ZMapWindowZoomControl zoom;
 
   gboolean scroll_initialised;      /* have we ever set a scroll region?
-                                     * used to control re-intialise eg on RevComp
+                                     * used to control re-initialise eg on RevComp
                                      */
   double scroll_x1, scroll_y1, scroll_x2, scroll_y2;	/* current reguin, to prevent setting it to the same value */
 

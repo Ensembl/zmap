@@ -57,7 +57,7 @@
 static gboolean parseHeaderLine(ZMapGFFParser parser, char *line) ;
 static gboolean parseBodyLine(ZMapGFFParser parser, char *line, gsize line_length) ;
 static gboolean parseSequenceLine(ZMapGFFParser parser, char *line) ;
-static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
+static gboolean makeNewFeature(ZMapGFFParser parser, char *line, NameFindType name_find,
 			       char *sequence, char *source, char *ontology,
 			       ZMapStyleMode feature_type,
 			       int start, int end,
@@ -102,7 +102,7 @@ static void normaliseFeatures(GData **feature_sets) ;
 static void checkFeatureSetCB(GQuark key_id, gpointer data, gpointer user_data_unused) ;
 static void checkFeatureCB(GQuark key_id, gpointer data, gpointer user_data_unused) ;
 
-
+static char *find_tag(char * str, char *tag) ;
 
 
 
@@ -592,7 +592,7 @@ gboolean zMapGFFGetFeatures(ZMapGFFParser parser_base, ZMapFeatureBlock feature_
       if (!parser->parse_only && parser->feature_sets)
 	{
           g_datalist_foreach(&(parser->feature_sets), getFeatureArray,
-			     feature_block) ;
+		     feature_block) ;
 	}
 
       /* It is possible and legal for features to be incomplete from GFF (e.g. transcripts without
@@ -1373,91 +1373,21 @@ static gboolean parseBodyLine(ZMapGFFParser parser_base, char *line, gsize line_
 	}
       else
 	{
-	  /* Clip start/end as specified in clip_mode, default is to exclude. */
-	  gboolean include_feature = TRUE ;
+          mungeFeatureType(source, &type);
 
-	  if (parser->clip_mode != GFF_CLIP_NONE)
-	    {
-	      gboolean debug = FALSE ;
-	      char *name = NULL ;
-	      GQuark name_id ;
-
-
-	      /* Find out name of feature, needed for excluding features. */
-	      if (getNameFromAttr(attributes, &name))
-		{
-		  name_id = g_quark_from_string(name) ;
-
-		  g_free(name) ;
-		}
-
-	      /* Anything outside always excluded. */
-	      if (parser->clip_mode == GFF_CLIP_ALL || parser->clip_mode == GFF_CLIP_OVERLAP)
-		{
-		  if (start > parser->clip_end || end < parser->clip_start)
-		    {
-		      include_feature = FALSE ;
-
-		      zMapDebugPrint(debug, "Completely outside :%s", line) ;
-		    }
-		}
-
-	      /* Exclude overlaps for CLIP_ALL */
-	      if (include_feature && parser->clip_mode == GFF_CLIP_ALL)
-		{
-		  if (start < parser->clip_start || end > parser->clip_end)
-		    {
-		      include_feature = FALSE ;
-
-		      zMapDebugPrint(debug, "Partially outside :%s", line) ;
-		    }
-		}
-
-	      /* Clip overlaps for CLIP_OVERLAP */
-	      if (include_feature && parser->clip_mode == GFF_CLIP_OVERLAP)
-		{
-		  if (start < parser->clip_start)
-		    start = parser->clip_start ;
-		  if (end > parser->clip_end)
-		    end = parser->clip_end ;
-		}
-
-
-	      /* Features that are to be excluded must also include children of those features
-	       * so we keep a hash of those names which we check all features against..... */
-	      if (!include_feature)
-		{
-
-		  g_hash_table_insert(parser->excluded_features, GINT_TO_POINTER(name_id), GINT_TO_POINTER(name_id)) ;
-
-		  result = TRUE ;
-		}
-	      else if ((g_hash_table_lookup(parser->excluded_features, GINT_TO_POINTER(name_id))))
-		{
-		  include_feature = FALSE ;
-
-		  zMapDebugPrint(debug, "Parent outside :%s", line) ;
-		}
-	    }
-
-
-	  if (include_feature)
-	    {
+          if (!(result = makeNewFeature(parser_base, line, NAME_FIND, sequence,
+                                        source, feature_type, type,
+                                        start, end, has_score, score, strand, phase,
+                                        attributes, &err_text)))
+            {
+              parser->error = g_error_new(parser->error_domain, ZMAP_GFF_ERROR_BODY,
+                                          "GFF line %d (b) - %s (\"%s\")",
+                                          parser->line_count, err_text, line) ;
+              g_free(err_text) ;
+            }
+          else
+            {
 	      GQuark locus_id = 0 ;
-
-	      mungeFeatureType(source, &type);
-
-	      if (!(result = makeNewFeature(parser_base, NAME_FIND, sequence,
-					    source, feature_type, type,
-					    start, end, has_score, score, strand, phase,
-					    attributes, &err_text)))
-		{
-		  parser->error = g_error_new(parser->error_domain, ZMAP_GFF_ERROR_BODY,
-					      "GFF line %d (b) - %s (\"%s\")",
-					      parser->line_count, err_text, line) ;
-		  g_free(err_text) ;
-		}
-
 
 	      /* If the Locus feature set has been requested then check to see if this feature
 	       * has a locus and add it to the locus feature set. Note this is different in that
@@ -1468,13 +1398,13 @@ static gboolean parseBodyLine(ZMapGFFParser parser_base, char *line, gsize line_
 	       * not straight forward to export them from acedb _and_ get their locations. */
 	      if (parser->locus_set_id && (locus_id = getLocus(attributes)))
 		{
-
 		  if (!zMapFeatureFormatType(parser->SO_compliant, parser->default_to_basic,
 					     ZMAP_FIXED_STYLE_LOCUS_NAME, &type))
 		    err_text = g_strdup_printf("feature_type not recognised: %s", ZMAP_FIXED_STYLE_LOCUS_NAME) ;
 
 
-		  if (!(result = makeNewFeature(parser_base, NAME_USE_SEQUENCE, (char *)g_quark_to_string(locus_id),
+		  if (!(result = makeNewFeature(parser_base, line, 
+                                                NAME_USE_SEQUENCE, (char *)g_quark_to_string(locus_id),
 						ZMAP_FIXED_STYLE_LOCUS_NAME, ZMAP_FIXED_STYLE_LOCUS_NAME, type,
 						start, end, FALSE, 0.0, ZMAPSTRAND_NONE, ZMAPPHASE_NONE,
 						attributes, &err_text)))
@@ -1485,7 +1415,7 @@ static gboolean parseBodyLine(ZMapGFFParser parser_base, char *line, gsize line_
 		      g_free(err_text) ;
 		    }
 		}
-	    }
+            }
 	}
     }
 
@@ -1493,47 +1423,7 @@ static gboolean parseBodyLine(ZMapGFFParser parser_base, char *line, gsize line_
 }
 
 
-/*
- * we can get tags in quoted strings, and maybe ';' too
- * i'm assuming that quotes cannot appear in quoted strings even with '\'
- */
-char *find_tag(char * str, char *tag)
-{
-  char *p = str ;
-  int len ;
-  int n_quote ;
-
-  len = strlen(tag) ;
-
-  while(*p)
-    {
-      if (!g_ascii_strncasecmp(p,tag,len))
-	{
-	  p += len;
-
-	  while(*p == ' ' || *p == '\t')
-	    p++;
-
-	  return(p);
-	}
-
-      for(n_quote = 0;*p;p++)
-	{
-	  if(*p == '"')
-	    n_quote++;
-	  if(*p == ';' && !(n_quote & 1))
-	    break;
-	}
-
-      while(*p == ';' || *p == ' ' || *p == '\t')
-	p++;
-    }
-
-  return(NULL);
-}
-
-
-static gboolean makeNewFeature(ZMapGFFParser parser_base, NameFindType name_find,
+static gboolean makeNewFeature(ZMapGFFParser parser_base, char *line, NameFindType name_find,
 			       char *sequence, char *source, char *ontology,
 			       ZMapStyleMode feature_type,
 			       int start, int end,
@@ -1762,10 +1652,6 @@ static gboolean makeNewFeature(ZMapGFFParser parser_base, NameFindType name_find
       zMapFeatureAddStyleMode(feature_style, feature_type);
     }
 
-
-  if (g_ascii_strcasecmp(source, "genomic_canonical") == 0)
-    printf("found it\n") ;
-
   /* We load some mode specific data which is needed in making a unique feature name. */
   if (feature_type == ZMAPSTYLE_MODE_ALIGNMENT)
     {
@@ -1842,261 +1728,322 @@ static gboolean makeNewFeature(ZMapGFFParser parser_base, NameFindType name_find
 				    start, end, query_start, query_end,
 				    &feature_name, &feature_name_id) ;
 
-
-  /* Check if the feature name for this feature is already known, if it is then check if there
-   * is already a multiline feature with the same name as we will need to augment it with this data. */
-  if (!parser->parse_only) // && parser_feature_set)
+  /* Clip features according to parser setting, note that we can't clip until we have the
+   * name....as we need the name to find other parts of multiline features. */
+  if (parser->clip_mode != GFF_CLIP_NONE)
     {
-      feature_set = parser_feature_set->feature_set ;
+      result = TRUE ;
+    }
+  else
+    {
+      gboolean debug = FALSE ;
 
-      if (feature_name)					    /* have to check in case of no-name data errors */
-	feature = (ZMapFeature)g_datalist_get_data(&(parser_feature_set->multiline_features),
-						   feature_name) ;
+      result = TRUE ;                                       /* set default.. */
+
+      /* Anything outside always excluded. */
+      if (parser->clip_mode == GFF_CLIP_ALL || parser->clip_mode == GFF_CLIP_OVERLAP)
+        {
+          if (start > parser->clip_end || end < parser->clip_start)
+            {
+              result = FALSE ;
+
+              zMapDebugPrint(debug, "Completely outside :%s", line) ;
+            }
+        }
+
+      /* Exclude overlaps for CLIP_ALL */
+      if (result && parser->clip_mode == GFF_CLIP_ALL)
+        {
+          if (start < parser->clip_start || end > parser->clip_end)
+            {
+              result = FALSE ;
+
+              zMapDebugPrint(debug, "Partially outside :%s", line) ;
+            }
+        }
+
+      /* Clip overlaps for CLIP_OVERLAP */
+      if (result && parser->clip_mode == GFF_CLIP_OVERLAP)
+        {
+          if (start < parser->clip_start)
+            start = parser->clip_start ;
+          if (end > parser->clip_end)
+            end = parser->clip_end ;
+        }
+
+      /* Features that are to be excluded must also include children of those features
+       * so we keep a hash of those names which we check all features against..... */
+      if (!result)
+        {
+          g_hash_table_insert(parser->excluded_features,
+                              GINT_TO_POINTER(feature_name_id), GINT_TO_POINTER(feature_name_id)) ;
+        }
+      else if ((g_hash_table_lookup(parser->excluded_features, GINT_TO_POINTER(feature_name_id))))
+        {
+          result = FALSE ;
+
+          zMapDebugPrint(debug, "Parent outside :%s", line) ;
+        }
     }
 
-
-  if (parser->parse_only || !feature)
+  /* All ok ? ...then make the feature. */
+  if (result)
     {
-      new_feature = zMapFeatureCreateEmpty() ;
-      parser->num_features++ ;
+      /* Check if the feature name for this feature is already known, if it is then check if there
+       * is already a multiline feature with the same name as we will need to augment it with this data. */
+      if (!parser->parse_only) // && parser_feature_set)
+        {
+          feature_set = parser_feature_set->feature_set ;
+
+          if (feature_name)					    /* have to check in case of no-name data errors */
+            feature = (ZMapFeature)g_datalist_get_data(&(parser_feature_set->multiline_features),
+                                                       feature_name) ;
+        }
+
+
+      if (parser->parse_only || !feature)
+        {
+          new_feature = zMapFeatureCreateEmpty() ;
+          parser->num_features++ ;
+        }
+
+
+      /* FOR PARSE ONLY WE WOULD LIKE TO CONTINUE TO USE THE LOCAL VARIABLE new_feature....SORT THIS
+       * OUT............. */
+
+      if (parser->parse_only)
+        {
+          feature = new_feature ;
+        }
+      else if (!feature)
+        {
+          /* If we haven't got an existing feature then fill one in and add it to its feature set
+           * if that exists, otherwise we have to create a list for the feature set and then
+           * add that to the list of sources...ugh.  */
+
+          feature = new_feature ;
+
+          /* THIS PIECE OF CODE WILL NEED TO BE CHANGED AS I DO MORE TYPES..... */
+          /* If the feature is one that must be built up from several GFF lines then add it to
+           * our set of such features. There are arcane/adhoc rules in action here, any features
+           * that do not have their own feature_name  _cannot_  be multiline features as such features
+           * can _only_ be identified if they do have their own name. */
+          if (feature_has_name && (feature_type == ZMAPSTYLE_MODE_TRANSCRIPT))
+            {
+              g_datalist_set_data(&(parser_feature_set->multiline_features), feature_name, feature) ;
+            }
+        }
+
+      if (!feature_name_id)
+        {
+          *err_text = g_strdup_printf("feature ignored as it has no name");
+        }
+      else if ((result = zMapFeatureAddStandardData(feature, feature_name_id, feature_name,
+                                                    sequence, ontology,
+                                                    feature_type, &parser_feature_set->feature_set->style, // feature_style,
+                                                    start, end,
+                                                    has_score, score,
+                                                    strand)))
+        {
+          zMapFeatureSetAddFeature(feature_set, feature);
+
+          if(!zMapStyleGetGFFFeature(feature_style))
+            zMapStyleSetGFF(feature_style,NULL,ontology);
+
+          if (url)
+            zMapFeatureAddURL(feature, url) ;
+
+          if (locus_id)
+            zMapFeatureAddLocus(feature, locus_id) ;
+
+          /* We always have a source_id and optionally text. */
+          zMapFeatureAddText(feature, source_id, source_text, note_text) ;
+
+          if (feature_type == ZMAPSTYLE_MODE_TRANSCRIPT)
+            {
+              ZMapSpanStruct exon = {0}, *exon_ptr = NULL, intron = {0}, *intron_ptr = NULL ;
+
+              /* Note that exons/introns are given one per line in GFF which is quite annoying.....it is
+               * out of sync with how homols with gaps are given.... */
+              if (g_ascii_strcasecmp(ontology, "coding_exon") == 0 || g_ascii_strcasecmp(ontology, "exon") == 0)
+                {
+                  exon.x1 = start ;
+                  exon.x2 = end ;
+                  exon_ptr = &exon ;
+                }
+              else if (g_ascii_strcasecmp(ontology, "intron") == 0)
+                {
+                  intron.x1 = start ;
+                  intron.x2 = end ;
+                  intron_ptr = &intron ;
+                }
+
+
+              if (g_ascii_strcasecmp(ontology, "CDS") == 0)
+                {
+                  result = zMapFeatureAddTranscriptCDS(feature, TRUE, start, end) ;
+                }
+
+
+              if (result)
+                {
+                  gboolean start_not_found_flag = FALSE, end_not_found_flag = FALSE ;
+                  int start_not_found = 0 ;
+
+                  if (getCDSStartAttr(attributes, &start_not_found_flag, &start_not_found)
+                      || getCDSEndAttr(attributes, &end_not_found_flag))
+                    {
+                      result = zMapFeatureAddTranscriptStartEnd(feature,
+                                                                start_not_found_flag, start_not_found,
+                                                                end_not_found_flag) ;
+                    }
+                }
+
+              if (result && (exon_ptr || intron_ptr))
+                result = zMapFeatureAddTranscriptExonIntron(feature, exon_ptr, intron_ptr) ;
+            }
+          else if (feature_type == ZMAPSTYLE_MODE_ALIGNMENT)
+            {
+
+
+              char *local_sequence_str ;
+              char *seq_str;
+              gboolean local_sequence = FALSE ;
+
+              /* I am not sure if we ever have target_phase from GFF output....check this out... "*/
+              if (zMapStyleIsParseGaps(feature_style))
+                {
+                  static char *gaps_tag = ZMAPSTYLE_ALIGNMENT_GAPS " " ;
+                  enum {GAP_STR_LEN = 5} ;
+
+                  if ((gaps_onwards = strstr(attributes, gaps_tag)) != NULL)
+                    {
+                      gaps = g_array_new(FALSE, FALSE, sizeof(ZMapAlignBlockStruct));
+                      gaps_onwards += GAP_STR_LEN ;  /* skip over Gaps tag and parse "1 12 12 122, ..." incl "" not
+                                                        terminated */
+
+                      if (!loadGaps(gaps_onwards, gaps, strand, query_strand))
+                        {
+                          g_array_free(gaps, TRUE) ;
+                          gaps = NULL ;
+                        }
+                    }
+                  else
+                    {
+                      ZMapFeatureAlignFormat align_format = ZMAPALIGN_FORMAT_INVALID ;
+
+                      if ((gaps_onwards = strstr(attributes,
+                                                 zMapFeatureAlignFormat2ShortText(ZMAPALIGN_FORMAT_CIGAR_EXONERATE))))
+                        align_format = ZMAPALIGN_FORMAT_CIGAR_EXONERATE ;
+                      else if ((gaps_onwards = strstr(attributes,
+                                                      zMapFeatureAlignFormat2ShortText(ZMAPALIGN_FORMAT_CIGAR_ENSEMBL))))
+                        align_format = ZMAPALIGN_FORMAT_CIGAR_ENSEMBL ;
+                      else if ((gaps_onwards = strstr(attributes,
+                                                      zMapFeatureAlignFormat2ShortText(ZMAPALIGN_FORMAT_CIGAR_BAM))))
+                        align_format = ZMAPALIGN_FORMAT_CIGAR_BAM ;
+                      else if ((gaps_onwards = strstr(attributes,
+                                                      zMapFeatureAlignFormat2ShortText(ZMAPALIGN_FORMAT_VULGAR_EXONERATE))))
+                        align_format = ZMAPALIGN_FORMAT_VULGAR_EXONERATE ;
+
+                      if (align_format)
+                        {
+                          if (!loadAlignString(parser_base, align_format,
+                                               gaps_onwards, &gaps,
+                                               strand, start, end,
+                                               query_strand, query_start, query_end))
+                            {
+                              zMapLogWarning("Could not parse align string: %s", gaps_onwards) ;
+                            }
+                        }
+                    }
+                }
+
+
+              /* own sequence means ACEDB has it; legacy data/code. sequence is given in GFF, so ZMap must store */
+              if ((local_sequence_str = strstr(attributes, "Own_Sequence TRUE")))
+                {
+                  local_sequence = TRUE ;
+                }
+
+              /* Why isn't Malcolm using the normal way of doing this....sigh...strstr is fine...??? */
+              if ((seq_str = find_tag(attributes, "sequence")))
+                {
+                  char *p;
+
+                  for (p = seq_str; *p > ';' ; p++)
+                    continue;
+
+                  seq_str = g_strdup_printf("%.*s", (int)(p - seq_str), seq_str);
+
+                  for(p = seq_str; *p > ';'; )
+                    *p++ |= 0x20;	/* need to be lower case else rev comp gives zeroes */
+                }
+
+              result = zMapFeatureAddAlignmentData(feature, clone_id,
+                                                   percent_id,
+                                                   query_start, query_end,
+                                                   homol_type, query_length, query_strand, ZMAPPHASE_0,
+                                                   gaps,
+                                                   zMapStyleGetWithinAlignError(feature_style),
+                                                   local_sequence, seq_str) ;
+            }
+          else if (feature_type == ZMAPSTYLE_MODE_ASSEMBLY_PATH)
+            {
+              result = zMapFeatureAddAssemblyPathData(feature, query_length, query_strand, path) ;
+            }
+          else
+            {
+              if (variation_string)
+                {
+                  if (!(result = zMapFeatureAddVariationString(feature, variation_string)))
+                    *err_text = g_strdup_printf("Bad format for variation_string \"%s\".", variation_string) ;
+                }
+
+              if (g_ascii_strcasecmp(source, "genomic_canonical") == 0)
+                {
+                  char *known_name = NULL ;
+
+                  result = TRUE;
+
+                  if ((getKnownName(attributes, &known_name)))
+                    {
+                      if (!(result = zMapFeatureAddKnownName(feature, known_name)))
+                        *err_text = g_strdup_printf("Bad format for Known_name attribute \"%s\".", attributes) ;
+                    }
+                }
+              else
+                {
+                  if (g_ascii_strcasecmp(ontology, "splice5") == 0)
+                    result = zMapFeatureAddSplice(feature, ZMAPBOUNDARY_5_SPLICE) ;
+                  else if (g_ascii_strcasecmp(ontology, "splice3") == 0)
+                    result = zMapFeatureAddSplice(feature, ZMAPBOUNDARY_3_SPLICE) ;
+
+                  if (!result)
+                    *err_text = g_strdup_printf("feature ignored, could not set \"%s\" splice data.", ontology) ;
+                }
+            }
+
+
+          /* If the SO accession was not added by any of the above functions try to fudge it from
+           * the source or type of the feature. */
+          if (!SO_acc)
+            {
+              SO_acc = zMapSOFeature2SO(feature) ;
+            }
+
+          if (SO_acc)
+            {
+              if (!(result = zMapFeatureAddSOaccession(feature, SO_acc)))
+                *err_text = g_strdup_printf("Could not add SO accession \"%d\".", SO_acc) ;
+            }
+
+        }
+
+      g_free(name_string) ;
+      g_free(feature_name) ;
+      g_free(feature_name_id) ;
+      g_free(url) ;
     }
-
-
-  /* FOR PARSE ONLY WE WOULD LIKE TO CONTINUE TO USE THE LOCAL VARIABLE new_feature....SORT THIS
-   * OUT............. */
-
-  if (parser->parse_only)
-    {
-      feature = new_feature ;
-    }
-  else if (!feature)
-    {
-      /* If we haven't got an existing feature then fill one in and add it to its feature set
-       * if that exists, otherwise we have to create a list for the feature set and then
-       * add that to the list of sources...ugh.  */
-
-      feature = new_feature ;
-
-      /* THIS PIECE OF CODE WILL NEED TO BE CHANGED AS I DO MORE TYPES..... */
-      /* If the feature is one that must be built up from several GFF lines then add it to
-       * our set of such features. There are arcane/adhoc rules in action here, any features
-       * that do not have their own feature_name  _cannot_  be multiline features as such features
-       * can _only_ be identified if they do have their own name. */
-      if (feature_has_name && (feature_type == ZMAPSTYLE_MODE_TRANSCRIPT))
-	{
-	  g_datalist_set_data(&(parser_feature_set->multiline_features), feature_name, feature) ;
-	}
-    }
-
-  if (!feature_name_id)
-    {
-      *err_text = g_strdup_printf("feature ignored as it has no name");
-    }
-  else if ((result = zMapFeatureAddStandardData(feature, feature_name_id, feature_name,
-						sequence, ontology,
-						feature_type, &parser_feature_set->feature_set->style, // feature_style,
-						start, end,
-						has_score, score,
-						strand)))
-    {
-      zMapFeatureSetAddFeature(feature_set, feature);
-
-      if(!zMapStyleGetGFFFeature(feature_style))
-	zMapStyleSetGFF(feature_style,NULL,ontology);
-
-      if (url)
-	zMapFeatureAddURL(feature, url) ;
-
-      if (locus_id)
-	zMapFeatureAddLocus(feature, locus_id) ;
-
-      /* We always have a source_id and optionally text. */
-      zMapFeatureAddText(feature, source_id, source_text, note_text) ;
-
-      if (feature_type == ZMAPSTYLE_MODE_TRANSCRIPT)
-	{
-	  ZMapSpanStruct exon = {0}, *exon_ptr = NULL, intron = {0}, *intron_ptr = NULL ;
-
-	  /* Note that exons/introns are given one per line in GFF which is quite annoying.....it is
-	   * out of sync with how homols with gaps are given.... */
-	  if (g_ascii_strcasecmp(ontology, "coding_exon") == 0 || g_ascii_strcasecmp(ontology, "exon") == 0)
-	    {
-	      exon.x1 = start ;
-	      exon.x2 = end ;
-	      exon_ptr = &exon ;
-	    }
-	  else if (g_ascii_strcasecmp(ontology, "intron") == 0)
-	    {
-	      intron.x1 = start ;
-	      intron.x2 = end ;
-	      intron_ptr = &intron ;
-	    }
-
-
-	  if (g_ascii_strcasecmp(ontology, "CDS") == 0)
-	    {
-	      result = zMapFeatureAddTranscriptCDS(feature, TRUE, start, end) ;
-	    }
-
-
-	  if (result)
-	    {
-	      gboolean start_not_found_flag = FALSE, end_not_found_flag = FALSE ;
-	      int start_not_found = 0 ;
-
-	      if (getCDSStartAttr(attributes, &start_not_found_flag, &start_not_found)
-		  || getCDSEndAttr(attributes, &end_not_found_flag))
-		{
-		  result = zMapFeatureAddTranscriptStartEnd(feature,
-							    start_not_found_flag, start_not_found,
-							    end_not_found_flag) ;
-		}
-	    }
-
-	  if (result && (exon_ptr || intron_ptr))
-	    result = zMapFeatureAddTranscriptExonIntron(feature, exon_ptr, intron_ptr) ;
-	}
-      else if (feature_type == ZMAPSTYLE_MODE_ALIGNMENT)
-	{
-
-
-	  char *local_sequence_str ;
-	  char *seq_str;
-	  gboolean local_sequence = FALSE ;
-
-	  /* I am not sure if we ever have target_phase from GFF output....check this out... "*/
-	  if (zMapStyleIsParseGaps(feature_style))
-	    {
-	      static char *gaps_tag = ZMAPSTYLE_ALIGNMENT_GAPS " " ;
-	      enum {GAP_STR_LEN = 5} ;
-
-	      if ((gaps_onwards = strstr(attributes, gaps_tag)) != NULL)
-		{
-		  gaps = g_array_new(FALSE, FALSE, sizeof(ZMapAlignBlockStruct));
-		  gaps_onwards += GAP_STR_LEN ;  /* skip over Gaps tag and parse "1 12 12 122, ..." incl "" not
-						    terminated */
-
-		  if (!loadGaps(gaps_onwards, gaps, strand, query_strand))
-		    {
-		      g_array_free(gaps, TRUE) ;
-		      gaps = NULL ;
-		    }
-		}
-	      else
-		{
-		  ZMapFeatureAlignFormat align_format = ZMAPALIGN_FORMAT_INVALID ;
-
-		  if ((gaps_onwards = strstr(attributes,
-					     zMapFeatureAlignFormat2ShortText(ZMAPALIGN_FORMAT_CIGAR_EXONERATE))))
-		    align_format = ZMAPALIGN_FORMAT_CIGAR_EXONERATE ;
-		  else if ((gaps_onwards = strstr(attributes,
-						  zMapFeatureAlignFormat2ShortText(ZMAPALIGN_FORMAT_CIGAR_ENSEMBL))))
-		    align_format = ZMAPALIGN_FORMAT_CIGAR_ENSEMBL ;
-		  else if ((gaps_onwards = strstr(attributes,
-						  zMapFeatureAlignFormat2ShortText(ZMAPALIGN_FORMAT_CIGAR_BAM))))
-		    align_format = ZMAPALIGN_FORMAT_CIGAR_BAM ;
-		  else if ((gaps_onwards = strstr(attributes,
-						  zMapFeatureAlignFormat2ShortText(ZMAPALIGN_FORMAT_VULGAR_EXONERATE))))
-		    align_format = ZMAPALIGN_FORMAT_VULGAR_EXONERATE ;
-
-		  if (align_format)
-		    {
-		      if (!loadAlignString(parser_base, align_format,
-					   gaps_onwards, &gaps,
-					   strand, start, end,
-					   query_strand, query_start, query_end))
-			{
-			  zMapLogWarning("Could not parse align string: %s", gaps_onwards) ;
-			}
-		    }
-		}
-	    }
-
-
-	  /* own sequence means ACEDB has it; legacy data/code. sequence is given in GFF, so ZMap must store */
-	  if ((local_sequence_str = strstr(attributes, "Own_Sequence TRUE")))
-	    {
-	      local_sequence = TRUE ;
-	    }
-
-	  /* Why isn't Malcolm using the normal way of doing this....sigh...strstr is fine...??? */
-	  if ((seq_str = find_tag(attributes, "sequence")))
-	    {
-	      char *p;
-
-	      for (p = seq_str; *p > ';' ; p++)
-		continue;
-
-	      seq_str = g_strdup_printf("%.*s", (int)(p - seq_str), seq_str);
-
-	      for(p = seq_str; *p > ';'; )
-		*p++ |= 0x20;	/* need to be lower case else rev comp gives zeroes */
-	    }
-
-	  result = zMapFeatureAddAlignmentData(feature, clone_id,
-					       percent_id,
-					       query_start, query_end,
-					       homol_type, query_length, query_strand, ZMAPPHASE_0,
-					       gaps,
-					       zMapStyleGetWithinAlignError(feature_style),
-					       local_sequence, seq_str) ;
-	}
-      else if (feature_type == ZMAPSTYLE_MODE_ASSEMBLY_PATH)
-	{
-	  result = zMapFeatureAddAssemblyPathData(feature, query_length, query_strand, path) ;
-	}
-      else
-	{
-	  if (variation_string)
-	    {
-	      if (!(result = zMapFeatureAddVariationString(feature, variation_string)))
-		*err_text = g_strdup_printf("Bad format for variation_string \"%s\".", variation_string) ;
-	    }
-
-	  if (g_ascii_strcasecmp(source, "genomic_canonical") == 0)
-	    {
-	      char *known_name = NULL ;
-
-	      result = TRUE;
-
-	      if ((getKnownName(attributes, &known_name)))
-		{
-		  if (!(result = zMapFeatureAddKnownName(feature, known_name)))
-		    *err_text = g_strdup_printf("Bad format for Known_name attribute \"%s\".", attributes) ;
-		}
-	    }
-	  else
-	    {
-	      if (g_ascii_strcasecmp(ontology, "splice5") == 0)
-		result = zMapFeatureAddSplice(feature, ZMAPBOUNDARY_5_SPLICE) ;
-	      else if (g_ascii_strcasecmp(ontology, "splice3") == 0)
-		result = zMapFeatureAddSplice(feature, ZMAPBOUNDARY_3_SPLICE) ;
-
-	      if (!result)
-		*err_text = g_strdup_printf("feature ignored, could not set \"%s\" splice data.", ontology) ;
-	    }
-	}
-
-
-      /* If the SO accession was not added by any of the above functions try to fudge it from
-       * the source or type of the feature. */
-      if (!SO_acc)
-	{
-	  SO_acc = zMapSOFeature2SO(feature) ;
-	}
-
-      if (SO_acc)
-	{
-	  if (!(result = zMapFeatureAddSOaccession(feature, SO_acc)))
-	    *err_text = g_strdup_printf("Could not add SO accession \"%d\".", SO_acc) ;
-	}
-
-    }
-
-  g_free(name_string) ;
-  g_free(feature_name) ;
-  g_free(feature_name_id) ;
-  g_free(url) ;
 
   /* If we are only parsing then free any stuff allocated by addDataToFeature() */
   if (parser->parse_only)
@@ -3389,3 +3336,45 @@ static void checkFeatureCB(GQuark key_id, gpointer data, gpointer user_data_unus
 
   return ;
 }
+
+
+/*
+ * we can get tags in quoted strings, and maybe ';' too
+ * i'm assuming that quotes cannot appear in quoted strings even with '\'
+ */
+static char *find_tag(char * str, char *tag)
+{
+  char *p = str ;
+  int len ;
+  int n_quote ;
+
+  len = strlen(tag) ;
+
+  while(*p)
+    {
+      if (!g_ascii_strncasecmp(p,tag,len))
+	{
+	  p += len;
+
+	  while(*p == ' ' || *p == '\t')
+	    p++;
+
+	  return(p);
+	}
+
+      for(n_quote = 0;*p;p++)
+	{
+	  if(*p == '"')
+	    n_quote++;
+	  if(*p == ';' && !(n_quote & 1))
+	    break;
+	}
+
+      while(*p == ';' || *p == ' ' || *p == '\t')
+	p++;
+    }
+
+  return(NULL);
+}
+
+

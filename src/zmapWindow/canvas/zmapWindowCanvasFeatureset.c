@@ -590,7 +590,7 @@ void zMapWindowCanvasFeaturesetPaintFeature(ZMapWindowFeaturesetItem featureset,
 
 /* output any buffered paints: useful eg for poly-line */
 /* paint function and flush must access data via FeaturesetItem or globally in thier module */
-/* feaature is the last feature painted */
+/* feature is the last feature painted */
 void zMapWindowCanvasFeaturesetPaintFlush(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
 					  GdkDrawable *drawable, GdkEventExpose *expose)
 {
@@ -1102,7 +1102,7 @@ ZMapWindowCanvasItem zMapWindowCanvasItemFeaturesetGetFeaturesetItem(FooCanvasGr
   ZMapWindowFeatureItemSetInitFunc func ;
   FooCanvasItem *foo  = NULL;
 
-  /* class not intialised till we make an item in foo_canvas_item_new() below */
+  /* class not initialised till we make an item in foo_canvas_item_new() below */
   if(featureset_class_G && featureset_class_G->featureset_items)
     foo = (FooCanvasItem *)g_hash_table_lookup( featureset_class_G->featureset_items, GUINT_TO_POINTER(id));
 

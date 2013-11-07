@@ -64,7 +64,7 @@ void zMapWindowCanvasGraphPaintFlush(ZMapWindowFeaturesetItem featureset, ZMapWi
 /*
  * if we draw wiggle plots then instead of one GDK call per segment we cahce points and draw a big long poly-line
  *
- * ideally this would be implemented in the feaatureset struct as extended for graphs
+ * ideally this would be implemented in the featureset struct as extended for graphs
  * but we don't extend featuresets as the rest of the code would be more complex.
  * instead we have a single cache here which works becaure we only ever display one column at a time.
  * and relies on ..PaintFlush() being called

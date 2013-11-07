@@ -50,6 +50,7 @@ typedef struct _PipeServerStruct
 {
   gchar *config_file ;
 
+  char *url ;                                                 /* Full url string. */
   char *protocol ;					    /* GFF Pipe or File */
   ZMapURLScheme scheme ;				    /* pipe:// or file:// */
 

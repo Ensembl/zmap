@@ -243,6 +243,7 @@ static gboolean createConnection(void **server_out,
       getConfiguration(server) ;
 
       /* Get url parameters. */
+      server->url = g_strdup(url->url) ;
       server->scheme = url->scheme ;
       url_script_path = url->path ;
 
@@ -753,6 +754,9 @@ static ZMapServerResponseType destroyConnection(void *server_in)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   PipeServer server = (PipeServer)server_in ;
+
+  if (server->url)
+    g_free(server->url) ;
 
   if (server->script_path)
     g_free(server->script_path) ;

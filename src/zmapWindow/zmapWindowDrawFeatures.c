@@ -279,7 +279,7 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
   if(!window->scroll_initialised)
     {
       /* MH17: draw features does not change the zoom factor, so we only set if first time round
-       * re-using scroll intialised flag but that should be safe
+       * re-using scroll initialised flag but that should be safe
        */
       zmapWindowSetPixelxy(window, 1.0, zMapWindowGetZoomFactor(window)) ;
 
