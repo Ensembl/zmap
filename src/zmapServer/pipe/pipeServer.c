@@ -340,7 +340,6 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   PipeServer server = (PipeServer)server_in ;
   GError *gff_pipe_err = NULL ;
-  int gff_version = 2 ;
 
   if (server->gff_pipe)
     {
@@ -1159,7 +1158,9 @@ static ZMapServerResponseType pipeGetHeader(PipeServer server)
 // read any DNA data at the head of the stream and quit after error or ##end-dna
 static ZMapServerResponseType pipeGetSequence(PipeServer server)
 {
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
   GIOStatus status ;
   gsize terminator_pos = 0 ;
   GError *gff_pipe_err = NULL ;

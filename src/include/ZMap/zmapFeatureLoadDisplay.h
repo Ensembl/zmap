@@ -95,31 +95,29 @@ typedef struct ZMapFeatureSetDescStructType
  * real display columns get munged with strand and frame */
 typedef struct ZMapFeatureColumnStructType
 {
-  GQuark unique_id ;                /* column name as a key value*/
-  GQuark column_id ;                /* column name as display text*/
+  /* Column name, description, ordering. */
+  GQuark unique_id ;					    /* For searching. */
+  GQuark column_id ;					    /* For display. */
+  char *column_desc ;
+  int order ;
 
-  char *column_desc;                /* description */
+  /* column specific style data may be config'd explicitly or derived from contained featuresets */
+  ZMapFeatureTypeStyle style ;
+  GQuark style_id;					    /* can be set before we get the style itself */
 
-  int order;                        /* column ordering */
+  /* all the styles needed by the column */
+  GList *style_table ;
 
-  ZMapFeatureTypeStyle style;       /* column specific style data
-                                     * may be config'd explicitly or derived from contained featuresets
-                                     */
-  GQuark style_id;                  /* this can be set before we get the style itself */
+  /* list of those configured these get filled in when servers request featureset-names
+   * for pipe servers we could do this during server config but for ACE
+   * (and possibly DAS) we have to wait till they provide data. */
+  GList *featuresets_names ;
 
-  GList *style_table;               /* all the styles needed by the column */
-
-  GList * featuresets_names;              /* list of those configured
-                                     * these get filled in when servers request featureset-names
-                                     * for pipe servers we could do this during server config
-                                     * but for ACE (and possibly DAS) we have to wait till they provide data
-                                     */
-  GList * featuresets_unique_ids;	/* we need both user style and unique id's */
-  						/* both are filled in by lazy evaluation if not configured explicitly
-  						 * (featuresets is set by the [columns] config)
-  						 * NOTE we now have virtual featuresets for BAM coverage that do not exist
-						 * servers that provide a mapping must delete these lists
-  						 */
+  /* we need both user style and unique id's both are filled in by lazy evaluation
+   * if not configured explicitly (featuresets is set by the [columns] config)
+   * NOTE we now have virtual featuresets for BAM coverage that do not exist
+   * servers that provide a mapping must delete these lists */
+  GList *featuresets_unique_ids ;
 
 } ZMapFeatureColumnStruct, *ZMapFeatureColumn ;
 
@@ -131,7 +129,7 @@ typedef struct ZMapFeatureColumnStructType
 typedef struct ZMapFeatureContextMapStructType
 {
   /* All the styles known to the view or window */
-  GHashTable *styles;
+  GHashTable *styles ;
 
   /* Mapping of each column to all the styles it requires. using a GHashTable of
    * GLists of style quark id's. NB: this stores data from ZMap config
@@ -179,16 +177,11 @@ typedef struct ZMapFeatureSequenceMapStructType
 
 
 
-ZMapFeatureColumn zMapFeatureGetSetColumn(ZMapFeatureContextMap map,GQuark set_id) ;
-
-
-
-gboolean zMapFeatureIsCoverageColumn(ZMapFeatureContextMap map,GQuark column_id);
-gboolean zMapFeatureIsSeqColumn(ZMapFeatureContextMap map,GQuark column_id);
-gboolean zMapFeatureIsSeqFeatureSet(ZMapFeatureContextMap map,GQuark fset_id);
-
-GList *zMapFeatureGetColumnFeatureSets(ZMapFeatureContextMap map,GQuark column_id,gboolean unique_id);
-
+ZMapFeatureColumn zMapFeatureGetSetColumn(ZMapFeatureContextMap map, GQuark set_id) ;
+gboolean zMapFeatureIsCoverageColumn(ZMapFeatureContextMap map, GQuark column_id) ;
+gboolean zMapFeatureIsSeqColumn(ZMapFeatureContextMap map, GQuark column_id) ;
+gboolean zMapFeatureIsSeqFeatureSet(ZMapFeatureContextMap map, GQuark fset_id) ;
+GList *zMapFeatureGetColumnFeatureSets(ZMapFeatureContextMap map, GQuark column_id, gboolean unique_id) ;
 
 
 #endif /* ZMAP_FEATURE_LOAD_DISPLAY_H */

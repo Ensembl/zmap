@@ -1,0 +1,30 @@
+
+----------------------------------------------------------------------
+Canvas
+
+
+This directory contains code to display the features in a ZMapWindow.
+
+
+The code is divided up into the following groups:
+
+zmapWindowCanvasXXXXXX.[ch]     - individual feature display.
+
+zmapWindowContainerXXX.[ch]     - creation of foocanvas groups and items
+                                  that hold features.
+
+zmapWindowOldItems.c            - Roy Storeys original foocanvas group
+                                  code that will gradually be replaced
+                                  by Canvas and Container code.
+
+The code is in a state of flux from Roy Storey's "items" code (originally
+contained in zmapWindow/items) to Malcolm Hinsley's "canvas" code which
+is contained in this directory.
+
+The main changes that are likely to be made in the future are the removal
+of Context, Alignment and Block group code and rationalising of all the
+container code.
+
+
+
+

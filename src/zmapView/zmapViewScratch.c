@@ -38,8 +38,11 @@
 #include <ZMap/zmap.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapFeature.h>
-#include <zmapView_P.h>
 #include <ZMap/zmapGLibUtils.h>
+#include <zmapView_P.h>
+
+
+
 
 
 #define SCRATCH_FEATURE_NAME "temp_feature"
