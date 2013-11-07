@@ -87,10 +87,6 @@
 
 
 
-
-
-
-
 //#include <zmapWindow_P.h>	// for debugging only
 //#include <zmapWindowContainerFeatureSet_I.h>
 
@@ -98,13 +94,15 @@
 typedef gint (FeatureCmpFunc)(gconstpointer a, gconstpointer b) ;
 
 
-static void zmap_window_featureset_item_item_class_init  (ZMapWindowFeaturesetItemClass featureset_class);
-static void zmap_window_featureset_item_item_init        (ZMapWindowFeaturesetItem      item);
+static void zmap_window_featureset_item_item_class_init(ZMapWindowFeaturesetItemClass featureset_class);
+static void zmap_window_featureset_item_item_init(ZMapWindowFeaturesetItem item);
 
-static void  zmap_window_featureset_item_item_update (FooCanvasItem *item, double i2w_dx, double i2w_dy, int flags);
-static double  zmap_window_featureset_item_foo_point (FooCanvasItem *item, double x, double y, int cx, int cy, FooCanvasItem **actual_item);
-static void  zmap_window_featureset_item_item_bounds (FooCanvasItem *item, double *x1, double *y1, double *x2, double *y2);
-static void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *drawable, GdkEventExpose *expose);
+static void  zmap_window_featureset_item_item_update(FooCanvasItem *item, double i2w_dx, double i2w_dy, int flags);
+static double  zmap_window_featureset_item_foo_point(FooCanvasItem *item,
+						     double x, double y, int cx, int cy, FooCanvasItem **actual_item) ;
+static void  zmap_window_featureset_item_item_bounds(FooCanvasItem *item,
+						     double *x1, double *y1, double *x2, double *y2);
+static void  zmap_window_featureset_item_item_draw(FooCanvasItem *item, GdkDrawable *drawable, GdkEventExpose *expose);
 
 
 static gboolean zmap_window_featureset_item_set_style(FooCanvasItem *item, ZMapFeatureTypeStyle style);
@@ -154,12 +152,16 @@ void zmap_window_canvas_featureset_expose_feature(ZMapWindowFeaturesetItem fi, Z
 
 
 
+/* 
+ *                Globals
+ */
 
 
-
+/* OH CRIKEY....WHY DO THIS...JUST SORT IT OUT SO WE ONLY HAVE ONE....DEEP SIGH.... */
 /* this is in parallel with the ZMapStyleMode enum */
 /* beware, traditionally glyphs ended up as basic features */
-/* This is a retro-fit ... i noticed that i'd defined a struct/feature type but not set it as orignally there was only one  */
+/* This is a retro-fit ... i noticed that i'd defined a struct/feature type but not set it as
+   orignally there was only one  */
 static zmapWindowCanvasFeatureType feature_types[N_STYLE_MODE + 1] =
   {
     FEATURE_INVALID,		/* ZMAPSTYLE_MODE_INVALID */
@@ -209,7 +211,7 @@ static gpointer _featureset_colour_G[FEATURE_N_TYPE] = { 0 };
 
 
 /* Moved from items/zmapWindowContainerGroup.c */
-/* NOTE don-t _EVER_ let this get called by a Foo Canvas callback */
+/* NOTE don-t _EVER_ let this get called by a Foo Canvas callback....YES BUT WHY ??????? */
 /* let's use a filter sort here, stability is a good thing and volumes are small */
 void zMapWindowContainerGroupSortByLayer(FooCanvasGroup * group)
 {
@@ -1708,6 +1710,30 @@ GList *zMapWindowFeaturesetItemFindFeatures(FooCanvasItem **item, double y1, dou
 
   return feature_list ;
 }
+
+
+
+
+/* for composite items (eg ZMapWindowGraphDensity)
+ * set the pointed at feature to be the one nearest to cursor
+ * We need this to stabilise the feature while processing a mouse click (item/feature select)
+ * point used to set this but the cursor is still moving while we trundle thro the code
+ * causing the feature to change with unpredictable results
+ * write up in density.html when i get round to correcting it.
+ */
+gboolean zMapWindowCanvasItemSetFeature(ZMapWindowCanvasItem item, double x, double y)
+{
+  ZMapWindowCanvasItemClass class = ZMAP_CANVAS_ITEM_GET_CLASS(item);
+  gboolean ret = FALSE;
+
+  if(class->set_feature)
+    ret = class->set_feature((FooCanvasItem *) item,x,y);
+
+  return ret;
+}
+
+
+
 
 
 
