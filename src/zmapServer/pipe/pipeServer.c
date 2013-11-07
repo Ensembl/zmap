@@ -247,10 +247,6 @@ static gboolean createConnection(void **server_out,
       server->scheme = url->scheme ;
       url_script_path = url->path ;
 
-
-      if ((strstr(server->url, "funcgen_H1ESC")))
-        printf("found it\n") ;
-
       if (server->scheme == SCHEME_FILE)
 	{
 	  if (g_path_is_absolute(url_script_path))
@@ -363,11 +359,6 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
   else
     {
       gboolean status = FALSE ;
-
-      if ((strstr(server->url, "funcgen_H1ESC")))
-        printf("found it\n") ;
-
-
 
       server->zmap_start = req_open->zmap_start;
       server->zmap_end = req_open->zmap_end;
@@ -763,6 +754,9 @@ static ZMapServerResponseType destroyConnection(void *server_in)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   PipeServer server = (PipeServer)server_in ;
+
+  if (server->url)
+    g_free(server->url) ;
 
   if (server->script_path)
     g_free(server->script_path) ;
