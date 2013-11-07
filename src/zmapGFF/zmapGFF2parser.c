@@ -102,7 +102,7 @@ static void normaliseFeatures(GData **feature_sets) ;
 static void checkFeatureSetCB(GQuark key_id, gpointer data, gpointer user_data_unused) ;
 static void checkFeatureCB(GQuark key_id, gpointer data, gpointer user_data_unused) ;
 
-
+static char *find_tag(char * str, char *tag) ;
 
 
 
@@ -3342,7 +3342,7 @@ static void checkFeatureCB(GQuark key_id, gpointer data, gpointer user_data_unus
  * we can get tags in quoted strings, and maybe ';' too
  * i'm assuming that quotes cannot appear in quoted strings even with '\'
  */
-char *find_tag(char * str, char *tag)
+static char *find_tag(char * str, char *tag)
 {
   char *p = str ;
   int len ;
