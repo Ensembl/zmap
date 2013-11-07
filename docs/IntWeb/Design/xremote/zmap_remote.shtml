@@ -432,7 +432,7 @@ of its clipboard to wait for the next request.</p>
 fundamental problems:</p>
 
 <ul>
-  <li><p><b>Bootstrapping:</b> How do peers intially find out the id of each others clipboards ?</p></li>
+  <li><p><b>Bootstrapping:</b> How do peers initially find out the id of each others clipboards ?</p></li>
   <li><p><b>Collisions:</b> What happens when two peers simultaneously make a request
       to each other ?</p></li>
   <li><p><b>Synchronisation:</b> What happens if two peers get "out of step" and the wrong request
@@ -1885,13 +1885,13 @@ signal that the peer has received the request. When the peer returns the reply
 to Remote Control then Remote Control calls the application's 
 reply_handler_func to return the reply to the application.</p>
 
-<p>Once the application has intialised both interfaces it is ready to start
+<p>Once the application has initialised both interfaces it is ready to start
 two-way communication with its peer as described in the following sections.</p>
 
 
 <h4>Receiving Requests</h4>
 
-<p>Once the Remote Control interfaces have been intialised the application can
+<p>Once the Remote Control interfaces have been initialised the application can
 wait for incoming requests and send its own requests to its peer. To wait for
 incoming requests the application calls the following routine:</p>
 
@@ -2000,7 +2000,7 @@ ZMapRemoteControl createRemoteObj(char *app_id, AppContext app_context)
 
 
 
-<h4>Intialisation</h4>
+<h4>Initialisation</h4>
 
 <pre class="code">
 gboolean initInterfaces(AppContext app_context,

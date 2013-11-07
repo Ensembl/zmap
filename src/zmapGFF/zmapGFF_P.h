@@ -79,7 +79,7 @@ typedef enum
 
 /* Used for maintaining dynamic buffers for parsing gff line elements. On
  * resizing the new buffers are size (line_length * BUF_MULT), so note
- * that the intial buffer size will be _twice_ whatever BUF_INIT is !
+ * that the initial buffer size will be _twice_ whatever BUF_INIT is !
  *  */
 typedef enum
   {

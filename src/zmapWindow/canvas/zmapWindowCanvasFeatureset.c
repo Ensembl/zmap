@@ -1102,7 +1102,7 @@ ZMapWindowCanvasItem zMapWindowCanvasItemFeaturesetGetFeaturesetItem(FooCanvasGr
   ZMapWindowFeatureItemSetInitFunc func ;
   FooCanvasItem *foo  = NULL;
 
-  /* class not intialised till we make an item in foo_canvas_item_new() below */
+  /* class not initialised till we make an item in foo_canvas_item_new() below */
   if(featureset_class_G && featureset_class_G->featureset_items)
     foo = (FooCanvasItem *)g_hash_table_lookup( featureset_class_G->featureset_items, GUINT_TO_POINTER(id));
 

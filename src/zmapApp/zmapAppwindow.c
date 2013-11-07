@@ -167,7 +167,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
     sleep(sleep_seconds) ;
 
 
-  /* Since thread support is crucial we do compile and run time checks that its all intialised.
+  /* Since thread support is crucial we do compile and run time checks that its all initialised.
    * the function calls look obscure but its what's recommended in the glib docs. */
 #if !defined G_THREADS_ENABLED || defined G_THREADS_IMPL_NONE || !defined G_THREADS_IMPL_POSIX
 #error "Cannot compile, threads not properly enabled."

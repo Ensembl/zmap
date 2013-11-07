@@ -2704,7 +2704,7 @@ static void setTextAttrs(gpointer data, gpointer user_data)
   tmp_start = iter_start ;
   tmp_end = iter_end ;
 
-  /* Find out where we are intially. */
+  /* Find out where we are initially. */
   gtk_text_buffer_get_iter_at_offset(buffer, &start, tmp_start) ;
   gtk_text_buffer_get_iter_at_offset (buffer, &end, tmp_start + 1) ;
 
