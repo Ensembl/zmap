@@ -133,7 +133,7 @@ gboolean zMapFeatureAddTranscriptCDSDynamic(ZMapFeature feature, Coord start, Co
 {
   gboolean result = FALSE ;
 
-  if (!feature || (feature_type != ZMAPSTYLE_MODE_TRANSCRIPT))
+  if (!feature || (feature->type != ZMAPSTYLE_MODE_TRANSCRIPT))
     return result ;
   if (!start || !end)
     return result ;
