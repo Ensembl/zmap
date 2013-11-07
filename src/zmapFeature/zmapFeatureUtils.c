@@ -44,7 +44,7 @@
 #include <ZMap/zmapFeatureLoadDisplay.h>
 
 
-typedef struct
+typedef struct SimpleParent2ChildDataStructType
 {
   ZMapMapBlock map;
   int limit_start;
@@ -109,6 +109,7 @@ gboolean zMapFeatureIsValid(ZMapFeatureAny any_feature)
 
   return result ;
 }
+
 #ifdef NOT_YET
 static int get_feature_allowed_types(ZMapStyleMode mode)
 {
