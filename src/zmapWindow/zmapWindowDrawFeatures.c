@@ -40,11 +40,10 @@
 
 #include <zmapWindow_P.h>
 #include <zmapWindowContainerUtils.h>
-//#include <zmapWindowItemFactory.h>
 #include <zmapWindowContainerFeatureSet_I.h>
-//#include <zmapWindowCanvas.h>
 
-//#include <ZMap/zmapGFF.h>     // for GFFSet struct for column mapping
+
+
 #include <zmapWindowCanvasFeatureset_I.h>		// for debug only
 
 
@@ -1197,12 +1196,12 @@ static FooCanvasGroup *find_or_create_column(ZMapCanvasData  canvas_data,
 
       tmp_column = FOO_CANVAS_GROUP(existing_column_item) ;
     }
-  else if ((existing_column_item = zMapFindCanvasColumn(window->feature_root_group,
-							alignment->unique_id,
-							block->unique_id,
-							column_id,
-							column_strand,
-							column_frame)))
+  else if ((existing_column_item = zmapWindowContainerFeatureSetFindCanvasColumn(window->feature_root_group,
+                                                                                 alignment->unique_id,
+                                                                                 block->unique_id,
+                                                                                 column_id,
+                                                                                 column_strand,
+                                                                                 column_frame)))
     {
       /* if the column exists but this feature_set is not in it (col has another featureset)
        * then we need to add this feature_set to the hash. */
