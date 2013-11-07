@@ -105,7 +105,7 @@ typedef enum
     ZMAPFEATURE_SUBPART_EXON_CDS   = 1 << 3,
     ZMAPFEATURE_SUBPART_GAP        = 1 << 4,
     ZMAPFEATURE_SUBPART_MATCH      = 1 << 5,
-    
+
     /* following added by mh17 to allow easier snazzy display of split codons */
     ZMAPFEATURE_SUBPART_SPLIT_3_CODON = 1 << 6,		/*NOTE: is 3' end of exon = 5' end of split codon */
     ZMAPFEATURE_SUBPART_SPLIT_5_CODON = 1 << 7,
@@ -247,7 +247,7 @@ typedef struct ZMapFullExonStructType
 
 
 /* This tells us information about the start boundary of an alignment block */
-typedef enum 
+typedef enum
 {
   ALIGN_BLOCK_BOUNDARY_EDGE,      /* starts at the edge of the feature (i.e. it's the first alignment block) */
   ALIGN_BLOCK_BOUNDARY_DELETION,  /* abuts a deletion */
@@ -781,7 +781,7 @@ typedef struct ZMapFeatureStructType
 
 
 
-/* 
+/*
  *          Structs/types for outputting information about features.
  */
 
@@ -862,7 +862,7 @@ typedef struct ZMapFeatureDescStructName
 
 
 
-/* 
+/*
  *            For recursing down through the feature hierachy.
  */
 typedef enum
@@ -945,6 +945,7 @@ gboolean zMapFeatureAddKnownName(ZMapFeature feature, char *known_name) ;
 gboolean zMapFeatureAddSplice(ZMapFeature feature, ZMapBoundaryType boundary) ;
 gboolean zMapFeatureTranscriptSortExons(ZMapFeature feature) ;
 gboolean zMapFeatureTranscriptInit(ZMapFeature feature) ;
+gboolean zMapFeatureAddTranscriptCDSDynamic(ZMapFeature feature, Coord start, Coord end) ;
 gboolean zMapFeatureAddTranscriptCDS(ZMapFeature feature, gboolean cds, Coord cds_start, Coord cds_end) ;
 gboolean zMapFeatureMergeTranscriptCDS(ZMapFeature src_feature, ZMapFeature dest_feature);
 gboolean zMapFeatureAddTranscriptStartEnd(ZMapFeature feature,
