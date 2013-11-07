@@ -423,11 +423,8 @@ double zMapWindowGetZoomMax(ZMapWindow window) ;
 double zMapWindowGetZoomMagnification(ZMapWindow window);
 double zMapWindowGetZoomMagAsBases(ZMapWindow window) ;
 double zMapWindowGetZoomMaxDNAInWrappedColumn(ZMapWindow window);
-gboolean zMapWindowItemGetSeqCoord(FooCanvasItem *item, gboolean set, double x, double y, long *seq_start, long *seq_end);
-FooCanvasItem *zMapWindowItemGetInterval(FooCanvasItem *item,
-                                         double x, double y,
-                                         ZMapFeatureSubPartSpan *sub_feature_out);
-
+gboolean zMapWindowItemGetSeqCoord(FooCanvasItem *item,
+                                   gboolean set, double x, double y, long *seq_start, long *seq_end);
 gboolean zMapWindowZoomToFeature(ZMapWindow window, ZMapFeature feature) ;
 void zMapWindowZoomToWorldPosition(ZMapWindow window, gboolean border,
 				   double rootx1, double rooty1,
@@ -443,7 +440,8 @@ gboolean zMapWindowMarkGetSequenceSpan(ZMapWindow window, int *start, int *end) 
 void zmapWindowMarkPrint(ZMapWindow window, char *title) ;
 gboolean zMapWindowMarkIsSet(ZMapWindow window);
 
-void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_mode, ZMapWindowCompressMode compress_mode) ;
+void zmapWindowColumnBumpRange(FooCanvasItem *bump_item,
+                               ZMapStyleBumpMode bump_mode, ZMapWindowCompressMode compress_mode) ;
 
 void zMapWindowRequestReposition(FooCanvasItem *foo);
 
@@ -495,7 +493,8 @@ FooCanvasItem *zMapWindowFeatureSetAdd(ZMapWindow window,
 FooCanvasItem *zMapWindowFeatureReplace(ZMapWindow zmap_window,
 					FooCanvasItem *curr_feature_item,
 					ZMapFeature new_feature, gboolean destroy_orig_feature) ;
-gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_item, ZMapFeature feature, gboolean destroy_feature) ;
+gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window,
+                                 FooCanvasItem *feature_item, ZMapFeature feature, gboolean destroy_feature) ;
 
 gint zMapFeatureCmp(gconstpointer a, gconstpointer b);
 
@@ -512,7 +511,8 @@ gboolean zMapWindowScrollToItem(ZMapWindow window, FooCanvasItem *feature_item) 
 
 gboolean zMapWindowFeatureSelect(ZMapWindow window, ZMapFeature feature) ;
 
-void zMapWindowHighlightFeature(ZMapWindow window, ZMapFeature feature, gboolean highlight_same_names, gboolean replace);
+void zMapWindowHighlightFeature(ZMapWindow window,
+                                ZMapFeature feature, gboolean highlight_same_names, gboolean replace);
 gboolean zMapWindowUnhighlightFeature(ZMapWindow window, ZMapFeature feature) ;
 void zMapWindowHighlightObject(ZMapWindow window, FooCanvasItem *feature,
 			       gboolean replace_highlight_item, gboolean highlight_same_names, gboolean sub_part) ;
@@ -541,11 +541,7 @@ gboolean zMapWindowXRemoteRegister(ZMapWindow window) ;
 char *zMapWindowRemoteReceiveAccepts(ZMapWindow window);
 void zMapWindowSetupXRemote(ZMapWindow window, GtkWidget *widget);
 
-
-
-
 void zMapWindowUtilsSetClipboard(ZMapWindow window, char *text);
-
 ZMapGuiNotebookChapter zMapWindowGetConfigChapter(ZMapWindow window, ZMapGuiNotebook parent);
 
 
