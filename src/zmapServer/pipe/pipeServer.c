@@ -243,8 +243,13 @@ static gboolean createConnection(void **server_out,
       getConfiguration(server) ;
 
       /* Get url parameters. */
+      server->url = g_strdup(url->url) ;
       server->scheme = url->scheme ;
       url_script_path = url->path ;
+
+
+      if ((strstr(server->url, "funcgen_H1ESC")))
+        printf("found it\n") ;
 
       if (server->scheme == SCHEME_FILE)
 	{
@@ -358,6 +363,11 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
   else
     {
       gboolean status = FALSE ;
+
+      if ((strstr(server->url, "funcgen_H1ESC")))
+        printf("found it\n") ;
+
+
 
       server->zmap_start = req_open->zmap_start;
       server->zmap_end = req_open->zmap_end;

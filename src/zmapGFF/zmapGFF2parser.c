@@ -1302,8 +1302,12 @@ static gboolean parseBodyLine(ZMapGFFParser parser_base, char *line, gsize line_
       else
 	{
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
           if ((strstr(source, "funcgen_H1ESC")))
             printf("found it\n") ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 	  /* Do some sanity checking... */
