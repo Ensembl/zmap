@@ -1730,7 +1730,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser_base, char *line, NameFindTy
 
   /* Clip features according to parser setting, note that we can't clip until we have the
    * name....as we need the name to find other parts of multiline features. */
-  if (parser->clip_mode != GFF_CLIP_NONE)
+  if (parser->clip_mode == GFF_CLIP_NONE)
     {
       result = TRUE ;
     }
