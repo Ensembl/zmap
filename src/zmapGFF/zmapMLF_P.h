@@ -42,9 +42,9 @@
 
 
 typedef struct ZMapMLFStruct_
-{
-  GHashTable *pIDTable ;
-} ZMapMLFStruct ;
+  {
+    GHashTable *pIDTable ;
+  } ZMapMLFStruct ;
 
 
 #endif

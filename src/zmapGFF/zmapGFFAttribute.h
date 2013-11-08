@@ -55,11 +55,11 @@
  *
  */
 typedef struct ZMapGFFAttributeInfoStruct_
-{
-  ZMapGFFAttributeName eName ;
-  char *sName ;
-  gboolean bIsMultivalued ;
-} ZMapGFFAttributeInfoStruct ;
+  {
+    ZMapGFFAttributeName eName ;
+    char *sName ;
+    gboolean bIsMultivalued ;
+  } ZMapGFFAttributeInfoStruct ;
 
 
 /*
@@ -72,11 +72,11 @@ typedef struct ZMapGFFAttributeInfoStruct_
  *
  */
 typedef struct ZMapGFFAttributeStruct_
-{
-  ZMapGFFAttributeName eName ;
-  char *sName ;
-  char *sTemp ;
-} ZMapGFFAttributeStruct ;
+  {
+    ZMapGFFAttributeName eName ;
+    char *sName ;
+    char *sTemp ;
+  } ZMapGFFAttributeStruct ;
 
 
 ZMapGFFAttribute zMapGFFCreateAttribute(ZMapGFFAttributeName) ;

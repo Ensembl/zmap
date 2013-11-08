@@ -64,16 +64,16 @@ typedef enum
  * List of data fields/types for GFF feature parsing.
  */
 typedef enum
-{
-  ZMAPGFF_FDA_SEQ,                           /* sequence            */
-  ZMAPGFF_FDA_SOU,                           /* source              */
-  ZMAPGFF_FDA_TYP,                           /* type                */
-  ZMAPGFF_FDA_STA,                           /* start               */
-  ZMAPGFF_FDA_END,                           /* end                 */
-  ZMAPGFF_FDA_SCO,                           /* score               */
-  ZMAPGFF_FDA_STR,                           /* strand              */
-  ZMAPGFF_FDA_PHA                            /* phase               */
-} ZMapGFFMandatoryFieldName ;
+  {
+    ZMAPGFF_FDA_SEQ,                           /* sequence            */
+    ZMAPGFF_FDA_SOU,                           /* source              */
+    ZMAPGFF_FDA_TYP,                           /* type                */
+    ZMAPGFF_FDA_STA,                           /* start               */
+    ZMAPGFF_FDA_END,                           /* end                 */
+    ZMAPGFF_FDA_SCO,                           /* score               */
+    ZMAPGFF_FDA_STR,                           /* strand              */
+    ZMAPGFF_FDA_PHA                            /* phase               */
+  } ZMapGFFMandatoryFieldName ;
 /* we have
  *
  * #define ZMAPGFF_MANDATORY_FIELDS 8
@@ -113,25 +113,25 @@ typedef enum
 #define ZMAPGFF_ATT_V2START 0
 #define ZMAPGFF_ATT_V3START 1000
 typedef enum
-{
-	ZMAPGFF_ATT_ALN2 = ZMAPGFF_ATT_V2START,              /* v2 "Align"                    */
-	ZMAPGFF_ATT_NAM2,                                    /* v2 "Name"                     */
-	ZMAPGFF_ATT_CLA2,                                    /* v2 "Class"                    */
+  {
+    ZMAPGFF_ATT_ALN2 = ZMAPGFF_ATT_V2START,              /* v2 "Align"                    */
+    ZMAPGFF_ATT_NAM2,                                    /* v2 "Name"                     */
+    ZMAPGFF_ATT_CLA2,                                    /* v2 "Class"                    */
 
-	ZMAPGFF_ATT_IDD3 = ZMAPGFF_ATT_V3START,              /* v3 "ID"                       */
-	ZMAPGFF_ATT_NAM3,                                    /* v3 "Name"                     */
-	ZMAPGFF_ATT_ALI3,                                    /* v3 "Alias"                    */
-	ZMAPGFF_ATT_PAR3,                                    /* v3 "Parent"                   */
-	ZMAPGFF_ATT_TAR3,                                    /* v3 "Target"                   */
-	ZMAPGFF_ATT_GAP3,                                    /* v3 "Gap"                      */
-	ZMAPGFF_ATT_DER3,                                    /* v3 "Derives_from"             */
-	ZMAPGFF_ATT_NOT3,                                    /* v3 "Note"                     */
-	ZMAPGFF_ATT_DBX3,                                    /* v3 "Dbxref"                   */
-	ZMAPGFF_ATT_ONT3,                                    /* v3 "Ontology_term"            */
-	ZMAPGFF_ATT_ISC3,                                    /* v3 "Is_circular"              */
+    ZMAPGFF_ATT_IDD3 = ZMAPGFF_ATT_V3START,              /* v3 "ID"                       */
+    ZMAPGFF_ATT_NAM3,                                    /* v3 "Name"                     */
+    ZMAPGFF_ATT_ALI3,                                    /* v3 "Alias"                    */
+    ZMAPGFF_ATT_PAR3,                                    /* v3 "Parent"                   */
+    ZMAPGFF_ATT_TAR3,                                    /* v3 "Target"                   */
+    ZMAPGFF_ATT_GAP3,                                    /* v3 "Gap"                      */
+    ZMAPGFF_ATT_DER3,                                    /* v3 "Derives_from"             */
+    ZMAPGFF_ATT_NOT3,                                    /* v3 "Note"                     */
+    ZMAPGFF_ATT_DBX3,                                    /* v3 "Dbxref"                   */
+    ZMAPGFF_ATT_ONT3,                                    /* v3 "Ontology_term"            */
+    ZMAPGFF_ATT_ISC3,                                    /* v3 "Is_circular"              */
 
-	ZMAPGFF_ATT_UNK,                                     /* unknown                       */
-} ZMapGFFAttributeName ;
+    ZMAPGFF_ATT_UNK,                                     /* unknown                       */
+  } ZMapGFFAttributeName ;
 #define ZMAPGFF_NUM_ATT_V2 3
 #define ZMAPGFF_NUM_ATT_V3 11
 #define ZMAPGFF_NUMBER_ATTRIBUTE_TYPES (ZMAPGFF_NUM_ATT_V2 + ZMAPGFF_NUM_ATT_V3  + 1)
@@ -145,17 +145,17 @@ typedef enum
  * are used only be v2.
  */
 typedef enum
-{
-  ZMAPGFF_LINE_EMP = 0,         /* empty line                 */
-  ZMAPGFF_LINE_DNA = 1,         /* ##DNA line                 */
-  ZMAPGFF_LINE_EDN = 2,         /* ##end-DNA line             */
-  ZMAPGFF_LINE_DIR = 3,         /* general header/directive   */
-  ZMAPGFF_LINE_COM = 4,         /* comment                    */
-  ZMAPGFF_LINE_BOD = 5,         /* body line                  */
-  ZMAPGFF_LINE_FAS = 6,         /* fasta directive            */
-  ZMAPGFF_LINE_CLO = 7,         /* closure                    */
-  ZMAPGFF_LINE_OTH = 8          /* anything else              */
-} ZMapGFFLineType ;
+  {
+    ZMAPGFF_LINE_EMP = 0,         /* empty line                 */
+    ZMAPGFF_LINE_DNA = 1,         /* ##DNA line                 */
+    ZMAPGFF_LINE_EDN = 2,         /* ##end-DNA line             */
+    ZMAPGFF_LINE_DIR = 3,         /* general header/directive   */
+    ZMAPGFF_LINE_COM = 4,         /* comment                    */
+    ZMAPGFF_LINE_BOD = 5,         /* body line                  */
+    ZMAPGFF_LINE_FAS = 6,         /* fasta directive            */
+    ZMAPGFF_LINE_CLO = 7,         /* closure                    */
+    ZMAPGFF_LINE_OTH = 8          /* anything else              */
+  } ZMapGFFLineType ;
 #define ZMAPGFF_NUMBER_LINE_TYPES 9
 
 /*
@@ -173,26 +173,26 @@ typedef struct      ZMapGFFFeatureDataStruct_      *ZMapGFFFeatureData ;
  * V3 parser struct.
  */
 typedef struct ZMapGFF3ParserStruct_
-{
-  /*
-   * Data common to both versions.
-   */
-  ZMAPGFF_PARSER_STRUCT_COMMON_DATA
+  {
+    /*
+     * Data common to both versions.
+     */
+    ZMAPGFF_PARSER_STRUCT_COMMON_DATA
 
-  /*
-   * Data for V3 only.
-   */
-  ZMapSequenceStruct *pSeqData;
-  ZMapGFFHeader pHeader ;
-  ZMapSOErrorLevel cSOErrorLevel ;
-  ZMapMLF pMLF ;
-  ZMapSOSetInUse cSOSetInUse ;
+    /*
+     * Data for V3 only.
+     */
+    ZMapSequenceStruct *pSeqData;
+    ZMapGFFHeader pHeader ;
+    ZMapSOErrorLevel cSOErrorLevel ;
+    ZMapMLF pMLF ;
+    ZMapSOSetInUse cSOSetInUse ;
 
-  unsigned int iNumWrongSequence,
-               nSequenceRecords;
+    unsigned int iNumWrongSequence,
+                 nSequenceRecords;
 
-  gboolean bLogWarnings,
-           bCheckSequenceLength;
+    gboolean bLogWarnings,
+             bCheckSequenceLength;
 
 } ZMapGFF3ParserStruct, *ZMapGFF3Parser ;
 

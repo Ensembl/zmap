@@ -4,7 +4,12 @@
  * Find unquoted (by q) ocurrances of the character c in the
  * string s; count them and store their positions.
  */
-unsigned int *zMapGFFStr_find_unquoted(const char * const sIn, char cQuote, char cToFind, unsigned int *n, void*(*local_malloc)(size_t), void(*local_free)(void*))
+unsigned int *zMapGFFStr_find_unquoted(const char * const sIn, 
+                                       char cQuote, 
+                                       char cToFind, 
+                                       unsigned int *n, 
+                                       void*(*local_malloc)(size_t), 
+                                       void(*local_free)(void*))
 {
   gboolean bQuoted = FALSE ;
   const char *s = sIn ;
@@ -14,26 +19,26 @@ unsigned int *zMapGFFStr_find_unquoted(const char * const sIn, char cQuote, char
     *pTemp = NULL;
     *n = 0 ;
   while (*s)
-  {
-    if (*s == cQuote)
-      bQuoted = !bQuoted;
-    if ((*s == cToFind) && !bQuoted)
     {
-      pTemp = (unsigned int *) local_malloc((*n + 1) * sizeof(unsigned int)) ;
-      for (i=0; i<*n; ++i)
-        pTemp[i] = pResult[i] ;
-      ++*n ;
-      pTemp[i] = iPos ;
-      if (pResult)
-      {
-        local_free(pResult) ;
-        pResult = NULL ;
-      }
-      pResult = pTemp ;
+      if (*s == cQuote)
+        bQuoted = !bQuoted;
+      if ((*s == cToFind) && !bQuoted)
+        {
+          pTemp = (unsigned int *) local_malloc((*n + 1) * sizeof(unsigned int)) ;
+          for (i=0; i<*n; ++i)
+            pTemp[i] = pResult[i] ;
+          ++*n ;
+          pTemp[i] = iPos ;
+          if (pResult)
+            {
+              local_free(pResult) ;
+              pResult = NULL ;
+            }
+          pResult = pTemp ;
+        }
+      ++iPos;
+      ++s;
     }
-    ++iPos;
-    ++s;
-  }
   return pResult ;
 }
 
@@ -63,10 +68,10 @@ void zMapGFFStr_array_add_element(char ***psArray, unsigned int *piLen,
     sArrayResult[i] = (*psArray)[i] ;
   sArrayResult[i] = NULL ;
   if (*psArray)
-  {
-    local_free( (void*) *psArray ) ;
-    *psArray = NULL ;
-  }
+    {
+      local_free( (void*) *psArray ) ;
+      *psArray = NULL ;
+    }
   *psArray = sArrayResult ;
   ++*piLen;
 }
@@ -147,45 +152,45 @@ char** zMapGFFStr_tokenizer(char cDelim, const char * const sTarg, unsigned int 
 
   iLength = strlen(sTarg) ;
   while ((sPos = strchr(sPosLast, cDelim)))
-  {
-    bInclude = TRUE ;
-    iTokLen = sPos-sPosLast ;
-    if (!iTokLen && !bIncludeEmpty)
     {
-      bInclude = FALSE ;
+      bInclude = TRUE ;
+      iTokLen = sPos-sPosLast ;
+      if (!iTokLen && !bIncludeEmpty)
+        {
+          bInclude = FALSE ;
+        }
+      if (bInclude)
+        {
+          /* include token here */
+          memset(sBuff, 0, iBuffLen) ;
+          strncpy(sBuff, sPosLast, iTokLen) ;
+          zMapGFFStr_remove_char(sBuff, cToRemove) ;
+          zMapGFFStr_array_add_element(&sTokens, &iNumTokens, local_malloc, local_free) ;
+          sTokens[iNumTokens-1] = g_strdup(sBuff) ;
+        }
+      sPosLast = sPos + 1 ;
+  
+      if (iNumTokens == (iTokenLimit-1))
+        break ;
     }
-    if (bInclude)
-    {
-      /* include token here */
-      memset(sBuff, 0, iBuffLen) ;
-      strncpy(sBuff, sPosLast, iTokLen) ;
-      zMapGFFStr_remove_char(sBuff, cToRemove) ;
-      zMapGFFStr_array_add_element(&sTokens, &iNumTokens, local_malloc, local_free) ;
-      sTokens[iNumTokens-1] = g_strdup(sBuff) ;
-    }
-    sPosLast = sPos + 1 ;
-
-    if (iNumTokens == (iTokenLimit-1))
-      break ;
-  }
   if (sPosLast-sTarg <= iLength)
-  {
-    bInclude = TRUE ;
-    iTokLen = sTarg+iLength - sPosLast ;
-    if (!iTokLen && !bIncludeEmpty)
     {
-      bInclude = FALSE ;
+      bInclude = TRUE ;
+      iTokLen = sTarg+iLength - sPosLast ;
+      if (!iTokLen && !bIncludeEmpty)
+        {
+          bInclude = FALSE ;
+        }
+      if (bInclude)
+        {
+          /* include token here */
+          memset(sBuff, 0, iBuffLen) ;
+          strncpy(sBuff, sPosLast, iTokLen) ;
+          zMapGFFStr_remove_char(sBuff, cToRemove) ;
+          zMapGFFStr_array_add_element(&sTokens, &iNumTokens, local_malloc, local_free) ;
+          sTokens[iNumTokens-1] = g_strdup(sBuff) ;
+        }
     }
-    if (bInclude)
-    {
-      /* include token here */
-      memset(sBuff, 0, iBuffLen) ;
-      strncpy(sBuff, sPosLast, iTokLen) ;
-      zMapGFFStr_remove_char(sBuff, cToRemove) ;
-      zMapGFFStr_array_add_element(&sTokens, &iNumTokens, local_malloc, local_free) ;
-      sTokens[iNumTokens-1] = g_strdup(sBuff) ;
-    }
-  }
 
   *piNumTokens = iNumTokens ;
   return sTokens ;
@@ -276,8 +281,13 @@ char** zMapGFFStr_tokenizer(char cDelim, const char * const sTarg, unsigned int 
  * instances of the argument cQuote. However, it does not check that the cQuote
  * characters are in matched pairs; thus we could go off the end of the input string.
  */
-char** zMapGFFStr_tokenizer02(char cDelim, char cQuote, const char * const sTarget, unsigned int * piNumTokens,
-                     gboolean bIncludeEmpty, void*(*local_malloc)(size_t), void(*local_free)(void*))
+char** zMapGFFStr_tokenizer02(char cDelim, 
+                              char cQuote, 
+                              const char * const sTarget, 
+                              unsigned int * piNumTokens,
+                              gboolean bIncludeEmpty, 
+                              void*(*local_malloc)(size_t), 
+                              void(*local_free)(void*))
 {
   static const char cToRemove = ' ';
   char ** sTokens = NULL, *sToken = NULL ;
@@ -317,28 +327,30 @@ char** zMapGFFStr_tokenizer02(char cDelim, char cQuote, const char * const sTarg
    * add to the return array.
    */
   for (i=0; i<n; ++i)
-  {
-    sStart = sTarget + (i==0 ? 0 : pPositions[i-1]+1);
-    sEnd = sTarget + pPositions[i];
-
-    bInclude = TRUE ;
-    if ((sStart == sEnd) && !bIncludeEmpty)
-      bInclude = FALSE ;
-    if (bInclude)
     {
-      sToken = zMapGFFStr_substring(sStart, sEnd, local_malloc);
-      zMapGFFStr_remove_char(sToken, cToRemove) ;
+      sStart = sTarget + (i==0 ? 0 : pPositions[i-1]+1);
+      sEnd = sTarget + pPositions[i];
 
-      if (strlen(sToken))
-      {
-        zMapGFFStr_array_add_element(&sTokens, &iNumTokens, local_malloc, local_free) ;
-        sTokens[iNumTokens-1] = sToken ;
-        ++*piNumTokens;
-      }
-      else if (sToken)
-        local_free(sToken) ;
+      bInclude = TRUE ;
+      if ((sStart == sEnd) && !bIncludeEmpty)
+        bInclude = FALSE ;
+      if (bInclude)
+        {
+          sToken = zMapGFFStr_substring(sStart, sEnd, local_malloc);
+          zMapGFFStr_remove_char(sToken, cToRemove) ;
+
+          if (strlen(sToken))
+            {
+              zMapGFFStr_array_add_element(&sTokens, &iNumTokens, local_malloc, local_free) ;
+              sTokens[iNumTokens-1] = sToken ;
+              ++*piNumTokens;
+            }
+          else if (sToken)
+            {
+             local_free(sToken) ;
+            }
+        }
     }
-  }
 
   /*
    * This is the final one (or the first one if n == 0).
@@ -349,19 +361,21 @@ char** zMapGFFStr_tokenizer02(char cDelim, char cQuote, const char * const sTarg
   if ((sStart >= sEnd) && !bIncludeEmpty)
     bInclude = FALSE ;
   if (bInclude)
-  {
-    sToken = zMapGFFStr_substring(sStart, sEnd, local_malloc);
-    zMapGFFStr_remove_char(sToken, cToRemove) ;
-
-    if (strlen(sToken))
     {
-      zMapGFFStr_array_add_element(&sTokens, &iNumTokens, local_malloc, local_free) ;
-      sTokens[iNumTokens-1] = sToken ;
-      ++*piNumTokens ;
+      sToken = zMapGFFStr_substring(sStart, sEnd, local_malloc);
+      zMapGFFStr_remove_char(sToken, cToRemove) ;
+
+      if (strlen(sToken))
+        {
+          zMapGFFStr_array_add_element(&sTokens, &iNumTokens, local_malloc, local_free) ;
+          sTokens[iNumTokens-1] = sToken ;
+          ++*piNumTokens ;
+        }
+      else if (sToken)
+        {
+          local_free(sToken) ;
+        }
     }
-    else if (sToken)
-      local_free(sToken) ;
-  }
 
   if (pPositions)
     local_free(pPositions) ;
@@ -398,15 +412,15 @@ void zMapGFFStr_remove_char(char* sInput, char cToRemove)
    * terminating null character.
    */
   while (*sStart == cToRemove)
-  {
-    ++sStart; ++iMove ;
-  }
+    {
+      ++sStart; ++iMove ;
+    }
   sStart = sInput ;
   while (*(sStart+iMove))
-  {
-    *sStart = *(sStart+iMove) ;
-    ++sStart ;
-  }
+    {
+      *sStart = *(sStart+iMove) ;
+      ++sStart ;
+    }
   *sStart = cNull ;
 
   /*
@@ -415,13 +429,15 @@ void zMapGFFStr_remove_char(char* sInput, char cToRemove)
    * character, we break.
    */
   while (sStart > sInput)
-  {
-    --sStart ;
-    if (*sStart == cToRemove)
     {
-      *sStart = cNull ;
+      --sStart ;
+      if (*sStart == cToRemove)
+        {
+          *sStart = cNull ;
+        }
+      else
+        {
+          break ;
+        }
     }
-    else
-      break ;
-  }
 }

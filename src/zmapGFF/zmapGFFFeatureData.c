@@ -119,15 +119,15 @@ gboolean zMapGFFFeatureDataSet(ZMapGFFFeatureData const pFeatureData,
   pFeatureData->flags.got_end     = TRUE ;
 
   if (bHasScore)
-  {
-    pFeatureData->dScore            = dScore ;
-    pFeatureData->flags.got_sco     = TRUE ;
-  }
+    {
+      pFeatureData->dScore            = dScore ;
+      pFeatureData->flags.got_sco     = TRUE ;
+    }
   else
-  {
-    pFeatureData->dScore            = 0.0 ;
-    pFeatureData->flags.got_sco     = FALSE ;
-  }
+    {
+      pFeatureData->dScore            = 0.0 ;
+      pFeatureData->flags.got_sco     = FALSE ;
+    }
 
   pFeatureData->cStrand           = cStrand ;
   pFeatureData->flags.got_str     = TRUE ;

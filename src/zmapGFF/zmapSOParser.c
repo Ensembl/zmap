@@ -122,37 +122,37 @@ ZMapStyleMode zMapSOSetGetStyleModeFromID(ZMapSOSetInUse cSOSetInUse, unsigned i
   unsigned int i ;
 
   if (cSOSetInUse == ZMAPSO_USE_SOFA)
-  {
-    for (i=0; i<ZMAP_SO_DATA_TABLE01_NUM_ITEMS; ++i)
     {
-      if (iID == ZMAP_SO_DATA_TABLE01[i].iID )
-      {
-        cTheMode =  ZMAP_SO_DATA_TABLE01[i].cStyleMode ;
-        break ;
-      }
+      for (i=0; i<ZMAP_SO_DATA_TABLE01_NUM_ITEMS; ++i)
+        {
+          if (iID == ZMAP_SO_DATA_TABLE01[i].iID )
+            {
+              cTheMode =  ZMAP_SO_DATA_TABLE01[i].cStyleMode ;
+              break ;
+            }
+        }
     }
-  }
   else if (cSOSetInUse == ZMAPSO_USE_SOXP)
-  {
-    for (i=0; i<ZMAP_SO_DATA_TABLE02_NUM_ITEMS; ++i)
     {
-      if (iID == ZMAP_SO_DATA_TABLE02[i].iID )
-      {
-        cTheMode = ZMAP_SO_DATA_TABLE02[i].cStyleMode ;
-        break ;
-      }
+      for (i=0; i<ZMAP_SO_DATA_TABLE02_NUM_ITEMS; ++i)
+        {
+          if (iID == ZMAP_SO_DATA_TABLE02[i].iID )
+            {
+              cTheMode = ZMAP_SO_DATA_TABLE02[i].cStyleMode ;
+              break ;
+            }
+        }
     }
-  }
   else if (cSOSetInUse == ZMAPSO_USE_SOXPSIMPLE)
-  {
-    for (i=0; i<ZMAP_SO_DATA_TABLE03_NUM_ITEMS; ++i)
     {
-      if (iID == ZMAP_SO_DATA_TABLE03[i].iID )
-      {
-        cTheMode = ZMAP_SO_DATA_TABLE03[i].cStyleMode ;
-        break ;
+      for (i=0; i<ZMAP_SO_DATA_TABLE03_NUM_ITEMS; ++i)
+        {
+          if (iID == ZMAP_SO_DATA_TABLE03[i].iID )
+            {
+              cTheMode = ZMAP_SO_DATA_TABLE03[i].cStyleMode ;
+              break ;
+            }
       }
-    }
   }
 
 
@@ -170,37 +170,37 @@ ZMapStyleMode zMapSOSetGetStyleModeFromName(ZMapSOSetInUse cSOSetInUse, const ch
     return cTheMode;
 
   if (cSOSetInUse == ZMAPSO_USE_SOFA)
-  {
-    for (i=0; i<ZMAP_SO_DATA_TABLE01_NUM_ITEMS; ++i)
     {
-      if (!strcmp(sName, ZMAP_SO_DATA_TABLE01[i].sName))
-      {
-        cTheMode = ZMAP_SO_DATA_TABLE01[i].cStyleMode ;
-        break ;
-      }
+      for (i=0; i<ZMAP_SO_DATA_TABLE01_NUM_ITEMS; ++i)
+        {
+          if (!strcmp(sName, ZMAP_SO_DATA_TABLE01[i].sName))
+            {
+              cTheMode = ZMAP_SO_DATA_TABLE01[i].cStyleMode ;
+              break ;
+            }
+        }
     }
-  }
   else if (cSOSetInUse == ZMAPSO_USE_SOXP)
-  {
-    for (i=0; i<ZMAP_SO_DATA_TABLE02_NUM_ITEMS; ++i)
     {
-      if (!strcmp(sName, ZMAP_SO_DATA_TABLE02[i].sName))
-      {
-        cTheMode = ZMAP_SO_DATA_TABLE02[i].cStyleMode ;
-        break ;
-      }
+      for (i=0; i<ZMAP_SO_DATA_TABLE02_NUM_ITEMS; ++i)
+        {
+          if (!strcmp(sName, ZMAP_SO_DATA_TABLE02[i].sName))
+            {
+              cTheMode = ZMAP_SO_DATA_TABLE02[i].cStyleMode ;
+              break ;
+            }
+        }
     }
-  }
   else if (cSOSetInUse == ZMAPSO_USE_SOXPSIMPLE)
-  {
-    for (i=0; i<ZMAP_SO_DATA_TABLE03_NUM_ITEMS; ++i)
     {
-      if (!strcmp(sName, ZMAP_SO_DATA_TABLE03[i].sName))
-      {
-        cTheMode = ZMAP_SO_DATA_TABLE03[i].cStyleMode ;
-        break ;
+      for (i=0; i<ZMAP_SO_DATA_TABLE03_NUM_ITEMS; ++i)
+        {
+          if (!strcmp(sName, ZMAP_SO_DATA_TABLE03[i].sName))
+            {
+              cTheMode = ZMAP_SO_DATA_TABLE03[i].cStyleMode ;
+              break ;
+            }
       }
-    }
   }
 
   return cTheMode ;
@@ -217,38 +217,38 @@ unsigned int zMapSOSetIsNamePresent(ZMapSOSetInUse cSOSetInUse, const char * con
     return iResult ;
 
   if (cSOSetInUse == ZMAPSO_USE_SOFA)
-  {
-    for (i=0; i<ZMAP_SO_DATA_TABLE01_NUM_ITEMS; ++i)
     {
-      if (!strcmp(sType, ZMAP_SO_DATA_TABLE01[i].sName))
-      {
-        iResult = ZMAP_SO_DATA_TABLE01[i].iID ;
-        break ;
-      }
+      for (i=0; i<ZMAP_SO_DATA_TABLE01_NUM_ITEMS; ++i)
+        {
+          if (!strcmp(sType, ZMAP_SO_DATA_TABLE01[i].sName))
+            {
+              iResult = ZMAP_SO_DATA_TABLE01[i].iID ;
+              break ;
+            }
+        }
     }
-  }
   else if (cSOSetInUse == ZMAPSO_USE_SOXP)
-  {
-    for (i=0; i<ZMAP_SO_DATA_TABLE02_NUM_ITEMS; ++i)
     {
-      if (!strcmp(sType, ZMAP_SO_DATA_TABLE02[i].sName))
-      {
-        iResult = ZMAP_SO_DATA_TABLE02[i].iID ;
-        break ;
-      }
+      for (i=0; i<ZMAP_SO_DATA_TABLE02_NUM_ITEMS; ++i)
+        {
+          if (!strcmp(sType, ZMAP_SO_DATA_TABLE02[i].sName))
+            {
+              iResult = ZMAP_SO_DATA_TABLE02[i].iID ;
+              break ;
+            }
+        }
     }
-  }
   else if (cSOSetInUse == ZMAPSO_USE_SOXPSIMPLE)
-  {
-    for (i=0; i<ZMAP_SO_DATA_TABLE03_NUM_ITEMS; ++i)
     {
-      if (!strcmp(sType, ZMAP_SO_DATA_TABLE03[i].sName))
-      {
-        iResult = ZMAP_SO_DATA_TABLE03[i].iID ;
-        break ;
-      }
+      for (i=0; i<ZMAP_SO_DATA_TABLE03_NUM_ITEMS; ++i)
+        {
+          if (!strcmp(sType, ZMAP_SO_DATA_TABLE03[i].sName))
+            {
+              iResult = ZMAP_SO_DATA_TABLE03[i].iID ;
+              break ;
+            }
+        }
     }
-  }
 
   return iResult ;
 }
@@ -263,38 +263,38 @@ char * zMapSOSetIsIDPresent(ZMapSOSetInUse cSOSetInUse, unsigned int iID )
   unsigned int i ;
 
   if (cSOSetInUse == ZMAPSO_USE_SOFA)
-  {
-    for (i=0; i<ZMAP_SO_DATA_TABLE01_NUM_ITEMS; ++i)
     {
-      if (iID == ZMAP_SO_DATA_TABLE01[i].iID )
-      {
-        sResult =  ZMAP_SO_DATA_TABLE01[i].sName ;
-        break ;
-      }
+      for (i=0; i<ZMAP_SO_DATA_TABLE01_NUM_ITEMS; ++i)
+        {
+          if (iID == ZMAP_SO_DATA_TABLE01[i].iID )
+            {
+              sResult =  ZMAP_SO_DATA_TABLE01[i].sName ;
+              break ;
+            }
+        }
     }
-  }
   else if (cSOSetInUse == ZMAPSO_USE_SOXP)
-  {
-    for (i=0; i<ZMAP_SO_DATA_TABLE02_NUM_ITEMS; ++i)
     {
-      if (iID == ZMAP_SO_DATA_TABLE02[i].iID )
-      {
-        sResult = ZMAP_SO_DATA_TABLE02[i].sName ;
-        break ;
-      }
+      for (i=0; i<ZMAP_SO_DATA_TABLE02_NUM_ITEMS; ++i)
+        {
+          if (iID == ZMAP_SO_DATA_TABLE02[i].iID )
+            {
+              sResult = ZMAP_SO_DATA_TABLE02[i].sName ;
+              break ;
+            }
+        }
     }
-  }
   else if (cSOSetInUse == ZMAPSO_USE_SOXPSIMPLE)
-  {
-    for (i=0; i<ZMAP_SO_DATA_TABLE03_NUM_ITEMS; ++i)
     {
-      if (iID == ZMAP_SO_DATA_TABLE03[i].iID )
-      {
-        sResult = ZMAP_SO_DATA_TABLE03[i].sName;
-        break ;
-      }
+      for (i=0; i<ZMAP_SO_DATA_TABLE03_NUM_ITEMS; ++i)
+        {
+          if (iID == ZMAP_SO_DATA_TABLE03[i].iID )
+            {
+              sResult = ZMAP_SO_DATA_TABLE03[i].sName;
+              break ;
+            }
+        }
     }
-  }
 
   return sResult ;
 }
@@ -465,9 +465,9 @@ unsigned int zMapSOIDParseString(const char * const sString)
    * Look for appropriate data form in the input string.
    */
   if (sscanf(sString, sFormatSO, &iResult) != iExpectedFields)
-  {
-    iResult = ZMAPSO_ID_UNK ;
-  }
+    {
+      iResult = ZMAPSO_ID_UNK ;
+    }
   if (iResult > ZMAPSO_ID_MAX)
     iResult = ZMAPSO_ID_UNK ;
 
@@ -551,10 +551,10 @@ ZMapSOTerm zMapSOTermCreate()
    */
   pTerm->pID = zMapSOIDCreate() ;
   if (!pTerm->pID)
-  {
-    zMapSOTermDestroy(pTerm) ;
-    return NULL ;
-  }
+    {
+      zMapSOTermDestroy(pTerm) ;
+      return NULL ;
+    }
 
   /*
    * Initialize name string to NULL.
@@ -958,42 +958,42 @@ gboolean zMapSOCollectionCheck(const ZMapSOCollection const pCollection)
   char *pName = NULL ;
 
   for (iTerm=0; iTerm<zMapSOCollectionGetNumTerms(pCollection); ++iTerm)
-  {
-    /*
-     * Find current term and its SOID.
-     */
-    pTerm = NULL ;
-    pTerm = zMapSOCollectionGetTerm(pCollection, iTerm) ;
-    if (pTerm)
     {
-
-      pID01 = zMapSOTermGetID(pTerm) ;
-
       /*
-       * Name lookup with current term.
+       * Find current term and its SOID.
        */
-      pID02 = zMapSOCollectionFindIDFromName(pCollection, pTerm->sName );
-      if (!zMapSOIDEquals(pID01, pID02))
-      {
-        return bResult ;
-      }
-
-      /*
-       * ID lookup with current term.
-       */
-      pName = zMapSOCollectionFindNameFromID(pCollection, pID01) ;
-      if (strcmp(pName, pTerm->sName))
-      {
-        return bResult ;
-      }
+      pTerm = NULL ;
+      pTerm = zMapSOCollectionGetTerm(pCollection, iTerm) ;
+      if (pTerm)
+        {
+    
+          pID01 = zMapSOTermGetID(pTerm) ;
+    
+          /*
+           * Name lookup with current term.
+           */
+          pID02 = zMapSOCollectionFindIDFromName(pCollection, pTerm->sName );
+          if (!zMapSOIDEquals(pID01, pID02))
+            {
+              return bResult ;
+            }
+    
+          /*
+           * ID lookup with current term.
+           */
+          pName = zMapSOCollectionFindNameFromID(pCollection, pID01) ;
+          if (strcmp(pName, pTerm->sName))
+            {
+              return bResult ;
+            }
+    
+        }
+      else
+        {
+          return bResult ;
+        }
 
     }
-    else
-    {
-      return bResult ;
-    }
-
-  }
   bResult = TRUE ;
 
   return bResult ;
@@ -1024,25 +1024,25 @@ static void zMapSOParserLineType(ZMapSOParser const pParser)
     return ;
 
   if (g_str_has_prefix(pParser->sBufferLine, "[Term]"))
-  {
-    eType = ZMAPSO_LINE_TER ;
-  }
+    {
+      eType = ZMAPSO_LINE_TER ;
+    }
   else if (g_str_has_prefix(pParser->sBufferLine, "[Typedef]"))
-  {
-    eType = ZMAPSO_LINE_TYP ;
-  }
+    {
+      eType = ZMAPSO_LINE_TYP ;
+    }
   else if (g_str_has_prefix(pParser->sBufferLine, "id:"))
-  {
-    eType = ZMAPSO_LINE_IDD ;
-  }
+    {
+      eType = ZMAPSO_LINE_IDD ;
+    }
   else if (g_str_has_prefix(pParser->sBufferLine, "name:"))
-  {
-    eType = ZMAPSO_LINE_NAM ;
-  }
+    {
+      eType = ZMAPSO_LINE_NAM ;
+    }
   else if (g_str_has_prefix(pParser->sBufferLine, "is_obsolete:"))
-  {
-    eType = ZMAPSO_LINE_OBS ;
-  }
+    {
+      eType = ZMAPSO_LINE_OBS ;
+    }
 
   pParser->eLineType = eType ;
 
@@ -1095,17 +1095,17 @@ ZMapSOParser zMapSOParserCreate()
    */
   pParser->sBufferLine = (char*) g_malloc(ZMAPSO_PARSER_BUFFER_LINELENGTH) ;
   if (!pParser->sBufferLine)
-  {
-    g_free(pParser) ;
-    return NULL ;
-  }
+    {
+      g_free(pParser) ;
+      return NULL ;
+    }
   pParser->sBuffer = (char*) g_malloc(ZMAPSO_PARSER_BUFFER_LENGTH) ;
   if (!pParser->sBuffer)
-  {
-    g_free(pParser->sBufferLine) ;
-    g_free(pParser) ;
-    return NULL ;
-  }
+    {
+      g_free(pParser->sBufferLine) ;
+      g_free(pParser) ;
+      return NULL ;
+    }
 
   /*
    * Initialize pTerm and pCollection
@@ -1118,10 +1118,10 @@ ZMapSOParser zMapSOParserCreate()
    * it and return NULL.
    */
   if (!zMapSOParserInitialize(pParser, bClearCollection))
-  {
-    zMapSOParserDestroy(pParser) ;
-    pParser = NULL ;
-  }
+    {
+      zMapSOParserDestroy(pParser) ;
+      pParser = NULL ;
+    }
 
   return pParser ;
 }
@@ -1147,11 +1147,11 @@ ZMapSOCollection zMapSOParserGetCollection(ZMapSOParser const pParser)
    * and if so, add it to the collection.
    */
   if (zMapSOTermIsValid(pParser->pTerm))
-  {
-    if (!zMapSOCollectionAddSOTerm(pParser->pCollection, pParser->pTerm) )
-       zMapSOTermDestroy(pParser->pTerm) ;
-    pParser->pTerm = NULL ;
-  }
+    {
+      if (!zMapSOCollectionAddSOTerm(pParser->pCollection, pParser->pTerm) )
+         zMapSOTermDestroy(pParser->pTerm) ;
+      pParser->pTerm = NULL ;
+    }
 
   pCollection = pParser->pCollection ;
   pParser->pCollection = NULL ;
@@ -1277,37 +1277,37 @@ static gboolean zMapSOParseIsObs(ZMapSOParser const pParser)
    * Look for appropriate data in the input string.
    */
   if (sscanf(pParser->sBufferLine, sFormat, pParser->sBuffer) == iExpectedFields)
-  {
-    if (!strcmp(sTrue, pParser->sBuffer))
     {
-      pParser->pTerm->flags.is_obs = TRUE ;
-      bResult = TRUE ;
-    }
-    else if (!strcmp(sFalse, pParser->sBuffer))
-    {
-      pParser->pTerm->flags.is_obs = FALSE ;
-      bResult = TRUE ;
-    }
-    else
-    {
-
-      if (pParser->pError)
-      {
-        g_error_free(pParser->pError) ;
-        pParser->pError = g_error_new(pParser->qErrorDomain, ZMAPSO_ERROR_PARSER_ISO,
-                                    "ERROR in zMapSOParseIsOsolete(); HIT ERROR CONDITION WITH ERROR ALREADY SET at line %i, with l = '%s'",
-                                    pParser->iLineCount, pParser->sBufferLine ) ;
-      }
+      if (!strcmp(sTrue, pParser->sBuffer))
+        {
+          pParser->pTerm->flags.is_obs = TRUE ;
+          bResult = TRUE ;
+        }
+      else if (!strcmp(sFalse, pParser->sBuffer))
+        {
+          pParser->pTerm->flags.is_obs = FALSE ;
+          bResult = TRUE ;
+        }
       else
-      {
-        pParser->pError = g_error_new(pParser->qErrorDomain, ZMAPSO_ERROR_PARSER_ISO,
-                                    "ERROR in zMapSOParseID(); unable to set IsObsolete flag at line %i, with l = '%s'",
-                                    pParser->iLineCount, pParser->sBufferLine ) ;
-      }
+        {
+  
+          if (pParser->pError)
+            {
+              g_error_free(pParser->pError) ;
+              pParser->pError = g_error_new(pParser->qErrorDomain, ZMAPSO_ERROR_PARSER_ISO,
+                                          "ERROR in zMapSOParseIsOsolete(); HIT ERROR CONDITION WITH ERROR ALREADY SET at line %i, with l = '%s'",
+                                          pParser->iLineCount, pParser->sBufferLine ) ;
+            }
+          else
+            {
+              pParser->pError = g_error_new(pParser->qErrorDomain, ZMAPSO_ERROR_PARSER_ISO,
+                                          "ERROR in zMapSOParseID(); unable to set IsObsolete flag at line %i, with l = '%s'",
+                                          pParser->iLineCount, pParser->sBufferLine ) ;
+            }
+  
+        }
 
-    }
-
-    pParser->pTerm->flags.got_obs = TRUE ;
+      pParser->pTerm->flags.got_obs = TRUE ;
 
   }
 
@@ -1342,30 +1342,30 @@ static gboolean zMapSOParseID(ZMapSOParser const pParser)
    * Look for appropriate data form in the input string.
    */
   if (sscanf(pParser->sBufferLine, sFormatID, pParser->sBuffer) == iExpectedFields)
-  {
-    if (zMapSOIDSet(pParser->pID, pParser->sBuffer))
     {
-      bResult = zMapSOTermSetID(pParser->pTerm, pParser->pID) ;
-    }
-    else
-    {
-
-      if (pParser->pError)
-      {
-        g_error_free(pParser->pError) ;
-        pParser->pError = g_error_new(pParser->qErrorDomain, ZMAPSO_ERROR_PARSER_IDD,
-                                    "ERROR in zMapSOParseID(); HIT ERROR CONDITION WITH ERROR ALREADY SET at line %i, with l = '%s'",
-                                    pParser->iLineCount, pParser->sBufferLine ) ;
-      }
+      if (zMapSOIDSet(pParser->pID, pParser->sBuffer))
+        {
+          bResult = zMapSOTermSetID(pParser->pTerm, pParser->pID) ;
+        }
       else
-      {
-        pParser->pError = g_error_new(pParser->qErrorDomain, ZMAPSO_ERROR_PARSER_IDD,
-                                    "ERROR in zMapSOParseID(); unable to set SOID at line %i, with l = '%s'",
-                                    pParser->iLineCount, pParser->sBufferLine ) ;
-      }
-
+        {
+    
+          if (pParser->pError)
+            {
+              g_error_free(pParser->pError) ;
+              pParser->pError = g_error_new(pParser->qErrorDomain, ZMAPSO_ERROR_PARSER_IDD,
+                                          "ERROR in zMapSOParseID(); HIT ERROR CONDITION WITH ERROR ALREADY SET at line %i, with l = '%s'",
+                                          pParser->iLineCount, pParser->sBufferLine ) ;
+            }
+          else
+            {
+              pParser->pError = g_error_new(pParser->qErrorDomain, ZMAPSO_ERROR_PARSER_IDD,
+                                          "ERROR in zMapSOParseID(); unable to set SOID at line %i, with l = '%s'",
+                                          pParser->iLineCount, pParser->sBufferLine ) ;
+            }
+  
+        }
     }
-  }
 
   return bResult ;
 }
@@ -1399,27 +1399,27 @@ static gboolean zMapSOParseName(ZMapSOParser const pParser)
    * Look for data of the appropriate form.
    */
   if (sscanf(pParser->sBufferLine, sFormatName, pParser->sBuffer) == iExpectedFields)
-  {
-    bResult = zMapSOTermSetName(pParser->pTerm, pParser->sBuffer) ;
-  }
+    {
+      bResult = zMapSOTermSetName(pParser->pTerm, pParser->sBuffer) ;
+    }
   else
-  {
-
-    if (pParser->pError)
     {
-      g_error_free(pParser->pError) ;
-      pParser->pError = g_error_new(pParser->qErrorDomain, ZMAPSO_ERROR_PARSER_IDD,
-                                  "ERROR in zMapSOParseName(); HIT ERROR CONDITION WITH ERROR ALREADY SET at line %i, with l = '%s'",
-                                  pParser->iLineCount, pParser->sBufferLine ) ;
+  
+      if (pParser->pError)
+        {
+          g_error_free(pParser->pError) ;
+          pParser->pError = g_error_new(pParser->qErrorDomain, ZMAPSO_ERROR_PARSER_IDD,
+                                      "ERROR in zMapSOParseName(); HIT ERROR CONDITION WITH ERROR ALREADY SET at line %i, with l = '%s'",
+                                      pParser->iLineCount, pParser->sBufferLine ) ;
+        }
+      else
+        {
+          pParser->pError = g_error_new(pParser->qErrorDomain, ZMAPSO_ERROR_PARSER_IDD,
+                                      "ERROR in zMapSOParseName(); unable to parse for name at line %i, with l = '%s'",
+                                      pParser->iLineCount, pParser->sBufferLine ) ;
+        }
+  
     }
-    else
-    {
-      pParser->pError = g_error_new(pParser->qErrorDomain, ZMAPSO_ERROR_PARSER_IDD,
-                                  "ERROR in zMapSOParseName(); unable to parse for name at line %i, with l = '%s'",
-                                  pParser->iLineCount, pParser->sBufferLine ) ;
-    }
-
-  }
 
   return bResult ;
 }
@@ -1467,54 +1467,54 @@ gboolean zMapSOParseLine(ZMapSOParser const pParser, const char * const sLine)
    * Switch actions depending on line type.
    */
   if ((eLineType == ZMAPSO_LINE_TER) || (eLineType == ZMAPSO_LINE_TYP))
-  {
+    {
 
-    /*
-     * If we have reached a [Term] or [Typedef] line then we should try to
-     * add the current term before going on.
-     *
-     * If the term is not valid, we destroy and carry on. If the term is valid
-     * and we cannot add to collection, destroy and carry on. Otherwise it is
-     * added so we do not destroy term.
-     */
-    if  (     !zMapSOTermIsValid(pParser->pTerm)
-          ||  !zMapSOCollectionAddSOTerm(pParser->pCollection, pParser->pTerm)
-        )
-      zMapSOTermDestroy(pParser->pTerm) ;
-    pParser->pTerm = NULL ;
-
-    /*
-     * Only the [Term] line signals the beginning of a new SO term object.
-     */
-    if (eLineType == ZMAPSO_LINE_TER)
-      pParser->pTerm = zMapSOTermCreate() ;
-
-  }
+      /*
+       * If we have reached a [Term] or [Typedef] line then we should try to
+       * add the current term before going on.
+       *
+       * If the term is not valid, we destroy and carry on. If the term is valid
+       * and we cannot add to collection, destroy and carry on. Otherwise it is
+       * added so we do not destroy term.
+       */
+      if  (     !zMapSOTermIsValid(pParser->pTerm)
+            ||  !zMapSOCollectionAddSOTerm(pParser->pCollection, pParser->pTerm)
+          )
+        zMapSOTermDestroy(pParser->pTerm) ;
+      pParser->pTerm = NULL ;
+  
+      /*
+       * Only the [Term] line signals the beginning of a new SO term object.
+       */
+      if (eLineType == ZMAPSO_LINE_TER)
+        pParser->pTerm = zMapSOTermCreate() ;
+  
+    }
   else if (eLineType == ZMAPSO_LINE_IDD)
-  {
-
-    if (pParser->pTerm && zMapSOParseID(pParser) )
     {
-      bResult = TRUE ;
+  
+      if (pParser->pTerm && zMapSOParseID(pParser) )
+        {
+          bResult = TRUE ;
+        }
+  
     }
-
-  }
   else if (eLineType == ZMAPSO_LINE_NAM)
-  {
-
-    if (pParser->pTerm && zMapSOParseName(pParser) )
     {
-      bResult = TRUE ;
+  
+      if (pParser->pTerm && zMapSOParseName(pParser) )
+        {
+          bResult = TRUE ;
+        }
+  
     }
-
-  }
   else if (eLineType == ZMAPSO_LINE_OBS)
-  {
-    if (pParser->pTerm && zMapSOParseIsObs(pParser) )
     {
-      bResult = TRUE ;
+      if (pParser->pTerm && zMapSOParseIsObs(pParser) )
+        {
+          bResult = TRUE ;
+        }
     }
-  }
 
   /*
    * Test to make sure that an error was not set during any of
@@ -1656,29 +1656,29 @@ gboolean zMapSOParseFile(ZMapSOParser const pParser, const char * const sFilenam
    */
   bReturn = TRUE ;
   while (!feof(fInput))
-  {
-    /*
-     * Read line from file.
-     */
-    if (!zMapSOReadLineFromFile(sBuffer, ZMAPSO_PARSER_BUFFER_LENGTH, fInput))
-      break ;
-
-    /*
-     * Parse that line.
-     */
-    zMapSOParseLine(pParser, sBuffer) ;
-
-    /*
-     * Test for parser error.
-     */
-    if (zMapSOParserTerminated(pParser))
     {
-      printf("error reading file '%s' at i = %i, l = '%s'\n", sFilename, pParser->iLineCount, sBuffer) ;
-      fflush(stdout) ;
-      break ;
-    }
+      /*
+       * Read line from file.
+       */
+      if (!zMapSOReadLineFromFile(sBuffer, ZMAPSO_PARSER_BUFFER_LENGTH, fInput))
+        break ;
 
-  }
+      /*
+       * Parse that line.
+       */
+      zMapSOParseLine(pParser, sBuffer) ;
+
+      /*
+       * Test for parser error.
+       */
+      if (zMapSOParserTerminated(pParser))
+        {
+          printf("error reading file '%s' at i = %i, l = '%s'\n", sFilename, pParser->iLineCount, sBuffer) ;
+          fflush(stdout) ;
+          break ;
+        }
+
+    }
 
   fclose(fInput) ;
 
@@ -1701,27 +1701,27 @@ ZMapSOCollection zMapSOReadFile(const char* const sFilename)
    */
   pParser = zMapSOParserCreate() ;
   if (!pParser)
-  {
-    return pCollection ;
-  }
+    {
+      return pCollection ;
+    }
 
   /*
    * Initialize for reading a file.
    */
   if (!zMapSOParserInitialize(pParser, bClearCollection))
-  {
-    zMapSOParserDestroy(pParser) ;
-    return pCollection ;
-  }
+    {
+      zMapSOParserDestroy(pParser) ;
+      return pCollection ;
+    }
 
   /*
    * Read a collection of terms from a file.
    */
   if (!zMapSOParseFile(pParser, sFilename))
-  {
-    zMapSOParserDestroy(pParser) ;
-    return pCollection ;
-  }
+    {
+      zMapSOParserDestroy(pParser) ;
+      return pCollection ;
+    }
 
   /*
    * Run internal check, and destroy collection if
@@ -1729,10 +1729,10 @@ ZMapSOCollection zMapSOReadFile(const char* const sFilename)
    */
   pCollection = zMapSOParserGetCollection(pParser) ;
   if (!zMapSOCollectionCheck(pCollection))
-  {
-    zMapSOCollectionDestroy(pCollection) ;
-    pCollection = NULL ;
-  }
+    {
+      zMapSOCollectionDestroy(pCollection) ;
+      pCollection = NULL ;
+    }
 
   /*
    * Destroy parser.
@@ -1755,16 +1755,16 @@ gboolean zMapSOReadSOCollections()
    */
   if (!pCollectionSOFA)
     if (!(pCollectionSOFA = zMapSOReadFile(sFilenameSOFA) ))
-  {
-    zMapSOCollectionDestroy(pCollectionSOFA) ;
-    bResult = FALSE ;
-  }
+      {
+        zMapSOCollectionDestroy(pCollectionSOFA) ;
+        bResult = FALSE ;
+      }
   if (!pCollectionSO)
     if (!(pCollectionSO = zMapSOReadFile(sFilenameSO) ))
-  {
-    zMapSOCollectionDestroy(pCollectionSO) ;
-    bResult = FALSE ;
-  }
+      {
+        zMapSOCollectionDestroy(pCollectionSO) ;
+        bResult = FALSE ;
+      }
 
   return bResult ;
 }

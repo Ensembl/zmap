@@ -62,17 +62,17 @@ ZMapGFFAttributeName zMapGFFGetAttributeName(ZMapGFFVersion eVersion, const char
     return eTheName ;
 
   if (eVersion == ZMAPGFF_VERSION_2)
-  {
-    for (iAtt=0; iAtt<ZMAPGFF_NUM_ATT_V2; ++iAtt)
-      if (!strcmp(sString, ZMAPGFF_ATTRIBUTE_INFO[iAtt].sName))
-        return ZMAPGFF_ATTRIBUTE_INFO[iAtt].eName ;
-  }
+    {
+      for (iAtt=0; iAtt<ZMAPGFF_NUM_ATT_V2; ++iAtt)
+        if (!strcmp(sString, ZMAPGFF_ATTRIBUTE_INFO[iAtt].sName))
+          return ZMAPGFF_ATTRIBUTE_INFO[iAtt].eName ;
+    }
   else if (eVersion == ZMAPGFF_VERSION_3)
-  {
-    for (iAtt=ZMAPGFF_NUM_ATT_V2; iAtt<ZMAPGFF_NUM_ATT_V2+ZMAPGFF_NUM_ATT_V3; ++iAtt)
-      if (!strcmp(sString, ZMAPGFF_ATTRIBUTE_INFO[iAtt].sName))
-        return ZMAPGFF_ATTRIBUTE_INFO[iAtt].eName ;
-  }
+    {
+      for (iAtt=ZMAPGFF_NUM_ATT_V2; iAtt<ZMAPGFF_NUM_ATT_V2+ZMAPGFF_NUM_ATT_V3; ++iAtt)
+        if (!strcmp(sString, ZMAPGFF_ATTRIBUTE_INFO[iAtt].sName))
+          return ZMAPGFF_ATTRIBUTE_INFO[iAtt].eName ;
+    }
 
   return eTheName ;
 }
@@ -280,12 +280,12 @@ ZMapGFFAttribute zMapGFFAttributeParse(const ZMapGFFParser const pParserBase, co
    */
   sTokens = zMapGFFStr_tokenizer(pParser->cDelimAttValue, sAttribute, &iNumTokens, bIncludeEmpty, iTokenLimit, g_malloc, g_free) ;
   if (iNumTokens > iExpectedTokens )
-  {
-    for (i=0; i<iNumTokens; ++i)
-      if (sTokens[i] != NULL)
-        g_free(sTokens[i]) ;
-    return pAttribute ;
-  }
+    {
+      for (i=0; i<iNumTokens; ++i)
+        if (sTokens[i] != NULL)
+          g_free(sTokens[i]) ;
+      return pAttribute ;
+    }
 
   /*
    * Find the attribute name.
@@ -308,16 +308,16 @@ ZMapGFFAttribute zMapGFFAttributeParse(const ZMapGFFParser const pParserBase, co
    * the input string.
    */
   if (iNumTokens == 1)
-  {
-    pAttribute->sTemp = NULL ;
-  }
+    {
+      pAttribute->sTemp = NULL ;
+    }
   else if (iNumTokens == iExpectedTokens )
-  {
-    pAttribute->sTemp = (char*) g_malloc(strlen(sTokens[1])+1) ;
-    strcpy(pAttribute->sTemp, sTokens[1]) ;
-    if (bRemoveQuotes)
-      zMapGFFAttributeRemoveQuotes(pAttribute) ;
-  }
+    {
+      pAttribute->sTemp = (char*) g_malloc(strlen(sTokens[1])+1) ;
+      strcpy(pAttribute->sTemp, sTokens[1]) ;
+      if (bRemoveQuotes)
+        zMapGFFAttributeRemoveQuotes(pAttribute) ;
+    }
 
   /*
    * Delete the token array now that we're done.
@@ -345,14 +345,14 @@ gboolean zMapGFFAttributeRemoveQuotes(const ZMapGFFAttribute const pAttribute )
   unsigned int iLength = strlen(pAttribute->sTemp) ;
   char *sTemp = pAttribute->sTemp ;
   if ((iLength > 1) && pAttribute->sTemp[0] == cQuote && (pAttribute->sTemp[iLength-1] == cQuote))
-  {
-    while (*(sTemp+1))
     {
-      *sTemp = *(sTemp+1) ;
-      ++sTemp ;
+      while (*(sTemp+1))
+        {
+          *sTemp = *(sTemp+1) ;
+          ++sTemp ;
+        }
+      pAttribute->sTemp[iLength-2] = '\0' ;
     }
-    pAttribute->sTemp[iLength-2] = '\0' ;
-  }
   return TRUE ;
 }
 
@@ -413,28 +413,28 @@ ZMapGFFAttribute* zMapGFFAttributeParseList(const ZMapGFFParser const pParserBas
    * Parse each of these attributes.
    */
   for (i=0; i<*pnAttributes; ++i)
-  {
-    pAttributes[i] = zMapGFFAttributeParse(pParserBase, sTokens[i], bRemoveQuotes) ;
-    if (pAttributes[i] == NULL)
     {
-      bFail = TRUE ;
-      break ;
+      pAttributes[i] = zMapGFFAttributeParse(pParserBase, sTokens[i], bRemoveQuotes) ;
+      if (pAttributes[i] == NULL)
+        {
+          bFail = TRUE ;
+          break ;
+        }
     }
-  }
 
   /*
    * If one of these fails, then destroy all attribute objects,
    * set the number of attributes found to 0, and return NULL.
    */
   if (bFail)
-  {
-    for (i=0; i<*pnAttributes; ++i)
-      if (pAttributes[i] != NULL)
-        zMapGFFDestroyAttribute(pAttributes[i]) ;
-    g_free(pAttributes) ;
-    *pnAttributes = 0 ;
-    pAttributes = NULL ;
-  }
+    {
+      for (i=0; i<*pnAttributes; ++i)
+        if (pAttributes[i] != NULL)
+          zMapGFFDestroyAttribute(pAttributes[i]) ;
+      g_free(pAttributes) ;
+      *pnAttributes = 0 ;
+      pAttributes = NULL ;
+    }
 
   /*
    * Destroy array of token strings.
@@ -481,13 +481,13 @@ ZMapGFFAttribute zMapGFFAttributeListContains(const ZMapGFFAttribute* const pAtt
   return pAttribute ;
 
   for (iAtt=0; iAtt<nAttributes; ++iAtt)
-  {
-    if (!strcmp(zMapGFFAttributeGetNamestring(pAttributes[iAtt]), sName))
     {
-      pAttribute = pAttributes[iAtt] ;
-      break ;
+      if (!strcmp(zMapGFFAttributeGetNamestring(pAttributes[iAtt]), sName))
+        {
+          pAttribute = pAttributes[iAtt] ;
+          break ;
+        }
     }
-  }
 
   return pAttribute ;
 }
@@ -653,15 +653,15 @@ gboolean zMapAttParseClass(const ZMapGFFAttribute const pAttribute, ZMapHomolTyp
   gboolean bResult = FALSE ;
   *pcReturnValue = ZMAPHOMOL_NONE ;
   if (!pAttribute)
-  {
-    return bResult ;
-  }
+    {
+      return bResult ;
+    }
   const char * const sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
   if (strcmp("Class", zMapGFFAttributeGetNamestring(pAttribute)))
-  {
-    zMapLogWarning("Attribute wrong type in %s: %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
-    return bResult ;
-  }
+    {
+      zMapLogWarning("Attribute wrong type in %s: %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
+      return bResult ;
+    }
 
   /*
    * Now extract data from the attribute value string
@@ -693,23 +693,23 @@ gboolean zMapAttParsePID(const ZMapGFFAttribute const pAttribute, double * const
   gboolean bResult = FALSE ;
   *pdReturnValue = 0.0 ;
   if (!pAttribute || !pdReturnValue )
-  {
-    return bResult ;
-  }
+    {
+      return bResult ;
+    }
   const char* const sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
   if (strcmp("percentID", zMapGFFAttributeGetNamestring(pAttribute)))
-  {
-    zMapLogWarning("Attribute wrong type in %s: %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
-    return bResult ;
-  }
+    {
+      zMapLogWarning("Attribute wrong type in %s: %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
+      return bResult ;
+    }
   if (sscanf(sValue, sFormat, pdReturnValue) == iExpectedFields )
-  {
-    bResult = TRUE ;
-  }
+    {
+      bResult = TRUE ;
+    }
   else
-  {
-    zMapLogWarning("Unable to parse in %s: %s %s ", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
-  }
+    {
+      zMapLogWarning("Unable to parse in %s: %s %s ", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
+    }
 
   return bResult ;
 }
@@ -731,10 +731,10 @@ gboolean zMapAttParseAlign(const ZMapGFFAttribute const pAttribute, int * const 
     return bResult ;
   const char * const sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
   if (strcmp("Align", zMapGFFAttributeGetNamestring(pAttribute)))
-  {
-    zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
-    return bResult ;
-  }
+    {
+      zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
+      return bResult ;
+    }
 
   /*
    * Parse "Align 157 197 +"
@@ -743,15 +743,15 @@ gboolean zMapAttParseAlign(const ZMapGFFAttribute const pAttribute, int * const 
     {
         /* Always export as start < end */
         if (*piStart <= *piEnd)
-        {
+          {
 
-        }
+          }
         else
-        {
-          iTemp = *piEnd ;
-          *piEnd = *piStart ;
-          *piStart = iTemp ;
-        }
+          {
+            iTemp = *piEnd ;
+            *piEnd = *piStart ;
+            *piStart = iTemp ;
+          }
 
         if (cStrand == '+')
           *pStrand = ZMAPSTRAND_FORWARD ;
@@ -759,11 +759,11 @@ gboolean zMapAttParseAlign(const ZMapGFFAttribute const pAttribute, int * const 
           *pStrand = ZMAPSTRAND_REVERSE ;
 
         bResult = TRUE ;
-    }
+      }
     else
-    {
-      zMapLogWarning("Unable to parse in %s: %s %s ", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
-    }
+      {
+        zMapLogWarning("Unable to parse in %s: %s %s ", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
+      }
 
   return bResult ;
 }
@@ -784,19 +784,19 @@ gboolean zMapAttParseCDSStartNotFound(const ZMapGFFAttribute const pAttribute, g
     return bResult ;
   const char * const sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
   if (strcmp("start_not_found", zMapGFFAttributeGetNamestring(pAttribute)))
-  {
-    zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
-    return bResult ;
-  }
+    {
+      zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
+      return bResult ;
+    }
 
   if (sscanf(sValue, sFormat, &iTemp) == iExpectedFields)
     {
       if (iTemp >= 1 && iTemp <= 3)
-      {
-        *pbOut = TRUE ;
-        *piOut = iTemp ;
-        bResult = TRUE ;
-      }
+        {
+          *pbOut = TRUE ;
+          *piOut = iTemp ;
+          bResult = TRUE ;
+        }
     }
 
   return bResult ;
@@ -813,10 +813,10 @@ gboolean zMapAttParseCDSEndNotFound(const ZMapGFFAttribute const pAttribute, gbo
   if (!pAttribute )
     return bResult ;
   if (strcmp("end_not_found", zMapGFFAttributeGetNamestring(pAttribute)))
-  {
-    zMapLogWarning("Attribute wrong type in %s, %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute)) ;
-    return bResult ;
-  }
+    {
+      zMapLogWarning("Attribute wrong type in %s, %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute)) ;
+      return bResult ;
+    }
 
   *pbOut = bResult = TRUE ;
 
@@ -840,16 +840,16 @@ gboolean zMapAttParseLength(const ZMapGFFAttribute const pAttribute , int* const
     return bResult ;
   const char * const sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
   if (strcmp("Length", zMapGFFAttributeGetNamestring(pAttribute)))
-  {
-    zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
-    return bResult ;
-  }
+    {
+      zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
+      return bResult ;
+    }
 
   if (sscanf(sValue, sFormat, &iLength) == iExpectedFields )
-  {
-    *piLength = iLength ;
-    bResult = TRUE ;
-  }
+    {
+      *piLength = iLength ;
+      bResult = TRUE ;
+    }
 
 
   return bResult ;
@@ -877,21 +877,21 @@ gboolean zMapAttParseNameV2(const ZMapGFFAttribute const pAttribute, GQuark *con
     return bResult ;
   const char * const sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
   if (strcmp("Name", zMapGFFAttributeGetNamestring(pAttribute)))
-  {
-    zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
-    return bResult ;
-  }
+    {
+      zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
+      return bResult ;
+    }
 
   if (sscanf(sValue, sFormat, name_str, variation_str) == iExpectedFields)
-  {
-    if ((SO_acc = zMapSOVariation2SO(variation_str)))
     {
-      *SO_acc_out = SO_acc ;
-      *name_str_out = g_strdup(name_str) ;
-      *variation_str_out = g_strdup(variation_str) ;
-      bResult = TRUE ;
+      if ((SO_acc = zMapSOVariation2SO(variation_str)))
+        {
+          *SO_acc_out = SO_acc ;
+          *name_str_out = g_strdup(name_str) ;
+          *variation_str_out = g_strdup(variation_str) ;
+          bResult = TRUE ;
+        }
     }
-  }
 
   return bResult ;
 }
@@ -909,10 +909,10 @@ gboolean zMapAttParseName(const ZMapGFFAttribute const pAttribute, char** const 
     return bResult ;
   const char * const sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
   if (strcmp("Name", zMapGFFAttributeGetNamestring(pAttribute)))
-  {
-    zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
-    return bResult ;
-  }
+    {
+      zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
+      return bResult ;
+    }
 
   if (strlen(sValue))
     *sOut = g_strdup(sValue) ;
@@ -934,10 +934,10 @@ gboolean zMapAttParseAlias(const ZMapGFFAttribute const pAttribute, char ** cons
     return bResult ;
   const char * const sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
   if (strcmp("Alias", zMapGFFAttributeGetNamestring(pAttribute)))
-  {
-    zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
-    return bResult ;
-  }
+    {
+      zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
+      return bResult ;
+    }
 
   if (strlen(sValue))
     *sOut = g_strdup(sValue) ;
@@ -975,48 +975,48 @@ gboolean zMapAttParseTarget(const ZMapGFFAttribute const pAttribute, char ** con
     return bResult ;
   const char * const sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
   if (strcmp("Target", zMapGFFAttributeGetNamestring(pAttribute)))
-  {
-    zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
-    return bResult ;
-  }
+    {
+      zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
+      return bResult ;
+    }
 
   if ((iFields = sscanf(sValue, sFormat, sStringBuff, &iStart, &iEnd, &cStrand)) >= iRequiredFields)
-  {
-    if (iStart <= iEnd)
     {
-
-      if (iFields == iRequiredFields) /* we did not have strand data */
-      {
-        *pStrand = ZMAPSTRAND_NONE ;
-        bResult = TRUE ;
-      }
-      else if (iFields == iRequiredFields+1) /* we did find strand data */
-      {
-        if (cStrand == cPlus)
+      if (iStart <= iEnd)
         {
-          *pStrand = ZMAPSTRAND_FORWARD ;
-          bResult = TRUE ;
+    
+          if (iFields == iRequiredFields) /* we did not have strand data */
+            {
+              *pStrand = ZMAPSTRAND_NONE ;
+              bResult = TRUE ;
+            }
+          else if (iFields == iRequiredFields+1) /* we did find strand data */
+            {
+              if (cStrand == cPlus)
+                {
+                  *pStrand = ZMAPSTRAND_FORWARD ;
+                  bResult = TRUE ;
+                }
+              else if (cStrand == cMinus)
+                {
+                  *pStrand = ZMAPSTRAND_REVERSE ;
+                  bResult = TRUE ;
+                }
+              else
+                {
+                  /* strand data was not valid */
+                }
+            }
+    
+          if (bResult)
+            {
+              *sOut = g_strdup(sStringBuff) ;
+              *piStart = iStart ;
+              *piEnd = iEnd ;
+            }
+ 
         }
-        else if (cStrand == cMinus)
-        {
-          *pStrand = ZMAPSTRAND_REVERSE ;
-          bResult = TRUE ;
-        }
-        else
-        {
-          /* strand data was not valid */
-        }
-      }
-
-      if (bResult)
-      {
-        *sOut = g_strdup(sStringBuff) ;
-        *piStart = iStart ;
-        *piEnd = iEnd ;
-      }
-
     }
-  }
 
 
   return bResult ;
@@ -1041,23 +1041,23 @@ gboolean zMapAttParseDbxref(const ZMapGFFAttribute const pAttribute, char ** con
   const char * const sEnd = sValue + strlen(sValue) ;
   const char * pC = sValue ;
   if (strcmp("Dbxref", zMapGFFAttributeGetNamestring(pAttribute)))
-  {
-    zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
-    return bResult ;
-  }
+    {
+      zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
+      return bResult ;
+    }
 
   /*
    * Find split point.
    */
   while (*pC)
-  {
-    if (*pC == cColon)
     {
-      bFoundSplit = TRUE ;
-      break ;
+      if (*pC == cColon)
+        {
+          bFoundSplit = TRUE ;
+          break ;
+        }
+      ++pC;
     }
-    ++pC;
-  }
   if (!bFoundSplit)
     return bResult ;
 
@@ -1072,11 +1072,11 @@ gboolean zMapAttParseDbxref(const ZMapGFFAttribute const pAttribute, char ** con
    * and we are done.
    */
   if (s1 && s2 && strlen(s1) && strlen(s2))
-  {
-    *sOut1 = s1 ;
-    *sOut2 = s2 ;
-    bResult = TRUE ;
-  }
+    {
+      *sOut1 = s1 ;
+      *sOut2 = s2 ;
+      bResult = TRUE ;
+    }
 
   return bResult ;
 }
@@ -1100,23 +1100,23 @@ gboolean zMapAttParseOntology_term(const ZMapGFFAttribute const pAttribute , cha
   const char * const sEnd = sValue + strlen(sValue) ;
   const char * pC = sValue ;
   if (strcmp("Ontology_term", zMapGFFAttributeGetNamestring(pAttribute)))
-  {
-    zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
-    return bResult ;
-  }
+    {
+      zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
+      return bResult ;
+    }
 
   /*
    * Find split point.
    */
   while (*pC)
-  {
-    if (*pC == cColon)
     {
-      bFoundSplit = TRUE ;
-      break ;
+      if (*pC == cColon)
+        {
+          bFoundSplit = TRUE ;
+          break ;
+        }
+      ++pC;
     }
-    ++pC;
-  }
   if (!bFoundSplit)
     return bResult ;
 
@@ -1131,11 +1131,11 @@ gboolean zMapAttParseOntology_term(const ZMapGFFAttribute const pAttribute , cha
    * and we are done.
    */
   if (s1 && s2 && strlen(s1) && strlen(s2))
-  {
-    *sOut1 = s1 ;
-    *sOut2 = s2 ;
-    bResult = TRUE ;
-  }
+    {
+      *sOut1 = s1 ;
+      *sOut2 = s2 ;
+      bResult = TRUE ;
+    }
 
   return bResult ;
 }
@@ -1155,24 +1155,24 @@ gboolean zMapAttParseIs_circular(const ZMapGFFAttribute const pAttribute, gboole
     return bResult ;
   const char * const sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
   if (strcmp("Is_circular", zMapGFFAttributeGetNamestring(pAttribute)))
-  {
-    zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
-    return bResult ;
-  }
+    {
+      zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
+      return bResult ;
+    }
 
   /*
    * Parse according to string comparisons.
    */
   if (!strcmp(sValue, sTrue))
-  {
-    *pbOut = TRUE ;
-    bResult = TRUE ;
-  }
+    {
+      *pbOut = TRUE ;
+      bResult = TRUE ;
+    }
   else if (!strcmp(sValue, sFalse))
-  {
-    *pbOut = FALSE ;
-    bResult = TRUE ;
-  }
+    {
+      *pbOut = FALSE ;
+      bResult = TRUE ;
+    }
 
   return bResult;
 }
@@ -1190,10 +1190,10 @@ gboolean zMapAttParseParent(const ZMapGFFAttribute const pAttribute, char ** con
     return bResult ;
   const char * const sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
   if (strcmp("Parent", zMapGFFAttributeGetNamestring(pAttribute)))
-  {
-    zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
-    return bResult ;
-  }
+    {
+      zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
+      return bResult ;
+    }
 
   if (strlen(sValue))
     *sOut = g_strdup(sValue) ;
@@ -1221,10 +1221,10 @@ gboolean zMapAttParseURL(const ZMapGFFAttribute const pAttribute, char** const s
     return bResult ;
   const char * const sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
   if (strcmp("URL", zMapGFFAttributeGetNamestring(pAttribute)))
-  {
-    zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
-    return bResult ;
-  }
+    {
+      zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
+      return bResult ;
+    }
 
   if (strlen(sValue))
     *sOut = g_strdup(sValue) ;
@@ -1246,10 +1246,10 @@ gboolean zMapAttParseNote(const ZMapGFFAttribute const pAttribute, char ** const
     return bResult ;
   const char * const sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
   if (strcmp("Note", zMapGFFAttributeGetNamestring(pAttribute)))
-  {
-    zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
-    return bResult ;
-  }
+    {
+      zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
+      return bResult ;
+    }
 
   if (strlen(sValue))
     *sOut = g_strdup(sValue) ;
@@ -1271,10 +1271,10 @@ gboolean zMapAttParseDerives_from(const ZMapGFFAttribute const pAttribute, char 
     return bResult ;
   const char * const sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
   if (strcmp("Derives_from", zMapGFFAttributeGetNamestring(pAttribute)))
-  {
-    zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
-    return bResult ;
-  }
+    {
+      zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
+      return bResult ;
+    }
 
   if (strlen(sValue))
     *sOut = g_strdup(sValue) ;
@@ -1298,16 +1298,16 @@ gboolean zMapAttParseID(const ZMapGFFAttribute const pAttribute, GQuark * const 
     return bResult ;
   const char * const sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
   if (strcmp("ID", zMapGFFAttributeGetNamestring(pAttribute)))
-  {
-    zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
-    return bResult ;
-  }
+    {
+      zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
+      return bResult ;
+    }
 
   if (strlen(sValue))
-  {
-    *pgqOut = g_quark_from_string(sValue) ;
-    bResult = TRUE ;
-  }
+    {
+      *pgqOut = g_quark_from_string(sValue) ;
+      bResult = TRUE ;
+    }
 
   return bResult ;
 }
@@ -1325,10 +1325,10 @@ gboolean zMapAttParseSequence(const ZMapGFFAttribute const pAttribute, char ** c
     return bResult ;
   const char * const sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
   if (strcmp("sequence", zMapGFFAttributeGetNamestring(pAttribute)))
-  {
-    zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
-    return bResult ;
-  }
+    {
+      zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
+      return bResult ;
+    }
 
   if (strlen(sValue))
     *sOut = g_strdup(sValue) ;
@@ -1350,10 +1350,10 @@ gboolean zMapAttParseSource(const ZMapGFFAttribute const pAttribute , char ** co
     return bResult ;
   const char * const sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
   if (strcmp("Note", zMapGFFAttributeGetNamestring(pAttribute)))
-  {
-    zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
-    return bResult ;
-  }
+    {
+      zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
+      return bResult ;
+    }
 
   if (strlen(sValue))
     *sOut = g_strdup(sValue) ;
@@ -1392,17 +1392,17 @@ gboolean zMapAttParseTargetV2(const ZMapGFFAttribute const pAttribute, char ** c
     return bResult ;
   const char * const sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
   if (strcmp("Target", zMapGFFAttributeGetNamestring(pAttribute)))
-  {
-    zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
-    return bResult ;
-  }
+    {
+      zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
+      return bResult ;
+    }
 
   if (sscanf(sValue, sFormat, sString01, sString02) == iExpectedFields)
-  {
-    *sOut01 = g_strdup(sString01) ;
-    *sOut02 = g_strdup(sString02) ;
-    bResult = TRUE ;
-  }
+    {
+      *sOut01 = g_strdup(sString01) ;
+      *sOut02 = g_strdup(sString02) ;
+      bResult = TRUE ;
+    }
 
   return bResult ;
 }
@@ -1434,17 +1434,17 @@ gboolean zMapAttParseAssemblySource(const ZMapGFFAttribute const pAttribute, cha
     return bResult ;
   const char * const sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
   if (strcmp("Assembly_source", zMapGFFAttributeGetNamestring(pAttribute)))
-  {
-    zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
-    return bResult ;
-  }
+    {
+      zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
+      return bResult ;
+    }
 
   if (sscanf(sValue, sFormat, sString01, sString02) == iExpectedFields)
-  {
-    *sOut01 = g_strdup(sString01) ;
-    *sOut02 = g_strdup(sString02) ;
-    bResult = TRUE ;
-  }
+    {
+      *sOut01 = g_strdup(sString01) ;
+      *sOut02 = g_strdup(sString02) ;
+      bResult = TRUE ;
+    }
 
   return bResult ;
 }
@@ -1464,17 +1464,17 @@ gboolean zMapAttParseAnyTwoStrings(const ZMapGFFAttribute const pAttribute, char
     return bResult ;
   const char * const sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
   if (!strlen(zMapGFFAttributeGetNamestring(pAttribute)))
-  {
-    zMapLogWarning("Attribute has empty tag in in %s, %s", sMyName, sValue) ;
-    return bResult ;
-  }
+    {
+      zMapLogWarning("Attribute has empty tag in in %s, %s", sMyName, sValue) ;
+      return bResult ;
+    }
 
   if (sscanf(sValue, sFormat, sString01, sString02) == iExpectedFields)
-  {
-    *sOut01 = g_strdup(sString01) ;
-    *sOut02 = g_strdup(sString02) ;
-    bResult = TRUE ;
-  }
+    {
+      *sOut01 = g_strdup(sString01) ;
+      *sOut02 = g_strdup(sString02) ;
+      bResult = TRUE ;
+    }
 
   return bResult ;
 }
@@ -1492,10 +1492,10 @@ gboolean zMapAttParseLocus(const ZMapGFFAttribute const pAttribute, GQuark * con
   const char * const sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
   GQuark cGQ = 0 ;
   if (strcmp("Locus", zMapGFFAttributeGetNamestring(pAttribute)))
-  {
-    zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
-    return bResult ;
-  }
+    {
+      zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
+      return bResult ;
+    }
 
   if (!strlen(sValue))
     cGQ = 0 ;
@@ -1524,47 +1524,47 @@ gboolean zMapAttParseGaps(const ZMapGFFAttribute const pAttribute, GArray ** con
   const char *sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
   ZMapAlignBlockStruct gap = { 0 };
   if (strcmp("Gaps", zMapGFFAttributeGetNamestring(pAttribute)))
-  {
-    zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
-    return bResult ;
-  }
+    {
+      zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
+      return bResult ;
+    }
 
   if (!sValue)
     return bResult ;
 
   while ( *sValue )
-  {
-
-    /* We should be looking at "number number number number , ....more stuff....." */
-    if (sscanf(sValue, sFormat, &gap.t1, &gap.t2, &gap.q1, &gap.q2) == iExpectedFields)
     {
-      if (gap.q1<1 || gap.q2<1 || gap.t1<1 || gap.t2<1 || gap.q1>gap.q2 || gap.t1>gap.t2)
-      {
-        bResult = FALSE ;
-        break ;
-      }
+
+      /* We should be looking at "number number number number , ....more stuff....." */
+      if (sscanf(sValue, sFormat, &gap.t1, &gap.t2, &gap.q1, &gap.q2) == iExpectedFields)
+        {
+          if (gap.q1<1 || gap.q2<1 || gap.t1<1 || gap.t2<1 || gap.q1>gap.q2 || gap.t1>gap.t2)
+            {
+              bResult = FALSE ;
+              break ;
+            }
+          else
+            {
+              gap.t_strand = cRefStrand ;
+              gap.q_strand = cMatchStrand ;
+              *pGaps = g_array_append_val(*pGaps, gap) ;
+            }
+        }
       else
-      {
-        gap.t_strand = cRefStrand ;
-        gap.q_strand = cMatchStrand ;
-        *pGaps = g_array_append_val(*pGaps, gap) ;
-      }
-    }
-    else
-    {
-      /* anything other than 4 is not a gap */
-      bResult = FALSE ;
-      break ;
-    }
+        {
+          /* anything other than 4 is not a gap */
+          bResult = FALSE ;
+          break ;
+        }
 
-    while (*sValue && *sValue != ',' )
-    {
-      sValue++ ;
-    };
-    if (*sValue && *sValue == ',')
-      ++sValue ;
+      while (*sValue && *sValue != ',' )
+        {
+          sValue++ ;
+        };
+      if (*sValue && *sValue == ',')
+        ++sValue ;
 
-  } ;
+    }
 
   return bResult ;
 
@@ -1592,10 +1592,10 @@ gboolean zMapAttParseCigarExonerate(const ZMapGFFAttribute const pAttribute , GA
     return bResult ;
   const char *sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
   if (strcmp("cigar_exonerate", zMapGFFAttributeGetNamestring(pAttribute)))
-  {
-    zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
-    return bResult ;
-  }
+    {
+      zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
+      return bResult ;
+    }
 
   bResult = zMapFeatureAlignmentString2Gaps(ZMAPALIGN_FORMAT_CIGAR_EXONERATE,
                                             cRefStrand, iRefStart, iRefEnd,
@@ -1620,11 +1620,11 @@ gboolean zMapAttParseCigarEnsembl(const ZMapGFFAttribute const pAttribute, GArra
   if (!pAttribute)
     return bResult ;
   const char *sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
-  if (strcmp("cigar_ensembl", zMapGFFAttributeGetNamestring(pAttribute)))
-  {
-    zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
-    return bResult ;
-  }
+    if (strcmp("cigar_ensembl", zMapGFFAttributeGetNamestring(pAttribute)))
+    {
+      zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
+      return bResult ;
+    }
 
   bResult = zMapFeatureAlignmentString2Gaps(ZMAPALIGN_FORMAT_CIGAR_ENSEMBL,
                                             cRefStrand, iRefStart, iRefEnd,
@@ -1649,10 +1649,10 @@ gboolean zMapAttParseCigarBam(const ZMapGFFAttribute const pAttribute , GArray *
     return bResult ;
   const char *sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
   if (strcmp("cigar_bam", zMapGFFAttributeGetNamestring(pAttribute)))
-  {
-    zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
-    return bResult ;
-  }
+    {
+      zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
+      return bResult ;
+    }
 
   bResult = zMapFeatureAlignmentString2Gaps(ZMAPALIGN_FORMAT_CIGAR_BAM,
                                             cRefStrand, iRefStart, iRefEnd,
@@ -1681,21 +1681,21 @@ gboolean zMapAttParseVulgarExonerate(const ZMapGFFAttribute const pAttribute , G
     return bResult ;
   const char *sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
   if (strcmp("vulgar_exonerate", zMapGFFAttributeGetNamestring(pAttribute)))
-  {
-    zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
-    return bResult ;
-  }
+    {
+      zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
+      return bResult ;
+    }
 
   /*
    * First step is to extract the quoted part of the value string of the attribute.
    */
   if (sscanf(sValue, sFormat, sStringBuff) == iExpectedFields)
-  {
-    bResult = zMapFeatureAlignmentString2Gaps(ZMAPALIGN_FORMAT_VULGAR_EXONERATE,
-                                              cRefStrand, iRefStart, iRefEnd,
-                                              cMatchStrand, iMatchStart, iMatchEnd,
-                                              sStringBuff, pGaps) ;
-  }
+    {
+      bResult = zMapFeatureAlignmentString2Gaps(ZMAPALIGN_FORMAT_VULGAR_EXONERATE,
+                                                cRefStrand, iRefStart, iRefEnd,
+                                                cMatchStrand, iMatchStart, iMatchEnd,
+                                                sStringBuff, pGaps) ;
+    }
 
   return bResult ;
 }
@@ -1713,10 +1713,10 @@ gboolean zMapAttParseKnownName(const ZMapGFFAttribute const pAttribute, char ** 
     return bResult ;
   const char * const sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
   if (strcmp("Known_name", zMapGFFAttributeGetNamestring(pAttribute)))
-  {
-    zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
-    return bResult ;
-  }
+    {
+      zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
+      return bResult ;
+    }
 
   if (strlen(sValue))
     *sOut = g_strdup(sValue) ;

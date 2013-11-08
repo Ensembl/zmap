@@ -48,17 +48,17 @@ gboolean zMapGFFIsValidVersion(const ZMapGFFParser const pParser)
   gboolean bResult = FALSE ;
 
   if (!pParser)
-  {
+    {
 
-  }
+    }
   else if (pParser->gff_version == ZMAPGFF_VERSION_2)
-  {
-    bResult = TRUE ;
-  }
+    {
+      bResult = TRUE ;
+    }
   else if (pParser->gff_version == ZMAPGFF_VERSION_3)
-  {
-    bResult = TRUE ;
-  }
+    {
+      bResult = TRUE ;
+    }
 
   return bResult ;
 }
@@ -83,17 +83,17 @@ ZMapGFFParser zMapGFFCreateParser(int iGFFVersion, char *sequence, int features_
   ZMapGFFParser pParser = NULL ;
 
   if (iGFFVersion == ZMAPGFF_VERSION_2 )
-  {
-    pParser = zMapGFFCreateParser_V2(sequence, features_start, features_end) ;
-  }
+    {
+      pParser = zMapGFFCreateParser_V2(sequence, features_start, features_end) ;
+    }
   else if (iGFFVersion == ZMAPGFF_VERSION_3 )
-  {
-    pParser = zMapGFFCreateParser_V3(sequence, features_start, features_end) ;
-  }
+    {
+      pParser = zMapGFFCreateParser_V3(sequence, features_start, features_end) ;
+    }
   else
-  {
-    /* unknown version */
-  }
+    {
+      /* unknown version */
+    }
 
   return pParser ;
 }
@@ -114,18 +114,18 @@ gboolean zMapGFFParseHeader(ZMapGFFParser parser, char *line, gboolean *header_f
     return bResult ;
 
   if (parser->gff_version == ZMAPGFF_VERSION_2 )
-  {
-    bResult = zMapGFFParseHeader_V2(parser, line, header_finished, header_state) ;
-  }
+    {
+      bResult = zMapGFFParseHeader_V2(parser, line, header_finished, header_state) ;
+    }
   else if (parser->gff_version == ZMAPGFF_VERSION_3 )
-  {
-    bResult = zMapGFFParse_V3(parser, line) ;
-    *header_finished = zMapGFFGetHeaderGotMinimal_V3(parser) ;
-  }
+    {
+      bResult = zMapGFFParse_V3(parser, line) ;
+      *header_finished = zMapGFFGetHeaderGotMinimal_V3(parser) ;
+    }
   else
-  {
-    /* unknown version  */
-  }
+    {
+      /* unknown version  */
+    }
 
   return bResult ;
 }
@@ -145,20 +145,20 @@ gboolean zMapGFFParseSequence(ZMapGFFParser parser, char *line, gboolean *sequen
     return bResult ;
 
   if (parser->gff_version == ZMAPGFF_VERSION_2 )
-  {
-    bResult = zMapGFFParseSequence_V2(parser, line, sequence_finished) ;
-  }
+    {
+      bResult = zMapGFFParseSequence_V2(parser, line, sequence_finished) ;
+    }
   else if (parser->gff_version == ZMAPGFF_VERSION_3 )
-  {
-    /*
-     * This should not be required since it's not part of the v3 spec.
-     */
-    bResult = FALSE ;
-  }
+    {
+      /*
+       * This should not be required since it's not part of the v3 spec.
+       */
+      bResult = FALSE ;
+    }
   else
-  {
-    /* unknown version */
-  }
+    {
+      /* unknown version */
+    }
 
   return bResult ;
 }
@@ -180,17 +180,17 @@ gboolean zMapGFFParseLine(ZMapGFFParser parser, char *line)
     return bResult ;
 
   if (parser->gff_version == ZMAPGFF_VERSION_2)
-  {
-    bResult = zMapGFFParseLineLength_V2(parser, line, 0) ;
-  }
+    {
+      bResult = zMapGFFParseLineLength_V2(parser, line, 0) ;
+    }
   else if (parser->gff_version == ZMAPGFF_VERSION_3 )
-  {
-    bResult = zMapGFFParse_V3(parser, line) ;
-  }
+    {
+      bResult = zMapGFFParse_V3(parser, line) ;
+    }
   else
-  {
-    /* unknown version */
-  }
+    {
+      /* unknown version */
+    }
 
   return bResult ;
 }
@@ -209,17 +209,17 @@ gboolean zMapGFFParseLineLength(ZMapGFFParser parser, char *line, gsize line_len
     return bResult ;
 
   if (parser->gff_version == ZMAPGFF_VERSION_2)
-  {
-    bResult = zMapGFFParseLineLength_V2(parser, line, 0) ;
-  }
+    {
+      bResult = zMapGFFParseLineLength_V2(parser, line, 0) ;
+    }
   else if (parser->gff_version == ZMAPGFF_VERSION_3 )
-  {
-    bResult = zMapGFFParse_V3(parser, line) ;
-  }
+    {
+      bResult = zMapGFFParse_V3(parser, line) ;
+    }
   else
-  {
-    /* unknown version */
-  }
+    {
+      /* unknown version */
+    }
 
   return bResult ;
 
@@ -238,17 +238,17 @@ void zMapGFFDestroyParser(ZMapGFFParser parser)
     return ;
 
   if (parser->gff_version == ZMAPGFF_VERSION_2)
-  {
-    zMapGFFDestroyParser_V2(parser) ;
-  }
+    {
+      zMapGFFDestroyParser_V2(parser) ;
+    }
   else if (parser->gff_version == ZMAPGFF_VERSION_3)
-  {
-    zMapGFFDestroyParser_V3(parser) ;
-  }
+    {
+      zMapGFFDestroyParser_V3(parser) ;
+    }
   else
-  {
-    /* unknown version */
-  }
+    {
+      /* unknown version */
+    }
 
   return ;
 }
@@ -302,15 +302,15 @@ gboolean zMapGFFParserInitForFeatures(ZMapGFFParser parser, GHashTable *sources,
   /* Check for Locus as one of the sources as this needs to be constructed as we go along. */
   locus_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_LOCUS_NAME) ;
   if (!(parser->locus_set_style = zMapFindStyle(parser->sources, locus_id)))
-  {
-    zMapLogWarning("Locus set will not be created, "
-                   "could not find style \"%s\" for feature set \"%s\".",
-                   ZMAP_FIXED_STYLE_LOCUS_NAME, ZMAP_FIXED_STYLE_LOCUS_NAME) ;
-  }
+    {
+      zMapLogWarning("Locus set will not be created, "
+                     "could not find style \"%s\" for feature set \"%s\".",
+                     ZMAP_FIXED_STYLE_LOCUS_NAME, ZMAP_FIXED_STYLE_LOCUS_NAME) ;
+    }
   else
-  {
-    parser->locus_set_id = locus_id ;
-  }
+    {
+      parser->locus_set_id = locus_id ;
+    }
 
 
 
@@ -345,51 +345,50 @@ gboolean zMapGFFGetFeatures(ZMapGFFParser parser, ZMapFeatureBlock feature_block
     return result ;
 
   if (parser->state != ZMAPGFF_PARSER_ERR)
-  {
-    start = parser->features_start;
-    end   = parser->features_end;
-
-    if (parser->clip_mode)
     {
-      if(start < parser->clip_start)
-        start = parser->clip_start;
-      if(end > parser->clip_end)
-       end = parser->clip_end;
-    }
+      start = parser->features_start;
+      end   = parser->features_end;
+
+      if (parser->clip_mode)
+        {
+          if(start < parser->clip_start)
+            start = parser->clip_start;
+          if(end > parser->clip_end)
+           end = parser->clip_end;
+        }
 
 
-	    /* as request coordinates are often given as 1,0 we need to put real coordinates in */
-	    /* ideally chromosome coordinates would be better */
-
-	    /* NOTE we need to know the actual data returned as we
-	     *  mark empty featuresets as loaded over this range
-	     */
-    feature_block->block_to_sequence.block.x1 = start;
-    feature_block->block_to_sequence.block.x2 = end;
-
-    if (!feature_block->block_to_sequence.parent.x2)
-   {
       /* as request coordinates are often given as 1,0 we need to put real coordinates in */
       /* ideally chromosome coordinates would be better */
-      feature_block->block_to_sequence.parent.x1 = start;
-      feature_block->block_to_sequence.parent.x2 = end;
+
+      /* NOTE we need to know the actual data returned as we
+       *  mark empty featuresets as loaded over this range */
+      feature_block->block_to_sequence.block.x1 = start;
+      feature_block->block_to_sequence.block.x2 = end;
+
+      if (!feature_block->block_to_sequence.parent.x2)
+        {
+          /* as request coordinates are often given as 1,0 we need to put real coordinates in */
+          /* ideally chromosome coordinates would be better */
+          feature_block->block_to_sequence.parent.x1 = start;
+          feature_block->block_to_sequence.parent.x2 = end;
+        }
+
+      /* Actually we should only need to test feature_sets here really as there shouldn't be any
+       * for parse_only.... */
+      if (!parser->parse_only && parser->feature_sets)
+      {
+        g_datalist_foreach(&(parser->feature_sets), getFeatureArray, feature_block) ;
+      }
+
+     /* It is possible for features to be incomplete from GFF (e.g. transcripts without
+      * an exon), we attempt to normalise them where possible...currently only
+      * transcripts/exons. */
+      normaliseFeatures(&(parser->feature_sets)) ;
+
+      result = TRUE ;
+
     }
-
-    /* Actually we should only need to test feature_sets here really as there shouldn't be any
-     * for parse_only.... */
-    if (!parser->parse_only && parser->feature_sets)
-    {
-      g_datalist_foreach(&(parser->feature_sets), getFeatureArray, feature_block) ;
-    }
-
-    /* It is possible for features to be incomplete from GFF (e.g. transcripts without
-     * an exon), we attempt to normalise them where possible...currently only
-     * transcripts/exons. */
-    normaliseFeatures(&(parser->feature_sets)) ;
-
-    result = TRUE ;
-
-  }
 
   return result ;
 }
@@ -441,9 +440,9 @@ static void checkFeatureSetCB(GQuark key_id, gpointer data, gpointer user_data_u
   ZMapGFFParserFeatureSet parser_feature_set = (ZMapGFFParserFeatureSet)data ;
 
   if (parser_feature_set->multiline_features)
-  {
-    g_datalist_foreach(&(parser_feature_set->multiline_features), checkFeatureCB, NULL) ;
-  }
+    {
+      g_datalist_foreach(&(parser_feature_set->multiline_features), checkFeatureCB, NULL) ;
+    }
 
   return ;
 }
@@ -461,14 +460,14 @@ static void checkFeatureCB(GQuark key_id, gpointer data, gpointer user_data_unus
   ZMapFeature feature = (ZMapFeature)data ;
 
   switch (feature->type)
-  {
-    case ZMAPSTYLE_MODE_TRANSCRIPT:
-      zMapFeatureTranscriptNormalise(feature) ;
-      break ;
+    {
+      case ZMAPSTYLE_MODE_TRANSCRIPT:
+        zMapFeatureTranscriptNormalise(feature) ;
+        break ;
 
-    default:
-      break ;
-  }
+      default:
+        break ;
+    }
 
   return ;
 }
@@ -599,9 +598,9 @@ void zMapGFFSetFeatureClip(ZMapGFFParser parser, ZMapGFFClipMode clip_mode)
     return ;
 
   if (parser->state != ZMAPGFF_PARSER_ERR)
-  {
-    parser->clip_mode = clip_mode ;
-  }
+    {
+      parser->clip_mode = clip_mode ;
+    }
 
   return ;
 }
