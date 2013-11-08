@@ -48,12 +48,11 @@
 
 typedef enum
 {
-      GLYPH_DRAW_INVALID,
-      GLYPH_DRAW_LINES,       // a series of connected lines
-      GLYPH_DRAW_BROKEN,      // connected lines with gaps
-      GLYPH_DRAW_POLYGON,     // a wiggly loop that can be filled
-      GLYPH_DRAW_ARC          // a circle ellipse or fraction of
-
+  GLYPH_DRAW_INVALID,
+  GLYPH_DRAW_LINES,       // a series of connected lines
+  GLYPH_DRAW_BROKEN,      // connected lines with gaps
+  GLYPH_DRAW_POLYGON,     // a wiggly loop that can be filled
+  GLYPH_DRAW_ARC          // a circle ellipse or fraction of
 } ZMapStyleGlyphDrawType;
 
 /*
@@ -177,6 +176,7 @@ typedef enum
     STYLE_PROP_GRAPH_MODE,
     STYLE_PROP_GRAPH_BASELINE,
     STYLE_PROP_GRAPH_SCALE,
+    STYLE_PROP_GRAPH_LINE_FILL,
     STYLE_PROP_GRAPH_DENSITY,
     STYLE_PROP_GRAPH_DENSITY_FIXED,
     STYLE_PROP_GRAPH_DENSITY_MIN_BIN,
@@ -319,14 +319,15 @@ typedef enum
 
 
 /* graph properties. */
-#define ZMAPSTYLE_PROPERTY_GRAPH_MODE      "graph-mode"
-#define ZMAPSTYLE_PROPERTY_GRAPH_DENSITY   "graph-density"
-#define ZMAPSTYLE_PROPERTY_GRAPH_DENSITY_FIXED   "graph-density-fixed"
-#define ZMAPSTYLE_PROPERTY_GRAPH_DENSITY_MIN_BIN   "graph-density-min-bin"
-#define ZMAPSTYLE_PROPERTY_GRAPH_DENSITY_STAGGER   "graph-density-stagger"
-#define ZMAPSTYLE_PROPERTY_GRAPH_BASELINE  "graph-baseline"
-#define ZMAPSTYLE_PROPERTY_GRAPH_SCALE     "graph-scale"
-#define ZMAPSTYLE_PROPERTY_GRAPH_SCALE     "graph-scale"
+#define ZMAPSTYLE_PROPERTY_GRAPH_MODE             "graph-mode"
+#define ZMAPSTYLE_PROPERTY_GRAPH_DENSITY          "graph-density"
+#define ZMAPSTYLE_PROPERTY_GRAPH_DENSITY_FIXED    "graph-density-fixed"
+#define ZMAPSTYLE_PROPERTY_GRAPH_DENSITY_MIN_BIN  "graph-density-min-bin"
+#define ZMAPSTYLE_PROPERTY_GRAPH_DENSITY_STAGGER  "graph-density-stagger"
+#define ZMAPSTYLE_PROPERTY_GRAPH_BASELINE         "graph-baseline"
+#define ZMAPSTYLE_PROPERTY_GRAPH_SCALE            "graph-scale"
+#define ZMAPSTYLE_PROPERTY_GRAPH_LINE_FILL        "graph-line-fill"
+
 
 
 /* alignment properties */
@@ -469,7 +470,7 @@ _(ZMAPSTYLE_GRAPH_HISTOGRAM, , "histogram", "Usual blocky like graph."    , "")
 
 ZMAP_DEFINE_ENUM(ZMapStyleGraphMode, ZMAP_STYLE_GRAPH_MODE_LIST);
 
-/* Specifies the style of graph. */
+/* Specifies the scaling used for graph. */
 #define ZMAP_STYLE_GRAPH_SCALE_LIST(_)                                           \
 _(ZMAPSTYLE_GRAPH_SCALE_INVALID,   , "invalid"  , "Initial setting. "           , "") \
 _(ZMAPSTYLE_GRAPH_SCALE_LINEAR,    , "linear"   , "show data as given. ", "") \
@@ -681,21 +682,21 @@ typedef struct
 
 
 
-/*! @struct ZMapStyleGraph zmapStyle_P.h
- *  @brief Graph feature
- *
- * Draws a feature as a graph, the feature must contain graph points. */
+/* For drawing a feature as a graph, the feature must contain graph points. */
 typedef struct
 {
-  ZMapStyleGraphMode mode ;                         /*!< Graph style. */
+  ZMapStyleGraphMode mode ;				    /* Graph style. */
 
-  double baseline ;                                 /*!< zero level for graph.  */
-  ZMapStyleGraphScale scale;        // log or linear
+  double baseline ;					    /* zero level for graph.  */
+  ZMapStyleGraphScale scale ;				    /* log or linear scaling. */
 
-  int min_bin;				/* min size in pixels */
-  int stagger;
-  gboolean density;                 /* density plot: recalc bins on zoom & use whole column foo */
-  gboolean fixed;                   /* bins are at pxel boundraies not feature extents */
+  gboolean line_fill ;					    /* Solid fill below line graph ? */
+
+  int min_bin ;						    /* min size in pixels */
+  int stagger ;
+  gboolean density ;					    /* density plot: recalc bins on zoom
+							       & use whole column foo */
+  gboolean fixed ;					    /* bins are at pixel boundraies not feature extents */
 
 
 } ZMapStyleGraphStruct, *ZMapStyleGraph ;
@@ -881,7 +882,7 @@ typedef struct _zmapFeatureTypeStyleStruct
   gboolean collapse;					    /* for duplicated features */
   /* see also alignment.squash: even better form of collapse for short reads */
 
-  double offset;
+  double offset ;					    /* move content right by x pixels */
 
   /*! GFF feature dumping, allows specifying of source/feature types independently of feature
    * attributes. */
@@ -1219,6 +1220,7 @@ gboolean zMapStyleIsFrameSpecific(ZMapFeatureTypeStyle style) ;
 #define zMapStyleGetFrameMode(style)      ((style)->frame_mode)
 
 //double zMapStyleBaseline(ZMapFeatureTypeStyle style) ;
+#define zMapStyleGraphLineFill(style)   ((style)->mode_data.graph.line_fill)
 #define zMapStyleBaseline(style)   ((style)->mode_data.graph.baseline)
 #define zMapStyleGraphMode(style)   ((style)->mode_data.graph.mode)
 #define zMapStyleDensity(style)   ((style)->mode_data.graph.density)

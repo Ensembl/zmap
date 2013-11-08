@@ -697,15 +697,15 @@ ZMapProcessTerminationType zMapUtilsProcessTerminationStatus(int status)
 /* Takes an integer that is the termination status of a process (e.g. as generated
  * by waitpid() etc) and returns a string describing that status.
  * 
- * Returns FALSE without setting termination_str_out if the process terminated
- * normally with a zero return code otherwise returns TRUE and returns the
+ * Returns TRUE without setting termination_str_out if the process terminated
+ * normally with a zero return code otherwise returns FALSE and returns the
  * termination status as a string in termination_str_out, this string should
  * be g_free'd by the caller when no longer required.
  * 
  *  */
-gboolean zMapUtilsProcessTerminationStr(int status, char **termination_str_out)
+gboolean zMapUtilsProcessHasTerminationError(int status, char **termination_str_out)
 {
-  gboolean has_termination_str = FALSE ;
+  gboolean has_termination_error = FALSE ;
 
   if (WIFEXITED(status))
     {
@@ -713,9 +713,9 @@ gboolean zMapUtilsProcessTerminationStr(int status, char **termination_str_out)
 
       if ((exit_status = WEXITSTATUS(status)))
 	{
-	  *termination_str_out = g_strdup_printf("Child terminated normally, exit status: %d", exit_status) ;
+	  *termination_str_out = g_strdup_printf("Child exited normally but exit status was: %d", exit_status) ;
 
-	  has_termination_str = TRUE ;
+	  has_termination_error = TRUE ;
 	}
     }
   else if (WIFSIGNALED(status))
@@ -723,16 +723,22 @@ gboolean zMapUtilsProcessTerminationStr(int status, char **termination_str_out)
       *termination_str_out = g_strdup_printf("Child terminated by signal number %d - \"%s\".",
 					     WTERMSIG(status), g_strsignal(WTERMSIG(status))) ;
 
-      has_termination_str = TRUE ;
+      has_termination_error = TRUE ;
     }
   else if (WIFSTOPPED(status))
     {
-      *termination_str_out = g_strdup_printf("Child terminated by signal, signal number: %d", WSTOPSIG(status)) ;
+      *termination_str_out = g_strdup_printf("Child stopped by signal, signal number: %d", WSTOPSIG(status)) ;
 
-      has_termination_str = TRUE ;
+      has_termination_error = TRUE ;
+    }
+  else
+    {
+      *termination_str_out = g_strdup_printf("%s", "Child terminated but cause not known.") ;
+
+      has_termination_error = TRUE ;
     }
 
-  return has_termination_str ;
+  return has_termination_error ;
 }
 
 

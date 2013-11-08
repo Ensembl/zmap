@@ -24,20 +24,15 @@
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- * Description:
+ * Description: Public interface to Graph, note that other functions
+ *              are set by zMapWindowCanvasGraphInit() as func pointers
+ *              in canvasFeature.c
  *
- * Exported functions: See XXXXXXXXXXXXX.h
  *-------------------------------------------------------------------
  */
-
 #ifndef ZMAP_WINDOW_GRAPH_DENSITY_H
 #define ZMAP_WINDOW_GRAPH_DENSITY_H
 
-#include <ZMap/zmap.h>
-
-void zMapWindowCanvasGraphInit(void);
-
-
-
+void zMapWindowCanvasGraphInit(void) ;
 
 #endif /* ZMAP_WINDOW_GRAPH_DENSITY_H */

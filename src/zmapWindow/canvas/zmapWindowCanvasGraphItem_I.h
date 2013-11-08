@@ -24,13 +24,11 @@
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- * Description:
+ * Description: Private header for graph "objects", i.e. graph
+ *              columns in zmap.
  *
- * Exported functions: See XXXXXXXXXXXXX.h
- * HISTORY:
  *-------------------------------------------------------------------
  */
-
 #ifndef ZMAP_WINDOW_GRAPH_DENSITY_ITEM_I_H
 #define ZMAP_WINDOW_GRAPH_DENSITY_ITEM_I_H
 
@@ -50,6 +48,26 @@
  * The original graph density code had extra stuff to deal with re-binned data
  * this has been moved into CanvasFeatureset and can be re-used for other type of pre display processing if necessary
  */
+
+/* this could be dynamic based on screen size because actually Malcolm some screens are this size.... */
+#define N_POINTS	2000	/* will never run out as we only display one screen's worth */
+
+
+/* Private struct representing a graph column. */
+typedef struct ZMapWindowCanvasGraphStructType
+{
+  zmapWindowCanvasFeatureStruct feature ;		    /* all the common stuff */
+
+  /* Cache of points either to be drawn or being drawn.
+   * n.b. the +4 is +2 for gaps between bins, inserting a line, plus allow for end of data trailing lines */
+  GdkPoint points[N_POINTS+4] ;				    /* The points to be drawn this time. */
+  int n_points ;					    /* Number of points to be drawn this time. */
+
+  double last_gy ;					    /* Last y position drawn. */
+
+} ZMapWindowCanvasGraphStruct, *ZMapWindowCanvasGraph ;
+
+
 
 
 #endif /* ZMAP_WINDOW_GRAPH_DENSITY_ITEM_I_H */

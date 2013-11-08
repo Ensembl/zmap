@@ -229,7 +229,7 @@ gboolean zMapStr2Double(char *str, double *double_out) ;
 
 
 ZMapProcessTerminationType zMapUtilsProcessTerminationStatus(int status) ;
-gboolean zMapUtilsProcessTerminationStr(int status, char **termination_str_out) ;
+gboolean zMapUtilsProcessHasTerminationError(int status, char **termination_str_out) ;
 
 
 

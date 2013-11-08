@@ -174,7 +174,7 @@ void zmapWindowCanvasFeaturesetSummariseFree(ZMapWindowFeaturesetItem featureset
 
 
 
-
+/* Oh goodness....what is all this for ?? */
 #define N_FEAT_ALLOC      1000
 
 typedef struct zmapWindowFeaturesetItemClassStructType
@@ -219,11 +219,9 @@ typedef struct _zmapWindowFeaturesetItemStruct
   ZMapStrand strand;
   ZMapFrame frame;
 
-
   /* Points to data that is needed on a per column basis and is assigned by the functions
    * that handle that data. */
   gpointer per_column_data ;
-
 
   /* Some stuff for handling zooming, not straight forward because we have to deal
    * with our canvas window being much smaller than our sequence making drawing/scrolling
@@ -258,10 +256,10 @@ typedef struct _zmapWindowFeaturesetItemStruct
    * but we need to sort features so GList is more convenient */
 
   long n_features;
-  gboolean features_sorted;	/* by start coord */
+  gboolean features_sorted;				    /* by start coord */
 
-  gboolean re_bin;		/* re-calculate bins/ features according to zoom */
-  GList *display;			/* features for display */
+  gboolean re_bin;					    /* re-calculate bins/ features according to zoom */
+  GList *display;					    /* features for display */
   /* NOTE normally features are indexed into display_index
    * coverage data gets re-binned and new features stored in display which is then indexed
    * if we add new features then we re-create the index - new features are added to features
@@ -273,6 +271,8 @@ typedef struct _zmapWindowFeaturesetItemStruct
   ZMapStyleBumpMode bump_mode;	/* if set */
 
   int set_index;			/* for staggered columns (heatmaps) */
+
+  /* I'm not sure what this is ? */
   double x_off;
 
   /* graphics context for all contained features
@@ -287,7 +287,8 @@ typedef struct _zmapWindowFeaturesetItemStruct
 
   double x;				  /* x canvas coordinate of the featureset, used for column reposition */
 
-  double dx,dy;			  /* canvas offsets as calculated for paint */
+  double dx, dy ;			  /* canvas offsets as calculated for paint */
+
   gpointer deferred;		  /* buffer for deferred paints, eg constructed polyline */
 
   gulong fill_colour;           /* Fill color, RGBA */
