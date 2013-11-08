@@ -48,11 +48,11 @@ ZMapGFFParser zMapGFFCreateParser(int iGFFVersion, char *sequence, int features_
 
   if (iGFFVersion == ZMAPGFF_VERSION_2 )
   {
-    parser = zMapGFFCreateParser2(sequence, features_start, features_end) ;
+    parser = zMapGFFCreateParser_V2(sequence, features_start, features_end) ;
   }
   else if (iGFFVersion == ZMAPGFF_VERSION_3 )
   {
-    parser = zMapGFFCreateParser3(sequence, features_start, features_end) ;
+    parser = zMapGFFCreateParser_V3(sequence, features_start, features_end) ;
   }
   else
   {

@@ -56,7 +56,7 @@ typedef struct ZMapGFF3ParserStruct_
 
 
 
-ZMapGFFParser zMapGFFCreateParser3(char *sequence, int features_start, int features_end) ;
+ZMapGFFParser zMapGFFCreateParser_V3(char *sequence, int features_start, int features_end) ;
 
 
 #endif

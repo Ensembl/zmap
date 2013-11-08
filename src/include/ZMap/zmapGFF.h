@@ -39,7 +39,9 @@
 #include <ZMap/zmapFeature.h>
 
 
-/* An instance of a parser. */
+/*
+ * A forward declaration for all versions of the parser.
+ */
 typedef struct ZMapGFFParserStruct_ *ZMapGFFParser ;
 
 
@@ -55,18 +57,26 @@ typedef enum
 }  ZMapGFFVersion ;
 
 
+/* Default gff version parsed. */
+enum
+{
+  GFF_DEFAULT_VERSION = ZMAPGFF_VERSION_2
+} ;
 
-/* Feature clip mode, selects how individual feature coords should be clipped in relation
+
+
+/*
+ * Feature clip mode, selects how individual feature coords should be clipped in relation
  * to the requested feature range (the gff file may contain features that are outside the
- * requested range. */
+ * requested range.
+ */
 typedef enum
-  {
-    GFF_CLIP_NONE,					    /* Don't clip feature coords at all. */
-    GFF_CLIP_OVERLAP,					    /* Exclude features outside the range,
-							       clip anything that overlaps (default). */
-    GFF_CLIP_ALL					    /* Exclude features outside or
-							       overlapping. */
-  } ZMapGFFClipMode ;
+{
+  GFF_CLIP_NONE,					       /* Don't clip feature coords at all. */
+  GFF_CLIP_OVERLAP,					    /* Exclude features outside the range, clip anything that overlaps (default). */
+  GFF_CLIP_ALL					         /* Exclude features outside or overlapping. */
+}
+ZMapGFFClipMode ;
 
 
 
@@ -78,17 +88,13 @@ typedef enum
   GFF_HEADER_NONE,
   GFF_HEADER_ERROR,
   GFF_HEADER_INCOMPLETE,
-  GFF_HEADER_COMPLETE
+  GFF_HEADER_COMPLETE,
+  ZMAPGFF_HEADER_OK,               /* from v3 code */
+  ZMAPGFF_HEADER_UNKNOWN           /* from v3 code */
 } ZMapGFFHeaderState ;
 
-typedef struct
-{
-  int gff_version ;
 
-  char *sequence_name ;
-  int features_start ;
-  int features_end ;
-} ZMapGFFHeaderStruct, *ZMapGFFHeader ;
+
 
 
 /*
@@ -101,12 +107,27 @@ gboolean zMapGFFGetVersionFromGIO(GIOChannel * const pChannel, int * const piOut
 /*
  * Modified old interface.
  */
+gboolean zMapGFFIsValidVersion(const ZMapGFFParser const ) ;
 ZMapGFFParser zMapGFFCreateParser(int iGFFVersion, char *sequence, int features_start, int features_end) ;
 gboolean zMapGFFParserInitForFeatures(ZMapGFFParser parser, GHashTable *sources, gboolean parse_only) ;
 gboolean zMapGFFParseHeader(ZMapGFFParser parser, char *line, gboolean *header_finished, ZMapGFFHeaderState *header_state) ;
 gboolean zMapGFFParseSequence(ZMapGFFParser parser, char *line, gboolean *sequence_finished) ;
 gboolean zMapGFFParseLine(ZMapGFFParser parser, char *line) ;
 gboolean zMapGFFParseLineLength(ZMapGFFParser parser, char *line, gsize line_length) ;
+void zMapGFFParseSetSourceHash(ZMapGFFParser parser,
+			       GHashTable *source_2_feature_set, GHashTable *source_2_sourcedata) ;
+GList *zMapGFFGetFeaturesets(ZMapGFFParser parser);
+void zMapGFFSetSOCompliance(ZMapGFFParser parser, gboolean SO_compliant) ;
+void zMapGFFSetFeatureClip(ZMapGFFParser parser, ZMapGFFClipMode clip_mode) ;
+void zMapGFFSetFeatureClipCoords(ZMapGFFParser parser, int start, int end) ;
+void zMapGFFSetDefaultToBasic(ZMapGFFParser parser, gboolean default_to_basic);
+int zMapGFFParserGetNumFeatures(ZMapGFFParser parser);
+int zMapGFFGetVersion(ZMapGFFParser parser) ;
+GError *zMapGFFGetError(ZMapGFFParser parser) ;
+int zMapGFFGetLineNumber(ZMapGFFParser parser) ;
+gboolean zMapGFFTerminated(ZMapGFFParser parser) ;
+void zMapGFFSetFreeOnDestroy(ZMapGFFParser parser, gboolean free_on_destroy) ;
+void zMapGFFDestroyParser(ZMapGFFParser parser) ;
 
 /*
  * Unchanged old interface.
@@ -114,25 +135,9 @@ gboolean zMapGFFParseLineLength(ZMapGFFParser parser, char *line, gsize line_len
 gboolean zMapGFFParserSetSequenceFlag(ZMapGFFParser parser);
 ZMapSequence zMapGFFGetSequence(ZMapGFFParser parser);
 GHashTable *zMapGFFParserGetStyles(ZMapGFFParser parser);
-void zMapGFFParseSetSourceHash(ZMapGFFParser parser,
-			       GHashTable *source_2_feature_set, GHashTable *source_2_sourcedata) ;
-void zMapGFFSetDefaultToBasic(ZMapGFFParser parser, gboolean default_to_basic);
 void zMapGFFSetStopOnError(ZMapGFFParser parser, gboolean stop_on_error) ;
 void zMapGFFSetParseOnly(ZMapGFFParser parser, gboolean parse_only) ;
-void zMapGFFSetSOCompliance(ZMapGFFParser parser, gboolean SO_compliant) ;
-void zMapGFFSetFeatureClip(ZMapGFFParser parser, ZMapGFFClipMode clip_mode) ;
-void zMapGFFSetFeatureClipCoords(ZMapGFFParser parser, int start, int end) ;
-ZMapGFFHeader zMapGFFGetHeader(ZMapGFFParser parser) ;
-void zMapGFFFreeHeader(ZMapGFFHeader header) ;
 gboolean zMapGFFGetFeatures(ZMapGFFParser parser, ZMapFeatureBlock feature_block) ;
-GList *zMapGFFGetFeaturesets(ZMapGFFParser parser);
-int zMapGFFGetVersion(ZMapGFFParser parser) ;
-int zMapGFFGetLineNumber(ZMapGFFParser parser) ;
-int zMapGFFParserGetNumFeatures(ZMapGFFParser parser);
-GError *zMapGFFGetError(ZMapGFFParser parser) ;
-gboolean zMapGFFTerminated(ZMapGFFParser parser) ;
-void zMapGFFSetFreeOnDestroy(ZMapGFFParser parser, gboolean free_on_destroy) ;
-void zMapGFFDestroyParser(ZMapGFFParser parser) ;
 
 gboolean zMapGFFDump(ZMapFeatureAny dump_set, GHashTable *styles, GIOChannel *file, GError **error_out);
 gboolean zMapGFFDumpRegion(ZMapFeatureAny dump_set, GHashTable *styles,
