@@ -42,7 +42,6 @@
 #include <ctype.h>
 #include <ZMap/zmapGFF.h>
 #include "zmapGFF3_P.h"
-//#include <ZMap/zmapGap.h>
 
 
 
@@ -117,7 +116,6 @@ gboolean zMapAttParseCDSStartNotFound(const ZMapGFFAttribute const, gboolean * c
 gboolean zMapAttParseCDSEndNotFound(const ZMapGFFAttribute const, gboolean * const ) ;
 gboolean zMapAttParseDerives_from(const ZMapGFFAttribute const, char ** const ) ;
 gboolean zMapAttParseDbxref(const ZMapGFFAttribute const, char ** const, char ** const ) ;
-//gboolean zMapAttParseGap(const ZMapGFFAttribute const, ZMapGapSeries const ) ;
 gboolean zMapAttParseGaps(const ZMapGFFAttribute const, GArray ** const, ZMapStrand, ZMapStrand ) ;
 gboolean zMapAttParseID(const ZMapGFFAttribute const, GQuark * const ) ;
 gboolean zMapAttParseIs_circular(const ZMapGFFAttribute const, gboolean * const ) ;

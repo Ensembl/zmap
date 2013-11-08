@@ -118,11 +118,11 @@ typedef enum
  */
 typedef enum
 {
-  ZMAPGFF_ERROR_HEADER,				   /* Error in GFF header section.                        */
-  ZMAPGFF_ERROR_BODY,					    /* Error in GFF body section.                          */
-  ZMAPGFF_ERROR_FASTA,        /* Error whilst reading FASTA section.                 */
-  ZMAPGFF_ERROR_SO,           /* Error reading the SO collections                    */
-  ZMAPGFF_ERROR_FAILED					   /* Other fatal failure, error->message should explain. */
+  ZMAPGFF_ERROR_HEADER,                                    /* Error in GFF header section.                        */
+  ZMAPGFF_ERROR_BODY,                                      /* Error in GFF body section.                          */
+  ZMAPGFF_ERROR_FASTA,                                     /* Error whilst reading FASTA section.                 */
+  ZMAPGFF_ERROR_SO,                                        /* Error reading the SO collections                    */
+  ZMAPGFF_ERROR_FAILED                                     /* Other fatal failure, error->message should explain. */
 } ZMapGFFError ;
 
 
@@ -164,18 +164,17 @@ typedef enum
  * but also a list of features that need to be built up from several GFF lines. */
 typedef struct ZMapGFFParserFeatureSetStruct_
 {
-  ZMapFeatureSet feature_set ;				    /* The feature set, gets passed on to
-							     * the feature context proper. */
-                                               /* NB this is the display column not a set of similar features */
+  ZMapFeatureSet feature_set ;                             /* The feature set, gets passed on to
+                                                            * the feature context proper. */
+                                                           /* NB this is the display column not a set of similar features */
 
-  GData *multiline_features ;				    /* Features in this feature set that
-							       must be built up from multiple
-							       lines. */
-  ZMapGFFParser parser ;				    /* Self reference forced on us because
-							       GData destroy func. does not have a
-							       user_data parameter. */
-  GHashTable *feature_styles;                   /* copies of styles needed by features
-                                                 * that can get pointed at by them */
+  GData *multiline_features ;                              /* Features in this feature set that
+                                                              must be built up from multiple lines. */
+  ZMapGFFParser parser ;                                   /* Self reference forced on us because
+                                                              GData destroy func. does not have a
+                                                              user_data parameter. */
+  GHashTable *feature_styles;                              /* copies of styles needed by features
+                                                            * that can get pointed at by them */
 
 } ZMapGFFParserFeatureSetStruct, *ZMapGFFParserFeatureSet ;
 
@@ -188,35 +187,37 @@ typedef struct ZMapGFFParserFeatureSetStruct_
 
 
   ZMapGFFVersion gff_version ;
-  ZMapGFFClipMode clip_mode ;				                Decides how features that overla or are outside the start/end are handled.
-  int line_count ;					                          Contains number of lines processed.
+  ZMapGFFClipMode clip_mode ;                              Decides how features that overla or are outside the start/end are handled.
+  int line_count ;                                         Contains number of lines processed.
   char *sequence_name ;
-  int features_start, features_end ;			          In GFF these are based from 1
+  int features_start, features_end ;                       In GFF these are based from 1
 
-  int clip_start, clip_end ;				                 Coords used for clipping.
-  GHashTable *sources ;		                        NOTE for sources read styles; If present, only make features from
-                                                 GFF records with a source from this list.
-  gboolean parse_only ;					                     TRUE => just parse the GFF for correctness, don't create feature arrays.
-  ZMapFeatureTypeStyle locus_set_style ;	   	    cached locus style.
-  GQuark locus_set_id ;					                     if not zero then make a locus set from locus tags in sequence objects.
-  gboolean free_on_destroy ;				                 TRUE => free all feature arrays when parser is destroyed.
-  GData *feature_sets ;					                     A list of ZMapGFFParserFeatureSetStruct. There is one of these structs per
-							                                          "source". The struct contains among other things an array of all features for that source.
-  GError *error ;					                           Holds last parser error.
-  GHashTable *excluded_features ;			             Records all features that should be excluded (e.g. because they are outside coords of ref. sequence).
-  GHashTable *source_2_feature_set ;			          Optionally maps source to a feature set.
-  GHashTable *source_2_sourcedata ;			           Optionally maps source to extra source data.
-  gboolean stop_on_error ;				                   Stop parsing if there is an error.
-  gboolean default_to_basic ;			    	            TRUE => Unrecognised feature types will be created as basic features.
+  int clip_start, clip_end ;                               Coords used for clipping.
+  GHashTable *sources ;                                    NOTE for sources read styles; If present, only make features from
+                                                           GFF records with a source from this list.
+  gboolean parse_only ;                                    TRUE => just parse the GFF for correctness, don't create feature arrays.
+  ZMapFeatureTypeStyle locus_set_style ;                   cached locus style.
+  GQuark locus_set_id ;                                    if not zero then make a locus set from locus tags in sequence objects.
+  gboolean free_on_destroy ;                               TRUE => free all feature arrays when parser is destroyed.
+  GData *feature_sets ;                                    A list of ZMapGFFParserFeatureSetStruct. There is one of these structs per
+                                                           "source". The struct contains among other things an array of all features 
+                                                           for that source.
+  GError *error ;                                          Holds last parser error.
+  GHashTable *excluded_features ;                          Records all features that should be excluded (e.g. because they are outside 
+                                                           coords of ref. sequence).
+  GHashTable *source_2_feature_set ;                       Optionally maps source to a feature set.
+  GHashTable *source_2_sourcedata ;                        Optionally maps source to extra source data.
+  gboolean stop_on_error ;                                 Stop parsing if there is an error.
+  gboolean default_to_basic ;                              TRUE => Unrecognised feature types will be created as basic features.
 
-  GList *src_feature_sets;                       list of quarks of actual feature sets in the context
+  GList *src_feature_sets;                                 list of quarks of actual feature sets in the context
 
  */
 
 #define ZMAPGFF_PARSER_STRUCT_COMMON_DATA                                                            \
                                               ZMapGFFVersion gff_version ;                           \
                                               ZMapGFFParserState state ;                             \
-                                              ZMapGFFClipMode clip_mode ;				                        \
+                                              ZMapGFFClipMode clip_mode ;                            \
                                               ZMapSequenceStruct seq_data ;                          \
                                                                                                      \
                                               int features_start,                                    \
@@ -252,7 +253,7 @@ typedef struct ZMapGFFParserFeatureSetStruct_
                                                          *source_2_feature_set,                      \
                                                          *source_2_sourcedata;                       \
                                                                                                      \
-                                              ZMapFeatureTypeStyle locus_set_style ;	             	  \
+                                              ZMapFeatureTypeStyle locus_set_style;                  \ 
                                                                                                      \
                                               GQuark locus_set_id, error_domain ;                    \
                                                                                                      \
