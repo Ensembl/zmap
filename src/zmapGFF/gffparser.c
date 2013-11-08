@@ -132,7 +132,7 @@ static GIOChannel *openFileOrDie(char *filename)
 
 static int readHeader(parserFile data)
 {
-  ZMapGFFHeader header ;
+  //ZMapGFFHeader header ;
   GIOStatus status ;
   gsize terminator_pos = 0 ;
   GError *gff_file_err = NULL ;
@@ -153,11 +153,11 @@ static int readHeader(parserFile data)
             {
               GError *error = zMapGFFGetError(data->parser) ;
 
-              if (!error && (header = zMapGFFGetHeader(data->parser)))
-                {
-                  /* Header finished..ugh poor interface.... */
-                  break ;
-                }
+              //if (!error && (header = zMapGFFGetHeader(data->parser)))
+              //  {
+              //    /* Header finished..ugh poor interface.... */
+              //    break ;
+              //  }
 
               if (!error)
                 {
@@ -187,7 +187,7 @@ static int readHeader(parserFile data)
         }
     }
 
-  zMapGFFFreeHeader(header) ;
+  //zMapGFFFreeHeader(header) ;
 
   return error_occurred;
 }
