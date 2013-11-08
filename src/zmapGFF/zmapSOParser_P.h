@@ -60,22 +60,22 @@
  */
 #define ZMAPSO_ID_STRING_LENGTH 10
 typedef struct ZMapSOIDStruct_
-{
-  unsigned int iID ;
-  char sID[ZMAPSO_ID_STRING_LENGTH+1] ;
-} ZMapSOIDStruct ;
-
+  {
+    unsigned int iID ;
+    char sID[ZMAPSO_ID_STRING_LENGTH+1] ;
+  } ZMapSOIDStruct ;
+  
 /*
  * Struct for storing SO ID data as a pair of integer and
  * string.
  */
 typedef struct ZMapSOIDDataStruct_
-{
-  unsigned int iID;
-  char * sName ;
-  ZMapStyleMode cStyleMode ;
-} ZMapSOIDDataStruct ;
-
+  {
+    unsigned int iID;
+    char * sName ;
+    ZMapStyleMode cStyleMode ;
+  } ZMapSOIDDataStruct ;
+  
 /*
  * Include data parsed out from SO files.
  */
@@ -88,18 +88,18 @@ typedef struct ZMapSOIDDataStruct_
  * flags              some flags
  */
 typedef struct ZMapSOTermStruct_
-{
-  ZMapSOID pID ;
-  char * sName ;
-  struct
   {
-    unsigned int got_ter : 1 ;   /* refers to "[Term]" line               */
-    unsigned int got_idd : 1 ;   /* refers to "id:" line                  */
-    unsigned int got_nam : 1 ;   /* refers to "name:" line                */
-    unsigned int got_obs : 1 ;   /* refers to "is_obsolete:" line         */
-    unsigned int is_obs  : 1 ;   /* value found in "is_obsolete" line     */
-  } flags ;
-} ZMapSOTermStruct ;
+    ZMapSOID pID ;
+    char * sName ;
+    struct
+      {
+        unsigned int got_ter : 1 ;   /* refers to "[Term]" line               */
+        unsigned int got_idd : 1 ;   /* refers to "id:" line                  */
+        unsigned int got_nam : 1 ;   /* refers to "name:" line                */
+        unsigned int got_obs : 1 ;   /* refers to "is_obsolete:" line         */
+        unsigned int is_obs  : 1 ;   /* value found in "is_obsolete" line     */
+      } flags ;
+  } ZMapSOTermStruct ;
 
 
 /*
@@ -108,10 +108,10 @@ typedef struct ZMapSOTermStruct_
  * only, to abstract internal representation.
  */
 typedef struct ZMapSOCollectionStruct_
-{
-  ZMapSOTerm *pTerms ;
-  unsigned int iNumTerms ;
-} ZMapSOCollectionStruct ;
+  {
+    ZMapSOTerm *pTerms ;
+    unsigned int iNumTerms ;
+  } ZMapSOCollectionStruct ;
 
 
 
@@ -121,31 +121,31 @@ typedef struct ZMapSOCollectionStruct_
  * at present.
  */
 typedef enum
-{
-  ZMAPSO_LINE_TER,           /* [Term]                                            */
-  ZMAPSO_LINE_TYP,           /* [Typedef]                                         */
-  ZMAPSO_LINE_IDD,           /* id: <identifier>  (SO:XXXXXXX)                    */
-  ZMAPSO_LINE_NAM,           /* name: <name_string>                               */
-  ZMAPSO_LINE_OBS,           /* is_obsolete: [true,false]                         */
-  ZMAPSO_LINE_UNK            /* unknown, i.e. everythig else                      */
-} ZMapSOParserLineType ;
-
+  {
+    ZMAPSO_LINE_TER,           /* [Term]                                            */
+    ZMAPSO_LINE_TYP,           /* [Typedef]                                         */
+    ZMAPSO_LINE_IDD,           /* id: <identifier>  (SO:XXXXXXX)                    */
+    ZMAPSO_LINE_NAM,           /* name: <name_string>                               */
+    ZMAPSO_LINE_OBS,           /* is_obsolete: [true,false]                         */
+    ZMAPSO_LINE_UNK            /* unknown, i.e. everythig else                      */
+  } ZMapSOParserLineType ;
+  
 /*
  * Parser for SO terms.
  */
 typedef struct ZMapSOParserStruct_
-{
-  unsigned int iLineCount ;
-  GError *pError ;
-  GQuark qErrorDomain ;
-  gboolean bStopOnError ;
-  ZMapSOParserLineType eLineType ;
-  ZMapSOID pID ;
-  char *sBufferLine ;
-  char *sBuffer ;
-  ZMapSOTerm pTerm ;
-  ZMapSOCollection pCollection ;
-} ZMapSOParserStruct ;
+  {
+    unsigned int iLineCount ;
+    GError *pError ;
+    GQuark qErrorDomain ;
+    gboolean bStopOnError ;
+    ZMapSOParserLineType eLineType ;
+    ZMapSOID pID ;
+    char *sBufferLine ;
+    char *sBuffer ;
+    ZMapSOTerm pTerm ;
+    ZMapSOCollection pCollection ;
+  } ZMapSOParserStruct ;
 #define ZMAPSO_PARSER_BUFFER_LINELENGTH 10000
 #define ZMAPSO_PARSER_BUFFER_LENGTH 1000
 

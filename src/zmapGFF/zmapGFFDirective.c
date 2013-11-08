@@ -33,10 +33,10 @@ ZMapGFFDirectiveName zMapGFFGetDirectiveName(const char*const line)
 {
   unsigned int iDir;
   for (iDir=0; iDir<ZMAPGFF_NUMBER_DIR_TYPES; ++iDir)
-  {
-    if (g_str_has_prefix(line, ZMAPGFF_DIR_INFO[iDir].pPrefixString))
-      return ZMAPGFF_DIR_INFO[iDir].eName ;
-  }
+    {
+      if (g_str_has_prefix(line, ZMAPGFF_DIR_INFO[iDir].pPrefixString))
+        return ZMAPGFF_DIR_INFO[iDir].eName ;
+    }
   return ZMAPGFF_DIR_UND;
 }
 
@@ -73,10 +73,10 @@ ZMapGFFDirectiveInfoStruct zMapGFFGetDirectiveInfo(ZMapGFFDirectiveName eTheName
   unsigned int iDir ;
   ZMapGFFDirectiveInfoStruct cTheDirectiveInfo;
   for (iDir=0; iDir<ZMAPGFF_NUMBER_DIR_TYPES; ++iDir)
-  {
-    if (eTheName == ZMAPGFF_DIR_INFO[iDir].eName)
-      cTheDirectiveInfo = ZMAPGFF_DIR_INFO[iDir] ;
-  }
+    {
+      if (eTheName == ZMAPGFF_DIR_INFO[iDir].eName)
+        cTheDirectiveInfo = ZMAPGFF_DIR_INFO[iDir] ;
+    }
   return cTheDirectiveInfo ;
 }
 
@@ -105,13 +105,15 @@ ZMapGFFDirective zMapGFFCreateDirective(ZMapGFFDirectiveName eTheName)
 
   pDirective->nString = cTheDirectiveInfo.iStrings ;
   if (pDirective->nString == 0)
-    pDirective->psData = NULL ;
+    {
+      pDirective->psData = NULL ;
+    }
   else
-  {
-    pDirective->psData = (char**) g_new0(char*, pDirective->nString ) ;
-    for (iLoop=0; iLoop<pDirective->nString; ++iLoop)
-      pDirective->psData[iLoop] = NULL ;
-  }
+    {
+      pDirective->psData = (char**) g_new0(char*, pDirective->nString ) ;
+      for (iLoop=0; iLoop<pDirective->nString; ++iLoop)
+        pDirective->psData[iLoop] = NULL ;
+    }
 
   return pDirective ;
 }
@@ -134,13 +136,13 @@ void zMapGFFDestroyDirective(ZMapGFFDirective const pDirective)
 
   /* delete string data if any allocated */
   if (pDirective->nString && pDirective->psData)
-  {
-    for (iLoop=0; iLoop<pDirective->nString; ++iLoop)
     {
-      if (pDirective->psData[iLoop])
-        g_free(pDirective->psData[iLoop]) ;
+      for (iLoop=0; iLoop<pDirective->nString; ++iLoop)
+        {
+          if (pDirective->psData[iLoop])
+            g_free(pDirective->psData[iLoop]) ;
+        }
     }
-  }
 
   g_free(pDirective) ;
 }

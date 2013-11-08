@@ -36,9 +36,9 @@ ZMapGFFHeader zMapGFFCreateHeader()
   pHeader->flags.got_clo = FALSE ;
 
   for (iDir=0; iDir<ZMAPGFF_NUMBER_DIR_TYPES; ++iDir)
-  {
-    pHeader->pDirective[iDir] = zMapGFFCreateDirective(iDir) ;
-  }
+    {
+      pHeader->pDirective[iDir] = zMapGFFCreateDirective(iDir) ;
+    }
 
   return pHeader;
 }
@@ -58,9 +58,9 @@ int zMapGFFGetDirectiveIntData(const ZMapGFFHeader const pHeader, ZMapGFFDirecti
 
   cTheDirectiveInfo = zMapGFFGetDirectiveInfo(cTheDirName) ;
   if (iIndex < cTheDirectiveInfo.iInts)
-  {
-    iResult = pHeader->pDirective[cTheDirName]->piData[iIndex] ;
-  }
+    {
+      iResult = pHeader->pDirective[cTheDirName]->piData[iIndex] ;
+    }
 
   return iResult ;
 }
@@ -81,9 +81,9 @@ char *zMapGFFGetDirectiveStringData(const ZMapGFFHeader const pHeader, ZMapGFFDi
 
   cTheDirectiveInfo = zMapGFFGetDirectiveInfo(cTheDirName) ;
   if (iIndex < cTheDirectiveInfo.iStrings)
-  {
-    sResult = pHeader->pDirective[cTheDirName]->psData[iIndex] ;
-  }
+    {
+      sResult = pHeader->pDirective[cTheDirName]->psData[iIndex] ;
+    }
 
   return sResult ;
 }
@@ -104,9 +104,9 @@ void zMapGFFHeaderDestroy(ZMapGFFHeader const pHeader)
    * Destroy individual directive objects
    */
   for (iDir=0; iDir<ZMAPGFF_NUMBER_DIR_TYPES; ++iDir)
-  {
-    zMapGFFDestroyDirective(pHeader->pDirective[iDir]) ;
-  }
+    {
+      zMapGFFDestroyDirective(pHeader->pDirective[iDir]) ;
+    }
 
   /*
    * Delete the top level object

@@ -10,10 +10,10 @@ ZMapMLF zMapMLFCreate()
   ZMapMLF pMLF = NULL ;
 
   pMLF = g_malloc(sizeof(ZMapMLFStruct)) ;
-  if (pMLF)
-  {
-    pMLF->pIDTable = g_hash_table_new(NULL, NULL) ;
-  }
+    if (pMLF)
+    {
+      pMLF->pIDTable = g_hash_table_new(NULL, NULL) ;
+    }
 
   return pMLF ;
 }
@@ -136,9 +136,9 @@ gboolean zMapMLFRemoveID(ZMapMLF const pMLF, GQuark gqValue)
    * And remove that key from the table.
    */
   if (g_hash_table_remove(pMLF->pIDTable, GINT_TO_POINTER(gqValue)))
-  {
-    bResult = TRUE ;
-  }
+    {
+      bResult = TRUE ;
+    }
 
   return bResult ;
 }
@@ -167,9 +167,9 @@ gboolean zMapMLFIsFeaturePresent(const ZMapMLF const pMLF, GQuark gqID, const ZM
    * Now check whether or not the feature is present.
    */
   if (g_hash_table_lookup(pValueTable, GINT_TO_POINTER(pFeature->unique_id)) != NULL )
-  {
-    bResult = TRUE ;
-  }
+    {
+      bResult = TRUE ;
+    }
 
   return bResult ;
 }
@@ -198,14 +198,14 @@ gboolean zMapMLFAddFeatureToID(const ZMapMLF const pMLF, GQuark gqID, const ZMap
    * Otherwise add the feature to the given pValueTable.
    */
   if (g_hash_table_lookup(pValueTable, GINT_TO_POINTER(pFeature->unique_id) ) != NULL )
-  {
-    return bResult ;
-  }
+    {
+      return bResult ;
+    }
   else
-  {
-    g_hash_table_insert(pValueTable, GINT_TO_POINTER(pFeature->unique_id), GINT_TO_POINTER(pFeature->unique_id) ) ;
-    bResult = TRUE ;
-  }
+    {
+      g_hash_table_insert(pValueTable, GINT_TO_POINTER(pFeature->unique_id), GINT_TO_POINTER(pFeature->unique_id) ) ;
+      bResult = TRUE ;
+    }
 
   return bResult ;
 }
@@ -233,10 +233,10 @@ gboolean zMapMLFRemoveFeatureFromID(const ZMapMLF const pMLF, GQuark gqID, const
    * Remove the feature if it is present.
    */
   if (g_hash_table_lookup(pValueTable, GINT_TO_POINTER(pFeature->unique_id) ) != NULL )
-  {
-    g_hash_table_remove(pValueTable, GINT_TO_POINTER(pFeature->unique_id) ) ;
-    bResult = TRUE ;
-  }
+    {
+      g_hash_table_remove(pValueTable, GINT_TO_POINTER(pFeature->unique_id) ) ;
+      bResult = TRUE ;
+    }
 
   return bResult ;
 }
@@ -300,16 +300,16 @@ gboolean zMapMLFIDIteration(const ZMapMLF const pMLF,  gboolean (*iterationFunct
 
   g_hash_table_iter_init(&ghIterator, pMLF->pIDTable) ;
   while (g_hash_table_iter_next(&ghIterator, &pKey, &pValue))
-  {
-    /*
-     * gqID is the current ID
-     * pValueTable is the value table associated with this ID
-     */
-    gqID = GPOINTER_TO_INT(pKey) ;
-    pValueTable = (GHashTable*) pValue ;
-    if (!(bResult = iterationFunction(gqID, pValueTable) ))
-      break ;
-  }
+    {
+      /*
+       * gqID is the current ID
+       * pValueTable is the value table associated with this ID
+       */
+      gqID = GPOINTER_TO_INT(pKey) ;
+      pValueTable = (GHashTable*) pValue ;
+      if (!(bResult = iterationFunction(gqID, pValueTable) ))
+        break ;
+    }
 
   return bResult ;
 }

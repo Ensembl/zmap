@@ -42,31 +42,31 @@
  * Base `class'' struct for the header data structure.
  */
 typedef struct ZMapGFFHeaderStruct_
-{
-  char *sequence_name ;
-  int features_start ;
-  int features_end ;
-
-  ZMapGFFHeaderState eState ;
-
-  struct
   {
-    unsigned int got_min : 1 ; /* minimal header (ver & sqr)  */
-    unsigned int got_ver : 1 ; /* ##gff-version               */
-    unsigned int got_dna : 1 ; /* ##DNA                       */
-    unsigned int got_sqr : 1 ; /* ##sequence-region           */
-    unsigned int got_feo : 1 ; /* ##feature-ontology          */
-    unsigned int got_ato : 1 ; /* ##attribute-ontology        */
-    unsigned int got_soo : 1 ; /* ##source-ontology           */
-    unsigned int got_spe : 1 ; /* ##species                   */
-    unsigned int got_gen : 1 ; /* ##genome-build              */
-    unsigned int got_fas : 1 ; /* ##FASTA                     */
-    unsigned int got_clo : 1 ; /* ###                         */
-  } flags ;
+    char *sequence_name ;
+    int features_start ;
+    int features_end ;
 
-  ZMapGFFDirective pDirective[ZMAPGFF_NUMBER_DIR_TYPES] ;
+    ZMapGFFHeaderState eState ;
 
-} ZMapGFFHeaderStruct ;
+    struct
+      {
+        unsigned int got_min : 1 ; /* minimal header (ver & sqr)  */
+        unsigned int got_ver : 1 ; /* ##gff-version               */
+        unsigned int got_dna : 1 ; /* ##DNA                       */
+        unsigned int got_sqr : 1 ; /* ##sequence-region           */
+        unsigned int got_feo : 1 ; /* ##feature-ontology          */
+        unsigned int got_ato : 1 ; /* ##attribute-ontology        */
+        unsigned int got_soo : 1 ; /* ##source-ontology           */
+        unsigned int got_spe : 1 ; /* ##species                   */
+        unsigned int got_gen : 1 ; /* ##genome-build              */
+        unsigned int got_fas : 1 ; /* ##FASTA                     */
+        unsigned int got_clo : 1 ; /* ###                         */
+      } flags ;
+
+    ZMapGFFDirective pDirective[ZMAPGFF_NUMBER_DIR_TYPES] ;
+
+  } ZMapGFFHeaderStruct ;
 
 
 

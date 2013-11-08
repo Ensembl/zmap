@@ -1719,7 +1719,7 @@ static gboolean parseDirective_SPECIES(ZMapGFFParser const pParserBase, const ch
     return bResult ;
   }
 
-/*
+  /*
    * Now attempt to read the appropriate number of fields from the input string.
    */
   if (sscanf(line, sFmt, &sBuf[0]) != iExpectedFields )
@@ -2642,7 +2642,7 @@ gboolean makeNewFeature_V3(
    */
   sSequence            = zMapGFFFeatureDataGetSeq(pFeatureData) ;
   sSource              = zMapGFFFeatureDataGetSou(pFeatureData) ;
-  //sSource              = "made_up_name_for_a_source_yes_completely_made_up" ;
+  /*sSource              = "made_up_name_for_a_source_yes_completely_made_up" ;*/ 
   iStart               = zMapGFFFeatureDataGetSta(pFeatureData) ;
   iEnd                 = zMapGFFFeatureDataGetEnd(pFeatureData) ;
   bHasScore            = zMapGFFFeatureDataGetFlagSco(pFeatureData) ;

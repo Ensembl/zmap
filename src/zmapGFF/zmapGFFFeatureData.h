@@ -57,35 +57,35 @@
  * Structure to store field data used to construct features.
  */
 typedef struct ZMapGFFFeatureDataStruct_
-{
-  char * sSequence ;
-  char * sSource ;
-  unsigned int iStart ;
-  unsigned int iEnd ;
-  double dScore ;
-  ZMapStrand cStrand ;
-  ZMapPhase cPhase ;
-  char *sAttributes ;
-  const ZMapGFFAttribute *pAttributes ;
-  unsigned int nAttributes ;
-  ZMapSOIDData pSOIDData ;
-
-  struct
   {
-    unsigned int got_seq : 1 ;           /* sequence           */
-    unsigned int got_sou : 1 ;           /* source             */
-    unsigned int got_sta : 1 ;           /* start              */
-    unsigned int got_end : 1 ;           /* end                */
-    unsigned int got_sco : 1 ;           /* score              */
-    unsigned int got_str : 1 ;           /* strand             */
-    unsigned int got_pha : 1 ;           /* phase              */
-    unsigned int got_att : 1 ;           /* attributes string  */
-    unsigned int got_pat : 1 ;           /* parsed attributes  */
-    unsigned int got_sod : 1 ;           /* so term data       */
-  } flags ;
+    char * sSequence ;
+    char * sSource ;
+    unsigned int iStart ;
+    unsigned int iEnd ;
+    double dScore ;
+    ZMapStrand cStrand ;
+    ZMapPhase cPhase ;
+    char *sAttributes ;
+    const ZMapGFFAttribute *pAttributes ;
+    unsigned int nAttributes ;
+    ZMapSOIDData pSOIDData ;
+
+    struct
+      {
+        unsigned int got_seq : 1 ;           /* sequence           */
+        unsigned int got_sou : 1 ;           /* source             */
+        unsigned int got_sta : 1 ;           /* start              */
+        unsigned int got_end : 1 ;           /* end                */
+        unsigned int got_sco : 1 ;           /* score              */
+        unsigned int got_str : 1 ;           /* strand             */
+        unsigned int got_pha : 1 ;           /* phase              */
+        unsigned int got_att : 1 ;           /* attributes string  */
+        unsigned int got_pat : 1 ;           /* parsed attributes  */
+        unsigned int got_sod : 1 ;           /* so term data       */
+    } flags ;
 
 
-} ZMapGFFFeatureDataStruct ;
+  } ZMapGFFFeatureDataStruct ;
 
 
 

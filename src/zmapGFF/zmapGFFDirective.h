@@ -45,12 +45,12 @@
  * declared in zmapGFF.h.
  */
 typedef struct ZMapGFFDirectiveStruct_
-{
-  unsigned int nInt ;
-  int *piData ;
-  unsigned int nString ;
-  char **psData ;
-} ZMapGFFDirectiveStruct ;
+  {
+    unsigned int nInt ;
+    int *piData ;
+    unsigned int nString ;
+    char **psData ;
+  } ZMapGFFDirectiveStruct ;
 
 
 /*
@@ -64,12 +64,12 @@ typedef struct ZMapGFFDirectiveStruct_
  *
  */
 typedef struct ZMapGFFDirectiveInfoStruct_
-{
-  ZMapGFFDirectiveName eName ;
-  char *pPrefixString ;
-  unsigned int iInts ;
-  unsigned int iStrings ;
-} ZMapGFFDirectiveInfoStruct ;
+  {
+    ZMapGFFDirectiveName eName ;
+    char *pPrefixString ;
+    unsigned int iInts ;
+    unsigned int iStrings ;
+  } ZMapGFFDirectiveInfoStruct ;
 
 
 /*
