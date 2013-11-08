@@ -13,6 +13,21 @@ zmapGFF2parser.c \
 zmapGFF3parser.c \
 zmapGFFGeneral.c \
 zmapGFFUtils.c \
+zmapGFFAttribute.h \
+zmapGFFAttribute.c \
+zmapGFFDirective.h \
+zmapGFFDirective.c \
+zmapGFFFeatureData.h \
+zmapGFFFeatureData.c \
+zmapGFFHeader.h \
+zmapGFFHeader.c \
+zmapGFFStringUtils.c \
+zmapGFFUtils.c \
+zmapMLF.c \
+zmapMLF_P.h \
+zmapSOData_P.h \
+zmapSOParser.h \
+zmapSOParser.c \
 $(NULL)
 
 libZMapGFF_la_CFLAGS = $(INCLUDE_COMMON)

@@ -538,332 +538,332 @@ ZMapSequence zMapGFFGetSequence(ZMapGFFParser parser_base)
 
 
 /* Return the set of features read from a file for a block. */
-gboolean zMapGFFGetFeatures(ZMapGFFParser parser_base, ZMapFeatureBlock feature_block)
-{
-  gboolean result = FALSE ;
-
-  ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
-
-  if (!parser)
-    return result ;
-  if (parser->gff_version != ZMAPGFF_VERSION_2)
-    return result ;
-
-  if (parser->state != ZMAPGFF_PARSER_ERR)
-    {
-      int start,end;
-
-      start = parser->features_start;
-      end   = parser->features_end;
-
-      if (parser->clip_mode)
-	{
-	  if(start < parser->clip_start)
-	    start = parser->clip_start;
-	  if(end > parser->clip_end)
-	    end = parser->clip_end;
-	}
-
-#if MH17_NEED_ACTUAL_FEATURES_COORD_RANGE_FOR_EMPTY_FEATURESETS
-      /* MH17: this appears to rebase the features to the start of the sequence span :-( */
-      if (!feature_block->block_to_sequence.block.x2)
-#endif
-	{
-	  /* as request coordinates are often given as 1,0 we need to put real coordinates in */
-	  /* ideally chromosome coordinates would be better */
-
-	  /* NOTE we need to know the actual data returned as we
-	   *  mark empty featuresets as loaded over this range
-	   */
-	  feature_block->block_to_sequence.block.x1 = start;
-	  feature_block->block_to_sequence.block.x2 = end;
-	}
-
-      if (!feature_block->block_to_sequence.parent.x2)
-	{
-	  /* as request coordinates are often given as 1,0 we need to put real coordinates in */
-	  /* ideally chromosome coordinates would be better */
-	  feature_block->block_to_sequence.parent.x1 = start;
-	  feature_block->block_to_sequence.parent.x2 = end;
-	}
-
-      /* Actually we should only need to test feature_sets here really as there shouldn't be any
-       * for parse_only.... */
-      if (!parser->parse_only && parser->feature_sets)
-	{
-          g_datalist_foreach(&(parser->feature_sets), getFeatureArray,
-		     feature_block) ;
-	}
-
-      /* It is possible and legal for features to be incomplete from GFF (e.g. transcripts without
-       * an exon or without intron records), we attempt to normalise them where possible...currently only
-       * transcripts/exons. */
-      normaliseFeatures(&(parser->feature_sets)) ;
-
-
-      result = TRUE ;
-    }
-
-  return result ;
-}
+//gboolean zMapGFFGetFeatures(ZMapGFFParser parser_base, ZMapFeatureBlock feature_block)
+//{
+//  gboolean result = FALSE ;
+//
+//  ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
+//
+//  if (!parser)
+//    return result ;
+//  if (parser->gff_version != ZMAPGFF_VERSION_2)
+//    return result ;
+//
+//  if (parser->state != ZMAPGFF_PARSER_ERR)
+//    {
+//      int start,end;
+//
+//      start = parser->features_start;
+//      end   = parser->features_end;
+//
+//      if (parser->clip_mode)
+//	{
+//	  if(start < parser->clip_start)
+//	    start = parser->clip_start;
+//	  if(end > parser->clip_end)
+//	    end = parser->clip_end;
+//	}
+//
+//#if MH17_NEED_ACTUAL_FEATURES_COORD_RANGE_FOR_EMPTY_FEATURESETS
+//      /* MH17: this appears to rebase the features to the start of the sequence span :-( */
+//      if (!feature_block->block_to_sequence.block.x2)
+//#endif
+//	{
+//	  /* as request coordinates are often given as 1,0 we need to put real coordinates in */
+//	  /* ideally chromosome coordinates would be better */
+//
+//	  /* NOTE we need to know the actual data returned as we
+//	   *  mark empty featuresets as loaded over this range
+//	   */
+//	  feature_block->block_to_sequence.block.x1 = start;
+//	  feature_block->block_to_sequence.block.x2 = end;
+//	}
+//
+//      if (!feature_block->block_to_sequence.parent.x2)
+//	{
+//	  /* as request coordinates are often given as 1,0 we need to put real coordinates in */
+//	  /* ideally chromosome coordinates would be better */
+//	  feature_block->block_to_sequence.parent.x1 = start;
+//	  feature_block->block_to_sequence.parent.x2 = end;
+//	}
+//
+//      /* Actually we should only need to test feature_sets here really as there shouldn't be any
+//       * for parse_only.... */
+//      if (!parser->parse_only && parser->feature_sets)
+//	{
+//          g_datalist_foreach(&(parser->feature_sets), getFeatureArray,
+//		     feature_block) ;
+//	}
+//
+//      /* It is possible and legal for features to be incomplete from GFF (e.g. transcripts without
+//       * an exon or without intron records), we attempt to normalise them where possible...currently only
+//       * transcripts/exons. */
+//      normaliseFeatures(&(parser->feature_sets)) ;
+//
+//
+//      result = TRUE ;
+//    }
+//
+//  return result ;
+//}
 
 
 
 /* Optionally set mappings that are keys from the GFF source to feature set and style names. */
-void zMapGFFParseSetSourceHash(ZMapGFFParser parser_base,
-			       GHashTable *source_2_feature_set, GHashTable *source_2_sourcedata)
-{
-
-  ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
-
-  if (!parser)
-    return ;
-  if (parser->gff_version != ZMAPGFF_VERSION_2)
-    return ;
-
-  parser->source_2_feature_set = source_2_feature_set ;
-
-  parser->source_2_sourcedata = source_2_sourcedata ;
-
-
-  /* Locus is an odd one out just now, we need to handle this differently..... */
-  if (parser->locus_set_id)
-    {
-      ZMapFeatureSetDesc set_data ;
-      ZMapFeatureSource source_data ;
-
-
-      set_data = g_new0(ZMapFeatureSetDescStruct, 1) ;
-      set_data->column_id = parser->locus_set_id ;
-      set_data->feature_set_text = g_strdup_printf("Locus IDs") ;
-
-      g_hash_table_insert(parser->source_2_feature_set,
-			  GINT_TO_POINTER(parser->locus_set_id),
-			  set_data) ;
-
-
-      source_data = g_new0(ZMapFeatureSourceStruct, 1) ;
-      source_data->source_id = parser->locus_set_id ;
-      source_data->style_id = parser->locus_set_id ;
-      source_data->source_text = g_quark_from_string("Locus IDs") ;
-
-
-      g_hash_table_insert(parser->source_2_sourcedata,
-			  GINT_TO_POINTER(parser->locus_set_id),
-			  source_data) ;
-
-    }
-
-
-  return ;
-}
+//void zMapGFFParseSetSourceHash(ZMapGFFParser parser_base,
+//			       GHashTable *source_2_feature_set, GHashTable *source_2_sourcedata)
+//{
+//
+//  ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
+//
+//  if (!parser)
+//    return ;
+//  if (parser->gff_version != ZMAPGFF_VERSION_2)
+//    return ;
+//
+//  parser->source_2_feature_set = source_2_feature_set ;
+//
+//  parser->source_2_sourcedata = source_2_sourcedata ;
+//
+//
+//  /* Locus is an odd one out just now, we need to handle this differently..... */
+//  if (parser->locus_set_id)
+//    {
+//      ZMapFeatureSetDesc set_data ;
+//      ZMapFeatureSource source_data ;
+//
+//
+//      set_data = g_new0(ZMapFeatureSetDescStruct, 1) ;
+//      set_data->column_id = parser->locus_set_id ;
+//      set_data->feature_set_text = g_strdup_printf("Locus IDs") ;
+//
+//      g_hash_table_insert(parser->source_2_feature_set,
+//			  GINT_TO_POINTER(parser->locus_set_id),
+//			  set_data) ;
+//
+//
+//      source_data = g_new0(ZMapFeatureSourceStruct, 1) ;
+//      source_data->source_id = parser->locus_set_id ;
+//      source_data->style_id = parser->locus_set_id ;
+//      source_data->source_text = g_quark_from_string("Locus IDs") ;
+//
+//
+//      g_hash_table_insert(parser->source_2_sourcedata,
+//			  GINT_TO_POINTER(parser->locus_set_id),
+//			  source_data) ;
+//
+//    }
+//
+//
+//  return ;
+//}
 
 
 /* servers have a list of columns in/out as provided by ACEDB and later used by pipes
  * here we privide a list of (single) featuresets as put into the context
  */
-GList *zMapGFFGetFeaturesets(ZMapGFFParser parser_base)
-{
-  ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
-
-  if (!parser)
-    return NULL ;
-  if (parser->gff_version != ZMAPGFF_VERSION_2)
-    return NULL ;
-
-  return (parser->src_feature_sets) ;
-}
+//GList *zMapGFFGetFeaturesets(ZMapGFFParser parser_base)
+//{
+//  ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
+//
+//  if (!parser)
+//    return NULL ;
+//  if (parser->gff_version != ZMAPGFF_VERSION_2)
+//    return NULL ;
+//
+//  return (parser->src_feature_sets) ;
+//}
 
 
 /* If stop_on_error is TRUE the parser will not parse any further lines after it encounters
  * the first error in the GFF file. */
-void zMapGFFSetStopOnError(ZMapGFFParser parser_base, gboolean stop_on_error)
-{
-  ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
-
-  if (!parser)
-    return ;
-  if (parser->gff_version != ZMAPGFF_VERSION_2)
-    return  ;
-
-  if (parser->state != ZMAPGFF_PARSER_ERR)
-    parser->stop_on_error = stop_on_error ;
-
-  return ;
-}
+//void zMapGFFSetStopOnError(ZMapGFFParser parser_base, gboolean stop_on_error)
+//{
+//  ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
+//
+//  if (!parser)
+//    return ;
+//  if (parser->gff_version != ZMAPGFF_VERSION_2)
+//    return  ;
+//
+//  if (parser->state != ZMAPGFF_PARSER_ERR)
+//    parser->stop_on_error = stop_on_error ;
+//
+//  return ;
+//}
 
 
 /* If SO_compliant is TRUE the parser will only accept SO terms for feature types. */
-void zMapGFFSetSOCompliance(ZMapGFFParser parser_base, gboolean SO_compliant)
-{
-  ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
-
-  if (!parser)
-    return ;
-  if (parser->gff_version != ZMAPGFF_VERSION_2)
-    return ;
-
-  if (parser->state != ZMAPGFF_PARSER_ERR)
-    parser->SO_compliant = SO_compliant ;
-
-  return ;
-}
+//void zMapGFFSetSOCompliance(ZMapGFFParser parser_base, gboolean SO_compliant)
+//{
+//  ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
+//
+//  if (!parser)
+//    return ;
+//  if (parser->gff_version != ZMAPGFF_VERSION_2)
+//    return ;
+//
+//  if (parser->state != ZMAPGFF_PARSER_ERR)
+//    parser->SO_compliant = SO_compliant ;
+//
+//  return ;
+//}
 
 
 /* Sets the clipping mode for handling features that are either partly or wholly outside
  * the requested start/end for the target sequence. */
-void zMapGFFSetFeatureClip(ZMapGFFParser parser_base, ZMapGFFClipMode clip_mode)
-{
-  ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
-
-  if (!parser)
-    return ;
-  if (parser->gff_version != ZMAPGFF_VERSION_2)
-    return ;
-
-  if (parser->state != ZMAPGFF_PARSER_ERR)
-    {
-      parser->clip_mode = clip_mode ;
-    }
-
-  return ;
-}
+//void zMapGFFSetFeatureClip(ZMapGFFParser parser_base, ZMapGFFClipMode clip_mode)
+//{
+//  ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
+//
+//  if (!parser)
+//    return ;
+//  if (parser->gff_version != ZMAPGFF_VERSION_2)
+//    return ;
+//
+//  if (parser->state != ZMAPGFF_PARSER_ERR)
+//    {
+//      parser->clip_mode = clip_mode ;
+//    }
+//
+//  return ;
+//}
 
 
 /* Sets the start/end coords for clipping features. */
-void zMapGFFSetFeatureClipCoords(ZMapGFFParser parser_base, int start, int end)
-{
-  ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
-
-  if (!parser)
-    return ;
-  if (parser->gff_version != ZMAPGFF_VERSION_2)
-    return ;
-
-  zMapAssert(start > 0 && end > 0 && start <= end) ;
-
-  if (parser->state != ZMAPGFF_PARSER_ERR)
-    {
-      parser->clip_start = start ;
-      parser->clip_end = end ;
-    }
-
-  return ;
-}
+//void zMapGFFSetFeatureClipCoords(ZMapGFFParser parser_base, int start, int end)
+//{
+//  ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
+//
+//  if (!parser)
+//    return ;
+//  if (parser->gff_version != ZMAPGFF_VERSION_2)
+//    return ;
+//
+//  zMapAssert(start > 0 && end > 0 && start <= end) ;
+//
+//  if (parser->state != ZMAPGFF_PARSER_ERR)
+//    {
+//      parser->clip_start = start ;
+//      parser->clip_end = end ;
+//    }
+//
+//  return ;
+//}
 
 
 
 
 /* If default_to_basic is TRUE the parser will create basic features for any unrecognised
  * feature type. */
-void zMapGFFSetDefaultToBasic(ZMapGFFParser parser_base, gboolean default_to_basic)
-{
-  ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
-
-  if (!parser)
-    return ;
-  if (parser->gff_version != ZMAPGFF_VERSION_2)
-    return ;
-
-  if (parser->state != ZMAPGFF_PARSER_ERR)
-    parser->default_to_basic = default_to_basic ;
-
-  return ;
-}
+//void zMapGFFSetDefaultToBasic(ZMapGFFParser parser_base, gboolean default_to_basic)
+//{
+//  ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
+//
+//  if (!parser)
+//    return ;
+//  if (parser->gff_version != ZMAPGFF_VERSION_2)
+//    return ;
+//
+//  if (parser->state != ZMAPGFF_PARSER_ERR)
+//    parser->default_to_basic = default_to_basic ;
+//
+//  return ;
+//}
 
 
 /* Return the GFF version which the parser is using. This is determined from the GFF
  * input stream from the header comments. */
-int zMapGFFGetVersion(ZMapGFFParser parser_base)
-{
-  int version = -1 ;
-  ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
-  if (!parser)
-    return ZMAPGFF_VERSION_UNKNOWN;
-  if (parser->gff_version != ZMAPGFF_VERSION_2)
-    return ZMAPGFF_VERSION_UNKNOWN;
-
-  if (parser->state != ZMAPGFF_PARSER_ERR)
-    version = parser->gff_version ;
-
-  return version ;
-}
+//int zMapGFFGetVersion(ZMapGFFParser parser_base)
+//{
+//  int version = -1 ;
+//  ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
+//  if (!parser)
+//    return ZMAPGFF_VERSION_UNKNOWN;
+//  if (parser->gff_version != ZMAPGFF_VERSION_2)
+//    return ZMAPGFF_VERSION_UNKNOWN;
+//
+//  if (parser->state != ZMAPGFF_PARSER_ERR)
+//    version = parser->gff_version ;
+//
+//  return version ;
+//}
 
 
 /* Return line number of last line processed (this is the same as the number of lines processed.
  * N.B. we always return this as it may be required for error diagnostics. */
-int zMapGFFGetLineNumber(ZMapGFFParser parser_base)
-{
-  ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
-
-  if (!parser)
-    return 0 ;
-  if (parser->gff_version != ZMAPGFF_VERSION_2)
-    return 0 ;
-  return parser->line_count ;
-}
+//int zMapGFFGetLineNumber(ZMapGFFParser parser_base)
+//{
+//  ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
+//
+//  if (!parser)
+//    return 0 ;
+//  if (parser->gff_version != ZMAPGFF_VERSION_2)
+//    return 0 ;
+//  return parser->line_count ;
+//}
 
 
 /* If a zMapGFFNNN function has failed then this function returns a description of the error
  * in the glib GError format. If there has been no error then NULL is returned. */
-GError *zMapGFFGetError(ZMapGFFParser parser_base)
-{
-  ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
-  if (!parser)
-    return NULL ;
-  if (parser->gff_version != ZMAPGFF_VERSION_2)
-    return NULL ;
+//GError *zMapGFFGetError(ZMapGFFParser parser_base)
+//{
+//  ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
+//  if (!parser)
+//    return NULL ;
+//  if (parser->gff_version != ZMAPGFF_VERSION_2)
+//    return NULL ;
+//
+//  return parser->error ;
+//}
 
-  return parser->error ;
-}
 
-
-int zMapGFFParserGetNumFeatures(ZMapGFFParser parser_base)
-{
-  ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
-  if (!parser)
-    return 0 ;
-  if (parser->gff_version != ZMAPGFF_VERSION_2)
-    return 0 ;
-  return(parser->num_features) ;
-}
+//int zMapGFFParserGetNumFeatures(ZMapGFFParser parser_base)
+//{
+//  ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
+//  if (!parser)
+//    return 0 ;
+//  if (parser->gff_version != ZMAPGFF_VERSION_2)
+//    return 0 ;
+//  return(parser->num_features) ;
+//}
 
 /* Returns TRUE if the parser has encountered an error from which it cannot recover and hence will
  * not process any more lines, FALSE otherwise. */
-gboolean zMapGFFTerminated(ZMapGFFParser parser_base)
-{
-  gboolean result = TRUE ;
-  ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
-  if (!parser)
-    return result ;
-  if (parser->gff_version != ZMAPGFF_VERSION_2)
-    return result ;
-
-  if (parser->state != ZMAPGFF_PARSER_ERR)
-    result = FALSE ;
-
-  return result ;
-}
+//gboolean zMapGFFTerminated(ZMapGFFParser parser_base)
+//{
+//  gboolean result = TRUE ;
+//  ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
+//  if (!parser)
+//    return result ;
+//  if (parser->gff_version != ZMAPGFF_VERSION_2)
+//    return result ;
+//
+//  if (parser->state != ZMAPGFF_PARSER_ERR)
+//    result = FALSE ;
+//
+//  return result ;
+//}
 
 /* If free_on_destroy == TRUE then all the feature arrays will be freed when
  * the GFF parser is destroyed, otherwise they are left intact. Important
  * because caller may still want access to them after the destroy. */
-void zMapGFFSetFreeOnDestroy(ZMapGFFParser parser_base, gboolean free_on_destroy)
-{
-  ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
-  if (!parser)
-    return ;
-  if (parser->gff_version != ZMAPGFF_VERSION_2)
-    return ;
+//void zMapGFFSetFreeOnDestroy(ZMapGFFParser parser_base, gboolean free_on_destroy)
+//{
+//  ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
+//  if (!parser)
+//    return ;
+//  if (parser->gff_version != ZMAPGFF_VERSION_2)
+//    return ;
+//
+//  if (parser->state != ZMAPGFF_PARSER_ERR)
+//    parser->free_on_destroy = free_on_destroy ;
+//
+//  return ;
+//}
 
-  if (parser->state != ZMAPGFF_PARSER_ERR)
-    parser->free_on_destroy = free_on_destroy ;
 
-  return ;
-}
-
-
-void zMapGFFDestroyParser(ZMapGFFParser parser_base)
+void zMapGFFDestroyParser_V2(ZMapGFFParser parser_base)
 {
   ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
   if (!parser)
