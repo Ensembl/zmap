@@ -37,8 +37,17 @@
 
 #include <glib.h>
 #include <string.h>
+#include <stdio.h>
 #include <ZMap/zmapGFF.h>
+#include "zmapGFF_P.h"
 
+/* #define LOCAL_DEBUG_CODE */
+
+#ifdef LOCAL_DEBUG_CODE
+static FILE *pFile = NULL ;
+static const char *sFilename = "/nfs/users/nfs_s/sm23/Work/ZMap_develop/test_data.txt" ;
+static unsigned int iCount = 0 ;
+#endif
 
 
 /*
@@ -59,7 +68,7 @@ gboolean zMapGFFGetVersionFromString(const char* const sString, int * const piOu
 
   if (sscanf(sString, sFormat, &iValue) == iExpectedFields)
   {
-    if ((iValue == 2) || (iValue == 3))
+    if ((iValue == ZMAPGFF_VERSION_2) || (iValue == ZMAPGFF_VERSION_3))
     {
       bResult = TRUE ;
       *piOut = iValue ;
@@ -71,21 +80,99 @@ gboolean zMapGFFGetVersionFromString(const char* const sString, int * const piOu
 
 
 /*
- * This function expects to be at the start of a GIOChannel and that the next line
+ * This function expects a valid GIOChannel and that the next line
  * to be read is of the form expected by zMapGFFGetVersionFromString(). Then parse
  * the line with this function and rewind the GIOChannel to the same point at which
  * we entered. Returns TRUE if this operation returns 2 or 3, FALSE otherwise.
- *
- * This is currently a dummy version of the function that returns the default
- * value.
- *
+ * If the line encountered is blank, we return with version 2 set as default,
+ * and return TRUE. If an error associated with the GIOChannel occurrs, then we
+ * return FALSE.
  */
 gboolean zMapGFFGetVersionFromGIO(GIOChannel * const pChannel, int * const piOut )
 {
-  gboolean bResult = FALSE ;
+  static const char
+    cNewline = '\n',
+    cNull = '\0'
+  ;
+  char *pPos = NULL ;
+  gboolean bResult = TRUE ;
+  GString *pString ;
+  gsize
+    iTerminatorPos = 0
+  ;
+  GError *pError = NULL ;
+  GIOStatus cStatus ;
 
-  bResult = TRUE ;
-  *piOut = 2 ;
+  /*
+   * Set the default version to be returned.
+   */
+  *piOut = GFF_DEFAULT_VERSION ;
+
+  /*
+   * Create string object to use as buffer.
+   */
+  pString = g_string_new(NULL) ;
+  if (!pString )
+    goto return_point ;
+
+#ifdef LOCAL_DEBUG_CODE
+  if (pFile == NULL )
+  {
+    pFile = fopen(sFilename, "aw") ;
+  }
+#endif
+
+  /*
+   * Read a line from the GIOChannel and remove newline if present (replace it with NULL).
+   */
+  cStatus = g_io_channel_read_line_string(pChannel, pString, &iTerminatorPos, &pError) ;
+  if (pError)
+    goto return_point ;
+  pPos = strchr(pString->str, cNewline) ;
+  if (pPos)
+    *pPos = cNull ;
+
+  if (cStatus == G_IO_STATUS_NORMAL)
+  {
+    cStatus = g_io_channel_seek_position(pChannel, -(gint64)(iTerminatorPos+1), G_SEEK_CUR, &pError ) ;
+    if (pError)
+      goto return_point ;
+
+    /*
+     * If the line read in contains some data, attempt to parse; if it was
+     * blank then we just return with default return values.
+     */
+    if ((cStatus == G_IO_STATUS_NORMAL) && strcmp(pString->str, ""))
+    {
+      /*
+       * Parse the string line that was read in.
+       */
+      bResult = zMapGFFGetVersionFromString(pString->str, piOut);
+
+    }
+  }
+  else /* We encountered an error in reading the stream, or seeking back */
+  {
+    bResult = FALSE ;
+  }
+
+#ifdef LOCAL_DEBUG_CODE
+  if (pFile != NULL )
+  {
+    ++iCount ;
+    fprintf(pFile, "parse string = '%s', i = %i, v = %i\n", pString->str, iCount, *piOut) ;
+    fflush(pFile) ;
+  }
+#endif
+
+  /*
+   * Free the allocated string and other data.
+   */
+return_point:
+  if (pString)
+    g_string_free(pString, TRUE) ;
+  if (pError)
+    g_error_free(pError) ;
 
   return bResult ;
 }
