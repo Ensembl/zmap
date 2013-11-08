@@ -17,15 +17,15 @@ ZMapGFFFeatureData zMapGFFFeatureDataCreate()
   if (!pFeatureData)
     return NULL;
 
-  pFeatureData->sSequence      = NULL ;                                       /* As parsed from GFF line                      */
-  pFeatureData->sSource        = NULL ;                                       /* As parsed from GFF line                      */
-  pFeatureData->iStart         = 0 ;                                          /* As parsed from GFF line                      */
-  pFeatureData->iEnd           = 0 ;                                          /* As parsed from GFF line                      */
-  pFeatureData->dScore         = 0.0;                                         /* As parsed from GFF line                      */
-  pFeatureData->cStrand        = ZMAPSTRAND_NONE ;                            /* As parsed from GFF line                      */
-  pFeatureData->cPhase         = ZMAPPHASE_NONE ;                             /* As parsed from GFF line                      */
-  pFeatureData->sAttributes    = NULL ;                                       /* As parsed from GFF line (may be NULL)        */
-  pFeatureData->pSOIDData      = NULL ;                                       /* From auto-generated header                   */
+  pFeatureData->sSequence      = NULL ;                    /* As parsed from GFF line                      */
+  pFeatureData->sSource        = NULL ;                    /* As parsed from GFF line                      */
+  pFeatureData->iStart         = 0 ;                       /* As parsed from GFF line                      */
+  pFeatureData->iEnd           = 0 ;                       /* As parsed from GFF line                      */
+  pFeatureData->dScore         = 0.0;                      /* As parsed from GFF line                      */
+  pFeatureData->cStrand        = ZMAPSTRAND_NONE ;         /* As parsed from GFF line                      */
+  pFeatureData->cPhase         = ZMAPPHASE_NONE ;          /* As parsed from GFF line                      */
+  pFeatureData->sAttributes    = NULL ;                    /* As parsed from GFF line (may be NULL)        */
+  pFeatureData->pSOIDData      = NULL ;                    /* From auto-generated header                   */
 
   pFeatureData->flags.got_seq        = FALSE ;
   pFeatureData->flags.got_sou        = FALSE ;

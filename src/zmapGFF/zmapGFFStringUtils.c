@@ -162,7 +162,6 @@ char** zMapGFFStr_tokenizer(char cDelim, const char * const sTarg, unsigned int 
       zMapGFFStr_remove_char(sBuff, cToRemove) ;
       zMapGFFStr_array_add_element(&sTokens, &iNumTokens, local_malloc, local_free) ;
       sTokens[iNumTokens-1] = g_strdup(sBuff) ;
-      //printf("'%s'\n", sBuff) ;
     }
     sPosLast = sPos + 1 ;
 
@@ -185,7 +184,6 @@ char** zMapGFFStr_tokenizer(char cDelim, const char * const sTarg, unsigned int 
       zMapGFFStr_remove_char(sBuff, cToRemove) ;
       zMapGFFStr_array_add_element(&sTokens, &iNumTokens, local_malloc, local_free) ;
       sTokens[iNumTokens-1] = g_strdup(sBuff) ;
-      //printf("'%s'\n", sBuff) ;
     }
   }
 
@@ -230,7 +228,6 @@ char** zMapGFFStr_tokenizer(char cDelim, const char * const sTarg, unsigned int 
       if (strlen(sToken))
       {
         zMapGFFStr_array_add_element(&sTokens, &iNumTokens, local_malloc, local_free) ;
-        //printf("'%s'\n", sToken) ;
         sTokens[iNumTokens-1] = sToken ;
       }
       else if (sToken)
@@ -255,7 +252,6 @@ char** zMapGFFStr_tokenizer(char cDelim, const char * const sTarg, unsigned int 
     if (strlen(sToken))
     {
       zMapGFFStr_array_add_element(&sTokens, &iNumTokens, local_malloc, local_free) ;
-      //printf("'%s'\n", sToken) ;
       sTokens[iNumTokens-1] = sToken ;
     }
     else if (sToken)
