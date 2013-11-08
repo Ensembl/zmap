@@ -142,21 +142,26 @@ gboolean zMapFeatureAddTranscriptCDSDynamic(ZMapFeature feature, Coord start, Co
   Coord start_s = feature->feature.transcript.cds_start,
         end_s   = feature->feature.transcript.cds_end ;
 
+  /* 
+   * Set flag for this feature to be a CDS. 
+   */ 
+  feature->feature.transcript.flags.cds = 1 ; 
+
   /* first case is if the data have not yet been set, and were initialized to zero */
   if (!start_s || !end_s)
-  {
-    feature->feature.transcript.cds_start = start ;
-    feature->feature.transcript.cds_end = end ;
-    result = TRUE ;
-  }
-  else /* we have non-zero values for cds_start and cds_end */
-  {
-    if (start < start_s)
+    {
       feature->feature.transcript.cds_start = start ;
-    if (end > end_s)
       feature->feature.transcript.cds_end = end ;
-    result = TRUE ;
-  }
+      result = TRUE ;
+    }
+  else /* we have non-zero values for cds_start and cds_end */
+    {
+      if (start < start_s)
+        feature->feature.transcript.cds_start = start ;
+      if (end > end_s)
+        feature->feature.transcript.cds_end = end ;
+      result = TRUE ;
+    }
 
   return result ;
 }
