@@ -86,11 +86,6 @@ static gboolean getFeatureName(const char * const sequence, const ZMapGFFAttribu
 static void destroyFeatureArray(gpointer data) ;
 
 
-
-static unsigned int iCounter = 0 ;
-
-
-
 /*
  * Parser FSM transitions. Row is current state, columns is line type.
  */
@@ -2133,9 +2128,6 @@ static gboolean parseBodyLine_V3(
    */
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
 
-  printf("parseBodyLine(); s = '%s'\n", sLine) ;
-  fflush(stdout) ;
-
   /*
    * Initial error check.
    */
@@ -2623,10 +2615,8 @@ gboolean makeNewFeature_V3(
     *pAttributes            = NULL
   ;
   ZMapSpanStruct
-    cExon                   = {0},
-    cIntron                 = {0},
-    *pExon                  = NULL,
-    *pIntron                = NULL
+    cSpanItem               = {0},
+    *pSpanItem               = NULL
   ;
 
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
@@ -2642,7 +2632,7 @@ gboolean makeNewFeature_V3(
    */
   sSequence            = zMapGFFFeatureDataGetSeq(pFeatureData) ;
   sSource              = zMapGFFFeatureDataGetSou(pFeatureData) ;
-  /*sSource              = "made_up_name_for_a_source_yes_completely_made_up" ;*/ 
+  /*sSource              = "made_up_name_for_a_source_yes_completely_made_up" ;*/
   iStart               = zMapGFFFeatureDataGetSta(pFeatureData) ;
   iEnd                 = zMapGFFFeatureDataGetEnd(pFeatureData) ;
   bHasScore            = zMapGFFFeatureDataGetFlagSco(pFeatureData) ;
@@ -2829,7 +2819,7 @@ gboolean makeNewFeature_V3(
         bFeatureAdded = zMapFeatureSetAddFeature(pFeatureSet, pFeature) ;
         if (!bFeatureAdded)
         {
-          *err_text = g_strdup_printf("feature with gqThisID = %i, and name = '%s' could not be added", (int)gqThisID, sFeatureName) ;
+          *err_text = g_strdup_printf("feature with gqThisID = %i and name = '%s' could not be added", (int)gqThisID, sFeatureName) ;
           bResult = FALSE ;
           goto return_point ;
         }
@@ -2848,26 +2838,33 @@ gboolean makeNewFeature_V3(
          */
          if (!strcmp(sSOType, "exon"))
          {
-           cExon.x1 = iStart ;
-           cExon.x2 = iEnd ;
-           pExon = &cExon ;
+           cSpanItem.x1 = iStart ;
+           cSpanItem.x2 = iEnd ;
+           pSpanItem = &cSpanItem;
+           bDataAdded = zMapFeatureAddTranscriptExonIntron(pFeature, pSpanItem, NULL) ;
          }
          else if (!strcmp(sSOType, "intron"))
          {
-           cIntron.x1 = iStart ;
-           cIntron.x2 = iEnd ;
-           pIntron = &cIntron ;
+           cSpanItem.x1 = iStart ;
+           cSpanItem.x2 = iEnd ;
+           pSpanItem = &cSpanItem ;
+           bDataAdded = zMapFeatureAddTranscriptExonIntron(pFeature, NULL, pSpanItem) ;
          }
          else if (!strcmp(sSOType, "CDS"))
          {
-
+           cSpanItem.x1 = iStart ;
+           cSpanItem.x2 = iEnd ;
+           pSpanItem = &cSpanItem ;
+           bDataAdded = zMapFeatureAddTranscriptCDSDynamic(pFeature, iStart, iEnd) ;
          }
 
-         /*
-          * Add extra data to feature.
-          */
-         if (pIntron || pExon)
-           bDataAdded = zMapFeatureAddTranscriptExonIntron(pFeature, pExon, pIntron) ;
+         if (!bDataAdded)
+         {
+           *err_text = g_strdup_printf("unable to add ZMapSpan to feature with gqThisID = %i and name = '%s'",
+                                       (int)gqThisID, sFeatureName) ;
+           bResult = FALSE ;
+           goto return_point ;
+         }
 
       }
       else
@@ -3154,13 +3151,6 @@ return_point:
     g_free(sFeatureName) ;
   if (sFeatureNameID)
     g_free(sFeatureNameID) ;
-
-
-  /*
-   * some debug tests
-   */
-  printf("call to makeNewFeature_V3(); iCounter = %i, pParser->num_features = %i\n", iCounter++, pParser->num_features ) ;
-  fflush(stdout) ;
 
   return bResult ;
 }
