@@ -422,14 +422,22 @@ ZMapViewConnectionRequest zmapViewStepListFindRequest(ZMapViewConnectionStepList
 						      ZMapServerReqType request_type, ZMapViewConnection connection)
 {
   ZMapViewConnectionRequest request = NULL ;
-  StepListFindStruct step_find = {0} ;
 
-  step_find.request_type = request_type ;
-  step_find.request = NULL ;
-
-  g_list_foreach(step_list->steps, stepFindReq, &step_find) ;
-
-  request = step_find.request ;
+  if (step_list)
+    {
+      StepListFindStruct step_find = {0} ;
+      
+      step_find.request_type = request_type ;
+      step_find.request = NULL ;
+      
+      g_list_foreach(step_list->steps, stepFindReq, &step_find) ;
+      
+      request = step_find.request ;
+    }
+  else
+    {
+      zMapLogWarning("%s", "Program error: step_list is NULL");
+    }
 
   return request ;
 }
