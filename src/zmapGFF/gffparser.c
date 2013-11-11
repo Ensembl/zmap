@@ -22,7 +22,8 @@
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *         Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk,
+ *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk
  *
  * Description:
  *
@@ -100,7 +101,7 @@ static int parseFile(char *filename, char *sequence, GHashTable *styles)
 
   data.file     = openFileOrDie(filename);
 
-  data.parser   = zMapGFFCreateParser(sequence, 0, 0) ;
+  data.parser   = zMapGFFCreateParser(2, sequence, 0, 0) ;
 
   zMapGFFParserInitForFeatures(data.parser, styles, FALSE) ;
   data.gff_line = g_string_sized_new(2000);

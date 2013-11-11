@@ -84,6 +84,38 @@ gboolean zMapFeatureSequenceSetType(ZMapFeature feature, ZMapSequenceType type)
 
 
 
+gboolean zMapFeatureORFCreateSet(ZMapFeatureBlock block, ZMapFeatureSet *set_out)
+{
+  gboolean created = FALSE ;
+  ZMapFeatureSet feature_set = NULL;
+  GQuark frame_id = 0;
+
+  /* No sequence. No Translation _return_ EARLY */
+  if ((block->sequence.length))
+    {
+      frame_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_ORF_NAME);
+
+      if (!(feature_set = zMapFeatureBlockGetSetByID(block, frame_id)))
+	{
+	  GQuark original_id = 0;
+	  GQuark unique_id   = frame_id;
+
+	  original_id = g_quark_from_string(ZMAP_FIXED_STYLE_ORF_NAME);
+
+	  feature_set = zMapFeatureSetIDCreate(original_id, unique_id, NULL, NULL) ;
+
+	  zMapFeatureBlockAddFeatureSet(block, feature_set);
+
+	  created = TRUE;
+	}
+
+      if (set_out)
+	*set_out = feature_set;
+    }
+
+  return created ;
+}
+
 
 
 gboolean zMapFeature3FrameTranslationCreateSet(ZMapFeatureBlock block, ZMapFeatureSet *set_out)
@@ -112,11 +144,71 @@ gboolean zMapFeature3FrameTranslationCreateSet(ZMapFeatureBlock block, ZMapFeatu
 	}
 
       if (set_out)
-	*set_out = feature_set;
+        *set_out = feature_set;
     }
 
   return created ;
 }
+
+
+void zMapFeatureORFSetCreateFeatures(ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style, ZMapFeatureSet translation_fs)
+{
+  ZMapStrand strand = ZMAPSTRAND_NONE;
+  ZMapFrame frame = ZMAPFRAME_NONE;
+
+  for (strand = ZMAPSTRAND_FORWARD ; strand <= ZMAPSTRAND_REVERSE; ++strand)
+    {
+      for (frame = ZMAPFRAME_0 ; frame <= ZMAPFRAME_2; ++frame)
+        {
+          ZMapFeature translation ;
+          char *translation_name = NULL ;		/* Remember to free this */
+          GQuark translation_id = 0 ;
+          ZMapFrame curr_frame = ZMAPFRAME_NONE;
+          
+
+          curr_frame = frame ; //   = zMapFeatureFrameFromCoords(translation_block->block_to_sequence.block.x1, block_position) ;	/* ref to zMapFeatureFrame(): these are block relative frames */
+
+          translation_name = zMapFeature3FrameTranslationFeatureName(translation_fs, curr_frame) ;
+          translation_id   = g_quark_from_string(translation_name) ;
+
+          if ((translation = zMapFeatureSetGetFeatureByID(translation_fs, translation_id)))
+            {
+              char *sequence = translation->feature.sequence.sequence;
+
+              /* Loop through each peptide looking for stops */
+              int i = 0;
+              int prev = 0;
+              
+              for ( ; i < translation->feature.sequence.length; ++i)
+                {
+                  if (sequence[i] == '*')
+                    {
+                      if (i != prev)
+                        {
+                          /* Convert to dna index */
+                          const int start = prev * 3;
+                          const int end = ((i - 1) * 3) + 2;
+                          
+                          /* Create the ORF feature */
+                          ZMapFeature orf_feature = zMapFeatureCreateEmpty() ;
+                          char *feature_name = g_strdup_printf("ORF %d %d", start + 1, end + 1); /* display coords are 1-based */
+                          
+                          zMapFeatureAddStandardData(orf_feature, feature_name, feature_name,
+                                                     NULL, NULL,
+                                                     ZMAPSTYLE_MODE_BASIC, &feature_set->style,
+                                                     start + translation->x1, end + translation->x1, FALSE, 0.0, strand);
+                          
+                          zMapFeatureSetAddFeature(feature_set, orf_feature);                          
+                       }
+
+                      prev = i + 1;
+                    }
+                }
+            }
+        }
+    }
+}
+
 
 void zMapFeature3FrameTranslationSetCreateFeatures(ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style)
 {
@@ -133,6 +225,16 @@ void zMapFeature3FrameTranslationSetRevComp(ZMapFeatureSet feature_set, int bloc
 {
   feature3FrameTranslationPopulate(feature_set, NULL, block_start, block_end) ;
 
+  return ;
+}
+
+
+/* This function relies on the 3 frame translation features already existing....should make
+ * sure this is true.......... */
+void zMapFeatureORFSetRevComp(ZMapFeatureSet feature_set, ZMapFeatureSet translation_fs)
+{
+  zMapFeatureORFSetCreateFeatures(feature_set, NULL, translation_fs);
+  
   return ;
 }
 
@@ -225,7 +327,6 @@ void zMapFeatureShowTranslationSetCreateFeatures(ZMapFeatureSet feature_set, ZMa
 /*
  *               internal routines
  */
-
 
 
 

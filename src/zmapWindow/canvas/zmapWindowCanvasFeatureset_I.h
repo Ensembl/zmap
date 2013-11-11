@@ -330,6 +330,7 @@ typedef struct _zmapWindowFeaturesetItemStruct
 
 
 void zmapWindowFeaturesetS2Ccoords(double *start_inout, double *end_inout) ;
+gboolean zmapWindowCanvasFeatureValid(ZMapWindowCanvasFeature feature) ;
 
 
 /*

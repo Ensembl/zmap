@@ -113,7 +113,8 @@ ZMapStyleBumpMode zmapWindowContainerFeatureSetGetBumpUnmarked(ZMapWindowContain
 
 ZMapStyleColumnDisplayState zmapWindowContainerFeatureSetGetDisplay(ZMapWindowContainerFeatureSet container_set);
 void zmapWindowContainerFeatureSetSetDisplay(ZMapWindowContainerFeatureSet container_set,
-					     ZMapStyleColumnDisplayState state) ;
+					     ZMapStyleColumnDisplayState state,
+                                             ZMapWindow window) ;
 
 /* this one sets a style which is probably wrong.... */
 void zmapWindowContainerFeatureSetDisplay(ZMapWindowContainerFeatureSet container_set,

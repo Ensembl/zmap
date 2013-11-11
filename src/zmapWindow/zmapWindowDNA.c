@@ -625,7 +625,7 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 	  strand = ZMAPSTRAND_NONE ;
 	}
 
-      if(search_data->window && search_data->window->revcomped_features)
+      if(search_data->window && search_data->window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
 	{
 	  /* switch the strand to fix rt bug # 77224 */
 	  switch(strand)
@@ -775,7 +775,7 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 	}
       else if (search_data->sequence_type == ZMAPSEQUENCE_PEPTIDE
 	       && (match_list = zMapPeptideMatchFindAll(dna, query_txt,
-							search_data->window->revcomped_features,
+							search_data->window->flags[ZMAPFLAG_REVCOMPED_FEATURES],
 							strand, frame, start, end - start + 1,
 							search_data->max_errors, search_data->max_Ns, TRUE)))
 	{
@@ -981,7 +981,7 @@ static void remapCoords(gpointer data, gpointer user_data)
   zmapWindowCoordPairToDisplay(search_data->window, match_data->ref_start, match_data->ref_end,
 			       &(match_data->screen_start), &(match_data->screen_end)) ;
 
-  if (search_data->window && search_data->window->revcomped_features)
+  if (search_data->window && search_data->window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
     {
       /* switch the strand to fix rt bug # 77224 */
       switch(match_data->strand)

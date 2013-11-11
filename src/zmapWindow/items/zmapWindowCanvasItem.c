@@ -190,6 +190,25 @@ ZMapFeatureSubPartSpan zMapWindowCanvasItemIntervalGetData(FooCanvasItem *item,
   return sub_feature ;
 }
 
+
+/* Wrapper around zMapWindowCanvasItemGetInterval to take a generic item
+ * and call the former if it's a canvas item. */
+FooCanvasItem *zMapWindowItemGetInterval(FooCanvasItem *item,
+                                         double x, double y,
+                                         ZMapFeatureSubPartSpan *sub_feature_out)
+{
+  FooCanvasItem *result = NULL;
+  
+  if (ZMAP_IS_CANVAS_ITEM(item))
+    {
+      ZMapWindowCanvasItem canvas_item = ZMAP_CANVAS_ITEM(item);
+      result = zMapWindowCanvasItemGetInterval(canvas_item, x, y, sub_feature_out);
+    }
+    
+  return result;
+}
+
+
 FooCanvasItem *zMapWindowCanvasItemGetInterval(ZMapWindowCanvasItem canvas_item,
 					       double x, double y,
 					       ZMapFeatureSubPartSpan *sub_feature_out)
@@ -249,15 +268,15 @@ FooCanvasItem *zMapWindowCanvasItemGetInterval(ZMapWindowCanvasItem canvas_item,
   if(matching_interval == NULL)
     g_warning("No matching interval!");
   else if(sub_feature_out)
-  {
-  	if(ZMAP_IS_WINDOW_FEATURESET_ITEM(matching_interval))
-  	{
-  		/* returns a static data structure */
-  		*sub_feature_out =
-  			zMapWindowCanvasFeaturesetGetSubPartSpan(matching_interval, zMapWindowCanvasItemGetFeature(item) ,x,y);
+    {
+      if(ZMAP_IS_WINDOW_FEATURESET_ITEM(matching_interval) && zMapWindowCanvasItemGetFeature(item))
+        {
+          /* returns a static data structure */
+          *sub_feature_out =
+            zMapWindowCanvasFeaturesetGetSubPartSpan(matching_interval, zMapWindowCanvasItemGetFeature(item) ,x,y);
   	}
-  }
-
+    }
+  
   return matching_interval;
 }
 

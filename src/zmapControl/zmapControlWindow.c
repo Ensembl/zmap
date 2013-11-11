@@ -52,6 +52,9 @@ static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data) ;
 gboolean myWindowMaximize(GtkWidget *widget, GdkEvent  *event, gpointer user_data) ;
 #endif 
 
+static gboolean rotateTextCB(gpointer user_data) ;
+
+
 
 /* 
  *                  Globals
@@ -161,91 +164,143 @@ void zmapControlWindowDestroy(ZMap zmap)
 
 
 /* Called to update the user information sections of the zmapControl sections
- * of the display. Currently sets forward/revcomp status and coords. */
+ * of the display. Currently sets forward/revcomp status and coords.
+ * 
+ * Currently it uses a static idle_handle, I think this is ok even if we change
+ * the focus_viewwindow because we will be resetting the text and then starting
+ * to rotate it or stopping if the view is loaded.
+ *  */
 void zmapControlWindowSetStatus(ZMap zmap)
 {
   char *status_text ;
-  char *free_this = NULL;
+  static int idle_handle = 0 ;
+  enum {ROTATION_DELAY = 500} ;				    /* delay in microseconds for each text move. */
+  ZMapViewState view_state = ZMAPVIEW_INIT ;
+  char *sources_loading = NULL, *sources_failing = NULL ;
 
   switch(zmap->state)
     {
     case ZMAP_DYING:
       {
-	status_text = "Dying...";
+	status_text = g_strdup("ZMap closing.....") ;
 	break ;
       }
     case ZMAP_VIEWS:
       {
 	ZMapView view ;
 	ZMapWindow window ;
-	gboolean revcomped ;
 	char *strand_txt ;
 	int start = 0, end = 0 ;
 	char *coord_txt = "" ;
-
-	zMapAssert(zmap->focus_viewwindow) ;
+	char *tmp ;
 
 	view = zMapViewGetView(zmap->focus_viewwindow) ;
-
 	window = zMapViewGetWindow(zmap->focus_viewwindow) ;
 
-	revcomped = zMapViewGetRevCompStatus(view) ;
-	if (revcomped)
+	view_state = zMapViewGetStatus(view) ;
+
+	/* Set strand. */
+	if (zMapViewGetRevCompStatus(view))
 	  strand_txt = " - " ;
 	else
 	  strand_txt = " + " ;
         gtk_label_set_text(GTK_LABEL(zmap->status_revcomp), strand_txt) ;
 
 
-#if NO_SCOPE_FOR_IMPROVEMENT
-//	if (zMapViewGetFeaturesSpan(view, &start, &end))
-//	  {
-	    zmapWindowCoordPairToDisplay(window,
-//					 start, end,
-					 window->min_coord,window->max_coord,
-					 &start, &end) ;
-#else
-        if(zmapWindowGetCurrentSpan(window,&start,&end))
+	/* Set displayed start/end. */
+        if (zmapWindowGetCurrentSpan(window, &start, &end))
           {
-#endif
             coord_txt = g_strdup_printf(" %d  %d ", start, end) ;
             gtk_label_set_text(GTK_LABEL(zmap->status_coords), coord_txt) ;
             g_free(coord_txt) ;
           }
 
-	free_this = status_text = zMapViewGetStatusStr(view) ;
+	tmp = zMapViewGetLoadStatusStr(view, &sources_loading, &sources_failing) ;
+	status_text = g_strdup_printf("%s.......", tmp) ;   /* Add spacing...better for rotating text. */
+	g_free(tmp) ;
 
 	break ;
       }
     case ZMAP_INIT:
     default:
       {
-	status_text = "" ;
+	status_text = g_strdup("No data.....") ;
 	break ;
       }
     }
 
+
+  if (zmap->state == ZMAP_VIEWS)
+    {
+      /* While we are loading we want the text to rotate but then we stop once
+       * we've finished loading. */
+      if (view_state == ZMAPVIEW_LOADED || view_state == ZMAPVIEW_LOADING || view_state == ZMAPVIEW_UPDATING)
+	{
+	  if (sources_loading || sources_failing)
+	    {
+	      GString *load_status_str ;
+
+	      load_status_str = g_string_new("Selected View\n\n") ;
+
+	      if (sources_loading)
+		g_string_append_printf(load_status_str, "Columns still loading:\n %s\n", sources_loading) ;
+
+	      if (sources_failing)
+		g_string_append_printf(load_status_str, "Columns failed to load:\n %s", sources_failing) ;
+
+	      gtk_tooltips_set_tip(zmap->tooltips, zmap->status_entry,
+				   load_status_str->str,
+				   "") ;
+
+	      g_string_free(load_status_str, TRUE) ;
+	      g_free(sources_loading) ;
+	      g_free(sources_failing) ;
+	    }
+	  else
+	    {
+	      gtk_tooltips_set_tip(zmap->tooltips, zmap->status_entry, /* reset. */
+				   "Status of selected view",
+				   "") ;
+	    }
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	  if (view_state == ZMAPVIEW_LOADED)
+	    {
+	      /* hack to stop the timeout...seems to be no way of removing it even though we have a handle..... */
+	      rotateTextCB(zmap) ;
+
+	      idle_handle = 0 ;
+	    }
+	  else if (view_state == ZMAPVIEW_LOADING || view_state == ZMAPVIEW_UPDATING)
+	    {
+	      /* Start the timeout if it's not already going. */
+	      if (!idle_handle)
+		idle_handle = g_timeout_add(ROTATION_DELAY, rotateTextCB, zmap->status_entry) ;
+	    }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+	  /* Start the timeout if it's not already going. */
+	  if ((view_state == ZMAPVIEW_LOADING || view_state == ZMAPVIEW_UPDATING)
+	      && !idle_handle)
+	    {
+		idle_handle = g_timeout_add(ROTATION_DELAY, rotateTextCB, zmap) ;
+	    }
+	}
+      else
+	{
+	  gtk_tooltips_set_tip(zmap->tooltips, zmap->status_entry, /* reset. */
+			       "Status of selected view",
+			       "") ;
+	}
+
+
+    }
+
+  /* Update the status with the next text. */
   gtk_entry_set_text(GTK_ENTRY(zmap->status_entry), status_text) ;
-
-#if UPDATES_SIBLING_WINDOWS  /* thought to be due to there being one event queue only */
-
-  /* display instantly, else we don't update due to other stuff using idle time */
-  /* except it doesn't work */
-  {
-      GdkWindow * win;
-
-#if GTK_MAJOR_VERSION == 2 && GTK_MINOR_VERSION < 14
-            win = zmap->status_entry->window ;
-#else
-      win = gtk_widget_get_window(zmap->status_entry);
-#endif
-      if(win)
-           gdk_window_process_updates(win,TRUE);
-  }
-#endif
-
-  if (free_this)
-    g_free(status_text) ;
+  g_free(status_text) ;
 
   return ;
 }
@@ -304,7 +359,8 @@ static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data)
   ZMap zmap = (ZMap)cb_data ;
   GList *destroyed_views = NULL ;
   
-  /* WHY DO WE DO THIS....I DON'T KNOW.... */
+  /* This function is called when gtk has sent a destroy signal to our toplevel window,
+   * setting this to NULL ensures that we don't try to destroy the window again. */
   zmap->toplevel = NULL ;
 
   zmapControlDoKill(zmap, &destroyed_views) ;
@@ -544,4 +600,51 @@ gboolean myWindowMaximize(GtkWidget *widget, GdkEvent  *event, gpointer user_dat
   return FALSE;
 }
 #endif
+
+
+
+/* Called at intervals and rotates the text in the entry widget given by user_data
+ * round and round and round.
+ * 
+ * Note that glib does not provide a way to remove a timeout handler so we
+ * hack this by removing ourselves if we are passed a null pointer.
+ *  */
+static gboolean rotateTextCB(gpointer user_data)
+{
+  gboolean call_again = TRUE ;				    /* Keep calling us. */
+  ZMap zmap = (ZMap)user_data ;
+
+  if (zmap->state == ZMAP_DYING)
+    {
+      call_again = FALSE ;				    /* Stop calling us. */
+    }
+  else
+    {
+      static GString *buffer = NULL ;
+      ZMapView view ;
+      ZMapViewState view_state ;
+      GtkWidget *entry_widg ;
+      char *entry_text ;
+
+      if (!buffer)
+	buffer = g_string_sized_new(1000) ;
+
+      view = zMapViewGetView(zmap->focus_viewwindow) ;
+      view_state = zMapViewGetStatus(view) ;
+
+      entry_widg = zmap->status_entry ;
+      if ((entry_text = (char *)gtk_entry_get_text(GTK_ENTRY(entry_widg))))
+	{
+	  buffer = g_string_assign(buffer, (entry_text + 1)) ;
+	  buffer = g_string_append_c(buffer, *entry_text) ;
+
+	  gtk_entry_set_text(GTK_ENTRY(entry_widg), buffer->str) ;
+	}
+
+      if (view_state == ZMAPVIEW_LOADED)
+	call_again = FALSE ;				    /* Stop calling us. */
+    }
+
+  return call_again ;
+}
 

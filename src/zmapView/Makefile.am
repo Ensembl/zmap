@@ -8,10 +8,12 @@ noinst_LTLIBRARIES = libZMapView.la
 libZMapView_la_SOURCES = zmapView.c \
 zmapView_P.h \
 zmapViewUtils.c \
+zmapView_P.h \
 zmapViewCallBlixem.c \
 zmapViewFeatureMask.c \
 zmapViewFeatureCollapse.c \
 zmapViewRemoteControl.c \
+zmapViewScratch.c \
 $(NULL)
 
 libZMapView_la_CFLAGS = $(INCLUDE_COMMON)

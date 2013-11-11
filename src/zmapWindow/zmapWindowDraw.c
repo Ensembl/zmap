@@ -180,6 +180,23 @@ void zMapWindowToggleDNAProteinColumns(ZMapWindow window,
 }
 
 
+void zMapWindowToggleScratchColumn(ZMapWindow window,
+                                   GQuark align_id,   GQuark block_id,
+                                   gboolean force_to, gboolean force)
+{
+  zmapWindowBusy(window, TRUE) ;
+
+  toggleColumnInMultipleBlocks(window, ZMAP_FIXED_STYLE_SCRATCH_NAME,
+                               align_id, block_id, force_to, force);
+
+  zmapWindowFullReposition(window->feature_root_group, TRUE, "toggle columns") ;
+
+  zmapWindowBusy(window, FALSE) ;
+
+  return ;
+}
+
+
 /* to resize ourselves and reposition stuff to the right of a CanvasFeatureset we have to resize the root */
 /* There's a lot of container code that labouriously trundles up the tree, but each canvas item knows the root. so let's use that */
 /* hmmmm... you need to call special invocations that set properties that then set flags... yet another run-around. */
@@ -304,7 +321,7 @@ void zmapWindowColumnSetState(ZMapWindow window, FooCanvasGroup *column_group,
 	  cur_visible = group->flags.visible; /* actual current state */
 	}
 
-      zmapWindowContainerFeatureSetSetDisplay(container, new_col_state) ;
+      zmapWindowContainerFeatureSetSetDisplay(container, new_col_state, window) ;
 
       new_visible = zmapWindowGetColumnVisibility(window,column_group);
       /* state we want rather than what's current */
@@ -548,30 +565,33 @@ gboolean zmapWindowColumnIs3frameDisplayed(ZMapWindow window, FooCanvasGroup *co
 gboolean zmapWindowColumnIsMagVisible(ZMapWindow window, FooCanvasGroup *col_group)
 {
   gboolean visible = TRUE ;
-  ZMapWindowContainerGroup container = (ZMapWindowContainerGroup)col_group;
-  ZMapWindowContainerFeatureSet featureset = (ZMapWindowContainerFeatureSet)col_group;
-
-  zMapAssert(window && FOO_IS_CANVAS_GROUP(col_group)) ;
-
-
-  if ((visible = (zmapWindowContainerHasFeatures(container) || zmapWindowContainerFeatureSetShowWhenEmpty(featureset))))
+  
+  if (ZMAP_IS_CONTAINER_FEATURESET(col_group))
     {
-      double min_mag = 0.0, max_mag = 0.0 ;
-      double curr_bases ;
+      ZMapWindowContainerGroup container = ZMAP_CONTAINER_GROUP(col_group);
+      ZMapWindowContainerFeatureSet featureset = ZMAP_CONTAINER_FEATURESET(col_group);
 
-      curr_bases = zMapWindowGetZoomMagAsBases(window) ;
-
-      if (zmapWindowContainerFeatureSetGetMagValues(featureset, &min_mag, &max_mag))
-	{
-	  if ((min_mag && curr_bases < min_mag)
-	      || (max_mag && curr_bases > max_mag))
-	    {
-	      visible = FALSE ;
-	    }
-	}
-
+      if(window && FOO_IS_CANVAS_GROUP(col_group))
+        {
+          if ((visible = (zmapWindowContainerHasFeatures(container) || zmapWindowContainerFeatureSetShowWhenEmpty(featureset))))
+            {
+              double min_mag = 0.0, max_mag = 0.0 ;
+              double curr_bases ;
+              
+              curr_bases = zMapWindowGetZoomMagAsBases(window) ;
+              
+              if (zmapWindowContainerFeatureSetGetMagValues(featureset, &min_mag, &max_mag))
+                {
+                  if ((min_mag && curr_bases < min_mag)
+                      || (max_mag && curr_bases > max_mag))
+                    {
+                      visible = FALSE ;
+                    }
+                }
+            }      
+        }
     }
-
+    
   return visible ;
 }
 
@@ -1192,32 +1212,34 @@ static void toggleColumnInMultipleBlocks(ZMapWindow window, char *name,
 
 	      frame_column = zmapWindowFToIFindItemColumn(window, window->context_to_item,
 							  feature_block->parent->unique_id,
-							  feature_block->unique_id,
+					  		  feature_block->unique_id,
 							  featureset_unique,
-							  // DNA is reverse but ST is fwd when revcomped
-							  // this is very tedious
-							  //							window->revcomped_features ? ZMAPSTRAND_REVERSE: ZMAPSTRAND_FORWARD,
+                                                          // DNA is reverse but ST is fwd when revcomped
+                                                          // this is very tedious
+                                                          //							window->flags[ZMAPFLAG_REVCOMPED_FEATURES] ? ZMAPSTRAND_REVERSE: ZMAPSTRAND_FORWARD,
 							  ZMAPSTRAND_FORWARD,
 							  frame) ;
 
-	      if (frame_column && ZMAP_IS_CONTAINER_FEATURESET(frame_column)
-		  && zmapWindowContainerHasFeatures((ZMapWindowContainerGroup)(frame_column)))
+
+	      if (frame_column && ZMAP_IS_CONTAINER_FEATURESET(frame_column) &&
+                  (zmapWindowContainerHasFeatures(ZMAP_CONTAINER_GROUP(frame_column)) ||
+                   zmapWindowContainerFeatureSetShowWhenEmpty(ZMAP_CONTAINER_FEATURESET(frame_column))))
 		{
-		  ZMapStyleColumnDisplayState show_hide_state ;
-
-		  if (force && force_to)
-		    show_hide_state = ZMAPSTYLE_COLDISPLAY_SHOW ;
-		  else if (force && !force_to)
-		    show_hide_state = ZMAPSTYLE_COLDISPLAY_HIDE ;
-		  else if (zmapWindowItemIsShown(FOO_CANVAS_ITEM(frame_column)))
-		    show_hide_state = ZMAPSTYLE_COLDISPLAY_HIDE ;
-		  else
-		    show_hide_state = ZMAPSTYLE_COLDISPLAY_SHOW ;
-
-		  zmapWindowColumnSetState(window,
-					   FOO_CANVAS_GROUP(frame_column),
-					   show_hide_state,
-					   FALSE) ;
+                  ZMapStyleColumnDisplayState show_hide_state ;
+                  
+                  if (force && force_to)
+                    show_hide_state = ZMAPSTYLE_COLDISPLAY_SHOW ;
+                  else if (force && !force_to)
+                    show_hide_state = ZMAPSTYLE_COLDISPLAY_HIDE ;
+                  else if (zmapWindowItemIsShown(FOO_CANVAS_ITEM(frame_column)))
+                    show_hide_state = ZMAPSTYLE_COLDISPLAY_HIDE ;
+                  else
+                    show_hide_state = ZMAPSTYLE_COLDISPLAY_SHOW ;
+                  
+                  zmapWindowColumnSetState(window,
+                                           FOO_CANVAS_GROUP(frame_column),
+                                           show_hide_state,
+                                           FALSE) ;
 		}
 	    }
 

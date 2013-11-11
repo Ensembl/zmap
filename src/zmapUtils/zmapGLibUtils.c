@@ -70,28 +70,19 @@ static void hashPrintTableCB(gpointer key, gpointer value, gpointer user_data_un
 static void destroyList(gpointer data) ;
 static void mergehashCB(gpointer key, gpointer value, gpointer user_data) ;
 
+static void insert_after(GList *donor, GList *recipient) ;
 
 
-/*! @defgroup zmapGLibutils   zMapGLibUtils: glib-derived utilities for ZMap
- * @{
- *
- * \brief  Glib-derived utilities for ZMap.
- *
- *
- * These routines are derived from the glib code available from www.gtk.org
- *
- * zMapUtils routines provide services such as debugging, testing and logging,
- * string handling, file utilities and GUI functions. They are general routines
- * used by all of ZMap.
- *
- *  */
+/*
+ *                    External routines.
+ */
+
+
 
 
 /*!
  *                Additions to String utilities
  */
-
-
 
 /* This routine removes all occurences of the given char from the target string,
  * this is done inplace so the returned string will be shorter. */
@@ -168,7 +159,7 @@ gchar *zMap_g_ascii_strstrcasecmp(const gchar *haystack, const gchar *needle)
 
 
 
-/*!
+/*
  *                Additions to GList
  */
 
@@ -278,59 +269,24 @@ GList *zMap_g_list_move(GList *list, gpointer user_data, gint new_index)
 
 GList *zMap_g_list_append_unique(GList *list, gpointer data)
 {
-	GList *l,*last = list;
+  GList *l,*last = list;
 
-	for(l = list; l ; l = l->next)
-	{
-		if(l->data == data)	/* already there, nothing to do */
-			return list;
-		last = l;
-	}
-
-	/* we reached the end or there was no list: add to the end */
-	last = g_list_append(list,data);
-
-	if(!list)
-		list = last;
-
+  for(l = list; l ; l = l->next)
+    {
+      if(l->data == data)	/* already there, nothing to do */
 	return list;
+      last = l;
+    }
+
+  /* we reached the end or there was no list: add to the end */
+  last = g_list_append(list,data);
+
+  if(!list)
+    list = last;
+
+  return list;
 }
 
-/*!
- * Prints out the contents of a list assuming that each element is a GQuark. We have
- * lots of these in zmap so this is useful.
- *
- * @param quark_list             A GList where each data pointer is a GQuark.
- * @param list_name              Optional list name to be printed first.
- * @param new_line               FALSE print list on one line, TRUE print each element
- *                               on a new line.
- * @return                       <nothing>
- */
-void zMap_g_list_quark_print(GList *quark_list, char *list_name, gboolean new_line)
-{
-  zMapAssert(quark_list) ;
-
-  if (list_name)
-    printf("\"%s\":%s", list_name, (new_line ? "\n" : "\t")) ;
-
-  g_list_foreach(quark_list, printCB, GINT_TO_POINTER(new_line)) ;
-
-  printf("\n") ;
-
-  return ;
-}
-
-
-GList *zMap_g_list_find_quark(GList *list, GQuark str_quark)
-{
-  GList *result = NULL ;
-
-  zMapAssert(list && str_quark) ;
-
-  result = g_list_find_custom(list, GINT_TO_POINTER(str_quark), caseCompareFunc) ;
-
-  return result ;
-}
 
 /* filter out a list of matching items */
 GList *zMap_g_list_grep(GList **list_inout, gpointer data, GCompareFunc func)
@@ -361,61 +317,71 @@ GList *zMap_g_list_grep(GList **list_inout, gpointer data, GCompareFunc func)
   return matched;
 }
 
-/* donor should already no be part of recipient */
-void insert_after(GList *donor, GList *recipient)
+
+/* Inserts donor list _after_ the node in recipient given by "point".
+ * To insert at the front set point to 0, to insert at the end set point
+ * to be the length of the list.
+ * 
+ * If copy_donor is TRUE a copy of the donor list is inserted into recipient
+ * otherwise the actual donor list is inserted. Note that only a shallow copy
+ * is done currently....so the copy list will point at the same data as the
+ * original donor list.
+ * 
+ * If recipient is NULL then donor (or a copy of donor) is returned,
+ * if donor is NULL then recipient is returned.
+ * 
+ * It is the callers responsibility to ensure that recipient and donor
+ * are separate lists.
+ * 
+ * Returns the new head of the recipient list or NULL if any of:
+ * 
+ *             recipient && donor are NULL
+ *             recipient == donor (only a trivial check is done)
+ *             recipient or donor are NOT the head nodes of lists
+ *             if !(0 <= point <= list_length)
+ */
+GList *zMap_g_list_insert_list_after(GList *recipient, GList *donor, int point, gboolean copy_donor)
 {
-  zMapAssert(recipient && recipient->next && donor);
+  GList *complete = NULL ;
+  int list_length ;
 
-  /*
-   * This next bit of code is confusing so here is a desciption...
-   *
-   * recipient A -> <- B -> <- F
-   * donor     C -> <- D -> <- E
-   * point = 2
-   *
-   * recipient[B]->next[F]->prev = g_list_last(donor)[E]
-   * recipient[B]->next[F]->prev[E]->next = recipient->next[F]
-   * recipient[B]->next = donor[C]
-   * donor[C]->prev = recipient[B]
-   *
-   * complete =  A -> <- B -> <- C -> <- D -> <- E -> <- F
-   *                       |   |                   |   |
-   * so we've changed B->next, C->prev,      E->next & F->prev
-   */
-  recipient->next->prev = g_list_last(donor);
-  recipient->next->prev->next = recipient->next;
-  recipient->next = donor;
-  donor->prev = recipient;
+  if ((recipient || donor)
+      && (recipient != donor)
+      && (recipient == g_list_first(recipient))
+      && (donor == g_list_first(donor))
+      && (point >= 0 && point <= (list_length = g_list_length(recipient))))
+    {
+      if (copy_donor)
+	donor = g_list_copy(donor) ;
 
-  return ;
+      if (!recipient)
+	{
+	  recipient = donor ;
+	}
+      else if (!donor)
+	{
+	  ;						    /* nothing to do. */
+	}
+      else if (point == 0)
+	{
+	  recipient = g_list_concat(donor, recipient) ;
+	}
+      else if (point == list_length)
+	{
+	  recipient = g_list_concat(recipient, donor) ;
+	}
+      else
+	{
+	  recipient = g_list_nth(recipient, point) ;
+	  insert_after(donor, recipient) ;
+	}
+
+      complete = g_list_first(recipient);
+    }
+
+  return complete ;
 }
 
-/* point is 0 based! */
-GList *zMap_g_list_insert_list_after(GList *recipient, GList *donor, int point)
-{
-  GList *complete = NULL;
-
-  recipient = g_list_first(recipient);
-
-  if(point == 0)
-    {
-      /* quicker to concat the recipient to the donor! */
-      recipient = g_list_concat(donor, recipient);
-    }
-  else if((recipient = g_list_nth(recipient, point)) &&
-          recipient->next)
-    {
-      insert_after(donor, recipient);
-    }
-  else if(recipient)
-    recipient = g_list_concat(recipient, donor);
-  else
-    zMapAssertNotReached();     /* point off list! */
-
-  complete = g_list_first(recipient);
-
-  return complete;
-}
 
 GList *zMap_g_list_lower(GList *move, int positions)
 {
@@ -496,36 +462,125 @@ GList *zMap_g_list_split(GList *list, GList *new_list_head)
 }
 
 
-// return a list of quarks as a ; delimted string, free this string when finished
-gchar *zMap_g_list_quark_to_string(GList *l)
-{
-      gchar *str = NULL;
-      const gchar *q;
-
-      while(l)
-      {
-            q = g_quark_to_string(GPOINTER_TO_UINT(l->data));
-            if(str)
-                  str = g_strconcat(str,";",q,NULL);
-            else
-                  str = g_strdup(q);
-            l = l->next;
-      }
-
-      return(str);
-}
-
-
 // merge lists giving list of unique items
 GList *zMap_g_list_merge(GList *a, GList *b)
 {
-      for(;b;b = b->next)
-      {
-            if(!g_list_find(a,b->data))
-                  a = g_list_prepend(a,b->data);
-      }
-      return(a);
+  for(;b;b = b->next)
+    {
+      if(!g_list_find(a,b->data))
+	a = g_list_prepend(a,b->data);
+    }
+  return(a);
 }
+
+
+
+
+
+/* 
+ *  Functions for lists of quarks of which we have plenty in zmap.
+ */
+
+
+/*!
+ * Prints out the contents of a list assuming that each element is a GQuark. We have
+ * lots of these in zmap so this is useful.
+ *
+ * @param quark_list             A GList where each data pointer is a GQuark.
+ * @param list_name              Optional list name to be printed first.
+ * @param new_line               FALSE print list on one line, TRUE print each element
+ *                               on a new line.
+ * @return                       <nothing>
+ */
+void zMap_g_list_quark_print(GList *quark_list, char *list_name, gboolean new_line)
+{
+  zMapAssert(quark_list) ;
+
+  if (list_name)
+    printf("\"%s\":%s", list_name, (new_line ? "\n" : "\t")) ;
+
+  g_list_foreach(quark_list, printCB, GINT_TO_POINTER(new_line)) ;
+
+  printf("\n") ;
+
+  return ;
+}
+
+
+/* Return a list of quarks delimited by the string given in delimiter,
+ * if delimiter is NULL the string " ; " is used.
+ * g_free() this string when finished. */
+gchar *zMap_g_list_quark_to_string(GList *l, char *delimiter)
+{
+  char *str = NULL ;
+
+  if (l)
+    {
+      GString *quark_str ;
+      const gchar *q ;
+
+      if (!delimiter)
+	delimiter = " ; " ;
+
+      quark_str = g_string_new(g_quark_to_string(GPOINTER_TO_UINT(l->data))) ;
+      l = l->next ;
+
+      while(l)
+	{
+	  q = g_quark_to_string(GPOINTER_TO_UINT(l->data)) ;
+
+	  g_string_append_printf(quark_str, "%s%s",
+				 delimiter,
+				 g_quark_to_string(GPOINTER_TO_UINT(l->data))) ;
+	  l = l->next ;
+	}
+
+      str = g_string_free(quark_str, FALSE) ;
+    }
+
+  return str ;
+}
+
+
+GList *zMap_g_list_find_quark(GList *list, GQuark str_quark)
+{
+  GList *result = NULL ;
+
+  zMapAssert(list && str_quark) ;
+
+  result = g_list_find_custom(list, GINT_TO_POINTER(str_quark), caseCompareFunc) ;
+
+  return result ;
+}
+
+
+/* Removes the given list of quarks from quark_list, only removes the first
+ * occurrence of a quark. */
+GList *zMap_g_list_remove_quarks(GList *quark_target_list, GList *quarks)
+{
+  GList *quark_list = NULL ;
+
+  if (quark_target_list)
+    {
+      quark_list = quark_target_list ;
+
+      while(quarks)
+	{
+	  quark_list = g_list_remove(quark_list, quarks->data) ;
+	  quarks = quarks->next ;
+	}
+    }
+
+  return quark_list ;
+}
+
+
+
+
+
+
+
+
 
 /*!
  *                Additions to GHash
@@ -1031,15 +1086,41 @@ void zMap_g_quark_destroy_set(ZMapQuarkSet quark_set)
 }
 
 
-/*! @} end of zmapGLibutils docs. */
-
-
-
-
 
 /*
  *                 Internal functions.
  */
+
+
+/* donor should already not be part of recipient */
+static void insert_after(GList *donor, GList *recipient)
+{
+  zMapAssert(recipient && recipient->next && donor);
+
+  /*
+   * This next bit of code is confusing so here is a desciption...
+   *
+   * recipient A -> <- B -> <- F
+   * donor     C -> <- D -> <- E
+   * point = 2
+   *
+   * recipient[B]->next[F]->prev = g_list_last(donor)[E]
+   * recipient[B]->next[F]->prev[E]->next = recipient->next[F]
+   * recipient[B]->next = donor[C]
+   * donor[C]->prev = recipient[B]
+   *
+   * complete =  A -> <- B -> <- C -> <- D -> <- E -> <- F
+   *                       |   |                   |   |
+   * so we've changed B->next, C->prev,      E->next & F->prev
+   */
+  recipient->next->prev = g_list_last(donor);
+  recipient->next->prev->next = recipient->next;
+  recipient->next = donor;
+  donor->prev = recipient;
+
+  return ;
+}
+
 
 
 /* HOLDS: g_quark_global_lock */

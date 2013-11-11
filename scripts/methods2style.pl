@@ -174,6 +174,7 @@ use Data::Dumper;
                    $self->name =~ m/^root$/i ||
                    $self->name =~ m/^feat$/i ||
                    $self->name =~ m/^DNA$/i ||
+                   $self->name =~ m/^Annotation$/i ||
                    $self->name =~ m/^Show Translation$/i ||
                    $self->name =~ m/^3 Frame$/i ||
                    $self->name =~ m/^3 Frame Translation$/i ||
@@ -327,6 +328,14 @@ colours=normal fill lavender ; normal border #898994
 parent-style=root
 mode=basic
 bump-mode=unbump
+
+[annotationcolumn]
+colours=normal fill #ddeeff ; selected fill #eeffcc
+width=20
+show-when-empty=true
+
+[Annotation]
+display-mode=show
 
 [DNA]
 colours=selected fill green

@@ -248,14 +248,14 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
 
   window->seqLength = zmapWindowExt(window->sequence->start, window->sequence->end) ;
 
-  zmapWindowScaleCanvasSetRevComped(window->ruler, window->revcomped_features) ;
-  /*
-   * MH17: after a revcomp we end up with 1-based coords if we have no official parent span
-   * which is very confusing but valid. To display the ruler properly we need to use those coordinates
-   * and not the original sequence coordinates.
-   * the code just above sets sequence->start,end, but only on the first display, which is not revcomped
-   */
-  //  zmapWindowScaleCanvasSetSpan(window->ruler, seq_start, seq_end) ;
+  zmapWindowScaleCanvasSetRevComped(window->ruler, window->flags[ZMAPFLAG_REVCOMPED_FEATURES]) ;
+/*
+ * MH17: after a revcomp we end up with 1-based coords if we have no official parent span
+ * which is very confusing but valid. To display the ruler properly we need to use those coordinates
+ * and not the original sequence coordinates.
+ * the code just above sets sequence->start,end, but only on the first display, which is not revcomped
+ */
+//  zmapWindowScaleCanvasSetSpan(window->ruler, seq_start, seq_end) ;
 
   zmapWindowZoomControlInitialise(window);		    /* Sets min/max/zf */
 
@@ -268,11 +268,11 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
 
 #if MH17_REVCOMP_DEBUG
   zMapLogWarning("drawFeatures window: %d-%d (%d,%d), %d (%f,%f), canvas = %p",
-		 window->sequence->start,window->sequence->end,
-		 seq_start,seq_end,
-		 window->revcomped_features,
-		 window->min_coord,window->max_coord,
-		 window->canvas);
+  window->sequence->start,window->sequence->end,
+  seq_start,seq_end,
+  window->flags[ZMAPFLAG_REVCOMPED_FEATURES],
+  window->min_coord,window->max_coord,
+  window->canvas);
 #endif
 
   h_adj = gtk_scrolled_window_get_hadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window)) ;
@@ -735,16 +735,19 @@ gboolean zmapWindowRemoveIfEmptyCol(FooCanvasGroup **col_group)
   ZMapWindowContainerGroup container;
   gboolean removed = FALSE ;
 
-  container = (ZMapWindowContainerGroup)(*col_group);
-
-  if ((!zmapWindowContainerHasFeatures(container)) &&
-      (!zmapWindowContainerFeatureSetShowWhenEmpty((ZMapWindowContainerFeatureSet)container)))
+  if (ZMAP_IS_CONTAINER_GROUP(*col_group))
     {
-      container = zmapWindowContainerGroupDestroy(container) ;
+      container = ZMAP_CONTAINER_GROUP(*col_group);
 
-      *col_group = (FooCanvasGroup *)container;
-
-      removed = TRUE ;
+      if ((!zmapWindowContainerHasFeatures(container)) &&
+          (!zmapWindowContainerFeatureSetShowWhenEmpty(ZMAP_CONTAINER_FEATURESET(container))))
+        {
+          container = zmapWindowContainerGroupDestroy(container) ;
+          
+          *col_group = (FooCanvasGroup *)container;
+          
+          removed = TRUE ;
+        }
     }
 
   return removed ;
@@ -828,8 +831,8 @@ static void hideEmptyCB(ZMapWindowContainerGroup container, FooCanvasPoints *poi
     {
     case ZMAPCONTAINER_LEVEL_FEATURESET:
       {
-	if ((!zmapWindowContainerHasFeatures(container)) &&
-	    (!zmapWindowContainerFeatureSetShowWhenEmpty((ZMapWindowContainerFeatureSet)container)))
+	  if (!zmapWindowContainerHasFeatures(container) &&
+              !zmapWindowContainerFeatureSetShowWhenEmpty(ZMAP_CONTAINER_FEATURESET(container)))
     	  {
 	    zmapWindowColumnHide((FooCanvasGroup *)container) ;
     	  }
@@ -1428,8 +1431,8 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 
     case ZMAPFEATURE_STRUCT_ALIGN:
       {
-        ZMapWindowContainerGroup align_parent;
-        FooCanvasItem  *align_hash_item;
+        ZMapWindowContainerGroup align_parent = NULL;
+        FooCanvasItem  *align_hash_item = NULL;
         double x, y;
         int start,end;
 
@@ -1453,8 +1456,10 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 							  0, 0, ZMAPSTRAND_NONE,
 							  ZMAPFRAME_NONE, 0)))
           {
-            zMapAssert(ZMAP_IS_CONTAINER_GROUP(align_hash_item));
-            align_parent = (ZMapWindowContainerGroup)(align_hash_item);
+            if (ZMAP_IS_CONTAINER_GROUP(align_hash_item))
+              {
+                align_parent = (ZMapWindowContainerGroup)(align_hash_item);
+              }
           }
         else
           {
@@ -1494,7 +1499,7 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 	      }
 	  }
 
-	if (status == ZMAP_CONTEXT_EXEC_STATUS_OK)
+	if (align_parent && status == ZMAP_CONTEXT_EXEC_STATUS_OK)
 	  canvas_data->curr_align_group = zmapWindowContainerGetFeatures(align_parent) ;
 
 	break;
@@ -1502,11 +1507,11 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 
     case ZMAPFEATURE_STRUCT_BLOCK:
       {
-	ZMapWindowContainerGroup block_group;
+	ZMapWindowContainerGroup block_group = NULL;
 	//    ZMapWindowContainerGroup forward_group, reverse_group ;
 	//	ZMapWindowContainerGroup strand_separator;
-	ZMapWindowContainerBlock container_block;
-	FooCanvasItem *block_hash_item;
+	ZMapWindowContainerBlock container_block = NULL;
+	FooCanvasItem *block_hash_item = NULL;
 	//    GdkColor *for_bg_colour, *rev_bg_colour ;
 	double x, y;
 	gboolean block_created = FALSE;
@@ -1539,12 +1544,13 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 							  feature_block->unique_id, 0, ZMAPSTRAND_NONE,
 							  ZMAPFRAME_NONE, 0)))
           {
-            zMapAssert(ZMAP_IS_CONTAINER_GROUP(block_hash_item));
-
-            block_group = (ZMapWindowContainerGroup)(block_hash_item);
+            if (ZMAP_IS_CONTAINER_GROUP(block_hash_item))
+              {
+                block_group = (ZMapWindowContainerGroup)(block_hash_item);
 #if MH17_REVCOMP_DEBUG
             zMapLogWarning(" old","");
 #endif
+              }
           }
         else
           {
@@ -1598,15 +1604,16 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 	      }
 	  }
 
-	container_block = (ZMapWindowContainerBlock)block_group;
+        if (block_group)
+          { 
+            container_block = (ZMapWindowContainerBlock)block_group;
 
-
-
-	if (status == ZMAP_CONTEXT_EXEC_STATUS_OK)
-	  {
-	    canvas_data->curr_block_group = zmapWindowContainerGetFeatures(block_group) ;
-	  }
-
+            if (status == ZMAP_CONTEXT_EXEC_STATUS_OK)
+              {
+                canvas_data->curr_block_group = zmapWindowContainerGetFeatures(block_group) ;
+              }
+          }
+        
 	zMapStopTimer("DrawBlock","");
 
 	break;
@@ -1853,16 +1860,18 @@ static gboolean feature_set_matches_frame_drawing_mode(ZMapWindow window,
 
 
 
-GQuark zMapWindowGetFeaturesetContainerID(ZMapWindow window,GQuark featureset_id)
+GQuark zMapWindowGetFeaturesetContainerID(ZMapWindow window, GQuark featureset_id)
 {
-  ZMapFeatureSetDesc gffset;
-  GQuark container_id = featureset_id;
+  GQuark container_id = featureset_id ;
+  ZMapFeatureSetDesc gffset ;
 
-  gffset = (ZMapFeatureSetDesc) g_hash_table_lookup(window->context_map->featureset_2_column, GUINT_TO_POINTER(featureset_id));
-  if(gffset)
-    container_id = gffset->column_id;
 
-  return container_id;
+  gffset = (ZMapFeatureSetDesc)g_hash_table_lookup(window->context_map->featureset_2_column,
+						   GUINT_TO_POINTER(featureset_id)) ;
+  if (gffset)
+    container_id = gffset->column_id ;
+
+  return container_id ;
 }
 
 

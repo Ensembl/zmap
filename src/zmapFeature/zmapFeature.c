@@ -1593,7 +1593,8 @@ void zMapFeatureContextDestroy(ZMapFeatureContext feature_context, gboolean free
 {
   gboolean result ;
 
-  zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature_context)) ;
+  g_return_if_fail(feature_context) ;
+  g_return_if_fail(zMapFeatureIsValid((ZMapFeatureAny)feature_context)) ;
 
   if (feature_context->diff_context)
     {
@@ -1886,7 +1887,8 @@ static void destroyFeatureAny(gpointer data)
   ZMapFeatureAny feature_any = (ZMapFeatureAny)data ;
   gulong nbytes ;
 
-  zMapAssert(zMapFeatureAnyHasMagic(feature_any));
+  g_return_if_fail(feature_any);
+  g_return_if_fail(zMapFeatureAnyHasMagic(feature_any));
 
   if (destroy_debug_G && feature_any->struct_type != ZMAPFEATURE_STRUCT_FEATURE)
     printDestroyDebugInfo(feature_any, "destroyFeatureAny") ;

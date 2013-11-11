@@ -113,7 +113,7 @@ FooCanvasItem *zmapWindowItemGetDNATextItem(ZMapWindow window, FooCanvasItem *it
 						  */
 						 /* but as ST require fwds always it's better to keep the featureset fwds */
 						 /* this is set in item factory run single() */
-						 //						 window->revcomped_features? ZMAPSTRAND_REVERSE : ZMAPSTRAND_FORWARD,
+						 //						 window->flags[ZMAPFLAG_REVCOMPED_FEATURES]? ZMAPSTRAND_REVERSE : ZMAPSTRAND_FORWARD,
 
 						 ZMAPFRAME_NONE, /* NO FRAME */
 						 dna_id)))
@@ -356,7 +356,7 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
       trans_set = zmapWindowFToIFindItemSetFull(window, window->context_to_item,
 						align_id, block_id, set_id,
 						set_id,
-						//						window->revcomped_features? "-" : "+", ".",
+						//						window->flags[ZMAPFLAG_REVCOMPED_FEATURES]? "-" : "+", ".",
 						"+", ".",
 						feature_id,
 						NULL, NULL) ;

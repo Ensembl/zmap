@@ -209,6 +209,285 @@ void zMapGUIRaiseToTop(GtkWidget *widget)
 
 
 
+/* Given a gdkEventAny, return a string name for the event.
+ * 
+ * NOTE, the other event masks need filling in, I've only done the ones I'm interested in...
+ * 
+ * If exclude_mask is zero all events are processed, otherwise events to be excluded should
+ * be specified like this:
+ *
+ * static GdkEventMask msg_exclude_mask_G = (GDK_POINTER_MOTION_MASK | GDK_EXPOSURE_MASK
+ *                                           | GDK_FOCUS_CHANGE_MASK | GDK_VISIBILITY_NOTIFY_MASK
+ *					     | GDK_ENTER_NOTIFY_MASK | GDK_LEAVE_NOTIFY_MASK) ;
+ *
+ */
+char *zMapGUIGetEventAsText(GdkEventMask exclude_mask, GdkEventAny *any_event)
+{
+  char *event_as_text = NULL ;
+  int true_index ;
+  eventTxtStruct event_txt[] =
+    {
+      {"GDK_NOTHING", 0, EVENT_COMMON_TIME},				    /* = -1 */
+      {"GDK_DELETE", 0, EVENT_COMMON_TIME},				    /* = 0 */
+      {"GDK_DESTROY", 0, EVENT_COMMON_TIME},				    /* = 1 */
+      {"GDK_EXPOSE", GDK_EXPOSURE_MASK, EVENT_NO_TIME},		    /* = 2 */
+
+      {"GDK_MOTION_NOTIFY", GDK_POINTER_MOTION_MASK, EVENT_COMMON_TIME},	    /* = 3 */
+      {"GDK_BUTTON_PRESS", 0, EVENT_COMMON_TIME},				    /* = 4 */
+      {"GDK_2BUTTON_PRESS", 0, EVENT_COMMON_TIME},				    /* = 5 */
+      {"GDK_3BUTTON_PRESS", 0, EVENT_COMMON_TIME},				    /* = 6 */
+      {"GDK_BUTTON_RELEASE", 0, EVENT_COMMON_TIME},			    /* = 7 */
+
+      {"GDK_KEY_PRESS", 0, EVENT_COMMON_TIME},				    /* = 8 */
+      {"GDK_KEY_RELEASE", 0, EVENT_COMMON_TIME},				    /* = 9 */
+
+      {"GDK_ENTER_NOTIFY", GDK_ENTER_NOTIFY_MASK, EVENT_CROSSING_TIME},	    /* = 10 */
+      {"GDK_LEAVE_NOTIFY", GDK_LEAVE_NOTIFY_MASK, EVENT_CROSSING_TIME},	    /* = 11 */
+
+      {"GDK_FOCUS_CHANGE", GDK_FOCUS_CHANGE_MASK, EVENT_NO_TIME},	    /* = 12 */
+      {"GDK_CONFIGURE", 0, EVENT_NO_TIME},				    /* = 13 */
+
+      {"GDK_MAP", 0, EVENT_COMMON_TIME},					    /* = 14 */
+      {"GDK_UNMAP", 0, EVENT_COMMON_TIME},					    /* = 15 */
+
+      {"GDK_PROPERTY_NOTIFY", 0, EVENT_ATOM_TIME},			    /* = 16 */
+
+      {"GDK_SELECTION_CLEAR", 0, EVENT_SELECTION_TIME},			    /* = 17 */
+      {"GDK_SELECTION_REQUEST", 0, EVENT_SELECTION_TIME},			    /* = 18 */
+      {"GDK_SELECTION_NOTIFY", 0, EVENT_SELECTION_TIME},			    /* = 19 */
+
+      {"GDK_PROXIMITY_IN", 0, EVENT_COMMON_TIME},				    /* = 20 */
+      {"GDK_PROXIMITY_OUT", 0, EVENT_COMMON_TIME},				    /* = 21 */
+
+      {"GDK_DRAG_ENTER", 0, EVENT_DND_TIME},				    /* = 22 */
+      {"GDK_DRAG_LEAVE", 0, EVENT_DND_TIME},				    /* = 23 */
+      {"GDK_DRAG_MOTION", 0, EVENT_DND_TIME},				    /* = 24 */
+      {"GDK_DRAG_STATUS", 0, EVENT_DND_TIME},				    /* = 25 */
+      {"GDK_DROP_START", 0, EVENT_DND_TIME},				    /* = 26 */
+      {"GDK_DROP_FINISHED", 0, EVENT_DND_TIME},				    /* = 27 */
+
+      {"GDK_CLIENT_EVENT", 0, EVENT_NO_TIME},				    /* = 28 */
+
+      {"GDK_VISIBILITY_NOTIFY", GDK_VISIBILITY_NOTIFY_MASK, EVENT_NO_TIME}, /* = 29 */
+      {"GDK_NO_EXPOSE", 0, EVENT_NO_TIME},				    /* = 30 */
+      {"GDK_SCROLL", 0, EVENT_COMMON_TIME},				    /* = 31 */
+      {"GDK_WINDOW_STATE", 0, EVENT_NO_TIME},				    /* = 32 */
+      {"GDK_SETTING", 0, EVENT_NO_TIME},				    /* = 33 */
+      {"GDK_OWNER_CHANGE", 0, EVENT_OWNER_TIME},				    /* = 34 */
+      {"GDK_GRAB_BROKEN", 0, EVENT_NO_TIME},				    /* = 35 */
+      {"GDK_DAMAGE", 0, EVENT_NO_TIME},				    /* = 36 */
+      {"GDK_EVENT_LAST", 0, EVENT_NO_TIME}				    /* helper variable for decls */
+    } ;
+
+
+  true_index = any_event->type + 1 ;			    /* yuch, see enum values in comments above. */
+
+  if (!exclude_mask || !(event_txt[true_index].mask & exclude_mask))
+    {
+      guint32 time ;
+
+      switch (event_txt[true_index].time_struct_type)
+	{
+	case EVENT_COMMON_TIME:
+	  {
+	    EventCommonTime common = (EventCommonTime)any_event ;
+
+	    time = common->time ;
+
+	    break ;
+	  }
+
+	case EVENT_CROSSING_TIME:
+	  {
+	    GdkEventCrossing *crossing = (GdkEventCrossing *)any_event ;
+
+	    time = crossing->time ;
+
+	    break ;
+	  }
+
+	case EVENT_ATOM_TIME:
+	  {
+	    GdkEventProperty *atom_time = (GdkEventProperty *)any_event ;
+
+	    time = atom_time->time ;
+
+	    break ;
+	  }
+
+	case EVENT_SELECTION_TIME:
+	  {
+	    GdkEventSelection *select_time = (GdkEventSelection *)any_event ;
+
+	    time = select_time->time ;
+
+	    break ;
+	  }
+
+	case EVENT_DND_TIME:
+	  {
+	    GdkEventDND *dnd_time = (GdkEventDND *)any_event ;
+
+	    time = dnd_time->time ;
+
+	    break ;
+	  }
+
+	case EVENT_OWNER_TIME:
+	  {
+	    GdkEventOwnerChange *owner_time = (GdkEventOwnerChange *)any_event ;
+
+	    time = owner_time->time ;
+
+	    break ;
+	  }
+
+	case EVENT_NO_TIME:
+	default:
+	  {
+	    time = 0 ;
+	    break ;
+	  }
+	}
+
+      event_as_text = g_strdup_printf("Event: \"%s\"\tXWindow: %x\tTime: %u.",
+				      event_txt[true_index].text,
+				      (unsigned int)GDK_WINDOW_XWINDOW(any_event->window),
+				      time) ;
+    }
+
+  return event_as_text ;
+}
+
+
+
+gboolean zMapGUIGetMaxWindowSize(GtkWidget *toplevel, gint *width_out, gint *height_out)
+{
+  gboolean result = TRUE ;
+  GdkAtom geometry_atom, workarea_atom, max_atom_vert ;
+  GdkScreen *screen ;
+  int window_width = 0, window_height = 0 ;
+  float ZMAPWINDOW_HORIZ_PROP = 0.9, ZMAPWINDOW_VERT_PROP = 0.9 ;
+
+
+  /* Get the atoms for _NET_* properties. */
+  geometry_atom = gdk_atom_intern("_NET_DESKTOP_GEOMETRY", FALSE) ;
+  workarea_atom = gdk_atom_intern("_NET_WORKAREA", FALSE) ;
+  max_atom_vert = gdk_atom_intern("_NET_WM_STATE_MAXIMIZED_VERT", FALSE) ;
+
+  screen = gtk_widget_get_screen(toplevel) ;
+
+  if (gdk_x11_screen_supports_net_wm_hint(screen, geometry_atom)
+      && gdk_x11_screen_supports_net_wm_hint(screen, workarea_atom))
+    {
+      /* We want to get these properties....
+       *   _NET_DESKTOP_GEOMETRY(CARDINAL) = 1600, 1200
+       *   _NET_WORKAREA(CARDINAL) = 0, 0, 1600, 1154, 0, 0, 1600, 1154,...repeated for all workspaces.
+       *
+       * In fact we don't use the geometry (i.e. screen size) but its useful
+       * to see it.
+       *
+       * When retrieving 32 bit items, these items will be stored in _longs_, this means
+       * that on a 32 bit machine they come back in 32 bits BUT on 64 bit machines they
+       * come back in 64 bits.
+       *
+       *  */
+      gboolean result ;
+      GdkWindow *root_window ;
+      gulong offset, length ;
+      gint pdelete = FALSE ;				    /* Never delete the property data. */
+      GdkAtom actual_property_type ;
+      gint actual_format, actual_length, field_size, num_fields ;
+      guchar *data, *curr ;
+      guint width, height, left, top, right, bottom ;
+
+      field_size = sizeof(glong) ;			    /* see comment above re. 32 vs. 64 bits. */
+
+      root_window = gdk_screen_get_root_window(screen) ;
+
+      offset = 0 ;
+      num_fields = 2 ;
+      length = num_fields * 4 ;				    /* Get two unsigned ints worth of data. */
+      actual_format = actual_length = 0 ;
+      data = NULL ;
+      result = gdk_property_get(root_window,
+				geometry_atom,
+				GDK_NONE,
+				offset,
+				length,
+				pdelete,
+				&actual_property_type,
+				&actual_format,
+				&actual_length,
+				&data) ;
+
+      if (num_fields == actual_length/sizeof(glong))
+	{
+	  curr = data ;
+	  memcpy(&width, curr, field_size) ;
+	  memcpy(&height, (curr += field_size), field_size) ;
+	  g_free(data) ;
+	}
+
+      offset = 0 ;
+      num_fields = 4 ;
+      length = num_fields * 4 ;				    /* Get four unsigned ints worth of data. */
+      actual_format = actual_length = 0 ;
+      data = NULL ;
+      result = gdk_property_get(root_window,
+				workarea_atom,
+				GDK_NONE,
+				offset,
+				length,
+				pdelete,
+				&actual_property_type,
+				&actual_format,
+				&actual_length,
+				&data) ;
+
+      if (num_fields == actual_length/sizeof(glong))
+	{
+	  curr = data ;
+	  memcpy(&left, curr, field_size) ;
+	  memcpy(&top, (curr += field_size), field_size) ;
+	  memcpy(&right, (curr += field_size), field_size) ;
+	  memcpy(&bottom, (curr += field_size), field_size) ;
+	  g_free(data) ;
+	}
+
+      /* off by one ? */
+      window_height = bottom - top ;
+      window_width = right - left ;
+    }
+  else
+    {
+      /* OK, here we just get the raw screen size and return that.uess some appropriate size, note that the window width is kind
+       * of irrelevant, we just set it to be a bit less than it will finally be and the
+       * widgets will resize it to the correct width. We don't use gtk_window_set_default_size()
+       * because it doesn't seem to work. */
+
+      window_width = (int)((float)(gdk_screen_get_width(screen)) * ZMAPWINDOW_HORIZ_PROP) ;
+      window_height = (int)((float)(gdk_screen_get_height(screen)) * ZMAPWINDOW_VERT_PROP) ;
+
+
+    }
+
+  *width_out = window_width ;
+  *height_out = window_height ;
+
+  return result ;
+}
+
+
+
+
+
+
+
+
+
+/* OH MY GOODNESS...THIS IS ALL JUST SHOVED IN HERE....WILLY, NILLY.... */
+
 /*
  * If store == TRUE, store e unless stored != NULL or e == zmapXErrorHandler
  * If clear == TRUE, reset stored to NULL

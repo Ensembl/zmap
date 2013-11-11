@@ -226,6 +226,7 @@ void zmapWindowPfetchEntry(ZMapWindow window, char *sequence_name)
 gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_item, ZMapFeature feature, gboolean destroy_feature)
 {
   ZMapWindowContainerFeatureSet container_set;
+  ZMapWindowContainerGroup column_group ;
   gboolean result = FALSE ;
   ZMapFeatureSet feature_set ;
 
@@ -233,47 +234,54 @@ gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_
   zMapAssert(feature && zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
   feature_set = (ZMapFeatureSet)(feature->parent) ;
 
-  container_set = (ZMapWindowContainerFeatureSet)zmapWindowContainerCanvasItemGetContainer(feature_item) ;
+  column_group = zmapWindowContainerCanvasItemGetContainer(feature_item) ;
 
-  /* Need to delete the feature from the feature set and from the hash and destroy the
-   * canvas item....NOTE this is very order dependent. */
-
-  /* I'm still not sure this is all correct.
-   * canvasItemDestroyCB has a FToIRemove!
-   */
-
-  /* Firstly remove from the FToI hash... */
-  if (zmapWindowFToIRemoveFeature(zmap_window->context_to_item,
-				  container_set->strand,
-				  container_set->frame, feature))
+  if (ZMAP_IS_CONTAINER_FEATURESET(column_group))
     {
-      /* check the feature is in featureset. */
-      if (zMapFeatureSetFindFeature(feature_set, feature))
+      container_set = (ZMapWindowContainerFeatureSet)column_group ;
+      
+      /* Need to delete the feature from the feature set and from the hash and destroy the
+       * canvas item....NOTE this is very order dependent. */
+      
+      /* I'm still not sure this is all correct.
+       * canvasItemDestroyCB has a FToIRemove!
+       */
+      
+      /* Firstly remove from the FToI hash... */
+      if (zmapWindowFToIRemoveFeature(zmap_window->context_to_item,
+                                      container_set->strand,
+                                      container_set->frame, feature))
         {
-	  if (ZMAP_IS_WINDOW_FEATURESET_ITEM(feature_item))
-	    {
-	      zMapWindowFeaturesetItemRemoveFeature(feature_item,feature);
-	    }
-	  else
-	    {
-	      /* destroy the canvas item...this will invoke canvasItemDestroyCB() */
-	      gtk_object_destroy(GTK_OBJECT(feature_item)) ;
-	    }
-
-	  /* I think we shouldn't need to do this probably....on the other hand showing
-	   * empty cols is configurable.... */
-	  if (!(zmapWindowContainerHasFeatures((ZMapWindowContainerGroup)container_set)))
-	    zmapWindowContainerSetVisibility(FOO_CANVAS_GROUP(container_set), FALSE) ;
-
-	  /* destroy the feature... deletes record in the featureset. */
-          if (destroy_feature)
-            zMapFeatureDestroy(feature);
-
-          result = TRUE ;
+          /* check the feature is in featureset. */
+          if (zMapFeatureSetFindFeature(feature_set, feature))
+            {
+              if (ZMAP_IS_WINDOW_FEATURESET_ITEM(feature_item))
+                {
+                  zMapWindowFeaturesetItemRemoveFeature(feature_item,feature);
+                }
+              else
+                {
+                  /* destroy the canvas item...this will invoke canvasItemDestroyCB() */
+                  gtk_object_destroy(GTK_OBJECT(feature_item)) ;
+                }
+              
+              /* I think we shouldn't need to do this probably....on the other hand showing
+               * empty cols is configurable.... */
+              if (!zmapWindowContainerHasFeatures(ZMAP_CONTAINER_GROUP(container_set)) &&
+                  !zmapWindowContainerFeatureSetShowWhenEmpty(container_set))
+                {
+                  zmapWindowContainerSetVisibility(FOO_CANVAS_GROUP(container_set), FALSE) ;
+                }
+              
+              /* destroy the feature... deletes record in the featureset. */
+              if (destroy_feature)
+                zMapFeatureDestroy(feature);
+              
+              result = TRUE ;
+            }
         }
     }
-
-
+      
   return result ;
 }
 
@@ -360,7 +368,7 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow      window,
       zMapAssertNotReached();
       return NULL ;
     }
-  if ((zMapStyleIsStrandSpecific(style)) && window->revcomped_features &&
+  if ((zMapStyleIsStrandSpecific(style)) && window->flags[ZMAPFLAG_REVCOMPED_FEATURES] &&
       ((feature->strand == ZMAPSTRAND_FORWARD) && (zMapStyleIsHideForwardStrand(style))))
     {
       zMapAssertNotReached();
@@ -645,7 +653,23 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 		      /* If external client then call them to do editing. */
 		      if (window->xremote_client)
 			{
-			  callXRemote(window, (ZMapFeatureAny)feature, ZACP_EDIT_FEATURE, highlight_item) ;
+                          /* For the scratch column, the feature doesn't exist in the peer.
+                           * Ask the peer to create it. */
+                          /*! \todo We may wish to change this so that, rather than creating 
+                           * the feature immediately, it opens an intermediary dialog where the
+                           * user can set some attributes locally in zmap instead. Then from
+                           * that dialog, or another option in zmap, they could have the option
+                           * to save the feature to the peer. */
+                          const gchar *style_id = g_quark_to_string(zMapStyleGetID(*feature->style)) ;
+                          
+                          if (feature && feature->style && strcmp(style_id, ZMAP_FIXED_STYLE_SCRATCH_NAME) == 0)
+                            {
+                              callXRemote(window, (ZMapFeatureAny)feature, ZACP_CREATE_FEATURE, highlight_item) ;
+                            }
+                          else
+                            {
+                              callXRemote(window, (ZMapFeatureAny)feature, ZACP_EDIT_FEATURE, highlight_item) ;
+                            }
 			}
 		    }
 
@@ -1023,7 +1047,7 @@ static void callXRemote(ZMapWindow window, ZMapFeatureAny feature_any,
   
 
   /* We should only ever be called with a feature, not a set or anything else. */
-  zMapAssert(feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURE) ;
+  g_return_if_fail(feature_any && feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURE) ;
 
   /* OK...IN HERE IS THE PLACE FOR THE HACK FOR COORDS....NEED TO COPY FEATURE
    * AND INSERT NEW CHROMOSOME COORDS...IF WE CAN DO THIS FOR THIS THEN WE
@@ -1035,7 +1059,7 @@ static void callXRemote(ZMapWindow window, ZMapFeatureAny feature_any,
   /* REVCOMP COORD HACK......THIS HACK IS BECAUSE OUR COORD SYSTEM IS MUCKED UP FOR
    * REVCOMP'D FEATURES..... */
   /* Convert coords */
-  if (window->revcomped_features)
+  if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
     {
       /* remap coords to forward strand range and also swop
        * them as they get reversed in revcomping.... */

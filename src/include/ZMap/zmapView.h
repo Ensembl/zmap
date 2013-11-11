@@ -36,12 +36,12 @@
 
 #include <gtk/gtk.h>
 
+#include <ZMap/zmapEnum.h>
 #include <ZMap/zmapWindow.h>
 #include <ZMap/zmapWindowNavigator.h>
 #include <ZMap/zmapXMLHandler.h>
 #include <ZMap/zmapUrl.h>
 #include <ZMap/zmapAppRemote.h>
-
 
 
 /* Opaque type, represents an instance of a ZMapView. */
@@ -80,25 +80,23 @@ typedef struct _ZMapViewCallbacksStruct
 
 } ZMapViewCallbacksStruct, *ZMapViewCallbacks ;
 
+
+
 /* The overall state of the zmapView, we need this because both the zmap window and the its threads
  * will die asynchronously so we need to block further operations while they are in this state. */
-typedef enum {
+#define VIEW_STATE_LIST(_)                                                           \
+_(ZMAPVIEW_INIT,            , "Init",          "View initialising.",            "") \
+_(ZMAPVIEW_MAPPED,          , "Mapped",        "View displayed.",               "") \
+_(ZMAPVIEW_CONNECTING,      , "Connecting",    "View connecting to data sources.",       "") \
+_(ZMAPVIEW_CONNECTED,       , "Connected",     "View data sources connected.", "") \
+_(ZMAPVIEW_LOADING,         , "Data loading",  "View loading data.",           "") \
+_(ZMAPVIEW_LOADED,          , "Data loaded",   "View data loaded.",           "") \
+_(ZMAPVIEW_UPDATING,        , "Data updating", "View data updating.",           "") \
+_(ZMAPVIEW_RESETTING,       , "Resetting",     "View resetting.",           "") \
+_(ZMAPVIEW_DYING,           , "Dying",         "View terminating.",     "")
 
-  ZMAPVIEW_INIT,
-  ZMAPVIEW_MAPPED,                                  /* Window(s), but no threads: can talk to otterlace */
+ZMAP_DEFINE_ENUM(ZMapViewState, VIEW_STATE_LIST) ;
 
-  ZMAPVIEW_CONNECTING,                              /* Connecting threads. */
-  ZMAPVIEW_CONNECTED,                               /* Threads connected, no data yet. */
-
-  ZMAPVIEW_LOADING,                                 /* Loading data. */
-  ZMAPVIEW_LOADED,                                  /* Full view. */
-  ZMAPVIEW_UPDATING,                                /* after LOADED we can request more data */
-
-  ZMAPVIEW_RESETTING,                               /* Returning to ZMAPVIEW_NOT_CONNECTED. */
-
-  ZMAPVIEW_DYING                              /* View is dying for some reason,
-                                                 cannot do anything in this state. */
-} ZMapViewState ;
 
 
 /* data passed back from view for destroy callback. */
@@ -159,7 +157,7 @@ ZMapViewWindow zMapViewGetDefaultViewWindow(ZMapView view) ;
 ZMapViewWindow zMapViewRemoveWindow(ZMapViewWindow view_window) ;
 
 void zMapViewRedraw(ZMapViewWindow view_window) ;
-gboolean zMapViewConnect(ZMapView zmap_view, char *config_str) ;
+gboolean zMapViewConnect(ZMapFeatureSequenceMap sequence_map, ZMapView zmap_view, char *config_str) ;
 gboolean zMapViewReset(ZMapView zmap_view) ;
 gboolean zMapViewReverseComplement(ZMapView zmap_view) ;
 gboolean zMapViewGetRevCompStatus(ZMapView zmap_view) ;
@@ -173,8 +171,8 @@ void zMapViewGetSourceNameTitle(ZMapView zmap_view, char **name, char **title) ;
 ZMapFeatureContext zMapViewGetFeatures(ZMapView zmap_view) ;
 void zMapViewGetVisible(ZMapViewWindow view_window, double *top, double *bottom) ;
 ZMapViewState zMapViewGetStatus(ZMapView zmap_view) ;
+char *zMapViewGetLoadStatusStr(ZMapView view, char **loading_sources_out, char **failed_sources_out) ;
 GtkWidget *zMapViewGetXremote(ZMapView view) ;
-char *zMapViewGetStatusStr(ZMapView view) ;
 gboolean zMapViewGetFeaturesSpan(ZMapView zmap_view, int *start, int *end) ;
 ZMapWindow zMapViewGetWindow(ZMapViewWindow view_window) ;
 ZMapView zMapViewGetView(ZMapViewWindow view_window) ;
@@ -230,5 +228,9 @@ ZMapGuiNotebookChapter zMapViewGetPrefsChapter(ZMapView view, ZMapGuiNotebook no
 gboolean zMapViewGetHighlightFilteredColumns(ZMapView);
 
 void zMapViewUpdateColumnBackground(ZMapView view);
+
+
+ZMAP_ENUM_AS_NAME_STRING_DEC(zMapView2Str, ZMapViewState) ;
+
 
 #endif /* !ZMAPVIEW_H */

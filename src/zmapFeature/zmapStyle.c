@@ -811,7 +811,7 @@ gboolean zMapStyleIsPropertySetId(ZMapFeatureTypeStyle style, ZMapStyleParamId i
   ZMapStyleParam param;
 
   param = &zmapStyleParams_G [id];
-  if((style->is_set[param->flag_ind] & param->flag_bit))
+  if(style && (style->is_set[param->flag_ind] & param->flag_bit))
     is_set = TRUE;
 
   return(is_set);
@@ -2366,7 +2366,7 @@ static void zmap_feature_type_style_get_property(GObject *gobject,
     case STYLE_PARAM_TYPE_QUARK_LIST_ID:
       {
         gchar *str;
-        str = zMap_g_list_quark_to_string(* (GList **) (((void *) style) + param->offset));
+        str = zMap_g_list_quark_to_string(*(GList **)(((void *) style) + param->offset), NULL);
         g_value_set_string(value, str);
         g_free(str);
       }

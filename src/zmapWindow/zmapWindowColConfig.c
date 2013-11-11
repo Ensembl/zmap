@@ -1083,7 +1083,14 @@ static gint find_name_cb(gconstpointer list_data, gconstpointer user_data)
   list_column_name  = (const char *)list_data;
   query_column_name = (const char *)user_data;
 
-  match = g_ascii_strcasecmp(list_column_name, query_column_name);
+  if (!list_column_name && !query_column_name)
+    match = 0 ;
+  else if (!list_column_name)
+    match = -1 ;
+  else if (!query_column_name)
+    match = 1 ;
+  else
+    match = g_ascii_strcasecmp(list_column_name, query_column_name);
 
   return match;
 }
@@ -1191,7 +1198,7 @@ static GtkWidget *deferred_cols_panel(NotebookPage notebook_page,
 
 	  column_name = (char *) g_quark_to_string(GPOINTER_TO_UINT(column->data));     //label_text_from_column(column_group);
 
-	  if(!g_list_find_custom(make_unique, column_name, find_name_cb))
+	  if(column_name && !g_list_find_custom(make_unique, column_name, find_name_cb))
 	    {
 	      label = create_label(label_box, column_name);
 
@@ -1208,9 +1215,11 @@ static GtkWidget *deferred_cols_panel(NotebookPage notebook_page,
                   page_data   = (DeferredPageData)notebook_page->page_data;
 
                   col = g_hash_table_lookup(window->context_map->columns, GUINT_TO_POINTER(zMapFeatureSetCreateID(column_name)));
-                  zMapAssert(col);
 
-                  loaded_in_mark = column_is_loaded_in_range(window->context_map,page_data->block,col->unique_id,mark1,mark2);
+                  if (col)
+                    loaded_in_mark = column_is_loaded_in_range(window->context_map,page_data->block,col->unique_id,mark1,mark2);
+                  else
+                    zMapWarning("Column lookup failed for '%s'\n", column_name ? column_name : "") ;
 		}
 
 	      col_id = zMapFeatureSetCreateID(column_name);
@@ -1391,8 +1400,19 @@ static FooCanvasGroup *configure_get_point_block_container(ColConfigure configur
 
 gint col_sort_by_name(gconstpointer a, gconstpointer b)
 {
+  int result = 0 ;
+  
   /* we sort by unique but display original; the result should be the same */
-  return(g_ascii_strcasecmp(g_quark_to_string(GPOINTER_TO_UINT(a)),g_quark_to_string(GPOINTER_TO_UINT(b))));
+  if (!a && !b)
+    result = 0 ;
+  else if (!a)
+    result = -1 ;
+  else if (!b)
+    result = 1 ;
+  else
+    result = (g_ascii_strcasecmp(g_quark_to_string(GPOINTER_TO_UINT(a)),g_quark_to_string(GPOINTER_TO_UINT(b))));
+
+  return result ;
 }
 
 /* get all deferered columns or just the one specified */
@@ -2093,11 +2113,16 @@ static void loaded_show_button_cb(GtkToggleButton *togglebutton, gpointer user_d
 			  frame_column = zmapWindowFToIFindSetItem(window, window->context_to_item,feature_set,
 								   zmapWindowContainerFeatureSetGetStrand(container), frame);
 
-			  if(frame_column && zmapWindowContainerHasFeatures((ZMapWindowContainerGroup)(frame_column)))
-			    zmapWindowColumnSetState(window,
-						     FOO_CANVAS_GROUP(frame_column),
-						     button_data->show_hide_state,
-						     FALSE) ;
+			  if(frame_column && 
+                             ZMAP_IS_CONTAINER_GROUP(frame_column) &&
+                             (zmapWindowContainerHasFeatures(ZMAP_CONTAINER_GROUP(frame_column)) ||
+                              zmapWindowContainerFeatureSetShowWhenEmpty(ZMAP_CONTAINER_FEATURESET(frame_column))))
+                            {
+                              zmapWindowColumnSetState(window,
+                                                       FOO_CANVAS_GROUP(frame_column),
+                                                       button_data->show_hide_state,
+                                                       FALSE) ;
+                            }
 			}
 
 		      if(page_data->reposition)
@@ -2190,11 +2215,13 @@ static void set_column_lists_cb(ZMapWindowContainerGroup container, FooCanvasPoi
 	  {
 	    ZMapWindowContainerFeatureSet container_set;
 	    gboolean is_empty;
+	    gboolean allow_empty;
 
 	    container_set = (ZMapWindowContainerFeatureSet)container;
-	    is_empty      = !zmapWindowContainerHasFeatures((ZMapWindowContainerGroup)container_set);
+	    is_empty      = !zmapWindowContainerHasFeatures(ZMAP_CONTAINER_GROUP(container_set));
+            allow_empty   = zmapWindowContainerFeatureSetShowWhenEmpty(container_set);
 
-	    if(!is_empty)
+	    if(!is_empty || allow_empty)
 	      {
 		if(zmapWindowContainerFeatureSetGetStrand(container_set) == ZMAPSTRAND_FORWARD)
 		  lists_data->forward = g_list_append(lists_data->forward, container);

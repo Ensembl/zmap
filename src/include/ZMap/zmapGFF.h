@@ -21,7 +21,8 @@
  * originated by
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk,
+ *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk
  *
  * Description: Interface to a GFF parser, the parser works in a
  *              "line at a time" way, the caller must pass complete
@@ -42,6 +43,19 @@
 typedef struct ZMapGFFParserStruct_ *ZMapGFFParser ;
 
 
+/*
+ * Version of GFF in use; only these symbols should be used. These are used
+ * as numerical values at some points, so must not be changed!
+ */
+typedef enum
+{
+  ZMAPGFF_VERSION_2 = 2,
+  ZMAPGFF_VERSION_3 = 3,
+  ZMAPGFF_VERSION_UNKNOWN
+}  ZMapGFFVersion ;
+
+
+
 /* Feature clip mode, selects how individual feature coords should be clipped in relation
  * to the requested feature range (the gff file may contain features that are outside the
  * requested range. */
@@ -59,7 +73,13 @@ typedef enum
 /* Types/Struct for GFF file header info., currently this is all we are interested
  * in but this may expand as GFFv3 support is introduced. */
 
-typedef enum {GFF_HEADER_NONE, GFF_HEADER_ERROR, GFF_HEADER_INCOMPLETE, GFF_HEADER_COMPLETE} ZMapGFFHeaderState ;
+typedef enum
+{
+  GFF_HEADER_NONE,
+  GFF_HEADER_ERROR,
+  GFF_HEADER_INCOMPLETE,
+  GFF_HEADER_COMPLETE
+} ZMapGFFHeaderState ;
 
 typedef struct
 {
@@ -71,14 +91,26 @@ typedef struct
 } ZMapGFFHeaderStruct, *ZMapGFFHeader ;
 
 
+/*
+ * Some new GFF interface functions.
+ */
+gboolean zMapGFFGetVersionFromString(const char* const sString, int * const piOut) ;
+gboolean zMapGFFGetVersionFromGIO(GIOChannel * const pChannel, int * const piOut ) ;
 
-ZMapGFFParser zMapGFFCreateParser(char *sequence, int features_start, int features_end) ;
+
+/*
+ * Modified old interface.
+ */
+ZMapGFFParser zMapGFFCreateParser(int iGFFVersion, char *sequence, int features_start, int features_end) ;
 gboolean zMapGFFParserInitForFeatures(ZMapGFFParser parser, GHashTable *sources, gboolean parse_only) ;
-gboolean zMapGFFParseHeader(ZMapGFFParser parser, char *line,
-			    gboolean *header_finished, ZMapGFFHeaderState *header_state) ;
+gboolean zMapGFFParseHeader(ZMapGFFParser parser, char *line, gboolean *header_finished, ZMapGFFHeaderState *header_state) ;
+gboolean zMapGFFParseSequence(ZMapGFFParser parser, char *line, gboolean *sequence_finished) ;
 gboolean zMapGFFParseLine(ZMapGFFParser parser, char *line) ;
 gboolean zMapGFFParseLineLength(ZMapGFFParser parser, char *line, gsize line_length) ;
-gboolean zMapGFFParseSequence(ZMapGFFParser parser, char *line, gboolean *sequence_finished) ;
+
+/*
+ * Unchanged old interface.
+ */
 gboolean zMapGFFParserSetSequenceFlag(ZMapGFFParser parser);
 ZMapSequence zMapGFFGetSequence(ZMapGFFParser parser);
 GHashTable *zMapGFFParserGetStyles(ZMapGFFParser parser);

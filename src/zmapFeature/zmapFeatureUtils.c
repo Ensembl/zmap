@@ -1175,6 +1175,79 @@ gboolean zMapFeatureTranscriptChildForeach(ZMapFeature feature, ZMapFeatureSubpa
 }
 
 
+void zMapFeatureTranscriptIntronForeach(ZMapFeature feature, GFunc function, gpointer user_data)
+{
+  GArray *introns;
+  unsigned index;
+  int multiplier = 1, start = 0, end, i;
+  gboolean forward = TRUE;
+
+  zMapAssert(feature->type == ZMAPSTYLE_MODE_TRANSCRIPT);
+
+  introns = feature->feature.transcript.introns;
+
+  if(introns->len > 1)
+    {
+      ZMapSpan first, last;
+      first = &(g_array_index(introns, ZMapSpanStruct, 0));
+      last  = &(g_array_index(introns, ZMapSpanStruct, introns->len - 1));
+      zMapAssert(first && last);
+
+      if(first->x1 > last->x1)
+        forward = FALSE;
+    }
+
+  if(forward)
+    end = introns->len;
+  else
+    {
+      multiplier = -1;
+      start = (introns->len * multiplier) + 1;
+      end   = 1;
+    }
+
+  for(i = start; i < end; i++)
+    {
+      ZMapSpan intron_span;
+
+      index = i * multiplier;
+
+      intron_span = &(g_array_index(introns, ZMapSpanStruct, index));
+
+      (function)(intron_span, user_data);
+    }
+
+  return ;
+}
+
+
+/* Returns FALSE if not an alignment feature or no matches, TRUE otherwise. */
+gboolean zMapFeatureAlignmentMatchForeach(ZMapFeature feature, GFunc function, gpointer user_data)
+{
+  gboolean result = FALSE ;
+
+  if (!zMapFeatureIsValid((ZMapFeatureAny)feature) ||
+      !function ||
+      !ZMAPFEATURE_IS_ALIGNMENT(feature) ||
+      !feature->feature.homol.align)
+    {
+      return result;
+    }
+  
+  result = TRUE;
+  
+  GArray *matches = feature->feature.homol.align;
+
+  int i = 0;
+  for ( ; i < matches->len; ++i)
+    {
+      ZMapAlignBlock match_block = &g_array_index(matches, ZMapAlignBlockStruct, 0) ;
+      (function)(match_block, user_data);
+    }
+
+  return result ;
+}
+
 
 GArray *zMapFeatureWorld2CDSArray(ZMapFeature feature)
 {
@@ -1459,8 +1532,8 @@ static ZMapFrame feature_frame(ZMapFeature feature, int start_coord)
   int offset;
   ZMapFeatureBlock block;
 
-  zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
-  zMapAssert(feature->parent && feature->parent->parent);
+  g_return_val_if_fail(zMapFeatureIsValid((ZMapFeatureAny)feature), ZMAPFRAME_NONE) ;
+  g_return_val_if_fail(feature->parent && feature->parent->parent, ZMAPFRAME_NONE);
 
   block = (ZMapFeatureBlock)(feature->parent->parent);
   offset = block->block_to_sequence.block.x1;   /* start of block in sequence/parent */

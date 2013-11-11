@@ -21,7 +21,8 @@
  * originated by
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk,
+ *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk
  *
  * Description: parser for GFF version 2 format.
  *
@@ -39,12 +40,7 @@
 #include <ZMap/zmapFeature.h>
 #include <ZMap/zmapSO.h>
 #include <zmapGFF_P.h>
-
-
-
-/* Types of name find operation, depend on type of feature. */
-typedef enum {NAME_FIND, NAME_USE_SOURCE, NAME_USE_SEQUENCE, NAME_USE_GIVEN, NAME_USE_GIVEN_OR_NAME } NameFindType ;
-
+#include "zmapGFF2_P.h"
 
 
 /* Some attributes look like this:    Tag "Value"
@@ -125,20 +121,17 @@ static void checkFeatureCB(GQuark key_id, gpointer data, gpointer user_data_unus
  * Optionally a feature start/end range may be specified, if start and end are 0 then
  * all features for the reference sequence are parsed from the gff.
  */
-ZMapGFFParser zMapGFFCreateParser(char *sequence, int features_start, int features_end)
+ZMapGFFParser zMapGFFCreateParser2(char *sequence, int features_start, int features_end)
 {
-  ZMapGFFParser parser = NULL ;
+  ZMapGFF2Parser parser = NULL ;
+  ZMapGFFParser parser_base = NULL ;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  if ((sequence && *sequence)
-      && ((features_start == 1 && features_end == 0) || (features_start > 0 && features_end >= features_start)))
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-    /* I WANT TO REMOVE THE 1,0 STUFF..... */
   if ((sequence && *sequence) && (features_start > 0 && features_end >= features_start))
     {
-      parser = g_new0(ZMapGFFParserStruct, 1) ;
+      parser = g_new0(ZMapGFF2ParserStruct, 1) ;
+      parser_base = (ZMapGFFParser) parser ;
+
+      parser->gff_version = ZMAPGFF_VERSION_2 ;
 
       parser->state = ZMAPGFF_PARSE_HEADER ;
       parser->error = NULL ;
@@ -161,7 +154,6 @@ ZMapGFFParser zMapGFFCreateParser(char *sequence, int features_start, int featur
       parser->header_state = GFF_HEADER_NONE ;
 
 
-      parser->gff_version = GFF_DEFAULT_VERSION ;
       parser->sequence_name = g_strdup(sequence) ;
       parser->features_start = features_start ;
       parser->features_end = features_end ;
@@ -171,69 +163,21 @@ ZMapGFFParser zMapGFFCreateParser(char *sequence, int features_start, int featur
       parser->sequence_flags.done_finished = TRUE ;	    /* default we don't parse the dna/protein */
 
       /* Set initial buffer & format string size to something that will probably be big enough. */
-      resizeBuffers(parser, BUF_INIT_SIZE) ;
+      resizeBuffers(parser_base, BUF_INIT_SIZE) ;
 
-      resizeFormatStrs(parser) ;
+      resizeFormatStrs(parser_base) ;
     }
 
-  return parser ;
+  return parser_base ;
 }
 
 
-/* the servers need styles to add DNA and 3FT
- * they used to create temp style and then destroy these but that's not very good
- * they don't have styles info directly but this is stored in the parser
- * during the protocol steps
- */
-GHashTable *zMapGFFParserGetStyles(ZMapGFFParser parser)
-{
-	if(!parser)
-		return NULL;
-	return parser->sources;
-}
-
-/* We should do this internally with a var in the parser struct.... */
-/* This function must be called prior to parsing feature lines, it is not required
- * for either the header lines or sequences. */
-gboolean zMapGFFParserInitForFeatures(ZMapGFFParser parser, GHashTable *sources, gboolean parse_only)
-{
-  gboolean result = FALSE ;
-  GQuark locus_id ;
-
-  parser->sources = sources ;
-  parser->parse_only = parse_only ;
-
-  /* Check for Locus as one of the sources as this needs to be constructed as we go along. */
-  locus_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_LOCUS_NAME) ;
-  if (!(parser->locus_set_style = zMapFindStyle(parser->sources, locus_id)))
-    {
-      zMapLogWarning("Locus set will not be created, "
-		     "could not find style \"%s\" for feature set \"%s\".",
-		     ZMAP_FIXED_STYLE_LOCUS_NAME, ZMAP_FIXED_STYLE_LOCUS_NAME) ;
-    }
-  else
-    {
-      parser->locus_set_id = locus_id ;
-    }
 
 
-
-  if (!parser->parse_only)
-    {
-      g_datalist_init(&(parser->feature_sets)) ;
-      parser->free_on_destroy  = TRUE ;
-    }
-  else
-    {
-      parser->feature_sets =  NULL ;
-      parser->free_on_destroy  = FALSE ;
-    }
-
-  return result ;
-}
-
-
-/* Parses a single line of GFF data, should be called repeatedly with successive lines
+/*
+ * V2 SPECIFIC
+ *
+ * Parses a single line of GFF data, should be called repeatedly with successive lines
  * of GFF data from a GFF source. This function expects the line to be a null-terminated
  * C string with any terminating newline char to already have been removed (this latter
  * because we don't know how the line is stored so don't want to write to it).
@@ -265,14 +209,20 @@ gboolean zMapGFFParserInitForFeatures(ZMapGFFParser parser, GHashTable *sources,
  * zMapGFFDestroyParser() should be called to free it.
  *
  */
-gboolean zMapGFFParseHeader(ZMapGFFParser parser, char *line,
+gboolean zMapGFFParseHeader_V2(ZMapGFFParser parser_base, char *line,
 			    gboolean *header_finished, ZMapGFFHeaderState *header_state)
 {
   gboolean result = FALSE ;
 
-  zMapLogReturnValIfFail((parser && line && header_finished), FALSE) ;
+  zMapLogReturnValIfFail((parser_base && line && header_finished), FALSE) ;
 
-  parser->line_count++ ;
+  if (!parser_base)
+    return result ;
+  if (parser_base->gff_version != ZMAPGFF_VERSION_2)
+    return result ;
+  parser_base->line_count++ ;
+
+  ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
 
   /* Look for the header information. */
   if (parser->state == ZMAPGFF_PARSE_HEADER)
@@ -286,7 +236,7 @@ gboolean zMapGFFParseHeader(ZMapGFFParser parser, char *line,
 	{
 	  /* If result is FALSE either header is finished or there was an error in a header line
 	   * that we are interested in. */
-	  if ((result = parseHeaderLine(parser, line)))
+	  if ((result = parseHeaderLine(parser_base, line)))
 	    {
 	      /* Signal that last line was a header line so header not finished. */
 	      *header_finished = FALSE ;
@@ -333,13 +283,20 @@ gboolean zMapGFFParseHeader(ZMapGFFParser parser, char *line,
  *
  * Returns TRUE in sequence_finished once all the sequence is parsed.
  */
-gboolean zMapGFFParseSequence(ZMapGFFParser parser, char *line, gboolean *sequence_finished)
+gboolean zMapGFFParseSequence_V2(ZMapGFFParser parser_base, char *line, gboolean *sequence_finished)
 {
   gboolean result = FALSE ;
 
+  if (!parser_base)
+    return result ;
+  if (parser_base->gff_version != ZMAPGFF_VERSION_2)
+    return result ;
+  parser_base->line_count++ ;
+
+  ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
+
   zMapLogReturnValIfFail((parser && line && sequence_finished), FALSE) ;
 
-  parser->line_count++ ;
 
   if (parser->state == ZMAPGFF_PARSE_BODY)
     parser->state = ZMAPGFF_PARSE_SEQUENCE ;
@@ -350,7 +307,7 @@ gboolean zMapGFFParseSequence(ZMapGFFParser parser, char *line, gboolean *sequen
 	{
 	  result = TRUE ;
 	}
-      if (!(result = parseSequenceLine(parser, line)))
+      if (!(result = parseSequenceLine(parser_base, line)))
 	{
 	  parser->state = ZMAPGFF_PARSE_BODY ;    // return FALSE, get ready for body section
 	}
@@ -372,17 +329,6 @@ gboolean zMapGFFParseSequence(ZMapGFFParser parser, char *line, gboolean *sequen
   return result ;
 }
 
-
-
-/* Convenience function, size 0 tells code to guess buffer size. */
-gboolean zMapGFFParseLine(ZMapGFFParser parser, char *line)
-{
-  gboolean result = FALSE ;
-
-  result = zMapGFFParseLineLength(parser, line, 0) ;
-
-  return result ;
-}
 
 
 
@@ -410,21 +356,27 @@ gboolean zMapGFFParseLine(ZMapGFFParser parser, char *line)
  * at the top of the file and that the first non-header line marks the beginning
  * of the GFF data. If this is not true then its an error.
  */
-gboolean zMapGFFParseLineLength(ZMapGFFParser parser, char *line, gsize line_length)
+gboolean zMapGFFParseLineLength_V2(ZMapGFFParser parser_base, char *line, gsize line_length)
 {
   gboolean result = FALSE ;
 
+  ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
+
+  if (!parser)
+    return result ;
+  if (parser->gff_version != ZMAPGFF_VERSION_2)
+    return result ;
 
   parser->line_count++ ;
 
   /* Look for the header information. */
   if (parser->state == ZMAPGFF_PARSE_HEADER)
+  {
+    if (!(result = parseHeaderLine(parser_base, line)))
     {
-      if (!(result = parseHeaderLine(parser, line)))
-	{
-	  if (parser->error)
-	    {
-	      result = FALSE ;
+      if (parser->error)
+      {
+        result = FALSE ;
 	      parser->state = ZMAPGFF_PARSE_ERROR ;
 	    }
 	  else
@@ -434,8 +386,8 @@ gboolean zMapGFFParseLineLength(ZMapGFFParser parser, char *line, gsize line_len
 	      parser->state = ZMAPGFF_PARSE_BODY ;
 	      result = TRUE ;
 	    }
-	}
     }
+  }
 
   /* Note can only be in parse body state if header correctly parsed. */
   if (parser->state == ZMAPGFF_PARSE_BODY)
@@ -451,7 +403,7 @@ gboolean zMapGFFParseLineLength(ZMapGFFParser parser, char *line, gsize line_len
 	}
       else
 	{
-	  if (!(result = parseBodyLine(parser, line, line_length)))
+	  if (!(result = parseBodyLine(parser_base, line, line_length)))
 	    {
 	      if (parser->error && parser->stop_on_error)
 		{
@@ -465,7 +417,7 @@ gboolean zMapGFFParseLineLength(ZMapGFFParser parser, char *line, gsize line_len
 
   if (parser->state == ZMAPGFF_PARSE_SEQUENCE)
     {
-      if (!(result = parseSequenceLine(parser, line)))
+      if (!(result = parseSequenceLine(parser_base, line)))
 	{
 	  if (parser->error && parser->stop_on_error)
 	    {
@@ -498,9 +450,16 @@ gboolean zMapGFFParseLineLength(ZMapGFFParser parser, char *line, gsize line_len
 /* Returns as much information as possible from the header comments of the gff file.
  * Note that our current parsing code makes this an all or nothing piece of code:
  * either the whole header is there or nothing is.... */
-ZMapGFFHeader zMapGFFGetHeader(ZMapGFFParser parser)
+ZMapGFFHeader zMapGFFGetHeader(ZMapGFFParser parser_base)
 {
   ZMapGFFHeader header = NULL ;
+
+  ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
+
+  if (!parser)
+    return NULL ;
+  if (parser->gff_version != ZMAPGFF_VERSION_2)
+    return NULL ;
 
 	/* MH17: if we have a GFF file with header only we never get to set done header */
 	/* on account of the structure of the code in use */
@@ -519,9 +478,18 @@ ZMapGFFHeader zMapGFFGetHeader(ZMapGFFParser parser)
   return header ;
 }
 
-gboolean zMapGFFParserSetSequenceFlag(ZMapGFFParser parser)
+
+
+gboolean zMapGFFParserSetSequenceFlag(ZMapGFFParser parser_base)
 {
   gboolean set = TRUE ;
+
+  ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
+
+  if (!parser)
+    return set ;
+  if (parser->gff_version != ZMAPGFF_VERSION_2)
+    return set ;
 
   parser->sequence_flags.done_start = FALSE ;
   parser->sequence_flags.done_finished = FALSE ;
@@ -529,9 +497,16 @@ gboolean zMapGFFParserSetSequenceFlag(ZMapGFFParser parser)
   return set ;
 }
 
-ZMapSequence zMapGFFGetSequence(ZMapGFFParser parser)
+ZMapSequence zMapGFFGetSequence(ZMapGFFParser parser_base)
 {
   ZMapSequence sequence = NULL;
+
+  ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
+
+  if (!parser)
+    return NULL ;
+  if (parser->gff_version != ZMAPGFF_VERSION_2)
+    return NULL ;
 
   if (parser->header_flags.done_header)
     {
@@ -551,28 +526,27 @@ ZMapSequence zMapGFFGetSequence(ZMapGFFParser parser)
   return sequence;
 }
 
+
+
 void zMapGFFFreeHeader(ZMapGFFHeader header)
 {
   zMapAssert(header) ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  g_free(header->source_name) ;
-  g_free(header->source_version) ;
-  g_free(header->sequence_name) ;
-
-  g_free(header) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
   return ;
 }
 
 
 /* Return the set of features read from a file for a block. */
-gboolean zMapGFFGetFeatures(ZMapGFFParser parser, ZMapFeatureBlock feature_block)
+gboolean zMapGFFGetFeatures(ZMapGFFParser parser_base, ZMapFeatureBlock feature_block)
 {
   gboolean result = FALSE ;
+
+  ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
+
+  if (!parser)
+    return result ;
+  if (parser->gff_version != ZMAPGFF_VERSION_2)
+    return result ;
 
   if (parser->state != ZMAPGFF_PARSE_ERROR)
     {
@@ -635,9 +609,17 @@ gboolean zMapGFFGetFeatures(ZMapGFFParser parser, ZMapFeatureBlock feature_block
 
 
 /* Optionally set mappings that are keys from the GFF source to feature set and style names. */
-void zMapGFFParseSetSourceHash(ZMapGFFParser parser,
+void zMapGFFParseSetSourceHash(ZMapGFFParser parser_base,
 			       GHashTable *source_2_feature_set, GHashTable *source_2_sourcedata)
 {
+
+  ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
+
+  if (!parser)
+    return ;
+  if (parser->gff_version != ZMAPGFF_VERSION_2)
+    return ;
+
   parser->source_2_feature_set = source_2_feature_set ;
 
   parser->source_2_sourcedata = source_2_sourcedata ;
@@ -679,16 +661,30 @@ void zMapGFFParseSetSourceHash(ZMapGFFParser parser,
 /* servers have a list of columns in/out as provided by ACEDB and later used by pipes
  * here we privide a list of (single) featuresets as put into the context
  */
-GList *zMapGFFGetFeaturesets(ZMapGFFParser parser)
+GList *zMapGFFGetFeaturesets(ZMapGFFParser parser_base)
 {
+  ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
+
+  if (!parser)
+    return NULL ;
+  if (parser->gff_version != ZMAPGFF_VERSION_2)
+    return NULL ;
+
   return (parser->src_feature_sets) ;
 }
 
 
 /* If stop_on_error is TRUE the parser will not parse any further lines after it encounters
  * the first error in the GFF file. */
-void zMapGFFSetStopOnError(ZMapGFFParser parser, gboolean stop_on_error)
+void zMapGFFSetStopOnError(ZMapGFFParser parser_base, gboolean stop_on_error)
 {
+  ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
+
+  if (!parser)
+    return ;
+  if (parser->gff_version != ZMAPGFF_VERSION_2)
+    return  ;
+
   if (parser->state != ZMAPGFF_PARSE_ERROR)
     parser->stop_on_error = stop_on_error ;
 
@@ -697,8 +693,15 @@ void zMapGFFSetStopOnError(ZMapGFFParser parser, gboolean stop_on_error)
 
 
 /* If SO_compliant is TRUE the parser will only accept SO terms for feature types. */
-void zMapGFFSetSOCompliance(ZMapGFFParser parser, gboolean SO_compliant)
+void zMapGFFSetSOCompliance(ZMapGFFParser parser_base, gboolean SO_compliant)
 {
+  ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
+
+  if (!parser)
+    return ;
+  if (parser->gff_version != ZMAPGFF_VERSION_2)
+    return ;
+
   if (parser->state != ZMAPGFF_PARSE_ERROR)
     parser->SO_compliant = SO_compliant ;
 
@@ -708,8 +711,15 @@ void zMapGFFSetSOCompliance(ZMapGFFParser parser, gboolean SO_compliant)
 
 /* Sets the clipping mode for handling features that are either partly or wholly outside
  * the requested start/end for the target sequence. */
-void zMapGFFSetFeatureClip(ZMapGFFParser parser, ZMapGFFClipMode clip_mode)
+void zMapGFFSetFeatureClip(ZMapGFFParser parser_base, ZMapGFFClipMode clip_mode)
 {
+  ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
+
+  if (!parser)
+    return ;
+  if (parser->gff_version != ZMAPGFF_VERSION_2)
+    return ;
+
   if (parser->state != ZMAPGFF_PARSE_ERROR)
     {
       parser->clip_mode = clip_mode ;
@@ -720,8 +730,15 @@ void zMapGFFSetFeatureClip(ZMapGFFParser parser, ZMapGFFClipMode clip_mode)
 
 
 /* Sets the start/end coords for clipping features. */
-void zMapGFFSetFeatureClipCoords(ZMapGFFParser parser, int start, int end)
+void zMapGFFSetFeatureClipCoords(ZMapGFFParser parser_base, int start, int end)
 {
+  ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
+
+  if (!parser)
+    return ;
+  if (parser->gff_version != ZMAPGFF_VERSION_2)
+    return ;
+
   zMapAssert(start > 0 && end > 0 && start <= end) ;
 
   if (parser->state != ZMAPGFF_PARSE_ERROR)
@@ -738,8 +755,15 @@ void zMapGFFSetFeatureClipCoords(ZMapGFFParser parser, int start, int end)
 
 /* If default_to_basic is TRUE the parser will create basic features for any unrecognised
  * feature type. */
-void zMapGFFSetDefaultToBasic(ZMapGFFParser parser, gboolean default_to_basic)
+void zMapGFFSetDefaultToBasic(ZMapGFFParser parser_base, gboolean default_to_basic)
 {
+  ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
+
+  if (!parser)
+    return ;
+  if (parser->gff_version != ZMAPGFF_VERSION_2)
+    return ;
+
   if (parser->state != ZMAPGFF_PARSE_ERROR)
     parser->default_to_basic = default_to_basic ;
 
@@ -749,9 +773,14 @@ void zMapGFFSetDefaultToBasic(ZMapGFFParser parser, gboolean default_to_basic)
 
 /* Return the GFF version which the parser is using. This is determined from the GFF
  * input stream from the header comments. */
-int zMapGFFGetVersion(ZMapGFFParser parser)
+int zMapGFFGetVersion(ZMapGFFParser parser_base)
 {
   int version = -1 ;
+  ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
+  if (!parser)
+    return ZMAPGFF_VERSION_UNKNOWN;
+  if (parser->gff_version != ZMAPGFF_VERSION_2)
+    return ZMAPGFF_VERSION_UNKNOWN;
 
   if (parser->state != ZMAPGFF_PARSE_ERROR)
     version = parser->gff_version ;
@@ -762,30 +791,52 @@ int zMapGFFGetVersion(ZMapGFFParser parser)
 
 /* Return line number of last line processed (this is the same as the number of lines processed.
  * N.B. we always return this as it may be required for error diagnostics. */
-int zMapGFFGetLineNumber(ZMapGFFParser parser)
+int zMapGFFGetLineNumber(ZMapGFFParser parser_base)
 {
+  ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
+
+  if (!parser)
+    return 0 ;
+  if (parser->gff_version != ZMAPGFF_VERSION_2)
+    return 0 ;
   return parser->line_count ;
 }
 
 
 /* If a zMapGFFNNN function has failed then this function returns a description of the error
  * in the glib GError format. If there has been no error then NULL is returned. */
-GError *zMapGFFGetError(ZMapGFFParser parser)
+GError *zMapGFFGetError(ZMapGFFParser parser_base)
 {
+  ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
+  if (!parser)
+    return NULL ;
+  if (parser->gff_version != ZMAPGFF_VERSION_2)
+    return NULL ;
+
   return parser->error ;
 }
 
 
-int zMapGFFParserGetNumFeatures(ZMapGFFParser parser)
+int zMapGFFParserGetNumFeatures(ZMapGFFParser parser_base)
 {
+  ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
+  if (!parser)
+    return 0 ;
+  if (parser->gff_version != ZMAPGFF_VERSION_2)
+    return 0 ;
   return(parser->num_features) ;
 }
 
 /* Returns TRUE if the parser has encountered an error from which it cannot recover and hence will
  * not process any more lines, FALSE otherwise. */
-gboolean zMapGFFTerminated(ZMapGFFParser parser)
+gboolean zMapGFFTerminated(ZMapGFFParser parser_base)
 {
   gboolean result = TRUE ;
+  ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
+  if (!parser)
+    return result ;
+  if (parser->gff_version != ZMAPGFF_VERSION_2)
+    return result ;
 
   if (parser->state != ZMAPGFF_PARSE_ERROR)
     result = FALSE ;
@@ -796,8 +847,14 @@ gboolean zMapGFFTerminated(ZMapGFFParser parser)
 /* If free_on_destroy == TRUE then all the feature arrays will be freed when
  * the GFF parser is destroyed, otherwise they are left intact. Important
  * because caller may still want access to them after the destroy. */
-void zMapGFFSetFreeOnDestroy(ZMapGFFParser parser, gboolean free_on_destroy)
+void zMapGFFSetFreeOnDestroy(ZMapGFFParser parser_base, gboolean free_on_destroy)
 {
+  ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
+  if (!parser)
+    return ;
+  if (parser->gff_version != ZMAPGFF_VERSION_2)
+    return ;
+
   if (parser->state != ZMAPGFF_PARSE_ERROR)
     parser->free_on_destroy = free_on_destroy ;
 
@@ -805,44 +862,20 @@ void zMapGFFSetFreeOnDestroy(ZMapGFFParser parser, gboolean free_on_destroy)
 }
 
 
-void zMapGFFDestroyParser(ZMapGFFParser parser)
+void zMapGFFDestroyParser(ZMapGFFParser parser_base)
 {
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  if (parser->error)
-    g_error_free(parser->error) ;
-
-  if (parser->source_name)
-    g_free(parser->source_name) ;
-  if (parser->source_version)
-    g_free(parser->source_version) ;
-
-  if (parser->date)
-    g_free(parser->date) ;
-
-  if (parser->sequence_name)
-    g_free(parser->sequence_name) ;
-
-  /* The datalist uses a destroy routine that only destroys the feature arrays if the caller wants
-   * us to, see destroyFeatureArray() */
-  if (!parser->parse_only && parser->feature_sets)
-    g_datalist_clear(&(parser->feature_sets)) ;
-
-  g_string_free(parser->attributes_str, TRUE) ;
-  g_string_free(parser->comments_str, TRUE) ;
-
-  g_free(parser) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
+  if (!parser)
+    return ;
+  if (parser->gff_version != ZMAPGFF_VERSION_2)
+    return ;
 
   g_hash_table_destroy(parser->excluded_features) ;
 
-
   if (parser->sequence_name)
     g_free(parser->sequence_name) ;
 
   g_free(parser) ;
-
-
 
   return ;
 }
@@ -861,16 +894,21 @@ void zMapGFFDestroyParser(ZMapGFFParser parser)
 /* This function expects a null-terminated C string that contains a GFF header line
  * which is a special form of comment line starting with a "##" in column 1.
  *
- * Currently we parse gff-version and sequence-region comments as they are 
+ * Currently we parse gff-version and sequence-region comments as they are
  * the only ones we are really interested in for now, for other header lines
  * we simply return TRUE.
  *
  * Returns FALSE if passed a line that is not a header comment OR if there
  * was a parse error. In the latter case parser->error will have been set.
  */
-static gboolean parseHeaderLine(ZMapGFFParser parser, char *line)
+static gboolean parseHeaderLine(ZMapGFFParser parser_base, char *line)
 {
   gboolean result = FALSE ;
+  ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
+  if (!parser)
+    return result ;
+  if (parser->gff_version != ZMAPGFF_VERSION_2)
+    return result ;
 
   /* OH DEAR...CHANGE TO HAVE A DYNAMIC BUFFER LIMIT AS WITH OTHER LINES.... */
   enum {FIELD_BUFFER_LEN = 1001} ;			    /* If you change this, change the
@@ -959,10 +997,10 @@ static gboolean parseHeaderLine(ZMapGFFParser parser, char *line)
 		  /* Parser is created with sequence name and a start/end range for
 		   * the features it wants to read from the file, this is compared
 		   * to any sequence-region pragma found.
-		   * 
+		   *
 		   * If a different sequence name is found it is ignored (may have mulitple
 		   * sequences in same file).
-		   * 
+		   *
 		   * If the sequence name is found but the given start/end of features is outside
 		   * the parsers start/end that is an error, otherwise the parser reads all features
 		   * that overlap its start/end.....IMPLIES WE MAY NEED TO REMOVE FEATURES IF
@@ -1066,11 +1104,18 @@ static gboolean parseHeaderLine(ZMapGFFParser parser, char *line)
  * TRUE if not. parser->sequence_flags.done_finished is set to TRUE
  * when sequence parse has finished.
  */
-static gboolean parseSequenceLine(ZMapGFFParser parser, char *line)
+static gboolean parseSequenceLine(ZMapGFFParser parser_base, char *line)
 {
   gboolean result = FALSE ;
   enum {FIELD_BUFFER_LEN = 1001} ;			    /* If you change this, change the
 							       scanf's below... */
+
+  ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
+
+  if (!parser)
+    return result ;
+  if (parser->gff_version != ZMAPGFF_VERSION_2)
+    return result ;
 
   if (parser->state == ZMAPGFF_PARSE_SEQUENCE)
     {
@@ -1151,7 +1196,7 @@ static gboolean parseSequenceLine(ZMapGFFParser parser, char *line)
  * If <sequence> does not match the name held by the parser the line is ignored (may be multiple
  * sequences per file).
  * If start/end are outside the start/end held in the parser the line is ignored.
- * 
+ *
  * For ZMap, we've modified the acedb gff dumper to output homology alignments after the
  * attributes, marked by a tag " Gaps ".  They're in groups of 4 space-separated coordinates,
  * successive groups being comma-separated.
@@ -1163,7 +1208,7 @@ static gboolean parseSequenceLine(ZMapGFFParser parser, char *line)
 
 /* THIS IS THE WRONG WAY TO HANDLE THIS...THE BAM gff data should be fixed to URL escape the '#'
  * AND THEN THE PROBLEM GOES AWAY !!
- * 
+ *
  * NOTE to handle BAM data that includes # inside attribute strings we take attributes and comments as one section
  * (comments are not processed anywhere)
  * Then we scan attributes and split this on an unquoted # and put the reamainder into commments
@@ -1172,7 +1217,7 @@ static gboolean parseSequenceLine(ZMapGFFParser parser, char *line)
 
 #define QUOTED_HASH_KILLS_ATTRIBUTES	0	/* set to 1 for previous code */
 
-static gboolean parseBodyLine(ZMapGFFParser parser, char *line, gsize line_length)
+static gboolean parseBodyLine(ZMapGFFParser parser_base, char *line, gsize line_length)
 {
   gboolean result = TRUE ;
   char *sequence, *source, *feature_type, *score_str, *strand_str, *phase_str, *attributes, *comments ;
@@ -1183,6 +1228,13 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line, gsize line_lengt
   ZMapPhase phase ;
   gboolean has_score = FALSE ;
   char *err_text = NULL ;
+
+  ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
+
+  if (!parser)
+    return result ;
+  if (parser->gff_version != ZMAPGFF_VERSION_2)
+    return result ;
 
 
   if (!line_length)
@@ -1200,9 +1252,9 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line, gsize line_lengt
       /* If line_length increases then increase the length of the buffers that receive text so that
        * they cannot overflow and redo format string to read in more chars. */
 
-      resizeBuffers(parser, line_length) ;
+      resizeBuffers(parser_base, line_length) ;
 
-      resizeFormatStrs(parser) ;
+      resizeFormatStrs(parser_base) ;
 
       zMapLogWarning("GFF parser buffers had to be resized to new line length: %d", parser->buffer_length) ;
     }
@@ -1376,7 +1428,7 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line, gsize line_lengt
 		{
 
 		  g_hash_table_insert(parser->excluded_features, GINT_TO_POINTER(name_id), GINT_TO_POINTER(name_id)) ;
-		      
+
 		  result = TRUE ;
 		}
 	      else if ((g_hash_table_lookup(parser->excluded_features, GINT_TO_POINTER(name_id))))
@@ -1394,7 +1446,7 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line, gsize line_lengt
 
 	      mungeFeatureType(source, &type);
 
-	      if (!(result = makeNewFeature(parser, NAME_FIND, sequence,
+	      if (!(result = makeNewFeature(parser_base, NAME_FIND, sequence,
 					    source, feature_type, type,
 					    start, end, has_score, score, strand, phase,
 					    attributes, &err_text)))
@@ -1421,7 +1473,7 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line, gsize line_lengt
 		    err_text = g_strdup_printf("feature_type not recognised: %s", ZMAP_FIXED_STYLE_LOCUS_NAME) ;
 
 
-		  if (!(result = makeNewFeature(parser, NAME_USE_SEQUENCE, (char *)g_quark_to_string(locus_id),
+		  if (!(result = makeNewFeature(parser_base, NAME_USE_SEQUENCE, (char *)g_quark_to_string(locus_id),
 						ZMAP_FIXED_STYLE_LOCUS_NAME, ZMAP_FIXED_STYLE_LOCUS_NAME, type,
 						start, end, FALSE, 0.0, ZMAPSTRAND_NONE, ZMAPPHASE_NONE,
 						attributes, &err_text)))
@@ -1480,7 +1532,7 @@ char *find_tag(char * str, char *tag)
 }
 
 
-static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
+static gboolean makeNewFeature(ZMapGFFParser parser_base, NameFindType name_find,
 			       char *sequence, char *source, char *ontology,
 			       ZMapStyleMode feature_type,
 			       int start, int end,
@@ -1512,6 +1564,13 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
   GQuark SO_acc = 0 ;
   char *name_string = NULL, *variation_string = NULL ;
   ZMapFeatureSource source_data ;
+
+  ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
+
+  if (!parser)
+    return result ;
+  if (parser->gff_version != ZMAPGFF_VERSION_2)
+    return result ;
 
 
   /* If the parser was given a source -> data mapping then
@@ -1647,7 +1706,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
       parser_feature_set->multiline_features = NULL ;
       g_datalist_init(&(parser_feature_set->multiline_features)) ;
 
-      parser_feature_set->parser = parser ;             /* We need parser flags in the destroy
+      parser_feature_set->parser = parser_base ;             /* We need parser flags in the destroy
 							   function for the feature_set list. */
     }
 
@@ -1702,6 +1761,9 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
       zMapFeatureAddStyleMode(feature_style, feature_type);
     }
 
+
+  if (g_ascii_strcasecmp(source, "genomic_canonical") == 0)
+    printf("found it\n") ;
 
   /* We load some mode specific data which is needed in making a unique feature name. */
   if (feature_type == ZMAPSTYLE_MODE_ALIGNMENT)
@@ -1938,7 +2000,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 
 		  if (align_format)
 		    {
-		      if (!loadAlignString(parser, align_format,
+		      if (!loadAlignString(parser_base, align_format,
 					   gaps_onwards, &gaps,
 					   strand, start, end,
 					   query_strand, query_start, query_end))
@@ -2115,7 +2177,7 @@ static gboolean loadGaps(char *attributes, GArray *gaps, ZMapStrand ref_strand, 
  * which may be worth referring to
  * but this function fills in gaps data from a cigar or vulgar string
  */
-static gboolean loadAlignString(ZMapGFFParser parser,
+static gboolean loadAlignString(ZMapGFFParser parser_base,
 				ZMapFeatureAlignFormat align_format, char *attributes, GArray **gaps_out,
 				ZMapStrand ref_strand, int ref_start, int ref_end,
 				ZMapStrand match_strand, int match_start, int match_end)
@@ -2123,6 +2185,13 @@ static gboolean loadAlignString(ZMapGFFParser parser,
   gboolean valid = FALSE ;
   int attr_fields ;
   GString *format_str ;
+
+  ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
+
+  if (!parser)
+    return valid ;
+  if (parser->gff_version != ZMAPGFF_VERSION_2)
+    return valid ;
 
   /* Cack handed really, we do the resizing of the format strings in one routine but
    * don't know which alignment format it is, so we append it here.... */
@@ -2194,6 +2263,7 @@ static gboolean getFeatureName(NameFindType name_find, char *sequence, char *att
 {
   gboolean has_name = FALSE ;
   char *tag_pos ;
+  gboolean name_at_start ;
 
   /* Probably we should do some checking to make sure start/end are in correct order....and
    * that other fields are correct....errr...shouldn't that already have been done ???? */
@@ -2223,11 +2293,24 @@ static gboolean getFeatureName(NameFindType name_find, char *sequence, char *att
       *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
 					       start, end, query_start, query_end) ;
     }
-  else if ((tag_pos = strstr(attributes, "Name")))
+  else if ((name_at_start = g_str_has_prefix(attributes, "Name"))
+	   || (tag_pos = strstr(attributes, " Name"))
+	   || (tag_pos = strstr(attributes, ";Name"))
+	   || (tag_pos = strstr(attributes, "\tName")))
     {
       /* Parse out "Name <objname> ;" */
+      /* Unfortunately the text "Name" appears also in the tag "DB_Name"
+       * and if that tag appears first then that's the one that's picked up. The 
+       * real Name tag should only ever be preceeded by a space, semi-colon or tab
+       * so we check for that. Once found, increment tag_pos so it's pointing
+       * at the start of the text "Name...". */
       int attr_fields ;
       char name[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
+
+      if (name_at_start)
+	tag_pos = attributes ;
+      else
+	++tag_pos ;
 
       attr_fields = sscanf(tag_pos, "Name " VALUE_FORMAT_STR, &name[0]) ;
 
@@ -2383,7 +2466,7 @@ static gboolean getFeatureName(NameFindType name_find, char *sequence, char *att
     }
 
 
-  /* EXCELLENT...IN APPLYING AN ADHOC FIX YOU'VE BROKEN THE CODE BECAUSE YOU DIDN'T 
+  /* EXCELLENT...IN APPLYING AN ADHOC FIX YOU'VE BROKEN THE CODE BECAUSE YOU DIDN'T
    * UNDERSTAND...NOT HELPFUL..... */
 
   /* mh17: catch all to create names for totally anonymous features
@@ -2860,8 +2943,8 @@ static gboolean getHomolLength(char *attributes, int *length_out)
  *   SNP:
  *
  *   Name "rs28847272 - A/G"
- * 
- * 
+ *
+ *
  *   Mutation:
  *
  *   Name "CM093744 - HGMD_MUTATION"
@@ -2897,8 +2980,17 @@ static gboolean getVariationString(char *attributes,
   gboolean result = FALSE ;
   char *target ;
 
-  if ((target = strstr(attributes, "Name")))
+  if ((target = strstr(attributes, " Name")) ||
+      (target = strstr(attributes, ";Name")) ||
+      (target = strstr(attributes, "\tName")))
     {
+      /* Unfortunately the text "Name" appears also in the tag "DB_Name"
+       * and if that tag appears first then that's the one that's picked up. The 
+       * real Name tag should only ever be preceeded by a space, semi-colon or tab
+       * so we check for that. Once found, increment target so it's pointing
+       * at the start of the text "Name...". */
+      ++target;
+
       int attr_fields ;
       char *attr_format_str = "Name " "%*[\"]%s - %" ZMAP_MAKESTRING(GFF_MAX_FIELD_CHARS) "[^\"]%*[\"]%*s" ;
       char name_str[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
@@ -2989,8 +3081,17 @@ static gboolean getNameFromAttr(char *attributes, char **name_out)
   gboolean result = FALSE ;
   char *tag_pos ;
 
-  if ((tag_pos = strstr(attributes, "Name")))
+  if ((tag_pos = strstr(attributes, " Name")) ||
+      (tag_pos = strstr(attributes, ";Name")) ||
+      (tag_pos = strstr(attributes, "\tName")))
     {
+      /* Unfortunately the text "Name" appears also in the tag "DB_Name"
+       * and if that tag appears first then that's the one that's picked up. The 
+       * real Name tag should only ever be preceeded by a space, semi-colon or tab
+       * so we check for that. Once found, increment tag_pos so it's pointing
+       * at the start of the text "Name...". */
+      ++tag_pos;
+
       /* Parse out "Name <objname> ;" */
       int attr_fields ;
       char name[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
@@ -3007,7 +3108,7 @@ static gboolean getNameFromAttr(char *attributes, char **name_out)
 	    }
 	}
     }
- 
+
   return result ;
 }
 
@@ -3104,9 +3205,16 @@ static char *getNoteText(char *attributes)
  * Note that we attempt to avoid frequent reallocation by making buffer twice as large as required
  * (not including the final null char....).
  */
-static gboolean resizeBuffers(ZMapGFFParser parser, gsize line_length)
+static gboolean resizeBuffers(ZMapGFFParser parser_base, gsize line_length)
 {
   gboolean resized = FALSE ;
+
+  ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
+
+  if (!parser)
+    return resized ;
+  if (parser->gff_version != ZMAPGFF_VERSION_2)
+    return resized ;
 
   if (line_length > parser->buffer_length)
     {
@@ -3163,12 +3271,19 @@ static gboolean resizeBuffers(ZMapGFFParser parser, gsize line_length)
  *
  * mh17 NOTE BAM data has # in its attributes
  */
-static gboolean resizeFormatStrs(ZMapGFFParser parser)
+static gboolean resizeFormatStrs(ZMapGFFParser parser_base)
 {
   gboolean resized = TRUE ;				    /* Everything will work or abort(). */
   GString *format_str ;
   char *align_format_str ;
   gsize length ;
+
+  ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
+
+  if (!parser)
+    return FALSE ;
+  if (parser->gff_version != ZMAPGFF_VERSION_2)
+    return FALSE ;
 
 
   /* Max length of string we can parse using scanf(), the "- 1" allows for the terminating null.  */

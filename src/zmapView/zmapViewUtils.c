@@ -84,6 +84,11 @@ static void formatSession(gpointer data, gpointer user_data) ;
  */
 
 
+/* This wierd macro creates a function that will return string literals for each num in the ZMAP_XXXX_LIST's. */
+ZMAP_ENUM_AS_EXACT_STRING_FUNC(zMapViewThreadStatus2ExactStr, ZMapViewThreadStatus, ZMAP_VIEW_THREAD_STATE_LIST) ;
+
+
+
 gpointer zMapViewFindView(ZMapView view_in, gpointer view_id)
 {
   gpointer view = NULL ;
@@ -417,14 +422,22 @@ ZMapViewConnectionRequest zmapViewStepListFindRequest(ZMapViewConnectionStepList
 						      ZMapServerReqType request_type, ZMapViewConnection connection)
 {
   ZMapViewConnectionRequest request = NULL ;
-  StepListFindStruct step_find = {0} ;
 
-  step_find.request_type = request_type ;
-  step_find.request = NULL ;
-
-  g_list_foreach(step_list->steps, stepFindReq, &step_find) ;
-
-  request = step_find.request ;
+  if (step_list)
+    {
+      StepListFindStruct step_find = {0} ;
+      
+      step_find.request_type = request_type ;
+      step_find.request = NULL ;
+      
+      g_list_foreach(step_list->steps, stepFindReq, &step_find) ;
+      
+      request = step_find.request ;
+    }
+  else
+    {
+      zMapLogWarning("%s", "Program error: step_list is NULL");
+    }
 
   return request ;
 }
