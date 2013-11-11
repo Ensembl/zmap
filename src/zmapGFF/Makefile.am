@@ -26,7 +26,7 @@ zmapGFFUtils.c \
 zmapMLF.c \
 zmapMLF_P.h \
 zmapSOData_P.h \
-zmapSOParser.h \
+zmapSOParser_P.h \
 zmapSOParser.c \
 $(NULL)
 
