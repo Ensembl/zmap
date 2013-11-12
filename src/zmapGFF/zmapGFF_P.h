@@ -200,10 +200,10 @@ typedef struct ZMapGFFParserFeatureSetStruct_
   GQuark locus_set_id ;                                    if not zero then make a locus set from locus tags in sequence objects.
   gboolean free_on_destroy ;                               TRUE => free all feature arrays when parser is destroyed.
   GData *feature_sets ;                                    A list of ZMapGFFParserFeatureSetStruct. There is one of these structs per
-                                                           "source". The struct contains among other things an array of all features 
+                                                           "source". The struct contains among other things an array of all features
                                                            for that source.
   GError *error ;                                          Holds last parser error.
-  GHashTable *excluded_features ;                          Records all features that should be excluded (e.g. because they are outside 
+  GHashTable *excluded_features ;                          Records all features that should be excluded (e.g. because they are outside
                                                            coords of ref. sequence).
   GHashTable *source_2_feature_set ;                       Optionally maps source to a feature set.
   GHashTable *source_2_sourcedata ;                        Optionally maps source to extra source data.
@@ -253,7 +253,7 @@ typedef struct ZMapGFFParserFeatureSetStruct_
                                                          *source_2_feature_set,                      \
                                                          *source_2_sourcedata;                       \
                                                                                                      \
-                                              ZMapFeatureTypeStyle locus_set_style;                  \ 
+                                              ZMapFeatureTypeStyle locus_set_style;                  \
                                                                                                      \
                                               GQuark locus_set_id, error_domain ;                    \
                                                                                                      \

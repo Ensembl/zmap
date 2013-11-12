@@ -335,7 +335,7 @@ unsigned int       zMapGFFFeatureDataGetNat(const ZMapGFFFeatureData const pFeat
 }
 
 
-const ZMapGFFAttribute * zMapGFFFeatureDataGetAts(const ZMapGFFFeatureData const pFeatureData )
+ZMapGFFAttribute * zMapGFFFeatureDataGetAts(const ZMapGFFFeatureData const pFeatureData )
 {
   if (!pFeatureData)
     return NULL ;

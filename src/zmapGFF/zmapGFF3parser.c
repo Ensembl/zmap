@@ -332,7 +332,7 @@ static ZMapGFFLineType parserLineType(const char * const sLine)
 {
   ZMapGFFLineType cTheType = ZMAPGFF_LINE_OTH ;
 
-  if (zMapStringBlank(sLine))
+  if (zMapStringBlank((char*)sLine))
   {
     cTheType = ZMAPGFF_LINE_EMP ;
   }
@@ -2307,7 +2307,7 @@ static gboolean parseBodyLine_V3(
    */
   if ((iSOID = zMapSOIDParseString(sType)) != ZMAPSO_ID_UNK) /* we have something of the form SO:XXXXXXX */
   {
-    if ((sSOIDName = zMapSOSetIsIDPresent(pParser->cSOSetInUse, sType)) != NULL) /* that is present in the SO set */
+    if ((sSOIDName = zMapSOSetIsIDPresent(pParser->cSOSetInUse, iSOID)) != NULL) /* that is present in the SO set */
     {
       bIsValidSOID = TRUE ;
       cType = zMapSOSetGetStyleModeFromID(pParser->cSOSetInUse, iSOID) ;
@@ -2575,10 +2575,7 @@ static gboolean makeNewFeature_V3(
 
   char
     *sFeatureNameID         = NULL,
-    *sFeatureName           = NULL
-  ;
-
-  const char
+    *sFeatureName           = NULL,
     *sSequence              = NULL,
     *sSource                = NULL,
     *sAttributes            = NULL,
