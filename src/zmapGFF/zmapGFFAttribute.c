@@ -984,7 +984,7 @@ gboolean zMapAttParseTarget(const ZMapGFFAttribute const pAttribute, char ** con
     {
       if (iStart <= iEnd)
         {
-    
+
           if (iFields == iRequiredFields) /* we did not have strand data */
             {
               *pStrand = ZMAPSTRAND_NONE ;
@@ -1007,14 +1007,14 @@ gboolean zMapAttParseTarget(const ZMapGFFAttribute const pAttribute, char ** con
                   /* strand data was not valid */
                 }
             }
-    
+
           if (bResult)
             {
               *sOut = g_strdup(sStringBuff) ;
               *piStart = iStart ;
               *piEnd = iEnd ;
             }
- 
+
         }
     }
 
@@ -1590,7 +1590,7 @@ gboolean zMapAttParseCigarExonerate(const ZMapGFFAttribute const pAttribute , GA
 
   if (!pAttribute)
     return bResult ;
-  const char *sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
+  char *sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
   if (strcmp("cigar_exonerate", zMapGFFAttributeGetNamestring(pAttribute)))
     {
       zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
@@ -1619,7 +1619,7 @@ gboolean zMapAttParseCigarEnsembl(const ZMapGFFAttribute const pAttribute, GArra
 
   if (!pAttribute)
     return bResult ;
-  const char *sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
+  char *sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
     if (strcmp("cigar_ensembl", zMapGFFAttributeGetNamestring(pAttribute)))
     {
       zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
@@ -1647,7 +1647,7 @@ gboolean zMapAttParseCigarBam(const ZMapGFFAttribute const pAttribute , GArray *
 
   if (!pAttribute)
     return bResult ;
-  const char *sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
+  char *sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
   if (strcmp("cigar_bam", zMapGFFAttributeGetNamestring(pAttribute)))
     {
       zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;

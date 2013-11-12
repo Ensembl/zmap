@@ -121,7 +121,7 @@ ZMapStrand                 zMapGFFFeatureDataGetStr(const ZMapGFFFeatureData con
 ZMapPhase                  zMapGFFFeatureDataGetPha(const ZMapGFFFeatureData const) ;
 char *                     zMapGFFFeatureDataGetAtt(const ZMapGFFFeatureData const) ;
 unsigned int               zMapGFFFeatureDataGetNat(const ZMapGFFFeatureData const) ;
-const ZMapGFFAttribute *   zMapGFFFeatureDataGetAts(const ZMapGFFFeatureData const) ;
+ZMapGFFAttribute *         zMapGFFFeatureDataGetAts(const ZMapGFFFeatureData const) ;
 const ZMapSOIDData         zMapGFFFeatureDataGetSod(const ZMapGFFFeatureData const) ;
 
 /*
