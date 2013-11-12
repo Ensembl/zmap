@@ -529,11 +529,11 @@ ZMapSequence zMapGFFGetSequence(ZMapGFFParser parser_base)
 
 
 
-/* 
- * (sm23) This function was used previously for testing with gffparser.c but never 
- * used outside, so I've removed it. (November 2013). 
+/*
+ * (sm23) This function was used previously for testing with gffparser.c but never
+ * used outside, so I've removed it. (November 2013).
  *
- */ 
+ */
 /*
 void zMapGFFFreeHeader(ZMapGFFHeader header)
 {
@@ -1084,7 +1084,7 @@ static gboolean parseBodyLine(ZMapGFFParser parser_base, char *line, gsize line_
 		    err_text = g_strdup_printf("feature_type not recognised: %s", ZMAP_FIXED_STYLE_LOCUS_NAME) ;
 
 
-		  if (!(result = makeNewFeature(parser_base, line, 
+		  if (!(result = makeNewFeature(parser_base, line,
                                                 ZMAPGFF_NAME_USE_SEQUENCE, (char *)g_quark_to_string(locus_id),
 						ZMAP_FIXED_STYLE_LOCUS_NAME, ZMAP_FIXED_STYLE_LOCUS_NAME, type,
 						start, end, FALSE, 0.0, ZMAPSTRAND_NONE, ZMAPPHASE_NONE,
@@ -1314,6 +1314,9 @@ static gboolean makeNewFeature(ZMapGFFParser parser_base, char *line, NameFindTy
 
   /* with one type of feature in a featureset this should be ok */
   parser_feature_set->feature_set->style = feature_style;
+
+  printf("feature_style_id = '%s', feature_set_name = '%s'\n", g_quark_to_string(feature_style_id), feature_set_name) ;
+  fflush(stdout) ;
 
   /* I'M NOT HAPPY WITH THIS, IT DOESN'T WORK AS A CONCEPT....NEED TYPES IN FEATURE STRUCT
    * AND IN STYLE...BUT THEY HAVE DIFFERENT PURPOSE.... */
@@ -1929,7 +1932,7 @@ static gboolean getFeatureName(NameFindType name_find, char *sequence, char *att
     {
       /* Parse out "Name <objname> ;" */
       /* Unfortunately the text "Name" appears also in the tag "DB_Name"
-       * and if that tag appears first then that's the one that's picked up. The 
+       * and if that tag appears first then that's the one that's picked up. The
        * real Name tag should only ever be preceeded by a space, semi-colon or tab
        * so we check for that. Once found, increment tag_pos so it's pointing
        * at the start of the text "Name...". */
@@ -2614,7 +2617,7 @@ static gboolean getVariationString(char *attributes,
       (target = strstr(attributes, "\tName")))
     {
       /* Unfortunately the text "Name" appears also in the tag "DB_Name"
-       * and if that tag appears first then that's the one that's picked up. The 
+       * and if that tag appears first then that's the one that's picked up. The
        * real Name tag should only ever be preceeded by a space, semi-colon or tab
        * so we check for that. Once found, increment target so it's pointing
        * at the start of the text "Name...". */
@@ -2715,7 +2718,7 @@ static gboolean getNameFromAttr(char *attributes, char **name_out)
       (tag_pos = strstr(attributes, "\tName")))
     {
       /* Unfortunately the text "Name" appears also in the tag "DB_Name"
-       * and if that tag appears first then that's the one that's picked up. The 
+       * and if that tag appears first then that's the one that's picked up. The
        * real Name tag should only ever be preceeded by a space, semi-colon or tab
        * so we check for that. Once found, increment tag_pos so it's pointing
        * at the start of the text "Name...". */

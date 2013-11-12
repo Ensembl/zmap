@@ -2616,7 +2616,8 @@ static gboolean makeNewFeature_V3(
     pSourceData             = NULL
   ;
   ZMapStyleMode
-    cFeatureStyleMode       = ZMAPSTYLE_MODE_BASIC
+    cFeatureStyleMode       = ZMAPSTYLE_MODE_BASIC,
+    cStyleStyleMode         = ZMAPSTYLE_MODE_BASIC
   ;
   ZMapStrand
     cStrand                 = ZMAPSTRAND_NONE
@@ -2743,6 +2744,19 @@ static gboolean makeNewFeature_V3(
    */
   pParserFeatureSet->feature_set->style = pFeatureStyle;
   pFeatureSet = pParserFeatureSet->feature_set ;
+
+  /*
+   * Now check that the ZMapStyleMode of the current style also has the same ZMapStyleMode.
+   * If it is not, then I treat this as an unrecoverable error for the current feature.
+   */
+  cStyleStyleMode = pFeatureStyle->mode ;
+  if (cFeatureStyleMode != cStyleStyleMode)
+  {
+    *err_text = g_strdup_printf("feature ignored, ZMapStyleMode for feature and Style do not match. Style = '%s', source = '%s'",
+                                g_quark_to_string(gqFeatureStyleID), sSource) ;
+    bResult = FALSE ;
+    goto return_point ;
+  }
 
   /*
    * We first look for ID and Parent attributes.
