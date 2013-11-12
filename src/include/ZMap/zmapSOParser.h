@@ -78,7 +78,7 @@ char * zMapSOSetIsIDPresent(ZMapSOSetInUse , unsigned int ) ;
 ZMapStyleMode zMapSOSetGetStyleModeFromID(ZMapSOSetInUse, unsigned int ) ;
 ZMapStyleMode zMapSOSetGetStyleModeFromName(ZMapSOSetInUse, const char * const ) ;
 ZMapSOIDData zMapSOIDDataCreate() ;
-ZMapSOIDData zMapSOIDDataCreateFromData(unsigned int, const char* const *, ZMapStyleMode ) ;
+ZMapSOIDData zMapSOIDDataCreateFromData(unsigned int, const char * const, ZMapStyleMode ) ;
 gboolean zMapSOIDDataDestroy(ZMapSOIDData const) ;
 unsigned int zMapSOIDDataGetID(const ZMapSOIDData const) ;
 char * zMapSOIDDataGetName(const ZMapSOIDData const) ;

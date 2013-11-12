@@ -51,7 +51,7 @@ ZMapSOIDData zMapSOIDDataCreate()
 /*
  * Create a single SOID Data object with supplied data.
  */
-ZMapSOIDData zMapSOIDDataCreateFromData(unsigned int iID, const char* const *sName, ZMapStyleMode cStyleMode )
+ZMapSOIDData zMapSOIDDataCreateFromData(unsigned int iID, const char* const sName, ZMapStyleMode cStyleMode )
 {
   ZMapSOIDData pIDData = zMapSOIDDataCreate() ;
   if (!pIDData)
@@ -966,9 +966,9 @@ gboolean zMapSOCollectionCheck(const ZMapSOCollection const pCollection)
       pTerm = zMapSOCollectionGetTerm(pCollection, iTerm) ;
       if (pTerm)
         {
-    
+
           pID01 = zMapSOTermGetID(pTerm) ;
-    
+
           /*
            * Name lookup with current term.
            */
@@ -977,7 +977,7 @@ gboolean zMapSOCollectionCheck(const ZMapSOCollection const pCollection)
             {
               return bResult ;
             }
-    
+
           /*
            * ID lookup with current term.
            */
@@ -986,7 +986,7 @@ gboolean zMapSOCollectionCheck(const ZMapSOCollection const pCollection)
             {
               return bResult ;
             }
-    
+
         }
       else
         {
@@ -1290,7 +1290,7 @@ static gboolean zMapSOParseIsObs(ZMapSOParser const pParser)
         }
       else
         {
-  
+
           if (pParser->pError)
             {
               g_error_free(pParser->pError) ;
@@ -1304,7 +1304,7 @@ static gboolean zMapSOParseIsObs(ZMapSOParser const pParser)
                                           "ERROR in zMapSOParseID(); unable to set IsObsolete flag at line %i, with l = '%s'",
                                           pParser->iLineCount, pParser->sBufferLine ) ;
             }
-  
+
         }
 
       pParser->pTerm->flags.got_obs = TRUE ;
@@ -1349,7 +1349,7 @@ static gboolean zMapSOParseID(ZMapSOParser const pParser)
         }
       else
         {
-    
+
           if (pParser->pError)
             {
               g_error_free(pParser->pError) ;
@@ -1363,7 +1363,7 @@ static gboolean zMapSOParseID(ZMapSOParser const pParser)
                                           "ERROR in zMapSOParseID(); unable to set SOID at line %i, with l = '%s'",
                                           pParser->iLineCount, pParser->sBufferLine ) ;
             }
-  
+
         }
     }
 
@@ -1404,7 +1404,7 @@ static gboolean zMapSOParseName(ZMapSOParser const pParser)
     }
   else
     {
-  
+
       if (pParser->pError)
         {
           g_error_free(pParser->pError) ;
@@ -1418,7 +1418,7 @@ static gboolean zMapSOParseName(ZMapSOParser const pParser)
                                       "ERROR in zMapSOParseName(); unable to parse for name at line %i, with l = '%s'",
                                       pParser->iLineCount, pParser->sBufferLine ) ;
         }
-  
+
     }
 
   return bResult ;
@@ -1482,31 +1482,31 @@ gboolean zMapSOParseLine(ZMapSOParser const pParser, const char * const sLine)
           )
         zMapSOTermDestroy(pParser->pTerm) ;
       pParser->pTerm = NULL ;
-  
+
       /*
        * Only the [Term] line signals the beginning of a new SO term object.
        */
       if (eLineType == ZMAPSO_LINE_TER)
         pParser->pTerm = zMapSOTermCreate() ;
-  
+
     }
   else if (eLineType == ZMAPSO_LINE_IDD)
     {
-  
+
       if (pParser->pTerm && zMapSOParseID(pParser) )
         {
           bResult = TRUE ;
         }
-  
+
     }
   else if (eLineType == ZMAPSO_LINE_NAM)
     {
-  
+
       if (pParser->pTerm && zMapSOParseName(pParser) )
         {
           bResult = TRUE ;
         }
-  
+
     }
   else if (eLineType == ZMAPSO_LINE_OBS)
     {
