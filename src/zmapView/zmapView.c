@@ -4845,86 +4845,89 @@ static void sendViewLoaded(ZMapView zmap_view, LoadFeaturesData loaded_features)
 		    {ZMAPXML_END_ELEMENT_EVENT,   "stderr", ZMAPXML_EVENT_DATA_NONE,    {0}},
 		    {0}} ;
 
-  if (!loaded_features || !(loaded_features->feature_sets))
+  if (zmap_view->remote_control)
     {
-      zMapLogCritical("%s", "Data Load notification received but no datasets specified.") ;
-    }
-  else
-    {
-      GList *features;
-      char *featurelist = NULL;
-      char *f ;
-      char *emsg = NULL ;
-      char *ok_mess = NULL ;
-      int i ;
-
-      for (features = loaded_features->feature_sets ; features ; features = features->next)
-	{
-	  char *prev ;
-
-	  f = (char *) g_quark_to_string(GPOINTER_TO_UINT(features->data)) ;
-	  prev = featurelist ;
-
-	  if (!prev)
-	    featurelist = g_strdup(f) ;
-	  else
-	    featurelist = g_strjoin(";", prev, f, NULL) ;
-
-	  g_free(prev) ;
-	}
-
-      if (loaded_features->status)		/* see comment in zmapSlave.c/ RETURNCODE_QUIT, we are tied up in knots */
-	{
-	  ok_mess = g_strdup_printf("%d features loaded",loaded_features->num_features);
-	  emsg = html_quote_string(ok_mess);                /* see comment about really free() below */
-	  g_free(ok_mess);
-
-	  {
-	    static long total = 0;
-
-	    total += loaded_features->num_features;
-	    zMapLogTime(TIMER_LOAD,TIMER_ELAPSED,total,"");	/* how long is startup... */
-	  }
-	}
+      if (!loaded_features || !(loaded_features->feature_sets))
+        {
+          zMapLogCritical("%s", "Data Load notification received but no datasets specified.") ;
+        }
       else
-	{
-	  emsg = html_quote_string(loaded_features->err_msg ? loaded_features->err_msg  : "");
-	}
+        {
+          GList *features;
+          char *featurelist = NULL;
+          char *f ;
+          char *emsg = NULL ;
+          char *ok_mess = NULL ;
+          int i ;
 
-      if (loaded_features->stderr_out)
-	{
-	  gchar *old = loaded_features->stderr_out;
-	  loaded_features->stderr_out =  html_quote_string(old);
-	  g_free(old);
-	}
+          for (features = loaded_features->feature_sets ; features ; features = features->next)
+            {
+              char *prev ;
 
-      i = 1 ;
-      viewloaded[i].value.s = featurelist ;
-      i += 3 ;
-      viewloaded[i].value.i = loaded_features->start ;
-      i += 3 ;
-      viewloaded[i].value.i = loaded_features->end ;
-      i += 3 ;
-      viewloaded[i].value.i = (int)loaded_features->status ;
-      i++ ;
-      viewloaded[i].value.s = emsg ;
-      i += 3 ;
-      viewloaded[i].value.i = loaded_features->exit_code ;
-      i += 3 ;
-      viewloaded[i].value.s = loaded_features->stderr_out ? loaded_features->stderr_out : "" ;
+              f = (char *) g_quark_to_string(GPOINTER_TO_UINT(features->data)) ;
+              prev = featurelist ;
+
+              if (!prev)
+                featurelist = g_strdup(f) ;
+              else
+                featurelist = g_strjoin(";", prev, f, NULL) ;
+
+              g_free(prev) ;
+            }
+
+          if (loaded_features->status)          /* see comment in zmapSlave.c/ RETURNCODE_QUIT, we are tied up in knots */
+            {
+              ok_mess = g_strdup_printf("%d features loaded",loaded_features->num_features);
+              emsg = html_quote_string(ok_mess);                /* see comment about really free() below */
+              g_free(ok_mess);
+              
+              {
+                static long total = 0;
+
+                total += loaded_features->num_features;
+                zMapLogTime(TIMER_LOAD,TIMER_ELAPSED,total,""); /* how long is startup... */
+              }
+            }
+          else
+            {
+              emsg = html_quote_string(loaded_features->err_msg ? loaded_features->err_msg  : "");
+            }
+
+          if (loaded_features->stderr_out)
+            {
+              gchar *old = loaded_features->stderr_out;
+              loaded_features->stderr_out =  html_quote_string(old);
+              g_free(old);
+            }
+
+          i = 1 ;
+          viewloaded[i].value.s = featurelist ;
+          i += 3 ;
+          viewloaded[i].value.i = loaded_features->start ;
+          i += 3 ;
+          viewloaded[i].value.i = loaded_features->end ;
+          i += 3 ;
+          viewloaded[i].value.i = (int)loaded_features->status ;
+          i++ ;
+          viewloaded[i].value.s = emsg ;
+          i += 3 ;
+          viewloaded[i].value.i = loaded_features->exit_code ;
+          i += 3 ;
+          viewloaded[i].value.s = loaded_features->stderr_out ? loaded_features->stderr_out : "" ;
 
 
-      /* Send request to peer program. */
-      /* NOTE WELL....gives a pointer to a static struct in this function, not ideal but will
-       * have to do for now. */
-      (*(view_cbs_G->remote_request_func))(view_cbs_G->remote_request_func_data,
-					   zmap_view,
-					   ZACP_FEATURES_LOADED, &viewloaded[0],
-					   localProcessReplyFunc, zmap_view) ;
+          /* Send request to peer program. */
+          /* NOTE WELL....gives a pointer to a static struct in this function, not ideal but will
+           * have to do for now. */
+          (*(view_cbs_G->remote_request_func))(view_cbs_G->remote_request_func_data,
+                                               zmap_view,
+                                               ZACP_FEATURES_LOADED, &viewloaded[0],
+                                               localProcessReplyFunc, zmap_view) ;
 
-      free(emsg);                                           /* yes really free() not g_free()-> see zmapUrlUtils.c */
+          free(emsg);                                           /* yes really free() not g_free()-> see zmapUrlUtils.c */
 
-      g_free(featurelist);
+          g_free(featurelist);
+        }
     }
 
   return ;
