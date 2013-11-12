@@ -47,14 +47,14 @@
 /*
  * Functions for internal usage only.
  */
-static gboolean zMapGFFRemoveCommentFromLine( char* sLine ) ;
-static ZMapGFFLineType zMapGFFParserLineType(const char * const sLine) ;
-static ZMapGFFParserState zMapGFFParserFSM(ZMapGFFParserState eCurrentState, const char * const sNewLine) ;
-static gboolean zMapGFFResizeFormatStrs(ZMapGFFParser const pParser) ;
-static gboolean zMapGFFResizeBuffers(ZMapGFFParser const pParser, gsize iLineLength) ;
+static gboolean removeCommentFromLine( char* sLine ) ;
+static ZMapGFFLineType parserLineType(const char * const sLine) ;
+static ZMapGFFParserState parserFSM(ZMapGFFParserState eCurrentState, const char * const sNewLine) ;
+static gboolean resizeFormatStrs(ZMapGFFParser const pParser) ;
+static gboolean resizeBuffers(ZMapGFFParser const pParser, gsize iLineLength) ;
 static gboolean isCommentLine(const char * const sLine) ;
 static gboolean isAcedbError(const char* const ) ;
-static gboolean zMapGFFParserStateChange(ZMapGFFParser pParser, ZMapGFFParserState eOldState, ZMapGFFParserState eNewState, const char * const sLine) ;
+static gboolean parserStateChange(ZMapGFFParser pParser, ZMapGFFParserState eOldState, ZMapGFFParserState eNewState, const char * const sLine) ;
 static gboolean initializeSequenceRead(ZMapGFFParser const pParser, const char * const sLine) ;
 static gboolean finalizeSequenceRead(ZMapGFFParser const pParser , const char* const sLine) ;
 static gboolean initializeFastaRead(ZMapGFFParser const pParser, const char * const sLine) ;
@@ -78,7 +78,7 @@ static gboolean parseDirective_SOURCE_ONTOLOGY(ZMapGFFParser const pParser, cons
 static gboolean parseDirective_SPECIES(ZMapGFFParser const pParser, const char * const line);
 static gboolean parseDirective_GENOME_BUILD(ZMapGFFParser const pParser, const char * const line);
 
-gboolean makeNewFeature_V3(const ZMapGFFParser const pParser, char ** const err_text, const ZMapGFFFeatureData const pFeatureData ) ;
+static gboolean makeNewFeature_V3(const ZMapGFFParser const pParser, char ** const err_text, const ZMapGFFFeatureData const pFeatureData ) ;
 
 static ZMapGFFParserFeatureSet getParserFeatureSet(ZMapGFFParser pParser, char* sFeatureSetName ) ;
 static gboolean getFeatureName(const char * const sequence, const ZMapGFFAttribute * const pAttributes, unsigned int nAttributes,const char * const given_name, const char * const source, ZMapStyleMode feature_type,
@@ -161,10 +161,10 @@ ZMapGFFParser zMapGFFCreateParser_V3(char *sequence, int features_start, int fea
     pParser->src_feature_sets                 = NULL ;
 
     /* Set initial buffer & format string size */
-    zMapGFFResizeBuffers((ZMapGFFParser) pParser, ZMAPGFF_BUF_INIT_SIZE) ;
+    resizeBuffers((ZMapGFFParser) pParser, ZMAPGFF_BUF_INIT_SIZE) ;
     pParser->format_str                       = NULL ;
     pParser->cigar_string_format_str          = NULL ;
-    zMapGFFResizeFormatStrs((ZMapGFFParser) pParser) ;
+    resizeFormatStrs((ZMapGFFParser) pParser) ;
 
     /*
      * Some format characters and delimiters.
@@ -281,7 +281,7 @@ gboolean zMapGFFGetHeaderGotMinimal_V3(const ZMapGFFParser const pParserBase)
  *
  * Returns TRUE if the operation was performed, FALSE otherwise.
  */
-static gboolean zMapGFFRemoveCommentFromLine( char* sLine )
+static gboolean removeCommentFromLine( char* sLine )
 {
   static const char cQuote = '"',
     cHash = '#',
@@ -328,7 +328,7 @@ static gboolean zMapGFFRemoveCommentFromLine( char* sLine )
  * Determine the line type that we are looking at.
  * See zmapGFF.h for the enum with definitions.
  */
-static ZMapGFFLineType zMapGFFParserLineType(const char * const sLine)
+static ZMapGFFLineType parserLineType(const char * const sLine)
 {
   ZMapGFFLineType cTheType = ZMAPGFF_LINE_OTH ;
 
@@ -379,14 +379,14 @@ static ZMapGFFLineType zMapGFFParserLineType(const char * const sLine)
 /*
  * Encapsulate the finite state machine logic of the parser.
  */
-static ZMapGFFParserState zMapGFFParserFSM(ZMapGFFParserState eCurrentState, const char * const sNewLine)
+static ZMapGFFParserState parserFSM(ZMapGFFParserState eCurrentState, const char * const sNewLine)
 {
   ZMapGFFParserState eNewState = eCurrentState ;
 
   /*
    * If new line is blank or a comment then never change state.
    */
-  ZMapGFFLineType eNewLineType = zMapGFFParserLineType(sNewLine) ;
+  ZMapGFFLineType eNewLineType = parserLineType(sNewLine) ;
   if ((eNewLineType == ZMAPGFF_LINE_EMP) || (eNewLineType == ZMAPGFF_LINE_COM))
     return eNewState ;
 
@@ -423,7 +423,7 @@ static ZMapGFFParserState zMapGFFParserFSM(ZMapGFFParserState eCurrentState, con
  * Note that we attempt to avoid frequent reallocation by making buffer twice as large as required
  * (not including the final null char....).
  */
-static gboolean zMapGFFResizeBuffers(ZMapGFFParser const pParser, gsize iLineLength)
+static gboolean resizeBuffers(ZMapGFFParser const pParser, gsize iLineLength)
 {
   gboolean bNewAlloc = TRUE,
     bResized = FALSE ;
@@ -527,7 +527,7 @@ static gboolean zMapGFFResizeBuffers(ZMapGFFParser const pParser, gsize iLineLen
  *
  * mh17 NOTE BAM data has # in its attributes
  */
-static gboolean zMapGFFResizeFormatStrs(ZMapGFFParser const pParser)
+static gboolean resizeFormatStrs(ZMapGFFParser const pParser)
 {
   gboolean bResized = TRUE ;
   GString *format_str ;
@@ -861,7 +861,7 @@ static gboolean actionUponClosure(ZMapGFFParser const pParserBase, const char* c
  * is no general mechanism for managing this, since it is relatively sparse.
  *
  */
-static gboolean zMapGFFParserStateChange(ZMapGFFParser pParserBase,
+static gboolean parserStateChange(ZMapGFFParser pParserBase,
                                   ZMapGFFParserState eOldState, ZMapGFFParserState eNewState,
                                   const char * const sLine)
 {
@@ -1946,14 +1946,14 @@ gboolean zMapGFFParse_V3(ZMapGFFParser const pParserBase, char * const sLine)
    * Remove trailing comment from line. Should do nothing to
    * directive lines (i.e. ones that start with "##").
    */
-  bCommentRemoved = zMapGFFRemoveCommentFromLine( sLine ) ;
+  bCommentRemoved = removeCommentFromLine( sLine ) ;
 
   /*
    * Parser FSM logic. Will be unaltered if we have a blank
    * line or a comment.
    */
   eOldState = pParser->state ;
-  eNewState = zMapGFFParserFSM(eOldState, sLine) ;
+  eNewState = parserFSM(eOldState, sLine) ;
   pParser->state = eNewState ;
 
   /*
@@ -1962,7 +1962,7 @@ gboolean zMapGFFParse_V3(ZMapGFFParser const pParserBase, char * const sLine)
   if (eOldState != eNewState)
   {
 
-    bResult = zMapGFFParserStateChange(pParserBase, eOldState, eNewState, sLine) ;
+    bResult = parserStateChange(pParserBase, eOldState, eNewState, sLine) ;
     if (!bResult && pParser->error)
     {
       pParser->state = ZMAPGFF_PARSER_ERR ;
@@ -2170,8 +2170,8 @@ static gboolean parseBodyLine_V3(
   {
     /* If iLineLength increases then increase the length of the buffers that receive text so that
      * they cannot overflow and redo format string to read in more chars. */
-    zMapGFFResizeBuffers(pParserBase, iLineLength) ;
-    zMapGFFResizeFormatStrs(pParserBase) ;
+    resizeBuffers(pParserBase, iLineLength) ;
+    resizeFormatStrs(pParserBase) ;
     if (zMapGFFGetLogWarnings(pParserBase))
       zMapLogWarning("GFF parser buffers had to be resized to new line length: %d", pParser->buffer_length) ;
   }
@@ -2521,9 +2521,28 @@ return_point:
 
 
 
+/*
+ * Check whether or not the ZMapStyleMode of all the
+ * features in the FeatureSet are the same.
+ */
+static gboolean checkFeatureSetStyleMode()
+{
+  return TRUE ;
+}
 
 
+/*
+ * Return the ZMapStyleMode of the features in the
+ * FeatureSet argument.
+ */
+static ZMapStyleMode getFeatureSetStyleMode()
+{
+  return 0 ;
+}
 
+/*
+ * Function to _change_ the ZMapStyleMode of the FeatureSet.
+ */
 
 
 
@@ -2532,7 +2551,7 @@ return_point:
 /*
  * Create a new feature and add it to the feature set.
  */
-gboolean makeNewFeature_V3(
+static gboolean makeNewFeature_V3(
                          const ZMapGFFParser const pParserBase,
                          char ** const err_text,
                          const ZMapGFFFeatureData const pFeatureData
@@ -2728,7 +2747,6 @@ gboolean makeNewFeature_V3(
   pParserFeatureSet->feature_set->style = pFeatureStyle;
   pFeatureSet = pParserFeatureSet->feature_set ;
 
-
   /*
    * We first look for ID and Parent attributes.
    */
@@ -2817,6 +2835,9 @@ gboolean makeNewFeature_V3(
          * Add feature to featureset
          */
         bFeatureAdded = zMapFeatureSetAddFeature(pFeatureSet, pFeature) ;
+        ///////////////////////////////////////////////////////////////////////
+        //bStyleModeChanged = dummy_function_name() ;
+        ///////////////////////////////////////////////////////////////////////
         if (!bFeatureAdded)
         {
           *err_text = g_strdup_printf("feature with gqThisID = %i and name = '%s' could not be added", (int)gqThisID, sFeatureName) ;
@@ -2933,9 +2954,14 @@ gboolean makeNewFeature_V3(
     /*
      * Add the feature to feature set
      */
-    if (!zMapFeatureSetAddFeature(pFeatureSet, pFeature))
+    bFeatureAdded = zMapFeatureSetAddFeature(pFeatureSet, pFeature) ;
+    ///////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////
+    if (!bFeatureAdded)
     {
-      /* error condition */
+      *err_text = g_strdup_printf("feature with name = '%s' could not be added", sFeatureName) ;
+      bResult = FALSE ;
+      goto return_point ;
     }
 
 
