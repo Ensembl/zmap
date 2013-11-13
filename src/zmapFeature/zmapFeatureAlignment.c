@@ -795,7 +795,11 @@ static gboolean ensemblCigar2Canon(char *match_str, AlignStrCanonical canon)
       else
 	op.length = 1 ;
 
-      op.op = *cp ;
+      op.op =                                               /* EnsEMBL CIGAR interchanges 'D' and
+                                                               'I' */
+        (*cp == 'D') ? 'I' :
+        (*cp == 'I') ? 'D' :
+        *cp;
 
       canon->align = g_array_append_val(canon->align, op) ;
 
