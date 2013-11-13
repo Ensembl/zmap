@@ -1,4 +1,3 @@
-/*  Last edited: Jul 12 08:51 2011 (edgrif) */
 /*  File: zmapWindowFeatureFuncs.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.

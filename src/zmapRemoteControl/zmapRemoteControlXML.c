@@ -1,4 +1,3 @@
-/*  Last edited: Oct 28 12:22 2011 (edgrif) */
 /*  File: zmapRemoteControlXML.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) Sanger Institute, 2011

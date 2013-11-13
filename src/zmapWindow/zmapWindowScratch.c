@@ -1,4 +1,3 @@
-/*  Last edited: Nov 09 14:25 2012 (gb10) */
 /*  File: zmapWindowEditColumn.c
  *  Author: Gemma Barson (gb10@sanger.ac.uk)
  *  Copyright (c) 2012: Genome Research Ltd.

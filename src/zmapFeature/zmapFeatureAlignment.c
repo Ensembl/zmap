@@ -1,4 +1,3 @@
-/*  Last edited: Jul 13 15:40 2012 (edgrif) */
 /*  File: zmapFeatureAlignment.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.

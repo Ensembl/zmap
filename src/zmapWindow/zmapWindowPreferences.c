@@ -1,4 +1,3 @@
-/*  Last edited: Jul 23 16:09 2012 (edgrif) */
 /*  File: zmapWindowPreferences.c
  *  Author: Roy Storey (roy@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
