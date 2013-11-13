@@ -269,7 +269,9 @@ ZMapGuiNotebookChapter zMapGUINotebookCreateChapter(ZMapGuiNotebook note_book,
 {
   ZMapGuiNotebookChapter chapter = NULL ;
 
-  zMapAssert((!user_callbacks || (user_callbacks && user_callbacks->cancel_func && user_callbacks->apply_func))) ;
+  /* zMapAssert((!user_callbacks || (user_callbacks && user_callbacks->cancel_func && user_callbacks->apply_func))) ;*/ 
+  if (!(!user_callbacks || (user_callbacks && user_callbacks->cancel_func && user_callbacks->apply_func))) 
+    return chapter ;
 
   chapter = (ZMapGuiNotebookChapter)createSectionAny(ZMAPGUI_NOTEBOOK_CHAPTER, chapter_name) ;
 
@@ -504,7 +506,8 @@ ZMapGuiNotebookTagValue zMapGUINotebookCreateTagValue(ZMapGuiNotebookParagraph p
  */
 void zMapGUINotebookAddChapter(ZMapGuiNotebook notebook, ZMapGuiNotebookChapter chapter)
 {
-  zMapAssert(notebook && chapter) ;
+  if (!notebook || !chapter) 
+    return ; 
 
   notebook->chapters = g_list_append(notebook->chapters, chapter) ;
 
@@ -523,6 +526,8 @@ void zMapGUINotebookAddChapter(ZMapGuiNotebook notebook, ZMapGuiNotebookChapter 
 void zMapGUINotebookAddPage(ZMapGuiNotebookChapter chapter, ZMapGuiNotebookPage page)
 {
   zMapAssert(chapter && page) ;
+  if (!chapter || !page) 
+    return ; 
 
   chapter->pages = g_list_append(chapter->pages, page) ;
 
@@ -548,8 +553,8 @@ void zMapGUINotebookAddPage(ZMapGuiNotebookChapter chapter, ZMapGuiNotebookPage 
  */
 void zMapGUINotebookMergeNotebooks(ZMapGuiNotebook notebook, ZMapGuiNotebook notebook_new)
 {
-  zMapAssert(notebook);
-  zMapAssert(notebook_new) ;
+  if (!notebook || !notebook_new) 
+    return ; 
 
 /* MH17:
   don't ignore or else we won't get the description from otterlace
@@ -579,10 +584,11 @@ void zMapGUINotebookMergeNotebooks(ZMapGuiNotebook notebook, ZMapGuiNotebook not
  */
 GtkWidget *zMapGUINotebookCreateWidget(ZMapGuiNotebook notebook_spec)
 {
-  MakeNotebook make_notebook  ;
-  GtkWidget *note_widg ;
+  MakeNotebook make_notebook = NULL ;
+  GtkWidget *note_widg = NULL ;
 
-  zMapAssert(notebook_spec) ;
+  if (!notebook_spec) 
+    return note_widg ; 
 
   make_notebook = g_new0(MakeNotebookStruct, 1) ;
 
@@ -627,7 +633,8 @@ GtkWidget *zMapGUINotebookCreateDialog(ZMapGuiNotebook notebook_spec, char *help
   GtkWidget *vbox, *note_widg, *hbuttons, *frame, *button ;
   MakeNotebook make_notebook  ;
 
-  zMapAssert(notebook_spec && help_title && *help_title && help_text && *help_text) ;
+  if (!notebook_spec || !help_title || !*help_title || !help_text || !*help_text) 
+    return dialog ; 
 
   make_notebook = g_new0(MakeNotebookStruct, 1) ;
 
@@ -700,7 +707,8 @@ ZMapGuiNotebookPage zMapGUINotebookFindPage(ZMapGuiNotebookChapter chapter, cons
   GList *page_item ;
   GQuark page_id ;
 
-  zMapAssert(chapter && page_name && *page_name) ;
+  if (!chapter || !page_name || !*page_name ) 
+    return page ; 
 
   page_id = g_quark_from_string(page_name) ;
 
@@ -764,7 +772,8 @@ gboolean zMapGUINotebookGetTagValue(ZMapGuiNotebookPage page, const char *tagval
   gboolean result = FALSE ;
   ZMapGuiNotebookTagValue tagvalue ;
 
-  zMapAssert(page && tagvalue_name && *tagvalue_name && arg_type && *arg_type) ;
+  if (!page || !tagvalue_name || !*tagvalue_name || !arg_type || !*arg_type) 
+    return result ; 
 
   if ((tagvalue = findTagInPage(page, tagvalue_name)))
     {
@@ -926,6 +935,9 @@ static void freeBookResources(gpointer data, gpointer user_data)
   ZMapGuiNotebookAny book_any = (ZMapGuiNotebookAny)data ;
   ZMapGuiNotebookAny *book_any_ptr = (ZMapGuiNotebookAny *)user_data;
 
+  if (!book_any) 
+    return ; 
+
   switch(book_any->type)
     {
     case ZMAPGUI_NOTEBOOK_BOOK:
@@ -947,7 +959,8 @@ static void freeBookResources(gpointer data, gpointer user_data)
       {
 	ZMapGuiNotebookTagValue tag_value = (ZMapGuiNotebookTagValue)book_any ;
 
-	zMapAssert(!(book_any->children)) ;
+        /* (sm23) Don't know that I can meaningfully replace this with anything. */ 
+	/* zMapAssert(!(book_any->children)) ; */ 
 
 	if (tag_value->data_type == ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_STRING &&
 	    tag_value->original_data.string_value != NULL)
@@ -2060,7 +2073,8 @@ static gboolean mergeAny(ZMapGuiNotebookAny note_any, ZMapGuiNotebookAny note_an
 {
   gboolean result = FALSE ;				    /* Usused....????? */
 
-  zMapAssert(note_any->type == note_any_new->type) ;
+  if (note_any->type != note_any_new->type ) 
+    return result ; 
 
   /* Now merge the children of note_any_new into the children of note_any */
   if (note_any_new->children)

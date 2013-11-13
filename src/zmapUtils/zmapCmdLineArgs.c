@@ -79,13 +79,16 @@ void zMapCmdLineArgsCreate(int *argc, char *argv[])
 {
   ZMapCmdLineArgs arg_context = NULL ;
 
-  zMapAssert(!arg_context_G) ;
+  if (arg_context_G)
+    return ;
 
-  zMapAssert(argc && *argc >= 1 && argv) ;
+  if (!(argc && *argc >= 1 && argv))
+    return ;
 
   makeContext(*argc, argv) ;
 
-  zMapAssert(arg_context_G) ;
+  if (!arg_context_G)
+    return ;
 
   arg_context = arg_context_G;
 
@@ -109,7 +112,8 @@ char **zMapCmdLineFinalArg(void)
   char **final_arg = NULL ;
   ZMapCmdLineArgs arg_context ;
 
-  zMapAssert(arg_context_G) ;
+  if (!arg_context_G)
+    return final_arg ;
   arg_context = arg_context_G ;
 
   if (arg_context->files_arg &&
@@ -139,58 +143,59 @@ gboolean zMapCmdLineArgsValue(char *arg_name, ZMapCmdLineArgsType *result)
   get_entries_func get_entries[GET_ENTRIES_COUNT] = { get_main_entries, get_config_entries };
   int i;
 
-  zMapAssert(arg_context_G) ;
+  if (!arg_context_G)
+    return val_set ;
   arg_context = arg_context_G ;
 
   for(i = 0; i < GET_ENTRIES_COUNT; i++)
     {
       GOptionEntry *entries;
       if(!val_set)
-	{
-	  entries = (get_entries[i])(arg_context);
-	  while(!val_set && entries && entries->long_name)
-	    {
-	      if(g_quark_from_string(entries->long_name) == g_quark_from_string(arg_name))
-		{
-		  if(entries->arg == G_OPTION_ARG_NONE &&
-		     ZMAPARG_INVALID_BOOL != *(gboolean *)entries->arg_data)
-		    {
-		      if(result)
-			result->b = *(gboolean *)(entries->arg_data);
-		      val_set = TRUE;
-		    }
-		  else if(entries->arg == G_OPTION_ARG_INT &&
-			  ZMAPARG_INVALID_INT != *(int *)entries->arg_data)
-		    {
-		      if(result)
-			result->i = *(int *)(entries->arg_data);
-		      val_set = TRUE;
-		    }
-		  else if(entries->arg == G_OPTION_ARG_DOUBLE &&
-			  ZMAPARG_INVALID_FLOAT != *(double *)entries->arg_data)
-		    {
-		      if(result)
-			result->f = *(double *)(entries->arg_data);
-		      val_set = TRUE;
-		    }
-		  else if(entries->arg == G_OPTION_ARG_STRING &&
-			  ZMAPARG_INVALID_STR != *(char **)entries->arg_data)
-		    {
-		      if(result)
-			result->s = *(char **)(entries->arg_data);
-		      val_set = TRUE;
-		    }
-		  else if(entries->arg == G_OPTION_ARG_STRING_ARRAY &&
-			  ZMAPARG_INVALID_STR != entries->arg_data)
-		    {
-		      if(result)
-			result->sa = (char **)(entries->arg_data);
-		      val_set = TRUE;
-		    }
-		}
-	      entries++;
-	    }
-	}
+        {
+          entries = (get_entries[i])(arg_context);
+          while(!val_set && entries && entries->long_name)
+            {
+              if(g_quark_from_string(entries->long_name) == g_quark_from_string(arg_name))
+                {
+                  if(entries->arg == G_OPTION_ARG_NONE && 
+                     ZMAPARG_INVALID_BOOL != *(gboolean *)entries->arg_data)
+                    {
+                      if(result)
+                      result->b = *(gboolean *)(entries->arg_data);
+                      val_set = TRUE;
+                    }
+                  else if(entries->arg == G_OPTION_ARG_INT && 
+                          ZMAPARG_INVALID_INT != *(int *)entries->arg_data)
+                    {
+                      if(result)
+                        result->i = *(int *)(entries->arg_data);
+                      val_set = TRUE;
+                    }
+                  else if(entries->arg == G_OPTION_ARG_DOUBLE && 
+                          ZMAPARG_INVALID_FLOAT != *(double *)entries->arg_data)
+                    {
+                      if(result)
+                        result->f = *(double *)(entries->arg_data);
+                      val_set = TRUE;
+                    }
+                  else if(entries->arg == G_OPTION_ARG_STRING && 
+                          ZMAPARG_INVALID_STR != *(char **)entries->arg_data)
+                    {
+                      if(result)
+                        result->s = *(char **)(entries->arg_data);
+                      val_set = TRUE;
+                    }
+                  else if(entries->arg == G_OPTION_ARG_STRING_ARRAY && 
+                          ZMAPARG_INVALID_STR != entries->arg_data)
+                    {
+                      if(result)
+                        result->sa = (char **)(entries->arg_data);
+                      val_set = TRUE;
+                    }
+                }
+              entries++;
+            }
+        }
     }
 
   return val_set ;
@@ -209,7 +214,8 @@ void zMapCmdLineArgsDestroy(void)
 {
   ZMapCmdLineArgs arg_context ;
 
-  zMapAssert(arg_context_G) ;
+  if (!arg_context_G)
+    return ; 
   arg_context = arg_context_G ;
 
   if(arg_context->opt_context)
@@ -392,13 +398,13 @@ static GOptionEntry *get_config_entries(ZMapCmdLineArgs arg_context)
     { ZMAPARG_WINDOW_ID, 0, 0,
       G_OPTION_ARG_STRING, NULL,
       ZMAPARG_WINDOW_ID_DESC, ZMAPARG_WINID_ARG },
-    { ZMAPARG_REMOTE_DEBUG, 0, 0, 
+    { ZMAPARG_REMOTE_DEBUG, 0, 0,
       G_OPTION_ARG_STRING, NULL,
       ZMAPARG_REMOTE_DEBUG_DESC, ZMAPARG_REMOTE_DEBUG_ARG },
-    { ZMAPARG_PEER_NAME, 0, 0, 
+    { ZMAPARG_PEER_NAME, 0, 0,
       G_OPTION_ARG_STRING, NULL,
       ZMAPARG_PEER_NAME_DESC, ZMAPARG_PEER_NAME_ARG },
-    { ZMAPARG_PEER_CLIPBOARD, 0, 0, 
+    { ZMAPARG_PEER_CLIPBOARD, 0, 0,
       G_OPTION_ARG_STRING, NULL,
       ZMAPARG_PEER_CLIPBOARD_DESC, ZMAPARG_PEER_CLIPBOARD_ARG },
     { NULL }

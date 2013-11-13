@@ -786,7 +786,8 @@ GtkWidget *zMapGUIFindTopLevel(GtkWidget *widget)
 {
   GtkWidget *toplevel = widget ;
 
-  zMapAssert(toplevel && GTK_IS_WIDGET(toplevel)) ;
+  if (!toplevel || !GTK_IS_WIDGET(toplevel))
+    return NULL ; 
 
   while (toplevel && !GTK_IS_WINDOW(toplevel))
     {
@@ -818,7 +819,8 @@ gint my_gtk_run_dialog_nonmodal(GtkWidget *toplevel)
   gint result = 0 ;
   int *response_ptr ;
 
-  zMapAssert(GTK_IS_DIALOG(toplevel)) ;
+  if (!GTK_IS_DIALOG(toplevel)) 
+    return result ; 
 
   response_ptr = g_new0(gint, 1) ;
   *response_ptr = 0 ;
@@ -1051,7 +1053,8 @@ void zMapGUIShowAbout(void)
  *  */
 void zMapGUISetHelpURL(char *URL_base)
 {
-  zMapAssert(URL_base && *URL_base) ;
+  if (!URL_base || !*URL_base) 
+    return ; 
 
   if (help_URL_base_G)
     g_free(help_URL_base_G) ;
@@ -1328,7 +1331,7 @@ GtkWidget *zMapGUIShowTextFull(char *title, char *text, gboolean edittable, GLis
 {
   enum {TEXT_X_BORDERS = 32, TEXT_Y_BORDERS = 50} ;
   char *full_title ;
-  GtkWidget *dialog, *scrwin, *view ;
+  GtkWidget *dialog = NULL, *scrwin, *view ;
   GtkTextBuffer *buffer ;
   GList *fixed_font_list = NULL ;
   GtkDialogFlags flags = GTK_DIALOG_DESTROY_WITH_PARENT ;
@@ -1339,7 +1342,8 @@ GtkWidget *zMapGUIShowTextFull(char *title, char *text, gboolean edittable, GLis
   int text_width, text_height ;
 
 
-  zMapAssert(title && *title && text && *text) ;
+  if (!title || !*title || !text || !*text) 
+    return dialog ; 
 
   full_title = zMapGUIMakeTitleString(NULL, title) ;
   dialog = gtk_dialog_new_with_buttons(full_title, NULL, flags,
@@ -1435,7 +1439,8 @@ char *zmapGUIFileChooserFull(GtkWidget *toplevel, char *title, char *directory_i
   char *file_path = NULL ;
   GtkWidget *dialog ;
 
-  zMapAssert(toplevel) ;
+  if (!toplevel) 
+    return file_path ; 
 
   if (!title)
     title = "Please give a file name:" ;
@@ -1541,7 +1546,7 @@ gboolean zMapGUIGetFixedWidthFont(GtkWidget *widget,
   PangoFontFamily **families;
   gint n_families, i, most_preferred, current ;
   PangoFontFamily *match_family = NULL ;
-  PangoFont *font = NULL;
+  PangoFont *font = NULL ;
 
   context = gtk_widget_get_pango_context(widget) ;
 
@@ -1602,14 +1607,15 @@ gboolean zMapGUIGetFixedWidthFont(GtkWidget *widget,
       pango_font_description_set_weight(desc, weight) ;
 
       font = pango_context_load_font(context, desc) ;
-      zMapAssert(font) ;
+      if (font) 
+        {
+          if (font_out)
+            *font_out = font ;
+          if (desc_out)
+            *desc_out = desc ;
 
-      if (font_out)
-	*font_out = font ;
-      if (desc_out)
-	*desc_out = desc ;
-
-      found = TRUE ;
+          found = TRUE ;
+        } 
     }
 
   return found ;
@@ -1626,22 +1632,25 @@ gboolean zMapGUIGetFixedWidthFont(GtkWidget *widget,
  */
 void zMapGUIGetFontWidth(PangoFont *font, int *width_out)
 {
-  PangoLanguage *language ;
-  PangoFontMetrics*  metrics ;
-  int width ;
+  PangoLanguage *language = NULL ;
+  PangoFontMetrics*  metrics = NULL ;
+  int width = 0 ;
 
   language = pango_language_from_string("en-UK") ; /* Does not need to be free'd. */
 
   metrics = pango_font_get_metrics(font, language) ;
-  zMapAssert(metrics) ;
+  if (metrics) 
+    { 
 
-  width = pango_font_metrics_get_approximate_char_width(metrics) ;
-  width = PANGO_PIXELS(width) ;				    /* PANGO_PIXELS confusingly converts
-							       to points not pixels...sigh... */
+      width = pango_font_metrics_get_approximate_char_width(metrics) ;
+      width = PANGO_PIXELS(width) ;                             /* PANGO_PIXELS confusingly converts
+                                                                   to points not pixels...sigh... */
 
-  pango_font_metrics_unref(metrics) ;
+      pango_font_metrics_unref(metrics) ;
 
-  *width_out = width ;
+      *width_out = width ;
+
+    }
 
   return ;
 }
@@ -1950,7 +1959,8 @@ static void responseCB(GtkDialog *toplevel, gint arg1, gpointer user_data)
 {
   int *response_ptr = (int *)user_data ;
 
-  zMapAssert(arg1 != 0) ;				    /* It will never exit if this is true... */
+  if (arg1 == 0) 
+    return ; 
 
   *response_ptr = arg1 ;
 
@@ -2030,11 +2040,17 @@ static GtkResponseType messageFull(GtkWindow *parent, char *title_in, char *msg,
   int interval = display_timeout * 1000 ;		    /* glib needs time in milliseconds. */
 
   /* relies on order of ZMapMsgType enum.... */
-  zMapAssert((msg_type >= ZMAP_MSG_INFORMATION || msg_type <= ZMAP_MSG_CRASH)
+  /* zMapAssert((msg_type >= ZMAP_MSG_INFORMATION || msg_type <= ZMAP_MSG_CRASH)
 	     && (msg && *msg)
 	     && (!user_data
 		 || (user_data
-		     && (user_data->type > ZMAPGUI_USERDATA_INVALID && user_data->type <= ZMAPGUI_USERDATA_TEXT)))) ;
+		     && (user_data->type > ZMAPGUI_USERDATA_INVALID && user_data->type <= ZMAPGUI_USERDATA_TEXT)))) ; */ 
+  if (!((msg_type >= ZMAP_MSG_INFORMATION || msg_type <= ZMAP_MSG_CRASH)
+             && (msg && *msg)
+             && (!user_data
+                 || (user_data
+                     && (user_data->type > ZMAPGUI_USERDATA_INVALID && user_data->type <= ZMAPGUI_USERDATA_TEXT)))))
+  return result ; 
 
   /* Set up title. */
   if (title_in && *title_in)

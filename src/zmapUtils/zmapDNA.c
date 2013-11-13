@@ -141,7 +141,8 @@ gboolean zMapDNACanonical(char *dna)
   gboolean result = TRUE ;				    /* Nothing to fail currently. */
   char *base ;
 
-  zMapAssert(dna && *dna) ;
+  if (!dna || !*dna) 
+    return FALSE ; 
 
   base = dna ;
   while (*base)
@@ -209,7 +210,8 @@ gboolean zMapDNAFindMatch(char *cp, char *end, char *tp, int maxError, int maxN,
   int  i = maxError, j = maxN ;
   char *start ;
 
-  zMapAssert(cp && *cp && tp && *tp) ;
+  if (!cp || !*cp || !tp || !*tp) 
+    return result ;
 
   start = cp ;
   while (c <= end)

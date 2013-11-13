@@ -60,7 +60,8 @@ void zMapSequencePep2DNA(int *start_inout, int *end_inout, ZMapFrame frame)
 {
   int frame_num ;
 
-  zMapAssert(start_inout && end_inout && frame >= ZMAPFRAME_NONE && frame <= ZMAPFRAME_2) ;
+  if (!(start_inout && end_inout && frame >= ZMAPFRAME_NONE && frame <= ZMAPFRAME_2))
+    return ;
 
   /* Convert frame enum to base offset, ZMAPFRAME_NONE is assumed to be zero. */
   frame_num = frame ;
@@ -92,8 +93,9 @@ void zMapSequenceDNA2Pep(int *start_inout, int *end_inout, ZMapFrame frame)
   int start_coord, end_coord ;
   int frame_int = (int)frame ;
 
-  zMapAssert((start_inout && end_inout && *start_inout > 0 && *end_inout > 0 && (*start_inout <= *end_inout))
-	     && (frame >= ZMAPFRAME_NONE && frame <= ZMAPFRAME_2)) ;
+  if (!((start_inout && end_inout && *start_inout > 0 && *end_inout > 0 && (*start_inout <= *end_inout))
+	     && (frame >= ZMAPFRAME_NONE && frame <= ZMAPFRAME_2)))
+    return ;
 
   dna_start = *start_inout ;
   dna_end = *end_inout ;
