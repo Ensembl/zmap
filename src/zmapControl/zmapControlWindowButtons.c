@@ -344,8 +344,6 @@ void zmapControlWindowSetButtonState(ZMap zmap, ZMapWindowFilter window_filter)
     case ZMAP_VIEWS:
       {
 
-	zMapAssert(zmap->focus_viewwindow) ;
-
 	/* Get focus view status. */
 	view = zMapViewGetView(zmap->focus_viewwindow) ;
 	window = zMapViewGetWindow(zmap->focus_viewwindow) ;
@@ -577,8 +575,6 @@ static gboolean zoomEventCB(GtkWidget *wigdet, GdkEvent *event, gpointer data)
 	ZMap zmap = (ZMap)data ;
 	ZMapWindow window ;
 
-	zMapAssert(zmap->focus_viewwindow) ;
-
 	window = zMapViewGetWindow(zmap->focus_viewwindow) ;
 
         switch(button_ev->button)
@@ -669,7 +665,8 @@ static void frame3CB(GtkWidget *wigdet, gpointer cb_data)
   ZMap zmap = (ZMap)cb_data ;
   ZMapWindow window ;
 
-  zMapAssert(zmap->focus_viewwindow) ;
+  if (!zmap || !zmap->focus_viewwindow) 
+    return ;
 
   window = zMapViewGetWindow(zmap->focus_viewwindow) ;
 
@@ -690,7 +687,8 @@ static void dnaCB(GtkWidget *wigdet, gpointer cb_data)
     do_aa        = FALSE,
     do_trans = FALSE ;
 
-  zMapAssert(zmap->focus_viewwindow) ;
+  if (!zmap || !zmap->focus_viewwindow) 
+    return ;
 
   window = zMapViewGetWindow(zmap->focus_viewwindow) ;
 
@@ -961,8 +959,6 @@ static gboolean sequenceEventCB(GtkWidget *widget, GdkEvent *event, gpointer dat
 	    {
 	      ZMap zmap = (ZMap)data ;
 	      ZMapWindow window ;
-
-	      zMapAssert(zmap->focus_viewwindow) ;
 
 	      window = zMapViewGetWindow(zmap->focus_viewwindow) ;
 

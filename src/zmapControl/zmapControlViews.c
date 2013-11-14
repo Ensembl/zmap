@@ -262,8 +262,6 @@ void zmapControlSplitWindow(ZMap zmap, GtkOrientation orientation, ZMapControlSp
     }
   else
     {
-      /* UGH, I don't like this, seems a bit addhoc to just grab the only view.... */
-      zMapAssert((g_list_length(zmap->view_list) == 1)) ;
       zmap_view = (ZMapView)(g_list_first(zmap->view_list)->data) ;
     }
 
@@ -386,10 +384,6 @@ void zmapControlRemoveWindow(ZMap zmap, ZMapViewWindow view_window, GList **dest
 
   view = zMapViewGetView(view_window) ;
 
-  /* We shouldn't get called if there are no views or if there is only a single view with one window left. */
-  zMapAssert(num_views && view_window && !(num_views == 1 && num_windows == 1)) ;
-
-
   close_container = g_hash_table_lookup(zmap->viewwindow_2_parent, view_window) ;
 
 
@@ -422,7 +416,6 @@ void zmapControlRemoveWindow(ZMap zmap, ZMapViewWindow view_window, GList **dest
 
   /* Remove from hash of viewwindows to frames */
   remove = g_hash_table_remove(zmap->viewwindow_2_parent, view_window) ;
-  zMapAssert(remove) ;
 
   /* Having removed one window we nwublastx_humaneed to refocus on another, if there is one....... */
   if (remaining_view)
@@ -579,7 +572,8 @@ static GtkWidget *closePane(GtkWidget *close_frame)
   ZMapPaneChild close_child, parent_parent_child ;
 
   parent_pane = gtk_widget_get_parent(close_frame) ;
-  zMapAssert(GTK_IS_PANED(parent_pane)) ;
+  if (!GTK_IS_PANED(parent_pane)) 
+    return keep_frame ;
 
   /* Find out which child of the pane the close_frame is and hence record the container
    * (n.b. might be another frame or might be a pane containing more panes/frames)
@@ -594,9 +588,6 @@ static GtkWidget *closePane(GtkWidget *close_frame)
   /* Remove the keep_container from its container, we will insert it into the place where
    * its parent was originally. */
   keep_container = gtk_widget_ref(keep_container) ;
-  zMapAssert(GTK_IS_PANED(keep_container) || GTK_IS_FRAME(keep_container) || GTK_IS_EVENT_BOX(keep_container)) ;
-
-
   gtk_container_remove(GTK_CONTAINER(parent_pane), keep_container) ;
 
 
@@ -647,15 +638,12 @@ static GtkWidget *closePane(GtkWidget *close_frame)
 	  GList *children ;
 
 	  children = gtk_container_get_children(GTK_CONTAINER(keep_container)) ;
-	  zMapAssert(g_list_length(children) == 1) ;
-
 	  keep_container = (GtkWidget *)(children->data) ;
 
 	  g_list_free(children) ;
 	}
     }
   keep_frame = keep_container ;
-  zMapAssert(GTK_IS_FRAME(keep_frame)) ;
 
   return keep_frame ;
 }
@@ -671,7 +659,8 @@ void zmapControlSetWindowFocus(ZMap zmap, ZMapViewWindow new_viewwindow)
   /* GdkColor color ; */
   double top, bottom ;
 
-  zMapAssert(new_viewwindow) ;
+  if (!new_viewwindow) 
+    return ;
 
   if (new_viewwindow != zmap->focus_viewwindow)
     {
@@ -747,13 +736,13 @@ static ZMapPaneChild whichChildOfPane(GtkWidget *child)
   GtkWidget *pane_parent ;
 
   pane_parent = gtk_widget_get_parent(child) ;
-  zMapAssert(GTK_IS_PANED(pane_parent)) ;
+  if (!GTK_IS_PANED(pane_parent)) 
+    pane_child ;
 
   if (myGetChild(pane_parent, 1) == child)
     pane_child = ZMAP_PANE_CHILD_1 ;
   else if (myGetChild(pane_parent, 2) == child)
     pane_child = ZMAP_PANE_CHILD_2 ;
-  zMapAssert(pane_child != ZMAP_PANE_NONE) ;		    /* Should never happen. */
 
   return pane_child ;
 }

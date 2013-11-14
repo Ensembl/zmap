@@ -101,9 +101,11 @@ ZMapViewCallbacksStruct view_cbs_G =
  * via some kind of zmaps terminate routine. */
 void zMapInit(ZMapCallbacks callbacks)
 {
-  zMapAssert(!zmap_cbs_G) ;
+  if (zmap_cbs_G) 
+    return ;
 
-  zMapAssert(callbacks && callbacks->add &&& callbacks->destroy && callbacks->quit_req) ;
+  if (!callbacks || !callbacks->add || !&callbacks->destroy || !callbacks->quit_req) 
+    return ;
 
   zmap_cbs_G = g_new0(ZMapCallbacksStruct, 1) ;
 
@@ -132,7 +134,8 @@ ZMap zMapCreate(void *app_data, ZMapFeatureSequenceMap seq_map)
   ZMap zmap = NULL ;
 
   /* No callbacks, then no zmap creation. */
-  zMapAssert(zmap_cbs_G) ;
+  if (!zmap_cbs_G) 
+    return zmap ;
 
   zmap = createZMap(app_data, seq_map) ;
 
@@ -184,8 +187,9 @@ ZMapViewWindow zMapAddView(ZMap zmap, ZMapFeatureSequenceMap sequence_map)
 {
   ZMapViewWindow view_window = NULL ;
 
-  zMapAssert(zmap && sequence_map->sequence && *sequence_map->sequence
-	     && (sequence_map->start > 0 && sequence_map->end > sequence_map->start)) ;
+  if (!(zmap && sequence_map->sequence && *sequence_map->sequence
+       && (sequence_map->start > 0 && sequence_map->end > sequence_map->start)) ) 
+    return view_window ;
 
   g_return_val_if_fail((zmap->state != ZMAP_DYING), NULL) ;
 
@@ -232,7 +236,8 @@ gboolean zmapConnectViewConfig(ZMap zmap, ZMapView view, char *config)
 {
   gboolean result = FALSE ;
 
-  zMapAssert(zmap && view && findViewInZMap(zmap, view)) ;
+  if (!zmap || !view || !findViewInZMap(zmap, view)) 
+    return result ;
 
   g_return_val_if_fail((zmap->state != ZMAP_DYING), FALSE) ;
 
@@ -248,7 +253,8 @@ gboolean zMapConnectView(ZMap zmap, ZMapView view)
 {
   gboolean result = FALSE ;
 
-  zMapAssert(zmap && view && findViewInZMap(zmap, view)) ;
+  if (!zmap || !view || !findViewInZMap(zmap, view)) 
+    return result ;
 
   g_return_val_if_fail((zmap->state != ZMAP_DYING), FALSE) ;
 
@@ -366,11 +372,12 @@ char *zMapGetZMapID(ZMap zmap)
 char *zMapGetZMapStatus(ZMap zmap)
 {
   /* Array must be kept in synch with ZmapState enum in ZMap_P.h */
-  static char *zmapStates[] = {"ZMAP_INIT", "ZMAP_VIEWS", "ZMAP_RESETTING",
+  static const char *zmapStates[] = {"ZMAP_INIT", "ZMAP_VIEWS", "ZMAP_RESETTING",
 			       "ZMAP_DYING"} ;
-  char *state ;
+  char *state = NULL ;
 
-  zMapAssert(zmap->state >= ZMAP_INIT && zmap->state <= ZMAP_DYING) ;
+  if (!(zmap->state >= ZMAP_INIT && zmap->state <= ZMAP_DYING) ) 
+    return state ;
 
   state = zmapStates[zmap->state] ;
 
@@ -424,7 +431,8 @@ void zmapControlClose(ZMap zmap)
   num_views = zmapControlNumViews(zmap) ;
 
   /* We shouldn't get called if there are no views. */
-  zMapAssert(num_views && zmap->focus_viewwindow) ;
+  if (!num_views || !zmap->focus_viewwindow) 
+    return ;
 
 
   /* focus_viewwindow gets reset so hang on to view_window pointer and view.*/
@@ -489,7 +497,8 @@ void zmapControlCloseFull(ZMap zmap, ZMapView view)
   num_views = zmapControlNumViews(zmap) ;
 
   /* We shouldn't get called if there are no views. */
-  zMapAssert(num_views) ;
+  if (!num_views) 
+    return ;
 
   /* focus_viewwindow gets reset so hang on to view_window pointer and view.*/
   view_window = zmapControlFindViewWindow(zmap, view) ;
@@ -613,6 +622,8 @@ void zmapControlDoKill(ZMap zmap, GList **destroyed_views_out)
 
 void zmapControlLoadCB(ZMap zmap)
 {
+  if (!zmap || !zmap->focus_viewwindow) 
+    return ;
 
   /* We can only load something if there is at least one view. */
   if (zmap->state == ZMAP_VIEWS)
@@ -623,7 +634,6 @@ void zmapControlLoadCB(ZMap zmap)
       /* for now we are just doing the current view but this will need to change to allow a kind
        * of global load of all views if there is no current selected view, or perhaps be an error
        * if no view is selected....perhaps there should always be a selected view. */
-      zMapAssert(zmap->focus_viewwindow) ;
 
       curr_view = zMapViewGetView(zmap->focus_viewwindow) ;
 
@@ -906,8 +916,6 @@ static void controlSplitToPatternCB(ZMapViewWindow view_window, void *app_data, 
 
       pattern = &(g_array_index(split->split_patterns, ZMapSplitPatternStruct, i));
 
-      zMapAssert(pattern);
-
       switch(pattern->subject)
         {
         case ZMAPSPLIT_NEW:
@@ -932,8 +940,6 @@ static void controlSplitToPatternCB(ZMapViewWindow view_window, void *app_data, 
         default:
           zMapAssertNotReached();
         }
-
-      zMapAssert(tmp_vw);
 
       zmap_view   = zMapViewGetView(tmp_vw);
       zmap_window = zMapViewGetWindow(tmp_vw);
@@ -1118,7 +1124,8 @@ static void killFinal(ZMap *zmap_out)
   ZMap zmap = *zmap_out ;
   void *app_data = zmap->app_data ;			    /* Hang on to app data. */
 
-  zMapAssert(zmap->state == ZMAP_DYING) ;
+  if (zmap->state != ZMAP_DYING) 
+    return ;
 
   /* Free the top window */
   if (zmap->toplevel)

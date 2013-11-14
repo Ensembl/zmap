@@ -144,7 +144,8 @@ void zMapControlImportFile(ZMapControlImportFileCB user_func, gpointer user_data
   GtkWidget *toplevel, *container ;
   gpointer seq_data = NULL ;
 
-  zMapAssert(user_func) ;
+  if (!user_func) 
+    return ;
 
   ZMap zmap = (ZMap)user_data;
 
@@ -1083,7 +1084,6 @@ static void importFileCB(GtkWidget *widget, gpointer cb_data)
                                    *script_txt == '/' ? "/" :"", script_txt, args_txt, and, opt_args_txt);
 
       servers = zmapViewGetIniSources(NULL, config_str, NULL) ;
-      zMapAssert(servers) ;
 
       server = (ZMapConfigSource) servers->data ;
 
