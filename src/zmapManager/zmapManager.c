@@ -143,11 +143,13 @@ static ZMapXMLObjTagFunctionsStruct end_handlers_G[] =
  * via some kind of zmaps terminate routine. */
 void zMapManagerInit(ZMapManagerCallbacks callbacks)
 {
-  zMapAssert(!manager_cbs_G) ;
+  if (manager_cbs_G)
+    return ; 
 
-  zMapAssert(callbacks
+  if (!(callbacks
 	     && callbacks->zmap_added_func && callbacks->zmap_deleted_func && callbacks->zmap_set_info_func
-	     && callbacks->quit_req_func) ;
+	     && callbacks->quit_req_func))
+    return  ;
 
   manager_cbs_G = g_new0(ZMapManagerCallbacksStruct, 1) ;
 
@@ -463,11 +465,13 @@ gboolean zMapManagerKillAllZMaps(ZMapManager zmaps)
  * may take some time to die. */
 gboolean zMapManagerDestroy(ZMapManager zmaps)
 {
-  gboolean result = TRUE ;
+  gboolean result = FALSE ;
 
-  zMapAssert(!(zmaps->zmap_list)) ;
+  if (zmaps->zmap_list) 
+    return result ; 
 
   g_free(zmaps) ;
+  result = TRUE ; 
 
   return result ;
 }
