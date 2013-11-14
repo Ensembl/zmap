@@ -180,10 +180,11 @@ const char *zMapConfigDirDefaultName(void)
 
 char *zMapConfigDirGetDir(void)
 {
-  char *config_dir ;
+  char *config_dir = NULL ;
   ZMapConfigDir dir_context = dir_context_G ;
 
-  zMapAssert(dir_context) ;
+  if (!dir_context) 
+    return config_dir ;
 
   config_dir = dir_context->config_dir ;
 
@@ -193,10 +194,11 @@ char *zMapConfigDirGetDir(void)
 
 char *zMapConfigDirGetFile(void)
 {
-  char *config_file ;
+  char *config_file = NULL ;
   ZMapConfigDir dir_context = dir_context_G ;
 
-  zMapAssert(dir_context) ;
+  if (!dir_context) 
+    return config_file ;
 
   config_file = dir_context->config_file ;
 
@@ -209,7 +211,8 @@ char *zMapConfigDirFindFile(char *filename)
   char *file_path = NULL ;
   ZMapConfigDir dir_context = dir_context_G ;
 
-  zMapAssert(dir_context) ;
+  if (!dir_context) 
+    return file_path ;
 
   file_path = zMapGetFile(dir_context->config_dir, filename, FALSE) ;
 
@@ -230,10 +233,11 @@ char *zMapConfigDirFindDir(char *directory_in)
 
 char *zMapConfigDirGetZmapHomeFile(void)
 {
-  char *config_file ;
+  char *config_file = NULL ;
   ZMapConfigDir dir_context = dir_context_G ;
 
-  zMapAssert(dir_context) ;
+  if (!dir_context) 
+    config_file ;
 
   config_file = dir_context->zmap_conf_file ;
 
@@ -243,10 +247,11 @@ char *zMapConfigDirGetZmapHomeFile(void)
 
 char *zMapConfigDirGetSysFile(void)
 {
-  char *config_file ;
+  char *config_file = NULL ;
   ZMapConfigDir dir_context = dir_context_G ;
 
-  zMapAssert(dir_context) ;
+  if (!dir_context) 
+    return config_file ;
 
   config_file = dir_context->sys_conf_file ;
 
@@ -258,7 +263,8 @@ void zMapConfigDirDestroy(void)
 {
   ZMapConfigDir dir_context = dir_context_G ;
 
-  zMapAssert(dir_context) ;
+  if (dir_context) 
+    return ;
 
   g_free(dir_context) ;
 

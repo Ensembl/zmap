@@ -171,7 +171,8 @@ ZMapConfigIniContext zMapConfigIniContextProvideNamed(char *config_file, char *s
 {
   ZMapConfigIniContext context = NULL;
 
-  zMapAssert(stanza_name_in && *stanza_name_in) ;
+  if (!stanza_name_in || !*stanza_name_in) 
+    return context ;
 
   if ((context = zMapConfigIniContextCreate(config_file)))
     {
@@ -220,7 +221,8 @@ GList *zMapConfigIniContextGetNamed(ZMapConfigIniContext context, char *stanza_n
 {
   GList *list = NULL;
 
-  zMapAssert(stanza_name && *stanza_name) ;
+  if (!stanza_name || !*stanza_name) 
+    return list ;
 
   if (g_ascii_strcasecmp(stanza_name, ZMAPSTANZA_STYLE_CONFIG) == 0)
     {
@@ -298,7 +300,8 @@ GList *zMapConfigIniContextGetListedStanzas(ZMapConfigIniContext context,
 
   style_names = get_names_as_list(styles_list);
 
-  zMapAssert(style_names) ;
+  if (!style_names) 
+    return styles ;
 
   g_list_foreach(style_names, fetch_referenced_stanzas, &data);
 
@@ -397,8 +400,6 @@ gboolean zMapConfigIniGetStylesFromFile(char *config_file, char *styles_list, ch
 
 	  /* The first item is special, the "name" field is the name of the style and
 	   * is derived from the name of the stanza and so must be treated specially. */
-	  zMapAssert(curr_config_style->name && *(curr_config_style->name)) ;
-
 	  g_value_init(&(curr_param->value), G_TYPE_STRING) ;
 
 	  curr_param->name = curr_config_style->name ;
