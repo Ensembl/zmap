@@ -2694,7 +2694,8 @@ static void stylePrintCB(gpointer data, gpointer user_data)
 
 static void mungeFeatureType(char *source, ZMapStyleMode *type_inout)
 {
-  zMapAssert(type_inout);
+  if (!type_inout)
+    return ;
 
   if(g_ascii_strcasecmp(source, "Genomic_canonical") == 0)
     *type_inout = ZMAPSTYLE_MODE_BASIC;
