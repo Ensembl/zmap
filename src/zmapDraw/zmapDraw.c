@@ -444,8 +444,6 @@ FooCanvasItem *zMapDrawAnnotatePolygon(FooCanvasItem *polygon,
       break;
     }
 
-  zMapAssert(final != NULL && annItemType);
-
   if(annItemType == foo_canvas_line_get_type())
     item = foo_canvas_item_new(FOO_CANVAS_GROUP(polygon->parent),
                                annItemType,
@@ -509,8 +507,6 @@ FooCanvasItem *zMapDrawSSPolygon(FooCanvasItem *grp, ZMapPolygonForm form,
       strand = 1;
       break;
     }
-
-  zMapAssert(strand == -1 || strand == 1);
 
   for(i = BOW_PORT; i < POINT_MAX; i++)
     {
@@ -748,7 +744,6 @@ FooCanvasItem *zMapDrawSSPolygon(FooCanvasItem *grp, ZMapPolygonForm form,
           /* Unknown and defaults are errors */
         case POINT_UNKNOWN_FORWARD:
         default:
-          zMapAssert("Error: Unknown point type." == 0);
           break;
 
         }
