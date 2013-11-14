@@ -101,9 +101,7 @@ gboolean zMapAppGetSequenceConfig(ZMapFeatureSequenceMap seq_map)
 
   if ((context = zMapConfigIniContextProvide(seq_map->config_file)))
     {
-//      gboolean tmp_bool = FALSE;
       char *tmp_string  = NULL;
-//      int tmp_int = 0;
 
       if (zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
 					ZMAPSTANZA_APP_DATASET, &tmp_string))
@@ -126,7 +124,6 @@ gboolean zMapAppGetSequenceConfig(ZMapFeatureSequenceMap seq_map)
 	      tmp_string = NULL;
 	      zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
 					    ZMAPSTANZA_APP_CSNAME,&tmp_string);
-	      zMapAssert(!tmp_string || !g_ascii_strcasecmp(tmp_string,"chromosome"));
             }
 	}
 

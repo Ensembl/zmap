@@ -92,7 +92,8 @@ void zMapAppGetSequenceView(ZMapAppGetSequenceViewCB user_func, gpointer user_da
   GtkWidget *toplevel, *container ;
   gpointer seq_data = NULL ;
 
-  zMapAssert(user_func) ;
+  if (!user_func) 
+    return ;
 
   toplevel = zMapGUIToplevelNew(NULL, "Please specify sequence to be viewed.") ;
 
