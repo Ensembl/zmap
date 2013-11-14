@@ -712,7 +712,6 @@ static void zmapWindowCanvasSequenceSetColour(FooCanvasItem *foo,
 	  break;
 
 	case ZMAPSTYLE_COLOURTYPE_SELECTED:
-	  zMapAssert(sub_feature);
 
 	  /* zmapStyleSetColour() according to sub_part->subpart */
 	  colour_pixel = zMap_gdk_color_to_rgba(default_fill);

@@ -234,9 +234,6 @@ static void zmap_window_container_group_class_init  (ZMapWindowContainerGroupCla
 
   item_parent_class_G  = (FooCanvasItemClass *)(g_type_class_peek_parent(container_class));
 
-  zMapAssert(item_parent_class_G);
-  zMapAssert(item_parent_class_G->update);
-
   item_class->draw     = zmap_window_container_group_draw;
   item_class->update   = zmap_window_container_group_update;
 
@@ -1285,8 +1282,9 @@ void zmapWindowContainerUtilsExecuteFull(ZMapWindowContainerGroup   container_gr
   //  ZMapWindowCanvas zmap_canvas;
   FooCanvasItem *parent;
 
-  zMapAssert(stop_at_type >= ZMAPCONTAINER_LEVEL_ROOT &&
-             stop_at_type <= ZMAPCONTAINER_LEVEL_FEATURESET) ;
+  if (!(stop_at_type >= ZMAPCONTAINER_LEVEL_ROOT &&
+             stop_at_type <= ZMAPCONTAINER_LEVEL_FEATURESET))
+    return  ;
 
   parent = (FooCanvasItem *)container_group;
 
@@ -1352,7 +1350,6 @@ void zmapWindowCanvasItemGetColours(ZMapFeatureTypeStyle style, ZMapStrand stran
           colour_target = STYLE_PROP_FRAME2_COLOURS ;
           break ;
         default:
-          //            zMapAssertNotReached() ; no longer valid: frame specific style by eg for swissprot we display in one col on startup
           break ;
         }
 
@@ -1407,8 +1404,9 @@ static void eachContainer(gpointer data, gpointer user_data)
   level   = container->level;
   spacing = container->this_spacing;
 
-  zMapAssert(level >  ZMAPCONTAINER_LEVEL_INVALID &&
-             level <= ZMAPCONTAINER_LEVEL_FEATURESET);
+  if (!(level >  ZMAPCONTAINER_LEVEL_INVALID &&
+             level <= ZMAPCONTAINER_LEVEL_FEATURESET) )
+    return ;
 
   this_points   = &this_points_data;
   parent_points = &parent_points_data;
