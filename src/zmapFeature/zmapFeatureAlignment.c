@@ -109,9 +109,12 @@ gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
 				     gboolean has_local_sequence, char *sequence)
 				     /* NOTE has_local mean in ACEBD, sequence is from GFF */
 {
-  gboolean result = TRUE ;
+  gboolean result = FALSE ;
 
-  zMapAssert(feature && feature->type == ZMAPSTYLE_MODE_ALIGNMENT) ;
+  if (!feature || (feature->type != ZMAPSTYLE_MODE_ALIGNMENT)) 
+    return result ; 
+
+  result = TRUE ; 
 
   if (clone_id)
     {
@@ -163,7 +166,8 @@ gboolean zMapFeatureAlignmentIsGapped(ZMapFeature feature)
 {
   gboolean result = FALSE ;
 
-  zMapAssert(zMapFeatureIsValidFull((ZMapFeatureAny) feature, ZMAPFEATURE_STRUCT_FEATURE)) ;
+  if (!zMapFeatureIsValidFull((ZMapFeatureAny) feature, ZMAPFEATURE_STRUCT_FEATURE)) 
+    return result ;
 
   if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
     {

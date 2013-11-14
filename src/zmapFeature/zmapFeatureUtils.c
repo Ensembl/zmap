@@ -389,7 +389,8 @@ char *zMapFeatureName(ZMapFeatureAny any_feature)
 {
   char *feature_name = NULL ;
 
-  zMapAssert(zMapFeatureIsValid(any_feature)) ;
+  if (!zMapFeatureIsValid(any_feature)) 
+    return feature_name ;
 
   feature_name = (char *)g_quark_to_string(any_feature->original_id) ;
 
@@ -409,7 +410,8 @@ gboolean zMapFeatureNameCompare(ZMapFeatureAny any_feature, char *name)
 {
   gboolean result = FALSE ;
 
-  zMapAssert(zMapFeatureIsValid(any_feature) && name && *name) ;
+  if (!zMapFeatureIsValid(any_feature) || !name || !*name) 
+    return result ;
 
   if (g_ascii_strcasecmp(g_quark_to_string(any_feature->original_id), name) == 0)
     result = TRUE ;
@@ -469,10 +471,11 @@ ZMapFeatureAny zMapFeatureGetParentGroup(ZMapFeatureAny any_feature, ZMapFeature
  *  */
 char *zMapFeatureCanonName(char *feature_name)
 {
-  char *ptr ;
+  char *ptr = NULL ;
   int len ;
 
-  zMapAssert(feature_name && *feature_name) ;
+  if (!feature_name || !*feature_name) 
+    return ptr ;
 
   len = strlen(feature_name);
 
@@ -507,9 +510,8 @@ char *zMapFeatureCreateName(ZMapStyleMode feature_type,
   char *strand_str, *ptr ;
   int len ;
 
-  /* Turn this into a if() and return null if things not supplied.... */
-  zMapAssert(feature_type) ;
-  zMapAssert(feature && *feature) ;
+  if (!feature_type || !feature || !*feature) 
+    return feature_unique_name ;
 
   strand_str = zMapFeatureStrand2Str(strand) ;
 
@@ -609,7 +611,8 @@ GQuark zMapFeatureSetCreateID(char *set_name)
 
 void zMapFeatureSortGaps(GArray *gaps)
 {
-  zMapAssert(gaps) ;
+  if (!gaps) 
+    return gaps ;
 
   /* Sort the array of gaps. performance hit? */
   g_array_sort(gaps, sortGapsByTarget);
@@ -627,7 +630,8 @@ gboolean zMapFeatureSetCoords(ZMapStrand strand, int *start, int *end, int *quer
 {
   gboolean result = FALSE ;
 
-  zMapAssert(start && end && query_start && query_end) ;
+  if (!start || !end || !query_start || !query_end) 
+    return result ;
 
   if (strand == ZMAPSTRAND_REVERSE)
     {
@@ -720,7 +724,8 @@ GList *zMapStylesGetNames(GHashTable *styles)
 {
   GList *quark_list = NULL ;
 
-  zMapAssert(styles) ;
+  if (!styles) 
+    quark_list ;
 
   g_hash_table_foreach(styles, addTypeQuark, (void *)&quark_list) ;
 
@@ -844,26 +849,18 @@ ZMapFeatureColumn zMapFeatureGetSetColumn(ZMapFeatureContextMap map,GQuark set_i
             {
 	            ZMapFeatureSource gff_source;
 
-//                  zMapLogWarning("creating column  %s for featureset %s (%s)", g_quark_to_string(gff->column_id), g_quark_to_string(set_id), g_quark_to_string(gff->column_ID));
 
                   column = g_new0(ZMapFeatureColumnStruct,1);
 
-// don-t set this from featureset data it's column specific style from config only
-//                  column->style_id =
                   column->unique_id =
                   column->column_id = set_id;
 
 			column->order = zMapFeatureColumnOrderNext();
 
                   gff_source = g_hash_table_lookup(map->source_2_sourcedata,GUINT_TO_POINTER(set_id));
-// don-t set this from featureset data it's column specific style from config only
-//			if(gff_source)
-//				column->style_id = gff_source->style_id;
                   column->column_desc = name;
 
                   column->featuresets_unique_ids = g_list_append(column->featuresets_unique_ids,GUINT_TO_POINTER(set_id));
-//printf("window adding %s to column %s\n", g_quark_to_string(GPOINTER_TO_UINT(set_id)), g_quark_to_string(column->unique_id));
-
                   g_hash_table_insert(map->columns,GUINT_TO_POINTER(set_id),column);
             }
       }
@@ -875,52 +872,51 @@ ZMapFeatureColumn zMapFeatureGetSetColumn(ZMapFeatureContextMap map,GQuark set_i
 
 GList *zMapFeatureGetColumnFeatureSets(ZMapFeatureContextMap map,GQuark column_id, gboolean unique_id)
 {
-      GList *list = NULL;
-      ZMapFeatureSetDesc fset;
-      ZMapFeatureColumn column;
-      gpointer key;
-      GList *iter;
+  GList *list = NULL;
+  ZMapFeatureSetDesc fset;
+  ZMapFeatureColumn column;
+  gpointer key;
+  GList *iter;
 
-	/*
-	This is hopelessly inefficient if we do this for every featureset, as ext_curated has about 1000
-	so we cache the list when we first create it.
-	can't always do it on startup as acedb provides the mapping later on
+  /*
+   * This is hopelessly inefficient if we do this for every featureset, as ext_curated has about 1000
+   * so we cache the list when we first create it.
+   * can't always do it on startup as acedb provides the mapping later on
+  
+   * NOTE see zmapWindowColConfig.c/column_is_loaded_in_range() for a comment about static or dynamic lists
+   * also need to scan for all calls to this func since caching the data
+   */
 
-	NOTE see zmapWindowColConfig.c/column_is_loaded_in_range() for a comment about static or dynamic lists
-	also need to scan for all calls to this func since caching the data
-	*/
+  column = g_hash_table_lookup(map->columns,GUINT_TO_POINTER(column_id));
 
-      column = g_hash_table_lookup(map->columns,GUINT_TO_POINTER(column_id));
+  if(!column)
+    return list;
 
-//      zMapAssert(column);	// would crash in a mis-config
-	if(!column)
-		return list;
+  if(unique_id)
+    {
+      if(column->featuresets_unique_ids)
+        list = column->featuresets_unique_ids;
+    }
+  else
+    {
+      if(column->featuresets_names)
+        list = column->featuresets_names;
+    }
 
-	if(unique_id)
-     	{
-     		if(column->featuresets_unique_ids)
-           	 	list = column->featuresets_unique_ids;
+  if(!list)
+  {
+    zMap_g_hash_table_iter_init(&iter,map->featureset_2_column);
+    while(zMap_g_hash_table_iter_next(&iter,&key,(gpointer) &fset))
+      {
+        if(fset->column_id == column_id)
+          list = g_list_prepend(list,unique_id ? key : GUINT_TO_POINTER(fset->feature_src_ID));
       }
-      else
-     	{
-     		if(column->featuresets_names)
-           	 	list = column->featuresets_names;
-      }
-
-	if(!list)
-	{
-		zMap_g_hash_table_iter_init(&iter,map->featureset_2_column);
-		while(zMap_g_hash_table_iter_next(&iter,&key,(gpointer) &fset))
-		{
-			if(fset->column_id == column_id)
-				list = g_list_prepend(list,unique_id ? key : GUINT_TO_POINTER(fset->feature_src_ID));
-		}
-		if(unique_id)
-			column->featuresets_unique_ids = list;
-		else
-			column->featuresets_names = list;
-	}
-      return list;
+    if(unique_id)
+      column->featuresets_unique_ids = list;
+    else
+      column->featuresets_names = list;
+  }
+  return list;
 }
 
 
@@ -935,7 +931,8 @@ void zMapFeature2MasterCoords(ZMapFeature feature, double *feature_x1, double *f
   ZMapFeatureBlock block ;
   double feature_offset = 0.0 ;
 
-  zMapAssert(feature->parent && feature->parent->parent) ;
+  if (!feature->parent || !feature->parent->parent) 
+    return ;
 
   block = (ZMapFeatureBlock)feature->parent->parent ;
 
@@ -1083,7 +1080,8 @@ gboolean zMapFeatureTranscriptSortExons(ZMapFeature feature)
 {
   gboolean result = FALSE ;
 
-  zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
+  if (!zMapFeatureIsValid((ZMapFeatureAny)feature)) 
+    return result ;
 
   if (ZMAPFEATURE_IS_TRANSCRIPT(feature)
       && (ZMAPFEATURE_HAS_EXONS(feature) || ZMAPFEATURE_HAS_INTRONS(feature)))
@@ -1121,8 +1119,8 @@ gboolean zMapFeatureTranscriptChildForeach(ZMapFeature feature, ZMapFeatureSubpa
 {
   gboolean result = FALSE ;
 
-  zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
-  zMapAssert(function) ;
+  if (!zMapFeatureIsValid((ZMapFeatureAny)feature) || !function) 
+    return result ;
 
   if (ZMAPFEATURE_IS_TRANSCRIPT(feature)
       && ((child_type == ZMAPFEATURE_SUBPART_EXON && ZMAPFEATURE_HAS_EXONS(feature))
@@ -1187,7 +1185,8 @@ void zMapFeatureTranscriptIntronForeach(ZMapFeature feature, GFunc function, gpo
   int multiplier = 1, start = 0, end, i;
   gboolean forward = TRUE;
 
-  zMapAssert(feature->type == ZMAPSTYLE_MODE_TRANSCRIPT);
+  if (feature->type != ZMAPSTYLE_MODE_TRANSCRIPT)
+    return ;
 
   introns = feature->feature.transcript.introns;
 
@@ -1196,7 +1195,6 @@ void zMapFeatureTranscriptIntronForeach(ZMapFeature feature, GFunc function, gpo
       ZMapSpan first, last;
       first = &(g_array_index(introns, ZMapSpanStruct, 0));
       last  = &(g_array_index(introns, ZMapSpanStruct, introns->len - 1));
-      zMapAssert(first && last);
 
       if(first->x1 > last->x1)
         forward = FALSE;

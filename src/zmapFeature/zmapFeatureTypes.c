@@ -125,7 +125,8 @@ gboolean zMapStyleSetAdd(GHashTable *style_set, ZMapFeatureTypeStyle style)
   gboolean result = FALSE ;
   GQuark style_id ;
 
-  zMapAssert(style_set && style) ;
+  if (!style_set || !style) 
+    return result ;
 
   style_id = zMapStyleGetUniqueID(style) ;
 
@@ -172,26 +173,26 @@ gboolean zMapStyleInheritAllStyles(GHashTable *style_set)
 
   g_hash_table_foreach(style_set, clear_inherited, style_set) ;
 
-  // we need to process the hash table and alter the data pointers
+  /* we need to process the hash table and alter the data pointers */
 
-  // get a list of keys
+  /* get a list of keys */
   zMap_g_hash_table_get_keys(&iter, style_set) ;
 
-  // lookup each one and replace in turn, update the output datalist
+  /* lookup each one and replace in turn, update the output datalist */
   for( ; iter ; iter = iter->next)
     {
-      // lookup the style: must do this for each as
-      // these may be changed by inheritance of previous styles
+      /* lookup the style: must do this for each as
+       * these may be changed by inheritance of previous styles 
+       */ 
       old = (ZMapFeatureTypeStyle)g_hash_table_lookup(style_set, iter->data) ;
-      zMapAssert(old) ;
 
-      // recursively inherit parent while not already done
+      /* recursively inherit parent while not already done */ 
       new = inherit_parent(old, style_set, 0) ;
       if(!new)
 	result = FALSE ;
     }
 
-  // tidy up
+  /* tidy up */
   g_list_free(iter) ;
 
   return result ;
@@ -278,20 +279,23 @@ gboolean zMapStyleCopyAllStyles(GHashTable *style_set, GHashTable **copy_style_s
  *  */
 gboolean zMapStyleMerge(ZMapFeatureTypeStyle curr_style, ZMapFeatureTypeStyle new_style)
 {
-  gboolean result = TRUE ;				    /* There is nothing to fail currently. */
+  gboolean result = FALSE ; 		    /* There is nothing to fail currently. */
   ZMapStyleParam param = zmapStyleParams_G;
   int i;
 
-  zMapAssert(curr_style && new_style) ;
+  if (!curr_style || !new_style) 
+    return result ;
+
+  result = TRUE ; 
 
   for(i = 1;i < _STYLE_PROP_N_ITEMS;i++,param++)
     {
-      if(zMapStyleIsPropertySetId(new_style,param->id))      // something to merge?
+      if(zMapStyleIsPropertySetId(new_style,param->id))      /* something to merge? */
         {
 
           switch(param->type)
             {
-            case STYLE_PARAM_TYPE_FLAGS:   // must not merge this!
+            case STYLE_PARAM_TYPE_FLAGS:   /* must not merge this! */
               continue;
 
             case STYLE_PARAM_TYPE_QUARK_LIST_ID:
@@ -299,7 +303,7 @@ gboolean zMapStyleMerge(ZMapFeatureTypeStyle curr_style, ZMapFeatureTypeStyle ne
                   GList **l = (GList **) (((void *) curr_style) + param->offset);
                   GList **ln = (GList **) (((void *) new_style) + param->offset);
 
-                  // free old list before overwriting
+                  /* free old list before overwriting */ 
                   if(*l)
                         g_list_free( *l);
                   *l = g_list_copy(*ln);
@@ -353,13 +357,13 @@ gboolean zMapStyleMerge(ZMapFeatureTypeStyle curr_style, ZMapFeatureTypeStyle ne
 }
 
 
-//---------------------------------
-// previous style access functions replaced with macros
-// they provided default value by we can make the opbject do that
-// external modules have read-only access.
-//---------------------------------
-
-// too complicated for macros
+/*---------------------------------
+ * previous style access functions replaced with macros
+ * they provided default value by we can make the opbject do that
+ * external modules have read-only access.
+ *---------------------------------
+ * too complicated for macros
+ */
 GQuark zMapStyleGetSubFeature(ZMapFeatureTypeStyle style,ZMapStyleSubFeature i)
 {
   GQuark x = 0;
@@ -575,8 +579,8 @@ void zMapStyleSetDisplayable(ZMapFeatureTypeStyle style, gboolean displayable)
 /* Controls whether the feature set is displayed. */
 void zMapStyleSetDisplay(ZMapFeatureTypeStyle style, ZMapStyleColumnDisplayState col_show)
 {
-  zMapAssert(style
-           && col_show > ZMAPSTYLE_COLDISPLAY_INVALID && col_show <= ZMAPSTYLE_COLDISPLAY_SHOW) ;
+  if (!(style && col_show > ZMAPSTYLE_COLDISPLAY_INVALID && col_show <= ZMAPSTYLE_COLDISPLAY_SHOW))
+    return ;
 
   zmapStyleSetIsSet(style,STYLE_PROP_COLUMN_DISPLAY_MODE);
   style->col_display_state = col_show ;
@@ -680,7 +684,8 @@ void zMapStyleSetScore(ZMapFeatureTypeStyle style, char *score_str,
 {
   ZMapStyleScoreMode score = ZMAPSCORE_WIDTH ;
 
-  zMapAssert(style) ;
+  if (!style) 
+    return ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* WE ONLY SCORE BY WIDTH AT THE MOMENT..... */
@@ -852,7 +857,7 @@ void zMapStyleSetGFF(ZMapFeatureTypeStyle style, char *gff_source, char *gff_fea
 void zMapStyleSetBumpMode(ZMapFeatureTypeStyle style, ZMapStyleBumpMode bump_mode)
 {
   if(!(bump_mode >= ZMAPBUMP_START && bump_mode <= ZMAPBUMP_END))
-      bump_mode  = ZMAPBUMP_UNBUMP;       // better than going Assert
+      bump_mode  = ZMAPBUMP_UNBUMP;       /* better than going Assert */
 
   if (!style->bump_fixed)
     {
@@ -886,13 +891,11 @@ void zMapStyleSetBumpSpace(ZMapFeatureTypeStyle style, double bump_spacing)
 void zMapStyleInitBumpMode(ZMapFeatureTypeStyle style,
 			   ZMapStyleBumpMode default_bump_mode, ZMapStyleBumpMode curr_bump_mode)
 {
-  zMapAssert(style
-	     && (default_bump_mode ==  ZMAPBUMP_INVALID
-		 || (default_bump_mode >= ZMAPBUMP_START && default_bump_mode <= ZMAPBUMP_END))
-           && (curr_bump_mode ==  ZMAPBUMP_INVALID
-		 || (curr_bump_mode >= ZMAPBUMP_START && curr_bump_mode <= ZMAPBUMP_END))
-
-             ) ;
+  if (!(style && (default_bump_mode ==  ZMAPBUMP_INVALID
+      || (default_bump_mode >= ZMAPBUMP_START && default_bump_mode <= ZMAPBUMP_END))
+      && (curr_bump_mode ==  ZMAPBUMP_INVALID
+      || (curr_bump_mode >= ZMAPBUMP_START && curr_bump_mode <= ZMAPBUMP_END)) ) )
+    return ;
 
   if (!style->bump_fixed)
     {
@@ -1129,7 +1132,8 @@ static void copySetCB(gpointer key_id, gpointer data, gpointer user_data)
   ZMapFeatureTypeStyle copy_style ;
   GHashTable *style_set = cb_data->copy_set ;
 
-  zMapAssert(GPOINTER_TO_UINT(key_id) == curr_style->unique_id) ;
+  if (GPOINTER_TO_UINT(key_id) != curr_style->unique_id) 
+    return ;
 
   if ((copy_style = zMapFeatureStyleCopy(curr_style)))
     g_hash_table_insert(style_set, key_id, copy_style) ;

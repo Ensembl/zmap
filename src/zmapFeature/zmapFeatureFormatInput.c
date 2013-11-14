@@ -51,7 +51,8 @@ gboolean zmapStr2Enum(ZMapFeatureStr2Enum type_table, char *type_str, int *type_
   gboolean result = FALSE ;
   ZMapFeatureStr2Enum type ;
 
-  zMapAssert(type_table && type_str && *type_str && type_out) ;
+  if (!type_table || !type_str || !*type_str || !type_out) 
+    return result ;
 
   type = type_table ;
   while (type->type_str)
@@ -247,9 +248,10 @@ char *zMapFeatureLevelType2Str(ZMapFeatureLevelType type)
   static char *struct_types[] = {".", "Context", "Alignment", "Block", "FeatureSet", "Feature"} ;
   char *type_str ;
 
-  zMapAssert(type == ZMAPFEATURE_STRUCT_INVALID || type == ZMAPFEATURE_STRUCT_CONTEXT
-	     || type == ZMAPFEATURE_STRUCT_ALIGN || type == ZMAPFEATURE_STRUCT_BLOCK
-	     || type ==  ZMAPFEATURE_STRUCT_FEATURESET || type == ZMAPFEATURE_STRUCT_FEATURE) ;
+  if ((type != ZMAPFEATURE_STRUCT_INVALID) && (type != ZMAPFEATURE_STRUCT_CONTEXT)
+      && (type != ZMAPFEATURE_STRUCT_ALIGN) && (type != ZMAPFEATURE_STRUCT_BLOCK)
+      && (type !=  ZMAPFEATURE_STRUCT_FEATURESET) && (type != ZMAPFEATURE_STRUCT_FEATURE)) 
+    return type_str ;
 
   type_str = struct_types[type] ;
 
@@ -261,12 +263,13 @@ char *zMapFeatureLevelType2Str(ZMapFeatureLevelType type)
 
 char *zMapFeatureSubPart2Str(ZMapFeatureSubpartType subpart)
 {
-  char *subpart_str ;
+  char *subpart_str = NULL ;
 
-  zMapAssert(subpart == ZMAPFEATURE_SUBPART_INVALID
-	     || subpart == ZMAPFEATURE_SUBPART_INTRON || subpart == ZMAPFEATURE_SUBPART_EXON
-	     || subpart == ZMAPFEATURE_SUBPART_EXON_CDS
-	     || subpart == ZMAPFEATURE_SUBPART_GAP || subpart == ZMAPFEATURE_SUBPART_MATCH) ;
+  if ((subpart != ZMAPFEATURE_SUBPART_INVALID)
+      && (subpart != ZMAPFEATURE_SUBPART_INTRON) && (subpart != ZMAPFEATURE_SUBPART_EXON)
+      && (subpart != ZMAPFEATURE_SUBPART_EXON_CDS)
+      && (subpart != ZMAPFEATURE_SUBPART_GAP) && (subpart != ZMAPFEATURE_SUBPART_MATCH) ) 
+    return subpart_str ;
 
   /* Ok, for now the subpart enum has shifted values to allow OR'ing of other flags into it,
    * hence we need to do these tests...this may change back sometime. */
@@ -337,10 +340,10 @@ gboolean zMapFeatureStr2Strand(char *string, ZMapStrand *strand)
 char *zMapFeatureStrand2Str(ZMapStrand strand)
 {
   static char *strands[] = {".", "+", "-" } ;
-  char *strand_str ;
+  char *strand_str = NULL ;
 
-  zMapAssert(strand == ZMAPSTRAND_NONE
-	     || strand == ZMAPSTRAND_FORWARD || strand == ZMAPSTRAND_REVERSE) ;
+  if ((strand != ZMAPSTRAND_NONE) && (strand != ZMAPSTRAND_FORWARD) && (strand != ZMAPSTRAND_REVERSE) ) 
+    return strand_str ;
 
   strand_str = strands[strand] ;
 
@@ -399,11 +402,11 @@ gboolean zMapFeatureStr2Frame(char *string, ZMapFrame *frame)
 
 char *zMapFeatureFrame2Str(ZMapFrame frame)
 {
-  static char *frames[] = {".", "1", "2", "3" } ;
-  char *frame_str ;
+  static const char *frames[] = {".", "1", "2", "3" } ;
+  char *frame_str = NULL ;
 
-  zMapAssert(frame == ZMAPFRAME_NONE
-	     || frame == ZMAPFRAME_0 || frame == ZMAPFRAME_1 || frame == ZMAPFRAME_2) ;
+  if ((frame != ZMAPFRAME_NONE) && (frame != ZMAPFRAME_0) && (frame != ZMAPFRAME_1) && (frame != ZMAPFRAME_2)) 
+    return frame_str ;
 
   frame_str = frames[frame] ;
 
@@ -442,7 +445,6 @@ gboolean zMapFeatureFormatPhase(char *phase_str, ZMapPhase *phase_out)
 	  break;
 	default:
 	  result = FALSE;
-	  /* zMapAssertNotReached(); */
 	  *phase_out = ZMAPPHASE_NONE ;
 	  break ;
 	}
@@ -474,11 +476,11 @@ char *zMapFeaturePhase2Str(ZMapPhase phase)
  * changed  0/1/2 into 1/2/3  to match the otterlace display
  * GFF specifies phase as 0,1,2
  */
-  static char *phases[] = {".", "1", "2", "3"} ;
-  char *phase_str ;
+  static const char *phases[] = {".", "1", "2", "3"} ;
+  char *phase_str = NULL ;
 
-  zMapAssert(phase == ZMAPPHASE_NONE || phase == ZMAPPHASE_0
-	     || phase == ZMAPPHASE_1 || phase == ZMAPPHASE_2) ;
+  if ((phase != ZMAPPHASE_NONE) && (phase != ZMAPPHASE_0) && (phase != ZMAPPHASE_1) && (phase != ZMAPPHASE_2) ) 
+    return phase_str ;
 
   phase_str = phases[phase] ;
 
@@ -490,11 +492,11 @@ char *zMapFeaturePhase2Str(ZMapPhase phase)
 
 char *zMapFeatureHomol2Str(ZMapHomolType homol)
 {
-  static char *homols[] = {".", "dna", "protein", "translated"} ;
-  char *homol_str ;
+  static const char *homols[] = {".", "dna", "protein", "translated"} ;
+  char *homol_str = NULL ;
 
-  zMapAssert(homol == ZMAPHOMOL_NONE || homol == ZMAPHOMOL_N_HOMOL
-	     || homol == ZMAPHOMOL_X_HOMOL || homol == ZMAPHOMOL_TX_HOMOL) ;
+  if ((homol != ZMAPHOMOL_NONE) && (homol != ZMAPHOMOL_N_HOMOL) && (homol != ZMAPHOMOL_X_HOMOL) && (homol != ZMAPHOMOL_TX_HOMOL))
+    return homol_str ;
 
   homol_str = homols[homol] ;
 

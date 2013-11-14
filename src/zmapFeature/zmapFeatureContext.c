@@ -862,7 +862,8 @@ static ZMapFeatureContextExecuteStatus revCompFeaturesCB(GQuark key,
   ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
   RevCompData cb_data = (RevCompData)user_data;
 
-  zMapAssert(feature_any && zMapFeatureIsValid(feature_any)) ;
+  if (!feature_any || !zMapFeatureIsValid(feature_any)) 
+    return status ;
 
   switch(feature_any->struct_type)
     {
@@ -974,7 +975,8 @@ static ZMapFeatureContextExecuteStatus revCompORFFeaturesCB(GQuark key,
   ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
   RevCompData cb_data = (RevCompData)user_data;
 
-  zMapAssert(feature_any && zMapFeatureIsValid(feature_any)) ;
+  if (!feature_any || !zMapFeatureIsValid(feature_any)) 
+    return status ;
 
   switch(feature_any->struct_type)
     {
@@ -1034,7 +1036,8 @@ static void revcompSpan(GArray *spans, int seq_start, int seq_end)
 
 static void revCompFeature(ZMapFeature feature, int start_coord, int end_coord)
 {
-  zMapAssert(feature);
+  if (!feature)
+    return ;
 
   zmapFeatureRevComp(Coord, start_coord, end_coord, feature->x1, feature->x2) ;
 
@@ -1112,8 +1115,6 @@ static void revCompFeature(ZMapFeature feature, int start_coord, int end_coord)
 	      printf("%s: seq lengths differ: %d, %zd\n",
 		     g_quark_to_string(feature->original_id), feature->feature.homol.length,
 		     strlen(feature->feature.homol.sequence));
-
-	    zMapAssert(feature->feature.homol.length == strlen(feature->feature.homol.sequence));
 
 	    zMapDNAReverseComplement(feature->feature.homol.sequence, feature->feature.homol.length) ;
 	  }
@@ -1221,7 +1222,8 @@ static gboolean  executeDataForeachFunc(gpointer key_ptr, gpointer data, gpointe
   ZMapFeatureLevelType feature_type = ZMAPFEATURE_STRUCT_INVALID;
   gboolean  remove_from_hash = FALSE;
 
-  zMapAssert(zMapFeatureAnyHasMagic(feature_any));
+  if (!zMapFeatureAnyHasMagic(feature_any))
+    return remove_from_hash ;
 
   if(full_data->status == ZMAP_CONTEXT_EXEC_STATUS_OK ||
      full_data->status == ZMAP_CONTEXT_EXEC_STATUS_OK_DELETE)

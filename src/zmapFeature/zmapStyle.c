@@ -553,7 +553,8 @@ ZMapFeatureTypeStyle zMapStyleCreate(char *name, char *description)
   GParameter params[2] ;
   guint num_params ;
 
-  zMapAssert(name && *name && (!description || *description)) ;
+  if (!(name && *name && (!description || *description)) ) 
+    return style ;
 
   /* Reset params memory.... */
   memset(&params, 0, sizeof(params)) ;
@@ -851,7 +852,8 @@ gboolean zMapStyleNameCompare(ZMapFeatureTypeStyle style, char *name)
 {
   gboolean result = FALSE ;
 
-  zMapAssert(style && name && *name) ;
+  if (!style || !name || !*name) 
+    return result ;
 
   if (g_ascii_strcasecmp(g_quark_to_string(style->original_id), name) == 0)
     result = TRUE ;
@@ -920,12 +922,15 @@ gboolean zMapStyleHasDrawableMode(ZMapFeatureTypeStyle style)
  */
 gboolean zMapStyleIsDrawable(ZMapFeatureTypeStyle style, GError **error)
 {
-  gboolean valid = TRUE ;
+  gboolean valid = FALSE ; 
   GQuark domain ;
   gint code = 0 ;
   char *message ;
 
-  zMapAssert(style && error && !(*error)) ;
+  if (!(style && error && !(*error)) ) 
+    return valid ;
+
+  valid = TRUE ; 
 
   domain = g_quark_from_string("ZmapStyle") ;
 
@@ -1142,7 +1147,8 @@ gboolean zMapStyleIsDrawable(ZMapFeatureTypeStyle style, GError **error)
 gboolean zMapStyleMakeDrawable(char *config_file, ZMapFeatureTypeStyle style)
 {
   gboolean result = FALSE ;
-  zMapAssert(style) ;
+  if (!style) 
+    return result ;
 
   if (style->displayable)
     {
@@ -1378,7 +1384,8 @@ gboolean zMapStyleSetColours(ZMapFeatureTypeStyle style, ZMapStyleParamId target
   ZMapStyleFullColour full_colour = NULL ;
   ZMapStyleColour colour = NULL ;
 
-  zMapAssert(style) ;
+  if (!style) 
+    return result ;
 
   full_colour = zmapStyleFullColour(style, target);
   colour = zmapStyleColour(full_colour, type);
@@ -1409,7 +1416,8 @@ gboolean zMapStyleGetColours(ZMapFeatureTypeStyle style, ZMapStyleParamId target
   ZMapStyleFullColour full_colour = NULL ;
   ZMapStyleColour colour = NULL ;
 
-  zMapAssert(style && (fill || draw || border)) ;
+  if (!(style && (fill || draw || border)) ) 
+    return result ;
 
   if (! zMapStyleIsPropertySetId(style,target))
     return(result);
@@ -1466,7 +1474,8 @@ gboolean zMapStyleIsColour(ZMapFeatureTypeStyle style, ZMapStyleDrawContext colo
 {
   gboolean is_colour = FALSE ;
 
-  zMapAssert(style) ;
+  if (!style) 
+    return is_colour ;
 
   switch(colour_context)
     {
@@ -1490,7 +1499,8 @@ GdkColor *zMapStyleGetColour(ZMapFeatureTypeStyle style, ZMapStyleDrawContext co
 {
   GdkColor *colour = NULL ;
 
-  zMapAssert(style) ;
+  if (!style) 
+    return colour ;
 
   if (zMapStyleIsColour(style, colour_context))
     {
@@ -1545,11 +1555,13 @@ gboolean zmapStyleIsValid(ZMapFeatureTypeStyle style)
 
 static gboolean setColours(ZMapStyleColour colour, char *border, char *draw, char *fill)
 {
-  gboolean status = TRUE ;
+  gboolean status = FALSE ;
   ZMapStyleColourStruct tmp_colour = {{0}} ;
 
+  if (!colour) 
+    return status ;
 
-  zMapAssert(colour) ;
+  status = TRUE ; 
 
   if (status && border && *border)
     {
@@ -2087,8 +2099,8 @@ static void zmap_feature_type_style_set_property_full(ZMapFeatureTypeStyle style
 {
   gboolean result = TRUE ;
 
-  // if we are in a copy constructor then only set properties that have been set in the source
-  // (except for the is_set array of course, which must be copied first)
+  /* if we are in a copy constructor then only set properties that have been set in the source
+   * (except for the is_set array of course, which must be copied first) */ 
 
   /* will we ever be in a copy constructor?
    * we use zMapStyleCopy() rather than a g_object(big_complex_value)
@@ -2099,7 +2111,6 @@ static void zmap_feature_type_style_set_property_full(ZMapFeatureTypeStyle style
     {
       ZMapStyleParam isp = &zmapStyleParams_G[STYLE_PROP_IS_SET];
 
-      zMapAssert((style->is_set[isp->flag_ind] & isp->flag_bit));
       /* if not we are in deep doo doo
        * This relies on STYLE_PROP_IS_SET being the first installed or
        * lowest numbered one and therefore the first one copied
@@ -2107,8 +2118,8 @@ static void zmap_feature_type_style_set_property_full(ZMapFeatureTypeStyle style
        * implement a copy constructor that forces this
        */
 
-      // only copy paramters that have been set in the source
-      // as we copied the is_set array we can read our own copy of it
+      /* only copy paramters that have been set in the source
+       * as we copied the is_set array we can read our own copy of it */ 
       if(!(style->is_set[param->flag_ind] & param->flag_bit))
         return;
     }

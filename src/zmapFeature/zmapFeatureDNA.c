@@ -46,7 +46,8 @@ gboolean zMapFeatureBlockDNA(ZMapFeatureBlock block,
   gboolean result = FALSE;
   ZMapFeatureContext context = NULL;
 
-  zMapAssert( block ) ;
+  if ( !block ) 
+    return result ;
 
   if(block->sequence.sequence &&
      block->sequence.type != ZMAPSEQUENCE_NONE &&
@@ -149,9 +150,8 @@ ZMapFeature zMapFeatureDNACreateFeature(ZMapFeatureBlock     block,
   ZMapFeature dna_feature = NULL;
   GQuark dna_set_id = 0;
 
-  zMapAssert(block);
-  zMapAssert(dna_str);
-  zMapAssert(sequence_length != 0);
+  if (!block || !dna_str || !sequence_length)
+    return dna_feature ;
 
   dna_set_id      = zMapFeatureSetCreateID(ZMAP_FIXED_STYLE_DNA_NAME);
 
