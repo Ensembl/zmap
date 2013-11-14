@@ -676,7 +676,6 @@ static void appExit(void *user_data)
 
       /* time out func makes sure that we exit if threads fail to report back. */
       timeout_func_id = g_timeout_add(interval, timeoutHandler, (gpointer)app_context) ;
-      zMapAssert(timeout_func_id) ;
 
       /* Tell all our zmaps to die, they will tell all their threads to die. */
       zMapManagerKillAllZMaps(app_context->zmap_manager) ;
