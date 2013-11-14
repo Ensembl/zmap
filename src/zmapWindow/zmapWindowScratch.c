@@ -1,4 +1,4 @@
-/*  File: zmapWindowEditColumn.c
+/*  File: zmapWindowScratch.c
  *  Author: Gemma Barson (gb10@sanger.ac.uk)
  *  Copyright (c) 2012: Genome Research Ltd.
  *-------------------------------------------------------------------
