@@ -240,10 +240,8 @@ gboolean zmapWindowGetColumnVisibility(ZMapWindow window,FooCanvasGroup *column_
   gboolean visible = FALSE;
   gboolean mag_visible, frame_visible, frame_displayed = TRUE ;
 
-  zMapAssert(style);
-
-  if(!style->displayable)
-    return(FALSE);
+  if (!style || !style->displayable)
+    return visible ;
 
   curr_col_state = zmapWindowContainerFeatureSetGetDisplay(container) ;
 
@@ -362,7 +360,8 @@ void zmapWindowColumnSetState(ZMapWindow window, FooCanvasGroup *column_group,
 void zmapWindowColumnSetMagState(ZMapWindow window, FooCanvasGroup *col_group)
 {
   ZMapWindowContainerFeatureSet container;
-  zMapAssert(window && FOO_IS_CANVAS_GROUP(col_group)) ;
+  if (!window || !FOO_IS_CANVAS_GROUP(col_group)) 
+    return ;
 
   container = (ZMapWindowContainerFeatureSet)col_group;
   /* Only check the mag factor if the column is visible. (wrong) */
@@ -413,12 +412,12 @@ gboolean zmapWindowColumnIs3frameVisible(ZMapWindow window, FooCanvasGroup *col_
   ZMapStyle3FrameMode frame_mode;
   ZMapFrame set_frame;
   ZMapStrand set_strand;
-  gboolean frame_specific, visible;
+  gboolean frame_specific, visible = FALSE ;
   int forward[ZMAPFRAME_2 + 1], reverse[ZMAPFRAME_2 + 1], none[ZMAPFRAME_2 + 1];
   int *frame_sens[ZMAPSTRAND_REVERSE + 1];
 
-  zMapAssert(window);
-  zMapAssert(ZMAP_IS_CONTAINER_FEATURESET(col_group));
+  if (!window || !ZMAP_IS_CONTAINER_FEATURESET(col_group))
+    return visible ;
 
   container = (ZMapWindowContainerFeatureSet)col_group;
 
@@ -517,13 +516,9 @@ gboolean zmapWindowColumnIs3frameDisplayed(ZMapWindow window, FooCanvasGroup *co
   ZMapWindowContainerFeatureSet container;
   ZMapStyle3FrameMode frame_mode;
   gboolean frame_specific ;
-  /*  ZMapFeatureSet feature_set ;*/
 
-  zMapAssert(window) ;
-  zMapAssert(ZMAP_IS_CONTAINER_FEATURESET(col_group)) ;
-
-  //  if(!IS_3FRAME(window->display_3_frame))
-  //    return displayed;
+  if (!window || !ZMAP_IS_CONTAINER_FEATURESET(col_group)) 
+    return displayed;
 
   container = (ZMapWindowContainerFeatureSet)col_group ;
 
@@ -607,7 +602,8 @@ gboolean zmapWindowColumnIsMagVisible(ZMapWindow window, FooCanvasGroup *col_gro
  */
 void zmapWindowColumnHide(FooCanvasGroup *column_group)
 {
-  zMapAssert(column_group && FOO_IS_CANVAS_GROUP(column_group)) ;
+  if (!column_group || !FOO_IS_CANVAS_GROUP(column_group)) 
+    return ;
 
   zmapWindowContainerSetVisibility(column_group, FALSE) ;
 
@@ -616,7 +612,8 @@ void zmapWindowColumnHide(FooCanvasGroup *column_group)
 
 void zmapWindowColumnShow(FooCanvasGroup *column_group)
 {
-  zMapAssert(column_group && FOO_IS_CANVAS_GROUP(column_group)) ;
+  if (!column_group || !FOO_IS_CANVAS_GROUP(column_group)) 
+    return ;
 
   zmapWindowContainerSetVisibility(column_group, TRUE) ;
 

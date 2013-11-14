@@ -230,8 +230,9 @@ gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_
   gboolean result = FALSE ;
   ZMapFeatureSet feature_set ;
 
-  //  feature = zmapWindowItemGetFeature(feature_item);
-  zMapAssert(feature && zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
+  if (!feature || !zMapFeatureIsValid((ZMapFeatureAny)feature)) 
+    return result ;
+
   feature_set = (ZMapFeatureSet)(feature->parent) ;
 
   column_group = zmapWindowContainerCanvasItemGetContainer(feature_item) ;
@@ -447,7 +448,8 @@ char *zmapWindowFeatureDescription(ZMapFeature feature)
 {
   char *description = NULL ;
 
-  zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
+  if (!zMapFeatureIsValid((ZMapFeatureAny)feature)) 
+    return description ;
 
 
   if (feature->description)
@@ -552,7 +554,8 @@ static gboolean canvasItemDestroyCB(FooCanvasItem *feature_item, gpointer data)
 
 static void featureCopySelectedItem(ZMapFeature feature_in, ZMapFeature feature_out, FooCanvasItem *selected)
 {
-  zMapAssert(feature_in && feature_out) ;
+  if (!feature_in || !feature_out) 
+    return ;
 
   if (feature_in && feature_out)
     memcpy(feature_out, feature_in, sizeof(ZMapFeatureStruct));

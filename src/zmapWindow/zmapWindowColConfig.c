@@ -321,7 +321,8 @@ void zmapWindowColumnConfigure(ZMapWindow                 window,
   ColConfigure configure_data = NULL;
   int page_no = 0;
 
-  zMapAssert(window);
+  if (!window)
+    return ;
 
   if(window->col_config_window)
     {
@@ -378,7 +379,6 @@ void zmapWindowColumnConfigure(ZMapWindow                 window,
 	break ;
       }
     default:
-      zMapAssert("Coding error, unrecognised column configure type") ;
       break ;
     }
 
@@ -524,8 +524,6 @@ static void configure_get_column_lists(ColConfigure configure_data,
       ZMapStrand strand ;
 
       strand = zmapWindowContainerFeatureSetGetStrand((ZMapWindowContainerFeatureSet) column_group);
-
-      zMapAssert(strand == ZMAPSTRAND_FORWARD || strand == ZMAPSTRAND_REVERSE) ;
 
       if (strand == ZMAPSTRAND_FORWARD)
 	forward_columns = g_list_append(forward_columns, column_group) ;
@@ -887,7 +885,8 @@ static void loaded_page_update(NotebookPage notebook_page, ChangeButtonStateData
 
   /* - Get the correct strand container for labels */
   strand = zmapWindowContainerFeatureSetGetStrand(ZMAP_CONTAINER_FEATURESET(cb_data->column_group)) ;
-  zMapAssert(strand == ZMAPSTRAND_FORWARD || strand == ZMAPSTRAND_REVERSE) ;
+  if (strand != ZMAPSTRAND_FORWARD && strand != ZMAPSTRAND_REVERSE) 
+    return ;
 
   switch(mode)
     {

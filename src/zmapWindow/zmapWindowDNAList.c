@@ -313,10 +313,7 @@ static gboolean selectionFuncCB(GtkTreeSelection *selection,
 	  FooCanvasItem *item ;
 	  ZMapFrame tmp_frame ;
 	  ZMapStrand tmp_strand ;
-//	  gboolean done_centring = FALSE ;
-
 	  block = window_list->block ;
-	  zMapAssert(block) ;
 
 	  /* Scroll to treeview entry. */
 	  tree_view = gtk_tree_selection_get_tree_view(selection) ;

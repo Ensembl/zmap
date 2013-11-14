@@ -187,7 +187,8 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleBumpMode bump_mod
   g_return_if_fail(ZMAP_IS_CONTAINER_FEATURESET(column_item));
 
   window = g_object_get_data(G_OBJECT(column_item), ZMAP_WINDOW_POINTER) ;
-  zMapAssert(window) ;
+  if (!window) 
+    return ;
 
   if (zmapWindowMarkIsSet(window->mark))
     compress_mode = ZMAPWINDOW_COMPRESS_MARK ;
@@ -245,21 +246,17 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
     zMapAssertNotReached();
 
   window = g_object_get_data(G_OBJECT(container), ZMAP_WINDOW_POINTER) ;
-  zMapAssert(window) ;
+  if (!window) 
+    return ;
 
-//  historic_bump_mode = zMapWindowContainerFeatureSetGetContainerBumpMode(container) ;
   historic_bump_mode = zmapWindowContainerFeatureSetGetBumpMode(container) ;
-//printf("bump_mode: %d %d\n",bump_mode,historic_bump_mode);
 
-  // if bumping from one mode to another just clear up with am unbump first, it's tidier this way
-  // mh17: ideally i'd prefer to have a separate unbump function, can hack it out later?
   if(historic_bump_mode > ZMAPBUMP_UNBUMP && historic_bump_mode != bump_mode && bump_mode != ZMAPBUMP_UNBUMP)
       zmapWindowColumnBumpRange(bump_item,ZMAPBUMP_UNBUMP,compress_mode);
 
   if (bump_mode == ZMAPBUMP_INVALID)      // this is set to 'rebump' the columns
     bump_mode = historic_bump_mode ;
 
-  //  RT 171529
   if(bump_mode == ZMAPBUMP_UNBUMP && bump_mode == historic_bump_mode)
       return;
 
@@ -296,8 +293,6 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
 	}
       else if (compress_mode == ZMAPWINDOW_COMPRESS_MARK)
 	{
-	  zMapAssert(mark_set) ;
-
 	  /* we know mark is set so no need to check result of range check. But should check
 	   * that col to be bumped and mark are in same block ! */
 	  zmapWindowMarkGetSequenceRange(window->mark, &start, &end) ;

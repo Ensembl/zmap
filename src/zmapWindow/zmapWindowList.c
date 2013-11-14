@@ -670,8 +670,6 @@ static gboolean selection_func_cb(GtkTreeSelection *selection,
         cfs = (ZMapWindowContainerFeatureSet)
             zmapWindowContainerUtilsItemGetParentLevel(item,ZMAPCONTAINER_LEVEL_FEATURESET);
 
-        zMapAssert(cfs);
-
 	  feature = zmapWindowItemGetFeature(item);
 
         gtk_tree_view_scroll_to_cell(treeView, path, NULL, FALSE, 0.0, 0.0);
@@ -787,7 +785,8 @@ static void destroyCB(GtkWidget *widget, gpointer user_data)
 {
   ZMapWindowList windowList = (ZMapWindowList)user_data ;
 
-  zMapAssert(windowList) ;
+  if (!windowList) 
+    return ;
 
   destroyList(windowList) ;
 

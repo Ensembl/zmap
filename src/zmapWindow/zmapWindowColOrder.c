@@ -148,7 +148,6 @@ static void orderColumnsCB(ZMapWindowContainerGroup container, FooCanvasPoints *
     {
       /* Get Features */
       container_features = zmapWindowContainerGetFeatures(container);
-      zMapAssert(container_features);
       /* Cast to FooCanvasGroup */
       features_group = (FooCanvasGroup *) container_features;
 

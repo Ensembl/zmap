@@ -597,7 +597,8 @@ static ZMapFeature getFeature(FooCanvasItem *item)
   ZMapFeature feature = NULL ;
 
   feature = zmapWindowItemGetFeature(item);
-  zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
+  if (!zMapFeatureIsValid((ZMapFeatureAny)feature)) 
+    return NULL ;
 
   return feature ;
 }
@@ -1860,7 +1861,8 @@ static void getAllMatches(ZMapWindow window,
   gboolean result ;
 
   result = zmapWindowItemGetStrandFrame(item, &set_strand, &set_frame) ;
-  zMapAssert(result) ;
+  if (!result) 
+    return ;
 
   if ((list = zmapWindowFToIFindSameNameItems(window, window->context_to_item,
 					      zMapFeatureStrand2Str(set_strand), zMapFeatureFrame2Str(set_frame),
@@ -2048,7 +2050,8 @@ static void callXRemote(ZMapWindow window, ZMapFeatureAny feature_any,
   int chr_bp ;
 
   /* We should only ever be called with a feature, not a set or anything else. */
-  zMapAssert(feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURE) ;
+  if (feature_any->struct_type != ZMAPFEATURE_STRUCT_FEATURE) 
+    return ;
 
 
   /* OK...IN HERE IS THE PLACE FOR THE HACK FOR COORDS....NEED TO COPY FEATURE

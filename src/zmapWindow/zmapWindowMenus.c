@@ -436,7 +436,8 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
   /* Some parts of the menu are feature type specific so retrieve the feature item info
    * from the canvas item. */
   feature = zMapWindowCanvasItemGetFeature(item);
-  zMapAssert(feature);
+  if (!feature)
+    return ;
 
 
   style = *feature->style;
@@ -1878,7 +1879,8 @@ static void peptideMenuCB(int menu_item_id, gpointer callback_data)
 
 
   feature = zMapWindowCanvasItemGetFeature(menu_data->item) ;
-  zMapAssert(feature->type == ZMAPSTYLE_MODE_TRANSCRIPT) ;
+  if (feature->type != ZMAPSTYLE_MODE_TRANSCRIPT) 
+    return ;
 
   context = menu_data->window->feature_context ;
 
@@ -2009,7 +2011,6 @@ static void exportMenuCB(int menu_item_id, gpointer callback_data)
       }
       break;
     default:
-      zMapAssert("Coding error, unrecognised menu item number.") ; /* exits... */
       break ;
     }
 
@@ -2461,7 +2462,6 @@ static void developerMenuCB(int menu_item_id, gpointer callback_data)
 
     default:
       {
-	zMapAssert("Coding error, unrecognised menu item number.") ; /* exits... */
 	break ;
       }
     }
@@ -3210,8 +3210,9 @@ static void exportFeatures(ZMapWindow window, ZMapSpan region_span, ZMapFeatureA
   ZMapFeatureBlock feature_block ;
 
   /* Should extend this any type.... */
-  zMapAssert(feature->struct_type == ZMAPFEATURE_STRUCT_FEATURESET
-	     || feature->struct_type == ZMAPFEATURE_STRUCT_FEATURE) ;
+  if (feature->struct_type != ZMAPFEATURE_STRUCT_FEATURESET
+      && feature->struct_type != ZMAPFEATURE_STRUCT_FEATURE) 
+    return ;
 
   /* Find the block from whatever pointer we are sent...  */
   feature_block = (ZMapFeatureBlock)zMapFeatureGetParentGroup(feature, ZMAPFEATURE_STRUCT_BLOCK);
@@ -3514,7 +3515,8 @@ static ZMapFeatureContextExecuteStatus alignBlockMenusDataListForeach(GQuark key
 				       char *root,
 				       GArray **items_array_out)
 {
-  zMapAssert(window);
+  if (!window)
+    return ;
   AlignBlockMenuStruct data = {0};
 
   data.each_align_items = each_align;
@@ -3692,8 +3694,9 @@ static void searchListMenuCB(int menu_item_id, gpointer callback_data)
 
   /* Retrieve the feature or featureset info from the canvas item. */
   feature_any = zmapWindowItemGetFeatureAny(menu_data->item);
-  zMapAssert(feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURESET
-	     || feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURE) ;
+  if (feature_any->struct_type != ZMAPFEATURE_STRUCT_FEATURESET
+	     && feature_any->struct_type != ZMAPFEATURE_STRUCT_FEATURE) 
+  return ;
 
   if (feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURESET)
     {
@@ -3797,7 +3800,7 @@ static void searchListMenuCB(int menu_item_id, gpointer callback_data)
 
     default:
       {
-	zMapAssertNotReached() ;				    /* exits... */
+	zMapAssertNotReached() ;
 	break ;
       }
     }

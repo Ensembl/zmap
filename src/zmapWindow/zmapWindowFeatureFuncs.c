@@ -147,7 +147,6 @@ void zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item,
       /* may be null if (temporary) blixem BAM option selected */
       if (feature)
 	align->block = (ZMapFeatureBlock)zMapFeatureGetParentGroup((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_BLOCK) ;
-      zMapAssert(align->block) ;
 
       align->offset = window->sequence->start ;
 
