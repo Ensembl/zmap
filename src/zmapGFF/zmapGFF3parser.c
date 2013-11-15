@@ -201,10 +201,6 @@ void zMapGFFDestroyParser_V3(ZMapGFFParser const pParserBase)
     g_string_free(pParser->raw_line_data, TRUE) ;
   if (pParser->pMLF)
     zMapMLFDestroy(pParser->pMLF) ;
-  if (pParser->source_2_feature_set)
-   g_hash_table_destroy(pParser->source_2_feature_set) ;
-  if (pParser->source_2_sourcedata)
-    g_hash_table_destroy(pParser->source_2_sourcedata) ;
   if (pParser->excluded_features)
     g_hash_table_destroy(pParser->excluded_features) ;
 
