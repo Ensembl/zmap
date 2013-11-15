@@ -1133,6 +1133,7 @@ static FooCanvasGroup *find_or_create_column(ZMapCanvasData  canvas_data,
   GQuark display_id = feature_set_id;
   ZMapFeatureColumn f_col = NULL;
   gboolean add_to_hash = FALSE;
+  ZMapFeatureSetDesc set_data ;
 
   zMapAssert(canvas_data && strand_container) ;
 
@@ -1150,37 +1151,44 @@ static FooCanvasGroup *find_or_create_column(ZMapCanvasData  canvas_data,
   if(!window->context_map->featureset_2_column)
     window->context_map->featureset_2_column = g_hash_table_new(NULL,NULL);
 
-  {
-    ZMapFeatureSetDesc set_data ;
+  set_data = g_hash_table_lookup(window->context_map->featureset_2_column, GUINT_TO_POINTER(feature_set_id));
 
-    set_data = g_hash_table_lookup(window->context_map->featureset_2_column, GUINT_TO_POINTER(feature_set_id));
-    zMapAssert(set_data);
+  column_id = set_data->column_id;      /* the display column as a key */
+  display_id = set_data->column_ID;
+  f_col = g_hash_table_lookup(window->context_map->columns,GUINT_TO_POINTER(column_id));
 
-    zMapAssert(window->context_map->columns);
-    {
-      column_id = set_data->column_id;      /* the display column as a key */
-      display_id = set_data->column_ID;
-      f_col = g_hash_table_lookup(window->context_map->columns,GUINT_TO_POINTER(column_id));
-    }
-    /* else we use the original feature_set_id
-       which should never happen as the view creates a 1-1 mapping regardless */
-  }
+  /* else we use the original feature_set_id
+     which should never happen as the view creates a 1-1 mapping regardless */
+
   /* but then we can't as we need the column style to work out whether to create it */
 
 
 
-  /* DEBUG..... */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* DEBUG.....LEAVING THIS IN IN CASE WE HAVE MORE PROBLEMS WITH DISPLAY... */
   zMap_g_hash_table_print(window->context_map->columns, "pointer") ;
 
+  printf("Given feature_set_id = \"%s\","
+         " set_data->column_id = \"%s\", set_data->column_ID = \"%s\",  set_data->feature_src_ID = \"%s\"\n",
+         g_quark_to_string(feature_set_id),
+         g_quark_to_string(set_data->column_id),
+         g_quark_to_string(set_data->column_ID),
+         g_quark_to_string(set_data->feature_src_ID)) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 
-  if(!f_col)
+
+  if (!f_col)
     {
-      printf("No column defined for featureset \"%s\"\n", g_quark_to_string(feature_set_id));
+      zMapLogWarning("Could not find column for featureset \"%s\"", g_quark_to_string(feature_set_id)) ;
+
+
+      /* HORRIBLE...HORRIBLE..... */
       return NULL;
     }
-  zMapAssert(f_col && f_col->style);
+
 
 #if MH17_PRINT_CREATE_COL
   if(zMapStyleDisplayInSeparator(feature_set->style))
