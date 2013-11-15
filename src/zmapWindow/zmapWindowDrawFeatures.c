@@ -1168,6 +1168,13 @@ static FooCanvasGroup *find_or_create_column(ZMapCanvasData  canvas_data,
   /* but then we can't as we need the column style to work out whether to create it */
 
 
+
+  /* DEBUG..... */
+  zMap_g_hash_table_print(window->context_map->columns, "pointer") ;
+
+
+
+
   if(!f_col)
     {
       printf("No column defined for featureset \"%s\"\n", g_quark_to_string(feature_set_id));

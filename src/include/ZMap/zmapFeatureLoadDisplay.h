@@ -142,6 +142,7 @@ typedef struct ZMapFeatureContextMapStructType
    * ACEDB */
   GHashTable *featureset_2_column ;
 
+
   /* Mapping of a feature source to its data using ZMapFeatureSource
    * This consists of style id and description and source id
    * NB: the GFFSource.source  (quark) is the GFF_source name the hash table
