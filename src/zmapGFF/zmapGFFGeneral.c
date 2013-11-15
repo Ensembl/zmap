@@ -618,7 +618,8 @@ void zMapGFFSetFeatureClipCoords(ZMapGFFParser parser, int start, int end)
   if (!zMapGFFIsValidVersion(parser))
     return ;
 
-  zMapAssert(start > 0 && end > 0 && start <= end) ;
+  if (start <= 0 || end <= 0 || end < start ) 
+    return ;
 
   if (parser->state != ZMAPGFF_PARSER_ERR)
     {

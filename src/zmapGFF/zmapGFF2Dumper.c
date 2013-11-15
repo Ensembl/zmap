@@ -239,14 +239,16 @@ gboolean zMapGFFDumpRegion(ZMapFeatureAny dump_set, GHashTable *styles,
 			   ZMapSpan region_span, GIOChannel *file, GError **error_out)
 {
   const char *sequence = NULL;
-  gboolean result = TRUE ;
+  gboolean result = FALSE ; 
 
-  zMapAssert(file && dump_set && error_out) ;
-  zMapAssert(dump_set->struct_type == ZMAPFEATURE_STRUCT_CONTEXT
-	     || dump_set->struct_type == ZMAPFEATURE_STRUCT_ALIGN
-	     || dump_set->struct_type == ZMAPFEATURE_STRUCT_BLOCK
-	     || dump_set->struct_type == ZMAPFEATURE_STRUCT_FEATURESET
-	     || dump_set->struct_type == ZMAPFEATURE_STRUCT_FEATURE) ;
+  if (!file || !dump_set || !error_out) 
+    return result ;
+  if ((dump_set->struct_type != ZMAPFEATURE_STRUCT_CONTEXT)
+	     && (dump_set->struct_type != ZMAPFEATURE_STRUCT_ALIGN)
+	     && (dump_set->struct_type != ZMAPFEATURE_STRUCT_BLOCK)
+	     && (dump_set->struct_type != ZMAPFEATURE_STRUCT_FEATURESET)
+	     && (dump_set->struct_type != ZMAPFEATURE_STRUCT_FEATURE) )
+    return result ;
 
   result = dump_full_header(dump_set, file, error_out, &sequence) ;
 
