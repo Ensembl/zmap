@@ -1747,19 +1747,21 @@ gboolean zMapWindowFeaturesetItemSetStyle(ZMapWindowFeaturesetItem di, ZMapFeatu
   //  di->zoom = 0.0;		// trigger recalc
 
 
-  if(zMapStyleGetMode(di->style) == ZMAPSTYLE_MODE_GRAPH && di->re_bin && zMapStyleDensityMinBin(di->style) != zMapStyleDensityMinBin(style))
+  if (zMapStyleGetMode(di->style) == ZMAPSTYLE_MODE_GRAPH
+      && di->re_bin && zMapStyleDensityMinBin(di->style) != zMapStyleDensityMinBin(style))
     re_index = TRUE;
 
-  if(di->display_index && re_index)
+  if (di->display_index && re_index)
     {
       zMapSkipListDestroy(di->display_index, NULL);
       di->display_index = NULL;
 
-      if(di->display)	/* was re-binned */
+      if (di->display)	/* was re-binned */
 	{
 	  for(features = di->display; features; features = g_list_delete_link(features,features))
 	    {
 	      ZMapWindowCanvasFeature feat = (ZMapWindowCanvasFeature) features->data;
+
 	      zmapWindowCanvasFeatureFree(feat);
 	    }
 	  di->display = NULL;
@@ -1772,7 +1774,8 @@ gboolean zMapWindowFeaturesetItemSetStyle(ZMapWindowFeaturesetItem di, ZMapFeatu
   di->x_off += zMapStyleOffset(style);
 
   /* need to set colours */
-  zmapWindowCanvasItemGetColours(style, di->strand, di->frame, ZMAPSTYLE_COLOURTYPE_NORMAL, &fill, &draw, &outline, NULL, NULL);
+  zmapWindowCanvasItemGetColours(style, di->strand, di->frame,
+                                 ZMAPSTYLE_COLOURTYPE_NORMAL, &fill, &draw, &outline, NULL, NULL);
 
   if(fill)
     {
@@ -1865,8 +1868,10 @@ static gboolean zmap_window_featureset_item_set_style(FooCanvasItem *item, ZMapF
   if (g_type_is_a(G_OBJECT_TYPE(item), ZMAP_TYPE_WINDOW_FEATURESET_ITEM))
     {
       ZMapWindowFeaturesetItem di = (ZMapWindowFeaturesetItem) item;
+
       zMapWindowFeaturesetItemSetStyle(di,style);
     }
+
   return FALSE;
 }
 
@@ -2417,6 +2422,12 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
       zMapLogWarning("draw: no gc","");
       return;		/* got a draw before realize ?? */
     }
+
+
+  char *set_name = g_quark_to_string(fi->id) ;
+
+
+
 
   /* check zoom level and recalculate */
   /* NOTE this also creates the index if needed */

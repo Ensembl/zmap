@@ -380,8 +380,10 @@ void zMapStylePrint(ZMapIOOut dest, ZMapFeatureTypeStyle style, char *prefix, gb
 
   full = TRUE ;
 
-  zMapOutWriteFormat(dest, "%s%s Style - \"%s\" (unique id = \"%s\")\n", (prefix ? prefix : ""),
-	 indent, g_quark_to_string(style->original_id), g_quark_to_string(style->unique_id)) ;
+  zMapOutWriteFormat(dest, "%s%s Style - \"%s\" (%u), unique id = \"%s\" (%u)\n",
+                     (prefix ? prefix : ""), indent,
+                     g_quark_to_string(style->original_id), style->original_id,
+                     g_quark_to_string(style->unique_id), style->unique_id) ;
 
   indent = "\t" ;
 
@@ -452,8 +454,9 @@ void zMapStylePrint(ZMapIOOut dest, ZMapFeatureTypeStyle style, char *prefix, gb
 
 	indent = "\t\t" ;
 	PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_GRAPH_MODE), mode_data.graph.mode, "Mode", "%s", zmapStyleGraphMode2ExactStr) ;
-	PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_GRAPH_BASELINE), mode_data.graph.baseline, "Graph baseline", "%g", (double)) ;
-      PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_GRAPH_SCALE), mode_data.graph.scale, "Scale", "%s", zmapStyleGraphScale2ExactStr) ;
+	PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_GRAPH_BASELINE), mode_data.graph.baseline, "Baseline", "%g", (double)) ;
+        PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_GRAPH_SCALE), mode_data.graph.scale, "Scale", "%s", zmapStyleGraphScale2ExactStr) ;
+	PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_GRAPH_FILL), mode_data.graph.fill,  "Fill", "%s", PRINTBOOL) ;
 
 	break ;
       }

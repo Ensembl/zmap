@@ -176,7 +176,7 @@ typedef enum
     STYLE_PROP_GRAPH_MODE,
     STYLE_PROP_GRAPH_BASELINE,
     STYLE_PROP_GRAPH_SCALE,
-    STYLE_PROP_GRAPH_LINE_FILL,
+    STYLE_PROP_GRAPH_FILL,
     STYLE_PROP_GRAPH_DENSITY,
     STYLE_PROP_GRAPH_DENSITY_FIXED,
     STYLE_PROP_GRAPH_DENSITY_MIN_BIN,
@@ -326,7 +326,7 @@ typedef enum
 #define ZMAPSTYLE_PROPERTY_GRAPH_DENSITY_STAGGER  "graph-density-stagger"
 #define ZMAPSTYLE_PROPERTY_GRAPH_BASELINE         "graph-baseline"
 #define ZMAPSTYLE_PROPERTY_GRAPH_SCALE            "graph-scale"
-#define ZMAPSTYLE_PROPERTY_GRAPH_LINE_FILL        "graph-line-fill"
+#define ZMAPSTYLE_PROPERTY_GRAPH_FILL             "graph-fill"
 
 
 
@@ -690,7 +690,7 @@ typedef struct
   double baseline ;					    /* zero level for graph.  */
   ZMapStyleGraphScale scale ;				    /* log or linear scaling. */
 
-  gboolean line_fill ;					    /* Solid fill below line graph ? */
+  gboolean fill ;					    /* Solid fill below line graph ? */
 
   int min_bin ;						    /* min size in pixels */
   int stagger ;
@@ -1220,7 +1220,8 @@ gboolean zMapStyleIsFrameSpecific(ZMapFeatureTypeStyle style) ;
 #define zMapStyleGetFrameMode(style)      ((style)->frame_mode)
 
 //double zMapStyleBaseline(ZMapFeatureTypeStyle style) ;
-#define zMapStyleGraphLineFill(style)   ((style)->mode_data.graph.line_fill)
+#define zMapStyleGraphFill(style)   ((style)->mode_data.graph.fill)
+
 #define zMapStyleBaseline(style)   ((style)->mode_data.graph.baseline)
 #define zMapStyleGraphMode(style)   ((style)->mode_data.graph.mode)
 #define zMapStyleDensity(style)   ((style)->mode_data.graph.density)

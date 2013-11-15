@@ -39,54 +39,66 @@
 #include <zmapWindowCanvasFeatureset_I.h>
 
 
-/* not static as we want to use this in alignments */
-void zMapWindowCanvasBasicPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature, GdkDrawable *drawable, GdkEventExpose *expose)
-{
-	gulong fill,outline;
-	int colours_set, fill_set, outline_set;
-	double x1,x2;
-
-	/* draw a box */
-
-	/* colours are not defined for the CanvasFeatureSet
-	 * as we can have several styles in a column
-	 * but they are cached by the calling function
-	 * and also the window focus code
-	 */
-	colours_set = zMapWindowCanvasFeaturesetGetColours(featureset, feature, &fill, &outline);
-	fill_set = colours_set & WINDOW_FOCUS_CACHE_FILL;
-	outline_set = colours_set & WINDOW_FOCUS_CACHE_OUTLINE;
-
-	if(fill_set && feature->feature->population)
-	{
-		FooCanvasItem *foo = (FooCanvasItem *) featureset;
-		ZMapFeatureTypeStyle style = *feature->feature->style;
-
-		if((zMapStyleGetScoreMode(style) == ZMAPSCORE_HEAT) || (zMapStyleGetScoreMode(style) == ZMAPSCORE_HEAT_WIDTH))
-		{
-			fill = (fill << 8) | 0xff;	/* convert back to RGBA */
-			fill = foo_canvas_get_color_pixel(foo->canvas,	zMapWindowCanvasFeatureGetHeatColour(0xffffffff,fill,feature->score));
-		}
-	}
-
-	x1 = featureset->width / 2 - feature->width / 2;
-	if(featureset->bumped)
-		x1 += feature->bump_offset;
-
-	x1 += featureset->dx + featureset->x_off;
-	x2 = x1 + feature->width - 1;
-
-	zMapCanvasFeaturesetDrawBoxMacro(featureset,x1,x2, feature->y1, feature->y2, drawable, fill_set,outline_set,fill,outline);
-}
-
+static void basicPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
+                              GdkDrawable *drawable, GdkEventExpose *expose) ;
 
 
 void zMapWindowCanvasBasicInit(void)
 {
-	gpointer funcs[FUNC_N_FUNC] = { NULL };
+  gpointer funcs[FUNC_N_FUNC] = { NULL } ;
 
-	funcs[FUNC_PAINT] = zMapWindowCanvasBasicPaintFeature;
+  funcs[FUNC_PAINT] = basicPaintFeature ;
 
-	zMapWindowCanvasFeatureSetSetFuncs(FEATURE_BASIC, funcs, 0, 0);
+  zMapWindowCanvasFeatureSetSetFuncs(FEATURE_BASIC, funcs, 0, 0) ;
+
+  return ;
 }
+
+
+
+static void basicPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
+                              GdkDrawable *drawable, GdkEventExpose *expose)
+{
+  gulong fill,outline ;
+  int colours_set, fill_set, outline_set ;
+  double x1,x2 ;
+
+  /* draw a box */
+
+  /* colours are not defined for the CanvasFeatureSet
+   * as we can have several styles in a column
+   * but they are cached by the calling function
+   * and also the window focus code
+   */
+  colours_set = zMapWindowCanvasFeaturesetGetColours(featureset, feature, &fill, &outline) ;
+  fill_set = colours_set & WINDOW_FOCUS_CACHE_FILL ;
+  outline_set = colours_set & WINDOW_FOCUS_CACHE_OUTLINE ;
+
+  if(fill_set && feature->feature->population)
+    {
+      FooCanvasItem *foo = (FooCanvasItem *) featureset ;
+      ZMapFeatureTypeStyle style = *feature->feature->style;
+
+      if((zMapStyleGetScoreMode(style) == ZMAPSCORE_HEAT) || (zMapStyleGetScoreMode(style) == ZMAPSCORE_HEAT_WIDTH))
+        {
+          fill = (fill << 8) | 0xff;	/* convert back to RGBA */
+          fill = foo_canvas_get_color_pixel(foo->canvas,
+                                            zMapWindowCanvasFeatureGetHeatColour(0xffffffff,fill,feature->score));
+        }
+    }
+
+  x1 = featureset->width / 2 - feature->width / 2;
+  if(featureset->bumped)
+    x1 += feature->bump_offset;
+
+  x1 += featureset->dx + featureset->x_off;
+  x2 = x1 + feature->width - 1;
+
+  zMapCanvasFeaturesetDrawBoxMacro(featureset, x1, x2, feature->y1, feature->y2, drawable,
+                                   fill_set, outline_set, fill, outline) ;
+
+  return ;
+}
+
+
 

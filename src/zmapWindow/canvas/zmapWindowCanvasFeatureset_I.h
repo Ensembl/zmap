@@ -38,12 +38,11 @@
 #include <glib-object.h>
 
 #include <libzmapfoocanvas/libfoocanvas.h>
-#include <zmapWindowCanvasItem_I.h>
-#include <ZMap/zmapWindow.h>
-#include <zmapWindowCanvasFeatureset.h>
+
 #include <ZMap/zmapStyle.h>
 #include <ZMap/zmapSkipList.h>
-
+#include <zmapWindowCanvasFeatureset.h>
+#include <zmapWindowCanvasItem_I.h>
 
 
 #if NEED_TO_REWRITE_SHED_LOADS_OF_CODE
@@ -208,6 +207,7 @@ typedef struct _zmapWindowFeaturesetItemStruct
   zmapWindowCanvasItemStruct __parent__;		/* itself derived from FooCanvasItem */
 
   GQuark id;
+
   ZMapFeatureTypeStyle style;				    /* column style: NB could have several
 							       featuresets mapped into this by virtualisation */
   ZMapFeatureTypeStyle featurestyle;			    /* current cached style for features */
