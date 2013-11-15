@@ -1,4 +1,3 @@
-
 /*  File: zmapGFFSOParser_P.h
  *  Author: Steve Miller (sm23@sanger.ac.uk)
  *  Copyright (c) 2006-2013: Genome Research Ltd.
@@ -64,7 +63,7 @@ typedef struct ZMapSOIDStruct_
     unsigned int iID ;
     char sID[ZMAPSO_ID_STRING_LENGTH+1] ;
   } ZMapSOIDStruct ;
-  
+
 /*
  * Struct for storing SO ID data as a pair of integer and
  * string.
@@ -75,7 +74,7 @@ typedef struct ZMapSOIDDataStruct_
     char * sName ;
     ZMapStyleMode cStyleMode ;
   } ZMapSOIDDataStruct ;
-  
+
 /*
  * Include data parsed out from SO files.
  */
@@ -129,7 +128,7 @@ typedef enum
     ZMAPSO_LINE_OBS,           /* is_obsolete: [true,false]                         */
     ZMAPSO_LINE_UNK            /* unknown, i.e. everythig else                      */
   } ZMapSOParserLineType ;
-  
+
 /*
  * Parser for SO terms.
  */

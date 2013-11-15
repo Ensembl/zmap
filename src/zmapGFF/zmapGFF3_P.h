@@ -43,20 +43,20 @@
  * Directive types.
  */
 typedef enum
-{
-  ZMAPGFF_DIR_VER = 0,                         /* "##gff-version"         */
-  ZMAPGFF_DIR_DNA = 1,                         /* "##DNA"                 */
-  ZMAPGFF_DIR_EDN = 2,                         /* "##end-DNA"             */
-  ZMAPGFF_DIR_SQR = 3,                         /* "##sequence-region"     */
-  ZMAPGFF_DIR_FEO = 4,                         /* "##feature-ontology"    */
-  ZMAPGFF_DIR_ATO = 5,                         /* "##attribute-ontology"  */
-  ZMAPGFF_DIR_SOO = 6,                         /* "##source-ontology"     */
-  ZMAPGFF_DIR_SPE = 7,                         /* "##species"             */
-  ZMAPGFF_DIR_GEN = 8,                         /* "##genome-build"        */
-  ZMAPGFF_DIR_FAS = 9,                         /* "##fasta"               */
-  ZMAPGFF_DIR_CLO = 10,                        /* "###"                   */
-  ZMAPGFF_DIR_UND = 11                         /* unknown/undefined       */
-} ZMapGFFDirectiveName ;
+  {
+    ZMAPGFF_DIR_VER = 0,                         /* "##gff-version"         */
+    ZMAPGFF_DIR_DNA = 1,                         /* "##DNA"                 */
+    ZMAPGFF_DIR_EDN = 2,                         /* "##end-DNA"             */
+    ZMAPGFF_DIR_SQR = 3,                         /* "##sequence-region"     */
+    ZMAPGFF_DIR_FEO = 4,                         /* "##feature-ontology"    */
+    ZMAPGFF_DIR_ATO = 5,                         /* "##attribute-ontology"  */
+    ZMAPGFF_DIR_SOO = 6,                         /* "##source-ontology"     */
+    ZMAPGFF_DIR_SPE = 7,                         /* "##species"             */
+    ZMAPGFF_DIR_GEN = 8,                         /* "##genome-build"        */
+    ZMAPGFF_DIR_FAS = 9,                         /* "##fasta"               */
+    ZMAPGFF_DIR_CLO = 10,                        /* "###"                   */
+    ZMAPGFF_DIR_UND = 11                         /* unknown/undefined       */
+  } ZMapGFFDirectiveName ;
 #define ZMAPGFF_NUMBER_DIR_TYPES 12
 
 
