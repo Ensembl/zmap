@@ -214,7 +214,8 @@ ZMapWindowNavigator zMapWindowNavigatorCreate(GtkWidget *canvas_widget)
   ZMapWindowNavigator navigate = NULL ;
   FooCanvasGroup *root = NULL ;
 
-  zMapAssert(FOO_IS_CANVAS(canvas_widget)) ;
+  if (!FOO_IS_CANVAS(canvas_widget)) 
+    return navigate ;
 
   navigate = g_new0(ZMapWindowNavigatorStruct, 1) ;
 
@@ -365,13 +366,13 @@ void zMapWindowNavigatorFocus(ZMapWindowNavigator navigate,
 
 void zMapWindowNavigatorSetCurrentWindow(ZMapWindowNavigator navigate, ZMapWindow window)
 {
-  zMapAssert(navigate && window);
+  if (!navigate || !window)
+    return ;
 
   /* We should be updating the locator here too.  In the case of
    * unlocked windows the locator becomes out of step on focusing
    * until the visibility change handler is called */
 
-//printf("nav set window %p -> %p\n", navigate, window);
  /* mh17: should also twiddle revcomped? but as revcomp applies to the view
      in violation of MVC then all the windows will follow
   */
@@ -466,7 +467,8 @@ void zMapWindowNavigatorDrawLocator(ZMapWindowNavigator navigate,
 {
   FooCanvasItem *root;
   GtkWidget *widget;
-  zMapAssert(navigate);
+  if (!navigate)
+    return ;
 
   root  = (FooCanvasItem *) navigate->container_root;
   if(!root)
@@ -481,7 +483,6 @@ void zMapWindowNavigatorDrawLocator(ZMapWindowNavigator navigate,
 
   navigate->width = root->x2 - root->x1 + 1;
   navigate->height = root->y2 - root->y1 + 1;
-//printf("DrawLocator %f\n",navigate->width);
 
   zmapWindowNavigatorSizeRequest(widget, navigate->width, navigate->height,
       (double) navigate->full_span.x1,
@@ -496,11 +497,7 @@ void zMapWindowNavigatorDrawLocator(ZMapWindowNavigator navigate,
 
 	  /* redraw all to ensure shrinking locator is wiped */
 	  foo_canvas_item_request_redraw(navigate->canvas->root);
-//	  zMapWindowCanvasFeaturesetExpose((ZMapWindowFeaturesetItem) navigate->locator);
   }
-
-//  if(navigate->draw_expose_handler_id == 0)	/* sets nav scroll region ?? */
-//	zmapWindowFullReposition(navigate->container_root,TRUE, "draw locator");
 
   return ;
 }
@@ -537,7 +534,8 @@ static FooCanvas *fetchCanvas(ZMapWindowNavigator navigate)
 
   g = (FooCanvasGroup *)(navigate->container_root);
 
-  zMapAssert(g);
+  if (!g)
+    return canvas ;
 
   canvas = FOO_CANVAS(FOO_CANVAS_ITEM(g)->canvas);
 
@@ -576,11 +574,12 @@ static gboolean nav_draw_expose_handler(GtkWidget *widget, GdkEventExpose *expos
 
 static void navigateDrawFunc(NavigateDraw nav_draw, GtkWidget *widget)
 {
-  ZMapWindowNavigator navigate = nav_draw->navigate;
+  ZMapWindowNavigator navigate = NULL; 
   FooCanvasItem *root;
 
-  /* We need this! */
-  zMapAssert(navigate->current_window);
+  if (!nav_draw || !nav_draw->navigate || !nav_draw->navigate->current_window) 
+    return ; 
+  navigate = nav_draw->navigate;
 
 #if SIZE_INVALID
   zmapWindowNavigatorSizeRequest(widget, navigate->width, navigate->height,
@@ -694,7 +693,6 @@ static ZMapFeatureContextExecuteStatus drawContext(GQuark key_id,
 
             hash_status = zmapWindowFToIAddAlign(navigate->ftoi_hash, key_id, (FooCanvasGroup *)(navigate->container_align));
 
-            zMapAssert(hash_status);
           }
       }
       break;
@@ -731,7 +729,6 @@ static ZMapFeatureContextExecuteStatus drawContext(GQuark key_id,
 
         hash_status = zmapWindowFToIAddBlock(navigate->ftoi_hash, draw_data->current_align->unique_id,
                                              key_id, (FooCanvasGroup *)(draw_data->container_block));
-        zMapAssert(hash_status);
 
 	navigate->locator = zmapWindowDrawSetGroupBackground(navigate->current_window, navigate->container_block,
 							     block_start, block_end, 1.0,
@@ -1294,8 +1291,6 @@ static gboolean navCanvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpoin
 
 	/* Retrieve the feature item info from the canvas item. */
         feature = zmapWindowItemGetFeature(item);
-        zMapAssert(feature) ;
-
 
 	if(button->type == GDK_BUTTON_PRESS)
           {
@@ -1451,7 +1446,8 @@ static LocusEntry zmapWindowNavigatorLDHInsert(GHashTable *hash,
  */
 static void zmapWindowNavigatorLDHDestroy(GHashTable **destroy_me)
 {
-  zMapAssert(destroy_me && *destroy_me);
+  if (!destroy_me || !*destroy_me)
+    return ;
 
   g_hash_table_destroy(*destroy_me);
 
@@ -1466,7 +1462,8 @@ static void destroyLocusEntry(gpointer data)
 {
   LocusEntry locus_entry = (LocusEntry)data;
 
-  zMapAssert(data);
+  if (!data)
+    return ;
 
   locus_entry->feature = NULL;
 

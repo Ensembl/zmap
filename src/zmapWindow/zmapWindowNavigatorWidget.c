@@ -53,7 +53,6 @@ typedef struct _ZMapNavigatorClassDataStruct
   ZMapWindowNavigatorCallbackStruct callbacks;
   gpointer user_data;
   double container_width, container_height;     /* size of the features in canvas coordinates */
-//  FooCanvasItem *top_bg, *bot_bg;
   GdkColor original_colour;
   GtkTooltips *tooltips; /* Tooltips */
   double start,end;
@@ -208,7 +207,8 @@ void zmapWindowNavigatorValueChanged(GtkWidget *widget, double top, double botto
   ZMapNavigatorClassData class_data = NULL;
 
   class_data = g_object_get_data(G_OBJECT(widget), ZMAP_NAVIGATOR_CLASS_DATA);
-  zMapAssert(class_data);
+  if (!class_data)
+    return ;
 
   if(navigator_debug_G)
     printf("%s to %f %f\n", __PRETTY_FUNCTION__, top, bottom);
@@ -225,7 +225,8 @@ void zmapWindowNavigatorWidthChanged(GtkWidget *widget, double left, double righ
   ZMapNavigatorClassData class_data = NULL;
 
   class_data = g_object_get_data(G_OBJECT(widget), ZMAP_NAVIGATOR_CLASS_DATA);
-  zMapAssert(class_data);
+  if (!class_data)
+    return ;
 
   if(navigator_debug_G)
     printf("%s to %f %f\n", __PRETTY_FUNCTION__, left, right);
@@ -281,8 +282,8 @@ void zmapWindowNavigatorSizeRequest(GtkWidget *widget, double x, double y,double
   canvas = FOO_CANVAS(widget);
 
   class_data = g_object_get_data(G_OBJECT(canvas), ZMAP_NAVIGATOR_CLASS_DATA);
-
-  zMapAssert(class_data);
+  if (!class_data)
+    return ;
 
 #if MH17_DEBUG_NAV_FOOBAR
 printf("nav size request %f %f, %f %f\n",x,y,start,end);
@@ -306,8 +307,8 @@ void zmapWindowNavigatorFillWidget(GtkWidget *widget)
   canvas = FOO_CANVAS(widget);
 
   class_data = g_object_get_data(G_OBJECT(canvas), ZMAP_NAVIGATOR_CLASS_DATA);
-
-  zMapAssert(class_data);
+  if (!class_data)
+    return ;
 
   curr_pixels   = canvas->pixels_per_unit_y;
 //  target_pixels = getZoomFactor(class_data->height, class_data->text_height, NAVIGATOR_SIZE);
@@ -374,8 +375,8 @@ void zmapWindowNavigatorTextSize(GtkWidget *widget, double *x, double *y)
   canvas = FOO_CANVAS(widget);
 
   class_data = g_object_get_data(G_OBJECT(canvas), ZMAP_NAVIGATOR_CLASS_DATA);
-
-  zMapAssert(class_data);
+  if (!class_data)
+    return ;
 
   ppux = canvas->pixels_per_unit_x;
   ppuy = canvas->pixels_per_unit_y;
@@ -453,8 +454,8 @@ static void fetchScrollCoords(ZMapNavigatorClassData class_data,
   double border_x = 2.0;
   double border_y = border;
   double max_x, max_y, container_width, container_height;
-
-  zMapAssert(x1 && x2 && y1 && y2);
+  if (!x1 || !x2 || !y1 || !y2)
+    return 
 
   max_x = 32000.0;             /* only canvas limit */
   max_y = class_data->span;	//(double)(NAVIGATOR_SIZE);

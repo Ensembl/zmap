@@ -52,12 +52,6 @@ typedef struct
 
 
 
-//static void styleDestroyCB(gpointer data) ;
-//static void styleTableHashCB(gpointer key, gpointer value, gpointer user_data) ;
-
-
-
-
 /* Some simple coord calculation routines, if these prove too expensive they
  * can be replaced with macros. */
 /* MH17: isn't the above comment sweet considering we use GObjects for everything */
@@ -186,9 +180,10 @@ ZMapStrand zmapWindowStrandToDisplay(ZMapWindow window, ZMapStrand strand_in)
 /* This is the basic length calculation, obvious, but the "+ 1" is constantly overlooked. */
 double zmapWindowExt(double start, double end)
 {
-  double extent ;
+  double extent = 0.0;
 
-  zMapAssert(start <= end) ;
+  if (start > end) 
+    return extent ;
 
   extent = end - start + 1 ;
 
@@ -213,7 +208,8 @@ double zmapWindowExt(double start, double end)
  */
 void zmapWindowSeq2CanExt(double *start_inout, double *end_inout)
 {
-  zMapAssert(start_inout && end_inout && *start_inout <= *end_inout) ;
+  if (!start_inout || !end_inout || (*start_inout > *end_inout)) 
+    return ;
 
   *end_inout += 1 ;
 
@@ -229,7 +225,7 @@ void zmapWindowSeq2CanExt(double *start_inout, double *end_inout)
  */
 void zmapWindowExt2Zero(double *start_inout, double *end_inout)
 {
-  zMapAssert(start_inout && end_inout && *start_inout <= *end_inout) ;
+  if (!start_inout || !end_inout || (*start_inout > *end_inout)) ;
 
   *end_inout = *end_inout - *start_inout ;		    /* do this first before zeroing start ! */
 
@@ -246,7 +242,8 @@ void zmapWindowExt2Zero(double *start_inout, double *end_inout)
  * and hence zero-based. */
 void zmapWindowSeq2CanExtZero(double *start_inout, double *end_inout)
 {
-  zMapAssert(start_inout && end_inout && *start_inout <= *end_inout) ;
+  if (!start_inout || !end_inout || (*start_inout > *end_inout)) 
+    return ;
 
   *end_inout = *end_inout - *start_inout ;		    /* do this first before zeroing start ! */
 
@@ -261,7 +258,8 @@ void zmapWindowSeq2CanExtZero(double *start_inout, double *end_inout)
 /* NOTE: offset may not be quite what you think, the routine recalculates */
 void zmapWindowSeq2CanOffset(double *start_inout, double *end_inout, double offset)
 {
-  zMapAssert(start_inout && end_inout && *start_inout <= *end_inout) ;
+  if (!start_inout || !end_inout || (*start_inout > *end_inout)) 
+    return ;
 
   *start_inout -= offset ;
 
@@ -306,7 +304,8 @@ void zmapWindowFreeWindowArray(GPtrArray **window_array_inout, gboolean free_arr
 {
   GPtrArray *window_array ;
 
-  zMapAssert(window_array_inout) ;
+  if (!window_array_inout) 
+    return ;
 
   if ((window_array = *window_array_inout))
     {

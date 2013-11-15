@@ -407,8 +407,6 @@ static void cancelCB(GtkWidget *widget, gpointer cb_data)
 
 	my_data->changed = FALSE;
 
-	zMapAssert(style);
-
 	/* update the column */
 	zmapWindowMenuSetStyleCB(style->unique_id, my_data->menu_data);
 
@@ -437,7 +435,6 @@ static void applyCB(GtkWidget *widget, gpointer cb_data)
 
 		if(style->unique_id == feature_set->unique_id)
 		{
-			zMapAssert(style->is_default);
 			name = g_strdup_printf("%s_",name);
 		}
 		description = name;

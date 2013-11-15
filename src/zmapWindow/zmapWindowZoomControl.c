@@ -342,7 +342,8 @@ static void centeringLimitSpan2MaxOrDefaultAtZoom(double  max_pixels,
                                                   double *pointB)
 {
   double max_span, seq_span, new_span, canv_span, start, end, halfway;
-  zMapAssert(max_pixels && def && pointA && pointB);
+  if (!max_pixels || !def || !pointA || !pointB)
+    return ;
 
   start     = *pointA;
   end       = *pointB;
@@ -468,11 +469,10 @@ static ZMapWindowZoomControl controlFromWindow(ZMapWindow window)
 {
   ZMapWindowZoomControl control = NULL;
 
-  zMapAssert(window && window->zoom);
+  if (!window || !window->zoom)
+    return control ;
 
   control = window->zoom;
-
-  zMapAssert(control && ZMAP_MAGIC_IS_VALID(zoom_magic_G, control->magic)) ;
 
   return control;
 }
@@ -482,14 +482,14 @@ static ZMapWindowZoomControl controlFromWindow(ZMapWindow window)
 /* Exactly what it says */
 static double getMinZoom(ZMapWindow window, ZMapWindowZoomControl control)
 {
-  double canvas_height, border_height, zf ;
+  double canvas_height, border_height, zf = 0.0;
 
   /* These heights are in pixels */
   border_height = control->border * 2.0;
   canvas_height = GTK_WIDGET(window->canvas)->allocation.height;
 
-  zMapAssert(canvas_height > 0);
-  /* zMapAssert(canvas_height >= border_height); */
+  if (canvas_height <= 0)
+    return zf ;
   /* rearrangement of
    *              canvas height
    * zf = ------------------------------
@@ -583,7 +583,8 @@ static void textDimensionsOfFont(FooCanvasGroup *group,
 #ifdef BLAH_BLAH_BLAH
 static void printControl(ZMapWindowZoomControl control)
 {
-  zMapAssert(control && ZMAP_MAGIC_IS_VALID(zoom_magic_G, control->magic)) ;
+  if (!control || !ZMAP_MAGIC_IS_VALID(zoom_magic_G, control->magic)) 
+    return ;
 
   printf("Control:\n"
          " factor %f\n"

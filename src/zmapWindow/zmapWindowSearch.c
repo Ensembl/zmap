@@ -191,7 +191,8 @@ void zmapWindowCreateSearchWindow(ZMapWindow window,
   SearchData search_data ;
 
   feature_any = zmapWindowItemGetFeatureAny(feature_item);
-  zMapAssert(feature_any) ;
+  if (!feature_any) 
+    return ;
 
   search_data = g_new0(SearchDataStruct, 1) ;
 
@@ -877,7 +878,8 @@ static void printListDataCB(gpointer data, gpointer user_data_unused)
   ZMapFeature feature ;
 
   feature = zmapWindowItemGetFeature(item);
-  zMapAssert(feature) ;
+  if (!feature) 
+    return ;
 
   printf("%s\n", g_quark_to_string(feature->unique_id)) ;
 

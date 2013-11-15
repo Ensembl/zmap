@@ -220,7 +220,11 @@ void zmapWindowUpdateXRemoteDataFull(ZMapWindow window, ZMapFeatureAny feature_a
   int chr_bp ;
 
   /* We should only ever be called with a feature, not a set or anything else. */
-  zMapAssert(feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURE) ;
+  if (feature_any->struct_type != ZMAPFEATURE_STRUCT_FEATURE) 
+    return ;
+
+  if (!feature_any) 
+    return ; 
 
 
   /* OK...IN HERE IS THE PLACE FOR THE HACK FOR COORDS....NEED TO COPY FEATURE

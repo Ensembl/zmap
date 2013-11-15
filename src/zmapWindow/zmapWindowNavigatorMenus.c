@@ -67,8 +67,12 @@ void zmapWindowNavigatorGoToLocusExtents(ZMapWindowNavigator navigate, FooCanvas
   GQuark locus_quark = 0;
   char *wild_card = "*";
 
+  if (!navigate || !navigate->current_window || !item) 
+    return ; 
+
   feature = zmapWindowItemGetFeature(item);
-  zMapAssert(feature);
+  if (!feature)
+    return ;
 
   window = navigate->current_window;
 
@@ -118,8 +122,13 @@ void zmapWindowNavigatorShowSameNameList(ZMapWindowNavigator navigate, FooCanvas
 
   wild_card_id = g_quark_from_string(wild_card) ;
 
+
+  if (!navigate || !navigate->current_window || !item ) 
+    return ; 
+
   feature = zmapWindowItemGetFeature(item) ;
-  zMapAssert(feature) ;
+  if (!feature) 
+    return ;
 
   set_item = FOO_CANVAS_ITEM(zmapWindowContainerCanvasItemGetContainer(item));
   container = (ZMapWindowContainerFeatureSet)set_item;
@@ -417,7 +426,6 @@ static void navigatorColumnMenuCB(int menu_item_id, gpointer callback_data)
       break ;
 
     default:
-      zMapAssert("Coding error, unrecognised menu item number.") ;
       break ;
     }
 
@@ -479,7 +487,8 @@ static void filter_checkbox_toggled_cb(GtkWidget *checkbox, gpointer user_data)
   button_pressed = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(checkbox));
   filter = g_object_get_data(G_OBJECT(checkbox), FILTER_DATA_KEY);
 
-  zMapAssert(filter != NULL);
+  if (!filter)
+    return ;
 
   if((in_hide_list = g_list_find(navigator->hide_filter, filter)))
     {
