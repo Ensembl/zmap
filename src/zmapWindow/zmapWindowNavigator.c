@@ -1,4 +1,4 @@
-/*  File: zmapWindowNav.c
+/*  File: zmapWindowNavigator.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
@@ -29,7 +29,7 @@
  *
  * Exported functions: See ZMap/zmapNavigator.h
  *
- *------------------------------------------------------------- - navigate->full_span.x1 + 1------
+ *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmap.h>

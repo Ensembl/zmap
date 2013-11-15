@@ -1,4 +1,4 @@
-/*  File: zmapFeatures.c
+/*  File: zmapFeature.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------

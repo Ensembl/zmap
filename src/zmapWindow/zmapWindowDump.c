@@ -1,4 +1,3 @@
-/*  Last edited: Apr 13 09:30 2012 (edgrif) */
 /*  File: zmapWindowDump.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.

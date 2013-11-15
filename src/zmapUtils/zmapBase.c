@@ -1,4 +1,4 @@
-/*  File: zmapZMap.c
+/*  File: zmapBase.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------

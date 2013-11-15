@@ -1,5 +1,4 @@
-/*  Last edited: 30 Oct 16"27 2012 (gb10) */
-/*  File: zmapViewScratchColumn.c
+/*  File: zmapViewScratch.c
  *  Author: Gemma Barson (gb10@sanger.ac.uk)
  *  Copyright (c) 2012: Genome Research Ltd.
  *-------------------------------------------------------------------

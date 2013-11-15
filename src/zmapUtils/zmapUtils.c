@@ -1,4 +1,3 @@
-/*  Last edited: Oct 28 13:51 2011 (edgrif) */
 /*  File: zmapUtils.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.

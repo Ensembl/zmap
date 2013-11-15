@@ -1,8 +1,4 @@
-
-/* File needs renaming to be a general config getting file.... */
-
-
-/*  File: zmapConfigUtils.c
+/*  File: zmapAppDebugConfig.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
@@ -31,6 +27,10 @@
  * Exported functions: See XXXXXXXXXXXXX.h
  *-------------------------------------------------------------------
  */
+
+
+/* File needs renaming to be a general config getting file.... */
+
 
 #include <ZMap/zmap.h>
 
