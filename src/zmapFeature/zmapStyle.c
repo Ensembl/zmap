@@ -333,6 +333,9 @@ ZMapStyleParamStruct zmapStyleParams_G[_STYLE_PROP_N_ITEMS] =
   { STYLE_PROP_GRAPH_SCALE, STYLE_PARAM_TYPE_GRAPH_SCALE, ZMAPSTYLE_PROPERTY_GRAPH_SCALE,
     "graph-scale", "Graph Scale",
     offsetof(zmapFeatureTypeStyleStruct, mode_data.graph.scale) ,ZMAPSTYLE_MODE_GRAPH },
+  { STYLE_PROP_GRAPH_FILL, STYLE_PARAM_TYPE_BOOLEAN, ZMAPSTYLE_PROPERTY_GRAPH_FILL,
+    "graph-fill", "Graph fill mode",
+    offsetof(zmapFeatureTypeStyleStruct, mode_data.graph.fill) ,ZMAPSTYLE_MODE_GRAPH },
   { STYLE_PROP_GRAPH_DENSITY, STYLE_PARAM_TYPE_BOOLEAN, ZMAPSTYLE_PROPERTY_GRAPH_DENSITY,
     "graph-density", "Density plot",
     offsetof(zmapFeatureTypeStyleStruct, mode_data.graph.density) ,ZMAPSTYLE_MODE_GRAPH },
@@ -345,7 +348,9 @@ ZMapStyleParamStruct zmapStyleParams_G[_STYLE_PROP_N_ITEMS] =
   { STYLE_PROP_GRAPH_DENSITY_STAGGER, STYLE_PARAM_TYPE_UINT, ZMAPSTYLE_PROPERTY_GRAPH_DENSITY_STAGGER,
     "graph-density-stagger", "featureset/ column offset",
     offsetof(zmapFeatureTypeStyleStruct, mode_data.graph.stagger) ,ZMAPSTYLE_MODE_GRAPH },
-
+  { STYLE_PROP_GRAPH_COLOURS, STYLE_PARAM_TYPE_COLOUR, ZMAPSTYLE_PROPERTY_GRAPH_COLOURS,
+    "graph colours", "Colours used to show the various types of graph.",
+    offsetof(zmapFeatureTypeStyleStruct, mode_data.graph.colours), ZMAPSTYLE_MODE_GRAPH  },
 
   { STYLE_PROP_ALIGNMENT_PARSE_GAPS, STYLE_PARAM_TYPE_BOOLEAN, ZMAPSTYLE_PROPERTY_ALIGNMENT_PARSE_GAPS,
     "parse gaps", "Parse Gaps ?",
@@ -1294,6 +1299,10 @@ ZMapStyleFullColour zmapStyleFullColour(ZMapFeatureTypeStyle style, ZMapStylePar
 
     case STYLE_PROP_GLYPH_ALT_COLOURS:
       full_colour = &(style->mode_data.glyph.glyph_alt_colours) ;
+      break;
+
+    case STYLE_PROP_GRAPH_COLOURS:
+      full_colour = &(style->mode_data.graph.colours) ;
       break;
 
     case STYLE_PROP_ALIGNMENT_PERFECT_COLOURS:

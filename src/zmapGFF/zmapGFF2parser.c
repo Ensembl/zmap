@@ -2854,7 +2854,7 @@ static gboolean resizeBuffers(ZMapGFFParser parser_base, gsize line_length)
 
       for (i = 0 ; i < ZMAPGFF_NUMBER_PARSEBUF ; i++)
 	{
-	  char **buf_ptr = parser->buffers[i] ;
+	  char *buf_ptr = parser->buffers[i] ;
 
 	  g_free(buf_ptr) ;				    /* g_free() handles NULL pointers. */
 

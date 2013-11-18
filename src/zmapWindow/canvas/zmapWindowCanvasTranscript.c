@@ -34,11 +34,10 @@
 
 #include <math.h>
 #include <string.h>
+
 #include <ZMap/zmapFeature.h>
 #include <zmapWindowCanvasFeatureset_I.h>
 #include <zmapWindowCanvasTranscript_I.h>
-
-
 
 
 

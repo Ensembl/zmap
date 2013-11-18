@@ -32,26 +32,27 @@
 #ifndef ZMAP_CANVAS_ALIGNMENT_I_H
 #define ZMAP_CANVAS_ALIGNMENT_I_H
 
-#include <ZMap/zmap.h>
-
-
 #include <zmapWindowCanvasFeatureset_I.h>
 #include <zmapWindowCanvasBasic.h>
 #include <zmapWindowCanvasGlyph_I.h>
 #include <zmapWindowCanvasAlignment.h>
 
-
-typedef struct _AlignGapStruct
-{
-	int y1,y2;		/* in pixel coords from feature y1 */
-	int type;
+/* Ugh....enum ?????????????????????????????????????? */
 #define GAP_BOX	1
 #define GAP_HLINE	2
 #define GAP_VLINE	3
 #define GAP_VLINE_INTRON 4
-	gboolean edge;	/* for squashed short reads: edge blocks are diff colour */
 
-	struct _AlignGapStruct *next;
+
+typedef struct _AlignGapStruct
+{
+  int y1,y2;		/* in pixel coords from feature y1 */
+
+  int type;						    /* See GAP_XXXX above... */
+
+  gboolean edge;	/* for squashed short reads: edge blocks are diff colour */
+
+  struct _AlignGapStruct *next;
 
 } AlignGapStruct, *AlignGap;
 
@@ -61,24 +62,25 @@ typedef struct _AlignGapStruct
 
 typedef struct _zmapWindowCanvasAlignmentStruct
 {
-	zmapWindowCanvasFeatureStruct feature;	/* all the common stuff */
-	/* NOTE that we can have: alignment.feature->feature->feature.homol */
+  zmapWindowCanvasFeatureStruct feature;	/* all the common stuff */
 
-	AlignGap gapped;		/* boxes and lines to draw when bumped */
+  /* NOTE that we can have: alignment.feature->feature->feature.homol */
 
-	/* stuff for displaying homology status derived from feature data when loading */
+  AlignGap gapped;		/* boxes and lines to draw when bumped */
 
-	/* we display one glyph max at each end
-	 * so far these can be 2 kinds of homology incomplete or nc-splice, which cannot overlap
-	 * however these are defined as sub styles and we can have more types in diff featuresets
-	 * so we cache these in global hash table indexed by a glyph signature
-	 * zero means don't display a glyph
-	 */
+  /* stuff for displaying homology status derived from feature data when loading */
 
-	ZMapWindowCanvasGlyph glyph5;
-	ZMapWindowCanvasGlyph glyph3;
+  /* we display one glyph max at each end
+   * so far these can be 2 kinds of homology incomplete or nc-splice, which cannot overlap
+   * however these are defined as sub styles and we can have more types in diff featuresets
+   * so we cache these in global hash table indexed by a glyph signature
+   * zero means don't display a glyph
+   */
 
-	gboolean bump_set;	/* has homology and gaps data (lazy evaluation) */
+  ZMapWindowCanvasGlyph glyph5;
+  ZMapWindowCanvasGlyph glyph3;
+
+  gboolean bump_set;	/* has homology and gaps data (lazy evaluation) */
 
 
 } zmapWindowCanvasAlignmentStruct, *ZMapWindowCanvasAlignment;

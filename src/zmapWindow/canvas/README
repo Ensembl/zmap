@@ -18,13 +18,67 @@ zmapWindowOldItems.c            - Roy Storeys original foocanvas group
                                   by Canvas and Container code.
 
 The code is in a state of flux from Roy Storey's "items" code (originally
-contained in zmapWindow/items) to Malcolm Hinsley's "canvas" code which
-is contained in this directory.
+contained in zmapWindow/items) to Malcolm Hinsley's "canvas" code which is
+contained in this directory.
 
-The main changes that are likely to be made in the future are the removal
-of Context, Alignment and Block group code and rationalising of all the
-container code.
+The main changes that are likely to be made in the future are the removal of
+Context, Alignment and Block group code and rationalising of all the container
+code.
 
 
+
+Some historical notes:
+
+We chose foocanvas originally because it was easily the fastest of the canvas
+widgets then available and was being used in open programs such as nautilus
+and the gnu spread sheet.
+
+However it is far from perfect in that it's underlying data structures and
+code have several fundamental problems:
+
+1) We have to hack the code to add different zoom levels in x and y
+directions.
+
+2) X Windows has a built in limit of 65k window size but 32k addressable
+pixels (negative and positive coords). The foocanvas should but does not
+handle the situation where the scrolled region becomes bigger than the 32k in
+any one direction meaning that we have to have a whole load of code to detect
+and manage all this.
+
+3) The underlying data structures in the foocanvas are inefficient when
+you get up to the stage of drawing many 1,000's of objects because they
+rely on flat lists.
+
+4) The foocanvas uses old style GTK2 drawing calls and converting it to use
+the new GTK3 calls would be a major rewrite.
+
+
+
+We have had 3 different approaches to drawing in the foocanvas:
+
+1) Draw features where each box/line/whatever is a native foocanvas
+object. This was fast but meant complicated code to handle compound features
+such as transcripts. We added some new native types (e.g. glyph) for objects
+not supplied by the foocanvas. (edgrif coded this)
+
+2) To handle compound features the code was completely rewritten by Roy
+Storey. The central ideas were good but unfortunately this involved turning
+all features into compound objects where they had a foocanvas group parent and
+then one-to-many children. This essentially killed performance.
+
+3) The code was again rewritten this time by Malcolm Hinsley to address the
+performance problems. This he did by using foocanvas objects only as far down
+as a column, his code then handled all drawing within a column.  This is MUCH
+faster but has the serious drawback that now all responsibility for coordinate
+calculations, event handling (mouse clicks on features etc) is devolved to our
+code. This has resulted in many, many bugs.
+
+
+This 3rd version is in this directory and many of the bugs have now been fixed
+but there are probably still many left. We should not lightly rewrite this
+part again because it is a HUGE sink for resources.
+
+
+Ed Griffiths, Nov 2013
 
 
