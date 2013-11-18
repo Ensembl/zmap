@@ -457,6 +457,7 @@ void zMapStylePrint(ZMapIOOut dest, ZMapFeatureTypeStyle style, char *prefix, gb
 	PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_GRAPH_BASELINE), mode_data.graph.baseline, "Baseline", "%g", (double)) ;
         PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_GRAPH_SCALE), mode_data.graph.scale, "Scale", "%s", zmapStyleGraphScale2ExactStr) ;
 	PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_GRAPH_FILL), mode_data.graph.fill,  "Fill", "%s", PRINTBOOL) ;
+	PRINTFULLCOLOUR(dest, mode_data.graph.colours, "Colours") ;
 
 	break ;
       }

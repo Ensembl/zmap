@@ -181,6 +181,7 @@ typedef enum
     STYLE_PROP_GRAPH_DENSITY_FIXED,
     STYLE_PROP_GRAPH_DENSITY_MIN_BIN,
     STYLE_PROP_GRAPH_DENSITY_STAGGER,
+    STYLE_PROP_GRAPH_COLOURS,
 
     STYLE_PROP_ALIGNMENT_PARSE_GAPS,
     STYLE_PROP_ALIGNMENT_SHOW_GAPS,
@@ -221,7 +222,7 @@ typedef enum
 
     _STYLE_PROP_N_ITEMS        // not a property but used in some macros
 
-  } ZMapStyleParamId;
+  } ZMapStyleParamId ;
 
 
 
@@ -327,7 +328,7 @@ typedef enum
 #define ZMAPSTYLE_PROPERTY_GRAPH_BASELINE         "graph-baseline"
 #define ZMAPSTYLE_PROPERTY_GRAPH_SCALE            "graph-scale"
 #define ZMAPSTYLE_PROPERTY_GRAPH_FILL             "graph-fill"
-
+#define ZMAPSTYLE_PROPERTY_GRAPH_COLOURS          "graph-colours"
 
 
 /* alignment properties */
@@ -463,10 +464,10 @@ ZMAP_DEFINE_ENUM(ZMapStyle3FrameMode, ZMAP_STYLE_3_FRAME_LIST);
 
 /* Specifies the style of graph. */
 #define ZMAP_STYLE_GRAPH_MODE_LIST(_)                                           \
-_(ZMAPSTYLE_GRAPH_INVALID,   , "invalid"  , "Initial setting. "           , "") \
-_(ZMAPSTYLE_GRAPH_LINE,      , "line"     , "Just points joining a line. ", "") \
-_(ZMAPSTYLE_GRAPH_HEATMAP,   , "heatmap"  , "Colour coded score. ", "") \
-_(ZMAPSTYLE_GRAPH_HISTOGRAM, , "histogram", "Usual blocky like graph."    , "")
+_(ZMAPSTYLE_GRAPH_INVALID,   , "invalid"  , "Initial setting."           , "") \
+_(ZMAPSTYLE_GRAPH_LINE,      , "line"     , "Line graph.", "") \
+_(ZMAPSTYLE_GRAPH_HEATMAP,   , "heatmap"  , "Colour coded density.", "") \
+_(ZMAPSTYLE_GRAPH_HISTOGRAM, , "histogram", "Block graph."    , "")
 
 ZMAP_DEFINE_ENUM(ZMapStyleGraphMode, ZMAP_STYLE_GRAPH_MODE_LIST);
 
@@ -545,16 +546,16 @@ ZMAP_DEFINE_ENUM(ZMapStyleDrawContext, ZMAP_STYLE_DRAW_CONTEXT_LIST) ;
 
 /* Specifies how wide features should be in relation to their score. */
 #define ZMAP_STYLE_SCORE_MODE_LIST(_)                                          \
-_(ZMAPSCORE_INVALID,   , "invalid"  , "Use column width only - default. ", "") \
-_(ZMAPSCORE_WIDTH,     , "width"    , "Use column width only - default. ", "") \
-_(ZMAPSCORE_HEIGHT,    , "height"   , "scale height of glyph. ", "") \
-_(ZMAPSCORE_SIZE,      , "size"     , "scale size of glyph. ", "") \
-_(ZMAPSCORE_HEAT,      , "heat"     , "heat colour according to score. ", "") \
+_(ZMAPSCORE_INVALID,    , "invalid"  ,  "Invalid Mode!", "") \
+_(ZMAPSCORE_WIDTH,      , "width"    ,  "Use column width only - default. ", "") \
+_(ZMAPSCORE_HEIGHT,     , "height"   ,  "scale height of glyph. ", "") \
+_(ZMAPSCORE_SIZE,       , "size"     ,  "scale size of glyph. ", "") \
+_(ZMAPSCORE_HEAT,       , "heat"     ,  "heat colour according to score. ", "") \
 _(ZMAPSCORE_HEAT_WIDTH, , "heat-width", "heat colour and width according to score. ", "") \
-_(ZMAPSCORE_OFFSET,     , "offset"   , ""                                 , "") \
-_(ZMAPSCORE_HISTOGRAM, , "histogram", ""                                 , "") \
-_(ZMAPSCORE_PERCENT,   , "percent"  , ""                                 , "")\
-_(ZMAPSTYLE_SCORE_ALT, , "alt" , "alternate colour for glyph" , "")
+_(ZMAPSCORE_OFFSET,     , "offset"   ,  ""                                 , "") \
+_(ZMAPSCORE_HISTOGRAM,  , "histogram",  ""                                 , "") \
+_(ZMAPSCORE_PERCENT,    , "percent"  ,  ""                                 , "")\
+_(ZMAPSTYLE_SCORE_ALT,  , "alt" ,       "alternate colour for glyph" , "")
 
 
 ZMAP_DEFINE_ENUM(ZMapStyleScoreMode, ZMAP_STYLE_SCORE_MODE_LIST) ;
@@ -697,6 +698,7 @@ typedef struct
   gboolean density ;					    /* density plot: recalc bins on zoom
 							       & use whole column foo */
   gboolean fixed ;					    /* bins are at pixel boundraies not feature extents */
+  ZMapStyleFullColourStruct colours ;
 
 
 } ZMapStyleGraphStruct, *ZMapStyleGraph ;
