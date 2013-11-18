@@ -48,16 +48,23 @@
 #include <zmapWindowCanvasGraphItem_I.h>
 
 
+/* THIS SHOULD BE IN GUI UTILS AND ZMAPWINDOW CODE SHOULD USE THE GUI UTILS
+ * STUFF TO BUT THAT'S ANOTHER PIECE OF WORK.... */
+/* As we zoom right in we can start to try to draw lines that are longer than
+ * the XWindows protocol supports so we need to clamp them. */
+#define CLAMP_COORDS(COORD)                                             \
+  ((COORD) < 0 ? (COORD) = 0 : ((COORD) > 30000 ? (COORD) = 30000 : (COORD)))
+
 
 
 
 static void graphInit(ZMapWindowFeaturesetItem featureset) ;
 static void graphPaintFlush(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
-                                            GdkDrawable *drawable, GdkEventExpose *expose);
+                            GdkDrawable *drawable, GdkEventExpose *expose);
 static void graphPaintPrepare(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
-                                              GdkDrawable *drawable, GdkEventExpose *expose) ;
+                              GdkDrawable *drawable, GdkEventExpose *expose) ;
 static void graphPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
-                                              GdkDrawable *drawable, GdkEventExpose *expose) ;
+                              GdkDrawable *drawable, GdkEventExpose *expose) ;
 static void graphPreZoom(ZMapWindowFeaturesetItem featureset) ;
 static void graphZoomSet(ZMapWindowFeaturesetItem featureset, GdkDrawable *drawable) ;
 static GList *densityCalcBins(ZMapWindowFeaturesetItem di) ;
@@ -65,15 +72,16 @@ static GList *densityCalcBins(ZMapWindowFeaturesetItem di) ;
 
 
 /*
- * if we draw wiggle plots then instead of one GDK call per segment we cahce points and draw a big long poly-line
+ * if we draw wiggle plots then instead of one GDK call per segment we cache points and draw a big
+ * long poly-line.
  *
- * ideally this would be implemented in the featureset struct as extended for graphs
- * but we don't extend featuresets as the rest of the code would be more complex.
- * instead we have a single cache here which works becaure we only ever display one column at a time.
- * and relies on ..PaintFlush() being called
+ * ideally this would be implemented in the featureset struct as extended for graphs but we don't
+ * extend featuresets as the rest of the code would be more complex.  instead we have a single
+ * cache here which works becaure we only ever display one column at a time.  and relies on
+ * ..PaintFlush() being called
  *
- * If we ever created threads to paint columns then this needs to be
- * moved into CanvasFeatureset and alloc'd for graphs and freed on CFS_destroy()
+ * If we ever created threads to paint columns then this needs to be moved into CanvasFeatureset
+ * and alloc'd for graphs and freed on CFS_destroy()
  *
  * NOTE currently we do use callbacks but these are necessarily serialised by the Foo Canvas
  */
@@ -85,21 +93,7 @@ static GList *densityCalcBins(ZMapWindowFeaturesetItem di) ;
 
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* ok...so I've put all this in a struct.... */
 
-
-/* Why is this static ?????? ...found it...there is no graph class/item struct...lazy, lazy,
-   lazy....all of this should be in graph class....christ.... */
-
-#define N_POINTS        2000    /* will never run out as we only display one screen's worth */
-static GdkPoint points[N_POINTS+4];                         /* +2 for gaps between bins, inserting a line, plus allow for end of data trailing lines */
-
-static int n_points = 0 ;
-
-double last_gy = -1.0 ;                                     /* Why not static ? */
-
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 
@@ -132,6 +126,7 @@ void zMapWindowCanvasGraphInit(void)
 }
 
 
+
 /* Initialise the graph object. */
 static void graphInit(ZMapWindowFeaturesetItem featureset)
 {
@@ -158,16 +153,22 @@ static void graphPaintPrepare(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
       double x_offset, y_offset ;
 
       /* quite hacky....we need the graph fill mode which is in the feature style but
-       * if move right to the end of the sequence the featurestyle is NULL, not sure why,
-       * and then the code crashes so I copy across the fill mode into the column style. */
+       * if we move right to the end of the sequence the featurestyle can be NULL because there
+       * may not be a feature within the canvas range and then the code crashes so here
+       * I copy across the fill mode into the column style to cache it and also the colour stuff. */
       if (featureset->featurestyle)
-        featureset->style->mode_data.graph.fill = zMapStyleGraphFill(featureset->featurestyle) ;
+        {
+          featureset->style->mode_data.graph.fill = zMapStyleGraphFill(featureset->featurestyle) ;
 
+          /* We need a function to copy colours across..... */
+          featureset->style->mode_data.graph.colours = featureset->featurestyle->mode_data.graph.colours ;
+          zmapStyleSetIsSet(featureset->style, STYLE_PROP_GRAPH_COLOURS) ;
+        }
 
       line_fill = zMapStyleGraphFill(featureset->style) ;
 
       x_offset = featureset->dx + featureset->x_off ;
-      y_offset = featureset->dy - featureset->start ;
+      y_offset = featureset->start - featureset->dy ;
 
       graph_set->n_points = 0 ;
 
@@ -175,8 +176,6 @@ static void graphPaintPrepare(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
       if (feature)
         {
           /* add first point to join up to */
-
-
           if (zMapStyleGraphFill(featureset->style))
             {
               x2 = 0 ;
@@ -184,16 +183,15 @@ static void graphPaintPrepare(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
 
               foo_canvas_w2c(item->canvas,
                              x2 + x_offset,
-                             y2 - y_offset,
+                             y2 + y_offset,
                              &cx2, &cy2) ;
+
+              cy2 = CLAMP_COORDS(cy2) ;
 
               graph_set->points[graph_set->n_points].x = cx2 ;
               graph_set->points[graph_set->n_points].y = cy2 ;
               graph_set->n_points++ ;
-
             }
-
-          /* NOT SURE IF IT'S RIGHT MAKING THIS AN ELSE... */
           else
             {
               /* this is probably a paint in the middle of the window */
@@ -203,19 +201,18 @@ static void graphPaintPrepare(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
 
               foo_canvas_w2c(item->canvas,
                              x2 + x_offset,
-                             y2 - y_offset,
+                             y2 + y_offset,
                              &cx2, &cy2) ;
+
+              cy2 = CLAMP_COORDS(cy2) ;
 
               graph_set->points[graph_set->n_points].x = cx2 ;
               graph_set->points[graph_set->n_points].y = cy2 ;
               graph_set->n_points++ ;
 
-              graph_set->last_gx = x2 ;
-              graph_set->last_gy = feature->y2 ;
-              graph_set->last_width = feature->width ;
             }
 
-          
+          graph_set->last_gx = x2 ;          
           graph_set->last_gy = feature->y2 ;
           graph_set->last_width = feature->width ;
         }
@@ -228,8 +225,10 @@ static void graphPaintPrepare(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
 
               foo_canvas_w2c(item->canvas,
                              x2 + x_offset,
-                             y2 - y_offset,
+                             y2 + y_offset,
                              &cx2, &cy2) ;
+
+              cy2 = CLAMP_COORDS(cy2) ;
 
               graph_set->points[graph_set->n_points].x = cx2 ;
               graph_set->points[graph_set->n_points].y = cy2 ;
@@ -273,20 +272,21 @@ static void graphPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
         double x_offset, y_offset ;
         int bin_gap ;
 
-
         {
           static gboolean debug = FALSE ;
 
-          if (feature && debug)
-            zMapDebugPrintf("Feature %s -\tbin: %g, %g\tfeature: %d, %d\n",
+          if (feature && feature->feature && debug)
+            zMapDebugPrintf("Feature %s -\tbin: %.f, %.f\tfeature: %d, %d\tdiff: %.f, %.f",
                             g_quark_to_string(feature->feature->original_id),
-                            feature->y1, feature->y2, feature->feature->x1, feature->feature->x2) ;
+                            feature->y1, feature->y2,
+                            feature->feature->x1, feature->feature->x2,
+                            feature->y1 - feature->feature->x1, feature->y2 - feature->feature->x2) ;
         }
 
         draw_box = FALSE;
 
         x_offset = featureset->dx + featureset->x_off ;
-        y_offset = featureset->dy - featureset->start ;
+        y_offset = featureset->start - featureset->dy ;
 
         /* output poly-line segemnts via a series of points
          * NOTE we start at the previous segment if any via the calling display code
@@ -301,15 +301,18 @@ static void graphPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
          */
 
 
-        /* big gap is left at start of sequence...try this.... */
+        /* If the very first feature is right at the start of the sequence we need to fill
+         * in s is the very first feature we fudge it big gap is left at start of sequence...try this.... */
         if (feature->y1 == featureset->start)
           {
             x2 = featureset->style->mode_data.graph.baseline + feature->width - 1 ;
             y2 = feature->y1 ;
             foo_canvas_w2c(item->canvas,
                            x2 + x_offset,
-                           y2 - y_offset,
+                           y2 + y_offset,
                            &cx2, &cy2) ;
+
+            cy2 = CLAMP_COORDS(cy2) ;
 
             graph_set->points[graph_set->n_points].x = cx2 ;
             graph_set->points[graph_set->n_points].y = cy2 ;
@@ -317,15 +320,9 @@ static void graphPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
           }
 
 
-        /* THERE'S SOMETHING WRONG HERE WHEN ZOOMED RIGHT IN...THE GRAPH ENDS UP BOUNCING BACK AND
-         * FORTH THE MUST BE SOMETHING WRONG ABOUT THIS CALCULATION....CHECK THIS... */
-
-        /* THERE'S STILL A BUG HERE THAT NEEDS FIXING....BOTHER....we do need these intermediate
-         * points....I need to work this out properly...I think the features just need to be 
-         * drawn more accurately............ */
-
         /* && fill_gaps_between_bins */
         bin_gap = feature->y1 - graph_set->last_gy ;
+
         if (bin_gap > 1 && (bin_gap > (featureset->bases_per_pixel * 2)))
           {
             double x_pos, y_pos ;
@@ -343,17 +340,12 @@ static void graphPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
               }
 
             /* draw from last point back to base: add baseline point at previous feature y2 */
+            foo_canvas_w2c(item->canvas,
+                           x_pos,
+                           y_pos + y_offset,
+                           &cx, &cy) ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-            foo_canvas_w2c(item->canvas,
-                           x_pos,
-                           graph_set->last_gy - y_offset,
-                           &cx, &cy) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-            foo_canvas_w2c(item->canvas,
-                           x_pos,
-                           y_pos - y_offset,
-                           &cx, &cy) ;
+            cy = CLAMP_COORDS(cy) ;
 
             graph_set->points[graph_set->n_points].x = cx;
             graph_set->points[graph_set->n_points].y = cy;
@@ -364,6 +356,8 @@ static void graphPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
                            x_pos,
                            feature->y1 - y_offset,
                            &cx, &cy) ;
+            cy = CLAMP_COORDS(cy) ;
+
             graph_set->points[graph_set->n_points].x = cx;
             graph_set->points[graph_set->n_points].y = cy;
             graph_set->n_points++;
@@ -375,8 +369,10 @@ static void graphPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
         y2 = (feature->y2 + feature->y1 + 1) / 2 ;
         foo_canvas_w2c(item->canvas,
                        x2 + x_offset,
-                       y2 - y_offset,
+                       y2 + y_offset,
                        &cx2, &cy2) ;
+
+        cy2 = CLAMP_COORDS(cy2) ;
 
         graph_set->points[graph_set->n_points].x = cx2 ;
         graph_set->points[graph_set->n_points].y = cy2 ;
@@ -386,9 +382,9 @@ static void graphPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
         graph_set->last_gy = feature->y2 ;
         graph_set->last_width = feature->width ;
 
+        (graph_set->n_points)++ ;
 
-        /* CHRIST, HATEFUL, HATEFUL CODING....WHY HIDE THE INCREMENT LIKE THIS...DUMB.... */
-        if (++(graph_set->n_points) >= N_POINTS)
+        if (graph_set->n_points >= N_POINTS)
           {
             graphPaintFlush(featureset, feature, drawable, expose) ;
           }
@@ -447,7 +443,7 @@ static void graphPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
 
 
 static void graphPaintFlush(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
-                                            GdkDrawable *drawable, GdkEventExpose *expose)
+                            GdkDrawable *drawable, GdkEventExpose *expose)
 {
   ZMapWindowCanvasGraph graph_set = (ZMapWindowCanvasGraph)(featureset->opt) ;
 
@@ -455,11 +451,15 @@ static void graphPaintFlush(ZMapWindowFeaturesetItem featureset, ZMapWindowCanva
   if (zMapStyleGraphMode(featureset->style) == ZMAPSTYLE_GRAPH_LINE)
     {
       gboolean line_fill = zMapStyleGraphFill(featureset->style) ;
+      GdkColor *normal_draw = NULL, *normal_fill = NULL, *normal_border = NULL;
+      GdkColor *draw = NULL, *fill = NULL, *border = NULL;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      OK....I THINK WE NEED TO DRAW A DUMMY POINT AT ZERO FOR POLYGONS AT _BOTH_ ENDS OF THE POINT LIST
-        SO THAT THE POLYGON IS DRAWN ALONG THE BOTTOM OF THE GRAPH....
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+      zMapStyleGetColours(featureset->style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
+                          &normal_fill, &normal_draw, &normal_border);
+      zMapStyleGetColours(featureset->style, STYLE_PROP_GRAPH_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
+                          &fill, &draw, &border);
+
 
       if (graph_set->n_points < 1)              /* no features, draw baseline */
         {
@@ -467,6 +467,10 @@ static void graphPaintFlush(ZMapWindowFeaturesetItem featureset, ZMapWindowCanva
           FooCanvasItem *foo = (FooCanvasItem *) featureset;
 
           foo_canvas_c2w (foo->canvas, 0, featureset->clip_y1, NULL, &dummy.y2);
+
+          if (dummy.y2 < 0)
+            dummy.y2 = 0 ;
+
           dummy.y1 = dummy.y2 - 1.0 ;
           dummy.width = 0.0;
 
@@ -477,7 +481,7 @@ static void graphPaintFlush(ZMapWindowFeaturesetItem featureset, ZMapWindowCanva
 
       if (graph_set->n_points >= 1)
         {
-          GdkColor c;
+          GdkColor c ;
           double end ;
           FooCanvasItem *foo = (FooCanvasItem *)featureset ;
 
@@ -490,7 +494,6 @@ static void graphPaintFlush(ZMapWindowFeaturesetItem featureset, ZMapWindowCanva
           /* THIS IS ALL PRETTY HOAKY...A NULL FEATURE SEEMS TO SIGNAL THE END OF THE 
            * FEATURE SET....DUH....... */
 
-
           /* draw back to baseline from last point and add trailing line */
           if (!feature)
             {
@@ -498,16 +501,6 @@ static void graphPaintFlush(ZMapWindowFeaturesetItem featureset, ZMapWindowCanva
 
               if (end > featureset->end)
                 {
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-                  /* THIS DOESN'T WORK.....DON'T KNOW WHY... */
-
-                  dummy.y1 = graph_set->last_gy ;
-                  dummy.y2 = featureset->end + 1 ;          /* + 1 to draw in last base span. */
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
                   /* For line fill add a last point at the _bottom_ of the graph. */
                   if (zMapStyleGraphFill(featureset->style))
                     {
@@ -516,7 +509,7 @@ static void graphPaintFlush(ZMapWindowFeaturesetItem featureset, ZMapWindowCanva
                       int cx2 = 0, cy2 = 0 ;             /* initialised for LINE mode */
 
                       x_offset = featureset->dx + featureset->x_off ;
-                      y_offset = featureset->dy - featureset->start ;
+                      y_offset = featureset->start - featureset->dy ;
 
                       x2 = 0 ;
                       y2 = graph_set->last_gy ;
@@ -525,6 +518,8 @@ static void graphPaintFlush(ZMapWindowFeaturesetItem featureset, ZMapWindowCanva
                                      x2 + x_offset,
                                      y2 - y_offset,
                                      &cx2, &cy2) ;
+
+                      cy2 = CLAMP_COORDS(cy2) ;
 
                       graph_set->points[graph_set->n_points].x = cx2 ;
                       graph_set->points[graph_set->n_points].y = cy2 ;
@@ -536,8 +531,10 @@ static void graphPaintFlush(ZMapWindowFeaturesetItem featureset, ZMapWindowCanva
 
                       foo_canvas_w2c(item->canvas,
                                      x2 + x_offset,
-                                     y2 - y_offset,
+                                     y2 + y_offset,
                                      &cx2, &cy2) ;
+
+                      cy2 = CLAMP_COORDS(cy2) ;
 
                       graph_set->points[graph_set->n_points].x = cx2 ;
                       graph_set->points[graph_set->n_points].y = cy2 ;
@@ -571,16 +568,14 @@ static void graphPaintFlush(ZMapWindowFeaturesetItem featureset, ZMapWindowCanva
                       y_offset = featureset->dy - featureset->start ;
 
                       x2 = 0 ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-                      y2 = end ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
                       y2 = graph_set->last_gy ;
 
                       foo_canvas_w2c(item->canvas,
                                      x2 + x_offset,
-                                     y2 - y_offset,
+                                     y2 + y_offset,
                                      &cx2, &cy2) ;
+
+                      cy2 = CLAMP_COORDS(cy2) ;
 
                       graph_set->points[graph_set->n_points].x = cx2 ;
                       graph_set->points[graph_set->n_points].y = cy2 ;
@@ -625,52 +620,39 @@ static void graphPaintFlush(ZMapWindowFeaturesetItem featureset, ZMapWindowCanva
 
                   foo_canvas_w2c(item->canvas,
                                  x2 + x_offset,
-                                 y2 - y_offset,
+                                 y2 + y_offset,
                                  &cx2, &cy2) ;
+
+                  cy2 = CLAMP_COORDS(cy2) ;
 
                   graph_set->points[graph_set->n_points].x = cx2 ;
                   graph_set->points[graph_set->n_points].y = cy2 ;
                   graph_set->n_points++ ;
 
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-                  x2 = 0 ;
-                  y2 = featureset->end ;
-
-                  foo_canvas_w2c(item->canvas,
-                                 x2 + x_offset,
-                                 y2 - y_offset,
-                                 &cx2, &cy2) ;
-
-                  graph_set->points[graph_set->n_points].x = cx2 ;
-                  graph_set->points[graph_set->n_points].y = cy2 ;
-                  graph_set->n_points++ ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
                 }
             }
        
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-          graphPaintFeature(featureset, &dummy, drawable, expose) ;
-
-          /* I DO NOT KNOW WHY THIS IS DONE AT ALL...... */
-          graph_set->n_points -= 1 ;        /* remove this point and leave the downstream
-                                               vertical */
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-       
-
-
-          /* SORT OUT WHICH COLOURS ARE USED FOR LINES/GRAPHS ETC OUT OF FILL, OUTLINE, DRAW */
           /* Draw the lines or filled lines, they are already clipped to the visible scroll region */
           if (zMapStyleGraphFill(featureset->style))
-            c.pixel = featureset->fill_pixel ;
+            {
+              GdkColormap *colour_map ;
+
+              colour_map = gdk_colormap_get_system() ;
+
+              /* This should all be inserted at the start and cached.... */
+              gdk_colormap_alloc_color(colour_map,
+                                       fill,
+                                       FALSE,
+                                       TRUE) ;
+
+              c = *fill ;
+            }
           else
-            c.pixel = featureset->outline_pixel ;
+            {
+              c.pixel = featureset->outline_pixel ;
+            }
+
           gdk_gc_set_foreground(featureset->gc, &c) ;
 
           if (line_fill)
@@ -700,7 +682,7 @@ static void graphPaintFlush(ZMapWindowFeaturesetItem featureset, ZMapWindowCanva
 
 /* Called before any zooming, this column needs to be recalculated with every zoom and
  * we do this by resetting our zoom level to 0 which triggers the featureset zoom
- * code to call our zoom routine. This is only needed because we need special
+ * code to call our zoom routine. This is required because we need special
  * processing on zoom. */
 static void graphPreZoom(ZMapWindowFeaturesetItem featureset)
 {
