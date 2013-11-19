@@ -165,6 +165,13 @@ fi
 #
 LINK_NAME="$BASE_DIR/$LINK_PREFIX.$BUILD_PREFIX"
 
+# For feature builds, add the subbranch as a suffix to the link name
+# to make sure it's unique (because we can have multiple feature builds
+# at the same time).
+if [[ $BUILD_PREFIX == "FEATURE" ]] ; then
+  $SUBBRANCH=${BRANCH#*/}             # remove text up to and including '/'
+  LINK_NAME=$LINK_NAME'.'$SUBBRANCH   # e.g. ~zmap/BUILD.FEATURE.GTK3_port
+fi
 
 
 # We do not know the directory for the logfile until here so cannot start logging
