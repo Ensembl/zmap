@@ -110,6 +110,79 @@ g_assert((EXPR))
 g_assert_not_reached()
 
 
+/* These macros should be used to check arguments instead of assert.
+ * The macros that cause the function to return should ONLY be used at
+ * the START of a function because we want to avoid multiple returns
+ * from within the body of the function. */
+
+/* Check a critical condition. Returns and issues a warning if the
+ * condition fails. */
+#define zMapReturnIfFail(EXPR)                                           \
+G_STMT_START{                                                            \
+  if G_LIKELY (EXPR)                                                     \
+    {                                                                    \
+    }                                                                    \
+  else                                                                   \
+    {                                                                    \
+      g_printerr(ZMAP_MSG_FORMAT_STRING " Assertion '%s' failed\n",      \
+                      ZMAP_MSG_FUNCTION_MACRO,                           \
+                      #EXPR) ;                                           \
+      zMapLogCritical(ZMAP_MSG_FORMAT_STRING " Assertion '%s' failed\n", \
+                      ZMAP_MSG_FUNCTION_MACRO,                           \
+                      #EXPR) ;                                           \
+      zMapLogStack();                                                    \
+      return;                                                            \
+    }                                                                    \
+}G_STMT_END
+
+/* Check a critical condition. Returns the given value and issues a
+ * warning if the condition fails. */
+#define zMapReturnValIfFail(EXPR, VALUE)                                 \
+G_STMT_START{                                                            \
+  if G_LIKELY (EXPR)                                                     \
+    {                                                                    \
+    }                                                                    \
+  else                                                                   \
+    {                                                                    \
+      g_printerr(ZMAP_MSG_FORMAT_STRING " Assertion '%s' failed\n",      \
+                      ZMAP_MSG_FUNCTION_MACRO,                           \
+                      #EXPR) ;                                           \
+      zMapLogCritical(ZMAP_MSG_FORMAT_STRING " Assertion '%s' failed\n", \
+                      ZMAP_MSG_FUNCTION_MACRO,                           \
+                      #EXPR) ;                                           \
+      zMapLogStack();                                                    \
+      return VALUE;                                                      \
+    }                                                                    \
+}G_STMT_END
+
+/* Issue a warning if the given condition fails */
+#define zMapWarnIfFail(EXPR)                                                   \
+G_STMT_START{                                                                  \
+  if G_LIKELY (EXPR)                                                           \
+    {                                                                          \
+    }                                                                          \
+  else                                                                         \
+    {                                                                          \
+      g_printerr(ZMAP_MSG_FORMAT_STRING " Runtime check failed (%s)\n",        \
+                      ZMAP_MSG_FUNCTION_MACRO,                                 \
+                      #EXPR) ;                                                 \
+      zMapLogCritical(ZMAP_MSG_FORMAT_STRING " Runtime check failed (%s)\n",   \
+                      ZMAP_MSG_FUNCTION_MACRO,                                 \
+                      #EXPR) ;                                                 \
+      zMapLogStack();                                                          \
+    }                                                                          \
+}G_STMT_END
+
+/* Issue a warning if this code is reached */
+#define zMapWarnIfReached()                                               \
+G_STMT_START{                                                             \
+  g_printerr(ZMAP_MSG_FORMAT_STRING " Code should not be reached\n",      \
+                  ZMAP_MSG_FUNCTION_MACRO) ;                              \
+  zMapLogCritical(ZMAP_MSG_FORMAT_STRING " Code should not be reached\n", \
+                  ZMAP_MSG_FUNCTION_MACRO) ;                              \
+  zMapLogStack();                                                         \
+}G_STMT_END
+
 
 
 /* If this global is TRUE then debugging messages will be displayed. */
