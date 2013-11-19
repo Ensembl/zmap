@@ -2882,18 +2882,26 @@ static gboolean makeNewFeature_V3(
 
     } /* if (cFeatureStyleMode == ZMAPSTYLE_MODE_TRANSCRIPT) */
 
-  //else if (cFeatureStyleMode == ZMAPSTYLE_MODE_ALIGNMENT)
-  //  {
-  //    pAttributeTarget = zMapGFFAttributeListContains(pAttributes, nAttributes, "Target") ;
-  //    if (pAttributeTarget)
-  //      {
-  //        if (zMapAttParseTarget(pAttributeTarget, &sTargetID, &iTargetStart, &iTargetEnd, &cTargetStrand))
-  //          {
-  //            printf("found valid target attribute with id = '%s'\n", sTargetID ) ;
-  //            fflush(stdout) ;
-  //          }
-  //      }
-  //  } /* if (cFeatureStyleMode == ZMAPSTYLE_MODE_ALIGNMENT */
+  else if (cFeatureStyleMode == ZMAPSTYLE_MODE_ALIGNMENT)
+    {
+      pAttributeTarget = zMapGFFAttributeListContains(pAttributes, nAttributes, "Target") ;
+      if (pAttributeTarget)
+        {
+          gboolean bFoundValid = FALSE ;
+          if (zMapAttParseTarget(pAttributeTarget, &sTargetID, &iTargetStart, &iTargetEnd, &cTargetStrand))
+            {
+              //printf("found valid target attribute with id = '%s', %i, %i, %i, %i\n",
+              //  sTargetID, iStart, iEnd, iTargetStart, iTargetEnd ) ;
+              //fflush(stdout) ;
+              bFoundValid = TRUE ;
+            }
+          if (!bFoundValid)
+            printf("Target invalid with s = '%s'\n", sTargetID) ;
+          else
+            printf("Target valid with s = '%s'\n", sTargetID) ;
+          fflush (stdout) ;
+        }
+    } /* if (cFeatureStyleMode == ZMAPSTYLE_MODE_ALIGNMENT */
 
   else
     {
