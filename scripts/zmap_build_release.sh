@@ -22,13 +22,19 @@ SEQTOOLS_DIR='RELEASE'
 ERROR_ID=''
 
 
-# Script takes 1 arg which is the name of the release branch.
+# Script takes 1 required arg which is the name of the release branch,
+# and 1 optional arg which is the symlink name of the seqtools build
+# (without the "BUILD." prefix)
 #
-if (( $# != 1 )) ; then
-  echo "script needs release branch name:  $0 <release_branch_name>"
+if (( $# < 1 )) ; then
+  echo "script needs release branch name:  $0 <release_branch_name> [<seqtools_dir>]"
   exit 1
 else
   RELEASE_BRANCH=$1
+fi
+
+if (( $# > 1 )) ; then
+  SEQTOOLS_DIR=$2
 fi
 
 
