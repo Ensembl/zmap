@@ -31,7 +31,7 @@ seqtools_dir=''
 #
 usage="$PROGNAME [ -d -f <feature_sub_branch e.g. New_XRemote> -o -p -r <release_sub_branch e.g. 0.8.0> -s <seqtools_dir>]"
 
-while getopts ":df:opr:s" opt ; do
+while getopts ":df:opr:s:" opt ; do
     case $opt in
 	d  ) branch='develop'
 	     headline='DEVELOP'
