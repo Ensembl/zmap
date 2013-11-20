@@ -69,8 +69,7 @@ gboolean zMapFASTAFile(GIOChannel *file, ZMapFASTASeqType seq_type, char *seq_na
   char *cp = NULL ;
   int i ;
 
-  if (!file || !seq_name || (seq_len<=0) || !dna || !error_out) 
-    return result ; 
+  zMapAssert(file && seq_name && seq_len > 0 && dna && error_out) ;
 
   header = zMapFASTATitle(seq_type, seq_name, molecule_type, gene_name, seq_len) ;
 
@@ -128,8 +127,7 @@ char *zMapFASTATitle(ZMapFASTASeqType seq_type, char *seq_name, char *molecule_t
 {
   char *title = NULL ;
 
-  if (!seq_name || !*seq_name || (sequence_length<=0)) 
-    return title ; 
+  zMapAssert(seq_name && *seq_name && sequence_length > 0) ;
 
   /* We should add more info. really.... */
   title = g_strdup_printf(">%s %s %s %d %s\n",
@@ -164,8 +162,7 @@ char *zMapFASTAString(ZMapFASTASeqType seq_type, char *seq_name, char *molecule_
   int i ;
   int true_sequence_length ;
 
-  if (!seq_name || !sequence || (sequence_length<=0))
-    return fasta_string ;  
+  zMapAssert(seq_name && sequence_length > 0 && sequence) ;
 
 
   /* We should add more info. really.... */

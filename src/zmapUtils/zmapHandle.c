@@ -146,11 +146,8 @@ void zMapMemoryHandleAdd(ZMapMemoryHandle memory_handle,
 {
   ZMapMemoryBlock block ;
 
-  /* zMapAssert(memory
-	     && (memory_free_func || (!memory_free_func && !user_data))) ; */ 
-  if (!(memory
-             && (memory_free_func || (!memory_free_func && !user_data))))
-    return ; 
+  zMapAssert(memory
+	     && (memory_free_func || (!memory_free_func && !user_data))) ;
 
   block = g_new0(ZMapMemoryBlockStruct, 1) ;
   block->memory = memory ;
@@ -204,8 +201,7 @@ gboolean zMapMemoryHandleRemove(ZMapMemoryHandle memory_handle, gpointer memory,
 void zMapMemoryHandleDestroy(ZMapMemoryHandle memory_handle)
 {
 
-  if (!memory_handle) 
-    return ; 
+  zMapAssert(memory_handle) ;
 
   handleDestroy((gpointer)memory_handle, NULL) ;
 
@@ -242,8 +238,7 @@ static void handleDestroy(gpointer memory, gpointer unused_user_data)
 {
   ZMapMemoryHandle memory_handle = (ZMapMemoryHandle)memory ;
 
-  if (!memory_handle) 
-    return ; 
+  zMapAssert(memory_handle) ;
 
   g_list_foreach(memory_handle->blocks, freeBlockCB, NULL) ;
 

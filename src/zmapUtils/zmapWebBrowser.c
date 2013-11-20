@@ -130,8 +130,7 @@ gboolean zMapLaunchWebBrowser(char *link, GError **error)
   BrowserConfig best_browser = NULL ;
   char *browser = NULL ;
 
-  if (!(link && *link && error && !(*error)) )
-    return result ; 
+  zMapAssert(link && *link && error && !(*error)) ; 
 
   if (!err_domain_G)
     err_domain_G = g_quark_from_string(domain_G) ;
@@ -268,7 +267,7 @@ static void makeBrowserCmd(GString *cmd, BrowserConfig best_browser, char *url)
 
   found = zMap_g_string_replace(cmd, BROWSER_PATTERN, url) ;
 
-  /* zMapAssert(found) ;*/					    /* Must find at least one pattern. */
+  zMapAssert(found) ;					    /* Must find at least one pattern. */
 
   return ;
 }

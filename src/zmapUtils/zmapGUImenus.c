@@ -193,8 +193,7 @@ void zMapGUIMakeMenu(char *menu_title, GList *menu_item_sets, GdkEventButton *bu
       item->callback = ourCB ;
       item->callback_action = i ;
 
-      /* (sm23) Don't know what this should be replaced with */ 
-      /* zMapAssert(menu_items[i].type != ZMAPGUI_MENU_NONE) ; */ 
+      zMapAssert(menu_items[i].type != ZMAPGUI_MENU_NONE) ;
 
       switch (menu_items[i].type)
 	{
@@ -339,8 +338,7 @@ void zMapGUIPopulateMenu(ZMapGUIMenuItem menu,
   ZMapGUIMenuItem menu_item ;
   int index ;
 
-  if (!menu || !start_index_inout) 
-    return ; 
+  zMapAssert(menu) ;
 
   if (start_index_inout)
     index = *start_index_inout ;
@@ -435,8 +433,7 @@ static char *makeMenuItemName(char *string)
 {
   char *item_string ;
 
-  if (!string || !*string) 
-    return item_string ; 
+  zMapAssert(string && *string) ;
 
   item_string = g_strdup_printf("/%s", string) ;
 
@@ -458,8 +455,7 @@ static char *makeMenuTitleName(char *string, char *escape_chars)
   char *cp ;
   gssize pos ;
 
-  if (!string || !*string) 
-    return item_string ;   
+  zMapAssert(string && *string) ;
 
   tmp = g_string_new(string) ;
 

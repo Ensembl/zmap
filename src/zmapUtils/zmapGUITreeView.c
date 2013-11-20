@@ -254,8 +254,7 @@ gboolean zMapGUITreeViewPrepare(ZMapGUITreeView zmap_tv)
                                      GTK_TREE_SORTABLE_UNSORTED_SORT_COLUMN_ID,
                                      GTK_SORT_ASCENDING);
         {
-          /* (sm23) Don't know what to replace this with. */ 
-          /* zMapAssert(gtk_tree_view_get_model(tree_view) == NULL); */ 
+          zMapAssert(gtk_tree_view_get_model(tree_view) == NULL);
         }
       }
 

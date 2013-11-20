@@ -131,8 +131,7 @@ char *zMapOutGetStr(ZMapIOOut out)
 {
   char *str = NULL ;
 
-  if (!zMapOutValid(out))
-    return str ; 
+  zMapAssert(zMapOutValid(out)) ;
 
   if (out->type != ZMAPIO_STRING)
     zMapLogWarning("%s", "zMapOutGetStr() failed, zMapIOOut does not contain a string.") ;
@@ -147,8 +146,7 @@ gboolean zMapOutWrite(ZMapIOOut out, char *text)
 {
   gboolean result = FALSE ;
 
-  if (!zMapOutValid(out) || !text || !*text) 
-    return result ; 
+  zMapAssert(zMapOutValid(out) && text && *text) ;
 
   switch (out->type)
     {
@@ -188,8 +186,7 @@ gboolean zMapOutWriteFormat(ZMapIOOut out, char *format, ...)
   va_list args ;
   char *msg_string ;
 
-  if (!zMapOutValid(out) || !format || !*format ) 
-    return result ; 
+  zMapAssert(zMapOutValid(out) && format && *format) ;
 
   switch (out->type)
     {
@@ -247,8 +244,7 @@ char *zMapOutErrorGetString(ZMapIOOut out)
 {
   char *err_text = NULL ;
 
-  if (!zMapOutValid(out)) 
-    return err_text ;
+  zMapAssert(zMapOutValid(out)) ;
 
   if (out->g_error)
     {
@@ -261,8 +257,7 @@ char *zMapOutErrorGetString(ZMapIOOut out)
 
 void zMapOutErrorClear(ZMapIOOut out)
 {
-  if (!zMapOutValid(out)) 
-    return ;
+  zMapAssert(zMapOutValid(out)) ;
 
   if (out->g_error)
     g_clear_error(&(out->g_error)) ;
@@ -274,8 +269,7 @@ void zMapOutErrorClear(ZMapIOOut out)
 /* destroy one... */
 void zMapOutDestroy(ZMapIOOut out)
 {
-  if (!zMapOutValid(out)) 
-    return ;
+  zMapAssert(zMapOutValid(out)) ;
 
   switch (out->type)
     {

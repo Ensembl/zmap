@@ -90,8 +90,7 @@ char *zMap_g_remove_char(char *string, char ch)
 {
   char *cp ;
 
-  if (!string) 
-    return NULL ; 
+  zMapAssert(string) ;
 
   cp = string ;
   while (*cp)
@@ -295,8 +294,7 @@ GList *zMap_g_list_grep(GList **list_inout, gpointer data, GCompareFunc func)
   GList *matched = NULL;
   GList *loop_list, *tmp, *inout;
 
-  if (!list_inout) 
-    return matched ; 
+  zMapAssert(list_inout);
 
   loop_list = inout = *list_inout;
 
@@ -407,8 +405,7 @@ GList *zMap_g_list_lower(GList *move, int positions)
         insert_after(move, before);
       else
         before = g_list_concat(before, move);
-      /* (sm23) I am not really sure what to replace this with... */
-      /* zMapAssert(g_list_find(before, move->data)); */ 
+      zMapAssert(g_list_find(before, move->data));
     }
 
   return g_list_first(move);
@@ -434,8 +431,7 @@ GList *zMap_g_list_raise(GList *move, int positions)
         insert_after(move, before);
       else
         before = g_list_concat(before, move);
-      /* (sm23) As above */ 
-      /* zMapAssert(g_list_find(before, move->data)); */
+      zMapAssert(g_list_find(before, move->data));
     }
 
   return g_list_first(move);
@@ -498,8 +494,7 @@ GList *zMap_g_list_merge(GList *a, GList *b)
  */
 void zMap_g_list_quark_print(GList *quark_list, char *list_name, gboolean new_line)
 {
-  if (!quark_list) 
-    return ; 
+  zMapAssert(quark_list) ;
 
   if (list_name)
     printf("\"%s\":%s", list_name, (new_line ? "\n" : "\t")) ;
@@ -551,8 +546,7 @@ GList *zMap_g_list_find_quark(GList *list, GQuark str_quark)
 {
   GList *result = NULL ;
 
-  if (!list || !str_quark) 
-    return result ; 
+  zMapAssert(list && str_quark) ;
 
   result = g_list_find_custom(list, GINT_TO_POINTER(str_quark), caseCompareFunc) ;
 
@@ -565,9 +559,6 @@ GList *zMap_g_list_find_quark(GList *list, GQuark str_quark)
 GList *zMap_g_list_remove_quarks(GList *quark_target_list, GList *quarks)
 {
   GList *quark_list = NULL ;
-
-  if (!quark_target_list || !quarks) 
-    return NULL ; 
 
   if (quark_target_list)
     {
@@ -602,8 +593,7 @@ gpointer zMap_g_hash_table_nth(GHashTable *hash_table, int nth)
 {
   gpointer entry = NULL ;
 
-  if (!hash_table || (nth < 0)) 
-    return entry ; 
+  zMapAssert(hash_table && nth >= 0) ;
 
   if (g_hash_table_size(hash_table) > nth)
     entry = g_hash_table_find(hash_table, getNthHashElement, &nth) ;
@@ -615,9 +605,6 @@ gpointer zMap_g_hash_table_nth(GHashTable *hash_table, int nth)
 /* Supported values for data_format_str are: "gquark", "pointer"  */
 void zMap_g_hash_table_print(GHashTable *hash_table, char *data_format_str)
 {
-  if (!hash_table || !data_format_str)
-    return ; 
-
   g_hash_table_foreach(hash_table, hashPrintTableCB, data_format_str) ;
 
   return ;
@@ -736,13 +723,13 @@ void zMap_g_hashlist_destroy(GHashTable *hashlist)
 
 static void get_key_value(gpointer key, gpointer value, gpointer user)
 {
-  ZMapGHashIter data;
-  GList **list = (GList **) user;
+      ZMapGHashIter data;
+      GList **list = (GList **) user;
 
-  data = g_new0(ZMapGHashIterStruct,1);
-  data->key = key;
-  data->value = value;
-  *list = g_list_prepend(*list,data); /* faster than append */
+      data = g_new0(ZMapGHashIterStruct,1);
+      data->key = key;
+      data->value = value;
+      *list = g_list_prepend(*list,data); // faster than append
 }
 
 void  zMap_g_hash_table_iter_init(GList **iter, GHashTable *h)
@@ -1022,8 +1009,7 @@ GQuark zMap_g_quark_try_string(ZMapQuarkSet quark_set, gchar *string)
 {
   GQuark quark = 0 ;
 
-  if (!quark_set || !string) 
-    return quark ; 
+  zMapAssert(quark_set && string) ;
 
   quark = GPOINTER_TO_UINT(g_hash_table_lookup(quark_set->g_quark_ht, string)) ;
 
@@ -1041,10 +1027,10 @@ GQuark zMap_g_quark_try_string(ZMapQuarkSet quark_set, gchar *string)
  *  */
 GQuark zMap_g_quark_from_string(ZMapQuarkSet quark_set, gchar *string)
 {
-  GQuark quark = 0 ;
+  GQuark quark ;
 
-  if (!quark_set || !string || !*string) 
-    return quark ; 
+  /* May be too draconian to insist on *string...just remove if so. */
+  zMapAssert(quark_set && string && *string) ;
 
   if (!(quark = (gulong) g_hash_table_lookup(quark_set->g_quark_ht, string)))
     quark = g_quark_new(quark_set, g_strdup (string));
@@ -1064,8 +1050,7 @@ gchar *zMap_g_quark_to_string(ZMapQuarkSet quark_set, GQuark quark)
 {
   gchar* result = NULL;
 
-  if (!quark_set || !quark) 
-    return result ;
+  zMapAssert(quark_set && quark) ;
 
   if (quark > 0 && quark <= quark_set->g_quark_seq_id)
     result = quark_set->g_quarks[quark - 1] ;
@@ -1110,8 +1095,7 @@ void zMap_g_quark_destroy_set(ZMapQuarkSet quark_set)
 /* donor should already not be part of recipient */
 static void insert_after(GList *donor, GList *recipient)
 {
-  if (!recipient || !recipient->next || !donor) 
-    return ; 
+  zMapAssert(recipient && recipient->next && donor);
 
   /*
    * This next bit of code is confusing so here is a desciption...
