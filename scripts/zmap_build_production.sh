@@ -21,6 +21,13 @@ SEQTOOLS_DIR='PRODUCTION'
 #ERROR_ID='-a edgrif@sanger.ac.uk'
 ERROR_ID=''
 
+# Script takes 1 optional arg which is the symlink name of the seqtools build
+# (without the "BUILD." prefix)
+#
+if (( $# > 0 )) ; then
+  SEQTOOLS_DIR=$1
+fi
+
 ./build_run.sh $ERROR_ID -b production -d -m -s $SEQTOOLS_DIR $BUILD_PREFIX || RC=1
 
 

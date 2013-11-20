@@ -1,5 +1,5 @@
 /*  File: zmapConfigKey.c
- *  Author: Malcolm Hinsley (mh17@sanger.ac.uk) after Roy Storey (rds@sanger.ac.uk)
+ *  Author: Malcolm Hinsley (mh17@sanger.ac.uk), Roy Storey (rds@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
