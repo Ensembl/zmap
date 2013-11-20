@@ -102,7 +102,9 @@ gboolean zMapStack2fd(unsigned int remove, int fd)
   size_t size, first = 0 ;
 
   /* zero on most machines... */
-  zMapAssert(fd != STDIN_FILENO) ;
+  /* zMapAssert(fd != STDIN_FILENO) ; */
+  if (fd == STDIN_FILENO) 
+    return traced ; 
 
   traced = TRUE ;
   size = backtrace(stack, ZMAPLOG_MAX_TRACE_SIZE) ;

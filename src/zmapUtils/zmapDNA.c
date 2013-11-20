@@ -138,10 +138,14 @@ void zMapDNAEncodeString(char *cp)
 /* Takes a dna string and lower cases it inplace. */
 gboolean zMapDNACanonical(char *dna)
 {
-  gboolean result = TRUE ;				    /* Nothing to fail currently. */
+  gboolean result = FALSE ;				    /* Nothing to fail currently. */
   char *base ;
 
-  zMapAssert(dna && *dna) ;
+  /* zMapAssert(dna && *dna) ;*/ 
+  if (!dna || !*dna) 
+    return result ; 
+
+  result = TRUE ; 
 
   base = dna ;
   while (*base)
@@ -209,7 +213,9 @@ gboolean zMapDNAFindMatch(char *cp, char *end, char *tp, int maxError, int maxN,
   int  i = maxError, j = maxN ;
   char *start ;
 
-  zMapAssert(cp && *cp && tp && *tp) ;
+  /* zMapAssert(cp && *cp && tp && *tp) ; */
+  if (!cp || !*cp || !tp || !*tp) 
+    return result ; 
 
   start = cp ;
   while (c <= end)

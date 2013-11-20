@@ -174,7 +174,9 @@ char *zMapPeptideCreateRaw(char *dna, ZMapGeneticCode translation_table, gboolea
   GArray *peptide ;
   gboolean incomplete_final_stop = FALSE ;
 
-  zMapAssert(dna && *dna) ;
+  /* zMapAssert(dna && *dna) ;*/
+  if (!dna || !*dna) 
+    return peptide_str ; 
 
   if ((peptide = translateDNA(dna, translation_table, include_stop, &incomplete_final_stop)))
     {
@@ -195,7 +197,9 @@ char *zMapPeptideCreateRawSegment(char *dna,  int from, int length, ZMapStrand s
   GArray *peptide ;
   gboolean incomplete_final_stop = FALSE ;
 
-  zMapAssert(dna && *dna) ;
+  /* zMapAssert(dna && *dna) ;*/
+  if (!dna || !*dna) 
+    return peptide_str ; 
 
   if ((peptide = translateDNASegment(dna, from, length, strand,
 				     translation_table, include_stop, &incomplete_final_stop)))
@@ -213,7 +217,9 @@ gboolean zMapPeptideCanonical(char *peptide)
   gboolean result = TRUE ;				    /* Nothing to fail currently. */
   char *base ;
 
-  zMapAssert(peptide && *peptide) ;
+  /* zMapAssert(peptide && *peptide) ; */
+  if (!peptide || !*peptide) 
+    return result ; 
 
   base = peptide ;
   while (*base)
@@ -397,9 +403,11 @@ char *zMapPeptideSequence(ZMapPeptide peptide)
 
 char *zMapPeptideSequenceName(ZMapPeptide peptide)
 {
-  char *sequence_name ;
+  char *sequence_name = NULL ;
 
-  zMapAssert(peptide) ;
+  /* zMapAssert(peptide) ; */
+  if (!peptide) 
+    return sequence_name ; 
 
   sequence_name = (char *)g_quark_to_string(peptide->sequence_name) ;
 
@@ -409,9 +417,11 @@ char *zMapPeptideSequenceName(ZMapPeptide peptide)
 
 char *zMapPeptideGeneName(ZMapPeptide peptide)
 {
-  char *gene_name ;
+  char *gene_name = NULL ;
 
-  zMapAssert(peptide) ;
+  /* zMapAssert(peptide) ; */
+  if (!peptide) 
+    return gene_name ; 
 
   gene_name = (char *)g_quark_to_string(peptide->gene_name) ;
 
@@ -468,10 +478,14 @@ GList *zMapPeptideMatchFindAll(char *target, char *query,
   int frames[6] = {0}, frame_num, i, frame ;
   ZMapStrand strand ;
 
-  zMapAssert(target && *target && query && *query) ;
+  /* zMapAssert(target && *target && query && *query) ; */
+  if (!target || !*target || !query || !*query) 
+    return sites ; 
 
   dna_len = n = strlen(target) ;
-  zMapAssert(from_in >= 0 && length > 0 && (from_in + length) <= dna_len) ;
+  /* zMapAssert(from_in >= 0 && length > 0 && (from_in + length) <= dna_len) ;*/
+  if (!(from_in >= 0 && length > 0 && (from_in + length) <= dna_len))
+    return sites ;
 
   if (n > from_in + length)
     n = from_in + length ;
@@ -569,7 +583,7 @@ GList *zMapPeptideMatchFindAll(char *target, char *query,
 	length = dna_len - from ;
 
       /* Sort this out....needs better error handling.... */
-      zMapAssert(length > 0) ;
+      /* zMapAssert(length > 0) ; */
 
       /* offset in reference sequence where search will start. */
       frame_offset = from - from_in ;
@@ -629,7 +643,9 @@ GList *zMapPeptideMatchFindAll(char *target, char *query,
 
 void zMapPeptideDestroy(ZMapPeptide peptide)
 {
-  zMapAssert(peptide) ;
+  /* zMapAssert(peptide) ;*/
+  if (!peptide) 
+    return ; 
 
   g_array_free(peptide->peptide, TRUE) ;
 
@@ -839,7 +855,9 @@ static GArray *translateDNA(char *dna, ZMapGeneticCode translation_table, gboole
 {
   GArray *peptide = NULL ;
 
-  zMapAssert(dna && *dna && incomplete_final_codon) ;
+  /* zMapAssert(dna && *dna && incomplete_final_codon) ; */
+  if (!dna || !*dna || !incomplete_final_codon) 
+    return peptide ;
 
   peptide = translateDNASegment(dna, 0, -1, TRUE,
 				translation_table, include_stop, incomplete_final_codon) ;
@@ -868,7 +886,9 @@ static GArray *translateDNASegment(char *dna_in, int from, int length, ZMapStran
   GArray *dna_array ;
   char *data ;
 
-  zMapAssert(dna_in && *dna_in && incomplete_final_codon) ;
+  /* zMapAssert(dna_in && *dna_in && incomplete_final_codon) ; */
+  if (!dna_in || !*dna_in || !incomplete_final_codon) 
+    return peptide ; 
 
   dna_len = strlen(dna_in) ;
 
@@ -929,7 +949,9 @@ static GArray *doDNATranslation(ZMapGeneticCode code_table, GArray *obj_dna, ZMa
   char str_null = '\0' ;
   CodonTranslatorFunc trans_func ;
 
-  zMapAssert(code_table && obj_dna) ;
+  /* zMapAssert(code_table && obj_dna) ;*/
+  if (!code_table || !obj_dna) 
+    return pep ; 
 
   /* Set up appropriate translator func. */
   if (strand == ZMAPSTRAND_FORWARD)

@@ -193,8 +193,6 @@ void zMapGUIMakeMenu(char *menu_title, GList *menu_item_sets, GdkEventButton *bu
       item->callback = ourCB ;
       item->callback_action = i ;
 
-      zMapAssert(menu_items[i].type != ZMAPGUI_MENU_NONE) ;
-
       switch (menu_items[i].type)
 	{
 	case ZMAPGUI_MENU_BRANCH:
@@ -338,7 +336,9 @@ void zMapGUIPopulateMenu(ZMapGUIMenuItem menu,
   ZMapGUIMenuItem menu_item ;
   int index ;
 
-  zMapAssert(menu) ;
+  /* zMapAssert(menu) ; */
+  if (!menu) 
+    return ; 
 
   if (start_index_inout)
     index = *start_index_inout ;
@@ -431,9 +431,11 @@ static void ourCB(gpointer callback_data, guint callback_action, GtkWidget *widg
 /* Normal Menu Item Name strings must have the format "/item_name". */
 static char *makeMenuItemName(char *string)
 {
-  char *item_string ;
+  char *item_string = NULL;
 
-  zMapAssert(string && *string) ;
+  /* zMapAssert(string && *string) ; */
+  if (!string || !*string) 
+    return item_string ; 
 
   item_string = g_strdup_printf("/%s", string) ;
 
@@ -455,7 +457,9 @@ static char *makeMenuTitleName(char *string, char *escape_chars)
   char *cp ;
   gssize pos ;
 
-  zMapAssert(string && *string) ;
+  /* zMapAssert(string && *string) ;*/
+  if (!string || !*string) 
+    return item_string ; 
 
   tmp = g_string_new(string) ;
 

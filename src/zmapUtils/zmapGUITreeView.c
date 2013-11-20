@@ -253,9 +253,7 @@ gboolean zMapGUITreeViewPrepare(ZMapGUITreeView zmap_tv)
         gtk_tree_sortable_set_sort_column_id(sort_model,
                                      GTK_TREE_SORTABLE_UNSORTED_SORT_COLUMN_ID,
                                      GTK_SORT_ASCENDING);
-        {
-          zMapAssert(gtk_tree_view_get_model(tree_view) == NULL);
-        }
+        /*{ zMapAssert(gtk_tree_view_get_model(tree_view) == NULL); }*/
       }
 
       /* If we have a model, but it has never been attached prepared

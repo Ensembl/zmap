@@ -79,13 +79,19 @@ void zMapCmdLineArgsCreate(int *argc, char *argv[])
 {
   ZMapCmdLineArgs arg_context = NULL ;
 
-  zMapAssert(!arg_context_G) ;
+  /* zMapAssert(!arg_context_G) ;*/ 
+  if (arg_context_G) 
+    return ; 
 
-  zMapAssert(argc && *argc >= 1 && argv) ;
+  /* zMapAssert(argc && *argc >= 1 && argv) ;*/ 
+  if (!argc || *argc < 1 || !argv ) 
+    return ; 
 
   makeContext(*argc, argv) ;
 
-  zMapAssert(arg_context_G) ;
+  /* zMapAssert(arg_context_G) ;*/ 
+  if (!arg_context_G) 
+    return ; 
 
   arg_context = arg_context_G;
 
@@ -109,7 +115,9 @@ char **zMapCmdLineFinalArg(void)
   char **final_arg = NULL ;
   ZMapCmdLineArgs arg_context ;
 
-  zMapAssert(arg_context_G) ;
+  /* zMapAssert(arg_context_G) ;*/
+  if (!arg_context_G) 
+    return ; 
   arg_context = arg_context_G ;
 
   if (arg_context->files_arg &&
@@ -139,7 +147,9 @@ gboolean zMapCmdLineArgsValue(char *arg_name, ZMapCmdLineArgsType *result)
   get_entries_func get_entries[GET_ENTRIES_COUNT] = { get_main_entries, get_config_entries };
   int i;
 
-  zMapAssert(arg_context_G) ;
+  /* zMapAssert(arg_context_G) ;*/
+  if (!arg_context_G) 
+    return ; 
   arg_context = arg_context_G ;
 
   for(i = 0; i < GET_ENTRIES_COUNT; i++)
@@ -209,7 +219,9 @@ void zMapCmdLineArgsDestroy(void)
 {
   ZMapCmdLineArgs arg_context ;
 
-  zMapAssert(arg_context_G) ;
+  /* zMapAssert(arg_context_G) ;*/
+  if (!arg_context_G) 
+    return ; 
   arg_context = arg_context_G ;
 
   if(arg_context->opt_context)
