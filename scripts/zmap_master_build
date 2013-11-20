@@ -100,7 +100,7 @@ cd $script_dir || zmap_message_exit "Cannot cd to $script_dir."
 #
 # Launch the build....
 #
-zmap_message_out "Starting build....."
+zmap_message_out "Starting build: $build_script $branch_arg $seqtools_dir"
 $build_script $branch_arg $seqtools_dir || zmap_message_exit "build failed !"
 zmap_message_out "Finished build....."
 
