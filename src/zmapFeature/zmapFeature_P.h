@@ -51,7 +51,6 @@ typedef struct
   (COORD) = (SEQ_END) - (COORD) + 1
 
 
-//
 #define zmapFeatureRevComp(TYPE, SEQ_START, SEQ_END, COORD_1, COORD_2)  \
   { \
     zmapFeatureSwop(TYPE, COORD_1, COORD_2) ;              \

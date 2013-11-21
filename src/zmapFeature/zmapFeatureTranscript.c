@@ -127,9 +127,10 @@ gboolean zMapFeatureTranscriptInit(ZMapFeature feature)
 
 /*
  * Adds CDS start and end to a feature but tests values as we go along to make sure
- * that the coordinates are only changed if the range is being expanded.
+ * that the coordinates are only changed if the range is being expanded. The phase is
+ * only stored if the _start_ of the range is expanded.
  */
-gboolean zMapFeatureAddTranscriptCDSDynamic(ZMapFeature feature, Coord start, Coord end)
+gboolean zMapFeatureAddTranscriptCDSDynamic(ZMapFeature feature, Coord start, Coord end, ZMapPhase phase)
 {
   gboolean result = FALSE ;
 
@@ -142,24 +143,30 @@ gboolean zMapFeatureAddTranscriptCDSDynamic(ZMapFeature feature, Coord start, Co
   Coord start_s = feature->feature.transcript.cds_start,
         end_s   = feature->feature.transcript.cds_end ;
 
-  /* 
-   * Set flag for this feature to be a CDS. 
-   */ 
-  feature->feature.transcript.flags.cds = 1 ; 
+  /*
+   * Set flag for this feature to be a CDS.
+   */
+  feature->feature.transcript.flags.cds = 1 ;
 
   /* first case is if the data have not yet been set, and were initialized to zero */
   if (!start_s || !end_s)
     {
       feature->feature.transcript.cds_start = start ;
       feature->feature.transcript.cds_end = end ;
+      feature->feature.transcript.phase = phase ;
       result = TRUE ;
     }
   else /* we have non-zero values for cds_start and cds_end */
     {
       if (start < start_s)
-        feature->feature.transcript.cds_start = start ;
+        {
+          feature->feature.transcript.cds_start = start ;
+          feature->feature.transcript.phase = phase ;
+        }
       if (end > end_s)
-        feature->feature.transcript.cds_end = end ;
+        {
+          feature->feature.transcript.cds_end = end ;
+        }
       result = TRUE ;
     }
 
