@@ -131,7 +131,7 @@ gboolean zMapAttParsePID(const ZMapGFFAttribute const, double *const);
 gboolean zMapAttParseSequence(const ZMapGFFAttribute const, char ** const ) ;
 gboolean zMapAttParseSource(const ZMapGFFAttribute const, char ** const) ;
 gboolean zMapAttParseTargetV2(const ZMapGFFAttribute const, char ** const, char ** const ) ;
-gboolean zMapAttParseTarget(const ZMapGFFAttribute const, char ** const, unsigned int * const , unsigned int * const , ZMapStrand * const ) ;
+gboolean zMapAttParseTarget(const ZMapGFFAttribute const, char ** const, int * const , int * const , ZMapStrand * const ) ;
 gboolean zMapAttParseURL(const ZMapGFFAttribute const, char** const ) ;
 gboolean zMapAttParseVulgarExonerate(const ZMapGFFAttribute const , GArray ** const, ZMapStrand , int, int, ZMapStrand, int, int) ;
 

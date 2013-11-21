@@ -2532,6 +2532,15 @@ return_point:
 
 /*
  * Create a new feature and add it to the feature set.
+ *
+ * NOTES:
+ *
+ * (1) All features other than CDS must have phase = '.' in GFFv3.
+ *     How is this data stored for CDS feature?
+ *
+ *
+ *
+ *
  */
 static gboolean makeNewFeature_V3(
                          const ZMapGFFParser const pParserBase,
@@ -2576,13 +2585,18 @@ static gboolean makeNewFeature_V3(
     bFeatureAdded           = FALSE,
     bResult                 = FALSE,
     bFeatureHasName         = FALSE,
-    bHasScore               = FALSE
+    bHasScore               = FALSE,
+    bValidTarget            = FALSE
   ;
 
   GQuark
     gqThisID                = 0,
     gqFeatureStyleID        = 0,
     gqSourceID              = 0
+  ;
+
+  GArray
+    *pGaps                  = NULL
   ;
 
   ZMapFeature
@@ -2601,12 +2615,14 @@ static gboolean makeNewFeature_V3(
     pSourceData             = NULL
   ;
   ZMapStyleMode
-    cFeatureStyleMode       = ZMAPSTYLE_MODE_BASIC,
-    cStyleStyleMode         = ZMAPSTYLE_MODE_BASIC
+    cFeatureStyleMode       = ZMAPSTYLE_MODE_BASIC
   ;
   ZMapStrand
     cStrand                 = ZMAPSTRAND_NONE,
     cTargetStrand           = ZMAPSTRAND_NONE
+  ;
+  ZMapPhase
+    cPhase                  = ZMAPPHASE_NONE
   ;
   ZMapSOIDData
     pSOIDData               = NULL
@@ -2616,6 +2632,7 @@ static gboolean makeNewFeature_V3(
     pAttributeID            = NULL,
     pAttributeParent        = NULL,
     pAttributeTarget        = NULL,
+    pAttributeGap           = NULL,
     *pAttributes            = NULL
   ;
   ZMapSpanStruct
@@ -2641,6 +2658,7 @@ static gboolean makeNewFeature_V3(
   bHasScore            = zMapGFFFeatureDataGetFlagSco(pFeatureData) ;
   dScore               = zMapGFFFeatureDataGetSco(pFeatureData) ;
   cStrand              = zMapGFFFeatureDataGetStr(pFeatureData) ;
+  cPhase               = zMapGFFFeatureDataGetPha(pFeatureData) ;
   sAttributes          = zMapGFFFeatureDataGetAtt(pFeatureData) ;
   nAttributes          = zMapGFFFeatureDataGetNat(pFeatureData) ;
   pAttributes          = zMapGFFFeatureDataGetAts(pFeatureData) ;
@@ -2649,6 +2667,30 @@ static gboolean makeNewFeature_V3(
   sSOType              = zMapSOIDDataGetName(pSOIDData) ;
   iSOID                = zMapSOIDDataGetID(pSOIDData) ;
   cFeatureStyleMode    = zMapSOIDDataGetStyleMode(pSOIDData) ;
+
+  /*
+   * A CDS feature _must_ have a phase which is not ZMAPPHASE_NONE.
+   *
+   * All features other than CDS _must_ have cPhase = '.' (i.e. ZMAPPHASE_NONE).
+   * Anything else is an error.
+   */
+  if (!strcmp(sSOType, "CDS"))
+    {
+      if (cPhase == ZMAPPHASE_NONE)
+        {
+          bResult = FALSE ;
+          goto return_point ;
+        }
+    }
+  else
+    {
+      if (cPhase != ZMAPPHASE_NONE)
+        {
+          bResult = FALSE ;
+          goto return_point ;
+        }
+    }
+
 
   /*
    * If the parser was given a source -> data mapping then
@@ -2817,8 +2859,8 @@ static gboolean makeNewFeature_V3(
               sFeatureName = g_strdup(g_quark_to_string(gqThisID)) ;
               sFeatureNameID = g_strdup(g_quark_to_string(gqThisID)) ;
               bResult = zMapFeatureAddStandardData(pFeature, sFeatureNameID, sFeatureName, sSequence, sSOType,
-                                             cFeatureStyleMode, &pParserFeatureSet->feature_set->style,
-                                             iStart, iEnd, bHasScore, dScore, cStrand) ;
+                                                   cFeatureStyleMode, &pParserFeatureSet->feature_set->style,
+                                                   iStart, iEnd, bHasScore, dScore, cStrand) ;
 
               /*
                * Add feature to featureset
@@ -2858,6 +2900,9 @@ static gboolean makeNewFeature_V3(
                  }
                else if (!strcmp(sSOType, "CDS"))
                  {
+                   /*
+                    * How/where is the phase datum added to the CDS feature?
+                    */
                    cSpanItem.x1 = iStart ;
                    cSpanItem.x2 = iEnd ;
                    pSpanItem = &cSpanItem ;
@@ -2886,21 +2931,48 @@ static gboolean makeNewFeature_V3(
     {
       pAttributeTarget = zMapGFFAttributeListContains(pAttributes, nAttributes, "Target") ;
       if (pAttributeTarget)
+        bValidTarget = zMapAttParseTarget(pAttributeTarget, &sTargetID, &iTargetStart, &iTargetEnd, &cTargetStrand) ;
+
+      if (bValidTarget)
         {
-          gboolean bFoundValid = FALSE ;
-          if (zMapAttParseTarget(pAttributeTarget, &sTargetID, &iTargetStart, &iTargetEnd, &cTargetStrand))
+          /*
+           * We have a valid Target attribute: we now:
+           * (1) create feature
+           * (2) find feature name
+           * (3) add standard data
+           * (2) look for "Gap" attribute (which might not be there)
+           * (3) add data to feature using zMapFeatureAddAlignmentData
+           * (4) add feature to feature set
+           */
+          pFeature = zMapFeatureCreateEmpty() ;
+          ++pParser->num_features ;
+
+          sFeatureName = NULL; // g_strdup(g_quark_to_string(gqThisID)) ;
+          sFeatureNameID = NULL; // g_strdup(g_quark_to_string(gqThisID)) ;
+
+          bResult = zMapFeatureAddStandardData(pFeature, sFeatureNameID, sFeatureName, sSequence, sSOType,
+                                               cFeatureStyleMode, &pParserFeatureSet->feature_set->style,
+                                               iStart, iEnd, bHasScore, dScore, cStrand) ;
+          pAttributeGap = zMapGFFAttributeListContains(pAttributes, nAttributes, "Gap") ;
+          if (pAttributeGap)
             {
-              //printf("found valid target attribute with id = '%s', %i, %i, %i, %i\n",
-              //  sTargetID, iStart, iEnd, iTargetStart, iTargetEnd ) ;
-              //fflush(stdout) ;
-              bFoundValid = TRUE ;
+               /* Parse this into a Gaps array... */
             }
-          if (!bFoundValid)
-            printf("Target invalid with s = '%s'\n", sTargetID) ;
-          else
-            printf("Target valid with s = '%s'\n", sTargetID) ;
-          fflush (stdout) ;
+          bDataAdded = zMapFeatureAddAlignmentData(pFeature, 0, 0.0, iTargetStart, iTargetEnd, ZMAPHOMOL_NONE,
+                                                   0, cTargetStrand, cPhase, pGaps,
+                                                   zMapStyleGetWithinAlignError(pFeatureStyle),
+                                                   FALSE, NULL )  ;
+          bFeatureAdded = zMapFeatureSetAddFeature(pFeatureSet, pFeature) ;
+          if (!bFeatureAdded)
+            {
+              *err_text = g_strdup_printf("feature with name = '%s', '%s' could not be added", sFeatureName, sFeatureNameID) ;
+              bResult = FALSE ;
+              goto return_point ;
+           }
+
         }
+
+
     } /* if (cFeatureStyleMode == ZMAPSTYLE_MODE_ALIGNMENT */
 
   else
@@ -3169,6 +3241,8 @@ return_point:
   /*
    *  Clean up
    */
+  if (!bFeatureAdded)
+    zMapFeatureDestroy(pFeature) ;
   if (sFeatureName)
     g_free(sFeatureName) ;
   if (sFeatureNameID)
