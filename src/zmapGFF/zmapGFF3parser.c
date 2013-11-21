@@ -2130,8 +2130,8 @@ static gboolean parseBodyLine_V3(
     pSOIDData                         = NULL
   ;
 
-  //printf("%s\n", sLine) ;
-  //fflush (stdout) ;
+  printf("%s\n", sLine) ;
+  fflush (stdout) ;
 
   /*
    * Cast to concrete type for GFFV3.
@@ -2535,15 +2535,75 @@ return_point:
 
 
 
+
+/*
+ * Create a feature of ZMapStyleMode = TRANSCRIPT only.
+ */
+static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const pFeatureData,
+                                         const ZMapFeatureSet const pFeatureSet,
+                                         char ** psError)
+{
+  int iSOID = 0 ;
+  char * sSOType = NULL ;
+  ZMapFeature pFeature = NULL ;
+  ZMapSOIDData pSOIDData = NULL ;
+  ZMapStyleMode cFeatureStyleMode = ZMAPSTYLE_MODE_BASIC ;
+
+  if (!psError || *psError)
+    return pFeature ;
+  if (!pFeatureData)
+    return pFeature ;
+
+  pSOIDData            = zMapGFFFeatureDataGetSod(pFeatureData) ;
+  sSOType              = zMapSOIDDataGetName(pSOIDData) ;
+  iSOID                = zMapSOIDDataGetID(pSOIDData) ;
+  cFeatureStyleMode    = zMapSOIDDataGetStyleMode(pSOIDData) ;
+
+  if (!pSOIDData)
+    return pFeature ;
+  if (!sSOType)
+    return pFeature ;
+  if (!iSOID)
+    return pFeature ;
+  if (cFeatureStyleMode != ZMAPSTYLE_MODE_TRANSCRIPT)
+    return pFeature ;
+
+  return pFeature ;
+}
+
+
+/*
+ * Create a feature of ZMapStyleMode = ALIGNMENT only.
+ */
+static ZMapFeature makeAlignmentFeature(const ZMapGFFFeatureData const pFeatureData,
+                                        char ** psError)
+{
+  ZMapFeature pFeature = NULL ;
+
+  return pFeature ;
+}
+
+
+/*
+ * Create a feature of ZMapStyleMode = BASIC only. This can be forced, even if the
+ * style mode stored in the feature data is not BASIC using the boolean flag.
+ */
+static ZMapFeature makeBasicFeature(const ZMapGFFFeatureData const pFeatureData,
+                                    gboolean bForce,
+                                    char **psError)
+{
+  ZMapFeature pFeature = NULL ;
+
+  return pFeature ;
+}
+
+
+
+
+
+
 /*
  * Create a new feature and add it to the feature set.
- *
- * NOTES:
- *
- * (1) All features other than CDS must have phase = '.' in GFFv3.
- *     How is this data stored for CDS feature?
- *
- *
  *
  *
  */
@@ -2951,29 +3011,30 @@ static gboolean makeNewFeature_V3(
            */
           pFeature = zMapFeatureCreateEmpty() ;
           ++pParser->num_features ;
+          bFeatureAdded = FALSE ;
 
-          sFeatureName = NULL; // g_strdup(g_quark_to_string(gqThisID)) ;
-          sFeatureNameID = NULL; // g_strdup(g_quark_to_string(gqThisID)) ;
+          //sFeatureName = NULL; // g_strdup(g_quark_to_string(gqThisID)) ;
+          //sFeatureNameID = NULL; // g_strdup(g_quark_to_string(gqThisID)) ;
 
-          bResult = zMapFeatureAddStandardData(pFeature, sFeatureNameID, sFeatureName, sSequence, sSOType,
-                                               cFeatureStyleMode, &pParserFeatureSet->feature_set->style,
-                                               iStart, iEnd, bHasScore, dScore, cStrand) ;
-          pAttributeGap = zMapGFFAttributeListContains(pAttributes, nAttributes, "Gap") ;
-          if (pAttributeGap)
-            {
-               /* Parse this into a Gaps array... */
-            }
-          bDataAdded = zMapFeatureAddAlignmentData(pFeature, 0, 0.0, iTargetStart, iTargetEnd, ZMAPHOMOL_NONE,
-                                                   0, cTargetStrand, cPhase, pGaps,
-                                                   zMapStyleGetWithinAlignError(pFeatureStyle),
-                                                   FALSE, NULL )  ;
-          bFeatureAdded = zMapFeatureSetAddFeature(pFeatureSet, pFeature) ;
-          if (!bFeatureAdded)
-            {
-              *err_text = g_strdup_printf("feature with name = '%s', '%s' could not be added", sFeatureName, sFeatureNameID) ;
-              bResult = FALSE ;
-              goto return_point ;
-           }
+          //bResult = zMapFeatureAddStandardData(pFeature, sFeatureNameID, sFeatureName, sSequence, sSOType,
+          //                                     cFeatureStyleMode, &pParserFeatureSet->feature_set->style,
+          //                                     iStart, iEnd, bHasScore, dScore, cStrand) ;
+          //pAttributeGap = zMapGFFAttributeListContains(pAttributes, nAttributes, "Gap") ;
+          //if (pAttributeGap)
+          //  {
+          //     /* Parse this into a Gaps array... */
+          //  }
+          //bDataAdded = zMapFeatureAddAlignmentData(pFeature, 0, 0.0, iTargetStart, iTargetEnd, ZMAPHOMOL_NONE,
+          //                                         0, cTargetStrand, cPhase, pGaps,
+          //                                         zMapStyleGetWithinAlignError(pFeatureStyle),
+          //                                         FALSE, NULL )  ;
+          //bFeatureAdded = zMapFeatureSetAddFeature(pFeatureSet, pFeature) ;
+          //if (!bFeatureAdded)
+          //  {
+          //    *err_text = g_strdup_printf("feature with name = '%s', '%s' could not be added", sFeatureName, sFeatureNameID) ;
+          //    bResult = FALSE ;
+          //    goto return_point ;
+          //  }
 
         }
 
@@ -3246,7 +3307,7 @@ return_point:
   /*
    *  Clean up
    */
-  if (!bFeatureAdded)
+  if (!bFeatureAdded && pFeature)
     zMapFeatureDestroy(pFeature) ;
   if (sFeatureName)
     g_free(sFeatureName) ;
