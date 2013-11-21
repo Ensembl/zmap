@@ -2107,6 +2107,9 @@ static gboolean parseBodyLine_V3(
   ZMapStyleMode
     cType                             = ZMAPSTYLE_MODE_BASIC
   ;
+  ZMapHomol
+    cHomol                            = ZMAPHOMOL_NONE
+  ;
   ZMapStrand
     cStrand                           = ZMAPSTRAND_NONE
   ;
@@ -2318,14 +2321,16 @@ static gboolean parseBodyLine_V3(
         {
           bIsValidSOID = TRUE ;
           cType = zMapSOSetGetStyleModeFromID(pParser->cSOSetInUse, iSOID) ;
-          pSOIDData = zMapSOIDDataCreateFromData(iSOID, sSOIDName, cType) ;
+          cHomol = zMapSOSetGetHomolFromID(pParser->cSOSetInUse, iSOID) ;
+          pSOIDData = zMapSOIDDataCreateFromData(iSOID, sSOIDName, cType, cHomol ) ;
         }
     }
   else if ((iSOID = zMapSOSetIsNamePresent(pParser->cSOSetInUse, sType)) != ZMAPSO_ID_UNK) /* we have sType is a name in the set */
     {
       bIsValidSOID = TRUE ;
-      cType = zMapSOSetGetStyleModeFromName(pParser->cSOSetInUse, sType) ;
-      pSOIDData = zMapSOIDDataCreateFromData(iSOID, sType, cType) ;
+      cType = zMapSOSetGetStyleModeFromName(pParser->cSOSetInUse, sType ) ;
+      cHomol = zMapSOSetGetHomolFromID(pParser->cSOSetInUse, iSOID) ;
+      pSOIDData = zMapSOIDDataCreateFromData(iSOID, sType, cType, cHomol ) ;
     }
 
   /*
@@ -2906,7 +2911,7 @@ static gboolean makeNewFeature_V3(
                    cSpanItem.x1 = iStart ;
                    cSpanItem.x2 = iEnd ;
                    pSpanItem = &cSpanItem ;
-                   bDataAdded = zMapFeatureAddTranscriptCDSDynamic(pFeature, iStart, iEnd) ;
+                   bDataAdded = zMapFeatureAddTranscriptCDSDynamic(pFeature, iStart, iEnd, cPhase) ;
                  }
 
                if (!bDataAdded)
