@@ -113,29 +113,70 @@ $available_modes{"ZMAPSTYLE_MODE_SEQUENCE"}          = 1 ;
 $available_modes{"ZMAPSTYLE_MODE_ASSEMBLY_PATH"}     = 1 ;
 $available_modes{"ZMAPSTYLE_MODE_GLYPH"}             = 1 ;
 
+
+#
+# This is the list of available homol types; we must also associate one
+# of these with each SO term that is of alignment mode.
+#
+# The C enum is defined as
+# {ZMAPHOMOL_NONE = 0, ZMAPHOMOL_N_HOMOL, ZMAPHOMOL_X_HOMOL, ZMAPHOMOL_TX_HOMOL}
+#
+$available_homol{"ZMAPHOMOL_NONE"}                    = 1 ;
+$available_homol{"ZMAPHOMOL_N_HOMOL"}                 = 1 ;
+$available_homol{"ZMAPHOMOL_X_HOMOL"}                 = 1 ;
+$available_homol{"ZMAPHOMOL_TX_HOMOL"}                = 1 ;
+
+
+######################################################################################
+######################################################################################
+######################################################################################
+#
+# At some point a check must be put in such that if a mode IS an alignment then 
+# the homol must NOT be ZMAPHOMOL_NONE, and if the mode IS NOT an alignment then 
+# the homol MUST be ZMAPHOMOL_NONE. For the moment, however, this is ignored.
+#
+######################################################################################
+######################################################################################
+######################################################################################
+
+
+
 #
 # Read in the SO to mode map file.
 #
 $so_to_mode_map_file      = "../scripts/so_to_mode_map.txt";
+$so_to_mode_map{"DUMMY_FAKE_NAME"} = "DUMMY_FAKE_MODE" ;   # to get rid of warnings  
+$so_to_homol_map{"DUMMY_FAKE_NAME"} = "DUMMY_FAKE_HOMOL" ; # ditto 
 open(SO_TO_MODE_MAP, "<$so_to_mode_map_file") or die "could not open file '$so_to_mode_map_file'; appears not to be present in the distribution.\n";
 while (<SO_TO_MODE_MAP>)
 {
-  ($so_name, $zmap_mode) = (m/(\w+)\t(\w+)\n/) ;
+  ($so_name, $zmap_mode, $zmap_homol) = (m/(\w+)\t(\w+)\t(\w+)\n/) ;
   if (defined $so_name)
-  {
-    if (defined $zmap_mode)
     {
-      #
-      # If the mode is one of the available ones, then
-      # create the hash map entry associated with the
-      # current SO term. Otherwise do nothing.
-      #
-      if (defined $available_modes{$zmap_mode})
-      {
-        $so_to_mode_map{$so_name} = $zmap_mode ;
-      }
+      if (defined $zmap_mode and defined $zmap_homol)
+        {
+          #
+          # If we have an available mode type then
+          #
+          #
+          if (defined $available_modes{$zmap_mode})
+            {
+             $so_to_mode_map{$so_name} = $zmap_mode ;
+            }
+          #
+          # If we have an available homol type then add this 
+          #
+          if (defined $available_homol{$zmap_homol}) 
+            {
+              $so_to_homol_map{$so_name} = $zmap_homol ; 
+            }
+        }  
+      else 
+        {
+          die "mode and homol must both be defined for name = $so_name\n" ; 
+        }
+
     }
-  }
 }
 close (SO_TO_MODE_MAP) ;
 
@@ -290,25 +331,32 @@ sub Convert_Data
   my $id = 0 ;
   my $nam = "" ;
   my $mode = "" ;
+  my $homol = "" ; 
 
   $i = 0 ;
   $id = $SOIDS[$i] ;
   $nam = $Names[$i] ;
   $mode  = $so_to_mode_map{$nam} ;
+  $homol = $so_to_homol_map{$nam} ; 
   if (defined $mode)
   {
-    $result .= "  \{ $id, \"$nam\", $mode \}" ;
+    $result .= "  \{ $id, \"$nam\", $mode, $homol \}" ;
   }
   for ($i=1; $i < $sizeNames ; $i++)
   {
     $id = $SOIDS[$i] ;
     $nam = $Names[$i] ;
     $mode = $so_to_mode_map{$nam} ;
+    $homol = $so_to_homol_map{$nam} ; 
     if (!defined $mode)
     {
       $mode = "ZMAPSTYLE_MODE_BASIC" ;
     }
-    $result .= ",\n  \{ $id, \"$nam\", $mode \}" ;
+    if (!defined $homol) 
+    {
+      $homol = "ZMAPHOMOL_NONE" ; 
+    }
+    $result .= ",\n  \{ $id, \"$nam\", $mode, $homol \}" ;
 
   }
   $result .= "\n\} ;\n\n" ;

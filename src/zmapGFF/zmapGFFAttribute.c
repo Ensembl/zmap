@@ -1,3 +1,34 @@
+/*  File: zmapGFFAttribute.c
+ *  Author: Steve Miller (sm23@sanger.ac.uk)
+ *  Copyright (c) 2006-2013: Genome Research Ltd.
+ *-------------------------------------------------------------------
+ * ZMap is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ * or see the on-line version at http://www.gnu.org/copyleft/gpl.txt
+ *-------------------------------------------------------------------
+ * This file is part of the ZMap genome database package
+ * originated by
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk,
+ *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk
+ *
+ * Description: Attribute storage and data manipulation for GFFv3.
+ *
+ *-------------------------------------------------------------------
+ */
+
 #include <ZMap/zmapSO.h>
 #include <ZMap/zmapGFF.h>
 #include "zmapGFF_P.h"
@@ -961,7 +992,7 @@ gboolean zMapAttParseAlias(const ZMapGFFAttribute const pAttribute, char ** cons
  * The 'start' and 'end' data are assumed to be unsigned. At least one
  * space is required between <end> and <strand> if the latter is present.
  */
-gboolean zMapAttParseTarget(const ZMapGFFAttribute const pAttribute, char ** const sOut, unsigned int * const piStart, unsigned int * const piEnd, ZMapStrand * const pStrand)
+gboolean zMapAttParseTarget(const ZMapGFFAttribute const pAttribute, char ** const sOut, int * const piStart, int * const piEnd, ZMapStrand * const pStrand)
 {
   gboolean bResult = FALSE ;
   static const char *sMyName = "zMapAttParseTarget()" ;
@@ -969,7 +1000,7 @@ gboolean zMapAttParseTarget(const ZMapGFFAttribute const pAttribute, char ** con
   static const char cPlus = '+', cMinus = '-' ;
   static unsigned int iRequiredFields = 3 ;
   char sStringBuff[ZMAPGFF_MAX_FIELD_CHARS + 1] = "" ;
-  unsigned int iFields = 0, iStart = 0, iEnd = 0;
+  int iFields = 0, iStart = 0, iEnd = 0;
   char cStrand = '\0' ;
   if (!pAttribute)
     return bResult ;

@@ -45,13 +45,15 @@ ZMapSOIDData zMapSOIDDataCreate()
   pID->iID = ZMAPSO_ID_UNK ;
   pID->sName = NULL ;
   pID->cStyleMode = ZMAPSTYLE_MODE_INVALID ;
+  pID->cHomol = ZMAPHOMOL_NONE ;
   return pID ;
 }
 
 /*
  * Create a single SOID Data object with supplied data.
  */
-ZMapSOIDData zMapSOIDDataCreateFromData(unsigned int iID, const char* const sName, ZMapStyleMode cStyleMode )
+ZMapSOIDData zMapSOIDDataCreateFromData(unsigned int iID, const char* const sName,
+                                        ZMapStyleMode cStyleMode , ZMapHomol cHomol )
 {
   ZMapSOIDData pIDData = zMapSOIDDataCreate() ;
   if (!pIDData)
@@ -59,6 +61,7 @@ ZMapSOIDData zMapSOIDDataCreateFromData(unsigned int iID, const char* const sNam
   pIDData->iID = iID ;
   pIDData->sName = g_strdup((gchar*) sName) ;
   pIDData->cStyleMode = cStyleMode ;
+  pIDData->cHomol = cHomol ;
   return pIDData ;
 }
 
@@ -92,6 +95,16 @@ ZMapStyleMode zMapSOIDDataGetStyleMode(const ZMapSOIDData const pData )
   if (!pData)
     return ZMAPSTYLE_MODE_BASIC ;
   return pData->cStyleMode ;
+}
+
+/*
+ * Return the homology type of the SOID data object.
+ */
+ZMapHomol zMapSOIDDataGetHomol(const ZMapSOIDData const pData )
+{
+  if (!pData)
+    return ZMAPHOMOL_NONE ;
+  return pData->cHomol ;
 }
 
 
@@ -157,6 +170,52 @@ ZMapStyleMode zMapSOSetGetStyleModeFromID(ZMapSOSetInUse cSOSetInUse, unsigned i
 
 
   return cTheMode ;
+}
+
+/*
+ * Lookup the ZMapHomol of the SO term from the numerical ID.
+ */
+ZMapHomol zMapSOSetGetHomolFromID(ZMapSOSetInUse cSOSetInUse, unsigned int iID)
+{
+  ZMapHomol cHomol = ZMAPHOMOL_NONE;
+  unsigned int i ;
+
+  if (cSOSetInUse == ZMAPSO_USE_SOFA)
+    {
+      for (i=0; i<ZMAP_SO_DATA_TABLE01_NUM_ITEMS; ++i)
+        {
+          if (iID == ZMAP_SO_DATA_TABLE01[i].iID )
+            {
+              cHomol =  ZMAP_SO_DATA_TABLE01[i].cHomol ;
+              break ;
+            }
+        }
+    }
+  else if (cSOSetInUse == ZMAPSO_USE_SOXP)
+    {
+      for (i=0; i<ZMAP_SO_DATA_TABLE02_NUM_ITEMS; ++i)
+        {
+          if (iID == ZMAP_SO_DATA_TABLE02[i].iID )
+            {
+              cHomol = ZMAP_SO_DATA_TABLE02[i].cHomol ;
+              break ;
+            }
+        }
+    }
+  else if (cSOSetInUse == ZMAPSO_USE_SOXPSIMPLE)
+    {
+      for (i=0; i<ZMAP_SO_DATA_TABLE03_NUM_ITEMS; ++i)
+        {
+          if (iID == ZMAP_SO_DATA_TABLE03[i].iID )
+            {
+              cHomol = ZMAP_SO_DATA_TABLE03[i].cHomol ;
+              break ;
+            }
+      }
+  }
+
+
+  return cHomol ;
 }
 
 /*
