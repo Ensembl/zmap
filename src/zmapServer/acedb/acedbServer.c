@@ -241,6 +241,7 @@ static void loadableCB(gpointer data, gpointer user_data) ;
 
 static char *get_url_query_value(char *full_query, char *key) ;
 static gboolean get_url_query_boolean(char *full_query, char *key) ;
+static int get_url_query_int(char *full_query, char *key) ;
 
 static void freeDataCB(gpointer data) ;
 static void freeSetCB(gpointer data) ;
@@ -333,7 +334,7 @@ static gboolean createConnection(void **server_out,
 
   server->has_new_tags = TRUE ;
 
-  use_methods = get_url_query_boolean(url->query, "use_methods");
+  use_methods = get_url_query_boolean(url->query, "use_methods") ;
 
   server->has_new_tags = !use_methods;
 
@@ -348,6 +349,9 @@ static gboolean createConnection(void **server_out,
     }
 
   server->stylename_from_methodname = isStyleFromMethod(server->config_file) ;
+
+  if (!(server->gff_version = get_url_query_int(url->query, "gff_version")))
+    server->gff_version = 3 ;
 
   server->zmap_start = 1;
   server->zmap_end = 0;
@@ -1323,7 +1327,7 @@ static gboolean sequenceRequest(DoAllAlignBlocks get_features, ZMapFeatureBlock 
 
   acedb_request =  g_strdup_printf("gif seqget %s -coords %d %d %s %s ; "
 				   " %s "
-				   "seqfeatures -refseq %s -rawmethods -zmap %s",
+				   "seqfeatures -refseq %s -rawmethods %s %s",
 				   g_quark_to_string(feature_block->original_id),
 				   server->zmap_start,
 				   server->zmap_end,
@@ -1331,6 +1335,7 @@ static gboolean sequenceRequest(DoAllAlignBlocks get_features, ZMapFeatureBlock 
 				   methods,
 				   (server->fetch_gene_finder_features ? gene_finder_cmds : ""),
 				   g_quark_to_string(feature_block->original_id),
+                                   (server->gff_version == 3 ? "" : "-zmap"),
 				   methods) ;
 
   if ((server->last_err_status = AceConnRequest(server->connection, acedb_request, &reply, &reply_len))
@@ -4602,28 +4607,38 @@ static void resetErr(AcedbServer server)
 }
 
 
-
+/* YEH WELL THIS IS BROKEN...THANKS A LOT..... */
 static char *get_url_query_value(char *full_query, char *key)
 {
-  char *value = NULL,
-    **split   = NULL,
-    **ptr     = NULL ;
+  char *value = NULL, **split   = NULL, **ptr     = NULL ;
 
-  if(full_query != NULL)
+  if ((full_query && *full_query) && (key && *key))
     {
-      split = ptr = g_strsplit(full_query, "&", 0);
+      split = ptr = g_strsplit(full_query, "&", 0) ;
 
       while(ptr && *ptr != '\0')
 	{
-	  char **key_value = NULL, **kv_ptr;
+	  char **key_value = NULL, **kv_ptr, *real_key ;
+
 	  key_value = kv_ptr = g_strsplit(*ptr, "=", 0);
-	  if(key_value[0] && (g_ascii_strcasecmp(key, key_value[0]) == 0))
-	    value = g_strdup(key_value[1]);
-	  g_strfreev(kv_ptr);
-	  ptr++;
+
+          /* Can this actually happen ? */
+          if (key_value[0])
+            {
+              real_key = *key_value ;
+              if (*real_key == '?')
+                real_key++ ;
+            
+              if (g_ascii_strcasecmp(real_key, key) == 0)
+                value = g_strdup(key_value[1]) ;
+            }
+
+	  g_strfreev(kv_ptr) ;
+
+	  ptr++ ;
 	}
 
-      g_strfreev(split);
+      g_strfreev(split) ;
     }
 
   return value;
@@ -4642,6 +4657,21 @@ static gboolean get_url_query_boolean(char *full_query, char *key)
     }
 
   return result;
+}
+
+static int get_url_query_int(char *full_query, char *key)
+{
+  int result = 0 ;
+  char *value = NULL ;
+
+  if ((value = get_url_query_value(full_query, key)))
+    {
+      result = atoi(value) ;
+
+      g_free(value) ;
+    }
+
+  return result ;
 }
 
 
