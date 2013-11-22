@@ -53,7 +53,7 @@ ZMapSOIDData zMapSOIDDataCreate()
  * Create a single SOID Data object with supplied data.
  */
 ZMapSOIDData zMapSOIDDataCreateFromData(unsigned int iID, const char* const sName,
-                                        ZMapStyleMode cStyleMode , ZMapHomol cHomol )
+                                        ZMapStyleMode cStyleMode , ZMapHomolType cHomol )
 {
   ZMapSOIDData pIDData = zMapSOIDDataCreate() ;
   if (!pIDData)
@@ -100,7 +100,7 @@ ZMapStyleMode zMapSOIDDataGetStyleMode(const ZMapSOIDData const pData )
 /*
  * Return the homology type of the SOID data object.
  */
-ZMapHomol zMapSOIDDataGetHomol(const ZMapSOIDData const pData )
+ZMapHomolType zMapSOIDDataGetHomol(const ZMapSOIDData const pData )
 {
   if (!pData)
     return ZMAPHOMOL_NONE ;
@@ -175,9 +175,9 @@ ZMapStyleMode zMapSOSetGetStyleModeFromID(ZMapSOSetInUse cSOSetInUse, unsigned i
 /*
  * Lookup the ZMapHomol of the SO term from the numerical ID.
  */
-ZMapHomol zMapSOSetGetHomolFromID(ZMapSOSetInUse cSOSetInUse, unsigned int iID)
+ZMapHomolType zMapSOSetGetHomolFromID(ZMapSOSetInUse cSOSetInUse, unsigned int iID)
 {
-  ZMapHomol cHomol = ZMAPHOMOL_NONE;
+  ZMapHomolType cHomol = ZMAPHOMOL_NONE;
   unsigned int i ;
 
   if (cSOSetInUse == ZMAPSO_USE_SOFA)

@@ -77,15 +77,15 @@ typedef enum
 unsigned int zMapSOSetIsNamePresent(ZMapSOSetInUse , const char * const ) ;
 char * zMapSOSetIsIDPresent(ZMapSOSetInUse , unsigned int ) ;
 ZMapStyleMode zMapSOSetGetStyleModeFromID(ZMapSOSetInUse, unsigned int ) ;
-ZMapHomol zMapSOSetGetHomolFromID(ZMapSOSetInUse, unsigned int ) ;
+ZMapHomolType zMapSOSetGetHomolFromID(ZMapSOSetInUse, unsigned int ) ;
 ZMapStyleMode zMapSOSetGetStyleModeFromName(ZMapSOSetInUse, const char * const ) ;
 ZMapSOIDData zMapSOIDDataCreate() ;
-ZMapSOIDData zMapSOIDDataCreateFromData(unsigned int, const char * const, ZMapStyleMode , ZMapHomol ) ;
+ZMapSOIDData zMapSOIDDataCreateFromData(unsigned int, const char * const, ZMapStyleMode , ZMapHomolType ) ;
 gboolean zMapSOIDDataDestroy(ZMapSOIDData const) ;
 unsigned int zMapSOIDDataGetID(const ZMapSOIDData const) ;
 char * zMapSOIDDataGetName(const ZMapSOIDData const) ;
 ZMapStyleMode zMapSOIDDataGetStyleMode(const ZMapSOIDData const) ;
-ZMapHomol zMapSOIDDataGetHomol(const ZMapSOIDData const) ;
+ZMapHomolType zMapSOIDDataGetHomol(const ZMapSOIDData const) ;
 
 
 
