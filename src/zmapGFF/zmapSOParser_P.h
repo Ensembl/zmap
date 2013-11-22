@@ -73,7 +73,7 @@ typedef struct ZMapSOIDDataStruct_
     unsigned int iID;
     char * sName ;
     ZMapStyleMode cStyleMode ;
-    ZMapHomol cHomol ;
+    ZMapHomolType cHomol ;
   } ZMapSOIDDataStruct ;
 
 /*
