@@ -3569,7 +3569,9 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 		  if ((reply == ZMAPTHREAD_REPLY_GOTDATA && request_type == ZMAP_SERVERREQ_FEATURES)
 		      || reply == ZMAPTHREAD_REPLY_REQERROR)
 		    {
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 		      LoadFeaturesData loaded_features ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 		      /* Note that load_features is cleaned up by sendViewLoaded() */
 
@@ -3581,10 +3583,21 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 		      connect_data->loaded_features->exit_code = connect_data->exit_code ;
 		      connect_data->loaded_features->stderr_out = connect_data->stderr_out ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+                      /* I'm leaving this for the moment until there's been thorough testing,
+                       * it's been replaced with a call from loadedDataCB() */
+
 		      loaded_features = copyLoadFeatures(connect_data->loaded_features) ;
 
                       if (zmap_view->remote_control)
-                        sendViewLoaded(zmap_view, loaded_features) ;
+                        {
+                          zMapLogWarning("VIEW LOADED FROM %s !!", "checkStateConnections()") ;
+
+                          sendViewLoaded(zmap_view, loaded_features) ;
+                        }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 		    }
 
 
@@ -4810,7 +4823,11 @@ static void loadedDataCB(ZMapWindow window, void *caller_data, gpointer loaded_d
       zMapLogMessage("Received LoadFeaturesDataStruct to pass to sendViewLoaded() at: %p, ", loaded_features) ;
 
       if (view->remote_control)
-        sendViewLoaded(view, loaded_features) ;
+        {
+          zMapLogWarning("VIEW LOADED FROM %s !!", "loadedDataCB()") ;
+
+          sendViewLoaded(view, loaded_features) ;
+        }
 
       /* We were passed a copy of this by displayDataWindows() and now we can delete it. */
       destroyLoadFeatures(loaded_features) ;
@@ -4925,6 +4942,9 @@ static void sendViewLoaded(ZMapView zmap_view, LoadFeaturesData loaded_features)
                                                localProcessReplyFunc, zmap_view) ;
 
           free(emsg);                                           /* yes really free() not g_free()-> see zmapUrlUtils.c */
+
+
+          zMapLogWarning("VIEW LOADED FEATURE LIST: %s !!", featurelist) ;
 
           g_free(featurelist);
         }
