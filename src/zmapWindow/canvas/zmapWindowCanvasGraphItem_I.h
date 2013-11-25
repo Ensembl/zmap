@@ -54,6 +54,13 @@
 
 typedef struct ZMapWindowCanvasGraphStructType
 {
+
+  /* Cache our colours.... */
+  GdkColor fill ;
+  GdkColor draw ;
+  GdkColor border ;
+
+
   /* Cache of points either to be drawn or being drawn.
    * n.b. the +4 is +2 for gaps between bins, inserting a line, plus allow for end of data trailing lines */
   GdkPoint points[N_POINTS + 4] ;                           /* The points to be drawn. */

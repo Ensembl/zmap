@@ -131,6 +131,16 @@ void zMapWindowCanvasGraphInit(void)
 static void graphInit(ZMapWindowFeaturesetItem featureset)
 {
   ZMapWindowCanvasGraph graph_set = (ZMapWindowCanvasGraph)(featureset->opt) ;
+  GdkColor *draw = NULL, *fill = NULL, *border = NULL ;
+
+  /* Set up default colours to draw with, these may be overwritten later by the features
+   * colours. */
+  if (zmapWindowFeaturesetGetDefaultColours(featureset, &fill, &draw, &border))
+    {
+      graph_set->fill = *fill ;
+      graph_set->draw = *draw ;
+      graph_set->border = *border ;
+    }
 
   graph_set->last_gy = -1.0 ;
 
@@ -160,9 +170,37 @@ static void graphPaintPrepare(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
         {
           featureset->style->mode_data.graph.fill = zMapStyleGraphFill(featureset->featurestyle) ;
 
-          /* We need a function to copy colours across..... */
-          featureset->style->mode_data.graph.colours = featureset->featurestyle->mode_data.graph.colours ;
-          zmapStyleSetIsSet(featureset->style, STYLE_PROP_GRAPH_COLOURS) ;
+          if (zMapStyleIsPropertySetId(featureset->featurestyle, STYLE_PROP_GRAPH_COLOURS))
+            {
+              /* We need a function to copy colours across..... */
+              featureset->style->mode_data.graph.colours = featureset->featurestyle->mode_data.graph.colours ;
+              zmapStyleSetIsSet(featureset->style, STYLE_PROP_GRAPH_COLOURS) ;
+            }
+
+          if (zMapStyleIsPropertySetId(featureset->style, STYLE_PROP_GRAPH_COLOURS))
+            {
+              GdkColor *draw = NULL, *fill = NULL, *border = NULL ;
+              ZMapWindowCanvasItemClass featureset_class = ZMAP_CANVAS_ITEM_GET_CLASS(featureset) ;
+
+              zMapStyleGetColours(featureset->style, STYLE_PROP_GRAPH_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
+                                  &fill, &draw, &border) ;
+
+              if (fill)
+                {
+                  graph_set->fill = *fill ;
+                  zmapWindowFeaturesetAllocColour(featureset_class, &(graph_set->fill)) ;
+                }
+              if (draw)
+                {
+                  graph_set->draw = *draw ;
+                  zmapWindowFeaturesetAllocColour(featureset_class, &(graph_set->draw)) ;
+                }
+              if (border)
+                {
+                  graph_set->border = *border ;
+                  zmapWindowFeaturesetAllocColour(featureset_class, &(graph_set->border)) ;
+                }
+            }
         }
 
       line_fill = zMapStyleGraphFill(featureset->style) ;
@@ -450,16 +488,9 @@ static void graphPaintFlush(ZMapWindowFeaturesetItem featureset, ZMapWindowCanva
   /* Currently only lines are drawn in this function. */
   if (zMapStyleGraphMode(featureset->style) == ZMAPSTYLE_GRAPH_LINE)
     {
-      gboolean line_fill = zMapStyleGraphFill(featureset->style) ;
-      GdkColor *normal_draw = NULL, *normal_fill = NULL, *normal_border = NULL;
-      GdkColor *draw = NULL, *fill = NULL, *border = NULL;
+      gboolean line_fill ;
 
-
-      zMapStyleGetColours(featureset->style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
-                          &normal_fill, &normal_draw, &normal_border);
-      zMapStyleGetColours(featureset->style, STYLE_PROP_GRAPH_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
-                          &fill, &draw, &border);
-
+      line_fill = zMapStyleGraphFill(featureset->style) ;
 
       if (graph_set->n_points < 1)              /* no features, draw baseline */
         {
@@ -481,7 +512,7 @@ static void graphPaintFlush(ZMapWindowFeaturesetItem featureset, ZMapWindowCanva
 
       if (graph_set->n_points >= 1)
         {
-          GdkColor c ;
+          GdkColor *graph_colour ;
           double end ;
           FooCanvasItem *foo = (FooCanvasItem *)featureset ;
 
@@ -634,26 +665,18 @@ static void graphPaintFlush(ZMapWindowFeaturesetItem featureset, ZMapWindowCanva
             }
        
           /* Draw the lines or filled lines, they are already clipped to the visible scroll region */
+
+          /* This should all be inserted at the start and cached.... */
           if (zMapStyleGraphFill(featureset->style))
             {
-              GdkColormap *colour_map ;
-
-              colour_map = gdk_colormap_get_system() ;
-
-              /* This should all be inserted at the start and cached.... */
-              gdk_colormap_alloc_color(colour_map,
-                                       fill,
-                                       FALSE,
-                                       TRUE) ;
-
-              c = *fill ;
+              graph_colour = &(graph_set->fill) ;
             }
           else
             {
-              c.pixel = featureset->outline_pixel ;
+              graph_colour = &(graph_set->border) ;
             }
-
-          gdk_gc_set_foreground(featureset->gc, &c) ;
+          
+          gdk_gc_set_foreground(featureset->gc, graph_colour) ;
 
           if (line_fill)
             gdk_draw_polygon(drawable, featureset->gc, TRUE, graph_set->points, graph_set->n_points) ;
