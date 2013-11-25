@@ -36,6 +36,7 @@
 #include <ZMap/zmapSOParser.h>
 #include <ZMap/zmapFeature.h>
 #include <ZMap/zmapFeatureLoadDisplay.h>
+#include <ZMap/zmapGLibUtils.h>
 #include "zmapGFFHeader.h"
 #include "zmapGFF_P.h"
 #include "zmapGFF3_P.h"
@@ -2137,8 +2138,10 @@ static gboolean parseBodyLine_V3(
     pSOIDData                         = NULL
   ;
 
+#ifdef LOCAL_DEBUG_CODE
   printf("%s\n", sLine) ;
   fflush (stdout) ;
+#endif
 
   /*
    * Cast to concrete type for GFFV3.
@@ -2552,6 +2555,7 @@ return_point:
  */
 static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const pFeatureData,
                                          const ZMapFeatureSet const pFeatureSet,
+                                         gboolean *pbNewFeatureCreated,
                                          char ** psError)
 {
   typedef enum {NONE, FIRST, SECOND} CaseToTreat ;
@@ -2574,8 +2578,7 @@ static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const pFeature
     bIsExon = FALSE,
     bIsIntron = FALSE,
     bIsCDS = FALSE,
-    bIsComponent = FALSE,
-    bNewFeatureCreated = FALSE ;
+    bIsComponent = FALSE ;
   GQuark gqThisID = 0 ;
   ZMapFeature pFeature = NULL ;
   ZMapSOIDData pSOIDData = NULL ;
@@ -2592,6 +2595,9 @@ static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const pFeature
     return pFeature ;
   if (!pFeatureData)
     return pFeature ;
+  if (!pbNewFeatureCreated)
+    return pFeature ;
+  *pbNewFeatureCreated = FALSE ;
 
   sSequence            = zMapGFFFeatureDataGetSeq(pFeatureData) ;
   iStart               = zMapGFFFeatureDataGetSta(pFeatureData) ;
@@ -2650,9 +2656,9 @@ static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const pFeature
    *                this is not handled.
    *                Feature _must_ be already present.
    */
-  bIsExon = !strcmp(sSOType, "exon") ;
-  bIsIntron = !strcmp(sSOType, "intron") ;
-  bIsCDS = !strcmp(sSOType, "CDS") ;
+  bIsExon = (gboolean) strstr(sSOType, "exon") ;
+  bIsIntron = (gboolean) strstr(sSOType, "intron") ;
+  bIsCDS = (gboolean) strstr(sSOType, "CDS") ;
   bIsComponent = (bIsExon || bIsIntron || bIsCDS );
   if (bHasAttributeID && !bIsComponent)
     {
@@ -2688,7 +2694,7 @@ static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const pFeature
        * This is a new feature, so we must create from scratch and add standard data.
        */
       pFeature = zMapFeatureCreateEmpty() ;
-      bNewFeatureCreated = TRUE ;
+      *pbNewFeatureCreated = TRUE ;
 
       /*
        * Name of feature is taken from ID attribute value.
@@ -2743,7 +2749,7 @@ static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const pFeature
     }
 
 #ifdef LOCAL_DEBUG_CODE
-  if (bNewFeatureCreated && bFeatureAdded)
+  if (*pbNewFeatureCreated && bFeatureAdded)
     {
       ++iCountTranscript ;
       printf("iCountTransript = %i\n", iCountTranscript) ;
@@ -2755,7 +2761,7 @@ static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const pFeature
    * If a new feature was created but not added to the feature set for some reason,
    * it must be destroyed to avoid a memory leak.
    */
-  if (bNewFeatureCreated && !bFeatureAdded)
+  if (*pbNewFeatureCreated && !bFeatureAdded)
     {
       zMapFeatureDestroy(pFeature) ;
       pFeature = NULL ;
@@ -2906,11 +2912,17 @@ static ZMapFeature makeFeatureAlignment(const ZMapGFFFeatureData const pFeatureD
 /*
  * Create a feature of ZMapStyleMode = BASIC only?
  */
-static ZMapFeature makeBasicFeature(const ZMapGFFFeatureData const pFeatureData,
+static ZMapFeature makeFeatureBasic(const ZMapGFFFeatureData const pFeatureData,
                                     gboolean bForce,
                                     char **psError)
 {
   ZMapFeature pFeature = NULL ;
+
+#ifdef LOCAL_DEBUG_CODE
+  ++iCountBasic ;
+  printf("iCountBasic = %i\n", iCountBasic ) ;
+  fflush(stdout) ;
+#endif
 
   return pFeature ;
 }
@@ -2970,7 +2982,8 @@ static gboolean makeNewFeature_V3(
     bResult                 = FALSE,
     bFeatureHasName         = FALSE,
     bHasScore               = FALSE,
-    bValidTarget            = FALSE
+    bValidTarget            = FALSE,
+    bNewFeatureCreated      = FALSE
   ;
 
   GQuark
@@ -3053,7 +3066,10 @@ static gboolean makeNewFeature_V3(
   cFeatureStyleMode    = zMapSOIDDataGetStyleMode(pSOIDData) ;
 
   /*
-   * A CDS feature _must_ have a phase which is not ZMAPPHASE_NONE.
+   * A CDS feature _must_ have a phase which is _not_ ZMAPPHASE_NONE.
+   *
+   * _MAY_ also require the following test at some point (but this is not in the
+   * standard).
    *
    * All features other than CDS _must_ have cPhase = '.' (i.e. ZMAPPHASE_NONE).
    * Anything else is an error.
@@ -3066,14 +3082,14 @@ static gboolean makeNewFeature_V3(
           goto return_point ;
         }
     }
-  else
+  /* else
     {
       if (cPhase != ZMAPPHASE_NONE)
         {
           bResult = FALSE ;
           goto return_point ;
         }
-    }
+    } */
 
 
   /*
@@ -3156,8 +3172,15 @@ static gboolean makeNewFeature_V3(
    */
   pParserFeatureSet->feature_set->style = pFeatureStyle;
   pFeatureSet = pParserFeatureSet->feature_set ;
+
+#ifdef LOCAL_DEBUG_CODE
   char* sFSName = NULL ;
   sFSName = g_strdup(g_quark_to_string(pFeatureSet->unique_id)) ;
+  if (strstr(sSource, "RNAi"))
+  {
+    double dX = 0.0;
+  }
+#endif
 
   /*
    * Now check that the ZMapStyleMode of the current style also has the same ZMapStyleMode.
@@ -3178,8 +3201,9 @@ static gboolean makeNewFeature_V3(
   if (cFeatureStyleMode == ZMAPSTYLE_MODE_TRANSCRIPT)
     {
 
-      pFeature = makeFeatureTranscript(pFeatureData, pFeatureSet, &sMakeFeatureErrorText) ;
-      if (pFeature)
+      bNewFeatureCreated = FALSE ;
+      pFeature = makeFeatureTranscript(pFeatureData, pFeatureSet, &bNewFeatureCreated, &sMakeFeatureErrorText) ;
+      if (bNewFeatureCreated)
         ++pParser->num_features ;
 
     }
@@ -3253,6 +3277,15 @@ static gboolean makeNewFeature_V3(
 
 
     } /* final ZMapStyleMode clause */
+
+
+#ifdef LOCAL_DEBUG_CODE
+  if (!strcmp("Pseudogene", sSource))
+    {
+      printf("Contents of featureset '%s'\n", g_quark_to_string(pFeatureSet->unique_id)) ;
+      zMap_g_hash_table_print(((ZMapFeatureAny)pFeatureSet)->children, "feature") ;
+    }
+#endif
 
 
   /*
