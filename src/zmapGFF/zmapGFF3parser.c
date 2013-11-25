@@ -2800,7 +2800,8 @@ static ZMapFeature makeFeatureAlignment(const ZMapGFFFeatureData const pFeatureD
   ZMapSOIDData pSOIDData = NULL ;
   ZMapFeature pFeature = NULL ;
   ZMapGFFAttribute *pAttributes = NULL,
-    pAttributeTarget = NULL ;
+    pAttributeTarget = NULL,
+    pAttributeGap = NULL ;
   ZMapStrand cStrand = ZMAPSTRAND_NONE,
     cTargetStrand = ZMAPSTRAND_NONE ;
   ZMapPhase cPhase = ZMAPPHASE_NONE ;
@@ -2867,11 +2868,11 @@ static ZMapFeature makeFeatureAlignment(const ZMapGFFFeatureData const pFeatureD
       bDataAdded = zMapFeatureAddStandardData(pFeature, sFeatureNameID, sFeatureName, sSequence, sSOType,
                                            cFeatureStyleMode, &pFeatureSet->style,
                                            iStart, iEnd, bHasScore, dScore, cStrand) ;
-      //pAttributeGap = zMapGFFAttributeListContains(pAttributes, nAttributes, "Gap") ;
-      //if (pAttributeGap)
-      //  {
-      //     /* Parse this into a Gaps array... */
-      //  }
+      pAttributeGap = zMapGFFAttributeListContains(pAttributes, nAttributes, "Gap") ;
+      if (pAttributeGap)
+        {
+          /* Parse this into a Gaps array... */
+        }
       bDataAdded = zMapFeatureAddAlignmentData(pFeature, 0, 0.0, iTargetStart, iTargetEnd, cHomolType,
                                                0, cTargetStrand, cPhase, pGaps,
                                                zMapStyleGetWithinAlignError(pFeatureStyle),
@@ -3277,15 +3278,6 @@ static gboolean makeNewFeature_V3(
 
 
     } /* final ZMapStyleMode clause */
-
-
-#ifdef LOCAL_DEBUG_CODE
-  if (!strcmp("Pseudogene", sSource))
-    {
-      printf("Contents of featureset '%s'\n", g_quark_to_string(pFeatureSet->unique_id)) ;
-      zMap_g_hash_table_print(((ZMapFeatureAny)pFeatureSet)->children, "feature") ;
-    }
-#endif
 
 
   /*
