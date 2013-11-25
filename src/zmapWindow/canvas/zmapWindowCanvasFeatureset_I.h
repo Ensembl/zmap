@@ -45,6 +45,15 @@
 #include <zmapWindowCanvasItem_I.h>
 
 
+
+/* Default colours !! - should be in more public header ?? */
+#define CANVAS_DEFAULT_COLOUR_FILL   "grey"
+#define CANVAS_DEFAULT_COLOUR_BORDER "black"
+#define CANVAS_DEFAULT_COLOUR_DRAW   "white"
+
+
+
+
 #if NEED_TO_REWRITE_SHED_LOADS_OF_CODE
 /* this is common to all of our display features */
 typedef struct _zmapWindowCanvasBaseStruct
@@ -75,7 +84,9 @@ typedef struct _zmapWindowCanvasGraphicsStruct
   double x1, x2;
   long fill ,outline;
   char *text;
+
   int flags;
+
 #define WCG_FILL_SET		1
 #define WCG_OUTLINE_SET		2
 
@@ -165,16 +176,12 @@ typedef struct _pixRect
 #define N_PIXRECT_ALLOC		20
 
 
-PixRect zmapWindowCanvasFeaturesetSummarise(PixRect pix,
-					    ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature);
-void zmapWindowCanvasFeaturesetSummariseFree(ZMapWindowFeaturesetItem featureset, PixRect pix);
-
-
-
 
 
 /* Oh goodness....what is all this for ?? */
 #define N_FEAT_ALLOC      1000
+
+
 
 typedef struct zmapWindowFeaturesetItemClassStructType
 {
@@ -190,6 +197,20 @@ typedef struct zmapWindowFeaturesetItemClassStructType
 
   int struct_size[FEATURE_N_TYPE];
   int set_struct_size[FEATURE_N_TYPE];
+
+
+  /* Cached colourmaps/colours for drawing, provides default colours for all feature drawing. */
+  GdkColormap *colour_map ;                                 /* This is a per-screen resource
+                                                               so multi-screen operation would need multiple values. */
+
+  gboolean colour_alloc ;                                   /* TRUE => colour allocation worked. */
+  GdkColor fill ;                                           /* Fill/background colour. */
+  GdkColor draw ;                                           /* Overlaid on fill colour. */
+  GdkColor border ;                                         /* Surround/line colour. */
+
+  /* Should we also have default select colours too ?? */
+
+
 
 } zmapWindowFeaturesetItemClassStruct;
 
@@ -291,6 +312,7 @@ typedef struct _zmapWindowFeaturesetItemStruct
 
   gpointer deferred;		  /* buffer for deferred paints, eg constructed polyline */
 
+  /* WHEN ARE THESE USED....DUH..... */
   gulong fill_colour;           /* Fill color, RGBA */
   gulong outline_colour;        /* Outline color, RGBA */
   gulong fill_pixel;            /* Fill color */
@@ -330,10 +352,6 @@ typedef struct _zmapWindowFeaturesetItemStruct
 
 
 
-void zmapWindowFeaturesetS2Ccoords(double *start_inout, double *end_inout) ;
-gboolean zmapWindowCanvasFeatureValid(ZMapWindowCanvasFeature feature) ;
-
-
 /*
  * module generic text interface, initially used by sequence and locus feature types
  * is used to paint single line text things at given x,y
@@ -350,6 +368,17 @@ typedef struct _zmapWindowCanvasPangoStruct
 
   int text_height, text_width;
 } zmapWindowCanvasPangoStruct ;
+
+
+
+PixRect zmapWindowCanvasFeaturesetSummarise(PixRect pix,
+					    ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature);
+void zmapWindowCanvasFeaturesetSummariseFree(ZMapWindowFeaturesetItem featureset, PixRect pix);
+
+void zmapWindowFeaturesetS2Ccoords(double *start_inout, double *end_inout) ;
+gboolean zmapWindowCanvasFeatureValid(ZMapWindowCanvasFeature feature) ;
+
+
 
 
 #endif /* ZMAP_WINDOW_FEATURESET_ITEM_I_H */

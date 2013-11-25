@@ -127,6 +127,8 @@ static ZMapSkipList zmap_window_canvas_featureset_find_feature_coords(FeatureCmp
 								      ZMapWindowFeaturesetItem fi,
 								      double y1, double y2) ;
 void zmap_window_canvas_featureset_expose_feature(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature gs);
+static guint32 gdk_color_to_rgba(GdkColor *color) ;
+
 
 
 
@@ -137,6 +139,7 @@ void zmap_window_canvas_featureset_expose_feature(ZMapWindowFeaturesetItem fi, Z
 static FooCanvasItemClass *item_class_G = NULL;
 static ZMapWindowCanvasItemClass parent_class_G = NULL;
 static ZMapWindowFeaturesetItemClass featureset_class_G = NULL;
+
 
 /* this is in parallel with the ZMapStyleMode enum */
 /* beware, traditionally glyphs ended up as basic features */
@@ -201,42 +204,42 @@ static long n_feature_free = 0;
 /* let's use a filter sort here, stability is a good thing and volumes are small */
 void zMapWindowContainerGroupSortByLayer(FooCanvasGroup * group)
 {
-	GList *old;
-	ZMapWindowFeaturesetItem item;
-	guint layer;
-	/* we only implement 3 layers */
-	GList *back = NULL, *features = NULL, *overlay = NULL;
+  GList *old;
+  ZMapWindowFeaturesetItem item;
+  guint layer;
+  /* we only implement 3 layers */
+  GList *back = NULL, *features = NULL, *overlay = NULL;
 
-	if(!group || !ZMAP_IS_CONTAINER_GROUP(group))
-		return;
+  if(!group || !ZMAP_IS_CONTAINER_GROUP(group))
+    return;
 
-	for(old = group->item_list; old; old = old->next)
-	{
-		if(!ZMAP_IS_WINDOW_FEATURESET_ITEM(old->data))
-		{
-			layer = 0;		/* is another group eg a column */
-		}
-		else
-		{
-			item = (ZMapWindowFeaturesetItem) old->data;
-			layer = zMapWindowCanvasFeaturesetGetLayer(item);
-		}
+  for(old = group->item_list; old; old = old->next)
+    {
+      if(!ZMAP_IS_WINDOW_FEATURESET_ITEM(old->data))
+        {
+          layer = 0;		/* is another group eg a column */
+        }
+      else
+        {
+          item = (ZMapWindowFeaturesetItem) old->data;
+          layer = zMapWindowCanvasFeaturesetGetLayer(item);
+        }
 
-		if(!(layer & ZMAP_CANVAS_LAYER_DECORATION))	/* normal features */
-			features = g_list_append(features, old->data);
-		else if((layer & ZMAP_CANVAS_LAYER_OVERLAY))
-			overlay = g_list_append(overlay, old->data);
-		else
-			back = g_list_append(back, old->data);
-	}
+      if(!(layer & ZMAP_CANVAS_LAYER_DECORATION))	/* normal features */
+        features = g_list_append(features, old->data);
+      else if((layer & ZMAP_CANVAS_LAYER_OVERLAY))
+        overlay = g_list_append(overlay, old->data);
+      else
+        back = g_list_append(back, old->data);
+    }
 
-	features = g_list_concat(features, overlay);
-	back = g_list_concat(back, features);
+  features = g_list_concat(features, overlay);
+  back = g_list_concat(back, features);
 
-	g_list_free(group->item_list);
+  g_list_free(group->item_list);
 
-	group->item_list = back;
-	group->item_list_end = g_list_last(back);
+  group->item_list = back;
+  group->item_list_end = g_list_last(back);
 }
 
 
@@ -289,7 +292,7 @@ int zMap_draw_line(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, g
   /*
     the problem is long vertical lines that wrap round
     we don't draw big horizontal ones
-    */
+  */
   if(cx1 > featureset->clip_x2)
     return;
   if(cx2 < featureset->clip_x1)
@@ -630,6 +633,7 @@ gboolean zMapWindowCanvasFeaturesetGetFeatureExtent(ZMapWindowCanvasFeature feat
     {
       func(feature, span, width);
     }
+
   return TRUE;
 }
 
@@ -1723,19 +1727,6 @@ gboolean zMapWindowCanvasItemSetFeature(ZMapWindowCanvasItem item, double x, dou
 
 
 
-static guint32 gdk_color_to_rgba(GdkColor *color)
-{
-  guint32 rgba = 0;
-
-  rgba = ((color->red & 0xff00) << 16  |
-	  (color->green & 0xff00) << 8 |
-	  (color->blue & 0xff00)       |
-	  0xff);
-
-  return rgba;
-}
-
-
 /* cut and paste from former graph density code */
 gboolean zMapWindowFeaturesetItemSetStyle(ZMapWindowFeaturesetItem di, ZMapFeatureTypeStyle style)
 {
@@ -1796,6 +1787,77 @@ gboolean zMapWindowFeaturesetItemSetStyle(ZMapWindowFeaturesetItem di, ZMapFeatu
 }
 
 
+/* Standard way to allocate featureset colours, parameters are:
+ * 
+ *          FALSE => we don't need the colour to be writeable
+ *           TRUE => we will accept the best available match  */
+gboolean zmapWindowFeaturesetAllocColour(ZMapWindowFeaturesetItemClass featureset_class,
+                                         GdkColor *colour)
+{
+  gboolean result = FALSE ;
+
+  result = gdk_colormap_alloc_color(featureset_class->colour_map, colour, FALSE, TRUE) ;
+
+  return result ;
+}
+
+
+
+/* probably need pixel and gdkcolour versions of these...... */
+/* Return pointers to the GdkColor structs for the default colours, you should not write
+ * to or attempt to free these structs. */
+gboolean zmapWindowFeaturesetGetDefaultColours(ZMapWindowFeaturesetItem feature_set_item,
+                                               GdkColor **fill, GdkColor **draw, GdkColor **border)
+{
+  gboolean result = FALSE ;
+  ZMapWindowFeaturesetItemClass featureset_class ;
+
+  featureset_class = ZMAP_WINDOW_FEATURESET_ITEM_GET_CLASS(feature_set_item) ;
+
+  /* It's possible our colour allocation failed in which case we return FALSE. */
+  if (featureset_class->colour_alloc)
+    {
+      if (fill)
+        *fill = &(featureset_class->fill) ;
+      if (draw)
+        *draw = &(featureset_class->draw) ;
+      if (fill)
+        *fill = &(featureset_class->border) ;
+
+      result = FALSE ;
+    }
+
+  return result ;
+}
+
+
+/* Return the pixel values for the default colours, these can be used directly to in
+ * setting the foreground/background colours in a graphics context. */
+gboolean zmapWindowFeaturesetGetDefaultPixels(ZMapWindowFeaturesetItem feature_set_item,
+                                              guint32 *fill, guint32 *draw, guint32 *border)
+{
+  gboolean result = FALSE ;
+  ZMapWindowFeaturesetItemClass featureset_class ;
+
+  featureset_class = ZMAP_WINDOW_FEATURESET_ITEM_GET_CLASS(feature_set_item) ;
+
+  /* It's possible our colour allocation failed in which case we return FALSE. */
+  if (featureset_class->colour_alloc)
+    {
+      if (fill)
+        *fill = featureset_class->fill.pixel ;
+      if (draw)
+        *draw = featureset_class->draw.pixel ;
+      if (fill)
+        *fill = featureset_class->border.pixel ;
+
+      result = FALSE ;
+    }
+
+  return result ;
+}
+
+
 
 
 
@@ -1830,7 +1892,33 @@ static void zmap_window_featureset_item_item_class_init(ZMapWindowFeaturesetItem
 
   //  zmapWindowItemStatsInit(&(canvas_class->stats), ZMAP_TYPE_WINDOW_FEATURESET_ITEM) ;
 
-  featureset_init_funcs();
+  /* Set up default colours stuff.... */
+  featureset_class->colour_map = gdk_colormap_get_system() ;    /* Not screen sensitive.... */
+
+  featureset_class->colour_alloc = TRUE ;
+  if (!gdk_color_parse(CANVAS_DEFAULT_COLOUR_FILL, &(featureset_class->fill))
+      || !zmapWindowFeaturesetAllocColour(featureset_class, &(featureset_class->fill)))
+    {
+      zMapLogCritical("Allocation of colour %d as default %d failed.",
+                      CANVAS_DEFAULT_COLOUR_FILL, "fill") ;
+      featureset_class->colour_alloc = FALSE ;
+    }
+  if (!gdk_color_parse(CANVAS_DEFAULT_COLOUR_DRAW, &(featureset_class->draw))
+      || !zmapWindowFeaturesetAllocColour(featureset_class, &(featureset_class->draw)))
+    {
+      zMapLogCritical("Allocation of colour %d as default %d failed.",
+                      CANVAS_DEFAULT_COLOUR_DRAW, "draw") ;
+      featureset_class->colour_alloc = FALSE ;
+    }
+  if (!gdk_color_parse(CANVAS_DEFAULT_COLOUR_BORDER, &(featureset_class->border))
+      || !zmapWindowFeaturesetAllocColour(featureset_class, &(featureset_class->border)))
+    {
+      zMapLogCritical("Allocation of colour %d as default %d failed.",
+                      CANVAS_DEFAULT_COLOUR_BORDER, "border") ;
+      featureset_class->colour_alloc = FALSE ;
+    }
+
+  featureset_init_funcs() ;
 
   return ;
 }
@@ -1966,7 +2054,6 @@ static void zmap_window_featureset_item_item_update (FooCanvasItem *item, double
 
 
 
-
 /* are we within the bounding box if not on a feature ? */
 /* when we call this we already know, but we have to set actual_item */
 double featureset_background_point(FooCanvasItem *item,int cx, int cy, FooCanvasItem **actual_item)
@@ -2034,7 +2121,7 @@ double  zmap_window_featureset_item_foo_point(FooCanvasItem *item,
   }
 #endif
 
-/* YES BUT WHAT ARE THEY !!!!!!!!!" */
+  /* YES BUT WHAT ARE THEY !!!!!!!!!" */
   if ((fi->layer & ZMAP_CANVAS_LAYER_DECORATION))	/* we don-t want to click on these ! */
     return(best);
 
@@ -3873,6 +3960,19 @@ static void zmap_window_featureset_item_item_destroy (GtkObject *object)
 }
 
 
+
+
+static guint32 gdk_color_to_rgba(GdkColor *color)
+{
+  guint32 rgba = 0;
+
+  rgba = ((color->red & 0xff00) << 16  |
+	  (color->green & 0xff00) << 8 |
+	  (color->blue & 0xff00)       |
+	  0xff);
+
+  return rgba;
+}
 
 
 
