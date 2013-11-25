@@ -46,7 +46,7 @@
 
 /* This struct should most certainly be a union of mutually exclusive fields, it's good
  * documentation as well as good practice... */
-typedef struct
+typedef struct RequestDataStructType
 {
   ZMapWindow window ;
 
@@ -71,6 +71,12 @@ typedef struct
   GList *feature_sets ;
 
   gboolean zoomed ;
+
+  gboolean zoom_to_pos ;
+  int zoom_start ;
+  int zoom_end ;
+
+
 } RequestDataStruct, *RequestData ;
 
 
@@ -82,6 +88,9 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement zmap_
 static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement zmap_element, ZMapXMLParser parser);
 static gboolean xml_return_true_cb(gpointer user_data, ZMapXMLElement zmap_element, ZMapXMLParser parser);
 
+static void zoomWindowToPosition(ZMapWindow window, RequestData request_data,
+                                 RemoteCommandRCType *command_rc_out, char **reason_out,
+                                 ZMapXMLUtilsEventStack *reply_out) ;
 static void zoomWindowToFeature(ZMapWindow window, RequestData input_data,
 				RemoteCommandRCType *command_rc_out, char **reason_out,
 				ZMapXMLUtilsEventStack *reply_out) ;
@@ -112,6 +121,19 @@ static ZMapXMLObjTagFunctionsStruct window_ends_G[] =
     { "feature",    xml_return_true_cb    },
     {NULL, NULL}
   } ;
+
+static ZMapXMLObjTagFunctionsStruct zoom_to_pos_starts_G[] = 
+  {
+    { "request",    xml_request_start_cb},
+    {NULL, NULL}
+  };
+
+static ZMapXMLObjTagFunctionsStruct zoom_to_pos_ends_G[] =
+  {
+    { "request",    xml_return_true_cb},
+    {NULL, NULL}
+  } ;
+
 
 
 static ZMapXMLObjTagFunctionsStruct mark_starts_G[] = 
@@ -439,8 +461,18 @@ static void processRequest(ZMapWindow window,
   /* Set start/end handlers, some commands are much simpler than others. */
   if (strcmp(command_name, ZACP_ZOOM_TO) == 0)
     {
-      starts = window_starts_G ;
-      ends = window_ends_G ;
+      /* seems a bit hacky, need func to look for attrs etc.... */
+      if ((strstr(request, "start=")) &&(strstr(request, "end=")))
+        {
+          request_data.zoom_to_pos = TRUE ;
+          starts = zoom_to_pos_starts_G ;
+          ends = zoom_to_pos_ends_G ;
+        }
+      else
+        {
+          starts = window_starts_G ;
+          ends = window_ends_G ;
+        }
     }
   else if (strcmp(command_name, ZACP_GET_MARK) == 0)
     {
@@ -458,8 +490,16 @@ static void processRequest(ZMapWindow window,
     {
       if (strcmp(command_name, ZACP_ZOOM_TO) == 0)
 	{
-          zoomWindowToFeature(window, &request_data,
-			      command_rc_out, reason_out, reply_out) ;
+          if (request_data.zoom_to_pos)
+            {
+              zoomWindowToPosition(window, &request_data,
+                                   command_rc_out, reason_out, reply_out) ;
+            }
+          else
+            {
+              zoomWindowToFeature(window, &request_data,
+                                  command_rc_out, reason_out, reply_out) ;
+            }
 	}
       else if (strcmp(command_name, ZACP_GET_MARK) == 0)
 	{
@@ -469,6 +509,39 @@ static void processRequest(ZMapWindow window,
 
   /* Free the parser!!! */
   zMapXMLParserDestroy(parser) ;
+
+  return ;
+}
+
+
+static void zoomWindowToPosition(ZMapWindow window, RequestData request_data,
+                                 RemoteCommandRCType *command_rc_out, char **reason_out,
+                                 ZMapXMLUtilsEventStack *reply_out)
+{
+  double world_start = 0, world_end = 0 ;
+
+  if (!zmapWindowSeqToWorldCoords(window,
+                                  request_data.zoom_start, request_data.zoom_end,
+                                  &world_start,  &world_end))
+    {
+      *command_rc_out = REMOTE_COMMAND_RC_FAILED ;
+
+      *reason_out = zMapXMLUtilsEscapeStrPrintf("Zoom to position failed, bad feature coords: %d, %d",
+						request_data.zoom_start, request_data.zoom_end) ;
+    }
+  else
+    {
+      char *message ;
+
+      /* hacked x coords....should really find out where we are now and use those coords. */
+      zmapWindowZoomToWorldPosition(window, TRUE,
+                                    0, world_start, 10, world_end) ;
+
+      message = g_strdup_printf("Zoom to position %d, %d ok",
+                                request_data.zoom_start, request_data.zoom_end) ;
+      *reply_out = makeMessageElement(message) ;
+      *command_rc_out = REMOTE_COMMAND_RC_OK ;
+    }
 
   return ;
 }
@@ -608,26 +681,66 @@ static gboolean xml_request_start_cb(gpointer user_data, ZMapXMLElement set_elem
 
   if (strcmp(request_data->command_name, ZACP_ZOOM_TO) == 0)
     {
-      if (request_data->window->feature_context)
-	{
-	  request_data->orig_context = request_data->window->feature_context ;
+      if (request_data->zoom_to_pos)
+        {
+          ZMapXMLAttribute attr = NULL;
+          int start = 0, end = 0 ;
 
-	  /* We default to the master alignment and the first block within that alignment, the xml
-	   * does not have to contain either making it easier for the peer. */
-	  request_data->orig_align = request_data->orig_context->master_align ;
-	  request_data->orig_block = zMap_g_hash_table_nth(request_data->orig_context->master_align->blocks, 0) ;
+          if (result && (attr = zMapXMLElementGetAttributeByName(set_element, "start")))
+            {
+              start = strtol((char *)g_quark_to_string(zMapXMLAttributeGetValue(attr)),
+                             (char **)NULL, 10);
+            }
+          else
+            {
+              zMapXMLParserRaiseParsingError(parser, "\"start\" is a required attribute for zoom_to pos.");
 
-	  result = TRUE ;
-	}
+              request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
+              result = FALSE ;
+            }
+
+          if (result && (attr = zMapXMLElementGetAttributeByName(set_element, "end")))
+            {
+              end = strtol((char *)g_quark_to_string(zMapXMLAttributeGetValue(attr)),
+                           (char **)NULL, 10);
+            }
+          else
+            {
+              zMapXMLParserRaiseParsingError(parser, "\"end\" is a required attribute for zoom_to pos.");
+
+              request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
+              result = FALSE ;
+            }
+
+          if (result)
+            {
+              request_data->zoom_start = start ;
+              request_data->zoom_end = end ;
+            }
+        }
       else
-	{
-	  /* If we can't find the feature context it probably means that zmap hasn't had time to 
-	   * fetch any features before the peer has sent a command needing features. */
-	  zMapXMLParserRaiseParsingError(parser, "No features in context yet !") ;
+        {
+          if (request_data->window->feature_context)
+            {
+              request_data->orig_context = request_data->window->feature_context ;
 
-	  request_data->command_rc = REMOTE_COMMAND_RC_FAILED ;
-	  result = FALSE ;
-	}
+              /* We default to the master alignment and the first block within that alignment, the xml
+               * does not have to contain either making it easier for the peer. */
+              request_data->orig_align = request_data->orig_context->master_align ;
+              request_data->orig_block = zMap_g_hash_table_nth(request_data->orig_context->master_align->blocks, 0) ;
+
+              result = TRUE ;
+            }
+          else
+            {
+              /* If we can't find the feature context it probably means that zmap hasn't had time to 
+               * fetch any features before the peer has sent a command needing features. */
+              zMapXMLParserRaiseParsingError(parser, "No features in context yet !") ;
+
+              request_data->command_rc = REMOTE_COMMAND_RC_FAILED ;
+              result = FALSE ;
+            }
+        }
     }
 
   return result ;
@@ -1032,9 +1145,5 @@ static void revcompTransChildCoordsCB(gpointer data, gpointer user_data)
   return ;
 }
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-
 
 
