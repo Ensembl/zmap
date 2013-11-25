@@ -33,14 +33,11 @@
 #include <ZMap/zmap.h>
 
 #include <string.h>
+
 #include <ZMap/zmapUtils.h>
 #include <zmapWindowContainers.h>
 #include <zmapWindowCanvasItem_I.h>
 #include <zmapWindow_P.h>
-
-
-
-
 
 
 #define STRING_SIZE 50
@@ -68,7 +65,7 @@ void zmapWindowPrintCanvas(FooCanvas *canvas)
 
   zMapDebugPrintf("\nZoom x,y: %f, %f\n", canvas->pixels_per_unit_x, canvas->pixels_per_unit_y) ;
 
-  zMapDebugPrintf("\nScroll region bounds: %f -> %f,  %f -> %f\n", x1, x2, y1, y2) ;
+  zMapDebugPrintf("\nScroll region bounds: %.f -> %.f,  %.f -> %.f\n", x1, x2, y1, y2) ;
 
   zmapWindowPrintGroups(canvas) ;
 
@@ -197,7 +194,7 @@ void zmapWindowPrintW2I(FooCanvasItem *item, char *text, double x1_in, double y1
   if (!text)
     text = "Item" ;
 
-  zMapDebugPrintf("%s -  world(%f, %f)  ->  item(%f, %f)\n", text, x1_in, y1_in, x1, y1) ;
+  zMapDebugPrintf("%s -  world(%.f, %.f)  ->  item(%.f, %.f)\n", text, x1_in, y1_in, x1, y1) ;
 
   return ;
 }
@@ -214,7 +211,7 @@ void zmapWindowPrintI2W(FooCanvasItem *item, char *text, double x1_in, double y1
   if (!text)
     text = "Item" ;
 
-  zMapDebugPrintf("%s -  item(%f, %f)  ->  world(%f, %f)\n", text, x1_in, y1_in, x1, y1) ;
+  zMapDebugPrintf("%s -  item(%.f, %.f)  ->  world(%.f, %.f)\n", text, x1_in, y1_in, x1, y1) ;
 
 
   return ;
@@ -317,12 +314,12 @@ static void printItem(FooCanvasItem *item)
     {
       FooCanvasGroup *group = (FooCanvasGroup *)item ;
 
-      zMapDebugPrintf("FOO_CANVAS_GROUP Parent->Group: %p -> %p    Pos: %f, %f    Bounds: %f -> %f,  %f -> %f    World bounds: %f -> %f,  %f -> %f\n",
+      zMapDebugPrintf("FOO_CANVAS_GROUP Parent->Group: %p -> %p    Pos: %.f, %.f    Bounds: %.f -> %.f,  %.f -> %.f    World bounds: %.f -> %.f,  %.f -> %.f\n",
 	     group->item.parent, group, group->xpos, group->ypos, x1, x2, y1, y2, wx1, wx2, wy1, wy2) ;
     }
   else
     {
-      zMapDebugPrintf("FOO_CANVAS_ITEM Parent->Item: %p -> %p    Bounds: %f -> %f,  %f -> %f    World bounds: %f -> %f,  %f -> %f\n",
+      zMapDebugPrintf("FOO_CANVAS_ITEM Parent->Item: %p -> %p    Bounds: %.f -> %.f,  %.f -> %.f    World bounds: %.f -> %.f,  %.f -> %.f\n",
 	     item->parent, item, x1, x2, y1, y2, wx1, wx2, wy1, wy2) ;
     }
 
