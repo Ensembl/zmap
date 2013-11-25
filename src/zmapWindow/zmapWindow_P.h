@@ -621,13 +621,6 @@ typedef struct _ZMapWindowStruct
 
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* xremote stuff....xremote_reply_handler is set dynamically by functions that make a remote
-   * request to handle any reply, the data they require is in xremote_reply_data. */
-  gboolean xremote_client ;				    /* Is there a remote client ? */
-  ZMapWindowRemoteReplyHandlerFunc xremote_reply_handler ;
-  gpointer xremote_reply_data ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
   /* xremote, TRUE => there is a remote client. */
   gboolean xremote_client ;
 
@@ -893,12 +886,6 @@ GtkWidget *zmapWindowMakeMenuBar(ZMapWindow window) ;
 GtkWidget *zmapWindowMakeButtons(ZMapWindow window) ;
 GtkWidget *zmapWindowMakeFrame(ZMapWindow window) ;
 
-void zmapWindowPrintCanvas(FooCanvas *canvas) ;
-void zmapWindowPrintGroups(FooCanvas *canvas) ;
-void zmapWindowPrintItem(FooCanvasGroup *item) ;
-void zmapWindowPrintLocalCoords(char *msg_prefix, FooCanvasItem *item) ;
-
-void zmapWindowShowItem(FooCanvasItem *item) ;
 
 
 void zmapWindowListWindowCreate(ZMapWindow                   window,
@@ -961,21 +948,6 @@ ZMapWindowContainerGroup zmapWindowContainerGroupCreateWithBackground(FooCanvasG
 								      GdkColor *background_fill_colour,
 								      GdkColor *background_border_colour);
 
-
-int zmapWindowCoordToDisplay(ZMapWindow window, int coord) ;
-void zmapWindowCoordPairToDisplay(ZMapWindow window,
-				  int start_in, int end_in,
-				  int *display_start_out, int *display_end_out) ;
-int zmapWindowCoordFromDisplay(ZMapWindow window, int coord) ;
-int zmapWindowCoordFromOriginRaw(int start,int end, int coord, gboolean revcomped) ;
-ZMapStrand zmapWindowStrandToDisplay(ZMapWindow window, ZMapStrand strand_in) ;
-int zmapWindowWorldToSequenceForward(ZMapWindow window, int coord);
-
-double zmapWindowExt(double start, double end) ;
-void zmapWindowSeq2CanExt(double *start_inout, double *end_inout) ;
-void zmapWindowExt2Zero(double *start_inout, double *end_inout) ;
-void zmapWindowSeq2CanExtZero(double *start_inout, double *end_inout) ;
-void zmapWindowSeq2CanOffset(double *start_inout, double *end_inout, double offset) ;
 
 GQuark zMapWindowGetFeaturesetContainerID(ZMapWindow window,GQuark featureset_id);
 
@@ -1139,9 +1111,33 @@ GList *zmapWindowItemSortByPostion(GList *feature_item_list) ;
 void zmapWindowSortCanvasItems(FooCanvasGroup *group) ;
 FooCanvasGroup *zmapWindowFeatureItemsMakeGroup(ZMapWindow window, GList *feature_items) ;
 gboolean zmapWindowItemGetStrandFrame(FooCanvasItem *item, ZMapStrand *set_strand, ZMapFrame *set_frame) ;
+
+void zmapWindowPrintCanvas(FooCanvas *canvas) ;
+void zmapWindowPrintGroups(FooCanvas *canvas) ;
+void zmapWindowPrintItem(FooCanvasGroup *item) ;
+void zmapWindowPrintLocalCoords(char *msg_prefix, FooCanvasItem *item) ;
 void zmapWindowPrintItemCoords(FooCanvasItem *item) ;
 char *zmapWindowItemCoordsText(FooCanvasItem *item) ;
+void zmapWindowShowItem(FooCanvasItem *item) ;
 
+int zmapWindowCoordToDisplay(ZMapWindow window, int coord) ;
+void zmapWindowCoordPairToDisplay(ZMapWindow window,
+				  int start_in, int end_in,
+				  int *display_start_out, int *display_end_out) ;
+int zmapWindowCoordFromDisplay(ZMapWindow window, int coord) ;
+int zmapWindowCoordFromOriginRaw(int start,int end, int coord, gboolean revcomped) ;
+ZMapStrand zmapWindowStrandToDisplay(ZMapWindow window, ZMapStrand strand_in) ;
+
+double zmapWindowExt(double start, double end) ;
+void zmapWindowSeq2CanExt(double *start_inout, double *end_inout) ;
+void zmapWindowExt2Zero(double *start_inout, double *end_inout) ;
+void zmapWindowSeq2CanExtZero(double *start_inout, double *end_inout) ;
+void zmapWindowSeq2CanOffset(double *start_inout, double *end_inout, double offset) ;
+
+gboolean zmapWindowSeqToWorldCoords(ZMapWindow window,
+                                    int seq_start, int seq_end,
+                                    double *word_start, double *world_end) ;
+int zmapWindowWorldToSequenceForward(ZMapWindow window, int coord);
 gboolean zmapWindowWorld2SeqCoords(ZMapWindow window, FooCanvasItem *foo,
 				   double wx1, double wy1, double wx2, double wy2,
 				   FooCanvasGroup **block_grp_out, int *y1_out, int *y2_out) ;
