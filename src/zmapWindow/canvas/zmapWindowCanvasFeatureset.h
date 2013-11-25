@@ -344,6 +344,10 @@ int zMapWindowFeaturesetItemGetNFiltered(FooCanvasItem *item);
 
 void zMapCanvasFeaturesetDrawBoxMacro(ZMapWindowFeaturesetItem featureset, double x1,double x2, double y1,double y2,GdkDrawable * drawable,gboolean fill_set,gboolean outline_set,gulong fill,gulong outline);
 
+gboolean zMapCanvasFeaturesetSeq2World(ZMapWindowFeaturesetItem featureset,
+                                       int seq_start, int seq_end, double *world_start_out, double *world_end_out) ;
+
+
 
 #endif /* ZMAP_WINDOW_FEATURESET_H */
 

@@ -2855,7 +2855,11 @@ ZMapWindowCanvasFeature zmapWindowCanvasFeatureAlloc(zmapWindowCanvasFeatureType
 	}
       else
 	{
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  printf("found it\n") ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 	}
 
       if (!featureset_class_G->feature_free_list[type])
@@ -3092,6 +3096,46 @@ gulong zMapWindowCanvasFeatureGetHeatColour(gulong a, gulong b, double score)
   colour |= get_heat_rgb(ar,br,score) << 24;
 
   return(colour);
+}
+
+
+/* Convert given sequence coords into world coords, the sequence coords must lie
+ * within the block that represents the featureset. */
+gboolean zMapCanvasFeaturesetSeq2World(ZMapWindowFeaturesetItem featureset,
+                                       int seq_start, int seq_end, double *world_start_out, double *world_end_out)
+{
+  gboolean result = FALSE ;
+  double world_start, world_end ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+  /* THIS IS FROM zMapCanvasFeaturesetDrawBoxMacro(), the conversion should be a macro, it's done
+   * all over the place in the code..... */
+
+  /* Note the calc to get to world....from sequence.... */
+
+  /* get item canvas coords, following example from FOO_CANVAS_RE (used by graph items) */
+  /* NOTE CanvasFeature coords are the extent including decorations so we get coords from the feature */
+  foo_canvas_w2c (item->canvas, x1, y1 - featureset->start + featureset->dy, &cx1, &cy1);
+  foo_canvas_w2c (item->canvas, x2, y2 - featureset->start + featureset->dy + 1, &cx2, &cy2);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  /* Should do some checking on ranges here...seq_start/seq_end should be within block... */
+  if (featureset && world_start_out && world_end_out
+      && (seq_start < seq_end)
+      && (seq_start >= featureset->start && seq_start <= featureset->end)
+      && (seq_end >= featureset->start && seq_end <= featureset->end)
+    {
+      world_start = seq_start - featureset->start + featureset->dy ;
+      world_end = seq_end - featureset->start + featureset->dy ;
+
+      *world_start_out = world_start ;
+      *world_end_out = world_end ;
+
+      result = TRUE ;
+    }
+
+  return result ;
 }
 
 
