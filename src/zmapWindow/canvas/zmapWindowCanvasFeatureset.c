@@ -3100,7 +3100,7 @@ gulong zMapWindowCanvasFeatureGetHeatColour(gulong a, gulong b, double score)
 
 
 /* Convert given sequence coords into world coords, the sequence coords must lie
- * within the block that represents the featureset. */
+ * within the parent block coords, i.e. the sequence start/end, of the featureset. */
 gboolean zMapCanvasFeaturesetSeq2World(ZMapWindowFeaturesetItem featureset,
                                        int seq_start, int seq_end, double *world_start_out, double *world_end_out)
 {
@@ -3120,11 +3120,10 @@ gboolean zMapCanvasFeaturesetSeq2World(ZMapWindowFeaturesetItem featureset,
   foo_canvas_w2c (item->canvas, x2, y2 - featureset->start + featureset->dy + 1, &cx2, &cy2);
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-  /* Should do some checking on ranges here...seq_start/seq_end should be within block... */
   if (featureset && world_start_out && world_end_out
       && (seq_start < seq_end)
       && (seq_start >= featureset->start && seq_start <= featureset->end)
-      && (seq_end >= featureset->start && seq_end <= featureset->end)
+      && (seq_end >= featureset->start && seq_end <= featureset->end))
     {
       world_start = seq_start - featureset->start + featureset->dy ;
       world_end = seq_end - featureset->start + featureset->dy ;
@@ -3139,9 +3138,7 @@ gboolean zMapCanvasFeaturesetSeq2World(ZMapWindowFeaturesetItem featureset,
 }
 
 
-
-
-/* I HAD REMOVED THIS....CHECK OUT WHY IT IS STILL HERE.... */
+/* I HAD MOVED THIS....CHECK OUT WHY IT IS STILL HERE.... */
 
 /* basic feature draw a box
  * defined as a macro for efficiency to avoid multple copies of cut and paste
