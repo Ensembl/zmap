@@ -455,9 +455,6 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   PipeServer server = (PipeServer)server_in ;
 
-  zMapAssert(server) ;
-
-
   /* THERE'S SOMETHING WRONG HERE IF WE NEED TO GET THESE HERE..... */
   // these are needed by the GFF parser
   server->source_2_sourcedata = *source_2_sourcedata_inout;
@@ -488,8 +485,6 @@ static ZMapServerResponseType getStyles(void *server_in, GHashTable **styles_out
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   PipeServer server = (PipeServer)server_in ;
-
-  zMapAssert(server) ;
 
   // can take this warning out as zmapView should now read the styles file globally
   setErrMsg(server, "Reading styles from a GFF stream is not supported.") ;
@@ -674,8 +669,6 @@ static char *lastErrorMsg(void *server_in)
   char *err_msg = NULL ;
   PipeServer server = (PipeServer)server_in ;
 
-  zMapAssert(server_in) ;
-
   if (server->last_err_msg)
     err_msg = server->last_err_msg ;
 
@@ -851,7 +844,7 @@ static char *make_arg(PipeArg pipe_arg, char *prefix, PipeServer server)
 	q = g_strdup_printf("%s%s=%s",prefix,pipe_arg->arg,server->sequence_map->sequence);
       break;
     default:
-      zMapAssertNotReached() ;
+      zMapLogCritical("Bad pipe_arg->flag %d !!", pipe_arg->flag) ;
       break ;
     }
 
