@@ -75,12 +75,12 @@ ZMAP_DEFINE_ENUM(RemoteValidateRCType, REMOTE_VALIDATE_RC_LIST) ;
 
 
 GArray *zMapRemoteCommandCreateRequest(ZMapRemoteControl remote_control,
-				       char *command, char *view_id, int timeout_secs) ;
+                                       char *command, int timeout_secs, ...) ;
 GArray *zMapRemoteCommandCreateReplyFromRequest(ZMapRemoteControl remote_control,
-						char *original_request,
-						RemoteCommandRCType return_code, char *reason,
-						ZMapXMLUtilsEventStack reply,
-						char **error_out) ;
+                                                char *original_request,
+                                                RemoteCommandRCType return_code, char *reason,
+                                                ZMapXMLUtilsEventStack reply,
+                                                char **error_out) ;
 GArray *zMapRemoteCommandCreateReplyEnvelopeFromRequest(ZMapRemoteControl remote_control,
 							char *xml_request,
 							RemoteCommandRCType return_code, char *reason,
