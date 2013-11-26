@@ -146,8 +146,7 @@ static ZMapFeatureContextExecuteStatus collapseNewFeatureset(GQuark key,
   ZMapFeatureTypeStyle style;
   GList *features = NULL, *fl;
 
-
-  zMapAssert(feature_any && zMapFeatureIsValid(feature_any)) ;
+  zMapReturnValIfFail((feature_any && zMapFeatureIsValid(feature_any)), ZMAP_CONTEXT_EXEC_STATUS_ERROR) ;
 
   switch(feature_any->struct_type)
     {
@@ -224,7 +223,7 @@ static ZMapFeatureContextExecuteStatus collapseNewFeatureset(GQuark key,
     case ZMAPFEATURE_STRUCT_INVALID:
     default:
       {
-	zMapAssertNotReached();
+        zMapWarnIfReached() ;
 	break;
       }
     }
@@ -820,9 +819,8 @@ static void addCompositeFeature(GHashTable *hash, ZMapFeature composite, ZMapFea
     zMapLogMessage("seq lengths differ: %d, %d\n",composite->feature.homol.length,strlen(composite->feature.homol.sequence));
 #endif
 
-  /* THIS IS JUST TERRIBLE, TERRIBLE CODING.....TERRRIBLE..... */
   if(composite->feature.homol.sequence)
-    zMapAssert(composite->feature.homol.length == strlen(composite->feature.homol.sequence));
+    zMapWarnIfFail((composite->feature.homol.length == strlen(composite->feature.homol.sequence))) ;
 
   return ;
 }
@@ -978,18 +976,19 @@ static int makeConcensusSequence(ZMapFeature composite)
 static int makeGaps(ZMapFeature composite, ZMapFeature feature, GList **splice_list,
 		    double y1, double y2, double edge1, double edge2)
 {
-  GArray *new_gaps;
-  int q_len;
+  int q_len = 0 ;
+  GArray *new_gaps ;
+
+
+  zMapReturnValIfFail((feature->feature.homol.align), q_len) ;
 
   /* NOTE squashed is set on the features that are not displayed, nottheo one that is */
-  if(composite->flags.squashed_start || composite->flags.squashed_end)
+  if (composite->flags.squashed_start || composite->flags.squashed_end)
     {
       int i;
       ZMapAlignBlock first;
       ZMapAlignBlock edge = NULL;
       int diff;
-
-      zMapAssert(feature->feature.homol.align);
 
 #if SQUASH_DEBUG
       zMapLogMessage("%s", "\nsquashing...\n");
@@ -1056,7 +1055,7 @@ static int makeGaps(ZMapFeature composite, ZMapFeature feature, GList **splice_l
 
 	  /* THIS FAILS WHEN YOU GET MATCHES OUTSIDE OF THE COMPOSITE.....
 	   * AND WHAT'S AN ASSERT DOING HERE ANYWAY... */
-	  zMapAssert(diff >= 0);
+	  zMapWarnIfFail(diff >= 0) ;
 
 
 	  /* target blocks are always fwd strand coords */
@@ -1095,7 +1094,7 @@ static int makeGaps(ZMapFeature composite, ZMapFeature feature, GList **splice_l
 
 
 	  /* AND ANOTHER ONE.....OH DEAR..... */
-	  zMapAssert(diff >= 0);
+	  zMapWarnIfFail(diff >= 0) ;
 
 
 
@@ -1388,6 +1387,8 @@ static gint featureGapCompare(gconstpointer a, gconstpointer b)
   ZMapFeature feata = (ZMapFeature) a;
   ZMapFeature featb = (ZMapFeature) b;	/* these must be alignments */
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* MALCOLM TESTED FOR NULL PTRS WHICH IS SURELY CRAZY.....
    * THIS SURELY HAS TO SAY THAT THERE IS SOMETHING DEEPLY WRONG WITH THE LIST, NOT WITH
    * GLIB.......THIS IS DEEPLY DISTURBING AS IT IMPLIES THE LISTS ARE RUBBISH....
@@ -1396,6 +1397,14 @@ static gint featureGapCompare(gconstpointer a, gconstpointer b)
   /* we can get NULLs due to GLib being silly */
   /* this code is pedantic, but I prefer stable sorting */
   zMapAssert(a && b) ;
+
+  /* I'VE REPLACED IT WITH THE NEW TEST MACRO BUT THIS REALLY NEEDS SORTING OUT.... */
+
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  zMapReturnValIfFail((a && b), result) ;
+
+
+
 
   /* Let's try a new sort...first by strand, then overall start/end then by gaps. */
   if (feata->strand == ZMAPSTRAND_FORWARD && featb->strand == ZMAPSTRAND_REVERSE)

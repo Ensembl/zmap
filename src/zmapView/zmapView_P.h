@@ -384,7 +384,6 @@ void zmapViewBusyFull(ZMapView zmap_view, gboolean busy, const char *file, const
   zmapViewBusyFull((VIEW), (BUSY), __FILE__, __PRETTY_FUNCTION__)
 
 gboolean zmapAnyConnBusy(GList *connection_list) ;
-char *zmapViewGetStatusAsStr(ZMapViewState state) ;
 
 gboolean zmapViewBlixemLocalSequences(ZMapView view, ZMapFeatureBlock block, ZMapHomolType align_type,
 				      int offset, int position,

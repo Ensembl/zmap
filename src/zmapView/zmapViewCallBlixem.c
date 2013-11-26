@@ -33,13 +33,14 @@
  *-------------------------------------------------------------------
  */
 
+#include <ZMap/zmap.h>
+
 #include <unistd.h>					    /* for getlogin() */
 #include <string.h>					    /* for memcpy */
 #include <sys/types.h>					    /* for chmod() */
 #include <sys/stat.h>					    /* for chmod() */
 #include <glib.h>
 
-#include <ZMap/zmap.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapSO.h>
 #include <ZMap/zmapGLibUtils.h>
@@ -3258,8 +3259,6 @@ static int findFeature(gconstpointer a, gconstpointer b)
 static void freeSequences(gpointer data, gpointer user_data_unused)
 {
   ZMapSequence sequence = (ZMapSequence)data ;
-
-  zMapAssert(sequence && sequence->sequence) ;
 
   g_free(sequence->sequence) ;
   g_free(sequence) ;

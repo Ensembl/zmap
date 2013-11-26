@@ -122,7 +122,7 @@ gpointer zMapViewFindView(ZMapView view_in, gpointer view_id)
 
 void zMapViewGetVisible(ZMapViewWindow view_window, double *top, double *bottom)
 {
-  zMapAssert(view_window && top && bottom) ;
+  zMapReturnIfFail((view_window && top && bottom)) ;
 
   zMapWindowGetVisible(view_window->window, top, bottom) ;
 
@@ -582,15 +582,12 @@ GHashTable *zmapViewCWHHashCreate(void)
  *************************************************/
 void zmapViewCWHSetList(GHashTable *hash, ZMapFeatureContext context, GList *list)
 {
-  ContextDestroyList destroy_list = NULL; /* Just to fix up the GList hassle. */
+  ContextDestroyList destroy_list ;
 
-  if((destroy_list = g_new0(ContextDestroyListStruct, 1)))
-    {
-      destroy_list->window_list = list;
-      g_hash_table_insert(hash, context, destroy_list);
-    }
-  else
-    zMapAssertNotReached();
+  destroy_list = g_new0(ContextDestroyListStruct, 1) ;
+  destroy_list->window_list = list ;
+
+  g_hash_table_insert(hash, context, destroy_list) ;
 
   return ;
 }
@@ -610,24 +607,31 @@ gboolean zmapViewCWHIsLastWindow(GHashTable *hash, ZMapFeatureContext context, Z
   gboolean last = FALSE;
   int before = 0, after = 0;
 
-  if((destroy_list = g_hash_table_lookup(hash, context)))
+  if ((destroy_list = g_hash_table_lookup(hash, context)))
     {
-      zMapAssert( destroy_list->window_list );
-
-      before = g_list_length(destroy_list->window_list);
-
-      /* The _only_ reason we need the struct! */
-      destroy_list->window_list = g_list_remove(destroy_list->window_list, window);
-
-      after  = g_list_length(destroy_list->window_list);
-
-      if(before > after)
+      if (!(destroy_list->window_list))
         {
-          if(after == 0)
-            last = TRUE;
+          zMapLogCritical("%s", "destroy_list->window_list is NULL, cannot check for last window !") ;
         }
       else
-        zMapLogCritical("%s", "Failed to find window in CWH list!");
+        {
+          before = g_list_length(destroy_list->window_list);
+
+          /* The _only_ reason we need the struct! */
+          destroy_list->window_list = g_list_remove(destroy_list->window_list, window);
+
+          after  = g_list_length(destroy_list->window_list);
+
+          if (before > after)
+            {
+              if(after == 0)
+                last = TRUE;
+            }
+          else
+            {
+              zMapLogCritical("%s", "Failed to find window in CWH list!");
+            }
+        }
     }
 
 

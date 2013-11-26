@@ -380,16 +380,16 @@ static gboolean thread_debug_G = FALSE ;
  *  */
 void zMapViewInit(ZMapViewCallbacks callbacks)
 {
-  zMapAssert(!view_cbs_G) ;
-  /* We have to assert alot here... */
-  zMapAssert(callbacks);
-  zMapAssert(callbacks->enter);
-  zMapAssert(callbacks->leave);
-  zMapAssert(callbacks->load_data);
-  zMapAssert(callbacks->focus);
-  zMapAssert(callbacks->select);
-  zMapAssert(callbacks->visibility_change);
-  zMapAssert(callbacks->state_change && callbacks->destroy) ;
+
+  zMapReturnIfFail((callbacks
+                    && callbacks->enter
+                    && callbacks->leave
+                    && callbacks->load_data
+                    && callbacks->focus
+                    && callbacks->select
+                    && callbacks->visibility_change
+                    && callbacks->state_change
+                    && callbacks->destroy)) ;
 
   /* Now we can get on. */
   view_cbs_G = g_new0(ZMapViewCallbacksStruct, 1) ;
@@ -451,12 +451,9 @@ ZMapViewWindow zMapViewCreate(GtkWidget *view_container, ZMapFeatureSequenceMap 
   char *view_name ;
 
   /* No callbacks, then no view creation. */
-  zMapAssert(view_cbs_G);
-  zMapAssert(GTK_IS_WIDGET(view_container));
-  /*! \todo #warning need to assert dataset too */
-  zMapAssert(sequence_map->sequence);
-//  zMapAssert(start > 0);
-  zMapAssert((sequence_map->end == 0 || sequence_map->end >= sequence_map->start)) ;
+  zMapReturnValIfFail((GTK_IS_WIDGET(view_container)), view_window);
+  zMapReturnValIfFail((sequence_map->sequence
+                       && (sequence_map->start > 0 && sequence_map->start <= sequence_map->end)), view_window) ;
 
   /* Set up debugging for threads and servers, we do it here so that user can change setting
    * in config file and next time they create a view the debugging will go on/off */
@@ -528,7 +525,7 @@ void zMapViewSetupNavigator(ZMapViewWindow view_window, GtkWidget *canvas_widget
 {
   ZMapView zmap_view ;
 
-  zMapAssert(view_window) ;
+  zMapReturnIfFail((view_window)) ;
 
   zmap_view = view_window->parent_view ;
 
@@ -830,43 +827,32 @@ ZMapViewWindow zMapViewCopyWindow(ZMapView zmap_view, GtkWidget *parent_widget,
 				  ZMapWindow copy_window, ZMapWindowLockType window_locking)
 {
   ZMapViewWindow view_window = NULL ;
+  GHashTable *copy_styles ;
 
+  zMapReturnValIfFail((zmap_view->state != ZMAPVIEW_DYING), view_window) ;
+  zMapReturnValIfFail((zmap_view && parent_widget && zmap_view->window_list), view_window) ;
 
-  if (zmap_view->state != ZMAPVIEW_DYING)
+  /* the view _must_ already have a window _and_ data. */
+  copy_styles = zmap_view->context_map.styles ;
+
+  view_window = createWindow(zmap_view, NULL) ;
+
+  if (!(view_window->window = zMapWindowCopy(parent_widget, zmap_view->view_sequence,
+                                             view_window, copy_window,
+                                             zmap_view->features,
+                                             zmap_view->context_map.styles, copy_styles,
+                                             window_locking)))
     {
-      GHashTable *copy_styles ;
+      /* should glog and/or gerror at this stage....really need g_errors.... */
+      /* should free view_window.... */
 
+      view_window = NULL ;
+    }
+  else
+    {
+      /* add to list of windows.... */
+      zmap_view->window_list = g_list_append(zmap_view->window_list, view_window) ;
 
-      /* the view _must_ already have a window _and_ data. */
-      zMapAssert(zmap_view);
-      zMapAssert(parent_widget);
-      zMapAssert(zmap_view->window_list);
-#if 0
-RT 227342
-now that we can use Zmap while data is loading this is a bit silly
-      zMapAssert(zmap_view->state == ZMAPVIEW_LOADED) ;
-#endif
-      copy_styles = zmap_view->context_map.styles ;
-
-      view_window = createWindow(zmap_view, NULL) ;
-
-      if (!(view_window->window = zMapWindowCopy(parent_widget, zmap_view->view_sequence,
-						 view_window, copy_window,
-						 zmap_view->features,
-						 zmap_view->context_map.styles, copy_styles,
-						 window_locking)))
-	{
-	  /* should glog and/or gerror at this stage....really need g_errors.... */
-	  /* should free view_window.... */
-
-	  view_window = NULL ;
-	}
-      else
-	{
-	  /* add to list of windows.... */
-	  zmap_view->window_list = g_list_append(zmap_view->window_list, view_window) ;
-
-	}
     }
 
   return view_window ;
@@ -879,7 +865,7 @@ int zMapViewNumWindows(ZMapViewWindow view_window)
   int num_windows = 0 ;
   ZMapView zmap_view ;
 
-  zMapAssert(view_window) ;
+  zMapReturnValIfFail((view_window), num_windows) ;
 
   zmap_view = view_window->parent_view ;
 
@@ -906,7 +892,7 @@ ZMapViewWindow zMapViewRemoveWindow(ZMapViewWindow view_window_in)
   ZMapViewWindow view_window = view_window_in ;
   ZMapView zmap_view ;
 
-  zMapAssert(view_window) ;
+  zMapReturnValIfFail((view_window), view_window_in) ;
 
   zmap_view = view_window->parent_view ;
 
@@ -1109,7 +1095,7 @@ void zmapViewEraseFeatures(ZMapView view, ZMapFeatureContext context, GList **fe
   return ;
 }
 
-/* Force a redraw of all the windows in a view, may be reuqired if it looks like
+/* Force a redraw of all the windows in a view, may be required if it looks like
  * drawing has got out of whack due to an overloaded network etc etc. */
 void zMapViewRedraw(ZMapViewWindow view_window)
 {
@@ -1117,7 +1103,7 @@ void zMapViewRedraw(ZMapViewWindow view_window)
   GList* list_item ;
 
   view = zMapViewGetView(view_window) ;
-  zMapAssert(view) ;
+  zMapReturnIfFail(view) ;
 
   if (view->state == ZMAPVIEW_LOADED)
     {
@@ -1510,7 +1496,7 @@ ZMapWindow zMapViewGetWindow(ZMapViewWindow view_window)
 {
   ZMapWindow window = NULL ;
 
-  zMapAssert(view_window) ;
+  zMapReturnValIfFail((view_window), window) ;
 
   if (view_window->parent_view->state != ZMAPVIEW_DYING)
     window = view_window->window ;
@@ -1522,7 +1508,7 @@ ZMapWindowNavigator zMapViewGetNavigator(ZMapView view)
 {
   ZMapWindowNavigator navigator = NULL ;
 
-  zMapAssert(view) ;
+  zMapReturnValIfFail((view), navigator) ;
 
   if (view->state != ZMAPVIEW_DYING)
     navigator = view->navigator_window ;
@@ -1533,16 +1519,19 @@ ZMapWindowNavigator zMapViewGetNavigator(ZMapView view)
 
 GList *zMapViewGetWindowList(ZMapViewWindow view_window)
 {
-  zMapAssert(view_window);
+  GList *window_list = NULL ;
 
-  return view_window->parent_view->window_list;
+  zMapReturnValIfFail((view_window), window_list) ;
+
+  window_list = view_window->parent_view->window_list ;
+
+  return window_list ;
 }
 
 
 void zMapViewSetWindowList(ZMapViewWindow view_window, GList *list)
 {
-  zMapAssert(view_window);
-  zMapAssert(list);
+  zMapReturnIfFail((view_window && list)) ;
 
   view_window->parent_view->window_list = list;
 
@@ -1633,24 +1622,6 @@ void zMapViewDestroy(ZMapView zmap_view)
  *                          Internal routines
  */
 
-
-char *zmapViewGetStatusAsStr(ZMapViewState state)
-{
-  /* Array must be kept in synch with ZmapState enum in ZMap.h */
-  static char *zmapStates[] = {"ZMAPVIEW_INIT","ZMAPVIEW_MAPPED",
-//			       "ZMAPVIEW_NOT_CONNECTED", "ZMAPVIEW_NO_WINDOW",
-			       "ZMAPVIEW_CONNECTING", "ZMAPVIEW_CONNECTED",
-			       "ZMAPVIEW_LOADING", "ZMAPVIEW_LOADED", "ZMAPVIEW_UPDATING",
-			       "ZMAPVIEW_RESETTING", "ZMAPVIEW_DYING"} ;
-  char *state_str ;
-
-  zMapAssert(state >= ZMAPVIEW_INIT);
-  zMapAssert(state <= ZMAPVIEW_DYING) ;
-
-  state_str = zmapStates[state] ;
-
-  return state_str ;
-}
 
 
 GList *zmapViewGetIniSources(char *config_file, char *config_str, char ** stylesfile)
@@ -2938,7 +2909,6 @@ static ZMapViewWindow addWindow(ZMapView zmap_view, GtkWidget *parent_widget)
 
   /* There are no steps where this can fail at the moment. */
   window = zMapWindowCreate(parent_widget, zmap_view->view_sequence, view_window, NULL, zmap_view->flags) ;
-  zMapAssert(window) ;
 
   view_window->window = window ;
 
@@ -3240,7 +3210,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 			    if (zmap_view->state != ZMAPVIEW_LOADING && zmap_view->state != ZMAPVIEW_UPDATING)
 			      {
 				THREAD_DEBUG_MSG(thread, "got data but ZMap state is - %s",
-						 zmapViewGetStatusAsStr(zMapViewGetStatus(zmap_view))) ;
+						 zMapView2Str(zMapViewGetStatus(zmap_view))) ;
 			      }
 
 			    zmapViewStepListStepProcessRequest(view_con, request) ;
@@ -4987,7 +4957,6 @@ static void getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature_req
   if (feature_req->context)
     {
       new_features = feature_req->context ;
-      zMapAssert(!new_features->no_parent);
       
       connect_data->num_features = feature_req->num_features ;
       
@@ -5030,12 +4999,10 @@ static ZMapFeatureContextExecuteStatus add_default_styles(GQuark key,
   ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
   ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
   ZMapView view = (ZMapView) user_data;
-//  ZMapFeatureSource src2src;
   ZMapFeatureTypeStyle style;
   ZMapFeatureColumn f_col;
-//  ZMapFeatureSetDesc set_data ;
 
-  zMapAssert(feature_any && zMapFeatureIsValid(feature_any)) ;
+  zMapReturnValIfFail((feature_any && zMapFeatureIsValid(feature_any)), ZMAP_CONTEXT_EXEC_STATUS_ERROR) ;
 
   switch(feature_any->struct_type)
     {
@@ -5107,7 +5074,7 @@ static ZMapFeatureContextExecuteStatus add_default_styles(GQuark key,
     case ZMAPFEATURE_STRUCT_INVALID:
     default:
       {
-      zMapAssertNotReached();
+        zMapWarnIfReached() ;
       break;
       }
     }
@@ -5462,7 +5429,7 @@ static void commandCB(ZMapWindow window, void *caller_data, void *window_data)
       
     default:
       {
-	zMapAssertNotReached() ;
+        zMapWarnIfReached() ;
 	break ;
       }
     }

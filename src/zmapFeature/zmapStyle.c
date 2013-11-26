@@ -2109,8 +2109,6 @@ static void zmap_feature_type_style_set_property_full(ZMapFeatureTypeStyle style
    */
   if(copy && param->id != STYLE_PROP_IS_SET)
     {
-      ZMapStyleParam isp = &zmapStyleParams_G[STYLE_PROP_IS_SET];
-
       /* if not we are in deep doo doo
        * This relies on STYLE_PROP_IS_SET being the first installed or
        * lowest numbered one and therefore the first one copied

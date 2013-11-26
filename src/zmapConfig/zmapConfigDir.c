@@ -237,7 +237,7 @@ char *zMapConfigDirGetZmapHomeFile(void)
   ZMapConfigDir dir_context = dir_context_G ;
 
   if (!dir_context) 
-    config_file ;
+    return config_file ;
 
   config_file = dir_context->zmap_conf_file ;
 

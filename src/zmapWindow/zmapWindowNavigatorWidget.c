@@ -454,8 +454,8 @@ static void fetchScrollCoords(ZMapNavigatorClassData class_data,
   double border_x = 2.0;
   double border_y = border;
   double max_x, max_y, container_width, container_height;
-  if (!x1 || !x2 || !y1 || !y2)
-    return 
+
+  zMapReturnIfFail((!x1 || !x2 || !y1 || !y2)) ;
 
   max_x = 32000.0;             /* only canvas limit */
   max_y = class_data->span;	//(double)(NAVIGATOR_SIZE);

@@ -611,11 +611,11 @@ GQuark zMapFeatureSetCreateID(char *set_name)
 
 void zMapFeatureSortGaps(GArray *gaps)
 {
-  if (!gaps) 
-    return gaps ;
-
-  /* Sort the array of gaps. performance hit? */
-  g_array_sort(gaps, sortGapsByTarget);
+  if (gaps) 
+    {
+      /* Sort the array of gaps. performance hit? */
+      g_array_sort(gaps, sortGapsByTarget);
+    }
 
   return ;
 }
@@ -724,10 +724,8 @@ GList *zMapStylesGetNames(GHashTable *styles)
 {
   GList *quark_list = NULL ;
 
-  if (!styles) 
-    quark_list ;
-
-  g_hash_table_foreach(styles, addTypeQuark, (void *)&quark_list) ;
+  if (styles) 
+    g_hash_table_foreach(styles, addTypeQuark, (void *)&quark_list) ;
 
   return quark_list ;
 }

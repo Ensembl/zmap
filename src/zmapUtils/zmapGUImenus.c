@@ -452,14 +452,13 @@ static char *makeMenuItemName(char *string)
  */
 static char *makeMenuTitleName(char *string, char *escape_chars)
 {
-  char *item_string ;
+  char *item_string = NULL ;
   GString *tmp ;
   char *cp ;
   gssize pos ;
 
-  /* zMapAssert(string && *string) ;*/
-  if (!string || !*string) 
-    return item_string ; 
+
+  zMapReturnValIfFail((!string || !*string), item_string) ;
 
   tmp = g_string_new(string) ;
 

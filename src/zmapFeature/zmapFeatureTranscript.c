@@ -195,8 +195,8 @@ gboolean zMapFeatureMergeTranscriptCDS(ZMapFeature src_feature, ZMapFeature dest
 {
   gboolean result = FALSE ;
 
-  if (!src_feature || (src_feature->type != ZMAPSTYLE_MODE_TRANSCRIPT) ||
-             dest_feature && (dest_feature->type != ZMAPSTYLE_MODE_TRANSCRIPT)) 
+  if (!src_feature || (src_feature->type != ZMAPSTYLE_MODE_TRANSCRIPT)
+      || (dest_feature && (dest_feature->type != ZMAPSTYLE_MODE_TRANSCRIPT)))
     return result ;
 
   /* There ought to be sanity checking of coords of cds/exons/introns here.... */

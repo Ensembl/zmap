@@ -942,16 +942,16 @@ static GArray *translateDNASegment(char *dna_in, int from, int length, ZMapStran
 static GArray *doDNATranslation(ZMapGeneticCode code_table, GArray *obj_dna, ZMapStrand strand,
 				gboolean encode, gboolean include_stop)
 {
-  GArray *pep ;
+  GArray *pep = NULL ;
   int dna_min, dna_max ;
   int bases, pepmax, x, code_table_index ;
   char cc ;
   char str_null = '\0' ;
   CodonTranslatorFunc trans_func ;
 
-  /* zMapAssert(code_table && obj_dna) ;*/
-  if (!code_table || !obj_dna) 
-    return pep ; 
+
+  zMapReturnValIfFail((!code_table || !obj_dna),  pep) ;
+
 
   /* Set up appropriate translator func. */
   if (strand == ZMAPSTRAND_FORWARD)

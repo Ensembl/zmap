@@ -115,9 +115,8 @@ char **zMapCmdLineFinalArg(void)
   char **final_arg = NULL ;
   ZMapCmdLineArgs arg_context ;
 
-  /* zMapAssert(arg_context_G) ;*/
-  if (!arg_context_G) 
-    return ; 
+  zMapReturnValIfFail((arg_context_G), final_arg) ; 
+
   arg_context = arg_context_G ;
 
   if (arg_context->files_arg &&
@@ -147,9 +146,9 @@ gboolean zMapCmdLineArgsValue(char *arg_name, ZMapCmdLineArgsType *result)
   get_entries_func get_entries[GET_ENTRIES_COUNT] = { get_main_entries, get_config_entries };
   int i;
 
-  /* zMapAssert(arg_context_G) ;*/
-  if (!arg_context_G) 
-    return ; 
+  zMapReturnValIfFail((arg_context_G), val_set) ; 
+
+
   arg_context = arg_context_G ;
 
   for(i = 0; i < GET_ENTRIES_COUNT; i++)

@@ -379,7 +379,7 @@ char *zMapGetZMapStatus(ZMap zmap)
   if (!(zmap->state >= ZMAP_INIT && zmap->state <= ZMAP_DYING) ) 
     return state ;
 
-  state = zmapStates[zmap->state] ;
+  state = (char *)zmapStates[zmap->state] ;
 
   return state ;
 }

@@ -737,7 +737,7 @@ static ZMapPaneChild whichChildOfPane(GtkWidget *child)
 
   pane_parent = gtk_widget_get_parent(child) ;
   if (!GTK_IS_PANED(pane_parent)) 
-    pane_child ;
+    return pane_child ;
 
   if (myGetChild(pane_parent, 1) == child)
     pane_child = ZMAP_PANE_CHILD_1 ;

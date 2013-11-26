@@ -82,7 +82,11 @@ static gboolean getCDSStartAttr(char *attributes, gboolean *start_not_found_out,
 static gboolean getCDSEndAttr(char *attributes, gboolean *end_not_found_out) ;
 static gboolean getVariationString(char *attributes,
 				   GQuark *SO_acc_out, char **name_str_out, char **variation_str_out) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void getFeatureArray(GQuark key_id, gpointer data, gpointer user_data) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 static void destroyFeatureArray(gpointer data) ;
 
 static gboolean loadGaps(char *currentPos, GArray *gaps,
@@ -92,15 +96,26 @@ static gboolean loadAlignString(ZMapGFFParser parser,
 				ZMapStrand ref_strand, int ref_start, int ref_end,
 				ZMapStrand match_strand, int match_start, int match_end) ;
 static void mungeFeatureType(char *source, ZMapStyleMode *type_inout);
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static gboolean getNameFromAttr(char *attributes, char **name) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 static gboolean getNameFromNote(char *attributes, char **name) ;
 static char *getNoteText(char *attributes) ;
 static gboolean resizeBuffers(ZMapGFFParser parser, gsize line_length) ;
 static gboolean resizeFormatStrs(ZMapGFFParser parser) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void normaliseFeatures(GData **feature_sets) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void checkFeatureSetCB(GQuark key_id, gpointer data, gpointer user_data_unused) ;
 static void checkFeatureCB(GQuark key_id, gpointer data, gpointer user_data_unused) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 static char *find_tag(char * str, char *tag) ;
 
@@ -2644,6 +2659,8 @@ static gboolean getVariationString(char *attributes,
 }
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* This is a GDataForeachFunc() and is called for each element of a GData list as a result
  * of a call to zmapGFFGetFeatures(). The function adds the feature array returned
  * in the GData element to the GArray in user_data. */
@@ -2657,6 +2674,8 @@ static void getFeatureArray(GQuark key_id, gpointer data, gpointer user_data)
 
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 /* This is a GDestroyNotify() and is called for each element in a GData list when
@@ -2705,6 +2724,8 @@ static void mungeFeatureType(char *source, ZMapStyleMode *type_inout)
 
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* Parse out "Name <objname> ;"  */
 static gboolean getNameFromAttr(char *attributes, char **name_out)
 {
@@ -2741,6 +2762,8 @@ static gboolean getNameFromAttr(char *attributes, char **name_out)
 
   return result ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
@@ -2854,7 +2877,7 @@ static gboolean resizeBuffers(ZMapGFFParser parser_base, gsize line_length)
 
       for (i = 0 ; i < ZMAPGFF_NUMBER_PARSEBUF ; i++)
 	{
-	  char **buf_ptr = parser->buffers[i] ;
+	  char *buf_ptr = parser->buffers[i] ;
 
 	  g_free(buf_ptr) ;				    /* g_free() handles NULL pointers. */
 
@@ -2971,6 +2994,8 @@ static gboolean resizeFormatStrs(ZMapGFFParser parser_base)
 
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* Features may be created incomplete by 'faulty' GFF files, here we try
  * to make them valid. */
 static void normaliseFeatures(GData **feature_sets)
@@ -2980,8 +3005,12 @@ static void normaliseFeatures(GData **feature_sets)
 
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* A GDataForeachFunc() which checks to see if the dataset passed in has
  * mulitline features and if they are then checks each feature to make sure
  * it is complete/valid. Currently this is only transcripts...see checkFeatureCB().
@@ -2997,6 +3026,7 @@ static void checkFeatureSetCB(GQuark key_id, gpointer data, gpointer user_data_u
 
   return ;
 }
+
 
 /* A GDataForeachFunc() which checks to see if the feature passed in is
  * complete/valid. Currently just checks transcripts to make sure they
@@ -3018,6 +3048,7 @@ static void checkFeatureCB(GQuark key_id, gpointer data, gpointer user_data_unus
 
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 /*

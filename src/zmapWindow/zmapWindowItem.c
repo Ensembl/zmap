@@ -493,15 +493,14 @@ FooCanvasItem *zMapWindowFindFeatureItemByItem(ZMapWindow window, FooCanvasItem 
   ZMapWindowContainerFeatureSet container;
 
   /* Retrieve the feature item info from the canvas item. */
-  feature = zMapWindowCanvasItemGetFeature(item) ;
-  if (!feature)
-    matching_item ;
+  if ((feature = zMapWindowCanvasItemGetFeature(item)))
+    {
+      container = (ZMapWindowContainerFeatureSet)zmapWindowContainerCanvasItemGetContainer(item) ;
 
-  container = (ZMapWindowContainerFeatureSet)zmapWindowContainerCanvasItemGetContainer(item) ;
-
-  matching_item = zmapWindowFToIFindFeatureItem(window,window->context_to_item,
+      matching_item = zmapWindowFToIFindFeatureItem(window,window->context_to_item,
 						    container->strand, container->frame,
 						    feature) ;
+    }
 
   return matching_item ;
 }
@@ -517,20 +516,18 @@ FooCanvasItem *zMapWindowFindFeatureItemChildByItem(ZMapWindow window, FooCanvas
   ZMapFeature feature ;
   ZMapWindowContainerFeatureSet container;
 
-  if (!window && !item || (child_start <= 0) || (child_end <= 0) || (child_start > child_end)) 
-    return matching_item ;
-
+  zMapReturnValIfFail((!window || !item || (child_start <= 0) || (child_end <= 0) || (child_start > child_end)),
+                      matching_item) ;
 
   /* Retrieve the feature item info from the canvas item. */
-  feature = zmapWindowItemGetFeature(item);
-  if (!feature) 
-    return matching_item ;
+  if ((feature = zmapWindowItemGetFeature(item)))
+    {
+      container = (ZMapWindowContainerFeatureSet)zmapWindowContainerCanvasItemGetContainer(item) ;
 
-  container = (ZMapWindowContainerFeatureSet)zmapWindowContainerCanvasItemGetContainer(item) ;
-
-  /* Find the item that matches */
-  matching_item = zmapWindowFToIFindFeatureItem(window,window->context_to_item,
-						container->strand, container->frame, feature) ;
+      /* Find the item that matches */
+      matching_item = zmapWindowFToIFindFeatureItem(window,window->context_to_item,
+                                                    container->strand, container->frame, feature) ;
+    }
 
   return matching_item ;
 }

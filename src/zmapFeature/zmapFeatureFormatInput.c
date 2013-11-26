@@ -246,7 +246,7 @@ gboolean zMapFeatureFormatType(gboolean SO_compliant, gboolean default_to_basic,
 char *zMapFeatureLevelType2Str(ZMapFeatureLevelType type)
 {
   static char *struct_types[] = {".", "Context", "Alignment", "Block", "FeatureSet", "Feature"} ;
-  char *type_str ;
+  char *type_str = NULL ;
 
   if ((type != ZMAPFEATURE_STRUCT_INVALID) && (type != ZMAPFEATURE_STRUCT_CONTEXT)
       && (type != ZMAPFEATURE_STRUCT_ALIGN) && (type != ZMAPFEATURE_STRUCT_BLOCK)
@@ -408,7 +408,7 @@ char *zMapFeatureFrame2Str(ZMapFrame frame)
   if ((frame != ZMAPFRAME_NONE) && (frame != ZMAPFRAME_0) && (frame != ZMAPFRAME_1) && (frame != ZMAPFRAME_2)) 
     return frame_str ;
 
-  frame_str = frames[frame] ;
+  frame_str = (char *)frames[frame] ;
 
   return frame_str ;
 }
@@ -482,7 +482,7 @@ char *zMapFeaturePhase2Str(ZMapPhase phase)
   if ((phase != ZMAPPHASE_NONE) && (phase != ZMAPPHASE_0) && (phase != ZMAPPHASE_1) && (phase != ZMAPPHASE_2) ) 
     return phase_str ;
 
-  phase_str = phases[phase] ;
+  phase_str = (char *)phases[phase] ;
 
   return phase_str ;
 }
@@ -498,7 +498,7 @@ char *zMapFeatureHomol2Str(ZMapHomolType homol)
   if ((homol != ZMAPHOMOL_NONE) && (homol != ZMAPHOMOL_N_HOMOL) && (homol != ZMAPHOMOL_X_HOMOL) && (homol != ZMAPHOMOL_TX_HOMOL))
     return homol_str ;
 
-  homol_str = homols[homol] ;
+  homol_str = (char *)homols[homol] ;
 
   return homol_str ;
 }

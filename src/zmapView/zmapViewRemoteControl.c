@@ -1039,58 +1039,71 @@ static gboolean xml_request_start_cb(gpointer user_data, ZMapXMLElement set_elem
   ZMapXMLAttribute attr = NULL;
   char *err_msg = NULL ;
 
-  request_data->cmd_desc = cmdGetDesc(request_data->command_id) ;
-
-  zMapAssert(request_data->cmd_desc) ;
-
-
-  request_data->orig_context = zMapViewGetFeatures(request_data->view_window->parent_view) ;
-
-
-  /* For actions that change the feature context create an "edit" context. */
-  if (request_data->cmd_desc->is_edit)
+  if (!(request_data->cmd_desc = cmdGetDesc(request_data->command_id)))
     {
-      request_data->edit_context
-	= (ZMapFeatureContext)zMapFeatureAnyCopy((ZMapFeatureAny)(request_data->orig_context)) ;
+      err_msg = g_strdup_printf("Could not find command description for command_id %s in xml request.",
+                                g_quark_to_string(request_data->command_id)) ;
 
-      if (request_data->command_id == g_quark_from_string(ZACP_REPLACE_FEATURE))
-	request_data->replace_context
-	  = (ZMapFeatureContext)zMapFeatureAnyCopy((ZMapFeatureAny)(request_data->orig_context)) ;
-    }
+      zMapLogCritical("%s", err_msg) ;
 
-
-  if (request_data->command_id == g_quark_from_string(ZACP_LOAD_FEATURES))
-    {
-      if ((attr = zMapXMLElementGetAttributeByName(set_element, "load")))
-	{
-	  GQuark load_id ;
-
-	  load_id = zMapXMLAttributeGetValue(attr) ;
-
-	  if (zMapLogQuarkIsStr(load_id, "mark"))
-	    {
-	      request_data->use_mark = TRUE ;
-	    }
-	  else if (zMapLogQuarkIsStr(load_id, "full"))
-	    {
-	      request_data->use_mark = FALSE ;
-	    }
-	  else
-	    {
-	      err_msg = g_strdup_printf("Value \"%s\" for \"load\" attr is unknown.", g_quark_to_string(load_id)) ;
-
-	      result = FALSE ;
-	    }
-	}
-    }
-
-  if (!result)
-    {
       request_data->command_rc = REMOTE_COMMAND_RC_BAD_XML ;
 
       zMapXMLParserRaiseParsingError(parser, err_msg) ;
 
       g_free(err_msg) ;
+
+      result = FALSE ;
+    }
+  else
+    {
+      request_data->orig_context = zMapViewGetFeatures(request_data->view_window->parent_view) ;
+
+
+      /* For actions that change the feature context create an "edit" context. */
+      if (request_data->cmd_desc->is_edit)
+        {
+          request_data->edit_context
+            = (ZMapFeatureContext)zMapFeatureAnyCopy((ZMapFeatureAny)(request_data->orig_context)) ;
+
+          if (request_data->command_id == g_quark_from_string(ZACP_REPLACE_FEATURE))
+            request_data->replace_context
+              = (ZMapFeatureContext)zMapFeatureAnyCopy((ZMapFeatureAny)(request_data->orig_context)) ;
+        }
+
+
+      if (request_data->command_id == g_quark_from_string(ZACP_LOAD_FEATURES))
+        {
+          if ((attr = zMapXMLElementGetAttributeByName(set_element, "load")))
+            {
+              GQuark load_id ;
+
+              load_id = zMapXMLAttributeGetValue(attr) ;
+
+              if (zMapLogQuarkIsStr(load_id, "mark"))
+                {
+                  request_data->use_mark = TRUE ;
+                }
+              else if (zMapLogQuarkIsStr(load_id, "full"))
+                {
+                  request_data->use_mark = FALSE ;
+                }
+              else
+                {
+                  err_msg = g_strdup_printf("Value \"%s\" for \"load\" attr is unknown.", g_quark_to_string(load_id)) ;
+
+                  result = FALSE ;
+                }
+            }
+        }
+
+      if (!result)
+        {
+          request_data->command_rc = REMOTE_COMMAND_RC_BAD_XML ;
+
+          zMapXMLParserRaiseParsingError(parser, err_msg) ;
+
+          g_free(err_msg) ;
+        }
     }
 
   return result ;

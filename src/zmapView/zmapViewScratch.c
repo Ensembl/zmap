@@ -520,6 +520,8 @@ static gboolean scratchMergeFeature(ScratchMergeData merge_data)
       /* Just merge the clicked subfeature */
       ZMapFeatureSubPartSpan sub_feature = NULL;
 
+
+      /* It doesn't seem right that we need to call canvas stuff from here..... */
       zMapWindowCanvasItemGetInterval(merge_feature->src_item,
 				      merge_feature->world_x, merge_feature->world_y, &sub_feature) ;
 
