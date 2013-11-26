@@ -319,11 +319,10 @@ parent-style=transcript\n\
 width=20\n\
 show-when-empty=true\n\
 display-mode=hide\n\
-frame-mode=always\n\
+frame-mode=never\n\
 colours=normal border #000000 ; selected border #000000 ; selected fill #ffddcc\n\
 transcript-cds-colours=normal fill white ; normal border SlateBlue ; selected fill gold\n\
 strand-specific=false\n\
-frame-specific=false\n\
 show-reverse-strand=false\n\
 \n\
 [style-hand_built]\n\
