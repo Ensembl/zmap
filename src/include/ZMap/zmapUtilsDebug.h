@@ -135,6 +135,19 @@ G_STMT_START{                                                            \
     }                                                                    \
 }G_STMT_END
 
+/* Check a condition and return if it fails. This is for non-error
+ * scenarios and does not emit any warnings. */
+#define zMapReturnIfFailSafe(EXPR)                                       \
+  G_STMT_START{                                                          \
+    if G_LIKELY (EXPR)                                                   \
+      {                                                                  \
+      }                                                                  \
+    else                                                                 \
+      {                                                                  \
+        return;                                                          \
+      }                                                                  \
+}G_STMT_END
+
 /* Check a critical condition. Returns the given value and issues a
  * warning if the condition fails. */
 #define zMapReturnValIfFail(EXPR, VALUE)                                 \
@@ -153,6 +166,19 @@ G_STMT_START{                                                            \
       zMapLogStack();                                                    \
       return VALUE;                                                      \
     }                                                                    \
+}G_STMT_END
+
+/* Check a condition and return the given value if it fails. This
+ * is for non-error scenarios and does not emit any warnings. */
+#define zMapReturnValIfFailSafe(EXPR, VALUE)                             \
+  G_STMT_START{                                                          \
+    if G_LIKELY (EXPR)                                                   \
+      {                                                                  \
+      }                                                                  \
+    else                                                                 \
+      {                                                                  \
+        return VALUE;                                                    \
+      }                                                                  \
 }G_STMT_END
 
 /* Issue a warning if the given condition fails */
