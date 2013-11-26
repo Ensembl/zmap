@@ -390,12 +390,9 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
 	{
 	  server->sequence_server = req_open->sequence_server ; /* if not then drop any DNA data */
 
-	  /* Hack...really this function should return version 2 */
-	  if (!zMapGFFGetVersionFromGIO(server->gff_pipe, &(server->gff_version)))
-	    {
-	      server->gff_version = 2 ;
-	    }
-	  
+	  /* Get the GFF version; default returned is 2 */
+	  zMapGFFGetVersionFromGIO(server->gff_pipe, &(server->gff_version));
+
 	  server->parser = zMapGFFCreateParser(server->gff_version,
 					       server->sequence_map->sequence, server->zmap_start, server->zmap_end) ;
 
@@ -572,7 +569,7 @@ static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles,
   if (server->gff_line->len > 0)
     {
       get_features_data.server = server ;
-  
+
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
