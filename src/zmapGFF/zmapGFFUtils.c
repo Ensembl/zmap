@@ -41,7 +41,7 @@
 #include <ZMap/zmapGFF.h>
 #include "zmapGFF_P.h"
 
-/* #define LOCAL_DEBUG_CODE */
+/* #define LOCAL_DEBUG_CODE 1 */
 
 #ifdef LOCAL_DEBUG_CODE
 static FILE *pFile = NULL ;
@@ -134,7 +134,7 @@ gboolean zMapGFFGetVersionFromGIO(GIOChannel * const pChannel, int * const piOut
 
   if (cStatus == G_IO_STATUS_NORMAL)
     {
-      cStatus = g_io_channel_seek_position(pChannel, -(gint64)(iTerminatorPos+1), G_SEEK_CUR, &pError ) ;
+      /*cStatus = g_io_channel_seek_position(pChannel, -(gint64)(iTerminatorPos+1), G_SEEK_CUR, &pError ) ; */
       if (pError)
         goto return_point ;
 
@@ -142,16 +142,16 @@ gboolean zMapGFFGetVersionFromGIO(GIOChannel * const pChannel, int * const piOut
      * If the line read in contains some data, attempt to parse; if it was
      * blank then we just return with default return values.
      */
-      if ((cStatus == G_IO_STATUS_NORMAL) && strcmp(pString->str, ""))
+      if (strcmp(pString->str, ""))
         {
           /*
            * Parse the string line that was read in.
            */
           bResult = zMapGFFGetVersionFromString(pString->str, piOut);
-    
+
         }
     }
-  else /* We encountered an error in reading the stream, or seeking back */
+  else /* We encountered an error in reading the stream */
     {
       bResult = FALSE ;
     }

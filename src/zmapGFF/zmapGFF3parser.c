@@ -86,12 +86,19 @@ static gboolean getFeatureName(const char * const sequence, const ZMapGFFAttribu
   ZMapStrand strand, int start, int end, int query_start, int query_end, char ** const feature_name, char ** const feature_name_id) ;
 static void destroyFeatureArray(gpointer data) ;
 
-#define LOCAL_DEBUG_CODE 1
+#define LOCAL_DEBUG_CODE01 1
 
-#ifdef LOCAL_DEBUG_CODE
+#ifdef LOCAL_DEBUG_CODE01
 static unsigned int iCountTranscript = 0 ;
 static unsigned int iCountAlignment = 0 ;
 static unsigned int iCountBasic = 0 ;
+#endif
+
+#define LOCAL_DEBUG_CODE02 1
+
+#ifdef LOCAL_DEBUG_CODE02
+static const char *sDataFilename = "/nfs/users/nfs_s/sm23/Work/ZMap_develop/src/build/linux/output.txt" ;
+static FILE *pOutputFile = NULL ;
 #endif
 
 /*
@@ -2138,9 +2145,16 @@ static gboolean parseBodyLine_V3(
     pSOIDData                         = NULL
   ;
 
-#ifdef LOCAL_DEBUG_CODE
+#ifdef LOCAL_DEBUG_CODE01
   printf("%s\n", sLine) ;
   fflush (stdout) ;
+#endif
+
+#ifdef LOCAL_DEBUG_CODE02
+  if (!pOutputFile)
+    pOutputFile = fopen(sDataFilename, "w") ;
+  fprintf(pOutputFile, "%s\n", sLine) ;
+  fflush(pOutputFile) ;
 #endif
 
   /*
@@ -2748,7 +2762,7 @@ static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const pFeature
 
     }
 
-#ifdef LOCAL_DEBUG_CODE
+#ifdef LOCAL_DEBUG_CODE01
   if (*pbNewFeatureCreated && bFeatureAdded)
     {
       ++iCountTranscript ;
@@ -2886,7 +2900,7 @@ static ZMapFeature makeFeatureAlignment(const ZMapGFFFeatureData const pFeatureD
 
     }
 
-#ifdef LOCAL_DEBUG_CODE
+#ifdef LOCAL_DEBUG_CODE01
   if (bNewFeatureCreated && bFeatureAdded)
     {
       ++iCountAlignment ;
@@ -2919,7 +2933,7 @@ static ZMapFeature makeFeatureBasic(const ZMapGFFFeatureData const pFeatureData,
 {
   ZMapFeature pFeature = NULL ;
 
-#ifdef LOCAL_DEBUG_CODE
+#ifdef LOCAL_DEBUG_CODE01
   ++iCountBasic ;
   printf("iCountBasic = %i\n", iCountBasic ) ;
   fflush(stdout) ;
@@ -3174,7 +3188,7 @@ static gboolean makeNewFeature_V3(
   pParserFeatureSet->feature_set->style = pFeatureStyle;
   pFeatureSet = pParserFeatureSet->feature_set ;
 
-#ifdef LOCAL_DEBUG_CODE
+#ifdef LOCAL_DEBUG_CODE01
   char* sFSName = NULL ;
   sFSName = g_strdup(g_quark_to_string(pFeatureSet->unique_id)) ;
   if (strstr(sSource, "RNAi"))
