@@ -462,7 +462,7 @@ static void processRequest(ZMapWindow window,
   if (strcmp(command_name, ZACP_ZOOM_TO) == 0)
     {
       /* seems a bit hacky, need func to look for attrs etc.... */
-      if ((strstr(request, "start=")) &&(strstr(request, "end=")))
+      if ((strstr(request, "start=")) && (strstr(request, "end=")))
         {
           request_data.zoom_to_pos = TRUE ;
           starts = zoom_to_pos_starts_G ;
@@ -521,13 +521,13 @@ static void zoomWindowToPosition(ZMapWindow window, RequestData request_data,
   double world_start = 0, world_end = 0 ;
 
   if (!zmapWindowSeqToWorldCoords(window,
-                                  request_data.zoom_start, request_data.zoom_end,
+                                  request_data->zoom_start, request_data->zoom_end,
                                   &world_start,  &world_end))
     {
       *command_rc_out = REMOTE_COMMAND_RC_FAILED ;
 
       *reason_out = zMapXMLUtilsEscapeStrPrintf("Zoom to position failed, bad feature coords: %d, %d",
-						request_data.zoom_start, request_data.zoom_end) ;
+						request_data->zoom_start, request_data->zoom_end) ;
     }
   else
     {
@@ -538,7 +538,7 @@ static void zoomWindowToPosition(ZMapWindow window, RequestData request_data,
                                     0, world_start, 10, world_end) ;
 
       message = g_strdup_printf("Zoom to position %d, %d ok",
-                                request_data.zoom_start, request_data.zoom_end) ;
+                                request_data->zoom_start, request_data->zoom_end) ;
       *reply_out = makeMessageElement(message) ;
       *command_rc_out = REMOTE_COMMAND_RC_OK ;
     }
@@ -686,6 +686,8 @@ static gboolean xml_request_start_cb(gpointer user_data, ZMapXMLElement set_elem
           ZMapXMLAttribute attr = NULL;
           int start = 0, end = 0 ;
 
+          result = TRUE ;
+
           if (result && (attr = zMapXMLElementGetAttributeByName(set_element, "start")))
             {
               start = strtol((char *)g_quark_to_string(zMapXMLAttributeGetValue(attr)),
@@ -693,7 +695,7 @@ static gboolean xml_request_start_cb(gpointer user_data, ZMapXMLElement set_elem
             }
           else
             {
-              zMapXMLParserRaiseParsingError(parser, "\"start\" is a required attribute for zoom_to pos.");
+              zMapXMLParserRaiseParsingError(parser, "\"start\" is a required attribute for zoom_to position.");
 
               request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
               result = FALSE ;
@@ -706,7 +708,7 @@ static gboolean xml_request_start_cb(gpointer user_data, ZMapXMLElement set_elem
             }
           else
             {
-              zMapXMLParserRaiseParsingError(parser, "\"end\" is a required attribute for zoom_to pos.");
+              zMapXMLParserRaiseParsingError(parser, "\"end\" is a required attribute for zoom_to position.");
 
               request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
               result = FALSE ;
