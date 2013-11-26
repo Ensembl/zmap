@@ -950,7 +950,7 @@ static GArray *doDNATranslation(ZMapGeneticCode code_table, GArray *obj_dna, ZMa
   CodonTranslatorFunc trans_func ;
 
 
-  zMapReturnValIfFail((!code_table || !obj_dna),  pep) ;
+  zMapReturnValIfFail((code_table && obj_dna),  pep) ;
 
 
   /* Set up appropriate translator func. */

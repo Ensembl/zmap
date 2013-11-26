@@ -4627,10 +4627,10 @@ static void lockWindow(ZMapWindow window, ZMapWindowLockType window_locking)
 static void copyLockWindow(ZMapWindow original_window, ZMapWindow new_window)
 {
   if (!(original_window->locked_display && original_window->curr_locking != ZMAP_WINLOCK_NONE
-      && original_window->sibling_locked_windows) )
+        && original_window->sibling_locked_windows) )
     return ;
   if (!(!new_window->locked_display && new_window->curr_locking == ZMAP_WINLOCK_NONE
-      && !new_window->sibling_locked_windows) )
+        && !new_window->sibling_locked_windows) )
     return ;
 
   new_window->locked_display = original_window->locked_display ;
@@ -4654,56 +4654,53 @@ static void unlockWindow(ZMapWindow window, gboolean no_destroy_if_empty)
 {
   gboolean removed ;
 
-  if (!window->locked_display || (window->curr_locking == ZMAP_WINLOCK_NONE)
-      || window->sibling_locked_windows) 
-    return ;
+  zMapReturnIfFail((window->locked_display
+                    && window->curr_locking != ZMAP_WINLOCK_NONE && window->sibling_locked_windows)) ;
 
-
-  removed = g_hash_table_remove(window->sibling_locked_windows, window) ;
-  if (!removed) 
-    return ;
-
-  if (!g_hash_table_size(window->sibling_locked_windows))
+  if ((removed = g_hash_table_remove(window->sibling_locked_windows, window)))
     {
-      if (!no_destroy_if_empty)
-	g_hash_table_destroy(window->sibling_locked_windows) ;
-    }
-  else
-    {
-      /* we only need to allocate a new adjuster if the hash table is not empty...otherwise we can
-       * keep our existing adjuster. */
-      GtkAdjustment *adjuster ;
-
-      if (window->curr_locking == ZMAP_WINLOCK_HORIZONTAL)
-	adjuster = gtk_scrolled_window_get_hadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window)) ;
-      else
-	adjuster = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window)) ;
-
-      adjuster = copyAdjustmentObj(adjuster) ;
-
-      if (window->curr_locking == ZMAP_WINLOCK_HORIZONTAL)
-	{
-	  gtk_scrolled_window_set_hadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window), adjuster) ;
-	}
+      if (!g_hash_table_size(window->sibling_locked_windows))
+        {
+          if (!no_destroy_if_empty)
+            g_hash_table_destroy(window->sibling_locked_windows) ;
+        }
       else
         {
-          gtk_scrolled_window_set_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window), adjuster) ;
+          /* we only need to allocate a new adjuster if the hash table is not empty...otherwise we can
+           * keep our existing adjuster. */
+          GtkAdjustment *adjuster ;
 
-          /* Need to set the scalebar one too if vertical locked */
-          zmapWindowScaleCanvasSetVAdjustment(window->ruler, adjuster);
+          if (window->curr_locking == ZMAP_WINLOCK_HORIZONTAL)
+            adjuster = gtk_scrolled_window_get_hadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window)) ;
+          else
+            adjuster = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window)) ;
+
+          adjuster = copyAdjustmentObj(adjuster) ;
+
+          if (window->curr_locking == ZMAP_WINLOCK_HORIZONTAL)
+            {
+              gtk_scrolled_window_set_hadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window), adjuster) ;
+            }
+          else
+            {
+              gtk_scrolled_window_set_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window), adjuster) ;
+
+              /* Need to set the scalebar one too if vertical locked */
+              zmapWindowScaleCanvasSetVAdjustment(window->ruler, adjuster);
+            }
         }
-    }
 
- if (g_hash_table_size(window->sibling_locked_windows) == 1)
-    {
-      g_hash_table_foreach(window->sibling_locked_windows,
-			   unlock_last_window, GUINT_TO_POINTER(TRUE));
-      g_hash_table_destroy(window->sibling_locked_windows) ;
-    }
+      if (g_hash_table_size(window->sibling_locked_windows) == 1)
+        {
+          g_hash_table_foreach(window->sibling_locked_windows,
+                               unlock_last_window, GUINT_TO_POINTER(TRUE));
+          g_hash_table_destroy(window->sibling_locked_windows) ;
+        }
 
-  window->locked_display= FALSE ;
-  window->curr_locking = ZMAP_WINLOCK_NONE ;
-  window->sibling_locked_windows = NULL ;
+      window->locked_display= FALSE ;
+      window->curr_locking = ZMAP_WINLOCK_NONE ;
+      window->sibling_locked_windows = NULL ;
+    }
 
   return ;
 }
