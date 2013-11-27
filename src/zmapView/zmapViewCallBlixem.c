@@ -2235,7 +2235,18 @@ static gboolean formatAlignmentGFF(GFFFormatData gff_data, GString *line,
 	      else if (next_ref > curr_ref + 1)
 		{
 		  coord = calcGapLength(match_seq_type, curr_ref, next_ref) ;
-		  g_string_append_printf(align_str, "D%d ", coord) ;
+
+                  /* Check if it's an intron or deletion */
+                  AlignBlockBoundaryType boundary_type = ALIGN_BLOCK_BOUNDARY_EDGE ;
+                  if (gap->q_strand == gap->t_strand)
+                    boundary_type = gap->end_boundary ;
+                  else
+                    boundary_type = gap->start_boundary ;
+
+                  if (boundary_type == ALIGN_BLOCK_BOUNDARY_INTRON)
+                    g_string_append_printf(align_str, "N%d ", coord) ;
+                  else
+                    g_string_append_printf(align_str, "D%d ", coord) ;
 		}
 	      else
 		zMapLogWarning("Bad coords in GFFv3 writer: gap %d,%d -> %d, %d, next_gap %d, %d -> %d, %d",
