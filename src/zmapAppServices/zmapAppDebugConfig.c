@@ -60,7 +60,7 @@ gboolean zMapUtilsConfigDebug(char *config_file)
     {
       result = TRUE;
 #if 0
-// very odd! callinf this function fropm zmaplogging.c resulted in some limk errors !!!
+/* very odd! calling this function fropm zmaplogging.c resulted in some limk errors !!!*/
       zMapConfigIniContextGetBoolean(context,
 					ZMAPSTANZA_DEBUG_CONFIG,
 					ZMAPSTANZA_DEBUG_CONFIG,
