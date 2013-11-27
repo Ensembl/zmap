@@ -2268,10 +2268,17 @@ static FooCanvasGroup *createColumnFull(ZMapWindowContainerFeatures parent_group
 
       if(feature_set->style && zMapStyleDisplayInSeparator(feature_set->style))
 	{
+          FooCanvasItem *feature_set ;
+
+
 	  /* fixed width, colour already set to yellow, but need start and end as there are no features */
-	  zmapWindowDrawSetGroupBackground(window, container,
-					   start, end, style->width,
-					   ZMAP_CANVAS_LAYER_SEPARATOR_BACKGROUND, colour, NULL);
+	  feature_set  = zmapWindowDrawSetGroupBackground(window, container,
+                                                          start, end, style->width,
+                                                          ZMAP_CANVAS_LAYER_SEPARATOR_BACKGROUND, colour, NULL) ;
+
+          
+          window->separator_feature_set = ZMAP_WINDOW_FEATURESET_ITEM(feature_set) ;
+
 	}
       else
 	{
