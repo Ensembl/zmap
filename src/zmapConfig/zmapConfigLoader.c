@@ -481,7 +481,7 @@ gboolean zMapConfigIniGetStylesFromFile(char *config_file, char *styles_list, ch
 		      }
 		    default:
 		      {
-			zMapAssertNotReached() ;
+                        zMapWarnIfReached() ;
 			break ;
 		      }
 		    }

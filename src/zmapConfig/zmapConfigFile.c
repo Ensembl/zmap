@@ -61,7 +61,7 @@ ZMapConfigIni zMapConfigIniNew(void)
 
   /* if(!(config = g_new0(ZMapConfigIniStruct, 1)))
     {
-      zMapAssertNotReached();
+      zMapWarnIfReached();
     }
   else
     {

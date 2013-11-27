@@ -913,9 +913,10 @@ static void zoomMenuCB(int menu_item_id, gpointer callback_data)
   menu_data = (ZoomMenuCBData)callback_data ;
   ZMapWindow window = menu_data->window ;
   double zoom_factor = 0.0, curr_factor = 0.0 ;
+  gboolean ok = TRUE ;
 
   curr_factor = zMapWindowGetZoomFactor(window) ;
-
+  zMapWarnIfFail(curr_factor != 0.0) ;
 
   switch (menu_item_id)
     {
@@ -952,15 +953,16 @@ static void zoomMenuCB(int menu_item_id, gpointer callback_data)
       break ;
 
     default:
-      zMapAssertNotReached() ;				    /* exits... */
+      ok = FALSE ;
+      zMapWarnIfReached() ;
       break ;
     }
 
-
-  zoom_factor = zoom_factor / curr_factor ;
-
-
-  zMapWindowZoom(window, zoom_factor) ;
+  if (ok && curr_factor != 0.0)
+    {
+      zoom_factor = zoom_factor / curr_factor ;
+      zMapWindowZoom(window, zoom_factor) ;
+    }
 
   g_free(menu_data) ;
 
@@ -1106,7 +1108,7 @@ static void seqMenuCB(int menu_item_id, gpointer callback_data)
 	  || menu_item_id == SHOW_3FT || menu_item_id == HIDE_3ALL
 	  || menu_item_id == SHOW_3ALL)
 	{
-	  ZMapWindow3FrameMode frame_mode ;
+          ZMapWindow3FrameMode frame_mode = ZMAP_WINDOW_3FRAME_INVALID ;
 
 	  switch(menu_item_id)
 	    {
@@ -1123,7 +1125,7 @@ static void seqMenuCB(int menu_item_id, gpointer callback_data)
 	      frame_mode = ZMAP_WINDOW_3FRAME_ALL ;
 	      break ;
 	    default:
-	      zMapAssertNotReached() ;
+              zMapWarnIfReached() ;
 	      break;
 	    }
 

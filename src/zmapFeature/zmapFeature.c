@@ -276,7 +276,7 @@ gboolean zMapFeatureAnyRemoveFeature(ZMapFeatureAny feature_parent, ZMapFeatureA
 	case ZMAPFEATURE_STRUCT_FEATURE:
 	  break ;
 	default:
-	  zMapAssertNotReached() ;
+          zMapWarnIfReached() ;
 	  break ;
 	}
 
@@ -752,7 +752,7 @@ int zMapFeatureLength(ZMapFeature feature, ZMapFeatureLengthType length_type)
       }
     default:
       {
-	zMapAssertNotReached() ;
+        zMapWarnIfReached() ;
 
 	break ;
       }

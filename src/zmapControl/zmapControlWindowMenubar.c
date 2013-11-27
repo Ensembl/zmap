@@ -344,7 +344,7 @@ static void rtTicket(gpointer cb_data, guint callback_action, GtkWidget *window)
   gboolean result ;
   GError *error = NULL ;
   RTQueueName queue_name = (RTQueueName)callback_action ;
-  int queue_number ;
+  int queue_number = 0 ;
 
   switch (queue_name)
     {
@@ -365,11 +365,11 @@ static void rtTicket(gpointer cb_data, guint callback_action, GtkWidget *window)
       raise_ticket = FALSE ;
       break ;
     default:
-      zMapAssertNotReached() ;
+      zMapWarnIfReached() ;
       break ;
     }
 
-  if (raise_ticket)
+  if (raise_ticket && queue_number)
     {
       web_page = g_strdup_printf("%s%d", url_raise_ticket_base, queue_number) ;
     }

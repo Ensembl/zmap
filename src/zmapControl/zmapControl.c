@@ -954,25 +954,28 @@ static void controlSplitToPatternCB(ZMapViewWindow view_window, void *app_data, 
           tmp_vw = view_window;
           break;
         default:
-          zMapAssertNotReached();
+          zMapWarnIfReached();
         }
 
-      zmap_view   = zMapViewGetView(tmp_vw);
-      zmap_window = zMapViewGetWindow(tmp_vw);
-
-      title = zMapViewGetSequence(zmap_view);
-
-      /* hmmm.... */
-      window_container = g_hash_table_lookup(zmap->viewwindow_2_parent, tmp_vw);
-
-      if((new_view_window = zmapControlNewWidgetAndWindowForView(zmap, zmap_view,
-                                                                 zmap_window,
-                                                                 window_container,
-                                                                 pattern->orientation,
-								 ZMAPCONTROL_SPLIT_LAST,
-                                                                 title)))
+      if (tmp_vw)
         {
-          split->touched_window_list = g_list_append(split->touched_window_list, new_view_window);
+          zmap_view   = zMapViewGetView(tmp_vw);
+          zmap_window = zMapViewGetWindow(tmp_vw);
+
+          title = zMapViewGetSequence(zmap_view);
+
+          /* hmmm.... */
+          window_container = g_hash_table_lookup(zmap->viewwindow_2_parent, tmp_vw);
+
+          if((new_view_window = zmapControlNewWidgetAndWindowForView(zmap, zmap_view,
+                                                                     zmap_window,
+                                                                     window_container,
+                                                                     pattern->orientation,
+                                                                     ZMAPCONTROL_SPLIT_LAST,
+                                                                     title)))
+            {
+              split->touched_window_list = g_list_append(split->touched_window_list, new_view_window);
+            }
         }
     }
 
