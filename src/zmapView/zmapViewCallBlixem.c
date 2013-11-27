@@ -2213,8 +2213,9 @@ static gboolean formatAlignmentGFF(GFFFormatData gff_data, GString *line,
 		}
 	      else
 		{
-		  curr_match = next_gap->q2 ;
-		  next_match = gap->q1 ;
+                  /* For the match, q1 > q2 for rev strand */
+                  curr_match = next_gap->q1 ;
+                  next_match = gap->q2 ;
 		}
 
 	      if (gap->t_strand == ZMAPSTRAND_FORWARD)
@@ -2224,6 +2225,7 @@ static gboolean formatAlignmentGFF(GFFFormatData gff_data, GString *line,
 		}
 	      else
 		{
+                  /* For the ref, t2 > t1 for both strands */
 		  curr_ref = next_gap->t2 ;
 		  next_ref = gap->t1 ;
 		}
