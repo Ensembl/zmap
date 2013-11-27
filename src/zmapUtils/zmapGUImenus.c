@@ -457,8 +457,7 @@ static char *makeMenuTitleName(char *string, char *escape_chars)
   char *cp ;
   gssize pos ;
 
-
-  zMapReturnValIfFail((!string || !*string), item_string) ;
+  zMapReturnValIfFail((string && *string), item_string) ;
 
   tmp = g_string_new(string) ;
 
