@@ -101,11 +101,13 @@ ZMapViewCallbacksStruct view_cbs_G =
  * via some kind of zmaps terminate routine. */
 void zMapInit(ZMapCallbacks callbacks)
 {
-  if (zmap_cbs_G) 
-    return ;
+  /* if (zmap_cbs_G) 
+    return ; */
+  zMapReturnIfFail(!zmap_cbs_G); 
 
-  if (!callbacks || !callbacks->add || !&callbacks->destroy || !callbacks->quit_req) 
-    return ;
+  /* if (!callbacks || !callbacks->add || !&callbacks->destroy || !callbacks->quit_req) 
+    return ; */
+  zMapReturnIfFail(callbacks && callbacks->add && &callbacks->destroy && callbacks->quit_req) ; 
 
   zmap_cbs_G = g_new0(ZMapCallbacksStruct, 1) ;
 
@@ -134,8 +136,9 @@ ZMap zMapCreate(void *app_data, ZMapFeatureSequenceMap seq_map)
   ZMap zmap = NULL ;
 
   /* No callbacks, then no zmap creation. */
-  if (!zmap_cbs_G) 
-    return zmap ;
+  /* if (!zmap_cbs_G) 
+    return zmap ; */
+  zMapReturnValIfFail(zmap_cbs_G, zmap) ; 
 
   zmap = createZMap(app_data, seq_map) ;
 
@@ -157,7 +160,7 @@ ZMap zMapCreate(void *app_data, ZMapFeatureSequenceMap seq_map)
 
 gboolean zMapRaise(ZMap zmap)
 {
-  g_return_val_if_fail((zmap->state != ZMAP_DYING), FALSE) ;
+  zMapReturnValIfFail(zmap && (zmap->state != ZMAP_DYING), FALSE) ;
 
   /* Presents a window to the user. This may mean raising the window
    * in the stacking order, deiconifying it, moving it to the current
@@ -173,7 +176,8 @@ gboolean zMapRaise(ZMap zmap)
 /* Noddy function to return number of current views. */
 int zMapNumViews(ZMap zmap)
 {
-  int num_views ;
+  int num_views = 0 ;
+  zMapReturnValIfFail(zmap, num_views) ; 
 
   num_views = g_list_length(zmap->view_list) ;
 
@@ -187,9 +191,11 @@ ZMapViewWindow zMapAddView(ZMap zmap, ZMapFeatureSequenceMap sequence_map)
 {
   ZMapViewWindow view_window = NULL ;
 
-  if (!(zmap && sequence_map->sequence && *sequence_map->sequence
+  /* if (!(zmap && sequence_map->sequence && *sequence_map->sequence
        && (sequence_map->start > 0 && sequence_map->end > sequence_map->start)) ) 
-    return view_window ;
+    return view_window ; */
+  zMapReturnValIfFail((zmap && sequence_map->sequence && *sequence_map->sequence
+       && (sequence_map->start > 0 && sequence_map->end > sequence_map->start)) , view_window ) ;  
 
   g_return_val_if_fail((zmap->state != ZMAP_DYING), NULL) ;
 
@@ -211,7 +217,10 @@ ZMapViewWindow zMapAddView(ZMap zmap, ZMapFeatureSequenceMap sequence_map)
 gboolean zMapGetDefaultView(ZMapAppRemoteViewID view_inout)
 {
   gboolean result = FALSE ;
-  ZMap zmap = view_inout->zmap ;
+  ZMap zmap = NULL ; 
+  zMapReturnValIfFail(view_inout, result ) ; 
+  zmap = view_inout->zmap ;
+  zMapReturnValIfFail(zmap, result ) ; 
 
   if (zmap->view_list)
     {
@@ -236,10 +245,8 @@ gboolean zmapConnectViewConfig(ZMap zmap, ZMapView view, char *config)
 {
   gboolean result = FALSE ;
 
-  if (!zmap || !view || !findViewInZMap(zmap, view)) 
-    return result ;
-
-  g_return_val_if_fail((zmap->state != ZMAP_DYING), FALSE) ;
+  zMapReturnValIfFail((zmap && view && findViewInZMap(zmap, view)), result );
+  zMapReturnValIfFail((zmap->state != ZMAP_DYING), FALSE) ;
 
   result = zMapViewConnect(zmap->default_sequence, view, config) ;
 
@@ -253,10 +260,8 @@ gboolean zMapConnectView(ZMap zmap, ZMapView view)
 {
   gboolean result = FALSE ;
 
-  if (!zmap || !view || !findViewInZMap(zmap, view)) 
-    return result ;
-
-  g_return_val_if_fail((zmap->state != ZMAP_DYING), FALSE) ;
+  zMapReturnValIfFail((zmap && view && findViewInZMap(zmap, view)), result ) ;  
+  zMapReturnValIfFail((zmap->state != ZMAP_DYING), FALSE) ;
 
   if ((result = zMapViewConnect(zmap->default_sequence, view, NULL)))
     zmapControlWindowSetGUIState(zmap) ;
@@ -335,7 +340,7 @@ gboolean zMapReset(ZMap zmap)
 
   /* not implemented or needed even ?? */
 
-  g_return_val_if_fail((zmap->state != ZMAP_DYING), FALSE) ;
+  zMapReturnValIfFail((zmap && zmap->state != ZMAP_DYING), result ) ;
 
   if (zmap->state == ZMAP_VIEWS)
     {
@@ -361,7 +366,7 @@ char *zMapGetZMapID(ZMap zmap)
 {
   char *id = NULL ;
 
-  g_return_val_if_fail((zmap->state != ZMAP_DYING), NULL) ;
+  zMapReturnValIfFail((zmap && zmap->state != ZMAP_DYING), id ) ;
 
   id = zmap->zmap_id ;
 
@@ -376,8 +381,7 @@ char *zMapGetZMapStatus(ZMap zmap)
 			       "ZMAP_DYING"} ;
   char *state = NULL ;
 
-  if (!(zmap->state >= ZMAP_INIT && zmap->state <= ZMAP_DYING) ) 
-    return state ;
+  zMapReturnValIfFail((zmap->state >= ZMAP_INIT && zmap->state <= ZMAP_DYING), state  ) ;  
 
   state = (char *)zmapStates[zmap->state] ;
 
@@ -431,8 +435,9 @@ void zmapControlClose(ZMap zmap)
   num_views = zmapControlNumViews(zmap) ;
 
   /* We shouldn't get called if there are no views. */
-  if (!num_views || !zmap->focus_viewwindow) 
-    return ;
+  /* if (!num_views || !zmap->focus_viewwindow) 
+    return ; */
+  zMapReturnIfFail(num_views && zmap && zmap->focus_viewwindow ) ; 
 
 
   /* focus_viewwindow gets reset so hang on to view_window pointer and view.*/
@@ -497,8 +502,7 @@ void zmapControlCloseFull(ZMap zmap, ZMapView view)
   num_views = zmapControlNumViews(zmap) ;
 
   /* We shouldn't get called if there are no views. */
-  if (!num_views) 
-    return ;
+  zMapReturnIfFail(num_views) ; 
 
   /* focus_viewwindow gets reset so hang on to view_window pointer and view.*/
   view_window = zmapControlFindViewWindow(zmap, view) ;
@@ -578,6 +582,8 @@ void zmapControlSetGUIVisChange(ZMap zmap, ZMapWindowVisibilityChange vis_change
 void zmapControlSignalKill(ZMap zmap)
 {
 
+  zMapReturnIfFail(zmap) ; 
+
   gtk_widget_destroy(zmap->toplevel) ;
 
   return ;
@@ -591,6 +597,8 @@ void zmapControlSignalKill(ZMap zmap)
  * layer above us that we have died. */
 void zmapControlDoKill(ZMap zmap, GList **destroyed_views_out)
 {
+  zMapReturnIfFail(zmap) ; 
+
   if (zmap->state != ZMAP_DYING)
     {
       /* set our state to DYING....so we don't respond to anything anymore....
@@ -622,8 +630,10 @@ void zmapControlDoKill(ZMap zmap, GList **destroyed_views_out)
 
 void zmapControlLoadCB(ZMap zmap)
 {
-  if (!zmap || !zmap->focus_viewwindow) 
-    return ;
+  /* if (!zmap || !zmap->focus_viewwindow) 
+    return ; */
+  zMapReturnIfFail(zmap && zmap->focus_viewwindow) ; 
+
 
   /* We can only load something if there is at least one view. */
   if (zmap->state == ZMAP_VIEWS)
@@ -654,6 +664,7 @@ void zmapControlLoadCB(ZMap zmap)
 
 void zmapControlResetCB(ZMap zmap)
 {
+  zMapReturnIfFail(zmap) ; 
 
   /* We can only reset something if there is at least one view. */
   if (zmap->state == ZMAP_VIEWS)
@@ -684,6 +695,7 @@ ZMapView zmapControlInsertView(ZMap zmap, ZMapFeatureSequenceMap sequence_map, c
   ZMapView view = NULL ;
   ZMapViewWindow view_window ;
 
+  zMapReturnIfFail(zmap) ; 
 
   if ((view_window = zmapControlAddView(zmap, sequence_map)))
     {
@@ -713,6 +725,8 @@ ZMapView zmapControlInsertView(ZMap zmap, ZMapFeatureSequenceMap sequence_map, c
 ZMapViewWindow zmapControlAddView(ZMap zmap, ZMapFeatureSequenceMap sequence_map)
 {
   ZMapViewWindow view_window = NULL ;
+
+  zMapReturnValIfFail(zmap, view_window) ; 
 
   if ((view_window = zmapControlNewWindow(zmap, sequence_map)))
     {
@@ -792,6 +806,8 @@ static ZMap createZMap(void *app_data, ZMapFeatureSequenceMap seq_map)
  * and other resources have gone. */
 static void destroyZMap(ZMap zmap)
 {
+  zMapReturnIfFail(zmap) ; 
+
   g_free(zmap->zmap_id) ;
 
   g_hash_table_destroy(zmap->viewwindow_2_parent) ;
