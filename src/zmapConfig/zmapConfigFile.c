@@ -59,15 +59,19 @@ ZMapConfigIni zMapConfigIniNew(void)
 {
   ZMapConfigIni config = NULL;
 
-  if(!(config = g_new0(ZMapConfigIniStruct, 1)))
+  /* if(!(config = g_new0(ZMapConfigIniStruct, 1)))
     {
       zMapAssertNotReached();
     }
   else
     {
       g_type_init();
-      //config->magic = config_magic_G;
-    }
+    } */
+
+  config = g_new0(ZMapConfigIniStruct, 1) ; 
+  zMapReturnValIfFail(config, config) ; 
+
+  g_type_init() ; 
 
   return config;
 }
@@ -78,8 +82,9 @@ gboolean zMapConfigIniReadAll(ZMapConfigIni config, char *config_file)
 {
   gboolean red = FALSE ;
 
-  if (!config) 
-    return red ;
+  /* if (!config) 
+    return red ; */
+  zMapReturnValIfFail(config, red) ; 
 
   /* mh17: this assignment invalidates the 2nd if statement and subsequent statement, we'd read the same file twice
     testing shows that none of these files exist....
@@ -109,8 +114,9 @@ gboolean zMapConfigIniReadUser(ZMapConfigIni config, char *config_file)
   gboolean red = FALSE ;
   char *file_name ;
 
-  if (!config) 
-    return red ;
+  /* if (!config) 
+    return red ; */
+  zMapReturnValIfFail(config, red) ;
 
   file_name = (config_file ? config_file : zMapConfigDirGetFile()) ;
 
@@ -127,8 +133,9 @@ gboolean zMapConfigIniReadUser(ZMapConfigIni config, char *config_file)
 gboolean zMapConfigIniReadBuffer(ZMapConfigIni config, char *buffer)
 {
   gboolean red = FALSE;
-  if (!config)
-    return red ;
+  /* if (!config)
+    return red ; */ 
+  zMapReturnValIfFail(config, red) ; 
 
   if(buffer != NULL)
     {
@@ -159,8 +166,9 @@ gboolean zMapConfigIniReadFile(ZMapConfigIni config, char *file)
 {
   gboolean read = FALSE;
 
-  if (!config)
-    return read ;
+  /* if (!config)
+    return read ; */ 
+  zMapReturnValIfFail(config, read ) ; 
 
 
   if ((g_path_is_absolute(file) || (file = zMapConfigDirFindFile(file)))

@@ -131,6 +131,7 @@ void zMapConfigIniSetValue(ZMapConfigIni config,
 			   GValue *value)
 {
   GKeyFile *user_key_file = NULL;
+  zMapReturnIfFail(config) ; 
 
   if((user_key_file = config->user_key_file))
     {
@@ -189,7 +190,8 @@ static gboolean zmapConfigIniGetValueFull(ZMapConfigIni config,
 {
   gboolean success = FALSE;
 
-  g_return_val_if_fail(value, FALSE);
+  zMapReturnValIfFail(value, success) ;
+  zMapReturnValIfFail(config, success) ; 
 
   if((!merge_files) && (config->user_key_file != NULL))
     {

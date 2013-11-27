@@ -161,6 +161,8 @@ gchar *zMapConfigIniContextErrorMessage(ZMapConfigIniContext context)
 {
   gchar *e = NULL ;
 
+  zMapReturnValIfFail(context, e) ; 
+
   e = context->error_message ;
 
   return e ;
@@ -168,6 +170,8 @@ gchar *zMapConfigIniContextErrorMessage(ZMapConfigIniContext context)
 
 static void setErrorMessage(ZMapConfigIniContext context,char *error_message)
 {
+  zMapReturnIfFail(context) ; 
+
   if (context->error_message)
     g_free(context->error_message);
 
@@ -179,6 +183,7 @@ static void setErrorMessage(ZMapConfigIniContext context,char *error_message)
 gchar *zMapConfigIniContextKeyFileErrorMessage(ZMapConfigIniContext context)
 {
   gchar *error_msg = NULL ;
+  zMapReturnValIfFail(context, error_msg) ;
 
   error_msg = context->config->extra_key_error->message ;
 
@@ -194,6 +199,7 @@ gboolean zMapConfigIniContextAddGroup(ZMapConfigIniContext context,
   ZMapConfigIniContextStanzaEntryStruct user_request = {NULL};
   gboolean not_exist = FALSE, result = FALSE;
   GList *entry_found = NULL;
+  zMapReturnValIfFail(context, result) ; 
 
   user_request.stanza_name = stanza_name;
   user_request.stanza_type = stanza_type;
@@ -237,6 +243,7 @@ gboolean zMapConfigIniContextAddGroup(ZMapConfigIniContext context,
 gboolean zMapConfigIniContextSave(ZMapConfigIniContext context)
 {
   gboolean saved = TRUE;
+  zMapReturnValIfFail(context, FALSE);
 
   saved = zMapConfigIniSaveUser(context->config);
 
@@ -245,6 +252,7 @@ gboolean zMapConfigIniContextSave(ZMapConfigIniContext context)
 
 ZMapConfigIniContext zMapConfigIniContextDestroy(ZMapConfigIniContext context)
 {
+  zMapReturnValIfFail(context, NULL) ; 
   if(context->error_message)
     g_free(context->error_message);
 
@@ -268,6 +276,8 @@ gboolean zMapConfigIniContextGetValue(ZMapConfigIniContext context,
   gboolean obtained = FALSE;
   GValue *value = NULL;
   GType type = 0;
+
+  zMapReturnValIfFail( context, obtained ) ;
 
   if(value_out)
     {
@@ -514,9 +524,11 @@ gboolean zMapConfigIniContextSetValue(ZMapConfigIniContext context,
 				      char *key_name,
 				      GValue *value)
 {
-  gboolean set = TRUE;
+  gboolean set = FALSE ;
+  zMapReturnValIfFail(context, set ) ; 
 
   zMapConfigIniSetValue(context->config, stanza_name, key_name, value);
+  set = TRUE ; 
 
   return set;
 }

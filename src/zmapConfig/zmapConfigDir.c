@@ -86,7 +86,8 @@ gboolean zMapConfigDirCreate(char *config_dir_in, char *config_file_in)
   char *config_dir = NULL, *config_file = NULL ;
   char *zmap_home ;
 
-  g_return_val_if_fail(dir_context_G == NULL, FALSE) ;
+  /* g_return_val_if_fail(dir_context_G == NULL, FALSE) ;*/
+  zMapReturnValIfFail(dir_context_G == NULL, FALSE) ;
 
   dir_context_G = dir_context = g_new0(ZMapConfigDirStruct, 1) ;
 
@@ -157,7 +158,7 @@ gboolean zMapConfigDirCreate(char *config_dir_in, char *config_file_in)
 
   if (!result)
     {
-      //  for error reporting  NOTE these may be NULL if we run config free
+      /*  for error reporting  NOTE these may be NULL if we run config free */
       dir_context->config_dir = config_dir;
       dir_context->config_file = config_file;
     }
@@ -183,8 +184,9 @@ char *zMapConfigDirGetDir(void)
   char *config_dir = NULL ;
   ZMapConfigDir dir_context = dir_context_G ;
 
-  if (!dir_context) 
-    return config_dir ;
+  /* if (!dir_context) 
+    return config_dir ; */
+  zMapReturnValIfFail(dir_context, config_dir) ; 
 
   config_dir = dir_context->config_dir ;
 
@@ -197,8 +199,9 @@ char *zMapConfigDirGetFile(void)
   char *config_file = NULL ;
   ZMapConfigDir dir_context = dir_context_G ;
 
-  if (!dir_context) 
-    return config_file ;
+  /* if (!dir_context) 
+    return config_file ; */
+  zMapReturnValIfFail(dir_context, config_file) ; 
 
   config_file = dir_context->config_file ;
 
@@ -211,8 +214,9 @@ char *zMapConfigDirFindFile(char *filename)
   char *file_path = NULL ;
   ZMapConfigDir dir_context = dir_context_G ;
 
-  if (!dir_context) 
-    return file_path ;
+  /* if (!dir_context) 
+    return file_path ; */
+  zMapReturnValIfFail(dir_context, file_path) ; 
 
   file_path = zMapGetFile(dir_context->config_dir, filename, FALSE) ;
 
@@ -236,8 +240,9 @@ char *zMapConfigDirGetZmapHomeFile(void)
   char *config_file = NULL ;
   ZMapConfigDir dir_context = dir_context_G ;
 
-  if (!dir_context) 
-    return config_file ;
+  /* if (!dir_context) 
+    return config_file ; */
+  zMapReturnValIfFail(dir_context, config_file) ; 
 
   config_file = dir_context->zmap_conf_file ;
 
@@ -250,8 +255,9 @@ char *zMapConfigDirGetSysFile(void)
   char *config_file = NULL ;
   ZMapConfigDir dir_context = dir_context_G ;
 
-  if (!dir_context) 
-    return config_file ;
+  /* if (!dir_context) 
+    return config_file ; */
+  zMapReturnValIfFail(dir_context, config_file) ; 
 
   config_file = dir_context->sys_conf_file ;
 
@@ -263,8 +269,9 @@ void zMapConfigDirDestroy(void)
 {
   ZMapConfigDir dir_context = dir_context_G ;
 
-  if (dir_context) 
-    return ;
+  /* if (!dir_context) 
+    return ; */
+  zMapReturnIfFail(dir_context) ; 
 
   g_free(dir_context) ;
 
