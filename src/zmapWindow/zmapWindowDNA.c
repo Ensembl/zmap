@@ -107,10 +107,10 @@ static void setColoursInStyle(DNASearchData search_data, ZMapFeatureTypeStyle st
 
 
 static GtkItemFactoryEntry menu_items_G[] = {
- { "/_File",           NULL,          NULL,          0, "<Branch>",      NULL},
- { "/File/Close",      "<control>W",  requestDestroyCB,    0, NULL,            NULL},
- { "/_Help",           NULL,          NULL,          0, "<LastBranch>",  NULL},
- { "/Help/Overview",   NULL,          helpCB,      0, NULL,            NULL}
+  { "/_File",           NULL,          NULL,          0, "<Branch>",      NULL},
+  { "/File/Close",      "<control>W",  requestDestroyCB,    0, NULL,            NULL},
+  { "/_Help",           NULL,          NULL,          0, "<LastBranch>",  NULL},
+  { "/Help/Overview",   NULL,          helpCB,      0, NULL,            NULL}
 };
 
 static gboolean window_dna_debug_G = FALSE;
@@ -170,7 +170,7 @@ void zmapWindowCreateSequenceSearchWindow(ZMapWindow window, FooCanvasItem *feat
 
   if(proceed)
     block = (ZMapFeatureBlock)zMapFeatureGetParentGroup(feature_any,
-						      ZMAPFEATURE_STRUCT_BLOCK) ;
+                                                        ZMAPFEATURE_STRUCT_BLOCK) ;
 
   if (block->sequence.type == ZMAPSEQUENCE_NONE)
     {
@@ -414,33 +414,37 @@ static void dnaMatchesToFeatures(ZMapWindow window, GList *match_list, ZMapFeatu
 
   style = zMapFeatureStyleCopy(orig_style);
 
-      separator_featureset->style = style ;
+  separator_featureset->style = style ;
 
-	/* set up featureset2_column and anything else needed */
-	f2c = g_hash_table_lookup(window->context_map->featureset_2_column, GUINT_TO_POINTER(separator_featureset->unique_id));
-	if(!f2c)	/* these just accumulate  and should be removed from the hash table on clear */
-	{
-		f2c = g_new0(ZMapFeatureSetDescStruct,1);
+  /* set up featureset2_column and anything else needed */
+  f2c = g_hash_table_lookup(window->context_map->featureset_2_column,
+                            GUINT_TO_POINTER(separator_featureset->unique_id));
+  if(!f2c)	/* these just accumulate  and should be removed from the hash table on clear */
+    {
+      f2c = g_new0(ZMapFeatureSetDescStruct,1);
 
-		f2c->column_id = zMapFeatureSetCreateID(ZMAP_FIXED_STYLE_STRAND_SEPARATOR);
-		f2c->column_ID = g_quark_from_string(ZMAP_FIXED_STYLE_STRAND_SEPARATOR);
-		f2c->feature_src_ID = g_quark_from_string(name);
-		f2c->feature_set_text = ZMAP_FIXED_STYLE_SEARCH_MARKERS_TEXT;
-		g_hash_table_insert(window->context_map->featureset_2_column, GUINT_TO_POINTER(separator_featureset->unique_id), f2c);
-	}
+      f2c->column_id = zMapFeatureSetCreateID(ZMAP_FIXED_STYLE_STRAND_SEPARATOR);
+      f2c->column_ID = g_quark_from_string(ZMAP_FIXED_STYLE_STRAND_SEPARATOR);
+      f2c->feature_src_ID = g_quark_from_string(name);
+      f2c->feature_set_text = ZMAP_FIXED_STYLE_SEARCH_MARKERS_TEXT;
+      g_hash_table_insert(window->context_map->featureset_2_column,
+                          GUINT_TO_POINTER(separator_featureset->unique_id), f2c);
+    }
 
-	src = g_hash_table_lookup(window->context_map->source_2_sourcedata, GUINT_TO_POINTER(separator_featureset->unique_id));
-	if(!src)
-	{
-		src = g_new0(ZMapFeatureSourceStruct,1);
-		src->source_id = f2c->feature_src_ID;
-		src->source_text = g_quark_from_string(ZMAP_FIXED_STYLE_SEARCH_MARKERS_TEXT);
-		src->style_id = style->unique_id;
-//		src->maps_to = f2c->column_id;	maps_to is for a vitrtual featureset not a column
-		src->maps_to = zMapFeatureSetCreateID(ZMAP_FIXED_STYLE_SEARCH_MARKERS_NAME);
+  src = g_hash_table_lookup(window->context_map->source_2_sourcedata,
+                            GUINT_TO_POINTER(separator_featureset->unique_id));
+  if(!src)
+    {
+      src = g_new0(ZMapFeatureSourceStruct,1);
+      src->source_id = f2c->feature_src_ID;
+      src->source_text = g_quark_from_string(ZMAP_FIXED_STYLE_SEARCH_MARKERS_TEXT);
+      src->style_id = style->unique_id;
+      //		src->maps_to = f2c->column_id;	maps_to is for a vitrtual featureset not a column
+      src->maps_to = zMapFeatureSetCreateID(ZMAP_FIXED_STYLE_SEARCH_MARKERS_NAME);
 
-		g_hash_table_insert(window->context_map->source_2_sourcedata, GUINT_TO_POINTER(separator_featureset->unique_id), src);
-	}
+      g_hash_table_insert(window->context_map->source_2_sourcedata,
+                          GUINT_TO_POINTER(separator_featureset->unique_id), src);
+    }
 
 
   list = g_hash_table_lookup(window->context_map->column_2_styles,GUINT_TO_POINTER(f2c->column_id));
@@ -663,23 +667,23 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
   query_txt = zMapStringFlatten(query_txt);	/* take out the null/ newline characters */
 
   if(*query_txt == '>')		/* we probably pasted a FASTA sequence */
-  {
+    {
 
-	  if (search_data->sequence_type == ZMAPSEQUENCE_DNA)
-	  {
-		/* caution: reverse engineered fix, search for 'bp' */
-		char * where = (char *) g_strstr_len(query_txt,-1,"bp");
-		if(where)
-			query_txt = where + 2;
-	  }
-	  else
-	  {
-  		/* caution: reverse engineered fix, search for 'AA' */
-		char * where = (char *) g_strstr_len(query_txt,-1,"AA");
-		if(where)
-			query_txt = where + 2;
-	  }
-  }
+      if (search_data->sequence_type == ZMAPSEQUENCE_DNA)
+        {
+          /* caution: reverse engineered fix, search for 'bp' */
+          char * where = (char *) g_strstr_len(query_txt,-1,"bp");
+          if(where)
+            query_txt = where + 2;
+        }
+      else
+        {
+          /* caution: reverse engineered fix, search for 'AA' */
+          char * where = (char *) g_strstr_len(query_txt,-1,"AA");
+          if(where)
+            query_txt = where + 2;
+        }
+    }
 
 
   gtk_entry_set_text(GTK_ENTRY(search_data->dna_entry), query_txt);
@@ -711,7 +715,7 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 	  || (search_data->max_Ns < 0 || search_data->max_Ns > dna_len))
 	err_text = g_strdup_printf("start/end/max errors/max Ns\n must all be within range %d -> %d",
 				   search_data->block->block_to_sequence.block.x1,
-			       search_data->block->block_to_sequence.block.x2) ;
+                                   search_data->block->block_to_sequence.block.x2) ;
     }
 
 
@@ -831,7 +835,7 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
     g_free(err_text) ;
 
   if(query_buf)
-	g_free(query_buf) ;
+    g_free(query_buf) ;
 
   return ;
 }
@@ -859,7 +863,7 @@ static void colourSetCB(GtkColorButton *widget, gpointer user_data)
 {
   DNASearchData search_data = (DNASearchData)user_data ;
   GdkColor colour = {0} ;
-//  char *colour_string = NULL ;
+  //  char *colour_string = NULL ;
   char **target_string ;
 
   if (GTK_WIDGET(widget) == search_data->forward_widget)
@@ -1044,7 +1048,7 @@ static void matches_to_features(gpointer list_data, gpointer user_data)
   style       = fstyle->feature_style;
 
   if(!feature_set->style)
-	  feature_set->style = style;
+    feature_set->style = style;
 
   current_feature = zMapFeatureCreateFromStandardData(current_match->match,
 						      sequence,
@@ -1067,17 +1071,17 @@ static void matches_to_features(gpointer list_data, gpointer user_data)
 
 typedef struct
 {
-	ZMapWindow window;
-	GQuark align_id;
-	GQuark block_id;
+  ZMapWindow window;
+  GQuark align_id;
+  GQuark block_id;
 
 }
-_contextStack, *contextStack;
+  _contextStack, *contextStack;
 
 static ZMapFeatureContextExecuteStatus undisplaySearchFeatureSetsCB(GQuark key,
-                                                           gpointer data,
-                                                           gpointer user_data,
-                                                           char **err_out)
+                                                                    gpointer data,
+                                                                    gpointer user_data,
+                                                                    char **err_out)
 {
   contextStack stuff = (contextStack) user_data ;
   ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
@@ -1085,25 +1089,25 @@ static ZMapFeatureContextExecuteStatus undisplaySearchFeatureSetsCB(GQuark key,
   ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
 
   switch(feature_any->struct_type)
-  {
-  case ZMAPFEATURE_STRUCT_ALIGN:
-	  stuff->align_id = feature_any->unique_id;
-	  break;
-  case ZMAPFEATURE_STRUCT_BLOCK:
-	  stuff->block_id = feature_any->unique_id;
-	  break;
+    {
+    case ZMAPFEATURE_STRUCT_ALIGN:
+      stuff->align_id = feature_any->unique_id;
+      break;
+    case ZMAPFEATURE_STRUCT_BLOCK:
+      stuff->block_id = feature_any->unique_id;
+      break;
 
     case ZMAPFEATURE_STRUCT_FEATURESET:
-	set = (ZMapFeatureSet) feature_any;
+      set = (ZMapFeatureSet) feature_any;
 
-	FooCanvasItem *foo = zmapWindowFToIFindSetItem(stuff->window,stuff->window->context_to_item,
-     					 set,ZMAPSTRAND_NONE, ZMAPFRAME_NONE);
+      FooCanvasItem *foo = zmapWindowFToIFindSetItem(stuff->window,stuff->window->context_to_item,
+                                                     set,ZMAPSTRAND_NONE, ZMAPFRAME_NONE);
 
-	zmapWindowFToIRemoveSet(stuff->window->context_to_item,
-				  stuff->align_id, stuff->block_id, set->unique_id,
-				  ZMAPSTRAND_NONE, ZMAPFRAME_NONE, TRUE);
+      zmapWindowFToIRemoveSet(stuff->window->context_to_item,
+                              stuff->align_id, stuff->block_id, set->unique_id,
+                              ZMAPSTRAND_NONE, ZMAPFRAME_NONE, TRUE);
 
-	zMapWindowFeaturesetItemRemoveSet(foo, set, FALSE);
+      zMapWindowFeaturesetItemRemoveSet(foo, set, FALSE);
 
       break;
 
@@ -1117,8 +1121,8 @@ static ZMapFeatureContextExecuteStatus undisplaySearchFeatureSetsCB(GQuark key,
 
 /* this function is here to remove whole featuresets from the FtoiHash, which is a lot more effciecient than one feature at time */
 void zMapWindowUnDisplaySearchFeatureSets(ZMapWindow window,
-                             ZMapFeatureContext current_features,
-                             ZMapFeatureContext new_features)
+                                          ZMapFeatureContext current_features,
+                                          ZMapFeatureContext new_features)
 {
   _contextStack stuff = { NULL };
 
@@ -1150,9 +1154,9 @@ static void remove_current_matches_from_display(DNASearchData search_data)
       ZMapFeatureBlock block;
       ZMapFeatureSet feature_set;
       FooCanvasItem *container = NULL;
-	GList *sets = NULL, *free_this;
-	ZMapFeatureContext diff_context = NULL, erase_context;
-	gboolean is_master = FALSE;
+      GList *sets = NULL, *free_this;
+      ZMapFeatureContext diff_context = NULL, erase_context;
+      gboolean is_master = FALSE;
 
       /* Get the alignment from the current context by looking up using block's parent */
       align = (ZMapFeatureAlignment)zMapFeatureGetParentGroup((ZMapFeatureAny)search_data->block,
@@ -1162,66 +1166,66 @@ static void remove_current_matches_from_display(DNASearchData search_data)
       /* Get the block matching the search_data->block */
       block = zMapFeatureAlignmentGetBlockByID(align, search_data->block->unique_id);
 
-	free_this = sets = zMapFeatureBlockGetMatchingSets(block,g_ascii_strdown(ZMAP_FIXED_STYLE_SEARCH_MARKERS_NAME"_",-1));
+      free_this = sets = zMapFeatureBlockGetMatchingSets(block,g_ascii_strdown(ZMAP_FIXED_STYLE_SEARCH_MARKERS_NAME"_",-1));
 
 
-	/* remove multiple featuresets matching the name, we have a diff set for each search */
-	is_master = (search_data->window->strand_separator_context->master_align == align);
+      /* remove multiple featuresets matching the name, we have a diff set for each search */
+      is_master = (search_data->window->strand_separator_context->master_align == align);
 
-	block = (ZMapFeatureBlock)zMapFeatureAnyCopy((ZMapFeatureAny)block);
+      block = (ZMapFeatureBlock)zMapFeatureAnyCopy((ZMapFeatureAny)block);
 
-	align = (ZMapFeatureAlignment)zMapFeatureAnyCopy((ZMapFeatureAny)align);
+      align = (ZMapFeatureAlignment)zMapFeatureAnyCopy((ZMapFeatureAny)align);
 
-	erase_context = (ZMapFeatureContext)zMapFeatureAnyCopy((ZMapFeatureAny)search_data->window->strand_separator_context);
-
-
-	zMapFeatureContextAddAlignment(erase_context, align, is_master);
-	zMapFeatureAlignmentAddBlock(align, block);
+      erase_context = (ZMapFeatureContext)zMapFeatureAnyCopy((ZMapFeatureAny)search_data->window->strand_separator_context);
 
 
-	for( ; sets; sets = sets->next)
+      zMapFeatureContextAddAlignment(erase_context, align, is_master);
+      zMapFeatureAlignmentAddBlock(align, block);
+
+
+      for( ; sets; sets = sets->next)
 	{
-		feature_set = (ZMapFeatureSet) sets->data;
+          feature_set = (ZMapFeatureSet) sets->data;
 
-		/* its container, to hide it later */
-		if(!container)
-			container = zmapWindowFToIFindSetItem(search_data->window,search_data->window->context_to_item,
-						feature_set,
-						ZMAPSTRAND_NONE,
-						ZMAPFRAME_NONE);
+          /* its container, to hide it later */
+          if(!container)
+            container = zmapWindowFToIFindSetItem(search_data->window,search_data->window->context_to_item,
+                                                  feature_set,
+                                                  ZMAPSTRAND_NONE,
+                                                  ZMAPFRAME_NONE);
 
-		feature_set = zMapFeatureSetCopy(feature_set);
+          feature_set = zMapFeatureSetCopy(feature_set);
 
-		zMapFeatureBlockAddFeatureSet(block, feature_set);
+          zMapFeatureBlockAddFeatureSet(block, feature_set);
 	}
 
-	if(container)
+      if(container)
 	{
-		foo_canvas_item_request_redraw((FooCanvasItem *) container -> parent); /* that's the column */
+          foo_canvas_item_request_redraw((FooCanvasItem *) container -> parent); /* that's the column */
 
-		if(!zMapFeatureContextErase(&(search_data->window->strand_separator_context),
-					erase_context,
-					&diff_context))
-		{
-			zMapLogCritical("%s", "Failed to complete Context Erase!");
-		}
-		else
-		{
-			/* remove the FtoiHash only */
-			zMapWindowUnDisplaySearchFeatureSets(search_data->window, NULL, diff_context);
+          if(!zMapFeatureContextErase(&(search_data->window->strand_separator_context),
+                                      erase_context,
+                                      &diff_context))
+            {
+              zMapLogCritical("%s", "Failed to complete Context Erase!");
+            }
+          else
+            {
+              /* remove the FtoiHash only */
+              zMapWindowUnDisplaySearchFeatureSets(search_data->window, NULL, diff_context);
 
-			/* this handles destroy of the (virtual) CanvasFeatureset */
-//			zmapWindowContainerGroupDestroy((ZMapWindowContainerGroup)(container));
+              /* this handles destroy of the (virtual) CanvasFeatureset */
+              //			zmapWindowContainerGroupDestroy((ZMapWindowContainerGroup)(container));
 
-//			zmapWindowFullReposition(search_data->window->feature_root_group,TRUE);
+              //			zmapWindowFullReposition(search_data->window->feature_root_group,TRUE);
 
-			zMapFeatureContextDestroy(diff_context, TRUE);
-		}
+              zMapFeatureContextDestroy(diff_context, TRUE);
+            }
 	}
 
-	zMapFeatureContextDestroy(erase_context, TRUE);
+      zMapFeatureContextDestroy(erase_context, TRUE);
 
-	g_list_free(free_this);
+      g_list_free(free_this);
     }
 
 
@@ -1240,9 +1244,9 @@ static void setColoursInStyle(DNASearchData search_data, ZMapFeatureTypeStyle st
 						  search_data->reverse_colour_str, "black", NULL) ;
 
   g_object_set(G_OBJECT(style),
-		 ZMAPSTYLE_PROPERTY_COLOURS, forward_colour_spec,
-		 ZMAPSTYLE_PROPERTY_REV_COLOURS, reverse_colour_spec,
-		 NULL);
+               ZMAPSTYLE_PROPERTY_COLOURS, forward_colour_spec,
+               ZMAPSTYLE_PROPERTY_REV_COLOURS, reverse_colour_spec,
+               NULL);
 
   return ;
 }
