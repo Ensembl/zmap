@@ -1041,7 +1041,8 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 
     default:
       {
-	zMapAssertNotReached() ;				    /* exits... */
+        zMapWarning("%s", "Unexpected menu callback action\n") ;
+        zMapWarnIfReached() ;
 	break ;
       }
     }
@@ -1763,7 +1764,7 @@ static void dnaMenuCB(int menu_item_id, gpointer callback_data)
       }
     default:
       {
-	zMapAssertNotReached() ;				    /* exits... */
+        zMapWarnIfReached() ;
 	break ;
       }
     }
@@ -1904,7 +1905,7 @@ static void peptideMenuCB(int menu_item_id, gpointer callback_data)
 	break ;
       }
     default:
-      zMapAssertNotReached() ;				    /* exits... */
+      zMapWarnIfReached() ;
       break ;
     }
 
@@ -3498,7 +3499,7 @@ static ZMapFeatureContextExecuteStatus alignBlockMenusDataListForeach(GQuark key
     case ZMAPFEATURE_STRUCT_FEATURE:
     case ZMAPFEATURE_STRUCT_INVALID:
     default:
-      zMapAssertNotReached();
+      zMapWarnIfReached();
       break;
 
     }
@@ -3655,7 +3656,7 @@ static void createExonTextTag(gpointer data, gpointer user_data)
 	  break ;
 
 	default:
-	  zMapAssertNotReached() ;
+          zMapWarnIfReached() ;
 	}
 
       text_attrs_list = g_list_append(text_attrs_list, text_attr) ;
@@ -3800,7 +3801,8 @@ static void searchListMenuCB(int menu_item_id, gpointer callback_data)
 
     default:
       {
-	zMapAssertNotReached() ;
+        zMapWarning("%s", "Unexpected search menu callback action\n") ;
+        zMapWarnIfReached() ;
 	break ;
       }
     }

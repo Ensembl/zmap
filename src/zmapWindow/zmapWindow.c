@@ -6233,12 +6233,18 @@ static void popUpMenu(GdkEventKey *key_event, ZMapWindow window, FooCanvasItem *
     {
       /* Is the item a feature or a column ? */
       if(ZMAP_IS_CANVAS_ITEM(focus_item))
-	is_feature = TRUE ;
+        {
+          is_feature = TRUE ;
+        }
       else if (ZMAP_IS_CONTAINER_GROUP(focus_item) &&
 	       zmapWindowContainerUtilsGetLevel(focus_item) == ZMAPCONTAINER_LEVEL_FEATURESET)
-	is_feature = FALSE ;
+        {
+          is_feature = FALSE ;
+        }
       else
-	zMapAssertNotReached() ;
+        {
+          zMapWarnIfReached() ;
+        }
 
 
       /* Calculate canvas window coords for menu position from part of item which is visible. */
@@ -6670,7 +6676,7 @@ static void lockedRulerCB(gpointer key, gpointer value_unused, gpointer user_dat
       removeRuler(window->mark_guide_line, NULL);
       break;
     default:
-      zMapAssertNotReached();
+      zMapWarnIfReached();
       break;
     }
 

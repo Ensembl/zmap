@@ -501,7 +501,7 @@ ZMapFeatureContext zMapFeatureContextCopyWithParents(ZMapFeatureAny orig_feature
 	      }
 
 	    default:
-	      zMapAssertNotReached();
+              zMapWarnIfReached();
 	      break;
 	    }
 
@@ -611,7 +611,9 @@ void zMapFeatureContextExecuteSubset(ZMapFeatureAny feature_any,
       postExecuteProcess(&full_data);
     }
   else
-    zMapAssertNotReached();
+    {
+      zMapWarnIfReached();
+    }
 
   return ;
 }
@@ -714,7 +716,7 @@ ZMapFeatureAny zMapFeatureContextFindFeatureFromFeature(ZMapFeatureContext conte
 	  break;
 	case ZMAPFEATURE_STRUCT_FEATURE:
 	default:
-	  zMapAssertNotReached();
+          zMapWarnIfReached();
 	  break;
 	}
     }
@@ -740,7 +742,7 @@ ZMapFeatureAny zMapFeatureContextFindFeatureFromFeature(ZMapFeatureContext conte
 	  break;
 	case ZMAPFEATURE_STRUCT_FEATURE:
 	default:
-	  zMapAssertNotReached();
+          zMapWarnIfReached();
 	  break;
 	}
 
@@ -957,7 +959,7 @@ static ZMapFeatureContextExecuteStatus revCompFeaturesCB(GQuark key,
     case ZMAPFEATURE_STRUCT_INVALID:
     default:
       {
-	zMapAssertNotReached();
+        zMapWarnIfReached();
 	break;
       }
     }
@@ -1204,7 +1206,7 @@ static ZMapFeatureContextExecuteStatus templateDataListForeach(GQuark key,
       break;
     case ZMAPFEATURE_STRUCT_INVALID:
     default:
-      zMapAssertNotReached();
+      zMapWarnIfReached();
       break;
 
     }
@@ -1282,7 +1284,7 @@ static gboolean  executeDataForeachFunc(gpointer key_ptr, gpointer data, gpointe
 			zMapLogWarning("%s", "Altering hash during foreach _not_ supported!");
 			zMapLogCritical("Hash traversal on the children of '%s' isn't going to work",
 					g_quark_to_string(feature_any->unique_id));
-			zMapAssertNotReached();
+                        zMapWarnIfReached();
 		      }
 		  }
 
@@ -1302,7 +1304,7 @@ static gboolean  executeDataForeachFunc(gpointer key_ptr, gpointer data, gpointe
               break;
             case ZMAPFEATURE_STRUCT_INVALID:
             default:
-              zMapAssertNotReached();
+              zMapWarnIfReached();
               break;
             }
         }

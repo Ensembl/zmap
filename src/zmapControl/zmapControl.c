@@ -695,7 +695,7 @@ ZMapView zmapControlInsertView(ZMap zmap, ZMapFeatureSequenceMap sequence_map, c
   ZMapView view = NULL ;
   ZMapViewWindow view_window ;
 
-  zMapReturnIfFail(zmap) ; 
+  zMapReturnValIfFail(zmap, view) ;
 
   if ((view_window = zmapControlAddView(zmap, sequence_map)))
     {
@@ -742,7 +742,6 @@ ZMapViewWindow zmapControlAddView(ZMap zmap, ZMapFeatureSequenceMap sequence_map
       zmapControlPrintView(zmap, view, "Added", TRUE) ;
       zmapControlPrintAllViews(zmap, TRUE) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
       zmap->state = ZMAP_VIEWS ;
     }
 

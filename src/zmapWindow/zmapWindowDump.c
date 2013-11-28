@@ -859,7 +859,7 @@ static void dumpCB(ZMapWindowContainerGroup container_parent, FooCanvasPoints *p
           }
 
           default:
-            zMapAssertNotReached();
+            zMapWarnIfReached();
             break;
       }
 //printf("DumpCB ends %s\n",tstamp());
@@ -1047,8 +1047,8 @@ static void dumpFeatureCB(gpointer data, gpointer user_data)
 	}
       else
 	{
-        zMapLogMessage("Unexpected item [%s]", G_OBJECT_TYPE_NAME(item));
-	  zMapAssertNotReached() ;
+          zMapLogMessage("Unexpected item [%s]", G_OBJECT_TYPE_NAME(item));
+          zMapWarnIfReached() ;
 	}
     }
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */

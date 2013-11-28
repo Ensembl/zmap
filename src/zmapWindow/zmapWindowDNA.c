@@ -140,7 +140,7 @@ void zmapWindowCreateSequenceSearchWindow(ZMapWindow window, FooCanvasItem *feat
     *buttonBox, *search_button, *forward_colour_button, *reverse_colour_button, *clear_button ;
   GdkColor colour = {0} ;
   DNASearchData search_data ;
-  ZMapFeatureAny feature_any ;
+  ZMapFeatureAny feature_any = NULL ;
   ZMapFeatureBlock block ;
   int max_errors, max_Ns ;
   char *text, *frame_label, *frame_text ;
@@ -159,7 +159,7 @@ void zmapWindowCreateSequenceSearchWindow(ZMapWindow window, FooCanvasItem *feat
     }
   else
     {
-      zMapAssertNotReached();
+      zMapWarnIfReached();
     }
 
   if(feature_any == NULL)

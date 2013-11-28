@@ -250,9 +250,16 @@ ZMapGuiNotebook zMapGUINotebookCreateNotebook(char *notebook_name, gboolean edit
 
   notebook = (ZMapGuiNotebook)createSectionAny(ZMAPGUI_NOTEBOOK_BOOK, notebook_name) ;
 
-  notebook->editable = editable ;
-  notebook->cleanup_cb = cleanup_cb ;
-  notebook->user_cleanup_data = user_cleanup_data ;
+  if (notebook)
+    {
+      notebook->editable = editable ;
+      notebook->cleanup_cb = cleanup_cb ;
+      notebook->user_cleanup_data = user_cleanup_data ;
+    }
+  else
+    {
+      zMapWarning("%s", "Error creating notebook\n") ;
+    }
 
   return notebook ;
 }
@@ -479,7 +486,7 @@ ZMapGuiNotebookTagValue zMapGUINotebookCreateTagValue(ZMapGuiNotebookParagraph p
     }
   else
     {
-      zMapAssertNotReached() ;
+      zMapWarnIfReached() ;
     }
 
   va_end (args);
@@ -784,6 +791,7 @@ gboolean zMapGUINotebookGetTagValue(ZMapGuiNotebookPage page, const char *tagval
 
   if ((tagvalue = findTagInPage(page, tagvalue_name)))
     {
+      result = TRUE ;
       va_list args ;
 
       /* Convert given type.... */
@@ -841,12 +849,11 @@ gboolean zMapGUINotebookGetTagValue(ZMapGuiNotebookPage page, const char *tagval
 	}
       else
 	{
-	  zMapAssertNotReached() ;
+          result = FALSE ;
+          zMapWarnIfReached() ;
 	}
 
       va_end (args);
-
-      result = TRUE ;
     }
 
   return result ;
@@ -898,8 +905,8 @@ void zMapGUINotebookDestroyNotebook(ZMapGuiNotebook note_book)
 /* Create the bare bones, canonical notebook structs. */
 static ZMapGuiNotebookAny createSectionAny(ZMapGuiNotebookType type, char *name)
 {
-  ZMapGuiNotebookAny book_any ;
-  int size ;
+  ZMapGuiNotebookAny book_any = NULL ;
+  int size = 0 ;
 
   switch(type)
     {
@@ -922,16 +929,18 @@ static ZMapGuiNotebookAny createSectionAny(ZMapGuiNotebookType type, char *name)
       size = sizeof(ZMapGuiNotebookTagValueStruct) ;
       break ;
     default:
-      zMapAssertNotReached() ;
+      zMapWarnIfReached() ;
       break ;
     }
 
-  book_any = g_malloc0(size) ;
-  book_any->type = type ;
+  if (size)
+    {
+      book_any = g_malloc0(size) ;
+      book_any->type = type ;
 
-  if (name)
-    book_any->name = g_quark_from_string(name) ;
-
+      if (name)
+        book_any->name = g_quark_from_string(name) ;
+    }
   return book_any ;
 }
 
@@ -971,7 +980,7 @@ static void freeBookResources(gpointer data, gpointer user_data)
       }
 
     default:
-      zMapAssertNotReached() ;
+      zMapWarnIfReached() ;
       break ;
     }
 
@@ -1273,25 +1282,28 @@ static gboolean editing_finished_cb(GtkWidget *widget, GdkEventFocus *event, gpo
 	  tag_value_text = g_strdup((tag_value->original_data.bool_value ? "true" : "false"));
 	  break;
 	default:
-	  zMapAssertNotReached() ;
-	  break;
+          zMapWarnIfReached() ;
+          break;
 	}
 
-      if (g_ascii_strcasecmp(entry_text, tag_value_text) != 0)
-	{
-	  if (edit_allowed)
-	    {
-	      /* update_original with entry_text */
-	      validateTagValue(tag_value, (char *)entry_text, TRUE) ;
-	    }
-	  else
-	    {
-	      /* revert to original */
-	      gtk_entry_set_text(entry, tag_value_text) ;
-	    }
-	}
+      if (tag_value_text)
+        {
+          if (g_ascii_strcasecmp(entry_text, tag_value_text) != 0)
+            {
+              if (edit_allowed)
+                {
+                  /* update_original with entry_text */
+                  validateTagValue(tag_value, (char *)entry_text, TRUE) ;
+                }
+              else
+                {
+                  /* revert to original */
+                  gtk_entry_set_text(entry, tag_value_text) ;
+                }
+            }
 
-      g_free(tag_value_text) ;
+          g_free(tag_value_text) ;
+        }
     }
 
   g_signal_handlers_unblock_by_func (widget, editing_finished_cb, user_data) ;
@@ -1498,7 +1510,7 @@ static void makeTagValueCB(gpointer data, gpointer user_data)
 
     default:
       {
-	zMapAssertNotReached() ;
+        zMapWarnIfReached() ;
 	break ;
       }
     }
@@ -2057,7 +2069,8 @@ static gboolean validateTagValue(ZMapGuiNotebookTagValue tag_value, char *text, 
       }
     default:
       {
-	zMapAssertNotReached() ;
+        zMapWarning("Invalid tag data type") ;
+        zMapWarnIfReached() ;
 	break ;
       }
     }

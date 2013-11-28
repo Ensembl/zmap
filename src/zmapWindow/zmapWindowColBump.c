@@ -218,7 +218,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
   BumpColStruct bump_data = {NULL} ;
   ZMapWindowContainerFeatureSet container = NULL;
   ZMapStyleBumpMode historic_bump_mode;
-  ZMapWindow window;
+  ZMapWindow window = NULL;
   gboolean column = FALSE ;
   gboolean ok = TRUE;
 
@@ -243,119 +243,125 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
       container = (ZMapWindowContainerFeatureSet)(bump_item);
     }
   else
-    zMapAssertNotReached();
-
-  window = g_object_get_data(G_OBJECT(container), ZMAP_WINDOW_POINTER) ;
-  if (!window) 
-    return ;
-
-  historic_bump_mode = zmapWindowContainerFeatureSetGetBumpMode(container) ;
-
-  if(historic_bump_mode > ZMAPBUMP_UNBUMP && historic_bump_mode != bump_mode && bump_mode != ZMAPBUMP_UNBUMP)
-      zmapWindowColumnBumpRange(bump_item,ZMAPBUMP_UNBUMP,compress_mode);
-
-  if (bump_mode == ZMAPBUMP_INVALID)      // this is set to 'rebump' the columns
-    bump_mode = historic_bump_mode ;
-
-  if(bump_mode == ZMAPBUMP_UNBUMP && bump_mode == historic_bump_mode)
-      return;
-
-  /* Need to know if mark is set for limiting feature display for several modes/feature types. */
-  mark_set = zmapWindowMarkIsSet(window->mark) ;
-
-  /* If range set explicitly or a mark is set on the window, then only bump within the range of mark
-   * or the visible section of the window. */
-  if (compress_mode == ZMAPWINDOW_COMPRESS_INVALID)
     {
-      if (mark_set)
-	zmapWindowMarkGetSequenceRange(window->mark, &start, &end) ;
-      else
-	{
-	  start = window->min_coord ;
-	  end   = window->max_coord ;
-	}
+      zMapWarnIfReached();
     }
-  else
-    {
-      if (compress_mode == ZMAPWINDOW_COMPRESS_VISIBLE)
-	{
-	  double wx1, wy1, wx2, wy2 ;
 
-	  zmapWindowItemGetVisibleWorld(window, &wx1, &wy1, &wx2, &wy2);
+  if (container)
+    {
+      window = g_object_get_data(G_OBJECT(container), ZMAP_WINDOW_POINTER) ;
+    }
+
+  if (window)
+    {
+      historic_bump_mode = zmapWindowContainerFeatureSetGetBumpMode(container) ;
+
+      if(historic_bump_mode > ZMAPBUMP_UNBUMP && historic_bump_mode != bump_mode && bump_mode != ZMAPBUMP_UNBUMP)
+        zmapWindowColumnBumpRange(bump_item,ZMAPBUMP_UNBUMP,compress_mode);
+
+      if (bump_mode == ZMAPBUMP_INVALID)      // this is set to 'rebump' the columns
+        bump_mode = historic_bump_mode ;
+
+      if(bump_mode == ZMAPBUMP_UNBUMP && bump_mode == historic_bump_mode)
+        return;
+
+      /* Need to know if mark is set for limiting feature display for several modes/feature types. */
+      mark_set = zmapWindowMarkIsSet(window->mark) ;
+
+      /* If range set explicitly or a mark is set on the window, then only bump within the range of mark
+       * or the visible section of the window. */
+      if (compress_mode == ZMAPWINDOW_COMPRESS_INVALID)
+        {
+          if (mark_set)
+            zmapWindowMarkGetSequenceRange(window->mark, &start, &end) ;
+          else
+            {
+              start = window->min_coord ;
+              end   = window->max_coord ;
+            }
+        }
+      else
+        {
+          if (compress_mode == ZMAPWINDOW_COMPRESS_VISIBLE)
+            {
+              double wx1, wy1, wx2, wy2 ;
+
+              zmapWindowItemGetVisibleWorld(window, &wx1, &wy1, &wx2, &wy2);
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  printf("Visible %f, %f  -> %f, %f\n", wx1, wy1, wx2, wy2) ;
+              printf("Visible %f, %f  -> %f, %f\n", wx1, wy1, wx2, wy2) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-	  /* should really clamp to seq. start/end..... */
-	  start = (int)wy1 ;
-	  end = (int)wy2 ;
-	}
-      else if (compress_mode == ZMAPWINDOW_COMPRESS_MARK)
-	{
-	  /* we know mark is set so no need to check result of range check. But should check
-	   * that col to be bumped and mark are in same block ! */
-	  zmapWindowMarkGetSequenceRange(window->mark, &start, &end) ;
-	}
-      else
-	{
-	  start = window->min_coord ;
-	  end   = window->max_coord ;
-	}
-    }
+              /* should really clamp to seq. start/end..... */
+              start = (int)wy1 ;
+              end = (int)wy2 ;
+            }
+          else if (compress_mode == ZMAPWINDOW_COMPRESS_MARK)
+            {
+              /* we know mark is set so no need to check result of range check. But should check
+               * that col to be bumped and mark are in same block ! */
+              zmapWindowMarkGetSequenceRange(window->mark, &start, &end) ;
+            }
+          else
+            {
+              start = window->min_coord ;
+              end   = window->max_coord ;
+            }
+        }
 
-  bump_data.start = start ;
-  bump_data.end = end ;
+      bump_data.start = start ;
+      bump_data.end = end ;
 
 
 //time = zMapElapsedSeconds;
 
 
-  if(bump_mode == ZMAPBUMP_STYLE || historic_bump_mode == ZMAPBUMP_STYLE)
-  {
-		/* this does many featuresets, we expect heatmap sub-columns */
-	if(!zmapWindowContainerBumpStyle(container,bump_mode == ZMAPBUMP_STYLE))
-	{
-		ok = FALSE;
-		zMapWarning("bump style not configured","");
-	}
-  }
-  else
-  {
-	/* bump features within each featureset item, we normally only expect one */
-	/* except for coverage data where we have a few heatmaps.*/
+      if(bump_mode == ZMAPBUMP_STYLE || historic_bump_mode == ZMAPBUMP_STYLE)
+        {
+          /* this does many featuresets, we expect heatmap sub-columns */
+          if(!zmapWindowContainerBumpStyle(container,bump_mode == ZMAPBUMP_STYLE))
+            {
+              ok = FALSE;
+              zMapWarning("bump style not configured","");
+            }
+        }
+      else
+        {
+          /* bump features within each featureset item, we normally only expect one */
+          /* except for coverage data where we have a few heatmaps.*/
 
-	GList *l;
-	FooCanvasGroup *column_features;
-	BumpFeaturesetStruct bump_data = { 0 };
+          GList *l;
+          FooCanvasGroup *column_features;
+          BumpFeaturesetStruct bump_data = { 0 };
 
 
-	column_features = (FooCanvasGroup *)zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)container) ;
+          column_features = (FooCanvasGroup *)zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)container) ;
 
-	if(!column_features)
-		return;
+          if(!column_features)
+            return;
 
-	bump_data.start = start ;	/* NOTE: different struct from previous one */
-	bump_data.end = end ;
-	bump_data.mark_set = mark_set;
-	bump_data.spacing = zmapWindowContainerFeatureGetBumpSpacing(container) ;
+          bump_data.start = start ;	/* NOTE: different struct from previous one */
+          bump_data.end = end ;
+          bump_data.mark_set = mark_set;
+          bump_data.spacing = zmapWindowContainerFeatureGetBumpSpacing(container) ;
 
-	for(l = column_features->item_list;l;l = l->next)
-      {
-		if(!zMapWindowCanvasFeaturesetBump(l->data, bump_mode, (int) compress_mode, &bump_data))
-		    ok = FALSE;
-      }
-  }
+          for(l = column_features->item_list;l;l = l->next)
+            {
+              if(!zMapWindowCanvasFeaturesetBump(l->data, bump_mode, (int) compress_mode, &bump_data))
+                ok = FALSE;
+            }
+        }
 
-     	/* this is a bit poor: we could have a column half bumped if there are > 1 CanvasFeatureset
-	 * in practice w/ heatmaps there will always be room and w/ other features only 1 CanvasFeatureset
-	 */
-  if(ok)
+      /* this is a bit poor: we could have a column half bumped if there are > 1 CanvasFeatureset
+       * in practice w/ heatmaps there will always be room and w/ other features only 1 CanvasFeatureset
+       */
+      if(ok)
 	zMapWindowContainerFeatureSetSetBumpMode(container,bump_mode);
 
 
 //		time = zMapElapsedSeconds - time;
 //		printf("featureset bump in %.3f seconds\n", time);
+    }
 
   return ;
 }

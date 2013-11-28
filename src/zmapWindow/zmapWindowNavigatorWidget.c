@@ -438,10 +438,10 @@ static double getZoomFactor(double widget_height, double border, int size)
        */
       zoom = (widget_height - border_height) / (size + 1);
     }
-#ifdef RDS_DONT_INCLUDE_UNUSED
   else
-    zMapAssertNotReached();
-#endif
+    {
+      zMapWarnIfReached();
+    }
 
   return zoom;
 }

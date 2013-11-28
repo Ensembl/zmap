@@ -846,7 +846,7 @@ ZMapWindowStateQueue zmapWindowStateQueueCreate(void)
   ZMapWindowStateQueue queue = NULL;
 
   if(!(queue = g_queue_new()))
-    zMapAssertNotReached();
+    zMapWarnIfReached();
 
   if(queue)
     {
@@ -999,7 +999,7 @@ static void mark_queue_updating(ZMapWindowStateQueue queue, gboolean update_flag
     {
       head_state->in_state_restore = update_flag;
       if(queue_doing_update(queue) != update_flag)
-	zMapAssertNotReached();
+        zMapWarnIfReached();
     }
 
   return ;

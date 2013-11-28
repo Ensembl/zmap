@@ -366,13 +366,13 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow      window,
   if ((zMapStyleIsStrandSpecific(style)) &&
       ((feature->strand == ZMAPSTRAND_REVERSE) && (!zMapStyleIsShowReverseStrand(style))))
     {
-      zMapAssertNotReached();
+      zMapWarnIfReached();
       return NULL ;
     }
   if ((zMapStyleIsStrandSpecific(style)) && window->flags[ZMAPFLAG_REVCOMPED_FEATURES] &&
       ((feature->strand == ZMAPSTRAND_FORWARD) && (zMapStyleIsHideForwardStrand(style))))
     {
-      zMapAssertNotReached();
+      zMapWarnIfReached();
       return NULL ;
     }
 #endif

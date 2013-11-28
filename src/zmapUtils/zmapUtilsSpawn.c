@@ -173,13 +173,21 @@ static gboolean example_stdout_io_func(GIOChannel *source, GIOCondition cond, gp
 	}
     }
   else if(cond & G_IO_HUP)	/* hung up, connection broken */
-    zMapShowMsg(ZMAP_MSG_INFORMATION, "%s", "G_IO_HUP");
+    {
+      zMapShowMsg(ZMAP_MSG_INFORMATION, "%s", "G_IO_HUP");
+    }
   else if(cond & G_IO_ERR)	/* error condition */
-    zMapShowMsg(ZMAP_MSG_INFORMATION, "%s", "G_IO_ERR");
+    {
+      zMapShowMsg(ZMAP_MSG_INFORMATION, "%s", "G_IO_ERR");
+    }
   else if(cond & G_IO_NVAL)	/* invalid request, file descriptor not open */
-    zMapShowMsg(ZMAP_MSG_INFORMATION, "%s", "G_IO_NVAL");      
+    {
+      zMapShowMsg(ZMAP_MSG_INFORMATION, "%s", "G_IO_NVAL");
+    }
   else
-    zMapAssertNotReached();
+    {
+      zMapWarnIfReached();
+    }
 
   return call_again;
 }

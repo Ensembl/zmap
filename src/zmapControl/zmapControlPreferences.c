@@ -76,29 +76,35 @@ void zmapControlShowPreferences(ZMap zmap)
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   zMapViewRedraw(zmap->focus_viewwindow) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-  
-  ZMapView zmap_view = zMapViewGetView(zmap->focus_viewwindow);
 
-  zMapViewBlixemGetConfigChapter(zmap_view, note_book) ;
-  zMapViewGetPrefsChapter(zmap_view, note_book);
-
-  if(0)
+  if (note_book)
     {
-      ZMapWindow window;
+      ZMapView zmap_view = zMapViewGetView(zmap->focus_viewwindow);
       
-      window  = zMapViewGetWindow(zmap->focus_viewwindow);
-      
-      chapter = zMapWindowGetConfigChapter(window, note_book) ;
-    }
+      zMapViewBlixemGetConfigChapter(zmap_view, note_book) ;
+      zMapViewGetPrefsChapter(zmap_view, note_book);
+
+      if(0)
+        {
+          ZMapWindow window;
+
+          window  = zMapViewGetWindow(zmap->focus_viewwindow);
+
+          chapter = zMapWindowGetConfigChapter(window, note_book) ;
+        }
 
 #ifdef NO_EDITING_YET
-  chapter = zMapViewSourcesGetConfigChapter(note_book) ;
+      chapter = zMapViewSourcesGetConfigChapter(note_book) ;
 #endif /* NO_EDITING_YET */
 
 
-  /* Display the preferences. */
-  notebook_dialog = zMapGUINotebookCreateDialog(note_book, help_title_G, help_text_G) ;
-
+      /* Display the preferences. */
+      notebook_dialog = zMapGUINotebookCreateDialog(note_book, help_title_G, help_text_G) ;
+    }
+  else
+    {
+      zMapWarning("%s", "Error creating preferences dialog\n") ;
+    }
 
   return ;
 }

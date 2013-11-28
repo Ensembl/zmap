@@ -437,17 +437,21 @@ void zMapLogMsg(char *domain, GLogLevelFlags log_level,
       msg_level = "Fatal" ;
       break ;
     default:
-      zMapAssertNotReached() ;
+      zMapWarnIfReached() ;
       break ;
     }
-  g_string_append_printf(format_str, "%s[%s:%s]\n",
-			 ZMAPLOG_MESSAGE_TUPLE, msg_level, format) ;
 
-  va_start(args, format) ;
-  g_logv(domain, log_level, format_str->str, args) ;
-  va_end(args) ;
+  if (msg_level)
+    {
+      g_string_append_printf(format_str, "%s[%s:%s]\n",
+                             ZMAPLOG_MESSAGE_TUPLE, msg_level, format) ;
 
-  g_string_free(format_str, TRUE) ;
+      va_start(args, format) ;
+      g_logv(domain, log_level, format_str->str, args) ;
+      va_end(args) ;
+
+      g_string_free(format_str, TRUE) ;
+    }
 
   return ;
 }

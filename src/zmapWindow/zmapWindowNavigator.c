@@ -798,7 +798,7 @@ static ZMapFeatureContextExecuteStatus drawContext(GQuark key_id,
     case ZMAPFEATURE_STRUCT_INVALID:
     default:
       status = ZMAP_CONTEXT_EXEC_STATUS_ERROR;
-      zMapAssertNotReached();
+      zMapWarnIfReached();
       break;
     }
 
@@ -1375,7 +1375,7 @@ static gboolean variantFeature(ZMapFeature feature, ZMapWindowNavigator navigate
         }
       else
         {
-          zMapAssertNotReached();
+          zMapWarnIfReached();
         }
     }
 
@@ -1436,7 +1436,9 @@ static LocusEntry zmapWindowNavigatorLDHInsert(GHashTable *hash,
                           (gpointer)hash_entry);
     }
   else
-    zMapAssertNotReached();
+    {
+      zMapWarnIfReached();
+    }
 
   return hash_entry;
 }

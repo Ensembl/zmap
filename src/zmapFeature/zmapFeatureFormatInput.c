@@ -284,7 +284,7 @@ char *zMapFeatureSubPart2Str(ZMapFeatureSubpartType subpart)
   else if (subpart & ZMAPFEATURE_SUBPART_MATCH)
     subpart_str = "Match" ;
   else
-    zMapAssertNotReached() ;
+    zMapWarnIfReached() ;
 
   return subpart_str ;
 }

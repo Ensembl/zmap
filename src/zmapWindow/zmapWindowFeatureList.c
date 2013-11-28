@@ -375,7 +375,7 @@ static void feature_name_to_value(GValue *value, gpointer feature_data)
   if(G_VALUE_TYPE(value) == G_TYPE_STRING)
     g_value_set_string(value, (char *)g_quark_to_string(feature_any->original_id));
   else
-    zMapAssertNotReached();
+    zMapWarnIfReached();
 
   return ;
 }
@@ -402,7 +402,9 @@ static void feature_start_to_value(GValue *value, gpointer feature_data)
       }
     }
   else
-    zMapAssertNotReached();
+    {
+      zMapWarnIfReached();
+    }
 
   return ;
 }
@@ -429,7 +431,9 @@ static void feature_end_to_value(GValue *value, gpointer feature_data)
       }
     }
   else
-    zMapAssertNotReached();
+    {
+      zMapWarnIfReached();
+    }
 
   return ;
 }
@@ -452,7 +456,9 @@ static void feature_strand_to_value(GValue *value, gpointer feature_data)
       }
     }
   else
-    zMapAssertNotReached();
+    {
+      zMapWarnIfReached();
+    }
 
   return ;
 }
@@ -476,7 +482,9 @@ static void feature_frame_to_value(GValue *value, gpointer feature_data)
       }
     }
   else
-    zMapAssertNotReached();
+    {
+      zMapWarnIfReached();
+    }
 
   return ;
 }
@@ -501,7 +509,9 @@ static void feature_phase_to_value(GValue *value, gpointer feature_data)
       }
     }
   else
-    zMapAssertNotReached();
+    {
+      zMapWarnIfReached();
+    }
 
   return ;
 }
@@ -534,7 +544,9 @@ static void feature_qstart_to_value(GValue *value, gpointer feature_data)
       } /* switch(feature->struct_type) */
     }
   else
-    zMapAssertNotReached();
+    {
+      zMapWarnIfReached();
+    }
 
   return ;
 }
@@ -568,7 +580,9 @@ static void feature_qend_to_value(GValue *value, gpointer feature_data)
       } /* switch(feature->struct_type) */
     }
   else
-    zMapAssertNotReached();
+    {
+      zMapWarnIfReached();
+    }
 
   return ;
 }
@@ -601,7 +615,9 @@ static void feature_qstrand_to_value(GValue *value, gpointer feature_data)
       } /* switch(feature->struct_type) */
     }
   else
-    zMapAssertNotReached();
+    {
+      zMapWarnIfReached();
+    }
 
   return ;
 }
@@ -624,7 +640,9 @@ static void feature_score_to_value(GValue *value, gpointer feature_data)
       }
     }
   else
-    zMapAssertNotReached();
+    {
+      zMapWarnIfReached();
+    }
 
   return ;
 }
@@ -652,7 +670,9 @@ static void feature_featureset_to_value(GValue *value, gpointer feature_data)
       }
     }
   else
-    zMapAssertNotReached();
+    {
+      zMapWarnIfReached();
+    }
 
   return ;
 }
@@ -674,7 +694,9 @@ static void feature_type_to_value(GValue *value, gpointer feature_data)
       }
     }
   else
-    zMapAssertNotReached();
+    {
+      zMapWarnIfReached();
+    }
 
   return ;
 }
@@ -696,7 +718,9 @@ static void feature_source_to_value (GValue *value, gpointer feature_data)
       }
     }
   else
-    zMapAssertNotReached();
+    {
+      zMapWarnIfReached();
+    }
 
   return ;
 }
@@ -718,7 +742,9 @@ static void feature_style_to_value (GValue *value, gpointer feature_data)
       }
     }
   else
-    zMapAssertNotReached();
+    {
+      zMapWarnIfReached();
+    }
 
   return ;
 }

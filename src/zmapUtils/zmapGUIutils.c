@@ -714,7 +714,7 @@ static gboolean zmapGUIXWindowValid(Display *x_display, Window x_window, char *c
         }
       else
         {
-          zMapAssertNotReached();
+          zMapWarnIfReached();
         }
 
       if (property_data)
@@ -2182,7 +2182,7 @@ static GtkResponseType messageFull(GtkWindow *parent, char *title_in, char *msg,
 		    }
 		  default:
 		    {
-		      zMapAssertNotReached() ;
+                      zMapWarnIfReached() ;
 
 		      break ;
 		    }

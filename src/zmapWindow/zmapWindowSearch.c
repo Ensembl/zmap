@@ -974,7 +974,7 @@ static void setFieldDefaults(SearchData search_data)
           break;
         case ZMAPFEATURE_STRUCT_INVALID:
         default:
-          zMapAssertNotReached();
+          zMapWarnIfReached();
           break;
 	}
 
@@ -1086,7 +1086,7 @@ static void setFilterDefaults(SearchData search_data)
           break;
         case ZMAPFEATURE_STRUCT_INVALID:
         default:
-          zMapAssertNotReached();
+          zMapWarnIfReached();
           break;
 	}
 
@@ -1157,7 +1157,7 @@ static ZMapFeatureContextExecuteStatus fillAllComboList(GQuark key, gpointer dat
     case ZMAPFEATURE_STRUCT_FEATURE:
     case ZMAPFEATURE_STRUCT_INVALID:
     default:
-      zMapAssertNotReached();
+      zMapWarnIfReached();
       break;
     }
 
@@ -1252,7 +1252,7 @@ gboolean searchPredCB(ZMapFeatureAny feature_any, gpointer user_data)
 
     case ZMAPFEATURE_STRUCT_INVALID:
     default:
-      zMapAssertNotReached();
+      zMapWarnIfReached();
       break;
 
     }

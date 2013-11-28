@@ -223,11 +223,12 @@ static void resetStats(gpointer data, gpointer user_data_unused)
       num_bytes = sizeof(ZMapWindowStatsTranscriptStruct) ;
       break ;
     default:
-      zMapAssertNotReached() ;
+      zMapWarnIfReached() ;
       break ;
     }
 
-  memset(any_stats, 0, num_bytes) ;
+  if (num_bytes)
+    memset(any_stats, 0, num_bytes) ;
 
   return ;
 }

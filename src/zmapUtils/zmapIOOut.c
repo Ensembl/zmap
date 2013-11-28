@@ -174,7 +174,7 @@ gboolean zMapOutWrite(ZMapIOOut out, char *text)
       }
     default:
       {
-	zMapAssertNotReached() ;
+        zMapWarnIfReached() ;
 	break ;
       }
     }
@@ -234,7 +234,7 @@ gboolean zMapOutWriteFormat(ZMapIOOut out, char *format, ...)
       }
     default:
       {
-	zMapAssertNotReached() ;
+        zMapWarnIfReached() ;
 	break ;
       }
     }
@@ -305,7 +305,7 @@ void zMapOutDestroy(ZMapIOOut out)
       }
     default:
       {
-	zMapAssertNotReached() ;
+        zMapWarnIfReached() ;
 	break ;
       }
     }

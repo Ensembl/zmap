@@ -91,17 +91,15 @@ void zmapWindowNavigatorGoToLocusExtents(ZMapWindowNavigator navigate, FooCanvas
         {
           /* x coords are HACKED!!!! */
           if(zMapFeatureGetFeatureListExtent(feature_list, &start, &end))
-	    {
-            zmapWindowZoomToWorldPosition(window, TRUE, 0.0, start, 100.0, end);
-	    }
+            {
+              zmapWindowZoomToWorldPosition(window, TRUE, 0.0, start, 100.0, end);
+            }
           g_list_free(feature_list);
         }
     }
   else
     {
-#ifdef TEMPORARY_AVOID_ISSUE_HERE
-      zMapAssertNotReached();
-#endif /* TEMPORARY_AVOID_ISSUE_HERE */
+      zMapWarnIfReached();
     }
 
   return ;

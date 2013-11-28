@@ -254,7 +254,7 @@ static ZMapFeatureContextExecuteStatus oneBlockHasDNA(GQuark key,
       break;
     case ZMAPFEATURE_STRUCT_INVALID:
     default:
-      zMapAssertNotReached();
+      zMapWarnIfReached();
       break;
 
     }

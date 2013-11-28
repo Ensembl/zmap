@@ -634,7 +634,7 @@ void zmapWindowColumnsCompress(FooCanvasItem *column_item, ZMapWindow window, ZM
   if(column_container)
     column_group = (FooCanvasGroup *)column_container;
   else
-    zMapAssertNotReached() ;
+    zMapWarnIfReached() ;
 
   block_container = zmapWindowContainerUtilsGetParentLevel(column_container, ZMAPCONTAINER_LEVEL_BLOCK) ;
 
@@ -1036,7 +1036,7 @@ static void set3FrameState(ZMapWindow window, ZMapWindow3FrameMode frame_mode)
       }
     default:
       {
-	zMapAssertNotReached() ;
+        zMapWarnIfReached() ;
       }
     }
 

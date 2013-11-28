@@ -591,7 +591,7 @@ char *zmapWindowGetDialogText(ZMapWindowDialogType dialog_type)
       dialog_text = "Export" ;
       break ;
     default:
-      zMapAssertNotReached() ;
+      zMapWarnIfReached() ;
       break ;
     }
 

@@ -1002,7 +1002,9 @@ gboolean zMapStyleIsDrawable(ZMapFeatureTypeStyle style, GError **error)
 	  }
 	default:
 	  {
-	    zMapAssertNotReached() ;
+            valid = FALSE ;
+            message = g_strdup("Invalid style mode.") ;
+            zMapWarnIfReached() ;
 	  }
 	}
     }
@@ -1085,7 +1087,9 @@ gboolean zMapStyleIsDrawable(ZMapFeatureTypeStyle style, GError **error)
 	  }
 	default:
 	  {
-	    zMapAssertNotReached() ;
+            valid = FALSE ;
+            message = g_strdup("Invalid style mode.") ;
+            zMapWarnIfReached() ;
 	  }
 	}
     }
@@ -1126,7 +1130,9 @@ gboolean zMapStyleIsDrawable(ZMapFeatureTypeStyle style, GError **error)
 	  }
 	default:
 	  {
-	    zMapAssertNotReached() ;
+            valid = FALSE ;
+            message = g_strdup("Invalid style mode.") ;
+            zMapWarnIfReached() ;
 	  }
 	}
     }
@@ -1278,7 +1284,7 @@ gboolean zMapStyleIsSpliceStyle(ZMapFeatureTypeStyle style)
 
 ZMapStyleFullColour zmapStyleFullColour(ZMapFeatureTypeStyle style, ZMapStyleParamId id)
 {
-  ZMapStyleFullColour full_colour;
+  ZMapStyleFullColour full_colour = NULL ;
 
   switch (id)
     {
@@ -1346,7 +1352,7 @@ ZMapStyleFullColour zmapStyleFullColour(ZMapFeatureTypeStyle style, ZMapStylePar
       break;
 
     default:
-      zMapAssertNotReached() ;
+      zMapWarnIfReached() ;
       break;
     }
   return(full_colour);
@@ -1357,7 +1363,7 @@ ZMapStyleFullColour zmapStyleFullColour(ZMapFeatureTypeStyle style, ZMapStylePar
 
 ZMapStyleColour zmapStyleColour(ZMapStyleFullColour full_colour,ZMapStyleColourType type)
 {
-  ZMapStyleColour colour;
+  ZMapStyleColour colour = NULL ;
 
   switch (type)
     {
@@ -1368,7 +1374,7 @@ ZMapStyleColour zmapStyleColour(ZMapStyleFullColour full_colour,ZMapStyleColourT
       colour = &(full_colour->selected) ;
       break ;
     default:
-      zMapAssertNotReached() ;
+      zMapWarnIfReached() ;
       break ;
     }
   return(colour);
@@ -1489,7 +1495,7 @@ gboolean zMapStyleIsColour(ZMapFeatureTypeStyle style, ZMapStyleDrawContext colo
       is_colour = style->colours.normal.fields_set.border ;
       break ;
     default:
-      zMapAssertNotReached() ;
+      zMapWarnIfReached() ;
     }
 
   return is_colour ;
@@ -1516,7 +1522,7 @@ GdkColor *zMapStyleGetColour(ZMapFeatureTypeStyle style, ZMapStyleDrawContext co
 	  colour = &(style->colours.normal.fill) ;
 	  break ;
 	default:
-	  zMapAssertNotReached() ;
+          zMapWarnIfReached() ;
 	}
     }
 
@@ -1869,7 +1875,7 @@ guint zmapStyleParamSize(ZMapStyleParamType type)
 
     case STYLE_PARAM_TYPE_INVALID:
     default:
-      zMapAssertNotReached();
+      zMapWarnIfReached();
       break;
     }
   return(0);
@@ -1948,7 +1954,7 @@ void zmap_param_spec_init(ZMapStyleParam param)
       break;
 
     default:
-      zMapAssertNotReached();
+      zMapWarnIfReached();
       break;
     }
 
@@ -2286,6 +2292,8 @@ static void zmap_feature_type_style_get_property(GObject *gobject,
 						 GValue *value,
 						 GParamSpec *pspec)
 {
+  zMapReturnIfFail(ZMAP_IS_FEATURE_STYLE(gobject));
+
   ZMapFeatureTypeStyle style;
   gboolean result = TRUE ;
   gchar *colour = NULL;
@@ -2293,8 +2301,6 @@ static void zmap_feature_type_style_get_property(GObject *gobject,
   gchar * flags;
   ZMapStyleParam param = &zmapStyleParams_G[param_id];
   gchar *shape = NULL;
-
-  g_return_if_fail(ZMAP_IS_FEATURE_STYLE(gobject));
 
   style = ZMAP_FEATURE_STYLE(gobject);
 
@@ -2408,7 +2414,8 @@ static void zmap_feature_type_style_get_property(GObject *gobject,
       break;
 
     default:
-      zMapAssertNotReached();
+      result = FALSE ;
+      zMapWarnIfReached() ;
       break;
     }
 
@@ -2571,7 +2578,8 @@ static gboolean parseColours(ZMapFeatureTypeStyle style, guint param_id, GValue 
 		    result = FALSE ;
 		  break ;
 		default:
-		  zMapAssertNotReached() ;
+                  result = FALSE ;
+                  zMapWarnIfReached() ;
 		  break;
 		}
 	    }
@@ -2629,7 +2637,7 @@ static gboolean isColourSet(ZMapFeatureTypeStyle style, int param_id, char *subp
 	  is_set = type_colour->fields_set.border ;
 	  break ;
 	default:
-	  zMapAssertNotReached() ;
+          zMapWarnIfReached() ;
 	  break;
 	}
     }
@@ -2688,7 +2696,8 @@ static gboolean validSplit(char **strings,
 	  }
 	default:
 	  {
-	    zMapAssertNotReached() ;
+            valid = FALSE ;
+            zMapWarnIfReached() ;
 	    break ;
 	  }
 	}

@@ -103,7 +103,7 @@ gboolean zMapFeatureIsValid(ZMapFeatureAny any_feature)
 	    result = TRUE ;
 	  break ;
 	default:
-	  zMapAssertNotReached() ;
+          zMapWarnIfReached() ;
 	}
     }
 
@@ -294,7 +294,7 @@ gboolean zMapFeatureIsSane(ZMapFeature feature, char **insanity_explained)
 	case ZMAPSTYLE_MODE_META:
 	  break;
         default:
-          zMapAssertNotReached();
+          zMapWarnIfReached();
           break;
         }
     }
@@ -347,7 +347,12 @@ gboolean zMapFeatureAnyIsSane(ZMapFeatureAny feature, char **insanity_explained)
           /* Nothing to check beyond ZMapFeatureAny basics */
           break;
         default:
-          zMapAssertNotReached();
+          sane = FALSE ;
+          insanity = g_strdup_printf("Feature '%s' [%s] has bad type.",
+                                     (char *)g_quark_to_string(feature->original_id),
+                                     (char *)g_quark_to_string(feature->unique_id));
+
+          zMapWarnIfReached();
           break;
         }
     }

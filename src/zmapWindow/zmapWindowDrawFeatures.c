@@ -1328,10 +1328,10 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
   ZMapCanvasData canvas_data = (ZMapCanvasData)user_data;
   ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
   ZMapWindow          window = canvas_data->window;
-  ZMapFeatureAlignment feature_align;
-  ZMapFeatureBlock     feature_block;
-  ZMapFeatureSet         feature_set;
-  ZMapFeatureLevelType feature_type;
+  ZMapFeatureAlignment feature_align = NULL ;
+  ZMapFeatureBlock     feature_block = NULL ;
+  ZMapFeatureSet         feature_set = NULL ;
+  ZMapFeatureLevelType feature_type = ZMAPFEATURE_STRUCT_INVALID ;
   ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
   //  int start,end;
 
@@ -1702,7 +1702,7 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
     default:
       {
 	status = ZMAP_CONTEXT_EXEC_STATUS_ERROR;
-	zMapAssertNotReached();
+        zMapWarnIfReached();
 	break;
       }
     }
@@ -2041,9 +2041,9 @@ static FooCanvasGroup *createColumnFull(ZMapWindowContainerFeatures parent_group
   FooCanvasGroup *group = NULL ;
   ZMapFeatureTypeStyle style = NULL;
   GList *style_list = NULL;
-  GdkColor *colour ;
-  gboolean proceed;
-  ZMapFeatureColumn column;
+  GdkColor *colour = NULL ;
+  gboolean proceed = FALSE ;
+  ZMapFeatureColumn column = NULL ;
 
   /* We _must_ have an align and a block... */
   /* ...and either a featureset _or_ a featureset id. */
@@ -2073,7 +2073,7 @@ static FooCanvasGroup *createColumnFull(ZMapWindowContainerFeatures parent_group
 	  colour = &(window->colour_frame_2) ;
 	  break ;
 	default:
-	  zMapAssertNotReached() ;
+          zMapWarnIfReached() ;
 	}
     }
   else
@@ -2827,7 +2827,7 @@ static gboolean containerDestroyCB(FooCanvasItem *item, gpointer user_data)
 	  break ;
 	default:
 	  {
-	    zMapAssertNotReached() ;
+            zMapWarnIfReached() ;
 	  }
 	}
 #ifdef RDS_REMOVED

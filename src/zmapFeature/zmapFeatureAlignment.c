@@ -323,7 +323,7 @@ static AlignStrCanonical alignStrMakeCanonical(char *match_str, ZMapFeatureAlign
       result = exonerateVulgar2Canon(match_str, canon) ;
       break ;
     default:
-      zMapAssertNotReached() ;
+      zMapWarnIfReached() ;
       break ;
     }
 
@@ -385,8 +385,8 @@ static gboolean alignStrCanon2Homol(AlignStrCanonical canon, ZMapStrand ref_stra
   for (i = 0, j = 0 ; i < align->len ; i++)
     {
       /* If you alter this code be sure to notice the += and -= which alter curr_ref and curr_match. */
-      AlignStrOp op ;
-      int curr_length ;
+      AlignStrOp op = NULL ;
+      int curr_length = 0 ;
       ZMapAlignBlockStruct gap = {0} ;
 
       op = &(g_array_index(align, AlignStrOpStruct, i)) ;
@@ -459,7 +459,8 @@ static gboolean alignStrCanon2Homol(AlignStrCanonical canon, ZMapStrand ref_stra
 	  }
 	default:
 	  {
-	    zMapAssertNotReached() ;
+            zMapWarning("Unrecognized operator '%c' in align string\n", op->op) ;
+            zMapWarnIfReached() ;
 
 	    break ;
 	  }
@@ -508,7 +509,7 @@ static gboolean alignStrVerifyStr(char *match_str, ZMapFeatureAlignFormat align_
       result = exonerateVerifyVulgar(match_str) ;
       break ;
     default:
-      zMapAssertNotReached() ;
+      zMapWarnIfReached() ;
       break ;
     }
 

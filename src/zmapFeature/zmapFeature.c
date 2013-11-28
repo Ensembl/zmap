@@ -31,6 +31,7 @@
  */
 
 #include <ZMap/zmap.h>
+#include <ZMap/zmapUtilsDebug.h>
 
 #include <stdio.h>
 #include <strings.h>
@@ -1649,24 +1650,15 @@ void zMapFeatureContextDestroy(ZMapFeatureContext feature_context, gboolean free
 static ZMapFeatureAny featureAnyCopy(ZMapFeatureAny orig_feature_any, GDestroyNotify destroy_cb)
 {
   ZMapFeatureAny new_feature_any  = NULL ;
-  guint bytes ;
+  zMapReturnValIfFail(orig_feature_any, new_feature_any) ;
+  zMapReturnValIfFail(orig_feature_any->struct_type == ZMAPFEATURE_STRUCT_CONTEXT ||
+                      orig_feature_any->struct_type == ZMAPFEATURE_STRUCT_ALIGN ||
+                      orig_feature_any->struct_type == ZMAPFEATURE_STRUCT_BLOCK ||
+                      orig_feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURESET ||
+                      orig_feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURE,
+                      new_feature_any) ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-
-  /* THIS IS COMPLETELY THE WRONG PLACE TO DO THIS...BY THE TIME WE GET HERE THERE _HAS_
-   * TO BE A FEATURE...AGGGHHHHHH */
-
-/* mh17: trying to load features via xremote asserted if no features were already loaded
- * this assert should not be here, as this module should handle incorrect input from external places
- * other bits of code will assert if they need features present
- * cross fingers and hope it works
- * certainly should pose no problem for previous use as it didn't assert then 
- */
-  if(!orig_feature_any)
-    return(NULL);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
+  guint bytes = 0 ;
 
   /* Copy the original struct and set common fields. */
   switch(orig_feature_any->struct_type)
@@ -1687,7 +1679,7 @@ static ZMapFeatureAny featureAnyCopy(ZMapFeatureAny orig_feature_any, GDestroyNo
       bytes = sizeof(ZMapFeatureStruct) ;
       break ;
     default:
-      zMapAssertNotReached();
+      zMapWarnIfReached();
       break;
     }
 
@@ -1841,7 +1833,7 @@ static ZMapFeatureAny featureAnyCopy(ZMapFeatureAny orig_feature_any, GDestroyNo
 	break ;
       }
     default:
-      zMapAssertNotReached();
+      zMapWarnIfReached();
       break;
     }
 
@@ -1911,8 +1903,8 @@ static void destroyFeatureAny(gpointer data)
   ZMapFeatureAny feature_any = (ZMapFeatureAny)data ;
   gulong nbytes ;
 
-  g_return_if_fail(feature_any);
-  g_return_if_fail(zMapFeatureAnyHasMagic(feature_any));
+  zMapReturnIfFail(feature_any);
+  zMapReturnIfFail(zMapFeatureAnyHasMagic(feature_any));
 
   if (destroy_debug_G && feature_any->struct_type != ZMAPFEATURE_STRUCT_FEATURE)
     printDestroyDebugInfo(feature_any, "destroyFeatureAny") ;
@@ -1957,7 +1949,7 @@ static void destroyFeatureAny(gpointer data)
       destroyFeature((ZMapFeature)feature_any) ;
       break;
     default:
-      zMapAssertNotReached();
+      zMapWarnIfReached();
       break;
     }
 
@@ -2538,7 +2530,7 @@ zMapLogWarning("addEmptySets","");
 
     default:
       {
-      zMapAssertNotReached() ;
+      zMapWarnIfReached() ;
       break;
       }
     }
@@ -2595,7 +2587,7 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
       diff_path_ptr        = &(merge_data->current_diff_set);
       break;
     default:
-      zMapAssertNotReached();
+      zMapWarnIfReached();
     }
 
 
@@ -2792,7 +2784,7 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
 
     default:
       {
-      zMapAssertNotReached() ;
+      zMapWarnIfReached() ;
       break;
       }
     }
@@ -2832,7 +2824,7 @@ static ZMapFeatureAny featureAnyCreateFeature(ZMapFeatureLevelType struct_type,
 					      GHashTable *children)
 {
   ZMapFeatureAny feature_any = NULL ;
-  gulong nbytes ;
+  gulong nbytes = 0 ;
 
   switch(struct_type)
     {
@@ -2852,35 +2844,38 @@ static ZMapFeatureAny featureAnyCreateFeature(ZMapFeatureLevelType struct_type,
       nbytes = sizeof(ZMapFeatureStruct) ;
       break ;
     default:
-      zMapAssertNotReached() ;
+      zMapWarnIfReached() ;
       break ;
     }
 
-  if (USE_SLICE_ALLOC)
-    feature_any = (ZMapFeatureAny)g_slice_alloc0(nbytes) ;
-  else
-    feature_any = (ZMapFeatureAny)g_malloc0(nbytes) ;
+  if (nbytes > 0)
+    {
+      if (USE_SLICE_ALLOC)
+        feature_any = (ZMapFeatureAny)g_slice_alloc0(nbytes) ;
+      else
+        feature_any = (ZMapFeatureAny)g_malloc0(nbytes) ;
 
 #ifdef FEATURES_NEED_MAGIC
-  feature_any->magic = feature_magic_G;
+      feature_any->magic = feature_magic_G;
 #endif
 
-  feature_any->struct_type = struct_type ;
+      feature_any->struct_type = struct_type ;
 
-  logMemCalls(TRUE, feature_any) ;
+      logMemCalls(TRUE, feature_any) ;
 
-  if (struct_type != ZMAPFEATURE_STRUCT_CONTEXT)
-    feature_any->parent = parent ;
+      if (struct_type != ZMAPFEATURE_STRUCT_CONTEXT)
+        feature_any->parent = parent ;
 
-  feature_any->original_id = original_id ;
-  feature_any->unique_id = unique_id ;
+      feature_any->original_id = original_id ;
+      feature_any->unique_id = unique_id ;
 
-  if (struct_type != ZMAPFEATURE_STRUCT_FEATURE)
-    {
-      if (children)
-	feature_any->children = children ;
-      else
-	feature_any->children = g_hash_table_new_full(NULL, NULL, NULL, destroyFeatureAny) ;
+      if (struct_type != ZMAPFEATURE_STRUCT_FEATURE)
+        {
+          if (children)
+            feature_any->children = children ;
+          else
+            feature_any->children = g_hash_table_new_full(NULL, NULL, NULL, destroyFeatureAny) ;
+        }
     }
 
   return feature_any ;
@@ -3002,7 +2997,7 @@ static ZMapFeatureContextExecuteStatus addModeCB(GQuark key_id,
     default:
       {
 	status = ZMAP_CONTEXT_EXEC_STATUS_ERROR;
-	zMapAssertNotReached();
+        zMapWarnIfReached();
 	break;
       }
     }
@@ -3028,7 +3023,7 @@ void zMapFeatureAddStyleMode(ZMapFeatureTypeStyle style, ZMapStyleMode f_type)
 {
   if (!zMapStyleHasMode(style))
     {
-      ZMapStyleMode mode ;
+      ZMapStyleMode mode = ZMAPSTYLE_MODE_INVALID ;
 
       switch (f_type)
 	{
@@ -3079,7 +3074,7 @@ void zMapFeatureAddStyleMode(ZMapFeatureTypeStyle style, ZMapStyleMode f_type)
 	  mode = f_type;           /* grrrrr is this really correct? */
 	  break;
 	default:
-	  zMapAssertNotReached() ;
+          zMapWarnIfReached() ;
 	  break ;
 	}
 

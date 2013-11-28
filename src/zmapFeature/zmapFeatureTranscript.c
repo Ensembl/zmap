@@ -529,7 +529,7 @@ ZMapFeatureContextExecuteStatus zMapFeatureContextTranscriptSortExons(GQuark key
     case ZMAPFEATURE_STRUCT_INVALID:
     default:
       {
-	zMapAssertNotReached();
+        zMapWarnIfReached();
 	break;
       }
     }
