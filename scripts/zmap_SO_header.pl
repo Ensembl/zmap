@@ -63,6 +63,11 @@ my $download;
 GetOptions ("download"  => \$download);
 
 #
+# Use extra hacked backwards compatibility data. 
+# 
+$use_hack = 1 ; 
+
+#
 # Destination file for auto-generated header.
 #
 $destination_file = "zmapGFF/zmapSOData_P.h" ;
@@ -74,6 +79,27 @@ $sofa_file            = "../scripts/SOFA.obo" ;
 $so_xp_file           = "../scripts/so-xp.obo";
 $so_xp_simple_file    = "../scripts/so-xp-simple.obo" ;
 $so_hack_file         = "../scripts/so-hack.obo" ; 
+
+#
+# Define the filenames for the SO-to-ZMapStyleMode files. 
+# 
+$so_to_mode_map_file           = "../scripts/so_to_mode_map.txt";
+$so_to_mode_map_hack_file      = "../scripts/so_to_mode_map_hack.txt";
+
+#
+# Define URLs at which to find files.
+#
+$sofa_url            = 'http://sourceforge.net/p/song/svn/HEAD/tree/trunk/subsets/SOFA.obo?format=raw' ;
+$so_xp_url           = 'http://sourceforge.net/p/song/svn/HEAD/tree/trunk/so-xp.obo?format=raw' ;
+$so_xp_simple_url    = 'http://sourceforge.net/p/song/svn/HEAD/tree/trunk/so-xp-simple.obo?format=raw' ;
+
+#
+# Define data table names
+#
+$header_tablename01 = "ZMAP_SO_DATA_TABLE01" ;
+$header_tablename02 = "ZMAP_SO_DATA_TABLE02" ;
+$header_tablename03 = "ZMAP_SO_DATA_TABLE03" ;
+$header_tablename04 = "ZMAP_SO_DATA_TABLE04_HACK" ;
 
 #
 # Filename that contains SO term to ZMapMode mapping.
@@ -149,7 +175,6 @@ $available_homol{"ZMAPHOMOL_TX_HOMOL"}                = 1 ;
 #
 # Read in the SO to mode map file.
 #
-$so_to_mode_map_file      = "../scripts/so_to_mode_map.txt";
 $so_to_mode_map{"DUMMY_FAKE_NAME"} = "DUMMY_FAKE_MODE" ;   # to get rid of warnings  
 $so_to_homol_map{"DUMMY_FAKE_NAME"} = "DUMMY_FAKE_HOMOL" ; # ditto 
 open(SO_TO_MODE_MAP, "<$so_to_mode_map_file") or die "could not open file '$so_to_mode_map_file'; appears not to be present in the distribution.\n";
@@ -185,19 +210,44 @@ while (<SO_TO_MODE_MAP>)
 }
 close (SO_TO_MODE_MAP) ;
 
-#
-# Define URLs at which to find files.
-#
-$sofa_url            = 'http://sourceforge.net/p/song/svn/HEAD/tree/trunk/subsets/SOFA.obo?format=raw' ;
-$so_xp_url           = 'http://sourceforge.net/p/song/svn/HEAD/tree/trunk/so-xp.obo?format=raw' ;
-$so_xp_simple_url    = 'http://sourceforge.net/p/song/svn/HEAD/tree/trunk/so-xp-simple.obo?format=raw' ;
+if (defined $use_hack) 
+{ 
+  open(SO_TO_MODE_MAP, "<$so_to_mode_map_hack_file") or die "could not open file '$so_to_mode_map_hack_file'; appears not to be present in the distribution.\n";
+  while (<SO_TO_MODE_MAP>)
+  {
+    ($so_name, $zmap_mode, $zmap_homol) = (m/(\w+)\t(\w+)\t(\w+)\n/) ;
+    if (defined $so_name)
+      {
+        if (defined $zmap_mode and defined $zmap_homol)
+          {
+            #
+            # If we have an available mode type then
+            #
+            #
+            if (defined $available_modes{$zmap_mode})
+              {
+               $so_to_mode_map{$so_name} = $zmap_mode ;
+              }
+            #
+            # If we have an available homol type then add this 
+            #
+            if (defined $available_homol{$zmap_homol})
+              {
+                $so_to_homol_map{$so_name} = $zmap_homol ;
+              }
+          }
+        else
+          {
+            die "mode and homol must both be defined for name = $so_name\n" ;
+          }
+  
+      }
+  }
+  close (SO_TO_MODE_MAP) ;
 
-#
-# Define data table names
-#
-$header_tablename01 = "ZMAP_SO_DATA_TABLE01" ;
-$header_tablename02 = "ZMAP_SO_DATA_TABLE02" ;
-$header_tablename03 = "ZMAP_SO_DATA_TABLE03" ;
+}
+
+
 
 #
 # Download files if command line option specifies such, or parse for
@@ -208,6 +258,10 @@ $header_tablename03 = "ZMAP_SO_DATA_TABLE03" ;
 $header_part01 = "" ;
 $header_part02 = "" ;
 $header_part03 = "" ;
+if (defined $use_hack)
+{
+  $header_part04 = ""; 
+}
 if ($download)
 {
   system("wget $sofa_url           -O        $sofa_file");
@@ -232,6 +286,13 @@ else
   $count = &Read_SO_File($so_xp_simple_file) ;
   $header_part03 = &Convert_Data($header_tablename03) ;
 
+  if (defined $use_hack) 
+  { 
+    @Names = () ; 
+    @SOIDS = () ; 
+    $count = &Read_SO_File($so_hack_file) ; 
+    $header_part04 = &Convert_Data($header_tablename04) ; 
+  } 
 }
 
 #
@@ -274,6 +335,11 @@ $header_data =
 $header_data .= $header_part01 ;
 $header_data .= $header_part02 ;
 $header_data .= $header_part03 ;
+if (defined $use_hack) 
+{
+  $header_data .= "#define USE_SO_TERM_HACK 1\n" ; 
+  $header_data .= $header_part04 ; 
+}
 
 #
 # Now send to final destination file.
