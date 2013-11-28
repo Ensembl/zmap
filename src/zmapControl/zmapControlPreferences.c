@@ -149,6 +149,8 @@ static void addControlPage(ZMapGuiNotebookChapter chapter, char *page_name)
   ZMapGuiNotebookParagraph paragraph ;
   ZMapGuiNotebookTagValue tag_value ;
 
+  zMapReturnIfFail(chapter) ; 
+
   page = (ZMapGuiNotebookPage)zMapGUINotebookCreateSectionAny(ZMAPGUI_NOTEBOOK_PAGE, page_name) ;
 
   chapter->pages = g_list_append(chapter->pages, page) ;

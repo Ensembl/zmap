@@ -144,8 +144,9 @@ void zMapControlImportFile(ZMapControlImportFileCB user_func, gpointer user_data
   GtkWidget *toplevel, *container ;
   gpointer seq_data = NULL ;
 
-  if (!user_func) 
-    return ;
+  /* if (!user_func) 
+    return ; */
+  zMapReturnIfFail(user_func && user_data) ; 
 
   ZMap zmap = (ZMap)user_data;
 

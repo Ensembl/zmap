@@ -44,11 +44,22 @@ enum {TOTAL_LABELS = 10} ;
 #define PANEL_WIDG_STYLE_NAME "zmap-control-infopanel"
 
 
-/* Make the info. panel. */
+/* 
+ * Make the info. panel. 
+ *
+ * (sm23) This function doesn't use the zmap argument, so this could be removed. 
+ * As far as I can see, it's only called in zmapControlViews.c, however I will leave 
+ * this for the time being. 
+ */
 GtkWidget *zmapControlWindowMakeInfoPanel(ZMap zmap, ZMapInfoPanelLabels labels)
 {
-  GtkWidget *hbox, *frame, *event_box, **label[TOTAL_LABELS] = {NULL} ;
+  GtkWidget *hbox = NULL, 
+    *frame, 
+    *event_box, 
+    **label[TOTAL_LABELS] = {NULL} ;
   int i ;
+
+  zMapReturnValIfFail(labels, hbox) ; 
 
   label[0] = &(labels->feature_name) ;
   label[1] = &(labels->feature_strand) ;
@@ -109,7 +120,8 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
   char *tooltip[TOTAL_LABELS] = {NULL} ;
   int i ;
   GString *desc_str ;
-//  static char *no_desc = "<no description>" ;
+
+  zMapReturnIfFail(labels) ; 
 
   label[0] = labels->feature_name ;
   label[1] = labels->feature_strand ;
