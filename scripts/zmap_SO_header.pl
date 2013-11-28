@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 #
 #
-#  File: scripts/zmap_SO_head.pl
+#  File: scripts/zmap_SO_header.pl
 #  Author: Steve Miller (sm23\@sanger.ac.uk)
 #  Copyright (c) 2006-2013: Genome Research Ltd.
 #-------------------------------------------------------------------
@@ -51,7 +51,11 @@
 # ZMAP_SO_DATA_TABLE02           so-xp
 # ZMAP_SO_DATA_TABLE03           so-xp-simple
 #
-#
+# There is also a fourth dataset called "so-hack.obo" that contains a few terms 
+# which were used in ZMap/otterlace GFFv2, but I am retaining for backwards 
+# compatibility during the development and testing process. There is an 
+# associated "so_to_mode_map_hack.txt" file that contains the ZMapStyleMode 
+# for these. 
 #
 
 use Getopt::Long;
@@ -69,6 +73,7 @@ $destination_file = "zmapGFF/zmapSOData_P.h" ;
 $sofa_file            = "../scripts/SOFA.obo" ;
 $so_xp_file           = "../scripts/so-xp.obo";
 $so_xp_simple_file    = "../scripts/so-xp-simple.obo" ;
+$so_hack_file         = "../scripts/so-hack.obo" ; 
 
 #
 # Filename that contains SO term to ZMapMode mapping.

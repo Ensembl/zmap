@@ -1,0 +1,11 @@
+[Term]
+id: SO:9999990
+name: Sequence
+
+[Term]
+id: SO:9999991
+name: similarity
+
+[Term]
+id: SO:9999992
+name: misc_feature
