@@ -719,7 +719,12 @@ typedef struct _ZMapWindowStruct
 /*  GHashTable *read_only_styles ;				     Original styles list from server. */
 /*  GHashTable *display_styles ;				     Styles used for current display. */
 
-  ZMapFeatureContext strand_separator_context ; /* context to display non-feature context "features" with. */
+
+
+  /* context to display non-feature context "features" with. */
+  ZMapFeatureContext strand_separator_context ;
+
+  ZMapWindowFeaturesetItem separator_feature_set ;
 
   ZMapFeatureContextMap context_map ;      /* all the data for mapping featuresets styles and columns */
 
@@ -1539,15 +1544,6 @@ void zmapWindowItemTextHighlightSetFullText(ZMapWindowItemHighlighter select_con
 char *zmapWindowItemTextHighlightGetFullText(ZMapWindowItemHighlighter select_control);
 void zmapWindowItemTextHighlightReset(ZMapWindowItemHighlighter select_control);
 #endif
-gboolean zmapWindowCreateSetColumns(ZMapWindow window,
-                                    ZMapWindowContainerFeatures forward_strand_group,
-                                    ZMapWindowContainerFeatures reverse_strand_group,
-                                    ZMapFeatureBlock block,
-                                    ZMapFeatureSet feature_set,
-                                    ZMapFrame frame,
-                                    FooCanvasGroup **forward_col_out,
-                                    FooCanvasGroup **reverse_col_out,
-				    FooCanvasGroup **separator_col_out);
 int zmapWindowDrawFeatureSet(ZMapWindow window,
 //			      GHashTable *styles,
                               ZMapFeatureSet feature_set,

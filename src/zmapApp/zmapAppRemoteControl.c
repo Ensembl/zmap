@@ -478,7 +478,9 @@ static void handleZMapRequestsCB(gpointer caller_data,
       if (result)
 	{
 	  if (!err_msg && !(request_stack = zMapRemoteCommandCreateRequest(remote->remote_controller,
-									   command, view, -1)))
+                                                                           command, -1,
+                                                                           ZACP_VIEWID, view,
+                                                                           (char*)NULL)))
 	    {
 	      err_msg = g_strdup_printf("Could not create request for command \"%s\"", command) ;
 	    }

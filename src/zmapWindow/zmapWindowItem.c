@@ -1059,7 +1059,11 @@ gboolean zmapWindowSeqToWorldCoords(ZMapWindow window,
   ZMapFeatureBlock block ;
   ZMapFeatureSet set ;
   FooCanvasItem *set_item ;
+  GQuark set_id ;
 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* We don't want caller to have to do all this so we laboriously find a featureset,
    * the first one in fact, and use that to call the canvas function to do the conversion
    * as the canvas knows how to do that. */
@@ -1067,9 +1071,28 @@ gboolean zmapWindowSeqToWorldCoords(ZMapWindow window,
   block = zMap_g_hash_table_nth(align->blocks, 0) ;
   set = zMap_g_hash_table_nth(block->feature_sets, 0) ;
 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  set_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_STRAND_SEPARATOR) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  set_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_SEARCH_MARKERS_NAME) ;
+
+
+
   if ((set_item = zmapWindowFToIFindItemFull(window, window->context_to_item,
-                                             align->unique_id, block->unique_id, set->unique_id,
-                                             ZMAPSTRAND_NONE, ZMAPFRAME_NONE, 0)))
+                                             align->unique_id, block->unique_id,
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+                                             set->unique_id,
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+                                             set_id,
+                                             ZMAPSTRAND_FORWARD, ZMAPFRAME_NONE, 0)))
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+    set_item = window->separator_feature_set ;
+
     {
       ZMapWindowFeaturesetItem featureset ;
       double world_start, world_end ;

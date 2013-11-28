@@ -645,20 +645,20 @@ static ZMapFeatureSubPartSpan zmapWindowCanvasAlignmentGetSubPartSpan(FooCanvasI
        */
 
       sub_part.index = i + 1;
-      sub_part.start = ab->t1;
-      sub_part.end = ab->t2;
 
       if(y >= ab->t1 && y <= ab->t2)
 	{
-	  sub_part.subpart = ZMAPFEATURE_SUBPART_MATCH;
-	  return &sub_part;
+          sub_part.start = ab->t1;
+          sub_part.end = ab->t2;
+          sub_part.subpart = ZMAPFEATURE_SUBPART_MATCH;
+          return &sub_part;
 	}
       if(y < ab->t1)
 	{
-	  sub_part.start = sub_part.end + 1;
-	  sub_part.end = ab->t1;
-	  sub_part.subpart = ZMAPFEATURE_SUBPART_GAP;
-	  return &sub_part;
+          sub_part.start = sub_part.end + 1;
+          sub_part.end = ab->t1 - 1;
+          sub_part.subpart = ZMAPFEATURE_SUBPART_GAP;
+          return &sub_part;
 	}
     }
   return NULL;

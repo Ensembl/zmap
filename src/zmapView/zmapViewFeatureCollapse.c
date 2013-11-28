@@ -572,18 +572,19 @@ static GList *collapseJoinStrand(GList *fl, GHashTable *hash, GList *splice_list
 
 	    }
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	zMapDebugPrintf("y1, y2 now: %d, %d\n", y1, y2) ;
 	zMapDebugPrintf("Next feature (%s) has %s: %d, %d\n",
 			g_quark_to_string(f->original_id),
 			(overlap ? "OVERLAP" : "NO OVERLAP"),
 			f->x1, f->x2) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 	zMapLogMessage("y1, y2 now: %d, %d", y1, y2) ;
 	zMapLogMessage("Next feature (%s) has %s: %d, %d",
 		       g_quark_to_string(f->original_id),
 		       (overlap ? "OVERLAP" : "NO OVERLAP"),
 		       f->x1, f->x2) ;
-
       }
 
 
