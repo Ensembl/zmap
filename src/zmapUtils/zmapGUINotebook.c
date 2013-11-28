@@ -2069,7 +2069,7 @@ static gboolean validateTagValue(ZMapGuiNotebookTagValue tag_value, char *text, 
       }
     default:
       {
-        zMapWarning("Invalid tag data type") ;
+        zMapWarning("%s", "Invalid tag data type") ;
         zMapWarnIfReached() ;
 	break ;
       }
