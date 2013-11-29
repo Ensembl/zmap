@@ -2283,6 +2283,17 @@ static gboolean parseBodyLine_V3(
 
 
   /*
+   * Hack for incorrect terms...
+   */
+#ifdef USE_SO_TERM_HACK
+  if (!strcmp(sSource, "Augustus"))
+  {
+    strcpy(sType, "transcript") ;
+  }
+#endif
+
+
+  /*
    * Ignore any lines with a different sequence name.
    */
   if (g_ascii_strcasecmp(sSequence, pParser->sequence_name) != 0)
@@ -2647,7 +2658,7 @@ static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const pFeature
   if (pAttributeID)
     bHasAttributeID = TRUE ;
 #ifdef USE_SO_TERM_HACK
-  if (!bHasAttributeID) /* use "Stable_ID" instead of "ID" */
+  if (!bHasAttributeID)
     {
       pAttributeID = zMapGFFAttributeListContains(pAttributes, nAttributes, "Stable_ID") ;
       if (pAttributeID)
@@ -2658,12 +2669,12 @@ static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const pFeature
   if (pAttributeParent)
     bHasAttributeParent = TRUE ;
 #ifdef USE_SO_TERM_HACK
-  if (!bHasAttributeParent) /* use "Name" instead of "Parent" */
+  /*if (!bHasAttributeParent)
     {
       pAttributeParent = zMapGFFAttributeListContains(pAttributes, nAttributes, "Name") ;
       if (pAttributeParent)
         bHasAttributeParent = TRUE ;
-    }
+    } */
 #endif
 
   /*
