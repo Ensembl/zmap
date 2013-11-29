@@ -2111,7 +2111,7 @@ static gboolean parseBodyLine_V3(
     bHasScore                         = FALSE,
     bIncludeFeature                   = TRUE,
     bIncludeEmpty                     = FALSE,
-    bRemoveQuotes                     = TRUE,
+    bRemoveQuotes                     = FALSE,
     bIsValidSOID                      = FALSE
   ;
 
@@ -2170,13 +2170,6 @@ static gboolean parseBodyLine_V3(
       bResult = FALSE ;
       goto return_point ;
     };
-
-  /*
-   * We only remove quotes from attribute strings with version 2, so this is
-   * set to be always false in this function.
-   */
-  bRemoveQuotes = FALSE ;
-
 
   /*
    * If the line length is too large, then we exit with an error set.
@@ -2653,9 +2646,25 @@ static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const pFeature
   pAttributeID = zMapGFFAttributeListContains(pAttributes, nAttributes, "ID") ;
   if (pAttributeID)
     bHasAttributeID = TRUE ;
+#ifdef USE_SO_TERM_HACK
+  if (!bHasAttributeID) /* use "Stable_ID" instead of "ID" */
+    {
+      pAttributeID = zMapGFFAttributeListContains(pAttributes, nAttributes, "Stable_ID") ;
+      if (pAttributeID)
+        bHasAttributeID = TRUE ;
+    }
+#endif
   pAttributeParent = zMapGFFAttributeListContains(pAttributes, nAttributes, "Parent");
   if (pAttributeParent)
     bHasAttributeParent = TRUE ;
+#ifdef USE_SO_TERM_HACK
+  if (!bHasAttributeParent) /* use "Name" instead of "Parent" */
+    {
+      pAttributeParent = zMapGFFAttributeListContains(pAttributes, nAttributes, "Name") ;
+      if (pAttributeParent)
+        bHasAttributeParent = TRUE ;
+    }
+#endif
 
   /*
    * Now the logic branches dependent upon what type of transcript we are dealing with.
