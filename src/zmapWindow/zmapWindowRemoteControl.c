@@ -102,7 +102,7 @@ static ZMapXMLUtilsEventStack makeMessageElement(char *message_text) ;
 
 
 
-static ZMapXMLObjTagFunctionsStruct window_starts_G[] = 
+static ZMapXMLObjTagFunctionsStruct zoom_starts_G[] = 
   {
     { "request",    xml_request_start_cb               },
     { "align",      xml_align_start_cb                 },
@@ -112,7 +112,7 @@ static ZMapXMLObjTagFunctionsStruct window_starts_G[] =
     {NULL, NULL}
   };
 
-static ZMapXMLObjTagFunctionsStruct window_ends_G[] =
+static ZMapXMLObjTagFunctionsStruct zoom_ends_G[] =
   {
     { "request",    xml_return_true_cb    },
     { "align",      xml_return_true_cb    },
@@ -121,19 +121,6 @@ static ZMapXMLObjTagFunctionsStruct window_ends_G[] =
     { "feature",    xml_return_true_cb    },
     {NULL, NULL}
   } ;
-
-static ZMapXMLObjTagFunctionsStruct zoom_to_pos_starts_G[] = 
-  {
-    { "request",    xml_request_start_cb},
-    {NULL, NULL}
-  };
-
-static ZMapXMLObjTagFunctionsStruct zoom_to_pos_ends_G[] =
-  {
-    { "request",    xml_return_true_cb},
-    {NULL, NULL}
-  } ;
-
 
 
 static ZMapXMLObjTagFunctionsStruct mark_starts_G[] = 
@@ -461,18 +448,8 @@ static void processRequest(ZMapWindow window,
   /* Set start/end handlers, some commands are much simpler than others. */
   if (strcmp(command_name, ZACP_ZOOM_TO) == 0)
     {
-      /* seems a bit hacky, need func to look for attrs etc.... */
-      if ((strstr(request, "start=")) && (strstr(request, "end=")))
-        {
-          request_data.zoom_to_pos = TRUE ;
-          starts = zoom_to_pos_starts_G ;
-          ends = zoom_to_pos_ends_G ;
-        }
-      else
-        {
-          starts = window_starts_G ;
-          ends = window_ends_G ;
-        }
+      starts = zoom_starts_G ;
+      ends = zoom_ends_G ;
     }
   else if (strcmp(command_name, ZACP_GET_MARK) == 0)
     {
@@ -681,38 +658,40 @@ static gboolean xml_request_start_cb(gpointer user_data, ZMapXMLElement set_elem
 
   if (strcmp(request_data->command_name, ZACP_ZOOM_TO) == 0)
     {
+      ZMapXMLAttribute start_attr = NULL, end_attr = NULL ;
+
+      result = TRUE ;
+
+      /* Check to see if it's a zoom to position or a zoom to feature by looking for
+       * start/end attributes in the request element. */
+      if ((start_attr = zMapXMLElementGetAttributeByName(set_element, "start"))
+          && (end_attr = zMapXMLElementGetAttributeByName(set_element, "end")))
+        {
+          request_data->zoom_to_pos = TRUE ;
+        }
+      else
+        {
+          /* either both or neither must be specified to be valid. */
+          if (start_attr || end_attr)
+            {
+              zMapXMLParserRaiseParsingError(parser, 
+                                             "Both \"start\" and \"end\" must be specified for zoom_to position.") ;
+
+              request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
+              result = FALSE ;
+            }
+        }
+
+
       if (request_data->zoom_to_pos)
         {
-          ZMapXMLAttribute attr = NULL;
           int start = 0, end = 0 ;
 
-          result = TRUE ;
+          start = strtol((char *)g_quark_to_string(zMapXMLAttributeGetValue(start_attr)),
+                         (char **)NULL, 10) ;
 
-          if (result && (attr = zMapXMLElementGetAttributeByName(set_element, "start")))
-            {
-              start = strtol((char *)g_quark_to_string(zMapXMLAttributeGetValue(attr)),
-                             (char **)NULL, 10);
-            }
-          else
-            {
-              zMapXMLParserRaiseParsingError(parser, "\"start\" is a required attribute for zoom_to position.");
-
-              request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
-              result = FALSE ;
-            }
-
-          if (result && (attr = zMapXMLElementGetAttributeByName(set_element, "end")))
-            {
-              end = strtol((char *)g_quark_to_string(zMapXMLAttributeGetValue(attr)),
-                           (char **)NULL, 10);
-            }
-          else
-            {
-              zMapXMLParserRaiseParsingError(parser, "\"end\" is a required attribute for zoom_to position.");
-
-              request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
-              result = FALSE ;
-            }
+          end = strtol((char *)g_quark_to_string(zMapXMLAttributeGetValue(end_attr)),
+                       (char **)NULL, 10);
 
           if (result)
             {
@@ -756,6 +735,9 @@ static gboolean xml_align_start_cb(gpointer user_data, ZMapXMLElement set_elemen
   RequestData request_data = (RequestData)user_data ;
   GQuark align_id ;
   char *align_name = NULL ;
+
+  /* no futher processing needed for zoom_to_pos */
+  zMapReturnValIfFailSafe((!(request_data->zoom_to_pos)), result) ;
 
   /* Look for an align name...doesn't have to be one. */
   if ((attr = zMapXMLElementGetAttributeByName(set_element, "name")))
@@ -818,6 +800,9 @@ static gboolean xml_block_start_cb(gpointer user_data, ZMapXMLElement set_elemen
   RequestData request_data = (RequestData)user_data ;
   GQuark block_id ;
   char *block_name = NULL ;
+
+  /* no futher processing needed for zoom_to_pos */
+  zMapReturnValIfFailSafe((!(request_data->zoom_to_pos)), result) ;
 
   if ((attr = zMapXMLElementGetAttributeByName(set_element, "name")))
     {
@@ -885,6 +870,9 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
   char *featureset_name ;
   GQuark unique_set_id ;
   char *unique_set_name ;
+
+  /* no futher processing needed for zoom_to_pos */
+  zMapReturnValIfFailSafe((!(request_data->zoom_to_pos)), result) ;
 
   if ((attr = zMapXMLElementGetAttributeByName(set_element, "name")))
     {
@@ -986,6 +974,9 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
   int start = 0, end = 0 ;
   ZMapFeature feature ;
   ZMapStyleMode mode ;
+
+  /* no futher processing needed for zoom_to_pos */
+  zMapReturnValIfFailSafe((!(request_data->zoom_to_pos)), result) ;
 
   result = TRUE ;
 
