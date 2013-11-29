@@ -3160,6 +3160,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 	    {
 	      ZMapServerReqAny req_any ;
 
+
 	      /* Recover the request from the thread data....is there always data ? check this... */
 	      if (data)
 		{
@@ -3182,6 +3183,14 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 		    ZMapViewConnectionRequest request ;
 		    ZMapViewConnectionStep step = NULL ;
 		    gboolean kill_connection = FALSE ;
+
+
+
+                    if ((strstr(view_con->url, "Patch")))
+                      printf("found it\n") ;
+
+
+
 
                     /* this is not good and shows this function needs rewriting....
                      * if we get this it means the thread has already failed and been
@@ -3564,18 +3573,12 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 				     g_list_length(zmap_view->sources_failed)) ;
 		    }
 
-
-
-		  if ((reply == ZMAPTHREAD_REPLY_GOTDATA && request_type == ZMAP_SERVERREQ_FEATURES)
-		      || reply == ZMAPTHREAD_REPLY_REQERROR)
+                  /* Record if features were loaded or if there was an error, if the latter
+                   * then report that to our remote peer if there is one. */
+		  if (request_type == ZMAP_SERVERREQ_FEATURES || reply == ZMAPTHREAD_REPLY_REQERROR)
 		    {
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-		      LoadFeaturesData loaded_features ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-		      /* Note that load_features is cleaned up by sendViewLoaded() */
-
-		      connect_data->loaded_features->status = (view_con->thread_status == THREAD_STATUS_OK ? TRUE : FALSE) ;
+		      connect_data->loaded_features->status = (view_con->thread_status == THREAD_STATUS_OK
+                                                               ? TRUE : FALSE) ;
 		      connect_data->loaded_features->err_msg = err_msg ;
 		      connect_data->loaded_features->start = connect_data->start;
 		      connect_data->loaded_features->end = connect_data->end;
@@ -3583,23 +3586,18 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 		      connect_data->loaded_features->exit_code = connect_data->exit_code ;
 		      connect_data->loaded_features->stderr_out = connect_data->stderr_out ;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-                      /* I'm leaving this for the moment until there's been thorough testing,
-                       * it's been replaced with a call from loadedDataCB() */
-
-		      loaded_features = copyLoadFeatures(connect_data->loaded_features) ;
-
-                      if (zmap_view->remote_control)
+                      if (reply == ZMAPTHREAD_REPLY_REQERROR && zmap_view->remote_control)
                         {
+                          /* Note that load_features is cleaned up by sendViewLoaded() */
+                          LoadFeaturesData loaded_features ;
+
+                          loaded_features = copyLoadFeatures(connect_data->loaded_features) ;
+
                           zMapLogWarning("VIEW LOADED FROM %s !!", "checkStateConnections()") ;
 
                           sendViewLoaded(zmap_view, loaded_features) ;
                         }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 		    }
-
 
 
 		}
