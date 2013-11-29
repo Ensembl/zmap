@@ -79,8 +79,6 @@ typedef struct GetFeaturesDataStructType
 
   char *err_msg ;
 
-
-
 } GetFeaturesDataStruct, *GetFeaturesData ;
 
 
@@ -220,7 +218,6 @@ static gboolean createConnection(void **server_out,
 {
   gboolean result = FALSE ;
   PipeServer server ;
-
 
   server = (PipeServer)g_new0(PipeServerStruct, 1) ;
 
@@ -566,7 +563,16 @@ static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles,
   int num_features ;
 
   /* Check that there is any more to parse.... */
-  if (server->gff_line->len > 0)
+  if (server->gff_line->len == 0)                           /* GString len is always >= 0 */
+    {
+      setErrMsg(server, "No features found.") ;
+
+      ZMAPPIPESERVER_LOG(Warning, server->protocol, server->script_path, server->script_args,
+                         "%s", server->last_err_msg) ;
+
+      result = server->result = ZMAP_SERVERRESPONSE_REQFAIL ;
+    }
+  else
     {
       get_features_data.server = server ;
 
@@ -611,7 +617,7 @@ static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles,
           ZMAPPIPESERVER_LOG(Warning, server->protocol, server->script_path, server->script_args,
                              "%s", server->last_err_msg) ;
 
-          server->result = ZMAP_SERVERRESPONSE_REQFAIL ;
+          result = server->result = ZMAP_SERVERRESPONSE_REQFAIL ;
         }
       else
         {
