@@ -161,7 +161,7 @@ ZMapGFFParser zMapGFFCreateParser_V3(char *sequence, int features_start, int fea
       pParser->clip_end                         = 0 ;
       pParser->clip_start                       = 0 ;
 
-      pParser->pMLF                             = zMapMLFCreate() ;
+      /* pParser->pMLF                             = zMapMLFCreate() ; */
       pParser->source_2_feature_set             = NULL ;
       pParser->source_2_sourcedata              = NULL ;
       pParser->excluded_features                = g_hash_table_new(NULL, NULL) ;
@@ -214,8 +214,8 @@ void zMapGFFDestroyParser_V3(ZMapGFFParser const pParserBase)
     g_error_free(pParser->error) ;
   if (pParser->raw_line_data)
     g_string_free(pParser->raw_line_data, TRUE) ;
-  if (pParser->pMLF)
-    zMapMLFDestroy(pParser->pMLF) ;
+  /* if (pParser->pMLF)
+    zMapMLFDestroy(pParser->pMLF) ; */
   if (pParser->excluded_features)
     g_hash_table_destroy(pParser->excluded_features) ;
 
@@ -845,24 +845,25 @@ static gboolean actionUponClosure(ZMapGFFParser const pParserBase, const char* c
 {
   gboolean bResult = TRUE ;
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
-  if (!pParser || !pParser->pHeader || !pParser->pMLF)
+  if (!pParser || !pParser->pHeader)
     return FALSE ;
 
-  printf("actionUponClosure() called, nID = %i\n", zMapMLFNumID(pParser->pMLF)) ;
+  /* printf("actionUponClosure() called, nID = %i\n", zMapMLFNumID(pParser->pMLF)) ; */
 
   /*
    * Process datasets.
    */
-  zMapMLFIDIteration(pParser->pMLF,  iterationFunctionID ) ;
+  /*zMapMLFIDIteration(pParser->pMLF,  iterationFunctionID ) ;*/
 
   /*
    * When finished we empty the parser MLF structure.
    */
-  if (!zMapMLFEmpty(pParser->pMLF))
+  /*if (!zMapMLFEmpty(pParser->pMLF))
     {
        pParser->error = g_error_new(pParser->error_domain, ZMAPGFF_ERROR_HEADER,
                                     "Error in actionUponClosure(); line = %i",  pParser->line_count) ;
     }
+  */
 
   return bResult ;
 }

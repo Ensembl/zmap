@@ -290,11 +290,9 @@ gboolean zMapGFFParserInitForFeatures(ZMapGFFParser parser, GHashTable *sources,
   gboolean result = FALSE ;
   GQuark locus_id ;
 
-  if (!parser)
-    return result ;
-
-  if (!zMapGFFIsValidVersion(parser))
-    return result ;
+  zMapReturnValIfFail(parser, result ) ;
+  zMapReturnValIfFail(zMapGFFIsValidVersion(parser), result) ;
+  zMapReturnValIfFail(sources, result);
 
   parser->sources = sources ;
   parser->parse_only = parse_only ;
@@ -618,7 +616,7 @@ void zMapGFFSetFeatureClipCoords(ZMapGFFParser parser, int start, int end)
   if (!zMapGFFIsValidVersion(parser))
     return ;
 
-  if (start <= 0 || end <= 0 || end < start ) 
+  if (start <= 0 || end <= 0 || end < start )
     return ;
 
   if (parser->state != ZMAPGFF_PARSER_ERR)

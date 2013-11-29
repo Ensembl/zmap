@@ -185,7 +185,7 @@ typedef struct ZMapGFF3ParserStruct_
     ZMapSequenceStruct *pSeqData;
     ZMapGFFHeader pHeader ;
     ZMapSOErrorLevel cSOErrorLevel ;
-    ZMapMLF pMLF ;
+    /*ZMapMLF pMLF ; */
     ZMapSOSetInUse cSOSetInUse ;
 
     unsigned int iNumWrongSequence,
