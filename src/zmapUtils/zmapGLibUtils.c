@@ -1252,6 +1252,11 @@ static void hashPrintTableCB(gpointer key, gpointer value, gpointer user_data)
       value_str = g_strdup_printf("'%s', '%s'", g_quark_to_string(((ZMapFeatureAny)value)->original_id),
                                             g_quark_to_string(((ZMapFeatureAny)value)->unique_id)) ;
     }
+  else if (g_ascii_strcasecmp(data_format_str, "style") == 0)
+    {
+      value_str = g_strdup_printf("'%s', '%s'", g_quark_to_string(((ZMapFeatureTypeStyle)value)->original_id),
+                                            g_quark_to_string(((ZMapFeatureTypeStyle)value)->unique_id)) ;
+    }
   else
     {
       value_str = g_strdup("unknown data value") ;
