@@ -4841,24 +4841,27 @@ static void sendViewLoaded(ZMapView zmap_view, LoadFeaturesData loaded_features)
   static ZMapXMLUtilsEventStackStruct
     viewloaded[] = {{ZMAPXML_START_ELEMENT_EVENT, "featureset", ZMAPXML_EVENT_DATA_NONE,    {0}},
 		    {ZMAPXML_ATTRIBUTE_EVENT,     "names",      ZMAPXML_EVENT_DATA_STRING,   {0}},
+		    {ZMAPXML_ATTRIBUTE_EVENT,     "start",      ZMAPXML_EVENT_DATA_INTEGER,   {0}},
+		    {ZMAPXML_ATTRIBUTE_EVENT,     "end",      ZMAPXML_EVENT_DATA_INTEGER,   {0}},
 		    {ZMAPXML_END_ELEMENT_EVENT,   "featureset", ZMAPXML_EVENT_DATA_NONE,    {0}},
-		    {ZMAPXML_START_ELEMENT_EVENT, "start", ZMAPXML_EVENT_DATA_NONE,    {0}},
-		    {ZMAPXML_ATTRIBUTE_EVENT,     "value",      ZMAPXML_EVENT_DATA_INTEGER,   {0}},
-		    {ZMAPXML_END_ELEMENT_EVENT,   "start", ZMAPXML_EVENT_DATA_NONE,    {0}},
-		    {ZMAPXML_START_ELEMENT_EVENT, "end", ZMAPXML_EVENT_DATA_NONE,    {0}},
-		    {ZMAPXML_ATTRIBUTE_EVENT,     "value",      ZMAPXML_EVENT_DATA_INTEGER,   {0}},
-		    {ZMAPXML_END_ELEMENT_EVENT,   "end", ZMAPXML_EVENT_DATA_NONE,    {0}},
+
 		    {ZMAPXML_START_ELEMENT_EVENT, "status", ZMAPXML_EVENT_DATA_NONE,    {0}},
 		    {ZMAPXML_ATTRIBUTE_EVENT,     "value",      ZMAPXML_EVENT_DATA_INTEGER,   {0}},
-		    {ZMAPXML_ATTRIBUTE_EVENT,     "message",      ZMAPXML_EVENT_DATA_STRING,   {0}},
+		    {ZMAPXML_ATTRIBUTE_EVENT,     "features_loaded",      ZMAPXML_EVENT_DATA_INTEGER,   {0}},
+
+                    {ZMAPXML_START_ELEMENT_EVENT, ZACP_MESSAGE,   ZMAPXML_EVENT_DATA_NONE,  {0}},
+                    {ZMAPXML_CHAR_DATA_EVENT,     NULL,    ZMAPXML_EVENT_DATA_STRING, {0}},
+                    {ZMAPXML_END_ELEMENT_EVENT,   ZACP_MESSAGE,      ZMAPXML_EVENT_DATA_NONE,  {0}},
+
 		    {ZMAPXML_END_ELEMENT_EVENT,   "status", ZMAPXML_EVENT_DATA_NONE,    {0}},
+
 		    {ZMAPXML_START_ELEMENT_EVENT, "exit_code", ZMAPXML_EVENT_DATA_NONE,    {0}},
 		    {ZMAPXML_ATTRIBUTE_EVENT,     "value",      ZMAPXML_EVENT_DATA_INTEGER,   {0}},
 		    {ZMAPXML_END_ELEMENT_EVENT,   "exit_code", ZMAPXML_EVENT_DATA_NONE,    {0}},
 		    {ZMAPXML_START_ELEMENT_EVENT, "stderr", ZMAPXML_EVENT_DATA_NONE,    {0}},
 		    {ZMAPXML_ATTRIBUTE_EVENT,     "value",      ZMAPXML_EVENT_DATA_STRING,   {0}},
 		    {ZMAPXML_END_ELEMENT_EVENT,   "stderr", ZMAPXML_EVENT_DATA_NONE,    {0}},
-		    {0}} ;
+		    {ZMAPXML_NULL_EVENT}} ;
 
   if (zmap_view->remote_control)
     {
@@ -4908,16 +4911,7 @@ static void sendViewLoaded(ZMapView zmap_view, LoadFeaturesData loaded_features)
             }
           else
             {
-              ok_mess = g_strdup_printf("%d features loaded", loaded_features->num_features) ;
-              emsg = html_quote_string(ok_mess) ;                /* see comment about really free() below */
-              g_free(ok_mess) ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-              /* NOT READY FOR THIS YET.....SIGH.....FIX rt 369227 in DEVELOP */
               emsg = html_quote_string(loaded_features->err_msg ? loaded_features->err_msg  : "");
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
             }
 
 
@@ -4931,16 +4925,22 @@ static void sendViewLoaded(ZMapView zmap_view, LoadFeaturesData loaded_features)
 
           i = 1 ;
           viewloaded[i].value.s = featurelist ;
-          i += 3 ;
+          i++ ;
           viewloaded[i].value.i = loaded_features->start ;
-          i += 3 ;
+          i++ ;
           viewloaded[i].value.i = loaded_features->end ;
+
           i += 3 ;
           viewloaded[i].value.i = (int)loaded_features->status ;
           i++ ;
+          viewloaded[i].value.i = loaded_features->num_features ;
+
+          i += 2 ;
           viewloaded[i].value.s = emsg ;
-          i += 3 ;
+
+          i += 4 ;
           viewloaded[i].value.i = loaded_features->exit_code ;
+
           i += 3 ;
           viewloaded[i].value.s = loaded_features->stderr_out ? loaded_features->stderr_out : "" ;
 
