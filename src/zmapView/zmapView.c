@@ -4890,23 +4890,37 @@ static void sendViewLoaded(ZMapView zmap_view, LoadFeaturesData loaded_features)
               g_free(prev) ;
             }
 
+
+          /* THIS PART NEEDS FIXING UP TO RETURN THE TRUE ERROR MESSAGE AS PER rt 369227 */
           if (loaded_features->status)          /* see comment in zmapSlave.c/ RETURNCODE_QUIT, we are tied up in knots */
             {
-              ok_mess = g_strdup_printf("%d features loaded",loaded_features->num_features);
-              emsg = html_quote_string(ok_mess);                /* see comment about really free() below */
-              g_free(ok_mess);
+              ok_mess = g_strdup_printf("%d features loaded", loaded_features->num_features) ;
+              emsg = html_quote_string(ok_mess) ;                /* see comment about really free() below */
+              g_free(ok_mess) ;
               
               {
                 static long total = 0;
 
-                total += loaded_features->num_features;
+                total += loaded_features->num_features ;
+
                 zMapLogTime(TIMER_LOAD,TIMER_ELAPSED,total,""); /* how long is startup... */
               }
             }
           else
             {
+              ok_mess = g_strdup_printf("%d features loaded", loaded_features->num_features) ;
+              emsg = html_quote_string(ok_mess) ;                /* see comment about really free() below */
+              g_free(ok_mess) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+              /* NOT READY FOR THIS YET.....SIGH.....FIX rt 369227 in DEVELOP */
               emsg = html_quote_string(loaded_features->err_msg ? loaded_features->err_msg  : "");
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
             }
+
+
 
           if (loaded_features->stderr_out)
             {
