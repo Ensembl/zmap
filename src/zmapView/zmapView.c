@@ -3591,6 +3591,10 @@ static gboolean checkStateConnections(ZMapView zmap_view)
                           /* Note that load_features is cleaned up by sendViewLoaded() */
                           LoadFeaturesData loaded_features ;
 
+                          /* Hack to support otterlace for this release.... */
+                          if (request_type == ZMAP_SERVERREQ_FEATURES)
+                            connect_data->loaded_features->status = TRUE ;
+
                           loaded_features = copyLoadFeatures(connect_data->loaded_features) ;
 
                           zMapLogWarning("VIEW LOADED FROM %s !!", "checkStateConnections()") ;
