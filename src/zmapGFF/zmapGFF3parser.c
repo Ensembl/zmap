@@ -60,7 +60,7 @@ static gboolean initializeSequenceRead(ZMapGFFParser const pParser, const char *
 static gboolean finalizeSequenceRead(ZMapGFFParser const pParser , const char* const sLine) ;
 static gboolean initializeFastaRead(ZMapGFFParser const pParser, const char * const sLine) ;
 static gboolean actionUponClosure(ZMapGFFParser const pParser, const char* const sLine)  ;
-static gboolean iterationFunctionID(GQuark gqID, GHashTable *pValueTable) ;
+/*static gboolean iterationFunctionID(GQuark gqID, GHashTable *pValueTable) ; */
 static gboolean initParserForSequenceRead(ZMapGFFParser pParser) ;
 static gboolean copySequenceData(ZMapSequence pSequence, GString *pData) ;
 
@@ -806,6 +806,7 @@ static gboolean initParserForSequenceRead(ZMapGFFParser pParserBase)
  * argument table. This is a model for functions to be called by
  * actionUponClosure().
  */
+/*
 static gboolean iterationFunctionID(GQuark gqID, GHashTable *pValueTable)
 {
   gboolean bResult = FALSE ;
@@ -819,18 +820,12 @@ static gboolean iterationFunctionID(GQuark gqID, GHashTable *pValueTable)
   while (g_hash_table_iter_next(&ghIterator, &pKey, &pValue))
     {
       gqFeatureID = GPOINTER_TO_INT( pKey ) ;
-      /*
-       * Work on feature->unique_id = gqFeatureID
-       *
-       * May also require access to parser here for context etc, so calling through
-       * zMapMLFIDIteration() may not be appropriate solution.
-       */
     }
   bResult = TRUE ;
 
   return bResult ;
 }
-
+*/
 
 
 
@@ -2408,10 +2403,6 @@ static gboolean parseBodyLine_V3(
   if (iFields == ZMAPGFF_MANDATORY_FIELDS+1)
     {
       nAttributes = 0 ;
-      if (!strcmp("SAGE_tag", sType))
-      {
-        double dX = 0.0;
-      }
       pAttributes = zMapGFFAttributeParseList(pParserBase, sAttributes, &nAttributes, bRemoveQuotes) ;
     }
 
@@ -2988,9 +2979,7 @@ static gboolean makeNewFeature_V3(
 
   int
     iQueryStart             = 0,
-    iQueryEnd               = 0,
-    iTargetStart            = 0,
-    iTargetEnd              = 0
+    iQueryEnd               = 0
   ;
 
   double
@@ -3010,26 +2999,16 @@ static gboolean makeNewFeature_V3(
   ;
 
   gboolean
-    bDataAdded              = FALSE,
-    bHasAttributeID         = FALSE,
-    bHasAttributeParent     = FALSE,
-    bFeaturePresent         = FALSE,
     bFeatureAdded           = FALSE,
     bResult                 = FALSE,
     bFeatureHasName         = FALSE,
     bHasScore               = FALSE,
-    bValidTarget            = FALSE,
     bNewFeatureCreated      = FALSE
   ;
 
   GQuark
-    gqThisID                = 0,
     gqFeatureStyleID        = 0,
     gqSourceID              = 0
-  ;
-
-  GArray
-    *pGaps                  = NULL
   ;
 
   ZMapFeature
@@ -3051,8 +3030,7 @@ static gboolean makeNewFeature_V3(
     cFeatureStyleMode       = ZMAPSTYLE_MODE_BASIC
   ;
   ZMapStrand
-    cStrand                 = ZMAPSTRAND_NONE,
-    cTargetStrand           = ZMAPSTRAND_NONE
+    cStrand                 = ZMAPSTRAND_NONE
   ;
   ZMapPhase
     cPhase                  = ZMAPPHASE_NONE
@@ -3062,15 +3040,7 @@ static gboolean makeNewFeature_V3(
   ;
   ZMapGFFAttribute
     pAttribute              = NULL,
-    pAttributeID            = NULL,
-    pAttributeParent        = NULL,
-    pAttributeTarget        = NULL,
-    pAttributeGap           = NULL,
     *pAttributes            = NULL
-  ;
-  ZMapSpanStruct
-    cSpanItem               = {0},
-    *pSpanItem               = NULL
   ;
 
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
@@ -3105,7 +3075,7 @@ static gboolean makeNewFeature_V3(
    * A CDS feature _must_ have a phase which is _not_ ZMAPPHASE_NONE.
    *
    * _MAY_ also require the following test at some point (but this is not in the
-   * standard).
+   * standard). It is present for the moment...
    *
    * All features other than CDS _must_ have cPhase = '.' (i.e. ZMAPPHASE_NONE).
    * Anything else is an error.
@@ -3118,14 +3088,14 @@ static gboolean makeNewFeature_V3(
           goto return_point ;
         }
     }
-  /* else
+  else
     {
       if (cPhase != ZMAPPHASE_NONE)
         {
           bResult = FALSE ;
           goto return_point ;
         }
-    } */
+    }
 
 
   /*
@@ -3212,10 +3182,6 @@ static gboolean makeNewFeature_V3(
 #ifdef LOCAL_DEBUG_CODE01
   char* sFSName = NULL ;
   sFSName = g_strdup(g_quark_to_string(pFeatureSet->unique_id)) ;
-  if (strstr(sSource, "RNAi"))
-  {
-    double dX = 0.0;
-  }
 #endif
 
   /*
