@@ -740,6 +740,8 @@ static void scratchMergeNewFeature(ZMapView zmap_view, ZMapFeature feature)
 
 static void handBuiltInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, ZMapFeatureContext context)
 {
+  zMapReturnIfFail(zmap_view && zmap_view->context_map.styles);
+
   ZMapFeatureSet featureset = NULL ;
   ZMapFeatureTypeStyle style = NULL ;
   ZMapFeatureSetDesc f2c;
@@ -761,45 +763,57 @@ static void handBuiltInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, Z
         context = zmapViewCreateContext(zmap_view, NULL, featureset);
 
 	/* set up featureset2_column and anything else needed */
-      f2c = g_hash_table_lookup(context_map->featureset_2_column, GUINT_TO_POINTER(featureset->unique_id));
-      if(!f2c)	/* these just accumulate  and should be removed from the hash table on clear */
-	{
-		f2c = g_new0(ZMapFeatureSetDescStruct,1);
+      if (context_map->featureset_2_column)
+        {
+          f2c = g_hash_table_lookup(context_map->featureset_2_column, GUINT_TO_POINTER(featureset->unique_id));
+          if(!f2c)	/* these just accumulate  and should be removed from the hash table on clear */
+            {
+              f2c = g_new0(ZMapFeatureSetDescStruct,1);
 
-		f2c->column_id = zMapFeatureSetCreateID(ZMAP_FIXED_STYLE_HAND_BUILT_NAME);
-		f2c->column_ID = g_quark_from_string(ZMAP_FIXED_STYLE_HAND_BUILT_NAME);
-		f2c->feature_src_ID = g_quark_from_string(ZMAP_FIXED_STYLE_HAND_BUILT_NAME);
-		f2c->feature_set_text = ZMAP_FIXED_STYLE_HAND_BUILT_TEXT;
-		g_hash_table_insert(context_map->featureset_2_column, GUINT_TO_POINTER(featureset->unique_id), f2c);
-	}
+              f2c->column_id = zMapFeatureSetCreateID(ZMAP_FIXED_STYLE_HAND_BUILT_NAME);
+              f2c->column_ID = g_quark_from_string(ZMAP_FIXED_STYLE_HAND_BUILT_NAME);
+              f2c->feature_src_ID = g_quark_from_string(ZMAP_FIXED_STYLE_HAND_BUILT_NAME);
+              f2c->feature_set_text = ZMAP_FIXED_STYLE_HAND_BUILT_TEXT;
+              g_hash_table_insert(context_map->featureset_2_column, GUINT_TO_POINTER(featureset->unique_id), f2c);
+            }
+        }
 
-      src = g_hash_table_lookup(context_map->source_2_sourcedata, GUINT_TO_POINTER(featureset->unique_id));
-      if(!src)
-	{
-		src = g_new0(ZMapFeatureSourceStruct,1);
-		src->source_id = f2c->feature_src_ID;
-		src->source_text = g_quark_from_string(ZMAP_FIXED_STYLE_HAND_BUILT_TEXT);
-		src->style_id = style->unique_id;
-		src->maps_to = f2c->column_id;
-		g_hash_table_insert(context_map->source_2_sourcedata, GUINT_TO_POINTER(featureset->unique_id), src);
-	}
+      if (context_map->source_2_sourcedata)
+        {
+          src = g_hash_table_lookup(context_map->source_2_sourcedata, GUINT_TO_POINTER(featureset->unique_id));
+          if(!src)
+            {
+              src = g_new0(ZMapFeatureSourceStruct,1);
+              src->source_id = f2c->feature_src_ID;
+              src->source_text = g_quark_from_string(ZMAP_FIXED_STYLE_HAND_BUILT_TEXT);
+              src->style_id = style->unique_id;
+              src->maps_to = f2c->column_id;
+              g_hash_table_insert(context_map->source_2_sourcedata, GUINT_TO_POINTER(featureset->unique_id), src);
+            }
+        }
 
-      list = g_hash_table_lookup(context_map->column_2_styles,GUINT_TO_POINTER(f2c->column_id));
-      if(!list)
-	{
-		list = g_list_prepend(list,GUINT_TO_POINTER(src->style_id));
-		g_hash_table_insert(context_map->column_2_styles,GUINT_TO_POINTER(f2c->column_id), list);
-	}
+      if (context_map->column_2_styles)
+        {
+          list = g_hash_table_lookup(context_map->column_2_styles,GUINT_TO_POINTER(f2c->column_id));
+          if(!list)
+            {
+              list = g_list_prepend(list,GUINT_TO_POINTER(src->style_id));
+              g_hash_table_insert(context_map->column_2_styles,GUINT_TO_POINTER(f2c->column_id), list);
+            }
+        }
 
-      column = g_hash_table_lookup(context_map->columns,GUINT_TO_POINTER(f2c->column_id));
-      if(!column)
-	{
-		column = g_new0(ZMapFeatureColumnStruct,1);
-		column->unique_id = f2c->column_id;
-		column->style_table = g_list_prepend(NULL, (gpointer)  style);
-		/* the rest shoudl get filled in elsewhere */
-		g_hash_table_insert(context_map->columns, GUINT_TO_POINTER(f2c->column_id), column);
-	}
+      if (context_map->columns)
+        {
+          column = g_hash_table_lookup(context_map->columns,GUINT_TO_POINTER(f2c->column_id));
+          if(!column)
+            {
+              column = g_new0(ZMapFeatureColumnStruct,1);
+              column->unique_id = f2c->column_id;
+              column->style_table = g_list_prepend(NULL, (gpointer)  style);
+              /* the rest shoudl get filled in elsewhere */
+              g_hash_table_insert(context_map->columns, GUINT_TO_POINTER(f2c->column_id), column);
+            }
+        }
     }  
 }
 
@@ -817,6 +831,8 @@ static void handBuiltInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, Z
  */
 void zmapViewScratchInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, ZMapFeatureContext context_in, ZMapFeatureBlock block_in)
 {
+  zMapReturnIfFail(zmap_view && zmap_view->context_map.styles);
+
   ZMapFeatureSet scratch_featureset = NULL ;
   ZMapFeatureTypeStyle style = NULL ;
   ZMapFeatureSetDesc f2c;
