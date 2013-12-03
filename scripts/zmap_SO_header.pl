@@ -65,7 +65,7 @@ GetOptions ("download"  => \$download);
 #
 # Use extra hacked backwards compatibility data. 
 # 
-$use_hack = 1 ; 
+$use_hack = 0 ; 
 
 #
 # Destination file for auto-generated header.

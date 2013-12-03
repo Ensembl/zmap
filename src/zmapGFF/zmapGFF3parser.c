@@ -2277,18 +2277,6 @@ static gboolean parseBodyLine_V3(
       goto return_point ;
     }
 
-
-  /*
-   * Hack for incorrect terms...
-   */
-#ifdef USE_SO_TERM_HACK
-  if (!strcmp(sSource, "Augustus"))
-  {
-    strcpy(sType, "transcript") ;
-  }
-#endif
-
-
   /*
    * Ignore any lines with a different sequence name.
    */
@@ -2649,25 +2637,9 @@ static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const pFeature
   pAttributeID = zMapGFFAttributeListContains(pAttributes, nAttributes, "ID") ;
   if (pAttributeID)
     bHasAttributeID = TRUE ;
-#ifdef USE_SO_TERM_HACK
-  if (!bHasAttributeID)
-    {
-      pAttributeID = zMapGFFAttributeListContains(pAttributes, nAttributes, "Stable_ID") ;
-      if (pAttributeID)
-        bHasAttributeID = TRUE ;
-    }
-#endif
   pAttributeParent = zMapGFFAttributeListContains(pAttributes, nAttributes, "Parent");
   if (pAttributeParent)
     bHasAttributeParent = TRUE ;
-#ifdef USE_SO_TERM_HACK
-  /*if (!bHasAttributeParent)
-    {
-      pAttributeParent = zMapGFFAttributeListContains(pAttributes, nAttributes, "Name") ;
-      if (pAttributeParent)
-        bHasAttributeParent = TRUE ;
-    } */
-#endif
 
   /*
    * Now the logic branches dependent upon what type of transcript we are dealing with.
@@ -3171,7 +3143,6 @@ static gboolean makeNewFeature_V3(
       if (pSourceData && pFeatureStyle->unique_id != gqFeatureStyleID)
         pSourceData->style_id = pFeatureStyle->unique_id;
     }
-
 
   /*
    * with one type of feature in a featureset this should be ok
