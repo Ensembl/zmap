@@ -41,7 +41,7 @@
 #include <ZMap/zmapGFF.h>
 #include "zmapGFF_P.h"
 
-/* #define LOCAL_DEBUG_CODE */
+/* #define LOCAL_DEBUG_CODE 1 */
 
 #ifdef LOCAL_DEBUG_CODE
 static FILE *pFile = NULL ;

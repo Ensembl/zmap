@@ -133,6 +133,7 @@ ZMapGFFParser zMapGFFCreateParser_V3(char *sequence, int features_start, int fea
 
       pParser->gff_version                      = ZMAPGFF_VERSION_3 ;
       pParser->pHeader                          = zMapGFFCreateHeader() ;
+      //pParser->pHeader->flags.got_ver           = TRUE ;
       if (!pParser->pHeader)
         return NULL ;
       pParser->state                            = ZMAPGFF_PARSER_NON ;
