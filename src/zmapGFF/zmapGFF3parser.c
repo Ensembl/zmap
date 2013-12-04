@@ -2654,9 +2654,9 @@ static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const pFeature
    *                this is not handled.
    *                Feature _must_ be already present.
    */
-  bIsExon = (gboolean) strstr(sSOType, "exon") ;
-  bIsIntron = (gboolean) strstr(sSOType, "intron") ;
-  bIsCDS = (gboolean) strstr(sSOType, "CDS") ;
+  bIsExon = strstr(sSOType, "exon") != NULL ? TRUE : FALSE ;
+  bIsIntron = strstr(sSOType, "intron") != NULL ? TRUE : FALSE ;
+  bIsCDS = strstr(sSOType, "CDS") != NULL ? TRUE : FALSE ;
   bIsComponent = (bIsExon || bIsIntron || bIsCDS );
   if (bHasAttributeID && !bIsComponent)
     {
