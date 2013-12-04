@@ -248,6 +248,7 @@ typedef struct _zmapWindowFeaturesetItemStruct
    * with our canvas window being much smaller than our sequence making drawing/scrolling
    * difficult. */
 
+  gboolean recalculate_zoom;    /* gets set to true if the zoom has changed and we need to recalculate summary data */
   double zoom;			/* current units per pixel */
   double bases_per_pixel;
   GtkWidget *canvas_scrolled_window ;			    /* needed to get ajuster for exposes. */

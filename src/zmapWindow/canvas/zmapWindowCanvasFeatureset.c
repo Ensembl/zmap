@@ -1181,6 +1181,7 @@ ZMapWindowCanvasItem zMapWindowCanvasItemFeaturesetGetFeaturesetItem(FooCanvasGr
 
 
       /* initialise zoom to prevent double index create on first draw (coverage graphs) */
+      featureset->recalculate_zoom = FALSE ;
       featureset->zoom = foo->canvas->pixels_per_unit_y;
       featureset->bases_per_pixel = 1.0 / featureset->zoom;
 
@@ -1209,10 +1210,17 @@ guint zMapWindowCanvasFeaturesetGetId(ZMapWindowFeaturesetItem featureset)
 
 void zMapWindowCanvasFeaturesetSetZoomY(ZMapWindowFeaturesetItem fi, double zoom_y)
 {
-  fi->zoom = zoom_y ;
-
+  /* If the zoom has changed, we need to set a flag so that we recalculate
+   * featureset summary data after the zoom has been completed. */
+  if (fi->zoom != zoom_y)
+    {
+      fi->recalculate_zoom = TRUE ;
+      fi->zoom = zoom_y ;
+    }
+  
   return ;
 }
+
 
 
 
@@ -1479,7 +1487,8 @@ void zMapWindowCanvasFeaturesetRedraw(ZMapWindowFeaturesetItem fi, double zoom)
   double x1;
   double width = fi->width;
 
-  fi->zoom = zoom;	/* can set to 0 to trigger recalc of zoom data */
+  /*fi->recalculate_zoom;*/ /* can set to TRUE to trigger a recalc of zoom data */
+  fi->zoom = zoom;	
 
 #if 1
 
@@ -1735,7 +1744,7 @@ gboolean zMapWindowFeaturesetItemSetStyle(ZMapWindowFeaturesetItem di, ZMapFeatu
   gboolean re_index = FALSE;
   GList  *features;
 
-  //  di->zoom = 0.0;		// trigger recalc
+  //  di->recalculate_zoom = TRUE;		// trigger recalc
 
 
   if (zMapStyleGetMode(di->style) == ZMAPSTYLE_MODE_GRAPH
@@ -2511,16 +2520,12 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
     }
 
 
-  char *set_name = g_quark_to_string(fi->id) ;
-
-
-
 
   /* check zoom level and recalculate */
   /* NOTE this also creates the index if needed */
-  if(!fi->display_index || fi->zoom != item->canvas->pixels_per_unit_y)
+  if(!fi->display_index || fi->recalculate_zoom)
     {
-      fi->zoom = item->canvas->pixels_per_unit_y;
+      fi->recalculate_zoom = FALSE;
       fi->bases_per_pixel = 1.0 / fi->zoom;
       zMapWindowCanvasFeaturesetZoom(fi, drawable) ;
     }
@@ -3368,7 +3373,8 @@ int zMapWindowCanvasFeaturesetFilter(gpointer gfilter, double value, gboolean hi
       /* trigger a re-calc if summarised to ensure the picture is pixel perfect
        * NOTE if bumped we don-t calculate so no creeping inefficiency here
        */
-      fi->zoom = 0;
+      fi->recalculate_zoom = TRUE ;
+      //fi->zoom = 0; /* gb10: now we have the recalculate_zoom flag this shouldn't be necessary */
 
 #if HIGHLIGHT_FILTERED_COLUMNS 
       /*!> \todo This code highlights columns that are filtered.
@@ -3502,7 +3508,7 @@ void zmapWindowFeaturesetAddToIndex(ZMapWindowFeaturesetItem featureset_item, ZM
     }
   /* must set this independantly as empty columns with no index get flagged as sorted */
   featureset_item->features_sorted = FALSE;
-  //  featureset_item->zoom = 0.0;	/* trigger a recalc */
+  //  featureset_item->recalculate_zoom = TRUE;	/* trigger a recalc */
 #else
   // untested code
   {
