@@ -69,9 +69,12 @@ gboolean zMapGFFIsValidVersion(const ZMapGFFParser const pParser)
  * Internal static function declarations.
  */
 static void getFeatureArray(GQuark key_id, gpointer data, gpointer user_data) ;
-static void normaliseFeatures(GData **feature_sets) ;
-static void checkFeatureSetCB(GQuark key_id, gpointer data, gpointer user_data_unused) ;
-static void checkFeatureCB(GQuark key_id, gpointer data, gpointer user_data_unused) ;
+static void normaliseFeatures_V2(GData **feature_sets) ;
+static void normaliseFeatures_V3(GData **feature_sets) ;
+static void checkFeatureSetCB_V2(GQuark key_id, gpointer data, gpointer user_data_unused) ;
+static void checkFeatureSetCB_V3(GQuark key_id, gpointer data, gpointer user_data_unused) ;
+static void checkFeatureCB_V2(GQuark key_id, gpointer data, gpointer user_data_unused) ;
+static void checkFeatureCB_V3(GQuark key_id, gpointer data, gpointer user_data_unused) ;
 
 
 /*
@@ -382,9 +385,18 @@ gboolean zMapGFFGetFeatures(ZMapGFFParser parser, ZMapFeatureBlock feature_block
      /* It is possible for features to be incomplete from GFF (e.g. transcripts without
       * an exon), we attempt to normalise them where possible...currently only
       * transcripts/exons. */
-      normaliseFeatures(&(parser->feature_sets)) ;
-
-      result = TRUE ;
+      if (parser->gff_version == ZMAPGFF_VERSION_2)
+      {
+        normaliseFeatures_V2(&(parser->feature_sets)) ;
+        result = TRUE ;
+      }
+      else if (parser->gff_version == ZMAPGFF_VERSION_3)
+      {
+        normaliseFeatures_V3(&(parser->feature_sets)) ;
+        result = TRUE ;
+      }
+      else
+        result = FALSE ;
 
     }
 
@@ -411,35 +423,51 @@ static void getFeatureArray(GQuark key_id, gpointer data, gpointer user_data)
 
 
 /*
- * Used by both versions.
- *
  * Features may be created incomplete by 'faulty' GFF files, here we try
  * to make them valid.
  */
-static void normaliseFeatures(GData **feature_sets)
+static void normaliseFeatures_V2(GData **feature_sets)
 {
   /* Look through all datasets.... */
-  g_datalist_foreach(feature_sets, checkFeatureSetCB, NULL) ;
+  g_datalist_foreach(feature_sets, checkFeatureSetCB_V2, NULL) ;
 
   return ;
 }
 
-
-
 /*
- * Used by both versions.
- *
  * A GDataForeachFunc() which checks to see if the dataset passed in has
  * mulitline features and if they are then checks each feature to make sure
  * it is complete/valid. Currently this is only transcripts...see checkFeatureCB().
  */
-static void checkFeatureSetCB(GQuark key_id, gpointer data, gpointer user_data_unused)
+static void checkFeatureSetCB_V2(GQuark key_id, gpointer data, gpointer user_data_unused)
 {
   ZMapGFFParserFeatureSet parser_feature_set = (ZMapGFFParserFeatureSet)data ;
 
   if (parser_feature_set->multiline_features)
     {
-      g_datalist_foreach(&(parser_feature_set->multiline_features), checkFeatureCB, NULL) ;
+      g_datalist_foreach(&(parser_feature_set->multiline_features), checkFeatureCB_V2, NULL) ;
+    }
+
+  return ;
+}
+
+/*
+ * A GDataForeachFunc() which checks to see if the feature passed in is
+ * complete/valid. Currently just checks transcripts to make sure they
+ * have at least one exon.
+ */
+static void checkFeatureCB_V2(GQuark key_id, gpointer data, gpointer user_data_unused)
+{
+  ZMapFeature feature = (ZMapFeature)data ;
+
+  switch (feature->type)
+    {
+      case ZMAPSTYLE_MODE_TRANSCRIPT:
+          zMapFeatureTranscriptNormalise(feature) ;
+        break ;
+
+      default:
+        break ;
     }
 
   return ;
@@ -447,20 +475,48 @@ static void checkFeatureSetCB(GQuark key_id, gpointer data, gpointer user_data_u
 
 
 /*
- * Used by both versions.
- *
- * A GDataForeachFunc() which checks to see if the feature passed in is
- * complete/valid. Currently just checks transcripts to make sure they
- * have at least one exon.
+ * This makes corrections to introns in transcript features.
  */
-static void checkFeatureCB(GQuark key_id, gpointer data, gpointer user_data_unused)
+static void normaliseFeatures_V3(GData **feature_sets)
+{
+  g_datalist_foreach(feature_sets, checkFeatureSetCB_V3, NULL) ;
+  return ;
+}
+
+/*
+ * Makes corrections to introns in transcript features.
+ */
+static void checkFeatureSetCB_V3(GQuark key_id, gpointer data, gpointer user_data_unused)
+{
+  ZMapGFFParserFeatureSet parser_feature_set = (ZMapGFFParserFeatureSet)data ;
+
+  /*
+     Note that the containers differ here:
+     multiline_features is GData*, and is traversed with g_datalist_foreach,
+     however feature_set is ZMapFeatureSetStructType and it features are
+     stored in a g_hash_table construct which is why we need two sets of
+     functions to do the traversal for v2 and v3 here.. amusing, eh?
+   */
+  if (parser_feature_set->feature_set->features)
+  {
+    g_hash_table_foreach(parser_feature_set->feature_set->features, checkFeatureCB_V3, NULL) ;
+  }
+
+  return ;
+}
+
+/*
+ * Calls function to make correction to introns in transcript features.
+ */
+static void checkFeatureCB_V3(GQuark key_id, gpointer data, gpointer user_data_unused)
 {
   ZMapFeature feature = (ZMapFeature)data ;
 
   switch (feature->type)
     {
       case ZMAPSTYLE_MODE_TRANSCRIPT:
-        zMapFeatureTranscriptNormalise(feature) ;
+          zMapFeatureRemoveIntrons(feature) ;
+          zMapFeatureTranscriptRecreateIntrons(feature) ;
         break ;
 
       default:

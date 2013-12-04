@@ -133,7 +133,6 @@ ZMapGFFParser zMapGFFCreateParser_V3(char *sequence, int features_start, int fea
 
       pParser->gff_version                      = ZMAPGFF_VERSION_3 ;
       pParser->pHeader                          = zMapGFFCreateHeader() ;
-      //pParser->pHeader->flags.got_ver           = TRUE ;
       if (!pParser->pHeader)
         return NULL ;
       pParser->state                            = ZMAPGFF_PARSER_NON ;
@@ -2972,8 +2971,8 @@ static gboolean makeNewFeature_V3(
   ;
 
   gboolean
-    bFeatureAdded           = FALSE,
     bResult                 = FALSE,
+    bFeatureAdded           = FALSE,
     bFeatureHasName         = FALSE,
     bHasScore               = FALSE,
     bNewFeatureCreated      = FALSE
@@ -3177,6 +3176,10 @@ static gboolean makeNewFeature_V3(
 
       bNewFeatureCreated = FALSE ;
       pFeature = makeFeatureTranscript(pFeatureData, pFeatureSet, &bNewFeatureCreated, &sMakeFeatureErrorText) ;
+      if (pFeature)
+      {
+        bResult = TRUE ;
+      }
       if (bNewFeatureCreated)
         ++pParser->num_features ;
 
@@ -3186,7 +3189,10 @@ static gboolean makeNewFeature_V3(
 
       pFeature = makeFeatureAlignment(pFeatureData, pFeatureSet, pFeatureStyle, &sMakeFeatureErrorText) ;
       if (pFeature)
+      {
+        bResult = TRUE ;
         ++pParser->num_features ;
+      }
 
     }
   else
