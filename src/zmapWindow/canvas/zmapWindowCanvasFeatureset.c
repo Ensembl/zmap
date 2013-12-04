@@ -2520,10 +2520,6 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
     }
 
 
-  char *set_name = g_quark_to_string(fi->id) ;
-
-
-
 
   /* check zoom level and recalculate */
   /* NOTE this also creates the index if needed */
@@ -3377,7 +3373,7 @@ int zMapWindowCanvasFeaturesetFilter(gpointer gfilter, double value, gboolean hi
       /* trigger a re-calc if summarised to ensure the picture is pixel perfect
        * NOTE if bumped we don-t calculate so no creeping inefficiency here
        */
-      fi->recalculate_zoom;
+      fi->recalculate_zoom = TRUE ;
       //fi->zoom = 0; /* gb10: now we have the recalculate_zoom flag this shouldn't be necessary */
 
 #if HIGHLIGHT_FILTERED_COLUMNS 
