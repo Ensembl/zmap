@@ -2782,19 +2782,21 @@ static ZMapFeature makeFeatureAlignment(const ZMapGFFFeatureData const pFeatureD
   int iStart = 0,
     iEnd = 0,
     iTargetStart = 0,
-    iTargetEnd = 0 ;
+    iTargetEnd = 0,
+    iLength = 0 ;
   char *sSequence = NULL,
     *sSOType = NULL,
     *sTargetID = NULL,
     *sFeatureName = NULL,
     *sFeatureNameID = NULL,
     *sTargetValue = NULL ;
-  double dScore = 0.0 ;
+  double dScore = 0.0,
+    dPercentID = 0.0 ;
   gboolean bHasScore = FALSE,
     bValidTarget = FALSE,
     bNewFeatureCreated = FALSE,
     bFeatureAdded = FALSE,
-    bValidGaps = FALSE,
+    bParseAttribute = FALSE,
     bDataAdded = FALSE ;
   GArray *pGaps = NULL ;
   ZMapSOIDData pSOIDData = NULL ;
@@ -2876,7 +2878,7 @@ static ZMapFeature makeFeatureAlignment(const ZMapGFFFeatureData const pFeatureD
        */
       if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "percentID")))
         {
-          /* parse for percentID data */
+          bParseAttribute = zMapAttParsePID(pAttribute, &dPercentID) ;
         }
 
       /*
@@ -2884,31 +2886,40 @@ static ZMapFeature makeFeatureAlignment(const ZMapGFFFeatureData const pFeatureD
        */
       if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "length")))
         {
-          /* parse for length data */
+          bParseAttribute = zMapAttParseLength(pAttribute, &iLength) ;
         }
 
       /*
-       * Now parse for various gap data formats...
+       * Now parse for gap data in various possible formats
        */
       if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "Gap")))
         {
-          pGaps = NULL ;
-          bValidGaps = FALSE ;
+          bParseAttribute = FALSE ; /* Not yet implemented. */
         }
       else if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "cigar_ensembl")))
         {
-          pGaps = NULL ;
-          bValidGaps = FALSE ;
+          bParseAttribute = zMapAttParseCigarEnsembl(pAttribute, &pGaps, cStrand, iStart, iEnd, cTargetStrand, iTargetStart, iTargetEnd) ;
         }
-      else
+      else if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "cigar_exonerate")))
         {
-          pGaps = NULL ;
-          bValidGaps = FALSE ;
+          bParseAttribute = zMapAttParseCigarExonerate(pAttribute, &pGaps, cStrand, iStart, iEnd, cTargetStrand, iTargetStart, iTargetEnd);
         }
-      bDataAdded = zMapFeatureAddAlignmentData(pFeature, 0, 0.0, iTargetStart, iTargetEnd, cHomolType,
-                                               0, cTargetStrand, cPhase, pGaps,
-                                               zMapStyleGetWithinAlignError(pFeatureStyle),
-                                               FALSE, NULL )  ;
+      else if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "cigar_bam")))
+        {
+          bParseAttribute = zMapAttParseCigarBam(pAttribute, &pGaps, cStrand, iStart, iEnd, cTargetStrand, iTargetStart, iTargetEnd);
+        }
+      if (!bParseAttribute && pGaps)
+        {
+          g_array_free(pGaps, TRUE) ;
+          pGaps = NULL ;
+        }
+
+      /*
+       * Add data to the feature.
+       */
+      bDataAdded = zMapFeatureAddAlignmentData(pFeature, 0, dPercentID, iTargetStart, iTargetEnd, cHomolType,
+                                               iLength, cTargetStrand, cPhase, pGaps,
+                                               zMapStyleGetWithinAlignError(pFeatureStyle), FALSE, NULL )  ;
       bFeatureAdded = zMapFeatureSetAddFeature(pFeatureSet, pFeature) ;
       if (!bFeatureAdded)
         {

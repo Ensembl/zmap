@@ -858,7 +858,8 @@ gboolean zMapAttParseCDSEndNotFound(const ZMapGFFAttribute const pAttribute, gbo
 
 
 /*
- * Inspect the "Length" attribute for a single integer variable.
+ * Inspect the "length" attribute for a single integer variable. This is for V3 only; the
+ * attribute name "length" was previous capitalised in our V2 code.
  */
 gboolean zMapAttParseLength(const ZMapGFFAttribute const pAttribute , int* const piLength )
 {
@@ -870,7 +871,7 @@ gboolean zMapAttParseLength(const ZMapGFFAttribute const pAttribute , int* const
   if (!pAttribute || !piLength )
     return bResult ;
   const char * const sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
-  if (strcmp("Length", zMapGFFAttributeGetNamestring(pAttribute)))
+  if (strcmp("length", zMapGFFAttributeGetNamestring(pAttribute)))
     {
       zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
       return bResult ;
