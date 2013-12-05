@@ -2787,19 +2787,20 @@ static ZMapFeature makeFeatureAlignment(const ZMapGFFFeatureData const pFeatureD
     *sSOType = NULL,
     *sTargetID = NULL,
     *sFeatureName = NULL,
-    *sFeatureNameID = NULL ;
+    *sFeatureNameID = NULL,
+    *sTargetValue = NULL ;
   double dScore = 0.0 ;
   gboolean bHasScore = FALSE,
     bValidTarget = FALSE,
     bNewFeatureCreated = FALSE,
     bFeatureAdded = FALSE,
+    bValidGaps = FALSE,
     bDataAdded = FALSE ;
   GArray *pGaps = NULL ;
   ZMapSOIDData pSOIDData = NULL ;
   ZMapFeature pFeature = NULL ;
   ZMapGFFAttribute *pAttributes = NULL,
-    pAttributeTarget = NULL,
-    pAttributeGap = NULL ;
+    pAttribute = NULL ;
   ZMapStrand cStrand = ZMAPSTRAND_NONE,
     cTargetStrand = ZMAPSTRAND_NONE ;
   ZMapPhase cPhase = ZMAPPHASE_NONE ;
@@ -2851,25 +2852,58 @@ static ZMapFeature makeFeatureAlignment(const ZMapGFFFeatureData const pFeatureD
 
   pAttributes = zMapGFFFeatureDataGetAts(pFeatureData) ;
   nAttributes = zMapGFFFeatureDataGetNat(pFeatureData) ;
-  pAttributeTarget = zMapGFFAttributeListContains(pAttributes, nAttributes, "Target") ;
-  if (pAttributeTarget)
-    bValidTarget = zMapAttParseTarget(pAttributeTarget, &sTargetID, &iTargetStart, &iTargetEnd, &cTargetStrand) ;
+  pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "Target") ;
+  if (pAttribute)
+  {
+    bValidTarget = zMapAttParseTarget(pAttribute, &sTargetID, &iTargetStart, &iTargetEnd, &cTargetStrand) ;
+    sTargetValue = zMapGFFAttributeGetTempstring((pAttribute)) ;
+  }
 
   if (bValidTarget)
     {
       pFeature = zMapFeatureCreateEmpty() ;
       bNewFeatureCreated = TRUE ;
 
-      sFeatureName = g_strdup_printf("%s,%s,Target=%s", g_quark_to_string(pFeatureSet->original_id), sSOType, sTargetID) ;
+      sFeatureName = g_strdup_printf("%s,%s,Target=%s", g_quark_to_string(pFeatureSet->original_id), sSOType, sTargetValue) ;
       sFeatureNameID = g_strdup_printf("%s", sFeatureName) ;
 
       bDataAdded = zMapFeatureAddStandardData(pFeature, sFeatureNameID, sFeatureName, sSequence, sSOType,
                                            cFeatureStyleMode, &pFeatureSet->style,
                                            iStart, iEnd, bHasScore, dScore, cStrand) ;
-      pAttributeGap = zMapGFFAttributeListContains(pAttributes, nAttributes, "Gap") ;
-      if (pAttributeGap)
+
+      /*
+       * "percentID" attribute
+       */
+      if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "percentID")))
         {
-          /* Parse this into a Gaps array... */
+          /* parse for percentID data */
+        }
+
+      /*
+       * "length" attribute
+       */
+      if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "length")))
+        {
+          /* parse for length data */
+        }
+
+      /*
+       * Now parse for various gap data formats...
+       */
+      if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "Gap")))
+        {
+          pGaps = NULL ;
+          bValidGaps = FALSE ;
+        }
+      else if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "cigar_ensembl")))
+        {
+          pGaps = NULL ;
+          bValidGaps = FALSE ;
+        }
+      else
+        {
+          pGaps = NULL ;
+          bValidGaps = FALSE ;
         }
       bDataAdded = zMapFeatureAddAlignmentData(pFeature, 0, 0.0, iTargetStart, iTargetEnd, cHomolType,
                                                0, cTargetStrand, cPhase, pGaps,
