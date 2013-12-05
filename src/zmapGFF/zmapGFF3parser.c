@@ -2915,7 +2915,10 @@ static ZMapFeature makeFeatureAlignment(const ZMapGFFFeatureData const pFeatureD
                                                iTargetStart, iTargetEnd, cHomolType,
                                                iLength, cTargetStrand, cPhase, pGaps,
                                                zMapStyleGetWithinAlignError(pFeatureStyle), FALSE, NULL )  ;
-      bFeatureAdded = zMapFeatureSetAddFeature(pFeatureSet, pFeature) ;
+      if (bDataAdded)
+        {
+          bFeatureAdded = zMapFeatureSetAddFeature(pFeatureSet, pFeature) ;
+        }
       if (!bFeatureAdded)
         {
           *psError = g_strdup_printf("makeFeatureAlignment(); feature with ID = %i and name = '%s' could not be added",
