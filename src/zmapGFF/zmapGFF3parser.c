@@ -86,19 +86,13 @@ static gboolean getFeatureName(const char * const sequence, const ZMapGFFAttribu
   ZMapStrand strand, int start, int end, int query_start, int query_end, char ** const feature_name, char ** const feature_name_id) ;
 static void destroyFeatureArray(gpointer data) ;
 
-#define LOCAL_DEBUG_CODE01 1
+// #define LOCAL_DEBUG_CODE_WRITE_BODY_LINE
+#define LOCAL_DEBUG_CODE_COUNT_FEATURE_INSTANCES 1
 
-#ifdef LOCAL_DEBUG_CODE01
+#ifdef LOCAL_DEBUG_CODE_COUNT_FEATURE_INSTANCES
 static unsigned int iCountTranscript = 0 ;
 static unsigned int iCountAlignment = 0 ;
 static unsigned int iCountBasic = 0 ;
-#endif
-
-#define LOCAL_DEBUG_CODE02 1
-
-#ifdef LOCAL_DEBUG_CODE02
-static const char *sDataFilename = "/nfs/users/nfs_s/sm23/Work/ZMap_develop/src/build/linux/output.txt" ;
-static FILE *pOutputFile = NULL ;
 #endif
 
 /*
@@ -135,6 +129,7 @@ ZMapGFFParser zMapGFFCreateParser_V3(char *sequence, int features_start, int fea
       pParser->pHeader                          = zMapGFFCreateHeader() ;
       if (!pParser->pHeader)
         return NULL ;
+      pParser->pHeader->flags.got_ver           = TRUE ;
       pParser->state                            = ZMAPGFF_PARSER_NON ;
       pParser->line_count                       = 0 ;
       pParser->num_features                     = 0 ;
@@ -1354,9 +1349,14 @@ static gboolean parseDirective_GFF_VERSION(ZMapGFFParser const pParserBase, cons
     return FALSE ;
 
   /*
+   * (sm23) I have removed this test to make sure that it's OK for
+   * the parser to have had data for version set more than once. This is
+   * a bit of a hack associated with the problem related to rewinding
+   * the GIO channel running under otterlace.
+   *
    * Set an error if this directive has been seen already.
    */
-  if (pParser->pHeader->flags.got_ver)
+  /*if (pParser->pHeader->flags.got_ver)
     {
       pParser->error =
         g_error_new(pParser->error_domain, ZMAPGFF_ERROR_HEADER,
@@ -1364,7 +1364,7 @@ static gboolean parseDirective_GFF_VERSION(ZMapGFFParser const pParserBase, cons
                     pParser->line_count, line) ;
       bResult = FALSE ;
       return bResult ;
-    }
+    }*/
 
   /*
    * Now attempt to read the line for desired fields. If we don't get the appropriate
@@ -1383,21 +1383,13 @@ static gboolean parseDirective_GFF_VERSION(ZMapGFFParser const pParserBase, cons
   /*
    * Now do some checking and write to the parser if all is well.
    */
-  if ((iVersion != 3 ) && (iVersion != 2))
+  if (iVersion != 3)
     {
        pParser->error =
          g_error_new(pParser->error_domain, ZMAPGFF_ERROR_HEADER,
                      "Only GFF3 versions 2 or 3 supported, line %d: \"%s\"",
                      pParser->line_count, line) ;
        bResult = FALSE ;
-    }
-  else if (iVersion == 3 && pParser->line_count != 1)
-    {
-      pParser->error =
-        g_error_new(pParser->error_domain, ZMAPGFF_ERROR_HEADER,
-                    "GFF3v3 \"##gff-version\" must be first line in file, line %d: \"%s\"",
-                    pParser->line_count, line) ;
-      bResult = FALSE ;
     }
   else
     {
@@ -2141,16 +2133,9 @@ static gboolean parseBodyLine_V3(
     pSOIDData                         = NULL
   ;
 
-#ifdef LOCAL_DEBUG_CODE01
+#ifdef LOCAL_DEBUG_CODE_WRITE_BODY_LINE
   printf("%s\n", sLine) ;
   fflush (stdout) ;
-#endif
-
-#ifdef LOCAL_DEBUG_CODE02
-  if (!pOutputFile)
-    pOutputFile = fopen(sDataFilename, "w") ;
-  fprintf(pOutputFile, "%s\n", sLine) ;
-  fflush(pOutputFile) ;
 #endif
 
   /*
@@ -2746,7 +2731,7 @@ static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const pFeature
 
     }
 
-#ifdef LOCAL_DEBUG_CODE01
+#ifdef LOCAL_DEBUG_CODE_COUNT_FEATURE_INSTANCES
   if (*pbNewFeatureCreated && bFeatureAdded)
     {
       ++iCountTranscript ;
@@ -2799,6 +2784,7 @@ static ZMapFeature makeFeatureAlignment(const ZMapGFFFeatureData const pFeatureD
     bParseAttribute = FALSE,
     bDataAdded = FALSE ;
   GArray *pGaps = NULL ;
+  GQuark gqTargetID = 0 ;
   ZMapSOIDData pSOIDData = NULL ;
   ZMapFeature pFeature = NULL ;
   ZMapGFFAttribute *pAttributes = NULL,
@@ -2858,11 +2844,19 @@ static ZMapFeature makeFeatureAlignment(const ZMapGFFFeatureData const pFeatureD
   if (pAttribute)
   {
     bValidTarget = zMapAttParseTarget(pAttribute, &sTargetID, &iTargetStart, &iTargetEnd, &cTargetStrand) ;
-    sTargetValue = zMapGFFAttributeGetTempstring((pAttribute)) ;
   }
 
   if (bValidTarget)
     {
+      /*
+       * Get some data from the target attribute.
+       */
+      sTargetValue = zMapGFFAttributeGetTempstring((pAttribute)) ;
+      gqTargetID = g_quark_from_string(sTargetID) ;
+
+      /*
+       * Create a new feature.
+       */
       pFeature = zMapFeatureCreateEmpty() ;
       bNewFeatureCreated = TRUE ;
 
@@ -2917,7 +2911,8 @@ static ZMapFeature makeFeatureAlignment(const ZMapGFFFeatureData const pFeatureD
       /*
        * Add data to the feature.
        */
-      bDataAdded = zMapFeatureAddAlignmentData(pFeature, 0, dPercentID, iTargetStart, iTargetEnd, cHomolType,
+      bDataAdded = zMapFeatureAddAlignmentData(pFeature, gqTargetID, dPercentID,
+                                               iTargetStart, iTargetEnd, cHomolType,
                                                iLength, cTargetStrand, cPhase, pGaps,
                                                zMapStyleGetWithinAlignError(pFeatureStyle), FALSE, NULL )  ;
       bFeatureAdded = zMapFeatureSetAddFeature(pFeatureSet, pFeature) ;
@@ -2929,11 +2924,11 @@ static ZMapFeature makeFeatureAlignment(const ZMapGFFFeatureData const pFeatureD
 
     }
 
-#ifdef LOCAL_DEBUG_CODE01
+#ifdef LOCAL_DEBUG_CODE_COUNT_FEATURE_INSTANCES
   if (bNewFeatureCreated && bFeatureAdded)
     {
       ++iCountAlignment ;
-      printf("iCountAlignment = %i\n", iCountAlignment) ;
+      printf("iCountAlignment = %i, s = '%s', gq = %i\n", iCountAlignment, sTargetID, gqTargetID) ;
       fflush(stdout) ;
     }
 #endif
@@ -2962,7 +2957,7 @@ static ZMapFeature makeFeatureBasic(const ZMapGFFFeatureData const pFeatureData,
 {
   ZMapFeature pFeature = NULL ;
 
-#ifdef LOCAL_DEBUG_CODE01
+#ifdef LOCAL_DEBUG_CODE_COUNT_FEATURE_INSTANCES
   ++iCountBasic ;
   printf("iCountBasic = %i\n", iCountBasic ) ;
   fflush(stdout) ;
@@ -3194,11 +3189,6 @@ static gboolean makeNewFeature_V3(
    */
   pParserFeatureSet->feature_set->style = pFeatureStyle;
   pFeatureSet = pParserFeatureSet->feature_set ;
-
-#ifdef LOCAL_DEBUG_CODE01
-  char* sFSName = NULL ;
-  sFSName = g_strdup(g_quark_to_string(pFeatureSet->unique_id)) ;
-#endif
 
   /*
    * Now check that the ZMapStyleMode of the current style also has the same ZMapStyleMode.

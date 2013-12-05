@@ -134,7 +134,12 @@ gboolean zMapGFFGetVersionFromGIO(GIOChannel * const pChannel, int * const piOut
 
   if (cStatus == G_IO_STATUS_NORMAL)
     {
-      cStatus = g_io_channel_seek_position(pChannel, (gint)0, G_SEEK_SET, &pError ) ;
+      /* (sm23) This _should_ seek to the start of the file; however, there is
+         some unexplained error when doing so running under otterlace.
+       */
+      /*
+        cStatus = g_io_channel_seek_position(pChannel, (gint)0, G_SEEK_SET, &pError ) ;
+      */
       if (pError)
         goto return_point ;
 
@@ -142,7 +147,7 @@ gboolean zMapGFFGetVersionFromGIO(GIOChannel * const pChannel, int * const piOut
      * If the line read in contains some data, attempt to parse; if it was
      * blank then we just return with default return values.
      */
-      if (/* (cStatus == G_IO_STATUS_NORMAL) && */ strcmp(pString->str, ""))
+      if (strcmp(pString->str, ""))
         {
           /*
            * Parse the string line that was read in.
