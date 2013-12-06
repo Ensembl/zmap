@@ -86,12 +86,20 @@ static gboolean getFeatureName(const char * const sequence, const ZMapGFFAttribu
   ZMapStrand strand, int start, int end, int query_start, int query_end, char ** const feature_name, char ** const feature_name_id) ;
 static void destroyFeatureArray(gpointer data) ;
 
-// #define LOCAL_DEBUG_CODE_WRITE_BODY_LINE
-#define LOCAL_DEBUG_CODE_COUNT_FEATURE_INSTANCES 1
+/* #define LOCAL_DEBUG_CODE_WRITE_BODY_LINE 1 */
+/* #define LOCAL_DEBUG_CODE_ALIGNMENT 1 */
+/* #define LOCAL_DEBUG_CODE_TRANSCRIPT 1 */
+/* #define LOCAL_DEBUG_CODE_BASIC 1 */
 
-#ifdef LOCAL_DEBUG_CODE_COUNT_FEATURE_INSTANCES
-static unsigned int iCountTranscript = 0 ;
+#ifdef LOCAL_DEBUG_CODE_ALIGNMENT
 static unsigned int iCountAlignment = 0 ;
+#endif
+
+#ifdef LOCAL_DEBUG_CODE_TRANSCRIPT
+static unsigned int iCountTranscript = 0 ;
+#endif
+
+#ifdef LOCAL_DEBUG_CODE_BASIC
 static unsigned int iCountBasic = 0 ;
 #endif
 
@@ -2731,7 +2739,7 @@ static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const pFeature
 
     }
 
-#ifdef LOCAL_DEBUG_CODE_COUNT_FEATURE_INSTANCES
+#ifdef LOCAL_DEBUG_CODE_TRANSCRIPT
   if (*pbNewFeatureCreated && bFeatureAdded)
     {
       ++iCountTranscript ;
@@ -2848,9 +2856,7 @@ static ZMapFeature makeFeatureAlignment(const ZMapGFFFeatureData const pFeatureD
 
   if (bValidTarget)
     {
-      /*
-       * Get some data from the target attribute.
-       */
+
       sTargetValue = zMapGFFAttributeGetTempstring((pAttribute)) ;
       gqTargetID = g_quark_from_string(sTargetID) ;
 
@@ -2860,7 +2866,7 @@ static ZMapFeature makeFeatureAlignment(const ZMapGFFFeatureData const pFeatureD
       pFeature = zMapFeatureCreateEmpty() ;
       bNewFeatureCreated = TRUE ;
 
-      sFeatureName = g_strdup_printf("%s,%s,Target=%s", g_quark_to_string(pFeatureSet->original_id), sSOType, sTargetValue) ;
+      sFeatureName = g_strdup_printf("%s, %s, %i, %i, Target=%s", g_quark_to_string(pFeatureSet->original_id), sSOType, iStart, iEnd, sTargetValue) ;
       sFeatureNameID = g_strdup_printf("%s", sFeatureName) ;
 
       bDataAdded = zMapFeatureAddStandardData(pFeature, sFeatureNameID, sFeatureName, sSequence, sSOType,
@@ -2927,11 +2933,11 @@ static ZMapFeature makeFeatureAlignment(const ZMapGFFFeatureData const pFeatureD
 
     }
 
-#ifdef LOCAL_DEBUG_CODE_COUNT_FEATURE_INSTANCES
+#ifdef LOCAL_DEBUG_CODE_ALIGNMENT
   if (bNewFeatureCreated && bFeatureAdded)
     {
       ++iCountAlignment ;
-      printf("iCountAlignment = %i, s = '%s', gq = %i\n", iCountAlignment, sTargetID, gqTargetID) ;
+      printf("created s = '%s', s = '%s', gq = %i\n", sFeatureName, sTargetValue, gqTargetID) ;
       fflush(stdout) ;
     }
 #endif
@@ -2944,6 +2950,10 @@ static ZMapFeature makeFeatureAlignment(const ZMapGFFFeatureData const pFeatureD
     {
       zMapFeatureDestroy(pFeature) ;
       pFeature = NULL ;
+#ifdef LOCAL_DEBUG_CODE_ALIGNMENT
+      printf("destroyed s = '%s', s = '%s', gq = %i\n", sFeatureName, sTargetValue, gqTargetID) ;
+      fflush(stdout) ;
+#endif
     }
 
 
@@ -2952,7 +2962,7 @@ static ZMapFeature makeFeatureAlignment(const ZMapGFFFeatureData const pFeatureD
 
 
 /*
- * Create a feature of ZMapStyleMode = BASIC only?
+ * Create a feature of ZMapStyleMode BASIC
  */
 static ZMapFeature makeFeatureBasic(const ZMapGFFFeatureData const pFeatureData,
                                     gboolean bForce,
@@ -2960,7 +2970,7 @@ static ZMapFeature makeFeatureBasic(const ZMapGFFFeatureData const pFeatureData,
 {
   ZMapFeature pFeature = NULL ;
 
-#ifdef LOCAL_DEBUG_CODE_COUNT_FEATURE_INSTANCES
+#ifdef LOCAL_DEBUG_CODE_BASIC
   ++iCountBasic ;
   printf("iCountBasic = %i\n", iCountBasic ) ;
   fflush(stdout) ;
@@ -3298,74 +3308,7 @@ static gboolean makeNewFeature_V3(
 
 
   /*
-   * "Alias" Attribute
-   */
-  //pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "Alias") ;
-  //if (pAttribute)
-  //{
-  //  if (zMapAttParseAlias(pAttribute, &sAlias_v3A))
-  //  {
-  //      /* Do something with these data */
-  //  }
-  //}
-
-
-  /*
-   * "Parent" Attribute
-   */
-  //pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "Parent") ;
-  //if (pAttribute)
-  //{
-  //  if (zMapAttParseParent(pAttribute, &sParent_v3A))
-  //  {
-  //    /* Do something with these data */
-  //  }
-  //}
-
-
-  /*
-   * "Target" Attribute
-   */
-  //pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "Target") ;
-  //if (pAttribute)
-  //{
-  //  if (zMapAttParseTarget(pAttribute, &sTarget_v3A, &iStart_v3a, &iEnd_v3A, &cStrand_v3a))
-  //  {
-  //    /* Do something with these data */
-  //  }
-  //}
-
-
-  /*
-   * "Gap" Attribute
-   */
-  //pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "Gap") ;
-  //if (pAttribute)
-  //{
-  //  pGapSeries = zMapGapSeriesCreate() ;
-  //  if (zMapAttParseGap(pAttribute, pGapSeries))
-  //  {
-  //    printf("zMapAttParseGap() sucessfully called. \n") ;
-  //    /* Do something with the data here */
-  //  }
-  //}
-
-
-  /*
-   * "Derives_from" Attribute
-   */
-  //pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "Derives_from") ;
-  //if (pAttribute)
-  //{
-  //  if (zMapAttParseDerives_from(pAttribute, &sDerives_from_v3A))
-  //  {
-  //    /* Do something with data here */
-  //  }
-  //}
-
-
-  /*
-   * "Note" Attribute
+   * Add note?
    */
   //pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "Note") ;
   //if (pAttribute)
@@ -3376,117 +3319,12 @@ static gboolean makeNewFeature_V3(
   //  }
   //}
 
-
   /*
-   * "Dbxref" Attribute
-   */
-  //pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "Dbxref") ;
-  //if (pAttribute)
-  //{
-  //  if (zMapAttParseDbxref(pAttribute, &sDBX1_v3A, &sDBX2_v3A))
-  //  {
-  //    /* Do something with data here */
-  //  }
-  //}
-
-
-  /*
-   * "Ontology_term" Attribute
-   */
-  //pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "Ontology_term") ;
-  //if (pAttribute)
-  //{
-  //  if (zMapAttParseOntology_term(pAttribute, &sOT1_v3A, &sOT2_v3A))
-  //  {
-  //    /* Do something with data here */
-  //  }
-  //}
-
-
-  /*
-   * "Is_circular" Attribute
-   */
-  //pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "Is_circular") ;
-  //if (pAttribute)
-  //{
-  //  if (zMapAttParseIs_circular(pAttribute, &bIsCircular_v3A))
-  //  {
-  //    /* Do something with data here */
-  //  }
-  //}
-
-
-
-  /*
-   *
-   * Now test for some "non-standard" attributes we also use.
-   *
-   *
+   * Add URL?
    */
 
-
   /*
-   * "cigar_exonerate" Attribute
-   */
-  //pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "cigar_exonerate") ;
-  //if (pAttribute)
-  //{
-  //  if (zMapAttParseCigarExonerate(pAttribute, &pGaps, cStrand, iStart, iEnd, cQueryStrand, iQueryStart, iQueryEnd) )
-  //  {
-  //    /* Do something with data here  */
-  //    printf("cigar_exonerate passed.\n") ;
-  //    fflush(stdout) ;
-  //  }
-  //  else
-  //  {
-  //    printf("cigar_exonerate failed.\n") ;
-  //    fflush(stdout) ;
-  //  }
-  //}
-
-
-  /*
-   * "cigar_ensembl" Attribute
-   */
-  //pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "cigar_ensembl") ;
-  //if (pAttribute)
-  //{
-  //  if (zMapAttParseCigarEnsembl(pAttribute, &pGaps, cStrand, iStart, iEnd, cQueryStrand, iQueryStart, iQueryEnd))
-  //  {
-  //    /* Do something with data here */
-  //    printf("cigar_ensembl passed.\n") ;
-  //    fflush(stdout) ;
-  //  }
-  //  else
-  //  {
-  //    printf("cigar_ensembl failed.\n") ;
-  //    fflush(stdout) ;
-  //  }
-  //}
-
-
-  /*
-   * "cigar_bam" Attribute
-   */
-  //pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "cigar_bam" ) ;
-  //if (pAttribute)
-  //{
-  //  if (zMapAttParseCigarBam(pAttribute, &pGaps, cStrand, iStart, iEnd, cQueryStrand, iQueryStart, iQueryEnd))
-  //  {
-  //    /* Do something with data here */
-  //    printf("cigar_bam passed.\n") ;
-  //    fflush(stdout) ;
-  //  }
-  //  else
-  //  {
-  //    printf("cigar_bam failed.\n") ;
-  //    fflush(stdout) ;
-  //  }
-  //}
-
-
-  /*
-   * Return point for the function. Temporary, probably.
+   * Return point for the function.
    */
 return_point:
 

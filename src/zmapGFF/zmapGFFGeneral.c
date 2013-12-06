@@ -74,7 +74,7 @@ static void normaliseFeatures_V3(GData **feature_sets) ;
 static void checkFeatureSetCB_V2(GQuark key_id, gpointer data, gpointer user_data_unused) ;
 static void checkFeatureSetCB_V3(GQuark key_id, gpointer data, gpointer user_data_unused) ;
 static void checkFeatureCB_V2(GQuark key_id, gpointer data, gpointer user_data_unused) ;
-static void checkFeatureCB_V3(GQuark key_id, gpointer data, gpointer user_data_unused) ;
+static void checkFeatureCB_V3(gpointer key_id, gpointer data, gpointer user_data_unused) ;
 
 
 /*
@@ -508,7 +508,7 @@ static void checkFeatureSetCB_V3(GQuark key_id, gpointer data, gpointer user_dat
 /*
  * Calls function to make correction to introns in transcript features.
  */
-static void checkFeatureCB_V3(GQuark key_id, gpointer data, gpointer user_data_unused)
+static void checkFeatureCB_V3(gpointer key_id, gpointer data, gpointer user_data_unused)
 {
   ZMapFeature feature = (ZMapFeature)data ;
 
