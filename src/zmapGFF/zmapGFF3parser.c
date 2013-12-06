@@ -86,6 +86,15 @@ static gboolean getFeatureName(const char * const sequence, const ZMapGFFAttribu
   ZMapStrand strand, int start, int end, int query_start, int query_end, char ** const feature_name, char ** const feature_name_id) ;
 static void destroyFeatureArray(gpointer data) ;
 
+/*
+ * Functions to create, augment or find names for various types of features based upon ZMapStyleMode.
+ */
+static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const, const ZMapFeatureSet const, gboolean *, char **) ;
+static ZMapFeature makeFeatureAlignment(const ZMapGFFFeatureData const, const ZMapFeatureSet const, const ZMapFeatureTypeStyle const, char ** ) ;
+static ZMapFeature makeFeatureBasic(const ZMapGFFFeatureData const, char **) ;
+static char * makeFeatureTranscriptName(const ZMapGFFFeatureData const) ;
+static char * makeFeatureAlignmentName(const ZMapGFFFeatureData const) ;
+
 /* #define LOCAL_DEBUG_CODE_WRITE_BODY_LINE 1 */
 /* #define LOCAL_DEBUG_CODE_ALIGNMENT 1 */
 /* #define LOCAL_DEBUG_CODE_TRANSCRIPT 1 */
@@ -2538,6 +2547,64 @@ return_point:
 
 
 
+/*
+ * Create a name for a transcript feature only. This is the name to display to the user,
+ * and is not used to create a feature->unique_id for the feature_set.
+ *
+ * The name is of the form "<name>_(<id>)", where
+ *
+ * (1) "Name = <name>"
+ * (2) "ID = <id>" for top level object only
+ *
+ * This should only be called for the the top level object, rather than
+ * components such as intron, exon, CDS, etc.
+ *
+ */
+static char * makeFeatureTranscriptName(const ZMapGFFFeatureData const pFeatureData)
+{
+  ZMapGFFAttribute *pAttributes = NULL,
+    pAttributeName = NULL,
+    pAttributeID = NULL ;
+  unsigned int nAttributes = 0 ;
+  char * sResult = NULL ;
+  pAttributes = zMapGFFFeatureDataGetAts(pFeatureData) ;
+  nAttributes = zMapGFFFeatureDataGetNat(pFeatureData) ;
+  pAttributeName = zMapGFFAttributeListContains(pAttributes, nAttributes, "Name") ;
+  pAttributeID = zMapGFFAttributeListContains(pAttributes, nAttributes, "ID") ;
+  sResult = g_strdup_printf("%s_(%s)", zMapGFFAttributeGetTempstring(pAttributeName), zMapGFFAttributeGetTempstring(pAttributeID)) ;
+  return sResult ;
+}
+
+
+/*
+ * Create a name for an alignment feature only. This is also used to generate the
+ * feature->unique_id for the feature_set.
+ *
+ * The name is of the form "[iStart, iEnd]_<TargetID>", where
+ *
+ * (1) [iStart, iEnd] are the start and end of the feature in the reference sequence
+ * (2) "Target=<TargetID> <i> <j> <p>", also referred to as the clone_id in the v2 code
+ *
+ *
+ */
+static char * makeFeatureAlignmentName(const ZMapGFFFeatureData const pFeatureData)
+{
+  ZMapGFFAttribute *pAttributes = NULL,
+    pAttributeTarget = NULL ;
+  unsigned int nAttributes = 0 ;
+  int iStart = 0, iEnd = 0 ;
+  char * sResult = NULL ;
+  pAttributes = zMapGFFFeatureDataGetAts(pFeatureData) ;
+  nAttributes = zMapGFFFeatureDataGetNat(pFeatureData) ;
+  pAttributeTarget = zMapGFFAttributeListContains(pAttributes, nAttributes, "Target") ;
+  iStart               = zMapGFFFeatureDataGetSta(pFeatureData) ;
+  iEnd                 = zMapGFFFeatureDataGetEnd(pFeatureData) ;
+  if (pAttributeTarget)
+    {
+      sResult = g_strdup_printf("[%i, %i]_%s",  iStart, iEnd, zMapGFFAttributeGetTempstring(pAttributeTarget)) ;
+    }
+  return sResult ;
+}
 
 
 
@@ -2690,7 +2757,7 @@ static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const pFeature
       /*
        * Name of feature is taken from ID attribute value.
        */
-      sFeatureName = g_strdup(g_quark_to_string(gqThisID)) ;
+      sFeatureName = makeFeatureTranscriptName(pFeatureData) ;
       sFeatureNameID = g_strdup(g_quark_to_string(gqThisID)) ;
       bDataAdded = zMapFeatureAddStandardData(pFeature, sFeatureNameID, sFeatureName, sSequence, sSOType,
                                               cFeatureStyleMode, &pFeatureSet->style,
@@ -2866,7 +2933,7 @@ static ZMapFeature makeFeatureAlignment(const ZMapGFFFeatureData const pFeatureD
       pFeature = zMapFeatureCreateEmpty() ;
       bNewFeatureCreated = TRUE ;
 
-      sFeatureName = g_strdup_printf("%s, %s, %i, %i, Target=%s", g_quark_to_string(pFeatureSet->original_id), sSOType, iStart, iEnd, sTargetValue) ;
+      sFeatureName =  makeFeatureAlignmentName(pFeatureData) ;
       sFeatureNameID = g_strdup_printf("%s", sFeatureName) ;
 
       bDataAdded = zMapFeatureAddStandardData(pFeature, sFeatureNameID, sFeatureName, sSequence, sSOType,
@@ -2965,7 +3032,6 @@ static ZMapFeature makeFeatureAlignment(const ZMapGFFFeatureData const pFeatureD
  * Create a feature of ZMapStyleMode BASIC
  */
 static ZMapFeature makeFeatureBasic(const ZMapGFFFeatureData const pFeatureData,
-                                    gboolean bForce,
                                     char **psError)
 {
   ZMapFeature pFeature = NULL ;
