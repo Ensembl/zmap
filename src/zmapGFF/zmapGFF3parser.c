@@ -92,8 +92,8 @@ static void destroyFeatureArray(gpointer data) ;
 static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const, const ZMapFeatureSet const, gboolean *, char **) ;
 static ZMapFeature makeFeatureAlignment(const ZMapGFFFeatureData const, const ZMapFeatureSet const, const ZMapFeatureTypeStyle const, char ** ) ;
 static ZMapFeature makeFeatureBasic(const ZMapGFFFeatureData const, char **) ;
-static char * makeFeatureTranscriptName(const ZMapGFFFeatureData const) ;
-static char * makeFeatureAlignmentName(const ZMapGFFFeatureData const) ;
+static char * makeFeatureTranscriptNamePublic(const ZMapGFFFeatureData const) ;
+static char * makeFeatureAlignmentNamePrivate(const ZMapGFFFeatureData const) ;
 
 /* #define LOCAL_DEBUG_CODE_WRITE_BODY_LINE 1 */
 /* #define LOCAL_DEBUG_CODE_ALIGNMENT 1 */
@@ -2551,33 +2551,31 @@ return_point:
  * Create a name for a transcript feature only. This is the name to display to the user,
  * and is not used to create a feature->unique_id for the feature_set.
  *
- * The name is of the form "<name>_(<id>)", where
+ * The name is of the form "<name>", where
  *
  * (1) "Name = <name>"
- * (2) "ID = <id>" for top level object only
  *
  * This should only be called for the the top level object, rather than
  * components such as intron, exon, CDS, etc.
  *
  */
-static char * makeFeatureTranscriptName(const ZMapGFFFeatureData const pFeatureData)
+static char * makeFeatureTranscriptNamePublic(const ZMapGFFFeatureData const pFeatureData)
 {
   ZMapGFFAttribute *pAttributes = NULL,
-    pAttributeName = NULL,
-    pAttributeID = NULL ;
+    pAttributeName = NULL ;
   unsigned int nAttributes = 0 ;
   char * sResult = NULL ;
+  static const char *sNoName = "no name given" ;
   pAttributes = zMapGFFFeatureDataGetAts(pFeatureData) ;
   nAttributes = zMapGFFFeatureDataGetNat(pFeatureData) ;
   pAttributeName = zMapGFFAttributeListContains(pAttributes, nAttributes, "Name") ;
-  pAttributeID = zMapGFFAttributeListContains(pAttributes, nAttributes, "ID") ;
-  sResult = g_strdup_printf("%s_(%s)", zMapGFFAttributeGetTempstring(pAttributeName), zMapGFFAttributeGetTempstring(pAttributeID)) ;
+  sResult = pAttributeName ? g_strdup(zMapGFFAttributeGetTempstring(pAttributeName)) : g_strdup(sNoName) ;
   return sResult ;
 }
 
 
 /*
- * Create a name for an alignment feature only. This is also used to generate the
+ * Create a name for an alignment feature only. This is used to generate the
  * feature->unique_id for the feature_set.
  *
  * The name is of the form "[iStart, iEnd]_<TargetID>", where
@@ -2587,7 +2585,7 @@ static char * makeFeatureTranscriptName(const ZMapGFFFeatureData const pFeatureD
  *
  *
  */
-static char * makeFeatureAlignmentName(const ZMapGFFFeatureData const pFeatureData)
+static char * makeFeatureAlignmentNamePrivate(const ZMapGFFFeatureData const pFeatureData)
 {
   ZMapGFFAttribute *pAttributes = NULL,
     pAttributeTarget = NULL ;
@@ -2757,7 +2755,7 @@ static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const pFeature
       /*
        * Name of feature is taken from ID attribute value.
        */
-      sFeatureName = makeFeatureTranscriptName(pFeatureData) ;
+      sFeatureName = makeFeatureTranscriptNamePublic(pFeatureData) ;
       sFeatureNameID = g_strdup(g_quark_to_string(gqThisID)) ;
       bDataAdded = zMapFeatureAddStandardData(pFeature, sFeatureNameID, sFeatureName, sSequence, sSOType,
                                               cFeatureStyleMode, &pFeatureSet->style,
@@ -2933,8 +2931,8 @@ static ZMapFeature makeFeatureAlignment(const ZMapGFFFeatureData const pFeatureD
       pFeature = zMapFeatureCreateEmpty() ;
       bNewFeatureCreated = TRUE ;
 
-      sFeatureName =  makeFeatureAlignmentName(pFeatureData) ;
-      sFeatureNameID = g_strdup_printf("%s", sFeatureName) ;
+      sFeatureName = g_strdup_printf("%s", sTargetID ) ;
+      sFeatureNameID = makeFeatureAlignmentNamePrivate(pFeatureData) ; ;
 
       bDataAdded = zMapFeatureAddStandardData(pFeature, sFeatureNameID, sFeatureName, sSequence, sSOType,
                                            cFeatureStyleMode, &pFeatureSet->style,
