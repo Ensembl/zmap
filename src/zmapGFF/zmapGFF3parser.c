@@ -91,14 +91,14 @@ static void destroyFeatureArray(gpointer data) ;
  */
 static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const, const ZMapFeatureSet const, gboolean *, char **) ;
 static ZMapFeature makeFeatureAlignment(const ZMapGFFFeatureData const, const ZMapFeatureSet const, const ZMapFeatureTypeStyle const, char ** ) ;
-static ZMapFeature makeFeatureBasic(const ZMapGFFFeatureData const, char **) ;
+static ZMapFeature makeFeatureDefault(const ZMapGFFFeatureData const, char **) ;
 static char * makeFeatureTranscriptNamePublic(const ZMapGFFFeatureData const) ;
 static char * makeFeatureAlignmentNamePrivate(const ZMapGFFFeatureData const) ;
 
 /* #define LOCAL_DEBUG_CODE_WRITE_BODY_LINE 1 */
 /* #define LOCAL_DEBUG_CODE_ALIGNMENT 1 */
 /* #define LOCAL_DEBUG_CODE_TRANSCRIPT 1 */
-/* #define LOCAL_DEBUG_CODE_BASIC 1 */
+/* #define LOCAL_DEBUG_CODE_DEFAULT 1 */
 
 #ifdef LOCAL_DEBUG_CODE_ALIGNMENT
 static unsigned int iCountAlignment = 0 ;
@@ -108,7 +108,7 @@ static unsigned int iCountAlignment = 0 ;
 static unsigned int iCountTranscript = 0 ;
 #endif
 
-#ifdef LOCAL_DEBUG_CODE_BASIC
+#ifdef LOCAL_DEBUG_CODE_DEFAULT
 static unsigned int iCountBasic = 0 ;
 #endif
 
@@ -3027,14 +3027,20 @@ static ZMapFeature makeFeatureAlignment(const ZMapGFFFeatureData const pFeatureD
 
 
 /*
- * Create a feature of ZMapStyleMode BASIC
+ * Default feature creation function.
  */
 static ZMapFeature makeFeatureBasic(const ZMapGFFFeatureData const pFeatureData,
                                     char **psError)
 {
   ZMapFeature pFeature = NULL ;
 
-#ifdef LOCAL_DEBUG_CODE_BASIC
+  /*
+   * Do some basic error checking. Make sure that this function is _not_ being
+   * called with ZMapStyleMode is TRANSCRIPT or ALIGNMENT.
+   *
+   */
+
+#ifdef LOCAL_DEBUG_CODE_DEFAULT
   ++iCountBasic ;
   printf("iCountBasic = %i\n", iCountBasic ) ;
   fflush(stdout) ;
