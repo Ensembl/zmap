@@ -545,7 +545,8 @@ gboolean zmapWindowColumnIs3frameDisplayed(ZMapWindow window, FooCanvasGroup *co
 	 if(container->unique_id == zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME))
 	 but we can patch up from the [ZMap] columns list
       */
-      if(zmapWindowContainerFeatureSetColumnDisplayName(container) == g_quark_from_string(ZMAP_FIXED_STYLE_3FT_NAME))
+      /* gb10: made this check use the lowercase unique id to fix the acedb bug */
+      if(zmapWindowContainerFeatureSetGetColumnId(container) == zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME))
 	{
 	  if (IS_3FRAME_TRANS(window->display_3_frame))
 	    displayed = TRUE ;
