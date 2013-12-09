@@ -91,7 +91,7 @@ static void destroyFeatureArray(gpointer data) ;
  */
 static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const, const ZMapFeatureSet const, gboolean *, char **) ;
 static ZMapFeature makeFeatureAlignment(const ZMapGFFFeatureData const, const ZMapFeatureSet const, const ZMapFeatureTypeStyle const, char ** ) ;
-static ZMapFeature makeFeatureDefault(const ZMapGFFFeatureData const, char **) ;
+static ZMapFeature makeFeatureDefault(const ZMapGFFFeatureData const, const ZMapFeatureSet const, const ZMapFeatureTypeStyle, char **) ;
 static char * makeFeatureTranscriptNamePublic(const ZMapGFFFeatureData const) ;
 static char * makeFeatureAlignmentNamePrivate(const ZMapGFFFeatureData const) ;
 
@@ -2434,6 +2434,9 @@ static gboolean parseBodyLine_V3(
 
   /*
    * Clip start/end as specified in clip_mode, default is to exclude.
+   *
+   * Clipping behaviour has to be modified... not sure how though.
+   *
    */
   if (pParser->clip_mode != GFF_CLIP_NONE)
     {
@@ -2468,6 +2471,7 @@ static gboolean parseBodyLine_V3(
         }
 
       /* Clip overlaps for CLIP_OVERLAP */
+
       if (bIncludeFeature && pParser->clip_mode == GFF_CLIP_OVERLAP)
         {
           if (iStart < pParser->clip_start)
@@ -3029,16 +3033,84 @@ static ZMapFeature makeFeatureAlignment(const ZMapGFFFeatureData const pFeatureD
 /*
  * Default feature creation function.
  */
-static ZMapFeature makeFeatureBasic(const ZMapGFFFeatureData const pFeatureData,
-                                    char **psError)
+static ZMapFeature makeFeatureDefault(const ZMapGFFFeatureData const pFeatureData,
+  const ZMapFeatureSet const pFeatureSet, const ZMapFeatureTypeStyle pFeatureStyle, char **psError)
 {
+  char *sName = NULL,
+    *sFeatureName = NULL,
+    *sFeatureNameID = NULL,
+    *sSequence = NULL,
+    *sSource = NULL ;
+  unsigned int nAttributes = 0 ;
+  int iStart = 0, iEnd = 0 ;
+  gboolean bFeatureHasName = FALSE ;
   ZMapFeature pFeature = NULL ;
+  ZMapGFFAttribute *pAttributes = NULL,
+    pAttribute = NULL ;
+  ZMapStyleMode cFeatureStyleMode = ZMAPSTYLE_MODE_BASIC ;
 
   /*
    * Do some basic error checking. Make sure that this function is _not_ being
    * called with ZMapStyleMode is TRANSCRIPT or ALIGNMENT.
    *
    */
+
+  /*
+   * Get attributes.
+   */
+  pAttributes = zMapGFFFeatureDataGetAts(pFeatureData) ;
+  nAttributes = zMapGFFFeatureDataGetNat(pFeatureData) ;
+
+   /*
+    * Look for "Name" attribute
+    */
+  pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "Name" );
+  if (pAttribute)
+    {
+      sName = zMapGFFAttributeGetTempstring(pAttribute) ;
+    }
+  /*
+   * Get the sFeatureName which may not be unique and sFeatureNameID which
+   * _must_ be unique.
+   */
+  bFeatureHasName = getFeatureName(sSequence, pAttributes, nAttributes, sName, sSource,
+                                   cFeatureStyleMode, cStrand, iStart, iEnd, iQueryStart, iQueryEnd,
+                                   &sFeatureName, &sFeatureNameID) ;
+  if (!sFeatureNameID)
+    {
+      *psError = g_strdup_printf("makeFeatureDefault(); feature ignored as it has no name");
+      return pFeature ;
+    }
+
+      /*
+       * Create our new feature object
+       */
+      //pFeature = zMapFeatureCreateEmpty() ;
+      //++pParser->num_features ;
+
+      /*
+       * Add standard data to the feature.
+       */
+      //bResult = zMapFeatureAddStandardData(pFeature, sFeatureNameID, sFeatureName, sSequence, sSOType,
+      //                                     cFeatureStyleMode, &pParserFeatureSet->feature_set->style,
+      //                                     iStart, iEnd, bHasScore, dScore, cStrand);
+
+      //if (!bResult)
+      //  {
+      //    goto return_point ;
+      //  }
+
+      /*
+       * Add the feature to feature set
+       */
+      //bFeatureAdded = zMapFeatureSetAddFeature(pFeatureSet, pFeature) ;
+      //if (!bFeatureAdded)
+      //  {
+      //    *err_text = g_strdup_printf("feature with name = '%s' could not be added", sFeatureName) ;
+      //    bResult = FALSE ;
+      //    goto return_point ;
+      //  }
+
 
 #ifdef LOCAL_DEBUG_CODE_DEFAULT
   ++iCountBasic ;
@@ -3321,6 +3393,12 @@ static gboolean makeNewFeature_V3(
        * The following section creates a new feature from scratch and adds to the featureset.
        * This is more or less a simplified version of what's in v2 code.
        */
+      //pFeature = makeFeatureDefault(pFeatureData, pFeatureSet, pFeatureStyle, &sMakeFeatureErrorText) ;
+      //if (pFeature)
+      //  {
+      //    bResult = TRUE ;
+      //    ++pParser->num_features ;
+      //  }
 
       /*
        * Look for "Name" attribute
