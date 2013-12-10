@@ -528,6 +528,8 @@ static gboolean scratchMergeFeature(ScratchMergeData merge_data)
             merged = scratchMergeCoord(merge_data, sub_feature->start);
           else
             merged = scratchMergeCoords(merge_data, sub_feature->start, sub_feature->end);
+
+          g_free(sub_feature) ;
         }
       else
         {
