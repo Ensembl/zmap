@@ -91,7 +91,7 @@ static void destroyFeatureArray(gpointer data) ;
  */
 static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const, const ZMapFeatureSet const, gboolean *, char **) ;
 static ZMapFeature makeFeatureAlignment(const ZMapGFFFeatureData const, const ZMapFeatureSet const, const ZMapFeatureTypeStyle const, char ** ) ;
-static ZMapFeature makeFeatureDefault(const ZMapGFFFeatureData const, const ZMapFeatureSet const, const ZMapFeatureTypeStyle, char **) ;
+static ZMapFeature makeFeatureDefault(const ZMapGFFFeatureData const, const ZMapFeatureSet const, const ZMapFeatureTypeStyle const, char **) ;
 static char * makeFeatureTranscriptNamePublic(const ZMapGFFFeatureData const) ;
 static char * makeFeatureAlignmentNamePrivate(const ZMapGFFFeatureData const) ;
 
@@ -109,7 +109,7 @@ static unsigned int iCountTranscript = 0 ;
 #endif
 
 #ifdef LOCAL_DEBUG_CODE_DEFAULT
-static unsigned int iCountBasic = 0 ;
+static unsigned int iCountDefault = 0 ;
 #endif
 
 /*
@@ -2754,7 +2754,10 @@ static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const pFeature
        * This is a new feature, so we must create from scratch and add standard data.
        */
       pFeature = zMapFeatureCreateEmpty() ;
-      *pbNewFeatureCreated = TRUE ;
+      if (pFeature)
+        *pbNewFeatureCreated = TRUE ;
+      else
+        return pFeature ;
 
       /*
        * Name of feature is taken from ID attribute value.
@@ -2933,7 +2936,15 @@ static ZMapFeature makeFeatureAlignment(const ZMapGFFFeatureData const pFeatureD
        * Create a new feature.
        */
       pFeature = zMapFeatureCreateEmpty() ;
-      bNewFeatureCreated = TRUE ;
+      if (pFeature)
+        {
+          bNewFeatureCreated = TRUE ;
+        }
+      else
+        {
+          *psError = g_strdup_printf("makeFeatureAlignment(); could not create new feature object ");
+          return pFeature ;
+        }
 
       sFeatureName = g_strdup_printf("%s", sTargetID ) ;
       sFeatureNameID = makeFeatureAlignmentNamePrivate(pFeatureData) ; ;
@@ -3034,30 +3045,62 @@ static ZMapFeature makeFeatureAlignment(const ZMapGFFFeatureData const pFeatureD
  * Default feature creation function.
  */
 static ZMapFeature makeFeatureDefault(const ZMapGFFFeatureData const pFeatureData,
-  const ZMapFeatureSet const pFeatureSet, const ZMapFeatureTypeStyle pFeatureStyle, char **psError)
+  const ZMapFeatureSet const pFeatureSet, const ZMapFeatureTypeStyle const pFeatureStyle, char **psError)
 {
   char *sName = NULL,
     *sFeatureName = NULL,
     *sFeatureNameID = NULL,
     *sSequence = NULL,
-    *sSource = NULL ;
+    *sSource = NULL,
+    *sSOType = NULL,
+    *sAttributes = NULL ;
   unsigned int nAttributes = 0 ;
   int iStart = 0,
     iEnd = 0,
     iQueryStart = 0,
-    iQueryEnd = 0 ;
-  gboolean bFeatureHasName = FALSE ;
+    iQueryEnd = 0,
+    iSOID = 0 ;
+  double dScore = 0.0 ;
+  gboolean bFeatureHasName = FALSE,
+    bDataAdded = FALSE,
+    bFeatureAdded = FALSE,
+    bNewFeatureCreated = FALSE,
+    bHasScore = FALSE ;
   ZMapFeature pFeature = NULL ;
   ZMapGFFAttribute *pAttributes = NULL,
     pAttribute = NULL ;
   ZMapStyleMode cFeatureStyleMode = ZMAPSTYLE_MODE_BASIC ;
   ZMapStrand cStrand = ZMAPSTRAND_NONE ;
+  ZMapPhase cPhase = ZMAPPHASE_NONE ;
+  ZMapSOIDData pSOIDData = NULL ;
+
+  sSequence            = zMapGFFFeatureDataGetSeq(pFeatureData) ;
+  sSource              = zMapGFFFeatureDataGetSou(pFeatureData) ;
+  iStart               = zMapGFFFeatureDataGetSta(pFeatureData) ;
+  iEnd                 = zMapGFFFeatureDataGetEnd(pFeatureData) ;
+  cStrand              = zMapGFFFeatureDataGetStr(pFeatureData) ;
+  cPhase               = zMapGFFFeatureDataGetPha(pFeatureData) ;
+  bHasScore            = zMapGFFFeatureDataGetFlagSco(pFeatureData) ;
+  dScore               = zMapGFFFeatureDataGetSco(pFeatureData) ;
+  sAttributes          = zMapGFFFeatureDataGetAtt(pFeatureData) ;
+  nAttributes          = zMapGFFFeatureDataGetNat(pFeatureData) ;
+  pAttributes          = zMapGFFFeatureDataGetAts(pFeatureData) ;
+
+  pSOIDData            = zMapGFFFeatureDataGetSod(pFeatureData) ;
+  sSOType              = zMapSOIDDataGetName(pSOIDData) ;
+  iSOID                = zMapSOIDDataGetID(pSOIDData) ;
+  cFeatureStyleMode    = zMapSOIDDataGetStyleMode(pSOIDData) ;
 
   /*
-   * Do some basic error checking. Make sure that this function is _not_ being
-   * called with ZMapStyleMode is TRANSCRIPT or ALIGNMENT.
-   *
+   * Make sure that this function is _not_ being called with ZMapStyleMode is
+   * TRANSCRIPT or ALIGNMENT becasuse they should have been dealt with before
+   * this point.
    */
+  if ((cFeatureStyleMode == ZMAPSTYLE_MODE_TRANSCRIPT) || (cFeatureStyleMode == ZMAPSTYLE_MODE_ALIGNMENT))
+    {
+      *psError = g_strdup("makeFeatureDefault(); ZMapStyleMode must _not_ be TRANSCRIPT or ALIGNMENT") ;
+      return pFeature ;
+    }
 
   /*
    * Get attributes.
@@ -3073,9 +3116,9 @@ static ZMapFeature makeFeatureDefault(const ZMapGFFFeatureData const pFeatureDat
     {
       sName = zMapGFFAttributeGetTempstring(pAttribute) ;
     }
+
   /*
-   * Get the sFeatureName which may not be unique and sFeatureNameID which
-   * _must_ be unique.
+   * Get a name for the feature.
    */
   bFeatureHasName = getFeatureName(sSequence, pAttributes, nAttributes, sName, sSource,
                                    cFeatureStyleMode, cStrand, iStart, iEnd, iQueryStart, iQueryEnd,
@@ -3086,41 +3129,54 @@ static ZMapFeature makeFeatureDefault(const ZMapGFFFeatureData const pFeatureDat
       return pFeature ;
     }
 
-      /*
-       * Create our new feature object
-       */
-      //pFeature = zMapFeatureCreateEmpty() ;
-      //++pParser->num_features ;
+  /*
+   * Create our new feature object
+   */
+  pFeature = zMapFeatureCreateEmpty() ;
+  if (pFeature)
+    bNewFeatureCreated = TRUE ;
+  else
+    {
+      *psError = g_strdup_printf("makeFeatureDefault(); could not create new feature object ");
+      return pFeature ;
+    }
 
-      /*
-       * Add standard data to the feature.
-       */
-      //bResult = zMapFeatureAddStandardData(pFeature, sFeatureNameID, sFeatureName, sSequence, sSOType,
-      //                                     cFeatureStyleMode, &pParserFeatureSet->feature_set->style,
-      //                                     iStart, iEnd, bHasScore, dScore, cStrand);
+  /*
+   * Add standard data to the feature.
+   */
+  bDataAdded = zMapFeatureAddStandardData(pFeature, sFeatureNameID, sFeatureName, sSequence, sSOType,
+                                       cFeatureStyleMode, &pFeatureSet->style,
+                                       iStart, iEnd, bHasScore, dScore, cStrand);
 
-      //if (!bResult)
-      //  {
-      //    goto return_point ;
-      //  }
-
-      /*
-       * Add the feature to feature set
-       */
-      //bFeatureAdded = zMapFeatureSetAddFeature(pFeatureSet, pFeature) ;
-      //if (!bFeatureAdded)
-      //  {
-      //    *err_text = g_strdup_printf("feature with name = '%s' could not be added", sFeatureName) ;
-      //    bResult = FALSE ;
-      //    goto return_point ;
-      //  }
+  /*
+   * Add the feature to feature set
+   */
+  if (bDataAdded)
+    {
+      bFeatureAdded = zMapFeatureSetAddFeature(pFeatureSet, pFeature) ;
+    }
+  if (!bFeatureAdded)
+    {
+      *psError = g_strdup_printf("makeFeatureDefault(); feature with ID = %i and name = '%s' could not be added",
+                                     (int)pFeature->unique_id, sFeatureName) ;
+    }
 
 
 #ifdef LOCAL_DEBUG_CODE_DEFAULT
-  ++iCountBasic ;
-  printf("iCountBasic = %i\n", iCountBasic ) ;
+  ++iCountDefault ;
+  printf("iCountDefault = %i\n", iCountDefault ) ;
   fflush(stdout) ;
 #endif
+
+  /*
+   * If a new feature was created, but could not be added to the featureset,
+   * it must be destroyed to prevent a memory leak.
+   */
+  if (bNewFeatureCreated && !bFeatureAdded)
+    {
+      zMapFeatureDestroy(pFeature) ;
+      pFeature = NULL ;
+    }
 
   return pFeature ;
 }
