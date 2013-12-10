@@ -1055,15 +1055,15 @@ gboolean zmapWindowSeqToWorldCoords(ZMapWindow window,
                                     int seq_start, int seq_end, double *world_start_out, double *world_end_out)
 {
   gboolean result = FALSE ;
-  ZMapFeatureAlignment align ;
-  ZMapFeatureBlock block ;
-  ZMapFeatureSet set ;
   FooCanvasItem *set_item ;
-  GQuark set_id ;
-
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  ZMapFeatureAlignment align ;
+  ZMapFeatureBlock block ;
+  ZMapFeatureSet set ;
+  GQuark set_id ;
+
   /* We don't want caller to have to do all this so we laboriously find a featureset,
    * the first one in fact, and use that to call the canvas function to do the conversion
    * as the canvas knows how to do that. */
@@ -1091,7 +1091,7 @@ gboolean zmapWindowSeqToWorldCoords(ZMapWindow window,
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
-    set_item = window->separator_feature_set ;
+    set_item = (FooCanvasItem*)window->separator_feature_set ;
 
     {
       ZMapWindowFeaturesetItem featureset ;
