@@ -3042,12 +3042,16 @@ static ZMapFeature makeFeatureDefault(const ZMapGFFFeatureData const pFeatureDat
     *sSequence = NULL,
     *sSource = NULL ;
   unsigned int nAttributes = 0 ;
-  int iStart = 0, iEnd = 0 ;
+  int iStart = 0,
+    iEnd = 0,
+    iQueryStart = 0,
+    iQueryEnd = 0 ;
   gboolean bFeatureHasName = FALSE ;
   ZMapFeature pFeature = NULL ;
   ZMapGFFAttribute *pAttributes = NULL,
     pAttribute = NULL ;
   ZMapStyleMode cFeatureStyleMode = ZMAPSTYLE_MODE_BASIC ;
+  ZMapStrand cStrand = ZMAPSTRAND_NONE ;
 
   /*
    * Do some basic error checking. Make sure that this function is _not_ being
