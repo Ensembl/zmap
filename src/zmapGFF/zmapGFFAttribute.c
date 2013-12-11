@@ -1761,3 +1761,40 @@ gboolean zMapAttParseKnownName(const ZMapGFFAttribute const pAttribute, char ** 
 
 
 
+
+/*
+ * Parse out assembly path data. Format of this attribute is:
+ * v2 data: Assembly_source "Sequence:B0250" ; Assembly_strand + ; Assembly_length 39216 ; Assembly_regions 1 39110 [, start end]+ ;
+ * v3 data: <ap_source>, <strand>, <length>, <rstart> <rend> [, <rstart>, <rend>]*
+ *
+ * Where <ap_source>               string
+ *       <strand>                  +,-
+ *       <length>                  non-negative integer value
+ *       <rstart>, <rend>          non-negative integer values, <rstart> <= <rend>
+ *
+ */
+gboolean zMapAttParseAssemblyPath(const ZMapGFFAttribute const pAttribute, char ** const psOut, ZMapStrand * const pcStrandOut,
+                                  int * const piOut, GArray ** const paOut)
+{
+  gboolean bResult = FALSE ;
+  static const char *sMyName = "zMapAttParseAssemblyPath()" ;
+  static const unsigned int iExpectedFields1 = 1 ;
+  static const unsigned int iExpectedFields2 = 2 ;
+  if (!pAttribute)
+    return bResult ;
+  const char *sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
+  if (strcmp("assembly_path", zMapGFFAttributeGetNamestring(pAttribute)))
+    {
+      zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
+      return bResult ;
+    }
+
+
+
+
+  return bResult ;
+}
+
+
+
+

@@ -107,6 +107,7 @@ void attribute_test_parse(ZMapGFFParser, char **, unsigned int) ;
 gboolean zMapAttParseAlias(const ZMapGFFAttribute const, char ** const ) ;
 gboolean zMapAttParseAlign(const ZMapGFFAttribute const, int * const, int * const, ZMapStrand * const);
 gboolean zMapAttParseAssemblySource(const ZMapGFFAttribute const, char ** const, char ** const) ;
+gboolean zMapAttParseAssemblyPath(const ZMapGFFAttribute const, char ** const, ZMapStrand * const , int * const, GArray ** const) ;
 gboolean zMapAttParseAnyTwoStrings(const ZMapGFFAttribute const, char ** const, char ** const) ;
 gboolean zMapAttParseClass(const ZMapGFFAttribute const, ZMapHomolType *const );
 gboolean zMapAttParseCigarExonerate(const ZMapGFFAttribute const , GArray ** const , ZMapStrand , int, int, ZMapStrand, int, int) ;
