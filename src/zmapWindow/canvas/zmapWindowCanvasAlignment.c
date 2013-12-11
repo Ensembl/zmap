@@ -598,13 +598,16 @@ static void zMapWindowCanvasAlignmentFreeSet(ZMapWindowFeaturesetItem featureset
 }
 
 
+/* Returns a newly-allocated ZMapFeatureSubPartSpan, which the caller must free with g_free,
+ * or NULL. */
 static ZMapFeatureSubPartSpan zmapWindowCanvasAlignmentGetSubPartSpan(FooCanvasItem *foo,
 								      ZMapFeature feature, double x, double y)
 {
-  static ZMapFeatureSubPartSpanStruct sub_part;
+  ZMapFeatureSubPartSpan sub_part = NULL ;
   ZMapWindowFeaturesetItem fi = (ZMapWindowFeaturesetItem) foo;
 
-  ZMapAlignBlock ab;
+  ZMapAlignBlock ab = NULL;
+  ZMapAlignBlock prev_ab = NULL;
   int i;
 
   /* find the gap or match if we are bumped */
@@ -620,11 +623,13 @@ static ZMapFeatureSubPartSpan zmapWindowCanvasAlignmentGetSubPartSpan(FooCanvasI
 
       if(!featureset->point_canvas_feature)
 	return NULL;
-      sub_part.start = !featureset->point_canvas_feature->y1;
-      sub_part.end   = !featureset->point_canvas_feature->y2;
-      sub_part.subpart = ZMAPFEATURE_SUBPART_MATCH;
-      sub_part.index = 1;
-      return &sub_part;
+
+      sub_part = g_malloc0(sizeof *sub_part) ;
+      sub_part->start = !featureset->point_canvas_feature->y1;
+      sub_part->end   = !featureset->point_canvas_feature->y2;
+      sub_part->subpart = ZMAPFEATURE_SUBPART_MATCH;
+      sub_part->index = 1;
+      return sub_part;
     }
 #endif
 
@@ -636,7 +641,7 @@ static ZMapFeatureSubPartSpan zmapWindowCanvasAlignmentGetSubPartSpan(FooCanvasI
    * as that may be compressed and does not contain sequence info
    * return the type index and target start and end
    */
-  for(i = 0; i < feature->feature.homol.align->len;i++)
+  for(i = 0; !sub_part && i < feature->feature.homol.align->len;i++)
     {
       ab = &g_array_index(feature->feature.homol.align, ZMapAlignBlockStruct, i);
       /* in the original foo based code
@@ -644,24 +649,35 @@ static ZMapFeatureSubPartSpan zmapWindowCanvasAlignmentGetSubPartSpan(FooCanvasI
        * gap n corresponds to the following match block
        */
 
-      sub_part.index = i + 1;
-
       if(y >= ab->t1 && y <= ab->t2)
 	{
-          sub_part.start = ab->t1;
-          sub_part.end = ab->t2;
-          sub_part.subpart = ZMAPFEATURE_SUBPART_MATCH;
-          return &sub_part;
+          sub_part = g_malloc0(sizeof *sub_part) ;
+          sub_part->index = i + 1;
+          sub_part->start = ab->t1;
+          sub_part->end = ab->t2;
+          sub_part->subpart = ZMAPFEATURE_SUBPART_MATCH;
 	}
       if(y < ab->t1)
 	{
-          sub_part.start = sub_part.end + 1;
-          sub_part.end = ab->t1 - 1;
-          sub_part.subpart = ZMAPFEATURE_SUBPART_GAP;
-          return &sub_part;
+          if (prev_ab)
+            {
+              sub_part = g_malloc0(sizeof *sub_part) ;
+              sub_part->index = i + 1;
+              sub_part->start = prev_ab->t2 + 1;
+              sub_part->end = ab->t1 - 1;
+              sub_part->subpart = ZMAPFEATURE_SUBPART_GAP;
+            }
+          else
+            {
+              zMapWarning("%s", "Failed to find sub-part span: no previous alignment block") ;
+              break;
+            }
 	}
+
+      prev_ab = ab ;
     }
-  return NULL;
+
+  return sub_part;
 }
 
 
