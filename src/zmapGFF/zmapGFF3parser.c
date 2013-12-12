@@ -91,6 +91,7 @@ static void destroyFeatureArray(gpointer data) ;
  */
 static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const, const ZMapFeatureSet const, gboolean *, char **) ;
 static ZMapFeature makeFeatureAlignment(const ZMapGFFFeatureData const, const ZMapFeatureSet const, char ** ) ;
+static ZMapFeature makeFeatureAssemblyPath(const ZMapGFFFeatureData const, const ZMapFeatureSet const, char ** ) ;
 static ZMapFeature makeFeatureDefault(const ZMapGFFFeatureData const, const ZMapFeatureSet const, char **) ;
 static char * makeFeatureTranscriptNamePublic(const ZMapGFFFeatureData const) ;
 static char * makeFeatureAlignmentNamePrivate(const ZMapGFFFeatureData const) ;
@@ -3041,6 +3042,19 @@ static ZMapFeature makeFeatureAlignment(const ZMapGFFFeatureData const pFeatureD
 
 
 /*
+ * Create a feature with ZMapStyleMode = ASSEMBLY_PATH
+ */
+static ZMapFeature makeFeatureAssemblyPath(const ZMapGFFFeatureData const pFeatureData,
+                                         const ZMapFeatureSet const pFeatureSet,
+                                         char ** psError)
+{
+  ZMapFeature pFeature = NULL ;
+
+  return pFeature ;
+}
+
+
+/*
  * Default feature creation function.
  */
 static ZMapFeature makeFeatureDefault(const ZMapGFFFeatureData const pFeatureData,
@@ -3196,16 +3210,13 @@ static gboolean makeNewFeature_V3(
                          const ZMapGFFFeatureData const pFeatureData
                        )
 {
-  unsigned int
+  int
     iStart                  = 0,
-    iEnd                    = 0,
+    iEnd                    = 0 ;
+
+  unsigned int
     nAttributes             = 0,
     iSOID                   = 0
-  ;
-
-  int
-    iQueryStart             = 0,
-    iQueryEnd               = 0
   ;
 
   double
@@ -3219,15 +3230,12 @@ static gboolean makeNewFeature_V3(
     *sSource                = NULL,
     *sAttributes            = NULL,
     *sSOType                = NULL,
-    *sName                  = NULL,
     *sTargetID              = NULL,
     *sMakeFeatureErrorText  = NULL
   ;
 
   gboolean
     bResult                 = FALSE,
-    bFeatureAdded           = FALSE,
-    bFeatureHasName         = FALSE,
     bHasScore               = FALSE,
     bNewFeatureCreated      = FALSE
   ;
@@ -3419,7 +3427,7 @@ static gboolean makeNewFeature_V3(
   /*
    * Temp test of the assembly_path attribute
    */
-  pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "assembly_path") ;
+  /* pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "assembly_path") ;
   if (pAttribute)
     {
       printf("as attribute with s = '%s'\n", zMapGFFAttributeGetTempstring(pAttribute)) ;
@@ -3430,13 +3438,19 @@ static gboolean makeNewFeature_V3(
       int iAssemblyLength = 0 ;
       GArray *pAssemblyArray = NULL ;
 
-      gboolean bParse = zMapAttParseAssemblyPath(pAttribute, &sAssemblySource, &sAssemblyStrand, &iAssemblyLength, &pAssemblyArray) ;
+      gboolean bParse = zMapAttParseAssemblyPath(pAttribute, &sAssemblySource, &cAssemblyStrand, &iAssemblyLength, &pAssemblyArray) ;
       if (bParse)
         {
-          /* print out data to look at ... */
+          printf("parse OK, i = %i\n", pAssemblyArray->len) ;
+          fflush(stdout) ;
+        }
+      else
+        {
+          printf("parse failed.\n") ;
+          fflush(stdout) ;
         }
     }
-
+  */
 
   /*
    * Now branch on the ZMapStyleMode of the current GFF line.
@@ -3469,13 +3483,14 @@ static gboolean makeNewFeature_V3(
         }
 
     }
-  else if (cFeatureStyleMode == ZMAPSTYLE_MODE_SEQUENCE)
-    {
-
-    }
   else if (cFeatureStyleMode == ZMAPSTYLE_MODE_ASSEMBLY_PATH)
     {
-
+      pFeature = makeFeatureAssemblyPath(pFeatureData, pFeatureSet, &sMakeFeatureErrorText) ;
+      if (pFeature)
+        {
+          bResult = TRUE ;
+          ++pParser->num_features ;
+        }
     }
   else
     {

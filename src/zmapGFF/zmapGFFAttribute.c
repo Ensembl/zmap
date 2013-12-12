@@ -1767,7 +1767,7 @@ gboolean zMapAttParseKnownName(const ZMapGFFAttribute const pAttribute, char ** 
  * v2 data: Assembly_source "Sequence:B0250" ; Assembly_strand + ; Assembly_length 39216 ; Assembly_regions 1 39110 [, start end]+ ;
  * v3 data: <ap_source>, <strand>, <length>, <rstart> <rend> [, <rstart>, <rend>]*
  *
- * Where <ap_source>               string
+ * Where <ap_source>               (unquoted) string
  *       <strand>                  +,-
  *       <length>                  non-negative integer value
  *       <rstart>, <rend>          non-negative integer values, <rstart> <= <rend>
@@ -1777,10 +1777,23 @@ gboolean zMapAttParseAssemblyPath(const ZMapGFFAttribute const pAttribute, char 
                                   int * const piOut, GArray ** const paOut)
 {
   gboolean bResult = FALSE ;
-  static const char *sMyName = "zMapAttParseAssemblyPath()" ;
+  static const char cComma = ',';
+  static const char *sMyName = "zMapAttParseAssemblyPath()",
+    *sEmpty = "",
+    *sStrandForward = "+",
+    *sStrandReverse = "-" ;
+  static const unsigned int iExpectedMinFields = 4 ;
   static const unsigned int iExpectedFields1 = 1 ;
   static const unsigned int iExpectedFields2 = 2 ;
+  unsigned int i, iTokens = 0, iTokenLimit = 1000 ;
+  int iLength = 0 ;
+  char **sTokens = NULL ;
+  gboolean bIncludeEmpty = TRUE ;
+  ZMapStrand cStrand = ZMAPSTRAND_NONE ;
+  GArray *pArray = NULL ;
   if (!pAttribute)
+    return bResult ;
+  if (!psOut || *psOut || !pcStrandOut || !piOut || !paOut || *paOut )
     return bResult ;
   const char *sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
   if (strcmp("assembly_path", zMapGFFAttributeGetNamestring(pAttribute)))
@@ -1789,7 +1802,91 @@ gboolean zMapAttParseAssemblyPath(const ZMapGFFAttribute const pAttribute, char 
       return bResult ;
     }
 
+  /*
+   * Tokenize on commas; we must have a minimum of 4 fields
+   */
+  sTokens = zMapGFFStr_tokenizer(cComma, sValue, &iTokens, bIncludeEmpty, iTokenLimit, g_malloc, g_free) ;
 
+  for (i=0; i<iTokens; ++i)
+  {
+    printf("t%i = '%s'\n", i, sTokens[i]) ;
+    fflush(stdout) ;
+  }
+
+  /*
+   * Now extract data from each of these; must have been a minimum of iExpectedMinFields fields.
+   */
+  if ((iTokens >= iExpectedMinFields) && (iTokens <= iTokenLimit))
+  {
+    bResult = TRUE ;
+
+    /*
+     * Firstly test that none of the strings are empty.
+     */
+    for (i=0; i<iTokens; ++i)
+      if (!strcmp(sTokens[i], sEmpty))
+        bResult = FALSE ;
+
+    /* */
+    if (bResult)
+      {
+        /* ap source just has to be a non-empty string */
+
+        /* strand */
+        if (!strcmp(sTokens[1], sStrandForward))
+          cStrand = ZMAPSTRAND_FORWARD ;
+        else if (!strcmp(sTokens[1], sStrandReverse))
+          cStrand = ZMAPSTRAND_REVERSE ;
+        else
+          bResult = FALSE ;
+
+        /* length */
+        if (bResult && (sscanf(sTokens[2], "%i", &iLength) != iExpectedFields1))
+          bResult = FALSE ;
+
+        /* start,end pairs */
+        if (bResult)
+          {
+            pArray = g_array_new(FALSE, TRUE, sizeof(ZMapSpanStruct)) ;
+            for (i=3; i<iTokens; ++i)
+              {
+                ZMapSpanStruct cSpan = {0} ;
+                if ((sscanf(sTokens[i], "%i %i", &cSpan.x1, &cSpan.x2) == iExpectedFields2) && (cSpan.x1 <= cSpan.x2) )
+                  {
+                    pArray = g_array_append_val(pArray, cSpan) ;
+                  }
+                else
+                  {
+                    bResult = FALSE ;
+                  }
+              }
+          }
+
+      }
+
+    /*
+     * Copy data to output values, or delete temporary variables
+     * if there was an error.
+     */
+     if (bResult)
+       {
+         *psOut = g_strdup(sTokens[0]) ;
+         *pcStrandOut = cStrand ;
+         *piOut = iLength ;
+         *paOut = pArray ;
+       }
+     else
+       {
+         if (pArray)
+           g_array_free(pArray, TRUE) ;
+       }
+  }
+
+
+  /*
+   * Clean up tokens.
+   */
+  zMapGFFStr_array_delete(sTokens, iTokens, g_free) ;
 
 
   return bResult ;
