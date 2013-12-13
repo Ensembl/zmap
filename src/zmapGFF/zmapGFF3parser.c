@@ -95,6 +95,7 @@ static ZMapFeature makeFeatureAssemblyPath(const ZMapGFFFeatureData const, const
 static ZMapFeature makeFeatureDefault(const ZMapGFFFeatureData const, const ZMapFeatureSet const, char **) ;
 static char * makeFeatureTranscriptNamePublic(const ZMapGFFFeatureData const) ;
 static char * makeFeatureAlignmentNamePrivate(const ZMapGFFFeatureData const) ;
+static gboolean clipFeature(ZMapGFFClipMode, ZMapStyleMode ) ;
 
 /* #define LOCAL_DEBUG_CODE_WRITE_BODY_LINE 1 */
 /* #define LOCAL_DEBUG_CODE_ALIGNMENT 1 */
@@ -2115,7 +2116,6 @@ static gboolean parseBodyLine_V3(
   gboolean
     bResult                           = TRUE,
     bHasScore                         = FALSE,
-    bIncludeFeature                   = TRUE,
     bIncludeEmpty                     = FALSE,
     bRemoveQuotes                     = FALSE,
     bIsValidSOID                      = FALSE
@@ -2434,103 +2434,32 @@ static gboolean parseBodyLine_V3(
 
 
   /*
-   * Clip start/end as specified in clip_mode, default is to exclude.
-   *
-   * Clipping behaviour has to be modified... not sure how though.
-   *
+   * Attempt to create the new feature object and add to the
+   * appropriate feature set.
    */
-  if (pParser->clip_mode != GFF_CLIP_NONE)
+  if ((bResult = makeNewFeature_V3(pParserBase,
+                                   &sErrText,
+                                   pFeatureData)))
     {
-
       /*
-       * Name is needed; if there is no "Name" then this will fail (but would have in v2 anyway).
+       * A new feature was successfully created and added to the
+       * feature set.
        */
-      gqNameID = 0 ;
-      pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "Name" );
-      if (pAttribute)
-        {
-          gqNameID = g_quark_from_string(zMapGFFAttributeGetTempstring(pAttribute)) ;
-        }
-
-
-      /* Anything outside always excluded. */
-      if (pParser->clip_mode == GFF_CLIP_ALL || pParser->clip_mode == GFF_CLIP_OVERLAP)
-        {
-          if (iStart > pParser->clip_end || iEnd < pParser->clip_start)
-            {
-              bIncludeFeature = FALSE ;
-            }
-        }
-
-      /* Exclude overlaps for CLIP_ALL */
-      if (bIncludeFeature && pParser->clip_mode == GFF_CLIP_ALL)
-        {
-          if (iStart < pParser->clip_start || iEnd > pParser->clip_end)
-            {
-              bIncludeFeature = FALSE ;
-            }
-        }
-
-      /* Clip overlaps for CLIP_OVERLAP */
-
-      if (bIncludeFeature && pParser->clip_mode == GFF_CLIP_OVERLAP)
-        {
-          if (iStart < pParser->clip_start)
-            iStart = pParser->clip_start ;
-          if (iEnd > pParser->clip_end)
-            iEnd = pParser->clip_end ;
-        }
-
-      /*
-       * Children of features to be excluded must also be excluded, so names of excluded features
-       * must be stored.
-       */
-      if (!bIncludeFeature)
-        {
-          g_hash_table_insert(pParser->excluded_features, GINT_TO_POINTER(gqNameID), GINT_TO_POINTER(gqNameID)) ;
-          bResult = TRUE ;
-        }
-      else if ((g_hash_table_lookup(pParser->excluded_features, GINT_TO_POINTER(gqNameID))))
-        {
-          bIncludeFeature = FALSE ;
-        }
-
-
-    } /* if (pParser->clip_mode != ZMAPGFF_CLIP_NONE) */
-
-
-    /*
-     * If the feature is to be included then create the new feature object
-     * and add to the appropriate feature set.
-     */
-    if (bIncludeFeature)
+    }
+  else
     {
-
-      if ((bResult = makeNewFeature_V3(pParserBase,
-                                    &sErrText,
-                                    pFeatureData)))
+      /*
+       * otherwise we have an error
+       */
+      if (pParser->error)
         {
-          /*
-           * A new feature was successfully created and added to the
-           * feature set.
-           */
+          g_error_free(pParser->error) ;
+          pParser->error = NULL ;
         }
-      else
-        {
-          /*
-           * otherwise we have an error
-           */
-          if (pParser->error)
-            {
-              g_error_free(pParser->error) ;
-              pParser->error = NULL ;
-            }
-          pParser->error = g_error_new(pParser->error_domain, ZMAPGFF_ERROR_BODY,
-                                       "GFF line %d (b) - %s (\"%s\")",  pParser->line_count, sErrText, sLine) ;
-          g_free(sErrText) ;
-          sErrText = NULL ;
-
-        }
+      pParser->error = g_error_new(pParser->error_domain, ZMAPGFF_ERROR_BODY,
+                                   "GFF line %d (b) - %s (\"%s\")",  pParser->line_count, sErrText, sLine) ;
+      g_free(sErrText) ;
+      sErrText = NULL ;
 
     }
 
@@ -3200,6 +3129,20 @@ static ZMapFeature makeFeatureDefault(const ZMapGFFFeatureData const pFeatureDat
 
 
 /*
+ * Encapsulation of clipping logic. This now has to take into account the StyleMode
+ * and other data concerning the feature of interest.
+ */
+static gboolean clipFeature(ZMapGFFClipMode cClipMode, ZMapStyleMode cStyleMode )
+{
+  gboolean bResult = FALSE ;
+
+
+  return bResult ;
+}
+
+
+
+/*
  * Create a new feature and add it to the feature set.
  *
  *
@@ -3237,7 +3180,8 @@ static gboolean makeNewFeature_V3(
   gboolean
     bResult                 = FALSE,
     bHasScore               = FALSE,
-    bNewFeatureCreated      = FALSE
+    bNewFeatureCreated      = FALSE,
+    bIncludeFeature         = TRUE
   ;
 
   GQuark
@@ -3273,7 +3217,6 @@ static gboolean makeNewFeature_V3(
     pSOIDData               = NULL
   ;
   ZMapGFFAttribute
-    pAttribute              = NULL,
     *pAttributes            = NULL
   ;
 
@@ -3425,102 +3368,112 @@ static gboolean makeNewFeature_V3(
     }
 
   /*
-   * Temp test of the assembly_path attribute
+   * Clipping logic.
    */
-  /* pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "assembly_path") ;
-  if (pAttribute)
+  if (pParser->clip_mode != GFF_CLIP_NONE)
     {
-      printf("as attribute with s = '%s'\n", zMapGFFAttributeGetTempstring(pAttribute)) ;
-      fflush (stdout) ;
 
-      char *sAssemblySource = NULL ;
-      ZMapStrand cAssemblyStrand = ZMAPSTRAND_NONE ;
-      int iAssemblyLength = 0 ;
-      GArray *pAssemblyArray = NULL ;
+      /* Anything outside always excluded. */
+      if (pParser->clip_mode == GFF_CLIP_ALL || pParser->clip_mode == GFF_CLIP_OVERLAP)
+        {
+          if (iStart > pParser->clip_end || iEnd < pParser->clip_start)
+            {
+              bIncludeFeature = FALSE ;
+            }
+        }
 
-      gboolean bParse = zMapAttParseAssemblyPath(pAttribute, &sAssemblySource, &cAssemblyStrand, &iAssemblyLength, &pAssemblyArray) ;
-      if (bParse)
+      /* Exclude overlaps for CLIP_ALL */
+      if (bIncludeFeature && pParser->clip_mode == GFF_CLIP_ALL)
         {
-          printf("parse OK, i = %i\n", pAssemblyArray->len) ;
-          fflush(stdout) ;
+          if (iStart < pParser->clip_start || iEnd > pParser->clip_end)
+            {
+              bIncludeFeature = FALSE ;
+            }
         }
-      else
+
+      /* Clip overlaps for CLIP_OVERLAP */
+      if (bIncludeFeature && pParser->clip_mode == GFF_CLIP_OVERLAP)
         {
-          printf("parse failed.\n") ;
-          fflush(stdout) ;
+          if (iStart < pParser->clip_start)
+            iStart = pParser->clip_start ;
+          if (iEnd > pParser->clip_end)
+            iEnd = pParser->clip_end ;
         }
-    }
-  */
+
+    } /* if (pParser->clip_mode != ZMAPGFF_CLIP_NONE) */
+
 
   /*
    * Now branch on the ZMapStyleMode of the current GFF line.
    */
-  if (cFeatureStyleMode == ZMAPSTYLE_MODE_INVALID)
-    {
-      /* Do nothing */
-    }
-  else if (cFeatureStyleMode == ZMAPSTYLE_MODE_TRANSCRIPT)
+  if (bIncludeFeature)
     {
 
-      bNewFeatureCreated = FALSE ;
-      pFeature = makeFeatureTranscript(pFeatureData, pFeatureSet, &bNewFeatureCreated, &sMakeFeatureErrorText) ;
-      if (pFeature)
+      if (cFeatureStyleMode == ZMAPSTYLE_MODE_INVALID)
         {
-          bResult = TRUE ;
+          /* Do nothing */
         }
-      if (bNewFeatureCreated)
-        ++pParser->num_features ;
-
-    }
-  else if (cFeatureStyleMode == ZMAPSTYLE_MODE_ALIGNMENT)
-    {
-
-      pFeature = makeFeatureAlignment(pFeatureData, pFeatureSet, &sMakeFeatureErrorText) ;
-      if (pFeature)
+      else if (cFeatureStyleMode == ZMAPSTYLE_MODE_TRANSCRIPT)
         {
-          bResult = TRUE ;
-          ++pParser->num_features ;
-        }
 
-    }
-  else if (cFeatureStyleMode == ZMAPSTYLE_MODE_ASSEMBLY_PATH)
-    {
-      pFeature = makeFeatureAssemblyPath(pFeatureData, pFeatureSet, &sMakeFeatureErrorText) ;
-      if (pFeature)
+          bNewFeatureCreated = FALSE ;
+          pFeature = makeFeatureTranscript(pFeatureData, pFeatureSet, &bNewFeatureCreated, &sMakeFeatureErrorText) ;
+          if (pFeature)
+            {
+              bResult = TRUE ;
+            }
+          if (bNewFeatureCreated)
+            ++pParser->num_features ;
+
+        }
+      else if (cFeatureStyleMode == ZMAPSTYLE_MODE_ALIGNMENT)
         {
-          bResult = TRUE ;
-          ++pParser->num_features ;
-        }
-    }
-  else
-    {
 
-      pFeature = makeFeatureDefault(pFeatureData, pFeatureSet, &sMakeFeatureErrorText) ;
-      if (pFeature)
+          pFeature = makeFeatureAlignment(pFeatureData, pFeatureSet, &sMakeFeatureErrorText) ;
+          if (pFeature)
+            {
+              bResult = TRUE ;
+              ++pParser->num_features ;
+            }
+
+        }
+      else if (cFeatureStyleMode == ZMAPSTYLE_MODE_ASSEMBLY_PATH)
         {
-          bResult = TRUE ;
-          ++pParser->num_features ;
+          pFeature = makeFeatureAssemblyPath(pFeatureData, pFeatureSet, &sMakeFeatureErrorText) ;
+          if (pFeature)
+            {
+              bResult = TRUE ;
+              ++pParser->num_features ;
+            }
         }
+      else
+        {
+
+          pFeature = makeFeatureDefault(pFeatureData, pFeatureSet, &sMakeFeatureErrorText) ;
+          if (pFeature)
+            {
+              bResult = TRUE ;
+              ++pParser->num_features ;
+            }
 
 
-    } /* final ZMapStyleMode clause */
+        } /* final ZMapStyleMode clause */
 
 
-  /*
-   * Add note?
-   */
-  //pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "Note") ;
-  //if (pAttribute)
-  //{
-  //  if (zMapAttParseNote(pAttribute, &sNote_v3A))
-  //  {
-  //    /* Do something with data here */
-  //  }
-  //}
+      /*
+       * Add any other attributes? Note, URL, etc?
+       */
+      //pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "Note") ;
+      //if (pAttribute)
+      //{
+      //  if (zMapAttParseNote(pAttribute, &sNote_v3A))
+      //  {
+      //    /* Do something with data here */
+      //  }
+      //}
 
-  /*
-   * Add URL?
-   */
+
+    } /* if (bIncludeFeature) */
 
   /*
    * Return point for the function.
