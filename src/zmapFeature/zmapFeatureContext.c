@@ -145,6 +145,10 @@ void zMapFeatureContextReverseComplement(ZMapFeatureContext context, GHashTable 
   cb_data.start = context->parent_span.x1;
   cb_data.end   = context->parent_span.x2 ;
 
+  cb_data.block_start = 0 ;
+  cb_data.block_end = 0 ;
+  cb_data.translation_fs = NULL ;
+
   //zMapLogWarning("rev comp, parent span = %d -> %d",context->parent_span.x1,context->parent_span.x2);
 
   /* Because this doesn't allow for execution at context level ;( */
@@ -935,7 +939,7 @@ static ZMapFeatureContextExecuteStatus revCompFeaturesCB(GQuark key,
 
 	/* OK...THIS IS CRAZY....SHOULD BE PART OF THE FEATURE REVCOMP....FIX THIS.... */
 	/* Now redo the 3 frame translations from the dna (if they exist). */
-	if (feature_set->original_id == g_quark_from_string(ZMAP_FIXED_STYLE_3FT_NAME))
+        if (feature_set->unique_id == zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME))
           {
             cb_data->translation_fs = feature_set;
             zMapFeature3FrameTranslationSetRevComp(feature_set, cb_data->block_start, cb_data->block_end) ;
