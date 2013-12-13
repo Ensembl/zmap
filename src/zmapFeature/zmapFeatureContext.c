@@ -939,7 +939,7 @@ static ZMapFeatureContextExecuteStatus revCompFeaturesCB(GQuark key,
 
 	/* OK...THIS IS CRAZY....SHOULD BE PART OF THE FEATURE REVCOMP....FIX THIS.... */
 	/* Now redo the 3 frame translations from the dna (if they exist). */
-	if (feature_set->original_id == g_quark_from_string(ZMAP_FIXED_STYLE_3FT_NAME))
+        if (feature_set->unique_id == zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME))
           {
             cb_data->translation_fs = feature_set;
             zMapFeature3FrameTranslationSetRevComp(feature_set, cb_data->block_start, cb_data->block_end) ;
