@@ -145,6 +145,10 @@ void zMapFeatureContextReverseComplement(ZMapFeatureContext context, GHashTable 
   cb_data.start = context->parent_span.x1;
   cb_data.end   = context->parent_span.x2 ;
 
+  cb_data.block_start = 0 ;
+  cb_data.block_end = 0 ;
+  cb_data.translation_fs = NULL ;
+
   //zMapLogWarning("rev comp, parent span = %d -> %d",context->parent_span.x1,context->parent_span.x2);
 
   /* Because this doesn't allow for execution at context level ;( */
