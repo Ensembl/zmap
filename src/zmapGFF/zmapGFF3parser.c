@@ -97,6 +97,11 @@ static char * makeFeatureTranscriptNamePublic(const ZMapGFFFeatureData const) ;
 static char * makeFeatureAlignmentNamePrivate(const ZMapGFFFeatureData const) ;
 static gboolean clipFeature(ZMapGFFClipMode, ZMapStyleMode ) ;
 
+/*
+ *
+ */
+static gboolean hack_SpecialColumnToSOTerm(const char * const, char ** const ) ;
+
 /* #define LOCAL_DEBUG_CODE_WRITE_BODY_LINE 1 */
 /* #define LOCAL_DEBUG_CODE_ALIGNMENT 1 */
 /* #define LOCAL_DEBUG_CODE_TRANSCRIPT 1 */
@@ -2317,6 +2322,16 @@ static gboolean parseBodyLine_V3(
   else if (!zMapFeatureFormatPhase(sPhase, &cPhase))
     sErrText = g_strdup_printf("phase format not recognised: %s", sPhase) ;
 
+
+  /*
+   * Deal with hack to source -> SO term mapping
+   */
+  printf("source = %s, type = %s\n", sSource, sType ) ;
+  fflush(stdout) ;
+  hack_SpecialColumnToSOTerm(sSource, &sType ) ;
+  printf("source = %s, type = %s\n", sSource, sType ) ;
+  fflush(stdout) ;
+
   /*
    * sType must be either an accession number or a valid name from the
    * SO set that is currently is use.
@@ -2499,7 +2514,7 @@ static char * makeFeatureTranscriptNamePublic(const ZMapGFFFeatureData const pFe
     pAttributeName = NULL ;
   unsigned int nAttributes = 0 ;
   char * sResult = NULL ;
-  static const char *sNoName = "no name given" ;
+  static const char *sNoName = "no_name_given" ;
   pAttributes = zMapGFFFeatureDataGetAts(pFeatureData) ;
   nAttributes = zMapGFFFeatureDataGetNat(pFeatureData) ;
   pAttributeName = zMapGFFAttributeListContains(pAttributes, nAttributes, "Name") ;
@@ -2512,7 +2527,7 @@ static char * makeFeatureTranscriptNamePublic(const ZMapGFFFeatureData const pFe
  * Create a name for an alignment feature only. This is used to generate the
  * feature->unique_id for the feature_set.
  *
- * The name is of the form "[iStart, iEnd]_<TargetID>", where
+ * The name is of the form "[iStart, iEnd]_<TargetID> <i> <j> <p>", where
  *
  * (1) [iStart, iEnd] are the start and end of the feature in the reference sequence
  * (2) "Target=<TargetID> <i> <j> <p>", also referred to as the clone_id in the v2 code
@@ -2548,7 +2563,8 @@ static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const pFeature
                                          gboolean *pbNewFeatureCreated,
                                          char ** psError)
 {
-  typedef enum {NONE, FIRST, SECOND} CaseToTreat ;
+  typedef enum {NONE, FIRST, SECOND, THIRD} CaseToTreat ;
+  static const char *sNoName = "no_name_given" ;
   CaseToTreat cCase = NONE ;
   unsigned int iSOID = 0,
     nAttributes = 0 ;
@@ -2575,7 +2591,8 @@ static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const pFeature
   ZMapStyleMode cFeatureStyleMode = ZMAPSTYLE_MODE_BASIC ;
   ZMapGFFAttribute *pAttributes = NULL,
     pAttributeParent = NULL,
-    pAttributeID = NULL ;
+    pAttributeID = NULL,
+    pAttributeName = NULL ;
   ZMapSpanStruct cSpanItem = {0},
     *pSpanItem = NULL ;
   ZMapStrand cStrand = ZMAPSTRAND_NONE ;
@@ -2645,6 +2662,9 @@ static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const pFeature
    *                We add data to an existing feature in the featureset. If it's not present already
    *                this is not handled.
    *                Feature _must_ be already present.
+   * Third case:    Construct a transcript feature and add a single exon with the same length to
+   *                it. A feature name is constructed from the Name attribute, start, end and strand
+   *                and this is used for the ID for these steps.
    */
   bIsExon = strstr(sSOType, "exon") != NULL ? TRUE : FALSE ;
   bIsIntron = strstr(sSOType, "intron") != NULL ? TRUE : FALSE ;
@@ -2659,6 +2679,18 @@ static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const pFeature
     {
       cCase = SECOND ;
       gqThisID = g_quark_from_string(zMapGFFAttributeGetTempstring(pAttributeParent)) ;
+    }
+  else if (!bHasAttributeID && !bIsComponent)
+    {
+      cCase = THIRD ;
+      pAttributeName = zMapGFFAttributeListContains(pAttributes, nAttributes, "Name") ;
+      sFeatureName = pAttributeName ? g_strdup(zMapGFFAttributeGetTempstring(pAttributeName)) : g_strdup(sNoName) ;
+      gqThisID = g_quark_from_string(sFeatureName) ; /* also include Name/start/end/strand etc...  */
+      if (sFeatureName)
+        {
+          g_free(sFeatureName) ;
+          sFeatureName = NULL ;
+        }
     }
   else
     {
@@ -2690,7 +2722,7 @@ static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const pFeature
         return pFeature ;
 
       /*
-       * Name of feature is taken from ID attribute value.
+       * Name of feature is taken from attribute values.
        */
       sFeatureName = makeFeatureTranscriptNamePublic(pFeatureData) ;
       sFeatureNameID = g_strdup(g_quark_to_string(gqThisID)) ;
@@ -2739,6 +2771,10 @@ static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const pFeature
                                      (int)gqThisID, sFeatureName) ;
         }
 
+    }
+  else if ((cCase == THIRD) && !bFeaturePresent)
+    {
+      /* Create a transcript feature and add a single same-length exon to the object */
     }
 
 #ifdef LOCAL_DEBUG_CODE_TRANSCRIPT
@@ -3141,6 +3177,45 @@ static gboolean clipFeature(ZMapGFFClipMode cClipMode, ZMapStyleMode cStyleMode 
 }
 
 
+/*
+ * This function is a nasty hack to get around the following problem:
+ *
+ * In the old v2 code, there were many columns that were fed through with
+ * sType = "misc_feature"; these were then treated in a variety of fashions,
+ * with different StyleMode. The type "misc_feature" is currently (December
+ * 2013) translated into the "sequence_feature" SO term. However the mapping
+ * from SO term to StyleMode must be many-to-one, so cannot be used in the
+ * case of these columns.
+ *
+ * This function selects an appropriate SO term for the columns for which
+ * this special treated is required, which is then used as part of the
+ * correct SO => StyleMode mapping that I've implemented for GFFv3. This
+ * seems a bit arbitrary, but is at least expident.
+ *
+ */
+static gboolean hack_SpecialColumnToSOTerm(const char * const sSource, char ** const psType )
+{
+  static const char *sCol01 = "das_constrained_regions" ;
+  static const char *sCol02 = "next_one_here" ;
+  gboolean bResult = FALSE ;
+  if (!sSource || !*sSource || !psType || !*psType)
+    return bResult ;
+
+  if (!strcmp(sSource, sCol01))
+    {
+      *psType = "transcript" ;
+      bResult = TRUE ;
+    }
+  else if (!strcmp(sSource, sCol02))
+    {
+      *psType = "transcript" ;
+      bResult = TRUE ;
+    }
+
+  return bResult ;
+}
+
+
 
 /*
  * Create a new feature and add it to the feature set.
@@ -3497,73 +3572,6 @@ return_point:
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    /*
-     * This is old stuff taken out of parseBodyLine_V3() that I'm not doing any more.
-     * Note in particular that "Locus" is not a valid attribute name in V3.
-     */
-
-    /* pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "Locus" );
-    if ( pParser->locus_set_id &&  pAttribute )
-    {
-
-      if (!zMapFeatureFormatType(pParser->SO_compliant, pParser->default_to_basic, ZMAP_FIXED_STYLE_LOCUS_NAME, &cType))
-        sErrText = g_strdup_printf("feature_type not recognised: %s", ZMAP_FIXED_STYLE_LOCUS_NAME) ;
-
-      pFeatureData02 = zMapGFFFeatureDataCreate() ;
-      zMapGFFFeatureDataSet(pFeatureData02,
-                            zMapGFFAttributeGetTempstring(pAttribute),
-                            ZMAP_FIXED_STYLE_LOCUS_NAME,
-                            ZMAP_FIXED_STYLE_LOCUS_NAME,
-                            cType,
-                            iStart,
-                            iEnd,
-                            FALSE,
-                            0.0,
-                            ZMAPSTRAND_NONE,
-                            ZMAPPHASE_NONE,
-                            sAttributes,
-                            pAttributes,
-                            nAttributes) ;
-
-      if ((bResult = makeNewFeature_V3((ZMapGFFParser) pParser,
-                                    ZMAPGFF_NAME_USE_SEQUENCE,
-                                    &sErrText,
-                                    pFeatureData02)))
-      {
-
-      }
-      else
-      {
-        if (pParser->error)
-        {
-          g_error_free(pParser->error) ;
-          pParser->error = NULL ;
-        }
-        pParser->error = g_error_new(pParser->error_domain, ZMAPGFF_ERROR_BODY,
-                                     "GFF line %d (c) - %s (\"%s\")", pParser->line_count, sErrText, sLine) ;
-        g_free(sErrText) ;
-        sErrText = NULL ;
-      }
-
-      zMapGFFFeatureDataDestroy(pFeatureData02) ;
-    }
-
-  */
 
 
 
