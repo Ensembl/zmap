@@ -2126,10 +2126,6 @@ static gboolean parseBodyLine_V3(
     bIsValidSOID                      = FALSE
   ;
 
-  GQuark
-    gqNameID                          = 0
-  ;
-
   ZMapStyleMode
     cType                             = ZMAPSTYLE_MODE_BASIC
   ;
@@ -2143,8 +2139,7 @@ static gboolean parseBodyLine_V3(
     cPhase                            = ZMAPPHASE_NONE
   ;
   ZMapGFFAttribute
-    *pAttributes                      = NULL,
-    pAttribute                        = NULL
+    *pAttributes                      = NULL
   ;
   ZMapGFFFeatureData
     pFeatureData                      = NULL
@@ -2326,11 +2321,7 @@ static gboolean parseBodyLine_V3(
   /*
    * Deal with hack to source -> SO term mapping
    */
-  printf("source = %s, type = %s\n", sSource, sType ) ;
-  fflush(stdout) ;
   hack_SpecialColumnToSOTerm(sSource, &sType ) ;
-  printf("source = %s, type = %s\n", sSource, sType ) ;
-  fflush(stdout) ;
 
   /*
    * sType must be either an accession number or a valid name from the
@@ -2557,6 +2548,19 @@ static char * makeFeatureAlignmentNamePrivate(const ZMapGFFFeatureData const pFe
 
 /*
  * Create a feature of ZMapStyleMode = TRANSCRIPT only.
+ *
+ * First case:    A transcript object: must _have_ ID and _not_ be intron/exon/CDS.
+ *                Find ID from ID attribute.
+ *                We create a new object and add to featureset if possible.
+ *                Feature must _not_ be already present.
+ * Second case:   A component of a transcript: _must_ be intron, exon, or CDS, _and_ have Parent
+ *                Find ID from Parent attribute
+ *                We add data to an existing feature in the featureset. If it's not present already
+ *                this is not handled.
+ *                Feature _must_ be already present.
+ * Third case:    Construct a transcript feature and add a single exon with the same length to
+ *                it. A feature name is constructed from the Name attribute, start, end and strand
+ *                and this is used for the ID for these steps.
  */
 static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const pFeatureData,
                                          const ZMapFeatureSet const pFeatureSet,
@@ -2652,19 +2656,7 @@ static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const pFeature
 
   /*
    * Now the logic branches dependent upon what type of transcript we are dealing with.
-   *
-   * First case:    A transcript object: must _have_ ID and _not_ be intron/exon/CDS.
-   *                Find ID from ID attribute.
-   *                We create a new object and add to featureset if possible.
-   *                Feature must _not_ be already present.
-   * Second case:   A component of a transcript: _must_ be intron, exon, or CDS, _and_ have Parent
-   *                Find ID from Parent attribute
-   *                We add data to an existing feature in the featureset. If it's not present already
-   *                this is not handled.
-   *                Feature _must_ be already present.
-   * Third case:    Construct a transcript feature and add a single exon with the same length to
-   *                it. A feature name is constructed from the Name attribute, start, end and strand
-   *                and this is used for the ID for these steps.
+   * Cases treated are described above.
    */
   bIsExon = strstr(sSOType, "exon") != NULL ? TRUE : FALSE ;
   bIsIntron = strstr(sSOType, "intron") != NULL ? TRUE : FALSE ;
@@ -2684,13 +2676,10 @@ static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const pFeature
     {
       cCase = THIRD ;
       pAttributeName = zMapGFFAttributeListContains(pAttributes, nAttributes, "Name") ;
-      sFeatureName = pAttributeName ? g_strdup(zMapGFFAttributeGetTempstring(pAttributeName)) : g_strdup(sNoName) ;
-      gqThisID = g_quark_from_string(sFeatureName) ; /* also include Name/start/end/strand etc...  */
-      if (sFeatureName)
-        {
-          g_free(sFeatureName) ;
-          sFeatureName = NULL ;
-        }
+      sFeatureNameID = pAttributeName ?
+                       g_strdup_printf("%s_%i_%i_%s_%g", zMapGFFAttributeGetTempstring(pAttributeName), iStart, iEnd, zMapFeatureStrand2Str(cStrand), dScore)
+                     : g_strdup_printf("%s_%i_%i_%s_%g", sNoName, iStart, iEnd, zMapFeatureStrand2Str(cStrand), dScore) ;
+      gqThisID = g_quark_from_string(sFeatureNameID) ;
     }
   else
     {
@@ -2774,7 +2763,42 @@ static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const pFeature
     }
   else if ((cCase == THIRD) && !bFeaturePresent)
     {
-      /* Create a transcript feature and add a single same-length exon to the object */
+      /*
+       * Firstly create the feature object as trasncript.
+       */
+      pFeature = zMapFeatureCreateEmpty() ;
+      if (pFeature)
+        *pbNewFeatureCreated = TRUE ;
+      else
+        return pFeature ;
+
+
+      sFeatureName = makeFeatureTranscriptNamePublic(pFeatureData) ;
+      /* sFeatureNameID = g_strdup(g_quark_to_string(gqThisID)) ; we have this already */
+      bDataAdded = zMapFeatureAddStandardData(pFeature, sFeatureNameID, sFeatureName, sSequence, sSOType,
+                                              cFeatureStyleMode, &pFeatureSet->style,
+                                              iStart, iEnd, bHasScore, dScore, cStrand) ;
+
+      bFeatureAdded = zMapFeatureSetAddFeature(pFeatureSet, pFeature) ;
+      if (!bFeatureAdded)
+        {
+          *psError = g_strdup_printf("makeFeatureTranscript(); feature with ID = %i and name = '%s' could not be added",
+                                     (int)gqThisID, sFeatureName) ;
+        }
+
+      /*
+       * Now add an exon to it.
+       */
+      cSpanItem.x1 = iStart ;
+      cSpanItem.x2 = iEnd ;
+      pSpanItem = &cSpanItem;
+      bDataAdded = zMapFeatureAddTranscriptExonIntron(pFeature, pSpanItem, NULL) ;
+      if (!bDataAdded)
+        {
+          *psError = g_strdup_printf("makeFeatureTranscript(); unable to add ZMapSpan to feature with ID = %i and name = '%s'",
+                                     (int)gqThisID, sFeatureName) ;
+        }
+
     }
 
 #ifdef LOCAL_DEBUG_CODE_TRANSCRIPT
@@ -3007,7 +3031,8 @@ static ZMapFeature makeFeatureAlignment(const ZMapGFFFeatureData const pFeatureD
 
 
 /*
- * Create a feature with ZMapStyleMode = ASSEMBLY_PATH
+ * Create a feature with ZMapStyleMode = ASSEMBLY_PATH; not yet implemented, although the
+ * code to parse the appropriate attribute value is in zmapGFFAttribute.c.
  */
 static ZMapFeature makeFeatureAssemblyPath(const ZMapGFFFeatureData const pFeatureData,
                                          const ZMapFeatureSet const pFeatureSet,
@@ -3074,9 +3099,12 @@ static ZMapFeature makeFeatureDefault(const ZMapGFFFeatureData const pFeatureDat
    * TRANSCRIPT or ALIGNMENT becasuse they should have been dealt with before
    * this point.
    */
-  if ((cFeatureStyleMode == ZMAPSTYLE_MODE_TRANSCRIPT) || (cFeatureStyleMode == ZMAPSTYLE_MODE_ALIGNMENT))
+  if (    (cFeatureStyleMode == ZMAPSTYLE_MODE_TRANSCRIPT)
+      ||  (cFeatureStyleMode == ZMAPSTYLE_MODE_ALIGNMENT)
+      ||  (cFeatureStyleMode == ZMAPSTYLE_MODE_ASSEMBLY_PATH)
+      )
     {
-      *psError = g_strdup("makeFeatureDefault(); ZMapStyleMode must _not_ be TRANSCRIPT or ALIGNMENT") ;
+      *psError = g_strdup("makeFeatureDefault(); ZMapStyleMode must _not_ be TRANSCRIPT or ALIGNMENT or ASSEMBLY_PATH") ;
       return pFeature ;
     }
 
@@ -3188,15 +3216,20 @@ static gboolean clipFeature(ZMapGFFClipMode cClipMode, ZMapStyleMode cStyleMode 
  * case of these columns.
  *
  * This function selects an appropriate SO term for the columns for which
- * this special treated is required, which is then used as part of the
+ * this special treatment is required, which is then used as part of the
  * correct SO => StyleMode mapping that I've implemented for GFFv3. This
- * seems a bit arbitrary, but is at least expident.
+ * seems a bit arbitrary, but is at least expident. Main advantage is that
+ * the style (in the ZMap written configuration) does not have to be altered
+ * for the affected columns.
  *
  */
 static gboolean hack_SpecialColumnToSOTerm(const char * const sSource, char ** const psType )
 {
+  /*
+   * List of special source names to be treated by this function.
+   */
   static const char *sCol01 = "das_constrained_regions" ;
-  static const char *sCol02 = "next_one_here" ;
+  static const char *sCol02 = "next_one_goes_in_here" ;
   gboolean bResult = FALSE ;
   if (!sSource || !*sSource || !psType || !*psType)
     return bResult ;
