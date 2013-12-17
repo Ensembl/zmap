@@ -982,7 +982,7 @@ static int makeGaps(ZMapFeature composite, ZMapFeature feature, GList **splice_l
   GArray *new_gaps;
   int q_len;
 
-  /* NOTE squashed is set on the features that are not displayed, nottheo one that is */
+  /* NOTE squashed is set on the features that are not displayed, not the one that is */
   if(composite->flags.squashed_start || composite->flags.squashed_end)
     {
       int i;
