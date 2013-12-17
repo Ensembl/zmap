@@ -3229,7 +3229,9 @@ static gboolean hack_SpecialColumnToSOTerm(const char * const sSource, char ** c
    * List of special source names to be treated by this function.
    */
   static const char *sCol01 = "das_constrained_regions" ;
-  static const char *sCol02 = "next_one_goes_in_here" ;
+  static const char *sCol02 = "das_phastCons_17way" ;
+  static const char *sCol03 = "das_phastCons_28way" ;
+  static const char *sCol04 = "das_phastCons_44way" ;
   gboolean bResult = FALSE ;
   if (!sSource || !*sSource || !psType || !*psType)
     return bResult ;
@@ -3241,7 +3243,17 @@ static gboolean hack_SpecialColumnToSOTerm(const char * const sSource, char ** c
     }
   else if (!strcmp(sSource, sCol02))
     {
-      *psType = "transcript" ;
+      *psType = "das_pc17" ;
+      bResult = TRUE ;
+    }
+  else if (!strcmp(sSource, sCol03))
+    {
+      *psType = "das_pc28" ;
+      bResult = TRUE ;
+    }
+  else if (!strcmp(sSource, sCol04))
+    {
+      *psType = "das_pc44" ;
       bResult = TRUE ;
     }
 

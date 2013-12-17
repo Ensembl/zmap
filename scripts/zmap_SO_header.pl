@@ -142,6 +142,7 @@ $available_modes{"ZMAPSTYLE_MODE_ALIGNMENT"}         = 1 ;
 $available_modes{"ZMAPSTYLE_MODE_TRANSCRIPT"}        = 1 ;
 $available_modes{"ZMAPSTYLE_MODE_SEQUENCE"}          = 1 ;
 $available_modes{"ZMAPSTYLE_MODE_ASSEMBLY_PATH"}     = 1 ;
+$available_modes{"ZMAPSTYLE_MODE_GRAPH"}     = 1 ;
 $available_modes{"ZMAPSTYLE_MODE_GLYPH"}             = 1 ;
 
 
