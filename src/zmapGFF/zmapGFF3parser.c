@@ -3232,6 +3232,7 @@ static gboolean hack_SpecialColumnToSOTerm(const char * const sSource, char ** c
   static const char *sCol02 = "das_phastCons_17way" ;
   static const char *sCol03 = "das_phastCons_28way" ;
   static const char *sCol04 = "das_phastCons_44way" ;
+  static const char *sCol05 = "solexa_coverage";
   gboolean bResult = FALSE ;
   if (!sSource || !*sSource || !psType || !*psType)
     return bResult ;
@@ -3254,6 +3255,11 @@ static gboolean hack_SpecialColumnToSOTerm(const char * const sSource, char ** c
   else if (!strcmp(sSource, sCol04))
     {
       *psType = "das_pc44" ;
+      bResult = TRUE ;
+    }
+  else if (!strcmp(sSource, sCol05))
+    {
+      *psType = "solexa_coverage" ;
       bResult = TRUE ;
     }
 
