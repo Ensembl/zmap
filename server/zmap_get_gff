@@ -127,7 +127,7 @@ sub main
         else {
             # AH6	accepted_hits	similarity	644	677	.	+	.	.... stuff
 
-            my @field_list = split /\s+/, $_;
+            my @field_list = split /\t/, $_;
 
             next unless $field_list[0] eq $seq_id;
 
