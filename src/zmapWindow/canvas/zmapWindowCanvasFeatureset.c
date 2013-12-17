@@ -587,9 +587,9 @@ void zMapWindowCanvasFeaturesetPaintFlush(ZMapWindowFeaturesetItem featureset, Z
 
   /* NOTE each feature type has it's own buffer if implemented
    * but  we expect only one type of feature and to handle mull features
-   * (which we do to join up lines in gaps betweeen features)
+   * (which we do to join up lines in gaps between features)
    * we need to use the featureset type instead.
-   * we could code this as featyreset iff feature is null
+   * we could code this as featureset iff feature is null
    * x-ref with PaintPrepare above
    */
 
