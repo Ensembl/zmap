@@ -893,7 +893,7 @@ static gboolean parseSequenceLine(ZMapGFFParser parser_base, char *line)
  *
  * NOTE to handle BAM data that includes # inside attribute strings we take attributes and comments as one section
  * (comments are not processed anywhere)
- * Then we scan attributes and split this on an unquoted # and put the reamainder into commments
+ * Then we scan attributes and split this on an unquoted # and put the remainder into commments
  *
  */
 #define QUOTED_HASH_KILLS_ATTRIBUTES	0	/* set to 1 for previous code */
