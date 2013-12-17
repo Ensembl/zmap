@@ -77,7 +77,7 @@ static GList *densityCalcBins(ZMapWindowFeaturesetItem di) ;
  *
  * ideally this would be implemented in the featureset struct as extended for graphs but we don't
  * extend featuresets as the rest of the code would be more complex.  instead we have a single
- * cache here which works becaure we only ever display one column at a time.  and relies on
+ * cache here which works because we only ever display one column at a time.  and relies on
  * ..PaintFlush() being called
  *
  * If we ever created threads to paint columns then this needs to be moved into CanvasFeatureset
