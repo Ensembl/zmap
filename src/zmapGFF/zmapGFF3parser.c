@@ -95,7 +95,7 @@ static ZMapFeature makeFeatureAssemblyPath(const ZMapGFFFeatureData const, const
 static ZMapFeature makeFeatureDefault(const ZMapGFFFeatureData const, const ZMapFeatureSet const, char **) ;
 static char * makeFeatureTranscriptNamePublic(const ZMapGFFFeatureData const) ;
 static char * makeFeatureAlignmentNamePrivate(const ZMapGFFFeatureData const) ;
-static gboolean clipFeature(ZMapGFFClipMode, ZMapStyleMode ) ;
+static gboolean clipFeatureLogic(const ZMapGFF3Parser const , const ZMapGFFFeatureData const ) ;
 
 /*
  *
@@ -3196,12 +3196,68 @@ static ZMapFeature makeFeatureDefault(const ZMapGFFFeatureData const pFeatureDat
  * Encapsulation of clipping logic. This now has to take into account the StyleMode
  * and other data concerning the feature of interest.
  */
-static gboolean clipFeature(ZMapGFFClipMode cClipMode, ZMapStyleMode cStyleMode )
+static gboolean clipFeatureLogic(const ZMapGFF3Parser const pParser, const ZMapGFFFeatureData const pFeatureData )
 {
-  gboolean bResult = FALSE ;
+  gboolean bIncludeFeature = FALSE ;
+  int iStart = 0,
+    iEnd = 0 ;
+  ZMapStyleMode cFeatureStyleMode = ZMAPSTYLE_MODE_INVALID ;
+
+  /*
+   * Error check.
+   */
+  zMapReturnValIfFail(pParser || pParser->pHeader || pFeatureData, bIncludeFeature) ;
+
+  /*
+   * Get some data about the feature, and error check.
+   */
+  iStart               = zMapGFFFeatureDataGetSta(pFeatureData) ;
+  iEnd                 = zMapGFFFeatureDataGetEnd(pFeatureData) ;
+  cFeatureStyleMode    = zMapSOIDDataGetStyleMode(zMapGFFFeatureDataGetSod(pFeatureData)) ;
+  zMapReturnValIfFail(iStart || iEnd || (cFeatureStyleMode != ZMAPSTYLE_MODE_INVALID), bIncludeFeature ) ;
+
+  /*
+   * Default behaviour is to include the feature.
+   */
+  bIncludeFeature = TRUE ;
+
+  /*
+   * Clipping logic.
+   */
+    if (pParser->clip_mode != GFF_CLIP_NONE)
+    {
+
+      /* Anything outside always excluded. */
+      if (pParser->clip_mode == GFF_CLIP_ALL || pParser->clip_mode == GFF_CLIP_OVERLAP)
+        {
+          if (iStart > pParser->clip_end || iEnd < pParser->clip_start)
+            {
+              bIncludeFeature = FALSE ;
+            }
+        }
+
+      /* Exclude overlaps for CLIP_ALL */
+      if (bIncludeFeature && pParser->clip_mode == GFF_CLIP_ALL)
+        {
+          if (iStart < pParser->clip_start || iEnd > pParser->clip_end)
+            {
+              bIncludeFeature = FALSE ;
+            }
+        }
+
+      /* Clip overlaps for CLIP_OVERLAP */
+      if (bIncludeFeature && pParser->clip_mode == GFF_CLIP_OVERLAP)
+        {
+          if (iStart < pParser->clip_start)
+            iStart = pParser->clip_start ;
+          if (iEnd > pParser->clip_end)
+            iEnd = pParser->clip_end ;
+        }
+
+    } /* if (pParser->clip_mode != ZMAPGFF_CLIP_NONE) */
 
 
-  return bResult ;
+  return bIncludeFeature ;
 }
 
 
@@ -3496,37 +3552,38 @@ static gboolean makeNewFeature_V3(
   /*
    * Clipping logic.
    */
-  if (pParser->clip_mode != GFF_CLIP_NONE)
-    {
+  bIncludeFeature = clipFeatureLogic(pParser, pFeatureData ) ;
+  //if (pParser->clip_mode != GFF_CLIP_NONE)
+  //  {
 
       /* Anything outside always excluded. */
-      if (pParser->clip_mode == GFF_CLIP_ALL || pParser->clip_mode == GFF_CLIP_OVERLAP)
-        {
-          if (iStart > pParser->clip_end || iEnd < pParser->clip_start)
-            {
-              bIncludeFeature = FALSE ;
-            }
-        }
+  //    if (pParser->clip_mode == GFF_CLIP_ALL || pParser->clip_mode == GFF_CLIP_OVERLAP)
+  //      {
+  //        if (iStart > pParser->clip_end || iEnd < pParser->clip_start)
+  //          {
+  //            bIncludeFeature = FALSE ;
+  //          }
+  //      }
 
       /* Exclude overlaps for CLIP_ALL */
-      if (bIncludeFeature && pParser->clip_mode == GFF_CLIP_ALL)
-        {
-          if (iStart < pParser->clip_start || iEnd > pParser->clip_end)
-            {
-              bIncludeFeature = FALSE ;
-            }
-        }
+  //    if (bIncludeFeature && pParser->clip_mode == GFF_CLIP_ALL)
+  //      {
+  //        if (iStart < pParser->clip_start || iEnd > pParser->clip_end)
+  //          {
+  //            bIncludeFeature = FALSE ;
+  //          }
+  //      }
 
       /* Clip overlaps for CLIP_OVERLAP */
-      if (bIncludeFeature && pParser->clip_mode == GFF_CLIP_OVERLAP)
-        {
-          if (iStart < pParser->clip_start)
-            iStart = pParser->clip_start ;
-          if (iEnd > pParser->clip_end)
-            iEnd = pParser->clip_end ;
-        }
+  //    if (bIncludeFeature && pParser->clip_mode == GFF_CLIP_OVERLAP)
+  //      {
+  //        if (iStart < pParser->clip_start)
+  //          iStart = pParser->clip_start ;
+  //        if (iEnd > pParser->clip_end)
+  //          iEnd = pParser->clip_end ;
+  //      }
 
-    } /* if (pParser->clip_mode != ZMAPGFF_CLIP_NONE) */
+  //  } /* if (pParser->clip_mode != ZMAPGFF_CLIP_NONE) */
 
 
   /*
