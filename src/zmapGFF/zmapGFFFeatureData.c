@@ -113,8 +113,8 @@ void zMapGFFFeatureDataDestroy(ZMapGFFFeatureData const pFeatureData)
 gboolean zMapGFFFeatureDataSet(ZMapGFFFeatureData const pFeatureData,
                                const char* const sSequence,
                                const char* const sSource,
-                               unsigned int iStart,
-                               unsigned int iEnd,
+                               int iStart,
+                               int iEnd,
                                gboolean bHasScore,
                                double dScore,
                                ZMapStrand cStrand,
@@ -295,6 +295,30 @@ gboolean zMapGFFFeatureDataGetFlagSod(const ZMapGFFFeatureData const pFeatureDat
 
 
 
+/*
+ * Functions to set some data members.
+ */
+gboolean zMapGFFFeatureDataSetSta(ZMapGFFFeatureData const pFeatureData, int iVal)
+{
+  gboolean bResult = FALSE ;
+
+  pFeatureData->iStart = iVal ;
+
+  bResult = TRUE ;
+  return bResult ;
+}
+
+
+gboolean zMapGFFFeatureDataSetEnd(ZMapGFFFeatureData const pFeatureData, int iVal)
+{
+  gboolean bResult = FALSE ;
+
+  pFeatureData->iEnd = iVal ;
+
+  bResult = TRUE ;
+  return bResult ;
+}
+
 
 
 
@@ -315,14 +339,14 @@ char*         zMapGFFFeatureDataGetSou(const ZMapGFFFeatureData const pFeatureDa
   return pFeatureData->sSource ;
 }
 
-unsigned int  zMapGFFFeatureDataGetSta(const ZMapGFFFeatureData const pFeatureData )
+int           zMapGFFFeatureDataGetSta(const ZMapGFFFeatureData const pFeatureData )
 {
   if (!pFeatureData)
     return 0 ;
   return pFeatureData->iStart ;
 }
 
-unsigned int  zMapGFFFeatureDataGetEnd(const ZMapGFFFeatureData const pFeatureData )
+int           zMapGFFFeatureDataGetEnd(const ZMapGFFFeatureData const pFeatureData )
 {
   if (!pFeatureData)
     return 0 ;

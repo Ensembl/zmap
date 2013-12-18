@@ -95,7 +95,7 @@ static ZMapFeature makeFeatureAssemblyPath(const ZMapGFFFeatureData const, const
 static ZMapFeature makeFeatureDefault(const ZMapGFFFeatureData const, const ZMapFeatureSet const, char **) ;
 static char * makeFeatureTranscriptNamePublic(const ZMapGFFFeatureData const) ;
 static char * makeFeatureAlignmentNamePrivate(const ZMapGFFFeatureData const) ;
-static gboolean clipFeatureLogic(const ZMapGFF3Parser const , const ZMapGFFFeatureData const ) ;
+static gboolean clipFeatureLogic(ZMapGFF3Parser const , const ZMapGFFFeatureData const ) ;
 
 /*
  *
@@ -3195,25 +3195,53 @@ static ZMapFeature makeFeatureDefault(const ZMapGFFFeatureData const pFeatureDat
 /*
  * Encapsulation of clipping logic. This now has to take into account the StyleMode
  * and other data concerning the feature of interest.
+ *
+ * Behaviour is dependent on the relationship between the parser clip boundaries, call them
+ * [clip_start, clip_end] and the feature start and end, call that [iStart, iEnd]. We may
+ * exclude a feature completely or truncate it.
+ *
+ * (1) CLIP_NONE          do nothing
+ * (2) CLIP_ALL          { exclude features _completely_ outside }   _and_   exclude features that overlap boundaries
+ * (3) CLIP_OVERLAP      { parser boundaries                     }   _and_   truncate features that overlap boundaries
+ *
+ *
+ *
  */
-static gboolean clipFeatureLogic(const ZMapGFF3Parser const pParser, const ZMapGFFFeatureData const pFeatureData )
+static gboolean clipFeatureLogic(ZMapGFF3Parser const pParser, const ZMapGFFFeatureData const pFeatureData )
 {
   gboolean bIncludeFeature = FALSE ;
   int iStart = 0,
-    iEnd = 0 ;
+    iEnd = 0,
+    iClipStart = 0,
+    iClipEnd = 0 ;
+  char *sSOType = NULL ;
+  gboolean bFeatureOutside = FALSE,
+    bFeatureOverlapStart = FALSE,
+    bFeatureOverlapEnd = FALSE,
+    bFeatureSpecialTranscript = FALSE ;
+  ZMapSOIDData pSOIDData = NULL ;
   ZMapStyleMode cFeatureStyleMode = ZMAPSTYLE_MODE_INVALID ;
+  ZMapGFFClipMode cClipMode = GFF_CLIP_NONE ;
+  ZMapGFFAttribute *pAttributes = NULL ;
+  unsigned int nAttributes = 0 ;
 
   /*
    * Error check.
    */
   zMapReturnValIfFail(pParser || pParser->pHeader || pFeatureData, bIncludeFeature) ;
+  cClipMode = pParser->clip_mode ;
+  iClipStart = pParser->clip_start ;
+  iClipEnd = pParser->clip_end ;
+  zMapReturnValIfFail(iClipStart || iClipEnd , bIncludeFeature ) ;
 
   /*
    * Get some data about the feature, and error check.
    */
   iStart               = zMapGFFFeatureDataGetSta(pFeatureData) ;
   iEnd                 = zMapGFFFeatureDataGetEnd(pFeatureData) ;
-  cFeatureStyleMode    = zMapSOIDDataGetStyleMode(zMapGFFFeatureDataGetSod(pFeatureData)) ;
+  pSOIDData            = zMapGFFFeatureDataGetSod(pFeatureData) ;
+  cFeatureStyleMode    = zMapSOIDDataGetStyleMode(pSOIDData) ;
+  sSOType              = zMapSOIDDataGetName(pSOIDData) ;
   zMapReturnValIfFail(iStart || iEnd || (cFeatureStyleMode != ZMAPSTYLE_MODE_INVALID), bIncludeFeature ) ;
 
   /*
@@ -3222,39 +3250,56 @@ static gboolean clipFeatureLogic(const ZMapGFF3Parser const pParser, const ZMapG
   bIncludeFeature = TRUE ;
 
   /*
+   * Special treatment for a feature with ID attribute and transcript type; not to be
+   * clipped, since we want to see the exons that _are_ within the clip boundaries.
+   */
+  nAttributes          = zMapGFFFeatureDataGetNat(pFeatureData) ;
+  pAttributes          = zMapGFFFeatureDataGetAts(pFeatureData) ;
+  bFeatureSpecialTranscript = (!strcmp(sSOType, "transcript")
+                            && zMapGFFAttributeListContains(pAttributes, nAttributes, "ID")) ;
+
+  /*
    * Clipping logic.
    */
-    if (pParser->clip_mode != GFF_CLIP_NONE)
+  if (cClipMode == GFF_CLIP_NONE)
     {
 
-      /* Anything outside always excluded. */
-      if (pParser->clip_mode == GFF_CLIP_ALL || pParser->clip_mode == GFF_CLIP_OVERLAP)
+    }
+  else
+    {
+
+      /* Exclude feature completely outisde parser boundaries. */
+      bFeatureOutside = (iStart > iClipEnd) || (iEnd < iClipStart) ;
+      if (bFeatureOutside)
+          bIncludeFeature = FALSE ;
+
+      /* Does the feature overlap the start and end of parser boundaries? */
+      bFeatureOverlapStart = (iStart < iClipStart) ;
+      bFeatureOverlapEnd = (iEnd > iClipEnd) ;
+
+      /* Exclude feature that overlaps the parser boundaries. */
+      if (bIncludeFeature && (cClipMode == GFF_CLIP_ALL) && !bFeatureSpecialTranscript)
         {
-          if (iStart > pParser->clip_end || iEnd < pParser->clip_start)
-            {
+          if (bFeatureOverlapStart || bFeatureOverlapEnd )
               bIncludeFeature = FALSE ;
+        }
+
+      /* Truncate a feature that overlaps the parser boundaries. */
+      if (bIncludeFeature && cClipMode == GFF_CLIP_OVERLAP)
+        {
+          if (bFeatureOverlapStart)
+            {
+              iStart = iClipStart ;
+              zMapGFFFeatureDataSetSta(pFeatureData, iStart) ;
+            }
+          if (bFeatureOverlapEnd)
+            {
+              iEnd = iClipEnd ;
+              zMapGFFFeatureDataSetEnd(pFeatureData, iEnd) ;
             }
         }
 
-      /* Exclude overlaps for CLIP_ALL */
-      if (bIncludeFeature && pParser->clip_mode == GFF_CLIP_ALL)
-        {
-          if (iStart < pParser->clip_start || iEnd > pParser->clip_end)
-            {
-              bIncludeFeature = FALSE ;
-            }
-        }
-
-      /* Clip overlaps for CLIP_OVERLAP */
-      if (bIncludeFeature && pParser->clip_mode == GFF_CLIP_OVERLAP)
-        {
-          if (iStart < pParser->clip_start)
-            iStart = pParser->clip_start ;
-          if (iEnd > pParser->clip_end)
-            iEnd = pParser->clip_end ;
-        }
-
-    } /* if (pParser->clip_mode != ZMAPGFF_CLIP_NONE) */
+    }
 
 
   return bIncludeFeature ;

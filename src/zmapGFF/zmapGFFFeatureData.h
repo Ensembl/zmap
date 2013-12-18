@@ -60,8 +60,8 @@ typedef struct ZMapGFFFeatureDataStruct_
   {
     char * sSequence ;
     char * sSource ;
-    unsigned int iStart ;
-    unsigned int iEnd ;
+    int iStart ;
+    int iEnd ;
     double dScore ;
     ZMapStrand cStrand ;
     ZMapPhase cPhase ;
@@ -110,12 +110,18 @@ gboolean zMapGFFFeatureDataGetFlagPat(const ZMapGFFFeatureData const) ;
 gboolean zMapGFFFeatureDataGetFlagSod(const ZMapGFFFeatureData const) ;
 
 /*
+ * Set some data members of the object.
+ */
+gboolean zMapGFFFeatureDataSetSta(ZMapGFFFeatureData const, int) ;
+gboolean zMapGFFFeatureDataSetEnd(ZMapGFFFeatureData const, int) ;
+
+/*
  * Return various data elements of the object.
  */
 char*                      zMapGFFFeatureDataGetSeq(const ZMapGFFFeatureData const) ;
 char*                      zMapGFFFeatureDataGetSou(const ZMapGFFFeatureData const) ;
-unsigned int               zMapGFFFeatureDataGetSta(const ZMapGFFFeatureData const) ;
-unsigned int               zMapGFFFeatureDataGetEnd(const ZMapGFFFeatureData const) ;
+int                        zMapGFFFeatureDataGetSta(const ZMapGFFFeatureData const) ;
+int                        zMapGFFFeatureDataGetEnd(const ZMapGFFFeatureData const) ;
 double                     zMapGFFFeatureDataGetSco(const ZMapGFFFeatureData const) ;
 ZMapStrand                 zMapGFFFeatureDataGetStr(const ZMapGFFFeatureData const) ;
 ZMapPhase                  zMapGFFFeatureDataGetPha(const ZMapGFFFeatureData const) ;
@@ -130,8 +136,8 @@ const ZMapSOIDData         zMapGFFFeatureDataGetSod(const ZMapGFFFeatureData con
 gboolean zMapGFFFeatureDataSet(ZMapGFFFeatureData const,
                                const char * const,
                                const char * const,
-                               unsigned int,
-                               unsigned int,
+                               int,
+                               int,
                                gboolean,
                                double,
                                ZMapStrand,
