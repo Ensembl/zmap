@@ -1252,7 +1252,7 @@ gboolean zMapAttParseURL(const ZMapGFFAttribute const pAttribute, char** const s
   if (!pAttribute)
     return bResult ;
   const char * const sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
-  if (strcmp("URL", zMapGFFAttributeGetNamestring(pAttribute)))
+  if (strcmp("url", zMapGFFAttributeGetNamestring(pAttribute)))
     {
       zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
       return bResult ;
