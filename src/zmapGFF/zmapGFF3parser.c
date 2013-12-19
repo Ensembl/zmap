@@ -2578,7 +2578,8 @@ static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const pFeature
   char * sSOType = NULL,
     *sFeatureName = NULL,
     *sFeatureNameID = NULL,
-    *sSequence = NULL ;
+    *sSequence = NULL,
+    *sSource = NULL ;
   double dScore = 0.0 ;
   gboolean bHasAttributeID = FALSE,
     bHasAttributeParent = FALSE,
@@ -2612,6 +2613,7 @@ static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const pFeature
   *pbNewFeatureCreated = FALSE ;
 
   sSequence            = zMapGFFFeatureDataGetSeq(pFeatureData) ;
+  sSource              = zMapGFFFeatureDataGetSou(pFeatureData) ;
   iStart               = zMapGFFFeatureDataGetSta(pFeatureData) ;
   iEnd                 = zMapGFFFeatureDataGetEnd(pFeatureData) ;
   pSOIDData            = zMapGFFFeatureDataGetSod(pFeatureData) ;
@@ -2730,6 +2732,8 @@ static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const pFeature
                                      (int)gqThisID, sFeatureName) ;
         }
 
+      zMapFeatureAddText(pFeature, g_quark_from_string(sSource), sSource, NULL) ;
+
     }
   else if ((cCase == SECOND) && bFeaturePresent)
     {
@@ -2787,6 +2791,8 @@ static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const pFeature
                                      (int)gqThisID, sFeatureName) ;
         }
 
+      zMapFeatureAddText(pFeature, g_quark_from_string(sSource), sSource, NULL) ;
+
       /*
        * Now add an exon to it.
        */
@@ -2840,6 +2846,7 @@ static ZMapFeature makeFeatureAlignment(const ZMapGFFFeatureData const pFeatureD
     iTargetEnd = 0,
     iLength = 0 ;
   char *sSequence = NULL,
+    *sSource = NULL,
     *sSOType = NULL,
     *sTargetID = NULL,
     *sFeatureName = NULL,
@@ -2871,6 +2878,7 @@ static ZMapFeature makeFeatureAlignment(const ZMapGFFFeatureData const pFeatureD
     return pFeature ;
 
   sSequence            = zMapGFFFeatureDataGetSeq(pFeatureData) ;
+  sSource              = zMapGFFFeatureDataGetSou(pFeatureData) ;
   iStart               = zMapGFFFeatureDataGetSta(pFeatureData) ;
   iEnd                 = zMapGFFFeatureDataGetEnd(pFeatureData) ;
   pSOIDData            = zMapGFFFeatureDataGetSod(pFeatureData) ;
@@ -2989,7 +2997,7 @@ static ZMapFeature makeFeatureAlignment(const ZMapGFFFeatureData const pFeatureD
        */
       bDataAdded = zMapFeatureAddAlignmentData(pFeature, gqTargetID, dPercentID,
                                                iTargetStart, iTargetEnd, cHomolType,
-                                               iLength, cTargetStrand, cPhase, pGaps,
+                                               iLength, cTargetStrand, ZMAPPHASE_0, pGaps,
                                                zMapStyleGetWithinAlignError(pFeatureSet->style), FALSE, NULL )  ;
       if (bDataAdded)
         {
@@ -3000,6 +3008,8 @@ static ZMapFeature makeFeatureAlignment(const ZMapGFFFeatureData const pFeatureD
           *psError = g_strdup_printf("makeFeatureAlignment(); feature with ID = %i and name = '%s' could not be added",
                                      (int)pFeature->unique_id, sFeatureName) ;
         }
+
+      zMapFeatureAddText(pFeature, g_quark_from_string(sSource), sSource, NULL) ;
 
     }
 
@@ -3167,6 +3177,8 @@ static ZMapFeature makeFeatureDefault(const ZMapGFFFeatureData const pFeatureDat
       *psError = g_strdup_printf("makeFeatureDefault(); feature with ID = %i and name = '%s' could not be added",
                                      (int)pFeature->unique_id, sFeatureName) ;
     }
+
+  zMapFeatureAddText(pFeature, g_quark_from_string(sSource), sSource, NULL) ;
 
 
 #ifdef LOCAL_DEBUG_CODE_DEFAULT
