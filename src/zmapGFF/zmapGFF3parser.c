@@ -2945,7 +2945,7 @@ static ZMapFeature makeFeatureAlignment(const ZMapGFFFeatureData const pFeatureD
         }
 
       sFeatureName = g_strdup_printf("%s", sTargetID ) ;
-      sFeatureNameID = makeFeatureAlignmentNamePrivate(pFeatureData) ; ;
+      sFeatureNameID = zMapFeatureCreateName(cFeatureStyleMode, sFeatureName, cStrand, iStart, iEnd, iTargetStart, iTargetEnd) ;
 
       bDataAdded = zMapFeatureAddStandardData(pFeature, sFeatureNameID, sFeatureName, sSequence, sSOType,
                                            cFeatureStyleMode, &pFeatureSet->style,
