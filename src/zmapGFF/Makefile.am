@@ -21,6 +21,7 @@ zmapGFFFeatureData.h \
 zmapGFFFeatureData.c \
 zmapGFFHeader.h \
 zmapGFFHeader.c \
+zmapGFFStringUtils.h \
 zmapGFFStringUtils.c \
 zmapGFFUtils.c \
 zmapMLF.c \
