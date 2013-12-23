@@ -1,6 +1,6 @@
-/*  File: zmapWindowContainerUtils_P.h
- *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+/*  File: zmapMLF_P.h
+ *  Author: Steve Miller (sm23@sanger.ac.uk)
+ *  Copyright (c) 2006-2013: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -18,27 +18,33 @@
  * or see the on-line version at http://www.gnu.org/copyleft/gpl.txt
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
- * originally written by:
- *
- *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ * originated by
+ *     	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk
  *
- * Description:
+ * Description: Header file for multi-line feature data structure. This
+ * is the private header, so simply contains the details of the data
+ * structure itself. The public header with the function interface is
+ * the file '/src/include/ZMap/zmapMLF.h'.
  *
- * Exported functions: See XXXXXXXXXXXXX.h
  *-------------------------------------------------------------------
  */
-#ifndef ZMAP_WINDOW_CONTAINER_UTILS_P_H
-#define ZMAP_WINDOW_CONTAINER_UTILS_P_H
 
-#include <ZMap/zmapBase.h>
-#include <zmapWindowContainerUtils.h>
+#ifndef ZMAP_MLF_P_H
+#define ZMAP_MLF_P_H
 
-
-/* enums, macros etc... */
-
+#include <string.h>
+#include <ZMap/zmapGFF.h>
+#include <ZMap/zmapMLF.h>
 
 
 
-#endif /* !ZMAP_WINDOW_CONTAINER_UTILS_P_H */
+typedef struct ZMapMLFStruct_
+  {
+    GHashTable *pIDTable ;
+  } ZMapMLFStruct ;
+
+
+#endif

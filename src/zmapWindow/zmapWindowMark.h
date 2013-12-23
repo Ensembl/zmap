@@ -1,5 +1,5 @@
 /*  File: zmapWindowMark.h
- *  Author: Roy Storey (roy@sanger.ac.uk)
+ *  Author: Roy Storey (rds@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
@@ -34,6 +34,9 @@
 
 #include <ZMap/zmapWindow.h>
 #include <zmapWindowContainerGroup.h>
+
+
+
 
 /* ZMapWindowMark */
 typedef struct _ZMapWindowMarkStruct *ZMapWindowMark ;

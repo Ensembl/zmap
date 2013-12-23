@@ -126,7 +126,7 @@
  *  <th>"show_mainwindow"</th>
  *  <td>Boolean</td>
  *  <td>true</td>
- *  <td>If false then the intial main zmap window is not shown, this is useful when zmap is being
+ *  <td>If false then the initial main zmap window is not shown, this is useful when zmap is being
  *      controlled by another application and its not necessary for the user to directly open
  *      feature windows themselves.</td>
  *  </tr>

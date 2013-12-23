@@ -1,7 +1,7 @@
 ================================================================================   
 The ZMap window
 
-The code that creates a single scrolled window with the sequence/feature view
+The code that creates a single scrolled window with the sequence/feature "view"
 inside it. There may be a multiple number of these windows within a single
 "zMapView".
 

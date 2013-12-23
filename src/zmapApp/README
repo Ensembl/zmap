@@ -2,4 +2,4 @@
 ZMapApp
 
 The code that forms the "main" of the zmap client application, it constructs
-the intial zmap window and creates/destroys individual ZMaps.
+the initial zmap window and creates/destroys individual ZMaps.

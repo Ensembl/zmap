@@ -119,7 +119,7 @@ The use of graphics primitives in a column such as the Scale Bar maintains this 
 <h4>Scale Bar Foo Canvas environment</h4>
 <p>The Scale Bar is drawn in two different contexts a) in a pane next the window on its own in its own canvas ad b) in the navigator in a ZMapWindowContainerFeatureSet.  Regardless of theis it consists of two foo canvas groups, one for text and one for ticks, which are then oriented left and right.
 </p>
-<p>Theoretically the ticks and text could be swapped round but this would require correct horizontal justifcation and therefore would be more complicated that re-positioning the groups.  To avoid having the extra complexity of positioning CanvasFeaturesets we propose to display ticks and text in one CanvasFeatureset, which will require pre-calculation of x-offsets to prevent the need to bump ticks and text after intial display.  Note also that as we implement text and ticks as generic simple graphics features we cannot use a CanvasFeatureset zoom function to operate any such bump operation.
+<p>Theoretically the ticks and text could be swapped round but this would require correct horizontal justifcation and therefore would be more complicated that re-positioning the groups.  To avoid having the extra complexity of positioning CanvasFeaturesets we propose to display ticks and text in one CanvasFeatureset, which will require pre-calculation of x-offsets to prevent the need to bump ticks and text after initial display.  Note also that as we implement text and ticks as generic simple graphics features we cannot use a CanvasFeatureset zoom function to operate any such bump operation.
 </p>
 
 

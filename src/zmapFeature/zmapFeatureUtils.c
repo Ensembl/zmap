@@ -1,4 +1,4 @@
-/*  File: zmapFeature.c
+/*  File: zmapFeatureUtils.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
@@ -39,8 +39,12 @@
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapGLibUtils.h>
 
+/* presence of this header suggests that there are routines here that need to be
+ * be moved into a separate feature "load display" file */
+#include <ZMap/zmapFeatureLoadDisplay.h>
 
-typedef struct
+
+typedef struct SimpleParent2ChildDataStructType
 {
   ZMapMapBlock map;
   int limit_start;
@@ -105,6 +109,7 @@ gboolean zMapFeatureIsValid(ZMapFeatureAny any_feature)
 
   return result ;
 }
+
 #ifdef NOT_YET
 static int get_feature_allowed_types(ZMapStyleMode mode)
 {
@@ -1186,7 +1191,7 @@ void zMapFeatureTranscriptIntronForeach(ZMapFeature feature, GFunc function, gpo
 
   introns = feature->feature.transcript.introns;
 
-  if(introns->len > 1)
+  if (introns->len > 1)
     {
       ZMapSpan first, last;
       first = &(g_array_index(introns, ZMapSpanStruct, 0));
@@ -1197,8 +1202,10 @@ void zMapFeatureTranscriptIntronForeach(ZMapFeature feature, GFunc function, gpo
         forward = FALSE;
     }
 
-  if(forward)
-    end = introns->len;
+  if (forward)
+    {
+      end = introns->len;
+    }
   else
     {
       multiplier = -1;
@@ -1206,7 +1213,7 @@ void zMapFeatureTranscriptIntronForeach(ZMapFeature feature, GFunc function, gpo
       end   = 1;
     }
 
-  for(i = start; i < end; i++)
+  for (i = start; i < end; i++)
     {
       ZMapSpan intron_span;
 
@@ -1791,8 +1798,12 @@ static gboolean calcExonPhase(ZMapFeature feature, int exon_index,
 
 
 /* Compares span objects (e.g. introns or exons) and returns whether
- * they are before or after each other according to their coords. */
-static int span_compare (gconstpointer a, gconstpointer b)
+ * they are before or after each other according to their coords.
+ * 
+ * Note that this assumes that span objects do not overlap.
+ * 
+ *  */
+static int span_compare(gconstpointer a, gconstpointer b)
 {
   int result = 0 ;
   ZMapSpan sa = (ZMapSpan)a ;

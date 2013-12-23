@@ -1,5 +1,5 @@
 /*  File: zmapWindowCanvasTranscript.c
- *  Author: malcolm hinsley (mh17@sanger.ac.uk)
+ *  Author: Malcolm Hinsley (mh17@sanger.ac.uk)
  *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can refeaturesetstribute it and/or
@@ -34,11 +34,10 @@
 
 #include <math.h>
 #include <string.h>
+
 #include <ZMap/zmapFeature.h>
 #include <zmapWindowCanvasFeatureset_I.h>
 #include <zmapWindowCanvasTranscript_I.h>
-
-
 
 
 
@@ -202,7 +201,7 @@ static ZMapWindowCanvasFeature zMapWindowCanvasTranscriptAddFeature(ZMapWindowFe
       ne = exons->len ;
 
       if ((introns = feature->feature.transcript.introns))
-	ni = introns->len;
+	ni = introns->len ;
 
 #if USE_DOTTED_LINES
       if(feature->feature.transcript.flags.start_not_found)	/* add dotted line fading away into the distance */
@@ -242,9 +241,10 @@ static ZMapWindowCanvasFeature zMapWindowCanvasTranscriptAddFeature(ZMapWindowFe
 	  tr->sub_type = TRANSCRIPT_EXON;
 	  tr->index = i;
 
-	  if(i < ni)
+	  if (i < ni)
 	    {
-	      intron = &g_array_index(introns,ZMapSpanStruct,i);
+	      intron = &g_array_index(introns, ZMapSpanStruct, i) ;
+
 	      fy1 = y1 - feature->x1 + intron->x1;
 	      fy2 = y1 - feature->x1 + intron->x2;
 

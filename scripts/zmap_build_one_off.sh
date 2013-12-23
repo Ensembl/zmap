@@ -16,10 +16,23 @@
 
 RC=0
 
-
+BRANCH='develop'
+SEQTOOLS_DIR='DEVELOPMENT'
 BUILD_PREFIX='ONE_OFF'
 ERROR_RECIPIENT='edgrif@sanger.ac.uk'
 
-./build_run.sh -a $ERROR_RECIPIENT -d -g $BUILD_PREFIX || RC=1
+# Two optional args: 1st specifies the FULL branch name and the 2nd is
+# the symlink id of the seqtools build to use (excluding the "BUILD."
+# prefix e.g. "RELEASE" or "FEATURE.sqlite").
+#
+if (( $# > 0 )) ; then
+  BRANCH=$1
+fi
+
+if (( $# > 1 )) ; then
+  SEQTOOLS_DIR=$2
+fi
+
+./build_run.sh -a $ERROR_RECIPIENT -b $BRANCH -d -g $SEQTOOLS_BUILD $BUILD_PREFIX || RC=1
 
 exit $RC

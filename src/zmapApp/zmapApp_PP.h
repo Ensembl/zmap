@@ -1,4 +1,4 @@
-/*  File: zmapWindowContainers_I.h
+/*  File: zmapApp_PP.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
@@ -18,28 +18,27 @@
  * or see the on-line version at http://www.gnu.org/copyleft/gpl.txt
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
- * originally written by:
+ * and was written by
+ *     Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *       Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *  Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ * Description: Private header for top level zmap application. This 
+ * header is for use in zmapAppmain_c.cc only. 
  *
- * Description:
- *
- * Exported functions: See XXXXXXXXXXXXX.h
  *-------------------------------------------------------------------
  */
-#ifndef __ZMAP_WINDOW_CONTAINERS_I_H__
-#define __ZMAP_WINDOW_CONTAINERS_I_H__
+#ifndef ZMAP_APP_PP_H
+#define ZMAP_APP_PP_H
 
-#include <zmapWindowContainerGroup_I.h>
+#ifdef __cplusplus
+#define EXTERN_C extern "C"
+#else
+#define EXTERN_C
+#endif
 
-//#include <zmapWindowContainerChildren_I.h>
+  EXTERN_C int zmapMainMakeAppWindow(int argc, char *argv[]) ;
 
-#include <zmapWindowContainerContext_I.h>
-#include <zmapWindowContainerAlignment_I.h>
-#include <zmapWindowContainerBlock_I.h>
-//#include <zmapWindowContainerStrand_I.h>
-#include <zmapWindowContainerFeatureSet_I.h>
+#undef EXTERN_C
 
-#endif /* ! __ZMAP_WINDOW_CONTAINERS_I_H__ */
+#endif /* !ZMAP_APP_PP_H */

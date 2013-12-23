@@ -43,6 +43,7 @@
 #include <ZMap/zmapConfigStrings.h>
 #include <ZMap/zmapConfigStanzaStructs.h>
 #include <ZMap/zmapFeature.h>
+#include <ZMap/zmapFeatureLoadDisplay.h>
 #include <zmapConfigIni_P.h>
 
 
@@ -410,9 +411,6 @@ gboolean zMapConfigIniGetStylesFromFile(char *config_file, char *styles_list, ch
             continue;
 
   	  name = curr_config_style->data.str;
-
-	  //if (g_ascii_strcasecmp(name, "retained_intron") == 0)
-	  //  printf("found it\n") ;
 
 	  if(!g_ascii_strncasecmp(curr_config_style->data.str,"style-",6))
 	    name += 6;
@@ -1596,11 +1594,8 @@ static gpointer create_config_style()
       { ZMAPSTYLE_PROPERTY_GLYPH_NAME_3_REV, FALSE, ZMAPCONF_STR, {FALSE},
 	ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)g_quark_from_string} },
       { ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_3_REV,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_NONE, {NULL} },
-
       { ZMAPSTYLE_PROPERTY_GLYPH_ALT_COLOURS,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2COLOUR, {NULL} },
-
       { ZMAPSTYLE_PROPERTY_GLYPH_THRESHOLD,   FALSE, ZMAPCONF_INT, {FALSE}, ZMAPCONV_NONE, {NULL} },
-
       { ZMAPSTYLE_PROPERTY_GLYPH_STRAND,   FALSE, ZMAPCONF_STR, {FALSE},
 	ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleStr2GlyphStrand} },
       { ZMAPSTYLE_PROPERTY_GLYPH_ALIGN,   FALSE, ZMAPCONF_STR, {FALSE},
@@ -1615,7 +1610,8 @@ static gpointer create_config_style()
       { ZMAPSTYLE_PROPERTY_GRAPH_DENSITY_FIXED,   FALSE, ZMAPCONF_BOOLEAN, {FALSE}, ZMAPCONV_NONE, {NULL} },
       { ZMAPSTYLE_PROPERTY_GRAPH_DENSITY_MIN_BIN,   FALSE, ZMAPCONF_INT, {FALSE}, ZMAPCONV_NONE, {NULL} },
       { ZMAPSTYLE_PROPERTY_GRAPH_DENSITY_STAGGER,   FALSE, ZMAPCONF_INT, {FALSE}, ZMAPCONV_NONE, {NULL} },
-
+      { ZMAPSTYLE_PROPERTY_GRAPH_FILL,   FALSE, ZMAPCONF_BOOLEAN, {FALSE}, ZMAPCONV_NONE, {NULL} },
+      { ZMAPSTYLE_PROPERTY_GRAPH_COLOURS,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2COLOUR, {NULL} },
 
       { ZMAPSTYLE_PROPERTY_ALIGNMENT_PARSE_GAPS,   FALSE, ZMAPCONF_BOOLEAN, {FALSE}, ZMAPCONV_NONE, {NULL} },
       { ZMAPSTYLE_PROPERTY_ALIGNMENT_SHOW_GAPS,   FALSE, ZMAPCONF_BOOLEAN, {FALSE}, ZMAPCONV_NONE, {NULL} },
@@ -1775,7 +1771,8 @@ static ZMapConfigIniContextKeyEntry get_style_group_data(char **stanza_name, cha
     { ZMAPSTYLE_PROPERTY_GRAPH_DENSITY_FIXED,   G_TYPE_BOOLEAN, style_set_property, FALSE },
     { ZMAPSTYLE_PROPERTY_GRAPH_DENSITY_MIN_BIN,   G_TYPE_INT, style_set_property, FALSE },
     { ZMAPSTYLE_PROPERTY_GRAPH_DENSITY_STAGGER,   G_TYPE_INT, style_set_property, FALSE },
-
+    { ZMAPSTYLE_PROPERTY_GRAPH_FILL,   G_TYPE_BOOLEAN, style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_GRAPH_COLOURS,   G_TYPE_STRING, style_set_property, FALSE },
 
     { ZMAPSTYLE_PROPERTY_ALIGNMENT_PARSE_GAPS,   G_TYPE_BOOLEAN, style_set_property, FALSE },
     { ZMAPSTYLE_PROPERTY_ALIGNMENT_SHOW_GAPS,   G_TYPE_BOOLEAN, style_set_property, FALSE },

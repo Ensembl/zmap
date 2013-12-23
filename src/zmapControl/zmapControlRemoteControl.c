@@ -1,4 +1,4 @@
-/*  File: zmapControlRemote.c
+/*  File: zmapControlRemoteControl.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2012: Genome Research Ltd.
  *-------------------------------------------------------------------

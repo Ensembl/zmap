@@ -22,11 +22,13 @@ ZMap/zmapDraw.h \
 ZMap/zmapEnum.h \
 ZMap/zmapFASTA.h \
 ZMap/zmapFeature.h \
+ZMap/zmapFeatureLoadDisplay.h \
 ZMap/zmapGFF.h \
 ZMap/zmapGLibUtils.h \
 ZMap/zmapGUITreeView.h \
 ZMap/zmapIO.h \
 ZMap/zmapManager.h \
+ZMap/zmapMLF.h \
 ZMap/zmapNavigatorStippleG.xbm \
 ZMap/zmapPeptide.h \
 ZMap/zmapReadLine.h \
@@ -37,6 +39,7 @@ ZMap/zmapSeqBitmap.h \
 ZMap/zmapSequence.h \
 ZMap/zmapServerProtocol.h \
 ZMap/zmapSO.h \
+ZMap/zmapSOParser.h \
 ZMap/zmapSkipList.h\
 ZMap/zmapString.h \
 ZMap/zmapStyle.h \

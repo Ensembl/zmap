@@ -243,7 +243,7 @@ void zmapControlWindowSetStatus(ZMap zmap)
 	      load_status_str = g_string_new("Selected View\n\n") ;
 
 	      if (sources_loading)
-		g_string_append_printf(load_status_str, "Columns still loading:\n %s\n", sources_loading) ;
+		g_string_append_printf(load_status_str, "Columns still loading:\n %s\n\n", sources_loading) ;
 
 	      if (sources_failing)
 		g_string_append_printf(load_status_str, "Columns failed to load:\n %s", sources_failing) ;

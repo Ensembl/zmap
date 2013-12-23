@@ -40,11 +40,10 @@
 
 #include <zmapWindow_P.h>
 #include <zmapWindowContainerUtils.h>
-//#include <zmapWindowItemFactory.h>
 #include <zmapWindowContainerFeatureSet_I.h>
-//#include <zmapWindowCanvas.h>
 
-//#include <ZMap/zmapGFF.h>     // for GFFSet struct for column mapping
+
+
 #include <zmapWindowCanvasFeatureset_I.h>		// for debug only
 
 
@@ -280,7 +279,7 @@ void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context,
   if(!window->scroll_initialised)
     {
       /* MH17: draw features does not change the zoom factor, so we only set if first time round
-       * re-using scroll intialised flag but that should be safe
+       * re-using scroll initialised flag but that should be safe
        */
       zmapWindowSetPixelxy(window, 1.0, zMapWindowGetZoomFactor(window)) ;
 
@@ -1197,12 +1196,12 @@ static FooCanvasGroup *find_or_create_column(ZMapCanvasData  canvas_data,
 
       tmp_column = FOO_CANVAS_GROUP(existing_column_item) ;
     }
-  else if ((existing_column_item = zMapFindCanvasColumn(window->feature_root_group,
-							alignment->unique_id,
-							block->unique_id,
-							column_id,
-							column_strand,
-							column_frame)))
+  else if ((existing_column_item = zmapWindowContainerFeatureSetFindCanvasColumn(window->feature_root_group,
+                                                                                 alignment->unique_id,
+                                                                                 block->unique_id,
+                                                                                 column_id,
+                                                                                 column_strand,
+                                                                                 column_frame)))
     {
       /* if the column exists but this feature_set is not in it (col has another featureset)
        * then we need to add this feature_set to the hash. */
@@ -2269,10 +2268,17 @@ static FooCanvasGroup *createColumnFull(ZMapWindowContainerFeatures parent_group
 
       if(feature_set->style && zMapStyleDisplayInSeparator(feature_set->style))
 	{
+          FooCanvasItem *feature_set ;
+
+
 	  /* fixed width, colour already set to yellow, but need start and end as there are no features */
-	  zmapWindowDrawSetGroupBackground(window, container,
-					   start, end, style->width,
-					   ZMAP_CANVAS_LAYER_SEPARATOR_BACKGROUND, colour, NULL);
+	  feature_set  = zmapWindowDrawSetGroupBackground(window, container,
+                                                          start, end, style->width,
+                                                          ZMAP_CANVAS_LAYER_SEPARATOR_BACKGROUND, colour, NULL) ;
+
+          
+          window->separator_feature_set = ZMAP_WINDOW_FEATURESET_ITEM(feature_set) ;
+
 	}
       else
 	{

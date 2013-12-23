@@ -73,6 +73,8 @@ typedef ColinearityType (*ZMapFeatureCompareFunc)(ZMapFeature feature_a, ZMapFea
 
 /* Public funcs */
 GType zmapWindowContainerFeatureSetGetType(void);
+FooCanvasItem *zmapWindowContainerFeatureSetFindCanvasColumn(ZMapWindowContainerGroup group,
+                                                             GQuark align, GQuark block, GQuark set, ZMapStrand strand, ZMapFrame frame) ;
 ZMapWindowContainerFeatureSet zmapWindowContainerFeatureSetAugment(ZMapWindowContainerFeatureSet container_set,
 								   ZMapWindow window,
 								   GQuark     align_id,

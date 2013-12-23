@@ -32,6 +32,8 @@
 #ifndef PIPE_SERVER_P_H
 #define PIPE_SERVER_P_H
 
+#include <zmapServerPrototype.h>
+
 
 #define PIPE_PROTOCOL_STR "GFF Pipe"			    /* For error messages. */
 #define FILE_PROTOCOL_STR "GFF File"
@@ -40,7 +42,7 @@
 
 /* Helpful to see script args in all error messages so add these to standard messages. */
 #define ZMAPPIPESERVER_LOG(LOGTYPE, PROTOCOL, HOST, ARGS, FORMAT, ...) \
-  ZMAPSERVER_LOG(LOGTYPE, PROTOCOL, HOST, ", script_args: \"%s\" ", FORMAT, __VA_ARGS__)
+  ZMAPSERVER_LOG(LOGTYPE, PROTOCOL, HOST, ", script_args: \"%s\", " FORMAT, ARGS, __VA_ARGS__)
 
 
 
@@ -50,6 +52,7 @@ typedef struct _PipeServerStruct
 {
   gchar *config_file ;
 
+  char *url ;                                                 /* Full url string. */
   char *protocol ;					    /* GFF Pipe or File */
   ZMapURLScheme scheme ;				    /* pipe:// or file:// */
 

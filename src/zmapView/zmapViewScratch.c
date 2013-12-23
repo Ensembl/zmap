@@ -1,5 +1,4 @@
-/*  Last edited: 30 Oct 16"27 2012 (gb10) */
-/*  File: zmapViewScratchColumn.c
+/*  File: zmapViewScratch.c
  *  Author: Gemma Barson (gb10@sanger.ac.uk)
  *  Copyright (c) 2012: Genome Research Ltd.
  *-------------------------------------------------------------------
@@ -38,8 +37,11 @@
 #include <ZMap/zmap.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapFeature.h>
-#include <zmapView_P.h>
 #include <ZMap/zmapGLibUtils.h>
+#include <zmapView_P.h>
+
+
+
 
 
 #define SCRATCH_FEATURE_NAME "temp_feature"
@@ -516,8 +518,10 @@ static gboolean scratchMergeFeature(ScratchMergeData merge_data)
     {
       /* Just merge the clicked subfeature */
       ZMapFeatureSubPartSpan sub_feature = NULL;
-      zMapWindowItemGetInterval(merge_feature->src_item, merge_feature->world_x, merge_feature->world_y, &sub_feature);
-      
+
+      zMapWindowCanvasItemGetInterval(merge_feature->src_item,
+				      merge_feature->world_x, merge_feature->world_y, &sub_feature) ;
+
       if (sub_feature)
         {
           if (sub_feature->start == sub_feature->end)

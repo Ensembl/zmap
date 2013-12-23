@@ -1,4 +1,4 @@
-/*  File: zmapControlImport.h
+/*  File: zmapControlImportFile.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2012: Genome Research Ltd.
  *-------------------------------------------------------------------
@@ -32,7 +32,7 @@
 #ifndef ZMAP_CONTROL_IMPORT_H
 #define ZMAP_CONTROL_IMPORT_H
 
-#include <ZMap/zmapFeature.h>
+#include <ZMap/zmapFeatureLoadDisplay.h>
 
 typedef void (*ZMapControlImportFileCB)(gpointer user_data) ;
 

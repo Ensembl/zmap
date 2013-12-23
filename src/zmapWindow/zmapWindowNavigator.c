@@ -1,4 +1,4 @@
-/*  File: zmapWindowNav.c
+/*  File: zmapWindowNavigator.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
@@ -29,7 +29,7 @@
  *
  * Exported functions: See ZMap/zmapNavigator.h
  *
- *------------------------------------------------------------- - navigate->full_span.x1 + 1------
+ *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmap.h>
@@ -770,11 +770,11 @@ static ZMapFeatureContextExecuteStatus drawContext(GQuark key_id,
 
         status = ZMAP_CONTEXT_EXEC_STATUS_DONT_DESCEND;
 
-	if ((item = zMapFindCanvasColumn(draw_data->navigate->container_root,
-					 draw_data->current_align->unique_id,
-					 draw_data->current_block->unique_id,
-					 col_id,
-					 ZMAPSTRAND_FORWARD, ZMAPFRAME_NONE)))
+	if ((item = zmapWindowContainerFeatureSetFindCanvasColumn(draw_data->navigate->container_root,
+                                                                  draw_data->current_align->unique_id,
+                                                                  draw_data->current_block->unique_id,
+                                                                  col_id,
+                                                                  ZMAPSTRAND_FORWARD, ZMAPFRAME_NONE)))
           {
 	    ZMapWindowContainerFeatureSet container_feature_set;
             FooCanvasGroup *group_feature_set;
@@ -857,11 +857,11 @@ static void drawScale(NavigateDraw draw_data)
   scale_id = g_quark_from_string(ZMAP_FIXED_STYLE_SCALE_NAME);
 
   /* less of a hack ... */
-  if ((item = zMapFindCanvasColumn(draw_data->navigate->container_root,
-				   draw_data->current_align->unique_id,
-				   draw_data->current_block->unique_id,
-				   scale_id,	/* is same as column id */
-				   ZMAPSTRAND_FORWARD, ZMAPFRAME_NONE)))
+  if ((item = zmapWindowContainerFeatureSetFindCanvasColumn(draw_data->navigate->container_root,
+                                                            draw_data->current_align->unique_id,
+                                                            draw_data->current_block->unique_id,
+                                                            scale_id,	/* is same as column id */
+                                                            ZMAPSTRAND_FORWARD, ZMAPFRAME_NONE)))
     {
       FooCanvasGroup *scale_group = NULL;
       FooCanvasGroup *features    = NULL;

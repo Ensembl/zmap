@@ -3160,6 +3160,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 	    {
 	      ZMapServerReqAny req_any ;
 
+
 	      /* Recover the request from the thread data....is there always data ? check this... */
 	      if (data)
 		{
@@ -3182,6 +3183,14 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 		    ZMapViewConnectionRequest request ;
 		    ZMapViewConnectionStep step = NULL ;
 		    gboolean kill_connection = FALSE ;
+
+
+
+                    if ((strstr(view_con->url, "Patch")))
+                      printf("found it\n") ;
+
+
+
 
                     /* this is not good and shows this function needs rewriting....
                      * if we get this it means the thread has already failed and been
@@ -3564,16 +3573,12 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 				     g_list_length(zmap_view->sources_failed)) ;
 		    }
 
-
-
-		  if (reply == ZMAPTHREAD_REPLY_GOTDATA && request_type == ZMAP_SERVERREQ_FEATURES
-		      || reply == ZMAPTHREAD_REPLY_REQERROR)
+                  /* Record if features were loaded or if there was an error, if the latter
+                   * then report that to our remote peer if there is one. */
+		  if (request_type == ZMAP_SERVERREQ_FEATURES || reply == ZMAPTHREAD_REPLY_REQERROR)
 		    {
-		      LoadFeaturesData loaded_features ;
-
-		      /* Note that load_features is cleaned up by sendViewLoaded() */
-
-		      connect_data->loaded_features->status = (view_con->thread_status == THREAD_STATUS_OK ? TRUE : FALSE) ;
+		      connect_data->loaded_features->status = (view_con->thread_status == THREAD_STATUS_OK
+                                                               ? TRUE : FALSE) ;
 		      connect_data->loaded_features->err_msg = err_msg ;
 		      connect_data->loaded_features->start = connect_data->start;
 		      connect_data->loaded_features->end = connect_data->end;
@@ -3581,11 +3586,22 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 		      connect_data->loaded_features->exit_code = connect_data->exit_code ;
 		      connect_data->loaded_features->stderr_out = connect_data->stderr_out ;
 
-		      loaded_features = copyLoadFeatures(connect_data->loaded_features) ;
-		      
-		      sendViewLoaded(zmap_view, loaded_features) ;
-		    }
+                      if (reply == ZMAPTHREAD_REPLY_REQERROR && zmap_view->remote_control)
+                        {
+                          /* Note that load_features is cleaned up by sendViewLoaded() */
+                          LoadFeaturesData loaded_features ;
 
+                          /* Hack to support otterlace for this release.... */
+                          if (request_type == ZMAP_SERVERREQ_FEATURES)
+                            connect_data->loaded_features->status = TRUE ;
+
+                          loaded_features = copyLoadFeatures(connect_data->loaded_features) ;
+
+                          zMapLogWarning("VIEW LOADED FROM %s !!", "checkStateConnections()") ;
+
+                          sendViewLoaded(zmap_view, loaded_features) ;
+                        }
+		    }
 
 
 		}
@@ -4808,7 +4824,12 @@ static void loadedDataCB(ZMapWindow window, void *caller_data, gpointer loaded_d
     {
       zMapLogMessage("Received LoadFeaturesDataStruct to pass to sendViewLoaded() at: %p, ", loaded_features) ;
 
-      sendViewLoaded(view, loaded_features) ;
+      if (view->remote_control)
+        {
+          zMapLogWarning("VIEW LOADED FROM %s !!", "loadedDataCB()") ;
+
+          sendViewLoaded(view, loaded_features) ;
+        }
 
       /* We were passed a copy of this by displayDataWindows() and now we can delete it. */
       destroyLoadFeatures(loaded_features) ;
@@ -4873,23 +4894,37 @@ static void sendViewLoaded(ZMapView zmap_view, LoadFeaturesData loaded_features)
               g_free(prev) ;
             }
 
+
+          /* THIS PART NEEDS FIXING UP TO RETURN THE TRUE ERROR MESSAGE AS PER rt 369227 */
           if (loaded_features->status)          /* see comment in zmapSlave.c/ RETURNCODE_QUIT, we are tied up in knots */
             {
-              ok_mess = g_strdup_printf("%d features loaded",loaded_features->num_features);
-              emsg = html_quote_string(ok_mess);                /* see comment about really free() below */
-              g_free(ok_mess);
+              ok_mess = g_strdup_printf("%d features loaded", loaded_features->num_features) ;
+              emsg = html_quote_string(ok_mess) ;                /* see comment about really free() below */
+              g_free(ok_mess) ;
               
               {
                 static long total = 0;
 
-                total += loaded_features->num_features;
+                total += loaded_features->num_features ;
+
                 zMapLogTime(TIMER_LOAD,TIMER_ELAPSED,total,""); /* how long is startup... */
               }
             }
           else
             {
+              ok_mess = g_strdup_printf("%d features loaded", loaded_features->num_features) ;
+              emsg = html_quote_string(ok_mess) ;                /* see comment about really free() below */
+              g_free(ok_mess) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+              /* NOT READY FOR THIS YET.....SIGH.....FIX rt 369227 in DEVELOP */
               emsg = html_quote_string(loaded_features->err_msg ? loaded_features->err_msg  : "");
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
             }
+
+
 
           if (loaded_features->stderr_out)
             {
@@ -4923,6 +4958,9 @@ static void sendViewLoaded(ZMapView zmap_view, LoadFeaturesData loaded_features)
                                                localProcessReplyFunc, zmap_view) ;
 
           free(emsg);                                           /* yes really free() not g_free()-> see zmapUrlUtils.c */
+
+
+          zMapLogWarning("VIEW LOADED FEATURE LIST: %s !!", featurelist) ;
 
           g_free(featurelist);
         }

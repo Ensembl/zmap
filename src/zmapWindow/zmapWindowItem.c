@@ -1048,6 +1048,74 @@ gboolean zmapWindowItem2SeqCoords(FooCanvasItem *item, int *y1, int *y2)
 }
 
 
+
+/* Convert sequence coords into world coords, can fail if sequence coords are out
+ * of range. */
+gboolean zmapWindowSeqToWorldCoords(ZMapWindow window,
+                                    int seq_start, int seq_end, double *world_start_out, double *world_end_out)
+{
+  gboolean result = FALSE ;
+  ZMapFeatureAlignment align ;
+  ZMapFeatureBlock block ;
+  ZMapFeatureSet set ;
+  FooCanvasItem *set_item ;
+  GQuark set_id ;
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* We don't want caller to have to do all this so we laboriously find a featureset,
+   * the first one in fact, and use that to call the canvas function to do the conversion
+   * as the canvas knows how to do that. */
+  align = zMap_g_hash_table_nth(window->feature_context->alignments, 0) ;
+  block = zMap_g_hash_table_nth(align->blocks, 0) ;
+  set = zMap_g_hash_table_nth(block->feature_sets, 0) ;
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  set_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_STRAND_SEPARATOR) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  set_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_SEARCH_MARKERS_NAME) ;
+
+
+
+  if ((set_item = zmapWindowFToIFindItemFull(window, window->context_to_item,
+                                             align->unique_id, block->unique_id,
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+                                             set->unique_id,
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+                                             set_id,
+                                             ZMAPSTRAND_FORWARD, ZMAPFRAME_NONE, 0)))
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+    set_item = window->separator_feature_set ;
+
+    {
+      ZMapWindowFeaturesetItem featureset ;
+      double world_start, world_end ;
+
+      featureset = (ZMapWindowFeaturesetItem)set_item ;
+      
+      if (zMapCanvasFeaturesetSeq2World(featureset,
+                                        seq_start, seq_end, &world_start, &world_end))
+        {
+          *world_start_out = world_start ;
+          *world_end_out = world_end ;
+
+          result = TRUE ;
+        }
+    }
+
+  return result ;
+}
+
+
+
+
+
 /**
  * my_foo_canvas_item_get_world_bounds:
  * @item: A canvas item.

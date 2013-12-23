@@ -1,5 +1,5 @@
 /*  File: zmapWindowFeatureset.h
- *  Author: malcolm hinsley (mh17@sanger.ac.uk)
+ *  Author: Malcolm Hinsley (mh17@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
@@ -331,12 +331,22 @@ double zMapWindowCanvasFeaturesetGetFilterValue(FooCanvasItem *foo);
 int zMapWindowCanvasFeaturesetGetFilterCount(FooCanvasItem *foo);
 int zMapWindowCanvasFeaturesetFilter(gpointer filter, double value, gboolean highlight_filtered_columns);
 
+gboolean zmapWindowFeaturesetGetDefaultColours(ZMapWindowFeaturesetItem feature_set_item,
+                                               GdkColor **fill, GdkColor **draw, GdkColor **border) ;
+gboolean zmapWindowFeaturesetGetDefaultPixels(ZMapWindowFeaturesetItem feature_set_item,
+                                              guint32 *fill, guint32 *draw, guint32 *border) ;
+
+
 
 void zMapWindowCanvasFeaturesetRequestReposition(FooCanvasItem *foo);
 
 int zMapWindowFeaturesetItemGetNFiltered(FooCanvasItem *item);
 
 void zMapCanvasFeaturesetDrawBoxMacro(ZMapWindowFeaturesetItem featureset, double x1,double x2, double y1,double y2,GdkDrawable * drawable,gboolean fill_set,gboolean outline_set,gulong fill,gulong outline);
+
+gboolean zMapCanvasFeaturesetSeq2World(ZMapWindowFeaturesetItem featureset,
+                                       int seq_start, int seq_end, double *world_start_out, double *world_end_out) ;
+
 
 
 #endif /* ZMAP_WINDOW_FEATURESET_H */

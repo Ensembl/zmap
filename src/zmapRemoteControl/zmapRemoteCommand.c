@@ -100,10 +100,17 @@ typedef struct ParseSingleDataStructName
 
 
 static GArray *createRequestReply(EnvelopeType type, GQuark version,
-				  GQuark app_id, GQuark clipboard_id,
-				  char *request_id,
-				  char *command, char *viwe, int timeout_secs,
-				  RemoteCommandRCType return_code, char *reason, ZMapXMLUtilsEventStack result) ;
+                                  GQuark app_id, GQuark clipboard_id,
+                                  char *request_id,
+                                  char *command, int timeout_secs,
+                                  RemoteCommandRCType return_code, char *reason, ZMapXMLUtilsEventStack result,
+                                  ...) ;
+static GArray *vCreateRequestReply(EnvelopeType type, GQuark version,
+                                   GQuark app_id, GQuark clipboard_id,
+                                   char *request_id,
+                                   char *command, int timeout_secs,
+                                   RemoteCommandRCType return_code, char *reason, ZMapXMLUtilsEventStack result,
+                                   va_list argp) ;
 static gboolean getRequestAttrs(char *xml_request, GQuark *req_version,
 				GQuark *app_id, GQuark *req_clipboard_id, char **req_request_id, char **command,
 				char **error_out) ;
@@ -214,28 +221,36 @@ static ZMapXMLObjTagFunctionsStruct parse_single_attr_ends_G[] =
 /* Make a zmap xml request envelope:
  * 
  * <ZMap version="n.n" type="request" app_id="xxxx" clipboard_id="yyyy" request_id="zzzz" [timeout="seconds"]>
- *   <request command="some_command">
+ *   <request command="some_command" some_attr="some_value">
  *   </request>
  * </zmap>
  * 
+ * Use the variable argument list to add attributes to the request tag. These should be passed in
+ * name,value pairs and the list should be terminated with (char*)NULL.
+ *
  * Add further content using zMapRemoteCommandRequestAddBody()
  * 
  * 
  *  */
 GArray *zMapRemoteCommandCreateRequest(ZMapRemoteControl remote_control,
-				       char *command, char *view, int timeout_secs)
+                                       char *command, int timeout_secs, ...)
 {
   GArray *envelope = NULL ;
   char *request_id ;
 
   request_id = zmapRemoteControlMakeReqID(remote_control) ;
 
-  envelope = createRequestReply(ENVELOPE_REQUEST, remote_control->version,
-				remote_control->receive->our_app_name,
-				remote_control->send->their_unique_str,
-				request_id,
-				command, view, timeout_secs,
-				REMOTE_COMMAND_RC_OK, NULL, NULL) ;
+  va_list argp ;
+  va_start(argp, timeout_secs) ;
+
+  envelope = vCreateRequestReply(ENVELOPE_REQUEST, remote_control->version,
+                                 remote_control->receive->our_app_name,
+                                 remote_control->send->their_unique_str,
+                                 request_id,
+                                 command, timeout_secs,
+                                 REMOTE_COMMAND_RC_OK, NULL, NULL, argp) ;
+
+  va_end(argp) ;
 
   return envelope ;
 }
@@ -279,16 +294,16 @@ GArray *zMapRemoteCommandCreateReplyFromRequest(ZMapRemoteControl remote_control
 
 
       if ((return_code == REMOTE_COMMAND_RC_OK && !reason) || (return_code != REMOTE_COMMAND_RC_OK && reason))
-	envelope = createRequestReply(ENVELOPE_REPLY, remote_control->version,
-				      remote_control->receive->our_app_name, req_clipboard_id,
-				      req_request_id,
-				      req_command, NULL, -1, 
-				      return_code, reason, reply) ;
+        envelope = createRequestReply(ENVELOPE_REPLY, remote_control->version,
+                                      remote_control->receive->our_app_name, req_clipboard_id,
+                                      req_request_id,
+                                      req_command, -1,
+                                      return_code, reason, reply, NULL) ;
       else
-	*error_out = g_strdup_printf("Bad args: %s.",
-				     (return_code == REMOTE_COMMAND_RC_OK
-				      ? "command succeeded but an error string was given"
-				      : "command failed but no error string was given")) ;
+        *error_out = g_strdup_printf("Bad args: %s.",
+                                     (return_code == REMOTE_COMMAND_RC_OK
+                                      ? "command succeeded but an error string was given"
+                                      : "command failed but no error string was given")) ;
     }
 
   return envelope ;
@@ -352,16 +367,16 @@ GArray *zMapRemoteCommandCreateReplyEnvelopeFromRequest(ZMapRemoteControl remote
 	      command = request_command ;
 
 	    if ((return_code == REMOTE_COMMAND_RC_OK && !reason) || (return_code != REMOTE_COMMAND_RC_OK && reason))
-	      envelope = createRequestReply(ENVELOPE_REPLY, remote_control->version,
-					    remote_control->receive->our_app_name, req_clipboard_id,
-					    req_request_id,
-					    command, NULL, -1, 
-					    return_code, reason, reply) ;
-	    else
-	      *error_out = g_strdup_printf("Bad args: %s.",
-					   (return_code == REMOTE_COMMAND_RC_OK
-					    ? "command succeeded but an error string was given"
-					    : "command failed but no error string was given")) ;
+              envelope = createRequestReply(ENVELOPE_REPLY, remote_control->version,
+                                            remote_control->receive->our_app_name, req_clipboard_id,
+                                            req_request_id,
+                                            command, -1,
+                                            return_code, reason, reply) ;
+            else
+              *error_out = g_strdup_printf("Bad args: %s.",
+                                           (return_code == REMOTE_COMMAND_RC_OK
+                                            ? "command succeeded but an error string was given"
+                                            : "command failed but no error string was given")) ;
 	  }
 
 	break ;
@@ -835,13 +850,46 @@ ZMAP_ENUM_TO_SHORT_TEXT_FUNC(zMapRemoteCommandRC2Desc, RemoteValidateRCType, REM
 
 /* Creates a request or reply according to the envelope type.
  * 
- * The last three args are for replies only, may need to rationalise args at some time.
+ * The last three positional args are for replies only, may need to rationalise args at some time.
  *  */
-static GArray *createRequestReply(EnvelopeType type, GQuark version,
-				  GQuark app_id, GQuark clipboard_id,
-				  char *request_id,
-				  char *command, char *view_id, int timeout_secs,
-				  RemoteCommandRCType return_code, char *reason, ZMapXMLUtilsEventStack result)
+static GArray *createRequestReply(EnvelopeType type,
+                                  GQuark version,
+                                  GQuark app_id,
+                                  GQuark clipboard_id,
+                                  char *request_id,
+                                  char *command,
+                                  int timeout_secs,
+                                  RemoteCommandRCType return_code,
+                                  char *reason,
+                                  ZMapXMLUtilsEventStack result,
+                                  ...)
+{
+  GArray *array = NULL ;
+
+  va_list argp ;
+  va_start(argp, result) ;
+
+  array = vCreateRequestReply(type, version, app_id, clipboard_id, request_id, command,
+                      timeout_secs, return_code, reason, result, argp) ;
+
+  va_end(argp) ;
+
+  return array ;
+}
+
+
+/* va_list version of creatRequestReply - does the work */
+static GArray *vCreateRequestReply(EnvelopeType type,
+                                   GQuark version,
+                                   GQuark app_id,
+                                   GQuark clipboard_id,
+                                   char *request_id,
+                                   char *command,
+                                   int timeout_secs,
+                                   RemoteCommandRCType return_code,
+                                   char *reason,
+                                   ZMapXMLUtilsEventStack result,
+                                   va_list argp)
 {
   GArray *envelope = NULL ;
   static ZMapXMLUtilsEventStackStruct
@@ -855,10 +903,10 @@ static GArray *createRequestReply(EnvelopeType type, GQuark version,
       {ZMAPXML_ATTRIBUTE_EVENT,     ZACP_REQUEST_ID,   ZMAPXML_EVENT_DATA_QUARK, {0}},
       {ZMAPXML_NULL_EVENT}
     },
-    view_id_attr[] =
+    var_arg_attr[] =
       {
-	{ZMAPXML_ATTRIBUTE_EVENT,     ZACP_VIEWID,   ZMAPXML_EVENT_DATA_QUARK, {0}},
-	{ZMAPXML_NULL_EVENT}
+        {ZMAPXML_ATTRIBUTE_EVENT,     NULL,   ZMAPXML_EVENT_DATA_QUARK, {0}},
+        {ZMAPXML_NULL_EVENT}
       },
     timeout_attr[] =
       {
@@ -939,13 +987,28 @@ static GArray *createRequestReply(EnvelopeType type, GQuark version,
 
       envelope = zMapXMLUtilsAddStackToEventsArrayEnd(envelope, &request_reply_start[0]) ;
 
-      /* Possibly add viewid for requests. */
-      if (type == ENVELOPE_REQUEST && view_id)
-	{
-	  view_id_attr[0].value.i = g_quark_from_string(view_id) ;
+      /* For requests, add any additional attributes that are given. */
+      if (type == ENVELOPE_REQUEST)
+        {
+          char *name = va_arg(argp, char*) ;
 
-	  envelope = zMapXMLUtilsAddStackToEventsArrayEnd(envelope, &view_id_attr[0]) ;
-	}
+          while (name)
+            {
+              /* varargs should be passed in name-value pairs */
+              char *value = va_arg(argp, char*) ;
+
+              if (value)
+                {
+                  var_arg_attr[0].name = name ;
+                  var_arg_attr[0].value.i = g_quark_from_string(value) ;
+
+                  envelope = zMapXMLUtilsAddStackToEventsArrayEnd(envelope, &var_arg_attr[0]) ;
+                }
+
+              /* get the next attribute */
+              name = va_arg(argp, char*) ;
+            }
+        }
 
       /* If it's a reply then add return code and either optional reply if command worked or reason if
        * it failed. */

@@ -34,6 +34,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <ZMap/zmapFeature.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapGLibUtils.h>
 
@@ -321,20 +322,20 @@ GList *zMap_g_list_grep(GList **list_inout, gpointer data, GCompareFunc func)
 /* Inserts donor list _after_ the node in recipient given by "point".
  * To insert at the front set point to 0, to insert at the end set point
  * to be the length of the list.
- * 
+ *
  * If copy_donor is TRUE a copy of the donor list is inserted into recipient
  * otherwise the actual donor list is inserted. Note that only a shallow copy
  * is done currently....so the copy list will point at the same data as the
  * original donor list.
- * 
+ *
  * If recipient is NULL then donor (or a copy of donor) is returned,
  * if donor is NULL then recipient is returned.
- * 
+ *
  * It is the callers responsibility to ensure that recipient and donor
  * are separate lists.
- * 
+ *
  * Returns the new head of the recipient list or NULL if any of:
- * 
+ *
  *             recipient && donor are NULL
  *             recipient == donor (only a trivial check is done)
  *             recipient or donor are NOT the head nodes of lists
@@ -477,7 +478,7 @@ GList *zMap_g_list_merge(GList *a, GList *b)
 
 
 
-/* 
+/*
  *  Functions for lists of quarks of which we have plenty in zmap.
  */
 
@@ -866,7 +867,7 @@ gint zMap_g_datalist_length(GData **datalist)
 /* My new routine for returning a pointer to an element in the array, the array will be
  * expanded to include the requested element if necessary. If "clear" was not set when
  * the array was created then the element may contain random junk instead of zeros.
- * 
+ *
  * NOTE, sadly user has to pass a pointer to a GArray point because the underlying
  * glib g_array_set_size () function returns an array pointer so we have to return
  * one too. You would imagine the struct would remain the same but you never know... */
@@ -1245,6 +1246,11 @@ static void hashPrintTableCB(gpointer key, gpointer value, gpointer user_data)
   else if (g_ascii_strcasecmp(data_format_str, "gquark") == 0)
     {
       value_str = g_strdup_printf("%s", g_quark_to_string(GPOINTER_TO_INT(value))) ;
+    }
+  else if (g_ascii_strcasecmp(data_format_str, "feature") == 0)
+    {
+      value_str = g_strdup_printf("'%s', '%s'", g_quark_to_string(((ZMapFeatureAny)value)->original_id),
+                                            g_quark_to_string(((ZMapFeatureAny)value)->unique_id)) ;
     }
   else
     {

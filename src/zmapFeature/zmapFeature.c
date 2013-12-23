@@ -1,4 +1,4 @@
-/*  File: zmapFeatures.c
+/*  File: zmapFeature.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
@@ -338,7 +338,7 @@ void zMapFeatureAnyDestroy(ZMapFeatureAny feature_any)
 
 
 /*!
- * Returns a single feature correctly intialised to be a "NULL" feature.
+ * Returns a single feature correctly initialised to be a "NULL" feature.
  *
  * @param   void  None.
  * @return  ZMapFeature  A pointer to the new ZMapFeature.

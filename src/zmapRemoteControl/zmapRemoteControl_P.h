@@ -214,7 +214,7 @@ typedef struct ZMapRemoteControlStructName
   RemoteSend send ;					    /* Active when acting as client. */
 
   /* Used to provide a unique id for each request, N.B. kept here so we can construct requests
-   * even if "send" has not been intialised. */
+   * even if "send" has not been initialised. */
   int request_id_num ;
   GString *request_id ;
 

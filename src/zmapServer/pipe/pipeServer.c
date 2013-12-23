@@ -50,7 +50,6 @@
 #include <ZMap/zmapConfigStrings.h>
 #include <ZMap/zmapGFF.h>
 #include <ZMap/zmapServerProtocol.h>
-#include <zmapServerPrototype.h>
 #include <pipeServer_P.h>
 
 
@@ -79,8 +78,6 @@ typedef struct GetFeaturesDataStructType
   ZMapServerResponseType result ;
 
   char *err_msg ;
-
-
 
 } GetFeaturesDataStruct, *GetFeaturesData ;
 
@@ -222,7 +219,6 @@ static gboolean createConnection(void **server_out,
   gboolean result = FALSE ;
   PipeServer server ;
 
-
   server = (PipeServer)g_new0(PipeServerStruct, 1) ;
 
   if ((url->scheme != SCHEME_FILE || url->scheme != SCHEME_PIPE) && (!(url->path) || !(*(url->path))))
@@ -243,6 +239,7 @@ static gboolean createConnection(void **server_out,
       getConfiguration(server) ;
 
       /* Get url parameters. */
+      server->url = g_strdup(url->url) ;
       server->scheme = url->scheme ;
       url_script_path = url->path ;
 
@@ -390,12 +387,9 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
 	{
 	  server->sequence_server = req_open->sequence_server ; /* if not then drop any DNA data */
 
-	  /* Hack...really this function should return version 2 */
-	  if (!zMapGFFGetVersionFromGIO(server->gff_pipe, &(server->gff_version)))
-	    {
-	      server->gff_version = 2 ;
-	    }
-	  
+	  /* Get the GFF version; default returned is 2 */
+	  zMapGFFGetVersionFromGIO(server->gff_pipe, &(server->gff_version));
+
 	  server->parser = zMapGFFCreateParser(server->gff_version,
 					       server->sequence_map->sequence, server->zmap_start, server->zmap_end) ;
 
@@ -569,10 +563,19 @@ static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles,
   int num_features ;
 
   /* Check that there is any more to parse.... */
-  if (server->gff_line->len > 0)
+  if (server->gff_line->len == 0)                           /* GString len is always >= 0 */
+    {
+      setErrMsg(server, "No features found.") ;
+
+      ZMAPPIPESERVER_LOG(Warning, server->protocol, server->script_path, server->script_args,
+                         "%s", server->last_err_msg) ;
+
+      result = server->result = ZMAP_SERVERRESPONSE_REQFAIL ;
+    }
+  else
     {
       get_features_data.server = server ;
-  
+
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -614,7 +617,7 @@ static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles,
           ZMAPPIPESERVER_LOG(Warning, server->protocol, server->script_path, server->script_args,
                              "%s", server->last_err_msg) ;
 
-          server->result = ZMAP_SERVERRESPONSE_REQFAIL ;
+          result = server->result = ZMAP_SERVERRESPONSE_REQFAIL ;
         }
       else
         {
@@ -753,6 +756,9 @@ static ZMapServerResponseType destroyConnection(void *server_in)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   PipeServer server = (PipeServer)server_in ;
+
+  if (server->url)
+    g_free(server->url) ;
 
   if (server->script_path)
     g_free(server->script_path) ;
@@ -1001,6 +1007,7 @@ static void waitForChild(PipeServer server)
       GIOStatus gio_status ;
       GError *g_error = NULL ;
       int status ;
+      char *termination_msg = NULL ;
 
       /* Why not flush the channel (i.e. why FALSE) ?....check this out..... */
       gio_status = g_io_channel_shutdown(server->gff_pipe, FALSE, &g_error) ; /* or else it may not exit */
@@ -1016,24 +1023,20 @@ static void waitForChild(PipeServer server)
       waitpid(server->child_pid, &status, 0) ;
       server->child_pid = 0 ;
 
-      if (zMapUtilsProcessTerminationStatus(status) == ZMAP_PROCTERM_OK)
+      /* Get the error if there was one. */
+      if (!zMapUtilsProcessHasTerminationError(status, &termination_msg))
 	{
 	  server->exit_code = EXIT_SUCCESS ;
 	}
       else
 	{
-	  char *termination_msg = NULL ;
-
 	  server->exit_code = EXIT_FAILURE ;
 
-	  if (zMapUtilsProcessTerminationStr(status, &termination_msg))
-	    {
-	      setErrMsg(server, termination_msg) ;
+	  setErrMsg(server, termination_msg) ;
 
-	      zMapLogWarning("%s", termination_msg) ;
+	  zMapLogWarning("%s", termination_msg) ;
 
-	      g_free(termination_msg) ;
-	    }
+	  g_free(termination_msg) ;
 	}
     }
 
@@ -1158,7 +1161,9 @@ static ZMapServerResponseType pipeGetHeader(PipeServer server)
 // read any DNA data at the head of the stream and quit after error or ##end-dna
 static ZMapServerResponseType pipeGetSequence(PipeServer server)
 {
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
   GIOStatus status ;
   gsize terminator_pos = 0 ;
   GError *gff_pipe_err = NULL ;

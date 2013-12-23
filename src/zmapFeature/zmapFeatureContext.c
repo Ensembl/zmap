@@ -30,8 +30,6 @@
  *-------------------------------------------------------------------
  */
 
-
-
 #include <ZMap/zmap.h>
 
 #include <string.h>
@@ -1002,7 +1000,7 @@ static ZMapFeatureContextExecuteStatus revCompORFFeaturesCB(GQuark key,
 }
 
 
-/* NOTE this is for transcript exon and introl arrays, also assembly paths (which are not used) */
+/* NOTE this is for transcript exon and intron arrays, also assembly paths (which are not used) */
 /* we need the exons etc to be in fwd order so we have to reverse the array as well as revcomp'ing the coords */
 static void revcompSpan(GArray *spans, int seq_start, int seq_end)
 {
@@ -1017,16 +1015,17 @@ static void revcompSpan(GArray *spans, int seq_start, int seq_end)
       zmapFeatureRevComp(Coord, seq_start, seq_end, span->x1, span->x2) ;
     }
 
-  for(i = 0, j = spans->len - 1; i < j; i++,j--)
+  for (i = 0, j = spans->len - 1 ; i < j ; i++,j--)
     {
-      ZMapSpanStruct x;
-      ZMapSpan si,sj;
+      ZMapSpanStruct x ;
+      ZMapSpan si,sj ;
 
       si = &g_array_index(spans, ZMapSpanStruct, i) ;
       sj = &g_array_index(spans, ZMapSpanStruct, j) ;
-      x = *si;		/* struct copy */
-      *si = *sj;
-      *sj = x;
+
+      x = *si ;						    /* struct copies */
+      *si = *sj ;
+      *sj = x ;
     }
 
   return ;
