@@ -156,6 +156,39 @@ char * zMapGFFStr_substring(const char* const sS1, const char* const sS2, void*(
 
 
 /*
+ * This function looks for the first occurrence of sToFind in sInput and replaces it with sReplacement.
+ * A newly allocated string is returned.
+ */
+char * zMapGFFStr_substring_replace(const char * const sInput, const char * const sToFind, const char * const sReplacement)
+{
+  char *sResult = NULL,
+    *sFirst = NULL,
+    *sSecond = NULL,
+    *sPos = NULL ;
+  size_t iQueryLength ;
+  if (!sInput || !*sInput || !sToFind || !*sToFind || !sReplacement || !*sReplacement )
+    return sResult ;
+  iQueryLength = strlen(sToFind) ;
+  sPos = strstr(sInput, sToFind) ;
+  if (sPos)
+    {
+      sFirst = g_strndup(sInput, (size_t)(sPos-sInput)) ;
+      sSecond = g_strdup(sPos+iQueryLength) ;
+      sResult = g_strdup_printf("%s=%s", sFirst, sSecond) ;
+
+      if (sFirst)
+        g_free(sFirst) ;
+      if (sSecond)
+        g_free(sSecond) ;
+    }
+
+  return sResult ;
+}
+
+
+
+
+/*
  * Substring based tokenizer; returns dynamically allocated
  * array of strings. We allow empty tokens to be stored if flag is set.
  * Note that this function also removes leading and trailing spaces

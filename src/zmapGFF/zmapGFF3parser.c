@@ -3768,6 +3768,17 @@ static gboolean makeNewFeature_V3(
 
       /*
        * Add URL attribute if found.
+       *
+       * Need to do some fiddling with escaped characters; for example:
+       *
+       *   http://www.ensembl.org/Homo_sapiens/Variation/Summary?v=rs200438784
+       *
+       * somehow got turned into
+       *
+       *   http://www.ensembl.org/Homo_sapiens/Variation/Summary?v%3Drs200438784
+       *
+       * which seems not to be correct. Same probably applies to some of the name attributes
+       * that contain "=" signs.
        */
       pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "url") ;
       if (pAttribute)

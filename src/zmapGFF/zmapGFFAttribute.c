@@ -36,6 +36,17 @@
 #include "zmapGFFAttribute.h"
 #include "zmapGFFStringUtils.h"
 
+/*
+ * Escaped strings that need to be removed from attribute strings.
+ * These are the url-escaped sequences, and are the only ones allowed
+ * GFF3 attributes.
+ */
+static const char *sEscapedComma = "%2C" ;
+static const char *sEscapedEquals = "%3D" ;
+static const char *sEscapedSemicolon = "%3B" ;
+static const char *sComma = "," ;
+static const char *sEquals = "=" ;
+static const char *sSemicolon = ";" ;
 
 /*
  * Array of attribute info objects. Data are as given in the header file.
@@ -1249,6 +1260,7 @@ gboolean zMapAttParseURL(const ZMapGFFAttribute const pAttribute, char** const s
 {
   gboolean bResult = FALSE ;
   static const char *sMyName = "zMapAttParseURL()" ;
+  char *sTemp = NULL ;
   if (!pAttribute)
     return bResult ;
   const char * const sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
@@ -1259,9 +1271,23 @@ gboolean zMapAttParseURL(const ZMapGFFAttribute const pAttribute, char** const s
     }
 
   if (strlen(sValue))
-    *sOut = g_strdup(sValue) ;
+    {
+      sTemp = zMapGFFStr_substring_replace(sValue, sEscapedEquals, sEquals) ;
+      printf("url = '%s', '%s'\n", sValue, sTemp) ;
+      fflush(stdout) ;
+      if (sTemp)
+        {
+          *sOut = sTemp ;
+        }
+      else
+        {
+          *sOut = g_strdup(sValue) ;
+        }
+    }
   else
-    *sOut = NULL ;
+    {
+      *sOut = NULL ;
+    }
   bResult = TRUE ;
 
   return bResult ;
