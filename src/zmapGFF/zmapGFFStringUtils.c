@@ -174,7 +174,7 @@ char * zMapGFFStr_substring_replace(const char * const sInput, const char * cons
     {
       sFirst = g_strndup(sInput, (size_t)(sPos-sInput)) ;
       sSecond = g_strdup(sPos+iQueryLength) ;
-      sResult = g_strdup_printf("%s=%s", sFirst, sSecond) ;
+      sResult = g_strdup_printf("%s%s%s", sFirst, sReplacement, sSecond) ;
 
       if (sFirst)
         g_free(sFirst) ;

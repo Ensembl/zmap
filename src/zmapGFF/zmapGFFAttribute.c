@@ -39,14 +39,17 @@
 /*
  * Escaped strings that need to be removed from attribute strings.
  * These are the url-escaped sequences, and are the only ones allowed
- * GFF3 attributes.
+ * GFF3 attributes. Not all of these are used at the moment, but
+ * might well be in the future.
  */
 static const char *sEscapedComma = "%2C" ;
 static const char *sEscapedEquals = "%3D" ;
 static const char *sEscapedSemicolon = "%3B" ;
+static const char *sEscapedSpace = "%20" ;
 static const char *sComma = "," ;
 static const char *sEquals = "=" ;
 static const char *sSemicolon = ";" ;
+static const char *sSpace = " " ;
 
 /*
  * Array of attribute info objects. Data are as given in the header file.
@@ -942,12 +945,13 @@ gboolean zMapAttParseNameV2(const ZMapGFFAttribute const pAttribute, GQuark *con
 
 
 /*
- * V3 "Name" parser. This just returns a copy of the string.
+ * V3 "Name" parser. This just returns a copy of the string, having removed escaped equals if present.
  */
 gboolean zMapAttParseName(const ZMapGFFAttribute const pAttribute, char** const sOut)
 {
   gboolean bResult = FALSE ;
   static const char *sMyName = "zMapAttParseNameV3()" ;
+  char * sTemp = NULL ;
   if (!pAttribute)
     return bResult ;
   const char * const sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
@@ -958,9 +962,21 @@ gboolean zMapAttParseName(const ZMapGFFAttribute const pAttribute, char** const 
     }
 
   if (strlen(sValue))
-    *sOut = g_strdup(sValue) ;
+    {
+      sTemp = zMapGFFStr_substring_replace(sValue, sEscapedEquals, sEquals) ;
+      if (sTemp)
+        {
+          *sOut = sTemp ;
+        }
+      else
+        {
+          *sOut = g_strdup(sValue) ;
+        }
+    }
   else
-    *sOut = NULL ;
+    {
+      *sOut = NULL ;
+    }
   bResult = TRUE ;
 
   return bResult ;
@@ -1273,8 +1289,6 @@ gboolean zMapAttParseURL(const ZMapGFFAttribute const pAttribute, char** const s
   if (strlen(sValue))
     {
       sTemp = zMapGFFStr_substring_replace(sValue, sEscapedEquals, sEquals) ;
-      printf("url = '%s', '%s'\n", sValue, sTemp) ;
-      fflush(stdout) ;
       if (sTemp)
         {
           *sOut = sTemp ;
