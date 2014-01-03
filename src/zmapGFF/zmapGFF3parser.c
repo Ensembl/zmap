@@ -4093,8 +4093,6 @@ static gboolean getFeatureName(const char * const sequence,
     }
   else if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "Name")))
     {
-
-      /* sValue = zMapGFFAttributeGetTempstring(pAttribute) ; */
       bParseValid = zMapAttParseName(pAttribute, &*feature_name) ;
       *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
                                                start, end, query_start, query_end) ;
