@@ -2505,12 +2505,24 @@ static char * makeFeatureTranscriptNamePublic(const ZMapGFFFeatureData const pFe
   ZMapGFFAttribute *pAttributes = NULL,
     pAttributeName = NULL ;
   unsigned int nAttributes = 0 ;
-  char * sResult = NULL ;
+  char *sResult = NULL,
+    *sFeatureAttributeName = NULL ;
+  gboolean bParseValid = FALSE ;
   static const char *sNoName = "no_name_given" ;
+  if (!pFeatureData)
+    return sResult ;
   pAttributes = zMapGFFFeatureDataGetAts(pFeatureData) ;
   nAttributes = zMapGFFFeatureDataGetNat(pFeatureData) ;
   pAttributeName = zMapGFFAttributeListContains(pAttributes, nAttributes, "Name") ;
-  sResult = pAttributeName ? g_strdup(zMapGFFAttributeGetTempstring(pAttributeName)) : g_strdup(sNoName) ;
+  if (pAttributeName)
+    {
+      bParseValid = zMapAttParseName(pAttributeName, &sFeatureAttributeName) ;
+    }
+  sResult = pAttributeName ? g_strdup(sFeatureAttributeName) : g_strdup(sNoName) ;
+  if (sFeatureAttributeName)
+    {
+      g_free(sFeatureAttributeName) ;
+    }
   return sResult ;
 }
 
@@ -2576,6 +2588,7 @@ static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const pFeature
   int iStart = 0,
     iEnd = 0 ;
   char * sSOType = NULL,
+    *sFeatureAttributeName = NULL,
     *sFeatureName = NULL,
     *sFeatureNameID = NULL,
     *sSequence = NULL,
@@ -2590,7 +2603,8 @@ static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const pFeature
     bIsExon = FALSE,
     bIsIntron = FALSE,
     bIsCDS = FALSE,
-    bIsComponent = FALSE ;
+    bIsComponent = FALSE,
+    bParseValid = FALSE ;
   GQuark gqThisID = 0 ;
   ZMapFeature pFeature = NULL ;
   ZMapSOIDData pSOIDData = NULL ;
@@ -2679,8 +2693,12 @@ static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const pFeature
     {
       cCase = THIRD ;
       pAttributeName = zMapGFFAttributeListContains(pAttributes, nAttributes, "Name") ;
+      if (pAttributeName)
+        {
+          bParseValid = zMapAttParseName(pAttributeName, &sFeatureAttributeName) ;
+        }
       sFeatureNameID = pAttributeName ?
-                       g_strdup_printf("%s_%i_%i_%s_%g", zMapGFFAttributeGetTempstring(pAttributeName), iStart, iEnd, zMapFeatureStrand2Str(cStrand), dScore)
+                       g_strdup_printf("%s_%i_%i_%s_%g", sFeatureAttributeName, iStart, iEnd, zMapFeatureStrand2Str(cStrand), dScore)
                      : g_strdup_printf("%s_%i_%i_%s_%g", sNoName, iStart, iEnd, zMapFeatureStrand2Str(cStrand), dScore) ;
       gqThisID = g_quark_from_string(sFeatureNameID) ;
     }
@@ -2826,6 +2844,9 @@ static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const pFeature
       zMapFeatureDestroy(pFeature) ;
       pFeature = NULL ;
     }
+
+  if (sFeatureAttributeName)
+    g_free(sFeatureAttributeName) ;
 
   return pFeature ;
 }
@@ -3079,7 +3100,8 @@ static ZMapFeature makeFeatureDefault(const ZMapGFFFeatureData const pFeatureDat
     bDataAdded = FALSE,
     bFeatureAdded = FALSE,
     bNewFeatureCreated = FALSE,
-    bHasScore = FALSE ;
+    bHasScore = FALSE,
+    bParseValid = FALSE ;
   ZMapFeature pFeature = NULL ;
   ZMapGFFAttribute *pAttributes = NULL,
     pAttribute = NULL ;
@@ -3131,7 +3153,7 @@ static ZMapFeature makeFeatureDefault(const ZMapGFFFeatureData const pFeatureDat
   pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "Name" );
   if (pAttribute)
     {
-      sName = zMapGFFAttributeGetTempstring(pAttribute) ;
+      bParseValid = zMapAttParseName(pAttribute, &sName) ;
     }
 
   /*
@@ -3195,6 +3217,11 @@ static ZMapFeature makeFeatureDefault(const ZMapGFFFeatureData const pFeatureDat
     {
       zMapFeatureDestroy(pFeature) ;
       pFeature = NULL ;
+    }
+
+  if (sName)
+    {
+      g_free(sName) ;
     }
 
   return pFeature ;
@@ -4034,8 +4061,9 @@ static gboolean getFeatureName(const char * const sequence,
   char ** const feature_name_id)
 {
   NameFindType name_find = ZMAPGFF_NAME_FIND ;
-  gboolean bHasName = FALSE, bAttributeHit = FALSE ;
-  char *sValue = NULL ;
+  gboolean bHasName = FALSE,
+    bAttributeHit = FALSE,
+    bParseValid = FALSE ;
   char *sTempBuff01 = NULL,
   *sTempBuff02 = NULL ;
   unsigned int iAttribute = 0 ;
@@ -4066,14 +4094,11 @@ static gboolean getFeatureName(const char * const sequence,
   else if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "Name")))
     {
 
-      sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
-      if (sValue && sValue[0])
-        {
-          *feature_name = g_strdup(zMapGFFAttributeGetTempstring(pAttribute)) ;
-          *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
-                                                   start, end, query_start, query_end) ;
-          bHasName = TRUE ;
-        }
+      /* sValue = zMapGFFAttributeGetTempstring(pAttribute) ; */
+      bParseValid = zMapAttParseName(pAttribute, &*feature_name) ;
+      *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
+                                               start, end, query_start, query_end) ;
+      bHasName = TRUE ;
 
     }
   else if (name_find != ZMAPGFF_NAME_USE_GIVEN_OR_NAME)
