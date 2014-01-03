@@ -159,32 +159,78 @@ char * zMapGFFStr_substring(const char* const sS1, const char* const sS2, void*(
  * This function looks for the first occurrence of sToFind in sInput and replaces it with sReplacement.
  * A newly allocated string is returned.
  */
-char * zMapGFFStr_substring_replace(const char * const sInput, const char * const sToFind, const char * const sReplacement)
+gboolean zMapGFFStr_substring_replace(const char * const sInput, const char * const sToFind, const char * const sReplacement,
+  char ** sOut )
 {
-  char *sResult = NULL,
-    *sFirst = NULL,
+  gboolean bResult = FALSE, bReplaced = FALSE ;
+  char *sFirst = NULL,
     *sSecond = NULL,
     *sPos = NULL ;
   size_t iQueryLength ;
   if (!sInput || !*sInput || !sToFind || !*sToFind || !sReplacement || !*sReplacement )
-    return sResult ;
+    return bResult ;
   iQueryLength = strlen(sToFind) ;
   sPos = strstr(sInput, sToFind) ;
   if (sPos)
     {
       sFirst = g_strndup(sInput, (size_t)(sPos-sInput)) ;
       sSecond = g_strdup(sPos+iQueryLength) ;
-      sResult = g_strdup_printf("%s%s%s", sFirst, sReplacement, sSecond) ;
+      *sOut = g_strdup_printf("%s%s%s", sFirst, sReplacement, sSecond) ;
 
       if (sFirst)
         g_free(sFirst) ;
       if (sSecond)
         g_free(sSecond) ;
+
+      bResult = TRUE ;
+    }
+  else
+    {
+      *sOut = g_strdup(sInput) ;
+      bResult = FALSE ;
     }
 
-  return sResult ;
+  return bResult ;
 }
 
+
+/*
+ * Replace all occurrences of sToFind with sReplacement.
+ */
+gboolean zMapGFFStr_substring_replace_n(const char * const sInput, const char * const sToFind, const char * const sReplacement,
+  char ** psOut)
+{
+  gboolean bResult = FALSE, bReplaced = FALSE  ;
+  if (!sInput || !*sInput || !sToFind || !*sToFind || !sReplacement || !*sReplacement )
+    return bResult ;
+
+  //bResult = zMapGFFStr_substring_replace(sInput, sToFind, sReplacement, psOut) ;
+
+  /*
+   * Now, how to do this many times
+   */
+  char *sInputTemp = g_strdup(sInput),
+    *sOutputTemp = NULL ;
+  while (1)
+    {
+      bReplaced = zMapGFFStr_substring_replace(sInputTemp, sToFind, sReplacement, &sOutputTemp) ;
+      g_free(sInputTemp) ;
+      sInputTemp = sOutputTemp ;
+
+      if (!bReplaced)
+        {
+          break ;
+        }
+      else
+        {
+          bResult = TRUE ;
+        }
+    }
+
+  *psOut = sOutputTemp ;
+
+  return bResult ;
+}
 
 
 

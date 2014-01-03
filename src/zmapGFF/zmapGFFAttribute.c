@@ -947,11 +947,11 @@ gboolean zMapAttParseNameV2(const ZMapGFFAttribute const pAttribute, GQuark *con
 /*
  * V3 "Name" parser. This just returns a copy of the string, having removed escaped equals if present.
  */
-gboolean zMapAttParseName(const ZMapGFFAttribute const pAttribute, char** const sOut)
+gboolean zMapAttParseName(const ZMapGFFAttribute const pAttribute, char** const psOut)
 {
-  gboolean bResult = FALSE ;
-  static const char *sMyName = "zMapAttParseNameV3()" ;
-  char * sTemp = NULL ;
+  gboolean bReplaced = FALSE, bResult = FALSE ;
+  static const char *sMyName = "zMapAttParseName()" ;
+  char *sTemp = NULL ;
   if (!pAttribute)
     return bResult ;
   const char * const sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
@@ -963,21 +963,19 @@ gboolean zMapAttParseName(const ZMapGFFAttribute const pAttribute, char** const 
 
   if (strlen(sValue))
     {
-      sTemp = zMapGFFStr_substring_replace(sValue, sEscapedEquals, sEquals) ;
-      if (sTemp)
-        {
-          *sOut = sTemp ;
-        }
-      else
-        {
-          *sOut = g_strdup(sValue) ;
-        }
+      bReplaced = zMapGFFStr_substring_replace_n(sValue, sEscapedEquals, sEquals, &sTemp) ;
+      bReplaced = zMapGFFStr_substring_replace_n(sTemp, sEscapedComma, sComma, psOut) ;
+      bResult = TRUE ;
     }
   else
     {
-      *sOut = NULL ;
+      *psOut = NULL ;
     }
-  bResult = TRUE ;
+
+  if (sTemp)
+    {
+      g_free(sTemp) ;
+    }
 
   return bResult ;
 }
@@ -1274,9 +1272,8 @@ gboolean zMapAttParseParent(const ZMapGFFAttribute const pAttribute, char ** con
  */
 gboolean zMapAttParseURL(const ZMapGFFAttribute const pAttribute, char** const sOut)
 {
-  gboolean bResult = FALSE ;
+  gboolean bResult = FALSE, bReplaced = FALSE ;
   static const char *sMyName = "zMapAttParseURL()" ;
-  char *sTemp = NULL ;
   if (!pAttribute)
     return bResult ;
   const char * const sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
@@ -1288,21 +1285,13 @@ gboolean zMapAttParseURL(const ZMapGFFAttribute const pAttribute, char** const s
 
   if (strlen(sValue))
     {
-      sTemp = zMapGFFStr_substring_replace(sValue, sEscapedEquals, sEquals) ;
-      if (sTemp)
-        {
-          *sOut = sTemp ;
-        }
-      else
-        {
-          *sOut = g_strdup(sValue) ;
-        }
+      bReplaced = zMapGFFStr_substring_replace(sValue, sEscapedEquals, sEquals, sOut) ;
+      bResult = TRUE ;
     }
   else
     {
       *sOut = NULL ;
     }
-  bResult = TRUE ;
 
   return bResult ;
 }
