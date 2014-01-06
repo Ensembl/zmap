@@ -3534,7 +3534,9 @@ static gboolean makeNewFeature_V3(
     *sAttributes            = NULL,
     *sSOType                = NULL,
     *sMakeFeatureErrorText  = NULL,
-    *sURL                   = NULL
+    *sURL                   = NULL,
+    *sVariation             = NULL,
+    *sVariationSO           = NULL
   ;
 
   gboolean
@@ -3546,7 +3548,8 @@ static gboolean makeNewFeature_V3(
 
   GQuark
     gqFeatureStyleID        = 0,
-    gqSourceID              = 0
+    gqSourceID              = 0,
+    gqVariationSO           = 0
   ;
 
   ZMapFeature
@@ -3793,19 +3796,14 @@ static gboolean makeNewFeature_V3(
         } /* final ZMapStyleMode clause */
 
 
+
       /*
-       * Add URL attribute if found.
-       *
-       * Need to do some fiddling with escaped characters; for example:
-       *
-       *   http://www.ensembl.org/Homo_sapiens/Variation/Summary?v=rs200438784
-       *
-       * somehow got turned into
-       *
-       *   http://www.ensembl.org/Homo_sapiens/Variation/Summary?v%3Drs200438784
-       *
-       * which seems not to be correct. Same probably applies to some of the name attributes
-       * that contain "=" signs.
+       * Now we deal with some extra attributes used locally.
+       */
+
+
+      /*
+       * URL attribute.
        */
       pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "url") ;
       if (pAttribute)
@@ -3816,11 +3814,28 @@ static gboolean makeNewFeature_V3(
             }
         }
 
+      /*
+       * EnsEMBL variation data.
+       */
+      pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "ensembl_variation") ;
+      if (pAttribute)
+        {
+          if (zMapAttParseEnsemblVariation(pAttribute, &sVariation))
+            {
+              zMapFeatureAddVariationString(pFeature, sVariation) ;
+              /*
+               * these are used in v2, but only apparently only in the
+               * context of variation strings
+               */
+              gqVariationSO = zMapSOVariation2SO(sVariation) ;
+              zMapFeatureAddSOaccession(pFeature, gqVariationSO) ;
+            }
+        }
+
 
     } /* if (bIncludeFeature) */
 
   /*
-
    * Return point for the function.
    */
 return_point:

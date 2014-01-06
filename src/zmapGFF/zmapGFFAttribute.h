@@ -135,6 +135,7 @@ gboolean zMapAttParseTargetV2(const ZMapGFFAttribute const, char ** const, char 
 gboolean zMapAttParseTarget(const ZMapGFFAttribute const, char ** const, int * const , int * const , ZMapStrand * const ) ;
 gboolean zMapAttParseURL(const ZMapGFFAttribute const, char** const ) ;
 gboolean zMapAttParseVulgarExonerate(const ZMapGFFAttribute const , GArray ** const, ZMapStrand , int, int, ZMapStrand, int, int) ;
+gboolean zMapAttParseEnsemblVariation(const ZMapGFFAttribute const, char ** const ) ;
 
 
 

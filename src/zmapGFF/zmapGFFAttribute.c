@@ -1285,7 +1285,7 @@ gboolean zMapAttParseURL(const ZMapGFFAttribute const pAttribute, char** const s
 
   if (strlen(sValue))
     {
-      bReplaced = zMapGFFStr_substring_replace(sValue, sEscapedEquals, sEquals, sOut) ;
+      bReplaced = zMapGFFStr_substring_replace_n(sValue, sEscapedEquals, sEquals, sOut) ;
       bResult = TRUE ;
     }
   else
@@ -1295,6 +1295,42 @@ gboolean zMapAttParseURL(const ZMapGFFAttribute const pAttribute, char** const s
 
   return bResult ;
 }
+
+
+
+
+
+
+/*
+ * Parse out the ensembl_variation attribute.
+ */
+gboolean zMapAttParseEnsemblVariation(const ZMapGFFAttribute const pAttribute, char ** const psOut)
+{
+  gboolean bResult = FALSE ;
+  static const char *sMyName = "zMapAttParseEnsembleVariation()" ;
+  if (!pAttribute)
+    return bResult ;
+  const char * const sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
+  if (strcmp("ensembl_variation", zMapGFFAttributeGetNamestring(pAttribute)))
+    {
+      zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
+      return bResult ;
+    }
+
+  if (strlen(sValue))
+    *psOut = g_strdup(sValue) ;
+  else
+    *psOut = NULL ;
+  bResult = TRUE ;
+
+  return bResult ;
+}
+
+
+
+
+
+
 
 /*
  * Parse "Note" attribute; this means just send back a copy of the value as a string.
