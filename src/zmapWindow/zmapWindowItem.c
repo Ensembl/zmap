@@ -1091,7 +1091,7 @@ gboolean zmapWindowSeqToWorldCoords(ZMapWindow window,
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
-    set_item = (FooCanvasItem*)window->separator_feature_set ;
+    set_item = (FooCanvasItem *)(window->separator_feature_set) ;
 
     {
       ZMapWindowFeaturesetItem featureset ;
