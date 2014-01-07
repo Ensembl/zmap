@@ -31,12 +31,16 @@
  *-------------------------------------------------------------------
  */
 
-#include <string.h>
 #include <ZMap/zmap.h>
+
+#include <string.h>
+
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapGLibUtils.h>
-#include <zmapStyle_I.h>
 #include <ZMap/zmapConfigIni.h>   // for zMapConfigLegacyStyles() only can remove when system has moved on
+#include <zmapStyle_I.h>
+
+
 
 /*
  * Some notes on implementation by mh17
@@ -52,8 +56,8 @@
  */
 
 
-
-
+#define PARAM_ID_IS_VALID(PARAM_ID)             \
+  ((PARAM_ID) > 0 && (PARAM_ID) < _STYLE_PROP_N_ITEMS)
 
 
 static void zmap_feature_type_style_class_init(ZMapFeatureTypeStyleClass style_class);
@@ -95,6 +99,8 @@ static gchar *zmapStyleValueColour(ZMapStyleFullColour this_colour);
 static gboolean parseSubFeatures(ZMapFeatureTypeStyle style,gchar *str);
 static gchar *zmapStyleValueSubFeatures(GQuark *quarks);
 
+static gboolean styleMergeParam( ZMapFeatureTypeStyle dest, ZMapFeatureTypeStyle src, ZMapStyleParamId id) ;
+
 
 
 
@@ -104,220 +110,226 @@ static gchar *zmapStyleValueSubFeatures(GQuark *quarks);
 
 
 /* all the parameters of a style, closely follows the style struct members
- *-----------------------------------------------------------------------
- * NB: this must be fully populated and
- * in the same order as the ZMapStyleParamId enum defined in zmapStyle.h
+ * 
+ * NB: this must be fully populated and IN THE SAME ORDER as the
+ * ZMapStyleParamId enum defined in zmapStyle.h
  *
  * it would be even better if we assigned each one to an array
  * using the id as an index
- *-----------------------------------------------------------------------
+ * 
  */
 ZMapStyleParamStruct zmapStyleParams_G[_STYLE_PROP_N_ITEMS] =
 {
-  { STYLE_PROP_NONE, STYLE_PARAM_TYPE_INVALID, ZMAPSTYLE_PROPERTY_INVALID
-    "", "", 0,0 },                                           // (0 not used)
+  { STYLE_PROP_NONE, STYLE_PARAM_TYPE_INVALID,
+    ZMAPSTYLE_PROPERTY_INVALID, "", "",
+    0, ZMAPSTYLE_MODE_INVALID,
+    0, 0, 0,
+    NULL}, // (0 not used)
 
-  { STYLE_PROP_IS_SET, STYLE_PARAM_TYPE_FLAGS, ZMAPSTYLE_PROPERTY_IS_SET,
-    "isset", "parameter set flags",
-    offsetof(zmapFeatureTypeStyleStruct,is_set),0 },          /* (internal/ automatic property) */
+  { STYLE_PROP_IS_SET, STYLE_PARAM_TYPE_FLAGS,
+    ZMAPSTYLE_PROPERTY_IS_SET, "isset", "parameter set flags",
+    offsetof(zmapFeatureTypeStyleStruct,is_set),ZMAPSTYLE_MODE_INVALID, 0, 0, 0, NULL},          /* (internal/ automatic property) */
 
   { STYLE_PROP_NAME, STYLE_PARAM_TYPE_SQUARK, ZMAPSTYLE_PROPERTY_NAME,
     "name", "Name",
-    offsetof(zmapFeatureTypeStyleStruct, original_id ),0 },                         /* Name as text. */
+    offsetof(zmapFeatureTypeStyleStruct, original_id ),ZMAPSTYLE_MODE_INVALID, 0, 0, 0, NULL}, /* Name as text. */
   // review zMapStyleGetName() if you change this
+
   { STYLE_PROP_ORIGINAL_ID, STYLE_PARAM_TYPE_QUARK, ZMAPSTYLE_PROPERTY_ORIGINAL_ID,
     "original-id", "original id",
-    offsetof(zmapFeatureTypeStyleStruct, original_id ),0 },
+    offsetof(zmapFeatureTypeStyleStruct, original_id ),ZMAPSTYLE_MODE_INVALID, 0, 0, 0, NULL},
+
   { STYLE_PROP_UNIQUE_ID, STYLE_PARAM_TYPE_QUARK, ZMAPSTYLE_PROPERTY_UNIQUE_ID,
     "unique-id", "unique id",
-    offsetof(zmapFeatureTypeStyleStruct, unique_id) ,0},
+    offsetof(zmapFeatureTypeStyleStruct, unique_id) ,ZMAPSTYLE_MODE_INVALID, 0, 0, 0, NULL},
 
   { STYLE_PROP_PARENT_STYLE, STYLE_PARAM_TYPE_QUARK, ZMAPSTYLE_PROPERTY_PARENT_STYLE,
     "parent-style", "parent style unique id",
-    offsetof(zmapFeatureTypeStyleStruct, parent_id),0},
+    offsetof(zmapFeatureTypeStyleStruct, parent_id),ZMAPSTYLE_MODE_INVALID, 0, 0, 0, NULL},
   { STYLE_PROP_DESCRIPTION, STYLE_PARAM_TYPE_STRING, ZMAPSTYLE_PROPERTY_DESCRIPTION,
     "description", "Description",
-    offsetof(zmapFeatureTypeStyleStruct, description) ,0},
+    offsetof(zmapFeatureTypeStyleStruct, description) ,ZMAPSTYLE_MODE_INVALID, 0, 0, 0, NULL},
   { STYLE_PROP_MODE, STYLE_PARAM_TYPE_MODE, ZMAPSTYLE_PROPERTY_MODE,
     "mode", "Mode",
-    offsetof(zmapFeatureTypeStyleStruct, mode) ,0},
+    offsetof(zmapFeatureTypeStyleStruct, mode) ,ZMAPSTYLE_MODE_INVALID, 0, 0, 0, NULL},
 
   { STYLE_PROP_COLOURS,        STYLE_PARAM_TYPE_COLOUR, ZMAPSTYLE_PROPERTY_COLOURS,
     "main colours", "Colours used for normal feature display.",
-    offsetof(zmapFeatureTypeStyleStruct,colours ),0 },
+    offsetof(zmapFeatureTypeStyleStruct,colours ),ZMAPSTYLE_MODE_INVALID, 0, 0, 0, NULL},
   { STYLE_PROP_FRAME0_COLOURS, STYLE_PARAM_TYPE_COLOUR, ZMAPSTYLE_PROPERTY_FRAME0_COLOURS,
     "frame0-colour-normal", "Frame0 normal colour",
-    offsetof(zmapFeatureTypeStyleStruct, frame0_colours),0 },
+    offsetof(zmapFeatureTypeStyleStruct, frame0_colours),ZMAPSTYLE_MODE_INVALID, 0, 0, 0, NULL},
   { STYLE_PROP_FRAME1_COLOURS, STYLE_PARAM_TYPE_COLOUR, ZMAPSTYLE_PROPERTY_FRAME1_COLOURS,
     "frame1-colour-normal", "Frame1 normal colour",
-    offsetof(zmapFeatureTypeStyleStruct,frame1_colours ),0 },
+    offsetof(zmapFeatureTypeStyleStruct,frame1_colours ),ZMAPSTYLE_MODE_INVALID, 0, 0, 0, NULL},
   { STYLE_PROP_FRAME2_COLOURS, STYLE_PARAM_TYPE_COLOUR, ZMAPSTYLE_PROPERTY_FRAME2_COLOURS,
     "frame2-colour-normal", "Frame2 normal colour",
-    offsetof(zmapFeatureTypeStyleStruct,frame2_colours ) ,0},
+    offsetof(zmapFeatureTypeStyleStruct,frame2_colours ) ,ZMAPSTYLE_MODE_INVALID, 0, 0, 0, NULL},
   { STYLE_PROP_REV_COLOURS,    STYLE_PARAM_TYPE_COLOUR, ZMAPSTYLE_PROPERTY_REV_COLOURS,
     "main-colour-normal", "Reverse Strand normal colour",
-    offsetof(zmapFeatureTypeStyleStruct, strand_rev_colours) ,0 },
+    offsetof(zmapFeatureTypeStyleStruct, strand_rev_colours) ,ZMAPSTYLE_MODE_INVALID, 0, 0, 0, NULL},
 
   { STYLE_PROP_COLUMN_DISPLAY_MODE, STYLE_PARAM_TYPE_COLDISP, ZMAPSTYLE_PROPERTY_DISPLAY_MODE,
     "display-mode", "Display mode",
-    offsetof(zmapFeatureTypeStyleStruct, col_display_state ),0 },
+    offsetof(zmapFeatureTypeStyleStruct, col_display_state ),ZMAPSTYLE_MODE_INVALID, 0, 0, 0, NULL},
 
   { STYLE_PROP_BUMP_DEFAULT, STYLE_PARAM_TYPE_BUMP, ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE,
     "bump-mode", "The Default Bump Mode",
-    offsetof(zmapFeatureTypeStyleStruct, default_bump_mode),0 },
+    offsetof(zmapFeatureTypeStyleStruct, default_bump_mode),ZMAPSTYLE_MODE_INVALID, 0, 0, 0, NULL},
   { STYLE_PROP_BUMP_MODE, STYLE_PARAM_TYPE_BUMP, ZMAPSTYLE_PROPERTY_BUMP_MODE,
     "initial-bump_mode", "Current bump mode",
-    offsetof(zmapFeatureTypeStyleStruct, initial_bump_mode),0 },
+    offsetof(zmapFeatureTypeStyleStruct, initial_bump_mode),ZMAPSTYLE_MODE_INVALID, 0, 0, 0, NULL},
   { STYLE_PROP_BUMP_FIXED, STYLE_PARAM_TYPE_BOOLEAN, ZMAPSTYLE_PROPERTY_BUMP_FIXED,
     "bump-fixed", "Style cannot be changed once set.",
-    offsetof(zmapFeatureTypeStyleStruct, bump_fixed) ,0},
+    offsetof(zmapFeatureTypeStyleStruct, bump_fixed) ,ZMAPSTYLE_MODE_INVALID, 0, 0, 0, NULL},
   { STYLE_PROP_BUMP_SPACING, STYLE_PARAM_TYPE_DOUBLE, ZMAPSTYLE_PROPERTY_BUMP_SPACING,
     "bump-spacing", "space between columns in bumped columns",
-    offsetof(zmapFeatureTypeStyleStruct, bump_spacing) ,0},
+    offsetof(zmapFeatureTypeStyleStruct, bump_spacing) ,ZMAPSTYLE_MODE_INVALID, 0, 0, 0, NULL},
   { STYLE_PROP_BUMP_STYLE, STYLE_PARAM_TYPE_SQUARK, ZMAPSTYLE_PROPERTY_BUMP_STYLE,
     "bump to different style", "bump to different style",
-    offsetof(zmapFeatureTypeStyleStruct, bump_style),0 },
+    offsetof(zmapFeatureTypeStyleStruct, bump_style),ZMAPSTYLE_MODE_INVALID, 0, 0, 0, NULL},
 
   { STYLE_PROP_FRAME_MODE, STYLE_PARAM_TYPE_3FRAME, ZMAPSTYLE_PROPERTY_FRAME_MODE,
     "3 frame display mode", "Defines frame sensitive display in 3 frame mode.",
-    offsetof(zmapFeatureTypeStyleStruct, frame_mode),0 },
+    offsetof(zmapFeatureTypeStyleStruct, frame_mode),ZMAPSTYLE_MODE_INVALID, 0, 0, 0, NULL},
 
   { STYLE_PROP_MIN_MAG, STYLE_PARAM_TYPE_DOUBLE, ZMAPSTYLE_PROPERTY_MIN_MAG,
     "min-mag", "minimum magnification",
-    offsetof(zmapFeatureTypeStyleStruct, min_mag),0 },
+    offsetof(zmapFeatureTypeStyleStruct, min_mag),ZMAPSTYLE_MODE_INVALID, 0, 0, 0, NULL},
   { STYLE_PROP_MAX_MAG, STYLE_PARAM_TYPE_DOUBLE, ZMAPSTYLE_PROPERTY_MAX_MAG,
     "max-mag", "maximum magnification",
-    offsetof(zmapFeatureTypeStyleStruct, max_mag),0 },
+    offsetof(zmapFeatureTypeStyleStruct, max_mag),ZMAPSTYLE_MODE_INVALID, 0, 0, 0, NULL},
 
   { STYLE_PROP_WIDTH, STYLE_PARAM_TYPE_DOUBLE, ZMAPSTYLE_PROPERTY_WIDTH,
     "width", "width",
-    offsetof(zmapFeatureTypeStyleStruct, width),0 },
+    offsetof(zmapFeatureTypeStyleStruct, width),ZMAPSTYLE_MODE_INVALID, 0, 0, 0, NULL},
 
   { STYLE_PROP_SCORE_MODE, STYLE_PARAM_TYPE_SCORE, ZMAPSTYLE_PROPERTY_SCORE_MODE,
     "score-mode", "Score Mode",
-    offsetof(zmapFeatureTypeStyleStruct, score_mode) ,0},
+    offsetof(zmapFeatureTypeStyleStruct, score_mode) ,ZMAPSTYLE_MODE_INVALID, 0, 0, 0, NULL},
+  { STYLE_PROP_SCORE_SCALE, STYLE_PARAM_TYPE_SCALE, ZMAPSTYLE_PROPERTY_SCORE_SCALE,
+    "score-scale", "Score scaling",
+    offsetof(zmapFeatureTypeStyleStruct, score_scale) , ZMAPSTYLE_MODE_INVALID, 0, 0, 0, NULL},
   { STYLE_PROP_MIN_SCORE, STYLE_PARAM_TYPE_DOUBLE, ZMAPSTYLE_PROPERTY_MIN_SCORE,
     "min-score", "minimum-score",
-    offsetof(zmapFeatureTypeStyleStruct, min_score),0 },
+    offsetof(zmapFeatureTypeStyleStruct, min_score),ZMAPSTYLE_MODE_INVALID, 0, 0, 0, NULL},
   { STYLE_PROP_MAX_SCORE, STYLE_PARAM_TYPE_DOUBLE, ZMAPSTYLE_PROPERTY_MAX_SCORE,
     "max-score", "maximum score",
-    offsetof(zmapFeatureTypeStyleStruct, max_score),0 },
-  { STYLE_PROP_SCORE_SCALE, STYLE_PARAM_TYPE_GRAPH_SCALE, ZMAPSTYLE_PROPERTY_SCORE_SCALE,
-    "graph-scale", "Graph Scale",
-    offsetof(zmapFeatureTypeStyleStruct, score_scale) , 0 },
+    offsetof(zmapFeatureTypeStyleStruct, max_score),ZMAPSTYLE_MODE_INVALID, 0, 0, 0, NULL},
 
   { STYLE_PROP_SUMMARISE, STYLE_PARAM_TYPE_DOUBLE, ZMAPSTYLE_PROPERTY_SUMMARISE,
     "summarise featureset at low zoom", "summarise featureset at low zoom",
-    offsetof(zmapFeatureTypeStyleStruct, summarise), 0 },
+    offsetof(zmapFeatureTypeStyleStruct, summarise), ZMAPSTYLE_MODE_INVALID, 0, 0, 0, NULL},
 
   { STYLE_PROP_COLLAPSE, STYLE_PARAM_TYPE_BOOLEAN, ZMAPSTYLE_PROPERTY_COLLAPSE,
     "collapse identical features into one", "collapse identical features into one",
-    offsetof(zmapFeatureTypeStyleStruct, collapse), 0 },
+    offsetof(zmapFeatureTypeStyleStruct, collapse), ZMAPSTYLE_MODE_INVALID, 0, 0, 0, NULL},
 
 
   { STYLE_PROP_GFF_SOURCE, STYLE_PARAM_TYPE_SQUARK, ZMAPSTYLE_PROPERTY_GFF_SOURCE,
     "gff source", "GFF Source",
-    offsetof(zmapFeatureTypeStyleStruct, gff_source) ,0 },
+    offsetof(zmapFeatureTypeStyleStruct, gff_source) ,ZMAPSTYLE_MODE_INVALID, 0, 0, 0, NULL},
   { STYLE_PROP_GFF_FEATURE, STYLE_PARAM_TYPE_SQUARK, ZMAPSTYLE_PROPERTY_GFF_FEATURE,
     "gff feature", "GFF feature",
-    offsetof(zmapFeatureTypeStyleStruct, gff_feature),0 },
+    offsetof(zmapFeatureTypeStyleStruct, gff_feature),ZMAPSTYLE_MODE_INVALID, 0, 0, 0, NULL},
 
   { STYLE_PROP_DISPLAYABLE, STYLE_PARAM_TYPE_BOOLEAN,ZMAPSTYLE_PROPERTY_DISPLAYABLE,
     "displayable", "Is the style Displayable",
-    offsetof(zmapFeatureTypeStyleStruct, displayable),0 },
+    offsetof(zmapFeatureTypeStyleStruct, displayable),ZMAPSTYLE_MODE_INVALID, 0, 0, 0, NULL},
   { STYLE_PROP_SHOW_WHEN_EMPTY, STYLE_PARAM_TYPE_BOOLEAN, ZMAPSTYLE_PROPERTY_SHOW_WHEN_EMPTY,
     "show when empty", "Does the Style get shown when empty",
-    offsetof(zmapFeatureTypeStyleStruct, show_when_empty ) ,0},
+    offsetof(zmapFeatureTypeStyleStruct, show_when_empty ) ,ZMAPSTYLE_MODE_INVALID, 0, 0, 0, NULL},
   { STYLE_PROP_SHOW_TEXT, STYLE_PARAM_TYPE_BOOLEAN, ZMAPSTYLE_PROPERTY_SHOW_TEXT,
     "show-text",  "Show as Text",
-    offsetof(zmapFeatureTypeStyleStruct, showText) ,0 },
+    offsetof(zmapFeatureTypeStyleStruct, showText) ,ZMAPSTYLE_MODE_INVALID, 0, 0, 0, NULL},
   { STYLE_PROP_SUB_FEATURES, STYLE_PARAM_TYPE_SUB_FEATURES, ZMAPSTYLE_PROPERTY_SUB_FEATURES,
     "sub-features",  "Sub-features (glyphs)",
-    offsetof(zmapFeatureTypeStyleStruct, sub_features) ,0 },
+    offsetof(zmapFeatureTypeStyleStruct, sub_features) ,ZMAPSTYLE_MODE_INVALID, 0, 0, 0, NULL},
 
   { STYLE_PROP_STRAND_SPECIFIC, STYLE_PARAM_TYPE_BOOLEAN, ZMAPSTYLE_PROPERTY_STRAND_SPECIFIC,
     "strand specific", "Strand Specific ?",
-    offsetof(zmapFeatureTypeStyleStruct, strand_specific) ,0 },
+    offsetof(zmapFeatureTypeStyleStruct, strand_specific) ,ZMAPSTYLE_MODE_INVALID, 0, 0, 0, NULL},
   { STYLE_PROP_SHOW_REV_STRAND, STYLE_PARAM_TYPE_BOOLEAN, ZMAPSTYLE_PROPERTY_SHOW_REVERSE_STRAND,
     "show-reverse-strand", "Show Rev Strand ?",
-    offsetof(zmapFeatureTypeStyleStruct, show_rev_strand) ,0 },
+    offsetof(zmapFeatureTypeStyleStruct, show_rev_strand) ,ZMAPSTYLE_MODE_INVALID, 0, 0, 0, NULL},
   { STYLE_PROP_HIDE_FWD_STRAND, STYLE_PARAM_TYPE_BOOLEAN, ZMAPSTYLE_PROPERTY_HIDE_FORWARD_STRAND,
     "hide-forward-strand", "Hide Fwd Strand when RevComp'd?",
-    offsetof(zmapFeatureTypeStyleStruct, hide_fwd_strand) ,0 },
+    offsetof(zmapFeatureTypeStyleStruct, hide_fwd_strand) ,ZMAPSTYLE_MODE_INVALID, 0, 0, 0, NULL},
   { STYLE_PROP_SHOW_ONLY_IN_SEPARATOR, STYLE_PARAM_TYPE_BOOLEAN, ZMAPSTYLE_PROPERTY_SHOW_ONLY_IN_SEPARATOR,
     "only in separator", "Show Only in Separator",
-    offsetof(zmapFeatureTypeStyleStruct, show_only_in_separator),0 },
+    offsetof(zmapFeatureTypeStyleStruct, show_only_in_separator),ZMAPSTYLE_MODE_INVALID, 0, 0, 0, NULL},
   { STYLE_PROP_DIRECTIONAL_ENDS, STYLE_PARAM_TYPE_BOOLEAN, ZMAPSTYLE_PROPERTY_DIRECTIONAL_ENDS,
     "directional-ends", "Display pointy \"short sides\"",
-    offsetof(zmapFeatureTypeStyleStruct, directional_end),0 },
+    offsetof(zmapFeatureTypeStyleStruct, directional_end),ZMAPSTYLE_MODE_INVALID, 0, 0, 0, NULL},
 
   { STYLE_PROP_FOO, STYLE_PARAM_TYPE_BOOLEAN, ZMAPSTYLE_PROPERTY_FOO,
     "as Foo Canvas Items", "use old technology",
-    offsetof(zmapFeatureTypeStyleStruct, foo),0 },
+    offsetof(zmapFeatureTypeStyleStruct, foo),ZMAPSTYLE_MODE_INVALID, 0, 0, 0, NULL},
 
   { STYLE_PROP_FILTER, STYLE_PARAM_TYPE_BOOLEAN, ZMAPSTYLE_PROPERTY_FILTER,
     "filter by score", "filter column by score",
-    offsetof(zmapFeatureTypeStyleStruct, filter),0 },
+    offsetof(zmapFeatureTypeStyleStruct, filter),ZMAPSTYLE_MODE_INVALID, 0, 0, 0, NULL},
 
   { STYLE_PROP_OFFSET, STYLE_PARAM_TYPE_DOUBLE, ZMAPSTYLE_PROPERTY_OFFSET,
     "offset contents by x pixels", "offset contents by x pixels",
-    offsetof(zmapFeatureTypeStyleStruct, offset), 0 },
+    offsetof(zmapFeatureTypeStyleStruct, offset), ZMAPSTYLE_MODE_INVALID, 0, 0, 0, NULL},
 
   { STYLE_PROP_GLYPH_NAME, STYLE_PARAM_TYPE_QUARK, ZMAPSTYLE_PROPERTY_GLYPH_NAME,
     "glyph-name", "Glyph name used to reference glyphs config stanza",
-    offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph_name),ZMAPSTYLE_MODE_GLYPH },
+    offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph_name),ZMAPSTYLE_MODE_GLYPH, 0, 0, 0, NULL},
 
   { STYLE_PROP_GLYPH_SHAPE, STYLE_PARAM_TYPE_GLYPH_SHAPE, ZMAPSTYLE_PROPERTY_GLYPH_SHAPE,
     "glyph-type", "Type of glyph to show.",
-    offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph), ZMAPSTYLE_MODE_GLYPH },
+    offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph), ZMAPSTYLE_MODE_GLYPH, 0, 0, 0, NULL},
 
   { STYLE_PROP_GLYPH_NAME_5, STYLE_PARAM_TYPE_QUARK, ZMAPSTYLE_PROPERTY_GLYPH_NAME_5,
     "glyph-name for 5' end", "Glyph name used to reference glyphs config stanza",
-    offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph_name_5),ZMAPSTYLE_MODE_GLYPH },
+    offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph_name_5),ZMAPSTYLE_MODE_GLYPH, 0, 0, 0, NULL},
 
   { STYLE_PROP_GLYPH_SHAPE_5, STYLE_PARAM_TYPE_GLYPH_SHAPE, ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_5,
     "glyph-type-5", "Type of glyph to show at 5' end.",
-    offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph5), ZMAPSTYLE_MODE_GLYPH },
+    offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph5), ZMAPSTYLE_MODE_GLYPH, 0, 0, 0, NULL},
 
   { STYLE_PROP_GLYPH_NAME_5_REV, STYLE_PARAM_TYPE_QUARK, ZMAPSTYLE_PROPERTY_GLYPH_NAME_5_REV,
     "glyph-name for 5' end reverse strand", "Glyph name used to reference glyphs config stanza",
-    offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph_name_5_rev),ZMAPSTYLE_MODE_GLYPH },
+    offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph_name_5_rev),ZMAPSTYLE_MODE_GLYPH, 0, 0, 0, NULL},
 
   { STYLE_PROP_GLYPH_SHAPE_5_REV, STYLE_PARAM_TYPE_GLYPH_SHAPE, ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_5_REV,
     "glyph-type-5-rev", "Type of glyph to show at 5' end on reverse strand.",
-    offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph5rev), ZMAPSTYLE_MODE_GLYPH },
+    offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph5rev), ZMAPSTYLE_MODE_GLYPH, 0, 0, 0, NULL},
 
   { STYLE_PROP_GLYPH_NAME_3, STYLE_PARAM_TYPE_QUARK, ZMAPSTYLE_PROPERTY_GLYPH_NAME_3,
     "glyph-name for 3' end", "Glyph name used to reference glyphs config stanza",
-    offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph_name_3),ZMAPSTYLE_MODE_GLYPH },
+    offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph_name_3),ZMAPSTYLE_MODE_GLYPH, 0, 0, 0, NULL},
 
   { STYLE_PROP_GLYPH_SHAPE_3, STYLE_PARAM_TYPE_GLYPH_SHAPE, ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_3,
     "glyph-type-3", "Type of glyph to show at 3' end.",
-    offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph3), ZMAPSTYLE_MODE_GLYPH },
+    offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph3), ZMAPSTYLE_MODE_GLYPH, 0, 0, 0, NULL},
 
   { STYLE_PROP_GLYPH_NAME_3_REV, STYLE_PARAM_TYPE_QUARK, ZMAPSTYLE_PROPERTY_GLYPH_NAME_3_REV,
     "glyph-name for 3' end reverse strand", "Glyph name used to reference glyphs config stanza",
-    offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph_name_3_rev),ZMAPSTYLE_MODE_GLYPH },
+    offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph_name_3_rev),ZMAPSTYLE_MODE_GLYPH, 0, 0, 0, NULL},
 
   { STYLE_PROP_GLYPH_SHAPE_3_REV, STYLE_PARAM_TYPE_GLYPH_SHAPE, ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_3_REV,
     "glyph-type-3-rev", "Type of glyph to show at 3' end on reverse strand.",
-    offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph3rev), ZMAPSTYLE_MODE_GLYPH },
+    offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph3rev), ZMAPSTYLE_MODE_GLYPH, 0, 0, 0, NULL},
 
   { STYLE_PROP_GLYPH_ALT_COLOURS, STYLE_PARAM_TYPE_COLOUR,ZMAPSTYLE_PROPERTY_GLYPH_ALT_COLOURS,
     "alternate glyph colour", "Colours used to show glyphs when below thrashold.",
-    offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph_alt_colours) ,ZMAPSTYLE_MODE_GLYPH  },
+    offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph_alt_colours), ZMAPSTYLE_MODE_GLYPH,
+    0, 0, 0, NULL},
 
   { STYLE_PROP_GLYPH_THRESHOLD, STYLE_PARAM_TYPE_UINT, ZMAPSTYLE_PROPERTY_GLYPH_THRESHOLD,
     "glyph-threshold", "Glyph threshold for alternate coloura",
-    offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph_threshold) ,ZMAPSTYLE_MODE_GLYPH },
+    offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph_threshold) ,ZMAPSTYLE_MODE_GLYPH, 0, 0, 0, NULL},
 
   { STYLE_PROP_GLYPH_STRAND, STYLE_PARAM_TYPE_GLYPH_STRAND, ZMAPSTYLE_PROPERTY_GLYPH_STRAND,
     "glyph-strand", "What to do for the reverse strand",
-    offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph_strand) ,ZMAPSTYLE_MODE_GLYPH },
+    offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph_strand) ,ZMAPSTYLE_MODE_GLYPH, 0, 0, 0, NULL},
 
   { STYLE_PROP_GLYPH_ALIGN, STYLE_PARAM_TYPE_GLYPH_ALIGN, ZMAPSTYLE_PROPERTY_GLYPH_ALIGN,
     "glyph-align", "where to centre the glyph",
-    offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph_align) ,ZMAPSTYLE_MODE_GLYPH },
+    offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph_align) ,ZMAPSTYLE_MODE_GLYPH, 0, 0, 0, NULL},
 
 
 
@@ -325,136 +337,157 @@ ZMapStyleParamStruct zmapStyleParams_G[_STYLE_PROP_N_ITEMS] =
 
   { STYLE_PROP_GRAPH_MODE, STYLE_PARAM_TYPE_GRAPH_MODE, ZMAPSTYLE_PROPERTY_GRAPH_MODE,
     "graph-mode", "Graph Mode",
-    offsetof(zmapFeatureTypeStyleStruct, mode_data.graph.mode) ,ZMAPSTYLE_MODE_GRAPH },
+    offsetof(zmapFeatureTypeStyleStruct, mode_data.graph.mode) ,ZMAPSTYLE_MODE_GRAPH, 0, 0, 0, NULL},
   { STYLE_PROP_GRAPH_BASELINE, STYLE_PARAM_TYPE_DOUBLE, ZMAPSTYLE_PROPERTY_GRAPH_BASELINE,
     "graph baseline", "Sets the baseline for graph values.",
-    offsetof(zmapFeatureTypeStyleStruct, mode_data.graph.baseline),ZMAPSTYLE_MODE_GRAPH },
-  { STYLE_PROP_GRAPH_SCALE, STYLE_PARAM_TYPE_GRAPH_SCALE, ZMAPSTYLE_PROPERTY_GRAPH_SCALE,
-    "graph-scale", "Graph Scale",
-    offsetof(zmapFeatureTypeStyleStruct, mode_data.graph.scale) ,ZMAPSTYLE_MODE_GRAPH },
+    offsetof(zmapFeatureTypeStyleStruct, mode_data.graph.baseline),ZMAPSTYLE_MODE_GRAPH, 0, 0, 0, NULL},
+  { STYLE_PROP_GRAPH_SCALE, STYLE_PARAM_TYPE_SCALE, ZMAPSTYLE_PROPERTY_GRAPH_SCALE,
+    "graph-scale", "Graph Scaling",
+    offsetof(zmapFeatureTypeStyleStruct, mode_data.graph.scale), ZMAPSTYLE_MODE_GRAPH, 0, 0, 0, NULL},
   { STYLE_PROP_GRAPH_FILL, STYLE_PARAM_TYPE_BOOLEAN, ZMAPSTYLE_PROPERTY_GRAPH_FILL,
     "graph-fill", "Graph fill mode",
-    offsetof(zmapFeatureTypeStyleStruct, mode_data.graph.fill) ,ZMAPSTYLE_MODE_GRAPH },
+    offsetof(zmapFeatureTypeStyleStruct, mode_data.graph.fill) ,ZMAPSTYLE_MODE_GRAPH, 0, 0, 0, NULL},
   { STYLE_PROP_GRAPH_DENSITY, STYLE_PARAM_TYPE_BOOLEAN, ZMAPSTYLE_PROPERTY_GRAPH_DENSITY,
     "graph-density", "Density plot",
-    offsetof(zmapFeatureTypeStyleStruct, mode_data.graph.density) ,ZMAPSTYLE_MODE_GRAPH },
+    offsetof(zmapFeatureTypeStyleStruct, mode_data.graph.density) ,ZMAPSTYLE_MODE_GRAPH, 0, 0, 0, NULL},
   { STYLE_PROP_GRAPH_DENSITY_FIXED, STYLE_PARAM_TYPE_BOOLEAN, ZMAPSTYLE_PROPERTY_GRAPH_DENSITY_FIXED,
     "graph-density-fixed", "anchor bins to pixel boundaries",
-    offsetof(zmapFeatureTypeStyleStruct, mode_data.graph.fixed) ,ZMAPSTYLE_MODE_GRAPH },
+    offsetof(zmapFeatureTypeStyleStruct, mode_data.graph.fixed) ,ZMAPSTYLE_MODE_GRAPH, 0, 0, 0, NULL},
   { STYLE_PROP_GRAPH_DENSITY_MIN_BIN, STYLE_PARAM_TYPE_UINT, ZMAPSTYLE_PROPERTY_GRAPH_DENSITY_MIN_BIN,
     "graph-density-min-bin", "min bin size in pixels",
-    offsetof(zmapFeatureTypeStyleStruct, mode_data.graph.min_bin) ,ZMAPSTYLE_MODE_GRAPH },
+    offsetof(zmapFeatureTypeStyleStruct, mode_data.graph.min_bin) ,ZMAPSTYLE_MODE_GRAPH, 0, 0, 0, NULL},
   { STYLE_PROP_GRAPH_DENSITY_STAGGER, STYLE_PARAM_TYPE_UINT, ZMAPSTYLE_PROPERTY_GRAPH_DENSITY_STAGGER,
     "graph-density-stagger", "featureset/ column offset",
-    offsetof(zmapFeatureTypeStyleStruct, mode_data.graph.stagger) ,ZMAPSTYLE_MODE_GRAPH },
+    offsetof(zmapFeatureTypeStyleStruct, mode_data.graph.stagger) ,ZMAPSTYLE_MODE_GRAPH, 0, 0, 0, NULL},
   { STYLE_PROP_GRAPH_COLOURS, STYLE_PARAM_TYPE_COLOUR, ZMAPSTYLE_PROPERTY_GRAPH_COLOURS,
     "graph colours", "Colours used to show the various types of graph.",
-    offsetof(zmapFeatureTypeStyleStruct, mode_data.graph.colours), ZMAPSTYLE_MODE_GRAPH  },
+    offsetof(zmapFeatureTypeStyleStruct, mode_data.graph.colours), ZMAPSTYLE_MODE_GRAPH, 0, 0, 0, NULL},
 
   { STYLE_PROP_ALIGNMENT_PARSE_GAPS, STYLE_PARAM_TYPE_BOOLEAN, ZMAPSTYLE_PROPERTY_ALIGNMENT_PARSE_GAPS,
     "parse gaps", "Parse Gaps ?",
-    offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.parse_gaps) ,ZMAPSTYLE_MODE_ALIGNMENT },
+    offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.parse_gaps) ,ZMAPSTYLE_MODE_ALIGNMENT, 0, 0, 0, NULL},
   { STYLE_PROP_ALIGNMENT_SHOW_GAPS, STYLE_PARAM_TYPE_BOOLEAN, ZMAPSTYLE_PROPERTY_ALIGNMENT_SHOW_GAPS,
     "show gaps", "Show Gaps ?",
-    offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.show_gaps) ,ZMAPSTYLE_MODE_ALIGNMENT  },
+    offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.show_gaps) ,ZMAPSTYLE_MODE_ALIGNMENT,
+    0, 0, 0, NULL},
   { STYLE_PROP_ALIGNMENT_ALWAYS_GAPPED, STYLE_PARAM_TYPE_BOOLEAN, ZMAPSTYLE_PROPERTY_ALIGNMENT_ALWAYS_GAPPED,
     "always gapped", "Always Gapped ?",
-    offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.always_gapped) ,ZMAPSTYLE_MODE_ALIGNMENT  },
+    offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.always_gapped) ,ZMAPSTYLE_MODE_ALIGNMENT ,
+    0, 0, 0, NULL},
   { STYLE_PROP_ALIGNMENT_UNIQUE, STYLE_PARAM_TYPE_BOOLEAN, ZMAPSTYLE_PROPERTY_ALIGNMENT_UNIQUE,
     "unique", "Don't display same name as joined up",
-    offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.unique) ,ZMAPSTYLE_MODE_ALIGNMENT  },
+    offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.unique) ,ZMAPSTYLE_MODE_ALIGNMENT , 0, 0, 0, NULL},
   { STYLE_PROP_ALIGNMENT_BETWEEN_ERROR,STYLE_PARAM_TYPE_UINT, ZMAPSTYLE_PROPERTY_ALIGNMENT_JOIN_ALIGN,
     "alignment between error", "Allowable alignment error between HSP's",
-    offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.between_align_error)  ,ZMAPSTYLE_MODE_ALIGNMENT },
+    offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.between_align_error)  ,ZMAPSTYLE_MODE_ALIGNMENT,
+    0, 0, 0, NULL},
   { STYLE_PROP_ALIGNMENT_ALLOW_MISALIGN, STYLE_PARAM_TYPE_BOOLEAN, ZMAPSTYLE_PROPERTY_ALIGNMENT_ALLOW_MISALIGN,
     "Allow misalign", "Allow match -> ref sequences to be different lengths.",
-    offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.allow_misalign)  ,ZMAPSTYLE_MODE_ALIGNMENT },
+    offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.allow_misalign)  ,ZMAPSTYLE_MODE_ALIGNMENT,
+    0, 0, 0, NULL},
   { STYLE_PROP_ALIGNMENT_PFETCHABLE, STYLE_PARAM_TYPE_BOOLEAN, ZMAPSTYLE_PROPERTY_ALIGNMENT_PFETCHABLE,
     "Pfetchable alignments", "Use pfetch proxy to get alignments ?",
-    offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.pfetchable)  ,ZMAPSTYLE_MODE_ALIGNMENT },
+    offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.pfetchable)  ,ZMAPSTYLE_MODE_ALIGNMENT,
+    0, 0, 0, NULL},
   { STYLE_PROP_ALIGNMENT_BLIXEM, STYLE_PARAM_TYPE_BLIXEM, ZMAPSTYLE_PROPERTY_ALIGNMENT_BLIXEM,
     "Blixemable alignments","Use blixem to view sequence of alignments ?",
-    offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.blixem_type)  ,ZMAPSTYLE_MODE_ALIGNMENT },
+    offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.blixem_type)  ,ZMAPSTYLE_MODE_ALIGNMENT,
+    0, 0, 0, NULL},
   { STYLE_PROP_ALIGNMENT_PERFECT_COLOURS, STYLE_PARAM_TYPE_COLOUR, ZMAPSTYLE_PROPERTY_ALIGNMENT_PERFECT_COLOURS,
     "perfect alignment indicator colour", "Colours used to show two alignments have exactly contiguous coords.",
-    offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.perfect)  ,ZMAPSTYLE_MODE_ALIGNMENT },
+    offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.perfect)  ,ZMAPSTYLE_MODE_ALIGNMENT,
+    0, 0, 0, NULL},
   { STYLE_PROP_ALIGNMENT_COLINEAR_COLOURS, STYLE_PARAM_TYPE_COLOUR, ZMAPSTYLE_PROPERTY_ALIGNMENT_COLINEAR_COLOURS,
     "colinear alignment indicator colour", "Colours used to show two alignments have gapped contiguous coords.",
-    offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.colinear)  ,ZMAPSTYLE_MODE_ALIGNMENT },
+    offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.colinear)  ,ZMAPSTYLE_MODE_ALIGNMENT,
+    0, 0, 0, NULL},
   { STYLE_PROP_ALIGNMENT_NONCOLINEAR_COLOURS, STYLE_PARAM_TYPE_COLOUR, ZMAPSTYLE_PROPERTY_ALIGNMENT_NONCOLINEAR_COLOURS,
     "noncolinear alignment indicator colour", "Colours used to show two alignments have overlapping coords.",
-    offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.noncolinear)  ,ZMAPSTYLE_MODE_ALIGNMENT },
+    offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.noncolinear)  ,ZMAPSTYLE_MODE_ALIGNMENT,
+    0, 0, 0, NULL},
   { STYLE_PROP_ALIGNMENT_UNMARKED_COLINEAR, STYLE_PARAM_TYPE_COLDISP, ZMAPSTYLE_PROPERTY_ALIGNMENT_UNMARKED_COLINEAR,
     "paint colinear lines when unmarked", "paint colinear lines when unmarked ?",
-    offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.unmarked_colinear), ZMAPSTYLE_MODE_ALIGNMENT },
+    offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.unmarked_colinear), ZMAPSTYLE_MODE_ALIGNMENT,
+    0, 0, 0, NULL},
   { STYLE_PROP_ALIGNMENT_GAP_COLOURS, STYLE_PARAM_TYPE_COLOUR, ZMAPSTYLE_PROPERTY_ALIGNMENT_GAP_COLOURS,
     "gap between spilt read", "Colours used to show gap between two parts of a split read.",
-    offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.perfect)  ,ZMAPSTYLE_MODE_ALIGNMENT },
+    offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.perfect)  ,ZMAPSTYLE_MODE_ALIGNMENT, 0, 0, 0, NULL},
   { STYLE_PROP_ALIGNMENT_COMMON_COLOURS, STYLE_PARAM_TYPE_COLOUR, ZMAPSTYLE_PROPERTY_ALIGNMENT_COMMON_COLOURS,
     "common part of squashed split read", "Colours used to show part of a squashed split read that is common to all source features.",
-    offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.colinear)  ,ZMAPSTYLE_MODE_ALIGNMENT },
+    offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.colinear)  ,ZMAPSTYLE_MODE_ALIGNMENT,
+    0, 0, 0, NULL},
   { STYLE_PROP_ALIGNMENT_MIXED_COLOURS, STYLE_PARAM_TYPE_COLOUR, ZMAPSTYLE_PROPERTY_ALIGNMENT_MIXED_COLOURS,
     "mixed part of squashed split read that", "Colours used to show  part of a squashed split read that is not common to all source features.",
-    offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.noncolinear)  ,ZMAPSTYLE_MODE_ALIGNMENT },
+    offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.noncolinear)  ,ZMAPSTYLE_MODE_ALIGNMENT,
+    0, 0, 0, NULL},
   { STYLE_PROP_ALIGNMENT_MASK_SETS, STYLE_PARAM_TYPE_QUARK_LIST_ID, ZMAPSTYLE_PROPERTY_ALIGNMENT_MASK_SETS,
     "mask featureset against others", "mask featureset against others",
-    offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.mask_sets), ZMAPSTYLE_MODE_ALIGNMENT },
+    offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.mask_sets), ZMAPSTYLE_MODE_ALIGNMENT,
+    0, 0, 0, NULL},
   { STYLE_PROP_ALIGNMENT_SQUASH, STYLE_PARAM_TYPE_BOOLEAN, ZMAPSTYLE_PROPERTY_ALIGNMENT_SQUASH,
     "squash overlapping split reads into one", "squash overlapping split reads into one",
-    offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.squash),ZMAPSTYLE_MODE_ALIGNMENT },
+    offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.squash),ZMAPSTYLE_MODE_ALIGNMENT, 0, 0, 0, NULL},
   { STYLE_PROP_ALIGNMENT_JOIN_OVERLAP, STYLE_PARAM_TYPE_UINT, ZMAPSTYLE_PROPERTY_ALIGNMENT_JOIN_OVERLAP,
     "join overlapping reads into one", "join overlapping reads into one",
-    offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.join_overlap),ZMAPSTYLE_MODE_ALIGNMENT },
+    offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.join_overlap),ZMAPSTYLE_MODE_ALIGNMENT,
+    0, 0, 0, NULL},
   { STYLE_PROP_ALIGNMENT_JOIN_THRESHOLD, STYLE_PARAM_TYPE_UINT, ZMAPSTYLE_PROPERTY_ALIGNMENT_JOIN_THRESHOLD,
     "allow bases around splice junction when joining", "allow bases around splice junction when joining",
-    offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.join_overlap),ZMAPSTYLE_MODE_ALIGNMENT },
+    offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.join_overlap),ZMAPSTYLE_MODE_ALIGNMENT,
+    0, 0, 0, NULL},
   { STYLE_PROP_ALIGNMENT_JOIN_MAX, STYLE_PARAM_TYPE_UINT, ZMAPSTYLE_PROPERTY_ALIGNMENT_JOIN_MAX,
     "join overlapping reads into one", "join overlapping reads into one",
-    offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.join_max),ZMAPSTYLE_MODE_ALIGNMENT },
+    offsetof(zmapFeatureTypeStyleStruct, mode_data.alignment.join_max),ZMAPSTYLE_MODE_ALIGNMENT, 0, 0, 0, NULL},
 
   { STYLE_PROP_TRANSCRIPT_TRUNC_LEN, STYLE_PARAM_TYPE_DOUBLE, ZMAPSTYLE_PROPERTY_TRANSCRIPT_TRUNC_LEN,
     "show dotted intron at edge of partial trancript", "show dotted intron at edge of partial trancript",
-    offsetof(zmapFeatureTypeStyleStruct, mode_data.transcript.truncated_intron_length),ZMAPSTYLE_MODE_TRANSCRIPT },
+    offsetof(zmapFeatureTypeStyleStruct, mode_data.transcript.truncated_intron_length),ZMAPSTYLE_MODE_TRANSCRIPT,
+    0, 0, 0, NULL},
 
 
   { STYLE_PROP_SEQUENCE_NON_CODING_COLOURS, STYLE_PARAM_TYPE_COLOUR, ZMAPSTYLE_PROPERTY_SEQUENCE_NON_CODING_COLOURS,
     "non-coding exon region colour", "Colour used to highlight UTR section of an exon.",
-    offsetof(zmapFeatureTypeStyleStruct, mode_data.sequence.non_coding), ZMAPSTYLE_MODE_SEQUENCE },
+    offsetof(zmapFeatureTypeStyleStruct, mode_data.sequence.non_coding), ZMAPSTYLE_MODE_SEQUENCE, 0, 0, 0, NULL},
   { STYLE_PROP_SEQUENCE_CODING_COLOURS, STYLE_PARAM_TYPE_COLOUR, ZMAPSTYLE_PROPERTY_SEQUENCE_CODING_COLOURS,
     "coding exon region colour", "Colour used to highlight coding section of an exon.",
-    offsetof(zmapFeatureTypeStyleStruct, mode_data.sequence.coding), ZMAPSTYLE_MODE_SEQUENCE },
+    offsetof(zmapFeatureTypeStyleStruct, mode_data.sequence.coding), ZMAPSTYLE_MODE_SEQUENCE, 0, 0, 0, NULL},
   { STYLE_PROP_SEQUENCE_SPLIT_CODON_5_COLOURS, STYLE_PARAM_TYPE_COLOUR, ZMAPSTYLE_PROPERTY_SEQUENCE_SPLIT_CODON_5_COLOURS,
     "coding exon split codon colour", "Colour used to highlight split codon 5' coding section of an exon.",
-    offsetof(zmapFeatureTypeStyleStruct, mode_data.sequence.split_codon_5), ZMAPSTYLE_MODE_SEQUENCE },
+    offsetof(zmapFeatureTypeStyleStruct, mode_data.sequence.split_codon_5), ZMAPSTYLE_MODE_SEQUENCE,
+    0, 0, 0, NULL},
   { STYLE_PROP_SEQUENCE_SPLIT_CODON_3_COLOURS, STYLE_PARAM_TYPE_COLOUR, ZMAPSTYLE_PROPERTY_SEQUENCE_SPLIT_CODON_3_COLOURS,
     "coding exon split codon colour", "Colour used to highlight split codon 3' coding section of an exon.",
-    offsetof(zmapFeatureTypeStyleStruct, mode_data.sequence.split_codon_3), ZMAPSTYLE_MODE_SEQUENCE },
+    offsetof(zmapFeatureTypeStyleStruct, mode_data.sequence.split_codon_3), ZMAPSTYLE_MODE_SEQUENCE,
+    0, 0, 0, NULL},
   { STYLE_PROP_SEQUENCE_IN_FRAME_CODING_COLOURS, STYLE_PARAM_TYPE_COLOUR, ZMAPSTYLE_PROPERTY_SEQUENCE_IN_FRAME_CODING_COLOURS,
     "in-frame coding exon region colour", "Colour used to highlight coding section of an exon that is in frame.",
-    offsetof(zmapFeatureTypeStyleStruct, mode_data.sequence.in_frame_coding), ZMAPSTYLE_MODE_SEQUENCE },
+    offsetof(zmapFeatureTypeStyleStruct, mode_data.sequence.in_frame_coding), ZMAPSTYLE_MODE_SEQUENCE,
+    0, 0, 0, NULL},
   { STYLE_PROP_SEQUENCE_START_CODON_COLOURS, STYLE_PARAM_TYPE_COLOUR, ZMAPSTYLE_PROPERTY_SEQUENCE_START_CODON_COLOURS,
     "start codon colour", "Colour used to highlight start codon.",
-    offsetof(zmapFeatureTypeStyleStruct, mode_data.sequence.start_codon), ZMAPSTYLE_MODE_SEQUENCE },
+    offsetof(zmapFeatureTypeStyleStruct, mode_data.sequence.start_codon), ZMAPSTYLE_MODE_SEQUENCE,
+    0, 0, 0, NULL},
   { STYLE_PROP_SEQUENCE_STOP_CODON_COLOURS, STYLE_PARAM_TYPE_COLOUR, ZMAPSTYLE_PROPERTY_SEQUENCE_STOP_CODON_COLOURS,
     "stop codon colour", "Colour used to highlight stop codon.",
-    offsetof(zmapFeatureTypeStyleStruct, mode_data.sequence.stop_codon), ZMAPSTYLE_MODE_SEQUENCE },
-
+    offsetof(zmapFeatureTypeStyleStruct, mode_data.sequence.stop_codon), ZMAPSTYLE_MODE_SEQUENCE, 0, 0, 0, NULL},
 
   { STYLE_PROP_TRANSCRIPT_CDS_COLOURS, STYLE_PARAM_TYPE_COLOUR, ZMAPSTYLE_PROPERTY_TRANSCRIPT_CDS_COLOURS,
     "CDS colours", "Colour used to CDS section of a transcript.",
-    offsetof(zmapFeatureTypeStyleStruct, mode_data.transcript.CDS_colours), ZMAPSTYLE_MODE_TRANSCRIPT},
+    offsetof(zmapFeatureTypeStyleStruct, mode_data.transcript.CDS_colours), ZMAPSTYLE_MODE_TRANSCRIPT,
+    0, 0, 0, NULL},
 
   { STYLE_PROP_ASSEMBLY_PATH_NON_COLOURS, STYLE_PARAM_TYPE_COLOUR, ZMAPSTYLE_PROPERTY_ASSEMBLY_PATH_NON_COLOURS,
     "non-path colours", "Colour used for unused part of an assembly path sequence.",
-    offsetof(zmapFeatureTypeStyleStruct, mode_data.assembly_path.non_path_colours) ,ZMAPSTYLE_MODE_ASSEMBLY_PATH  },
-
+    offsetof(zmapFeatureTypeStyleStruct, mode_data.assembly_path.non_path_colours),
+    ZMAPSTYLE_MODE_ASSEMBLY_PATH , 0, 0, 0, NULL},
 
   { STYLE_PROP_TEXT_FONT, STYLE_PARAM_TYPE_STRING, ZMAPSTYLE_PROPERTY_TEXT_FONT,
     "Text Font", "Font to draw text with.",
-    offsetof(zmapFeatureTypeStyleStruct, mode_data.text.font)  ,ZMAPSTYLE_MODE_TEXT }
+    offsetof(zmapFeatureTypeStyleStruct, mode_data.text.font)  ,ZMAPSTYLE_MODE_TEXT, 0, 0, 0, NULL}
 
-};
+  /* No guard entry ?? */
 
+} ;
 
 
 
@@ -462,7 +495,7 @@ ZMapStyleParamStruct zmapStyleParams_G[_STYLE_PROP_N_ITEMS] =
 /* Class pointer for styles. */
 static GObjectClass *style_parent_class_G ;
 
-static GQuark splice_style_id_G = 0;
+static GQuark splice_style_id_G = 0 ;
 
 
 
@@ -616,18 +649,29 @@ ZMapFeatureTypeStyle zMapStyleCreateV(guint n_parameters, GParameter *parameters
 ZMapFeatureTypeStyle zMapFeatureStyleCopy(ZMapFeatureTypeStyle src)
 {
   ZMapFeatureTypeStyle dest = NULL ;
-  ZMapStyleParam param = zmapStyleParams_G;
-  int i;
+  ZMapStyleParam param = zmapStyleParams_G ;
+  int i ;
+  gboolean status = TRUE ;
 
-  if(!(src || !ZMAP_IS_FEATURE_STYLE(src)))
-    return(dest);
 
-  dest = g_object_new(ZMAP_TYPE_FEATURE_STYLE, NULL);
+  zMapReturnValIfFailSafe((ZMAP_IS_FEATURE_STYLE(src)), dest) ;
 
-  for(i = 1;i < _STYLE_PROP_N_ITEMS;i++,param++)
+  dest = g_object_new(ZMAP_TYPE_FEATURE_STYLE, NULL) ;
+
+  for (i = 1 ; i < _STYLE_PROP_N_ITEMS ; i++, param++)
     {
+      if (zMapStyleIsPropertySetId(src, param->id)
+          && !(status = styleMergeParam(dest, src, param->id)))
+        {
+          zMapLogCritical("Copy of style %s failed.", g_quark_to_string(src->original_id)) ;
 
-      if(zMapStyleIsPropertySetId(src, param->id))      // something to copy?
+          break ;
+        }
+      
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      /* Big change so leaving this code in until I've tested further..... */
+
+      if (zMapStyleIsPropertySetId(src, param->id))      // something to copy?
         {
 
           switch(param->type)
@@ -640,6 +684,7 @@ ZMapFeatureTypeStyle zMapFeatureStyleCopy(ZMapFeatureTypeStyle src)
                 dststr = (gchar **) (((void *) dest) + param->offset);
 
                 *dststr = g_strdup(*srcstr);
+
                 break;
               }
             case STYLE_PARAM_TYPE_QUARK_LIST_ID:
@@ -651,6 +696,7 @@ ZMapFeatureTypeStyle zMapFeatureStyleCopy(ZMapFeatureTypeStyle src)
                 *dl = g_list_copy(*sl);   // ok as the list is shallow
                 break;
               }
+
             case STYLE_PARAM_TYPE_COLOUR:
 	      // included explicitly to flag up that it has internal is_set flags
 	      // merge handles this differently but copy is ok
@@ -664,16 +710,30 @@ ZMapFeatureTypeStyle zMapFeatureStyleCopy(ZMapFeatureTypeStyle src)
                 dstval = ((void *) dest) + param->offset;
 
                 memcpy(dstval,srcval,param->size);
+
+                break;
               }
-              break;
             }
 
+
+          /* Um....does this not need doing ??....not sure.... */
 	  //          zmapStyleSetIsSet(curr_style,param->id);
         }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+    }
+
+  if (!status)
+    {
+      zMapStyleDestroy(dest) ;
+      dest = NULL ;
     }
 
   return dest ;
 }
+
+
+
 
 
 void zMapStyleDestroy(ZMapFeatureTypeStyle style)
@@ -755,8 +815,7 @@ gboolean zMapStyleGet(ZMapFeatureTypeStyle style, char *first_property_name, ...
 }
 
 
-/*!
- * This is just like g_object_set() except that it returns a boolean
+/* This is just like g_object_set() except that it returns a boolean
  * to indicate success or failure. Note that if you supply several
  * properties you will need to look in the logs to see which one failed.
  *
@@ -784,6 +843,29 @@ gboolean zMapStyleSet(ZMapFeatureTypeStyle style, char *first_property_name, ...
   va_end(args2) ;
 
   result = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(style), ZMAPSTYLE_OBJ_RC)) ;
+
+  return result ;
+}
+
+
+/* Copy a single property from one style to the another. 
+ * Returns TRUE if the property is set in src_style and could be merged in to dest_style, FALSE
+ * otherwise.
+ * Note, caller does not have to check whether the property is set in src_style as this function
+ * does that anyway.
+ */
+gboolean zMapStyleMergeProperty(ZMapFeatureTypeStyle dest_style, ZMapFeatureTypeStyle src_style, ZMapStyleParamId id)
+{
+  gboolean result = FALSE ;
+  ZMapStyleParam param ;
+
+  zMapReturnValIfFailSafe((ZMAP_IS_FEATURE_STYLE(dest_style) && ZMAP_IS_FEATURE_STYLE(src_style)
+                           && PARAM_ID_IS_VALID(id)
+                           && zMapStyleIsPropertySetId(src_style, id)), result) ;
+
+  param = &zmapStyleParams_G[id] ;
+
+  result = styleMergeParam(dest_style, src_style, id) ;
 
   return result ;
 }
@@ -841,6 +923,19 @@ void zmapStyleUnsetIsSet(ZMapFeatureTypeStyle style, ZMapStyleParamId id)
   param = &zmapStyleParams_G [id];
   style->is_set[param->flag_ind] &= ~param->flag_bit;
 }
+
+/* Converts a numerical paramid to it's corresponding string name. */
+const char *zmapStyleParam2Name(ZMapStyleParamId id)
+{
+  char *param_name = NULL ;
+
+  zMapReturnValIfFailSafe((PARAM_ID_IS_VALID(id)), param_name) ;
+
+  param_name = zmapStyleParams_G[STYLE_PROP_MIN_SCORE].name ;
+
+  return param_name ;
+}
+
 
 
 /*!
@@ -1200,12 +1295,12 @@ gboolean zMapStyleMakeDrawable(char *config_file, ZMapFeatureTypeStyle style)
 	case ZMAPSTYLE_MODE_TEXT:
 	  {
 	    if (!(style->colours.normal.fields_set.fill))
-	      zMapStyleSetColours(style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
-				  "white", NULL, NULL) ;
+	      zMapStyleSetColoursStr(style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
+                                     "white", NULL, NULL) ;
 
 	    if (!(style->colours.normal.fields_set.draw))
-	      zMapStyleSetColours(style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
-				  NULL, "black", NULL) ;
+	      zMapStyleSetColoursStr(style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
+                                     NULL, "black", NULL) ;
 
 	    break ;
 	  }
@@ -1240,8 +1335,8 @@ gboolean zMapStyleMakeDrawable(char *config_file, ZMapFeatureTypeStyle style)
 	  {
 	    if (!(style->colours.normal.fields_set.fill) && !(style->colours.normal.fields_set.border))
 	      {
-		zMapStyleSetColours(style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
-				    NULL, NULL, "black") ;
+		zMapStyleSetColoursStr(style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
+                                       NULL, NULL, "black") ;
 	      }
 
 	    break ;
@@ -1379,8 +1474,8 @@ ZMapStyleColour zmapStyleColour(ZMapStyleFullColour full_colour,ZMapStyleColourT
 
 /* I'm going to try these more generalised functions.... */
 
-gboolean zMapStyleSetColours(ZMapFeatureTypeStyle style, ZMapStyleParamId target, ZMapStyleColourType type,
-			     char *fill, char *draw, char *border)
+gboolean zMapStyleSetColoursStr(ZMapFeatureTypeStyle style, ZMapStyleParamId target, ZMapStyleColourType type,
+                                char *fill, char *draw, char *border)
 {
   gboolean result = FALSE ;
   ZMapStyleFullColour full_colour = NULL ;
@@ -1409,6 +1504,42 @@ gboolean zMapStyleSetColours(ZMapFeatureTypeStyle style, ZMapStyleParamId target
 
   return result ;
 }
+
+
+gboolean zMapStyleSetColours(ZMapFeatureTypeStyle style, ZMapStyleParamId target, ZMapStyleColourType type,
+                             GdkColor *fill, GdkColor *draw, GdkColor *border)
+{
+  gboolean result = FALSE ;
+  ZMapStyleFullColour full_colour = NULL ;
+  ZMapStyleColour colour = NULL ;
+
+
+  full_colour = zmapStyleFullColour(style, target);
+  colour = zmapStyleColour(full_colour, type);
+
+  if (fill)
+    {
+      colour->fields_set.fill = TRUE ;
+      colour->fill = *fill ;
+    }
+
+  if (draw)
+    {
+      colour->fields_set.draw = TRUE ;
+      colour->draw = *draw ;
+    }
+
+  if (border)
+    {
+      colour->fields_set.border = TRUE ;
+      colour->border = *border ;
+    }
+
+  zmapStyleSetIsSet(style, target) ;
+
+  return result ;
+}
+
 
 gboolean zMapStyleGetColours(ZMapFeatureTypeStyle style, ZMapStyleParamId target, ZMapStyleColourType type,
 			     GdkColor **fill, GdkColor **draw, GdkColor **border)
@@ -1550,12 +1681,73 @@ gboolean zmapStyleIsValid(ZMapFeatureTypeStyle style)
  */
 
 
+/* Copy a style param from one style to another. Takes no action unless the param is
+ * set in src. */
+static gboolean styleMergeParam( ZMapFeatureTypeStyle dest, ZMapFeatureTypeStyle src, ZMapStyleParamId id)
+{
+  gboolean result = FALSE ;
+
+  if (zMapStyleIsPropertySetId(src, id))
+    {
+      ZMapStyleParam param = &(zmapStyleParams_G[id]) ; 
+
+      switch(param->type)
+        {
+        case STYLE_PARAM_TYPE_STRING:
+          {
+            gchar **srcstr, **dststr;
+
+            srcstr = (gchar **) (((void *)src) + param->offset);
+            dststr = (gchar **) (((void *)dest) + param->offset);
+
+            *dststr = g_strdup(*srcstr);
+
+            break;
+          }
+        case STYLE_PARAM_TYPE_QUARK_LIST_ID:
+          {
+            GList **sl,**dl;
+
+            sl = (GList **) (((void *) src) + param->offset);
+            dl = (GList **) (((void *) dest) + param->offset);
+
+            *dl = g_list_copy(*sl);   // ok as the list is shallow
+
+            break;
+          }
+
+        case STYLE_PARAM_TYPE_COLOUR:
+          // included explicitly to flag up that it has internal is_set flags
+          // merge handles this differently but copy is ok
+        case STYLE_PARAM_TYPE_FLAGS:
+          // copy this as normal, then we don't have to set the bits one by one
+        default:
+          {
+            void *srcval,*dstval;
+
+            srcval = ((void *)src) + param->offset ;
+            dstval = ((void *)dest) + param->offset ;
+
+            memcpy(dstval, srcval, param->size) ;
+
+            break;
+          }
+        }
+
+      zmapStyleSetIsSet(dest, param->id) ;
+
+      result = TRUE ;
+    }
+
+  return result ;
+}
+
+
 
 static gboolean setColours(ZMapStyleColour colour, char *border, char *draw, char *fill)
 {
   gboolean status = TRUE ;
   ZMapStyleColourStruct tmp_colour = {{0}} ;
-
 
   zMapAssert(colour) ;
 
@@ -1853,7 +2045,7 @@ guint zmapStyleParamSize(ZMapStyleParamType type)
     case STYLE_PARAM_TYPE_3FRAME:      return(sizeof(ZMapStyle3FrameMode)); break;
     case STYLE_PARAM_TYPE_SCORE:       return(sizeof(ZMapStyleScoreMode));  break;
     case STYLE_PARAM_TYPE_GRAPH_MODE:  return(sizeof(ZMapStyleGraphMode));  break;
-    case STYLE_PARAM_TYPE_GRAPH_SCALE: return(sizeof(ZMapStyleGraphScale));  break;
+    case STYLE_PARAM_TYPE_SCALE:       return(sizeof(ZMapStyleScale));  break;
     case STYLE_PARAM_TYPE_BLIXEM:      return(sizeof(ZMapStyleBlixemType)); break;
     case STYLE_PARAM_TYPE_GLYPH_STRAND:return(sizeof(ZMapStyleGlyphStrand)); break;
     case STYLE_PARAM_TYPE_GLYPH_ALIGN: return(sizeof(ZMapStyleGlyphAlign)); break;
@@ -1930,8 +2122,8 @@ void zmap_param_spec_init(ZMapStyleParam param)
     case STYLE_PARAM_TYPE_BUMP:                // ZMapStyleBumpMode
     case STYLE_PARAM_TYPE_3FRAME:              // ZMapStyle3FrameMode
     case STYLE_PARAM_TYPE_SCORE:               // ZMapStyleScoreMode
+    case STYLE_PARAM_TYPE_SCALE:               // ZMapStyleScale
     case STYLE_PARAM_TYPE_GRAPH_MODE:          // ZMapStyleGraphMode
-    case STYLE_PARAM_TYPE_GRAPH_SCALE:         // ZMapStyleGraphScale
     case STYLE_PARAM_TYPE_BLIXEM:              // ZMapStyleBlixemType
     case STYLE_PARAM_TYPE_GLYPH_STRAND:        // ZMapStyleGlyphStrand
     case STYLE_PARAM_TYPE_GLYPH_ALIGN:         // ZMapStyleGlyphAlign
@@ -1954,6 +2146,8 @@ void zmap_param_spec_init(ZMapStyleParam param)
 
   param->size = zmapStyleParamSize(param->type);
   param->spec = gps;
+
+  return ;
 }
 
 /* When adding new properties be sure to have only "[a-z]-" in the name and make sure
@@ -1975,15 +2169,15 @@ static void zmap_feature_type_style_class_init(ZMapFeatureTypeStyleClass style_c
 
   style_parent_class_G = g_type_class_peek_parent(style_class);
 
-  for(i = 1, param = &zmapStyleParams_G[i];i < _STYLE_PROP_N_ITEMS;i++,param++)
+  for (i = 1, param = &zmapStyleParams_G[i] ; i < _STYLE_PROP_N_ITEMS ; i++, param++)
     {
-      zmap_param_spec_init(param);
+      zmap_param_spec_init(param) ;
 
-      g_object_class_install_property(gobject_class,param->id,param->spec);
+      g_object_class_install_property(gobject_class, param->id, param->spec) ;
     }
 
-  gobject_class->dispose  = zmap_feature_type_style_dispose;
-  gobject_class->finalize = zmap_feature_type_style_finalize;
+  gobject_class->dispose = zmap_feature_type_style_dispose ;
+  gobject_class->finalize = zmap_feature_type_style_finalize ;
 
 
   return ;
@@ -2030,6 +2224,8 @@ static void zmap_feature_type_style_set_property(GObject *gobject,
   param = &zmapStyleParams_G[param_id];
 
   zmap_feature_type_style_set_property_full(style,param,value,FALSE);
+
+  return ;
 }
 
 
@@ -2088,6 +2284,12 @@ static void zmap_bin_to_hex(gchar *dest,guchar *src, int len)
 }
 
 
+
+/* OH GOSH....THIS ISN'T THOUGHT THROUGH...IT ALLOWS THE CALLER TO SET
+ * NON-SENSICAL STATE IN THE STYLE, e.g. min_score > max_score AND SO ON....
+ * 
+ * bother......WHOEVER DID THIS SHOULD HAVE THOUGHT IT THROUGH MORE.....
+ *  */
 static void zmap_feature_type_style_set_property_full(ZMapFeatureTypeStyle style,
 						      ZMapStyleParam param,
 						      const GValue *value,
@@ -2103,7 +2305,7 @@ static void zmap_feature_type_style_set_property_full(ZMapFeatureTypeStyle style
    * if someone programmed a GObject copy function what would happen?
    * ... an exercise for the reader
    */
-  if(copy && param->id != STYLE_PROP_IS_SET)
+  if (copy && param->id != STYLE_PROP_IS_SET)
     {
       ZMapStyleParam isp = &zmapStyleParams_G[STYLE_PROP_IS_SET];
 
@@ -2120,6 +2322,7 @@ static void zmap_feature_type_style_set_property_full(ZMapFeatureTypeStyle style
       if(!(style->is_set[param->flag_ind] & param->flag_bit))
         return;
     }
+
   /* if the property is mode specific and invalid don't set it
    * ideally all styles should have a mode set
    * but if the mode is set in a parent style it may not be set
@@ -2142,12 +2345,22 @@ static void zmap_feature_type_style_set_property_full(ZMapFeatureTypeStyle style
       return;
     }
 
+
+  /* I'M GUESSING FROM THE COMMENT STYLE THAT THIS IS MALCOLM'S CODE....WHAT'S WRONG
+   * WITH THIS IS THAT IT SETS THE STYLE WITHOUT CHECKING THAT THE VALUE IS RATIONAL,
+   * SANE, ALLOWED....ETC ETC......
+   *  */
   // set the value
   switch(param->type)
     {
     case STYLE_PARAM_TYPE_BOOLEAN:
       * (gboolean *) (((void *) style) + param->offset) = g_value_get_boolean(value);
       break;
+
+    case STYLE_PARAM_TYPE_UINT:
+      * (guint *) (((void *) style) + param->offset) = g_value_get_uint(value);
+      break;
+
     case STYLE_PARAM_TYPE_DOUBLE:
       * (double *) (((void *) style) + param->offset)   = g_value_get_double(value);
       break;
@@ -2191,19 +2404,24 @@ static void zmap_feature_type_style_set_property_full(ZMapFeatureTypeStyle style
       break
 
       STYLE_SET_PROP (STYLE_PARAM_TYPE_MODE,            ZMapStyleMode);
-      STYLE_SET_PROP (STYLE_PARAM_TYPE_COLDISP,         ZMapStyleColumnDisplayState);
-      STYLE_SET_PROP (STYLE_PARAM_TYPE_BUMP,            ZMapStyleBumpMode);
-      STYLE_SET_PROP (STYLE_PARAM_TYPE_3FRAME,          ZMapStyle3FrameMode);
-      STYLE_SET_PROP (STYLE_PARAM_TYPE_SCORE,           ZMapStyleScoreMode);
-      STYLE_SET_PROP (STYLE_PARAM_TYPE_GRAPH_MODE,      ZMapStyleGraphMode);
-      STYLE_SET_PROP (STYLE_PARAM_TYPE_GRAPH_SCALE,     ZMapStyleGraphScale);
-      STYLE_SET_PROP (STYLE_PARAM_TYPE_BLIXEM,          ZMapStyleBlixemType);
-      STYLE_SET_PROP (STYLE_PARAM_TYPE_GLYPH_STRAND,    ZMapStyleGlyphStrand);
-      STYLE_SET_PROP (STYLE_PARAM_TYPE_GLYPH_ALIGN,     ZMapStyleGlyphAlign);
 
-    case STYLE_PARAM_TYPE_UINT:
-      * (guint *) (((void *) style) + param->offset) = g_value_get_uint(value);
-      break;
+      STYLE_SET_PROP (STYLE_PARAM_TYPE_COLDISP,         ZMapStyleColumnDisplayState);
+
+      STYLE_SET_PROP (STYLE_PARAM_TYPE_BUMP,            ZMapStyleBumpMode);
+
+      STYLE_SET_PROP (STYLE_PARAM_TYPE_3FRAME,          ZMapStyle3FrameMode);
+
+      STYLE_SET_PROP (STYLE_PARAM_TYPE_SCORE,           ZMapStyleScoreMode);
+
+      STYLE_SET_PROP (STYLE_PARAM_TYPE_GRAPH_MODE,      ZMapStyleGraphMode);
+
+      STYLE_SET_PROP (STYLE_PARAM_TYPE_SCALE,           ZMapStyleScale);
+
+      STYLE_SET_PROP (STYLE_PARAM_TYPE_BLIXEM,          ZMapStyleBlixemType);
+
+      STYLE_SET_PROP (STYLE_PARAM_TYPE_GLYPH_STRAND,    ZMapStyleGlyphStrand);
+
+      STYLE_SET_PROP (STYLE_PARAM_TYPE_GLYPH_ALIGN,     ZMapStyleGlyphAlign);
 
     default:
       break;
@@ -2280,10 +2498,7 @@ static void zmap_feature_type_style_set_property_full(ZMapFeatureTypeStyle style
  * whether this function succeeded or not.
  *
  * this function pays no attention to the field_set data...is this correct ???? */
-static void zmap_feature_type_style_get_property(GObject *gobject,
-						 guint param_id,
-						 GValue *value,
-						 GParamSpec *pspec)
+static void zmap_feature_type_style_get_property(GObject *gobject, guint param_id, GValue *value, GParamSpec *pspec)
 {
   ZMapFeatureTypeStyle style;
   gboolean result = TRUE ;
@@ -2304,12 +2519,14 @@ static void zmap_feature_type_style_get_property(GObject *gobject,
    * we could test param->mode and style->mode but is_set cover all possibilities
    */
   if(!(style->is_set[param->flag_ind] & param->flag_bit))
-    return;
+    return ;
 
-  if(param->mode && param->mode != style->mode)
+  if (param->mode && param->mode != style->mode)
     {
-      zMapLogWarning("Get style mode specific parameter %s ignored as mode is %s",param->name,zMapStyleMode2ExactStr(style->mode));
-      return;
+      zMapLogWarning("Get style mode specific parameter %s ignored as mode is %s",
+                     param->name, zMapStyleMode2ExactStr(style->mode)) ;
+
+      return ;
     }
 
   // get the value
@@ -2397,7 +2614,7 @@ static void zmap_feature_type_style_get_property(GObject *gobject,
       STYLE_GET_PROP (STYLE_PARAM_TYPE_3FRAME          , ZMapStyle3FrameMode);
       STYLE_GET_PROP (STYLE_PARAM_TYPE_SCORE           , ZMapStyleScoreMode);
       STYLE_GET_PROP (STYLE_PARAM_TYPE_GRAPH_MODE      , ZMapStyleGraphMode);
-      STYLE_GET_PROP (STYLE_PARAM_TYPE_GRAPH_SCALE     , ZMapStyleGraphScale);
+      STYLE_GET_PROP (STYLE_PARAM_TYPE_SCALE           , ZMapStyleScale);
       STYLE_GET_PROP (STYLE_PARAM_TYPE_BLIXEM          , ZMapStyleBlixemType);
       STYLE_GET_PROP (STYLE_PARAM_TYPE_GLYPH_STRAND    , ZMapStyleGlyphStrand);
       STYLE_GET_PROP (STYLE_PARAM_TYPE_GLYPH_ALIGN     , ZMapStyleGlyphAlign);
