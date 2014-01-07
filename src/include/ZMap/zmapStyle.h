@@ -123,9 +123,10 @@ typedef enum
     STYLE_PROP_WIDTH,
 
     STYLE_PROP_SCORE_MODE,
+    STYLE_PROP_SCORE_SCALE,
     STYLE_PROP_MIN_SCORE,
     STYLE_PROP_MAX_SCORE,
-    STYLE_PROP_SCORE_SCALE,
+
 
     STYLE_PROP_SUMMARISE,
     STYLE_PROP_COLLAPSE,
@@ -224,6 +225,8 @@ typedef enum
 
   } ZMapStyleParamId ;
 
+#define STYLE_IS_SET_SIZE ((_STYLE_PROP_N_ITEMS + 7) / 8)
+
 
 
 /* All the properties that can be set on a style object. NOTE that I would have liked to have
@@ -264,7 +267,7 @@ typedef enum
 #define ZMAPSTYLE_PROPERTY_SCORE_MODE             "score-mode"
 #define ZMAPSTYLE_PROPERTY_MIN_SCORE              "min-score"
 #define ZMAPSTYLE_PROPERTY_MAX_SCORE              "max-score"
-#define ZMAPSTYLE_PROPERTY_SCORE_SCALE            "score-scale"		/* reuses GRAPH_SCALE options */
+#define ZMAPSTYLE_PROPERTY_SCORE_SCALE            "score-scale"
 
 /* ... optimese the display */
 #define ZMAPSTYLE_PROPERTY_SUMMARISE              "summarise"
@@ -326,7 +329,8 @@ typedef enum
 #define ZMAPSTYLE_PROPERTY_GRAPH_DENSITY_MIN_BIN  "graph-density-min-bin"
 #define ZMAPSTYLE_PROPERTY_GRAPH_DENSITY_STAGGER  "graph-density-stagger"
 #define ZMAPSTYLE_PROPERTY_GRAPH_BASELINE         "graph-baseline"
-#define ZMAPSTYLE_PROPERTY_GRAPH_SCALE            "graph-scale"
+/* graph-scale is currently not used by the code but I've left it in while we test graph. */
+#define ZMAPSTYLE_PROPERTY_GRAPH_SCALE            "graph-scale" /* reuses score scale enum for values. */
 #define ZMAPSTYLE_PROPERTY_GRAPH_FILL             "graph-fill"
 #define ZMAPSTYLE_PROPERTY_GRAPH_COLOURS          "graph-colours"
 
@@ -471,13 +475,13 @@ _(ZMAPSTYLE_GRAPH_HISTOGRAM, , "histogram", "Block graph."    , "")
 
 ZMAP_DEFINE_ENUM(ZMapStyleGraphMode, ZMAP_STYLE_GRAPH_MODE_LIST);
 
-/* Specifies the scaling used for graph. */
-#define ZMAP_STYLE_GRAPH_SCALE_LIST(_)                                           \
-_(ZMAPSTYLE_GRAPH_SCALE_INVALID,   , "invalid"  , "Initial setting. "           , "") \
-_(ZMAPSTYLE_GRAPH_SCALE_LINEAR,    , "linear"   , "show data as given. ", "") \
-_(ZMAPSTYLE_GRAPH_SCALE_LOG,       , "log"      , "convert data to log scale. ", "") \
+/* Specifies the scaling used for scores, graph. */
+#define ZMAP_STYLE_SCALE_LIST(_)                                           \
+_(ZMAPSTYLE_SCALE_INVALID,   , "invalid"  , "Invalid !"           , "") \
+_(ZMAPSTYLE_SCALE_LINEAR,    , "linear"   , "show data as given. ", "") \
+_(ZMAPSTYLE_SCALE_LOG,       , "log"      , "convert data to log scale. ", "") \
 
-ZMAP_DEFINE_ENUM(ZMapStyleGraphScale, ZMAP_STYLE_GRAPH_SCALE_LIST);
+ZMAP_DEFINE_ENUM(ZMapStyleScale, ZMAP_STYLE_SCALE_LIST);
 
 
 
@@ -689,7 +693,7 @@ typedef struct
   ZMapStyleGraphMode mode ;				    /* Graph style. */
 
   double baseline ;					    /* zero level for graph.  */
-  ZMapStyleGraphScale scale ;				    /* log or linear scaling. */
+  ZMapStyleScale scale ;				    /* log or linear scaling. */
 
   gboolean fill ;					    /* Solid fill below line graph ? */
 
@@ -819,17 +823,16 @@ typedef struct _zmapFeatureTypeStyleStruct
 {
   GObject __parent__;
 
-#define STYLE_IS_SET_SIZE ((_STYLE_PROP_N_ITEMS + 7) / 8)
   guchar is_set[STYLE_IS_SET_SIZE];                   // flags to say whether fields are set
                                                       // includes mode dependant fields
                                                       // but colours have thier own flags
 
-  /*! _All_ styles must have these fields set, no other fields are compulsory. */
+  /* _All_ styles must have these fields set, no other fields are compulsory. */
   GQuark original_id ;                              /*!< Original name. */
   GQuark unique_id ;                                /*!< Name normalised to be unique. */
 
 
-  /*! Data fields for the style. */
+  /* Data fields for the style. */
 
 
   GQuark parent_id ;                                /*!< Styles can inherit from other
@@ -845,17 +848,20 @@ typedef struct _zmapFeatureTypeStyleStruct
                                                   * and may not be unset/changed afterwards
                                                   */
 
-  GQuark sub_features[ZMAPSTYLE_SUB_FEATURE_MAX];      /* style ID quarks indexed by SUBFEATURE ENUM */
-  struct _zmapFeatureTypeStyleStruct *sub_style[ZMAPSTYLE_SUB_FEATURE_MAX];      /* style pointers indexed by SUBFEATURE ENUM */
+  GQuark sub_features[ZMAPSTYLE_SUB_FEATURE_MAX] ;      /* style ID quarks indexed by SUBFEATURE
+                                                          ENUM */
+  /* style pointers indexed by SUBFEATURE ENUM */
+  struct _zmapFeatureTypeStyleStruct *sub_style[ZMAPSTYLE_SUB_FEATURE_MAX] ;
+
 
   ZMapStyleFullColourStruct colours ;                     /*!< Main feature colours. */
 
-  /*! Colours for when feature is shown in frames. */
+  /* Colours for when feature is shown in frames. */
   ZMapStyleFullColourStruct frame0_colours ;
   ZMapStyleFullColourStruct frame1_colours ;
   ZMapStyleFullColourStruct frame2_colours ;
 
-  /*! Colours for when feature is shown stranded by colour  */
+  /* Colours for when feature is shown stranded by colour  */
   ZMapStyleFullColourStruct strand_rev_colours;
 
 
@@ -869,19 +875,20 @@ typedef struct _zmapFeatureTypeStyleStruct
   ZMapStyle3FrameMode frame_mode ;                  /*!< Controls how frame sensitive
                                                 features are displayed. */
 
-  double min_mag ;                                  /*!< Don't display if fewer bases/line */
-  double max_mag ;                                  /*!< Don't display if more bases/line */
+  double min_mag ;                                          /* Don't display if fewer bases/line */
+  double max_mag ;                                          /* Don't display if more bases/line */
 
-  double width ;					    /*!< column width */
+  double width ;					    /* column width */
 
-  ZMapStyleScoreMode score_mode ;			    /*!< Controls width of features that
+  ZMapStyleScoreMode score_mode ;			    /* Controls width of features that
 							      have scores. */
-  double min_score, max_score ;				    /*!< Min/max for score width calc. */
+  ZMapStyleScale score_scale ;                              /* log or linear */
+  double min_score, max_score ;				    /* Min/max for score width calc. */
 
   double summarise;					    /* only display visible features up this zoom level */
 
-  ZMapStyleGraphScale score_scale;			    // log or linear, for collapse option
-  gboolean collapse;					    /* for duplicated features */
+
+  gboolean collapse;					    /* for duplicated features, uses score_scale. */
   /* see also alignment.squash: even better form of collapse for short reads */
 
   double offset ;					    /* move content right by x pixels */
@@ -987,7 +994,7 @@ ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2Mode,            ZMapStyleMode) ;
 ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2ColDisplayState, ZMapStyleColumnDisplayState) ;
 ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr23FrameMode,      ZMapStyle3FrameMode) ;
 ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2GraphMode,       ZMapStyleGraphMode) ;
-ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2GraphScale,       ZMapStyleGraphScale) ;
+ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2Scale,           ZMapStyleScale) ;
 ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2DrawContext,     ZMapStyleDrawContext) ;
 ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2ColourType,      ZMapStyleColourType) ;
 //ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2ColourTarget,    ZMapStyleColourTarget) ;
@@ -1003,7 +1010,7 @@ ZMAP_ENUM_AS_EXACT_STRING_DEC(zMapStyleMode2ExactStr,            ZMapStyleMode) 
 ZMAP_ENUM_AS_EXACT_STRING_DEC(zmapStyleColDisplayState2ExactStr, ZMapStyleColumnDisplayState) ;
 ZMAP_ENUM_AS_EXACT_STRING_DEC(zmapStyle3FrameMode2ExactStr, ZMapStyle3FrameMode) ;
 ZMAP_ENUM_AS_EXACT_STRING_DEC(zmapStyleGraphMode2ExactStr,       ZMapStyleGraphMode) ;
-ZMAP_ENUM_AS_EXACT_STRING_DEC(zmapStyleGraphScale2ExactStr,       ZMapStyleGraphScale) ;
+ZMAP_ENUM_AS_EXACT_STRING_DEC(zmapStyleScale2ExactStr,           ZMapStyleScale) ;
 ZMAP_ENUM_AS_EXACT_STRING_DEC(zmapStyleDrawContext2ExactStr,     ZMapStyleDrawContext) ;
 ZMAP_ENUM_AS_EXACT_STRING_DEC(zmapStyleColourType2ExactStr,      ZMapStyleColourType) ;
 //ZMAP_ENUM_AS_EXACT_STRING_DEC(zmapStyleColourTarget2ExactStr,    ZMapStyleColourTarget) ;
@@ -1022,17 +1029,24 @@ ZMAP_ENUM_AS_NAME_STRING_DEC(zmapStyleMode2ShortText, ZMapStyleMode) ;
 
 ZMapFeatureTypeStyle zMapStyleCreate(char *name, char *description) ;
 ZMapFeatureTypeStyle zMapStyleCreateV(guint n_parameters, GParameter *parameters) ;
-ZMapFeatureTypeStyle zMapFeatureStyleCopy(ZMapFeatureTypeStyle src);
-gboolean zMapStyleCCopy(ZMapFeatureTypeStyle src, ZMapFeatureTypeStyle *dest_out);
 void zMapStyleDestroy(ZMapFeatureTypeStyle style);
 
+ZMapFeatureTypeStyle zMapFeatureStyleCopy(ZMapFeatureTypeStyle style) ;
+
+
+/* This all seems a bit of a mess, why can't I just set one property at a time by
+ * name ?? */
 gboolean zMapStyleIsPropertySet(ZMapFeatureTypeStyle style, char *property_name) ;
 gboolean zMapStyleIsPropertySetId(ZMapFeatureTypeStyle style, ZMapStyleParamId id);
 void zmapStyleSetIsSet(ZMapFeatureTypeStyle style, ZMapStyleParamId id);
 void zmapStyleUnsetIsSet(ZMapFeatureTypeStyle style, ZMapStyleParamId id);
+const char *zmapStyleParam2Name(ZMapStyleParamId id) ;
 
 gboolean zMapStyleGet(ZMapFeatureTypeStyle style, char *first_property_name, ...) ;
 gboolean zMapStyleSet(ZMapFeatureTypeStyle style, char *first_property_name, ...) ;
+
+gboolean zMapStyleMerge(ZMapFeatureTypeStyle curr_style, ZMapFeatureTypeStyle new_style) ;
+gboolean zMapStyleMergeProperty(ZMapFeatureTypeStyle dest, ZMapFeatureTypeStyle src, ZMapStyleParamId id) ;
 
 
 gboolean zMapStyleNameCompare(ZMapFeatureTypeStyle style, char *name) ;
@@ -1052,8 +1066,6 @@ gboolean zMapStyleIsSpliceStyle(ZMapFeatureTypeStyle style) ;
 
 GQuark zMapStyleGetSubFeature(ZMapFeatureTypeStyle style,ZMapStyleSubFeature i);
 
-gboolean zMapStyleSetColours(ZMapFeatureTypeStyle style, ZMapStyleParamId target, ZMapStyleColourType type,
-			     char *fill, char *draw, char *border) ;
 void zMapStyleSetDisplay(ZMapFeatureTypeStyle style, ZMapStyleColumnDisplayState col_show) ;
 void zMapStyleSetMode(ZMapFeatureTypeStyle style, ZMapStyleMode mode) ;
 //ZMapStyleMode zMapStyleGetMode(ZMapFeatureTypeStyle style) ;
@@ -1124,10 +1136,15 @@ void zMapStyleGetStrandAttrs(ZMapFeatureTypeStyle type,
 
 #define zMapStyleGetShowWhenEmpty(style)   ((style)->show_when_empty)
 
+
 gboolean zMapStyleGetColours(ZMapFeatureTypeStyle style, ZMapStyleParamId target, ZMapStyleColourType type,
 			     GdkColor **fill, GdkColor **draw, GdkColor **border) ;
+gboolean zMapStyleSetColours(ZMapFeatureTypeStyle style, ZMapStyleParamId target, ZMapStyleColourType type,
+			     GdkColor *fill, GdkColor *draw, GdkColor *border) ;
+gboolean zMapStyleSetColoursStr(ZMapFeatureTypeStyle style, ZMapStyleParamId target, ZMapStyleColourType type,
+                                char *fill, char *draw, char *border) ;
 gboolean zMapStyleGetColoursDefault(ZMapFeatureTypeStyle style,
-                            GdkColor **background, GdkColor **foreground, GdkColor **outline);
+                                    GdkColor **fill, GdkColor **draw, GdkColor **border) ;
 char *zMapStyleMakeColourString(char *normal_fill, char *normal_draw, char *normal_border,
 				char *selected_fill, char *selected_draw, char *selected_border) ;
 
@@ -1152,8 +1169,8 @@ char *zMapStyleMakeColourString(char *normal_fill, char *normal_draw, char *norm
 
 void zMapStyleSetParent(ZMapFeatureTypeStyle style, char *parent_name) ;
 void zMapStyleSetMag(ZMapFeatureTypeStyle style, double min_mag, double max_mag) ;
-void zMapStyleSetGraph(ZMapFeatureTypeStyle style, ZMapStyleGraphMode mode, double min, double max, double baseline) ;
-void zMapStyleSetScore(ZMapFeatureTypeStyle style, double min_score, double max_score) ;
+gboolean zMapStyleSetGraph(ZMapFeatureTypeStyle style, ZMapStyleGraphMode mode, double min, double max, double baseline) ;
+gboolean zMapStyleSetScore(ZMapFeatureTypeStyle style, double min_score, double max_score) ;
 void zMapStyleSetStrandSpecific(ZMapFeatureTypeStyle type, gboolean strand_specific) ;
 void zMapStyleSetStrandShowReverse(ZMapFeatureTypeStyle type, gboolean show_reverse) ;
 void zMapStyleSetFrameMode(ZMapFeatureTypeStyle type, ZMapStyle3FrameMode frame_mode) ;
@@ -1180,7 +1197,7 @@ gboolean zMapStyleMakeDrawable(char *config_file, ZMapFeatureTypeStyle style) ;
 gboolean zMapStyleGetColoursCDSDefault(ZMapFeatureTypeStyle style,
 				       GdkColor **background, GdkColor **foreground, GdkColor **outline);
 gboolean zMapStyleGetColoursGlyphDefault(ZMapFeatureTypeStyle style,
-                               GdkColor **background, GdkColor **foreground, GdkColor **outline);
+                                         GdkColor **background, GdkColor **foreground, GdkColor **outline);
 gboolean zMapStyleIsColour(ZMapFeatureTypeStyle style, ZMapStyleDrawContext colour_context) ;
 gboolean zMapStyleIsBackgroundColour(ZMapFeatureTypeStyle style) ;
 gboolean zMapStyleIsForegroundColour(ZMapFeatureTypeStyle style) ;
@@ -1263,10 +1280,6 @@ GQuark zMapStyleCreateID(char *style_name) ;
 
 
 ZMapFeatureTypeStyle zMapStyleGetPredefined(char *style_name) ;
-
-ZMapFeatureTypeStyle zMapFeatureStyleCopy(ZMapFeatureTypeStyle style) ;
-gboolean zMapStyleMerge(ZMapFeatureTypeStyle curr_style, ZMapFeatureTypeStyle new_style) ;
-
 
 
 gboolean zMapStyleSetSubStyles(GHashTable *style_set);
