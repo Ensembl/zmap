@@ -28,7 +28,6 @@
  *
  *-------------------------------------------------------------------
  */
-
 #ifndef __ZMAP_STYLE_I_H__
 #define __ZMAP_STYLE_I_H__
 
@@ -63,7 +62,7 @@ typedef enum
     STYLE_PARAM_TYPE_3FRAME,              // ZMapStyle3FrameMode
     STYLE_PARAM_TYPE_SCORE,               // ZMapStyleScoreMode
     STYLE_PARAM_TYPE_GRAPH_MODE,          // ZMapStyleGraphMode
-    STYLE_PARAM_TYPE_GRAPH_SCALE,          // ZMapStyleGraphScale
+    STYLE_PARAM_TYPE_SCALE,               // ZMapStyleScale
     STYLE_PARAM_TYPE_BLIXEM,              // ZMapStyleBlixemType
     STYLE_PARAM_TYPE_GLYPH_STRAND,        // ZMapStyleGlyphStrand
     STYLE_PARAM_TYPE_GLYPH_ALIGN,         // ZMapStyleGlyphAlign
@@ -86,26 +85,29 @@ typedef enum
   } ZMapStyleParamType;
 
 
-typedef struct
-  {
-      ZMapStyleParamId id;
-      ZMapStyleParamType type;
+/* The style struct for setting/getting property values. The main style struct 
+ * is referenced from here by direct offsets of properties in the struct. */
+typedef struct ZMapStyleParamStructName
+{
+  ZMapStyleParamId id ;
+  ZMapStyleParamType type ;
 
-      gchar *name;
-      gchar *nick;            // if NULL or "" defaults to name
-      gchar *blurb;
+  gchar *name ;
+  gchar *nick ;            // if NULL or "" defaults to name
+  gchar *blurb ;
 
-      guint offset;           // of the data in the style struct
-      ZMapStyleMode mode;     // non zero if mode dependant
+  guint offset ;           // of the data in the style struct
+  ZMapStyleMode mode ;     // non zero if mode dependant
 
-      guint8 flag_ind;        // index of the is_set bit in the array
-      guint8 flag_bit;        // which bit to set or test
+  guint8 flag_ind ;        // index of the is_set bit in the array
+  guint8 flag_bit ;        // which bit to set or test
 
-      guint size;
+  guint size ;
 
-      GParamSpec *spec;
+  /* Used for setting/getting values using the GObject code. */
+  GParamSpec *spec ;
 
-  } ZMapStyleParamStruct, *ZMapStyleParam;
+} ZMapStyleParamStruct, *ZMapStyleParam ;
 
 
 extern ZMapStyleParamStruct zmapStyleParams_G[_STYLE_PROP_N_ITEMS];
