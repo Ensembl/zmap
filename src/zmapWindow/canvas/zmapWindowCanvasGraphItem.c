@@ -45,6 +45,7 @@
 #include <ZMap/zmapUtilsFoo.h>
 #include <ZMap/zmapUtilsLog.h>
 #include <ZMap/zmapFeature.h>
+#include <zmapWindowCanvasDraw.h>
 #include <zmapWindowCanvasFeatureset.h>
 #include <zmapWindowCanvasGraphItem_I.h>
 
@@ -74,16 +75,6 @@
  * often have arcane semantics about which pixels they actually fill on the screen.
  * 
  *  */
-
-
-
-/* THIS SHOULD BE IN GUI UTILS AND ZMAPWINDOW CODE SHOULD USE THE GUI UTILS
- * STUFF TOO BUT THAT'S ANOTHER PIECE OF WORK.... */
-/* As we zoom right in we can start to try to draw lines that are longer than
- * the XWindows protocol supports so we need to clamp them. */
-#define CLAMP_COORDS(COORD)                                             \
-  ((COORD) < 0 ? 0 : ((COORD) > 30000 ? 30000 : (COORD)))
-
 
 
 static void graphInit(ZMapWindowFeaturesetItem featureset) ;
@@ -172,7 +163,10 @@ static void graphPreZoom(ZMapWindowFeaturesetItem featureset)
 /* Recalculate the bins if the zoom level changes */
 static void graphZoomSet(ZMapWindowFeaturesetItem featureset, GdkDrawable *drawable)
 {
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* unused currently. */
   ZMapWindowCanvasGraph graph_set = (ZMapWindowCanvasGraph)(featureset->opt) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
   /* WHEN DOES featureset->featurestyle GET SET ????????? */
@@ -335,7 +329,7 @@ static void graphPaintPrepare(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
                              y2 + y_offset,
                              &cx2, &cy2) ;
 
-              cy2 = CLAMP_COORDS(cy2) ;
+              cy2 = CANVAS_CLAMP_COORDS(cy2) ;
 
               graph_set->points[graph_set->n_points].x = cx2 ;
               graph_set->points[graph_set->n_points].y = cy2 ;
@@ -353,7 +347,7 @@ static void graphPaintPrepare(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
                              y2 + y_offset,
                              &cx2, &cy2) ;
 
-              cy2 = CLAMP_COORDS(cy2) ;
+              cy2 = CANVAS_CLAMP_COORDS(cy2) ;
 
               graph_set->points[graph_set->n_points].x = cx2 ;
               graph_set->points[graph_set->n_points].y = cy2 ;
@@ -377,7 +371,7 @@ static void graphPaintPrepare(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
                              y2 + y_offset,
                              &cx2, &cy2) ;
 
-              cy2 = CLAMP_COORDS(cy2) ;
+              cy2 = CANVAS_CLAMP_COORDS(cy2) ;
 
               graph_set->points[graph_set->n_points].x = cx2 ;
               graph_set->points[graph_set->n_points].y = cy2 ;
@@ -458,7 +452,7 @@ static void graphPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
                            y2 + y_offset,
                            &cx2, &cy2) ;
 
-            cy2 = CLAMP_COORDS(cy2) ;
+            cy2 = CANVAS_CLAMP_COORDS(cy2) ;
 
             graph_set->points[graph_set->n_points].x = cx2 ;
             graph_set->points[graph_set->n_points].y = cy2 ;
@@ -483,7 +477,7 @@ static void graphPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
                            y_pos + y_offset,
                            &cx, &cy) ;
 
-            cy = CLAMP_COORDS(cy) ;
+            cy = CANVAS_CLAMP_COORDS(cy) ;
 
             graph_set->points[graph_set->n_points].x = cx;
             graph_set->points[graph_set->n_points].y = cy;
@@ -494,7 +488,7 @@ static void graphPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
                            x_pos,
                            feature->y1 - y_offset,
                            &cx, &cy) ;
-            cy = CLAMP_COORDS(cy) ;
+            cy = CANVAS_CLAMP_COORDS(cy) ;
 
             graph_set->points[graph_set->n_points].x = cx;
             graph_set->points[graph_set->n_points].y = cy;
@@ -511,7 +505,7 @@ static void graphPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
                        y2 + y_offset,
                        &cx2, &cy2) ;
 
-        cy2 = CLAMP_COORDS(cy2) ;
+        cy2 = CANVAS_CLAMP_COORDS(cy2) ;
 
         graph_set->points[graph_set->n_points].x = cx2 ;
         graph_set->points[graph_set->n_points].y = cy2 ;
@@ -651,7 +645,7 @@ static void graphPaintFlush(ZMapWindowFeaturesetItem featureset, ZMapWindowCanva
                                      y2 - y_offset,
                                      &cx2, &cy2) ;
 
-                      cy2 = CLAMP_COORDS(cy2) ;
+                      cy2 = CANVAS_CLAMP_COORDS(cy2) ;
 
                       graph_set->points[graph_set->n_points].x = cx2 ;
                       graph_set->points[graph_set->n_points].y = cy2 ;
@@ -665,7 +659,7 @@ static void graphPaintFlush(ZMapWindowFeaturesetItem featureset, ZMapWindowCanva
                                      y2 + y_offset,
                                      &cx2, &cy2) ;
 
-                      cy2 = CLAMP_COORDS(cy2) ;
+                      cy2 = CANVAS_CLAMP_COORDS(cy2) ;
 
                       graph_set->points[graph_set->n_points].x = cx2 ;
                       graph_set->points[graph_set->n_points].y = cy2 ;
@@ -706,7 +700,7 @@ static void graphPaintFlush(ZMapWindowFeaturesetItem featureset, ZMapWindowCanva
                                      y2 + y_offset,
                                      &cx2, &cy2) ;
 
-                      cy2 = CLAMP_COORDS(cy2) ;
+                      cy2 = CANVAS_CLAMP_COORDS(cy2) ;
 
                       graph_set->points[graph_set->n_points].x = cx2 ;
                       graph_set->points[graph_set->n_points].y = cy2 ;
@@ -754,7 +748,7 @@ static void graphPaintFlush(ZMapWindowFeaturesetItem featureset, ZMapWindowCanva
                                  y2 + y_offset,
                                  &cx2, &cy2) ;
 
-                  cy2 = CLAMP_COORDS(cy2) ;
+                  cy2 = CANVAS_CLAMP_COORDS(cy2) ;
 
                   graph_set->points[graph_set->n_points].x = cx2 ;
                   graph_set->points[graph_set->n_points].y = cy2 ;
