@@ -3236,13 +3236,13 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
 
 
 	  if (colour)
-	    zMapStyleSetColours(style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
-				background, foreground, outline) ;
+	    zMapStyleSetColoursStr(style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
+                                   background, foreground, outline) ;
 
 	  if (cds_colour)
 	    {
-	      zMapStyleSetColours(style, STYLE_PROP_TRANSCRIPT_CDS_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
-				  NULL, NULL, cds_colour) ;
+	      zMapStyleSetColoursStr(style, STYLE_PROP_TRANSCRIPT_CDS_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
+                                     NULL, NULL, cds_colour) ;
 	      g_free(cds_colour);
 	      cds_colour = NULL;
 	    }
@@ -3828,10 +3828,11 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
       if (some_colours)
 	{
 	  /* May need to put some checking code here to test which colours set. */
-	  zMapStyleSetColours(style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
-			      style_colours.normal.fill, style_colours.normal.draw, style_colours.normal.border) ;
-	  zMapStyleSetColours(style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_SELECTED,
-			      style_colours.selected.fill, style_colours.selected.draw, style_colours.selected.border) ;
+	  zMapStyleSetColoursStr(style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
+                                 style_colours.normal.fill, style_colours.normal.draw, style_colours.normal.border) ;
+	  zMapStyleSetColoursStr(style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_SELECTED,
+                                 style_colours.selected.fill, style_colours.selected.draw,
+                                 style_colours.selected.border) ;
 	}
 
       if (some_frame0_colours || some_frame1_colours || some_frame2_colours)
@@ -3839,20 +3840,26 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
 	  if (some_frame0_colours && some_frame1_colours && some_frame2_colours)
 	    {
 	      /* May need to put some checking code here to test which colours set. */
-	      zMapStyleSetColours(style, STYLE_PROP_FRAME0_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
-				  frame0_style_colours.normal.fill, frame0_style_colours.normal.draw, frame0_style_colours.normal.border) ;
-	      zMapStyleSetColours(style, STYLE_PROP_FRAME0_COLOURS, ZMAPSTYLE_COLOURTYPE_SELECTED,
-				  frame0_style_colours.selected.fill, frame0_style_colours.selected.draw, frame0_style_colours.selected.border) ;
+	      zMapStyleSetColoursStr(style, STYLE_PROP_FRAME0_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
+                                     frame0_style_colours.normal.fill, frame0_style_colours.normal.draw,
+                                     frame0_style_colours.normal.border) ;
+	      zMapStyleSetColoursStr(style, STYLE_PROP_FRAME0_COLOURS, ZMAPSTYLE_COLOURTYPE_SELECTED,
+                                     frame0_style_colours.selected.fill, frame0_style_colours.selected.draw,
+                                     frame0_style_colours.selected.border) ;
 
-	      zMapStyleSetColours(style, STYLE_PROP_FRAME1_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
-				  frame1_style_colours.normal.fill, frame1_style_colours.normal.draw, frame1_style_colours.normal.border) ;
-	      zMapStyleSetColours(style, STYLE_PROP_FRAME1_COLOURS, ZMAPSTYLE_COLOURTYPE_SELECTED,
-				  frame1_style_colours.selected.fill, frame1_style_colours.selected.draw, frame1_style_colours.selected.border) ;
+	      zMapStyleSetColoursStr(style, STYLE_PROP_FRAME1_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
+                                     frame1_style_colours.normal.fill, frame1_style_colours.normal.draw,
+                                     frame1_style_colours.normal.border) ;
+	      zMapStyleSetColoursStr(style, STYLE_PROP_FRAME1_COLOURS, ZMAPSTYLE_COLOURTYPE_SELECTED,
+                                     frame1_style_colours.selected.fill, frame1_style_colours.selected.draw,
+                                     frame1_style_colours.selected.border) ;
 
-	      zMapStyleSetColours(style, STYLE_PROP_FRAME2_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
-				  frame2_style_colours.normal.fill, frame2_style_colours.normal.draw, frame2_style_colours.normal.border) ;
-	      zMapStyleSetColours(style, STYLE_PROP_FRAME2_COLOURS, ZMAPSTYLE_COLOURTYPE_SELECTED,
-				  frame2_style_colours.selected.fill, frame2_style_colours.selected.draw, frame2_style_colours.selected.border) ;
+	      zMapStyleSetColoursStr(style, STYLE_PROP_FRAME2_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
+                                     frame2_style_colours.normal.fill, frame2_style_colours.normal.draw,
+                                     frame2_style_colours.normal.border) ;
+	      zMapStyleSetColoursStr(style, STYLE_PROP_FRAME2_COLOURS, ZMAPSTYLE_COLOURTYPE_SELECTED,
+                                     frame2_style_colours.selected.fill, frame2_style_colours.selected.draw,
+                                     frame2_style_colours.selected.border) ;
 	    }
 	  else
 	    zMapLogWarning("Style \"%s\": Bad frame colour spec, following were not set:%s%s%s", name,
@@ -3865,10 +3872,12 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
 	{
 
 	  /* May need to put some checking code here to test which colours set. */
-	  zMapStyleSetColours(style, STYLE_PROP_TRANSCRIPT_CDS_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
-			      CDS_style_colours.normal.fill, CDS_style_colours.normal.draw, CDS_style_colours.normal.border) ;
-	  zMapStyleSetColours(style, STYLE_PROP_TRANSCRIPT_CDS_COLOURS, ZMAPSTYLE_COLOURTYPE_SELECTED,
-			      CDS_style_colours.selected.fill, CDS_style_colours.selected.draw, CDS_style_colours.selected.border) ;
+	  zMapStyleSetColoursStr(style, STYLE_PROP_TRANSCRIPT_CDS_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
+                                 CDS_style_colours.normal.fill, CDS_style_colours.normal.draw,
+                                 CDS_style_colours.normal.border) ;
+	  zMapStyleSetColoursStr(style, STYLE_PROP_TRANSCRIPT_CDS_COLOURS, ZMAPSTYLE_COLOURTYPE_SELECTED,
+                                 CDS_style_colours.selected.fill, CDS_style_colours.selected.draw,
+                                 CDS_style_colours.selected.border) ;
 	}
 
       if (width_set)
