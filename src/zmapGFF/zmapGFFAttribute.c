@@ -1326,6 +1326,31 @@ gboolean zMapAttParseEnsemblVariation(const ZMapGFFAttribute const pAttribute, c
   return bResult ;
 }
 
+/*
+ * Parse out the allele_string attribute.
+ */
+gboolean zMapAttParseAlleleString(const ZMapGFFAttribute const pAttribute, char ** const psOut)
+{
+  gboolean bResult = FALSE ;
+  static const char *sMyName = "zMapAttParseAlleleString()" ;
+  if (!pAttribute)
+    return bResult ;
+  const char * const sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
+  if (strcmp("allele_string", zMapGFFAttributeGetNamestring(pAttribute)))
+    {
+      zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
+      return bResult ;
+    }
+
+  if (strlen(sValue))
+    *psOut = g_strdup(sValue) ;
+  else
+    *psOut = NULL ;
+  bResult = TRUE ;
+
+  return bResult ;
+}
+
 
 
 

@@ -3801,12 +3801,10 @@ static gboolean makeNewFeature_V3(
        * Now we deal with some extra attributes used locally.
        */
 
-
       /*
        * URL attribute.
        */
-      pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "url") ;
-      if (pAttribute)
+      if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "url")))
         {
           if (zMapAttParseURL(pAttribute, &sURL))
             {
@@ -3815,22 +3813,31 @@ static gboolean makeNewFeature_V3(
         }
 
       /*
-       * EnsEMBL variation data.
+       * EnsEMBL variation data. Might be an attribute with name "ensembl_variation"
+       * or "allele_string".
        */
-      pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "ensembl_variation") ;
-      if (pAttribute)
+      if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "ensembl_variation")))
         {
           if (zMapAttParseEnsemblVariation(pAttribute, &sVariation))
             {
               zMapFeatureAddVariationString(pFeature, sVariation) ;
-              /*
-               * these are used in v2, but only apparently only in the
-               * context of variation strings
-               */
+              gqVariationSO = zMapSOVariation2SO(sVariation) ;       /* these two calls are from v2, and only    */
+              zMapFeatureAddSOaccession(pFeature, gqVariationSO) ;   /* used in the context of variation         */
+            }
+        }
+       else if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "allele_string")))
+        {
+          if (zMapAttParseAlleleString(pAttribute, &sVariation))
+            {
+              zMapFeatureAddVariationString(pFeature, sVariation) ;
               gqVariationSO = zMapSOVariation2SO(sVariation) ;
               zMapFeatureAddSOaccession(pFeature, gqVariationSO) ;
             }
         }
+
+      /*
+       * Insert handling of other attributes in here as necesary.
+       */
 
 
     } /* if (bIncludeFeature) */
