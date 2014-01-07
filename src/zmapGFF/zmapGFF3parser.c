@@ -3815,23 +3815,18 @@ static gboolean makeNewFeature_V3(
       /*
        * EnsEMBL variation data. Might be an attribute with name "ensembl_variation"
        * or "allele_string".
+       *
+       * The calls to zMapSOVariation2SO() and zMapFeatureAddSOaccession() are from v2 code
+       * and should be deprecated once the correct SO terms are being passed through.
        */
       if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "ensembl_variation")))
         {
           if (zMapAttParseEnsemblVariation(pAttribute, &sVariation))
             {
               zMapFeatureAddVariationString(pFeature, sVariation) ;
-              gqVariationSO = zMapSOVariation2SO(sVariation) ;       /* these two calls are from v2, and only    */
-              zMapFeatureAddSOaccession(pFeature, gqVariationSO) ;   /* used in the context of variation         */
-            }
-        }
-       else if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "allele_string")))
-        {
-          if (zMapAttParseAlleleString(pAttribute, &sVariation))
-            {
-              zMapFeatureAddVariationString(pFeature, sVariation) ;
               gqVariationSO = zMapSOVariation2SO(sVariation) ;
-              zMapFeatureAddSOaccession(pFeature, gqVariationSO) ;
+              if (gqVariationSO)
+                zMapFeatureAddSOaccession(pFeature, gqVariationSO) ;
             }
         }
 
