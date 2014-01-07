@@ -54,7 +54,6 @@
 
 typedef struct ZMapWindowCanvasGraphStructType
 {
-
   /* Cache our colours.... */
   GdkColor fill ;
   GdkColor draw ;

@@ -35,6 +35,7 @@
 
 #include <string.h>
 #include <unistd.h>
+
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapEnum.h>
 #include <zmapStyle_I.h>
@@ -123,7 +124,7 @@ ZMAP_ENUM_FROM_STRING_FUNC(zMapStyleStr2Mode,            ZMapStyleMode, ZMAPSTYL
 ZMAP_ENUM_FROM_STRING_FUNC(zMapStyleStr2ColDisplayState, ZMapStyleColumnDisplayState, ZMAPSTYLE_COLDISPLAY_INVALID, ZMAP_STYLE_COLUMN_DISPLAY_LIST, , );
 ZMAP_ENUM_FROM_STRING_FUNC(zMapStyleStr23FrameMode,      ZMapStyle3FrameMode, ZMAPSTYLE_3_FRAME_INVALID, ZMAP_STYLE_3_FRAME_LIST, , ) ;
 ZMAP_ENUM_FROM_STRING_FUNC(zMapStyleStr2GraphMode,       ZMapStyleGraphMode,          ZMAPSTYLE_GRAPH_INVALID, ZMAP_STYLE_GRAPH_MODE_LIST, , );
-ZMAP_ENUM_FROM_STRING_FUNC(zMapStyleStr2GraphScale,       ZMapStyleGraphScale,          ZMAPSTYLE_GRAPH_SCALE_INVALID, ZMAP_STYLE_GRAPH_SCALE_LIST, , );
+ZMAP_ENUM_FROM_STRING_FUNC(zMapStyleStr2Scale,           ZMapStyleScale,          ZMAPSTYLE_SCALE_INVALID, ZMAP_STYLE_SCALE_LIST, , );
 ZMAP_ENUM_FROM_STRING_FUNC(zMapStyleStr2DrawContext,     ZMapStyleDrawContext,        ZMAPSTYLE_DRAW_INVALID, ZMAP_STYLE_DRAW_CONTEXT_LIST, , );
 ZMAP_ENUM_FROM_STRING_FUNC(zMapStyleStr2ColourType,      ZMapStyleColourType,         ZMAPSTYLE_COLOURTYPE_INVALID, ZMAP_STYLE_COLOUR_TYPE_LIST, , );
 //ZMAP_ENUM_FROM_STRING_FUNC(zMapStyleStr2ColourTarget,    ZMapStyleColourTarget,       ZMAPSTYLE_COLOURTARGET_INVALID, ZMAP_STYLE_COLOUR_TARGET_LIST, , );
@@ -149,7 +150,7 @@ ZMAP_ENUM_AS_EXACT_STRING_FUNC(zMapStyleMode2ExactStr,            ZMapStyleMode,
 ZMAP_ENUM_AS_EXACT_STRING_FUNC(zmapStyleColDisplayState2ExactStr, ZMapStyleColumnDisplayState, ZMAP_STYLE_COLUMN_DISPLAY_LIST);
 ZMAP_ENUM_AS_EXACT_STRING_FUNC(zmapStyle3FrameMode2ExactStr, ZMapStyle3FrameMode, ZMAP_STYLE_3_FRAME_LIST) ;
 ZMAP_ENUM_AS_EXACT_STRING_FUNC(zmapStyleGraphMode2ExactStr,       ZMapStyleGraphMode,          ZMAP_STYLE_GRAPH_MODE_LIST);
-ZMAP_ENUM_AS_EXACT_STRING_FUNC(zmapStyleGraphScale2ExactStr,       ZMapStyleGraphScale,          ZMAP_STYLE_GRAPH_SCALE_LIST);
+ZMAP_ENUM_AS_EXACT_STRING_FUNC(zmapStyleScale2ExactStr,       ZMapStyleScale,          ZMAP_STYLE_SCALE_LIST);
 ZMAP_ENUM_AS_EXACT_STRING_FUNC(zmapStyleDrawContext2ExactStr,     ZMapStyleDrawContext,        ZMAP_STYLE_DRAW_CONTEXT_LIST);
 ZMAP_ENUM_AS_EXACT_STRING_FUNC(zmapStyleColourType2ExactStr,      ZMapStyleColourType,         ZMAP_STYLE_COLOUR_TYPE_LIST);
 //ZMAP_ENUM_AS_EXACT_STRING_FUNC(zmapStyleColourTarget2ExactStr,    ZMapStyleColourTarget,       ZMAP_STYLE_COLOUR_TARGET_LIST);
@@ -415,9 +416,9 @@ void zMapStylePrint(ZMapIOOut dest, ZMapFeatureTypeStyle style, char *prefix, gb
   PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_WIDTH), width, "Width", "%g", (double)) ;
 
   PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_SCORE_MODE), score_mode, "Score mode", "%s", zmapStyleScoreMode2ExactStr) ;
-
-  PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_MIN_SCORE), min_score, "Min score", "%g", (double)) ;
-  PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_MAX_SCORE), max_score, "Max score", "%g", (double)) ;
+  PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_SCORE_SCALE), score_scale, "Score scaling", "%s", zmapStyleScale2ExactStr) ;
+  PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_MIN_SCORE), min_score, "Score min", "%g", (double)) ;
+  PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_MAX_SCORE), max_score, "Score max", "%g", (double)) ;
 
   PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_GFF_SOURCE), gff_source, "GFF source", "%s", g_quark_to_string) ;
   PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_GFF_FEATURE), gff_feature, "GFF feature", "%s", g_quark_to_string) ;
@@ -455,7 +456,7 @@ void zMapStylePrint(ZMapIOOut dest, ZMapFeatureTypeStyle style, char *prefix, gb
 	indent = "\t\t" ;
 	PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_GRAPH_MODE), mode_data.graph.mode, "Mode", "%s", zmapStyleGraphMode2ExactStr) ;
 	PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_GRAPH_BASELINE), mode_data.graph.baseline, "Baseline", "%g", (double)) ;
-        PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_GRAPH_SCALE), mode_data.graph.scale, "Scale", "%s", zmapStyleGraphScale2ExactStr) ;
+        PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_GRAPH_SCALE), mode_data.graph.scale, "Scaling", "%s", zmapStyleScale2ExactStr) ;
 	PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_GRAPH_FILL), mode_data.graph.fill,  "Fill", "%s", PRINTBOOL) ;
 	PRINTFULLCOLOUR(dest, mode_data.graph.colours, "Colours") ;
 

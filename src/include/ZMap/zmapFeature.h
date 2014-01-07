@@ -729,7 +729,8 @@ typedef struct ZMapFeatureStructType
   /* style id tp be removed when style fully working */
   /* GQuark style_id ;	*/ /* Style defining how this feature is processed (use Styles _unique_ id.) */
 
-  ZMapFeatureTypeStyle *style;                             /* pointer to the style structure held by the
+  ZMapFeatureTypeStyle *style;                             /* pointer to the style structure held by 
+the
                                                             * featureset in the context NOTE we can have
                                                             * mixed styles in a column/ virtual featureset */
 

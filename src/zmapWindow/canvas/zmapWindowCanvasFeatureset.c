@@ -32,22 +32,22 @@
  * for basic features (the first type implemented) it runs about 3-5x faster than the foo canvas
  * but note that that does not include expose/ GDK
  * previous code can be used with 'foo=true' in the style
-
- _new code_
- deskpro17848[mh17]32: zmap --conf_file=ZMap_bins
- # /nfs/users/nfs_m/mh17/.ZMap/ZMap_bins	27/09/2011
- Draw featureset basic_1000: 999 features in 0.060 seconds
- Draw featureset scored: 9999 features in 0.347 seconds
- Draw featureset basic_10000: 9999 features in 0.324 seconds
- Draw featureset basic_100000: 99985 features in 1.729 seconds
-
- _old code_
- deskpro17848[mh17]33: zmap --conf_file=ZMap_bins
- # /nfs/users/nfs_m/mh17/.ZMap/ZMap_bins	27/09/2011
- Draw featureset basic_1000: 999 features in 0.165 seconds
- Draw featureset scored: 9999 features in 0.894 seconds
- Draw featureset basic_10000: 9999 features in 1.499 seconds
- Draw featureset basic_100000: 99985 features in 8.968 seconds
+ * 
+ *  _new code_
+ *  deskpro17848[mh17]32: zmap --conf_file=ZMap_bins
+ *  # /nfs/users/nfs_m/mh17/.ZMap/ZMap_bins	27/09/2011
+ *  Draw featureset basic_1000: 999 features in 0.060 seconds
+ *  Draw featureset scored: 9999 features in 0.347 seconds
+ *  Draw featureset basic_10000: 9999 features in 0.324 seconds
+ *  Draw featureset basic_100000: 99985 features in 1.729 seconds
+ * 
+ *  _old code_
+ *  deskpro17848[mh17]33: zmap --conf_file=ZMap_bins
+ *  # /nfs/users/nfs_m/mh17/.ZMap/ZMap_bins	27/09/2011
+ *  Draw featureset basic_1000: 999 features in 0.165 seconds
+ *  Draw featureset scored: 9999 features in 0.894 seconds
+ *  Draw featureset basic_10000: 9999 features in 1.499 seconds
+ *  Draw featureset basic_100000: 99985 features in 8.968 seconds
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  *-------------------------------------------------------------------
@@ -1207,6 +1207,13 @@ guint zMapWindowCanvasFeaturesetGetId(ZMapWindowFeaturesetItem featureset)
   return(featureset->id);
 }
 
+
+void zMapWindowCanvasFeaturesetSetZoomRecalc(ZMapWindowFeaturesetItem featureset, gboolean recalc)
+{
+  featureset->recalculate_zoom = recalc ;
+
+  return ;
+}
 
 void zMapWindowCanvasFeaturesetSetZoomY(ZMapWindowFeaturesetItem fi, double zoom_y)
 {
@@ -2467,7 +2474,7 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
   double y1,y2;
   double width;
   GList *highlight = NULL;	/* must paint selected on top ie last */
-  gboolean is_line;
+  gboolean is_line = FALSE, is_graphic = FALSE ;
   ZMapWindowFeaturesetItem fi = (ZMapWindowFeaturesetItem)item;
   //gboolean debug = FALSE;
 
@@ -2518,6 +2525,10 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
       zMapLogWarning("draw: no gc","");
       return;		/* got a draw before realize ?? */
     }
+
+
+  char *set_name = (char *)g_quark_to_string(fi->id) ;
+
 
 
 
@@ -2580,15 +2591,28 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
   if(!sl)
     return;
 
+  /* Handle graphics prepaint, line drawing etc. */
   /* we have already found the first matching or previous item */
   /* get the previous one to handle wiggle plots that must go off screen */
-  is_line = (zMapStyleGetMode(fi->style) == ZMAPSTYLE_MODE_GRAPH && fi->style->mode_data.graph.mode == ZMAPSTYLE_GRAPH_LINE);
+  if (zMapStyleGetMode(fi->style) == ZMAPSTYLE_MODE_GRAPH)
+    {
+      is_graphic = TRUE ;
+
+      if (fi->style->mode_data.graph.mode == ZMAPSTYLE_GRAPH_LINE)
+        is_line = TRUE ;
+    }
+
 
   if(is_line)
     {
       feat = sl->prev ? (ZMapWindowCanvasFeature) sl->prev->data : NULL;
+    }
+
+  if (is_graphic)
+    {
       zMapWindowCanvasFeaturesetPaintPrepare(fi,feat,drawable,expose);
     }
+
 
   for(fi->featurestyle = NULL;sl;sl = sl->next)
     {
@@ -3235,6 +3259,7 @@ double zMapWindowCanvasFeatureGetWidthFromScore(ZMapFeatureTypeStyle style, doub
 }
 
 
+
 /* used by graph data ... which recalulates bins */
 /* normal features just have width set from feature score */
 double zMapWindowCanvasFeatureGetNormalisedScore(ZMapFeatureTypeStyle style, double score)
@@ -3248,12 +3273,14 @@ double zMapWindowCanvasFeatureGetNormalisedScore(ZMapFeatureTypeStyle style, dou
   numerator = score - min_score ;
   denominator = max_score - min_score ;
 
+
   if(numerator < 0)			/* coverage and histgrams do not have -ve values */
     numerator = 0;
   if(denominator < 0)		/* dumb but wise, could conceivably be mis-configured and not checked */
     denominator = 0;
 
-  if(style->mode_data.graph.scale == ZMAPSTYLE_GRAPH_SCALE_LOG)
+  if (zMapStyleIsPropertySetId(style, STYLE_PROP_SCORE_SCALE)
+      && (zMapStyleGetScoreScale(style) == ZMAPSTYLE_SCALE_LOG))
     {
       numerator++;	/* as log(1) is zero we need to bodge values of 1 to distingish from zero */
       /* and as log(0) is big -ve number bias zero to come out as zero */
@@ -3277,8 +3304,11 @@ double zMapWindowCanvasFeatureGetNormalisedScore(ZMapFeatureTypeStyle style, dou
       if (dx > 1)
 	dx = 1 ;
     }
-  return(dx);
+
+
+  return(dx) ;
 }
+
 
 double zMapWindowCanvasFeaturesetGetFilterValue(FooCanvasItem *foo)
 {

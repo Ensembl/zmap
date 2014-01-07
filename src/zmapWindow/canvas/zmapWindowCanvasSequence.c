@@ -36,6 +36,7 @@
 #include <string.h>
 
 #include <ZMap/zmapFeature.h>
+#include <zmapWindowCanvasDraw.h>
 #include <zmapWindowCanvasFeatureset_I.h>
 #include <zmapWindowCanvasSequence_I.h>
 

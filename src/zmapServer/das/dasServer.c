@@ -1370,7 +1370,7 @@ static void typesFilter      (ZMapDAS1Type type,              gpointer user_data
   if (mode != ZMAPSTYLE_MODE_INVALID)
     zMapStyleSetMode(style, mode) ;
 
-  zMapStyleSetColours(style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL, bg, fg, outline) ;
+  zMapStyleSetColoursStr(style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL, bg, fg, outline) ;
 
   zMapStyleSetWidth(style, width) ;
 
@@ -1481,7 +1481,7 @@ static void applyGlyphToEachType(gpointer style_id, gpointer data, gpointer user
   if(glyph->bg)
     bg = (char *)g_quark_to_string(glyph->bg);
 
-  zMapStyleSetColours(style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL, bg, fg, outline);
+  zMapStyleSetColoursStr(style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL, bg, fg, outline);
 
   return ;
 }

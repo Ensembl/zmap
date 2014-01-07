@@ -49,6 +49,7 @@
 #include <ZMap/zmapConfigStrings.h>
 #include <zmapWindowState.h>
 #include <zmapWindowContainers.h>
+#include <zmapWindowCanvasDraw.h>
 #include <zmapWindowCanvasItem.h>
 #include <zmapWindowCanvasFeatureset.h>
 #include <zmapWindow_P.h>

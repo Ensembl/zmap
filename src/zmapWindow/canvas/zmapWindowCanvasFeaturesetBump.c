@@ -22,33 +22,26 @@
  *
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- * Description:
+ * Description: NOTE this module implements the bumping of featuresets
+ *              as foo canvas items
  *
  * Exported functions: See XXXXXXXXXXXXX.h
- * HISTORY:
- * Last edited: Jun  3 09:51 2009 (rds)
- * Created: Fri Jan 16 11:20:07 2009 (rds)
  *-------------------------------------------------------------------
  */
 
- /* NOTE
-  * this module implements the bumping of featuresets as foo canvas items
-  */
-
 #include <ZMap/zmap.h>
-
-
 
 #include <math.h>
 #include <string.h>
+
 #include <ZMap/zmapUtilsLog.h>
 #include <ZMap/zmapUtilsDebug.h>
 #include <ZMap/zmapSkipList.h>
+#include <zmapWindowCanvasDraw.h>
 #include <zmapWindowCanvasFeatureset_I.h>
 
-typedef struct  _BumpColRangeStruct *BumpColRange;
 
 /*
 an experiment w/ memory allocation
@@ -93,6 +86,10 @@ deskpro17848[mh17]56: zmap --conf_file=ZMap_bins
 
 #define MODULE_STATS	0	/* NOTE this is for BUMP_OVERLAP, colinear is BUMP_ALL */
 #define SLOW_BUT_EASY	0	/* 30% quicker if not */
+
+
+typedef struct  _BumpColRangeStruct *BumpColRange;
+
 
 typedef struct _BumpColRangeStruct
 {
