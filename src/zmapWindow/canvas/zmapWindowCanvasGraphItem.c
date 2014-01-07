@@ -22,7 +22,7 @@
  *
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description: this module takes a series of bins and draws then in various formats
  *              (line, hiostogram, heatmap) but in each case the source data is the same if
@@ -32,7 +32,7 @@
  *              that heatmaps and histograms would not look as good.
  *              
  *              NOTE originally implemented as free standing canvas type
- *               and lter merged into CanvasFeatureset
+ *               and later merged into CanvasFeatureset.
  *
  *-------------------------------------------------------------------
  */
@@ -45,16 +45,44 @@
 #include <ZMap/zmapUtilsFoo.h>
 #include <ZMap/zmapUtilsLog.h>
 #include <ZMap/zmapFeature.h>
+#include <zmapWindowCanvasFeatureset.h>
 #include <zmapWindowCanvasGraphItem_I.h>
+
+/*
+ * if we draw wiggle plots then instead of one GDK call per segment we cache points and draw a big
+ * long poly-line. For filled graphs we just call the gdk draw polygon function instead.
+ *
+ * ideally this would be implemented in the featureset struct as extended for graphs but we don't
+ * extend featuresets as the rest of the code would be more complex.  instead we have a single
+ * cache here which works because we only ever display one column at a time.  and relies on
+ * ..PaintFlush() being called
+ *
+ * If we ever created threads to paint columns then this needs to be moved into CanvasFeatureset
+ * and alloc'd for graphs and freed on CFS_destroy()
+ *
+ * NOTE currently we do use callbacks but these are necessarily serialised by the Foo Canvas
+ */
+
+/* Current state of play of this code:
+ * 
+ * Code was originally written by Malcolm and then a load of fixes applied by Ed.
+ * I (Ed) don't completely understand all of Malcolm's thinking and there are
+ * probably some bugs remaining but I don't have the time to fix this any more.
+ * The code seems robust and the colouring/filling work except that the fill code draws
+ * shapes that are one short in height. This is probably related to the gdk
+ * polygon function which must call an X Windows function, these functions
+ * often have arcane semantics about which pixels they actually fill on the screen.
+ * 
+ *  */
+
 
 
 /* THIS SHOULD BE IN GUI UTILS AND ZMAPWINDOW CODE SHOULD USE THE GUI UTILS
- * STUFF TO BUT THAT'S ANOTHER PIECE OF WORK.... */
+ * STUFF TOO BUT THAT'S ANOTHER PIECE OF WORK.... */
 /* As we zoom right in we can start to try to draw lines that are longer than
  * the XWindows protocol supports so we need to clamp them. */
 #define CLAMP_COORDS(COORD)                                             \
-  ((COORD) < 0 ? (COORD) = 0 : ((COORD) > 30000 ? (COORD) = 30000 : (COORD)))
-
+  ((COORD) < 0 ? 0 : ((COORD) > 30000 ? 30000 : (COORD)))
 
 
 
@@ -68,33 +96,14 @@ static void graphPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
 static void graphPreZoom(ZMapWindowFeaturesetItem featureset) ;
 static void graphZoomSet(ZMapWindowFeaturesetItem featureset, GdkDrawable *drawable) ;
 static GList *densityCalcBins(ZMapWindowFeaturesetItem di) ;
-
-
-
-/*
- * if we draw wiggle plots then instead of one GDK call per segment we cache points and draw a big
- * long poly-line.
- *
- * ideally this would be implemented in the featureset struct as extended for graphs but we don't
- * extend featuresets as the rest of the code would be more complex.  instead we have a single
- * cache here which works because we only ever display one column at a time.  and relies on
- * ..PaintFlush() being called
- *
- * If we ever created threads to paint columns then this needs to be moved into CanvasFeatureset
- * and alloc'd for graphs and freed on CFS_destroy()
- *
- * NOTE currently we do use callbacks but these are necessarily serialised by the Foo Canvas
- */
+static void setColumnStyle(ZMapWindowFeaturesetItem featureset, ZMapFeatureTypeStyle feature_style) ;
 
 
 /* 
  *                        Globals
  */
 
-
-
-
-
+static gboolean debug_G = FALSE ;                            /* Set TRUE for debug output. */
 
 
 
@@ -103,11 +112,11 @@ static GList *densityCalcBins(ZMapWindowFeaturesetItem di) ;
  * 
  * Some of these are static but are directly called from zmapWindowCanvasFeature
  * as they are "methods".
+ * 
  */
 
 
-/* Called by canvasFeature to set up callbacks for graph when features
- * are painted, zoomed etc. */
+/* Called by canvasFeature to set up callbacks for graph when features are painted, zoomed etc. */
 void zMapWindowCanvasGraphInit(void)
 {
   gpointer funcs[FUNC_N_FUNC] = { NULL } ;
@@ -119,8 +128,7 @@ void zMapWindowCanvasGraphInit(void)
   funcs[FUNC_PRE_ZOOM] = graphPreZoom ;
   funcs[FUNC_ZOOM] = graphZoomSet ;
 
-  zMapWindowCanvasFeatureSetSetFuncs(FEATURE_GRAPH, funcs,
-                                     0, sizeof(ZMapWindowCanvasGraphStruct)) ;
+  zMapWindowCanvasFeatureSetSetFuncs(FEATURE_GRAPH, funcs, 0, sizeof(ZMapWindowCanvasGraphStruct)) ;
 
   return ;
 }
@@ -148,6 +156,78 @@ static void graphInit(ZMapWindowFeaturesetItem featureset)
 }
 
 
+/* Called before any zooming, this column needs to be recalculated with every zoom and
+ * we do this by resetting our zoom level to 0 which triggers the featureset zoom
+ * code to call our zoom routine. This is required because we need special
+ * processing on zoom not just box/line resizing. */
+static void graphPreZoom(ZMapWindowFeaturesetItem featureset)
+{
+  zMapWindowCanvasFeaturesetSetZoomRecalc(featureset, TRUE) ;
+
+  return ;
+}
+
+
+
+/* Recalculate the bins if the zoom level changes */
+static void graphZoomSet(ZMapWindowFeaturesetItem featureset, GdkDrawable *drawable)
+{
+  ZMapWindowCanvasGraph graph_set = (ZMapWindowCanvasGraph)(featureset->opt) ;
+
+
+  /* WHEN DOES featureset->featurestyle GET SET ????????? */
+  /* OK...THIS ALL POINTS TO SOMETHING NOT QUITE RIGHT....AT THIS POINT WE ARE ZOOMING
+   * WHICH REQUIRES STYLE ACCESS BUT featureset->featurestyle IS NOT SET....DUH... */
+
+  /* need logic here to handle all this style crud and to get hold of a feature in the
+   * the first place.... Can this in fact happen here....we need the feature style so
+   * it should have been set ??????? */
+  /* FIND OUT WHEN featureset->featurestyle GETS SET....POTENTIAL FOR SCREW UPS HERE...
+   *  */
+
+  if (featureset->featurestyle)
+    {
+      setColumnStyle(featureset, featureset->featurestyle) ;
+    }
+  else
+    {
+      GList *feature_list ;
+      ZMapWindowCanvasFeature feature_item ;
+      ZMapFeature feature ;
+
+      feature_list = featureset->features ;
+
+      feature_item = (ZMapWindowCanvasFeature)(feature_list->data) ;
+
+      feature = feature_item->feature ;
+
+
+      setColumnStyle(featureset, *(feature->style)) ;
+    }
+
+  /* Some displays must be rebinned on zoom. */
+  if (featureset->re_bin)
+    {
+      if (featureset->display_index)
+        {
+          zMapSkipListDestroy(featureset->display_index, zmapWindowCanvasFeatureFree);
+          featureset->display = NULL;
+          featureset->display_index = NULL;
+        }
+
+      featureset->display = densityCalcBins(featureset);
+    }
+
+  /* will index display not features if display is set */
+  if (!featureset->display_index)
+    zMapWindowCanvasFeaturesetIndex(featureset) ;
+
+  return ;
+}
+
+
+
+/* There may not be a feature so that may mean graph stuff is not set up properly....?? */
 static void graphPaintPrepare(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
                               GdkDrawable *drawable, GdkEventExpose *expose)
 {
@@ -156,12 +236,43 @@ static void graphPaintPrepare(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
   double x2, y2 ;
   FooCanvasItem *item = (FooCanvasItem *)featureset ;
 
-  /* Only stuff to do for lines currently. */
+
+  if (featureset->featurestyle)
+    {
+      zMapDebugPrint(debug_G, "FeatureSet  \"%s\", featureset style \"%s\",  feature style \"%s\"",
+                     g_quark_to_string(featureset->id),
+                     zMapStyleGetName(featureset->style),
+                     zMapStyleGetName(featureset->featurestyle)) ;
+
+      /* Need score stuff to be copied across.... */
+      if (zMapStyleIsPropertySetId(featureset->featurestyle, STYLE_PROP_MIN_SCORE))
+        {
+          featureset->style->min_score = featureset->featurestyle->min_score ;
+          zmapStyleSetIsSet(featureset->style, STYLE_PROP_MIN_SCORE) ;
+        }
+
+      if (zMapStyleIsPropertySetId(featureset->featurestyle, STYLE_PROP_MAX_SCORE))
+        {
+          featureset->style->max_score = featureset->featurestyle->max_score ;
+          zmapStyleSetIsSet(featureset->style, STYLE_PROP_MAX_SCORE) ;
+        }
+
+      if (zMapStyleIsPropertySetId(featureset->featurestyle, STYLE_PROP_SCORE_SCALE))
+        {
+          featureset->style->score_scale = featureset->featurestyle->score_scale ;
+          zmapStyleSetIsSet(featureset->style, STYLE_PROP_SCORE_SCALE) ;
+        }
+    }
+
+
   if (zMapStyleGraphMode(featureset->style) == ZMAPSTYLE_GRAPH_LINE)
     {
       gboolean line_fill ;
       double x_offset, y_offset ;
 
+      /* THERE IS ANOTHER PROBLEM HERE TOO....THE COLUMN STYLE NEEDS TO REFLECT THE
+       * FEATURESET STYLES...NONE OF THIS IS TOO GOOD ACTUALLY SINCE REALLY THE FEATURESET
+       * STYLES SHOULD BE USED BY THE CANVAS FEATURESET CODE TOO !! */
       /* quite hacky....we need the graph fill mode which is in the feature style but
        * if we move right to the end of the sequence the featurestyle can be NULL because there
        * may not be a feature within the canvas range and then the code crashes so here
@@ -180,7 +291,7 @@ static void graphPaintPrepare(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
           if (zMapStyleIsPropertySetId(featureset->style, STYLE_PROP_GRAPH_COLOURS))
             {
               GdkColor *draw = NULL, *fill = NULL, *border = NULL ;
-              ZMapWindowCanvasItemClass featureset_class = ZMAP_CANVAS_ITEM_GET_CLASS(featureset) ;
+              ZMapWindowFeaturesetItemClass featureset_class = ZMAP_WINDOW_FEATURESET_ITEM_GET_CLASS(featureset) ;
 
               zMapStyleGetColours(featureset->style, STYLE_PROP_GRAPH_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
                                   &fill, &draw, &border) ;
@@ -310,16 +421,12 @@ static void graphPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
         double x_offset, y_offset ;
         int bin_gap ;
 
-        {
-          static gboolean debug = FALSE ;
-
-          if (feature && feature->feature && debug)
-            zMapDebugPrintf("Feature %s -\tbin: %.f, %.f\tfeature: %d, %d\tdiff: %.f, %.f",
-                            g_quark_to_string(feature->feature->original_id),
-                            feature->y1, feature->y2,
-                            feature->feature->x1, feature->feature->x2,
-                            feature->y1 - feature->feature->x1, feature->y2 - feature->feature->x2) ;
-        }
+        if (debug_G && feature && feature->feature)
+          zMapDebugPrint(debug_G, "Feature %s -\tbin: %.f, %.f\tfeature: %d, %d\tdiff: %.f, %.f",
+                         g_quark_to_string(feature->feature->original_id),
+                         feature->y1, feature->y2,
+                         feature->feature->x1, feature->feature->x2,
+                         feature->y1 - feature->feature->x1, feature->y2 - feature->feature->x2) ;
 
         draw_box = FALSE;
 
@@ -345,6 +452,7 @@ static void graphPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
           {
             x2 = featureset->style->mode_data.graph.baseline + feature->width - 1 ;
             y2 = feature->y1 ;
+
             foo_canvas_w2c(item->canvas,
                            x2 + x_offset,
                            y2 + y_offset,
@@ -366,16 +474,8 @@ static void graphPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
             double x_pos, y_pos ;
             int cx, cy ;
 
-            if (zMapStyleGraphFill(featureset->style))
-              {
-                x_pos = x_offset ;
-                y_pos = graph_set->last_gy ;
-              }
-            else
-              {
-                x_pos = featureset->style->mode_data.graph.baseline + x_offset ;
-                y_pos = graph_set->last_gy ;
-              }
+            x_pos = featureset->style->mode_data.graph.baseline + x_offset ;
+            y_pos = graph_set->last_gy ;
 
             /* draw from last point back to base: add baseline point at previous feature y2 */
             foo_canvas_w2c(item->canvas,
@@ -405,6 +505,7 @@ static void graphPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
         /* WHY'S IT  - 1  HERE...?? */
         x2 = featureset->style->mode_data.graph.baseline + feature->width - 1 ;
         y2 = (feature->y2 + feature->y1 + 1) / 2 ;
+
         foo_canvas_w2c(item->canvas,
                        x2 + x_offset,
                        y2 + y_offset,
@@ -556,7 +657,6 @@ static void graphPaintFlush(ZMapWindowFeaturesetItem featureset, ZMapWindowCanva
                       graph_set->points[graph_set->n_points].y = cy2 ;
                       graph_set->n_points++ ;
 
-
                       x2 = 0 ;
                       y2 = featureset->end ;
 
@@ -703,43 +803,6 @@ static void graphPaintFlush(ZMapWindowFeaturesetItem featureset, ZMapWindowCanva
 }
 
 
-/* Called before any zooming, this column needs to be recalculated with every zoom and
- * we do this by resetting our zoom level to 0 which triggers the featureset zoom
- * code to call our zoom routine. This is required because we need special
- * processing on zoom. */
-static void graphPreZoom(ZMapWindowFeaturesetItem featureset)
-{
-  zMapWindowCanvasFeaturesetSetZoomY(featureset, 0) ;
-
-  return ;
-}
-
-
-
-/* recalculate the bins if the zoom level changes */
-static void graphZoomSet(ZMapWindowFeaturesetItem featureset, GdkDrawable *drawable)
-{
-
-  if (featureset->re_bin)               /* if it's a density item we always re-bin */
-    {
-      if (featureset->display_index)
-        {
-          zMapSkipListDestroy(featureset->display_index, zmapWindowCanvasFeatureFree);
-          featureset->display = NULL;
-          featureset->display_index = NULL;
-        }
-
-      featureset->display = densityCalcBins(featureset);
-    }
-  /* else we just paint features as they are */
-
-  if(!featureset->display_index)
-    zMapWindowCanvasFeaturesetIndex(featureset);        /* will index display not features if display is set */
-
-  return ;
-}
-
-
 
 
 /* 
@@ -772,14 +835,26 @@ static GList *densityCalcBins(ZMapWindowFeaturesetItem di)
   ZMapWindowCanvasFeature bin_gs;                           /* re-binned */
   GList *src,*dest;
   double score;
+  double min_feat_score = 0, max_feat_score = 0 ;
+
+
+
+  /* this is weird given that the feature style may not have been given for the column style yet.... */
   int min_bin = zMapStyleDensityMinBin(di->style);          /* min pixels per bin */
   gboolean fixed = zMapStyleDensityFixed(di->style);
 
 
-  if(!di->features_sorted)
-    di->features = g_list_sort(di->features,zMapFeatureCmp);
+  zMapDebugPrint(debug_G, "FeatureSet  \"%s\", featureset style \"%s\",  feature style \"%s\", Score scaling is: %s",
+                 g_quark_to_string(di->id),
+                 zMapStyleGetName(di->style),
+                 ((di->featurestyle) ? zMapStyleGetName(di->featurestyle) : "no feature style"),
+                 zmapStyleScale2ExactStr(zMapStyleGetScoreScale(di->style))) ;
 
-  di->features_sorted = TRUE;
+
+  if (!di->features_sorted)
+    di->features = g_list_sort(di->features, zMapFeatureCmp) ;
+
+  di->features_sorted = TRUE ;
 
   if(!min_bin)
     min_bin = 4;
@@ -807,13 +882,16 @@ static GList *densityCalcBins(ZMapWindowFeaturesetItem di)
       bin_gs->y1 = bin_start;
       bin_gs->y2 = bin_end;
       bin_gs->score = 0.0;
+
       //printf("bin: %d,%d\n",bin_start,bin_end);
       for(;src; src = src->next)
         {
           src_gs = (ZMapWindowCanvasFeature) src->data;
+
           //printf("src: %f,%f, %f\n",src_gs->y1,src_gs->y2,src_gs->score);
           if(src_gs->y2 < bin_start)
             continue;
+
           if(src_gs->y1 > bin_end)
             {
               /* jump fwds to next data at high zoom */
@@ -880,13 +958,26 @@ static GList *densityCalcBins(ZMapWindowFeaturesetItem di)
               break;
             }
         }
+
       if(bin_gs->score > 0)
         {
+          if (bin_gs->feature->score < min_feat_score)
+            min_feat_score = bin_gs->feature->score ;
+          else if (bin_gs->feature->score > max_feat_score)
+            max_feat_score = bin_gs->feature->score ;
+
+
           bin_gs->score = zMapWindowCanvasFeatureGetNormalisedScore(di->style, bin_gs->feature->score);
+
           bin_gs->width = di->width;
 
           if(di->style->mode_data.graph.mode != ZMAPSTYLE_GRAPH_HEATMAP)
             bin_gs->width = di->width * bin_gs->score;
+
+
+          zMapDebugPrint(debug_G, "Feature score: %f, normalised score: %f, di->width: %f, bin_gs->width: %f",
+                         bin_gs->feature->score, bin_gs->score, di->width, bin_gs->width) ;
+
 
           if(!fixed && src_gs->y2 < bin_gs->y2) /* limit dest bin to extent of src */
             {
@@ -902,13 +993,93 @@ static GList *densityCalcBins(ZMapWindowFeaturesetItem di)
   /* we could have been artisitic and constructed dest backwards */
   dest = g_list_reverse(dest);
 
+
+  zMapDebugPrint(debug_G, "Min Feature score: %f, max Feat score: %f",
+                 min_feat_score, max_feat_score) ;
+
+
   return dest ;
 }
 
 
 
+/* THERE IS ANOTHER PROBLEM HERE TOO....THE COLUMN STYLE NEEDS TO REFLECT THE
+ * FEATURESET STYLES...NONE OF THIS IS TOO GOOD ACTUALLY SINCE REALLY THE FEATURESET
+ * STYLES SHOULD BE USED BY THE CANVAS FEATURESET CODE TOO !! */
+/* quite hacky....we need the graph fill mode which is in the feature style but
+ * if we move right to the end of the sequence the featurestyle can be NULL because there
+ * may not be a feature within the canvas range and then the code crashes so here
+ * I copy across the fill mode into the column style to cache it and also the colour stuff. */
+static void setColumnStyle(ZMapWindowFeaturesetItem featureset, ZMapFeatureTypeStyle feature_style)
+{
+  ZMapWindowCanvasGraph graph_set = (ZMapWindowCanvasGraph)(featureset->opt) ;
+
+  /* Although doing a style merge here is tempting it's not a good idea as some _column_ style
+   * settings (e.g. width, bump etc) are made independently by other parts of the code
+   * and would be overwritten by this action. */
+
+  /* Settings for all graphs. */
+  if (zMapStyleIsPropertySetId(feature_style, STYLE_PROP_MIN_SCORE))
+    {
+      featureset->style->min_score = feature_style->min_score ;
+      zmapStyleSetIsSet(featureset->style, STYLE_PROP_MIN_SCORE) ;
+    }
+
+  if (zMapStyleIsPropertySetId(feature_style, STYLE_PROP_MAX_SCORE))
+    {
+      featureset->style->max_score = feature_style->max_score ;
+      zmapStyleSetIsSet(featureset->style, STYLE_PROP_MAX_SCORE) ;
+    }
+
+  if (zMapStyleIsPropertySetId(feature_style, STYLE_PROP_SCORE_SCALE))
+    {
+      featureset->style->score_scale = feature_style->score_scale ;
+      zmapStyleSetIsSet(featureset->style, STYLE_PROP_SCORE_SCALE) ;
+    }
 
 
+  /* Settings for line graphs. */
+  featureset->style->mode_data.graph.fill = zMapStyleGraphFill(feature_style) ;
+
+  /* UM....WHAT ON EARTH WAS I DOING HERE...JUST TESTING...???? */
+  if (zMapStyleIsPropertySetId(feature_style, STYLE_PROP_GRAPH_COLOURS))
+    {
+      GdkColor *fill, *draw, *border ;
+
+      if (zMapStyleGetColours(feature_style, STYLE_PROP_GRAPH_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
+                              &fill, &draw, &border))
+         zMapStyleSetColours(feature_style, STYLE_PROP_GRAPH_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
+			     fill, draw, border) ;
+    }
+
+  /* Allocate and cache the draw colours */
+  if (zMapStyleIsPropertySetId(featureset->style, STYLE_PROP_GRAPH_COLOURS))
+    {
+      GdkColor *draw = NULL, *fill = NULL, *border = NULL ;
+      ZMapWindowFeaturesetItemClass featureset_class = ZMAP_WINDOW_FEATURESET_ITEM_GET_CLASS(featureset) ;
+
+      zMapStyleGetColours(featureset->style, STYLE_PROP_GRAPH_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
+                          &fill, &draw, &border) ;
+
+      if (fill)
+        {
+          graph_set->fill = *fill ;
+          zmapWindowFeaturesetAllocColour(featureset_class, &(graph_set->fill)) ;
+        }
+      if (draw)
+        {
+          graph_set->draw = *draw ;
+          zmapWindowFeaturesetAllocColour(featureset_class, &(graph_set->draw)) ;
+        }
+      if (border)
+        {
+          graph_set->border = *border ;
+          zmapWindowFeaturesetAllocColour(featureset_class, &(graph_set->border)) ;
+        }
+    }
+
+  return ;
+}
 
 
 
