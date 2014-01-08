@@ -384,7 +384,7 @@ static GList *squashStrand(GList *fl, GHashTable *hash,  GList **splice_list)
 
       fl = fl->next;
       next_f = fl ? (ZMapFeature) fl->data : NULL;
-      if(next_f && !next_f->feature.homol.align)
+      if(next_f && (!next_f->feature.homol.align || next_f->feature.homol.align->len == 1))
 	next_f = NULL;
       if(next_f && feature && next_f->strand != feature->strand)
 	next_f = NULL;
@@ -441,6 +441,14 @@ gboolean canSquash(ZMapFeature first, ZMapFeature current)
       /* if there are gaps they must be identical */
       if(g1->len != g2->len)
 	return FALSE;
+
+      /* If there are fewer than 2 alignment blocks then there is no gap!
+       * (We shouldn't get this because non-gapped alignments should be
+       * filtered out before we get here, but double-check because this would
+       * let non-overlapping blocks slip through and cause crashing in makeGaps.) */
+      zMapWarnIfFail(g1->len > 1) ;
+      if(g1->len < 2)
+        return FALSE;
 
       int i;
       ZMapAlignBlock a1, a2;
@@ -1282,10 +1290,12 @@ static void storeSpliceCoords(ZMapFeature feature, GList **splice_list)
 
 static gint featureGapCompare(gconstpointer a, gconstpointer b)
 {
+  gint result = 0 ;
+  
   ZMapFeature feata = (ZMapFeature) a;
   ZMapFeature featb = (ZMapFeature) b;	/* these must be alignments */
   GArray *g1,*g2;
-  ZMapAlignBlock a1, a2;
+  ZMapAlignBlock ab1=NULL, ab2=NULL;
   int ng1 = 0, ng2 = 0;
 
   /* this compare function is horrid! */
@@ -1301,69 +1311,87 @@ static gint featureGapCompare(gconstpointer a, gconstpointer b)
   if(!featb)
     {
       if(!feata)
-	return(0);
+	result = 0 ;
 
-      return(1);
+      result = 1 ;
     }
-
-  if(!feata)
-    return(-1);
-
-  if(feata->strand < featb->strand)
-    return(-1);
-
-  if(feata->strand > featb->strand)
-    return(1);
-
-
-  /* THERE'S A MASSIVE PROBLEM HERE.....THE NUMBER OF GAPS IS IRRELEVALENT IF THE ALIGNS
-   * DON'T EVEN OVERLAP....IT'S HARD TO EVEN UNDERSTAND WHAT THE SORT IS TRYING TO ACHIEVE... */
-
-  /* compare gaps array (first gap only), no gaps means move to the end and compare start, end coord */
-  /* as the align block struct holds the matches the gap is between then :-o */
-  g1 = feata->feature.homol.align;
-  g2 = featb->feature.homol.align;
-  if(g1)
-    ng1 = g1->len;
-  if(g2)
-    ng2 = g2->len;
-
-  if(ng1 < ng2)	/* only compare gaps if there are the same number */
-    return 1;
-  if(ng1 > ng2)
-    return -1;
-
-  if(ng1 && ng2)
+  else if(!feata)
     {
-      a1 = &g_array_index(g1, ZMapAlignBlockStruct, 0);
-      a2 = &g_array_index(g2, ZMapAlignBlockStruct, 0);
-
-      if(a1->t2 < a2->t2)
-	return(1);
-      if(a1->t2 > a2->t2)
-	return(-1);
-
-      a1 = &g_array_index(g1, ZMapAlignBlockStruct, 1);
-      a2 = &g_array_index(g2, ZMapAlignBlockStruct, 1);
-      if(a1->t1 < a2->t1)
-	return(-1);
-      if(a1->t1 > a2->t1)
-	return(1);
+      result = -1 ;
+    }
+  else if(feata->strand < featb->strand)
+    {
+      result = -1 ;
+    }
+  else if(feata->strand > featb->strand)
+    {
+      result = 1 ;
     }
   else
     {
-      if(feata->x1 < featb->x1)
-	return(-1);
-      if(feata->x1 > featb->x1)
-	return(1);
+      /* THERE'S A MASSIVE PROBLEM HERE.....THE NUMBER OF GAPS IS IRRELEVALENT IF THE ALIGNS
+       * DON'T EVEN OVERLAP....IT'S HARD TO EVEN UNDERSTAND WHAT THE SORT IS TRYING TO ACHIEVE... */
+      
+      /* gb10: I think the aim of this routine is to place alignments with identical splice
+       * sites adjacent to each other. It first sorts by the number of gaps (in reverse order),
+       * so alignments with the most gaps come first and ungapped alignments come last. This
+       * effectively groups alignments with the same number of gaps. Then it sorts by splice
+       * site coords to group alignments with identical splice sites next to each other. */
+      
+      /* Note that the align block struct holds the matches, so the gap is between them */
+      g1 = feata->feature.homol.align ;
+      g2 = featb->feature.homol.align ;
 
-      if(feata->x2 < featb->x2)
-	return(-1);
-      if(feata->x2 > featb->x2)
-	return(1);
+      if(g1)
+        ng1 = g1->len ;
+      if(g2)
+        ng2 = g2->len ;
+      
+      /* Sort by the number of gaps (reverse order) */
+      result = ng2 - ng1 ;
+
+      /* If identical, also sort by coords */
+      if(!result)
+        {
+          if (ng1 > 1) /* must have at least 2 match blocks for there to be a gap between them! */
+            {
+              /* Gapped alignments */
+              
+              /* Loop through each alignment block and check the splice sites match.
+               * Note that the start/end of the first/last block don't need checking because
+               * they're not splice sites. Continue searching through while matches are
+               * identical i.e. while result is zero. */
+              int i = 0;
+              for ( ; i < ng1 && !result; ++i)
+                {
+                  ab1 = &g_array_index(g1, ZMapAlignBlockStruct, i);
+                  ab2 = &g_array_index(g2, ZMapAlignBlockStruct, i);
+                  
+                  /* sort on the start coord of the alignment block (unless it's the first block) */
+                  if (i > 0)
+                    result = ab1->t1 - ab2->t1 ;
+              
+                  /* If identical, also sort on the end coord of the alignment block
+                   * (unless it's the last block) */
+                  if (!result && i < ng1 - 1)
+                    result = ab1->t2 - ab2->t2 ;
+                }
+            }
+          else
+            {
+              /* Ungapped alignments - just sort by feature coords */
+
+              /* Sort by start coord */
+              result = feata->x1 - featb->x1 ;
+
+              /* If identical, also sort by end end coord */
+              if (!result)
+                result = feata->x2 - featb->x2 ;
+            }
+        }
     }
-
-  return(0);
+  
+  return result ;
 }
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
