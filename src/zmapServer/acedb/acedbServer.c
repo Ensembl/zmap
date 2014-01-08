@@ -1327,7 +1327,7 @@ static gboolean sequenceRequest(DoAllAlignBlocks get_features, ZMapFeatureBlock 
 
   acedb_request =  g_strdup_printf("gif seqget %s -coords %d %d %s %s ; "
 				   " %s "
-				   "seqfeatures -refseq %s -rawmethods %s %s",
+				   "seqfeatures -refseq %s -rawmethods -version %d %s %s",
 				   g_quark_to_string(feature_block->original_id),
 				   server->zmap_start,
 				   server->zmap_end,
@@ -1335,6 +1335,7 @@ static gboolean sequenceRequest(DoAllAlignBlocks get_features, ZMapFeatureBlock 
 				   methods,
 				   (server->fetch_gene_finder_features ? gene_finder_cmds : ""),
 				   g_quark_to_string(feature_block->original_id),
+                                   server->gff_version,
                                    (server->gff_version == 3 ? "" : "-zmap"),
 				   methods) ;
 
