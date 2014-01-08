@@ -469,6 +469,14 @@ static gboolean alignStrCanon2Homol(AlignStrCanonical canon, ZMapStrand ref_stra
         prev_gap = NULL ;
     }
 
+  if (local_map && local_map->len == 1)
+    {
+      /* If there is only one match block then it's ungapped and we must set the
+       * gaps array to null (the code relies on this being null to indicate ungapped) */
+      g_array_free(local_map, TRUE);
+      local_map = NULL;
+    }
+
   *local_map_out = local_map ;
 
   return result ;
