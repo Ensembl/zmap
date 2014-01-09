@@ -237,26 +237,35 @@ static ZMapWindowCanvasFeature zMapWindowCanvasTranscriptAddFeature(ZMapWindowFe
 	      feat->left = &tr->feature;
 	    }
 
-	  tr = (ZMapWindowCanvasTranscript) feat;
-	  tr->sub_type = TRANSCRIPT_EXON;
-	  tr->index = i;
+	  tr = (ZMapWindowCanvasTranscript)feat ;
+	  tr->sub_type = TRANSCRIPT_EXON ;
+
+          if (feature->strand == ZMAPSTRAND_FORWARD)
+            tr->index = i + 1 ;
+          else
+            tr->index = (ne - i) ;
 
 	  if (i < ni)
 	    {
 	      intron = &g_array_index(introns, ZMapSpanStruct, i) ;
 
-	      fy1 = y1 - feature->x1 + intron->x1;
-	      fy2 = y1 - feature->x1 + intron->x2;
+	      fy1 = y1 - feature->x1 + intron->x1 ;
+	      fy2 = y1 - feature->x1 + intron->x2 ;
 
-	      feat = zMapWindowFeaturesetAddFeature(featureset, feature, fy1,fy2);
-	      feat->width = featureset->width;
+	      feat = zMapWindowFeaturesetAddFeature(featureset, feature, fy1,fy2) ;
+	      feat->width = featureset->width ;
 
-	      tr->feature.right = feat;
-	      feat->left = &tr->feature;
+	      tr->feature.right = feat ;
+	      feat->left = &tr->feature ;
 
-	      tr = (ZMapWindowCanvasTranscript) feat;
-	      tr->sub_type = TRANSCRIPT_INTRON;
-	      tr->index = i;
+	      tr = (ZMapWindowCanvasTranscript)feat ;
+	      tr->sub_type = TRANSCRIPT_INTRON ;
+
+              /* should this be corrected for strand...find out where it's used.... */
+              if (feature->strand == ZMAPSTRAND_FORWARD)
+                tr->index = i + 1 ;
+              else
+                tr->index = (ni - i) ;
 	    }
 	}
 
@@ -290,7 +299,8 @@ static ZMapWindowCanvasFeature zMapWindowCanvasTranscriptAddFeature(ZMapWindowFe
 
 
 
-static ZMapFeatureSubPartSpan zmapWindowCanvasTranscriptGetSubPartSpan (FooCanvasItem *foo, ZMapFeature feature, double x,double y)
+static ZMapFeatureSubPartSpan zmapWindowCanvasTranscriptGetSubPartSpan(FooCanvasItem *foo,
+                                                                       ZMapFeature feature, double x, double y)
 {
   ZMapFeatureSubPartSpan sub_part = NULL;
 
@@ -338,11 +348,17 @@ static ZMapFeatureSubPartSpan zmapWindowCanvasTranscriptGetSubPartSpan (FooCanva
 
   for(i = 0; i < ne; i++)
     {
-      exon = &g_array_index(exons,ZMapSpanStruct,i);
+      exon = &g_array_index(exons, ZMapSpanStruct, i) ;
+
       if(exon->x1 <= y && exon->x2 >= y)
 	{
           sub_part = g_malloc0(sizeof *sub_part) ;
-          sub_part->index = i + 1;
+
+          if (feature->strand == ZMAPSTRAND_FORWARD)
+            sub_part->index = i + 1 ;
+          else
+            sub_part->index = (ne - i) ;
+
           sub_part->start = exon->x1;
           sub_part->end = exon->x2;
           sub_part->subpart = ZMAPFEATURE_SUBPART_EXON;
@@ -374,13 +390,19 @@ static ZMapFeatureSubPartSpan zmapWindowCanvasTranscriptGetSubPartSpan (FooCanva
           return sub_part;
 	}
 
-      if(i < ni)
+      if (i < ni)
 	{
-	  intron = &g_array_index(introns,ZMapSpanStruct,i);
+	  intron = &g_array_index(introns,ZMapSpanStruct,i) ;
+
 	  if(intron->x1 <= y && intron->x2 >= y)
 	    {
               sub_part = g_malloc0(sizeof *sub_part) ;
-              sub_part->index = i + 1;
+
+              if (feature->strand == ZMAPSTRAND_FORWARD)
+                sub_part->index = i + 1 ;
+              else
+                sub_part->index = (ni - i) ;
+
               sub_part->start = intron->x1;
               sub_part->end = intron->x2;
               sub_part->subpart = ZMAPFEATURE_SUBPART_INTRON;
