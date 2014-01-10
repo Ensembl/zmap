@@ -247,7 +247,7 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
 
    if (feature_desc->feature_variation_string)
      {
-       g_string_append(desc_str, g_strdup_printf(" (allele string = %s)", feature_desc->feature_variation_string )) ;
+       g_string_append(desc_str, g_strdup_printf("; allele =\n%s", feature_desc->feature_variation_string )) ;
      }
 
 	  if (feature_desc->feature_total_length)
