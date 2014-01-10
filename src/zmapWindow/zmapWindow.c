@@ -1565,7 +1565,9 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
 			       char *alternative_clipboard_text,
 			       gboolean replace_highlight_item, gboolean highlight_same_names, gboolean sub_part)
 {
-  static const int max_variation_string_length = 20 ;
+  static const int max_variation_str_len = 60 ;
+  char *p = NULL ;
+  GString *temp_string ;
   ZMapWindowCanvasItem top_canvas_item;
   ZMapFeature feature = NULL;
   ZMapFeatureTypeStyle style ;
@@ -1853,20 +1855,35 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
 	}
 
       zMapFeatureGetInfo((ZMapFeatureAny)feature, NULL,
-			 "locus", &(select.feature_desc.feature_locus),
-			 NULL);
+                         "locus", &(select.feature_desc.feature_locus), NULL);
 
       if (ZMAPFEATURE_IS_BASIC(feature) && feature->feature.basic.has_attr.variation_str)
         {
           select.feature_desc.feature_name = g_strdup_printf("%s (%s)",
-							   (char *)g_quark_to_string(feature->original_id),
-							   (char *)(strlen(feature->feature.basic.variation_str) < max_variation_string_length ? feature->feature.basic.variation_str : "long allele string") ) ;
-          if (strlen(feature->feature.basic.variation_str) >= max_variation_string_length)
-            select.feature_desc.feature_variation_string = g_strdup(feature->feature.basic.variation_str) ;
+            (char *)g_quark_to_string(feature->original_id),
+							     (char *)(strlen(feature->feature.basic.variation_str) < max_variation_str_len ? feature->feature.basic.variation_str : "long allele string") ) ;
+          if (strlen(feature->feature.basic.variation_str) >= max_variation_str_len)
+            {
+              /* select.feature_desc.feature_variation_string = g_strdup(feature->feature.basic.variation_str) ; */
+
+              temp_string = g_string_new("") ;
+              p = feature->feature.basic.variation_str ;
+              while (strlen(p) > max_variation_str_len)
+                {
+                  g_string_append_len(temp_string, p, max_variation_str_len) ;
+                  g_string_append(temp_string, "\n") ;
+                  p += max_variation_str_len ;
+                }
+              g_string_append(temp_string, p) ;
+              select.feature_desc.feature_variation_string = g_string_free(temp_string, FALSE ) ;
+
+            }
+
         }
       else
-	select.feature_desc.feature_name = g_strdup((char *)g_quark_to_string(feature->original_id)) ;
-
+        {
+          select.feature_desc.feature_name = g_strdup((char *)g_quark_to_string(feature->original_id)) ;
+        }
 
       if (feature->type == ZMAPSTYLE_MODE_BASIC && feature->feature.basic.known_name)
 	select.feature_desc.feature_known_name = (char *)g_quark_to_string(feature->feature.basic.known_name) ;
