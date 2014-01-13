@@ -3823,9 +3823,6 @@ static gboolean makeNewFeature_V3(
           if (zMapAttParseEnsemblVariation(pAttribute, &sVariation))
             {
               zMapFeatureAddVariationString(pFeature, sVariation) ;
-              //gqSOTerm = zMapSOVariation2SO(sVariation) ;
-              //if (gqSOTerm)
-              //  zMapFeatureAddSOaccession(pFeature, gqSOTerm) ;
             }
         }
 
@@ -3834,7 +3831,6 @@ static gboolean makeNewFeature_V3(
        */
       sSOUserString = g_strdup_printf("%s (%s)", sSOType, zMapSOIDDataGetIDAsString(pSOIDData)) ;
       gqSOTerm = g_quark_from_string(sSOUserString) ;
-      //pFeature->SO_accession = gqSOTerm ;
       zMapFeatureAddSOaccession(pFeature, gqSOTerm) ;
 
       /*
