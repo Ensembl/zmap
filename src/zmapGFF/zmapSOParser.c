@@ -107,6 +107,17 @@ ZMapHomolType zMapSOIDDataGetHomol(const ZMapSOIDData const pData )
   return pData->cHomol ;
 }
 
+/*
+ * Return the ID as a string, that is something of the form "SO:0000ijk".
+ */
+char *       zMapSOIDDataGetIDAsString(const ZMapSOIDData const pData )
+{
+  char * sResult = NULL ;
+  if (!pData)
+    return sResult ;
+  sResult = g_strdup_printf("SO:%07d", pData->iID) ;
+  return sResult ;
+}
 
 
 
@@ -132,6 +143,7 @@ gboolean zMapSOIDDataDestroy(ZMapSOIDData const pID)
 ZMapStyleMode zMapSOSetGetStyleModeFromID(ZMapSOSetInUse cSOSetInUse, unsigned int iID)
 {
   ZMapStyleMode cTheMode = ZMAPSTYLE_MODE_INVALID ;
+  gboolean bFound = FALSE ;
   unsigned int i ;
 
   if (cSOSetInUse == ZMAPSO_USE_SOFA)
@@ -141,6 +153,7 @@ ZMapStyleMode zMapSOSetGetStyleModeFromID(ZMapSOSetInUse cSOSetInUse, unsigned i
           if (iID == ZMAP_SO_DATA_TABLE01[i].iID )
             {
               cTheMode =  ZMAP_SO_DATA_TABLE01[i].cStyleMode ;
+              bFound = TRUE ;
               break ;
             }
         }
@@ -152,6 +165,7 @@ ZMapStyleMode zMapSOSetGetStyleModeFromID(ZMapSOSetInUse cSOSetInUse, unsigned i
           if (iID == ZMAP_SO_DATA_TABLE02[i].iID )
             {
               cTheMode = ZMAP_SO_DATA_TABLE02[i].cStyleMode ;
+              bFound = TRUE ;
               break ;
             }
         }
@@ -163,10 +177,26 @@ ZMapStyleMode zMapSOSetGetStyleModeFromID(ZMapSOSetInUse cSOSetInUse, unsigned i
           if (iID == ZMAP_SO_DATA_TABLE03[i].iID )
             {
               cTheMode = ZMAP_SO_DATA_TABLE03[i].cStyleMode ;
+              bFound = TRUE ;
               break ;
             }
-      }
-  }
+        }
+    }
+
+#ifdef USE_SO_TERM_HACK
+  if (!bFound)
+    {
+      for (i=0; i<ZMAP_SO_DATA_TABLE04_HACK_NUM_ITEMS; ++i)
+        {
+          if (iID == ZMAP_SO_DATA_TABLE04_HACK[i].iID )
+            {
+              cTheMode = ZMAP_SO_DATA_TABLE04_HACK[i].cStyleMode ;
+              bFound = TRUE ;
+              break ;
+            }
+        }
+    }
+#endif
 
 
   return cTheMode ;
@@ -178,6 +208,7 @@ ZMapStyleMode zMapSOSetGetStyleModeFromID(ZMapSOSetInUse cSOSetInUse, unsigned i
 ZMapHomolType zMapSOSetGetHomolFromID(ZMapSOSetInUse cSOSetInUse, unsigned int iID)
 {
   ZMapHomolType cHomol = ZMAPHOMOL_NONE;
+  gboolean bFound = FALSE ;
   unsigned int i ;
 
   if (cSOSetInUse == ZMAPSO_USE_SOFA)
@@ -187,6 +218,7 @@ ZMapHomolType zMapSOSetGetHomolFromID(ZMapSOSetInUse cSOSetInUse, unsigned int i
           if (iID == ZMAP_SO_DATA_TABLE01[i].iID )
             {
               cHomol =  ZMAP_SO_DATA_TABLE01[i].cHomol ;
+              bFound = TRUE ;
               break ;
             }
         }
@@ -198,6 +230,7 @@ ZMapHomolType zMapSOSetGetHomolFromID(ZMapSOSetInUse cSOSetInUse, unsigned int i
           if (iID == ZMAP_SO_DATA_TABLE02[i].iID )
             {
               cHomol = ZMAP_SO_DATA_TABLE02[i].cHomol ;
+              bFound = TRUE ;
               break ;
             }
         }
@@ -209,10 +242,26 @@ ZMapHomolType zMapSOSetGetHomolFromID(ZMapSOSetInUse cSOSetInUse, unsigned int i
           if (iID == ZMAP_SO_DATA_TABLE03[i].iID )
             {
               cHomol = ZMAP_SO_DATA_TABLE03[i].cHomol ;
+              bFound = TRUE ;
               break ;
             }
-      }
-  }
+        }
+    }
+
+#ifdef USE_SO_TERM_HACK
+  if (!bFound)
+    {
+      for (i=0; i<ZMAP_SO_DATA_TABLE04_HACK_NUM_ITEMS; ++i)
+        {
+          if (iID == ZMAP_SO_DATA_TABLE04_HACK[i].iID )
+            {
+              cHomol = ZMAP_SO_DATA_TABLE04_HACK[i].cHomol ;
+              bFound = TRUE ;
+              break ;
+            }
+        }
+    }
+#endif
 
 
   return cHomol ;
@@ -224,6 +273,7 @@ ZMapHomolType zMapSOSetGetHomolFromID(ZMapSOSetInUse cSOSetInUse, unsigned int i
 ZMapStyleMode zMapSOSetGetStyleModeFromName(ZMapSOSetInUse cSOSetInUse, const char * const sName )
 {
   ZMapStyleMode cTheMode = ZMAPSTYLE_MODE_INVALID ;
+  gboolean bFound = FALSE ;
   unsigned int i ;
   if (!sName || !*sName)
     return cTheMode;
@@ -235,6 +285,7 @@ ZMapStyleMode zMapSOSetGetStyleModeFromName(ZMapSOSetInUse cSOSetInUse, const ch
           if (!strcmp(sName, ZMAP_SO_DATA_TABLE01[i].sName))
             {
               cTheMode = ZMAP_SO_DATA_TABLE01[i].cStyleMode ;
+              bFound = TRUE ;
               break ;
             }
         }
@@ -246,6 +297,7 @@ ZMapStyleMode zMapSOSetGetStyleModeFromName(ZMapSOSetInUse cSOSetInUse, const ch
           if (!strcmp(sName, ZMAP_SO_DATA_TABLE02[i].sName))
             {
               cTheMode = ZMAP_SO_DATA_TABLE02[i].cStyleMode ;
+              bFound = TRUE ;
               break ;
             }
         }
@@ -257,10 +309,26 @@ ZMapStyleMode zMapSOSetGetStyleModeFromName(ZMapSOSetInUse cSOSetInUse, const ch
           if (!strcmp(sName, ZMAP_SO_DATA_TABLE03[i].sName))
             {
               cTheMode = ZMAP_SO_DATA_TABLE03[i].cStyleMode ;
+              bFound = TRUE ;
               break ;
             }
-      }
-  }
+        }
+    }
+
+#ifdef USE_SO_TERM_HACK
+  if (!bFound)
+    {
+      for (i=0; i<ZMAP_SO_DATA_TABLE04_HACK_NUM_ITEMS; ++i)
+        {
+          if (!strcmp(sName, ZMAP_SO_DATA_TABLE04_HACK[i].sName))
+            {
+              cTheMode = ZMAP_SO_DATA_TABLE04_HACK[i].cStyleMode ;
+              bFound = TRUE ;
+              break ;
+            }
+        }
+    }
+#endif
 
   return cTheMode ;
 }
@@ -272,6 +340,7 @@ ZMapStyleMode zMapSOSetGetStyleModeFromName(ZMapSOSetInUse cSOSetInUse, const ch
 unsigned int zMapSOSetIsNamePresent(ZMapSOSetInUse cSOSetInUse, const char * const sType)
 {
   unsigned int iResult = ZMAPSO_ID_UNK, i ;
+  gboolean bFound = FALSE ;
   if (!sType || !*sType)
     return iResult ;
 
@@ -282,6 +351,7 @@ unsigned int zMapSOSetIsNamePresent(ZMapSOSetInUse cSOSetInUse, const char * con
           if (!strcmp(sType, ZMAP_SO_DATA_TABLE01[i].sName))
             {
               iResult = ZMAP_SO_DATA_TABLE01[i].iID ;
+              bFound = TRUE ;
               break ;
             }
         }
@@ -293,6 +363,7 @@ unsigned int zMapSOSetIsNamePresent(ZMapSOSetInUse cSOSetInUse, const char * con
           if (!strcmp(sType, ZMAP_SO_DATA_TABLE02[i].sName))
             {
               iResult = ZMAP_SO_DATA_TABLE02[i].iID ;
+              bFound = TRUE ;
               break ;
             }
         }
@@ -304,10 +375,26 @@ unsigned int zMapSOSetIsNamePresent(ZMapSOSetInUse cSOSetInUse, const char * con
           if (!strcmp(sType, ZMAP_SO_DATA_TABLE03[i].sName))
             {
               iResult = ZMAP_SO_DATA_TABLE03[i].iID ;
+              bFound = TRUE ;
               break ;
             }
         }
     }
+
+#ifdef USE_SO_TERM_HACK
+  if (!bFound)
+    {
+      for (i=0; i<ZMAP_SO_DATA_TABLE04_HACK_NUM_ITEMS; ++i)
+        {
+          if (!strcmp(sType, ZMAP_SO_DATA_TABLE04_HACK[i].sName))
+            {
+              iResult = ZMAP_SO_DATA_TABLE04_HACK[i].iID ;
+              bFound = TRUE ;
+              break ;
+            }
+        }
+    }
+#endif
 
   return iResult ;
 }
@@ -319,6 +406,7 @@ unsigned int zMapSOSetIsNamePresent(ZMapSOSetInUse cSOSetInUse, const char * con
 char * zMapSOSetIsIDPresent(ZMapSOSetInUse cSOSetInUse, unsigned int iID )
 {
   char* sResult = NULL ;
+  gboolean bFound = FALSE ;
   unsigned int i ;
 
   if (cSOSetInUse == ZMAPSO_USE_SOFA)
@@ -328,6 +416,7 @@ char * zMapSOSetIsIDPresent(ZMapSOSetInUse cSOSetInUse, unsigned int iID )
           if (iID == ZMAP_SO_DATA_TABLE01[i].iID )
             {
               sResult =  ZMAP_SO_DATA_TABLE01[i].sName ;
+              bFound = TRUE ;
               break ;
             }
         }
@@ -339,6 +428,7 @@ char * zMapSOSetIsIDPresent(ZMapSOSetInUse cSOSetInUse, unsigned int iID )
           if (iID == ZMAP_SO_DATA_TABLE02[i].iID )
             {
               sResult = ZMAP_SO_DATA_TABLE02[i].sName ;
+              bFound = TRUE ;
               break ;
             }
         }
@@ -350,10 +440,26 @@ char * zMapSOSetIsIDPresent(ZMapSOSetInUse cSOSetInUse, unsigned int iID )
           if (iID == ZMAP_SO_DATA_TABLE03[i].iID )
             {
               sResult = ZMAP_SO_DATA_TABLE03[i].sName;
+              bFound = TRUE ;
               break ;
             }
         }
     }
+
+#ifdef USE_SO_TERM_HACK
+  if (!bFound)
+    {
+      for (i=0; i<ZMAP_SO_DATA_TABLE04_HACK_NUM_ITEMS; ++i)
+        {
+          if (iID == ZMAP_SO_DATA_TABLE04_HACK[i].iID )
+            {
+              sResult = ZMAP_SO_DATA_TABLE04_HACK[i].sName ;
+              bFound = TRUE ;
+              break ;
+            }
+        }
+    }
+#endif
 
   return sResult ;
 }
