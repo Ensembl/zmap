@@ -1773,7 +1773,8 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
 	  if (feature_length)
 	    select.feature_desc.feature_length = g_strdup_printf("%d", feature_length) ;
 
-	  select.feature_desc.feature_term   = feature_term;
+	  //select.feature_desc.feature_term   = feature_term;
+	  select.feature_desc.feature_term = g_quark_to_string(feature->SO_accession) ;
 	}
 
 

@@ -3535,8 +3535,7 @@ static gboolean makeNewFeature_V3(
     *sSOType                = NULL,
     *sMakeFeatureErrorText  = NULL,
     *sURL                   = NULL,
-    *sVariation             = NULL,
-    *sVariationSO           = NULL
+    *sVariation             = NULL
   ;
 
   gboolean
@@ -3549,7 +3548,7 @@ static gboolean makeNewFeature_V3(
   GQuark
     gqFeatureStyleID        = 0,
     gqSourceID              = 0,
-    gqVariationSO           = 0
+    gqSOTerm                = 0
   ;
 
   ZMapFeature
@@ -3813,8 +3812,7 @@ static gboolean makeNewFeature_V3(
         }
 
       /*
-       * EnsEMBL variation data. Might be an attribute with name "ensembl_variation"
-       * or "allele_string".
+       * EnsEMBL variation data.
        *
        * The calls to zMapSOVariation2SO() and zMapFeatureAddSOaccession() are from v2 code
        * and should be deprecated once the correct SO terms are being passed through.
@@ -3824,11 +3822,18 @@ static gboolean makeNewFeature_V3(
           if (zMapAttParseEnsemblVariation(pAttribute, &sVariation))
             {
               zMapFeatureAddVariationString(pFeature, sVariation) ;
-              gqVariationSO = zMapSOVariation2SO(sVariation) ;
-              if (gqVariationSO)
-                zMapFeatureAddSOaccession(pFeature, gqVariationSO) ;
+              //gqSOTerm = zMapSOVariation2SO(sVariation) ;
+              //if (gqSOTerm)
+              //  zMapFeatureAddSOaccession(pFeature, gqSOTerm) ;
             }
         }
+
+      /*
+       * SO terms
+       */
+      gqSOTerm = g_quark_from_string(sSOType) ;
+      pFeature->SO_accession = gqSOTerm ;
+      //zMapFeatureAddSOaccession(pFeature, gqSOTerm) ;
 
       /*
        * Insert handling of other attributes in here as necesary.
