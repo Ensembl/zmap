@@ -107,6 +107,17 @@ ZMapHomolType zMapSOIDDataGetHomol(const ZMapSOIDData const pData )
   return pData->cHomol ;
 }
 
+/*
+ * Return the ID as a string, that is something of the form "SO:0000ijk".
+ */
+char *       zMapSOIDDataGetIDAsString(const ZMapSOIDData const pData )
+{
+  char * sResult = NULL ;
+  if (!pData)
+    return sResult ;
+  sResult = g_strdup_printf("SO:%07d", pData->iID) ;
+  return sResult ;
+}
 
 
 

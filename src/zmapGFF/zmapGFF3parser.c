@@ -3535,7 +3535,8 @@ static gboolean makeNewFeature_V3(
     *sSOType                = NULL,
     *sMakeFeatureErrorText  = NULL,
     *sURL                   = NULL,
-    *sVariation             = NULL
+    *sVariation             = NULL,
+    *sSOUserString          = NULL
   ;
 
   gboolean
@@ -3829,11 +3830,12 @@ static gboolean makeNewFeature_V3(
         }
 
       /*
-       * SO terms
+       * Set the SO term data for the feature.
        */
-      gqSOTerm = g_quark_from_string(sSOType) ;
-      pFeature->SO_accession = gqSOTerm ;
-      //zMapFeatureAddSOaccession(pFeature, gqSOTerm) ;
+      sSOUserString = g_strdup_printf("%s (%s)", sSOType, zMapSOIDDataGetIDAsString(pSOIDData)) ;
+      gqSOTerm = g_quark_from_string(sSOUserString) ;
+      //pFeature->SO_accession = gqSOTerm ;
+      zMapFeatureAddSOaccession(pFeature, gqSOTerm) ;
 
       /*
        * Insert handling of other attributes in here as necesary.
@@ -3852,6 +3854,8 @@ return_point:
    */
   if (sURL)
     g_free(sURL) ;
+  if (sSOUserString)
+    g_free(sSOUserString) ;
 
   return bResult ;
 }
