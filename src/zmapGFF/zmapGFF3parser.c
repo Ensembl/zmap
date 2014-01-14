@@ -3795,7 +3795,12 @@ static gboolean makeNewFeature_V3(
 
         } /* final ZMapStyleMode clause */
 
-
+      /*
+       * Set the SO term data for the feature.
+       */
+      sSOUserString = g_strdup_printf("%s (%s)", sSOType, zMapSOIDDataGetIDAsString(pSOIDData)) ;
+      gqSOTerm = g_quark_from_string(sSOUserString) ;
+      zMapFeatureAddSOaccession(pFeature, gqSOTerm) ;
 
       /*
        * Now we deal with some extra attributes used locally.
@@ -3814,9 +3819,6 @@ static gboolean makeNewFeature_V3(
 
       /*
        * EnsEMBL variation data.
-       *
-       * The calls to zMapSOVariation2SO() and zMapFeatureAddSOaccession() are from v2 code
-       * and should be deprecated once the correct SO terms are being passed through.
        */
       if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "ensembl_variation")))
         {
@@ -3825,13 +3827,6 @@ static gboolean makeNewFeature_V3(
               zMapFeatureAddVariationString(pFeature, sVariation) ;
             }
         }
-
-      /*
-       * Set the SO term data for the feature.
-       */
-      sSOUserString = g_strdup_printf("%s (%s)", sSOType, zMapSOIDDataGetIDAsString(pSOIDData)) ;
-      gqSOTerm = g_quark_from_string(sSOUserString) ;
-      zMapFeatureAddSOaccession(pFeature, gqSOTerm) ;
 
       /*
        * Insert handling of other attributes in here as necesary.
