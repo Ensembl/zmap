@@ -3535,8 +3535,7 @@ static gboolean makeNewFeature_V3(
     *sSOType                = NULL,
     *sMakeFeatureErrorText  = NULL,
     *sURL                   = NULL,
-    *sVariation             = NULL,
-    *sSOUserString          = NULL
+    *sVariation             = NULL
   ;
 
   gboolean
@@ -3796,13 +3795,6 @@ static gboolean makeNewFeature_V3(
         } /* final ZMapStyleMode clause */
 
       /*
-       * Set the SO term data for the feature.
-       */
-      sSOUserString = g_strdup_printf("%s (%s)", sSOType, zMapSOIDDataGetIDAsString(pSOIDData)) ;
-      gqSOTerm = g_quark_from_string(sSOUserString) ;
-      zMapFeatureAddSOaccession(pFeature, gqSOTerm) ;
-
-      /*
        * Now we deal with some extra attributes used locally.
        */
 
@@ -3845,8 +3837,6 @@ return_point:
    */
   if (sURL)
     g_free(sURL) ;
-  if (sSOUserString)
-    g_free(sSOUserString) ;
 
   return bResult ;
 }
