@@ -136,6 +136,61 @@ gboolean zMapSOIDDataDestroy(ZMapSOIDData const pID)
   return bResult ;
 }
 
+/*
+ * Return the SOAccession as a string, looked up from the name as a string.
+ */
+char *       zMapSOIDDataName2SOAcc(const char * const pData)
+{
+  char * sResult = NULL ;
+  unsigned int iID = 0 ;
+  gboolean bFound = FALSE ;
+  int i = 0 ;
+
+  for (i=0; i<ZMAP_SO_DATA_TABLE01_NUM_ITEMS; ++i)
+    {
+      if (!strcmp(pData, ZMAP_SO_DATA_TABLE01[i].sName))
+        {
+          iID = ZMAP_SO_DATA_TABLE01[i].iID ;
+          bFound = TRUE ;
+          break ;
+        }
+    }
+
+  if (!bFound)
+    {
+      for (i=0; i<ZMAP_SO_DATA_TABLE02_NUM_ITEMS; ++i)
+        {
+          if (!strcmp(pData, ZMAP_SO_DATA_TABLE02[i].sName))
+            {
+              iID = ZMAP_SO_DATA_TABLE02[i].iID ;
+              bFound = TRUE ;
+              break ;
+            }
+        }
+    }
+
+  if (!bFound)
+  {
+    for (i=0; i<ZMAP_SO_DATA_TABLE03_NUM_ITEMS; ++i)
+      {
+        if (!strcmp(pData, ZMAP_SO_DATA_TABLE03[i].sName))
+          {
+            iID = ZMAP_SO_DATA_TABLE03[i].iID ;
+            bFound = TRUE ;
+            break ;
+          }
+      }
+  }
+
+  if (bFound)
+    {
+      sResult = g_strdup_printf("SO:%07d", iID) ;
+    }
+
+
+  return sResult ;
+}
+
 
 /*
  * Lookup the style mode of the SO term from the numerical ID.

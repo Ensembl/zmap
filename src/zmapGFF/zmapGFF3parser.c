@@ -3547,8 +3547,7 @@ static gboolean makeNewFeature_V3(
 
   GQuark
     gqFeatureStyleID        = 0,
-    gqSourceID              = 0,
-    gqSOTerm                = 0
+    gqSourceID              = 0
   ;
 
   ZMapFeature
