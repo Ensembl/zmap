@@ -162,7 +162,7 @@ char * zMapGFFStr_substring(const char* const sS1, const char* const sS2, void*(
 gboolean zMapGFFStr_substring_replace(const char * const sInput, const char * const sToFind, const char * const sReplacement,
   char ** sOut )
 {
-  gboolean bResult = FALSE, bReplaced = FALSE ;
+  gboolean bResult = FALSE ;
   char *sFirst = NULL,
     *sSecond = NULL,
     *sPos = NULL ;

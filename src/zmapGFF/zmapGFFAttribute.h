@@ -43,7 +43,74 @@
 #include <ZMap/zmapGFF.h>
 #include "zmapGFF3_P.h"
 
-
+/*
+ * Names of attributes.
+ */
+#ifdef ATTRIBUTE_DEFINITIONS
+const char * sAttributeName_Class                     = "Class" ;
+const char * sAttributeName_percentID                 = "percentID" ;
+const char * sAttributeName_Align                     = "Align" ;
+const char * sAttributeName_start_not_found           = "start_not_found" ;
+const char * sAttributeName_end_not_found             = "end_not_found" ;
+const char * sAttributeName_length                    = "length" ;
+const char * sAttributeName_Name                      = "Name" ;
+const char * sAttributeName_Alias                     = "Alias" ;
+const char * sAttributeName_Target                    = "Target" ;
+const char * sAttributeName_Dbxref                    = "Dbxref" ;
+const char * sAttributeName_Ontology_term             = "Ontology_term" ;
+const char * sAttributeName_Is_circular               = "Is_circular" ;
+const char * sAttributeName_Parent                    = "Parent" ;
+const char * sAttributeName_url                       = "url" ;
+const char * sAttributeName_ensembl_variation         = "ensembl_variation" ;
+const char * sAttributeName_allele_string             = "allele_string" ;
+const char * sAttributeName_Note                      = "Note" ;
+const char * sAttributeName_Derives_from              = "Derives_from" ;
+const char * sAttributeName_ID                        = "ID" ;
+const char * sAttributeName_sequence                  = "sequence" ;
+const char * sAttributeName_Source                    = "Source" ;
+const char * sAttributeName_Assembly_source           = "Assembly_source" ;
+const char * sAttributeName_locus                     = "locus";
+const char * sAttributeName_Gaps                      = "Gaps" ;
+const char * sAttributeName_Gap                       = "Gap" ;
+const char * sAttributeName_cigar_exonerate           = "cigar_exonerate" ;
+const char * sAttributeName_cigar_ensembl             = "cigar_ensembl" ;
+const char * sAttributeName_cigar_bam                 = "cigar_bam" ;
+const char * sAttributeName_vulgar_exonerate          = "vulgar_exonerate" ;
+const char * sAttributeName_Known_name                = "Known_name" ;
+const char * sAttributeName_assembly_path             = "assembly_path" ;
+#else
+extern const char * sAttributeName_Class ;
+extern const char * sAttributeName_percentID ;
+extern const char * sAttributeName_Align ;
+extern const char * sAttributeName_start_not_found ;
+extern const char * sAttributeName_end_not_found ;
+extern const char * sAttributeName_length ;
+extern const char * sAttributeName_Name ;
+extern const char * sAttributeName_Alias ;
+extern const char * sAttributeName_Target ;
+extern const char * sAttributeName_Dbxref ;
+extern const char * sAttributeName_Ontology_term ;
+extern const char * sAttributeName_Is_circular ;
+extern const char * sAttributeName_Parent ;
+extern const char * sAttributeName_url;
+extern const char * sAttributeName_ensembl_variation;
+extern const char * sAttributeName_allele_string ;
+extern const char * sAttributeName_Note ;
+extern const char * sAttributeName_Derives_from ;
+extern const char * sAttributeName_ID ;
+extern const char * sAttributeName_sequence ;
+extern const char * sAttributeName_Source ;
+extern const char * sAttributeName_Assembly_source ;
+extern const char * sAttributeName_locus ;
+extern const char * sAttributeName_Gaps ;
+extern const char * sAttributeName_Gap ;
+extern const char * sAttributeName_cigar_exonerate ;
+extern const char * sAttributeName_cigar_ensembl ;
+extern const char * sAttributeName_cigar_bam ;
+extern const char * sAttributeName_vulgar_exonerate ;
+extern const char * sAttributeName_Known_name ;
+extern const char * sAttributeName_assembly_path ;
+#endif
 
 /*
  * Structure to store info about attributes. Data are:

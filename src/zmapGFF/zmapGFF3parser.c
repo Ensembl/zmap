@@ -97,6 +97,8 @@ static char * makeFeatureTranscriptNamePublic(const ZMapGFFFeatureData const) ;
 static char * makeFeatureAlignmentNamePrivate(const ZMapGFFFeatureData const) ;
 static gboolean clipFeatureLogic_General(const ZMapGFF3Parser const, ZMapGFFFeatureData const ) ;
 static gboolean clipFeatureLogic_Transcript(const ZMapGFF3Parser const , ZMapGFFFeatureData const ) ;
+static gboolean requireLocusOperations() ;
+static gboolean performLocusOperations() ;
 
 /*
  *
@@ -2513,7 +2515,7 @@ static char * makeFeatureTranscriptNamePublic(const ZMapGFFFeatureData const pFe
     return sResult ;
   pAttributes = zMapGFFFeatureDataGetAts(pFeatureData) ;
   nAttributes = zMapGFFFeatureDataGetNat(pFeatureData) ;
-  pAttributeName = zMapGFFAttributeListContains(pAttributes, nAttributes, "Name") ;
+  pAttributeName = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_Name) ;
   if (pAttributeName)
     {
       bParseValid = zMapAttParseName(pAttributeName, &sFeatureAttributeName) ;
@@ -2547,7 +2549,7 @@ static char * makeFeatureAlignmentNamePrivate(const ZMapGFFFeatureData const pFe
   char * sResult = NULL ;
   pAttributes = zMapGFFFeatureDataGetAts(pFeatureData) ;
   nAttributes = zMapGFFFeatureDataGetNat(pFeatureData) ;
-  pAttributeTarget = zMapGFFAttributeListContains(pAttributes, nAttributes, "Target") ;
+  pAttributeTarget = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_Target) ;
   iStart               = zMapGFFFeatureDataGetSta(pFeatureData) ;
   iEnd                 = zMapGFFFeatureDataGetEnd(pFeatureData) ;
   if (pAttributeTarget)
@@ -2664,10 +2666,10 @@ static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const pFeature
    */
   pAttributes = zMapGFFFeatureDataGetAts(pFeatureData) ;
   nAttributes = zMapGFFFeatureDataGetNat(pFeatureData) ;
-  pAttributeID = zMapGFFAttributeListContains(pAttributes, nAttributes, "ID") ;
+  pAttributeID = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_ID) ;
   if (pAttributeID)
     bHasAttributeID = TRUE ;
-  pAttributeParent = zMapGFFAttributeListContains(pAttributes, nAttributes, "Parent");
+  pAttributeParent = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_Parent);
   if (pAttributeParent)
     bHasAttributeParent = TRUE ;
 
@@ -2692,7 +2694,7 @@ static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const pFeature
   else if (!bHasAttributeID && !bIsComponent)
     {
       cCase = THIRD ;
-      pAttributeName = zMapGFFAttributeListContains(pAttributes, nAttributes, "Name") ;
+      pAttributeName = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_Name) ;
       if (pAttributeName)
         {
           bParseValid = zMapAttParseName(pAttributeName, &sFeatureAttributeName) ;
@@ -2939,7 +2941,7 @@ static ZMapFeature makeFeatureAlignment(const ZMapGFFFeatureData const pFeatureD
 
   pAttributes = zMapGFFFeatureDataGetAts(pFeatureData) ;
   nAttributes = zMapGFFFeatureDataGetNat(pFeatureData) ;
-  pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "Target") ;
+  pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_Target) ;
   if (pAttribute)
   {
     bValidTarget = zMapAttParseTarget(pAttribute, &sTargetID, &iTargetStart, &iTargetEnd, &cTargetStrand) ;
@@ -2975,7 +2977,7 @@ static ZMapFeature makeFeatureAlignment(const ZMapGFFFeatureData const pFeatureD
       /*
        * "percentID" attribute
        */
-      if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "percentID")))
+      if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_percentID)))
         {
           bParseAttribute = zMapAttParsePID(pAttribute, &dPercentID) ;
         }
@@ -2983,7 +2985,7 @@ static ZMapFeature makeFeatureAlignment(const ZMapGFFFeatureData const pFeatureD
       /*
        * "length" attribute
        */
-      if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "length")))
+      if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_length)))
         {
           bParseAttribute = zMapAttParseLength(pAttribute, &iLength) ;
         }
@@ -2991,19 +2993,19 @@ static ZMapFeature makeFeatureAlignment(const ZMapGFFFeatureData const pFeatureD
       /*
        * Now parse for gap data in various possible formats
        */
-      if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "Gap")))
+      if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_Gap)))
         {
           bParseAttribute = FALSE ; /* Not yet implemented. */
         }
-      else if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "cigar_ensembl")))
+      else if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_cigar_ensembl)))
         {
           bParseAttribute = zMapAttParseCigarEnsembl(pAttribute, &pGaps, cStrand, iStart, iEnd, cTargetStrand, iTargetStart, iTargetEnd) ;
         }
-      else if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "cigar_exonerate")))
+      else if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_cigar_exonerate)))
         {
           bParseAttribute = zMapAttParseCigarExonerate(pAttribute, &pGaps, cStrand, iStart, iEnd, cTargetStrand, iTargetStart, iTargetEnd);
         }
-      else if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "cigar_bam")))
+      else if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_cigar_bam)))
         {
           bParseAttribute = zMapAttParseCigarBam(pAttribute, &pGaps, cStrand, iStart, iEnd, cTargetStrand, iTargetStart, iTargetEnd);
         }
@@ -3150,7 +3152,7 @@ static ZMapFeature makeFeatureDefault(const ZMapGFFFeatureData const pFeatureDat
    /*
     * Look for "Name" attribute
     */
-  pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "Name" );
+  pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_Name );
   if (pAttribute)
     {
       bParseValid = zMapAttParseName(pAttribute, &sName) ;
@@ -3285,7 +3287,7 @@ static gboolean clipFeatureLogic_Transcript(const ZMapGFF3Parser const pParser, 
   nAttributes          = zMapGFFFeatureDataGetNat(pFeatureData) ;
   pAttributes          = zMapGFFFeatureDataGetAts(pFeatureData) ;
   bFeatureSpecialTranscript = (!strcmp(sSOType, "transcript")
-                            && zMapGFFAttributeListContains(pAttributes, nAttributes, "ID")) ;
+                            && zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_ID)) ;
 
   /*
    * Clipping logic.
@@ -3542,7 +3544,8 @@ static gboolean makeNewFeature_V3(
     bResult                 = FALSE,
     bHasScore               = FALSE,
     bNewFeatureCreated      = FALSE,
-    bIncludeFeature         = TRUE
+    bIncludeFeature         = TRUE,
+    bHasLocus               = FALSE
   ;
 
   GQuark
@@ -3759,6 +3762,17 @@ static gboolean makeNewFeature_V3(
           if (bNewFeatureCreated)
             ++pParser->num_features ;
 
+
+          if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_locus)))
+            {
+              bHasLocus = TRUE ;
+            }
+
+          if (requireLocusOperations()) /* depends upon the locus attribute and other things...  */
+            {
+              performLocusOperations() ;
+            }
+
         }
       else if (cFeatureStyleMode == ZMAPSTYLE_MODE_ALIGNMENT)
         {
@@ -3800,7 +3814,7 @@ static gboolean makeNewFeature_V3(
       /*
        * URL attribute.
        */
-      if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "url")))
+      if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_url)))
         {
           if (zMapAttParseURL(pAttribute, &sURL))
             {
@@ -3811,7 +3825,7 @@ static gboolean makeNewFeature_V3(
       /*
        * EnsEMBL variation data.
        */
-      if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "ensembl_variation")))
+      if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_ensembl_variation)))
         {
           if (zMapAttParseEnsemblVariation(pAttribute, &sVariation))
             {
@@ -3822,12 +3836,6 @@ static gboolean makeNewFeature_V3(
       /*
        * Insert handling of other attributes in here as necesary.
        */
-
-      if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "locus")))
-        {
-          printf("locus = '%s'\n", zMapGFFAttributeGetTempstring(pAttribute)) ;
-          fflush(stdout) ;
-        }
 
 
     } /* if (bIncludeFeature) */
@@ -3851,8 +3859,27 @@ return_point:
 
 
 
+/*
+ * Decide whether or not locus-based operations are required for
+ * the current feature.
+ */
+gboolean requireLocusOperations()
+{
+  gboolean bResult = TRUE ;
+
+  return bResult ;
+}
 
 
+/*
+ * Perform the locus-based operations for the current feature.
+ */
+gboolean performLocusOperations()
+{
+  gboolean bResult = TRUE ;
+
+  return bResult ;
+}
 
 
 
