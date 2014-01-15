@@ -3823,6 +3823,12 @@ static gboolean makeNewFeature_V3(
        * Insert handling of other attributes in here as necesary.
        */
 
+      if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "locus")))
+        {
+          printf("locus = '%s'\n", zMapGFFAttributeGetTempstring(pAttribute)) ;
+          fflush(stdout) ;
+        }
+
 
     } /* if (bIncludeFeature) */
 
