@@ -36,8 +36,9 @@
 #include "zmapGFF3_P.h"
 
 #define ATTRIBUTE_DEFINITIONS 1
-
 #include "zmapGFFAttribute.h"
+#undef ATTRIBUTE_DEFINITIONS
+
 #include "zmapGFFStringUtils.h"
 
 

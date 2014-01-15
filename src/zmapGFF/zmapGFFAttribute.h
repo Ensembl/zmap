@@ -96,6 +96,8 @@ DEFINE_ATTRIBUTE(sAttributeName, vulgar_exonerate)
 DEFINE_ATTRIBUTE(sAttributeName, Known_name)
 DEFINE_ATTRIBUTE(sAttributeName, assembly_path)
 
+#undef DEFINE_ATTRIBUTE
+
 
 
 /*
