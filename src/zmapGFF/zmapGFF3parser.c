@@ -97,8 +97,8 @@ static char * makeFeatureTranscriptNamePublic(const ZMapGFFFeatureData const) ;
 static char * makeFeatureAlignmentNamePrivate(const ZMapGFFFeatureData const) ;
 static gboolean clipFeatureLogic_General(const ZMapGFF3Parser const, ZMapGFFFeatureData const ) ;
 static gboolean clipFeatureLogic_Transcript(const ZMapGFF3Parser const , ZMapGFFFeatureData const ) ;
-static gboolean requireLocusOperations() ;
-static gboolean performLocusOperations() ;
+static gboolean requireLocusOperations(const ZMapGFFParser const, const ZMapGFFFeatureData const ) ;
+static gboolean performLocusOperations(const ZMapGFFParser const, const ZMapGFFFeatureData const ) ;
 
 /*
  *
@@ -3768,9 +3768,9 @@ static gboolean makeNewFeature_V3(
               bHasLocus = TRUE ;
             }
 
-          if (requireLocusOperations()) /* depends upon the locus attribute and other things...  */
+          if (requireLocusOperations(pParserBase, pFeatureData))
             {
-              performLocusOperations() ;
+              performLocusOperations(pParserBase, pFeatureData) ;
             }
 
         }
@@ -3863,9 +3863,24 @@ return_point:
  * Decide whether or not locus-based operations are required for
  * the current feature.
  */
-gboolean requireLocusOperations()
+gboolean requireLocusOperations(const ZMapGFFParser const pParser, const ZMapGFFFeatureData const pFeatureData)
 {
-  gboolean bResult = TRUE ;
+  gboolean bResult = FALSE ;
+  ZMapGFFAttribute *pAttributes = NULL ;
+  unsigned int nAttributes = 0 ;
+  char *sSOType = NULL ;
+
+  nAttributes          = zMapGFFFeatureDataGetNat(pFeatureData) ;
+  pAttributes          = zMapGFFFeatureDataGetAts(pFeatureData) ;
+  sSOType              = zMapSOIDDataGetName(zMapGFFFeatureDataGetSod(pFeatureData)) ;
+
+  if (pParser->locus_set_id                                                          &&
+      zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_locus)   &&
+      zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_ID)      &&
+      !strcmp(sSOType, "transcript") )
+    {
+      bResult = TRUE ;
+    }
 
   return bResult ;
 }
@@ -3873,10 +3888,22 @@ gboolean requireLocusOperations()
 
 /*
  * Perform the locus-based operations for the current feature.
+ *
+ * These should use the clipping logic of the non-transcript objects, I think. There are some features that
+ * the v2 code clips that are included at this stage by v3 code for this reason.
  */
-gboolean performLocusOperations()
+gboolean performLocusOperations(const ZMapGFFParser const pParser, const ZMapGFFFeatureData const pFeatureData )
 {
   gboolean bResult = TRUE ;
+  ZMapGFFAttribute pAttribute = NULL, *pAttributes = NULL ;
+  unsigned int nAttributes = 0 ;
+
+  nAttributes          = zMapGFFFeatureDataGetNat(pFeatureData) ;
+  pAttributes          = zMapGFFFeatureDataGetAts(pFeatureData) ;
+  pAttribute           = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_locus) ;
+
+  printf("creating locus with s = '%s'\n", zMapGFFAttributeGetTempstring(pAttribute)) ;
+  fflush(stdout) ;
 
   return bResult ;
 }

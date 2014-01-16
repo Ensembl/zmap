@@ -1611,7 +1611,7 @@ gboolean zMapAttParseAnyTwoStrings(const ZMapGFFAttribute const pAttribute, char
 
 
 /*
- * Parse the attribute as a "locus" ... v3 only with lower case "locus" as name.
+ * Parse "locus" attribute and convert to GQuark.
  */
 gboolean zMapAttParseLocus(const ZMapGFFAttribute const pAttribute, GQuark * const pGQ)
 {
