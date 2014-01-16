@@ -99,6 +99,8 @@ static gboolean clipFeatureLogic_General(const ZMapGFF3Parser const, ZMapGFFFeat
 static gboolean clipFeatureLogic_Transcript(const ZMapGFF3Parser const , ZMapGFFFeatureData const ) ;
 static gboolean requireLocusOperations(const ZMapGFFParser const, const ZMapGFFFeatureData const ) ;
 static gboolean performLocusOperations(const ZMapGFFParser const, const ZMapGFFFeatureData const ) ;
+static ZMapFeatureSource getSourceData(const ZMapGFFParser const, const char * const, GQuark * const , GQuark * const )  ;
+static ZMapFeatureTypeStyle getFeatureStyleData(const ZMapGFFParser const, const ZMapGFFParserFeatureSet const, GQuark * const, ZMapStyleMode) ;
 
 /*
  *
@@ -2320,6 +2322,29 @@ static gboolean parseBodyLine_V3(
   else if (!zMapFeatureFormatPhase(sPhase, &cPhase))
     sErrText = g_strdup_printf("phase format not recognised: %s", sPhase) ;
 
+  /*
+   * A CDS feature _must_ have a phase which is _not_ ZMAPPHASE_NONE.
+   *
+   * All features other than CDS _must_ have cPhase = '.' (i.e. ZMAPPHASE_NONE).
+   * Anything else is an error.
+   */
+  if (!strcmp(sType, "CDS"))
+    {
+      if (cPhase == ZMAPPHASE_NONE)
+        {
+          bResult = FALSE ;
+          goto return_point ;
+        }
+    }
+  else
+    {
+      if (cPhase != ZMAPPHASE_NONE)
+        {
+          bResult = FALSE ;
+          goto return_point ;
+        }
+    }
+
 
   /*
    * Deal with hack to source -> SO term mapping
@@ -3613,67 +3638,13 @@ static gboolean makeNewFeature_V3(
   iSOID                = zMapSOIDDataGetID(pSOIDData) ;
   cFeatureStyleMode    = zMapSOIDDataGetStyleMode(pSOIDData) ;
 
-  /*
-   * A CDS feature _must_ have a phase which is _not_ ZMAPPHASE_NONE.
-   *
-   * _MAY_ also require the following test at some point (but this is not in the
-   * standard). It is present for the moment...
-   *
-   * All features other than CDS _must_ have cPhase = '.' (i.e. ZMAPPHASE_NONE).
-   * Anything else is an error.
-   */
-  if (!strcmp(sSOType, "CDS"))
-    {
-      if (cPhase == ZMAPPHASE_NONE)
-        {
-          bResult = FALSE ;
-          goto return_point ;
-        }
-    }
-  else
-    {
-      if (cPhase != ZMAPPHASE_NONE)
-        {
-          bResult = FALSE ;
-          goto return_point ;
-        }
-    }
-
 
   /*
    * If the parser was given a source -> data mapping then
    * use that to get the style id and other
    * data otherwise use the source itself.
    */
-  if (pParser->source_2_sourcedata)
-    {
-      gqSourceID = zMapFeatureSetCreateID(sSource);
-
-      if (!(pSourceData = g_hash_table_lookup(pParser->source_2_sourcedata, GINT_TO_POINTER(gqSourceID))))
-        {
-          /* need to invent this for autoconfigured servers */
-          pSourceData = g_new0(ZMapFeatureSourceStruct,1);
-          pSourceData->source_id = gqSourceID;
-          pSourceData->source_text = gqSourceID;
-
-          /* this is the same hash owned by the view & window */
-          g_hash_table_insert(pParser->source_2_sourcedata,GINT_TO_POINTER(gqSourceID), pSourceData);
-        }
-
-      if (pSourceData->style_id)
-        gqFeatureStyleID = zMapStyleCreateID((char *) g_quark_to_string(pSourceData->style_id)) ;
-      else
-        gqFeatureStyleID = zMapStyleCreateID((char *) g_quark_to_string(pSourceData->source_id)) ;
-
-      gqSourceID = pSourceData->source_id ;
-      pSourceData->style_id = gqFeatureStyleID;
-    }
-  else
-    {
-      gqSourceID = gqFeatureStyleID = zMapStyleCreateID(sSource) ;
-    }
-
-
+  pSourceData =  getSourceData(pParserBase, sSource, &gqSourceID, &gqFeatureStyleID) ;
 
   /*
    * Find the feature set from the parser associated with the source, and
@@ -3713,24 +3684,22 @@ static gboolean makeNewFeature_V3(
       if (pSourceData && pFeatureStyle->unique_id != gqFeatureStyleID)
         pSourceData->style_id = pFeatureStyle->unique_id;
     }
-
-  /*
-   * with one type of feature in a featureset this should be ok
-   */
   pParserFeatureSet->feature_set->style = pFeatureStyle;
   pFeatureSet = pParserFeatureSet->feature_set ;
+
+  //pFeatureStyle = getFeatureStyleData(pParser, pParserFeatureSet, &gqFeatureStyleID, cFeatureStyleMode) ;
 
   /*
    * Now check that the ZMapStyleMode of the current style also has the same ZMapStyleMode.
    * If it is not, then I treat this as an unrecoverable error for the current feature.
    */
-  if (cFeatureStyleMode != pFeatureStyle->mode)
+  /*if (cFeatureStyleMode != pFeatureStyle->mode)
     {
       *err_text = g_strdup_printf("feature ignored, ZMapStyleMode for feature and Style do not match. Style = '%s', source = '%s'",
                                   g_quark_to_string(gqFeatureStyleID), sSource) ;
       bResult = FALSE ;
       goto return_point ;
-    }
+    } */
 
   /*
    * Clipping logic.
@@ -3852,6 +3821,59 @@ return_point:
     g_free(sURL) ;
 
   return bResult ;
+}
+
+
+/*
+ *
+ */
+ZMapFeatureTypeStyle getFeatureStyleData(const ZMapGFFParser const pParser, const ZMapGFFParserFeatureSet const pParserFeatureSet,
+                                         GQuark * const pgqFeatureStyleID, ZMapStyleMode cFeatureStyleMode )
+{
+  return NULL ;
+}
+
+
+
+/*
+ * Perform lookup of data associated with a source, find Quark representations of
+ * the source ID and style ID associated with these features.
+ */
+ZMapFeatureSource getSourceData(const ZMapGFFParser const pParser, const char * const sSource, GQuark *pgqSourceID,  GQuark *pgqFeatureStyleID)
+{
+  ZMapFeatureSource pSourceData = NULL ;
+  GQuark gqSourceID = 0, gqFeatureStyleID = 0 ;
+
+  if (pParser->source_2_sourcedata)
+    {
+      gqSourceID = zMapFeatureSetCreateID(sSource);
+
+      if (!(pSourceData = g_hash_table_lookup(pParser->source_2_sourcedata, GINT_TO_POINTER(gqSourceID))))
+        {
+          pSourceData = g_new0(ZMapFeatureSourceStruct,1);
+          pSourceData->source_id = gqSourceID;
+          pSourceData->source_text = gqSourceID;
+
+          g_hash_table_insert(pParser->source_2_sourcedata,GINT_TO_POINTER(gqSourceID), pSourceData);
+        }
+
+      if (pSourceData->style_id)
+        gqFeatureStyleID = zMapStyleCreateID((char *) g_quark_to_string(pSourceData->style_id)) ;
+      else
+        gqFeatureStyleID = zMapStyleCreateID((char *) g_quark_to_string(pSourceData->source_id)) ;
+
+      gqSourceID = pSourceData->source_id ;
+      pSourceData->style_id = gqFeatureStyleID;
+    }
+  else
+    {
+      gqSourceID = gqFeatureStyleID = zMapStyleCreateID(sSource) ;
+    }
+
+  *pgqSourceID = gqSourceID ;
+  *pgqFeatureStyleID = gqFeatureStyleID ;
+
+  return pSourceData ;
 }
 
 
