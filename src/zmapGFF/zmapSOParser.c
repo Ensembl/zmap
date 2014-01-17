@@ -50,6 +50,24 @@ ZMapSOIDData zMapSOIDDataCreate()
 }
 
 /*
+ * A "copy constructor" for the SOIDData object.
+ */
+ZMapSOIDData zMapSOIDDataCC(const ZMapSOIDData const pData)
+{
+  ZMapSOIDData pID = NULL ;
+  pID = g_malloc(sizeof(ZMapSOIDDataStruct)) ;
+  zMapReturnValIfFail(pData && pID, pID) ;
+
+  pID->iID            = pData->iID ;
+  pID->sName          = pData->sName ? g_strdup(pData->sName) : NULL ;
+  pID->cStyleMode     = pData->cStyleMode ;
+  pID->cHomol         = pData->cHomol ;
+
+  return pID ;
+}
+
+
+/*
  * Create a single SOID Data object with supplied data.
  */
 ZMapSOIDData zMapSOIDDataCreateFromData(unsigned int iID, const char* const sName,

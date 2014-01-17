@@ -3542,38 +3542,22 @@ static gboolean makeNewFeature_V3(
                          const ZMapGFFFeatureData const pFeatureData
                        )
 {
-  unsigned int
-    nAttributes             = 0
-  ;
+  unsigned int nAttributes = 0 ;
 
-  char
-    *sMakeFeatureErrorText  = NULL,
-    *sURL                   = NULL,
-    *sVariation             = NULL
-  ;
+  char *sMakeFeatureErrorText = NULL,
+    *sURL = NULL,
+    *sVariation = NULL ;
 
-  gboolean
-    bResult                 = FALSE,
-    bNewFeatureCreated      = FALSE,
-    bIncludeFeature         = TRUE
-  ;
+  gboolean bResult = FALSE,
+    bNewFeatureCreated = FALSE,
+    bIncludeFeature = TRUE ;
 
-  ZMapFeature
-    pFeature                = NULL
-  ;
-  ZMapFeatureSet
-    pFeatureSet             = NULL
-  ;
-  ZMapStyleMode
-    cFeatureStyleMode       = ZMAPSTYLE_MODE_INVALID
-  ;
-  ZMapSOIDData
-    pSOIDData               = NULL
-  ;
-  ZMapGFFAttribute
-    pAttribute              = NULL,
-    *pAttributes            = NULL
-  ;
+  ZMapFeature pFeature = NULL ;
+  ZMapFeatureSet pFeatureSet = NULL ;
+  ZMapStyleMode cFeatureStyleMode = ZMAPSTYLE_MODE_INVALID ;
+  ZMapSOIDData pSOIDData = NULL ;
+  ZMapGFFAttribute pAttribute = NULL,
+    *pAttributes = NULL ;
 
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
 

@@ -147,6 +147,7 @@ gboolean zMapGFFFeatureDataSet(ZMapGFFFeatureData const,
                                unsigned int,
                                const ZMapSOIDData const) ;
 gboolean zMapGFFFeatureDataIsValid(const ZMapGFFFeatureData const ) ;
+ZMapGFFFeatureData zMapGFFFeatureDataCC(const ZMapGFFFeatureData const ) ;
 
 
 

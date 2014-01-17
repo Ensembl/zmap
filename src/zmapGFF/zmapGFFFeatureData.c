@@ -71,6 +71,38 @@ ZMapGFFFeatureData zMapGFFFeatureDataCreate()
   return pFeatureData ;
 }
 
+/*
+ * A "copy constructor" that returns pointer to a new object by copying the argument.
+ */
+ZMapGFFFeatureData zMapGFFFeatureDataCC(const ZMapGFFFeatureData const pData )
+{
+  ZMapGFFFeatureData pFeatureData = NULL ;
+  pFeatureData = (ZMapGFFFeatureData) g_new0(ZMapGFFFeatureDataStruct, 1) ;
+  zMapReturnValIfFail(pData && pFeatureData, pFeatureData) ;
+
+  pFeatureData->sSequence    = pData->sSequence ? g_strdup(pData->sSequence) : NULL ;
+  pFeatureData->sSource      = pData->sSource ? g_strdup(pData->sSource) : NULL ;
+  pFeatureData->iStart       = pData->iStart ;
+  pFeatureData->iEnd         = pData->iEnd ;
+  pFeatureData->dScore       = pData->dScore ;
+  pFeatureData->cStrand      = pData->cStrand ;
+  pFeatureData->cPhase       = pData->cPhase ;
+  pFeatureData->sAttributes  = pData->sAttributes ? g_strdup(pData->sAttributes) : NULL ;
+  pFeatureData->pSOIDData    = zMapSOIDDataCC(pData->pSOIDData) ;
+
+  pFeatureData->flags.got_seq        = pFeatureData->flags.got_seq ;
+  pFeatureData->flags.got_sou        = pFeatureData->flags.got_sou ;
+  pFeatureData->flags.got_sta        = pFeatureData->flags.got_sta ;
+  pFeatureData->flags.got_end        = pFeatureData->flags.got_end ;
+  pFeatureData->flags.got_sco        = pFeatureData->flags.got_sco ;
+  pFeatureData->flags.got_str        = pFeatureData->flags.got_str ;
+  pFeatureData->flags.got_pha        = pFeatureData->flags.got_pha ;
+  pFeatureData->flags.got_att        = pFeatureData->flags.got_att ;
+  pFeatureData->flags.got_sod        = pFeatureData->flags.got_sod ;
+
+  return pFeatureData ;
+}
+
 
 
 /*
