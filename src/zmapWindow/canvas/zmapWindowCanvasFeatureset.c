@@ -946,23 +946,22 @@ static void zMapWindowCanvasFeaturesetPaintSet(ZMapWindowFeaturesetItem fi,
 	}
 
       zMap_draw_rect (drawable, fi, x1, y1, x2, y2, TRUE);
-      //printf("draw back %s %x %d,%d - %d,%d\n", g_quark_to_string(fi->id), c.pixel, x1, y1, x2, y2);
     }
 
   if(fi->border_set)
     {
+      /* Is this EVER called...????? */
+
       c.pixel = fi->border;
       gdk_gc_set_foreground (fi->gc, &c);
       gdk_gc_set_fill (fi->gc, GDK_SOLID);
 
       zMap_draw_rect (drawable, fi, x1, y1, x2, y2, FALSE);
-      //printf("draw border %d,%d - %d,%d\n", g_quark_to_string(fi->id), c.pixel, x1, y1, x2, y2);
     }
 
 
 
-  if ((fi->type > 0 && fi->type < FEATURE_N_TYPE)
-      &&(func = _featureset_set_paint_G[fi->type]))
+  if ((fi->type > 0 && fi->type < FEATURE_N_TYPE) &&(func = _featureset_set_paint_G[fi->type]))
     func(fi, drawable, expose) ;
 
   return ;
@@ -2049,7 +2048,7 @@ static void zmap_window_featureset_item_item_update (FooCanvasItem *item, double
 
   di->dy = i2w_dy;
   y1 = di->dy = di->start;
-  y2 = y1 + di->end - di->start;
+  y2 = (y1 + di->end - di->start) + 1 ;                     /* + 1 to cover last base. */
 
   if((di->layer & ZMAP_CANVAS_LAYER_STRETCH_Y))
     y2 = y1;  	/* will be set afterwards by caller */
@@ -2477,9 +2476,13 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
   gboolean is_line = FALSE, is_graphic = FALSE ;
   ZMapWindowFeaturesetItem fi = (ZMapWindowFeaturesetItem)item;
   //gboolean debug = FALSE;
+  GdkRegion *region;
+  GdkRectangle rect;
+  GtkAdjustment *adjust ;
 
 
-  /* get visible scroll region in gdk coordinates to clip features that overlap and possibly extend beyond actual scroll
+  /* get visible scroll region in gdk coordinates to clip features that
+   * overlap and possibly extend beyond actual scroll
    * this avoids artifacts due to wrap round
    * NOTE we cannot calc this post zoom as we get scroll afterwards
    * except possibly if we combine the zoom and scroll operation
@@ -2490,34 +2493,31 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
    * 
    * 
    */
-  {
-    GdkRegion *region;
-    GdkRectangle rect;
-    GtkAdjustment *adjust ;
+
+  region = gdk_drawable_get_visible_region(drawable);
+  gdk_region_get_clipbox ((const GdkRegion *) region, &rect);
+  gdk_region_destroy(region);
+
+
+  adjust = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(fi->canvas_scrolled_window)) ;
+  if (rect.height < adjust->page_size)
+    rect.height = adjust->page_size + 1000 ;		    /* hack...try it.... */
+  
+
+  fi->clip_x1 = rect.x - 1;
+  fi->clip_y1 = rect.y - 1;
+
+  fi->clip_x2 = rect.x + rect.width + 1;
+  fi->clip_y2 = rect.y + rect.height + 1;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  fi->clip_x2 = rect.x + rect.width + 1;
+  fi->clip_y2 = rect.y + rect.height + 2 ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 
-    region = gdk_drawable_get_visible_region(drawable);
-    gdk_region_get_clipbox ((const GdkRegion *) region, &rect);
-    gdk_region_destroy(region);
-
-
-    adjust = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(fi->canvas_scrolled_window)) ;
-    if (rect.height < adjust->page_size)
-      rect.height = adjust->page_size + 1000 ;		    /* hack...try it.... */
-
-
-    fi->clip_x1 = rect.x - 1;
-    fi->clip_y1 = rect.y - 1;
-    fi->clip_x2 = rect.x + rect.width + 1;
-    fi->clip_y2 = rect.y + rect.height + 1;
-  }
-
-
-
-
-
-
+  /* UM....WHY NOT DO THIS AT THE BEGINNING...DUH..... */
   if(!fi->gc && (item->object.flags & FOO_CANVAS_ITEM_REALIZED))
     fi->gc = gdk_gc_new (item->canvas->layout.bin_window);
   if(!fi->gc)
@@ -3212,8 +3212,11 @@ void zMapCanvasFeaturesetDrawBoxMacro(ZMapWindowFeaturesetItem featureset,
       c.pixel = outline;
       gdk_gc_set_foreground(featureset->gc, &c);
       /* +1 due to gdk_draw_rect and zMap_draw_rect */
-      zMap_draw_rect(drawable, featureset, cx1, cy1, cx2+1, cy2+1, FALSE);
+
+      zMap_draw_rect(drawable, featureset, cx1, cy1, cx2+1, cy2, FALSE);
     }
+
+  return ;
 }
 
 
