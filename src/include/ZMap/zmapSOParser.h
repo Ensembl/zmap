@@ -80,6 +80,7 @@ ZMapStyleMode zMapSOSetGetStyleModeFromID(ZMapSOSetInUse, unsigned int ) ;
 ZMapHomolType zMapSOSetGetHomolFromID(ZMapSOSetInUse, unsigned int ) ;
 ZMapStyleMode zMapSOSetGetStyleModeFromName(ZMapSOSetInUse, const char * const ) ;
 ZMapSOIDData zMapSOIDDataCreate() ;
+ZMapSOIDData zMapSOIDDataCC(const ZMapSOIDData const) ;
 ZMapSOIDData zMapSOIDDataCreateFromData(unsigned int, const char * const, ZMapStyleMode , ZMapHomolType ) ;
 gboolean zMapSOIDDataDestroy(ZMapSOIDData const) ;
 unsigned int zMapSOIDDataGetID(const ZMapSOIDData const) ;
