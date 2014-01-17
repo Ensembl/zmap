@@ -90,6 +90,7 @@ static void destroyFeatureArray(gpointer data) ;
  * Functions to create, augment or find names for various types of features based upon ZMapStyleMode.
  */
 static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const, const ZMapFeatureSet const, gboolean *, char **) ;
+static ZMapFeature makeFeatureLocus(const ZMapGFFFeatureData const, char ** ) ;
 static ZMapFeature makeFeatureAlignment(const ZMapGFFFeatureData const, const ZMapFeatureSet const, char ** ) ;
 static ZMapFeature makeFeatureAssemblyPath(const ZMapGFFFeatureData const, const ZMapFeatureSet const, char ** ) ;
 static ZMapFeature makeFeatureDefault(const ZMapGFFFeatureData const, const ZMapFeatureSet const, char **) ;
@@ -98,8 +99,6 @@ static char * makeFeatureAlignmentNamePrivate(const ZMapGFFFeatureData const) ;
 static gboolean clipFeatureLogic_General(const ZMapGFF3Parser const, ZMapGFFFeatureData const ) ;
 static gboolean clipFeatureLogic_Transcript(const ZMapGFF3Parser const , ZMapGFFFeatureData const ) ;
 static gboolean requireLocusOperations(const ZMapGFFParser const, const ZMapGFFFeatureData const ) ;
-static gboolean performLocusOperations(const ZMapGFFParser const, const ZMapGFFFeatureData const ) ;
-static ZMapFeatureSource getSourceData(const ZMapGFFParser const, const char * const, GQuark * const , GQuark * const )  ;
 static gboolean performSourceComputations(const ZMapGFFParser const , const ZMapGFFFeatureData const , ZMapFeatureSet *) ;
 
 /*
@@ -2879,6 +2878,42 @@ static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const pFeature
 }
 
 
+
+
+
+
+/*
+ * Make a locus feature with the data from the current one...
+ */
+ZMapFeature makeFeatureLocus(const ZMapGFFFeatureData const, char ** )
+{
+  ZMapFeature pFeature = NULL ;
+  ZMapGFFAttribute pAttribute = NULL, *pAttributes = NULL ;
+  unsigned int nAttributes = 0 ;
+
+  nAttributes          = zMapGFFFeatureDataGetNat(pFeatureData) ;
+  pAttributes          = zMapGFFFeatureDataGetAts(pFeatureData) ;
+  pAttribute           = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_locus) ;
+
+  printf("creating locus with s = '%s'\n", zMapGFFAttributeGetTempstring(pAttribute)) ;
+  fflush(stdout) ;
+
+  /*
+   * duplicate feature data object here? do the business with the featureset computations etc.
+   */
+
+  /*
+   * Make the feature and add to the new featureset...
+   */
+
+  return pFeature ;
+}
+
+
+
+
+
+
 /*
  * Create a feature of ZMapStyleMode = ALIGNMENT only.
  */
@@ -3616,7 +3651,7 @@ static gboolean makeNewFeature_V3(
 
           if (requireLocusOperations(pParserBase, pFeatureData))
             {
-              performLocusOperations(pParserBase, pFeatureData) ;
+              ZMapFeature pFeatureTemp = makeFeatureLocus(pParserBase, pFeatureData) ;
             }
 
         }
@@ -3816,50 +3851,6 @@ gboolean performSourceComputations(const ZMapGFFParser const pParser, const ZMap
 
 
 
-/*
- * Perform lookup of data associated with a source, find Quark representations of
- * the source ID and style ID associated with these features.
- */
-ZMapFeatureSource getSourceData(const ZMapGFFParser const pParser, const char * const sSource, GQuark *pgqSourceID,  GQuark *pgqFeatureStyleID)
-{
-  ZMapFeatureSource pSourceData = NULL ;
-  GQuark gqSourceID = 0, gqFeatureStyleID = 0 ;
-
-  if (pParser->source_2_sourcedata)
-    {
-      gqSourceID = zMapFeatureSetCreateID((char*)sSource);
-
-      if (!(pSourceData = g_hash_table_lookup(pParser->source_2_sourcedata, GINT_TO_POINTER(gqSourceID))))
-        {
-          pSourceData = g_new0(ZMapFeatureSourceStruct,1);
-          pSourceData->source_id = gqSourceID;
-          pSourceData->source_text = gqSourceID;
-
-          g_hash_table_insert(pParser->source_2_sourcedata,GINT_TO_POINTER(gqSourceID), pSourceData);
-        }
-
-      if (pSourceData->style_id)
-        gqFeatureStyleID = zMapStyleCreateID((char *) g_quark_to_string(pSourceData->style_id)) ;
-      else
-        gqFeatureStyleID = zMapStyleCreateID((char *) g_quark_to_string(pSourceData->source_id)) ;
-
-      gqSourceID = pSourceData->source_id ;
-      pSourceData->style_id = gqFeatureStyleID;
-    }
-  else
-    {
-      gqSourceID = gqFeatureStyleID = zMapStyleCreateID((char*)sSource) ;
-    }
-
-  *pgqSourceID = gqSourceID ;
-  *pgqFeatureStyleID = gqFeatureStyleID ;
-
-  return pSourceData ;
-}
-
-
-
-
 
 
 /*
@@ -3887,31 +3878,6 @@ gboolean requireLocusOperations(const ZMapGFFParser const pParser, const ZMapGFF
 
   return bResult ;
 }
-
-
-/*
- * Perform the locus-based operations for the current feature.
- *
- * These should use the clipping logic of the non-transcript objects, I think. There are some features that
- * the v2 code clips that are included at this stage by v3 code for this reason.
- */
-gboolean performLocusOperations(const ZMapGFFParser const pParser, const ZMapGFFFeatureData const pFeatureData )
-{
-  gboolean bResult = TRUE ;
-  ZMapGFFAttribute pAttribute = NULL, *pAttributes = NULL ;
-  unsigned int nAttributes = 0 ;
-
-  nAttributes          = zMapGFFFeatureDataGetNat(pFeatureData) ;
-  pAttributes          = zMapGFFFeatureDataGetAts(pFeatureData) ;
-  pAttribute           = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_locus) ;
-
-  printf("creating locus with s = '%s'\n", zMapGFFAttributeGetTempstring(pAttribute)) ;
-  fflush(stdout) ;
-
-  return bResult ;
-}
-
-
 
 
 
