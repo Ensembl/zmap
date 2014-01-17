@@ -2885,11 +2885,14 @@ static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const pFeature
 /*
  * Make a locus feature with the data from the current one...
  */
-ZMapFeature makeFeatureLocus(const ZMapGFFFeatureData const, char ** )
+ZMapFeature makeFeatureLocus(const ZMapGFFFeatureData const pFeatureData , char ** psError)
 {
   ZMapFeature pFeature = NULL ;
   ZMapGFFAttribute pAttribute = NULL, *pAttributes = NULL ;
+  ZMapGFFFeatureData pFeatureDataLocus = NULL ;
   unsigned int nAttributes = 0 ;
+
+  zMapReturnValIfFail(pFeatureData && psError, pFeature ) ;
 
   nAttributes          = zMapGFFFeatureDataGetNat(pFeatureData) ;
   pAttributes          = zMapGFFFeatureDataGetAts(pFeatureData) ;
@@ -2899,12 +2902,29 @@ ZMapFeature makeFeatureLocus(const ZMapGFFFeatureData const, char ** )
   fflush(stdout) ;
 
   /*
-   * duplicate feature data object here? do the business with the featureset computations etc.
+   * Duplicate FeatureData object here, and alter appropriate data members.
+   *
+   * Use the feature "Name" for the sequence
+   * Use "Locus" for the source
+   * Use "Locus" for ontology
+   * Use the StyleMode BASIC
+   * There is no SO_accession... not sure how that should work...
+   *
+   */
+  pFeatureDataLocus = zMapGFFFeatureDataCC(pFeatureData) ;
+
+  /*
+   * Find featureset and other data.
    */
 
   /*
-   * Make the feature and add to the new featureset...
+   * Make the feature and add to the new featureset
    */
+
+  /*
+   * Clean up
+   */
+  zMapGFFFeatureDataDestroy(pFeatureDataLocus) ;
 
   return pFeature ;
 }
@@ -3651,7 +3671,7 @@ static gboolean makeNewFeature_V3(
 
           if (requireLocusOperations(pParserBase, pFeatureData))
             {
-              ZMapFeature pFeatureTemp = makeFeatureLocus(pParserBase, pFeatureData) ;
+              /* ZMapFeature pFeatureTemp = */ makeFeatureLocus(pFeatureData, &sMakeFeatureErrorText) ;
             }
 
         }
