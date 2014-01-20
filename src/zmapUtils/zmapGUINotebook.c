@@ -785,9 +785,11 @@ gboolean zMapGUINotebookGetTagValue(ZMapGuiNotebookPage page, const char *tagval
   gboolean result = FALSE ;
   ZMapGuiNotebookTagValue tagvalue ;
 
+
   /* zMapAssert(page && tagvalue_name && *tagvalue_name && arg_type && *arg_type) ; */ 
-  if (!page || tagvalue_name || !*tagvalue_name || !arg_type || !*arg_type) 
+  if (!page || !tagvalue_name || !*tagvalue_name || !arg_type || !*arg_type) 
     return result ; 
+
 
   if ((tagvalue = findTagInPage(page, tagvalue_name)))
     {
