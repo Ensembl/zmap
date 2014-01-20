@@ -609,7 +609,7 @@ ZMAP_DEFINE_ENUM(ZMapStyleMergeMode, ZMAP_STYLE_MERGE_MODE_LIST) ;
  * All ZMap objects can potentially have a border colour, a fill colour and a draw colour
  * which can be used to "draw" over the fill colour. */
 
-typedef struct
+typedef struct ZMapStyleColourStructType
 {
   struct
   {
@@ -629,7 +629,7 @@ typedef struct
  *
  * All features in ZMap can be selected and hence must have both "normal" and "selected"
  * colours. */
-typedef struct
+typedef struct ZMapStyleFullColourStructType
 {
   ZMapStyleColourStruct normal ;
   ZMapStyleColourStruct selected ;
@@ -650,7 +650,7 @@ enum {ZMAPSTYLE_MAX_COLOUR_SPECS = 6} ;/* Instance */
  *  @brief Basic feature
  *
  * < currently this is empty > */
-typedef struct
+typedef struct ZMapStyleBasicStructType
 {
   char *dummy ;
 
@@ -659,7 +659,7 @@ typedef struct
 
 
 /* Sequence features - dna or peptide */
-typedef struct
+typedef struct ZMapStyleSequenceStructType
 {
 
   /* Colours for highlighting parts of sequence. */
@@ -679,7 +679,7 @@ typedef struct
  *  @brief Text feature
  *
  * (currently this is empty) */
-typedef struct
+typedef struct ZMapStyleTextStructType
 {
   char *font;
 
@@ -688,7 +688,7 @@ typedef struct
 
 
 /* For drawing a feature as a graph, the feature must contain graph points. */
-typedef struct
+typedef struct ZMapStyleGraphStructType
 {
   ZMapStyleGraphMode mode ;				    /* Graph style. */
 
@@ -715,7 +715,7 @@ typedef struct
  *  @brief Glyph feature
  *
  * Draws shapes of various kinds, e.g. splice site indicators etc. */
-typedef struct
+typedef struct ZMapStyleGlyphStructType
 {
       // sub feature glyphs or glyphs for glyph mode
   GQuark glyph_name,glyph_name_5,glyph_name_5_rev,glyph_name_3,glyph_name_3_rev;
@@ -740,7 +740,7 @@ typedef struct
  * to indicate colinearity between adjacent blocks. */
 
 
-typedef struct
+typedef struct ZMapStyleAlignmentStructType
  {
    /* If set then blixem will be run with nucleotide or peptide sequences for the features. */
    ZMapStyleBlixemType blixem_type ;
@@ -792,7 +792,7 @@ typedef struct
  *  @brief Transcript feature
  *
  * Draws a transcript as a series of boxes joined by angled lines. */
-typedef struct
+typedef struct ZMapStyleTranscriptStructType
 {
   ZMapStyleFullColourStruct CDS_colours ;           /*!< Colour for CDS part of feature. */
 
@@ -805,7 +805,7 @@ typedef struct
  *  @brief AssemblyPath feature
  *
  * Draws an assembly path as a series of boxes placed alternately to form a tiling path. */
-typedef struct
+typedef struct ZMapStyleAssemblyPathStructType
 {
   ZMapStyleFullColourStruct non_path_colours ;            /*!< Colour for non-assembly part of feature. */
 
