@@ -888,11 +888,22 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
                                                          ZMAPGUI_NOTEBOOK_PARAGRAPH_TAGVALUE_TABLE, NULL, NULL) ;
 
               if (feature->feature.transcript.flags.cds)
-                tmp = g_strdup_printf("%d -> %d", feature->feature.transcript.cds_start, feature->feature.transcript.cds_end) ;
-              else
-                tmp = g_strdup_printf("%s", NOT_SET_TEXT) ;
+                {
+                  int display_start, display_end ;
 
-              tag_value = zMapGUINotebookCreateTagValue(paragraph, "CDS",
+                  zmapWindowCoordPairToDisplay(show->zmapWindow,
+                                               feature->feature.transcript.cds_start,
+                                               feature->feature.transcript.cds_end,
+                                               &display_start, &display_end) ;
+
+                  tmp = g_strdup_printf("%d, %d", display_start, display_end) ;
+                }
+              else
+                {
+                  tmp = g_strdup_printf("%s", NOT_SET_TEXT) ;
+                }
+
+              tag_value = zMapGUINotebookCreateTagValue(paragraph, "CDS (start, end)",
                                                         ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
                                                         "string",
                                                         tmp,
