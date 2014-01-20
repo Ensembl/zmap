@@ -58,6 +58,8 @@ static char *help_text_G =
 
 
 
+static ZMapGuiNotebook note_book_G = NULL ;
+
 
 void zmapControlShowPreferences(ZMap zmap)
 {
@@ -65,6 +67,8 @@ void zmapControlShowPreferences(ZMap zmap)
   char *notebook_title ;
   GtkWidget *notebook_dialog ;
   ZMapGuiNotebookChapter chapter ;
+
+  zMapReturnIfFailSafe(!note_book_G) ;
 
   /* Construct the preferences representation */
   notebook_title = g_strdup_printf("Preferences for zmap %s", zMapGetZMapID(zmap)) ;
@@ -100,6 +104,9 @@ void zmapControlShowPreferences(ZMap zmap)
 
       /* Display the preferences. */
       notebook_dialog = zMapGUINotebookCreateDialog(note_book, help_title_G, help_text_G) ;
+
+      note_book_G = note_book ;
+
     }
   else
     {
@@ -223,7 +230,7 @@ static void cleanUpCB(ZMapGuiNotebookAny any_section, void *user_data)
 
   zMapGUINotebookDestroyNotebook(note_book) ;
 
-  note_book = NULL;
+  note_book_G = NULL ;
 
   return ;
 }
