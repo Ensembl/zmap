@@ -1,5 +1,5 @@
 /*  File: zmapWindowCanvasGlyph.c
- *  Author: malcolm hinsley (mh17@sanger.ac.uk)
+ *  Author: Malcolm Hinsley (mh17@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
@@ -24,15 +24,12 @@
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- * Description:
+ * Description: Private header for glyph "objects".
  *
- * implements callback functions for FeaturesetItem glyph features
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CANVAS_GLYPH_I_H
 #define ZMAP_CANVAS_GLYPH_I_H
-
-#include <ZMap/zmap.h>
 
 
 #include <zmapWindowCanvasFeatureset_I.h>

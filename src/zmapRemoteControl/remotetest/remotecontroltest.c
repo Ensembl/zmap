@@ -2135,7 +2135,9 @@ static void cmdCB(gpointer data, guint callback_action, GtkWidget *w)
 
 
   /* Create the xml request and display it in our request window. */
-  request_stack = zMapRemoteCommandCreateRequest(remote_data->remote_cntl, command, view_id, -1) ;
+  request_stack = zMapRemoteCommandCreateRequest(remote_data->remote_cntl, command, -1,
+                                                 ZACP_VIEWID, view_id,
+                                                 (char*)NULL) ;
 
 
   /* Feature or basic command ? */

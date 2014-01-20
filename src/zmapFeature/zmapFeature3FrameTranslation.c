@@ -241,7 +241,10 @@ void zMapFeatureORFSetRevComp(ZMapFeatureSet feature_set, ZMapFeatureSet transla
 
 char *zMapFeature3FrameTranslationFeatureName(ZMapFeatureSet feature_set, ZMapFrame frame)
 {
-  char *feature_name = NULL, *frame_str;
+  char *feature_name = NULL ;
+  zMapReturnValIfFail(feature_set, feature_name) ;
+
+  char *frame_str ;
 
   switch (frame)
     {

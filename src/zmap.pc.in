@@ -5,7 +5,7 @@ includedir=@includedir@
 
 Name: ZMap
 Description: ZMap library.
-Requires: Everything
+Requires: gtk+-2.0 libcurl
 Version: @VERSION@
 Libs: -L${libdir} -lzmap
 Cflags: -I${includedir}/zmap

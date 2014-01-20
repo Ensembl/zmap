@@ -1,5 +1,5 @@
 /*  File: zmapControlImportFile.c
- *  Author: malcolm hinsley (mh17@sanger.ac.uk)
+ *  Author: Malcolm Hinsley (mh17@sanger.ac.uk)
  *  Copyright (c) 2012: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
@@ -766,16 +766,14 @@ static void fileChangedCB(GtkWidget *widget, gpointer user_data)
   view = zMapViewGetView(zmap->focus_viewwindow);
 
   filename = (char *) gtk_entry_get_text(GTK_ENTRY(widget)) ;
-
   extent = filename + strlen(filename);
+
   while(*extent != '.' && extent > filename)
     extent--;
   if(!g_ascii_strcasecmp(extent,".bam"))
     file_type = FILE_BAM;
   else if(!g_ascii_strcasecmp(extent,".bigwig"))
     file_type = FILE_BIGWIG;
-
-  main_frame->file_type = file_type;
 
   // look up script and args and display themn
   for (scripts = main_frame->scripts; scripts ; scripts++)
@@ -791,6 +789,10 @@ static void fileChangedCB(GtkWidget *widget, gpointer user_data)
 	  break;
 	}
     }
+
+  /* Set the file type in the struct. We must do this AFTER setting the
+   * script_widg because scriptChangedCB resets the file type! */
+  main_frame->file_type = file_type;
 
   if(file_type != FILE_GFF)
     {

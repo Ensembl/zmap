@@ -243,14 +243,13 @@ static void configure_populate_containers(ColConfigure    configure_data,
 static void configure_clear_containers(ColConfigure configure_data);
 
 static gboolean show_press_button_cb(GtkWidget *widget, GdkEvent *event, gpointer user_data);
-static void apply_button_cb(GtkWidget *apply_button, gpointer user_data);
+static void cancel_button_cb(GtkWidget *apply_button, gpointer user_data) ;
 static void revert_button_cb(GtkWidget *apply_button, gpointer user_data);
-
+static void apply_button_cb(GtkWidget *apply_button, gpointer user_data);
 
 static void select_all_buttons(GtkWidget *button, gpointer user_data);
 static void set_column_lists_cb(ZMapWindowContainerGroup container, FooCanvasPoints *points,
 				ZMapContainerLevelType level, gpointer user_data);
-
 
 static void notebook_foreach_page(GtkWidget *notebook_widget, gboolean current_page_only,
 				  NotebookFuncType func_type, gpointer foreach_data);
@@ -1960,7 +1959,7 @@ static void apply_state_cb(GtkWidget *widget, gpointer user_data)
 
 static GtkWidget *create_revert_apply_button(ColConfigure configure_data)
 {
-  GtkWidget *button_box, *apply_button, *frame, *parent, *revert_button;
+  GtkWidget *button_box, *cancel_button, *revert_button, *apply_button, *frame, *parent;
 
   parent = configure_data->vbox;
 
@@ -1971,17 +1970,20 @@ static GtkWidget *create_revert_apply_button(ColConfigure configure_data)
   gtk_container_set_border_width (GTK_CONTAINER (button_box),
                                   ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
 
+  apply_button = gtk_button_new_with_label("Apply") ;
+  gtk_box_pack_end(GTK_BOX(button_box), apply_button, FALSE, FALSE, 0) ;
+  gtk_signal_connect(GTK_OBJECT(apply_button), "clicked",
+		     GTK_SIGNAL_FUNC(apply_button_cb), (gpointer)configure_data) ;
+
   revert_button = gtk_button_new_with_label("Revert") ;
   gtk_box_pack_start(GTK_BOX(button_box), revert_button, FALSE, FALSE, 0) ;
-
   gtk_signal_connect(GTK_OBJECT(revert_button), "clicked",
 		     GTK_SIGNAL_FUNC(revert_button_cb), (gpointer)configure_data) ;
 
-  apply_button = gtk_button_new_with_label("Apply") ;
-  gtk_box_pack_end(GTK_BOX(button_box), apply_button, FALSE, FALSE, 0) ;
-
-  gtk_signal_connect(GTK_OBJECT(apply_button), "clicked",
-		     GTK_SIGNAL_FUNC(apply_button_cb), (gpointer)configure_data) ;
+  cancel_button = gtk_button_new_with_label("Cancel") ;
+  gtk_box_pack_start(GTK_BOX(button_box), cancel_button, FALSE, FALSE, 0) ;
+  gtk_signal_connect(GTK_OBJECT(cancel_button), "clicked",
+		     GTK_SIGNAL_FUNC(cancel_button_cb), (gpointer)configure_data) ;
 
   /* set apply button as default. */
   GTK_WIDGET_SET_FLAGS(apply_button, GTK_CAN_DEFAULT) ;
@@ -2314,11 +2316,11 @@ static void notebook_foreach_page(GtkWidget       *notebook_widget,
 }
 
 
-static void apply_button_cb(GtkWidget *apply_button, gpointer user_data)
+static void cancel_button_cb(GtkWidget *apply_button, gpointer user_data)
 {
   ColConfigure configure_data = (ColConfigure)user_data;
 
-  notebook_foreach_page(configure_data->notebook, FALSE, NOTEBOOK_APPLY_FUNC, NULL);
+  gtk_widget_destroy(configure_data->window->col_config_window) ;
 
   return ;
 }
@@ -2332,6 +2334,14 @@ static void revert_button_cb(GtkWidget *apply_button, gpointer user_data)
   return ;
 }
 
+static void apply_button_cb(GtkWidget *apply_button, gpointer user_data)
+{
+  ColConfigure configure_data = (ColConfigure)user_data;
+
+  notebook_foreach_page(configure_data->notebook, FALSE, NOTEBOOK_APPLY_FUNC, NULL);
+
+  return ;
+}
 
 
 

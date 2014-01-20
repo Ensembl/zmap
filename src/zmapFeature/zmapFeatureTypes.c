@@ -288,7 +288,7 @@ gboolean zMapStyleMerge(ZMapFeatureTypeStyle curr_style, ZMapFeatureTypeStyle ne
 
   result = TRUE ; 
 
-  for(i = 1;i < _STYLE_PROP_N_ITEMS;i++,param++)
+  for(i = 1 ; i < _STYLE_PROP_N_ITEMS ; i++, param++)
     {
       if(zMapStyleIsPropertySetId(new_style,param->id))      /* something to merge? */
         {
@@ -341,10 +341,14 @@ gboolean zMapStyleMerge(ZMapFeatureTypeStyle curr_style, ZMapFeatureTypeStyle ne
               {
                 void *src,*dst;
 
+
                 src = ((void *) new_style) + param->offset;
                 dst = ((void *) curr_style) + param->offset;
 
                 memcpy(dst,src,param->size);
+
+
+
                 break;
               }
             }
@@ -603,59 +607,52 @@ void zMapStyleSetShowWhenEmpty(ZMapFeatureTypeStyle style, gboolean show_when_em
 
 
 
-
-
-/* Set up graphing stuff, currentlyends the basic code is copied from acedb but this will
- * change if we add different graphing types.... */
-void zMapStyleSetGraph(ZMapFeatureTypeStyle style, ZMapStyleGraphMode mode,
-		       double min_score, double max_score, double baseline)
-{
-
-  style->mode_data.graph.mode = mode ;
-  zmapStyleSetIsSet(style,STYLE_PROP_GRAPH_MODE);
-  style->mode_data.graph.baseline = baseline ;
-  zmapStyleSetIsSet(style,STYLE_PROP_GRAPH_BASELINE);
-
-  style->min_score = min_score ;
-  zmapStyleSetIsSet(style,STYLE_PROP_MIN_SCORE);
-  style->max_score = max_score ;
-  zmapStyleSetIsSet(style,STYLE_PROP_MAX_SCORE);
-
-
-  /* normalise the baseline */
-  if (style->min_score == style->max_score)
-    style->mode_data.graph.baseline = style->min_score ;
-  else
-    style->mode_data.graph.baseline = (style->mode_data.graph.baseline - style->min_score) / (style->max_score - style->min_score) ;
-
-  if (style->mode_data.graph.baseline < 0)
-    style->mode_data.graph.baseline = 0 ;
-  if (style->mode_data.graph.baseline > 1)
-    style->mode_data.graph.baseline = 1 ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* fmax seems only to be used to obtain the final column width in acedb, we can get this from its size... */
-
-  bc->fmax = (bc->width * bc->histBase) + 0.2 ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-  return ;
-}
-
-
-
-
 /* Set score bounds for displaying column with width related to score. */
-void zMapStyleSetScore(ZMapFeatureTypeStyle style, double min_score, double max_score)
+gboolean zMapStyleSetScore(ZMapFeatureTypeStyle style, double min_score, double max_score)
 {
+  gboolean result = FALSE ;
 
-  style->min_score = min_score ;
-  zmapStyleSetIsSet(style,STYLE_PROP_MIN_SCORE);
-  style->max_score = max_score ;
-  zmapStyleSetIsSet(style,STYLE_PROP_MAX_SCORE);
+  if (min_score < max_score)
+    {
+      style->min_score = min_score ;
+      zmapStyleSetIsSet(style,STYLE_PROP_MIN_SCORE) ;
+      style->max_score = max_score ;
+      zmapStyleSetIsSet(style,STYLE_PROP_MAX_SCORE) ;
 
-  return ;
+      result = TRUE ;
+    }
+
+  return result ;
 }
+
+
+/* Set up graphing stuff, currently the basic code is copied from acedb but this will
+ * change if we add different graphing types.... */
+gboolean zMapStyleSetGraph(ZMapFeatureTypeStyle style, ZMapStyleGraphMode mode,
+                           double min_score, double max_score, double baseline)
+{
+  gboolean result = FALSE ;
+
+
+  if (min_score < max_score
+      && (baseline >= min_score && baseline < max_score)
+      && zMapStyleSetScore(style, min_score, max_score))
+    {
+      style->mode_data.graph.mode = mode ;
+      zmapStyleSetIsSet(style,STYLE_PROP_GRAPH_MODE);
+      style->mode_data.graph.baseline = baseline ;
+      zmapStyleSetIsSet(style,STYLE_PROP_GRAPH_BASELINE);
+
+      /* normalise the baseline */
+      style->mode_data.graph.baseline
+        = (style->mode_data.graph.baseline - style->min_score) / (style->max_score - style->min_score) ;
+      
+      result = TRUE ;
+    }
+
+  return result ;
+}
+
 
 
 
@@ -672,53 +669,6 @@ void zMapStyleSetEndStyle(ZMapFeatureTypeStyle style, gboolean directional)
 
   return;
 }
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-
-/* NOT USING THIS CURRENTLY, WILL BE NEEDED IN FUTURE... */
-
-/* Score stuff is all quite interdependent, hence this function to set it all up. */
-void zMapStyleSetScore(ZMapFeatureTypeStyle style, char *score_str,
-		       double min_score, double max_score)
-{
-  ZMapStyleScoreMode score = ZMAPSCORE_WIDTH ;
-
-  if (!style) 
-    return ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* WE ONLY SCORE BY WIDTH AT THE MOMENT..... */
-  if (bump_str && *bump_str)
-    {
-      if (g_ascii_strcasecmp(bump_str, "bump") == 0)
-	bump = ZMAPBUMP_OVERLAP ;
-      else if (g_ascii_strcasecmp(bump_str, "position") == 0)
-	bump = ZMAPBUMP_POSITION ;
-      else if (g_ascii_strcasecmp(bump_str, "name") == 0)
-	bump = ZMAPBUMP_NAME ;
-      else if (g_ascii_strcasecmp(bump_str, "simple") == 0)
-	bump = ZMAPBUMP_SIMPLE ;
-    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-  style->score_mode = score ;
-
-  /* Make sure we have some kind of score. */
-  if (style->max_score == style->min_score)
-    style->max_score = style->min_score + 1 ;
-
-  /* Make sure we have kind of width. */
-  if (!(style->width))
-    style->width = 2.0 ;
-
-  zmapStyleSetIsSet(style,STYLE_PROP_MIN_SCORE);
-  zmapStyleSetIsSet(style,STYLE_PROP_MAX_SCORE);
-  zmapStyleSetIsSet(style,STYLE_PROP_SCORE_MODE);
-
-  return ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 

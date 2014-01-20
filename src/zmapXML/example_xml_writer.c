@@ -1,4 +1,3 @@
-/*  Last edited: Oct 28 14:14 2011 (edgrif) */
 /*  File: example_xml_writer.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.

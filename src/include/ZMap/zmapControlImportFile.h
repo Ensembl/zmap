@@ -1,4 +1,4 @@
-/*  File: zmapControlImport.h
+/*  File: zmapControlImportFile.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2012: Genome Research Ltd.
  *-------------------------------------------------------------------

@@ -1,4 +1,4 @@
-/*  File: zmapControlSplit.c
+/*  File: zmapControlViews.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
@@ -157,7 +157,7 @@ ZMapViewWindow zmapControlNewWindow(ZMap zmap, ZMapFeatureSequenceMap sequence_m
 
 
   /* Create a new container that will hold the new view window. */
-  view_container = zmapControlAddWindow(zmap, curr_container, orientation, ZMAPCONTROL_SPLIT_LAST, view_title) ;
+  view_container = zmapControlAddWindow(zmap, curr_container, orientation, ZMAPCONTROL_SPLIT_FIRST, view_title) ;
 
   if (!(view_window = zMapViewCreate(view_container, sequence_map, (void *)zmap)))
     {

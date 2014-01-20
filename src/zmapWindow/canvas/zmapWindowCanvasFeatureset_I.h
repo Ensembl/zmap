@@ -1,5 +1,5 @@
 /*  File: zmapWindowCanvasFeatureset_I.h
- *  Author: malcolm hinsley (mh17@sanger.ac.uk)
+ *  Author: Malcolm Hinsley (mh17@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
@@ -38,11 +38,19 @@
 #include <glib-object.h>
 
 #include <libzmapfoocanvas/libfoocanvas.h>
-#include <zmapWindowCanvasItem_I.h>
-#include <ZMap/zmapWindow.h>
-#include <zmapWindowCanvasFeatureset.h>
+
 #include <ZMap/zmapStyle.h>
 #include <ZMap/zmapSkipList.h>
+#include <zmapWindowCanvasFeatureset.h>
+#include <zmapWindowCanvasItem_I.h>
+
+
+
+/* Default colours !! - should be in more public header ?? */
+#define CANVAS_DEFAULT_COLOUR_FILL   "grey"
+#define CANVAS_DEFAULT_COLOUR_BORDER "black"
+#define CANVAS_DEFAULT_COLOUR_DRAW   "white"
+
 
 
 
@@ -76,7 +84,9 @@ typedef struct _zmapWindowCanvasGraphicsStruct
   double x1, x2;
   long fill ,outline;
   char *text;
+
   int flags;
+
 #define WCG_FILL_SET		1
 #define WCG_OUTLINE_SET		2
 
@@ -166,16 +176,12 @@ typedef struct _pixRect
 #define N_PIXRECT_ALLOC		20
 
 
-PixRect zmapWindowCanvasFeaturesetSummarise(PixRect pix,
-					    ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature);
-void zmapWindowCanvasFeaturesetSummariseFree(ZMapWindowFeaturesetItem featureset, PixRect pix);
 
 
-
-
-
-
+/* Oh goodness....what is all this for ?? */
 #define N_FEAT_ALLOC      1000
+
+
 
 typedef struct zmapWindowFeaturesetItemClassStructType
 {
@@ -191,6 +197,20 @@ typedef struct zmapWindowFeaturesetItemClassStructType
 
   int struct_size[FEATURE_N_TYPE];
   int set_struct_size[FEATURE_N_TYPE];
+
+
+  /* Cached colourmaps/colours for drawing, provides default colours for all feature drawing. */
+  GdkColormap *colour_map ;                                 /* This is a per-screen resource
+                                                               so multi-screen operation would need multiple values. */
+
+  gboolean colour_alloc ;                                   /* TRUE => colour allocation worked. */
+  GdkColor fill ;                                           /* Fill/background colour. */
+  GdkColor draw ;                                           /* Overlaid on fill colour. */
+  GdkColor border ;                                         /* Surround/line colour. */
+
+  /* Should we also have default select colours too ?? */
+
+
 
 } zmapWindowFeaturesetItemClassStruct;
 
@@ -208,6 +228,7 @@ typedef struct _zmapWindowFeaturesetItemStruct
   zmapWindowCanvasItemStruct __parent__;		/* itself derived from FooCanvasItem */
 
   GQuark id;
+
   ZMapFeatureTypeStyle style;				    /* column style: NB could have several
 							       featuresets mapped into this by virtualisation */
   ZMapFeatureTypeStyle featurestyle;			    /* current cached style for features */
@@ -219,16 +240,15 @@ typedef struct _zmapWindowFeaturesetItemStruct
   ZMapStrand strand;
   ZMapFrame frame;
 
-
   /* Points to data that is needed on a per column basis and is assigned by the functions
    * that handle that data. */
   gpointer per_column_data ;
-
 
   /* Some stuff for handling zooming, not straight forward because we have to deal
    * with our canvas window being much smaller than our sequence making drawing/scrolling
    * difficult. */
 
+  gboolean recalculate_zoom;    /* gets set to true if the zoom has changed and we need to recalculate summary data */
   double zoom;			/* current units per pixel */
   double bases_per_pixel;
   GtkWidget *canvas_scrolled_window ;			    /* needed to get ajuster for exposes. */
@@ -258,10 +278,10 @@ typedef struct _zmapWindowFeaturesetItemStruct
    * but we need to sort features so GList is more convenient */
 
   long n_features;
-  gboolean features_sorted;	/* by start coord */
+  gboolean features_sorted;				    /* by start coord */
 
-  gboolean re_bin;		/* re-calculate bins/ features according to zoom */
-  GList *display;			/* features for display */
+  gboolean re_bin;					    /* re-calculate bins/ features according to zoom */
+  GList *display;					    /* features for display */
   /* NOTE normally features are indexed into display_index
    * coverage data gets re-binned and new features stored in display which is then indexed
    * if we add new features then we re-create the index - new features are added to features
@@ -273,6 +293,8 @@ typedef struct _zmapWindowFeaturesetItemStruct
   ZMapStyleBumpMode bump_mode;	/* if set */
 
   int set_index;			/* for staggered columns (heatmaps) */
+
+  /* I'm not sure what this is ? */
   double x_off;
 
   /* graphics context for all contained features
@@ -287,9 +309,11 @@ typedef struct _zmapWindowFeaturesetItemStruct
 
   double x;				  /* x canvas coordinate of the featureset, used for column reposition */
 
-  double dx,dy;			  /* canvas offsets as calculated for paint */
+  double dx, dy ;			  /* canvas offsets as calculated for paint */
+
   gpointer deferred;		  /* buffer for deferred paints, eg constructed polyline */
 
+  /* WHEN ARE THESE USED....DUH..... */
   gulong fill_colour;           /* Fill color, RGBA */
   gulong outline_colour;        /* Outline color, RGBA */
   gulong fill_pixel;            /* Fill color */
@@ -329,10 +353,6 @@ typedef struct _zmapWindowFeaturesetItemStruct
 
 
 
-void zmapWindowFeaturesetS2Ccoords(double *start_inout, double *end_inout) ;
-gboolean zmapWindowCanvasFeatureValid(ZMapWindowCanvasFeature feature) ;
-
-
 /*
  * module generic text interface, initially used by sequence and locus feature types
  * is used to paint single line text things at given x,y
@@ -349,6 +369,17 @@ typedef struct _zmapWindowCanvasPangoStruct
 
   int text_height, text_width;
 } zmapWindowCanvasPangoStruct ;
+
+
+
+PixRect zmapWindowCanvasFeaturesetSummarise(PixRect pix,
+					    ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature);
+void zmapWindowCanvasFeaturesetSummariseFree(ZMapWindowFeaturesetItem featureset, PixRect pix);
+
+void zmapWindowFeaturesetS2Ccoords(double *start_inout, double *end_inout) ;
+gboolean zmapWindowCanvasFeatureValid(ZMapWindowCanvasFeature feature) ;
+
+
 
 
 #endif /* ZMAP_WINDOW_FEATURESET_ITEM_I_H */

@@ -66,7 +66,7 @@
 
 
 /* Define thread debug messages, used in checkStateConnections() mostly. */
-#define THREAD_DEBUG_MSG_PREFIX "GUI - Slave thread %s: "
+#define THREAD_DEBUG_MSG_PREFIX " Reply from slave thread %s, "
 
 #define THREAD_DEBUG_MSG(CHILD_THREAD, FORMAT_STR, ...)	\
   G_STMT_START								\
@@ -87,19 +87,21 @@
 #define THREAD_DEBUG_MSG_FULL(CHILD_THREAD, VIEW_CON, REQUEST_TYPE, REPLY, FORMAT_STR, ...) \
   G_STMT_START								\
   {									\
-    char *msg_str ;							\
-									\
-    msg_str = g_strdup_printf("reply = \"%s\", status = \"%s\","	\
-			      "request = \"%s\", url = \"%s\" " FORMAT_STR, \
-			      zMapThreadReply2ExactStr((REPLY)),	\
-			      zMapViewThreadStatus2ExactStr((VIEW_CON)->thread_status), \
-			      zMapServerReqType2ExactStr((REQUEST_TYPE)), \
-			      (VIEW_CON)->url,				\
-			      __VA_ARGS__) ;				\
-									\
-    THREAD_DEBUG_MSG((CHILD_THREAD), "%s", msg_str) ;			\
-    									\
-    g_free(msg_str) ;							\
+    GString *msg_str ;							\
+                                                                        \
+    msg_str = g_string_new("") ;                                        \
+                                                                        \
+    g_string_append_printf(msg_str, "status = \"%s\", request = \"%s\", reply = \"%s\", msg = \""FORMAT_STR"\"", \
+                           zMapViewThreadStatus2ExactStr((VIEW_CON)->thread_status), \
+                           zMapServerReqType2ExactStr((REQUEST_TYPE)),  \
+                           zMapThreadReply2ExactStr((REPLY)),           \
+                           __VA_ARGS__) ;                               \
+                                                                        \
+    g_string_append_printf(msg_str, ", url = \"%s\"", (VIEW_CON)->url) ;  \
+                                                                        \
+    THREAD_DEBUG_MSG((CHILD_THREAD), "%s", msg_str->str) ;              \
+                                                                        \
+    g_string_free(msg_str, TRUE) ;                                      \
     									\
   } G_STMT_END
 
@@ -3130,6 +3132,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 	    {
 	      ZMapServerReqAny req_any ;
 
+
 	      /* Recover the request from the thread data....is there always data ? check this... */
 	      if (data)
 		{
@@ -3152,6 +3155,14 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 		    ZMapViewConnectionRequest request ;
 		    ZMapViewConnectionStep step = NULL ;
 		    gboolean kill_connection = FALSE ;
+
+
+
+                    if ((strstr(view_con->url, "Patch")))
+                      printf("found it\n") ;
+
+
+
 
                     /* this is not good and shows this function needs rewriting....
                      * if we get this it means the thread has already failed and been
@@ -3534,16 +3545,12 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 				     g_list_length(zmap_view->sources_failed)) ;
 		    }
 
-
-
-		  if ((reply == ZMAPTHREAD_REPLY_GOTDATA && request_type == ZMAP_SERVERREQ_FEATURES)
-		      || reply == ZMAPTHREAD_REPLY_REQERROR)
+                  /* Record if features were loaded or if there was an error, if the latter
+                   * then report that to our remote peer if there is one. */
+		  if (request_type == ZMAP_SERVERREQ_FEATURES || reply == ZMAPTHREAD_REPLY_REQERROR)
 		    {
-		      LoadFeaturesData loaded_features ;
-
-		      /* Note that load_features is cleaned up by sendViewLoaded() */
-
-		      connect_data->loaded_features->status = (view_con->thread_status == THREAD_STATUS_OK ? TRUE : FALSE) ;
+		      connect_data->loaded_features->status = (view_con->thread_status == THREAD_STATUS_OK
+                                                               ? TRUE : FALSE) ;
 		      connect_data->loaded_features->err_msg = err_msg ;
 		      connect_data->loaded_features->start = connect_data->start;
 		      connect_data->loaded_features->end = connect_data->end;
@@ -3551,12 +3558,22 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 		      connect_data->loaded_features->exit_code = connect_data->exit_code ;
 		      connect_data->loaded_features->stderr_out = connect_data->stderr_out ;
 
-		      loaded_features = copyLoadFeatures(connect_data->loaded_features) ;
+                      if (reply == ZMAPTHREAD_REPLY_REQERROR && zmap_view->remote_control)
+                        {
+                          /* Note that load_features is cleaned up by sendViewLoaded() */
+                          LoadFeaturesData loaded_features ;
 
-                      if (zmap_view->remote_control)
-                        sendViewLoaded(zmap_view, loaded_features) ;
+                          /* Hack to support otterlace for this release.... */
+                          if (request_type == ZMAP_SERVERREQ_FEATURES)
+                            connect_data->loaded_features->status = TRUE ;
+
+                          loaded_features = copyLoadFeatures(connect_data->loaded_features) ;
+
+                          zMapLogWarning("VIEW LOADED FROM %s !!", "checkStateConnections()") ;
+
+                          sendViewLoaded(zmap_view, loaded_features) ;
+                        }
 		    }
-
 
 
 		}
@@ -4780,7 +4797,11 @@ static void loadedDataCB(ZMapWindow window, void *caller_data, gpointer loaded_d
       zMapLogMessage("Received LoadFeaturesDataStruct to pass to sendViewLoaded() at: %p, ", loaded_features) ;
 
       if (view->remote_control)
-        sendViewLoaded(view, loaded_features) ;
+        {
+          zMapLogWarning("VIEW LOADED FROM %s !!", "loadedDataCB()") ;
+
+          sendViewLoaded(view, loaded_features) ;
+        }
 
       /* We were passed a copy of this by displayDataWindows() and now we can delete it. */
       destroyLoadFeatures(loaded_features) ;
@@ -4796,24 +4817,27 @@ static void sendViewLoaded(ZMapView zmap_view, LoadFeaturesData loaded_features)
   static ZMapXMLUtilsEventStackStruct
     viewloaded[] = {{ZMAPXML_START_ELEMENT_EVENT, "featureset", ZMAPXML_EVENT_DATA_NONE,    {0}},
 		    {ZMAPXML_ATTRIBUTE_EVENT,     "names",      ZMAPXML_EVENT_DATA_STRING,   {0}},
+		    {ZMAPXML_ATTRIBUTE_EVENT,     "start",      ZMAPXML_EVENT_DATA_INTEGER,   {0}},
+		    {ZMAPXML_ATTRIBUTE_EVENT,     "end",      ZMAPXML_EVENT_DATA_INTEGER,   {0}},
 		    {ZMAPXML_END_ELEMENT_EVENT,   "featureset", ZMAPXML_EVENT_DATA_NONE,    {0}},
-		    {ZMAPXML_START_ELEMENT_EVENT, "start", ZMAPXML_EVENT_DATA_NONE,    {0}},
-		    {ZMAPXML_ATTRIBUTE_EVENT,     "value",      ZMAPXML_EVENT_DATA_INTEGER,   {0}},
-		    {ZMAPXML_END_ELEMENT_EVENT,   "start", ZMAPXML_EVENT_DATA_NONE,    {0}},
-		    {ZMAPXML_START_ELEMENT_EVENT, "end", ZMAPXML_EVENT_DATA_NONE,    {0}},
-		    {ZMAPXML_ATTRIBUTE_EVENT,     "value",      ZMAPXML_EVENT_DATA_INTEGER,   {0}},
-		    {ZMAPXML_END_ELEMENT_EVENT,   "end", ZMAPXML_EVENT_DATA_NONE,    {0}},
+
 		    {ZMAPXML_START_ELEMENT_EVENT, "status", ZMAPXML_EVENT_DATA_NONE,    {0}},
 		    {ZMAPXML_ATTRIBUTE_EVENT,     "value",      ZMAPXML_EVENT_DATA_INTEGER,   {0}},
-		    {ZMAPXML_ATTRIBUTE_EVENT,     "message",      ZMAPXML_EVENT_DATA_STRING,   {0}},
+		    {ZMAPXML_ATTRIBUTE_EVENT,     "features_loaded",      ZMAPXML_EVENT_DATA_INTEGER,   {0}},
+
+                    {ZMAPXML_START_ELEMENT_EVENT, ZACP_MESSAGE,   ZMAPXML_EVENT_DATA_NONE,  {0}},
+                    {ZMAPXML_CHAR_DATA_EVENT,     NULL,    ZMAPXML_EVENT_DATA_STRING, {0}},
+                    {ZMAPXML_END_ELEMENT_EVENT,   ZACP_MESSAGE,      ZMAPXML_EVENT_DATA_NONE,  {0}},
+
 		    {ZMAPXML_END_ELEMENT_EVENT,   "status", ZMAPXML_EVENT_DATA_NONE,    {0}},
+
 		    {ZMAPXML_START_ELEMENT_EVENT, "exit_code", ZMAPXML_EVENT_DATA_NONE,    {0}},
 		    {ZMAPXML_ATTRIBUTE_EVENT,     "value",      ZMAPXML_EVENT_DATA_INTEGER,   {0}},
 		    {ZMAPXML_END_ELEMENT_EVENT,   "exit_code", ZMAPXML_EVENT_DATA_NONE,    {0}},
 		    {ZMAPXML_START_ELEMENT_EVENT, "stderr", ZMAPXML_EVENT_DATA_NONE,    {0}},
 		    {ZMAPXML_ATTRIBUTE_EVENT,     "value",      ZMAPXML_EVENT_DATA_STRING,   {0}},
 		    {ZMAPXML_END_ELEMENT_EVENT,   "stderr", ZMAPXML_EVENT_DATA_NONE,    {0}},
-		    {0}} ;
+		    {ZMAPXML_NULL_EVENT}} ;
 
   if (zmap_view->remote_control)
     {
@@ -4845,16 +4869,19 @@ static void sendViewLoaded(ZMapView zmap_view, LoadFeaturesData loaded_features)
               g_free(prev) ;
             }
 
+
+          /* THIS PART NEEDS FIXING UP TO RETURN THE TRUE ERROR MESSAGE AS PER rt 369227 */
           if (loaded_features->status)          /* see comment in zmapSlave.c/ RETURNCODE_QUIT, we are tied up in knots */
             {
-              ok_mess = g_strdup_printf("%d features loaded",loaded_features->num_features);
-              emsg = html_quote_string(ok_mess);                /* see comment about really free() below */
-              g_free(ok_mess);
+              ok_mess = g_strdup_printf("%d features loaded", loaded_features->num_features) ;
+              emsg = html_quote_string(ok_mess) ;                /* see comment about really free() below */
+              g_free(ok_mess) ;
               
               {
                 static long total = 0;
 
-                total += loaded_features->num_features;
+                total += loaded_features->num_features ;
+
                 zMapLogTime(TIMER_LOAD,TIMER_ELAPSED,total,""); /* how long is startup... */
               }
             }
@@ -4862,6 +4889,8 @@ static void sendViewLoaded(ZMapView zmap_view, LoadFeaturesData loaded_features)
             {
               emsg = html_quote_string(loaded_features->err_msg ? loaded_features->err_msg  : "");
             }
+
+
 
           if (loaded_features->stderr_out)
             {
@@ -4872,16 +4901,22 @@ static void sendViewLoaded(ZMapView zmap_view, LoadFeaturesData loaded_features)
 
           i = 1 ;
           viewloaded[i].value.s = featurelist ;
-          i += 3 ;
+          i++ ;
           viewloaded[i].value.i = loaded_features->start ;
-          i += 3 ;
+          i++ ;
           viewloaded[i].value.i = loaded_features->end ;
+
           i += 3 ;
           viewloaded[i].value.i = (int)loaded_features->status ;
           i++ ;
+          viewloaded[i].value.i = loaded_features->num_features ;
+
+          i += 2 ;
           viewloaded[i].value.s = emsg ;
-          i += 3 ;
+
+          i += 4 ;
           viewloaded[i].value.i = loaded_features->exit_code ;
+
           i += 3 ;
           viewloaded[i].value.s = loaded_features->stderr_out ? loaded_features->stderr_out : "" ;
 
@@ -4895,6 +4930,9 @@ static void sendViewLoaded(ZMapView zmap_view, LoadFeaturesData loaded_features)
                                                localProcessReplyFunc, zmap_view) ;
 
           free(emsg);                                           /* yes really free() not g_free()-> see zmapUrlUtils.c */
+
+
+          zMapLogWarning("VIEW LOADED FEATURE LIST: %s !!", featurelist) ;
 
           g_free(featurelist);
         }

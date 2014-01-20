@@ -1,5 +1,5 @@
 /*  File: zmapWindowCanvasLocus.c
- *  Author: malcolm hinsley (mh17@sanger.ac.uk)
+ *  Author: Malcolm Hinsley (mh17@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can refeaturesetstribute it and/or
@@ -455,7 +455,8 @@ static ZMapWindowCanvasFeature zMapWindowCanvasLocusAddFeature(ZMapWindowFeature
 {
   ZMapWindowCanvasFeature feat = zMapWindowFeaturesetAddFeature(featureset, feature, y1, y2);
 
-  featureset->zoom = 0.0;		/* force recalc of de-overlap */
+  featureset->recalculate_zoom = TRUE;
+  //featureset->zoom = 0.0;		/* force recalc of de-overlap: gb10 shouldn't be necessary now we have the recalculate_zoom flag */
   /* force display at all */
   //	printf("added locus feature %s\n",g_quark_to_string(feature->original_id));
 

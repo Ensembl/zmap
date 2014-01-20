@@ -1,5 +1,5 @@
 /*  File: zmapWindowCanvasAlignment.c
- *  Author: malcolm hinsley (mh17@sanger.ac.uk)
+ *  Author: Malcolm Hinsley (mh17@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can refeaturesetstribute it and/or
@@ -60,7 +60,7 @@ static gboolean fragments_splice(char *fragment_a, char *fragment_b) ;
 static gboolean is_nc_splice(ZMapFeature left,ZMapFeature right) ;
 static void align_gap_free(AlignGap ag) ;
 static AlignGap align_gap_alloc(void) ;
-static AlignGap make_gapped(ZMapFeature feature, double offset, FooCanvasItem *foo, gboolean forward) ;
+static AlignGap makeGapped(ZMapFeature feature, double offset, FooCanvasItem *foo, gboolean forward) ;
 
 
 
@@ -264,7 +264,7 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
           if (homol->strand == ZMAPSTRAND_REVERSE)
             forward = !forward;
           
-	  align->gapped = make_gapped(feature->feature, featureset->dy - featureset->start, foo, forward);
+	  align->gapped = makeGapped(feature->feature, featureset->dy - featureset->start, foo, forward);
 	}
 
       /* draw them */
@@ -274,7 +274,7 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
       foo_canvas_w2c (foo->canvas, x2, 0, &cx2, NULL);
       cy2 = cy1;
 
-      for(ag = align->gapped ; ag ; ag = ag->next)
+      for (ag = align->gapped ; ag ; ag = ag->next)
 	{
 	  int gy1, gy2, gx;
 
@@ -284,21 +284,23 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
 	  switch(ag->type)
 	    {
 	    case GAP_BOX:
-	      if(fill_set && (!outline_set || (gy2 - gy1 > 1)))	/* fill will be visible */
-		{
-		  c.pixel = fill;
-		  gdk_gc_set_foreground (featureset->gc, &c);
-		  zMap_draw_rect(drawable, featureset, cx1, gy1, cx2, gy2, TRUE);
-		}
+              {
+                if (fill_set && (!outline_set || (gy2 - gy1 > 1)))	/* fill will be visible */
+                  {
+                    c.pixel = fill;
+                    gdk_gc_set_foreground(featureset->gc, &c) ;
+                    zMap_draw_rect(drawable, featureset, cx1, gy1, cx2, gy2, TRUE) ;
+                  }
 
-	      if(outline_set)
-		{
-		  c.pixel = outline;
-		  gdk_gc_set_foreground (featureset->gc, &c);
-		  zMap_draw_rect(drawable, featureset, cx1, gy1, cx2, gy2 + 1, FALSE);
-		}
+                if (outline_set)
+                  {
+                    c.pixel = outline;
+                    gdk_gc_set_foreground (featureset->gc, &c);
+                    zMap_draw_rect(drawable, featureset, cx1, gy1, cx2, gy2, FALSE);
+                  }
 
-	      break;
+                break;
+              }
 
 	    case GAP_HLINE:		/* x coords differ, y is the same */
 	      if(!outline_set)	/* must be or else we are up the creek! */
@@ -448,11 +450,7 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
 
 	      /* draw line between boxes, don't overlap the pixels */
 	      gdk_gc_set_foreground(featureset->gc, colour);
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	      zMap_draw_line(drawable, featureset, cx1, ++cy1, cx2, --cy2);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-	      zMap_draw_line(drawable, featureset, cx1, ++cy1, cx2, cy2) ;
+	      zMap_draw_line(drawable, featureset, cx1, cy1, cx2, cy2) ;
 
 	      if(cy2 > expose->area.y + expose->area.height)
 		break;
@@ -598,14 +596,15 @@ static void zMapWindowCanvasAlignmentFreeSet(ZMapWindowFeaturesetItem featureset
 }
 
 
+/* Returns a newly-allocated ZMapFeatureSubPartSpan, which the caller must free with g_free,
+ * or NULL. */
 static ZMapFeatureSubPartSpan zmapWindowCanvasAlignmentGetSubPartSpan(FooCanvasItem *foo,
 								      ZMapFeature feature, double x, double y)
 {
-  static ZMapFeatureSubPartSpanStruct sub_part;
-  ZMapWindowFeaturesetItem fi = (ZMapWindowFeaturesetItem) foo;
-
-  ZMapAlignBlock ab;
-  int i;
+  ZMapFeatureSubPartSpan sub_part = NULL ;
+  ZMapWindowFeaturesetItem fi = (ZMapWindowFeaturesetItem) foo ;
+  ZMapAlignBlock ab, prev_ab ;
+  int i, match_num, gap_num ;
 
   /* find the gap or match if we are bumped */
   if(!fi->bumped)
@@ -613,55 +612,71 @@ static ZMapFeatureSubPartSpan zmapWindowCanvasAlignmentGetSubPartSpan(FooCanvasI
   if(!feature->feature.homol.align)	/* is un-gapped */
     return NULL;
 
-#if 0
-  if(!y)	/* interface to legacy code they uses G_OBJECT_DATA */
-    {
-      ZMapWindowFeaturesetItem featureset = (ZMapWindowFeaturesetItem) foo;
-
-      if(!featureset->point_canvas_feature)
-	return NULL;
-      sub_part.start = !featureset->point_canvas_feature->y1;
-      sub_part.end   = !featureset->point_canvas_feature->y2;
-      sub_part.subpart = ZMAPFEATURE_SUBPART_MATCH;
-      sub_part.index = 1;
-      return &sub_part;
-    }
-#endif
-
   /* get sequence coords for x,y,  well y at least */
   /* AFAICS y is a world coordinate as the caller runs it through foo_w2c() */
-
 
   /* we refer to the actual feature gaps data not the display data
    * as that may be compressed and does not contain sequence info
    * return the type index and target start and end
    */
-  for(i = 0; i < feature->feature.homol.align->len;i++)
+
+  match_num = feature->feature.homol.align->len ;
+  gap_num = match_num - 1 ;
+  prev_ab = NULL ;
+  for (i = 0 ; !sub_part && i < feature->feature.homol.align->len ; i++)
     {
-      ab = &g_array_index(feature->feature.homol.align, ZMapAlignBlockStruct, i);
       /* in the original foo based code
        * match n corresponds to the match block indexed from 1
        * gap n corresponds to the following match block
        */
+      double start, end ;
 
-      sub_part.index = i + 1;
-      sub_part.start = ab->t1;
-      sub_part.end = ab->t2;
+      ab = &g_array_index(feature->feature.homol.align, ZMapAlignBlockStruct, i) ;
 
-      if(y >= ab->t1 && y <= ab->t2)
+      /* Matches.... */
+      start = ab->t1 ;
+      end = ab->t2 + 1 ;                                    /* full extent of gap is end + 1. */
+      if (y >= start && y < end)
 	{
-	  sub_part.subpart = ZMAPFEATURE_SUBPART_MATCH;
-	  return &sub_part;
+          sub_part = g_malloc0(sizeof *sub_part) ;
+
+          if (feature->strand == ZMAPSTRAND_FORWARD)
+            sub_part->index = i + 1 ;
+          else
+            sub_part->index = (match_num - i) ;
+            
+          sub_part->start = ab->t1 ;
+          sub_part->end = ab->t2 ;
+          sub_part->subpart = ZMAPFEATURE_SUBPART_MATCH ;
+
+          break ;
 	}
-      if(y < ab->t1)
-	{
-	  sub_part.start = sub_part.end + 1;
-	  sub_part.end = ab->t1;
-	  sub_part.subpart = ZMAPFEATURE_SUBPART_GAP;
-	  return &sub_part;
+
+      /* Gaps.... */
+      if (prev_ab)
+        {
+          start = prev_ab->t2 + 1 ;
+          end = ab->t1 ;
+
+          if (y >= start && y < end)
+            {
+              sub_part = g_malloc0(sizeof *sub_part) ;
+
+              if (feature->strand == ZMAPSTRAND_FORWARD)
+                sub_part->index = i ;
+              else
+                sub_part->index = (gap_num - i) + 1 ;
+
+              sub_part->start = start ;
+              sub_part->end = end - 1 ;
+              sub_part->subpart = ZMAPFEATURE_SUBPART_GAP ;
+            }
 	}
+
+      prev_ab = ab ;
     }
-  return NULL;
+
+  return sub_part ;
 }
 
 
@@ -676,9 +691,13 @@ static double alignmentPoint(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeatur
 
   /* Get feature extent on display. */
   /* NOTE cannot use feature coords as transcript exons all point to the same feature */
-  /* alignments have to implement a special function to handle bumped features - the first exon gets expanded to cover the whole */
-  /* when we get upgraded to vulgar strings these can be like transcripts... except that there's a performance problem due to volume */
+  /* alignments have to implement a special function to handle bumped features
+   *  - the first exon gets expanded to cover the whole */
+  /* when we get upgraded to vulgar strings these can be like transcripts...
+   * except that there's a performance problem due to volume */
   /* perhaps better to add  extra display/ search coords to ZMapWindowCancasFeature ?? */
+
+
   can_start = gs->feature->x1 ;
   can_end = gs->feature->x2 ;
   zmapWindowFeaturesetS2Ccoords(&can_start, &can_end) ;
@@ -851,41 +870,44 @@ static AlignGap align_gap_alloc(void)
 }
 
 
-/* NOTE the gaps array is not explicitly sorted, but is only provided by ACEDB
- * and subsequent pipe scripts written by otterlace
- * and it is believed that the match blocks are always provided in start coordinate order (says Ed)
+/* NOTE the gaps array is not explicitly sorted, but is only provided by ACEDB and subsequent pipe
+ * scripts written by otterlace and it is believed that the match blocks are always provided in
+ * start coordinate order (says Ed)
+ * 
  * So it's a bit slack trusting an external program but ZMap has been doing that for a long time.
  * "roll on CIGAR strings" which prevent this kind of problem
- * NOTE that sorting a GArray might sort the data structures themselves, so schoolboy error kind of slow.
- * If they do need to be sorted then the place is in zmapGFF2Parser.c/loadGaps()
  *
- * sorting is interesting here as the display optimisation would produce
- * a comppletely wrong picture if it was not done
+ * NOTE that sorting a GArray might sort the data structures themselves, so schoolboy error kind
+ * of slow.  If they do need to be sorted then the place is in zmapGFF2Parser.c/loadGaps() Sorting
+ * is interesting here as the display optimisation would produce a completely wrong picture if it
+ * was not done
  *
  * we draw boxes etc at the target coordinates ie on the genomic sequence
  *
- * NOTE for short reads we have an option to squash those that have the same gap
- * (they only have one gap ,except for a few pathological cases)
- * in this case the first and last blocks are a diff colour, so we flag this
- * if the colour is visible and add another box not a line. Yuk
+ * NOTE for short reads we have an option to squash those that have the same gap (they only have
+ * one gap ,except for a few pathological cases) in this case the first and last blocks are a diff
+ * colour, so we flag this if the colour is visible and add another box not a line. Yuk
  *
  */
-static AlignGap make_gapped(ZMapFeature feature, double offset, FooCanvasItem *foo, gboolean forward)
+static AlignGap makeGapped(ZMapFeature feature, double offset, FooCanvasItem *foo, gboolean forward)
 {
   int i;
   AlignGap ag;
   AlignGap last_box = NULL;
   AlignGap last_ag = NULL;
   AlignGap display_ag = NULL;
-  GArray *gaps = feature->feature.homol.align;
+  GArray *gaps ;
   ZMapAlignBlock ab;
   int cy1,cy2,fy1;
-  int n = gaps->len;
+  int n ;
   gboolean edge;
 
-  foo_canvas_w2c (foo->canvas, 0, feature->x1 + offset, NULL, &fy1);
 
-  for(i = 0; i < n ;i++)
+  foo_canvas_w2c(foo->canvas, 0, feature->x1 + offset, NULL, &fy1);
+
+  gaps = feature->feature.homol.align ;
+  n = gaps->len ;
+  for (i = 0; i < n ;i++)
     {
       ab = &g_array_index(gaps, ZMapAlignBlockStruct, i);
 
@@ -896,15 +918,17 @@ static AlignGap make_gapped(ZMapFeature feature, double offset, FooCanvasItem *f
       cy2 -= fy1;
 
 
-      if(last_box)
+      if (last_box)
 	{
-	  if(i == 1 && (feature->flags.squashed_start))
+	  if (i == 1 && (feature->flags.squashed_start))
 	    {
 	      last_box->edge = TRUE;
 	      if(last_box->y2 - last_box->y1 > 2)
 		last_box = NULL;	/* force a new box if the colours are visible */
 	    }
+
 	  edge = FALSE;
+
 	  if(i == (n-1) && (feature->flags.squashed_end))
 	    {
 	      if(last_box && last_box->y2 - last_box->y1 > 2)
@@ -912,6 +936,7 @@ static AlignGap make_gapped(ZMapFeature feature, double offset, FooCanvasItem *f
 	      edge = TRUE;
 	    }
 	}
+
       if(last_box)
 	{
 	  if(last_box->y2 == cy1 && cy2 != cy1)

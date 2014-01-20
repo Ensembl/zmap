@@ -316,11 +316,10 @@ parent-style=transcript
 width=20
 show-when-empty=true
 display-mode=hide
-frame-mode=always
+frame-mode=never
 colours=normal border #000000 ; selected border #000000 ; selected fill #ffddcc
 transcript-cds-colours=normal fill white ; normal border SlateBlue ; selected fill gold
 strand-specific=false
-frame-specific=false
 show-reverse-strand=false
 
 [style-hand_built]

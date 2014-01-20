@@ -134,7 +134,7 @@ gboolean zMapGFFGetVersionFromGIO(GIOChannel * const pChannel, int * const piOut
 
   if (cStatus == G_IO_STATUS_NORMAL)
     {
-      cStatus = g_io_channel_seek_position(pChannel, -(gint64)(iTerminatorPos+1), G_SEEK_CUR, &pError ) ;
+      /* cStatus = g_io_channel_seek_position(pChannel, -(gint64)(iTerminatorPos+1), G_SEEK_CUR, &pError ) ; */
       if (pError)
         goto return_point ;
 
@@ -148,7 +148,7 @@ gboolean zMapGFFGetVersionFromGIO(GIOChannel * const pChannel, int * const piOut
            * Parse the string line that was read in.
            */
           bResult = zMapGFFGetVersionFromString(pString->str, piOut);
-    
+
         }
     }
   else /* We encountered an error in reading the stream, or seeking back */

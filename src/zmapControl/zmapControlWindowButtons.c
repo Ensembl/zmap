@@ -1,4 +1,4 @@
-/*  File: zmapWindow.c
+/*  File: zmapControlWindowButtons.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------
@@ -765,7 +765,7 @@ static void vertSplitPaneCB(GtkWidget *widget, gpointer data)
 {
   ZMap zmap = (ZMap)data ;
 
-  zmapControlSplitWindow(zmap, GTK_ORIENTATION_VERTICAL, ZMAPCONTROL_SPLIT_LAST) ;
+  zmapControlSplitWindow(zmap, GTK_ORIENTATION_VERTICAL, ZMAPCONTROL_SPLIT_FIRST) ;
 
   return ;
 }
@@ -775,7 +775,7 @@ static void horizSplitPaneCB(GtkWidget *widget, gpointer data)
 {
   ZMap zmap = (ZMap)data ;
 
-  zmapControlSplitWindow(zmap, GTK_ORIENTATION_HORIZONTAL, ZMAPCONTROL_SPLIT_LAST) ;
+  zmapControlSplitWindow(zmap, GTK_ORIENTATION_HORIZONTAL, ZMAPCONTROL_SPLIT_FIRST) ;
 
   return ;
 }

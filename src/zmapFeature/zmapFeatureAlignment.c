@@ -1,4 +1,3 @@
-/*  Last edited: Jul 13 15:40 2012 (edgrif) */
 /*  File: zmapFeatureAlignment.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
@@ -475,6 +474,14 @@ static gboolean alignStrCanon2Homol(AlignStrCanonical canon, ZMapStrand ref_stra
         prev_gap = NULL ;
     }
 
+  if (local_map && local_map->len == 1)
+    {
+      /* If there is only one match block then it's ungapped and we must set the
+       * gaps array to null (the code relies on this being null to indicate ungapped) */
+      g_array_free(local_map, TRUE);
+      local_map = NULL;
+    }
+
   *local_map_out = local_map ;
 
   return result ;
@@ -800,7 +807,11 @@ static gboolean ensemblCigar2Canon(char *match_str, AlignStrCanonical canon)
       else
 	op.length = 1 ;
 
-      op.op = *cp ;
+      op.op =                                               /* EnsEMBL CIGAR interchanges 'D' and
+                                                               'I' */
+        (*cp == 'D') ? 'I' :
+        (*cp == 'I') ? 'D' :
+        *cp;
 
       canon->align = g_array_append_val(canon->align, op) ;
 

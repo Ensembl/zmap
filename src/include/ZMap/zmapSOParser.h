@@ -50,6 +50,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <ZMap/zmapStyle.h>
+#include <ZMap/zmapFeature.h>
 
 
 /*
@@ -76,13 +77,18 @@ typedef enum
 unsigned int zMapSOSetIsNamePresent(ZMapSOSetInUse , const char * const ) ;
 char * zMapSOSetIsIDPresent(ZMapSOSetInUse , unsigned int ) ;
 ZMapStyleMode zMapSOSetGetStyleModeFromID(ZMapSOSetInUse, unsigned int ) ;
+ZMapHomolType zMapSOSetGetHomolFromID(ZMapSOSetInUse, unsigned int ) ;
 ZMapStyleMode zMapSOSetGetStyleModeFromName(ZMapSOSetInUse, const char * const ) ;
 ZMapSOIDData zMapSOIDDataCreate() ;
-ZMapSOIDData zMapSOIDDataCreateFromData(unsigned int, const char * const, ZMapStyleMode ) ;
+ZMapSOIDData zMapSOIDDataCC(const ZMapSOIDData const) ;
+ZMapSOIDData zMapSOIDDataCreateFromData(unsigned int, const char * const, ZMapStyleMode , ZMapHomolType ) ;
 gboolean zMapSOIDDataDestroy(ZMapSOIDData const) ;
 unsigned int zMapSOIDDataGetID(const ZMapSOIDData const) ;
+char *       zMapSOIDDataGetIDAsString(const ZMapSOIDData const ) ;
+char *       zMapSOIDDataName2SOAcc(const char * const ) ;
 char * zMapSOIDDataGetName(const ZMapSOIDData const) ;
 ZMapStyleMode zMapSOIDDataGetStyleMode(const ZMapSOIDData const) ;
+ZMapHomolType zMapSOIDDataGetHomol(const ZMapSOIDData const) ;
 
 
 

@@ -1,4 +1,4 @@
-/*  File: zmapConfFile.c
+/*  File: zmapConfigFile.c
  *  Author: Malcolm Hinsley (mh17@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------

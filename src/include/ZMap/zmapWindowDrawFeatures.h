@@ -1,4 +1,4 @@
-/*  File: zmapWindow.h
+/*  File: zmapWindowDrawFeatures.h
  *  Author: Rob Clack (rnc@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
  *-------------------------------------------------------------------

@@ -257,6 +257,11 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
 	      g_string_append(desc_str, " (feature known name)") ;
 	    }
 
+   if (feature_desc->feature_variation_string)
+     {
+       g_string_append(desc_str, g_strdup_printf("; allele =\n%s", feature_desc->feature_variation_string )) ;
+     }
+
 	  if (feature_desc->feature_total_length)
 	    {
 	      g_string_append(desc_str, " (total feature length)") ;

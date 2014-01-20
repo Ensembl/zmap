@@ -1,6 +1,7 @@
 /*  File: zmapWindow.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
@@ -48,6 +49,7 @@
 #include <ZMap/zmapConfigStrings.h>
 #include <zmapWindowState.h>
 #include <zmapWindowContainers.h>
+#include <zmapWindowCanvasDraw.h>
 #include <zmapWindowCanvasItem.h>
 #include <zmapWindowCanvasFeatureset.h>
 #include <zmapWindow_P.h>
@@ -329,7 +331,7 @@ static void printAdjusters(ZMapWindow window) ;
 
 
 
-/* 
+/*
  *                  Globals
  */
 
@@ -391,7 +393,7 @@ void zMapWindowInit(ZMapWindowCallbacks callbacks)
   window_cbs_G->visibilityChange = callbacks->visibilityChange ;
   window_cbs_G->command = callbacks->command ;
   window_cbs_G->drawn_data = callbacks->drawn_data;
-  
+
   window_cbs_G->remote_request_func = callbacks->remote_request_func ;
   window_cbs_G->remote_request_func_data = callbacks->remote_request_func_data ;
 
@@ -450,7 +452,7 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, ZMapFeatureSequenceMap seque
 
   new_window = myWindowCreate(parent_widget, sequence, app_data,
                               original_window->feature_set_names,
-                              hadjustment, vadjustment, 
+                              hadjustment, vadjustment,
                               original_window->flags) ;
   if (!new_window) 
     return new_window ;
@@ -560,9 +562,9 @@ void zMapWindowBusyFull(ZMapWindow window, gboolean busy, const char *file, cons
  * Rob
  *
  *    Yes...if you read the docs then you'll know that realised != sized.
- *    It's the map-event signal that is needed....though whether that's really what's wanted 
+ *    It's the map-event signal that is needed....though whether that's really what's wanted
  *    I'm not sure....better revisit this.... Ed
- * 
+ *
  *
  *  */
 void zMapWindowDisplayData(ZMapWindow window, ZMapWindowState state,
@@ -728,7 +730,7 @@ void zMapWindowUnDisplayData(ZMapWindow window,
 }
 
 
-#ifdef NOT_USED 
+#ifdef NOT_USED
 void zMapWindowRemoveFeatureset(ZMapWindow window, ZMapFeatureSet featureset)
 {
 #warning: "what's going on here, this function takes a feature, not a feature set..."
@@ -861,25 +863,25 @@ void zMapWindowFeatureSaveState(ZMapWindow window, gboolean features_are_revcomp
    * originally highlighted feature...but only if its still visible if it ends up on the
    * reverse strand...for now we just blank it.... */
   zmapWindowUpdateInfoPanel(window, NULL, NULL, NULL, NULL, 0, 0, 0, 0, NULL, TRUE, FALSE, FALSE) ;
-  
+
   zmapWindowStateSavePosition(window->state, window);
   zmapWindowStateSaveFocusItems(window->state, window) ;
-  
+
   if (window_rev_comp_save_state_G)
     {
       zmapWindowStateSaveMark(window->state, window);
     }
-  
+
   if(window_rev_comp_save_bumped_G)
     {
       zmapWindowStateSaveBumpedColumns(window->state, window);
     }
-  
+
   if(window_rev_comp_save_zoom_G)
     {
       zmapWindowStateSaveZoom(window->state, zMapWindowGetZoomFactor(window));
     }
-  
+
   zMapStopTimer("WindowFeatureRedraw","Revcomp");
 
   return ;
@@ -986,7 +988,7 @@ void zMapWindowBack(ZMapWindow window)
 /* only appears to apply to v-split */
 //	sleep(4);		/* still goes wrong as before */
       zMapWindowRedraw(window);
-        
+
       /* also need to do locked windows */
       /* NOTE this hash table has window as key and value, maybe a GList would have been better
        * but we will call WindowRedraw with 3 args and the first will be valid
@@ -1456,8 +1458,8 @@ void zmapWindowGetScrollableArea(ZMapWindow window,
 }
 
 void zmapWindowSetScrollableArea(ZMapWindow window,
-			       double *x1_inout, double *y1_inout,
-			       double *x2_inout, double *y2_inout,char *where)
+                                 double *x1_inout, double *y1_inout,
+                                 double *x2_inout, double *y2_inout, char *where)
 {
   ZMapWindowVisibilityChangeStruct vis_change ;
   ZMapGUIClampType clamp = ZMAPGUI_CLAMP_INIT;
@@ -1508,7 +1510,7 @@ void zmapWindowSetScrollableArea(ZMapWindow window,
 #endif
 
       zmapWindowSetScrolledRegion(window, x1, x2, y1, y2) ;
-      
+
       zMapWindowRedraw(window);	/* expose the blank area off the edge */
 
       window->scroll_x1 = x1;
@@ -1565,6 +1567,9 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
 			       char *alternative_clipboard_text,
 			       gboolean replace_highlight_item, gboolean highlight_same_names, gboolean sub_part)
 {
+  static const int max_variation_str_len = 60 ;
+  char *p = NULL ;
+  GString *temp_string ;
   ZMapWindowCanvasItem top_canvas_item;
   ZMapFeature feature = NULL;
   ZMapFeatureTypeStyle style ;
@@ -1644,6 +1649,7 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
 
       select.feature_desc.feature_name   = (char *)g_quark_to_string(feature->original_id) ;
       select.feature_desc.feature_term   = g_strdup_printf("%s", seq_term) ;
+      select.feature_desc.feature_variation_string = NULL ;
       select.feature_desc.feature_start  = g_strdup_printf("%d", display_start) ;
       select.feature_desc.feature_end    = g_strdup_printf("%d", display_end) ;
       select.feature_desc.feature_length = g_strdup_printf("%d", dna_end - dna_start + 1) ;
@@ -1849,16 +1855,35 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
 	}
 
       zMapFeatureGetInfo((ZMapFeatureAny)feature, NULL,
-			 "locus", &(select.feature_desc.feature_locus),
-			 NULL);
+                         "locus", &(select.feature_desc.feature_locus), NULL);
 
       if (ZMAPFEATURE_IS_BASIC(feature) && feature->feature.basic.has_attr.variation_str)
-	select.feature_desc.feature_name = g_strdup_printf("%s \"%s\"",
-							   (char *)g_quark_to_string(feature->original_id),
-							   feature->feature.basic.variation_str) ;
-      else
-	select.feature_desc.feature_name = g_strdup((char *)g_quark_to_string(feature->original_id)) ;
+        {
+          select.feature_desc.feature_name = g_strdup_printf("%s (%s)",
+            (char *)g_quark_to_string(feature->original_id),
+							     (char *)(strlen(feature->feature.basic.variation_str) < max_variation_str_len ? feature->feature.basic.variation_str : "long allele string") ) ;
+          if (strlen(feature->feature.basic.variation_str) >= max_variation_str_len)
+            {
+              /* select.feature_desc.feature_variation_string = g_strdup(feature->feature.basic.variation_str) ; */
 
+              temp_string = g_string_new("") ;
+              p = feature->feature.basic.variation_str ;
+              while (strlen(p) > max_variation_str_len)
+                {
+                  g_string_append_len(temp_string, p, max_variation_str_len) ;
+                  g_string_append(temp_string, "\n") ;
+                  p += max_variation_str_len ;
+                }
+              g_string_append(temp_string, p) ;
+              select.feature_desc.feature_variation_string = g_string_free(temp_string, FALSE ) ;
+
+            }
+
+        }
+      else
+        {
+          select.feature_desc.feature_name = g_strdup((char *)g_quark_to_string(feature->original_id)) ;
+        }
 
       if (feature->type == ZMAPSTYLE_MODE_BASIC && feature->feature.basic.known_name)
 	select.feature_desc.feature_known_name = (char *)g_quark_to_string(feature->feature.basic.known_name) ;
@@ -1886,7 +1911,7 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
 
 	}
 
-      
+
       if (style)
         select.feature_desc.feature_type = (char *)zMapStyleMode2ExactStr(zMapStyleGetMode(style)) ;
 
@@ -2652,10 +2677,10 @@ static void resetCanvas(ZMapWindow window, gboolean free_child_windows, gboolean
       if(window->flags[ZMAPFLAG_REVCOMPED_FEATURES] && window->scroll_initialised && free_revcomp_safe_windows)
         {
           double y1,y2,x1,x2;
-          
+
           foo_canvas_get_scroll_region(window->canvas,&x1,&y1,&x2,&y2);
           zmapWindowStateRevCompRegion(window, &y1, &y2);
-          
+
           zmapWindowSetScrolledRegion(window, x1, x2, y1, y2) ;
         }
       else
@@ -3126,7 +3151,7 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
         {
 //	zMapLogMessage("%s", "event handler for canvas already registered.");
         }
-      
+
       /* If features were already displayed and one was highlighted then rehighlight it. */
       if (highlight_feature)
 	zMapWindowFeatureSelect(window, highlight_feature) ;
@@ -3272,10 +3297,10 @@ static gboolean windowGeneralEventCB(GtkWidget *wigdet, GdkEvent *event, gpointe
  *
  * If the user does lassoing, ruler or moving the mark then we return TRUE to say we have
  * handled the event, otherwise we pass the event on (so canvas items can receive events).
- * 
+ *
  * NOTE...WITH THE INTRODUCTION OF MARK CODE HERE THIS FUNCTION IS NOW FAR TOO LONG,
  * SOME SUBROUTINES ARE NEEDED.....
- * 
+ *
  */
 static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer data)
 {
@@ -4287,35 +4312,35 @@ void zmapWindowZoomToWorldPosition(ZMapWindow window, gboolean border,
   double zoom_by_factor, target_zoom_factor, current;
   double wx1, wx2, wy1, wy2;
   int two_times, border_size = ZMAP_WINDOW_FEATURE_ZOOM_BORDER;
-  
+
   v_adjuster = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window));
   win_height = v_adjuster->page_size;
-  
+
   /* If we want a border add it...
    * Actually take it away from the current height of the canvas, this
    * way that pixel size will automatically be ratioed by the zoom.
    */
   if(border && ((two_times = (border_size * 2)) < win_height))
     win_height -= two_times;
-  
+
   current = zMapWindowGetZoomFactor(window) ;
-  
+
   /* make them canvas so we can scroll there */
   foo_canvas_w2c(window->canvas, rootx1, rooty1, &beforex, &beforey);
-  
+
   /* work out the zoom factor to show all the area (vertically) and
      calculate how much we need to zoom by to achieve that. */
   ydiff = rooty2 - rooty1;
-  
+
   if (ydiff >= ZOOM_SENSITIVITY)
     {
       area_middle = rooty1 + (ydiff / 2.0) ; /* So we can make this the centre later */
-      
+
       target_zoom_factor = (double)(win_height / ydiff);
-      
+
       zoom_by_factor = (target_zoom_factor / current);
-      
-      
+
+
       /* Actually do the zoom */
       /* possible bug here with width and scrolling, need to check. */
       if (window->locked_display)
@@ -4323,7 +4348,7 @@ void zmapWindowZoomToWorldPosition(ZMapWindow window, gboolean border,
           //		ZMapWindowState prev_state;
           LockedDisplayStruct locked_data = { NULL };
           //		gboolean use_queue = TRUE;
-          
+
 #if POINTLESS
           double half_win_span = ((window->canvas_maxwin_size / target_zoom_factor) / 2.0);
           double min_seq = area_middle - half_win_span;
@@ -4337,11 +4362,11 @@ void zmapWindowZoomToWorldPosition(ZMapWindow window, gboolean border,
           locked_data.start = rooty1;
           locked_data.end = rooty2;
           locked_data.border_size = border_size;
-          
+
 #if STUPID
           /* erm... if we are restoring a zoom position the we need to feed that into this function from the top
              this makes this function ignore its arguments */
-             
+
           if(use_queue && zmapWindowStateQueueIsRestoring(window->history) &&
              zmapWindowStateGetPrevious(window, &prev_state, FALSE))
             {
@@ -4352,18 +4377,18 @@ void zmapWindowZoomToWorldPosition(ZMapWindow window, gboolean border,
               locked_data.position = ((ry2 - ry1) / 2 ) + ry1;
             }
 #endif
-          
+
           g_hash_table_foreach(window->sibling_locked_windows, lockedDisplayCB, (gpointer)&locked_data) ;
 	}
       else
 	{
-          
+
           foo_canvas_busy(window->canvas,TRUE);
           myWindowZoomTo(window, zoom_by_factor, rooty1, rooty2, border, border_size) ;
           foo_canvas_busy(window->canvas,FALSE);
 	}
-      
-      
+
+
       /* Now we need to find where the original top of the area is in
        * canvas coords after the effect of the zoom. Hence the w2c calls
        * below.
@@ -4378,13 +4403,13 @@ void zmapWindowZoomToWorldPosition(ZMapWindow window, gboolean border,
       if (rooty1 > wy1 && rooty2 < wy2)
 	{                           /* We're still in the same area, */
 	  foo_canvas_w2c(window->canvas, rootx1, rooty1, &canvasx, &canvasy);
-          
+
           /* If we had a border we need to take this into account,
            * otherwise the feature just ends up at the top of the
            * window with 2 border widths at the bottom! */
           if(border)
             canvasy -= border_size;
-          
+
 	  if(beforey != canvasy)
 	    foo_canvas_scroll_to(FOO_CANVAS(window->canvas), canvasx, canvasy);
 	}
@@ -4393,22 +4418,22 @@ void zmapWindowZoomToWorldPosition(ZMapWindow window, gboolean border,
 	  double half_win_span = ((window->canvas_maxwin_size / target_zoom_factor) / 2.0);
 	  double min_seq = area_middle - half_win_span;
 	  double max_seq = area_middle + half_win_span - 1;
-          
+
 	  /* unfortunately freeze/thaw child-notify doesn't stop flicker */
 	  /* can we do something else to make it busy?? */
 	  zMapWindowMove(window, min_seq, max_seq);
-          
+
 	  foo_canvas_w2c(window->canvas, rootx1, rooty1, &canvasx, &canvasy);
-          
+
           /* Do the right thing with the border again. */
           if(border)
             canvasy -= border_size;
-          
+
           /* No need to worry about border here as we're using the centre of the window. */
 	  foo_canvas_scroll_to(FOO_CANVAS(window->canvas), canvasx, canvasy);
 	}
     }
-  
+
   return ;
 }
 
@@ -4465,25 +4490,25 @@ static gboolean canvasRootEventCB(GtkWidget *widget, GdkEventClient *event, gpoi
  * the canvas changes its own size through zooming.
  *
  * We _may_ need to take action when the canvas window changes size:
- * 
+ *
  * If we are at min zoom and the window gets larger then we need to redo the min zoom so
  * the sequence once again occupies the whole window....
- * 
+ *
  * ...otherwise we don't need to do anything, the scrolled window/canvas interface takes
  * care of sorting out the scroll bars.
- * 
+ *
  * NOTES:
- * 
+ *
  * - foocanvas uses GtkLayout which has two windows, the one that's visible on the screen
  * and the larger scrolling one that sits "behind" it with the actual data. alloc_XXX is
  * the size of the visible window, actual_XXX is the size of the scrolling window.
- * 
+ *
  *  -  you cannot use the sizes of the layout widgets actual windows because when this
  * routine is called they have not yet been set to the new sizes specified in the allocation.
- * 
+ *
  * - the allocation struct passed in seems always to have the same values as the allocation
  * struct embedded in the widget passed in (the foocanvas/layout).....duh....
- * 
+ *
  */
 static void canvasSizeAllocateCB(GtkWidget *widget, GtkAllocation *allocation, gpointer user_data)
 {
@@ -5257,7 +5282,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
             /* Copy the selected feature to the scratch column */
             FooCanvasItem *item = zmapWindowFocusGetHotItem(window->focus);
             ZMapFeature feature = NULL;
-            
+
             if (item && (feature = zmapWindowItemGetFeature(item)))
               {
                 /* \todo It would be good to have a shortcut do copy just the subfeature
@@ -5455,18 +5480,19 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
             if ((focus_item = zmapWindowFocusGetHotItem(window->focus)))
               {
                 ZMapFeature feature ;
-                
+
                 feature = zmapWindowItemGetFeature(focus_item);
+
                 /* If there is a marked feature(s), for "z" we zoom just to the highlighted
                  * feature, for "Z" we zoom to the whole transcript/HSP's */
                 if (key_event->keyval == GDK_z)
                   {
                     GList *focus_items ;
-                    
+
                     if ((focus_items = zmapWindowFocusGetFocusItems(window->focus)))
                       {
                         zmapWindowZoomToItems(window, focus_items) ;
-                        
+
                         g_list_free(focus_items) ;
                       }
                   }
@@ -5482,15 +5508,16 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
                         ZMapStrand set_strand ;
                         ZMapFrame set_frame ;
                         gboolean result ;
-                        
+
                         result = zmapWindowItemGetStrandFrame(focus_item, &set_strand, &set_frame) ;
+
                         list = zmapWindowFToIFindSameNameItems(window,window->context_to_item,
                                                                zMapFeatureStrand2Str(set_strand),
                                                                zMapFeatureFrame2Str(set_frame),
                                                                feature) ;
-                        
+
                         zmapWindowZoomToItems(window, list) ;
-                        
+
                         g_list_free(list) ;
                       }
                     else
@@ -5502,9 +5529,9 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
             else if ((mark_set = zmapWindowMarkIsSet(window->mark)))
               {
                 double rootx1, rooty1, rootx2, rooty2 ;
-                
+
                 zmapWindowMarkGetWorldRange(window->mark, &rootx1, &rooty1, &rootx2, &rooty2) ;
-                
+
                 zmapWindowZoomToWorldPosition(window, TRUE, rootx1, rooty1, rootx2, rooty2) ;
               }
 
@@ -6163,7 +6190,7 @@ static void getFirstForwardCol(ZMapWindowContainerGroup container, FooCanvasPoin
 	      column = (FooCanvasGroup *)(col_ptr->data) ;
 
 	      if (checkItem(FOO_CANVAS_ITEM(column), GINT_TO_POINTER(FALSE))
-                  ZMAP_IS_CONTAINER_GROUP(column) && 
+                  ZMAP_IS_CONTAINER_GROUP(column) &&
 		  && (zmapWindowContainerHasFeatures(ZMAP_CONTAINER_GROUP(column)) ||
                       zmapWindowContainerFeatureSetShowWhenEmpty(ZMAP_CONTAINER_FEATURESET(column))))
 		{
@@ -6898,8 +6925,8 @@ static gint sortCoordsCB(gconstpointer a, gconstpointer b)
 /*!
  * \brief Redraw the background for the given strand/frame of the given featureset
  */
-static void updateColumnBackground(ZMapWindow window, 
-                                   ZMapFeatureSet feature_set, 
+static void updateColumnBackground(ZMapWindow window,
+                                   ZMapFeatureSet feature_set,
                                    gboolean highlight_filtered_columns,
                                    ZMapStrand strand,
                                    ZMapFrame frame)
@@ -6918,7 +6945,7 @@ static void updateColumnBackground(ZMapWindow window,
 
       int n_filtered = zMapWindowFeaturesetItemGetNFiltered(foo);
 
-      /* Update the 'filtered' flag in the column based on whether this 
+      /* Update the 'filtered' flag in the column based on whether this
        * column should be highlighted as filtered */
       if (highlight_filtered_columns && n_filtered > 0)
         column->flags.filtered = 1;
@@ -6932,7 +6959,7 @@ static void updateColumnBackground(ZMapWindow window,
       zmapWindowDrawSetGroupBackground(window, column,
 				       0, 1, 1.0,
 				       ZMAP_CANVAS_LAYER_COL_BACKGROUND, fill, NULL);
-      
+
       foo_canvas_item_request_redraw(foo->parent);
     }
 }
@@ -6943,7 +6970,7 @@ static void updateColumnBackground(ZMapWindow window,
  *
  * Updates the column in all strands/frames
  */
-void zMapWindowUpdateColumnBackground(ZMapWindow window, 
+void zMapWindowUpdateColumnBackground(ZMapWindow window,
                                       ZMapFeatureSet feature_set,
                                       gboolean highlight_filtered_columns)
 {
@@ -6980,7 +7007,7 @@ static void printAdjusters(ZMapWindow window)
 
   v_adjust = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window)) ;
   h_adjust = gtk_scrolled_window_get_hadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window)) ;
-      
+
   zMapDebugPrintf("\nv_adjust = %p, h_adjust = %p\n", v_adjust, h_adjust) ;
 
   return ;
