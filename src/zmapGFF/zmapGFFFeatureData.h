@@ -112,8 +112,11 @@ gboolean zMapGFFFeatureDataGetFlagSod(const ZMapGFFFeatureData const) ;
 /*
  * Set some data members of the object.
  */
+gboolean zMapGFFFeatureDataSetSeq(ZMapGFFFeatureData const, const char * const ) ;
+gboolean zMapGFFFeatureDataSetSou(ZMapGFFFeatureData const, const char * const ) ;
 gboolean zMapGFFFeatureDataSetSta(ZMapGFFFeatureData const, int) ;
 gboolean zMapGFFFeatureDataSetEnd(ZMapGFFFeatureData const, int) ;
+gboolean zMapGFFFeatureDataSetSod(ZMapGFFFeatureData const, const ZMapSOIDData const ) ;
 
 /*
  * Return various data elements of the object.

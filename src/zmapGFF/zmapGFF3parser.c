@@ -2863,6 +2863,8 @@ static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const pFeature
           if (zMapAttParseLocus(pAttributeLocus, &gqLocusID))
             {
               zMapFeatureAddLocus(pFeature, gqLocusID) ;
+              printf("adding locus id with s = '%s'\n", g_quark_to_string(gqLocusID))  ;
+              fflush(stdout) ;
             }
         }
     }
@@ -2905,6 +2907,7 @@ void makeFeatureLocus(const ZMapGFFFeatureData const pFeatureData , char ** psEr
   ZMapFeature pFeature = NULL ;
   ZMapGFFAttribute pAttribute = NULL, *pAttributes = NULL ;
   ZMapGFFFeatureData pFeatureDataLocus = NULL ;
+  GQuark gqLocusID = 0 ;
   unsigned int nAttributes = 0 ;
 
   zMapReturnIfFail(pFeatureData && psError) ;
@@ -2912,7 +2915,6 @@ void makeFeatureLocus(const ZMapGFFFeatureData const pFeatureData , char ** psEr
   nAttributes          = zMapGFFFeatureDataGetNat(pFeatureData) ;
   pAttributes          = zMapGFFFeatureDataGetAts(pFeatureData) ;
   pAttribute           = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_locus) ;
-
 
   printf("creating locus with s = '%s'\n", zMapGFFAttributeGetTempstring(pAttribute)) ;
   fflush(stdout) ;
@@ -2928,6 +2930,13 @@ void makeFeatureLocus(const ZMapGFFFeatureData const pFeatureData , char ** psEr
    *
    */
   pFeatureDataLocus = zMapGFFFeatureDataCC(pFeatureData) ;
+  zMapGFFFeatureDataSetSeq(pFeatureDataLocus, "Locus" ) ;
+  zMapGFFFeatureDataSetSou(pFeatureDataLocus, "Locus" ) ;
+  /*
+   * SOIDData must have something that maps Locus to BASIC style mode ...
+   * this should also include a dummy SO accession in thesame way as with
+   * the other fake SO terms.
+   */
 
   /*
    * Find featureset and other data.

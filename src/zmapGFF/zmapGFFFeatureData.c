@@ -330,6 +330,53 @@ gboolean zMapGFFFeatureDataGetFlagSod(const ZMapGFFFeatureData const pFeatureDat
 /*
  * Functions to set some data members.
  */
+
+gboolean zMapGFFFeatureDataSetSeq(ZMapGFFFeatureData const pFeatureData , const char * const sData)
+{
+  gboolean bResult = FALSE ;
+
+  zMapReturnValIfFail(pFeatureData && sData, bResult ) ;
+
+  if (pFeatureData->sSequence)
+    g_free(pFeatureData->sSequence) ;
+
+  pFeatureData->sSequence = g_strdup(sData) ;
+  bResult = TRUE ;
+
+  return bResult ;
+}
+
+
+gboolean zMapGFFFeatureDataSetSou(ZMapGFFFeatureData const pFeatureData, const char * const sData )
+{
+  gboolean bResult = FALSE ;
+
+  zMapReturnValIfFail(pFeatureData && sData, bResult ) ;
+
+  if (pFeatureData->sSource)
+    g_free (pFeatureData->sSource) ;
+
+  pFeatureData->sSource = g_strdup(sData) ;
+  bResult = TRUE ;
+
+  return bResult ;
+}
+
+gboolean zMapGFFFeatureDataSetSod(ZMapGFFFeatureData const pFeatureData , const ZMapSOIDData const pData )
+{
+  gboolean bResult = FALSE ;
+
+  zMapReturnValIfFail(pFeatureData && pData, bResult ) ;
+
+  if (pFeatureData->pSOIDData)
+    zMapSOIDDataDestroy(pFeatureData->pSOIDData) ;
+
+  pFeatureData->pSOIDData = zMapSOIDDataCC(pData) ;
+
+  return bResult ;
+}
+
+
 gboolean zMapGFFFeatureDataSetSta(ZMapGFFFeatureData const pFeatureData, int iVal)
 {
   gboolean bResult = FALSE ;
@@ -339,7 +386,6 @@ gboolean zMapGFFFeatureDataSetSta(ZMapGFFFeatureData const pFeatureData, int iVa
   bResult = TRUE ;
   return bResult ;
 }
-
 
 gboolean zMapGFFFeatureDataSetEnd(ZMapGFFFeatureData const pFeatureData, int iVal)
 {

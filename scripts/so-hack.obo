@@ -14,3 +14,6 @@ name: das_pc44
 id: SO:9999993
 name: solexa_coverage
 
+[Term]
+id: SO:9999994
+name: Locus
