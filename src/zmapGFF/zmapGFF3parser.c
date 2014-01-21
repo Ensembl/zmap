@@ -2912,7 +2912,7 @@ gboolean makeFeatureLocus(const ZMapGFFParser const pParser, const ZMapGFFFeatur
   ZMapGFFAttribute pAttribute = NULL, *pAttributes = NULL ;
   ZMapGFFFeatureData pFeatureDataLocus = NULL ;
   ZMapHomolType cHomol = ZMAPHOMOL_NONE ;
-  ZMapStyleMode cType = ZMAPSTYLE_MODE_TEXT ;
+  ZMapStyleMode cStyleMode = ZMAPSTYLE_MODE_TEXT ;
   ZMapSOIDData pSOIDData = NULL ;
   ZMapFeatureSet pFeatureSet = NULL ;
   GQuark gqLocusID = 0 ;
@@ -2952,6 +2952,8 @@ gboolean makeFeatureLocus(const ZMapGFFParser const pParser, const ZMapGFFFeatur
       zMapGFFFeatureDataSetSou(pFeatureDataLocus, sType ) ;
       zMapGFFFeatureDataSetFlagSco(pFeatureDataLocus, FALSE) ;
       zMapGFFFeatureDataSetSco(pFeatureDataLocus, 0.0) ;
+      zMapGFFFeatureDataSetStr(pFeatureDataLocus, ZMAPSTRAND_NONE) ;
+      zMapGFFFeatureDataSetPha(pFeatureDataLocus, ZMAPPHASE_NONE) ;
 
       /*
        * SOIDData must have something that maps Locus to BASIC style mode ...
@@ -2960,7 +2962,7 @@ gboolean makeFeatureLocus(const ZMapGFFParser const pParser, const ZMapGFFFeatur
        */
       if ((iSOID = zMapSOSetIsNamePresent(ZMAPSO_USE_NONE, sType)) != ZMAPSO_ID_UNK)
         {
-          pSOIDData = zMapSOIDDataCreateFromData(iSOID, sType, cType, cHomol ) ;
+          pSOIDData = zMapSOIDDataCreateFromData(iSOID, sType, cStyleMode, cHomol ) ;
         }
       zMapGFFFeatureDataSetSod(pFeatureDataLocus, pSOIDData) ;
 
@@ -2968,6 +2970,10 @@ gboolean makeFeatureLocus(const ZMapGFFParser const pParser, const ZMapGFFFeatur
        * Find featureset and other data.
        */
       // performSourceComputations(pParser, pFeatureDataLocus, &pFeatureSet) ;
+
+      /*
+       * Make a name and a name_id for the feature.
+       */
 
       /*
        * Make the feature and add to the new featureset
