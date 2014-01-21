@@ -301,24 +301,18 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   gtk_container_border_width(GTK_CONTAINER(toplevel), 0) ;
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* THIS IS THE OLD REMOTE HANDLER.... */
-  /* This ensures that the widget *really* has a X Window id when it
-   * comes to doing XChangeProperty.  Using realize doesn't and the
-   * expose_event means we can't hide the mainwindow. */
-  g_signal_connect(G_OBJECT(toplevel), "map-event",
-                   G_CALLBACK(zmapAppRemoteInstaller),
-                   (gpointer)app_context);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-  /* **NEW XREMOTE** THIS IS THE NEW HANDLER... */
+  /* If there is a peer program then set up xremote comms. */
   if (remote_control)
     {
       if (zmapAppRemoteControlCreate(app_context, peer_name, peer_clipboard, peer_retries, peer_timeout_ms))
 	{
 	  /* Rest of initialisation requires a window so code is in a map callback
 	   * where we are guaranteed to have a window. */
+
+          consoleMsg(TRUE, "ZMAP %s() - %s",
+                     __PRETTY_FUNCTION__,
+                     "Setting up remoteInstaller() as callback on \"map-event\"") ;
+
 	  app_context->mapCB_id = g_signal_connect(G_OBJECT(toplevel), "map-event",
 						   G_CALLBACK(remoteInstaller),
 						   (gpointer)app_context) ;
@@ -362,7 +356,13 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
   /* We don't always want to show this window, for lace users it is useless.... */
   if (!(app_context->show_mainwindow) && !(app_context->defer_hiding))
-    gtk_widget_unmap(toplevel) ;
+    {
+      consoleMsg(TRUE,  "ZMAP %s() - %s",
+                 __PRETTY_FUNCTION__,
+                 "Hiding main window.") ;
+
+      gtk_widget_unmap(toplevel) ;
+    }
 
 
   /* Check that log file has not got too big... */
@@ -667,7 +667,7 @@ static void appExit(void *user_data)
       guint timeout_func_id ;
       int interval = app_context->exit_timeout * 1000 ;	    /* glib needs time in milliseconds. */
 
-      zMapLogMessage("%s", "Issuing requests to all ZMaps to disconnect from servers and quit.") ;
+      consoleMsg(TRUE, "%s", "Issuing requests to all ZMaps to disconnect from servers and quit.") ;
 
       /* N.B. we block for 2 seconds here to make sure user can see message. */
       zMapGUIShowMsgFull(NULL, "ZMap is disconnecting from its servers and quitting, please wait.",
@@ -743,7 +743,7 @@ static void finalCleanUp(ZMapAppContext app_context)
   if (exit_rc)
     zMapLogCritical("%s", exit_msg) ;
   else
-    zMapLogMessage("%s", exit_msg) ;
+    consoleMsg(TRUE, "%s", exit_msg) ;
 
   zMapWriteStopMsg() ;
   zMapLogDestroy() ;
@@ -1145,6 +1145,10 @@ static void remoteInstaller(GtkWidget *widget, GdkEvent *event, gpointer user_da
 {
   ZMapAppContext app_context = (ZMapAppContext)user_data ;
 
+  consoleMsg(TRUE, "ZMAP %s() - %s",
+             __PRETTY_FUNCTION__,
+             "In remoteInstaller, about init RemoteControl.") ;
+
   /* Stop ourselves being called again. */
   g_signal_handler_disconnect(app_context->app_widg, app_context->mapCB_id) ;
   app_context->mapCB_id = 0 ;
@@ -1164,7 +1168,9 @@ static void remoteInstaller(GtkWidget *widget, GdkEvent *event, gpointer user_da
 
 
 
-
+  consoleMsg(TRUE, "ZMAP %s() - %s",
+             __PRETTY_FUNCTION__,
+             "In remoteInstaller, about to hide main window.") ;
 
   /* Hide main window if required. */
   if (!(app_context->show_mainwindow) && app_context->defer_hiding)
