@@ -531,7 +531,9 @@ static void processRequest(ZMap zmap,
 static void doViews(gpointer data, gpointer user_data)
 {
   ZMapView view = (ZMapView)data ;
-  GetViewNames get_view_names = (GetViewNames)user_data ;
+  GetViewNames get_view_names = NULL ; 
+  zMapReturnIfFail(user_data) ; 
+  get_view_names = (GetViewNames)user_data ;
 
   if (get_view_names->result)
     {

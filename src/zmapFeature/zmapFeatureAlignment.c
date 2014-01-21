@@ -108,9 +108,12 @@ gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
 				     gboolean has_local_sequence, char *sequence)
 				     /* NOTE has_local mean in ACEBD, sequence is from GFF */
 {
-  gboolean result = TRUE ;
+  gboolean result = FALSE ;
 
-  zMapAssert(feature && feature->type == ZMAPSTYLE_MODE_ALIGNMENT) ;
+  if (!feature || (feature->type != ZMAPSTYLE_MODE_ALIGNMENT)) 
+    return result ; 
+
+  result = TRUE ; 
 
   if (clone_id)
     {
@@ -162,7 +165,8 @@ gboolean zMapFeatureAlignmentIsGapped(ZMapFeature feature)
 {
   gboolean result = FALSE ;
 
-  zMapAssert(zMapFeatureIsValidFull((ZMapFeatureAny) feature, ZMAPFEATURE_STRUCT_FEATURE)) ;
+  if (!zMapFeatureIsValidFull((ZMapFeatureAny) feature, ZMAPFEATURE_STRUCT_FEATURE)) 
+    return result ;
 
   if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
     {
@@ -318,7 +322,7 @@ static AlignStrCanonical alignStrMakeCanonical(char *match_str, ZMapFeatureAlign
       result = exonerateVulgar2Canon(match_str, canon) ;
       break ;
     default:
-      zMapAssertNotReached() ;
+      zMapWarnIfReached() ;
       break ;
     }
 
@@ -380,8 +384,8 @@ static gboolean alignStrCanon2Homol(AlignStrCanonical canon, ZMapStrand ref_stra
   for (i = 0, j = 0 ; i < align->len ; i++)
     {
       /* If you alter this code be sure to notice the += and -= which alter curr_ref and curr_match. */
-      AlignStrOp op ;
-      int curr_length ;
+      AlignStrOp op = NULL ;
+      int curr_length = 0 ;
       ZMapAlignBlockStruct gap = {0} ;
 
       op = &(g_array_index(align, AlignStrOpStruct, i)) ;
@@ -454,7 +458,8 @@ static gboolean alignStrCanon2Homol(AlignStrCanonical canon, ZMapStrand ref_stra
 	  }
 	default:
 	  {
-	    zMapAssertNotReached() ;
+            zMapWarning("Unrecognized operator '%c' in align string\n", op->op) ;
+            zMapWarnIfReached() ;
 
 	    break ;
 	  }
@@ -511,7 +516,7 @@ static gboolean alignStrVerifyStr(char *match_str, ZMapFeatureAlignFormat align_
       result = exonerateVerifyVulgar(match_str) ;
       break ;
     default:
-      zMapAssertNotReached() ;
+      zMapWarnIfReached() ;
       break ;
     }
 

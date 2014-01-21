@@ -350,7 +350,6 @@ static gboolean window_split_save_bumped_G = TRUE;
 
 /* Debugging canvas... */
 static gboolean busy_debug_G = FALSE ;
-//static gboolean foo_debug_G = FALSE ;
 static gboolean mouse_debug_G = FALSE ;
 
 struct fooBug foo_wins [128];
@@ -369,14 +368,19 @@ int n_foo_wins = 0;
  * via some kind of windows terminate routine. */
 void zMapWindowInit(ZMapWindowCallbacks callbacks)
 {
-  zMapAssert(!window_cbs_G) ;
-
-  zMapAssert(callbacks
-	     && callbacks->enter && callbacks->leave
-	     && callbacks->scroll && callbacks->focus && callbacks->select
-             && callbacks->setZoomStatus && callbacks->splitToPattern
-	     && callbacks->visibilityChange
-             && callbacks->command && callbacks->drawn_data) ;
+  if (window_cbs_G 
+      || !callbacks 
+      || !callbacks->enter 
+      || !callbacks->leave 
+      || !callbacks->scroll 
+      || !callbacks->focus 
+      || !callbacks->select 
+      || !callbacks->setZoomStatus 
+      || !callbacks->splitToPattern  
+      || !callbacks->visibilityChange 
+      || !callbacks->command 
+      || !callbacks->drawn_data) 
+    return ; 
 
   window_cbs_G = g_new0(ZMapWindowCallbacksStruct, 1) ;
 
@@ -451,7 +455,8 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, ZMapFeatureSequenceMap seque
                               original_window->feature_set_names,
                               hadjustment, vadjustment,
                               original_window->flags) ;
-  zMapAssert(new_window) ;
+  if (!new_window) 
+    return new_window ;
 
   zmapWindowBusy(new_window, TRUE) ;
 
@@ -825,7 +830,8 @@ void zMapWindowRedraw(ZMapWindow window)
  *  */
 void zMapWindowStats(ZMapWindow window, GString *text)
 {
-  zMapAssert(text) ;
+  if (!text) 
+    return ;
 
   zmapWindowContainerUtilsExecute(window->feature_root_group,
 				  ZMAPCONTAINER_LEVEL_FEATURESET,
@@ -1446,7 +1452,6 @@ void zmapWindowGetScrollableArea(ZMapWindow window,
 
   if(y1_inout && y2_inout)
   {
-    zMapAssert(*y1_inout <= *y2_inout);
     zmapWindowClampedAtStartEnd(window, y1_inout, y2_inout);
   }
 
@@ -1454,17 +1459,14 @@ void zmapWindowGetScrollableArea(ZMapWindow window,
 }
 
 void zmapWindowSetScrollableArea(ZMapWindow window,
-			       double *x1_inout, double *y1_inout,
-			       double *x2_inout, double *y2_inout,char *where)
+                                 double *x1_inout, double *y1_inout,
+                                 double *x2_inout, double *y2_inout, char *where)
 {
   ZMapWindowVisibilityChangeStruct vis_change ;
   ZMapGUIClampType clamp = ZMAPGUI_CLAMP_INIT;
   double border, x1, x2, y1, y2, tmp_top, tmp_bot;
 
   zmapWindowGetBorderSize(window, &border);
-
-  if(y1_inout && y2_inout)
-    zMapAssert(*y1_inout <= *y2_inout);
 
   foo_canvas_get_scroll_region(FOO_CANVAS(window->canvas),
                                &x1, &y1, &x2, &y2);
@@ -1694,8 +1696,6 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
       	feature = feature_arg;
       else
 #endif
-      	zMapAssert(feature_arg == feature);
-
       top_canvas_item = zMapWindowCanvasItemIntervalGetObject(item);
 
       feature_group   = zmapWindowItemGetParentContainer(FOO_CANVAS_ITEM(top_canvas_item)) ;
@@ -2153,9 +2153,11 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
   GtkWidget *canvas, *eventbox ;
 
   /* No callbacks, then no window creation. */
-  zMapAssert(window_cbs_G) ;
+  if (!window_cbs_G) 
+    return window ;
 
-  zMapAssert(parent_widget && sequence && sequence->sequence && app_data) ;
+  if (!parent_widget || !sequence || !sequence->sequence || !app_data) 
+    return window ;
 
   window = g_new0(ZMapWindowStruct, 1) ;
 
@@ -2182,7 +2184,6 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
   window->parent_widget = parent_widget ;
 
   window->display_forward_coords = TRUE ;
-//  window->origin = 1 ;
 
   window->feature_set_names   = g_list_copy(feature_set_names);
 
@@ -2581,7 +2582,8 @@ static void myWindowMove(ZMapWindow window, double start, double end)
 static void resetCanvas(ZMapWindow window, gboolean free_child_windows, gboolean free_revcomp_safe_windows)
 {
 
-  zMapAssert(window) ;
+  if (!window) 
+    return ;
 
   /* There is code here that should be shared with zmapwindowdestroy....
    * BUT NOTE THAT SOME THINGS ARE NOT SHARED...e.g. RECREATION OF THE FEATURELISTWINDOWS
@@ -2968,8 +2970,6 @@ static gboolean exposeHandlerCB(GtkWidget *widget, GdkEventExpose *expose, gpoin
   /* call the function given us by zmapView.c to set zoom_status
    * for all windows in this view. */
   (*(window_cbs_G->setZoomStatus))(realiseData->window, realiseData->window->app_data, NULL);
-
-  zMapAssert(GTK_WIDGET_REALIZED(widget));
 
   /* disconnect signal handler before calling sendClientEvent otherwise when splitting
    * windows, the scroll-to which positions the new window in the same place on the
@@ -4641,8 +4641,9 @@ static void setCurrLock(ZMapWindowLockType window_locking, ZMapWindow window,
 /* May need to make this routine more flexible..... */
 static void lockWindow(ZMapWindow window, ZMapWindowLockType window_locking)
 {
-  zMapAssert(!window->locked_display && window->curr_locking == ZMAP_WINLOCK_NONE
-	     && !window->sibling_locked_windows) ;
+  if (!(!window->locked_display && window->curr_locking == ZMAP_WINLOCK_NONE
+      && !window->sibling_locked_windows) )
+    return ;
 
   window->locked_display = TRUE ;
   window->curr_locking = window_locking ;
@@ -4656,10 +4657,12 @@ static void lockWindow(ZMapWindow window, ZMapWindowLockType window_locking)
 
 static void copyLockWindow(ZMapWindow original_window, ZMapWindow new_window)
 {
-  zMapAssert(original_window->locked_display && original_window->curr_locking != ZMAP_WINLOCK_NONE
-	     && original_window->sibling_locked_windows) ;
-  zMapAssert(!new_window->locked_display && new_window->curr_locking == ZMAP_WINLOCK_NONE
-	     && !new_window->sibling_locked_windows) ;
+  if (!(original_window->locked_display && original_window->curr_locking != ZMAP_WINLOCK_NONE
+        && original_window->sibling_locked_windows) )
+    return ;
+  if (!(!new_window->locked_display && new_window->curr_locking == ZMAP_WINLOCK_NONE
+        && !new_window->sibling_locked_windows) )
+    return ;
 
   new_window->locked_display = original_window->locked_display ;
   new_window->curr_locking = original_window->curr_locking ;
@@ -4682,54 +4685,53 @@ static void unlockWindow(ZMapWindow window, gboolean no_destroy_if_empty)
 {
   gboolean removed ;
 
-  zMapAssert(window->locked_display && window->curr_locking != ZMAP_WINLOCK_NONE
-	     && window->sibling_locked_windows) ;
+  zMapReturnIfFail((window->locked_display
+                    && window->curr_locking != ZMAP_WINLOCK_NONE && window->sibling_locked_windows)) ;
 
-
-  removed = g_hash_table_remove(window->sibling_locked_windows, window) ;
-  zMapAssert(removed) ;
-
-  if (!g_hash_table_size(window->sibling_locked_windows))
+  if ((removed = g_hash_table_remove(window->sibling_locked_windows, window)))
     {
-      if (!no_destroy_if_empty)
-	g_hash_table_destroy(window->sibling_locked_windows) ;
-    }
-  else
-    {
-      /* we only need to allocate a new adjuster if the hash table is not empty...otherwise we can
-       * keep our existing adjuster. */
-      GtkAdjustment *adjuster ;
-
-      if (window->curr_locking == ZMAP_WINLOCK_HORIZONTAL)
-	adjuster = gtk_scrolled_window_get_hadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window)) ;
-      else
-	adjuster = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window)) ;
-
-      adjuster = copyAdjustmentObj(adjuster) ;
-
-      if (window->curr_locking == ZMAP_WINLOCK_HORIZONTAL)
-	{
-	  gtk_scrolled_window_set_hadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window), adjuster) ;
-	}
+      if (!g_hash_table_size(window->sibling_locked_windows))
+        {
+          if (!no_destroy_if_empty)
+            g_hash_table_destroy(window->sibling_locked_windows) ;
+        }
       else
         {
-          gtk_scrolled_window_set_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window), adjuster) ;
+          /* we only need to allocate a new adjuster if the hash table is not empty...otherwise we can
+           * keep our existing adjuster. */
+          GtkAdjustment *adjuster ;
 
-          /* Need to set the scalebar one too if vertical locked */
-          zmapWindowScaleCanvasSetVAdjustment(window->ruler, adjuster);
+          if (window->curr_locking == ZMAP_WINLOCK_HORIZONTAL)
+            adjuster = gtk_scrolled_window_get_hadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window)) ;
+          else
+            adjuster = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window)) ;
+
+          adjuster = copyAdjustmentObj(adjuster) ;
+
+          if (window->curr_locking == ZMAP_WINLOCK_HORIZONTAL)
+            {
+              gtk_scrolled_window_set_hadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window), adjuster) ;
+            }
+          else
+            {
+              gtk_scrolled_window_set_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window), adjuster) ;
+
+              /* Need to set the scalebar one too if vertical locked */
+              zmapWindowScaleCanvasSetVAdjustment(window->ruler, adjuster);
+            }
         }
-    }
 
- if (g_hash_table_size(window->sibling_locked_windows) == 1)
-    {
-      g_hash_table_foreach(window->sibling_locked_windows,
-			   unlock_last_window, GUINT_TO_POINTER(TRUE));
-      g_hash_table_destroy(window->sibling_locked_windows) ;
-    }
+      if (g_hash_table_size(window->sibling_locked_windows) == 1)
+        {
+          g_hash_table_foreach(window->sibling_locked_windows,
+                               unlock_last_window, GUINT_TO_POINTER(TRUE));
+          g_hash_table_destroy(window->sibling_locked_windows) ;
+        }
 
-  window->locked_display= FALSE ;
-  window->curr_locking = ZMAP_WINLOCK_NONE ;
-  window->sibling_locked_windows = NULL ;
+      window->locked_display= FALSE ;
+      window->curr_locking = ZMAP_WINLOCK_NONE ;
+      window->sibling_locked_windows = NULL ;
+    }
 
   return ;
 }
@@ -5180,8 +5182,6 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	    gboolean spliced = TRUE, cds = FALSE ;
 
 	    feature = zmapWindowItemGetFeature(focus_item);
-	    zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
-
 	    context = zMapFeatureGetParentGroup((ZMapFeatureAny)feature,
 						ZMAPFEATURE_STRUCT_CONTEXT);
 
@@ -5343,8 +5343,6 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	    char *peptide_fasta;
 
 	    feature = zmapWindowItemGetFeature(focus_item);
-	    zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
-
 	    context = zMapFeatureGetParentGroup((ZMapFeatureAny)feature,
 						ZMAPFEATURE_STRUCT_CONTEXT);
 
@@ -5490,7 +5488,6 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
                 ZMapFeature feature ;
 
                 feature = zmapWindowItemGetFeature(focus_item);
-                zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
 
                 /* If there is a marked feature(s), for "z" we zoom just to the highlighted
                  * feature, for "Z" we zoom to the whole transcript/HSP's */
@@ -5519,7 +5516,6 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
                         gboolean result ;
 
                         result = zmapWindowItemGetStrandFrame(focus_item, &set_strand, &set_frame) ;
-                        zMapAssert(result) ;
 
                         list = zmapWindowFToIFindSameNameItems(window,window->context_to_item,
                                                                zMapFeatureStrand2Str(set_strand),
@@ -5885,7 +5881,6 @@ static void jumpColumn(ZMapWindow window, guint keyval)
       select.feature_desc.feature_set = (char *)g_quark_to_string(set_id) ;
 
       column = g_hash_table_lookup(window->context_map->columns,GUINT_TO_POINTER(set_id));
-      zMapAssert(column);
       select.secondary_text = column->column_desc;
       /* column must exist and it will have some description, defaulting to the name of the column
        * ideally we  should default it to the best featureset description on config or data load
@@ -6271,12 +6266,18 @@ static void popUpMenu(GdkEventKey *key_event, ZMapWindow window, FooCanvasItem *
     {
       /* Is the item a feature or a column ? */
       if(ZMAP_IS_CANVAS_ITEM(focus_item))
-	is_feature = TRUE ;
+        {
+          is_feature = TRUE ;
+        }
       else if (ZMAP_IS_CONTAINER_GROUP(focus_item) &&
 	       zmapWindowContainerUtilsGetLevel(focus_item) == ZMAPCONTAINER_LEVEL_FEATURESET)
-	is_feature = FALSE ;
+        {
+          is_feature = FALSE ;
+        }
       else
-	zMapAssertNotReached() ;
+        {
+          zMapWarnIfReached() ;
+        }
 
 
       /* Calculate canvas window coords for menu position from part of item which is visible. */
@@ -6353,8 +6354,6 @@ static void printStats(ZMapWindowContainerGroup container_parent, FooCanvasPoint
 	    ZMapWindowStats stats ;
 
 	    stats = g_object_get_data(G_OBJECT(container_parent), ITEM_FEATURE_STATS) ;
-	    zMapAssert(stats) ;
-
 	    zmapWindowStatsPrint(text, stats) ;
 
 	    break ;
@@ -6525,9 +6524,11 @@ static void fc_begin_update_cb(FooCanvas *canvas, gpointer user_data)
   ZMapWindow window = (ZMapWindow)user_data;
   double x1, x2, y1, y2;
 
-  zMapAssert(canvas == window->canvas) ;
-
-  if (canvas == window->canvas)
+  if (canvas != window->canvas) 
+    {
+      return ;
+    }
+  else 
     {
       zmapWindowBusy(window, TRUE) ;
     }
@@ -6586,9 +6587,11 @@ static void fc_begin_map_cb(FooCanvas *canvas, gpointer user_data)
 {
   ZMapWindow window = (ZMapWindow)user_data;
 
-  zMapAssert(canvas == window->canvas) ;
-
-  if (canvas == window->canvas)
+  if (canvas != window->canvas) 
+    {
+      return ; 
+    } 
+  else 
     {
       zMapDebugPrint(foo_debug_G, "%s",  "Entered") ;
 
@@ -6604,9 +6607,11 @@ static void fc_end_map_cb(FooCanvas *canvas, gpointer user_data)
 {
   ZMapWindow window = (ZMapWindow)user_data;
 
-  zMapAssert(canvas == window->canvas) ;
-
-  if (canvas == window->canvas)
+  if (canvas != window->canvas)
+    {
+      return ; 
+    } 
+ else 
     {
       zMapDebugPrint(foo_debug_G, "%s",  "Entered") ;
 
@@ -6704,7 +6709,7 @@ static void lockedRulerCB(gpointer key, gpointer value_unused, gpointer user_dat
       removeRuler(window->mark_guide_line, NULL);
       break;
     default:
-      zMapAssertNotReached();
+      zMapWarnIfReached();
       break;
     }
 

@@ -153,7 +153,6 @@ void zmapWindowHighlightSequenceItem(ZMapWindow window, FooCanvasItem *item, int
       ZMapFeatureBlock block ;
 
       block = (ZMapFeatureBlock)(zMapFeatureGetParentGroup((feature_any), ZMAPFEATURE_STRUCT_BLOCK));
-      zMapAssert(block);
 
       highlightSequenceItems(window, block, NULL, ZMAPSEQUENCE_NONE, ZMAPFRAME_NONE, start, end, FALSE, flanking) ;
     }
@@ -821,7 +820,7 @@ gboolean zMapWindowSeqDispSelectByFeature(FooCanvasItem *sequence_feature,
                         break ;
                         
                       default:
-                        zMapAssertNotReached() ;
+                        zMapWarnIfReached() ;
                       }
                     
                     if (current_exon->region_type != EXON_NON_CODING

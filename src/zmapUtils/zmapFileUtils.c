@@ -215,7 +215,9 @@ gboolean zMapFileAccess(char *filepath, char *mode)
   gboolean access = FALSE ;
   struct stat stat_buf ;
   
-  zMapAssert(filepath && *filepath) ;
+  /* zMapAssert(filepath && *filepath) ; */
+  if (!filepath || !*filepath) 
+    return access ; 
 
   if (stat(filepath, &stat_buf) == 0 && S_ISREG(stat_buf.st_mode))
     {

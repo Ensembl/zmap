@@ -910,8 +910,6 @@ char *lastErrorMsg(void *server_in)
   char *err_msg = NULL ;
   AcedbServer server = (AcedbServer)server_in ;
 
-  zMapAssert(server_in) ;
-
   if (server->last_err_msg)
     err_msg = server->last_err_msg ;
   else if (server->last_err_status != ACECONN_OK)
@@ -1179,8 +1177,6 @@ static char *getMethodString(GList *styles_or_style_names,
   ZMapTypesStringStruct types_data ;
   GString *str ;
   gboolean free_string = TRUE ;
-
-  zMapAssert(styles_or_style_names) ;
 
   str = g_string_new("") ;
 
@@ -1799,8 +1795,6 @@ static gboolean getSequenceMapping(AcedbServer server, ZMapFeatureContext featur
 	ZMapFeatureAlignment align = feature_context->master_align;
 	GHashTable *blocks = align->blocks ;
 	ZMapFeatureBlock block ;
-
-	zMapAssert(g_hash_table_size(blocks) == 1) ;
 
 	block = (ZMapFeatureBlock)(zMap_g_hash_table_nth(blocks, 0)) ;
 
@@ -4067,7 +4061,7 @@ static ZMapServerResponseType getObjNames(AcedbServer server, GList **style_name
 
 
 
-/* GCompareDataFunc () used to resort our list of styles to match users original sorting. */
+/* GCompareDataFunc () used to re-sort our list of styles to match users original sorting. */
 gint resortStyles(gconstpointer a, gconstpointer b, gpointer user_data)
 {
   gint result = 0 ;
@@ -4077,7 +4071,6 @@ gint resortStyles(gconstpointer a, gconstpointer b, gpointer user_data)
 
   pos_a = g_list_index(style_list, GUINT_TO_POINTER(zMapStyleGetUniqueID(style_a))) ;
   pos_b = g_list_index(style_list, GUINT_TO_POINTER(zMapStyleGetUniqueID(style_b))) ;
-  zMapAssert(pos_a >= 0 && pos_b >= 0 && pos_a != pos_b) ;
 
   if (pos_a < pos_b)
     result = -1 ;

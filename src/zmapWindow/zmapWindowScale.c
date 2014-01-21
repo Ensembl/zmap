@@ -277,11 +277,11 @@ gboolean zmapWindowScaleCanvasDraw(ZMapWindowScaleCanvas ruler, int start, int e
   double width = 0.0;
   gboolean zoomed = FALSE;
 
-  zMapAssert(ruler && ruler->canvas);
+  if (!ruler || !ruler->canvas)
+    return drawn ;
 
   if(ruler->last_draw_coords.y1 != start || ruler->last_draw_coords.y2 != end ||
      (ruler->last_draw_coords.revcomped != ruler->revcomped) ||
-     //     (ruler->display_forward_coords && ruler->last_draw_coords.origin != ruler->origin) ||
      (ruler->last_draw_coords.pixels_per_unit_y != ruler->canvas->pixels_per_unit_y))
     {
       /* We need to remove the current item */
@@ -376,7 +376,8 @@ void zmapWindowScaleCanvasZoom(ZMapWindowScaleCanvas ruler, double x, double y)
 
 void zmapWindowScaleCanvasSetRevComped(ZMapWindowScaleCanvas ruler, gboolean revcomped)
 {
-  zMapAssert(ruler) ;
+  if (!ruler) 
+    return ;
 
   ruler->display_forward_coords = TRUE ;
   ruler->revcomped = revcomped;
@@ -389,7 +390,8 @@ void zmapWindowScaleCanvasSetRevComped(ZMapWindowScaleCanvas ruler, gboolean rev
 /* set seq start, end to handle high zoom level with non 1-based first display coord */
 void zmapWindowScaleCanvasSetSpan(ZMapWindowScaleCanvas ruler, int start,int end)
 {
-  zMapAssert(ruler) ;
+  if (!ruler) 
+    return ;
 
   ruler->seq_start = start;
   ruler->seq_end = end;
@@ -407,7 +409,8 @@ void zmapWindowScaleCanvasSetVAdjustment(ZMapWindowScaleCanvas ruler, GtkAdjustm
 
 void zmapWindowScaleCanvasSetPixelsPerUnit(ZMapWindowScaleCanvas ruler, double x, double y)
 {
-  zMapAssert(ruler && ruler->canvas);
+  if (!ruler || !ruler->canvas)
+    return ;
 
   foo_canvas_set_pixels_per_unit_xy(ruler->canvas, x, y) ;
 
@@ -418,7 +421,8 @@ void zmapWindowScaleCanvasSetPixelsPerUnit(ZMapWindowScaleCanvas ruler, double x
 void zmapWindowScaleCanvasSetLineHeight(ZMapWindowScaleCanvas ruler,
                                         double line_height)
 {
-  zMapAssert(ruler);
+  if (!ruler)
+    return ;
 #ifdef VERBOSE_3
   printf("setLineHeight: setting line_height = %f\n", line_height);
 #endif

@@ -222,12 +222,8 @@ gboolean zMapFeatureListForeachDumperCreate(ZMapFeatureDumpFeatureFunc dump_func
   gboolean result = FALSE;
   DumpFeaturesToFile dump_data = NULL;
 
-  zMapAssert(dump_file);
-  zMapAssert(dump_func);
-  zMapAssert(dump_error_out) ;
-
-  zMapAssert(dumper_func_out);
-  zMapAssert(dumper_data_out);
+  if (!dump_file || !dump_func || !dump_error_out || !dumper_func_out || !dumper_data_out)
+    return result ;
 
   if((dump_data = g_new0(DumpFeaturesToFileStruct, 1)))
     {
@@ -299,9 +295,8 @@ gboolean zMapFeatureListDumpToFile(GList                     *feature_list,
   DumpFeaturesToFileStruct dump_data = {FALSE};
   DumpAnyStruct dump_any;
 
-  zMapAssert(dump_file);
-  zMapAssert(dump_func);
-  zMapAssert(dump_error_out) ;
+  if (!dump_file || !dump_func || !dump_error_out) 
+    return result ;
 
   dump_any.data_type = DUMP_DATA_ANY;
   dump_any.user_data = dump_user_data;
@@ -344,16 +339,15 @@ gboolean zMapFeatureContextDumpToFile(ZMapFeatureAny             dump_set,
   DumpFeaturesToFileStruct dump_data = {FALSE};
   DumpAnyStruct dump_any;
 
-  zMapAssert(dump_file);
-  zMapAssert(dump_set);
-  zMapAssert(dump_func);
-  zMapAssert(dump_error_out) ;
+  if (!dump_file || !dump_set || !dump_func || !dump_error_out) 
+    return result ;
 
-  zMapAssert(dump_set->struct_type == ZMAPFEATURE_STRUCT_CONTEXT    ||
-	     dump_set->struct_type == ZMAPFEATURE_STRUCT_ALIGN      ||
-	     dump_set->struct_type == ZMAPFEATURE_STRUCT_BLOCK      ||
-	     dump_set->struct_type == ZMAPFEATURE_STRUCT_FEATURESET ||
-	     dump_set->struct_type == ZMAPFEATURE_STRUCT_FEATURE) ;
+  if ((dump_set->struct_type != ZMAPFEATURE_STRUCT_CONTEXT)    &&
+      (dump_set->struct_type != ZMAPFEATURE_STRUCT_ALIGN)      &&
+      (dump_set->struct_type != ZMAPFEATURE_STRUCT_BLOCK)      &&
+      (dump_set->struct_type != ZMAPFEATURE_STRUCT_FEATURESET) &&
+      (dump_set->struct_type != ZMAPFEATURE_STRUCT_FEATURE)) 
+    return result ;
 
   dump_any.data_type = DUMP_DATA_ANY;
   dump_any.user_data = dump_user_data;
@@ -395,16 +389,15 @@ gboolean zMapFeatureContextRangeDumpToFile(ZMapFeatureAny             dump_set,
   DumpFeaturesToFileStruct dump_data = {FALSE};
   DumpWithinRangeStruct range_data;
 
-  zMapAssert(dump_file);
-  zMapAssert(dump_set);
-  zMapAssert(dump_func);
-  zMapAssert(dump_error_out) ;
+  if (!dump_file || !dump_set || !dump_func || !dump_error_out) 
+    return result ;
 
-  zMapAssert(dump_set->struct_type == ZMAPFEATURE_STRUCT_CONTEXT    ||
-	     dump_set->struct_type == ZMAPFEATURE_STRUCT_ALIGN      ||
-	     dump_set->struct_type == ZMAPFEATURE_STRUCT_BLOCK      ||
-	     dump_set->struct_type == ZMAPFEATURE_STRUCT_FEATURESET ||
-	     dump_set->struct_type == ZMAPFEATURE_STRUCT_FEATURE) ;
+  if ((dump_set->struct_type != ZMAPFEATURE_STRUCT_CONTEXT)    &&
+      (dump_set->struct_type != ZMAPFEATURE_STRUCT_ALIGN)      &&
+      (dump_set->struct_type != ZMAPFEATURE_STRUCT_BLOCK)      &&
+      (dump_set->struct_type != ZMAPFEATURE_STRUCT_FEATURESET) &&
+      (dump_set->struct_type != ZMAPFEATURE_STRUCT_FEATURE)) 
+    return result ;
 
   range_data.data_type = DUMP_DATA_RANGE;
   range_data.span      = span_data;

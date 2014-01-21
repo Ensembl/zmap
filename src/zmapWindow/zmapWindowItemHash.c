@@ -381,7 +381,6 @@ gboolean zmapWindowFToIAddAlign(GHashTable *feature_context_to_item,
       ZMapFeatureAny item_feature ;
 
       item_feature = zmapWindowItemGetFeatureAny((FooCanvasItem *) align_group) ;
-      //      zMapAssert(item_feature) ;
 
       align = g_new0(ID2CanvasStruct, 1) ;
       align->item = FOO_CANVAS_ITEM(align_group) ;
@@ -431,7 +430,6 @@ gboolean zmapWindowFToIAddBlock(GHashTable *feature_context_to_item,
 	  ZMapFeatureAny item_feature ;
 
 	  item_feature = zmapWindowItemGetFeatureAny((FooCanvasItem *) block_group) ;
-	  //	  zMapAssert(item_feature) ;
 
 	  block = g_new0(ID2CanvasStruct, 1) ;
 	  block->item = FOO_CANVAS_ITEM(block_group) ;
@@ -500,17 +498,12 @@ gboolean zmapWindowFToIAddSet(GHashTable *feature_context_to_item,
 	  ZMapFeatureAny item_feature ;
 
 	  item_feature = zmapWindowItemGetFeatureAny((FooCanvasItem *) set_item) ;
-// MH17: despite looking as if this is set up we still get an assert
-// i suspect this assert was added recently and now prevents the navigator from being displayed
-//	  zMapAssert(item_feature) ;
-
 	  set = g_new0(ID2CanvasStruct, 1) ;
 	  set->item = set_item ;
 	  set->hash_table = g_hash_table_new_full(NULL, NULL, NULL, destroyIDHash) ;
 	  set->feature_any = item_feature ;
 
 	  g_hash_table_insert(block->hash_table, GUINT_TO_POINTER(set_id), set) ;
-//printf("added set %s to block\n",g_quark_to_string(set_id));
 	}
 
       result = TRUE ;
@@ -546,7 +539,6 @@ gboolean zmapWindowFToIRemoveSet(GHashTable *feature_context_to_item,
       else
         {
 	  result = g_hash_table_remove(block->hash_table, GUINT_TO_POINTER(set_id)) ;
-	  zMapAssert(result) ;
         }
     }
 
@@ -695,7 +687,6 @@ gboolean zmapWindowFToIRemoveFeature(GHashTable *feature_context_to_item,
 						   GUINT_TO_POINTER(feature_id))))
     {
       result = g_hash_table_remove(set->hash_table, GUINT_TO_POINTER(feature_id)) ;
-      zMapAssert(result == TRUE) ;
     }
 
   return result ;
@@ -779,7 +770,8 @@ ID2Canvas zmapWindowFToIFindID2CFull(ZMapWindow window, GHashTable *feature_cont
   ID2Canvas id2c = NULL;
 
   /* Required for minimum query. */
-  zMapAssert(feature_context_to_item) ; /* && align_id */
+  if (!feature_context_to_item) 
+    return id2c;
 
   /* Cascade down through the hashes until we reach the point the caller wants to stop at. */
   if (align_id && (align = (ID2Canvas)g_hash_table_lookup(feature_context_to_item,
@@ -825,7 +817,6 @@ ID2Canvas zmapWindowFToIFindID2CFull(ZMapWindow window, GHashTable *feature_cont
       /* We just want the root_group of our columns. Not the canvas
        * root_group, get that by foo_canvas_root(canvas)! */
       /* The best check that we are actually asking for the root. */
-      zMapAssert(!block_id && !set_id && !feature_id); // "Warning: You are asking for the root_group.\n"
 
       if((root = (ID2Canvas)g_hash_table_lookup(feature_context_to_item,
                                                 GUINT_TO_POINTER(rootCanvasID()))))
@@ -949,17 +940,8 @@ GList *zmapWindowFToIFindItemSetFull(ZMapWindow window,GHashTable *feature_conte
   feature_search = {0}, terminal_search = {0} ;
 
   /* Required for minimum query. */
-  zMapAssert(feature_context_to_item && align_id) ;
-
-#if 0
-  zMapLogWarning("find item set full %s. %s, %s, %s, %s %s",
-		 g_quark_to_string(align_id),
-		 g_quark_to_string(block_id),
-		 g_quark_to_string(column_id),
-		 g_quark_to_string(set_id),
-		 strand_spec,frame_spec,
-		 g_quark_to_string(feature_id));
-#endif
+  if (!feature_context_to_item || !align_id)
+    return result ; 
 
   align_search.search_quark = align_id ;
   if (align_id && isRegExp(align_id))
@@ -988,8 +970,6 @@ GList *zmapWindowFToIFindItemSetFull(ZMapWindow window,GHashTable *feature_conte
 	  strand_both = g_quark_from_string("*") ;
 
 	  strand_id = g_quark_from_string(strand_spec) ;
-	  zMapAssert(strand_id == strand_none || strand_id == strand_forward
-		     || strand_id == strand_reverse || strand_id == strand_both) ;
 	}
 
       /* Convert frame_spec to something useful. */
@@ -1003,9 +983,6 @@ GList *zmapWindowFToIFindItemSetFull(ZMapWindow window,GHashTable *feature_conte
 	  frame_all = g_quark_from_string("*") ;
 
 	  frame_id = g_quark_from_string(frame_spec) ;
-	  zMapAssert(frame_id == frame_none
-		     || frame_id == frame_0 || frame_id == frame_1 || frame_id == frame_2
-		     || frame_id == frame_all) ;
 	}
 
       zMap_g_hash_table_iter_init(&iter,window->context_map->featureset_2_column);
@@ -1380,7 +1357,8 @@ void zmapWindowFToISetSearchDestroy(ZMapWindowFToISetSearchData search_data)
  * shows how to parse the list returned by that function. */
 void zmapWindowFToIPrintList(GList *item_list)
 {
-  zMapAssert(item_list) ;
+  if (!item_list) 
+    return ;
 
   g_list_foreach(item_list, printGlist, NULL) ;
 
@@ -1528,7 +1506,8 @@ static void doHashSet(GHashTable *hash_table, GList *search, GList **results_ino
 
   /* I think this can't happen, we should stop recursing _before_ the current search becomes
    * stop. */
-  zMapAssert(curr_search_id != stop) ;
+  if (curr_search_id == stop) 
+    return ;
 
 #if MH17_SEARCH_DEBUG
 printf("cur_search id = %s (%d) ... %s, %d\n", g_quark_to_string(curr_search_id), g_hash_table_size(hash_table), g_quark_to_string(next_search_id),curr_search->is_reg_exp);

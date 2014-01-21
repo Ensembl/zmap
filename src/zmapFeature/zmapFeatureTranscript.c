@@ -180,7 +180,8 @@ gboolean zMapFeatureAddTranscriptCDS(ZMapFeature feature,
 {
   gboolean result = FALSE ;
 
-  zMapAssert(feature && feature->type == ZMAPSTYLE_MODE_TRANSCRIPT) ;
+  if (!feature || (feature->type != ZMAPSTYLE_MODE_TRANSCRIPT)) 
+    return result ;
 
   /* There ought to be sanity checking of coords of cds/exons/introns here.... */
   if (cds)
@@ -201,8 +202,9 @@ gboolean zMapFeatureMergeTranscriptCDS(ZMapFeature src_feature, ZMapFeature dest
 {
   gboolean result = FALSE ;
 
-  zMapAssert(src_feature && src_feature->type == ZMAPSTYLE_MODE_TRANSCRIPT &&
-             dest_feature && dest_feature->type == ZMAPSTYLE_MODE_TRANSCRIPT) ;
+  if (!src_feature || (src_feature->type != ZMAPSTYLE_MODE_TRANSCRIPT)
+      || (dest_feature && (dest_feature->type != ZMAPSTYLE_MODE_TRANSCRIPT)))
+    return result ;
 
   /* There ought to be sanity checking of coords of cds/exons/introns here.... */
   if (src_feature->feature.transcript.flags.cds)
@@ -227,11 +229,13 @@ gboolean zMapFeatureAddTranscriptStartEnd(ZMapFeature feature,
 					  gboolean start_not_found_flag, int start_not_found,
 					  gboolean end_not_found_flag)
 {
-  gboolean result = TRUE ;
+  gboolean result = FALSE ;
 
-  zMapAssert(feature && feature->type == ZMAPSTYLE_MODE_TRANSCRIPT
-	     && (!start_not_found_flag || (start_not_found_flag && (start_not_found >= 1 || start_not_found <= 3)))) ;
+  if (!(feature && feature->type == ZMAPSTYLE_MODE_TRANSCRIPT
+	     && (!start_not_found_flag || (start_not_found_flag && (start_not_found >= 1 || start_not_found <= 3)))) )
+    return result ;
 
+  result = TRUE ; 
   if (start_not_found_flag)
     {
       feature->feature.transcript.flags.start_not_found = TRUE ;
@@ -310,7 +314,8 @@ void zMapFeatureTranscriptRecreateIntrons(ZMapFeature feature)
   int multiplier = 1, start = 0, end, i;
   gboolean forward = TRUE;
 
-  zMapAssert(feature->type == ZMAPSTYLE_MODE_TRANSCRIPT);
+  if (feature->type != ZMAPSTYLE_MODE_TRANSCRIPT)
+    return ;
 
   exons = feature->feature.transcript.exons;
 
@@ -319,7 +324,6 @@ void zMapFeatureTranscriptRecreateIntrons(ZMapFeature feature)
       ZMapSpan first, last;
       first = &(g_array_index(exons, ZMapSpanStruct, 0));
       last  = &(g_array_index(exons, ZMapSpanStruct, exons->len - 1));
-      zMapAssert(first && last);
 
       if(first->x1 > last->x1)
         forward = FALSE;
@@ -487,7 +491,8 @@ ZMapFeatureContextExecuteStatus zMapFeatureContextTranscriptSortExons(GQuark key
   GList *features = NULL ;
 
 
-  zMapAssert(feature_any && zMapFeatureIsValid(feature_any)) ;
+  if (!feature_any || !zMapFeatureIsValid(feature_any)) 
+    return status ;
 
   switch(feature_any->struct_type)
     {
@@ -531,7 +536,7 @@ ZMapFeatureContextExecuteStatus zMapFeatureContextTranscriptSortExons(GQuark key
     case ZMAPFEATURE_STRUCT_INVALID:
     default:
       {
-	zMapAssertNotReached();
+        zMapWarnIfReached();
 	break;
       }
     }
@@ -1160,7 +1165,8 @@ static ZMapFullExon exonCreate(int feature_start, ExonRegionType region_type, ZM
 
 static void exonDestroy(ZMapFullExon exon)
 {
-  zMapAssert(exon);
+  if (!exon)
+    return ;
 
   if (exon->peptide)
     g_free(exon->peptide) ;

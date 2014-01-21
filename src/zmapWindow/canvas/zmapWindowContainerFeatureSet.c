@@ -999,7 +999,6 @@ static ZMapWindowContainerGroup getChildById(ZMapWindowContainerGroup group,
 	}
       else
 	{
-	  zMapAssert(g->feature_any);
 	  if(g->feature_any->unique_id == id)
 	    return g;
 	}

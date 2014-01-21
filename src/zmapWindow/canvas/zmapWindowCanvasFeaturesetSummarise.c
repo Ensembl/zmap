@@ -91,7 +91,6 @@ void pix_rect_free(PixRect pix)
 	/* NOTE alloc list only has next pointers set */
 
 #if PIX_LIST_DEBUG
-	zMapAssert(pix && pix->alloc);
 	printf("free %d: ",pix->which);
 
 	pix->alloc = FALSE;
@@ -118,10 +117,6 @@ PixRect alloc_pix_rect(void)
 
 	if(!pix_rect_free_G)
 	{
-#if PIX_LIST_DEBUG
-		zMapAssert(!n_list);
-#endif
-
 		mem = g_malloc(sizeof(pixRect) * N_PIXRECT_ALLOC);
 		for(i = 0; i < N_PIXRECT_ALLOC; i++)
 		{
@@ -141,9 +136,6 @@ PixRect alloc_pix_rect(void)
 	ret = pix_rect_free_G;
 #if PIX_LIST_DEBUG
 printf("alloc %d:",ret->which);
-
-zMapAssert(!ret->alloc);
-zMapAssert(ret->next || n_list == 1);
 #endif
 
 	pix_rect_free_G = pix_rect_free_G->next;
@@ -169,14 +161,6 @@ printf("\n");
 	memset((void *) ret,0,sizeof(pixRect));
 #endif
 
-
-#if PIX_LIST_DEBUG
-//	zMapAssert( !(((gboolean) pix_rect_free_G) ^ ((gboolean) n_list)));
-	if(pix_rect_free_G) zMapAssert(n_list);
-	if(n_list) zMapAssert(pix_rect_free_G);
-	if(!pix_rect_free_G) zMapAssert(!n_list);
-	if(!n_list) zMapAssert(!pix_rect_free_G);
-#endif
 
 	return ret;
 }

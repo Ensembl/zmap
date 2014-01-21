@@ -31,7 +31,7 @@
 #ifndef ZMAP_STYLE_P_H
 #define ZMAP_STYLE_P_H
 
-// mh17: file not used
+/* mh17: file not used */
 
 #define STYLES_ARE_G_OBJECTS
 

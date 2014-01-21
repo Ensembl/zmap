@@ -325,7 +325,7 @@ gboolean zMapRemoteControlReceiveInit(ZMapRemoteControl remote_control, char *ap
 {
   gboolean result = FALSE ;
 
-  ZMAP_MAGIC_ASSERT(remote_control_magic_G, remote_control->magic) ;
+  zMapReturnValIfFail((ZMAP_MAGIC_IS_VALID(remote_control->magic, remote_control_magic_G)), result) ;
 
   DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", ENTER_TXT) ;
 
@@ -382,7 +382,7 @@ gboolean zMapRemoteControlSendInit(ZMapRemoteControl remote_control,
 {
   gboolean result = FALSE ;
 
-  ZMAP_MAGIC_ASSERT(remote_control_magic_G, remote_control->magic) ;
+  zMapReturnValIfFail((ZMAP_MAGIC_IS_VALID(remote_control->magic, remote_control_magic_G)), result) ;
 
   DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", ENTER_TXT) ;
 
@@ -434,7 +434,7 @@ gboolean zMapRemoteControlReceiveWaitForRequest(ZMapRemoteControl remote_control
   gboolean result = FALSE ;
   RemoteReceive receive ;
 
-  ZMAP_MAGIC_ASSERT(remote_control_magic_G, remote_control->magic) ;
+  zMapReturnValIfFail((ZMAP_MAGIC_IS_VALID(remote_control->magic, remote_control_magic_G)), result) ;
 
   DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", ENTER_TXT) ;
 
@@ -490,7 +490,7 @@ gboolean zMapRemoteControlSendRequest(ZMapRemoteControl remote_control, char *re
 {
   gboolean result = FALSE ;
 
-  ZMAP_MAGIC_ASSERT(remote_control_magic_G, remote_control->magic) ;
+  zMapReturnValIfFail((ZMAP_MAGIC_IS_VALID(remote_control->magic, remote_control_magic_G)), result) ;
 
   DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", ENTER_TXT) ;
 
@@ -582,7 +582,7 @@ gboolean zMapRemoteControlSendRequest(ZMapRemoteControl remote_control, char *re
 /* Resets the remote interface to REMOTE_STATE_IDLE. */
 void zMapRemoteControlReset(ZMapRemoteControl remote_control)
 {
-  ZMAP_MAGIC_ASSERT(remote_control_magic_G, remote_control->magic) ;
+  zMapReturnIfFail((ZMAP_MAGIC_IS_VALID(remote_control->magic, remote_control_magic_G))) ;
 
   resetRemoteToIdle(remote_control) ;
 
@@ -595,7 +595,7 @@ gboolean zMapRemoteControlSetDebug(ZMapRemoteControl remote_control, ZMapRemoteC
 {
   gboolean result = TRUE ;
 
-  ZMAP_MAGIC_ASSERT(remote_control_magic_G, remote_control->magic) ;
+  zMapReturnValIfFail((ZMAP_MAGIC_IS_VALID(remote_control->magic, remote_control_magic_G)), result) ;
 
   remote_debug_G = debug_level ;
 
@@ -610,7 +610,7 @@ gboolean zMapRemoteControlSetTimeout(ZMapRemoteControl remote_control, int timeo
 {
   gboolean result = TRUE ;
 
-  ZMAP_MAGIC_ASSERT(remote_control_magic_G, remote_control->magic) ;
+  zMapReturnValIfFail((ZMAP_MAGIC_IS_VALID(remote_control->magic, remote_control_magic_G)), result) ;
 
   if (timeout_ms < 0)
     remote_control->timeout_ms = 0 ;
@@ -631,8 +631,8 @@ gboolean zMapRemoteControlSetErrorCB(ZMapRemoteControl remote_control,
 {
   gboolean result = FALSE ;
 
-  ZMAP_MAGIC_ASSERT(remote_control_magic_G, remote_control->magic) ;
-  zMapAssert(err_report_func) ;
+  zMapReturnValIfFail((ZMAP_MAGIC_IS_VALID(remote_control->magic, remote_control_magic_G)), result) ;
+  zMapReturnValIfFail((err_report_func), result) ;
 
   remote_control->app_err_report_func = err_report_func ;
   remote_control->app_err_report_data = err_report_data ;
@@ -646,7 +646,7 @@ gboolean zMapRemoteControlUnSetErrorCB(ZMapRemoteControl remote_control)
 {
   gboolean result = FALSE ;
 
-  ZMAP_MAGIC_ASSERT(remote_control_magic_G, remote_control->magic) ;
+  zMapReturnValIfFail((ZMAP_MAGIC_IS_VALID(remote_control->magic, remote_control_magic_G)), result) ;
 
   remote_control->app_err_report_func = stderrOutputCB ;
   remote_control->app_err_report_data = NULL ;
@@ -672,7 +672,7 @@ gboolean zMapRemoteControlDestroy(ZMapRemoteControl remote_control)
 {
   gboolean result = FALSE ;
 
-  ZMAP_MAGIC_ASSERT(remote_control_magic_G, remote_control->magic) ;
+  zMapReturnValIfFail((ZMAP_MAGIC_IS_VALID(remote_control->magic, remote_control_magic_G)), result) ;
 
   DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", ENTER_TXT) ;
 
@@ -723,7 +723,7 @@ char *zmapRemoteControlMakeReqID(ZMapRemoteControl remote_control)
 {
   char *id = NULL ;
 
-  ZMAP_MAGIC_ASSERT(remote_control_magic_G, remote_control->magic) ;
+  zMapReturnValIfFail((ZMAP_MAGIC_IS_VALID(remote_control->magic, remote_control_magic_G)), id) ;
   
   (remote_control->request_id_num)++ ;
   g_string_printf(remote_control->request_id, "%d", remote_control->request_id_num) ;
@@ -780,7 +780,7 @@ static void sendClipboardSendRequestCB(GtkClipboard *clipboard, GtkSelectionData
   GdkAtom target_atom ;
   char *target_name ;
 
-  ZMAP_MAGIC_ASSERT(remote_control_magic_G, remote_control->magic) ;
+  zMapReturnIfFail((ZMAP_MAGIC_IS_VALID(remote_control->magic, remote_control_magic_G))) ;
 
   DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", ENTER_TXT) ;
 
@@ -851,7 +851,7 @@ static void sendClipboardClearCB(GtkClipboard *clipboard, gpointer user_data)
   ZMapRemoteControl remote_control = (ZMapRemoteControl)user_data ;
   RemoteSend send ;
 
-  ZMAP_MAGIC_ASSERT(remote_control_magic_G, remote_control->magic) ;
+  zMapReturnIfFail((ZMAP_MAGIC_IS_VALID(remote_control->magic, remote_control_magic_G))) ;
 
   DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", ENTER_TXT) ;
 
@@ -934,7 +934,7 @@ static void sendReplyWaitClipboardClearCB(GtkClipboard *clipboard, gpointer user
   ZMapRemoteControl remote_control = (ZMapRemoteControl)user_data ;
   RemoteSend send ;
 
-  ZMAP_MAGIC_ASSERT(remote_control_magic_G, remote_control->magic) ;
+  zMapReturnIfFail((ZMAP_MAGIC_IS_VALID(remote_control->magic, remote_control_magic_G))) ;
 
   DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", ENTER_TXT) ;
 
@@ -979,7 +979,7 @@ static void sendReplyWaitClipboardGetCB(GtkClipboard *clipboard, GtkSelectionDat
 {
   ZMapRemoteControl remote_control = (ZMapRemoteControl)user_data ;
 
-  ZMAP_MAGIC_ASSERT(remote_control_magic_G, remote_control->magic) ;
+  zMapReturnIfFail((ZMAP_MAGIC_IS_VALID(remote_control->magic, remote_control_magic_G))) ;
 
   DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", ENTER_TXT) ;
 
@@ -1007,7 +1007,7 @@ static void sendGetRequestClipboardCB(GtkClipboard *clipboard, GtkSelectionData 
   ZMapRemoteControl remote_control = (ZMapRemoteControl)user_data ;
   RemoteSend send ;
 
-  ZMAP_MAGIC_ASSERT(remote_control_magic_G, remote_control->magic) ;
+  zMapReturnIfFail((ZMAP_MAGIC_IS_VALID(remote_control->magic, remote_control_magic_G))) ;
 
   DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", ENTER_TXT) ;
 
@@ -1106,7 +1106,7 @@ static void sendRequestReceivedClipboardClearCB(GtkClipboard *clipboard, gpointe
   ZMapRemoteControl remote_control = (ZMapRemoteControl)user_data ;
   RemoteSend send ;
 
-  ZMAP_MAGIC_ASSERT(remote_control_magic_G, remote_control->magic) ;
+  zMapReturnIfFail((ZMAP_MAGIC_IS_VALID(remote_control->magic, remote_control_magic_G))) ;
 
   DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", ENTER_TXT) ;
 
@@ -1168,7 +1168,7 @@ static void sendRequestReceivedClipboardGetCB(GtkClipboard *clipboard, GtkSelect
 {
   ZMapRemoteControl remote_control = (ZMapRemoteControl)user_data ;
 
-  ZMAP_MAGIC_ASSERT(remote_control_magic_G, remote_control->magic) ;
+  zMapReturnIfFail((ZMAP_MAGIC_IS_VALID(remote_control->magic, remote_control_magic_G))) ;
 
   DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", ENTER_TXT) ;
 
@@ -1220,7 +1220,7 @@ static void receiveWaitClipboardClearCB(GtkClipboard *clipboard, gpointer user_d
 {
   ZMapRemoteControl remote_control = (ZMapRemoteControl)user_data ;
 
-  ZMAP_MAGIC_ASSERT(remote_control_magic_G, remote_control->magic) ;
+  zMapReturnIfFail((ZMAP_MAGIC_IS_VALID(remote_control->magic, remote_control_magic_G))) ;
 
   DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", ENTER_TXT) ;
 
@@ -1259,7 +1259,7 @@ static void receiveWaitClipboardGetCB(GtkClipboard *clipboard, GtkSelectionData 
 {
   ZMapRemoteControl remote_control = (ZMapRemoteControl)user_data ;
 
-  ZMAP_MAGIC_ASSERT(remote_control_magic_G, remote_control->magic) ;
+  zMapReturnIfFail((ZMAP_MAGIC_IS_VALID(remote_control->magic, remote_control_magic_G))) ;
 
   DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", ENTER_TXT) ;
 
@@ -1287,7 +1287,7 @@ static void receiveGetRequestClipboardCB(GtkClipboard *clipboard, GtkSelectionDa
   ZMapRemoteControl remote_control = (ZMapRemoteControl)user_data ;
   RemoteReceive receive_request ;
 
-  ZMAP_MAGIC_ASSERT(remote_control_magic_G, remote_control->magic) ;
+  zMapReturnIfFail((ZMAP_MAGIC_IS_VALID(remote_control->magic, remote_control_magic_G))) ;
 
   DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", ENTER_TXT) ;
 
@@ -1381,7 +1381,7 @@ static void receiveRequestReceivedClipboardClearCB(GtkClipboard *clipboard, gpoi
   ZMapRemoteControl remote_control = (ZMapRemoteControl)user_data ;
   RemoteReceive receive_request ;
 
-  ZMAP_MAGIC_ASSERT(remote_control_magic_G, remote_control->magic) ;
+  zMapReturnIfFail((ZMAP_MAGIC_IS_VALID(remote_control->magic, remote_control_magic_G))) ;
 
   DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", ENTER_TXT) ;
 
@@ -1424,7 +1424,7 @@ static void receiveRequestReceivedClipboardGetCB(GtkClipboard *clipboard, GtkSel
 {
   ZMapRemoteControl remote_control = (ZMapRemoteControl)user_data ;
   
-  ZMAP_MAGIC_ASSERT(remote_control_magic_G, remote_control->magic) ;
+  zMapReturnIfFail((ZMAP_MAGIC_IS_VALID(remote_control->magic, remote_control_magic_G))) ;
 
   DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", ENTER_TXT) ;
 
@@ -1454,7 +1454,7 @@ static void receiveAppCB(void *remote_data, gboolean abort, char *reply)
   ZMapRemoteControl remote_control = (ZMapRemoteControl)remote_data ;
   RemoteReceive receive ;
 
-  ZMAP_MAGIC_ASSERT(remote_control_magic_G, remote_control->magic) ;
+  zMapReturnIfFail((ZMAP_MAGIC_IS_VALID(remote_control->magic, remote_control_magic_G))) ;
 
   DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", ENTER_TXT) ;
 
@@ -1537,7 +1537,7 @@ static void receiveClipboardGetReplyCB(GtkClipboard *clipboard, GtkSelectionData
   GdkAtom target_atom ;
   char *target_name ;
 
-  ZMAP_MAGIC_ASSERT(remote_control_magic_G, remote_control->magic) ;
+  zMapReturnIfFail((ZMAP_MAGIC_IS_VALID(remote_control->magic, remote_control_magic_G))) ;
 
   DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", ENTER_TXT) ;
 
@@ -1610,7 +1610,7 @@ static void receiveClipboardClearWaitAfterReplyCB(GtkClipboard *clipboard, gpoin
   ZMapRemoteControl remote_control = (ZMapRemoteControl)user_data ;
   RemoteReceive receive ;
 
-  ZMAP_MAGIC_ASSERT(remote_control_magic_G, remote_control->magic) ;
+  zMapReturnIfFail((ZMAP_MAGIC_IS_VALID(remote_control->magic, remote_control_magic_G))) ;
 
   DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", ENTER_TXT) ;
 
@@ -2016,7 +2016,7 @@ static gboolean stderrOutputCB(gpointer user_data_unused, char *err_msg)
 
 static void addTimeout(ZMapRemoteControl remote_control)
 {
-  zMapAssert(!(remote_control->timer_source_id)) ;
+  zMapReturnIfFail(!(remote_control->timer_source_id)) ;
 
   if ((remote_control->timeout_ms))
     remote_control->timer_source_id = g_timeout_add(remote_control->timeout_ms, timeOutCB, remote_control) ;
@@ -2036,7 +2036,7 @@ static gboolean haveTimeout(ZMapRemoteControl remote_control)
 
 static void removeTimeout(ZMapRemoteControl remote_control)
 {
-  zMapAssert(remote_control->timer_source_id) ;
+  zMapReturnIfFail((remote_control->timer_source_id)) ;
 
   if ((remote_control->timeout_ms))
     gtk_timeout_remove(remote_control->timer_source_id) ;

@@ -75,6 +75,7 @@ GtkWidget *zmapControlWindowMakeFrame(ZMap zmap)
 static void createNavViewWindow(ZMap zmap, GtkWidget *parent)
 {
   GtkWidget *nav_top ;
+  zMapReturnIfFail(zmap) ; 
 
   /* Navigator and views are in an hpane, so the user can adjust the width
    * of the navigator and views. */
@@ -111,7 +112,9 @@ static void createNavViewWindow(ZMap zmap, GtkWidget *parent)
 /* Gets called by navigator when user has moved window locator scroll bar. */
 static void valueCB(void *user_data, double start, double end)
 {
-  ZMap zmap = (ZMap)user_data ;
+  ZMap zmap = NULL ; 
+  zMapReturnIfFail(user_data) ; 
+  zmap = (ZMap)user_data ;
 
   if (zmap->state == ZMAP_VIEWS)
     {
@@ -127,7 +130,9 @@ static void valueCB(void *user_data, double start, double end)
 
 static void pane_position_callback(GObject *pane, GParamSpec *scroll, gpointer user_data)
 {
-  ZMap zmap = (ZMap)user_data;
+  ZMap zmap = NULL ; 
+  zMapReturnIfFail(user_data) ; 
+  zmap = (ZMap)user_data;
   gint pos, max;
 
   /* we need to get the position... */

@@ -43,7 +43,6 @@
 
 typedef struct _ZMapConfigIniStruct
 {
-  //  ZMapMagic magic;
   GKeyFile *buffer_key_file;
   GKeyFile *extra_key_file;
   GKeyFile *user_key_file;

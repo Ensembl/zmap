@@ -111,8 +111,6 @@ ZMapWindowStatsAny zmapWindowStatsAddChild(ZMapWindowStats stats, ZMapFeatureAny
       GList *stats_list ;
       ZMapFeature feature = (ZMapFeature)feature_any ;
 
-      zMapAssert(zMapFeatureIsValidFull((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_FEATURE)) ;
-
       if ((stats_list = g_list_find_custom(stats->child_sets, (ZMapFeature)feature_any, feature2StyleCompare)))
 	{
 	  stats_any = (ZMapWindowStatsAny)(stats_list->data) ;
@@ -189,7 +187,8 @@ void zmapWindowStatsDestroy(ZMapWindowStats stats)
 {
   int nbytes = sizeof(ZMapWindowStatsStruct) ;
 
-  zMapAssert(stats) ;
+  if (!stats) 
+    return ;
 
   g_slice_free1(nbytes, stats) ;
 
@@ -224,11 +223,12 @@ static void resetStats(gpointer data, gpointer user_data_unused)
       num_bytes = sizeof(ZMapWindowStatsTranscriptStruct) ;
       break ;
     default:
-      zMapAssertNotReached() ;
+      zMapWarnIfReached() ;
       break ;
     }
 
-  memset(any_stats, 0, num_bytes) ;
+  if (num_bytes)
+    memset(any_stats, 0, num_bytes) ;
 
   return ;
 }

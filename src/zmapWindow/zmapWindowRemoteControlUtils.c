@@ -492,7 +492,7 @@ ZMapFeatureContextExecuteStatus xmlDumpCB(GQuark key,
 
         case ZMAPFEATURE_STRUCT_INVALID:
         default:
-          zMapAssertNotReached();
+          zMapWarnIfReached();
           break;
         }
     }
@@ -544,7 +544,7 @@ static void generateClosingEvents(ZMapFeatureAny feature_any,
               break;
             case ZMAPFEATURE_STRUCT_INVALID:
             default:
-              zMapAssertNotReached();
+              zMapWarnIfReached();
               break;
             }
         }
