@@ -90,7 +90,7 @@ static void destroyFeatureArray(gpointer data) ;
  * Functions to create, augment or find names for various types of features based upon ZMapStyleMode.
  */
 static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const, const ZMapFeatureSet const, gboolean *, char **) ;
-static ZMapFeature makeFeatureLocus(const ZMapGFFFeatureData const, char ** ) ;
+static void makeFeatureLocus(const ZMapGFFFeatureData const, char ** ) ;
 static ZMapFeature makeFeatureAlignment(const ZMapGFFFeatureData const, const ZMapFeatureSet const, char ** ) ;
 static ZMapFeature makeFeatureAssemblyPath(const ZMapGFFFeatureData const, const ZMapFeatureSet const, char ** ) ;
 static ZMapFeature makeFeatureDefault(const ZMapGFFFeatureData const, const ZMapFeatureSet const, char **) ;
@@ -2631,14 +2631,15 @@ static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const pFeature
     bIsCDS = FALSE,
     bIsComponent = FALSE,
     bParseValid = FALSE ;
-  GQuark gqThisID = 0 ;
+  GQuark gqThisID = 0 , gqLocusID = 0 ;
   ZMapFeature pFeature = NULL ;
   ZMapSOIDData pSOIDData = NULL ;
   ZMapStyleMode cFeatureStyleMode = ZMAPSTYLE_MODE_BASIC ;
   ZMapGFFAttribute *pAttributes = NULL,
     pAttributeParent = NULL,
     pAttributeID = NULL,
-    pAttributeName = NULL ;
+    pAttributeName = NULL,
+    pAttributeLocus = NULL ;  ;
   ZMapSpanStruct cSpanItem = {0},
     *pSpanItem = NULL ;
   ZMapStrand cStrand = ZMAPSTRAND_NONE ;
@@ -2852,6 +2853,20 @@ static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const pFeature
 
     }
 
+  /*
+   * Deal with "locus" attribute if present for a newly-created feature only.
+   */
+  if (*pbNewFeatureCreated)
+    {
+      if ((pAttributeLocus = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_locus)))
+        {
+          if (zMapAttParseLocus(pAttributeLocus, &gqLocusID))
+            {
+              zMapFeatureAddLocus(pFeature, gqLocusID) ;
+            }
+        }
+    }
+
 #ifdef LOCAL_DEBUG_CODE_TRANSCRIPT
   if (*pbNewFeatureCreated && bFeatureAdded)
     {
@@ -2885,18 +2900,19 @@ static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const pFeature
 /*
  * Make a locus feature with the data from the current one...
  */
-ZMapFeature makeFeatureLocus(const ZMapGFFFeatureData const pFeatureData , char ** psError)
+void makeFeatureLocus(const ZMapGFFFeatureData const pFeatureData , char ** psError)
 {
   ZMapFeature pFeature = NULL ;
   ZMapGFFAttribute pAttribute = NULL, *pAttributes = NULL ;
   ZMapGFFFeatureData pFeatureDataLocus = NULL ;
   unsigned int nAttributes = 0 ;
 
-  zMapReturnValIfFail(pFeatureData && psError, pFeature ) ;
+  zMapReturnIfFail(pFeatureData && psError) ;
 
   nAttributes          = zMapGFFFeatureDataGetNat(pFeatureData) ;
   pAttributes          = zMapGFFFeatureDataGetAts(pFeatureData) ;
   pAttribute           = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_locus) ;
+
 
   printf("creating locus with s = '%s'\n", zMapGFFAttributeGetTempstring(pAttribute)) ;
   fflush(stdout) ;
@@ -2920,13 +2936,13 @@ ZMapFeature makeFeatureLocus(const ZMapGFFFeatureData const pFeatureData , char 
   /*
    * Make the feature and add to the new featureset
    */
+  pFeature = NULL ;
 
   /*
    * Clean up
    */
   zMapGFFFeatureDataDestroy(pFeatureDataLocus) ;
 
-  return pFeature ;
 }
 
 
@@ -3735,6 +3751,17 @@ static gboolean makeNewFeature_V3(
         }
 
       /*
+       * Handle "locus" attribute.
+       */
+      //if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_locus)))
+      //  {
+      //    if (zMapAttParseLocus(pAttribute, &gqLocusID ))
+      //      {
+      //        zMapFeatureAddLocus(pFeature, gqLocusID ) ;
+      //      }
+      //  }
+
+      /*
        * Insert handling of other attributes in here as necesary.
        */
 
@@ -3888,9 +3915,9 @@ gboolean requireLocusOperations(const ZMapGFFParser const pParser, const ZMapGFF
   pAttributes          = zMapGFFFeatureDataGetAts(pFeatureData) ;
   sSOType              = zMapSOIDDataGetName(zMapGFFFeatureDataGetSod(pFeatureData)) ;
 
-  if (pParser->locus_set_id                                                          &&
-      zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_locus)   &&
-      zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_ID)      &&
+  if (pParser->locus_set_id                                                                           &&
+      zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_locus)                    &&
+      zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_ID)                       &&
       !strcmp(sSOType, "transcript") )
     {
       bResult = TRUE ;

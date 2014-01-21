@@ -40,8 +40,7 @@ ZMapSOIDData zMapSOIDDataCreate()
 {
   ZMapSOIDData pID = NULL ;
   pID = g_malloc(sizeof(ZMapSOIDDataStruct)) ;
-  if (!pID)
-    return pID ;
+  zMapReturnValIfFail(pID, pID) ;
   pID->iID = ZMAPSO_ID_UNK ;
   pID->sName = NULL ;
   pID->cStyleMode = ZMAPSTYLE_MODE_INVALID ;
@@ -56,10 +55,10 @@ ZMapSOIDData zMapSOIDDataCC(const ZMapSOIDData const pData)
 {
   ZMapSOIDData pID = NULL ;
   pID = g_malloc(sizeof(ZMapSOIDDataStruct)) ;
-  zMapReturnValIfFail(pData && pID, pID) ;
+  zMapReturnValIfFail(pData && pData->sName && pID, pID) ;
 
   pID->iID            = pData->iID ;
-  pID->sName          = pData->sName ? g_strdup(pData->sName) : NULL ;
+  pID->sName          = g_strdup(pData->sName) ;
   pID->cStyleMode     = pData->cStyleMode ;
   pID->cHomol         = pData->cHomol ;
 
@@ -74,8 +73,7 @@ ZMapSOIDData zMapSOIDDataCreateFromData(unsigned int iID, const char* const sNam
                                         ZMapStyleMode cStyleMode , ZMapHomolType cHomol )
 {
   ZMapSOIDData pIDData = zMapSOIDDataCreate() ;
-  if (!pIDData)
-    return pIDData ;
+  zMapReturnValIfFail(pIDData && sName, pIDData) ;
   pIDData->iID = iID ;
   pIDData->sName = g_strdup((gchar*) sName) ;
   pIDData->cStyleMode = cStyleMode ;
@@ -88,8 +86,8 @@ ZMapSOIDData zMapSOIDDataCreateFromData(unsigned int iID, const char* const sNam
  */
 unsigned int zMapSOIDDataGetID(const ZMapSOIDData const pData)
 {
-  if (!pData)
-    return 0 ;
+  unsigned int iReturn = 0 ;
+  zMapReturnValIfFail(pData, iReturn) ;
   return pData->iID ;
 }
 
@@ -99,8 +97,7 @@ unsigned int zMapSOIDDataGetID(const ZMapSOIDData const pData)
  */
 char * zMapSOIDDataGetName(const ZMapSOIDData const pData )
 {
-  if (!pData)
-    return NULL ;
+  zMapReturnValIfFail(pData, NULL) ;
   return pData->sName ;
 }
 
@@ -110,8 +107,7 @@ char * zMapSOIDDataGetName(const ZMapSOIDData const pData )
  */
 ZMapStyleMode zMapSOIDDataGetStyleMode(const ZMapSOIDData const pData )
 {
-  if (!pData)
-    return ZMAPSTYLE_MODE_BASIC ;
+  zMapReturnValIfFail(pData, ZMAPSTYLE_MODE_BASIC) ;
   return pData->cStyleMode ;
 }
 
@@ -120,8 +116,7 @@ ZMapStyleMode zMapSOIDDataGetStyleMode(const ZMapSOIDData const pData )
  */
 ZMapHomolType zMapSOIDDataGetHomol(const ZMapSOIDData const pData )
 {
-  if (!pData)
-    return ZMAPHOMOL_NONE ;
+  zMapReturnValIfFail(pData, ZMAPHOMOL_NONE) ;
   return pData->cHomol ;
 }
 
@@ -131,8 +126,7 @@ ZMapHomolType zMapSOIDDataGetHomol(const ZMapSOIDData const pData )
 char *       zMapSOIDDataGetIDAsString(const ZMapSOIDData const pData )
 {
   char * sResult = NULL ;
-  if (!pData)
-    return sResult ;
+  zMapReturnValIfFail(pData, sResult) ;
   sResult = g_strdup_printf("SO:%07d", pData->iID) ;
   return sResult ;
 }
@@ -145,8 +139,7 @@ char *       zMapSOIDDataGetIDAsString(const ZMapSOIDData const pData )
 gboolean zMapSOIDDataDestroy(ZMapSOIDData const pID)
 {
   gboolean bResult = FALSE ;
-  if (!pID)
-    return bResult ;
+  zMapReturnValIfFail(pID, bResult) ;
   bResult = TRUE ;
   if (pID->sName)
     g_free(pID->sName) ;
@@ -163,6 +156,7 @@ char *       zMapSOIDDataName2SOAcc(const char * const pData)
   unsigned int iID = 0 ;
   gboolean bFound = FALSE ;
   int i = 0 ;
+  zMapReturnValIfFail(pData, sResult ) ;
 
   for (i=0; i<ZMAP_SO_DATA_TABLE01_NUM_ITEMS; ++i)
     {
@@ -218,6 +212,7 @@ ZMapStyleMode zMapSOSetGetStyleModeFromID(ZMapSOSetInUse cSOSetInUse, unsigned i
   ZMapStyleMode cTheMode = ZMAPSTYLE_MODE_INVALID ;
   gboolean bFound = FALSE ;
   unsigned int i ;
+  zMapReturnValIfFail(iID, cTheMode) ;
 
   if (cSOSetInUse == ZMAPSO_USE_SOFA)
     {
@@ -283,6 +278,7 @@ ZMapHomolType zMapSOSetGetHomolFromID(ZMapSOSetInUse cSOSetInUse, unsigned int i
   ZMapHomolType cHomol = ZMAPHOMOL_NONE;
   gboolean bFound = FALSE ;
   unsigned int i ;
+  zMapReturnValIfFail(iID, cHomol ) ;
 
   if (cSOSetInUse == ZMAPSO_USE_SOFA)
     {
@@ -348,8 +344,7 @@ ZMapStyleMode zMapSOSetGetStyleModeFromName(ZMapSOSetInUse cSOSetInUse, const ch
   ZMapStyleMode cTheMode = ZMAPSTYLE_MODE_INVALID ;
   gboolean bFound = FALSE ;
   unsigned int i ;
-  if (!sName || !*sName)
-    return cTheMode;
+  zMapReturnValIfFail(sName && *sName, cTheMode ) ;
 
   if (cSOSetInUse == ZMAPSO_USE_SOFA)
     {
@@ -414,8 +409,7 @@ unsigned int zMapSOSetIsNamePresent(ZMapSOSetInUse cSOSetInUse, const char * con
 {
   unsigned int iResult = ZMAPSO_ID_UNK, i ;
   gboolean bFound = FALSE ;
-  if (!sType || !*sType)
-    return iResult ;
+  zMapReturnValIfFail(sType && *sType, iResult ) ;
 
   if (cSOSetInUse == ZMAPSO_USE_SOFA)
     {
@@ -481,6 +475,7 @@ char * zMapSOSetIsIDPresent(ZMapSOSetInUse cSOSetInUse, unsigned int iID )
   char* sResult = NULL ;
   gboolean bFound = FALSE ;
   unsigned int i ;
+  zMapReturnValIfFail(iID, sResult ) ;
 
   if (cSOSetInUse == ZMAPSO_USE_SOFA)
     {
