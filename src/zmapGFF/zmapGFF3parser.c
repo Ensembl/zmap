@@ -2938,6 +2938,7 @@ void makeFeatureLocus(const ZMapGFFFeatureData const pFeatureData , char ** psEr
    * the other fake SO terms.
    */
 
+
   /*
    * Find featureset and other data.
    */
