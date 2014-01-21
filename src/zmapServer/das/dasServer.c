@@ -878,8 +878,6 @@ static gboolean requestAndParseOverHTTP(DasServer server,
   ZMapDAS1QueryType type;
   char *url = NULL;
 
-  zMapAssert(detail);
-
   if((url = detail->url) && !(*url))
     {
       result = FALSE;
@@ -1519,9 +1517,6 @@ static void stylesheetFilter (ZMapDAS1Stylesheet style, gpointer user_data)
                (char *)g_quark_to_string(type->id),
                (char *)g_quark_to_string(category->id));
     }
-  else
-    zMapAssertNotReached();
-
 
   return ;
 }

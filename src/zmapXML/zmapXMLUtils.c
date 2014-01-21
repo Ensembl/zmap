@@ -536,7 +536,7 @@ static void transfer(ZMapXMLUtilsEventStack source, ZMapXMLWriterEvent dest)
 	    dest->data.comp.value.quark = g_quark_from_string(source->value.s) ;
 	    break ;
 	  default:
-	    zMapAssertNotReached();
+            zMapWarnIfReached();
 	    break ;
 	  }
 

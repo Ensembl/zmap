@@ -2129,7 +2129,7 @@ static void cmdCB(gpointer data, guint callback_action, GtkWidget *w)
       break;
 
     default:
-      zMapAssertNotReached();
+      zMapWarnIfReached();
       break;
     }
 

@@ -140,7 +140,7 @@ void zmapWindowCreateSequenceSearchWindow(ZMapWindow window, FooCanvasItem *feat
     *buttonBox, *search_button, *forward_colour_button, *reverse_colour_button, *clear_button ;
   GdkColor colour = {0} ;
   DNASearchData search_data ;
-  ZMapFeatureAny feature_any ;
+  ZMapFeatureAny feature_any = NULL ;
   ZMapFeatureBlock block ;
   int max_errors, max_Ns ;
   char *text, *frame_label, *frame_text ;
@@ -159,7 +159,7 @@ void zmapWindowCreateSequenceSearchWindow(ZMapWindow window, FooCanvasItem *feat
     }
   else
     {
-      zMapAssertNotReached();
+      zMapWarnIfReached();
     }
 
   if(feature_any == NULL)
@@ -730,7 +730,6 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 
       orig_style = zMapFindStyle(search_data->window->context_map->styles,
 				 zMapStyleCreateID(ZMAP_FIXED_STYLE_SEARCH_MARKERS_NAME)) ;
-      zMapAssert(orig_style) ;
 
       if (search_data->sequence_type == ZMAPSEQUENCE_DNA
 	  && (match_list = zMapDNAFindAllMatches(dna, query_txt, strand, start, end - start + 1,

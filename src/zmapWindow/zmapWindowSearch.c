@@ -191,7 +191,8 @@ void zmapWindowCreateSearchWindow(ZMapWindow window,
   SearchData search_data ;
 
   feature_any = zmapWindowItemGetFeatureAny(feature_item);
-  zMapAssert(feature_any) ;
+  if (!feature_any) 
+    return ;
 
   search_data = g_new0(SearchDataStruct, 1) ;
 
@@ -877,7 +878,8 @@ static void printListDataCB(gpointer data, gpointer user_data_unused)
   ZMapFeature feature ;
 
   feature = zmapWindowItemGetFeature(item);
-  zMapAssert(feature) ;
+  if (!feature) 
+    return ;
 
   printf("%s\n", g_quark_to_string(feature->unique_id)) ;
 
@@ -972,7 +974,7 @@ static void setFieldDefaults(SearchData search_data)
           break;
         case ZMAPFEATURE_STRUCT_INVALID:
         default:
-          zMapAssertNotReached();
+          zMapWarnIfReached();
           break;
 	}
 
@@ -1084,7 +1086,7 @@ static void setFilterDefaults(SearchData search_data)
           break;
         case ZMAPFEATURE_STRUCT_INVALID:
         default:
-          zMapAssertNotReached();
+          zMapWarnIfReached();
           break;
 	}
 
@@ -1155,7 +1157,7 @@ static ZMapFeatureContextExecuteStatus fillAllComboList(GQuark key, gpointer dat
     case ZMAPFEATURE_STRUCT_FEATURE:
     case ZMAPFEATURE_STRUCT_INVALID:
     default:
-      zMapAssertNotReached();
+      zMapWarnIfReached();
       break;
     }
 
@@ -1250,7 +1252,7 @@ gboolean searchPredCB(ZMapFeatureAny feature_any, gpointer user_data)
 
     case ZMAPFEATURE_STRUCT_INVALID:
     default:
-      zMapAssertNotReached();
+      zMapWarnIfReached();
       break;
 
     }

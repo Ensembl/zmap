@@ -347,11 +347,7 @@ ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
   /* Slightly opaque here, if *slave_data is NULL this implies that we are not set up yet
    * so the request should be to start a connection and we should have been passed in
    * a load of connection stuff.... */
-  zMapAssert(request_in && reply_out && err_msg_out) ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  zMapAssert(!*slave_data && (request->type == ZMAP_SERVERREQ_CREATE || request->type == ZMAP_SERVERREQ_OPENLOAD)) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  zMapReturnValIfFail((request_in && reply_out && err_msg_out), ZMAPTHREAD_RETURNCODE_BADREQ) ;
 
 
   /* slave_data is NULL first time we are called. */
@@ -475,29 +471,6 @@ ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
 	  {
 	    *err_msg_out = g_strdup(zMapServerLastErrorMsg(server)) ;
 	    thread_rc = thread_RC(request->response);
-	  }
-	else
-	  {
-#if MH17_BLOCK_COORDS_SET_FROM_SEQ_COORDS_IN_REQUEST_BY_SERVER_OR_GFF_HEADER
-	    /* The start/end for the master alignment may have been specified as start = 1 and end = 0
-	     * so we may need to fill in the start/end for the master align block. */
-	    GHashTable *blocks = context->context->master_align->blocks ;
-	    ZMapFeatureBlock block ;
-
-	    zMapAssert(g_hash_table_size(blocks) == 1) ;
-
-	    block = (ZMapFeatureBlock)(zMap_g_hash_table_nth(blocks, 0)) ;
-	    if(!block->block_to_sequence.t2)
-	      {
-		// mh17: this happens before getFeatures? which is where the data gets set
-		// adding the if has no effect of course
-		block->block_to_sequence.q1 = block->block_to_sequence.t1
-		  = context->context->sequence_to_parent.c1 ;
-		block->block_to_sequence.q2 = block->block_to_sequence.t2
-		  = context->context->sequence_to_parent.c2 ;
-	      }
-	    block->block_to_sequence.q_strand = block->block_to_sequence.t_strand = ZMAPSTRAND_FORWARD ;
-#endif
 	  }
 
 	break ;
@@ -623,7 +596,7 @@ ZMapThreadReturnCode zMapServerTerminateHandler(void **slave_data, char **err_ms
   ZMapThreadReturnCode thread_rc = ZMAPTHREAD_RETURNCODE_OK ;
   ZMapServer server ;
 
-  zMapAssert(slave_data) ;
+  zMapReturnValIfFail((slave_data && err_msg_out), ZMAPTHREAD_RETURNCODE_BADREQ) ;
 
   server = (ZMapServer)*slave_data ;
 
@@ -639,7 +612,7 @@ ZMapThreadReturnCode zMapServerDestroyHandler(void **slave_data)
   ZMapThreadReturnCode thread_rc = ZMAPTHREAD_RETURNCODE_OK ;
   ZMapServer server ;
 
-  zMapAssert(slave_data) ;
+  zMapReturnValIfFail((slave_data), ZMAPTHREAD_RETURNCODE_BADREQ) ;
 
   server = (ZMapServer)*slave_data ;
 
@@ -957,7 +930,7 @@ static ZMapThreadReturnCode getStyles(ZMapServer server, ZMapServerReqStyles sty
 }
 
 
-
+/* THIS NEEDS CLEANING UP AND WILL BE BY THE THREADS REWRITE... */
 /* Return a thread return code for each type of server response. */
 static ZMapThreadReturnCode thread_RC(ZMapServerResponseType code)
 {
@@ -984,7 +957,7 @@ static ZMapThreadReturnCode thread_RC(ZMapServerResponseType code)
       break ;
 
     default:
-      zMapAssertNotReached() ;
+      thread_rc = ZMAPTHREAD_RETURNCODE_INVALID ;
       break ;
     }
 

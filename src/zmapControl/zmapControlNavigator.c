@@ -84,7 +84,7 @@ static ZMapWindowNavigatorCallbackStruct control_nav_cbs_G = {
  * widget in top_widg_out. */
 ZMapNavigator zmapNavigatorCreate(GtkWidget **top_widg_out, GtkWidget **canvas_out)
 {
-  ZMapNavigator navigator ;
+  ZMapNavigator navigator = NULL ;
 #if USE_REGION
   GtkObject *adjustment ;
   GtkWidget *label,
@@ -199,6 +199,9 @@ ZMapNavigator zmapNavigatorCreate(GtkWidget **top_widg_out, GtkWidget **canvas_o
 void zmapNavigatorSetWindowCallback(ZMapNavigator navigator,
 				    ZMapNavigatorScrollValue cb_func, void *user_data)
 {
+
+  zMapReturnIfFail(navigator) ; 
+
   navigator->cb_func = cb_func ;
   navigator->user_data = user_data ;
 
@@ -223,6 +226,8 @@ int zmapNavigatorSetWindowPos(ZMapNavigator navigator, double top_pos, double bo
   int pane_width = 0 ;
   int seq_start = 0, seq_end = 0;
 
+  zMapReturnIfFail(navigator) ; 
+
   seq_start = navigator->sequence_span.x1;
   seq_end   = navigator->sequence_span.x2;
 
@@ -238,6 +243,8 @@ int zmapNavigatorSetWindowPos(ZMapNavigator navigator, double top_pos, double bo
 void zmapNavigatorSetView(ZMapNavigator navigator, ZMapFeatureContext features,
 			  double top, double bottom)
 {
+  zMapReturnIfFail(navigator) ; 
+
 #if UNUSED_MEMORY_LEAK
   gchar *window_top_str, *window_bot_str ;
 #endif
@@ -330,6 +337,8 @@ void zmapNavigatorSetView(ZMapNavigator navigator, ZMapFeatureContext features,
 
 int zmapNavigatorGetMaxWidth(ZMapNavigator navigator)
 {
+  zMapReturnIfFail(navigator) ; 
+
 #ifdef NAVIGATOR_USES_PANES
   int handle_size = gtk_widget_style_get(navigator->pane, "handle-size", &handle_size, NULL);
 
@@ -346,6 +355,8 @@ int zmapNavigatorGetMaxWidth(ZMapNavigator navigator)
  * all our widgets. */
 void zmapNavigatorDestroy(ZMapNavigator navigator)
 {
+  zMapReturnIfFail(navigator) ; 
+
   g_free(navigator) ;
 
   return ;
@@ -363,7 +374,9 @@ void zmapNavigatorDestroy(ZMapNavigator navigator)
 /* This used to be GtkAdjustment *, gpointer user_data... */
 static void canvas_value_cb(gpointer user_data, double top, double bottom)
 {
-  ZMapNavigator navigator = (ZMapNavigator)user_data;
+  ZMapNavigator navigator = NULL ; 
+  zMapReturnIfFail(user_data) ; 
+  navigator = (ZMapNavigator)user_data;
 
   if (navigator->cb_func)
     (*(navigator->cb_func))(navigator->user_data, top, bottom) ;
@@ -374,7 +387,9 @@ static void canvas_value_cb(gpointer user_data, double top, double bottom)
 
 static void canvas_width_cb(gpointer user_data, double left, double right)
 {
-  ZMapNavigator navigator = (ZMapNavigator)user_data;
+  ZMapNavigator navigator = NULL ; 
+  zMapReturnIfFail(user_data) ; 
+  navigator = (ZMapNavigator)user_data;
 
   navigator->right_pane_width = (int)(right - left) + 1;
 
@@ -391,7 +406,9 @@ static void canvas_size_cb(ZMapWindowNavigator navigator)
 #ifdef NAVIGATOR_USES_PANES
 static void paneNotifyPositionCB(GObject *pane, GParamSpec *scroll, gpointer user_data)
 {
-  ZMapNavigator navigator = (ZMapNavigator)user_data;
+  ZMapNavigator navigator = NULL ; 
+  zMapReturnIfFail(user_data) ; 
+  navigator = (ZMapNavigator)user_data;
   int pos;
 
   pos = gtk_paned_get_position(GTK_PANED(navigator->pane));

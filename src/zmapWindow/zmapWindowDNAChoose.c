@@ -133,7 +133,8 @@ char *zmapWindowDNAChoose(ZMapWindow window, FooCanvasItem *feature_item, ZMapWi
   /* Need to check that there is any dna...n.b. we need the item that was clicked for us to check
    * the dna..... */
   feature = zmapWindowItemGetFeature(feature_item);
-  zMapAssert(feature) ;
+  if (!feature) 
+    return dna ;
   block = (ZMapFeatureBlock)zMapFeatureGetParentGroup((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_BLOCK) ;
 
   if (block->sequence.type == ZMAPSEQUENCE_NONE)

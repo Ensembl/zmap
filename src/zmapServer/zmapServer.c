@@ -30,14 +30,15 @@
 
 #include <ZMap/zmap.h>
 
-
 #include <strings.h>
 
 #include <ZMap/zmapUrl.h>
 #include <ZMap/zmapUtils.h>
 #include <zmapServer_P.h>
 
+
 static void zMapServerSetErrorMsg(ZMapServer server,char *message);
+
 
 /* We need matching serverInit and serverCleanup functions that are only called once
  * for each server type, libcurl needs this to avoid memory leaks but maybe this is not
@@ -49,8 +50,12 @@ static void zMapServerSetErrorMsg(ZMapServer server,char *message);
  * NOTE the result is always TRUE at the moment because if we fail on any of these we crash... */
 gboolean zMapServerGlobalInit(ZMapURL url, void **server_global_data_out)
 {
-  gboolean result = TRUE ;
+  gboolean result = FALSE ;
   ZMapServerFuncs serverfuncs ;
+
+  zMapReturnValIfFail((server_global_data_out), result) ;
+  zMapReturnValIfFail((url->scheme == SCHEME_ACEDB || url->scheme == SCHEME_HTTP
+                       || url->scheme == SCHEME_FILE || url->scheme == SCHEME_PIPE), result) ;
 
   serverfuncs = g_new0(ZMapServerFuncsStruct, 1) ;
 
@@ -63,6 +68,7 @@ gboolean zMapServerGlobalInit(ZMapURL url, void **server_global_data_out)
     case SCHEME_ACEDB:
       acedbGetServerFuncs(serverfuncs) ;
       break;
+
     case SCHEME_HTTP:
       /*  case SCHEME_HTTPS: */
       /* Force http[s] to BE das at the moment, but later I think we should have FORMAT too */
@@ -70,6 +76,7 @@ gboolean zMapServerGlobalInit(ZMapURL url, void **server_global_data_out)
       /* if(strcasecmp(format, 'das') == 0) */
       dasGetServerFuncs(serverfuncs);
       break;
+
     case SCHEME_FILE:     // DAS only: file gets handled by pipe
       if(url->params)
 	{
@@ -77,43 +84,43 @@ gboolean zMapServerGlobalInit(ZMapURL url, void **server_global_data_out)
 	  break;
 	}
       // fall through for real files
+
     case SCHEME_PIPE:
       pipeGetServerFuncs(serverfuncs);
       break;
+
     default:
-      /* Fatal coding error, we exit here..... Nothing more can happen
-	 without setting up serverfuncs! */
-      /* Getting here means somethings been added to ZMap/zmapUrl.h
-	 and not to the above protocol decision above. */
-      zMapLogFatal("Unsupported server protocol: %s", url->protocol) ;
+      /* Nothing to do here, note this case is excluded by the zMapReturnValIfFail() check. */
       break;
     }
 
   /* All functions MUST be specified. */
-  zMapAssert(serverfuncs->global_init
-	     && serverfuncs->create
-	     && serverfuncs->open
-	     && serverfuncs->get_info
-	     && serverfuncs->feature_set_names
-	     && serverfuncs->get_styles
-	     && serverfuncs->have_modes
-	     && serverfuncs->get_sequence
-	     && serverfuncs->set_context
-	     && serverfuncs->get_features
-	     && serverfuncs->get_context_sequences
-	     && serverfuncs->errmsg
-	     && serverfuncs->get_status
-	     && serverfuncs->close
-	     && serverfuncs->destroy) ;
-
-  /* Call the global init function. */
-  if (result)
+  if ((serverfuncs->global_init
+       && serverfuncs->create
+       && serverfuncs->open
+       && serverfuncs->get_info
+       && serverfuncs->feature_set_names
+       && serverfuncs->get_styles
+       && serverfuncs->have_modes
+       && serverfuncs->get_sequence
+       && serverfuncs->set_context
+        && serverfuncs->get_features
+       && serverfuncs->get_context_sequences
+       && serverfuncs->errmsg
+       && serverfuncs->get_status
+       && serverfuncs->close
+       && serverfuncs->destroy))
     {
+      /* Call the global init function. */
       result = (serverfuncs->global_init)() ;
+
+      if (result)
+        *server_global_data_out = (void *)serverfuncs ;
     }
 
-  if (result)
-    *server_global_data_out = (void *)serverfuncs ;
+  if (!result)
+    g_free(serverfuncs) ;
+
 
   return result ;
 }
@@ -130,7 +137,7 @@ ZMapServerResponseType zMapServerCreateConnection(ZMapServer *server_out, void *
   ZMapServerFuncs serverfuncs = (ZMapServerFuncs)global_data ;
   int parse_error ;
 
-  zMapAssert(server_out && global_data && url) ;
+  zMapReturnValIfFail((server_out && global_data && url), ZMAP_SERVERRESPONSE_BADREQ) ;
 
   server = g_new0(ZMapServerStruct, 1) ;
   *server_out = server ;
@@ -198,8 +205,8 @@ ZMapServerResponseType zMapServerFeatureSetNames(ZMapServer server,
 {
   ZMapServerResponseType result = server->last_response ;
 
-  //  zMapAssert(server && *feature_sets_inout && !*required_styles_out) ;
-  zMapAssert(server && !*required_styles_out) ;	// need to request all if not specified
+  zMapReturnValIfFail((server && !*required_styles_out), ZMAP_SERVERRESPONSE_BADREQ) ;
+
 
   if (server->last_response != ZMAP_SERVERRESPONSE_SERVERDIED && server->last_response != ZMAP_SERVERRESPONSE_REQFAIL)
     {
@@ -328,7 +335,7 @@ ZMapServerResponseType zMapServerSetContext(ZMapServer server, ZMapFeatureContex
 {
   ZMapServerResponseType result = server->last_response ;
 
-  zMapAssert(feature_context) ;
+  zMapReturnValIfFail((feature_context), ZMAP_SERVERRESPONSE_BADREQ) ;
 
   if (server->last_response != ZMAP_SERVERRESPONSE_SERVERDIED && server->last_response != ZMAP_SERVERRESPONSE_REQFAIL)
     {

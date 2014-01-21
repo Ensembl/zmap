@@ -181,7 +181,8 @@ ZMapXMLParser zMapXMLParserCreate(void *user_data, gboolean validating, gboolean
 
 void zMapXMLParserSetUserData(ZMapXMLParser parser, void *user_data)
 {
-  zMapAssert(parser);
+  if (!parser)
+    return ;
   parser->user_data = user_data;
 
   return ;
@@ -451,7 +452,8 @@ void zMapXMLParserSetMarkupObjectTagHandlers(ZMapXMLParser parser,
 {
   ZMapXMLObjTagFunctions p = NULL;
 
-  zMapAssert(starts || ends);
+  if (!(starts || ends))
+    return ;
 
   p = starts;
   while(p && p->element_name != NULL)
@@ -937,7 +939,8 @@ static ZMapXMLAttribute parserFetchNewAttribute(ZMapXMLParser parser,
   ZMapXMLAttribute attr = NULL;
   int i = 0, save = -1;
 
-  zMapAssert(parser->attributes);
+  if (!parser->attributes)
+    return attr ;
 
   for (i = 0; i < parser->attributes->len; i++)
     {
@@ -968,7 +971,8 @@ static ZMapXMLElement parserFetchNewElement(ZMapXMLParser parser,
   ZMapXMLElement element = NULL;
   int i = 0, save = -1;
 
-  zMapAssert(parser->elements);
+  if (!parser->elements)
+    return element ;
 
   for (i = 0; i < parser->elements->len; i++)
     {

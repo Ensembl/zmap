@@ -166,7 +166,9 @@ gboolean zMapLogCreate(char *logname)
   gboolean result = FALSE ;
   ZMapLog log = log_G ;
 
-  zMapAssert(!log) ;
+  /* zMapAssert(!log) ; */
+  if (log) 
+    return result ; 
 
 #if FOO_LOG	// log timing stats from foo
 		// have to take this out to get xremote to compile for perl
@@ -222,7 +224,9 @@ void zMapWriteStartMsg(void)
 {
   ZMapLog log = log_G ;
 
-  zMapAssert(log) ;
+  /* zMapAssert(log) ; */
+  if (!log)
+    return ; 
 
   writeStartOrStopMessage(TRUE) ;
 
@@ -233,7 +237,9 @@ void zMapWriteStopMsg(void)
 {
   ZMapLog log = log_G ;
 
-  zMapAssert(log) ;
+  /* zMapAssert(log) ; */
+  if (!log) 
+    return ; 
 
   writeStartOrStopMessage(FALSE) ;
 
@@ -284,7 +290,9 @@ gboolean zMapLogStart()
   gboolean result = FALSE ;
   ZMapLog log = log_G ;
 
-  zMapAssert(log) ;
+  /* zMapAssert(log) ; */
+  if (!log)
+    return result  ;
 
   g_mutex_lock(log->log_lock) ;
 
@@ -342,7 +350,9 @@ int zMapLogFileSize(void)
   ZMapLog log = log_G ;
   struct stat file_stats ;
 
-  zMapAssert(log) ;
+  /* zMapAssert(log) ; */
+  if (!log) 
+    return size ; 
 
   if (log->log_to_file)
     {
@@ -366,9 +376,13 @@ void zMapLogMsg(char *domain, GLogLevelFlags log_level,
   char *msg_level = NULL ;
 
 
-  zMapAssert(log) ;
+  /* zMapAssert(log) ;*/
+  if (!log)
+    return ; 
 
-  zMapAssert(domain && *domain && file && *file && format && *format) ;
+  /* zMapAssert(domain && *domain && file && *file && format && *format) ; */
+  if (!domain || !*domain || !file || !*file || !format || !*format) 
+    return ; 
 
   format_str = g_string_sized_new(2000) ;		    /* Not too many records longer than this. */
 
@@ -423,17 +437,21 @@ void zMapLogMsg(char *domain, GLogLevelFlags log_level,
       msg_level = "Fatal" ;
       break ;
     default:
-      zMapAssertNotReached() ;
+      zMapWarnIfReached() ;
       break ;
     }
-  g_string_append_printf(format_str, "%s[%s:%s]\n",
-			 ZMAPLOG_MESSAGE_TUPLE, msg_level, format) ;
 
-  va_start(args, format) ;
-  g_logv(domain, log_level, format_str->str, args) ;
-  va_end(args) ;
+  if (msg_level)
+    {
+      g_string_append_printf(format_str, "%s[%s:%s]\n",
+                             ZMAPLOG_MESSAGE_TUPLE, msg_level, format) ;
 
-  g_string_free(format_str, TRUE) ;
+      va_start(args, format) ;
+      g_logv(domain, log_level, format_str->str, args) ;
+      va_end(args) ;
+
+      g_string_free(format_str, TRUE) ;
+    }
 
   return ;
 }
@@ -449,11 +467,13 @@ void zMapLogStack(void)
   int log_fd = 0;
   gboolean logged = FALSE;
 
-  zMapAssert(log);
+  /* zMapAssert(log); */
+  /* zMapAssert(log->logging);*/
+
+  if (!log || !log->logging) 
+    return ; 
 
   g_mutex_lock(log->log_lock);
-
-  zMapAssert(log->logging);
 
   if (log->active_handler.logfile &&
      (log_fd = g_io_channel_unix_get_fd(log->active_handler.logfile)))
@@ -477,7 +497,9 @@ gboolean zMapLogStop(void)
   gboolean result = FALSE ;
   ZMapLog log = log_G ;
 
-  zMapAssert(log) ;
+  /* zMapAssert(log) ; */
+  if (!log) 
+    return result ; 
 
   g_mutex_lock(log->log_lock) ;
 
@@ -498,7 +520,9 @@ void zMapLogDestroy(void)
 {
   ZMapLog log = log_G ;
 
-  zMapAssert(log) ;
+  /* zMapAssert(log) ; */
+  if (!log) 
+    return ; 
 
   g_mutex_lock(log->log_lock) ;
 
@@ -818,12 +842,12 @@ static void fileLogger(const gchar *log_domain, GLogLevelFlags log_level, const 
   GError *g_error = NULL ;
   gsize bytes_written = 0 ;
 
+  /* zMapAssert(log->logging) ; */
+  if (!log || !log->logging) 
+    return ; 
 
   /* glib logging routines are not thread safe so must lock here. */
   g_mutex_lock(log->log_lock) ;
-
-
-  zMapAssert(log->logging) ;				    /* logging must be on.... */
 
   if ((g_io_channel_write_chars(log->active_handler.logfile, message, -1, &bytes_written, &g_error)
        != G_IO_STATUS_NORMAL)

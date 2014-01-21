@@ -334,10 +334,11 @@ ZMapXMLWriterErrorCode zMapXMLWriterProcessEvents(ZMapXMLWriter writer, GArray *
 	      }
             else
 	      {
-		zMapAssertNotReached();
+                zMapWarnIfReached();
 	      }
 
-            status = zMapXMLWriterAttribute(writer, first, second);
+            if (second)
+              status = zMapXMLWriterAttribute(writer, first, second);
 
             if(free_second && second)
               g_free(second);
@@ -348,7 +349,7 @@ ZMapXMLWriterErrorCode zMapXMLWriterProcessEvents(ZMapXMLWriter writer, GArray *
         case ZMAPXML_UNSUPPORTED_EVENT:
         case ZMAPXML_UNKNOWN_EVENT:
         default:
-          zMapAssertNotReached();
+          zMapWarnIfReached();
           break;
         }
     }

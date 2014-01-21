@@ -60,7 +60,7 @@ gboolean zMapUtilsConfigDebug(char *config_file)
     {
       result = TRUE;
 #if 0
-// very odd! calling this function from zmaplogging.c resulted in some link errors !!!
+/* very odd! calling this function fropm zmaplogging.c resulted in some limk errors !!!*/
       zMapConfigIniContextGetBoolean(context,
 					ZMAPSTANZA_DEBUG_CONFIG,
 					ZMAPSTANZA_DEBUG_CONFIG,
@@ -101,9 +101,7 @@ gboolean zMapAppGetSequenceConfig(ZMapFeatureSequenceMap seq_map)
 
   if ((context = zMapConfigIniContextProvide(seq_map->config_file)))
     {
-//      gboolean tmp_bool = FALSE;
       char *tmp_string  = NULL;
-//      int tmp_int = 0;
 
       if (zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
 					ZMAPSTANZA_APP_DATASET, &tmp_string))
@@ -126,7 +124,6 @@ gboolean zMapAppGetSequenceConfig(ZMapFeatureSequenceMap seq_map)
 	      tmp_string = NULL;
 	      zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
 					    ZMAPSTANZA_APP_CSNAME,&tmp_string);
-	      zMapAssert(!tmp_string || !g_ascii_strcasecmp(tmp_string,"chromosome"));
             }
 	}
 

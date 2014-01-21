@@ -230,7 +230,7 @@ ZMapStyleBumpMode zMapStylePatchBumpMode(ZMapStyleBumpMode curr_bump)
 	break;
 
     default:
-      zMapAssertNotReached() ;
+      zMapWarnIfReached() ;
       break;
     }
 
@@ -377,7 +377,8 @@ void zMapStylePrint(ZMapIOOut dest, ZMapFeatureTypeStyle style, char *prefix, gb
   #define STYLE_PTR style
 
 
-  zMapAssert(ZMAP_IS_FEATURE_STYLE(style)) ;
+  if (!ZMAP_IS_FEATURE_STYLE(style)) 
+    return ;
 
   full = TRUE ;
 
@@ -510,7 +511,7 @@ void zMapStylePrint(ZMapIOOut dest, ZMapFeatureTypeStyle style, char *prefix, gb
       }
     default:
       {
-	zMapAssertNotReached() ;
+        zMapWarnIfReached() ;
 	break ;
       }
     }

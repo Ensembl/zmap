@@ -250,9 +250,16 @@ ZMapGuiNotebook zMapGUINotebookCreateNotebook(char *notebook_name, gboolean edit
 
   notebook = (ZMapGuiNotebook)createSectionAny(ZMAPGUI_NOTEBOOK_BOOK, notebook_name) ;
 
-  notebook->editable = editable ;
-  notebook->cleanup_cb = cleanup_cb ;
-  notebook->user_cleanup_data = user_cleanup_data ;
+  if (notebook)
+    {
+      notebook->editable = editable ;
+      notebook->cleanup_cb = cleanup_cb ;
+      notebook->user_cleanup_data = user_cleanup_data ;
+    }
+  else
+    {
+      zMapWarning("%s", "Error creating notebook\n") ;
+    }
 
   return notebook ;
 }
@@ -269,7 +276,9 @@ ZMapGuiNotebookChapter zMapGUINotebookCreateChapter(ZMapGuiNotebook note_book,
 {
   ZMapGuiNotebookChapter chapter = NULL ;
 
-  zMapAssert((!user_callbacks || (user_callbacks && user_callbacks->cancel_func && user_callbacks->apply_func))) ;
+  /* zMapAssert((!user_callbacks || (user_callbacks && user_callbacks->cancel_func && user_callbacks->apply_func))) ;*/
+  if (!((!user_callbacks || (user_callbacks && user_callbacks->cancel_func && user_callbacks->apply_func))) )
+    return chapter ;
 
   chapter = (ZMapGuiNotebookChapter)createSectionAny(ZMAPGUI_NOTEBOOK_CHAPTER, chapter_name) ;
 
@@ -477,7 +486,7 @@ ZMapGuiNotebookTagValue zMapGUINotebookCreateTagValue(ZMapGuiNotebookParagraph p
     }
   else
     {
-      zMapAssertNotReached() ;
+      zMapWarnIfReached() ;
     }
 
   va_end (args);
@@ -504,7 +513,9 @@ ZMapGuiNotebookTagValue zMapGUINotebookCreateTagValue(ZMapGuiNotebookParagraph p
  */
 void zMapGUINotebookAddChapter(ZMapGuiNotebook notebook, ZMapGuiNotebookChapter chapter)
 {
-  zMapAssert(notebook && chapter) ;
+  /* zMapAssert(notebook && chapter) ; */
+  if (!notebook || !chapter ) 
+    return ; 
 
   notebook->chapters = g_list_append(notebook->chapters, chapter) ;
 
@@ -522,7 +533,9 @@ void zMapGUINotebookAddChapter(ZMapGuiNotebook notebook, ZMapGuiNotebookChapter 
  */
 void zMapGUINotebookAddPage(ZMapGuiNotebookChapter chapter, ZMapGuiNotebookPage page)
 {
-  zMapAssert(chapter && page) ;
+  /* zMapAssert(chapter && page) ;*/
+  if (!chapter || !page ) 
+    return ; 
 
   chapter->pages = g_list_append(chapter->pages, page) ;
 
@@ -548,8 +561,10 @@ void zMapGUINotebookAddPage(ZMapGuiNotebookChapter chapter, ZMapGuiNotebookPage 
  */
 void zMapGUINotebookMergeNotebooks(ZMapGuiNotebook notebook, ZMapGuiNotebook notebook_new)
 {
-  zMapAssert(notebook);
-  zMapAssert(notebook_new) ;
+  /* zMapAssert(notebook); */
+  if (!notebook || !notebook_new) 
+    return ; 
+  /* zMapAssert(notebook_new) ; */
 
 /* MH17:
   don't ignore or else we won't get the description from otterlace
@@ -580,9 +595,11 @@ void zMapGUINotebookMergeNotebooks(ZMapGuiNotebook notebook, ZMapGuiNotebook not
 GtkWidget *zMapGUINotebookCreateWidget(ZMapGuiNotebook notebook_spec)
 {
   MakeNotebook make_notebook  ;
-  GtkWidget *note_widg ;
+  GtkWidget *note_widg = NULL ;
 
-  zMapAssert(notebook_spec) ;
+  /* zMapAssert(notebook_spec) ; */
+  if (!notebook_spec) 
+    return note_widg ; 
 
   make_notebook = g_new0(MakeNotebookStruct, 1) ;
 
@@ -627,7 +644,9 @@ GtkWidget *zMapGUINotebookCreateDialog(ZMapGuiNotebook notebook_spec, char *help
   GtkWidget *vbox, *note_widg, *hbuttons, *frame, *button ;
   MakeNotebook make_notebook  ;
 
-  zMapAssert(notebook_spec && help_title && *help_title && help_text && *help_text) ;
+  /* zMapAssert(notebook_spec && help_title && *help_title && help_text && *help_text) ;*/
+  if (!notebook_spec || !help_title || !*help_title || !help_text || !*help_text ) 
+    return dialog ; 
 
   make_notebook = g_new0(MakeNotebookStruct, 1) ;
 
@@ -700,7 +719,9 @@ ZMapGuiNotebookPage zMapGUINotebookFindPage(ZMapGuiNotebookChapter chapter, cons
   GList *page_item ;
   GQuark page_id ;
 
-  zMapAssert(chapter && page_name && *page_name) ;
+  /* zMapAssert(chapter && page_name && *page_name) ; */
+  if (!chapter || !page_name || !*page_name) 
+    return page ; 
 
   page_id = g_quark_from_string(page_name) ;
 
@@ -764,10 +785,15 @@ gboolean zMapGUINotebookGetTagValue(ZMapGuiNotebookPage page, const char *tagval
   gboolean result = FALSE ;
   ZMapGuiNotebookTagValue tagvalue ;
 
-  zMapAssert(page && tagvalue_name && *tagvalue_name && arg_type && *arg_type) ;
+
+  /* zMapAssert(page && tagvalue_name && *tagvalue_name && arg_type && *arg_type) ; */ 
+  if (!page || !tagvalue_name || !*tagvalue_name || !arg_type || !*arg_type) 
+    return result ; 
+
 
   if ((tagvalue = findTagInPage(page, tagvalue_name)))
     {
+      result = TRUE ;
       va_list args ;
 
       /* Convert given type.... */
@@ -825,12 +851,11 @@ gboolean zMapGUINotebookGetTagValue(ZMapGuiNotebookPage page, const char *tagval
 	}
       else
 	{
-	  zMapAssertNotReached() ;
+          result = FALSE ;
+          zMapWarnIfReached() ;
 	}
 
       va_end (args);
-
-      result = TRUE ;
     }
 
   return result ;
@@ -882,8 +907,8 @@ void zMapGUINotebookDestroyNotebook(ZMapGuiNotebook note_book)
 /* Create the bare bones, canonical notebook structs. */
 static ZMapGuiNotebookAny createSectionAny(ZMapGuiNotebookType type, char *name)
 {
-  ZMapGuiNotebookAny book_any ;
-  int size ;
+  ZMapGuiNotebookAny book_any = NULL ;
+  int size = 0 ;
 
   switch(type)
     {
@@ -906,16 +931,18 @@ static ZMapGuiNotebookAny createSectionAny(ZMapGuiNotebookType type, char *name)
       size = sizeof(ZMapGuiNotebookTagValueStruct) ;
       break ;
     default:
-      zMapAssertNotReached() ;
+      zMapWarnIfReached() ;
       break ;
     }
 
-  book_any = g_malloc0(size) ;
-  book_any->type = type ;
+  if (size)
+    {
+      book_any = g_malloc0(size) ;
+      book_any->type = type ;
 
-  if (name)
-    book_any->name = g_quark_from_string(name) ;
-
+      if (name)
+        book_any->name = g_quark_from_string(name) ;
+    }
   return book_any ;
 }
 
@@ -947,8 +974,6 @@ static void freeBookResources(gpointer data, gpointer user_data)
       {
 	ZMapGuiNotebookTagValue tag_value = (ZMapGuiNotebookTagValue)book_any ;
 
-	zMapAssert(!(book_any->children)) ;
-
 	if (tag_value->data_type == ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_STRING &&
 	    tag_value->original_data.string_value != NULL)
 	  g_free(tag_value->original_data.string_value) ;
@@ -957,7 +982,7 @@ static void freeBookResources(gpointer data, gpointer user_data)
       }
 
     default:
-      zMapAssertNotReached() ;
+      zMapWarnIfReached() ;
       break ;
     }
 
@@ -1259,25 +1284,28 @@ static gboolean editing_finished_cb(GtkWidget *widget, GdkEventFocus *event, gpo
 	  tag_value_text = g_strdup((tag_value->original_data.bool_value ? "true" : "false"));
 	  break;
 	default:
-	  zMapAssertNotReached() ;
-	  break;
+          zMapWarnIfReached() ;
+          break;
 	}
 
-      if (g_ascii_strcasecmp(entry_text, tag_value_text) != 0)
-	{
-	  if (edit_allowed)
-	    {
-	      /* update_original with entry_text */
-	      validateTagValue(tag_value, (char *)entry_text, TRUE) ;
-	    }
-	  else
-	    {
-	      /* revert to original */
-	      gtk_entry_set_text(entry, tag_value_text) ;
-	    }
-	}
+      if (tag_value_text)
+        {
+          if (g_ascii_strcasecmp(entry_text, tag_value_text) != 0)
+            {
+              if (edit_allowed)
+                {
+                  /* update_original with entry_text */
+                  validateTagValue(tag_value, (char *)entry_text, TRUE) ;
+                }
+              else
+                {
+                  /* revert to original */
+                  gtk_entry_set_text(entry, tag_value_text) ;
+                }
+            }
 
-      g_free(tag_value_text) ;
+          g_free(tag_value_text) ;
+        }
     }
 
   g_signal_handlers_unblock_by_func (widget, editing_finished_cb, user_data) ;
@@ -1484,7 +1512,7 @@ static void makeTagValueCB(gpointer data, gpointer user_data)
 
     default:
       {
-	zMapAssertNotReached() ;
+        zMapWarnIfReached() ;
 	break ;
       }
     }
@@ -2043,7 +2071,8 @@ static gboolean validateTagValue(ZMapGuiNotebookTagValue tag_value, char *text, 
       }
     default:
       {
-	zMapAssertNotReached() ;
+        zMapWarning("%s", "Invalid tag data type") ;
+        zMapWarnIfReached() ;
 	break ;
       }
     }
@@ -2060,7 +2089,9 @@ static gboolean mergeAny(ZMapGuiNotebookAny note_any, ZMapGuiNotebookAny note_an
 {
   gboolean result = FALSE ;				    /* Usused....????? */
 
-  zMapAssert(note_any->type == note_any_new->type) ;
+  /* zMapAssert(note_any->type == note_any_new->type) ;*/
+  if (!note_any || !note_any_new || note_any->type != note_any_new->type ) 
+    return result ; 
 
   /* Now merge the children of note_any_new into the children of note_any */
   if (note_any_new->children)

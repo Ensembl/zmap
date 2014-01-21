@@ -73,10 +73,12 @@ static gboolean zmap_shrink_G = FALSE;
 /* Makes the toplevel window and control panels for an individual zmap. */
 gboolean zmapControlWindowCreate(ZMap zmap)
 {
-  gboolean result = TRUE ;
+  gboolean result = FALSE ; 
   GtkWidget *toplevel, *vbox, *menubar, *frame, *controls_box, *button_box, *status_box,
     *info_panel_box, *info_box ;
   ZMapCmdLineArgsType shrink_arg = {FALSE} ;
+
+  zMapReturnValIfFail(zmap, result) ; 
 
 
   /* Make tooltips groups for the main zmap controls and the feature information. */
@@ -139,6 +141,8 @@ gboolean zmapControlWindowCreate(ZMap zmap)
   setTooltips(zmap) ;
   gtk_tooltips_enable(zmap->tooltips) ;
 
+  result = TRUE ; 
+
 
   return result ;
 }
@@ -147,6 +151,8 @@ gboolean zmapControlWindowCreate(ZMap zmap)
 
 void zmapControlWindowDestroy(ZMap zmap)
 {
+  zMapReturnIfFail(zmap) ; 
+
   /* We must disconnect the "destroy" callback otherwise we will enter toplevelDestroyCB()
    * below and that will try to call our callers destroy routine which has already
    * called this routine...i.e. a circularity which results in attempts to
@@ -177,6 +183,8 @@ void zmapControlWindowSetStatus(ZMap zmap)
   enum {ROTATION_DELAY = 500} ;				    /* delay in microseconds for each text move. */
   ZMapViewState view_state = ZMAPVIEW_INIT ;
   char *sources_loading = NULL, *sources_failing = NULL ;
+
+  zMapReturnIfFail(zmap) ; 
 
   switch(zmap->state)
     {
@@ -323,7 +331,9 @@ void zmapControlWindowSetStatus(ZMap zmap)
  * is provided by the event box. */
 static GtkWidget *makeStatusPanel(ZMap zmap)
 {
-  GtkWidget *status_box, *frame, *event_box ;
+  GtkWidget *status_box = NULL , *frame, *event_box ;
+
+  zMapReturnValIfFail(zmap, status_box) ; 
 
   status_box = gtk_hbox_new(FALSE, 0) ;
 
@@ -356,7 +366,9 @@ static GtkWidget *makeStatusPanel(ZMap zmap)
  * code. */
 static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data)
 {
-  ZMap zmap = (ZMap)cb_data ;
+  ZMap zmap = NULL ; 
+  zMapReturnIfFail(cb_data) ; 
+  zmap = (ZMap)cb_data ;
   GList *destroyed_views = NULL ;
   
   /* This function is called when gtk has sent a destroy signal to our toplevel window,
@@ -393,6 +405,7 @@ static void setTooltips(ZMap zmap)
 
 static void makeStatusTooltips(ZMap zmap)
 {
+  zMapReturnIfFail(zmap) ; 
 
   gtk_tooltips_set_tip(zmap->tooltips, gtk_widget_get_parent(zmap->status_revcomp),
 		       "\"+\" = forward complement,\n \"-\"  = reverse complement",
@@ -612,7 +625,9 @@ gboolean myWindowMaximize(GtkWidget *widget, GdkEvent  *event, gpointer user_dat
 static gboolean rotateTextCB(gpointer user_data)
 {
   gboolean call_again = TRUE ;				    /* Keep calling us. */
-  ZMap zmap = (ZMap)user_data ;
+  ZMap zmap = NULL ; 
+  zMapReturnValIfFail(user_data, call_again) ; 
+  zmap = (ZMap)user_data ;
 
   if (zmap->state == ZMAP_DYING)
     {

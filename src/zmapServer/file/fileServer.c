@@ -178,8 +178,6 @@ static gboolean createConnection(void **server_out,
   gboolean result = TRUE ;
   FileServer server ;
 
-  zMapAssert(url->path) ;
-
   /* Always return a server struct as it contains error message stuff. */
   server = (FileServer)g_new0(FileServerStruct, 1) ;
   *server_out = (void *)server ;
@@ -280,8 +278,6 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   FileServer server = (FileServer)server_in ;
 
-  zMapAssert(server) ;
-
   setErrMsg(server, g_strdup("Feature Sets cannot be read from a GFF file.")) ;
   ZMAPSERVER_LOG(Warning, FILE_PROTOCOL_STR, server->file_path,
 		 "%s", server->last_err_msg) ;
@@ -304,8 +300,6 @@ static ZMapServerResponseType getStyles(void *server_in, GData **styles_out)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   FileServer server = (FileServer)server_in ;
-
-  zMapAssert(server) ;
 
   setErrMsg(server, g_strdup("Reading styles from a GFF file is not supported.")) ;
   ZMAPSERVER_LOG(Warning, FILE_PROTOCOL_STR, server->file_path,
@@ -615,8 +609,6 @@ static char *lastErrorMsg(void *server_in)
   char *err_msg = NULL ;
   FileServer server = (FileServer)server_in ;
 
-  zMapAssert(server_in) ;
-
   if (server->last_err_msg)
     err_msg = server->last_err_msg ;
 
@@ -696,8 +688,6 @@ static ZMapServerResponseType destroyConnection(void *server_in)
 static void setLastErrorMsg(FileServer server, GError **gff_file_err_inout)
 {
   GError *gff_file_err ;
-
-  zMapAssert(server && gff_file_err_inout && *gff_file_err_inout) ;
 
   gff_file_err = *gff_file_err_inout ;
 

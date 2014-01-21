@@ -31,6 +31,7 @@
  */
 
 #include <ZMap/zmap.h>
+#include <ZMap/zmapUtilsDebug.h>
 
 #include <stdio.h>
 #include <strings.h>
@@ -225,7 +226,8 @@ gboolean zMapFeatureAnyFindFeature(ZMapFeatureAny feature_set, ZMapFeatureAny fe
   gboolean result = FALSE ;
   ZMapFeature hash_feature ;
 
-  zMapAssert(feature_set && feature) ;
+  if (!feature_set || !feature ) 
+    return result ; 
 
   if ((hash_feature = g_hash_table_lookup(feature_set->children, zmapFeature2HashKey(feature))))
     result = TRUE ;
@@ -276,7 +278,7 @@ gboolean zMapFeatureAnyRemoveFeature(ZMapFeatureAny feature_parent, ZMapFeatureA
 	case ZMAPFEATURE_STRUCT_FEATURE:
 	  break ;
 	default:
-	  zMapAssertNotReached() ;
+          zMapWarnIfReached() ;
 	  break ;
 	}
 
@@ -329,10 +331,10 @@ void zMapFeatureAnyDestroy(ZMapFeatureAny feature_any)
 {
   gboolean result ;
 
-  zMapAssert(zMapFeatureIsValid(feature_any)) ;
+  if (!zMapFeatureIsValid(feature_any)) 
+    return ;
 
   result = destroyFeatureAnyWithChildren(feature_any, TRUE) ;
-  zMapAssert(result) ;
 
   return ;
 }
@@ -417,7 +419,8 @@ gboolean zMapFeatureAddStandardData(ZMapFeature feature, char *feature_name_id, 
 {
   gboolean result = FALSE ;
 
-  zMapAssert(feature) ;
+  if (!feature) 
+    return result ; 
 
   if (feature->unique_id == ZMAPFEATURE_NULLQUARK)
     {
@@ -474,7 +477,8 @@ gboolean zMapFeatureAddKnownName(ZMapFeature feature, char *known_name)
   gboolean result = FALSE ;
   GQuark known_id ;
 
-  zMapAssert(feature && (feature->type == ZMAPSTYLE_MODE_BASIC || feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)) ;
+  if (!(feature && (feature->type == ZMAPSTYLE_MODE_BASIC || feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)) )
+    return result ;
 
   known_id = g_quark_from_string(known_name) ;
 
@@ -494,12 +498,14 @@ gboolean zMapFeatureAddKnownName(ZMapFeature feature, char *known_name)
 
 gboolean zMapFeatureAddVariationString(ZMapFeature feature, char *variation_string)
 {
-  gboolean result = TRUE ;
+  gboolean result = FALSE ;
 
-  zMapAssert(feature && (variation_string && *variation_string)) ;
+  if (!(feature && (variation_string && *variation_string)) )
+    return result ;
 
   feature->feature.basic.has_attr.variation_str = TRUE ;
   feature->feature.basic.variation_str = variation_string ;
+  result = TRUE ; 
 
   return result ;
 }
@@ -507,11 +513,13 @@ gboolean zMapFeatureAddVariationString(ZMapFeature feature, char *variation_stri
 
 gboolean zMapFeatureAddSOaccession(ZMapFeature feature, GQuark SO_accession)
 {
-  gboolean result = TRUE ;
+  gboolean result = FALSE ;
 
-  zMapAssert(feature && SO_accession) ;
+  if (!feature || !SO_accession) 
+    return result ;
 
   feature->SO_accession = SO_accession ;
+  result = TRUE ; 
 
   return result ;
 }
@@ -520,12 +528,14 @@ gboolean zMapFeatureAddSOaccession(ZMapFeature feature, GQuark SO_accession)
 /* Adds splice data for splice features, usually from gene finder output. */
 gboolean zMapFeatureAddSplice(ZMapFeature feature, ZMapBoundaryType boundary)
 {
-  gboolean result = TRUE ;
+  gboolean result = FALSE ;
 
-  zMapAssert(feature && (boundary == ZMAPBOUNDARY_5_SPLICE || boundary == ZMAPBOUNDARY_3_SPLICE)) ;
+  if (!(feature && (boundary == ZMAPBOUNDARY_5_SPLICE || boundary == ZMAPBOUNDARY_3_SPLICE)) )
+    return result ;
 
   feature->flags.has_boundary = TRUE ;
   feature->boundary_type = boundary ;
+  result = TRUE ; 
 
   return result ;
 }
@@ -536,7 +546,8 @@ gboolean zMapFeatureSequenceIsDNA(ZMapFeature feature)
 {
   gboolean result = FALSE ;
 
-  zMapAssert(zMapFeatureIsValidFull((ZMapFeatureAny) feature, ZMAPFEATURE_STRUCT_FEATURE)) ;
+  if (!zMapFeatureIsValidFull((ZMapFeatureAny) feature, ZMAPFEATURE_STRUCT_FEATURE)) 
+    return result ;
 
   if (feature->type == ZMAPSTYLE_MODE_SEQUENCE && feature->feature.sequence.type == ZMAPSEQUENCE_DNA)
     result = TRUE ;
@@ -550,7 +561,8 @@ gboolean zMapFeatureSequenceIsPeptide(ZMapFeature feature)
 {
   gboolean result = FALSE ;
 
-  zMapAssert(zMapFeatureIsValidFull((ZMapFeatureAny) feature, ZMAPFEATURE_STRUCT_FEATURE)) ;
+  if (!zMapFeatureIsValidFull((ZMapFeatureAny) feature, ZMAPFEATURE_STRUCT_FEATURE)) 
+    return result ;
 
   if (feature->type == ZMAPSTYLE_MODE_SEQUENCE && feature->feature.sequence.type == ZMAPSEQUENCE_PEPTIDE)
     result = TRUE ;
@@ -577,7 +589,8 @@ gboolean zMapFeatureAddAssemblyPathData(ZMapFeature feature,
 {
   gboolean result = FALSE ;
 
-  zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
+  if (!zMapFeatureIsValid((ZMapFeatureAny)feature)) 
+    return result ;
 
   if (feature->type == ZMAPSTYLE_MODE_ASSEMBLY_PATH)
     {
@@ -597,11 +610,13 @@ gboolean zMapFeatureAddAssemblyPathData(ZMapFeature feature,
  *  */
 gboolean zMapFeatureAddURL(ZMapFeature feature, char *url)
 {
-  gboolean result = TRUE ;				    /* We may add url checking sometime. */
+  gboolean result = FALSE ;                                /* We may add url checking sometime. */
 
-  zMapAssert(feature && url && *url) ;
+  if (!feature || !url || !*url) 
+    return result ;
 
   feature->url = g_strdup(url) ;
+  result = TRUE ; 
 
   return result ;
 }
@@ -614,7 +629,8 @@ gboolean zMapFeatureAddLocus(ZMapFeature feature, GQuark locus_id)
 {
   gboolean result = FALSE ;
 
-  zMapAssert(feature && locus_id) ;
+  if (!feature || !locus_id) 
+    return result ; 
 
   if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
     {
@@ -632,10 +648,11 @@ gboolean zMapFeatureAddLocus(ZMapFeature feature, GQuark locus_id)
  *  */
 gboolean zMapFeatureAddText(ZMapFeature feature, GQuark source_id, char *source_text, char *feature_text)
 {
-  gboolean result = TRUE ;
+  gboolean result = FALSE ;
 
-  zMapAssert(zMapFeatureIsValidFull((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_FEATURE)
-	     && (source_id || (source_text && *source_text) || (feature_text && *feature_text))) ;
+  if (!(zMapFeatureIsValidFull((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_FEATURE)
+	     && (source_id || (source_text && *source_text) || (feature_text && *feature_text))) )
+    return result ;
 
   if (source_id)
     feature->source_id = source_id ;
@@ -643,6 +660,7 @@ gboolean zMapFeatureAddText(ZMapFeature feature, GQuark source_id, char *source_
     feature->source_text = g_quark_from_string(source_text) ;
   if (feature_text)
     feature->description = g_strdup(feature_text) ;
+  result = TRUE ; 
 
   return result ;
 }
@@ -663,7 +681,8 @@ int zMapFeatureLength(ZMapFeature feature, ZMapFeatureLengthType length_type)
 {
   int length = 0 ;
 
-  zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
+  if (!zMapFeatureIsValid((ZMapFeatureAny)feature)) 
+    return length ;
 
   switch (length_type)
     {
@@ -735,7 +754,7 @@ int zMapFeatureLength(ZMapFeature feature, ZMapFeatureLengthType length_type)
       }
     default:
       {
-	zMapAssertNotReached() ;
+        zMapWarnIfReached() ;
 
 	break ;
       }
@@ -753,12 +772,12 @@ int zMapFeatureLength(ZMapFeature feature, ZMapFeatureLengthType length_type)
  *  */
 void zMapFeatureDestroy(ZMapFeature feature)
 {
-  gboolean result ;
+  gboolean result = FALSE ;
 
-  zMapAssert(feature) ;
+  if (!feature) 
+    return ;
 
   result = destroyFeatureAnyWithChildren((ZMapFeatureAny)feature, FALSE) ;
-  zMapAssert(result) ;
 
   return ;
 }
@@ -786,10 +805,12 @@ ZMapFeatureSet zMapFeatureSetCreate(char *source, GHashTable *features)
 
 void zMapFeatureSetStyle(ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style)
 {
-  zMapAssert(feature_set && style) ;
+  if (!feature_set || !style) 
+    return ;
 
-      // MH17: was for the column (historically)
-      // new put back to be used for each feature
+  /* MH17: was for the column (historically)
+   * new put back to be used for each feature
+   */ 
   feature_set->style = style ;
 
   return ;
@@ -860,7 +881,8 @@ gboolean zMapFeatureSetFindFeature(ZMapFeatureSet feature_set,
 {
   gboolean result = FALSE ;
 
-  zMapAssert(feature_set && feature) ;
+  if (!feature_set || !feature) 
+    return result ;
 
   result = zMapFeatureAnyFindFeature((ZMapFeatureAny)feature_set, (ZMapFeatureAny)feature) ;
 
@@ -886,7 +908,8 @@ gboolean zMapFeatureSetRemoveFeature(ZMapFeatureSet feature_set, ZMapFeature fea
 {
   gboolean result = FALSE ;
 
-  zMapAssert(feature_set && feature && feature->unique_id != ZMAPFEATURE_NULLQUARK) ;
+  if (!(feature_set && feature && feature->unique_id != ZMAPFEATURE_NULLQUARK) )
+    return result ;
 
   result = zMapFeatureAnyRemoveFeature((ZMapFeatureAny)feature_set, (ZMapFeatureAny)feature) ;
 
@@ -959,9 +982,10 @@ void zMapFeatureSetDestroy(ZMapFeatureSet feature_set, gboolean free_data)
 {
   gboolean result ;
 
-  zMapAssert(feature_set);
+  if (!feature_set) 
+    return ;
+
   result = destroyFeatureAnyWithChildren((ZMapFeatureAny)feature_set, free_data) ;
-  zMapAssert(result) ;
 
   return ;
 }
@@ -969,7 +993,8 @@ void zMapFeatureSetDestroy(ZMapFeatureSet feature_set, gboolean free_data)
 
 void zMapFeatureSetDestroyFeatures(ZMapFeatureSet feature_set)
 {
-  zMapAssert(feature_set) ;
+  if (!feature_set) 
+    return ;
 
   g_hash_table_destroy(feature_set->features) ;
   feature_set->features = NULL ;
@@ -1004,9 +1029,10 @@ GQuark zMapFeatureAlignmentCreateID(char *align_name, gboolean master_alignment)
 
 ZMapFeatureAlignment zMapFeatureAlignmentCreate(char *align_name, gboolean master_alignment)
 {
-  ZMapFeatureAlignment alignment ;
+  ZMapFeatureAlignment alignment = NULL ;
 
-  zMapAssert(align_name) ;
+  if (!align_name) 
+    return alignment ;
 
   alignment = (ZMapFeatureAlignment)featureAnyCreateFeature(ZMAPFEATURE_STRUCT_ALIGN,
 							    NULL,
@@ -1022,7 +1048,8 @@ gboolean zMapFeatureAlignmentAddBlock(ZMapFeatureAlignment alignment, ZMapFeatur
 {
   gboolean result = FALSE  ;
 
-  zMapAssert(alignment && block) ;
+  if (!alignment || !block) 
+    return result ;
 
   result = featureAnyAddFeature((ZMapFeatureAny)alignment, (ZMapFeatureAny)block) ;
 
@@ -1045,7 +1072,7 @@ gboolean zMapFeatureAlignmentFindBlock(ZMapFeatureAlignment feature_align,
 {
   gboolean result = FALSE;
 
-  zMapAssert(feature_align && feature_block);
+  if (!feature_align || !feature_block);
 
   result = zMapFeatureAnyFindFeature((ZMapFeatureAny)feature_align, (ZMapFeatureAny)feature_block) ;
 
@@ -1076,9 +1103,9 @@ void zMapFeatureAlignmentDestroy(ZMapFeatureAlignment alignment, gboolean free_d
 {
   gboolean result ;
 
-  zMapAssert(alignment);
+  if (!alignment) 
+    return ;
   result = destroyFeatureAnyWithChildren((ZMapFeatureAny)alignment, free_data) ;
-  zMapAssert(result) ;
 
   return ;
 }
@@ -1096,10 +1123,11 @@ ZMapFeatureBlock zMapFeatureBlockCreate(char *block_seq,
 					int ref_start, int ref_end, ZMapStrand ref_strand,
 					int non_start, int non_end, ZMapStrand non_strand)
 {
-  ZMapFeatureBlock new_block ;
+  ZMapFeatureBlock new_block = NULL ;
 
-  zMapAssert((ref_strand == ZMAPSTRAND_FORWARD || ref_strand == ZMAPSTRAND_REVERSE)
-	     && (non_strand == ZMAPSTRAND_FORWARD || non_strand == ZMAPSTRAND_REVERSE)) ;
+  if (!((ref_strand == ZMAPSTRAND_FORWARD || ref_strand == ZMAPSTRAND_REVERSE)
+	     && (non_strand == ZMAPSTRAND_FORWARD || non_strand == ZMAPSTRAND_REVERSE)) )
+    return new_block ;
 
   new_block = (ZMapFeatureBlock)featureAnyCreateFeature(ZMAPFEATURE_STRUCT_BLOCK,
 							NULL,
@@ -1152,7 +1180,8 @@ gboolean zMapFeatureBlockAddFeatureSet(ZMapFeatureBlock feature_block,
 {
   gboolean result = FALSE  ;
 
-  zMapAssert(feature_block && feature_set) ;
+  if (!feature_block || !feature_set) 
+    return result ;
 
   result = featureAnyAddFeature((ZMapFeatureAny)feature_block, (ZMapFeatureAny)feature_set) ;
 
@@ -1166,7 +1195,8 @@ gboolean zMapFeatureBlockFindFeatureSet(ZMapFeatureBlock feature_block,
 {
   gboolean result = FALSE ;
 
-  zMapAssert(feature_set && feature_block);
+  if (!feature_set || !feature_block)
+    return result ;
 
   result = zMapFeatureAnyFindFeature((ZMapFeatureAny)feature_block, (ZMapFeatureAny)feature_set) ;
 
@@ -1184,26 +1214,26 @@ ZMapFeatureSet zMapFeatureBlockGetSetByID(ZMapFeatureBlock feature_block, GQuark
 
 GList *zMapFeatureBlockGetMatchingSets(ZMapFeatureBlock feature_block, char *prefix)
 {
-	GList *sets = NULL,*s, *del;
-	ZMapFeatureSet set;
+  GList *sets = NULL,*s, *del;
+  ZMapFeatureSet set;
 
-	zMap_g_hash_table_get_data(&sets, feature_block->feature_sets);
+  zMap_g_hash_table_get_data(&sets, feature_block->feature_sets);
 
-	for(s = sets; s; )
-	{
-		const char *name;
+  for(s = sets; s; )
+    {
+      const char *name;
 
-		set = (ZMapFeatureSet) s->data;
-		name = g_quark_to_string(set->unique_id);
+      set = (ZMapFeatureSet) s->data;
+      name = g_quark_to_string(set->unique_id);
 
-		del = s;
-		s = s->next;
+      del = s;
+      s = s->next;
 
-		if(!g_str_has_prefix(name, prefix))
-			sets = g_list_delete_link(sets, del);
-	}
+      if(!g_str_has_prefix(name, prefix))
+        sets = g_list_delete_link(sets, del);
+    }
 
-	return sets;
+  return sets;
 }
 
 
@@ -1221,10 +1251,10 @@ void zMapFeatureBlockDestroy(ZMapFeatureBlock block, gboolean free_data)
 {
   gboolean result ;
 
-  zMapAssert(block);
+  if (!block) 
+    return ;
 
   result = destroyFeatureAnyWithChildren((ZMapFeatureAny)block, free_data) ;
-  zMapAssert(result) ;
 
   return ;
 }
@@ -1259,7 +1289,8 @@ gboolean zMapFeatureContextAddAlignment(ZMapFeatureContext feature_context,
 {
   gboolean result = FALSE  ;
 
-  zMapAssert(feature_context && alignment) ;
+  if (!feature_context || !alignment) 
+    return result ;
 
   if ((result = featureAnyAddFeature((ZMapFeatureAny)feature_context, (ZMapFeatureAny)alignment)))
     {
@@ -1275,7 +1306,8 @@ gboolean zMapFeatureContextFindAlignment(ZMapFeatureContext   feature_context,
 {
   gboolean result = FALSE ;
 
-  zMapAssert(feature_context && feature_align );
+  if (!feature_context || !feature_align )
+    return result ;
 
   result = zMapFeatureAnyFindFeature((ZMapFeatureAny)feature_context, (ZMapFeatureAny)feature_align) ;
 
@@ -1298,7 +1330,8 @@ gboolean zMapFeatureContextRemoveAlignment(ZMapFeatureContext feature_context,
 {
   gboolean result = FALSE;
 
-  zMapAssert(feature_context && feature_alignment);
+  if (!feature_context || !feature_alignment)
+    return result ;
 
   if ((result = zMapFeatureAnyRemoveFeature((ZMapFeatureAny)feature_context, (ZMapFeatureAny)feature_alignment)))
     {
@@ -1346,7 +1379,8 @@ ZMapFeatureContextMergeCode zMapFeatureContextMerge(ZMapFeatureContext *merged_c
   ZMapFeatureContext current_context, new_context, diff_context = NULL ;
   MergeContextDataStruct merge_data = {NULL} ;
 
-  zMapAssert(merged_context_inout && new_context_inout && diff_context_out) ;
+  if (!merged_context_inout || !new_context_inout || !diff_context_out) 
+    return status ;
 
   current_context = *merged_context_inout ;
   new_context = *new_context_inout ;
@@ -1359,12 +1393,6 @@ ZMapFeatureContextMergeCode zMapFeatureContextMerge(ZMapFeatureContext *merged_c
      race conditions  between Rx featuresets and display
    */
 
-#if 0
-	/* mh17: NOTE nice idea but DNA search draws stuff into a NULL seperator context
-	 * so we restore the previous code which should be safe as there are no race conditions
-	 */
-  zMapAssert(current_context);
-#else
   if (!current_context)
 	/* if several servers supply data before the first gets painted then some get painted twice (data is duplicated in the canvas) */
     {
@@ -1385,7 +1413,6 @@ ZMapFeatureContextMergeCode zMapFeatureContextMerge(ZMapFeatureContext *merged_c
       status = ZMAPFEATURE_CONTEXT_OK ;
     }
   else
-#endif
     {
       /* Here we need to merge for all alignments and all blocks.... */
 
@@ -1519,7 +1546,8 @@ gboolean zMapFeatureContextErase(ZMapFeatureContext *current_context_inout,
   ZMapFeatureContext diff_context ;
   GList *copy_list ;
 
-  zMapAssert(current_context_inout && remove_context && diff_context_out) ;
+  if (!current_context_inout || !remove_context || !diff_context_out) 
+    return erased ;
 
   current_context = *current_context_inout ;
 
@@ -1595,8 +1623,8 @@ void zMapFeatureContextDestroy(ZMapFeatureContext feature_context, gboolean free
 {
   gboolean result ;
 
-  g_return_if_fail(feature_context) ;
-  g_return_if_fail(zMapFeatureIsValid((ZMapFeatureAny)feature_context)) ;
+  if (!feature_context || !zMapFeatureIsValid((ZMapFeatureAny)feature_context)) 
+    return ;
 
   if (feature_context->diff_context)
     {
@@ -1605,7 +1633,6 @@ void zMapFeatureContextDestroy(ZMapFeatureContext feature_context, gboolean free
   else
     {
       result = destroyFeatureAnyWithChildren((ZMapFeatureAny)feature_context, free_data) ;
-      zMapAssert(result) ;
     }
 
   return ;
@@ -1625,26 +1652,15 @@ void zMapFeatureContextDestroy(ZMapFeatureContext feature_context, gboolean free
 static ZMapFeatureAny featureAnyCopy(ZMapFeatureAny orig_feature_any, GDestroyNotify destroy_cb)
 {
   ZMapFeatureAny new_feature_any  = NULL ;
-  guint bytes ;
+  zMapReturnValIfFail(orig_feature_any, new_feature_any) ;
+  zMapReturnValIfFail(orig_feature_any->struct_type == ZMAPFEATURE_STRUCT_CONTEXT ||
+                      orig_feature_any->struct_type == ZMAPFEATURE_STRUCT_ALIGN ||
+                      orig_feature_any->struct_type == ZMAPFEATURE_STRUCT_BLOCK ||
+                      orig_feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURESET ||
+                      orig_feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURE,
+                      new_feature_any) ;
 
-//  zMapAssert(zMapFeatureIsValid(orig_feature_any)) ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-
-  /* THIS IS COMPLETELY THE WRONG PLACE TO DO THIS...BY THE TIME WE GET HERE THERE _HAS_
-   * TO BE A FEATURE...AGGGHHHHHH */
-
-// mh17: trying to load features via xremote asserted if no features were already loaded
-// this assert should not be here, as this module should handle incorrect input from external places
-// other bits of code will assert if they need features present
-// cross fingers and hope it works
-// certainly should pose no problem for previous use as it didn't assert then
-  if(!orig_feature_any)
-    return(NULL);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
+  guint bytes = 0 ;
 
   /* Copy the original struct and set common fields. */
   switch(orig_feature_any->struct_type)
@@ -1665,7 +1681,7 @@ static ZMapFeatureAny featureAnyCopy(ZMapFeatureAny orig_feature_any, GDestroyNo
       bytes = sizeof(ZMapFeatureStruct) ;
       break ;
     default:
-      zMapAssertNotReached();
+      zMapWarnIfReached();
       break;
     }
 
@@ -1819,7 +1835,7 @@ static ZMapFeatureAny featureAnyCopy(ZMapFeatureAny orig_feature_any, GDestroyNo
 	break ;
       }
     default:
-      zMapAssertNotReached();
+      zMapWarnIfReached();
       break;
     }
 
@@ -1889,8 +1905,8 @@ static void destroyFeatureAny(gpointer data)
   ZMapFeatureAny feature_any = (ZMapFeatureAny)data ;
   gulong nbytes ;
 
-  g_return_if_fail(feature_any);
-  g_return_if_fail(zMapFeatureAnyHasMagic(feature_any));
+  zMapReturnIfFail(feature_any);
+  zMapReturnIfFail(zMapFeatureAnyHasMagic(feature_any));
 
   if (destroy_debug_G && feature_any->struct_type != ZMAPFEATURE_STRUCT_FEATURE)
     printDestroyDebugInfo(feature_any, "destroyFeatureAny") ;
@@ -1935,7 +1951,7 @@ static void destroyFeatureAny(gpointer data)
       destroyFeature((ZMapFeature)feature_any) ;
       break;
     default:
-      zMapAssertNotReached();
+      zMapWarnIfReached();
       break;
     }
 
@@ -2101,8 +2117,6 @@ static ZMapFeatureContextExecuteStatus eraseContextCB(GQuark key,
           /* remove from the current context.*/
           remove_status = zMapFeatureSetRemoveFeature((ZMapFeatureSet)merge_data->current_view_set,
 						      erased_feature);
-          zMapAssert(remove_status);
-
           zMapFeatureSetAddFeature((ZMapFeatureSet)merge_data->current_diff_set,
 				   erased_feature);
 
@@ -2214,66 +2228,61 @@ static ZMapFeatureContextExecuteStatus destroyIfEmptyContextCB(GQuark key,
 
 void print_loaded(GList *l,char *fred)
 {
-      char buf[1024],*p = buf;
-      ZMapSpan span;
-      p += sprintf(p,"%s: ",fred);
-      for(;l;l = l->next)
-      {
-            span = (ZMapSpan) l->data;
-            p += sprintf(p," %d-%d (%p->%p)",span->x1,span->x2,l,span);
-      }
-      zMapLogWarning(buf,"");
+  char buf[1024],*p = buf;
+  ZMapSpan span;
+  p += sprintf(p,"%s: ",fred);
+  for(;l;l = l->next)
+    {
+      span = (ZMapSpan) l->data;
+      p += sprintf(p," %d-%d (%p->%p)",span->x1,span->x2,l,span);
+    }
+  zMapLogWarning(buf,"");
 }
 
 static void mergeFeatureSetLoaded(ZMapFeatureSet view_set, ZMapFeatureSet new_set)
 {
-      GList *view_list,*new_list;
-      ZMapSpan view_span,new_span,got_span;
-      gboolean got = FALSE;
+  GList *view_list,*new_list;
+  ZMapSpan view_span,new_span,got_span;
+  gboolean got = FALSE;
 
-      if(view_set == new_set) /* loaded list transfered to view context, will not be freed */
-            return;
+  if(view_set == new_set) /* loaded list transfered to view context, will not be freed */
+    return;
 
-if(!view_set || !new_set)
-{
-//      zMapLogWarning("merge: null set %p %p",view_set,new_set);
+  if(!view_set || !new_set)
+  {
+    return;
+  }
+
+
+  /* we expect to just add our seq region to the existing
+  * may have to combine adjacent
+  * and logically deal with overlaps, which should not happen
+  *
+  * new list can only have one region due to GFF constraints
+  */
+
+  view_list = view_set->loaded;
+  new_list = new_set->loaded;
+
+
+  if(!view_list)
+    {
+      view_set->loaded = new_set->loaded;
+      zMapLogWarning("merge loaded %s had no loaded list", g_quark_to_string(view_set->unique_id));
+    }
+  if(!new_list)
+    {
+      zMapLogWarning("merge loaded %s had no loaded list", g_quark_to_string(new_set->unique_id));
       return;
-}
-//zMapLogWarning("merge feature set loaded %s %s",g_quark_to_string(view_set->unique_id), //g_quark_to_string(new_set->unique_id));
+    }
 
 
-      /* we expect to just add our seq region to the existing
-       * may have to combine adjacent
-       * and logically deal with overlaps, which should not happen
-       *
-       * new list can only have one region due to GFF constraints
-       */
-
-      view_list = view_set->loaded;
-      new_list = new_set->loaded;
-
-
-//      zMapAssert(view_list && new_list);  /* there must be features so there must be a region */
-      if(!view_list)
-      {
-            view_set->loaded = new_set->loaded;
-            zMapLogWarning("merge loaded %s had no loaded list", g_quark_to_string(view_set->unique_id));
-      }
-      if(!new_list)
-      {
-            zMapLogWarning("merge loaded %s had no loaded list", g_quark_to_string(new_set->unique_id));
-            return;
-      }
-
-//print_loaded(view_set->loaded, "view list 1");
-//print_loaded(new_set->loaded,  "new list  1");
-
-      new_span = (ZMapSpan) new_list->data;
-      if(new_list->next)
-      {
-            /* due to GFF format we can only have one region */
-            zMapLogWarning("unexpected multiple region in new context ignored in featureset %s", g_quark_to_string(new_set->unique_id));
-      }
+  new_span = (ZMapSpan) new_list->data;
+  if(new_list->next)
+    {
+      /* due to GFF format we can only have one region */
+      zMapLogWarning("unexpected multiple region in new context ignored in featureset %s", g_quark_to_string(new_set->unique_id));
+    }
 
 /*
       this is disapointingly complex:
@@ -2329,7 +2338,6 @@ if(!view_set || !new_set)
 
             if(got)     /* we are joining an already combined region */
             {
-//printf("view,got = %d-%d, %d-%d\n",view_span->x1,view_span->x2,got_span->x1,got_span->x2);
                   if(got_span->x2 >= view_span->x1 - 1) /* join */
                   {
                         if(got_span->x2 < view_span->x2)
@@ -2351,7 +2359,6 @@ if(!view_set || !new_set)
             }
             else
             {
-//zMapLogWarning("view,new = %d-%d, %d-%d",view_span->x1,view_span->x2,new_span->x1,new_span->x2);
                   if(new_span->x2 + 1 == view_span->x1)     /* join then we are finished */
                   {
                         view_span->x1 = new_span->x1;
@@ -2384,8 +2391,6 @@ if(!view_set || !new_set)
       {
             view_set->loaded = g_list_append(view_set->loaded, g_memdup(new_span,sizeof(ZMapSpanStruct)));
       }
-//print_loaded(view_set->loaded, "view list 2");
-//print_loaded(new_set->loaded,  "new list  2");
 
 }
 
@@ -2404,16 +2409,9 @@ gboolean zMapFeatureSetIsLoadedInRange(ZMapFeatureBlock block,  GQuark unique_id
       fset = zMapFeatureBlockGetSetByID(block,unique_id);
       if(fset)
       {
-//            if(!fset->loaded)
-//            {
-//                  zMapLogWarning("Featureset %s has no span",g_quark_to_string(unique_id));
-//            }
-
             for(l = fset->loaded;l;l = l->next)
             {
                   span = l->data;
-//                  zMapLogWarning("featureset span %d -> %d",span->x1,span->x2);
-                  if(span->x2 < start)
                         continue;
 
                   if(span->x1 > start)
@@ -2421,7 +2419,6 @@ gboolean zMapFeatureSetIsLoadedInRange(ZMapFeatureBlock block,  GQuark unique_id
 
                   if(!span->x2)     /* not real coordinates */
                   {
-//                        zMapLogWarning("featureset %s has null coordinates", g_quark_to_string(fset->original_id));
                         return TRUE ;
                   }
                   if(span->x2 >= end)
@@ -2535,7 +2532,7 @@ zMapLogWarning("addEmptySets","");
 
     default:
       {
-      zMapAssertNotReached() ;
+      zMapWarnIfReached() ;
       break;
       }
     }
@@ -2592,7 +2589,7 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
       diff_path_ptr        = &(merge_data->current_diff_set);
       break;
     default:
-      zMapAssertNotReached();
+      zMapWarnIfReached();
     }
 
 
@@ -2617,12 +2614,6 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
 		context->master_align = NULL;
 	      }
 	  }
-
-	/* general code start */
-
-	zMapAssert(view_path_ptr && view_path_parent_ptr &&
-		   diff_path_ptr && diff_path_parent_ptr);
-	zMapAssert(*view_path_parent_ptr && *diff_path_parent_ptr);
 
 	/* Only need to do anything if this level has children. */
 	if (feature_any->children)
@@ -2768,9 +2759,6 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
       break;
     case ZMAPFEATURE_STRUCT_FEATURE:
       {
-	zMapAssert(view_path_parent_ptr && *view_path_parent_ptr &&
-		   diff_path_parent_ptr && *diff_path_parent_ptr);
-
 	feature_any->parent = NULL;
 	status = ZMAP_CONTEXT_EXEC_STATUS_OK_DELETE;
 
@@ -2798,7 +2786,7 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
 
     default:
       {
-      zMapAssertNotReached() ;
+      zMapWarnIfReached() ;
       break;
       }
     }
@@ -2838,7 +2826,7 @@ static ZMapFeatureAny featureAnyCreateFeature(ZMapFeatureLevelType struct_type,
 					      GHashTable *children)
 {
   ZMapFeatureAny feature_any = NULL ;
-  gulong nbytes ;
+  gulong nbytes = 0 ;
 
   switch(struct_type)
     {
@@ -2858,35 +2846,38 @@ static ZMapFeatureAny featureAnyCreateFeature(ZMapFeatureLevelType struct_type,
       nbytes = sizeof(ZMapFeatureStruct) ;
       break ;
     default:
-      zMapAssertNotReached() ;
+      zMapWarnIfReached() ;
       break ;
     }
 
-  if (USE_SLICE_ALLOC)
-    feature_any = (ZMapFeatureAny)g_slice_alloc0(nbytes) ;
-  else
-    feature_any = (ZMapFeatureAny)g_malloc0(nbytes) ;
+  if (nbytes > 0)
+    {
+      if (USE_SLICE_ALLOC)
+        feature_any = (ZMapFeatureAny)g_slice_alloc0(nbytes) ;
+      else
+        feature_any = (ZMapFeatureAny)g_malloc0(nbytes) ;
 
 #ifdef FEATURES_NEED_MAGIC
-  feature_any->magic = feature_magic_G;
+      feature_any->magic = feature_magic_G;
 #endif
 
-  feature_any->struct_type = struct_type ;
+      feature_any->struct_type = struct_type ;
 
-  logMemCalls(TRUE, feature_any) ;
+      logMemCalls(TRUE, feature_any) ;
 
-  if (struct_type != ZMAPFEATURE_STRUCT_CONTEXT)
-    feature_any->parent = parent ;
+      if (struct_type != ZMAPFEATURE_STRUCT_CONTEXT)
+        feature_any->parent = parent ;
 
-  feature_any->original_id = original_id ;
-  feature_any->unique_id = unique_id ;
+      feature_any->original_id = original_id ;
+      feature_any->unique_id = unique_id ;
 
-  if (struct_type != ZMAPFEATURE_STRUCT_FEATURE)
-    {
-      if (children)
-	feature_any->children = children ;
-      else
-	feature_any->children = g_hash_table_new_full(NULL, NULL, NULL, destroyFeatureAny) ;
+      if (struct_type != ZMAPFEATURE_STRUCT_FEATURE)
+        {
+          if (children)
+            feature_any->children = children ;
+          else
+            feature_any->children = g_hash_table_new_full(NULL, NULL, NULL, destroyFeatureAny) ;
+        }
     }
 
   return feature_any ;
@@ -2928,14 +2919,16 @@ static gboolean featureAnyAddFeature(ZMapFeatureAny feature_any, ZMapFeatureAny 
 
 static gboolean destroyFeatureAnyWithChildren(ZMapFeatureAny feature_any, gboolean free_children)
 {
-  gboolean result = TRUE ;
+  gboolean result = FALSE ;
 
-  zMapAssert(feature_any);
+  if (!feature_any)
+    return result ;
+  result = TRUE ; 
 
   /* I think this is equivalent to the below code.... */
 
   /* If we have a parent then remove ourselves from the parent. */
-  if (result && feature_any->parent)
+  if (feature_any->parent)
     {
       /* splice out the feature_any from parent */
       result = g_hash_table_steal(feature_any->parent->children, zmapFeature2HashKey(feature_any)) ;
@@ -2948,7 +2941,6 @@ static gboolean destroyFeatureAnyWithChildren(ZMapFeatureAny feature_any, gboole
       if ((g_hash_table_foreach_steal(feature_any->children,
 				      withdrawFeatureAny, (gpointer)feature_any)))
 	{
-	  zMapAssert(g_hash_table_size(feature_any->children) == 0) ;
 	  result = TRUE ;
 	}
     }
@@ -2967,8 +2959,8 @@ static gboolean destroyFeatureAnyWithChildren(ZMapFeatureAny feature_any, gboole
 
 static void featureAnyAddToDestroyList(ZMapFeatureContext context, ZMapFeatureAny feature_any)
 {
-  zMapAssert(context && feature_any) ;
-//printf("add to destroy list %s\n",g_quark_to_string(feature_any->unique_id));
+  if (!context || !feature_any) 
+    return ;
 
   g_hash_table_insert(context->elements_to_destroy, zmapFeature2HashKey(feature_any), feature_any) ;
 
@@ -3007,7 +2999,7 @@ static ZMapFeatureContextExecuteStatus addModeCB(GQuark key_id,
     default:
       {
 	status = ZMAP_CONTEXT_EXEC_STATUS_ERROR;
-	zMapAssertNotReached();
+        zMapWarnIfReached();
 	break;
       }
     }
@@ -3033,7 +3025,7 @@ void zMapFeatureAddStyleMode(ZMapFeatureTypeStyle style, ZMapStyleMode f_type)
 {
   if (!zMapStyleHasMode(style))
     {
-      ZMapStyleMode mode ;
+      ZMapStyleMode mode = ZMAPSTYLE_MODE_INVALID ;
 
       switch (f_type)
 	{
@@ -3084,7 +3076,7 @@ void zMapFeatureAddStyleMode(ZMapFeatureTypeStyle style, ZMapStyleMode f_type)
 	  mode = f_type;           /* grrrrr is this really correct? */
 	  break;
 	default:
-	  zMapAssertNotReached() ;
+          zMapWarnIfReached() ;
 	  break ;
 	}
 

@@ -451,6 +451,9 @@ void zmapWindowCanvasFeaturesetInitPango(GdkDrawable *drawable,
   PangoFontDescription *desc;
   int width, height;
 
+  if (!pango || !featureset || !featureset->gc)
+    return ;
+
   if(pango->drawable && pango->drawable != drawable)
     zmapWindowCanvasFeaturesetFreePango(pango);
 
@@ -461,14 +464,12 @@ void zmapWindowCanvasFeaturesetInitPango(GdkDrawable *drawable,
 
       gdk_pango_renderer_set_drawable (GDK_PANGO_RENDERER (pango->renderer), drawable);
 
-      zMapAssert(featureset->gc);	/* should have been set by caller */
       gdk_pango_renderer_set_gc (GDK_PANGO_RENDERER (pango->renderer), featureset->gc);
 
       /* Create a PangoLayout, set the font and text */
       pango->context = gdk_pango_context_get_for_screen (screen);
       pango->layout = pango_layout_new (pango->context);
 
-      //		font = findFixedWidthFontFamily(seq->pango.context);
       desc = pango_font_description_from_string (family);
       /*! \todo #warning mod this function and call from both places */
 #if 0
@@ -1001,7 +1002,6 @@ void featureset_init_funcs(void)
 
   /* if not then graphics modules have to set thier size */
   /* this wastes a bit of memory but uses only one free list and may be safer */
-  zMapAssert( sizeof(zmapWindowCanvasGraphicsStruct) <= sizeof(zmapWindowCanvasFeatureStruct));
 
   return ;
 }
@@ -1026,7 +1026,8 @@ void featureset_init_funcs(void)
  */
 void zmapWindowFeaturesetS2Ccoords(double *start_inout, double *end_inout)
 {
-  zMapAssert(start_inout && end_inout && *start_inout <= *end_inout) ;
+  if (!start_inout || !end_inout || !(*start_inout <= *end_inout)) 
+    return ; 
 
   *end_inout += 1 ;
 
@@ -1415,7 +1416,6 @@ gboolean zmapWindowCanvasFeatureValid(ZMapWindowCanvasFeature feature)
   /*! \todo Add an assert if this fails because it would be useful to 
    * debug when this happens - but only once we are able to disable asserts
    * in release code! */
-  //zMapAssert(result) ;
   
   return result ;
 }
@@ -2896,7 +2896,6 @@ ZMapWindowCanvasFeature zmapWindowCanvasFeatureAlloc(zmapWindowCanvasFeatureType
 	  int i ;
 
 	  mem = g_malloc(size * N_FEAT_ALLOC) ;
-	  zMapAssert(mem) ;
 
 	  for (i = 0 ; i < N_FEAT_ALLOC ; i++, mem += size)
 	    {
@@ -2908,7 +2907,6 @@ ZMapWindowCanvasFeature zmapWindowCanvasFeatureAlloc(zmapWindowCanvasFeatureType
 
 	  n_block_alloc++ ;
 	}
-      zMapAssert(featureset_class_G->feature_free_list[type]) ;
 
       l = featureset_class_G->feature_free_list[type] ;
       feat = (ZMapWindowCanvasFeature)l->data ;
@@ -3762,7 +3760,6 @@ int zMapWindowFeaturesetItemRemoveFeature(FooCanvasItem *foo, ZMapFeature featur
       /* NOTE search for ->from if you revive this */
       /* glib  g_list_sort() invalidates these adresses -> preserves the data but not the list elements */
 
-      zMapAssert(link);
       zmap_window_canvas_featureset_expose_feature(fi, gs);
 
 
@@ -3863,7 +3860,6 @@ int zMapWindowFeaturesetItemRemoveSet(FooCanvasItem *foo, ZMapFeatureSet feature
       /* NOTE search for ->from if you revive this */
       /* glib  g_list_sort() invalidates these adresses -> preserves the data but not the list elements */
 
-      zMapAssert(link);
       zmap_window_canvas_featureset_expose_feature(fi, gs);
 
 

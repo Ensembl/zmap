@@ -74,12 +74,13 @@ static pthread_mutex_t thread_fork_mutex_G = PTHREAD_MUTEX_INITIALIZER ;
 ZMapThread zMapThreadCreate(ZMapThreadRequestHandlerFunc handler_func,
 			    ZMapThreadTerminateHandler terminate_func, ZMapThreadDestroyHandler destroy_func)
 {
-  ZMapThread thread ;
+  ZMapThread thread = NULL ;
   pthread_t thread_id ;
   pthread_attr_t thread_attr ;
   int status = 0 ;
 
-  zMapAssert(handler_func) ;
+  
+  zMapReturnValIfFail((handler_func), thread) ;
 
   thread = createThread(handler_func, terminate_func, destroy_func) ;
 
