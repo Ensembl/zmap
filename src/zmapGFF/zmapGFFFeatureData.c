@@ -325,6 +325,17 @@ gboolean zMapGFFFeatureDataGetFlagSod(const ZMapGFFFeatureData const pFeatureDat
   return pFeatureData->flags.got_sod ;
 }
 
+/*
+ * Set some of the flags
+ */
+gboolean zMapGFFFeatureDataSetFlagSco(ZMapGFFFeatureData const pFeatureData, gboolean bValue)
+{
+  gboolean bResult = FALSE ;
+  zMapReturnValIfFail(pFeatureData, bResult ) ;
+  bResult = TRUE ;
+  pFeatureData->flags.got_sco = bValue ;
+  return bResult ;
+}
 
 
 /*
@@ -381,6 +392,8 @@ gboolean zMapGFFFeatureDataSetSta(ZMapGFFFeatureData const pFeatureData, int iVa
 {
   gboolean bResult = FALSE ;
 
+  zMapReturnValIfFail(pFeatureData, bResult) ;
+
   pFeatureData->iStart = iVal ;
 
   bResult = TRUE ;
@@ -391,9 +404,47 @@ gboolean zMapGFFFeatureDataSetEnd(ZMapGFFFeatureData const pFeatureData, int iVa
 {
   gboolean bResult = FALSE ;
 
+  zMapReturnValIfFail(pFeatureData, bResult) ;
+
   pFeatureData->iEnd = iVal ;
 
   bResult = TRUE ;
+  return bResult ;
+}
+
+gboolean zMapGFFFeatureDataSetSco(ZMapGFFFeatureData const pFeatureData, double dVal)
+{
+  gboolean bResult = FALSE ;
+
+  zMapReturnValIfFail(pFeatureData, bResult) ;
+
+  pFeatureData->dScore = dVal ;
+  bResult = TRUE ;
+
+  return bResult ;
+}
+
+gboolean zMapGFFFeatureDataSetStr(const ZMapGFFFeatureData const pFeatureData, ZMapStrand cStrand)
+{
+  gboolean bResult = FALSE ;
+
+  zMapReturnValIfFail(pFeatureData, bResult) ;
+
+  pFeatureData->cStrand = cStrand ;
+  bResult = TRUE ;
+
+  return bResult ;
+}
+
+gboolean zMapGFFFeatureDataSetPha(const ZMapGFFFeatureData const pFeatureData, ZMapPhase cPhase)
+{
+  gboolean bResult = FALSE ;
+
+  zMapReturnValIfFail(pFeatureData, bResult) ;
+
+  pFeatureData->cPhase = cPhase ;
+  bResult = TRUE ;
+
   return bResult ;
 }
 

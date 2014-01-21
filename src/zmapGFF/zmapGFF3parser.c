@@ -37,6 +37,7 @@
 #include <ZMap/zmapFeature.h>
 #include <ZMap/zmapFeatureLoadDisplay.h>
 #include <ZMap/zmapGLibUtils.h>
+#include <glib.h>
 #include "zmapGFFHeader.h"
 #include "zmapGFF_P.h"
 #include "zmapGFF3_P.h"
@@ -90,7 +91,7 @@ static void destroyFeatureArray(gpointer data) ;
  * Functions to create, augment or find names for various types of features based upon ZMapStyleMode.
  */
 static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const, const ZMapFeatureSet const, gboolean *, char **) ;
-static gboolean makeFeatureLocus(const ZMapGFFFeatureData const, char ** ) ;
+static gboolean makeFeatureLocus(const ZMapGFFParser const, const ZMapGFFFeatureData const, char ** ) ;
 static ZMapFeature makeFeatureAlignment(const ZMapGFFFeatureData const, const ZMapFeatureSet const, char ** ) ;
 static ZMapFeature makeFeatureAssemblyPath(const ZMapGFFFeatureData const, const ZMapFeatureSet const, char ** ) ;
 static ZMapFeature makeFeatureDefault(const ZMapGFFFeatureData const, const ZMapFeatureSet const, char **) ;
@@ -2902,17 +2903,18 @@ static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const pFeature
 /*
  * Make a locus feature with the data from the current one...
  */
-gboolean makeFeatureLocus(const ZMapGFFFeatureData const pFeatureData , char ** psError)
+gboolean makeFeatureLocus(const ZMapGFFParser const pParser, const ZMapGFFFeatureData const pFeatureData , char ** psError)
 {
   static const char *sType = "Locus" ;
-  //char *sName = NULL ;
+  char *sLocusID = NULL ;
   gboolean bResult = FALSE ;
   ZMapFeature pFeature = NULL ;
   ZMapGFFAttribute pAttribute = NULL, *pAttributes = NULL ;
   ZMapGFFFeatureData pFeatureDataLocus = NULL ;
   ZMapHomolType cHomol = ZMAPHOMOL_NONE ;
-  ZMapStyleMode cType = ZMAPSTYLE_MODE_BASIC ;
+  ZMapStyleMode cType = ZMAPSTYLE_MODE_TEXT ;
   ZMapSOIDData pSOIDData = NULL ;
+  ZMapFeatureSet pFeatureSet = NULL ;
   GQuark gqLocusID = 0 ;
   unsigned int nAttributes = 0, iSOID = 0 ;
 
@@ -2922,14 +2924,10 @@ gboolean makeFeatureLocus(const ZMapGFFFeatureData const pFeatureData , char ** 
   nAttributes          = zMapGFFFeatureDataGetNat(pFeatureData) ;
   pAttributes          = zMapGFFFeatureDataGetAts(pFeatureData) ;
 
-  //if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttribute, sAttributeName_Name))
-  //  {
-  //     bResult = zMapAttParseName(pAttribute, &sName) ;
-  //  }
-
   if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_locus) ) && bResult )
     {
       bResult = zMapAttParseLocus(pAttribute, &gqLocusID) ;
+      sLocusID = g_strdup(zMapGFFAttributeGetTempstring(pAttribute)) ;
     }
   else
     {
@@ -2939,20 +2937,21 @@ gboolean makeFeatureLocus(const ZMapGFFFeatureData const pFeatureData , char ** 
   if (bResult)
     {
 
-      printf("creating locus with s = '%s'\n", g_quark_to_string(gqLocusID)) ;
+      printf("creating locus with s = '%s'\n", sLocusID) ;
       fflush(stdout) ;
 
       /*
        * Use the feature "Name" for the sequence
        * Use "Locus" for the source
        * Use "Locus" for ontology
-       * Use the StyleMode BASIC
+       * Use the StyleMode TEXT
        * There is a faked SO accession for these.
-       *
        */
       pFeatureDataLocus = zMapGFFFeatureDataCC(pFeatureData) ;
-      zMapGFFFeatureDataSetSeq(pFeatureDataLocus, sType ) ;
+      zMapGFFFeatureDataSetSeq(pFeatureDataLocus, sLocusID ) ;
       zMapGFFFeatureDataSetSou(pFeatureDataLocus, sType ) ;
+      zMapGFFFeatureDataSetFlagSco(pFeatureDataLocus, FALSE) ;
+      zMapGFFFeatureDataSetSco(pFeatureDataLocus, 0.0) ;
 
       /*
        * SOIDData must have something that maps Locus to BASIC style mode ...
@@ -2961,8 +2960,6 @@ gboolean makeFeatureLocus(const ZMapGFFFeatureData const pFeatureData , char ** 
        */
       if ((iSOID = zMapSOSetIsNamePresent(ZMAPSO_USE_NONE, sType)) != ZMAPSO_ID_UNK)
         {
-          cType = zMapSOSetGetStyleModeFromName(ZMAPSO_USE_NONE, sType ) ;
-          cHomol = zMapSOSetGetHomolFromID(ZMAPSO_USE_NONE, iSOID) ;
           pSOIDData = zMapSOIDDataCreateFromData(iSOID, sType, cType, cHomol ) ;
         }
       zMapGFFFeatureDataSetSod(pFeatureDataLocus, pSOIDData) ;
@@ -2970,6 +2967,7 @@ gboolean makeFeatureLocus(const ZMapGFFFeatureData const pFeatureData , char ** 
       /*
        * Find featureset and other data.
        */
+      // performSourceComputations(pParser, pFeatureDataLocus, &pFeatureSet) ;
 
       /*
        * Make the feature and add to the new featureset
@@ -3733,7 +3731,7 @@ static gboolean makeNewFeature_V3(
 
           if (requireLocusOperations(pParserBase, pFeatureData))
             {
-              /* ZMapFeature pFeatureTemp = */ makeFeatureLocus(pFeatureData, &sMakeFeatureErrorText) ;
+              gboolean bLocusFeature = makeFeatureLocus(pParserBase, pFeatureData, &sMakeFeatureErrorText) ;
             }
 
         }

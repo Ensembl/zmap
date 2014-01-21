@@ -110,13 +110,21 @@ gboolean zMapGFFFeatureDataGetFlagPat(const ZMapGFFFeatureData const) ;
 gboolean zMapGFFFeatureDataGetFlagSod(const ZMapGFFFeatureData const) ;
 
 /*
+ * Set some of the flag values
+ */
+gboolean zMapGFFFeatureDataSetFlagSco(ZMapGFFFeatureData const, gboolean) ;
+
+/*
  * Set some data members of the object.
  */
 gboolean zMapGFFFeatureDataSetSeq(ZMapGFFFeatureData const, const char * const ) ;
 gboolean zMapGFFFeatureDataSetSou(ZMapGFFFeatureData const, const char * const ) ;
 gboolean zMapGFFFeatureDataSetSta(ZMapGFFFeatureData const, int) ;
 gboolean zMapGFFFeatureDataSetEnd(ZMapGFFFeatureData const, int) ;
+gboolean zMapGFFFeatureDataSetSco(ZMapGFFFeatureData const, double ) ;
 gboolean zMapGFFFeatureDataSetSod(ZMapGFFFeatureData const, const ZMapSOIDData const ) ;
+gboolean zMapGFFFeatureDataSetStr(const ZMapGFFFeatureData const, ZMapStrand) ;
+gboolean zMapGFFFeatureDataSetPha(const ZMapGFFFeatureData const, ZMapPhase) ;
 
 /*
  * Return various data elements of the object.
