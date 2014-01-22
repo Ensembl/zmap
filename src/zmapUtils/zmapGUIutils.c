@@ -453,11 +453,11 @@ gboolean zMapGUIGetMaxWindowSize(GtkWidget *toplevel, gint *width_out, gint *hei
 	  memcpy(&right, (curr += field_size), field_size) ;
 	  memcpy(&bottom, (curr += field_size), field_size) ;
 	  g_free(data) ;
-	}
 
-      /* off by one ? */
-      window_height = bottom - top ;
-      window_width = right - left ;
+          /* off by one ? */
+          window_height = bottom - top ;
+          window_width = right - left ;
+        }
     }
   else
     {

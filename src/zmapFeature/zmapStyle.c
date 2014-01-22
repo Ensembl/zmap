@@ -1804,7 +1804,7 @@ static gboolean setColours(ZMapStyleColour colour, char *border, char *draw, cha
 // store coordinate pairs in the struct and work out type
 ZMapStyleGlyphShape zMapStyleGetGlyphShape(gchar *shape, GQuark id)
 {
-  gchar **spec,**segments,**s,**points,**p,*q;
+  gchar **spec = NULL, **segments = NULL, **s = NULL, **points = NULL, **p = NULL, *q = NULL;
   gboolean syntax = FALSE;
   gint x,y,n;
   gint *cp;

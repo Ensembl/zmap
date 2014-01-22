@@ -226,7 +226,7 @@ int zmapNavigatorSetWindowPos(ZMapNavigator navigator, double top_pos, double bo
   int pane_width = 0 ;
   int seq_start = 0, seq_end = 0;
 
-  zMapReturnIfFail(navigator) ; 
+  zMapReturnValIfFail(navigator, pane_width) ;
 
   seq_start = navigator->sequence_span.x1;
   seq_end   = navigator->sequence_span.x2;
@@ -337,7 +337,7 @@ void zmapNavigatorSetView(ZMapNavigator navigator, ZMapFeatureContext features,
 
 int zmapNavigatorGetMaxWidth(ZMapNavigator navigator)
 {
-  zMapReturnIfFail(navigator) ; 
+  zMapReturnValIfFail(navigator, 0) ;
 
 #ifdef NAVIGATOR_USES_PANES
   int handle_size = gtk_widget_style_get(navigator->pane, "handle-size", &handle_size, NULL);

@@ -473,7 +473,7 @@ void zmapControlWindowMaximize(GtkWidget *widget, ZMap zmap)
        * come back in 64 bits.
        *
        *  */
-      int window_width_guess = 300, window_height_guess ;
+      int window_width_guess = 300, window_height_guess = 300 ;
       gboolean result ;
       GdkWindow *root_window ;
       gulong offset, length ;
@@ -535,9 +535,9 @@ void zmapControlWindowMaximize(GtkWidget *widget, ZMap zmap)
 	  memcpy(&right, (curr += field_size), field_size) ;
 	  memcpy(&bottom, (curr += field_size), field_size) ;
 	  g_free(data) ;
-	}
 
-      window_height_guess = bottom - top ;
+          window_height_guess = bottom - top ;
+        }
 
       /* We now know the screen size and the work area size so we can set the window accordingly,
        * note how we set the width small knowing that gtk will make it only as big as it needs

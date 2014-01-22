@@ -4044,8 +4044,6 @@ static ZMapServerResponseType getObjNames(AcedbServer server, GList **style_name
       g_free(reply) ;
       reply = NULL ;
     }
-  else
-    result = server->last_err_status ;
 
   g_free(acedb_request) ;
 

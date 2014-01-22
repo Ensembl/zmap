@@ -287,7 +287,7 @@ gboolean zMapControlProcessRemoteRequest(ZMap zmap,
       /* Find the view_window for the request or the default view .... */
       if (view && !view_window)
 	{
-	  if ((view == zMapViewGetView(zmap->focus_viewwindow)))
+          if (view == zMapViewGetView(zmap->focus_viewwindow))
 	    {
 	      /* view is the focus view. */
 	      view_window = zmap->focus_viewwindow ;

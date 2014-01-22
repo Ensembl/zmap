@@ -1072,7 +1072,7 @@ gboolean zMapFeatureAlignmentFindBlock(ZMapFeatureAlignment feature_align,
 {
   gboolean result = FALSE;
 
-  if (!feature_align || !feature_block);
+  zMapReturnValIfFail(feature_align && feature_block, result) ;
 
   result = zMapFeatureAnyFindFeature((ZMapFeatureAny)feature_align, (ZMapFeatureAny)feature_block) ;
 
@@ -1903,7 +1903,7 @@ static void destroyFeature(ZMapFeature feature)
 static void destroyFeatureAny(gpointer data)
 {
   ZMapFeatureAny feature_any = (ZMapFeatureAny)data ;
-  gulong nbytes ;
+  gulong nbytes = 0 ;
 
   zMapReturnIfFail(feature_any);
   zMapReturnIfFail(zMapFeatureAnyHasMagic(feature_any));
@@ -1963,12 +1963,19 @@ static void destroyFeatureAny(gpointer data)
 
   logMemCalls(FALSE, feature_any) ;
 
-  memset(feature_any, 0, nbytes) ;			    /* Make sure mem for struct is useless. */
-  if (USE_SLICE_ALLOC)
-    g_slice_free1(nbytes, feature_any) ;
-  else
-    g_free(feature_any) ;
+  /* nbytes is zero if we were given an invalid struct type - shouldn't
+   * happen but check anyway */
+  if (nbytes)
+    {
+      memset(feature_any, 0, nbytes) ;			    /* Make sure mem for struct is useless. */
+      if (USE_SLICE_ALLOC)
+        g_slice_free1(nbytes, feature_any) ;
+    }
 
+  if (!USE_SLICE_ALLOC)
+    {
+      g_free(feature_any) ;
+    }
 
   return ;
 }
