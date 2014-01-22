@@ -90,15 +90,15 @@ ZMapGFFFeatureData zMapGFFFeatureDataCC(const ZMapGFFFeatureData const pData )
   pFeatureData->sAttributes  = pData->sAttributes ? g_strdup(pData->sAttributes) : NULL ;
   pFeatureData->pSOIDData    = zMapSOIDDataCC(pData->pSOIDData) ;
 
-  pFeatureData->flags.got_seq        = pFeatureData->flags.got_seq ;
-  pFeatureData->flags.got_sou        = pFeatureData->flags.got_sou ;
-  pFeatureData->flags.got_sta        = pFeatureData->flags.got_sta ;
-  pFeatureData->flags.got_end        = pFeatureData->flags.got_end ;
-  pFeatureData->flags.got_sco        = pFeatureData->flags.got_sco ;
-  pFeatureData->flags.got_str        = pFeatureData->flags.got_str ;
-  pFeatureData->flags.got_pha        = pFeatureData->flags.got_pha ;
-  pFeatureData->flags.got_att        = pFeatureData->flags.got_att ;
-  pFeatureData->flags.got_sod        = pFeatureData->flags.got_sod ;
+  pFeatureData->flags.got_seq        = pData->flags.got_seq ;
+  pFeatureData->flags.got_sou        = pData->flags.got_sou ;
+  pFeatureData->flags.got_sta        = pData->flags.got_sta ;
+  pFeatureData->flags.got_end        = pData->flags.got_end ;
+  pFeatureData->flags.got_sco        = pData->flags.got_sco ;
+  pFeatureData->flags.got_str        = pData->flags.got_str ;
+  pFeatureData->flags.got_pha        = pData->flags.got_pha ;
+  pFeatureData->flags.got_att        = pData->flags.got_att ;
+  pFeatureData->flags.got_sod        = pData->flags.got_sod ;
 
   return pFeatureData ;
 }

@@ -2906,7 +2906,7 @@ static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const pFeature
 gboolean makeFeatureLocus(const ZMapGFFParser const pParser, const ZMapGFFFeatureData const pFeatureData , char ** psError)
 {
   static const char *sType = "Locus" ;
-  char *sLocusID = NULL ;
+  char *sLocusID = NULL, *sName = NULL, *sNameID = NULL ;
   gboolean bResult = FALSE ;
   ZMapFeature pFeature = NULL ;
   ZMapGFFAttribute pAttribute = NULL, *pAttributes = NULL ;
@@ -2956,9 +2956,8 @@ gboolean makeFeatureLocus(const ZMapGFFParser const pParser, const ZMapGFFFeatur
       zMapGFFFeatureDataSetPha(pFeatureDataLocus, ZMAPPHASE_NONE) ;
 
       /*
-       * SOIDData must have something that maps Locus to BASIC style mode ...
-       * this should also include a dummy SO accession in thesame way as with
-       * the other fake SO terms.
+       * SOIDData must contain the hacked SO:000ijk number and map this
+       * to ZMAPSTYLE_MODE_TEXT. The homol type must be NONE.
        */
       if ((iSOID = zMapSOSetIsNamePresent(ZMAPSO_USE_NONE, sType)) != ZMAPSO_ID_UNK)
         {
@@ -2969,11 +2968,14 @@ gboolean makeFeatureLocus(const ZMapGFFParser const pParser, const ZMapGFFFeatur
       /*
        * Find featureset and other data.
        */
-      // performSourceComputations(pParser, pFeatureDataLocus, &pFeatureSet) ;
+      performSourceComputations(pParser, pFeatureDataLocus, &pFeatureSet) ;
 
       /*
-       * Make a name and a name_id for the feature.
+       * Make a name and a name_id for the feature. The name comes from the locus ID and
+       * the name_id is created in the usual fashion.
        */
+      sName = g_strdup(sLocusID) ;
+      sNameID = g_strdup(sLocusID) ;
 
       /*
        * Make the feature and add to the new featureset
@@ -2987,10 +2989,13 @@ gboolean makeFeatureLocus(const ZMapGFFParser const pParser, const ZMapGFFFeatur
   /*
    * Clean up
    */
-  //if (sName)
-  //  g_free(sName) ;
+  if (sLocusID)
+    g_free(sLocusID) ;
+  if (sName)
+    g_free(sName) ;
+  if (sNameID)
+    g_free(sNameID) ;
   zMapGFFFeatureDataDestroy(pFeatureDataLocus) ;
-  zMapSOIDDataDestroy(pSOIDData) ;
 
   return bResult ;
 }
