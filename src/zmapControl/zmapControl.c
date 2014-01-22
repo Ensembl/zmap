@@ -298,7 +298,7 @@ gboolean zMapControlCloseView(ZMap zmap, ZMapView view)
 
 void zMapDeleteView(ZMap zmap, ZMapView view, GList **destroyed_views_inout)
 {
-  gboolean view_found ;
+  gboolean view_found = FALSE ;
 
   if (zmap && view && (view_found = findViewInZMap(zmap, view)))
     {

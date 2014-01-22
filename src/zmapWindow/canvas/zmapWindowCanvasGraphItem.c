@@ -227,7 +227,7 @@ static void graphPaintPrepare(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
 {
   ZMapWindowCanvasGraph graph_set = (ZMapWindowCanvasGraph)(featureset->opt) ;
   int cx2 = 0, cy2 = 0 ;                                    /* initialised for LINE mode */
-  double x2, y2 ;
+  double x2 = 0, y2 = 0 ;
   FooCanvasItem *item = (FooCanvasItem *)featureset ;
 
 

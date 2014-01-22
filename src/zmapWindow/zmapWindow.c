@@ -5066,7 +5066,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
     case GDK_a:
     case GDK_A:
       {
-	ZMapWindowAlignSetType requested_homol_set ;
+        ZMapWindowAlignSetType requested_homol_set = ZMAPWINDOW_ALIGNCMD_INVALID ;
 	FooCanvasItem *focus_item  ;
 
 	/* User just pressed a key so pass in focus item if there is one. */

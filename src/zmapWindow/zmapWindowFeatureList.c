@@ -501,6 +501,7 @@ static void feature_phase_to_value(GValue *value, gpointer feature_data)
       case ZMAPFEATURE_STRUCT_FEATURE:
         /*! \todo #warning refer to other calls to zMapFeaturePhase2Str() */
         /*! \todo #warning this used to say strand! phase is buried in obscure places and this function i think has never been called */
+#warning Frame is being used here where it should be phase!
         g_value_set_string(value, zMapFeaturePhase2Str(zMapFeatureFrame(feature_any)));
         break;
       default:

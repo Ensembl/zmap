@@ -438,7 +438,7 @@ static void processRequest(ZMapWindow window,
   gboolean cmd_debug = FALSE ;
   gboolean parse_ok = FALSE ;
   RequestDataStruct request_data = {0} ;
-  ZMapXMLObjTagFunctions starts, ends ;
+  ZMapXMLObjTagFunctions starts = NULL, ends = NULL ;
 
 
 
@@ -461,7 +461,6 @@ static void processRequest(ZMapWindow window,
       ends = mark_ends_G ;
     }
   zMapXMLParserSetMarkupObjectTagHandlers(parser, starts, ends) ;
-
   if (!(parse_ok = zMapXMLParserParseBuffer(parser, request, strlen(request))))
     {
       *command_rc_out = request_data.command_rc ;

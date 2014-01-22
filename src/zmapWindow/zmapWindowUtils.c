@@ -225,7 +225,8 @@ void zmapWindowSeq2CanExt(double *start_inout, double *end_inout)
  */
 void zmapWindowExt2Zero(double *start_inout, double *end_inout)
 {
-  if (!start_inout || !end_inout || (*start_inout > *end_inout)) ;
+  if (!start_inout || !end_inout || (*start_inout > *end_inout))
+    return ;
 
   *end_inout = *end_inout - *start_inout ;		    /* do this first before zeroing start ! */
 

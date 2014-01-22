@@ -2527,10 +2527,6 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
     }
 
 
-  char *set_name = (char *)g_quark_to_string(fi->id) ;
-
-
-
 
   /* check zoom level and recalculate */
   /* NOTE this also creates the index if needed */
@@ -3265,7 +3261,7 @@ double zMapWindowCanvasFeatureGetWidthFromScore(ZMapFeatureTypeStyle style, doub
 /* normal features just have width set from feature score */
 double zMapWindowCanvasFeatureGetNormalisedScore(ZMapFeatureTypeStyle style, double score)
 {
-  double numerator, denominator, dx ;
+  double numerator, denominator, dx = 0 ;
   double max_score, min_score ;
 
   min_score = zMapStyleGetMinScore(style) ;
@@ -3559,7 +3555,7 @@ void zmapWindowFeaturesetAddToIndex(ZMapWindowFeaturesetItem featureset_item, ZM
 
 ZMapWindowCanvasFeature zMapWindowFeaturesetAddFeature(ZMapWindowFeaturesetItem featureset_item, ZMapFeature feature, double y1, double y2)
 {
-  ZMapWindowCanvasFeature feat;
+  ZMapWindowCanvasFeature feat = NULL ;
   ZMapFeatureTypeStyle style = *feature->style;
   zmapWindowCanvasFeatureType type = FEATURE_INVALID;
 

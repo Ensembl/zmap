@@ -407,7 +407,7 @@ double zmapWindowZoomControlLimitSpan(ZMapWindow window,
                                       double y1_inout, double y2_inout)
 {
   ZMapWindowZoomControl control;
-  double max_span, seq_span, new_span, canv_span;
+  double max_span, seq_span, new_span, canv_span = 0 ;
   /* double x1, x2; */
   double y1, y2;
 

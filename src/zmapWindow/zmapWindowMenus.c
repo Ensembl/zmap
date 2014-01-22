@@ -2133,7 +2133,7 @@ static void compressMenuCB(int menu_item_id, gpointer callback_data)
 {
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
   ZMapWindowCompressMode compress_mode = (ZMapWindowCompressMode)menu_item_id  ;
-  FooCanvasGroup *column_group ;
+  FooCanvasGroup *column_group = NULL ;
 
   if (menu_data->item)
     column_group = FOO_CANVAS_GROUP(menu_data->item) ;
@@ -2631,7 +2631,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuBlixemBAM(int *start_index_inout,
   static ZMapGUIMenuItem menu = NULL;
   static int n_menu = 0;
   ItemMenuCBData cbdata  = (ItemMenuCBData)callback_data;
-  ZMapGUIMenuItem m;
+  ZMapGUIMenuItem m = NULL ;
   GList *fs_list = cbdata->window->context_map->seq_data_featuresets;
   GList *fsl;
   int n_sets = g_list_length(fs_list);
@@ -2696,7 +2696,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuBlixemBAM(int *start_index_inout,
   	}
     }
 
-  if (blixem_col)
+  if (blixem_col && m)
     {
       m->type = ZMAPGUI_MENU_NORMAL;
       m->name = g_strdup_printf("Blixem %s paired reads", blixem_col);
@@ -2706,42 +2706,46 @@ ZMapGUIMenuItem zmapWindowMakeMenuBlixemBAM(int *start_index_inout,
     }
 
   /* add sub menu */
-  m->type = ZMAPGUI_MENU_BRANCH;
-  m->name = g_strdup(BLIXEM_OPS_STR"/"BLIXEM_READS_STR);
-  m->id = 0;
-  m->callback_func = NULL;
-  m++;
-
-  for(i = 0, fsl = fs_list;i < n_sets; i++, fsl = fsl->next)
+  if (m)
     {
-      const gchar *fset;
-      GQuark req_id;
-      ZMapFeatureSetDesc f2c;
+      m->type = ZMAPGUI_MENU_BRANCH;
+      m->name = g_strdup(BLIXEM_OPS_STR"/"BLIXEM_READS_STR);
+      m->id = 0;
+      m->callback_func = NULL;
+      m++;
 
-      m->type = ZMAPGUI_MENU_NORMAL;
+      for(i = 0, fsl = fs_list;i < n_sets; i++, fsl = fsl->next)
+        {
+          const gchar *fset;
+          GQuark req_id;
+          ZMapFeatureSetDesc f2c;
 
-      f2c = g_hash_table_lookup(cbdata->window->context_map->featureset_2_column,fsl->data);
-      if(f2c)
-	{
-	  fset = get_menu_string(f2c->feature_src_ID,'/');
+          m->type = ZMAPGUI_MENU_NORMAL;
 
-	  req_id = related_column(cbdata->window->context_map,GPOINTER_TO_UINT(fsl->data));
+          f2c = g_hash_table_lookup(cbdata->window->context_map->featureset_2_column,fsl->data);
+          if(f2c)
+            {
+              fset = get_menu_string(f2c->feature_src_ID,'/');
 
-	  if(!req_id)		/* don't include coverage data */
-	    {
-	      m->name = g_strdup_printf(BLIXEM_OPS_STR"/"BLIXEM_READS_STR"/%s", fset);
-	      m->id = BLIX_SEQ + i;
-	      m->callback_func = blixemMenuCB;
-	      m++;
-	    }
-	}
+              req_id = related_column(cbdata->window->context_map,GPOINTER_TO_UINT(fsl->data));
+
+              if(!req_id)		/* don't include coverage data */
+                {
+                  m->name = g_strdup_printf(BLIXEM_OPS_STR"/"BLIXEM_READS_STR"/%s", fset);
+                  m->id = BLIX_SEQ + i;
+                  m->callback_func = blixemMenuCB;
+                  m++;
+                }
+            }
+        }
+
+      m->type = ZMAPGUI_MENU_NONE;
+      m->name = NULL;
     }
 
-  m->type = ZMAPGUI_MENU_NONE;
-  m->name = NULL;
-
   /* this overrides data in the menus as given in the args, but index and func are always NULL */
-  zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
+  if (menu)
+    zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
 
   return menu;
 }
