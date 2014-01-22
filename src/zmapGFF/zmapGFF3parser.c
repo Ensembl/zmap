@@ -2996,6 +2996,7 @@ gboolean makeFeatureLocus(const ZMapGFFParser const pParser, const ZMapGFFFeatur
         }
       else
         {
+          zMapFeatureDestroy(pFeature) ;
           *psError = g_strdup_printf("makeFeatureLocus(); could not add standard data to name_id = '%s' and name = '%s'",
                                       sNameID, sName) ;
         }
@@ -3005,6 +3006,7 @@ gboolean makeFeatureLocus(const ZMapGFFParser const pParser, const ZMapGFFFeatur
           bResult = zMapFeatureSetAddFeature(pFeatureSet, pFeature) ;
           if (!bResult)
             {
+              zMapFeatureDestroy(pFeature) ;
               *psError = g_strdup_printf("makeFeatureLocus(); could not add feature with name_id = '%s' and name = '%s' to featureset",
                                          sNameID, sName) ;
             }
