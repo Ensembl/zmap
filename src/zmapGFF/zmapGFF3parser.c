@@ -2864,8 +2864,6 @@ static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const pFeature
           if (zMapAttParseLocus(pAttributeLocus, &gqLocusID))
             {
               zMapFeatureAddLocus(pFeature, gqLocusID) ;
-              printf("adding locus id with s = '%s'\n", g_quark_to_string(gqLocusID))  ;
-              fflush(stdout) ;
             }
         }
     }
@@ -2940,9 +2938,6 @@ gboolean makeFeatureLocus(const ZMapGFFParser const pParser, const ZMapGFFFeatur
   if (bResult)
     {
 
-      printf("creating locus with s = '%s'\n", sLocusID) ;
-      fflush(stdout) ;
-
       /*
        * Use the feature "Name" for the sequence
        * Use "Locus" for the source
@@ -2985,8 +2980,35 @@ gboolean makeFeatureLocus(const ZMapGFFParser const pParser, const ZMapGFFFeatur
       /*
        * Make the feature, add standard data to it and add it to featureset.
        */
-      pFeature = NULL ;
+      pFeature = zMapFeatureCreateEmpty() ;
+      if (!pFeature)
+        {
+          *psError = g_strdup_printf("makeFeatureLocus(); could not create feature with name_id = '%s' and name = '%s'",
+                                      sNameID, sName) ;
+          bResult = FALSE ;
+        }
 
+      if (bResult)
+        {
+          bResult = zMapFeatureAddStandardData(pFeature, sNameID, sName, sLocusID, (char*)sType,
+                                              cStyleMode, &pFeatureSet->style,
+                                              iStart, iEnd, FALSE, 0.0, cStrand) ;
+        }
+      else
+        {
+          *psError = g_strdup_printf("makeFeatureLocus(); could not add standard data to name_id = '%s' and name = '%s'",
+                                      sNameID, sName) ;
+        }
+
+      if (bResult)
+        {
+          bResult = zMapFeatureSetAddFeature(pFeatureSet, pFeature) ;
+          if (!bResult)
+            {
+              *psError = g_strdup_printf("makeFeatureLocus(); could not add feature with name_id = '%s' and name = '%s' to featureset",
+                                         sNameID, sName) ;
+            }
+        }
 
 
     } /* if (bResult) */
@@ -2996,10 +3018,6 @@ gboolean makeFeatureLocus(const ZMapGFFParser const pParser, const ZMapGFFFeatur
    */
   if (sLocusID)
     g_free(sLocusID) ;
-  if (sName)
-    g_free(sName) ;
-  if (sNameID)
-    g_free(sNameID) ;
   zMapGFFFeatureDataDestroy(pFeatureDataLocus) ;
 
   return bResult ;
