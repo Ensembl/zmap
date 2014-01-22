@@ -2942,7 +2942,7 @@ gboolean makeFeatureLocus(const ZMapGFFParser const pParser, const ZMapGFFFeatur
        * Use the feature "Name" for the sequence
        * Use "Locus" for the source
        * Use "Locus" for ontology
-       * Use the StyleMode TEXTmake[2]: Leaving directory `/nfs/users/nfs_s/sm23/Work/ZMap_develop/src/build/linux/zmap
+       * Use the StyleMode TEXT
        * There is a faked SO accession for these.
        */
       pFeatureDataLocus = zMapGFFFeatureDataCC(pFeatureData) ;
