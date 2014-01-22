@@ -3756,7 +3756,6 @@ static gboolean makeNewFeature_V3(
       else if (cFeatureStyleMode == ZMAPSTYLE_MODE_TRANSCRIPT)
         {
 
-          bNewFeatureCreated = FALSE ;
           pFeature = makeFeatureTranscript(pFeatureData, pFeatureSet, &bNewFeatureCreated, &sMakeFeatureErrorText) ;
           if (pFeature)
             {
@@ -3765,7 +3764,7 @@ static gboolean makeNewFeature_V3(
           if (bNewFeatureCreated)
             ++pParser->num_features ;
 
-          if (requireLocusOperations(pParserBase, pFeatureData))
+          if (requireLocusOperations(pParserBase, pFeatureData) && bNewFeatureCreated)
             {
               gboolean bLocusFeature = makeFeatureLocus(pParserBase, pFeatureData, &sMakeFeatureErrorText) ;
             }
@@ -3989,16 +3988,14 @@ gboolean requireLocusOperations(const ZMapGFFParser const pParser, const ZMapGFF
   gboolean bResult = FALSE ;
   ZMapGFFAttribute *pAttributes = NULL ;
   unsigned int nAttributes = 0 ;
-  char *sSOType = NULL ;
 
   nAttributes          = zMapGFFFeatureDataGetNat(pFeatureData) ;
   pAttributes          = zMapGFFFeatureDataGetAts(pFeatureData) ;
-  sSOType              = zMapSOIDDataGetName(zMapGFFFeatureDataGetSod(pFeatureData)) ;
 
   if (pParser->locus_set_id                                                                           &&
       zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_locus)                    &&
       zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_ID)                       &&
-      !strcmp(sSOType, "transcript") )
+      !strcmp( zMapSOIDDataGetName(zMapGFFFeatureDataGetSod(pFeatureData)) , "transcript") )
     {
       bResult = TRUE ;
     }
