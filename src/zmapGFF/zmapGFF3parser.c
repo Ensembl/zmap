@@ -2907,10 +2907,13 @@ gboolean makeFeatureLocus(const ZMapGFFParser const pParser, const ZMapGFFFeatur
 {
   static const char *sType = "Locus" ;
   char *sLocusID = NULL, *sName = NULL, *sNameID = NULL ;
+  int iStart = 0, iEnd = 0, iTargetStart = 0, iTargetEnd = 0 ;
   gboolean bResult = FALSE ;
   ZMapFeature pFeature = NULL ;
   ZMapGFFAttribute pAttribute = NULL, *pAttributes = NULL ;
   ZMapGFFFeatureData pFeatureDataLocus = NULL ;
+  ZMapStrand cStrand = ZMAPSTRAND_NONE ;
+  ZMapPhase cPhase = ZMAPPHASE_NONE ;
   ZMapHomolType cHomol = ZMAPHOMOL_NONE ;
   ZMapStyleMode cStyleMode = ZMAPSTYLE_MODE_TEXT ;
   ZMapSOIDData pSOIDData = NULL ;
@@ -2944,7 +2947,7 @@ gboolean makeFeatureLocus(const ZMapGFFParser const pParser, const ZMapGFFFeatur
        * Use the feature "Name" for the sequence
        * Use "Locus" for the source
        * Use "Locus" for ontology
-       * Use the StyleMode TEXT
+       * Use the StyleMode TEXTmake[2]: Leaving directory `/nfs/users/nfs_s/sm23/Work/ZMap_develop/src/build/linux/zmap
        * There is a faked SO accession for these.
        */
       pFeatureDataLocus = zMapGFFFeatureDataCC(pFeatureData) ;
@@ -2952,8 +2955,10 @@ gboolean makeFeatureLocus(const ZMapGFFParser const pParser, const ZMapGFFFeatur
       zMapGFFFeatureDataSetSou(pFeatureDataLocus, sType ) ;
       zMapGFFFeatureDataSetFlagSco(pFeatureDataLocus, FALSE) ;
       zMapGFFFeatureDataSetSco(pFeatureDataLocus, 0.0) ;
-      zMapGFFFeatureDataSetStr(pFeatureDataLocus, ZMAPSTRAND_NONE) ;
-      zMapGFFFeatureDataSetPha(pFeatureDataLocus, ZMAPPHASE_NONE) ;
+      zMapGFFFeatureDataSetStr(pFeatureDataLocus, cStrand) ;
+      zMapGFFFeatureDataSetPha(pFeatureDataLocus, cPhase) ;
+      iStart = zMapGFFFeatureDataGetSta(pFeatureDataLocus) ;
+      iEnd = zMapGFFFeatureDataGetEnd(pFeatureDataLocus) ;
 
       /*
        * SOIDData must contain the hacked SO:000ijk number and map this
@@ -2975,10 +2980,10 @@ gboolean makeFeatureLocus(const ZMapGFFParser const pParser, const ZMapGFFFeatur
        * the name_id is created in the usual fashion.
        */
       sName = g_strdup(sLocusID) ;
-      sNameID = g_strdup(sLocusID) ;
+      sNameID = zMapFeatureCreateName(cStyleMode, sName, ZMAPSTRAND_NONE, iStart, iEnd, iTargetStart, iTargetEnd ) ;
 
       /*
-       * Make the feature and add to the new featureset
+       * Make the feature, add standard data to it and add it to featureset.
        */
       pFeature = NULL ;
 
@@ -3118,7 +3123,7 @@ static ZMapFeature makeFeatureAlignment(const ZMapGFFFeatureData const pFeatureD
           return pFeature ;
         }
 
-      sFeatureName = g_strdup_printf("%s", sTargetID ) ;
+      sFeatureName = g_strdup(sTargetID) ;
       sFeatureNameID = zMapFeatureCreateName(cFeatureStyleMode, sFeatureName, cStrand, iStart, iEnd, iTargetStart, iTargetEnd) ;
 
       bDataAdded = zMapFeatureAddStandardData(pFeature, sFeatureNameID, sFeatureName, sSequence, sSOType,
