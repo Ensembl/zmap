@@ -638,7 +638,7 @@ void zmapWindowMenuSetStyleCB(int menu_item_id, gpointer callback_data)
   for(set_strand = ZMAPSTRAND_NONE; set_strand <= ZMAPSTRAND_REVERSE; set_strand++)
   {
 	  /* yes really: frames are numbered 0,1,2 and have the values 1,2,3 */
-	for(set_frame = ZMAPSTRAND_NONE; set_frame <= ZMAPFRAME_2; set_frame++)
+    for(set_frame = ZMAPFRAME_NONE; set_frame <= ZMAPFRAME_2; set_frame++)
 	{
 		/* this is really frustrating:
 		 * every operation of the ftoi hash involves

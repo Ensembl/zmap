@@ -905,30 +905,28 @@ static GArray *translateDNASegment(char *dna_in, int from, int length, ZMapStran
 
       /* I think we can free the dna now... */
       g_free(dna);
-    }
 
-  if (!translation_table)
-    translation_table = pepGetTranslationTable() ;
+      if (!translation_table)
+        translation_table = pepGetTranslationTable() ;
 
-  {
-    int dna_min = 1 ;
-    int dna_max = dna_array->len ;
-    int bases = dna_max - dna_min + 1 ;
+      int dna_min = 1 ;
+      int dna_max = dna_array->len ;
+      int bases = dna_max - dna_min + 1 ;
 
-    if (bases % 3)
-      *incomplete_final_codon = TRUE ;
-    else
-      *incomplete_final_codon = FALSE ;
-  }
+      if (bases % 3)
+        *incomplete_final_codon = TRUE ;
+      else
+        *incomplete_final_codon = FALSE ;
 
-  peptide = doDNATranslation(translation_table, dna_array, strand, FALSE, include_stop) ;
+      peptide = doDNATranslation(translation_table, dna_array, strand, FALSE, include_stop) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* Tidy up, note how we just leave the dna as it is still the original data. */
-  data = g_array_free(dna_array, FALSE) ;
+      /* Tidy up, note how we just leave the dna as it is still the original data. */
+      data = g_array_free(dna_array, FALSE) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-  /* in this version we now free the dna... */
-  data = g_array_free(dna_array, TRUE) ;
+      /* in this version we now free the dna... */
+      data = g_array_free(dna_array, TRUE) ;
+    }
 
   return peptide ;
 }

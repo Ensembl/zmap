@@ -1139,8 +1139,8 @@ static gboolean setBlixemScope(blixemData blixem_data)
 static gboolean makeTmpfiles(blixemData blixem_data)
 {
   gboolean    status = TRUE;
-  char       *path;
-  char       *login;
+  char       *path = NULL;
+  char       *login = NULL;
 
   if ((login = (char *)g_get_user_name()))
     {

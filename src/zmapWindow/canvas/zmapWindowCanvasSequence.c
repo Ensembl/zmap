@@ -783,7 +783,7 @@ gboolean zMapWindowCanvasFeaturesetGetSeqCoord(ZMapWindowFeaturesetItem features
   /* get y coordinate as left hand base/ residue of current row */
   static ZMapWindowCanvasSequence seq = NULL;
   static long seq_origin;		/* is fixed once set */
-  ZMapSkipList sl;
+  ZMapSkipList sl = NULL ;
   long seq_y, seq_x;
   ZMapWindowCanvasPango pango = (ZMapWindowCanvasPango) featureset->opt;
 

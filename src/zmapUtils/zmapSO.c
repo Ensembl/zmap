@@ -132,7 +132,7 @@ GQuark zMapSOVariation2SO(char *variation_str)
   static GRegex *insertion_exp = NULL, *lots_insertion_exp, *deletion_exp, *lots_deletion_exp,
     *snp_exp, *substitution_exp, *alteration_exp ;
   /* GMatchInfo *match_info ; */
-  GQuark var_id ;
+  GQuark var_id = 0 ;
 
   if (!insertion_exp)
     {

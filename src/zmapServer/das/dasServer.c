@@ -622,7 +622,7 @@ static gint segmentsFindCurrent(gpointer data, gpointer user_data)
   listFindResult full_data = (listFindResult)user_data;
   gint found = 1;
 
-  if((segment->id == full_data->id_to_match))
+  if(segment->id == full_data->id_to_match)
     {
       full_data->segment = segment;
       full_data->matched = TRUE;

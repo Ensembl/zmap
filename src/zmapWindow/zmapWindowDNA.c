@@ -141,7 +141,7 @@ void zmapWindowCreateSequenceSearchWindow(ZMapWindow window, FooCanvasItem *feat
   GdkColor colour = {0} ;
   DNASearchData search_data ;
   ZMapFeatureAny feature_any = NULL ;
-  ZMapFeatureBlock block ;
+  ZMapFeatureBlock block = NULL ;
   int max_errors, max_Ns ;
   char *text, *frame_label, *frame_text ;
   int screen_search_end, screen_search_start;
@@ -172,7 +172,7 @@ void zmapWindowCreateSequenceSearchWindow(ZMapWindow window, FooCanvasItem *feat
     block = (ZMapFeatureBlock)zMapFeatureGetParentGroup(feature_any,
                                                         ZMAPFEATURE_STRUCT_BLOCK) ;
 
-  if (block->sequence.type == ZMAPSEQUENCE_NONE)
+  if (proceed && block->sequence.type == ZMAPSEQUENCE_NONE)
     {
       proceed = FALSE;
       zMapWarning("Cannot search DNA in this block \"%s\", "
