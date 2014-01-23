@@ -111,6 +111,9 @@ static gboolean hack_SpecialColumnToSOTerm(const char * const, char ** const ) ;
 /* #define LOCAL_DEBUG_CODE_ALIGNMENT 1 */
 /* #define LOCAL_DEBUG_CODE_TRANSCRIPT 1 */
 /* #define LOCAL_DEBUG_CODE_DEFAULT 1 */
+/* #define LOCAL_DEBUG_CODE_LOCUS 1 */
+
+
 
 #ifdef LOCAL_DEBUG_CODE_ALIGNMENT
 static unsigned int iCountAlignment = 0 ;
@@ -122,6 +125,11 @@ static unsigned int iCountTranscript = 0 ;
 
 #ifdef LOCAL_DEBUG_CODE_DEFAULT
 static unsigned int iCountDefault = 0 ;
+#endif
+
+#ifdef LOCAL_DEBUG_CODE_LOCUS
+static FILE *pTestFile = NULL ;
+static const char *sTestFileName = "/nfs/users/nfs_s/sm23/Work/testfile.txt" ;
 #endif
 
 /*
@@ -3010,6 +3018,17 @@ gboolean makeFeatureLocus(const ZMapGFFParser const pParser, const ZMapGFFFeatur
               *psError = g_strdup_printf("makeFeatureLocus(); could not add feature with name_id = '%s' and name = '%s' to featureset",
                                          sNameID, sName) ;
             }
+#ifdef LOCAL_DEBUG_CODE_LOCUS
+          if (!pTestFile)
+          {
+            pTestFile = fopen(sTestFileName, "w") ;
+          }
+          if (bResult)
+            {
+              fprintf(pTestFile, "creating locus with s = '%s', '%s'\n", sName, sNameID ) ;
+              fflush(pTestFile) ;
+            }
+#endif
         }
 
 
