@@ -3720,7 +3720,9 @@ static gboolean makeNewFeature_V3(
 
   gboolean bResult = FALSE,
     bNewFeatureCreated = FALSE,
-    bIncludeFeature = TRUE ;
+    bIncludeFeature = TRUE,
+    bFoundFeatureset = FALSE,
+    bLocusFeature = FALSE ;
 
   ZMapFeature pFeature = NULL ;
   ZMapFeatureSet pFeatureSet = NULL ;
@@ -3746,26 +3748,15 @@ static gboolean makeNewFeature_V3(
   cFeatureStyleMode    = zMapSOIDDataGetStyleMode(pSOIDData) ;
 
   /*
-   * Clipping logic.
-   */
-  if (cFeatureStyleMode == ZMAPSTYLE_MODE_TRANSCRIPT)
-    bIncludeFeature = clipFeatureLogic_Transcript(pParser, pFeatureData ) ;
-  else
-    bIncludeFeature = clipFeatureLogic_General(pParser, pFeatureData ) ;
-
-  /*
    * This is doing some lookups to find styles for features (or at least for the
    * feature set at once). If it fails then we exit doing nothing.
    */
-  if (!performSourceComputations(pParserBase, pFeatureData, &pFeatureSet) )
-    {
-      bIncludeFeature = FALSE ;
-    }
+  bFoundFeatureset = performSourceComputations(pParserBase, pFeatureData, &pFeatureSet) ;
 
   /*
    * Now branch on the ZMapStyleMode of the current GFF line.
    */
-  if (bIncludeFeature)
+  if (bFoundFeatureset)
     {
 
       if (cFeatureStyleMode == ZMAPSTYLE_MODE_INVALID)
@@ -3775,48 +3766,73 @@ static gboolean makeNewFeature_V3(
       else if (cFeatureStyleMode == ZMAPSTYLE_MODE_TRANSCRIPT)
         {
 
-          pFeature = makeFeatureTranscript(pFeatureData, pFeatureSet, &bNewFeatureCreated, &sMakeFeatureErrorText) ;
-          if (pFeature)
+          if ((bIncludeFeature = clipFeatureLogic_Transcript(pParser, pFeatureData )))
             {
-              bResult = TRUE ;
-            }
-          if (bNewFeatureCreated)
-            ++pParser->num_features ;
 
-          if (requireLocusOperations(pParserBase, pFeatureData) && bNewFeatureCreated)
-            {
-              gboolean bLocusFeature = makeFeatureLocus(pParserBase, pFeatureData, &sMakeFeatureErrorText) ;
+              pFeature = makeFeatureTranscript(pFeatureData, pFeatureSet, &bNewFeatureCreated, &sMakeFeatureErrorText) ;
+              if (pFeature)
+                {
+                  bResult = TRUE ;
+                }
+              if (bNewFeatureCreated)
+                ++pParser->num_features ;
+
+              if (requireLocusOperations(pParserBase, pFeatureData) && bNewFeatureCreated)
+                {
+                  if (clipFeatureLogic_General(pParser, pFeatureData ))
+                    {
+                      bLocusFeature = makeFeatureLocus(pParserBase, pFeatureData, &sMakeFeatureErrorText) ;
+                    }
+                }
+
             }
 
         }
       else if (cFeatureStyleMode == ZMAPSTYLE_MODE_ALIGNMENT)
         {
 
-          pFeature = makeFeatureAlignment(pFeatureData, pFeatureSet, &sMakeFeatureErrorText) ;
-          if (pFeature)
+          if ((bIncludeFeature = clipFeatureLogic_General(pParser, pFeatureData )))
             {
-              bResult = TRUE ;
-              ++pParser->num_features ;
+
+              pFeature = makeFeatureAlignment(pFeatureData, pFeatureSet, &sMakeFeatureErrorText) ;
+              if (pFeature)
+                {
+                  bResult = TRUE ;
+                  ++pParser->num_features ;
+                }
+
             }
+
 
         }
       else if (cFeatureStyleMode == ZMAPSTYLE_MODE_ASSEMBLY_PATH)
         {
-          pFeature = makeFeatureAssemblyPath(pFeatureData, pFeatureSet, &sMakeFeatureErrorText) ;
-          if (pFeature)
+
+          if ((bIncludeFeature = clipFeatureLogic_General(pParser, pFeatureData )))
             {
-              bResult = TRUE ;
-              ++pParser->num_features ;
+
+              pFeature = makeFeatureAssemblyPath(pFeatureData, pFeatureSet, &sMakeFeatureErrorText) ;
+              if (pFeature)
+                {
+                  bResult = TRUE ;
+                  ++pParser->num_features ;
+                }
+
             }
         }
       else
         {
 
-          pFeature = makeFeatureDefault(pFeatureData, pFeatureSet, &sMakeFeatureErrorText) ;
-          if (pFeature)
+          if ((bIncludeFeature = clipFeatureLogic_General(pParser, pFeatureData )))
             {
-              bResult = TRUE ;
-              ++pParser->num_features ;
+
+              pFeature = makeFeatureDefault(pFeatureData, pFeatureSet, &sMakeFeatureErrorText) ;
+              if (pFeature)
+                {
+                  bResult = TRUE ;
+                  ++pParser->num_features ;
+                }
+
             }
 
 
@@ -3847,17 +3863,6 @@ static gboolean makeNewFeature_V3(
               zMapFeatureAddVariationString(pFeature, sVariation) ;
             }
         }
-
-      /*
-       * Handle "locus" attribute.
-       */
-      //if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_locus)))
-      //  {
-      //    if (zMapAttParseLocus(pAttribute, &gqLocusID ))
-      //      {
-      //        zMapFeatureAddLocus(pFeature, gqLocusID ) ;
-      //      }
-      //  }
 
       /*
        * Insert handling of other attributes in here as necesary.
