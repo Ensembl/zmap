@@ -3385,6 +3385,18 @@ static ZMapFeature makeFeatureDefault(const ZMapGFFFeatureData const pFeatureDat
                                        iStart, iEnd, bHasScore, dScore, cStrand);
 
   /*
+   * Handle the case where we have a splice site of some kind. These were originally handled
+   * with the SO terms "splice3" and "splice5" in GFF2 output from AceDB.
+   */
+  if (bDataAdded)
+    {
+      if (!strcmp(sSOType, "five_prime_cis_splice_site"))
+        bDataAdded = zMapFeatureAddSplice(pFeature, ZMAPBOUNDARY_5_SPLICE) ;
+      else if (!strcmp(sSOType, "three_prime_cis_splice_site"))
+        bDataAdded = zMapFeatureAddSplice(pFeature, ZMAPBOUNDARY_3_SPLICE) ;
+    }
+
+  /*
    * Add the feature to feature set
    */
   if (bDataAdded)
@@ -3398,7 +3410,6 @@ static ZMapFeature makeFeatureDefault(const ZMapGFFFeatureData const pFeatureDat
     }
 
   zMapFeatureAddText(pFeature, g_quark_from_string(sSource), sSource, NULL) ;
-
 
 #ifdef LOCAL_DEBUG_CODE_DEFAULT
   ++iCountDefault ;
