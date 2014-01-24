@@ -22,11 +22,10 @@
  *
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- * Description:
- *
- * implements callback functions for FeaturesetItem basic features (boxes)
+ * Description: Implements callback functions for FeaturesetItem
+ *              basic features (boxes).
  *-------------------------------------------------------------------
  */
 
@@ -36,11 +35,13 @@
 #include <string.h>
 
 #include <ZMap/zmapFeature.h>
+#include <zmapWindowCanvasDraw.h>
 #include <zmapWindowCanvasFeatureset_I.h>
 
 
 static void basicPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
                               GdkDrawable *drawable, GdkEventExpose *expose) ;
+
 
 
 void zMapWindowCanvasBasicInit(void)
@@ -55,15 +56,13 @@ void zMapWindowCanvasBasicInit(void)
 }
 
 
-
+/* draw a box */
 static void basicPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
                               GdkDrawable *drawable, GdkEventExpose *expose)
 {
   gulong fill,outline ;
   int colours_set, fill_set, outline_set ;
   double x1,x2 ;
-
-  /* draw a box */
 
   /* colours are not defined for the CanvasFeatureSet
    * as we can have several styles in a column
@@ -74,7 +73,7 @@ static void basicPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
   fill_set = colours_set & WINDOW_FOCUS_CACHE_FILL ;
   outline_set = colours_set & WINDOW_FOCUS_CACHE_OUTLINE ;
 
-  if(fill_set && feature->feature->population)
+  if (fill_set && feature->feature->population)
     {
       FooCanvasItem *foo = (FooCanvasItem *) featureset ;
       ZMapFeatureTypeStyle style = *feature->feature->style;
@@ -87,15 +86,9 @@ static void basicPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
         }
     }
 
-  x1 = featureset->width / 2 - feature->width / 2;
-  if(featureset->bumped)
-    x1 += feature->bump_offset;
-
-  x1 += featureset->dx + featureset->x_off;
-  x2 = x1 + feature->width - 1;
-
-  zMapCanvasFeaturesetDrawBoxMacro(featureset, x1, x2, feature->y1, feature->y2, drawable,
-                                   fill_set, outline_set, fill, outline) ;
+  if (zMapWindowCanvasCalcHorizCoords(featureset, feature, &x1, &x2))
+    zMapCanvasFeaturesetDrawBoxMacro(featureset, x1, x2, feature->y1, feature->y2, drawable,
+                                     fill_set, outline_set, fill, outline) ;
 
   return ;
 }
