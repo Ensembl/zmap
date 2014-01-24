@@ -37,6 +37,7 @@
 
 #include <ZMap/zmapFeature.h>
 #include <ZMap/zmapUtilsLog.h>
+#include <zmapWindowCanvasDraw.h>
 #include <zmapWindowCanvasAlignment_I.h>
 
 
@@ -186,11 +187,15 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
   /* display code assumes a narrow column w/ overlapping features and does not process x-coord */
   /* this makes a huge difference to display speed */
 
+  /* Stuff this in here for now....needed in colinear lines.... */
   mid_x = featureset->dx + featureset->x_off + (featureset->width / 2);
   if(featureset->bumped)
     mid_x += feature->bump_offset;
-  x1 = mid_x - feature->width / 2;
-  x2 = x1 + feature->width;
+
+
+
+  zMapWindowCanvasCalcHorizCoords(featureset, feature, &x1, &x2) ;
+
   foo_canvas_w2c (foo->canvas, x1, 0, &cx1, NULL);
   foo_canvas_w2c (foo->canvas, x2, 0, &cx2, NULL);
 
@@ -231,23 +236,17 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
       /* we don't draw gaps on reverse, annotators work on the fwd strand and revcomp if needs be */
       double x1, x2 ;
 
-      x1 = featureset->width / 2 - feature->width / 2;
-      if(featureset->bumped)
-	x1 += feature->bump_offset;
-
-      x1 += featureset->dx + featureset->x_off;
-      x2 = x1 + feature->width - 1 ;
-
-      /* must use feature coords here as the first alignment in the series gets expanded to pick up colinear lines
-       * if it's ungapped we'd draw a big box over the whole series
-       */
-      zMapCanvasFeaturesetDrawBoxMacro(featureset,
-				       x1, x2, feature->feature->x1, feature->feature->x2,
-				       drawable, fill_set, outline_set, fill, outline) ;
+      if (zMapWindowCanvasCalcHorizCoords(featureset, feature, &x1, &x2))
+        /* must use feature coords here as the first alignment in the series gets expanded to pick up colinear lines
+         * if it's ungapped we'd draw a big box over the whole series
+         */
+        zMapCanvasFeaturesetDrawBoxMacro(featureset,
+                                         x1, x2, feature->feature->x1, feature->feature->x2,
+                                         drawable, fill_set, outline_set, fill, outline) ;
     }
   else
     {
-      /* draw gapped boxes */
+      /* Draw full gapped alignment boxes, colinear lines etc etc. */
       AlignGap ag;
       GdkColor c;
       int cx1, cy1, cx2, cy2;
@@ -270,9 +269,9 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
       /* draw them */
 
       /* get item canvas coords.  gaps data is relative to feature y1 in pixel coordinates */
-      foo_canvas_w2c (foo->canvas, x1, feature->feature->x1 - featureset->start + featureset->dy, &cx1, &cy1);
-      foo_canvas_w2c (foo->canvas, x2, 0, &cx2, NULL);
-      cy2 = cy1;
+      foo_canvas_w2c(foo->canvas, x1, feature->feature->x1 - featureset->start + featureset->dy, &cx1, &cy1) ;
+      foo_canvas_w2c(foo->canvas, x2, 0, &cx2, NULL) ;
+      cy2 = cy1 ;
 
       for (ag = align->gapped ; ag ; ag = ag->next)
 	{
@@ -285,6 +284,8 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
 	    {
 	    case GAP_BOX:
               {
+                /* Can't use generalised draw call here because these are already canvas coords. */
+
                 if (fill_set && (!outline_set || (gy2 - gy1 > 1)))	/* fill will be visible */
                   {
                     c.pixel = fill;
@@ -439,6 +440,7 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
 	      foo_canvas_w2c(foo->canvas,
 			     mid_x, feat->feature->x2 - featureset->start + featureset->dy + 1,
 			     &cx1, &cy1);
+
 	      foo_canvas_w2c(foo->canvas,
 			     mid_x, next->feature.y1 - featureset->start + featureset->dy,
 			     &cx2, &cy2);
@@ -450,6 +452,15 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
 
 	      /* draw line between boxes, don't overlap the pixels */
 	      gdk_gc_set_foreground(featureset->gc, colour);
+
+
+              /* The bit about clobbering the "first feature's y2" above seems to mean the first
+               * line is drawn one pixel too long at the top. I hate doing this but I haven't
+               * worked out what is going on  here yet !!! */
+              if (!feature->left)
+                cy1++ ;
+
+
 	      zMap_draw_line(drawable, featureset, cx1, cy1, cx2, cy2) ;
 
 	      if(cy2 > expose->area.y + expose->area.height)
