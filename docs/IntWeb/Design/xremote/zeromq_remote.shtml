@@ -1,0 +1,152 @@
+<!--#set var="banner" value="The Remote Control Interface using ZeroMQ"-->
+<!--#include virtual="/perl/header"-->
+
+<!--#set var="author" value="mg13@sanger.ac.uk" -->
+
+<!-- some colours for our boxes etc. -->
+
+<!-- lightpink = #FFB8C1 -->
+
+<style>
+
+pre{ background-color: #DDDDDD; border-style: solid; border-width: 1px; padding: 10px }
+
+.code{ background-color: lightsteelblue }
+.request{ border-color: red;  border-width: medium }
+.reply{ border-color: green; border-width: medium }
+.message{ border-color: blue; border-width: medium }
+
+table.zmap_actions{ background-color: #EFEFEF; border-width: 1px; border-style: solid; border-collapse: collapse }
+table.zmap_actions td{ border-width: 0px 1px 1px 0px; border-style: solid; padding: 2px }
+table.zmap_actions tr{ vertical-align: top; }
+table.zmap_actions th{ border-width: 0px 0px 1px 0px; border-style: solid; }
+
+fieldset
+{
+background-color: lightblue;
+border-style: solid; border-width: 3px; border-color: black;
+padding: 10px
+}
+
+legend{ font-weight: bold }
+
+</style>
+
+
+<h1 align="center">ZMap Remote Control Interface using ZeroMQ</h1>
+
+
+<h2>Contents</h2>
+
+<ul>
+  <li><a href="#introduction"><b>Introduction</b></a></li>
+  <li><a href="#protocol"><b>The Request/Reply Transport Protocol</b></a></li>
+  <li><a href="#problems"><b>Bootstrapping, Collisions, Synchronisation and Hanging</b><a></li>
+  <li><a href="#protocol"><b>References</b></a></li>
+</ul>
+
+
+
+<a name="introduction"></a>
+<h2>Introduction</h2>
+
+<p>This document describes how
+the <a href="zmap_remote.shtml#protocol">Request/Reply Transport
+Protocol</a> can be re-implemented using
+the <a href="http://zeromq.org">ZeroMQ</a> networking library.</p>
+
+<p>It would be helpful to have read the preface of
+the <a href="http://zguide.zeromq.org/page:all">ZeroMQ Guide</a> and the
+first few sections of chapter 1, up to and
+including <em><a href="http://zguide.zeromq.org/page:all#Ask-and-Ye-Shall-Receive">Ask
+and Ye Shall Receive</a></em>.</p>
+
+<a name="protocol"></a>
+<h2>The Request/Reply Transport Protocol</h2>
+
+<h3>Peer States in the Request/Reply cycle:</h3>
+
+<p>The simplified state changes are:</p>
+
+<img src="./ZeroMQ_Request_Response_state.png" align="center">
+
+<h3>ZeroMQ Endpoints</h3>
+
+<p>The clipboard IDs used as endpoint identifiers in the X selection
+transport are replaced with ZeroMQ endpoint addresses. These can
+either be TCP sockets bound to the local interface (for single-machine
+operation) or Unix domain sockets bound to a temporary file path.</p>
+
+<h3>ZeroMQ Request/Reply cycle</h3>
+
+<p>The following is simplified by ignoring the setting up of a ZeroMQ
+context, and does not describe ZeroMQ message management.</p>
+
+<p>Any use of the term <em>socket</em> refers to a ZeroMQ socket
+and <b>not</b> to a traditional Unix or TCP socket.</p>
+
+<img src="./ZeroMQ_Request_Reply.png" align="center">
+
+<h3>Preparation for communications:</h3>
+
+<ol>
+  <li><p>Peer 1 creates a <tt>ZMQ_REQ</tt> client socket and connects it
+  to Peer 2's endpoint via <tt>zmq_connect()</tt>.</p></li>
+
+  <li><p>Peer 2 creates a <tt>ZMQ_REP</tt> server socket and binds this
+  to its own endpoint via <tt>zmq_bind()</tt>. Peer 2 then arranges a
+  callback on receive events for this socket.</p></li>
+</ol>
+
+<p>Note that ZeroMQ permits steps 1 and 2 to happen in either order.
+
+<h3>Request and reply:</h3>
+
+<ol start="3">
+  <li><p>Peer 1 creates a request and sends it via its client socket by
+  calling <tt>zmq_send()</tt>.</p></li>
+  <li><p>Peer 2's server socket callback is fired, and
+  uses <tt>zmq_recv</tt> to fetch the request.</p></li>
+  <li><p>Peer 1 polls for, or arranges a callback on, a reply on its
+  client socket. (A callback could be set up at any stage after the
+  socket has been connected.)</p></li>
+  <li><p>Peer 2 does some processing on the request (this should be
+  brief).</p></li>
+  <li><p>Peer 2 creates a reply and sends it via its server socket by
+  calling <tt>zmq_send()</tt>.</p></li>
+  <li><p>Peer 1's client socket callback or poll is fired, and
+  uses <tt>zmq_recv()</tt> to fetch the reply.</p></li>
+  <li><p>The request-reply sequence is complete, and can be repeated
+  from step 3 when next required.</p></li>
+</ol>
+
+<a name="problems"></a>
+<h2>Bootstrapping, Collisions, Synchronisation and Hanging</h2>
+
+<p><b>Under construction.</b></p>
+
+<p>Bootstrapping is almost identical to the existing system. The
+initiator passes its server endpoint to its peer as a command line
+parameter, which responds with its own server endpoint in a handshake
+request message.</p>
+
+<p>Timeouts and errors are to be handled by each client implementing
+the <a href="http://zguide.zeromq.org/page:all#toc89">Lazy Pirate
+Pattern</a>.
+
+<p>The collision protocol is under consideration and development, but
+note that the simplified state diagram probably reduces the likelihood
+and impact of collisions.</p>
+
+<a name="references"></a>
+<h2>References</h2>
+
+<ul>
+  <li><a href="http://zeromq.org/">ZeroMQ</a></li>
+  <li><a href="http://zguide.zeromq.org/page:all">ZeroMQ Guide</a></li>
+  <li><a href="https://metacpan.org/pod/ZMQ::LibZMQ3">ZMQ::LibZMQ3 perl module</a></li>
+</ul>
+
+
+
+<!--#include virtual="/perl/footer"-->
