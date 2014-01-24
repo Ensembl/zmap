@@ -72,6 +72,7 @@
 #include <zmapWindowCanvasLocus.h>
 #include <zmapWindowCanvasGraphics.h>
 #include <zmapWindowCanvasGlyph.h>
+#include <zmapWindowCanvasDraw.h>
 #include <zmapWindowCanvasFeatureset_I.h>
 
 
@@ -275,161 +276,6 @@ void zMapWindowCanvasFeatureSetSetFuncs(int featuretype, gpointer *funcs, int fe
 }
 
 
-
-/* clip to expose region */
-/* erm,,, clip to visible scroll region: else rectangles would get extra edges */
-int zMap_draw_line(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, gint cx1, gint cy1, gint cx2, gint cy2)
-{
-  /* for H or V lines we can clip easily */
-
-  if(cy1 > featureset->clip_y2)
-    return 0;
-  if(cy2 < featureset->clip_y1)
-    return 0;
-
-
-#if 0
-  /*
-    the problem is long vertical lines that wrap round
-    we don't draw big horizontal ones
-  */
-  if(cx1 > featureset->clip_x2)
-    return;
-  if(cx2 < featureset->clip_x1)
-    {
-      /* this will return if we expose part of a line that runs TR to BL
-       * we'd have to swap x1 and x2 round for the comparison to work
-       */
-      return;
-    }
-#endif
-
-
-  if(cx1 == cx2)	/* is vertical */
-    {
-#if 0
-      /*
-	the problem is long vertical lines that wrap round
-	we don't draw big horizontal ones
-      */
-      if(cx1 < featureset->clip_x1)
-	cx1 = featureset->clip_x1;
-      if(cx2 > featureset->clip_x2)
-	cx2 = featureset->clip_x2;
-#endif
-
-      if(cy1 < featureset->clip_y1)
-	cy1 = featureset->clip_y1;
-      if(cy2 > featureset->clip_y2)
-	cy2 = featureset->clip_y2 ;
-    }
-  else
-    {
-      double dx = cx2 - cx1;
-      double dy = cy2 - cy1;
-
-      if(cy1 < featureset->clip_y1)
-	{
-	  /* need to round to get partial lines joining up neatly */
-	  cx1 += round(dx * (featureset->clip_y1 - cy1) / dy);
-	  cy1 = featureset->clip_y1;
-	}
-      if(cy2 > featureset->clip_y2)
-	{
-	  cx2 -= round(dx * (cy2 - featureset->clip_y2) / dy);
-	  cy2 = featureset->clip_y2;
-	}
-
-    }
-
-  gdk_draw_line (drawable, featureset->gc, cx1, cy1, cx2, cy2);
-
-  return 1;
-}
-
-
-/* these are less common than solid lines */
-int zMap_draw_broken_line(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, gint cx1, gint cy1, gint cx2, gint cy2)
-{
-  int ret;
-
-  gdk_gc_set_line_attributes(featureset->gc, 1, GDK_LINE_ON_OFF_DASH,GDK_CAP_BUTT, GDK_JOIN_MITER);
-
-  ret = zMap_draw_line(drawable, featureset, cx1, cy1, cx2, cy2);
-
-  gdk_gc_set_line_attributes(featureset->gc, 1, GDK_LINE_SOLID,GDK_CAP_BUTT, GDK_JOIN_MITER);
-
-  return ret;
-}
-
-
-
-/* clip to expose region */
-/* erm,,, clip to visble scroll regipn: else rectangles would get extra edges */
-/* NOTE rectangles may be drawn partially if they overlap the visible region
- * in which case a false outline will be draw outside the region
- */
-int zMap_draw_rect(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, gint cx1, gint cy1, gint cx2, gint cy2, gboolean fill)
-{
-  /* as our rectangles are all aligned to H and V we can clip easily */
-  
-  /* First check whether the coords overlap the clip rect at all */
-  if(cy1 > featureset->clip_y2)
-    return 0;
-  if(cy2 < featureset->clip_y1)
-    return 0;
-
-  if(cx1 > featureset->clip_x2)
-    return 0;
-  if(cx2 < featureset->clip_x1)
-    return 0;
-
-  /* Clip the coords */
-  if(cx1 < featureset->clip_x1)
-    cx1 = featureset->clip_x1;
-  if(cy1 < featureset->clip_y1)
-    cy1 = featureset->clip_y1;
-  if(cx2 > featureset->clip_x2)
-    cx2 = featureset->clip_x2;
-  if(cy2 > featureset->clip_y2)
-    cy2 = featureset->clip_y2;
-
-  /* NOTE that the gdk_draw_rectangle interface is a bit esoteric
-   * and it doesn't like rectangles that have no depth 
-   * read the docs to understand the coordinate calculations here
-   */
-
-  int result = 0;
-  
-  if (cy2 == cy1 || cx1 == cx2)
-    {
-      gdk_draw_line (drawable, featureset->gc, cx1, cy1, cx2, cy2);
-      result = 1;
-    }
-  else if (cy2 < cy1 || cx2 < cx1)
-    {
-      /* We expect the second coord to be greater than the first so
-       * if we get here it's an error. */
-      zMapWarning("Program error: Tried to draw a rectangle with negative width/height (width=%d, height=%d)",
-		  cx2 - cx1, cy2 - cy1) ;
-    }
-  else
-    {
-      if (!fill)
-	{
-	  cx2--;	/* outline rects are 1 pixel bigger than filled ones */
-	  cy2--;
-	}
-
-      gdk_draw_rectangle (drawable, featureset->gc, fill, cx1, cy1, cx2 - cx1, cy2 - cy1);
-
-      result = 1;
-    }
-
-  return result;
-}
-
-
 gboolean zMapWindowCanvasIsFeatureSet(ZMapWindowFeaturesetItem feature_list)
 {
   gboolean is_featureset_item = FALSE ;
@@ -613,6 +459,8 @@ void zMapWindowCanvasFeaturesetPaintFlush(ZMapWindowFeaturesetItem featureset, Z
 gboolean zMapWindowCanvasFeaturesetGetFeatureExtent(ZMapWindowCanvasFeature feature,
 						    gboolean complex, ZMapSpan span, double *width)
 {
+  gboolean result = TRUE ;
+
   void (*func) (ZMapWindowCanvasFeature feature, ZMapSpan span, double *width) = NULL;
 
   if(!feature || feature->type < 0 || feature->type >= FEATURE_N_TYPE)
@@ -635,7 +483,7 @@ gboolean zMapWindowCanvasFeaturesetGetFeatureExtent(ZMapWindowCanvasFeature feat
       func(feature, span, width);
     }
 
-  return TRUE;
+  return result ;
 }
 
 
@@ -911,7 +759,6 @@ static void zMapWindowCanvasFeaturesetPaintSet(ZMapWindowFeaturesetItem fi,
 {
   ZMapWindowFeatureItemSetPaintFunc func ;
   FooCanvasItem * foo = (FooCanvasItem *) fi;
-
   gint x1, x2, y1, y2;
   GdkColor c;
 
@@ -931,8 +778,12 @@ static void zMapWindowCanvasFeaturesetPaintSet(ZMapWindowFeaturesetItem fi,
   if(y2 > fi->clip_y2)
     y2 = fi->clip_y2;
 
+
+  /* You can't use zMapCanvasFeaturesetDrawBoxMacro() here because it converts from world to
+   * canvas and these coords are already canvas. */
   if(fi->background_set)
     {
+
       c.pixel = fi->background;
       gdk_gc_set_foreground (fi->gc, &c);
 
@@ -946,10 +797,11 @@ static void zMapWindowCanvasFeaturesetPaintSet(ZMapWindowFeaturesetItem fi,
 	  gdk_gc_set_fill (fi->gc, GDK_SOLID);
 	}
 
-      zMap_draw_rect (drawable, fi, x1, y1, x2, y2, TRUE);
+
+      zMap_draw_rect(drawable, fi, x1, y1, x2, y2, TRUE);
     }
 
-  if(fi->border_set)
+  if (fi->border_set)
     {
       /* Is this EVER called...????? */
 
@@ -957,7 +809,7 @@ static void zMapWindowCanvasFeaturesetPaintSet(ZMapWindowFeaturesetItem fi,
       gdk_gc_set_foreground (fi->gc, &c);
       gdk_gc_set_fill (fi->gc, GDK_SOLID);
 
-      zMap_draw_rect (drawable, fi, x1, y1, x2, y2, FALSE);
+      zMap_draw_rect(drawable, fi, x1, y1, x2, y2, FALSE);
     }
 
 
@@ -2510,12 +2362,6 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
   fi->clip_x2 = rect.x + rect.width + 1;
   fi->clip_y2 = rect.y + rect.height + 1;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  fi->clip_x2 = rect.x + rect.width + 1;
-  fi->clip_y2 = rect.y + rect.height + 2 ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 
   /* UM....WHY NOT DO THIS AT THE BEGINNING...DUH..... */
   if(!fi->gc && (item->object.flags & FOO_CANVAS_ITEM_REALIZED))
@@ -3158,59 +3004,6 @@ gboolean zMapCanvasFeaturesetSeq2World(ZMapWindowFeaturesetItem featureset,
     }
 
   return result ;
-}
-
-
-/* I HAD MOVED THIS....CHECK OUT WHY IT IS STILL HERE.... */
-
-/* basic feature draw a box
- * defined as a macro for efficiency to avoid multple copies of cut and paste
- * otherwise would need 10 args which is silly
- * used by basc feature, alignments, graphs, maybe transcripts... and what else??
- *
- * NOTE x1 and x2 passed as args as normal features are centred but graphs maybe not
- */
-void zMapCanvasFeaturesetDrawBoxMacro(ZMapWindowFeaturesetItem featureset, 
-                                      double x1,
-                                      double x2, 
-                                      double y1,
-                                      double y2,
-                                      GdkDrawable * drawable,
-                                      gboolean fill_set,
-                                      gboolean outline_set,
-                                      gulong fill,
-                                      gulong outline)
-{
-  FooCanvasItem *item = (FooCanvasItem *) featureset;
-  GdkColor c;
-  int cx1, cy1, cx2, cy2;
-  
-  /* get item canvas coords, following example from FOO_CANVAS_RE (used by graph items) */
-  /* NOTE CanvasFeature coords are the extent including decorations so we get coords from the feature */
-  foo_canvas_w2c (item->canvas, x1, y1 - featureset->start + featureset->dy, &cx1, &cy1);
-  foo_canvas_w2c (item->canvas, x2, y2 - featureset->start + featureset->dy + 1, &cx2, &cy2);
-  /* + 1 to draw to the end of the last base */
-  
-  /* NOTE that the gdk_draw_rectangle interface is a bit esoteric	
-   * and it doesn't like rectangles that have no depth
-   */
-  if(fill_set && (!outline_set || (cy2 - cy1 > 1)))	/* fill will be visible */
-    {
-      c.pixel = fill;
-      gdk_gc_set_foreground (featureset->gc, &c);
-      zMap_draw_rect (drawable, featureset, cx1, cy1, cx2, cy2, TRUE);
-    }
-  
-  if(outline_set)
-    {
-      c.pixel = outline;
-      gdk_gc_set_foreground(featureset->gc, &c);
-      /* +1 due to gdk_draw_rect and zMap_draw_rect */
-
-      zMap_draw_rect(drawable, featureset, cx1, cy1, cx2+1, cy2, FALSE);
-    }
-
-  return ;
 }
 
 
