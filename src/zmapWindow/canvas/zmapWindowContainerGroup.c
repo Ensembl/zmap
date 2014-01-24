@@ -336,20 +336,8 @@ static void zmap_window_container_group_get_property(GObject               *obje
 static void zmap_window_container_group_draw (FooCanvasItem *item, GdkDrawable *drawable,
                                               GdkEventExpose *expose)
 {
-
-#if 0
-  // draw background if set
-  // not ideal no gc, need a window gc to share held in the container
-  zMap_draw_rect(drawable, ZMapWindowFeaturesetItem featureset, gint cx1, gint cy1, gint cx2, gint cy2, gboolean fill)
-    gdk_draw_rectangle (drawable, featureset->gc, fill, cx1, cy1, cx2 - cx1, cy2 - cy1);
-
-  this is only used for the strand separator...
-    instead let-s add a CanvasFeatureset with a fixed width and make that draw the background
-    do this in zmapWindowDrawFeatures and make hit markers find the feature set not add it
-#endif
-
-      if(item_parent_class_G->draw)
-        (item_parent_class_G->draw)(item, drawable, expose);
+  if(item_parent_class_G->draw)
+    (item_parent_class_G->draw)(item, drawable, expose) ;
 
   return ;
 }

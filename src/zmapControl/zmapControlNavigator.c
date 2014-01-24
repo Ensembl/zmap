@@ -222,11 +222,11 @@ void zmapNavigatorSetWindowCallback(ZMapNavigator navigator,
  * Returns an integer which is the width in pixels of the window scrollbar. */
 int zmapNavigatorSetWindowPos(ZMapNavigator navigator, double top_pos, double bot_pos)
 {
-  gboolean always_maximised = FALSE;
   int pane_width = 0 ;
+  gboolean always_maximised = FALSE;
   int seq_start = 0, seq_end = 0;
 
-  zMapReturnValIfFail(navigator, pane_width) ;
+  zMapReturnValIfFail(navigator, pane_width) ; 
 
   seq_start = navigator->sequence_span.x1;
   seq_end   = navigator->sequence_span.x2;
@@ -337,7 +337,9 @@ void zmapNavigatorSetView(ZMapNavigator navigator, ZMapFeatureContext features,
 
 int zmapNavigatorGetMaxWidth(ZMapNavigator navigator)
 {
-  zMapReturnValIfFail(navigator, 0) ;
+  int max_width = 0 ;
+
+  zMapReturnValIfFail(navigator, max_width) ; 
 
 #ifdef NAVIGATOR_USES_PANES
   int handle_size = gtk_widget_style_get(navigator->pane, "handle-size", &handle_size, NULL);
@@ -347,7 +349,9 @@ int zmapNavigatorGetMaxWidth(ZMapNavigator navigator)
     navigator->right_pane_width;
 #endif 
 
-  return navigator->left_pane_width + navigator->right_pane_width;
+  max_width = navigator->left_pane_width + navigator->right_pane_width ;
+
+  return max_width ;
 }
 
 /* Destroys a navigator instance, note there is not much to do here because we

@@ -24,9 +24,8 @@
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- * Description:
- *
- * implements callback functions for FeaturesetItem transcript features
+ * Description: Implements callback functions for FeaturesetItem
+ *              transcript features.
  *-------------------------------------------------------------------
  */
 
@@ -36,6 +35,7 @@
 #include <string.h>
 
 #include <ZMap/zmapFeature.h>
+#include <zmapWindowCanvasDraw.h>
 #include <zmapWindowCanvasFeatureset_I.h>
 #include <zmapWindowCanvasTranscript_I.h>
 
@@ -69,44 +69,47 @@ static void zMapWindowCanvasTranscriptPaintFeature(ZMapWindowFeaturesetItem feat
    * this is likely ineffective, but as the number of features is small we don't care so much
    */
 
-  colours_set = zMapWindowCanvasFeaturesetGetColours(featureset, feature, &fill, &outline);		/* non cds colours */
+  /* Set up non-cds colours */
+  colours_set = zMapWindowCanvasFeaturesetGetColours(featureset, feature, &fill, &outline);
   fill_set = colours_set & WINDOW_FOCUS_CACHE_FILL;
   outline_set = colours_set & WINDOW_FOCUS_CACHE_OUTLINE;
 
-  x1 = featureset->width / 2 - feature->width / 2;	/* NOTE works for exons not introns */
-  if(featureset->bumped)
-    x1 += feature->bump_offset;
 
-  x1 += featureset->dx;
-  x2 = x1 + feature->width - 1;
-  y1 = feature->y1;
-  y2 = feature->y2;
+  /* set up position. */
+  zMapWindowCanvasCalcHorizCoords(featureset, feature, &x1, &x2) ;
+  y1 = feature->y1 ;
+  y2 = feature->y2 ;
 
-  if(tr->sub_type == TRANSCRIPT_EXON)
+  /* Draw any UTR sections of an exon. */
+  if (tr->sub_type == TRANSCRIPT_EXON)
     {
+      /* utr at start ? */
       if(transcript->flags.cds && transcript->cds_start > y1 && transcript->cds_start < y2)
-
 	{
-	  /* draw a utr box at the start of the exon */
-	  zMapCanvasFeaturesetDrawBoxMacro(featureset, x1, x2, y1, transcript->cds_start-1, drawable, fill_set,outline_set,fill,outline);
-	  y1 = transcript->cds_start;
+	  zMapCanvasFeaturesetDrawBoxMacro(featureset, x1, x2, y1, transcript->cds_start-1,
+                                           drawable, fill_set,outline_set,fill,outline) ;
+	  y1 = transcript->cds_start ;
 	}
+
+      /* utr at end ? */
       if(transcript->flags.cds && transcript->cds_end > y1 && transcript->cds_end < y2)
 	{
-	  /* draw a utr box at the end of the exon */
-	  zMapCanvasFeaturesetDrawBoxMacro(featureset, x1, x2, transcript->cds_end + 1, y2, drawable, fill_set,outline_set,fill,outline);
-	  y2 = transcript->cds_end;
+	  zMapCanvasFeaturesetDrawBoxMacro(featureset, x1, x2, transcript->cds_end + 1, y2,
+                                           drawable, fill_set,outline_set,fill,outline) ;
+	  y2 = transcript->cds_end ;
 	}
     }
 
-  /* get cds colours if in CDS */
-  if(transcript->flags.cds && transcript->cds_start <= y1 && transcript->cds_end >= y2)
+  /* set up cds colours if in CDS */
+  if (transcript->flags.cds && transcript->cds_start <= y1 && transcript->cds_end >= y2)
     {
       ZMapStyleColourType ct;
       GdkColor *gdk_fill = NULL, *gdk_outline = NULL;
 
-      ct = feature->flags & WINDOW_FOCUS_GROUP_FOCUSSED ? ZMAPSTYLE_COLOURTYPE_SELECTED : ZMAPSTYLE_COLOURTYPE_NORMAL;
-      zMapStyleGetColours(*feature->feature->style, STYLE_PROP_TRANSCRIPT_CDS_COLOURS, ct, &gdk_fill, NULL, &gdk_outline);
+      ct = (feature->flags & WINDOW_FOCUS_GROUP_FOCUSSED
+            ? ZMAPSTYLE_COLOURTYPE_SELECTED : ZMAPSTYLE_COLOURTYPE_NORMAL) ;
+      zMapStyleGetColours(*feature->feature->style, STYLE_PROP_TRANSCRIPT_CDS_COLOURS, ct,
+                          &gdk_fill, NULL, &gdk_outline);
 
       if(gdk_fill)
 	{
@@ -116,6 +119,7 @@ static void zMapWindowCanvasTranscriptPaintFeature(ZMapWindowFeaturesetItem feat
 	  fill_colour = zMap_gdk_color_to_rgba(gdk_fill);
 	  fill = foo_canvas_get_color_pixel(foo->canvas, fill_colour);
 	}
+
       if(gdk_outline)
 	{
 	  gulong outline_colour;
@@ -129,7 +133,7 @@ static void zMapWindowCanvasTranscriptPaintFeature(ZMapWindowFeaturesetItem feat
 
   if(tr->sub_type == TRANSCRIPT_EXON)
     {
-      zMapCanvasFeaturesetDrawBoxMacro(featureset, x1, x2, y1, y2, drawable, fill_set,outline_set,fill,outline);
+      zMapCanvasFeaturesetDrawBoxMacro(featureset, x1, x2, y1, y2, drawable, fill_set,outline_set,fill,outline) ;
     }
   else if (outline_set)
     {
@@ -140,12 +144,15 @@ static void zMapWindowCanvasTranscriptPaintFeature(ZMapWindowFeaturesetItem feat
 
 	  /* get item canvas coords in pixel coordinates */
 	  /* NOTE not quite sure why y1 is 1 out when y2 isn't */
-	  foo_canvas_w2c (foo->canvas, x1, feature->y1 - featureset->start + featureset->dy, &cx1, &cy1);
-	  foo_canvas_w2c (foo->canvas, x2, feature->y2 - featureset->start + featureset->dy + 1, &cx2, &cy2);
+	  foo_canvas_w2c(foo->canvas, x1, feature->y1 - featureset->start + featureset->dy, &cx1, &cy1);
+	  foo_canvas_w2c(foo->canvas, x2, feature->y2 - featureset->start + featureset->dy + 1, &cx2, &cy2);
+
 	  cy1_5 = (cy1 + cy2) / 2;
 	  cx1_5 = (cx1 + cx2) / 2;
+
 	  c.pixel = outline;
 	  gdk_gc_set_foreground (featureset->gc, &c);
+
 	  zMap_draw_line(drawable, featureset, cx1_5, cy1, cx2, cy1_5);
 	  zMap_draw_line(drawable, featureset, cx2, cy1_5, cx1_5, cy2);
 	}
@@ -158,9 +165,12 @@ static void zMapWindowCanvasTranscriptPaintFeature(ZMapWindowFeaturesetItem feat
 	  /* NOTE not quite sure why y1 is 1 out when y2 isn't */
 	  foo_canvas_w2c (foo->canvas, x1, feature->y1 - featureset->start + featureset->dy, &cx1, &cy1);
 	  foo_canvas_w2c (foo->canvas, x2, feature->y2 - featureset->start + featureset->dy + 1, &cx2, &cy2);
+
 	  cx1_5 = (cx1 + cx2) / 2;
+
 	  c.pixel = outline;
 	  gdk_gc_set_foreground (featureset->gc, &c);
+
 	  zMap_draw_broken_line(drawable, featureset, cx2, cy1, cx1_5, cy2);
 	}
       else if(tr->sub_type == TRANSCRIPT_INTRON_END_NOT_FOUND)
@@ -172,9 +182,12 @@ static void zMapWindowCanvasTranscriptPaintFeature(ZMapWindowFeaturesetItem feat
 	  /* NOTE not quite sure why y1 is 1 out when y2 isn't */
 	  foo_canvas_w2c (foo->canvas, x1, feature->y1 - featureset->start + featureset->dy, &cx1, &cy1);
 	  foo_canvas_w2c (foo->canvas, x2, feature->y2 - featureset->start + featureset->dy + 1, &cx2, &cy2);
+
 	  cx1_5 = (cx1 + cx2) / 2;
+
 	  c.pixel = outline;
 	  gdk_gc_set_foreground (featureset->gc, &c);
+
 	  zMap_draw_broken_line(drawable, featureset, cx1_5, cy1, cx2, cy2);
 	}
     }

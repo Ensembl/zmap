@@ -221,11 +221,6 @@ gboolean zMapWindowCanvasIsFeatureSet(ZMapWindowFeaturesetItem) ;
 
 /* GDK wrappers to clip features */
 
-int zMap_draw_line(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, gint cx1, gint cy1, gint cx2, gint cy2);
-int zMap_draw_broken_line(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, gint cx1, gint cy1, gint cx2, gint cy2);
-int zMap_draw_rect(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, gint cx1, gint cy1, gint cx2, gint cy2, gboolean fill);
-
-
 void zmapWindowCanvasFeaturesetInitPango(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasPango pango, char *family, int size, GdkColor *draw);
 
 void zmapWindowCanvasFeaturesetFreePango(ZMapWindowCanvasPango pango);
@@ -342,8 +337,6 @@ gboolean zmapWindowFeaturesetGetDefaultPixels(ZMapWindowFeaturesetItem feature_s
 void zMapWindowCanvasFeaturesetRequestReposition(FooCanvasItem *foo);
 
 int zMapWindowFeaturesetItemGetNFiltered(FooCanvasItem *item);
-
-void zMapCanvasFeaturesetDrawBoxMacro(ZMapWindowFeaturesetItem featureset, double x1,double x2, double y1,double y2,GdkDrawable * drawable,gboolean fill_set,gboolean outline_set,gulong fill,gulong outline);
 
 gboolean zMapCanvasFeaturesetSeq2World(ZMapWindowFeaturesetItem featureset,
                                        int seq_start, int seq_end, double *world_start_out, double *world_end_out) ;
