@@ -100,7 +100,7 @@ static char * makeFeatureAlignmentNamePrivate(const ZMapGFFFeatureData const) ;
 static gboolean clipFeatureLogic_General(const ZMapGFF3Parser const, ZMapGFFFeatureData const ) ;
 static gboolean clipFeatureLogic_Transcript(const ZMapGFF3Parser const , ZMapGFFFeatureData const ) ;
 static gboolean requireLocusOperations(const ZMapGFFParser const, const ZMapGFFFeatureData const ) ;
-static gboolean performSourceComputations(const ZMapGFFParser const , const ZMapGFFFeatureData const , ZMapFeatureSet *) ;
+static gboolean findFeatureset(const ZMapGFFParser const , const ZMapGFFFeatureData const , ZMapFeatureSet *) ;
 
 /*
  *
@@ -2976,7 +2976,7 @@ gboolean makeFeatureLocus(const ZMapGFFParser const pParser, const ZMapGFFFeatur
       /*
        * Find featureset and other data.
        */
-      performSourceComputations(pParser, pFeatureDataLocus, &pFeatureSet) ;
+      findFeatureset(pParser, pFeatureDataLocus, &pFeatureSet) ;
 
       /*
        * Make a name and a name_id for the feature. The name comes from the locus ID and
@@ -3762,7 +3762,7 @@ static gboolean makeNewFeature_V3(
    * This is doing some lookups to find styles for features (or at least for the
    * feature set at once). If it fails then we exit doing nothing.
    */
-  bFoundFeatureset = performSourceComputations(pParserBase, pFeatureData, &pFeatureSet) ;
+  bFoundFeatureset = findFeatureset(pParserBase, pFeatureData, &pFeatureSet) ;
 
   /*
    * Now branch on the ZMapStyleMode of the current GFF line.
@@ -3904,7 +3904,7 @@ return_point:
  *
  * Return a boolean to indicate success or failure.
  */
-gboolean performSourceComputations(const ZMapGFFParser const pParser, const ZMapGFFFeatureData const pFeatureData,
+gboolean findFeatureset(const ZMapGFFParser const pParser, const ZMapGFFFeatureData const pFeatureData,
                                    ZMapFeatureSet *ppFeatureSet)
 {
   gboolean bResult = TRUE ;
@@ -3972,30 +3972,28 @@ gboolean performSourceComputations(const ZMapGFFParser const pParser, const ZMap
   if (bResult)
     {
 
-  if (!(pFeatureStyle = (ZMapFeatureTypeStyle)g_hash_table_lookup(pParserFeatureSet->feature_styles, GUINT_TO_POINTER(gqFeatureStyleID))))
-    {
-      if (!(pFeatureStyle = zMapFindFeatureStyle(pParser->sources, gqFeatureStyleID, cFeatureStyleMode)))
+      if (!(pFeatureStyle = (ZMapFeatureTypeStyle)g_hash_table_lookup(pParserFeatureSet->feature_styles, GUINT_TO_POINTER(gqFeatureStyleID))))
         {
-          gqFeatureStyleID = g_quark_from_string(zmapStyleMode2ShortText(cFeatureStyleMode)) ;
+          if (!(pFeatureStyle = zMapFindFeatureStyle(pParser->sources, gqFeatureStyleID, cFeatureStyleMode)))
+            {
+              gqFeatureStyleID = g_quark_from_string(zmapStyleMode2ShortText(cFeatureStyleMode)) ;
+            }
+
+          if (!(pFeatureStyle = zMapFindFeatureStyle(pParser->sources, gqFeatureStyleID, cFeatureStyleMode)))
+            bResult = FALSE ;
+
+          if (bResult)
+            {
+              if (pSourceData)
+                pSourceData->style_id = gqFeatureStyleID;
+
+              g_hash_table_insert(pParserFeatureSet->feature_styles,GUINT_TO_POINTER(gqFeatureStyleID),(gpointer) pFeatureStyle);
+
+              if (pSourceData && pFeatureStyle->unique_id != gqFeatureStyleID)
+                pSourceData->style_id = pFeatureStyle->unique_id;
+
+            }
         }
-
-      if (!(pFeatureStyle = zMapFindFeatureStyle(pParser->sources, gqFeatureStyleID, cFeatureStyleMode)))
-        {
-          bResult = FALSE ;
-        }
-
-      if (bResult)
-        {
-          if (pSourceData)
-            pSourceData->style_id = gqFeatureStyleID;
-
-          g_hash_table_insert(pParserFeatureSet->feature_styles,GUINT_TO_POINTER(gqFeatureStyleID),(gpointer) pFeatureStyle);
-
-          if (pSourceData && pFeatureStyle->unique_id != gqFeatureStyleID)
-            pSourceData->style_id = pFeatureStyle->unique_id;
-
-        }
-    }
 
     }
 
