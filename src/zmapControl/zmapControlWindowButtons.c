@@ -340,7 +340,7 @@ void zmapControlWindowSetButtonState(ZMap zmap, ZMapWindowFilter window_filter)
   ZMapWindow window = NULL ;
   ZMapViewState view_state ;
 
-  zMapReturnIfFail(zmap) ; 
+  zMapReturnIfFail(zmap || zmap->focus_viewwindow) ; 
 
   filter = general = revcomp =  unsplit = unlock = stop = reload = frame3 = dna = back = FALSE ;
 
