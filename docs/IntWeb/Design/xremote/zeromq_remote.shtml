@@ -125,19 +125,58 @@ and <b>not</b> to a traditional Unix or TCP socket.</p>
 
 <p><b>Under construction.</b></p>
 
+<h3>Bootstrapping</h3>
+
 <p>Bootstrapping is almost identical to the existing system. The
 initiator passes its server endpoint to its peer as a command line
 parameter, which responds with its own server endpoint in a handshake
 request message.</p>
 
+<h3>Collisions</h3>
+
+<p>The collision protocol is under consideration and development
+(i.e. 'watch this space'), but note that the simplified state diagram
+probably reduces the likelihood and impact of collisions.</p>
+
+<p>Provided that when sending, the client also monitors its server
+socket whilst waiting for a reply, collision detection should be
+straightforward.</p>
+
+<h3>Timeouts and errors</h3>
+
 <p>Timeouts and errors are to be handled by each client implementing
 the <a href="http://zguide.zeromq.org/page:all#toc89">Lazy Pirate
-Pattern</a>.
+Pattern</a>. The implications of the resulting likelihood of client
+retries are discussed in the next section.</p>
 
-<p>The collision protocol is under consideration and development, but
-note that the simplified state diagram probably reduces the likelihood
-and impact of collisions.</p>
+<h3>Synchronisation</h3>
 
+<p>The client knows for certain that the server has received its
+request when it receives the ZeroMQ reply.</p>
+
+<p>The server does not know for certain that its ZeroMQ reply has
+reached the client. This is an acceptable tradeoff compared with the
+likely complexity of more handshaking, but leads to the following
+alternative scenarios:</p>
+
+<ul>
+  <li><p>If server actions are idempotent, or else can be repeated at
+  acceptable cost without resulting in an erroneous application state,
+  then no special measures are required.</p></li>
+  <li>
+    <p>Otherwise, the latest reply message should be cached and the
+    server should resend it if the current request's sequence number
+    matches that of the cached reply.</p>
+    <p>Note that this will require the transport / connection layer to
+    process the message sequence numbers. This may be best handled by
+    using multipart ZeroMQ messages
+    (<a href="http://zguide.zeromq.org/page:all#toc36">http://zguide.zeromq.org/page:all#toc36</a>)
+    to preserve and pass the XML from the higher layers, unchanged and
+    not inspected by the transport layer.</p>
+  </li>
+</ul>
+
+<p>
 <a name="references"></a>
 <h2>References</h2>
 
