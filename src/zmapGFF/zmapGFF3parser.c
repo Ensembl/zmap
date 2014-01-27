@@ -3743,12 +3743,7 @@ static gboolean makeNewFeature_V3(
     *pAttributes = NULL ;
 
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
-
-  if (!pParser || !pParser->pHeader )
-  {
-    bResult = FALSE ;
-    goto return_point ;
-  }
+  zMapReturnValIfFail(pParser && pParser->pHeader, bResult) ;
 
   /*
    * Take some data from the ZMapGFFFeatureData object
@@ -3765,9 +3760,20 @@ static gboolean makeNewFeature_V3(
   bFoundFeatureset = findFeatureset(pParserBase, pFeatureData, &pFeatureSet) ;
 
   /*
-   * Now branch on the ZMapStyleMode of the current GFF line.
+   * Test the StyleMode of the feature against that of the Style itself
    */
   if (bFoundFeatureset)
+    {
+      if (!(bResult = pFeatureSet->style->mode == cFeatureStyleMode ))
+        {
+          sMakeFeatureErrorText = g_strdup_printf("makeNewFeature_V3(); feature StyleMode did not match FeatureSet; not created") ;
+        }
+    }
+
+  /*
+   * Now branch on the ZMapStyleMode of the current GFF line.
+   */
+  if (bFoundFeatureset && bResult)
     {
 
       if (cFeatureStyleMode == ZMAPSTYLE_MODE_INVALID)
@@ -3881,11 +3887,6 @@ static gboolean makeNewFeature_V3(
 
 
     } /* if (bIncludeFeature) */
-
-  /*
-   * Return point for the function.
-   */
-return_point:
 
   /*
    *  Clean up
