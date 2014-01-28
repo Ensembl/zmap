@@ -3858,35 +3858,39 @@ static gboolean makeNewFeature_V3(
       /*
        * Now we deal with some extra attributes used locally.
        */
-
-      /*
-       * URL attribute.
-       */
-      if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_url)))
+      if (bIncludeFeature)
         {
-          if (zMapAttParseURL(pAttribute, &sURL))
+
+          /*
+           * URL attribute.
+           */
+          if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_url)))
             {
-              zMapFeatureAddURL(pFeature, sURL) ;
+              if (zMapAttParseURL(pAttribute, &sURL))
+                {
+                  zMapFeatureAddURL(pFeature, sURL) ;
+                }
             }
+
+          /*
+           * EnsEMBL variation data.
+           */
+          if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_ensembl_variation)))
+            {
+              if (zMapAttParseEnsemblVariation(pAttribute, &sVariation))
+                {
+                  zMapFeatureAddVariationString(pFeature, sVariation) ;
+                }
+            }
+
+          /*
+           * Insert handling of other attributes in here as necesary.
+           */
+
         }
 
-      /*
-       * EnsEMBL variation data.
-       */
-      if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_ensembl_variation)))
-        {
-          if (zMapAttParseEnsemblVariation(pAttribute, &sVariation))
-            {
-              zMapFeatureAddVariationString(pFeature, sVariation) ;
-            }
-        }
 
-      /*
-       * Insert handling of other attributes in here as necesary.
-       */
-
-
-    } /* if (bIncludeFeature) */
+    } /* if (bFoundFeatureset && bResult) */
 
   /*
    *  Clean up
