@@ -74,15 +74,15 @@ typedef struct ZMapGFFHeaderStruct_
  * Header creation and destruction.
  */
 ZMapGFFHeader zMapGFFCreateHeader() ;
-void zMapGFFHeaderDestroy(ZMapGFFHeader const ) ;
-void zMapGFFHeaderMinimalTest(const ZMapGFFHeader const ) ;
+void zMapGFFHeaderDestroy(ZMapGFFHeader ) ;
+void zMapGFFHeaderMinimalTest(ZMapGFFHeader ) ;
 
 
 /*
  * Some data utilities
 */
-int zMapGFFGetDirectiveIntData(const ZMapGFFHeader const, ZMapGFFDirectiveName, unsigned int) ;
-char *zMapGFFGetDirectiveStringData(const ZMapGFFHeader const, ZMapGFFDirectiveName, unsigned int) ;
+int zMapGFFGetDirectiveIntData(ZMapGFFHeader, ZMapGFFDirectiveName, unsigned int) ;
+char *zMapGFFGetDirectiveStringData(ZMapGFFHeader, ZMapGFFDirectiveName, unsigned int) ;
 
 
 

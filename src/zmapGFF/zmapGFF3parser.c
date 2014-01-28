@@ -52,55 +52,55 @@
 static gboolean removeCommentFromLine( char* sLine ) ;
 static ZMapGFFLineType parserLineType(const char * const sLine) ;
 static ZMapGFFParserState parserFSM(ZMapGFFParserState eCurrentState, const char * const sNewLine) ;
-static gboolean resizeFormatStrs(ZMapGFFParser const pParser) ;
-static gboolean resizeBuffers(ZMapGFFParser const pParser, gsize iLineLength) ;
+static gboolean resizeFormatStrs(ZMapGFFParser pParser) ;
+static gboolean resizeBuffers(ZMapGFFParser pParser, gsize iLineLength) ;
 static gboolean isCommentLine(const char * const sLine) ;
 static gboolean isAcedbError(const char* const ) ;
 static gboolean parserStateChange(ZMapGFFParser pParser, ZMapGFFParserState eOldState, ZMapGFFParserState eNewState, const char * const sLine) ;
-static gboolean initializeSequenceRead(ZMapGFFParser const pParser, const char * const sLine) ;
-static gboolean finalizeSequenceRead(ZMapGFFParser const pParser , const char* const sLine) ;
-static gboolean initializeFastaRead(ZMapGFFParser const pParser, const char * const sLine) ;
-static gboolean actionUponClosure(ZMapGFFParser const pParser, const char* const sLine)  ;
+static gboolean initializeSequenceRead(ZMapGFFParser pParser, const char * const sLine) ;
+static gboolean finalizeSequenceRead(ZMapGFFParser pParser , const char* const sLine) ;
+static gboolean initializeFastaRead(ZMapGFFParser pParser, const char * const sLine) ;
+static gboolean actionUponClosure(ZMapGFFParser pParser, const char* const sLine)  ;
 /*static gboolean iterationFunctionID(GQuark gqID, GHashTable *pValueTable) ; */
 static gboolean initParserForSequenceRead(ZMapGFFParser pParser) ;
 static gboolean copySequenceData(ZMapSequence pSequence, GString *pData) ;
 
-static gboolean parseHeaderLine_V3(ZMapGFFParser const pParserBase, const char * const sLine) ;
-static gboolean parseFastaLine_V3(ZMapGFFParser const pParser, const char* const sLine) ;
-static gboolean parseBodyLine_V3(ZMapGFFParser const pParser, const char * const sLine) ;
-static gboolean parseSequenceLine_V3(ZMapGFFParser const pParser, const char * const sLine) ;
+static gboolean parseHeaderLine_V3(ZMapGFFParser pParserBase, const char * const sLine) ;
+static gboolean parseFastaLine_V3(ZMapGFFParser pParser, const char* const sLine) ;
+static gboolean parseBodyLine_V3(ZMapGFFParser pParser, const char * const sLine) ;
+static gboolean parseSequenceLine_V3(ZMapGFFParser pParser, const char * const sLine) ;
 
 static gboolean addNewSequenceRecord(ZMapGFFParser pParser);
 static gboolean appendToSequenceRecord(ZMapGFFParser pParser, const char * const sLine) ;
-static gboolean parseDirective_GFF_VERSION(ZMapGFFParser const pParser, const char * const line);
-static gboolean parseDirective_SEQUENCE_REGION(ZMapGFFParser const pParser, const char * const line);
-static gboolean parseDirective_FEATURE_ONTOLOGY(ZMapGFFParser const pParser, const char * const line);
-static gboolean parseDirective_ATTRIBUTE_ONTOLOGY(ZMapGFFParser const pParser, const char * const line);
-static gboolean parseDirective_SOURCE_ONTOLOGY(ZMapGFFParser const pParser, const char * const line);
-static gboolean parseDirective_SPECIES(ZMapGFFParser const pParser, const char * const line);
-static gboolean parseDirective_GENOME_BUILD(ZMapGFFParser const pParser, const char * const line);
+static gboolean parseDirective_GFF_VERSION(ZMapGFFParser pParser, const char * const line);
+static gboolean parseDirective_SEQUENCE_REGION(ZMapGFFParser pParser, const char * const line);
+static gboolean parseDirective_FEATURE_ONTOLOGY(ZMapGFFParser pParser, const char * const line);
+static gboolean parseDirective_ATTRIBUTE_ONTOLOGY(ZMapGFFParser pParser, const char * const line);
+static gboolean parseDirective_SOURCE_ONTOLOGY(ZMapGFFParser pParser, const char * const line);
+static gboolean parseDirective_SPECIES(ZMapGFFParser pParser, const char * const line);
+static gboolean parseDirective_GENOME_BUILD(ZMapGFFParser pParser, const char * const line);
 
-static gboolean makeNewFeature_V3(const ZMapGFFParser const pParser, char ** const err_text, const ZMapGFFFeatureData const pFeatureData ) ;
+static gboolean makeNewFeature_V3(ZMapGFFParser pParser, char ** const err_text, ZMapGFFFeatureData pFeatureData ) ;
 
 static ZMapGFFParserFeatureSet getParserFeatureSet(ZMapGFFParser pParser, char* sFeatureSetName ) ;
-static gboolean getFeatureName(const char * const sequence, const ZMapGFFAttribute * const pAttributes, unsigned int nAttributes,const char * const given_name, const char * const source, ZMapStyleMode feature_type,
+static gboolean getFeatureName(const char * const sequence, ZMapGFFAttribute *pAttributes, unsigned int nAttributes,const char * const given_name, const char * const source, ZMapStyleMode feature_type,
   ZMapStrand strand, int start, int end, int query_start, int query_end, char ** const feature_name, char ** const feature_name_id) ;
 static void destroyFeatureArray(gpointer data) ;
 
 /*
  * Functions to create, augment or find names for various types of features based upon ZMapStyleMode.
  */
-static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const, const ZMapFeatureSet const, gboolean *, char **) ;
-static gboolean makeFeatureLocus(const ZMapGFFParser const, const ZMapGFFFeatureData const, char ** ) ;
-static ZMapFeature makeFeatureAlignment(const ZMapGFFFeatureData const, const ZMapFeatureSet const, char ** ) ;
-static ZMapFeature makeFeatureAssemblyPath(const ZMapGFFFeatureData const, const ZMapFeatureSet const, char ** ) ;
-static ZMapFeature makeFeatureDefault(const ZMapGFFFeatureData const, const ZMapFeatureSet const, char **) ;
-static char * makeFeatureTranscriptNamePublic(const ZMapGFFFeatureData const) ;
-static char * makeFeatureAlignmentNamePrivate(const ZMapGFFFeatureData const) ;
-static gboolean clipFeatureLogic_General(const ZMapGFF3Parser const, ZMapGFFFeatureData const ) ;
-static gboolean clipFeatureLogic_Transcript(const ZMapGFF3Parser const , ZMapGFFFeatureData const ) ;
-static gboolean requireLocusOperations(const ZMapGFFParser const, const ZMapGFFFeatureData const ) ;
-static gboolean findFeatureset(const ZMapGFFParser const , const ZMapGFFFeatureData const , ZMapFeatureSet *) ;
+static ZMapFeature makeFeatureTranscript(ZMapGFFFeatureData , ZMapFeatureSet , gboolean *, char **) ;
+static gboolean makeFeatureLocus(ZMapGFFParser , ZMapGFFFeatureData , char ** ) ;
+static ZMapFeature makeFeatureAlignment(ZMapGFFFeatureData , ZMapFeatureSet , char ** ) ;
+static ZMapFeature makeFeatureAssemblyPath(ZMapGFFFeatureData , ZMapFeatureSet , char ** ) ;
+static ZMapFeature makeFeatureDefault(ZMapGFFFeatureData, ZMapFeatureSet , char **) ;
+static char * makeFeatureTranscriptNamePublic(ZMapGFFFeatureData ) ;
+static char * makeFeatureAlignmentNamePrivate(ZMapGFFFeatureData) ;
+static gboolean clipFeatureLogic_General(ZMapGFF3Parser, ZMapGFFFeatureData) ;
+static gboolean clipFeatureLogic_Transcript(ZMapGFF3Parser, ZMapGFFFeatureData ) ;
+static gboolean requireLocusOperations(ZMapGFFParser , ZMapGFFFeatureData  ) ;
+static gboolean findFeatureset(ZMapGFFParser , ZMapGFFFeatureData  , ZMapFeatureSet *) ;
 
 /*
  *
@@ -235,7 +235,7 @@ ZMapGFFParser zMapGFFCreateParser_V3(char *sequence, int features_start, int fea
 /*
  * Function to destroy a parser.
  */
-void zMapGFFDestroyParser_V3(ZMapGFFParser const pParserBase)
+void zMapGFFDestroyParser_V3(ZMapGFFParser pParserBase)
 {
   unsigned int iValue ;
   if (!pParserBase)
@@ -299,7 +299,7 @@ void zMapGFFDestroyParser_V3(ZMapGFFParser const pParserBase)
  * Return the got_minimal_header flag. This style of header flags is only
  * used for version 3.
  */
-gboolean zMapGFFGetHeaderGotMinimal_V3(const ZMapGFFParser const pParserBase)
+gboolean zMapGFFGetHeaderGotMinimal_V3(ZMapGFFParser pParserBase)
 {
   if (!pParserBase)
     return FALSE ;
@@ -468,7 +468,7 @@ static ZMapGFFParserState parserFSM(ZMapGFFParserState eCurrentState, const char
  * Note that we attempt to avoid frequent reallocation by making buffer twice as large as required
  * (not including the final null char....).
  */
-static gboolean resizeBuffers(ZMapGFFParser const pParser, gsize iLineLength)
+static gboolean resizeBuffers(ZMapGFFParser pParser, gsize iLineLength)
 {
   gboolean bNewAlloc = TRUE,
     bResized = FALSE ;
@@ -572,7 +572,7 @@ static gboolean resizeBuffers(ZMapGFFParser const pParser, gsize iLineLength)
  *
  * mh17 NOTE BAM data has # in its attributes
  */
-static gboolean resizeFormatStrs(ZMapGFFParser const pParser)
+static gboolean resizeFormatStrs(ZMapGFFParser pParser)
 {
   gboolean bResized = TRUE ;
   GString *format_str ;
@@ -676,7 +676,7 @@ static gboolean isAcedbError(const char * const sLine)
  * Actions to initialize reading a sequence section. Current line must
  * be "##DNA" only.
  */
-static gboolean initializeSequenceRead(ZMapGFFParser const pParserBase, const char * const sLine)
+static gboolean initializeSequenceRead(ZMapGFFParser pParserBase, const char * const sLine)
 {
   gboolean bResult = TRUE ;
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
@@ -748,7 +748,7 @@ static gboolean initializeSequenceRead(ZMapGFFParser const pParserBase, const ch
  * Actions to initialize reading a fasta section. All this does is sets a flag if we
  * are seeing ##FASTA for the first time and returns an error otherwise.
  */
-static gboolean initializeFastaRead(ZMapGFFParser const pParserBase, const char * const sLine)
+static gboolean initializeFastaRead(ZMapGFFParser pParserBase, const char * const sLine)
 {
   gboolean bResult = TRUE ;
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
@@ -868,7 +868,7 @@ static gboolean iterationFunctionID(GQuark gqID, GHashTable *pValueTable)
  * "###" directive. This should be doing something with the MLF data
  * stored in the parser. At the moment, just calls a dummy function.
  */
-static gboolean actionUponClosure(ZMapGFFParser const pParserBase, const char* const sLine)
+static gboolean actionUponClosure(ZMapGFFParser pParserBase, const char* const sLine)
 {
   gboolean bResult = TRUE ;
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
@@ -971,7 +971,7 @@ static gboolean parserStateChange(ZMapGFFParser pParserBase,
  * Actions to finalize reading a sequence section. Current line must be
  * "##end-DNA" only.
  */
-static gboolean finalizeSequenceRead(ZMapGFFParser const pParserBase , const char* const sLine)
+static gboolean finalizeSequenceRead(ZMapGFFParser pParserBase , const char* const sLine)
 {
   gboolean bResult = TRUE,
     bCopyData = TRUE;
@@ -1195,7 +1195,7 @@ static gboolean appendToSequenceRecord(ZMapGFFParser pParserBase, const char * c
  *
  * Note that we assume that the sequence is DNA. This is not tested.
  */
-static gboolean parseFastaLine_V3(ZMapGFFParser const pParserBase, const char* const sLine)
+static gboolean parseFastaLine_V3(ZMapGFFParser pParserBase, const char* const sLine)
 {
   unsigned int iFields ;
   gboolean bResult = FALSE ;
@@ -1315,7 +1315,7 @@ static gboolean parseFastaLine_V3(ZMapGFFParser const pParserBase, const char* c
  *   ##ACTGACTGACTGACTGACTGAC...
  * No checking is done for validity of sequence.
  */
-static gboolean parseSequenceLine_V3(ZMapGFFParser const pParserBase, const char * const sLine)
+static gboolean parseSequenceLine_V3(ZMapGFFParser pParserBase, const char * const sLine)
 {
   gboolean bResult = FALSE ;
 
@@ -1372,7 +1372,7 @@ static gboolean parseSequenceLine_V3(ZMapGFFParser const pParserBase, const char
 /*
  * GFF Version requires a single non-negative integer value. We support only 2 or 3.
  */
-static gboolean parseDirective_GFF_VERSION(ZMapGFFParser const pParserBase, const char * const line)
+static gboolean parseDirective_GFF_VERSION(ZMapGFFParser pParserBase, const char * const line)
 {
   static const char *sFmt= "%*13s%d";
   static const unsigned int iExpectedFields = 1 ;
@@ -1451,7 +1451,7 @@ static gboolean parseDirective_GFF_VERSION(ZMapGFFParser const pParserBase, cons
 /*
  * Sequence region is a string followed by two non-negative integers.
  */
-static gboolean parseDirective_SEQUENCE_REGION(ZMapGFFParser const pParserBase, const char * const line)
+static gboolean parseDirective_SEQUENCE_REGION(ZMapGFFParser pParserBase, const char * const line)
 {
   static const unsigned int iExpectedFields = 3 ;
   static const char *sFmt = "%*s%1000s%d%d" ;
@@ -1537,7 +1537,7 @@ static gboolean parseDirective_SEQUENCE_REGION(ZMapGFFParser const pParserBase, 
  * The feature ontology should be a URL/URI string. This is not checked for validity in
  * any way.
  */
-static gboolean parseDirective_FEATURE_ONTOLOGY(ZMapGFFParser const pParserBase , const char * const line)
+static gboolean parseDirective_FEATURE_ONTOLOGY(ZMapGFFParser pParserBase , const char * const line)
 {
   static const char* sFmt = "%*s%1000s" ;
   static const unsigned int iExpectedFields = 1 ;
@@ -1602,7 +1602,7 @@ static gboolean parseDirective_FEATURE_ONTOLOGY(ZMapGFFParser const pParserBase 
 /*
  * Function for the attribute ontology directive. Again, just reads a string.
  */
-static gboolean parseDirective_ATTRIBUTE_ONTOLOGY(ZMapGFFParser const pParserBase, const char * const line)
+static gboolean parseDirective_ATTRIBUTE_ONTOLOGY(ZMapGFFParser pParserBase, const char * const line)
 {
   static const char* sFmt = "%*s%1000s" ;
   static const unsigned int iExpectedFields = 1 ;
@@ -1667,7 +1667,7 @@ static gboolean parseDirective_ATTRIBUTE_ONTOLOGY(ZMapGFFParser const pParserBas
 /*
  * Function for the source ontology. Again, reads a single string.
  */
-static gboolean parseDirective_SOURCE_ONTOLOGY(ZMapGFFParser const pParserBase, const char * const line)
+static gboolean parseDirective_SOURCE_ONTOLOGY(ZMapGFFParser pParserBase, const char * const line)
 {
   static const char* sFmt = "%*s%1000s" ;
   static const unsigned int iExpectedFields = 1 ;
@@ -1733,7 +1733,7 @@ static gboolean parseDirective_SOURCE_ONTOLOGY(ZMapGFFParser const pParserBase, 
 /*
  * Function for the ##species; one string only.
  */
-static gboolean parseDirective_SPECIES(ZMapGFFParser const pParserBase, const char * const line)
+static gboolean parseDirective_SPECIES(ZMapGFFParser pParserBase, const char * const line)
 {
   static const char* sFmt = "%*s%1000s" ;
   static const unsigned int iExpectedFields = 1 ;
@@ -1801,7 +1801,7 @@ static gboolean parseDirective_SPECIES(ZMapGFFParser const pParserBase, const ch
 /*
  * Genome build; requires two strings for the name and source of assembly.
  */
-static gboolean parseDirective_GENOME_BUILD(ZMapGFFParser const pParserBase, const char * const line)
+static gboolean parseDirective_GENOME_BUILD(ZMapGFFParser pParserBase, const char * const line)
 {
   static const char* sFmt = "%*s%1000s%1000s" ;
   static const unsigned int iExpectedFields = 2 ;
@@ -1877,7 +1877,7 @@ static gboolean parseDirective_GENOME_BUILD(ZMapGFFParser const pParserBase, con
  * Returns FALSE if passed a line that is not a header comment OR if there
  * was a parse error. In the latter case parser->error will have been set.
  */
-static gboolean parseHeaderLine_V3(ZMapGFFParser const pParserBase, const char * const sLine)
+static gboolean parseHeaderLine_V3(ZMapGFFParser pParserBase, const char * const sLine)
 {
   gboolean bResult = FALSE ;
   ZMapGFFDirectiveName eDirName ;
@@ -1966,7 +1966,7 @@ static gboolean parseHeaderLine_V3(ZMapGFFParser const pParserBase, const char *
  * encountering a change of state; there are fewer actions (and indeed
  * fewer functions) of this second type.
  */
-gboolean zMapGFFParse_V3(ZMapGFFParser const pParserBase, char * const sLine)
+gboolean zMapGFFParse_V3(ZMapGFFParser pParserBase, char * const sLine)
 {
   gboolean bResult = TRUE, bCommentRemoved = FALSE ;
   ZMapGFFParserState eOldState = ZMAPGFF_PARSER_NON,
@@ -2077,7 +2077,7 @@ gboolean zMapGFFParse_V3(ZMapGFFParser const pParserBase, char * const sLine)
 /*
  * Return the flag whether or not to log warnings.
  */
-gboolean zMapGFFGetLogWarnings(const ZMapGFFParser const pParserBase )
+gboolean zMapGFFGetLogWarnings(ZMapGFFParser pParserBase )
 {
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
 
@@ -2097,10 +2097,7 @@ gboolean zMapGFFGetLogWarnings(const ZMapGFFParser const pParserBase )
  * Parse out a body line for data and then call functions to create
  * appropriate new features.
  */
-static gboolean parseBodyLine_V3(
-                        ZMapGFFParser const pParserBase,
-                        const char * const sLine
-                      )
+static gboolean parseBodyLine_V3(ZMapGFFParser pParserBase, const char * const sLine)
 {
   static const unsigned int
     iTokenLimit                       = 1000
@@ -2535,7 +2532,7 @@ return_point:
  * components such as intron, exon, CDS, etc.
  *
  */
-static char * makeFeatureTranscriptNamePublic(const ZMapGFFFeatureData const pFeatureData)
+static char * makeFeatureTranscriptNamePublic( ZMapGFFFeatureData pFeatureData)
 {
   ZMapGFFAttribute *pAttributes = NULL,
     pAttributeName = NULL ;
@@ -2573,7 +2570,7 @@ static char * makeFeatureTranscriptNamePublic(const ZMapGFFFeatureData const pFe
  *
  *
  */
-static char * makeFeatureAlignmentNamePrivate(const ZMapGFFFeatureData const pFeatureData)
+static char * makeFeatureAlignmentNamePrivate( ZMapGFFFeatureData pFeatureData)
 {
   ZMapGFFAttribute *pAttributes = NULL,
     pAttributeTarget = NULL ;
@@ -2610,8 +2607,8 @@ static char * makeFeatureAlignmentNamePrivate(const ZMapGFFFeatureData const pFe
  *                it. A feature name is constructed from the Name attribute, start, end and strand
  *                and this is used for the ID for these steps.
  */
-static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const pFeatureData,
-                                         const ZMapFeatureSet const pFeatureSet,
+static ZMapFeature makeFeatureTranscript(ZMapGFFFeatureData pFeatureData,
+                                         ZMapFeatureSet pFeatureSet,
                                          gboolean *pbNewFeatureCreated,
                                          char ** psError)
 {
@@ -2907,9 +2904,9 @@ static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const pFeature
 
 
 /*
- * Make a locus feature with the data from the current one...
+ * Make a locus feature with data for the current "real" transcript feature.
  */
-gboolean makeFeatureLocus(const ZMapGFFParser const pParser, const ZMapGFFFeatureData const pFeatureData , char ** psError)
+gboolean makeFeatureLocus(ZMapGFFParser pParser, ZMapGFFFeatureData pFeatureData , char ** psError)
 {
   static const char *sType = "Locus" ;
   char *sLocusID = NULL, *sName = NULL, *sNameID = NULL ;
@@ -3052,8 +3049,8 @@ gboolean makeFeatureLocus(const ZMapGFFParser const pParser, const ZMapGFFFeatur
 /*
  * Create a feature of ZMapStyleMode = ALIGNMENT only.
  */
-static ZMapFeature makeFeatureAlignment(const ZMapGFFFeatureData const pFeatureData,
-                                        const ZMapFeatureSet const pFeatureSet,
+static ZMapFeature makeFeatureAlignment(ZMapGFFFeatureData pFeatureData,
+                                        ZMapFeatureSet pFeatureSet,
                                         char ** psError)
 {
   unsigned int iSOID = 0,
@@ -3263,8 +3260,8 @@ static ZMapFeature makeFeatureAlignment(const ZMapGFFFeatureData const pFeatureD
  * Create a feature with ZMapStyleMode = ASSEMBLY_PATH; not yet implemented, although the
  * code to parse the appropriate attribute value is in zmapGFFAttribute.c.
  */
-static ZMapFeature makeFeatureAssemblyPath(const ZMapGFFFeatureData const pFeatureData,
-                                         const ZMapFeatureSet const pFeatureSet,
+static ZMapFeature makeFeatureAssemblyPath(ZMapGFFFeatureData pFeatureData,
+                                         ZMapFeatureSet pFeatureSet,
                                          char ** psError)
 {
   ZMapFeature pFeature = NULL ;
@@ -3276,7 +3273,7 @@ static ZMapFeature makeFeatureAssemblyPath(const ZMapGFFFeatureData const pFeatu
 /*
  * Default feature creation function.
  */
-static ZMapFeature makeFeatureDefault(const ZMapGFFFeatureData const pFeatureData,
+static ZMapFeature makeFeatureDefault(ZMapGFFFeatureData pFeatureData,
   const ZMapFeatureSet const pFeatureSet, char **psError)
 {
   char *sName = NULL,
@@ -3444,7 +3441,7 @@ static ZMapFeature makeFeatureDefault(const ZMapGFFFeatureData const pFeatureDat
  * See comment for clipFeatureLogic_General() function and note that this version also
  * has a special hack to make the behaviour with transcript objects consistent with v2 code.
  */
-static gboolean clipFeatureLogic_Transcript(const ZMapGFF3Parser const pParser, ZMapGFFFeatureData const pFeatureData )
+static gboolean clipFeatureLogic_Transcript( ZMapGFF3Parser pParser, ZMapGFFFeatureData pFeatureData )
 {
   gboolean bIncludeFeature = FALSE ;
   int iStart = 0,
@@ -3555,7 +3552,7 @@ static gboolean clipFeatureLogic_Transcript(const ZMapGFF3Parser const pParser, 
  * (3) CLIP_OVERLAP      { parser boundaries                     }   _and_   truncate features that overlap boundaries
  *
  */
-static gboolean clipFeatureLogic_General(const ZMapGFF3Parser const pParser, ZMapGFFFeatureData const pFeatureData )
+static gboolean clipFeatureLogic_General(ZMapGFF3Parser  pParser, ZMapGFFFeatureData pFeatureData )
 {
   gboolean bIncludeFeature = FALSE ;
   int iStart = 0,
@@ -3717,10 +3714,9 @@ static gboolean hack_SpecialColumnToSOTerm(const char * const sSource, char ** c
  *
  *
  */
-static gboolean makeNewFeature_V3(
-                         const ZMapGFFParser const pParserBase,
+static gboolean makeNewFeature_V3( ZMapGFFParser pParserBase,
                          char ** const err_text,
-                         const ZMapGFFFeatureData const pFeatureData
+                         ZMapGFFFeatureData pFeatureData
                        )
 {
   unsigned int nAttributes = 0 ;
@@ -3909,7 +3905,7 @@ static gboolean makeNewFeature_V3(
  *
  * Return a boolean to indicate success or failure.
  */
-gboolean findFeatureset(const ZMapGFFParser const pParser, const ZMapGFFFeatureData const pFeatureData,
+gboolean findFeatureset(ZMapGFFParser pParser, ZMapGFFFeatureData pFeatureData,
                                    ZMapFeatureSet *ppFeatureSet)
 {
   gboolean bResult = TRUE ;
@@ -4021,7 +4017,7 @@ gboolean findFeatureset(const ZMapGFFParser const pParser, const ZMapGFFFeatureD
  * Decide whether or not locus-based operations are required for
  * the current feature.
  */
-gboolean requireLocusOperations(const ZMapGFFParser const pParser, const ZMapGFFFeatureData const pFeatureData)
+gboolean requireLocusOperations(ZMapGFFParser pParser, ZMapGFFFeatureData pFeatureData)
 {
   gboolean bResult = FALSE ;
   ZMapGFFAttribute *pAttributes = NULL ;
@@ -4059,7 +4055,7 @@ gboolean requireLocusOperations(const ZMapGFFParser const pParser, const ZMapGFF
 /*
  * Sets the SO collection flag. TRUE means use SO, FALSE means use SOFA.
  */
-gboolean zMapGFFSetSOSetInUse(ZMapGFFParser const pParserBase, ZMapSOSetInUse cUse)
+gboolean zMapGFFSetSOSetInUse(ZMapGFFParser  pParserBase, ZMapSOSetInUse cUse)
 {
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
   gboolean bSet = FALSE ;
@@ -4073,7 +4069,7 @@ gboolean zMapGFFSetSOSetInUse(ZMapGFFParser const pParserBase, ZMapSOSetInUse cU
 /*
  * Returns the SO collection flag.
  */
-ZMapSOSetInUse zMapGFFGetSOSetInUse(const ZMapGFFParser const pParserBase )
+ZMapSOSetInUse zMapGFFGetSOSetInUse(ZMapGFFParser pParserBase )
 {
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
   if (!pParser || !pParser->pHeader )
@@ -4087,7 +4083,7 @@ ZMapSOSetInUse zMapGFFGetSOSetInUse(const ZMapGFFParser const pParserBase )
 /*
  * Set the SO Error level within the parser.
  */
-gboolean zMapGFFSetSOErrorLevel(ZMapGFFParser const pParserBase, ZMapSOErrorLevel cErrorLevel)
+gboolean zMapGFFSetSOErrorLevel(ZMapGFFParser pParserBase, ZMapSOErrorLevel cErrorLevel)
 {
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
   gboolean bSet = FALSE ;
@@ -4102,7 +4098,7 @@ gboolean zMapGFFSetSOErrorLevel(ZMapGFFParser const pParserBase, ZMapSOErrorLeve
 /*
  * Return the error level setting within the parser.
  */
-ZMapSOErrorLevel zMapGFFGetSOErrorLevel(const ZMapGFFParser const pParserBase )
+ZMapSOErrorLevel zMapGFFGetSOErrorLevel(ZMapGFFParser pParserBase )
 {
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
   if (!pParser || !pParser->pHeader)
@@ -4244,7 +4240,7 @@ static ZMapGFFParserFeatureSet getParserFeatureSet(ZMapGFFParser pParserBase, ch
  *
  */
 static gboolean getFeatureName(const char * const sequence,
-  const ZMapGFFAttribute * const pAttributes,
+  ZMapGFFAttribute * pAttributes,
   unsigned int nAttributes,
   const char * const given_name,
   const char * const source,

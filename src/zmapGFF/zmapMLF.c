@@ -86,7 +86,7 @@ gboolean zMapMLFDestroy(ZMapMLF pMLF)
  * Empty the container. In fact, destroy the old ID Table and
  * create a new one.
  */
-gboolean zMapMLFEmpty(ZMapMLF const pMLF )
+gboolean zMapMLFEmpty(ZMapMLF pMLF )
 {
   gboolean bResult = FALSE ;
   if (!pMLF || !pMLF->pIDTable)
@@ -108,7 +108,7 @@ gboolean zMapMLFEmpty(ZMapMLF const pMLF )
  * the top level structure. If the ID is present, it returns a pointer to
  * the associated value hash.
  */
-gpointer zMapMLFIsIDPresent(const ZMapMLF const pMLF, GQuark gqValue)
+gpointer zMapMLFIsIDPresent(ZMapMLF pMLF, GQuark gqValue)
 {
   if (!pMLF || !gqValue)
     return FALSE ;
@@ -120,7 +120,7 @@ gpointer zMapMLFIsIDPresent(const ZMapMLF const pMLF, GQuark gqValue)
  * Add a new ID to the data structure. This means add a key-value pair that
  * consists of gqValue and a new (empty) hash table associated with it.
  */
-gboolean zMapMLFAddID(const ZMapMLF const pMLF, GQuark gqValue)
+gboolean zMapMLFAddID(ZMapMLF pMLF, GQuark gqValue)
 {
   gboolean bResult = FALSE ;
   GHashTable *pTable = NULL ;
@@ -183,7 +183,7 @@ gboolean zMapMLFRemoveID(ZMapMLF const pMLF, GQuark gqValue)
  * given MLF structure. Returns false if the ID is not present to start with.
  * Feature is identified through the pointer value it is accessed through.
  */
-gboolean zMapMLFIsFeaturePresent(const ZMapMLF const pMLF, GQuark gqID, const ZMapFeature const pFeature)
+gboolean zMapMLFIsFeaturePresent(ZMapMLF pMLF, GQuark gqID, ZMapFeature pFeature)
 {
   gboolean bResult = FALSE ;
   GHashTable *pValueTable = NULL ;
@@ -213,7 +213,7 @@ gboolean zMapMLFIsFeaturePresent(const ZMapMLF const pMLF, GQuark gqID, const ZM
  * If the feature ID is already present in the ID value hash, then return false, otherwise
  * add it.
  */
-gboolean zMapMLFAddFeatureToID(const ZMapMLF const pMLF, GQuark gqID, const ZMapFeature const pFeature )
+gboolean zMapMLFAddFeatureToID(ZMapMLF pMLF, GQuark gqID, ZMapFeature pFeature )
 {
   gboolean bResult = FALSE ;
   GHashTable *pValueTable = NULL ;
@@ -249,7 +249,7 @@ gboolean zMapMLFAddFeatureToID(const ZMapMLF const pMLF, GQuark gqID, const ZMap
  * Remove a given feature from the specified ID. If the feature was not
  * present in the ID value hash, then return false.
  */
-gboolean zMapMLFRemoveFeatureFromID(const ZMapMLF const pMLF, GQuark gqID, const ZMapFeature const pFeature )
+gboolean zMapMLFRemoveFeatureFromID(ZMapMLF pMLF, GQuark gqID, ZMapFeature pFeature )
 {
   gboolean bResult = FALSE ;
   GHashTable * pValueTable = NULL ;
@@ -280,7 +280,7 @@ gboolean zMapMLFRemoveFeatureFromID(const ZMapMLF const pMLF, GQuark gqID, const
 /*
  * Return the number of IDs in the top level hash.
  */
-unsigned int zMapMLFNumID(const ZMapMLF const pMLF )
+unsigned int zMapMLFNumID(ZMapMLF pMLF )
 {
   unsigned int nResult = 0 ;
   if (!pMLF || !pMLF->pIDTable)
@@ -297,7 +297,7 @@ unsigned int zMapMLFNumID(const ZMapMLF const pMLF )
  * Return the number of features associated with a given ID. If the ID is
  * not present then return 0.
  */
-unsigned int zMapMLFNumFeatures(const ZMapMLF const pMLF , GQuark gqID)
+unsigned int zMapMLFNumFeatures(ZMapMLF pMLF , GQuark gqID)
 {
   unsigned int nResult = 0 ;
   gpointer pValueTable = NULL ;
@@ -319,7 +319,7 @@ unsigned int zMapMLFNumFeatures(const ZMapMLF const pMLF , GQuark gqID)
 /*
  * Iteration over IDs in the top level table.
  */
-gboolean zMapMLFIDIteration(const ZMapMLF const pMLF,  gboolean (*iterationFunction)(GQuark, GHashTable *) )
+gboolean zMapMLFIDIteration(ZMapMLF pMLF,  gboolean (*iterationFunction)(GQuark, GHashTable *) )
 {
   gboolean bResult = FALSE ;
   GHashTableIter ghIterator ;

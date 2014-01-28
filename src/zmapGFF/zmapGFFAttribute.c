@@ -146,7 +146,7 @@ char * zMapGFFAttributeGetString(ZMapGFFAttributeName eName)
  * Return the name stored as a string (not necessarily the same as the
  * name from the above lookups).
  */
-char * zMapGFFAttributeGetNamestring(const ZMapGFFAttribute const pAttribute)
+char * zMapGFFAttributeGetNamestring(ZMapGFFAttribute pAttribute)
 {
   if (!pAttribute)
     return NULL ;
@@ -156,7 +156,7 @@ char * zMapGFFAttributeGetNamestring(const ZMapGFFAttribute const pAttribute)
 /*
  * Return the temp string stored internally.
  */
-char * zMapGFFAttributeGetTempstring(const ZMapGFFAttribute const pAttribute)
+char * zMapGFFAttributeGetTempstring(ZMapGFFAttribute pAttribute)
 {
   if (!pAttribute)
     return NULL ;
@@ -198,7 +198,7 @@ static gboolean zMapGFFAttributeIsV3Attribute(ZMapGFFAttributeName eTheName)
 /*
  * Return the name (as an enum element) of the attribute.
  */
-ZMapGFFAttributeName zMapGFFAttributeGetName(const ZMapGFFAttribute const pAttribute)
+ZMapGFFAttributeName zMapGFFAttributeGetName(ZMapGFFAttribute pAttribute)
 {
   if (!pAttribute)
     return ZMAPGFF_ATT_UNK ;
@@ -230,7 +230,7 @@ ZMapGFFAttribute zMapGFFCreateAttribute(ZMapGFFAttributeName eTheName)
 /*
  * Destroy an attribute object.
  */
-gboolean zMapGFFDestroyAttribute(ZMapGFFAttribute const pAttribute)
+gboolean zMapGFFDestroyAttribute(ZMapGFFAttribute pAttribute)
 {
   gboolean bResult = TRUE ;
 	 if (!pAttribute)
@@ -266,7 +266,7 @@ gboolean zMapGFFAttributeGetIsMultivalued(ZMapGFFAttributeName eTheName)
 /*
  * Test whether or not an attribute is valid.
  */
-gboolean zMapGFFAttributeIsValid(const ZMapGFFAttribute const pAttribute)
+gboolean zMapGFFAttributeIsValid(ZMapGFFAttribute pAttribute)
 {
   gboolean bResult = FALSE ;
   ZMapGFFAttributeName eTheName ;
@@ -297,7 +297,7 @@ gboolean zMapGFFAttributeIsValid(const ZMapGFFAttribute const pAttribute)
  * flag say whether or not to attempt to remove leading or trailing
  * quotes from the string that is parsed out.
  */
-ZMapGFFAttribute zMapGFFAttributeParse(const ZMapGFFParser const pParserBase, const char*  const sAttribute, gboolean bRemoveQuotes)
+ZMapGFFAttribute zMapGFFAttributeParse(ZMapGFFParser pParserBase, const char*  const sAttribute, gboolean bRemoveQuotes)
 {
   static const unsigned int iExpectedTokens = 2 ,
     iTokenLimit = 2 ;
@@ -391,7 +391,7 @@ ZMapGFFAttribute zMapGFFAttributeParse(const ZMapGFFParser const pParserBase, co
  *                 '"<string>'   or    '<s1> "<s2>" <s3>'
  * etc.
  */
-gboolean zMapGFFAttributeRemoveQuotes(const ZMapGFFAttribute const pAttribute )
+gboolean zMapGFFAttributeRemoveQuotes(ZMapGFFAttribute pAttribute )
 {
   static const char cQuote = '"';
   unsigned int iLength = strlen(pAttribute->sTemp) ;
@@ -415,7 +415,7 @@ gboolean zMapGFFAttributeRemoveQuotes(const ZMapGFFAttribute const pAttribute )
  * Parse multiple attributes from input string. Calls the above parse function
  * for each attribute found.
  */
-ZMapGFFAttribute* zMapGFFAttributeParseList(const ZMapGFFParser const pParserBase, const char * const sAttributes,
+ZMapGFFAttribute* zMapGFFAttributeParseList(ZMapGFFParser pParserBase, const char * const sAttributes,
                                             unsigned int * const pnAttributes, gboolean bRemoveQuotes)
 {
   unsigned int i = 0 ;
@@ -501,7 +501,7 @@ ZMapGFFAttribute* zMapGFFAttributeParseList(const ZMapGFFParser const pParserBas
 /*
  * Destroy a list of attributes as created above.
  */
-gboolean zMapGFFAttributeDestroyList(ZMapGFFAttribute* const pAttributes, unsigned int nAttributes)
+gboolean zMapGFFAttributeDestroyList(ZMapGFFAttribute* pAttributes, unsigned int nAttributes)
 {
   gboolean bResult = FALSE ;
   unsigned int iAtt;
@@ -520,7 +520,7 @@ gboolean zMapGFFAttributeDestroyList(ZMapGFFAttribute* const pAttributes, unsign
  * Queries a list of attributes to see if it contains one with the name passed in.
  * Returns a pointer to it or NULL if not found (or some other error).
  */
-ZMapGFFAttribute zMapGFFAttributeListContains(const ZMapGFFAttribute* const pAtt, unsigned int nAttributes, const char * const sName)
+ZMapGFFAttribute zMapGFFAttributeListContains( ZMapGFFAttribute* pAtt, unsigned int nAttributes, const char * const sName)
 {
   ZMapGFFAttribute pAttribute = NULL ;
   const ZMapGFFAttribute *pAttributes = pAtt ;
@@ -699,7 +699,7 @@ void attribute_test_parse(ZMapGFFParser pParser, char ** pAttributes, unsigned i
 /*
  * Inspect the "Class" attribute to convert to a homology type.
  */
-gboolean zMapAttParseClass(const ZMapGFFAttribute const pAttribute, ZMapHomolType * const pcReturnValue)
+gboolean zMapAttParseClass(ZMapGFFAttribute pAttribute, ZMapHomolType * const pcReturnValue)
 {
   static const char* sMyName = "zMapAttParseClass()" ;
   gboolean bResult = FALSE ;
@@ -737,7 +737,7 @@ gboolean zMapAttParseClass(const ZMapGFFAttribute const pAttribute, ZMapHomolTyp
 /*
  * Inspect the "percentID" attribute to convert to double.
  */
-gboolean zMapAttParsePID(const ZMapGFFAttribute const pAttribute, double * const pdReturnValue)
+gboolean zMapAttParsePID(ZMapGFFAttribute pAttribute, double * const pdReturnValue)
 {
   static const char* sMyName = "zMapAttParsePID()" ;
   static const unsigned int iExpectedFields = 1 ;
@@ -771,7 +771,7 @@ gboolean zMapAttParsePID(const ZMapGFFAttribute const pAttribute, double * const
 /*
  * Inspect the "Align" attribute to convert to two integer values, and a char.
  */
-gboolean zMapAttParseAlign(const ZMapGFFAttribute const pAttribute, int * const piStart, int * const piEnd, ZMapStrand * const pStrand)
+gboolean zMapAttParseAlign(ZMapGFFAttribute pAttribute, int * const piStart, int * const piEnd, ZMapStrand * const pStrand)
 {
   static const char *sMyName = "zMapAttParseAlign()" ;
   static const unsigned int iExpectedFields = 3 ;
@@ -825,7 +825,7 @@ gboolean zMapAttParseAlign(const ZMapGFFAttribute const pAttribute, int * const 
  * Parse the "start_not_found" attribute. We are just after an integer value; but it must be
  * within a certain numerical range.
  */
-gboolean zMapAttParseCDSStartNotFound(const ZMapGFFAttribute const pAttribute, gboolean * const pbOut, int * const piOut)
+gboolean zMapAttParseCDSStartNotFound(ZMapGFFAttribute pAttribute, gboolean * const pbOut, int * const piOut)
 {
   static const char *sMyName = "zMapAttParseCDSStartNotFound()" ;
   static const unsigned int iExpectedFields = 1;
@@ -858,7 +858,7 @@ gboolean zMapAttParseCDSStartNotFound(const ZMapGFFAttribute const pAttribute, g
  * Parse the "end_not_found" attribute. All we have to do here is check that the type of the attribute
  * is correct.
  */
-gboolean zMapAttParseCDSEndNotFound(const ZMapGFFAttribute const pAttribute, gboolean * const pbOut)
+gboolean zMapAttParseCDSEndNotFound(ZMapGFFAttribute pAttribute, gboolean * const pbOut)
 {
   static const char *sMyName = "zMapAttParseCDSEndNotFound()" ;
   gboolean bResult = FALSE ;
@@ -882,7 +882,7 @@ gboolean zMapAttParseCDSEndNotFound(const ZMapGFFAttribute const pAttribute, gbo
  * Inspect the "length" attribute for a single integer variable. This is for V3 only; the
  * attribute name "length" was previous capitalised in our V2 code.
  */
-gboolean zMapAttParseLength(const ZMapGFFAttribute const pAttribute , int* const piLength )
+gboolean zMapAttParseLength(ZMapGFFAttribute pAttribute , int* const piLength )
 {
   static const char *sMyName = "zMapAttParseLength()" ;
   static const unsigned int iExpectedFields = 1;
@@ -917,7 +917,7 @@ gboolean zMapAttParseLength(const ZMapGFFAttribute const pAttribute , int* const
  * Parse a "Name" attribute for variation data. This was what we previously did in V2. There
  * is another version of ParseNameV3 for the new version.
  */
-gboolean zMapAttParseNameV2(const ZMapGFFAttribute const pAttribute, GQuark *const SO_acc_out, char ** const name_str_out, char ** const variation_str_out)
+gboolean zMapAttParseNameV2(ZMapGFFAttribute pAttribute, GQuark *const SO_acc_out, char ** const name_str_out, char ** const variation_str_out)
 {
   gboolean bResult = FALSE ;
   static const char *sMyName = "zMapAttParseNameV2()" ;
@@ -955,7 +955,7 @@ gboolean zMapAttParseNameV2(const ZMapGFFAttribute const pAttribute, GQuark *con
  * V3 "Name" parser. This just returns a copy of the string, having removed escaped equals and
  * escaped commas if any are present.
  */
-gboolean zMapAttParseName(const ZMapGFFAttribute const pAttribute, char** const psOut)
+gboolean zMapAttParseName(ZMapGFFAttribute pAttribute, char** const psOut)
 {
   gboolean bReplaced = FALSE, bResult = FALSE ;
   static const char *sMyName = "zMapAttParseName()" ;
@@ -991,7 +991,7 @@ gboolean zMapAttParseName(const ZMapGFFAttribute const pAttribute, char** const 
 /*
  * Parse the "Alias" attribute; just returns a copy of the string.
  */
-gboolean zMapAttParseAlias(const ZMapGFFAttribute const pAttribute, char ** const sOut)
+gboolean zMapAttParseAlias(ZMapGFFAttribute pAttribute, char ** const sOut)
 {
   gboolean bResult = FALSE ;
   static const char *sMyName = "zMapAttParseAlias()" ;
@@ -1026,7 +1026,7 @@ gboolean zMapAttParseAlias(const ZMapGFFAttribute const pAttribute, char ** cons
  * The 'start' and 'end' data are assumed to be unsigned. At least one
  * space is required between <end> and <strand> if the latter is present.
  */
-gboolean zMapAttParseTarget(const ZMapGFFAttribute const pAttribute, char ** const sOut, int * const piStart, int * const piEnd, ZMapStrand * const pStrand)
+gboolean zMapAttParseTarget(ZMapGFFAttribute pAttribute, char ** const sOut, int * const piStart, int * const piEnd, ZMapStrand * const pStrand)
 {
   gboolean bResult = FALSE ;
   static const char *sMyName = "zMapAttParseTarget()" ;
@@ -1093,7 +1093,7 @@ gboolean zMapAttParseTarget(const ZMapGFFAttribute const pAttribute, char ** con
  * may contain colons so we split on the first one encountered. If one is not encountered
  * at all, this is an error.
  */
-gboolean zMapAttParseDbxref(const ZMapGFFAttribute const pAttribute, char ** const sOut1, char ** const sOut2)
+gboolean zMapAttParseDbxref(ZMapGFFAttribute pAttribute, char ** const sOut1, char ** const sOut2)
 {
   gboolean bResult = FALSE,
     bFoundSplit = FALSE ;
@@ -1152,7 +1152,7 @@ gboolean zMapAttParseDbxref(const ZMapGFFAttribute const pAttribute, char ** con
 /*
  * This parses the "Ontology_term" attribute; is the same as Dbxref other than the name.
  */
-gboolean zMapAttParseOntology_term(const ZMapGFFAttribute const pAttribute , char ** const sOut1, char ** const sOut2 )
+gboolean zMapAttParseOntology_term(ZMapGFFAttribute pAttribute , char ** const sOut1, char ** const sOut2 )
 {
   gboolean bResult = FALSE,
     bFoundSplit = FALSE ;
@@ -1210,7 +1210,7 @@ gboolean zMapAttParseOntology_term(const ZMapGFFAttribute const pAttribute , cha
  * Parse the "Is_circular" attribute. Allowed values are "true" and "false" and are taken
  * to be case sensitive.
  */
-gboolean zMapAttParseIs_circular(const ZMapGFFAttribute const pAttribute, gboolean * const pbOut)
+gboolean zMapAttParseIs_circular(ZMapGFFAttribute pAttribute, gboolean * const pbOut)
 {
   gboolean bResult = FALSE ;
   static const char *sMyName = "zMapAttParseIs_circular()" ;
@@ -1247,7 +1247,7 @@ gboolean zMapAttParseIs_circular(const ZMapGFFAttribute const pAttribute, gboole
 /*
  * Parse the "Parent" attribute; just returns a copy of the string.
  */
-gboolean zMapAttParseParent(const ZMapGFFAttribute const pAttribute, char ** const sOut)
+gboolean zMapAttParseParent(ZMapGFFAttribute pAttribute, char ** const sOut)
 {
   gboolean bResult = FALSE ;
   static const char *sMyName = "zMapAttParseParent()" ;
@@ -1278,7 +1278,7 @@ gboolean zMapAttParseParent(const ZMapGFFAttribute const pAttribute, char ** con
  * as long as its not empty. No attempt is made in the old code to see whether or
  * not the string is actually a valid URL or not.
  */
-gboolean zMapAttParseURL(const ZMapGFFAttribute const pAttribute, char** const sOut)
+gboolean zMapAttParseURL(ZMapGFFAttribute pAttribute, char** const sOut)
 {
   gboolean bResult = FALSE, bReplaced = FALSE ;
   static const char *sMyName = "zMapAttParseURL()" ;
@@ -1312,7 +1312,7 @@ gboolean zMapAttParseURL(const ZMapGFFAttribute const pAttribute, char** const s
 /*
  * Parse out the ensembl_variation attribute.
  */
-gboolean zMapAttParseEnsemblVariation(const ZMapGFFAttribute const pAttribute, char ** const psOut)
+gboolean zMapAttParseEnsemblVariation(ZMapGFFAttribute pAttribute, char ** const psOut)
 {
   gboolean bResult = FALSE ;
   static const char *sMyName = "zMapAttParseEnsembleVariation()" ;
@@ -1337,7 +1337,7 @@ gboolean zMapAttParseEnsemblVariation(const ZMapGFFAttribute const pAttribute, c
 /*
  * Parse out the allele_string attribute.
  */
-gboolean zMapAttParseAlleleString(const ZMapGFFAttribute const pAttribute, char ** const psOut)
+gboolean zMapAttParseAlleleString(ZMapGFFAttribute pAttribute, char ** const psOut)
 {
   gboolean bResult = FALSE ;
   static const char *sMyName = "zMapAttParseAlleleString()" ;
@@ -1368,7 +1368,7 @@ gboolean zMapAttParseAlleleString(const ZMapGFFAttribute const pAttribute, char 
 /*
  * Parse "Note" attribute; this means just send back a copy of the value as a string.
  */
-gboolean zMapAttParseNote(const ZMapGFFAttribute const pAttribute, char ** const sOut)
+gboolean zMapAttParseNote(ZMapGFFAttribute pAttribute, char ** const sOut)
 {
   gboolean bResult = FALSE ;
   static const char *sMyName = "zMapAttParseNote()" ;
@@ -1393,7 +1393,7 @@ gboolean zMapAttParseNote(const ZMapGFFAttribute const pAttribute, char ** const
 /*
  * Parse "Derives_from" attribute; this means just send back a copy of the value as a string.
  */
-gboolean zMapAttParseDerives_from(const ZMapGFFAttribute const pAttribute, char ** const sOut)
+gboolean zMapAttParseDerives_from(ZMapGFFAttribute pAttribute, char ** const sOut)
 {
   gboolean bResult = FALSE ;
   static const char *sMyName = "zMapAttParseDerives_from()" ;
@@ -1420,7 +1420,7 @@ gboolean zMapAttParseDerives_from(const ZMapGFFAttribute const pAttribute, char 
 /*
  * Parse the "ID" attribute. Translate the associated string into a GQuark.
  */
-gboolean zMapAttParseID(const ZMapGFFAttribute const pAttribute, GQuark * const pgqOut )
+gboolean zMapAttParseID(ZMapGFFAttribute pAttribute, GQuark * const pgqOut )
 {
   gboolean bResult = FALSE ;
   static const char *sMyName = "zMapAttParseID()" ;
@@ -1447,7 +1447,7 @@ gboolean zMapAttParseID(const ZMapGFFAttribute const pAttribute, GQuark * const 
 /*
  * Parse the "sequence" attribute; simply return a copy of the string data.
  */
-gboolean zMapAttParseSequence(const ZMapGFFAttribute const pAttribute, char ** const sOut)
+gboolean zMapAttParseSequence(ZMapGFFAttribute pAttribute, char ** const sOut)
 {
   gboolean bResult = FALSE ;
   static const char *sMyName = "zMapAttParseSequence()" ;
@@ -1472,7 +1472,7 @@ gboolean zMapAttParseSequence(const ZMapGFFAttribute const pAttribute, char ** c
 /*
  * Parse "Source" attribute; this means just send back a copy of the value as a string.
  */
-gboolean zMapAttParseSource(const ZMapGFFAttribute const pAttribute , char ** const sOut )
+gboolean zMapAttParseSource(ZMapGFFAttribute pAttribute , char ** const sOut )
 {
   gboolean bResult = FALSE ;
   static const char *sMyName = "zMapAttParseSource()" ;
@@ -1510,7 +1510,7 @@ gboolean zMapAttParseSource(const ZMapGFFAttribute const pAttribute , char ** co
  * Parse out a "Target" attribute. This is modified from the original version that was
  * in 'getFeatureName()' to read both of the strings that are present.
  */
-gboolean zMapAttParseTargetV2(const ZMapGFFAttribute const pAttribute, char ** const sOut01, char ** const sOut02)
+gboolean zMapAttParseTargetV2(ZMapGFFAttribute pAttribute, char ** const sOut01, char ** const sOut02)
 {
   static const char *sFormat = "%*[\"]%*[^:]%*[:]%50[^\"]%*[\"]%s" ;
   static const unsigned int iExpectedFields = 2 ;
@@ -1552,7 +1552,7 @@ gboolean zMapAttParseTargetV2(const ZMapGFFAttribute const pAttribute, char ** c
  * in 'getFeatureName()' to read both of the strings that are present. Basically the same as the
  * "Target" parser above but with different tag.
  */
-gboolean zMapAttParseAssemblySource(const ZMapGFFAttribute const pAttribute, char ** const sOut01, char ** const sOut02)
+gboolean zMapAttParseAssemblySource(ZMapGFFAttribute pAttribute, char ** const sOut01, char ** const sOut02)
 {
   static const char *sFormat = "%*[\"]%*[^:]%*[:]%50[^\"]%*[\"]%s" ;
   static const unsigned int iExpectedFields = 2 ;
@@ -1582,7 +1582,7 @@ gboolean zMapAttParseAssemblySource(const ZMapGFFAttribute const pAttribute, cha
 /*
  * Parse out any attribute tag followed by two strings, the first of which is quoted.
  */
-gboolean zMapAttParseAnyTwoStrings(const ZMapGFFAttribute const pAttribute, char ** const sOut01, char ** const sOut02)
+gboolean zMapAttParseAnyTwoStrings(ZMapGFFAttribute pAttribute, char ** const sOut01, char ** const sOut02)
 {
   static const char *sFormat = "%*[\"]%50[^\"]%*[\"]%*s";
   static const unsigned int iExpectedFields = 2 ;
@@ -1613,7 +1613,7 @@ gboolean zMapAttParseAnyTwoStrings(const ZMapGFFAttribute const pAttribute, char
 /*
  * Parse "locus" attribute and convert to GQuark.
  */
-gboolean zMapAttParseLocus(const ZMapGFFAttribute const pAttribute, GQuark * const pGQ)
+gboolean zMapAttParseLocus(ZMapGFFAttribute pAttribute, GQuark * const pGQ)
 {
   gboolean bResult = FALSE ;
   static const char *sMyName = "zMapAttParseLocus()" ;
@@ -1643,7 +1643,7 @@ gboolean zMapAttParseLocus(const ZMapGFFAttribute const pAttribute, GQuark * con
  * Parse data from the "Gaps" attribute; we expect to find zero or more comma-seperated groups of 4 integer values.
  * The value string of the attribute should be unquoted.
  */
-gboolean zMapAttParseGaps(const ZMapGFFAttribute const pAttribute, GArray ** const pGaps, ZMapStrand cRefStrand, ZMapStrand cMatchStrand)
+gboolean zMapAttParseGaps(ZMapGFFAttribute pAttribute, GArray ** const pGaps, ZMapStrand cRefStrand, ZMapStrand cMatchStrand)
 {
   gboolean bResult = FALSE ;
   static const char *sMyName = "zMapAttParseGaps()" ;
@@ -1712,7 +1712,7 @@ gboolean zMapAttParseGaps(const ZMapGFFAttribute const pAttribute, GArray ** con
  * The final one (vulgar exonerate) is not yet implemented and so will always
  * return false.
  */
-gboolean zMapAttParseCigarExonerate(const ZMapGFFAttribute const pAttribute , GArray ** const pGaps,
+gboolean zMapAttParseCigarExonerate(ZMapGFFAttribute pAttribute , GArray ** const pGaps,
   ZMapStrand cRefStrand, int iRefStart, int iRefEnd, ZMapStrand cMatchStrand, int iMatchStart, int iMatchEnd)
 {
   gboolean bResult = FALSE ;
@@ -1741,7 +1741,7 @@ gboolean zMapAttParseCigarExonerate(const ZMapGFFAttribute const pAttribute , GA
 /*
  * This parses the "cigar_ensemble" attribute.
  */
-gboolean zMapAttParseCigarEnsembl(const ZMapGFFAttribute const pAttribute, GArray ** const pGaps ,
+gboolean zMapAttParseCigarEnsembl(ZMapGFFAttribute pAttribute, GArray ** const pGaps ,
   ZMapStrand cRefStrand, int iRefStart, int iRefEnd, ZMapStrand cMatchStrand, int iMatchStart, int iMatchEnd)
 {
   gboolean bResult = FALSE ;
@@ -1769,7 +1769,7 @@ gboolean zMapAttParseCigarEnsembl(const ZMapGFFAttribute const pAttribute, GArra
 /*
  * This parses the "cigar_bam" attribute.
  */
-gboolean zMapAttParseCigarBam(const ZMapGFFAttribute const pAttribute , GArray ** const pGaps,
+gboolean zMapAttParseCigarBam(ZMapGFFAttribute pAttribute , GArray ** const pGaps,
   ZMapStrand cRefStrand, int iRefStart, int iRefEnd, ZMapStrand cMatchStrand, int iMatchStart, int iMatchEnd )
 {
   gboolean bResult = FALSE ;
@@ -1798,7 +1798,7 @@ gboolean zMapAttParseCigarBam(const ZMapGFFAttribute const pAttribute , GArray *
 /*
  * This parses the "vulgar_exonerate" attribute. This one is not yet implemented.
  */
-gboolean zMapAttParseVulgarExonerate(const ZMapGFFAttribute const pAttribute , GArray ** const pGaps ,
+gboolean zMapAttParseVulgarExonerate(ZMapGFFAttribute pAttribute , GArray ** const pGaps ,
   ZMapStrand cRefStrand, int iRefStart, int iRefEnd, ZMapStrand cMatchStrand, int iMatchStart, int iMatchEnd)
 {
   gboolean bResult = FALSE ;
@@ -1835,7 +1835,7 @@ gboolean zMapAttParseVulgarExonerate(const ZMapGFFAttribute const pAttribute , G
 /*
  * Parse "Known_name" attribute; this means just send back a copy of the value as a string.
  */
-gboolean zMapAttParseKnownName(const ZMapGFFAttribute const pAttribute, char ** const sOut)
+gboolean zMapAttParseKnownName(ZMapGFFAttribute pAttribute, char ** const sOut)
 {
   gboolean bResult = FALSE ;
   static const char *sMyName = "zMapAttParseKnownName()" ;
@@ -1871,7 +1871,7 @@ gboolean zMapAttParseKnownName(const ZMapGFFAttribute const pAttribute, char ** 
  *       <rstart>, <rend>          non-negative integer values, <rstart> <= <rend>
  *
  */
-gboolean zMapAttParseAssemblyPath(const ZMapGFFAttribute const pAttribute, char ** const psOut, ZMapStrand * const pcStrandOut,
+gboolean zMapAttParseAssemblyPath(ZMapGFFAttribute pAttribute, char ** const psOut, ZMapStrand * const pcStrandOut,
                                   int * const piOut, GArray ** const paOut)
 {
   gboolean bResult = FALSE ;

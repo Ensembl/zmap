@@ -201,12 +201,12 @@ typedef struct ZMapGFF3ParserStruct_
 ZMapGFFParser zMapGFFCreateParser_V3(char *sequence, int features_start, int features_end) ;
 void zMapGFFDestroyParser_V3(ZMapGFFParser parser) ;
 gboolean zMapGFFParse_V3(ZMapGFFParser parser_base, char* const line ) ;
-gboolean zMapGFFGetLogWarnings(const ZMapGFFParser const pParser );
-gboolean zMapGFFSetSOSetInUse(ZMapGFFParser const pParser, ZMapSOSetInUse );
-ZMapSOSetInUse zMapGFFGetSOSetInUse(const ZMapGFFParser const pParser );
-gboolean zMapGFFSetSOErrorLevel(ZMapGFFParser const pParserBase, ZMapSOErrorLevel cErrorLevel) ;
-ZMapSOErrorLevel zMapGFFGetSOErrorLevel(const ZMapGFFParser const pParserBase ) ;
-gboolean zMapGFFGetHeaderGotMinimal_V3(const ZMapGFFParser const pParserBase) ;
+gboolean zMapGFFGetLogWarnings(ZMapGFFParser pParser );
+gboolean zMapGFFSetSOSetInUse(ZMapGFFParser pParser, ZMapSOSetInUse );
+ZMapSOSetInUse zMapGFFGetSOSetInUse(ZMapGFFParser pParser );
+gboolean zMapGFFSetSOErrorLevel(ZMapGFFParser pParserBase, ZMapSOErrorLevel cErrorLevel) ;
+ZMapSOErrorLevel zMapGFFGetSOErrorLevel(ZMapGFFParser pParserBase ) ;
+gboolean zMapGFFGetHeaderGotMinimal_V3(ZMapGFFParser pParserBase) ;
 
 
 

@@ -135,22 +135,22 @@ typedef struct ZMapGFFAttributeStruct_
 
 
 ZMapGFFAttribute zMapGFFCreateAttribute(ZMapGFFAttributeName) ;
-gboolean zMapGFFDestroyAttribute(ZMapGFFAttribute const) ;
+gboolean zMapGFFDestroyAttribute(ZMapGFFAttribute) ;
 
-ZMapGFFAttributeName zMapGFFAttributeGetName(const ZMapGFFAttribute const) ;
-char * zMapGFFAttributeGetNamestring(const ZMapGFFAttribute const ) ;
-char * zMapGFFAttributeGetTempstring(const ZMapGFFAttribute const ) ;
+ZMapGFFAttributeName zMapGFFAttributeGetName(ZMapGFFAttribute) ;
+char * zMapGFFAttributeGetNamestring(ZMapGFFAttribute ) ;
+char * zMapGFFAttributeGetTempstring(ZMapGFFAttribute) ;
 char * zMapGFFAttributeGetString(ZMapGFFAttributeName) ;
 
 gboolean zMapGFFAttributeGetIsMultivalued(ZMapGFFAttributeName) ;
-gboolean zMapGFFAttributeIsValid(const ZMapGFFAttribute const ) ;
+gboolean zMapGFFAttributeIsValid(ZMapGFFAttribute) ;
 
-ZMapGFFAttribute zMapGFFAttributeParse(const ZMapGFFParser const , const char * const, gboolean) ;
-gboolean zMapGFFAttributeRemoveQuotes(const ZMapGFFAttribute const) ;
-ZMapGFFAttribute* zMapGFFAttributeParseList(const ZMapGFFParser const , const char * const, unsigned int * const, gboolean ) ;
-gboolean zMapGFFAttributeDestroyList(ZMapGFFAttribute * const , unsigned int) ;
+ZMapGFFAttribute zMapGFFAttributeParse(ZMapGFFParser, const char * const, gboolean) ;
+gboolean zMapGFFAttributeRemoveQuotes(ZMapGFFAttribute) ;
+ZMapGFFAttribute* zMapGFFAttributeParseList(ZMapGFFParser, const char * const, unsigned int * const, gboolean ) ;
+gboolean zMapGFFAttributeDestroyList(ZMapGFFAttribute * , unsigned int) ;
 
-ZMapGFFAttribute zMapGFFAttributeListContains(const ZMapGFFAttribute *const , unsigned int, const char * const) ;
+ZMapGFFAttribute zMapGFFAttributeListContains(ZMapGFFAttribute * , unsigned int, const char * const) ;
 
 void attribute_test_example() ;
 void attribute_test_parse(ZMapGFFParser, char **, unsigned int) ;
@@ -159,39 +159,39 @@ void attribute_test_parse(ZMapGFFParser, char **, unsigned int) ;
  * Attribute parsing functions. Similar to previous implementation, but broken up
  * into simpler components.
  */
-gboolean zMapAttParseAlias(const ZMapGFFAttribute const, char ** const ) ;
-gboolean zMapAttParseAlign(const ZMapGFFAttribute const, int * const, int * const, ZMapStrand * const);
-gboolean zMapAttParseAssemblySource(const ZMapGFFAttribute const, char ** const, char ** const) ;
-gboolean zMapAttParseAssemblyPath(const ZMapGFFAttribute const, char ** const, ZMapStrand * const , int * const, GArray ** const) ;
-gboolean zMapAttParseAnyTwoStrings(const ZMapGFFAttribute const, char ** const, char ** const) ;
-gboolean zMapAttParseClass(const ZMapGFFAttribute const, ZMapHomolType *const );
-gboolean zMapAttParseCigarExonerate(const ZMapGFFAttribute const , GArray ** const , ZMapStrand , int, int, ZMapStrand, int, int) ;
-gboolean zMapAttParseCigarEnsembl(const ZMapGFFAttribute const , GArray ** const , ZMapStrand , int, int, ZMapStrand, int, int) ;
-gboolean zMapAttParseCigarBam(const ZMapGFFAttribute const , GArray ** const , ZMapStrand , int, int, ZMapStrand, int, int) ;
-gboolean zMapAttParseCDSStartNotFound(const ZMapGFFAttribute const, gboolean * const, int * const ) ;
-gboolean zMapAttParseCDSEndNotFound(const ZMapGFFAttribute const, gboolean * const ) ;
-gboolean zMapAttParseDerives_from(const ZMapGFFAttribute const, char ** const ) ;
-gboolean zMapAttParseDbxref(const ZMapGFFAttribute const, char ** const, char ** const ) ;
-gboolean zMapAttParseGaps(const ZMapGFFAttribute const, GArray ** const, ZMapStrand, ZMapStrand ) ;
-gboolean zMapAttParseID(const ZMapGFFAttribute const, GQuark * const ) ;
-gboolean zMapAttParseIs_circular(const ZMapGFFAttribute const, gboolean * const ) ;
-gboolean zMapAttParseKnownName(const ZMapGFFAttribute const, char ** const ) ;
-gboolean zMapAttParseLocus(const ZMapGFFAttribute const, GQuark * const ) ;
-gboolean zMapAttParseLength(const ZMapGFFAttribute const, int* const) ;
-gboolean zMapAttParseName(const ZMapGFFAttribute const, char ** const) ;
-gboolean zMapAttParseNameV2(const ZMapGFFAttribute const, GQuark *const, char ** const, char ** const) ;
-gboolean zMapAttParseNote(const ZMapGFFAttribute const, char ** const ) ;
-gboolean zMapAttParseOntology_term(const ZMapGFFAttribute const, char ** const, char ** const ) ;
-gboolean zMapAttParseParent(const ZMapGFFAttribute const, char ** const ) ;
-gboolean zMapAttParsePID(const ZMapGFFAttribute const, double *const);
-gboolean zMapAttParseSequence(const ZMapGFFAttribute const, char ** const ) ;
-gboolean zMapAttParseSource(const ZMapGFFAttribute const, char ** const) ;
-gboolean zMapAttParseTargetV2(const ZMapGFFAttribute const, char ** const, char ** const ) ;
-gboolean zMapAttParseTarget(const ZMapGFFAttribute const, char ** const, int * const , int * const , ZMapStrand * const ) ;
-gboolean zMapAttParseURL(const ZMapGFFAttribute const, char** const ) ;
-gboolean zMapAttParseVulgarExonerate(const ZMapGFFAttribute const , GArray ** const, ZMapStrand , int, int, ZMapStrand, int, int) ;
-gboolean zMapAttParseEnsemblVariation(const ZMapGFFAttribute const, char ** const ) ;
-gboolean zMapAttParseAlleleString(const ZMapGFFAttribute const, char ** const) ;
+gboolean zMapAttParseAlias(ZMapGFFAttribute, char ** const ) ;
+gboolean zMapAttParseAlign(ZMapGFFAttribute, int * const, int * const, ZMapStrand * const);
+gboolean zMapAttParseAssemblySource(ZMapGFFAttribute, char ** const, char ** const) ;
+gboolean zMapAttParseAssemblyPath(ZMapGFFAttribute, char ** const, ZMapStrand * const , int * const, GArray ** const) ;
+gboolean zMapAttParseAnyTwoStrings(ZMapGFFAttribute, char ** const, char ** const) ;
+gboolean zMapAttParseClass(ZMapGFFAttribute, ZMapHomolType *const );
+gboolean zMapAttParseCigarExonerate(ZMapGFFAttribute , GArray ** const , ZMapStrand , int, int, ZMapStrand, int, int) ;
+gboolean zMapAttParseCigarEnsembl(ZMapGFFAttribute , GArray ** const , ZMapStrand , int, int, ZMapStrand, int, int) ;
+gboolean zMapAttParseCigarBam(ZMapGFFAttribute , GArray ** const , ZMapStrand , int, int, ZMapStrand, int, int) ;
+gboolean zMapAttParseCDSStartNotFound(ZMapGFFAttribute, gboolean * const, int * const ) ;
+gboolean zMapAttParseCDSEndNotFound(ZMapGFFAttribute, gboolean * const ) ;
+gboolean zMapAttParseDerives_from(ZMapGFFAttribute, char ** const ) ;
+gboolean zMapAttParseDbxref(ZMapGFFAttribute, char ** const, char ** const ) ;
+gboolean zMapAttParseGaps(ZMapGFFAttribute, GArray ** const, ZMapStrand, ZMapStrand ) ;
+gboolean zMapAttParseID(ZMapGFFAttribute, GQuark * const ) ;
+gboolean zMapAttParseIs_circular(ZMapGFFAttribute, gboolean * const ) ;
+gboolean zMapAttParseKnownName(ZMapGFFAttribute, char ** const ) ;
+gboolean zMapAttParseLocus(ZMapGFFAttribute, GQuark * const ) ;
+gboolean zMapAttParseLength(ZMapGFFAttribute, int* const) ;
+gboolean zMapAttParseName(ZMapGFFAttribute, char ** const) ;
+gboolean zMapAttParseNameV2(ZMapGFFAttribute, GQuark *const, char ** const, char ** const) ;
+gboolean zMapAttParseNote(ZMapGFFAttribute, char ** const ) ;
+gboolean zMapAttParseOntology_term(ZMapGFFAttribute, char ** const, char ** const ) ;
+gboolean zMapAttParseParent(ZMapGFFAttribute, char ** const ) ;
+gboolean zMapAttParsePID(ZMapGFFAttribute, double *const);
+gboolean zMapAttParseSequence(ZMapGFFAttribute, char ** const ) ;
+gboolean zMapAttParseSource(ZMapGFFAttribute, char ** const) ;
+gboolean zMapAttParseTargetV2(ZMapGFFAttribute, char ** const, char ** const ) ;
+gboolean zMapAttParseTarget(ZMapGFFAttribute, char ** const, int * const , int * const , ZMapStrand * const ) ;
+gboolean zMapAttParseURL(ZMapGFFAttribute, char** const ) ;
+gboolean zMapAttParseVulgarExonerate(ZMapGFFAttribute , GArray ** const, ZMapStrand , int, int, ZMapStrand, int, int) ;
+gboolean zMapAttParseEnsemblVariation(ZMapGFFAttribute, char ** const ) ;
+gboolean zMapAttParseAlleleString(ZMapGFFAttribute, char ** const) ;
 
 
 

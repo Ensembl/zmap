@@ -78,7 +78,7 @@ ZMapGFFHeader zMapGFFCreateHeader()
 /*
  * Data utility to get a int data member stored in a directive
 */
-int zMapGFFGetDirectiveIntData(const ZMapGFFHeader const pHeader, ZMapGFFDirectiveName cTheDirName, unsigned int iIndex)
+int zMapGFFGetDirectiveIntData(ZMapGFFHeader pHeader, ZMapGFFDirectiveName cTheDirName, unsigned int iIndex)
 {
   ZMapGFFDirectiveInfoStruct cTheDirectiveInfo;
   int iResult = 0 ;
@@ -101,7 +101,7 @@ int zMapGFFGetDirectiveIntData(const ZMapGFFHeader const pHeader, ZMapGFFDirecti
 /*
  * Data utility to get a string data member from a directive
 */
-char *zMapGFFGetDirectiveStringData(const ZMapGFFHeader const pHeader, ZMapGFFDirectiveName cTheDirName, unsigned int iIndex)
+char *zMapGFFGetDirectiveStringData(ZMapGFFHeader pHeader, ZMapGFFDirectiveName cTheDirName, unsigned int iIndex)
 {
   ZMapGFFDirectiveInfoStruct cTheDirectiveInfo ;
   char* sResult = NULL ;
@@ -125,7 +125,7 @@ char *zMapGFFGetDirectiveStringData(const ZMapGFFHeader const pHeader, ZMapGFFDi
 /*
  * Function to destroy a GFF3 header object.
  */
-void zMapGFFHeaderDestroy(ZMapGFFHeader const pHeader)
+void zMapGFFHeaderDestroy(ZMapGFFHeader pHeader)
 {
   unsigned int iDir;
   if (!pHeader)
@@ -150,7 +150,7 @@ void zMapGFFHeaderDestroy(ZMapGFFHeader const pHeader)
  * Tests to see if the got_minimal header flag should be set. This is should only be
  * set if we have both the gff_version and got_sequence_region flags set.
  */
-void zMapGFFHeaderMinimalTest(const ZMapGFFHeader const pHeader)
+void zMapGFFHeaderMinimalTest(ZMapGFFHeader pHeader)
 {
   if (!pHeader)
     return ;

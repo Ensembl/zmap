@@ -155,7 +155,7 @@ ZMapGFFDirective zMapGFFCreateDirective(ZMapGFFDirectiveName eTheName)
 /*
  * Function to destroy a directive object.
 */
-void zMapGFFDestroyDirective(ZMapGFFDirective const pDirective)
+void zMapGFFDestroyDirective(ZMapGFFDirective pDirective)
 {
   unsigned int iLoop ;
   if (!pDirective)

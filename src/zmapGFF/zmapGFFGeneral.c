@@ -43,7 +43,7 @@
  * Check whether the parser passed in is a valid version (i.e. one that we handle)
  * or not. Returns TRUE if this is the case and FALSE otherwise.
  */
-gboolean zMapGFFIsValidVersion(const ZMapGFFParser const pParser)
+gboolean zMapGFFIsValidVersion(ZMapGFFParser pParser)
 {
   gboolean bResult = FALSE ;
 
