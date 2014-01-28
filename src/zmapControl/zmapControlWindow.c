@@ -645,19 +645,23 @@ static gboolean rotateTextCB(gpointer user_data)
 	buffer = g_string_sized_new(1000) ;
 
       view = zMapViewGetView(zmap->focus_viewwindow) ;
-      view_state = zMapViewGetStatus(view) ;
 
-      entry_widg = zmap->status_entry ;
-      if ((entry_text = (char *)gtk_entry_get_text(GTK_ENTRY(entry_widg))))
-	{
-	  buffer = g_string_assign(buffer, (entry_text + 1)) ;
-	  buffer = g_string_append_c(buffer, *entry_text) ;
+      if (view)
+        {
+          view_state = zMapViewGetStatus(view) ;
 
-	  gtk_entry_set_text(GTK_ENTRY(entry_widg), buffer->str) ;
-	}
+          entry_widg = zmap->status_entry ;
+          if ((entry_text = (char *)gtk_entry_get_text(GTK_ENTRY(entry_widg))))
+            {
+              buffer = g_string_assign(buffer, (entry_text + 1)) ;
+              buffer = g_string_append_c(buffer, *entry_text) ;
 
-      if (view_state == ZMAPVIEW_LOADED)
-	call_again = FALSE ;				    /* Stop calling us. */
+              gtk_entry_set_text(GTK_ENTRY(entry_widg), buffer->str) ;
+            }
+
+          if (view_state == ZMAPVIEW_LOADED)
+            call_again = FALSE ;				    /* Stop calling us. */
+        }
     }
 
   return call_again ;
