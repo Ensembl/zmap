@@ -42,6 +42,7 @@ legend{ font-weight: bold }
   <li><a href="#introduction"><b>Introduction</b></a></li>
   <li><a href="#protocol"><b>The Request/Reply Transport Protocol</b></a></li>
   <li><a href="#problems"><b>Bootstrapping, Collisions, Synchronisation and Hanging</b><a></li>
+  <li><a href="#collisions"><b>Collision Protocol</b></a></li>
   <li><a href="#protocol"><b>References</b></a></li>
 </ul>
 
@@ -134,13 +135,14 @@ request message.</p>
 
 <h3>Collisions</h3>
 
-<p>The collision protocol is under consideration and development
-(i.e. 'watch this space'), but note that the simplified state diagram
-probably reduces the likelihood and impact of collisions.</p>
-
 <p>Provided that when sending, the client also monitors its server
 socket whilst waiting for a reply, collision detection should be
 straightforward.</p>
+
+<p>The simplified state diagram probably reduces the likelihood and
+impact of collisions. None-the-less,
+the <a href="#collisions">collision protocol</a> below allows safe
+resolution.</p>
 
 <h3>Timeouts and errors</h3>
 
@@ -176,7 +178,90 @@ alternative scenarios:</p>
   </li>
 </ul>
 
-<p>
+<a name="collisions"></a>
+<h2>Collision Protocol</h2>
+
+<p>The state diagram including collision detection, from the perspective of peer one:</p>
+
+<img src="./ZeroMQ_Collision_state.png" align="center">
+
+<h3>Detection and arbitration</h3>
+
+<ol>
+  <li><p>Peer 1 send a request, and then monitors for a reply, whilst
+  also monitoring for an inbound request. <em>[Peer 2: also event 1]</em></p></li>
+  <li>
+    <p>Peer 2 sends a simultaneous request, which peer 1 detects and
+    receives as a colliding request.</p>
+    <p>Peer 1 compares the timestamp of the received request against
+    its cached timestamp for its sent request.</p>
+    <ul>
+      <li><p>If peer 1 sent <em>before</em> peer 2, it wins the
+      collision. (Continue at step 3.)</p></li>
+      <li><p>If peer 1 sent <em>after</em> peer 2, it loses the
+      collision. (Continue at step 10.)</p></li>
+      <li><p>In the unlikely event that both timestamps are identical,
+      the master wins, where the master is the peer which originally
+      sent its endpoint address via the commandline to the
+      slave.</p></li>
+    </ul>
+    <p><em>[Peer 2: also event 2]</em></p>
+  </li>
+</ol>
+
+<h3>Collision winner</h3>
+
+<p>Peer 1 wins.</p>
+
+<ol start="3">
+  <li><p>The winner's request stands, so the winner waits for a
+  reply. <em>[Peer 2: events 10, 11]</em></p></li>
+  <li><p>Once the reply is received, the winner examines the header to
+  see if the loser wants to abort its colliding request.</p></li>
+  <li><p>Assuming no abort, the losing request is now processed
+  as usual. <em>[Peer 2: event 12, CLIENT_WAITING/normal]</em></p></li>
+  <li>
+    <p>The winner replies to the losing request as normal. <em>[Peer
+    2: event 13.]</em></p>
+    <p><em>or</em></p>
+  </li>
+  <li><p>If the loser has signalled abort, the winner does not reply
+  and returns directly to INACTIVE. <em>[Peer 2: event
+  14.]</em></p></li>
+</ol>
+
+<img src="./ZeroMQ_Req_Rep_coll_win.png" align="center">
+
+<h3>Collision loser</h3>
+
+<p>Peer 1 loses.</p>
+
+<ol start="10">
+  <li><p>The loser cancels timeouts on its request (but leaves the
+  request pending) and then processes the winning request as
+  usual. <em>[Peer 2: event 3,
+  CLIENT_WAITING/collision_win.]</em></p></li>
+  <li><p>The loser can optionally, on the basis of processing the
+  winning request, decide to abort its losing request. It indicates
+  this in the header of its reply to the winning request, which is
+  otherwise returned normally. <em>[Peer 2: event 4.]</em></p></li>
+  <li><p>Assuming the loser is not aborting its request, it now waits for
+  the reply to its losing request as usual, restarting its request
+  timeout from 0. <em>[Peer 2: event 5.]</em></p></li>
+  <li>
+    <p>The winner replies to the losing request as normal. <em>[Peer
+    2: event 6.]</em></p>
+    <p><em>or</em></p>
+  </li>
+  <li><p>If the loser is aborting its request, it closes and reopens its
+  client socket (which would otherwise be awaiting a reply), and
+  returns directly to INACTIVE. <em>[Peer 2: event 7.]</em></p></li>
+</ol>
+
+<h3>Message header</h3>
+
+<p><b>TBC</b></p>
+
 <a name="references"></a>
 <h2>References</h2>
 
