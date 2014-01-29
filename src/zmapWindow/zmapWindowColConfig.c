@@ -1971,20 +1971,20 @@ static GtkWidget *create_revert_apply_button(ColConfigure configure_data)
   gtk_container_set_border_width (GTK_CONTAINER (button_box),
                                   ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
 
-  cancel_button = gtk_button_new_with_label("Cancel") ;
-  gtk_box_pack_start(GTK_BOX(button_box), cancel_button, FALSE, FALSE, 0) ;
-  gtk_signal_connect(GTK_OBJECT(cancel_button), "clicked",
-		     GTK_SIGNAL_FUNC(cancel_button_cb), (gpointer)configure_data) ;
+  apply_button = gtk_button_new_with_label("Apply") ;
+  gtk_box_pack_end(GTK_BOX(button_box), apply_button, FALSE, FALSE, 0) ;
+  gtk_signal_connect(GTK_OBJECT(apply_button), "clicked",
+		     GTK_SIGNAL_FUNC(apply_button_cb), (gpointer)configure_data) ;
 
   revert_button = gtk_button_new_with_label("Revert") ;
   gtk_box_pack_start(GTK_BOX(button_box), revert_button, FALSE, FALSE, 0) ;
   gtk_signal_connect(GTK_OBJECT(revert_button), "clicked",
 		     GTK_SIGNAL_FUNC(revert_button_cb), (gpointer)configure_data) ;
 
-  apply_button = gtk_button_new_with_label("Apply") ;
-  gtk_box_pack_end(GTK_BOX(button_box), apply_button, FALSE, FALSE, 0) ;
-  gtk_signal_connect(GTK_OBJECT(apply_button), "clicked",
-		     GTK_SIGNAL_FUNC(apply_button_cb), (gpointer)configure_data) ;
+  cancel_button = gtk_button_new_with_label("Cancel") ;
+  gtk_box_pack_start(GTK_BOX(button_box), cancel_button, FALSE, FALSE, 0) ;
+  gtk_signal_connect(GTK_OBJECT(cancel_button), "clicked",
+		     GTK_SIGNAL_FUNC(cancel_button_cb), (gpointer)configure_data) ;
 
   /* set apply button as default. */
   GTK_WIDGET_SET_FLAGS(apply_button, GTK_CAN_DEFAULT) ;

@@ -731,7 +731,7 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
     {
       FooCanvasItem *sub_item = NULL, *highlight_item = NULL ;
       gboolean replace_highlight = TRUE, highlight_same_names = TRUE ;
-      ZMapFeatureSubPartSpan sub_feature ;
+      ZMapFeatureSubPartSpan sub_feature = NULL ;
       ZMapWindowCanvasItem canvas_item ;
       ZMapFeatureStruct feature_copy = {};
       ZMapFeatureAny my_feature = (ZMapFeatureAny) feature ;
@@ -822,6 +822,9 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
 
 	  window->multi_select = FALSE ;
 	}
+
+      if (sub_feature)
+        g_free(sub_feature) ;
     }
 
 

@@ -17,7 +17,7 @@ What's common between then and now is the aim to search for an item and then pro
 </p>
 
 <h4>Skip Lists as defined</h4>
-<p>Skip lists as written up involve a fixed size stack of higher level lists. When I started looking I had thought that they were guaranteed to not become degenrate, but if you look at what's online you see that it's only 'fairly likely'.  I had hoped to not have to write code to prevent degeneracy...
+<p>Skip lists as written up involve a fixed size stack of higher level lists. When I started looking I had thought that they were guaranteed to not become degenerate, but if you look at what's online you see that it's only 'fairly likely'.  I had hoped to not have to write code to prevent degeneracy...
 </p>
 <img src="Design/modules/skip_array.png" border="1">
 
@@ -32,7 +32,7 @@ Balancing/ non degeneracy is a pain, as there are a few edge cases and I can rem
 
 <h3>Balancing upper layers is not implemented</h3>
 <p>
-As the ZMap usage is nominally static I took the lazy option and did not implemnent this, instead just erasing and re-creating the whole list on any insert/ delete.  This is practical, as the list is calculated by lazy evaluation, and 100 insertions and deletions will only result in the list bneing re-calculated once.
+As the ZMap usage is nominally static I took the lazy option and did not implement this, instead just erasing and re-creating the whole list on any insert/ delete.  This is practical, as the list is calculated by lazy evaluation, and 100 insertions and deletions will only result in the list bneing re-calculated once.
 </p>
 
 <p>

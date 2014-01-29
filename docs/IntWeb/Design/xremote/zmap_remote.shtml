@@ -1259,10 +1259,10 @@ the opposite of the "handshake" request and is the default "goodbye" action.</p>
 <pre class="request">
 &lt;zmap type="request" version="2.0" app_id="ZMap" clipboard_id="remotecontrol-27328-1339141746" request_id="8"&gt;
   &lt;request command="features_loaded" view="NNNNN"&gt;
-    &lt;featureset names="genomic_canonical"/&gt;
-    &lt;start value="1"/&gt;
-    &lt;end value="37801"/&gt;
-    &lt;status value="1" message="1&#32;features&#32;loaded"/&gt;
+    &lt;featureset names="genomic_canonical" start="1" end="37801"/&gt;
+    &lt;status value="1" features_loaded="1"&gt;
+      &lt;message&gt;"1&#32;feature&#32;loaded"&gt;&lt;/message&gt;
+    &lt;/status&gt;
     &lt;exit_code value="0"/&gt;
     &lt;stderr value=""/&gt;
   &lt;/request&gt;

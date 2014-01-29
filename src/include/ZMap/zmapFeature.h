@@ -729,7 +729,8 @@ typedef struct ZMapFeatureStructType
   /* style id tp be removed when style fully working */
   /* GQuark style_id ;	*/ /* Style defining how this feature is processed (use Styles _unique_ id.) */
 
-  ZMapFeatureTypeStyle *style;                             /* pointer to the style structure held by the
+  ZMapFeatureTypeStyle *style;                             /* pointer to the style structure held by
+the
                                                             * featureset in the context NOTE we can have
                                                             * mixed styles in a column/ virtual featureset */
 
@@ -809,10 +810,10 @@ typedef struct ZMapFeatureDescStructName
   char *feature_name ;
   char *feature_known_name ;
   char *feature_total_length ;                             /* e.g. length of _whole_ match sequence. */
-  char *feature_term ;                                     /* This feature's style (was feature_style)
-                                                            * "ZMAPSTYLE_MODE_TRANSCRIPT" isn't
-                                                            * very helpful, changed in favour of
-                                                            * "Transcript" (could add feature_so_term) */
+  char *feature_term ;                                     /* This feature's style (was feature_style) */
+  char *feature_variation_string ;                         /* "ZMAPSTYLE_MODE_TRANSCRIPT" isn't */
+                                                            /* very helpful, changed in favour of */
+                                                            /* "Transcript" (could add feature_so_term) */
 
   char *feature_start ;
   char *feature_end ;

@@ -36,6 +36,7 @@
 #include <string.h>
 
 #include <ZMap/zmapFeature.h>
+#include <zmapWindowCanvasDraw.h>
 #include <zmapWindowCanvasFeatureset_I.h>
 #include <zmapWindowCanvasSequence_I.h>
 
@@ -740,16 +741,17 @@ static void zmapWindowCanvasSequenceSetColour(FooCanvasItem *foo,
 static ZMapFeatureSubPartSpan zmapWindowCanvasSequenceGetSubPartSpan(FooCanvasItem *foo,
 								     ZMapFeature feature, double x, double y)
 {
-  static ZMapFeatureSubPartSpanStruct sub_part;
+  ZMapFeatureSubPartSpan sub_part = NULL ;
 
   /*! \todo #warning revisit this when canvas items are simplified */
 
-  sub_part.start = y;
-  sub_part.end = y;
-  sub_part.index = 1;
-  sub_part.subpart = ZMAPFEATURE_SUBPART_INVALID;
+  sub_part = g_malloc0(sizeof *sub_part) ;
+  sub_part->start = y;
+  sub_part->end = y;
+  sub_part->index = 1;
+  sub_part->subpart = ZMAPFEATURE_SUBPART_INVALID;
 
-  return &sub_part;
+  return sub_part;
 }
 
 

@@ -230,9 +230,6 @@ void zmapWindowCanvasFeaturesetInitPango(GdkDrawable *drawable, ZMapWindowFeatur
 
 void zmapWindowCanvasFeaturesetFreePango(ZMapWindowCanvasPango pango);
 
-
-void zMapWindowCanvasFeaturesetSetZoomY(ZMapWindowFeaturesetItem fi, double zoom_y) ;
-
 void zMapWindowCanvasFeaturesetExpose(ZMapWindowFeaturesetItem fi);
 void zMapWindowCanvasFeaturesetRedraw(ZMapWindowFeaturesetItem fi, double zoom);
 
@@ -301,9 +298,11 @@ void zMapWindowCanvasFeaturesetPaintFlush(ZMapWindowFeaturesetItem featureset, Z
 					  GdkDrawable *drawable, GdkEventExpose *expose);
 gboolean zMapWindowCanvasFeaturesetGetFeatureExtent(ZMapWindowCanvasFeature feature, gboolean complex,
 						    ZMapSpan span, double *width);
+
 void zMapWindowCanvasFeaturesetPreZoom(ZMapWindowFeaturesetItem featureset) ;
 void zMapWindowCanvasFeaturesetZoom(ZMapWindowFeaturesetItem featureset, GdkDrawable *drawable);
-
+void zMapWindowCanvasFeaturesetSetZoomY(ZMapWindowFeaturesetItem fi, double zoom_y) ;
+void zMapWindowCanvasFeaturesetSetZoomRecalc(ZMapWindowFeaturesetItem featureset, gboolean recalc) ;
 
 gint zMapFeatureNameCmp(gconstpointer a, gconstpointer b);
 gint zMapFeatureCmp(gconstpointer a, gconstpointer b);
@@ -331,6 +330,8 @@ double zMapWindowCanvasFeaturesetGetFilterValue(FooCanvasItem *foo);
 int zMapWindowCanvasFeaturesetGetFilterCount(FooCanvasItem *foo);
 int zMapWindowCanvasFeaturesetFilter(gpointer filter, double value, gboolean highlight_filtered_columns);
 
+gboolean zmapWindowFeaturesetAllocColour(ZMapWindowFeaturesetItemClass featureset_class,
+                                         GdkColor *colour) ;
 gboolean zmapWindowFeaturesetGetDefaultColours(ZMapWindowFeaturesetItem feature_set_item,
                                                GdkColor **fill, GdkColor **draw, GdkColor **border) ;
 gboolean zmapWindowFeaturesetGetDefaultPixels(ZMapWindowFeaturesetItem feature_set_item,

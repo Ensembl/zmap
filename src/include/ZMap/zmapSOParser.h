@@ -83,6 +83,8 @@ ZMapSOIDData zMapSOIDDataCreate() ;
 ZMapSOIDData zMapSOIDDataCreateFromData(unsigned int, const char * const, ZMapStyleMode , ZMapHomolType ) ;
 gboolean zMapSOIDDataDestroy(ZMapSOIDData const) ;
 unsigned int zMapSOIDDataGetID(const ZMapSOIDData const) ;
+char *       zMapSOIDDataGetIDAsString(const ZMapSOIDData const ) ;
+char *       zMapSOIDDataName2SOAcc(const char * const ) ;
 char * zMapSOIDDataGetName(const ZMapSOIDData const) ;
 ZMapStyleMode zMapSOIDDataGetStyleMode(const ZMapSOIDData const) ;
 ZMapHomolType zMapSOIDDataGetHomol(const ZMapSOIDData const) ;

@@ -237,26 +237,35 @@ static ZMapWindowCanvasFeature zMapWindowCanvasTranscriptAddFeature(ZMapWindowFe
 	      feat->left = &tr->feature;
 	    }
 
-	  tr = (ZMapWindowCanvasTranscript) feat;
-	  tr->sub_type = TRANSCRIPT_EXON;
-	  tr->index = i;
+	  tr = (ZMapWindowCanvasTranscript)feat ;
+	  tr->sub_type = TRANSCRIPT_EXON ;
+
+          if (feature->strand == ZMAPSTRAND_FORWARD)
+            tr->index = i + 1 ;
+          else
+            tr->index = (ne - i) ;
 
 	  if (i < ni)
 	    {
 	      intron = &g_array_index(introns, ZMapSpanStruct, i) ;
 
-	      fy1 = y1 - feature->x1 + intron->x1;
-	      fy2 = y1 - feature->x1 + intron->x2;
+	      fy1 = y1 - feature->x1 + intron->x1 ;
+	      fy2 = y1 - feature->x1 + intron->x2 ;
 
-	      feat = zMapWindowFeaturesetAddFeature(featureset, feature, fy1,fy2);
-	      feat->width = featureset->width;
+	      feat = zMapWindowFeaturesetAddFeature(featureset, feature, fy1,fy2) ;
+	      feat->width = featureset->width ;
 
-	      tr->feature.right = feat;
-	      feat->left = &tr->feature;
+	      tr->feature.right = feat ;
+	      feat->left = &tr->feature ;
 
-	      tr = (ZMapWindowCanvasTranscript) feat;
-	      tr->sub_type = TRANSCRIPT_INTRON;
-	      tr->index = i;
+	      tr = (ZMapWindowCanvasTranscript)feat ;
+	      tr->sub_type = TRANSCRIPT_INTRON ;
+
+              /* should this be corrected for strand...find out where it's used.... */
+              if (feature->strand == ZMAPSTRAND_FORWARD)
+                tr->index = i + 1 ;
+              else
+                tr->index = (ni - i) ;
 	    }
 	}
 
@@ -290,9 +299,10 @@ static ZMapWindowCanvasFeature zMapWindowCanvasTranscriptAddFeature(ZMapWindowFe
 
 
 
-static ZMapFeatureSubPartSpan zmapWindowCanvasTranscriptGetSubPartSpan (FooCanvasItem *foo, ZMapFeature feature, double x,double y)
+static ZMapFeatureSubPartSpan zmapWindowCanvasTranscriptGetSubPartSpan(FooCanvasItem *foo,
+                                                                       ZMapFeature feature, double x, double y)
 {
-  static ZMapFeatureSubPartSpanStruct sub_part;
+  ZMapFeatureSubPartSpan sub_part = NULL;
 
   /* the interface to this is via zMapWindowCanvasItemGetInterval(), so here we have to look up the feature again */
   /*! \todo #warning revisit this when canvas items are simplified */
@@ -312,17 +322,18 @@ static ZMapFeatureSubPartSpan zmapWindowCanvasTranscriptGetSubPartSpan (FooCanva
       if(!featureset->point_canvas_feature)
 	return NULL;
 
-      sub_part.start = featureset->point_canvas_feature->y1;
-      sub_part.end   = featureset->point_canvas_feature->y2;
-      sub_part.subpart = ZMAPFEATURE_SUBPART_EXON;
+      sub_part = g_malloc0(sizeof *sub_part) ;
+      sub_part->start = featureset->point_canvas_feature->y1;
+      sub_part->end   = featureset->point_canvas_feature->y2;
+      sub_part->subpart = ZMAPFEATURE_SUBPART_EXON;
       /* work out which one it really is... */
-      for(sub_part.index = 1, wcf = featureset->point_canvas_feature; wcf->left; wcf = wcf->left)
+      for(sub_part->index = 1, wcf = featureset->point_canvas_feature; wcf->left; wcf = wcf->left)
 	{
 	  if()
-	    sub_part.index++;
+            sub_part->index++;
 	}
 
-      return &sub_part;
+      return sub_part;
     }
 #endif
 
@@ -337,53 +348,67 @@ static ZMapFeatureSubPartSpan zmapWindowCanvasTranscriptGetSubPartSpan (FooCanva
 
   for(i = 0; i < ne; i++)
     {
-      exon = &g_array_index(exons,ZMapSpanStruct,i);
+      exon = &g_array_index(exons, ZMapSpanStruct, i) ;
+
       if(exon->x1 <= y && exon->x2 >= y)
 	{
-	  sub_part.index = i + 1;
-	  sub_part.start = exon->x1;
-	  sub_part.end = exon->x2;
-	  sub_part.subpart = ZMAPFEATURE_SUBPART_EXON;
+          sub_part = g_malloc0(sizeof *sub_part) ;
+
+          if (feature->strand == ZMAPSTRAND_FORWARD)
+            sub_part->index = i + 1 ;
+          else
+            sub_part->index = (ne - i) ;
+
+          sub_part->start = exon->x1;
+          sub_part->end = exon->x2;
+          sub_part->subpart = ZMAPFEATURE_SUBPART_EXON;
 	  if(tr->flags.cds)
 	    {
 	      if(tr->cds_start <= y && tr->cds_end >= y)
 		{
 		  /* cursor in CDS but could have UTR in this exon */
-		  sub_part.subpart = ZMAPFEATURE_SUBPART_EXON_CDS;
+                  sub_part->subpart = ZMAPFEATURE_SUBPART_EXON_CDS;
 
-		  if(sub_part.start < tr->cds_start)
-		    sub_part.start = tr->cds_start;
-		  if(sub_part.end > tr->cds_end)		/* these coordinates are inclusive according to EG */
-		    sub_part.end = tr->cds_end;
+                  if(sub_part->start < tr->cds_start)
+                    sub_part->start = tr->cds_start;
+                  if(sub_part->end > tr->cds_end)		/* these coordinates are inclusive according to EG */
+                    sub_part->end = tr->cds_end;
 		}
 	      /* we have to handle both ends :-(   |----UTR-----|--------CDS--------|-----UTR------| */
 	      else if(y >= tr->cds_end)
 		{
 		  /* cursor not in CDS but could have some in this exon */
-		  if(sub_part.start <= tr->cds_end)
-		    sub_part.start = tr->cds_end + 1;
+                  if(sub_part->start <= tr->cds_end)
+                    sub_part->start = tr->cds_end + 1;
 		}
 	      else if(y <= tr->cds_start)
 		{
-		  if(sub_part.end >= tr->cds_start)
-		    sub_part.end = tr->cds_start - 1;
+                  if(sub_part->end >= tr->cds_start)
+                    sub_part->end = tr->cds_start - 1;
 		}
 	    }
-	  return &sub_part;
+          return sub_part;
 	}
 
-      if(i < ni)
+      if (i < ni)
 	{
-	  intron = &g_array_index(introns,ZMapSpanStruct,i);
+	  intron = &g_array_index(introns,ZMapSpanStruct,i) ;
+
 	  if(intron->x1 <= y && intron->x2 >= y)
 	    {
-	      sub_part.index = i + 1;
-	      sub_part.start = intron->x1;
-	      sub_part.end = intron->x2;
-	      sub_part.subpart = ZMAPFEATURE_SUBPART_INTRON;
+              sub_part = g_malloc0(sizeof *sub_part) ;
+
+              if (feature->strand == ZMAPSTRAND_FORWARD)
+                sub_part->index = i + 1 ;
+              else
+                sub_part->index = (ni - i) ;
+
+              sub_part->start = intron->x1;
+              sub_part->end = intron->x2;
+              sub_part->subpart = ZMAPFEATURE_SUBPART_INTRON;
 	      if(tr->flags.cds && tr->cds_start <= y && tr->cds_end >= y)
-		sub_part.subpart = ZMAPFEATURE_SUBPART_INTRON_CDS;
-	      return &sub_part;
+                sub_part->subpart = ZMAPFEATURE_SUBPART_INTRON_CDS;
+              return sub_part;
 	    }
 	}
     }

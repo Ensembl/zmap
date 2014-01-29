@@ -36,6 +36,7 @@
 
 #include <math.h>
 
+#include <zmapWindowCanvasDraw.h>
 #include <zmapWindowZoomControl_P.h>
 
 

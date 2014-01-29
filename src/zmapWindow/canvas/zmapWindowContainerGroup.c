@@ -953,7 +953,6 @@ FooCanvasItem *zMapWindowCanvasItemGetInterval(ZMapWindowCanvasItem canvas_item,
     {
       if(ZMAP_IS_WINDOW_FEATURESET_ITEM(matching_interval) && zMapWindowCanvasItemGetFeature(item))
         {
-          /* returns a static data structure */
           *sub_feature_out =
             zMapWindowCanvasFeaturesetGetSubPartSpan(matching_interval, zMapWindowCanvasItemGetFeature(item) ,x,y);
         }

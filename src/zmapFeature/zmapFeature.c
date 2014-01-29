@@ -237,7 +237,8 @@ gboolean zMapFeatureAnyFindFeature(ZMapFeatureAny feature_set, ZMapFeatureAny fe
 /* Returns the feature if found, NULL otherwise. */
 ZMapFeatureAny zMapFeatureAnyGetFeatureByID(ZMapFeatureAny feature_set, GQuark feature_id)
 {
-  ZMapFeatureAny feature ;
+  ZMapFeatureAny feature = NULL ;
+  zMapReturnValIfFail(feature_set, feature) ;
 
   feature = g_hash_table_lookup(feature_set->children, GINT_TO_POINTER(feature_id)) ;
 
@@ -868,7 +869,8 @@ gboolean zMapFeatureSetFindFeature(ZMapFeatureSet feature_set,
 
 ZMapFeature zMapFeatureSetGetFeatureByID(ZMapFeatureSet feature_set, GQuark feature_id)
 {
-  ZMapFeature feature ;
+  ZMapFeature feature = NULL ;
+  zMapReturnValIfFail(feature_set, feature) ;
 
   feature = (ZMapFeature)zMapFeatureAnyGetFeatureByID((ZMapFeatureAny)feature_set, feature_id) ;
 

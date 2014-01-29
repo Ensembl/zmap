@@ -281,8 +281,8 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(GHashTable *ftoi_hash,
 	  if(!feature_stack->col_hash[strand])
 	    {
 	      feature_stack->col_hash[strand] = zmapWindowFToIGetSetHash(ftoi_hash,
-									 feature_stack->align->unique_id, feature_stack->block->unique_id,
-									 feature_stack->set->unique_id, feature_stack->strand, feature_stack->frame);
+                                                                         feature_stack->align->unique_id, feature_stack->block->unique_id,
+                                                                         feature_stack->set->unique_id, strand, frame);
 	    }
 
 	  status = zmapWindowFToIAddSetFeature(feature_stack->col_hash[strand], feature->unique_id, feature_item, feature);
