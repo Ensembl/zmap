@@ -1306,8 +1306,185 @@ static gboolean configureLog(char *config_file)
 }
 
 
-/* Store the paths of any files given on the command line */
-static void checkFileListArgs(ZMapFeatureSequenceMap seq_map_inout)
+
+/* Read a line from a file, gets the whole line no matter how big...until you run out
+ * of memory.
+ * Returns NULL if there was nothing to read from the file, otherwise returns the
+ * line read which is actually the string held within the GString passed in.
+ * Crashes if there is a problem with the file. */
+static char *nextLine(FILE *file, GString *line_string)
+{
+  enum {BLX_BUF_SIZE = 4096} ;   /* Vague guess at initial length. */
+  char *result = NULL ;
+  gboolean line_finished ;
+  char buffer[BLX_BUF_SIZE] ;
+
+  g_assert(file) ;
+
+  line_finished = FALSE ;
+  while (!line_finished)
+    {
+
+      if (!fgets(buffer, BLX_BUF_SIZE, file))
+        {
+          if (feof(file))
+            line_finished = TRUE ;
+          else
+            g_error("NULL value returned on reading input file\n") ;
+        }
+      else
+        {
+          if (buffer[0] == '\0')
+            {
+              line_finished = TRUE ;
+              result = line_string->str ;
+            }
+          else
+            {
+              int line_end ;
+
+              g_string_append_printf(line_string, "%s", &buffer[0]) ;
+
+              line_end = strlen(&buffer[0]) - 1 ;
+
+              if (buffer[line_end] == '\n' || buffer[line_end] == '\r')
+                {
+                  line_finished = TRUE ;
+                  result = line_string->str ;
+                }
+            }
+        }
+    }
+
+  return result ;
+}
+
+
+/* Check the given file to see if we can extract sequence details */
+/* gb10: temporary function to get this info quickly - needs tidying up and organising properly,
+ * e.g. should probably use the GFF code. */
+static gboolean checkInputFileForSequenceDetails(const char* const filename, ZMapFeatureSequenceMap seq_map_inout)
+{
+#define MAXLINE       10000
+  gboolean found = FALSE ;
+  FILE *file = NULL ;
+
+  if((file = fopen(filename, "r")))
+    {
+      int lineNum = 0 ;
+      GString *line_string = g_string_sized_new(MAXLINE + 1);
+
+      while (!feof(file))
+        {
+          ++lineNum;
+          line_string = g_string_truncate(line_string, 0) ;     /* Reset buffer pointer. */
+
+          char *line = nextLine(file, line_string);
+
+          if (!line)
+            break;
+
+          const int lineLen = strlen(line);
+          if (lineLen == 0 || line[0] == '\n')
+            {
+              continue; /* empty file??? */
+            }
+
+          /* get rid of any trailing '\n', there may not be one if the last line of the file
+           * didn't have one. */
+          char *charPtr = strchr(line, '\n');
+          if (charPtr)
+            {
+              *charPtr = 0;
+            }
+
+          /* We're just looking for the sequence-region line (GFF2 or GFF3 format) */
+          if (!strncasecmp(line, "# sequence-region", 17))
+            {
+              /* read in the reference sequence name and range */
+              char sequence[MAXLINE + 1];
+              int start = 0;
+              int end = 0;
+
+              if (sscanf(line, "# sequence-region%s%d%d", sequence, &start, &end) < 3)
+                {
+                  g_warning("Error parsing sequence-region line in input file. Sequence range was not set. \"%s\"\n", line);
+                }
+              else
+                {
+                  seq_map_inout->sequence = g_strdup(sequence) ;
+                  seq_map_inout->start = start ;
+                  seq_map_inout->end = end ;
+                  found = TRUE ;
+                }
+
+              break ;
+            }
+          else if (!strncasecmp(line, "##sequence-region", 17))
+            {
+              /* read in the reference sequence name and range */
+              char sequence[MAXLINE + 1];
+              int start = 0;
+              int end = 0;
+
+              if (sscanf(line, "##sequence-region%s%d%d", sequence, &start, &end) < 3)
+                {
+                  g_warning("Error parsing sequence-region line in input file. Sequence range was not set. \"%s\"\n", line);
+                }
+              else
+                {
+                  seq_map_inout->sequence = g_strdup(sequence) ;
+                  seq_map_inout->start = start ;
+                  seq_map_inout->end = end ;
+                  found = TRUE ;
+                }
+
+              break ;
+            }
+          else if (*line != '#')
+            {
+              /* Non-comment line => we've reached the file body and not found the required
+                 header comment */
+              break ;
+            }
+        }
+
+      if (file != stdin)
+        {
+          fclose(file);
+        }
+    }
+  else
+    {
+      zMapWarning("Cannot open file %s\n", filename);
+    }
+
+  return found ;
+}
+
+
+/* Check the input file(s), if any, for sequence details */
+static gboolean checkInputFilesForSequenceDetails(ZMapFeatureSequenceMap seq_map_inout)
+{
+  gboolean found = FALSE ;
+  zMapReturnValIfFailSafe(seq_map_inout, found) ;
+
+  GSList *file_item = seq_map_inout->file_list ;
+
+  for ( ; file_item && !found; file_item = file_item->next)
+    {
+      const char *file = (char*)(file_item->data) ;
+      const char *file_cp = file + 8 ; /* clip off "file:///" */
+      found = checkInputFileForSequenceDetails(file_cp, seq_map_inout) ;
+    }
+
+  return found ;
+}
+
+
+/* Save the paths of any input files in the sequence map. These are needed later to construct the
+ * server URLs  */
+static void saveInputFilePaths(ZMapFeatureSequenceMap seq_map_inout)
 {
   char *files = zMapCmdLineFinalArg() ;
 
@@ -1317,7 +1494,6 @@ static void checkFileListArgs(ZMapFeatureSequenceMap seq_map_inout)
 
       /* Loop through the file paths and prefix with "file://" */
       char **file = file_list ;
-
       for (; file && *file; ++file)
         {
           char *url = g_strdup_printf("file:///%s", *file) ;
@@ -1330,6 +1506,7 @@ static void checkFileListArgs(ZMapFeatureSequenceMap seq_map_inout)
 }
 
 
+
 /* Check to see if user specied a sequence/start/end on the command line or in
  * a config file, only returns FALSE if they tried to specify it and it was
  * wrong. If FALSE an error message is returned in err_msg_out which should
@@ -1340,28 +1517,22 @@ static gboolean checkSequenceArgs(int argc, char *argv[],
   gboolean result = FALSE ;
   const char *source = "- could not get sequence details from command line, config file or in input file" ;
 
-  /* First check if there are any files on the command line and store their paths.
-   * We'll need to get the sequence details from these if there is no config file. */
-  checkFileListArgs(seq_map_inout) ;
+  saveInputFilePaths(seq_map_inout) ;
 
   /* Check command line first, calls will exit if there is a problem if flag is completely wrong. */
   checkForCmdLineSequenceArg(argc, argv, &seq_map_inout->dataset, &seq_map_inout->sequence);
   checkForCmdLineStartEndArg(argc, argv, &seq_map_inout->start, &seq_map_inout->end) ;
 
-    /* Nothing specified on command line so check config file. */
+  /* Nothing specified on command line so check config file or input file(s). */
   if (!(seq_map_inout->sequence) && !(seq_map_inout->start) && !(seq_map_inout->end))
     {
       if (zMapAppGetSequenceConfig(seq_map_inout))
         {
           source = "in config file" ;
         }
-      else
+      else if (checkInputFilesForSequenceDetails(seq_map_inout))
         {
-          /* Not in config file - check if we can extract the info from the input files. */
-          if (zMapAppGetInputFileConfig(seq_map_inout))
-            {
-              source = "in input file" ;
-            }
+          source = "in input file" ;
         }
     }
   else

@@ -134,13 +134,3 @@ gboolean zMapAppGetSequenceConfig(ZMapFeatureSequenceMap seq_map)
 
   return result ;
 }
-
-
-/* Read ZMap sequence/start/end from input file(s). */
-gboolean zMapAppGetInputFileConfig(ZMapFeatureSequenceMap seq_map)
-{
-  gboolean result = FALSE ;
-
-
-  return result ;
-}
