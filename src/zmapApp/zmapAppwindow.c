@@ -943,15 +943,7 @@ static char *checkConfigDir(void)
   zMapCmdLineArgsValue(ZMAPARG_CONFIG_FILE, &file) ;
 
 
-  if (!zMapConfigDirCreate(dir.s, file.s))
-    {
-      fprintf(stderr, "Could not access either/both of configuration directory \"%s\" "
-              "or file \"%s\" within that directory.\n",
-              zMapConfigDirGetDir(), zMapConfigDirGetFile()) ;
-      doTheExit(EXIT_FAILURE) ;
-
-    }
-  else
+  if (zMapConfigDirCreate(dir.s, file.s))
     {
       config_file = zMapConfigDirGetFile() ;
     }
@@ -1314,6 +1306,30 @@ static gboolean configureLog(char *config_file)
 }
 
 
+/* Store the paths of any files given on the command line */
+static void checkFileListArgs(ZMapFeatureSequenceMap seq_map_inout)
+{
+  char *files = zMapCmdLineFinalArg() ;
+
+  if (files)
+    {
+      char **file_list = g_strsplit(files, " ", -1) ;
+
+      /* Loop through the file paths and prefix with "file://" */
+      char **file = file_list ;
+
+      for (; file && *file; ++file)
+        {
+          char *url = g_strdup_printf("file:///%s", *file) ;
+          seq_map_inout->file_list = g_slist_append(seq_map_inout->file_list, url) ;
+        }
+
+      g_strfreev(file_list) ;
+      g_free(files) ;
+    }
+}
+
+
 /* Check to see if user specied a sequence/start/end on the command line or in
  * a config file, only returns FALSE if they tried to specify it and it was
  * wrong. If FALSE an error message is returned in err_msg_out which should
@@ -1322,7 +1338,11 @@ static gboolean checkSequenceArgs(int argc, char *argv[],
 				  ZMapFeatureSequenceMap seq_map_inout, char **err_msg_out)
 {
   gboolean result = FALSE ;
-  char *source = NULL ;
+  const char *source = "- could not get sequence details from command line, config file or in input file" ;
+
+  /* First check if there are any files on the command line and store their paths.
+   * We'll need to get the sequence details from these if there is no config file. */
+  checkFileListArgs(seq_map_inout) ;
 
   /* Check command line first, calls will exit if there is a problem if flag is completely wrong. */
   checkForCmdLineSequenceArg(argc, argv, &seq_map_inout->dataset, &seq_map_inout->sequence);
@@ -1331,9 +1351,18 @@ static gboolean checkSequenceArgs(int argc, char *argv[],
     /* Nothing specified on command line so check config file. */
   if (!(seq_map_inout->sequence) && !(seq_map_inout->start) && !(seq_map_inout->end))
     {
-      zMapAppGetSequenceConfig(seq_map_inout) ;
-
-      source = "in config file" ;
+      if (zMapAppGetSequenceConfig(seq_map_inout))
+        {
+          source = "in config file" ;
+        }
+      else
+        {
+          /* Not in config file - check if we can extract the info from the input files. */
+          if (zMapAppGetInputFileConfig(seq_map_inout))
+            {
+              source = "in input file" ;
+            }
+        }
     }
   else
     {

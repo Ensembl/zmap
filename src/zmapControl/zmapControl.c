@@ -381,7 +381,7 @@ char *zMapGetZMapStatus(ZMap zmap)
 			       "ZMAP_DYING"} ;
   char *state = NULL ;
 
-  zMapReturnValIfFail((zmap->state >= ZMAP_INIT && zmap->state <= ZMAP_DYING), state  ) ;  
+  zMapReturnValIfFail((zmap && zmap->state >= ZMAP_INIT && zmap->state <= ZMAP_DYING), state  ) ;
 
   state = (char *)zmapStates[zmap->state] ;
 

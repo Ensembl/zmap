@@ -102,26 +102,25 @@ void zMapCmdLineArgsCreate(int *argc, char *argv[])
 
 
 
-/* Retrieves the final commandline argument, if there is one. This is different
- * in that by unix convention it is not preceded with a "--". The string
- * must not be freed by the application.
+/* Retrieves the final commandline argument, if there is one, and returns a copy of it
+ * which should be free'd by the caller using g_free. This is different
+ * in that by unix convention it is not preceded with a "--".
  *
  * @return           A pointer to the string which is the final argument on the command line.
  *
  *  */
 /* NOTE the 'final arg' is actually zero or more files names and can be interspersed with options */
-char **zMapCmdLineFinalArg(void)
+char *zMapCmdLineFinalArg(void)
 {
-  char **final_arg = NULL ;
+  char *final_arg = NULL ;
   ZMapCmdLineArgs arg_context ;
 
   zMapReturnValIfFail((arg_context_G), final_arg) ; 
 
   arg_context = arg_context_G ;
 
-  if (arg_context->files_arg &&
-      (arg_context->files_arg))
-    final_arg = (arg_context->files_arg) ;
+  if (arg_context->files_arg && arg_context->files_arg)
+    final_arg = g_strdup(*arg_context->files_arg) ;
 
   return final_arg ;
 }

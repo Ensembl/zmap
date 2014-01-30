@@ -169,6 +169,7 @@ typedef struct ZMapFeatureContextMapStructType
 typedef struct ZMapFeatureSequenceMapStructType
 {
   char *config_file ;
+  GSList *file_list ;   /* list of filename URLs passed on command line */
 
   char *dataset ;       /* eg human */
   char *sequence ;      /* eg chr6-18 */

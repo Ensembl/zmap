@@ -99,7 +99,7 @@ gboolean zMapAppGetSequenceConfig(ZMapFeatureSequenceMap seq_map)
   gboolean result = FALSE ;
   ZMapConfigIniContext context;
 
-  if ((context = zMapConfigIniContextProvide(seq_map->config_file)))
+  if (seq_map && seq_map->config_file && (context = zMapConfigIniContextProvide(seq_map->config_file)))
     {
       char *tmp_string  = NULL;
 
@@ -136,3 +136,11 @@ gboolean zMapAppGetSequenceConfig(ZMapFeatureSequenceMap seq_map)
 }
 
 
+/* Read ZMap sequence/start/end from input file(s). */
+gboolean zMapAppGetInputFileConfig(ZMapFeatureSequenceMap seq_map)
+{
+  gboolean result = FALSE ;
+
+
+  return result ;
+}
