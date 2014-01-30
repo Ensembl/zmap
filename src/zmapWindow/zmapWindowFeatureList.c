@@ -302,10 +302,10 @@ static void feature_add_simple(ZMapGUITreeView zmap_tv,
   zmap_tv_feature = ZMAP_WINDOWFEATURELIST(zmap_tv);
 
   if(zmap_tv_feature->feature_type == ZMAPSTYLE_MODE_INVALID &&
-     feature->type != ZMAPSTYLE_MODE_INVALID)
+     feature->mode != ZMAPSTYLE_MODE_INVALID)
     {
-      zmap_tv_feature->feature_type = feature->type;
-      setup_tree(zmap_tv_feature, feature->type);
+      zmap_tv_feature->feature_type = feature->mode;
+      setup_tree(zmap_tv_feature, feature->mode);
     }
 
   /* Always add the feature... */
@@ -317,7 +317,7 @@ static void feature_add_simple(ZMapGUITreeView zmap_tv,
     add_simple.window = zmap_tv_feature->window;
 
   if(zmap_tv_feature->feature_type != ZMAPSTYLE_MODE_INVALID &&
-     zmap_tv_feature->feature_type == feature->type &&
+     zmap_tv_feature->feature_type == feature->mode &&
      parent_class_G->add_tuple_simple)
     (* parent_class_G->add_tuple_simple)(zmap_tv, &add_simple);
 
@@ -528,7 +528,7 @@ static void feature_qstart_to_value(GValue *value, gpointer feature_data)
       {
       case ZMAPFEATURE_STRUCT_FEATURE:
         {
-          switch(feature_any->type)
+          switch(feature_any->mode)
             {
             case ZMAPSTYLE_MODE_ALIGNMENT:
             g_value_set_int(value, feature_any->feature.homol.y1);
@@ -536,7 +536,7 @@ static void feature_qstart_to_value(GValue *value, gpointer feature_data)
             default:
             g_value_set_int(value, 0);
             break;
-            } /* switch(feature->type) */
+            } /* switch(feature->mode) */
         }
         break;
       default:
@@ -564,7 +564,7 @@ static void feature_qend_to_value(GValue *value, gpointer feature_data)
       {
       case ZMAPFEATURE_STRUCT_FEATURE:
         {
-          switch(feature_any->type)
+          switch(feature_any->mode)
             {
             case ZMAPSTYLE_MODE_ALIGNMENT:
             g_value_set_int(value, feature_any->feature.homol.y2);
@@ -572,7 +572,7 @@ static void feature_qend_to_value(GValue *value, gpointer feature_data)
             default:
             g_value_set_int(value, 0);
             break;
-            }     /* switch(feature->type) */
+            }     /* switch(feature->mode) */
         }
         break;
       default:
@@ -599,7 +599,7 @@ static void feature_qstrand_to_value(GValue *value, gpointer feature_data)
       {
       case ZMAPFEATURE_STRUCT_FEATURE:
         {
-          switch(feature_any->type)
+          switch(feature_any->mode)
             {
             case ZMAPSTYLE_MODE_ALIGNMENT:
             g_value_set_string(value, zMapFeatureStrand2Str(feature_any->feature.homol.strand));
@@ -607,7 +607,7 @@ static void feature_qstrand_to_value(GValue *value, gpointer feature_data)
             default:
             g_value_set_string(value, ".");
             break;
-            }     /* switch(feature->type) */
+            }     /* switch(feature->mode) */
         }
         break;
       default:
@@ -688,7 +688,7 @@ static void feature_type_to_value(GValue *value, gpointer feature_data)
       switch(feature_any->struct_type)
       {
       case ZMAPFEATURE_STRUCT_FEATURE:
-        g_value_set_string(value, zMapStyleMode2ExactStr(feature_any->type));
+        g_value_set_string(value, zMapStyleMode2ExactStr(feature_any->mode));
         break;
       default:
         break;
@@ -1313,10 +1313,10 @@ static void feature_item_add_simple(ZMapGUITreeView zmap_tv,
   if((feature))	// = zmapWindowItemGetFeature(item)))
     {
       if(zmap_tv_feature->feature_type == ZMAPSTYLE_MODE_INVALID &&
-       feature->type != ZMAPSTYLE_MODE_INVALID)
+       feature->mode != ZMAPSTYLE_MODE_INVALID)
       {
-        zmap_tv_feature->feature_type = feature->type;
-        setup_item_tree(zmap_tv_feature, feature->type);
+        zmap_tv_feature->feature_type = feature->mode;
+        setup_item_tree(zmap_tv_feature, feature->mode);
       }
 
         /* Always add the feature & the item... */
@@ -1329,7 +1329,7 @@ static void feature_item_add_simple(ZMapGUITreeView zmap_tv,
 
 
       if(zmap_tv_feature->feature_type != ZMAPSTYLE_MODE_INVALID &&
-       zmap_tv_feature->feature_type == feature->type &&
+       zmap_tv_feature->feature_type == feature->mode &&
        feature_item_parent_class_G->add_tuple_simple)
       (* feature_item_parent_class_G->add_tuple_simple)(zmap_tv, &add_simple);
     }
@@ -1537,7 +1537,7 @@ static void feature_item_type_get_titles_types_funcs(ZMapStyleMode feature_type,
   funcs  = g_list_append(funcs, feature_style_to_value);
   flags  = g_list_append(flags, GINT_TO_POINTER(flags_set));
 
-  /* feature->type... */
+  /* feature->mode ... */
   titles = g_list_append(titles, ZMAP_WINDOWFEATURELIST_TYPE_COLUMN_NAME);
   types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_STRING));
   funcs  = g_list_append(funcs, feature_type_to_value);

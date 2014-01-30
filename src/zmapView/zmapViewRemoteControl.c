@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -29,7 +29,7 @@
  *              level to a remote peer.
  *
  * Exported functions: See ZMap/zmapView.h
- * 
+ *
  * Created: Mon Mar 26 13:35:27 2012 (edgrif)
  *-------------------------------------------------------------------
  */
@@ -270,7 +270,7 @@ static CommandDescriptorStruct command_table_G[] =
 
 
 /* xml parser callbacks */
-static ZMapXMLObjTagFunctionsStruct view_starts_G[] = 
+static ZMapXMLObjTagFunctionsStruct view_starts_G[] =
   {
     { "zmap",       xml_zmap_start_cb                  },
     { "request",    xml_request_start_cb               },
@@ -296,7 +296,7 @@ static ZMapXMLObjTagFunctionsStruct view_ends_G[] =
 
 
 
-/* 
+/*
  *                     External interface
  */
 
@@ -536,7 +536,7 @@ static ZMapFeature createLocusFeature(ZMapFeatureContext context, ZMapFeature fe
 
   old_feature = (ZMapFeature)zMapFeatureContextFindFeatureFromFeature(context, (ZMapFeatureAny)feature) ;
 
-  if ((old_feature) && (old_feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
+  if ((old_feature) && (old_feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
       && (old_feature->feature.transcript.locus_id != 0)
       && (old_feature->feature.transcript.locus_id != new_locus_id))
     {
@@ -819,7 +819,7 @@ static void draw_failed_make_message(gpointer list_data, gpointer user_data)
     }
   else
     {
-      
+
 
       g_string_append_printf(request_data->err_msg,
 			     "Failed to draw feature '%s' [%s]. Unknown reason, check zmap log file.\n",
@@ -1355,7 +1355,7 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 				request_data->request) ;
       zMapXMLParserRaiseParsingError(parser, err_msg) ;
       g_free(err_msg) ;
-	      
+
       result = FALSE ;
     }
   else
@@ -1378,13 +1378,13 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 					request_data->request) ;
 	      zMapXMLParserRaiseParsingError(parser, err_msg) ;
 	      g_free(err_msg) ;
-	      
+
 	      result = FALSE ;
 	    }
 	}
-	  
+
       if (result)
-	{ 
+	{
 	  /* Record original name and unique names for feature set, all look-ups are via the latter. */
 	  featureset_id = zMapXMLAttributeGetValue(attr) ;
 	  featureset_name = (char *)g_quark_to_string(featureset_id) ;
@@ -1428,7 +1428,7 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 		}
 
 	      zMapFeatureBlockAddFeatureSet(request_data->edit_block, feature_set) ;
-	      
+
 	      request_data->edit_feature_set = feature_set ;
 
 	      result = TRUE ;
@@ -1512,8 +1512,8 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 	  // as load features processes a complete step list that inludes requesting the style
 	  // then if the style is not there then we'll drop the features
 	  ZMapFeatureTypeStyle style ;
-	  
-	  if ((style = zMapFindStyle(request_data->view_window->parent_view->context_map.styles, 
+
+	  if ((style = zMapFindStyle(request_data->view_window->parent_view->context_map.styles,
 				     request_data->style_id)))
 	    {
 	      /* Make sure style is correct for what might be a new column. */
@@ -1994,7 +1994,7 @@ static gboolean xml_subfeature_end_cb(gpointer user_data, ZMapXMLElement sub_ele
 
       ontology = zMapXMLAttributeGetValue(attr) ;
 
-      feature->type = ZMAPSTYLE_MODE_TRANSCRIPT;
+      feature->mode = ZMAPSTYLE_MODE_TRANSCRIPT;
 
       if (valid && (attr = zMapXMLElementGetAttributeByName(sub_element, "start")))
         {

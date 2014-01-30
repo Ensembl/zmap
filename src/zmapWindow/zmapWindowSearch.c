@@ -191,7 +191,7 @@ void zmapWindowCreateSearchWindow(ZMapWindow window,
   SearchData search_data ;
 
   feature_any = zmapWindowItemGetFeatureAny(feature_item);
-  if (!feature_any) 
+  if (!feature_any)
     return ;
 
   search_data = g_new0(SearchDataStruct, 1) ;
@@ -878,7 +878,7 @@ static void printListDataCB(gpointer data, gpointer user_data_unused)
   ZMapFeature feature ;
 
   feature = zmapWindowItemGetFeature(item);
-  if (!feature) 
+  if (!feature)
     return ;
 
   printf("%s\n", g_quark_to_string(feature->unique_id)) ;
@@ -1239,7 +1239,7 @@ gboolean searchPredCB(ZMapFeatureAny feature_any, gpointer user_data)
 	      result = TRUE ;
 	  }
 
-	if (search_pred->locus && feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
+	if (search_pred->locus && feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
 	  {
 	    if (feature->feature.transcript.locus_id)
 	      result = TRUE ;

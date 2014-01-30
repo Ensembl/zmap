@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -24,7 +24,7 @@
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *     Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- * Description: 
+ * Description:
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  *-------------------------------------------------------------------
@@ -67,7 +67,7 @@ START_TEST(check_zMapFeatureCreateStandard)
 {
   ZMapFeature feature = NULL;
   ZMapFeatureTypeStyle style = NULL;
-  
+
   style = zMapStyleCreate("DummyStyle", "Dummy Style for Testing");
 
   feature = zMapFeatureCreateFromStandardData(ZMAP_CHECK_FEATURE_NAME,
@@ -96,7 +96,7 @@ START_TEST(check_zMapFeatureCreateStandard)
     {
       fail("End not matched with creation parameters");
     }
-  
+
   if(feature->strand != ZMAP_CHECK_FEATURE_STRAND)
     {
       fail("Strand not matched with creation parameters");
@@ -109,7 +109,7 @@ START_TEST(check_zMapFeatureCreateStandard)
 
   if(style)
     zMapStyleDestroy(style);
-  
+
   if(feature)
     zMapFeatureDestroy(feature);
 
@@ -158,17 +158,17 @@ START_TEST(check_zmapFeatureCopy)
     {
       fail("Copied feature unique ids don't match");
     }
-  
+
   if(feature->original_id != feature_G->original_id)
     {
-      fail("Copied feature original ids don't match");	
+      fail("Copied feature original ids don't match");
     }
 
-  if(feature->type != feature_G->type)
+  if(feature->mode != feature_G->mode)
     {
       fail("Copied feature types don't match");
     }
-  
+
   if(feature->ontology != feature_G->ontology)
     {
       fail("Copied feature ontologies don't match");
@@ -184,7 +184,7 @@ START_TEST(check_zmapFeatureCopy)
     {
       fail("Copied feature starts/ends don't match");
     }
-  
+
   if(feature->strand != feature_G->strand ||
      feature->phase  != feature_G->phase)
     {
@@ -230,7 +230,7 @@ Suite *zMapCheckFeatureSuite(void)
 {
   Suite *suite = NULL;
   TCase *test_case = NULL;
-  
+
   suite = suite_create(ZMAP_CHECK_FEATURE_SUITE_NAME);
 
   test_case = tcase_create(ZMAP_CHECK_FEATURE_SUITE_NAME " Tests");
@@ -241,7 +241,7 @@ Suite *zMapCheckFeatureSuite(void)
 
   suite_add_tcase(suite, test_case);
 
-  
+
   test_case = tcase_create(ZMAP_CHECK_FEATURE_SUITE_NAME " Detailed Tests");
 
   tcase_add_unchecked_fixture(test_case, setup_feature, destroy_feature);

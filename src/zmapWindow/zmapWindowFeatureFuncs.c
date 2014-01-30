@@ -171,7 +171,7 @@ void zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item,
 	}
       else
 	{
-	  if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
+	  if (feature->mode == ZMAPSTYLE_MODE_ALIGNMENT)
 	    {
 	      align->homol_type = feature->feature.homol.type ;
 
@@ -181,7 +181,7 @@ void zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item,
 	    {
 	      /* User may click on non-homol feature if they want to see some other feature + dna in blixem. */
 	      align->homol_type = ZMAPHOMOL_N_HOMOL ;
-	      
+
 	      align->homol_set = ZMAPWINDOW_ALIGNCMD_NONE ;
 	    }
 

@@ -459,7 +459,7 @@ static void checkFeatureCB(GQuark key_id, gpointer data, gpointer user_data_unus
 {
   ZMapFeature feature = (ZMapFeature)data ;
 
-  switch (feature->type)
+  switch (feature->mode)
     {
       case ZMAPSTYLE_MODE_TRANSCRIPT:
         zMapFeatureTranscriptNormalise(feature) ;
@@ -618,7 +618,7 @@ void zMapGFFSetFeatureClipCoords(ZMapGFFParser parser, int start, int end)
   if (!zMapGFFIsValidVersion(parser))
     return ;
 
-  if (start <= 0 || end <= 0 || end < start ) 
+  if (start <= 0 || end <= 0 || end < start )
     return ;
 
   if (parser->state != ZMAPGFF_PARSER_ERR)

@@ -157,7 +157,7 @@ void zMapFeatureContextReverseComplement(ZMapFeatureContext context, GHashTable 
                             revCompFeaturesCB,
                             &cb_data);
 
-  
+
   //GQuark featureset_id = g_quark_from_string(ZMAP_FIXED_STYLE_ORF_NAME);
   //zMapFeatureAnyGetFeatureByID(context, featureset_id) ;
 
@@ -868,7 +868,7 @@ static ZMapFeatureContextExecuteStatus revCompFeaturesCB(GQuark key,
   ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
   RevCompData cb_data = (RevCompData)user_data;
 
-  if (!feature_any || !zMapFeatureIsValid(feature_any)) 
+  if (!feature_any || !zMapFeatureIsValid(feature_any))
     return status ;
 
   switch(feature_any->struct_type)
@@ -981,7 +981,7 @@ static ZMapFeatureContextExecuteStatus revCompORFFeaturesCB(GQuark key,
   ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
   RevCompData cb_data = (RevCompData)user_data;
 
-  if (!feature_any || !zMapFeatureIsValid(feature_any)) 
+  if (!feature_any || !zMapFeatureIsValid(feature_any))
     return status ;
 
   switch(feature_any->struct_type)
@@ -1084,7 +1084,7 @@ static void revCompFeature(ZMapFeature feature, int start_coord, int end_coord)
 
       feature->unique_id = dna_id ;
     }
-  else if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT
+  else if (feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT
 	   && (feature->feature.transcript.exons || feature->feature.transcript.introns))
     {
       if (feature->feature.transcript.exons)
@@ -1098,7 +1098,7 @@ static void revCompFeature(ZMapFeature feature, int start_coord, int end_coord)
                            feature->feature.transcript.cds_start,
                            feature->feature.transcript.cds_end);
     }
-  else if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT
+  else if (feature->mode == ZMAPSTYLE_MODE_ALIGNMENT
            && feature->feature.homol.align)
     {
       int i ;
@@ -1125,7 +1125,7 @@ static void revCompFeature(ZMapFeature feature, int start_coord, int end_coord)
 	    zMapDNAReverseComplement(feature->feature.homol.sequence, feature->feature.homol.length) ;
 	  }
     }
-  else if (feature->type == ZMAPSTYLE_MODE_ASSEMBLY_PATH)
+  else if (feature->mode == ZMAPSTYLE_MODE_ASSEMBLY_PATH)
     {
       if (feature->feature.assembly_path.path)
         revcompSpan(feature->feature.assembly_path.path, start_coord, end_coord) ;

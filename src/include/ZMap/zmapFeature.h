@@ -41,9 +41,9 @@
 #define ZMAPFEATURE_FORWARD(FEATURE)       ((FEATURE)->strand == ZMAPSTRAND_FORWARD)
 #define ZMAPFEATURE_REVERSE(FEATURE)       ((FEATURE)->strand == ZMAPSTRAND_REVERSE)
 
-#define ZMAPFEATURE_IS_BASIC(FEATURE)      ((FEATURE)->type == ZMAPSTYLE_MODE_BASIC)
+#define ZMAPFEATURE_IS_BASIC(FEATURE)      ((FEATURE)->mode == ZMAPSTYLE_MODE_BASIC)
 
-#define ZMAPFEATURE_IS_TRANSCRIPT(FEATURE) ((FEATURE)->type == ZMAPSTYLE_MODE_TRANSCRIPT)
+#define ZMAPFEATURE_IS_TRANSCRIPT(FEATURE) ((FEATURE)->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
 #define ZMAPFEATURE_HAS_CDS(FEATURE)       (ZMAPFEATURE_IS_TRANSCRIPT(FEATURE) && \
 					    ((FEATURE)->feature.transcript.flags.cds))
 #define ZMAPFEATURE_HAS_EXONS(FEATURE)     (ZMAPFEATURE_IS_TRANSCRIPT(FEATURE) &&            \
@@ -54,7 +54,7 @@
 					    ((FEATURE)->feature.transcript.introns != NULL) && \
 					    ((FEATURE)->feature.transcript.introns->len > (guint)0))
 
-#define ZMAPFEATURE_IS_ALIGNMENT(FEATURE)  ((FEATURE)->type == ZMAPSTYLE_MODE_ALIGNMENT)
+#define ZMAPFEATURE_IS_ALIGNMENT(FEATURE)  ((FEATURE)->mode == ZMAPSTYLE_MODE_ALIGNMENT)
 
 #define ZMAPFEATURE_SWOP_STRAND(STRAND) \
   ((STRAND) == ZMAPSTRAND_FORWARD ? ZMAPSTRAND_REVERSE :                                       \
@@ -716,7 +716,7 @@ typedef struct ZMapFeatureStructType
   ZMapFeatureID db_id ;                                    /* unique DB identifier, currently
                                                               unused but will be..... */
 
-  ZMapStyleMode type ;                                     /* Basic, transcript, alignment. */
+  ZMapStyleMode mode ;                                     /* Basic, transcript, alignment. */
 
 
 

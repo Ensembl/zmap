@@ -119,7 +119,7 @@ ZMapWindowStatsAny zmapWindowStatsAddChild(ZMapWindowStats stats, ZMapFeatureAny
 	{
 	  int num_bytes = 0 ;
 
-	  switch (feature->type)
+	  switch (feature->mode)
 	    {
 	    case ZMAPSTYLE_MODE_ASSEMBLY_PATH:
 
@@ -146,7 +146,7 @@ ZMapWindowStatsAny zmapWindowStatsAddChild(ZMapWindowStats stats, ZMapFeatureAny
 	  if (num_bytes)
 	    {
 	      stats_any = g_slice_alloc0(num_bytes) ;
-	      stats_any->feature_type = feature->type ;
+	      stats_any->feature_type = feature->mode ;
 	      stats_any->style_id = (*feature->style)->unique_id ;
 
 	      stats->child_sets = g_list_append(stats->child_sets, stats_any) ;
@@ -187,7 +187,7 @@ void zmapWindowStatsDestroy(ZMapWindowStats stats)
 {
   int nbytes = sizeof(ZMapWindowStatsStruct) ;
 
-  if (!stats) 
+  if (!stats)
     return ;
 
   g_slice_free1(nbytes, stats) ;

@@ -59,7 +59,7 @@
 
 
 
-/* 
+/*
  * some common menu strings, needed because cascading menus need the same string as their parent
  * menu item.
  */
@@ -387,25 +387,25 @@ static void highlightEvidenceCB(GList *evidence, gpointer user_data) ;
 static ZMapWindowContainerFeatureSet getScratchContainerFeatureset(ZMapWindow window)
 {
   ZMapWindowContainerFeatureSet scratch_container = NULL ;
-  
+
   ZMapFeatureSet scratch_featureset = zmapWindowScratchGetFeatureset(window) ;
 
   if (scratch_featureset)
     {
-      FooCanvasItem *scratch_column_item = zmapWindowFToIFindItemFull(window, window->context_to_item, 
+      FooCanvasItem *scratch_column_item = zmapWindowFToIFindItemFull(window, window->context_to_item,
                                                                       scratch_featureset->parent->parent->unique_id,
                                                                       scratch_featureset->parent->unique_id,
-                                                                      scratch_featureset->unique_id, 
+                                                                      scratch_featureset->unique_id,
                                                                       ZMAPSTRAND_NONE, ZMAPFRAME_NONE, 0) ;
-  
+
       ZMapWindowContainerGroup scratch_group  = zmapWindowContainerCanvasItemGetContainer(scratch_column_item) ;
-      
+
       if (scratch_group && ZMAP_IS_CONTAINER_FEATURESET(scratch_group))
         {
           scratch_container = ZMAP_CONTAINER_FEATURESET(scratch_group) ;
         }
     }
-  
+
   return scratch_container ;
 }
 
@@ -476,7 +476,7 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
     }
 
 
-  if (feature->type != ZMAPSTYLE_MODE_ALIGNMENT)
+  if (feature->mode != ZMAPSTYLE_MODE_ALIGNMENT)
     {
       menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuNonHomolFeature(NULL, NULL, menu_data)) ;
     }
@@ -512,7 +512,7 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
   menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuFeatureOps(NULL, NULL, menu_data)) ;
 
   /* Show translation on forward strand features only */
-  if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT && feature->strand == ZMAPSTRAND_FORWARD)
+  if (feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT && feature->strand == ZMAPSTRAND_FORWARD)
     menu_sets = g_list_append(menu_sets, makeMenuShowTranslation(NULL, NULL, menu_data));
 
   if (feature->url)
@@ -522,7 +522,7 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
 
   /* Scratch column ops */
   ZMapWindowContainerFeatureSet scratch_container = getScratchContainerFeatureset(window) ;
-  
+
   if (scratch_container &&
       (scratch_container->display_state == ZMAPSTYLE_COLDISPLAY_SHOW ||
        scratch_container->display_state == ZMAPSTYLE_COLDISPLAY_SHOW))
@@ -531,7 +531,7 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
       menu_sets = g_list_append(menu_sets, separator) ;
     }
 
-    
+
   /* Big bump menu.... */
   menu_sets = g_list_append(menu_sets,
 			    zmapWindowMakeMenuBump(NULL, NULL, menu_data,
@@ -552,7 +552,7 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
 	 * NOTE is we define EST_ALIGN as a default style then EST_Human etc can be edited
 	 */
 	if(window->edit_styles || style->is_default || (parent && parent->is_default))
-		menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuStyle(NULL, NULL, menu_data, style, feature->type));
+		menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuStyle(NULL, NULL, menu_data, style, feature->mode));
   }
 
   /* list all short reads data, temp access till we get wiggle plots running */
@@ -568,7 +568,7 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
   menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuShowTop(NULL, NULL, menu_data)) ;
   menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuShowFeature(NULL, NULL, menu_data)) ;
 
-  if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
+  if (feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
     {
       menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDNATranscript(NULL, NULL, menu_data)) ;
       menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDNATranscriptFile(NULL, NULL, menu_data)) ;
@@ -639,7 +639,7 @@ void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
    * we find in the column..... */
   if ((feature = zMap_g_hash_table_nth(feature_set->features, 0)))
     {
-      if (feature->type != ZMAPSTYLE_MODE_ALIGNMENT)
+      if (feature->mode != ZMAPSTYLE_MODE_ALIGNMENT)
 	{
 	  menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuNonHomolFeature(NULL, NULL, cbdata)) ;
 	}
@@ -671,7 +671,7 @@ void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
 
   /* Scratch column ops */
   ZMapWindowContainerFeatureSet scratch_container = getScratchContainerFeatureset(window) ;
-  
+
   if (scratch_container &&
       (scratch_container->display_state == ZMAPSTYLE_COLDISPLAY_SHOW ||
        scratch_container->display_state == ZMAPSTYLE_COLDISPLAY_SHOW))
@@ -679,7 +679,7 @@ void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
       menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuScratchOps(NULL, NULL, cbdata)) ;
       menu_sets = g_list_append(menu_sets, separator) ;
     }
-  
+
   menu_sets
     = g_list_append(menu_sets,
 		    zmapWindowMakeMenuBump(NULL, NULL, cbdata,
@@ -1000,7 +1000,7 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 		  {
 		    /* NOTE: need to filter by transcript start and end coords in case of repeat alignments */
 		    /* Not so - annotators want to see duplicated features' data */
-		      
+
 		    evidence_items = g_list_prepend(evidence_items,items->data);
 		  }
 
@@ -1769,7 +1769,7 @@ static void dnaMenuCB(int menu_item_id, gpointer callback_data)
       }
     }
 
-  if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
+  if (feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
     {
       molecule_type = "DNA" ;
       gene_name = (char *)g_quark_to_string(feature->original_id) ;
@@ -1786,7 +1786,7 @@ static void dnaMenuCB(int menu_item_id, gpointer callback_data)
 
       dna = zmapWindowDNAChoose(menu_data->window, menu_data->item, dialog_type, &user_start, &user_end) ;
     }
-  else if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
+  else if (feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
     {
       dna = zMapFeatureGetTranscriptDNA(feature, spliced, cds) ;
     }
@@ -1822,7 +1822,7 @@ static void dnaMenuCB(int menu_item_id, gpointer callback_data)
 
 	  /* Transcript annotation only supported if whole transcript shown, add annotation of
 	   * partial transcript as an enhancement if/when users ask for it. */
-	  if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT
+	  if (feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT
 	      && (user_start <= feature->x1 && user_end >= feature->x2)
 	      && ((style = zMapFindStyle(menu_data->window->context_map->styles,
 					 zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME)))
@@ -1880,7 +1880,7 @@ static void peptideMenuCB(int menu_item_id, gpointer callback_data)
 
 
   feature = zMapWindowCanvasItemGetFeature(menu_data->item) ;
-  if (feature->type != ZMAPSTYLE_MODE_TRANSCRIPT) 
+  if (feature->mode != ZMAPSTYLE_MODE_TRANSCRIPT)
     return ;
 
   context = menu_data->window->feature_context ;
@@ -3216,7 +3216,7 @@ static void exportFeatures(ZMapWindow window, ZMapSpan region_span, ZMapFeatureA
 
   /* Should extend this any type.... */
   if (feature->struct_type != ZMAPFEATURE_STRUCT_FEATURESET
-      && feature->struct_type != ZMAPFEATURE_STRUCT_FEATURE) 
+      && feature->struct_type != ZMAPFEATURE_STRUCT_FEATURE)
     return ;
 
   /* Find the block from whatever pointer we are sent...  */
@@ -3700,7 +3700,7 @@ static void searchListMenuCB(int menu_item_id, gpointer callback_data)
   /* Retrieve the feature or featureset info from the canvas item. */
   feature_any = zmapWindowItemGetFeatureAny(menu_data->item);
   if (feature_any->struct_type != ZMAPFEATURE_STRUCT_FEATURESET
-	     && feature_any->struct_type != ZMAPFEATURE_STRUCT_FEATURE) 
+	     && feature_any->struct_type != ZMAPFEATURE_STRUCT_FEATURE)
   return ;
 
   if (feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURESET)
@@ -3826,7 +3826,7 @@ DEFINE HIGHLIGHT_DATA STRUCT
 CHANGE FUNC PROTO FOR GETEVIDENCE...AND MAKE IT CALL BACK TO THIS FUNC SUPPLYING
 THE EVIDENCE LIST AND WE SHOULD BE DONE.....
 
-BUT MAY NEED A SPECIAL CALLBACK IN FEATURESHOW TO HANDLE THIS CALLBACK 
+BUT MAY NEED A SPECIAL CALLBACK IN FEATURESHOW TO HANDLE THIS CALLBACK
 SEPARATELY FROM THE EXISTING FEATURESHOW CALLBACK......
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
@@ -3876,7 +3876,7 @@ static void highlightEvidenceCB(GList *evidence, gpointer user_data)
 	{
 	  /* NOTE: need to filter by transcript start and end coords in case of repeat alignments */
 	  /* Not so - annotators want to see duplicated features' data */
-		      
+
 	  evidence_items = g_list_prepend(evidence_items,items->data);
 	}
 
