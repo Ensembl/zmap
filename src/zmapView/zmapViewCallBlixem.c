@@ -1827,7 +1827,7 @@ static void writeFeatureLine(ZMapFeature feature, blixemData  blixem_data)
 
       if (include_feature)
 	{
-	  switch (feature->type)
+	  switch (feature->mode)
 	    {
 	    case ZMAPSTYLE_MODE_ALIGNMENT:
 	      {
@@ -2966,9 +2966,9 @@ static void getFeatureCB(gpointer key, gpointer data, gpointer user_data)
   /* Only process features we want to dump. We then filter those features according to the
    * following rules (inherited from acedb): alignment features must be wholly within the
    * blixem max/min to be included, for transcripts we include as many introns/exons as will fit. */
-  if (feature->type == blixem_data->required_feature_type)
+  if (feature->mode == blixem_data->required_feature_type)
     {
-      switch (feature->type)
+      switch (feature->mode)
 	{
 	case ZMAPSTYLE_MODE_ALIGNMENT:
 	  {
@@ -3206,9 +3206,9 @@ static void checkForLocalSequence(gpointer key, gpointer data, gpointer user_dat
       /* Only process features we want to dump. We then filter those features according to the
        * following rules (inherited from acedb): alignment features must be wholly within the
        * blixem max/min to be included, for transcripts we include as many introns/exons as will fit. */
-      if (feature->type == blixem_data->required_feature_type)
+      if (feature->mode == blixem_data->required_feature_type)
 	{
-	  if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT
+	  if (feature->mode == ZMAPSTYLE_MODE_ALIGNMENT
 	      && feature->feature.homol.flags.has_sequence)
 	    {
 	      GQuark align_id = feature->original_id ;

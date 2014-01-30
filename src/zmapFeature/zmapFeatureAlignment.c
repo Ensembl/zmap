@@ -110,10 +110,10 @@ gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
 {
   gboolean result = FALSE ;
 
-  if (!feature || (feature->type != ZMAPSTYLE_MODE_ALIGNMENT)) 
-    return result ; 
+  if (!feature || (feature->mode != ZMAPSTYLE_MODE_ALIGNMENT))
+    return result ;
 
-  result = TRUE ; 
+  result = TRUE ;
 
   if (clone_id)
     {
@@ -165,10 +165,10 @@ gboolean zMapFeatureAlignmentIsGapped(ZMapFeature feature)
 {
   gboolean result = FALSE ;
 
-  if (!zMapFeatureIsValidFull((ZMapFeatureAny) feature, ZMAPFEATURE_STRUCT_FEATURE)) 
+  if (!zMapFeatureIsValidFull((ZMapFeatureAny) feature, ZMAPFEATURE_STRUCT_FEATURE))
     return result ;
 
-  if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
+  if (feature->mode == ZMAPSTYLE_MODE_ALIGNMENT)
     {
       int ref_length, match_length ;
 
@@ -401,7 +401,7 @@ static gboolean alignStrCanon2Homol(AlignStrCanonical canon, ZMapStrand ref_stra
 	    else
 	      curr_ref -= curr_length ;
 
-            boundary_type = ALIGN_BLOCK_BOUNDARY_INTRON ;	    
+            boundary_type = ALIGN_BLOCK_BOUNDARY_INTRON ;
 	    break ;
 	  }
 	case 'D':					    /* Deletion in reference sequence. */
@@ -825,12 +825,12 @@ static gboolean ensemblCigar2Canon(char *match_str, AlignStrCanonical canon)
 
 /* Blindly converts, assumes match_str is a valid BAM cigar string.
  * Currently we convert:
- * 
+ *
  * X -> M
  * P -> ignored
  * S -> ignored
  * H -> not handled
- * 
+ *
  */
 static gboolean bamCigar2Canon(char *match_str, AlignStrCanonical canon)
 {
@@ -857,7 +857,7 @@ static gboolean bamCigar2Canon(char *match_str, AlignStrCanonical canon)
         {
           /* Padding and soft-clipping: should be fine to ignore these */
         }
-      else 
+      else
         {
           if (*cp == 'X') /* Mismatch. Treat it like a match. */
             op.op = 'M' ;
@@ -866,7 +866,7 @@ static gboolean bamCigar2Canon(char *match_str, AlignStrCanonical canon)
 
           canon->align = g_array_append_val(canon->align, op) ;
         }
-      
+
       cp++ ;
     } while (*cp) ;
 

@@ -368,19 +368,19 @@ int n_foo_wins = 0;
  * via some kind of windows terminate routine. */
 void zMapWindowInit(ZMapWindowCallbacks callbacks)
 {
-  if (window_cbs_G 
-      || !callbacks 
-      || !callbacks->enter 
-      || !callbacks->leave 
-      || !callbacks->scroll 
-      || !callbacks->focus 
-      || !callbacks->select 
-      || !callbacks->setZoomStatus 
-      || !callbacks->splitToPattern  
-      || !callbacks->visibilityChange 
-      || !callbacks->command 
-      || !callbacks->drawn_data) 
-    return ; 
+  if (window_cbs_G
+      || !callbacks
+      || !callbacks->enter
+      || !callbacks->leave
+      || !callbacks->scroll
+      || !callbacks->focus
+      || !callbacks->select
+      || !callbacks->setZoomStatus
+      || !callbacks->splitToPattern
+      || !callbacks->visibilityChange
+      || !callbacks->command
+      || !callbacks->drawn_data)
+    return ;
 
   window_cbs_G = g_new0(ZMapWindowCallbacksStruct, 1) ;
 
@@ -455,7 +455,7 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, ZMapFeatureSequenceMap seque
                               original_window->feature_set_names,
                               hadjustment, vadjustment,
                               original_window->flags) ;
-  if (!new_window) 
+  if (!new_window)
     return new_window ;
 
   zmapWindowBusy(new_window, TRUE) ;
@@ -830,7 +830,7 @@ void zMapWindowRedraw(ZMapWindow window)
  *  */
 void zMapWindowStats(ZMapWindow window, GString *text)
 {
-  if (!text) 
+  if (!text)
     return ;
 
   zmapWindowContainerUtilsExecute(window->feature_root_group,
@@ -1589,7 +1589,7 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
   select.type = ZMAPWINDOW_SELECT_SINGLE;
 
   /* If feature_arg is NULL then this implies "reset the info data/panel". */
-  if (!feature_arg || feature_arg->type == ZMAPSTYLE_MODE_INVALID)
+  if (!feature_arg || feature_arg->mode == ZMAPSTYLE_MODE_INVALID)
     {
       (*(window->caller_cbs->select))(window, window->app_data, NULL) ;
 
@@ -1610,7 +1610,7 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
    * Need to merge sequence and non-sequence feature code....too much repetition...
    */
 
-  if (feature_arg->type == ZMAPSTYLE_MODE_SEQUENCE)
+  if (feature_arg->mode == ZMAPSTYLE_MODE_SEQUENCE)
     {
       /* sequence like feature. */
       char *seq_term ;
@@ -1702,7 +1702,7 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
 
       style = feature && feature->style ? *feature->style : NULL ;
       select.feature_desc.struct_type = feature->struct_type ;
-      select.feature_desc.type        = feature->type ;
+      select.feature_desc.type        = feature->mode ;
 
       select.feature_desc.feature_description = zmapWindowFeatureDescription(feature) ;
 
@@ -1783,7 +1783,7 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
 	}
 
 
-      if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
+      if (feature->mode == ZMAPSTYLE_MODE_ALIGNMENT)
 	{
 	  if (zMapFeatureGetInfo((ZMapFeatureAny)feature, NULL,
 				 "query-start",  &query_start,
@@ -1811,7 +1811,7 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
 
 	    }
 	}
-      else if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
+      else if (feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
 	{
 	  if (!(feature->feature.transcript.introns))
 	    select.feature_desc.sub_feature_none_txt = g_strdup("NO INTRONS") ;
@@ -1842,7 +1842,7 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
 	      select.feature_desc.sub_feature_term   = sub_feature_term ;
 	    }
 
-	  if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
+	  if (feature->mode == ZMAPSTYLE_MODE_ALIGNMENT)
 	    {
 	      if (zMapFeatureGetInfo((ZMapFeatureAny)feature, sub_feature,
 				     "query-start",  &query_start,
@@ -1891,9 +1891,9 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
           select.feature_desc.feature_name = g_strdup((char *)g_quark_to_string(feature->original_id)) ;
         }
 
-      if (feature->type == ZMAPSTYLE_MODE_BASIC && feature->feature.basic.known_name)
+      if (feature->mode == ZMAPSTYLE_MODE_BASIC && feature->feature.basic.known_name)
 	select.feature_desc.feature_known_name = (char *)g_quark_to_string(feature->feature.basic.known_name) ;
-      else if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT && feature->feature.transcript.known_name)
+      else if (feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT && feature->feature.transcript.known_name)
 	select.feature_desc.feature_known_name = (char *)g_quark_to_string(feature->feature.transcript.known_name) ;
 
 
@@ -1910,7 +1910,7 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
       if (feature->flags.has_score)
 	select.feature_desc.feature_score = g_strdup_printf("%g", (double) feature->score) ;
 
-      if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
+      if (feature->mode == ZMAPSTYLE_MODE_ALIGNMENT)
 	{
 	  if (feature->feature.homol.percent_id)
 	    select.feature_desc.feature_percent_id = g_strdup_printf("%g%%", (double) (feature->feature.homol.percent_id)) ;
@@ -2153,10 +2153,10 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
   GtkWidget *canvas, *eventbox ;
 
   /* No callbacks, then no window creation. */
-  if (!window_cbs_G) 
+  if (!window_cbs_G)
     return window ;
 
-  if (!parent_widget || !sequence || !sequence->sequence || !app_data) 
+  if (!parent_widget || !sequence || !sequence->sequence || !app_data)
     return window ;
 
   window = g_new0(ZMapWindowStruct, 1) ;
@@ -2582,7 +2582,7 @@ static void myWindowMove(ZMapWindow window, double start, double end)
 static void resetCanvas(ZMapWindow window, gboolean free_child_windows, gboolean free_revcomp_safe_windows)
 {
 
-  if (!window) 
+  if (!window)
     return ;
 
   /* There is code here that should be shared with zmapwindowdestroy....
@@ -5504,11 +5504,11 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
                   }
                 else
                   {
-                    if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
+                    if (feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
                       {
                         zmapWindowZoomToItem(window, zmapWindowItemGetTrueItem(focus_item)) ;
                       }
-                    else if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
+                    else if (feature->mode == ZMAPSTYLE_MODE_ALIGNMENT)
                       {
                         GList *list = NULL;
                         ZMapStrand set_strand ;
@@ -5960,7 +5960,7 @@ static char *makePrimarySelectionText(ZMapWindow window) //, FooCanvasItem *high
 
       /* Processing is different if there is only one item highlighted and it's a transcript. */
       if (ZMAP_IS_CANVAS_ITEM(item) && length == 1
-	  && item_feature->type == ZMAPSTYLE_MODE_TRANSCRIPT && item_feature->feature.transcript.exons)
+	  && item_feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT && item_feature->feature.transcript.exons)
 	{
 	  /* For a transcript feature with exons put all the exons in the paste buffer. */
 	  ZMapSpan span ;
@@ -6524,11 +6524,11 @@ static void fc_begin_update_cb(FooCanvas *canvas, gpointer user_data)
   ZMapWindow window = (ZMapWindow)user_data;
   double x1, x2, y1, y2;
 
-  if (canvas != window->canvas) 
+  if (canvas != window->canvas)
     {
       return ;
     }
-  else 
+  else
     {
       zmapWindowBusy(window, TRUE) ;
     }
@@ -6587,11 +6587,11 @@ static void fc_begin_map_cb(FooCanvas *canvas, gpointer user_data)
 {
   ZMapWindow window = (ZMapWindow)user_data;
 
-  if (canvas != window->canvas) 
+  if (canvas != window->canvas)
     {
-      return ; 
-    } 
-  else 
+      return ;
+    }
+  else
     {
       zMapDebugPrint(foo_debug_G, "%s",  "Entered") ;
 
@@ -6609,9 +6609,9 @@ static void fc_end_map_cb(FooCanvas *canvas, gpointer user_data)
 
   if (canvas != window->canvas)
     {
-      return ; 
-    } 
- else 
+      return ;
+    }
+ else
     {
       zMapDebugPrint(foo_debug_G, "%s",  "Entered") ;
 

@@ -25,14 +25,14 @@
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
  * Description:
- *              
+ *
  * NOTE
  * this module implements the basic handling of featuresets as foo canvas items
  *
  * for basic features (the first type implemented) it runs about 3-5x faster than the foo canvas
  * but note that that does not include expose/ GDK
  * previous code can be used with 'foo=true' in the style
- * 
+ *
  *  _new code_
  *  deskpro17848[mh17]32: zmap --conf_file=ZMap_bins
  *  # /nfs/users/nfs_m/mh17/.ZMap/ZMap_bins	27/09/2011
@@ -40,7 +40,7 @@
  *  Draw featureset scored: 9999 features in 0.347 seconds
  *  Draw featureset basic_10000: 9999 features in 0.324 seconds
  *  Draw featureset basic_100000: 99985 features in 1.729 seconds
- * 
+ *
  *  _old code_
  *  deskpro17848[mh17]33: zmap --conf_file=ZMap_bins
  *  # /nfs/users/nfs_m/mh17/.ZMap/ZMap_bins	27/09/2011
@@ -133,7 +133,7 @@ static guint32 gdk_color_to_rgba(GdkColor *color) ;
 
 
 
-/* 
+/*
  *                Globals
  */
 
@@ -195,7 +195,7 @@ static long n_feature_free = 0;
 
 
 
-/* 
+/*
  *                         External routines
  */
 
@@ -442,8 +442,8 @@ void zMapWindowCanvasFeaturesetPaintFlush(ZMapWindowFeaturesetItem featureset, Z
 
 #if 0
   if(feature &&
-     (feature->type > 0 && feature->type < FEATURE_N_TYPE)
-     && (func = _featureset_flush_G[feature->type]))
+     (feature->mode > 0 && feature->mode < FEATURE_N_TYPE)
+     && (func = _featureset_flush_G[feature->mode]))
 #else
     if ((featureset->type > 0 && featureset->type < FEATURE_N_TYPE)
 	&& (func = _featureset_flush_G[featureset->type]))
@@ -622,8 +622,8 @@ ZMapFeatureSubPartSpan zMapWindowCanvasFeaturesetGetSubPartSpan(FooCanvasItem *f
   //	ZMapWindowFeaturesetItem featureset = (ZMapWindowFeaturesetItem) foo;
 
 
-  if(feature->type > 0 && feature->type < FEATURE_N_TYPE)
-    func = _featureset_subpart_G[feature->type];
+  if(feature->mode > 0 && feature->mode < FEATURE_N_TYPE)
+    func = _featureset_subpart_G[feature->mode];
   if(!func)
     return NULL;
 
@@ -649,7 +649,7 @@ gboolean zMapWindowCanvasFeaturesetHasPointFeature(FooCanvasItem *item)
   return result ;
 }
 
-/* For normal clicking by user the point_feature is reset automatically but 
+/* For normal clicking by user the point_feature is reset automatically but
  * features can be removed programmatically (i.e. xremote) requiring the
  * point_feature to be unset as the feature it points to is no longer valid. */
 gboolean zMapWindowCanvasFeaturesetUnsetPointFeature(FooCanvasItem *item)
@@ -878,8 +878,8 @@ void featureset_init_funcs(void)
  */
 void zmapWindowFeaturesetS2Ccoords(double *start_inout, double *end_inout)
 {
-  if (!start_inout || !end_inout || !(*start_inout <= *end_inout)) 
-    return ; 
+  if (!start_inout || !end_inout || !(*start_inout <= *end_inout))
+    return ;
 
   *end_inout += 1 ;
 
@@ -1076,7 +1076,7 @@ void zMapWindowCanvasFeaturesetSetZoomY(ZMapWindowFeaturesetItem fi, double zoom
       fi->recalculate_zoom = TRUE ;
       fi->zoom = zoom_y ;
     }
-  
+
   return ;
 }
 
@@ -1253,22 +1253,22 @@ static ZMapSkipList zmap_window_canvas_featureset_find_feature_index(ZMapWindowF
 
 
 /* Check that the given feature is a valid ZMapWindowCanvasFeature. I think that
- * other structs are cast to this type when they shouldn't really be because 
- * zmapWindowCanvasBaseStruct isn't implemented. Therefore this struct can 
- * contain corrupt values if its type is not correct: this function returns 
+ * other structs are cast to this type when they shouldn't really be because
+ * zmapWindowCanvasBaseStruct isn't implemented. Therefore this struct can
+ * contain corrupt values if its type is not correct: this function returns
  * true if we can trust all of its values (otherwise we can only trust the
  * first three, that would have been in zmapWindowCanvasBaseStruct). */
 gboolean zmapWindowCanvasFeatureValid(ZMapWindowCanvasFeature feature)
 {
   gboolean result = FALSE ;
-  
+
   if (feature && feature->type > FEATURE_INVALID && feature->type < FEATURE_GRAPHICS)
     result = TRUE ;
 
-  /*! \todo Add an assert if this fails because it would be useful to 
+  /*! \todo Add an assert if this fails because it would be useful to
    * debug when this happens - but only once we are able to disable asserts
    * in release code! */
-  
+
   return result ;
 }
 
@@ -1278,8 +1278,8 @@ static ZMapWindowCanvasFeature zmap_window_canvas_featureset_find_feature(ZMapWi
   ZMapSkipList sl;
   ZMapWindowCanvasFeature gs = NULL;
 
-  if(fi->last_added && 
-     zmapWindowCanvasFeatureValid(fi->last_added) && 
+  if(fi->last_added &&
+     zmapWindowCanvasFeatureValid(fi->last_added) &&
      fi->last_added->feature == feature)
     {
       gs = fi->last_added;
@@ -1291,7 +1291,7 @@ static ZMapWindowCanvasFeature zmap_window_canvas_featureset_find_feature(ZMapWi
       if(sl)
         {
           gs = (ZMapWindowCanvasFeature) sl->data;
-          
+
           if (!zmapWindowCanvasFeatureValid(gs))
             gs = NULL ;
         }
@@ -1346,7 +1346,7 @@ void zMapWindowCanvasFeaturesetRedraw(ZMapWindowFeaturesetItem fi, double zoom)
   double width = fi->width;
 
   /*fi->recalculate_zoom;*/ /* can set to TRUE to trigger a recalc of zoom data */
-  fi->zoom = zoom;	
+  fi->zoom = zoom;
 
 #if 1
 
@@ -1655,7 +1655,7 @@ gboolean zMapWindowFeaturesetItemSetStyle(ZMapWindowFeaturesetItem di, ZMapFeatu
 
 
 /* Standard way to allocate featureset colours, parameters are:
- * 
+ *
  *          FALSE => we don't need the colour to be writeable
  *           TRUE => we will accept the best available match  */
 gboolean zmapWindowFeaturesetAllocColour(ZMapWindowFeaturesetItemClass featureset_class,
@@ -2269,7 +2269,7 @@ void zmap_window_featureset_item_link_sideways(ZMapWindowFeaturesetItem fi)
   for(l = fi->features;l;l = l->next)
     {
       right = (ZMapWindowCanvasFeature) l->data;
-      
+
       if (!zmapWindowCanvasFeatureValid(right))
         continue ;
 
@@ -2296,7 +2296,7 @@ void zMapWindowCanvasFeaturesetIndex(ZMapWindowFeaturesetItem fi)
 
   /*
    * this call has to be here as zMapWindowCanvasFeaturesetIndex() is called from bump,
-   * which can happen before we get a paint i tried to move it into alignments 
+   * which can happen before we get a paint i tried to move it into alignments
    * (it's a bodge to cope with the data being shredded before we get it)
    */
   if(fi->link_sideways && !fi->linked_sideways)
@@ -2339,11 +2339,11 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
    * NOTE we cannot calc this post zoom as we get scroll afterwards
    * except possibly if we combine the zoom and scroll operation
    * but this code cannot assume that
-   * 
+   *
    * ACTUALLY SOMETHING GOES WRONG HERE...STUFF GET'S CLIPPED WHEN IT SHOULDN'T IN THE CASE WHERE
    * WE'VE SCROLLED OFF THE CURRENT POSITION OF THE FOO CANVAS WINDOW......
-   * 
-   * 
+   *
+   *
    */
 
   region = gdk_drawable_get_visible_region(drawable);
@@ -2354,7 +2354,7 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
   adjust = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(fi->canvas_scrolled_window)) ;
   if (rect.height < adjust->page_size)
     rect.height = adjust->page_size + 1000 ;		    /* hack...try it.... */
-  
+
 
   fi->clip_x1 = rect.x - 1;
   fi->clip_y1 = rect.y - 1;
@@ -2545,8 +2545,8 @@ void zmapWindowCanvasFeaturesetSetColours(ZMapWindowFeaturesetItem fi, ZMapWindo
       ZMapFeature feature = feat->feature ;
       ZMapStyleColourType ct;
       static gboolean tmp_debug = FALSE ;
-      
-      
+
+
       /* NOTE carefully balanced code:
        * we do all blurred features then all focussed ones
        * if the style changes then we look up the colours
@@ -2554,12 +2554,12 @@ void zmapWindowCanvasFeaturesetSetColours(ZMapWindowFeaturesetItem fi, ZMapWindo
        * other kinds of focus eg evidence do not have colours set in the style
        * so mixed focus types are not a problem
        */
-      
+
       if (tmp_debug)
         zMapUtilsDebugPrintf(stderr, "Feature: \"%s\", \"%s\"\n",
                              g_quark_to_string(feature->original_id), g_quark_to_string(feature->unique_id)) ;
-      
-      
+
+
       if((fi->featurestyle != *feat->feature->style) || !(fi->frame && zMapStyleIsFrameSpecific(*feat->feature->style)))
         /* diff style: set colour from style */
         {
@@ -2569,23 +2569,23 @@ void zmapWindowCanvasFeaturesetSetColours(ZMapWindowFeaturesetItem fi, ZMapWindo
            * but hopefully it's faster than not caching regardless
            * beware of enum ZMapWindowFocusType not being a bit-mask
            */
-          
+
           GdkColor *fill = NULL,*draw = NULL, *outline = NULL;
           ZMapFrame frame;
           ZMapStrand strand;
-          
+
           fi->featurestyle = *feat->feature->style;
-          
+
           /* eg for glyphs these get mixed up in one column so have to set for the feature not featureset */
           frame = zMapFeatureFrame(feat->feature);
           strand = feat->feature->strand;
-          
+
           ct = feat->flags & WINDOW_FOCUS_GROUP_FOCUSSED ? ZMAPSTYLE_COLOURTYPE_SELECTED : ZMAPSTYLE_COLOURTYPE_NORMAL;
-          
+
           zmapWindowCanvasItemGetColours(fi->featurestyle, strand, frame, ct , &fill, &draw, &outline, NULL, NULL);
-          
+
           /* can cache these in the feature? or style?*/
-          
+
           fi->fill_set = FALSE;
           if(fill)
             {
@@ -2600,12 +2600,12 @@ void zmapWindowCanvasFeaturesetSetColours(ZMapWindowFeaturesetItem fi, ZMapWindo
               fi->outline_colour = zMap_gdk_color_to_rgba(outline);
               fi->outline_pixel = foo_canvas_get_color_pixel(item->canvas, fi->outline_colour);
             }
-          
+
         }
     }
 }
 
-    
+
 /* called by item drawing code, we cache style colours hoping it will run faster */
 /* see also zmap_window_canvas_alignment_get_colours() */
 int zMapWindowCanvasFeaturesetGetColours(ZMapWindowFeaturesetItem featureset,
@@ -2617,7 +2617,7 @@ int zMapWindowCanvasFeaturesetGetColours(ZMapWindowFeaturesetItem featureset,
   if (zmapWindowCanvasFeatureValid(feature))
     {
       ret = zMapWindowFocusCacheGetSelectedColours(feature->flags, fill_pixel, outline_pixel);
-      
+
       if(!(ret & WINDOW_FOCUS_CACHE_FILL))
         {
           if (featureset->fill_set)
@@ -2626,7 +2626,7 @@ int zMapWindowCanvasFeaturesetGetColours(ZMapWindowFeaturesetItem featureset,
               ret |= WINDOW_FOCUS_CACHE_FILL;
             }
         }
-      
+
       if(!(ret & WINDOW_FOCUS_CACHE_OUTLINE))
         {
           if (featureset->outline_set)
@@ -3196,7 +3196,7 @@ int zMapWindowCanvasFeaturesetFilter(gpointer gfilter, double value, gboolean hi
       fi->recalculate_zoom = TRUE ;
       //fi->zoom = 0; /* gb10: now we have the recalculate_zoom flag this shouldn't be necessary */
 
-#if HIGHLIGHT_FILTERED_COLUMNS 
+#if HIGHLIGHT_FILTERED_COLUMNS
       /*!> \todo This code highlights columns that are filtered.
        * It is requested functionality but it needs to be optional
        * so that the user can turn it off. */
@@ -3358,21 +3358,21 @@ ZMapWindowCanvasFeature zMapWindowFeaturesetAddFeature(ZMapWindowFeaturesetItem 
         type = feature_types[zMapStyleGetMode(style)];
       if(type == FEATURE_INVALID)		/* no style or feature type not implemented */
         return NULL;
-      
+
       feat = zmapWindowCanvasFeatureAlloc(type);
-      
+
       feat->feature = feature;
       feat->type = type;
-      
+
       feat->y1 = y1;
       feat->y2 = y2;
-      
+
       if(y2 - y1 > featureset_item->longest)
         featureset_item->longest = y2 - y1;
-      
+
       zmapWindowFeaturesetAddToIndex(featureset_item, feat);
     }
-  
+
   return feat;
 }
 
@@ -3611,13 +3611,13 @@ int zMapWindowFeaturesetItemRemoveSet(FooCanvasItem *foo, ZMapFeatureSet feature
       if (zmapWindowCanvasFeatureValid(feat))
         {
           set = (ZMapFeatureSet) feat->feature->parent;
-          
+
           if (set == featureset)
             {
               /* NOTE the features list and display index both point to the same structs */
-              
+
               zmap_window_canvas_featureset_expose_feature(fi, feat);
-              
+
               zmapWindowCanvasFeatureFree(feat);
               del = l;
               l = l->next;
@@ -3703,15 +3703,15 @@ int zMapWindowFeaturesetItemRemoveSet(FooCanvasItem *foo, ZMapFeatureSet feature
 int zMapWindowFeaturesetItemGetNFiltered(FooCanvasItem *item)
 {
   int result = 0;
-  
+
   if (item)
     {
       ZMapWindowFeaturesetItem fi = (ZMapWindowFeaturesetItem)item;
-      
+
       if (fi)
         result = fi->n_filtered;
     }
-  
+
   return result;
 }
 

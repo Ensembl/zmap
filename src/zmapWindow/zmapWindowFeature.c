@@ -106,7 +106,7 @@ static void revcompTransChildCoordsCB(gpointer data, gpointer user_data) ;
 
 
 
-/* 
+/*
  *                        Globals
  */
 
@@ -230,7 +230,7 @@ gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_
   gboolean result = FALSE ;
   ZMapFeatureSet feature_set ;
 
-  if (!feature || !zMapFeatureIsValid((ZMapFeatureAny)feature)) 
+  if (!feature || !zMapFeatureIsValid((ZMapFeatureAny)feature))
     return result ;
 
   feature_set = (ZMapFeatureSet)(feature->parent) ;
@@ -240,14 +240,14 @@ gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_
   if (ZMAP_IS_CONTAINER_FEATURESET(column_group))
     {
       container_set = (ZMapWindowContainerFeatureSet)column_group ;
-      
+
       /* Need to delete the feature from the feature set and from the hash and destroy the
        * canvas item....NOTE this is very order dependent. */
-      
+
       /* I'm still not sure this is all correct.
        * canvasItemDestroyCB has a FToIRemove!
        */
-      
+
       /* Firstly remove from the FToI hash... */
       if (zmapWindowFToIRemoveFeature(zmap_window->context_to_item,
                                       container_set->strand,
@@ -265,7 +265,7 @@ gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_
                   /* destroy the canvas item...this will invoke canvasItemDestroyCB() */
                   gtk_object_destroy(GTK_OBJECT(feature_item)) ;
                 }
-              
+
               /* I think we shouldn't need to do this probably....on the other hand showing
                * empty cols is configurable.... */
               if (!zmapWindowContainerHasFeatures(ZMAP_CONTAINER_GROUP(container_set)) &&
@@ -273,16 +273,16 @@ gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_
                 {
                   zmapWindowContainerSetVisibility(FOO_CANVAS_GROUP(container_set), FALSE) ;
                 }
-              
+
               /* destroy the feature... deletes record in the featureset. */
               if (destroy_feature)
                 zMapFeatureDestroy(feature);
-              
+
               result = TRUE ;
             }
         }
     }
-      
+
   return result ;
 }
 
@@ -448,7 +448,7 @@ char *zmapWindowFeatureDescription(ZMapFeature feature)
 {
   char *description = NULL ;
 
-  if (!zMapFeatureIsValid((ZMapFeatureAny)feature)) 
+  if (!zMapFeatureIsValid((ZMapFeatureAny)feature))
     return description ;
 
 
@@ -492,7 +492,7 @@ char *zmapWindowFeatureTranscriptFASTA(ZMapFeature feature, gboolean spliced, gb
   ZMapFeatureContext context ;
 
 
-  if((feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
+  if((feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
      && ((context = (ZMapFeatureContext)zMapFeatureGetParentGroup((ZMapFeatureAny)feature,
 								  ZMAPFEATURE_STRUCT_CONTEXT))))
     {
@@ -554,7 +554,7 @@ static gboolean canvasItemDestroyCB(FooCanvasItem *feature_item, gpointer data)
 
 static void featureCopySelectedItem(ZMapFeature feature_in, ZMapFeature feature_out, FooCanvasItem *selected)
 {
-  if (!feature_in || !feature_out) 
+  if (!feature_in || !feature_out)
     return ;
 
   if (feature_in && feature_out)
@@ -658,13 +658,13 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 			{
                           /* For the scratch column, the feature doesn't exist in the peer.
                            * Ask the peer to create it. */
-                          /*! \todo We may wish to change this so that, rather than creating 
+                          /*! \todo We may wish to change this so that, rather than creating
                            * the feature immediately, it opens an intermediary dialog where the
                            * user can set some attributes locally in zmap instead. Then from
                            * that dialog, or another option in zmap, they could have the option
                            * to save the feature to the peer. */
                           const gchar *style_id = g_quark_to_string(zMapStyleGetID(*feature->style)) ;
-                          
+
                           if (feature && feature->style && strcmp(style_id, ZMAP_FIXED_STYLE_SCRATCH_NAME) == 0)
                             {
                               callXRemote(window, (ZMapFeatureAny)feature, ZACP_CREATE_FEATURE, highlight_item) ;
@@ -745,7 +745,7 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
 
       sub_item = zMapWindowCanvasItemGetInterval(canvas_item, but_event->x, but_event->y, &sub_feature);
 
-      if (feature->type != ZMAPSTYLE_MODE_ALIGNMENT || zMapStyleIsUnique(*feature->style))
+      if (feature->mode != ZMAPSTYLE_MODE_ALIGNMENT || zMapStyleIsUnique(*feature->style))
 	highlight_same_names = FALSE ;
 
 
@@ -757,7 +757,7 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
 
 	  /* Annotators say they don't want subparts sub selections + multiple
 	   * selections for alignments. */
-	  if (feature->type != ZMAPSTYLE_MODE_ALIGNMENT)
+	  if (feature->mode != ZMAPSTYLE_MODE_ALIGNMENT)
 	    {
 	      highlight_item = sub_item ;
 
@@ -1007,7 +1007,7 @@ static gboolean factoryTopItemCreated(FooCanvasItem *top_item,
    *
    *  */
 
-  switch(feature_stack->feature->type)
+  switch(feature_stack->feature->mode)
     {
     case ZMAPSTYLE_MODE_ASSEMBLY_PATH:
     case ZMAPSTYLE_MODE_TRANSCRIPT:
@@ -1050,7 +1050,7 @@ static void callXRemote(ZMapWindow window, ZMapFeatureAny feature_any,
   ZMapFeature feature_copy ;
   int chr_bp ;
   RemoteData remote_data ;
-  
+
 
   /* We should only ever be called with a feature, not a set or anything else. */
   g_return_if_fail(feature_any && feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURE) ;
@@ -1084,7 +1084,7 @@ static void callXRemote(ZMapWindow window, ZMapFeatureAny feature_any,
 	feature_copy->strand = ZMAPSTRAND_REVERSE ;
       else
 	feature_copy->strand = ZMAPSTRAND_FORWARD ;
-	      
+
 
       if (ZMAPFEATURE_IS_TRANSCRIPT(feature_copy))
 	{
@@ -1208,7 +1208,7 @@ static void revcompTransChildCoordsCB(gpointer data, gpointer user_data)
   chr_bp = zmapWindowWorldToSequenceForward(window, chr_bp) ;
   child->x1 = chr_bp ;
 
- 
+
   chr_bp = child->x2 ;
   chr_bp = zmapWindowWorldToSequenceForward(window, chr_bp) ;
   child->x2 = chr_bp ;

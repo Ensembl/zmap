@@ -198,7 +198,7 @@ ZMapWindowMark zmapWindowMarkCreate(ZMapWindow window)
 {
   ZMapWindowMark mark = NULL ;
 
-  if (!window) 
+  if (!window)
     return mark ;
 
   mark = g_new0(ZMapWindowMarkStruct, 1) ;
@@ -243,7 +243,7 @@ gboolean zmapWindowMarkIsSet(ZMapWindowMark mark)
 {
   gboolean result = FALSE ;
 
-  if (!mark || !ZMAP_MAGIC_IS_VALID(mark_magic_G, mark->magic)) 
+  if (!mark || !ZMAP_MAGIC_IS_VALID(mark_magic_G, mark->magic))
     return result ;
 
   /* marking is 'asynchronous' during redraws for marks with no mark_src_item. */
@@ -269,7 +269,7 @@ gboolean zmapWindowMarkIsSet(ZMapWindowMark mark)
  */
 void zmapWindowMarkReset(ZMapWindowMark mark)
 {
-  if (!mark || !ZMAP_MAGIC_IS_VALID(mark_magic_G, mark->magic)) 
+  if (!mark || !ZMAP_MAGIC_IS_VALID(mark_magic_G, mark->magic))
     return ;
 
   if (mark->mark_set)
@@ -317,7 +317,7 @@ void zmapWindowToggleMark(ZMapWindow window, gboolean whole_feature)
 	   * all HSP's, otherwise we mark just the highlighted ones. */
 	  if (whole_feature)
 	    {
-	      if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
+	      if (feature->mode == ZMAPSTYLE_MODE_ALIGNMENT)
 		{
 		  GList *list = NULL;
 		  ZMapStrand set_strand ;
@@ -441,7 +441,7 @@ void zmapWindowMarkShowMark(ZMapWindowMark mark)
  */
 void zmapWindowMarkSetColour(ZMapWindowMark mark, char *colour)
 {
-  if (!mark || !ZMAP_MAGIC_IS_VALID(mark_magic_G, mark->magic)) 
+  if (!mark || !ZMAP_MAGIC_IS_VALID(mark_magic_G, mark->magic))
     return ;
 
   gdk_color_parse(colour, &(mark->colour)) ;
@@ -458,7 +458,7 @@ void zmapWindowMarkSetColour(ZMapWindowMark mark, char *colour)
  */
 GdkColor *zmapWindowMarkGetColour(ZMapWindowMark mark)
 {
-  if (!mark || !ZMAP_MAGIC_IS_VALID(mark_magic_G, mark->magic)) 
+  if (!mark || !ZMAP_MAGIC_IS_VALID(mark_magic_G, mark->magic))
     return NULL ;
 
   return &(mark->colour) ;
@@ -475,7 +475,7 @@ gboolean zmapWindowMarkSetItem(ZMapWindowMark mark, FooCanvasItem *item)
   gboolean result = FALSE ;
   ZMapFeature feature ;
 
-  if (!mark || !ZMAP_MAGIC_IS_VALID(mark_magic_G, mark->magic) || !FOO_IS_CANVAS_ITEM(item)) 
+  if (!mark || !ZMAP_MAGIC_IS_VALID(mark_magic_G, mark->magic) || !FOO_IS_CANVAS_ITEM(item))
     return result ;
 
   if (!(feature = zMapWindowCanvasItemGetFeature(item)))
@@ -546,7 +546,7 @@ gboolean zmapWindowMarkSetWorldRange(ZMapWindowMark mark,
   double scroll_x1, scroll_x2;
   gboolean result = FALSE ;
 
-  if (!mark || !ZMAP_MAGIC_IS_VALID(mark_magic_G, mark->magic)) 
+  if (!mark || !ZMAP_MAGIC_IS_VALID(mark_magic_G, mark->magic))
     return result ;
 
   zmapWindowMarkReset(mark) ;
@@ -615,7 +615,7 @@ gboolean zmapWindowMarkGetWorldRange(ZMapWindowMark mark,
 {
   gboolean result = FALSE ;
 
-  if (!mark || !ZMAP_MAGIC_IS_VALID(mark_magic_G, mark->magic)) 
+  if (!mark || !ZMAP_MAGIC_IS_VALID(mark_magic_G, mark->magic))
     return result ;
 
   if (mark->mark_set)
@@ -636,7 +636,7 @@ gboolean zmapWindowMarkGetWorldRange(ZMapWindowMark mark,
 /* Get the start/end coords of the marked region of a window, the coords
  * are returned in the original coord range the reference sequence, not
  * the displayed range which may have been remapped to start at "1".
- * 
+ *
  * Returns TRUE and the start/end if there is a mark set, FALSE otherwise.
  */
 gboolean zMapWindowGetMark(ZMapWindow window, int *start, int *end)
@@ -666,7 +666,7 @@ gboolean zMapWindowMarkGetSequenceSpan(ZMapWindow window, int *start, int *end)
   gboolean result = FALSE ;
   ZMapWindowMark mark = window->mark ;
 
-  if (!mark || !ZMAP_MAGIC_IS_VALID(mark_magic_G, mark->magic)) 
+  if (!mark || !ZMAP_MAGIC_IS_VALID(mark_magic_G, mark->magic))
     return result ;
 
   if ((result = zmapWindowMarkGetSequenceRange(mark, start, end)))
@@ -696,7 +696,7 @@ gboolean zmapWindowMarkGetSequenceRange(ZMapWindowMark mark, int *start, int *en
 {
   gboolean result = FALSE ;
 
-  if (!mark || !ZMAP_MAGIC_IS_VALID(mark_magic_G, mark->magic)) 
+  if (!mark || !ZMAP_MAGIC_IS_VALID(mark_magic_G, mark->magic))
     return result ;
 
   if (mark->mark_set)
@@ -830,7 +830,7 @@ void zmapWindowMarkPrint(ZMapWindow window, char *title)
  */
 void zmapWindowMarkDestroy(ZMapWindowMark mark)
 {
-  if (!mark || !ZMAP_MAGIC_IS_VALID(mark_magic_G, mark->magic)) 
+  if (!mark || !ZMAP_MAGIC_IS_VALID(mark_magic_G, mark->magic))
     return ;
 
   zmapWindowMarkReset(mark) ;

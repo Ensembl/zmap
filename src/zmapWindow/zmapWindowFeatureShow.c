@@ -96,7 +96,7 @@ typedef struct AddParaStructName
 
 
 /* Malcolm's stuff more properly defined....... */
-typedef enum 
+typedef enum
   {
     INVALID_EVIDENCE,
     WANT_EVIDENCE,					    /* constructing the list */
@@ -402,7 +402,7 @@ void zmapWindowFeatureShow(ZMapWindow window, FooCanvasItem *item)
 
 
 
-/* 
+/*
  *                    Package routines
  */
 
@@ -410,9 +410,9 @@ void zmapWindowFeatureShow(ZMapWindow window, FooCanvasItem *item)
 /* mh17: get evidence feature names from otterlace, reusing code from createFeatureBook() above
  * the show code does some complex stuff with reusable lists of windows,
  * probably to stop these accumulating but as we don't display a window we don't care
- * 
+ *
  * edgrif: I've restructured this to use the new xremote.
- * 
+ *
  */
 
 void zmapWindowFeatureGetEvidence(ZMapWindow window, ZMapFeature feature,
@@ -543,7 +543,7 @@ static void localShowFeature(ZMapWindowFeatureShow show)
   ZMapGuiNotebook extras_notebook = NULL ;
 
   /* Add any additional info. we can, not much at the moment. */
-  switch(show->feature->type)
+  switch(show->feature->mode)
     {
     case ZMAPSTYLE_MODE_TRANSCRIPT:
       {
@@ -585,7 +585,7 @@ static void showFeature(ZMapWindowFeatureShow show, ZMapGuiNotebook extras_noteb
                                                             G_CALLBACK(switchPageHandler), show) ;
 
       gtk_box_pack_start(GTK_BOX(show->vbox), show->notebook, TRUE, TRUE, 0) ;
-  
+
       gtk_widget_show_all(show->window) ;
 
       zMapGUIRaiseToTop(show->window);
@@ -604,7 +604,7 @@ static ZMapFeature getFeature(FooCanvasItem *item)
   ZMapFeature feature = NULL ;
 
   feature = zmapWindowItemGetFeature(item);
-  if (!zMapFeatureIsValid((ZMapFeatureAny)feature)) 
+  if (!zMapFeatureIsValid((ZMapFeatureAny)feature))
     return NULL ;
 
   return feature ;
@@ -692,7 +692,7 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
   feature_book = zMapGUINotebookCreateNotebook(name, FALSE, cleanUp, NULL) ;
 
   /* The feature fundamentals page. */
-  switch(feature->type)
+  switch(feature->mode)
     {
     case ZMAPSTYLE_MODE_BASIC:
     case ZMAPSTYLE_MODE_ASSEMBLY_PATH:
@@ -783,7 +783,7 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
 
 
       /* Feature specific stuff. */
-      if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
+      if (feature->mode == ZMAPSTYLE_MODE_ALIGNMENT)
         {
           char *query_length ;
 
@@ -818,7 +818,7 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
        * WANT...THEY ASKED TO HAVE PROPERTIES AT THE BOTTOM SO I'VE DONE THAT BY MOVING THIS SECTION
        * TO BE LAST...SEE BELOW...BUT THEY NOW THINK THIS WON'T SUIT EVERYONE.... 22/10/2013 EG */
 
-      else if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
+      else if (feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
         {
           paragraph = zMapGUINotebookCreateParagraph(subsection, "Properties",
                                                      ZMAPGUI_NOTEBOOK_PARAGRAPH_TAGVALUE_TABLE, NULL, NULL) ;
@@ -875,7 +875,7 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
 
 
       /* TRY DOING IT HERE FOR HAVANA REQUEST....SEE COMMENTS ABOVE... */
-      if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
+      if (feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
         {
           /* Report cds, start/end not found if they are set. */
           if (feature->feature.transcript.flags.cds
@@ -999,7 +999,7 @@ static void createEditWindow(ZMapWindowFeatureShow feature_show, char *title)
 
 
 /* Called when we are first mapped to set initial size of window. */
-static gboolean mapeventCB(GtkWidget *widget, GdkEvent  *event, gpointer   user_data)  
+static gboolean mapeventCB(GtkWidget *widget, GdkEvent  *event, gpointer   user_data)
 {
   gboolean event_handled = FALSE ;			    /* make sure event is propagated. */
   ZMapWindowFeatureShow feature_show = (ZMapWindowFeatureShow)user_data ;
@@ -1878,7 +1878,7 @@ static void getAllMatches(ZMapWindow window,
   gboolean result ;
 
   result = zmapWindowItemGetStrandFrame(item, &set_strand, &set_frame) ;
-  if (!result) 
+  if (!result)
     return ;
 
   if ((list = zmapWindowFToIFindSameNameItems(window, window->context_to_item,
@@ -2069,7 +2069,7 @@ static void callXRemote(ZMapWindow window, ZMapFeatureAny feature_any,
   int chr_bp ;
 
   /* We should only ever be called with a feature, not a set or anything else. */
-  if (feature_any->struct_type != ZMAPFEATURE_STRUCT_FEATURE) 
+  if (feature_any->struct_type != ZMAPFEATURE_STRUCT_FEATURE)
     return ;
 
 
@@ -2102,7 +2102,7 @@ static void callXRemote(ZMapWindow window, ZMapFeatureAny feature_any,
 	feature_copy->strand = ZMAPSTRAND_REVERSE ;
       else
 	feature_copy->strand = ZMAPSTRAND_FORWARD ;
-	      
+
 
       if (ZMAPFEATURE_IS_TRANSCRIPT(feature_copy))
 	{
@@ -2225,9 +2225,9 @@ static void getEvidenceReplyFunc(gboolean reply_ok, char *reply_error,
 	  parser = zMapXMLParserCreate(evidence_data->show, FALSE, FALSE);
 
 	  zMapXMLParserSetMarkupObjectTagHandlers(parser, evidence_data->starts, evidence_data->ends) ;
- 
-	  if ((parses_ok = zMapXMLParserParseBuffer(parser, 
-						    reply, 
+
+	  if ((parses_ok = zMapXMLParserParseBuffer(parser,
+						    reply,
 						    strlen(reply))) != TRUE)
 	    {
 	      zMapLogWarning("Parsing error : %s", zMapXMLParserLastErrorMsg(parser));
@@ -2272,7 +2272,7 @@ static void revcompTransChildCoordsCB(gpointer data, gpointer user_data)
   chr_bp = zmapWindowWorldToSequenceForward(window, chr_bp) ;
   child->x1 = chr_bp ;
 
- 
+
   chr_bp = child->x2 ;
   chr_bp = zmapWindowWorldToSequenceForward(window, chr_bp) ;
   child->x2 = chr_bp ;

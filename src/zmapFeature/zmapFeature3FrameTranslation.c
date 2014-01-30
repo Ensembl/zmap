@@ -72,7 +72,7 @@ gboolean zMapFeatureSequenceSetType(ZMapFeature feature, ZMapSequenceType type)
 {
   gboolean result = FALSE ;
 
-  if (feature->type == ZMAPSTYLE_MODE_SEQUENCE && !(feature->feature.sequence.type)
+  if (feature->mode == ZMAPSTYLE_MODE_SEQUENCE && !(feature->feature.sequence.type)
       && (type == ZMAPSEQUENCE_DNA || type == ZMAPSEQUENCE_PEPTIDE))
     {
       feature->feature.sequence.type = type ;
@@ -164,7 +164,7 @@ void zMapFeatureORFSetCreateFeatures(ZMapFeatureSet feature_set, ZMapFeatureType
           char *translation_name = NULL ;		/* Remember to free this */
           GQuark translation_id = 0 ;
           ZMapFrame curr_frame = ZMAPFRAME_NONE;
-          
+
 
           curr_frame = frame ; //   = zMapFeatureFrameFromCoords(translation_block->block_to_sequence.block.x1, block_position) ;	/* ref to zMapFeatureFrame(): these are block relative frames */
 
@@ -178,7 +178,7 @@ void zMapFeatureORFSetCreateFeatures(ZMapFeatureSet feature_set, ZMapFeatureType
               /* Loop through each peptide looking for stops */
               int i = 0;
               int prev = 0;
-              
+
               for ( ; i < translation->feature.sequence.length; ++i)
                 {
                   if (sequence[i] == '*')
@@ -188,17 +188,17 @@ void zMapFeatureORFSetCreateFeatures(ZMapFeatureSet feature_set, ZMapFeatureType
                           /* Convert to dna index */
                           const int start = prev * 3;
                           const int end = ((i - 1) * 3) + 2;
-                          
+
                           /* Create the ORF feature */
                           ZMapFeature orf_feature = zMapFeatureCreateEmpty() ;
                           char *feature_name = g_strdup_printf("ORF %d %d", start + 1, end + 1); /* display coords are 1-based */
-                          
+
                           zMapFeatureAddStandardData(orf_feature, feature_name, feature_name,
                                                      NULL, NULL,
                                                      ZMAPSTYLE_MODE_BASIC, &feature_set->style,
                                                      start + translation->x1, end + translation->x1, FALSE, 0.0, strand);
-                          
-                          zMapFeatureSetAddFeature(feature_set, orf_feature);                          
+
+                          zMapFeatureSetAddFeature(feature_set, orf_feature);
                        }
 
                       prev = i + 1;
@@ -234,7 +234,7 @@ void zMapFeature3FrameTranslationSetRevComp(ZMapFeatureSet feature_set, int bloc
 void zMapFeatureORFSetRevComp(ZMapFeatureSet feature_set, ZMapFeatureSet translation_fs)
 {
   zMapFeatureORFSetCreateFeatures(feature_set, NULL, translation_fs);
-  
+
   return ;
 }
 

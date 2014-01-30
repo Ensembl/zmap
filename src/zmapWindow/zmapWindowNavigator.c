@@ -214,7 +214,7 @@ ZMapWindowNavigator zMapWindowNavigatorCreate(GtkWidget *canvas_widget)
   ZMapWindowNavigator navigate = NULL ;
   FooCanvasGroup *root = NULL ;
 
-  if (!FOO_IS_CANVAS(canvas_widget)) 
+  if (!FOO_IS_CANVAS(canvas_widget))
     return navigate ;
 
   navigate = g_new0(ZMapWindowNavigatorStruct, 1) ;
@@ -574,11 +574,11 @@ static gboolean nav_draw_expose_handler(GtkWidget *widget, GdkEventExpose *expos
 
 static void navigateDrawFunc(NavigateDraw nav_draw, GtkWidget *widget)
 {
-  ZMapWindowNavigator navigate = NULL; 
+  ZMapWindowNavigator navigate = NULL;
   FooCanvasItem *root;
 
-  if (!nav_draw || !nav_draw->navigate || !nav_draw->navigate->current_window) 
-    return ; 
+  if (!nav_draw || !nav_draw->navigate || !nav_draw->navigate->current_window)
+    return ;
   navigate = nav_draw->navigate;
 
 #if SIZE_INVALID
@@ -1312,7 +1312,7 @@ static gboolean navCanvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpoin
         else
           {
             if (button->button == 1  /* && feature->feature.transcript.locus_id != 0) */
-		&& feature->type == ZMAPSTYLE_MODE_TEXT)
+		&& feature->mode == ZMAPSTYLE_MODE_TEXT)
               {
 		/*used to get a transcript feature? no idea how, but the locus feature is a text item */
                 zmapWindowNavigatorGoToLocusExtents(navigate, item);

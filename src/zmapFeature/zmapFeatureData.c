@@ -148,7 +148,7 @@ static GType zmapFeatureAnyGType(ZMapFeatureAny feature_any)
   gtype = feature_any->struct_type;
 
   if(gtype == ZMAPFEATURE_STRUCT_FEATURE)
-    gtype += (((ZMapFeature)feature_any)->type) << FEATURE_DATA_FEATURE_SHAPE_SHIFT ;
+    gtype += (((ZMapFeature)feature_any)->mode) << FEATURE_DATA_FEATURE_SHAPE_SHIFT ;
 
   return gtype;
 }
@@ -533,7 +533,7 @@ static gboolean basic_get_sub_feature_info(gpointer user_data, guint param_spec_
 	      }
 	    else
 	      {
-		switch(feature->type)
+		switch(feature->mode)
 		  {
 		  case ZMAPSTYLE_MODE_BASIC:
 		    term_id = g_quark_from_string("Basic") ;
@@ -649,7 +649,7 @@ gboolean zMapFeatureGetInfo(ZMapFeatureAny         feature_any,
     case ZMAPFEATURE_STRUCT_FEATURE:
       {
 	feature = (ZMapFeature)feature_any;
-	switch(feature->type)
+	switch(feature->mode)
 	  {
 	  case ZMAPSTYLE_MODE_ALIGNMENT:
 	    get_func_pointer = alignment_get_sub_feature_info;

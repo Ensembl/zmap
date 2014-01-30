@@ -70,7 +70,7 @@ gboolean zmapWindowItemGetStrandFrame(FooCanvasItem *item, ZMapStrand *set_stran
 
   /* Retrieve the feature item info from the canvas item. */
   feature = zmapWindowItemGetFeature(item);
-  if (!feature || (feature->struct_type != ZMAPFEATURE_STRUCT_FEATURE)) 
+  if (!feature || (feature->struct_type != ZMAPFEATURE_STRUCT_FEATURE))
     return result ;
 
   container = (ZMapWindowContainerFeatureSet)zmapWindowContainerCanvasItemGetContainer(item) ;
@@ -209,13 +209,13 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
 
 
   canvas_item = zMapWindowCanvasItemIntervalGetObject(item) ;
-  if (!ZMAP_IS_CANVAS_ITEM(canvas_item)) 
+  if (!ZMAP_IS_CANVAS_ITEM(canvas_item))
     return ;
 
 
   /* Retrieve the feature item info from the canvas item. */
   feature = zmapWindowItemGetFeature((FooCanvasItem *)canvas_item);
-  if (!feature) 
+  if (!feature)
     return ;
 
 
@@ -225,7 +225,7 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
 
 
   /* For some types of feature we want to highlight all the ones with the same name in that column. */
-  switch (feature->type)
+  switch (feature->mode)
     {
     case ZMAPSTYLE_MODE_ALIGNMENT:
       {
@@ -575,7 +575,7 @@ gboolean zmapWindowItemIsShown(FooCanvasItem *item)
 {
   gboolean visible = FALSE;
 
-  if (!FOO_IS_CANVAS_ITEM(item)) 
+  if (!FOO_IS_CANVAS_ITEM(item))
     return visible ;
 
   g_object_get(G_OBJECT(item),
@@ -632,7 +632,7 @@ gboolean zMapWindowScrollToItem(ZMapWindow window, FooCanvasItem *item)
   gboolean result = FALSE ;
 
   if (!window || !item)
-    return result ; 
+    return result ;
 
   if ((result = zmapWindowItemIsShown(item)))
     {
@@ -675,7 +675,7 @@ void zmapWindowItemCentreOnItemSubPart(ZMapWindow window, FooCanvasItem *item,
 
 
   /* OH GOSH....THIS FUNCTION IS HARD TO FOLLOW, SOME COMMENTING WOULD HAVE HELPED. */
-  if (!window || !item) 
+  if (!window || !item)
     return ;
 
   if (zmapWindowItemIsShown(item))
@@ -1059,7 +1059,7 @@ gboolean zmapWindowSeqToWorldCoords(ZMapWindow window,
       double world_start, world_end ;
 
       featureset = (ZMapWindowFeaturesetItem)set_item ;
-      
+
       if (zMapCanvasFeaturesetSeq2World(featureset,
                                         seq_start, seq_end, &world_start, &world_end))
         {
