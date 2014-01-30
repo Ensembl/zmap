@@ -239,9 +239,9 @@ gboolean zMapGFFDumpRegion(ZMapFeatureAny dump_set, GHashTable *styles,
 			   ZMapSpan region_span, GIOChannel *file, GError **error_out)
 {
   const char *sequence = NULL;
-  gboolean result = FALSE ; 
+  gboolean result = FALSE ;
 
-  if (!file || !dump_set || !error_out) 
+  if (!file || !dump_set || !error_out)
     return result ;
   if ((dump_set->struct_type != ZMAPFEATURE_STRUCT_CONTEXT)
 	     && (dump_set->struct_type != ZMAPFEATURE_STRUCT_ALIGN)
@@ -560,14 +560,14 @@ static gboolean dump_gff_cb(ZMapFeatureAny feature_any,
 	g_string_append_printf(gff_string, GFF_SEP_STRAND, strand2Char(feature->strand)) ;
 
 	g_string_append_printf(gff_string, GFF_SEP_PHASE,
-			       ((feature->type == ZMAPSTYLE_MODE_TRANSCRIPT && feature->feature.transcript.flags.cds)
+			       ((feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT && feature->feature.transcript.flags.cds)
 				? phase2Char(feature->feature.transcript.start_not_found)
 				: '.')) ;
 
 
 	/* Now to the attribute fields, and any subparts... */
 
-	switch(feature->type)
+	switch(feature->mode)
 	  {
 	  case ZMAPSTYLE_MODE_BASIC:
 	    {
@@ -724,9 +724,9 @@ static gboolean dump_known_name(ZMapFeature    feature,
   gboolean result = FALSE;
   GQuark known_id = 0;
 
-  if (feature->type == ZMAPSTYLE_MODE_BASIC)
+  if (feature->mode == ZMAPSTYLE_MODE_BASIC)
     known_id = feature->feature.basic.known_name;
-  else if(feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
+  else if(feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
     known_id = feature->feature.transcript.known_name;
 
   if(known_id)

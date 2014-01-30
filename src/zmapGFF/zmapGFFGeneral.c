@@ -460,7 +460,7 @@ static void checkFeatureCB_V2(GQuark key_id, gpointer data, gpointer user_data_u
 {
   ZMapFeature feature = (ZMapFeature)data ;
 
-  switch (feature->type)
+  switch (feature->mode)
     {
       case ZMAPSTYLE_MODE_TRANSCRIPT:
           zMapFeatureTranscriptNormalise(feature) ;
@@ -512,7 +512,7 @@ static void checkFeatureCB_V3(gpointer key_id, gpointer data, gpointer user_data
 {
   ZMapFeature feature = (ZMapFeature)data ;
 
-  switch (feature->type)
+  switch (feature->mode)
     {
       case ZMAPSTYLE_MODE_TRANSCRIPT:
           zMapFeatureRemoveIntrons(feature) ;
