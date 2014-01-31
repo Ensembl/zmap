@@ -1671,7 +1671,7 @@ static void zmapViewGetCmdLineSources(ZMapFeatureSequenceMap sequence_map, GList
 
       ZMapConfigSource src = g_new0(ZMapConfigSourceStruct, 1) ;
       src->group = SOURCE_GROUP_START ;        // default_value
-      src->url = g_strdup(file) ;
+      src->url = g_strdup_printf("file:///%s", file) ;
       src->featuresets = g_strdup(ZMAP_DEFAULT_FEATURESETS) ;
 
       *settings_list_inout = g_list_append(*settings_list_inout, (gpointer)src) ;

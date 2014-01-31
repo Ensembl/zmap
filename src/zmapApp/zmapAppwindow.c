@@ -1474,8 +1474,7 @@ static gboolean checkInputFilesForSequenceDetails(ZMapFeatureSequenceMap seq_map
   for ( ; file_item && !found; file_item = file_item->next)
     {
       const char *file = (char*)(file_item->data) ;
-      const char *file_cp = file + 8 ; /* clip off "file:///" */
-      found = checkInputFileForSequenceDetails(file_cp, seq_map_inout) ;
+      found = checkInputFileForSequenceDetails(file, seq_map_inout) ;
     }
 
   return found ;
@@ -1486,22 +1485,17 @@ static gboolean checkInputFilesForSequenceDetails(ZMapFeatureSequenceMap seq_map
  * server URLs  */
 static void saveInputFilePaths(ZMapFeatureSequenceMap seq_map_inout)
 {
-  char *files = zMapCmdLineFinalArg() ;
+  char **file_list = zMapCmdLineFinalArg() ;
 
-  if (files)
+  if (file_list)
     {
-      char **file_list = g_strsplit(files, " ", -1) ;
-
       /* Loop through the file paths and prefix with "file://" */
       char **file = file_list ;
       for (; file && *file; ++file)
         {
-          char *url = g_strdup_printf("file:///%s", *file) ;
+          char *url = g_strdup(*file) ;
           seq_map_inout->file_list = g_slist_append(seq_map_inout->file_list, url) ;
         }
-
-      g_strfreev(file_list) ;
-      g_free(files) ;
     }
 }
 

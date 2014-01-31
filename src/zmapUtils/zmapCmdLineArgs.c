@@ -110,9 +110,9 @@ void zMapCmdLineArgsCreate(int *argc, char *argv[])
  *
  *  */
 /* NOTE the 'final arg' is actually zero or more files names and can be interspersed with options */
-char *zMapCmdLineFinalArg(void)
+char **zMapCmdLineFinalArg(void)
 {
-  char *final_arg = NULL ;
+  char **final_arg = NULL ;
   ZMapCmdLineArgs arg_context ;
 
   zMapReturnValIfFail((arg_context_G), final_arg) ; 
@@ -120,7 +120,7 @@ char *zMapCmdLineFinalArg(void)
   arg_context = arg_context_G ;
 
   if (arg_context->files_arg && arg_context->files_arg)
-    final_arg = g_strdup(*arg_context->files_arg) ;
+    final_arg = arg_context->files_arg ;
 
   return final_arg ;
 }
