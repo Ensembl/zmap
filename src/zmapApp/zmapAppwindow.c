@@ -1471,6 +1471,10 @@ static gboolean checkInputFilesForSequenceDetails(ZMapFeatureSequenceMap seq_map
 
   GSList *file_item = seq_map_inout->file_list ;
 
+  /* Loop through each input file looking for sequence details. At the moment
+   * we only use the details from the first file we find. There's potential
+   * to do something more clever - merge coords, and maybe open multiple views for different
+   * sequences? */
   for ( ; file_item && !found; file_item = file_item->next)
     {
       const char *file = (char*)(file_item->data) ;
