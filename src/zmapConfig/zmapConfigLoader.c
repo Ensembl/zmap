@@ -904,34 +904,34 @@ GHashTable *zMapConfigIniGetColumns(ZMapConfigIniContext context)
   // nb there is a small memory leak if we config description for non-existant columns
   col_desc   = zMapConfigIniGetQQHash(context,ZMAPSTANZA_COLUMN_DESCRIPTION_CONFIG,QQ_STRING);
 
-
+  /* Add the columns from the config file */
   if(zMapConfigIniHasStanza(context->config,ZMAPSTANZA_APP_CONFIG,&gkf))
     {
       colstr = g_key_file_get_string(gkf, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_COLUMNS,NULL);
 
       if(colstr && *colstr)
-	columns = zMapConfigString2QuarkList(colstr,FALSE);
+        columns = zMapConfigString2QuarkList(colstr,FALSE);
+    }
 
-      /* add in a hard coded column first */
-      col = g_list_prepend(columns, GUINT_TO_POINTER(g_quark_from_string(ZMAP_FIXED_STYLE_STRAND_SEPARATOR)));
+  /* Add the hard-coded strand-separator column at the start of the list */
+  col = g_list_prepend(columns, GUINT_TO_POINTER(g_quark_from_string(ZMAP_FIXED_STYLE_STRAND_SEPARATOR)));
 
-      for(; col;col = col->next)
-	{
-	  f_col = g_new0(ZMapFeatureColumnStruct,1);
-	  f_col->column_id = GPOINTER_TO_UINT(col->data);
+  /* Loop through the list and create the column struct, and add it to the hash table */
+  for(; col;col = col->next)
+    {
+      f_col = g_new0(ZMapFeatureColumnStruct,1);
+      f_col->column_id = GPOINTER_TO_UINT(col->data);
 
-	  desc = (char *) g_quark_to_string(f_col->column_id);
-	  f_col->unique_id = zMapFeatureSetCreateID(desc);
+      desc = (char *) g_quark_to_string(f_col->column_id);
+      f_col->unique_id = zMapFeatureSetCreateID(desc);
 
-	  f_col->column_desc = g_hash_table_lookup(col_desc,
-						   GUINT_TO_POINTER(f_col->column_id));
-	  if(!f_col->column_desc)
-	    f_col->column_desc = desc;
+      f_col->column_desc = g_hash_table_lookup(col_desc, GUINT_TO_POINTER(f_col->column_id));
+      if(!f_col->column_desc)
+        f_col->column_desc = desc;
 
-	  f_col->order = zMapFeatureColumnOrderNext() ;
+      f_col->order = zMapFeatureColumnOrderNext() ;
 
-	  g_hash_table_insert(hash,GUINT_TO_POINTER(f_col->unique_id),f_col);
-	}
+      g_hash_table_insert(hash,GUINT_TO_POINTER(f_col->unique_id),f_col);
     }
 
   if(col_desc)
