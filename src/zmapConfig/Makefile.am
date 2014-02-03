@@ -14,7 +14,7 @@ zmapConfigKey.c \
 zmapConfigLoader.c \
 default_styles.txt\
 default_styles.c\
-gen_default\
+zmap_DefaultStyles.pl\
 $(NULL)
 
 libZMapConfig_la_CFLAGS = $(INCLUDE_COMMON)
@@ -29,7 +29,7 @@ MAINTAINERCLEANFILES = $(top_srcdir)/zmapConfig/Makefile.in
 # Create default styles string dynamically each time the text file is changed.
 #
 $(top_srcdir)/zmapConfig/default_styles.c: $(top_srcdir)/zmapConfig/default_styles.txt
-	$(top_srcdir)/zmapConfig/gen_default $(top_srcdir)/zmapConfig/default_styles.txt > $(top_srcdir)/zmapConfig/default_styles.c
+	$(top_srcdir)/zmapConfig/zmap_DefaultStyles.pl $(top_srcdir)/zmapConfig/default_styles.txt > $(top_srcdir)/zmapConfig/default_styles.c
 
 default-styles: $(top_srcdir)/zmapConfig/default_styles.c
 
