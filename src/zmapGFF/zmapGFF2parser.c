@@ -613,7 +613,7 @@ static gboolean parseHeaderLine(ZMapGFFParser parser_base, char *line)
 
   if (parser->state == ZMAPGFF_PARSER_DIR)
     {
-      if (!g_str_has_prefix(line, "##"))
+      if (!g_str_has_prefix(line, "##") || g_str_has_prefix(line, "##DNA"))
 	{
 	  result = FALSE ;
 	}
