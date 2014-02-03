@@ -41,6 +41,7 @@
 #include <zmapWindowCanvasAlignment_I.h>
 
 
+static void alignmentColumnInit(ZMapWindowFeaturesetItem featureset) ;
 static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featureset,
 						  ZMapWindowCanvasFeature feature,
 						  GdkDrawable *drawable, GdkEventExpose *expose) ;
@@ -103,6 +104,7 @@ void zMapWindowCanvasAlignmentInit(void)
 {
   gpointer funcs[FUNC_N_FUNC] = { NULL };
 
+  funcs[FUNC_SET_INIT] = alignmentColumnInit ;
   funcs[FUNC_PAINT]  = zMapWindowCanvasAlignmentPaintFeature;
   funcs[FUNC_EXTENT] = zMapWindowCanvasAlignmentGetFeatureExtent;
   funcs[FUNC_PRE_ZOOM] = zmapWindowCanvasAlignmentPreZoom ;
@@ -472,8 +474,10 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
       zMapLogWarning("paint glyphs %s %p,%p",g_quark_to_string(feature->feature->unique_id),align->glyph5,align->glyph3);
 #endif
       /* all features: add glyphs if present */
-      zMapWindowCanvasGlyphPaintSubFeature(featureset, feature, align->glyph5, drawable);
-      zMapWindowCanvasGlyphPaintSubFeature(featureset, feature, align->glyph3, drawable);
+      if (align->glyph5)
+        zMapWindowCanvasGlyphPaintSubFeature(featureset, feature, align->glyph5, drawable) ;
+      if (align->glyph3)
+        zMapWindowCanvasGlyphPaintSubFeature(featureset, feature, align->glyph3, drawable) ;
     }
 
   return ;
@@ -521,6 +525,12 @@ static void zMapWindowCanvasAlignmentGetFeatureExtent(ZMapWindowCanvasFeature fe
   span->x2 = first->y2;
 }
 
+static void alignmentColumnInit(ZMapWindowFeaturesetItem featureset)
+{
+  zMapWindowCanvasGlyphSetColData(featureset) ;
+
+  return ;
+}
 
 
 static void zmapWindowCanvasAlignmentPreZoom(ZMapWindowFeaturesetItem featureset)
