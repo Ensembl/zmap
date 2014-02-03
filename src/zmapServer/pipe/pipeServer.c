@@ -1463,7 +1463,7 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
                   ZMAPPIPESERVER_LOG(Warning, server->protocol, server->script_path, server->script_args,
-                                     "%s", error->message) ;
+                                     "%s", (error ? error->message : "no error reported")) ;
 
                   /* If the error was serious we stop processing and return the error. */
                   if (zMapGFFTerminated(parser))

@@ -1456,7 +1456,7 @@ static gboolean checkInputFileForSequenceDetails(const char* const filename, ZMa
     }
   else
     {
-      zMapWarning("Cannot open file %s\n", filename);
+      consoleMsg(TRUE, "Cannot open file %s", filename);
     }
 
   return found ;
