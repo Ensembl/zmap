@@ -37,29 +37,63 @@
 
 
 
-/* 
+/* Per Column Glyph Data.
+ * 
  * Data common to particular types of glyph, stored using the per_column_data pointer
  * in zmapWindowFeaturesetItemStruct.
  */
 
-/* Splice marker column data. */
-#define ZERO_LINE_COLOUR   "dark slate grey"
-#define OTHER_LINE_COLOUR  "light grey"
+typedef enum
+  {
+    ZMAP_GLYPH_SHAPE_INVALID,
+    ZMAP_GLYPH_SHAPE_ANY,				    /* glyphs with no special data */
+    ZMAP_GLYPH_SHAPE_GFSPLICE,				    /* acedb-style GF Splices */
+  } ZMapGlyphShapeType ;
 
-typedef struct GlyphSpliceColumnDataStructName
+
+/* General struct for per column data, all other structs must have matching fields at the
+ * start of their structs. */
+typedef struct GlyphAnyColumnDataStructName
 {
-  double glyph_len ;					    /* Standard glyph size, all scaled from this. */
+  ZMapGlyphShapeType glyph_type ;
+
+  double min_score, max_score ;				    /* cached from style. */
+
+
+} GlyphAnyColumnDataStruct, *GlyphAnyColumnData ;
+
+
+
+/* Genefinder Splice marker column data. */
+#define GF_ZERO_LINE_COLOUR   "dark slate grey"
+#define GF_OTHER_LINE_COLOUR  "light grey"
+
+
+typedef struct GFSpliceColumnDataStructName
+{
+  /* All glyph fields. */
+
+  ZMapGlyphShapeType glyph_type ;
+  
+  double min_score, max_score ;				    /* cached from style. */
+
+
+  /* GF Splice only fields below. */
+
   double col_width ;
   double min_size ;					    /* Min. size for glyph so it's easily clickable. */
   double scale_factor ;					    /* Scaling factor for glyphs. */
 
   double origin ;					    /* score == 0 position across column. */
 
+  /* Graph line colours to show origin, 50% & 75%. */
   gboolean colours_set ;
   GdkColor zero_line_colour ;
   GdkColor other_line_colour ;
 
-} GlyphSpliceColumnDataStruct, *GlyphSpliceColumnData ;
+} GFSpliceColumnDataStruct, *GFSpliceColumnData ;
+
+
 
 
 
@@ -71,8 +105,6 @@ typedef struct GlyphSpliceColumnDataStructName
  * As the CanvasFeatureset code is generic we start with a feature pointer
  * and evaluate the points on demand and cache these. (lazy evaluation)
  */
-
-
 typedef struct _zmapWindowCanvasGlyphStruct
 {
   zmapWindowCanvasFeatureStruct feature ;		    /* all the common stuff */
@@ -82,21 +114,26 @@ typedef struct _zmapWindowCanvasGlyphStruct
   gboolean use_glyph_colours ;				    /* only set if threshold ALT colour selected */
   gboolean sub_feature ;				    /* or free standing? */
 
-  /* Used for all glyphs except splices. */
-  double width, height ; 	/* scale by this factor, -ve values imply flipping around the anchor point */
-  double origin ;		/* relative to the centre of the column */
+  /* scale by this factor, -ve values imply flipping around the anchor point,
+   * used for all glyphs except splices. */
+  double width, height ;
+
+  double origin ;                                           /* relative to the centre of the column */
 
   int which ;						    /* generic or 5' or 3' ? */
+
   ZMapStyleGlyphShape shape ;				    /* pointer to relevant style shape struct */
+
   GdkPoint coords[GLYPH_SHAPE_MAX_COORD] ;		    /* derived from style->shape struct
 							       but adjusted for scale etc */
   GdkPoint points[GLYPH_SHAPE_MAX_COORD] ;		    /* offset to the canvas for gdk_draw */
 
   /* non selected colours */
-  gulong line_pixel ;
-  gulong area_pixel ;
   gboolean line_set ;
   gboolean area_set ;
+
+  gulong line_pixel ;
+  gulong area_pixel ;
 
 } zmapWindowCanvasGlyphStruct ;
 

@@ -1976,7 +1976,7 @@ double  zmap_window_featureset_item_foo_point(FooCanvasItem *item,
      (assuming non overlapping features)
      else choose nearest of next and previous
   */
-  *actual_item = NULL;
+  *actual_item = NULL;                                      /* UM, SHOULDN'T DO THIS.... */
 
 #if 0
   {
@@ -2036,11 +2036,14 @@ double  zmap_window_featureset_item_foo_point(FooCanvasItem *item,
 
       /* NOTE there is a flake in world coords at low zoom */
       /* NOTE close_enough is zero */
-      sl = zmap_window_canvas_featureset_find_feature_coords(zMapFeatureFullCmp, fi, y1 , y2) ;
+      sl = zmap_window_canvas_featureset_find_feature_coords(zMapFeatureFullCmp, fi, y1, y2) ;
 
+
+      /* AGH....HATEFUL....STOP RETURNING FROM THE MIDDLE OF STUFF..... */
       //printf("point %s	%f,%f %d,%d: %p\n",g_quark_to_string(fi->id),x,y,cx,cy,sl);
       if (!sl)
 	return featureset_background_point(item, cx, cy, actual_item) ;
+
 
       for (; sl ; sl = sl->next)
 	{

@@ -24,10 +24,8 @@
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- * Description:
+ * Description: Private header for featuresets (== columns).
  *
- * Exported functions: See XXXXXXXXXXXXX.h
- * HISTORY:
  *-------------------------------------------------------------------
  */
 
@@ -50,6 +48,40 @@
 #define CANVAS_DEFAULT_COLOUR_FILL   "grey"
 #define CANVAS_DEFAULT_COLOUR_BORDER "black"
 #define CANVAS_DEFAULT_COLOUR_DRAW   "white"
+
+
+
+/* Enums ???? */
+#define FEATURE_FOCUS_MASK	WINDOW_FOCUS_GROUP_FOCUSSED		/* any focus flag will map to selected */
+#define FEATURE_FOCUS_BLURRED	WINDOW_FOCUS_GROUP_BLURRED		/* eg masked */
+#define FEATURE_FOCUS_BITMAP	(WINDOW_FOCUS_GROUP_BITMASK | WINDOW_FOCUS_DONT_USE)		/* includes masking (EST) */
+#define FEATURE_HIDDEN		0x0100		/* not always false, set for hidden rather than visible to make flag twiddling easier */
+#define FEATURE_USER_HIDE	0x0200		/* hidden by user request */
+#define FEATURE_MARK_HIDE	0x0400		/* hidden by bump from mark */
+#define FEATURE_SUMMARISED	0x0800		/* hidden by summarise */
+#define FEATURE_MASK_HIDE	0x1000		/* masked feature hidden by user */
+#define FEATURE_HIDE_FILTER	0x2000		/* filtered by score or something else eg locus prefix */
+#define FEATURE_HIDE_COMPOSITE	0x4000	/* squashed or collapsed */
+#define FEATURE_HIDE_EXPAND	0x8000		/* compressed feature got bumped */
+#define FEATURE_HIDE_REASON	0xfe00		/* NOTE: update this if you add a reason */
+
+#define FEATURE_FOCUS_ID	WINDOW_FOCUS_ID
+
+
+/* CHECK IF THIS IS EVER USED AND DELETE IF NOT... */
+#if 0
+#define FEATURE_SQUASHED_START	0x10000
+#define FEATURE_SQUASHED_END		0x20000
+#define FEATURE_SQUASHED		0x30000
+
+  GArray *gaps;					/* alternate gaps array for alignments if squashed */
+#endif
+
+
+#define WCG_FILL_SET		1
+#define WCG_OUTLINE_SET		2
+
+
 
 
 
@@ -85,10 +117,7 @@ typedef struct _zmapWindowCanvasGraphicsStruct
   long fill ,outline;
   char *text;
 
-  int flags;
-
-#define WCG_FILL_SET		1
-#define WCG_OUTLINE_SET		2
+  int flags;                                                /* See FEATURE_XXXX above. */
 
 } zmapWindowCanvasGraphicsStruct;
 
@@ -124,28 +153,6 @@ typedef struct _zmapWindowCanvasFeatureStruct
   int bump_col;		/* for calculating sub-col before working out width */
 
   long flags;				/* non standard display option eg selected */
-#define FEATURE_FOCUS_MASK	WINDOW_FOCUS_GROUP_FOCUSSED		/* any focus flag will map to selected */
-#define FEATURE_FOCUS_BLURRED	WINDOW_FOCUS_GROUP_BLURRED		/* eg masked */
-#define FEATURE_FOCUS_BITMAP	(WINDOW_FOCUS_GROUP_BITMASK | WINDOW_FOCUS_DONT_USE)		/* includes masking (EST) */
-#define FEATURE_HIDDEN		0x0100		/* not always false, set for hidden rather than visible to make flag twiddling easier */
-#define FEATURE_USER_HIDE	0x0200		/* hidden by user request */
-#define FEATURE_MARK_HIDE	0x0400		/* hidden by bump from mark */
-#define FEATURE_SUMMARISED	0x0800		/* hidden by summarise */
-#define FEATURE_MASK_HIDE	0x1000		/* masked feature hidden by user */
-#define FEATURE_HIDE_FILTER	0x2000		/* filtered by score or something else eg locus prefix */
-#define FEATURE_HIDE_COMPOSITE	0x4000	/* squashed or collapsed */
-#define FEATURE_HIDE_EXPAND	0x8000		/* compressed feature got bumped */
-#define FEATURE_HIDE_REASON	0xfe00		/* NOTE: update this if you add a reason */
-
-#define FEATURE_FOCUS_ID	WINDOW_FOCUS_ID
-
-#if 0
-#define FEATURE_SQUASHED_START	0x10000
-#define FEATURE_SQUASHED_END		0x20000
-#define FEATURE_SQUASHED		0x30000
-
-  GArray *gaps;					/* alternate gaps array for alignments if squashed */
-#endif
 
   ZMapWindowCanvasFeature left,right;	/* for exons and alignments, NULL for simple features */
 
@@ -243,6 +250,11 @@ typedef struct _zmapWindowFeaturesetItemStruct
   /* Points to data that is needed on a per column basis and is assigned by the functions
    * that handle that data. */
   gpointer per_column_data ;
+
+  /* Glyph data, this is held separately because as well as glyph columns there are columns
+   * e.g. alignments, that also need glyph data. */
+  gpointer glyph_per_column_data ;
+
 
   /* Some stuff for handling zooming, not straight forward because we have to deal
    * with our canvas window being much smaller than our sequence making drawing/scrolling

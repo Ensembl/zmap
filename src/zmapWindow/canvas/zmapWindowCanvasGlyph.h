@@ -45,6 +45,7 @@ ZMapWindowCanvasGlyph zMapWindowCanvasGetGlyph(ZMapWindowFeaturesetItem features
 					       int which, double score) ;
 void zMapWindowCanvasGlyphPaintSubFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
 					  ZMapWindowCanvasGlyph glyph, GdkDrawable *drawable) ;
+void zMapWindowCanvasGlyphSetColData(ZMapWindowFeaturesetItem featureset) ;
 
 
 #endif /* !ZMAP_CANVAS_GLYPH_H */

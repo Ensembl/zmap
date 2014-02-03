@@ -14,8 +14,8 @@ fwd3-tri = <0,4; -4,0 ;4,0; 0,4>
 rev5-tri = <0,-4 ;-4,0 ;4,0 ;0,-4>
 rev3-tri = <0,0 ;-4,4 ;4,4 ;0,0>
 
-dn-hook = <0,0; 15,0; 15,10>
-up-hook = <0,0; 15,0; 15,-10>
+dn-hook = <0,0; 8,0; 8,8>
+up-hook = <0,0; 8,0; 8,-8>
 
 
 # generic styles lifted from otterlace
