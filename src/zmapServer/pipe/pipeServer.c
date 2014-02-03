@@ -1290,10 +1290,15 @@ static void eachBlockSequence(gpointer key, gpointer data, gpointer user_data)
 	       */
 
 	      if (hash)
-		dna_style = g_hash_table_lookup(hash, GUINT_TO_POINTER(g_quark_from_string(ZMAP_FIXED_STYLE_DNA_NAME)));
+                {
+                  dna_style = g_hash_table_lookup(hash, GUINT_TO_POINTER(feature_set->unique_id));
+                }
+
 	      if (dna_style)
-		feature = zMapFeatureDNACreateFeature(feature_block, dna_style,
-						      sequence->sequence, sequence->length);
+                {
+                  feature = zMapFeatureDNACreateFeature(feature_block, dna_style,
+                                                        sequence->sequence, sequence->length);
+                }
 #endif
 	    }
 
