@@ -130,7 +130,8 @@ static char *zmapXRemoteErrorText = NULL;
 
 static gboolean modalFromMsgType(ZMapMsgType msg_type) ;
 static GtkResponseType messageFull(GtkWindow *parent, char *title_in, char *msg,
-				   gboolean modal, int display_timeout, gboolean close_button,
+				   gboolean modal, int display_timeout,
+                                   char *first_button, char *second_button, char *third_button,
 				   ZMapMsgType msg_type, GtkJustification justify,
 				   ZMapGUIMsgUserData user_data) ;
 static void printMessage(ZMapMsgType msg_type, char *message) ;
@@ -1212,7 +1213,8 @@ void zMapGUIShowMsg(ZMapMsgType msg_type, char *msg)
 
   modal = modalFromMsgType(msg_type) ;
 
-  messageFull(NULL, NULL, msg, modal, 0, TRUE, msg_type, GTK_JUSTIFY_CENTER, NULL) ;
+  messageFull(NULL, NULL, msg, modal, 0,
+              GTK_STOCK_CLOSE, NULL, NULL, msg_type, GTK_JUSTIFY_CENTER, NULL) ;
 
   return ;
 }
@@ -1227,13 +1229,18 @@ void zMapGUIShowMsg(ZMapMsgType msg_type, char *msg)
  */
 void zMapGUIShowMsgFull(GtkWindow *parent, char *msg,
 			ZMapMsgType msg_type,
-			GtkJustification justify, int display_timeout, gboolean close_button)
+			GtkJustification justify, int display_timeout, gboolean close)
 {
   gboolean modal ;
+  char *first_button = NULL ;
 
   modal = modalFromMsgType(msg_type) ;
 
-  messageFull(parent, NULL, msg, modal, display_timeout, close_button, msg_type, justify, NULL) ;
+  if (close)
+    first_button = GTK_STOCK_CLOSE ;
+
+  messageFull(parent, NULL, msg, modal, display_timeout,
+              first_button, NULL, NULL, msg_type, justify, NULL) ;
 
   return ;
 }
@@ -1252,13 +1259,29 @@ void zMapGUIShowMsgFull(GtkWindow *parent, char *msg,
 gboolean zMapGUIMsgGetBool(GtkWindow *parent, ZMapMsgType msg_type, char *msg)
 {
   gboolean result = FALSE ;
+
+  result = zMapGUIMsgGetBoolFull(parent, msg_type, msg, GTK_STOCK_OK, GTK_STOCK_CANCEL) ;
+
+
+  return result ;
+}
+
+
+
+/* The first button is the text that represents TRUE and the second FALSE so be
+ * sure to word the button text accordingly ! */
+gboolean zMapGUIMsgGetBoolFull(GtkWindow *parent, ZMapMsgType msg_type, char *msg,
+                               char* first_button, char *second_button)
+{
+  gboolean result = FALSE ;
   ZMapGUIMsgUserDataStruct user_data = {ZMAPGUI_USERDATA_BOOL, FALSE, {FALSE}} ;
   gboolean modal ;
 
   modal = modalFromMsgType(msg_type) ;
 
   /* We ignore the return value, it's not needed, just pick up the boolean. */
-  messageFull(parent, NULL, msg, modal, 0, TRUE, msg_type, GTK_JUSTIFY_CENTER, &user_data) ;
+  messageFull(parent, NULL, msg, modal, 0,
+              first_button, second_button, NULL, msg_type, GTK_JUSTIFY_CENTER, &user_data) ;
 
   result = user_data.data.bool ;
 
@@ -1286,7 +1309,8 @@ GtkResponseType zMapGUIMsgGetText(GtkWindow *parent, ZMapMsgType msg_type, char 
 
   user_data.hide_input = hide_text ;
 
-  if ((result = messageFull(parent, NULL, msg, modal, 0, TRUE, msg_type, GTK_JUSTIFY_CENTER, &user_data))
+  if ((result = messageFull(parent, NULL, msg, modal, 0, 
+                            GTK_STOCK_CLOSE, NULL, NULL, msg_type, GTK_JUSTIFY_CENTER, &user_data))
       == GTK_RESPONSE_OK)
     *text_out = user_data.data.text ;
 
@@ -2028,7 +2052,8 @@ static void printMessage(ZMapMsgType msg_type, char *message)
  * returns TRUE if user data not required or if user data returned, FALSE otherwise.
  *  */
 static GtkResponseType messageFull(GtkWindow *parent, char *title_in, char *msg,
-				   gboolean modal, int display_timeout, gboolean close_button,
+				   gboolean modal, int display_timeout,
+                                   char *first_button, char *second_button, char *third_button,
 				   ZMapMsgType msg_type, GtkJustification justify,
 				   ZMapGUIMsgUserData user_data)
 {
@@ -2039,11 +2064,8 @@ static GtkResponseType messageFull(GtkWindow *parent, char *title_in, char *msg,
   GtkDialogFlags flags = GTK_DIALOG_DESTROY_WITH_PARENT ;
   guint timeout_func_id ;
   int interval = display_timeout * 1000 ;		    /* glib needs time in milliseconds. */
+  GtkResponseType first_response = 0, second_response = 0, third_response = 0 ;
 
-  /* relies on order of ZMapMsgType enum.... */
-  /*zMapAssert((msg_type >= ZMAP_MSG_INFORMATION || msg_type <= ZMAP_MSG_CRASH) && (msg && *msg) && (!user_data || (user_data && (user_data->type > ZMAPGUI_USERDATA_INVALID && user_data->type <= ZMAPGUI_USERDATA_TEXT)))) ;*/
-  if (!((msg_type >= ZMAP_MSG_INFORMATION || msg_type <= ZMAP_MSG_CRASH) && (msg && *msg) && (!user_data || (user_data && (user_data->type > ZMAPGUI_USERDATA_INVALID && user_data->type <= ZMAPGUI_USERDATA_TEXT)))) )
-    return result ;
 
   /* Set up title. */
   if (title_in && *title_in)
@@ -2074,31 +2096,35 @@ static GtkResponseType messageFull(GtkWindow *parent, char *title_in, char *msg,
 
   full_title = zMapGUIMakeTitleString(NULL, title) ;
 
-  /* Set up the dialog, if user data is required we need all the buttons, otherwise
+  /* Set up the button responses, note that we just set the responses arbitrarily to be as 
+   * below. If we needed to we could allow the caller to set the responses but that seems
+   * overkill just now. */
+  if (first_button && *first_button)
+    first_response = GTK_RESPONSE_OK ;
+  if (second_button && *second_button)
+    second_response = GTK_RESPONSE_CANCEL ;
+  if (third_button && *third_button)
+    third_response = GTK_RESPONSE_CLOSE ;
+
+
+  /* Set up the dialog, if user data is required we need two buttons, otherwise
    * there will be a "close" or perhaps no buttons for messages that time out. */
   if (modal)
     flags |= GTK_DIALOG_MODAL ;
 
-  if (user_data)
     dialog = gtk_dialog_new_with_buttons(full_title, parent, flags,
-					 GTK_STOCK_OK,
-					 GTK_RESPONSE_OK,
-					 GTK_STOCK_CANCEL,
-					 GTK_RESPONSE_CANCEL,
-					 NULL) ;
-  else if (close_button)
-    dialog = gtk_dialog_new_with_buttons(full_title, parent, flags,
-					 "Close", GTK_RESPONSE_NONE,
-					 NULL) ;
-  else
-    dialog = gtk_dialog_new_with_buttons(full_title, parent, flags,
+					 first_button,
+					 first_response,
+					 second_button,
+					 second_response,
+					 third_button,
+					 third_response,
 					 NULL) ;
 
   g_free(full_title) ;
 
 
   gtk_container_set_border_width(GTK_CONTAINER(dialog), 5) ;
-
 
   /* Set up the message text in a button widget so that it can put in the primary
    * selection buffer for cut/paste when user clicks on it. */
