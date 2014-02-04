@@ -328,6 +328,9 @@ static void requestHandlerCB(ZMapRemoteControl remote_control,
   ZMapAppContext app_context = (ZMapAppContext)user_data ;
   ZMapAppRemote remote = app_context->remote_control ;
 
+  /* Update last interaction time. */
+  app_context->remote_control->last_active_time_s = zMapUtilsGetRawTime() ;
+
   /* Test to see if we are processing a remote command....and then set that we are active. */
   zMapDebugPrint(is_active_debug_G, "%s", "About to test for blocking.") ;
   requestBlockingTestAndBlock() ;
@@ -444,6 +447,9 @@ static void handleZMapRequestsCB(gpointer caller_data,
 {
   ZMapAppContext app_context = (ZMapAppContext)caller_data ;
   ZMapAppRemote remote = app_context->remote_control ;
+
+  /* Update last interaction time. */
+  app_context->remote_control->last_active_time_s = zMapUtilsGetRawTime() ;
 
 
   /* If we have a remote control peer then build the request.....surely this should be in assert.... */
