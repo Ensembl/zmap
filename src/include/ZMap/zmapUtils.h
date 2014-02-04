@@ -210,6 +210,7 @@ gboolean zMapUtilsConfigDebug(char *config_file) ;
 
 char *zMapMakeUniqueID(char *prefix) ;
 
+guint zMapUtilsGetRawTime(void) ;
 char *zMapGetTimeString(ZMapTimeFormat format, char *format_str_in) ;
 
 const char *zMapUtilsPtr2Str(void *ptr) ;

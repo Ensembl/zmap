@@ -349,6 +349,28 @@ char *zMapGetTimeString(ZMapTimeFormat format, char *format_str_in)
 }
 
 
+/* Get raw microseconds time......here's what is returned to us:
+ * 
+ * struct timeval
+ *   {
+ *     time_t      tv_sec;     seconds
+ *     suseconds_t tv_usec;    microseconds
+ *   };
+ *
+ * We just use seconds.
+ */
+guint zMapUtilsGetRawTime(void)
+{
+  guint rawtime = 0 ;
+  struct timeval tv = {0, 0} ;
+
+  if (!gettimeofday(&tv, NULL))
+    rawtime = tv.tv_sec ;
+
+  return rawtime ;
+}
+
+
 
 /* Given an int between 0 and 9 returns the corresponding char representation,
  * (surely this must exist somewhere ??).
