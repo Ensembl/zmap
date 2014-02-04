@@ -44,6 +44,7 @@
 
 #include <ZMap/zmap.h>
 #include <ZMap/zmapUtils.h>
+#include <ZMap/zmapUtilsGUI.h>
 #include <ZMap/zmapCmdLineArgs.h>
 #include <ZMap/zmapConfigDir.h>
 #include <ZMap/zmapConfigIni.h>
@@ -100,15 +101,26 @@ static void doTheExit(int exit_code) ;
 static void setupSignalHandlers(void);
 
 static void remoteInstaller(GtkWidget *widget, GdkEvent *event, gpointer app_context_data) ;
+static gboolean remoteInactiveHandler(gpointer data) ;
 static gboolean pingHandler(gpointer data) ;
 
 static gboolean configureLog(char *config_file) ;
 static void consoleMsg(gboolean err_msg, char *format, ...) ;
 
+static void hideMainWindow(ZMapAppContext app_context) ;
+
+
+
+
+/* 
+ *                            Globals
+ */
+
 
 static ZMapManagerCallbacksStruct app_window_cbs_G = {addZMapCB, removeZMapCB, infoSetCB, quitReqCB, NULL} ;
 
 
+/* Why are these here ?? */
 #define ZMAPLOG_FILENAME "zmap.log"
 
 
@@ -116,6 +128,8 @@ char *ZMAP_X_PROGRAM_G  = "ZMap" ;
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+/* RESURRECT ?? */
+
 /* Place a copyright notice in the executable. */
 char *obj_copyright_G = ZMAP_OBJ_COPYRIGHT_STRING(ZMAP_TITLE,
 						  ZMAP_VERSION, ZMAP_RELEASE, ZMAP_UPDATE,
@@ -348,8 +362,6 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 		     GTK_SIGNAL_FUNC(quitCB), (gpointer)app_context) ;
   gtk_box_pack_start(GTK_BOX(vbox), quit_button, FALSE, FALSE, 0) ;
 
-
-
   /* Always create the widget. */
   gtk_widget_show_all(toplevel) ;
 
@@ -361,7 +373,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
                  __PRETTY_FUNCTION__,
                  "Hiding main window.") ;
 
-      gtk_widget_unmap(toplevel) ;
+      hideMainWindow(app_context) ;
     }
 
 
@@ -380,6 +392,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
       if (!zmapAppCreateZMap(app_context, seq_map, &zmap, &view, &err_msg))
 	zMapWarning("%s", err_msg) ;
     }
+
 
   app_context->state = ZMAPAPP_RUNNING ;
 
@@ -595,6 +608,7 @@ void removeZMapCB(void *app_data, void *zmap_data)
  *        callbacks that destroy the application
  */
 
+/* Called when user selects "quit2 button in main window. */
 static void quitCB(GtkWidget *widget, gpointer cb_data)
 {
   ZMapAppContext app_context = (ZMapAppContext)cb_data ;
@@ -1174,7 +1188,16 @@ static void remoteInstaller(GtkWidget *widget, GdkEvent *event, gpointer user_da
 
   /* Hide main window if required. */
   if (!(app_context->show_mainwindow) && app_context->defer_hiding)
-    gtk_widget_unmap(app_context->app_widg) ;
+    hideMainWindow(app_context) ;
+
+  /* Set an inactivity timeout, so we can warn the user if nothing happens for a long time in case
+   * zmap has become disconnected from the peer. (note timeout is in milliseconds) */
+  app_context->remote_control->inactive_timeout_interval_s = ZMAP_APP_REMOTE_TIMEOUT_S ;
+  app_context->remote_control->inactive_func_id = g_timeout_add(ZMAP_APP_REMOTE_TIMEOUT_S * 1000,
+                                                                remoteInactiveHandler, (gpointer)app_context) ;
+
+  /* Now set the time of day we did this. */
+  app_context->remote_control->last_active_time_s = zMapUtilsGetRawTime() ;
 
   return ;
 }
@@ -1351,10 +1374,71 @@ static void consoleMsg(gboolean err_msg, char *format, ...)
   else
     stream = stdout ;
 
+  /* show message and flush to make sure it appears in a timely way. */
   fprintf(stream, "%s\n", msg_string) ;
+  fflush(stream) ;
+
 
   g_free(msg_string) ;
 
   return ;
 }
+
+
+/* Hide the zmap main window, currently just a trivial cover function for unmap call. */
+static void hideMainWindow(ZMapAppContext app_context)
+{
+  gtk_widget_unmap(app_context->app_widg) ;
+
+  return ;
+}
+
+
+
+
+/* A GSourceFunc, only called when there is a peer program. If there is no currently
+ * displayed sequence and there has been no communication with the peer since before
+ * the timeout started then we warn the user. The user can elect to continue or to
+ * exit zmap. If the function returns FALSE it will not be called again.
+ */
+static gboolean remoteInactiveHandler(gpointer data)
+{
+  gboolean result = TRUE ;
+  ZMapAppContext app_context = (ZMapAppContext)data ;
+  guint zmap_num ;
+  time_t current_time_s ;
+
+  current_time_s = zMapUtilsGetRawTime() ;
+
+  /* Only do this if there are no displayed zmaps and inactivity has been longer than timeout. */
+  if (((current_time_s - app_context->remote_control->last_active_time_s) > ZMAP_APP_REMOTE_TIMEOUT_S)
+      && !(zmap_num = zMapManagerCount(app_context->zmap_manager)))
+    {
+      char *msg ;
+      long pid, ppid ;
+
+      pid = getpid() ;
+      ppid = getppid() ;
+
+      msg = g_strdup_printf("This zmap (PID = %ld) has been running for more than %d mins"
+                            " with no sequence displayed"
+                            " and without any interaction with its peer \"%s\" (PID = %ld)."
+                            " Do you want to continue ?",
+                            pid, (ZMAP_APP_REMOTE_TIMEOUT_S / 60),
+                            app_context->remote_control->peer_name, ppid) ;
+
+      if (!zMapGUIMsgGetBoolFull((GtkWindow *)(app_context->app_widg), ZMAP_MSG_WARNING, msg,
+                                 "Continue", "Exit"))
+        {
+          zmapAppExit(app_context) ;
+
+          result = FALSE ;
+        }
+
+      g_free(msg) ;
+    }
+
+  return result ;
+}
+
 
