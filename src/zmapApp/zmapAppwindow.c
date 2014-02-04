@@ -50,6 +50,7 @@
 #include <ZMap/zmapConfigIni.h>
 #include <ZMap/zmapConfigStrings.h>
 #include <ZMap/zmapControl.h>
+#include <ZMap/zmapGFF.h>
 #include <zmapApp_P.h>
 
 
@@ -1306,160 +1307,82 @@ static gboolean configureLog(char *config_file)
 }
 
 
-
-/* Read a line from a file, gets the whole line no matter how big...until you run out
- * of memory.
- * Returns NULL if there was nothing to read from the file, otherwise returns the
- * line read which is actually the string held within the GString passed in.
- * Crashes if there is a problem with the file. */
-static char *nextLine(FILE *file, GString *line_string)
+/* Check the given file to see if we can extract sequence details */
+static gboolean checkInputFileForSequenceDetails(const char* const filename, ZMapFeatureSequenceMap seq_map_inout)
 {
-  enum {BLX_BUF_SIZE = 4096} ;   /* Vague guess at initial length. */
-  char *result = NULL ;
-  gboolean line_finished ;
-  char buffer[BLX_BUF_SIZE] ;
+  gboolean result = FALSE ;
+  GError *gff_pipe_err = NULL ;
+  int gff_version = 0 ;
+  ZMapGFFParser parser = NULL ;
+  GString *gff_line = g_string_sized_new(2000) ; /* Probably not many lines will be > 2k chars. */
+  GIOChannel *gff_pipe = g_io_channel_new_file(filename, "r", &gff_pipe_err) ;
+  GIOStatus status = G_IO_STATUS_NORMAL ;
 
-  g_assert(file) ;
+  /* Get the GFF version; default returned is 2 */
+  if (gff_pipe)
+    zMapGFFGetVersionFromGIO(gff_pipe, &gff_version);
 
-  line_finished = FALSE ;
-  while (!line_finished)
+  if (gff_version)
+    parser = zMapGFFCreateParser(gff_version, NULL, 0, 0) ;
+
+  if (parser)
     {
+      gsize terminator_pos = 0 ;
+      gboolean done_header = FALSE ;
+      ZMapGFFHeaderState header_state = GFF_HEADER_NONE ; /* got all the ones we need ? */
 
-      if (!fgets(buffer, BLX_BUF_SIZE, file))
+      zMapGFFParserSetSequenceFlag(parser);  // reset done flag for seq else skip the data
+
+      /* Read the header, needed for feature coord range. */
+      while ((status = g_io_channel_read_line_string(gff_pipe, gff_line,
+                                                     &terminator_pos,
+                                                     &gff_pipe_err)) == G_IO_STATUS_NORMAL)
         {
-          if (feof(file))
-            line_finished = TRUE ;
-          else
-            g_error("NULL value returned on reading input file\n") ;
-        }
-      else
-        {
-          if (buffer[0] == '\0')
+          *(gff_line->str + terminator_pos) = '\0' ; /* Remove terminating newline. */
+
+          if (zMapGFFParseHeader(parser, gff_line->str, &done_header, &header_state))
             {
-              line_finished = TRUE ;
-              result = line_string->str ;
-            }
-          else
-            {
-              int line_end ;
-
-              g_string_append_printf(line_string, "%s", &buffer[0]) ;
-
-              line_end = strlen(&buffer[0]) - 1 ;
-
-              if (buffer[line_end] == '\n' || buffer[line_end] == '\r')
+              if (done_header)
                 {
-                  line_finished = TRUE ;
-                  result = line_string->str ;
+                  result = TRUE ;
+                  break ;
+                }
+              else
+                {
+                  gff_line = g_string_truncate(gff_line, 0) ;  /* Reset line to empty. */
                 }
             }
+          else
+            {
+              consoleMsg(TRUE, "Error reading GFF file header") ;
+              break ;
+            }
         }
+    }
+
+  else
+    {
+      consoleMsg(TRUE, "Error getting sequence-region from file %s", filename);
+    }
+
+  if (result && parser)
+    {
+      /* Cache the sequence details */
+      seq_map_inout->sequence = g_strdup(zMapGFFGetSequenceName(parser)) ;
+      seq_map_inout->start = zMapGFFGetFeaturesStart(parser) ;
+      seq_map_inout->end = zMapGFFGetFeaturesEnd(parser) ;
+
+      /* Cache the parser state */
+      seq_map_inout->cached_parsers = g_hash_table_new(NULL, NULL) ;
+      ZMapFeatureParserCache parser_cache = g_new0(ZMapFeatureParserCacheStruct, 1) ;
+      parser_cache->parser = (gpointer)parser ;
+      parser_cache->line = gff_line ;
+      parser_cache->pipe = gff_pipe ;
+      parser_cache->pipe_status = status ;
+      g_hash_table_insert(seq_map_inout->cached_parsers, GINT_TO_POINTER(g_quark_from_string(filename)), parser_cache) ;
     }
 
   return result ;
-}
-
-
-/* Check the given file to see if we can extract sequence details */
-/* gb10: temporary function to get this info quickly - needs tidying up and organising properly,
- * e.g. should probably use the GFF code. */
-static gboolean checkInputFileForSequenceDetails(const char* const filename, ZMapFeatureSequenceMap seq_map_inout)
-{
-#define MAXLINE       10000
-  gboolean found = FALSE ;
-  FILE *file = NULL ;
-
-  if((file = fopen(filename, "r")))
-    {
-      int lineNum = 0 ;
-      GString *line_string = g_string_sized_new(MAXLINE + 1);
-
-      while (!feof(file))
-        {
-          ++lineNum;
-          line_string = g_string_truncate(line_string, 0) ;     /* Reset buffer pointer. */
-
-          char *line = nextLine(file, line_string);
-
-          if (!line)
-            break;
-
-          const int lineLen = strlen(line);
-          if (lineLen == 0 || line[0] == '\n')
-            {
-              continue; /* empty file??? */
-            }
-
-          /* get rid of any trailing '\n', there may not be one if the last line of the file
-           * didn't have one. */
-          char *charPtr = strchr(line, '\n');
-          if (charPtr)
-            {
-              *charPtr = 0;
-            }
-
-          /* We're just looking for the sequence-region line (GFF2 or GFF3 format) */
-          if (!strncasecmp(line, "# sequence-region", 17))
-            {
-              /* read in the reference sequence name and range */
-              char sequence[MAXLINE + 1];
-              int start = 0;
-              int end = 0;
-
-              if (sscanf(line, "# sequence-region%s%d%d", sequence, &start, &end) < 3)
-                {
-                  g_warning("Error parsing sequence-region line in input file. Sequence range was not set. \"%s\"\n", line);
-                }
-              else
-                {
-                  seq_map_inout->sequence = g_strdup(sequence) ;
-                  seq_map_inout->start = start ;
-                  seq_map_inout->end = end ;
-                  found = TRUE ;
-                }
-
-              break ;
-            }
-          else if (!strncasecmp(line, "##sequence-region", 17))
-            {
-              /* read in the reference sequence name and range */
-              char sequence[MAXLINE + 1];
-              int start = 0;
-              int end = 0;
-
-              if (sscanf(line, "##sequence-region%s%d%d", sequence, &start, &end) < 3)
-                {
-                  g_warning("Error parsing sequence-region line in input file. Sequence range was not set. \"%s\"\n", line);
-                }
-              else
-                {
-                  seq_map_inout->sequence = g_strdup(sequence) ;
-                  seq_map_inout->start = start ;
-                  seq_map_inout->end = end ;
-                  found = TRUE ;
-                }
-
-              break ;
-            }
-          else if (*line != '#')
-            {
-              /* Non-comment line => we've reached the file body and not found the required
-                 header comment */
-              break ;
-            }
-        }
-
-      if (file != stdin)
-        {
-          fclose(file);
-        }
-    }
-  else
-    {
-      consoleMsg(TRUE, "Cannot open file %s", filename);
-    }
-
-  return found ;
 }
 
 
@@ -1510,7 +1433,7 @@ static void saveInputFilePaths(ZMapFeatureSequenceMap seq_map_inout)
  * wrong. If FALSE an error message is returned in err_msg_out which should
  * be g_free'd by caller. */
 static gboolean checkSequenceArgs(int argc, char *argv[],
-				  ZMapFeatureSequenceMap seq_map_inout, char **err_msg_out)
+                                  ZMapFeatureSequenceMap seq_map_inout, char **err_msg_out)
 {
   gboolean result = FALSE ;
   const char *source = "- could not get sequence details from command line, config file or in input file" ;

@@ -133,79 +133,74 @@ static const ZMapGFFParserState ZMAP_GFF_PARSER_TRANSITIONS[ZMAPGFF_NUMBER_PARSE
 ZMapGFFParser zMapGFFCreateParser_V3(char *sequence, int features_start, int features_end)
 {
   ZMapGFF3Parser pParser = NULL ;
-  if (!sequence || !*sequence )
+
+  pParser                                   = g_new0(ZMapGFF3ParserStruct, 1) ;
+  if (!pParser)
     return NULL ;
 
-  if ((sequence && *sequence) && (features_start > 0 && features_end >= features_start))
-    {
-      pParser                                   = g_new0(ZMapGFF3ParserStruct, 1) ;
-      if (!pParser)
-        return NULL ;
-
-      pParser->gff_version                      = ZMAPGFF_VERSION_3 ;
-      pParser->pHeader                          = zMapGFFCreateHeader() ;
-      if (!pParser->pHeader)
-        return NULL ;
-      pParser->pHeader->flags.got_ver           = TRUE ;
-      pParser->state                            = ZMAPGFF_PARSER_NON ;
-      pParser->line_count                       = 0 ;
-      pParser->num_features                     = 0 ;
-      pParser->parse_only                       = FALSE ;
-      pParser->free_on_destroy                  = TRUE ;
-      pParser->bLogWarnings                     = FALSE ;
-      pParser->iNumWrongSequence                = 0 ;
+  pParser->gff_version                      = ZMAPGFF_VERSION_3 ;
+  pParser->pHeader                          = zMapGFFCreateHeader() ;
+  if (!pParser->pHeader)
+    return NULL ;
+  pParser->pHeader->flags.got_ver           = TRUE ;
+  pParser->state                            = ZMAPGFF_PARSER_NON ;
+  pParser->line_count                       = 0 ;
+  pParser->num_features                     = 0 ;
+  pParser->parse_only                       = FALSE ;
+  pParser->free_on_destroy                  = TRUE ;
+  pParser->bLogWarnings                     = FALSE ;
+  pParser->iNumWrongSequence                = 0 ;
 
 
-      pParser->bCheckSequenceLength             = FALSE ;
-      pParser->raw_line_data                    = NULL ;
-      pParser->nSequenceRecords                 = 0 ;
-      pParser->pSeqData                         = NULL ;
+  pParser->bCheckSequenceLength             = FALSE ;
+  pParser->raw_line_data                    = NULL ;
+  pParser->nSequenceRecords                 = 0 ;
+  pParser->pSeqData                         = NULL ;
 
-      pParser->error                            = NULL ;
-      pParser->error_domain                     = g_quark_from_string(ZMAP_GFF_ERROR) ;
-      pParser->stop_on_error                    = FALSE ;
+  pParser->error                            = NULL ;
+  pParser->error_domain                     = g_quark_from_string(ZMAP_GFF_ERROR) ;
+  pParser->stop_on_error                    = FALSE ;
 
-      pParser->SO_compliant                     = FALSE ;
-      pParser->cSOErrorLevel                    = ZMAPGFF_SOERRORLEVEL_ERR ;
-      pParser->default_to_basic                 = FALSE ;
+  pParser->SO_compliant                     = FALSE ;
+  pParser->cSOErrorLevel                    = ZMAPGFF_SOERRORLEVEL_ERR ;
+  pParser->default_to_basic                 = FALSE ;
 
-      pParser->clip_mode                        = GFF_CLIP_NONE ;
-      pParser->clip_end                         = 0 ;
-      pParser->clip_start                       = 0 ;
+  pParser->clip_mode                        = GFF_CLIP_NONE ;
+  pParser->clip_end                         = 0 ;
+  pParser->clip_start                       = 0 ;
 
-      /* pParser->pMLF                             = zMapMLFCreate() ; */
-      pParser->source_2_feature_set             = NULL ;
-      pParser->source_2_sourcedata              = NULL ;
-      pParser->excluded_features                = g_hash_table_new(NULL, NULL) ;
+  /* pParser->pMLF                             = zMapMLFCreate() ; */
+  pParser->source_2_feature_set             = NULL ;
+  pParser->source_2_sourcedata              = NULL ;
+  pParser->excluded_features                = g_hash_table_new(NULL, NULL) ;
 
-      pParser->sequence_name                    = g_strdup(sequence) ;
-      pParser->features_start                   = features_start ;
-      pParser->features_end                     = features_end ;
+  pParser->sequence_name                    = g_strdup(sequence) ;
+  pParser->features_start                   = features_start ;
+  pParser->features_end                     = features_end ;
 
-      pParser->locus_set_id                     = 0 ;
-      pParser->sources                          = NULL ;
-      pParser->feature_sets                     = NULL ;
-      pParser->src_feature_sets                 = NULL ;
+  pParser->locus_set_id                     = 0 ;
+  pParser->sources                          = NULL ;
+  pParser->feature_sets                     = NULL ;
+  pParser->src_feature_sets                 = NULL ;
 
-      /* Set initial buffer & format string size */
-      resizeBuffers((ZMapGFFParser) pParser, ZMAPGFF_BUF_INIT_SIZE) ;
-      pParser->format_str                       = NULL ;
-      pParser->cigar_string_format_str          = NULL ;
-      resizeFormatStrs((ZMapGFFParser) pParser) ;
+  /* Set initial buffer & format string size */
+  resizeBuffers((ZMapGFFParser) pParser, ZMAPGFF_BUF_INIT_SIZE) ;
+  pParser->format_str                       = NULL ;
+  pParser->cigar_string_format_str          = NULL ;
+  resizeFormatStrs((ZMapGFFParser) pParser) ;
 
-      /*
-       * Some format characters and delimiters.
-       */
-      pParser->cDelimBodyLine                   = '\t' ;
-      pParser->cDelimAttributes                 = ';' ;
-      pParser->cDelimAttValue                   = '=' ;
-      pParser->cDelimQuote                      = '"' ;
+  /*
+   * Some format characters and delimiters.
+   */
+  pParser->cDelimBodyLine                   = '\t' ;
+  pParser->cDelimAttributes                 = ';' ;
+  pParser->cDelimAttValue                   = '=' ;
+  pParser->cDelimQuote                      = '"' ;
 
-      /*
-       * Flag for SO term set in use.
-       */
-      pParser->cSOSetInUse                      = ZMAPSO_USE_SOXP ;
-    }
+  /*
+   * Flag for SO term set in use.
+   */
+  pParser->cSOSetInUse                      = ZMAPSO_USE_SOXP ;
 
   return (ZMapGFFParser) pParser ;
 }
@@ -1465,6 +1460,13 @@ static gboolean parseDirective_SEQUENCE_REGION(ZMapGFFParser const pParserBase, 
       return bResult ;
     }
 
+  /* If the parser sequence details are not set, then set them from the sequence-region */
+  if (!zMapGFFGetSequenceName((ZMapGFFParser)pParser))
+    {
+      pParser->sequence_name = g_strdup(sBuf) ;
+      pParser->features_start = iStart ;
+      pParser->features_end = iEnd ;
+    }
 
   /*
    * We require the names to match up here.

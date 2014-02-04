@@ -162,6 +162,21 @@ typedef struct ZMapFeatureContextMapStructType
 
 
 
+/* This cached info about GFF parsing that is in progress. We need to cache this info if we need
+ * to parse the input GFF file(s) on startup to populate the ZMapFeatureSequenceMap before we're
+ * ready to read the features in themselves - then when we do come read the features, this cached
+ * info lets us use the same parser to continue reading the file where we left off.
+ * (Note that we can't rewind the input stream and start again because we want to support stdin.) */
+typedef struct ZMapFeatureParserCacheStructType
+{
+  gpointer parser ;
+  GString *line ;     /* the last line that was parsed */
+  GIOChannel *pipe ;
+  GIOStatus pipe_status ;
+} ZMapFeatureParserCacheStruct, *ZMapFeatureParserCache ;
+
+
+
 /* THIS IS THE WRONG PLACE FOR THIS I THINK...EG */
 /* Holds data about a sequence to be fetched.
  * Used for the 'default-sequence' from the config file or one loaded later
@@ -169,7 +184,10 @@ typedef struct ZMapFeatureContextMapStructType
 typedef struct ZMapFeatureSequenceMapStructType
 {
   char *config_file ;
-  GSList *file_list ;   /* list of filename URLs passed on command line */
+  GSList *file_list ;   /* list of filenames passed on command line */
+
+  GHashTable *cached_parsers ; /* filenames (as GQuarks) mapped to cached info about GFF parsing that
+                                * is in progress (ZMapFeatureParserCache) if parsing has already been started */
 
   char *dataset ;       /* eg human */
   char *sequence ;      /* eg chr6-18 */
