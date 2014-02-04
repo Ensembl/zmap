@@ -153,78 +153,80 @@ static const ZMapGFFParserState ZMAP_GFF_PARSER_TRANSITIONS[ZMAPGFF_NUMBER_PARSE
 ZMapGFFParser zMapGFFCreateParser_V3(char *sequence, int features_start, int features_end)
 {
   ZMapGFF3Parser pParser = NULL ;
-  if (!sequence || !*sequence )
-    return NULL ;
 
-  if ((sequence && *sequence) && (features_start > 0 && features_end >= features_start))
+  zMapReturnValIfFail(sequence && *sequence, NULL) ;
+
+  if ((features_start > 0) && (features_end >= features_start))
     {
       pParser                                   = g_new0(ZMapGFF3ParserStruct, 1) ;
-      if (!pParser)
-        return NULL ;
+      if (pParser)
+        {
 
-      pParser->gff_version                      = ZMAPGFF_VERSION_3 ;
-      pParser->pHeader                          = zMapGFFCreateHeader() ;
-      if (!pParser->pHeader)
-        return NULL ;
-      pParser->pHeader->flags.got_ver           = TRUE ;
-      pParser->state                            = ZMAPGFF_PARSER_NON ;
-      pParser->line_count                       = 0 ;
-      pParser->num_features                     = 0 ;
-      pParser->parse_only                       = FALSE ;
-      pParser->free_on_destroy                  = TRUE ;
-      pParser->bLogWarnings                     = FALSE ;
-      pParser->iNumWrongSequence                = 0 ;
+          pParser->gff_version                      = ZMAPGFF_VERSION_3 ;
+          pParser->pHeader                          = zMapGFFCreateHeader() ;
+          if (!pParser->pHeader)
+            return NULL ;
+          pParser->pHeader->flags.got_ver           = TRUE ;
+          pParser->state                            = ZMAPGFF_PARSER_NON ;
+          pParser->line_count                       = 0 ;
+          pParser->num_features                     = 0 ;
+          pParser->parse_only                       = FALSE ;
+          pParser->free_on_destroy                  = TRUE ;
+          pParser->bLogWarnings                     = FALSE ;
+          pParser->iNumWrongSequence                = 0 ;
 
 
-      pParser->bCheckSequenceLength             = FALSE ;
-      pParser->raw_line_data                    = NULL ;
-      pParser->nSequenceRecords                 = 0 ;
-      pParser->pSeqData                         = NULL ;
+          pParser->bCheckSequenceLength             = FALSE ;
+          pParser->raw_line_data                    = NULL ;
+          pParser->nSequenceRecords                 = 0 ;
+          pParser->pSeqData                         = NULL ;
 
-      pParser->error                            = NULL ;
-      pParser->error_domain                     = g_quark_from_string(ZMAP_GFF_ERROR) ;
-      pParser->stop_on_error                    = FALSE ;
+          pParser->error                            = NULL ;
+          pParser->error_domain                     = g_quark_from_string(ZMAP_GFF_ERROR) ;
+          pParser->stop_on_error                    = FALSE ;
 
-      pParser->SO_compliant                     = FALSE ;
-      pParser->cSOErrorLevel                    = ZMAPGFF_SOERRORLEVEL_ERR ;
-      pParser->default_to_basic                 = FALSE ;
+          pParser->SO_compliant                     = FALSE ;
+          pParser->cSOErrorLevel                    = ZMAPGFF_SOERRORLEVEL_ERR ;
+          pParser->default_to_basic                 = FALSE ;
 
-      pParser->clip_mode                        = GFF_CLIP_NONE ;
-      pParser->clip_end                         = 0 ;
-      pParser->clip_start                       = 0 ;
+          pParser->clip_mode                        = GFF_CLIP_NONE ;
+          pParser->clip_end                         = 0 ;
+          pParser->clip_start                       = 0 ;
 
-      /* pParser->pMLF                             = zMapMLFCreate() ; */
-      pParser->source_2_feature_set             = NULL ;
-      pParser->source_2_sourcedata              = NULL ;
-      pParser->excluded_features                = g_hash_table_new(NULL, NULL) ;
+          /* pParser->pMLF                             = zMapMLFCreate() ; */
+          pParser->source_2_feature_set             = NULL ;
+          pParser->source_2_sourcedata              = NULL ;
+          pParser->excluded_features                = g_hash_table_new(NULL, NULL) ;
 
-      pParser->sequence_name                    = g_strdup(sequence) ;
-      pParser->features_start                   = features_start ;
-      pParser->features_end                     = features_end ;
+          pParser->sequence_name                    = g_strdup(sequence) ;
+          pParser->features_start                   = features_start ;
+          pParser->features_end                     = features_end ;
 
-      pParser->locus_set_id                     = 0 ;
-      pParser->sources                          = NULL ;
-      pParser->feature_sets                     = NULL ;
-      pParser->src_feature_sets                 = NULL ;
+          pParser->locus_set_id                     = 0 ;
+          pParser->sources                          = NULL ;
+          pParser->feature_sets                     = NULL ;
+          pParser->src_feature_sets                 = NULL ;
 
-      /* Set initial buffer & format string size */
-      resizeBuffers((ZMapGFFParser) pParser, ZMAPGFF_BUF_INIT_SIZE) ;
-      pParser->format_str                       = NULL ;
-      pParser->cigar_string_format_str          = NULL ;
-      resizeFormatStrs((ZMapGFFParser) pParser) ;
+          /* Set initial buffer & format string size */
+          resizeBuffers((ZMapGFFParser) pParser, ZMAPGFF_BUF_INIT_SIZE) ;
+          pParser->format_str                       = NULL ;
+          pParser->cigar_string_format_str          = NULL ;
+          resizeFormatStrs((ZMapGFFParser) pParser) ;
 
-      /*
-       * Some format characters and delimiters.
-       */
-      pParser->cDelimBodyLine                   = '\t' ;
-      pParser->cDelimAttributes                 = ';' ;
-      pParser->cDelimAttValue                   = '=' ;
-      pParser->cDelimQuote                      = '"' ;
+          /*
+           * Some format characters and delimiters.
+           */
+          pParser->cDelimBodyLine                   = '\t' ;
+          pParser->cDelimAttributes                 = ';' ;
+          pParser->cDelimAttValue                   = '=' ;
+          pParser->cDelimQuote                      = '"' ;
 
-      /*
-       * Flag for SO term set in use.
-       */
-      pParser->cSOSetInUse                      = ZMAPSO_USE_SOXP ;
+          /*
+           * Flag for SO term set in use.
+           */
+          pParser->cSOSetInUse                      = ZMAPSO_USE_SOXP ;
+
+        }
     }
 
   return (ZMapGFFParser) pParser ;
@@ -238,8 +240,7 @@ ZMapGFFParser zMapGFFCreateParser_V3(char *sequence, int features_start, int fea
 void zMapGFFDestroyParser_V3(ZMapGFFParser pParserBase)
 {
   unsigned int iValue ;
-  if (!pParserBase)
-    return ;
+  zMapReturnIfFail(pParserBase) ;
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
 
   if (pParser->error)
@@ -301,8 +302,7 @@ void zMapGFFDestroyParser_V3(ZMapGFFParser pParserBase)
  */
 gboolean zMapGFFGetHeaderGotMinimal_V3(ZMapGFFParser pParserBase)
 {
-  if (!pParserBase)
-    return FALSE ;
+  zMapReturnValIfFail(pParserBase, FALSE );
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
   return (gboolean) pParser->pHeader->flags.got_min ;
 }
@@ -331,6 +331,7 @@ static gboolean removeCommentFromLine( char* sLine )
     cNull = '\0' ;
   gboolean bIsQuoted = FALSE,
     bResult = FALSE ;
+  zMapReturnValIfFail(sLine && *sLine, bResult) ;
 
 
   /*
@@ -475,8 +476,7 @@ static gboolean resizeBuffers(ZMapGFFParser pParser, gsize iLineLength)
   char *sBuf[ZMAPGFF_NUMBER_PARSEBUF];
   unsigned int i, iNewLineLength ;
 
-  if (!pParser || !iLineLength )
-    return bResized ;
+  zMapReturnValIfFail(pParser && iLineLength, bResized) ;
 
   if (iLineLength > pParser->buffer_length)
     {
@@ -579,8 +579,7 @@ static gboolean resizeFormatStrs(ZMapGFFParser pParser)
   static const char *align_format_str = "%%*[\"]" "%%%d" "[^\"]%%*[\"]%%*s" ;
   gsize iLength ;
 
-  if (!pParser)
-    return bResized ;
+  zMapReturnValIfFail(pParser, bResized) ;
 
   /*
    * Max length of string we can parse using scanf(), the "- 1"
@@ -680,8 +679,8 @@ static gboolean initializeSequenceRead(ZMapGFFParser pParserBase, const char * c
 {
   gboolean bResult = TRUE ;
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
-  if (!pParser || !pParser->pHeader)
-    return FALSE ;
+
+  zMapReturnValIfFail(pParser && pParser->pHeader, FALSE) ;
 
   /*
    * We must have already made the transition into the
@@ -752,8 +751,8 @@ static gboolean initializeFastaRead(ZMapGFFParser pParserBase, const char * cons
 {
   gboolean bResult = TRUE ;
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
-  if (!pParser || !pParser->pHeader)
-    return FALSE ;
+
+  zMapReturnValIfFail(pParser && pParser->pHeader, FALSE) ;
 
   /*
    * We must have already made the transition into the
@@ -808,8 +807,8 @@ static gboolean initParserForSequenceRead(ZMapGFFParser pParserBase)
 {
   gboolean bResult = FALSE ;
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
-  if (!pParser || !pParser->pHeader )
-    return bResult ;
+
+  zMapReturnValIfFail(pParser && pParser->pHeader, FALSE ) ;
 
   bResult = TRUE ;
   if (pParser->raw_line_data != NULL )
@@ -872,8 +871,8 @@ static gboolean actionUponClosure(ZMapGFFParser pParserBase, const char* const s
 {
   gboolean bResult = TRUE ;
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
-  if (!pParser || !pParser->pHeader)
-    return FALSE ;
+
+  zMapReturnValIfFail(pParser && pParser->pHeader, FALSE) ;
 
   /* printf("actionUponClosure() called, nID = %i\n", zMapMLFNumID(pParser->pMLF)) ; */
 
@@ -914,8 +913,9 @@ static gboolean parserStateChange(ZMapGFFParser pParserBase,
 {
   gboolean bResult = TRUE ;
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
-  if (!pParser || !pParser->pHeader)
-    return FALSE ;
+
+  zMapReturnValIfFail(pParser && pParser->pHeader, FALSE) ;
+
   if (eOldState == eNewState)
     return FALSE ;
 
@@ -976,8 +976,8 @@ static gboolean finalizeSequenceRead(ZMapGFFParser pParserBase , const char* con
   gboolean bResult = TRUE,
     bCopyData = TRUE;
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
-  if (!pParser || !pParser->pHeader )
-    return FALSE ;
+
+  zMapReturnValIfFail(pParser && pParser->pHeader, FALSE ) ;
 
   if (!g_str_has_prefix(sLine, "##end-DNA"))
     {
@@ -1075,8 +1075,9 @@ static gboolean addNewSequenceRecord(ZMapGFFParser pParserBase)
   ZMapSequenceStruct *pSeqTemp = NULL ;
   unsigned int nSequenceRecords , iSeq ;
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
-  if (!pParser || !pParser->pHeader )
-    return bResult ;
+
+  zMapReturnValIfFail(pParser && pParser->pHeader, bResult) ;
+
   nSequenceRecords = pParser->nSequenceRecords ;
   bResult = TRUE ;
 
@@ -1130,8 +1131,7 @@ static gboolean appendToSequenceRecord(ZMapGFFParser pParserBase, const char * c
 
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
 
-  if (!pParser || !pParser->pHeader )
-    return bResult ;
+  zMapReturnValIfFail(pParser && pParser->pHeader, bResult) ;
 
   bResult = TRUE ;
 
@@ -1208,8 +1208,7 @@ static gboolean parseFastaLine_V3(ZMapGFFParser pParserBase, const char* const s
   /*
    * Some basic error checking.
    */
-  if (!pParser || !pParser->pHeader)
-    return bResult ;
+  zMapReturnValIfFail(pParser && pParser->pHeader, bResult) ;
 
   /*
    * If we are given sLine = "##FASTA" then this is the start, and just return
@@ -1321,8 +1320,7 @@ static gboolean parseSequenceLine_V3(ZMapGFFParser pParserBase, const char * con
 
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
 
-  if (!pParser || !pParser->pHeader)
-    return bResult ;
+  zMapReturnValIfFail(pParser && pParser->pHeader, bResult) ;
 
   if (pParser->state != ZMAPGFF_PARSER_SEQ)
     return bResult ;
@@ -1382,8 +1380,7 @@ static gboolean parseDirective_GFF_VERSION(ZMapGFFParser pParserBase, const char
 
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
 
-  if (!pParser || !pParser->pHeader)
-    return FALSE ;
+  zMapReturnValIfFail(pParser && pParser->pHeader, FALSE) ;
 
   /*
    * (sm23) I have removed this test to make sure that it's OK for
@@ -1461,8 +1458,7 @@ static gboolean parseDirective_SEQUENCE_REGION(ZMapGFFParser pParserBase, const 
 
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
 
-  if (!pParser || !pParser->pHeader )
-    return FALSE ;
+  zMapReturnValIfFail(pParser && pParser->pHeader, FALSE ) ;
 
   /*
    * If we have already read a directive of this form, we do nothing else, but this is
@@ -1546,8 +1542,7 @@ static gboolean parseDirective_FEATURE_ONTOLOGY(ZMapGFFParser pParserBase , cons
 
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
 
-  if (!pParser || !pParser->pHeader)
-    return FALSE ;
+  zMapReturnValIfFail(pParser && pParser->pHeader, FALSE) ;
 
   /*
    * If we have read this directive already, then set an error.
@@ -1611,8 +1606,7 @@ static gboolean parseDirective_ATTRIBUTE_ONTOLOGY(ZMapGFFParser pParserBase, con
 
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
 
-  if (!pParser || !pParser->pHeader)
-    return bResult ;
+  zMapReturnValIfFail(pParser && pParser->pHeader, bResult ) ;
 
   /*
    * If we have read this directive already, then set an error.
@@ -1676,8 +1670,7 @@ static gboolean parseDirective_SOURCE_ONTOLOGY(ZMapGFFParser pParserBase, const 
 
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
 
-  if (!pParser || !pParser->pHeader)
-    return bResult ;
+  zMapReturnValIfFail(pParser && pParser->pHeader, bResult ) ;
 
   /*
    * If we have read this directive already, then set an error.
@@ -1742,8 +1735,7 @@ static gboolean parseDirective_SPECIES(ZMapGFFParser pParserBase, const char * c
 
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
 
-  if (!pParser || !pParser->pHeader)
-    return bResult ;
+  zMapReturnValIfFail(pParser && pParser->pHeader, bResult) ;
 
   /*
    * If we have read this directive already, then set an error.
@@ -1810,8 +1802,7 @@ static gboolean parseDirective_GENOME_BUILD(ZMapGFFParser pParserBase, const cha
 
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
 
-  if (!pParser || !pParser->pHeader)
-    return bResult ;
+  zMapReturnValIfFail(pParser && pParser->pHeader, bResult) ;
 
   /*
    * If we have read this directive alre/ady, then set an error.
@@ -1884,8 +1875,7 @@ static gboolean parseHeaderLine_V3(ZMapGFFParser pParserBase, const char * const
 
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
 
-  if (!pParser || !pParser->pHeader )
-    return bResult ;
+  zMapReturnValIfFail(pParser && pParser->pHeader, bResult ) ;
 
   if (!g_str_has_prefix(sLine, "##"))
     return bResult ;
@@ -1972,8 +1962,8 @@ gboolean zMapGFFParse_V3(ZMapGFFParser pParserBase, char * const sLine)
   ZMapGFFParserState eOldState = ZMAPGFF_PARSER_NON,
     eNewState = ZMAPGFF_PARSER_NON;
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
-  if (!pParser || !pParser->pHeader)
-    return FALSE ;
+
+  zMapReturnValIfFail(pParser && pParser->pHeader, FALSE) ;
 
   /*
    * Increment line count and skip over blank lines and comments.
@@ -2081,8 +2071,7 @@ gboolean zMapGFFGetLogWarnings(ZMapGFFParser pParserBase )
 {
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
 
-  if (!pParser || !pParser->pHeader )
-    return FALSE ;
+  zMapReturnValIfFail(pParser && pParser->pHeader, FALSE ) ;
 
   return pParser->bLogWarnings ;
 }
@@ -2174,11 +2163,7 @@ static gboolean parseBodyLine_V3(ZMapGFFParser pParserBase, const char * const s
   /*
    * Initial error check.
    */
-  if (!pParser || !pParser->pHeader)
-    {
-      bResult = FALSE ;
-      goto return_point ;
-    };
+  zMapReturnValIfFail(pParser && pParser->pHeader, FALSE) ;
 
   /*
    * If the line length is too large, then we exit with an error set.
@@ -2541,8 +2526,7 @@ static char * makeFeatureTranscriptNamePublic( ZMapGFFFeatureData pFeatureData)
     *sFeatureAttributeName = NULL ;
   gboolean bParseValid = FALSE ;
   static const char *sNoName = "no_name_given" ;
-  if (!pFeatureData)
-    return sResult ;
+  zMapReturnValIfFail(pFeatureData, sResult );
   pAttributes = zMapGFFFeatureDataGetAts(pFeatureData) ;
   nAttributes = zMapGFFFeatureDataGetNat(pFeatureData) ;
   pAttributeName = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_Name) ;
@@ -2577,6 +2561,7 @@ static char * makeFeatureAlignmentNamePrivate( ZMapGFFFeatureData pFeatureData)
   unsigned int nAttributes = 0 ;
   int iStart = 0, iEnd = 0 ;
   char * sResult = NULL ;
+  zMapReturnValIfFail(pFeatureData, sResult) ;
   pAttributes = zMapGFFFeatureDataGetAts(pFeatureData) ;
   nAttributes = zMapGFFFeatureDataGetNat(pFeatureData) ;
   pAttributeTarget = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_Target) ;
@@ -2651,12 +2636,7 @@ static ZMapFeature makeFeatureTranscript(ZMapGFFFeatureData pFeatureData,
   ZMapStrand cStrand = ZMAPSTRAND_NONE ;
   ZMapPhase cPhase = ZMAPPHASE_NONE ;
 
-  if (!psError || *psError)
-    return pFeature ;
-  if (!pFeatureData)
-    return pFeature ;
-  if (!pbNewFeatureCreated)
-    return pFeature ;
+  zMapReturnValIfFail(psError && pFeatureData && pbNewFeatureCreated, pFeature ) ;
   *pbNewFeatureCreated = FALSE ;
 
   sSequence            = zMapGFFFeatureDataGetSeq(pFeatureData) ;
@@ -3087,10 +3067,7 @@ static ZMapFeature makeFeatureAlignment(ZMapGFFFeatureData pFeatureData,
   ZMapStyleMode cFeatureStyleMode = ZMAPSTYLE_MODE_BASIC ;
   ZMapHomolType cHomolType = ZMAPHOMOL_NONE ;
 
-  if (!pFeatureData)
-    return pFeature ;
-  if (!psError || *psError)
-    return pFeature ;
+  zMapReturnValIfFail(pFeatureData && psError, pFeature) ;
 
   sSequence            = zMapGFFFeatureDataGetSeq(pFeatureData) ;
   sSource              = zMapGFFFeatureDataGetSou(pFeatureData) ;
@@ -3304,6 +3281,8 @@ static ZMapFeature makeFeatureDefault(ZMapGFFFeatureData pFeatureData,
   ZMapPhase cPhase = ZMAPPHASE_NONE ;
   ZMapSOIDData pSOIDData = NULL ;
 
+  zMapReturnValIfFail(pFeatureData && pFeatureSet && psError, pFeature ) ;
+
   sSequence            = zMapGFFFeatureDataGetSeq(pFeatureData) ;
   sSource              = zMapGFFFeatureDataGetSou(pFeatureData) ;
   iStart               = zMapGFFFeatureDataGetSta(pFeatureData) ;
@@ -3459,10 +3438,8 @@ static gboolean clipFeatureLogic_Transcript( ZMapGFF3Parser pParser, ZMapGFFFeat
   ZMapGFFAttribute *pAttributes = NULL ;
   unsigned int nAttributes = 0 ;
 
-  /*
-   * Error check.
-   */
   zMapReturnValIfFail(pParser || pParser->pHeader || pFeatureData, bIncludeFeature) ;
+
   cClipMode = pParser->clip_mode ;
   iClipStart = pParser->clip_start ;
   iClipEnd = pParser->clip_end ;
@@ -3567,10 +3544,8 @@ static gboolean clipFeatureLogic_General(ZMapGFF3Parser  pParser, ZMapGFFFeature
   ZMapStyleMode cFeatureStyleMode = ZMAPSTYLE_MODE_INVALID ;
   ZMapGFFClipMode cClipMode = GFF_CLIP_NONE ;
 
-  /*
-   * Error check.
-   */
   zMapReturnValIfFail(pParser || pParser->pHeader || pFeatureData, bIncludeFeature) ;
+
   cClipMode = pParser->clip_mode ;
   iClipStart = pParser->clip_start ;
   iClipEnd = pParser->clip_end ;
@@ -3671,8 +3646,8 @@ static gboolean hack_SpecialColumnToSOTerm(const char * const sSource, char ** c
   static const char *sCol05 = "solexa_coverage" ;
   static const char *sCol06 = "das_ChromSig" ;
   gboolean bResult = FALSE ;
-  if (!sSource || !*sSource || !psType || !*psType)
-    return bResult ;
+
+  zMapReturnValIfFail(sSource && *sSource && psType && *psType, bResult ) ;
 
   if (!strcmp(sSource, sCol01))
     {
@@ -3739,7 +3714,8 @@ static gboolean makeNewFeature_V3( ZMapGFFParser pParserBase,
     *pAttributes = NULL ;
 
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
-  zMapReturnValIfFail(pParser && pParser->pHeader, bResult) ;
+
+  zMapReturnValIfFail(pParser && pParser->pHeader && pFeatureData, bResult) ;
 
   /*
    * Take some data from the ZMapGFFFeatureData object
@@ -3905,7 +3881,7 @@ static gboolean makeNewFeature_V3( ZMapGFFParser pParserBase,
  *
  * Return a boolean to indicate success or failure.
  */
-gboolean findFeatureset(ZMapGFFParser pParser, ZMapGFFFeatureData pFeatureData,
+static gboolean findFeatureset(ZMapGFFParser pParser, ZMapGFFFeatureData pFeatureData,
                                    ZMapFeatureSet *ppFeatureSet)
 {
   gboolean bResult = TRUE ;
@@ -3919,6 +3895,8 @@ gboolean findFeatureset(ZMapGFFParser pParser, ZMapGFFFeatureData pFeatureData,
   ZMapFeatureTypeStyle pFeatureStyle = NULL ;
   ZMapSOIDData pSOIDData = NULL ;
   ZMapStyleMode cFeatureStyleMode = ZMAPSTYLE_MODE_INVALID ;
+
+  zMapReturnValIfFail(pParser && pFeatureData && ppFeatureSet, FALSE ) ;
 
   /*
    * Firstly get the attributes.
@@ -4017,11 +3995,13 @@ gboolean findFeatureset(ZMapGFFParser pParser, ZMapGFFFeatureData pFeatureData,
  * Decide whether or not locus-based operations are required for
  * the current feature.
  */
-gboolean requireLocusOperations(ZMapGFFParser pParser, ZMapGFFFeatureData pFeatureData)
+static gboolean requireLocusOperations(ZMapGFFParser pParser, ZMapGFFFeatureData pFeatureData)
 {
   gboolean bResult = FALSE ;
   ZMapGFFAttribute *pAttributes = NULL ;
   unsigned int nAttributes = 0 ;
+
+  zMapReturnValIfFail(pParser && pFeatureData, bResult ) ;
 
   nAttributes          = zMapGFFFeatureDataGetNat(pFeatureData) ;
   pAttributes          = zMapGFFFeatureDataGetAts(pFeatureData) ;
@@ -4059,8 +4039,9 @@ gboolean zMapGFFSetSOSetInUse(ZMapGFFParser  pParserBase, ZMapSOSetInUse cUse)
 {
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
   gboolean bSet = FALSE ;
-  if (!pParser || !pParser->pHeader )
-    return bSet ;
+
+  zMapReturnValIfFail(pParser && pParser->pHeader, bSet) ;
+
   pParser->cSOSetInUse = cUse ;
   bSet = TRUE ;
   return bSet ;
@@ -4072,8 +4053,9 @@ gboolean zMapGFFSetSOSetInUse(ZMapGFFParser  pParserBase, ZMapSOSetInUse cUse)
 ZMapSOSetInUse zMapGFFGetSOSetInUse(ZMapGFFParser pParserBase )
 {
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
-  if (!pParser || !pParser->pHeader )
-    return ZMAPSO_USE_NONE ;
+
+  zMapReturnValIfFail(pParser && pParser->pHeader, ZMAPSO_USE_NONE) ;
+
   return pParser->cSOSetInUse ;
 }
 
@@ -4087,8 +4069,9 @@ gboolean zMapGFFSetSOErrorLevel(ZMapGFFParser pParserBase, ZMapSOErrorLevel cErr
 {
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
   gboolean bSet = FALSE ;
-  if (!pParser || !pParser->pHeader || cErrorLevel < ZMAPGFF_SOERRORLEVEL_UNK )
-    return bSet ;
+
+  zMapReturnValIfFail(pParser && pParser->pHeader, bSet) ;
+
   bSet = TRUE ;
   pParser->cSOErrorLevel = cErrorLevel ;
   return bSet ;
@@ -4101,8 +4084,7 @@ gboolean zMapGFFSetSOErrorLevel(ZMapGFFParser pParserBase, ZMapSOErrorLevel cErr
 ZMapSOErrorLevel zMapGFFGetSOErrorLevel(ZMapGFFParser pParserBase )
 {
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
-  if (!pParser || !pParser->pHeader)
-    return 0 ;
+  zMapReturnValIfFail(pParser && pParser->pHeader, 0);
   return pParser->cSOErrorLevel ;
 }
 
@@ -4117,13 +4099,14 @@ ZMapSOErrorLevel zMapGFFGetSOErrorLevel(ZMapGFFParser pParserBase )
 static void destroyFeatureArray(gpointer data)
 {
   ZMapGFFParserFeatureSet parser_feature_set = (ZMapGFFParserFeatureSet)data ;
+  zMapReturnIfFail(parser_feature_set) ;
 
   /* No data to free in this list, just clear it. */
   g_datalist_clear(&(parser_feature_set->multiline_features)) ;
   if(parser_feature_set->feature_set && parser_feature_set->feature_set->style)
       zMapStyleDestroy(parser_feature_set->feature_set->style);
 
-  g_hash_table_destroy(parser_feature_set->feature_styles);       // styles remain pointed at by features
+  g_hash_table_destroy(parser_feature_set->feature_styles);
 
   g_free(parser_feature_set) ;
 
@@ -4144,6 +4127,8 @@ static ZMapGFFParserFeatureSet getParserFeatureSet(ZMapGFFParser pParserBase, ch
   ZMapGFFParserFeatureSet pParserFeatureSet = NULL ;
   ZMapFeatureSet pFeatureSet = NULL ;
   ZMapSpan span;
+
+  zMapReturnValIfFail(pParser && pParser->pHeader && sFeatureSetName && *sFeatureSetName, pParserFeatureSet) ;
 
   pParserFeatureSet = (ZMapGFFParserFeatureSet)g_datalist_get_data(&(pParser->feature_sets), sFeatureSetName);
 
@@ -4260,6 +4245,8 @@ static gboolean getFeatureName(const char * const sequence,
   char *sTempBuff01 = NULL,
   *sTempBuff02 = NULL ;
   unsigned int iAttribute = 0 ;
+
+  zMapReturnValIfFail(sequence && *sequence && pAttributes && given_name && *given_name && source && *source, bHasName) ;
 
   ZMapGFFAttribute pAttribute = NULL ;
 
