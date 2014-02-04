@@ -332,9 +332,11 @@ void zMapManagerDestroyView(ZMapManager zmaps, ZMap zmap, ZMapView view)
 
 guint zMapManagerCount(ZMapManager zmaps)
 {
-  guint zmaps_count = 0;
-  zmaps_count = g_list_length(zmaps->zmap_list);
-  return zmaps_count;
+  guint zmaps_count = 0 ;
+
+  zmaps_count = g_list_length(zmaps->zmap_list) ;
+
+  return zmaps_count ;
 }
 
 
@@ -471,6 +473,7 @@ gboolean zMapManagerDestroy(ZMapManager zmaps)
     return result ; 
 
   g_free(zmaps) ;
+
   result = TRUE ; 
 
   return result ;

@@ -3619,29 +3619,31 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
   /* Once a view is loaded there won't be any more column changes until the user elects
    * to load a new column. */
-  if (zmap_view->state != ZMAPVIEW_LOADED)
+  if (zmap_view->state != ZMAPVIEW_DYING)
     {
-      if (!has_step_list && reqs_finished)
-	{
-	  /*
-	   * rather than count up the number loaded we say 'LOADED' if there's no LOADING active
-	   * This accounts for failures as well as completed loads
-	   */
-	  zmap_view->state = ZMAPVIEW_LOADED ;
-	  g_list_free(zmap_view->sources_loading) ;
-	  zmap_view->sources_loading = NULL ;
+      if (zmap_view->state != ZMAPVIEW_LOADED)
+        {
+          if (!has_step_list && reqs_finished)
+            {
+              /*
+               * rather than count up the number loaded we say 'LOADED' if there's no LOADING active
+               * This accounts for failures as well as completed loads
+               */
+              zmap_view->state = ZMAPVIEW_LOADED ;
+              g_list_free(zmap_view->sources_loading) ;
+              zmap_view->sources_loading = NULL ;
 
-	  state_change = TRUE ;
-	}
-      else if (!(zmap_view->sources_loading))
-	{
-	  /* We shouldn't need to do this if reqs_finished and has_step_list were consistent. */
+              state_change = TRUE ;
+            }
+          else if (!(zmap_view->sources_loading))
+            {
+              /* We shouldn't need to do this if reqs_finished and has_step_list were consistent. */
 
-	  zmap_view->state = ZMAPVIEW_LOADED ;
-	  state_change = TRUE ;
-	}
+              zmap_view->state = ZMAPVIEW_LOADED ;
+              state_change = TRUE ;
+            }
+        }
     }
-
 
   /* Inform the layer about us that our state has changed. */
   if (state_change)
