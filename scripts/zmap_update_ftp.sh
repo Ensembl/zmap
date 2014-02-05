@@ -37,10 +37,8 @@ repo_name=zmap                           		     # repository name
 website_svn_subdir=zmap_web                          # subdirectory of home_dir that contains the website svn repositories
 # NOTE the svn repository was initialised manually via the following commands. This should not need doing again.
 #   cd ~zmap/BUILD_CHECKOUT
-#   websvn co svn+ssh://www-sanger-ac-uk@web-wwwsvn.internal.sanger.ac.uk/repos/svn/sites/www-sanger-ac-uk/trunk/htdocs/resources/software/zmap zmap_web 
+#   svn co svn+ssh://www-sanger-ac-uk@web-wwwsvn.internal.sanger.ac.uk/repos/svn/sites/www-sanger-ac-uk/trunk/htdocs/resources/software/zmap zmap_web
 # We assume that files in the repository are not edited by hand and therefore we won't get merge conflicts
-
-alias websvn='SSH_AUTH_SOCK="" /usr/bin/svn --config-option config:tunnels:ssh=ssh\ -i\ ${HOME}/.ssh/pagesmith/svn-ssh'
 
 ########################### subroutines ###################################
 
@@ -267,12 +265,12 @@ check_status "Error updating $inc_file"
 
 # Commit the changes to svn
 cd $website_svn_dir
-svn_status=`websvn up`
+svn_status=`svn up`
 echo "$msg_prefix SVN status: $svn_status"
 
-svn_status=`websvn st`
+svn_status=`svn st`
 
-result=`websvn ci -m "Updated link to $inc_file_name build." $inc_file`
+result=`svn ci -m "Updated link to $inc_file_name build." $inc_file`
 check_status "Error committing changes for $inc_file; website will not be updated"
 
 # Publish the changes
