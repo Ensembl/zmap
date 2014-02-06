@@ -1311,12 +1311,22 @@ static gboolean configureLog(char *config_file)
 static gboolean checkInputFileForSequenceDetails(const char* const filename, ZMapFeatureSequenceMap seq_map_inout)
 {
   gboolean result = FALSE ;
+  zMapReturnValIfFail(filename, result) ;
+
   GError *gff_pipe_err = NULL ;
   int gff_version = 0 ;
   ZMapGFFParser parser = NULL ;
-  GString *gff_line = g_string_sized_new(2000) ; /* Probably not many lines will be > 2k chars. */
-  GIOChannel *gff_pipe = g_io_channel_new_file(filename, "r", &gff_pipe_err) ;
+  GString *gff_line = NULL ;
   GIOStatus status = G_IO_STATUS_NORMAL ;
+  GIOChannel *gff_pipe = NULL ;
+
+  gff_line = g_string_sized_new(2000) ; /* Probably not many lines will be > 2k chars. */
+
+  /* Check for the special case "-" which means stdin */
+  if (!strcmp(filename, "-"))
+    gff_pipe = g_io_channel_unix_new(0) ; /* file descriptor for stdin is 0 */
+  else
+    gff_pipe = g_io_channel_new_file(filename, "r", &gff_pipe_err) ;
 
   /* Get the GFF version; default returned is 2 */
   if (gff_pipe)
@@ -1416,8 +1426,9 @@ static void saveInputFilePaths(ZMapFeatureSequenceMap seq_map_inout)
 
   if (file_list)
     {
-      /* Loop through the file paths and prefix with "file://" */
+      /* Loop through the file paths and add them to our list */
       char **file = file_list ;
+
       for (; file && *file; ++file)
         {
           char *url = g_strdup(*file) ;
