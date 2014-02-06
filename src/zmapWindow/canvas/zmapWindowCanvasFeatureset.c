@@ -2478,7 +2478,7 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
       feat = (ZMapWindowCanvasFeature) sl->data;
 
       //      if(debug && feat->feature) printf("feat: %s %lx %f %f\n",g_quark_to_string(feat->feature->unique_id), feat->flags, feat->y1,feat->y2);
-      if (feat->feature)
+      if (0) // feat->feature)
       {
         printf("working on valid feature here, %g %g\n", feat->y1, feat->y2 ) ;
         if (feat->y1 <= fi->start)
