@@ -2324,7 +2324,7 @@ static gboolean parseBodyLine_V3(ZMapGFFParser pParserBase, const char * const s
         {
           bResult = FALSE ;
           sErrText = g_strdup_printf("CDS feature must not have ZMAPPHASE_NONE; line %i, '%s'", pParser->line_count, sLine) ;
-          pParser->error = g_error_new(pParser->error_domain, ZMAPGFF_ERROR_BODY, sErrText) ;
+          pParser->error = g_error_new(pParser->error_domain, ZMAPGFF_ERROR_BODY, "%s", sErrText) ;
           goto return_point ;
         }
     }
@@ -2334,7 +2334,7 @@ static gboolean parseBodyLine_V3(ZMapGFFParser pParserBase, const char * const s
         {
           bResult = FALSE ;
           sErrText = g_strdup_printf("non-CDS feature must have ZMAPPHASE_NONE; line %i, '%s'", pParser->line_count, sLine) ;
-          pParser->error = g_error_new(pParser->error_domain, ZMAPGFF_ERROR_BODY, sErrText) ;
+          pParser->error = g_error_new(pParser->error_domain, ZMAPGFF_ERROR_BODY, "%s", sErrText) ;
           goto return_point ;
         }
     }
