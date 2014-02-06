@@ -407,7 +407,7 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
 	{
 	  server->sequence_server = req_open->sequence_server ; /* if not then drop any DNA data */
 
-	  /* Get the GFF version; default returned is 2 */
+          /* Get the GFF version */
           int parser_version = zMapGFFGetVersion(server->parser) ;
 
           if (!parser_version)

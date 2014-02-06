@@ -51,9 +51,9 @@ typedef struct ZMapGFFParserStruct_ *ZMapGFFParser ;
  */
 typedef enum
 {
+  ZMAPGFF_VERSION_UNKNOWN = 0,
   ZMAPGFF_VERSION_2 = 2,
   ZMAPGFF_VERSION_3 = 3,
-  ZMAPGFF_VERSION_UNKNOWN
 }  ZMapGFFVersion ;
 
 
