@@ -803,7 +803,7 @@ gboolean zMapWindowCanvasFeaturesetGetSeqCoord(ZMapWindowFeaturesetItem features
       break;
     }
 
-  if(!sl || !seq || seq->factor == 0)
+  if(!seq)
     {
       zMapWarnIfReached() ;
       return FALSE;	/* should not happen */
