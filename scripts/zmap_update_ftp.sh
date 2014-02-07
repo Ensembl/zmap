@@ -106,7 +106,7 @@ function print_usage
   print "  -r  remove target directory if it exists."
   print
   print "  -t <type> OVERNIGHT | DEVELOPMENT | PRODUCTION  selects archive on ftp site (DEVELOPMENT is default),"
-  print "                     archive goes to ~ftp/pub4/resources/software/zmap/"
+  print "                     archive goes to ~ftp/pub/resources/software/zmap/"
   print
 
   exit 1
@@ -123,7 +123,7 @@ overnight='OVERNIGHT'
 development='DEVELOPMENT'
 production='PRODUCTION'
 
-ftp_root=/nfs/disk69/ftp/pub4/resources/software/zmap
+ftp_root=/nfs/disk69/ftp/pub/resources/software/zmap
 build_id=$development
 
 
@@ -251,7 +251,7 @@ echo "$msg_prefix Writing website include file: $inc_file"
 # Gemma had a script called from here but we have 4 files to tag, so it's eaiser to do it inline
 # $scripts_dir/zmap_update_website_version_file.sh $build_id $inc_file
 
-ftp_link="ftp://ftp.sanger.ac.uk/pub4/resources/software/$repo_name/$inc_file_name"
+ftp_link="ftp://ftp.sanger.ac.uk/pub/resources/software/$repo_name/$inc_file_name"
 
 echo "<p>The latest version is $version_string, created on $compile_date:" > $inc_file
 for i in `ls`
