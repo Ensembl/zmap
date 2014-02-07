@@ -107,13 +107,14 @@ static gboolean findFeatureset(ZMapGFFParser , ZMapGFFFeatureData  , ZMapFeature
  */
 static gboolean hack_SpecialColumnToSOTerm(const char * const, char ** const ) ;
 
+/*
+ * Some flags used for debugging.
+ */
 /* #define LOCAL_DEBUG_CODE_WRITE_BODY_LINE 1 */
 /* #define LOCAL_DEBUG_CODE_ALIGNMENT 1 */
 /* #define LOCAL_DEBUG_CODE_TRANSCRIPT 1 */
 /* #define LOCAL_DEBUG_CODE_DEFAULT 1 */
 /* #define LOCAL_DEBUG_CODE_LOCUS 1 */
-
-
 
 #ifdef LOCAL_DEBUG_CODE_ALIGNMENT
 static unsigned int iCountAlignment = 0 ;
@@ -131,6 +132,13 @@ static unsigned int iCountDefault = 0 ;
 static FILE *pTestFile = NULL ;
 static const char *sTestFileName = "/nfs/users/nfs_s/sm23/Work/testfile.txt" ;
 #endif
+
+
+/*
+ * Uncomment this flag to use the feature clipping logic during the
+ * parsing/feature creation operations.
+ */
+/* #define PERFORM_CLIPPING_ON_PARSE 1 */
 
 /*
  * Parser FSM transitions. Row is current state, columns is line type.
@@ -3759,8 +3767,10 @@ static gboolean makeNewFeature_V3( ZMapGFFParser pParserBase,
       else if (cFeatureStyleMode == ZMAPSTYLE_MODE_TRANSCRIPT)
         {
 
+#ifdef PERFORM_CLIPPING_ON_PARSE
           if ((bIncludeFeature = clipFeatureLogic_Transcript(pParser, pFeatureData )))
             {
+#endif
 
               pFeature = makeFeatureTranscript(pFeatureData, pFeatureSet, &bNewFeatureCreated, &sMakeFeatureErrorText) ;
               if (pFeature)
@@ -3778,14 +3788,18 @@ static gboolean makeNewFeature_V3( ZMapGFFParser pParserBase,
                     }
                 }
 
+#ifdef PERFORM_CLIPPING_ON_PARSE
             }
+#endif
 
         }
       else if (cFeatureStyleMode == ZMAPSTYLE_MODE_ALIGNMENT)
         {
 
+#ifdef PERFORM_CLIPPING_ON_PARSE
           if ((bIncludeFeature = clipFeatureLogic_General(pParser, pFeatureData )))
             {
+#endif
 
               pFeature = makeFeatureAlignment(pFeatureData, pFeatureSet, &sMakeFeatureErrorText) ;
               if (pFeature)
@@ -3794,15 +3808,18 @@ static gboolean makeNewFeature_V3( ZMapGFFParser pParserBase,
                   ++pParser->num_features ;
                 }
 
+#ifdef PERFORM_CLIPPING_ON_PARSE
             }
-
+#endif
 
         }
       else if (cFeatureStyleMode == ZMAPSTYLE_MODE_ASSEMBLY_PATH)
         {
 
+#ifdef PERFORM_CLIPPING_ON_PARSE
           if ((bIncludeFeature = clipFeatureLogic_General(pParser, pFeatureData )))
             {
+#endif
 
               pFeature = makeFeatureAssemblyPath(pFeatureData, pFeatureSet, &sMakeFeatureErrorText) ;
               if (pFeature)
@@ -3811,13 +3828,18 @@ static gboolean makeNewFeature_V3( ZMapGFFParser pParserBase,
                   ++pParser->num_features ;
                 }
 
+#ifdef PERFORM_CLIPPING_ON_PARSE
             }
+#endif
+
         }
       else
         {
 
+#ifdef PERFORM_CLIPPING_ON_PARSE
           if ((bIncludeFeature = clipFeatureLogic_General(pParser, pFeatureData )))
             {
+#endif
 
               pFeature = makeFeatureDefault(pFeatureData, pFeatureSet, &sMakeFeatureErrorText) ;
               if (pFeature)
@@ -3826,7 +3848,9 @@ static gboolean makeNewFeature_V3( ZMapGFFParser pParserBase,
                   ++pParser->num_features ;
                 }
 
+#ifdef PERFORM_CLIPPING_ON_PARSE
             }
+#endif
 
 
         } /* final ZMapStyleMode clause */
