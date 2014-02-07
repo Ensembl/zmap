@@ -802,8 +802,12 @@ gboolean zMapWindowCanvasFeaturesetGetSeqCoord(ZMapWindowFeaturesetItem features
       //		if(x >= featureset->x_off + featureset->dx && x <= featureset->x_off + featureset->dx + featureset->width)
       break;
     }
-  if(!sl || !seq)
-    return FALSE;	/* should not happen */
+
+  if(!sl || !seq || seq->factor == 0)
+    {
+      zMapWarnIfReached() ;
+      return FALSE;	/* should not happen */
+    }
 
   /* get y coordinate as left hand base/ residue of current row */
 
