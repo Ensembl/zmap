@@ -913,6 +913,12 @@ GHashTable *zMapConfigIniGetColumns(ZMapConfigIniContext context)
         columns = zMapConfigString2QuarkList(colstr,FALSE);
     }
 
+  if (!columns)
+    {
+      /* Use default list of columns */
+      columns = zMapConfigString2QuarkList(ZMAP_DEFAULT_FEATURESETS, FALSE) ;
+    }
+
   /* Add the hard-coded strand-separator column at the start of the list */
   col = g_list_prepend(columns, GUINT_TO_POINTER(g_quark_from_string(ZMAP_FIXED_STYLE_STRAND_SEPARATOR)));
 

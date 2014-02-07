@@ -63,9 +63,6 @@
 #define ZMAP_NB_CHAPTER_GENERAL  "ZMap"  /* preferences chapter relating to general zmap settings */
 #define ZMAP_NB_PAGE_DISPLAY  "Display"  /* preferences page relating to zmap display settings */
 
-/* default list of in-built columns if not specified in config file */
-#define ZMAP_DEFAULT_FEATURESETS "DNA ; 3 Frame ; 3 Frame Translation ; Scratch "
-
 
 /* Define thread debug messages, used in checkStateConnections() mostly. */
 #define THREAD_DEBUG_MSG_PREFIX " Reply from slave thread %s, "
