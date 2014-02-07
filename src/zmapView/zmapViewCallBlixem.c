@@ -876,7 +876,7 @@ static gboolean getUserPrefs(char *config_file, BlixemConfigData curr_prefs)
       char *tmp;
       tmp = file_prefs.script;
 
-      if (file_prefs.script = g_find_program_in_path(tmp))
+      if ((file_prefs.script = g_find_program_in_path(tmp)))
         {
           status = TRUE ;
         }
