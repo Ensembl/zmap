@@ -105,7 +105,7 @@ static void remoteInstaller(GtkWidget *widget, GdkEvent *event, gpointer app_con
 static gboolean remoteInactiveHandler(gpointer data) ;
 static gboolean pingHandler(gpointer data) ;
 
-static gboolean configureLog(char *config_file) ;
+static gboolean configureLog(char *config_file, GError **error) ;
 static void consoleMsg(gboolean err_msg, char *format, ...) ;
 
 static void hideMainWindow(ZMapAppContext app_context) ;
@@ -160,6 +160,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   ZMapFeatureSequenceMap seq_map;
   char *err_msg = NULL ;
   gboolean remote_control = FALSE ;
+  GError *g_error = NULL ;
 
 
 
@@ -260,9 +261,9 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   app_context->zmap_manager = zMapManagerCreate((void *)app_context) ;
 
   /* Set up logging for application....NO LOGGING BEFORE THIS. */
-  if (!zMapLogCreate(NULL) || !configureLog(seq_map->config_file))
+  if (!zMapLogCreate(NULL) || !configureLog(seq_map->config_file, &g_error))
     {
-      consoleMsg(TRUE, "%s", "ZMap cannot create log file.") ;
+      consoleMsg(TRUE, "Error creating log file: %s", (g_error ? g_error->message : "<no error message>")) ;
       doTheExit(EXIT_FAILURE) ;
     }
   else
@@ -1197,9 +1198,10 @@ static void remoteInstaller(GtkWidget *widget, GdkEvent *event, gpointer user_da
 
 
 /* Read logging configuration from ZMap stanza and apply to log. */
-static gboolean configureLog(char *config_file)
+static gboolean configureLog(char *config_file, GError **error)
 {
   gboolean result = TRUE ;	/* if no config, we can't fail to configure */
+  GError *g_error = NULL ;
   ZMapConfigIniContext context ;
   gboolean logging, log_to_file, show_process, show_code, show_time, catch_glib, echo_glib ;
   char *full_dir, *log_name, *logfile_path ;
@@ -1292,16 +1294,25 @@ static gboolean configureLog(char *config_file)
 
     }
 
-  logfile_path = zMapGetFile(full_dir, log_name, TRUE) ;
+  logfile_path = zMapGetFile(full_dir, log_name, TRUE, &g_error) ;
 
   /* all our strings need freeing */
   g_free(log_name) ;
   g_free(full_dir) ;
 
-  result = zMapLogConfigure(logging, log_to_file,
-			    show_process, show_code, show_time,
-			    catch_glib, echo_glib,
-			    logfile_path) ;
+  if (!g_error)
+    {
+      result = zMapLogConfigure(logging, log_to_file,
+                                show_process, show_code, show_time,
+                                catch_glib, echo_glib,
+                                logfile_path, &g_error) ;
+    }
+
+  if (g_error)
+    {
+      result = FALSE ;
+      g_propagate_error(error, g_error) ;
+    }
 
   return result ;
 }

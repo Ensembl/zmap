@@ -45,6 +45,7 @@
 #include <ZMap/zmapConfigIni.h>
 #include <ZMap/zmapConfigStrings.h>
 #include <ZMap/zmapUtils.h>
+#include <zmapUtils_P.h>
 
 
 
@@ -111,17 +112,17 @@ typedef struct  _ZMapLogStruct
 static ZMapLog createLog(void) ;
 static void destroyLog(ZMapLog log) ;
 
-static gboolean configureLog(ZMapLog log) ;
+static gboolean configureLog(ZMapLog log, GError **error) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static gboolean getLogConf(ZMapLog log) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
-static gboolean startLogging(ZMapLog log) ;
+static gboolean startLogging(ZMapLog log, GError **error) ;
 static gboolean stopLogging(ZMapLog log, gboolean remove_all_handlers) ;
 
-static gboolean openLogFile(ZMapLog log) ;
+static gboolean openLogFile(ZMapLog log, GError **error) ;
 static gboolean closeLogFile(ZMapLog log) ;
 
 static void writeStartOrStopMessage(gboolean start) ;
@@ -200,7 +201,7 @@ gboolean zMapLogCreate(char *logname)
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  if (!configureLog(log))
+  if (!configureLog(log, g_error))
     {
       destroyLog(log) ;
       log_G = log = NULL ;
@@ -251,9 +252,10 @@ void zMapWriteStopMsg(void)
 gboolean zMapLogConfigure(gboolean logging, gboolean log_to_file,
 			  gboolean show_process, gboolean show_code, gboolean show_time,
 			  gboolean catch_glib, gboolean echo_glib,
-			  char *logfile_path)
+                          char *logfile_path, GError **error)
 {
   gboolean result = FALSE ;
+  GError *g_error = NULL ;
   ZMapLog log = log_G ;
 
   /* Log at all ? */
@@ -276,7 +278,10 @@ gboolean zMapLogConfigure(gboolean logging, gboolean log_to_file,
   /* user specified dir, default to config dir */
   log->active_handler.log_path = logfile_path ;
 
-  result = configureLog(log) ;
+  result = configureLog(log, &g_error) ;
+
+  if (g_error)
+    g_propagate_error(error, g_error) ;
 
   return result ;
 }
@@ -285,9 +290,10 @@ gboolean zMapLogConfigure(gboolean logging, gboolean log_to_file,
 /* The log and Start and Stop routines write out a record to the log to show start and stop
  * of the log but there is a window where a thread could get in and write to the log
  * before/after they do. We'll just have to live with this... */
-gboolean zMapLogStart()
+gboolean zMapLogStart(GError **error)
 {
   gboolean result = FALSE ;
+  GError *g_error = NULL ;
   ZMapLog log = log_G ;
 
   /* zMapAssert(log) ; */
@@ -296,9 +302,12 @@ gboolean zMapLogStart()
 
   g_mutex_lock(log->log_lock) ;
 
-  result = startLogging(log) ;
+  result = startLogging(log, &g_error) ;
 
   g_mutex_unlock(log->log_lock) ;
+
+  if (g_error)
+    g_propagate_error(error, g_error) ;
 
   return result ;
 }
@@ -609,9 +618,10 @@ static void destroyLog(ZMapLog log)
 
 /* We start and stop logging by swapping from a logging routine that writes to file with one
  * that does nothing. */
-static gboolean startLogging(ZMapLog log)
+static gboolean startLogging(ZMapLog log, GError **error)
 {
   gboolean result = FALSE ;
+  GError *g_error = NULL ;
 
   if (!(log->logging))
     {
@@ -625,7 +635,7 @@ static gboolean startLogging(ZMapLog log)
       /* Only need to do something if we are logging to a file. */
       if (log->log_to_file)
 	{
-	  if (openLogFile(log))
+          if (openLogFile(log, &g_error))
 	    {
 	      log->active_handler.cb_id = g_log_set_handler(ZMAPLOG_DOMAIN,
 							    G_LOG_LEVEL_MASK | G_LOG_FLAG_FATAL
@@ -645,6 +655,9 @@ static gboolean startLogging(ZMapLog log)
       if (result)
 	log->logging = TRUE ;
     }
+
+  if (g_error)
+    g_propagate_error(error, g_error) ;
 
   return result ;
 }
@@ -711,10 +724,10 @@ static gboolean stopLogging(ZMapLog log, gboolean remove_all_handlers)
 
 
 /* Read the configuration information logging and set up the log. */
-static gboolean configureLog(ZMapLog log)
+static gboolean configureLog(ZMapLog log, GError **error)
 {
   gboolean result = FALSE ;
-
+  GError *g_error = NULL ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   if ((result = getLogConf(log)))
@@ -740,19 +753,21 @@ static gboolean configureLog(ZMapLog log)
 	      log->active_handler.log_cb = fileLogger ;
 	    }
 
-	  result = startLogging(log) ;
+          result = startLogging(log, &g_error) ;
 	}
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     }
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+  if (g_error)
+    g_propagate_error(error, g_error) ;
 
   return result ;
 }
 
 
-static gboolean openLogFile(ZMapLog log)
+static gboolean openLogFile(ZMapLog log, GError **error)
 {
   gboolean result = FALSE ;
   GError *g_error = NULL ;
@@ -766,10 +781,13 @@ static gboolean openLogFile(ZMapLog log)
   else
     {
       result = FALSE ;
-
-      /* We should be using the Gerror here..... */
+      g_set_error(&g_error, ZMAP_UTILS_ERROR, ZMAPUTILS_ERROR_GET_LOG,
+                  "Cannot access log file '%s'",
+                  log->active_handler.log_path) ;
     }
 
+  if (g_error)
+    g_propagate_error(error, g_error) ;
 
   return result ;
 }
