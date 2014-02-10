@@ -171,7 +171,8 @@ void zMapViewGetSourceNameTitle(ZMapView zmap_view, char **name, char **title) ;
 ZMapFeatureContext zMapViewGetFeatures(ZMapView zmap_view) ;
 void zMapViewGetVisible(ZMapViewWindow view_window, double *top, double *bottom) ;
 ZMapViewState zMapViewGetStatus(ZMapView zmap_view) ;
-char *zMapViewGetLoadStatusStr(ZMapView view, char **loading_sources_out, char **failed_sources_out) ;
+char *zMapViewGetLoadStatusStr(ZMapView view,
+                               char **loading_sources_out, char **empty_sources_out, char **failed_sources_out) ;
 GtkWidget *zMapViewGetXremote(ZMapView view) ;
 gboolean zMapViewGetFeaturesSpan(ZMapView zmap_view, int *start, int *end) ;
 ZMapWindow zMapViewGetWindow(ZMapViewWindow view_window) ;

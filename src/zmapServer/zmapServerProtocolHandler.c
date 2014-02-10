@@ -946,6 +946,7 @@ static ZMapThreadReturnCode thread_RC(ZMapServerResponseType code)
       thread_rc = ZMAPTHREAD_RETURNCODE_BADREQ ;
       break ;
 
+    case ZMAP_SERVERRESPONSE_NODATA:
     case ZMAP_SERVERRESPONSE_REQFAIL:
     case ZMAP_SERVERRESPONSE_UNSUPPORTED:
       thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
