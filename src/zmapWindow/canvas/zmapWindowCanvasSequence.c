@@ -113,7 +113,7 @@ static void zmapWindowCanvasSequenceGetPango(GdkDrawable *drawable, ZMapWindowFe
 
   if ((pango = (ZMapWindowCanvasPango)(featureset->opt)))
     {
-      if (pango->drawable && pango->drawable != drawable)
+      if (drawable && pango->drawable && pango->drawable != drawable)
 	zmapWindowCanvasFeaturesetFreePango(pango);
 
       if (!pango->renderer)
@@ -577,10 +577,15 @@ static void zmapWindowCanvasSequencePreZoom(ZMapWindowFeaturesetItem featureset)
 
 
 /* I don't know why drawable is passed in here....check other canvas types to see how it's used.... */
-static void zmapWindowCanvasSequenceZoomSet(ZMapWindowFeaturesetItem featureset, GdkDrawable *drawable_unused)
+static void zmapWindowCanvasSequenceZoomSet(ZMapWindowFeaturesetItem featureset, GdkDrawable *drawable)
 {
   ZMapWindowCanvasSequence seq ;
   ZMapSkipList sl ;
+  
+  ZMapWindowCanvasPango pango = (ZMapWindowCanvasPango) featureset->opt;
+
+  if (!pango)
+    return;
 
   /* calculate bases per line */
   //	zMapDebugPrintf("sequence zoom (%.5f)\n", featureset->zoom);	/* is pixels per unit y */
@@ -595,6 +600,8 @@ static void zmapWindowCanvasSequenceZoomSet(ZMapWindowFeaturesetItem featureset,
   for (sl = zMapSkipListFirst(featureset->display_index) ; sl ; sl = sl->next)
     {
       seq = (ZMapWindowCanvasSequence)(sl->data) ;
+
+      zmapWindowCanvasSequenceGetPango(drawable, featureset, seq);
 
 
 
