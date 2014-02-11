@@ -44,6 +44,7 @@ legend{ font-weight: bold }
   <li><a href="#problems"><b>Bootstrapping, Collisions, Synchronisation and Hanging</b><a></li>
   <li><a href="#collisions"><b>Collision Protocol</b></a></li>
   <li><a href="#protocol"><b>References</b></a></li>
+  <li><a href="#collisions_abort">Appendix: Collision Protocol with abort</a></li>
 </ul>
 
 
@@ -215,6 +216,92 @@ alternative scenarios:</p>
 
 <ol start="3">
   <li><p>The winner's request stands, so the winner waits for a
+  reply. <em>[Peer 2: event 10]</em></p></li>
+  <li><p>The reply is received from the loser. <em>[Peer 2: event
+  11]</em></p></li>
+  <li><p>The losing request is now processed by the winner
+  as usual. <em>[Peer 2: CLIENT_WAITING/normal]</em></p></li>
+  <li><p>The winner replies to the losing request as normal.
+         <em>[Peer 2: event 12.]</em></p></li>
+</ol>
+
+<img src="./ZeroMQ_Req_Rep_coll_win.png" align="center">
+
+<h3>Collision loser</h3>
+
+<p>Peer 1 loses.</p>
+
+<ol start="10">
+  <li><p>The loser cancels timeouts on its request (but leaves the
+  request pending) and then processes the winning request as
+  usual. <em>[Peer 2: event 3, CLIENT_WAITING/collision_win.]</em>
+  </p></li>
+  <li><p>The reply to the winning request is returned
+  normally. <em>[Peer 2: event 4.]</em></p></li>
+  <li><p>The loser now waits for the reply to its losing request as
+  usual, restarting its request timeout from 0.
+  <em>[Peer 2: event 5.]</em></p></li>
+  <li><p>The winner replies to the losing request as normal.
+      <em>[Peer 2: event 6.]</em></p></li>
+</ol>
+
+<h3>Message header</h3>
+
+<p><b>TBC</b></p>
+
+<a name="references"></a>
+<h2>References</h2>
+
+<ul>
+  <li><a href="http://zeromq.org/">ZeroMQ</a></li>
+  <li><a href="http://zguide.zeromq.org/page:all">ZeroMQ Guide</a></li>
+  <li><a href="https://metacpan.org/pod/ZMQ::LibZMQ3">ZMQ::LibZMQ3 perl module</a></li>
+</ul>
+
+<a name="collisions_abort"></a>
+<h2>Appendix: Collision Protocol with abort</h2>
+
+<p>It is possible that the loser in a collision, having processed the
+winner's request, changes state sufficiently that it now wishes to
+retract its losing request. The following modifications allow for
+this, although it is not proposed to implement the modified system
+unless proved to be required.</p>
+
+<p>The state diagram including collision detection and abort handling,
+from the perspective of peer one:</p>
+
+<img src="./ZeroMQ_Collision_state_abort.png" align="center">
+
+<h3>Detection and arbitration</h3>
+
+<ol>
+  <li><p>Peer 1 send a request, and then monitors for a reply, whilst
+  also monitoring for an inbound request. <em>[Peer 2: also event 1]</em></p></li>
+  <li>
+    <p>Peer 2 sends a simultaneous request, which peer 1 detects and
+    receives as a colliding request.</p>
+    <p>Peer 1 compares the timestamp of the received request against
+    its cached timestamp for its sent request.</p>
+    <ul>
+      <li><p>If peer 1 sent <em>before</em> peer 2, it wins the
+      collision. (Continue at step 3.)</p></li>
+      <li><p>If peer 1 sent <em>after</em> peer 2, it loses the
+      collision. (Continue at step 10.)</p></li>
+      <li><p>In the unlikely event that both timestamps are identical,
+      the master wins, where the master is the peer which originally
+      sent its endpoint address via the commandline to the
+      slave.</p></li>
+    </ul>
+    <p><em>[Peer 2: also event 2]</em></p>
+  </li>
+</ol>
+
+<h3>Collision winner (with abort handling)</h3>
+
+<p>Peer 1 wins.</p>
+
+<ol start="3">
+  <li><p>The winner's request stands, so the winner waits for a
   reply. <em>[Peer 2: events 10, 11]</em></p></li>
   <li><p>Once the reply is received, the winner examines the header to
   see if the loser wants to abort its colliding request.</p></li>
@@ -230,9 +317,9 @@ alternative scenarios:</p>
   14.]</em></p></li>
 </ol>
 
-<img src="./ZeroMQ_Req_Rep_coll_win.png" align="center">
+<img src="./ZeroMQ_Req_Rep_coll_win_abort.png" align="center">
 
-<h3>Collision loser</h3>
+<h3>Collision loser (with abort handling)</h3>
 
 <p>Peer 1 loses.</p>
 
@@ -257,19 +344,6 @@ alternative scenarios:</p>
   client socket (which would otherwise be awaiting a reply), and
   returns directly to INACTIVE. <em>[Peer 2: event 7.]</em></p></li>
 </ol>
-
-<h3>Message header</h3>
-
-<p><b>TBC</b></p>
-
-<a name="references"></a>
-<h2>References</h2>
-
-<ul>
-  <li><a href="http://zeromq.org/">ZeroMQ</a></li>
-  <li><a href="http://zguide.zeromq.org/page:all">ZeroMQ Guide</a></li>
-  <li><a href="https://metacpan.org/pod/ZMQ::LibZMQ3">ZMQ::LibZMQ3 perl module</a></li>
-</ul>
 
 
 

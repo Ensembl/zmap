@@ -381,6 +381,18 @@ bg=magenta</panel_attributes>
     <additional_attributes/>
   </element>
   <element>
+    <type>com.umlet.element.Class</type>
+    <coordinates>
+      <x>536</x>
+      <y>352</y>
+      <w>24</w>
+      <h>24</h>
+    </coordinates>
+    <panel_attributes>11
+bg=orange</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
     <type>com.umlet.element.custom.SeqObjectActive</type>
     <coordinates>
       <x>160</x>
@@ -389,6 +401,18 @@ bg=magenta</panel_attributes>
       <h>40</h>
     </coordinates>
     <panel_attributes>bg=cyan</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <type>com.umlet.element.Class</type>
+    <coordinates>
+      <x>192</x>
+      <y>352</y>
+      <w>16</w>
+      <h>24</h>
+    </coordinates>
+    <panel_attributes>4
+bg=green</panel_attributes>
     <additional_attributes/>
   </element>
   <element>
@@ -419,12 +443,12 @@ fg=#986018</panel_attributes>
   <element>
     <type>com.umlet.element.Class</type>
     <coordinates>
-      <x>192</x>
-      <y>352</y>
+      <x>128</x>
+      <y>408</y>
       <w>16</w>
       <h>24</h>
     </coordinates>
-    <panel_attributes>4
+    <panel_attributes>5
 bg=green</panel_attributes>
     <additional_attributes/>
   </element>
@@ -491,12 +515,12 @@ timestamp win</panel_attributes>
   <element>
     <type>com.umlet.element.Class</type>
     <coordinates>
-      <x>536</x>
-      <y>352</y>
+      <x>688</x>
+      <y>408</y>
       <w>24</w>
       <h>24</h>
     </coordinates>
-    <panel_attributes>11
+    <panel_attributes>12
 bg=orange</panel_attributes>
     <additional_attributes/>
   </element>
@@ -617,29 +641,5 @@ mode
     <panel_attributes>lt=.
 </panel_attributes>
     <additional_attributes>24;24;24;96</additional_attributes>
-  </element>
-  <element>
-    <type>com.umlet.element.Class</type>
-    <coordinates>
-      <x>128</x>
-      <y>464</y>
-      <w>16</w>
-      <h>24</h>
-    </coordinates>
-    <panel_attributes>5
-bg=green</panel_attributes>
-    <additional_attributes/>
-  </element>
-  <element>
-    <type>com.umlet.element.Class</type>
-    <coordinates>
-      <x>688</x>
-      <y>408</y>
-      <w>24</w>
-      <h>24</h>
-    </coordinates>
-    <panel_attributes>12
-bg=orange</panel_attributes>
-    <additional_attributes/>
   </element>
 </diagram>
