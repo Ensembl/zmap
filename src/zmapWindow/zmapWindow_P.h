@@ -498,9 +498,9 @@ typedef enum
 #define ZMAP_WINDOW_ITEM_HIGHLIGHT "dark grey"
 
 /* Colours for highlighting 3 frame data */
-#define ZMAP_WINDOW_FRAME_0 "red"
-#define ZMAP_WINDOW_FRAME_1 "deep pink"
-#define ZMAP_WINDOW_FRAME_2 "light pink"
+#define ZMAP_WINDOW_FRAME_0 "#ffe6e6" /* pale pink */
+#define ZMAP_WINDOW_FRAME_1 "#e6ffe6" /* pale green */
+#define ZMAP_WINDOW_FRAME_2 "#e6e6ff" /* pale blue */
 
 
 /* Colour for "marked" item. */
