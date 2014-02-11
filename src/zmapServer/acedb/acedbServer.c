@@ -1617,18 +1617,8 @@ static gboolean blockDNARequest(AcedbServer server, GHashTable *styles, ZMapFeat
        * it was done this way - Ed) */
       if (zMapFeatureDNACreateFeatureSet(feature_block, &feature_set))
 	{
-
-	  /* This temp style creation feels wrong, and probably is,
-	   * but we don't have the merged in default styles in here,
-	   * or so it seems... */
-
 	  if ((dna_style = zMapFindStyle(styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME))))
-#if 0
-	    temp_style = dna_style = zMapStyleCreate(ZMAP_FIXED_STYLE_DNA_NAME,
-						     ZMAP_FIXED_STYLE_DNA_NAME_TEXT);
-#endif
-
-		feature = zMapFeatureDNACreateFeature(feature_block, dna_style, dna_sequence, dna_length);
+            feature = zMapFeatureDNACreateFeature(feature_block, dna_style, dna_sequence, dna_length);
 	}
 
 
@@ -1647,10 +1637,10 @@ static gboolean blockDNARequest(AcedbServer server, GHashTable *styles, ZMapFeat
 
           if ((zMapFeatureORFCreateSet(feature_block, &feature_set)))
             {
-              ZMapFeatureTypeStyle frame_style = NULL;
+              ZMapFeatureTypeStyle orf_style = NULL;
               
-              if ((frame_style = zMapFindStyle(styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_ORF_NAME))))
-                zMapFeatureORFSetCreateFeatures(feature_set, frame_style, translation_fs);
+              if ((orf_style = zMapFindStyle(styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_ORF_NAME))))
+                zMapFeatureORFSetCreateFeatures(feature_set, orf_style, translation_fs);
             }
 	}
 
