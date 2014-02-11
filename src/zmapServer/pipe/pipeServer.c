@@ -1308,82 +1308,51 @@ static void eachBlockSequence(gpointer key, gpointer data, gpointer user_data)
 	}
       else
 	{
+          /* the servers need styles to add DNA and 3FT
+           * they used to create temp style and then destroy these but that's not very good
+           * they don't have styles info directly but this is stored in the parser
+           * during the protocol steps, so i wrote a GFF function to supply that info
+           * Now that features have style ref'd indirectly via the featureset we can't use temp data
+           */
 	  ZMapFeatureContext context;
 	  ZMapFeatureSet feature_set;
+          GHashTable *styles = zMapGFFParserGetStyles(server->parser);
 
 	  if (zMapFeatureDNACreateFeatureSet(feature_block, &feature_set))
 	    {
 	      ZMapFeatureTypeStyle dna_style = NULL;
 	      ZMapFeature feature;
-	      GHashTable *hash = zMapGFFParserGetStyles(server->parser);
 
-#if 0
-	      /* This temp style creation feels wrong, and probably is,
-	       * but we don't have the merged in default styles in here,
-	       * or so it seems... */
-	      dna_style = zMapStyleCreate(ZMAP_FIXED_STYLE_DNA_NAME,
-					  ZMAP_FIXED_STYLE_DNA_NAME_TEXT);
-
-	      feature = zMapFeatureDNACreateFeature(feature_block, dna_style,
-						    sequence->sequence, sequence->length);
-
-	      zMapStyleDestroy(dna_style);
-#else
-	      /* the servers need styles to add DNA and 3FT
-	       * they used to create temp style and then destroy these but that's not very good
-	       * they don't have styles info directly but this is stored in the parser
-	       * during the protocol steps, so i wrote a GFF function to supply that info
-	       * Now that features have style ref'd indirectly via the featureset we can't use temp data
-	       */
-
-	      if (hash)
-                {
-                  dna_style = g_hash_table_lookup(hash, GUINT_TO_POINTER(feature_set->unique_id));
-                }
-
-	      if (dna_style)
-                {
-                  feature = zMapFeatureDNACreateFeature(feature_block, dna_style,
-                                                        sequence->sequence, sequence->length);
-                }
-#endif
+              if (styles && (dna_style = g_hash_table_lookup(styles, GUINT_TO_POINTER(feature_set->unique_id))))
+                feature = zMapFeatureDNACreateFeature(feature_block, dna_style, sequence->sequence, sequence->length);
 	    }
 
 
 	  // this is insane: asking a pipe server for 3FT, however some old code might expect it
-	  context = (ZMapFeatureContext)zMapFeatureGetParentGroup((ZMapFeatureAny)feature_block,
-								  ZMAPFEATURE_STRUCT_CONTEXT) ;
+          /* gb10: ZMap can now be run standalone on a GFF file, so everything, including the DNA
+           * for the 3FT, has to come from that file... */
+          context = (ZMapFeatureContext)zMapFeatureGetParentGroup((ZMapFeatureAny)feature_block, ZMAPFEATURE_STRUCT_CONTEXT) ;
 
 	  /* I'm going to create the three frame translation up front! */
 	  if (zMap_g_list_find_quark(context->req_feature_set_names, zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME)))
 	    {
-	      if ((zMapFeature3FrameTranslationCreateSet(feature_block, &feature_set)))
-		{
-		  ZMapFeatureTypeStyle frame_style = NULL;
-		  ZMapFeature feature;
-#if 0
-		  /* NOTE: this old code has the wrong style name ! */
-		  frame_style = zMapStyleCreate(ZMAP_FIXED_STYLE_DNA_NAME,
-						ZMAP_FIXED_STYLE_DNA_NAME_TEXT);
+              ZMapFeatureSet translation_fs = NULL;
+          
+              if (zMapFeature3FrameTranslationCreateSet(feature_block, &feature_set))
+                {
+                  translation_fs = feature_set;
+                  ZMapFeatureTypeStyle frame_style = NULL;
 
-		  zMapFeature3FrameTranslationSetCreateFeatures(feature_set, frame_style);
+                  if(styles && (frame_style = zMapFindStyle(styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME))))
+                    zMapFeature3FrameTranslationSetCreateFeatures(feature_set, frame_style);
+                }
 
-		  zMapStyleDestroy(frame_style);
-#else
-		  /* the servers need styles to add DNA and 3FT
-		   * they used to create temp style and then destroy these but that's not very good
-		   * they don't have styles info directly but this is stored in the parser
-		   * during the protocol steps, so i wrote a GFF function to supply that info
-		   * Now that features have style ref'd indirectly via the featureset we can't use temp data
-		   */
-		  GHashTable *hash = zMapGFFParserGetStyles(server->parser);
-
-		  if (hash)
-		    frame_style = g_hash_table_lookup(hash, GUINT_TO_POINTER(g_quark_from_string(ZMAP_FIXED_STYLE_3FT_NAME)));
-		  if (frame_style)
-		    feature = zMapFeatureDNACreateFeature(feature_block, frame_style,
-							  sequence->sequence, sequence->length);
-#endif
+              if (zMapFeatureORFCreateSet(feature_block, &feature_set))
+                {
+                  ZMapFeatureTypeStyle orf_style = NULL;
+              
+                  if (styles && (orf_style = zMapFindStyle(styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_ORF_NAME))))
+                    zMapFeatureORFSetCreateFeatures(feature_set, orf_style, translation_fs);
 		}
 	    }
 
