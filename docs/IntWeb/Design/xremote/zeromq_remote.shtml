@@ -43,7 +43,10 @@ legend{ font-weight: bold }
   <li><a href="#protocol"><b>The Request/Reply Transport Protocol</b></a></li>
   <li><a href="#problems"><b>Bootstrapping, Collisions, Synchronisation and Hanging</b><a></li>
   <li><a href="#collisions"><b>Collision Protocol</b></a></li>
-  <li><a href="#protocol"><b>References</b></a></li>
+  <li><a href="#timeouts"><b>Timeout Protocol</b></a></li>
+  <li><a href="#state"><b>State</b></a></li>
+  <li><a href="#header"><b>Message Header</b></a></li>
+  <li><a href="#references"><b>References</b></a></li>
   <li><a href="#collisions_abort">Appendix: Collision Protocol with abort</a></li>
 </ul>
 
@@ -150,7 +153,7 @@ resolution.</p>
 <p>Timeouts and errors are to be handled by each client implementing
 the <a href="http://zguide.zeromq.org/page:all#toc89">Lazy Pirate
 Pattern</a>. The implications of the resulting likelihood of client
-retries are discussed in the next section.</p>
+retries are discussed in the 'Synchronisation' sub-section.</p>
 
 <h3>Synchronisation</h3>
 
@@ -245,9 +248,59 @@ alternative scenarios:</p>
       <em>[Peer 2: event 6.]</em></p></li>
 </ol>
 
-<h3>Message header</h3>
+<a name="timeouts"></a>
+<h2>Timeout Protocol</h2>
 
-<p><b>TBC</b></p>
+<p>The sequence diagram including a client timeout, from the perspective of peer one:</p>
+
+<img src="./ZeroMQ_Req_rep_timeout.png" align="center">
+
+<ol>
+  <li><p>Peer 1 makes a new request with sequence id 203. It keeps a
+  copy of the request in case of problems.</p></li>
+  <li><p>Peer 2 receives request 203. At this stage it can discard
+  response 202. It starts to process the new request.</p></li>
+  <li><p>Peer 2 has finished processing request 203 and has created
+  response 203. It keeps a copy of response 203 in case of
+  problems.</p></li>
+  <li><p>Peer 2 replies with its response.</p></li>
+  <li><p>Unfortunately peer 2's processing has been too slow, so peer
+  1 has timed out. It tears down and recreates its ZeroMQ REQ/REP
+  connection to peer 1, and resends request 203.</p></li>
+  <li><p>ZeroMQ discards the original reply.</p></li>
+  <li><p>Peer 2 receives the repeat request 203.</p></li>
+  <li><p>As it has kept a copy, there is no need to repeat the
+  original processing.</p></li>
+  <li><p>Peer 2 replies with its stored copy of response 203.</p></li>
+  <li><p>Peer 1 receives the response. At this stage it can mark
+  request 203 as acknowledged and can discard the stored
+  request.</p></li>
+</ol>
+
+<h3>Notes</h3>
+
+<ul>
+  <li><p>If request processing involves returning to the event loop,
+  the server (peer 2 in the example above) should suspend callbacks on
+  its <code>ZQM_REP</code> server socket whilst it is processing the
+  request, to prevent nested requests. ZeroMQ will buffer any incoming
+  requests. Once the process-and-reply sequence is complete, the
+  callback should be reinstated.</p></li>
+  <li><p>Collison processing is not shown here but should proceed as
+  normal. If the server has issued a new request which clashes with
+  the client's resend, the resend will win as its timestamp will be as
+  for the original request.</p></li>
+</ul>
+
+<a name="state"></a>
+<h2>State</h2>
+
+<p>Details of state which must be maintained by client and server <b>TBC</b>.</p>
+
+<a name="header"></a>
+<h2>Message header</h2>
+
+<p>Details of message header <b>TBC</b>.</p>
 
 <a name="references"></a>
 <h2>References</h2>
