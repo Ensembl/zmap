@@ -34,7 +34,7 @@
 
 
 /* default list of in-built columns if not specified in config file */
-#define ZMAP_DEFAULT_FEATURESETS "DNA ; 3 Frame ; 3 Frame Translation ; Scratch "
+#define ZMAP_DEFAULT_FEATURESETS "DNA ; 3 Frame ; 3 Frame Translation ; Show Translation ; Annotation "
 
 
 typedef gpointer (*ZMapConfigIniUserDataCreateFunc)(void);

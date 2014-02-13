@@ -1356,6 +1356,19 @@ static void eachBlockSequence(gpointer key, gpointer data, gpointer user_data)
 		}
 	    }
 
+          /* I'm going to create the show translation up front! */
+          if (zMap_g_list_find_quark(context->req_feature_set_names,
+                                     zMapStyleCreateID(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME)))
+            {
+              if ((zMapFeatureShowTranslationCreateSet(feature_block, &feature_set)))
+                {
+                  ZMapFeatureTypeStyle trans_style = NULL;
+
+                  if ((trans_style = zMapFindStyle(styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME))))
+                    zMapFeatureShowTranslationSetCreateFeatures(feature_set, trans_style) ;
+                }
+            }
+
 	  g_free(sequence);
 	}
     }
