@@ -75,6 +75,7 @@ static void checkFeatureSetCB_V2(GQuark key_id, gpointer data, gpointer user_dat
 static void checkFeatureSetCB_V3(GQuark key_id, gpointer data, gpointer user_data_unused) ;
 static void checkFeatureCB_V2(GQuark key_id, gpointer data, gpointer user_data_unused) ;
 static void checkFeatureCB_V3(gpointer key_id, gpointer data, gpointer user_data_unused) ;
+static gboolean removeTranscriptFeature(gpointer key,gpointer value, gpointer user_data);
 
 
 /*
@@ -475,7 +476,7 @@ static void checkFeatureCB_V2(GQuark key_id, gpointer data, gpointer user_data_u
 
 
 /*
- * This makes corrections to introns in transcript features.
+ * This traverses all featuresets.
  */
 static void normaliseFeatures_V3(GData **feature_sets)
 {
@@ -489,13 +490,15 @@ static void normaliseFeatures_V3(GData **feature_sets)
 static void checkFeatureSetCB_V3(GQuark key_id, gpointer data, gpointer user_data_unused)
 {
   ZMapGFFParserFeatureSet parser_feature_set = (ZMapGFFParserFeatureSet)data ;
+  guint iRemoved = 0 ;
 
   /*
-     Note that the containers differ here:
-     multiline_features is GData*, and is traversed with g_datalist_foreach,
-     however feature_set is ZMapFeatureSetStructType and it features are
-     stored in a g_hash_table construct which is why we need two sets of
-     functions to do the traversal for v2 and v3 here.. amusing, eh?
+   * This traversal is to remove transcript features with no exons.
+   */
+  iRemoved = g_hash_table_foreach_remove(parser_feature_set->feature_set->features, removeTranscriptFeature, NULL);
+
+  /*
+   * This traversal is to normalize introns in each transcript feature
    */
   if (parser_feature_set->feature_set->features)
   {
@@ -524,6 +527,30 @@ static void checkFeatureCB_V3(gpointer key_id, gpointer data, gpointer user_data
     }
 
   return ;
+}
+
+/*
+ * Return true if the feature is a transcript with no exons; return false otherwise.
+ * This function simply signals whether or not the pointer is to be removed from the
+ * hash table, but does not delete what it points to.
+ */
+static gboolean removeTranscriptFeature(gpointer key, gpointer value, gpointer user_data_unused)
+{
+  gboolean bEmptyTranscript = FALSE ;
+  ZMapFeature pFeature = NULL ;
+  pFeature = (ZMapFeature) value ;
+
+  zMapReturnValIfFail(pFeature, FALSE ) ;
+
+  if (pFeature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
+    {
+      if (!pFeature->feature.transcript.exons->len)
+        {
+          bEmptyTranscript = TRUE ;
+        }
+    }
+
+  return bEmptyTranscript ;
 }
 
 
