@@ -48,6 +48,8 @@ void zMapGFFStr_array_add_element(char ***, unsigned int *, void*(*)(size_t), vo
 void zMapGFFStr_array_delete(char**, unsigned int, void(*)(void*)) ;
 char * zMapGFFStr_substring(const char* const, const char* const, void*(*local_malloc)(size_t)) ;
 void zMapGFFStr_remove_char(char *, char) ;
+gboolean zMapGFFStr_substring_replace(const char * const, const char * const, const char * const, char ** ) ;
+gboolean zMapGFFStr_substring_replace_n(const char * const, const char * const, const char * const, char ** ) ;
 
 
 

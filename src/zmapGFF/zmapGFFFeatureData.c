@@ -1,3 +1,34 @@
+/*  File: zmapGFFFeatureData.c
+ *  Author: Steve Miller (sm23@sanger.ac.uk)
+ *  Copyright (c) 2006-2013: Genome Research Ltd.
+ *-------------------------------------------------------------------
+ * ZMap is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ * or see the on-line version at http://www.gnu.org/copyleft/gpl.txt
+ *-------------------------------------------------------------------
+ * This file is part of the ZMap genome database package
+ * originated by
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk,
+ *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk
+ *
+ * Description: FeatureData storage and management for GFFv3.
+ *
+ *-------------------------------------------------------------------
+ */
+
 #include "zmapGFFFeatureData.h"
 
 
@@ -40,12 +71,44 @@ ZMapGFFFeatureData zMapGFFFeatureDataCreate()
   return pFeatureData ;
 }
 
+/*
+ * A "copy constructor" that returns pointer to a new object by copying the argument.
+ */
+ZMapGFFFeatureData zMapGFFFeatureDataCC(ZMapGFFFeatureData pData )
+{
+  ZMapGFFFeatureData pFeatureData = NULL ;
+  pFeatureData = (ZMapGFFFeatureData) g_new0(ZMapGFFFeatureDataStruct, 1) ;
+  zMapReturnValIfFail(pData && pFeatureData, pFeatureData) ;
+
+  pFeatureData->sSequence    = pData->sSequence ? g_strdup(pData->sSequence) : NULL ;
+  pFeatureData->sSource      = pData->sSource ? g_strdup(pData->sSource) : NULL ;
+  pFeatureData->iStart       = pData->iStart ;
+  pFeatureData->iEnd         = pData->iEnd ;
+  pFeatureData->dScore       = pData->dScore ;
+  pFeatureData->cStrand      = pData->cStrand ;
+  pFeatureData->cPhase       = pData->cPhase ;
+  pFeatureData->sAttributes  = pData->sAttributes ? g_strdup(pData->sAttributes) : NULL ;
+  pFeatureData->pSOIDData    = zMapSOIDDataCC(pData->pSOIDData) ;
+
+  pFeatureData->flags.got_seq        = pData->flags.got_seq ;
+  pFeatureData->flags.got_sou        = pData->flags.got_sou ;
+  pFeatureData->flags.got_sta        = pData->flags.got_sta ;
+  pFeatureData->flags.got_end        = pData->flags.got_end ;
+  pFeatureData->flags.got_sco        = pData->flags.got_sco ;
+  pFeatureData->flags.got_str        = pData->flags.got_str ;
+  pFeatureData->flags.got_pha        = pData->flags.got_pha ;
+  pFeatureData->flags.got_att        = pData->flags.got_att ;
+  pFeatureData->flags.got_sod        = pData->flags.got_sod ;
+
+  return pFeatureData ;
+}
+
 
 
 /*
  * Delete a ZMapGFFFeatureData object
  */
-void zMapGFFFeatureDataDestroy(ZMapGFFFeatureData const pFeatureData)
+void zMapGFFFeatureDataDestroy(ZMapGFFFeatureData pFeatureData)
 {
   if (!pFeatureData)
     return ;
@@ -79,17 +142,17 @@ void zMapGFFFeatureDataDestroy(ZMapGFFFeatureData const pFeatureData)
  * Set the internal data of the object. All data are required, apart from the score,
  * which we do not necessarily have.
  */
-gboolean zMapGFFFeatureDataSet(ZMapGFFFeatureData const pFeatureData,
+gboolean zMapGFFFeatureDataSet(ZMapGFFFeatureData pFeatureData,
                                const char* const sSequence,
                                const char* const sSource,
-                               unsigned int iStart,
-                               unsigned int iEnd,
+                               int iStart,
+                               int iEnd,
                                gboolean bHasScore,
                                double dScore,
                                ZMapStrand cStrand,
                                ZMapPhase cPhase,
                                const char* const sAttributes,
-                               const ZMapGFFAttribute * const pAttributes,
+                               ZMapGFFAttribute *pAttributes,
                                unsigned int nAttributes,
                                const ZMapSOIDData const pSOID
                                )
@@ -156,7 +219,7 @@ gboolean zMapGFFFeatureDataSet(ZMapGFFFeatureData const pFeatureData,
  * We require all fields to be set except for the score which is
  * not necessarily present in the original data.
  */
-gboolean zMapGFFFeatureDataIsValid(const ZMapGFFFeatureData const pFeatureData  )
+gboolean zMapGFFFeatureDataIsValid( ZMapGFFFeatureData pFeatureData  )
 {
   gboolean bResult = FALSE ;
   if (!pFeatureData)
@@ -191,56 +254,56 @@ gboolean zMapGFFFeatureDataIsValid(const ZMapGFFFeatureData const pFeatureData  
 /*
  * Functions to return the values of various flags.
  */
-gboolean zMapGFFFeatureDataGetFlagSeq(const ZMapGFFFeatureData const pFeatureData)
+gboolean zMapGFFFeatureDataGetFlagSeq(ZMapGFFFeatureData pFeatureData)
 {
   if (!pFeatureData)
     return FALSE ;
   return pFeatureData->flags.got_seq ;
 }
 
-gboolean zMapGFFFeatureDataGetFlagSou(const ZMapGFFFeatureData const pFeatureData)
+gboolean zMapGFFFeatureDataGetFlagSou(ZMapGFFFeatureData pFeatureData)
 {
   if (!pFeatureData)
     return FALSE ;
   return pFeatureData->flags.got_sou ;
 }
 
-gboolean zMapGFFFeatureDataGetFlagSta(const ZMapGFFFeatureData const pFeatureData)
+gboolean zMapGFFFeatureDataGetFlagSta(ZMapGFFFeatureData pFeatureData)
 {
   if (!pFeatureData)
     return FALSE ;
   return pFeatureData->flags.got_sta ;
 }
 
-gboolean zMapGFFFeatureDataGetFlagEnd(const ZMapGFFFeatureData const pFeatureData)
+gboolean zMapGFFFeatureDataGetFlagEnd(ZMapGFFFeatureData pFeatureData)
 {
   if (!pFeatureData)
     return FALSE ;
   return pFeatureData->flags.got_end ;
 }
 
-gboolean zMapGFFFeatureDataGetFlagSco(const ZMapGFFFeatureData const pFeatureData)
+gboolean zMapGFFFeatureDataGetFlagSco( ZMapGFFFeatureData pFeatureData)
 {
   if (!pFeatureData)
     return FALSE ;
   return pFeatureData->flags.got_sco ;
 }
 
-gboolean zMapGFFFeatureDataGetFlagStr(const ZMapGFFFeatureData const pFeatureData)
+gboolean zMapGFFFeatureDataGetFlagStr( ZMapGFFFeatureData pFeatureData)
 {
   if (!pFeatureData)
     return FALSE ;
   return pFeatureData->flags.got_str ;
 }
 
-gboolean zMapGFFFeatureDataGetFlagPha(const ZMapGFFFeatureData const pFeatureData)
+gboolean zMapGFFFeatureDataGetFlagPha(ZMapGFFFeatureData pFeatureData)
 {
   if (!pFeatureData)
     return FALSE ;
   return pFeatureData->flags.got_pha ;
 }
 
-gboolean zMapGFFFeatureDataGetFlagAtt(const ZMapGFFFeatureData const pFeatureData)
+gboolean zMapGFFFeatureDataGetFlagAtt(ZMapGFFFeatureData pFeatureData)
 {
   if (!pFeatureData)
     return FALSE ;
@@ -248,21 +311,142 @@ gboolean zMapGFFFeatureDataGetFlagAtt(const ZMapGFFFeatureData const pFeatureDat
 }
 
 
-gboolean zMapGFFFeatureDataGetFlagPat(const ZMapGFFFeatureData const pFeatureData )
+gboolean zMapGFFFeatureDataGetFlagPat(ZMapGFFFeatureData pFeatureData )
 {
   if (!pFeatureData)
     return FALSE ;
   return pFeatureData->flags.got_pat;
 }
 
-gboolean zMapGFFFeatureDataGetFlagSod(const ZMapGFFFeatureData const pFeatureData )
+gboolean zMapGFFFeatureDataGetFlagSod(ZMapGFFFeatureData pFeatureData )
 {
   if (!pFeatureData)
     return FALSE ;
   return pFeatureData->flags.got_sod ;
 }
 
+/*
+ * Set some of the flags
+ */
+gboolean zMapGFFFeatureDataSetFlagSco(ZMapGFFFeatureData pFeatureData, gboolean bValue)
+{
+  gboolean bResult = FALSE ;
+  zMapReturnValIfFail(pFeatureData, bResult ) ;
+  bResult = TRUE ;
+  pFeatureData->flags.got_sco = bValue ;
+  return bResult ;
+}
 
+
+/*
+ * Functions to set some data members.
+ */
+
+gboolean zMapGFFFeatureDataSetSeq(ZMapGFFFeatureData pFeatureData , const char * const sData)
+{
+  gboolean bResult = FALSE ;
+
+  zMapReturnValIfFail(pFeatureData && sData, bResult ) ;
+
+  if (pFeatureData->sSequence)
+    g_free(pFeatureData->sSequence) ;
+
+  pFeatureData->sSequence = g_strdup(sData) ;
+  bResult = TRUE ;
+
+  return bResult ;
+}
+
+
+gboolean zMapGFFFeatureDataSetSou(ZMapGFFFeatureData pFeatureData, const char * const sData )
+{
+  gboolean bResult = FALSE ;
+
+  zMapReturnValIfFail(pFeatureData && sData, bResult ) ;
+
+  if (pFeatureData->sSource)
+    g_free (pFeatureData->sSource) ;
+
+  pFeatureData->sSource = g_strdup(sData) ;
+  bResult = TRUE ;
+
+  return bResult ;
+}
+
+gboolean zMapGFFFeatureDataSetSod(ZMapGFFFeatureData pFeatureData , ZMapSOIDData pData )
+{
+  gboolean bResult = FALSE ;
+
+  zMapReturnValIfFail(pFeatureData && pData, bResult ) ;
+
+  if (pFeatureData->pSOIDData)
+    zMapSOIDDataDestroy(pFeatureData->pSOIDData) ;
+
+  pFeatureData->pSOIDData = zMapSOIDDataCC(pData) ;
+
+  return bResult ;
+}
+
+
+gboolean zMapGFFFeatureDataSetSta(ZMapGFFFeatureData pFeatureData, int iVal)
+{
+  gboolean bResult = FALSE ;
+
+  zMapReturnValIfFail(pFeatureData, bResult) ;
+
+  pFeatureData->iStart = iVal ;
+
+  bResult = TRUE ;
+  return bResult ;
+}
+
+gboolean zMapGFFFeatureDataSetEnd(ZMapGFFFeatureData pFeatureData, int iVal)
+{
+  gboolean bResult = FALSE ;
+
+  zMapReturnValIfFail(pFeatureData, bResult) ;
+
+  pFeatureData->iEnd = iVal ;
+
+  bResult = TRUE ;
+  return bResult ;
+}
+
+gboolean zMapGFFFeatureDataSetSco(ZMapGFFFeatureData pFeatureData, double dVal)
+{
+  gboolean bResult = FALSE ;
+
+  zMapReturnValIfFail(pFeatureData, bResult) ;
+
+  pFeatureData->dScore = dVal ;
+  bResult = TRUE ;
+
+  return bResult ;
+}
+
+gboolean zMapGFFFeatureDataSetStr(ZMapGFFFeatureData pFeatureData, ZMapStrand cStrand)
+{
+  gboolean bResult = FALSE ;
+
+  zMapReturnValIfFail(pFeatureData, bResult) ;
+
+  pFeatureData->cStrand = cStrand ;
+  bResult = TRUE ;
+
+  return bResult ;
+}
+
+gboolean zMapGFFFeatureDataSetPha(ZMapGFFFeatureData pFeatureData, ZMapPhase cPhase)
+{
+  gboolean bResult = FALSE ;
+
+  zMapReturnValIfFail(pFeatureData, bResult) ;
+
+  pFeatureData->cPhase = cPhase ;
+  bResult = TRUE ;
+
+  return bResult ;
+}
 
 
 
@@ -270,82 +454,71 @@ gboolean zMapGFFFeatureDataGetFlagSod(const ZMapGFFFeatureData const pFeatureDat
 /*
  * Functions to return various of the object data elements.
  */
-char*         zMapGFFFeatureDataGetSeq(const ZMapGFFFeatureData const pFeatureData)
+char*         zMapGFFFeatureDataGetSeq(ZMapGFFFeatureData pFeatureData)
 {
-  if (!pFeatureData)
-    return NULL ;
+  zMapReturnValIfFail(pFeatureData, NULL) ;
   return pFeatureData->sSequence ;
 }
 
-char*         zMapGFFFeatureDataGetSou(const ZMapGFFFeatureData const pFeatureData)
+char*         zMapGFFFeatureDataGetSou(ZMapGFFFeatureData pFeatureData)
 {
-  if (!pFeatureData)
-    return NULL ;
+  zMapReturnValIfFail(pFeatureData, NULL) ;
   return pFeatureData->sSource ;
 }
 
-unsigned int  zMapGFFFeatureDataGetSta(const ZMapGFFFeatureData const pFeatureData )
+int           zMapGFFFeatureDataGetSta(ZMapGFFFeatureData pFeatureData )
 {
-  if (!pFeatureData)
-    return 0 ;
+  zMapReturnValIfFail(pFeatureData, 0) ;
   return pFeatureData->iStart ;
 }
 
-unsigned int  zMapGFFFeatureDataGetEnd(const ZMapGFFFeatureData const pFeatureData )
+int           zMapGFFFeatureDataGetEnd(ZMapGFFFeatureData pFeatureData )
 {
-  if (!pFeatureData)
-    return 0 ;
+  zMapReturnValIfFail(pFeatureData, 0) ;
   return pFeatureData->iEnd ;
 }
 
-double        zMapGFFFeatureDataGetSco(const ZMapGFFFeatureData const pFeatureData)
+double        zMapGFFFeatureDataGetSco(ZMapGFFFeatureData pFeatureData)
 {
-  if (!pFeatureData)
-    return 0.0 ;
+  zMapReturnValIfFail(pFeatureData, 0.0) ;
   return pFeatureData->dScore ;
 }
 
-ZMapStrand    zMapGFFFeatureDataGetStr(const ZMapGFFFeatureData const pFeatureData)
+ZMapStrand    zMapGFFFeatureDataGetStr(ZMapGFFFeatureData pFeatureData)
 {
-  if (!pFeatureData)
-    return ZMAPSTRAND_NONE ;
+  zMapReturnValIfFail(pFeatureData, ZMAPSTRAND_NONE) ;
   return pFeatureData->cStrand ;
 }
 
-ZMapPhase     zMapGFFFeatureDataGetPha(const ZMapGFFFeatureData const pFeatureData )
+ZMapPhase     zMapGFFFeatureDataGetPha( ZMapGFFFeatureData  pFeatureData )
 {
-  if (!pFeatureData)
-    return ZMAPPHASE_NONE ;
+  zMapReturnValIfFail(pFeatureData, ZMAPPHASE_NONE ) ;
   return pFeatureData->cPhase ;
 }
 
-char*         zMapGFFFeatureDataGetAtt(const ZMapGFFFeatureData const pFeatureData)
+char*         zMapGFFFeatureDataGetAtt(ZMapGFFFeatureData pFeatureData)
 {
-  if (!pFeatureData)
-    return NULL ;
+  zMapReturnValIfFail(pFeatureData, NULL) ;
   return pFeatureData->sAttributes ;
 }
 
 
-unsigned int       zMapGFFFeatureDataGetNat(const ZMapGFFFeatureData const pFeatureData )
+unsigned int       zMapGFFFeatureDataGetNat(ZMapGFFFeatureData pFeatureData )
 {
-  if (!pFeatureData)
-    return 0 ;
+  zMapReturnValIfFail(pFeatureData, 0 ) ;
   return pFeatureData->nAttributes ;
 }
 
 
-ZMapGFFAttribute * zMapGFFFeatureDataGetAts(const ZMapGFFFeatureData const pFeatureData )
+ZMapGFFAttribute * zMapGFFFeatureDataGetAts(ZMapGFFFeatureData pFeatureData )
 {
-  if (!pFeatureData)
-    return NULL ;
+  zMapReturnValIfFail(pFeatureData, NULL );
   return pFeatureData->pAttributes ;
 }
 
-const ZMapSOIDData zMapGFFFeatureDataGetSod(const ZMapGFFFeatureData const pFeatureData)
+const ZMapSOIDData zMapGFFFeatureDataGetSod(ZMapGFFFeatureData pFeatureData)
 {
-  if (!pFeatureData)
-    return NULL ;
+  zMapReturnValIfFail(pFeatureData, NULL ) ;
   return pFeatureData->pSOIDData ;
 }
 
