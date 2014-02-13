@@ -1,4 +1,3 @@
-/*  Last edited: Jul 23 14:58 2012 (edgrif) */
 /*  File: acedbServer_P.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2012: Genome Research Ltd.
