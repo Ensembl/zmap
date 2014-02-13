@@ -532,7 +532,8 @@ static void checkFeatureCB_V3(gpointer key_id, gpointer data, gpointer user_data
 /*
  * Return true if the feature is a transcript with no exons; return false otherwise.
  * This function simply signals whether or not the pointer is to be removed from the
- * hash table, but does not delete what it points to.
+ * hash table, but does not delete what it points to. This latter operation is performed
+ * by the appropriate desroy function that has already been attached to the featureset.
  */
 static gboolean removeTranscriptFeature(gpointer key, gpointer value, gpointer user_data_unused)
 {
