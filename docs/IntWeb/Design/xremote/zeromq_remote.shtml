@@ -43,7 +43,7 @@ legend{ font-weight: bold }
   <li><a href="#protocol"><b>The Request/Reply Transport Protocol</b></a></li>
   <li><a href="#problems"><b>Bootstrapping, Collisions, Synchronisation and Hanging</b><a></li>
   <li><a href="#collisions"><b>Collision Protocol</b></a></li>
-  <li><a href="#timeouts"><b>Timeout Protocol</b></a></li>
+  <li><a href="#timeouts"><b>Timeout Handling</b></a></li>
   <li><a href="#state"><b>State</b></a></li>
   <li><a href="#header"><b>Message Header</b></a></li>
   <li><a href="#references"><b>References</b></a></li>
@@ -152,7 +152,9 @@ resolution.</p>
 
 <p>Timeouts and errors are to be handled by each client implementing
 the <a href="http://zguide.zeromq.org/page:all#toc89">Lazy Pirate
-Pattern</a>. The implications of the resulting likelihood of client
+Pattern</a>. See <a href="#timeouts">Timeout Handling</a> below.</p>
+
+<p>The implications of the resulting likelihood of client
 retries are discussed in the 'Synchronisation' sub-section.</p>
 
 <h3>Synchronisation</h3>
@@ -249,7 +251,7 @@ alternative scenarios:</p>
 </ol>
 
 <a name="timeouts"></a>
-<h2>Timeout Protocol</h2>
+<h2>Timeout Handling</h2>
 
 <p>The sequence diagram including a client timeout, from the perspective of peer one:</p>
 
