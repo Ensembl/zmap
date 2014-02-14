@@ -87,20 +87,21 @@ operation) or Unix domain sockets bound to a temporary file path.</p>
 <p>The following is simplified by ignoring the setting up of a ZeroMQ
 context, and does not describe ZeroMQ message management.</p>
 
-<p>Any use of the term <em>socket</em> refers to a ZeroMQ socket
-and <b>not</b> to a traditional Unix or TCP socket.</p>
+<p>To avoid confusion, henceforth the term <em>zmq_socket</em> is used
+to refer to a ZeroMQ socket as opposed to a traditional Unix or TCP
+socket.</p>
 
 <img src="./ZeroMQ_Request_Reply.png" align="center">
 
 <h3>Preparation for communications:</h3>
 
 <ol>
-  <li><p>Peer 1 creates a <tt>ZMQ_REQ</tt> client socket and connects it
+  <li><p>Peer 1 creates a <tt>ZMQ_REQ</tt> client zmq_socket and connects it
   to Peer 2's endpoint via <tt>zmq_connect()</tt>.</p></li>
 
-  <li><p>Peer 2 creates a <tt>ZMQ_REP</tt> server socket and binds this
+  <li><p>Peer 2 creates a <tt>ZMQ_REP</tt> server zmq_socket and binds this
   to its own endpoint via <tt>zmq_bind()</tt>. Peer 2 then arranges a
-  callback on receive events for this socket.</p></li>
+  callback on receive events for this zmq_socket.</p></li>
 </ol>
 
 <p>Note that ZeroMQ permits steps 1 and 2 to happen in either order.
@@ -108,18 +109,18 @@ and <b>not</b> to a traditional Unix or TCP socket.</p>
 <h3>Request and reply:</h3>
 
 <ol start="3">
-  <li><p>Peer 1 creates a request and sends it via its client socket by
+  <li><p>Peer 1 creates a request and sends it via its client zmq_socket by
   calling <tt>zmq_send()</tt>.</p></li>
-  <li><p>Peer 2's server socket callback is fired, and
+  <li><p>Peer 2's server zmq_socket callback is fired, and
   uses <tt>zmq_recv</tt> to fetch the request.</p></li>
   <li><p>Peer 1 polls for, or arranges a callback on, a reply on its
-  client socket. (A callback could be set up at any stage after the
-  socket has been connected.)</p></li>
+  client zmq_socket. (A callback could be set up at any stage after the
+  zmq_socket has been connected.)</p></li>
   <li><p>Peer 2 does some processing on the request (this should be
   brief).</p></li>
-  <li><p>Peer 2 creates a reply and sends it via its server socket by
+  <li><p>Peer 2 creates a reply and sends it via its server zmq_socket by
   calling <tt>zmq_send()</tt>.</p></li>
-  <li><p>Peer 1's client socket callback or poll is fired, and
+  <li><p>Peer 1's client zmq_socket callback or poll is fired, and
   uses <tt>zmq_recv()</tt> to fetch the reply.</p></li>
   <li><p>The request-reply sequence is complete, and can be repeated
   from step 3 when next required.</p></li>
@@ -140,7 +141,7 @@ request message.</p>
 <h3>Collisions</h3>
 
 <p>Provided that when sending, the client also monitors its server
-socket whilst waiting for a reply, collision detection should be
+zmq_socket whilst waiting for a reply, collision detection should be
 straightforward.</p>
 
 <p>The simplified state diagram probably reduces the likelihood and
@@ -284,7 +285,7 @@ alternative scenarios:</p>
 <ul>
   <li><p>If request processing involves returning to the event loop,
   the server (peer 2 in the example above) should suspend callbacks on
-  its <code>ZQM_REP</code> server socket whilst it is processing the
+  its <code>ZQM_REP</code> server zmq_socket whilst it is processing the
   request, to prevent nested requests. ZeroMQ will buffer any incoming
   requests. Once the process-and-reply sequence is complete, the
   callback should be reinstated.</p></li>
@@ -396,7 +397,7 @@ from the perspective of peer one:</p>
     <p><em>or</em></p>
   </li>
   <li><p>If the loser is aborting its request, it closes and reopens its
-  client socket (which would otherwise be awaiting a reply), and
+  client zmq_socket (which would otherwise be awaiting a reply), and
   returns directly to INACTIVE. <em>[Peer 2: event 7.]</em></p></li>
 </ol>
 
