@@ -1,7 +1,6 @@
 /*  File: zmapWindowColOrder.c
- *  Author: Roy Storey (rds@sanger.ac.uk)
+ *  Author: Roy Storey (rds@sanger.ac.uk), Malcolm Hinsley (mh17@sanger.ac.uk)
  *  Copyright (c) 2006-2014: Genome Research Ltd.
- *  Re-factored by malcolm hinsley
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
