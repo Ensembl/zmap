@@ -1,4 +1,4 @@
-/*  File: zmapGUITreeView_I.h
+/*  File: zmapWindowDNAList_I.h
  *  Author: Roy Storey (rds@sanger.ac.uk)
  *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------

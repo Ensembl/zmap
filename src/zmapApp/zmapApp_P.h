@@ -1,4 +1,4 @@
-/*  File: zmapApp.h
+/*  File: zmapApp_P.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------

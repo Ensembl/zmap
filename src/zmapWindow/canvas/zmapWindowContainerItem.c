@@ -1,4 +1,4 @@
-/*  File: zmapWindowOldItems.c
+/*  File: zmapWindowContainerItem.c
  *  Author: ed (edgrif@sanger.ac.uk)
  *  Copyright (c) 2013-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
