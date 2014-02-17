@@ -162,7 +162,8 @@ ZMapGFFParser zMapGFFCreateParser_V3(char *sequence, int features_start, int fea
 {
   ZMapGFF3Parser pParser = NULL ;
 
-  if ((features_start > 0) && (features_end >= features_start))
+  /* If coords are given, check that they're sensible */
+  if ((!features_start && !features_end) || ((features_start > 0) && (features_end >= features_start)))
     {
       pParser                                   = g_new0(ZMapGFF3ParserStruct, 1) ;
       if (pParser)
