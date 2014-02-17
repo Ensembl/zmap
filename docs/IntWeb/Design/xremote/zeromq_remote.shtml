@@ -299,7 +299,19 @@ alternative scenarios:</p>
 <a name="state"></a>
 <h2>State</h2>
 
-<p>Details of state which must be maintained by client and server <b>TBC</b>.</p>
+<p>The server is required to keep:
+<ul>
+  <li><p>the request ID for the last request</p></li>
+  <li><p>a copy of the reply to the last request</p></li>
+</ul>
+until a new request (with incremented request ID) is received.</p>
+
+<p>This allows the server to reply to repeat requests issued as a
+result of the client's timeout handling, without needing to re-process
+the request.</p>
+
+<p>Repeat requests for earlier requests are not expected and will not
+be handled. (To do so would require a sliding window system.)</p>
 
 
 <a name="header"></a>
