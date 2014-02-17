@@ -862,14 +862,14 @@ gboolean zMapGFFSequenceDestroy(ZMapSequence sequence)
 }
 
 
-ZMapSequence zMapGFFGetSequence(ZMapGFFParser parser_base, int sequence_record)
+ZMapSequence zMapGFFGetSequence(ZMapGFFParser parser_base, GQuark sequence_name)
 {
   /*
    * Pointer to ZMapSequenceStruct
    */
   ZMapSequence sequence = NULL;
 
-  zMapReturnValIfFail(parser_base && (sequence_record >= 0), sequence) ;
+  zMapReturnValIfFail(parser_base && sequence_name, sequence) ;
 
   /*
    * We do different things here depending on the GFF version.
@@ -878,7 +878,9 @@ ZMapSequence zMapGFFGetSequence(ZMapGFFParser parser_base, int sequence_record)
     {
       ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
 
-      if (parser->header_flags.done_header)
+      /* There is only one sequence in the GFF2 parser and that's the genomic sequence. If the
+         given name is the genomic sequence name, return it. */
+      if (parser->header_flags.done_header && g_quark_from_string(parser->sequence_name) == sequence_name)
         {
           if(parser->seq_data.type != ZMAPSEQUENCE_NONE && (parser->seq_data.sequence != NULL && parser->raw_line_data == NULL))
             {
@@ -894,24 +896,30 @@ ZMapSequence zMapGFFGetSequence(ZMapGFFParser parser_base, int sequence_record)
     }
   else if (parser_base->gff_version == ZMAPGFF_VERSION_3)
     {
+      /* Loop through all of the parsed sequences looking for the one with the given name */
       ZMapGFF3Parser parser = (ZMapGFF3Parser) parser_base ;
+      int sequence_record = 0 ;
 
-      /*
-       * Note that the v3 parser controls the lifetime of its pSeqData objects.
-       */
-      if (sequence_record < parser->nSequenceRecords)
+      for ( ; sequence_record < parser->nSequenceRecords; ++sequence_record)
         {
-          sequence = g_new0(ZMapSequenceStruct, 1) ;
-          sequence->name = parser->pSeqData[sequence_record].name ;
-          sequence->type = parser->pSeqData[sequence_record].type ;
-          sequence->sequence = g_strdup(parser->pSeqData[sequence_record].sequence) ;
+          if (parser->pSeqData[sequence_record].name == sequence_name)
+            {
+              /*
+               * Note that the v3 parser controls the lifetime of its pSeqData objects.
+               */
+              sequence = g_new0(ZMapSequenceStruct, 1) ;
+              sequence->name = parser->pSeqData[sequence_record].name ;
+              sequence->type = parser->pSeqData[sequence_record].type ;
+              sequence->length = parser->pSeqData[sequence_record].length ;
+              sequence->sequence = g_strdup(parser->pSeqData[sequence_record].sequence) ;
+
+              break ;
+            }
         }
     }
 
   return sequence;
 }
-
-
 
 
 
