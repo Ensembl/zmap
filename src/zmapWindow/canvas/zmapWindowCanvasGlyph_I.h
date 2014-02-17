@@ -1,4 +1,4 @@
-/*  File: zmapWindowCanvasGlyph.c
+/*  File: zmapWindowCanvasGlyph_I.h
  *  Author: Malcolm Hinsley (mh17@sanger.ac.uk)
  *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
