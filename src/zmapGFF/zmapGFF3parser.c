@@ -1247,7 +1247,6 @@ static gboolean parseFastaLine_V3(ZMapGFFParser pParserBase, const char* const s
 
   if (g_str_has_prefix(sLine, ">"))
     {
-
       /*
        * Init for reading sequence data
        */
@@ -1294,6 +1293,7 @@ static gboolean parseFastaLine_V3(ZMapGFFParser pParserBase, const char* const s
           pTheSequence->name = g_quark_from_string("ZMAPGFF_FASTA_NAME_NOT_FOUND") ;
         }
 
+      bResult = TRUE ;
     }
   else
     {
@@ -1307,6 +1307,7 @@ static gboolean parseFastaLine_V3(ZMapGFFParser pParserBase, const char* const s
           return bResult ;
         }
 
+      bResult = TRUE ;
     }
 
   return bResult ;
