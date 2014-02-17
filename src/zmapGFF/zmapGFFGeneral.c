@@ -871,13 +871,15 @@ void zMapGFFSetFreeOnDestroy(ZMapGFFParser parser, gboolean free_on_destroy)
  * Used by both versions.
  *
  *
- * Return true if the parser status is parsing the header/directives
+ * Return true if the parser status is parsing the header/directives.
+ * Also returns true if parsing hasn't started yet, because we need 
+ * to parser the header in that case.
  */
 gboolean zMapGFFParsingHeader(ZMapGFFParser parser)
 {
   gboolean result = FALSE ;
 
-  if (parser->state == ZMAPGFF_PARSER_DIR)
+  if (parser->state == ZMAPGFF_PARSER_DIR || parser->state == ZMAPGFF_PARSER_NON)
     result = TRUE ;
 
   return result ;
