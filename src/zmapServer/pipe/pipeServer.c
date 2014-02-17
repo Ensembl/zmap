@@ -1236,7 +1236,7 @@ static void eachBlockSequence(gpointer key, gpointer data, gpointer user_data)
   if (server->result == ZMAP_SERVERRESPONSE_OK)  // no point getting DNA if features are not there
     {
       ZMapSequence sequence;
-      if (!(sequence = zMapGFFGetSequence(server->parser)))
+      if (!(sequence = zMapGFFGetSequence(server->parser, 0)))
 	{
 	  GError *error;
 	  char *estr;

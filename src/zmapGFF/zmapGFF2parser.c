@@ -513,35 +513,6 @@ gboolean zMapGFFParserSetSequenceFlag(ZMapGFFParser parser_base)
   return set ;
 }
 
-ZMapSequence zMapGFFGetSequence(ZMapGFFParser parser_base)
-{
-  ZMapSequence sequence = NULL;
-
-  ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
-
-  if (!parser)
-    return NULL ;
-  if (parser->gff_version != ZMAPGFF_VERSION_2)
-    return NULL ;
-
-  if (parser->header_flags.done_header)
-    {
-      if(parser->seq_data.type != ZMAPSEQUENCE_NONE
-	 && (parser->seq_data.sequence != NULL && parser->raw_line_data == NULL))
-	{
-	  sequence = g_new0(ZMapSequenceStruct, 1);
-	  *sequence = parser->seq_data;
-	  sequence->name = g_quark_from_string(parser->sequence_name);
-
-	  /* So we don't copy empty data */
-	  parser->seq_data.type     = ZMAPSEQUENCE_NONE;
-	  parser->seq_data.sequence = NULL; /* So it doesn't get free'd */
-	}
-    }
-
-  return sequence;
-}
-
 
 
 /*

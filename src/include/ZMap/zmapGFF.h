@@ -133,7 +133,8 @@ void zMapGFFDestroyParser(ZMapGFFParser parser) ;
  * Unchanged old interface.
  */
 gboolean zMapGFFParserSetSequenceFlag(ZMapGFFParser parser);
-ZMapSequence zMapGFFGetSequence(ZMapGFFParser parser);
+ZMapSequence zMapGFFGetSequence(ZMapGFFParser parser, int sequence_record);
+gboolean zMapGFFSequenceDestroy(ZMapSequence sequence) ;
 GHashTable *zMapGFFParserGetStyles(ZMapGFFParser parser);
 void zMapGFFSetStopOnError(ZMapGFFParser parser, gboolean stop_on_error) ;
 void zMapGFFSetParseOnly(ZMapGFFParser parser, gboolean parse_only) ;

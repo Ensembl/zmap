@@ -96,8 +96,19 @@ static void basicPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
     }
 
   /*
-   * Decide about truncation.
+   * Determine whether or not the feature needs to be truncated
+   * at the start or end.
    */
+  //if (feature->feature->x1 < featureset->start)
+  //  {
+  //    truncated_start = TRUE ;
+  //    feature->y1 = featureset->start ;
+  //  }
+  //if (feature->feature->x2 > featureset->end)
+  //  {
+  //    truncated_end = TRUE ;
+  //    feature->y2 = featureset->end ;
+  //  }
 
   /*
    * Draw the basic box.
@@ -111,7 +122,8 @@ static void basicPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
     }
 
   /*
-   * Construct glyph object from shape given.
+   * Construct glyph object from shape given,
+   * once and once only.
    */
   if (truncation_glyph == NULL)
     {
@@ -120,13 +132,13 @@ static void basicPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
       truncation_glyph->sub_feature = TRUE ;
       truncation_glyph->shape = truncation_shape01 ;
     }
-  col_width = zMapStyleGetWidth(featureset->style) ;
-  zmap_window_canvas_set_glyph(foo, truncation_glyph, style, feature->feature, col_width, feature->score ) ;
+  //col_width = zMapStyleGetWidth(featureset->style) ;
+  //zmap_window_canvas_set_glyph(foo, truncation_glyph, style, feature->feature, col_width, feature->score ) ;
 
   /*
    * Draw the glyph subfeatures.
    */
-  zMapWindowCanvasGlyphPaintSubFeature(featureset, feature, truncation_glyph, drawable) ;
+  //zMapWindowCanvasGlyphPaintSubFeature(featureset, feature, truncation_glyph, drawable) ;
 
   return ;
 }

@@ -848,6 +848,72 @@ void zMapGFFSetFreeOnDestroy(ZMapGFFParser parser, gboolean free_on_destroy)
 
 
 
+gboolean zMapGFFSequenceDestroy(ZMapSequence sequence)
+{
+  gboolean bReturn = FALSE ;
+
+  zMapReturnValIfFail(sequence, bReturn) ;
+
+  if (sequence->sequence)
+    g_free(sequence->sequence) ;
+  g_free(sequence) ;
+
+  return bReturn ;
+}
+
+
+ZMapSequence zMapGFFGetSequence(ZMapGFFParser parser_base, int sequence_record)
+{
+  /*
+   * Pointer to ZMapSequenceStruct
+   */
+  ZMapSequence sequence = NULL;
+
+  zMapReturnValIfFail(parser_base && (sequence_record >= 0), sequence) ;
+
+  /*
+   * We do different things here depending on the GFF version.
+   */
+  if (parser_base->gff_version == ZMAPGFF_VERSION_2)
+    {
+      ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
+
+      if (parser->header_flags.done_header)
+        {
+          if(parser->seq_data.type != ZMAPSEQUENCE_NONE && (parser->seq_data.sequence != NULL && parser->raw_line_data == NULL))
+            {
+              sequence = g_new0(ZMapSequenceStruct, 1);
+              *sequence = parser->seq_data;
+              sequence->name = g_quark_from_string(parser->sequence_name);
+
+              /* So we don't copy empty data */
+              parser->seq_data.type     = ZMAPSEQUENCE_NONE;
+              parser->seq_data.sequence = NULL; /* So it doesn't get free'd */
+            }
+        }
+    }
+  else if (parser_base->gff_version == ZMAPGFF_VERSION_3)
+    {
+      ZMapGFF3Parser parser = (ZMapGFF3Parser) parser_base ;
+
+      /*
+       * Note that the v3 parser controls the lifetime of its pSeqData objects.
+       */
+      if (sequence_record < parser->nSequenceRecords)
+        {
+          sequence = g_new0(ZMapSequenceStruct, 1) ;
+          sequence->name = parser->pSeqData[sequence_record].name ;
+          sequence->type = parser->pSeqData[sequence_record].type ;
+          sequence->sequence = g_strdup(parser->pSeqData[sequence_record].sequence) ;
+        }
+    }
+
+  return sequence;
+}
+
+
+
+
 
 
 
