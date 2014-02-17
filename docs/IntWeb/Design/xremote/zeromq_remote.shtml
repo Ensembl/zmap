@@ -295,15 +295,61 @@ alternative scenarios:</p>
   for the original request.</p></li>
 </ul>
 
+
 <a name="state"></a>
 <h2>State</h2>
 
 <p>Details of state which must be maintained by client and server <b>TBC</b>.</p>
 
+
 <a name="header"></a>
 <h2>Message header</h2>
 
-<p>Details of message header <b>TBC</b>.</p>
+<h3>Header fields</h3>
+
+<p>The minimum set of fields for the message header is:</p>
+<dl>
+  <dt><em>Request-id</em></dt>
+  <dd>The id of this request. Should be unique for each request, and
+  should be incremented after each successful or aborted request.</dd>
+
+  <dt><em>Clock-sec</em></dt>
+  <dd>The whole-seconds portion of the system clock at the time the
+  request was <b>first issued</b>.</dd>
+
+  <dt><em>Clock-usec</em></dt>
+  <dd>The microseconds portion of the system clock at the time the
+  request was <b>first issued</b>.<br />
+  Could be combined with <em>Clock-sec</em> to create a floating
+  point <em>Clock</em> field, or a pure microseconds field.</dd>
+</dl>
+
+<p>Optional fields which could aid debugging but which are not
+required for protocol operation:</p>
+<dl>
+  <dt><em>Request-attempt</em></dt>
+  <dd>The retransmit attempt for this request. Should start at 1 and
+  should be incremented on each retransmission.</dd>
+</dl>
+
+<h3>Suggested serialisation format</h3>
+
+<p>Serialisation of the header does not warrant XML. ZeroMQ partitions
+the header into a separate frame, which can use any appropriate
+serialisation.</p>
+
+<p>
+  A suggested single-line format is:<br />
+  <code>&lt;Request-id&gt;/&lt;Request-attempt&gt; &lt;Clock-sec&gt;,&lt;Clock-usec&gt;</code>
+</p>
+
+<p>
+  For example, for
+  <em>Request-id: 334, Request-attempt: 1, Clock:
+  1145.232507</em><br /> the header is:<br />
+  <code>334/1 1145,232507</code>
+</p>
+
 
 <a name="references"></a>
 <h2>References</h2>
