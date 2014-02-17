@@ -39,14 +39,6 @@
 #define FILE_PROTOCOL_STR "GFF File"
 
 
-
-/* Helpful to see script args in all error messages so add these to standard messages. */
-#define ZMAPPIPESERVER_LOG(LOGTYPE, PROTOCOL, HOST, ARGS, FORMAT, ...) \
-  ZMAPSERVER_LOG(LOGTYPE, PROTOCOL, HOST, ", script_args: \"%s\", " FORMAT, ARGS, __VA_ARGS__)
-
-
-
-
 /* Holds all the state we need to create and access the script output. */
 typedef struct _PipeServerStruct
 {

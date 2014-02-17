@@ -1,6 +1,6 @@
 /*  File: zmapServerProtocolHandler.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -946,6 +946,7 @@ static ZMapThreadReturnCode thread_RC(ZMapServerResponseType code)
       thread_rc = ZMAPTHREAD_RETURNCODE_BADREQ ;
       break ;
 
+    case ZMAP_SERVERRESPONSE_NODATA:
     case ZMAP_SERVERRESPONSE_REQFAIL:
     case ZMAP_SERVERRESPONSE_UNSUPPORTED:
       thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;

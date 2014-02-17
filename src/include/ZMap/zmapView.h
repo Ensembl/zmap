@@ -1,6 +1,6 @@
 /*  File: zmapView.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -171,7 +171,8 @@ void zMapViewGetSourceNameTitle(ZMapView zmap_view, char **name, char **title) ;
 ZMapFeatureContext zMapViewGetFeatures(ZMapView zmap_view) ;
 void zMapViewGetVisible(ZMapViewWindow view_window, double *top, double *bottom) ;
 ZMapViewState zMapViewGetStatus(ZMapView zmap_view) ;
-char *zMapViewGetLoadStatusStr(ZMapView view, char **loading_sources_out, char **failed_sources_out) ;
+char *zMapViewGetLoadStatusStr(ZMapView view,
+                               char **loading_sources_out, char **empty_sources_out, char **failed_sources_out) ;
 GtkWidget *zMapViewGetXremote(ZMapView view) ;
 gboolean zMapViewGetFeaturesSpan(ZMapView zmap_view, int *start, int *end) ;
 ZMapWindow zMapViewGetWindow(ZMapViewWindow view_window) ;

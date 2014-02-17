@@ -1,6 +1,6 @@
 /*  File: zmapControlWindow.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -182,7 +182,7 @@ void zmapControlWindowSetStatus(ZMap zmap)
   static int idle_handle = 0 ;
   enum {ROTATION_DELAY = 500} ;				    /* delay in microseconds for each text move. */
   ZMapViewState view_state = ZMAPVIEW_INIT ;
-  char *sources_loading = NULL, *sources_failing = NULL ;
+  char *sources_loading = NULL, *sources_empty = NULL, *sources_failing = NULL ;
 
   zMapReturnIfFail(zmap) ; 
 
@@ -223,7 +223,7 @@ void zmapControlWindowSetStatus(ZMap zmap)
             g_free(coord_txt) ;
           }
 
-	tmp = zMapViewGetLoadStatusStr(view, &sources_loading, &sources_failing) ;
+	tmp = zMapViewGetLoadStatusStr(view, &sources_loading, &sources_empty, &sources_failing) ;
 	status_text = g_strdup_printf("%s.......", tmp) ;   /* Add spacing...better for rotating text. */
 	g_free(tmp) ;
 
@@ -253,8 +253,11 @@ void zmapControlWindowSetStatus(ZMap zmap)
 	      if (sources_loading)
 		g_string_append_printf(load_status_str, "Columns still loading:\n %s\n\n", sources_loading) ;
 
+	      if (sources_empty)
+		g_string_append_printf(load_status_str, "Columns empty:\n %s\n\n", sources_empty) ;
+
 	      if (sources_failing)
-		g_string_append_printf(load_status_str, "Columns failed to load:\n %s", sources_failing) ;
+		g_string_append_printf(load_status_str, "Columns failed to load:\n %s\n\n", sources_failing) ;
 
 	      gtk_tooltips_set_tip(zmap->tooltips, zmap->status_entry,
 				   load_status_str->str,
@@ -262,6 +265,7 @@ void zmapControlWindowSetStatus(ZMap zmap)
 
 	      g_string_free(load_status_str, TRUE) ;
 	      g_free(sources_loading) ;
+	      g_free(sources_empty) ;
 	      g_free(sources_failing) ;
 	    }
 	  else

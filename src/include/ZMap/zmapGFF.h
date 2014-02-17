@@ -1,6 +1,6 @@
 /*  File: zmapGFF.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -137,7 +137,8 @@ gboolean zMapGFFParsingHeader(ZMapGFFParser parser) ;
  * Unchanged old interface.
  */
 gboolean zMapGFFParserSetSequenceFlag(ZMapGFFParser parser);
-ZMapSequence zMapGFFGetSequence(ZMapGFFParser parser);
+ZMapSequence zMapGFFGetSequence(ZMapGFFParser parser, int sequence_record);
+gboolean zMapGFFSequenceDestroy(ZMapSequence sequence) ;
 GHashTable *zMapGFFParserGetStyles(ZMapGFFParser parser);
 void zMapGFFSetStopOnError(ZMapGFFParser parser, gboolean stop_on_error) ;
 void zMapGFFSetParseOnly(ZMapGFFParser parser, gboolean parse_only) ;

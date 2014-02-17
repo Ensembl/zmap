@@ -1,6 +1,6 @@
 /*  File: zmapGFF3parser.c
  *  Author: Steve Miller (sm23@sanger.ac.uk)
- *  Copyright (c) 2006-2013: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -138,7 +138,7 @@ static const char *sTestFileName = "/nfs/users/nfs_s/sm23/Work/testfile.txt" ;
  * Uncomment this flag to use the feature clipping logic during the
  * parsing/feature creation operations.
  */
-/* #define PERFORM_CLIPPING_ON_PARSE 1 */
+#define PERFORM_CLIPPING_ON_PARSE 1
 
 /*
  * Parser FSM transitions. Row is current state, columns is line type.
@@ -150,7 +150,7 @@ static const ZMapGFFParserState ZMAP_GFF_PARSER_TRANSITIONS[ZMAPGFF_NUMBER_PARSE
 /* BOD */{ZMAPGFF_PARSER_BOD, ZMAPGFF_PARSER_SEQ, ZMAPGFF_PARSER_ERR, ZMAPGFF_PARSER_DIR, ZMAPGFF_PARSER_BOD, ZMAPGFF_PARSER_BOD, ZMAPGFF_PARSER_FAS, ZMAPGFF_PARSER_CLO, ZMAPGFF_PARSER_ERR},
 /* SEQ */{ZMAPGFF_PARSER_ERR, ZMAPGFF_PARSER_ERR, ZMAPGFF_PARSER_NON, ZMAPGFF_PARSER_SEQ, ZMAPGFF_PARSER_ERR, ZMAPGFF_PARSER_ERR, ZMAPGFF_PARSER_ERR, ZMAPGFF_PARSER_ERR, ZMAPGFF_PARSER_ERR},
 /* FAS */{ZMAPGFF_PARSER_FAS, ZMAPGFF_PARSER_ERR, ZMAPGFF_PARSER_ERR, ZMAPGFF_PARSER_ERR, ZMAPGFF_PARSER_FAS, ZMAPGFF_PARSER_FAS, ZMAPGFF_PARSER_ERR, ZMAPGFF_PARSER_ERR, ZMAPGFF_PARSER_FAS},
-/* CLO */{ZMAPGFF_PARSER_NON, ZMAPGFF_PARSER_SEQ, ZMAPGFF_PARSER_ERR, ZMAPGFF_PARSER_DIR, ZMAPGFF_PARSER_CLO, ZMAPGFF_PARSER_BOD, ZMAPGFF_PARSER_FAS, ZMAPGFF_PARSER_ERR, ZMAPGFF_PARSER_NON},
+/* CLO */{ZMAPGFF_PARSER_NON, ZMAPGFF_PARSER_SEQ, ZMAPGFF_PARSER_ERR, ZMAPGFF_PARSER_DIR, ZMAPGFF_PARSER_CLO, ZMAPGFF_PARSER_BOD, ZMAPGFF_PARSER_FAS, ZMAPGFF_PARSER_CLO, ZMAPGFF_PARSER_NON},
 /* ERR */{ZMAPGFF_PARSER_ERR, ZMAPGFF_PARSER_ERR, ZMAPGFF_PARSER_ERR, ZMAPGFF_PARSER_ERR, ZMAPGFF_PARSER_ERR, ZMAPGFF_PARSER_ERR, ZMAPGFF_PARSER_ERR, ZMAPGFF_PARSER_ERR, ZMAPGFF_PARSER_ERR}
 } ;
 
@@ -265,18 +265,17 @@ void zMapGFFDestroyParser_V3(ZMapGFFParser pParserBase)
   if (pParser->sequence_name)
     g_free(pParser->sequence_name) ;
 
-  /*
   if (pParser->nSequenceRecords)
   {
     if (pParser->pSeqData)
     {
       for (iValue=0; iValue<pParser->nSequenceRecords; ++iValue)
       {
-        zMapSequenceDestroy(&pParser->pSeqData[iValue]) ;
+        zMapGFFSequenceDestroy(&pParser->pSeqData[iValue]) ;
       }
     }
+    g_free(pParser->pSeqData) ;
   }
-  */
 
   /*
    * The parser should not attempt to control the lifetime of the
@@ -1282,14 +1281,10 @@ static gboolean parseFastaLine_V3(ZMapGFFParser pParserBase, const char* const s
       if ((iFields == 1) || (iFields == 2))
         {
           pTheSequence->name = g_quark_from_string(sBuf01) ;
+          bResult = TRUE ;
         }
       else
         {
-          /*
-          bResult = FALSE ;
-          pParser->error = g_error_new(pParser->error_domain, ZMAPGFF_ERROR_FASTA,
-                                       "Error set in parseFastaLine(); unable to parse fasta header with l = '%s'", sLine) ;
-          */
           pTheSequence->name = g_quark_from_string("ZMAPGFF_FASTA_NAME_NOT_FOUND") ;
         }
 
@@ -1305,6 +1300,10 @@ static gboolean parseFastaLine_V3(ZMapGFFParser pParserBase, const char* const s
             g_error_new(pParser->error_domain, ZMAPGFF_ERROR_FASTA,
                         "Error set in parseFastaLine(); unable to append to sequence record with l = '%s'", sLine) ;
           return bResult ;
+        }
+      else
+        {
+          bResult = TRUE ;
         }
 
       bResult = TRUE ;

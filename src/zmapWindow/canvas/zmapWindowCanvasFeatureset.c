@@ -1,6 +1,6 @@
 /*  File: zmapWindowFeaturesetItem.c
  *  Author: Malcolm Hinsley (mh17@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -2461,37 +2461,9 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
 
   for(fi->featurestyle = NULL;sl;sl = sl->next)
     {
-      /*
-       * The fi->[start,end] are the sequence region start and end coordinates.
-       * Then we can compare with feat->[y1,y2] (or feat->feature->[x1,x2], same thing)
-       * which are the feature start and end as in the gff dataset.
-       *
-       * So I think this should be sufficient to see if the feature (or subfeature) has been
-       * clipped or not. I hope that checking subfeatures' coordinates against the overall range
-       * should be sufficient. Whether or not an item is in the exposed area is checked before
-       * we get to this point.
-       *
-       */
-
-
-
       feat = (ZMapWindowCanvasFeature) sl->data;
 
       //      if(debug && feat->feature) printf("feat: %s %lx %f %f\n",g_quark_to_string(feat->feature->unique_id), feat->flags, feat->y1,feat->y2);
-      if (0) // feat->feature)
-      {
-        printf("working on valid feature here, %g %g\n", feat->y1, feat->y2 ) ;
-        if (feat->y1 <= fi->start)
-          {
-            printf("clipped start (%g, %g), (%g, %g)\n", fi->start, fi->end, feat->y1, feat->y2 ) ;
-          }
-        if (feat->y2 >= fi->end)
-          {
-            printf("clipped end (%g, %g), (%g, %g)\n", fi->start, fi->end, feat->y1, feat->y2 ) ;
-          }
-        fflush(stdout) ;
-      }
-
       if(!is_line && feat->y1 > y2)		/* for lines we have to do one more */
 	break;	/* finished */
 

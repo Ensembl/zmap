@@ -1,6 +1,6 @@
 /*  File: zmapWindowCanvasGlyph.c
  *  Author: Malcolm Hinsley (mh17@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -35,10 +35,12 @@
 #include <zmapWindowCanvasFeatureset_I.h>
 #include <zmapWindowCanvasGlyph.h>
 
-
+gboolean zmap_window_canvas_set_glyph(FooCanvasItem *foo,
+					     ZMapWindowCanvasGlyph glyph, ZMapFeatureTypeStyle style,
+					     ZMapFeature feature, double col_width, double score);
 
 /* Per Column Glyph Data.
- * 
+ *
  * Data common to particular types of glyph, stored using the per_column_data pointer
  * in zmapWindowFeaturesetItemStruct.
  */
@@ -74,7 +76,7 @@ typedef struct GFSpliceColumnDataStructName
   /* All glyph fields. */
 
   ZMapGlyphShapeType glyph_type ;
-  
+
   double min_score, max_score ;				    /* cached from style. */
 
 
@@ -98,7 +100,7 @@ typedef struct GFSpliceColumnDataStructName
 
 
 /* Per glyph data.
- * 
+ *
  * NOTE
  * Glyphs are quite complex and we create an array of points for display
  * that are interpreted according to the glyph type.

@@ -1,6 +1,6 @@
 /*  File: zmapView_P.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -292,12 +292,13 @@ typedef struct _ZMapViewStruct
 
 
   /* Data recording which sources are loading and which failed. */
-  GList *sources_loading ;					    /* how many active/queued requests,
-								       this is not very neat as failures
-								       are dealt with in a complex way */
-  GList *sources_failed ;					    /* A count of the number that failed
-								       since the last data request, is
-								       reset on next load command */
+  GList *sources_loading ;                                  /* how many active/queued requests,
+                                                               this is not very neat as failures
+                                                               are dealt with in a complex way */
+  GList *sources_empty ;                                    /* How many sources are empty. */
+  GList *sources_failed ;                                   /* A count of the number that failed
+                                                               since the last data request, is
+                                                               reset on next load command */
 
   GList *connection_list ;				    /* Of ZMapViewConnection. */
   ZMapViewConnection sequence_server ;			    /* Which connection to get raw

@@ -1,6 +1,6 @@
 /*  File: zmapServerProtocol.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -65,6 +65,7 @@ ZMAP_DEFINE_ENUM(ZMapServerReqType, ZMAP_SERVER_REQ_LIST) ;
 /* WE SHOULD ADD AN  INVALID  AT THE START BUT REQUIRES CHECKING ALL USE OF  OK  !! */
 #define ZMAP_SERVER_RESPONSE_LIST(_)                         \
   _(ZMAP_SERVERRESPONSE_OK, , "ok", "", "")				      \
+    _(ZMAP_SERVERRESPONSE_NODATA, , "no data returned", "", "")		\
     _(ZMAP_SERVERRESPONSE_BADREQ, , "error in request args", "", "")		\
     _(ZMAP_SERVERRESPONSE_UNSUPPORTED, , "unsupported request", "", "")		\
     _(ZMAP_SERVERRESPONSE_REQFAIL, , "request failed", "", "")			\

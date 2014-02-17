@@ -1,6 +1,6 @@
 /*  File: zmapView.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -1464,7 +1464,8 @@ ZMAP_ENUM_AS_NAME_STRING_FUNC(zMapView2Str, ZMapViewState, VIEW_STATE_LIST) ;
  * if loading_sources_out and/or failed_sources_out are non-NULL.
  * 
  *  */
-char *zMapViewGetLoadStatusStr(ZMapView view, char **loading_sources_out, char **failed_sources_out)
+char *zMapViewGetLoadStatusStr(ZMapView view,
+                               char **loading_sources_out, char **empty_sources_out, char **failed_sources_out)
 {
   char *load_state_str = NULL ;
   ZMapViewState state = view->state ;
@@ -1475,15 +1476,20 @@ char *zMapViewGetLoadStatusStr(ZMapView view, char **loading_sources_out, char *
   if (state == ZMAPVIEW_LOADING || state == ZMAPVIEW_UPDATING || state == ZMAPVIEW_LOADED)
     {
       if (state == ZMAPVIEW_LOADING || state == ZMAPVIEW_UPDATING)
-	load_state_str = g_strdup_printf("%s (%d to go) (%d failed)", state_str,
+	load_state_str = g_strdup_printf("%s (%d to go) (%d empty) (%d failed)", state_str,
 					 g_list_length(view->sources_loading),
+					 g_list_length(view->sources_empty),
 					 g_list_length(view->sources_failed)) ;
       else
-	load_state_str = g_strdup_printf("%s (%d failed)", state_str,
+	load_state_str = g_strdup_printf("%s (%d empty) (%d failed)", state_str,
+					 g_list_length(view->sources_empty),
 					 g_list_length(view->sources_failed)) ;
 
       if (loading_sources_out)
 	*loading_sources_out = zMap_g_list_quark_to_string(view->sources_loading, NULL) ;
+
+      if (empty_sources_out)
+	*empty_sources_out = zMap_g_list_quark_to_string(view->sources_empty, NULL) ;
 
       if (failed_sources_out)
 	*failed_sources_out = zMap_g_list_quark_to_string(view->sources_failed, NULL) ;
@@ -2098,6 +2104,9 @@ ZMapViewConnection zmapViewRequestServer(ZMapView view, ZMapViewConnection view_
       /* Why does this need reiniting ? */
       if (!view->sources_loading)
 	{
+	  g_list_free(view->sources_empty) ;
+	  view->sources_empty = NULL ;
+
 	  g_list_free(view->sources_failed) ;
 	  view->sources_failed = NULL ;
 	}
@@ -3091,7 +3100,12 @@ static gboolean checkStateConnections(ZMapView zmap_view)
       list_item = g_list_first(zmap_view->connection_list) ;
 
 
-      /* GOSH THE STATE HAS BECOME EVER MORE COMPLEX HERE...NEEDS A GOOD CLEAN UP. */
+      /* GOSH THE STATE HAS BECOME EVER MORE COMPLEX HERE...NEEDS A GOOD CLEAN UP.
+       * 
+       * MALCOLM'S ATTEMPT TO CLEAN IT UP WITH A NEW THREAD STATE HAS JUST MADE IT
+       * EVEN MORE COMPLEX....
+       *  */
+
 
       do
 	{
@@ -3106,6 +3120,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 	  ZMapServerReqType request_type = ZMAP_SERVERREQ_INVALID ;
 	  gboolean is_continue = FALSE ;
 	  ConnectionData connect_data = NULL ;
+          gboolean is_empty = FALSE ;
 
 	  view_con = list_item->data ;
 	  thread = view_con->thread ;
@@ -3113,6 +3128,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
 	  data = NULL ;
 	  err_msg = NULL ;
+          is_empty = FALSE ;
 
 
 	  if (view_con->request_data)
@@ -3149,12 +3165,12 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
 	      zMapLogCritical("Source \"%s\", cannot access reply from server thread,"
 			      " error was: %s", view_con->url, err_msg) ;
-
+              
 	      thread_has_died = TRUE ;
 	    }
 	  else
 	    {
-	      ZMapServerReqAny req_any ;
+	      ZMapServerReqAny req_any = NULL ;
 
 
 	      /* Recover the request from the thread data....is there always data ? check this... */
@@ -3162,9 +3178,15 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 		{
 		  req_any = (ZMapServerReqAny)data ;
 		  request_type = req_any->type ;
+
+                  /* hacky...tidy up... */
+                  if (req_any->response == ZMAP_SERVERRESPONSE_NODATA)
+                    is_empty = TRUE ;
+                  else
+                    is_empty = FALSE ;
 		}
 
-
+              
 	      switch (reply)
 		{
 		case ZMAPTHREAD_REPLY_WAIT:
@@ -3179,13 +3201,6 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 		    ZMapViewConnectionRequest request ;
 		    ZMapViewConnectionStep step = NULL ;
 		    gboolean kill_connection = FALSE ;
-
-
-
-                    if ((strstr(view_con->url, "Patch")))
-                      printf("found it\n") ;
-
-
 
 
                     /* this is not good and shows this function needs rewriting....
@@ -3295,12 +3310,18 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
 		    if (kill_connection)
 		      {
-
-                        zmap_view->sources_failed
-                          = zMap_g_list_insert_list_after(zmap_view->sources_failed,
-                                                          connect_data->loaded_features->feature_sets,
-                                                          g_list_length(zmap_view->sources_failed),
-                                                          TRUE) ;
+                        if (is_empty)
+                          zmap_view->sources_empty
+                            = zMap_g_list_insert_list_after(zmap_view->sources_empty,
+                                                            connect_data->loaded_features->feature_sets,
+                                                            g_list_length(zmap_view->sources_empty),
+                                                            TRUE) ;
+                        else
+                          zmap_view->sources_failed
+                            = zMap_g_list_insert_list_after(zmap_view->sources_failed,
+                                                            connect_data->loaded_features->feature_sets,
+                                                            g_list_length(zmap_view->sources_failed),
+                                                            TRUE) ;
 
 
 
@@ -3427,16 +3448,23 @@ static gboolean checkStateConnections(ZMapView zmap_view)
               if (connect_data->loaded_features->feature_sets
                   && reply == ZMAPTHREAD_REPLY_DIED)
                 {
-                  zmap_view->sources_failed
-                    = zMap_g_list_insert_list_after(zmap_view->sources_failed,
-                                                    connect_data->loaded_features->feature_sets,
-                                                    g_list_length(zmap_view->sources_failed),
-                                                    TRUE) ;
+                  if (is_empty)
+                    zmap_view->sources_empty
+                      = zMap_g_list_insert_list_after(zmap_view->sources_empty,
+                                                      connect_data->loaded_features->feature_sets,
+                                                      g_list_length(zmap_view->sources_empty),
+                                                      TRUE) ;
+                  else
+                    zmap_view->sources_failed
+                      = zMap_g_list_insert_list_after(zmap_view->sources_failed,
+                                                      connect_data->loaded_features->feature_sets,
+                                                      g_list_length(zmap_view->sources_failed),
+                                                      TRUE) ;
                 }
-
+              
 
 	      is_continue = FALSE ;
-
+              
 	      if (view_con->step_list && 
                   view_con->step_list->current &&
                   view_con->step_list->current->data)
@@ -3444,7 +3472,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 		  step = (ZMapViewConnectionStep) view_con->step_list->current->data;
 		  is_continue = (step->on_fail == REQUEST_ONFAIL_CONTINUE);
 		}
-
+              
 	      /* We are going to remove an item from the list so better move on from
 	       * this item. */
 	      zmap_view->connection_list = g_list_remove(zmap_view->connection_list, view_con) ;
@@ -3547,25 +3575,10 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 				      connect_data->stderr_out) ;
 		        }
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-		      /* Add any new sources that have failed. */
-		      if (connect_data->loaded_features->feature_sets
-			  && reply == ZMAPTHREAD_REPLY_DIED)
-			{
-			  zmap_view->sources_failed
-			    = zMap_g_list_insert_list_after(zmap_view->sources_failed,
-							    connect_data->loaded_features->feature_sets,
-							    g_list_length(zmap_view->sources_failed),
-							    TRUE) ;
-			}
-
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-		      zMapLogWarning("Thread %p failed, request = %s, failed sources now %d",
+		      zMapLogWarning("Thread %p failed, request = %s, empty sources now %d, failed sources now %d",
 				     thread,
 				     request_type_str,
+                                     g_list_length(zmap_view->sources_empty),
 				     g_list_length(zmap_view->sources_failed)) ;
 		    }
 
@@ -3587,8 +3600,9 @@ static gboolean checkStateConnections(ZMapView zmap_view)
                           /* Note that load_features is cleaned up by sendViewLoaded() */
                           LoadFeaturesData loaded_features ;
 
-                          /* Hack to support otterlace for this release.... */
-                          if (request_type == ZMAP_SERVERREQ_FEATURES)
+                          /* Hack to support otterlace for this release....otterlace is expecting
+                           * no features to mean "it's all ok"...not really true.... */
+                          if (is_empty)
                             connect_data->loaded_features->status = TRUE ;
 
                           loaded_features = copyLoadFeatures(connect_data->loaded_features) ;

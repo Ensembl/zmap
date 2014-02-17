@@ -1,6 +1,6 @@
 /*  File: zmapGFFGeneral.c
  *  Author: Steve Miller (sm23@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -75,6 +75,7 @@ static void checkFeatureSetCB_V2(GQuark key_id, gpointer data, gpointer user_dat
 static void checkFeatureSetCB_V3(GQuark key_id, gpointer data, gpointer user_data_unused) ;
 static void checkFeatureCB_V2(GQuark key_id, gpointer data, gpointer user_data_unused) ;
 static void checkFeatureCB_V3(gpointer key_id, gpointer data, gpointer user_data_unused) ;
+static gboolean removeTranscriptFeature(gpointer key,gpointer value, gpointer user_data);
 
 
 /*
@@ -475,7 +476,7 @@ static void checkFeatureCB_V2(GQuark key_id, gpointer data, gpointer user_data_u
 
 
 /*
- * This makes corrections to introns in transcript features.
+ * This traverses all featuresets.
  */
 static void normaliseFeatures_V3(GData **feature_sets)
 {
@@ -489,13 +490,15 @@ static void normaliseFeatures_V3(GData **feature_sets)
 static void checkFeatureSetCB_V3(GQuark key_id, gpointer data, gpointer user_data_unused)
 {
   ZMapGFFParserFeatureSet parser_feature_set = (ZMapGFFParserFeatureSet)data ;
+  guint iRemoved = 0 ;
 
   /*
-     Note that the containers differ here:
-     multiline_features is GData*, and is traversed with g_datalist_foreach,
-     however feature_set is ZMapFeatureSetStructType and it features are
-     stored in a g_hash_table construct which is why we need two sets of
-     functions to do the traversal for v2 and v3 here.. amusing, eh?
+   * This traversal is to remove transcript features with no exons.
+   */
+  iRemoved = g_hash_table_foreach_remove(parser_feature_set->feature_set->features, removeTranscriptFeature, NULL);
+
+  /*
+   * This traversal is to normalize introns in each transcript feature
    */
   if (parser_feature_set->feature_set->features)
   {
@@ -524,6 +527,31 @@ static void checkFeatureCB_V3(gpointer key_id, gpointer data, gpointer user_data
     }
 
   return ;
+}
+
+/*
+ * Return true if the feature is a transcript with no exons; return false otherwise.
+ * This function simply signals whether or not the pointer is to be removed from the
+ * hash table, but does not delete what it points to. This latter operation is performed
+ * by the appropriate desroy function that has already been attached to the featureset.
+ */
+static gboolean removeTranscriptFeature(gpointer key, gpointer value, gpointer user_data_unused)
+{
+  gboolean bEmptyTranscript = FALSE ;
+  ZMapFeature pFeature = NULL ;
+  pFeature = (ZMapFeature) value ;
+
+  zMapReturnValIfFail(pFeature, FALSE ) ;
+
+  if (pFeature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
+    {
+      if (!pFeature->feature.transcript.exons->len)
+        {
+          bEmptyTranscript = TRUE ;
+        }
+    }
+
+  return bEmptyTranscript ;
 }
 
 
@@ -884,4 +912,74 @@ gboolean zMapGFFParsingHeader(ZMapGFFParser parser)
 
   return result ;
 }
+
+
+gboolean zMapGFFSequenceDestroy(ZMapSequence sequence)
+{
+  gboolean bReturn = FALSE ;
+
+  zMapReturnValIfFail(sequence, bReturn) ;
+
+  if (sequence->sequence)
+    g_free(sequence->sequence) ;
+  g_free(sequence) ;
+
+  return bReturn ;
+}
+
+
+ZMapSequence zMapGFFGetSequence(ZMapGFFParser parser_base, int sequence_record)
+{
+  /*
+   * Pointer to ZMapSequenceStruct
+   */
+  ZMapSequence sequence = NULL;
+
+  zMapReturnValIfFail(parser_base && (sequence_record >= 0), sequence) ;
+
+  /*
+   * We do different things here depending on the GFF version.
+   */
+  if (parser_base->gff_version == ZMAPGFF_VERSION_2)
+    {
+      ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
+
+      if (parser->header_flags.done_header)
+        {
+          if(parser->seq_data.type != ZMAPSEQUENCE_NONE && (parser->seq_data.sequence != NULL && parser->raw_line_data == NULL))
+            {
+              sequence = g_new0(ZMapSequenceStruct, 1);
+              *sequence = parser->seq_data;
+              sequence->name = g_quark_from_string(parser->sequence_name);
+
+              /* So we don't copy empty data */
+              parser->seq_data.type     = ZMAPSEQUENCE_NONE;
+              parser->seq_data.sequence = NULL; /* So it doesn't get free'd */
+            }
+        }
+    }
+  else if (parser_base->gff_version == ZMAPGFF_VERSION_3)
+    {
+      ZMapGFF3Parser parser = (ZMapGFF3Parser) parser_base ;
+
+      /*
+       * Note that the v3 parser controls the lifetime of its pSeqData objects.
+       */
+      if (sequence_record < parser->nSequenceRecords)
+        {
+          sequence = g_new0(ZMapSequenceStruct, 1) ;
+          sequence->name = parser->pSeqData[sequence_record].name ;
+          sequence->type = parser->pSeqData[sequence_record].type ;
+          sequence->sequence = g_strdup(parser->pSeqData[sequence_record].sequence) ;
+        }
+    }
+
+  return sequence;
+}
+
+
+
+
+
+
 
