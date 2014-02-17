@@ -970,6 +970,7 @@ ZMapSequence zMapGFFGetSequence(ZMapGFFParser parser_base, int sequence_record)
           sequence = g_new0(ZMapSequenceStruct, 1) ;
           sequence->name = parser->pSeqData[sequence_record].name ;
           sequence->type = parser->pSeqData[sequence_record].type ;
+          sequence->length = parser->pSeqData[sequence_record].length ;
           sequence->sequence = g_strdup(parser->pSeqData[sequence_record].sequence) ;
         }
     }
