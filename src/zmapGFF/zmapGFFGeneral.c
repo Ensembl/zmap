@@ -85,6 +85,7 @@ static gboolean removeTranscriptFeature(gpointer key,gpointer value, gpointer us
 ZMapGFFParser zMapGFFCreateParser(int iGFFVersion, char *sequence, int features_start, int features_end)
 {
   ZMapGFFParser pParser = NULL ;
+  zMapReturnValIfFail(sequence && *sequence && features_start && (features_start <= features_end), pParser) ;
 
   if (iGFFVersion == ZMAPGFF_VERSION_2 )
     {
@@ -111,11 +112,7 @@ gboolean zMapGFFParseHeader(ZMapGFFParser parser, char *line, gboolean *header_f
 {
   gboolean bResult = FALSE ;
 
-  if (!parser)
-    return bResult ;
-
-  if (!zMapGFFIsValidVersion(parser))
-    return bResult ;
+  zMapReturnValIfFail(parser && zMapGFFIsValidVersion(parser), bResult );
 
   if (parser->gff_version == ZMAPGFF_VERSION_2 )
     {
@@ -142,11 +139,7 @@ gboolean zMapGFFParseSequence(ZMapGFFParser parser, char *line, gboolean *sequen
 {
   gboolean bResult = FALSE ;
 
-  if (!parser)
-    return bResult ;
-
-  if (!zMapGFFIsValidVersion(parser))
-    return bResult ;
+  zMapReturnValIfFail(parser && zMapGFFIsValidVersion(parser), bResult );
 
   if (parser->gff_version == ZMAPGFF_VERSION_2 )
     {
@@ -177,11 +170,7 @@ gboolean zMapGFFParseLine(ZMapGFFParser parser, char *line)
 {
   gboolean bResult = FALSE ;
 
-  if (!parser)
-    return bResult ;
-
-  if (!zMapGFFIsValidVersion(parser))
-    return bResult ;
+  zMapReturnValIfFail(parser && zMapGFFIsValidVersion(parser), bResult );
 
   if (parser->gff_version == ZMAPGFF_VERSION_2)
     {
@@ -206,11 +195,7 @@ gboolean zMapGFFParseLineLength(ZMapGFFParser parser, char *line, gsize line_len
 {
   gboolean bResult = FALSE ;
 
-  if (!parser)
-    return bResult ;
-
-  if (!zMapGFFIsValidVersion(parser))
-    return bResult ;
+  zMapReturnValIfFail(parser && zMapGFFIsValidVersion(parser), bResult );
 
   if (parser->gff_version == ZMAPGFF_VERSION_2)
     {
@@ -235,11 +220,7 @@ gboolean zMapGFFParseLineLength(ZMapGFFParser parser, char *line, gsize line_len
  */
 void zMapGFFDestroyParser(ZMapGFFParser parser)
 {
-  if (!parser)
-    return ;
-
-  if (!zMapGFFIsValidVersion(parser))
-    return ;
+  zMapReturnIfFail(parser && zMapGFFIsValidVersion(parser));
 
   if (parser->gff_version == ZMAPGFF_VERSION_2)
     {
@@ -294,9 +275,7 @@ gboolean zMapGFFParserInitForFeatures(ZMapGFFParser parser, GHashTable *sources,
   gboolean result = FALSE ;
   GQuark locus_id ;
 
-  zMapReturnValIfFail(parser, result ) ;
-  zMapReturnValIfFail(zMapGFFIsValidVersion(parser), result) ;
-  zMapReturnValIfFail(sources, result);
+  zMapReturnValIfFail(parser && zMapGFFIsValidVersion(parser) && sources, result);
 
   parser->sources = sources ;
   parser->parse_only = parse_only ;
@@ -341,10 +320,7 @@ gboolean zMapGFFGetFeatures(ZMapGFFParser parser, ZMapFeatureBlock feature_block
   int start,end;
   gboolean result = FALSE ;
 
-  if (!parser)
-    return result ;
-  if (!zMapGFFIsValidVersion(parser))
-    return result ;
+  zMapReturnValIfFail(parser && zMapGFFIsValidVersion(parser), result) ;
 
   if (parser->state != ZMAPGFF_PARSER_ERR)
     {
@@ -564,10 +540,7 @@ static gboolean removeTranscriptFeature(gpointer key, gpointer value, gpointer u
 void zMapGFFParseSetSourceHash(ZMapGFFParser parser,
 			       GHashTable *source_2_feature_set, GHashTable *source_2_sourcedata)
 {
-  if (!parser)
-    return ;
-  if (!zMapGFFIsValidVersion(parser))
-    return ;
+  zMapReturnIfFail(parser && zMapGFFIsValidVersion(parser));
 
   parser->source_2_feature_set = source_2_feature_set ;
   parser->source_2_sourcedata = source_2_sourcedata ;
@@ -595,8 +568,8 @@ void zMapGFFParseSetSourceHash(ZMapGFFParser parser,
 
 
       g_hash_table_insert(parser->source_2_sourcedata,
-			  GINT_TO_POINTER(parser->locus_set_id),
-			  source_data) ;
+                          GINT_TO_POINTER(parser->locus_set_id),
+                          source_data) ;
 
     }
 
@@ -614,10 +587,7 @@ void zMapGFFParseSetSourceHash(ZMapGFFParser parser,
  */
 GList *zMapGFFGetFeaturesets(ZMapGFFParser parser)
 {
-  if (!parser)
-    return NULL ;
-  if (!zMapGFFIsValidVersion(parser))
-    return NULL ;
+  zMapReturnIfFail(parser && zMapGFFIsValidVersion(parser));
 
   return (parser->src_feature_sets) ;
 }
@@ -633,10 +603,7 @@ GList *zMapGFFGetFeaturesets(ZMapGFFParser parser)
  */
 void zMapGFFSetStopOnError(ZMapGFFParser parser, gboolean stop_on_error)
 {
-  if (!parser)
-    return ;
-  if (!zMapGFFIsValidVersion(parser))
-    return ;
+  zMapReturnIfFail(parser && zMapGFFIsValidVersion(parser));
 
   if (parser->state != ZMAPGFF_PARSER_ERR)
     parser->stop_on_error = stop_on_error ;
@@ -655,10 +622,7 @@ void zMapGFFSetStopOnError(ZMapGFFParser parser, gboolean stop_on_error)
  */
 void zMapGFFSetSOCompliance(ZMapGFFParser parser, gboolean SO_compliant)
 {
-  if (!parser)
-    return ;
-  if (!zMapGFFIsValidVersion(parser))
-    return ;
+  zMapReturnIfFail(parser && zMapGFFIsValidVersion(parser));
 
   if (parser->state != ZMAPGFF_PARSER_ERR)
     parser->SO_compliant = SO_compliant ;
@@ -674,10 +638,7 @@ void zMapGFFSetSOCompliance(ZMapGFFParser parser, gboolean SO_compliant)
  */
 void zMapGFFSetFeatureClip(ZMapGFFParser parser, ZMapGFFClipMode clip_mode)
 {
-  if (!parser)
-    return ;
-  if (!zMapGFFIsValidVersion(parser))
-    return ;
+  zMapReturnIfFail(parser && zMapGFFIsValidVersion(parser));
 
   if (parser->state != ZMAPGFF_PARSER_ERR)
     {
@@ -695,10 +656,7 @@ void zMapGFFSetFeatureClip(ZMapGFFParser parser, ZMapGFFClipMode clip_mode)
  */
 void zMapGFFSetFeatureClipCoords(ZMapGFFParser parser, int start, int end)
 {
-  if (!parser)
-    return ;
-  if (!zMapGFFIsValidVersion(parser))
-    return ;
+  zMapReturnIfFail(parser && zMapGFFIsValidVersion(parser));
 
   if (start <= 0 || end <= 0 || end < start )
     return ;
@@ -723,10 +681,7 @@ void zMapGFFSetFeatureClipCoords(ZMapGFFParser parser, int start, int end)
  */
 void zMapGFFSetDefaultToBasic(ZMapGFFParser parser, gboolean default_to_basic)
 {
-  if (!parser)
-    return ;
-  if (!zMapGFFIsValidVersion(parser))
-    return ;
+  zMapReturnIfFail(parser && zMapGFFIsValidVersion(parser)) ;
 
   if (parser->state != ZMAPGFF_PARSER_ERR)
     parser->default_to_basic = default_to_basic ;
@@ -744,10 +699,7 @@ void zMapGFFSetDefaultToBasic(ZMapGFFParser parser, gboolean default_to_basic)
 int zMapGFFGetVersion(ZMapGFFParser parser)
 {
   int version = ZMAPGFF_VERSION_UNKNOWN ;
-  if (!parser)
-    return ZMAPGFF_VERSION_UNKNOWN ;
-  if (!zMapGFFIsValidVersion(parser))
-    return ZMAPGFF_VERSION_UNKNOWN ;
+  zMapReturnValIfFail(parser && zMapGFFIsValidVersion(parser), ZMAPGFF_VERSION_UNKNOWN ) ;
 
   if (parser->state != ZMAPGFF_PARSER_ERR)
     version = parser->gff_version ;
@@ -765,10 +717,7 @@ int zMapGFFGetVersion(ZMapGFFParser parser)
  */
 int zMapGFFGetLineNumber(ZMapGFFParser parser)
 {
-  if (!parser)
-    return 0 ;
-  if (!zMapGFFIsValidVersion(parser))
-    return 0 ;
+  zMapReturnValIfFail(parser && zMapGFFIsValidVersion(parser), 0 );
 
   return parser->line_count ;
 }
@@ -782,10 +731,7 @@ int zMapGFFGetLineNumber(ZMapGFFParser parser)
  */
 GError *zMapGFFGetError(ZMapGFFParser parser)
 {
-  if (!parser)
-    return NULL ;
-  if (!zMapGFFIsValidVersion(parser))
-    return NULL ;
+  zMapReturnValIfFail(parser && zMapGFFIsValidVersion(parser), NULL);
 
   return parser->error ;
 }
@@ -794,10 +740,7 @@ GError *zMapGFFGetError(ZMapGFFParser parser)
 
 int zMapGFFParserGetNumFeatures(ZMapGFFParser parser)
 {
-  if (!parser)
-    return 0 ;
-  if (!zMapGFFIsValidVersion(parser))
-    return 0 ;
+  zMapReturnValIfFail(parser && zMapGFFIsValidVersion(parser), 0) ;
   return(parser->num_features) ;
 }
 
@@ -812,10 +755,7 @@ int zMapGFFParserGetNumFeatures(ZMapGFFParser parser)
 gboolean zMapGFFTerminated(ZMapGFFParser parser)
 {
   gboolean result = TRUE ;
-  if (!parser)
-    return result ;
-  if (!zMapGFFIsValidVersion(parser))
-    return result ;
+  zMapReturnValIfFail( parser && zMapGFFIsValidVersion(parser), result) ;
 
   if (parser->state != ZMAPGFF_PARSER_ERR)
     result = FALSE ;
@@ -835,10 +775,7 @@ gboolean zMapGFFTerminated(ZMapGFFParser parser)
  */
 void zMapGFFSetFreeOnDestroy(ZMapGFFParser parser, gboolean free_on_destroy)
 {
-  if (!parser)
-    return ;
-  if (!zMapGFFIsValidVersion(parser))
-    return ;
+  zMapReturnIfFail(parser && zMapGFFIsValidVersion(parser));
 
   if (parser->state != ZMAPGFF_PARSER_ERR)
     parser->free_on_destroy = free_on_destroy ;
