@@ -1,6 +1,6 @@
 
 
-/*  File: zmapGFFSOParser.h
+/*  File: zmapSOParser.h
  *  Author: Steve Miller (sm23@sanger.ac.uk)
  *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------

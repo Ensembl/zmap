@@ -1,4 +1,4 @@
-/*  File: zmapWindowItemFeatureSet_I.h
+/*  File: zmapWindowContainerFeatureSet_I.h
  *  Author: Roy Storey (rds@sanger.ac.uk)
  *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------

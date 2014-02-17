@@ -1,4 +1,4 @@
-/*  File: check_ZMapFeature.c
+/*  File: check_zmapFeature.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
  *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
