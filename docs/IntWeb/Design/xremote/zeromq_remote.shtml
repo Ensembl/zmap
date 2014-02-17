@@ -47,6 +47,7 @@ legend{ font-weight: bold }
   <li><a href="#state"><b>State</b></a></li>
   <li><a href="#header"><b>Message Header</b></a></li>
   <li><a href="#references"><b>References</b></a></li>
+  <li><a href="#otterlace_zmap">Appendix: Otterlace &amp; ZMap</a></li>
   <li><a href="#collisions_abort">Appendix: Collision Protocol with abort</a></li>
 </ul>
 
@@ -371,6 +372,17 @@ serialisation.</p>
   <li><a href="http://zguide.zeromq.org/page:all">ZeroMQ Guide</a></li>
   <li><a href="https://metacpan.org/pod/ZMQ::LibZMQ3">ZMQ::LibZMQ3 perl module</a></li>
 </ul>
+
+
+<a name="otterlace_zmap"></a>
+<h2>Appendix: Otterlace &amp; ZMap</h2>
+
+<ul>
+  <li><p>Appropriate paths for Unix domain zmq_sockets would
+  be <code>/var/tmp/otter_${USER}/${NUMBER}/0mq_{otter,zmap}</code>. Thanks
+  to Matthew for this suggestion.</p></li>
+</ul>
+
 
 <a name="collisions_abort"></a>
 <h2>Appendix: Collision Protocol with abort</h2>
