@@ -38,11 +38,28 @@
 #include <zmapWindowCanvasDraw.h>
 #include <zmapWindowCanvasFeatureset_I.h>
 #include <zmapWindowCanvasTranscript_I.h>
+#include <zmapWindowCanvasGlyph_I.h>
+
+/*
+ * Truncation shape.
+ */
+static ZMapStyleGlyphShapeStruct truncation_shape_transcript_instance01 =
+{
+  {
+    5, 0,      0, 5,        -5, 0,       0, -5,      5, 0,          0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+  },                                                                               /* length 32 coordinate array */
+  5,                                                                               /* number of coordinates */
+  10, 10,                                                                          /* width and height */
+  0,                                                                               /* quark ID */
+  GLYPH_DRAW_LINES                                                                 /* ZMapStyleGlyphDrawType; LINES == OUTLINE, POLYGON == filled */
+}  ;
+
+static ZMapStyleGlyphShapeStruct * truncation_shape_transcript01 = &truncation_shape_transcript_instance01 ;
+static ZMapWindowCanvasGlyph truncation_glyph_transcript = NULL ;
 
 
-
-
-/* 
+/*
  *                    External interface
  */
 

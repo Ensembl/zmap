@@ -44,7 +44,7 @@
  * A glyph to represent the trunction of a feature at the ZMap boundary. This one just draws a
  * square with the diagonal oriented in the direction of the feature.
  */
-static ZMapStyleGlyphShapeStruct truncation_shape_instance01 =
+static ZMapStyleGlyphShapeStruct truncation_shape_basic_instance01 =
 {
   {
     5, 0,      0, 5,        -5, 0,       0, -5,      5, 0,          0, 0, 0, 0, 0, 0,
@@ -53,11 +53,11 @@ static ZMapStyleGlyphShapeStruct truncation_shape_instance01 =
   5,                                                                               /* number of coordinates */
   10, 10,                                                                          /* width and height */
   0,                                                                               /* quark ID */
-  GLYPH_DRAW_LINES                                                                 /* ZMapStyleGlyphDrawType */
+  GLYPH_DRAW_LINES                                                                 /* ZMapStyleGlyphDrawType; LINES == OUTLINE, POLYGON == filled */
 }  ;
 
-static ZMapStyleGlyphShapeStruct * truncation_shape01 = &truncation_shape_instance01 ;
-static ZMapWindowCanvasGlyph truncation_glyph = NULL ;
+static ZMapStyleGlyphShapeStruct * truncation_shape_basic01 = &truncation_shape_basic_instance01 ;
+static ZMapWindowCanvasGlyph truncation_glyph_basic = NULL ;
 
 /* draw a box */
 static void basicPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
@@ -83,7 +83,6 @@ static void basicPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
 
   if (fill_set && feature->feature->population)
     {
-
       if((zMapStyleGetScoreMode(style) == ZMAPSCORE_HEAT) || (zMapStyleGetScoreMode(style) == ZMAPSCORE_HEAT_WIDTH))
         {
           fill = (fill << 8) | 0xff;	/* convert back to RGBA */
@@ -120,27 +119,27 @@ static void basicPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
    * Construct glyph object from shape given,
    * once and once only.
    */
-  if (truncation_glyph == NULL)
+  if (truncation_glyph_basic == NULL)
     {
-      truncation_glyph = g_new0(zmapWindowCanvasGlyphStruct, 1) ;
-      truncation_glyph->sub_feature = TRUE ;
-      truncation_glyph->shape = truncation_shape01 ;
+      truncation_glyph_basic = g_new0(zmapWindowCanvasGlyphStruct, 1) ;
+      truncation_glyph_basic->sub_feature = TRUE ;
+      truncation_glyph_basic->shape = truncation_shape_basic01 ;
     }
   col_width = zMapStyleGetWidth(featureset->style) ;
-  zmap_window_canvas_set_glyph(foo, truncation_glyph, style, feature->feature, col_width, feature->score ) ;
+  zmap_window_canvas_set_glyph(foo, truncation_glyph_basic, style, feature->feature, col_width, feature->score ) ;
 
   /*
    * Draw the truncation glyph subfeatures.
    */
   if (truncated_start)
     {
-      truncation_glyph->which = ZMAP_GLYPH_TRUNCATED_START ;
-      zMapWindowCanvasGlyphPaintSubFeature(featureset, feature, truncation_glyph, drawable) ;
+      truncation_glyph_basic->which = ZMAP_GLYPH_TRUNCATED_START ;
+      zMapWindowCanvasGlyphPaintSubFeature(featureset, feature, truncation_glyph_basic, drawable) ;
     }
   if (truncated_end)
     {
-      truncation_glyph->which = ZMAP_GLYPH_TRUNCATED_END ;
-      zMapWindowCanvasGlyphPaintSubFeature(featureset, feature, truncation_glyph, drawable) ;
+      truncation_glyph_basic->which = ZMAP_GLYPH_TRUNCATED_END ;
+      zMapWindowCanvasGlyphPaintSubFeature(featureset, feature, truncation_glyph_basic, drawable) ;
     }
 
 
