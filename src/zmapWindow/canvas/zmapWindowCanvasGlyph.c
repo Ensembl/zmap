@@ -247,8 +247,8 @@ void zMapWindowCanvasGlyphPaintSubFeature(ZMapWindowFeaturesetItem featureset, Z
 
   zMapReturnIfFail((featureset && feature && glyph && drawable)) ;
 
-  y1 = (glyph->which == 3 ? feature->feature->x2 + 1 : feature->feature->x1) ;
-
+  y1 = (glyph->which == 3 ?  feature->feature->x2 + 1 : feature->feature->x1) ;
+  // feature->y2 + 1 : feature->y1) ;
   setGlyphCanvasCoords(featureset, feature, glyph, y1) ;
 
   zmap_window_canvas_paint_feature_glyph(featureset, feature, glyph, y1, drawable) ;
