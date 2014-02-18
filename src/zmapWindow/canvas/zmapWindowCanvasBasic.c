@@ -58,9 +58,6 @@ static ZMapStyleGlyphShapeStruct truncation_shape_instance01 =
 
 static ZMapStyleGlyphShapeStruct * truncation_shape01 = &truncation_shape_instance01 ;
 static ZMapWindowCanvasGlyph truncation_glyph = NULL ;
-static const int truncation_glyph_type = 999 ;
-
-
 
 /* draw a box */
 static void basicPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
@@ -115,10 +112,8 @@ static void basicPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
    */
   if (zMapWindowCanvasCalcHorizCoords(featureset, feature, &x1, &x2))
     {
-
       zMapCanvasFeaturesetDrawBoxMacro(featureset, x1, x2, feature->y1, feature->y2, drawable,
                                        fill_set, outline_set, fill, outline) ;
-
     }
 
   /*
@@ -128,7 +123,6 @@ static void basicPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
   if (truncation_glyph == NULL)
     {
       truncation_glyph = g_new0(zmapWindowCanvasGlyphStruct, 1) ;
-      truncation_glyph->which = truncation_glyph_type ;
       truncation_glyph->sub_feature = TRUE ;
       truncation_glyph->shape = truncation_shape01 ;
     }
@@ -136,9 +130,18 @@ static void basicPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
   zmap_window_canvas_set_glyph(foo, truncation_glyph, style, feature->feature, col_width, feature->score ) ;
 
   /*
-   * Draw the glyph subfeatures.
+   * Draw the truncation glyph subfeatures.
    */
-  zMapWindowCanvasGlyphPaintSubFeature(featureset, feature, truncation_glyph, drawable) ;
+  if (truncated_start)
+    {
+      truncation_glyph->which = ZMAP_GLYPH_TRUNCATED_START ;
+      zMapWindowCanvasGlyphPaintSubFeature(featureset, feature, truncation_glyph, drawable) ;
+    }
+  if (truncated_end)
+    {
+      truncation_glyph->which = ZMAP_GLYPH_TRUNCATED_END ;
+      zMapWindowCanvasGlyphPaintSubFeature(featureset, feature, truncation_glyph, drawable) ;
+    }
 
 
   return ;

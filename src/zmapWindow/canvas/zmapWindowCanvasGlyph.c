@@ -243,15 +243,32 @@ ZMapWindowCanvasGlyph zMapWindowCanvasGetGlyph(ZMapWindowFeaturesetItem features
 void zMapWindowCanvasGlyphPaintSubFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
 					  ZMapWindowCanvasGlyph glyph, GdkDrawable *drawable)
 {
-  double y1 ;
+  double y = 0.0 ;
 
   zMapReturnIfFail((featureset && feature && glyph && drawable)) ;
 
-  y1 = (glyph->which == 3 ?  feature->feature->x2 + 1 : feature->feature->x1) ;
-  // feature->y2 + 1 : feature->y1) ;
-  setGlyphCanvasCoords(featureset, feature, glyph, y1) ;
+  if (glyph->which == ZMAP_GLYPH_THREEPRIME)
+    {
+      y = feature->y2 + 1.0 ;
+    }
+  else if (glyph->which == ZMAP_GLYPH_FIVEPRIME)
+    {
+      y = feature->y1 ;
+    }
+  else if (glyph->which == ZMAP_GLYPH_TRUNCATED_START )
+    {
+      y = feature->y1 ;
+    }
+  else if (glyph->which == ZMAP_GLYPH_TRUNCATED_END )
+    {
+      y = feature->y2 + 1.0 ;
+    }
 
-  zmap_window_canvas_paint_feature_glyph(featureset, feature, glyph, y1, drawable) ;
+  /* y1 = (glyph->which == 3 ? feature->feature->x2 + 1 : feature->feature->x1) ;  */
+
+  setGlyphCanvasCoords(featureset, feature, glyph, y) ;
+
+  zmap_window_canvas_paint_feature_glyph(featureset, feature, glyph, y, drawable) ;
 
   return ;
 }

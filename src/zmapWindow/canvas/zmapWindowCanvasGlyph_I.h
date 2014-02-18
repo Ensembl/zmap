@@ -52,6 +52,20 @@ typedef enum
     ZMAP_GLYPH_SHAPE_GFSPLICE,				    /* acedb-style GF Splices */
   } ZMapGlyphShapeType ;
 
+/*
+ * Enum for the glyph "which" data member. Represents 3', 5' or
+ * truncated at start or end. Note that the numerical values are
+ * important here as they are tested for explicitly in much of
+ * the drawing code.
+ */
+typedef enum
+  {
+    ZMAP_GLYPH_THREEPRIME      = 3,
+    ZMAP_GLYPH_FIVEPRIME       = 5,
+    ZMAP_GLYPH_TRUNCATED_START = 999,
+    ZMAP_GLYPH_TRUNCATED_END   = 1000
+  } ZMapGlyphWhichType ;
+
 
 /* General struct for per column data, all other structs must have matching fields at the
  * start of their structs. */
