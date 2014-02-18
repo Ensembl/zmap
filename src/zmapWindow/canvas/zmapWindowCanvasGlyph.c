@@ -24,7 +24,7 @@
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
- * Description: Implements create/draw interface for 
+ * Description: Implements create/draw interface for
  *              glyph features.
  *-------------------------------------------------------------------
  */
@@ -78,7 +78,7 @@ static void glyphColumnFree(ZMapWindowFeaturesetItem featureset) ;
 
 static void setGlyphPerColData(ZMapWindowFeaturesetItem featureset) ;
 static ZMapStyleGlyphShape getGlyphShape(ZMapFeatureTypeStyle style, int which, ZMapStrand strand) ;
-static gboolean zmap_window_canvas_set_glyph(FooCanvasItem *foo,
+gboolean zmap_window_canvas_set_glyph(FooCanvasItem *foo,
 					     ZMapWindowCanvasGlyph glyph, ZMapFeatureTypeStyle style,
 					     ZMapFeature feature, double col_width, double score);
 static void glyph_set_coords(ZMapFeatureTypeStyle style, double score,
@@ -243,15 +243,32 @@ ZMapWindowCanvasGlyph zMapWindowCanvasGetGlyph(ZMapWindowFeaturesetItem features
 void zMapWindowCanvasGlyphPaintSubFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
 					  ZMapWindowCanvasGlyph glyph, GdkDrawable *drawable)
 {
-  double y1 ;
+  double y = 0.0 ;
 
   zMapReturnIfFail((featureset && feature && glyph && drawable)) ;
 
-  y1 = (glyph->which == 3 ? feature->feature->x2 + 1 : feature->feature->x1) ;
+  if (glyph->which == ZMAP_GLYPH_THREEPRIME)
+    {
+      y = feature->y2 + 1.0 ;
+    }
+  else if (glyph->which == ZMAP_GLYPH_FIVEPRIME)
+    {
+      y = feature->y1 ;
+    }
+  else if (glyph->which == ZMAP_GLYPH_TRUNCATED_START )
+    {
+      y = feature->y1 ;
+    }
+  else if (glyph->which == ZMAP_GLYPH_TRUNCATED_END )
+    {
+      y = feature->y2 + 1.0 ;
+    }
 
-  setGlyphCanvasCoords(featureset, feature, glyph, y1) ;
+  /* y1 = (glyph->which == 3 ? feature->feature->x2 + 1 : feature->feature->x1) ;  */
 
-  zmap_window_canvas_paint_feature_glyph(featureset, feature, glyph, y1, drawable) ;
+  setGlyphCanvasCoords(featureset, feature, glyph, y) ;
+
+  zmap_window_canvas_paint_feature_glyph(featureset, feature, glyph, y, drawable) ;
 
   return ;
 }
@@ -266,7 +283,7 @@ void zMapWindowCanvasGlyphSetColData(ZMapWindowFeaturesetItem featureset)
 
 
 
-/* 
+/*
  *       External callbacks (static but called directly from other packages)
  */
 
@@ -298,7 +315,7 @@ static void glyphSetPaint(ZMapWindowFeaturesetItem featureset, GdkDrawable *draw
 		= zMapGUIGetColour(GTK_WIDGET(item->canvas),
 				   GF_ZERO_LINE_COLOUR, &(splice_col->zero_line_colour)))
 	      || !(splice_col->colours_set
-		   = zMapGUIGetColour(GTK_WIDGET(item->canvas), 
+		   = zMapGUIGetColour(GTK_WIDGET(item->canvas),
 				      GF_OTHER_LINE_COLOUR, &(splice_col->other_line_colour))))
 	    zMapLogCritical("%s", "Cannot create colours for GF splice display, no splices will be displayed.") ;
 	}
@@ -351,7 +368,7 @@ static void glyphSetPaint(ZMapWindowFeaturesetItem featureset, GdkDrawable *draw
 
 
 
-/* Draw handler for the glyph item 
+/* Draw handler for the glyph item
  * The interface for free-standing glyphs, called via CanvasFeatureset virtual functions
  * must calculate the shape coords etc on first paint */
 static void glyphPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
@@ -480,17 +497,17 @@ static ZMapWindowCanvasFeature glyphAddFeature(ZMapWindowFeaturesetItem features
  *
  * reimplementation based on coords of glyph, not the feature coords which may
  * be useless for glyph purposes.
- * 
+ *
  *
  * THIS CODE HAS BEEN THROUGH SEVERAL (BROKEN) ITERATIONS, SO HERE'S HOW IT STANDS RIGHT NOW:
- * 
+ *
  * GLYPHS ARE NOT SUPPOSED TO SCALE AS THE CANVAS IS ZOOMED IN/OUT, THEY REMAIN A
  * CONSTANT SIZE SO THEREFORE WE COMPARE THE FOOCANVAS WINDOW COORDS OF THE GLYPH
  * WITH THE FOOCANVAS WINDOW POSITION OF THE CLICK (cx & cy).
- * 
+ *
  * IF AT A FUTURE DATE GLYPHS BECOME SCALABLE THEN THIS ROUTINE WILL NEED CHANGING
  * TO COPE WITH BOTH TYPES OF GLYPHS.
- * 
+ *
  *  */
 static double glyphPoint(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeature gs,
 			 double item_x, double item_y, int cx, int cy,
@@ -621,7 +638,7 @@ static void setGlyphPerColData(ZMapWindowFeaturesetItem featureset)
 
 
 /* Complicated call to get the right glyph shape for the strand/glyph type...
- * 
+ *
  * It would be good to make this more obvious....
  *  */
 static ZMapStyleGlyphShape getGlyphShape(ZMapFeatureTypeStyle style, int which,  ZMapStrand strand)
@@ -649,7 +666,7 @@ static ZMapStyleGlyphShape getGlyphShape(ZMapFeatureTypeStyle style, int which, 
  * called for both standalone features and sub-feature glyphs
  * NOTE sub-feature glyphs have an uninitialised feature part
  */
-static gboolean zmap_window_canvas_set_glyph(FooCanvasItem *foo, ZMapWindowCanvasGlyph glyph,
+gboolean zmap_window_canvas_set_glyph(FooCanvasItem *foo, ZMapWindowCanvasGlyph glyph,
 					     ZMapFeatureTypeStyle style, ZMapFeature feature,
 					     double col_width, double score)
 {
@@ -707,7 +724,7 @@ static gboolean zmap_window_canvas_set_glyph(FooCanvasItem *foo, ZMapWindowCanva
 
   /* We need splice markers to behave in a particular way for wormbase, I've added this function
    * to get the positions so it doesn't interfere with the general workings of glyphs. */
-  if (any_glyph_col->glyph_type == ZMAP_GLYPH_SHAPE_GFSPLICE)
+  if (any_glyph_col && (any_glyph_col->glyph_type == ZMAP_GLYPH_SHAPE_GFSPLICE))
     {
       GFSpliceColumnData splice_col = (GFSpliceColumnData)any_glyph_col ;
 
@@ -722,7 +739,7 @@ static gboolean zmap_window_canvas_set_glyph(FooCanvasItem *foo, ZMapWindowCanva
        * for anything that's not a gf splice. */
       min = zMapStyleGetMinScore(style);
       max = zMapStyleGetMaxScore(style);
-      
+
 
       range = max - min;
 
@@ -1029,7 +1046,7 @@ static void zmap_window_canvas_paint_feature_glyph(ZMapWindowFeaturesetItem feat
       outline = glyph->line_pixel;
     }
 
-  if (any_glyph_col->glyph_type == ZMAP_GLYPH_SHAPE_GFSPLICE)
+  if (any_glyph_col && (any_glyph_col->glyph_type == ZMAP_GLYPH_SHAPE_GFSPLICE))
     gdk_gc_set_line_attributes(featureset->gc, SPLICE_LINE_WIDTH, GDK_LINE_SOLID, GDK_CAP_BUTT, GDK_JOIN_MITER) ;
   else
     gdk_gc_set_line_attributes(featureset->gc, DEFAULT_LINE_WIDTH, GDK_LINE_SOLID, GDK_CAP_BUTT, GDK_JOIN_ROUND) ;
@@ -1053,7 +1070,7 @@ static void zmap_window_canvas_paint_feature_glyph(ZMapWindowFeaturesetItem feat
 
 
 /* Calculate actual pixel coordinates on the foocanvas window, the glyph is centred around cx,cy.
- * 
+ *
  * NOTE these coords are NOT the viewport coords but the coords on the zoomed foocanvas window. */
 static void glyph_to_canvas(GdkPoint *points, GdkPoint *coords, int count, int cx, int cy)
 {

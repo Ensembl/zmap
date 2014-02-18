@@ -35,10 +35,12 @@
 #include <zmapWindowCanvasFeatureset_I.h>
 #include <zmapWindowCanvasGlyph.h>
 
-
+gboolean zmap_window_canvas_set_glyph(FooCanvasItem *foo,
+					     ZMapWindowCanvasGlyph glyph, ZMapFeatureTypeStyle style,
+					     ZMapFeature feature, double col_width, double score);
 
 /* Per Column Glyph Data.
- * 
+ *
  * Data common to particular types of glyph, stored using the per_column_data pointer
  * in zmapWindowFeaturesetItemStruct.
  */
@@ -49,6 +51,20 @@ typedef enum
     ZMAP_GLYPH_SHAPE_ANY,				    /* glyphs with no special data */
     ZMAP_GLYPH_SHAPE_GFSPLICE,				    /* acedb-style GF Splices */
   } ZMapGlyphShapeType ;
+
+/*
+ * Enum for the glyph "which" data member. Represents 3', 5' or
+ * truncated at start or end. Note that the numerical values are
+ * important here as they are tested for explicitly in much of
+ * the drawing code.
+ */
+typedef enum
+  {
+    ZMAP_GLYPH_THREEPRIME      = 3,
+    ZMAP_GLYPH_FIVEPRIME       = 5,
+    ZMAP_GLYPH_TRUNCATED_START = 999,
+    ZMAP_GLYPH_TRUNCATED_END   = 1000
+  } ZMapGlyphWhichType ;
 
 
 /* General struct for per column data, all other structs must have matching fields at the
@@ -74,7 +90,7 @@ typedef struct GFSpliceColumnDataStructName
   /* All glyph fields. */
 
   ZMapGlyphShapeType glyph_type ;
-  
+
   double min_score, max_score ;				    /* cached from style. */
 
 
@@ -98,7 +114,7 @@ typedef struct GFSpliceColumnDataStructName
 
 
 /* Per glyph data.
- * 
+ *
  * NOTE
  * Glyphs are quite complex and we create an array of points for display
  * that are interpreted according to the glyph type.
