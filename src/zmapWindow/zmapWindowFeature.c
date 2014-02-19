@@ -131,7 +131,7 @@ gboolean zMapWindowFeatureSelect(ZMapWindow window, ZMapFeature feature)
     {
 
       zmapWindowUpdateInfoPanel(window, feature, NULL, feature_item, NULL, 0, 0,  0, 0,
-				NULL, TRUE, FALSE, FALSE) ;
+				NULL, TRUE, FALSE, FALSE, FALSE) ;
       result = TRUE ;
     }
 
@@ -542,7 +542,6 @@ static gboolean canvasItemDestroyCB(FooCanvasItem *feature_item, gpointer data)
   gboolean event_handled = FALSE ;			    /* Make sure any other callbacks also get run. */
   ZMapWindow window = (ZMapWindowStruct*)data ;
 
-
   if (window->focus)
     zmapWindowFocusRemoveOnlyFocusItem(window->focus, feature_item) ;
 
@@ -612,7 +611,7 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 	   * seems a bit more semantic to do this in zMapWindowCanvasItemGetInterval()
 	   * but that's called by handleButton which doesn't do double click
 	   */
-	  if(but_event->button == 1)
+	  if (but_event->button == 1 || but_event->button == 3)
 	    zMapWindowCanvasItemSetFeature((ZMapWindowCanvasItem) item, but_event->x, but_event->y);
 
 	  /* Get the feature attached to the item, checking that its type is valid */
@@ -712,7 +711,8 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
   gboolean event_handled = FALSE ;
   GdkModifierType shift_mask = GDK_SHIFT_MASK,
     control_mask = GDK_CONTROL_MASK,
-    shift_control_mask = (GDK_SHIFT_MASK | GDK_CONTROL_MASK),
+    alt_mask = GDK_MOD1_MASK,
+    meta_mask = GDK_META_MASK,
     unwanted_masks = (GDK_LOCK_MASK | GDK_MOD2_MASK | GDK_MOD3_MASK | GDK_MOD4_MASK | GDK_MOD5_MASK
 		      | GDK_BUTTON1_MASK | GDK_BUTTON2_MASK | GDK_BUTTON3_MASK
 		      | GDK_BUTTON4_MASK | GDK_BUTTON5_MASK),
@@ -724,9 +724,10 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
    * GDK_SUPER_MASK, GDK_HYPER_MASK and GDK_META_MASK */
   if ((locks_mask = (but_event->state & unwanted_masks)))
     {
-      shift_mask         |= locks_mask;
-      control_mask       |= locks_mask;
-      shift_control_mask |= locks_mask;
+      shift_mask |= locks_mask ;
+      control_mask |= locks_mask ;
+      alt_mask |= locks_mask ;
+      meta_mask |= locks_mask ;
     }
 
   /* Button 1 and 3 are handled, 2 is left for a general handler which could be the root handler. */
@@ -739,6 +740,8 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
       ZMapFeatureStruct feature_copy = {};
       ZMapFeatureAny my_feature = (ZMapFeatureAny) feature ;
       gboolean control = FALSE;
+      ZMapWindowDisplayStyleStruct display_style = {ZMAPWINDOW_COORD_ONE_BASED, ZMAPWINDOW_PASTE_FORMAT_OTTERLACE,
+                                                    ZMAPWINDOW_PASTE_TYPE_ALLSUBPARTS} ;
 
       canvas_item = ZMAP_CANVAS_ITEM(item);
       highlight_item = item;
@@ -776,6 +779,14 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
 	    }
 	}
 
+      if (zMapGUITestModifiers(but_event, alt_mask) || zMapGUITestModifiers(but_event, meta_mask))
+	{
+          display_style.coord_frame = ZMAPWINDOW_COORD_NATURAL ;
+          display_style.paste_style = ZMAPWINDOW_PASTE_FORMAT_BROWSER ;
+          display_style.paste_feature = ZMAPWINDOW_PASTE_TYPE_EXTENT ;
+        }
+
+
       {
 	/* mh17 Foo sequence features have a diff interface, but we wish to avoid that, see sequenceSelectionCB() above */
 	/* using a CanvasFeatureset we get here, first off just pass a single coord through so it does not crash */
@@ -792,7 +803,7 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
 
 	/* Pass information about the object clicked on back to the application. */
 	zmapWindowUpdateInfoPanel(window, feature, NULL, item, sub_feature, start, end, start, end,
-				    NULL, replace_highlight, highlight_same_names, control) ;
+                                  NULL, replace_highlight, highlight_same_names, control, &display_style) ;
 
 	/* if we have an active dialog update it: they have to click on a feature not the column */
 	zmapWindowSetStyleFeatureset(window, item, feature);
@@ -1029,6 +1040,7 @@ static gboolean factoryTopItemCreated(FooCanvasItem *top_item,
       break;
     }
 
+  /* this is completely pointless as is this whole routine..... */
   zMapWindowCanvasItemSetConnected((ZMapWindowCanvasItem) top_item, TRUE);
 
 
