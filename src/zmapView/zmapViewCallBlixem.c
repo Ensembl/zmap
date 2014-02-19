@@ -694,14 +694,12 @@ static gboolean initBlixemData(ZMapView view, ZMapFeatureBlock block,
 
   blixem_data->align_set = align_set;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  blixem_data->feature = feature ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
   blixem_data->features = features ;
 
   blixem_data->feature_set = feature_set ;
 
   blixem_data->block = block ;
+
 
   /* ZMap uses the new blixem so default format is GFF by default. */
   blixem_data->file_format = BLX_FILE_FORMAT_GFF ;
@@ -1278,7 +1276,7 @@ static gboolean buildParamString(blixemData blixem_data, char **paramString)
       start = end = blixem_data->position ;
 
       if (blixem_data->view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
-	zMapFeatureReverseComplementCoords(blixem_data->block, &start, &end) ;
+	zMapFeatureReverseComplementCoords(blixem_data->view->features, &start, &end) ;
 
       paramString[BLX_ARGV_START_FLAG - missed] = g_strdup("-s") ;
       paramString[BLX_ARGV_START - missed]      = g_strdup_printf("%d", start) ;
@@ -1293,16 +1291,9 @@ static gboolean buildParamString(blixemData blixem_data, char **paramString)
     {
       int offset, tmp1 ;
 
-
       offset = tmp1 = blixem_data->offset ;
 
       paramString[BLX_ARGV_OFFSET_FLAG - missed] = g_strdup("-m") ;
-#if MH17_WONT_WORK_POST_CHROMO_COORDS
-      /* NOTE this function swaps start and end and inverts them, you have to provide both */
-      if (blixem_data->view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
-	zMapFeatureReverseComplementCoords(blixem_data->block, &offset, &tmp1) ;
-#endif
-
 
       paramString[BLX_ARGV_OFFSET - missed]      = g_strdup_printf("%d", offset) ;
     }
@@ -1320,7 +1311,7 @@ static gboolean buildParamString(blixemData blixem_data, char **paramString)
     end = blixem_data->window_end ;
 
     if (blixem_data->view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
-      zMapFeatureReverseComplementCoords(blixem_data->block, &start, &end) ;
+      zMapFeatureReverseComplementCoords(blixem_data->view->features, &start, &end) ;
 
     paramString[BLX_ARGV_ZOOM_FLAG - missed] = g_strdup("-z") ;
     paramString[BLX_ARGV_ZOOM - missed] = g_strdup_printf("%d:%d", start, end) ;
@@ -1469,7 +1460,7 @@ static gboolean writeFeatureFiles(blixemData blixem_data)
       end = blixem_data->features_max ;
 
       if (blixem_data->view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
-	zMapFeatureReverseComplementCoords(blixem_data->block, &start, &end) ;
+	zMapFeatureReverseComplementCoords(blixem_data->view->features, &start, &end) ;
 
 
       header = g_strdup_printf("##gff-version 3\n##sequence-region %s %d %d\n",
@@ -3064,7 +3055,7 @@ static gboolean writeFastAFile(blixemData blixem_data)
 	  end = blixem_data->scope_max ;
 
 	  if (blixem_data->view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
-	    zMapFeatureReverseComplementCoords(blixem_data->block, &start, &end) ;
+	    zMapFeatureReverseComplementCoords(blixem_data->view->features, &start, &end) ;
 
 //zMapLogWarning("FastA %d,%d (scope is %d %d",start, end, blixem_data->scope_min, blixem_data->scope_max);
 
