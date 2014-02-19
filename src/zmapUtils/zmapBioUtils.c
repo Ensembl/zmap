@@ -65,24 +65,26 @@
  * Note that we anchor the regex at both ends to ensure we don't allow
  * leading or trailing rubbish.
  * 
+ * Note also that the chromosome "number" can also be "X" or "Y" !!
+ * 
  * Returns TRUE and the chromosome as a string and the start/end coords as ints
  * if string is parseable, FALSE otherwise, in which case chromosome_out etc
  * are not altered.
  * 
- * Chromosome is returned as string to allow for chromosome variants which often
- * have a suffix letter etc or may given as roman numerals.
+ * Chromosome is returned as string because it could be "X" or "Y" or some variant
+ * which often have a suffix letter etc or may given as roman numerals.
  *  */
 gboolean zMapUtilsBioParseChromLoc(char *location_str, char **chromosome_out, int *start_out, int *end_out)
 {
   gboolean result = FALSE ;
-  static char *regex_str = "^(?:chr)?([\\d]+):\\s*([\\d,]+)-([\\d,]+)$" ;
+  static char *regex_str = "^(?:chr)?([\\d]+|X|Y):\\s*([\\d,]+)-([\\d,]+)$" ;
   static GRegex *regex = NULL ;
   GError *error = NULL ;
   gchar **sub_strings ;
   gchar **match ;
   char *chromosome_str = NULL, *start_str = NULL, *end_str = NULL ;
 
-  zMapReturnValIfFailSafe((location_str && *location_str), FALSE) ;
+  zMapReturnValIfFail((location_str && *location_str), FALSE) ;
 
 
   /* Set up the regex's just the once. */
@@ -128,14 +130,14 @@ gboolean zMapUtilsBioParseChromLoc(char *location_str, char **chromosome_out, in
       /* If we've got all parts then convert the numbers to ints. */
       if (chromosome_str && start_str && end_str)
         {
-          int chromosome, start, end ;
+          int start, end ;
 
           /* Remove the "," from the numbers. */
           start_str = zMap_g_remove_char(start_str, ',') ;
           end_str = zMap_g_remove_char(end_str, ',') ;
 
-          /* Check they can all be converted to ints, note that we don't use the chromosome int. */
-          if (zMapStr2Int(start_str, &chromosome) && zMapStr2Int(start_str, &start) && zMapStr2Int(end_str, &end))
+          /* Check start/end can be converted to ints. */
+          if (zMapStr2Int(start_str, &start) && zMapStr2Int(end_str, &end))
             {
               *chromosome_out = g_strdup(chromosome_str) ;
               *start_out = start ;
@@ -150,5 +152,70 @@ gboolean zMapUtilsBioParseChromLoc(char *location_str, char **chromosome_out, in
 }
 
 
+/* If chromosome_str is of the form "chr6-18" returns "6" otherwise NULL.
+ * 
+ * Handles strings of the form:
+ * 
+ *     "chr6-18"
+ *     "chr61-18"
+ *     "chr6"
+ *     "chrX-11"
+ * 
+ *  */
+gboolean zMapUtilsBioParseChromNumber(char *chromosome_str, char **chromosome_out)
+{
+  gboolean result = FALSE ;
+  static char *regex_str = "^(?:^chr)([\\d]+|X|Y)(?:-[\\d,]+)?$" ;
+  static GRegex *regex = NULL ;
+  GError *error = NULL ;
+  gchar **sub_strings ;
+  gchar **match ;
+  char *number_str = NULL ;
 
+  zMapReturnValIfFail((chromosome_str && *chromosome_str && chromosome_out), FALSE) ;
+
+
+  /* Set up the regex's just the once. */
+  if (!regex)
+    {
+      regex = g_regex_new(regex_str,
+                          0,
+                          0,
+                          &error) ;
+    }
+
+  /* Do the split...note that if the regex fails we get our location string
+   * back as the first match. Note also that this regex produces an initial
+   * empty match then the matche we want and then another empty match,
+   * I don't know why..... */
+  sub_strings = g_regex_split_full(regex, chromosome_str, -1, 0, 0, -1, &error) ;
+
+  if (strcmp(*sub_strings, chromosome_str) != 0)
+    {
+      match = sub_strings ;
+
+      while (*match)
+        {
+          char *curr_match ;
+
+          curr_match = *match ;
+
+          if (curr_match && *curr_match)                    /* skip odd empty matches.... */
+            {
+              number_str = curr_match ;
+            }
+
+          match++ ;
+        }
+
+      /* Now return the chromosome "number". */
+      if (number_str)
+        {
+          *chromosome_out = g_strdup(number_str) ;
+          result = TRUE ;
+        }
+    }
+
+  return result ;
+}
 
