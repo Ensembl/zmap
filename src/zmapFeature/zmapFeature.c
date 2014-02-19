@@ -1043,6 +1043,35 @@ ZMapFeatureAlignment zMapFeatureAlignmentCreate(char *align_name, gboolean maste
   return alignment ;
 }
 
+/* If aligment sequence name is of the form "chr6-18" returns "6" otherwise NULL. */
+char *zMapFeatureAlignmentGetChromosome(ZMapFeatureAlignment feature_align)
+{
+  char *chromosome_text = NULL ;
+  const char *search_str ;
+  char *target_str = "chr" ;
+  int target_len ;
+
+  search_str = g_quark_to_string(feature_align->original_id) ;
+  target_len = strlen(target_str) ;
+
+  if (g_ascii_strncasecmp(search_str, target_str, target_len) == 0)
+    {
+      int len ;
+      char *cp ;
+
+      for (len = 0, cp = (char *)(search_str + target_len) ; cp ; len++, cp++)
+        {
+          if (!g_ascii_isdigit(*cp))
+            break ;
+        }
+
+      chromosome_text = g_strndup(search_str + target_len, len) ;
+    }
+
+  return chromosome_text ;
+}
+
+
 
 gboolean zMapFeatureAlignmentAddBlock(ZMapFeatureAlignment alignment, ZMapFeatureBlock block)
 {
