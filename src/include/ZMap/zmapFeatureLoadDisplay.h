@@ -162,7 +162,6 @@ typedef struct ZMapFeatureContextMapStructType
 
 
 
-/* THIS IS THE WRONG PLACE FOR THIS I THINK...EG */
 /* Holds data about a sequence to be fetched.
  * Used for the 'default-sequence' from the config file or one loaded later
  * via a peer program, e.g. otterlace. */
@@ -170,9 +169,9 @@ typedef struct ZMapFeatureSequenceMapStructType
 {
   char *config_file ;
 
-  char *dataset ;       /* eg human */
-  char *sequence ;      /* eg chr6-18 */
-  int start, end ;      /* chromosome coordinates */
+  char *dataset ;                                           /* e.g. human */
+  char *sequence ;                                          /* e.g. chr6-18 */
+  int start, end ;                                          /* chromosome coordinates */
 } ZMapFeatureSequenceMapStruct, *ZMapFeatureSequenceMap ;
 
 
@@ -182,7 +181,6 @@ gboolean zMapFeatureIsCoverageColumn(ZMapFeatureContextMap map, GQuark column_id
 gboolean zMapFeatureIsSeqColumn(ZMapFeatureContextMap map, GQuark column_id) ;
 gboolean zMapFeatureIsSeqFeatureSet(ZMapFeatureContextMap map, GQuark fset_id) ;
 GList *zMapFeatureGetColumnFeatureSets(ZMapFeatureContextMap map, GQuark column_id, gboolean unique_id) ;
-
 
 #endif /* ZMAP_FEATURE_LOAD_DISPLAY_H */
 
