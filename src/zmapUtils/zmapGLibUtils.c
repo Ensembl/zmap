@@ -86,14 +86,18 @@ static void insert_after(GList *donor, GList *recipient) ;
  */
 
 /* This routine removes all occurences of the given char from the target string,
- * this is done inplace so the returned string will be shorter. */
+ * this is done inplace so the returned string will be shorter.
+ * 
+ * This is not an efficient implementation, it would be done better by
+ * keeping "to" and "from" pointers and simply moving sequentially through
+ * the string skipping over the char to be removed and only moving the
+ * other chars....one for a rainy day....
+ *  */
 char *zMap_g_remove_char(char *string, char ch)
 {
   char *cp ;
 
-  /* zMapAssert(string) ;*/
-  if (!string) 
-    return string ; 
+  zMapReturnValIfFailSafe((string && *string), string) ;
 
   cp = string ;
   while (*cp)

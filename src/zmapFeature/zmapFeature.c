@@ -1043,6 +1043,20 @@ ZMapFeatureAlignment zMapFeatureAlignmentCreate(char *align_name, gboolean maste
   return alignment ;
 }
 
+/* If aligment sequence name is of the form "chr6-18" returns "6" otherwise NULL. */
+char *zMapFeatureAlignmentGetChromosome(ZMapFeatureAlignment feature_align)
+{
+  char *chromosome_text = NULL ;
+  char *search_str ;
+
+  search_str = (char *)g_quark_to_string(feature_align->original_id) ;
+
+  zMapUtilsBioParseChromNumber(search_str, &chromosome_text) ;
+
+  return chromosome_text ;
+}
+
+
 
 gboolean zMapFeatureAlignmentAddBlock(ZMapFeatureAlignment alignment, ZMapFeatureBlock block)
 {

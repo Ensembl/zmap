@@ -17,6 +17,7 @@ zmapWindowCanvas.c \
 zmapWindowColBump.c \
 zmapWindowColConfig.c \
 zmapWindowColOrder.c \
+zmapWindowDisplayOps.c \
 zmapWindowDNA.c \
 zmapWindowDNAChoose.c \
 zmapWindowDNAList.c \
@@ -63,7 +64,7 @@ zmapWindowZoomControl_P.h \
 zmapWindow_P.h \
 $(NULL)
 
-libZMapWindowGUI_la_CFLAGS = $(INCLUDE_COMMON) -I$(top_srcdir)/zmapUtils -I$(top_srcdir)/zmapWindow/items -I$(top_srcdir)/zmapWindow/canvas
+libZMapWindowGUI_la_CFLAGS = $(INCLUDE_COMMON) -I$(top_srcdir)/zmapUtils -I$(top_srcdir)/zmapWindow/canvas
 
 libZMapWindowCanvas_la_SOURCES = \
 canvas/zmapWindowAllBase.h \
@@ -123,13 +124,13 @@ $(NULL)
 
 
 # We need the top_builddir to find the generated marshal code
-libZMapWindowItems_la_CFLAGS = $(INCLUDE_COMMON) -I$(top_srcdir)/zmapUtils -I$(top_srcdir)/zmapWindow/items -I$(top_srcdir)/zmapWindow/canvas
+#libZMapWindowItems_la_CFLAGS = $(INCLUDE_COMMON) -I$(top_srcdir)/zmapUtils -I$(top_srcdir)/zmapWindow/items -I$(top_srcdir)/zmapWindow/canvas
 
-libZMapWindowItems_la_DEPENDENCIES = $(nodist_libZMapWindowItems_la_SOURCES)
+#libZMapWindowItems_la_DEPENDENCIES = $(nodist_libZMapWindowItems_la_SOURCES)
 
 
 
-libZMapWindowCanvas_la_CFLAGS = $(INCLUDE_COMMON) -I$(top_srcdir)/zmapUtils  -I$(top_srcdir)/zmapWindow/canvas -I$(top_srcdir)/zmapWindow/items
+libZMapWindowCanvas_la_CFLAGS = $(INCLUDE_COMMON) -I$(top_srcdir)/zmapUtils  -I$(top_srcdir)/zmapWindow/canvas
 
 libZMapWindowCanvas_la_DEPENDENCIES = $(nodist_libZMapWindowCanvas_la_SOURCES)
 

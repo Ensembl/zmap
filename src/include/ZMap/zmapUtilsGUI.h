@@ -215,8 +215,6 @@ typedef struct
 
 
 
-
-
 /* Convenience routines for creating GTK notebooks and their pages and fields.
  *
  * The idea is that the caller creates a "tree" of pages and fields and then
@@ -510,7 +508,9 @@ ZMapGUIClampType zMapGUICoordsClampSpanWithLimits(double  top_limit, double  bot
 ZMapGUIClampType zMapGUICoordsClampToLimits(double  top_limit, double  bot_limit,
                                             double *top_inout, double *bot_inout);
 
-void zMapGUISetClipboard(GtkWidget *widget, char *contents);
+
+gboolean zMapGUISetClipboard(GtkWidget *widget, GdkAtom clipboard, char *clipboard_text) ;
+gboolean zMapGUIGetClipboard(GdkAtom clipboard, char **clipboard_text_out) ;
 
 void zMapGUIPanedSetMaxPositionHandler(GtkWidget *widget, GCallback callback, gpointer user_data);
 

@@ -252,6 +252,7 @@ static void searchListMenuCB(int menu_item_id, gpointer callback_data) ;
 
 static void hideEvidenceMenuCB(int menu_item_id, gpointer callback_data);
 static void compressMenuCB(int menu_item_id, gpointer callback_data);
+static void copyPasteMenuCB(int menu_item_id, gpointer callback_data) ;
 static void configureMenuCB(int menu_item_id, gpointer callback_data) ;
 
 static void colourMenuCB(int menu_item_id, gpointer callback_data);
@@ -451,7 +452,6 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
 
   /* Call back stuff.... */
   menu_data = g_new0(ItemMenuCBDataStruct, 1) ;
-
   menu_data->x = button_event->x ;
   menu_data->y = button_event->y ;
   menu_data->item_cb = TRUE ;
@@ -1151,6 +1151,10 @@ ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
+      {ZMAPGUI_MENU_NORMAL, "Copy Chr Coords", ZMAPWINDOW_COPY, copyPasteMenuCB,  NULL},
+      {ZMAPGUI_MENU_NORMAL, "Paste Chr Coords", ZMAPWINDOW_PASTE, copyPasteMenuCB,  NULL},
+
+
       {ZMAPGUI_MENU_TOGGLE, "Column Bump", ZMAPBUMP_UNBUMP, bumpToggleMenuCB, NULL, "B"},
       {ZMAPGUI_MENU_NORMAL, "Column Hide", ZMAPWINDOWCOLUMN_HIDE, configureMenuCB,  NULL},
       {ZMAPGUI_MENU_TOGGLE, "Show Masked Features", ZMAPWINDOWCOLUMN_MASK,  maskToggleMenuCB, NULL, NULL},
@@ -1170,12 +1174,12 @@ ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       /* Remove when we are sure no one wants it... */
-      {ZMAPGUI_MENU_NORMAL, "Unbump All Columns",                     0,                              unbumpAllCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Unbump All Columns", 0, unbumpAllCB, NULL},
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
       {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}  // menu terminates on id = 0 in one loop below
     } ;
-  enum {MENU_INDEX_BUMP = 0, MENU_INDEX_MARK = 3,  MENU_INDEX_COMPRESS = 4} ;
+  enum {MENU_INDEX_BUMP = 2, MENU_INDEX_MARK = 5,  MENU_INDEX_COMPRESS = 6} ;
 							    /* Keep in step with menu[] positions. */
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data;
   static gboolean menu_set = FALSE ;
@@ -1307,61 +1311,61 @@ ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
 /* sort into order of style mode then alpha by name but put current style at the front */
 gint style_menu_sort(gconstpointer a, gconstpointer b, gpointer data)
 {
-	ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle) data;
-	ZMapFeatureTypeStyle sa = (ZMapFeatureTypeStyle) a, sb = (ZMapFeatureTypeStyle) b;
-	const char *na, *nb;
+  ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle) data;
+  ZMapFeatureTypeStyle sa = (ZMapFeatureTypeStyle) a, sb = (ZMapFeatureTypeStyle) b;
+  const char *na, *nb;
 
-	if(sa->mode != sb->mode)
-	{
-		if(sa->mode == style->mode)
-			return -1;
-		if(sb->mode == style->mode)
-			return  1;
-		if(sa->mode < sb->mode)
-			return -1;
-		return 1;
-	}
+  if(sa->mode != sb->mode)
+    {
+      if(sa->mode == style->mode)
+        return -1;
+      if(sb->mode == style->mode)
+        return  1;
+      if(sa->mode < sb->mode)
+        return -1;
+      return 1;
+    }
 
-	na = g_quark_to_string(sa->unique_id);
-	nb = g_quark_to_string(sb->unique_id);
+  na = g_quark_to_string(sa->unique_id);
+  nb = g_quark_to_string(sb->unique_id);
 
-	return strcmp(na,nb);
+  return strcmp(na,nb);
 }
 
 
 /* is a style comapatble with a feature type: need to avoid crashes due to wrong data */
 gboolean style_is_compatable(ZMapFeatureTypeStyle style, ZMapStyleMode f_type)
 {
-	if(f_type == style->mode)
-		return TRUE;
+  if(f_type == style->mode)
+    return TRUE;
 
-	switch(f_type)
-	{
-	case ZMAPSTYLE_MODE_BASIC:
-		if(style->mode == ZMAPSTYLE_MODE_GRAPH)
-			return TRUE;
-		return FALSE;
+  switch(f_type)
+    {
+    case ZMAPSTYLE_MODE_BASIC:
+      if(style->mode == ZMAPSTYLE_MODE_GRAPH)
+        return TRUE;
+      return FALSE;
 
-	case ZMAPSTYLE_MODE_GRAPH:
-	case ZMAPSTYLE_MODE_ASSEMBLY_PATH:
-	case ZMAPSTYLE_MODE_GLYPH:
-		if(style->mode == ZMAPSTYLE_MODE_BASIC)
-			return TRUE;
-		return FALSE;
+    case ZMAPSTYLE_MODE_GRAPH:
+    case ZMAPSTYLE_MODE_ASSEMBLY_PATH:
+    case ZMAPSTYLE_MODE_GLYPH:
+      if(style->mode == ZMAPSTYLE_MODE_BASIC)
+        return TRUE;
+      return FALSE;
 
-	case ZMAPSTYLE_MODE_ALIGNMENT:
-	case ZMAPSTYLE_MODE_TRANSCRIPT:
-	case ZMAPSTYLE_MODE_SEQUENCE:
-	case ZMAPSTYLE_MODE_TEXT:
-	default:
-		return FALSE;
-	}
+    case ZMAPSTYLE_MODE_ALIGNMENT:
+    case ZMAPSTYLE_MODE_TRANSCRIPT:
+    case ZMAPSTYLE_MODE_SEQUENCE:
+    case ZMAPSTYLE_MODE_TEXT:
+    default:
+      return FALSE;
+    }
 }
 
 
 static ZMapGUIMenuItem zmapWindowMakeMenuStyle(int *start_index_inout,
-				       ZMapGUIMenuItemCallbackFunc callback_func,
-				       gpointer callback_data, ZMapFeatureTypeStyle cur_style, ZMapStyleMode f_type)
+                                               ZMapGUIMenuItemCallbackFunc callback_func, gpointer callback_data,
+                                               ZMapFeatureTypeStyle cur_style, ZMapStyleMode f_type)
 {
   /* get a list of featuresets from the window's context_map */
   static ZMapGUIMenuItem menu = NULL;
@@ -2155,6 +2159,48 @@ static void compressMenuCB(int menu_item_id, gpointer callback_data)
 }
 
 
+/* Copy or paste chromosome coords. */
+static void copyPasteMenuCB(int menu_item_id, gpointer callback_data)
+{
+  ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
+  ZMapWindowCopyPasteType mode = (ZMapWindowCopyPasteType)menu_item_id  ;
+
+  if (mode == ZMAPWINDOW_PASTE)
+    {
+      gboolean result ;
+
+      result = zmapWindowZoomFromClipboard(menu_data->window, menu_data->x, menu_data->y) ;
+    }
+  else
+    {
+      char *clipboard_txt = NULL ;
+      ZMapWindowDisplayStyleStruct display_style = {ZMAPWINDOW_COORD_NATURAL, ZMAPWINDOW_PASTE_FORMAT_BROWSER,
+                                                    ZMAPWINDOW_PASTE_TYPE_EXTENT} ;
+
+      if (menu_data->feature)
+        {
+          clipboard_txt = zmapWindowMakeFeatureSelectionText(menu_data->window, &display_style, menu_data->feature) ;
+        }
+      else
+        {
+          clipboard_txt = zmapWindowMakeColumnSelectionText(menu_data->window, menu_data->x, menu_data->y,
+                                                            &display_style, NULL) ;
+        }
+
+      zMapGUISetClipboard(menu_data->window->toplevel, GDK_SELECTION_PRIMARY, clipboard_txt) ;
+      zMapGUISetClipboard(menu_data->window->toplevel, GDK_SELECTION_CLIPBOARD, clipboard_txt) ;
+
+      g_free(clipboard_txt) ;
+    }
+
+
+  g_free(menu_data) ;
+
+  return ;
+}
+
+
+
 /* Configure a column, may mean repositioning the other columns. */
 static void configureMenuCB(int menu_item_id, gpointer callback_data)
 {
@@ -2172,6 +2218,10 @@ static void configureMenuCB(int menu_item_id, gpointer callback_data)
 
   return ;
 }
+
+
+
+
 
 
 static void colourMenuCB(int menu_item_id, gpointer callback_data)

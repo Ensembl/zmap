@@ -169,16 +169,6 @@ typedef struct
 
 
 
-typedef struct FeatureCoordStructType
-{
-  char *name ;
-  int start ;
-  int end ;
-  int length ;
-} FeatureCoordStruct, *FeatureCoord ;
-
-
-
 struct fooBug
 {
   void *key;
@@ -265,7 +255,6 @@ static gboolean possiblyPopulateWithFullData(ZMapWindow window,
                                              int *selected_start, int *selected_end,
                                              int *selected_length);
 #endif
-static char *makePrimarySelectionText(ZMapWindow window);
 
 static FooCanvasGroup *getFirstColumn(ZMapWindow window, ZMapStrand strand) ;
 static void getFirstForwardCol(ZMapWindowContainerGroup container, FooCanvasPoints *container_points,
@@ -309,9 +298,6 @@ static void removeRuler(FooCanvasItem *horizon, FooCanvasGroup *tooltip);
 static gboolean within_x_percent(ZMapWindow window, double percent, double y, gboolean in_top);
 static gboolean real_recenter_scroll_window(ZMapWindow window, unsigned int one_to_hundred, double world_y, gboolean in_top);
 static gboolean recenter_scroll_window(ZMapWindow window, double *event_y_in_out);
-
-static void makeSelectionString(ZMapWindow window, GString *selection_str, GArray *feature_coords) ;
-static gint sortCoordsCB(gconstpointer a, gconstpointer b) ;
 
 static ZMapFeatureContextExecuteStatus undisplayFeaturesCB(GQuark key,
                                                            gpointer data, gpointer user_data,
@@ -863,7 +849,7 @@ void zMapWindowFeatureSaveState(ZMapWindow window, gboolean features_are_revcomp
   /* I think its ok to do this here ? this blanks out the info panel, we could hold on to the
    * originally highlighted feature...but only if its still visible if it ends up on the
    * reverse strand...for now we just blank it.... */
-  zmapWindowUpdateInfoPanel(window, NULL, NULL, NULL, NULL, 0, 0, 0, 0, NULL, TRUE, FALSE, FALSE) ;
+  zmapWindowUpdateInfoPanel(window, NULL, NULL, NULL, NULL, 0, 0, 0, 0, NULL, TRUE, FALSE, FALSE, NULL) ;
 
   zmapWindowStateSavePosition(window->state, window);
   zmapWindowStateSaveFocusItems(window->state, window) ;
@@ -1559,6 +1545,11 @@ void zmapWindowSetScrollableArea(ZMapWindow window,
  * NOTE if feature =List is not null them it is a list of many features selected by the lasoo
  * item is the first one and fulfils previous functinality
  * feature_list is freed by this function
+ * 
+ * We have burgeoning parameters here which is a sign that some rationalisation is needed....
+ * e.g. not all combinations are valid....
+ * 
+ * 
  */
 void zmapWindowUpdateInfoPanel(ZMapWindow window,
                                ZMapFeature feature_arg,
@@ -1566,7 +1557,8 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
 			       int sub_item_dna_start, int sub_item_dna_end,
 			       int sub_item_coords_start, int sub_item_coords_end,
 			       char *alternative_clipboard_text,
-			       gboolean replace_highlight_item, gboolean highlight_same_names, gboolean sub_part)
+			       gboolean replace_highlight_item, gboolean highlight_same_names,
+                               gboolean sub_part, ZMapWindowDisplayStyle display_style)
 {
   static const int max_variation_str_len = 60 ;
   char *p = NULL ;
@@ -1576,7 +1568,6 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
   ZMapFeatureTypeStyle style ;
   ZMapWindowSelectStruct select = {0} ;
   FooCanvasGroup *feature_group;
-
   ZMapStrand query_strand = ZMAPSTRAND_NONE;
   char *feature_term, *sub_feature_term;
   int feature_total_length, feature_start, feature_end, feature_length, query_start, query_end ;
@@ -1585,6 +1576,13 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
   int dna_start, dna_end ;
   int display_start, display_end ;
   int start, end ;
+  ZMapWindowDisplayStyleStruct default_display_style = {ZMAPWINDOW_COORD_ONE_BASED,
+                                                        ZMAPWINDOW_PASTE_FORMAT_OTTERLACE,
+                                                        ZMAPWINDOW_PASTE_TYPE_ALLSUBPARTS} ;
+
+
+  if (!display_style)
+    display_style = &default_display_style ;
 
   select.type = ZMAPWINDOW_SELECT_SINGLE;
 
@@ -1929,7 +1927,8 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
       select.replace_highlight_item = replace_highlight_item ;
 
       select.highlight_same_names = highlight_same_names ;
-	select.sub_part = sub_part;
+
+      select.sub_part = sub_part;
 
 
 	/* dis/enable the filter by score widget and set min and max */
@@ -2015,11 +2014,11 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
     }
   else
     {
-      select.secondary_text = makePrimarySelectionText(window);
+      select.secondary_text = zmapWindowMakeFeatureSelectionText(window, display_style, NULL) ;
     }
 
-	/* this puts the DNA in the clipbaord */
-  zMapGUISetClipboard(window->toplevel, select.secondary_text) ;
+  /* this puts the DNA in the clipbaord */
+  zMapGUISetClipboard(window->toplevel, GDK_SELECTION_PRIMARY, select.secondary_text) ;
 
   g_free(select.secondary_text) ;
 
@@ -3323,6 +3322,16 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
   static MarkRegionUpdateStruct mark_updater = {0} ;
   static FooCanvasItem *seq_item = NULL;		    /* if not NULL we are selecting text */
   static long seq_start, seq_end;			    /* first coord is fixed, then we can move above or below */
+  GdkEventButton *but_event ;
+  GdkModifierType shift_mask = GDK_SHIFT_MASK,
+    control_mask = GDK_CONTROL_MASK,
+    alt_mask = GDK_MOD1_MASK,
+    meta_mask = GDK_META_MASK,
+    unwanted_masks = (GDK_LOCK_MASK | GDK_MOD2_MASK | GDK_MOD3_MASK | GDK_MOD4_MASK | GDK_MOD5_MASK
+                      | GDK_BUTTON1_MASK | GDK_BUTTON2_MASK | GDK_BUTTON3_MASK
+                      | GDK_BUTTON4_MASK | GDK_BUTTON5_MASK),
+    locks_mask ;
+
 
 
 #if MOUSE_DEBUG
@@ -3340,12 +3349,30 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
   else if (event->type == GDK_BUTTON_PRESS)
     in_window = TRUE ;
 
+  if (event->type == GDK_BUTTON_PRESS || event->type == GDK_MOTION_NOTIFY || event->type ==  GDK_BUTTON_RELEASE)
+    {
+      but_event = (GdkEventButton *)event ;
+
+	
+      /* In order to make the modifier only checks work we need to OR in the unwanted masks that might be on.
+       * This includes the shift lock and num lock. Depending on the setup of X these might be mapped
+       * to other things which is why MODs 2-5 are included This in theory should include the new (since 2.10)
+       * GDK_SUPER_MASK, GDK_HYPER_MASK and GDK_META_MASK */
+      if ((locks_mask = (but_event->state & unwanted_masks)))
+        {
+          shift_mask |= locks_mask ;
+          control_mask |= locks_mask ;
+          alt_mask |= locks_mask ;
+          meta_mask |= locks_mask ;
+        }
+    }
+
+
 
   switch (event->type)
     {
     case GDK_BUTTON_PRESS:
       {
-	GdkEventButton *but_event = (GdkEventButton *)event ;
 	FooCanvasItem *item ;
 
 	zMapDebugPrint(mouse_debug_G, "Start: button_press %d", but_event->button) ;
@@ -3410,7 +3437,9 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 		    zmapWindowHighlightSequenceItem(window, seq_item, seq_start, seq_end, 0);
 
 		    /* NOTE we set feature list to NULL here, update info panel must handle */
-		    zmapWindowUpdateInfoPanel(window, zMapWindowCanvasItemGetFeature(seq_item), NULL, seq_item, NULL, seq_start, seq_end, seq_start, seq_end, NULL, FALSE, FALSE, FALSE) ;
+		    zmapWindowUpdateInfoPanel(window, zMapWindowCanvasItemGetFeature(seq_item), NULL, seq_item,
+                                              NULL, seq_start, seq_end, seq_start, seq_end,
+                                              NULL, FALSE, FALSE, FALSE, NULL) ;
 
 		    event_handled = TRUE;
 		  }
@@ -3461,9 +3490,14 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 		{
 		  /* It's possible to press another mouse button while holding the middle
 		   * one down especially if it's a standard PC mouse with the wheel in the middle
-		   * instead of a proper button. */
+		   * instead of a proper button then you try to do two things at once. */
 		  event_handled = TRUE ;
 		}
+              else if (zMapGUITestModifiers(but_event, alt_mask)
+                       ||zMapGUITestModifiers(but_event, meta_mask))
+                {
+                  event_handled = TRUE ;
+                }
 	      else
 		{
 
@@ -3562,14 +3596,22 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 
 	zMapDebugPrint(mouse_debug_G, "%s", "Start: motion") ;
 
-	if(seq_item)
+
+        if (but_event->button == 2
+            && (zMapGUITestModifiers(but_event, alt_mask) || zMapGUITestModifiers(but_event, meta_mask)))
+          {
+            event_handled = TRUE ;
+          }
+	else if(seq_item)
 	  {
 	    zMapWindowCanvasFeaturesetGetSeqCoord((ZMapWindowFeaturesetItem) seq_item, FALSE,  wx, wy, &seq_start, &seq_end);
 
 	    zmapWindowHighlightSequenceItem(window, seq_item, seq_start, seq_end, 0);
 
 	    /* NOTE we set feature list to NULL here, update info panel must handle */
-	    zmapWindowUpdateInfoPanel(window, zMapWindowCanvasItemGetFeature(seq_item), NULL, seq_item, NULL, seq_start, seq_end, seq_start, seq_end, NULL, FALSE, FALSE, FALSE) ;
+	    zmapWindowUpdateInfoPanel(window, zMapWindowCanvasItemGetFeature(seq_item),
+                                      NULL, seq_item, NULL, seq_start, seq_end, seq_start, seq_end,
+                                      NULL,  FALSE, FALSE, FALSE, NULL) ;
 	  }
 	else if (dragging || guide)
 	  {
@@ -3760,14 +3802,37 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 
 	zMapDebugPrint(mouse_debug_G, "Start: button_release %d", but_event->button) ;
 
-	if (seq_item)
+        if (but_event->button == 2
+            && (zMapGUITestModifiers(but_event, alt_mask) || zMapGUITestModifiers(but_event, meta_mask)))
+          {
+            /* We need the clipboard contents but.....which one ?
+             * 
+             * Cntl-C seems always to go to GDK_SELECTION_CLIPBOARD
+             * 
+             * cursor selecting with mouse seems to go to GDK_SELECTION_PRIMARY
+             *  */
+            double but_wx, but_wy ;
+            gboolean result ;
+
+            foo_canvas_window_to_world(window->canvas,
+                                       but_event->x, but_event->y,
+                                       &but_wx, &but_wy) ; 
+
+            result = zmapWindowZoomFromClipboard(window, but_wx, but_wy) ;
+
+            event_handled = TRUE ;
+          }
+        else if (seq_item)
 	  {
-	    zMapWindowCanvasFeaturesetGetSeqCoord((ZMapWindowFeaturesetItem) seq_item, FALSE,  wx, wy, &seq_start, &seq_end);
+	    zMapWindowCanvasFeaturesetGetSeqCoord((ZMapWindowFeaturesetItem)seq_item, FALSE,
+                                                  wx, wy, &seq_start, &seq_end);
 
 	    zmapWindowHighlightSequenceItem(window, seq_item, seq_start, seq_end, 0);
 
 	    /* NOTE we set feature list to NULL here, update info panel must handle */
-	    zmapWindowUpdateInfoPanel(window, zMapWindowCanvasItemGetFeature(seq_item), NULL, seq_item, NULL, seq_start, seq_end, seq_start, seq_end, NULL, FALSE, FALSE, FALSE) ;
+	    zmapWindowUpdateInfoPanel(window, zMapWindowCanvasItemGetFeature(seq_item),
+                                      NULL, seq_item, NULL, seq_start, seq_end, seq_start, seq_end,
+                                      NULL, FALSE, FALSE, FALSE, NULL) ;
 
 	    seq_item = NULL;
 	    event_handled = TRUE;		    /* We _ARE_ handling */
@@ -3818,7 +3883,8 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 			/* this is how features get highlit */
 			if (item)
 			  zmapWindowUpdateInfoPanel(window, zMapWindowCanvasItemGetFeature(item),
-						    feature_list, item, NULL, 0, 0, 0, 0, NULL, !shift_on, FALSE, FALSE) ;
+						    feature_list, item, NULL, 0, 0, 0, 0, NULL,
+                                                    !shift_on, FALSE, FALSE, NULL) ;
 
 			event_handled = TRUE;		    /* We _ARE_ handling */
 		      }
@@ -4957,21 +5023,6 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	  break ;
 	}
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      /* NEEDS TO USE A DIFFERENT MODIFIER.... */
-
-      if (zMapGUITestModifiers(key_event, GDK_CONTROL_MASK))
-        {
-	  if (key_event->keyval == GDK_Left || key_event->keyval == GDK_Right)
-            {
-              swapColumns(window, key_event->keyval);
-            }
-          break;
-        }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
     case GDK_Page_Up:
     case GDK_Page_Down:
     case GDK_Home:
@@ -5214,7 +5265,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	      }
 	    else
 	      {
-		zMapGUISetClipboard(window->toplevel, dna) ;
+		zMapGUISetClipboard(window->toplevel, GDK_SELECTION_PRIMARY, dna) ;
 
 		g_free(dna) ;
 	      }
@@ -5755,7 +5806,7 @@ static void jumpFeature(ZMapWindow window, guint keyval)
 
       /* Pass information about the object clicked on back to the application. */
       zmapWindowUpdateInfoPanel(window, feature, NULL, focus_item, NULL, 0, 0, 0, 0,
-				NULL, replace_highlight, highlight_same_names, FALSE) ;
+				NULL, replace_highlight, highlight_same_names, FALSE, NULL) ;
     }
 
 
@@ -5908,248 +5959,19 @@ static void unhideItemsCB(gpointer data, gpointer user_data)
   ZMapWindow window = (ZMapWindow)user_data ;
 
   if(ZMAP_IS_WINDOW_FEATURESET_ITEM(item))
-  {
-	zMapWindowCanvasItemSetFeaturePointer((ZMapWindowCanvasItem) id2c->item, (ZMapFeature) id2c->feature_any);
-	zMapWindowCanvasItemShowHide((ZMapWindowCanvasItem)id2c->item, TRUE);
-  }
+    {
+      zMapWindowCanvasItemSetFeaturePointer((ZMapWindowCanvasItem) id2c->item, (ZMapFeature) id2c->feature_any);
+      zMapWindowCanvasItemShowHide((ZMapWindowCanvasItem)id2c->item, TRUE);
+    }
   else
-  {
-	foo_canvas_item_show(item) ;
-  }
+    {
+      foo_canvas_item_show(item) ;
+    }
 
   zmapWindowHighlightObject(window, item, FALSE, TRUE, FALSE) ;
 
-
   return ;
 }
-
-
-/* This bit of code will need to be modified as users get used to zmap and ask for
- * different things in the paste buffer. */
-static char *makePrimarySelectionText(ZMapWindow window) //, FooCanvasItem *highlight_item)
-{
-  char *selection = NULL ;
-  GList *selected ;
-  gint length ;
-
-  /* If there are any focus items then put their coords in the X Windows paste buffer. */
-  if ((selected = zmapWindowFocusGetFocusItems(window->focus)) && (length = g_list_length(selected)))
-    {
-      GString *text ;
-
-      GArray *feature_coords ;
-      ID2Canvas id2c;
-      FooCanvasItem *item;
-      ZMapWindowCanvasItem canvas_item;
-      ZMapFeature item_feature ;
-      gint i = 0 ;
-      int selected_start, selected_end, selected_length; //, dummy ;
-      ZMapFeatureSubpartType item_type_int ;
-
-      text = g_string_sized_new(512) ;
-
-      feature_coords = g_array_new(FALSE, FALSE, sizeof(FeatureCoordStruct)) ;
- 	id2c = (ID2Canvas) selected->data;
-      item = FOO_CANVAS_ITEM(id2c->item) ;
-      if (ZMAP_IS_CANVAS_ITEM(item))
-	canvas_item = ZMAP_CANVAS_ITEM( item );
-      else
-	canvas_item = zMapWindowCanvasItemIntervalGetObject(item) ;
-//      item_feature = zmapWindowItemGetFeature(canvas_item) ;
-	item_feature = (ZMapFeature) id2c->feature_any;
-
-      /* Processing is different if there is only one item highlighted and it's a transcript. */
-      if (ZMAP_IS_CANVAS_ITEM(item) && length == 1
-	  && item_feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT && item_feature->feature.transcript.exons)
-	{
-	  /* For a transcript feature with exons put all the exons in the paste buffer. */
-	  ZMapSpan span ;
-	  int i ;
-	  char *name ;
-
-	  name = (char *)g_quark_to_string(item_feature->original_id) ;
-
-	  for (i = 0 ; i < item_feature->feature.transcript.exons->len ; i++)
-	    {
-	      FeatureCoordStruct feature_coord ;
-	      int index ;
-
-	      if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
-		index = item_feature->feature.transcript.exons->len - (i + 1) ;
-	      else
-		index = i ;
-
-	      span = &g_array_index(item_feature->feature.transcript.exons, ZMapSpanStruct, index) ;
-
-	      feature_coord.name = name ;
-	      feature_coord.start = span->x1 ;
-	      feature_coord.end = span->x2 ;
-	      feature_coord.length = (span->x2 - span->x1 + 1) ;
-
-	      feature_coords = g_array_append_val(feature_coords, feature_coord) ;
-	    }
-
-	  makeSelectionString(window, text, feature_coords) ;
-	}
-      else
-	{
-	  while (selected)
-	    {
-	      FeatureCoordStruct feature_coord ;
-		id2c = (ID2Canvas) selected->data;
-      	item = FOO_CANVAS_ITEM(id2c->item) ;
-
-	      if (ZMAP_IS_CANVAS_ITEM(item))
-		canvas_item = ZMAP_CANVAS_ITEM( item );
-	      else
-		canvas_item = zMapWindowCanvasItemIntervalGetObject(item) ;
-
-		item_feature = (ZMapFeature) id2c->feature_any;
-
-		/* this is not a get sub part issue, we want the whole canvas feature which is a single 'exon' in a bigger alignment */
-		selected_start = item_feature->x1 ;
-		selected_end = item_feature->x2 ;
-		selected_length = item_feature->x2 - item_feature->x1 + 1 ;
-		item_type_int = ZMAPFEATURE_SUBPART_MATCH ;
-
-		feature_coord.name = (char *)g_quark_to_string(item_feature->original_id) ;
-	      feature_coord.start = selected_start ;
-	      feature_coord.end = selected_end ;
-	      feature_coord.length = selected_length ;
-
-	      feature_coords = g_array_append_val(feature_coords, feature_coord) ;
-
-	      selected = selected->next;
-	      i++;
-	    }
-
-	  makeSelectionString(window, text, feature_coords) ;
-	}
-
-      selected = g_list_first(selected) ;
-      g_list_free(selected) ;
-
-      g_array_free(feature_coords, TRUE) ;
-
-      selection = g_string_free(text, FALSE) ;
-    }
-
-  return selection ;
-}
-
-
-
-#if 0
-void zmapWindowReFocusHighlights(ZMapWindow window)
-{
-  FooCanvasItem *hot_item = NULL;
-  gboolean allow_rehighlight = FALSE;
-
-  /* we only really need to do the text highlighting... */
-  if (allow_rehighlight && (hot_item = zmapWindowFocusGetHotItem(window->focus)))
-//    zmapWindowFocusForEachFocusItem(window->focus, rehighlightCB, window) ;
-    zmapWindowFocusRehighlightFocusItems(window->focus, window) ;
-
-  return ;
-}
-#endif
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static void swapColumns(ZMapWindow window, guint keyval)
-{
-  FooCanvasGroup *focus_column, *column, *other_column, *strand_group_features;
-  FooCanvasItem *col_as_item;
-  ZMapFeatureSet feature_set, other_feature_set;
-  GList *set_name, *other_set_name, *current_list, *other_list;
-  gboolean move_focus = FALSE;
-
-  /* We don't do anything if there is no current focus column, we could take an educated guess and
-   * start with the middle visible column but perhaps not worth it ? */
-  if ((focus_column = zmapWindowFocusGetHotColumn(window->focus)))
-    {
-      column      = zmapWindowContainerGetParent(FOO_CANVAS_ITEM( focus_column )) ;
-      col_as_item = FOO_CANVAS_ITEM(column);
-      feature_set = zmapWindowItemGetFeatureSet(column);
-      set_name    = g_list_find(window->feature_set_names,
-                                  GUINT_TO_POINTER(feature_set->unique_id));
-      strand_group_features = FOO_CANVAS_GROUP(col_as_item->parent);
-      current_list  = g_list_find(strand_group_features->item_list,
-                                  column);
-      other_list  = current_list;
-
-      while (TRUE)
-	{
-	  if (keyval == GDK_Left)
-            other_list = g_list_previous(other_list) ;
-	  else
-            other_list = g_list_next(other_list) ;
-
-	  /* Deal with hidden columns, we need to move over them until we find a visible one or
-	   * we reach the left/right end of the columns. */
-	  if (!other_list)
-	    break ;
-	  else if (zmapWindowItemIsShown((FooCanvasItem *)(other_list->data)))
-	    {
-	      move_focus = TRUE ;
-	      break ;
-	    }
-	}
-
-      if(move_focus && other_list)
-        {
-          int a, b, names_pos, cols_pos;
-          double x1, x2, f1, f2, spacing;
-
-          /* Most of this is just to update lists so the rest of our code works */
-          other_column = FOO_CANVAS_GROUP(other_list->data);
-          other_feature_set = zmapWindowItemGetFeatureSet(other_column);
-
-          other_set_name = g_list_find(window->feature_set_names,
-                                       GUINT_TO_POINTER(other_feature_set->unique_id));
-
-          a = g_list_position(window->feature_set_names, set_name);
-          b = g_list_position(window->feature_set_names, other_set_name);
-          names_pos = ((a < b) ? (b - a) : (a - b));
-
-          a = g_list_position(strand_group_features->item_list, current_list);
-          b = g_list_position(strand_group_features->item_list, other_list);
-          cols_pos = ((a < b) ? (b - a) : (a - b));
-
-
-          f1 = f2 = 1.0;
-          if(keyval == GDK_Left)
-            {
-              f2 = -1.0;
-              foo_canvas_item_lower(FOO_CANVAS_ITEM(column), cols_pos);
-              zMap_g_list_lower(set_name, names_pos);
-            }
-          else
-            {
-              f1 = -1.0;
-              foo_canvas_item_raise(FOO_CANVAS_ITEM(column), cols_pos);
-              zMap_g_list_raise(set_name, names_pos);
-            }
-
-          spacing  = zmapWindowContainerGetSpacing(zmapWindowContainerGetParent(FOO_CANVAS_ITEM(strand_group_features)));
-          spacing /= 2.0;
-
-          foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(column), &x1, NULL, &x2, NULL);
-          x1 = x2 - x1 + 1.0;
-          foo_canvas_item_move(FOO_CANVAS_ITEM(other_column), f1 * (x1 + spacing), 0.0);
-
-          foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(other_column), &x1, NULL, &x2, NULL);
-          x1 = x2 - x1 + 1.0;
-          foo_canvas_item_move(FOO_CANVAS_ITEM(column), f2 * (x1 + spacing), 0.0);
-
-        }
-    }
-
-  return;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
 
 
@@ -6858,74 +6680,6 @@ static gboolean recenter_scroll_window(ZMapWindow window, double *event_y_in_out
   return moved;
 }
 
-
-
-static void makeSelectionString(ZMapWindow window, GString *selection_str, GArray *feature_coords)
-{
-  int i ;
-
-
-  for (i = 0 ; i < feature_coords->len ; i++)
-    {
-      FeatureCoord feature_coord ;
-
-      feature_coord = &g_array_index(feature_coords, FeatureCoordStruct, i) ;
-
-      zmapWindowCoordPairToDisplay(window, feature_coord->start, feature_coord->end,
-				   &feature_coord->start, &feature_coord->end) ;
-
-      if (feature_coord->start > feature_coord->end)
-	zMapUtilsSwop(int, feature_coord->start, feature_coord->end) ;
-    }
-
-  g_array_sort(feature_coords, sortCoordsCB) ;
-
-  for (i = 0 ; i < feature_coords->len ; i++)
-    {
-      FeatureCoord feature_coord ;
-
-      feature_coord = &g_array_index(feature_coords, FeatureCoordStruct, i) ;
-
-      g_string_append_printf(selection_str, "\"%s\"    %d %d (%d)%s",
-			     feature_coord->name,
-			     feature_coord->start, feature_coord->end, feature_coord->length,
-			     (i < feature_coords->len ? "\n" : "")) ;
-    }
-
-  return ;
-}
-
-
-/* Sorts lists of features names and their coords, sorts on name first then coord. */
-static gint sortCoordsCB(gconstpointer a, gconstpointer b)
-{
-  gint result = 0 ;
-  FeatureCoord feature_coord1 = (FeatureCoord)a ;
-  FeatureCoord feature_coord2 = (FeatureCoord)b ;
-
-  if ((result = g_ascii_strcasecmp(feature_coord1->name, feature_coord2->name)) == 0)
-    {
-      if (feature_coord1->start < feature_coord2->start)
-	{
-	  result = -1 ;
-	}
-      else if (feature_coord1->start == feature_coord2->start)
-	{
-	  if (feature_coord1->end < feature_coord2->end)
-	    result = -1 ;
-	  else if (feature_coord1->end == feature_coord2->end)
-	    result = 0 ;
-	  else
-	    result = 1 ;
-	}
-      else
-	{
-	  result = 1 ;
-	}
-    }
-
-  return result ;
-}
 
 
 /*!
