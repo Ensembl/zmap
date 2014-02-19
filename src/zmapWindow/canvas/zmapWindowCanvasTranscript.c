@@ -64,17 +64,48 @@ static ZMapWindowCanvasGlyph truncation_glyph_transcript = NULL ;
  */
 
 
-static void zMapWindowCanvasTranscriptPaintFeature(ZMapWindowFeaturesetItem featureset,
-						   ZMapWindowCanvasFeature feature,
-						   GdkDrawable *drawable, GdkEventExpose *expose)
+static void
+zMapWindowCanvasTranscriptPaintFeature(ZMapWindowFeaturesetItem featureset,
+                                       ZMapWindowCanvasFeature feature,
+                                       GdkDrawable *drawable,
+                                       GdkEventExpose *expose)
 {
-  gulong fill,outline;
-  int colours_set, fill_set, outline_set;
-  double x1,x2;
-  double y1,y2;
-  ZMapWindowCanvasTranscript tr = (ZMapWindowCanvasTranscript) feature;
-  FooCanvasItem *foo = (FooCanvasItem *) featureset;
-  ZMapTranscript transcript = &feature->feature->feature.transcript;
+  gulong fill = 0L, outline = 0L ;
+  int colours_set = 0, fill_set = 0, outline_set = 0 ;
+  double x1 = 0.0, x2 = 0.0, y1 = 0.0, y2 = 0.0, col_width = 0.0 ;
+  ZMapWindowCanvasTranscript tr = NULL ;
+  FooCanvasItem *foo = NULL ;
+  ZMapTranscript transcript = NULL ;
+  ZMapFeatureTypeStyle style = NULL ;
+
+  zMapReturnIfFail(featureset && feature && drawable && expose ) ;
+
+  foo = (FooCanvasItem *) featureset;
+  tr = (ZMapWindowCanvasTranscript) feature;
+  transcript = &feature->feature->feature.transcript;
+  style = *feature->feature->style;
+
+#ifdef INCLUDE_TRUNCATION_GLYPHS
+  /*
+   * Instantiate glyph object.
+   */
+  if (truncation_glyph_transcript == NULL)
+    {
+      truncation_glyph_transcript = g_new0(zmapWindowCanvasGlyphStruct, 1) ;
+      truncation_glyph_transcript->sub_feature = TRUE ;
+      truncation_glyph_transcript->shape = truncation_shape_transcript01 ;
+    }
+  col_width = zMapStyleGetWidth(featureset->style) ;
+  zmap_window_canvas_set_glyph(foo, truncation_glyph_transcript, style, feature->feature, col_width, feature->score ) ;
+
+  /*
+   * Temporary draw at each end of the features.
+   */
+  truncation_glyph_transcript->which = ZMAP_GLYPH_TRUNCATED_START ;
+  zMapWindowCanvasGlyphPaintSubFeature(featureset, feature, truncation_glyph_transcript, drawable) ;
+  truncation_glyph_transcript->which = ZMAP_GLYPH_TRUNCATED_END ;
+  zMapWindowCanvasGlyphPaintSubFeature(featureset, feature, truncation_glyph_transcript, drawable) ;
+#endif
 
   /* draw a box */
 
@@ -86,68 +117,84 @@ static void zMapWindowCanvasTranscriptPaintFeature(ZMapWindowFeaturesetItem feat
    * this is likely ineffective, but as the number of features is small we don't care so much
    */
 
-  /* Set up non-cds colours */
+  /*
+   * Set up non-cds colours
+   */
   colours_set = zMapWindowCanvasFeaturesetGetColours(featureset, feature, &fill, &outline);
   fill_set = colours_set & WINDOW_FOCUS_CACHE_FILL;
   outline_set = colours_set & WINDOW_FOCUS_CACHE_OUTLINE;
 
 
-  /* set up position. */
+  /*
+   * set up position.
+   */
   zMapWindowCanvasCalcHorizCoords(featureset, feature, &x1, &x2) ;
+
+  /*
+   * Find y coordinates of the feature
+   */
   y1 = feature->y1 ;
   y2 = feature->y2 ;
 
-  /* Draw any UTR sections of an exon. */
+  /*
+   * Draw any UTR sections of an exon.
+   */
   if (tr->sub_type == TRANSCRIPT_EXON)
     {
       /* utr at start ? */
       if(transcript->flags.cds && transcript->cds_start > y1 && transcript->cds_start < y2)
-	{
-	  zMapCanvasFeaturesetDrawBoxMacro(featureset, x1, x2, y1, transcript->cds_start-1,
+        {
+          zMapCanvasFeaturesetDrawBoxMacro(featureset, x1, x2, y1, transcript->cds_start-1,
                                            drawable, fill_set,outline_set,fill,outline) ;
-	  y1 = transcript->cds_start ;
-	}
+          y1 = transcript->cds_start ;
+        }
 
       /* utr at end ? */
       if(transcript->flags.cds && transcript->cds_end > y1 && transcript->cds_end < y2)
-	{
-	  zMapCanvasFeaturesetDrawBoxMacro(featureset, x1, x2, transcript->cds_end + 1, y2,
+        {
+          zMapCanvasFeaturesetDrawBoxMacro(featureset, x1, x2, transcript->cds_end + 1, y2,
                                            drawable, fill_set,outline_set,fill,outline) ;
-	  y2 = transcript->cds_end ;
-	}
+          y2 = transcript->cds_end ;
+        }
     }
 
-  /* set up cds colours if in CDS */
+
+
+  /*
+   * set up cds colours if in CDS
+   */
   if (transcript->flags.cds && transcript->cds_start <= y1 && transcript->cds_end >= y2)
     {
       ZMapStyleColourType ct;
       GdkColor *gdk_fill = NULL, *gdk_outline = NULL;
 
-      ct = (feature->flags & WINDOW_FOCUS_GROUP_FOCUSSED
-            ? ZMAPSTYLE_COLOURTYPE_SELECTED : ZMAPSTYLE_COLOURTYPE_NORMAL) ;
-      zMapStyleGetColours(*feature->feature->style, STYLE_PROP_TRANSCRIPT_CDS_COLOURS, ct,
-                          &gdk_fill, NULL, &gdk_outline);
+      ct = (feature->flags & WINDOW_FOCUS_GROUP_FOCUSSED ? ZMAPSTYLE_COLOURTYPE_SELECTED : ZMAPSTYLE_COLOURTYPE_NORMAL) ;
+      zMapStyleGetColours(*feature->feature->style, STYLE_PROP_TRANSCRIPT_CDS_COLOURS, ct, &gdk_fill, NULL, &gdk_outline);
 
       if(gdk_fill)
-	{
-	  gulong fill_colour;
+        {
+          gulong fill_colour = 0L ;
 
-	  fill_set = TRUE;
-	  fill_colour = zMap_gdk_color_to_rgba(gdk_fill);
-	  fill = foo_canvas_get_color_pixel(foo->canvas, fill_colour);
-	}
+          fill_set = TRUE;
+          fill_colour = zMap_gdk_color_to_rgba(gdk_fill);
+          fill = foo_canvas_get_color_pixel(foo->canvas, fill_colour);
+        }
 
       if(gdk_outline)
-	{
-	  gulong outline_colour;
+        {
+          gulong outline_colour = 0L ;
 
-	  outline_set = TRUE;
-	  outline_colour = zMap_gdk_color_to_rgba(gdk_outline);
-	  outline = foo_canvas_get_color_pixel(foo->canvas, outline_colour);
-	}
+          outline_set = TRUE;
+          outline_colour = zMap_gdk_color_to_rgba(gdk_outline);
+          outline = foo_canvas_get_color_pixel(foo->canvas, outline_colour);
+        }
+
     }
 
 
+  /*
+   * Now draw either box for CDS of exon, or intron lines.
+   */
   if(tr->sub_type == TRANSCRIPT_EXON)
     {
       zMapCanvasFeaturesetDrawBoxMacro(featureset, x1, x2, y1, y2, drawable, fill_set,outline_set,fill,outline) ;

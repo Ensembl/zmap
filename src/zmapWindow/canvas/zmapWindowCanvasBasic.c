@@ -119,6 +119,7 @@ static void basicPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
    * Construct glyph object from shape given,
    * once and once only.
    */
+#ifdef INCLUDE_TRUNCATION_GLYPHS
   if (truncation_glyph_basic == NULL)
     {
       truncation_glyph_basic = g_new0(zmapWindowCanvasGlyphStruct, 1) ;
@@ -141,6 +142,7 @@ static void basicPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
       truncation_glyph_basic->which = ZMAP_GLYPH_TRUNCATED_END ;
       zMapWindowCanvasGlyphPaintSubFeature(featureset, feature, truncation_glyph_basic, drawable) ;
     }
+#endif
 
 
   return ;

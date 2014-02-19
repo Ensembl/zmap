@@ -138,7 +138,7 @@ static const char *sTestFileName = "/nfs/users/nfs_s/sm23/Work/testfile.txt" ;
  * Uncomment this flag to use the feature clipping logic during the
  * parsing/feature creation operations.
  */
-/* #define PERFORM_CLIPPING_ON_PARSE 1 */
+#define PERFORM_CLIPPING_ON_PARSE 1
 
 /*
  * Parser FSM transitions. Row is current state, columns is line type.
@@ -3659,7 +3659,7 @@ static gboolean hack_SpecialColumnToSOTerm(const char * const sSource, char ** c
       *psType = "das_pc44" ;
       bResult = TRUE ;
     }
-  else if (!strcmp(sSource, sCol05))
+  else if (strstr(sSource, sCol05)) /* we may have "solexa_coverage" or things of the form "solexa_coverage_6hpf-ERS017423" */
     {
       *psType = "solexa_coverage" ;
       bResult = TRUE ;
