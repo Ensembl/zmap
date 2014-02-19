@@ -104,6 +104,39 @@ typedef enum
 
 
 
+/* Feature info/coord display, selection, paste data. */
+
+/* Coord frame for coordinate display, exporting, pasting (coords are held internally in their
+ * natural frame). */
+typedef enum
+  {
+    ZMAPWINDOW_COORD_ONE_BASED,                             /* Convert coords to one-based. */
+    ZMAPWINDOW_COORD_NATURAL                                /* Leave coords as they are, e.g. chromosome. */
+  } ZMapWindowCoordFrame ;
+
+/* Which part of feature should be pasted. */
+typedef enum
+  {
+    ZMAPWINDOW_PASTE_TYPE_ALLSUBPARTS,                     /* paste all subparts of feature. */
+    ZMAPWINDOW_PASTE_TYPE_SUBPART,                         /* paste single subpart clicked on. */
+    ZMAPWINDOW_PASTE_TYPE_EXTENT                           /* paste extent of feature. */
+  } ZMapWindowPasteFeatureType ;
+
+
+/* Use to specify how to paste, display, export features. */
+typedef struct ZMapWindowDisplayStyleStructName
+{
+  ZMapWindowCoordFrame coord_frame ;
+  ZMapWindowPasteStyleType paste_style ;
+  ZMapWindowPasteFeatureType paste_feature ;
+} ZMapWindowDisplayStyleStruct, *ZMapWindowDisplayStyle ;
+
+
+
+
+
+
+
 /* All feature stats structs must have these common fields at their start. */
 typedef struct
 {
@@ -397,6 +430,13 @@ enum
     ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH = 5
   };
 
+
+
+typedef enum
+  {
+    ZMAPWINDOW_COPY,
+    ZMAPWINDOW_PASTE
+  } ZMapWindowCopyPasteType ;
 
 
 /* Controls column configuration menu actions. */
@@ -1058,9 +1098,15 @@ void zmapWindowZoomToItem(ZMapWindow window, FooCanvasItem *item) ;
 void zmapWindowZoomToItems(ZMapWindow window, GList *items) ;
 void zmapWindowZoomToWorldPosition(ZMapWindow window, gboolean border,
 				   double rootx1, double rooty1, double rootx2, double rooty2) ;
+gboolean zmapWindowZoomFromClipboard(ZMapWindow window, double curr_world_x, double curr_world_y) ;
+
+char *zmapWindowMakeFeatureSelectionText(ZMapWindow window,
+                                         ZMapWindowDisplayStyle display_style, ZMapFeature selected_feature) ;
+char *zmapWindowMakeColumnSelectionText(ZMapWindow window, double wx, double wy, ZMapWindowDisplayStyle display_style,
+                                        ZMapWindowContainerFeatureSet selected_column) ;
+
 void zmapWindowGetMaxBoundsItems(ZMapWindow window, GList *items,
 				 double *rootx1, double *rooty1, double *rootx2, double *rooty2) ;
-
 gboolean zmapWindowItemIsCompound(FooCanvasItem *item) ;
 FooCanvasItem *zmapWindowItemGetTrueItem(FooCanvasItem *item) ;
 FooCanvasItem *zmapWindowItemGetNthChild(FooCanvasGroup *compound_item, int child_index) ;
@@ -1126,6 +1172,9 @@ void zmapWindowCoordPairToDisplay(ZMapWindow window,
 				  int *display_start_out, int *display_end_out) ;
 int zmapWindowCoordFromDisplay(ZMapWindow window, int coord) ;
 int zmapWindowCoordFromOriginRaw(int start,int end, int coord, gboolean revcomped) ;
+void zmapWindowParentCoordPairToDisplay(ZMapWindow window,
+                                        int start_in, int end_in,
+                                        int *display_start_out, int *display_end_out) ;
 ZMapStrand zmapWindowStrandToDisplay(ZMapWindow window, ZMapStrand strand_in) ;
 
 double zmapWindowExt(double start, double end) ;
@@ -1136,12 +1185,15 @@ void zmapWindowSeq2CanOffset(double *start_inout, double *end_inout, double offs
 
 gboolean zmapWindowSeqToWorldCoords(ZMapWindow window,
                                     int seq_start, int seq_end,
-                                    double *word_start, double *world_end) ;
+                                    double *world_start, double *world_end) ;
 int zmapWindowWorldToSequenceForward(ZMapWindow window, int coord);
 gboolean zmapWindowWorld2SeqCoords(ZMapWindow window, FooCanvasItem *foo,
 				   double wx1, double wy1, double wx2, double wy2,
 				   FooCanvasGroup **block_grp_out, int *y1_out, int *y2_out) ;
 gboolean zmapWindowItem2SeqCoords(FooCanvasItem *item, int *y1, int *y2) ;
+
+
+
 
 void zmapWindowItemGetVisibleWorld(ZMapWindow window, double *wx1, double *wy1, double *wx2, double *wy2);
 
@@ -1192,7 +1244,12 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature,
 			       int sub_item_dna_start, int sub_item_dna_end,
 			       int sub_item_coords_start, int sub_item_coords_end,
 			       char *alternative_clipboard_text,
-			       gboolean replace_highlight_item, gboolean highlight_same_names, gboolean sub_part) ;
+			       gboolean replace_highlight_item, gboolean highlight_same_names,
+
+                               /* Needs to be subsumed into display_style in due course. */
+                               gboolean sub_part,
+
+                               ZMapWindowDisplayStyle display_style) ;
 
 void zmapWindowDrawZoom(ZMapWindow window) ;
 void zmapWindowDrawManageWindowWidth(ZMapWindow window);
