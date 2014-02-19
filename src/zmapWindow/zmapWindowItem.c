@@ -906,39 +906,6 @@ void zmapWindowScrollToItem(ZMapWindow window, FooCanvasItem *item)
 
 
 
-
-#if MH17_NOT_USED
-/* moves a feature to new coordinates */
-void zMapWindowMoveItem(ZMapWindow window, ZMapFeature origFeature,
-			ZMapFeature modFeature, FooCanvasItem *item)
-{
-  double top, bottom, offset;
-
-  if (FOO_IS_CANVAS_ITEM (item))
-    {
-      offset = ((ZMapFeatureBlock)(modFeature->parent->parent))->block_to_sequence.q1;
-      top = modFeature->x1;
-      bottom = modFeature->x2;
-      zmapWindowSeq2CanOffset(&top, &bottom, offset);
-
-      if (modFeature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
-	{
-	  foo_canvas_item_set(item->parent, "y", top, NULL);
-	}
-      else
-	{
-	  foo_canvas_item_set(item, "y1", top, "y2", bottom, NULL);
-	}
-
-      zmapWindowUpdateInfoPanel(window, modFeature, NULL, item, NULL, 0, 0, NULL, TRUE, TRUE) ;
-    }
-  return;
-}
-#endif
-
-
-
-
 /* Returns the sequence coords that correspond to the given _world_ foocanvas coords.
  *
  * NOTE that although we only return y coords, we need the world x coords as input
