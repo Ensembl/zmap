@@ -589,20 +589,12 @@ static void getWindowMark(ZMapWindow window, RemoteCommandRCType *command_rc_out
       /* Need to check for revcomp..... */
       if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
 	{
-	  ZMapFeatureAlignment align ;
-	  ZMapFeatureBlock block ;
 	  int seq_start, seq_end ;
-
-
-	  /* default to master align. */
-	  align = window->feature_context->master_align ;
-	  block = zMap_g_hash_table_nth(align->blocks, 0) ;
-
 
 	  seq_start = start ;
 	  seq_end = end ;
 
-	  zMapFeatureReverseComplementCoords(block, &seq_start, &seq_end) ;
+	  zMapFeatureReverseComplementCoords(window->feature_context, &seq_start, &seq_end) ;
 
 	  /* NOTE, always return start < end so swop coords */
 	  start = seq_end ;
