@@ -138,7 +138,11 @@ static const char *sTestFileName = "/nfs/users/nfs_s/sm23/Work/testfile.txt" ;
  * Uncomment this flag to use the feature clipping logic during the
  * parsing/feature creation operations.
  */
-#define PERFORM_CLIPPING_ON_PARSE 1
+/* #define CLIP_TRANSCRIPT_ON_PARSE 1 */
+/* #define CLIP_ALIGNMENT_ON_PARSE 1 */
+/* #define CLIP_ASSEMBLYPATH_ON_PARSE 1 */
+/* #define CLIP_DEFAULT_ON_PARSE 1 */
+#define CLIP_LOCUS_ON_PARSE 1
 
 /*
  * Parser FSM transitions. Row is current state, columns is line type.
@@ -3745,7 +3749,7 @@ static gboolean makeNewFeature_V3( ZMapGFFParser pParserBase,
       else if (cFeatureStyleMode == ZMAPSTYLE_MODE_TRANSCRIPT)
         {
 
-#ifdef PERFORM_CLIPPING_ON_PARSE
+#ifdef CLIP_TRANSCRIPT_ON_PARSE
           if ((bIncludeFeature = clipFeatureLogic_Transcript(pParser, pFeatureData )))
             {
 #endif
@@ -3760,13 +3764,17 @@ static gboolean makeNewFeature_V3( ZMapGFFParser pParserBase,
 
               if (requireLocusOperations(pParserBase, pFeatureData) && bNewFeatureCreated)
                 {
+#ifdef CLIP_LOCUS_ON_PARSE
                   if (clipFeatureLogic_General(pParser, pFeatureData ))
                     {
+#endif
                       bLocusFeature = makeFeatureLocus(pParserBase, pFeatureData, &sMakeFeatureErrorText) ;
+#ifdef CLIP_LOCUS_ON_PARSE
                     }
+#endif
                 }
 
-#ifdef PERFORM_CLIPPING_ON_PARSE
+#ifdef CLIP_TRANSCRIPT_ON_PARSE
             }
 #endif
 
@@ -3774,7 +3782,7 @@ static gboolean makeNewFeature_V3( ZMapGFFParser pParserBase,
       else if (cFeatureStyleMode == ZMAPSTYLE_MODE_ALIGNMENT)
         {
 
-#ifdef PERFORM_CLIPPING_ON_PARSE
+#ifdef CLIP_ALIGNMENT_ON_PARSE
           if ((bIncludeFeature = clipFeatureLogic_General(pParser, pFeatureData )))
             {
 #endif
@@ -3786,7 +3794,7 @@ static gboolean makeNewFeature_V3( ZMapGFFParser pParserBase,
                   ++pParser->num_features ;
                 }
 
-#ifdef PERFORM_CLIPPING_ON_PARSE
+#ifdef CLIP_ALIGNMENT_ON_PARSE
             }
 #endif
 
@@ -3794,7 +3802,7 @@ static gboolean makeNewFeature_V3( ZMapGFFParser pParserBase,
       else if (cFeatureStyleMode == ZMAPSTYLE_MODE_ASSEMBLY_PATH)
         {
 
-#ifdef PERFORM_CLIPPING_ON_PARSE
+#ifdef CLIP_ASSEMBLYPATH_ON_PARSE
           if ((bIncludeFeature = clipFeatureLogic_General(pParser, pFeatureData )))
             {
 #endif
@@ -3806,7 +3814,7 @@ static gboolean makeNewFeature_V3( ZMapGFFParser pParserBase,
                   ++pParser->num_features ;
                 }
 
-#ifdef PERFORM_CLIPPING_ON_PARSE
+#ifdef CLIP_ASSEMBLYPATH_ON_PARSE
             }
 #endif
 
@@ -3814,7 +3822,7 @@ static gboolean makeNewFeature_V3( ZMapGFFParser pParserBase,
       else
         {
 
-#ifdef PERFORM_CLIPPING_ON_PARSE
+#ifdef CLIP_DEFAULT_ON_PARSE
           if ((bIncludeFeature = clipFeatureLogic_General(pParser, pFeatureData )))
             {
 #endif
@@ -3826,7 +3834,7 @@ static gboolean makeNewFeature_V3( ZMapGFFParser pParserBase,
                   ++pParser->num_features ;
                 }
 
-#ifdef PERFORM_CLIPPING_ON_PARSE
+#ifdef CLIP_DEFAULT_ON_PARSE
             }
 #endif
 

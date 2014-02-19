@@ -59,7 +59,9 @@ static ZMapStyleGlyphShapeStruct truncation_shape_basic_instance01 =
 static ZMapStyleGlyphShapeStruct * truncation_shape_basic01 = &truncation_shape_basic_instance01 ;
 static ZMapWindowCanvasGlyph truncation_glyph_basic = NULL ;
 
-/* draw a box */
+/*
+ * Function to draw a  basic feature.
+ */
 static void basicPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
                               GdkDrawable *drawable, GdkEventExpose *expose)
 {
@@ -115,11 +117,12 @@ static void basicPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
                                        fill_set, outline_set, fill, outline) ;
     }
 
+
+#ifdef INCLUDE_TRUNCATION_GLYPHS
   /*
    * Construct glyph object from shape given,
    * once and once only.
    */
-#ifdef INCLUDE_TRUNCATION_GLYPHS
   if (truncation_glyph_basic == NULL)
     {
       truncation_glyph_basic = g_new0(zmapWindowCanvasGlyphStruct, 1) ;
