@@ -1964,7 +1964,7 @@ static gboolean rowSelectCB(GtkTreeSelection *selection, GtkTreeModel *tree_mode
       /* Now paste and then destroy the gstring... */
       tree_view = gtk_tree_selection_get_tree_view(selection) ;
       toplevel  = zMapGUIFindTopLevel(GTK_WIDGET(tree_view)) ;
-      zMapGUISetClipboard(toplevel, text->str) ;
+      zMapGUISetClipboard(toplevel, GDK_SELECTION_PRIMARY, text->str) ;
 
       g_string_free(text, TRUE) ;
     }
