@@ -41,6 +41,41 @@
 #include <zmapWindowCanvasGlyph_I.h>
 
 /*
+ * Glyphs to represent the trunction of a feature at the ZMap boundary. One for
+ * truncation at the start and one for truncation at the end.
+ */
+
+static ZMapStyleGlyphShapeStruct truncation_shape_transcript_instance_start =
+{
+  {
+    0, 0,      5, -5,        0, -10,       -5, -5,      0, 0,          0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+  },                                                                               /* length 32 coordinate array */
+  5,                                                                               /* number of coordinates */
+  10, 10,                                                                          /* width and height */
+  0,                                                                               /* quark ID */
+  GLYPH_DRAW_LINES                                                                 /* ZMapStyleGlyphDrawType; LINES == OUTLINE, POLYGON == filled */
+}  ;
+
+static ZMapStyleGlyphShapeStruct truncation_shape_transcript_instance_end =
+{
+  {
+    0, 0,      -5, 5,        0, 10,       5, 5,      0, 0,          0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+  },
+  5,
+  10, 10,
+  0,
+  GLYPH_DRAW_LINES
+}  ;
+
+
+static ZMapStyleGlyphShapeStruct * truncation_shape_transcript_start = &truncation_shape_transcript_instance_start ;
+static ZMapStyleGlyphShapeStruct * truncation_shape_transcript_end = &truncation_shape_transcript_instance_end ;
+static ZMapWindowCanvasGlyph truncation_glyph_transcript_start = NULL ;
+static ZMapWindowCanvasGlyph truncation_glyph_transcript_end = NULL ;
+
+/*
  * Truncation shape.
  */
 static ZMapStyleGlyphShapeStruct truncation_shape_transcript_instance01 =
@@ -118,66 +153,20 @@ zMapWindowCanvasTranscriptPaintFeature(ZMapWindowFeaturesetItem featureset,
   y1_cache = y1 = feature->y1 ;
   y2_cache = y2 = feature->y2 ;
 
-#ifdef INCLUDE_TRUNCATION_GLYPHS
   /*
-   * Quick hack for features that are completely outside of the sequence
-   * region (these should not really be passed in, but occasionally are
-   * due to bugs on the otterlace side).
+   * Determine whether or not the feature needs to be truncated
+   * at the start or end.
    */
-  if (    (feature->feature->x2 < featureset->start)
-      ||  (feature->feature->x1 > featureset->end)  )
+  if (y1 < featureset->start)
     {
-      draw_truncation_glyphs = FALSE ;
+      truncated_start = TRUE ;
+      feature->y1 = y1 = featureset->start ;
     }
-
-  if (draw_truncation_glyphs)
+  if (y2 > featureset->end)
     {
-
-      /*
-       * Instantiate glyph object.
-       */
-      if (truncation_glyph_transcript == NULL)
-        {
-          truncation_glyph_transcript = g_new0(zmapWindowCanvasGlyphStruct, 1) ;
-          truncation_glyph_transcript->sub_feature = TRUE ;
-          truncation_glyph_transcript->shape = truncation_shape_transcript01 ;
-        }
-      col_width = zMapStyleGetWidth(featureset->style) ;
-      zmap_window_canvas_set_glyph(foo, truncation_glyph_transcript, style, feature->feature, col_width, feature->score ) ;
-
-      /*
-       * Determine whether or not the feature needs to be truncated
-       * at the start or end.
-       */
-      if (y1 < featureset->start)
-        {
-          truncated_start = TRUE ;
-          feature->y1 = y1 = featureset->start ;
-        }
-      if (y2 > featureset->end)
-        {
-          truncated_end = TRUE ;
-          feature->y2 = y2 = featureset->end ;
-        }
-
-      /*
-       * Draw glyphs at start and end if required.
-       */
-      if (truncated_start)
-        {
-          truncation_glyph_transcript->which = ZMAP_GLYPH_TRUNCATED_START ;
-          zMapWindowCanvasGlyphPaintSubFeature(featureset, feature, truncation_glyph_transcript, drawable) ;
-        }
-      if (truncated_end)
-        {
-          truncation_glyph_transcript->which = ZMAP_GLYPH_TRUNCATED_END ;
-          zMapWindowCanvasGlyphPaintSubFeature(featureset, feature, truncation_glyph_transcript, drawable) ;
-        }
-
+      truncated_end = TRUE ;
+      feature->y2 = y2 = featureset->end ;
     }
-
-#endif
-
 
   /*
    * Draw any UTR sections of an exon.
@@ -200,7 +189,6 @@ zMapWindowCanvasTranscriptPaintFeature(ZMapWindowFeaturesetItem featureset,
           y2 = transcript->cds_end ;
         }
     }
-
 
 
   /*
@@ -234,10 +222,10 @@ zMapWindowCanvasTranscriptPaintFeature(ZMapWindowFeaturesetItem featureset,
 
     }
 
-
   /*
    * Now draw either box for CDS of exon, or intron lines.
    */
+  int cx1, cy1, cx2, cy2, cy1_5, cx1_5;
   if(tr->sub_type == TRANSCRIPT_EXON)
     {
       zMapCanvasFeaturesetDrawBoxMacro(featureset, x1, x2, y1, y2, drawable, fill_set,outline_set,fill,outline) ;
@@ -245,62 +233,110 @@ zMapWindowCanvasTranscriptPaintFeature(ZMapWindowFeaturesetItem featureset,
   else if (outline_set)
     {
       if(tr->sub_type == TRANSCRIPT_INTRON)
-	{
-	  GdkColor c;
-	  int cx1, cy1, cx2, cy2, cy1_5, cx1_5;
+        {
+          GdkColor c;
 
-	  /* get item canvas coords in pixel coordinates */
-	  /* NOTE not quite sure why y1 is 1 out when y2 isn't */
-	  foo_canvas_w2c(foo->canvas, x1, feature->y1 - featureset->start + featureset->dy, &cx1, &cy1);
-	  foo_canvas_w2c(foo->canvas, x2, feature->y2 - featureset->start + featureset->dy + 1, &cx2, &cy2);
+          /* get item canvas coords in pixel coordinates */
+          /* NOTE not quite sure why y1 is 1 out when y2 isn't */
+          foo_canvas_w2c(foo->canvas, x1, feature->y1 - featureset->start + featureset->dy, &cx1, &cy1);
+          foo_canvas_w2c(foo->canvas, x2, feature->y2 - featureset->start + featureset->dy + 1, &cx2, &cy2);
 
-	  cy1_5 = (cy1 + cy2) / 2;
-	  cx1_5 = (cx1 + cx2) / 2;
+          cy1_5 = (cy1 + cy2) / 2;
+          cx1_5 = (cx1 + cx2) / 2;
 
-	  c.pixel = outline;
-	  gdk_gc_set_foreground (featureset->gc, &c);
+          c.pixel = outline;
+          gdk_gc_set_foreground (featureset->gc, &c);
 
-	  zMap_draw_line(drawable, featureset, cx1_5, cy1, cx2, cy1_5);
-	  zMap_draw_line(drawable, featureset, cx2, cy1_5, cx1_5, cy2);
-	}
+          zMap_draw_line(drawable, featureset, cx1_5, cy1, cx2, cy1_5);
+          zMap_draw_line(drawable, featureset, cx2, cy1_5, cx1_5, cy2);
+        }
       else if(tr->sub_type == TRANSCRIPT_INTRON_START_NOT_FOUND)
-	{
-	  GdkColor c;
-	  int cx1, cy1, cx2, cy2, cx1_5;
+        {
+          GdkColor c;
 
-	  /* get item canvas coords in pixel coordinates */
-	  /* NOTE not quite sure why y1 is 1 out when y2 isn't */
-	  foo_canvas_w2c (foo->canvas, x1, feature->y1 - featureset->start + featureset->dy, &cx1, &cy1);
-	  foo_canvas_w2c (foo->canvas, x2, feature->y2 - featureset->start + featureset->dy + 1, &cx2, &cy2);
+          /* get item canvas coords in pixel coordinates */
+          /* NOTE not quite sure why y1 is 1 out when y2 isn't */
+          foo_canvas_w2c (foo->canvas, x1, feature->y1 - featureset->start + featureset->dy, &cx1, &cy1);
+          foo_canvas_w2c (foo->canvas, x2, feature->y2 - featureset->start + featureset->dy + 1, &cx2, &cy2);
 
-	  cx1_5 = (cx1 + cx2) / 2;
+          cx1_5 = (cx1 + cx2) / 2;
 
-	  c.pixel = outline;
-	  gdk_gc_set_foreground (featureset->gc, &c);
+          c.pixel = outline;
+          gdk_gc_set_foreground (featureset->gc, &c);
 
-	  zMap_draw_broken_line(drawable, featureset, cx2, cy1, cx1_5, cy2);
-	}
+          zMap_draw_broken_line(drawable, featureset, cx2, cy1, cx1_5, cy2);
+        }
       else if(tr->sub_type == TRANSCRIPT_INTRON_END_NOT_FOUND)
-	{
-	  GdkColor c;
-	  int cx1, cy1, cx2, cy2, cx1_5;
+        {
+          GdkColor c;
 
-	  /* get item canvas coords in pixel coordinates */
-	  /* NOTE not quite sure why y1 is 1 out when y2 isn't */
-	  foo_canvas_w2c (foo->canvas, x1, feature->y1 - featureset->start + featureset->dy, &cx1, &cy1);
-	  foo_canvas_w2c (foo->canvas, x2, feature->y2 - featureset->start + featureset->dy + 1, &cx2, &cy2);
+          /* get item canvas coords in pixel coordinates */
+          /* NOTE not quite sure why y1 is 1 out when y2 isn't */
+          foo_canvas_w2c (foo->canvas, x1, feature->y1 - featureset->start + featureset->dy, &cx1, &cy1);
+          foo_canvas_w2c (foo->canvas, x2, feature->y2 - featureset->start + featureset->dy + 1, &cx2, &cy2);
 
-	  cx1_5 = (cx1 + cx2) / 2;
+          cx1_5 = (cx1 + cx2) / 2;
 
-	  c.pixel = outline;
-	  gdk_gc_set_foreground (featureset->gc, &c);
+          c.pixel = outline;
+          gdk_gc_set_foreground (featureset->gc, &c);
 
-	  zMap_draw_broken_line(drawable, featureset, cx1_5, cy1, cx2, cy2);
-	}
+          zMap_draw_broken_line(drawable, featureset, cx1_5, cy1, cx2, cy2);
+        }
     }
 
+#ifdef INCLUDE_TRUNCATION_GLYPHS
+  /*
+   * Quick hack for features that are completely outside of the sequence
+   * region. These should not really be passed in, but occasionally are
+   * due to bugs on the otterlace side (Feb. 20th 2014).
+   */
+  if (    (feature->feature->x2 < featureset->start)
+      ||  (feature->feature->x1 > featureset->end)  )
+    {
+      draw_truncation_glyphs = FALSE ;
+    }
 
-  feature->y1 = y1_cache  ;
+  if (draw_truncation_glyphs)
+    {
+
+      /*
+       * Instantiate glyph object.
+       */
+      if (truncation_glyph_transcript_start == NULL)
+        {
+          truncation_glyph_transcript_start = g_new0(zmapWindowCanvasGlyphStruct, 1) ;
+          truncation_glyph_transcript_start->sub_feature = TRUE ;
+          truncation_glyph_transcript_start->shape = truncation_shape_transcript_start ;
+          truncation_glyph_transcript_start->which = ZMAP_GLYPH_TRUNCATED_START ;
+        }
+      if (truncation_glyph_transcript_end == NULL)
+        {
+          truncation_glyph_transcript_end = g_new0(zmapWindowCanvasGlyphStruct, 1) ;
+          truncation_glyph_transcript_end->sub_feature = TRUE ;
+          truncation_glyph_transcript_end->shape = truncation_shape_transcript_end ;
+          truncation_glyph_transcript_end->which = ZMAP_GLYPH_TRUNCATED_END ;
+        }
+      col_width = zMapStyleGetWidth(featureset->style) ;
+
+      /*
+       * Draw glyphs at start and end if required.
+       */
+      if (truncated_start)
+        {
+          zmap_window_canvas_set_glyph(foo, truncation_glyph_transcript_start, style, feature->feature, col_width, feature->score ) ;
+          zMapWindowCanvasGlyphPaintSubFeature(featureset, feature, truncation_glyph_transcript_start, drawable) ;
+        }
+      if (truncated_end)
+        {
+          zmap_window_canvas_set_glyph(foo, truncation_glyph_transcript_end, style, feature->feature, col_width, feature->score ) ;
+          zMapWindowCanvasGlyphPaintSubFeature(featureset, feature, truncation_glyph_transcript_end, drawable) ;
+        }
+
+    }
+
+#endif
+
+  feature->y1 = y1_cache ;
   feature->y2 = y2_cache ;
 
   return ;
