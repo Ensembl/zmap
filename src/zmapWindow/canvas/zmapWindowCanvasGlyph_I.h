@@ -35,7 +35,11 @@
 #include <zmapWindowCanvasFeatureset_I.h>
 #include <zmapWindowCanvasGlyph.h>
 
-/* #define INCLUDE_TRUNCATION_GLYPHS 1 */
+/*
+ * Uncomment this #define to make it draw the
+ * truncation glyphs.
+ */
+#define INCLUDE_TRUNCATION_GLYPHS 1
 
 gboolean zmap_window_canvas_set_glyph(FooCanvasItem *foo,
 					     ZMapWindowCanvasGlyph glyph, ZMapFeatureTypeStyle style,

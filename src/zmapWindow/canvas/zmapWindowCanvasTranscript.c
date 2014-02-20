@@ -77,7 +77,8 @@ zMapWindowCanvasTranscriptPaintFeature(ZMapWindowFeaturesetItem featureset,
   FooCanvasItem *foo = NULL ;
   ZMapTranscript transcript = NULL ;
   ZMapFeatureTypeStyle style = NULL ;
-  gboolean truncated_start = FALSE,
+  gboolean draw_truncation_glyphs = TRUE,
+    truncated_start = FALSE,
     truncated_end = FALSE ;
 
   zMapReturnIfFail(featureset && feature && drawable && expose ) ;
@@ -119,45 +120,62 @@ zMapWindowCanvasTranscriptPaintFeature(ZMapWindowFeaturesetItem featureset,
 
 #ifdef INCLUDE_TRUNCATION_GLYPHS
   /*
-   * Instantiate glyph object.
+   * Quick hack for features that are completely outside of the sequence
+   * region (these should not really be passed in, but occasionally are
+   * due to bugs on the otterlace side).
    */
-  if (truncation_glyph_transcript == NULL)
+  if (    (feature->feature->x2 < featureset->start)
+      ||  (feature->feature->x1 > featureset->end)  )
     {
-      truncation_glyph_transcript = g_new0(zmapWindowCanvasGlyphStruct, 1) ;
-      truncation_glyph_transcript->sub_feature = TRUE ;
-      truncation_glyph_transcript->shape = truncation_shape_transcript01 ;
-    }
-  col_width = zMapStyleGetWidth(featureset->style) ;
-  zmap_window_canvas_set_glyph(foo, truncation_glyph_transcript, style, feature->feature, col_width, feature->score ) ;
-
-  /*
-   * Determine whether or not the feature needs to be truncated
-   * at the start or end.
-   */
-  if (y1 < featureset->start)
-    {
-      truncated_start = TRUE ;
-      feature->y1 = y1 = featureset->start ;
-    }
-  if (y2 > featureset->end)
-    {
-      truncated_end = TRUE ;
-      feature->y2 = y2 = featureset->end ;
+      draw_truncation_glyphs = FALSE ;
     }
 
-  /*
-   * Draw glyphs at start and end if required.
-   */
-  if (truncated_start)
+  if (draw_truncation_glyphs)
     {
-      truncation_glyph_transcript->which = ZMAP_GLYPH_TRUNCATED_START ;
-      zMapWindowCanvasGlyphPaintSubFeature(featureset, feature, truncation_glyph_transcript, drawable) ;
+
+      /*
+       * Instantiate glyph object.
+       */
+      if (truncation_glyph_transcript == NULL)
+        {
+          truncation_glyph_transcript = g_new0(zmapWindowCanvasGlyphStruct, 1) ;
+          truncation_glyph_transcript->sub_feature = TRUE ;
+          truncation_glyph_transcript->shape = truncation_shape_transcript01 ;
+        }
+      col_width = zMapStyleGetWidth(featureset->style) ;
+      zmap_window_canvas_set_glyph(foo, truncation_glyph_transcript, style, feature->feature, col_width, feature->score ) ;
+
+      /*
+       * Determine whether or not the feature needs to be truncated
+       * at the start or end.
+       */
+      if (y1 < featureset->start)
+        {
+          truncated_start = TRUE ;
+          feature->y1 = y1 = featureset->start ;
+        }
+      if (y2 > featureset->end)
+        {
+          truncated_end = TRUE ;
+          feature->y2 = y2 = featureset->end ;
+        }
+
+      /*
+       * Draw glyphs at start and end if required.
+       */
+      if (truncated_start)
+        {
+          truncation_glyph_transcript->which = ZMAP_GLYPH_TRUNCATED_START ;
+          zMapWindowCanvasGlyphPaintSubFeature(featureset, feature, truncation_glyph_transcript, drawable) ;
+        }
+      if (truncated_end)
+        {
+          truncation_glyph_transcript->which = ZMAP_GLYPH_TRUNCATED_END ;
+          zMapWindowCanvasGlyphPaintSubFeature(featureset, feature, truncation_glyph_transcript, drawable) ;
+        }
+
     }
-  if (truncated_end)
-    {
-      truncation_glyph_transcript->which = ZMAP_GLYPH_TRUNCATED_END ;
-      zMapWindowCanvasGlyphPaintSubFeature(featureset, feature, truncation_glyph_transcript, drawable) ;
-    }
+
 #endif
 
 

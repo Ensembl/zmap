@@ -68,7 +68,8 @@ static void basicPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
   gulong fill,outline ;
   int colours_set = 0, fill_set = 0, outline_set = 0;
   double x1 = 0.0, x2 = 0.0, col_width = 0.0 ;
-  gboolean truncated_start = FALSE,
+  gboolean draw_truncation_glyphs = TRUE,
+    truncated_start = FALSE,
     truncated_end = FALSE ;
   zMapReturnIfFail(featureset && feature && drawable && expose ) ;
   ZMapFeatureTypeStyle style = *feature->feature->style;
@@ -109,6 +110,17 @@ static void basicPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
     }
 
   /*
+   * Quick hack for features that are completely outside of the sequence
+   * region (these should not really be passed in, but occasionally are
+   * due to bugs on the otterlace side).
+   */
+  if (    (feature->feature->x2 < featureset->start)
+      ||  (feature->feature->x1 > featureset->end)  )
+    {
+      draw_truncation_glyphs = FALSE ;
+    }
+
+  /*
    * Draw the basic box.
    */
   if (zMapWindowCanvasCalcHorizCoords(featureset, feature, &x1, &x2))
@@ -119,31 +131,36 @@ static void basicPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
 
 
 #ifdef INCLUDE_TRUNCATION_GLYPHS
-  /*
-   * Construct glyph object from shape given,
-   * once and once only.
-   */
-  if (truncation_glyph_basic == NULL)
+  if (draw_truncation_glyphs)
     {
-      truncation_glyph_basic = g_new0(zmapWindowCanvasGlyphStruct, 1) ;
-      truncation_glyph_basic->sub_feature = TRUE ;
-      truncation_glyph_basic->shape = truncation_shape_basic01 ;
-    }
-  col_width = zMapStyleGetWidth(featureset->style) ;
-  zmap_window_canvas_set_glyph(foo, truncation_glyph_basic, style, feature->feature, col_width, feature->score ) ;
 
-  /*
-   * Draw the truncation glyph subfeatures.
-   */
-  if (truncated_start)
-    {
-      truncation_glyph_basic->which = ZMAP_GLYPH_TRUNCATED_START ;
-      zMapWindowCanvasGlyphPaintSubFeature(featureset, feature, truncation_glyph_basic, drawable) ;
-    }
-  if (truncated_end)
-    {
-      truncation_glyph_basic->which = ZMAP_GLYPH_TRUNCATED_END ;
-      zMapWindowCanvasGlyphPaintSubFeature(featureset, feature, truncation_glyph_basic, drawable) ;
+      /*
+       * Construct glyph object from shape given,
+       * once and once only.
+       */
+      if (truncation_glyph_basic == NULL)
+        {
+          truncation_glyph_basic = g_new0(zmapWindowCanvasGlyphStruct, 1) ;
+          truncation_glyph_basic->sub_feature = TRUE ;
+          truncation_glyph_basic->shape = truncation_shape_basic01 ;
+        }
+      col_width = zMapStyleGetWidth(featureset->style) ;
+      zmap_window_canvas_set_glyph(foo, truncation_glyph_basic, style, feature->feature, col_width, feature->score ) ;
+
+      /*
+       * Draw the truncation glyph subfeatures.
+       */
+      if (truncated_start)
+        {
+          truncation_glyph_basic->which = ZMAP_GLYPH_TRUNCATED_START ;
+          zMapWindowCanvasGlyphPaintSubFeature(featureset, feature, truncation_glyph_basic, drawable) ;
+        }
+      if (truncated_end)
+        {
+          truncation_glyph_basic->which = ZMAP_GLYPH_TRUNCATED_END ;
+          zMapWindowCanvasGlyphPaintSubFeature(featureset, feature, truncation_glyph_basic, drawable) ;
+        }
+
     }
 #endif
 
