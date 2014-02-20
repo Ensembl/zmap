@@ -1,14 +1,6 @@
 [Term]
 id: SO:9999990
-name: das_pc17
-
-[Term]
-id: SO:9999991
-name: das_pc28
-
-[Term]
-id: SO:9999992
-name: das_pc44
+name: das_phastCons
 
 [Term]
 id: SO:9999993

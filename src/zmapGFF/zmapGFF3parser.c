@@ -138,10 +138,10 @@ static const char *sTestFileName = "/nfs/users/nfs_s/sm23/Work/testfile.txt" ;
  * Uncomment this flag to use the feature clipping logic during the
  * parsing/feature creation operations.
  */
-/* #define CLIP_TRANSCRIPT_ON_PARSE 1 */
-/* #define CLIP_ALIGNMENT_ON_PARSE 1 */
-/* #define CLIP_ASSEMBLYPATH_ON_PARSE 1 */
-/* #define CLIP_DEFAULT_ON_PARSE 1 */
+#define CLIP_TRANSCRIPT_ON_PARSE 1
+#define CLIP_ALIGNMENT_ON_PARSE 1
+#define CLIP_ASSEMBLYPATH_ON_PARSE 1
+#define CLIP_DEFAULT_ON_PARSE 1
 #define CLIP_LOCUS_ON_PARSE 1
 
 /*
@@ -3634,9 +3634,7 @@ static gboolean hack_SpecialColumnToSOTerm(const char * const sSource, char ** c
    * List of special source names to be treated by this function.
    */
   static const char *sCol01 = "das_constrained_regions" ;
-  static const char *sCol02 = "das_phastCons_17way" ;
-  static const char *sCol03 = "das_phastCons_28way" ;
-  static const char *sCol04 = "das_phastCons_44way" ;
+  static const char *sCol02 = "das_phastCons" ;
   static const char *sCol05 = "solexa_coverage" ;
   static const char *sCol06 = "das_ChromSig" ;
   gboolean bResult = FALSE ;
@@ -3648,22 +3646,12 @@ static gboolean hack_SpecialColumnToSOTerm(const char * const sSource, char ** c
       *psType = "transcript" ;
       bResult = TRUE ;
     }
-  else if (!strcmp(sSource, sCol02))
+  else if (strstr(sSource, sCol02)) /* several sources start with the string "das_phastCons" */
     {
-      *psType = "das_pc17" ;
+      *psType = "das_phastCons" ;
       bResult = TRUE ;
     }
-  else if (!strcmp(sSource, sCol03))
-    {
-      *psType = "das_pc28" ;
-      bResult = TRUE ;
-    }
-  else if (!strcmp(sSource, sCol04))
-    {
-      *psType = "das_pc44" ;
-      bResult = TRUE ;
-    }
-  else if (strstr(sSource, sCol05)) /* we may have "solexa_coverage" or things of the form "solexa_coverage_6hpf-ERS017423" */
+  else if (strstr(sSource, sCol05)) /* several sources start with the string "solexa_coverage" */
     {
       *psType = "solexa_coverage" ;
       bResult = TRUE ;
