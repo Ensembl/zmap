@@ -254,6 +254,7 @@ typedef struct _zmapWindowFeaturesetItemStruct
   /* Glyph data, this is held separately because as well as glyph columns there are columns
    * e.g. alignments, that also need glyph data. */
   gpointer glyph_per_column_data ;
+  gboolean draw_truncation_glyphs ;
 
 
   /* Some stuff for handling zooming, not straight forward because we have to deal
