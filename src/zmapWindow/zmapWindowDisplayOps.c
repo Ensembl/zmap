@@ -466,22 +466,39 @@ static void makeSelectionString(ZMapWindow window, ZMapWindowDisplayStyle displa
 
   g_array_sort(feature_coords, sortCoordsCB) ;
 
-  for (i = 0 ; i < feature_coords->len ; i++)
+
+  /* For "otterlace" style we display the coords + other data for each feature_coord, for
+   * browser style we just give the overall extent of all the feature_coords. */
+  if (display_style->paste_style == ZMAPWINDOW_PASTE_FORMAT_OTTERLACE)
     {
+      for (i = 0 ; i < feature_coords->len ; i++)
+        {
+          FeatureCoord feature_coord ;
+
+          feature_coord = &g_array_index(feature_coords, FeatureCoordStruct, i) ;
+
+          g_string_append_printf(selection_str, "\"%s\"    %d %d (%d)%s",
+                                 feature_coord->name,
+                                 feature_coord->start, feature_coord->end, feature_coord->length,
+                                 (i < feature_coords->len ? "\n" : "")) ;
+        }
+    }
+  else
+    {
+      /* We can do this because the feature_coords array is sorted on position. */
+      int multi_start, multi_end ;      
       FeatureCoord feature_coord ;
 
-      feature_coord = &g_array_index(feature_coords, FeatureCoordStruct, i) ;
+      feature_coord = &g_array_index(feature_coords, FeatureCoordStruct, 0) ;
+      multi_start = feature_coord->start ;
 
-      if (display_style->paste_style == ZMAPWINDOW_PASTE_FORMAT_OTTERLACE)
-        g_string_append_printf(selection_str, "\"%s\"    %d %d (%d)%s",
-                               feature_coord->name,
-                               feature_coord->start, feature_coord->end, feature_coord->length,
-                               (i < feature_coords->len ? "\n" : "")) ;
-      else
-        g_string_append_printf(selection_str, "%s%s%d-%d",
-                               (chromosome ? chromosome : ""),
-                               (chromosome ? ":" : ""),
-                               feature_coord->start, feature_coord->end) ;
+      feature_coord = &g_array_index(feature_coords, FeatureCoordStruct, (feature_coords->len - 1)) ;
+      multi_end = feature_coord->end ;
+
+      g_string_append_printf(selection_str, "%s%s%d-%d",
+                             (chromosome ? chromosome : ""),
+                             (chromosome ? ":" : ""),
+                             multi_start, multi_end) ;
     }
 
   return ;
