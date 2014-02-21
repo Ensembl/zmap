@@ -55,15 +55,18 @@ case $opsys in
 	    zmap_register_prefix_as_rpath $GTK_PREFIX
 
 	    if [ "x$USE_GPROF" == "x$ZMAP_TRUE" ]; then
-		LDFLAGS="-pg $LDFLAGS"
-                CFLAGS="-pg $CFLAGS"
+                CFLAGS_args="-pg $CFLAGS"
+		LDFLAGS_args="-pg $LDFLAGS"
 	    fi
 
-	    # Now add LDFLAGS to args so they get through to configure.
-	    LDFLAGS_args="$LDFLAGS $LDFLAGS_args"
+            # the intel compiler.
+	    CC_args=icc
 
 	    # Compile with PIC so that X11::XRemote compiles...
 	    CFLAGS_args="$CFLAGS_args -fPIC"
+
+	    # Now add LDFLAGS to args so they get through to configure.
+	    LDFLAGS_args="$LDFLAGS $LDFLAGS_args"
 
 	    ;; # end x86_64
 
@@ -83,13 +86,13 @@ case $opsys in
 
 	    # Add electric fence memory debugging lib.
 	    if [ "x$ELECTRIC_MEM" == "x$ZMAP_TRUE" ]; then
-              LDFLAGS="$HOME/downloads/electric-fence-2.1.13/libefence.a $LDFLAGS"
+              LDFLAGS_args="$HOME/downloads/electric-fence-2.1.13/libefence.a $LDFLAGS"
             fi
 
 
 	    if [ "x$USE_GPROF" == "x$ZMAP_TRUE" ]; then
-	      LDFLAGS="-pg $LDFLAGS"
-              CFLAGS="-pg $CFLAGS"
+              CFLAGS_args="-pg $CFLAGS"
+	      LDFLAGS_args="-pg $LDFLAGS"
 	    fi
 
 
@@ -108,18 +111,16 @@ case $opsys in
 
     CFLAGS_args="-Wall -I$GTK_PREFIX/include"
 
-    #if [ "x$UNIVERSAL_BUILD" == "x$ZMAP_TRUE" ]; then
-	#SDK=/Developer/SDKs/MacOSX10.4u.sdk
-	#SPECIFIC_CONFIGURE_ARGS="--disable-dependency-tracking --with-macosx-sdk-path=$SDK --x-includes=$SDK/include --x-libraries=$SDK/lib"
-	#if [ -d $SDK/usr/bin ]; then
-	    #PATH=$SDK/usr/bin:$PATH
-	#fi
-    #fi
 
     LDFLAGS_args="$LDFLAGS $LDFLAGS_args"
+
     ;;
+
   * )
-    zmap_message_exit "unsupported operating system: $opsys" ;;
+
+    zmap_message_exit "unsupported operating system: $opsys"
+
+    ;;
 
 esac
 
@@ -127,14 +128,8 @@ CC_param="CC=$CC_args"
 CFLAGS_param="CFLAGS=$CFLAGS_args"
 LDFLAGS_param="LDFLAGS=$LDFLAGS_args"
 
-# Do these here.
-export LD_LIBRARY_PATH
-export LD_RUN_PATH
-export PKG_CONFIG
+# Export any settings we need to be passed on.
 export PKG_CONFIG_PATH
-export ACLOCAL_FLAGS
-
-
 
 
 zmap_message_out "Running " \
@@ -147,6 +142,7 @@ zmap_message_out "Running " \
 zmap_message_out "=========================================================================="
 
 
+
 # run the configure.......watch out for the quoting, sometimes we want the variable to
 # be interpreted as a single cmdline arg, sometimes as multiple ones.
 
@@ -154,7 +150,7 @@ $BASE_DIR/configure \
 $INSTALL_DIR \
 $COMMON_CONFIGURE_ARGS \
 $SPECIFIC_CONFIGURE_ARGS \
-"$CFLAGS_param" "$LDFLAGS_param" "$@" || zmap_message_exit "configure script failed."
+"$CC_param" "$CFLAGS_param" "$LDFLAGS_param" "$@" || zmap_message_exit "configure script failed."
 
 
 exit 0
