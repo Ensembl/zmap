@@ -793,7 +793,7 @@ gboolean zMapGFFSequenceDestroy(ZMapSequence sequence)
 
   if (sequence->sequence)
     g_free(sequence->sequence) ;
-  g_free(sequence) ;
+  /* g_free(sequence) ; */
 
   return bReturn ;
 }
