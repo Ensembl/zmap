@@ -60,7 +60,7 @@ case $opsys in
 	    fi
 
             # the intel compiler.
-	    CC_args=icc
+            CC_args=gcc
 
 	    # Compile with PIC so that X11::XRemote compiles...
 	    CFLAGS_args="$CFLAGS_args -fPIC"
