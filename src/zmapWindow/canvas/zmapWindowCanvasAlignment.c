@@ -23,6 +23,7 @@
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk
  *
  * Description:
  *
@@ -66,9 +67,44 @@ static AlignGap makeGapped(ZMapFeature feature, double offset, FooCanvasItem *fo
 
 
 
+/*
+ * Glyphs to represent the trunction of a feature at the ZMap boundary. One for
+ * truncation at the start and one for truncation at the end.
+ */
+
+static ZMapStyleGlyphShapeStruct truncation_shape_alignment_instance_start =
+{
+  {
+    0, 0,      5, -5,        0, -10,       -5, -5,      0, 0,          0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+  },                                                                               /* length 32 coordinate array */
+  5,                                                                               /* number of coordinates */
+  10, 10,                                                                          /* width and height */
+  0,                                                                               /* quark ID */
+  GLYPH_DRAW_LINES                                                                 /* ZMapStyleGlyphDrawType; LINES == OUTLINE, POLYGON == filled */
+}  ;
+
+static ZMapStyleGlyphShapeStruct truncation_shape_alignment_instance_end =
+{
+  {
+    0, 0,      -5, 5,        0, 10,       5, 5,      0, 0,          0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+  },
+  5,
+  10, 10,
+  0,
+  GLYPH_DRAW_LINES
+}  ;
+
+static ZMapStyleGlyphShapeStruct * truncation_shape_transcript_start = &truncation_shape_alignment_instance_start ;
+static ZMapStyleGlyphShapeStruct * truncation_shape_alignment_end = &truncation_shape_alignment_instance_end ;
+static ZMapWindowCanvasGlyph truncation_glyph_alignment_start = NULL ;
+static ZMapWindowCanvasGlyph truncation_glyph_alignment_end = NULL ;
 
 
-/* 
+
+
+/*
  *                   Globals
  */
 
@@ -94,7 +130,7 @@ static long n_gap_free = 0;
 
 
 
-/* 
+/*
  *                      External routines (static by exposed via func. ptrs.)
  */
 
@@ -174,16 +210,20 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
 						  ZMapWindowCanvasFeature feature,
 						  GdkDrawable *drawable, GdkEventExpose *expose)
 {
+  static const char *colours[] = { "black", "red", "orange", "green" };
   ZMapWindowCanvasAlignment align = (ZMapWindowCanvasAlignment)feature;
-  int cx1, cy1, cx2, cy2;
   FooCanvasItem *foo = (FooCanvasItem *) featureset;
   ZMapFeatureTypeStyle homology = NULL,nc_splice = NULL;
   gulong fill,outline;
-  int colours_set, fill_set, outline_set;
+  int cx1, cy1, cx2, cy2,
+    colours_set, fill_set, outline_set,
+    gy1, gy2, gx ;
   gulong edge;
   gboolean edge_set;
-  double mid_x;
-  double x1,x2;
+  double mid_x = 0.0, x1 = 0.0, x2 = 0.0;
+
+  printf("call to zMapWindowCanvasAlignmentPaintFeature()\n") ;
+  fflush(stdout) ;
 
   /* if bumped we can have a very wide column: don't paint if not visible */
   /* display code assumes a narrow column w/ overlapping features and does not process x-coord */
@@ -195,7 +235,9 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
     mid_x += feature->bump_offset;
 
 
-
+  /*
+   * Find horizontal coordinates of the feature.
+   */
   zMapWindowCanvasCalcHorizCoords(featureset, feature, &x1, &x2) ;
 
   foo_canvas_w2c (foo->canvas, x1, 0, &cx1, NULL);
@@ -205,6 +247,9 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
     return;
 
 
+  /*
+   * Find colours.
+   */
   colours_set = zMapWindowCanvasFeaturesetGetColours(featureset, feature, &fill, &outline);
   fill_set = colours_set & WINDOW_FOCUS_CACHE_FILL;
   outline_set = colours_set & WINDOW_FOCUS_CACHE_OUTLINE;
@@ -214,59 +259,52 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
       ZMapFeatureTypeStyle style = *feature->feature->style;
 
       if ((zMapStyleGetScoreMode(style) == ZMAPSCORE_HEAT) || (zMapStyleGetScoreMode(style) == ZMAPSCORE_HEAT_WIDTH))
-	{
-	  fill = (fill << 8) | 0xff;	/* convert back to RGBA */
-	  fill = foo_canvas_get_color_pixel(foo->canvas,
-					    zMapWindowCanvasFeatureGetHeatColour(0xffffffff,fill,feature->score));
-	}
+        {
+          fill = (fill << 8) | 0xff;	/* convert back to RGBA */
+          fill = foo_canvas_get_color_pixel(foo->canvas,
+          zMapWindowCanvasFeatureGetHeatColour(0xffffffff,fill,feature->score));
+        }
 
       if (zMapStyleIsSquash(style))		/* diff colours for first and last box */
-	{
-	  edge = 0x808080ff;
-	  edge_set = TRUE;
-          /*! \todo #warning get alignment colour for edge */
-	}
+        {
+          edge = 0x808080ff;
+          edge_set = TRUE;
+        }
     }
 
 
   /* Draw the alignment boxes. */
-  if (!(feature->feature->feature.homol.align)
-      || (!zMapStyleIsAlwaysGapped(*feature->feature->style)
-	  && (!featureset->bumped || !zMapStyleIsShowGaps(*feature->feature->style))))
+  if (   !feature->feature->feature.homol.align
+      || (!zMapStyleIsAlwaysGapped(*feature->feature->style) && (!featureset->bumped || !zMapStyleIsShowGaps(*feature->feature->style))   )
+     )
     {
-      /* draw a simple ungapped box */
-      /* we don't draw gaps on reverse, annotators work on the fwd strand and revcomp if needs be */
-      double x1, x2 ;
-
-      if (zMapWindowCanvasCalcHorizCoords(featureset, feature, &x1, &x2))
-        /* must use feature coords here as the first alignment in the series gets expanded to pick up colinear lines
-         * if it's ungapped we'd draw a big box over the whole series
-         */
-        zMapCanvasFeaturesetDrawBoxMacro(featureset,
-                                         x1, x2, feature->feature->x1, feature->feature->x2,
-                                         drawable, fill_set, outline_set, fill, outline) ;
+      /*
+       * draw a simple ungapped box
+       * we don't draw gaps on reverse, annotators work on the fwd strand and revcomp if needs be
+       * must use feature coords here as the first alignment in the series gets expanded to pick up colinear lines
+       * if it's ungapped we'd draw a big box over the whole series
+       */
+      zMapCanvasFeaturesetDrawBoxMacro(featureset, x1, x2, feature->feature->x1, feature->feature->x2,
+                                       drawable, fill_set, outline_set, fill, outline) ;
     }
   else
     {
       /* Draw full gapped alignment boxes, colinear lines etc etc. */
       AlignGap ag;
       GdkColor c;
-      int cx1, cy1, cx2, cy2;
 
 
       /* create a list of things to draw at this zoom taking onto account bases per pixel */
-
-
       if(!align->gapped)
-	{
+        {
           ZMapHomol homol = &feature->feature->feature.homol;
           gboolean forward = (feature->feature->strand == homol->strand);
-          
+
           if (homol->strand == ZMAPSTRAND_REVERSE)
             forward = !forward;
-          
-	  align->gapped = makeGapped(feature->feature, featureset->dy - featureset->start, foo, forward);
-	}
+
+          align->gapped = makeGapped(feature->feature, featureset->dy - featureset->start, foo, forward);
+        }
 
       /* draw them */
 
@@ -276,34 +314,32 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
       cy2 = cy1 ;
 
       for (ag = align->gapped ; ag ; ag = ag->next)
-	{
-	  int gy1, gy2, gx;
+        {
 
-	  gy1 = cy1 + ag->y1;
-	  gy2 = cy1 + ag->y2;
+          gy1 = cy1 + ag->y1;
+          gy2 = cy1 + ag->y2;
 
-	  switch(ag->type)
-	    {
-	    case GAP_BOX:
-              {
-                /* Can't use generalised draw call here because these are already canvas coords. */
+          switch(ag->type)
+            {
+              case GAP_BOX:
+                {
+                  /* Can't use generalised draw call here because these are already canvas coords. */
+                  if (fill_set && (!outline_set || (gy2 - gy1 > 1)))	/* fill will be visible */
+                    {
+                      c.pixel = fill;
+                      gdk_gc_set_foreground(featureset->gc, &c) ;
+                      zMap_draw_rect(drawable, featureset, cx1, gy1, cx2, gy2, TRUE) ;
+                    }
 
-                if (fill_set && (!outline_set || (gy2 - gy1 > 1)))	/* fill will be visible */
-                  {
-                    c.pixel = fill;
-                    gdk_gc_set_foreground(featureset->gc, &c) ;
-                    zMap_draw_rect(drawable, featureset, cx1, gy1, cx2, gy2, TRUE) ;
-                  }
+                  if (outline_set)
+                    {
+                      c.pixel = outline;
+                      gdk_gc_set_foreground (featureset->gc, &c);
+                      zMap_draw_rect(drawable, featureset, cx1, gy1, cx2, gy2, FALSE);
+                    }
 
-                if (outline_set)
-                  {
-                    c.pixel = outline;
-                    gdk_gc_set_foreground (featureset->gc, &c);
-                    zMap_draw_rect(drawable, featureset, cx1, gy1, cx2, gy2, FALSE);
-                  }
-
-                break;
-              }
+                  break;
+                }
 
 	    case GAP_HLINE:		/* x coords differ, y is the same */
 	      if(!outline_set)	/* must be or else we are up the creek! */
@@ -322,22 +358,28 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
 	      gx = (cx1 + cx2) / 2;
 	      c.pixel = outline;
 	      gdk_gc_set_foreground (featureset->gc, &c);
-              
+
               if (ag->type == GAP_VLINE_INTRON)
                 zMap_draw_broken_line(drawable, featureset, gx, gy1, gx, gy2);
               else
                 zMap_draw_line(drawable, featureset, gx, gy1, gx, gy2);
 	      break;
-	    }
-	}
+            } /* switch statement */
+
+        } /* for (ag = align->gapped ; ag ; ag = ag->next) */
     }
+
+
+
+
+
+
 
   /* draw decorations */
   if (featureset->bumped)
     {
       if(!decoration_set_G)
 	{
-	  char *colours[] = { "black", "red", "orange", "green" };
 	  int i;
 	  GdkColor colour;
 	  gulong pixel;
@@ -535,7 +577,7 @@ static void alignmentColumnInit(ZMapWindowFeaturesetItem featureset)
 
 static void zmapWindowCanvasAlignmentPreZoom(ZMapWindowFeaturesetItem featureset)
 {
-  
+
   /* Need to call routine to trigger calculate on zoom for text here... */
   zMapWindowCanvasAlignmentZoomSet(featureset, NULL) ;
 
@@ -665,7 +707,7 @@ static ZMapFeatureSubPartSpan zmapWindowCanvasAlignmentGetSubPartSpan(FooCanvasI
             sub_part->index = i + 1 ;
           else
             sub_part->index = (match_num - i) ;
-            
+
           sub_part->start = ab->t1 ;
           sub_part->end = ab->t2 ;
           sub_part->subpart = ZMAPFEATURE_SUBPART_MATCH ;
@@ -752,7 +794,7 @@ static double alignmentPoint(ZMapWindowFeaturesetItem fi, ZMapWindowCanvasFeatur
 
 
 
-/* 
+/*
  *                            Internal routines
  */
 
@@ -894,7 +936,7 @@ static AlignGap align_gap_alloc(void)
 /* NOTE the gaps array is not explicitly sorted, but is only provided by ACEDB and subsequent pipe
  * scripts written by otterlace and it is believed that the match blocks are always provided in
  * start coordinate order (says Ed)
- * 
+ *
  * So it's a bit slack trusting an external program but ZMap has been doing that for a long time.
  * "roll on CIGAR strings" which prevent this kind of problem
  *
