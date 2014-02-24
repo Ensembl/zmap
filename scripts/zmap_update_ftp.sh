@@ -30,6 +30,7 @@
 
 home_dir=~zmap/BUILD_CHECKOUT                        # root directory for zmap checkout
 scripts_dir=$home_dir/ZMap/scripts                        # scripts directory
+software_dir=/software/annotools/bin                 # our project software area on /software
 
 msg_prefix="(`basename $0` on `hostname`)"
 
@@ -232,8 +233,8 @@ echo incfile is $inc_file
 cd $repo_dir
 check_status "Cannot find dist repository in build directory "$repo_dir
 
-# Get the version number using git_version script.
-verprog=$scripts_dir/git_version.sh
+# Get the version number using gitversion script.
+verprog=$software_dir/gitversion
 
 if [[ ! -f $verprog || ! -x $verprog ]]
 then
