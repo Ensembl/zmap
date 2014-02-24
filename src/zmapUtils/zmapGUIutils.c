@@ -39,6 +39,7 @@
 #include <math.h>
 
 #include <ZMap/zmapUtilsGUI.h>
+#include <ZMap/zmapUtilsDebug.h>
 #include <ZMap/zmapWebPages.h>
 #include <zmapUtils_P.h>
 
@@ -1858,24 +1859,53 @@ ZMapGUIClampType zMapGUICoordsClampSpanWithLimits(double  top_limit, double  bot
 }
 
 
-void zMapGUISetClipboard(GtkWidget *widget, char *text)
+
+/* Set/Get clipboard text, note that there are TWO clipboards in
+ * common use under X, the original Clipboard and the more recent
+ * Primary_selection. The code for both setting and getting uses
+ * both. In the case of zMapGUIGetClipboard() the contents of 
+ *  */
+
+/* Set both clipboards...not sure if it's a good idea or not. */
+gboolean zMapGUISetClipboard(GtkWidget *widget, GdkAtom clipboard_name, char *clipboard_text)
 {
-  if(text)
+  gboolean result = FALSE ;
+  GtkClipboard* clipboard ;
+
+  zMapReturnValIfFail((widget && clipboard_name && clipboard_text), FALSE) ;
+
+  if ((clipboard = gtk_widget_get_clipboard(widget, clipboard_name)) != NULL)
     {
-      GtkClipboard* clip = NULL;
-      if((clip = gtk_widget_get_clipboard(GTK_WIDGET(widget),
-                                          GDK_SELECTION_PRIMARY)) != NULL)
-        {
-          //printf("Setting clipboard to: '%s'\n", text);
-          gtk_clipboard_set_text(clip, text, -1);
-        }
-      else
-        zMapLogWarning("%s", "Failed to get clipboard (GDK_SELECTION_PRIMARY)");
+      gtk_clipboard_set_text(clipboard, clipboard_text, -1) ;
+
+      result = TRUE ;
     }
 
-
-  return ;
+  return result ;
 }
+
+
+/* Gets text from clipboard. Blocks waiting for clipboard text. */
+gboolean zMapGUIGetClipboard(GdkAtom clipboard_name, char **clipboard_text_out)
+{
+  gboolean result = FALSE ;
+  GtkClipboard *clipboard ;
+  char *clipboard_text ;
+
+  zMapReturnValIfFail((clipboard_name && clipboard_text_out), FALSE) ;
+
+  if ((clipboard = gtk_clipboard_get(clipboard_name))
+      && (clipboard_text = gtk_clipboard_wait_for_text(clipboard)))
+    {
+      *clipboard_text_out = clipboard_text ;
+      result = TRUE ;
+    }
+
+  return result ;
+}
+
+
+
 
 
 

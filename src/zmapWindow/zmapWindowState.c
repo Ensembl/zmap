@@ -488,33 +488,17 @@ static void state_mark_restore(ZMapWindow window, ZMapWindowMark mark, ZMapWindo
 
   restore = *serialized ;				    /* n.b. struct copy */
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES] != restore.rev_comp_state)
     {
-      zmapWindowStateRevCompRegion(window, &(restore.y1), &(restore.y2)) ;
-    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-  if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES] != restore.rev_comp_state)
-    {
-      ZMapFeatureAlignment align ;
-      ZMapFeatureBlock block ;
       int seq_start, seq_end ;
-
-
-      /* default to master align. */
-      align = window->feature_context->master_align ;
-      block = zMap_g_hash_table_nth(align->blocks, 0) ;
-
 
       seq_start = (int)(restore.y1) ;
       seq_end = (int)(restore.y2) ;
 
-      zMapFeatureReverseComplementCoords(block, &seq_start, &seq_end) ;
+      zMapFeatureReverseComplementCoords(window->feature_context, &seq_start, &seq_end) ;
 
       restore.y1 = (double)seq_start ;
       restore.y2 = (double)seq_end ;
-
     }
 
 
@@ -660,7 +644,7 @@ static void state_focus_items_restore(ZMapWindow window, ZMapWindowFocusSerialSt
 	     strand ?? or maybe not...actually we should be checking if something is visible !!!! */
 
 	  /* Blank the info panel if we can't find the feature. */
-	  zmapWindowUpdateInfoPanel(window, NULL, NULL, NULL, NULL, 0, 0, 0, 0, NULL, TRUE, FALSE, FALSE) ;
+	  zmapWindowUpdateInfoPanel(window, NULL, NULL, NULL, NULL, 0, 0, 0, 0, NULL, TRUE, FALSE, FALSE, FALSE) ;
 
 
 	  zMapLogWarning("%s", "Failed to find serialized focus item.");
@@ -677,7 +661,7 @@ static void state_focus_items_restore(ZMapWindow window, ZMapWindowFocusSerialSt
 
 	  /* Pass information about the object clicked on back to the application. */
 	  zmapWindowUpdateInfoPanel(window, feature, NULL, sub_item, NULL, 0, 0, 0, 0,
-				    NULL, replace_highlight, highlight_same_names, FALSE) ;
+				    NULL, replace_highlight, highlight_same_names, FALSE, FALSE) ;
 	}
     }
 

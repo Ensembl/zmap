@@ -1,4 +1,4 @@
-/*  File: zmapWindowMark_P.h
+/*  File: zmapWindowScratch_P.h
  *  Author: Roy Storey (rds@sanger.ac.uk)
  *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------

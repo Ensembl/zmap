@@ -1,4 +1,4 @@
-/*  File: zmapWindowFeaturesetItem.c
+/*  File: zmapWindowCanvasFeatureset.c
  *  Author: Malcolm Hinsley (mh17@sanger.ac.uk)
  *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
@@ -982,6 +982,7 @@ ZMapWindowCanvasItem zMapWindowCanvasItemFeaturesetGetFeaturesetItem(FooCanvasGr
       featureset->strand = strand;
       featureset->frame = frame;
       featureset->style = style;
+      featureset->draw_truncation_glyphs = FALSE ;
 
       featureset->overlap = TRUE;
 

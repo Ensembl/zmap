@@ -135,10 +135,15 @@ static const char *sTestFileName = "/nfs/users/nfs_s/sm23/Work/testfile.txt" ;
 
 
 /*
- * Uncomment this flag to use the feature clipping logic during the
- * parsing/feature creation operations.
+ * Uncomment these flag to use the feature clipping logic during the
+ * parsing/feature creation operations. Note that this is done seperately
+ * for different StyleMode values.
  */
-#define PERFORM_CLIPPING_ON_PARSE 1
+/* #define CLIP_TRANSCRIPT_ON_PARSE 1
+#define CLIP_ALIGNMENT_ON_PARSE 1
+#define CLIP_ASSEMBLYPATH_ON_PARSE 1
+#define CLIP_DEFAULT_ON_PARSE 1 */
+#define CLIP_LOCUS_ON_PARSE 1
 
 /*
  * Parser FSM transitions. Row is current state, columns is line type.
@@ -870,8 +875,7 @@ static gboolean iterationFunctionID(GQuark gqID, GHashTable *pValueTable)
 
 /*
  * This is the semantic action to be performed upon encountering the
- * "###" directive. This should be doing something with the MLF data
- * stored in the parser. At the moment, just calls a dummy function.
+ * "###" directive. Right now this is just a dummy function.
  */
 static gboolean actionUponClosure(ZMapGFFParser pParserBase, const char* const sLine)
 {
@@ -879,23 +883,6 @@ static gboolean actionUponClosure(ZMapGFFParser pParserBase, const char* const s
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
 
   zMapReturnValIfFail(pParser && pParser->pHeader, FALSE) ;
-
-  /* printf("actionUponClosure() called, nID = %i\n", zMapMLFNumID(pParser->pMLF)) ; */
-
-  /*
-   * Process datasets.
-   */
-  /*zMapMLFIDIteration(pParser->pMLF,  iterationFunctionID ) ;*/
-
-  /*
-   * When finished we empty the parser MLF structure.
-   */
-  /*if (!zMapMLFEmpty(pParser->pMLF))
-    {
-       pParser->error = g_error_new(pParser->error_domain, ZMAPGFF_ERROR_HEADER,
-                                    "Error in actionUponClosure(); line = %i",  pParser->line_count) ;
-    }
-  */
 
   return bResult ;
 }
@@ -1044,12 +1031,9 @@ static gboolean finalizeSequenceRead(ZMapGFFParser pParserBase , const char* con
  */
 static gboolean copySequenceData(ZMapSequence pSequence, GString *pData)
 {
-  gboolean bResult = TRUE ;
-  if (!pSequence || !pData)
-    {
-      bResult = FALSE ;
-      return bResult ;
-    }
+  gboolean bResult = FALSE ;
+  zMapReturnValIfFail(pSequence && pData, bResult ) ;
+  bResult = TRUE ;
 
   if (pSequence->sequence)
     {
@@ -2177,7 +2161,7 @@ static gboolean parseBodyLine_V3(ZMapGFFParser pParserBase, const char * const s
   /*
    * Initial error check.
    */
-  zMapReturnValIfFail(pParser && pParser->pHeader, FALSE) ;
+  zMapReturnValIfFail(pParser && pParser->pHeader && sLine && *sLine, FALSE) ;
 
   /*
    * If the line length is too large, then we exit with an error set.
@@ -3456,12 +3440,12 @@ static gboolean clipFeatureLogic_Transcript( ZMapGFF3Parser pParser, ZMapGFFFeat
   ZMapGFFAttribute *pAttributes = NULL ;
   unsigned int nAttributes = 0 ;
 
-  zMapReturnValIfFail(pParser || pParser->pHeader || pFeatureData, bIncludeFeature) ;
+  zMapReturnValIfFail(pParser && pParser->pHeader && pFeatureData, bIncludeFeature) ;
 
   cClipMode = pParser->clip_mode ;
   iClipStart = pParser->clip_start ;
   iClipEnd = pParser->clip_end ;
-  zMapReturnValIfFail(iClipStart || iClipEnd , bIncludeFeature ) ;
+  zMapReturnValIfFail(iClipStart && iClipEnd , bIncludeFeature ) ;
 
   /*
    * Get some data about the feature, and error check.
@@ -3562,7 +3546,7 @@ static gboolean clipFeatureLogic_General(ZMapGFF3Parser  pParser, ZMapGFFFeature
   ZMapStyleMode cFeatureStyleMode = ZMAPSTYLE_MODE_INVALID ;
   ZMapGFFClipMode cClipMode = GFF_CLIP_NONE ;
 
-  zMapReturnValIfFail(pParser || pParser->pHeader || pFeatureData, bIncludeFeature) ;
+  zMapReturnValIfFail(pParser && pParser->pHeader && pFeatureData, bIncludeFeature) ;
 
   cClipMode = pParser->clip_mode ;
   iClipStart = pParser->clip_start ;
@@ -3658,9 +3642,7 @@ static gboolean hack_SpecialColumnToSOTerm(const char * const sSource, char ** c
    * List of special source names to be treated by this function.
    */
   static const char *sCol01 = "das_constrained_regions" ;
-  static const char *sCol02 = "das_phastCons_17way" ;
-  static const char *sCol03 = "das_phastCons_28way" ;
-  static const char *sCol04 = "das_phastCons_44way" ;
+  static const char *sCol02 = "das_phastCons" ;
   static const char *sCol05 = "solexa_coverage" ;
   static const char *sCol06 = "das_ChromSig" ;
   gboolean bResult = FALSE ;
@@ -3672,22 +3654,12 @@ static gboolean hack_SpecialColumnToSOTerm(const char * const sSource, char ** c
       *psType = "transcript" ;
       bResult = TRUE ;
     }
-  else if (!strcmp(sSource, sCol02))
+  else if (strstr(sSource, sCol02)) /* several sources start with the string "das_phastCons" */
     {
-      *psType = "das_pc17" ;
+      *psType = "das_phastCons" ;
       bResult = TRUE ;
     }
-  else if (!strcmp(sSource, sCol03))
-    {
-      *psType = "das_pc28" ;
-      bResult = TRUE ;
-    }
-  else if (!strcmp(sSource, sCol04))
-    {
-      *psType = "das_pc44" ;
-      bResult = TRUE ;
-    }
-  else if (!strcmp(sSource, sCol05))
+  else if (strstr(sSource, sCol05)) /* several sources start with the string "solexa_coverage" */
     {
       *psType = "solexa_coverage" ;
       bResult = TRUE ;
@@ -3773,7 +3745,7 @@ static gboolean makeNewFeature_V3( ZMapGFFParser pParserBase,
       else if (cFeatureStyleMode == ZMAPSTYLE_MODE_TRANSCRIPT)
         {
 
-#ifdef PERFORM_CLIPPING_ON_PARSE
+#ifdef CLIP_TRANSCRIPT_ON_PARSE
           if ((bIncludeFeature = clipFeatureLogic_Transcript(pParser, pFeatureData )))
             {
 #endif
@@ -3788,13 +3760,17 @@ static gboolean makeNewFeature_V3( ZMapGFFParser pParserBase,
 
               if (requireLocusOperations(pParserBase, pFeatureData) && bNewFeatureCreated)
                 {
+#ifdef CLIP_LOCUS_ON_PARSE
                   if (clipFeatureLogic_General(pParser, pFeatureData ))
                     {
+#endif
                       bLocusFeature = makeFeatureLocus(pParserBase, pFeatureData, &sMakeFeatureErrorText) ;
+#ifdef CLIP_LOCUS_ON_PARSE
                     }
+#endif
                 }
 
-#ifdef PERFORM_CLIPPING_ON_PARSE
+#ifdef CLIP_TRANSCRIPT_ON_PARSE
             }
 #endif
 
@@ -3802,7 +3778,7 @@ static gboolean makeNewFeature_V3( ZMapGFFParser pParserBase,
       else if (cFeatureStyleMode == ZMAPSTYLE_MODE_ALIGNMENT)
         {
 
-#ifdef PERFORM_CLIPPING_ON_PARSE
+#ifdef CLIP_ALIGNMENT_ON_PARSE
           if ((bIncludeFeature = clipFeatureLogic_General(pParser, pFeatureData )))
             {
 #endif
@@ -3814,7 +3790,7 @@ static gboolean makeNewFeature_V3( ZMapGFFParser pParserBase,
                   ++pParser->num_features ;
                 }
 
-#ifdef PERFORM_CLIPPING_ON_PARSE
+#ifdef CLIP_ALIGNMENT_ON_PARSE
             }
 #endif
 
@@ -3822,7 +3798,7 @@ static gboolean makeNewFeature_V3( ZMapGFFParser pParserBase,
       else if (cFeatureStyleMode == ZMAPSTYLE_MODE_ASSEMBLY_PATH)
         {
 
-#ifdef PERFORM_CLIPPING_ON_PARSE
+#ifdef CLIP_ASSEMBLYPATH_ON_PARSE
           if ((bIncludeFeature = clipFeatureLogic_General(pParser, pFeatureData )))
             {
 #endif
@@ -3834,7 +3810,7 @@ static gboolean makeNewFeature_V3( ZMapGFFParser pParserBase,
                   ++pParser->num_features ;
                 }
 
-#ifdef PERFORM_CLIPPING_ON_PARSE
+#ifdef CLIP_ASSEMBLYPATH_ON_PARSE
             }
 #endif
 
@@ -3842,7 +3818,7 @@ static gboolean makeNewFeature_V3( ZMapGFFParser pParserBase,
       else
         {
 
-#ifdef PERFORM_CLIPPING_ON_PARSE
+#ifdef CLIP_DEFAULT_ON_PARSE
           if ((bIncludeFeature = clipFeatureLogic_General(pParser, pFeatureData )))
             {
 #endif
@@ -3854,7 +3830,7 @@ static gboolean makeNewFeature_V3( ZMapGFFParser pParserBase,
                   ++pParser->num_features ;
                 }
 
-#ifdef PERFORM_CLIPPING_ON_PARSE
+#ifdef CLIP_DEFAULT_ON_PARSE
             }
 #endif
 

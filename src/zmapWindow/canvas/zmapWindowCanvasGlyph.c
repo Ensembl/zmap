@@ -1,13 +1,13 @@
 /*  File: zmapWindowCanvasGlyph.c
- *  Author: malcolm hinsley (mh17@sanger.ac.uk)
+ *  Author: Malcolm Hinsley (mh17@sanger.ac.uk)
  *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
- * ZMap is free software; you can refeaturesetstribute it and/or
- * mofeaturesetfy it under the terms of the GNU General Public License
+ * ZMap is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
  *
- * This program is featuresetstributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -243,15 +243,32 @@ ZMapWindowCanvasGlyph zMapWindowCanvasGetGlyph(ZMapWindowFeaturesetItem features
 void zMapWindowCanvasGlyphPaintSubFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
 					  ZMapWindowCanvasGlyph glyph, GdkDrawable *drawable)
 {
-  double y1 ;
+  double y = 0.0 ;
 
   zMapReturnIfFail((featureset && feature && glyph && drawable)) ;
 
-  y1 = (glyph->which == 3 ? feature->feature->x2 + 1 : feature->feature->x1) ;
+  if (glyph->which == ZMAP_GLYPH_THREEPRIME)
+    {
+      y = feature->y2 + 1.0 ;
+    }
+  else if (glyph->which == ZMAP_GLYPH_FIVEPRIME)
+    {
+      y = feature->y1 ;
+    }
+  else if (glyph->which == ZMAP_GLYPH_TRUNCATED_START )
+    {
+      y = feature->y1 ;
+    }
+  else if (glyph->which == ZMAP_GLYPH_TRUNCATED_END )
+    {
+      y = feature->y2 + 1.0 ;
+    }
 
-  setGlyphCanvasCoords(featureset, feature, glyph, y1) ;
+  /* y1 = (glyph->which == 3 ? feature->feature->x2 + 1 : feature->feature->x1) ;  */
 
-  zmap_window_canvas_paint_feature_glyph(featureset, feature, glyph, y1, drawable) ;
+  setGlyphCanvasCoords(featureset, feature, glyph, y) ;
+
+  zmap_window_canvas_paint_feature_glyph(featureset, feature, glyph, y, drawable) ;
 
   return ;
 }

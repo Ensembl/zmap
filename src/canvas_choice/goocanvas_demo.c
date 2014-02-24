@@ -1,4 +1,4 @@
-/*  File: crcanvas_demo.c
+/*  File: goocanvas_demo.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
  *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------

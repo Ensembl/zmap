@@ -1,4 +1,4 @@
-/*  File: crcanvas_demo.h
+/*  File: long_item_test.h
  *  Author: Roy Storey (rds@sanger.ac.uk)
  *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------

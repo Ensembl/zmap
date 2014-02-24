@@ -989,15 +989,14 @@ gboolean zMapFeatureSequenceIsPeptide(ZMapFeature feature) ;
 gboolean zMapFeatureAddAssemblyPathData(ZMapFeature feature,
 					int length, ZMapStrand strand, GArray *path) ;
 gboolean zMapFeatureAddSOaccession(ZMapFeature feature, GQuark SO_accession) ;
-gboolean zMapFeatureSetCoords(ZMapStrand strand, int *start, int *end,
-			      int *query_start, int *query_end) ;
+gboolean zMapFeatureSetCoords(ZMapStrand strand, int *start, int *end, int *query_start, int *query_end) ;
 void zMapFeature2MasterCoords(ZMapFeature feature, double *feature_x1, double *feature_x2) ;
 void zMapFeature2BlockCoords(ZMapFeatureBlock block, int *x1_inout, int *x2_inout) ;
 void zMapBlock2FeatureCoords(ZMapFeatureBlock block, int *x1_inout, int *x2_inout) ;
 
 void zMapFeatureContextReverseComplement(ZMapFeatureContext context, GHashTable *styles) ;
 void zMapFeatureReverseComplement(ZMapFeatureContext context, ZMapFeature feature) ;
-void zMapFeatureReverseComplementCoords(ZMapFeatureBlock block, int *start_inout, int *end_inout) ;
+void zMapFeatureReverseComplementCoords(ZMapFeatureContext context, int *start_inout, int *end_inout) ;
 
 ZMapFrame zMapFeatureFrame(ZMapFeature feature) ;
 ZMapFrame zMapFeatureFrameFromCoords(int block, int feature);
@@ -1006,9 +1005,9 @@ gboolean zMapFeatureAddVariationString(ZMapFeature feature, char *variation_stri
 gboolean zMapFeatureAddURL(ZMapFeature feature, char *url) ;
 gboolean zMapFeatureAddLocus(ZMapFeature feature, GQuark locus_id) ;
 gboolean zMapFeatureAddText(ZMapFeature feature, GQuark source_id, char *source_text, char *feature_text) ;
-void     zMapFeatureSortGaps(GArray *gaps) ;
-int      zMapFeatureLength(ZMapFeature feature, ZMapFeatureLengthType length_type) ;
-void     zMapFeatureDestroy(ZMapFeature feature) ;
+void zMapFeatureSortGaps(GArray *gaps) ;
+int zMapFeatureLength(ZMapFeature feature, ZMapFeatureLengthType length_type) ;
+void zMapFeatureDestroy(ZMapFeature feature) ;
 
 
 /* *******************
@@ -1068,6 +1067,7 @@ gboolean zMapFeatureBlockDNA(ZMapFeatureBlock block,
  */
 GQuark zMapFeatureAlignmentCreateID(char *align_sequence, gboolean master_alignment) ;
 ZMapFeatureAlignment zMapFeatureAlignmentCreate(char *align_name, gboolean master_alignment) ;
+char *zMapFeatureAlignmentGetChromosome(ZMapFeatureAlignment feature_align) ;
 gboolean zMapFeatureAlignmentAddBlock(ZMapFeatureAlignment feature_align,
 				      ZMapFeatureBlock     feature_block) ;
 gboolean zMapFeatureAlignmentFindBlock(ZMapFeatureAlignment feature_align,

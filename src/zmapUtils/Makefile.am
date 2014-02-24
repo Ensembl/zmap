@@ -12,6 +12,7 @@ $(ZMAP_COMPILEDATE_FILE) \
 zmapAppRemoteUtils.c \
 zmapBase.c \
 zmapBase_I.h \
+zmapBioUtils.c \
 zmapCmdLineArgs.c \
 zmapCmdLineArgs_P.h \
 zmapCompileDate.c \

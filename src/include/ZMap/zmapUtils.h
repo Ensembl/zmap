@@ -261,5 +261,7 @@ void zMapCoordsToOffset(int base, int start_value, int *start_inout, int *end_in
 typedef guint ZMapRadixKeyFunc (gconstpointer thing,int digit);
 GList * zMapRadixSort(GList *list, ZMapRadixKeyFunc *key_func,int key_size);
 
+gboolean zMapUtilsBioParseChromLoc(char *location_str, char **chromsome_out, int *start_out, int *end_out) ;
+gboolean zMapUtilsBioParseChromNumber(char *chromosome_str, char **chromosome_out) ;
 
 #endif /* ZMAP_UTILS_H */
