@@ -96,7 +96,7 @@ static ZMapStyleGlyphShapeStruct truncation_shape_alignment_instance_end =
   GLYPH_DRAW_LINES
 }  ;
 
-static ZMapStyleGlyphShapeStruct * truncation_shape_transcript_start = &truncation_shape_alignment_instance_start ;
+static ZMapStyleGlyphShapeStruct * truncation_shape_alignment_start = &truncation_shape_alignment_instance_start ;
 static ZMapStyleGlyphShapeStruct * truncation_shape_alignment_end = &truncation_shape_alignment_instance_end ;
 static ZMapWindowCanvasGlyph truncation_glyph_alignment_start = NULL ;
 static ZMapWindowCanvasGlyph truncation_glyph_alignment_end = NULL ;
@@ -207,23 +207,42 @@ static GdkColor *zmapWindowCanvasAlignmentGetFwdColinearColour(ZMapWindowCanvasA
 
 
 static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featureset,
-						  ZMapWindowCanvasFeature feature,
-						  GdkDrawable *drawable, GdkEventExpose *expose)
+                                                  ZMapWindowCanvasFeature feature,
+                                                  GdkDrawable *drawable,
+                                                  GdkEventExpose *expose)
 {
   static const char *colours[] = { "black", "red", "orange", "green" };
   ZMapWindowCanvasAlignment align = (ZMapWindowCanvasAlignment)feature;
   FooCanvasItem *foo = (FooCanvasItem *) featureset;
-  ZMapFeatureTypeStyle homology = NULL,nc_splice = NULL;
+  ZMapFeatureTypeStyle homology = NULL,
+    nc_splice = NULL,
+    style = NULL ;
   gulong fill,outline;
   int cx1, cy1, cx2, cy2,
     colours_set, fill_set, outline_set,
     gy1, gy2, gx ;
   gulong edge;
-  gboolean edge_set;
-  double mid_x = 0.0, x1 = 0.0, x2 = 0.0;
+  gboolean truncated_start = FALSE,
+    truncated_end = FALSE,
+    ignore_truncation_glyphs = FALSE ;
+  double mid_x = 0.0,
+    x1 = 0.0,
+    x2 = 0.0,
+    x1_cache = 0.0,
+    x2_cache = 0.0,
+    y1_cache = 0.0,
+    y2_cache = 0.0,
+    col_width = 0.0 ;
 
-  printf("call to zMapWindowCanvasAlignmentPaintFeature()\n") ;
-  fflush(stdout) ;
+  /*
+   * Error test.
+   */
+  zMapReturnIfFail(featureset && feature && drawable && expose ) ;
+
+  /*
+   * Find featureset style.
+   */
+  style = *feature->feature->style;
 
   /* if bumped we can have a very wide column: don't paint if not visible */
   /* display code assumes a narrow column w/ overlapping features and does not process x-coord */
@@ -236,15 +255,39 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
 
 
   /*
-   * Find horizontal coordinates of the feature.
+   * Find horizontal coordinates of the feature in world coordinates.
    */
   zMapWindowCanvasCalcHorizCoords(featureset, feature, &x1, &x2) ;
 
+  /*
+   * Get some canvas coordinates.
+   */
   foo_canvas_w2c (foo->canvas, x1, 0, &cx1, NULL);
   foo_canvas_w2c (foo->canvas, x2, 0, &cx2, NULL);
 
   if (cx2 < expose->area.x || cx1 > expose->area.x + expose->area.width)
     return;
+
+//#ifdef INCLUDE_TRUNCATION_GLYPHS
+  /*
+   * Instantiate glyph objects.
+   */
+  if (truncation_glyph_alignment_start == NULL)
+    {
+      truncation_glyph_alignment_start = g_new0(zmapWindowCanvasGlyphStruct, 1) ;
+      truncation_glyph_alignment_start->sub_feature = TRUE ;
+      truncation_glyph_alignment_start->shape = truncation_shape_alignment_start ;
+      truncation_glyph_alignment_start->which = ZMAP_GLYPH_TRUNCATED_START ;
+    }
+  if (truncation_glyph_alignment_end == NULL)
+    {
+      truncation_glyph_alignment_end = g_new0(zmapWindowCanvasGlyphStruct, 1) ;
+      truncation_glyph_alignment_end->sub_feature = TRUE ;
+      truncation_glyph_alignment_end->shape = truncation_shape_alignment_end ;
+      truncation_glyph_alignment_end->which = ZMAP_GLYPH_TRUNCATED_END ;
+    }
+  col_width = zMapStyleGetWidth(featureset->style) ;
+//#endif
 
 
   /*
@@ -256,7 +299,6 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
 
   if (fill_set && feature->feature->population)
     {
-      ZMapFeatureTypeStyle style = *feature->feature->style;
 
       if ((zMapStyleGetScoreMode(style) == ZMAPSCORE_HEAT) || (zMapStyleGetScoreMode(style) == ZMAPSCORE_HEAT_WIDTH))
         {
@@ -268,16 +310,67 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
       if (zMapStyleIsSquash(style))		/* diff colours for first and last box */
         {
           edge = 0x808080ff;
-          edge_set = TRUE;
         }
     }
 
 
-  /* Draw the alignment boxes. */
+  /*
+   * Draw the alignment boxes.
+   */
   if (   !feature->feature->feature.homol.align
       || (!zMapStyleIsAlwaysGapped(*feature->feature->style) && (!featureset->bumped || !zMapStyleIsShowGaps(*feature->feature->style))   )
      )
     {
+
+      if (    (feature->feature->x2 < featureset->start)
+          ||  (feature->feature->x1 > featureset->end)  )
+        {
+          ignore_truncation_glyphs = TRUE ;
+        }
+
+      /*
+       * Deal with y coordinate in case of clipping.
+       */
+      x1_cache = feature->feature->x1 ;
+      x2_cache = feature->feature->x2 ;
+      y1_cache = feature->y1 ;
+      y2_cache = feature->y2 ;
+
+      /*
+       * Determine whether or not the feature needs to be truncated
+       * at the start or end.
+       */
+      if (feature->feature->x1 < featureset->start)
+        {
+          truncated_start = TRUE ;
+          feature->y1 = feature->feature->x1 = featureset->start ;
+        }
+      if (feature->feature->x2 > featureset->end)
+        {
+          truncated_end = TRUE ;
+          feature->y2 = feature->feature->x2 = featureset->end ;
+        }
+
+      if (!ignore_truncation_glyphs)
+      {
+        if (truncated_start)
+          {
+            zmap_window_canvas_set_glyph(foo, truncation_glyph_alignment_start, style, feature->feature, col_width,
+                                         zMapStyleGetMaxScore(style) ) ;
+            zMapWindowCanvasGlyphPaintSubFeature(featureset, feature, truncation_glyph_alignment_start, drawable) ;
+          }
+        if (truncated_end)
+          {
+            zmap_window_canvas_set_glyph(foo, truncation_glyph_alignment_end, style, feature->feature, col_width,
+                                         zMapStyleGetMaxScore(style) ) ;
+            zMapWindowCanvasGlyphPaintSubFeature(featureset, feature, truncation_glyph_alignment_end, drawable) ;
+          }
+
+        if (truncated_start || truncated_end)
+          featureset->draw_truncation_glyphs = TRUE ;
+
+      }
+
       /*
        * draw a simple ungapped box
        * we don't draw gaps on reverse, annotators work on the fwd strand and revcomp if needs be
@@ -286,6 +379,16 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
        */
       zMapCanvasFeaturesetDrawBoxMacro(featureset, x1, x2, feature->feature->x1, feature->feature->x2,
                                        drawable, fill_set, outline_set, fill, outline) ;
+
+
+      /*
+       * Reset to cached values.
+       */
+      feature->feature->x1 = x1_cache ;
+      feature->feature->x2 = x2_cache ;
+      feature->y1 = y1_cache ;
+      feature->y2 = y2_cache ;
+
     }
   else
     {
@@ -342,14 +445,15 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
                 }
 
               case GAP_HLINE:		/* x coords differ, y is the same */
-                if (!outline_set)	/* must be or else we are up the creek! */
+                {
+                  if (!outline_set)	/* must be or else we are up the creek! */
+                    break;
+
+                  c.pixel = outline;
+                  gdk_gc_set_foreground (featureset->gc, &c);
+                  zMap_draw_line(drawable, featureset, cx1, gy1, cx2 - 1, gy2);	/* GDK foible */
                   break;
-
-                c.pixel = outline;
-                gdk_gc_set_foreground (featureset->gc, &c);
-                zMap_draw_line(drawable, featureset, cx1, gy1, cx2 - 1, gy2);	/* GDK foible */
-                break;
-
+                }
               case GAP_VLINE_INTRON:      /* fall through */
               case GAP_VLINE:		/* y coords differ, x is the same */
                 if(!outline_set)	/* must be or else we are up the creek! */
@@ -385,7 +489,7 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
           GdkColor colour;
           gulong pixel;
           FooCanvasItem *foo = (FooCanvasItem *) featureset;
-      
+
           /* cache the colours for colinear lines */
           for(i = 1; i < COLINEARITY_N_TYPE; i++)
           {
@@ -393,10 +497,10 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
             pixel = zMap_gdk_color_to_rgba(&colour);
             colinear_gdk_G[i].pixel = foo_canvas_get_color_pixel(foo->canvas,pixel);
           }
-      
+
           decoration_set_G = TRUE;
         }
-  
+
       /* add some decorations */
       if(!align->bump_set)		/* set up glyph data once only */
         {
@@ -404,11 +508,11 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
           * 	'glyph-strand=flip-y'
           * which will handle reverse strand indication */
           ZMapFeatureTypeStyle style = *feature->feature->style;
-        
+
           /* set the glyph pointers if applicable */
           homology = style->sub_style[ZMAPSTYLE_SUB_FEATURE_HOMOLOGY];
           nc_splice = style->sub_style[ZMAPSTYLE_SUB_FEATURE_NON_CONCENCUS_SPLICE];
-        
+
           /* find and/or allocate glyph structs */
           if(!feature->left && homology)	/* top end homology incomplete ? */
             {
@@ -417,10 +521,10 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
               double score = homol->y1 - 1;
               if(feature->feature->strand != homol->strand)
               score = homol->length - homol->y2;
-        
+
               if(score)
                 align->glyph5 = zMapWindowCanvasGetGlyph(featureset, homology, feature->feature, 5, score);
-      
+
             }
 
           if(feature->right && nc_splice)	/* nc-splice ?? */
@@ -428,7 +532,7 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
               if(is_nc_splice(feature->feature,feature->right->feature))
               {
                 ZMapWindowCanvasAlignment next = (ZMapWindowCanvasAlignment) feature->right;
-  
+
                 align->glyph3 = zMapWindowCanvasGetGlyph(featureset, nc_splice, feature->feature, 3, 0.0);
                 next->glyph5 = zMapWindowCanvasGetGlyph(featureset, nc_splice, next->feature.feature, 5, 0.0);
               }
@@ -445,7 +549,7 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
               if(score)
                 align->glyph3 = zMapWindowCanvasGetGlyph(featureset, homology, feature->feature, 3, score);
             }
-  
+
           align->bump_set = TRUE;
         }
 
@@ -465,7 +569,7 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
               foo_canvas_w2c(foo->canvas,
                               mid_x, feat->feature->x2 - featureset->start + featureset->dy + 1,
                               &cx1, &cy1);
-  
+
               foo_canvas_w2c(foo->canvas,
                               mid_x, next->feature.y1 - featureset->start + featureset->dy,
                               &cx2, &cy2);
@@ -474,10 +578,10 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
                 continue;
 
               colour = zmapWindowCanvasAlignmentGetFwdColinearColour((ZMapWindowCanvasAlignment) feat);
-  
+
               /* draw line between boxes, don't overlap the pixels */
               gdk_gc_set_foreground(featureset->gc, colour);
-  
+
 
               /* The bit about clobbering the "first feature's y2" above seems to mean the first
                * line is drawn one pixel too long at the top. I hate doing this but I haven't
@@ -487,10 +591,10 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
 
 
               zMap_draw_line(drawable, featureset, cx1, cy1, cx2, cy2) ;
-    
+
               if(cy2 > expose->area.y + expose->area.height)
                 break;
-            } /* for (feat = feature ; feat->right ; feat = feat->right) */ 
+            } /* for (feat = feature ; feat->right ; feat = feat->right) */
         }
 
       /* all features: add glyphs if present */

@@ -170,7 +170,7 @@ zMapWindowCanvasTranscriptPaintFeature(ZMapWindowFeaturesetItem featureset,
     {
 
       /*
-       * Instantiate glyph object.
+       * Instantiate glyph objects.
        */
       if (truncation_glyph_transcript_start == NULL)
         {
@@ -331,6 +331,9 @@ zMapWindowCanvasTranscriptPaintFeature(ZMapWindowFeaturesetItem featureset,
         }
     }
 
+  /*
+   * Reset to cached values.
+   */
   feature->y1 = y1_cache ;
   feature->y2 = y2_cache ;
 
