@@ -34,9 +34,10 @@ ERROR_RECIPIENT='annotools@sanger.ac.uk'
 MAIL_SUBJECT="ZMap Build Failed (control script)"
 
 
-# where build scripts are located.
+# where build/utility scripts are located.
 BASE_DIR=~zmap
 SCRIPTS_DIR="$BASE_DIR/BUILD_CHECKOUT/ZMap/scripts"
+SOFTWARE_DIR="/software/annotools/bin"
 
 BUILD_SCRIPT="$SCRIPTS_DIR/build_bootstrap.sh"
 FUNCTIONS_SCRIPT="$SCRIPTS_DIR/zmap_functions.sh"
