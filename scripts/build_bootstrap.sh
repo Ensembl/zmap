@@ -257,7 +257,6 @@ SCRIPTS_DIR=$CHECKOUT_BASE/scripts
 BASE_DIR=$SCRIPTS_DIR
 SRC_DIR=$CHECKOUT_BASE/src
 DOC_DIR=$CHECKOUT_BASE/doc
-SOFTWARE_DIR=/software/annotools/bin
 
 
 # This shouldn't fail and makes sure source can be tested.
@@ -385,7 +384,7 @@ zmap_message_out "All hosts alive."
 #
 #    zmap_message_out "Collecting GIT describe info..."
 #
-#    GIT_VERSION_INFO=`cd $SCRIPTS_DIR ; $SOFTWARE_DIR/gitversion`
+#    GIT_VERSION_INFO=`cd $SCRIPTS_DIR ; $SCRIPTS_DIR/git_version.sh`
 #
 #    zmap_message_out "Inserting GIT describe info..$GIT_VERSION_INFO into $version_file."
 #
@@ -406,7 +405,7 @@ zmap_message_out "All hosts alive."
 #
 #    zmap_message_out "Collecting GIT describe info....for zmap version string"
 #
-#    GIT_VERSION_INFO=`cd $SCRIPTS_DIR ; $SOFTWARE_DIR/gitversion`
+#    GIT_VERSION_INFO=`cd $SCRIPTS_DIR ; $SCRIPTS_DIR/git_version.sh`
 #
 #    ZMAP_RELEASE_VERSION=$GIT_VERSION_INFO
 #
@@ -428,7 +427,7 @@ fi
 
 zmap_message_out "Collecting GIT info....for zmap version string"
 
-GIT_VERSION_INFO=`cd $SCRIPTS_DIR ; $SOFTWARE_DIR/gitversion $GIT_FLAG`
+GIT_VERSION_INFO=`cd $SCRIPTS_DIR ; $SCRIPTS_DIR/git_version.sh $GIT_FLAG`
 
 ZMAP_RELEASE_VERSION=$GIT_VERSION_INFO
 
