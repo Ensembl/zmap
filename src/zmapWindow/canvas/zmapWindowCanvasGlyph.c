@@ -761,8 +761,16 @@ gboolean zmap_window_canvas_set_glyph(FooCanvasItem *foo, ZMapWindowCanvasGlyph 
 	  max -= min;
 	  score -= min;
 
-	  if(score < min)
-	    return FALSE;		/* not visible: don't draw */
+   /*
+    * sm23 commented out 25th February 2014 - not sure this is
+    * correct to start with...
+    *
+    * original comment:
+    *
+    * not visible: don't draw
+    */
+	  /* if(score < min)
+	    return FALSE; */
 
 	  if(col_width)                     // origin is mid point
 	    origin = col_width / 2.0;

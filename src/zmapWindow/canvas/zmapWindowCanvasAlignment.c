@@ -217,6 +217,7 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
   ZMapFeatureTypeStyle homology = NULL,
     nc_splice = NULL,
     style = NULL ;
+  ZMapStyleScoreMode style_score_mode = ZMAPSCORE_INVALID ;
   gulong fill,outline;
   int cx1, cy1, cx2, cy2,
     colours_set, fill_set, outline_set,
@@ -268,7 +269,7 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
   if (cx2 < expose->area.x || cx1 > expose->area.x + expose->area.width)
     return;
 
-//#ifdef INCLUDE_TRUNCATION_GLYPHS
+#ifdef INCLUDE_TRUNCATION_GLYPHS
   /*
    * Instantiate glyph objects.
    */
@@ -287,7 +288,7 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
       truncation_glyph_alignment_end->which = ZMAP_GLYPH_TRUNCATED_END ;
     }
   col_width = zMapStyleGetWidth(featureset->style) ;
-//#endif
+#endif
 
 
   /*
@@ -313,29 +314,25 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
         }
     }
 
+    /*
+     * If the feature is completely outside of the sequence-region then
+     * we don't draw glyphs (otherwise we end up with a glyph on the edge of
+     * the sequence-region, but no visible feature!).
+     */
+    if (    (feature->feature->x2 < featureset->start)
+        ||  (feature->feature->x1 > featureset->end)  )
+      {
+        ignore_truncation_glyphs = TRUE ;
+      }
+    /*
+     * Store feature coordintes.
+     */
+    x1_cache = feature->feature->x1 ;
+    x2_cache = feature->feature->x2 ;
+    y1_cache = feature->y1 ;
+    y2_cache = feature->y2 ;
 
-  /*
-   * Draw the alignment boxes.
-   */
-  if (   !feature->feature->feature.homol.align
-      || (!zMapStyleIsAlwaysGapped(*feature->feature->style) && (!featureset->bumped || !zMapStyleIsShowGaps(*feature->feature->style))   )
-     )
-    {
-
-      if (    (feature->feature->x2 < featureset->start)
-          ||  (feature->feature->x1 > featureset->end)  )
-        {
-          ignore_truncation_glyphs = TRUE ;
-        }
-
-      /*
-       * Deal with y coordinate in case of clipping.
-       */
-      x1_cache = feature->feature->x1 ;
-      x2_cache = feature->feature->x2 ;
-      y1_cache = feature->y1 ;
-      y2_cache = feature->y2 ;
-
+#ifdef INCLUDE_TRUNCATION_GLYPHS
       /*
        * Determine whether or not the feature needs to be truncated
        * at the start or end.
@@ -370,6 +367,17 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
           featureset->draw_truncation_glyphs = TRUE ;
 
       }
+#endif
+
+  /*
+   * Draw the alignment boxes.
+   */
+  if (   !feature->feature->feature.homol.align
+      || (!zMapStyleIsAlwaysGapped(*feature->feature->style) && (!featureset->bumped || !zMapStyleIsShowGaps(*feature->feature->style))   )
+     )
+    {
+
+//////////////////
 
       /*
        * draw a simple ungapped box
@@ -381,17 +389,10 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
                                        drawable, fill_set, outline_set, fill, outline) ;
 
 
-      /*
-       * Reset to cached values.
-       */
-      feature->feature->x1 = x1_cache ;
-      feature->feature->x2 = x2_cache ;
-      feature->y1 = y1_cache ;
-      feature->y2 = y2_cache ;
-
     }
   else
     {
+
       /* Draw full gapped alignment boxes, colinear lines etc etc. */
       AlignGap ag;
       GdkColor c;
@@ -426,6 +427,7 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
             {
               case GAP_BOX:
                 {
+
                   /* Can't use generalised draw call here because these are already canvas coords. */
                   if (fill_set && (!outline_set || (gy2 - gy1 > 1)))	/* fill will be visible */
                     {
@@ -476,11 +478,19 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
 
 
 
+     /*
+       * Reset to cached values.
+       */
+      feature->feature->x1 = x1_cache ;
+      feature->feature->x2 = x2_cache ;
+      feature->y1 = y1_cache ;
+      feature->y2 = y2_cache ;
 
 
 
-
-  /* draw decorations */
+  /*
+   * draw decorations
+   */
   if (featureset->bumped)
     {
       if(!decoration_set_G)
