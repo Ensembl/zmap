@@ -326,6 +326,9 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
       {
         ignore_truncation_glyphs = TRUE ;
       }
+
+
+#ifdef INCLUDE_TRUNCATION_GLYPHS
     /*
      * Store feature coordintes.
      */
@@ -334,7 +337,6 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
     y1_cache = feature->y1 ;
     y2_cache = feature->y2 ;
 
-#ifdef INCLUDE_TRUNCATION_GLYPHS
       /*
        * Determine whether or not the feature needs to be truncated
        * at the start or end.
@@ -504,7 +506,7 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
     }
 
 
-
+#ifdef INCLUDE_TRUNCATION_GLYPHS
   /*
    * Reset to cached values before attempting anything else.
    */
@@ -512,6 +514,7 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
   feature->feature->x2 = x2_cache ;
   feature->y1 = y1_cache ;
   feature->y2 = y2_cache ;
+#endif
 
 
   /*

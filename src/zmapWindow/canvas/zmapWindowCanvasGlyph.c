@@ -247,13 +247,17 @@ void zMapWindowCanvasGlyphPaintSubFeature(ZMapWindowFeaturesetItem featureset, Z
 
   zMapReturnIfFail((featureset && feature && glyph && drawable)) ;
 
+  /*
+   * The final 'else' clause here should not be necesary, right? But it is, and
+   * some quite nasty bugs appear if it's omitted. No idea why...
+   */
   if (glyph->which == ZMAP_GLYPH_THREEPRIME)
     {
-      y = feature->y2 + 1.0 ;
+      y = feature->feature->x2 + 1.0 ;
     }
   else if (glyph->which == ZMAP_GLYPH_FIVEPRIME)
     {
-      y = feature->y1 ;
+      y = feature->feature->x1 ;
     }
   else if (glyph->which == ZMAP_GLYPH_TRUNCATED_START )
     {
@@ -263,8 +267,12 @@ void zMapWindowCanvasGlyphPaintSubFeature(ZMapWindowFeaturesetItem featureset, Z
     {
       y = feature->y2 + 1.0 ;
     }
+  else
+    {
+      y = feature->feature->x1 ;
+    }
 
-  /* y1 = (glyph->which == 3 ? feature->feature->x2 + 1 : feature->feature->x1) ;  */
+  // y = (glyph->which == 3 ? feature->feature->x2 + 1 : feature->feature->x1) ;
 
   setGlyphCanvasCoords(featureset, feature, glyph, y) ;
 
@@ -762,15 +770,15 @@ gboolean zmap_window_canvas_set_glyph(FooCanvasItem *foo, ZMapWindowCanvasGlyph 
 	  score -= min;
 
    /*
-    * sm23 commented out 25th February 2014 - not sure this is
+    * sm23 25th February 2014 - not sure this is
     * correct to start with...
     *
     * original comment:
     *
     * not visible: don't draw
     */
-	  /* if(score < min)
-	    return FALSE; */
+	  if(score < min)
+	    return FALSE;
 
 	  if(col_width)                     // origin is mid point
 	    origin = col_width / 2.0;
