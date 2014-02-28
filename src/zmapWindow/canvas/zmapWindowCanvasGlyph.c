@@ -247,11 +247,7 @@ void zMapWindowCanvasGlyphPaintSubFeature(ZMapWindowFeaturesetItem featureset, Z
 
   zMapReturnIfFail((featureset && feature && glyph && drawable)) ;
 
-  /*
-   * The final 'else' clause here should not be necesary, right? But it is, and
-   * some quite nasty bugs appear if it's omitted. No idea why...
-   */
-  if (glyph->which == ZMAP_GLYPH_THREEPRIME)
+  /* if (glyph->which == ZMAP_GLYPH_THREEPRIME)
     {
       y = feature->feature->x2 + 1.0 ;
     }
@@ -271,8 +267,9 @@ void zMapWindowCanvasGlyphPaintSubFeature(ZMapWindowFeaturesetItem featureset, Z
     {
       y = feature->feature->x1 ;
     }
+  */
 
-  // y = (glyph->which == 3 ? feature->feature->x2 + 1 : feature->feature->x1) ;
+  y = (glyph->which == 3 ? feature->feature->x2 + 1 : feature->feature->x1) ;
 
   setGlyphCanvasCoords(featureset, feature, glyph, y) ;
 
