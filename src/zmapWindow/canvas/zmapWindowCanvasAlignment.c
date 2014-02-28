@@ -229,6 +229,8 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
   double mid_x = 0.0,
     x1 = 0.0,
     x2 = 0.0,
+    y1 = 0.0,
+    y2 = 0.0,
     x1_cache = 0.0,
     x2_cache = 0.0,
     y1_cache = 0.0,
@@ -377,8 +379,6 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
      )
     {
 
-//////////////////
-
       /*
        * draw a simple ungapped box
        * we don't draw gaps on reverse, annotators work on the fwd strand and revcomp if needs be
@@ -393,12 +393,23 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
   else
     {
 
+      /*
+       * Note: we only enter this section on bump event with gapped item present in the featureset
+       */
+
       /* Draw full gapped alignment boxes, colinear lines etc etc. */
       AlignGap ag;
       GdkColor c;
 
 
-      /* create a list of things to draw at this zoom taking onto account bases per pixel */
+      /*
+       * create a list of things to draw at this zoom taking onto account bases per pixel
+       *
+       * Note that: The function makeGapped() returns data in canvas pixel coordinates
+       * _relative_to_ the start of the feature, that is the quantity feature->feature->x1.
+       * Hence the rather arcane looking arithmetic on coordinates in the section below
+       * where these are modified for cases that are truncated.
+       */
       if(!align->gapped)
         {
           ZMapHomol homol = &feature->feature->feature.homol;
@@ -408,6 +419,22 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
             forward = !forward;
 
           align->gapped = makeGapped(feature->feature, featureset->dy - featureset->start, foo, forward);
+
+#ifdef INCLUDE_TRUNCATION_GLYPHS
+          for (ag = align->gapped ; ag ; ag = ag->next )
+            {
+              /* treat start of box */
+              ag->y1 = ag->y1 < 0 ? 0 : ag->y1 ;
+              ag->y2 = ag->y2 < 0 ? 0 : ag->y2 ;
+
+              /* treat end of box */
+              foo_canvas_w2c(foo->canvas, 0, feature->feature->x1, NULL, &cy1) ;
+              foo_canvas_w2c(foo->canvas, 0, feature->feature->x2, NULL, &cy2) ;
+              cy2 -= cy1 ;
+              ag->y1 = ag->y1 > cy2 ? cy2 : ag->y1 ;
+              ag->y2 = ag->y2 > cy2 ? cy2 : ag->y2 ;
+            }
+#endif
         }
 
       /* draw them */
@@ -478,14 +505,13 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
 
 
 
-     /*
-       * Reset to cached values.
-       */
-      feature->feature->x1 = x1_cache ;
-      feature->feature->x2 = x2_cache ;
-      feature->y1 = y1_cache ;
-      feature->y2 = y2_cache ;
-
+  /*
+   * Reset to cached values before attempting anything else.
+   */
+  feature->feature->x1 = x1_cache ;
+  feature->feature->x2 = x2_cache ;
+  feature->y1 = y1_cache ;
+  feature->y2 = y2_cache ;
 
 
   /*
