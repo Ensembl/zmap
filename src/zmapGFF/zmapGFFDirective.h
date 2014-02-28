@@ -76,7 +76,7 @@ typedef struct ZMapGFFDirectiveInfoStruct_
  * Directive creation and destruction.
  */
 ZMapGFFDirective zMapGFFCreateDirective(ZMapGFFDirectiveName) ;
-void zMapGFFDestroyDirective(ZMapGFFDirective const) ;
+void zMapGFFDestroyDirective(ZMapGFFDirective) ;
 
 /*
  * Directive utilities.

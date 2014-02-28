@@ -96,6 +96,10 @@ typedef struct _AcedbServerStruct
 
   gint zmap_start, zmap_end ;				    /* request coordinates for our one block */
 
+
+  gint gff_version ;                                        /* Which version of gff to request from acedb. */
+
+
 } AcedbServerStruct, *AcedbServer ;
 
 

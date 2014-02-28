@@ -43,7 +43,7 @@
  * Check whether the parser passed in is a valid version (i.e. one that we handle)
  * or not. Returns TRUE if this is the case and FALSE otherwise.
  */
-gboolean zMapGFFIsValidVersion(const ZMapGFFParser const pParser)
+gboolean zMapGFFIsValidVersion(ZMapGFFParser pParser)
 {
   gboolean bResult = FALSE ;
 
@@ -69,9 +69,13 @@ gboolean zMapGFFIsValidVersion(const ZMapGFFParser const pParser)
  * Internal static function declarations.
  */
 static void getFeatureArray(GQuark key_id, gpointer data, gpointer user_data) ;
-static void normaliseFeatures(GData **feature_sets) ;
-static void checkFeatureSetCB(GQuark key_id, gpointer data, gpointer user_data_unused) ;
-static void checkFeatureCB(GQuark key_id, gpointer data, gpointer user_data_unused) ;
+static void normaliseFeatures_V2(GData **feature_sets) ;
+static void normaliseFeatures_V3(GData **feature_sets) ;
+static void checkFeatureSetCB_V2(GQuark key_id, gpointer data, gpointer user_data_unused) ;
+static void checkFeatureSetCB_V3(GQuark key_id, gpointer data, gpointer user_data_unused) ;
+static void checkFeatureCB_V2(GQuark key_id, gpointer data, gpointer user_data_unused) ;
+static void checkFeatureCB_V3(gpointer key_id, gpointer data, gpointer user_data_unused) ;
+static gboolean removeTranscriptFeature(gpointer key,gpointer value, gpointer user_data);
 
 
 /*
@@ -81,6 +85,7 @@ static void checkFeatureCB(GQuark key_id, gpointer data, gpointer user_data_unus
 ZMapGFFParser zMapGFFCreateParser(int iGFFVersion, char *sequence, int features_start, int features_end)
 {
   ZMapGFFParser pParser = NULL ;
+  zMapReturnValIfFail(sequence && *sequence && features_start && (features_start <= features_end), pParser) ;
 
   if (iGFFVersion == ZMAPGFF_VERSION_2 )
     {
@@ -107,11 +112,7 @@ gboolean zMapGFFParseHeader(ZMapGFFParser parser, char *line, gboolean *header_f
 {
   gboolean bResult = FALSE ;
 
-  if (!parser)
-    return bResult ;
-
-  if (!zMapGFFIsValidVersion(parser))
-    return bResult ;
+  zMapReturnValIfFail(parser && zMapGFFIsValidVersion(parser), bResult );
 
   if (parser->gff_version == ZMAPGFF_VERSION_2 )
     {
@@ -138,11 +139,7 @@ gboolean zMapGFFParseSequence(ZMapGFFParser parser, char *line, gboolean *sequen
 {
   gboolean bResult = FALSE ;
 
-  if (!parser)
-    return bResult ;
-
-  if (!zMapGFFIsValidVersion(parser))
-    return bResult ;
+  zMapReturnValIfFail(parser && zMapGFFIsValidVersion(parser), bResult );
 
   if (parser->gff_version == ZMAPGFF_VERSION_2 )
     {
@@ -173,11 +170,7 @@ gboolean zMapGFFParseLine(ZMapGFFParser parser, char *line)
 {
   gboolean bResult = FALSE ;
 
-  if (!parser)
-    return bResult ;
-
-  if (!zMapGFFIsValidVersion(parser))
-    return bResult ;
+  zMapReturnValIfFail(parser && zMapGFFIsValidVersion(parser), bResult );
 
   if (parser->gff_version == ZMAPGFF_VERSION_2)
     {
@@ -202,11 +195,7 @@ gboolean zMapGFFParseLineLength(ZMapGFFParser parser, char *line, gsize line_len
 {
   gboolean bResult = FALSE ;
 
-  if (!parser)
-    return bResult ;
-
-  if (!zMapGFFIsValidVersion(parser))
-    return bResult ;
+  zMapReturnValIfFail(parser && zMapGFFIsValidVersion(parser), bResult );
 
   if (parser->gff_version == ZMAPGFF_VERSION_2)
     {
@@ -231,11 +220,7 @@ gboolean zMapGFFParseLineLength(ZMapGFFParser parser, char *line, gsize line_len
  */
 void zMapGFFDestroyParser(ZMapGFFParser parser)
 {
-  if (!parser)
-    return ;
-
-  if (!zMapGFFIsValidVersion(parser))
-    return ;
+  zMapReturnIfFail(parser && zMapGFFIsValidVersion(parser));
 
   if (parser->gff_version == ZMAPGFF_VERSION_2)
     {
@@ -290,11 +275,7 @@ gboolean zMapGFFParserInitForFeatures(ZMapGFFParser parser, GHashTable *sources,
   gboolean result = FALSE ;
   GQuark locus_id ;
 
-  if (!parser)
-    return result ;
-
-  if (!zMapGFFIsValidVersion(parser))
-    return result ;
+  zMapReturnValIfFail(parser && zMapGFFIsValidVersion(parser) && sources, result);
 
   parser->sources = sources ;
   parser->parse_only = parse_only ;
@@ -339,10 +320,7 @@ gboolean zMapGFFGetFeatures(ZMapGFFParser parser, ZMapFeatureBlock feature_block
   int start,end;
   gboolean result = FALSE ;
 
-  if (!parser)
-    return result ;
-  if (!zMapGFFIsValidVersion(parser))
-    return result ;
+  zMapReturnValIfFail(parser && zMapGFFIsValidVersion(parser), result) ;
 
   if (parser->state != ZMAPGFF_PARSER_ERR)
     {
@@ -384,9 +362,18 @@ gboolean zMapGFFGetFeatures(ZMapGFFParser parser, ZMapFeatureBlock feature_block
      /* It is possible for features to be incomplete from GFF (e.g. transcripts without
       * an exon), we attempt to normalise them where possible...currently only
       * transcripts/exons. */
-      normaliseFeatures(&(parser->feature_sets)) ;
-
-      result = TRUE ;
+      if (parser->gff_version == ZMAPGFF_VERSION_2)
+      {
+        normaliseFeatures_V2(&(parser->feature_sets)) ;
+        result = TRUE ;
+      }
+      else if (parser->gff_version == ZMAPGFF_VERSION_3)
+      {
+        normaliseFeatures_V3(&(parser->feature_sets)) ;
+        result = TRUE ;
+      }
+      else
+        result = FALSE ;
 
     }
 
@@ -413,56 +400,47 @@ static void getFeatureArray(GQuark key_id, gpointer data, gpointer user_data)
 
 
 /*
- * Used by both versions.
- *
  * Features may be created incomplete by 'faulty' GFF files, here we try
  * to make them valid.
  */
-static void normaliseFeatures(GData **feature_sets)
+static void normaliseFeatures_V2(GData **feature_sets)
 {
   /* Look through all datasets.... */
-  g_datalist_foreach(feature_sets, checkFeatureSetCB, NULL) ;
+  g_datalist_foreach(feature_sets, checkFeatureSetCB_V2, NULL) ;
 
   return ;
 }
 
-
-
 /*
- * Used by both versions.
- *
  * A GDataForeachFunc() which checks to see if the dataset passed in has
  * mulitline features and if they are then checks each feature to make sure
  * it is complete/valid. Currently this is only transcripts...see checkFeatureCB().
  */
-static void checkFeatureSetCB(GQuark key_id, gpointer data, gpointer user_data_unused)
+static void checkFeatureSetCB_V2(GQuark key_id, gpointer data, gpointer user_data_unused)
 {
   ZMapGFFParserFeatureSet parser_feature_set = (ZMapGFFParserFeatureSet)data ;
 
   if (parser_feature_set->multiline_features)
     {
-      g_datalist_foreach(&(parser_feature_set->multiline_features), checkFeatureCB, NULL) ;
+      g_datalist_foreach(&(parser_feature_set->multiline_features), checkFeatureCB_V2, NULL) ;
     }
 
   return ;
 }
 
-
 /*
- * Used by both versions.
- *
  * A GDataForeachFunc() which checks to see if the feature passed in is
  * complete/valid. Currently just checks transcripts to make sure they
  * have at least one exon.
  */
-static void checkFeatureCB(GQuark key_id, gpointer data, gpointer user_data_unused)
+static void checkFeatureCB_V2(GQuark key_id, gpointer data, gpointer user_data_unused)
 {
   ZMapFeature feature = (ZMapFeature)data ;
 
   switch (feature->mode)
     {
       case ZMAPSTYLE_MODE_TRANSCRIPT:
-        zMapFeatureTranscriptNormalise(feature) ;
+          zMapFeatureTranscriptNormalise(feature) ;
         break ;
 
       default:
@@ -470,6 +448,86 @@ static void checkFeatureCB(GQuark key_id, gpointer data, gpointer user_data_unus
     }
 
   return ;
+}
+
+
+/*
+ * This traverses all featuresets.
+ */
+static void normaliseFeatures_V3(GData **feature_sets)
+{
+  g_datalist_foreach(feature_sets, checkFeatureSetCB_V3, NULL) ;
+  return ;
+}
+
+/*
+ * Makes corrections to introns in transcript features.
+ */
+static void checkFeatureSetCB_V3(GQuark key_id, gpointer data, gpointer user_data_unused)
+{
+  ZMapGFFParserFeatureSet parser_feature_set = (ZMapGFFParserFeatureSet)data ;
+  guint iRemoved = 0 ;
+
+  /*
+   * This traversal is to remove transcript features with no exons.
+   */
+  iRemoved = g_hash_table_foreach_remove(parser_feature_set->feature_set->features, removeTranscriptFeature, NULL);
+
+  /*
+   * This traversal is to normalize introns in each transcript feature
+   */
+  if (parser_feature_set->feature_set->features)
+  {
+    g_hash_table_foreach(parser_feature_set->feature_set->features, checkFeatureCB_V3, NULL) ;
+  }
+
+  return ;
+}
+
+/*
+ * Calls function to make correction to introns in transcript features.
+ */
+static void checkFeatureCB_V3(gpointer key_id, gpointer data, gpointer user_data_unused)
+{
+  ZMapFeature feature = (ZMapFeature)data ;
+
+  switch (feature->mode)
+    {
+      case ZMAPSTYLE_MODE_TRANSCRIPT:
+          zMapFeatureRemoveIntrons(feature) ;
+          zMapFeatureTranscriptRecreateIntrons(feature) ;
+        break ;
+
+      default:
+        break ;
+    }
+
+  return ;
+}
+
+/*
+ * Return true if the feature is a transcript with no exons; return false otherwise.
+ * This function simply signals whether or not the pointer is to be removed from the
+ * hash table, but does not delete what it points to. This latter operation is performed
+ * by the appropriate desroy function that has already been attached to the featureset.
+ */
+static gboolean removeTranscriptFeature(gpointer key, gpointer value, gpointer user_data_unused)
+{
+  gboolean bEmptyTranscript = FALSE ;
+  ZMapFeature pFeature = NULL ;
+  pFeature = (ZMapFeature) value ;
+
+  zMapReturnValIfFail(pFeature, FALSE ) ;
+
+  if (pFeature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
+    {
+      if (!pFeature->feature.transcript.exons->len)
+        {
+          bEmptyTranscript = TRUE ;
+        }
+    }
+
+  return bEmptyTranscript ;
 }
 
 
@@ -482,10 +540,7 @@ static void checkFeatureCB(GQuark key_id, gpointer data, gpointer user_data_unus
 void zMapGFFParseSetSourceHash(ZMapGFFParser parser,
 			       GHashTable *source_2_feature_set, GHashTable *source_2_sourcedata)
 {
-  if (!parser)
-    return ;
-  if (!zMapGFFIsValidVersion(parser))
-    return ;
+  zMapReturnIfFail(parser && zMapGFFIsValidVersion(parser));
 
   parser->source_2_feature_set = source_2_feature_set ;
   parser->source_2_sourcedata = source_2_sourcedata ;
@@ -513,8 +568,8 @@ void zMapGFFParseSetSourceHash(ZMapGFFParser parser,
 
 
       g_hash_table_insert(parser->source_2_sourcedata,
-			  GINT_TO_POINTER(parser->locus_set_id),
-			  source_data) ;
+                          GINT_TO_POINTER(parser->locus_set_id),
+                          source_data) ;
 
     }
 
@@ -532,10 +587,7 @@ void zMapGFFParseSetSourceHash(ZMapGFFParser parser,
  */
 GList *zMapGFFGetFeaturesets(ZMapGFFParser parser)
 {
-  if (!parser)
-    return NULL ;
-  if (!zMapGFFIsValidVersion(parser))
-    return NULL ;
+  zMapReturnIfFail(parser && zMapGFFIsValidVersion(parser));
 
   return (parser->src_feature_sets) ;
 }
@@ -551,10 +603,7 @@ GList *zMapGFFGetFeaturesets(ZMapGFFParser parser)
  */
 void zMapGFFSetStopOnError(ZMapGFFParser parser, gboolean stop_on_error)
 {
-  if (!parser)
-    return ;
-  if (!zMapGFFIsValidVersion(parser))
-    return ;
+  zMapReturnIfFail(parser && zMapGFFIsValidVersion(parser));
 
   if (parser->state != ZMAPGFF_PARSER_ERR)
     parser->stop_on_error = stop_on_error ;
@@ -573,10 +622,7 @@ void zMapGFFSetStopOnError(ZMapGFFParser parser, gboolean stop_on_error)
  */
 void zMapGFFSetSOCompliance(ZMapGFFParser parser, gboolean SO_compliant)
 {
-  if (!parser)
-    return ;
-  if (!zMapGFFIsValidVersion(parser))
-    return ;
+  zMapReturnIfFail(parser && zMapGFFIsValidVersion(parser));
 
   if (parser->state != ZMAPGFF_PARSER_ERR)
     parser->SO_compliant = SO_compliant ;
@@ -592,10 +638,7 @@ void zMapGFFSetSOCompliance(ZMapGFFParser parser, gboolean SO_compliant)
  */
 void zMapGFFSetFeatureClip(ZMapGFFParser parser, ZMapGFFClipMode clip_mode)
 {
-  if (!parser)
-    return ;
-  if (!zMapGFFIsValidVersion(parser))
-    return ;
+  zMapReturnIfFail(parser && zMapGFFIsValidVersion(parser));
 
   if (parser->state != ZMAPGFF_PARSER_ERR)
     {
@@ -613,10 +656,7 @@ void zMapGFFSetFeatureClip(ZMapGFFParser parser, ZMapGFFClipMode clip_mode)
  */
 void zMapGFFSetFeatureClipCoords(ZMapGFFParser parser, int start, int end)
 {
-  if (!parser)
-    return ;
-  if (!zMapGFFIsValidVersion(parser))
-    return ;
+  zMapReturnIfFail(parser && zMapGFFIsValidVersion(parser));
 
   if (start <= 0 || end <= 0 || end < start )
     return ;
@@ -641,10 +681,7 @@ void zMapGFFSetFeatureClipCoords(ZMapGFFParser parser, int start, int end)
  */
 void zMapGFFSetDefaultToBasic(ZMapGFFParser parser, gboolean default_to_basic)
 {
-  if (!parser)
-    return ;
-  if (!zMapGFFIsValidVersion(parser))
-    return ;
+  zMapReturnIfFail(parser && zMapGFFIsValidVersion(parser)) ;
 
   if (parser->state != ZMAPGFF_PARSER_ERR)
     parser->default_to_basic = default_to_basic ;
@@ -662,10 +699,7 @@ void zMapGFFSetDefaultToBasic(ZMapGFFParser parser, gboolean default_to_basic)
 int zMapGFFGetVersion(ZMapGFFParser parser)
 {
   int version = ZMAPGFF_VERSION_UNKNOWN ;
-  if (!parser)
-    return ZMAPGFF_VERSION_UNKNOWN ;
-  if (!zMapGFFIsValidVersion(parser))
-    return ZMAPGFF_VERSION_UNKNOWN ;
+  zMapReturnValIfFail(parser && zMapGFFIsValidVersion(parser), ZMAPGFF_VERSION_UNKNOWN ) ;
 
   if (parser->state != ZMAPGFF_PARSER_ERR)
     version = parser->gff_version ;
@@ -683,10 +717,7 @@ int zMapGFFGetVersion(ZMapGFFParser parser)
  */
 int zMapGFFGetLineNumber(ZMapGFFParser parser)
 {
-  if (!parser)
-    return 0 ;
-  if (!zMapGFFIsValidVersion(parser))
-    return 0 ;
+  zMapReturnValIfFail(parser && zMapGFFIsValidVersion(parser), 0 );
 
   return parser->line_count ;
 }
@@ -700,10 +731,7 @@ int zMapGFFGetLineNumber(ZMapGFFParser parser)
  */
 GError *zMapGFFGetError(ZMapGFFParser parser)
 {
-  if (!parser)
-    return NULL ;
-  if (!zMapGFFIsValidVersion(parser))
-    return NULL ;
+  zMapReturnValIfFail(parser && zMapGFFIsValidVersion(parser), NULL);
 
   return parser->error ;
 }
@@ -712,10 +740,7 @@ GError *zMapGFFGetError(ZMapGFFParser parser)
 
 int zMapGFFParserGetNumFeatures(ZMapGFFParser parser)
 {
-  if (!parser)
-    return 0 ;
-  if (!zMapGFFIsValidVersion(parser))
-    return 0 ;
+  zMapReturnValIfFail(parser && zMapGFFIsValidVersion(parser), 0) ;
   return(parser->num_features) ;
 }
 
@@ -730,10 +755,7 @@ int zMapGFFParserGetNumFeatures(ZMapGFFParser parser)
 gboolean zMapGFFTerminated(ZMapGFFParser parser)
 {
   gboolean result = TRUE ;
-  if (!parser)
-    return result ;
-  if (!zMapGFFIsValidVersion(parser))
-    return result ;
+  zMapReturnValIfFail( parser && zMapGFFIsValidVersion(parser), result) ;
 
   if (parser->state != ZMAPGFF_PARSER_ERR)
     result = FALSE ;
@@ -753,10 +775,7 @@ gboolean zMapGFFTerminated(ZMapGFFParser parser)
  */
 void zMapGFFSetFreeOnDestroy(ZMapGFFParser parser, gboolean free_on_destroy)
 {
-  if (!parser)
-    return ;
-  if (!zMapGFFIsValidVersion(parser))
-    return ;
+  zMapReturnIfFail(parser && zMapGFFIsValidVersion(parser));
 
   if (parser->state != ZMAPGFF_PARSER_ERR)
     parser->free_on_destroy = free_on_destroy ;
@@ -764,6 +783,80 @@ void zMapGFFSetFreeOnDestroy(ZMapGFFParser parser, gboolean free_on_destroy)
   return ;
 }
 
+
+
+gboolean zMapGFFSequenceDestroy(ZMapSequence sequence)
+{
+  gboolean bReturn = FALSE ;
+
+  zMapReturnValIfFail(sequence, bReturn) ;
+
+  if (sequence->sequence)
+    g_free(sequence->sequence) ;
+  /* g_free(sequence) ; */
+
+  return bReturn ;
+}
+
+
+ZMapSequence zMapGFFGetSequence(ZMapGFFParser parser_base, GQuark sequence_name)
+{
+  /*
+   * Pointer to ZMapSequenceStruct
+   */
+  ZMapSequence sequence = NULL;
+
+  zMapReturnValIfFail(parser_base && sequence_name, sequence) ;
+
+  /*
+   * We do different things here depending on the GFF version.
+   */
+  if (parser_base->gff_version == ZMAPGFF_VERSION_2)
+    {
+      ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
+
+      /* There is only one sequence in the GFF2 parser and that's the genomic sequence. If the
+         given name is the genomic sequence name, return it. */
+      if (parser->header_flags.done_header && g_quark_from_string(parser->sequence_name) == sequence_name)
+        {
+          if(parser->seq_data.type != ZMAPSEQUENCE_NONE && (parser->seq_data.sequence != NULL && parser->raw_line_data == NULL))
+            {
+              sequence = g_new0(ZMapSequenceStruct, 1);
+              *sequence = parser->seq_data;
+              sequence->name = g_quark_from_string(parser->sequence_name);
+
+              /* So we don't copy empty data */
+              parser->seq_data.type     = ZMAPSEQUENCE_NONE;
+              parser->seq_data.sequence = NULL; /* So it doesn't get free'd */
+            }
+        }
+    }
+  else if (parser_base->gff_version == ZMAPGFF_VERSION_3)
+    {
+      /* Loop through all of the parsed sequences looking for the one with the given name */
+      ZMapGFF3Parser parser = (ZMapGFF3Parser) parser_base ;
+      int sequence_record = 0 ;
+
+      for ( ; sequence_record < parser->nSequenceRecords; ++sequence_record)
+        {
+          if (parser->pSeqData[sequence_record].name == sequence_name)
+            {
+              /*
+               * Note that the v3 parser controls the lifetime of its pSeqData objects.
+               */
+              sequence = g_new0(ZMapSequenceStruct, 1) ;
+              sequence->name = parser->pSeqData[sequence_record].name ;
+              sequence->type = parser->pSeqData[sequence_record].type ;
+              sequence->length = parser->pSeqData[sequence_record].length ;
+              sequence->sequence = g_strdup(parser->pSeqData[sequence_record].sequence) ;
+
+              break ;
+            }
+        }
+    }
+
+  return sequence;
+}
 
 
 

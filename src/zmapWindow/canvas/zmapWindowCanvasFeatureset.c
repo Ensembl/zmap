@@ -982,6 +982,7 @@ ZMapWindowCanvasItem zMapWindowCanvasItemFeaturesetGetFeaturesetItem(FooCanvasGr
       featureset->strand = strand;
       featureset->frame = frame;
       featureset->style = style;
+      featureset->draw_truncation_glyphs = FALSE ;
 
       featureset->overlap = TRUE;
 

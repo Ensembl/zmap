@@ -65,25 +65,25 @@ typedef struct     ZMapMLFStruct_      *ZMapMLF ;
  * Creation/destruction functions.
  */
 ZMapMLF zMapMLFCreate() ;
-gboolean zMapMLFEmpty(ZMapMLF const ) ;
+gboolean zMapMLFEmpty(ZMapMLF ) ;
 gboolean zMapMLFDestroy(ZMapMLF) ;
 
 /*
  * Data manipulation and other functions.
  */
-unsigned int zMapMLFNumID(const ZMapMLF const ) ;
-unsigned int zMapMLFNumFeatures(const ZMapMLF const, GQuark ) ;
-gpointer zMapMLFIsIDPresent(const ZMapMLF const, GQuark ) ;
-gboolean zMapMLFAddID(const ZMapMLF const, GQuark) ;
+unsigned int zMapMLFNumID(ZMapMLF) ;
+unsigned int zMapMLFNumFeatures(ZMapMLF, GQuark ) ;
+gpointer zMapMLFIsIDPresent(ZMapMLF, GQuark ) ;
+gboolean zMapMLFAddID(ZMapMLF, GQuark) ;
 gboolean zMapMLFRemoveID(ZMapMLF const, GQuark ) ;
-gboolean zMapMLFIsFeaturePresent(const ZMapMLF const, GQuark, const ZMapFeature const ) ;
-gboolean zMapMLFAddFeatureToID(const ZMapMLF const , GQuark, const ZMapFeature const ) ;
-gboolean zMapMLFRemoveFeatureFromID(const ZMapMLF const, GQuark , const ZMapFeature const ) ;
+gboolean zMapMLFIsFeaturePresent(ZMapMLF, GQuark, ZMapFeature ) ;
+gboolean zMapMLFAddFeatureToID(ZMapMLF, GQuark, ZMapFeature ) ;
+gboolean zMapMLFRemoveFeatureFromID(ZMapMLF, GQuark , ZMapFeature ) ;
 
 /*
  * Iteration mechanisms.
  */
-gboolean zMapMLFIDIteration(const ZMapMLF const, gboolean (*)(GQuark, GHashTable *) ) ;
+gboolean zMapMLFIDIteration(ZMapMLF, gboolean (*)(GQuark, GHashTable *) ) ;
 
 
 #endif

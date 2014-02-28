@@ -1,14 +1,46 @@
+/*  File: zmapGFFStringUtils.c
+ *  Author: Steve Miller (sm23@sanger.ac.uk)
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
+ *-------------------------------------------------------------------
+ * ZMap is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ * or see the on-line version at http://www.gnu.org/copyleft/gpl.txt
+ *-------------------------------------------------------------------
+ * This file is part of the ZMap genome database package
+ * originated by
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk,
+ *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk
+ *
+ * Description: Some string handling utilities used in dealing with
+ * GFFv3 data; most important thing in here is the tokenizer.
+ *
+ *-------------------------------------------------------------------
+ */
+
 #include "zmapGFFStringUtils.h"
 
 /*
  * Find unquoted (by q) ocurrances of the character c in the
  * string s; count them and store their positions.
  */
-unsigned int *zMapGFFStr_find_unquoted(const char * const sIn, 
-                                       char cQuote, 
-                                       char cToFind, 
-                                       unsigned int *n, 
-                                       void*(*local_malloc)(size_t), 
+unsigned int *zMapGFFStr_find_unquoted(const char * const sIn,
+                                       char cQuote,
+                                       char cToFind,
+                                       unsigned int *n,
+                                       void*(*local_malloc)(size_t),
                                        void(*local_free)(void*))
 {
   gboolean bQuoted = FALSE ;
@@ -124,6 +156,85 @@ char * zMapGFFStr_substring(const char* const sS1, const char* const sS2, void*(
 
 
 /*
+ * This function looks for the first occurrence of sToFind in sInput and replaces it with sReplacement.
+ * A newly allocated string is returned.
+ */
+gboolean zMapGFFStr_substring_replace(const char * const sInput, const char * const sToFind, const char * const sReplacement,
+  char ** sOut )
+{
+  gboolean bResult = FALSE ;
+  char *sFirst = NULL,
+    *sSecond = NULL,
+    *sPos = NULL ;
+  size_t iQueryLength ;
+  if (!sInput || !*sInput || !sToFind || !*sToFind || !sReplacement || !*sReplacement )
+    return bResult ;
+  iQueryLength = strlen(sToFind) ;
+  sPos = strstr(sInput, sToFind) ;
+  if (sPos)
+    {
+      sFirst = g_strndup(sInput, (size_t)(sPos-sInput)) ;
+      sSecond = g_strdup(sPos+iQueryLength) ;
+      *sOut = g_strdup_printf("%s%s%s", sFirst, sReplacement, sSecond) ;
+
+      if (sFirst)
+        g_free(sFirst) ;
+      if (sSecond)
+        g_free(sSecond) ;
+
+      bResult = TRUE ;
+    }
+  else
+    {
+      *sOut = g_strdup(sInput) ;
+      bResult = FALSE ;
+    }
+
+  return bResult ;
+}
+
+
+/*
+ * Replace all occurrences of sToFind with sReplacement.
+ */
+gboolean zMapGFFStr_substring_replace_n(const char * const sInput, const char * const sToFind, const char * const sReplacement,
+  char ** psOut)
+{
+  gboolean bResult = FALSE, bReplaced = FALSE  ;
+  if (!sInput || !*sInput || !sToFind || !*sToFind || !sReplacement || !*sReplacement )
+    return bResult ;
+
+  //bResult = zMapGFFStr_substring_replace(sInput, sToFind, sReplacement, psOut) ;
+
+  /*
+   * Now, how to do this many times
+   */
+  char *sInputTemp = g_strdup(sInput),
+    *sOutputTemp = NULL ;
+  while (1)
+    {
+      bReplaced = zMapGFFStr_substring_replace(sInputTemp, sToFind, sReplacement, &sOutputTemp) ;
+      g_free(sInputTemp) ;
+      sInputTemp = sOutputTemp ;
+
+      if (!bReplaced)
+        {
+          break ;
+        }
+      else
+        {
+          bResult = TRUE ;
+        }
+    }
+
+  *psOut = sOutputTemp ;
+
+  return bResult ;
+}
+
+
+
+/*
  * Substring based tokenizer; returns dynamically allocated
  * array of strings. We allow empty tokens to be stored if flag is set.
  * Note that this function also removes leading and trailing spaces
@@ -169,7 +280,7 @@ char** zMapGFFStr_tokenizer(char cDelim, const char * const sTarg, unsigned int 
           sTokens[iNumTokens-1] = g_strdup(sBuff) ;
         }
       sPosLast = sPos + 1 ;
-  
+
       if (iNumTokens == (iTokenLimit-1))
         break ;
     }
@@ -221,28 +332,28 @@ char** zMapGFFStr_tokenizer(char cDelim, const char * const sTarg, unsigned int 
    * Loop whilst we walk along the string.
    */
   while ((sResult = strchr(sTarget, cDelim)))
-  {
-
-    bInclude = TRUE ;
-    if ((sResult == sTarget) && !bIncludeEmpty)
-      bInclude = FALSE ;
-    if (bInclude)
     {
-      sToken = zMapGFFStr_substring(sTarget, sResult, local_malloc) ;
-      zMapGFFStr_remove_char(sToken, cToRemove) ;
-      if (strlen(sToken))
-      {
-        zMapGFFStr_array_add_element(&sTokens, &iNumTokens, local_malloc, local_free) ;
-        sTokens[iNumTokens-1] = sToken ;
-      }
-      else if (sToken)
-        local_free(sToken) ;
-    }
-    sTarget = sResult + iDelimLength ;
 
-    if (iNumTokens == (iTokenLimit-1))
-      break ;
-  }
+      bInclude = TRUE ;
+      if ((sResult == sTarget) && !bIncludeEmpty)
+        bInclude = FALSE ;
+      if (bInclude)
+        {
+          sToken = zMapGFFStr_substring(sTarget, sResult, local_malloc) ;
+          zMapGFFStr_remove_char(sToken, cToRemove) ;
+          if (strlen(sToken))
+            {
+              zMapGFFStr_array_add_element(&sTokens, &iNumTokens, local_malloc, local_free) ;
+              sTokens[iNumTokens-1] = sToken ;
+            }
+          else if (sToken)
+            local_free(sToken) ;
+        }
+      sTarget = sResult + iDelimLength ;
+
+      if (iNumTokens == (iTokenLimit-1))
+        break ;
+    }
 
   /*
    * Do the final one.
@@ -251,17 +362,17 @@ char** zMapGFFStr_tokenizer(char cDelim, const char * const sTarg, unsigned int 
   if ((sEndTarget == sTarget) && !bIncludeEmpty)
     bInclude = FALSE ;
   if (bInclude)
-  {
-    sToken = zMapGFFStr_substring(sTarget, sEndTarget, local_malloc) ;
-    zMapGFFStr_remove_char(sToken, cToRemove) ;
-    if (strlen(sToken))
     {
-      zMapGFFStr_array_add_element(&sTokens, &iNumTokens, local_malloc, local_free) ;
-      sTokens[iNumTokens-1] = sToken ;
+      sToken = zMapGFFStr_substring(sTarget, sEndTarget, local_malloc) ;
+      zMapGFFStr_remove_char(sToken, cToRemove) ;
+      if (strlen(sToken))
+        {
+          zMapGFFStr_array_add_element(&sTokens, &iNumTokens, local_malloc, local_free) ;
+          sTokens[iNumTokens-1] = sToken ;
+        }
+      else if (sToken)
+        local_free(sToken) ;
     }
-    else if (sToken)
-      local_free(sToken) ;
-  }
 
   /*
    * Store the number of tokens found.
@@ -281,12 +392,12 @@ char** zMapGFFStr_tokenizer(char cDelim, const char * const sTarg, unsigned int 
  * instances of the argument cQuote. However, it does not check that the cQuote
  * characters are in matched pairs; thus we could go off the end of the input string.
  */
-char** zMapGFFStr_tokenizer02(char cDelim, 
-                              char cQuote, 
-                              const char * const sTarget, 
+char** zMapGFFStr_tokenizer02(char cDelim,
+                              char cQuote,
+                              const char * const sTarget,
                               unsigned int * piNumTokens,
-                              gboolean bIncludeEmpty, 
-                              void*(*local_malloc)(size_t), 
+                              gboolean bIncludeEmpty,
+                              void*(*local_malloc)(size_t),
                               void(*local_free)(void*))
 {
   static const char cToRemove = ' ';

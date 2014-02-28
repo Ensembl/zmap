@@ -47,6 +47,7 @@
 #include <ZMap/zmapFeature.h>
 #include <ZMap/zmapConfigIni.h>
 #include <ZMap/zmapConfigStrings.h>
+#include <ZMap/zmapSOParser.h>
 #include <zmapWindowState.h>
 #include <zmapWindowContainers.h>
 #include <zmapWindowCanvasDraw.h>
@@ -1771,7 +1772,12 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
 	  if (feature_length)
 	    select.feature_desc.feature_length = g_strdup_printf("%d", feature_length) ;
 
-	  select.feature_desc.feature_term   = feature_term;
+	  /* select.feature_desc.feature_term   = feature_term; */
+	  const char * sSOAcc = g_quark_to_string(feature->SO_accession) ;
+	  char * sSOAcc_id = zMapSOIDDataName2SOAcc(sSOAcc) ;
+	  select.feature_desc.feature_term =  sSOAcc_id ? g_strdup_printf("%s (%s)", sSOAcc, sSOAcc_id) : g_strdup(sSOAcc) ;
+	  if (sSOAcc_id)
+	    g_free(sSOAcc_id) ;
 	}
 
 

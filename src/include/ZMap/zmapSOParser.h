@@ -80,15 +80,15 @@ ZMapStyleMode zMapSOSetGetStyleModeFromID(ZMapSOSetInUse, unsigned int ) ;
 ZMapHomolType zMapSOSetGetHomolFromID(ZMapSOSetInUse, unsigned int ) ;
 ZMapStyleMode zMapSOSetGetStyleModeFromName(ZMapSOSetInUse, const char * const ) ;
 ZMapSOIDData zMapSOIDDataCreate() ;
-ZMapSOIDData zMapSOIDDataCC(const ZMapSOIDData const) ;
+ZMapSOIDData zMapSOIDDataCC(ZMapSOIDData) ;
 ZMapSOIDData zMapSOIDDataCreateFromData(unsigned int, const char * const, ZMapStyleMode , ZMapHomolType ) ;
-gboolean zMapSOIDDataDestroy(ZMapSOIDData const) ;
-unsigned int zMapSOIDDataGetID(const ZMapSOIDData const) ;
-char *       zMapSOIDDataGetIDAsString(const ZMapSOIDData const ) ;
+gboolean zMapSOIDDataDestroy(ZMapSOIDData) ;
+unsigned int zMapSOIDDataGetID(ZMapSOIDData) ;
+char *       zMapSOIDDataGetIDAsString(ZMapSOIDData ) ;
 char *       zMapSOIDDataName2SOAcc(const char * const ) ;
-char * zMapSOIDDataGetName(const ZMapSOIDData const) ;
-ZMapStyleMode zMapSOIDDataGetStyleMode(const ZMapSOIDData const) ;
-ZMapHomolType zMapSOIDDataGetHomol(const ZMapSOIDData const) ;
+char * zMapSOIDDataGetName(ZMapSOIDData ) ;
+ZMapStyleMode zMapSOIDDataGetStyleMode(ZMapSOIDData ) ;
+ZMapHomolType zMapSOIDDataGetHomol(ZMapSOIDData) ;
 
 
 
@@ -127,15 +127,15 @@ typedef enum
  * Creation/destruction/access functions for SO ID object.
  */
 ZMapSOID zMapSOIDCreate() ;
-gboolean zMapSOIDCopy(ZMapSOID const, const ZMapSOID const) ;
-gboolean zMapSOIDEquals(const ZMapSOID const, const ZMapSOID const) ;
+gboolean zMapSOIDCopy(ZMapSOID, ZMapSOID ) ;
+gboolean zMapSOIDEquals(ZMapSOID ,ZMapSOID ) ;
 gboolean zMapSOIDSet(ZMapSOID, const char* const) ;
-gboolean zMapSOIDInitialize(ZMapSOID const) ;
-gboolean zMapSOIDIsValid(const ZMapSOID const) ;
+gboolean zMapSOIDInitialize(ZMapSOID) ;
+gboolean zMapSOIDIsValid(ZMapSOID) ;
 unsigned int zMapSOIDParseString(const char * const) ;
-unsigned int zMapSOIDGetIDNumber(const ZMapSOID const) ;
-char * zMapSOIDGetIDString(const ZMapSOID const) ;
-gboolean zMapSOIDDestroy(ZMapSOID const) ;
+unsigned int zMapSOIDGetIDNumber(ZMapSOID) ;
+char * zMapSOIDGetIDString(ZMapSOID) ;
+gboolean zMapSOIDDestroy(ZMapSOID) ;
 gboolean zMapSOIDIsAccessionNumber(const char * const ) ;
 
 
@@ -143,15 +143,15 @@ gboolean zMapSOIDIsAccessionNumber(const char * const ) ;
  * Creation/destruction/access functions for SO Terms.
  */
 ZMapSOTerm zMapSOTermCreate() ;
-gboolean zMapSOTermDestroy(ZMapSOTerm const ) ;
+gboolean zMapSOTermDestroy(ZMapSOTerm) ;
 
-gboolean zMapSOTermCopy(ZMapSOTerm const, const ZMapSOTerm const) ;
-gboolean zMapSOTermEquals(const ZMapSOTerm const, const ZMapSOTerm const ) ;
+gboolean zMapSOTermCopy(ZMapSOTerm , ZMapSOTerm ) ;
+gboolean zMapSOTermEquals(ZMapSOTerm ,ZMapSOTerm ) ;
 
-gboolean zMapSOTermSetName(ZMapSOTerm const, const char* const ) ;
-char *   zMapSOTermGetName(const ZMapSOTerm const) ;
-gboolean zMapSOTermSetID(ZMapSOTerm const , const ZMapSOID const) ;
-ZMapSOID zMapSOTermGetID(const ZMapSOTerm const) ;
+gboolean zMapSOTermSetName(ZMapSOTerm , const char* const ) ;
+char *   zMapSOTermGetName(ZMapSOTerm ) ;
+gboolean zMapSOTermSetID(ZMapSOTerm , ZMapSOID ) ;
+ZMapSOID zMapSOTermGetID(ZMapSOTerm) ;
 
 gboolean zMapSOTermIsValid(ZMapSOTerm) ;
 
@@ -160,35 +160,35 @@ gboolean zMapSOTermIsValid(ZMapSOTerm) ;
  * Access functions for SO Collection.
  */
 ZMapSOCollection zMapSOCollectionCreate() ;
-unsigned int zMapSOCollectionGetNumTerms(const ZMapSOCollection const ) ;
-gboolean zMapSOCollectionAddSOTerm(ZMapSOCollection const, const ZMapSOTerm const) ;
-gboolean zMapSOCollectionDestroy(ZMapSOCollection const) ;
-gboolean zMapSOCollectionIsTermPresent(const ZMapSOCollection const, const ZMapSOTerm const) ;
-gboolean zMapSOCollectionIsNamePresent(const ZMapSOCollection const, const char* const) ;
-ZMapSOID zMapSOCollectionFindIDFromName(const ZMapSOCollection const, const char* const) ;
-char *   zMapSOCollectionFindNameFromID(const ZMapSOCollection const, const ZMapSOID const) ;
-ZMapSOTerm zMapSOCollectionGetTerm(const ZMapSOCollection const, unsigned int) ;
-gboolean zMapSOCollectionCheck(const ZMapSOCollection const ) ;
+unsigned int zMapSOCollectionGetNumTerms(ZMapSOCollection ) ;
+gboolean zMapSOCollectionAddSOTerm(ZMapSOCollection, ZMapSOTerm ) ;
+gboolean zMapSOCollectionDestroy(ZMapSOCollection ) ;
+gboolean zMapSOCollectionIsTermPresent(ZMapSOCollection , ZMapSOTerm ) ;
+gboolean zMapSOCollectionIsNamePresent(ZMapSOCollection , const char* const) ;
+ZMapSOID zMapSOCollectionFindIDFromName(ZMapSOCollection , const char* const) ;
+char *   zMapSOCollectionFindNameFromID(ZMapSOCollection , ZMapSOID ) ;
+ZMapSOTerm zMapSOCollectionGetTerm( ZMapSOCollection , unsigned int) ;
+gboolean zMapSOCollectionCheck( ZMapSOCollection ) ;
 
 
 /*
  * Parsing functions.
  */
 ZMapSOParser zMapSOParserCreate() ;
-gboolean zMapSOParserInitialize(ZMapSOParser const, gboolean) ;
-gboolean zMapSOParserInitializeForLine(ZMapSOParser const) ;
-gboolean zMapSOParserDestroy(ZMapSOParser const) ;
-ZMapSOCollection zMapSOParserGetCollection(ZMapSOParser const) ;
-gboolean zMapSOParseLine(ZMapSOParser const, const char * const) ;
-GError *zMapSOParserGetError(const ZMapSOParser const) ;
-unsigned int zMapSOParserGetLineCount(const ZMapSOParser const) ;
-gboolean zMapSOParserSetStopOnError(ZMapSOParser const, gboolean) ;
-gboolean zMapSOParserTerminated(const ZMapSOParser const) ;
+gboolean zMapSOParserInitialize(ZMapSOParser , gboolean) ;
+gboolean zMapSOParserInitializeForLine(ZMapSOParser) ;
+gboolean zMapSOParserDestroy(ZMapSOParser ) ;
+ZMapSOCollection zMapSOParserGetCollection(ZMapSOParser) ;
+gboolean zMapSOParseLine(ZMapSOParser, const char * const) ;
+GError *zMapSOParserGetError( ZMapSOParser) ;
+unsigned int zMapSOParserGetLineCount(ZMapSOParser) ;
+gboolean zMapSOParserSetStopOnError(ZMapSOParser , gboolean) ;
+gboolean zMapSOParserTerminated(ZMapSOParser) ;
 
 /*
  * File reading functions.
  */
-gboolean zMapSOParseFile(ZMapSOParser const, const char * const) ;
+gboolean zMapSOParseFile(ZMapSOParser, const char * const) ;
 ZMapSOCollection zMapSOReadFile(const char* const) ;
 
 

@@ -23,6 +23,7 @@
  *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk
  *
  * Description: Private header for glyph "objects".
  *
@@ -34,6 +35,12 @@
 
 #include <zmapWindowCanvasFeatureset_I.h>
 #include <zmapWindowCanvasGlyph.h>
+
+/*
+ * Uncomment this #define to make it draw the
+ * truncation glyphs.
+ */
+/* #define INCLUDE_TRUNCATION_GLYPHS 1 */
 
 gboolean zmap_window_canvas_set_glyph(FooCanvasItem *foo,
 					     ZMapWindowCanvasGlyph glyph, ZMapFeatureTypeStyle style,

@@ -1,4 +1,35 @@
-
+/*  File: zmapGFFHeader.c
+ *  Author: Steve Miller (sm23@sanger.ac.uk)
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
+ *-------------------------------------------------------------------
+ * ZMap is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ * or see the on-line version at http://www.gnu.org/copyleft/gpl.txt
+ *-------------------------------------------------------------------
+ * This file is part of the ZMap genome database package
+ * originated by
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk,
+ *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk
+ *
+ * Description: Header object storage and management for GFFv3. This
+ * refers to the internal header of the parser (rather than what were
+ * referred to as headers in v2; these are called "directives" in v3).
+ *
+ *-------------------------------------------------------------------
+ */
 #include <string.h>
 #include <ZMap/zmapGFF.h>
 
@@ -47,7 +78,7 @@ ZMapGFFHeader zMapGFFCreateHeader()
 /*
  * Data utility to get a int data member stored in a directive
 */
-int zMapGFFGetDirectiveIntData(const ZMapGFFHeader const pHeader, ZMapGFFDirectiveName cTheDirName, unsigned int iIndex)
+int zMapGFFGetDirectiveIntData(ZMapGFFHeader pHeader, ZMapGFFDirectiveName cTheDirName, unsigned int iIndex)
 {
   ZMapGFFDirectiveInfoStruct cTheDirectiveInfo;
   int iResult = 0 ;
@@ -70,7 +101,7 @@ int zMapGFFGetDirectiveIntData(const ZMapGFFHeader const pHeader, ZMapGFFDirecti
 /*
  * Data utility to get a string data member from a directive
 */
-char *zMapGFFGetDirectiveStringData(const ZMapGFFHeader const pHeader, ZMapGFFDirectiveName cTheDirName, unsigned int iIndex)
+char *zMapGFFGetDirectiveStringData(ZMapGFFHeader pHeader, ZMapGFFDirectiveName cTheDirName, unsigned int iIndex)
 {
   ZMapGFFDirectiveInfoStruct cTheDirectiveInfo ;
   char* sResult = NULL ;
@@ -94,7 +125,7 @@ char *zMapGFFGetDirectiveStringData(const ZMapGFFHeader const pHeader, ZMapGFFDi
 /*
  * Function to destroy a GFF3 header object.
  */
-void zMapGFFHeaderDestroy(ZMapGFFHeader const pHeader)
+void zMapGFFHeaderDestroy(ZMapGFFHeader pHeader)
 {
   unsigned int iDir;
   if (!pHeader)
@@ -119,7 +150,7 @@ void zMapGFFHeaderDestroy(ZMapGFFHeader const pHeader)
  * Tests to see if the got_minimal header flag should be set. This is should only be
  * set if we have both the gff_version and got_sequence_region flags set.
  */
-void zMapGFFHeaderMinimalTest(const ZMapGFFHeader const pHeader)
+void zMapGFFHeaderMinimalTest(ZMapGFFHeader pHeader)
 {
   if (!pHeader)
     return ;
