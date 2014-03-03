@@ -229,7 +229,6 @@ ZMapWindowCanvasGlyph zMapWindowCanvasGetGlyph(ZMapWindowFeaturesetItem features
 	    {
 	      g_hash_table_insert(glyph_cache_G,GUINT_TO_POINTER(siggy),glyph) ;
 	      glyph->sig = siggy ;
-	      //zMapLogWarning("created glyph %s",g_quark_to_string(siggy)) ;
 	    }
 	}
     }
@@ -246,28 +245,6 @@ void zMapWindowCanvasGlyphPaintSubFeature(ZMapWindowFeaturesetItem featureset, Z
   double y = 0.0 ;
 
   zMapReturnIfFail((featureset && feature && glyph && drawable)) ;
-
-  /* if (glyph->which == ZMAP_GLYPH_THREEPRIME)
-    {
-      y = feature->feature->x2 + 1.0 ;
-    }
-  else if (glyph->which == ZMAP_GLYPH_FIVEPRIME)
-    {
-      y = feature->feature->x1 ;
-    }
-  else if (glyph->which == ZMAP_GLYPH_TRUNCATED_START )
-    {
-      y = feature->y1 ;
-    }
-  else if (glyph->which == ZMAP_GLYPH_TRUNCATED_END )
-    {
-      y = feature->y2 + 1.0 ;
-    }
-  else
-    {
-      y = feature->feature->x1 ;
-    }
-  */
 
   y = (glyph->which == 3 ? feature->feature->x2 + 1 : feature->feature->x1) ;
 
@@ -661,12 +638,16 @@ static ZMapStyleGlyphShape getGlyphShape(ZMapFeatureTypeStyle style, int which, 
 
 
 /*
- * Draw the truncation glyph as a standalone shape.There are several steps:
+ * Draw the truncation glyph as a standalone shape. There are several steps:
  *
  * (1) Basic properties of glyph.
- * (2) World coordinates of glyph.
- * (3) Canvas coordinates of glyph.
+ * (2) World coordinates of glyph. The call to zmap_window_canvas_paint_feature_glyph()
+ *     makes a call to convert to canvas coordinates.
  * (4) Draw the thing.
+ *
+ * A more general function to just draw a standalone glyph could be based on
+ * the approach used here which seems to be robust and not muckup anything
+ * else. Not needed at the moment though.
  *
  */
 void zMapWindowCanvasGlyphDrawTruncationGlyph(FooCanvasItem *foo,
@@ -708,11 +689,6 @@ void zMapWindowCanvasGlyphDrawTruncationGlyph(FooCanvasItem *foo,
       /* error; but should have been caught already */
       return ;
     }
-
-  /*
-   * Set coordinates in pixels.
-   */
-  setGlyphCanvasCoords(featureset, feature, glyph, y) ;
 
   /*
    * At last, actually draw the thing.
@@ -830,11 +806,6 @@ gboolean zmap_window_canvas_set_glyph(FooCanvasItem *foo, ZMapWindowCanvasGlyph 
 	  score -= min;
 
    /*
-    * sm23 25th February 2014 - not sure this is
-    * correct to start with...
-    *
-    * original comment:
-    *
     * not visible: don't draw
     */
 	  if(score < min)

@@ -40,6 +40,10 @@
 #include <ZMap/zmapUtilsLog.h>
 #include <zmapWindowCanvasDraw.h>
 #include <zmapWindowCanvasAlignment_I.h>
+#include <zmapWindowCanvasGlyph_I.h>
+#include <zmapWindowCanvasGlyph.h>
+
+#define INCLUDE_TRUNCATION_GLYPHS_ALIGNMENT
 
 
 static void alignmentColumnInit(ZMapWindowFeaturesetItem featureset) ;
@@ -271,7 +275,7 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
   if (cx2 < expose->area.x || cx1 > expose->area.x + expose->area.width)
     return;
 
-#ifdef INCLUDE_TRUNCATION_GLYPHS
+#ifdef INCLUDE_TRUNCATION_GLYPHS_ALIGNMENT
   /*
    * Instantiate glyph objects.
    */
@@ -328,7 +332,7 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
       }
 
 
-#ifdef INCLUDE_TRUNCATION_GLYPHS
+#ifdef INCLUDE_TRUNCATION_GLYPHS_ALIGNMENT
     /*
      * Store feature coordintes.
      */
@@ -356,15 +360,15 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
       {
         if (truncated_start)
           {
-            zmap_window_canvas_set_glyph(foo, truncation_glyph_alignment_start, style, feature->feature, col_width,
-                                         zMapStyleGetMaxScore(style) ) ;
-            zMapWindowCanvasGlyphPaintSubFeature(featureset, feature, truncation_glyph_alignment_start, drawable) ;
+            zMapWindowCanvasGlyphDrawTruncationGlyph(foo, featureset, feature,
+                                                     style, truncation_glyph_alignment_start,
+                                                     drawable, col_width) ;
           }
         if (truncated_end)
           {
-            zmap_window_canvas_set_glyph(foo, truncation_glyph_alignment_end, style, feature->feature, col_width,
-                                         zMapStyleGetMaxScore(style) ) ;
-            zMapWindowCanvasGlyphPaintSubFeature(featureset, feature, truncation_glyph_alignment_end, drawable) ;
+            zMapWindowCanvasGlyphDrawTruncationGlyph(foo, featureset, feature,
+                                                     style, truncation_glyph_alignment_end,
+                                                     drawable, col_width) ;
           }
 
         if (truncated_start || truncated_end)
@@ -422,7 +426,7 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
 
           align->gapped = makeGapped(feature->feature, featureset->dy - featureset->start, foo, forward);
 
-#ifdef INCLUDE_TRUNCATION_GLYPHS
+#ifdef INCLUDE_TRUNCATION_GLYPHS_ALIGNMENT
           for (ag = align->gapped ; ag ; ag = ag->next )
             {
               /* treat start of box */
@@ -506,7 +510,7 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
     }
 
 
-#ifdef INCLUDE_TRUNCATION_GLYPHS
+#ifdef INCLUDE_TRUNCATION_GLYPHS_ALIGNMENT
   /*
    * Reset to cached values before attempting anything else.
    */
@@ -543,6 +547,8 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
       /* add some decorations */
       if(!align->bump_set)		/* set up glyph data once only */
         {
+          align->glyph3 = align->glyph5 = NULL ;
+
           /* NOTE this code assumes the styles have been set up with:
           * 	'glyph-strand=flip-y'
           * which will handle reverse strand indication */

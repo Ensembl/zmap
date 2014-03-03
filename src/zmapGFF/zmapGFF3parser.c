@@ -3836,7 +3836,7 @@ static gboolean makeNewFeature_V3( ZMapGFFParser pParserBase,
         {
 
 #ifdef CLIP_ALIGNMENT_ON_PARSE
-          if ((bIncludeFeature = clipFeatureLogic_General(pParser, pFeatureData ))) /* or clipFeatureLogic_Alignment */
+          if ((bIncludeFeature = clipFeatureLogic_Alignment(pParser, pFeatureData ))) /* or clipFeatureLogic_General */
             {
 #endif
 
