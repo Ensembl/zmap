@@ -46,6 +46,9 @@ ZMapWindowCanvasGlyph zMapWindowCanvasGetGlyph(ZMapWindowFeaturesetItem features
 void zMapWindowCanvasGlyphPaintSubFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
 					  ZMapWindowCanvasGlyph glyph, GdkDrawable *drawable) ;
 void zMapWindowCanvasGlyphSetColData(ZMapWindowFeaturesetItem featureset) ;
+void zMapWindowCanvasGlyphDrawTruncationGlyph(FooCanvasItem *foo, ZMapWindowFeaturesetItem featureset,
+  ZMapWindowCanvasFeature feature, ZMapFeatureTypeStyle style, ZMapWindowCanvasGlyph glyph,
+  GdkDrawable *drawable, double col_width) ;
 
 
 #endif /* !ZMAP_CANVAS_GLYPH_H */

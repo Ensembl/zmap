@@ -139,10 +139,10 @@ static const char *sTestFileName = "/nfs/users/nfs_s/sm23/Work/testfile.txt" ;
  * parsing/feature creation operations. Note that this is done seperately
  * for different StyleMode values.
  */
-#define CLIP_TRANSCRIPT_ON_PARSE 1
+/* #define CLIP_TRANSCRIPT_ON_PARSE 1 */
 #define CLIP_ALIGNMENT_ON_PARSE 1
-#define CLIP_ASSEMBLYPATH_ON_PARSE 1
-#define CLIP_DEFAULT_ON_PARSE 1
+/* #define CLIP_ASSEMBLYPATH_ON_PARSE 1 */
+/* #define CLIP_DEFAULT_ON_PARSE 1 */
 #define CLIP_LOCUS_ON_PARSE 1
 
 /*

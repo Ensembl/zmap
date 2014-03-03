@@ -660,6 +660,69 @@ static ZMapStyleGlyphShape getGlyphShape(ZMapFeatureTypeStyle style, int which, 
 
 
 
+/*
+ * Draw the truncation glyph as a standalone shape.There are several steps:
+ *
+ * (1) Basic properties of glyph.
+ * (2) World coordinates of glyph.
+ * (3) Canvas coordinates of glyph.
+ * (4) Draw the thing.
+ *
+ */
+void zMapWindowCanvasGlyphDrawTruncationGlyph(FooCanvasItem *foo,
+                                         ZMapWindowFeaturesetItem featureset,
+                                         ZMapWindowCanvasFeature feature,
+                                         ZMapFeatureTypeStyle style,
+                                         ZMapWindowCanvasGlyph glyph,
+                                         GdkDrawable *drawable,
+                                         double col_width)
+{
+  double score = 0.0, y = 0.0 ;
+  zMapReturnIfFail((foo && featureset && feature && style && glyph && drawable && (col_width > 0.0) )) ;
+  zMapReturnIfFail( glyph->which == ZMAP_GLYPH_TRUNCATED_START || glyph->which == ZMAP_GLYPH_TRUNCATED_END ) ;
+
+  /*
+   * Basic properties of the glyph. The quantities 'width' and 'height'
+   * are ratios, not numbers of pixels or units in world coordinates.
+   */
+  glyph->width = 1.0 ;
+  glyph->height = 1.0 ;
+  glyph->origin = col_width/2.0 ;
+
+  glyph_set_coords(style, score, NULL, glyph) ;
+  glyph->coords_set = TRUE ;
+
+  /*
+   * Find the y coordinate of the glyph in world space.
+   */
+  if (glyph->which == ZMAP_GLYPH_TRUNCATED_START )
+    {
+      y = feature->y1 ;
+    }
+  else if (glyph->which == ZMAP_GLYPH_TRUNCATED_END )
+    {
+      y = feature->y2 + 1.0 ;
+    }
+  else
+    {
+      /* error; but should have been caught already */
+      return ;
+    }
+
+  /*
+   * Set coordinates in pixels.
+   */
+  setGlyphCanvasCoords(featureset, feature, glyph, y) ;
+
+  /*
+   * At last, actually draw the thing.
+   */
+  zmap_window_canvas_paint_feature_glyph(featureset, feature, glyph, y, drawable) ;
+
+}
+
+
+
 /* set up the coord array for the paint function
  *
  * fill in coords copied from the shape

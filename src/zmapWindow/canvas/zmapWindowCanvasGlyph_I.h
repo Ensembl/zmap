@@ -36,16 +36,6 @@
 #include <zmapWindowCanvasFeatureset_I.h>
 #include <zmapWindowCanvasGlyph.h>
 
-/*
- * Uncomment this #define to make it draw the
- * truncation glyphs.
- */
-/* #define INCLUDE_TRUNCATION_GLYPHS 1 */
-
-gboolean zmap_window_canvas_set_glyph(FooCanvasItem *foo,
-					     ZMapWindowCanvasGlyph glyph, ZMapFeatureTypeStyle style,
-					     ZMapFeature feature, double col_width, double score);
-
 /* Per Column Glyph Data.
  *
  * Data common to particular types of glyph, stored using the per_column_data pointer

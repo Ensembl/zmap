@@ -40,6 +40,9 @@
 #include <zmapWindowCanvasFeatureset_I.h>
 #include <zmapWindowCanvasTranscript_I.h>
 #include <zmapWindowCanvasGlyph_I.h>
+#include <zmapWindowCanvasGlyph.h>
+
+#define INCLUDE_TRUNCATION_GLYPHS_TRANSCRIPT
 
 /*
  * Glyphs to represent the trunction of a feature at the ZMap boundary. One for
@@ -150,7 +153,7 @@ zMapWindowCanvasTranscriptPaintFeature(ZMapWindowFeaturesetItem featureset,
       feature->y2 = y2 = featureset->end ;
     }
 
-#ifdef INCLUDE_TRUNCATION_GLYPHS
+#ifdef INCLUDE_TRUNCATION_GLYPHS_TRANSCRIPT
   /*
    * Quick hack for features that are completely outside of the sequence
    * region. These should not really be passed in, but occasionally are
@@ -193,13 +196,15 @@ zMapWindowCanvasTranscriptPaintFeature(ZMapWindowFeaturesetItem featureset,
        */
       if (truncated_start)
         {
-          zmap_window_canvas_set_glyph(foo, truncation_glyph_transcript_start, style, feature->feature, col_width, feature->score ) ;
-          zMapWindowCanvasGlyphPaintSubFeature(featureset, feature, truncation_glyph_transcript_start, drawable) ;
+          zMapWindowCanvasGlyphDrawTruncationGlyph(foo, featureset, feature,
+                                                   style, truncation_glyph_transcript_start,
+                                                   drawable, col_width) ;
         }
       if (truncated_end)
         {
-          zmap_window_canvas_set_glyph(foo, truncation_glyph_transcript_end, style, feature->feature, col_width, feature->score ) ;
-          zMapWindowCanvasGlyphPaintSubFeature(featureset, feature, truncation_glyph_transcript_end, drawable) ;
+          zMapWindowCanvasGlyphDrawTruncationGlyph(foo, featureset, feature,
+                                                   style, truncation_glyph_transcript_end,
+                                                   drawable, col_width) ;
         }
 
       if (truncated_start || truncated_end)
