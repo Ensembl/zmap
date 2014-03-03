@@ -587,7 +587,7 @@ void zMapGFFParseSetSourceHash(ZMapGFFParser parser,
  */
 GList *zMapGFFGetFeaturesets(ZMapGFFParser parser)
 {
-  zMapReturnIfFail(parser && zMapGFFIsValidVersion(parser));
+  zMapReturnValIfFail(parser && zMapGFFIsValidVersion(parser), NULL);
 
   return (parser->src_feature_sets) ;
 }
