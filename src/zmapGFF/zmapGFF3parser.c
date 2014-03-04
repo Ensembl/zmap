@@ -3419,10 +3419,7 @@ static gboolean clipFeatureLogic_Alignment(ZMapGFF3Parser  pParser, ZMapGFFFeatu
     iEnd = 0,
     iClipStart = 0,
     iClipEnd = 0 ;
-  char *sSOType = NULL ;
-  gboolean bFeatureOutside = FALSE,
-    bFeatureOverlapStart = FALSE,
-    bFeatureOverlapEnd = FALSE ;
+  gboolean bFeatureOutside = FALSE ;
   ZMapSOIDData pSOIDData = NULL ;
   ZMapStyleMode cFeatureStyleMode = ZMAPSTYLE_MODE_INVALID ;
   ZMapGFFClipMode cClipMode = GFF_CLIP_NONE ;
@@ -3441,7 +3438,6 @@ static gboolean clipFeatureLogic_Alignment(ZMapGFF3Parser  pParser, ZMapGFFFeatu
   iEnd                 = zMapGFFFeatureDataGetEnd(pFeatureData) ;
   pSOIDData            = zMapGFFFeatureDataGetSod(pFeatureData) ;
   cFeatureStyleMode    = zMapSOIDDataGetStyleMode(pSOIDData) ;
-  sSOType              = zMapSOIDDataGetName(pSOIDData) ;
   zMapReturnValIfFail(iStart || iEnd
                   || (cFeatureStyleMode != ZMAPSTYLE_MODE_INVALID)
                   || (cFeatureStyleMode != ZMAPSTYLE_MODE_TRANSCRIPT), bIncludeFeature ) ;
@@ -3745,7 +3741,8 @@ static gboolean makeNewFeature_V3( ZMapGFFParser pParserBase,
 
   char *sMakeFeatureErrorText = NULL,
     *sURL = NULL,
-    *sVariation = NULL ;
+    *sVariation = NULL,
+    *sSOType = NULL ;
 
   gboolean bResult = FALSE,
     bNewFeatureCreated = FALSE,
@@ -3770,6 +3767,7 @@ static gboolean makeNewFeature_V3( ZMapGFFParser pParserBase,
   nAttributes          = zMapGFFFeatureDataGetNat(pFeatureData) ;
   pAttributes          = zMapGFFFeatureDataGetAts(pFeatureData) ;
   pSOIDData            = zMapGFFFeatureDataGetSod(pFeatureData) ;
+  sSOType              = zMapSOIDDataGetName(pSOIDData) ;
   cFeatureStyleMode    = zMapSOIDDataGetStyleMode(pSOIDData) ;
 
   /*
@@ -3899,6 +3897,9 @@ static gboolean makeNewFeature_V3( ZMapGFFParser pParserBase,
        */
       if (bIncludeFeature)
         {
+
+          if(!zMapStyleGetGFFFeature(pFeatureSet->style))
+            zMapStyleSetGFF(pFeatureSet->style, NULL, sSOType);
 
           /*
            * URL attribute.
