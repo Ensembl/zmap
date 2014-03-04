@@ -103,36 +103,9 @@ static gboolean requireLocusOperations(ZMapGFFParser , ZMapGFFFeatureData  ) ;
 static gboolean findFeatureset(ZMapGFFParser , ZMapGFFFeatureData  , ZMapFeatureSet *) ;
 
 /*
- *
+ * See comments with function.
  */
 static gboolean hack_SpecialColumnToSOTerm(const char * const, char ** const ) ;
-
-/*
- * Some flags used for debugging.
- */
-/* #define LOCAL_DEBUG_CODE_WRITE_BODY_LINE 1 */
-/* #define LOCAL_DEBUG_CODE_ALIGNMENT 1 */
-/* #define LOCAL_DEBUG_CODE_TRANSCRIPT 1 */
-/* #define LOCAL_DEBUG_CODE_DEFAULT 1 */
-/* #define LOCAL_DEBUG_CODE_LOCUS 1 */
-
-#ifdef LOCAL_DEBUG_CODE_ALIGNMENT
-static unsigned int iCountAlignment = 0 ;
-#endif
-
-#ifdef LOCAL_DEBUG_CODE_TRANSCRIPT
-static unsigned int iCountTranscript = 0 ;
-#endif
-
-#ifdef LOCAL_DEBUG_CODE_DEFAULT
-static unsigned int iCountDefault = 0 ;
-#endif
-
-#ifdef LOCAL_DEBUG_CODE_LOCUS
-static FILE *pTestFile = NULL ;
-static const char *sTestFileName = "/nfs/users/nfs_s/sm23/Work/testfile.txt" ;
-#endif
-
 
 /*
  * Uncomment these flag to use the feature clipping logic during the
@@ -2141,11 +2114,6 @@ static gboolean parseBodyLine_V3(ZMapGFFParser pParserBase, const char * const s
     pSOIDData                         = NULL
   ;
 
-#ifdef LOCAL_DEBUG_CODE_WRITE_BODY_LINE
-  printf("%s\n", sLine) ;
-  fflush (stdout) ;
-#endif
-
   /*
    * Cast to concrete type for GFFV3.
    */
@@ -2848,15 +2816,6 @@ static ZMapFeature makeFeatureTranscript(ZMapGFFFeatureData pFeatureData,
         }
     }
 
-#ifdef LOCAL_DEBUG_CODE_TRANSCRIPT
-  if (*pbNewFeatureCreated && bFeatureAdded)
-    {
-      ++iCountTranscript ;
-      printf("iCountTransript = %i\n", iCountTranscript) ;
-      fflush(stdout) ;
-    }
-#endif
-
   /*
    * If a new feature was created but not added to the feature set for some reason,
    * it must be destroyed to avoid a memory leak.
@@ -2990,17 +2949,6 @@ gboolean makeFeatureLocus(ZMapGFFParser pParser, ZMapGFFFeatureData pFeatureData
               *psError = g_strdup_printf("makeFeatureLocus(); could not add feature with name_id = '%s' and name = '%s' to featureset",
                                          sNameID, sName) ;
             }
-#ifdef LOCAL_DEBUG_CODE_LOCUS
-          if (!pTestFile)
-          {
-            pTestFile = fopen(sTestFileName, "w") ;
-          }
-          if (bResult)
-            {
-              fprintf(pTestFile, "creating locus with s = '%s', '%s'\n", sName, sNameID ) ;
-              fflush(pTestFile) ;
-            }
-#endif
         }
 
 
@@ -3200,15 +3148,6 @@ static ZMapFeature makeFeatureAlignment(ZMapGFFFeatureData pFeatureData,
 
     }
 
-#ifdef LOCAL_DEBUG_CODE_ALIGNMENT
-  if (bNewFeatureCreated && bFeatureAdded)
-    {
-      ++iCountAlignment ;
-      printf("created s = '%s', s = '%s', gq = %i\n", sFeatureName, sTargetValue, gqTargetID) ;
-      fflush(stdout) ;
-    }
-#endif
-
   /*
    * If a new feature was created, but could not be added to the featureset,
    * it must be destroyed to prevent a memory leak.
@@ -3217,10 +3156,6 @@ static ZMapFeature makeFeatureAlignment(ZMapGFFFeatureData pFeatureData,
     {
       zMapFeatureDestroy(pFeature) ;
       pFeature = NULL ;
-#ifdef LOCAL_DEBUG_CODE_ALIGNMENT
-      printf("destroyed s = '%s', s = '%s', gq = %i\n", sFeatureName, sTargetValue, gqTargetID) ;
-      fflush(stdout) ;
-#endif
     }
 
 
@@ -3381,12 +3316,6 @@ static ZMapFeature makeFeatureDefault(ZMapGFFFeatureData pFeatureData,
     }
 
   zMapFeatureAddText(pFeature, g_quark_from_string(sSource), sSource, NULL) ;
-
-#ifdef LOCAL_DEBUG_CODE_DEFAULT
-  ++iCountDefault ;
-  printf("iCountDefault = %i\n", iCountDefault ) ;
-  fflush(stdout) ;
-#endif
 
   /*
    * If a new feature was created, but could not be added to the featureset,
