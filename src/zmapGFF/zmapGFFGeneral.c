@@ -85,7 +85,6 @@ static gboolean removeTranscriptFeature(gpointer key,gpointer value, gpointer us
 ZMapGFFParser zMapGFFCreateParser(int iGFFVersion, char *sequence, int features_start, int features_end)
 {
   ZMapGFFParser pParser = NULL ;
-  zMapReturnValIfFail(sequence && *sequence && features_start && (features_start <= features_end), pParser) ;
 
   if (iGFFVersion == ZMAPGFF_VERSION_2 )
     {
@@ -726,6 +725,54 @@ int zMapGFFGetLineNumber(ZMapGFFParser parser)
 /*
  * Used by both versions.
  *
+ * Return the features_start coord
+ */
+int zMapGFFGetFeaturesStart(ZMapGFFParser parser)
+{
+  if (!parser)
+    return 0 ;
+  if (!zMapGFFIsValidVersion(parser))
+    return 0 ;
+
+  return parser->features_start ;
+}
+
+
+/*
+ * Used by both versions.
+ *
+ * Return the features_end coord
+ */
+int zMapGFFGetFeaturesEnd(ZMapGFFParser parser)
+{
+  if (!parser)
+    return 0 ;
+  if (!zMapGFFIsValidVersion(parser))
+    return 0 ;
+
+  return parser->features_end ;
+}
+
+
+/*
+ * Used by both versions.
+ *
+ * Return the sequence name stored in the parser
+ */
+char* zMapGFFGetSequenceName(ZMapGFFParser parser)
+{
+  if (!parser)
+    return NULL ;
+  if (!zMapGFFIsValidVersion(parser))
+    return NULL ;
+
+  return parser->sequence_name ;
+}
+
+
+/*
+ * Used by both versions.
+ *
  * If a zMapGFFNNN function has failed then this function returns a description of the error
  * in the glib GError format. If there has been no error then NULL is returned.
  */
@@ -783,6 +830,24 @@ void zMapGFFSetFreeOnDestroy(ZMapGFFParser parser, gboolean free_on_destroy)
   return ;
 }
 
+
+/*
+ * Used by both versions.
+ *
+ *
+ * Return true if the parser status is parsing the header/directives.
+ * Also returns true if parsing hasn't started yet, because we need 
+ * to parser the header in that case.
+ */
+gboolean zMapGFFParsingHeader(ZMapGFFParser parser)
+{
+  gboolean result = FALSE ;
+
+  if (parser->state == ZMAPGFF_PARSER_DIR || parser->state == ZMAPGFF_PARSER_NON)
+    result = TRUE ;
+
+  return result ;
+}
 
 
 gboolean zMapGFFSequenceDestroy(ZMapSequence sequence)
@@ -857,6 +922,8 @@ ZMapSequence zMapGFFGetSequence(ZMapGFFParser parser_base, GQuark sequence_name)
 
   return sequence;
 }
+
+
 
 
 

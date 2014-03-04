@@ -64,7 +64,6 @@
 #define ZMAP_NB_PAGE_DISPLAY  "Display"  /* preferences page relating to zmap display settings */
 
 
-
 /* Define thread debug messages, used in checkStateConnections() mostly. */
 #define THREAD_DEBUG_MSG_PREFIX " Reply from slave thread %s, "
 
@@ -194,6 +193,7 @@ typedef struct FindStylesStructType
 static void getIniData(ZMapView view, char *config_str, GList *sources) ;
 static void zmapViewCreateColumns(ZMapView view,GList *featuresets) ;
 static ZMapConfigSource zmapViewGetSourceFromFeatureset(GHashTable *hash,GQuark featurequark);
+static void zmapViewGetCmdLineSources(ZMapFeatureSequenceMap sequence_map, GList **settings_list_inout) ;
 static ZMapView createZMapView(char *view_name, GList *sequences, void *app_data) ;
 static void destroyZMapView(ZMapView *zmap) ;
 static void displayDataWindows(ZMapView zmap_view,
@@ -473,6 +473,7 @@ ZMapViewWindow zMapViewCreate(GtkWidget *view_container, ZMapFeatureSequenceMap 
   sequence_fetch->sequence = g_strdup(sequence_map->sequence) ;
   sequence_fetch->start = sequence_map->start ;
   sequence_fetch->end = sequence_map->end ;
+  sequence_fetch->cached_parsers = sequence_map->cached_parsers ;
 
   sequences_list = g_list_append(sequences_list, sequence_fetch) ;
 
@@ -584,6 +585,9 @@ gboolean zMapViewConnect(ZMapFeatureSequenceMap sequence_map, ZMapView zmap_view
 
       // get the stanza structs from ZMap config
       settings_list = zmapViewGetIniSources(zmap_view->view_sequence->config_file, config_str, &stylesfile) ;
+
+      // create stanza structs for any URLs passed on command line
+      zmapViewGetCmdLineSources(sequence_map, &settings_list) ;
 
       /*
        * read styles from file
@@ -1659,6 +1663,26 @@ GList *zmapViewGetIniSources(char *config_file, char *config_str, char ** styles
 }
 
 
+static void zmapViewGetCmdLineSources(ZMapFeatureSequenceMap sequence_map, GList **settings_list_inout)
+{
+  zMapReturnIfFailSafe(sequence_map) ;
+
+  GSList *file_item = sequence_map->file_list ;
+
+  for ( ; file_item; file_item = file_item->next)
+    {
+      char *file = (char*)(file_item->data) ;
+
+      ZMapConfigSource src = g_new0(ZMapConfigSourceStruct, 1) ;
+      src->group = SOURCE_GROUP_START ;        // default_value
+      src->url = g_strdup_printf("file:///%s", file) ;
+      src->featuresets = g_strdup(ZMAP_DEFAULT_FEATURESETS) ;
+
+      *settings_list_inout = g_list_append(*settings_list_inout, (gpointer)src) ;
+    }
+}
+
+
 // create a hash table of feature set names and thier sources
 static GHashTable *zmapViewGetFeatureSourceHash(GList *sources)
 {
@@ -2018,10 +2042,10 @@ gboolean zMapViewRequestServer(ZMapView view,
  * which cannot be delayed as there's no way to fit these into the columns dialog as it currrently exists
  */
 ZMapViewConnection zmapViewRequestServer(ZMapView view, ZMapViewConnection view_conn,
-					 ZMapFeatureBlock block_orig, GList *req_featuresets,
-					 gpointer _server, /* ZMapConfigSource */
-					 int req_start, int req_end,
-					 gboolean dna_requested, gboolean terminate, gboolean show_warning)
+                                         ZMapFeatureBlock block_orig, GList *req_featuresets,
+                                         gpointer _server, /* ZMapConfigSource */
+                                         int req_start, int req_end,
+                                         gboolean dna_requested, gboolean terminate, gboolean show_warning)
 {
   ZMapFeatureContext context ;
   ZMapFeatureBlock block ;
@@ -2047,17 +2071,17 @@ ZMapViewConnection zmapViewRequestServer(ZMapView view, ZMapViewConnection view_
       zMapFeatureBlockSetFeaturesCoords(block, req_start, req_end) ;
 
 
-		if (view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
-		{
-			/* revcomp our empty context to get external fwd strand coordinates */
-			zMapFeatureContextReverseComplement(context, view->context_map.styles);
-		}
-	}
-	else
-	{
-	/* Create data specific to this step list...and set it in the connection. */
-          context = zmapViewCreateContext(view, req_featuresets, NULL) ;
-	}
+      if (view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
+        {
+          /* revcomp our empty context to get external fwd strand coordinates */
+          zMapFeatureContextReverseComplement(context, view->context_map.styles);
+        }
+    }
+  else
+    {
+      /* Create data specific to this step list...and set it in the connection. */
+      context = zmapViewCreateContext(view, req_featuresets, NULL) ;
+    }
 
   //printf("request featureset %s from %s\n",g_quark_to_string(GPOINTER_TO_UINT(req_featuresets->data)),server->url);
   zMapStartTimer("LoadFeatureSet", g_quark_to_string(GPOINTER_TO_UINT(req_featuresets->data)));
@@ -2066,16 +2090,16 @@ ZMapViewConnection zmapViewRequestServer(ZMapView view, ZMapViewConnection view_
   is_pipe = g_str_has_prefix(server->url,"pipe://");
 
   if ((view_conn = createViewConnection(view, view_conn,
-					context, server->url,
-					(char *)server->format,
-					server->timeout,
-					(char *)server->version,
-					server->req_styles,
-					server->stylesfile,
-					req_featuresets,
-					dna_requested,
-					req_start,req_end,
-					terminate || is_pipe)))
+                                        context, server->url,
+                                        (char *)server->format,
+                                        server->timeout,
+                                        (char *)server->version,
+                                        server->req_styles,
+                                        server->stylesfile,
+                                        req_featuresets,
+                                        dna_requested,
+                                        req_start,req_end,
+                                        terminate || is_pipe)))
     {
       /* Why does this need reiniting ? */
       if (!view->sources_loading)
@@ -2088,21 +2112,21 @@ ZMapViewConnection zmapViewRequestServer(ZMapView view, ZMapViewConnection view_
 	}
 
       view->sources_loading = zMap_g_list_insert_list_after(view->sources_loading, req_featuresets,
-							    g_list_length(view->sources_loading),
-							    TRUE) ;
+                                                            g_list_length(view->sources_loading),
+                                                            TRUE) ;
 
       view_conn->show_warning = show_warning ;
     }
   else
     {
       view->sources_failed = zMap_g_list_insert_list_after(view->sources_failed, req_featuresets,
-							   g_list_length(view->sources_failed),
-							   TRUE) ;
+                                                           g_list_length(view->sources_failed),
+                                                           TRUE) ;
 
       zMap_g_list_quark_print(req_featuresets, "req_featuresets", FALSE) ;
 
       zMapLogWarning("createViewConnection() failed, failed sources now %d",
-		     g_list_length(view->sources_failed)) ;
+                     g_list_length(view->sources_failed)) ;
     }
 
   return view_conn ;

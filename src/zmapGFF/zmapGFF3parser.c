@@ -167,9 +167,8 @@ ZMapGFFParser zMapGFFCreateParser_V3(char *sequence, int features_start, int fea
 {
   ZMapGFF3Parser pParser = NULL ;
 
-  zMapReturnValIfFail(sequence && *sequence, NULL) ;
-
-  if ((features_start > 0) && (features_end >= features_start))
+  /* If coords are given, check that they're sensible */
+  if ((!features_start && !features_end) || ((features_start > 0) && (features_end >= features_start)))
     {
       pParser                                   = g_new0(ZMapGFF3ParserStruct, 1) ;
       if (pParser)
@@ -1231,7 +1230,6 @@ static gboolean parseFastaLine_V3(ZMapGFFParser pParserBase, const char* const s
 
   if (g_str_has_prefix(sLine, ">"))
     {
-
       /*
        * Init for reading sequence data
        */
@@ -1274,6 +1272,7 @@ static gboolean parseFastaLine_V3(ZMapGFFParser pParserBase, const char* const s
           pTheSequence->name = g_quark_from_string("ZMAPGFF_FASTA_NAME_NOT_FOUND") ;
         }
 
+      bResult = TRUE ;
     }
   else
     {
@@ -1291,6 +1290,7 @@ static gboolean parseFastaLine_V3(ZMapGFFParser pParserBase, const char* const s
           bResult = TRUE ;
         }
 
+      bResult = TRUE ;
     }
 
   return bResult ;
@@ -1472,6 +1472,13 @@ static gboolean parseDirective_SEQUENCE_REGION(ZMapGFFParser pParserBase, const 
       return bResult ;
     }
 
+  /* If the parser sequence details are not set, then set them from the sequence-region */
+  if (!zMapGFFGetSequenceName((ZMapGFFParser)pParser))
+    {
+      pParser->sequence_name = g_strdup(sBuf) ;
+      pParser->features_start = iStart ;
+      pParser->features_end = iEnd ;
+    }
 
   /*
    * We require the names to match up here.
