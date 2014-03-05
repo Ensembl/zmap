@@ -58,6 +58,7 @@ enum
     BLIX_DEFAULT_SCOPE = 40000				    /* default 'width' of blixem sequence/features. */
   } ;
 
+#define BLIX_DEFAULT_SCRIPT "blixemh"                       /* default executable name */
 
 #define ZMAP_BLIXEM_CONFIG "blixem"
 
@@ -853,33 +854,45 @@ static gboolean getUserPrefs(char *config_file, BlixemConfigData curr_prefs)
       zMapConfigIniContextDestroy(context);
     }
 
-  if ((file_prefs.script) && ((file_prefs.config_file) || (file_prefs.netid && file_prefs.port)))
+  /* If a config file is specified, check that it can be found */
+  if (file_prefs.config_file && !zMapFileAccess(file_prefs.config_file, "rw"))
+    {
+      zMapShowMsg(ZMAP_MSG_WARNING,
+                  "The Blixem config file \"%s\" cannot be found in your path or it is not read/writeable.",
+                  file_prefs.config_file) ;
+    }
+
+  /* We need a blixem script. If it wasn't given, set a default */
+  if (!file_prefs.script)
+    {
+      file_prefs.script = g_strdup(BLIX_DEFAULT_SCRIPT) ;
+    }
+
+  /* Check that script exists and is executable */
+  if (file_prefs.script)
     {
       char *tmp;
       tmp = file_prefs.script;
 
-      if (!(file_prefs.script = g_find_program_in_path(tmp)))
-  	    zMapShowMsg(ZMAP_MSG_WARNING,
-		    "Either can't locate \"%s\" in your path or it is not executable by you.",
-		    tmp) ;
-      g_free(tmp) ;
+      if ((file_prefs.script = g_find_program_in_path(tmp)))
+        {
+          status = TRUE ;
+        }
+      else
+        {
+          zMapShowMsg(ZMAP_MSG_WARNING,
+                      "Either can't locate \"%s\" in your path or it is not executable by you.",
+                      tmp) ;
+        }
 
-      if (file_prefs.config_file && !zMapFileAccess(file_prefs.config_file, "rw"))
-	    zMapShowMsg(ZMAP_MSG_WARNING,
-		    "Either can't locate \"%s\" in your path or it is not read/writeable.",
-		    file_prefs.config_file) ;
+      g_free(tmp) ;
     }
   else
     {
-      zMapShowMsg(ZMAP_MSG_WARNING, "Some or all of the compulsory blixem parameters "
-		  "(\"netid\", \"port\") or config_file or \"script\" are missing from your config file.");
+      zMapShowMsg(ZMAP_MSG_WARNING, "The blixem script is not specified.") ;
     }
 
-  if (file_prefs.script && file_prefs.config_file)
-     status = TRUE;
-
   file_prefs.init = TRUE;
-
 
   /* If curr_prefs is initialised then copy any curr prefs set by user into file prefs,
    * thus overriding file prefs with user prefs. Then copy file prefs into curr_prefs

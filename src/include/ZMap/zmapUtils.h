@@ -172,10 +172,10 @@ gboolean zMapLogCreate(char *logname) ;
 gboolean zMapLogConfigure(gboolean logging, gboolean log_to_file,
 			  gboolean show_process, gboolean show_code, gboolean show_time,
 			  gboolean catch_glib, gboolean echo_glib,
-			  char *logfile_path) ;
+                          char *logfile_path, GError **error) ;
 void zMapWriteStartMsg(void) ;
 void zMapWriteStopMsg(void) ;
-gboolean zMapLogStart(void) ;
+gboolean zMapLogStart(GError **error) ;
 int zMapLogFileSize(void) ;
 gboolean zMapLogStop(void) ;
 void zMapLogStack(void);
@@ -187,7 +187,7 @@ gboolean zMapStack2fd(unsigned int remove, int fd) ;
 void zMapSignalHandler(int sig_no) ;
 
 char *zMapGetDir(char *directory_in, gboolean home_relative, gboolean make_dir) ;
-char *zMapGetFile(char *directory, char *filename, gboolean make_file) ;
+char *zMapGetFile(char *directory, char *filename, gboolean make_file, GError **error) ;
 char *zMapGetPath(char *path_in) ;
 char *zMapGetBasename(char *path_in) ;
 char *zMapExpandFilePath(char *path_in) ;

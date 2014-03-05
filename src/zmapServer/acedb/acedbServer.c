@@ -1323,7 +1323,7 @@ static gboolean sequenceRequest(DoAllAlignBlocks get_features, ZMapFeatureBlock 
 
   acedb_request =  g_strdup_printf("gif seqget %s -coords %d %d %s %s ; "
 				   " %s "
-				   "seqfeatures -refseq %s -rawmethods -version %d %s %s",
+                                   "seqfeatures -refseq %s -rawmethods -version %d %s %s",
 				   g_quark_to_string(feature_block->original_id),
 				   server->zmap_start,
 				   server->zmap_end,
@@ -1623,18 +1623,8 @@ static gboolean blockDNARequest(AcedbServer server, GHashTable *styles, ZMapFeat
        * it was done this way - Ed) */
       if (zMapFeatureDNACreateFeatureSet(feature_block, &feature_set))
 	{
-
-	  /* This temp style creation feels wrong, and probably is,
-	   * but we don't have the merged in default styles in here,
-	   * or so it seems... */
-
 	  if ((dna_style = zMapFindStyle(styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME))))
-#if 0
-	    temp_style = dna_style = zMapStyleCreate(ZMAP_FIXED_STYLE_DNA_NAME,
-						     ZMAP_FIXED_STYLE_DNA_NAME_TEXT);
-#endif
-
-		feature = zMapFeatureDNACreateFeature(feature_block, dna_style, dna_sequence, dna_length);
+            feature = zMapFeatureDNACreateFeature(feature_block, dna_style, dna_sequence, dna_length);
 	}
 
 
@@ -1653,10 +1643,10 @@ static gboolean blockDNARequest(AcedbServer server, GHashTable *styles, ZMapFeat
 
           if ((zMapFeatureORFCreateSet(feature_block, &feature_set)))
             {
-              ZMapFeatureTypeStyle frame_style = NULL;
+              ZMapFeatureTypeStyle orf_style = NULL;
               
-              if ((frame_style = zMapFindStyle(styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_ORF_NAME))))
-                zMapFeatureORFSetCreateFeatures(feature_set, frame_style, translation_fs);
+              if ((orf_style = zMapFindStyle(styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_ORF_NAME))))
+                zMapFeatureORFSetCreateFeatures(feature_set, orf_style, translation_fs);
             }
 	}
 
@@ -4619,7 +4609,7 @@ static char *get_url_query_value(char *full_query, char *key)
 
       while(ptr && *ptr != '\0')
 	{
-	  char **key_value = NULL, **kv_ptr, *real_key ;
+          char **key_value = NULL, **kv_ptr, *real_key ;
 
 	  key_value = kv_ptr = g_strsplit(*ptr, "=", 0);
 
@@ -4634,9 +4624,9 @@ static char *get_url_query_value(char *full_query, char *key)
                 value = g_strdup(key_value[1]) ;
             }
 
-	  g_strfreev(kv_ptr) ;
+          g_strfreev(kv_ptr) ;
 
-	  ptr++ ;
+          ptr++ ;
 	}
 
       g_strfreev(split) ;

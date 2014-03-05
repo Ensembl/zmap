@@ -142,47 +142,44 @@ ZMapGFFParser zMapGFFCreateParser_V2(char *sequence, int features_start, int fea
   ZMapGFF2Parser parser = NULL ;
   ZMapGFFParser parser_base = NULL ;
 
-  if ((sequence && *sequence) && (features_start > 0 && features_end >= features_start))
-    {
-      parser = g_new0(ZMapGFF2ParserStruct, 1) ;
-      parser_base = (ZMapGFFParser) parser ;
+  parser = g_new0(ZMapGFF2ParserStruct, 1) ;
+  parser_base = (ZMapGFFParser) parser ;
 
-      parser->gff_version = ZMAPGFF_VERSION_2 ;
+  parser->gff_version = ZMAPGFF_VERSION_2 ;
 
-      parser->state = ZMAPGFF_PARSER_DIR ;
-      parser->error = NULL ;
-      parser->error_domain = g_quark_from_string(ZMAP_GFF_ERROR) ;
-      parser->stop_on_error = FALSE ;
+  parser->state = ZMAPGFF_PARSER_DIR ;
+  parser->error = NULL ;
+  parser->error_domain = g_quark_from_string(ZMAP_GFF_ERROR) ;
+  parser->stop_on_error = FALSE ;
 
-      parser->line_count = 0 ;
-      parser->SO_compliant = FALSE ;
-      parser->default_to_basic = FALSE ;
+  parser->line_count = 0 ;
+  parser->SO_compliant = FALSE ;
+  parser->default_to_basic = FALSE ;
 
-      parser->clip_mode = GFF_CLIP_NONE ;
-      parser->clip_start = parser->clip_end = 0 ;
+  parser->clip_mode = GFF_CLIP_NONE ;
+  parser->clip_start = parser->clip_end = 0 ;
 
-      parser->excluded_features = g_hash_table_new(NULL, NULL) ;
+  parser->excluded_features = g_hash_table_new(NULL, NULL) ;
 
-      /* Some of these may also be derived from the file meta-data. */
-      parser->header_flags.done_header = FALSE ;
-      parser->header_flags.got_gff_version = FALSE ;
-      parser->header_flags.got_sequence_region = FALSE ;
-      parser->header_state = GFF_HEADER_NONE ;
+  /* Some of these may also be derived from the file meta-data. */
+  parser->header_flags.done_header = FALSE ;
+  parser->header_flags.got_gff_version = FALSE ;
+  parser->header_flags.got_sequence_region = FALSE ;
+  parser->header_state = GFF_HEADER_NONE ;
 
 
-      parser->sequence_name = g_strdup(sequence) ;
-      parser->features_start = features_start ;
-      parser->features_end = features_end ;
+  parser->sequence_name = g_strdup(sequence) ;
+  parser->features_start = features_start ;
+  parser->features_end = features_end ;
 
-      parser->raw_line_data = g_string_sized_new(2000) ;
+  parser->raw_line_data = g_string_sized_new(2000) ;
 
-      parser->sequence_flags.done_finished = TRUE ;	    /* default we don't parse the dna/protein */
+  parser->sequence_flags.done_finished = TRUE ;	    /* default we don't parse the dna/protein */
 
-      /* Set initial buffer & format string size to something that will probably be big enough. */
-      resizeBuffers(parser_base, ZMAPGFF_BUF_INIT_SIZE) ;
+  /* Set initial buffer & format string size to something that will probably be big enough. */
+  resizeBuffers(parser_base, ZMAPGFF_BUF_INIT_SIZE) ;
 
-      resizeFormatStrs(parser_base) ;
-    }
+  resizeFormatStrs(parser_base) ;
 
   return parser_base ;
 }
@@ -584,7 +581,7 @@ static gboolean parseHeaderLine(ZMapGFFParser parser_base, char *line)
 
   if (parser->state == ZMAPGFF_PARSER_DIR)
     {
-      if (!g_str_has_prefix(line, "##"))
+      if (!g_str_has_prefix(line, "##") || g_str_has_prefix(line, "##DNA"))
 	{
 	  result = FALSE ;
 	}
@@ -674,6 +671,16 @@ static gboolean parseHeaderLine(ZMapGFFParser parser_base, char *line)
 		   * that overlap its start/end.....IMPLIES WE MAY NEED TO REMOVE FEATURES IF
 		   * PARSER MODE IS NOT TO HAVE OVERLAPPING FEATURES.....
 		   */
+
+                  /* If the sequence name wasn't specified on the command line or in a config
+                     file then take the sequence details from the first gff file we find */
+                  if (!zMapGFFGetSequenceName((ZMapGFFParser)parser))
+                    {
+                      parser->sequence_name = g_strdup(sequence_name) ;
+                      parser->features_start = start ;
+                      parser->features_end = end ;
+                    }
+
 		  if (g_ascii_strcasecmp(&sequence_name[0], parser->sequence_name) == 0)
 		    {
 		      if (parser->header_flags.got_sequence_region)

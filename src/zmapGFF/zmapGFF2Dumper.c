@@ -569,8 +569,11 @@ static gboolean dump_gff_cb(ZMapFeatureAny feature_any,
           /* this is made up data: do not dump */
           if(fset->original_id == g_quark_from_string("Annotation"))
             break;
-          /* better to dump DNA to a FASTA file */
-          if(fset->original_id == g_quark_from_string("DNA"))
+         /* this is made up data: do not dump */
+         if(fset->original_id == g_quark_from_string("ORF"))
+            break;
+         /* better to dump DNA to a FASTA file */
+         if(fset->original_id == g_quark_from_string("DNA"))
             break;
 
           gff_data->gff_source = (char *) g_quark_to_string(fset->original_id);
