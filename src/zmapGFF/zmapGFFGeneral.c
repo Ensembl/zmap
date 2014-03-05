@@ -698,9 +698,8 @@ void zMapGFFSetDefaultToBasic(ZMapGFFParser parser, gboolean default_to_basic)
 int zMapGFFGetVersion(ZMapGFFParser parser)
 {
   int version = ZMAPGFF_VERSION_UNKNOWN ;
-  zMapReturnValIfFail(parser && zMapGFFIsValidVersion(parser), ZMAPGFF_VERSION_UNKNOWN ) ;
 
-  if (parser->state != ZMAPGFF_PARSER_ERR)
+  if (parser && (parser->state != ZMAPGFF_PARSER_ERR) )
     version = parser->gff_version ;
 
   return version ;
@@ -836,7 +835,7 @@ void zMapGFFSetFreeOnDestroy(ZMapGFFParser parser, gboolean free_on_destroy)
  *
  *
  * Return true if the parser status is parsing the header/directives.
- * Also returns true if parsing hasn't started yet, because we need 
+ * Also returns true if parsing hasn't started yet, because we need
  * to parser the header in that case.
  */
 gboolean zMapGFFParsingHeader(ZMapGFFParser parser)
