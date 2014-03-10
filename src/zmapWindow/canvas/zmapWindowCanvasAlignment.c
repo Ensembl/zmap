@@ -43,7 +43,7 @@
 #include <zmapWindowCanvasGlyph_I.h>
 #include <zmapWindowCanvasGlyph.h>
 
-#define INCLUDE_TRUNCATION_GLYPHS_ALIGNMENT
+#define INCLUDE_TRUNCATION_GLYPHS_ALIGNMENT 1
 
 
 static void alignmentColumnInit(ZMapWindowFeaturesetItem featureset) ;

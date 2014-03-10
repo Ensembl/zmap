@@ -42,7 +42,7 @@
 #include <zmapWindowCanvasGlyph_I.h>
 #include <zmapWindowCanvasGlyph.h>
 
-#define INCLUDE_TRUNCATION_GLYPHS_TRANSCRIPT
+#define INCLUDE_TRUNCATION_GLYPHS_TRANSCRIPT 1
 
 /*
  * Glyphs to represent the trunction of a feature at the ZMap boundary. One for
