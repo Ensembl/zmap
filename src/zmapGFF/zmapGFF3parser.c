@@ -112,10 +112,10 @@ static gboolean hack_SpecialColumnToSOTerm(const char * const, char ** const ) ;
  * parsing/feature creation operations. Note that this is done seperately
  * for different StyleMode values.
  */
-/* #define CLIP_TRANSCRIPT_ON_PARSE 1 */
+#define CLIP_TRANSCRIPT_ON_PARSE 1
 #define CLIP_ALIGNMENT_ON_PARSE 1
-/* #define CLIP_ASSEMBLYPATH_ON_PARSE 1 */
-/* #define CLIP_DEFAULT_ON_PARSE 1 */
+#define CLIP_ASSEMBLYPATH_ON_PARSE 1
+#define CLIP_DEFAULT_ON_PARSE 1
 #define CLIP_LOCUS_ON_PARSE 1
 
 /*
@@ -3770,7 +3770,7 @@ static gboolean makeNewFeature_V3( ZMapGFFParser pParserBase,
         {
 
 #ifdef CLIP_ALIGNMENT_ON_PARSE
-          if ((bIncludeFeature = clipFeatureLogic_Alignment(pParser, pFeatureData ))) /* or clipFeatureLogic_General */
+          if ((bIncludeFeature = clipFeatureLogic_General(pParser, pFeatureData ))) /* or clipFeatureLogic_General */
             {
 #endif
 
