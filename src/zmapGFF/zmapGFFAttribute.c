@@ -1653,7 +1653,7 @@ gboolean zMapAttParseGaps(ZMapGFFAttribute pAttribute, GArray ** const pGaps, ZM
     return bResult ;
   const char *sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
   ZMapAlignBlockStruct gap = { 0 };
-  if (strcmp(sAttributeName_Gaps, zMapGFFAttributeGetNamestring(pAttribute)))
+  if (strcmp(sAttributeName_gaps, zMapGFFAttributeGetNamestring(pAttribute)))
     {
       zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
       return bResult ;

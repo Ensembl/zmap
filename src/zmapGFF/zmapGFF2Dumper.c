@@ -38,7 +38,8 @@
 
 
 /*
- * GFF version to output. Can be set to a default value using the
+ * GFF version to output. Can be set to either
+ * [ZMAPGFF_VERSION_2, ZMAPGFF_VERSION_3] using the
  * external interface function 'zMapGFFDumpVersion()'.
  */
 static ZMapGFFVersion gff_output_version = ZMAPGFF_VERSION_3 ;
@@ -144,6 +145,8 @@ static gboolean dump_transcript_locus(ZMapFeature feature, gpointer transcript_d
  */
 static gboolean dump_text_note_v3(ZMapFeature feature, gpointer basic_data,
   GString *gff_string, GError **error, GFFDumpData gff_data) ;
+static gboolean dump_transcript_locus_v3(ZMapFeature feature, gpointer transcript_data,
+  GString *gff_string, GError **error, GFFDumpData gff_data);
 static gboolean dump_id_as_name_v3(ZMapFeature feature, gpointer basic_data,
   GString *gff_string, GError **error, GFFDumpData gff_data) ;
 static gboolean dump_transcript_id_v3(ZMapFeature feature, gpointer basic_data,
@@ -185,8 +188,13 @@ static gboolean dump_alignment_clone(ZMapFeature feature, gpointer homol,
 static gboolean dump_alignment_length(ZMapFeature feature, gpointer homol,
   GString *gff_string, GError **error, GFFDumpData gff_data);
 
+/*
+ * V3 versions of these
+ */
 static gboolean dump_alignment_target_v3(ZMapFeature feature, gpointer homol,
-  GString *gff_string, GError **error, GFFDumpData gff_data);
+  GString *gff_string, GError **error, GFFDumpData gff_data) ;
+static gboolean dump_alignment_gaps_v3(ZMapFeature feature, gpointer homol_data,
+  GString *gff_string, GError **error, GFFDumpData gff_data) ;
 
 /* utils */
 static char strand2Char(ZMapStrand strand) ;
@@ -195,11 +203,12 @@ static char phase2Char(ZMapPhase phase) ;
 
 
 /*
- * These arrays of function pointers are used to obtain,
+ * These arrays of function pointers are used to obtain
  * format and output various attributes of different types
  * of features. They depend not only on the style mode of
  * the features themselves (BASIC, TRANSCRIPT, ALIGNMENT, etc)
- * but also on GFF version.
+ * but also on GFF version. There are seperate sets of
+ * tables for v2 and v3.
  */
 
 static DumpGFFAttrFunc basic_funcs_G_GFF2[] = {
@@ -242,7 +251,12 @@ static DumpGFFAttrFunc transcript_funcs_G_GFF3[] = {
 };
 static DumpGFFAttrFunc homol_funcs_G_GFF3[] = {
   dump_alignment_target_v3,	/* Target=<clone_id> <start> <end> <strand> */
-  //dump_alignment_gaps,	/* Gaps "1234 1245 4567 4578, 2345 2356 5678 5689" */
+  dump_alignment_gaps_v3,	/* Gaps=(<int><int><int><int>)+ */
+  NULL
+};
+static DumpGFFAttrFunc text_funcs_G_GFF3[] = {
+  dump_text_note_v3,
+  dump_transcript_locus_v3,
   NULL
 };
 
@@ -316,7 +330,7 @@ gboolean zMapGFFDumpRegion(ZMapFeatureAny dump_set, GHashTable *styles,
           gff_data.basic      = basic_funcs_G_GFF3;
           gff_data.transcript = transcript_funcs_G_GFF3;
           gff_data.homol      = homol_funcs_G_GFF3;
-          gff_data.text       = text_funcs_G_GFF2;
+          gff_data.text       = text_funcs_G_GFF3;
           gff_data.styles     = styles ;
         }
 
@@ -374,7 +388,7 @@ gboolean zMapGFFDumpList(GList *dump_list, GHashTable *styles, char *sequence, G
           gff_data.basic      = basic_funcs_G_GFF3;
           gff_data.transcript = transcript_funcs_G_GFF3;
           gff_data.homol      = homol_funcs_G_GFF3;
-          gff_data.text       = text_funcs_G_GFF2;
+          gff_data.text       = text_funcs_G_GFF3;
           gff_data.styles     = styles ;
         }
 
@@ -426,7 +440,7 @@ gboolean zMapGFFDumpForeachList(ZMapFeatureAny first_feature, GHashTable *styles
               gff_data->basic      = basic_funcs_G_GFF3;
               gff_data->transcript = transcript_funcs_G_GFF3;
               gff_data->homol      = homol_funcs_G_GFF3;
-              gff_data->text       = text_funcs_G_GFF2;
+              gff_data->text       = text_funcs_G_GFF3;
               gff_data->styles     = styles ;
             }
 
@@ -768,6 +782,24 @@ static gboolean dump_text_note_v3(ZMapFeature feature, gpointer basic_data, GStr
   return result;
 }
 
+static gboolean dump_transcript_locus_v3(ZMapFeature feature, gpointer transcript_data,
+                                      GString *gff_string, GError **error,
+                                      GFFDumpData gff_data)
+{
+  gboolean result = FALSE;
+
+  if (feature->feature.transcript.locus_id)
+  {
+    /* To make       Locus "AC12345.1"          */
+    g_string_append_printf(gff_string,
+      GFF_UNQUOTED_ATTRIBUTE,
+      "locus", (char *)g_quark_to_string(feature->feature.transcript.locus_id));
+    result = TRUE;
+  }
+
+return result;
+}
+
 
 static gboolean dump_id_as_name_v3(ZMapFeature feature, gpointer basic_data,
   GString *gff_string, GError **error, GFFDumpData gff_data)
@@ -856,16 +888,16 @@ static gboolean dump_transcript_locus(ZMapFeature feature, gpointer transcript_d
   gboolean result = FALSE;
 
   if (feature->feature.transcript.locus_id)
-  {
-    /* To make       Locus "AC12345.1"          */
-    g_string_append_printf(gff_string,
-      GFF_ATTRIBUTE_TAB_BEGIN GFF_QUOTED_ATTRIBUTE GFF_ATTRIBUTE_TAB_END,
-      "Locus",
-      (char *)g_quark_to_string(feature->feature.transcript.locus_id));
-    result = TRUE;
-  }
+    {
+      /* To make       Locus "AC12345.1"          */
+      g_string_append_printf(gff_string,
+        GFF_ATTRIBUTE_TAB_BEGIN GFF_QUOTED_ATTRIBUTE GFF_ATTRIBUTE_TAB_END,
+        "Locus",
+        (char *)g_quark_to_string(feature->feature.transcript.locus_id));
+      result = TRUE;
+    }
 
-return result;
+  return result;
 }
 
 /* this generates an erro about phase...*/
@@ -1181,6 +1213,40 @@ static gboolean dump_alignment_target_v3(ZMapFeature feature, gpointer homol_dat
   }
 
   return result ;
+}
+
+
+static gboolean dump_alignment_gaps_v3(ZMapFeature feature, gpointer homol_data,
+                                       GString *gff_string, GError **error,
+                                       GFFDumpData gff_data)
+{
+  ZMapHomol homol = (ZMapHomol)homol_data;
+  GArray *gaps_array = NULL;
+  int i;
+  gboolean has_gaps = FALSE;
+
+  if((gaps_array = homol->align))
+  {
+    has_gaps = TRUE;
+
+    g_string_append_printf(gff_string, "gaps=");
+
+    for(i = 0; i < gaps_array->len; i++)
+      {
+        ZMapAlignBlock block = NULL;
+
+        block = &(g_array_index(gaps_array, ZMapAlignBlockStruct, i));
+
+        g_string_append_printf(gff_string, "%d %d %d %d,",
+        block->q1, block->q2,
+        block->t1, block->t2);
+      }
+
+    /* remove the last comma! */
+    g_string_truncate(gff_string, gff_string->len - 1);
+  }
+
+  return has_gaps;
 }
 
 
