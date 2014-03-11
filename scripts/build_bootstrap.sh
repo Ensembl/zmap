@@ -576,7 +576,7 @@ if [ "x$ZMAP_MASTER_BUILD_DEVELOPMENT_DIR" != "x" ]; then
   _checkout_message_out "*** WARNING : If this is in production! Edit ZMAP_MASTER_BUILD_DEVELOPMENT_DIR in build_bootstrap.sh ***"
 fi
 
-_checkout_message_out "Running ./zmap_compile_and_tar.sh -b $BRANCH $options TAR_TARGET=$tar_target"
+_checkout_message_out "Running ./zmap_compile_and_tar.sh $options TAR_TARGET=$tar_target BRANCH=$branch"
 
 \$SCRIPTS_DIR/zmap_compile_and_tar.sh $options TAR_TARGET=$tar_target || _checkout_message_exit "Failed to build"
 
