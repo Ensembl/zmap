@@ -132,7 +132,7 @@ develop_branch="develop"
 production_branch="production"
 release_branch="release/*"
 
-if [[ $BRANCH == *($develop_branch) || $BRANCH == *($production_branch) || $BRANCH == *($release_branch) ]]
+if [[ $BRANCH == $develop_branch || $BRANCH == $production_branch || $BRANCH == $release_branch ]]
 then
   source_dir=$CVS_CHECKOUT_DIR/$CVS_MODULE_LOCAL/$INSTALL_PREFIX # where to copy the installed files from
   dev_machine=lucid-dev32               # machine with write access to the project software area
@@ -174,10 +174,10 @@ then
     # production builds are installed in the project area directly
     # release and develop builds are stored in 'test' and 'dev' subdirectories
     build_subdir=""
-    if [[ $BRANCH == *($develop_branch) ]]
+    if [[ $BRANCH == $develop_branch ]]
     then
         build_subdir="/dev"
-    elif [[ $BRANCH == *($release_branch) ]]
+    elif [[ $BRANCH == $release_branch ]]
     then
       build_subdir="/test"
     fi
@@ -191,7 +191,7 @@ then
 
     # Do the copy
     zmap_message_out "Installing binaries in $project_area"
-    ssh $dev_machine "$SCRIPT_DIR/copy_directory.sh $source_dir $project_area"
+    ssh $dev_machine "$BASE_DIR/copy_directory.sh $source_dir $project_area"
     wait
   
     # We don't currently build on ubuntu precise because the ubuntu lucid build works there.
@@ -200,7 +200,7 @@ then
     if [ $arch_subdir == "linux-x86_64" ]
     then
       zmap_message_out "Installing binaries in $precise_project_area"
-      ssh $dev_machine "$SCRIPT_DIR/copy_directory.sh $source_dir $precise_project_area"
+      ssh $dev_machine "$BASE_DIR/copy_directory.sh $source_dir $precise_project_area"
       wait  
     fi    
   fi
