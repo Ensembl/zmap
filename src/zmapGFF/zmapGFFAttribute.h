@@ -188,7 +188,7 @@ gboolean zMapAttParsePID(ZMapGFFAttribute, double *const);
 gboolean zMapAttParseSequence(ZMapGFFAttribute, char ** const ) ;
 gboolean zMapAttParseSource(ZMapGFFAttribute, char ** const) ;
 gboolean zMapAttParseTargetV2(ZMapGFFAttribute, char ** const, char ** const ) ;
-gboolean zMapAttParseTarget(ZMapGFFAttribute, char ** const, int * const , int * const , ZMapStrand * const ) ;
+gboolean zMapAttParseTarget(ZMapGFFAttribute, GQuark * const, int * const , int * const , ZMapStrand * const ) ;
 gboolean zMapAttParseURL(ZMapGFFAttribute, char** const ) ;
 gboolean zMapAttParseVulgarExonerate(ZMapGFFAttribute , GArray ** const, ZMapStrand , int, int, ZMapStrand, int, int) ;
 gboolean zMapAttParseEnsemblVariation(ZMapGFFAttribute, char ** const ) ;

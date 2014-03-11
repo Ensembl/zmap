@@ -112,7 +112,7 @@ static gboolean hack_SpecialColumnToSOTerm(const char * const, char ** const ) ;
  * settled down with the new behaviour (i.e. it has gone through
  * user testing).
  */
-#define OLD_CLIPPING_BEHAVIOUR 1
+/* #define OLD_CLIPPING_BEHAVIOUR 1 */
 
 #ifdef OLD_CLIPPING_BEHAVIOUR
 /*
@@ -3012,9 +3012,9 @@ static ZMapFeature makeFeatureAlignment(ZMapGFFFeatureData pFeatureData,
   char *sSequence = NULL,
     *sSource = NULL,
     *sSOType = NULL,
-    *sIdentifier = NULL,
     *sFeatureName = NULL,
     *sFeatureNameID = NULL ;
+  const char * sIdentifier = NULL ;
   double dScore = 0.0,
     dPercentID = 0.0 ;
   gboolean bHasScore = FALSE,
@@ -3085,16 +3085,18 @@ static ZMapFeature makeFeatureAlignment(ZMapGFFFeatureData pFeatureData,
   /*
    * We treat two cases:
    * (a) First is an "ordinary" alignment where we are after the "Target" attribute.
-   * (b) Second is a read_pair, where we are interested in the
+   * (b) Second is a read_pair, where we are interested in the "Target" and the "read_pair_id"
+   *     attributes
+   *
+   * This may change soon...
    */
 
   if  (         strcmp(sReadPair, sSOType)
              && (pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_Target))
-             && zMapAttParseTarget(pAttribute, &sIdentifier, &iTargetStart, &iTargetEnd, &cTargetStrand)
+             && zMapAttParseTarget(pAttribute, &gqTargetID, &iTargetStart, &iTargetEnd, &cTargetStrand)
       )
     {
       cCase = FIRST ;
-      gqTargetID = g_quark_from_string(sIdentifier) ;
     }
   else if (     !strcmp(sReadPair, sSOType)
              && (pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_read_pair_id))
@@ -3102,9 +3104,24 @@ static ZMapFeature makeFeatureAlignment(ZMapGFFFeatureData pFeatureData,
           )
     {
       cCase = SECOND ;
-      sIdentifier = zMapGFFAttributeGetTempstring(pAttribute) ;
     }
 
+
+  /*
+   * Get case dependent information
+   */
+  if (cCase == FIRST)
+    {
+      sIdentifier = g_quark_to_string(gqTargetID) ;
+    }
+  else if (cCase == SECOND)
+    {
+      sIdentifier = g_quark_to_string(gqTargetID) ;
+    }
+
+  /*
+   * Create the feature with all appropriate data
+   */
   if (
          cCase != NONE
      )
