@@ -1201,14 +1201,30 @@ static gboolean dump_alignment_target_v3(ZMapFeature feature, gpointer homol_dat
                                       GString *gff_string, GError **error,
                                       GFFDumpData gff_data)
 {
+  static const char * read_pair = "read_pair" ;
   ZMapHomol homol = (ZMapHomol)homol_data;
   gboolean result = FALSE ;
 
+  /*
+   * We need different behaviour here if the
+   * feature has SOtype == read_pair... Target attribute
+   * is not appropriate in this case, we just want the
+   * "read_pair_id" attribute.
+   */
+
   if(homol->clone_id)
   {
-    g_string_append_printf(gff_string, "Target=%s %d %d %s",
-      g_quark_to_string(homol->clone_id),
-      homol->y1, homol->y2, zMapFeatureStrand2Str(homol->strand));
+    if (!strcmp(g_quark_to_string(feature->SO_accession), read_pair))
+      {
+        g_string_append_printf(gff_string, "read_pair_id=%s",
+          g_quark_to_string(homol->clone_id));
+      }
+    else
+      {
+        g_string_append_printf(gff_string, "Target=%s %d %d %s",
+          g_quark_to_string(homol->clone_id),
+          homol->y1, homol->y2, zMapFeatureStrand2Str(homol->strand));
+      }
     result = TRUE ;
   }
 

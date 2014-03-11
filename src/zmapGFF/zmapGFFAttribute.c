@@ -1436,7 +1436,10 @@ gboolean zMapAttParseID(ZMapGFFAttribute pAttribute, GQuark * const pgqOut )
   if (strlen(sValue))
     {
       *pgqOut = g_quark_from_string(sValue) ;
-      bResult = TRUE ;
+      if (*pgqOut)
+        {
+          bResult = TRUE ;
+        }
     }
 
   return bResult ;
@@ -1993,3 +1996,30 @@ gboolean zMapAttParseAssemblyPath(ZMapGFFAttribute pAttribute, char ** const psO
 
 
 
+/*
+ * Parse the "read_pair_id" attribute. Translate the associated string into a GQuark.
+ */
+gboolean zMapAttParseReadPairID(ZMapGFFAttribute pAttribute, GQuark * const pgqOut )
+{
+  gboolean bResult = FALSE ;
+  static const char *sMyName = "zMapAttParseReadPairID()" ;
+  if (!pAttribute)
+    return bResult ;
+  const char * const sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
+  if (strcmp(sAttributeName_read_pair_id, zMapGFFAttributeGetNamestring(pAttribute)))
+    {
+      zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
+      return bResult ;
+    }
+
+  if (strlen(sValue))
+    {
+      *pgqOut = g_quark_from_string(sValue) ;
+      if (*pgqOut)
+        {
+          bResult = TRUE ;
+        }
+    }
+
+  return bResult ;
+}

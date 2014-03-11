@@ -95,6 +95,7 @@ DEFINE_ATTRIBUTE(sAttributeName, cigar_bam)
 DEFINE_ATTRIBUTE(sAttributeName, vulgar_exonerate)
 DEFINE_ATTRIBUTE(sAttributeName, Known_name)
 DEFINE_ATTRIBUTE(sAttributeName, assembly_path)
+DEFINE_ATTRIBUTE(sAttributeName, read_pair_id)
 
 #undef DEFINE_ATTRIBUTE
 
@@ -192,6 +193,7 @@ gboolean zMapAttParseURL(ZMapGFFAttribute, char** const ) ;
 gboolean zMapAttParseVulgarExonerate(ZMapGFFAttribute , GArray ** const, ZMapStrand , int, int, ZMapStrand, int, int) ;
 gboolean zMapAttParseEnsemblVariation(ZMapGFFAttribute, char ** const ) ;
 gboolean zMapAttParseAlleleString(ZMapGFFAttribute, char ** const) ;
+gboolean zMapAttParseReadPairID(ZMapGFFAttribute, GQuark * const) ;
 
 
 

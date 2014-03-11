@@ -108,15 +108,31 @@ static gboolean findFeatureset(ZMapGFFParser , ZMapGFFFeatureData  , ZMapFeature
 static gboolean hack_SpecialColumnToSOTerm(const char * const, char ** const ) ;
 
 /*
- * Uncomment these flag to use the feature clipping logic during the
- * parsing/feature creation operations. Note that this is done seperately
- * for different StyleMode values.
+ * These alternatives are in place temporarily until we have
+ * settled down with the new behaviour (i.e. it has gone through
+ * user testing).
  */
-/* #define CLIP_TRANSCRIPT_ON_PARSE 1 */
-#define CLIP_ALIGNMENT_ON_PARSE 1
-/* #define CLIP_ASSEMBLYPATH_ON_PARSE 1 */
-/* #define CLIP_DEFAULT_ON_PARSE 1 */
+#define OLD_CLIPPING_BEHAVIOUR 1
+
+#ifdef OLD_CLIPPING_BEHAVIOUR
+/*
+ * old clipping behaviour; clip alignments using the
+ * General function
+ */
+#define CLIP_TRANSCRIPT_ON_PARSE 1
+#define CLIP_ALIGNMENT_ON_PARSE_GENERAL 1
+#define CLIP_ASSEMBLYPATH_ON_PARSE 1
+#define CLIP_DEFAULT_ON_PARSE 1
 #define CLIP_LOCUS_ON_PARSE 1
+
+#else
+/*
+ * new clipping behaviour; alignments are clipped using
+ * the Alignment-specific function
+ */
+#define CLIP_LOCUS_ON_PARSE 1
+
+#endif
 
 /*
  * Parser FSM transitions. Row is current state, columns is line type.
@@ -2983,6 +2999,9 @@ static ZMapFeature makeFeatureAlignment(ZMapGFFFeatureData pFeatureData,
                                         ZMapFeatureSet pFeatureSet,
                                         char ** psError)
 {
+  static const char * sReadPair = "read_pair" ;
+  typedef enum {NONE, FIRST, SECOND} CaseToTreat ;
+  CaseToTreat cCase = NONE ;
   unsigned int iSOID = 0,
     nAttributes = 0 ;
   int iStart = 0,
@@ -2993,10 +3012,9 @@ static ZMapFeature makeFeatureAlignment(ZMapGFFFeatureData pFeatureData,
   char *sSequence = NULL,
     *sSource = NULL,
     *sSOType = NULL,
-    *sTargetID = NULL,
+    *sIdentifier = NULL,
     *sFeatureName = NULL,
-    *sFeatureNameID = NULL,
-    *sTargetValue = NULL ;
+    *sFeatureNameID = NULL ;
   double dScore = 0.0,
     dPercentID = 0.0 ;
   gboolean bHasScore = FALSE,
@@ -3058,19 +3076,39 @@ static ZMapFeature makeFeatureAlignment(ZMapGFFFeatureData pFeatureData,
       return pFeature ;
     }
 
+  /*
+   * Firstly get basic data for attributes.
+   */
   pAttributes = zMapGFFFeatureDataGetAts(pFeatureData) ;
   nAttributes = zMapGFFFeatureDataGetNat(pFeatureData) ;
-  pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_Target) ;
-  if (pAttribute)
-  {
-    bValidTarget = zMapAttParseTarget(pAttribute, &sTargetID, &iTargetStart, &iTargetEnd, &cTargetStrand) ;
-  }
 
-  if (bValidTarget)
+  /*
+   * We treat two cases:
+   * (a) First is an "ordinary" alignment where we are after the "Target" attribute.
+   * (b) Second is a read_pair, where we are interested in the
+   */
+
+  if  (         strcmp(sReadPair, sSOType)
+             && (pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_Target))
+             && zMapAttParseTarget(pAttribute, &sIdentifier, &iTargetStart, &iTargetEnd, &cTargetStrand)
+      )
     {
+      cCase = FIRST ;
+      gqTargetID = g_quark_from_string(sIdentifier) ;
+    }
+  else if (     !strcmp(sReadPair, sSOType)
+             && (pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_read_pair_id))
+             && zMapAttParseReadPairID(pAttribute, &gqTargetID)
+          )
+    {
+      cCase = SECOND ;
+      sIdentifier = zMapGFFAttributeGetTempstring(pAttribute) ;
+    }
 
-      sTargetValue = zMapGFFAttributeGetTempstring((pAttribute)) ;
-      gqTargetID = g_quark_from_string(sTargetID) ;
+  if (
+         cCase != NONE
+     )
+    {
 
       /*
        * Create a new feature.
@@ -3086,7 +3124,7 @@ static ZMapFeature makeFeatureAlignment(ZMapGFFFeatureData pFeatureData,
           return pFeature ;
         }
 
-      sFeatureName = g_strdup(sTargetID) ;
+      sFeatureName = g_strdup(sIdentifier) ;
       sFeatureNameID = zMapFeatureCreateName(cFeatureStyleMode, sFeatureName, cStrand, iStart, iEnd, iTargetStart, iTargetEnd) ;
 
       bDataAdded = zMapFeatureAddStandardData(pFeature, sFeatureNameID, sFeatureName, sSequence, sSOType,
@@ -3769,8 +3807,11 @@ static gboolean makeNewFeature_V3( ZMapGFFParser pParserBase,
       else if (cFeatureStyleMode == ZMAPSTYLE_MODE_ALIGNMENT)
         {
 
-#ifdef CLIP_ALIGNMENT_ON_PARSE
-          if ((bIncludeFeature = clipFeatureLogic_Alignment(pParser, pFeatureData ))) /* or clipFeatureLogic_General */
+#ifdef CLIP_ALIGNMENT_ON_PARSE_GENERAL
+          if ((bIncludeFeature = clipFeatureLogic_General(pParser, pFeatureData )))
+            {
+#else
+          if ((bIncludeFeature = clipFeatureLogic_Alignment(pParser, pFeatureData )))
             {
 #endif
 
@@ -3781,9 +3822,7 @@ static gboolean makeNewFeature_V3( ZMapGFFParser pParserBase,
                   ++pParser->num_features ;
                 }
 
-#ifdef CLIP_ALIGNMENT_ON_PARSE
             }
-#endif
 
         }
       else if (cFeatureStyleMode == ZMAPSTYLE_MODE_ASSEMBLY_PATH)
