@@ -132,8 +132,11 @@ develop_branch="develop"
 production_branch="production"
 release_branch="release/*"
 
+zmap_message_out "Checking whether to install on /software for branch $BRANCH"
+
 if [[ $BRANCH == $develop_branch || $BRANCH == $production_branch || $BRANCH == $release_branch ]]
 then
+  zmap_message_out "Installing on /software"
   source_dir=$CVS_CHECKOUT_DIR/$CVS_MODULE_LOCAL/$INSTALL_PREFIX # where to copy the installed files from
   dev_machine=lucid-dev32               # machine with write access to the project software area
   software_root_dir="/software/noarch"  # root directory for project software
@@ -204,6 +207,8 @@ then
       wait  
     fi    
   fi
+else
+  zmap_message_out "NOT installing on /software"
 fi
 
 
