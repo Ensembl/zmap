@@ -75,6 +75,10 @@ enum
     BLX_ARGV_NETID_PORT_FLAG,   /* --fetch-server */
     BLX_ARGV_NETID_PORT,        /* [hostname:port] */
 
+    BLX_ARGV_SCREEN_FLAG,                                   /* --screen */
+    BLX_ARGV_SCREEN_NUM,                                    /* screen num as an int */
+
+    /* WHY HAVE YOU DONE THIS MALCOLM, EITHER DO ALL OF THEM OR NONE OF THEM...SIGH.... */
 //    BLX_ARGV_CONFIGFILE_FLAG = BLX_ARGV_NETID_PORT_FLAG,   /* -c */
 //    BLX_ARGV_CONFIGFILE = BLX_ARGV_NETID_PORT,             /* [filepath] */
 
@@ -1265,13 +1269,24 @@ static gboolean buildParamString(blixemData blixem_data, char **paramString)
     }
   else
     {
-      missed += 2;
+      missed += 2 ;
+    }
+
+  /* Might need to start blixem on a different screen. */
+  if (blixem_data->view->multi_screen)
+    {
+      paramString[BLX_ARGV_SCREEN_FLAG] = g_strdup("--screen") ;
+      paramString[BLX_ARGV_SCREEN_NUM] = g_strdup_printf("%d", blixem_data->view->blixem_screen) ;
+    }
+  else
+    {
+      missed += 1 ;
     }
 
   /* For testing purposes remove the "-r" flag to leave the temporary files.
    * (keep_tempfiles = true in blixem stanza of ZMap file) */
   if (!blixem_data->keep_tmpfiles)
-    paramString[BLX_ARGV_RM_TMP_FILES - missed] = g_strdup("--remove-input-files");
+    paramString[BLX_ARGV_RM_TMP_FILES - missed] = g_strdup("--remove-input-files") ;
   else
     missed += 1;
 

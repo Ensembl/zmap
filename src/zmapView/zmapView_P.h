@@ -251,6 +251,11 @@ typedef struct _ZMapViewStruct
   gboolean remote_control ;
 
 
+  /* Multiple screen support. */
+  gboolean multi_screen ;
+  int blixem_screen ;
+
+
   /* THESE WILL NOT BE NEEDED ANY MORE.. */
   GtkWidget *xremote_widget ;				    /* Widget that receives xremote
 							       commands from external program
