@@ -93,7 +93,7 @@ gboolean zMapUtilsConfigDebug(char *config_file)
 
 
 
-/* Read ZMap sequence/start/end from config file. */
+/* Read ZMap sequence/start/end from config file. Returns true if all three are found. */
 gboolean zMapAppGetSequenceConfig(ZMapFeatureSequenceMap seq_map)
 {
   gboolean result = FALSE ;
@@ -101,6 +101,7 @@ gboolean zMapAppGetSequenceConfig(ZMapFeatureSequenceMap seq_map)
 
   if (seq_map && seq_map->config_file && (context = zMapConfigIniContextProvide(seq_map->config_file)))
     {
+      result = TRUE;
       char *tmp_string  = NULL;
 
       if (zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
@@ -114,22 +115,32 @@ gboolean zMapAppGetSequenceConfig(ZMapFeatureSequenceMap seq_map)
 					ZMAPSTANZA_APP_SEQUENCE, &tmp_string))
 	{
 	  seq_map->sequence = tmp_string;
-	  if (zMapConfigIniContextGetInt(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+
+          if (zMapConfigIniContextGetInt(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
 					 ZMAPSTANZA_APP_START, &seq_map->start))
             {
-	      zMapConfigIniContextGetInt(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
-					 ZMAPSTANZA_APP_END, &seq_map->end);
+              if (!zMapConfigIniContextGetInt(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+                                              ZMAPSTANZA_APP_END, &seq_map->end))
+                {
+                  result = FALSE;
+                }
 
 	      /* possibly worth checking csname and csver at some point */
 	      tmp_string = NULL;
 	      zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
 					    ZMAPSTANZA_APP_CSNAME,&tmp_string);
             }
+          else
+            {
+              result = FALSE;
+            }
 	}
+      else
+        {
+          result = FALSE;
+        }
 
       zMapConfigIniContextDestroy(context);
-
-      result = TRUE;
     }
 
   return result ;
