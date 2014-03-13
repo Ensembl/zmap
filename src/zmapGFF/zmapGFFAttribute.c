@@ -1026,7 +1026,7 @@ gboolean zMapAttParseAlias(ZMapGFFAttribute pAttribute, char ** const sOut)
  * The 'start' and 'end' data are assumed to be unsigned. At least one
  * space is required between <end> and <strand> if the latter is present.
  */
-gboolean zMapAttParseTarget(ZMapGFFAttribute pAttribute, char ** const sOut, int * const piStart, int * const piEnd, ZMapStrand * const pStrand)
+gboolean zMapAttParseTarget(ZMapGFFAttribute pAttribute, GQuark * const pgqOut, int * const piStart, int * const piEnd, ZMapStrand * const pStrand)
 {
   gboolean bResult = FALSE ;
   static const char *sMyName = "zMapAttParseTarget()" ;
@@ -1075,7 +1075,7 @@ gboolean zMapAttParseTarget(ZMapGFFAttribute pAttribute, char ** const sOut, int
 
           if (bResult)
             {
-              *sOut = g_strdup(sStringBuff) ;
+              *pgqOut = g_quark_from_string(sStringBuff) ;
               *piStart = iStart ;
               *piEnd = iEnd ;
             }
