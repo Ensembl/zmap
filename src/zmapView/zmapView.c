@@ -451,6 +451,7 @@ ZMapViewWindow zMapViewCreate(GtkWidget *view_container, ZMapFeatureSequenceMap 
   ZMapFeatureSequenceMap sequence_fetch ;
   GList *sequences_list = NULL ;
   char *view_name ;
+  int curr_scr_num, num_screens ;
 
   /* No callbacks, then no view creation. */
   zMapReturnValIfFail((GTK_IS_WIDGET(view_container)), view_window);
@@ -479,6 +480,8 @@ ZMapViewWindow zMapViewCreate(GtkWidget *view_container, ZMapFeatureSequenceMap 
 
   view_name = sequence_map->sequence ;
 
+
+  /* UM....THIS IS RUBBISH...WE GET PASSED THIS ALWAYS....CHECK THAT THIS IS TRUE !! */
   if(!sequence_map->start)
     {
       /* this should use coords extracted from ACEDB/smap or provided by otterlace
@@ -507,6 +510,20 @@ ZMapViewWindow zMapViewCreate(GtkWidget *view_container, ZMapFeatureSequenceMap 
 
 
   zmap_view = createZMapView(view_name, sequences_list, app_data) ; /* N.B. this step can't fail. */
+
+  /* If we have multiple screens then work out where we should show blixem. */
+  if (zMapGUIGetScreenInfo(view_container, &curr_scr_num, &num_screens) && num_screens > 1)
+    {
+      zmap_view->multi_screen = TRUE ;
+
+      /* Crude but it will do for now. */
+      if (curr_scr_num == 0)
+        zmap_view->blixem_screen = 1 ;
+      else if (curr_scr_num > 0)
+        zmap_view->blixem_screen = 0 ;
+    }
+
+
 
   if (view_cbs_G->remote_request_func)
     zmap_view->remote_control = TRUE ;

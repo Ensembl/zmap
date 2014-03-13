@@ -363,6 +363,31 @@ char *zMapGUIGetEventAsText(GdkEventMask exclude_mask, GdkEventAny *any_event)
 
 
 
+/* Retrieve the screen number the widget is displayed on and how many screens there are
+ * altogether on the display. */
+gboolean zMapGUIGetScreenInfo(GtkWidget *widget, int *curr_screen_out, int *num_screens_out)
+{
+  gboolean result = TRUE ;                                  /* func. can't fail at the moment. */
+  GdkDisplay *curr_display ;
+  gint num_screens ;
+  GdkScreen *curr_screen ;
+  int curr_screen_num ;
+
+  curr_display = gtk_widget_get_display(widget) ;
+  num_screens = gdk_display_get_n_screens(curr_display) ;
+
+  curr_screen = gtk_widget_get_screen(widget) ;
+  curr_screen_num = gdk_screen_get_number(curr_screen) ;
+
+  *curr_screen_out = curr_screen_num ;
+  *num_screens_out = num_screens ;
+
+  return result ;
+}
+
+
+
+
 gboolean zMapGUIGetMaxWindowSize(GtkWidget *toplevel, gint *width_out, gint *height_out)
 {
   gboolean result = TRUE ;
