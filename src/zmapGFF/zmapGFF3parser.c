@@ -112,7 +112,7 @@ static gboolean hack_SpecialColumnToSOTerm(const char * const, char ** const ) ;
  * settled down with the new behaviour (i.e. it has gone through
  * user testing).
  */
-/* #define OLD_CLIPPING_BEHAVIOUR 1 */
+#define OLD_CLIPPING_BEHAVIOUR 1
 
 #ifdef OLD_CLIPPING_BEHAVIOUR
 /*
