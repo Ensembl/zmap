@@ -120,26 +120,23 @@ if [ "x$ZMAP_MAKE_INSTALL" == "x$ZMAP_TRUE" ]; then
 fi
 
 
-#
-# Now also install on /software for certain types of build:
+# Copy the builds to /software for certain types of build:
 #   production builds get installed in /software/annotools/
 #   release builds get installed in /software/annotools/test
 #   develop builds get installed in /software/annotools/dev
 #
-develop_branch="develop"
-production_branch="production"
-release_branch="release/*"
+zmap_message_out "Checking whether to install on /software for $BUILD_PREFIX build"
 
-zmap_message_out "Checking whether to install on /software for branch $BRANCH"
-
-if [[ $BRANCH == $develop_branch || $BRANCH == $production_branch || $BRANCH == $release_branch ]]
+if [[ $BUILD_PREFIX == "PRODUCTION" || $BUILD_PREFIX == "RELEASE" || $BUILD_PREFIX == "DEVELOPMENT" ]]
 then
   zmap_message_out "Installing on /software"
   source_dir=$CVS_CHECKOUT_DIR/$CVS_MODULE_LOCAL/$INSTALL_PREFIX # where to copy the installed files from
+
   dev_machine=lucid-dev32               # machine with write access to the project software area
   software_root_dir="/software/noarch"  # root directory for project software
   arch_subdir=""                        # the subdirectory for the current machine architecture
   annotools_subdir="annotools"          # the subdirectory for annotools
+
   opsys=`uname -s`
   
   case $opsys in
@@ -175,10 +172,10 @@ then
     # production builds are installed in the project area directly
     # release and develop builds are stored in 'test' and 'dev' subdirectories
     build_subdir=""
-    if [[ $BRANCH == $develop_branch ]]
+    if [[ $BUILD_PREFIX == "DEVELOPMENT" ]]
     then
         build_subdir="/dev"
-    elif [[ $BRANCH == $release_branch ]]
+    elif [[ $BUILD_PREFIX == "RELEASE" ]]
     then
       build_subdir="/test"
     fi
@@ -210,12 +207,10 @@ else
 fi
 
 
+
 zmap_cd $CVS_CHECKOUT_DIR
 
 zmap_cd $CVS_MODULE_LOCAL
-
-
-
 
 
 

@@ -225,6 +225,13 @@ fi
 CMD_OPTIONS="$TAG_CVS $INC_REL_VERSION $INC_UPDATE_VERSION $GIT_FEATURE_INFO"
 
 # Now flags with options
+if [ -n "$BUILD_PREFIX" ] ; then
+
+  CMD_OPTIONS="$CMD_OPTIONS -p $BUILD_PREFIX"
+
+fi
+
+
 if [ -n "$INPUT_DIR" ] ; then
 
   CMD_OPTIONS="$CMD_OPTIONS -f $INPUT_DIR"

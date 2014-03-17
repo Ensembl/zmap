@@ -50,13 +50,14 @@ zmap_message_out "Start of build bootstrap, running in $PWD"
 #
 zmap_message_out "About to parse options: $*"
 
-usage="$0 -b <branch> -d -f <zmap feature dir> -g -r -s <seqtools directory> -t -u VARIABLE=VALUE"
+usage="$0 -b <branch> -d -f <zmap feature dir> -g -p <build_prefix> -r -s <seqtools directory> -t -u VARIABLE=VALUE"
 while getopts ":b:df:grs:tu" opt ; do
     case $opt in
 	b  ) BRANCH=$OPTARG ;;
 	d  ) ZMAP_MASTER_RT_RELEASE_NOTES="yes"   ;;
 	f  ) ZMAP_MASTER_BUILD_COPY_DIR=$OPTARG ;;
 	g  ) GIT_VERSION_INFO="yes" ;;
+	p  ) BUILD_PREFIX=$OPTARG ;;
 	r  ) ZMAP_MASTER_INC_REL_VERSION="yes"    ;;
 	s  ) ZMAP_SEQTOOLS_RELEASE_DIR=$OPTARG ;;
 	t  ) ZMAP_MASTER_TAG_CVS="yes"            ;;
@@ -576,7 +577,7 @@ if [ "x$ZMAP_MASTER_BUILD_DEVELOPMENT_DIR" != "x" ]; then
   _checkout_message_out "*** WARNING : If this is in production! Edit ZMAP_MASTER_BUILD_DEVELOPMENT_DIR in build_bootstrap.sh ***"
 fi
 
-_checkout_message_out "Running ./zmap_compile_and_tar.sh $options TAR_TARGET=$tar_target BRANCH=$BRANCH"
+_checkout_message_out "Running ./zmap_compile_and_tar.sh $options TAR_TARGET=$tar_target BUILD_PREFIX=$BUILD_PREFIX"
 
 \$SCRIPTS_DIR/zmap_compile_and_tar.sh $options TAR_TARGET=$tar_target || _checkout_message_exit "Failed to build"
 
