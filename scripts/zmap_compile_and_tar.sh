@@ -23,9 +23,12 @@ zmap_message_out "Running in $INITIAL_DIR on $(hostname)"
 zmap_message_out "Parsing cmd line options: '$*'"
 
 # Get the options the user may have requested
-while getopts ":di" opt ; do
+BUILD_PREFIX=""
+
+while getopts ":dip:" opt ; do
     case $opt in
 	i  ) ZMAP_MAKE_INSTALL=$ZMAP_TRUE     ;;
+	p  ) BUILD_PREFIX=$OPTARG             ;;
 	\? ) zmap_message_exit "usage notes"
     esac
 done
