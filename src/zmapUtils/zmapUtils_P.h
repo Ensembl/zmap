@@ -45,7 +45,7 @@
 
 /* Create a website string for dialogs etc. */
 #define ZMAP_WEBSITE_STRING()                                  \
-"http://wwwdev.sanger.ac.uk/Software/analysis/ZMap/"
+"http://www.sanger.ac.uk/resources/software/zmap/"
 
 
 /* compile string. */

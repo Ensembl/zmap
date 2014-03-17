@@ -35,9 +35,7 @@
  * out how to get our release notes on to the website....and some of our other help docs. */
 
 
-/* http://wwwdev.sanger.ac.uk/Software/analysis/ZMap/doc/user_interface.shtml */
-
-#define ZMAPWEB_URL "http://wwwdev.sanger.ac.uk/resources/software/zmap"
+#define ZMAPWEB_URL "http://www.sanger.ac.uk/resources/software/zmap/"
 
 #define ZMAPWEB_DOC_URL ZMAPWEB_URL
 
