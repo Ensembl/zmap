@@ -190,11 +190,9 @@ then
     precise_subdir="precise-x86_64"
     precise_project_area=$software_root_dir/$precise_subdir/$annotools_subdir$build_subdir
 
-    # Do the copy. (Hack to hard-code path to copy script - can't find it in the
-    # local checkout for some reason.)
-    copy_script=~zmap/BUILD_CHECKOUT/ZMap_develop/copy_directory.sh
-    zmap_message_out "Running: ssh $dev_machine "$copy_script $source_dir $project_area""
-    ssh $dev_machine "$copy_script $source_dir $project_area"
+    # Do the copy
+    zmap_message_out "Installing binaries in $project_area"
+    ssh $dev_machine "$BASE_DIR/copy_directory.sh $source_dir $project_area"
     wait
   
     # We don't currently build on ubuntu precise because the ubuntu lucid build works there.
@@ -202,8 +200,8 @@ then
     # precise machines).
     if [ $arch_subdir == "linux-x86_64" ]
     then
-      zmap_message_out "Running: ssh $dev_machine $copy_script $source_dir $precise_project_area"
-      ssh $dev_machine "$copy_script $source_dir $precise_project_area"
+      zmap_message_out "Installing binaries in $precise_project_area"
+      ssh $dev_machine "$BASE_DIR/copy_directory.sh $source_dir $precise_project_area"
       wait  
     fi    
   fi
