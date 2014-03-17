@@ -192,7 +192,7 @@ then
 
     # Do the copy. (Hack to hard-code path to copy script - can't find it in the
     # local checkout for some reason.)
-    copy_script=~zmap/BUILD_CHECKOUT/ZMap_develop/copy_directory.sh
+    copy_script=~zmap/BUILD_CHECKOUT/ZMap_develop/scripts/copy_directory.sh
     zmap_message_out "Running: ssh $dev_machine "$copy_script $source_dir $project_area""
     ssh $dev_machine "$copy_script $source_dir $project_area"
     wait
