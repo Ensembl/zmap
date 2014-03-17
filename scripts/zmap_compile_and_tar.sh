@@ -133,7 +133,7 @@ zmap_message_out "Checking whether to install on /software for $BUILD_PREFIX bui
 if [[ $BUILD_PREFIX == "PRODUCTION" || $BUILD_PREFIX == "RELEASE" || $BUILD_PREFIX == "DEVELOPMENT" ]]
 then
   zmap_message_out "Installing on /software"
-  source_dir=$CVS_CHECKOUT_DIR/$CVS_MODULE.`hostname -s`/$INSTALL_PREFIX # where to copy the installed files from
+  source_dir=$CVS_CHECKOUT_DIR/$INSTALL_PREFIX # where to copy the installed files from
 
   dev_machine=lucid-dev32               # machine with write access to the project software area
   software_root_dir="/software/noarch"  # root directory for project software
