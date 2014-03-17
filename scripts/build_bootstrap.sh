@@ -51,7 +51,7 @@ zmap_message_out "Start of build bootstrap, running in $PWD"
 zmap_message_out "About to parse options: $*"
 
 usage="$0 -b <branch> -d -f <zmap feature dir> -g -p <build_prefix> -r -s <seqtools directory> -t -u VARIABLE=VALUE"
-while getopts ":b:df:grs:tu" opt ; do
+while getopts ":b:df:gp:rs:tu" opt ; do
     case $opt in
 	b  ) BRANCH=$OPTARG ;;
 	d  ) ZMAP_MASTER_RT_RELEASE_NOTES="yes"   ;;
