@@ -255,6 +255,7 @@ static void makeContext(int argc, char *argv[])
   arg_context->end     = ZMAPARG_INVALID_INT ;
   arg_context->config_file_path = arg_context->config_dir = ZMAPARG_INVALID_STR;
   arg_context->window  = ZMAPARG_INVALID_STR;
+  arg_context->styles_file = ZMAPARG_INVALID_STR;
 
   makeOptionContext(arg_context);
 
@@ -411,6 +412,9 @@ static GOptionEntry *get_config_entries(ZMapCmdLineArgs arg_context)
     { ZMAPARG_PEER_CLIPBOARD, 0, 0, 
       G_OPTION_ARG_STRING, NULL,
       ZMAPARG_PEER_CLIPBOARD_DESC, ZMAPARG_PEER_CLIPBOARD_ARG },
+    { ZMAPARG_STYLES_FILE, 0, 0,
+      G_OPTION_ARG_STRING, NULL,
+      ZMAPARG_STYLES_FILE_DESC, ZMAPARG_STYLES_FILE_ARG },
     { NULL }
   };
 
@@ -422,6 +426,7 @@ static GOptionEntry *get_config_entries(ZMapCmdLineArgs arg_context)
       entries[3].arg_data = &(arg_context->remote_debug);
       entries[4].arg_data = &(arg_context->peer_name);
       entries[5].arg_data = &(arg_context->peer_clipboard);
+      entries[6].arg_data = &(arg_context->styles_file);
     }
 
   return &entries[0];

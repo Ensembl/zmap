@@ -129,11 +129,15 @@ gboolean zMapConfigDirCreate(char *config_dir_in, char *config_file_in)
       g_free(dirname) ;
     }
 
-  if (config_dir && config_file)
+  if (config_dir)
     {
-      if ((dir_context->config_dir = zMapGetDir(config_dir, FALSE, FALSE))
-          && (dir_context->config_file = zMapGetFile(dir_context->config_dir, config_file, FALSE, NULL)))
+      if (dir_context->config_dir = zMapGetDir(config_dir, FALSE, FALSE))
 	result = TRUE ;
+    }
+
+  if (config_file)
+    {
+      dir_context->config_file = zMapGetFile(dir_context->config_dir, config_file, FALSE, NULL);
     }
 
   if ((zmap_home = getenv("ZMAP_HOME")))

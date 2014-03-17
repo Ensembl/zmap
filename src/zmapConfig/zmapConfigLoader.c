@@ -1152,7 +1152,7 @@ static GList *contextGetNamedStanzas(ZMapConfigIniContext context,
 	  fetchStanzas(&data, extra_styles_keyfile, *np) ;
 	}
     }
-  else
+  else if (names)
     {
       /* Otherwise read all available config files. */
 

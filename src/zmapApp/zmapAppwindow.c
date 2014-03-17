@@ -67,7 +67,7 @@ static void checkForCmdLineVersionArg(int argc, char *argv[]) ;
 static int checkForCmdLineSleep(int argc, char *argv[]) ;
 static void checkForCmdLineSequenceArg(int argc, char *argv[], char **dataset_out, char **sequence_out) ;
 static void checkForCmdLineStartEndArg(int argc, char *argv[], int *start_inout, int *end_inout) ;
-static char *checkConfigDir(void) ;
+static void checkConfigDir(ZMapFeatureSequenceMap seq_map) ;
 static gboolean checkSequenceArgs(int argc, char *argv[],
 				  ZMapFeatureSequenceMap seq_map_inout, char **err_msg_out) ;
 static gboolean checkPeerID(ZMapAppContext app_context,
@@ -223,7 +223,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
   /* Set up configuration directory/files, this function exits if the directory/files can't be
    * accessed.... */
-  seq_map->config_file = checkConfigDir() ;
+  checkConfigDir(seq_map) ;
 
 
   /* Set any global debug flags from config file. */
@@ -935,22 +935,31 @@ static int checkForCmdLineSleep(int argc, char *argv[])
 
 
 
-/* Did user specify a config directory and/or config file within that directory on the command line. */
-static char *checkConfigDir(void)
+/* Did user specify a config directory and/or config file within that directory on the command
+ * line. Also check for the stylesfile on the command line or in the config dir */
+static void checkConfigDir(ZMapFeatureSequenceMap seq_map)
 {
-  char *config_file = NULL ;
-  ZMapCmdLineArgsType dir = {FALSE}, file = {FALSE};
+  ZMapCmdLineArgsType dir = {FALSE}, file = {FALSE}, stylesfile = {FALSE} ;
 
   zMapCmdLineArgsValue(ZMAPARG_CONFIG_DIR, &dir) ;
   zMapCmdLineArgsValue(ZMAPARG_CONFIG_FILE, &file) ;
-
+  zMapCmdLineArgsValue(ZMAPARG_STYLES_FILE, &stylesfile) ;
 
   if (zMapConfigDirCreate(dir.s, file.s))
     {
-      config_file = zMapConfigDirGetFile() ;
+      seq_map->config_file = zMapConfigDirGetFile() ;
+      
+      /* If the stylesfile is a relative path, look for it in the config dir. If it 
+       * was not given on the command line, check if there's one with the default name */
+      if (stylesfile.s)
+        seq_map->stylesfile = zMapConfigDirFindFile(stylesfile.s) ;
+      else
+        seq_map->stylesfile = zMapConfigDirFindFile("styles.ini") ;
     }
-
-  return config_file ;
+  else if (stylesfile.s)
+    {
+      seq_map->stylesfile = stylesfile.s;
+    }
 }
 
 

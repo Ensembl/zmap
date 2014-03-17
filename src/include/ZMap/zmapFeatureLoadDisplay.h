@@ -185,6 +185,7 @@ typedef struct ZMapFeatureSequenceMapStructType
 {
   char *config_file ;
   GSList *file_list ;   /* list of filenames passed on command line */
+  char *stylesfile ;    /* path to styles file given on command line or in config dir */
 
   GHashTable *cached_parsers ; /* filenames (as GQuarks) mapped to cached info about GFF parsing that
                                 * is in progress (ZMapFeatureParserCache) if parsing has already been started */

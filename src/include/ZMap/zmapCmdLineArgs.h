@@ -58,6 +58,7 @@ typedef union
 #define ZMAPARG_SEQUENCE_END   "end"
 #define ZMAPARG_CONFIG_FILE    "conf_file"
 #define ZMAPARG_CONFIG_DIR     "conf_dir"
+#define ZMAPARG_STYLES_FILE    "styles_file"
 
 
 /* Soon to be removed. */
