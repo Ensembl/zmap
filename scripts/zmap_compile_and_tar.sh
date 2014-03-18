@@ -122,6 +122,38 @@ if [ "x$ZMAP_MAKE_INSTALL" == "x$ZMAP_TRUE" ]; then
     make install || zmap_message_exit $(hostname) "Failed running make install"
 fi
 
+zmap_cd $CVS_CHECKOUT_DIR
+
+zmap_cd $CVS_MODULE_LOCAL
+
+
+
+if [ "x$TAR_TARGET" != "x" ]; then
+
+    zmap_scp_path_to_host_path $TAR_TARGET
+
+    zmap_message_out $TAR_TARGET_HOST $TAR_TARGET_PATH
+    TAR_TARGET_CVS=$CVS_MODULE.$(hostname -s)
+    UNAME_DIR=$(uname -ms | sed -e 's/ /_/g')
+
+    [ "x$TAR_TARGET_CVS"  != "x" ] || zmap_message_exit "No CVS set."
+
+    tar -zcf - * | ssh $TAR_TARGET_HOST "/bin/bash -c '\
+cd $TAR_TARGET_PATH    || exit 1; \
+rm -rf $TAR_TARGET_CVS || exit 1; \
+mkdir $TAR_TARGET_CVS  || exit 1; \
+cd $TAR_TARGET_CVS     || exit 1; \
+tar -zxf -             || exit 1; \
+cd ..                  || exit 1; \
+ln -s $TAR_TARGET_CVS/$INSTALL_PREFIX $UNAME_DIR'"
+
+    if [ $? != 0 ]; then
+	zmap_message_exit "Failed to copy!"
+    else
+	zmap_message_out "Sucessfully copied to $TAR_TARGET_HOST:$TAR_TARGET_PATH/$TAR_TARGET_CVS"
+    fi
+fi
+
 
 # Copy the builds to /software for certain types of build:
 #   production builds get installed in /software/annotools/
@@ -133,9 +165,9 @@ zmap_message_out "Checking whether to install on /software for $BUILD_PREFIX bui
 if [[ $BUILD_PREFIX == "PRODUCTION" || $BUILD_PREFIX == "RELEASE" || $BUILD_PREFIX == "DEVELOPMENT" ]]
 then
   zmap_message_out "Installing on /software"
-  source_dir=$CVS_CHECKOUT_DIR/$INSTALL_PREFIX # where to copy the installed files from
+  source_dir=$TAR_TARGET_PATH/$TAR_TARGET_CVS # where to copy the installed files from
 
-  dev_machine=lucid-dev32               # machine with write access to the project software area
+  dev_machine=$TAR_TARGET_HOST          # must be a machine with write access to the project software area
   software_root_dir="/software/noarch"  # root directory for project software
   arch_subdir=""                        # the subdirectory for the current machine architecture
   annotools_subdir="annotools"          # the subdirectory for annotools
@@ -209,38 +241,4 @@ then
   fi
 else
   zmap_message_out "NOT installing on /software"
-fi
-
-
-
-zmap_cd $CVS_CHECKOUT_DIR
-
-zmap_cd $CVS_MODULE_LOCAL
-
-
-
-if [ "x$TAR_TARGET" != "x" ]; then
-
-    zmap_scp_path_to_host_path $TAR_TARGET
-
-    zmap_message_out $TAR_TARGET_HOST $TAR_TARGET_PATH
-    TAR_TARGET_CVS=$CVS_MODULE.$(hostname -s)
-    UNAME_DIR=$(uname -ms | sed -e 's/ /_/g')
-
-    [ "x$TAR_TARGET_CVS"  != "x" ] || zmap_message_exit "No CVS set."
-
-    tar -zcf - * | ssh $TAR_TARGET_HOST "/bin/bash -c '\
-cd $TAR_TARGET_PATH    || exit 1; \
-rm -rf $TAR_TARGET_CVS || exit 1; \
-mkdir $TAR_TARGET_CVS  || exit 1; \
-cd $TAR_TARGET_CVS     || exit 1; \
-tar -zxf -             || exit 1; \
-cd ..                  || exit 1; \
-ln -s $TAR_TARGET_CVS/$INSTALL_PREFIX $UNAME_DIR'"
-
-    if [ $? != 0 ]; then
-	zmap_message_exit "Failed to copy!"
-    else
-	zmap_message_out "Sucessfully copied to $TAR_TARGET_HOST:$TAR_TARGET_PATH/$TAR_TARGET_CVS"
-    fi
 fi
