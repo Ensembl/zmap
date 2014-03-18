@@ -165,7 +165,7 @@ zmap_message_out "Checking whether to install on /software for $BUILD_PREFIX bui
 if [[ $BUILD_PREFIX == "PRODUCTION" || $BUILD_PREFIX == "RELEASE" || $BUILD_PREFIX == "DEVELOPMENT" ]]
 then
   zmap_message_out "Installing on /software"
-  source_dir=$TAR_TARGET_PATH/$TAR_TARGET_CVS # where to copy the installed files from
+  source_dir=$TAR_TARGET_PATH/$TAR_TARGET_CVS/$INSTALL_PREFIX # where to copy the installed files from
 
   dev_machine=$TAR_TARGET_HOST          # must be a machine with write access to the project software area
   software_root_dir="/software/noarch"  # root directory for project software
