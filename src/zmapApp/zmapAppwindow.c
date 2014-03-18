@@ -55,7 +55,6 @@
 
 
 
-
 /* define this to get some memory debugging. */
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #define ZMAP_MEMORY_DEBUG
@@ -65,11 +64,11 @@
 
 static void checkForCmdLineVersionArg(int argc, char *argv[]) ;
 static int checkForCmdLineSleep(int argc, char *argv[]) ;
-static void checkForCmdLineSequenceArg(int argc, char *argv[], char **dataset_out, char **sequence_out) ;
-static void checkForCmdLineStartEndArg(int argc, char *argv[], int *start_inout, int *end_inout) ;
+static void checkForCmdLineSequenceArg(int argc, char *argv[], char **dataset_out, char **sequence_out, GError **error) ;
+static void checkForCmdLineStartEndArg(int argc, char *argv[], int *start_inout, int *end_inout, GError **error) ;
 static void checkConfigDir(ZMapFeatureSequenceMap seq_map) ;
 static gboolean checkSequenceArgs(int argc, char *argv[],
-				  ZMapFeatureSequenceMap seq_map_inout, char **err_msg_out) ;
+                                  ZMapFeatureSequenceMap seq_map_inout, GError **error) ;
 static gboolean checkPeerID(ZMapAppContext app_context,
 			    char **peer_name_out, char **peer_clipboard_out, int *peer_retries, int *peer_timeout_ms) ;
 
@@ -158,7 +157,6 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   int log_size ;
   int sleep_seconds = 0 ;
   ZMapFeatureSequenceMap seq_map;
-  char *err_msg = NULL ;
   gboolean remote_control = FALSE ;
   GError *g_error = NULL ;
 
@@ -268,6 +266,11 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
     }
   else
     {
+      if (g_error)
+        {
+          g_error_free(g_error) ;
+          g_error = NULL ;
+        }
       zMapWriteStartMsg() ;
     }
 
@@ -295,10 +298,21 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
   /* Check for sequence/start/end on command line or in config. file, must be
    * either completely correct or not specified. */
-  if (!checkSequenceArgs(argc, argv, seq_map, &err_msg))
+  if (!checkSequenceArgs(argc, argv, seq_map, &g_error))
     {
-      zMapLogCritical("%s", err_msg) ;
-      consoleMsg(TRUE, "%s", err_msg) ;
+      if (g_error)
+        {
+          zMapLogCritical("%s", g_error->message) ;
+          consoleMsg(TRUE, "%s", g_error->message) ;
+          g_error_free(g_error);
+          g_error = NULL;
+        }
+      else
+        {
+          zMapLogCritical("%s", "Fatal error: no error message given") ;
+          consoleMsg(TRUE, "%s", "Fatal error: no error message given") ;
+        }
+
       doTheExit(EXIT_FAILURE) ;
     }
 
@@ -814,7 +828,7 @@ static gboolean removeZMapRowForeachFunc(GtkTreeModel *model, GtkTreePath *path,
 }
 
 /* Did user specify seqence/start/end on command line? */
-static void checkForCmdLineSequenceArg(int argc, char *argv[], char **dataset_out, char **sequence_out)
+static void checkForCmdLineSequenceArg(int argc, char *argv[], char **dataset_out, char **sequence_out, GError **error)
 {
   ZMapCmdLineArgsType value ;
   char *sequence ;
@@ -844,36 +858,33 @@ static void checkForCmdLineSequenceArg(int argc, char *argv[], char **dataset_ou
 
 
 /* Did user specify seqence/start/end on command line. */
-static void checkForCmdLineStartEndArg(int argc, char *argv[], int *start_inout, int *end_inout)
+static void checkForCmdLineStartEndArg(int argc, char *argv[], int *start_inout, int *end_inout, GError **error)
 {
-  ZMapCmdLineArgsType value ;
+  GError *tmp_error = NULL ;
+  ZMapCmdLineArgsType start_value ;
+  ZMapCmdLineArgsType end_value ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  int start = *start_inout, end = *end_inout ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  gboolean got_start = zMapCmdLineArgsValue(ZMAPARG_SEQUENCE_START, &start_value) ;
+  gboolean got_end = zMapCmdLineArgsValue(ZMAPARG_SEQUENCE_END, &end_value) ;
 
-
-  if (zMapCmdLineArgsValue(ZMAPARG_SEQUENCE_START, &value))
-    *start_inout = value.i ;
-  if (zMapCmdLineArgsValue(ZMAPARG_SEQUENCE_END, &value))
-    *end_inout = value.i ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  if (start != *start_inout || end != *end_inout)
+  if (got_start && got_end)
     {
-      if (start < 1 || (end != 0 && end < start))
-	{
-	  fprintf(stderr, "Bad start/end values: start = %d, end = %d\n", start, end) ;
-	  doTheExit(EXIT_FAILURE) ;
-	}
-      else
-	{
-	  *start_inout = start ;
-	  *end_inout = end ;
-	}
+      *start_inout = start_value.i ;
+      *end_inout = end_value.i ;
     }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  else if (got_start)
+    {
+      g_set_error(&tmp_error, ZMAP_APP_ERROR, ZMAPAPP_ERROR_BAD_COORDS,
+                  "The start coord was specified on the command line but the end coord is missing: must specify both or none") ;
+    }
+  else if (got_end)
+    {
+      g_set_error(&tmp_error, ZMAP_APP_ERROR, ZMAPAPP_ERROR_BAD_COORDS,
+                  "The end coord was specified on the command line but the start coord is missing: must specify both or none") ;
+    }
+
+  if (tmp_error)
+    g_propagate_error(error, tmp_error) ;
 
   return ;
 }
@@ -1328,7 +1339,9 @@ static gboolean configureLog(char *config_file, GError **error)
 
 
 /* Check the given file to see if we can extract sequence details */
-static gboolean checkInputFileForSequenceDetails(const char* const filename, ZMapFeatureSequenceMap seq_map_inout)
+static gboolean checkInputFileForSequenceDetails(const char* const filename, 
+                                                 ZMapFeatureSequenceMap seq_map_inout,
+                                                 GError **error)
 {
   gboolean result = FALSE ;
   zMapReturnValIfFail(filename, result) ;
@@ -1427,28 +1440,6 @@ static gboolean checkInputFileForSequenceDetails(const char* const filename, ZMa
 }
 
 
-/* Check the input file(s), if any, for sequence details */
-static gboolean checkInputFilesForSequenceDetails(ZMapFeatureSequenceMap seq_map_inout)
-{
-  gboolean found = FALSE ;
-  zMapReturnValIfFailSafe(seq_map_inout, found) ;
-
-  GSList *file_item = seq_map_inout->file_list ;
-
-  /* Loop through each input file looking for sequence details. At the moment
-   * we only use the details from the first file we find. There's potential
-   * to do something more clever - merge coords, and maybe open multiple views for different
-   * sequences? */
-  for ( ; file_item && !found; file_item = file_item->next)
-    {
-      const char *file = (char*)(file_item->data) ;
-      found = checkInputFileForSequenceDetails(file, seq_map_inout) ;
-    }
-
-  return found ;
-}
-
-
 /* Save the paths of any input files in the sequence map. These are needed later to construct the
  * server URLs  */
 static void saveInputFilePaths(ZMapFeatureSequenceMap seq_map_inout)
@@ -1469,54 +1460,92 @@ static void saveInputFilePaths(ZMapFeatureSequenceMap seq_map_inout)
 }
 
 
-
-/* Check to see if user specied a sequence/start/end on the command line or in
- * a config file, only returns FALSE if they tried to specify it and it was
- * wrong. If FALSE an error message is returned in err_msg_out which should
- * be g_free'd by caller. */
-static gboolean checkSequenceArgs(int argc, char *argv[],
-                                  ZMapFeatureSequenceMap seq_map_inout, char **err_msg_out)
+/* Check the input file(s) on the command line, if any. Checks the sequence details are valid and/or
+ * sets the sequence details if they are not already set. */
+static void checkInputFiles(ZMapFeatureSequenceMap seq_map_inout, GError **error)
 {
-  gboolean result = FALSE ;
-  const char *source = "- could not get sequence details from command line, config file or in input file" ;
+  zMapReturnIfFailSafe(seq_map_inout) ;
+  GError *tmp_error = NULL ;
 
+  /* Save the list of files that were given on the command line */
   saveInputFilePaths(seq_map_inout) ;
 
-  /* Check command line first, calls will exit if there is a problem if flag is completely wrong. */
-  checkForCmdLineSequenceArg(argc, argv, &seq_map_inout->dataset, &seq_map_inout->sequence);
-  checkForCmdLineStartEndArg(argc, argv, &seq_map_inout->start, &seq_map_inout->end) ;
+  GSList *file_item = seq_map_inout->file_list ;
 
-  /* Nothing specified on command line so check config file or input file(s). */
-  if (!(seq_map_inout->sequence) && !(seq_map_inout->start) && !(seq_map_inout->end))
+  /* Loop through each input file checking the sequence details. */
+  for ( ; file_item; file_item = file_item->next)
     {
-      if (zMapAppGetSequenceConfig(seq_map_inout))
-        {
-          source = "in config file" ;
-        }
-      else if (checkInputFilesForSequenceDetails(seq_map_inout))
-        {
-          source = "in input file" ;
-        }
+      const char *file = (char*)(file_item->data) ;
+      checkInputFileForSequenceDetails(file, seq_map_inout, &tmp_error) ;
     }
-  else
-    {
-      source = "on command line" ;
-    }
+  
+  if (tmp_error)
+    g_propagate_error(error, tmp_error) ;
+}
+
+
+/* Validate the sequence details set in the sequence map. Sets the error if there is a problem. */
+static gboolean validateSequenceDetails(ZMapFeatureSequenceMap seq_map, GError **error)
+{
+  gboolean result = FALSE ;
+  GError *tmp_error = NULL ;
 
   /* Everything must be specified or nothing. */
-  if ((seq_map_inout->sequence && seq_map_inout->start && seq_map_inout->end)
-      || (!(seq_map_inout->sequence) && !(seq_map_inout->start) && !(seq_map_inout->end)))
+  if ((seq_map->sequence && seq_map->start && seq_map->end)
+      || (!(seq_map->sequence) && !(seq_map->start) && !(seq_map->end)))
     {
       result = TRUE ;
     }
   else
     {
       result = FALSE ;
-      *err_msg_out = g_strdup_printf("Bad sequence args %s: %s",
-				     source,
-				     (!seq_map_inout->sequence ? "no sequence name"
-				      : (seq_map_inout->start <= 1 ? "start less than 1" : "end less than start"))) ;
+
+      g_set_error(&tmp_error, ZMAP_APP_ERROR, ZMAPAPP_ERROR_BAD_SEQUENCE_DETAILS, 
+                  "Bad sequence args: must set all or none of sequence name, start and end. Got: %s, %d, %d",
+                  (!seq_map->sequence ? "<no sequence name>" : seq_map->sequence),
+                  seq_map->start, seq_map->end) ;
     }
+
+  if (tmp_error)
+    g_propagate_error(error, tmp_error) ;
+
+  return result ;
+}
+
+
+/* Check to see if user specied a sequence/start/end on the command line or in
+ * a config file, only returns FALSE if they tried to specify it and it was
+ * wrong. If FALSE an error message is returned in err_msg_out which should
+ * be g_free'd by caller. */
+static gboolean checkSequenceArgs(int argc, char *argv[],
+                                  ZMapFeatureSequenceMap seq_map_inout, GError **error)
+{
+  gboolean result = FALSE ;
+  GError *tmp_error = NULL ;
+
+  /* Check for sequence on command-line */
+  if (!tmp_error)
+    checkForCmdLineSequenceArg(argc, argv, &seq_map_inout->dataset, &seq_map_inout->sequence, &tmp_error) ;
+  
+  /* Check for coords on command-line */
+  if (!tmp_error)
+    checkForCmdLineStartEndArg(argc, argv, &seq_map_inout->start, &seq_map_inout->end, &tmp_error) ;
+
+  /* Check for sequence details in the config file, if one was given. If the sequence details
+   * are already set then this just validates the config file values against the existing ones. */
+  if (!tmp_error)
+    zMapAppGetSequenceConfig(seq_map_inout, &tmp_error) ;
+
+  /* Next check any input file(s) */
+  if (!tmp_error)
+    checkInputFiles(seq_map_inout, &tmp_error) ;
+
+  /* If details were set, check that they are valid. */
+  if (!tmp_error)
+    result = validateSequenceDetails(seq_map_inout, &tmp_error) ;
+
+  if (tmp_error)
+    g_propagate_error(error, tmp_error) ;
 
   return result ;
 }
