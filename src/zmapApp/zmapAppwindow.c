@@ -1348,51 +1348,62 @@ static gboolean checkInputFileForSequenceDetails(const char* const filename, ZMa
   else
     gff_pipe = g_io_channel_new_file(filename, "r", &gff_pipe_err) ;
 
-  /* Get the GFF version; default returned is 2 */
   if (gff_pipe)
-    zMapGFFGetVersionFromGIO(gff_pipe, &gff_version);
-
-  if (gff_version)
-    parser = zMapGFFCreateParser(gff_version, NULL, 0, 0) ;
-
-  if (parser)
     {
-      gsize terminator_pos = 0 ;
-      gboolean done_header = FALSE ;
-      ZMapGFFHeaderState header_state = GFF_HEADER_NONE ; /* got all the ones we need ? */
-
-      zMapGFFParserSetSequenceFlag(parser);  // reset done flag for seq else skip the data
-
-      /* Read the header, needed for feature coord range. */
-      while ((status = g_io_channel_read_line_string(gff_pipe, gff_line,
-                                                     &terminator_pos,
-                                                     &gff_pipe_err)) == G_IO_STATUS_NORMAL)
+      /* Get the GFF version; default returned is 2 */
+      zMapGFFGetVersionFromGIO(gff_pipe, &gff_version);
+      
+      if (gff_version)
         {
-          *(gff_line->str + terminator_pos) = '\0' ; /* Remove terminating newline. */
+          parser = zMapGFFCreateParser(gff_version, NULL, 0, 0) ;
 
-          if (zMapGFFParseHeader(parser, gff_line->str, &done_header, &header_state))
+          if (parser)
             {
-              if (done_header)
+              gsize terminator_pos = 0 ;
+              gboolean done_header = FALSE ;
+              ZMapGFFHeaderState header_state = GFF_HEADER_NONE ; /* got all the ones we need ? */
+              
+              zMapGFFParserSetSequenceFlag(parser);  // reset done flag for seq else skip the data
+              
+              /* Read the header, needed for feature coord range. */
+              while ((status = g_io_channel_read_line_string(gff_pipe, gff_line,
+                                                         &terminator_pos,
+                                                             &gff_pipe_err)) == G_IO_STATUS_NORMAL)
                 {
-                  result = TRUE ;
-                  break ;
-                }
-              else
-                {
-                  gff_line = g_string_truncate(gff_line, 0) ;  /* Reset line to empty. */
+                  *(gff_line->str + terminator_pos) = '\0' ; /* Remove terminating newline. */
+                  
+                  if (zMapGFFParseHeader(parser, gff_line->str, &done_header, &header_state))
+                    {
+                      if (done_header)
+                        {
+                          result = TRUE ;
+                          break ;
+                        }
+                      else
+                        {
+                          gff_line = g_string_truncate(gff_line, 0) ;  /* Reset line to empty. */
+                        }
+                    }
+                  else
+                    {
+                      consoleMsg(TRUE, "Error reading GFF file header") ;
+                      break ;
+                    }
                 }
             }
           else
             {
-              consoleMsg(TRUE, "Error reading GFF file header") ;
-              break ;
+              consoleMsg(TRUE, "Error creating GFF parser for file %s", filename);
             }
         }
+      else
+        {
+          consoleMsg(TRUE, "Could not get gff-version from file %s", filename);
+        }
     }
-
   else
-    {
-      consoleMsg(TRUE, "Error getting sequence-region from file %s", filename);
+    { 
+      consoleMsg(TRUE, "Could not open file %s", filename);
     }
 
   if (result && parser)
