@@ -4306,7 +4306,7 @@ static gboolean getFeatureName(const char * const sequence,
   *sTempBuff02 = NULL ;
   unsigned int iAttribute = 0 ;
 
-  zMapReturnValIfFail(sequence && *sequence && pAttributes && given_name && *given_name && source && *source, bHasName) ;
+  zMapReturnValIfFail(sequence && *sequence && source && *source, bHasName) ;
 
   ZMapGFFAttribute pAttribute = NULL ;
 
@@ -4331,7 +4331,7 @@ static gboolean getFeatureName(const char * const sequence,
       *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
                                                start, end, query_start, query_end) ;
     }
-  else if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "Name")))
+  else if (pAttributes && (pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "Name")))
     {
       bParseValid = zMapAttParseName(pAttribute, &*feature_name) ;
       *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
@@ -4347,14 +4347,14 @@ static gboolean getFeatureName(const char * const sequence,
       if (feature_type == ZMAPSTYLE_MODE_ALIGNMENT)
         {
 
-          if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "Target")))
+          if (pAttributes && (pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "Target")))
             {
 
                 /* In acedb output at least, homologies all have the same format.
                * Strictly speaking this is V2 only, as target has a different meaning
                * in V3.
                */
-              if (zMapAttParseTargetV2(pAttribute, &sTempBuff01, &sTempBuff02))
+              if (pAttributes && zMapAttParseTargetV2(pAttribute, &sTempBuff01, &sTempBuff02))
                 {
                   bHasName = FALSE ;
                   *feature_name = g_strdup(sTempBuff01) ;
@@ -4372,8 +4372,8 @@ static gboolean getFeatureName(const char * const sequence,
            */
 
           /* if ((tag_pos = strstr(attributes, "Assembly_source"))) */
-          pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "Assembly_source") ;
-          if (pAttribute)
+           ;
+          if (pAttributes && (pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "Assembly_source")) )
             {
               /* if (sscanf(tag_pos, attr_format_str02, name) == iExpectedFields1) */
               if (zMapAttParseAssemblySource(pAttribute, &sTempBuff01, &sTempBuff02))
@@ -4405,14 +4405,17 @@ static gboolean getFeatureName(const char * const sequence,
            * (sm23) Again, why are we only looking for the "Note" attribute at the beginning
            * of the attribute string?
            */
-          for (iAttribute=0; iAttribute<nAttributes; ++iAttribute)
+          if (pAttributes)
             {
-              pAttribute = pAttributes[iAttribute] ;
-              if (zMapAttParseAnyTwoStrings(pAttribute, &sTempBuff01, &sTempBuff02) )
-              {
-                bAttributeHit = TRUE;
-                break ;
-              }
+              for (iAttribute=0; iAttribute<nAttributes; ++iAttribute)
+                {
+                  pAttribute = pAttributes[iAttribute] ;
+                  if (zMapAttParseAnyTwoStrings(pAttribute, &sTempBuff01, &sTempBuff02) )
+                    {
+                      bAttributeHit = TRUE;
+                      break ;
+                    }
+                }
             }
 
           /* if (sscanf(attributes, attr_format_str03, sClass, name) == iExpectedFields2) */
