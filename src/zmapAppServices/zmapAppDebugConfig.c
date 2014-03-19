@@ -57,6 +57,7 @@ typedef enum
   ZMAPAPPSERVICES_ERROR_BAD_COORDS,
   ZMAPAPPSERVICES_ERROR_CONFLICT_DATASET,
   ZMAPAPPSERVICES_ERROR_CONFLICT_SEQUENCE,
+  ZMAPAPPSERVICES_ERROR_BAD_SEQUENCE_NAME
 } ZMapUtilsError;
 
 
@@ -107,9 +108,37 @@ gboolean zMapUtilsConfigDebug(char *config_file)
 }
 
 
+/* Set the sequence details in the given sequence map if not set already; if they are set,
+ * merge the new details. Sets the error if the new values could not be merged (i.e. it's
+ * a different sequence or the coords do not overlap). */
+void zMapAppMergeSequenceName(ZMapFeatureSequenceMap seq_map, const char *sequence_name, GError **error)
+{
+  zMapReturnIfFail(seq_map) ;
+  GError *tmp_error = NULL ;
+
+  /* Check the sequence name */
+  if (!seq_map->sequence)
+    {
+      /* No sequence name set yet so use the new one */
+      seq_map->sequence = g_strdup(sequence_name) ;
+    }
+  else if (sequence_name && strcmp(sequence_name, seq_map->sequence) != 0)
+    {
+      /* Sequence name is already set and the new one does not match - error */
+      g_set_error(&tmp_error, ZMAP_APP_SERVICES_ERROR, ZMAPAPPSERVICES_ERROR_BAD_SEQUENCE_NAME,
+                  "Error merging sequence '%s'; name does not match the set sequence '%s'",
+                  sequence_name, seq_map->sequence) ;
+      
+    }
+
+  if (tmp_error)
+    g_propagate_error(error, tmp_error) ;
+}
+
+
 /* Merge the given coords with those already set in the given sequence map. Sets the error if
  * they cannot be merged */
-static void zmapAppMergeSequenceCoords(ZMapFeatureSequenceMap seq_map, int start, int end, GError **error)
+void zMapAppMergeSequenceCoords(ZMapFeatureSequenceMap seq_map, int start, int end, GError **error)
 {
   zMapReturnIfFail(seq_map) ;
   GError *tmp_error = NULL ;
@@ -133,13 +162,13 @@ static void zmapAppMergeSequenceCoords(ZMapFeatureSequenceMap seq_map, int start
         {
           /* Check if there is a gap between the ranges, i.e. no overlap */
           g_set_error(&tmp_error, ZMAP_APP_SERVICES_ERROR, ZMAPAPPSERVICES_ERROR_BAD_COORDS,
-                      "Coordinate range from config file [%d,%d] does not overlap set range [%d,%d]",
+                      "Error merging coords [%d,%d]; range does not overlap the set sequence range [%d,%d]",
                       start, end, seq_map->start, seq_map->end) ;
         }
       else
         {
           /* We know there's an overlap so join the ranges by taking the maximum extent. */
-          zMapLogMessage("Merging coordinate range from config file [%d,%d] with the set range [%d,%d]",
+          zMapLogMessage("Merging coordinate range [%d,%d] with the set sequence range [%d,%d]",
                          start, end, seq_map->start, seq_map->end) ;
           
           seq_map->start = (seq_map->start < start ? seq_map->start : start) ;
@@ -186,16 +215,7 @@ void zMapAppGetSequenceConfig(ZMapFeatureSequenceMap seq_map, GError **error)
           zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
 					ZMAPSTANZA_APP_SEQUENCE, &tmp_string))
 	{
-          if (!seq_map->sequence)
-            {
-              seq_map->sequence = tmp_string;
-            }
-          else
-            {
-              g_set_error(&tmp_error, ZMAP_APP_SERVICES_ERROR, ZMAPAPPSERVICES_ERROR_CONFLICT_SEQUENCE,
-                          "Sequence '%s' in the config file does not match the set sequence '%s'",
-                          tmp_string, seq_map->sequence) ;
-            }
+          zMapAppMergeSequenceName(seq_map, tmp_string, &tmp_error) ;
         }
 
       if (!tmp_error)
@@ -208,7 +228,7 @@ void zMapAppGetSequenceConfig(ZMapFeatureSequenceMap seq_map, GError **error)
          
           if (got_start && got_end)
             {
-              zmapAppMergeSequenceCoords(seq_map, start, end, &tmp_error) ;
+              zMapAppMergeSequenceCoords(seq_map, start, end, &tmp_error) ;
             }
           else if (got_start)
             {

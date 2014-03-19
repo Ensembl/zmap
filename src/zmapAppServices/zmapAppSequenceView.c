@@ -505,7 +505,7 @@ static void createViewCB(GtkWidget *widget, gpointer cb_data)
     }
 
   if (tmp_error)
-    g_error_free(&tmp_error) ;
+    g_error_free(tmp_error) ;
 
   return ;
 }

@@ -219,8 +219,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   seq_map = app_context->default_sequence =  g_new0(ZMapFeatureSequenceMapStruct, 1) ;
 
 
-  /* Set up configuration directory/files, this function exits if the directory/files can't be
-   * accessed.... */
+  /* Set up configuration directory/files */
   checkConfigDir(seq_map) ;
 
 
@@ -947,7 +946,7 @@ static int checkForCmdLineSleep(int argc, char *argv[])
 
 
 /* Did user specify a config directory and/or config file within that directory on the command
- * line. Also check for the stylesfile on the command line or in the config dir */
+ * line. Also check for the stylesfile on the command line or in the config dir. */
 static void checkConfigDir(ZMapFeatureSequenceMap seq_map)
 {
   ZMapCmdLineArgsType dir = {FALSE}, file = {FALSE}, stylesfile = {FALSE} ;
@@ -1339,13 +1338,14 @@ static gboolean configureLog(char *config_file, GError **error)
 
 
 /* Check the given file to see if we can extract sequence details */
-static gboolean checkInputFileForSequenceDetails(const char* const filename, 
-                                                 ZMapFeatureSequenceMap seq_map_inout,
-                                                 GError **error)
+static void checkInputFileForSequenceDetails(const char* const filename, 
+                                             ZMapFeatureSequenceMap seq_map_inout,
+                                             GError **error)
 {
-  gboolean result = FALSE ;
-  zMapReturnValIfFail(filename, result) ;
+  zMapReturnIfFail(filename) ;
 
+  gboolean result = FALSE ;
+  GError *tmp_error = NULL ;
   GError *gff_pipe_err = NULL ;
   int gff_version = 0 ;
   ZMapGFFParser parser = NULL ;
@@ -1399,64 +1399,64 @@ static gboolean checkInputFileForSequenceDetails(const char* const filename,
                     }
                   else
                     {
-                      consoleMsg(TRUE, "Error reading GFF file header") ;
+                      g_set_error(&tmp_error, ZMAP_APP_ERROR, ZMAPAPP_ERROR_GFF_HEADER,
+                                  "Error reading GFF header for file %s", filename) ;
                       break ;
                     }
                 }
             }
           else
             {
-              consoleMsg(TRUE, "Error creating GFF parser for file %s", filename);
+              g_set_error(&tmp_error, ZMAP_APP_ERROR, ZMAPAPP_ERROR_GFF_PARSER, 
+                          "Error creating GFF parser for file %s", filename);
             }
         }
       else
         {
-          consoleMsg(TRUE, "Could not get gff-version from file %s", filename);
+          g_set_error(&tmp_error, ZMAP_APP_ERROR, ZMAPAPP_ERROR_GFF_VERSION, 
+                      "Could not get gff-version from file %s", filename);
         }
     }
   else
     { 
-      consoleMsg(TRUE, "Could not open file %s", filename);
+      g_set_error(&tmp_error, ZMAP_APP_ERROR, ZMAPAPP_ERROR_OPENING_FILE, 
+                  "Could not open file %s", filename);
     }
 
-  if (result && parser)
+  if (result)
     {
       /* Cache the sequence details */
-      seq_map_inout->sequence = g_strdup(zMapGFFGetSequenceName(parser)) ;
-      seq_map_inout->start = zMapGFFGetFeaturesStart(parser) ;
-      seq_map_inout->end = zMapGFFGetFeaturesEnd(parser) ;
+      if (!tmp_error)
+        zMapAppMergeSequenceName(seq_map_inout, zMapGFFGetSequenceName(parser), &tmp_error) ;
+      
+      if (!tmp_error)
+        zMapAppMergeSequenceCoords(seq_map_inout, zMapGFFGetFeaturesStart(parser), zMapGFFGetFeaturesEnd(parser), &tmp_error) ;
 
       /* Cache the parser state */
-      seq_map_inout->cached_parsers = g_hash_table_new(NULL, NULL) ;
-      ZMapFeatureParserCache parser_cache = g_new0(ZMapFeatureParserCacheStruct, 1) ;
-      parser_cache->parser = (gpointer)parser ;
-      parser_cache->line = gff_line ;
-      parser_cache->pipe = gff_pipe ;
-      parser_cache->pipe_status = status ;
-      g_hash_table_insert(seq_map_inout->cached_parsers, GINT_TO_POINTER(g_quark_from_string(filename)), parser_cache) ;
-    }
-
-  return result ;
-}
-
-
-/* Save the paths of any input files in the sequence map. These are needed later to construct the
- * server URLs  */
-static void saveInputFilePaths(ZMapFeatureSequenceMap seq_map_inout)
-{
-  char **file_list = zMapCmdLineFinalArg() ;
-
-  if (file_list)
-    {
-      /* Loop through the file paths and add them to our list */
-      char **file = file_list ;
-
-      for (; file && *file; ++file)
+      if (!tmp_error)
         {
-          char *url = g_strdup(*file) ;
-          seq_map_inout->file_list = g_slist_append(seq_map_inout->file_list, url) ;
+          seq_map_inout->cached_parsers = g_hash_table_new(NULL, NULL) ;
+          ZMapFeatureParserCache parser_cache = g_new0(ZMapFeatureParserCacheStruct, 1) ;
+          parser_cache->parser = (gpointer)parser ;
+          parser_cache->line = gff_line ;
+          parser_cache->pipe = gff_pipe ;
+          parser_cache->pipe_status = status ;
+          g_hash_table_insert(seq_map_inout->cached_parsers, GINT_TO_POINTER(g_quark_from_string(filename)), parser_cache) ;
         }
     }
+  else if (!tmp_error)
+    {
+      /* If result is false then tmp_error should be set, but it's possible it might not be if we
+       * didn't find a full header in the GFF file. */
+      g_set_error(&tmp_error, ZMAP_APP_ERROR, ZMAPAPP_ERROR_CHECK_FILE, 
+                  "Error reading GFF header information for file %s", filename);
+    }
+
+  if (tmp_error && parser)
+    zMapGFFDestroyParser(parser) ;
+
+  if (tmp_error)
+    g_propagate_error(error, tmp_error) ;
 }
 
 
@@ -1465,20 +1465,37 @@ static void saveInputFilePaths(ZMapFeatureSequenceMap seq_map_inout)
 static void checkInputFiles(ZMapFeatureSequenceMap seq_map_inout, GError **error)
 {
   zMapReturnIfFailSafe(seq_map_inout) ;
+
   GError *tmp_error = NULL ;
+  char **file_list = zMapCmdLineFinalArg() ;
 
-  /* Save the list of files that were given on the command line */
-  saveInputFilePaths(seq_map_inout) ;
-
-  GSList *file_item = seq_map_inout->file_list ;
-
-  /* Loop through each input file checking the sequence details. */
-  for ( ; file_item; file_item = file_item->next)
+  if (file_list)
     {
-      const char *file = (char*)(file_item->data) ;
-      checkInputFileForSequenceDetails(file, seq_map_inout, &tmp_error) ;
+      /* Loop through the input files */
+      char **file = file_list ;
+
+      for (; file && *file; ++file)
+        {
+          checkInputFileForSequenceDetails(*file, seq_map_inout, &tmp_error) ;
+
+          if (tmp_error)
+            {
+              /* This is not a fatal error so just give a warning and continue */
+              zMapLogWarning("Cannot open file '%s': %s", *file, tmp_error->message) ;
+              consoleMsg(TRUE, "Cannot open file '%s': %s", *file, tmp_error->message) ;
+              g_error_free(tmp_error) ;
+              tmp_error = NULL ;
+            }
+          else
+            {
+              /* All ok so add the file to the cached list */
+              seq_map_inout->file_list = g_slist_append(seq_map_inout->file_list, g_strdup(*file)) ;
+            }
+        }
+
+      g_strfreev(file_list) ;
     }
-  
+
   if (tmp_error)
     g_propagate_error(error, tmp_error) ;
 }
@@ -1490,11 +1507,23 @@ static gboolean validateSequenceDetails(ZMapFeatureSequenceMap seq_map, GError *
   gboolean result = FALSE ;
   GError *tmp_error = NULL ;
 
-  /* Everything must be specified or nothing. */
+  /* The sequence name, start and end must all be specified, or none of them. */
   if ((seq_map->sequence && seq_map->start && seq_map->end)
       || (!(seq_map->sequence) && !(seq_map->start) && !(seq_map->end)))
     {
-      result = TRUE ;
+      /* We must have a config file or some files on the command line (otherwise we have no
+       * sources) */
+      if (seq_map->config_file || seq_map->file_list)
+        {
+          result = TRUE ;
+        }
+      else 
+        {
+          result = FALSE ;
+          
+          g_set_error(&tmp_error, ZMAP_APP_ERROR, ZMAPAPP_ERROR_NO_SOURCES, 
+                      "No data sources - you must specify a config file, or pass data in GFF files on the command line") ;
+        }
     }
   else
     {

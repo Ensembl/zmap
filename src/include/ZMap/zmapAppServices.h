@@ -49,5 +49,7 @@ void zMapAppGetSequenceView(ZMapAppGetSequenceViewCB user_func, gpointer user_da
 			    ZMapFeatureSequenceMap sequence_map, gboolean display_sequence) ;
 GtkWidget *zMapCreateSequenceViewWidg(ZMapAppGetSequenceViewCB user_func, gpointer user_data,
 				      ZMapFeatureSequenceMap sequence_map, gboolean display_sequence) ;
+void zMapAppMergeSequenceName(ZMapFeatureSequenceMap seq_map_inout, const char *sequence_name, GError **error) ;
+void zMapAppMergeSequenceCoords(ZMapFeatureSequenceMap seq_map, int start, int end, GError **error) ;
 
 #endif /* !ZMAP_APP_SERVICES_H */
