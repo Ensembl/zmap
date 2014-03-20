@@ -1340,6 +1340,7 @@ static gboolean configureLog(char *config_file, GError **error)
 /* Check the given file to see if we can extract sequence details */
 static void checkInputFileForSequenceDetails(const char* const filename, 
                                              ZMapFeatureSequenceMap seq_map_inout,
+                                             const gboolean merge_details,
                                              GError **error)
 {
   zMapReturnIfFail(filename) ;
@@ -1427,10 +1428,10 @@ static void checkInputFileForSequenceDetails(const char* const filename,
     {
       /* Cache the sequence details */
       if (!tmp_error)
-        zMapAppMergeSequenceName(seq_map_inout, zMapGFFGetSequenceName(parser), &tmp_error) ;
+        zMapAppMergeSequenceName(seq_map_inout, zMapGFFGetSequenceName(parser), merge_details, &tmp_error) ;
       
       if (!tmp_error)
-        zMapAppMergeSequenceCoords(seq_map_inout, zMapGFFGetFeaturesStart(parser), zMapGFFGetFeaturesEnd(parser), &tmp_error) ;
+        zMapAppMergeSequenceCoords(seq_map_inout, zMapGFFGetFeaturesStart(parser), zMapGFFGetFeaturesEnd(parser), merge_details, &tmp_error) ;
 
       /* Cache the parser state */
       if (!tmp_error)
@@ -1471,12 +1472,17 @@ static void checkInputFiles(ZMapFeatureSequenceMap seq_map_inout, GError **error
 
   if (file_list)
     {
+      /* If details have been set by the command line or config file then take those as absolute
+       * and don't merge the ranges from the input files - just check that they are valid. If
+       * they are not already set, merge the ranges from the input files to get the full extent. */
+      const gboolean merge_details = (!seq_map_inout->sequence && !seq_map_inout->start && !seq_map_inout->end);
+
       /* Loop through the input files */
       char **file = file_list ;
 
       for (; file && *file; ++file)
         {
-          checkInputFileForSequenceDetails(*file, seq_map_inout, &tmp_error) ;
+          checkInputFileForSequenceDetails(*file, seq_map_inout, merge_details, &tmp_error) ;
 
           if (tmp_error)
             {
