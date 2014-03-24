@@ -824,6 +824,87 @@ static void handBuiltInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, Z
 }
 
 
+/*!
+ * /brief Recreate the scratch feature's list of exons from the list of merged features
+ */
+static void scratchFeatureRecreateExons(ZMapView view, ZMapFeature scratch_feature)
+{
+  /* Get the singleton features that exist in each strand of the scatch column */
+  ZMapFeatureSet scratch_featureset = zmapViewScratchGetFeatureset(view);
+
+  /* Loop through each feature in the merge list and merge it in */
+  GError *error = NULL;
+  ScratchMergeDataStruct merge_data = {view, scratch_featureset, scratch_feature, &error, NULL};
+  GList *list_item = view->scratch_features;
+
+  while (list_item)
+    {
+      ScratchMergedFeature merge_feature = (ScratchMergedFeature)(list_item->data);
+      gboolean merged = FALSE;
+
+      if (!merge_feature->ignore)
+        {
+          /* Add info about the current feature to the merge data */
+          merge_data.merge_feature = merge_feature;
+
+          /* Do the merge */
+          merged = scratchMergeFeature(&merge_data);
+        }
+
+      list_item = list_item->next;
+
+      /* If we attempted to merge but it failed, remove the feature from the list.
+       * Do this after setting the next pointer because the current item will be removed. */
+      if (!merge_feature->ignore && !merged)
+        view->scratch_features = g_list_remove(view->scratch_features, merge_feature);
+    }
+
+  zMapFeatureTranscriptRecreateIntrons(scratch_feature);
+}
+
+
+/*!
+ * /brief Recreate the scratch feature from the list of merged features
+ */
+static void scratchFeatureRecreate(ZMapView view)
+{
+  /* Erase the existing scratch feature */
+  scratchEraseFeature(view) ;
+
+  /* Create the new feature */
+  ZMapFeature feature = scratchCreateNewFeature(view) ;
+
+  /* Merge it in */
+  scratchMergeNewFeature(view, feature) ;
+}
+
+
+
+
+/* This function clears the redo stack. It should be called after a successful operation (other
+ * than an undo or redo) to "reset" where to start doing redo's from. */
+static gboolean scratchClearRedoStack(ZMapView view)
+{
+  gboolean result = TRUE ;
+
+  /* Remove all of the ignored (i.e. un-done) features from the scratch column */
+  GList *item = view->scratch_features ;
+
+  while (item)
+    {
+      ScratchMergedFeature merge_feature = (ScratchMergedFeature)(item->data);
+
+      /* Get the next item before we remove the current one! */
+      item = item->next ;
+
+      if (merge_feature->ignore)
+        view->scratch_features = g_list_remove(view->scratch_features, merge_feature) ;
+    }
+
+  return result ;
+}
+
+
 /************ PUBLIC FUNCTIONS **************/
 
 
@@ -972,61 +1053,6 @@ void zMapViewToggleScratchColumn(ZMapView view, gboolean force_to, gboolean forc
 
 
 /*!
- * /brief Recreate the scratch feature's list of exons from the list of merged features
- */
-static void scratchFeatureRecreateExons(ZMapView view, ZMapFeature scratch_feature)
-{
-  /* Get the singleton features that exist in each strand of the scatch column */
-  ZMapFeatureSet scratch_featureset = zmapViewScratchGetFeatureset(view);
-
-  /* Loop through each feature in the merge list and merge it in */
-  GError *error = NULL;
-  ScratchMergeDataStruct merge_data = {view, scratch_featureset, scratch_feature, &error, NULL};
-  GList *list_item = view->scratch_features;
-
-  while (list_item)
-    {
-      ScratchMergedFeature merge_feature = (ScratchMergedFeature)(list_item->data);
-      gboolean merged = FALSE;
-
-      if (!merge_feature->ignore)
-        {
-          /* Add info about the current feature to the merge data */
-          merge_data.merge_feature = merge_feature;
-
-          /* Do the merge */
-          merged = scratchMergeFeature(&merge_data);
-        }
-
-      list_item = list_item->next;
-
-      /* If we attempted to merge but it failed, remove the feature from the list.
-       * Do this after setting the next pointer because the current item will be removed. */
-      if (!merge_feature->ignore && !merged)
-        view->scratch_features = g_list_remove(view->scratch_features, merge_feature);
-    }
-
-  zMapFeatureTranscriptRecreateIntrons(scratch_feature);
-}
-
-
-/*!
- * /brief Recreate the scratch feature from the list of merged features
- */
-void scratchFeatureRecreate(ZMapView view)
-{
-  /* Erase the existing scratch feature */
-  scratchEraseFeature(view) ;
-
-  /* Create the new feature */
-  ZMapFeature feature = scratchCreateNewFeature(view) ;
-
-  /* Merge it in */
-  scratchMergeNewFeature(view, feature) ;
-}
-
-
-/*!
  * \brief Update any changes to the given featureset
  */
 gboolean zmapViewScratchCopyFeature(ZMapView view,
@@ -1049,6 +1075,7 @@ gboolean zmapViewScratchCopyFeature(ZMapView view,
 
       /* Add this feature to the list of merged features and recreate the scratch feature */
       scratchAddFeature(view, merge_feature);
+      scratchClearRedoStack(view) ;
       scratchFeatureRecreate(view);
     }
 
