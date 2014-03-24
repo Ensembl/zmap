@@ -131,7 +131,7 @@ gboolean zMapConfigDirCreate(char *config_dir_in, char *config_file_in)
 
   if (config_dir)
     {
-      if (dir_context->config_dir = zMapGetDir(config_dir, FALSE, FALSE))
+      if ((dir_context->config_dir = zMapGetDir(config_dir, FALSE, FALSE)))
 	result = TRUE ;
     }
 
