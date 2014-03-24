@@ -40,6 +40,25 @@
 #include <ZMap/zmapAppServices.h>
 
 
+/*
+ * We follow glib convention in error domain naming:
+ *          "The error domain is called <NAMESPACE>_<MODULE>_ERROR"
+ */
+#define ZMAP_APP_ERROR g_quark_from_string("ZMAP_APP_ERROR")
+
+typedef enum
+{
+  ZMAPAPP_ERROR_BAD_SEQUENCE_DETAILS,
+  ZMAPAPP_ERROR_BAD_COORDS,
+  ZMAPAPP_ERROR_GFF_HEADER,
+  ZMAPAPP_ERROR_GFF_PARSER,
+  ZMAPAPP_ERROR_GFF_VERSION,
+  ZMAPAPP_ERROR_OPENING_FILE,
+  ZMAPAPP_ERROR_CHECK_FILE,
+  ZMAPAPP_ERROR_NO_SOURCES
+} ZMapUtilsError;
+
+
 /* Minimum GTK version supported. */
 enum {ZMAP_GTK_MAJOR = 2, ZMAP_GTK_MINOR = 2, ZMAP_GTK_MICRO = 4} ;
 
