@@ -111,7 +111,8 @@ gboolean zMapUtilsConfigDebug(char *config_file)
 /* Set the sequence details in the given sequence map if not set already; if they are set,
  * merge the new details. Sets the error if the new values could not be merged (i.e. it's
  * a different sequence or the coords do not overlap). */
-void zMapAppMergeSequenceName(ZMapFeatureSequenceMap seq_map, const char *sequence_name, GError **error)
+void zMapAppMergeSequenceName(ZMapFeatureSequenceMap seq_map, const char *sequence_name, 
+                              const gboolean merge_details, GError **error)
 {
   zMapReturnIfFail(seq_map) ;
   GError *tmp_error = NULL ;
@@ -136,9 +137,12 @@ void zMapAppMergeSequenceName(ZMapFeatureSequenceMap seq_map, const char *sequen
 }
 
 
-/* Merge the given coords with those already set in the given sequence map. Sets the error if
- * they cannot be merged */
-void zMapAppMergeSequenceCoords(ZMapFeatureSequenceMap seq_map, int start, int end, GError **error)
+/* Validate that the given coords are compatible with those in the seq_map. If exact_match is true
+ * then the ranges must match exactly or the error is set; otherwise they are considered valid if
+ * the ranges overlap. If exact_match is false and merge_details is true then we attempt to merge
+ * the ranges - in this case the error is set if they cannot be merged (i.e. they do not overlap). */
+void zMapAppMergeSequenceCoords(ZMapFeatureSequenceMap seq_map, int start, int end, 
+                                const gboolean exact_match, const gboolean merge_details, GError **error)
 {
   zMapReturnIfFail(seq_map) ;
   GError *tmp_error = NULL ;
@@ -154,26 +158,46 @@ void zMapAppMergeSequenceCoords(ZMapFeatureSequenceMap seq_map, int start, int e
     {
       /* No new values: nothing to do */
     }
+  else if (seq_map->start == start && seq_map->end == end)
+    {
+      /* New values match existing ones: nothing to do */
+    }
+  else if (exact_match)
+    {
+      /* The new details are different to the existing ones and we're looking for an exact match,
+       * so this is an error */
+      g_set_error(&tmp_error, ZMAP_APP_SERVICES_ERROR, ZMAPAPPSERVICES_ERROR_BAD_COORDS,
+                  "The coord range [%d,%d] must match the existing range [%d,%d]",
+                  start, end, seq_map->start, seq_map->end) ;
+    }
   else if (seq_map->start && seq_map->end && start && end)
     {
-      /* Both start/end are set in both ranges. Try to merge them */
+      /* Both start/end are set in both ranges. See if they overlap. */
       if ((seq_map->start < start && seq_map->end < start) ||
           (start < seq_map->start && end < seq_map->end))
         {
-          /* Check if there is a gap between the ranges, i.e. no overlap */
+          /* No overlap, so this is an error */
           g_set_error(&tmp_error, ZMAP_APP_SERVICES_ERROR, ZMAPAPPSERVICES_ERROR_BAD_COORDS,
                       "Error merging coords [%d,%d]; range does not overlap the set sequence range [%d,%d]",
                       start, end, seq_map->start, seq_map->end) ;
         }
-      else
+      else if (merge_details)
         {
-          /* We know there's an overlap so join the ranges by taking the maximum extent. */
+          /* We know there's an overlap and we want to merge the ranges, so join the ranges by
+           * taking the maximum extent. */
           zMapLogMessage("Merging coordinate range [%d,%d] with the set sequence range [%d,%d]",
                          start, end, seq_map->start, seq_map->end) ;
           
           seq_map->start = (seq_map->start < start ? seq_map->start : start) ;
           seq_map->end = (seq_map->end > end ? seq_map->end : end) ;
         }
+    }
+  else
+    {
+      /* We shouldn't have a start coord set without an end coord or vice versa. If we do we get
+       * here. Perhaps we could handle this but the logic is more complicated if we try to merge
+       * a single coord, so for now calling functions are assumed to set both or neither. */
+      zMapWarnIfReached() ;
     }
 
   if (tmp_error)
@@ -215,7 +239,11 @@ void zMapAppGetSequenceConfig(ZMapFeatureSequenceMap seq_map, GError **error)
           zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
 					ZMAPSTANZA_APP_SEQUENCE, &tmp_string))
 	{
-          zMapAppMergeSequenceName(seq_map, tmp_string, &tmp_error) ;
+          /* Pass merge_details as false - it's not currently used because we're not currently
+           * allowing more than one sequence. We may want to change this in future but even so we
+           * probably want the config file details to agree with the command-line details so we'd
+           * pass merge_details as false here anyway. */
+          zMapAppMergeSequenceName(seq_map, tmp_string, FALSE, &tmp_error) ;
         }
 
       if (!tmp_error)
@@ -228,7 +256,10 @@ void zMapAppGetSequenceConfig(ZMapFeatureSequenceMap seq_map, GError **error)
          
           if (got_start && got_end)
             {
-              zMapAppMergeSequenceCoords(seq_map, start, end, &tmp_error) ;
+              /* Pass merge_details as false because we want the config file range to match the
+               * command-line range. (We could merge the ranges, but I'm not sure that makes sense 
+               * because we wouldn't know which range applies to the DNA, if given.) */
+              zMapAppMergeSequenceCoords(seq_map, start, end, TRUE, FALSE, &tmp_error) ;
             }
           else if (got_start)
             {

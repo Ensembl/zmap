@@ -1234,7 +1234,7 @@ static gboolean configureLog(char *config_file, GError **error)
   catch_glib = TRUE ;
   echo_glib = TRUE ;
   /* if we run config free we put the log file in the cwd */
-  full_dir = g_strdup("./") ;
+  full_dir = g_strdup_printf("%s/%s", g_get_home_dir(), ZMAP_USER_CONFIG_DIR) ;
   log_name = g_strdup(ZMAPLOG_FILENAME) ;
 
 
@@ -1431,7 +1431,7 @@ static void checkInputFileForSequenceDetails(const char* const filename,
         zMapAppMergeSequenceName(seq_map_inout, zMapGFFGetSequenceName(parser), merge_details, &tmp_error) ;
       
       if (!tmp_error)
-        zMapAppMergeSequenceCoords(seq_map_inout, zMapGFFGetFeaturesStart(parser), zMapGFFGetFeaturesEnd(parser), merge_details, &tmp_error) ;
+        zMapAppMergeSequenceCoords(seq_map_inout, zMapGFFGetFeaturesStart(parser), zMapGFFGetFeaturesEnd(parser), FALSE, merge_details, &tmp_error) ;
 
       /* Cache the parser state */
       if (!tmp_error)

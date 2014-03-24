@@ -52,6 +52,6 @@ GtkWidget *zMapCreateSequenceViewWidg(ZMapAppGetSequenceViewCB user_func, gpoint
 void zMapAppMergeSequenceName(ZMapFeatureSequenceMap seq_map_inout, const char *sequence_name, 
                               const gboolean merge_details, GError **error) ;
 void zMapAppMergeSequenceCoords(ZMapFeatureSequenceMap seq_map, int start, int end, 
-                                const gboolean merge_details, GError **error) ;
+                                const gboolean exact_match, const gboolean merge_details, GError **error) ;
 
 #endif /* !ZMAP_APP_SERVICES_H */
