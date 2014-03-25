@@ -893,6 +893,8 @@ gboolean zMapFeatureTranscriptMergeCoord(ZMapFeature transcript,
         }
     }
 
+  zMapFeatureTranscriptRecreateIntrons(transcript);
+
   if (tmp_error)
     g_propagate_error(error, tmp_error);
 
