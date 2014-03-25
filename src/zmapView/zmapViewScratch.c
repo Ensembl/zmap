@@ -83,6 +83,7 @@ typedef struct _ScratchMergeDataStruct
 
 /* Local function declarations */
 static void scratchFeatureRecreateExons(ZMapView view, ZMapFeature feature) ;
+static void scratchFeatureRecreate(ZMapView view) ;
 
 
 /*!
@@ -210,6 +211,16 @@ static void scratchAddOperation(ZMapView view, EditOperation operation)
         zMapWarnIfReached() ; /* shouldn't get here because we should have a new pointer after
                                  the original end pointer! */
     }
+
+  /* For "clear" operations we set the start pointer to the end of the list, so that all of the
+   * features are ignored (but they're still there so we can undo the operation) */
+  if (operation->edit_type == ZMAPEDIT_CLEAR)
+    {
+      view->edit_list_start = view->edit_list_end ;
+    }
+
+  /* Now recreate the scratch feature from the new list of operations */
+  scratchFeatureRecreate(view);
 }
 
 
@@ -1061,9 +1072,8 @@ gboolean zmapViewScratchCopyFeature(ZMapView view,
       operation->subfeature = subfeature ;
       operation->boundary = ZMAPBOUNDARY_NONE;
 
-      /* Add this feature to the list of merged features and recreate the scratch feature. */
+      /* Add this operation to the list and recreate the scratch feature. */
       scratchAddOperation(view, operation);
-      scratchFeatureRecreate(view);
     }
 
   return TRUE;
@@ -1090,9 +1100,8 @@ gboolean zmapViewScratchDeleteFeature(ZMapView view,
       operation->subfeature = subfeature ;
       operation->boundary = ZMAPBOUNDARY_NONE;
 
-      /* Add this feature to the list of merged features and recreate the scratch feature. */
+      /* Add this operation to the list and recreate the scratch feature. */
       scratchAddOperation(view, operation);
-      scratchFeatureRecreate(view);
     }
 
   return TRUE;
@@ -1108,16 +1117,16 @@ gboolean zmapViewScratchDeleteFeature(ZMapView view,
  */
 gboolean zmapViewScratchClear(ZMapView view)
 {
-  /* Clear the list of features in the scratch column */
-  if (view->edit_list)
+  /* Only do anything if we have a visible feature i.e. the operations list is not empty */
+  if (view->edit_list_start)
     {
-      freeListFull(view->edit_list, g_free);
-      view->edit_list = NULL;
-      view->edit_list_start = NULL;
-      view->edit_list_end = NULL;
-    }
+      EditOperation operation = g_new0(EditOperationStruct, 1) ;
 
-  scratchFeatureRecreate(view);
+      operation->edit_type = ZMAPEDIT_CLEAR ;
+
+      /* Add this feature to the list of merged features and recreate the scratch feature. */
+      scratchAddOperation(view, operation);
+    }
 
   return TRUE;
 }
@@ -1128,14 +1137,37 @@ gboolean zmapViewScratchClear(ZMapView view)
  */
 gboolean zmapViewScratchUndo(ZMapView view)
 {
-  /* Move the end pointer back */
   if (view->edit_list_end)
     {
+      /* Special treatment if the last operation was a "clear" because clear shifts the start
+       * pointer to be the same as the end pointer, so we need to move it back (to the start of
+       * the list or to the last "clear" operation, if there is one). */
+      EditOperation operation = (EditOperation)(view->edit_list_end->data) ;
+
+      if (operation->edit_type == ZMAPEDIT_CLEAR)
+        {
+          while (view->edit_list_start && view->edit_list_start->prev)
+            {
+              EditOperation prev_operation = (EditOperation)(view->edit_list_end->prev->data) ;
+              
+              if (prev_operation->edit_type == ZMAPEDIT_CLEAR)
+                break ;
+
+              view->edit_list_start = view->edit_list_start->prev ;
+            }
+        }
+
+      /* In all cases, move the end pointer back one place */
       view->edit_list_end = view->edit_list_end->prev ;
       
       /* If we have no operations left in the list, null the start pointer too */
       if (view->edit_list_end == NULL)
         view->edit_list_start = NULL ;
+
+      if (view->edit_list_start)
+        {
+          
+        }
       
       scratchFeatureRecreate(view);
     }
@@ -1157,6 +1189,12 @@ gboolean zmapViewScratchRedo(ZMapView view)
   if (view->edit_list_end && view->edit_list_end->next)
     {
       view->edit_list_end = view->edit_list_end->next ;
+
+      /* For "clear" operations we need to move the start pointer to the same as the end pointer */
+      EditOperation operation = (EditOperation)(view->edit_list_end->data) ;
+      if (operation->edit_type == ZMAPEDIT_CLEAR)
+        view->edit_list_start = view->edit_list_end ;
+
       scratchFeatureRecreate(view);
     }
   else if (!view->edit_list_end && view->edit_list)
@@ -1164,6 +1202,12 @@ gboolean zmapViewScratchRedo(ZMapView view)
       /* If the list exists but start/end pointers are null then we had un-done the entire list,
        * so we just need to set the start/end pointers to the first item in the list */
       view->edit_list_start = view->edit_list_end = view->edit_list ;
+
+      /* For "clear" operations we need to move the start pointer to the same as the end pointer */
+      EditOperation operation = (EditOperation)(view->edit_list_end->data) ;
+      if (operation->edit_type == ZMAPEDIT_CLEAR)
+        view->edit_list_start = view->edit_list_end ;
+
       scratchFeatureRecreate(view);
     }
   else
