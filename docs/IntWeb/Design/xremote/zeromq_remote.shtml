@@ -257,7 +257,7 @@ alternative scenarios:</p>
 
 <p>The sequence diagram including a client timeout, from the perspective of peer one:</p>
 
-<img src="./ZeroMQ_Req_rep_timeout.png" align="center">
+<img src="./ZeroMQ_Req_Rep_timeout.png" align="center">
 
 <ol>
   <li><p>Peer 1 makes a new request with sequence id 203. It keeps a
