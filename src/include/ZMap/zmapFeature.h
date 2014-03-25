@@ -1245,8 +1245,9 @@ ZMapFeatureContextExecuteStatus zMapFeatureContextTranscriptSortExons(GQuark key
 								      char **error_out) ;
 
 int zMapFeatureTranscriptGetNumExons(ZMapFeature transcript);
-void zMapFeatureTranscriptMergeExon(ZMapFeature feature, Coord x1, Coord x2);
+gboolean zMapFeatureTranscriptMergeExon(ZMapFeature feature, Coord x1, Coord x2);
 gboolean zMapFeatureTranscriptMergeCoord(ZMapFeature transcript, const int x, ZMapBoundaryType *boundary_inout, GError **error);
+gboolean zMapFeatureTranscriptDeleteSubfeatureAtCoord(ZMapFeature feature, Coord coord);
 
 /* ============================================================== for teh === */
 /* functions in zmapFeatureFormatInput.c */

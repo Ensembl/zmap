@@ -5520,6 +5520,13 @@ static void commandCB(ZMapWindow window, void *caller_data, void *window_data)
         zmapViewScratchCopyFeature(view, scratch_cmd->feature, scratch_cmd->item, scratch_cmd->world_x, scratch_cmd->world_y, scratch_cmd->use_subfeature);
         break;
       }
+
+    case ZMAPWINDOW_CMD_DELETEFROMSCRATCH:
+      {
+        ZMapWindowCallbackCommandScratch scratch_cmd = (ZMapWindowCallbackCommandScratch)cmd_any ;
+        zmapViewScratchDeleteFeature(view, scratch_cmd->feature, scratch_cmd->item, scratch_cmd->world_x, scratch_cmd->world_y, scratch_cmd->use_subfeature);
+        break;
+      }
       
     case ZMAPWINDOW_CMD_CLEARSCRATCH:
       {

@@ -161,6 +161,46 @@ void zmapWindowScratchCopyFeature(ZMapWindow window,
 
 
 /*!
+ * \brief Delete the subfeature at the given feature's coords from the scratch column
+ *
+ * \param window
+ * \param feature The new feature to be copied in
+ * \param item The foo canvas item for the new feature
+ * \param world_x The clicked x coord
+ * \param world_y The clicked y coord
+ * \param merge_subfeature If true, just merge the clicked subfeature, otherwise merge the whole feature
+ */
+void zmapWindowScratchDeleteFeature(ZMapWindow window, 
+                                    ZMapFeature feature, 
+                                    FooCanvasItem *item, 
+                                    const double world_x,
+                                    const double world_y,
+                                    const gboolean use_subfeature)
+{
+  if (window && feature)
+    {
+      /* Call back to the View to update all windows */
+      ZMapWindowCallbacks window_cbs_G = zmapWindowGetCBs() ;
+      ZMapWindowCallbackCommandScratch scratch_cmd = g_new0(ZMapWindowCallbackCommandScratchStruct, 1) ;
+      
+      /* Set up general command field for callback. */
+      scratch_cmd->cmd = ZMAPWINDOW_CMD_DELETEFROMSCRATCH ;
+      scratch_cmd->feature = feature;
+      scratch_cmd->item = item;
+      scratch_cmd->world_x = world_x;
+      scratch_cmd->world_y = world_y;
+      scratch_cmd->use_subfeature = use_subfeature;
+      
+      (*(window_cbs_G->command))(window, window->app_data, scratch_cmd) ;
+    }
+  else
+    {
+      zMapWarning("%s", "Error: no feature selected\n");
+    }
+}
+
+
+/*!
  * \brief Clear the scratch column
  */
 void zmapWindowScratchClear(ZMapWindow window)

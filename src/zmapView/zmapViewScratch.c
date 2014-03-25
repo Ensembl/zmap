@@ -215,6 +215,43 @@ static void scratchAddFeature(ZMapView view, EditOperation operation)
 }
 
 
+/* Add an operation that will remove a subfeature from the scratch column */
+static void scratchAddDeleteOperation(ZMapView view, EditOperation operation)
+{
+  /* Clear the redo stack first so we can just append the new operation at the end of the list */
+  scratchClearRedoStack(view) ;
+
+  /* We need to get the subfeature before we clear the existing feature. (This is because
+   * we'll usually get here from clicking on the scratch feature itself, which gets cleared
+   * before we recreate the exons.) Therefore we save the feature coords in the operation */
+  if (!operation->subfeature)
+    {
+      /* It doesn't seem right that we need to call canvas stuff from here..... */
+      zMapWindowCanvasItemGetInterval(operation->src_item,
+                                      operation->world_x, operation->world_y, &operation->subfeature) ;
+    }
+
+  /* Now add the operation to the list */
+  view->edit_list = g_list_append(view->edit_list, operation) ;
+  
+  /* If this is the first item, also set the start/end pointers */
+  if (!view->edit_list_end)
+    {
+      view->edit_list_start = view->edit_list ;
+      view->edit_list_end = view->edit_list ;
+    }
+  else
+    {
+      /* Move the end pointer to include the new item */
+      if (view->edit_list_end->next)
+        view->edit_list_end = view->edit_list_end->next ;
+      else
+        zMapWarnIfReached() ; /* shouldn't get here because we should have a new pointer after
+                                 the original end pointer! */
+    }
+}
+
+
 /*!
  * \brief Callback called on every child in a FeatureAny.
  *
@@ -267,7 +304,6 @@ static ZMapFeatureSet getFeaturesetFromId(ZMapView view, GQuark set_id)
  *
  * \returns The ZMapFeatureSet, or NULL if the column doesn't exist
  */
-
 ZMapFeatureSet zmapViewScratchGetFeatureset(ZMapView view)
 {
   ZMapFeatureSet feature_set = NULL;
@@ -332,8 +368,7 @@ static gboolean scratchMergeCoords(ScratchMergeData merge_data, const int coord1
       merge_data->dest_feature->x2 = coord2;
     }
 
-  zMapFeatureTranscriptMergeExon(merge_data->dest_feature, coord1, coord2);
-  result = TRUE;
+  result = zMapFeatureTranscriptMergeExon(merge_data->dest_feature, coord1, coord2);
 
   return result;
 }
@@ -503,8 +538,24 @@ static gboolean scratchMergeTranscript(ScratchMergeData merge_data)
  */
 static gboolean scratchDeleteFeature(ScratchMergeData merge_data)
 {
-  /*! \todo implement */
-  return TRUE ;
+  gboolean merged = FALSE ;
+  zMapReturnValIfFail(merge_data, merged) ;
+
+  EditOperation operation = merge_data->operation;
+
+  if (operation->subfeature)
+    {
+      merged = zMapFeatureTranscriptDeleteSubfeatureAtCoord(merge_data->dest_feature, operation->subfeature->start);
+    }
+  else
+    {
+      g_set_error(merge_data->error, g_quark_from_string("ZMap"), 99,
+                  "Could not find subfeature in feature '%s' at coords %d, %d",
+                  g_quark_to_string(operation->src_feature->original_id),
+                  (int)operation->world_x, (int)operation->world_y);
+    }
+  
+  return merged ;
 }
 
 
@@ -610,7 +661,6 @@ static void scratchDeleteFeatureExons(ZMapView view, ZMapFeature feature, ZMapFe
   if (feature)
     {
       zMapFeatureRemoveExons(feature);
-      zMapFeatureRemoveIntrons(feature);
     }
 }
 
@@ -893,8 +943,6 @@ static void scratchFeatureRecreateExons(ZMapView view, ZMapFeature scratch_featu
 
       list_item = next_item ;
     }
-
-  zMapFeatureTranscriptRecreateIntrons(scratch_feature);
 }
 
 
@@ -1063,7 +1111,7 @@ void zMapViewToggleScratchColumn(ZMapView view, gboolean force_to, gboolean forc
 
 
 /*!
- * \brief Update any changes to the given featureset
+ * \brief Copy a feature into the scratch column
  */
 gboolean zmapViewScratchCopyFeature(ZMapView view,
                                     ZMapFeature feature,
@@ -1087,6 +1135,38 @@ gboolean zmapViewScratchCopyFeature(ZMapView view,
 
       /* Add this feature to the list of merged features and recreate the scratch feature. */
       scratchAddFeature(view, operation);
+      scratchFeatureRecreate(view);
+    }
+
+  return TRUE;
+}
+
+
+/*!
+ * \brief Delete a subfeature from the scratch column
+ */
+gboolean zmapViewScratchDeleteFeature(ZMapView view,
+                                      ZMapFeature feature,
+                                      FooCanvasItem *item,
+                                      const double world_x,
+                                      const double world_y,
+                                      const gboolean use_subfeature)
+{
+  if (feature)
+    {
+      EditOperation operation = g_new0(EditOperationStruct, 1);
+      
+      operation->edit_type = ZMAPEDIT_DELETE ;
+      operation->src_feature = feature;
+      operation->src_item = item;
+      operation->world_x = world_x;
+      operation->world_y = world_y;
+      operation->use_subfeature = use_subfeature;
+      operation->subfeature = NULL ;
+      operation->boundary = ZMAPBOUNDARY_NONE;
+
+      /* Add this feature to the list of merged features and recreate the scratch feature. */
+      scratchAddDeleteOperation(view, operation);
       scratchFeatureRecreate(view);
     }
 
