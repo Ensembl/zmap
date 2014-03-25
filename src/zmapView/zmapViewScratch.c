@@ -47,7 +47,7 @@
 #define SCRATCH_FEATURE_NAME "temp_feature"
 
 
-typedef enum {ZMAPEDIT_COPY, ZMAPEDIT_DELETE, ZMAPEDIT_CLEAR} ZMapEditType ;
+typedef enum {ZMAPEDIT_MERGE, ZMAPEDIT_DELETE, ZMAPEDIT_CLEAR} ZMapEditType ;
 
 
 typedef struct _GetFeaturesetCBDataStruct
@@ -186,40 +186,13 @@ static gboolean scratchClearRedoStack(ZMapView view)
 
 
 /*!
-* \brief Add a feature to the list of merged features
-* */
-static void scratchAddFeature(ZMapView view, EditOperation operation)
-{
-  /* Clear the redo stack first so we can just append the new feature at the end of the list */
-  scratchClearRedoStack(view) ;
-
-  view->edit_list = g_list_append(view->edit_list, operation) ;
-  
-  /* If this is the first item, also set the start/end pointers */
-  if (!view->edit_list_end)
-    {
-      view->edit_list_start = view->edit_list ;
-      view->edit_list_end = view->edit_list ;
-    }
-  else
-    {
-      /* Move the end pointer to include the new item */
-      if (view->edit_list_end->next)
-        view->edit_list_end = view->edit_list_end->next ;
-      else
-        zMapWarnIfReached() ; /* shouldn't get here because we should have a new pointer after
-                                 the original end pointer! */
-    }
-}
-
-
-/* Add an operation that will remove a subfeature from the scratch column */
-static void scratchAddDeleteOperation(ZMapView view, EditOperation operation)
+ * \brief Add the given edit operation to the list
+ */
+static void scratchAddOperation(ZMapView view, EditOperation operation)
 {
   /* Clear the redo stack first so we can just append the new operation at the end of the list */
   scratchClearRedoStack(view) ;
 
-  /* Now add the operation to the list */
   view->edit_list = g_list_append(view->edit_list, operation) ;
   
   /* If this is the first item, also set the start/end pointers */
@@ -238,6 +211,7 @@ static void scratchAddDeleteOperation(ZMapView view, EditOperation operation)
                                  the original end pointer! */
     }
 }
+
 
 
 /*!
@@ -856,7 +830,7 @@ static void scratchFeatureRecreateExons(ZMapView view, ZMapFeature scratch_featu
       /* Do the operation */
       if (operation->edit_type == ZMAPEDIT_CLEAR)
         merged = TRUE ;                                   /* nothing to do */
-      else if (operation->edit_type == ZMAPEDIT_COPY)
+      else if (operation->edit_type == ZMAPEDIT_MERGE)
         merged = scratchMergeFeature(&merge_data) ;
       else if (operation->edit_type == ZMAPEDIT_DELETE)
         merged = scratchDeleteFeature(&merge_data) ;
@@ -1080,7 +1054,7 @@ gboolean zmapViewScratchCopyFeature(ZMapView view,
     {
       EditOperation operation = g_new0(EditOperationStruct, 1);
       
-      operation->edit_type = ZMAPEDIT_COPY ;
+      operation->edit_type = ZMAPEDIT_MERGE ;
       operation->src_feature = feature;
       operation->seq_start = seq_start;
       operation->seq_end = seq_end;
@@ -1088,7 +1062,7 @@ gboolean zmapViewScratchCopyFeature(ZMapView view,
       operation->boundary = ZMAPBOUNDARY_NONE;
 
       /* Add this feature to the list of merged features and recreate the scratch feature. */
-      scratchAddFeature(view, operation);
+      scratchAddOperation(view, operation);
       scratchFeatureRecreate(view);
     }
 
@@ -1117,7 +1091,7 @@ gboolean zmapViewScratchDeleteFeature(ZMapView view,
       operation->boundary = ZMAPBOUNDARY_NONE;
 
       /* Add this feature to the list of merged features and recreate the scratch feature. */
-      scratchAddDeleteOperation(view, operation);
+      scratchAddOperation(view, operation);
       scratchFeatureRecreate(view);
     }
 
