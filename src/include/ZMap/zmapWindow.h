@@ -326,9 +326,8 @@ typedef struct ZMapWindowCallbackCommandScratchStructName
 
   /* Scratch specific section. */
   ZMapFeature feature;  /* clicked feature */
-  FooCanvasItem *item;  /* clicked item */
-  double world_x;       /* clicked x pos in world coords */
-  double world_y;       /* clicked y pos in world coords */
+  long seq_start;       /* sequence coordinate that was clicked (sequence features only) */
+  long seq_end;         /* sequence coordinate that was clicked */
   ZMapFeatureSubPartSpan subfeature; /* the specific subfeature to use, if applicable */
 } ZMapWindowCallbackCommandScratchStruct, *ZMapWindowCallbackCommandScratch ;
 

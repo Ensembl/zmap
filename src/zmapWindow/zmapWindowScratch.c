@@ -146,10 +146,13 @@ void zmapWindowScratchCopyFeature(ZMapWindow window,
       /* Set up general command field for callback. */
       scratch_cmd->cmd = ZMAPWINDOW_CMD_COPYTOSCRATCH ;
       scratch_cmd->feature = feature;
-      scratch_cmd->item = item;
-      scratch_cmd->world_x = world_x;
-      scratch_cmd->world_y = world_y;
+      scratch_cmd->seq_start = 0;
+      scratch_cmd->seq_end = 0;
       scratch_cmd->subfeature = NULL;
+
+      /* For sequence features, get the sequence coord that was clicked */
+      if (feature->mode == ZMAPSTYLE_MODE_SEQUENCE)
+        zMapWindowItemGetSeqCoord(item, TRUE, world_x, world_y, &scratch_cmd->seq_start, &scratch_cmd->seq_end) ;
 
       /* If necessary, find the subfeature and set it in the data */
       if (use_subfeature)
@@ -198,10 +201,13 @@ void zmapWindowScratchDeleteFeature(ZMapWindow window,
       /* Set up general command field for callback. */
       scratch_cmd->cmd = ZMAPWINDOW_CMD_DELETEFROMSCRATCH ;
       scratch_cmd->feature = feature;
-      scratch_cmd->item = item;
-      scratch_cmd->world_x = world_x;
-      scratch_cmd->world_y = world_y;
+      scratch_cmd->seq_start = 0;
+      scratch_cmd->seq_end = 0;
       scratch_cmd->subfeature = NULL;
+
+      /* For sequence features, get the sequence coord that was clicked */
+      if (feature->mode == ZMAPSTYLE_MODE_SEQUENCE)
+        zMapWindowItemGetSeqCoord(item, TRUE, world_x, world_y, &scratch_cmd->seq_start, &scratch_cmd->seq_end) ;
 
       /* If necessary, find the subfeature and set it in the data */
       if (use_subfeature)

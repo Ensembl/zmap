@@ -61,10 +61,9 @@ typedef struct _GetFeaturesetCBDataStruct
 typedef struct _EditOperationStruct
 {
   ZMapEditType edit_type;      /* the type of edit operation */
-  FooCanvasItem *src_item;     /* the item for the new feature to be merged in */
   ZMapFeature src_feature;     /* the new feature to be merged in, i.e. the source for the merge */
-  double world_x;              /* clicked position */
-  double world_y;              /* clicked position */
+  long seq_start;              /* sequence coord (sequence features only) */
+  long seq_end;                /* sequence coord (sequence features only) */
   ZMapFeatureSubPartSpan subfeature; /* if non-null then we should use this subfeature, not the whole feature */
   ZMapBoundaryType boundary;   /* the boundary type for a single-coord feature */
 } EditOperationStruct, *EditOperation;
@@ -419,20 +418,8 @@ static void scratchMergeMatchCB(gpointer match, gpointer user_data)
 static gboolean scratchMergeBase(ScratchMergeData merge_data)
 {
   gboolean merged = FALSE;
-  long seq_start=0.0, seq_end=0.0;
 
-  /* Convert the world coords to sequence coords */
-  EditOperation operation = merge_data->operation;
-
-  if (zMapWindowItemGetSeqCoord(operation->src_item, TRUE, operation->world_x, operation->world_y, &seq_start, &seq_end))
-    {
-      merged = scratchMergeCoord(merge_data, seq_start);
-    }
-  else
-    {
-      g_set_error(merge_data->error, g_quark_from_string("ZMap"), 99, "Program error: not a featureset item");
-    }
-
+  merged = scratchMergeCoord(merge_data, merge_data->operation->seq_start);
 
   return merged;
 }
@@ -539,9 +526,8 @@ static gboolean scratchDeleteFeature(ScratchMergeData merge_data)
   else
     {
       g_set_error(merge_data->error, g_quark_from_string("ZMap"), 99,
-                  "Program error: a subfeature is required to delete an intron/exon. No subfeature for feature '%s' at coords %d, %d",
-                  g_quark_to_string(operation->src_feature->original_id),
-                  (int)operation->world_x, (int)operation->world_y);
+                  "Program error: a subfeature is required to delete an intron/exon. No subfeature given for feature '%s'",
+                  g_quark_to_string(operation->src_feature->original_id)) ;
     }
   
   return merged ;
@@ -1086,9 +1072,8 @@ void zMapViewToggleScratchColumn(ZMapView view, gboolean force_to, gboolean forc
  */
 gboolean zmapViewScratchCopyFeature(ZMapView view,
                                     ZMapFeature feature,
-                                    FooCanvasItem *item,
-                                    const double world_x,
-                                    const double world_y,
+                                    const long seq_start,
+                                    const long seq_end,
                                     ZMapFeatureSubPartSpan subfeature)
 {
   if (feature)
@@ -1097,9 +1082,8 @@ gboolean zmapViewScratchCopyFeature(ZMapView view,
       
       operation->edit_type = ZMAPEDIT_COPY ;
       operation->src_feature = feature;
-      operation->src_item = item;
-      operation->world_x = world_x;
-      operation->world_y = world_y;
+      operation->seq_start = seq_start;
+      operation->seq_end = seq_end;
       operation->subfeature = subfeature ;
       operation->boundary = ZMAPBOUNDARY_NONE;
 
@@ -1117,9 +1101,8 @@ gboolean zmapViewScratchCopyFeature(ZMapView view,
  */
 gboolean zmapViewScratchDeleteFeature(ZMapView view,
                                       ZMapFeature feature,
-                                      FooCanvasItem *item,
-                                      const double world_x,
-                                      const double world_y,
+                                      const long seq_start,
+                                      const long seq_end,
                                       ZMapFeatureSubPartSpan subfeature)
 {
   if (feature)
@@ -1128,9 +1111,8 @@ gboolean zmapViewScratchDeleteFeature(ZMapView view,
       
       operation->edit_type = ZMAPEDIT_DELETE ;
       operation->src_feature = feature;
-      operation->src_item = item;
-      operation->world_x = world_x;
-      operation->world_y = world_y;
+      operation->seq_start = seq_start;
+      operation->seq_end = seq_end;
       operation->subfeature = subfeature ;
       operation->boundary = ZMAPBOUNDARY_NONE;
 
