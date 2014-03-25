@@ -3,9 +3,9 @@ id: SO:9999990
 name: das_phastCons
 
 [Term]
-id: SO:9999993
+id: SO:9999991
 name: solexa_coverage
 
 [Term]
-id: SO:9999994
+id: SO:9999992
 name: Locus
