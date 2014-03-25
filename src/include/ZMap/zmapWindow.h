@@ -329,7 +329,7 @@ typedef struct ZMapWindowCallbackCommandScratchStructName
   FooCanvasItem *item;  /* clicked item */
   double world_x;       /* clicked x pos in world coords */
   double world_y;       /* clicked y pos in world coords */
-  gboolean use_subfeature; /* whether use selected a subfeature; false if selected whole feature */
+  ZMapFeatureSubPartSpan subfeature; /* the specific subfeature to use, if applicable */
 } ZMapWindowCallbackCommandScratchStruct, *ZMapWindowCallbackCommandScratch ;
 
 

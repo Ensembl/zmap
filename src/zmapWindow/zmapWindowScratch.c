@@ -142,16 +142,28 @@ void zmapWindowScratchCopyFeature(ZMapWindow window,
       /* Call back to the View to update all windows */
       ZMapWindowCallbacks window_cbs_G = zmapWindowGetCBs() ;
       ZMapWindowCallbackCommandScratch scratch_cmd = g_new0(ZMapWindowCallbackCommandScratchStruct, 1) ;
-      
+
       /* Set up general command field for callback. */
       scratch_cmd->cmd = ZMAPWINDOW_CMD_COPYTOSCRATCH ;
       scratch_cmd->feature = feature;
       scratch_cmd->item = item;
       scratch_cmd->world_x = world_x;
       scratch_cmd->world_y = world_y;
-      scratch_cmd->use_subfeature = use_subfeature;
-      
-      (*(window_cbs_G->command))(window, window->app_data, scratch_cmd) ;
+      scratch_cmd->subfeature = NULL;
+
+      /* If necessary, find the subfeature and set it in the data */
+      if (use_subfeature)
+        zMapWindowCanvasItemGetInterval((ZMapWindowCanvasItem)item, world_x, world_y, &scratch_cmd->subfeature) ;
+
+      if (use_subfeature && !scratch_cmd->subfeature)
+        {
+          zMapWarning("Cannot find subfeature for feature '%s' at position %f,%f", 
+                      g_quark_to_string(feature->original_id), world_x, world_y) ;
+        }
+      else
+        {
+          (*(window_cbs_G->command))(window, window->app_data, scratch_cmd) ;
+        }
     }
   else
     {
@@ -189,9 +201,21 @@ void zmapWindowScratchDeleteFeature(ZMapWindow window,
       scratch_cmd->item = item;
       scratch_cmd->world_x = world_x;
       scratch_cmd->world_y = world_y;
-      scratch_cmd->use_subfeature = use_subfeature;
-      
-      (*(window_cbs_G->command))(window, window->app_data, scratch_cmd) ;
+      scratch_cmd->subfeature = NULL;
+
+      /* If necessary, find the subfeature and set it in the data */
+      if (use_subfeature)
+        zMapWindowCanvasItemGetInterval((ZMapWindowCanvasItem)item, world_x, world_y, &scratch_cmd->subfeature) ;
+
+      if (use_subfeature && !scratch_cmd->subfeature)
+        {
+          zMapWarning("Cannot find subfeature for feature '%s' at position %f,%f", 
+                      g_quark_to_string(feature->original_id), world_x, world_y) ;
+        }
+      else
+        {
+          (*(window_cbs_G->command))(window, window->app_data, scratch_cmd) ;
+        }
     }
   else
     {

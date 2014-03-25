@@ -65,8 +65,7 @@ typedef struct _EditOperationStruct
   ZMapFeature src_feature;     /* the new feature to be merged in, i.e. the source for the merge */
   double world_x;              /* clicked position */
   double world_y;              /* clicked position */
-  gboolean use_subfeature;     /* if true, just use the clicked subfeature, otherwise use the whole feature */
-  ZMapFeatureSubPartSpan subfeature; /* if use_subfeature is true then this gets set to the actual subfeature */
+  ZMapFeatureSubPartSpan subfeature; /* if non-null then we should use this subfeature, not the whole feature */
   ZMapBoundaryType boundary;   /* the boundary type for a single-coord feature */
 } EditOperationStruct, *EditOperation;
 
@@ -221,16 +220,6 @@ static void scratchAddDeleteOperation(ZMapView view, EditOperation operation)
   /* Clear the redo stack first so we can just append the new operation at the end of the list */
   scratchClearRedoStack(view) ;
 
-  /* We need to get the subfeature before we clear the existing feature. (This is because
-   * we'll usually get here from clicking on the scratch feature itself, which gets cleared
-   * before we recreate the exons.) Therefore we save the feature coords in the operation */
-  if (!operation->subfeature)
-    {
-      /* It doesn't seem right that we need to call canvas stuff from here..... */
-      zMapWindowCanvasItemGetInterval(operation->src_item,
-                                      operation->world_x, operation->world_y, &operation->subfeature) ;
-    }
-
   /* Now add the operation to the list */
   view->edit_list = g_list_append(view->edit_list, operation) ;
   
@@ -362,7 +351,7 @@ static gboolean scratchMergeCoords(ScratchMergeData merge_data, const int coord1
    * extent from a higher level). */
   EditOperation operation = merge_data->operation;
 
-  if (operation->use_subfeature && !scratchGetStartEndFlag(merge_data->view))
+  if (operation->subfeature && !scratchGetStartEndFlag(merge_data->view))
     {
       merge_data->dest_feature->x1 = coord1;
       merge_data->dest_feature->x2 = coord2;
@@ -550,7 +539,7 @@ static gboolean scratchDeleteFeature(ScratchMergeData merge_data)
   else
     {
       g_set_error(merge_data->error, g_quark_from_string("ZMap"), 99,
-                  "Could not find subfeature in feature '%s' at coords %d, %d",
+                  "Program error: a subfeature is required to delete an intron/exon. No subfeature for feature '%s' at coords %d, %d",
                   g_quark_to_string(operation->src_feature->original_id),
                   (int)operation->world_x, (int)operation->world_y);
     }
@@ -567,31 +556,13 @@ static gboolean scratchMergeFeature(ScratchMergeData merge_data)
   gboolean merged = FALSE;
   EditOperation operation = merge_data->operation;
 
-  if (operation->use_subfeature)
+  if (operation->subfeature)
     {
-      /* Just merge the clicked subfeature. The subfeature will already be set if re-merging a previous
-       * feature but the first time round we need to find it */
-      if (!operation->subfeature)
-        {
-          /* It doesn't seem right that we need to call canvas stuff from here..... */
-          zMapWindowCanvasItemGetInterval(operation->src_item,
-                                          operation->world_x, operation->world_y, &operation->subfeature) ;
-        }
-
-      if (operation->subfeature)
-        {
-          if (operation->subfeature->start == operation->subfeature->end)
-            merged = scratchMergeCoord(merge_data, operation->subfeature->start);
-          else
-            merged = scratchMergeCoords(merge_data, operation->subfeature->start, operation->subfeature->end);
-        }
+      /* Just merge the subfeature. */
+      if (operation->subfeature->start == operation->subfeature->end)
+        merged = scratchMergeCoord(merge_data, operation->subfeature->start);
       else
-        {
-          g_set_error(merge_data->error, g_quark_from_string("ZMap"), 99,
-                      "Could not find subfeature in feature '%s' at coords %d, %d",
-                      g_quark_to_string(operation->src_feature->original_id),
-                      (int)operation->world_x, (int)operation->world_y);
-        }
+        merged = scratchMergeCoords(merge_data, operation->subfeature->start, operation->subfeature->end);
     }
   else
     {
@@ -1118,7 +1089,7 @@ gboolean zmapViewScratchCopyFeature(ZMapView view,
                                     FooCanvasItem *item,
                                     const double world_x,
                                     const double world_y,
-                                    const gboolean use_subfeature)
+                                    ZMapFeatureSubPartSpan subfeature)
 {
   if (feature)
     {
@@ -1129,8 +1100,7 @@ gboolean zmapViewScratchCopyFeature(ZMapView view,
       operation->src_item = item;
       operation->world_x = world_x;
       operation->world_y = world_y;
-      operation->use_subfeature = use_subfeature;
-      operation->subfeature = NULL ;
+      operation->subfeature = subfeature ;
       operation->boundary = ZMAPBOUNDARY_NONE;
 
       /* Add this feature to the list of merged features and recreate the scratch feature. */
@@ -1150,7 +1120,7 @@ gboolean zmapViewScratchDeleteFeature(ZMapView view,
                                       FooCanvasItem *item,
                                       const double world_x,
                                       const double world_y,
-                                      const gboolean use_subfeature)
+                                      ZMapFeatureSubPartSpan subfeature)
 {
   if (feature)
     {
@@ -1161,8 +1131,7 @@ gboolean zmapViewScratchDeleteFeature(ZMapView view,
       operation->src_item = item;
       operation->world_x = world_x;
       operation->world_y = world_y;
-      operation->use_subfeature = use_subfeature;
-      operation->subfeature = NULL ;
+      operation->subfeature = subfeature ;
       operation->boundary = ZMAPBOUNDARY_NONE;
 
       /* Add this feature to the list of merged features and recreate the scratch feature. */
