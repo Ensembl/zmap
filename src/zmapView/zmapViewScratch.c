@@ -62,6 +62,7 @@ typedef struct _ScratchMergedFeatureStruct
   double world_x;              /* clicked position */
   double world_y;              /* clicked position */
   gboolean use_subfeature;     /* if true, just use the clicked subfeature, otherwise use the whole feature */
+  ZMapFeatureSubPartSpan subfeature; /* if use_subfeature is true then this gets set to the actual subfeature */
   ZMapBoundaryType boundary;   /* the boundary type for a single-coord feature */
 } ScratchMergedFeatureStruct, *ScratchMergedFeature;
 
@@ -108,14 +109,35 @@ static void scratchSetStartEndFlag(ZMapView view, gboolean value)
 }
 
 
+/*!
+ * \brief destroy a ScratchMergedFeature struct 
+ */
+static void scratchMergedFeatureDestroy(ScratchMergedFeature merge_feature)
+{
+  if (merge_feature)
+    {
+      if (merge_feature->subfeature)
+        g_free(merge_feature->subfeature) ;
+
+      g_free(merge_feature);
+    }
+}
+
+
 /* 
  * \brief Does the same as g_list_free_full, which requires gtk 2.28 
  */
 static void freeListFull(GList *list, GDestroyNotify free_func)
 {
   GList *item = list;
+
   for ( ; item; item = item->next)
-    g_free(item->data);
+    {
+      /* Free the data and any memory we allocated in it */
+      ScratchMergedFeature merge_feature = (ScratchMergedFeature)(item->data) ;
+      scratchMergedFeatureDestroy(merge_feature) ;
+      merge_feature = NULL ;
+    }
 
   g_list_free(list);
 }
@@ -484,22 +506,21 @@ static gboolean scratchMergeFeature(ScratchMergeData merge_data)
 
   if (merge_feature->use_subfeature)
     {
-      /* Just merge the clicked subfeature */
-      ZMapFeatureSubPartSpan sub_feature = NULL;
-
-
-      /* It doesn't seem right that we need to call canvas stuff from here..... */
-      zMapWindowCanvasItemGetInterval(merge_feature->src_item,
-				      merge_feature->world_x, merge_feature->world_y, &sub_feature) ;
-
-      if (sub_feature)
+      /* Just merge the clicked subfeature. The subfeature will already be set if re-merging a previous
+       * feature but the first time round we need to find it */
+      if (!merge_feature->subfeature)
         {
-          if (sub_feature->start == sub_feature->end)
-            merged = scratchMergeCoord(merge_data, sub_feature->start);
-          else
-            merged = scratchMergeCoords(merge_data, sub_feature->start, sub_feature->end);
+          /* It doesn't seem right that we need to call canvas stuff from here..... */
+          zMapWindowCanvasItemGetInterval(merge_feature->src_item,
+                                          merge_feature->world_x, merge_feature->world_y, &merge_feature->subfeature) ;
+        }
 
-          g_free(sub_feature) ;
+      if (merge_feature->subfeature)
+        {
+          if (merge_feature->subfeature->start == merge_feature->subfeature->end)
+            merged = scratchMergeCoord(merge_data, merge_feature->subfeature->start);
+          else
+            merged = scratchMergeCoords(merge_data, merge_feature->subfeature->start, merge_feature->subfeature->end);
         }
       else
         {
@@ -834,7 +855,11 @@ static void scratchFeatureRecreateExons(ZMapView view, ZMapFeature scratch_featu
                   view->edit_list_end = view->edit_list_start = NULL ;
                 }
             }
-             
+          else if (view->edit_list_start == list_item)
+            {
+              view->edit_list_start = view->edit_list_start->next ;
+            }
+
           /* Now delete the item from the list and free the data */
           view->edit_list = g_list_delete_link(view->edit_list, list_item) ;
           list_item = NULL ;
@@ -1036,6 +1061,7 @@ gboolean zmapViewScratchCopyFeature(ZMapView view,
       merge_feature->world_x = world_x;
       merge_feature->world_y = world_y;
       merge_feature->use_subfeature = use_subfeature;
+      merge_feature->subfeature = NULL ;
       merge_feature->boundary = ZMAPBOUNDARY_NONE;
 
       /* Add this feature to the list of merged features and recreate the scratch feature. */
