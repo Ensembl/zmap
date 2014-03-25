@@ -372,7 +372,12 @@ typedef struct _ZMapViewStruct
 
   GHashTable *cwh_hash ;
 
-  GList *scratch_features ;             /* List of feature data that has been copied into the scratch column on the fwd strand */
+  /* These pointers maintain a list of operations for editing the Scratch feature. edit_list
+   * points to the start of the whole list. start/end point to the current subset of valid operations
+   * that have not been un-done. */
+  GList *edit_list ;
+  GList *edit_list_start ;
+  GList *edit_list_end ;
   gboolean scratch_start_end_set ;     /* TRUE if the scratch-column forward-strand feature start/end has been set */
 
 } ZMapViewStruct ;

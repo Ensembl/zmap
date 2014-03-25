@@ -63,7 +63,6 @@ typedef struct _ScratchMergedFeatureStruct
   double world_y;              /* clicked position */
   gboolean use_subfeature;     /* if true, just use the clicked subfeature, otherwise use the whole feature */
   ZMapBoundaryType boundary;   /* the boundary type for a single-coord feature */
-  gboolean ignore;             /* set to false to ignore this feature i.e. so it's not part of the scratch feature */
 } ScratchMergedFeatureStruct, *ScratchMergedFeature;
 
 
@@ -109,93 +108,58 @@ static void scratchSetStartEndFlag(ZMapView view, gboolean value)
 }
 
 
-/*!
-* \brief Get the list of merged features
-* */
-static GList* scratchGetMergedFeatures(ZMapView view)
+/* 
+ * \brief Does the same as g_list_free_full, which requires gtk 2.28 
+ */
+static void freeListFull(GList *list, GDestroyNotify free_func)
 {
-  GList *list = NULL;
+  GList *item = list;
+  for ( ; item; item = item->next)
+    g_free(item->data);
 
-  if (view->scratch_features)
-    list = view->scratch_features;
-
-  return list;
+  g_list_free(list);
 }
 
 
 /*!
-* \brief Get pointer to the list of merged features
-* */
-static GList** scratchGetMergedFeaturesPtr(ZMapView view)
+ * \brief This function clears the redo stack. It should be called after a successful operation (other
+ * than an undo or redo) to "reset" where to start doing redo's from. 
+ */
+static gboolean scratchClearRedoStack(ZMapView view)
 {
-  GList **list = NULL;
+  gboolean result = TRUE ;
 
-  list = &view->scratch_features;
-
-  return list;
-}
-
-
-/*!
-* \brief Get the first ignored item in the list of merged features
-* */
-static ScratchMergedFeature scratchGetFirstIgnoredFeature(ZMapView view)
-{
-  ScratchMergedFeature found_feature = NULL;
-
-  GList *list = scratchGetMergedFeatures(view);
-  GList *list_item = g_list_first(list);
-
-  for ( ; list_item && !found_feature; list_item = list_item->next)
+  /* Remove all of the features after the end pointer - these operations have been un-done */
+  if (view->edit_list_end)
     {
-      ScratchMergedFeature merge_feature = (ScratchMergedFeature)(list_item->data);
-      if (merge_feature->ignore)
-        found_feature = merge_feature;
+      GList *item = view->edit_list_end->next ;
+
+      while (item)
+        {
+          ScratchMergedFeature merge_feature = (ScratchMergedFeature)(item->data);
+
+          /* Get the next pointer before we remove the current one! */
+          GList *next_item = item->next ;
+
+          /* Remove the link from the list and delete the data */
+          view->edit_list = g_list_delete_link(view->edit_list, item) ;
+          item = next_item ;
+
+          g_free(merge_feature) ;
+          merge_feature = NULL ;
+        }
+    }
+  else if (view->edit_list)
+    {
+      /* If the start/end pointers are null but the list exists it means we've un-done the entire
+       * list. So, to clear the redo stack, clear the entire list. */
+      freeListFull(view->edit_list, g_free);
+      view->edit_list = NULL;
+      view->edit_list_start = NULL;
+      view->edit_list_end = NULL;
     }
 
-  return found_feature;
-}
-
-
-/*!
-* \brief Get the last visible item in the list of merged features
-* */
-static ScratchMergedFeature scratchGetLastVisibleFeature(ZMapView view)
-{
-  ScratchMergedFeature found_feature = NULL;
-
-  GList *list = scratchGetMergedFeatures(view);
-  GList *list_item = g_list_last(list);
-
-  for ( ; list_item && !found_feature; list_item = list_item->prev)
-    {
-      ScratchMergedFeature merge_feature = (ScratchMergedFeature)(list_item->data);
-      if (!merge_feature->ignore)
-        found_feature = merge_feature;
-    }
-
-  return found_feature;
-}
-
-
-/*!
-* \brief Same as scratchGetLastVisibleFeature but returns the GList item
-* */
-static GList* scratchGetLastVisibleFeatureItem(ZMapView view)
-{
-  GList *found_item = NULL;
-
-  GList *list = scratchGetMergedFeatures(view);
-  GList *list_item = g_list_last(list);
-
-  for ( ; list_item && !found_item; list_item = list_item->prev)
-    {
-      ScratchMergedFeature merge_feature = (ScratchMergedFeature)(list_item->data);
-      if (!merge_feature->ignore)
-        found_item = list_item;
-    }
-
-  return found_item;
+  return result ;
 }
 
 
@@ -204,22 +168,26 @@ static GList* scratchGetLastVisibleFeatureItem(ZMapView view)
 * */
 static void scratchAddFeature(ZMapView view, ScratchMergedFeature new_feature)
 {
-  GList **list_ptr = scratchGetMergedFeaturesPtr(view);
-  GList *list = list_ptr ? *list_ptr : NULL;
+  /* Clear the redo stack first so we can just append the new feature at the end of the list */
+  scratchClearRedoStack(view) ;
 
-  /* We may have ignored features at the end of the list. Insert
-   * the new item after the last visible feature in the list otherwise
-   * the undo/redo order will get messed up. */
-  GList *sibling = scratchGetLastVisibleFeatureItem(view);
-
-  if (sibling && sibling->next)
-    *list_ptr = g_list_insert_before(list, sibling->next, new_feature);
-  else if (sibling)
-    *list_ptr = g_list_append(list, new_feature); /* sibling is last in list, so just append */
-  else if (list_ptr && list)
-    *list_ptr = g_list_prepend(list, new_feature); /* list only contains ignored items, so add new item at start */
+  view->edit_list = g_list_append(view->edit_list, new_feature) ;
+  
+  /* If this is the first item, also set the start/end pointers */
+  if (!view->edit_list_end)
+    {
+      view->edit_list_start = view->edit_list ;
+      view->edit_list_end = view->edit_list ;
+    }
   else
-    *list_ptr = g_list_append(list, new_feature); /* empty list so append */
+    {
+      /* Move the end pointer to include the new item */
+      if (view->edit_list_end->next)
+        view->edit_list_end = view->edit_list_end->next ;
+      else
+        zMapWarnIfReached() ; /* shouldn't get here because we should have a new pointer after
+                                 the original end pointer! */
+    }
 }
 
 
@@ -835,28 +803,51 @@ static void scratchFeatureRecreateExons(ZMapView view, ZMapFeature scratch_featu
   /* Loop through each feature in the merge list and merge it in */
   GError *error = NULL;
   ScratchMergeDataStruct merge_data = {view, scratch_featureset, scratch_feature, &error, NULL};
-  GList *list_item = view->scratch_features;
+  GList *list_item = view->edit_list_start;
 
   while (list_item)
     {
       ScratchMergedFeature merge_feature = (ScratchMergedFeature)(list_item->data);
       gboolean merged = FALSE;
 
-      if (!merge_feature->ignore)
-        {
-          /* Add info about the current feature to the merge data */
-          merge_data.merge_feature = merge_feature;
+      /* Add info about the current feature to the merge data */
+      merge_data.merge_feature = merge_feature;
 
-          /* Do the merge */
-          merged = scratchMergeFeature(&merge_data);
-        }
+      /* Do the merge */
+      merged = scratchMergeFeature(&merge_data);
 
-      list_item = list_item->next;
+      GList *next_item = list_item->next;
 
       /* If we attempted to merge but it failed, remove the feature from the list.
-       * Do this after setting the next pointer because the current item will be removed. */
-      if (!merge_feature->ignore && !merged)
-        view->scratch_features = g_list_remove(view->scratch_features, merge_feature);
+       * Remember the next pointer first because the current item will be removed. */
+      if (!merged)
+        {
+          /* This is probably the end item in the list so update the end pointer */
+          if (list_item == view->edit_list_end)
+            {
+              view->edit_list_end = view->edit_list_end->prev ;
+              
+              if (view->edit_list_end == NULL)
+                {
+                  /* This was the first item and it failed so reset start/end to null to indicate
+                   * there's nothing valid in the list */
+                  view->edit_list_end = view->edit_list_start = NULL ;
+                }
+            }
+             
+          /* Now delete the item from the list and free the data */
+          view->edit_list = g_list_delete_link(view->edit_list, list_item) ;
+          list_item = NULL ;
+
+          g_free(merge_feature) ;
+          merge_feature = NULL ;
+        }
+
+      /* If we're at the last item in the valid list, finish now */
+      if (list_item == view->edit_list_end)
+        break ;
+
+      list_item = next_item ;
     }
 
   zMapFeatureTranscriptRecreateIntrons(scratch_feature);
@@ -878,31 +869,6 @@ static void scratchFeatureRecreate(ZMapView view)
   scratchMergeNewFeature(view, feature) ;
 }
 
-
-
-
-/* This function clears the redo stack. It should be called after a successful operation (other
- * than an undo or redo) to "reset" where to start doing redo's from. */
-static gboolean scratchClearRedoStack(ZMapView view)
-{
-  gboolean result = TRUE ;
-
-  /* Remove all of the ignored (i.e. un-done) features from the scratch column */
-  GList *item = view->scratch_features ;
-
-  while (item)
-    {
-      ScratchMergedFeature merge_feature = (ScratchMergedFeature)(item->data);
-
-      /* Get the next item before we remove the current one! */
-      item = item->next ;
-
-      if (merge_feature->ignore)
-        view->scratch_features = g_list_remove(view->scratch_features, merge_feature) ;
-    }
-
-  return result ;
-}
 
 
 /************ PUBLIC FUNCTIONS **************/
@@ -1071,26 +1037,13 @@ gboolean zmapViewScratchCopyFeature(ZMapView view,
       merge_feature->world_y = world_y;
       merge_feature->use_subfeature = use_subfeature;
       merge_feature->boundary = ZMAPBOUNDARY_NONE;
-      merge_feature->ignore = FALSE;
 
-      /* Add this feature to the list of merged features and recreate the scratch feature */
+      /* Add this feature to the list of merged features and recreate the scratch feature. */
       scratchAddFeature(view, merge_feature);
-      scratchClearRedoStack(view) ;
       scratchFeatureRecreate(view);
     }
 
   return TRUE;
-}
-
-
-/* Does the same as g_list_free_full, which requires gtk 2.28 */
-static void freeListFull(GList *list, GDestroyNotify free_func)
-{
-  GList *item = list;
-  for ( ; item; item = item->next)
-    g_free(item->data);
-
-  g_list_free(list);
 }
 
 
@@ -1104,10 +1057,12 @@ static void freeListFull(GList *list, GDestroyNotify free_func)
 gboolean zmapViewScratchClear(ZMapView view)
 {
   /* Clear the list of features in the scratch column */
-  if (view->scratch_features)
+  if (view->edit_list)
     {
-      freeListFull(view->scratch_features, g_free);
-      view->scratch_features = NULL;
+      freeListFull(view->edit_list, g_free);
+      view->edit_list = NULL;
+      view->edit_list_start = NULL;
+      view->edit_list_end = NULL;
     }
 
   scratchFeatureRecreate(view);
@@ -1121,17 +1076,20 @@ gboolean zmapViewScratchClear(ZMapView view)
  */
 gboolean zmapViewScratchUndo(ZMapView view)
 {
-  /* Find the last visible item and disable it */
-  ScratchMergedFeature feature = scratchGetLastVisibleFeature(view);
-
-  if (feature)
+  /* Move the end pointer back */
+  if (view->edit_list_end)
     {
-      feature->ignore = TRUE;
+      view->edit_list_end = view->edit_list_end->prev ;
+      
+      /* If we have no operations left in the list, null the start pointer too */
+      if (view->edit_list_end == NULL)
+        view->edit_list_start = NULL ;
+      
       scratchFeatureRecreate(view);
     }
   else
     {
-      g_critical("No operations to redo");
+      zMapWarning("%s", "No operations to undo");
     }
 
   return TRUE;
@@ -1143,17 +1101,22 @@ gboolean zmapViewScratchUndo(ZMapView view)
  */
 gboolean zmapViewScratchRedo(ZMapView view)
 {
-  /* Get the first ignored feature and re-enable it */
-  ScratchMergedFeature feature = scratchGetFirstIgnoredFeature(view);
-
-  if (feature)
+  /* Move the end pointer forward */
+  if (view->edit_list_end && view->edit_list_end->next)
     {
-      feature->ignore = FALSE;
+      view->edit_list_end = view->edit_list_end->next ;
+      scratchFeatureRecreate(view);
+    }
+  else if (!view->edit_list_end && view->edit_list)
+    {
+      /* If the list exists but start/end pointers are null then we had un-done the entire list,
+       * so we just need to set the start/end pointers to the first item in the list */
+      view->edit_list_start = view->edit_list_end = view->edit_list ;
       scratchFeatureRecreate(view);
     }
   else
     {
-      g_critical("No operations to redo\n");
+      zMapWarning("%s", "No operations to redo\n");
     }
 
   return TRUE;
