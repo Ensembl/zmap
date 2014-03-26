@@ -708,15 +708,16 @@ void zMapWindowCanvasFeaturesetZoom(ZMapWindowFeaturesetItem featureset, GdkDraw
     {
       ZMapWindowFeatureItemZoomFunc func ;
 
-      if(!featureset->display_index)
-        zMapWindowCanvasFeaturesetIndex(featureset);
-
       if ((featureset->type > 0 && featureset->type < FEATURE_N_TYPE)
 	  && (func = _featureset_zoom_G[featureset->type]))
 	{
 	  /* zoom can (re)create the index eg if graphs density stuff gets re-binned */
 	  func(featureset, drawable) ;
 	}
+
+
+      if(!featureset->display_index)
+        zMapWindowCanvasFeaturesetIndex(featureset);
 
 
       /* column summarise: after creating the index work out which features are visible and hide the rest */
