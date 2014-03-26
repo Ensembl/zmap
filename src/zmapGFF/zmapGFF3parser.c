@@ -3617,8 +3617,7 @@ static gboolean clipFeatureLogic_General(ZMapGFF3Parser  pParser, ZMapGFFFeature
   cFeatureStyleMode    = zMapSOIDDataGetStyleMode(pSOIDData) ;
   sSOType              = zMapSOIDDataGetName(pSOIDData) ;
   zMapReturnValIfFail(iStart && iEnd
-                  && (cFeatureStyleMode != ZMAPSTYLE_MODE_INVALID)
-                  && (cFeatureStyleMode != ZMAPSTYLE_MODE_TRANSCRIPT), bIncludeFeature ) ;
+                  && (cFeatureStyleMode != ZMAPSTYLE_MODE_INVALID), bIncludeFeature ) ;
 
   /*
    * Default behaviour is to include the feature.
