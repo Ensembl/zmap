@@ -1018,6 +1018,7 @@ void zMapGUIShowAbout(void)
   const gchar *authors[] = {"Ed Griffiths, Sanger Institute, UK <edgrif@sanger.ac.uk>",
 			    "Roy Storey, Sanger Institute, UK <rds@sanger.ac.uk>",
 			    "Malcolm Hinsley, Sanger Institute, UK <mh17@sanger.ac.uk>",
+			    "Steve Miller, Sanger Institute, UK <sm23@sanger.ac.uk>",
 			    NULL} ;
   char *comment_str ;
 
