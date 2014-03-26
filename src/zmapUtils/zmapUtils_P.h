@@ -71,7 +71,7 @@ __DATE__ " " __TIME__
 "@(#) Copyright (c):   Genome Research Ltd., 2006-2014\n"                                                   \
 "@(#) \n"                                                                                       \
 "@(#) This application is part of the ZMap genome viewer/annotation package originally written by \n"    \
-"@(#) 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk, \n"                            \
+"@(#)   Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk, \n"                            \
 "@(#)   and Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk \n"                                \
 "@(#)   and Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk \n"                            \
 "@(#) \n"                                                                                       \
