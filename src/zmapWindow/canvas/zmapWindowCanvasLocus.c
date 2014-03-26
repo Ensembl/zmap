@@ -43,6 +43,7 @@
 
 #include <ZMap/zmapFeature.h>
 #include <zmapWindowCanvasDraw.h>
+#include <zmapWindowCanvasUtils.h>
 #include <zmapWindowCanvasFeatureset_I.h>
 #include <zmapWindowCanvasLocus_I.h>
 

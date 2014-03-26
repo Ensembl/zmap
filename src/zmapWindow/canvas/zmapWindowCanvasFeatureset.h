@@ -54,50 +54,6 @@
 
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* basic feature draw a box
- * defined as a macro for efficiency to avoid multple copies of cut and paste
- * otherwise would need 10 args which is silly
- * used by basc feature, alignments, graphs, maybe transcripts... and what else??
- *
- * NOTE x1 and x2 passed as args as normal features are centred but graphs maybe not
- */
-#define zMapCanvasFeaturesetDrawBoxMacro(featureset, x1,x2, y1,y2,  drawable,fill_set,outline_set,fill,outline)\
-  {									\
-    FooCanvasItem *item = (FooCanvasItem *) featureset;			\
-    GdkColor c;								\
-    int cx1, cy1, cx2, cy2;						\
-\
-    /* get item canvas coords, following example from FOO_CANVAS_RE (used by graph items) */ \
-    /* NOTE CanvasFeature coords are the extent including decorations so we get coords from the feature */ \
-    foo_canvas_w2c (item->canvas, x1, y1 - featureset->start + featureset->dy, &cx1, &cy1); \
-    foo_canvas_w2c (item->canvas, x2, y2 - featureset->start + featureset->dy + 1, &cx2, &cy2);	\
-      						/* + 1 to draw to the end of the last base */\
-\
-    /* NOTE that the gdk_draw_rectangle interface is a bit esoteric	\
-     * and it doesn't like rectangles that have no depth\
-     */							\
-\
-    if(fill_set && (!outline_set || (cy2 - cy1 > 1)))	/* fill will be visible */ \
-      {									\
-	c.pixel = fill;							\
-	gdk_gc_set_foreground (featureset->gc, &c);			\
-	zMap_draw_rect (drawable, featureset, cx1, cy1, cx2, cy2, TRUE); \
-      }									\
-\
-    if(outline_set)				\
-      {						\
-	c.pixel = outline;					\
-	gdk_gc_set_foreground(featureset->gc, &c);			\
-	/* +1 due to gdk_draw_rect and zMap_draw_rect */		\
-	zMap_draw_rect(drawable, featureset, cx1, cy1, cx2+1, cy2+1, FALSE); \
-      }									\
-  }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-
 /* Instance */
 typedef struct _zmapWindowFeaturesetItemStruct *ZMapWindowFeaturesetItem ;
 typedef struct _zmapWindowCanvasFeatureStruct *ZMapWindowCanvasFeature ;
@@ -186,8 +142,10 @@ typedef enum
 
   } ZMapWindowCanvasFeaturesetHideType;
 
+
+
 /* holds all data need to drive exotic bump modes */
-typedef struct
+typedef struct BumpFeaturesetStructName
 {
   double start,end;	/* eg mark */
   double spacing;	/* between sub columns */
@@ -204,7 +162,7 @@ typedef struct
   int comps;
   int n_col;
 
-} BumpFeaturesetStruct, *BumpFeatureset;
+} BumpFeaturesetStruct, *BumpFeatureset ;
 
 
 
@@ -300,15 +258,10 @@ void zMapWindowCanvasFeaturesetZoom(ZMapWindowFeaturesetItem featureset, GdkDraw
 void zMapWindowCanvasFeaturesetSetZoomY(ZMapWindowFeaturesetItem fi, double zoom_y) ;
 void zMapWindowCanvasFeaturesetSetZoomRecalc(ZMapWindowFeaturesetItem featureset, gboolean recalc) ;
 
-gint zMapFeatureNameCmp(gconstpointer a, gconstpointer b);
-gint zMapFeatureCmp(gconstpointer a, gconstpointer b);
-
 gulong zMapWindowCanvasFeatureGetHeatColour(gulong a, gulong b, double score);
 gulong zMapWindowCanvasFeatureGetHeatPixel(gulong a, gulong b, double score);
 
-
 gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowFeaturesetItem item, ZMapStyleBumpMode bump_mode, int compress_mode, BumpFeatureset bump_data);
-
 
 void zMapWindowCanvasFeaturesetShowHideMasked(FooCanvasItem *foo, gboolean show, gboolean set_colour);
 
@@ -345,11 +298,3 @@ gboolean zMapCanvasFeaturesetSeq2World(ZMapWindowFeaturesetItem featureset,
 
 
 #endif /* ZMAP_WINDOW_FEATURESET_H */
-
-
-
-
-
-
-
-

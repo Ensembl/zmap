@@ -72,10 +72,16 @@ typedef struct _zmapWindowContainerFeatureSetStruct
 
   /* does the column contain featuresets that are maskable? */
   gboolean    maskable;
+
   /* does the column contain masked featuresets that have been masked (not displayed)? (default) */
   gboolean    masked;
+
+
+
   /* which featuresets are displayed in this column */
   GList *     featuresets;
+
+
 
   /* this is a column setting, the settings struct below is an amalgamation of styles */
   ZMapStyleBumpMode bump_mode;

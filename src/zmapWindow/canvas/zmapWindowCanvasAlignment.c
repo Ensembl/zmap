@@ -675,8 +675,8 @@ static void zMapWindowCanvasAlignmentGetFeatureExtent(ZMapWindowCanvasFeature fe
 
   *width = feature->width;
 
-  if (!zMapStyleIsUnique(*feature->feature->style))
-    /* if not joining up same name features they don't need to go in the same column */
+  /* if not joining up same name features they don't need to go in the same column */
+  if(!zMapStyleIsUnique(*feature->feature->style))
     {
       while(first->left)
         {
@@ -697,7 +697,10 @@ static void zMapWindowCanvasAlignmentGetFeatureExtent(ZMapWindowCanvasFeature fe
 
   span->x1 = first->y1;
   span->x2 = first->y2;
+
+  return ;
 }
+
 
 static void alignmentColumnInit(ZMapWindowFeaturesetItem featureset)
 {
@@ -709,7 +712,6 @@ static void alignmentColumnInit(ZMapWindowFeaturesetItem featureset)
 
 static void zmapWindowCanvasAlignmentPreZoom(ZMapWindowFeaturesetItem featureset)
 {
-
   /* Need to call routine to trigger calculate on zoom for text here... */
   zMapWindowCanvasAlignmentZoomSet(featureset, NULL) ;
 
