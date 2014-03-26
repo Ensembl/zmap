@@ -42,7 +42,7 @@ typedef union
   gboolean b ;
   int i ;
   char *s ;
-  char **sa;
+  char **sa ;
   double f ;
 } ZMapCmdLineArgsType ;
 
@@ -59,7 +59,7 @@ typedef union
 #define ZMAPARG_CONFIG_FILE    "conf_file"
 #define ZMAPARG_CONFIG_DIR     "conf_dir"
 #define ZMAPARG_STYLES_FILE    "styles_file"
-
+#define ZMAPARG_SINGLE_SCREEN  "single_screen"
 
 /* Soon to be removed. */
 #define ZMAPARG_WINDOW_ID      "win_id"

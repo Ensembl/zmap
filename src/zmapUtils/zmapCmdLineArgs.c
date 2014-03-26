@@ -347,6 +347,8 @@ static GOptionEntry *get_main_entries(ZMapCmdLineArgs arg_context)
 
     { ZMAPARG_SHRINK,  0, 0, G_OPTION_ARG_NONE, NULL, ZMAPARG_SHRINK_DESC,  ZMAPARG_NO_ARG },
 
+    { ZMAPARG_SINGLE_SCREEN, 0, 0, G_OPTION_ARG_NONE, NULL, ZMAPARG_SINGLE_SCREEN_DESC, ZMAPARG_NO_ARG },
+
     { ZMAPARG_SEQUENCE, 0, ARG_NO_FLAGS, G_OPTION_ARG_STRING, NULL, ZMAPARG_SEQUENCE_DESC, ZMAPARG_SEQUENCE_ARG },
 
 /* Must be the last entry. */
@@ -382,6 +384,8 @@ static GOptionEntry *get_main_entries(ZMapCmdLineArgs arg_context)
       entries[i].arg_data = &(zmap_timing_G) ;
       i++ ;
       entries[i].arg_data = &(arg_context->shrink) ;
+      i++ ;
+      entries[i].arg_data = &(arg_context->single_screen) ;
       i++ ;
       entries[i].arg_data = &(arg_context->sequence_arg) ;
       i++ ;

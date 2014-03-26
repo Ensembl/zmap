@@ -42,6 +42,7 @@
 #define ZMAPARG_CONFIG_FILE_DESC    "Relative or full path to configuration file."
 #define ZMAPARG_CONFIG_DIR_DESC     "Relative or full path to configuration directory."
 #define ZMAPARG_STYLES_FILE_DESC    "Relative or full path to styles file."
+#define ZMAPARG_SINGLE_SCREEN_DESC  "Force zmap to open tools like blixem on the same screen that it is running on."
 #define ZMAPARG_WINDOW_ID_DESC      "Window ID of the controlling application."
 #define ZMAPARG_REMOTE_DEBUG_DESC   "Set RemoteControl debug level."
 #define ZMAPARG_PEER_NAME_DESC      "Peer Remote Control app name."
@@ -89,6 +90,7 @@ typedef struct _ZMapCmdLineArgsStruct
   gboolean version ;
   gboolean serial ;
   gboolean timing ;
+  gboolean single_screen ;
 
   int sleep ;
 

@@ -515,13 +515,26 @@ ZMapViewWindow zMapViewCreate(GtkWidget *view_container, ZMapFeatureSequenceMap 
   /* If we have multiple screens then work out where we should show blixem. */
   if (zMapGUIGetScreenInfo(view_container, &curr_scr_num, &num_screens) && num_screens > 1)
     {
+      ZMapCmdLineArgsType value ;
+
       zmap_view->multi_screen = TRUE ;
 
-      /* Crude but it will do for now. */
-      if (curr_scr_num == 0)
-        zmap_view->blixem_screen = 1 ;
-      else if (curr_scr_num > 0)
-        zmap_view->blixem_screen = 0 ;
+      /* Can be overridden by user from commandline. */
+      if ((zMapCmdLineArgsValue(ZMAPARG_SINGLE_SCREEN, &value)) && (value.b))
+        zmap_view->multi_screen = FALSE ;
+
+      if (zmap_view->multi_screen)
+        {
+          /* Crude but it will do for now. */
+          if (curr_scr_num == 0)
+            zmap_view->blixem_screen = 1 ;
+          else if (curr_scr_num > 0)
+            zmap_view->blixem_screen = 0 ;
+        }
+      else
+        {
+          zmap_view->blixem_screen = curr_scr_num ;
+        }
     }
 
 
