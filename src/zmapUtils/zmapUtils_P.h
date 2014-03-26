@@ -40,7 +40,7 @@
 
 /* Create a copyright string for dialogs etc. */
 #define ZMAP_COPYRIGHT_STRING()                                  \
-"Copyright (c) 2006-2010: Genome Research Ltd."
+"Copyright (c) 2006-2014: Genome Research Ltd."
 
 
 /* Create a website string for dialogs etc. */
@@ -68,7 +68,7 @@ __DATE__ " " __TIME__
 "@(#) Title/Version:  "ZMAP_MAKE_TITLE_STRING(TITLE, VERSION, RELEASE, UPDATE)"\n"              \
 "@(#)      Compiled:  "__DATE__" "__TIME__"\n"                                                  \
 "@(#)   Description:  " DESCRIPTION_STRING"\n"                                                  \
-"@(#) Copyright (c):   Genome Research Ltd., 2006-2010\n"                                                   \
+"@(#) Copyright (c):   Genome Research Ltd., 2006-2014\n"                                                   \
 "@(#) \n"                                                                                       \
 "@(#) This application is part of the ZMap genome viewer/annotation package originally written by \n"    \
 "@(#) 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk, \n"                            \
