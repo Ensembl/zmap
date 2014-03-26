@@ -83,8 +83,7 @@ __DATE__ " " __TIME__
 
 
 
-#define ZMAP_SEPARATOR "/"				    /* WE SHOULD BE ABLE TO CALL A FUNC
-							       FOR THIS..... */
+#define ZMAP_SEPARATOR "/"                    /* WE SHOULD BE ABLE TO CALL A FUNC FOR THIS..... */
 
 
 /*
