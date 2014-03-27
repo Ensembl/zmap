@@ -2594,10 +2594,22 @@ static void setColours(ZMapWindow window)
 {
   ZMapConfigIniContext context = NULL;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* THIS ALL NEEDS RATIONALISING BUT WE NEED TO SET OTHER COLOURS SUCH AS
+   * LASSO COLOUR, DNA TEXT COLOUR AND SO ON SO THEY SHOW UP AGAINST THE BACKGROUND. */
+
   gdk_color_parse(ZMAP_WINDOW_BACKGROUND_COLOUR, &(window->colour_root)) ;
   gdk_color_parse(ZMAP_WINDOW_BACKGROUND_COLOUR, &window->colour_alignment) ;
   gdk_color_parse(ZMAP_WINDOW_BLOCK_BACKGROUND_COLOUR, &window->colour_block) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  window->colour_root = window->colour_alignment = window->colour_block = window->canvas_background ;
+                                                            /* struct copies */
+
+
   gdk_color_parse(ZMAP_WINDOW_STRAND_DIVIDE_COLOUR, &window->colour_separator) ;
+
+  /* Get rid of these ?? */
   gdk_color_parse(ZMAP_WINDOW_MBLOCK_F_BG, &window->colour_mblock_for) ;
   gdk_color_parse(ZMAP_WINDOW_MBLOCK_R_BG, &window->colour_mblock_rev) ;
   gdk_color_parse(ZMAP_WINDOW_QBLOCK_F_BG, &window->colour_qblock_for) ;
@@ -2606,6 +2618,7 @@ static void setColours(ZMapWindow window)
   gdk_color_parse(ZMAP_WINDOW_MBLOCK_R_BG, &(window->colour_mreverse_col)) ;
   gdk_color_parse(ZMAP_WINDOW_QBLOCK_F_BG, &(window->colour_qforward_col)) ;
   gdk_color_parse(ZMAP_WINDOW_QBLOCK_R_BG, &(window->colour_qreverse_col)) ;
+
   gdk_color_parse(ZMAP_WINDOW_COLUMN_HIGHLIGHT, &(window->colour_column_highlight)) ;
   window->highlights_set.column = TRUE ;
   //  gdk_color_parse(ZMAP_WINDOW_ITEM_HIGHLIGHT, &(window->colour_item_highlight)) ;
