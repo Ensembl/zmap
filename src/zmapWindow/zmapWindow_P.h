@@ -520,18 +520,27 @@ typedef enum
  *           Default colours.
  */
 
+
+
 #define ZMAP_WINDOW_BACKGROUND_COLOUR "white"		    /* main canvas background */
-#define ZMAP_WINDOW_BLOCK_BACKGROUND_COLOUR "white"	    /* main canvas background */
 
-#define ZMAP_WINDOW_STRAND_DIVIDE_COLOUR "yellow"	    /* Marks boundary of forward/reverse strands. */
 
+
+#define ZMAP_WINDOW_BLOCK_BACKGROUND_COLOUR ZMAP_WINDOW_BACKGROUND_COLOUR	    /* main canvas background */
+
+
+/* I think these can be removed now... */
 /* Colours for master alignment block (forward and reverse). */
-#define ZMAP_WINDOW_MBLOCK_F_BG "white"
-#define ZMAP_WINDOW_MBLOCK_R_BG "white"
+#define ZMAP_WINDOW_MBLOCK_F_BG ZMAP_WINDOW_BACKGROUND_COLOUR
+#define ZMAP_WINDOW_MBLOCK_R_BG ZMAP_WINDOW_BACKGROUND_COLOUR
 
 /* Colours for query alignment block (forward and reverse). */
 #define ZMAP_WINDOW_QBLOCK_F_BG "light pink"
 #define ZMAP_WINDOW_QBLOCK_R_BG "pink"
+
+
+
+#define ZMAP_WINDOW_STRAND_DIVIDE_COLOUR "yellow"	    /* Marks boundary of forward/reverse strands. */
 
 /* Colour for highlighting a whole columns background. */
 #define ZMAP_WINDOW_COLUMN_HIGHLIGHT "grey"
