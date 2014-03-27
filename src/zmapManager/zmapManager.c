@@ -223,7 +223,11 @@ ZMapManagerAddResult zMapManagerAdd(ZMapManager zmaps, ZMapFeatureSequenceMap se
 
   if (zmap)
     {
+      ZMapAppContext app_context = (ZMapAppContext)(zmaps->gui_data) ;
       ZMapViewWindow view_window ;
+
+      if (app_context->session_colour_set)
+        zMapSetSessionColour(zmap, &(app_context->session_colour)) ;
 
       /* Try to load the sequence. */
       if ((view_window = zMapAddView(zmap, sequence_map)) && zMapConnectView(zmap, zMapViewGetView(view_window)))
@@ -739,6 +743,11 @@ static ZMapManagerAddResult addNewView(ZMapManager zmaps,
 
   if (zmap)
     {
+      ZMapAppContext app_context = (ZMapAppContext)(zmaps->gui_data) ;
+
+      if (app_context->session_colour_set)
+        zMapSetSessionColour(zmap, &(app_context->session_colour)) ;
+
 
       /* NOT SURE THIS BIT WORKS PROPERLY NOW.... */
       if (!(zmaps->remote_control))
