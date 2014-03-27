@@ -70,6 +70,7 @@ typedef struct _ZMapCallbacksStruct
 void zMapInit(ZMapCallbacks callbacks) ;
 ZMap zMapCreate(void *app_data, ZMapFeatureSequenceMap sequence_map) ;
 int zMapNumViews(ZMap zmap) ;
+gboolean zMapSetSessionColour(ZMap zmap, GdkColor *session_colour) ;
 ZMapViewWindow zMapAddView(ZMap zmap, ZMapFeatureSequenceMap sequence_map) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
