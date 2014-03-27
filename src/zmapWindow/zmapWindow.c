@@ -2201,9 +2201,12 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
   g_signal_connect(GTK_OBJECT(window->toplevel), "event",
 		   GTK_SIGNAL_FUNC(windowGeneralEventCB), (gpointer)window) ;
 
+  /* colours may be overwritten by configuration later. */
+  gdk_color_parse(ZMAP_WINDOW_BACKGROUND_COLOUR, &(window->canvas_background)) ;
+
   gdk_color_parse(ZMAP_WINDOW_ITEM_FILL_COLOUR, &(window->canvas_fill)) ;
   gdk_color_parse(ZMAP_WINDOW_ITEM_BORDER_COLOUR, &(window->canvas_border)) ;
-  gdk_color_parse(ZMAP_WINDOW_BACKGROUND_COLOUR, &(window->canvas_background)) ;
+
   gdk_color_parse("green", &(window->align_background)) ;
 
   window->zmap_atom = gdk_atom_intern(ZMAP_ATOM, FALSE) ;
@@ -3247,6 +3250,10 @@ static gboolean getConfiguration(ZMapWindow window)
       if(zMapConfigIniContextGetInt(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
 				    ZMAPSTANZA_WINDOW_LINE_WIDTH, &tmp_int))
 	window->config.feature_line_width = (double)tmp_int;
+
+      if (zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
+                                        ZMAPSTANZA_WINDOW_BACKGROUND_COLOUR, &tmp_str))
+        gdk_color_parse(tmp_str, &(window->canvas_background)) ;
 
       zMapConfigIniContextDestroy(context);
 
