@@ -1116,6 +1116,14 @@ static gboolean getConfiguration(ZMapAppContext app_context)
 					ZMAPSTANZA_APP_HELP_URL, &tmp_string))
 	zMapGUISetHelpURL(tmp_string) ;
 
+      /* session colour for visual grouping of applications. */
+      if (zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+					ZMAPSTANZA_APP_SESSION_COLOUR, &tmp_string))
+        {
+          gdk_color_parse(tmp_string, &(app_context->session_colour)) ;
+          app_context->session_colour_set = TRUE ;
+        }
+
       /* locale to use */
       if (zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
 					ZMAPSTANZA_APP_LOCALE, &tmp_string))

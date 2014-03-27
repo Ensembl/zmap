@@ -218,6 +218,11 @@ typedef struct _ZMapAppContextStruct
   GtkTreeStore *tree_store_widg ;
 
 
+  /* Special colour to visually group zmap with it's peer window(s), colour is set by peer or user. */
+  gboolean session_colour_set ;
+  GdkColor session_colour ;
+
+
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* Is this needed any more ?? */
