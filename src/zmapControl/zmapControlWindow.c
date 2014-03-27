@@ -108,7 +108,8 @@ gboolean zmapControlWindowCreate(ZMap zmap)
   vbox = gtk_vbox_new(FALSE, 0) ;
   gtk_container_add(GTK_CONTAINER(toplevel), vbox) ;
 
-  menubar = zmapControlWindowMakeMenuBar(zmap) ;
+
+  zmap->menubar = menubar = zmapControlWindowMakeMenuBar(zmap) ;
   gtk_box_pack_start(GTK_BOX(vbox), menubar, FALSE, TRUE, 0);
 
   frame = gtk_frame_new(NULL);
