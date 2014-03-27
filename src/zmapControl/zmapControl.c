@@ -173,10 +173,25 @@ gboolean zMapRaise(ZMap zmap)
 }
 
 
+gboolean zMapSetSessionColour(ZMap zmap, GdkColor *session_colour)
+{
+  gboolean result = FALSE ;
+
+  zMapReturnValIfFail((zmap && session_colour && zmap->menubar), FALSE) ; 
+
+  zmap->session_colour = *session_colour ;
+  zmap->session_colour_set = TRUE ;
+
+  gtk_widget_modify_bg(zmap->menubar, GTK_STATE_NORMAL, &(zmap->session_colour)) ;
+
+  return result ;
+}
+
 /* Noddy function to return number of current views. */
 int zMapNumViews(ZMap zmap)
 {
   int num_views = 0 ;
+
   zMapReturnValIfFail(zmap, num_views) ; 
 
   num_views = g_list_length(zmap->view_list) ;
@@ -191,11 +206,8 @@ ZMapViewWindow zMapAddView(ZMap zmap, ZMapFeatureSequenceMap sequence_map)
 {
   ZMapViewWindow view_window = NULL ;
 
-  /* if (!(zmap && sequence_map->sequence && *sequence_map->sequence
-       && (sequence_map->start > 0 && sequence_map->end > sequence_map->start)) ) 
-    return view_window ; */
   zMapReturnValIfFail((zmap && sequence_map->sequence && *sequence_map->sequence
-       && (sequence_map->start > 0 && sequence_map->end > sequence_map->start)) , view_window ) ;  
+                       && (sequence_map->start > 0 && sequence_map->end > sequence_map->start)) , view_window ) ;  
 
   g_return_val_if_fail((zmap->state != ZMAP_DYING), NULL) ;
 
@@ -1324,5 +1336,4 @@ static void removeView(ZMap zmap, ZMapView view, unsigned long xwid)
 
   return ;
 }
-
 
