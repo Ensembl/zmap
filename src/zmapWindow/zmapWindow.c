@@ -1400,10 +1400,6 @@ void zMapWindowDestroy(ZMapWindow window)
 }
 
 
-/*! @} end of zmapwindow docs. */
-
-
-
 
 /* This function shouldn't be called directly, instead use the macro zMapWindowBusy()
  * defined in the public header zmapWindow.h */
@@ -1452,44 +1448,51 @@ void zmapWindowSetScrollableArea(ZMapWindow window,
   ZMapGUIClampType clamp = ZMAPGUI_CLAMP_INIT;
   double border, x1, x2, y1, y2, tmp_top, tmp_bot;
 
-  zmapWindowGetBorderSize(window, &border);
+  zmapWindowGetBorderSize(window, &border) ;
 
-  foo_canvas_get_scroll_region(FOO_CANVAS(window->canvas),
-                               &x1, &y1, &x2, &y2);
+  foo_canvas_get_scroll_region(FOO_CANVAS(window->canvas), &x1, &y1, &x2, &y2) ;
 
   /* Read the input */
-  x1 = (x1_inout ? *x1_inout : x1);
-  x2 = (x2_inout ? *x2_inout : x2);
-  y1 = (y1_inout ? *y1_inout : y1);
-  y2 = (y2_inout ? *y2_inout : y2);
+  x1 = (x1_inout ? *x1_inout : x1) ;
+  x2 = (x2_inout ? *x2_inout : x2) ;
+  y1 = (y1_inout ? *y1_inout : y1) ;
+  y2 = (y2_inout ? *y2_inout : y2) ;
 
-  clamp = zmapWindowClampedAtStartEnd(window, &y1, &y2);
-  y1   -= (tmp_top = ((clamp & ZMAPGUI_CLAMP_START) ? border : 0.0));
-  y2   += (tmp_bot = ((clamp & ZMAPGUI_CLAMP_END)   ? border : 0.0));
+  clamp = zmapWindowClampedAtStartEnd(window, &y1, &y2) ;
+  y1 -= (tmp_top = ((clamp & ZMAPGUI_CLAMP_START) ? border : 0.0)) ;
+  y2 += (tmp_bot = ((clamp & ZMAPGUI_CLAMP_END)   ? border : 0.0)) ;
 
   window->scroll_initialised = TRUE;
 
 
+  /* THIS OPTIMISATION IS ALL ABOUT WHAT HAS HAPPENED TO THE CODE...WE CHANGES SIZES ALL OVER
+   * THE PLACE WHICH PROVOKES REDRAWS WHICH RESULTS IN THIS FUNCTION GETTING CALLED MANY
+   * TIMES...STUPID, STUPID, STUPID......SO I RECORD SEPARATELY WHETHER WE HAVE BEEN REVCOMP'D
+   * IN WHICH CASE WE _MUST_ REDRAW THE SCALE. */
   /* if the vertical scroll region has changed then draw the scale bar */
   /* formerly done by fc_end_update_cb(), which is silly: why redraw the scale bar on any update?? */
   /* NOTE also required stupid coding to handle spurious calls and bouncing event loops */
-  if(y1 != window->scroll_y1 || y2 != window->scroll_y2)
+  if ((window->ruler_previous_revcomp != window->flags[ZMAPFLAG_REVCOMPED_FEATURES]) || (y1 != window->scroll_y1 || y2 != window->scroll_y2))
     {
 #if 0
-      zMapLogWarning("draw scale %f,%f - %f,%f",y1,y2, window->min_coord, window->max_coord);
-      zMapLogStack();
+      zMapLogWarning("draw scale %f,%f - %f,%f",y1,y2, window->min_coord, window->max_coord) ;
+      zMapLogStack() ;
 #endif
-      if(zmapWindowScaleCanvasDraw(window->ruler,  y1, y2, window->min_coord, window->max_coord))
+
+      window->ruler_previous_revcomp = window->flags[ZMAPFLAG_REVCOMPED_FEATURES] ;
+
+      if (zmapWindowScaleCanvasDraw(window->ruler, y1, y2, window->min_coord, window->max_coord))
 	{
-	  double max_x2 = zMapWindowScaleCanvasGetWidth(window->ruler) + 1;
+	  double max_x2 = zMapWindowScaleCanvasGetWidth(window->ruler) + 1 ;
 
 	  /* NOTE this canvas has nothing except the scale bar */
-	  zMapWindowScaleCanvasSetScroll(window->ruler, x1, y1, max_x2, y2);
+	  zMapWindowScaleCanvasSetScroll(window->ruler, x1, y1, max_x2, y2) ;
 	}
+
+
     }
 
-
-  if(x1 != window->scroll_x1 || y1 != window->scroll_y1 || x2 != window->scroll_x2 || y2 != window->scroll_y2)
+  if (x1 != window->scroll_x1 || y1 != window->scroll_y1 || x2 != window->scroll_x2 || y2 != window->scroll_y2)
     {
 #if 0
       printf("set scroll %p %f,%f - %f,%f from %s\n",window->canvas,y1,x1,y2,x2,where);
