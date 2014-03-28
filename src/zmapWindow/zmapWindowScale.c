@@ -582,11 +582,6 @@ static void thaw_notify(ZMapWindowScaleCanvas ruler)
    text height (font)
 */
 /* we draw the scale on the right and text to the left */
-double zMapWindowDrawScaleBar(GtkWidget *canvas_scrolled_window,
-			      FooCanvasGroup *group,
-			      int scroll_start, int scroll_end,
-			      int seq_start, int seq_end,
-			      double zoom_factor, gboolean revcomped, gboolean zoomed)
 /*
  * scroll start and end are as displayed (NB navigator always has whole sequence)
  * seq start and end are whole sequence in fwd strand coodinates
@@ -613,6 +608,11 @@ double zMapWindowDrawScaleBar(GtkWidget *canvas_scrolled_window,
  * perhaps it would have been simpler to stay with the two columns (text and ticks) instead of calculating text size...
  * but regardless of that they have to be drawn together in the x axis
  */
+double zMapWindowDrawScaleBar(GtkWidget *canvas_scrolled_window,
+			      FooCanvasGroup *group,
+			      int scroll_start, int scroll_end,
+			      int seq_start, int seq_end,
+			      double zoom_factor, gboolean revcomped, gboolean zoomed)
 {
   int seq_len;	/* # bases in the scroll region */
   int tick;
@@ -653,8 +653,10 @@ double zMapWindowDrawScaleBar(GtkWidget *canvas_scrolled_window,
   int tick_inc = 4.0;		/* diff in size per level */
   double prev;
   int first;
-
   static ZMapFeatureTypeStyle scale_style = NULL;
+
+
+
   /*! \todo #warning move this to predefined styles code in featureTyoes.c */
   /* temporarily create pre-defined style here (needed by Canvasfeatureset)
    * we don't actually use the colours here, maybe we should */
