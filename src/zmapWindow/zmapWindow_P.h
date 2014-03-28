@@ -818,6 +818,9 @@ typedef struct _ZMapWindowStruct
 
 
   ZMapWindowScaleCanvas ruler ;
+  gboolean ruler_previous_revcomp ;                               /* Ghastly hack to prevent unnecessary redraws... */
+
+
 
   /* Holds focus items/column for the zmap. */
   ZMapWindowFocus focus ;
