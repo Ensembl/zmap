@@ -1252,6 +1252,12 @@ static gboolean buildParamString(blixemData blixem_data, char **paramString)
   /* MH17 NOTE
      this code must operate in the same order as the enums at the top of the file
      better to recode without the 'missed flag' as this code is VERY error prone
+     
+     ************* IMPORTANT *************
+     YOU MUST: 
+      - subtract "missed" from the enum when indexing paramString
+      - if args are not available, increment "missing" by the number of args you
+        would have added if they were (noting that e.g. -c <file> is TWO arguments, not one)
   */
 
 
@@ -1259,13 +1265,13 @@ static gboolean buildParamString(blixemData blixem_data, char **paramString)
 
   if (blixem_data->config_file)
     {
-      paramString[BLX_ARGV_CONFIGFILE_FLAG] = g_strdup("-c");
-      paramString[BLX_ARGV_CONFIGFILE]      = g_strdup_printf("%s", blixem_data->config_file) ;
+      paramString[BLX_ARGV_CONFIGFILE_FLAG - missed] = g_strdup("-c");
+      paramString[BLX_ARGV_CONFIGFILE - missed]      = g_strdup_printf("%s", blixem_data->config_file) ;
     }
   else if (blixem_data->netid && blixem_data->port)
     {
-      paramString[BLX_ARGV_NETID_PORT_FLAG] = g_strdup("--fetch-server");
-      paramString[BLX_ARGV_NETID_PORT]      = g_strdup_printf("%s:%d", blixem_data->netid, blixem_data->port);
+      paramString[BLX_ARGV_NETID_PORT_FLAG - missed] = g_strdup("--fetch-server");
+      paramString[BLX_ARGV_NETID_PORT - missed]      = g_strdup_printf("%s:%d", blixem_data->netid, blixem_data->port);
     }
   else
     {
@@ -1275,12 +1281,12 @@ static gboolean buildParamString(blixemData blixem_data, char **paramString)
   /* Might need to start blixem on a different screen. */
   if (blixem_data->view->multi_screen)
     {
-      paramString[BLX_ARGV_SCREEN_FLAG] = g_strdup("--screen") ;
-      paramString[BLX_ARGV_SCREEN_NUM] = g_strdup_printf("%d", blixem_data->view->blixem_screen) ;
+      paramString[BLX_ARGV_SCREEN_FLAG - missed] = g_strdup("--screen") ;
+      paramString[BLX_ARGV_SCREEN_NUM - missed] = g_strdup_printf("%d", blixem_data->view->blixem_screen) ;
     }
   else
     {
-      missed += 1 ;
+      missed += 2 ;
     }
 
   /* For testing purposes remove the "-r" flag to leave the temporary files.
