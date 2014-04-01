@@ -48,6 +48,7 @@ dist_doc_DATA = $(srcdir)/doc/user/*
 EXTRA_DIST = INSTALL \
 	README.zmap \
 	$(srcdir)/doc/* \
+	$(srcdir)/examples/* \
 	$(NULL)
 
 
