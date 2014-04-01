@@ -13,5 +13,5 @@ gff_source=accepted_hits
     --end=37801         \
     --gff_version=3 \
     --gff_seqname=AH6 \
-    --gff_feature_source=${gff_source} \
+    --gff_source=${gff_source} \
     ;

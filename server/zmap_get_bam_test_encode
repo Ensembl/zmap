@@ -13,7 +13,7 @@ false && # comment out to enable
     --start=85591570 \
     --end=87672398   \
     --gff_seqname=chr16-03 \
-    --gff_feature_source=${gff_source} \
+    --gff_source=${gff_source} \
     ;
 
 # false && # comment out to enable
@@ -23,5 +23,5 @@ false && # comment out to enable
     --start=31536329 \
     --end=31721845   \
     --gff_seqname=chr10-10 \
-    --gff_feature_source=${gff_source} \
+    --gff_source=${gff_source} \
     ;
