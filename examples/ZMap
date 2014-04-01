@@ -1,0 +1,10 @@
+[ZMap]
+default-sequence=chr6-18
+sequence=chr6-18
+start=2696324
+end=2864370
+sources=chr6-18
+stylesfile=styles.ini
+
+[chr6-18]
+featuresets = DNA ; 3 Frame ; 3 Frame Translation ; Scratch 
