@@ -248,15 +248,19 @@ compile_date=`date`
 cd $dist_dir
 
 echo "$msg_prefix Writing website include file: $inc_file"
-# Gemma had a script called from here but we have 4 files to tag, so it's eaiser to do it inline
+# Gemma had a script called from here but we have several files to tag, so it's eaiser to do it inline
 # $scripts_dir/zmap_update_website_version_file.sh $build_id $inc_file
 
 ftp_link="ftp://ftp.sanger.ac.uk/pub/resources/software/$repo_name/$inc_file_name"
 
 echo "<p>The latest version is $version_string, created on $compile_date:" > $inc_file
+exclude_pattern="ACEDB*" # don't include acedb build in zmap downloads tab
 for i in `ls`
 do
-   echo "<br /><a href=\""$ftp_link/$i"\">" $i "</a>" >> $inc_file
+  if [[ $i != $exclude_pattern ]]
+  then
+    echo "<br /><a href=\""$ftp_link/$i"\">" $i "</a>" >> $inc_file
+  fi
 done
 echo "</p>" >> $inc_file
 

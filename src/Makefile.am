@@ -41,8 +41,14 @@ MOSTLYCLEANFILES = $(DX_CLEANFILES)
 # noinst_DATA = INSTALL
 
 
+# these will be installed alongside the programs
+dist_doc_DATA = $(srcdir)/doc/user/*
+
+# these are included in the distribution, but are not installed
 EXTRA_DIST = INSTALL \
 	README.zmap \
+	$(srcdir)/doc/* \
+	$(srcdir)/examples/* \
 	$(NULL)
 
 
