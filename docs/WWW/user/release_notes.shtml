@@ -1,0 +1,15 @@
+<head>
+  <title>ZMap - Release Notes</title>
+</head>
+
+
+<body>
+<h2>ZMap - Release Notes</h2>
+
+<h4>Version 0.22.0</h4>
+<ul>
+  <li>ZMap now supports GFF version 3
+  <li>ZMap can now run standalone on a GFF (v2 or v3) file without requiring any configuration files
+</ul>
+
+</body>

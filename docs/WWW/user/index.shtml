@@ -9,10 +9,12 @@
 <p>Getting the most out of zmap...</p>
 
 <ul>
-  <li><a href="configuration.shtml">Running and configuring ZMap</a>
+  <li><a href="zmap_quick_start.shtml">Quick start guide</a>
+    <li><a href="configuration.shtml">Running and configuring ZMap</a>
   <li><a href="user_interface.shtml">User interface</a>
   <li><a href="keyboard_mouse.shtml">Keyboard and mouse operation</a>
   <li><a href="styles.shtml">Styles</a>
+  <li><a href="ZMap_User_Manual.pdf">User manual</a>
 </ul>
 
 </fieldset>
