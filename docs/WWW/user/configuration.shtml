@@ -33,26 +33,44 @@ This section describes the various ways ZMap can be configured.
 <legend id="commandline">Command Line Options</legend>
 
 <p>
-ZMap recognises command line options starting with double dashes:
+ZMap recognises command line options starting with double dashes. Run <code>zmap --help</code> to see usage information:
 </p>
 
 <pre id="usage" class="example">
 Usage:
-  zmap [OPTION...] <sequence name>
+  zmap [OPTIONS] &lt;file(s)&gt;
+
+ZMap 0.21.0-395-g8cd9e5a (compiled on Mar 31 2014 15:18:13)
 
 A multi-threaded genome browser and annotation tool.
 
 Help Options:
-  -?, --help                Show help options
+  -h, --help                                             Show help options
+  --help-all                                             Show all help options
+  --help-gtk                                             Show GTK+ Options
 
 Application Options:
-  --version=<none>          Program version.
-  --start=coord             Start coord in sequence, must be in range 1 -> seq_length.
-  --end=coord               End coord in sequence, must be in range start -> seq_length
-                            but end == 0 means show to end of sequence.
-  --conf_file=file path     Relative or full path to configuration file.
-  --conf_dir=directory      Relative or full path to configuration directory.
-  --win_id=0x0000000        Window ID of the controlling application.
+  --version                                              Program version.
+  --raw_version                                          Code version.
+  --serial                                               Operate pipe servers in serial on startup
+  --remote-debug=debug level: off | normal | verbose     Set RemoteControl debug level.
+  --peer-name=peer app name                              Peer Remote Control app name.
+  --peer-clipboard=peer clipboard unique id              Peer Remote Control clipboard name.
+  --start=coord                                          Start coord in sequence, must be in range 1 -> seq_length.
+  --end=coord                                            End coord in sequence, must be in range start -> seq_length, but end == 0 means show to end of sequence.
+  --sleep=seconds                                        Makes ZMap sleep for given number of secs at start-up to give time to attach a debugger.
+  --timing                                               switch on timing functions
+  --shrink                                               allow shrinkable ZMap window
+  --single_screen                                        Force zmap to open tools like blixem on the same screen that it is running on.
+  --sequence=sequence_name                               Sequence name.
+  --conf_file=file path                                  Relative or full path to configuration file.
+  --conf_dir=directory                                   Relative or full path to configuration directory.
+  --win_id=0x0000000                                     Window ID of the controlling application.
+  --remote-debug=debug level: off | normal | verbose     Set RemoteControl debug level.
+  --peer-name=peer app name                              Peer Remote Control app name.
+  --peer-clipboard=peer clipboard unique id              Peer Remote Control clipboard name.
+  --styles_file=styles file path                         Relative or full path to styles file.
+  --display=DISPLAY                                      X display to use
 </pre>
 
 </fieldset><br />
@@ -61,7 +79,16 @@ Application Options:
 
 
 
+<fieldset>
+<legend>Input files</legend>
+<p>When running ZMap standalone, you can simply provide GFF file(s) on the command line. ZMap supports GFF versions 2 and 3.</p>
+<pre>
+zmap &lt;file1&gt; [&lt;file2&gt;]
+</pre>
 
+<p>To pipe files via stdin, use "-" as the filename:</p>
+<pre>zmap -</pre>
+</fieldset>
 
 <fieldset>
 <legend>Configuration Files - Format</legend>
