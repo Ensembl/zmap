@@ -1427,9 +1427,6 @@ static gboolean parseDirective_GFF_VERSION(ZMapGFFParser pParserBase, const char
 
       /* write data to parser */
       pParser->gff_version = (ZMapGFFVersion) iVersion ;
-
-      /* special operation for this directive */
-      zMapGFFHeaderMinimalTest(pParser->pHeader) ;
     }
 
   return bResult ;
@@ -1516,9 +1513,6 @@ static gboolean parseDirective_SEQUENCE_REGION(ZMapGFFParser pParserBase, const 
           /* write specific info to parser */
           pParser->features_start = iStart ;
           pParser->features_end = iEnd ;
-
-          /* special operation for this directive */
-          zMapGFFHeaderMinimalTest(pParser->pHeader) ;
         }
 
     } /* sequence name matches */
@@ -1936,6 +1930,11 @@ static gboolean parseHeaderLine_V3(ZMapGFFParser pParserBase, const char * const
       pParser->pHeader->eState = GFF_HEADER_ERROR;
       bResult = FALSE ;
     }
+
+  /*
+   * To be tested for after read of every directive line.
+   */
+  zMapGFFHeaderMinimalTest(pParser->pHeader) ;
 
   return bResult ;
 }

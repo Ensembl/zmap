@@ -154,8 +154,9 @@ void zMapGFFHeaderMinimalTest(ZMapGFFHeader pHeader)
 {
   if (!pHeader)
     return ;
-  pHeader->flags.got_min =
-    pHeader->flags.got_ver & pHeader->flags.got_sqr ;
+  //pHeader->flags.got_min =
+  //  pHeader->flags.got_ver & pHeader->flags.got_sqr ;
+  pHeader->flags.got_min = pHeader->flags.got_ver ;
 }
 
 
