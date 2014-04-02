@@ -314,9 +314,26 @@ void zMapGFFDestroyParser_V3(ZMapGFFParser pParserBase)
  */
 gboolean zMapGFFGetHeaderGotMinimal_V3(ZMapGFFParser pParserBase)
 {
+  gboolean bResult = FALSE ;
   zMapReturnValIfFail(pParserBase, FALSE );
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
-  return (gboolean) pParser->pHeader->flags.got_min ;
+
+  /*
+   *
+   */
+  if ( pParser->pHeader->flags.got_ver )
+    {
+      if (pParser->pHeader->flags.got_sqr )
+        {
+          bResult = TRUE ;
+        }
+      else if ( pParser->features_start && pParser->features_end )
+        {
+          bResult = TRUE ;
+        }
+    }
+
+  return bResult ; // (gboolean) pParser->pHeader->flags.got_min ;
 }
 
 
