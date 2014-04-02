@@ -1096,6 +1096,33 @@ void zMapGUISetHelpURL(char *URL_base)
 }
 
 
+/* Find the docs that are installed along with the zmap executable. Returns the path if
+ * found, which should be free'd by the caller with g_free. Returns NULL if not found. */
+static char* getLocalDocsDir()
+{
+  char *path = NULL ;
+
+  /* Find the executable's full path */
+  char *exe = g_find_program_in_path(g_get_prgname());
+
+  if (exe)
+    {
+      /* Get the bin directory */
+      char *dir = g_path_get_dirname(exe);
+      
+      if (dir)
+        {
+          /* Get the path to the docs directory */
+          path = g_strdup_printf("%s/%s", dir, ZMAP_LOCAL_DOC_PATH);
+          g_free(dir) ;
+        }
+
+      g_free(exe) ;
+    }
+
+  return path ;
+}
+
 
 /*!
  * Displays the requested help, currently this is done by making a request to the users
@@ -1110,52 +1137,63 @@ void zMapGUIShowHelp(ZMapHelpType help_contents)
   GError *error = NULL ;
 
   if (!help_URL_base_G)
-    help_URL_base_G = ZMAPWEB_DOC_URL ;
+    help_URL_base_G = getLocalDocsDir() ;
 
-  switch(help_contents)
+  if (help_URL_base_G)
     {
-    case ZMAPGUI_HELP_GENERAL:
-      web_page = g_strdup_printf("%s/%s", help_URL_base_G, ZMAPWEB_HELP_DOC) ;
-      break ;
+      switch(help_contents)
+        {
+        case ZMAPGUI_HELP_GENERAL:
+          web_page = g_strdup_printf("%s/%s", help_URL_base_G, ZMAPWEB_HELP_DOC) ;
+          break ;
 
-    case ZMAPGUI_HELP_ALIGNMENT_DISPLAY:
-      web_page = g_strdup_printf("%s/%s#%s", help_URL_base_G, ZMAPWEB_HELP_DOC, ZMAPWEB_HELP_ALIGNMENT_SECTION) ;
-      break ;
+        case ZMAPGUI_HELP_QUICK_START:
+          web_page = g_strdup_printf("%s/%s", help_URL_base_G, ZMAPWEB_HELP_QUICK_START) ;
+          break ;
 
-    case ZMAPGUI_HELP_KEYBOARD:
-      web_page = g_strdup_printf("%s/%s", help_URL_base_G, ZMAPWEB_KEYBOARD_DOC) ;
-      break ;
+        case ZMAPGUI_HELP_ALIGNMENT_DISPLAY:
+          web_page = g_strdup_printf("%s/%s", help_URL_base_G, ZMAPWEB_HELP_ALIGNMENT_SECTION) ;
+          break ;
 
-    case ZMAPGUI_HELP_RELEASE_NOTES:
-      web_page = g_strdup_printf("%s/%s/%s", help_URL_base_G, ZMAPWEB_RELEASE_NOTES_DIR, ZMAPWEB_RELEASE_NOTES) ;
-      break ;
+        case ZMAPGUI_HELP_KEYBOARD:
+          web_page = g_strdup_printf("%s/%s", help_URL_base_G, ZMAPWEB_KEYBOARD_DOC) ;
+          break ;
 
-    case ZMAPGUI_HELP_WHATS_NEW:
-      web_page = g_strdup_printf("%s",ZMAP_INTERNAL_WEB_WHATSNEW);	/* a temporary fix via the internal wiki */
-	break;
+        case ZMAPGUI_HELP_RELEASE_NOTES:
+          web_page = g_strdup_printf("%s/%s", help_URL_base_G, ZMAPWEB_RELEASE_NOTES) ;
+          break ;
 
-    default:
-      zMapWarning("menu choice (%d) temporarily unavailable",help_contents);
-      /* this used to assert: why crash? */
-      /* NOTE gcc flags up switches with enums not handled, so doubly useless */
-      break ;
+        case ZMAPGUI_HELP_WHATS_NEW:
+          web_page = g_strdup_printf("%s",ZMAP_INTERNAL_WEB_WHATSNEW);	/* a temporary fix via the internal wiki */
+          break;
 
-    }
+        default:
+          zMapWarning("menu choice (%d) temporarily unavailable",help_contents);
+          /* this used to assert: why crash? */
+          /* NOTE gcc flags up switches with enums not handled, so doubly useless */
+          break ;
 
-  if (zMapLaunchWebBrowser(web_page, &error))
-    {
-      zMapGUIShowMsgFull(NULL, "Please wait, help page will be shown in your browser in a few seconds.",
-			 ZMAP_MSG_INFORMATION,
-			 GTK_JUSTIFY_CENTER, 5, TRUE) ;
+        }
+
+      if (zMapLaunchWebBrowser(web_page, &error))
+        {
+          zMapGUIShowMsgFull(NULL, "Please wait, help page will be shown in your browser in a few seconds.",
+                             ZMAP_MSG_INFORMATION,
+                             GTK_JUSTIFY_CENTER, 5, TRUE) ;
+        }
+      else
+        {
+          zMapWarning("Error: %s\n", error->message) ;
+
+          g_error_free(error) ;
+        }
+
+      g_free(web_page) ;
     }
   else
     {
-      zMapWarning("Error: %s\n", error->message) ;
-
-      g_error_free(error) ;
+      zMapWarning("%s", "Could not find the help pages; check that they are installed in the correct location\n") ;
     }
-
-  g_free(web_page) ;
 
   return ;
 }
