@@ -853,7 +853,7 @@ static void nullLogger(const gchar *log_domain, GLogLevelFlags log_level, const 
  * we have to lock and unlock a mutex here because g_log, although it mutex locks its own stuff
  * does not lock this routine...STUPID...they should have an option to do this if they don't
  * like having it on all the time. */
-static void fileLogger(const gchar *log_domain, GLogLevelFlags log_level, const gchar *message,
+static void fileLogger(const gchar *log_domain, GLogLevelFlags log_level, const gchar *message_in,
 		       gpointer user_data)
 {
   ZMapLog log = (ZMapLog)user_data ;
@@ -861,8 +861,18 @@ static void fileLogger(const gchar *log_domain, GLogLevelFlags log_level, const 
   gsize bytes_written = 0 ;
 
   /* zMapAssert(log->logging) ; */
-  if (!log || !log->logging) 
+  if (!log || !log->logging || !message_in) 
     return ; 
+
+  /* Must make sure it's UTF8 or g_io_channel_write_chars will crash */
+  gchar *message = message_in;
+  gchar *bad_char = NULL;
+
+  while (!g_utf8_validate(message_in, -1, &bad_char))
+    {
+      /* For now just replace the bad character with a question mark */
+      *bad_char='?';
+    }
 
   /* glib logging routines are not thread safe so must lock here. */
   g_mutex_lock(log->log_lock) ;
