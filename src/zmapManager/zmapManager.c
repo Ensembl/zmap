@@ -38,6 +38,8 @@
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapXML.h>
 #include <zmapManager_P.h>
+#include <ZMap/zmapConfigIni.h>
+#include <ZMap/zmapConfigStrings.h>
 
 
 #include <zmapApp/zmapApp_P.h>
@@ -99,6 +101,8 @@ static ZMapManagerAddResult addNewView(ZMapManager manager, ZMap zmap_in, ZMapFe
 				       ZMapView *view_out) ;
 static void closeZMap(ZMapManager app, ZMap zmap, gpointer view_id,
 		      RemoteCommandRCType *command_rc_out, char **reason_out, ZMapXMLUtilsEventStack *reply_out) ;
+
+static gboolean getSessionColourConfiguration(char *config_file, GdkColor *session_colour) ;
 
 
 
@@ -744,9 +748,17 @@ static ZMapManagerAddResult addNewView(ZMapManager zmaps,
   if (zmap)
     {
       ZMapAppContext app_context = (ZMapAppContext)(zmaps->gui_data) ;
+      GdkColor tmp_colour, *session_colour = NULL ;
 
-      if (app_context->session_colour_set)
-        zMapSetSessionColour(zmap, &(app_context->session_colour)) ;
+      /* Load session colour if there is one, any colour specified for this view will override
+       * subsequent colours. */
+      if (sequence_map->config_file && getSessionColourConfiguration(sequence_map->config_file, &tmp_colour))
+        session_colour = &tmp_colour ;
+      else if (app_context->session_colour_set)
+        session_colour = &(app_context->session_colour) ;
+
+      if (session_colour)
+        zMapSetSessionColour(zmap, session_colour) ;
 
 
       /* NOT SURE THIS BIT WORKS PROPERLY NOW.... */
@@ -902,5 +914,30 @@ static gboolean req_end(void *user_data, ZMapXMLElement element, ZMapXMLParser p
   return handled ;
 }
 
+
+
+/* Read ZMap application defaults. */
+static gboolean getSessionColourConfiguration(char *config_file, GdkColor *session_colour)
+{
+  gboolean result = FALSE ;
+  ZMapConfigIniContext context ;
+
+  if ((context = zMapConfigIniContextProvide(config_file)))
+    {
+      char *tmp_string  = NULL ;
+
+      /* session colour for visual grouping of applications. */
+      if (zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+					ZMAPSTANZA_APP_SESSION_COLOUR, &tmp_string))
+        {
+          gdk_color_parse(tmp_string, session_colour) ;
+          result = TRUE ;
+        }
+
+      zMapConfigIniContextDestroy(context) ;
+    }
+
+  return result ;
+}
 
 
