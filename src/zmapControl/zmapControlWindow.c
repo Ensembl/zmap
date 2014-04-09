@@ -92,8 +92,6 @@ gboolean zmapControlWindowCreate(ZMap zmap)
     zmap_shrink_G = shrink_arg.b ;
   gtk_window_set_policy(GTK_WINDOW(toplevel), zmap_shrink_G, TRUE, FALSE ) ;
 
-  gtk_container_border_width(GTK_CONTAINER(toplevel), 5) ;
-
 #ifdef MAXIMIZE_ON_MAP_EVENT
   /* We can leave width to default sensibly but height does not because zmap is in a scrolled
    * window, we try to maximise it to the screen depth but have to do this after window is
@@ -113,7 +111,6 @@ gboolean zmapControlWindowCreate(ZMap zmap)
   gtk_box_pack_start(GTK_BOX(vbox), menubar, FALSE, TRUE, 0);
 
   frame = gtk_frame_new(NULL);
-  gtk_container_border_width(GTK_CONTAINER(frame), 5);
   gtk_box_pack_start(GTK_BOX(vbox), frame, FALSE, TRUE, 0);
 
   zmap->button_info_box = controls_box = gtk_vbox_new(FALSE, 0) ;

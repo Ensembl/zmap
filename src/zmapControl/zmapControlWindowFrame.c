@@ -57,7 +57,6 @@ GtkWidget *zmapControlWindowMakeFrame(ZMap zmap)
   GtkWidget *frame ;
 
   frame = gtk_frame_new(NULL) ;
-  gtk_container_border_width(GTK_CONTAINER(frame), 5) ;
 
   createNavViewWindow(zmap, frame) ;
 
@@ -90,8 +89,6 @@ static void createNavViewWindow(ZMap zmap, GtkWidget *parent)
   /* This box contains what may be multiple views in paned widgets. */
   zmap->pane_vbox = gtk_vbox_new(FALSE,0) ;
   gtk_paned_pack2(GTK_PANED(zmap->hpane), zmap->pane_vbox, TRUE, TRUE);
-
-
 
 
   /* Set left hand (sliders) pane closed by default. */
