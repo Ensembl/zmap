@@ -1995,7 +1995,7 @@ gboolean zMapGFFParse_V3(ZMapGFFParser pParserBase, char * const sLine)
    * Remove trailing comment from line. Should do nothing to
    * directive lines (i.e. ones that start with "##").
    */
-  bCommentRemoved = removeCommentFromLine( sLine ) ;
+  //bCommentRemoved = removeCommentFromLine( sLine ) ;
 
   /*
    * Parser FSM logic. Will be unaltered if we have a blank
