@@ -440,7 +440,7 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
                 result = ZMAP_SERVERRESPONSE_OK ;
 
               /* Then parser the sequence */
-              if (result == ZMAP_SERVERRESPONSE_OK)
+              if (result == ZMAP_SERVERRESPONSE_OK && server->gff_version == ZMAPGFF_VERSION_2)
                 pipeGetSequence(server);
             }
 	}
