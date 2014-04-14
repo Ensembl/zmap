@@ -220,39 +220,6 @@ ZMapViewWindow zMapAddView(ZMap zmap, ZMapFeatureSequenceMap sequence_map)
 }
 
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* User passes in a view ID struct which this function fills in with the first view in
- * its list and the first window within that view and returns TRUE. Returns FALSE if
- * the view or window are missing.
- *  */
-gboolean zMapGetDefaultView(ZMapAppRemoteViewID view_inout)
-{
-  gboolean result = FALSE ;
-  ZMap zmap = NULL ; 
-  zMapReturnValIfFail(view_inout, result ) ; 
-  zmap = view_inout->zmap ;
-  zMapReturnValIfFail(zmap, result ) ; 
-
-  if (zmap->view_list)
-    {
-      ZMapAppRemoteViewIDStruct tmp_view = *view_inout ;
-
-      tmp_view.view = (ZMapView)(zmap->view_list->data) ;
-
-      if (zMapViewGetDefaultWindow(&tmp_view))
-	{
-	  *view_inout = tmp_view ;
-	  result = TRUE ;
-	}
-    }
-
-  return result ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
 gboolean zmapConnectViewConfig(ZMap zmap, ZMapView view, char *config)
 {
   gboolean result = FALSE ;
@@ -718,10 +685,6 @@ ZMapView zmapControlInsertView(ZMap zmap, ZMapFeatureSequenceMap sequence_map, c
 	  *err_msg = g_strdup_printf("Display of sequence \"%s\" failed, see log for details.",
 				     sequence_map->sequence) ;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  zMapViewDestroy(view, NULL) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 	  zMapViewDestroy(view) ;
 
 	  view = NULL ;
