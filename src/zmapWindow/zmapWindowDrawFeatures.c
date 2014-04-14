@@ -1956,14 +1956,16 @@ FooCanvasItem *zmapWindowDrawSetGroupBackground(ZMapWindow window, ZMapWindowCon
       /* add a background CanvasFeatureset if it's not there */
       if (!cfs)
 	{
+          GtkAdjustment *v_adjust ;
+
+          v_adjust = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window)) ;
+
 	  /* foo canvas update will resize this */
 	  cfs = (ZMapWindowFeaturesetItem)zMapWindowCanvasItemFeaturesetGetFeaturesetItem(group, id,
-											  window->scrolled_window,
+											  v_adjust,
 											  start, end, style,
 											  ZMAPSTRAND_NONE,
-											  ZMAPFRAME_NONE, 0, layer) ;
-
-	  //printf("add background %s\n", container->feature_any ? g_quark_to_string(container->feature_any->unique_id) : "none");
+                                                                                          ZMAPFRAME_NONE, 0, layer) ;
 	}
 
       if(cfs)

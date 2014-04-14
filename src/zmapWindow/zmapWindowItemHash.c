@@ -184,6 +184,7 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(GHashTable *ftoi_hash,
       char frame = '0';
       char *x;
       ZMapWindow window ;
+      GtkAdjustment *v_adjust ;
 
       window = zMapWindowContainerFeatureSetGetWindow(parent_container) ;
 
@@ -219,9 +220,11 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(GHashTable *ftoi_hash,
 
 
       /* adds once per canvas+column+style, then returns that repeatedly */
+      v_adjust = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window)) ;
+
       canvas_item = zMapWindowCanvasItemFeaturesetGetFeaturesetItem((FooCanvasGroup *)features_container,
 								    feature_stack->id,
-								    window->scrolled_window,
+								    v_adjust,
 								    block->block_to_sequence.block.x1,
 								    block->block_to_sequence.block.x2,
 								    *feature->style,

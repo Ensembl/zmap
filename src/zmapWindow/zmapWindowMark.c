@@ -900,9 +900,13 @@ static FooCanvasItem *set_mark_item(ZMapWindowMark mark, gboolean top)
 
   if(!foo)
     {
+      GtkAdjustment *v_adjust ;
+
+      v_adjust = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(mark->window->scrolled_window)) ;
+
       foo = (FooCanvasItem *)zMapWindowCanvasItemFeaturesetGetFeaturesetItem((FooCanvasGroup *)mark->block_container,
 									     id,
-									     mark->window->scrolled_window,
+									     v_adjust,
 									     y1, y2, style,
 									     ZMAPSTRAND_NONE, ZMAPFRAME_NONE,
 									     0, ZMAP_CANVAS_LAYER_BLOCK_MARK);
