@@ -1664,7 +1664,8 @@ gboolean zmapWindowScaleCanvasDraw(ZMapWindowScaleCanvas obj, int x, int y,int s
 void zmapWindowScaleCanvasSetVAdjustment(ZMapWindowScaleCanvas obj, GtkAdjustment *vadjustment);
 void zmapWindowScaleCanvasSetPixelsPerUnit(ZMapWindowScaleCanvas obj, double x, double y);
 void zmapWindowScaleCanvasSetLineHeight(ZMapWindowScaleCanvas obj, double border);
-//void zmapWindowScaleGroupDraw(FooCanvasGroup *parent, gboolean revcomped,double start, double end, double canvas_offset);
+GtkWidget *zmapWindowScaleCanvasGetScrolledWindow(ZMapWindowScaleCanvas obj) ;
+
 
 /* Stats functions. */
 ZMapWindowStats zmapWindowStatsCreate(ZMapFeatureAny feature_any ) ;
