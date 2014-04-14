@@ -217,13 +217,15 @@ static void zoomWindow(ZMapWindow window, GdkEventKey *key_event) ;
 
 static void setCurrLock(ZMapWindowLockType window_locking, ZMapWindow window,
 			GtkAdjustment **hadjustment, GtkAdjustment **vadjustment) ;
-static void lockedDisplayCB(gpointer key, gpointer value, gpointer user_data) ;
-static void scrollToCB(gpointer key, gpointer value, gpointer user_data) ;
-
 static void copyLockWindow(ZMapWindow original_window, ZMapWindow new_window) ;
 static void lockWindow(ZMapWindow window, ZMapWindowLockType window_locking) ;
 static void unlockWindow(ZMapWindow window, gboolean no_destroy_if_empty) ;
+static void removeLastLockWindow(GHashTable *sibling_locked_windows) ;
+
 static GtkAdjustment *copyAdjustmentObj(GtkAdjustment *orig_adj) ;
+
+static void lockedDisplayCB(gpointer key, gpointer value, gpointer user_data) ;
+static void scrollToCB(gpointer key, gpointer value, gpointer user_data) ;
 
 static void zoomToRubberBandArea(ZMapWindow window);
 
@@ -1352,7 +1354,6 @@ void zMapWindowDestroy(ZMapWindow window)
   if (window->locked_display)
     unlockWindow(window, FALSE) ;
 
-
   /* free the array of feature list windows and the windows themselves */
   zmapWindowFreeWindowArray(&(window->featureListWindows), TRUE) ;
 
@@ -1372,7 +1373,7 @@ void zMapWindowDestroy(ZMapWindow window)
   zmapWindowFreeWindowArray(&(window->feature_show_windows), TRUE) ;
 
   if(window->style_window)
-	zmapStyleWindowDestroy(window);
+    zmapStyleWindowDestroy(window);
 
   /* Get rid of the column configuration window. */
   zmapWindowColumnConfigureDestroy(window) ;
@@ -4748,14 +4749,6 @@ static void copyLockWindow(ZMapWindow original_window, ZMapWindow new_window)
   return ;
 }
 
-static void unlock_last_window(gpointer key, gpointer value, gpointer user_data)
-{
-  ZMapWindow window = (ZMapWindow)key;
-
-  unlockWindow(window, GPOINTER_TO_UINT(user_data));
-
-  return ;
-}
 
 static void unlockWindow(ZMapWindow window, gboolean no_destroy_if_empty)
 {
@@ -4776,7 +4769,9 @@ static void unlockWindow(ZMapWindow window, gboolean no_destroy_if_empty)
           /* we only need to allocate a new adjuster if the hash table is not empty...otherwise we can
            * keep our existing adjuster. */
           GtkAdjustment *adjuster ;
+          GtkAdjustment *v_adjuster ;
 
+          /* Make a copy any shared adjusters according to orientation of locking */
           if (window->curr_locking == ZMAP_WINLOCK_HORIZONTAL)
             adjuster = gtk_scrolled_window_get_hadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window)) ;
           else
@@ -4791,16 +4786,19 @@ static void unlockWindow(ZMapWindow window, gboolean no_destroy_if_empty)
           else
             {
               gtk_scrolled_window_set_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window), adjuster) ;
-
-              /* Need to set the scalebar one too if vertical locked */
-              zmapWindowScaleCanvasSetVAdjustment(window->ruler, adjuster);
             }
+
+
+          /* And reset vertical ajuster in scale to ensure it is valid. */
+          v_adjuster = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window)) ;
+
+          zmapWindowScaleCanvasSetVAdjustment(window->ruler, adjuster);
         }
 
       if (g_hash_table_size(window->sibling_locked_windows) == 1)
         {
-          g_hash_table_foreach(window->sibling_locked_windows,
-                               unlock_last_window, GUINT_TO_POINTER(TRUE));
+          removeLastLockWindow(window->sibling_locked_windows) ;
+
           g_hash_table_destroy(window->sibling_locked_windows) ;
         }
 
@@ -4811,6 +4809,31 @@ static void unlockWindow(ZMapWindow window, gboolean no_destroy_if_empty)
 
   return ;
 }
+
+
+static void removeLastLockWindow(GHashTable *sibling_locked_windows)
+{
+  GList *keys ;
+  
+
+  keys = g_hash_table_get_keys(sibling_locked_windows) ;
+
+  if (g_list_length(keys) == 1)
+    {
+      ZMapWindow window ;
+
+      window = (ZMapWindow)(keys->data) ;
+
+      window->locked_display= FALSE ;
+      window->curr_locking = ZMAP_WINLOCK_NONE ;
+      window->sibling_locked_windows = NULL ;
+    }
+
+
+  return ;
+}
+
+
 
 
 static GtkAdjustment *copyAdjustmentObj(GtkAdjustment *orig_adj)
