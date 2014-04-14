@@ -699,10 +699,6 @@ double zMapWindowDrawScaleBar(GtkWidget *canvas_scrolled_window,
 											 ZMAPSTRAND_NONE, ZMAPFRAME_0,
                                                                                          0, 0);
 
-  zMapDebugPrintf("Allocating featureset %p (\"%s\")  with scrwin %p",
-                  featureset, g_quark_to_string(zMapWindowCanvasFeaturesetGetId(featureset)), canvas_scrolled_window) ;
-
-
   seq_len = seq_end - seq_start + 1;
   if(seq_len < 10)	/* we get called on start up w/ no sequence */
     return 0;
