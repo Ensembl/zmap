@@ -431,7 +431,7 @@ void zmapControlRemoveWindow(ZMap zmap, ZMapViewWindow view_window, GList **dest
   /* Remove from hash of viewwindows to frames */
   remove = g_hash_table_remove(zmap->viewwindow_2_parent, view_window) ;
 
-  /* Having removed one window we nwublastx_humaneed to refocus on another, if there is one....... */
+  /* Having removed one window we need to refocus on another, if there is one....... */
   if (remaining_view)
     {
       zmapControlSetWindowFocus(zmap, remaining_view) ;
@@ -686,7 +686,7 @@ void zmapControlSetWindowFocus(ZMap zmap, ZMapViewWindow new_viewwindow)
     {
       GtkWidget *label ;
       char *label_txt ;
-
+      ZMapWindowNavigator navigator ;
 
       /* Unfocus the old window. */
       if (zmap->focus_viewwindow)
@@ -727,17 +727,10 @@ void zmapControlSetWindowFocus(ZMap zmap, ZMapViewWindow new_viewwindow)
       /* make sure zoom buttons etc. appropriately sensitised for this window. */
       zmapControlWindowSetGUIState(zmap) ;
 
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      /* not needed here I think.....see controlFocusCB()...may not be the best place...??  */
-
-      /* WRONG POINTER PASSED IN HERE !!!!! */
-      /* Set up navigator with new view. */
-      zMapWindowNavigatorSetCurrentWindow(zmap->navigator, window) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
+      /* set up navigator with new focus window. */
+      navigator = zMapViewGetNavigator(view) ;
+      zMapWindowNavigatorFocus(navigator, TRUE);
+      zMapWindowNavigatorSetCurrentWindow(navigator, window);
 
       zMapWindowGetVisible(window, &top, &bottom) ;
       zmapNavigatorSetView(zmap->navigator, zMapViewGetFeatures(view), top, bottom) ;
