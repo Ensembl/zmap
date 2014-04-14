@@ -125,24 +125,12 @@ static gboolean hack_SpecialColumnToSOTerm(const char * const, char ** const ) ;
 #define CLIP_DEFAULT_ON_PARSE 1
 #define CLIP_LOCUS_ON_PARSE 1
 
-static const gboolean bClipTranscriptOnParse = TRUE ;
-static const gboolean bClipALignmentOnParse_General = TRUE ;
-static const gboolean bClipAssemblyPathOnParse = TRUE ;
-static const gboolean bClipDefaultOnParse = TRUE ;
-static const gboolean bClipLocusOnParse = TRUE ;
-
 #else
 /*
  * new clipping behaviour; alignments are clipped using
  * the Alignment-specific function
  */
 #define CLIP_LOCUS_ON_PARSE 1
-
-static const gboolean bClipTranscriptOnParse = FALSE ;
-static const gboolean bClipALignmentOnParse = FALSE ;
-static const gboolean bClipAssemblyPathOnParse = FALSE ;
-static const gboolean bClipDefaultOnParse = FALSE ;
-static const gboolean bClipLocusOnParse = TRUE ;
 
 #endif
 
