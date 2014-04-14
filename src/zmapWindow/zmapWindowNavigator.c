@@ -366,6 +366,9 @@ void zMapWindowNavigatorFocus(ZMapWindowNavigator navigate,
 
 void zMapWindowNavigatorSetCurrentWindow(ZMapWindowNavigator navigate, ZMapWindow window)
 {
+  GtkAdjustment *v_adjust ;
+
+
   if (!navigate || !window)
     return ;
 
@@ -377,6 +380,14 @@ void zMapWindowNavigatorSetCurrentWindow(ZMapWindowNavigator navigate, ZMapWindo
      in violation of MVC then all the windows will follow
   */
   navigate->current_window = window ;
+
+  v_adjust = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window)) ;
+
+  if (navigate->locator)
+    zMapWindowCanvasItemFeaturesetSetVAdjust((ZMapWindowFeaturesetItem)(navigate->locator), v_adjust) ;
+
+  if (navigate->locator_drag)
+    zMapWindowCanvasItemFeaturesetSetVAdjust((ZMapWindowFeaturesetItem)(navigate->locator_drag), v_adjust) ;
 
   return ;
 }
@@ -871,7 +882,7 @@ static void drawScale(NavigateDraw draw_data)
       max = draw_data->context->master_align->sequence_span.x2;
       zoom_factor = item->canvas->pixels_per_unit_y;
 
-      zMapWindowDrawScaleBar(draw_data->navigate->current_window->scrolled_window,
+      zMapWindowDrawScaleBar(zmapWindowScaleCanvasGetScrolledWindow(draw_data->navigate->current_window->ruler),
 			     features, min, max, min, max, zoom_factor, draw_data->navigate->is_reversed, FALSE);
     }
 
