@@ -918,7 +918,6 @@ GType zMapWindowFeaturesetItemGetType(void)
 }
 
 
-
 /*
  * return a singleton column wide canvas item
  * just in case we wanted to overlay two or more line graphs we need to allow for more than one
@@ -933,7 +932,7 @@ GType zMapWindowFeaturesetItemGetType(void)
  * which is ok as it's typically 1, occasionally 2 (focus)  and sometimes serveral eg 4 or 12
  */
 ZMapWindowCanvasItem zMapWindowCanvasItemFeaturesetGetFeaturesetItem(FooCanvasGroup *parent, GQuark id,
-								     GtkWidget *scr_win,
+								     GtkAdjustment *v_adjust,
 								     int start, int end,
 								     ZMapFeatureTypeStyle style,
 								     ZMapStrand strand, ZMapFrame frame,
@@ -1031,7 +1030,7 @@ ZMapWindowCanvasItem zMapWindowCanvasItemFeaturesetGetFeaturesetItem(FooCanvasGr
       /* We need the scrolled window to get at the vertical adjuster to make sure we redraw
        * the entire window after scrolling somewhere because we may have altered the window
        * under the adjusters feet. */
-      featureset->canvas_scrolled_window = scr_win ;
+      featureset->v_adjuster = v_adjust ;
 
 
       /* initialise zoom to prevent double index create on first draw (coverage graphs) */
@@ -1054,6 +1053,15 @@ ZMapWindowCanvasItem zMapWindowCanvasItemFeaturesetGetFeaturesetItem(FooCanvasGr
 
   return ((ZMapWindowCanvasItem) foo);
 }
+
+
+void zMapWindowCanvasItemFeaturesetSetVAdjust(ZMapWindowFeaturesetItem featureset, GtkAdjustment *v_adjust)
+{
+  featureset->v_adjuster = v_adjust ;
+
+  return ;    
+}
+
 
 
 guint zMapWindowCanvasFeaturesetGetId(ZMapWindowFeaturesetItem featureset)
@@ -1081,9 +1089,6 @@ void zMapWindowCanvasFeaturesetSetZoomY(ZMapWindowFeaturesetItem fi, double zoom
 
   return ;
 }
-
-
-
 
 
 void zMapWindowCanvasFeaturesetSetStipple(ZMapWindowFeaturesetItem featureset, GdkBitmap *stipple)
@@ -2335,7 +2340,7 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
   //gboolean debug = FALSE;
   GdkRegion *region;
   GdkRectangle rect;
-  GtkAdjustment *adjust ;
+  GtkAdjustment *v_adjust ;
 
 
   /* get visible scroll region in gdk coordinates to clip features that
@@ -2356,9 +2361,10 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
   gdk_region_destroy(region);
 
 
-  adjust = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(fi->canvas_scrolled_window)) ;
-  if (rect.height < adjust->page_size)
-    rect.height = adjust->page_size + 1000 ;		    /* hack...try it.... */
+  v_adjust = fi->v_adjuster ;
+
+  if (rect.height < v_adjust->page_size)
+    rect.height = v_adjust->page_size + 1000 ;		    /* hack...try it.... */
 
 
   fi->clip_x1 = rect.x - 1;

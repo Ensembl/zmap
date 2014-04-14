@@ -264,7 +264,8 @@ typedef struct _zmapWindowFeaturesetItemStruct
   gboolean recalculate_zoom;    /* gets set to true if the zoom has changed and we need to recalculate summary data */
   double zoom;			/* current units per pixel */
   double bases_per_pixel;
-  GtkWidget *canvas_scrolled_window ;			    /* needed to get ajuster for exposes. */
+
+  GtkAdjustment *v_adjuster ;                               /* needed to calculate exposes. */
 
 
   /* stuff for column summarise */
