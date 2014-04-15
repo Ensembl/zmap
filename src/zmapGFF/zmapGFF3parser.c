@@ -99,6 +99,7 @@ static char * makeFeatureTranscriptNamePublic(ZMapGFFFeatureData ) ;
 static char * makeFeatureAlignmentNamePrivate(ZMapGFFFeatureData) ;
 static gboolean clipFeatureLogic_General(ZMapGFF3Parser, ZMapGFFFeatureData) ;
 static gboolean clipFeatureLogic_Transcript(ZMapGFF3Parser, ZMapGFFFeatureData ) ;
+static gboolean clipFeatureLogic_Complete(ZMapGFF3Parser, ZMapGFFFeatureData) ;
 static gboolean requireLocusOperations(ZMapGFFParser , ZMapGFFFeatureData  ) ;
 static gboolean findFeatureset(ZMapGFFParser , ZMapGFFFeatureData  , ZMapFeatureSet *) ;
 
@@ -112,7 +113,7 @@ static gboolean hack_SpecialColumnToSOTerm(const char * const, char ** const ) ;
  * settled down with the new behaviour (i.e. it has gone through
  * user testing).
  */
-#define OLD_CLIPPING_BEHAVIOUR 1
+/* #define OLD_CLIPPING_BEHAVIOUR 1 */
 
 #ifdef OLD_CLIPPING_BEHAVIOUR
 /*
@@ -127,8 +128,7 @@ static gboolean hack_SpecialColumnToSOTerm(const char * const, char ** const ) ;
 
 #else
 /*
- * new clipping behaviour; alignments are clipped using
- * the Alignment-specific function
+ * new clipping behaviour
  */
 #define CLIP_LOCUS_ON_PARSE 1
 
@@ -3416,19 +3416,19 @@ static ZMapFeature makeFeatureDefault(ZMapGFFFeatureData pFeatureData,
 
 
 /*
- * Clipping for alignment features only... exclude a feature completely outside the
- * sequence region boundaries.
+ * This clipping function ignores the clip mode of the parser, and clips everything
+ * that is completely outside of the [pParser->clip_start, pParser->clip_end] range;
+ * If the values of clip_start and clip_end are not set in the parser, then we
+ * include the feature.
  */
-static gboolean clipFeatureLogic_Alignment(ZMapGFF3Parser  pParser, ZMapGFFFeatureData pFeatureData )
+static gboolean clipFeatureLogic_Complete(ZMapGFF3Parser  pParser, ZMapGFFFeatureData pFeatureData )
 {
-  gboolean bIncludeFeature = FALSE ;
+  gboolean bIncludeFeature = TRUE ;
   int iStart = 0,
     iEnd = 0,
     iClipStart = 0,
     iClipEnd = 0 ;
   gboolean bFeatureOutside = FALSE ;
-  ZMapSOIDData pSOIDData = NULL ;
-  ZMapStyleMode cFeatureStyleMode = ZMAPSTYLE_MODE_INVALID ;
   ZMapGFFClipMode cClipMode = GFF_CLIP_NONE ;
 
   zMapReturnValIfFail(pParser && pParser->pHeader && pFeatureData, bIncludeFeature) ;
@@ -3437,22 +3437,14 @@ static gboolean clipFeatureLogic_Alignment(ZMapGFF3Parser  pParser, ZMapGFFFeatu
   iClipStart = pParser->clip_start ;
   iClipEnd = pParser->clip_end ;
   if (!iClipStart && !iClipEnd)
-    return TRUE ;
+    return bIncludeFeature ;
 
   /*
    * Get some data about the feature, and error check.
    */
   iStart               = zMapGFFFeatureDataGetSta(pFeatureData) ;
   iEnd                 = zMapGFFFeatureDataGetEnd(pFeatureData) ;
-  pSOIDData            = zMapGFFFeatureDataGetSod(pFeatureData) ;
-  cFeatureStyleMode    = zMapSOIDDataGetStyleMode(pSOIDData) ;
-  zMapReturnValIfFail(iStart && iEnd
-                  && (cFeatureStyleMode == ZMAPSTYLE_MODE_ALIGNMENT), bIncludeFeature ) ;
-
-  /*
-   * Default behaviour is to include the feature.
-   */
-  bIncludeFeature = TRUE ;
+  zMapReturnValIfFail(iStart && iEnd, bIncludeFeature ) ;
 
   /*
    * Clipping logic.
@@ -3798,14 +3790,10 @@ static gboolean makeNewFeature_V3( ZMapGFFParser pParserBase,
   /*
    * Now branch on the ZMapStyleMode of the current GFF line.
    */
-  if (bFoundFeatureset && bResult)
+  if (bFoundFeatureset && bResult && (cFeatureStyleMode != ZMAPSTYLE_MODE_INVALID))
     {
 
-      if (cFeatureStyleMode == ZMAPSTYLE_MODE_INVALID)
-        {
-          /* Do nothing */
-        }
-      else if (cFeatureStyleMode == ZMAPSTYLE_MODE_TRANSCRIPT)
+      if (cFeatureStyleMode == ZMAPSTYLE_MODE_TRANSCRIPT)
         {
 
 #ifdef CLIP_TRANSCRIPT_ON_PARSE
@@ -3845,7 +3833,7 @@ static gboolean makeNewFeature_V3( ZMapGFFParser pParserBase,
           if ((bIncludeFeature = clipFeatureLogic_General(pParser, pFeatureData )))
             {
 #else
-          if ((bIncludeFeature = clipFeatureLogic_Alignment(pParser, pFeatureData )))
+          if ((bIncludeFeature = clipFeatureLogic_Complete(pParser, pFeatureData )))
             {
 #endif
 
@@ -3865,6 +3853,9 @@ static gboolean makeNewFeature_V3( ZMapGFFParser pParserBase,
 #ifdef CLIP_ASSEMBLYPATH_ON_PARSE
           if ((bIncludeFeature = clipFeatureLogic_General(pParser, pFeatureData )))
             {
+#else
+          if ((bIncludeFeature = clipFeatureLogic_Complete(pParser, pFeatureData )))
+            {
 #endif
 
               pFeature = makeFeatureAssemblyPath(pFeatureData, pFeatureSet, &sMakeFeatureErrorText) ;
@@ -3874,9 +3865,8 @@ static gboolean makeNewFeature_V3( ZMapGFFParser pParserBase,
                   ++pParser->num_features ;
                 }
 
-#ifdef CLIP_ASSEMBLYPATH_ON_PARSE
             }
-#endif
+
 
         }
       else
@@ -3884,6 +3874,9 @@ static gboolean makeNewFeature_V3( ZMapGFFParser pParserBase,
 
 #ifdef CLIP_DEFAULT_ON_PARSE
           if ((bIncludeFeature = clipFeatureLogic_General(pParser, pFeatureData )))
+            {
+#else
+          if ((bIncludeFeature = clipFeatureLogic_Complete(pParser, pFeatureData )))
             {
 #endif
 
@@ -3894,9 +3887,7 @@ static gboolean makeNewFeature_V3( ZMapGFFParser pParserBase,
                   ++pParser->num_features ;
                 }
 
-#ifdef CLIP_DEFAULT_ON_PARSE
             }
-#endif
 
 
         } /* final ZMapStyleMode clause */
