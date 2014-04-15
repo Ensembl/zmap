@@ -1569,16 +1569,6 @@ gboolean zMapFeatureContextErase(ZMapFeatureContext *current_context_inout,
   diff_context->diff_context        = TRUE;
   diff_context->elements_to_destroy = g_hash_table_new_full(NULL, NULL, NULL, destroyFeatureAny);
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-
-  /* WHY IS THIS DONE TWICE....??? */
-
-  /* TRY COPYING THE LIST.... */
-  diff_context->req_feature_set_names = g_list_copy(remove_context->req_feature_set_names) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
   merge_data.view_context      = current_context;
   merge_data.iteration_context = remove_context;
   merge_data.diff_context      = diff_context;
