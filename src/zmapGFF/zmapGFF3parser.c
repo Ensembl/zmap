@@ -130,6 +130,7 @@ static gboolean hack_SpecialColumnToSOTerm(const char * const, char ** const ) ;
 /*
  * new clipping behaviour
  */
+#define CLIP_ALIGNMENT_ON_PARSE_GENERAL 1
 #define CLIP_LOCUS_ON_PARSE 1
 
 #endif

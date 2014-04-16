@@ -139,6 +139,18 @@ zMapWindowCanvasTranscriptPaintFeature(ZMapWindowFeaturesetItem featureset,
   y2_cache = y2 = feature->y2 ;
 
   /*
+   * Sometimes if we are dealing with truncated features (e.g. transcript)
+   * we might get a (sub)feature e.g. intron that is completely outside of the
+   * view area. This test traps that possibility and thus avoids the ensuing
+   * hilarity as a consequence of pixel based arithmetic when one attempts
+   * to draw them.
+   */
+  if (y2 <= featureset->start || y1 >= featureset->end)
+    {
+      return ;
+    }
+
+  /*
    * Determine whether or not the feature needs to be truncated
    * at the start or end.
    */
