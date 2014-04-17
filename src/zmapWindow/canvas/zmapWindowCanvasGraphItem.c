@@ -1034,10 +1034,14 @@ static void setColumnStyle(ZMapWindowFeaturesetItem featureset, ZMapFeatureTypeS
   /* Settings for line graphs. */
   featureset->style->mode_data.graph.fill = zMapStyleGraphFill(feature_style) ;
 
-  /* UM....WHAT ON EARTH WAS I DOING HERE...JUST TESTING...???? */
+  /* UM....WHAT ON EARTH WAS I DOING HERE...JUST TESTING...???? 
+   * (sm23) I don't understand the details, but not initialising these 
+   * pointers was causing the crash. Now all is well with the graph
+   * display. 
+   */
   if (zMapStyleIsPropertySetId(feature_style, STYLE_PROP_GRAPH_COLOURS))
     {
-      GdkColor *fill, *draw, *border ;
+      GdkColor *fill = NULL, *draw = NULL, *border = NULL ;
 
       if (zMapStyleGetColours(feature_style, STYLE_PROP_GRAPH_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
                               &fill, &draw, &border))
