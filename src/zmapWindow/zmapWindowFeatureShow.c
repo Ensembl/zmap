@@ -196,8 +196,8 @@ typedef struct GetEvidenceDataStructType
 
 
 static void remoteShowFeature(ZMapWindowFeatureShow show) ;
-static void localShowFeature(ZMapWindowFeatureShow show) ;
-static void showFeature(ZMapWindowFeatureShow show, ZMapGuiNotebook extras_notebook) ;
+static void localShowFeature(ZMapWindowFeatureShow show, const gboolean editable) ;
+static void showFeature(ZMapWindowFeatureShow show, ZMapGuiNotebook extras_notebook, const gboolean editable) ;
 static void replyShowFeature(ZMapWindow window, gpointer user_data,
 			     char *command, RemoteCommandRCType command_rc,
 			     char *reason, char *reply) ;
@@ -206,7 +206,8 @@ static ZMapWindowFeatureShow featureShowCreate(ZMapWindow window, FooCanvasItem 
 static void featureShowReset(ZMapWindowFeatureShow show, ZMapWindow window, char *title) ;
 static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
 					 ZMapFeature feature, FooCanvasItem *item,
-					 ZMapGuiNotebook extras_notebook) ;
+                                         ZMapGuiNotebook extras_notebook,
+                                         const gboolean editable) ;
 
 /* xml event callbacks */
 static gboolean xml_zmap_start_cb(gpointer user_data, ZMapXMLElement element,
@@ -265,7 +266,7 @@ static void cleanUp(ZMapGuiNotebookAny any_section, void *user_data) ;
 static void getAllMatches(ZMapWindow window,
 			  ZMapFeature feature, FooCanvasItem *item, ZMapGuiNotebookSubsection subsection) ;
 static void addTagValue(gpointer data, gpointer user_data) ;
-static ZMapGuiNotebook makeTranscriptExtras(ZMapWindow window, ZMapFeature feature) ;
+static ZMapGuiNotebook makeTranscriptExtras(ZMapWindow window, ZMapFeature feature, const gboolean editable) ;
 
 static void callXRemote(ZMapWindow window, ZMapFeatureAny feature_any,
 			char *action, FooCanvasItem *real_item,
@@ -349,7 +350,7 @@ static ZMapXMLObjTagFunctionsStruct ends_G[] =
 
 /* Displays a feature in a window, will reuse an existing window if it can, otherwise
  * it creates a new one. */
-void zmapWindowFeatureShow(ZMapWindow window, FooCanvasItem *item)
+void zmapWindowFeatureShow(ZMapWindow window, FooCanvasItem *item, const gboolean editable)
 {
   ZMapWindowFeatureShow show = NULL ;
   ZMapFeature feature ;
@@ -393,7 +394,7 @@ void zmapWindowFeatureShow(ZMapWindow window, FooCanvasItem *item)
 	}
       else
 	{
-	  localShowFeature(show) ;
+          localShowFeature(show, editable) ;
 	}
     }
 
@@ -488,7 +489,7 @@ static void replyShowFeature(ZMapWindow window, gpointer user_data,
 	{
 	  /* command may legitimately fail as peer may not have any extra feature details in which
 	   * case we do the best we can. */
-	  localShowFeature(show) ;
+          localShowFeature(show, FALSE) ;
 	}
       else
 	{
@@ -527,7 +528,7 @@ static void replyShowFeature(ZMapWindow window, gpointer user_data,
 	}
       else
 	{
-	  showFeature(show, show->xml_curr_notebook) ;
+          showFeature(show, show->xml_curr_notebook, FALSE) ;
 	}
 
       /* Free the parser!!! */
@@ -538,7 +539,7 @@ static void replyShowFeature(ZMapWindow window, gpointer user_data,
 }
 
 
-static void localShowFeature(ZMapWindowFeatureShow show)
+static void localShowFeature(ZMapWindowFeatureShow show, const gboolean editable)
 {
   ZMapGuiNotebook extras_notebook = NULL ;
 
@@ -548,7 +549,7 @@ static void localShowFeature(ZMapWindowFeatureShow show)
     case ZMAPSTYLE_MODE_TRANSCRIPT:
       {
 	/* For transcripts add exons and other local stuff. */
-	extras_notebook = makeTranscriptExtras(show->zmapWindow, show->feature) ;
+        extras_notebook = makeTranscriptExtras(show->zmapWindow, show->feature, editable) ;
 	break ;
       }
     default:
@@ -557,14 +558,14 @@ static void localShowFeature(ZMapWindowFeatureShow show)
       }
     }
 
-  showFeature(show, extras_notebook) ;
+  showFeature(show, extras_notebook, editable) ;
 
   return ;
 }
 
 
 
-static void showFeature(ZMapWindowFeatureShow show, ZMapGuiNotebook extras_notebook)
+static void showFeature(ZMapWindowFeatureShow show, ZMapGuiNotebook extras_notebook, const gboolean editable)
 {
   char *feature_name ;
   GtkWidget *notebook_widg ;
@@ -572,7 +573,7 @@ static void showFeature(ZMapWindowFeatureShow show, ZMapGuiNotebook extras_noteb
   feature_name = (char *)g_quark_to_string(show->feature->original_id) ;
 
   /* Make the notebook. */
-  show->feature_book = createFeatureBook(show, feature_name, show->feature, show->item, extras_notebook) ;
+  show->feature_book = createFeatureBook(show, feature_name, show->feature, show->item, extras_notebook, editable) ;
 
   if (show->feature_book)
     {
@@ -670,7 +671,8 @@ static gboolean windowIsReusable(void)
 
 static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
 					 ZMapFeature feature, FooCanvasItem *item,
-					 ZMapGuiNotebook extras_notebook)
+                                         ZMapGuiNotebook extras_notebook,
+                                         const gboolean editable)
 {
   ZMapGuiNotebook feature_book = NULL ;
   ZMapGuiNotebookChapter dummy_chapter = NULL ;
@@ -689,7 +691,7 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
 
 
 
-  feature_book = zMapGUINotebookCreateNotebook(name, FALSE, cleanUp, NULL) ;
+  feature_book = zMapGUINotebookCreateNotebook(name, editable, cleanUp, NULL) ;
 
   /* The feature fundamentals page. */
   switch(feature->mode)
@@ -1981,7 +1983,7 @@ static void addTagValue(gpointer data, gpointer user_data)
 
 
 
-static ZMapGuiNotebook makeTranscriptExtras(ZMapWindow window, ZMapFeature feature)
+static ZMapGuiNotebook makeTranscriptExtras(ZMapWindow window, ZMapFeature feature, const gboolean editable)
 {
   ZMapGuiNotebook extras_notebook = NULL ;
   ZMapGuiNotebookChapter dummy_chapter = NULL ;
@@ -1991,7 +1993,7 @@ static ZMapGuiNotebook makeTranscriptExtras(ZMapWindow window, ZMapFeature featu
   GList *headers = NULL, *types = NULL ;
   int i = 0 ;
 
-  extras_notebook = zMapGUINotebookCreateNotebook(NULL, FALSE, cleanUp, NULL) ;
+  extras_notebook = zMapGUINotebookCreateNotebook(NULL, editable, cleanUp, NULL) ;
 
   if (extras_notebook)
     {

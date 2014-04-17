@@ -5091,7 +5091,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 
 	if ((focus_item = zmapWindowFocusGetHotItem(window->focus)))
 	  {
-	    zmapWindowFeatureShow(window, focus_item) ;
+            zmapWindowFeatureShow(window, focus_item, FALSE) ;
 	  }
 	else
 	  {

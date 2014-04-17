@@ -1729,7 +1729,7 @@ static void featureMenuCB(int menu_item_id, gpointer callback_data)
 {
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
 
-  zmapWindowFeatureShow(menu_data->window, menu_data->item) ;
+  zmapWindowFeatureShow(menu_data->window, menu_data->item, FALSE) ;
 
   return ;
 }

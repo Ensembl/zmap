@@ -647,6 +647,8 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 
 	      if (second_press || but_event->time - last_but_release < but_threshold)
 		{
+                  const gchar *style_id = g_quark_to_string(zMapStyleGetID(*feature->style)) ;
+
 		  /* Second click of a double click means show feature details. */
 		  if (but_event->button == 1)
 		    {
@@ -662,8 +664,6 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
                            * user can set some attributes locally in zmap instead. Then from
                            * that dialog, or another option in zmap, they could have the option
                            * to save the feature to the peer. */
-                          const gchar *style_id = g_quark_to_string(zMapStyleGetID(*feature->style)) ;
-
                           if (feature && feature->style && strcmp(style_id, ZMAP_FIXED_STYLE_SCRATCH_NAME) == 0)
                             {
                               callXRemote(window, (ZMapFeatureAny)feature, ZACP_CREATE_FEATURE, highlight_item) ;
@@ -673,7 +673,21 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
                               callXRemote(window, (ZMapFeatureAny)feature, ZACP_EDIT_FEATURE, highlight_item) ;
                             }
 			}
-		    }
+                      else
+                        {
+                          /* No xremote peer connected. If the user double clicked the annotation
+                           * column then open the Create Feature dialog to create the feature
+                           * locally. For other columns we may want to do an 'edit' operation - copy the feature to
+                           * the Annotation column ready for editing. This requires a little thought
+                           * though (we probably only want to do this if the Annotation column is
+                           * empty? Or always copy and merge it in... probably with a control key to
+                           * determine whether the entire feature or just the subfeature should be copied). */
+                          if (feature && feature->style && strcmp(style_id, ZMAP_FIXED_STYLE_SCRATCH_NAME) == 0)
+                            {
+                              zmapWindowFeatureShow(window, item, TRUE) ;
+                            }
+                        }
+                    }
 
 		  second_press = FALSE ;
 		}
@@ -1196,7 +1210,7 @@ static void handleXRemoteReply(gboolean reply_ok, char *reply_error,
 	    }
 	  else if (command_rc == REMOTE_COMMAND_RC_FAILED)
 	    {
-	      zmapWindowFeatureShow(remote_data->window, remote_data->real_item) ;
+              zmapWindowFeatureShow(remote_data->window, remote_data->real_item, FALSE) ;
 	    }
 	}
     }
