@@ -50,13 +50,6 @@
 typedef enum {ZMAPEDIT_MERGE, ZMAPEDIT_DELETE, ZMAPEDIT_CLEAR} ZMapEditType ;
 
 
-typedef struct _GetFeaturesetCBDataStruct
-{
-  GQuark set_id;
-  ZMapFeatureSet featureset;
-} GetFeaturesetCBDataStruct, *GetFeaturesetCBData;
-
-
 /* Data about each edit operation in the Scratch column */
 typedef struct _EditOperationStruct
 {
@@ -224,54 +217,6 @@ static void scratchAddOperation(ZMapView view, EditOperation operation)
 }
 
 
-
-/*!
- * \brief Callback called on every child in a FeatureAny.
- *
- * For each featureset, compares its id to the id in the user
- * data and if it matches it sets the result in the user data.
- */
-static ZMapFeatureContextExecuteStatus getFeaturesetFromIdCB(GQuark key,
-                                                             gpointer data,
-                                                             gpointer user_data,
-                                                             char **err_out)
-{
-  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
-
-  GetFeaturesetCBData cb_data = (GetFeaturesetCBData) user_data ;
-  ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
-
-  switch(feature_any->struct_type)
-    {
-    case ZMAPFEATURE_STRUCT_FEATURESET:
-      if (feature_any->unique_id == cb_data->set_id)
-        cb_data->featureset = (ZMapFeatureSet)feature_any;
-      break;
-
-    default:
-      break;
-    };
-
-  return status;
-}
-
-
-/*!
- * \brief Find the featureset with the given id in the given view's context
- */
-static ZMapFeatureSet getFeaturesetFromId(ZMapView view, GQuark set_id)
-{
-  GetFeaturesetCBDataStruct cb_data = { set_id, NULL };
-
-  zMapFeatureContextExecute((ZMapFeatureAny)view->features,
-                            ZMAPFEATURE_STRUCT_FEATURESET,
-                            getFeaturesetFromIdCB,
-                            &cb_data);
-
-  return cb_data.featureset ;
-}
-
-
 /*!
  * \brief Get the single featureset that resides in the scratch column
  *
@@ -288,7 +233,7 @@ ZMapFeatureSet zmapViewScratchGetFeatureset(ZMapView view)
   if (g_list_length(fs_list) > 0)
     {
       GQuark set_id = (GQuark)(GPOINTER_TO_INT(fs_list->data));
-      feature_set = getFeaturesetFromId(view, set_id);
+      feature_set = zmapFeatureContextGetFeaturesetFromId(view->features, set_id);
     }
 
   return feature_set;
@@ -607,44 +552,6 @@ static void scratchDeleteFeatureExons(ZMapView view, ZMapFeature feature, ZMapFe
 }
 
 
-static ZMapFeatureContext copyContextAll(ZMapFeatureContext context,
-                                         ZMapFeature feature,
-                                         ZMapFeatureSet feature_set,
-                                         GList **feature_list,
-                                         ZMapFeature *feature_copy_out)
-{
-  ZMapFeatureContext context_copy = NULL ;
-
-  g_return_val_if_fail(context && context->master_align && feature && feature_set, NULL) ;
-
-  context_copy = (ZMapFeatureContext)zMapFeatureAnyCopy((ZMapFeatureAny)context) ;
-  context_copy->req_feature_set_names = g_list_append(context_copy->req_feature_set_names, GINT_TO_POINTER(feature_set->unique_id)) ;
-
-  ZMapFeatureAlignment align_copy = (ZMapFeatureAlignment)zMapFeatureAnyCopy((ZMapFeatureAny)context->master_align) ;
-  zMapFeatureContextAddAlignment(context_copy, align_copy, FALSE) ;
-
-  ZMapFeatureBlock block = zMap_g_hash_table_nth(context->master_align->blocks, 0) ;
-  g_return_val_if_fail(block, NULL) ;
-
-  ZMapFeatureBlock block_copy = (ZMapFeatureBlock)zMapFeatureAnyCopy((ZMapFeatureAny)block) ;
-  zMapFeatureAlignmentAddBlock(align_copy, block_copy) ;
-
-  ZMapFeatureSet feature_set_copy = (ZMapFeatureSet)zMapFeatureAnyCopy((ZMapFeatureAny)feature_set) ;
-  zMapFeatureBlockAddFeatureSet(block_copy, feature_set_copy) ;
-
-  ZMapFeature feature_copy = (ZMapFeature)zMapFeatureAnyCopy((ZMapFeatureAny)feature) ;
-  zMapFeatureSetAddFeature(feature_set_copy, feature_copy) ;
-
-  if (feature_list)
-    *feature_list = g_list_append(*feature_list, feature_copy) ;
-
-  if (feature_copy_out)
-    *feature_copy_out = feature_copy ;
-
-  return context_copy ;
-}
-
-
 static void scratchEraseFeature(ZMapView zmap_view)
 {
   g_return_if_fail(zmap_view && zmap_view->features) ;
@@ -664,7 +571,7 @@ static void scratchEraseFeature(ZMapView zmap_view)
   scratchSetStartEndFlag(zmap_view, FALSE);
 
   GList *feature_list = NULL ;
-  ZMapFeatureContext context_copy = copyContextAll(context, feature, feature_set, &feature_list, NULL) ;
+  ZMapFeatureContext context_copy = zmapViewCopyContextAll(context, feature, feature_set, &feature_list, NULL) ;
 
   if (context_copy && feature_list)
     zmapViewEraseFeatures(zmap_view, context_copy, &feature_list) ;
@@ -703,35 +610,6 @@ static ZMapFeature scratchCreateNewFeature(ZMapView zmap_view)
   scratchFeatureRecreateExons(zmap_view, feature) ;
 
   return feature ;
-}
-
-
-static void scratchMergeNewFeature(ZMapView zmap_view, ZMapFeature feature)
-{
-  g_return_if_fail(zmap_view && zmap_view->features) ;
-  //g_return_if_fail(feature) ;
-
-  /* Get the current featureset and context */
-  ZMapFeatureSet feature_set = zmapViewScratchGetFeatureset(zmap_view);
-  g_return_if_fail(feature_set) ;
-
-  //ZMapFeature feature = zmapViewScratchGetFeature(feature_set, ZMAPSTRAND_FORWARD);
-  g_return_if_fail(feature) ;
-
-  ZMapFeatureContext context = zmap_view->features ;
-
-  GList *feature_list = NULL ;
-  ZMapFeature feature_copy = NULL ;
-  ZMapFeatureContext context_copy = copyContextAll(context, feature, feature_set, &feature_list, &feature_copy) ;
-
-  if (context_copy && feature_list)
-    zmapViewMergeNewFeatures(zmap_view, &context_copy, &feature_list) ;
-
-  if (context_copy && feature_copy)
-    zmapViewDrawDiffContext(zmap_view, &context_copy, feature_copy) ;
-
-  if (context_copy)
-    zMapFeatureContextDestroy(context_copy, TRUE) ;
 }
 
 
@@ -900,7 +778,10 @@ static void scratchFeatureRecreate(ZMapView view)
   ZMapFeature feature = scratchCreateNewFeature(view) ;
 
   /* Merge it in */
-  scratchMergeNewFeature(view, feature) ;
+  ZMapFeatureSet feature_set = zmapViewScratchGetFeatureset(view);
+
+  if (feature_set && feature)
+    zmapViewMergeNewFeature(view, feature, feature_set) ;
 }
 
 

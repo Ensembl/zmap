@@ -463,12 +463,18 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 			  int features_start, int features_end,
 			  gboolean group, gboolean make_new_connection, gboolean terminate) ;
 
-
 GQuark zmapViewSrc2FSetGetID(GHashTable *source_2_featureset, char *source_name) ;
 GList *zmapViewSrc2FSetGetList(GHashTable *source_2_featureset, GList *source_list) ;
 
 ZMapFeatureContext zmapViewCreateContext(ZMapView view, GList *feature_set_names, ZMapFeatureSet feature_set);
 
+ZMapFeatureContext zmapViewCopyContextAll(ZMapFeatureContext context,
+                                          ZMapFeature feature,
+                                          ZMapFeatureSet feature_set,
+                                          GList **feature_list,
+                                          ZMapFeature *feature_copy_out) ;
+
+void zmapViewMergeNewFeature(ZMapView view, ZMapFeature feature, ZMapFeatureSet feature_set) ;
 gboolean zmapViewMergeNewFeatures(ZMapView view, ZMapFeatureContext *context, GList **feature_list) ;
 void zmapViewEraseFeatures(ZMapView view, ZMapFeatureContext context, GList **feature_list) ;
 

@@ -388,6 +388,7 @@ void zMapWindowInit(ZMapWindowCallbacks callbacks)
   window_cbs_G->visibilityChange = callbacks->visibilityChange ;
   window_cbs_G->command = callbacks->command ;
   window_cbs_G->drawn_data = callbacks->drawn_data;
+  window_cbs_G->merge_new_feature = callbacks->merge_new_feature;
 
   window_cbs_G->remote_request_func = callbacks->remote_request_func ;
   window_cbs_G->remote_request_func_data = callbacks->remote_request_func_data ;

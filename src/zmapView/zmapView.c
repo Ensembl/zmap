@@ -211,6 +211,7 @@ static void viewVisibilityChangeCB(ZMapWindow window, void *caller_data, void *w
 static void setZoomStatusCB(ZMapWindow window, void *caller_data, void *window_data) ;
 static void commandCB(ZMapWindow window, void *caller_data, void *window_data) ;
 static void loadedDataCB(ZMapWindow window, void *caller_data, gpointer loaded_data, void *window_data) ;
+static void mergeNewFeatureCB(ZMapWindow window, void *caller_data, void *window_data) ;
 static void viewSplitToPatternCB(ZMapWindow window, void *caller_data, void *window_data);
 static void setZoomStatus(gpointer data, gpointer user_data);
 static void splitMagic(gpointer data, gpointer user_data);
@@ -358,6 +359,7 @@ ZMapWindowCallbacksStruct window_cbs_G =
   viewVisibilityChangeCB,
   commandCB,
   loadedDataCB,
+  mergeNewFeatureCB,
   NULL,
   NULL
 } ;
@@ -1098,6 +1100,63 @@ static ZMapFeatureContextExecuteStatus mark_matching_invalid(GQuark key,
   return ZMAP_CONTEXT_EXEC_STATUS_OK;
 }
 
+
+ZMapFeatureContext zmapViewCopyContextAll(ZMapFeatureContext context,
+                                          ZMapFeature feature,
+                                          ZMapFeatureSet feature_set,
+                                          GList **feature_list,
+                                          ZMapFeature *feature_copy_out)
+{
+  ZMapFeatureContext context_copy = NULL ;
+
+  g_return_val_if_fail(context && context->master_align && feature && feature_set, NULL) ;
+
+  context_copy = (ZMapFeatureContext)zMapFeatureAnyCopy((ZMapFeatureAny)context) ;
+  context_copy->req_feature_set_names = g_list_append(context_copy->req_feature_set_names, GINT_TO_POINTER(feature_set->unique_id)) ;
+
+  ZMapFeatureAlignment align_copy = (ZMapFeatureAlignment)zMapFeatureAnyCopy((ZMapFeatureAny)context->master_align) ;
+  zMapFeatureContextAddAlignment(context_copy, align_copy, FALSE) ;
+
+  ZMapFeatureBlock block = zMap_g_hash_table_nth(context->master_align->blocks, 0) ;
+  g_return_val_if_fail(block, NULL) ;
+
+  ZMapFeatureBlock block_copy = (ZMapFeatureBlock)zMapFeatureAnyCopy((ZMapFeatureAny)block) ;
+  zMapFeatureAlignmentAddBlock(align_copy, block_copy) ;
+
+  ZMapFeatureSet feature_set_copy = (ZMapFeatureSet)zMapFeatureAnyCopy((ZMapFeatureAny)feature_set) ;
+  zMapFeatureBlockAddFeatureSet(block_copy, feature_set_copy) ;
+
+  ZMapFeature feature_copy = (ZMapFeature)zMapFeatureAnyCopy((ZMapFeatureAny)feature) ;
+  zMapFeatureSetAddFeature(feature_set_copy, feature_copy) ;
+
+  if (feature_list)
+    *feature_list = g_list_append(*feature_list, feature_copy) ;
+
+  if (feature_copy_out)
+    *feature_copy_out = feature_copy ;
+
+  return context_copy ;
+}
+
+void zmapViewMergeNewFeature(ZMapView view, ZMapFeature feature, ZMapFeatureSet feature_set)
+{
+  zMapReturnIfFail(view && view->features && feature && feature_set);
+
+  ZMapFeatureContext context = view->features ;
+
+  GList *feature_list = NULL ;
+  ZMapFeature feature_copy = NULL ;
+  ZMapFeatureContext context_copy = zmapViewCopyContextAll(context, feature, feature_set, &feature_list, &feature_copy) ;
+
+  if (context_copy && feature_list)
+    zmapViewMergeNewFeatures(view, &context_copy, &feature_list) ;
+
+  if (context_copy && feature_copy)
+    zmapViewDrawDiffContext(view, &context_copy, feature_copy) ;
+
+  if (context_copy)
+    zMapFeatureContextDestroy(context_copy, TRUE) ;
+}
 
 gboolean zmapViewMergeNewFeatures(ZMapView view, ZMapFeatureContext *context, GList **feature_list)
 {
@@ -4882,6 +4941,16 @@ static void loadedDataCB(ZMapWindow window, void *caller_data, gpointer loaded_d
     }
 
   return ;
+}
+
+
+static void mergeNewFeatureCB(ZMapWindow window, void *caller_data, void *window_data)
+{
+  ZMapViewWindow view_window = (ZMapViewWindow)caller_data ;
+  ZMapWindowMergeNewFeature merge = (ZMapWindowMergeNewFeature)window_data ;
+  ZMapView view = zMapViewGetView(view_window) ;
+
+  zmapViewMergeNewFeature(view, merge->feature, merge->feature_set) ;
 }
 
 

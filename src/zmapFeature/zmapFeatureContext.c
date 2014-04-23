@@ -39,6 +39,13 @@
 #include <zmapFeature_P.h>
 
 
+typedef struct _GetFeaturesetCBDataStruct
+{
+  GQuark set_id;
+  ZMapFeatureSet featureset;
+} GetFeaturesetCBDataStruct, *GetFeaturesetCBData;
+
+
 
 /* This isn't ideal, but there is code calling the getDNA functions
  * below, not checking return value... */
@@ -118,7 +125,10 @@ static void feature_context_execute_full(ZMapFeatureAny feature_any,
 					 gboolean catch_hash,
 					 gpointer data) ;
 
-
+static ZMapFeatureContextExecuteStatus getFeaturesetFromIdCB(GQuark key,
+                                                             gpointer data,
+                                                             gpointer user_data,
+                                                             char **err_out) ;
 
 
 
@@ -764,6 +774,21 @@ ZMapFeatureAny zMapFeatureContextFindFeatureFromFeature(ZMapFeatureContext conte
   return feature_any;
 }
 
+
+/*!
+ * \brief Find the featureset with the given id in the given context
+ */
+ZMapFeatureSet zmapFeatureContextGetFeaturesetFromId(ZMapFeatureContext context, GQuark set_id)
+{
+  GetFeaturesetCBDataStruct cb_data = { set_id, NULL };
+
+  zMapFeatureContextExecute((ZMapFeatureAny)context,
+                            ZMAPFEATURE_STRUCT_FEATURESET,
+                            getFeaturesetFromIdCB,
+                            &cb_data);
+
+  return cb_data.featureset ;
+}
 
 
 
@@ -1414,3 +1439,33 @@ static void feature_context_execute_full(ZMapFeatureAny feature_any,
   return ;
 }
 
+
+/*!
+ * \brief Callback called on every child in a FeatureAny.
+ * 
+ * For each featureset, compares its id to the id in the user
+ * data and if it matches it sets the result in the user data.
+ */
+static ZMapFeatureContextExecuteStatus getFeaturesetFromIdCB(GQuark key,
+                                                             gpointer data,
+                                                             gpointer user_data,
+                                                             char **err_out)
+{
+  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
+  
+  GetFeaturesetCBData cb_data = (GetFeaturesetCBData) user_data ;
+  ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
+
+  switch(feature_any->struct_type)
+    {
+    case ZMAPFEATURE_STRUCT_FEATURESET:
+      if (feature_any->unique_id == cb_data->set_id)
+        cb_data->featureset = (ZMapFeatureSet)feature_any;
+      break;
+      
+    default:
+      break;
+    };
+  
+  return status;
+}

@@ -40,59 +40,6 @@
 #include <zmapWindowScratch_P.h>
 
 
-typedef struct _GetFeaturesetCBDataStruct
-{
-  GQuark set_id;
-  ZMapFeatureSet featureset;
-} GetFeaturesetCBDataStruct, *GetFeaturesetCBData;
-
-
-/*!
- * \brief Callback called on every child in a FeatureAny.
- * 
- * For each featureset, compares its id to the id in the user
- * data and if it matches it sets the result in the user data.
- */
-static ZMapFeatureContextExecuteStatus getFeaturesetFromIdCB(GQuark key,
-                                                             gpointer data,
-                                                             gpointer user_data,
-                                                             char **err_out)
-{
-  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
-  
-  GetFeaturesetCBData cb_data = (GetFeaturesetCBData) user_data ;
-  ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
-
-  switch(feature_any->struct_type)
-    {
-    case ZMAPFEATURE_STRUCT_FEATURESET:
-      if (feature_any->unique_id == cb_data->set_id)
-        cb_data->featureset = (ZMapFeatureSet)feature_any;
-      break;
-      
-    default:
-      break;
-    };
-  
-  return status;
-}
-
-
-/*!
- * \brief Find the featureset with the given id in the given window's context
- */
-static ZMapFeatureSet getFeaturesetFromId(ZMapWindow window, GQuark set_id)
-{
-  GetFeaturesetCBDataStruct cb_data = { set_id, NULL };
-  
-  zMapFeatureContextExecute((ZMapFeatureAny)window->feature_context,
-                            ZMAPFEATURE_STRUCT_FEATURESET,
-                            getFeaturesetFromIdCB,
-                            &cb_data);
-
-  return cb_data.featureset ;
-}
-
 
 /*!
  * \brief Get the single featureset that resides in the scratch column
@@ -112,7 +59,7 @@ ZMapFeatureSet zmapWindowScratchGetFeatureset(ZMapWindow window)
       if (g_list_length(fs_list) > 0)
         {         
           GQuark set_id = (GQuark)(GPOINTER_TO_INT(fs_list->data));
-          feature_set = getFeaturesetFromId(window, set_id);
+          feature_set = zmapFeatureContextGetFeaturesetFromId(window->feature_context, set_id);
         }
     }
   

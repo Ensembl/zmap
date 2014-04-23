@@ -1299,6 +1299,7 @@ gboolean zMapFeatureAnyHasMagic(ZMapFeatureAny feature_any);
 ZMapFeatureAny zMapFeatureContextFindFeatureFromFeature(ZMapFeatureContext context,
 							ZMapFeatureAny from_feature);
 
+ZMapFeatureSet zmapFeatureContextGetFeaturesetFromId(ZMapFeatureContext context, GQuark set_id) ;
 
 GType zMapFeatureDataGetType(void);
 gboolean zMapFeatureGetInfo(ZMapFeatureAny         feature_any,

@@ -186,6 +186,12 @@ typedef struct
 } ZMapWindowSelectStruct, *ZMapWindowSelect ;
 
 
+typedef struct
+{
+  ZMapFeature feature ;
+  ZMapFeatureSet feature_set ;
+} ZMapWindowMergeNewFeatureStruct, *ZMapWindowMergeNewFeature ;
+
 
 
 
@@ -356,7 +362,7 @@ typedef struct _ZMapWindowCallbacksStruct
   ZMapWindowCallbackFunc visibilityChange ;
   ZMapWindowCallbackFunc command ;                          /* Request to exit given command. */
   ZMapWindowLoadCallbackFunc drawn_data ;
-
+  ZMapWindowCallbackFunc merge_new_feature ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* WHAT..... */
