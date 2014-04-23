@@ -192,18 +192,24 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer d
 static gboolean exposeHandlerCB(GtkWidget *widget, GdkEventExpose *event, gpointer user_data);
 static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer data) ;
 
+
+
 //static gboolean pressCB(GtkWidget *widget, GdkEventButton *event, gpointer user_data) ;
 //static gboolean motionCB(GtkWidget *widget, GdkEventMotion *event, gpointer user_data) ;
 //static gboolean releaseCB(GtkWidget *widget, GdkEventButton *event, gpointer user_data) ;
 
 static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event) ;
-
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static gboolean canvasRootEventCB(GtkWidget *widget, GdkEventClient *event, gpointer data) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 static void canvasSizeAllocateCB(GtkWidget *widget, GtkAllocation *alloc, gpointer user_data) ;
 static gboolean windowGeneralEventCB(GtkWidget *wigdet, GdkEvent *event, gpointer data);
+
+static void setZoomFromLayoutSize(ZMapWindow window,
+                                  int *layout_win_width_out, int *layout_win_height_out,
+                                  int *layout_binwin_width_out, int *layout_binwin_height_out) ;
+
+
 
 static void resetCanvas(ZMapWindow window, gboolean free_child_windows, gboolean keep_revcomp_safe_windows) ;
 static gboolean getConfiguration(ZMapWindow window) ;
@@ -496,6 +502,15 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, ZMapFeatureSequenceMap seque
   /* Reset our scrolled position otherwise we can end up jumping to the top of the window. */
   foo_canvas_scroll_to(original_window->canvas, x, y) ;
   foo_canvas_scroll_to(new_window->canvas, x, y) ;
+
+
+  /* some of the above functions set the window sizes of the layout so copy across the original
+   * sizes otherwise we do not how to zoom/split this copy window correctly... */
+  new_window->layout_window_width = original_window->layout_window_width ;
+  new_window->layout_window_height = original_window->layout_window_height ;
+  new_window->layout_bin_window_width = original_window->layout_bin_window_width ;
+  new_window->layout_bin_window_height = original_window->layout_bin_window_height ;
+
 
 
 
@@ -1135,7 +1150,6 @@ void zmapWindowZoom(ZMapWindow window, double zoom_factor, gboolean stay_centere
 	{
 	  XSynchronize(x_display, FALSE) ;
 	}
-
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       printAdjusters(window) ;
@@ -2247,8 +2261,9 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
   window->scrolled_window = gtk_scrolled_window_new(hadjustment, vadjustment) ;
   gtk_container_add(GTK_CONTAINER(window->parent_widget), window->toplevel) ;
   gtk_container_add(GTK_CONTAINER(window->toplevel), window->pane) ;
-
   gtk_paned_add2(GTK_PANED(window->pane), window->scrolled_window);
+
+
 
   /* ACTUALLY I'M NOT SURE WHY THE SCROLLED WINDOW IS GETTING THESE...WHY NOT JUST SEND
    * DIRECT TO CANVAS.... */
@@ -2965,10 +2980,12 @@ static void changeRegion(ZMapWindow window, guint keyval)
  * we have to detect the invalid height and attach this handler to the canvas's
  * expose_event, such that when it does get called, the height is valid.  Then we
  * disconnect it to prevent it being triggered by any other expose_events.
+ *
+ * widget is the canvas, user_data is the realizeData structure
  */
 static gboolean exposeHandlerCB(GtkWidget *widget, GdkEventExpose *expose, gpointer user_data)
 {
-  /* widget is the canvas, user_data is the realizeData structure */
+  gboolean result = FALSE ;                                 /* ie allow any other callbacks to run as well */
   RealiseData realiseData = (RealiseDataStruct*)user_data;
 
   zmapWindowBusy(realiseData->window, TRUE) ;
@@ -2997,12 +3014,13 @@ static gboolean exposeHandlerCB(GtkWidget *widget, GdkEventExpose *expose, gpoin
   realiseData->feature_sets = NULL ;
   g_free(realiseData) ;
 
-
-  return FALSE ;					    /* ie allow any other callbacks to run as well */
+  return result ;
 }
 
-/* This routine sends a synthesized event to alert the GUI that it needs to
- * do some work and supplies the data for the GUI to process via the event struct. */
+
+
+/* This routine sends a synthesized event to tell the ZMapWindow that there are new
+ * features to draw. The features are passed in the data element of the event struct. */
 static void sendClientEvent(ZMapWindow window, FeatureSetsState feature_sets, gpointer loaded_cb_user_data)
 {
   GdkEventClient event ;
@@ -3040,12 +3058,41 @@ static void sendClientEvent(ZMapWindow window, FeatureSetsState feature_sets, gp
   return ;
 }
 
-/* Called when gtk detects the event sent by signalDataToGUI(), this routine calls
- * the data display routines of ZMap. */
+
+/* Called to service the event sent by sendClientEvent(), this seems ocntorted but we need
+ * to be sure drawing of features occurs as part of the normal stream of events so that we
+ * don't draw before the window has been displayed for instance. This routine calls
+ * the data display routines of ZMap.
+ * 
+ * This is a general handler that does stuff like handle "click to focus", it gets run
+ * _BEFORE_ any canvas item handlers (there seems to be no way with the current
+ * foocanvas/gtk to get an event run _after_ the canvas handlers, you cannot for instance
+ * just use  g_signal_connect_after(). Therefore you can check on focus/mouse clicks etc
+ * for debugging purposes from here.
+ * 
+ */
 static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer cb_data)
 {
   gboolean event_handled = FALSE ;
   int i ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      {
+        /* we've had problems with event handling so I'm leaving these here for now in
+         * case there is more trouble. */
+	gpointer obj = window->canvas ;
+
+	gtk_widget_add_events(GTK_WIDGET(window->toplevel), GDK_POINTER_MOTION_MASK) ;
+	g_signal_connect(obj, "button-press-event",
+			 pressCB, (gpointer)window) ;
+	g_signal_connect(obj, "motion-notify-event",
+			 motionCB, (gpointer)window) ;
+	g_signal_connect(obj, "button-release-event",
+			 releaseCB, (gpointer)window) ;
+
+      }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   if (event->type != GDK_CLIENT_EVENT)
     {
@@ -3112,27 +3159,7 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
 	}
 
 
-      /* This is a general handler that does stuff like handle "click to focus", it gets run
-       * _BEFORE_ any canvas item handlers (there seems to be no way with the current
-       * foocanvas/gtk to get an event run _after_ the canvas handlers, you cannot for instance
-       * just use  g_signal_connect_after(). */
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      {
-        /* we've had problems with event handling so I'm leaving these here for now in
-         * case there is more trouble. */
-	gpointer obj = window->canvas ;
-
-	gtk_widget_add_events(GTK_WIDGET(window->toplevel), GDK_POINTER_MOTION_MASK) ;
-	g_signal_connect(obj, "button-press-event",
-			 pressCB, (gpointer)window) ;
-	g_signal_connect(obj, "motion-notify-event",
-			 motionCB, (gpointer)window) ;
-	g_signal_connect(obj, "button-release-event",
-			 releaseCB, (gpointer)window) ;
-
-      }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+      /* I DON'T KNOW WHAT THIS SECTION OF CODE IS SUPPOSED TO DO.... */
 
       /* adding G_SIGNAL_MATCH_DETAIL to mask results in failure here, despite using the same detail! */
       signal_detail = g_quark_from_string("event");
@@ -3178,6 +3205,8 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
 
       zmapWindowBusy(window, FALSE) ;
 
+      /* Now drawing is complete reset the zoom level. */
+      setZoomFromLayoutSize(window, NULL, NULL, NULL, NULL) ;
 
       event_handled = TRUE ;
     }
@@ -4569,6 +4598,7 @@ static gboolean canvasRootEventCB(GtkWidget *widget, GdkEventClient *event, gpoi
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
+
 /* NOTE: This routine only gets called when the canvas widgets parent requests a resize, not when
  * the canvas changes its own size through zooming.
  *
@@ -4596,15 +4626,43 @@ static gboolean canvasRootEventCB(GtkWidget *widget, GdkEventClient *event, gpoi
 static void canvasSizeAllocateCB(GtkWidget *widget, GtkAllocation *allocation, gpointer user_data)
 {
   ZMapWindow window = (ZMapWindow)user_data ;
-  FooCanvas *canvas = FOO_CANVAS(widget) ;
-  GtkLayout *layout = &(canvas->layout) ;
-  int layout_alloc_width, layout_alloc_height ;
+  int layout_win_width, layout_win_height,  layout_binwin_width, layout_binwin_height ;
 
 
-  /* New layout window size as set by parent widget. */
-  layout_alloc_width = widget->allocation.width ;
-  layout_alloc_height = widget->allocation.height ;
+  /* Window size has changed so we need to set zoom accordingly. */
+  setZoomFromLayoutSize(window,
+                        &layout_win_width, &layout_win_height,
+                        &layout_binwin_width, &layout_binwin_height) ;
 
+
+  /* Record size of window allocated to visible layout window. */
+  window->layout_window_width = layout_win_width ;
+  window->layout_window_height = layout_win_height ;
+  window->layout_bin_window_width = layout_binwin_width ;
+  window->layout_bin_window_height = layout_binwin_height ;
+
+
+  return ;
+}
+
+
+/* Gets current canvas/layout widget window sizes and compares them to previous sizes.
+ * If the layout view window has got bigger than the layout bin window then we need
+ * to actually zoom the sequence to fill the new bigger window. If the layout view
+ * window is still smaller than the layout bin window then we just need to record
+ * that the minimum zoom has changed.
+ * 
+ * Optionally returns the layout window sizes but note that you must specify
+ * all the layout_* variables or none of them. */
+static void setZoomFromLayoutSize(ZMapWindow window,
+                                  int *layout_win_width_out, int *layout_win_height_out,
+                                  int *layout_binwin_width_out, int *layout_binwin_height_out)
+{
+  int layout_win_width, layout_win_height,  layout_binwin_width, layout_binwin_height ;
+
+  /* Get allocated size of canvas layout widget windows. */
+  zmapWindowGetCanvasLayoutSize(window->canvas,
+                                &layout_win_width, &layout_win_height, &layout_binwin_width, &layout_binwin_height) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   {
@@ -4618,14 +4676,14 @@ static void canvasSizeAllocateCB(GtkWidget *widget, GtkAllocation *allocation, g
     gdk_drawable_get_size(GDK_DRAWABLE(widget->window), &layout_win_width, &layout_win_height) ;
     gdk_drawable_get_size(GDK_DRAWABLE(layout->bin_window), &layout_binwin_width, &layout_binwin_height) ;
 
-    printf("\nLayout width/height - alloc: %d, %d\tactual: %u, %u\twin: %d, %d\tbin_win: %d, %d\n",
-	   layout_alloc_width, layout_alloc_height, layout_width, layout_height,
-	   layout_win_width, layout_win_height,  layout_binwin_width, layout_binwin_height) ;
+    zMapDebugPrintf("\nLayout width/height - alloc: %d, %d\tactual: %u, %u\twin: %d, %d\tbin_win: %d, %d\n",
+                    layout_alloc_width, layout_alloc_height, layout_width, layout_height,
+                    layout_win_width, layout_win_height,  layout_binwin_width, layout_binwin_height) ;
 
-    printf("ZMapWindow width/height - alloc: %d, %d\twindow: %d, %d\tbin_win: %d, %d\n",
-	   window->layout_alloc_width, window->layout_alloc_height,
-	   window->layout_actual_width, window->layout_actual_height,
-	   window->bin_window_width, window->bin_window_height) ;
+    zMapDebugPrintf("ZMapWindow width/height - alloc: %d, %d\twindow: %d, %d\tbin_win: %d, %d\n",
+                    window->layout_alloc_width, window->layout_alloc_height,
+                    window->layout_actual_width, window->layout_actual_height,
+                    window->bin_window_width, window->bin_window_height) ;
   }
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
@@ -4634,35 +4692,41 @@ static void canvasSizeAllocateCB(GtkWidget *widget, GtkAllocation *allocation, g
    * then we need to zoom so sequence fills whole window.
    * (Need to test seqLength because this routine can be called before we have loaded
    * the sequence.) */
-  if ((window->seqLength) && (window->layout_actual_height < layout_alloc_height))
+  if ((window->seqLength))
     {
-      if (window->layout_actual_width != 0 && window->layout_actual_height != 0)
-	{
-	  ZMapWindowVisibilityChangeStruct vis_change ;
-	  double start, end;
+      ZMapWindowVisibilityChangeStruct vis_change ;
+      double start, end;
 
-	  zmapWindowZoomControlHandleResize(window);
+      if (window->layout_bin_window_height < layout_win_height)
+        {
+          zmapWindowZoomControlHandleResize(window);
+        }
+      else
+        {
+          zmapWindowZoomControlRegisterResize(window) ;
+        }
 
-	  zmapWindowGetScrollableArea(window, NULL, &start, NULL, &end);
 
-	  vis_change.zoom_status    = zMapWindowGetZoomStatus(window) ;
-	  vis_change.scrollable_top = start ;
-	  vis_change.scrollable_bot = end ;
-	  (*(window_cbs_G->visibilityChange))(window, window->app_data, (void *)&vis_change) ;
-	}
+      zmapWindowGetScrollableArea(window, NULL, &start, NULL, &end);
+
+      vis_change.zoom_status    = zMapWindowGetZoomStatus(window) ;
+      vis_change.scrollable_top = start ;
+      vis_change.scrollable_bot = end ;
+      (*(window_cbs_G->visibilityChange))(window, window->app_data, (void *)&vis_change) ;
+   }
+
+  /* Optionally return the layout window sizes. */
+  if (layout_win_width_out)
+    {
+      *layout_win_width_out = layout_win_width ;
+      *layout_win_height_out = layout_win_height ;
+      *layout_binwin_width_out = layout_binwin_width ;
+      *layout_binwin_height_out = layout_binwin_height ;
     }
 
-
-  /* Record size of window allocated to visible layout window. */
-  window->layout_alloc_width = widget->allocation.width ;
-  window->layout_alloc_height = widget->allocation.height ;
-
-  /* Record size of scrolled layout window. */
-  gtk_layout_get_size(layout, &(window->layout_actual_width), &(window->layout_actual_height)) ;
-
-
-  return ;
+   return ;
 }
+
 
 
 
