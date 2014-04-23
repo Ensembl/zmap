@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -45,7 +45,7 @@ static void signal_write(int fd, char *buffer, int size, gboolean *result_in_out
 
 
 
-/* 
+/*
  *                 Globals
  */
 
@@ -53,7 +53,7 @@ static gboolean enable_core_dumping_G = TRUE;
 
 
 
-/* 
+/*
  *                    External interface routines
  */
 
@@ -61,13 +61,14 @@ static gboolean enable_core_dumping_G = TRUE;
 /* Our Unix signal handler function, prints a stack trace for some signals. */
 void zMapSignalHandler(int sig_no)
 {
-  char *sig_name = NULL ;
+  char *sig_name = NULL, *pid_output = NULL ;
   int sig_name_len = 0 ;
   gboolean write_result = TRUE ;
 
   /* ensure we don't get back in here. */
   /* If we return rather than exit, we'll also produce a core file. */
   signal(sig_no, SIG_DFL);
+  pid_output = g_strdup_printf("(ZMAP_PID = %ld)", getpid() ) ;
 
   switch(sig_no)
     {
@@ -98,25 +99,29 @@ void zMapSignalHandler(int sig_no)
       signal_write(STDERR_FILENO, sig_name, sig_name_len, &write_result);
       signal_write(STDERR_FILENO, " - ZMap ", 8, &write_result);
       signal_write(STDERR_FILENO, zMapGetAppVersionString(), strlen(zMapGetAppVersionString()), &write_result);
+      signal_write(STDERR_FILENO, pid_output, strlen(pid_output), &write_result) ;
       signal_write(STDERR_FILENO, " ===\nStack:\n", 12, &write_result);
       /*                           123456789012345678901234567890123456789012345678901234567890 */
       if (!zMapStack2fd(0, STDERR_FILENO))
-	signal_write(STDERR_FILENO, "*** no backtrace() available ***\n", 33, &write_result);
+        signal_write(STDERR_FILENO, "*** no backtrace() available ***\n", 33, &write_result);
 
       /* If we exit, no core file is dumped. */
       if (!enable_core_dumping_G)
-	_exit(EXIT_FAILURE);
+        _exit(EXIT_FAILURE);
       break;
     default:
       break;
     }
+
+  if (pid_output)
+    g_free(pid_output) ;
 
   return ;
 }
 
 
 
-/* 
+/*
  *                    Internal routines
  */
 
@@ -128,18 +133,18 @@ static void signal_write(int fd, char *buffer, int size, gboolean *result_in_out
       ssize_t expected = size, actual = 0 ;
 
       if ((write(fd, (void *)NULL, 0)) == 0)
-	{
-	  actual = write(fd, (void *)buffer, size) ;
+        {
+          actual = write(fd, (void *)buffer, size) ;
 
-	  if (actual == 0 || actual == -1)
-	    *result_in_out = FALSE ;
-	  else if (actual == expected)
-	    *result_in_out = TRUE ;
-	}
+          if (actual == 0 || actual == -1)
+            *result_in_out = FALSE ;
+          else if (actual == expected)
+            *result_in_out = TRUE ;
+        }
       else
-	{
-	  *result_in_out = FALSE ;
-	}
+        {
+          *result_in_out = FALSE ;
+        }
     }
 
   return ;
