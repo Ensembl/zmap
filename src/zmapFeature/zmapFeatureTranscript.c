@@ -1329,9 +1329,9 @@ static void printDetailedExons(gpointer exon_data, gpointer user_data)
 /* Blindly extend transcripts start/end to encompass the given span. */
 static void extendTranscript(ZMapFeature transcript, ZMapSpanStruct * span)
 {
-  if (span->x1 < transcript->x1)
+  if (transcript->x1 == 0 || span->x1 < transcript->x1)
     transcript->x1 = span->x1 ;
-  if (span->x2 > transcript->x2)
+  if (transcript->x2 == 0 || span->x2 > transcript->x2)
     transcript->x2 = span->x2 ;
 
   return ;
