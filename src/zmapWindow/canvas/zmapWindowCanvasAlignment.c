@@ -221,7 +221,6 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
   ZMapFeatureTypeStyle homology = NULL,
     nc_splice = NULL,
     style = NULL ;
-  ZMapStyleScoreMode style_score_mode = ZMAPSCORE_INVALID ;
   gulong fill,outline;
   int cx1, cy1, cx2, cy2,
     colours_set, fill_set, outline_set,
@@ -233,8 +232,6 @@ static void zMapWindowCanvasAlignmentPaintFeature(ZMapWindowFeaturesetItem featu
   double mid_x = 0.0,
     x1 = 0.0,
     x2 = 0.0,
-    y1 = 0.0,
-    y2 = 0.0,
     x1_cache = 0.0,
     x2_cache = 0.0,
     y1_cache = 0.0,
