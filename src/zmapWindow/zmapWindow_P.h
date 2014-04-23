@@ -681,8 +681,8 @@ typedef struct _ZMapWindowStruct
 
   /* We need to monitor changes to the size of the canvas window caused by user interactions
    * so we can adjust zoom and other controls appropriately. */
-  gint layout_alloc_width, layout_alloc_height ;
-  guint layout_actual_width, layout_actual_height ;
+  gint layout_window_width, layout_window_height ;          /* layout widget viewport size. */
+  gint layout_bin_window_width, layout_bin_window_height ;  /* layout widget main window size. */
 
 
   /* Windows can be locked together in their zooming/scrolling. */
@@ -1234,6 +1234,9 @@ void zmapWindowSetScrollableArea(ZMapWindow window,
 
 void zmapWindowSetScrolledRegion(ZMapWindow window, double x1, double x2, double y1, double y2) ;
 void zmapWindowSetPixelxy(ZMapWindow window, double pixels_per_unit_x, double pixels_per_unit_y) ;
+gboolean zmapWindowGetCanvasLayoutSize(FooCanvas *canvas, 
+                                       int *layout_win_width, int *layout_win_height,
+                                       int *layout_binwin_width, int *layout_binwin_height) ;
 
 
 ZMapGUIClampType zmapWindowClampSpan(ZMapWindow window,
@@ -1450,6 +1453,7 @@ ZMapWindowZoomControl zmapWindowZoomControlCreate(ZMapWindow window) ;
 void zmapWindowZoomControlInitialise(ZMapWindow window) ;
 gboolean zmapWindowZoomControlZoomByFactor(ZMapWindow window, double factor);
 void zmapWindowZoomControlHandleResize(ZMapWindow window);
+void zmapWindowZoomControlRegisterResize(ZMapWindow window) ;
 double zmapWindowZoomControlLimitSpan(ZMapWindow window, double y1, double y2) ;
 void zmapWindowZoomControlCopyTo(ZMapWindowZoomControl orig, ZMapWindowZoomControl new) ;
 void zmapWindowZoomControlGetScrollRegion(ZMapWindow window,
