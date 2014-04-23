@@ -80,7 +80,6 @@ gboolean zmapWindowGetCanvasLayoutSize(FooCanvas *canvas,
 void zmapWindowSetScrolledRegion(ZMapWindow window, double x1, double x2, double y1, double y2)
 {
   FooCanvas *canvas = FOO_CANVAS(window->canvas) ;
-  GtkLayout *layout = &(canvas->layout) ;
 
   foo_canvas_set_scroll_region(canvas, x1, y1, x2, y2) ;
 
@@ -92,7 +91,6 @@ void zmapWindowSetScrolledRegion(ZMapWindow window, double x1, double x2, double
 void zmapWindowSetPixelxy(ZMapWindow window, double pixels_per_unit_x, double pixels_per_unit_y)
 {
   FooCanvas *canvas = FOO_CANVAS(window->canvas) ;
-  GtkLayout *layout = &(canvas->layout) ;
 
   foo_canvas_set_pixels_per_unit_xy(canvas, pixels_per_unit_x, pixels_per_unit_y) ;
 
