@@ -1042,7 +1042,6 @@ static void setColumnStyle(ZMapWindowFeaturesetItem featureset, ZMapFeatureTypeS
   if (zMapStyleIsPropertySetId(feature_style, STYLE_PROP_GRAPH_COLOURS))
     {
       GdkColor *fill = NULL, *draw = NULL, *border = NULL ;
-
       if (zMapStyleGetColours(feature_style, STYLE_PROP_GRAPH_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
                               &fill, &draw, &border))
          zMapStyleSetColours(feature_style, STYLE_PROP_GRAPH_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,

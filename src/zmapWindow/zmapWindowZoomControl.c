@@ -279,7 +279,7 @@ void zmapWindowZoomControlInitialise(ZMapWindow window)
 }
 
 /* Should be called when either canvas height(size-allocate) or seq
- * length change. Does virtually the same as initialise... */
+ * length changes and an immediate zoom is needed. Does virtually the same as initialise... */
 void zmapWindowZoomControlHandleResize(ZMapWindow window)
 {
   ZMapWindowZoomControl control;
@@ -305,6 +305,30 @@ void zmapWindowZoomControlHandleResize(ZMapWindow window)
 
   return ;
 }
+
+/* Should be called when canvas window height decreases so no zoom operation is
+ * needed. */
+void zmapWindowZoomControlRegisterResize(ZMapWindow window)
+
+{
+  ZMapWindowZoomControl control;
+  double min;
+
+  control = controlFromWindow(window);
+
+  min = getMinZoom(window, control) ;
+
+  /* Always need to reset this. */
+  control->minZF = min;
+
+  setZoomStatus(control) ;
+
+  return ;
+}
+
+
+
+
 
 /* This just does the maths and sets zoom factor and status
  * (Might need to work with setZoomStatus??? also ZMAP_ZOOM_FIXED)
@@ -436,10 +460,15 @@ double zmapWindowZoomControlLimitSpan(ZMapWindow window,
 }
 
 
+/* Is this function really needed.....it's only called in one place...check the two
+ * objects, perhaps we can just do a bulk copy... */
 void zmapWindowZoomControlCopyTo(ZMapWindowZoomControl orig, ZMapWindowZoomControl new)
 {
-  new->zF     = orig->zF;
-  setZoomStatus(new);
+  new->zF = orig->zF ;
+  new->minZF = orig->minZF ;
+
+  setZoomStatus(new) ;
+
   return ;
 }
 
