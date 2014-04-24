@@ -1300,6 +1300,7 @@ ZMapFeatureAny zMapFeatureContextFindFeatureFromFeature(ZMapFeatureContext conte
 							ZMapFeatureAny from_feature);
 
 ZMapFeatureSet zmapFeatureContextGetFeaturesetFromId(ZMapFeatureContext context, GQuark set_id) ;
+ZMapFeature zmapFeatureContextGetFeatureFromId(ZMapFeatureContext context, GQuark feature_id) ;
 
 GType zMapFeatureDataGetType(void);
 gboolean zMapFeatureGetInfo(ZMapFeatureAny         feature_any,

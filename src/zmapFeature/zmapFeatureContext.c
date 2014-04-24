@@ -45,6 +45,12 @@ typedef struct _GetFeaturesetCBDataStruct
   ZMapFeatureSet featureset;
 } GetFeaturesetCBDataStruct, *GetFeaturesetCBData;
 
+typedef struct _GetFeatureCBDataStruct
+{
+  GQuark set_id;
+  ZMapFeature feature;
+} GetFeatureCBDataStruct, *GetFeatureCBData;
+
 
 
 /* This isn't ideal, but there is code calling the getDNA functions
@@ -129,6 +135,10 @@ static ZMapFeatureContextExecuteStatus getFeaturesetFromIdCB(GQuark key,
                                                              gpointer data,
                                                              gpointer user_data,
                                                              char **err_out) ;
+static ZMapFeatureContextExecuteStatus getFeatureFromIdCB(GQuark key,
+                                                          gpointer data,
+                                                          gpointer user_data,
+                                                          char **err_out) ;
 
 
 
@@ -788,6 +798,21 @@ ZMapFeatureSet zmapFeatureContextGetFeaturesetFromId(ZMapFeatureContext context,
                             &cb_data);
 
   return cb_data.featureset ;
+}
+
+/*!
+ * \brief Find the feature with the given id in the given context
+ */
+ZMapFeature zmapFeatureContextGetFeatureFromId(ZMapFeatureContext context, GQuark feature_id)
+{
+  GetFeatureCBDataStruct cb_data = { feature_id, NULL };
+
+  zMapFeatureContextExecute((ZMapFeatureAny)context,
+                            ZMAPFEATURE_STRUCT_FEATURE,
+                            getFeatureFromIdCB,
+                            &cb_data);
+
+  return cb_data.feature ;
 }
 
 
@@ -1459,6 +1484,37 @@ static ZMapFeatureContextExecuteStatus getFeaturesetFromIdCB(GQuark key,
   switch(feature_any->struct_type)
     {
     case ZMAPFEATURE_STRUCT_FEATURESET:
+      if (feature_any->unique_id == cb_data->set_id)
+        cb_data->featureset = (ZMapFeatureSet)feature_any;
+      break;
+      
+    default:
+      break;
+    };
+  
+  return status;
+}
+
+
+/*!
+ * \brief Callback called on every child in a FeatureAny.
+ * 
+ * For each featureset, compares its id to the id in the user
+ * data and if it matches it sets the result in the user data.
+ */
+static ZMapFeatureContextExecuteStatus getFeatureFromIdCB(GQuark key,
+                                                          gpointer data,
+                                                          gpointer user_data,
+                                                          char **err_out)
+{
+  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
+  
+  GetFeaturesetCBData cb_data = (GetFeaturesetCBData) user_data ;
+  ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
+
+  switch(feature_any->struct_type)
+    {
+    case ZMAPFEATURE_STRUCT_FEATURE:
       if (feature_any->unique_id == cb_data->set_id)
         cb_data->featureset = (ZMapFeatureSet)feature_any;
       break;

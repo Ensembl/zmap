@@ -194,7 +194,7 @@ typedef struct GetEvidenceDataStructType
 /* Struct to hold the feature details found by readChapter */
 typedef struct ChapterFeatureStructType {
   char *feature_name;
-  char *feature_group;
+  char *feature_set;
   char *CDS;
   char *start_not_found;
   char *end_not_found;
@@ -777,24 +777,46 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
       paragraph = zMapGUINotebookCreateParagraph(subsection, NULL,
                                                  ZMAPGUI_NOTEBOOK_PARAGRAPH_TAGVALUE_TABLE, NULL, NULL) ;
 
+      /*! \todo If editable is true (i.e. we have a temp feature from the Annotation column), we 
+       * want the default feature name and featureset to be those of the feature the user
+       * originally copied into the Annotation column, rather than the temp feature
+       * details. Defaults will need to be passed through somehow because we don't want to pollute
+       * this code with Annotation column stuff. */
       tag_value = zMapGUINotebookCreateTagValue(paragraph, "Feature Name",
                                                 ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
                                                 "string", g_strdup(g_quark_to_string(feature->original_id)),
                                                 NULL) ;
 
-      style = *feature->style; /* zMapFindStyle(show->zmapWindow->display_styles, feature->style_id); */
-
-      tag_value = zMapGUINotebookCreateTagValue(paragraph, "Feature Group [style_id]",
-                                                ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-                                                "string", g_strdup(zMapStyleGetName(style)), NULL) ;
-
-      if ((description = zMapStyleGetDescription(style)))
+      if (editable)
         {
-          tag_value = zMapGUINotebookCreateTagValue(paragraph, "Style Description",
-                                                    ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,   /* SCROLLED_TEXT,*/
-                                                    "string", g_strdup(description), NULL) ;
-        }
+          /* When editing a feature, add an entry to allow the user to set the feature_set. */
+          const char *featureset_name = NULL ;
 
+          if (feature->parent && feature->parent->unique_id)
+            featureset_name = g_quark_to_string(feature->parent->unique_id) ;
+
+          tag_value = zMapGUINotebookCreateTagValue(paragraph, "Feature Set",
+                                                    ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+                                                    "string", featureset_name, NULL) ;
+        }
+      else
+        {
+          /* When not editing a feature show the style instead (we possibly want to show this
+           * when editing as well but we'll need to make it non-editable and would want it to
+           * update when the user sets the featureset */
+          style = *feature->style; /* zMapFindStyle(show->zmapWindow->display_styles, feature->style_id); */
+
+          tag_value = zMapGUINotebookCreateTagValue(paragraph, "Feature Group [style_id]",
+                                                    ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+                                                    "string", g_strdup(zMapStyleGetName(style)), NULL) ;
+
+          if ((description = zMapStyleGetDescription(style)))
+            {
+              tag_value = zMapGUINotebookCreateTagValue(paragraph, "Style Description",
+                                                        ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,   /* SCROLLED_TEXT,*/
+                                                        "string", g_strdup(description), NULL) ;
+            }
+        }
 
       if ((notes = zmapWindowFeatureDescription(feature)))
         {
@@ -2356,8 +2378,8 @@ static ChapterFeature readChapter(ZMapGuiNotebookChapter chapter)
       if (zMapGUINotebookGetTagValue(page, "Feature Name", "string", &string_value))
         result->feature_name = g_strdup(string_value);
 
-      if (zMapGUINotebookGetTagValue(page, "Feature Group [style_id]", "string", &string_value))
-        result->feature_group = g_strdup(string_value);
+      if (zMapGUINotebookGetTagValue(page, "Feature Set", "string", &string_value))
+        result->feature_set = g_strdup(string_value);
 
       if (zMapGUINotebookGetTagValue(page, "CDS (start, end)", "string", &string_value))
         result->CDS = g_strdup(string_value);
@@ -2413,55 +2435,91 @@ static ZMapFeatureSet getFeaturesetFromName(ZMapWindow window, char *name)
 }
 
 
+/* Check if a transcript already exists with the given feature's details */
+static gboolean transcriptExists(ZMapWindow window, ZMapFeature feature)
+{
+  gboolean result = FALSE ;
+  zMapReturnValIfFail(feature, result) ;
+
+  char *feature_name = g_strdup(g_quark_to_string(feature->original_id)) ;
+
+  GQuark feature_id = zMapFeatureCreateID(ZMAPSTYLE_MODE_TRANSCRIPT,
+                                          feature_name, feature->strand,
+                                          feature->x1, feature->x2, 0, 0) ;
+
+  g_free(feature_name) ;
+  
+  ZMapFeature existing_feature = zmapFeatureContextGetFeatureFromId(window->feature_context, feature_id) ;
+  
+  if (existing_feature)
+    result = TRUE ;
+
+  return result ;
+}
+
+
+/* Create a feature from the details in chapter_feature */
+/*! \todo Check that this is a transcript */
 static void saveChapter(ZMapGuiNotebookChapter chapter, ChapterFeature chapter_feature, ZMapWindowFeatureShow show)
 {
   zMapReturnIfFail(chapter_feature) ;
 
   GError *error = NULL ;
-
-  /* Create a feature from the details in chapter_feature. Ask to overwrite if it 
-   * already exists. */
-  /*! \todo By default, "Save" should overwrite the original feature that was copied into the
-   * Annotation column, if that feature was a gene model. We could also have a "Save As" option
-   * which by default creates a new feature, or we could just make "Save" do both, with the
-   * default name set or unset for "Save" and "Save As" respectively. We should probably always confirm
-   * before overwriting an existing feature for either type of save operation because the editing 
-   * is happening in a separate column, not the original column. (OR have an option to undo the
-   * overwrite or reset the feature from the original file etc.) */
+  gboolean overwrite = TRUE ;
 
   ZMapWindow window = show->zmapWindow ;
   ZMapStrand strand = ZMAPSTRAND_FORWARD ; /*! \todo Get current Annotation column strand */
-  ZMapFeatureSet feature_set = getFeaturesetFromName(window, chapter_feature->feature_group) ;
+  ZMapFeatureSet feature_set = getFeaturesetFromName(window, chapter_feature->feature_set) ;
   int offset = window->feature_context->parent_span.x1 - 1 ; /* need to convert user coords to chromosome coords */
-  
+  ZMapFeatureTypeStyle style = NULL ;
+
+  if (feature_set)
+    style = feature_set->style ;
+
   /* Create the feature with default values */
   ZMapFeature feature = zMapFeatureCreateFromStandardData(chapter_feature->feature_name,
                                                           NULL,
                                                           NULL,
                                                           ZMAPSTYLE_MODE_TRANSCRIPT,
-                                                          &feature_set->style,
+                                                          &style,
                                                           0, /* start */
                                                           0, /* end */
                                                           FALSE,
                                                           0.0,
                                                           strand);
 
-  zMapFeatureTranscriptInit(feature);
-  //zMapFeatureAddTranscriptStartEnd(feature, chapter_feature->start_not_found, 0, chapter_feature->end_not_found);
-
-  if (chapter_feature->CDS)
+  /*! \todo If the feature already exists, ask if the user wants to overwrite it (the code to
+   * do this will probably need to delete the original feature first). If we wanted we could have
+   * separate "Save" and "Save As" menu options (where Save would automatically overwrite but Save As 
+   * wouldn't, for example) */
+  if (transcriptExists(window, feature))
     {
-      const int cds_start = atoi(chapter_feature->CDS) + offset ;
-      char *cp = strchr(chapter_feature->CDS, ',') ;
+      gboolean ok = zMapGUIMsgGetBool(NULL, ZMAP_MSG_WARNING,
+                                      "Feature already exists: overwrite?") ;
       
-      if (cp && cp + 1)
+      if (!ok)
+        g_set_error(&error, g_quark_from_string("ZMap"), 99, "Save operation cancelled by user") ;
+    }
+
+  if (!error)
+    {
+      zMapFeatureTranscriptInit(feature);
+      //zMapFeatureAddTranscriptStartEnd(feature, chapter_feature->start_not_found, 0, chapter_feature->end_not_found);
+
+      if (chapter_feature->CDS)
         {
-          const int cds_end = atoi(cp + 1) + offset ;
-          zMapFeatureAddTranscriptCDS(feature, TRUE, cds_start, cds_end) ;
-        }
-      else
-        {
-          g_set_error(&error, g_quark_from_string("ZMap"), 99, "Invalid format in CDS field. Should be: [start],[end]") ;
+          const int cds_start = atoi(chapter_feature->CDS) + offset ;
+          char *cp = strchr(chapter_feature->CDS, ',') ;
+      
+          if (cp && cp + 1)
+            {
+              const int cds_end = atoi(cp + 1) + offset ;
+              zMapFeatureAddTranscriptCDS(feature, TRUE, cds_start, cds_end) ;
+            }
+          else
+            {
+              g_set_error(&error, g_quark_from_string("ZMap"), 99, "Invalid format in CDS field. Should be: [start],[end]") ;
+            }
         }
     }
 
@@ -2495,11 +2553,12 @@ static void saveChapter(ZMapGuiNotebookChapter chapter, ChapterFeature chapter_f
 
       window->caller_cbs->merge_new_feature(window, window->app_data, &merge) ;
 
-      /*! \todo Feed back that feature was saved and close feature details dialog */
+      /*! \todo Check that feature was saved successfully before reporting back. Also close
+       * the feature details dialog now we're finished. */
+      zMapMessage("%s", "Feature saved") ;
     }
   else 
     {
-      /*! \todo Error message */
       zMapWarning("%s", error->message) ;
       g_error_free(error) ;
     }
