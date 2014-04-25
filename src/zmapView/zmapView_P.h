@@ -372,7 +372,12 @@ typedef struct _ZMapViewStruct
 
   GHashTable *cwh_hash ;
 
-  GList *scratch_features ;             /* List of feature data that has been copied into the scratch column on the fwd strand */
+  /* These pointers maintain a list of operations for editing the Scratch feature. edit_list
+   * points to the start of the whole list. start/end point to the current subset of valid operations
+   * that have not been un-done. */
+  GList *edit_list ;
+  GList *edit_list_start ;
+  GList *edit_list_end ;
   gboolean scratch_start_end_set ;     /* TRUE if the scratch-column forward-strand feature start/end has been set */
 
 } ZMapViewStruct ;
@@ -458,12 +463,18 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 			  int features_start, int features_end,
 			  gboolean group, gboolean make_new_connection, gboolean terminate) ;
 
-
 GQuark zmapViewSrc2FSetGetID(GHashTable *source_2_featureset, char *source_name) ;
 GList *zmapViewSrc2FSetGetList(GHashTable *source_2_featureset, GList *source_list) ;
 
 ZMapFeatureContext zmapViewCreateContext(ZMapView view, GList *feature_set_names, ZMapFeatureSet feature_set);
 
+ZMapFeatureContext zmapViewCopyContextAll(ZMapFeatureContext context,
+                                          ZMapFeature feature,
+                                          ZMapFeatureSet feature_set,
+                                          GList **feature_list,
+                                          ZMapFeature *feature_copy_out) ;
+
+void zmapViewMergeNewFeature(ZMapView view, ZMapFeature feature, ZMapFeatureSet feature_set) ;
 gboolean zmapViewMergeNewFeatures(ZMapView view, ZMapFeatureContext *context, GList **feature_list) ;
 void zmapViewEraseFeatures(ZMapView view, ZMapFeatureContext context, GList **feature_list) ;
 
@@ -475,7 +486,8 @@ gboolean zMapViewCollapseFeatureSets(ZMapView view, ZMapFeatureContext diff_cont
 /* zmapViewScratch.c */
 void zmapViewScratchInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, ZMapFeatureContext context, ZMapFeatureBlock block);
 void zMapViewToggleScratchColumn(ZMapView view, gboolean force_to, gboolean force);
-gboolean zmapViewScratchCopyFeature(ZMapView zmap_view, ZMapFeature feature, FooCanvasItem *item, const double world_x, const double world_y, const gboolean use_subfeature);
+gboolean zmapViewScratchCopyFeature(ZMapView zmap_view, ZMapFeature feature, const long seq_start, const long seq_end, ZMapFeatureSubPartSpan subfeature);
+gboolean zmapViewScratchDeleteFeature(ZMapView zmap_view, ZMapFeature feature, const long seq_start, const long seq_end, ZMapFeatureSubPartSpan subfeature);
 gboolean zmapViewScratchUndo(ZMapView zmap_view);
 gboolean zmapViewScratchRedo(ZMapView zmap_view);
 gboolean zmapViewScratchClear(ZMapView zmap_view);

@@ -1310,7 +1310,7 @@ void zmapWindowGetPosFromScore(ZMapFeatureTypeStyle style, double score,
 			       double *curr_x1_inout, double *curr_x2_out) ;
 void zmapWindowFreeWindowArray(GPtrArray **window_array_inout, gboolean free_array) ;
 
-void zmapWindowFeatureShow(ZMapWindow zmapWindow, FooCanvasItem *item) ;
+void zmapWindowFeatureShow(ZMapWindow zmapWindow, FooCanvasItem *item, const gboolean editable) ;
 
 void zmapWindowFeatureGetEvidence(ZMapWindow window,ZMapFeature feature,
 				  ZMapWindowGetEvidenceCB evidence_cb, gpointer user_data) ;

@@ -907,15 +907,6 @@ static void finishAndPerformNextRequest(GQueue *request_queue)
  * gtk main loop rather than performing it immediately */
 static void performNextRequest(GQueue *request_queue)
 {
-  /*! \todo gb10: We have a known race condition here because we don't
-   * handle the case where both peers try to make a request simultaneously,
-   * which is likely to happen if both have requests queued because
-   * they'll both be unblocked at the same time, and therefore try to make
-   * their next requests at the same time. Processing any outstanding
-   * gtk events here seems to alleviate the problem (at least with xace). */
-  while (gtk_events_pending())
-    gtk_main_iteration() ;
-
   /* If no more requests in the queue, there's nothing to do */
   if (g_queue_get_length(request_queue) < 1)
     {

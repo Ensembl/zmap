@@ -849,6 +849,15 @@ gboolean zMapGUINotebookGetTagValue(ZMapGuiNotebookPage page, const char *tagval
 
 	  *item_arg = tagvalue->data.item_value ;
 	}
+      else if (strcmp(arg_type, "compound") == 0)
+        {
+          GList **compound_arg = NULL ;
+          
+          tagvalue->data_type = ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_COMPOUND ;
+          
+          compound_arg = va_arg(args, GList **) ;
+          *compound_arg = tagvalue->data.compound_values;
+        }
       else
 	{
           result = FALSE ;
@@ -2122,9 +2131,11 @@ static void mergeChildren(void *data, void *user_data)
     {
       /* child has no name so merge it with the first child in the list (this allows
        * merging of anonymous items. */
-
-      child = parent->children->data ;
-      mergeAny(child, new_child) ;
+      if (parent->children)
+        {
+          child = parent->children->data ;
+          mergeAny(child, new_child) ;
+        }
     }
   else if ((child = findAnyChild(parent->children, new_child)))
     {

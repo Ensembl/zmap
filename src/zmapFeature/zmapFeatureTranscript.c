@@ -310,6 +310,9 @@ void zMapFeatureRemoveIntrons(ZMapFeature feature)
 /* Create introns based on exons */
 void zMapFeatureTranscriptRecreateIntrons(ZMapFeature feature)
 {
+  /* First remove any existing introns */
+  zMapFeatureRemoveIntrons(feature) ;
+
   GArray *exons;
   int multiplier = 1, start = 0, end, i;
   gboolean forward = TRUE;
@@ -572,10 +575,14 @@ int zMapFeatureTranscriptGetNumExons(ZMapFeature transcript)
  * created. If these coords overlap existing exon(s) then the existing
  * exon(s) will be extended rather than a new exon being created.
  */
-void zMapFeatureTranscriptMergeExon(ZMapFeature transcript, Coord x1, Coord x2)
+gboolean zMapFeatureTranscriptMergeExon(ZMapFeature transcript, Coord x1, Coord x2)
 {
+  gboolean result = FALSE ;
+
   if (!transcript || transcript->mode != ZMAPSTYLE_MODE_TRANSCRIPT)
-    return;
+    return result;
+
+  result = TRUE ;
 
   /* Loop through existing exons to determine how to do the merge.
    * Simple logic at the moment: if the new exon overlaps existing
@@ -601,6 +608,7 @@ void zMapFeatureTranscriptMergeExon(ZMapFeature transcript, Coord x1, Coord x2)
           if (x1 != compare_exon->x1 || x2 != compare_exon->x2)
             {
               replace = TRUE;
+              exons_to_replace = g_slist_append(exons_to_replace, GINT_TO_POINTER(i)) ;
 
               /* Adjust new start/end to include the existing exon */
               if (compare_exon->x1 < start)
@@ -640,7 +648,74 @@ void zMapFeatureTranscriptMergeExon(ZMapFeature transcript, Coord x1, Coord x2)
       /* If this is the first/last exon set the start/end coord */
       extendTranscript(transcript, new_exon);
     }
+
+  zMapFeatureTranscriptRecreateIntrons(transcript);
+  
+  return result ;
 }
+
+
+/*!
+ * \brief Delete the intron/exon at the given coord
+ *
+ * Find the intron/exon at the given coord and delete it. If there is no intron/exon at this
+ * coord, returns false and does nothing. If an intron/exon is found, the adjacent exons/introns
+ * are merged.
+ */
+gboolean zMapFeatureTranscriptDeleteSubfeatureAtCoord(ZMapFeature transcript, Coord coord)
+{
+  gboolean result = FALSE ;
+  
+  if (!transcript || transcript->mode != ZMAPSTYLE_MODE_TRANSCRIPT)
+    return result;
+
+  /* Loop through the exons looking for one containing the coord, or a gap (i.e. intron)
+   * containing the coord. We sort out the exons first and then recreate the introns at the end. */
+  GArray *array = transcript->feature.transcript.exons;
+  ZMapSpan prev_exon = NULL ;
+  int i = 0;
+
+  for ( ; i < array->len; ++i)
+    {
+      ZMapSpan exon = &(g_array_index(array, ZMapSpanStruct, i));
+
+      if (i == 0 && coord < exon->x1)
+        {
+          /* The coord is before the first exon - there's no feature here so nothing to delete */
+          result = FALSE ;
+          break ;
+        }
+      else if (i == array->len - 1 && coord > exon->x2)
+        {
+          /* The coord is after the last exon - there's no feature here so nothing to delete */
+          result = FALSE ;
+          break ;
+        }
+      else if (coord >= exon->x1 && coord <= exon->x2)
+        {
+          /* The coord is in this exon - just delete this exon */
+          g_array_remove_index(array, i) ;
+          result = TRUE ;
+          break ;
+        }
+      else if (coord < exon->x1 && prev_exon)
+        {
+          /* The coord is in the gap between this and the next exon. Merge the two exons. */
+          prev_exon->x2 = exon->x2 ;
+          g_array_remove_index(array, i) ;
+          
+          result = TRUE ;
+          break ;
+        }
+
+      prev_exon = exon ;
+    }
+
+  zMapFeatureTranscriptRecreateIntrons(transcript);
+  
+  return result ;
+}
+
 
 /*!
  * \brief Ask the user whether to trim the start/end of the given exon
@@ -817,6 +892,8 @@ gboolean zMapFeatureTranscriptMergeCoord(ZMapFeature transcript,
             }
         }
     }
+
+  zMapFeatureTranscriptRecreateIntrons(transcript);
 
   if (tmp_error)
     g_propagate_error(error, tmp_error);
@@ -1252,9 +1329,9 @@ static void printDetailedExons(gpointer exon_data, gpointer user_data)
 /* Blindly extend transcripts start/end to encompass the given span. */
 static void extendTranscript(ZMapFeature transcript, ZMapSpanStruct * span)
 {
-  if (span->x1 < transcript->x1)
+  if (transcript->x1 == 0 || span->x1 < transcript->x1)
     transcript->x1 = span->x1 ;
-  if (span->x2 > transcript->x2)
+  if (transcript->x2 == 0 || span->x2 > transcript->x2)
     transcript->x2 = span->x2 ;
 
   return ;
