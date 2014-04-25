@@ -334,7 +334,9 @@ typedef struct ZMapWindowCallbackCommandScratchStructName
   ZMapFeature feature;  /* clicked feature */
   long seq_start;       /* sequence coordinate that was clicked (sequence features only) */
   long seq_end;         /* sequence coordinate that was clicked */
-  ZMapFeatureSubPartSpan subfeature; /* the specific subfeature to use, if applicable */
+  ZMapFeatureSubPartSpan subpart; /* the subpart to use, if applicable */
+  gboolean use_subfeature; /* if true, use the clicked subfeature; otherwise use the entire
+                              feature */
 } ZMapWindowCallbackCommandScratchStruct, *ZMapWindowCallbackCommandScratch ;
 
 

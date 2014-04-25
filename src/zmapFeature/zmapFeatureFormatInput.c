@@ -266,9 +266,12 @@ char *zMapFeatureSubPart2Str(ZMapFeatureSubpartType subpart)
   char *subpart_str = NULL ;
 
   if ((subpart != ZMAPFEATURE_SUBPART_INVALID)
-      && (subpart != ZMAPFEATURE_SUBPART_INTRON) && (subpart != ZMAPFEATURE_SUBPART_EXON)
+      && (subpart != ZMAPFEATURE_SUBPART_INTRON)
+      && (subpart != ZMAPFEATURE_SUBPART_INTRON_CDS)
+      && (subpart != ZMAPFEATURE_SUBPART_EXON)
       && (subpart != ZMAPFEATURE_SUBPART_EXON_CDS)
-      && (subpart != ZMAPFEATURE_SUBPART_GAP) && (subpart != ZMAPFEATURE_SUBPART_MATCH) ) 
+      && (subpart != ZMAPFEATURE_SUBPART_GAP)
+      && (subpart != ZMAPFEATURE_SUBPART_MATCH))
     return subpart_str ;
 
   /* Ok, for now the subpart enum has shifted values to allow OR'ing of other flags into it,
@@ -277,6 +280,8 @@ char *zMapFeatureSubPart2Str(ZMapFeatureSubpartType subpart)
     subpart_str = "Exon (CDS)" ;
   else if (subpart & ZMAPFEATURE_SUBPART_EXON)
     subpart_str = "Exon" ;
+  else if (subpart & ZMAPFEATURE_SUBPART_INTRON_CDS)
+    subpart_str = "Intron (CDS)" ;
   else if (subpart & ZMAPFEATURE_SUBPART_INTRON)
     subpart_str = "Intron" ;
   else if (subpart & ZMAPFEATURE_SUBPART_GAP)

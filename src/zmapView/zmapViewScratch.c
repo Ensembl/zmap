@@ -57,7 +57,8 @@ typedef struct _EditOperationStruct
   ZMapFeature src_feature;     /* the new feature to be merged in, i.e. the source for the merge */
   long seq_start;              /* sequence coord (sequence features only) */
   long seq_end;                /* sequence coord (sequence features only) */
-  ZMapFeatureSubPartSpan subfeature; /* if non-null then we should use this subfeature, not the whole feature */
+  ZMapFeatureSubPartSpan subpart; /* the subpart to use, if applicable */
+  gboolean use_subfeature;     /* if true, use the clicked subfeature; otherwise use the entire feature */
   ZMapBoundaryType boundary;   /* the boundary type for a single-coord feature */
 } EditOperationStruct, *EditOperation;
 
@@ -110,8 +111,8 @@ static void editOperationDestroy(EditOperation operation)
 {
   if (operation)
     {
-      if (operation->subfeature)
-        g_free(operation->subfeature) ;
+      if (operation->subpart)
+        g_free(operation->subpart) ;
 
       g_free(operation);
     }
@@ -280,7 +281,7 @@ static gboolean scratchMergeCoords(ScratchMergeData merge_data, const int coord1
    * extent from a higher level). */
   EditOperation operation = merge_data->operation;
 
-  if (operation->subfeature && !scratchGetStartEndFlag(merge_data->view))
+  if (operation->subpart && !scratchGetStartEndFlag(merge_data->view))
     {
       merge_data->dest_feature->x1 = coord1;
       merge_data->dest_feature->x2 = coord2;
@@ -398,23 +399,19 @@ static gboolean scratchMergeAlignment(ScratchMergeData merge_data)
   /* Loop through each match block and merge it in */
   EditOperation operation = merge_data->operation;
 
-  if (!zMapFeatureAlignmentMatchForeach(operation->src_feature, scratchMergeMatchCB, merge_data))
+  if (operation->use_subfeature)
     {
-      /* The above returns false if no match blocks were found. If the alignment is
-       * gapped but we don't have this data then we can't process it. Otherwise, it's
-       * an ungapped alignment so add the whole thing. */
-      if (zMapFeatureAlignmentIsGapped(operation->src_feature))
-        {
-          g_set_error(merge_data->error, g_quark_from_string("ZMap"), 99, "Cannot copy feature; gapped alignment data is not available");
-        }
-      else
-        {
-          merged = scratchMergeCoords(merge_data, operation->src_feature->x1, operation->src_feature->x2);
-        }
+      /* The subfeature in this context is the match block, which is just the ZMapFeature that
+       * was clicked on. We can simply merge the feature as a basic feature. */
+      merged = scratchMergeBasic(merge_data) ;
     }
-
-  /* Copy CDS, if set */
-  //  zMapFeatureMergeTranscriptCDS(operation->src_feature, merge_data->dest_feature);
+  else
+    {
+      /* Merge the "entire" feature, which in this context includes all of the linked match
+       * blocks for this alignment */
+      zMapFeatureAlignmentMatchForeach
+      scratchMergeCoords(merge_data, operation->src_feature->x1, operation->src_feature->x2);
+    }
 
   return merged;
 }
@@ -449,9 +446,9 @@ static gboolean scratchDeleteFeature(ScratchMergeData merge_data)
 
   EditOperation operation = merge_data->operation;
 
-  if (operation->subfeature)
+  if (operation->subpart)
     {
-      merged = zMapFeatureTranscriptDeleteSubfeatureAtCoord(merge_data->dest_feature, operation->subfeature->start);
+      merged = zMapFeatureTranscriptDeleteSubfeatureAtCoord(merge_data->dest_feature, operation->subpart->start);
     }
   else
     {
@@ -472,13 +469,26 @@ static gboolean scratchMergeFeature(ScratchMergeData merge_data)
   gboolean merged = FALSE;
   EditOperation operation = merge_data->operation;
 
-  if (operation->subfeature)
+  if (operation->subpart)
     {
-      /* Just merge the subfeature. */
-      if (operation->subfeature->start == operation->subfeature->end)
-        merged = scratchMergeCoord(merge_data, operation->subfeature->start);
+      /* We don't currently handle merging of introns */
+      if (operation->subpart->subpart != ZMAPFEATURE_SUBPART_INTRON &&
+          operation->subpart->subpart != ZMAPFEATURE_SUBPART_INTRON_CDS)
+        {
+          /* Just merge the subfeature. */
+          if (operation->subpart->start == operation->subpart->end)
+            merged = scratchMergeCoord(merge_data, operation->subpart->start);
+          else
+            merged = scratchMergeCoords(merge_data, operation->subpart->start, operation->subpart->end);
+        }
       else
-        merged = scratchMergeCoords(merge_data, operation->subfeature->start, operation->subfeature->end);
+        {
+          const char *subfeature_desc = zMapFeatureSubPart2Str(operation->subpart->subpart) ;
+
+          g_set_error(merge_data->error, g_quark_from_string("ZMap"), 99, 
+                      "copy of subfeature of type '%s' is not implemented.\n", 
+                      subfeature_desc);
+        }
     }
   else
     {
@@ -940,7 +950,8 @@ gboolean zmapViewScratchCopyFeature(ZMapView view,
                                     ZMapFeature feature,
                                     const long seq_start,
                                     const long seq_end,
-                                    ZMapFeatureSubPartSpan subfeature)
+                                    ZMapFeatureSubPartSpan subpart,
+                                    const gboolean use_subfeature)
 {
   if (feature)
     {
@@ -950,7 +961,8 @@ gboolean zmapViewScratchCopyFeature(ZMapView view,
       operation->src_feature = feature;
       operation->seq_start = seq_start;
       operation->seq_end = seq_end;
-      operation->subfeature = subfeature ;
+      operation->subpart = subpart ;
+      operation->use_subfeature = use_subfeature ;
       operation->boundary = ZMAPBOUNDARY_NONE;
 
       /* Add this operation to the list and recreate the scratch feature. */
@@ -968,7 +980,8 @@ gboolean zmapViewScratchDeleteFeature(ZMapView view,
                                       ZMapFeature feature,
                                       const long seq_start,
                                       const long seq_end,
-                                      ZMapFeatureSubPartSpan subfeature)
+                                      ZMapFeatureSubPartSpan subpart,
+                                      const gboolean use_subfeature)
 {
   if (feature)
     {
@@ -978,7 +991,8 @@ gboolean zmapViewScratchDeleteFeature(ZMapView view,
       operation->src_feature = feature;
       operation->seq_start = seq_start;
       operation->seq_end = seq_end;
-      operation->subfeature = subfeature ;
+      operation->subpart = subpart ;
+      operation->use_subfeature = use_subfeature ;
       operation->boundary = ZMAPBOUNDARY_NONE;
 
       /* Add this operation to the list and recreate the scratch feature. */
