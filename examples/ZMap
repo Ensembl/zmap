@@ -31,6 +31,12 @@ stylesfile=styles.ini
 #data-dir=./
 
 
+#
+# Column-style maps columns to column-specific style information (e.g. column
+# background colour)
+#
+[column-style]
+Annotation=annotationcolumn
 
 
 #
