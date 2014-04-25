@@ -5915,7 +5915,9 @@ static void jumpFeature(ZMapWindow window, guint keyval)
 /* Jump to the previous/next column according to which arrow key was pressed. */
 static void jumpColumn(ZMapWindow window, guint keyval)
 {
-  /*! \todo #warning jumpColumn commented out temporarily */
+  /*! \todo This was commented out "temporarily" by Malcolm (probably because changes to
+   * the drawing code broke it) and was never put back in. It doesn't compile any more so
+   * it needs fixing up. */
 #if 0
   FooCanvasGroup *focus_column;
   gboolean move_focus = FALSE, highlight_column = FALSE ;
