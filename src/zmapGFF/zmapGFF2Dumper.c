@@ -31,6 +31,9 @@
  */
 
 #include <ZMap/zmap.h>
+
+#include <string.h>
+
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapFeature.h>
 #include <ZMap/zmapSO.h>
