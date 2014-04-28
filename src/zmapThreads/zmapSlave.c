@@ -301,17 +301,7 @@ static void cleanUpThread(void *thread_args)
   ZMapThreadReply reply ;
   gchar *error_msg = NULL ;
 
-
   ZMAPTHREAD_DEBUG(thread, "%s", "thread clean-up routine: starting....") ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* I think this is probably a very bad idea isn't it...what if this thread didn't have the lock,
-   * just seems like asking for trouble.... */
-
-  zMapThreadForkUnlock(); // not needed, but play safe. See zmapThread.c
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
   if (thread_cb->thread_died)
     {
@@ -320,7 +310,7 @@ static void cleanUpThread(void *thread_args)
       reply = ZMAPTHREAD_REPLY_DIED ;
 
       if (thread_cb->initial_error)
-	error_msg = g_strdup(thread_cb->initial_error) ;
+        error_msg = g_strdup(thread_cb->initial_error) ;
     }
   else
     {
@@ -330,16 +320,15 @@ static void cleanUpThread(void *thread_args)
 
       /* If thread was cancelled we need to ensure it is terminated correctly. */
       if (thread_cb->slave_data)
-	{
-	  ZMapThreadReturnCode slave_response ;
+        {
+          ZMapThreadReturnCode slave_response ;
 
-	  /* Call the registered slave handler function. */
-	  if ((slave_response = (*(thread->terminate_func))(&(thread_cb->slave_data), &error_msg))
-	      != ZMAPTHREAD_RETURNCODE_OK)
-	    {
-	      ZMAPTHREAD_DEBUG(thread, "%s", "Unable to close connection to server cleanly") ;
-	    }
-	}
+          /* Call the registered slave handler function. */
+          if ((slave_response = (*(thread->terminate_func))(&(thread_cb->slave_data), &error_msg)) != ZMAPTHREAD_RETURNCODE_OK)
+            {
+              ZMAPTHREAD_DEBUG(thread, "%s", "Unable to close connection to server cleanly") ;
+            }
+        }
     }
 
   /* Now make sure thread is destroyed correctly. */
@@ -350,11 +339,10 @@ static void cleanUpThread(void *thread_args)
       ZMAPTHREAD_DEBUG(thread, "%s", "thread clean-up routine: calling slave terminate function...") ;
 
       /* Call the registered slave handler function. */
-      if ((slave_response = (*(thread->destroy_func))(&(thread_cb->slave_data)))
-	  != ZMAPTHREAD_RETURNCODE_OK)
-	{
-	  ZMAPTHREAD_DEBUG(thread, "%s", "thread clean-up routine: Unable to destroy connection") ;
-	}
+      if ((slave_response = (*(thread->destroy_func))(&(thread_cb->slave_data)))!= ZMAPTHREAD_RETURNCODE_OK)
+        {
+          ZMAPTHREAD_DEBUG(thread, "%s", "thread clean-up routine: Unable to destroy connection") ;
+        }
     }
 
   g_free(thread_cb) ;
