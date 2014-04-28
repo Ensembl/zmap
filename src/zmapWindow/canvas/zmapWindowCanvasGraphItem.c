@@ -26,11 +26,11 @@
  *
  * Description: this module takes a series of bins and draws then in various formats
  *              (line, hiostogram, heatmap) but in each case the source data is the same if
- *              'density' mode is set then the source data is re-binned according to zoom level 
- *              it adds a single (extended) foo_canvas item to the canvas for each set of data 
+ *              'density' mode is set then the source data is re-binned according to zoom level
+ *              it adds a single (extended) foo_canvas item to the canvas for each set of data
  *              in a column.  It is possible to have several line graphs overlapping, but note
  *              that heatmaps and histograms would not look as good.
- *              
+ *
  *              NOTE originally implemented as free standing canvas type
  *               and later merged into CanvasFeatureset.
  *
@@ -65,7 +65,7 @@
  */
 
 /* Current state of play of this code:
- * 
+ *
  * Code was originally written by Malcolm and then a load of fixes applied by Ed.
  * I (Ed) don't completely understand all of Malcolm's thinking and there are
  * probably some bugs remaining but I don't have the time to fix this any more.
@@ -73,7 +73,7 @@
  * shapes that are one short in height. This is probably related to the gdk
  * polygon function which must call an X Windows function, these functions
  * often have arcane semantics about which pixels they actually fill on the screen.
- * 
+ *
  *  */
 
 
@@ -90,7 +90,7 @@ static GList *densityCalcBins(ZMapWindowFeaturesetItem di) ;
 static void setColumnStyle(ZMapWindowFeaturesetItem featureset, ZMapFeatureTypeStyle feature_style) ;
 
 
-/* 
+/*
  *                        Globals
  */
 
@@ -98,12 +98,12 @@ static gboolean debug_G = FALSE ;                            /* Set TRUE for deb
 
 
 
-/* 
+/*
  *                     External routines.
- * 
+ *
  * Some of these are static but are directly called from zmapWindowCanvasFeature
  * as they are "methods".
- * 
+ *
  */
 
 
@@ -354,7 +354,7 @@ static void graphPaintPrepare(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
 
             }
 
-          graph_set->last_gx = x2 ;          
+          graph_set->last_gx = x2 ;
           graph_set->last_gy = feature->y2 ;
           graph_set->last_width = feature->width ;
         }
@@ -391,7 +391,7 @@ static void graphPaintPrepare(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
 
 
 /* paint one feature, CanvasFeatureset handles focus highlight
- * 
+ *
  * NOTE wiggle plots are drawn as poly-lines and get cached and painted when complete
  * NOTE lines have to be drawn out of the box at the edges */
 static void graphPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
@@ -542,7 +542,7 @@ static void graphPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
     default:
     case ZMAPSTYLE_GRAPH_HISTOGRAM:
       {
-        x1 = featureset->dx + featureset->x_off; //  + (width * zMapStyleBaseline(di->style)) ;
+        x1 = featureset->dx + featureset->x_off;
         x2 = x1 + feature->width - 1;
 
         /* If the baseline is not zero then we can end up with x2 being less than x1
@@ -616,7 +616,7 @@ static void graphPaintFlush(ZMapWindowFeaturesetItem featureset, ZMapWindowCanva
           foo_canvas_c2w(foo->canvas, 0, featureset->clip_y2, NULL, &end) ;
 
 
-          /* THIS IS ALL PRETTY HOAKY...A NULL FEATURE SEEMS TO SIGNAL THE END OF THE 
+          /* THIS IS ALL PRETTY HOAKY...A NULL FEATURE SEEMS TO SIGNAL THE END OF THE
            * FEATURE SET....DUH....... */
 
           /* draw back to baseline from last point and add trailing line */
@@ -756,7 +756,7 @@ static void graphPaintFlush(ZMapWindowFeaturesetItem featureset, ZMapWindowCanva
 
                 }
             }
-       
+
           /* Draw the lines or filled lines, they are already clipped to the visible scroll region */
 
           /* This should all be inserted at the start and cached.... */
@@ -768,7 +768,7 @@ static void graphPaintFlush(ZMapWindowFeaturesetItem featureset, ZMapWindowCanva
             {
               graph_colour = &(graph_set->border) ;
             }
-          
+
           gdk_gc_set_foreground(featureset->gc, graph_colour) ;
 
           if (line_fill)
@@ -798,22 +798,22 @@ static void graphPaintFlush(ZMapWindowFeaturesetItem featureset, ZMapWindowCanva
 
 
 
-/* 
+/*
  *                      Internal routines.
  */
 
 
 
 /* create a new list of binned data derived from the real stuff
- * 
+ *
  * bins are coerced to be at least one pixel across
- * 
+ *
  * bin values are set as the max (ie most extreme, can be -ve) pro-rated value within the range
  * this is to highlight peaks without creating silly wide graphs
- * 
+ *
  * we are aiming for the same graph at lower resolution, this point is most acute for heatmaps that
- * cannot be overlapped sensibly 
- * 
+ * cannot be overlapped sensibly
+ *
  * try not to split big bins into smaller ones, there's no min size in BP, but the source data
  * imposes a limit
  */
@@ -863,9 +863,6 @@ static GList *densityCalcBins(ZMapWindowFeaturesetItem di)
   if(bases_per_bin < 1) /* at high zoom we get many pixels per base */
     bases_per_bin = 1;
 
-  //printf("calc density item %s = %d\n",g_quark_to_string(di->id),g_list_length(di->features));
-  //printf("bases per bin = %d,fixed = %d\n",bases_per_bin,fixed);
-
   for (bin_start = start, src = di->features, dest = NULL ; bin_start < end && src ; bin_start = bin_end + 1)
     {
       bin_end = bin_start + bases_per_bin - 1 ;             /* end can equal start */
@@ -876,12 +873,10 @@ static GList *densityCalcBins(ZMapWindowFeaturesetItem di)
       bin_gs->y2 = bin_end;
       bin_gs->score = 0.0;
 
-      //printf("bin: %d,%d\n",bin_start,bin_end);
       for(;src; src = src->next)
         {
           src_gs = (ZMapWindowCanvasFeature) src->data;
 
-          //printf("src: %f,%f, %f\n",src_gs->y1,src_gs->y2,src_gs->score);
           if(src_gs->y2 < bin_start)
             continue;
 
@@ -894,7 +889,6 @@ static GList *densityCalcBins(ZMapWindowFeaturesetItem di)
                   /* bias to even boundaries */
                   bin_end -= (bin_end - bin_start + 1) % bases_per_bin;
                   bin_end--;    /* as it gets ioncremented by the loop */
-                  //printf("jump fwds to %d\n",bin_end);
                 }
               break;
             }
@@ -914,7 +908,6 @@ static GList *densityCalcBins(ZMapWindowFeaturesetItem di)
               if(!fixed)
                 {
                   bin_gs->y1 = src_gs->y1;              /* limit dest bin to extent of src */
-                  //printf("set src back to %f\n",bin_gs->y1);
                 }
               bin_gs->feature = src_gs->feature;
             }
@@ -923,7 +916,6 @@ static GList *densityCalcBins(ZMapWindowFeaturesetItem di)
           /* this implicitly pro-rates any partial overlap of source bins */
           if(fabs(score) > fabs(bin_gs->score))
             {
-              //printf("score set to %f\n",score);
               bin_gs->score = score;
               bin_gs->feature = src_gs->feature;                /* can only have one... choose the biggest */
             }
@@ -934,19 +926,11 @@ static GList *densityCalcBins(ZMapWindowFeaturesetItem di)
               if(!fixed)
                 {
                   bin_gs->y2 = bin_end = src_gs->y2;
-                  //printf("loose jump to %d\n",bin_end);
                 }
               else if(src_gs->y2 > bin_end + bases_per_bin)
                 {
-                  //printf("fixed jump: %d, %d\n",(bin_end - bin_start + 1),(bin_end - bin_start + 1) % bases_per_bin);
                   bin_end = src_gs->y2; /* bias to the next one before the end */
-
-                  /* else we start overlapping the next src bin */
-                  //                                    bin_end -= (bin_end - bin_start + 1) % bases_per_bin;
-                  //                                    bin_end--;              /* as it gets incremented by the loop */
-
                   bin_gs->y2 = bin_end;
-                  //printf("fixed jump to %d\n",bin_end);
                 }
               break;
             }
@@ -977,7 +961,6 @@ static GList *densityCalcBins(ZMapWindowFeaturesetItem di)
               bin_gs->y2 = src_gs->y2;
             }
 
-          //printf("add: %f,%f\n", bin_gs->y1,bin_gs->y2);
           dest = g_list_prepend(dest,(gpointer) bin_gs);
         }
 
@@ -1034,10 +1017,10 @@ static void setColumnStyle(ZMapWindowFeaturesetItem featureset, ZMapFeatureTypeS
   /* Settings for line graphs. */
   featureset->style->mode_data.graph.fill = zMapStyleGraphFill(feature_style) ;
 
-  /* UM....WHAT ON EARTH WAS I DOING HERE...JUST TESTING...???? 
-   * (sm23) I don't understand the details, but not initialising these 
+  /* UM....WHAT ON EARTH WAS I DOING HERE...JUST TESTING...????
+   * (sm23) I don't understand the details, but not initialising these
    * pointers was causing the crash. Now all is well with the graph
-   * display. 
+   * display.
    */
   if (zMapStyleIsPropertySetId(feature_style, STYLE_PROP_GRAPH_COLOURS))
     {
