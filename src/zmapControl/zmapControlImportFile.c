@@ -55,7 +55,7 @@
 #define N_FILE_TYPE (FILE_BIGWIG + 1)
 
 /* number of optional dialog entries for FILE_NONE (is really 8 so i allowed a few spare) */
-#define N_ARGS 16 
+#define N_ARGS 16
 
 
 typedef enum { FILE_NONE, FILE_GFF, FILE_BAM, FILE_BIGWIG } fileType;
@@ -144,14 +144,14 @@ void zMapControlImportFile(ZMapControlImportFileCB user_func, gpointer user_data
   GtkWidget *toplevel, *container ;
   gpointer seq_data = NULL ;
 
-  /* if (!user_func) 
+  /* if (!user_func)
     return ; */
-  zMapReturnIfFail(user_func && user_data) ; 
+  zMapReturnIfFail(user_func && user_data) ;
 
   ZMap zmap = (ZMap)user_data;
 
   toplevel = zMapGUIToplevelNew(NULL, "Please choose a file to import.") ;
-  
+
   /* Make sure the dialog is destroyed if the zmap window is closed */
   /*! \todo For some reason this doesn't work and the dialog hangs around
    * after zmap->toplevel is destroyed */
@@ -187,8 +187,8 @@ static void importGetConfig(MainFrame main_frame, char *config_file)
 {
   ZMapImportScript s;
   ZMapConfigIniContext context;
-  fileType file_type = FILE_NONE;
-  char * default_scripts[] = { "", "zmap_get_gff", "zmap_get_bam", "zmap_get_bigwig" };	
+  fileType file_type = FILE_NONE ;
+  static const char * default_scripts[] = { "", "zmap_get_gff", "zmap_get_bam", "zmap_get_bigwig" };
 							    /* in parallel with the filetype enum */
   int i;
   char *tmp_string;
@@ -203,7 +203,7 @@ static void importGetConfig(MainFrame main_frame, char *config_file)
       s->args = NULL;
       s->allocd = NULL;
     }
-  //	scripts[2].args = g_strsplit("--fruit=apple --car=jeep --weather=sunny", " ", 0);
+  /*	scripts[2].args = g_strsplit("--fruit=apple --car=jeep --weather=sunny", " ", 0); */
 
   if ((context = zMapConfigIniContextProvide(config_file)))
     {
@@ -216,28 +216,24 @@ static void importGetConfig(MainFrame main_frame, char *config_file)
 
       if(zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
 				       ZMAPSTANZA_APP_CSVER, &tmp_string))
-	{
-	  if(!g_ascii_strcasecmp(tmp_string,"Otter"))
-	    {
-	      char *chr;
-	      main_frame->is_otter = TRUE;
-	      if(zMapConfigIniContextGetString(context,
-					       ZMAPSTANZA_APP_CONFIG,
-					       ZMAPSTANZA_APP_CONFIG,
-					       ZMAPSTANZA_APP_CHR,
-					       &chr))
-		{
-		  main_frame->chr = chr;
-		}
-	      else
-		{
-		  main_frame->chr = NULL;
-		}
-	    }
-	}
+        {
+          if(!g_ascii_strcasecmp(tmp_string,"Otter"))
+            {
+              char *chr;
+              main_frame->is_otter = TRUE;
+              if(zMapConfigIniContextGetString(context,ZMAPSTANZA_APP_CONFIG,ZMAPSTANZA_APP_CONFIG,ZMAPSTANZA_APP_CHR,&chr))
+                {
+                  main_frame->chr = chr;
+                }
+              else
+                {
+                  main_frame->chr = NULL;
+                }
+            }
+        }
 
       if(zMapConfigIniHasStanza(context->config,ZMAPSTANZA_IMPORT_CONFIG,&gkf))
-	{
+{
 	  freethis = keys = g_key_file_get_keys(gkf,ZMAPSTANZA_IMPORT_CONFIG,&len,NULL);
 
 	  for(;len--;keys++)
@@ -762,7 +758,7 @@ static void fileChangedCB(GtkWidget *widget, gpointer user_data)
    * problems if we don't exit early here ) */
   if (!zmap->toplevel)
     return;
-  
+
   view = zMapViewGetView(zmap->focus_viewwindow);
 
   filename = (char *) gtk_entry_get_text(GTK_ENTRY(widget)) ;
@@ -876,7 +872,7 @@ static void importFileCB(GtkWidget *widget, gpointer cb_data)
   int strand = 0 ;
 
   /* Check that the zmap window hasn't been closed (currently the dialog
-   * isn't closed automatically with it, so we'll have problems if we don't 
+   * isn't closed automatically with it, so we'll have problems if we don't
    * exit early here) */
   if (!zmap->toplevel)
     return;
