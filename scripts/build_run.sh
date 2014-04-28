@@ -68,7 +68,6 @@ ZMAP_MASTER_BUILD_DIST=''
 ZMAP_MASTER_RT_RELEASE_NOTES=''
 ZMAP_MASTER_FORCE_RELEASE_NOTES=''
 SEQTOOLS_DIR='DEVELOPMENT'
-RT_RUN='-d'
 
 # try to load useful shared shell functions...after this we will have access to
 # common message funcs.
@@ -223,7 +222,7 @@ fi
 #
 
 # all single letter flags...
-CMD_OPTIONS="$TAG_CVS $RT_RUN $INC_REL_VERSION $INC_UPDATE_VERSION $GIT_FEATURE_INFO"
+CMD_OPTIONS="$TAG_CVS $INC_REL_VERSION $INC_UPDATE_VERSION $GIT_FEATURE_INFO"
 
 # Now flags with options
 if [ -n "$BUILD_PREFIX" ] ; then
