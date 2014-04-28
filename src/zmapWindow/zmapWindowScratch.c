@@ -67,6 +67,70 @@ ZMapFeatureSet zmapWindowScratchGetFeatureset(ZMapWindow window)
 }
 
 
+static void doScratchCallbackCommand(ZMapWindowCommandType command_type,
+                                     ZMapWindow window,
+                                     ZMapFeature feature, 
+                                     FooCanvasItem *item, 
+                                     const double world_x,
+                                     const double world_y,
+                                     const gboolean use_subfeature)
+{
+  gboolean ok = TRUE ;
+  ZMapWindowCallbackCommandScratch scratch_cmd = g_new0(ZMapWindowCallbackCommandScratchStruct, 1) ;
+ 
+  /* Set up general command field for callback. */
+  scratch_cmd->cmd = command_type ;
+  scratch_cmd->seq_start = 0;
+  scratch_cmd->seq_end = 0;
+  scratch_cmd->subpart = NULL;
+  scratch_cmd->use_subfeature = use_subfeature ;
+
+  if (feature->mode == ZMAPSTYLE_MODE_ALIGNMENT && !use_subfeature)
+    {
+      /* For alignment features, get all of the linked match blocks */
+      scratch_cmd->features = zMapWindowCanvasAlignmentGetAllMatchBlocks(item) ;
+    }
+  else
+    {
+      /* Otherwise just pass the single given feature */
+      scratch_cmd->features = g_list_append(scratch_cmd->features, feature) ;
+    }
+
+  if (feature->mode == ZMAPSTYLE_MODE_SEQUENCE)
+    {
+      /* For sequence features, get the sequence coord that was clicked */
+      zMapWindowItemGetSeqCoord(item, TRUE, world_x, world_y, &scratch_cmd->seq_start, &scratch_cmd->seq_end) ;
+    }
+
+  /* If necessary, find the subfeature and set it in the data. What constitutes a
+   * "subfeature" depends on the feature type: for transcripts, it's an intron/exon. For
+   * alignments, it's a match block, which is actually the whole ZMapFeature (and the
+   * "entire" feature therefore includes the linked match blocks from the same alignment).  */
+  if (use_subfeature && feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
+    {
+      zMapWindowCanvasItemGetInterval((ZMapWindowCanvasItem)item, world_x, world_y, &scratch_cmd->subpart) ;
+      
+      if (!scratch_cmd->subpart)
+        {
+          ok = FALSE ;
+          zMapWarning("Cannot find subfeature for feature '%s' at position %f,%f", 
+                      g_quark_to_string(feature->original_id), world_x, world_y) ;
+        }
+    }
+
+  if (ok)
+    {
+      /* Call back to the View to update all windows */
+      ZMapWindowCallbacks window_cbs_G = zmapWindowGetCBs() ;
+      (*(window_cbs_G->command))(window, window->app_data, scratch_cmd) ;
+    }
+  else
+    {
+      g_free(scratch_cmd) ;
+      scratch_cmd = NULL ;
+    }
+}
+
 /*!
  * \brief Copy the given feature to the scratch column
  *
@@ -86,44 +150,13 @@ void zmapWindowScratchCopyFeature(ZMapWindow window,
 {
   if (window && feature)
     {
-      gboolean ok = TRUE ;
-
-      /* Call back to the View to update all windows */
-      ZMapWindowCallbacks window_cbs_G = zmapWindowGetCBs() ;
-      ZMapWindowCallbackCommandScratch scratch_cmd = g_new0(ZMapWindowCallbackCommandScratchStruct, 1) ;
-
-      /* Set up general command field for callback. */
-      scratch_cmd->cmd = ZMAPWINDOW_CMD_COPYTOSCRATCH ;
-      scratch_cmd->feature = feature;
-      scratch_cmd->seq_start = 0;
-      scratch_cmd->seq_end = 0;
-      scratch_cmd->subpart = NULL;
-      scratch_cmd->use_subfeature = use_subfeature ;
-
-      /* For sequence features, get the sequence coord that was clicked */
-      if (feature->mode == ZMAPSTYLE_MODE_SEQUENCE)
-        zMapWindowItemGetSeqCoord(item, TRUE, world_x, world_y, &scratch_cmd->seq_start, &scratch_cmd->seq_end) ;
-
-      /* If necessary, find the subfeature and set it in the data. What constitutes a
-       * "subfeature" depends on the feature type: for transcripts, it's an intron/exon. For
-       * alignments, it's a match block, which is actually the whole ZMapFeature (and the
-       * "entire" feature therefore includes the linked match blocks from the same alignment).  */
-      if (use_subfeature && feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
-        {
-          zMapWindowCanvasItemGetInterval((ZMapWindowCanvasItem)item, world_x, world_y, &scratch_cmd->subpart) ;
-
-          if (!scratch_cmd->subpart)
-            {
-              ok = FALSE ;
-              zMapWarning("Cannot find subfeature for feature '%s' at position %f,%f", 
-                          g_quark_to_string(feature->original_id), world_x, world_y) ;
-            }
-        }
-
-      if (ok)
-        {
-          (*(window_cbs_G->command))(window, window->app_data, scratch_cmd) ;
-        }
+      doScratchCallbackCommand(ZMAPWINDOW_CMD_COPYTOSCRATCH, 
+                               window,
+                               feature, 
+                               item, 
+                               world_x,
+                               world_y,
+                               use_subfeature) ;
     }
   else
     {
@@ -151,47 +184,13 @@ void zmapWindowScratchDeleteFeature(ZMapWindow window,
 {
   if (window && feature)
     {
-      gboolean ok = TRUE;
-
-      /* Call back to the View to update all windows */
-      ZMapWindowCallbacks window_cbs_G = zmapWindowGetCBs() ;
-      ZMapWindowCallbackCommandScratch scratch_cmd = g_new0(ZMapWindowCallbackCommandScratchStruct, 1) ;
-      
-      /* Set up general command field for callback. */
-      scratch_cmd->cmd = ZMAPWINDOW_CMD_DELETEFROMSCRATCH ;
-      scratch_cmd->feature = feature;
-      scratch_cmd->seq_start = 0;
-      scratch_cmd->seq_end = 0;
-      scratch_cmd->subpart = NULL;
-      scratch_cmd->use_subfeature = use_subfeature ;
-
-      if (feature->mode == ZMAPSTYLE_MODE_SEQUENCE)
-        {
-          /* For sequence features, get the sequence coord that was clicked */
-          zMapWindowItemGetSeqCoord(item, TRUE, world_x, world_y, &scratch_cmd->seq_start, &scratch_cmd->seq_end) ;
-        }
-      else if (feature->mode == ZMAPSTYLE_MODE_ALIGNMENT && !use_subfeature)
-        {
-          /* For alignment features, get all of the linked match blocks */
-        }
-
-      /* If necessary, find the subfeature and set it in the data */
-      if (use_subfeature)
-        {
-          zMapWindowCanvasItemGetInterval((ZMapWindowCanvasItem)item, world_x, world_y, &scratch_cmd->subpart) ;
-          
-          if (!scratch_cmd->subpart)
-            {
-              ok = FALSE ;
-              zMapWarning("Cannot find subfeature for feature '%s' at position %f,%f", 
-                          g_quark_to_string(feature->original_id), world_x, world_y) ;
-            }
-        }
-
-      if (ok)
-        {
-          (*(window_cbs_G->command))(window, window->app_data, scratch_cmd) ;
-        }
+      doScratchCallbackCommand(ZMAPWINDOW_CMD_DELETEFROMSCRATCH, 
+                               window,
+                               feature, 
+                               item, 
+                               world_x,
+                               world_y,
+                               use_subfeature) ;
     }
   else
     {

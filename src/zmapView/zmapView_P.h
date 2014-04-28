@@ -486,8 +486,8 @@ gboolean zMapViewCollapseFeatureSets(ZMapView view, ZMapFeatureContext diff_cont
 /* zmapViewScratch.c */
 void zmapViewScratchInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, ZMapFeatureContext context, ZMapFeatureBlock block);
 void zMapViewToggleScratchColumn(ZMapView view, gboolean force_to, gboolean force);
-gboolean zmapViewScratchCopyFeature(ZMapView zmap_view, ZMapFeature feature, const long seq_start, const long seq_end, ZMapFeatureSubPartSpan subpart, const gboolean use_subfeature);
-gboolean zmapViewScratchDeleteFeature(ZMapView zmap_view, ZMapFeature feature, const long seq_start, const long seq_end, ZMapFeatureSubPartSpan subpart, const gboolean use_subfeature);
+gboolean zmapViewScratchCopyFeatures(ZMapView zmap_view, GList *features, const long seq_start, const long seq_end, ZMapFeatureSubPartSpan subpart, const gboolean use_subfeature);
+gboolean zmapViewScratchDeleteFeatures(ZMapView zmap_view, GList *features, const long seq_start, const long seq_end, ZMapFeatureSubPartSpan subpart, const gboolean use_subfeature);
 gboolean zmapViewScratchUndo(ZMapView zmap_view);
 gboolean zmapViewScratchRedo(ZMapView zmap_view);
 gboolean zmapViewScratchClear(ZMapView zmap_view);

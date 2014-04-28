@@ -331,7 +331,7 @@ typedef struct ZMapWindowCallbackCommandScratchStructName
   ZMapFeatureBlock block ;
 
   /* Scratch specific section. */
-  ZMapFeature feature;  /* clicked feature */
+  GList *features;      /* clicked feature(s) */
   long seq_start;       /* sequence coordinate that was clicked (sequence features only) */
   long seq_end;         /* sequence coordinate that was clicked */
   ZMapFeatureSubPartSpan subpart; /* the subpart to use, if applicable */
@@ -611,5 +611,7 @@ gboolean zmapWindowFocusHasType(ZMapWindowFocus focus, ZMapWindowFocusType type)
 gboolean zMapWindowFocusGetColour(ZMapWindow window,int mask, GdkColor *fill, GdkColor *border);
 
 void zMapWindowUpdateColumnBackground(ZMapWindow window, ZMapFeatureSet feature_set, gboolean highlight_column_background);
+
+GList* zMapWindowCanvasAlignmentGetAllMatchBlocks(FooCanvasItem *item) ;
 
 #endif /* !ZMAP_WINDOW_H */

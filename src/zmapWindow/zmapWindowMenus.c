@@ -848,9 +848,12 @@ ZMapGUIMenuItem zmapWindowMakeMenuScratchOps(int *start_index_inout,
           /* add in feature menu options (not applicable to annotation column) */
           addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR"/"SCRATCH_COPY_FEATURE, ITEM_MENU_COPY_TO_SCRATCH, itemMenuCB, NULL);
 
-          /* add in transcript menu options */
-          if (menu_data->feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
-            addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR"/"SCRATCH_COPY_SUBFEATURE, ITEM_MENU_COPY_SUBPART_TO_SCRATCH, itemMenuCB, NULL);
+          /* add in transcript/alignment menu options */
+          if (menu_data->feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT || 
+              menu_data->feature->mode == ZMAPSTYLE_MODE_ALIGNMENT)
+            {
+              addMenuItem(menu, &i, max_elements, ZMAPGUI_MENU_NORMAL, SCRATCH_CONFIG_STR"/"SCRATCH_COPY_SUBFEATURE, ITEM_MENU_COPY_SUBPART_TO_SCRATCH, itemMenuCB, NULL);
+            }
         }
       else
         {
