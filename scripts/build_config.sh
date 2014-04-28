@@ -119,8 +119,7 @@ ZMAP_MASTER_BUILD_CANVAS_DIST=no
 ZMAP_CLUSTER_CONFIG_FILE=~zmap/cluster.config.sh
 
 # tviewsrv and lucid-dev64 are now ubuntu....
-ZMAP_BUILD_MACHINES="tviewsrv lucid-dev64"
-#ZMAP_BUILD_MACHINES="tviewsrv mac106229i lucid-dev64"
+ZMAP_BUILD_MACHINES="tviewsrv mac106229i lucid-dev64"
 #ZMAP_BUILD_MACHINES="tviewsrv mac18480i lucid-dev64"
 #ZMAP_BUILD_MACHINES="deskpro021045 mac18480i lucid-dev64"
 
