@@ -590,7 +590,6 @@ gboolean zMapFeatureTranscriptMergeExon(ZMapFeature transcript, Coord x1, Coord 
   gboolean replace = FALSE;
   gboolean overlaps = FALSE;
   GArray *array = transcript->feature.transcript.exons;
-  GSList *exons_to_replace = NULL;
   int i = 0;
   int start = x1;
   int end = x2;
@@ -608,7 +607,6 @@ gboolean zMapFeatureTranscriptMergeExon(ZMapFeature transcript, Coord x1, Coord 
           if (x1 != compare_exon->x1 || x2 != compare_exon->x2)
             {
               replace = TRUE;
-              exons_to_replace = g_slist_append(exons_to_replace, GINT_TO_POINTER(i)) ;
 
               /* Adjust new start/end to include the existing exon */
               if (compare_exon->x1 < start)
@@ -624,14 +622,6 @@ gboolean zMapFeatureTranscriptMergeExon(ZMapFeature transcript, Coord x1, Coord 
               --i;
             }
         }
-    }
-
-  /* Remove existing exons that are being replaced */
-  GSList *item = exons_to_replace;
-  for ( ; item; item = item->next)
-    {
-      int i = GPOINTER_TO_INT(item->data);
-      g_array_remove_index(array, i);
     }
 
   /* Create the new exon. Only do this if replacing exons or

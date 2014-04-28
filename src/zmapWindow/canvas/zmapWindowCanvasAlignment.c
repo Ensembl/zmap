@@ -160,6 +160,29 @@ void zMapWindowCanvasAlignmentInit(void)
 }
 
 
+/* Return all match blocks for the given alignment. Returns a GList containing all features
+ * (ZMapFeature) that are linked to the given feature. */
+GList* zMapWindowCanvasAlignmentGetAllMatchBlocks(FooCanvasItem *item)
+{
+  GList *result = NULL ;
+  zMapReturnValIfFail(item, result) ;
+
+  ZMapWindowFeaturesetItem featureset_item = (ZMapWindowFeaturesetItem)item ;
+  ZMapWindowCanvasFeature canvas_feature = featureset_item->point_canvas_feature ;
+
+  /* Find the first match block in the linked-list */
+  while (canvas_feature && canvas_feature->left)
+    canvas_feature = canvas_feature->left ;
+  
+  /* Now loop through the whole list and add them to the result */
+  while (canvas_feature)
+    {
+      result = g_list_append(result, canvas_feature->feature) ;
+      canvas_feature = canvas_feature->right ;
+    }
+
+  return result ;
+}
 
 
 /* given an alignment sub-feature return the colour or the colinearity line to the next sub-feature */
