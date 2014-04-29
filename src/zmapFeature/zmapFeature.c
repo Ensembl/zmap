@@ -1379,14 +1379,19 @@ gboolean zMapFeatureContextRemoveAlignment(ZMapFeatureContext feature_context,
  *
  * If all ok returns ZMAPFEATURE_CONTEXT_OK, merged context in merged_context_inout
  * and diff context in diff_context_out. Otherwise returns a code to show what went
- * wrong, unaltered original context in merged_context_inout and diff_context_out is NULL,
+ * wrong, unaltered original context in merged_context_inout and diff_context_out is NULL.
+ * 
+ * N.B. under new scheme, new_context_inout will be always be destroyed && NULL'd....
+ * 
+ * 
+ * If merge_stats_out is non-NULL then a pointer to a struct containing stats about the merge is
+ * returned in merge_stats_out, the struct should be g_free'd when no longer required.
+ * 
  */
-
-/* N.B. under new scheme, new_context_inout will be always be destroyed && NULL'd.... */
-
 ZMapFeatureContextMergeCode zMapFeatureContextMerge(ZMapFeatureContext *merged_context_inout,
 						    ZMapFeatureContext *new_context_inout,
 						    ZMapFeatureContext *diff_context_out,
+                                                    ZMapFeatureContextMergeStats *merge_stats_out,
 						    GList *featureset_names)
 {
   ZMapFeatureContextMergeCode status = ZMAPFEATURE_CONTEXT_ERROR ;
@@ -1407,10 +1412,10 @@ ZMapFeatureContextMergeCode zMapFeatureContextMerge(ZMapFeatureContext *merged_c
      race conditions  between Rx featuresets and display
    */
 
+  /* if several servers supply data before the first gets painted then some get painted twice
+   * (data is duplicated in the canvas) */
   if (!current_context)
-	/* if several servers supply data before the first gets painted then some get painted twice (data is duplicated in the canvas) */
     {
-
       if (merge_debug_G)
         zMapLogWarning("%s", "No current context, returning complete new...") ;
 
@@ -1429,7 +1434,6 @@ ZMapFeatureContextMergeCode zMapFeatureContextMerge(ZMapFeatureContext *merged_c
   else
     {
       /* Here we need to merge for all alignments and all blocks.... */
-
       GList *copy_features ;
 
 
@@ -1539,6 +1543,16 @@ ZMapFeatureContextMergeCode zMapFeatureContextMerge(ZMapFeatureContext *merged_c
       *merged_context_inout = current_context ;
       *new_context_inout = new_context ;
       *diff_context_out = diff_context ;
+    }
+
+  if (merge_stats_out)
+    {
+      ZMapFeatureContextMergeStats merge_stats ;
+
+      merge_stats = g_new0(ZMapFeatureContextMergeStatsStruct, 1) ;
+      merge_stats->features_added = merge_data.feature_count ;
+
+      *merge_stats_out = merge_stats ;
     }
 
   return status ;
@@ -2766,8 +2780,11 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
 	    merge_data->diff_context->master_align = (ZMapFeatureAlignment)diff_feature_any;
 	  }
 #endif /* NO_IDEA_WHAT_SHOULD_HAPPEN_HERE */
+
+        break;
       }
-      break;
+
+
     case ZMAPFEATURE_STRUCT_FEATURE:
       {
 	feature_any->parent = NULL;
@@ -2791,13 +2808,14 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
 	  {
 	    new = FALSE ;
 	  }
-      }
-      break;
 
+        break;
+      }
 
     default:
       {
       zMapWarnIfReached() ;
+
       break;
       }
     }
