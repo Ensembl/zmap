@@ -115,7 +115,7 @@ static void freeSkipList(ZMapSkipList sl)
       sl->next = skip_list_free_G;
       skip_list_free_G = sl;
 
-	n_skip_free++;
+n_skip_free++;
 }
 
 #endif
@@ -124,62 +124,62 @@ static void freeSkipList(ZMapSkipList sl)
 
 ZMapSkipList zMapSkipListCreate(GList *data_in, GCompareFunc cmp)
 {
-	int n_node = SKIP_LIST_NORM_SKIP+1,n_skip;
-	GList *l;
-	ZMapSkipList head = 0,cur = 0,new, old;
+  int n_node = SKIP_LIST_NORM_SKIP+1,n_skip;
+  GList *l;
+  ZMapSkipList head = 0,cur = 0,new, old;
 
-	/* NOTE data_in must be pre-sorted if cmp is NULL*/
-	if(cmp)
-		data_in = g_list_sort(data_in,cmp);
+  /* NOTE data_in must be pre-sorted if cmp is NULL*/
+  if(cmp)
+    data_in = g_list_sort(data_in,cmp);
 
-	/* NOTE these two loops are very similar, make any changes in both! */
+  /* NOTE these two loops are very similar, make any changes in both! */
 
-	/* create base layer above the data */
-	for(l = data_in,n_node = 0;l; l = l->next)
-	{
-		new = allocSkipList();
-		new->data = l->data;
+  /* create base layer above the data */
+  for(l = data_in,n_node = 0;l; l = l->next)
+    {
+      new = allocSkipList();
+      new->data = l->data;
+  
+      if(cur)
+        {
+          cur->next = new;
+          new->prev = cur;
+        }
+      cur = new;
+      if(!head)
+        head = new;
+      n_node++;
+    }
 
-		if(cur)
-		{
-			cur->next = new;
-			new->prev = cur;
-		}
-		cur = new;
-		if(!head)
-			head = new;
-		n_node++;
-	}
+  /* create upper layers */
+  while (n_node > SKIP_LIST_NORM_SKIP)
+    {
+      for(old = head,head = cur = NULL,n_node = 0,n_skip = 0;old;old = (ZMapSkipList) old->next)
+        {
+          if(!n_skip)
+            {
+              new = allocSkipList();
+              new->down = old;
+              new->data = old->data;
+        
+              if(cur)
+                {
+                  cur->next = new;
+                  new->prev = cur;
+                }
+              cur = new;
+              if(!head)
+                head = new;
+              n_skip = SKIP_LIST_NORM_SKIP;
+              n_node++;
+        
+              old->up = new;
+            }
+        }
+    
+    }
 
-	/* create upper layers */
-	while (n_node > SKIP_LIST_NORM_SKIP)
-	{
-		for(old = head,head = cur = NULL,n_node = 0,n_skip = 0;old;old = (ZMapSkipList) old->next)
-		{
-			if(!n_skip)
-			{
-				new = allocSkipList();
-				new->down = old;
-				new->data = old->data;
-
-				if(cur)
-				{
-					cur->next = new;
-					new->prev = cur;
-				}
-				cur = new;
-				if(!head)
-					head = new;
-				n_skip = SKIP_LIST_NORM_SKIP;
-				n_node++;
-
-				old->up = new;
-			}
-		}
-
-	}
-
-	return(head);
+  return(head);
 }
 
 
@@ -193,25 +193,25 @@ ZMapSkipList zMapSkipListCreate(GList *data_in, GCompareFunc cmp)
  */
 ZMapSkipList zMapSkipListFirst(ZMapSkipList head)
 {
-	if(head)
-	{
-		while(head->down)
-			head = head->down;
-		while(head->prev)
-			head = head->prev;
-	}
-	return head;
+  if(head)
+    {
+      while(head->down)
+        head = head->down;
+      while(head->prev)
+        head = head->prev;
+    }
+  return head;
 }
 
 
 int zMapSkipListCount(ZMapSkipList head)
 {
-	int i;
+  int i;
 
-	head = zMapSkipListFirst(head);
-	for(i = 0; head; i++)
-		head = head->next;
-	return(i);
+  head = zMapSkipListFirst(head);
+    for(i = 0; head; i++)
+  head = head->next;
+  return(i);
 }
 
 
@@ -220,18 +220,18 @@ int zMapSkipListCount(ZMapSkipList head)
  */
 ZMapSkipList zMapSkipListLast(ZMapSkipList head)
 {
-	while(head) /* if true will stay so */
-	{
-		/* there's alwasy a down pointer, not always an up
-		 * so we keep going next, then down, then next...
-		 */
-		while(head->next)
-			head = head->next;
-		if(!head->down)
-			break;
-		head = head->down;
-	}
-	return head;
+  while(head) /* if true will stay so */
+    {
+      /* there's alwasy a down pointer, not always an up
+       * so we keep going next, then down, then next...
+       */
+      while(head->next)
+        head = head->next;
+      if(!head->down)
+        break;
+      head = head->down;
+    }
+  return head;
 }
 
 /* return a pointer to the lowest list layer */
@@ -242,24 +242,24 @@ ZMapSkipList zMapSkipListLast(ZMapSkipList head)
 
 ZMapSkipList zMapSkipListFind(ZMapSkipList head, GCompareFunc cmp, gconstpointer key)
 {
-	ZMapSkipList sl = head;
+  ZMapSkipList sl = head;
 
-	if(!head)
-		return NULL;
+  if(!head)
+    return NULL;
 
-	while(cmp(sl->data,key) < 0 && sl->next)
-		sl = (ZMapSkipList) sl->next;
+  while(cmp(sl->data,key) < 0 && sl->next)
+    sl = (ZMapSkipList) sl->next;
 
-	if(sl->down)
-		return(zMapSkipListFind(sl->down, cmp, key));
+  if(sl->down)
+    return(zMapSkipListFind(sl->down, cmp, key));
 
-	while(sl->prev && cmp(sl->prev->data,key) >= 0)
-		sl = (ZMapSkipList) sl->prev;
+  while(sl->prev && cmp(sl->prev->data,key) >= 0)
+    sl = (ZMapSkipList) sl->prev;
 
-	if(sl->prev && cmp(sl->data,key) > 0) /* bias to one before if no exact match possible */
-		sl = sl->prev;
+  if(sl->prev && cmp(sl->data,key) > 0) /* bias to one before if no exact match possible */
+    sl = sl->prev;
 
-	return(sl);
+  return(sl);
 }
 
 
@@ -270,55 +270,55 @@ ZMapSkipList zMapSkipListFind(ZMapSkipList head, GCompareFunc cmp, gconstpointer
 /* if you need the actual base skip list struct do a Find and test for data pointer */
 ZMapSkipList zMapSkipListAdd(ZMapSkipList head, GCompareFunc cmp, gpointer data)
 {
-	ZMapSkipList here;
-	int side;
-	ZMapSkipList new = allocSkipList();
+  ZMapSkipList here;
+  int side;
+  ZMapSkipList new = allocSkipList();
 
-	new->data = data;
+  new->data = data;
 
-	if(head)
-	{
-		here = zMapSkipListFind(head,cmp,data);
+  if(head)
+    {
+      here = zMapSkipListFind(head,cmp,data);
                 /*! \todo #warning SkipListAdd balancing upper layers not implemented */
 
-		/* this is less critical than remove */
+      /* this is less critical than remove */
 
-		side = cmp(here->data, data);
-		new->up = here->up;
+      side = cmp(here->data, data);
+      new->up = here->up;
 
-		if(side > 0)
-		{
-			if(here->next)
-				here->next->prev = new;
-			new->next = here->next;
-			new->prev = here;
-			here->next = new;
-		}
-		else /* equal or before here: insert before */
-		{
-			if(here->prev)
-			{
-				here->prev->next = new;
-				new->up = here->prev->up;
-			}
-			new->prev = here->prev;
-			new->next = here;
-			here->prev = new;
+      if(side > 0)
+        {
+          if(here->next)
+            here->next->prev = new;
+          new->next = here->next;
+          new->prev = here;
+          here->next = new;
+        }
+      else /* equal or before here: insert before */
+        {
+          if(here->prev)
+            {
+              here->prev->next = new;
+              new->up = here->prev->up;
+            }
+          new->prev = here->prev;
+          new->next = here;
+          here->prev = new;
+  
+          if(here == head) /* ->up will be NULL */
+            head = new;
+          /*
+           * NOTE that the new item may be before the first key in the head
+           * but can still be found due to the lookup implementation
+           */
+        }
+    }
+  else
+    {
+      head = new;
+    }
 
-			if(here == head) /* ->up will be NULL */
-				head = new;
-			/*
-			 * NOTE that the new item may be before the first key in the head
-			 * but can still be found due to the lookup implementation
-			 */
-		}
-	}
-	else
-	{
-		head = new;
-	}
-
-	return head;
+  return head;
 }
 
 
@@ -328,87 +328,87 @@ ZMapSkipList zMapSkipListAdd(ZMapSkipList head, GCompareFunc cmp, gpointer data)
 /* returns the head (may change) */
 ZMapSkipList zMapSkipListRemove(ZMapSkipList head, ZMapSkipListFreeFunc free_func)
 {
-	/* NOTE: we must tidy up downward pointers from upper layers */
-	/* NOTE: we must tidy up upward pointers from lower layers
-	 * as these are only non-NULL when layers are stacked
-	 * this is taken care of by removing the stack of layers
-	 */
-	ZMapSkipList up;
-	ZMapSkipList sl = head;
-	gpointer data = sl->data;
+  /* NOTE: we must tidy up downward pointers from upper layers */
+  /* NOTE: we must tidy up upward pointers from lower layers
+   * as these are only non-NULL when layers are stacked
+   * this is taken care of by removing the stack of layers
+   */
+  ZMapSkipList up;
+  ZMapSkipList sl = head;
+  gpointer data = sl->data;
 
-	if(!sl)
-		return NULL;
+  if(!sl)
+    return NULL;
 
-	while(sl->down)
-		sl = sl->down;
-	if(free_func)
-		free_func(sl->data);
+  while(sl->down)
+    sl = sl->down;
+  if(free_func)
+    free_func(sl->data);
+  
+  if(sl->prev)
+    sl->prev->next = sl->next;
+  if(sl->next)
+    sl->next->prev = sl->prev;
 
-	if(sl->prev)
-		sl->prev->next = sl->next;
-	if(sl->next)
-		sl->next->prev = sl->prev;
-
-	up = sl->up;
+  up = sl->up;
 
 
-	while(up && up->data == data)
-	{
-		freeSkipList(sl);
+  while(up && up->data == data)
+    {
+      freeSkipList(sl);
 
-                /*! \todo #warning SkipListRemove upper layer balancing not implemented */
-		/* just remove offending downward pointers */
-		/* if we remove a deep key then we double the skip distance */
-		/* and the list starts to go degnerate */
-		/* FTM i didn't bother to sort this as data is almost entirely static */
+                  /*! \todo #warning SkipListRemove upper layer balancing not implemented */
+        /* just remove offending downward pointers */
+        /* if we remove a deep key then we double the skip distance */
+        /* and the list starts to go degnerate */
+        /* FTM i didn't bother to sort this as data is almost entirely static */
 
-/*
- * - balancing intermediate/upper layers -
- * calculate # links fwd and back between this link and its neighbours
- * - move data pointer fwd/back -> stack slides sideways !!
- * - remove link if sum < max threshold then repeat process further up
- * if only one link remove layer
- */
+        /*
+         * - balancing intermediate/upper layers -
+         * calculate # links fwd and back between this link and its neighbours
+         * - move data pointer fwd/back -> stack slides sideways !!
+         * - remove link if sum < max threshold then repeat process further up
+         * if only one link remove layer
+         */
 
-		if(up->prev)
-			up->prev->next = up->next;
-		if(up->next)
-			up->next->prev = up->prev;
+      if(up->prev)
+        up->prev->next = up->next;
+      if(up->next)
+        up->next->prev = up->prev;
+  
+      sl = up;
+      up = up->up; /* possibly the whackiest line of code i've written for years :-) */
+    }
 
-		sl = up;
-		up = up->up; /* possibly the whackiest line of code i've written for years :-) */
-	}
+  /* if up != NULL then we didn't change the head */
+  /* sl is the last one to delete */
 
-	/* if up != NULL then we didn't change the head */
-	/* sl is the last one to delete */
+  if(sl == head)
+    head = sl->next; /* may be NULL if we remove the last one */
 
-	if(sl == head)
-		head = sl->next; /* may be NULL if we remove the last one */
+  freeSkipList(sl);
 
-	freeSkipList(sl);
-
-	return head;
+  return head;
 }
 
 
 void zMapSkipListDestroy(ZMapSkipList skip_list, ZMapSkipListFreeFunc free_func)
 {
-	ZMapSkipList delete;
+  ZMapSkipList delete;
 
-	if(!skip_list)
-		return;
-	if(skip_list->down)
-		zMapSkipListDestroy(skip_list->down,free_func);
+  if(!skip_list)
+    return;
+  if(skip_list->down)
+    zMapSkipListDestroy(skip_list->down,free_func);
 
-	while(skip_list)
-	{
-		if(!skip_list->down && free_func) /* skip list stack all points down to the same data */
-			free_func(skip_list->data);
-		delete = skip_list;
-		skip_list = (ZMapSkipList) skip_list->next;
-		freeSkipList(delete);
-	}
+  while(skip_list)
+    {
+      if(!skip_list->down && free_func) /* skip list stack all points down to the same data */
+        free_func(skip_list->data);
+      delete = skip_list;
+      skip_list = (ZMapSkipList) skip_list->next;
+      freeSkipList(delete);
+    }
 
 
         /* printf("skip list: %ld %ld %ld\n", n_block_alloc, n_skip_alloc, n_skip_free); */
