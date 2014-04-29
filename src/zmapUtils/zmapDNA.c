@@ -141,11 +141,11 @@ gboolean zMapDNACanonical(char *dna)
   gboolean result = FALSE ;				    /* Nothing to fail currently. */
   char *base ;
 
-  /* zMapAssert(dna && *dna) ;*/ 
-  if (!dna || !*dna) 
-    return result ; 
+  /* zMapAssert(dna && *dna) ;*/
+  if (!dna || !*dna)
+    return result ;
 
-  result = TRUE ; 
+  result = TRUE ;
 
   base = dna ;
   while (*base)
@@ -170,18 +170,18 @@ gboolean zMapDNAValidate(char *dna)
       base = dna ;
       valid = TRUE ;
       while (*base)
-	{
-	  if (*base != 'a' && *base != 'c' && *base != 'g' && *base != 't' && *base != 'u'
-	      && *base != 'm' && *base != 'r' && *base != 'w' && *base != 's' && *base != 'y'
-	      && *base != 'k' && *base != 'v' && *base != 'h' && *base != 'd' && *base != 'b'
-	      && *base != 'n' && *base != 'x' && *base != '-' && *base != '*' && *base != '.')
-	    {
-	      valid = FALSE ;
-	      break ;
-	    }
-	  else
-	    base++ ;
-	}
+        {
+          if (*base != 'a' && *base != 'c' && *base != 'g' && *base != 't' && *base != 'u'
+              && *base != 'm' && *base != 'r' && *base != 'w' && *base != 's' && *base != 'y'
+              && *base != 'k' && *base != 'v' && *base != 'h' && *base != 'd' && *base != 'b'
+              && *base != 'n' && *base != 'x' && *base != '-' && *base != '*' && *base != '.')
+            {
+              valid = FALSE ;
+              break ;
+            }
+          else
+            base++ ;
+        }
     }
 
   return valid ;
@@ -214,36 +214,37 @@ gboolean zMapDNAFindMatch(char *cp, char *end, char *tp, int maxError, int maxN,
   char *start ;
 
   /* zMapAssert(cp && *cp && tp && *tp) ; */
-  if (!cp || !*cp || !tp || !*tp) 
-    return result ; 
+  zMapReturnValIfFail(cp && *cp && tp && *tp, result) ;
+  /* if (!cp || !*cp || !tp || !*tp)
+    return result ; */
 
   start = cp ;
   while (c <= end)
     {
       if (!*t)
-	{
-	  result = TRUE ;
-	  break ;
-	}
+        {
+          result = TRUE ;
+          break ;
+        }
       else if ((*c == 'n' || *c == 'x') && --j < 0)
-	{
-	  t = tp ;
-	  c = ++cs ;
-	  i = maxError ;
-	  j = maxN ;
+        {
+          t = tp ;
+          c = ++cs ;
+          i = maxError ;
+          j = maxN ;
 
-	  start = c ;					    /* reset start.... */
-	}
+          start = c ;					    /* reset start.... */
+        }
       else
         {
           gboolean match  = FALSE;
 
           char base = dnaEncodeChar[(int) *c++ & 0x7f];
 
-            /* does this cry out for an automaton or what?
-             * this runs inefficiently as a naive algorithm but as it's one match
-             *  against one shortish DNA sequence it completes in a person feasable time
-             */
+          /* does this cry out for an automaton or what?
+           * this runs inefficiently as a naive algorithm but as it's one match
+           *  against one shortish DNA sequence it completes in a person feasable time
+           */
           match = (*t++ & base);
 
           if (!match && (--i < 0))
@@ -260,18 +261,18 @@ gboolean zMapDNAFindMatch(char *cp, char *end, char *tp, int maxError, int maxN,
 
   if (result || !*t)
     {
-	int len;
+      int len;
 #define MAX_BASE 50
 
       result = TRUE ;
       *start_out = start ;
       *end_out = c - 1 ;				    /* We've gone past the last match so reset. */
-	len = *end_out - *start_out + 1;
+      len = *end_out - *start_out + 1;
 
       if (match_str)
-	{
-		*match_str = g_strdup_printf("%.*s%s", len < MAX_BASE ? len : MAX_BASE, *start_out,  len > MAX_BASE ? "..." : "");
-	}
+        {
+          *match_str = g_strdup_printf("%.*s%s", len < MAX_BASE ? len : MAX_BASE, *start_out,  len > MAX_BASE ? "..." : "");
+        }
 
     }
 
@@ -323,31 +324,31 @@ GList *zMapDNAFindAllMatches(char *dna, char *query, ZMapStrand strand, int from
        * Target: ATGGCGGATTAGCAATG
        */
       while (cp < search_end && zMapDNAFindMatch(cp, search_end, tx_query, max_errors, max_Ns, &start, &end, match_ptr))
-	{
-	  ZMapDNAMatch match ;
+        {
+          ZMapDNAMatch match ;
 
-	  /* Record this match. */
-	  match = g_new0(ZMapDNAMatchStruct, 1) ;
-	  match->match_type = ZMAPSEQUENCE_DNA ;
-	  match->strand = ZMAPSTRAND_FORWARD ;
+          /* Record this match. */
+          match = g_new0(ZMapDNAMatchStruct, 1) ;
+          match->match_type = ZMAPSEQUENCE_DNA ;
+          match->strand = ZMAPSTRAND_FORWARD ;
 
-	  match->start = start - dna ;
-	  match->end = end - dna ;
+          match->start = start - dna ;
+          match->end = end - dna ;
 
-	  /* Must be one-based for reference. */
-	  match->ref_start = match->start + 1 ;
-	  match->ref_end = match->end + 1 ;
+          /* Must be one-based for reference. */
+          match->ref_start = match->start + 1 ;
+          match->ref_end = match->end + 1 ;
 
-	  match->frame = zMapSequenceGetFrame(match->start + 1) ;
+          match->frame = zMapSequenceGetFrame(match->start + 1) ;
 
-	  if (return_matches)
-	    match->match = *match_ptr ;
+          if (return_matches)
+            match->match = *match_ptr ;
 
-	  sites = g_list_append(sites, match) ;
+          sites = g_list_append(sites, match) ;
 
-	  /* Move pointers on. */
-	  cp = end + 1 ;
-	}
+          /* Move pointers on. */
+          cp = end + 1 ;
+        }
     }
 
   if (strand == ZMAPSTRAND_NONE || strand == ZMAPSTRAND_REVERSE)
@@ -373,36 +374,35 @@ GList *zMapDNAFindAllMatches(char *dna, char *query, ZMapStrand strand, int from
        */
 
       while (cp < search_end && zMapDNAFindMatch(cp, search_end, tx_query, max_errors, max_Ns, &start, &end, match_ptr))
-	{
-	  ZMapDNAMatch match ;
-	  int tmp ;
+        {
+          ZMapDNAMatch match ;
+          int tmp ;
 
-	  /* Record this match. */
-	  match = g_new0(ZMapDNAMatchStruct, 1) ;
-	  match->match_type = ZMAPSEQUENCE_DNA ;
-	  match->strand = ZMAPSTRAND_REVERSE ;
+          /* Record this match. */
+          match = g_new0(ZMapDNAMatchStruct, 1) ;
+          match->match_type = ZMAPSEQUENCE_DNA ;
+          match->strand = ZMAPSTRAND_REVERSE ;
 
-	  match->start = (length - (start - revcomp_dna)) + offset - 1 ;
-	  match->end = (length - (end - revcomp_dna)) + offset - 1 ;
-	  tmp = match->start ;
-	  match->start = match->end ;
-	  match->end = tmp ;
+          match->start = (length - (start - revcomp_dna)) + offset - 1 ;
+          match->end = (length - (end - revcomp_dna)) + offset - 1 ;
+          tmp = match->start ;
+          match->start = match->end ;
+          match->end = tmp ;
 
-	  /* Must be one-based for reference. */
-	  match->ref_start = match->start + 1 ;
-	  match->ref_end = match->end + 1 ;
+          /* Must be one-based for reference. */
+          match->ref_start = match->start + 1 ;
+          match->ref_end = match->end + 1 ;
 
+          match->frame = zMapSequenceGetFrame(match->start + 1) ;
 
-	  match->frame = zMapSequenceGetFrame(match->start + 1) ;
+          if (return_matches)
+            match->match = *match_ptr ;
 
-	  if (return_matches)
-	    match->match = *match_ptr ;
+          sites = g_list_append(sites, match) ;
 
-	  sites = g_list_append(sites, match) ;
-
-	  /* Move pointers on. */
-	  cp = end + 1 ;
-	}
+          /* Move pointers on. */
+          cp = end + 1 ;
+        }
 
       g_free(revcomp_dna) ;
     }

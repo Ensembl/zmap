@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -27,7 +27,7 @@
  * Description: Various coordinate transforming functions.
  *
  * Exported functions: See ZMap/zmapUtils.h
- *              
+ *
  *-------------------------------------------------------------------
  */
 
@@ -43,7 +43,7 @@
 
 
 /* Clamp start_inout/end_inout to be within range_start/range_end.
- * 
+ *
  * Returns FALSE if coords do not overlap range and leaves coords unaltered, otherwise
  * returns TRUE and if coords had to be clamped they are returned in start_inout/end_inout. */
 gboolean zMapCoordsClamp(int range_start, int range_end, int *start_inout, int *end_inout)
@@ -65,9 +65,9 @@ gboolean zMapCoordsClamp(int range_start, int range_end, int *start_inout, int *
       result = TRUE ;
 
       if (*start_inout < range_start)
-	*start_inout = range_start ;
+        *start_inout = range_start ;
       if (*end_inout > range_end)
-	*end_inout = range_end ;
+        *end_inout = range_end ;
     }
 
   return result ;
@@ -92,7 +92,7 @@ void zmapCoordsZeroBased(int *start_inout, int *end_inout)
 
 /* Convert given coords to offsets from base. Offsets start at start_value which would
  * commonly be 0 or 1 or give zero or one-based coords.
- * 
+ *
  * Coords are assumed to be >= base and start_value >= 0
  *  */
 void zMapCoordsToOffset(int base, int start_value, int *start_inout, int *end_inout)

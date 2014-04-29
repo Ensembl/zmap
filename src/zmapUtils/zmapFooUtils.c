@@ -107,26 +107,26 @@ gboolean zMapFoocanvasGetTextDimensions(FooCanvas *canvas,
       if(!zMapGUIGetFixedWidthFont(GTK_WIDGET(canvas),
                                    g_list_append(NULL, ZMAP_ZOOM_FONT_FAMILY), ZMAP_ZOOM_FONT_SIZE, PANGO_WEIGHT_NORMAL,
                                    &font, &font_desc))
-      {
-        zMapLogWarning("%s", "Couldn't get fixed width font");
-      }
+        {
+          zMapLogWarning("%s", "Couldn't get fixed width font");
+        }
       else
-      {
-      	tmp_item = foo_canvas_item_new(root_grp,
-                                     foo_canvas_text_get_type(),
-                                     "x",         0.0,
-                                     "y",         0.0,
-                                     "text",      "A",
-                                     "font_desc", font_desc,
-                                     NULL);
-      	layout = FOO_CANVAS_TEXT(tmp_item)->layout;
-      	pango_layout_get_pixel_size(layout, &iwidth, &iheight);
-      	width  = (double)iwidth;
-      	height = (double)iheight;
+        {
+          tmp_item = foo_canvas_item_new(root_grp,
+                                         foo_canvas_text_get_type(),
+                                         "x",         0.0,
+                                         "y",         0.0,
+                                         "text",      "A",
+                                         "font_desc", font_desc,
+                                         NULL);
+      	   layout = FOO_CANVAS_TEXT(tmp_item)->layout;
+      	   pango_layout_get_pixel_size(layout, &iwidth, &iheight);
+      	   width  = (double)iwidth;
+          height = (double)iheight;
 
-      	gtk_object_destroy(GTK_OBJECT(tmp_item));
-      	success = TRUE;
-	}
+      	   gtk_object_destroy(GTK_OBJECT(tmp_item));
+      	   success = TRUE;
+        }
     }
 
   if(width_out)
