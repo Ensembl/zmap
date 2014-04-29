@@ -798,7 +798,7 @@ void zmapWindowDrawSeparatorFeatures(ZMapWindow           window,
 
       /* Now we have a context to merge. */
       zMapFeatureContextMerge(&(window->strand_separator_context),
-			      &context_cp, &diff,NULL);
+			      &context_cp, &diff, NULL, NULL);
 
       canvas_data.window = window;
       canvas_data.canvas = window->canvas;
