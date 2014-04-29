@@ -798,7 +798,7 @@ static gboolean mergeNewFeatures(ZMapView view, RequestData request_data,
     }
 
   /* Add total features drawn. */
-  g_string_append(request_data->err_msg, " Total features drawn: %d", merge_stats->features_added) ;
+  g_string_append_printf(request_data->err_msg, " Total features drawn: %d", merge_stats->features_added) ;
   g_free(merge_stats) ;
 
   return result ;
