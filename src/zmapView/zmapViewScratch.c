@@ -730,15 +730,21 @@ static void scratchMergeNewFeature(ZMapView zmap_view, ZMapFeature feature)
   GList *feature_list = NULL ;
   ZMapFeature feature_copy = NULL ;
   ZMapFeatureContext context_copy = copyContextAll(context, feature, feature_set, &feature_list, &feature_copy) ;
+  ZMapFeatureContextMergeStats merge_stats ;
 
   if (context_copy && feature_list)
-    zmapViewMergeNewFeatures(zmap_view, &context_copy, &feature_list) ;
+    zmapViewMergeNewFeatures(zmap_view, &context_copy, &merge_stats, &feature_list) ;
 
   if (context_copy && feature_copy)
     zmapViewDrawDiffContext(zmap_view, &context_copy, feature_copy) ;
 
   if (context_copy)
     zMapFeatureContextDestroy(context_copy, TRUE) ;
+
+  /* Gemma, use the stats if you need to....Ed */
+  g_free(merge_stats) ;
+
+  return ;
 }
 
 
@@ -944,8 +950,15 @@ void zmapViewScratchInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, ZM
   /* Merge our context into the view's context and view the diff context */
   if (!context_in)
     {
-      ZMapFeatureContext diff_context = zmapViewMergeInContext(zmap_view, context);
+      ZMapFeatureContext diff_context ;
+      ZMapFeatureContextMergeStats merge_stats ;
+
+      diff_context = zmapViewMergeInContext(zmap_view, context, &merge_stats);
+
       zmapViewDrawDiffContext(zmap_view, &diff_context, NULL);
+
+      /* Gemma, use the stats if you need to....Ed */
+      g_free(merge_stats) ;
     }
 }
 
