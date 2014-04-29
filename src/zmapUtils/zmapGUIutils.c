@@ -99,8 +99,8 @@ typedef struct TextAttrsStructName
  * absent, these structs deal with getting hold of it....obviously they need to be kept in step
  * with the gdk event structs but they won't be changing much ! */
 typedef enum {EVENT_NO_TIME, EVENT_COMMON_TIME,
-	      EVENT_CROSSING_TIME, EVENT_ATOM_TIME,
-	      EVENT_SELECTION_TIME, EVENT_DND_TIME, EVENT_OWNER_TIME} TimeStuctType ;
+      EVENT_CROSSING_TIME, EVENT_ATOM_TIME,
+      EVENT_SELECTION_TIME, EVENT_DND_TIME, EVENT_OWNER_TIME} TimeStuctType ;
 
 typedef struct EventCommonTimeStructName
 {
@@ -131,10 +131,10 @@ static char *zmapXRemoteErrorText = NULL;
 
 static gboolean modalFromMsgType(ZMapMsgType msg_type) ;
 static GtkResponseType messageFull(GtkWindow *parent, char *title_in, char *msg,
-				   gboolean modal, int display_timeout,
+   gboolean modal, int display_timeout,
                                    char *first_button, char *second_button, char *third_button,
-				   ZMapMsgType msg_type, GtkJustification justify,
-				   ZMapGUIMsgUserData user_data) ;
+   ZMapMsgType msg_type, GtkJustification justify,
+   ZMapGUIMsgUserData user_data) ;
 static void printMessage(ZMapMsgType msg_type, char *message) ;
 static void butClick(GtkButton *button, gpointer user_data) ;
 static gboolean timeoutHandlerModal(gpointer data) ;
@@ -220,7 +220,7 @@ void zMapGUIRaiseToTop(GtkWidget *widget)
  *
  * static GdkEventMask msg_exclude_mask_G = (GDK_POINTER_MOTION_MASK | GDK_EXPOSURE_MASK
  *                                           | GDK_FOCUS_CHANGE_MASK | GDK_VISIBILITY_NOTIFY_MASK
- *					     | GDK_ENTER_NOTIFY_MASK | GDK_LEAVE_NOTIFY_MASK) ;
+ *     | GDK_ENTER_NOTIFY_MASK | GDK_LEAVE_NOTIFY_MASK) ;
  *
  */
 char *zMapGUIGetEventAsText(GdkEventMask exclude_mask, GdkEventAny *any_event)
@@ -229,133 +229,133 @@ char *zMapGUIGetEventAsText(GdkEventMask exclude_mask, GdkEventAny *any_event)
   int true_index ;
   eventTxtStruct event_txt[] =
     {
-      {"GDK_NOTHING", 0, EVENT_COMMON_TIME},				    /* = -1 */
-      {"GDK_DELETE", 0, EVENT_COMMON_TIME},				    /* = 0 */
-      {"GDK_DESTROY", 0, EVENT_COMMON_TIME},				    /* = 1 */
-      {"GDK_EXPOSE", GDK_EXPOSURE_MASK, EVENT_NO_TIME},		    /* = 2 */
+      {"GDK_NOTHING", 0, EVENT_COMMON_TIME},    /* = -1 */
+      {"GDK_DELETE", 0, EVENT_COMMON_TIME},    /* = 0 */
+      {"GDK_DESTROY", 0, EVENT_COMMON_TIME},    /* = 1 */
+      {"GDK_EXPOSE", GDK_EXPOSURE_MASK, EVENT_NO_TIME},    /* = 2 */
 
-      {"GDK_MOTION_NOTIFY", GDK_POINTER_MOTION_MASK, EVENT_COMMON_TIME},	    /* = 3 */
-      {"GDK_BUTTON_PRESS", 0, EVENT_COMMON_TIME},				    /* = 4 */
-      {"GDK_2BUTTON_PRESS", 0, EVENT_COMMON_TIME},				    /* = 5 */
-      {"GDK_3BUTTON_PRESS", 0, EVENT_COMMON_TIME},				    /* = 6 */
-      {"GDK_BUTTON_RELEASE", 0, EVENT_COMMON_TIME},			    /* = 7 */
+      {"GDK_MOTION_NOTIFY", GDK_POINTER_MOTION_MASK, EVENT_COMMON_TIME},    /* = 3 */
+      {"GDK_BUTTON_PRESS", 0, EVENT_COMMON_TIME},    /* = 4 */
+      {"GDK_2BUTTON_PRESS", 0, EVENT_COMMON_TIME},    /* = 5 */
+      {"GDK_3BUTTON_PRESS", 0, EVENT_COMMON_TIME},    /* = 6 */
+      {"GDK_BUTTON_RELEASE", 0, EVENT_COMMON_TIME},    /* = 7 */
 
-      {"GDK_KEY_PRESS", 0, EVENT_COMMON_TIME},				    /* = 8 */
-      {"GDK_KEY_RELEASE", 0, EVENT_COMMON_TIME},				    /* = 9 */
+      {"GDK_KEY_PRESS", 0, EVENT_COMMON_TIME},    /* = 8 */
+      {"GDK_KEY_RELEASE", 0, EVENT_COMMON_TIME},    /* = 9 */
 
-      {"GDK_ENTER_NOTIFY", GDK_ENTER_NOTIFY_MASK, EVENT_CROSSING_TIME},	    /* = 10 */
-      {"GDK_LEAVE_NOTIFY", GDK_LEAVE_NOTIFY_MASK, EVENT_CROSSING_TIME},	    /* = 11 */
+      {"GDK_ENTER_NOTIFY", GDK_ENTER_NOTIFY_MASK, EVENT_CROSSING_TIME},    /* = 10 */
+      {"GDK_LEAVE_NOTIFY", GDK_LEAVE_NOTIFY_MASK, EVENT_CROSSING_TIME},    /* = 11 */
 
-      {"GDK_FOCUS_CHANGE", GDK_FOCUS_CHANGE_MASK, EVENT_NO_TIME},	    /* = 12 */
-      {"GDK_CONFIGURE", 0, EVENT_NO_TIME},				    /* = 13 */
+      {"GDK_FOCUS_CHANGE", GDK_FOCUS_CHANGE_MASK, EVENT_NO_TIME},    /* = 12 */
+      {"GDK_CONFIGURE", 0, EVENT_NO_TIME},    /* = 13 */
 
-      {"GDK_MAP", 0, EVENT_COMMON_TIME},					    /* = 14 */
-      {"GDK_UNMAP", 0, EVENT_COMMON_TIME},					    /* = 15 */
+      {"GDK_MAP", 0, EVENT_COMMON_TIME},    /* = 14 */
+      {"GDK_UNMAP", 0, EVENT_COMMON_TIME},    /* = 15 */
 
-      {"GDK_PROPERTY_NOTIFY", 0, EVENT_ATOM_TIME},			    /* = 16 */
+      {"GDK_PROPERTY_NOTIFY", 0, EVENT_ATOM_TIME},    /* = 16 */
 
-      {"GDK_SELECTION_CLEAR", 0, EVENT_SELECTION_TIME},			    /* = 17 */
-      {"GDK_SELECTION_REQUEST", 0, EVENT_SELECTION_TIME},			    /* = 18 */
-      {"GDK_SELECTION_NOTIFY", 0, EVENT_SELECTION_TIME},			    /* = 19 */
+      {"GDK_SELECTION_CLEAR", 0, EVENT_SELECTION_TIME},    /* = 17 */
+      {"GDK_SELECTION_REQUEST", 0, EVENT_SELECTION_TIME},    /* = 18 */
+      {"GDK_SELECTION_NOTIFY", 0, EVENT_SELECTION_TIME},    /* = 19 */
 
-      {"GDK_PROXIMITY_IN", 0, EVENT_COMMON_TIME},				    /* = 20 */
-      {"GDK_PROXIMITY_OUT", 0, EVENT_COMMON_TIME},				    /* = 21 */
+      {"GDK_PROXIMITY_IN", 0, EVENT_COMMON_TIME},    /* = 20 */
+      {"GDK_PROXIMITY_OUT", 0, EVENT_COMMON_TIME},    /* = 21 */
 
-      {"GDK_DRAG_ENTER", 0, EVENT_DND_TIME},				    /* = 22 */
-      {"GDK_DRAG_LEAVE", 0, EVENT_DND_TIME},				    /* = 23 */
-      {"GDK_DRAG_MOTION", 0, EVENT_DND_TIME},				    /* = 24 */
-      {"GDK_DRAG_STATUS", 0, EVENT_DND_TIME},				    /* = 25 */
-      {"GDK_DROP_START", 0, EVENT_DND_TIME},				    /* = 26 */
-      {"GDK_DROP_FINISHED", 0, EVENT_DND_TIME},				    /* = 27 */
+      {"GDK_DRAG_ENTER", 0, EVENT_DND_TIME},    /* = 22 */
+      {"GDK_DRAG_LEAVE", 0, EVENT_DND_TIME},    /* = 23 */
+      {"GDK_DRAG_MOTION", 0, EVENT_DND_TIME},    /* = 24 */
+      {"GDK_DRAG_STATUS", 0, EVENT_DND_TIME},    /* = 25 */
+      {"GDK_DROP_START", 0, EVENT_DND_TIME},    /* = 26 */
+      {"GDK_DROP_FINISHED", 0, EVENT_DND_TIME},    /* = 27 */
 
-      {"GDK_CLIENT_EVENT", 0, EVENT_NO_TIME},				    /* = 28 */
+      {"GDK_CLIENT_EVENT", 0, EVENT_NO_TIME},    /* = 28 */
 
       {"GDK_VISIBILITY_NOTIFY", GDK_VISIBILITY_NOTIFY_MASK, EVENT_NO_TIME}, /* = 29 */
-      {"GDK_NO_EXPOSE", 0, EVENT_NO_TIME},				    /* = 30 */
-      {"GDK_SCROLL", 0, EVENT_COMMON_TIME},				    /* = 31 */
-      {"GDK_WINDOW_STATE", 0, EVENT_NO_TIME},				    /* = 32 */
-      {"GDK_SETTING", 0, EVENT_NO_TIME},				    /* = 33 */
-      {"GDK_OWNER_CHANGE", 0, EVENT_OWNER_TIME},				    /* = 34 */
-      {"GDK_GRAB_BROKEN", 0, EVENT_NO_TIME},				    /* = 35 */
-      {"GDK_DAMAGE", 0, EVENT_NO_TIME},				    /* = 36 */
-      {"GDK_EVENT_LAST", 0, EVENT_NO_TIME}				    /* helper variable for decls */
+      {"GDK_NO_EXPOSE", 0, EVENT_NO_TIME},    /* = 30 */
+      {"GDK_SCROLL", 0, EVENT_COMMON_TIME},    /* = 31 */
+      {"GDK_WINDOW_STATE", 0, EVENT_NO_TIME},    /* = 32 */
+      {"GDK_SETTING", 0, EVENT_NO_TIME},    /* = 33 */
+      {"GDK_OWNER_CHANGE", 0, EVENT_OWNER_TIME},    /* = 34 */
+      {"GDK_GRAB_BROKEN", 0, EVENT_NO_TIME},    /* = 35 */
+      {"GDK_DAMAGE", 0, EVENT_NO_TIME},    /* = 36 */
+      {"GDK_EVENT_LAST", 0, EVENT_NO_TIME}    /* helper variable for decls */
     } ;
 
 
-  true_index = any_event->type + 1 ;			    /* yuch, see enum values in comments above. */
+  true_index = any_event->type + 1 ;    /* yuch, see enum values in comments above. */
 
   if (!exclude_mask || !(event_txt[true_index].mask & exclude_mask))
     {
       guint32 time ;
 
       switch (event_txt[true_index].time_struct_type)
-	{
-	case EVENT_COMMON_TIME:
-	  {
-	    EventCommonTime common = (EventCommonTime)any_event ;
+        {
+          case EVENT_COMMON_TIME:
+            {
+              EventCommonTime common = (EventCommonTime)any_event ;
+  
+              time = common->time ;
+  
+              break ;
+            }
 
-	    time = common->time ;
+          case EVENT_CROSSING_TIME:
+            {
+              GdkEventCrossing *crossing = (GdkEventCrossing *)any_event ;
+      
+              time = crossing->time ;
+      
+              break ;
+            }
 
-	    break ;
-	  }
+          case EVENT_ATOM_TIME:
+            {
+              GdkEventProperty *atom_time = (GdkEventProperty *)any_event ;
+      
+              time = atom_time->time ;
+      
+              break ;
+            }
+  
+          case EVENT_SELECTION_TIME:
+            {
+              GdkEventSelection *select_time = (GdkEventSelection *)any_event ;
+        
+              time = select_time->time ;
+      
+              break ;
+            }
 
-	case EVENT_CROSSING_TIME:
-	  {
-	    GdkEventCrossing *crossing = (GdkEventCrossing *)any_event ;
+          case EVENT_DND_TIME:
+            {
+              GdkEventDND *dnd_time = (GdkEventDND *)any_event ;
 
-	    time = crossing->time ;
+              time = dnd_time->time ;
 
-	    break ;
-	  }
+              break ;
+            }
 
-	case EVENT_ATOM_TIME:
-	  {
-	    GdkEventProperty *atom_time = (GdkEventProperty *)any_event ;
+          case EVENT_OWNER_TIME:
+            {
+              GdkEventOwnerChange *owner_time = (GdkEventOwnerChange *)any_event ;
 
-	    time = atom_time->time ;
+              time = owner_time->time ;
+    
+              break ;
+            }
 
-	    break ;
-	  }
-
-	case EVENT_SELECTION_TIME:
-	  {
-	    GdkEventSelection *select_time = (GdkEventSelection *)any_event ;
-
-	    time = select_time->time ;
-
-	    break ;
-	  }
-
-	case EVENT_DND_TIME:
-	  {
-	    GdkEventDND *dnd_time = (GdkEventDND *)any_event ;
-
-	    time = dnd_time->time ;
-
-	    break ;
-	  }
-
-	case EVENT_OWNER_TIME:
-	  {
-	    GdkEventOwnerChange *owner_time = (GdkEventOwnerChange *)any_event ;
-
-	    time = owner_time->time ;
-
-	    break ;
-	  }
-
-	case EVENT_NO_TIME:
-	default:
-	  {
-	    time = 0 ;
-	    break ;
-	  }
-	}
+          case EVENT_NO_TIME:
+          default:
+            {
+              time = 0 ;
+              break ;
+            }
+        }
 
       event_as_text = g_strdup_printf("Event: \"%s\"\tXWindow: %x\tTime: %u.",
-				      event_txt[true_index].text,
-				      (unsigned int)GDK_WINDOW_XWINDOW(any_event->window),
-				      time) ;
+      event_txt[true_index].text,
+      (unsigned int)GDK_WINDOW_XWINDOW(any_event->window),
+      time) ;
     }
 
   return event_as_text ;
@@ -422,64 +422,64 @@ gboolean zMapGUIGetMaxWindowSize(GtkWidget *toplevel, gint *width_out, gint *hei
       gboolean result ;
       GdkWindow *root_window ;
       gulong offset, length ;
-      gint pdelete = FALSE ;				    /* Never delete the property data. */
+      gint pdelete = FALSE ;    /* Never delete the property data. */
       GdkAtom actual_property_type ;
       gint actual_format, actual_length, field_size, num_fields ;
       guchar *data, *curr ;
       guint width, height, left, top, right, bottom ;
 
-      field_size = sizeof(glong) ;			    /* see comment above re. 32 vs. 64 bits. */
+      field_size = sizeof(glong) ;    /* see comment above re. 32 vs. 64 bits. */
 
       root_window = gdk_screen_get_root_window(screen) ;
 
       offset = 0 ;
       num_fields = 2 ;
-      length = num_fields * 4 ;				    /* Get two unsigned ints worth of data. */
+      length = num_fields * 4 ;    /* Get two unsigned ints worth of data. */
       actual_format = actual_length = 0 ;
       data = NULL ;
       result = gdk_property_get(root_window,
-				geometry_atom,
-				GDK_NONE,
-				offset,
-				length,
-				pdelete,
-				&actual_property_type,
-				&actual_format,
-				&actual_length,
-				&data) ;
+                                geometry_atom,
+                                GDK_NONE,
+                                offset,
+                                length,
+                                pdelete,
+                                &actual_property_type,
+                                &actual_format,
+                                &actual_length,
+                                &data) ;
 
       if (num_fields == actual_length/sizeof(glong))
-	{
-	  curr = data ;
-	  memcpy(&width, curr, field_size) ;
-	  memcpy(&height, (curr += field_size), field_size) ;
-	  g_free(data) ;
-	}
+        {
+          curr = data ;
+          memcpy(&width, curr, field_size) ;
+          memcpy(&height, (curr += field_size), field_size) ;
+          g_free(data) ;
+        }
 
       offset = 0 ;
       num_fields = 4 ;
-      length = num_fields * 4 ;				    /* Get four unsigned ints worth of data. */
+      length = num_fields * 4 ;    /* Get four unsigned ints worth of data. */
       actual_format = actual_length = 0 ;
       data = NULL ;
       result = gdk_property_get(root_window,
-				workarea_atom,
-				GDK_NONE,
-				offset,
-				length,
-				pdelete,
-				&actual_property_type,
-				&actual_format,
-				&actual_length,
-				&data) ;
+                                workarea_atom,
+                                GDK_NONE,
+                                offset,
+                                length,
+                                pdelete,
+                                &actual_property_type,
+                                &actual_format,
+                                &actual_length,
+                                &data) ;
 
       if (num_fields == actual_length/sizeof(glong))
-	{
-	  curr = data ;
-	  memcpy(&left, curr, field_size) ;
-	  memcpy(&top, (curr += field_size), field_size) ;
-	  memcpy(&right, (curr += field_size), field_size) ;
-	  memcpy(&bottom, (curr += field_size), field_size) ;
-	  g_free(data) ;
+        {
+          curr = data ;
+          memcpy(&left, curr, field_size) ;
+          memcpy(&top, (curr += field_size), field_size) ;
+          memcpy(&right, (curr += field_size), field_size) ;
+          memcpy(&bottom, (curr += field_size), field_size) ;
+          g_free(data) ;
 
           /* off by one ? */
           window_height = bottom - top ;
@@ -537,7 +537,7 @@ static XErrorHandler stored_xerror_handler(XErrorHandler e, gboolean store, gboo
         {
           zMapLogWarning("I'm not forgetting %p, but not storing %p either!", stored, e);
 
-	  zMapLogWarning("I'm not forgetting %p, but not storing %p either!", stored, e);
+          zMapLogWarning("I'm not forgetting %p, but not storing %p either!", stored, e);
         }
     }
 
@@ -558,7 +558,7 @@ static void zmapXTrapErrors(char *where, char *what, char *text)
   window_error_G = False ;
 
   trap_txt_G = g_strdup_printf("X Error in \"%s\" calling \"%s\"() with \"%s\"",
-			       where, what, text) ;
+       where, what, text) ;
 
   if ((current = XSetErrorHandler(zmapXErrorHandler)))
     {
@@ -591,7 +591,7 @@ static int zmapXErrorHandler(Display *dpy, XErrorEvent *e )
 
   zMapLogWarning("**** X11 Error: %s **** Reason: %s", errorText, trap_txt_G) ;
 
-  return 1 ;						    /* This seems to be ignored by the server (!) */
+  return 1 ;    /* This seems to be ignored by the server (!) */
 }
 
 
@@ -622,9 +622,9 @@ gboolean zMapGUIXWindowChangeProperty(Display *x_display, Window x_window, char 
   zmapXTrapErrors((char *)__PRETTY_FUNCTION__, "XChangeProperty", err_txt) ;
 
   XChangeProperty(x_display, x_window,
-		  xproperty, XA_STRING, 8,
-		  PropModeReplace, (unsigned char *)change_to,
-		  strlen(change_to));
+  xproperty, XA_STRING, 8,
+  PropModeReplace, (unsigned char *)change_to,
+  strlen(change_to));
 
   XSync(x_display, False) ;
 
@@ -693,7 +693,7 @@ static gboolean zmapGUIXWindowValid(Display *x_display, Window x_window, char *c
           success = FALSE;
           i += attempts; /* no more attempts */
         }
-      else if (result != Success || !xtype_return)	    /* make sure we use "Success" from the X11 definition for success... */
+      else if (result != Success || !xtype_return)    /* make sure we use "Success" from the X11 definition for success... */
         {
           /* The property doesn't exist, so this isn't the correct window */
           success = FALSE ;
@@ -761,7 +761,7 @@ static gboolean zmapGUIXWindowValid(Display *x_display, Window x_window, char *c
  */
 gboolean zMapGUIXWindowExists(Display *x_display, Window x_window, char *clipboard_name, char **err_msg_out)
 {
-  gboolean result = TRUE ;				    /* default to window ok. */
+  gboolean result = TRUE ;    /* default to window ok. */
   Status status ;
   XWindowAttributes x_attributes ;
   int x_error_code ;
@@ -777,22 +777,22 @@ gboolean zMapGUIXWindowExists(Display *x_display, Window x_window, char *clipboa
     {
       /* If there was an error then check what sort. */
       if ((x_error_code = gdk_error_trap_pop()))
-	{
-	  enum {TEXT_BUF_SIZE = 1024} ;
-	  char *error_text ;
+        {
+          enum {TEXT_BUF_SIZE = 1024} ;
+          char *error_text ;
 
-	  error_text = g_malloc(TEXT_BUF_SIZE) ;
+          error_text = g_malloc(TEXT_BUF_SIZE) ;
 
-	  XGetErrorText(x_display, x_error_code, error_text, TEXT_BUF_SIZE) ;
+          XGetErrorText(x_display, x_error_code, error_text, TEXT_BUF_SIZE) ;
 
-	  *err_msg_out = error_text ;
+          *err_msg_out = error_text ;
 
-	  result = FALSE ;
-	}
+          result = FALSE ;
+        }
       else
-	{
-	  *err_msg_out = g_strdup("XGetWindowAttributes() failed but there was no X error code.") ;
-	}
+        {
+          *err_msg_out = g_strdup("XGetWindowAttributes() failed but there was no X error code.") ;
+        }
     }
   else
     {
@@ -855,7 +855,7 @@ gint my_gtk_run_dialog_nonmodal(GtkWidget *toplevel)
   *response_ptr = 0 ;
 
   g_signal_connect(GTK_OBJECT(toplevel), "response",
-		   GTK_SIGNAL_FUNC(responseCB), (gpointer)response_ptr) ;
+   GTK_SIGNAL_FUNC(responseCB), (gpointer)response_ptr) ;
 
   while (*response_ptr == 0)
     gtk_main_iteration() ;
@@ -911,14 +911,14 @@ char *zMapGUIMakeTitleString(char *window_type, char *message)
   char *title = NULL ;
 
   title = g_strdup_printf("%s%s%s%s%s%s%s%s",
-			  (abbreviated_title_prefix_G ? "Z" : "ZMap"),
-			  (abbreviated_title_prefix_G ? "" : " ("),
-			  (abbreviated_title_prefix_G ? "" : zMapGetAppVersionString()),
-			  (abbreviated_title_prefix_G ? "" : ")"),
-			  (window_type ? " " : ""),
-			  (window_type ? window_type : ""),
-			  (message ? " - " : ""),
-			  (message ? message : "")) ;
+  (abbreviated_title_prefix_G ? "Z" : "ZMap"),
+  (abbreviated_title_prefix_G ? "" : " ("),
+  (abbreviated_title_prefix_G ? "" : zMapGetAppVersionString()),
+  (abbreviated_title_prefix_G ? "" : ")"),
+  (window_type ? " " : ""),
+  (window_type ? window_type : ""),
+  (message ? " - " : ""),
+  (message ? message : "")) ;
 
   return title ;
 }
@@ -983,22 +983,22 @@ GtkWidget *zMapGUIPopOutWidget(GtkWidget *popout, char *title)
       PopOutData popout_data;
 
       if((popout_data = g_new0(PopOutDataStruct, 1)))
-	{
-	  popout_data->original_parent   = curr_parent;
-	  popout_data->popout_toplevel = new_toplevel;
-	  popout_data->popout_child    = popout;
+        {
+          popout_data->original_parent   = curr_parent;
+          popout_data->popout_toplevel = new_toplevel;
+          popout_data->popout_child    = popout;
 
-	  gtk_widget_reparent(popout, new_toplevel);
+          gtk_widget_reparent(popout, new_toplevel);
 
-	  popout_data->original_parent_signal_id =
-	    g_signal_connect(G_OBJECT(curr_parent), "destroy",
-			     G_CALLBACK(handle_original_parent_destroy_cb),
-			     popout_data);
+          popout_data->original_parent_signal_id =
+                g_signal_connect(G_OBJECT(curr_parent), "destroy",
+                                 G_CALLBACK(handle_original_parent_destroy_cb),
+                                 popout_data);
 
-	  g_signal_connect(G_OBJECT(new_toplevel), "destroy",
-			   G_CALLBACK(handle_popout_destroy_cb),
-			   popout_data);
-	}
+          g_signal_connect(G_OBJECT(new_toplevel), "destroy",
+                           G_CALLBACK(handle_popout_destroy_cb),
+                           popout_data);
+        }
     }
 
   return new_toplevel;
@@ -1016,10 +1016,10 @@ GtkWidget *zMapGUIPopOutWidget(GtkWidget *popout, char *title)
 void zMapGUIShowAbout(void)
 {
   const gchar *authors[] = {"Ed Griffiths, Sanger Institute, UK <edgrif@sanger.ac.uk>",
-			    "Roy Storey, Sanger Institute, UK <rds@sanger.ac.uk>",
-			    "Malcolm Hinsley, Sanger Institute, UK <mh17@sanger.ac.uk>",
-			    "Steve Miller, Sanger Institute, UK <sm23@sanger.ac.uk>",
-			    NULL} ;
+    "Roy Storey, Sanger Institute, UK <rds@sanger.ac.uk>",
+    "Malcolm Hinsley, Sanger Institute, UK <mh17@sanger.ac.uk>",
+    "Steve Miller, Sanger Institute, UK <sm23@sanger.ac.uk>",
+    NULL} ;
   char *comment_str ;
 
   comment_str = g_strdup_printf("%s\n\n%s\n", zMapGetCompileString(), zMapGetCommentsString()) ;
@@ -1031,15 +1031,15 @@ void zMapGUIShowAbout(void)
       gtk_about_dialog_set_url_hook(aboutLinkOldCB, NULL, NULL) ;
 
       gtk_show_about_dialog(NULL,
-			    "authors", authors,
-			    "comments", comment_str,
-			    "copyright", zMapGetCopyrightString(),
-			    "license", zMapGetLicenseString(),
-			    "program-name", zMapGetAppName(),
-			    "version", zMapGetAppVersionString(),
-			    "website", zMapGetWebSiteString(),
-			    "title", zMapGUIMakeTitleString(NULL, "About the program"),
-			    NULL) ;
+    "authors", authors,
+    "comments", comment_str,
+    "copyright", zMapGetCopyrightString(),
+    "license", zMapGetLicenseString(),
+    "program-name", zMapGetAppName(),
+    "version", zMapGetAppVersionString(),
+    "website", zMapGetWebSiteString(),
+    "title", zMapGUIMakeTitleString(NULL, "About the program"),
+    NULL) ;
     }
 #if MAC_VERSION_HAS_BUG
   else
@@ -1057,8 +1057,8 @@ void zMapGUIShowAbout(void)
       gtk_about_dialog_set_authors(about_dialog, authors) ;
 
       g_signal_connect(GTK_OBJECT(about_dialog), "activate-link",
-		       GTK_SIGNAL_FUNC(aboutLinkNewCB),
-		       NULL) ;
+       GTK_SIGNAL_FUNC(aboutLinkNewCB),
+       NULL) ;
 
       zMapGUISetToplevelTitle((GtkWidget)about_dialog, NULL, "About the program") ;
 
@@ -1164,7 +1164,7 @@ void zMapGUIShowHelp(ZMapHelpType help_contents)
           break ;
 
         case ZMAPGUI_HELP_WHATS_NEW:
-          web_page = g_strdup_printf("%s",ZMAP_INTERNAL_WEB_WHATSNEW);	/* a temporary fix via the internal wiki */
+          web_page = g_strdup_printf("%s",ZMAP_INTERNAL_WEB_WHATSNEW);/* a temporary fix via the internal wiki */
           break;
 
         default:
@@ -1293,8 +1293,8 @@ void zMapGUIShowMsg(ZMapMsgType msg_type, char *msg)
  * @return  void
  */
 void zMapGUIShowMsgFull(GtkWindow *parent, char *msg,
-			ZMapMsgType msg_type,
-			GtkJustification justify, int display_timeout, gboolean close)
+ZMapMsgType msg_type,
+GtkJustification justify, int display_timeout, gboolean close)
 {
   gboolean modal ;
   char *first_button = NULL ;
@@ -1364,7 +1364,7 @@ gboolean zMapGUIMsgGetBoolFull(GtkWindow *parent, ZMapMsgType msg_type, char *ms
  * @return  char *, users text or NULL if no text.
  */
 GtkResponseType zMapGUIMsgGetText(GtkWindow *parent, ZMapMsgType msg_type, char *msg, gboolean hide_text,
-				  char **text_out)
+  char **text_out)
 {
   GtkResponseType result = GTK_RESPONSE_CANCEL ;
   ZMapGUIMsgUserDataStruct user_data = {ZMAPGUI_USERDATA_TEXT, FALSE, {FALSE}} ;
@@ -1419,7 +1419,7 @@ void zMapGUIShowText(char *title, char *text, gboolean edittable)
  * @return             the GtkWidget *dialog
  */
 GtkWidget *zMapGUIShowTextFull(char *title, char *text, gboolean edittable, GList *text_attributes,
-			       GtkTextBuffer **buffer_out)
+       GtkTextBuffer **buffer_out)
 {
   enum {TEXT_X_BORDERS = 32, TEXT_Y_BORDERS = 50} ;
   char *full_title ;
@@ -1440,17 +1440,17 @@ GtkWidget *zMapGUIShowTextFull(char *title, char *text, gboolean edittable, GLis
 
   full_title = zMapGUIMakeTitleString(NULL, title) ;
   dialog = gtk_dialog_new_with_buttons(full_title, NULL, flags,
-				       "Close", GTK_RESPONSE_NONE,
-				       NULL) ;
+       "Close", GTK_RESPONSE_NONE,
+       NULL) ;
   g_free(full_title) ;
 
   gtk_container_set_border_width(GTK_CONTAINER(dialog), 5) ;
 
   /* Ensure that the dialog box is destroyed when the user responds. */
   g_signal_connect_swapped(dialog,
-			   "response",
-			   G_CALLBACK(gtk_widget_destroy),
-			   dialog) ;
+   "response",
+   G_CALLBACK(gtk_widget_destroy),
+   dialog) ;
 
   scrwin = gtk_scrolled_window_new(NULL, NULL) ;
   gtk_box_pack_start(GTK_BOX(GTK_DIALOG(dialog)->vbox), scrwin, TRUE, TRUE, 0) ;
@@ -1474,11 +1474,11 @@ GtkWidget *zMapGUIShowTextFull(char *title, char *text, gboolean edittable, GLis
   /* Here we try to set a fixed width font in the text widget and set the size of the dialog
    * so that a sensible amount of text is displayed. */
   if (!zMapGUIGetFixedWidthFont(view,
-				fixed_font_list, ZMAP_ZOOM_FONT_SIZE, PANGO_WEIGHT_NORMAL,
-				&font, &font_desc))
+        fixed_font_list, ZMAP_ZOOM_FONT_SIZE, PANGO_WEIGHT_NORMAL,
+        &font, &font_desc))
     {
       zMapGUIShowMsg(ZMAP_MSG_WARNING, "Could not get fixed width font, "
-		     "message window may be a strange size") ;
+     "message window may be a strange size") ;
     }
   else
     {
@@ -1501,7 +1501,7 @@ GtkWidget *zMapGUIShowTextFull(char *title, char *text, gboolean edittable, GLis
 
       /* Big hack here...see comment above.... */
       if (text_width < 700)
-	text_width = 700 ;
+        text_width = 700 ;
 
       gtk_widget_modify_font(view, font_desc) ;
 
@@ -1526,7 +1526,7 @@ GtkWidget *zMapGUIShowTextFull(char *title, char *text, gboolean edittable, GLis
  * it is the callers responsibility to free the filepath using g_free().
  * Caller can optionally specify a default directory. */
 char *zmapGUIFileChooserFull(GtkWidget *toplevel, char *title, char *directory_in, char *file_suffix,
-			     ZMapFileChooserContentAreaCB content_func, gpointer content_data)
+     ZMapFileChooserContentAreaCB content_func, gpointer content_data)
 {
   char *full_title ;
   char *file_path = NULL ;
@@ -1543,11 +1543,11 @@ char *zmapGUIFileChooserFull(GtkWidget *toplevel, char *title, char *directory_i
 
   /* Set up the dialog. */
   dialog = gtk_file_chooser_dialog_new(full_title,
-				       GTK_WINDOW(toplevel),
-				       GTK_FILE_CHOOSER_ACTION_SAVE,
-				       GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-				       GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
-				       NULL) ;
+       GTK_WINDOW(toplevel),
+       GTK_FILE_CHOOSER_ACTION_SAVE,
+       GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+       GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
+       NULL) ;
 
   g_free(full_title) ;
 
@@ -1565,10 +1565,10 @@ char *zmapGUIFileChooserFull(GtkWidget *toplevel, char *title, char *directory_i
       //content_vbox = gtk_dialog_get_content_area (GTK_DIALOG(dialog));
       content_vbox = GTK_WIDGET(GTK_DIALOG(dialog)->vbox);
       if (content_vbox)
-	{
-	  (content_func)(content_vbox, content_data);
-	  gtk_widget_show_all(content_vbox);
-	}
+      {
+          (content_func)(content_vbox, content_data);
+          gtk_widget_show_all(content_vbox);
+      }
     }
 
   /* Wait for a response, we don't have to do anything with this new dialog....yipeeeee.... */
@@ -1632,8 +1632,8 @@ gboolean zMapGUIGetColour(GtkWidget *widget, char *colour_spec, GdkColor *colour
  * @return               TRUE if font found, FALSE otherwise.
  */
 gboolean zMapGUIGetFixedWidthFont(GtkWidget *widget,
-				  GList *pref_families, gint points, PangoWeight weight,
-				  PangoFont **font_out, PangoFontDescription **desc_out)
+  GList *pref_families, gint points, PangoWeight weight,
+  PangoFont **font_out, PangoFontDescription **desc_out)
 {
   gboolean found = FALSE, found_most_preferred = FALSE ;
   PangoContext *context ;
@@ -1658,16 +1658,16 @@ gboolean zMapGUIGetFixedWidthFont(GtkWidget *widget,
 
       pref = g_list_first(pref_families) ;
       while(pref && ++current)
-	{
-	  char *pref_font = (char *)pref->data ;
+        {
+          char *pref_font = (char *)pref->data ;
 
-	  if (g_ascii_strncasecmp(name, pref_font, strlen(pref_font)) == 0
+          if (g_ascii_strncasecmp(name, pref_font, strlen(pref_font)) == 0
 #if GLIB_MAJOR_VERSION == 2 && GLIB_MINOR_VERSION >= 6
-	      && pango_font_family_is_monospace(families[i])
+                && pango_font_family_is_monospace(families[i])
 #endif
-	      )
-	    {
-	      found = TRUE ;
+              )
+            {
+              found = TRUE ;
               if(current <= most_preferred)
                 {
                   if((most_preferred = current) == 1)
@@ -1675,11 +1675,11 @@ gboolean zMapGUIGetFixedWidthFont(GtkWidget *widget,
                   match_family   = families[i] ;
                 }
               match_family = families[i] ;
-	      break ;
-	    }
+              break ;
+            }
 
-	  pref = g_list_next(pref) ;
-	}
+          pref = g_list_next(pref) ;
+        }
     }
 
   if(families)
@@ -1703,9 +1703,9 @@ gboolean zMapGUIGetFixedWidthFont(GtkWidget *widget,
       font = pango_context_load_font(context, desc) ;
 
       if (font_out)
-	*font_out = font ;
+        *font_out = font ;
       if (desc_out)
-	*desc_out = desc ;
+        *desc_out = desc ;
 
       found = TRUE ;
     }
@@ -1735,8 +1735,8 @@ void zMapGUIGetFontWidth(PangoFont *font, int *width_out)
     return ; 
 
   width = pango_font_metrics_get_approximate_char_width(metrics) ;
-  width = PANGO_PIXELS(width) ;				    /* PANGO_PIXELS confusingly converts
-							       to points not pixels...sigh... */
+  width = PANGO_PIXELS(width) ;    /* PANGO_PIXELS confusingly converts
+       to points not pixels...sigh... */
 
   pango_font_metrics_unref(metrics) ;
 
@@ -2049,14 +2049,14 @@ static void pane_max_position_callback(GObject *pane, GParamSpec *scroll, gpoint
   if(pane_data->callback)
     {
       g_signal_handlers_block_by_func(G_OBJECT(pane),
-				      G_CALLBACK(pane_max_position_callback),
-				      pane_data);
+      G_CALLBACK(pane_max_position_callback),
+      pane_data);
 
       (pane_data->callback)(pane, scroll, pane_data->user_data);
 
       g_signal_handlers_unblock_by_func(G_OBJECT(pane),
-					G_CALLBACK(pane_max_position_callback),
-					pane_data);
+                                        G_CALLBACK(pane_max_position_callback),
+                                        pane_data);
     }
 
   return;
@@ -2146,10 +2146,10 @@ static void printMessage(ZMapMsgType msg_type, char *message)
  * returns TRUE if user data not required or if user data returned, FALSE otherwise.
  *  */
 static GtkResponseType messageFull(GtkWindow *parent, char *title_in, char *msg,
-				   gboolean modal, int display_timeout,
+   gboolean modal, int display_timeout,
                                    char *first_button, char *second_button, char *third_button,
-				   ZMapMsgType msg_type, GtkJustification justify,
-				   ZMapGUIMsgUserData user_data)
+   ZMapMsgType msg_type, GtkJustification justify,
+   ZMapGUIMsgUserData user_data)
 {
   GtkResponseType result = GTK_RESPONSE_CANCEL ;
   GtkWidget *dialog, *button, *label ;
@@ -2157,7 +2157,7 @@ static GtkResponseType messageFull(GtkWindow *parent, char *title_in, char *msg,
   char *title = NULL, *full_title ;
   GtkDialogFlags flags = GTK_DIALOG_DESTROY_WITH_PARENT ;
   guint timeout_func_id ;
-  int interval = display_timeout * 1000 ;		    /* glib needs time in milliseconds. */
+  int interval = display_timeout * 1000 ;    /* glib needs time in milliseconds. */
   GtkResponseType first_response = 0, second_response = 0, third_response = 0 ;
 
 
@@ -2169,23 +2169,23 @@ static GtkResponseType messageFull(GtkWindow *parent, char *title_in, char *msg,
   else
     {
       switch(msg_type)
-	{
-	case ZMAP_MSG_INFORMATION:
-	  title = "Information" ;
-	  break ;
-	case ZMAP_MSG_WARNING:
-	  title = "Warning !" ;
-	  break;
-	case ZMAP_MSG_CRITICAL:
-	  title = "CRITICAL !" ;
-	  break;
-	case ZMAP_MSG_EXIT:
-	  title = "EXIT !" ;
-	  break;
-	case ZMAP_MSG_CRASH:
-	  title = "CRASH !" ;
-	  break;
-	}
+        {
+          case ZMAP_MSG_INFORMATION:
+            title = "Information" ;
+            break ;
+          case ZMAP_MSG_WARNING:
+            title = "Warning !" ;
+            break;
+          case ZMAP_MSG_CRITICAL:
+            title = "CRITICAL !" ;
+            break;
+          case ZMAP_MSG_EXIT:
+            title = "EXIT !" ;
+            break;
+          case ZMAP_MSG_CRASH:
+            title = "CRASH !" ;
+            break;
+        }
     }
 
   full_title = zMapGUIMakeTitleString(NULL, title) ;
@@ -2207,13 +2207,13 @@ static GtkResponseType messageFull(GtkWindow *parent, char *title_in, char *msg,
     flags |= GTK_DIALOG_MODAL ;
 
     dialog = gtk_dialog_new_with_buttons(full_title, parent, flags,
-					 first_button,
-					 first_response,
-					 second_button,
-					 second_response,
-					 third_button,
-					 third_response,
-					 NULL) ;
+                                         first_button,
+                                         first_response,
+                                         second_button,
+                                         second_response,
+                                         third_button,
+                                         third_response,
+                                         NULL) ;
 
   g_free(full_title) ;
 
@@ -2225,12 +2225,12 @@ static GtkResponseType messageFull(GtkWindow *parent, char *title_in, char *msg,
   button = gtk_button_new_with_label(msg) ;
   gtk_box_pack_start(GTK_BOX(GTK_DIALOG(dialog)->vbox), button, TRUE, TRUE, 20);
   gtk_button_set_relief(GTK_BUTTON(button), GTK_RELIEF_NONE) ;
-  label = gtk_bin_get_child(GTK_BIN(button)) ;		    /* Center + wrap long lines. */
+  label = gtk_bin_get_child(GTK_BIN(button)) ;    /* Center + wrap long lines. */
   gtk_label_set_justify(GTK_LABEL(label), justify) ;
   gtk_label_set_line_wrap(GTK_LABEL(label), TRUE) ;
 
   gtk_signal_connect(GTK_OBJECT(button), "clicked",
-		     GTK_SIGNAL_FUNC(butClick), button) ;
+     GTK_SIGNAL_FUNC(butClick), button) ;
 
 
   /* For text set up a an entry widget, optionally with hidden text entry. */
@@ -2240,7 +2240,7 @@ static GtkResponseType messageFull(GtkWindow *parent, char *title_in, char *msg,
       gtk_box_pack_start(GTK_BOX(GTK_DIALOG(dialog)->vbox), entry, TRUE, TRUE, 0) ;
 
       if (user_data->hide_input)
-	gtk_entry_set_visibility(GTK_ENTRY(entry), FALSE) ;
+        gtk_entry_set_visibility(GTK_ENTRY(entry), FALSE) ;
     }
 
 
@@ -2248,9 +2248,9 @@ static GtkResponseType messageFull(GtkWindow *parent, char *title_in, char *msg,
   if (interval > 0)
     {
       if (modal)
-	timeout_func_id = g_timeout_add(interval, timeoutHandlerModal, (gpointer)dialog) ;
+        timeout_func_id = g_timeout_add(interval, timeoutHandlerModal, (gpointer)dialog) ;
       else
-	timeout_func_id = g_timeout_add(interval, timeoutHandler, (gpointer)dialog) ;
+        timeout_func_id = g_timeout_add(interval, timeoutHandler, (gpointer)dialog) ;
     }
 
 
@@ -2263,77 +2263,77 @@ static GtkResponseType messageFull(GtkWindow *parent, char *title_in, char *msg,
   if (!modal && !user_data)
     {
       g_signal_connect_swapped(dialog,
-			       "response",
-			       G_CALLBACK(gtk_widget_destroy),
-			       dialog) ;
+       "response",
+       G_CALLBACK(gtk_widget_destroy),
+       dialog) ;
     }
   else
     {
       /* block waiting for user to answer dialog, for modal we can use straight gtk call,
        * for non-modal must use our home-grown (and probably buggy) version. */
       if (modal)
-	result = gtk_dialog_run(GTK_DIALOG(dialog)) ;
+        result = gtk_dialog_run(GTK_DIALOG(dialog)) ;
       else
-	result = my_gtk_run_dialog_nonmodal(dialog) ;
+        result = my_gtk_run_dialog_nonmodal(dialog) ;
 
       /* Return any data that was requested by caller according to which button they click. */
       if (user_data)
-	{
-	  switch (result)
-	    {
-	    case GTK_RESPONSE_OK:
-	      {
-		switch (user_data->type)
-		  {
-		  case ZMAPGUI_USERDATA_BOOL:
-		    {
-		      user_data->data.bool = TRUE ;
-		      break ;
-		    }
-		  case ZMAPGUI_USERDATA_TEXT:
-		    {
-		      char *text ;
+        {
+          switch (result)
+            {
+              case GTK_RESPONSE_OK:
+              {
+                switch (user_data->type)
+                  {
+                    case ZMAPGUI_USERDATA_BOOL:
+                      {
+                        user_data->data.bool = TRUE ;
+                        break ;
+                      }
+                    case ZMAPGUI_USERDATA_TEXT:
+                      {
+                        char *text ;
+  
+                        /* entry returns "" for no string so check there is some text. */
+                        if ((text = (char *)gtk_entry_get_text(GTK_ENTRY(entry))) && *text)
+                        user_data->data.text = g_strdup(text) ;
+  
+                        break ;
+                      }
+                    default:
+                      {
+                        zMapWarnIfReached() ;
+  
+                        break ;
+                      }
+                  }
 
-		      /* entry returns "" for no string so check there is some text. */
-		      if ((text = (char *)gtk_entry_get_text(GTK_ENTRY(entry))) && *text)
-			user_data->data.text = g_strdup(text) ;
+                break ;
+              }
+            default:
+              {
+                switch (user_data->type)
+                  {
+                    case ZMAPGUI_USERDATA_BOOL:
+                      {
+                        user_data->data.bool = FALSE ;
+                        break ;
+                      }
+                    default:
+                      {
+                        /* No need to do anything, just return CANCEL. */
+          
+                        break ;
+                      }
+                  }
 
-		      break ;
-		    }
-		  default:
-		    {
-                      zMapWarnIfReached() ;
-
-		      break ;
-		    }
-		  }
-
-		break ;
-	      }
-	    default:
-	      {
-		switch (user_data->type)
-		  {
-		  case ZMAPGUI_USERDATA_BOOL:
-		    {
-		      user_data->data.bool = FALSE ;
-		      break ;
-		    }
-		  default:
-		    {
-		      /* No need to do anything, just return CANCEL. */
-
-		      break ;
-		    }
-		  }
-
-		break ;
-	      }
-	    }
-	}
+                break ;
+              }
+          }
+      }
 
       gtk_widget_destroy(dialog) ;
-    }
+  }
 
 
   return result ;
@@ -2390,18 +2390,18 @@ static void handle_popout_destroy_cb(GtkWidget *toplevel, gpointer cb_data)
   if(toplevel == popout_data->popout_toplevel)
     {
       if(popout_data->original_parent)
-	{
-	  g_signal_handler_disconnect(popout_data->original_parent,
-				      popout_data->original_parent_signal_id);
-	  gtk_widget_reparent(popout_data->popout_child,
-			      popout_data->original_parent);
-	}
-      else			/* just free the data */
-	{
-	  popout_data->popout_child = NULL;
-	  popout_data->popout_toplevel = NULL;
-	  g_free(popout_data);
-	}
+        {
+          g_signal_handler_disconnect(popout_data->original_parent,
+              popout_data->original_parent_signal_id);
+          gtk_widget_reparent(popout_data->popout_child,
+              popout_data->original_parent);
+        }
+      else/* just free the data */
+        {
+          popout_data->popout_child = NULL;
+          popout_data->popout_toplevel = NULL;
+          g_free(popout_data);
+        }
     }
 
   return ;
@@ -2563,93 +2563,93 @@ static unsigned char zmap_noentry_mask_bits[] = {
    0x0c, 0x18, 0x30, 0x06, 0xc0, 0x01, 0x00, 0x00};
 
 
- gchar *shape_data, *mask_data ;
- gint hot_x, hot_y ;
- gboolean found_cursor = FALSE ;
- GdkPixmap *source, *mask;
- GdkColor red = { 0, 65535, 0, 0 };			    /* Red. */
- GdkColor blue = { 0, 0, 0, 65535 };			    /* Blue. */
- GdkColor black = { 0, 0, 0, 0 };			    /* Black. */
- GdkColor white = { 0, 65535, 65535, 65535 };		    /* White. */
- GdkColor *fg, *bg ;
+  gchar *shape_data, *mask_data ;
+  gint hot_x, hot_y ;
+  gboolean found_cursor = FALSE ;
+  GdkPixmap *source, *mask;
+  GdkColor red = { 0, 65535, 0, 0 };    /* Red. */
+  GdkColor blue = { 0, 0, 0, 65535 };    /* Blue. */
+  GdkColor black = { 0, 0, 0, 0 };    /* Black. */
+  GdkColor white = { 0, 65535, 65535, 65535 };    /* White. */
+  GdkColor *fg, *bg ;
 
 
- if (g_ascii_strcasecmp(cursor_name, ZMAPGUI_CURSOR_COLOUR_CROSS) == 0)
-   {
-     shape_data = (gchar *)zmap_colour_cross_shape_bits ;
-     mask_data = (gchar *)zmap_colour_cross_mask_bits ;
-     hot_x = zmap_colour_cross_shape_x_hot ;
-     hot_y = zmap_colour_cross_shape_y_hot ;
-     fg = &red ;
-     bg = &blue ;
+  if (g_ascii_strcasecmp(cursor_name, ZMAPGUI_CURSOR_COLOUR_CROSS) == 0)
+    {
+      shape_data = (gchar *)zmap_colour_cross_shape_bits ;
+      mask_data = (gchar *)zmap_colour_cross_mask_bits ;
+      hot_x = zmap_colour_cross_shape_x_hot ;
+      hot_y = zmap_colour_cross_shape_y_hot ;
+      fg = &red ;
+      bg = &blue ;
 
-     found_cursor = TRUE ;
-   }
- else if (g_ascii_strcasecmp(cursor_name, ZMAPGUI_CURSOR_CROSS) == 0)
-   {
-     shape_data = (gchar *)zmap_cross_shape_bits ;
-     mask_data = (gchar *)zmap_cross_mask_bits ;
-     hot_x = zmap_cross_shape_x_hot ;
-     hot_y = zmap_cross_shape_y_hot ;
-     fg = &black ;
-     bg = &white ;
-     found_cursor = TRUE ;
-   }
- else if (g_ascii_strcasecmp(cursor_name, ZMAPGUI_THINCURSOR_CROSS) == 0)
-   {
-     shape_data = (gchar *)zmap_thincross_shape_bits ;
-     mask_data = (gchar *)zmap_thincross_mask_bits ;
-     hot_x = zmap_thincross_shape_x_hot ;
-     hot_y = zmap_thincross_shape_y_hot ;
-     fg = &black ;
-     bg = &white ;
-     found_cursor = TRUE ;
-   }
- else if (g_ascii_strcasecmp(cursor_name, ZMAPGUI_CURSOR_CROSSHAIR) == 0)
-   {
-     shape_data = (gchar *)zmap_crosshair_shape_bits ;
-     mask_data = (gchar *)zmap_crosshair_mask_bits ;
-     hot_x = zmap_crosshair_shape_x_hot ;
-     hot_y = zmap_crosshair_shape_y_hot ;
-     fg = bg = &black ;
+      found_cursor = TRUE ;
+    }
+  else if (g_ascii_strcasecmp(cursor_name, ZMAPGUI_CURSOR_CROSS) == 0)
+    {
+      shape_data = (gchar *)zmap_cross_shape_bits ;
+      mask_data = (gchar *)zmap_cross_mask_bits ;
+      hot_x = zmap_cross_shape_x_hot ;
+      hot_y = zmap_cross_shape_y_hot ;
+      fg = &black ;
+      bg = &white ;
+      found_cursor = TRUE ;
+    }
+  else if (g_ascii_strcasecmp(cursor_name, ZMAPGUI_THINCURSOR_CROSS) == 0)
+    {
+      shape_data = (gchar *)zmap_thincross_shape_bits ;
+      mask_data = (gchar *)zmap_thincross_mask_bits ;
+      hot_x = zmap_thincross_shape_x_hot ;
+      hot_y = zmap_thincross_shape_y_hot ;
+      fg = &black ;
+      bg = &white ;
+      found_cursor = TRUE ;
+    }
+  else if (g_ascii_strcasecmp(cursor_name, ZMAPGUI_CURSOR_CROSSHAIR) == 0)
+    {
+      shape_data = (gchar *)zmap_crosshair_shape_bits ;
+      mask_data = (gchar *)zmap_crosshair_mask_bits ;
+      hot_x = zmap_crosshair_shape_x_hot ;
+      hot_y = zmap_crosshair_shape_y_hot ;
+      fg = bg = &black ;
+  
+      found_cursor = TRUE ;
+    }
+  else if (g_ascii_strcasecmp(cursor_name, ZMAPGUI_CURSOR_CIRCLE) == 0)
+    {
+      shape_data = (gchar *)zmap_circle_shape_bits ;
+      mask_data = (gchar *)zmap_circle_mask_bits ;
+      hot_x = zmap_circle_shape_x_hot ;
+      hot_y = zmap_circle_shape_y_hot ;
+      fg = &red ;
+      bg = &blue ;
+  
+      found_cursor = TRUE ;
+    }
+  else if (g_ascii_strcasecmp(cursor_name, ZMAPGUI_CURSOR_NOENTRY) == 0)
+    {
+      shape_data = (gchar *)zmap_noentry_shape_bits ;
+      mask_data = (gchar *)zmap_noentry_mask_bits ;
+      hot_x = zmap_noentry_shape_x_hot ;
+      hot_y = zmap_noentry_shape_y_hot ;
+      fg = &black ;
+      bg = &white ;
+  
+      found_cursor = TRUE ;
+    }
 
-     found_cursor = TRUE ;
-   }
- else if (g_ascii_strcasecmp(cursor_name, ZMAPGUI_CURSOR_CIRCLE) == 0)
-   {
-     shape_data = (gchar *)zmap_circle_shape_bits ;
-     mask_data = (gchar *)zmap_circle_mask_bits ;
-     hot_x = zmap_circle_shape_x_hot ;
-     hot_y = zmap_circle_shape_y_hot ;
-     fg = &red ;
-     bg = &blue ;
+  if (found_cursor)
+    {
+      source = gdk_bitmap_create_from_data(NULL, shape_data,
+                                           zmap_cursor_width, zmap_cursor_height) ;
+      mask = gdk_bitmap_create_from_data(NULL, mask_data,
+                                         zmap_cursor_width, zmap_cursor_height);
 
-     found_cursor = TRUE ;
-   }
- else if (g_ascii_strcasecmp(cursor_name, ZMAPGUI_CURSOR_NOENTRY) == 0)
-   {
-     shape_data = (gchar *)zmap_noentry_shape_bits ;
-     mask_data = (gchar *)zmap_noentry_mask_bits ;
-     hot_x = zmap_noentry_shape_x_hot ;
-     hot_y = zmap_noentry_shape_y_hot ;
-     fg = &black ;
-     bg = &white ;
+      cursor = gdk_cursor_new_from_pixmap (source, mask, fg, bg, hot_x, hot_y) ;
 
-     found_cursor = TRUE ;
-   }
-
- if (found_cursor)
-   {
-     source = gdk_bitmap_create_from_data(NULL, shape_data,
-					  zmap_cursor_width, zmap_cursor_height) ;
-     mask = gdk_bitmap_create_from_data(NULL, mask_data,
-					zmap_cursor_width, zmap_cursor_height);
-
-     cursor = gdk_cursor_new_from_pixmap (source, mask, fg, bg, hot_x, hot_y) ;
-
-     g_object_unref (source);
-     g_object_unref (mask);
-   }
+      g_object_unref (source);
+      g_object_unref (mask);
+    }
 
 
   return cursor ;
@@ -2738,7 +2738,7 @@ GdkCursor *makeStandardCursor(char *cursor_name)
       {GDK_UR_ANGLE, "UR_ANGLE"},
       {GDK_WATCH, "WATCH"},
       {GDK_XTERM, "XTERM"},
-      {GDK_LAST_CURSOR, NULL}				    /* end of array marker. */
+      {GDK_LAST_CURSOR, NULL}    /* end of array marker. */
     } ;
   CursorName curr_cursor ;
 
@@ -2746,14 +2746,14 @@ GdkCursor *makeStandardCursor(char *cursor_name)
   while (curr_cursor->cursor_id != GDK_LAST_CURSOR)
     {
       if (g_ascii_strcasecmp(cursor_name, curr_cursor->cursor_name) == 0)
-	{
-	  cursor = gdk_cursor_new(curr_cursor->cursor_id) ;
-	  break ;
-	}
+        {
+          cursor = gdk_cursor_new(curr_cursor->cursor_id) ;
+          break ;
+        }
       else
-	{
-	  curr_cursor++ ;
-	}
+        {
+          curr_cursor++ ;
+        }
     }
 
   return cursor ;
@@ -2797,22 +2797,22 @@ static void setTextAttrs(gpointer data, gpointer user_data)
   if (text_attrs->background)
     {
       if (!first_attr)
-	{
-	  first_attr = "background-gdk" ;
-	  first_value = text_attrs->background ;
-	}
+        {
+          first_attr = "background-gdk" ;
+          first_value = text_attrs->background ;
+        }
       else
-	{
-	  second_attr = "background-gdk" ;
-	  second_value = text_attrs->background ;
-	}
+        {
+          second_attr = "background-gdk" ;
+          second_value = text_attrs->background ;
+        }
     }
 
   /* Create anonymous tags as we don't reuse them. */
   tag = gtk_text_buffer_create_tag(buffer, NULL,
-				   first_attr, first_value,
-				   second_attr, second_value,
-				   NULL) ;
+                                   first_attr, first_value,
+                                   second_attr, second_value,
+                                   NULL) ;
 
 
 
@@ -2881,7 +2881,7 @@ static void setTextAttrs(gpointer data, gpointer user_data)
       gtk_text_buffer_get_iter_at_offset (buffer, &end, tmp_end) ;
 
       if (text_debug)
-	curr_char = gtk_text_buffer_get_text(buffer, &start, &end, FALSE) ;
+        curr_char = gtk_text_buffer_get_text(buffer, &start, &end, FALSE) ;
 
       line_start = tmp_line_start ;
       tmp_line_start = gtk_text_iter_get_line(&start) ;
@@ -2916,20 +2916,20 @@ static void setTextAttrs(gpointer data, gpointer user_data)
 
   while (tmp_line_end != line_end)
       {
-	int diff ;
+        int diff ;
 
-	diff = tmp_line_end - line_end ;
+        diff = tmp_line_end - line_end ;
 
-	tmp_end += diff ;
+        tmp_end += diff ;
+  
+        gtk_text_buffer_get_iter_at_offset(buffer, &start, tmp_start) ;
+        gtk_text_buffer_get_iter_at_offset (buffer, &end, tmp_end) ;
 
-	gtk_text_buffer_get_iter_at_offset(buffer, &start, tmp_start) ;
-	gtk_text_buffer_get_iter_at_offset (buffer, &end, tmp_end) ;
-
-	if (text_debug)
-	  curr_char = gtk_text_buffer_get_text(buffer, &start, &end, FALSE) ;
-
-	line_end = tmp_line_end ;
-	tmp_line_end = gtk_text_iter_get_line(&end) ;
+        if (text_debug)
+          curr_char = gtk_text_buffer_get_text(buffer, &start, &end, FALSE) ;
+  
+        line_end = tmp_line_end ;
+        tmp_line_end = gtk_text_iter_get_line(&end) ;
       }
 
 
