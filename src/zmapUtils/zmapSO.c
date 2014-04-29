@@ -20,7 +20,7 @@
  * This file is part of the ZMap genome database package
  * originally written by:
  *
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk
+ * Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
@@ -72,7 +72,7 @@ char *zMapSOAcc2Term(GQuark SO_accession)
       SOEntry SO_entry ;
 
       if ((SO_entry = findSOentry(SO_accession)))
-	SO_term = SO_entry->term ;
+        SO_term = SO_entry->term ;
     }
 
   return SO_term ;
@@ -90,7 +90,7 @@ GQuark zMapSOAcc2TermID(GQuark SO_accession)
       SOEntry SO_entry ;
 
       if ((SO_entry = findSOentry(SO_accession)))
-	SO_term_id = g_quark_from_string(SO_entry->term) ;
+        SO_term_id = g_quark_from_string(SO_entry->term) ;
     }
 
   return SO_term_id ;
@@ -148,12 +148,12 @@ GQuark zMapSOVariation2SO(char *variation_str)
   if (g_regex_match(alteration_exp, variation_str, 0, NULL))
     var_id = g_quark_from_string(SO_ACC_SEQ_ALT) ;
   else if (g_regex_match(insertion_exp, variation_str, 0, NULL)
-	   || g_regex_match(lots_insertion_exp, variation_str, 0, NULL)
-	   || g_ascii_strcasecmp("(LARGEINSERTION)/-", variation_str) == 0)
+   || g_regex_match(lots_insertion_exp, variation_str, 0, NULL)
+   || g_ascii_strcasecmp("(LARGEINSERTION)/-", variation_str) == 0)
     var_id = g_quark_from_string(SO_ACC_INSERTION) ;
   else if (g_regex_match(deletion_exp, variation_str, 0, NULL)
-	   || g_regex_match(lots_deletion_exp, variation_str, 0, NULL)
-	   || g_ascii_strcasecmp("-/(LARGEDELETION)", variation_str) == 0)
+   || g_regex_match(lots_deletion_exp, variation_str, 0, NULL)
+   || g_ascii_strcasecmp("-/(LARGEDELETION)", variation_str) == 0)
     var_id = g_quark_from_string(SO_ACC_DELETION) ;
   else if (g_regex_match(snp_exp, variation_str, 0, NULL))
     var_id = g_quark_from_string(SO_ACC_SNP) ;
@@ -240,7 +240,7 @@ static void fillHashTable(GHashTable *acc2SO)
       {SO_ACC_MUTATION, "sequence_variant_obs"},
       {SO_ACC_SUBSTITUTION, "substitution"},
       {SO_ACC_TRANSCRIPT, "transcript"},
-      {NULL, NULL}					    /* Must be last value. */
+      {NULL, NULL}    /* Must be last value. */
     } ;
   SOEntry curr ;
 
@@ -341,7 +341,7 @@ static GHashTable *makeAcedb2SOHash(void)
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
-      {NULL, NULL, NULL}				    /* Last one must be NULL. */
+      {NULL, NULL, NULL}    /* Last one must be NULL. */
     } ;
 
   acedb2SO = makeHash(featureSO) ;
