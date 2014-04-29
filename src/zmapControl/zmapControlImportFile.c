@@ -1057,7 +1057,7 @@ static void importFileCB(GtkWidget *widget, gpointer cb_data)
         case FILE_NONE:
           /* add in any that have data */
           if (source_txt)
-            *argp++ = g_strdup_printf("--gff_source=%s", source_txt) ;
+            *argp++ = g_strdup_printf("--gff_feature_source=%s", source_txt) ;
           if (strand)
             *argp++ = g_strdup_printf("--strand=%d", strand) ;
           break;
@@ -1070,7 +1070,7 @@ static void importFileCB(GtkWidget *widget, gpointer cb_data)
           /* fall through */
 
         case FILE_BAM:
-          *argp++ = g_strdup_printf("--gff_source=%s", source_txt);
+          *argp++ = g_strdup_printf("--gff_feature_source=%s", source_txt);
           break;
         }
 
