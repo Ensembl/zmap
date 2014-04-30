@@ -1855,7 +1855,9 @@ static GHashTable *zmapViewGetFeatureSourceHash(GList *sources)
 
             /* add a cononical version */
             q =  zMapFeatureSetCreateID(feature);
-            g_hash_table_insert(hash,GUINT_TO_POINTER(q), (gpointer) src);
+            
+            if (q != g_quark_from_string(feature))
+              g_hash_table_insert(hash,GUINT_TO_POINTER(q), (gpointer) src);
           }
         }
 
