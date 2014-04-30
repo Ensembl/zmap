@@ -854,23 +854,24 @@ static void nullLogger(const gchar *log_domain, GLogLevelFlags log_level, const 
  * does not lock this routine...STUPID...they should have an option to do this if they don't
  * like having it on all the time. */
 static void fileLogger(const gchar *log_domain, GLogLevelFlags log_level, const gchar *message_in,
-       gpointer user_data)
+                       gpointer user_data)
 {
   ZMapLog log = (ZMapLog)user_data ;
   GError *g_error = NULL ;
   gsize bytes_written = 0 ;
+  gchar *message = (gchar *)message_in ;
+  const gchar *bad_char_out = NULL ;
 
-  /* zMapAssert(log->logging) ; */
-  if (!log || !log->logging || !message_in) 
-    return ; 
 
-  /* Must make sure it's UTF8 or g_io_channel_write_chars will crash */
-  gchar *message = message_in;
-  gchar *bad_char = NULL;
+  zMapReturnIfFail((log && log->logging && message_in && *message_in)) ; 
 
-  while (!g_utf8_validate(message_in, -1, &bad_char))
+
+  /* Must make sure it's UTF8 or g_io_channel_write_chars will crash,
+   * for now just replace the bad character with a question mark */
+  while (!g_utf8_validate(message_in, -1, &bad_char_out))
     {
-      /* For now just replace the bad character with a question mark */
+      char *bad_char = (char *)bad_char_out ;
+
       *bad_char='?';
     }
 
