@@ -370,7 +370,7 @@ ZMapWindowCallbacksStruct window_cbs_G =
   viewVisibilityChangeCB,
   commandCB,
   loadedDataCB,
-  //mergeNewFeatureCB,
+  mergeNewFeatureCB,
   NULL,
   NULL
 } ;
@@ -1136,7 +1136,6 @@ static ZMapFeatureContextExecuteStatus mark_matching_invalid(GQuark key,
 }
 
 
-//<<<<<<< HEAD
 ZMapFeatureContext zmapViewCopyContextAll(ZMapFeatureContext context,
                                           ZMapFeature feature,
                                           ZMapFeatureSet feature_set,
@@ -1174,34 +1173,29 @@ ZMapFeatureContext zmapViewCopyContextAll(ZMapFeatureContext context,
   return context_copy ;
 }
 
-//void zmapViewMergeNewFeature(ZMapView view, ZMapFeature feature, ZMapFeatureSet feature_set)
-//{
-//  zMapReturnIfFail(view && view->features && feature && feature_set);
+void zmapViewMergeNewFeature(ZMapView view, ZMapFeature feature, ZMapFeatureSet feature_set)
+{
+  zMapReturnIfFail(view && view->features && feature && feature_set);
 
-//  ZMapFeatureContext context = view->features ;
+  ZMapFeatureContext context = view->features ;
 
- // GList *feature_list = NULL ;
- // ZMapFeature feature_copy = NULL ;
- // ZMapFeatureContext context_copy = zmapViewCopyContextAll(context, feature, feature_set, &feature_list, &feature_copy) ;
-//
- // if (context_copy && feature_list)
- //   zmapViewMergeNewFeatures(view, &context_copy, &feature_list) ;
-////
-  //if (context_copy && feature_copy)
-  //  zmapViewDrawDiffContext(view, &context_copy, feature_copy) ;
+  GList *feature_list = NULL ;
+  ZMapFeature feature_copy = NULL ;
+  ZMapFeatureContext context_copy = zmapViewCopyContextAll(context, feature, feature_set, &feature_list, &feature_copy) ;
 
-  //if (context_copy)
-  //  zMapFeatureContextDestroy(context_copy, TRUE) ;
-//}
+  if (context_copy && feature_list)
+    zmapViewMergeNewFeatures(view, &context_copy, NULL, &feature_list) ;
 
-//gboolean zmapViewMergeNewFeatures(ZMapView view, ZMapFeatureContext *context, GList **feature_list)
-//||||||| merged common ancestors
-//gboolean zmapViewMergeNewFeatures(ZMapView view, ZMapFeatureContext *context, GList **feature_list)
-//=======
+  if (context_copy && feature_copy)
+    zmapViewDrawDiffContext(view, &context_copy, feature_copy) ;
+
+  if (context_copy)
+    zMapFeatureContextDestroy(context_copy, TRUE) ;
+}
+
 gboolean zmapViewMergeNewFeatures(ZMapView view,
                                   ZMapFeatureContext *context, ZMapFeatureContextMergeStats *merge_stats_out,
                                   GList **feature_list)
-//>>>>>>> release/0.22
 {
   gboolean result = FALSE ;
   
@@ -4993,14 +4987,14 @@ static void loadedDataCB(ZMapWindow window, void *caller_data, gpointer loaded_d
 }
 
 
-//static void mergeNewFeatureCB(ZMapWindow window, void *caller_data, void *window_data)
-//{
-//  ZMapViewWindow view_window = (ZMapViewWindow)caller_data ;
-//  ZMapWindowMergeNewFeature merge = (ZMapWindowMergeNewFeature)window_data ;
-//  ZMapView view = zMapViewGetView(view_window) ;
-//
-//  zmapViewMergeNewFeature(view, merge->feature, merge->feature_set) ;
-//}
+static void mergeNewFeatureCB(ZMapWindow window, void *caller_data, void *window_data)
+{
+  ZMapViewWindow view_window = (ZMapViewWindow)caller_data ;
+  ZMapWindowMergeNewFeature merge = (ZMapWindowMergeNewFeature)window_data ;
+  ZMapView view = zMapViewGetView(view_window) ;
+
+  zmapViewMergeNewFeature(view, merge->feature, merge->feature_set) ;
+}
 
 
 /* Sends a message to our peer that all features are now loaded. */

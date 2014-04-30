@@ -593,113 +593,6 @@ static ZMapFeature scratchCreateNewFeature(ZMapView zmap_view)
 }
 
 
-//<<<<<<< HEAD
-//||||||| merged common ancestors
-//static void scratchMergeNewFeature(ZMapView zmap_view, ZMapFeature feature)
-//{
- // g_return_if_fail(zmap_view && zmap_view->features) ;
-  //g_return_if_fail(feature) ;
-
-  /* Get the current featureset and context */
-  //ZMapFeatureSet feature_set = zmapViewScratchGetFeatureset(zmap_view);
-  //g_return_if_fail(feature_set) ;
-
-  //ZMapFeature feature = zmapViewScratchGetFeature(feature_set, ZMAPSTRAND_FORWARD);
-//  g_return_if_fail(feature) ;
-
-//  ZMapFeatureContext context = zmap_view->features ;
-
-  //GList *feature_list = NULL ;
-  //ZMapFeature feature_copy = NULL ;
-  //ZMapFeatureContext context_copy = copyContextAll(context, feature, feature_set, &feature_list, &feature_copy) ;
-
-  //if (context_copy && feature_list)
-    //zmapViewMergeNewFeatures(zmap_view, &context_copy, &feature_list) ;
-
-  //if (context_copy && feature_copy)
-    //zmapViewDrawDiffContext(zmap_view, &context_copy, feature_copy) ;
-
-  //if (context_copy)
-    //zMapFeatureContextDestroy(context_copy, TRUE) ;
-//}
-
-
-//=======
-
-static ZMapFeatureContext copyContextAll(ZMapFeatureContext context,
-                                         ZMapFeature feature,
-                                         ZMapFeatureSet feature_set,
-                                         GList **feature_list,
-                                         ZMapFeature *feature_copy_out)
-{
-  ZMapFeatureContext context_copy = NULL ;
-
-  g_return_val_if_fail(context && context->master_align && feature && feature_set, NULL) ;
-
-  context_copy = (ZMapFeatureContext)zMapFeatureAnyCopy((ZMapFeatureAny)context) ;
-  context_copy->req_feature_set_names = g_list_append(context_copy->req_feature_set_names, GINT_TO_POINTER(feature_set->unique_id)) ;
-
-  ZMapFeatureAlignment align_copy = (ZMapFeatureAlignment)zMapFeatureAnyCopy((ZMapFeatureAny)context->master_align) ;
-  zMapFeatureContextAddAlignment(context_copy, align_copy, FALSE) ;
-
-  ZMapFeatureBlock block = zMap_g_hash_table_nth(context->master_align->blocks, 0) ;
-  g_return_val_if_fail(block, NULL) ;
-
-  ZMapFeatureBlock block_copy = (ZMapFeatureBlock)zMapFeatureAnyCopy((ZMapFeatureAny)block) ;
-  zMapFeatureAlignmentAddBlock(align_copy, block_copy) ;
-
-  ZMapFeatureSet feature_set_copy = (ZMapFeatureSet)zMapFeatureAnyCopy((ZMapFeatureAny)feature_set) ;
-  zMapFeatureBlockAddFeatureSet(block_copy, feature_set_copy) ;
-
-  ZMapFeature feature_copy = (ZMapFeature)zMapFeatureAnyCopy((ZMapFeatureAny)feature) ;
-  zMapFeatureSetAddFeature(feature_set_copy, feature_copy) ;
-
-  if (feature_list)
-    *feature_list = g_list_append(*feature_list, feature_copy) ;
-
-  if (feature_copy_out)
-    *feature_copy_out = feature_copy ;
-
-  return context_copy ;
-}
-
-
-static void scratchMergeNewFeature(ZMapView zmap_view, ZMapFeature feature)
-{
-  g_return_if_fail(zmap_view && zmap_view->features) ;
-  //g_return_if_fail(feature) ;
-
-  /* Get the current featureset and context */
-  ZMapFeatureSet feature_set = zmapViewScratchGetFeatureset(zmap_view);
-  g_return_if_fail(feature_set) ;
-
-  //ZMapFeature feature = zmapViewScratchGetFeature(feature_set, ZMAPSTRAND_FORWARD);
-  g_return_if_fail(feature) ;
-
-  ZMapFeatureContext context = zmap_view->features ;
-
-  GList *feature_list = NULL ;
-  ZMapFeature feature_copy = NULL ;
-  ZMapFeatureContext context_copy = copyContextAll(context, feature, feature_set, &feature_list, &feature_copy) ;
-  ZMapFeatureContextMergeStats merge_stats ;
-
-  if (context_copy && feature_list)
-    zmapViewMergeNewFeatures(zmap_view, &context_copy, &merge_stats, &feature_list) ;
-
-  if (context_copy && feature_copy)
-    zmapViewDrawDiffContext(zmap_view, &context_copy, feature_copy) ;
-
-  if (context_copy)
-    zMapFeatureContextDestroy(context_copy, TRUE) ;
-
-  /* Gemma, use the stats if you need to....Ed */
-  g_free(merge_stats) ;
-
-  return ;
-}
-
-
-//>>>>>>> release/0.22
 static void handBuiltInit(ZMapView zmap_view, ZMapFeatureSequenceMap sequence, ZMapFeatureContext context)
 {
   zMapReturnIfFail(zmap_view && zmap_view->context_map.styles);
@@ -865,14 +758,10 @@ static void scratchFeatureRecreate(ZMapView view)
   ZMapFeature feature = scratchCreateNewFeature(view) ;
 
   /* Merge it in */
-  scratchMergeNewFeature(view, feature) ;
+  ZMapFeatureSet feature_set = zmapViewScratchGetFeatureset(view);
 
-
-  /* Merge it in */
-  //ZMapFeatureSet feature_set = zmapViewScratchGetFeatureset(view);
-
-  //if (feature_set && feature)
-  //  zmapViewMergeNewFeature(view, feature, feature_set) ;
+  if (feature_set && feature)
+    zmapViewMergeNewFeature(view, feature, feature_set) ;
 }
 
 
