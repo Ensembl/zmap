@@ -411,7 +411,8 @@ gboolean zmapViewCallBlixem(ZMapView view, ZMapFeatureBlock block,
 			    GList *source, GList *local_sequences,
 			    GPid *child_pid, gboolean *kill_on_exit) ;
 
-ZMapFeatureContext zmapViewMergeInContext(ZMapView view, ZMapFeatureContext context);
+ZMapFeatureContext zmapViewMergeInContext(ZMapView view,
+                                          ZMapFeatureContext context, ZMapFeatureContextMergeStats *merge_stats_out) ;
 gboolean zmapViewDrawDiffContext(ZMapView view, ZMapFeatureContext *diff_context, ZMapFeature highlight_feature) ;
 void zmapViewResetWindows(ZMapView zmap_view, gboolean revcomp);
 void zmapViewEraseFromContext(ZMapView replace_me, ZMapFeatureContext context_inout);
@@ -468,14 +469,22 @@ GList *zmapViewSrc2FSetGetList(GHashTable *source_2_featureset, GList *source_li
 
 ZMapFeatureContext zmapViewCreateContext(ZMapView view, GList *feature_set_names, ZMapFeatureSet feature_set);
 
+//<<<<<<< HEAD
 ZMapFeatureContext zmapViewCopyContextAll(ZMapFeatureContext context,
                                           ZMapFeature feature,
                                           ZMapFeatureSet feature_set,
                                           GList **feature_list,
                                           ZMapFeature *feature_copy_out) ;
 
-void zmapViewMergeNewFeature(ZMapView view, ZMapFeature feature, ZMapFeatureSet feature_set) ;
-gboolean zmapViewMergeNewFeatures(ZMapView view, ZMapFeatureContext *context, GList **feature_list) ;
+//void zmapViewMergeNewFeature(ZMapView view, ZMapFeature feature, ZMapFeatureSet feature_set) ;
+//gboolean zmapViewMergeNewFeatures(ZMapView view, ZMapFeatureContext *context, GList **feature_list) ;
+//||||||| merged common ancestors
+//gboolean zmapViewMergeNewFeatures(ZMapView view, ZMapFeatureContext *context, GList **feature_list) ;
+//=======
+gboolean zmapViewMergeNewFeatures(ZMapView view,
+                                  ZMapFeatureContext *context, ZMapFeatureContextMergeStats *merge_stats_out,
+                                  GList **feature_list) ;
+//>>>>>>> release/0.22
 void zmapViewEraseFeatures(ZMapView view, ZMapFeatureContext context, GList **feature_list) ;
 
 /* zmapViewFeatureMask.c */

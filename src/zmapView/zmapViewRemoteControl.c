@@ -777,8 +777,9 @@ static gboolean mergeNewFeatures(ZMapView view, RequestData request_data,
 				 ZMapFeatureContext *merge_context, GList **feature_list)
 {
   gboolean result = FALSE ;
+  ZMapFeatureContextMergeStats merge_stats = NULL  ;
 
-  result = zmapViewMergeNewFeatures(view, merge_context, feature_list) ;
+  result = zmapViewMergeNewFeatures(view, merge_context, &merge_stats, feature_list) ;
 
   if (!result)
     {
@@ -795,6 +796,10 @@ static gboolean mergeNewFeatures(ZMapView view, RequestData request_data,
 
       result = TRUE ;
     }
+
+  /* Add total features drawn. */
+  g_string_append_printf(request_data->err_msg, " Total features drawn: %d", merge_stats->features_added) ;
+  g_free(merge_stats) ;
 
   return result ;
 }
@@ -882,7 +887,9 @@ static void loadFeatures(ZMapView view, RequestData request_data)
   gboolean use_mark = FALSE ;
   int start = 0, end = 0 ;
 
+
   request_data->command_rc = REMOTE_COMMAND_RC_OK ;
+  request_data->msg = "Launched feature loading request !" ;
 
   /* If mark then get mark, otherwise get big start/end. */
   if (request_data->use_mark)

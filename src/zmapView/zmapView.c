@@ -112,12 +112,16 @@ typedef struct LoadFeaturesDataStructName
   char *err_msg;        // from the server mainly
   gchar *stderr_out;
   gint exit_code;
-  int num_features;
+
+  gboolean status;      // load sucessful?
+  unsigned long xwid ;  // X Window id for the xremote widg. */
 
   GList *feature_sets ;
   int start,end;        // requested coords
-  gboolean status;      // load sucessful?
-  unsigned long xwid ;  // X Window id for the xremote widg. */
+
+
+  int num_features ;
+
 
 } LoadFeaturesDataStruct, *LoadFeaturesData ;
 
@@ -145,6 +149,8 @@ typedef struct ConnectionDataStructType
   gchar *stderr_out;
   gint exit_code;
 
+  /* Essentially useless and needs to go...is a record of the features we tried to add,
+   * not the features that were actually added. */
   int num_features;
 
   GList *feature_sets ;
@@ -164,6 +170,10 @@ typedef struct ConnectionDataStructType
 
   ZMapServerReqGetFeatures get_features;		    /* features got from the server, 
 							       save for display after checking status */
+
+  ZMapFeatureContextMergeStats merge_stats ;                /* Stats from merge of features into existing
+                                                             * context. */
+
 
   ZMapServerReqType display_after ;			    /* what step to display features after */
 
@@ -249,7 +259,7 @@ static void resetWindows(ZMapView zmap_view) ;
 static ZMapViewWindow createWindow(ZMapView zmap_view, ZMapWindow window) ;
 static void destroyWindow(ZMapView zmap_view, ZMapViewWindow view_window) ;
 
-static void getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature_req, ConnectionData styles) ;
+static gboolean getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature_req, ConnectionData styles) ;
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -257,9 +267,11 @@ static GList *string2StyleQuarks(char *feature_sets) ;
 static gboolean nextIsQuoted(char **text) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inout,
-				 GHashTable *styles, GList **masked,
-				 gboolean request_as_columns, gboolean revcomp_if_needed);
+static ZMapFeatureContextMergeCode justMergeContext(ZMapView view, ZMapFeatureContext *context_inout,
+                                                    ZMapFeatureContextMergeStats *merge_stats_out,
+                                                    GHashTable *styles, GList **masked,
+                                                    gboolean request_as_columns, gboolean revcomp_if_needed) ;
+
 static void justDrawContext(ZMapView view, ZMapFeatureContext diff_context,
 			    GHashTable *styles, GList *masked, ZMapFeature highlight_feature,
 			    ConnectionData connect_data);
@@ -359,7 +371,7 @@ ZMapWindowCallbacksStruct window_cbs_G =
   viewVisibilityChangeCB,
   commandCB,
   loadedDataCB,
-  mergeNewFeatureCB,
+  //mergeNewFeatureCB,
   NULL,
   NULL
 } ;
@@ -670,15 +682,16 @@ gboolean zMapViewConnect(ZMapFeatureSequenceMap sequence_map, ZMapView zmap_view
 	  /* add a strand separator featureset, we need it for the yellow stripe in the middle of the screen */
 	  /* it will cause a column of the same name to be created */
 	  /* real separator featuresets have diff names and will be added to the column */
-
 	  ZMapFeatureSet feature_set;
 	  GQuark style_id ;
 	  ZMapFeatureTypeStyle style ;
 	  ZMapSpan loaded;
 	  ZMapFeatureSequenceMap sequence = zmap_view->view_sequence;
 	  ZMapFeatureContext context;
+          ZMapFeatureContextMergeStats merge_stats ;
 	  GList *dummy = NULL;
 	  ZMapFeatureBlock block ;
+          ZMapFeatureContextMergeCode merge ;
 
 	  style_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_STRAND_SEPARATOR) ;
 
@@ -702,11 +715,22 @@ gboolean zMapViewConnect(ZMapFeatureSequenceMap sequence_map, ZMapView zmap_view
           zmapViewScratchInit(zmap_view, sequence_map, context, block) ;
 
 
-	  /* now draw it */
-
-	  if (justMergeContext(zmap_view, &context, zmap_view->context_map.styles, &dummy, FALSE, TRUE))
-	    justDrawContext(zmap_view, context, zmap_view->context_map.styles, dummy, NULL, NULL) ;
-
+	  /* now merge and draw it */
+	  if ((merge = justMergeContext(zmap_view, 
+                                        &context, &merge_stats,
+                                        zmap_view->context_map.styles, &dummy, FALSE, TRUE))
+              == ZMAPFEATURE_CONTEXT_OK)
+            {
+              justDrawContext(zmap_view, context, zmap_view->context_map.styles, dummy, NULL, NULL) ;
+            }
+          else if (merge == ZMAPFEATURE_CONTEXT_NONE)
+            {
+              zMapLogWarning("%s", "Context merge failed because no new features found in new context.") ;
+            }
+          else
+            {
+              zMapLogCritical("%s", "Context merge failed, serious error.") ;
+            }
 	}
 
 
@@ -1000,16 +1024,28 @@ void zmapViewEraseFromContext(ZMapView replace_me, ZMapFeatureContext context_in
  *                       but needs destroying...
  * @return               The diff context.  This needs destroying.
  *************************************************** */
-ZMapFeatureContext zmapViewMergeInContext(ZMapView view, ZMapFeatureContext context)
+ZMapFeatureContext zmapViewMergeInContext(ZMapView view, ZMapFeatureContext context,
+                                          ZMapFeatureContextMergeStats *merge_stats_out)
 {
 
   /* called from zmapViewRemoteReceive.c, no styles are available. */
   /* we do not expect masked features to be affected and do not process these */
 
   if (view->state != ZMAPVIEW_DYING)
-    justMergeContext(view, &context, NULL, NULL, TRUE, FALSE) ;
+    {
+      ZMapFeatureContextMergeCode result = ZMAPFEATURE_CONTEXT_ERROR ;
 
-  return context;
+      result = justMergeContext(view, &context, merge_stats_out, NULL, NULL, TRUE, FALSE) ;
+
+      if (result == ZMAPFEATURE_CONTEXT_OK)
+        zMapLogMessage("%s", "Context merge successful.") ;
+      else if (result == ZMAPFEATURE_CONTEXT_NONE)
+        zMapLogWarning("%s", "Context merge failed because no new features found in new context.") ;
+      else
+        zMapLogCritical("%s", "Context merge failed, serious error.") ;
+    }
+
+  return context ;
 }
 
 /*!
@@ -1101,6 +1137,7 @@ static ZMapFeatureContextExecuteStatus mark_matching_invalid(GQuark key,
 }
 
 
+//<<<<<<< HEAD
 ZMapFeatureContext zmapViewCopyContextAll(ZMapFeatureContext context,
                                           ZMapFeature feature,
                                           ZMapFeatureSet feature_set,
@@ -1138,31 +1175,38 @@ ZMapFeatureContext zmapViewCopyContextAll(ZMapFeatureContext context,
   return context_copy ;
 }
 
-void zmapViewMergeNewFeature(ZMapView view, ZMapFeature feature, ZMapFeatureSet feature_set)
-{
-  zMapReturnIfFail(view && view->features && feature && feature_set);
+//void zmapViewMergeNewFeature(ZMapView view, ZMapFeature feature, ZMapFeatureSet feature_set)
+//{
+//  zMapReturnIfFail(view && view->features && feature && feature_set);
 
-  ZMapFeatureContext context = view->features ;
+//  ZMapFeatureContext context = view->features ;
 
-  GList *feature_list = NULL ;
-  ZMapFeature feature_copy = NULL ;
-  ZMapFeatureContext context_copy = zmapViewCopyContextAll(context, feature, feature_set, &feature_list, &feature_copy) ;
+ // GList *feature_list = NULL ;
+ // ZMapFeature feature_copy = NULL ;
+ // ZMapFeatureContext context_copy = zmapViewCopyContextAll(context, feature, feature_set, &feature_list, &feature_copy) ;
+//
+ // if (context_copy && feature_list)
+ //   zmapViewMergeNewFeatures(view, &context_copy, &feature_list) ;
+////
+  //if (context_copy && feature_copy)
+  //  zmapViewDrawDiffContext(view, &context_copy, feature_copy) ;
 
-  if (context_copy && feature_list)
-    zmapViewMergeNewFeatures(view, &context_copy, &feature_list) ;
+  //if (context_copy)
+  //  zMapFeatureContextDestroy(context_copy, TRUE) ;
+//}
 
-  if (context_copy && feature_copy)
-    zmapViewDrawDiffContext(view, &context_copy, feature_copy) ;
-
-  if (context_copy)
-    zMapFeatureContextDestroy(context_copy, TRUE) ;
-}
-
-gboolean zmapViewMergeNewFeatures(ZMapView view, ZMapFeatureContext *context, GList **feature_list)
+//gboolean zmapViewMergeNewFeatures(ZMapView view, ZMapFeatureContext *context, GList **feature_list)
+//||||||| merged common ancestors
+//gboolean zmapViewMergeNewFeatures(ZMapView view, ZMapFeatureContext *context, GList **feature_list)
+//=======
+gboolean zmapViewMergeNewFeatures(ZMapView view,
+                                  ZMapFeatureContext *context, ZMapFeatureContextMergeStats *merge_stats_out,
+                                  GList **feature_list)
+//>>>>>>> release/0.22
 {
   gboolean result = FALSE ;
   
-  *context = zmapViewMergeInContext(view, *context) ;
+  *context = zmapViewMergeInContext(view, *context, merge_stats_out) ;
   
   if (*context)
     {
@@ -3372,6 +3416,12 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 			    else
 			      {
 				reply = ZMAPTHREAD_REPLY_REQERROR;    // ie there was an error
+
+
+                                /* TRY THIS HERE.... */
+                                err_msg = connect_data->err_msg ;
+                                
+                                this_step_finished = TRUE ;
 			      }
  			  }
 		      }
@@ -3538,8 +3588,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
               /* TRY THIS HERE.... */
               /* Add any new sources that have failed. */
-              if (connect_data->loaded_features->feature_sets
-                  && reply == ZMAPTHREAD_REPLY_DIED)
+              if (connect_data->loaded_features->feature_sets && reply == ZMAPTHREAD_REPLY_DIED)
                 {
                   if (is_empty)
                     zmap_view->sources_empty
@@ -3684,7 +3733,9 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 		      connect_data->loaded_features->err_msg = err_msg ;
 		      connect_data->loaded_features->start = connect_data->start;
 		      connect_data->loaded_features->end = connect_data->end;
+
 		      connect_data->loaded_features->num_features = connect_data->num_features ;
+
 		      connect_data->loaded_features->exit_code = connect_data->exit_code ;
 		      connect_data->loaded_features->stderr_out = connect_data->stderr_out ;
 
@@ -3693,6 +3744,18 @@ static gboolean checkStateConnections(ZMapView zmap_view)
                           /* Note that load_features is cleaned up by sendViewLoaded() */
                           LoadFeaturesData loaded_features ;
 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+                          if (!(connect_data->merge_stats))
+                            printf("found it\n") ;
+                          else
+                            connect_data->loaded_features->num_features = connect_data->merge_stats->features_added ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+
                           /* Hack to support otterlace for this release....otterlace is expecting
                            * no features to mean "it's all ok"...not really true.... */
                           if (is_empty)
@@ -3700,7 +3763,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
                           loaded_features = copyLoadFeatures(connect_data->loaded_features) ;
 
-                          zMapLogWarning("VIEW LOADED FROM %s !!", "checkStateConnections()") ;
+                          zMapLogWarning("View loaded from %s !!", "checkStateConnections()") ;
 
                           sendViewLoaded(zmap_view, loaded_features) ;
                         }
@@ -4395,9 +4458,8 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 		  connect_data->feature_sets = g_list_copy(connect_data->get_features->context->src_feature_set_names) ;
 
 		/* Does the merge and issues the request to do the drawing. */
-		getFeatures(zmap_view, connect_data->get_features, connect_data) ;
+		result = getFeatures(zmap_view, connect_data->get_features, connect_data) ;
 	      }
-
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -4944,14 +5006,14 @@ static void loadedDataCB(ZMapWindow window, void *caller_data, gpointer loaded_d
 }
 
 
-static void mergeNewFeatureCB(ZMapWindow window, void *caller_data, void *window_data)
-{
-  ZMapViewWindow view_window = (ZMapViewWindow)caller_data ;
-  ZMapWindowMergeNewFeature merge = (ZMapWindowMergeNewFeature)window_data ;
-  ZMapView view = zMapViewGetView(view_window) ;
-
-  zmapViewMergeNewFeature(view, merge->feature, merge->feature_set) ;
-}
+//static void mergeNewFeatureCB(ZMapWindow window, void *caller_data, void *window_data)
+//{
+//  ZMapViewWindow view_window = (ZMapViewWindow)caller_data ;
+//  ZMapWindowMergeNewFeature merge = (ZMapWindowMergeNewFeature)window_data ;
+//  ZMapView view = zMapViewGetView(view_window) ;
+//
+//  zmapViewMergeNewFeature(view, merge->feature, merge->feature_set) ;
+//}
 
 
 /* Sends a message to our peer that all features are now loaded. */
@@ -5112,11 +5174,12 @@ static void destroyWindow(ZMapView zmap_view, ZMapViewWindow view_window)
 
 
 
-/* We have far too many function calls here...it's all confusing..... */
-static void getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature_req, ConnectionData connect_data)
+
+static gboolean getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature_req, ConnectionData connect_data)
 {
+  gboolean result = FALSE ;
   ZMapFeatureContext new_features = NULL ;
-  gboolean merge_results = FALSE ;
+  ZMapFeatureContextMergeCode merge_results = ZMAPFEATURE_CONTEXT_ERROR ;
   ZMapFeatureContext diff_context = NULL ;
   GList *masked;
 
@@ -5141,21 +5204,49 @@ static void getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature_req
       
       connect_data->num_features = feature_req->num_features ;
       
-      if ((merge_results = justMergeContext(zmap_view,
-					    &new_features, connect_data->curr_styles,
-					    &masked, connect_data->session.request_as_columns, TRUE)))
+      merge_results = justMergeContext(zmap_view,
+                                       &new_features, &(connect_data->merge_stats),
+                                       connect_data->curr_styles,
+                                       &masked, connect_data->session.request_as_columns, TRUE) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      if (connect_data->loaded_features)
+        connect_data->loaded_features->num_features = connect_data->merge_stats->features_added ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+      if (merge_results == ZMAPFEATURE_CONTEXT_OK)
         {
-	  diff_context = new_features;
+	  diff_context = new_features ;
+
 	  justDrawContext(zmap_view, diff_context, connect_data->curr_styles , masked, NULL, connect_data) ;
+
+          result = TRUE ;
         }
       else
         {
-	  feature_req->context = NULL;
+	  feature_req->context = NULL ;
+
+          if (merge_results == ZMAPFEATURE_CONTEXT_NONE)
+            {
+              connect_data->err_msg = g_strdup("Context merge failed because no new features found in new context.") ;
+
+              zMapLogWarning("%s", connect_data->err_msg) ;
+            }
+          else
+            {
+              connect_data->err_msg = g_strdup("Context merge failed, serious error.") ;
+
+              zMapLogCritical("%s", connect_data->err_msg) ;
+            }
+
+          result = FALSE ;
         }
     }
 
-  return ;
-  
+  return result ;
  }
 
 
@@ -5263,15 +5354,16 @@ static ZMapFeatureContextExecuteStatus add_default_styles(GQuark key,
   return status;
 }
 
-static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inout,
-				 GHashTable *styles, GList **masked,
-				 gboolean request_as_columns, gboolean revcomp_if_needed)
+static ZMapFeatureContextMergeCode justMergeContext(ZMapView view, ZMapFeatureContext *context_inout,
+                                                    ZMapFeatureContextMergeStats *merge_stats_out,
+                                                    GHashTable *styles, GList **masked,
+                                                    gboolean request_as_columns, gboolean revcomp_if_needed)
 {
-  gboolean merge_result = FALSE ;
+  ZMapFeatureContextMergeCode result = ZMAPFEATURE_CONTEXT_ERROR ;
   ZMapFeatureContext new_features, diff_context = NULL ;
-  ZMapFeatureContextMergeCode merge = ZMAPFEATURE_CONTEXT_ERROR ;
   GList *featureset_names = NULL;
   GList *l;
+
 
   new_features = *context_inout ;
 
@@ -5280,14 +5372,14 @@ static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inou
   zMapStartTimer("Merge Context","") ;
 
   if(!view->features)
-  {
-	/* we need a context with a master_align with a block, all with valid sequence coordinates */
-	/* this is all back to front, we only know what we requested when the answer comes back */
-	/* and we need to have asked the same qeusrtion 3 times */
-	ZMapFeatureBlock block = zMap_g_hash_table_nth(new_features->master_align->blocks, 0) ;
+    {
+      /* we need a context with a master_align with a block, all with valid sequence coordinates */
+      /* this is all back to front, we only know what we requested when the answer comes back */
+      /* and we need to have asked the same qeusrtion 3 times */
+      ZMapFeatureBlock block = zMap_g_hash_table_nth(new_features->master_align->blocks, 0) ;
 
-	view->features = zMapFeatureContextCopyWithParents((ZMapFeatureAny) block) ;
-  }
+      view->features = zMapFeatureContextCopyWithParents((ZMapFeatureAny) block) ;
+    }
 
 
   if(!view->view_sequence->end)
@@ -5309,7 +5401,7 @@ static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inou
    */
   //printf("justMerge req=%d, %d featuresets\n", request_as_columns,g_list_length(new_features->req_feature_set_names));
 
-  if(request_as_columns)      /* ie came from ACEDB */
+  if (request_as_columns)                                   /* ie came from ACEDB */
     {
 
       ZMapFeatureColumn column;
@@ -5332,9 +5424,6 @@ static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inou
 	      if ((set_desc = g_hash_table_lookup(view->context_map.featureset_2_column, GUINT_TO_POINTER(set_id))))
 		column = g_hash_table_lookup(view->context_map.columns,GUINT_TO_POINTER(set_desc->column_id)) ;
 	    }
-
-
-
 
 
 	  /* the column featureset lists have been assembled by this point,
@@ -5361,13 +5450,13 @@ static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inou
     }
   else
     {
-	/* not sure if these lists need copying, but a small memory leak is better than a crash due to a double free */
+      /* not sure if these lists need copying, but a small memory leak is better than a crash due to a double free */
       if(!new_features->req_feature_set_names)
-		new_features->req_feature_set_names = g_list_copy(new_features->src_feature_set_names);
+        new_features->req_feature_set_names = g_list_copy(new_features->src_feature_set_names);
 
-	featureset_names = new_features->req_feature_set_names;
+      featureset_names = new_features->req_feature_set_names;
 
-	/* need to add column_2_style and column style table; tediously we need the featureset structs to do this */
+      /* need to add column_2_style and column style table; tediously we need the featureset structs to do this */
       zMapFeatureContextExecute((ZMapFeatureAny) new_features,
 				ZMAPFEATURE_STRUCT_FEATURESET,
 				add_default_styles,
@@ -5384,12 +5473,15 @@ static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inou
 	  char *y = (char *) g_quark_to_string(GPOINTER_TO_UINT(l->data));
 	  x = g_strconcat(x," ",y,NULL);
 	}
-//      zMapLogWarning(x,"");
-	printf("%s\n",x);
+      //      zMapLogWarning(x,"");
+      printf("%s\n",x);
 
     }
 
-  merge = zMapFeatureContextMerge(&(view->features), &new_features, &diff_context, featureset_names) ;
+
+  /* Merge the new features !! */
+  result = zMapFeatureContextMerge(&(view->features), &new_features, &diff_context,
+                                   merge_stats_out, featureset_names) ;
 
 
   //  printf("just Merge view = %s\n",zMapFeatureContextGetDNAStatus(view->features) ? "yes" : "non");
@@ -5409,11 +5501,9 @@ static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inou
   }
 
 
-  if (merge == ZMAPFEATURE_CONTEXT_OK)
+  if (result == ZMAPFEATURE_CONTEXT_OK)
     {
       /*      zMapLogMessage("%s", "Context merge succeeded.") ;*/
-      merge_result = TRUE ;
-
       if(0)
 	{
 	  char *x = g_strdup_printf("justMerge req=%d, diff has %d featuresets after merging: ", request_as_columns,g_list_length(diff_context->src_feature_set_names));
@@ -5427,18 +5517,18 @@ static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inou
 	  printf("%s\n",x);
 	}
 
-	/* ensure transcripts have exons in fwd strand order
-	 * needed for CanvasTranscript... ACEDB did this but pipe scripts return exons in transcript (strand) order
-	 */
-	zMapViewSortExons(diff_context);
+      /* ensure transcripts have exons in fwd strand order
+       * needed for CanvasTranscript... ACEDB did this but pipe scripts return exons in transcript (strand) order
+       */
+      zMapViewSortExons(diff_context);
 
 
-	/* collpase short reads if configured
-	 * NOTE this is simpler than EST masking as we simply don't display the collapsed features
-	 * if it is thought necessary to change this then follow the example of EST masking code
-	 * you will need to head into window code via just DrawContext()
-	 */
-	zMapViewCollapseFeatureSets(view,diff_context);
+      /* collpase short reads if configured
+       * NOTE this is simpler than EST masking as we simply don't display the collapsed features
+       * if it is thought necessary to change this then follow the example of EST masking code
+       * you will need to head into window code via just DrawContext()
+       */
+      zMapViewCollapseFeatureSets(view,diff_context);
 
       // mask ESTs with mRNAs if configured
       l = zMapViewMaskFeatureSets(view, diff_context->src_feature_set_names);
@@ -5446,19 +5536,24 @@ static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inou
       if(masked)
 	*masked = l;
     }
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   else if (merge == ZMAPFEATURE_CONTEXT_NONE)
     zMapLogWarning("%s", "Context merge failed because no new features found in new context.") ;
   else
     zMapLogCritical("%s", "Context merge failed, serious error.") ;
-
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
   zMapStopTimer("Merge Context","") ;
 
   /* Return the diff_context which is the just the new features (NULL if merge fails). */
   *context_inout = diff_context ;
 
-  return merge_result ;
+  return result ;
 }
+
+
+
 
 static void justDrawContext(ZMapView view, ZMapFeatureContext diff_context,
 			    GHashTable *new_styles, GList *masked, ZMapFeature highlight_feature,

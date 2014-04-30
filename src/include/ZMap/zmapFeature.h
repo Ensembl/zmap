@@ -170,9 +170,9 @@ typedef enum
 /* Return values from feature context merge. */
 typedef enum
   {
-    ZMAPFEATURE_CONTEXT_OK,                                /* Merge worked. */
-    ZMAPFEATURE_CONTEXT_ERROR,                             /* Some bad error, e.g. bad input args. */
-    ZMAPFEATURE_CONTEXT_NONE                               /* No new features so nothing merged. */
+    ZMAPFEATURE_CONTEXT_OK,                                 /* Merge worked. */
+    ZMAPFEATURE_CONTEXT_NONE,                               /* No new features so nothing merged. */
+    ZMAPFEATURE_CONTEXT_ERROR                               /* Some bad error, e.g. bad input args. */
   } ZMapFeatureContextMergeCode ;
 
 
@@ -287,6 +287,27 @@ typedef struct ZMapMapBlockStructType
   gboolean reversed;
 
 } ZMapMapBlockStruct, *ZMapMapBlock ;
+
+
+
+
+/* Features, featuresets and so on are added/modified/deleted in contexts by
+ * doing merges of a context containing the features to be changed with an
+ * existing feature context. For a number of reasons this turns out to be
+ * the best way to do these operations.
+ * 
+ * This struct holds stats about such merges.
+ * 
+ * The struct is very bare bones and we can add stuff as needed.
+ *  */
+typedef struct ZMapFeatureContextMergeStatsStructType
+{
+  int features_added ;                                       /* Number of new features added to context. */
+
+} ZMapFeatureContextMergeStatsStruct, *ZMapFeatureContextMergeStats ;
+
+
+
 
 
 /*
@@ -1090,7 +1111,8 @@ ZMapFeatureContext zMapFeatureContextCopyWithParents(ZMapFeatureAny orig_feature
 ZMapFeatureContextMergeCode zMapFeatureContextMerge(ZMapFeatureContext *current_context_inout,
 						    ZMapFeatureContext *new_context_inout,
 						    ZMapFeatureContext *diff_context_out,
-                                        GList *featureset_names) ;
+                                                    ZMapFeatureContextMergeStats *merge_stats_out,
+						    GList *featureset_names) ;
 gboolean zMapFeatureContextErase(ZMapFeatureContext *current_context_inout,
 				 ZMapFeatureContext remove_context,
 				 ZMapFeatureContext *diff_context_out);
