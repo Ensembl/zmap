@@ -425,23 +425,47 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
 
               pipe_status = g_io_channel_read_line_string(server->gff_pipe, server->gff_line, &terminator_pos, &gff_pipe_err) ;
 
-              *(server->gff_line->str + terminator_pos) = '\0' ; /* Remove terminating newline. */
+              if (pipe_status == G_IO_STATUS_NORMAL)
+                {
+                  *(server->gff_line->str + terminator_pos) = '\0' ; /* Remove terminating
+                                                                        newline. */
+                }
+              else
+                {
+                  result = ZMAP_SERVERRESPONSE_REQFAIL ;
+                  server->last_err_msg = g_strdup("No GFF file returned from pipe") ;
+                }
             }
 
 	  /* always read it: have to skip over if not wanted
 	   * need a flag here to say if this is a sequence server
 	   * ignore error response as we want to report open is OK */
-          if (pipe_status == G_IO_STATUS_NORMAL)
+          if (!server->last_err_msg)
             {
-              /* First parse the header, if we need to (it might already have been done) */
-              if (zMapGFFParsingHeader(server->parser))
-                result = pipeGetHeader(server) ;
-              else
-                result = ZMAP_SERVERRESPONSE_OK ;
+              if (pipe_status == G_IO_STATUS_NORMAL)
+                {
+                  /* First parse the header, if we need to (it might already have been done) */
+                  if (zMapGFFParsingHeader(server->parser))
+                    result = pipeGetHeader(server) ;
+                  else
+                    result = ZMAP_SERVERRESPONSE_OK ;
 
-              /* Then parser the sequence */
-              if (result == ZMAP_SERVERRESPONSE_OK && server->gff_version == ZMAPGFF_VERSION_2)
-                pipeGetSequence(server);
+                  /* Then parser the sequence */
+                  if (result == ZMAP_SERVERRESPONSE_OK && server->gff_version == ZMAPGFF_VERSION_2)
+                    pipeGetSequence(server);
+                }
+              else if (pipe_status == G_IO_STATUS_EOF)
+                {
+                  /* No features in the file */
+                  result = ZMAP_SERVERRESPONSE_REQFAIL ;
+                  server->last_err_msg = g_strdup("No features in GFF file") ;
+                }
+              else
+                {
+                  /* Pipe error */
+                  result = ZMAP_SERVERRESPONSE_REQFAIL ;
+                  server->last_err_msg = g_strdup_printf("Invalid pipe status: %d", pipe_status) ;
+                }
             }
 	}
     }
