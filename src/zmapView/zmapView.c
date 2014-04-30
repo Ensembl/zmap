@@ -107,20 +107,24 @@
 
 
 /* Struct describing features loaded. */
-typedef struct LoadFeaturesDataStructName
+typedef struct LoadFeaturesDataStructType
 {
-  char *err_msg;        // from the server mainly
+  char *err_msg;                                            /* from the server mainly */
   gchar *stderr_out;
   gint exit_code;
 
-  gboolean status;      // load sucessful?
-  unsigned long xwid ;  // X Window id for the xremote widg. */
+  gboolean status;                                          /* load sucessful? */
+
+
+  /* why is this here ????? */
+  unsigned long xwid ;                                      /* X Window id for the xremote widg. */
 
   GList *feature_sets ;
-  int start,end;        // requested coords
+  int start, end ;                                          /* requested coords */
 
 
-  int num_features ;
+  ZMapFeatureContextMergeStats merge_stats ;                /* Stats from merge of features into existing
+                                                             * context. */
 
 
 } LoadFeaturesDataStruct, *LoadFeaturesData ;
@@ -142,22 +146,20 @@ typedef struct ConnectionDataStructType
   ZMapServerReqGetServerInfoStruct session ;
 
 
+  /* Why are start/end separate...are they not in sequence_map ??? */
   ZMapFeatureSequenceMap sequence_map;
   gint start,end;
 
+  /* Move into loaded_features ? */
   char *err_msg;					    // from the server mainly
   gchar *stderr_out;
   gint exit_code;
-
-  /* Essentially useless and needs to go...is a record of the features we tried to add,
-   * not the features that were actually added. */
-  int num_features;
+  gboolean status;					    // load sucessful?
 
   GList *feature_sets ;
 
   GList *required_styles ;
   gboolean server_styles_have_mode ;
-  gboolean status;					    // load sucessful?
 
   GHashTable *column_2_styles ;				    /* Mapping of each column to all
 							       the styles it requires. */
@@ -171,10 +173,7 @@ typedef struct ConnectionDataStructType
   ZMapServerReqGetFeatures get_features;		    /* features got from the server, 
 							       save for display after checking status */
 
-  ZMapFeatureContextMergeStats merge_stats ;                /* Stats from merge of features into existing
-                                                             * context. */
-
-
+  /* Oh gosh this is hokey....ugh....... */
   ZMapServerReqType display_after ;			    /* what step to display features after */
 
   LoadFeaturesData loaded_features ;			    /* List of feature sets loaded for this connection. */
@@ -437,7 +436,7 @@ ZMapViewCallbacks zmapViewGetCallbacks(void)
 
   call_backs = view_cbs_G ;
 
-  return  call_backs ;
+  return call_backs ;
 }
 
 
@@ -3214,11 +3213,6 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 	  // need to copy this info in case of thread death which clears it up
 	  if (connect_data)
 	    {
-	      if (!(connect_data->loaded_features))
-		{
-		  connect_data->loaded_features = createLoadFeatures(NULL) ;
-		}
-
 	      /* Does this need to be separate....?? probably not.... */
 	      connect_data->loaded_features->feature_sets = g_list_copy(connect_data->feature_sets) ;
 	      connect_data->loaded_features->xwid = zmap_view->xwid ;
@@ -3668,9 +3662,6 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 		      connect_data->loaded_features->err_msg = err_msg ;
 		      connect_data->loaded_features->start = connect_data->start;
 		      connect_data->loaded_features->end = connect_data->end;
-
-		      connect_data->loaded_features->num_features = connect_data->num_features ;
-
 		      connect_data->loaded_features->exit_code = connect_data->exit_code ;
 		      connect_data->loaded_features->stderr_out = connect_data->stderr_out ;
 
@@ -3679,18 +3670,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
                           /* Note that load_features is cleaned up by sendViewLoaded() */
                           LoadFeaturesData loaded_features ;
 
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-                          if (!(connect_data->merge_stats))
-                            printf("found it\n") ;
-                          else
-                            connect_data->loaded_features->num_features = connect_data->merge_stats->features_added ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-
+                          /* CAN WE GET RID OF THIS HACK NOW ??? */
                           /* Hack to support otterlace for this release....otterlace is expecting
                            * no features to mean "it's all ok"...not really true.... */
                           if (is_empty)
@@ -4354,9 +4334,6 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 	    /* Why is this needed....to cache for the getstatus call ???? */
 	    connect_data->get_features = get_features ;
 
-	    connect_data->num_features = get_features->num_features ;
-
-
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	    /* not ready for these yet.... */
@@ -4679,6 +4656,13 @@ static ZMapViewConnection createViewConnection(ZMapView zmap_view,
       /* likewise this has to get copied through a series of data structs */
       connect_data->sequence_map = zmap_view->view_sequence;
 
+      connect_data->display_after = ZMAP_SERVERREQ_FEATURES ;
+
+      /* This struct will needs to persist after the viewcon is gone so we can
+       * return information to the layer above us about feature loading. */
+      connect_data->loaded_features = createLoadFeatures(NULL) ;
+
+
       view_con->step_list = zmapViewConnectionStepListCreate(dispatchContextRequests,
 							     processDataRequests,
 							     freeDataRequest);
@@ -4686,8 +4670,6 @@ static ZMapViewConnection createViewConnection(ZMapView zmap_view,
       /* Record info. for this session. */
       zmapViewSessionAddServer(&(view_con->session), urlObj, format) ;
 
-
-      connect_data->display_after = ZMAP_SERVERREQ_FEATURES;
 
       /* Set up this connection in the step list. */
       if (!existing)
@@ -5003,14 +4985,14 @@ static void sendViewLoaded(ZMapView zmap_view, LoadFeaturesData loaded_features)
           /* THIS PART NEEDS FIXING UP TO RETURN THE TRUE ERROR MESSAGE AS PER rt 369227 */
           if (loaded_features->status)          /* see comment in zmapSlave.c/ RETURNCODE_QUIT, we are tied up in knots */
             {
-              ok_mess = g_strdup_printf("%d features loaded", loaded_features->num_features) ;
+              ok_mess = g_strdup_printf("%d features loaded", loaded_features->merge_stats->features_added) ;
               emsg = html_quote_string(ok_mess) ;                /* see comment about really free() below */
               g_free(ok_mess) ;
               
               {
                 static long total = 0;
 
-                total += loaded_features->num_features ;
+                total += loaded_features->merge_stats->features_added ;
 
                 zMapLogTime(TIMER_LOAD,TIMER_ELAPSED,total,""); /* how long is startup... */
               }
@@ -5031,15 +5013,18 @@ static void sendViewLoaded(ZMapView zmap_view, LoadFeaturesData loaded_features)
 
           i = 1 ;
           viewloaded[i].value.s = featurelist ;
+
           i++ ;
           viewloaded[i].value.i = loaded_features->start ;
+
           i++ ;
           viewloaded[i].value.i = loaded_features->end ;
 
           i += 3 ;
           viewloaded[i].value.i = (int)loaded_features->status ;
+
           i++ ;
-          viewloaded[i].value.i = loaded_features->num_features ;
+          viewloaded[i].value.i = loaded_features->merge_stats->features_added ;
 
           i += 2 ;
           viewloaded[i].value.s = emsg ;
@@ -5127,20 +5112,10 @@ static gboolean getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature
     {
       new_features = feature_req->context ;
       
-      connect_data->num_features = feature_req->num_features ;
-      
       merge_results = justMergeContext(zmap_view,
-                                       &new_features, &(connect_data->merge_stats),
+                                       &new_features, &(connect_data->loaded_features->merge_stats),
                                        connect_data->curr_styles,
                                        &masked, connect_data->session.request_as_columns, TRUE) ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      if (connect_data->loaded_features)
-        connect_data->loaded_features->num_features = connect_data->merge_stats->features_added ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 
       if (merge_results == ZMAPFEATURE_CONTEXT_OK)
         {
@@ -5461,13 +5436,6 @@ static ZMapFeatureContextMergeCode justMergeContext(ZMapView view, ZMapFeatureCo
       if(masked)
 	*masked = l;
     }
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  else if (merge == ZMAPFEATURE_CONTEXT_NONE)
-    zMapLogWarning("%s", "Context merge failed because no new features found in new context.") ;
-  else
-    zMapLogCritical("%s", "Context merge failed, serious error.") ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
   zMapStopTimer("Merge Context","") ;
 
