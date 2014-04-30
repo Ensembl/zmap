@@ -3300,10 +3300,10 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
 	      /* Warn the user ! */
 	      if (view_con->show_warning)
-		zMapWarning("Source \"%s\" is being removed, check log for details.", view_con->url) ;
+                zMapWarning("Source is being removed: Error was: %s\n\nSource: %s", (err_msg ? err_msg : "<no error message>"), view_con->url) ;
 
 	      zMapLogCritical("Source \"%s\", cannot access reply from server thread,"
-			      " error was: %s", view_con->url, err_msg) ;
+                              " error was: %s", view_con->url, (err_msg ? err_msg : "<no error message>")) ;
               
 	      thread_has_died = TRUE ;
 	    }
@@ -3477,7 +3477,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
 			/* Warn the user ! */
 			if (view_con->show_warning)
-			  zMapWarning("Source \"%s\" is being cancelled, check log for details.", view_con->url) ;
+                          zMapWarning("Source is being cancelled: Error was: %s\n\nSource: %s", (err_msg ? err_msg : "<no error message>"), view_con->url) ;
 
 			THREAD_DEBUG_MSG_FULL(thread, view_con, request_type, reply,
 					      "Thread being cancelled because of error \"%s\"",
@@ -3776,7 +3776,10 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 	    }
 
 	  if (err_msg)
-	    g_free(err_msg) ;
+            {
+              g_free(err_msg) ;
+              err_msg = NULL ;
+            }
 
 	  if (thread_has_died)
 	    {
