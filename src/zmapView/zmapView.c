@@ -123,7 +123,7 @@ typedef struct LoadFeaturesDataStructType
   int start, end ;                                          /* requested coords */
 
 
-  ZMapFeatureContextMergeStats merge_stats ;                /* Stats from merge of features into existing
+  ZMapFeatureContextMergeStatsStruct merge_stats ;          /* Stats from merge of features into existing
                                                              * context. */
 
 
@@ -5065,14 +5065,14 @@ static void sendViewLoaded(ZMapView zmap_view, LoadFeaturesData loaded_features)
           /* THIS PART NEEDS FIXING UP TO RETURN THE TRUE ERROR MESSAGE AS PER rt 369227 */
           if (loaded_features->status)          /* see comment in zmapSlave.c/ RETURNCODE_QUIT, we are tied up in knots */
             {
-              ok_mess = g_strdup_printf("%d features loaded", loaded_features->merge_stats->features_added) ;
+              ok_mess = g_strdup_printf("%d features loaded", loaded_features->merge_stats.features_added) ;
               emsg = html_quote_string(ok_mess) ;                /* see comment about really free() below */
               g_free(ok_mess) ;
               
               {
                 static long total = 0;
 
-                total += loaded_features->merge_stats->features_added ;
+                total += loaded_features->merge_stats.features_added ;
 
                 zMapLogTime(TIMER_LOAD,TIMER_ELAPSED,total,""); /* how long is startup... */
               }
@@ -5104,7 +5104,7 @@ static void sendViewLoaded(ZMapView zmap_view, LoadFeaturesData loaded_features)
           viewloaded[i].value.i = (int)loaded_features->status ;
 
           i++ ;
-          viewloaded[i].value.i = loaded_features->merge_stats->features_added ;
+          viewloaded[i].value.i = loaded_features->merge_stats.features_added ;
 
           i += 2 ;
           viewloaded[i].value.s = emsg ;
@@ -5190,12 +5190,20 @@ static gboolean getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature
    *  */
   if (feature_req->context)
     {
+      ZMapFeatureContextMergeStats merge_stats = NULL ;
+      
       new_features = feature_req->context ;
       
       merge_results = justMergeContext(zmap_view,
-                                       &new_features, &(connect_data->loaded_features->merge_stats),
+                                       &new_features, &merge_stats,
                                        connect_data->curr_styles,
                                        &masked, connect_data->session.request_as_columns, TRUE) ;
+
+      connect_data->loaded_features->merge_stats = *merge_stats ;
+
+      g_free(merge_stats) ;
+
+
 
       if (merge_results == ZMAPFEATURE_CONTEXT_OK)
         {
