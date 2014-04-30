@@ -2679,6 +2679,11 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
 		diff_feature_any->parent = *view_path_parent_ptr;
 
 		status |= ZMAP_CONTEXT_EXEC_STATUS_DONT_DESCEND;
+
+                /* Not descending to feature level so need to record number of features. */
+                if (feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURESET)
+                  merge_data->feature_count += g_hash_table_size(feature_any->children) ;
+
 	      }
 	    else
 	      {
