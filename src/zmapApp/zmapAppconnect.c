@@ -75,7 +75,7 @@ GtkWidget *zmapMainMakeConnect(ZMapAppContext app_context, ZMapFeatureSequenceMa
  *
  *  */
 gboolean zmapAppCreateZMap(ZMapAppContext app_context, ZMapFeatureSequenceMap sequence_map,
-			   ZMap *zmap_out, ZMapView *view_out, char **err_msg_out)
+   ZMap *zmap_out, ZMapView *view_out, char **err_msg_out)
 {
   gboolean result = FALSE ;
   ZMap zmap = *zmap_out ;
@@ -93,14 +93,14 @@ gboolean zmapAppCreateZMap(ZMapAppContext app_context, ZMapFeatureSequenceMap se
       zMapWarning("%s", tmp_error->message) ;
     }
   else if (!((sequence_map->sequence && sequence_map->start && sequence_map->end)
-	|| (!(sequence_map->sequence) && !(sequence_map->start) && !(sequence_map->end))))
+        || (!(sequence_map->sequence) && !(sequence_map->start) && !(sequence_map->end))))
     {
       /* Everything must be specified or nothing otherwise it's an error. */
       result = FALSE ;
 
       zMapWarning("Sequence not specified properly: %s",
-		  (!sequence_map->sequence ? "no sequence name"
-		   : (sequence_map->start <= 1 ? "start less than 1" : "end less than start"))) ;
+          (!sequence_map->sequence ? "no sequence name"
+           : (sequence_map->start <= 1 ? "start less than 1" : "end less than start"))) ;
     }
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -114,40 +114,40 @@ gboolean zmapAppCreateZMap(ZMapAppContext app_context, ZMapFeatureSequenceMap se
     {
       add_result = zMapManagerAdd(app_context->zmap_manager, sequence_map, &zmap, &view) ;
       if (add_result == ZMAPMANAGER_ADD_DISASTER)
-	{
-	  zMapWarning("%s", "Failed to create ZMap and then failed to clean up properly,"
-		      " save your work and exit now !") ;
-	}
+        {
+          zMapWarning("%s", "Failed to create ZMap and then failed to clean up properly,"
+              " save your work and exit now !") ;
+        }
       else if (add_result == ZMAPMANAGER_ADD_FAIL)
-	{
-	  zMapWarning("%s", "Failed to create ZMap") ;
-	  /* DO WE NEED THIS ERR_MSG_OUT STUFF....CHECK.... */
-	  *err_msg_out = g_strdup_printf("Bad start/end coords: %d, %d", sequence_map->start, sequence_map->end) ;
-	}
+        {
+          zMapWarning("%s", "Failed to create ZMap") ;
+          /* DO WE NEED THIS ERR_MSG_OUT STUFF....CHECK.... */
+          *err_msg_out = g_strdup_printf("Bad start/end coords: %d, %d", sequence_map->start, sequence_map->end) ;
+        }
       else
-	{
-	  GtkTreeIter iter1 = {0} ;
-
-	  gtk_tree_store_append(app_context->tree_store_widg, &iter1, NULL) ;
-	  gtk_tree_store_set(app_context->tree_store_widg, &iter1,
-			     ZMAPID_COLUMN, zMapGetZMapID(zmap),
-			     ZMAPSEQUENCE_COLUMN,"<dummy>" ,
-			     ZMAPSTATE_COLUMN, zMapGetZMapStatus(zmap),
-			     ZMAPLASTREQUEST_COLUMN, "blah, blah, blaaaaaa",
-			     ZMAPDATA_COLUMN, (gpointer)zmap,
-			     -1) ;
+        {
+          GtkTreeIter iter1 = {0} ;
+        
+          gtk_tree_store_append(app_context->tree_store_widg, &iter1, NULL) ;
+          gtk_tree_store_set(app_context->tree_store_widg, &iter1,
+             ZMAPID_COLUMN, zMapGetZMapID(zmap),
+             ZMAPSEQUENCE_COLUMN,"<dummy>" ,
+             ZMAPSTATE_COLUMN, zMapGetZMapStatus(zmap),
+             ZMAPLASTREQUEST_COLUMN, "blah, blah, blaaaaaa",
+             ZMAPDATA_COLUMN, (gpointer)zmap,
+             -1) ;
 
 #ifdef RDS_NEVER_INCLUDE_THIS_CODE
-	  zMapDebug("GUI: create thread number %d for zmap \"%s\" for sequence \"%s\"\n",
-		    (row + 1), row_text[0], row_text[1]) ;
+          zMapDebug("GUI: create thread number %d for zmap \"%s\" for sequence \"%s\"\n",
+            (row + 1), row_text[0], row_text[1]) ;
 #endif /* RDS_NEVER_INCLUDE_THIS_CODE */
 
-	  *zmap_out = zmap ;
-	  if (view)
-	    *view_out = view ;
-
-	  result = TRUE ;
-	}
+          *zmap_out = zmap ;
+          if (view)
+            *view_out = view ;
+        
+          result = TRUE ;
+        }
     }
 
   return result ;

@@ -113,14 +113,14 @@ static void print_hello( gpointer data, guint callback_action, GtkWidget *w )
 {
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	GtkWidget *myWidget;
-	printf( "widget is %x data is %s\n", w, data );
-	g_message ("Hello, World!\n");
+  GtkWidget *myWidget;
+  printf( "widget is %x data is %s\n", w, data );
+  g_message ("Hello, World!\n");
 
-	myWidget = gtk_item_factory_get_widget (item_factory, "/File/New");
-	printf( "File/New is %x\n", myWidget );
+  myWidget = gtk_item_factory_get_widget (item_factory, "/File/New");
+  printf( "File/New is %x\n", myWidget );
 
-	gtk_item_factory_delete_item( item_factory, "/Edit" );
+  gtk_item_factory_delete_item( item_factory, "/Edit" );
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 }
@@ -129,10 +129,10 @@ static void handle_option( gpointer data, guint callback_action, GtkWidget *w )
 {
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	GtkCheckMenuItem *checkMenuItem = (GtkCheckMenuItem *) w;
+  GtkCheckMenuItem *checkMenuItem = (GtkCheckMenuItem *) w;
 
-	printf( "widget is %x data is %s\n", w, data );
-	g_message ("Hello, World!\n");
+  printf( "widget is %x data is %s\n", w, data );
+  g_message ("Hello, World!\n");
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 }
@@ -166,7 +166,7 @@ void DestroyNotifyFunc( gpointer data )
 {
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	printf( "data is %x\n", data );	
+  printf( "data is %x\n", data );
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 }

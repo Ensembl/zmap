@@ -70,7 +70,7 @@ static void checkConfigDir(ZMapFeatureSequenceMap seq_map) ;
 static gboolean checkSequenceArgs(int argc, char *argv[],
                                   ZMapFeatureSequenceMap seq_map_inout, GError **error) ;
 static gboolean checkPeerID(ZMapAppContext app_context,
-			    char **peer_name_out, char **peer_clipboard_out, int *peer_retries, int *peer_timeout_ms) ;
+    char **peer_name_out, char **peer_clipboard_out, int *peer_retries, int *peer_timeout_ms) ;
 
 static gboolean removeZMapRowForeachFunc(GtkTreeModel *model, GtkTreePath *path,
                                          GtkTreeIter *iter, gpointer data);
@@ -132,8 +132,8 @@ char *ZMAP_X_PROGRAM_G  = "ZMap" ;
 
 /* Place a copyright notice in the executable. */
 char *obj_copyright_G = ZMAP_OBJ_COPYRIGHT_STRING(ZMAP_TITLE,
-						  ZMAP_VERSION, ZMAP_RELEASE, ZMAP_UPDATE,
-						  ZMAP_DESCRIPTION) ;
+  ZMAP_VERSION, ZMAP_RELEASE, ZMAP_UPDATE,
+  ZMAP_DESCRIPTION) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
@@ -236,8 +236,8 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
       /* obscure...only an error if just one is specified... */
       if (!(!peer_name && !peer_clipboard))
-	consoleMsg(TRUE, "No %s name for remote connection specified so remote interface cannot be created.",
-		   (!peer_name ? "peer" : "clipboard")) ;
+        consoleMsg(TRUE, "No %s name for remote connection specified so remote interface cannot be created.",
+           (!peer_name ? "peer" : "clipboard")) ;
     }
   else
     {
@@ -289,9 +289,9 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
     /* should we store locale_in_use and new_locale somewhere? */
     if (!(new_locale = setlocale(LC_ALL, app_context->locale)))
       {
-	zMapLogWarning("Failed setting locale to '%s'", app_context->locale) ;
-	consoleMsg(TRUE, "Failed setting locale to '%s'", app_context->locale) ;
-	doTheExit(EXIT_FAILURE) ;
+        zMapLogWarning("Failed setting locale to '%s'", app_context->locale) ;
+        consoleMsg(TRUE, "Failed setting locale to '%s'", app_context->locale) ;
+        doTheExit(EXIT_FAILURE) ;
       }
   }
 
@@ -318,7 +318,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
   /*             GTK initialisation              */
 
-  initGnomeGTK(argc, argv) ;					    /* May exit if checks fail. */
+  initGnomeGTK(argc, argv) ;    /* May exit if checks fail. */
 
 #ifdef ZMAP_MEMORY_DEBUG
   g_mem_profile() ;
@@ -334,31 +334,31 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   if (remote_control)
     {
       if (zmapAppRemoteControlCreate(app_context, peer_name, peer_clipboard, peer_retries, peer_timeout_ms))
-	{
-	  /* Rest of initialisation requires a window so code is in a map callback
-	   * where we are guaranteed to have a window. */
+        {
+          /* Rest of initialisation requires a window so code is in a map callback
+           * where we are guaranteed to have a window. */
 
           consoleMsg(TRUE, "ZMAP %s() - %s",
                      __PRETTY_FUNCTION__,
                      "Setting up remoteInstaller() as callback on \"map-event\"") ;
 
-	  app_context->mapCB_id = g_signal_connect(G_OBJECT(toplevel), "map-event",
-						   G_CALLBACK(remoteInstaller),
-						   (gpointer)app_context) ;
+          app_context->mapCB_id = g_signal_connect(G_OBJECT(toplevel), "map-event",
+           G_CALLBACK(remoteInstaller),
+           (gpointer)app_context) ;
 
 
-	  zmapAppRemoteControlSetExitRoutine(app_context, appExit) ;
-	}
+          zmapAppRemoteControlSetExitRoutine(app_context, appExit) ;
+        }
       else
-	{
-	  zMapCritical("%s", "Could not initialise remote control interface.") ;
-	}
+        {
+          zMapCritical("%s", "Could not initialise remote control interface.") ;
+        }
     }
 
 
   /* Handler for when main window is destroyed (by whichever route). */
   gtk_signal_connect(GTK_OBJECT(toplevel), "destroy",
-		     GTK_SIGNAL_FUNC(toplevelDestroyCB), (gpointer)app_context) ;
+     GTK_SIGNAL_FUNC(toplevelDestroyCB), (gpointer)app_context) ;
 
   vbox = gtk_vbox_new(FALSE, 0) ;
   gtk_container_add(GTK_CONTAINER(toplevel), vbox) ;
@@ -374,7 +374,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
   quit_button = gtk_button_new_with_label("Quit") ;
   gtk_signal_connect(GTK_OBJECT(quit_button), "clicked",
-		     GTK_SIGNAL_FUNC(quitCB), (gpointer)app_context) ;
+     GTK_SIGNAL_FUNC(quitCB), (gpointer)app_context) ;
   gtk_box_pack_start(GTK_BOX(vbox), quit_button, FALSE, FALSE, 0) ;
 
   /* Always create the widget. */
@@ -405,7 +405,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
       char *err_msg = NULL ;
 
       if (!zmapAppCreateZMap(app_context, seq_map, &zmap, &view, &err_msg))
-	zMapWarning("%s", err_msg) ;
+        zMapWarning("%s", err_msg) ;
     }
 
 
@@ -414,7 +414,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   /* Start the GUI. */
   gtk_main() ;
 
-  doTheExit(EXIT_SUCCESS) ;				    /* exits.... */
+  doTheExit(EXIT_SUCCESS) ;    /* exits.... */
 
 
   /* We should never get here, hence the failure return code. */
@@ -451,7 +451,7 @@ void zmapAppExit(ZMapAppContext app_context)
 void zmapAppPingStart(ZMapAppContext app_context)
 {
   guint timeout_func_id ;
-  int interval = app_context->ping_timeout * 1000 ;	    /* glib needs time in milliseconds. */
+  int interval = app_context->ping_timeout * 1000 ;    /* glib needs time in milliseconds. */
 
   app_context->stop_pinging = FALSE ;
 
@@ -533,7 +533,7 @@ static void destroyAppContext(ZMapAppContext app_context)
   if(app_context->default_sequence)
     {
       if(app_context->default_sequence->sequence)
-	g_free(app_context->default_sequence->sequence);
+        g_free(app_context->default_sequence->sequence);
 
       g_free(app_context->default_sequence);
     }
@@ -569,12 +569,12 @@ void addZMapCB(void *app_data, void *zmap_data)
   /* Update our list of zmaps.... */
   gtk_tree_store_append (app_context->tree_store_widg, &iter1, NULL);
   gtk_tree_store_set (app_context->tree_store_widg, &iter1,
-		      ZMAPID_COLUMN, zMapGetZMapID(zmap),
-		      ZMAPSEQUENCE_COLUMN,"<dummy>" ,
-		      ZMAPSTATE_COLUMN, zMapGetZMapStatus(zmap),
-		      ZMAPLASTREQUEST_COLUMN, "blah, blah, blaaaaaa",
-		      ZMAPDATA_COLUMN, (gpointer)zmap,
-		      -1);
+      ZMAPID_COLUMN, zMapGetZMapID(zmap),
+      ZMAPSEQUENCE_COLUMN,"<dummy>" ,
+      ZMAPSTATE_COLUMN, zMapGetZMapStatus(zmap),
+      ZMAPLASTREQUEST_COLUMN, "blah, blah, blaaaaaa",
+      ZMAPDATA_COLUMN, (gpointer)zmap,
+      -1);
 
   return ;
 }
@@ -654,7 +654,7 @@ static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data)
 {
   ZMapAppContext app_context = (ZMapAppContext)cb_data ;
 
-  finalCleanUp(app_context) ;				    /* exits program. */
+  finalCleanUp(app_context) ;    /* exits program. */
 
   return ;
 }
@@ -694,14 +694,14 @@ static void appExit(void *user_data)
   else
     {
       guint timeout_func_id ;
-      int interval = app_context->exit_timeout * 1000 ;	    /* glib needs time in milliseconds. */
+      int interval = app_context->exit_timeout * 1000 ;    /* glib needs time in milliseconds. */
 
       consoleMsg(TRUE, "%s", "Issuing requests to all ZMaps to disconnect from servers and quit.") ;
 
       /* N.B. we block for 2 seconds here to make sure user can see message. */
       zMapGUIShowMsgFull(NULL, "ZMap is disconnecting from its servers and quitting, please wait.",
-			 ZMAP_MSG_EXIT,
-			 GTK_JUSTIFY_CENTER, 2, FALSE) ;
+                         ZMAP_MSG_EXIT,
+                         GTK_JUSTIFY_CENTER, 2, FALSE) ;
 
       /* time out func makes sure that we exit if threads fail to report back. */
       timeout_func_id = g_timeout_add(interval, timeoutHandler, (gpointer)app_context) ;
@@ -724,7 +724,7 @@ static void exitApp(ZMapAppContext app_context)
   if (app_context->zmap_manager)
     zMapManagerDestroy(app_context->zmap_manager) ;
 
-  signalFinalCleanUp(app_context, EXIT_SUCCESS, CLEAN_EXIT_MSG) ;	    /* exits app. */
+  signalFinalCleanUp(app_context, EXIT_SUCCESS, CLEAN_EXIT_MSG) ;    /* exits app. */
 
   return ;
 }
@@ -735,7 +735,7 @@ static void crashExitApp(ZMapAppContext app_context)
 {
   char *exit_msg = "Exit timed out - WARNING: Zmap clean up of threads timed out, exit has been forced !" ;
 
-  signalFinalCleanUp(app_context, EXIT_FAILURE, exit_msg) ;	    /* exits app. */
+  signalFinalCleanUp(app_context, EXIT_FAILURE, exit_msg) ;    /* exits app. */
 
   return ;
 }
@@ -803,7 +803,7 @@ static void doTheExit(int exit_code)
 
   exit(true_exit_code) ;
 
-  return ;						    /* we never get here. */
+  return ;    /* we never get here. */
 }
 
 
@@ -833,21 +833,21 @@ static void checkForCmdLineSequenceArg(int argc, char *argv[], char **dataset_ou
   char *sequence ;
 
   if (zMapCmdLineArgsValue(ZMAPARG_SEQUENCE, &value))
-  {
-    sequence = value.s ;
-
-    if(dataset_out)
     {
-      gchar *delim;
+      sequence = value.s ;
 
-      delim = g_strstr_len(sequence,-1,"/");
-      if(delim)
-      {
-            *dataset_out = sequence;
-            *delim++ = 0;
-            sequence = delim;
+      if(dataset_out)
+        {
+          gchar *delim;
+
+          delim = g_strstr_len(sequence,-1,"/");
+          if(delim)
+            {
+              *dataset_out = sequence;
+              *delim++ = 0;
+              sequence = delim;
+          }
       }
-    }
 
     *sequence_out = sequence ;
   }
@@ -931,10 +931,10 @@ static int checkForCmdLineSleep(int argc, char *argv[])
   while (*curr_arg)
     {
       if (g_str_has_prefix(*curr_arg, "--" ZMAPSTANZA_APP_SLEEP "="))
-	{
-	  seconds = atoi((strstr(*curr_arg, "=") + 1)) ;
-	  break ;
-	}
+        {
+          seconds = atoi((strstr(*curr_arg, "=") + 1)) ;
+          break ;
+        }
 
       curr_arg++ ;
     }
@@ -975,7 +975,7 @@ static void checkConfigDir(ZMapFeatureSequenceMap seq_map)
 
 /* Did caller specify a peer program id on the command line or in a config file. */
 static gboolean checkPeerID(ZMapAppContext app_context,
-			    char **peer_name_out, char **peer_clipboard_out, int *peer_retries, int *peer_timeout_ms)
+    char **peer_name_out, char **peer_clipboard_out, int *peer_retries, int *peer_timeout_ms)
 {
   gboolean result = FALSE ;
   ZMapCmdLineArgsType name_value = {FALSE}, clipboard_value = {FALSE} ;
@@ -987,10 +987,10 @@ static gboolean checkPeerID(ZMapAppContext app_context,
       && zMapCmdLineArgsValue(ZMAPARG_PEER_CLIPBOARD, &clipboard_value))
     {
       if (name_value.s && clipboard_value.s)
-	{
-	  *peer_name_out = g_strdup(name_value.s) ;
-	  *peer_clipboard_out = g_strdup(clipboard_value.s) ;
-	}
+        {
+          *peer_name_out = g_strdup(name_value.s) ;
+          *peer_clipboard_out = g_strdup(clipboard_value.s) ;
+        }
     }
 
   if ((context = zMapConfigIniContextProvide(app_context->default_sequence->config_file)))
@@ -1000,29 +1000,29 @@ static gboolean checkPeerID(ZMapAppContext app_context,
 
       /* If peer app name/clipboard not set then look in the config file... */
       if (!(*peer_name_out))
-	{
-	  if (zMapConfigIniContextGetString(context, ZMAPSTANZA_PEER_CONFIG, ZMAPSTANZA_PEER_CONFIG,
-					    ZMAPSTANZA_PEER_NAME, &tmp_string))
-	    *peer_name_out = g_strdup(tmp_string) ;
+        {
+          if (zMapConfigIniContextGetString(context, ZMAPSTANZA_PEER_CONFIG, ZMAPSTANZA_PEER_CONFIG,
+                                            ZMAPSTANZA_PEER_NAME, &tmp_string))
+            *peer_name_out = g_strdup(tmp_string) ;
 
-
-	  /* peer unique id to use in remote control. */
-	  if (zMapConfigIniContextGetString(context, ZMAPSTANZA_PEER_CONFIG, ZMAPSTANZA_PEER_CONFIG,
-					    ZMAPSTANZA_PEER_CLIPBOARD, &tmp_string))
-	    *peer_clipboard_out = g_strdup(tmp_string) ;
-	}
+        
+          /* peer unique id to use in remote control. */
+          if (zMapConfigIniContextGetString(context, ZMAPSTANZA_PEER_CONFIG, ZMAPSTANZA_PEER_CONFIG,
+                                            ZMAPSTANZA_PEER_CLIPBOARD, &tmp_string))
+            *peer_clipboard_out = g_strdup(tmp_string) ;
+        }
 
 
       /* How many times to retry the peer on timeout. */
       if (zMapConfigIniContextGetInt(context, ZMAPSTANZA_PEER_CONFIG, ZMAPSTANZA_PEER_CONFIG,
-				     ZMAPSTANZA_PEER_RETRIES, &tmp_int))
-	*peer_retries = tmp_int ;
+                                     ZMAPSTANZA_PEER_RETRIES, &tmp_int))
+*peer_retries = tmp_int ;
 
 
       /* How long to wait in ms before timeout waiting for peer. */
       if (zMapConfigIniContextGetInt(context, ZMAPSTANZA_PEER_CONFIG, ZMAPSTANZA_PEER_CONFIG,
-				     ZMAPSTANZA_PEER_TIMEOUT, &tmp_int))
-	*peer_timeout_ms = tmp_int ;
+                                     ZMAPSTANZA_PEER_TIMEOUT, &tmp_int))
+        *peer_timeout_ms = tmp_int ;
 
 
       zMapConfigIniContextDestroy(context);
@@ -1092,33 +1092,33 @@ static gboolean getConfiguration(ZMapAppContext app_context)
 
       /* Do we show the main window? if not then on ZMap close we should exit */
       if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
-					 ZMAPSTANZA_APP_MAINWINDOW, &tmp_bool))
-	app_context->show_mainwindow = tmp_bool ;
+                                         ZMAPSTANZA_APP_MAINWINDOW, &tmp_bool))
+        app_context->show_mainwindow = tmp_bool ;
 
       /* Should window title prefix be abbreviated ? */
       if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
-					 ZMAPSTANZA_APP_ABBREV_TITLE, &tmp_bool))
-	app_context->abbrev_title_prefix = tmp_bool ;
+                                         ZMAPSTANZA_APP_ABBREV_TITLE, &tmp_bool))
+        app_context->abbrev_title_prefix = tmp_bool ;
       zMapGUISetAbbrevTitlePrefix(app_context->abbrev_title_prefix) ;
 
 
       /* How long to wait when closing, before timeout */
       if (zMapConfigIniContextGetInt(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
-				     ZMAPSTANZA_APP_EXIT_TIMEOUT, &tmp_int))
-	app_context->exit_timeout = tmp_int ;
+                                             ZMAPSTANZA_APP_EXIT_TIMEOUT, &tmp_int))
+        app_context->exit_timeout = tmp_int ;
 
       if (app_context->exit_timeout < 0)
-	app_context->exit_timeout = ZMAP_DEFAULT_EXIT_TIMEOUT ;
+        app_context->exit_timeout = ZMAP_DEFAULT_EXIT_TIMEOUT ;
 
 
       /* help url to use */
       if (zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
-					ZMAPSTANZA_APP_HELP_URL, &tmp_string))
-	zMapGUISetHelpURL(tmp_string) ;
+                                        ZMAPSTANZA_APP_HELP_URL, &tmp_string))
+        zMapGUISetHelpURL(tmp_string) ;
 
       /* session colour for visual grouping of applications. */
       if (zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
-					ZMAPSTANZA_APP_SESSION_COLOUR, &tmp_string))
+                                        ZMAPSTANZA_APP_SESSION_COLOUR, &tmp_string))
         {
           gdk_color_parse(tmp_string, &(app_context->session_colour)) ;
           app_context->session_colour_set = TRUE ;
@@ -1126,15 +1126,15 @@ static gboolean getConfiguration(ZMapAppContext app_context)
 
       /* locale to use */
       if (zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
-					ZMAPSTANZA_APP_LOCALE, &tmp_string))
-	app_context->locale = tmp_string;
+                                        ZMAPSTANZA_APP_LOCALE, &tmp_string))
+        app_context->locale = tmp_string;
 
       /* Turn on/off debugging for xremote connection to peer client. */
       if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
-					 ZMAPSTANZA_APP_XREMOTE_DEBUG, &tmp_bool))
-	{
-	  app_context->xremote_debug = tmp_bool ;
-	}
+                                         ZMAPSTANZA_APP_XREMOTE_DEBUG, &tmp_bool))
+        {
+          app_context->xremote_debug = tmp_bool ;
+        }
 
       zMapConfigIniContextDestroy(context);
 
@@ -1192,9 +1192,9 @@ static void remoteInstaller(GtkWidget *widget, GdkEvent *event, gpointer user_da
   if (zmapAppRemoteControlInit(app_context))
     {
       if (!zmapAppRemoteControlConnect(app_context))
-	zMapCritical("Failed to connect to peer %s using clipboard %s.",
-		     app_context->remote_control->peer_name,
-		     app_context->remote_control->peer_clipboard) ;
+        zMapCritical("Failed to connect to peer %s using clipboard %s.",
+     app_context->remote_control->peer_name,
+     app_context->remote_control->peer_clipboard) ;
     }
   else
     {
@@ -1227,7 +1227,7 @@ static void remoteInstaller(GtkWidget *widget, GdkEvent *event, gpointer user_da
 /* Read logging configuration from ZMap stanza and apply to log. */
 static gboolean configureLog(char *config_file, GError **error)
 {
-  gboolean result = TRUE ;	/* if no config, we can't fail to configure */
+  gboolean result = TRUE ;/* if no config, we can't fail to configure */
   GError *g_error = NULL ;
   ZMapConfigIniContext context ;
   gboolean logging, log_to_file, show_process, show_code, show_time, catch_glib, echo_glib ;
@@ -1253,67 +1253,67 @@ static gboolean configureLog(char *config_file, GError **error)
 
       /* logging at all */
       if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_LOG_CONFIG,
-					 ZMAPSTANZA_LOG_CONFIG,
-					 ZMAPSTANZA_LOG_LOGGING, &tmp_bool))
-	logging = tmp_bool ;
+                                         ZMAPSTANZA_LOG_CONFIG,
+                                         ZMAPSTANZA_LOG_LOGGING, &tmp_bool))
+        logging = tmp_bool ;
 
       /* logging to the file */
       if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_LOG_CONFIG,
-					 ZMAPSTANZA_LOG_CONFIG,
-					 ZMAPSTANZA_LOG_FILE, &tmp_bool))
-	log_to_file = tmp_bool ;
+                                         ZMAPSTANZA_LOG_CONFIG,
+                                         ZMAPSTANZA_LOG_FILE, &tmp_bool))
+        log_to_file = tmp_bool ;
 
       /* how much detail to show...process/pid... */
       if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_LOG_CONFIG,
-					 ZMAPSTANZA_LOG_CONFIG,
-					 ZMAPSTANZA_LOG_SHOW_PROCESS, &tmp_bool))
-	show_process = tmp_bool ;
+                                         ZMAPSTANZA_LOG_CONFIG,
+                                         ZMAPSTANZA_LOG_SHOW_PROCESS, &tmp_bool))
+        show_process = tmp_bool ;
 
       /* how much detail to show...code... */
       if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_LOG_CONFIG,
-					 ZMAPSTANZA_LOG_CONFIG,
-					 ZMAPSTANZA_LOG_SHOW_CODE, &tmp_bool))
-	show_code = tmp_bool;
+                                         ZMAPSTANZA_LOG_CONFIG,
+                                         ZMAPSTANZA_LOG_SHOW_CODE, &tmp_bool))
+        show_code = tmp_bool;
 
       /* how much detail to show...time... */
       if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_LOG_CONFIG,
-					 ZMAPSTANZA_LOG_CONFIG,
-					 ZMAPSTANZA_LOG_SHOW_TIME, &tmp_bool))
-	show_time = tmp_bool;
+                                         ZMAPSTANZA_LOG_CONFIG,
+                                         ZMAPSTANZA_LOG_SHOW_TIME, &tmp_bool))
+        show_time = tmp_bool;
 
       /* catch GLib errors, else they stay on stdout */
       if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_LOG_CONFIG,
-					 ZMAPSTANZA_LOG_CONFIG,
-					 ZMAPSTANZA_LOG_CATCH_GLIB, &tmp_bool))
-	catch_glib = tmp_bool;
+                                         ZMAPSTANZA_LOG_CONFIG,
+                                         ZMAPSTANZA_LOG_CATCH_GLIB, &tmp_bool))
+        catch_glib = tmp_bool;
 
       /* catch GLib errors, else they stay on stdout */
       if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_LOG_CONFIG,
-					 ZMAPSTANZA_LOG_CONFIG,
-					 ZMAPSTANZA_LOG_ECHO_GLIB, &tmp_bool))
-	echo_glib = tmp_bool;
+                                         ZMAPSTANZA_LOG_CONFIG,
+                                         ZMAPSTANZA_LOG_ECHO_GLIB, &tmp_bool))
+        echo_glib = tmp_bool;
 
       /* user specified dir, default to config dir */
       if (zMapConfigIniContextGetString(context, ZMAPSTANZA_LOG_CONFIG,
-					ZMAPSTANZA_LOG_CONFIG,
-					ZMAPSTANZA_LOG_DIRECTORY, &tmp_string))
-	{
-	  full_dir = zMapGetDir(tmp_string, TRUE, TRUE) ;
-	}
+                                        ZMAPSTANZA_LOG_CONFIG,
+                                        ZMAPSTANZA_LOG_DIRECTORY, &tmp_string))
+        {
+          full_dir = zMapGetDir(tmp_string, TRUE, TRUE) ;
+        }
       else
-	{
-	  full_dir = g_strdup(zMapConfigDirGetDir()) ;
-	}
+        {
+          full_dir = g_strdup(zMapConfigDirGetDir()) ;
+        }
 
 
       /* user specified file, default to zmap.log */
       if (zMapConfigIniContextGetString(context, ZMAPSTANZA_LOG_CONFIG,
-					ZMAPSTANZA_LOG_CONFIG,
-					ZMAPSTANZA_LOG_FILENAME, &tmp_string))
-	{
-	  g_free(log_name) ;
-	  log_name = tmp_string;
-	}
+                                        ZMAPSTANZA_LOG_CONFIG,
+                                        ZMAPSTANZA_LOG_FILENAME, &tmp_string))
+        {
+          g_free(log_name) ;
+          log_name = tmp_string;
+        }
 
       /* config context needs freeing */
       zMapConfigIniContextDestroy(context);

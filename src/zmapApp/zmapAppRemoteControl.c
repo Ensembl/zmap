@@ -20,7 +20,7 @@
  * This file is part of the ZMap genome database package
  * originally written by:
  *
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ * Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
@@ -74,22 +74,22 @@ typedef struct _RequestQueueDataStruct
 
 
 static void requestHandlerCB(ZMapRemoteControl remote_control,
-			     ZMapRemoteControlReturnReplyFunc remote_reply_func, void *remote_reply_data,
-			     char *request, void *user_data) ;
+     ZMapRemoteControlReturnReplyFunc remote_reply_func, void *remote_reply_data,
+     char *request, void *user_data) ;
 static void replySentCB(void *user_data) ;
 static void requestSentCB(void *user_data) ;
 static void replyHandlerCB(ZMapRemoteControl remote_control, char *reply, void *user_data) ;
 
 static void handleZMapRepliesCB(char *command, gboolean abort, RemoteCommandRCType result, char *reason,
-				ZMapXMLUtilsEventStack reply, gpointer app_reply_data) ;
+ZMapXMLUtilsEventStack reply, gpointer app_reply_data) ;
 static void handleZMapRequestsCB(gpointer caller_data,
-				 gpointer sub_system_ptr,
-				 char *command, ZMapXMLUtilsEventStack request_body,
-				 ZMapRemoteAppProcessReplyFunc reply_func, gpointer reply_func_data) ;
+ gpointer sub_system_ptr,
+ char *command, ZMapXMLUtilsEventStack request_body,
+ ZMapRemoteAppProcessReplyFunc reply_func, gpointer reply_func_data) ;
 
 static void errorHandlerCB(ZMapRemoteControl remote_control,
-			   ZMapRemoteControlRCType error_type, char *err_msg,
-			   void *user_data) ;
+   ZMapRemoteControlRCType error_type, char *err_msg,
+   void *user_data) ;
 static gboolean timeoutHandlerCB(ZMapRemoteControl remote_control, void *user_data) ;
 
 static void requestBlockingTestAndBlock(void) ;
@@ -149,7 +149,7 @@ ZMapRemoteAppMakeRequestFunc zmapAppRemoteControlGetRequestCB(void)
 
 /* Set up the remote controller object. */
 gboolean zmapAppRemoteControlCreate(ZMapAppContext app_context, char *peer_name, char *peer_clipboard,
-				    int peer_retries, int peer_timeout_ms)
+    int peer_retries, int peer_timeout_ms)
 {
   gboolean result = FALSE ;
   ZMapAppRemote remote ;
@@ -159,9 +159,9 @@ gboolean zmapAppRemoteControlCreate(ZMapAppContext app_context, char *peer_name,
 
   app_id = zMapGetAppName() ;
   if ((remote_control = zMapRemoteControlCreate(app_id,
-						errorHandlerCB, app_context,
-						timeoutHandlerCB, app_context,
-						NULL, NULL)))
+        errorHandlerCB, app_context,
+        timeoutHandlerCB, app_context,
+        NULL, NULL)))
     {
       remote = g_new0(ZMapAppRemoteStruct, 1) ;
       remote->app_id = g_strdup(app_id) ;
@@ -173,25 +173,25 @@ gboolean zmapAppRemoteControlCreate(ZMapAppContext app_context, char *peer_name,
       remote->remote_controller = remote_control ;
 
       if (peer_retries > 0)
-	remote->window_retries_max = remote->window_retries_left = peer_retries ;
+        remote->window_retries_max = remote->window_retries_left = peer_retries ;
       else
-	remote->window_retries_max = remote->window_retries_left = ZMAP_WINDOW_RETRIES ;
+        remote->window_retries_max = remote->window_retries_left = ZMAP_WINDOW_RETRIES ;
 
       if (peer_timeout_ms > 0)
-	zMapRemoteControlSetTimeout(remote->remote_controller, peer_timeout_ms) ;
+        zMapRemoteControlSetTimeout(remote->remote_controller, peer_timeout_ms) ;
       else
-	zMapRemoteControlSetTimeout(remote->remote_controller, ZMAP_WINDOW_TIMEOUT_MS) ;
-	
+        zMapRemoteControlSetTimeout(remote->remote_controller, ZMAP_WINDOW_TIMEOUT_MS) ;
+
 
 
       /* Only set debug from cmdline the first time around otherwise it overrides what
        * is set dynamically....maybe it should be per remote object ? */
       if (!debug_set)
-	{
-	  setDebugLevel() ;
-
-	  debug_set = TRUE ;
-	}
+        {
+          setDebugLevel() ;
+        
+          debug_set = TRUE ;
+        }
 
       zMapRemoteControlSetDebug(remote->remote_controller, remote_debug_G) ;
 
@@ -224,42 +224,42 @@ gboolean zmapAppRemoteControlInit(ZMapAppContext app_context)
       Display *x_display ;
       
       if ((gdk_window = gtk_widget_get_window(app_context->app_widg))
-	  && (x_window = GDK_WINDOW_XID(gdk_window)))
-	{
+                          && (x_window = GDK_WINDOW_XID(gdk_window)))
+        {
           char *pid ;
 
-	  app_context->remote_control->app_window = x_window ;
-	  app_context->remote_control->app_window_str
-	    = g_strdup_printf(ZMAP_XWINDOW_FORMAT_STR, app_context->remote_control->app_window) ;
+          app_context->remote_control->app_window = x_window ;
+          app_context->remote_control->app_window_str
+                    = g_strdup_printf(ZMAP_XWINDOW_FORMAT_STR, app_context->remote_control->app_window) ;
 
           /* Set a property on the x window named for the peer clipboard (the value
            * isn't used). This is used by the peer to check that they have our correct x window. */
-	  x_display = GDK_WINDOW_XDISPLAY(gdk_window) ;
+          x_display = GDK_WINDOW_XDISPLAY(gdk_window) ;
 
           pid = g_strdup_printf("%d", getpid()) ;
           zMapDebugPrint(is_active_debug_G, "Setting property '%s' to value '%s'\n", remote->app_unique_id, pid) ;
           result = zMapGUIXWindowChangeProperty(x_display, x_window, remote->app_unique_id, pid) ;
-	}
+        }
       else
-	{
-	  zMapLogCritical("%s",
-			  "Could not retrieve X Window of app_window, remote control initialisation has failed.") ;
+        {
+          zMapLogCritical("%s",
+          "Could not retrieve X Window of app_window, remote control initialisation has failed.") ;
 
-	  result = FALSE ;
-	}
+          result = FALSE ;
+        }
     }
 
   if (result)
     result = zMapRemoteControlReceiveInit(remote->remote_controller,
-					  remote->app_unique_id,
-					  requestHandlerCB, app_context,
-					  replySentCB, app_context) ;
+  remote->app_unique_id,
+  requestHandlerCB, app_context,
+  replySentCB, app_context) ;
 
   if (result)
     result = zMapRemoteControlSendInit(remote->remote_controller,
-				       remote->peer_name, remote->peer_clipboard,
-				       requestSentCB, app_context,
-				       replyHandlerCB, app_context) ;
+       remote->peer_name, remote->peer_clipboard,
+       requestSentCB, app_context,
+       replyHandlerCB, app_context) ;
 
   if (result)
     result = zMapRemoteControlReceiveWaitForRequest(remote->remote_controller) ;
@@ -321,9 +321,9 @@ void zmapAppRemoteControlDestroy(ZMapAppContext app_context)
  * Called by ZMapRemoteControl: receives all requests sent to zmap by a peer.
  */
 static void requestHandlerCB(ZMapRemoteControl remote_control,
-			     ZMapRemoteControlReturnReplyFunc return_reply_func,
-			     void *return_reply_func_data,
-			     char *request, void *user_data)
+     ZMapRemoteControlReturnReplyFunc return_reply_func,
+     void *return_reply_func_data,
+     char *request, void *user_data)
 {
   ZMapAppContext app_context = (ZMapAppContext)user_data ;
   ZMapAppRemote remote = app_context->remote_control ;
@@ -360,10 +360,10 @@ static void requestHandlerCB(ZMapRemoteControl remote_control,
  * 
  *  */
 static void handleZMapRepliesCB(char *command,
-				gboolean abort,
-				RemoteCommandRCType command_rc, char *reason,
-				ZMapXMLUtilsEventStack reply,
-				gpointer app_reply_data)
+                                gboolean abort,
+                                RemoteCommandRCType command_rc, char *reason,
+                                ZMapXMLUtilsEventStack reply,
+                                gpointer app_reply_data)
 {
   ZMapAppContext app_context = (ZMapAppContext)app_reply_data ;
   ZMapAppRemote remote = app_context->remote_control ;
@@ -374,28 +374,28 @@ static void handleZMapRepliesCB(char *command,
   if (abort)
     {
       zMapLogWarning("Aborting request \"%s\", see log file.",
-		     (command ? command : "no command name available")) ;
+     (command ? command : "no command name available")) ;
     }
   else
     {
       /* Make a zmap protocol reply from the return code etc..... */
       if (command)
-	xml_stack = zMapRemoteCommandCreateReplyFromRequest(remote->remote_controller,
-							    remote->curr_peer_request,
-							    command_rc, reason, reply, &err_msg) ;
+        xml_stack = zMapRemoteCommandCreateReplyFromRequest(remote->remote_controller,
+                                                            remote->curr_peer_request,
+                                                            command_rc, reason, reply, &err_msg) ;
       else
-	xml_stack = zMapRemoteCommandCreateReplyEnvelopeFromRequest(remote->remote_controller,
-								    remote->curr_peer_request,
-								    command_rc, reason, reply, &err_msg) ;
+        xml_stack = zMapRemoteCommandCreateReplyEnvelopeFromRequest(remote->remote_controller,
+                                                                    remote->curr_peer_request,
+                                                                    command_rc, reason, reply, &err_msg) ;
 
       /* If we can't make sense of what's passed to us something is wrong in our code so abort
        * the request. */
       if (!xml_stack || !(full_reply = zMapXMLUtilsStack2XML(xml_stack, &err_msg, FALSE)))
-	{
-	  zMapLogWarning("%s", err_msg) ;
-
-	  abort = TRUE ;
-	}
+        {
+          zMapLogWarning("%s", err_msg) ;
+        
+          abort = TRUE ;
+        }
     }
 
   /* Next phase of messages with host so reset window retries */
@@ -441,9 +441,9 @@ static void replySentCB(void *user_data)
  * 
  *  */
 static void handleZMapRequestsCB(gpointer caller_data,
-				 gpointer sub_system_ptr,
-				 char *command, ZMapXMLUtilsEventStack request_body,
-				 ZMapRemoteAppProcessReplyFunc process_reply_func, gpointer process_reply_func_data)
+ gpointer sub_system_ptr,
+ char *command, ZMapXMLUtilsEventStack request_body,
+ ZMapRemoteAppProcessReplyFunc process_reply_func, gpointer process_reply_func_data)
 {
   ZMapAppContext app_context = (ZMapAppContext)caller_data ;
   ZMapAppRemote remote = app_context->remote_control ;
@@ -459,61 +459,61 @@ static void handleZMapRequestsCB(gpointer caller_data,
       GArray *request_stack ;
       char *request ;
       char *err_msg = NULL ;
-      char *view = NULL ;					    /* to be filled in later..... */
+      char *view = NULL ;    /* to be filled in later..... */
       gpointer view_id = NULL ;
 
 
       /* If request came from a subsystem (zmap, view, window) find the corresponding view_id
        * so we can return it to the caller. */
       if (sub_system_ptr)
-	{
-	  if (!(view_id = zMapManagerFindView(app_context->zmap_manager, sub_system_ptr)))
-	    {
-	      zMapLogCritical("Cannot find sub_system_ptr %p in zmaps/views/windows, remote call has failed.",
-			      sub_system_ptr) ;
-	      result = FALSE ;
-	    }
-	  else if (!zMapAppRemoteViewCreateIDStr(view_id, &view))
-	    {
-	      zMapLogCritical("Cannot convert sub_system_ptr %p to view_id, remote call has failed.",
-			      sub_system_ptr) ;
-	      result = FALSE ;
-	    }
-	}
+        {
+          if (!(view_id = zMapManagerFindView(app_context->zmap_manager, sub_system_ptr)))
+            {
+              zMapLogCritical("Cannot find sub_system_ptr %p in zmaps/views/windows, remote call has failed.",
+              sub_system_ptr) ;
+              result = FALSE ;
+            }
+          else if (!zMapAppRemoteViewCreateIDStr(view_id, &view))
+            {
+              zMapLogCritical("Cannot convert sub_system_ptr %p to view_id, remote call has failed.",
+              sub_system_ptr) ;
+              result = FALSE ;
+            }
+        }
 
       if (result)
-	{
-	  if (!err_msg && !(request_stack = zMapRemoteCommandCreateRequest(remote->remote_controller,
-                                                                           command, -1,
-                                                                           ZACP_VIEWID, view,
-                                                                           (char*)NULL)))
-	    {
-	      err_msg = g_strdup_printf("Could not create request for command \"%s\"", command) ;
-	    }
+        {
+          if (!err_msg && !(request_stack = zMapRemoteCommandCreateRequest(remote->remote_controller,
+                                                                                   command, -1,
+                                                                                   ZACP_VIEWID, view,
+                                                                                   (char*)NULL)))
+            {
+              err_msg = g_strdup_printf("Could not create request for command \"%s\"", command) ;
+            }
 
-	  /* for debugging... */
-	  request = zMapXMLUtilsStack2XML(request_stack, &err_msg, FALSE) ;
+          /* for debugging... */
+          request = zMapXMLUtilsStack2XML(request_stack, &err_msg, FALSE) ;
       
-	  if (request_body)
-	    {
-	      if (!err_msg && !(request_stack = zMapRemoteCommandAddBody(request_stack, "request", request_body)))
-		err_msg = g_strdup_printf("Could not add request body for command \"%s\"", command) ;
-	    }
+          if (request_body)
+            {
+              if (!err_msg && !(request_stack = zMapRemoteCommandAddBody(request_stack, "request", request_body)))
+        err_msg = g_strdup_printf("Could not add request body for command \"%s\"", command) ;
+            }
+        
+          if (!err_msg && !(request = zMapXMLUtilsStack2XML(request_stack, &err_msg, FALSE)))
+            {
+              err_msg = g_strdup_printf("Could not create raw xml from request for command \"%s\"", command) ;
+            }
 
-	  if (!err_msg && !(request = zMapXMLUtilsStack2XML(request_stack, &err_msg, FALSE)))
-	    {
-	      err_msg = g_strdup_printf("Could not create raw xml from request for command \"%s\"", command) ;
-	    }
+          if (!err_msg)
+            {
+              if (!(result = sendOrQueueRequest(remote, command, request, process_reply_func, process_reply_func_data, ZMAP_WINDOW_RETRIES, app_context->app_widg)))
+                {
+                  err_msg = g_strdup_printf("Could not send request to peer: \"%s\"", request) ;
+        
 
-	  if (!err_msg)
-	    {
-	      if (!(result = sendOrQueueRequest(remote, command, request, process_reply_func, process_reply_func_data, ZMAP_WINDOW_RETRIES, app_context->app_widg)))
-		{
-		  err_msg = g_strdup_printf("Could not send request to peer: \"%s\"", request) ;
-
-
-		  zMapDebugPrint(is_active_debug_G, "%s", "Send request failed so unsetting our block.") ;
-		  requestBlockingSetInActive() ;
+                  zMapDebugPrint(is_active_debug_G, "%s", "Send request failed so unsetting our block.") ;
+                  requestBlockingSetInActive() ;
 
 
                   /* and go back to waiting for a request...... */
@@ -522,19 +522,19 @@ static void handleZMapRequestsCB(gpointer caller_data,
                       zMapLogCritical("%s", "Call to wait for peer requests failed, cannot communicate with peer.") ;
                       zMapWarning("%s", "Call to wait for peer requests failed, cannot communicate with peer.") ;
                     }
-		}
-	    }
+                }
+            }
 
-	  /* Serious failure, record that remote is no longer working properly. */
-	  if (err_msg)
-	    {
-	      app_context->remote_ok = FALSE ;
-
-	      zMapLogCritical("%s", err_msg) ;
-
-	      g_free(err_msg) ;
-	    }
-	}
+          /* Serious failure, record that remote is no longer working properly. */
+          if (err_msg)
+            {
+              app_context->remote_ok = FALSE ;
+        
+              zMapLogCritical("%s", err_msg) ;
+        
+              g_free(err_msg) ;
+            }
+        }
 
     }
 
@@ -569,7 +569,7 @@ static void replyHandlerCB(ZMapRemoteControl remote_control, char *reply, void *
    * to reset state...fine to log a bad message but we still need to call the app func. */
 
   if (!(result = zMapRemoteCommandValidateReply(remote->remote_controller,
-						remote->curr_zmap_request, reply, &error_out)))
+                                                remote->curr_zmap_request, reply, &error_out)))
     {
        /* error message etc...... */
       zMapLogWarning("Bad remote message from peer: %s", error_out) ;
@@ -629,8 +629,8 @@ static void replyHandlerCB(ZMapRemoteControl remote_control, char *reply, void *
  *         if timeoutHandlerCB returns FALSE).
  */
 static void errorHandlerCB(ZMapRemoteControl remote_control,
-			   ZMapRemoteControlRCType error_type, char *err_msg,
-			   void *user_data)
+   ZMapRemoteControlRCType error_type, char *err_msg,
+   void *user_data)
 {
   ZMapAppContext app_context = (ZMapAppContext)user_data ;
 
@@ -680,49 +680,49 @@ static gboolean timeoutHandlerCB(ZMapRemoteControl remote_control, void *user_da
   if ((x_window = app_remote_control->peer_window))
     {
       if (!(app_remote_control->window_retries_left))
-	{
-	  char *full_err_msg ;
+        {
+          char *full_err_msg ;
 
-	  full_err_msg = g_strdup_printf("Peer has still not responded after %d timeouts, transaction has timed out (peer clipboard is %s)\n",
-					 app_remote_control->window_retries_max, 
+          full_err_msg = g_strdup_printf("Peer has still not responded after %d timeouts, transaction has timed out (peer clipboard is %s)\n",
+         app_remote_control->window_retries_max, 
                                          (app_remote_control->peer_clipboard ? app_remote_control->peer_clipboard : "null")) ;
 
-	  zMapLogCritical("%s", full_err_msg) ;
+          zMapLogCritical("%s", full_err_msg) ;
+        
+          zMapCritical("%s", full_err_msg) ;
 
-	  zMapCritical("%s", full_err_msg) ;
-
-	  g_free(full_err_msg) ;
-	}
+          g_free(full_err_msg) ;
+        }
       else
-	{
-	  GdkWindow *gdk_window ; 
-	  Display *x_display ;
-	  char *err_msg = NULL ;      
+        {
+          GdkWindow *gdk_window ; 
+          Display *x_display ;
+          char *err_msg = NULL ;      
+        
+          gdk_window = gtk_widget_get_window(app_context->app_widg) ;
+          x_display = GDK_WINDOW_XDISPLAY(gdk_window) ;
+        
+        
+          (app_remote_control->window_retries_left)-- ;
+        
+          /* This is our way of testing to see if the peer application is alive, if the window id
+           * they gave us is still good then we assume they are still alive. */
+          if (!(result = zMapGUIXWindowExists(x_display, x_window, app_remote_control->peer_clipboard, &err_msg)))
+            {
+              char *full_err_msg ;
+        
+              full_err_msg = g_strdup_printf("Peer window ("ZMAP_XWINDOW_FORMAT_STR") has gone,"
+             " stopping remote control because: \"%s\".", x_window, err_msg) ;
+        
+              zMapLogCritical("%s", full_err_msg) ;
+        
+              zMapCritical("%s", full_err_msg) ;
 
-	  gdk_window = gtk_widget_get_window(app_context->app_widg) ;
-	  x_display = GDK_WINDOW_XDISPLAY(gdk_window) ;
+              g_free(full_err_msg) ;
+            }
 
-
-	  (app_remote_control->window_retries_left)-- ;
-
-	  /* This is our way of testing to see if the peer application is alive, if the window id
-	   * they gave us is still good then we assume they are still alive. */
-	  if (!(result = zMapGUIXWindowExists(x_display, x_window, app_remote_control->peer_clipboard, &err_msg)))
-	    {
-	      char *full_err_msg ;
-
-	      full_err_msg = g_strdup_printf("Peer window ("ZMAP_XWINDOW_FORMAT_STR") has gone,"
-					     " stopping remote control because: \"%s\".", x_window, err_msg) ;
-
-	      zMapLogCritical("%s", full_err_msg) ;
-
-	      zMapCritical("%s", full_err_msg) ;
-
-	      g_free(full_err_msg) ;
-	    }
-
-	  g_free(err_msg) ;
-	}
+          g_free(err_msg) ;
+        }
     }
 
   return result ;
@@ -748,10 +748,10 @@ static void requestBlockingTestAndBlock(void)
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
   zMapDebugPrint(is_active_debug_G, "Entering blocking code: %s",
-		 (is_active_G ? "Request Active" : "No Request Active")) ;
+                 (is_active_G ? "Request Active" : "No Request Active")) ;
 
   zMapDebugPrint(is_active_debug_G, "%s",
-		 (is_active_G ? "Request Active, now blocking." : "No Request Active, no blocking")) ;
+                 (is_active_G ? "Request Active, now blocking." : "No Request Active, no blocking")) ;
 
   while (is_active_G)
     {
@@ -759,7 +759,7 @@ static void requestBlockingTestAndBlock(void)
     }
 
   zMapDebugPrint(is_active_debug_G, "Leaving blocking code: %s",
-		 (is_active_G ? "Request Active" : "No Request Active")) ;
+                 (is_active_G ? "Request Active" : "No Request Active")) ;
 
   return ;
 }
@@ -941,7 +941,7 @@ static void performNextRequest(GQueue *request_queue)
   event.window       = request_data->widget->window ;                     /* no window generates this event. */
   event.send_event   = TRUE ;                               /* we sent this event. */
   event.message_type = gdk_atom_intern("zmap_atom", FALSE);             /* This is our id for events. */
-  event.data_format  = 8 ;		                      /* Not sure about data format here... */
+  event.data_format  = 8 ;                      /* Not sure about data format here... */
   
   gdk_event_put((GdkEvent *)&event);
 }
@@ -1082,19 +1082,19 @@ static gboolean sendOrQueueRequest(ZMapAppRemote remote,
 static void setDebugLevel(void)
 {
   ZMapCmdLineArgsType cmdline_arg = {FALSE} ;
-	  
+  
   if (zMapCmdLineArgsValue(ZMAPARG_REMOTE_DEBUG, &cmdline_arg))
     {
       char *debug_level_str ;
-	      
+      
       debug_level_str = cmdline_arg.s ;
 
       if (strcasecmp(debug_level_str, "off") == 0)
-	remote_debug_G = ZMAP_REMOTECONTROL_DEBUG_OFF ;
+        remote_debug_G = ZMAP_REMOTECONTROL_DEBUG_OFF ;
       else if (strcasecmp(debug_level_str, "normal") == 0)
-	remote_debug_G = ZMAP_REMOTECONTROL_DEBUG_NORMAL ;
+        remote_debug_G = ZMAP_REMOTECONTROL_DEBUG_NORMAL ;
       else if (strcasecmp(debug_level_str, "verbose") == 0)
-	remote_debug_G = ZMAP_REMOTECONTROL_DEBUG_VERBOSE ;
+        remote_debug_G = ZMAP_REMOTECONTROL_DEBUG_VERBOSE ;
     }
 
   return ;

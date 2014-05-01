@@ -78,7 +78,7 @@ GtkWidget *zmapMainMakeManage(ZMapAppContext app_context)
   /* scrolled widget */
   scrwin = gtk_scrolled_window_new(NULL, NULL) ;
   gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrwin),
-				 GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC) ;
+         GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC) ;
   gtk_widget_set_usize(scrwin, 600, 150) ;
   gtk_box_pack_start(GTK_BOX(vbox), scrwin, FALSE, FALSE, 0) ;
   /* tree view widget */
@@ -139,17 +139,17 @@ GtkWidget *zmapMainMakeManage(ZMapAppContext app_context)
 
   stop_button = gtk_button_new_with_label("Stop") ;
   gtk_signal_connect(GTK_OBJECT(stop_button), "clicked",
-		     GTK_SIGNAL_FUNC(stopThreadCB), (gpointer)app_context) ;
+     GTK_SIGNAL_FUNC(stopThreadCB), (gpointer)app_context) ;
   gtk_box_pack_start(GTK_BOX(hbox), stop_button, FALSE, FALSE, 0) ;
 
   kill_button = gtk_button_new_with_label("Kill") ;
   gtk_signal_connect(GTK_OBJECT(kill_button), "clicked",
-		     GTK_SIGNAL_FUNC(killThreadCB), (gpointer)app_context) ;
+     GTK_SIGNAL_FUNC(killThreadCB), (gpointer)app_context) ;
   gtk_box_pack_start(GTK_BOX(hbox), kill_button, FALSE, FALSE, 0) ;
 
   check_button = gtk_button_new_with_label("Status") ;
   gtk_signal_connect(GTK_OBJECT(check_button), "clicked",
-		     GTK_SIGNAL_FUNC(checkThreadCB), (gpointer)app_context) ;
+     GTK_SIGNAL_FUNC(checkThreadCB), (gpointer)app_context) ;
   gtk_box_pack_start(GTK_BOX(hbox), check_button, FALSE, FALSE, 0) ;
 
   return frame ;
