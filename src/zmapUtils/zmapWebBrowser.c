@@ -46,9 +46,9 @@
 /* Describes various browsers, crude at the moment, we will probably need more options later. */
 typedef struct
 {
-  char *system ;					    /* system name as in "uname -s" */
-  char *executable ;					    /* executable name or full path. */
-  char *open_command ;					    /* alternative command to start browser. */
+  char *system ;    /* system name as in "uname -s" */
+  char *executable ;    /* executable name or full path. */
+  char *open_command ;    /* alternative command to start browser. */
 } BrowserConfigStruct, *BrowserConfig ;
 
 
@@ -88,7 +88,7 @@ static BrowserConfigStruct browsers_G[] =
     {"Linux",  "mozilla", "mozilla -remote 'openurl(\""BROWSER_PATTERN"\",new-window)' || mozilla \""BROWSER_PATTERN"\""},
     {"OSF",    "netscape", NULL},
     {"Darwin", "/Applications/Safari.app/Contents/MacOS/Safari", "open \""BROWSER_PATTERN"\""},
-    {NULL, NULL}					    /* Terminator record. */
+    {NULL, NULL}    /* Terminator record. */
   } ;
 
 
@@ -153,16 +153,16 @@ gboolean zMapLaunchWebBrowser(char *link, GError **error)
       /* Translate troublesome chars to their url escape sequences, see translateURLChars() for explanation. */
       url = translateURLChars(link) ;  
 
-      sys_cmd = g_string_sized_new(1024) ;		    /* Should be long enough for most urls. */
+      sys_cmd = g_string_sized_new(1024) ;    /* Should be long enough for most urls. */
 
       if (best_browser->open_command)
-	{
-	  makeBrowserCmd(sys_cmd, best_browser, url) ;
-	}
+        {
+          makeBrowserCmd(sys_cmd, best_browser, url) ;
+        }
       else 
-	{
-	  g_string_printf(sys_cmd, "%s \"%s\"", browser, url) ;
-	}
+        {
+          g_string_printf(sys_cmd, "%s \"%s\"", browser, url) ;
+        }
 
       /* Make sure browser is run in background by the shell so we do not wait.
        * NOTE that because we do not wait for the command to be executed,
@@ -172,14 +172,14 @@ gboolean zMapLaunchWebBrowser(char *link, GError **error)
 
       /* We could do much more to interpret what exactly failed here... */
       if ((sys_rc = system(sys_cmd->str)) == EXIT_SUCCESS)
-	{
-	  result = TRUE ;
-	}
+        {
+          result = TRUE ;
+        }
       else   
-	{
-	  *error = g_error_new(err_domain_G, BROWSER_COMMAND_FAILED,
-			       "Failed to run command \"%s\".", sys_cmd->str) ;
-	}
+        {
+          *error = g_error_new(err_domain_G, BROWSER_COMMAND_FAILED,
+               "Failed to run command \"%s\".", sys_cmd->str) ;
+        }
 
       g_string_free(sys_cmd, TRUE) ;
       g_free(url) ;
@@ -217,44 +217,44 @@ static char *findBrowser(BrowserConfig browsers_in, BrowserConfig *browser_out, 
   if (uname(&unamebuf) == -1)
     {
       *error = g_error_new_literal(err_domain_G, BROWSER_UNAME_FAILED,
-				   "uname() call to find system name failed") ;
+   "uname() call to find system name failed") ;
     }
   else 
     {
       BrowserConfig curr_browser = browsers_in ;
       
       while (curr_browser->system != NULL)
-	{
-	  if (g_ascii_strcasecmp(curr_browser->system, unamebuf.sysname) == 0)
-	    {
-	      browser_in_list = TRUE ; 
+        {
+          if (g_ascii_strcasecmp(curr_browser->system, unamebuf.sysname) == 0)
+            {
+              browser_in_list = TRUE ; 
+        
+              /* Look for the browser in the users path. */
+              if ((browser = g_find_program_in_path(curr_browser->executable)))
+                {
+                  *browser_out = curr_browser ;
+                
+                  break ;
+                }
+            }
 
-	      /* Look for the browser in the users path. */
-	      if ((browser = g_find_program_in_path(curr_browser->executable)))
-		{
-		  *browser_out = curr_browser ;
-
-		  break ;
-		}
-	    }
-
-	  curr_browser++ ;
-	}
+          curr_browser++ ;
+        }
     }
 
   if (!browser)
     {
       if (browser_in_list)
-	{
-	  *error = g_error_new(err_domain_G, BROWSER_NOT_FOUND,
-			       "Browser(s) registered with ZMap for this system (%s)"
-			       " but none found in $PATH or they were not executable.", unamebuf.sysname) ;
-	}
+        {
+          *error = g_error_new(err_domain_G, BROWSER_NOT_FOUND,
+               "Browser(s) registered with ZMap for this system (%s)"
+               " but none found in $PATH or they were not executable.", unamebuf.sysname) ;
+        }
       else
-	{
-	  *error = g_error_new(err_domain_G, BROWSER_NOT_REGISTERED,
-			       "No browser registered for system %s", unamebuf.sysname) ;
-	}
+        {
+          *error = g_error_new(err_domain_G, BROWSER_NOT_REGISTERED,
+               "No browser registered for system %s", unamebuf.sysname) ;
+        }
     }
 
   return browser ;
@@ -269,7 +269,7 @@ static void makeBrowserCmd(GString *cmd, BrowserConfig best_browser, char *url)
 
   found = zMap_g_string_replace(cmd, BROWSER_PATTERN, url) ;
 
-  /* zMapAssert(found) ;*/					    /* Must find at least one pattern. */
+  /* zMapAssert(found) ;*/    /* Must find at least one pattern. */
 
   return ;
 }

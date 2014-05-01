@@ -48,7 +48,7 @@
 
 
 static gboolean getVersionNumbers(char *version_str,
-				  int *version_out, int *release_out, int *update_out) ;
+  int *version_out, int *release_out, int *update_out) ;
 
 
 /*! @defgroup zmaputils   zMapUtils: utilities for ZMap
@@ -143,9 +143,9 @@ gboolean zMapCompareVersionStings(char *reference_version, char *test_version)
       && (result = getVersionNumbers(test_str, &test_vers, &test_rel, &test_upd)))
     {
       if (test_vers >= ref_vers && test_rel >= ref_rel && test_upd >= ref_upd)
-	result = TRUE ;
+        result = TRUE ;
       else
-	result = FALSE ;
+        result = FALSE ;
     }
 
   g_free(ref_str) ;
@@ -316,33 +316,33 @@ char *zMapGetTimeString(ZMapTimeFormat format, char *format_str_in)
       curtime = tv.tv_sec ;
 
       switch(format)
-	{
-	case ZMAPTIME_STANDARD:
-	  /* e.g. "Thu Sep 30 10:05:27 2004" */
-	  format_str = "%a %b %d %X %Y" ;
-	  break ;
-	case ZMAPTIME_YMD:
-	  /* e.g. "1997-11-08" */
-	  format_str = "%Y-%m-%d" ;
-	  break ;
-	case ZMAPTIME_LOG:
-	  /* e.g. "2013/06/11 13:18:27.021129", i.e. includes milliseconds. */
-	  format_str = "%Y/%m/%d %T," ;
-	  break ;
-	case ZMAPTIME_USERFORMAT:
-	  /* User provides format string which must be in strftime() format. */
-	  format_str = format_str_in ;
-	  break ;
-	}
+        {
+        case ZMAPTIME_STANDARD:
+          /* e.g. "Thu Sep 30 10:05:27 2004" */
+          format_str = "%a %b %d %X %Y" ;
+          break ;
+        case ZMAPTIME_YMD:
+          /* e.g. "1997-11-08" */
+          format_str = "%Y-%m-%d" ;
+          break ;
+        case ZMAPTIME_LOG:
+          /* e.g. "2013/06/11 13:18:27.021129", i.e. includes milliseconds. */
+          format_str = "%Y/%m/%d %T," ;
+          break ;
+        case ZMAPTIME_USERFORMAT:
+          /* User provides format string which must be in strftime() format. */
+          format_str = format_str_in ;
+          break ;
+        }
 
       /* format the secs and then tack on the microsecs. */
       if ((strftime(&(buffer[0]), buf_size, format_str, localtime(&curtime))) > 0)
-	{
-	  if (format == ZMAPTIME_LOG)
-	    time_str = g_strdup_printf("%s%06ld", buffer, (long int)(tv.tv_usec)) ; /* pad to make sure we don't miss leading 0's */
-	  else
-	    time_str = g_strdup(buffer) ;
-	}
+        {
+          if (format == ZMAPTIME_LOG)
+            time_str = g_strdup_printf("%s%06ld", buffer, (long int)(tv.tv_usec)) ; /* pad to make sure we don't miss leading 0's */
+          else
+            time_str = g_strdup(buffer) ;
+        }
     }
 
   return time_str ;
@@ -406,18 +406,18 @@ gboolean zMapStr2Bool(char *str, gboolean *bool_out)
   if (str && *str)
     {
       if (g_ascii_strcasecmp("true", str) == 0)
-	{
-	  retval = TRUE ;
-	  result = TRUE ;
-	}
+        {
+          retval = TRUE ;
+          result = TRUE ;
+        }
       else if (g_ascii_strcasecmp("false", str) == 0)
-	{
-	  retval = FALSE ;
-	  result = TRUE ;
-	}
+        {
+          retval = FALSE ;
+          result = TRUE ;
+        }
 
       if (result && bool_out)
-	*bool_out = retval ;
+        *bool_out = retval ;
     }
 
   return result ;
@@ -432,14 +432,14 @@ gboolean zMapStr2Int(char *str, int *int_out)
   if (str && *str)
     {
       if (zMapStr2LongInt(str, &retval))
-	{
-	  if (retval <= INT_MAX || retval >= INT_MIN)
-	    {
-	      if (int_out)
-		*int_out = (int)retval ;
-	      result = TRUE ;
-	    }
-	}
+        {
+          if (retval <= INT_MAX || retval >= INT_MIN)
+            {
+              if (int_out)
+        *int_out = (int)retval ;
+              result = TRUE ;
+            }
+        }
     }
 
   return result ;
@@ -456,11 +456,11 @@ gboolean zMapInt2Str(int int_in, char **str_out)
       /* I think this can never fail as the input is just an int. */
       str = g_strdup_printf("%d", int_in) ;
       if (str && *str)
-	{
-	  if (str_out)
-	    *str_out = str ;
-	  result = TRUE ;
-	}
+        {
+          if (str_out)
+            *str_out = str ;
+          result = TRUE ;
+        }
     }
 
   return result ;
@@ -479,26 +479,26 @@ gboolean zMapStr2LongInt(char *str, long int *long_int_out)
       retval = strtol(str, &endptr, 10) ;
 
       if (retval == 0 && (errno != 0 || str == endptr))
-	{
-	  /* Invalid string in some way. */
-	  result = FALSE ;
-	}
+        {
+          /* Invalid string in some way. */
+          result = FALSE ;
+        }
       else if (*endptr != '\0')
-	{
-	  /* non-digit found in string */
-	  result = FALSE;
-	}
+        {
+          /* non-digit found in string */
+          result = FALSE;
+        }
       else if (errno !=0 && (retval == LONG_MAX || retval == LONG_MIN))
-	{
-	  /* Number exceeds long int size. */
-	  result = FALSE ;
-	}
+        {
+          /* Number exceeds long int size. */
+          result = FALSE ;
+        }
       else
-	{
-	  result = TRUE ;
-	  if (long_int_out)
-	    *long_int_out = retval ;
-	}
+        {
+          result = TRUE ;
+          if (long_int_out)
+            *long_int_out = retval ;
+        }
     }
 
   return result ;
@@ -518,34 +518,34 @@ gboolean zMapStr2Float(char *str, float *float_out)
       ret_val = strtof(str, &end_ptr) ;
 
       if (ret_val == 0 && end_ptr == str)
-	{
-	  /* Standard says:  no conversion performed */
-	  result = FALSE ;
-	}
+        {
+          /* Standard says:  no conversion performed */
+          result = FALSE ;
+        }
       else if (*end_ptr != '\0')
-	{
-	  /* Standard says:  string contains stuff that could not be converted. */
-	  result = FALSE ;
-	}
+        {
+          /* Standard says:  string contains stuff that could not be converted. */
+          result = FALSE ;
+        }
       else if (errno == ERANGE)
-	{
-	  if (ret_val == 0)
-	    {
-	      /* Standard says:  Underflow */
-	      result = FALSE ;
-	    }
-	  else
-	    {
-	      /* Standard says:  Overflow (+ or - HUGEVALF resturned. */
-	      result = FALSE ;
-	    }
-	}
+        {
+          if (ret_val == 0)
+            {
+              /* Standard says:  Underflow */
+              result = FALSE ;
+            }
+          else
+            {
+              /* Standard says:  Overflow (+ or - HUGEVALF resturned. */
+              result = FALSE ;
+            }
+        }
       else
-	{
-	  result = TRUE ;
-	  if (float_out)
-	    *float_out = ret_val ;
-	}
+        {
+          result = TRUE ;
+          if (float_out)
+            *float_out = ret_val ;
+        }
     }
 
   return result ;
@@ -564,34 +564,34 @@ gboolean zMapStr2Double(char *str, double *double_out)
       ret_val = strtod(str, &end_ptr) ;
 
       if (ret_val == 0 && end_ptr == str)
-	{
-	  /* Standard says:  no conversion performed */
-	  result = FALSE ;
-	}
+        {
+          /* Standard says:  no conversion performed */
+          result = FALSE ;
+        }
       else if (*end_ptr != '\0')
-	{
-	  /* Standard says:  string contains stuff that could not be converted. */
-	  result = FALSE ;
-	}
+        {
+          /* Standard says:  string contains stuff that could not be converted. */
+          result = FALSE ;
+        }
       else if (errno == ERANGE)
-	{
-	  if (ret_val == 0)
-	    {
-	      /* Standard says:  Underflow */
-	      result = FALSE ;
-	    }
-	  else
-	    {
-	      /* Standard says:  Overflow (+ or - HUGEVAL resturned. */
-	      result = FALSE ;
-	    }
-	}
+        {
+          if (ret_val == 0)
+            {
+              /* Standard says:  Underflow */
+              result = FALSE ;
+            }
+          else
+            {
+              /* Standard says:  Overflow (+ or - HUGEVAL resturned. */
+              result = FALSE ;
+            }
+        }
       else
-	{
-	  result = TRUE ;
-	  if (double_out)
-	    *double_out = ret_val ;
-	}
+        {
+          result = TRUE ;
+          if (double_out)
+            *double_out = ret_val ;
+        }
     }
 
   return result ;
@@ -625,56 +625,56 @@ gboolean zMapUtilsSysCall(char *cmd_str, char **err_msg_out)
       /* Deal with special return codes when cmd is NULL. */
 
       if (sys_rc != 0)
-	result = TRUE ;
+result = TRUE ;
       else
-	{
-	  result = FALSE ;
-	  if (err_msg_out)
-	    *err_msg_out = g_strdup("No shell available !") ;
-	}
+        {
+          result = FALSE ;
+          if (err_msg_out)
+            *err_msg_out = g_strdup("No shell available !") ;
+        }
     }
   else
     {
       /* All other command strings... */
 
       if (sys_rc == -1)
-	{
-	  result = FALSE ;
-	  if (err_msg_out)
-	    *err_msg_out = g_strdup_printf("Failed to run child process correctly, sys error: %s.",
-					   g_strerror(errno)) ;
-	}
+        {
+          result = FALSE ;
+          if (err_msg_out)
+            *err_msg_out = g_strdup_printf("Failed to run child process correctly, sys error: %s.",
+           g_strerror(errno)) ;
+        }
       else
-	{
-	  /* If the shell cannot be exec'd the docs say it behaves as though a command returned
-	   * exit(127) but I don't know if you can disambiguate this from any other command that
-	   * might return 127..... */
-
-	  if (!WIFEXITED(sys_rc))
-	    {
-	      result = FALSE ;
-	      if (err_msg_out)
-		*err_msg_out = g_strdup("Child process did not exit normally.") ;
-
-	    }
-	  else
-	    {
-	      /* you can only use WEXITSTATUS() if WIFEXITED() is true. */
-	      int true_rc ;
-
-	      true_rc = WEXITSTATUS(sys_rc) ;
-
-	      if (true_rc == EXIT_SUCCESS)
-		result = TRUE ;
-	      else
-		{
-		  result = FALSE ;
-		  if (err_msg_out)
-		    *err_msg_out = g_strdup_printf("Command \"%s\" failed with return code %d",
-						   cmd_str, true_rc) ;
-		}
-	    }
-	}
+        {
+          /* If the shell cannot be exec'd the docs say it behaves as though a command returned
+           * exit(127) but I don't know if you can disambiguate this from any other command that
+           * might return 127..... */
+        
+          if (!WIFEXITED(sys_rc))
+            {
+              result = FALSE ;
+              if (err_msg_out)
+        *err_msg_out = g_strdup("Child process did not exit normally.") ;
+        
+            }
+          else
+            {
+              /* you can only use WEXITSTATUS() if WIFEXITED() is true. */
+              int true_rc ;
+        
+              true_rc = WEXITSTATUS(sys_rc) ;
+        
+              if (true_rc == EXIT_SUCCESS)
+                result = TRUE ;
+              else
+                {
+                  result = FALSE ;
+                  if (err_msg_out)
+                    *err_msg_out = g_strdup_printf("Command \"%s\" failed with return code %d",
+                   cmd_str, true_rc) ;
+                }
+            }
+        }
     }
 
 
@@ -699,9 +699,9 @@ ZMapProcessTerminationType zMapUtilsProcessTerminationStatus(int status)
       exit_status = WEXITSTATUS(status) ;
 
       if (exit_status)
-	termination_type = ZMAP_PROCTERM_ERROR ;
+        termination_type = ZMAP_PROCTERM_ERROR ;
       else
-	termination_type =  ZMAP_PROCTERM_OK ;
+        termination_type =  ZMAP_PROCTERM_OK ;
     }
   else if (WIFSIGNALED(status))
     {
@@ -734,16 +734,16 @@ gboolean zMapUtilsProcessHasTerminationError(int status, char **termination_str_
       int exit_status ;
 
       if ((exit_status = WEXITSTATUS(status)))
-	{
-	  *termination_str_out = g_strdup_printf("Child exited normally but exit status was: %d", exit_status) ;
-
-	  has_termination_error = TRUE ;
-	}
+        {
+          *termination_str_out = g_strdup_printf("Child exited normally but exit status was: %d", exit_status) ;
+        
+          has_termination_error = TRUE ;
+        }
     }
   else if (WIFSIGNALED(status))
     {
       *termination_str_out = g_strdup_printf("Child terminated by signal number %d - \"%s\".",
-					     WTERMSIG(status), g_strsignal(WTERMSIG(status))) ;
+             WTERMSIG(status), g_strsignal(WTERMSIG(status))) ;
 
       has_termination_error = TRUE ;
     }
@@ -863,7 +863,7 @@ void zMapUtilsDebugPrintf(FILE *stream, char *format, ...)
 
 
 static gboolean getVersionNumbers(char *version_str,
-				  int *version_out, int *release_out, int *update_out)
+  int *version_out, int *release_out, int *update_out)
 {
   gboolean result = FALSE ;
   char *next ;
@@ -872,9 +872,9 @@ static gboolean getVersionNumbers(char *version_str,
   if (((next = strtok(version_str, "."))
        && (version = atoi(next)))
       && ((next = strtok(NULL, "."))
-	  && (release = atoi(next)))
+  && (release = atoi(next)))
       && ((next = strtok(NULL, "."))
-	  && (update = atoi(next))))
+  && (update = atoi(next))))
     {
       result = TRUE ;
       *version_out = version ;
