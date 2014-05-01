@@ -78,9 +78,9 @@ gboolean zMapUtilsConfigDebug(char *config_file)
 #if 0
 /* very odd! calling this function fropm zmaplogging.c resulted in some limk errors !!!*/
       zMapConfigIniContextGetBoolean(context,
-					ZMAPSTANZA_DEBUG_CONFIG,
-					ZMAPSTANZA_DEBUG_CONFIG,
-					ZMAPSTANZA_DEBUG_APP_THREADS, &zmap_thread_debug_G);
+                                ZMAPSTANZA_DEBUG_CONFIG,
+                                ZMAPSTANZA_DEBUG_CONFIG,
+                                ZMAPSTANZA_DEBUG_APP_THREADS, &zmap_thread_debug_G);
       zMapConfigIniContextGetBoolean(context,
                               ZMAPSTANZA_DEBUG_CONFIG,
                               ZMAPSTANZA_DEBUG_CONFIG,
@@ -220,9 +220,9 @@ void zMapAppGetSequenceConfig(ZMapFeatureSequenceMap seq_map, GError **error)
       int end = 0 ;
 
       if (zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
-					ZMAPSTANZA_APP_DATASET, &tmp_string))
-	{
-	  /* if not supplied needs to appear in all the pipe script URLs */
+                                                ZMAPSTANZA_APP_DATASET, &tmp_string))
+        {
+  /* if not supplied needs to appear in all the pipe script URLs */
           if (!seq_map->dataset)
             {
               seq_map->dataset = tmp_string;
@@ -233,12 +233,12 @@ void zMapAppGetSequenceConfig(ZMapFeatureSequenceMap seq_map, GError **error)
                           "Dataset '%s' in the config file does not match the set dataset '%s'",
                           tmp_string, seq_map->dataset) ;
             }
-	}
+}
 
       if (!tmp_error && 
           zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
-					ZMAPSTANZA_APP_SEQUENCE, &tmp_string))
-	{
+                                ZMAPSTANZA_APP_SEQUENCE, &tmp_string))
+        {
           /* Pass merge_details as false - it's not currently used because we're not currently
            * allowing more than one sequence. We may want to change this in future but even so we
            * probably want the config file details to agree with the command-line details so we'd
