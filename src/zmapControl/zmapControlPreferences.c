@@ -1,6 +1,6 @@
 /*  File: zmapControlPreferences.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -58,6 +58,8 @@ static char *help_text_G =
 
 
 
+static ZMapGuiNotebook note_book_G = NULL ;
+
 
 void zmapControlShowPreferences(ZMap zmap)
 {
@@ -65,6 +67,8 @@ void zmapControlShowPreferences(ZMap zmap)
   char *notebook_title ;
   GtkWidget *notebook_dialog ;
   ZMapGuiNotebookChapter chapter ;
+
+  zMapReturnIfFailSafe(!note_book_G) ;
 
   /* Construct the preferences representation */
   notebook_title = g_strdup_printf("Preferences for zmap %s", zMapGetZMapID(zmap)) ;
@@ -76,29 +80,38 @@ void zmapControlShowPreferences(ZMap zmap)
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   zMapViewRedraw(zmap->focus_viewwindow) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-  
-  ZMapView zmap_view = zMapViewGetView(zmap->focus_viewwindow);
 
-  zMapViewBlixemGetConfigChapter(zmap_view, note_book) ;
-  zMapViewGetPrefsChapter(zmap_view, note_book);
-
-  if(0)
+  if (note_book)
     {
-      ZMapWindow window;
+      ZMapView zmap_view = zMapViewGetView(zmap->focus_viewwindow);
       
-      window  = zMapViewGetWindow(zmap->focus_viewwindow);
-      
-      chapter = zMapWindowGetConfigChapter(window, note_book) ;
-    }
+      zMapViewBlixemGetConfigChapter(zmap_view, note_book) ;
+      zMapViewGetPrefsChapter(zmap_view, note_book);
+
+      if(0)
+        {
+          ZMapWindow window;
+
+          window  = zMapViewGetWindow(zmap->focus_viewwindow);
+
+          chapter = zMapWindowGetConfigChapter(window, note_book) ;
+        }
 
 #ifdef NO_EDITING_YET
-  chapter = zMapViewSourcesGetConfigChapter(note_book) ;
+      chapter = zMapViewSourcesGetConfigChapter(note_book) ;
 #endif /* NO_EDITING_YET */
 
 
-  /* Display the preferences. */
-  notebook_dialog = zMapGUINotebookCreateDialog(note_book, help_title_G, help_text_G) ;
+      /* Display the preferences. */
+      notebook_dialog = zMapGUINotebookCreateDialog(note_book, help_title_G, help_text_G) ;
 
+      note_book_G = note_book ;
+
+    }
+  else
+    {
+      zMapWarning("%s", "Error creating preferences dialog\n") ;
+    }
 
   return ;
 }
@@ -148,6 +161,8 @@ static void addControlPage(ZMapGuiNotebookChapter chapter, char *page_name)
   ZMapGuiNotebookPage page ;
   ZMapGuiNotebookParagraph paragraph ;
   ZMapGuiNotebookTagValue tag_value ;
+
+  zMapReturnIfFail(chapter) ; 
 
   page = (ZMapGuiNotebookPage)zMapGUINotebookCreateSectionAny(ZMAPGUI_NOTEBOOK_PAGE, page_name) ;
 
@@ -215,7 +230,7 @@ static void cleanUpCB(ZMapGuiNotebookAny any_section, void *user_data)
 
   zMapGUINotebookDestroyNotebook(note_book) ;
 
-  note_book = NULL;
+  note_book_G = NULL ;
 
   return ;
 }

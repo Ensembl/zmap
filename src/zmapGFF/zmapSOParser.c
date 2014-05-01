@@ -1,6 +1,6 @@
 /*  File: zmapSOParser.c
  *  Author: Steve Miller (sm23@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -40,8 +40,7 @@ ZMapSOIDData zMapSOIDDataCreate()
 {
   ZMapSOIDData pID = NULL ;
   pID = g_malloc(sizeof(ZMapSOIDDataStruct)) ;
-  if (!pID)
-    return pID ;
+  zMapReturnValIfFail(pID, pID) ;
   pID->iID = ZMAPSO_ID_UNK ;
   pID->sName = NULL ;
   pID->cStyleMode = ZMAPSTYLE_MODE_INVALID ;
@@ -50,14 +49,31 @@ ZMapSOIDData zMapSOIDDataCreate()
 }
 
 /*
+ * A "copy constructor" for the SOIDData object.
+ */
+ZMapSOIDData zMapSOIDDataCC(ZMapSOIDData pData)
+{
+  ZMapSOIDData pID = NULL ;
+  pID = g_malloc(sizeof(ZMapSOIDDataStruct)) ;
+  zMapReturnValIfFail(pData && pData->sName && pID, pID) ;
+
+  pID->iID            = pData->iID ;
+  pID->sName          = g_strdup(pData->sName) ;
+  pID->cStyleMode     = pData->cStyleMode ;
+  pID->cHomol         = pData->cHomol ;
+
+  return pID ;
+}
+
+
+/*
  * Create a single SOID Data object with supplied data.
  */
 ZMapSOIDData zMapSOIDDataCreateFromData(unsigned int iID, const char* const sName,
                                         ZMapStyleMode cStyleMode , ZMapHomolType cHomol )
 {
   ZMapSOIDData pIDData = zMapSOIDDataCreate() ;
-  if (!pIDData)
-    return pIDData ;
+  zMapReturnValIfFail(pIDData && sName, pIDData) ;
   pIDData->iID = iID ;
   pIDData->sName = g_strdup((gchar*) sName) ;
   pIDData->cStyleMode = cStyleMode ;
@@ -68,10 +84,10 @@ ZMapSOIDData zMapSOIDDataCreateFromData(unsigned int iID, const char* const sNam
 /*
  * Return the numerical ID of the SOIDData object
  */
-unsigned int zMapSOIDDataGetID(const ZMapSOIDData const pData)
+unsigned int zMapSOIDDataGetID(ZMapSOIDData pData)
 {
-  if (!pData)
-    return 0 ;
+  unsigned int iReturn = 0 ;
+  zMapReturnValIfFail(pData, iReturn) ;
   return pData->iID ;
 }
 
@@ -79,10 +95,9 @@ unsigned int zMapSOIDDataGetID(const ZMapSOIDData const pData)
 /*
  * Return the name of the SOIDData object as a string
  */
-char * zMapSOIDDataGetName(const ZMapSOIDData const pData )
+char * zMapSOIDDataGetName(ZMapSOIDData pData )
 {
-  if (!pData)
-    return NULL ;
+  zMapReturnValIfFail(pData, NULL) ;
   return pData->sName ;
 }
 
@@ -90,31 +105,28 @@ char * zMapSOIDDataGetName(const ZMapSOIDData const pData )
 /*
  * Return the ZMapStyleMode of the SOID data object
  */
-ZMapStyleMode zMapSOIDDataGetStyleMode(const ZMapSOIDData const pData )
+ZMapStyleMode zMapSOIDDataGetStyleMode(ZMapSOIDData pData )
 {
-  if (!pData)
-    return ZMAPSTYLE_MODE_BASIC ;
+  zMapReturnValIfFail(pData, ZMAPSTYLE_MODE_BASIC) ;
   return pData->cStyleMode ;
 }
 
 /*
  * Return the homology type of the SOID data object.
  */
-ZMapHomolType zMapSOIDDataGetHomol(const ZMapSOIDData const pData )
+ZMapHomolType zMapSOIDDataGetHomol(ZMapSOIDData pData )
 {
-  if (!pData)
-    return ZMAPHOMOL_NONE ;
+  zMapReturnValIfFail(pData, ZMAPHOMOL_NONE) ;
   return pData->cHomol ;
 }
 
 /*
  * Return the ID as a string, that is something of the form "SO:0000ijk".
  */
-char *       zMapSOIDDataGetIDAsString(const ZMapSOIDData const pData )
+char *       zMapSOIDDataGetIDAsString(ZMapSOIDData pData )
 {
   char * sResult = NULL ;
-  if (!pData)
-    return sResult ;
+  zMapReturnValIfFail(pData, sResult) ;
   sResult = g_strdup_printf("SO:%07d", pData->iID) ;
   return sResult ;
 }
@@ -124,11 +136,10 @@ char *       zMapSOIDDataGetIDAsString(const ZMapSOIDData const pData )
 /*
  * Destroy a single SO ID Data object.
  */
-gboolean zMapSOIDDataDestroy(ZMapSOIDData const pID)
+gboolean zMapSOIDDataDestroy(ZMapSOIDData pID)
 {
   gboolean bResult = FALSE ;
-  if (!pID)
-    return bResult ;
+  zMapReturnValIfFail(pID, bResult) ;
   bResult = TRUE ;
   if (pID->sName)
     g_free(pID->sName) ;
@@ -145,6 +156,7 @@ char *       zMapSOIDDataName2SOAcc(const char * const pData)
   unsigned int iID = 0 ;
   gboolean bFound = FALSE ;
   int i = 0 ;
+  zMapReturnValIfFail(pData, sResult ) ;
 
   for (i=0; i<ZMAP_SO_DATA_TABLE01_NUM_ITEMS; ++i)
     {
@@ -200,6 +212,7 @@ ZMapStyleMode zMapSOSetGetStyleModeFromID(ZMapSOSetInUse cSOSetInUse, unsigned i
   ZMapStyleMode cTheMode = ZMAPSTYLE_MODE_INVALID ;
   gboolean bFound = FALSE ;
   unsigned int i ;
+  zMapReturnValIfFail(iID, cTheMode) ;
 
   if (cSOSetInUse == ZMAPSO_USE_SOFA)
     {
@@ -265,6 +278,7 @@ ZMapHomolType zMapSOSetGetHomolFromID(ZMapSOSetInUse cSOSetInUse, unsigned int i
   ZMapHomolType cHomol = ZMAPHOMOL_NONE;
   gboolean bFound = FALSE ;
   unsigned int i ;
+  zMapReturnValIfFail(iID, cHomol ) ;
 
   if (cSOSetInUse == ZMAPSO_USE_SOFA)
     {
@@ -330,8 +344,7 @@ ZMapStyleMode zMapSOSetGetStyleModeFromName(ZMapSOSetInUse cSOSetInUse, const ch
   ZMapStyleMode cTheMode = ZMAPSTYLE_MODE_INVALID ;
   gboolean bFound = FALSE ;
   unsigned int i ;
-  if (!sName || !*sName)
-    return cTheMode;
+  zMapReturnValIfFail(sName && *sName, cTheMode ) ;
 
   if (cSOSetInUse == ZMAPSO_USE_SOFA)
     {
@@ -396,8 +409,7 @@ unsigned int zMapSOSetIsNamePresent(ZMapSOSetInUse cSOSetInUse, const char * con
 {
   unsigned int iResult = ZMAPSO_ID_UNK, i ;
   gboolean bFound = FALSE ;
-  if (!sType || !*sType)
-    return iResult ;
+  zMapReturnValIfFail(sType && *sType, iResult ) ;
 
   if (cSOSetInUse == ZMAPSO_USE_SOFA)
     {
@@ -463,6 +475,7 @@ char * zMapSOSetIsIDPresent(ZMapSOSetInUse cSOSetInUse, unsigned int iID )
   char* sResult = NULL ;
   gboolean bFound = FALSE ;
   unsigned int i ;
+  zMapReturnValIfFail(iID, sResult ) ;
 
   if (cSOSetInUse == ZMAPSO_USE_SOFA)
     {
@@ -567,7 +580,7 @@ ZMapSOID zMapSOIDCreate()
 /*
  * Copy an SOID object from pRHS to pLHS
  */
-gboolean zMapSOIDCopy(ZMapSOID const pLHS, const ZMapSOID const pRHS)
+gboolean zMapSOIDCopy(ZMapSOID pLHS, const ZMapSOID pRHS)
 {
   gboolean bResult = FALSE ;
   if (!pLHS || !pRHS)
@@ -586,7 +599,7 @@ gboolean zMapSOIDCopy(ZMapSOID const pLHS, const ZMapSOID const pRHS)
  * Test to see if two SOID objects are equal. Test numerical
  * and string IDs.
  */
-gboolean zMapSOIDEquals(const ZMapSOID const pLHS, const ZMapSOID const pRHS)
+gboolean zMapSOIDEquals(const ZMapSOID pLHS, const ZMapSOID pRHS)
 {
   if (!pLHS || !pRHS)
     return FALSE ;
@@ -601,7 +614,7 @@ gboolean zMapSOIDEquals(const ZMapSOID const pLHS, const ZMapSOID const pRHS)
 /*
  * Initialize the SOID to UNK numerical type with empty name string.
  */
-gboolean zMapSOIDInitialize(ZMapSOID const pID)
+gboolean zMapSOIDInitialize(ZMapSOID pID)
 {
   gboolean bResult = FALSE ;
   if (!pID)
@@ -618,7 +631,7 @@ gboolean zMapSOIDInitialize(ZMapSOID const pID)
  * and then parse the string for numerical value. Test that this is
  * in the correct range, then set numerical value and copy string.
  */
-gboolean zMapSOIDSet(ZMapSOID const pID, const char* const sString)
+gboolean zMapSOIDSet(ZMapSOID pID, const char* const sString)
 {
   gboolean bResult = FALSE ;
   unsigned int iResult = ZMAPSO_ID_UNK ;
@@ -643,7 +656,7 @@ gboolean zMapSOIDSet(ZMapSOID const pID, const char* const sString)
  * ID must be in the correct range, and must match what's stored in the
  * string data.
  */
-gboolean zMapSOIDIsValid(const ZMapSOID const pID)
+gboolean zMapSOIDIsValid(const ZMapSOID pID)
 {
   gboolean bResult = FALSE ;
   if (    !pID
@@ -711,7 +724,7 @@ gboolean zMapSOIDIsAccessionNumber(const char * const sString)
 /*
  * Return the stored ID numerical value.
  */
-unsigned int zMapSOIDGetIDNumber(const ZMapSOID const pID)
+unsigned int zMapSOIDGetIDNumber(const ZMapSOID pID)
 {
   if (!pID)
     return ZMAPSO_ID_UNK ;
@@ -721,7 +734,7 @@ unsigned int zMapSOIDGetIDNumber(const ZMapSOID const pID)
 /*
  * Return the stored ID as a string.
  */
-char * zMapSOIDGetIDString(const ZMapSOID const pID )
+char * zMapSOIDGetIDString(const ZMapSOID pID )
 {
   if (!pID)
     return NULL ;
@@ -734,7 +747,7 @@ char * zMapSOIDGetIDString(const ZMapSOID const pID )
  * Destroy a single SO ID object. Do not need to seperately free
  * the string data.
  */
-gboolean zMapSOIDDestroy(ZMapSOID const pID)
+gboolean zMapSOIDDestroy(ZMapSOID pID)
 {
   gboolean bResult = FALSE ;
   if (!pID)
@@ -801,7 +814,7 @@ ZMapSOTerm zMapSOTermCreate()
 /*
  * Add an ID to the term but only if it does not have one set already.
  */
-gboolean zMapSOTermSetID(ZMapSOTerm const pTerm, const ZMapSOID const pID)
+gboolean zMapSOTermSetID(ZMapSOTerm const pTerm, const ZMapSOID pID)
 {
   gboolean bResult = FALSE ;
   if (     !pTerm
@@ -1017,7 +1030,7 @@ ZMapSOCollection zMapSOCollectionCreate()
 /*
  * Return the number of terms in the collection.
  */
-unsigned int zMapSOCollectionGetNumTerms(const ZMapSOCollection const pCollection)
+unsigned int zMapSOCollectionGetNumTerms(ZMapSOCollection pCollection)
 {
   if (!pCollection)
     return 0 ;
@@ -1029,7 +1042,7 @@ unsigned int zMapSOCollectionGetNumTerms(const ZMapSOCollection const pCollectio
  * Add an SOTerm to the SOCollection object. Return false if it was present
  * already. THis is done by copying the pointer value, not creating a new object.
  */
-gboolean zMapSOCollectionAddSOTerm(ZMapSOCollection const pCollection, const ZMapSOTerm const pTerm)
+gboolean zMapSOCollectionAddSOTerm(ZMapSOCollection pCollection, const ZMapSOTerm const pTerm)
 {
   gboolean bResult = FALSE ;
   ZMapSOTerm *pTerms = NULL ;
@@ -1078,7 +1091,7 @@ gboolean zMapSOCollectionAddSOTerm(ZMapSOCollection const pCollection, const ZMa
 /*
  * Destroy an SO Collection object
  */
-gboolean zMapSOCollectionDestroy(ZMapSOCollection const pCollection)
+gboolean zMapSOCollectionDestroy(ZMapSOCollection pCollection)
 {
   gboolean bResult = TRUE ;
   unsigned int iTerm ;
@@ -1097,7 +1110,7 @@ gboolean zMapSOCollectionDestroy(ZMapSOCollection const pCollection)
  * Query a SO Collection to see if a term is present.
  * Check is made on numerical and string IDs.
  */
-gboolean zMapSOCollectionIsTermPresent(const ZMapSOCollection const pCollection, const ZMapSOTerm const pTerm)
+gboolean zMapSOCollectionIsTermPresent(ZMapSOCollection pCollection, const ZMapSOTerm const pTerm)
 {
   gboolean bResult = FALSE ;
   unsigned int iTerm ;
@@ -1112,7 +1125,7 @@ gboolean zMapSOCollectionIsTermPresent(const ZMapSOCollection const pCollection,
 /*
  * Quesry an SO Collection to see if an SO name present. Check is made on name string only.
  */
-gboolean zMapSOCollectionIsNamePresent(const ZMapSOCollection const pCollection, const char* const sName)
+gboolean zMapSOCollectionIsNamePresent(ZMapSOCollection pCollection, const char* const sName)
 {
   gboolean bResult = FALSE ;
   unsigned int iTerm ;
@@ -1129,7 +1142,7 @@ gboolean zMapSOCollectionIsNamePresent(const ZMapSOCollection const pCollection,
  * Find the SOID associated with a given name. Returns NULL if the
  * name is not present in the collection.
  */
-ZMapSOID zMapSOCollectionFindIDFromName(const ZMapSOCollection const pCollection, const char* const sName)
+ZMapSOID zMapSOCollectionFindIDFromName(ZMapSOCollection pCollection, const char* const sName)
 {
   unsigned int iTerm = 0 ;
   for (iTerm=0; iTerm<pCollection->iNumTerms; ++iTerm)
@@ -1142,7 +1155,7 @@ ZMapSOID zMapSOCollectionFindIDFromName(const ZMapSOCollection const pCollection
 /*
  * Find the Name associated with a given SOID. Return NULL if the SOID is not in the collection.
  */
-char * zMapSOCollectionFindNameFromID(const ZMapSOCollection const pCollection, const ZMapSOID const pID)
+char * zMapSOCollectionFindNameFromID(ZMapSOCollection pCollection, const ZMapSOID pID)
 {
   unsigned int iTerm = 0 ;
   for (iTerm=0; iTerm<pCollection->iNumTerms; ++iTerm)
@@ -1157,7 +1170,7 @@ char * zMapSOCollectionFindNameFromID(const ZMapSOCollection const pCollection, 
  * Return a pointer to a term in the collection indexed with unsigned int.
  * Return NULL if it is not present.
  */
-ZMapSOTerm zMapSOCollectionGetTerm(const ZMapSOCollection const pCollection, unsigned int iIndex)
+ZMapSOTerm zMapSOCollectionGetTerm(ZMapSOCollection pCollection, unsigned int iIndex)
 {
   if (iIndex >= pCollection->iNumTerms)
     return NULL ;
@@ -1169,7 +1182,7 @@ ZMapSOTerm zMapSOCollectionGetTerm(const ZMapSOCollection const pCollection, uns
  * Checks the internal consistency of the collection. Currently
  * checks for duplicates only.
  */
-gboolean zMapSOCollectionCheck(const ZMapSOCollection const pCollection)
+gboolean zMapSOCollectionCheck(ZMapSOCollection pCollection)
 {
   gboolean bResult = FALSE ;
   unsigned int iTerm = 0 ;

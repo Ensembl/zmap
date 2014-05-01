@@ -20,7 +20,6 @@ GLib keyword value file format, if you are unfamiliar with this then read the
 <a href="#acedb_styles">acedb</a>.
 </p>
 
-<p>NB: This file has beed copied frorm the web old web directory and may need updating. (mh17 09 Mar 2010)</p>
 </fieldset>
 
 
@@ -29,8 +28,9 @@ GLib keyword value file format, if you are unfamiliar with this then read the
 <fieldset>
 <legend>Overview</legend>
 
-
-
+<p>ZMap is highly configurable using <a href="configuration.shtml">configuration</a> and
+styles files. This document describes the styles file options, which control how
+features appear in the display.</p>
 
 <p>ZMap displays features using "<b>Feature Sets</b>" and "<b>Styles</b>", the distinction
 between these two is:</p>
@@ -42,7 +42,7 @@ set has a unique name which can be used to query, find and retrieve the features
 </p>
 
 
-<p>Which feature sets are displayed is controlled by the "featuresets" keyword in the "source" stanza
+<p>Which feature sets are displayed can be controlled by the "featuresets" keyword in the "source" stanza
 in the ZMap config file:
 </p>
 

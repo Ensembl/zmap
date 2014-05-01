@@ -23,10 +23,12 @@ zmap_message_out "Running in $INITIAL_DIR on $(hostname)"
 zmap_message_out "Parsing cmd line options: '$*'"
 
 # Get the options the user may have requested
+BUILD_PREFIX=""
 
-while getopts ":di" opt ; do
+while getopts ":dip:" opt ; do
     case $opt in
 	i  ) ZMAP_MAKE_INSTALL=$ZMAP_TRUE     ;;
+	p  ) BUILD_PREFIX=$OPTARG             ;;
 	\? ) zmap_message_exit "usage notes"
     esac
 done
@@ -126,9 +128,6 @@ zmap_cd $CVS_MODULE_LOCAL
 
 
 
-
-
-
 if [ "x$TAR_TARGET" != "x" ]; then
 
     zmap_scp_path_to_host_path $TAR_TARGET
@@ -153,4 +152,93 @@ ln -s $TAR_TARGET_CVS/$INSTALL_PREFIX $UNAME_DIR'"
     else
 	zmap_message_out "Sucessfully copied to $TAR_TARGET_HOST:$TAR_TARGET_PATH/$TAR_TARGET_CVS"
     fi
+fi
+
+
+# Copy the builds to /software for certain types of build:
+#   production builds get installed in /software/annotools/
+#   release builds get installed in /software/annotools/test
+#   develop builds get installed in /software/annotools/dev
+#
+zmap_message_out "Checking whether to install on /software for $BUILD_PREFIX build"
+
+if [[ $BUILD_PREFIX == "PRODUCTION" || $BUILD_PREFIX == "RELEASE" || $BUILD_PREFIX == "DEVELOPMENT" ]]
+then
+  zmap_message_out "Installing on /software"
+  source_dir=$TAR_TARGET_PATH/$TAR_TARGET_CVS/$INSTALL_PREFIX # where to copy the installed files from
+
+  dev_machine=$TAR_TARGET_HOST          # must be a machine with write access to the project software area
+  software_root_dir="/software/noarch"  # root directory for project software
+  arch_subdir=""                        # the subdirectory for the current machine architecture
+  annotools_subdir="annotools"          # the subdirectory for annotools
+
+  opsys=`uname -s`
+  
+  case $opsys in
+    "Linux")
+      case `uname -m` in
+        "ia64")
+          arch_subdir="linux-ia64"
+          ;;
+  
+        "x86_64")
+          arch_subdir="linux-x86_64"
+          ;;
+  
+        "i686")
+          arch_subdir="linux-i386"
+          ;;
+  
+        *)
+          ;;
+      esac
+      ;;
+  
+    "Darwin")
+      arch_subdir="macosx-10-i386"
+      ;;
+  
+    *)
+      ;;
+  esac
+  
+  if [[ $arch_subdir != "" ]]
+  then
+    # production builds are installed in the project area directly
+    # release and develop builds are stored in 'test' and 'dev' subdirectories
+    build_subdir=""
+    if [[ $BUILD_PREFIX == "DEVELOPMENT" ]]
+    then
+        build_subdir="/dev"
+    elif [[ $BUILD_PREFIX == "RELEASE" ]]
+    then
+      build_subdir="/test"
+    fi
+
+    # Set the destination for the current host machine type
+    project_area=$software_root_dir/$arch_subdir/$annotools_subdir$build_subdir
+
+    # Set the destination for precise builds
+    precise_subdir="precise-x86_64"
+    precise_project_area=$software_root_dir/$precise_subdir/$annotools_subdir$build_subdir
+
+    # Do the copy. (Hack to hard-code path to copy script - can't find it in the
+    # local checkout for some reason.)
+    copy_script=~zmap/BUILD_CHECKOUT/ZMap_develop/scripts/copy_directory.sh
+    zmap_message_out "Running: ssh $dev_machine "$copy_script $source_dir $project_area""
+    ssh $dev_machine "$copy_script $source_dir $project_area"
+    wait
+  
+    # We don't currently build on ubuntu precise because the ubuntu lucid build works there.
+    # This means we need to copy the linux build to precise (note that we only have 64-bit 
+    # precise machines).
+    if [ $arch_subdir == "linux-x86_64" ]
+    then
+      zmap_message_out "Running: ssh $dev_machine $copy_script $source_dir $precise_project_area"
+      ssh $dev_machine "$copy_script $source_dir $precise_project_area"
+      wait  
+    fi    
+  fi
+else
+  zmap_message_out "NOT installing on /software"
 fi

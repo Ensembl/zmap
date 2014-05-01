@@ -1,6 +1,6 @@
 /*  File: zmapFileUtils.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -180,22 +180,38 @@ char *zMapExpandFilePath(char *path_in)
 
 /* Construct file path from directory and filename and check if it can be accessed, if it
  * doesn't exist then create the file as read/writeable but empty.  */
-char *zMapGetFile(char *directory, char *filename, gboolean make_file)
+char *zMapGetFile(char *directory, char *filename, gboolean make_file, GError **error)
 {
   gboolean status = FALSE ;
+  GError *g_error = NULL ;
   char *filepath ;
   /* struct stat stat_buf ; */
 
   filepath = g_build_path(ZMAP_SEPARATOR, directory, filename, NULL) ;
 
   /* Is there a configuration file in the config dir that is readable/writeable ? */
-  if (!(status = zMapFileAccess(filepath, "rw")) && make_file)
+  if (!(status = zMapFileAccess(filepath, "rw")))
     {
-      int file ;
+      if (make_file)
+        {
+          int file ;
 
-      if ((file = open(filepath, (O_RDWR | O_CREAT | O_EXCL), (S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) != -1)
-	  && (close(file) != -1))
-	status = TRUE ;
+          if ((file = open(filepath, (O_RDWR | O_CREAT | O_EXCL), (S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) != -1)
+              && (close(file) != -1))
+            {
+              status = TRUE ;
+            }
+          else
+            {
+              g_set_error(&g_error, ZMAP_UTILS_ERROR, ZMAPUTILS_ERROR_OPEN_FILE,
+                          "Cannot create file '%s'", filepath) ;
+            }
+        }
+      else
+        {
+          g_set_error(&g_error, ZMAP_UTILS_ERROR, ZMAPUTILS_ERROR_OPEN_FILE,
+                      "Cannot access file '%s'", filepath) ;
+        }
     }
 
   if (!status)
@@ -203,6 +219,9 @@ char *zMapGetFile(char *directory, char *filename, gboolean make_file)
       g_free(filepath) ;
       filepath = NULL ;
     }
+
+  if (g_error)
+    g_propagate_error(error, g_error) ;
 
   return filepath ;
 }
@@ -215,7 +234,9 @@ gboolean zMapFileAccess(char *filepath, char *mode)
   gboolean access = FALSE ;
   struct stat stat_buf ;
   
-  zMapAssert(filepath && *filepath) ;
+  /* zMapAssert(filepath && *filepath) ; */
+  if (!filepath || !*filepath) 
+    return access ; 
 
   if (stat(filepath, &stat_buf) == 0 && S_ISREG(stat_buf.st_mode))
     {

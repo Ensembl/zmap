@@ -1,6 +1,6 @@
 /*  File: zmapCmdLineArgs.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -42,7 +42,7 @@ typedef union
   gboolean b ;
   int i ;
   char *s ;
-  char **sa;
+  char **sa ;
   double f ;
 } ZMapCmdLineArgsType ;
 
@@ -58,7 +58,8 @@ typedef union
 #define ZMAPARG_SEQUENCE_END   "end"
 #define ZMAPARG_CONFIG_FILE    "conf_file"
 #define ZMAPARG_CONFIG_DIR     "conf_dir"
-
+#define ZMAPARG_STYLES_FILE    "styles_file"
+#define ZMAPARG_SINGLE_SCREEN  "single_screen"
 
 /* Soon to be removed. */
 #define ZMAPARG_WINDOW_ID      "win_id"

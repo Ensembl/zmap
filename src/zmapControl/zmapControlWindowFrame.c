@@ -1,6 +1,6 @@
 /*  File: zmapControlWindowFrame.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -57,7 +57,6 @@ GtkWidget *zmapControlWindowMakeFrame(ZMap zmap)
   GtkWidget *frame ;
 
   frame = gtk_frame_new(NULL) ;
-  gtk_container_border_width(GTK_CONTAINER(frame), 5) ;
 
   createNavViewWindow(zmap, frame) ;
 
@@ -75,6 +74,7 @@ GtkWidget *zmapControlWindowMakeFrame(ZMap zmap)
 static void createNavViewWindow(ZMap zmap, GtkWidget *parent)
 {
   GtkWidget *nav_top ;
+  zMapReturnIfFail(zmap) ; 
 
   /* Navigator and views are in an hpane, so the user can adjust the width
    * of the navigator and views. */
@@ -89,8 +89,6 @@ static void createNavViewWindow(ZMap zmap, GtkWidget *parent)
   /* This box contains what may be multiple views in paned widgets. */
   zmap->pane_vbox = gtk_vbox_new(FALSE,0) ;
   gtk_paned_pack2(GTK_PANED(zmap->hpane), zmap->pane_vbox, TRUE, TRUE);
-
-
 
 
   /* Set left hand (sliders) pane closed by default. */
@@ -111,7 +109,9 @@ static void createNavViewWindow(ZMap zmap, GtkWidget *parent)
 /* Gets called by navigator when user has moved window locator scroll bar. */
 static void valueCB(void *user_data, double start, double end)
 {
-  ZMap zmap = (ZMap)user_data ;
+  ZMap zmap = NULL ; 
+  zMapReturnIfFail(user_data) ; 
+  zmap = (ZMap)user_data ;
 
   if (zmap->state == ZMAP_VIEWS)
     {
@@ -127,7 +127,9 @@ static void valueCB(void *user_data, double start, double end)
 
 static void pane_position_callback(GObject *pane, GParamSpec *scroll, gpointer user_data)
 {
-  ZMap zmap = (ZMap)user_data;
+  ZMap zmap = NULL ; 
+  zMapReturnIfFail(user_data) ; 
+  zmap = (ZMap)user_data;
   gint pos, max;
 
   /* we need to get the position... */

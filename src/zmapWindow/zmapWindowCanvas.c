@@ -1,6 +1,6 @@
 /*  File: zmapWindowCanvas.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2013: Genome Research Ltd.
+ *  Copyright (c) 2013-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -37,27 +37,68 @@
 #include <zmapWindow_P.h>
 
 
+
+
+/* 
+ *                   Package routines.
+ */
+
+
+/* FooCanvas inherits from the Gtk widget "layout" which has two windows: the (smaller)
+ * visible one and a larger window which can be scrolled past the smaller one.
+ * This function returns the sizes of these windows in pixels, the bin window is the
+ * larger/background one. */
+gboolean zmapWindowGetCanvasLayoutSize(FooCanvas *canvas, 
+                                       int *layout_win_width, int *layout_win_height,
+                                       int *layout_binwin_width, int *layout_binwin_height)
+{
+  gboolean result = FALSE ;
+
+  if (FOO_IS_CANVAS(canvas))
+    {
+      GtkWidget *widget = GTK_WIDGET(canvas) ;
+      GtkLayout *layout = &(canvas->layout) ;
+      int layout_alloc_width, layout_alloc_height ;
+      unsigned int get_layout_width, get_layout_height ;
+
+
+      /* Check sizes for debug.... */
+      layout_alloc_width = widget->allocation.width ;
+      layout_alloc_height = widget->allocation.height ;
+      gtk_layout_get_size(layout, &get_layout_width, &get_layout_height) ;
+
+
+      gdk_drawable_get_size(GDK_DRAWABLE(widget->window), layout_win_width, layout_win_height) ;
+      gdk_drawable_get_size(GDK_DRAWABLE(layout->bin_window), layout_binwin_width, layout_binwin_height) ;
+
+      result = TRUE ;
+    }
+  
+  return result ;
+}
+
 void zmapWindowSetScrolledRegion(ZMapWindow window, double x1, double x2, double y1, double y2)
 {
   FooCanvas *canvas = FOO_CANVAS(window->canvas) ;
-  GtkLayout *layout = &(canvas->layout) ;
 
   foo_canvas_set_scroll_region(canvas, x1, y1, x2, y2) ;
-
-  gtk_layout_get_size(layout, &(window->layout_actual_width), &(window->layout_actual_height)) ;
 
   return ;
 }
 
 
+/* Change the pixel/zoom for the window and update the cached sizes of the canvas/layout window. */
 void zmapWindowSetPixelxy(ZMapWindow window, double pixels_per_unit_x, double pixels_per_unit_y)
 {
   FooCanvas *canvas = FOO_CANVAS(window->canvas) ;
-  GtkLayout *layout = &(canvas->layout) ;
 
   foo_canvas_set_pixels_per_unit_xy(canvas, pixels_per_unit_x, pixels_per_unit_y) ;
 
-  gtk_layout_get_size(layout, &(window->layout_actual_width), &(window->layout_actual_height)) ;
+  zmapWindowGetCanvasLayoutSize(canvas,
+                                &(window->layout_window_width),
+                                &(window->layout_window_height),
+                                &(window->layout_bin_window_width),
+                                &(window->layout_bin_window_height)) ;
 
   return ;
 }

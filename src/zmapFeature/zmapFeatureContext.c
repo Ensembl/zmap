@@ -1,6 +1,6 @@
 /*  File: zmapFeatureContext.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -157,7 +157,7 @@ void zMapFeatureContextReverseComplement(ZMapFeatureContext context, GHashTable 
                             revCompFeaturesCB,
                             &cb_data);
 
-  
+
   //GQuark featureset_id = g_quark_from_string(ZMAP_FIXED_STYLE_ORF_NAME);
   //zMapFeatureAnyGetFeatureByID(context, featureset_id) ;
 
@@ -184,9 +184,8 @@ void zMapFeatureReverseComplement(ZMapFeatureContext context, ZMapFeature featur
   return ;
 }
 
-void zMapFeatureReverseComplementCoords(ZMapFeatureBlock block, int *start_inout, int *end_inout)
+void zMapFeatureReverseComplementCoords(ZMapFeatureContext context, int *start_inout, int *end_inout)
 {
-  ZMapFeatureContext context = (ZMapFeatureContext)(block->parent->parent) ;
   int start, end, my_start, my_end ;
 
   start = context->parent_span.x1 ;
@@ -505,7 +504,7 @@ ZMapFeatureContext zMapFeatureContextCopyWithParents(ZMapFeatureAny orig_feature
 	      }
 
 	    default:
-	      zMapAssertNotReached();
+              zMapWarnIfReached();
 	      break;
 	    }
 
@@ -615,7 +614,9 @@ void zMapFeatureContextExecuteSubset(ZMapFeatureAny feature_any,
       postExecuteProcess(&full_data);
     }
   else
-    zMapAssertNotReached();
+    {
+      zMapWarnIfReached();
+    }
 
   return ;
 }
@@ -718,7 +719,7 @@ ZMapFeatureAny zMapFeatureContextFindFeatureFromFeature(ZMapFeatureContext conte
 	  break;
 	case ZMAPFEATURE_STRUCT_FEATURE:
 	default:
-	  zMapAssertNotReached();
+          zMapWarnIfReached();
 	  break;
 	}
     }
@@ -744,7 +745,7 @@ ZMapFeatureAny zMapFeatureContextFindFeatureFromFeature(ZMapFeatureContext conte
 	  break;
 	case ZMAPFEATURE_STRUCT_FEATURE:
 	default:
-	  zMapAssertNotReached();
+          zMapWarnIfReached();
 	  break;
 	}
 
@@ -866,7 +867,8 @@ static ZMapFeatureContextExecuteStatus revCompFeaturesCB(GQuark key,
   ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
   RevCompData cb_data = (RevCompData)user_data;
 
-  zMapAssert(feature_any && zMapFeatureIsValid(feature_any)) ;
+  if (!feature_any || !zMapFeatureIsValid(feature_any))
+    return status ;
 
   switch(feature_any->struct_type)
     {
@@ -960,7 +962,7 @@ static ZMapFeatureContextExecuteStatus revCompFeaturesCB(GQuark key,
     case ZMAPFEATURE_STRUCT_INVALID:
     default:
       {
-	zMapAssertNotReached();
+        zMapWarnIfReached();
 	break;
       }
     }
@@ -978,7 +980,8 @@ static ZMapFeatureContextExecuteStatus revCompORFFeaturesCB(GQuark key,
   ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
   RevCompData cb_data = (RevCompData)user_data;
 
-  zMapAssert(feature_any && zMapFeatureIsValid(feature_any)) ;
+  if (!feature_any || !zMapFeatureIsValid(feature_any))
+    return status ;
 
   switch(feature_any->struct_type)
     {
@@ -1038,7 +1041,8 @@ static void revcompSpan(GArray *spans, int seq_start, int seq_end)
 
 static void revCompFeature(ZMapFeature feature, int start_coord, int end_coord)
 {
-  zMapAssert(feature);
+  if (!feature)
+    return ;
 
   zmapFeatureRevComp(Coord, start_coord, end_coord, feature->x1, feature->x2) ;
 
@@ -1079,7 +1083,7 @@ static void revCompFeature(ZMapFeature feature, int start_coord, int end_coord)
 
       feature->unique_id = dna_id ;
     }
-  else if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT
+  else if (feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT
 	   && (feature->feature.transcript.exons || feature->feature.transcript.introns))
     {
       if (feature->feature.transcript.exons)
@@ -1093,7 +1097,7 @@ static void revCompFeature(ZMapFeature feature, int start_coord, int end_coord)
                            feature->feature.transcript.cds_start,
                            feature->feature.transcript.cds_end);
     }
-  else if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT
+  else if (feature->mode == ZMAPSTYLE_MODE_ALIGNMENT
            && feature->feature.homol.align)
     {
       int i ;
@@ -1117,12 +1121,10 @@ static void revCompFeature(ZMapFeature feature, int start_coord, int end_coord)
 		     g_quark_to_string(feature->original_id), feature->feature.homol.length,
 		     strlen(feature->feature.homol.sequence));
 
-	    zMapAssert(feature->feature.homol.length == strlen(feature->feature.homol.sequence));
-
 	    zMapDNAReverseComplement(feature->feature.homol.sequence, feature->feature.homol.length) ;
 	  }
     }
-  else if (feature->type == ZMAPSTYLE_MODE_ASSEMBLY_PATH)
+  else if (feature->mode == ZMAPSTYLE_MODE_ASSEMBLY_PATH)
     {
       if (feature->feature.assembly_path.path)
         revcompSpan(feature->feature.assembly_path.path, start_coord, end_coord) ;
@@ -1207,7 +1209,7 @@ static ZMapFeatureContextExecuteStatus templateDataListForeach(GQuark key,
       break;
     case ZMAPFEATURE_STRUCT_INVALID:
     default:
-      zMapAssertNotReached();
+      zMapWarnIfReached();
       break;
 
     }
@@ -1225,7 +1227,8 @@ static gboolean  executeDataForeachFunc(gpointer key_ptr, gpointer data, gpointe
   ZMapFeatureLevelType feature_type = ZMAPFEATURE_STRUCT_INVALID;
   gboolean  remove_from_hash = FALSE;
 
-  zMapAssert(zMapFeatureAnyHasMagic(feature_any));
+  if (!zMapFeatureAnyHasMagic(feature_any))
+    return remove_from_hash ;
 
   if(full_data->status == ZMAP_CONTEXT_EXEC_STATUS_OK ||
      full_data->status == ZMAP_CONTEXT_EXEC_STATUS_OK_DELETE)
@@ -1284,7 +1287,7 @@ static gboolean  executeDataForeachFunc(gpointer key_ptr, gpointer data, gpointe
 			zMapLogWarning("%s", "Altering hash during foreach _not_ supported!");
 			zMapLogCritical("Hash traversal on the children of '%s' isn't going to work",
 					g_quark_to_string(feature_any->unique_id));
-			zMapAssertNotReached();
+                        zMapWarnIfReached();
 		      }
 		  }
 
@@ -1304,7 +1307,7 @@ static gboolean  executeDataForeachFunc(gpointer key_ptr, gpointer data, gpointe
               break;
             case ZMAPFEATURE_STRUCT_INVALID:
             default:
-              zMapAssertNotReached();
+              zMapWarnIfReached();
               break;
             }
         }

@@ -1,6 +1,6 @@
 /*  File: zmapConfigIni.h
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -31,6 +31,10 @@
 #define ZMAP_CONFIG_INI_H
 
 #include <glib-object.h>
+
+
+/* default list of in-built columns if not specified in config file */
+#define ZMAP_DEFAULT_FEATURESETS "DNA ; 3 Frame ; 3 Frame Translation ; Show Translation ; Annotation "
 
 
 typedef gpointer (*ZMapConfigIniUserDataCreateFunc)(void);

@@ -12,6 +12,6 @@ gff_source=Tier1_H1-hESC_cell_longPolyA_rep1
     --start=85591570 \
     --end=87672398   \
     --gff_seqname=chr13-03 \
-    --gff_feature_source=${gff_source} \
+    --gff_source=${gff_source} \
     --strand=1 \
     ;

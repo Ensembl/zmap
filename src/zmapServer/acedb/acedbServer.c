@@ -1,6 +1,6 @@
 /*  File: acedbServer.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -241,6 +241,7 @@ static void loadableCB(gpointer data, gpointer user_data) ;
 
 static char *get_url_query_value(char *full_query, char *key) ;
 static gboolean get_url_query_boolean(char *full_query, char *key) ;
+static int get_url_query_int(char *full_query, char *key) ;
 
 static void freeDataCB(gpointer data) ;
 static void freeSetCB(gpointer data) ;
@@ -333,7 +334,7 @@ static gboolean createConnection(void **server_out,
 
   server->has_new_tags = TRUE ;
 
-  use_methods = get_url_query_boolean(url->query, "use_methods");
+  use_methods = get_url_query_boolean(url->query, "use_methods") ;
 
   server->has_new_tags = !use_methods;
 
@@ -348,6 +349,9 @@ static gboolean createConnection(void **server_out,
     }
 
   server->stylename_from_methodname = isStyleFromMethod(server->config_file) ;
+
+  if (!(server->gff_version = get_url_query_int(url->query, "gff_version")))
+    server->gff_version = 3 ;
 
   server->zmap_start = 1;
   server->zmap_end = 0;
@@ -906,8 +910,6 @@ char *lastErrorMsg(void *server_in)
   char *err_msg = NULL ;
   AcedbServer server = (AcedbServer)server_in ;
 
-  zMapAssert(server_in) ;
-
   if (server->last_err_msg)
     err_msg = server->last_err_msg ;
   else if (server->last_err_status != ACECONN_OK)
@@ -1176,8 +1178,6 @@ static char *getMethodString(GList *styles_or_style_names,
   GString *str ;
   gboolean free_string = TRUE ;
 
-  zMapAssert(styles_or_style_names) ;
-
   str = g_string_new("") ;
 
   if (find_string)
@@ -1323,7 +1323,7 @@ static gboolean sequenceRequest(DoAllAlignBlocks get_features, ZMapFeatureBlock 
 
   acedb_request =  g_strdup_printf("gif seqget %s -coords %d %d %s %s ; "
 				   " %s "
-				   "seqfeatures -refseq %s -rawmethods -zmap %s",
+                                   "seqfeatures -refseq %s -rawmethods -version %d %s %s",
 				   g_quark_to_string(feature_block->original_id),
 				   server->zmap_start,
 				   server->zmap_end,
@@ -1331,6 +1331,8 @@ static gboolean sequenceRequest(DoAllAlignBlocks get_features, ZMapFeatureBlock 
 				   methods,
 				   (server->fetch_gene_finder_features ? gene_finder_cmds : ""),
 				   g_quark_to_string(feature_block->original_id),
+                                   server->gff_version,
+                                   (server->gff_version == 3 ? "" : "-zmap"),
 				   methods) ;
 
   if ((server->last_err_status = AceConnRequest(server->connection, acedb_request, &reply, &reply_len))
@@ -1621,18 +1623,8 @@ static gboolean blockDNARequest(AcedbServer server, GHashTable *styles, ZMapFeat
        * it was done this way - Ed) */
       if (zMapFeatureDNACreateFeatureSet(feature_block, &feature_set))
 	{
-
-	  /* This temp style creation feels wrong, and probably is,
-	   * but we don't have the merged in default styles in here,
-	   * or so it seems... */
-
 	  if ((dna_style = zMapFindStyle(styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME))))
-#if 0
-	    temp_style = dna_style = zMapStyleCreate(ZMAP_FIXED_STYLE_DNA_NAME,
-						     ZMAP_FIXED_STYLE_DNA_NAME_TEXT);
-#endif
-
-		feature = zMapFeatureDNACreateFeature(feature_block, dna_style, dna_sequence, dna_length);
+            feature = zMapFeatureDNACreateFeature(feature_block, dna_style, dna_sequence, dna_length);
 	}
 
 
@@ -1651,10 +1643,10 @@ static gboolean blockDNARequest(AcedbServer server, GHashTable *styles, ZMapFeat
 
           if ((zMapFeatureORFCreateSet(feature_block, &feature_set)))
             {
-              ZMapFeatureTypeStyle frame_style = NULL;
+              ZMapFeatureTypeStyle orf_style = NULL;
               
-              if ((frame_style = zMapFindStyle(styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_ORF_NAME))))
-                zMapFeatureORFSetCreateFeatures(feature_set, frame_style, translation_fs);
+              if ((orf_style = zMapFindStyle(styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_ORF_NAME))))
+                zMapFeatureORFSetCreateFeatures(feature_set, orf_style, translation_fs);
             }
 	}
 
@@ -1793,8 +1785,6 @@ static gboolean getSequenceMapping(AcedbServer server, ZMapFeatureContext featur
 	ZMapFeatureAlignment align = feature_context->master_align;
 	GHashTable *blocks = align->blocks ;
 	ZMapFeatureBlock block ;
-
-	zMapAssert(g_hash_table_size(blocks) == 1) ;
 
 	block = (ZMapFeatureBlock)(zMap_g_hash_table_nth(blocks, 0)) ;
 
@@ -4050,8 +4040,6 @@ static ZMapServerResponseType getObjNames(AcedbServer server, GList **style_name
       g_free(reply) ;
       reply = NULL ;
     }
-  else
-    result = server->last_err_status ;
 
   g_free(acedb_request) ;
 
@@ -4061,7 +4049,7 @@ static ZMapServerResponseType getObjNames(AcedbServer server, GList **style_name
 
 
 
-/* GCompareDataFunc () used to resort our list of styles to match users original sorting. */
+/* GCompareDataFunc () used to re-sort our list of styles to match users original sorting. */
 gint resortStyles(gconstpointer a, gconstpointer b, gpointer user_data)
 {
   gint result = 0 ;
@@ -4071,7 +4059,6 @@ gint resortStyles(gconstpointer a, gconstpointer b, gpointer user_data)
 
   pos_a = g_list_index(style_list, GUINT_TO_POINTER(zMapStyleGetUniqueID(style_a))) ;
   pos_b = g_list_index(style_list, GUINT_TO_POINTER(zMapStyleGetUniqueID(style_b))) ;
-  zMapAssert(pos_a >= 0 && pos_b >= 0 && pos_a != pos_b) ;
 
   if (pos_a < pos_b)
     result = -1 ;
@@ -4611,28 +4598,38 @@ static void resetErr(AcedbServer server)
 }
 
 
-
+/* YEH WELL THIS IS BROKEN...THANKS A LOT..... */
 static char *get_url_query_value(char *full_query, char *key)
 {
-  char *value = NULL,
-    **split   = NULL,
-    **ptr     = NULL ;
+  char *value = NULL, **split   = NULL, **ptr     = NULL ;
 
-  if(full_query != NULL)
+  if ((full_query && *full_query) && (key && *key))
     {
-      split = ptr = g_strsplit(full_query, "&", 0);
+      split = ptr = g_strsplit(full_query, "&", 0) ;
 
       while(ptr && *ptr != '\0')
 	{
-	  char **key_value = NULL, **kv_ptr;
+          char **key_value = NULL, **kv_ptr, *real_key ;
+
 	  key_value = kv_ptr = g_strsplit(*ptr, "=", 0);
-	  if(key_value[0] && (g_ascii_strcasecmp(key, key_value[0]) == 0))
-	    value = g_strdup(key_value[1]);
-	  g_strfreev(kv_ptr);
-	  ptr++;
+
+          /* Can this actually happen ? */
+          if (key_value[0])
+            {
+              real_key = *key_value ;
+              if (*real_key == '?')
+                real_key++ ;
+            
+              if (g_ascii_strcasecmp(real_key, key) == 0)
+                value = g_strdup(key_value[1]) ;
+            }
+
+          g_strfreev(kv_ptr) ;
+
+          ptr++ ;
 	}
 
-      g_strfreev(split);
+      g_strfreev(split) ;
     }
 
   return value;
@@ -4651,6 +4648,21 @@ static gboolean get_url_query_boolean(char *full_query, char *key)
     }
 
   return result;
+}
+
+static int get_url_query_int(char *full_query, char *key)
+{
+  int result = 0 ;
+  char *value = NULL ;
+
+  if ((value = get_url_query_value(full_query, key)))
+    {
+      result = atoi(value) ;
+
+      g_free(value) ;
+    }
+
+  return result ;
 }
 
 

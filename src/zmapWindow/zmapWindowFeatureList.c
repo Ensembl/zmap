@@ -1,6 +1,6 @@
 /*  File: zmapWindowFeatureList.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -302,10 +302,10 @@ static void feature_add_simple(ZMapGUITreeView zmap_tv,
   zmap_tv_feature = ZMAP_WINDOWFEATURELIST(zmap_tv);
 
   if(zmap_tv_feature->feature_type == ZMAPSTYLE_MODE_INVALID &&
-     feature->type != ZMAPSTYLE_MODE_INVALID)
+     feature->mode != ZMAPSTYLE_MODE_INVALID)
     {
-      zmap_tv_feature->feature_type = feature->type;
-      setup_tree(zmap_tv_feature, feature->type);
+      zmap_tv_feature->feature_type = feature->mode;
+      setup_tree(zmap_tv_feature, feature->mode);
     }
 
   /* Always add the feature... */
@@ -317,7 +317,7 @@ static void feature_add_simple(ZMapGUITreeView zmap_tv,
     add_simple.window = zmap_tv_feature->window;
 
   if(zmap_tv_feature->feature_type != ZMAPSTYLE_MODE_INVALID &&
-     zmap_tv_feature->feature_type == feature->type &&
+     zmap_tv_feature->feature_type == feature->mode &&
      parent_class_G->add_tuple_simple)
     (* parent_class_G->add_tuple_simple)(zmap_tv, &add_simple);
 
@@ -375,7 +375,7 @@ static void feature_name_to_value(GValue *value, gpointer feature_data)
   if(G_VALUE_TYPE(value) == G_TYPE_STRING)
     g_value_set_string(value, (char *)g_quark_to_string(feature_any->original_id));
   else
-    zMapAssertNotReached();
+    zMapWarnIfReached();
 
   return ;
 }
@@ -402,7 +402,9 @@ static void feature_start_to_value(GValue *value, gpointer feature_data)
       }
     }
   else
-    zMapAssertNotReached();
+    {
+      zMapWarnIfReached();
+    }
 
   return ;
 }
@@ -429,7 +431,9 @@ static void feature_end_to_value(GValue *value, gpointer feature_data)
       }
     }
   else
-    zMapAssertNotReached();
+    {
+      zMapWarnIfReached();
+    }
 
   return ;
 }
@@ -452,7 +456,9 @@ static void feature_strand_to_value(GValue *value, gpointer feature_data)
       }
     }
   else
-    zMapAssertNotReached();
+    {
+      zMapWarnIfReached();
+    }
 
   return ;
 }
@@ -476,7 +482,9 @@ static void feature_frame_to_value(GValue *value, gpointer feature_data)
       }
     }
   else
-    zMapAssertNotReached();
+    {
+      zMapWarnIfReached();
+    }
 
   return ;
 }
@@ -493,6 +501,7 @@ static void feature_phase_to_value(GValue *value, gpointer feature_data)
       case ZMAPFEATURE_STRUCT_FEATURE:
         /*! \todo #warning refer to other calls to zMapFeaturePhase2Str() */
         /*! \todo #warning this used to say strand! phase is buried in obscure places and this function i think has never been called */
+#warning Frame is being used here where it should be phase!
         g_value_set_string(value, zMapFeaturePhase2Str(zMapFeatureFrame(feature_any)));
         break;
       default:
@@ -501,7 +510,9 @@ static void feature_phase_to_value(GValue *value, gpointer feature_data)
       }
     }
   else
-    zMapAssertNotReached();
+    {
+      zMapWarnIfReached();
+    }
 
   return ;
 }
@@ -517,7 +528,7 @@ static void feature_qstart_to_value(GValue *value, gpointer feature_data)
       {
       case ZMAPFEATURE_STRUCT_FEATURE:
         {
-          switch(feature_any->type)
+          switch(feature_any->mode)
             {
             case ZMAPSTYLE_MODE_ALIGNMENT:
             g_value_set_int(value, feature_any->feature.homol.y1);
@@ -525,7 +536,7 @@ static void feature_qstart_to_value(GValue *value, gpointer feature_data)
             default:
             g_value_set_int(value, 0);
             break;
-            } /* switch(feature->type) */
+            } /* switch(feature->mode) */
         }
         break;
       default:
@@ -534,7 +545,9 @@ static void feature_qstart_to_value(GValue *value, gpointer feature_data)
       } /* switch(feature->struct_type) */
     }
   else
-    zMapAssertNotReached();
+    {
+      zMapWarnIfReached();
+    }
 
   return ;
 }
@@ -551,7 +564,7 @@ static void feature_qend_to_value(GValue *value, gpointer feature_data)
       {
       case ZMAPFEATURE_STRUCT_FEATURE:
         {
-          switch(feature_any->type)
+          switch(feature_any->mode)
             {
             case ZMAPSTYLE_MODE_ALIGNMENT:
             g_value_set_int(value, feature_any->feature.homol.y2);
@@ -559,7 +572,7 @@ static void feature_qend_to_value(GValue *value, gpointer feature_data)
             default:
             g_value_set_int(value, 0);
             break;
-            }     /* switch(feature->type) */
+            }     /* switch(feature->mode) */
         }
         break;
       default:
@@ -568,7 +581,9 @@ static void feature_qend_to_value(GValue *value, gpointer feature_data)
       } /* switch(feature->struct_type) */
     }
   else
-    zMapAssertNotReached();
+    {
+      zMapWarnIfReached();
+    }
 
   return ;
 }
@@ -584,7 +599,7 @@ static void feature_qstrand_to_value(GValue *value, gpointer feature_data)
       {
       case ZMAPFEATURE_STRUCT_FEATURE:
         {
-          switch(feature_any->type)
+          switch(feature_any->mode)
             {
             case ZMAPSTYLE_MODE_ALIGNMENT:
             g_value_set_string(value, zMapFeatureStrand2Str(feature_any->feature.homol.strand));
@@ -592,7 +607,7 @@ static void feature_qstrand_to_value(GValue *value, gpointer feature_data)
             default:
             g_value_set_string(value, ".");
             break;
-            }     /* switch(feature->type) */
+            }     /* switch(feature->mode) */
         }
         break;
       default:
@@ -601,7 +616,9 @@ static void feature_qstrand_to_value(GValue *value, gpointer feature_data)
       } /* switch(feature->struct_type) */
     }
   else
-    zMapAssertNotReached();
+    {
+      zMapWarnIfReached();
+    }
 
   return ;
 }
@@ -624,7 +641,9 @@ static void feature_score_to_value(GValue *value, gpointer feature_data)
       }
     }
   else
-    zMapAssertNotReached();
+    {
+      zMapWarnIfReached();
+    }
 
   return ;
 }
@@ -652,7 +671,9 @@ static void feature_featureset_to_value(GValue *value, gpointer feature_data)
       }
     }
   else
-    zMapAssertNotReached();
+    {
+      zMapWarnIfReached();
+    }
 
   return ;
 }
@@ -667,14 +688,16 @@ static void feature_type_to_value(GValue *value, gpointer feature_data)
       switch(feature_any->struct_type)
       {
       case ZMAPFEATURE_STRUCT_FEATURE:
-        g_value_set_string(value, zMapStyleMode2ExactStr(feature_any->type));
+        g_value_set_string(value, zMapStyleMode2ExactStr(feature_any->mode));
         break;
       default:
         break;
       }
     }
   else
-    zMapAssertNotReached();
+    {
+      zMapWarnIfReached();
+    }
 
   return ;
 }
@@ -696,7 +719,9 @@ static void feature_source_to_value (GValue *value, gpointer feature_data)
       }
     }
   else
-    zMapAssertNotReached();
+    {
+      zMapWarnIfReached();
+    }
 
   return ;
 }
@@ -718,7 +743,9 @@ static void feature_style_to_value (GValue *value, gpointer feature_data)
       }
     }
   else
-    zMapAssertNotReached();
+    {
+      zMapWarnIfReached();
+    }
 
   return ;
 }
@@ -1286,10 +1313,10 @@ static void feature_item_add_simple(ZMapGUITreeView zmap_tv,
   if((feature))	// = zmapWindowItemGetFeature(item)))
     {
       if(zmap_tv_feature->feature_type == ZMAPSTYLE_MODE_INVALID &&
-       feature->type != ZMAPSTYLE_MODE_INVALID)
+       feature->mode != ZMAPSTYLE_MODE_INVALID)
       {
-        zmap_tv_feature->feature_type = feature->type;
-        setup_item_tree(zmap_tv_feature, feature->type);
+        zmap_tv_feature->feature_type = feature->mode;
+        setup_item_tree(zmap_tv_feature, feature->mode);
       }
 
         /* Always add the feature & the item... */
@@ -1302,7 +1329,7 @@ static void feature_item_add_simple(ZMapGUITreeView zmap_tv,
 
 
       if(zmap_tv_feature->feature_type != ZMAPSTYLE_MODE_INVALID &&
-       zmap_tv_feature->feature_type == feature->type &&
+       zmap_tv_feature->feature_type == feature->mode &&
        feature_item_parent_class_G->add_tuple_simple)
       (* feature_item_parent_class_G->add_tuple_simple)(zmap_tv, &add_simple);
     }
@@ -1510,7 +1537,7 @@ static void feature_item_type_get_titles_types_funcs(ZMapStyleMode feature_type,
   funcs  = g_list_append(funcs, feature_style_to_value);
   flags  = g_list_append(flags, GINT_TO_POINTER(flags_set));
 
-  /* feature->type... */
+  /* feature->mode ... */
   titles = g_list_append(titles, ZMAP_WINDOWFEATURELIST_TYPE_COLUMN_NAME);
   types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_STRING));
   funcs  = g_list_append(funcs, feature_type_to_value);

@@ -1,6 +1,6 @@
 /*  File: zmapWindow.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -60,7 +60,7 @@ typedef struct _GQueue *ZMapWindowStateQueue;
 /*! indicates how far the zmap is zoomed, n.b. ZMAP_ZOOM_FIXED implies that the whole sequence
  * is displayed at the maximum zoom. */
 typedef enum {ZMAP_ZOOM_INIT, ZMAP_ZOOM_MIN, ZMAP_ZOOM_MID, ZMAP_ZOOM_MAX,
-	      ZMAP_ZOOM_FIXED} ZMapWindowZoomStatus ;
+              ZMAP_ZOOM_FIXED} ZMapWindowZoomStatus ;
 
 /*! Should the original window and the new window be locked together for scrolling and zooming.
  * vertical means that the vertical scrollbars should be locked together, specifying vertical
@@ -72,9 +72,9 @@ typedef enum {ZMAP_WINLOCK_NONE, ZMAP_WINLOCK_VERTICAL, ZMAP_WINLOCK_HORIZONTAL}
 typedef enum
   {
     ZMAP_WINDOW_3FRAME_INVALID,
-    ZMAP_WINDOW_3FRAME_TRANS,				    /* 3 frame translation display. */
-    ZMAP_WINDOW_3FRAME_COLS,				    /* 3 frame other cols display. */
-    ZMAP_WINDOW_3FRAME_ALL				    /* All 3 frame cols. */
+    ZMAP_WINDOW_3FRAME_TRANS,                               /* 3 frame translation display. */
+    ZMAP_WINDOW_3FRAME_COLS,                                /* 3 frame other cols display. */
+    ZMAP_WINDOW_3FRAME_ALL                                  /* All 3 frame cols. */
   } ZMapWindow3FrameMode ;
 
 typedef enum 
@@ -110,51 +110,75 @@ typedef int (*ZMapWindowFilterCallbackFunc)(gpointer filter, double value, gbool
 
 typedef struct
 {
-	double min,max;			/* for the spin button */
-	double value;
-	ZMapWindow window;
-	gpointer featureset;		/* where to filter, is a ZMapWindowCanvasFeatureset... scope :-( */
-	gpointer column;			/* where to filter, is a ZMapWindowCanvasFeaturesetItem... scope :-( */
+        double min,max;                 /* for the spin button */
+        double value;
+        ZMapWindow window;
+        gpointer featureset;            /* where to filter, is a ZMapWindowCanvasFeatureset... scope :-( */
+        gpointer column;                        /* where to filter, is a ZMapWindowCanvasFeaturesetItem... scope :-( */
 
-	ZMapWindowFilterCallbackFunc func;		/* function to do it */
+        ZMapWindowFilterCallbackFunc func;              /* function to do it */
 
-	int n_filtered;			/* how many we hid */
-	gboolean enable;
+        int n_filtered;                 /* how many we hid */
+        gboolean enable;
 
-	/* be good to implement this oe day, currently we look it up from config every time someone click the filter button */
-	GdkColor fill;			/* background for widget and also filtered column */
+        /* be good to implement this oe day, currently we look it up from config every time someone click the filter button */
+        GdkColor fill;                  /* background for widget and also filtered column */
 
 } ZMapWindowFilterStruct, *ZMapWindowFilter;
 
 
 
 
-/*! Data returned to the focus callback routine, called whenever a feature is selected. */
+/* Selection/pasting of features, data returned to the focus callback routine and so on. */
+
+
+/* request a particular format for pasting of feature coords.... */
+typedef enum
+  {
+    /* For otterlace paste all feature subparts (e.g. exons), in one-based corods
+     * with feature name, lengths:
+     *                              "LA16c-366D1.2-001"    28897 29136 (240)
+     *                              "LA16c-366D1.2-001"    31731 32851 (1121)
+     *                              etc
+     */
+    ZMAPWINDOW_PASTE_FORMAT_OTTERLACE,
+
+    /* Show in universal browser chromsome coord format (chromosome and coords):
+                                    "16:610422-615528"
+    */
+    ZMAPWINDOW_PASTE_FORMAT_BROWSER
+  } ZMapWindowPasteStyleType ;
+
 
 typedef enum {ZMAPWINDOW_SELECT_SINGLE, ZMAPWINDOW_SELECT_DOUBLE} ZMapWindowSelectType ;
 
+
 typedef struct
 {
-  ZMapWindowSelectType type;				    /* SINGLE or DOUBLE */
+  ZMapWindowSelectType type;                                /* SINGLE or DOUBLE */
 
-  FooCanvasItem *highlight_item ;			    /* The feature selected to be highlighted, may be null
-							          if a column was selected. */
+  FooCanvasItem *highlight_item ;                           /* The feature selected to be highlighted, may be null
+                                                               if a column was selected. */
 
-  GList *feature_list;					/* for lassoo multiple select */
+  GList *feature_list;                                      /* for lassoo multiple select */
 
-  gboolean replace_highlight_item ;			    /* TRUE means highlight item replaces
-							       existing highlighted item, FALSE
-							       means its added to the list of
-							       highlighted items. */
+  gboolean replace_highlight_item ;                         /* TRUE means highlight item replaces
+                                                               existing highlighted item, FALSE
+                                                               means its added to the list of
+                                                               highlighted items. */
 
-  gboolean highlight_same_names ;			    /* TRUE means highlight all other
-							       features with the same name in the
-							       same feature set. */
-  gboolean sub_part;					/* if selecting part of a feature w/ the control key */
+  gboolean highlight_same_names ;                           /* TRUE means highlight all other
+                                                               features with the same name in the
+                                                               same feature set. */
 
-  ZMapFeatureDescStruct feature_desc ;			    /* Text descriptions of selected feature. */
+  gboolean sub_part;                                        /* if selecting part of a feature w/
+                                                               the control key */
 
-  char *secondary_text ;				    /* Simple string description. */
+  ZMapFeatureDescStruct feature_desc ;                      /* Text descriptions of selected feature. */
+
+
+  char *secondary_text ;                                    /* Simple string description used for paste to
+                                                               clipboard, format is one of ZMapWindowPasteStyleType */
 
 
   ZMapWindowFilterStruct filter;
@@ -206,9 +230,9 @@ typedef enum
 typedef enum
   {
     ZMAPWINDOW_COMPRESS_INVALID,
-    ZMAPWINDOW_COMPRESS_VISIBLE,			    /* Compress for visible window only. */
-    ZMAPWINDOW_COMPRESS_MARK,				    /* Compress for mark region. */
-    ZMAPWINDOW_COMPRESS_ALL				    /* Compress for whole sequence. */
+    ZMAPWINDOW_COMPRESS_VISIBLE,                            /* Compress for visible window only. */
+    ZMAPWINDOW_COMPRESS_MARK,                               /* Compress for mark region. */
+    ZMAPWINDOW_COMPRESS_ALL                                 /* Compress for whole sequence. */
   } ZMapWindowCompressMode ;
 
 
@@ -240,23 +264,23 @@ typedef struct ZMapWindowCallbackCommandAlignStructName
   ZMapFeatureBlock block ;
 
   /* Align specific section. */
-  ZMapHomolType homol_type ;				    /* DNA or Peptide alignments. */
+  ZMapHomolType homol_type ;                                /* DNA or Peptide alignments. */
 
-  int offset ;						    /* Offset for displaying coords with
-							       different base. */
+  int offset ;                                              /* Offset for displaying coords with
+                                                               different base. */
 
-  int cursor_position ;					    /* Where the alignment tools "cursor" should be. */
+  int cursor_position ;                                     /* Where the alignment tools "cursor" should be. */
 
-  int window_start, window_end ;			    /* Start/end coords that should be initially
-							       visible in alignment tool.  */
+  int window_start, window_end ;                            /* Start/end coords that should be initially
+                                                               visible in alignment tool.  */
 
-  int mark_start, mark_end ;				    /* Optional range for alignment viewing. */
-
-
-  ZMapWindowAlignSetType homol_set ;			    /* What features to display. */
+  int mark_start, mark_end ;                                /* Optional range for alignment viewing. */
 
 
-  GList *features ;					    /* Optional list of alignment features. */
+  ZMapWindowAlignSetType homol_set ;                        /* What features to display. */
+
+
+  GList *features ;                                         /* Optional list of alignment features. */
 
   ZMapFeatureSet feature_set ;
 
@@ -273,9 +297,9 @@ typedef struct
   /* Common section. */
   ZMapWindowCommandType cmd ;
 
-  ZMapFeatureBlock block ;				    /* Block for which features should be fetched. */
-  GList *feature_set_ids ;				    /* List of names as quarks. */
-  int start, end ;					    /* Range over which features should be fetched. */
+  ZMapFeatureBlock block ;                                  /* Block for which features should be fetched. */
+  GList *feature_set_ids ;                                  /* List of names as quarks. */
+  int start, end ;                                          /* Range over which features should be fetched. */
 
 } ZMapWindowCallbackCommandGetFeaturesStruct, *ZMapWindowCallbackGetFeatures ;
 
@@ -317,7 +341,7 @@ typedef struct ZMapWindowCallbackCommandScratchStructName
  * go via the ZMapWindowCallbacksStruct. */
 typedef void (*ZMapWindowCallbackFunc)(ZMapWindow window, void *caller_data, void *window_data) ;
 typedef void (*ZMapWindowLoadCallbackFunc)(ZMapWindow window,
-					   void *caller_data, gpointer load_cb_data, void *window_data) ;
+                                           void *caller_data, gpointer load_cb_data, void *window_data) ;
 
 
 typedef struct _ZMapWindowCallbacksStruct
@@ -330,7 +354,7 @@ typedef struct _ZMapWindowCallbacksStruct
   ZMapWindowCallbackFunc splitToPattern ;
   ZMapWindowCallbackFunc setZoomStatus ;
   ZMapWindowCallbackFunc visibilityChange ;
-  ZMapWindowCallbackFunc command ;			    /* Request to exit given command. */
+  ZMapWindowCallbackFunc command ;                          /* Request to exit given command. */
   ZMapWindowLoadCallbackFunc drawn_data ;
 
 
@@ -347,6 +371,55 @@ typedef struct _ZMapWindowCallbacksStruct
 
 
 
+/* window focus */
+
+typedef struct _ZMapWindowFocusStruct *ZMapWindowFocus ;
+
+typedef enum
+{
+      /* types of groups of features, used to index an array
+       * NOTE: these are in order of priority
+       */
+      WINDOW_FOCUS_GROUP_FOCUS = 0,
+      WINDOW_FOCUS_GROUP_EVIDENCE,
+      WINDOW_FOCUS_GROUP_TEXT,
+
+      /* NOTE above = focus items, below = global colours see BITMASK and FOCUSSED below */
+
+        /* window focus has a cache of colours per window
+         * we can retrieve these by id which does note require out of scope data or headers
+         */
+      WINDOW_FOCUS_GROUP_MASKED,        /* use to store colours but not set as a focus type */
+      WINDOW_FOCUS_GROUP_FILTERED,
+
+/* NOTE this must be the first blurred one */
+#define N_FOCUS_GROUPS_FOCUS WINDOW_FOCUS_GROUP_MASKED
+
+      N_FOCUS_GROUPS
+} ZMapWindowFocusType;
+
+
+
+/* all these comments imply that this stuff should NOT be in the public header.... */
+
+#define WINDOW_FOCUS_GROUP_FOCUSSED 0x07        /* all the focus types */
+#define WINDOW_FOCUS_GROUP_BLURRED      0xf8    /* all the blurred types */
+#define WINDOW_FOCUS_GROUP_BITMASK      0xff    /* all the colour types, focussed and blurred */
+#define WINDOW_FOCUS_DONT_USE   0xff00  /* see FEATURE_FOCUS in zmapWindowCanvasFeatureSet.c */
+/* x-ref with zmapWindowCanvasFeatureset_I.h */
+
+#define WINDOW_FOCUS_ID 0xffff0000
+
+/* bitmap return values from the following function, _please_ don't enum them! */
+#define WINDOW_FOCUS_CACHE_FILL                 1
+#define WINDOW_FOCUS_CACHE_OUTLINE              2
+#define WINDOW_FOCUS_CACHE_SELECTED             4
+
+
+/* Does this need to be here ??????? */
+extern int focus_group_mask[];  /* indexed by ZMapWindowFocusType */
+
+
 
 
 void zMapWindowInit(ZMapWindowCallbacks callbacks) ;
@@ -354,13 +427,13 @@ ZMapWindow zMapWindowCreate(GtkWidget *parent_widget,
                             ZMapFeatureSequenceMap sequence, void *app_data,
                             GList *feature_set_names, gboolean *flags) ;
 ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, ZMapFeatureSequenceMap sequence,
-			  void *app_data, ZMapWindow old,
-			  ZMapFeatureContext features, GHashTable *all_styles, GHashTable *new_styles,
-			  ZMapWindowLockType window_locking) ;
+                          void *app_data, ZMapWindow old,
+                          ZMapFeatureContext features, GHashTable *all_styles, GHashTable *new_styles,
+                          ZMapWindowLockType window_locking) ;
 
 gboolean zMapWindowProcessRemoteRequest(ZMapWindow window,
-					char *command_name, char *request,
-					ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data) ;
+                                        char *command_name, char *request,
+                                        ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data) ;
 
 
 void zMapWindowBusyFull(ZMapWindow window, gboolean busy, const char *file, const char *func) ;
@@ -373,9 +446,9 @@ void zMapWindowBusyFull(ZMapWindow window, gboolean busy, const char *file, cons
 #endif
 
 void zMapWindowDisplayData(ZMapWindow window, ZMapWindowState state,
-			   ZMapFeatureContext current_features, ZMapFeatureContext new_features,
-			   ZMapFeatureContextMap context_map,
-			   GList *masked, ZMapFeature highlight_feature, gpointer loaded_cb_user_data) ;
+                           ZMapFeatureContext current_features, ZMapFeatureContext new_features,
+                           ZMapFeatureContextMap context_map,
+                           GList *masked, ZMapFeature highlight_feature, gpointer loaded_cb_user_data) ;
 void zMapWindowUnDisplayData(ZMapWindow window,
                              ZMapFeatureContext current_features,
                              ZMapFeatureContext new_features);
@@ -388,8 +461,9 @@ void zMapWindowRedraw(ZMapWindow window) ;
 void zMapWindowFeatureSaveState(ZMapWindow window, gboolean features_are_revcomped);
 void zMapWindowFeatureReset(ZMapWindow window, gboolean features_are_revcomped);
 void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_context,
-			     gboolean reversed) ;
+                             gboolean reversed) ;
 void zMapWindowZoom(ZMapWindow window, double zoom_factor) ;
+gboolean zMapWindowZoomFromClipboard(ZMapWindow window) ;
 ZMapWindowZoomStatus zMapWindowGetZoomStatus(ZMapWindow window) ;
 double zMapWindowGetZoomFactor(ZMapWindow window);
 double zMapWindowGetZoomMin(ZMapWindow window) ;
@@ -401,12 +475,12 @@ gboolean zMapWindowItemGetSeqCoord(FooCanvasItem *item,
                                    gboolean set, double x, double y, long *seq_start, long *seq_end);
 gboolean zMapWindowZoomToFeature(ZMapWindow window, ZMapFeature feature) ;
 void zMapWindowZoomToWorldPosition(ZMapWindow window, gboolean border,
-				   double rootx1, double rooty1,
+                                   double rootx1, double rooty1,
                                    double rootx2, double rooty2);
 
 void zmapWindowCoordPairToDisplay(ZMapWindow window,
-				  int start_in, int end_in,
-				  int *display_start_out, int *display_end_out) ;
+                                  int start_in, int end_in,
+                                  int *display_start_out, int *display_end_out) ;
 gboolean zmapWindowGetCurrentSpan(ZMapWindow window,int *start,int *end);
 
 gboolean zMapWindowGetMark(ZMapWindow window, int *start, int *end) ;
@@ -439,8 +513,8 @@ void zMapWindowStateRecord(ZMapWindow window);
 void zMapWindowBack(ZMapWindow window);
 gboolean zMapWindowHasHistory(ZMapWindow window);
 gboolean zMapWindowIsLocked(ZMapWindow window) ;
-void zMapWindowSiblingWasRemoved(ZMapWindow window);	    /* For when a window in the same view
-							       has a child removed */
+void zMapWindowSiblingWasRemoved(ZMapWindow window);        /* For when a window in the same view
+                                                               has a child removed */
 
 
 PangoFontDescription *zMapWindowZoomGetFixedWidthFontInfo(ZMapWindow window,
@@ -460,13 +534,13 @@ gboolean zMapWindowPrint(ZMapWindow window) ;
 
 /* Add, modify, draw, remove features from the canvas. */
 FooCanvasItem *zMapWindowFeatureAdd(ZMapWindow window,
-			      FooCanvasGroup *feature_group, ZMapFeature feature) ;
+                              FooCanvasGroup *feature_group, ZMapFeature feature) ;
 FooCanvasItem *zMapWindowFeatureSetAdd(ZMapWindow window,
                                        FooCanvasGroup *block_group,
                                        char *feature_set_name) ;
 FooCanvasItem *zMapWindowFeatureReplace(ZMapWindow zmap_window,
-					FooCanvasItem *curr_feature_item,
-					ZMapFeature new_feature, gboolean destroy_orig_feature) ;
+                                        FooCanvasItem *curr_feature_item,
+                                        ZMapFeature new_feature, gboolean destroy_orig_feature) ;
 gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window,
                                  FooCanvasItem *feature_item, ZMapFeature feature, gboolean destroy_feature) ;
 
@@ -478,9 +552,9 @@ gboolean zMapWindowGetFilteredColour(ZMapWindow window, GdkColor **fill);
 
 void zMapWindowScrollToWindowPos(ZMapWindow window, int window_y_pos) ;
 gboolean zMapWindowCurrWindowPos(ZMapWindow window,
-				 double *x1_out, double *y1_out, double *x2_out, double *y2_out) ;
+                                 double *x1_out, double *y1_out, double *x2_out, double *y2_out) ;
 gboolean zMapWindowMaxWindowPos(ZMapWindow window,
-				double *x1_out, double *y1_out, double *x2_out, double *y2_out) ;
+                                double *x1_out, double *y1_out, double *x2_out, double *y2_out) ;
 gboolean zMapWindowScrollToItem(ZMapWindow window, FooCanvasItem *feature_item) ;
 
 gboolean zMapWindowFeatureSelect(ZMapWindow window, ZMapFeature feature) ;
@@ -489,7 +563,7 @@ void zMapWindowHighlightFeature(ZMapWindow window,
                                 ZMapFeature feature, gboolean highlight_same_names, gboolean replace);
 gboolean zMapWindowUnhighlightFeature(ZMapWindow window, ZMapFeature feature) ;
 void zMapWindowHighlightObject(ZMapWindow window, FooCanvasItem *feature,
-			       gboolean replace_highlight_item, gboolean highlight_same_names, gboolean sub_part) ;
+                               gboolean replace_highlight_item, gboolean highlight_same_names, gboolean sub_part) ;
 void zMapWindowHighlightObjects(ZMapWindow window, ZMapFeatureContext context, gboolean multiple_select);
 
 void zmapWindowHighlightSequenceItem(ZMapWindow window, FooCanvasItem *item, int start, int end, int flanking);
@@ -509,58 +583,18 @@ void zMapWindowMenuAlignBlockSubMenus(ZMapWindow window,
                                       char *root,
                                       GArray **items_array_out);
 
-gboolean zMapWindowXRemoteRegister(ZMapWindow window) ;
 
 /* It's possible these are defunct now..... */
+gboolean zMapWindowXRemoteRegister(ZMapWindow window) ;
 char *zMapWindowRemoteReceiveAccepts(ZMapWindow window);
 void zMapWindowSetupXRemote(ZMapWindow window, GtkWidget *widget);
 
-void zMapWindowUtilsSetClipboard(ZMapWindow window, char *text);
+
+char *zMapWindowGetSelectionText(ZMapWindow window) ;
+
 ZMapGuiNotebookChapter zMapWindowGetConfigChapter(ZMapWindow window, ZMapGuiNotebook parent);
 
 
-
-/* window focus */
-
-typedef struct _ZMapWindowFocusStruct *ZMapWindowFocus ;
-
-typedef enum
-{
-      /* types of groups of features, used to index an array
-       * NOTE: these are in order of priority
-       */
-      WINDOW_FOCUS_GROUP_FOCUS = 0,
-      WINDOW_FOCUS_GROUP_EVIDENCE,
-      WINDOW_FOCUS_GROUP_TEXT,
-
-      /* NOTE above = focus items, below = global colours see BITMASK and FOCUSSED below */
-
-	/* window focus has a cache of colours per window
-	 * we can retrieve these by id which does note require out of scope data or headers
-	 */
-      WINDOW_FOCUS_GROUP_MASKED,	/* use to store colours but not set as a focus type */
-      WINDOW_FOCUS_GROUP_FILTERED,
-/* NOTE this must be the first blurred one */
-#define N_FOCUS_GROUPS_FOCUS WINDOW_FOCUS_GROUP_MASKED
-
-      N_FOCUS_GROUPS
-} ZMapWindowFocusType;
-
-
-extern int focus_group_mask[];	/* indexed by ZMapWindowFocusType */
-
-#define WINDOW_FOCUS_GROUP_FOCUSSED 0x07	/* all the focus types */
-#define WINDOW_FOCUS_GROUP_BLURRED	0xf8	/* all the blurred types */
-#define WINDOW_FOCUS_GROUP_BITMASK	0xff	/* all the colour types, focussed and blurred */
-#define WINDOW_FOCUS_DONT_USE	0xff00	/* see FEATURE_FOCUS in zmapWindowCanvasFeatureSet.c */
-/* x-ref with zmapWindowCanvasFeatureset_I.h */
-
-#define WINDOW_FOCUS_ID	0xffff0000
-
-/* bitmap return values from the following function, _please_ don't enum them! */
-#define WINDOW_FOCUS_CACHE_FILL 		1
-#define WINDOW_FOCUS_CACHE_OUTLINE		2
-#define WINDOW_FOCUS_CACHE_SELECTED		4
 int zMapWindowFocusCacheGetSelectedColours(int id_flags,gulong *fill,gulong *outline);
 
 void zMapWindowFocusCacheSetSelectedColours(ZMapWindow window);

@@ -1,6 +1,6 @@
 /*  File: zmapControlRemoteControl.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2012: Genome Research Ltd.
+ *  Copyright (c) 2012-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -287,7 +287,7 @@ gboolean zMapControlProcessRemoteRequest(ZMap zmap,
       /* Find the view_window for the request or the default view .... */
       if (view && !view_window)
 	{
-	  if ((view == zMapViewGetView(zmap->focus_viewwindow)))
+          if (view == zMapViewGetView(zmap->focus_viewwindow))
 	    {
 	      /* view is the focus view. */
 	      view_window = zmap->focus_viewwindow ;
@@ -531,7 +531,9 @@ static void processRequest(ZMap zmap,
 static void doViews(gpointer data, gpointer user_data)
 {
   ZMapView view = (ZMapView)data ;
-  GetViewNames get_view_names = (GetViewNames)user_data ;
+  GetViewNames get_view_names = NULL ; 
+  zMapReturnIfFail(user_data) ; 
+  get_view_names = (GetViewNames)user_data ;
 
   if (get_view_names->result)
     {

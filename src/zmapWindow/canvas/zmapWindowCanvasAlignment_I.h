@@ -1,6 +1,6 @@
-/*  File: zmapWindowCanvasAlignment.c
+/*  File: zmapWindowCanvasAlignment_I.h
  *  Author: Malcolm Hinsley (mh17@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -37,20 +37,24 @@
 #include <zmapWindowCanvasGlyph_I.h>
 #include <zmapWindowCanvasAlignment.h>
 
-/* Ugh....enum ?????????????????????????????????????? */
-#define GAP_BOX	1
-#define GAP_HLINE	2
-#define GAP_VLINE	3
-#define GAP_VLINE_INTRON 4
+
+/* Different parts of a gapped alignment. */
+typedef enum
+  {
+    GAP_BOX,                                                /* Match box. */
+    GAP_HLINE,                                              /* Drawing a match boundary where there is no gap. */
+    GAP_VLINE,                                              /* Drawing gap line between matches. */
+    GAP_VLINE_INTRON                                        /* Um...don't know... */
+} GappedAlignFeaturesType ;
 
 
 typedef struct _AlignGapStruct
 {
-  int y1,y2;		/* in pixel coords from feature y1 */
+  int y1,y2;                                                /* in pixel coords from feature y1 */
 
-  int type;						    /* See GAP_XXXX above... */
+  GappedAlignFeaturesType type ;                            /* See GAP_XXXX above... */
 
-  gboolean edge;	/* for squashed short reads: edge blocks are diff colour */
+  gboolean edge;                                            /* for squashed short reads: edge blocks are diff colour */
 
   struct _AlignGapStruct *next;
 

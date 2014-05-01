@@ -1,6 +1,6 @@
 /*  File: zmapFeature.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -41,9 +41,9 @@
 #define ZMAPFEATURE_FORWARD(FEATURE)       ((FEATURE)->strand == ZMAPSTRAND_FORWARD)
 #define ZMAPFEATURE_REVERSE(FEATURE)       ((FEATURE)->strand == ZMAPSTRAND_REVERSE)
 
-#define ZMAPFEATURE_IS_BASIC(FEATURE)      ((FEATURE)->type == ZMAPSTYLE_MODE_BASIC)
+#define ZMAPFEATURE_IS_BASIC(FEATURE)      ((FEATURE)->mode == ZMAPSTYLE_MODE_BASIC)
 
-#define ZMAPFEATURE_IS_TRANSCRIPT(FEATURE) ((FEATURE)->type == ZMAPSTYLE_MODE_TRANSCRIPT)
+#define ZMAPFEATURE_IS_TRANSCRIPT(FEATURE) ((FEATURE)->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
 #define ZMAPFEATURE_HAS_CDS(FEATURE)       (ZMAPFEATURE_IS_TRANSCRIPT(FEATURE) && \
 					    ((FEATURE)->feature.transcript.flags.cds))
 #define ZMAPFEATURE_HAS_EXONS(FEATURE)     (ZMAPFEATURE_IS_TRANSCRIPT(FEATURE) &&            \
@@ -54,7 +54,7 @@
 					    ((FEATURE)->feature.transcript.introns != NULL) && \
 					    ((FEATURE)->feature.transcript.introns->len > (guint)0))
 
-#define ZMAPFEATURE_IS_ALIGNMENT(FEATURE)  ((FEATURE)->type == ZMAPSTYLE_MODE_ALIGNMENT)
+#define ZMAPFEATURE_IS_ALIGNMENT(FEATURE)  ((FEATURE)->mode == ZMAPSTYLE_MODE_ALIGNMENT)
 
 #define ZMAPFEATURE_SWOP_STRAND(STRAND) \
   ((STRAND) == ZMAPSTRAND_FORWARD ? ZMAPSTRAND_REVERSE :                                       \
@@ -170,9 +170,9 @@ typedef enum
 /* Return values from feature context merge. */
 typedef enum
   {
-    ZMAPFEATURE_CONTEXT_OK,                                /* Merge worked. */
-    ZMAPFEATURE_CONTEXT_ERROR,                             /* Some bad error, e.g. bad input args. */
-    ZMAPFEATURE_CONTEXT_NONE                               /* No new features so nothing merged. */
+    ZMAPFEATURE_CONTEXT_OK,                                 /* Merge worked. */
+    ZMAPFEATURE_CONTEXT_NONE,                               /* No new features so nothing merged. */
+    ZMAPFEATURE_CONTEXT_ERROR                               /* Some bad error, e.g. bad input args. */
   } ZMapFeatureContextMergeCode ;
 
 
@@ -287,6 +287,27 @@ typedef struct ZMapMapBlockStructType
   gboolean reversed;
 
 } ZMapMapBlockStruct, *ZMapMapBlock ;
+
+
+
+
+/* Features, featuresets and so on are added/modified/deleted in contexts by
+ * doing merges of a context containing the features to be changed with an
+ * existing feature context. For a number of reasons this turns out to be
+ * the best way to do these operations.
+ * 
+ * This struct holds stats about such merges.
+ * 
+ * The struct is very bare bones and we can add stuff as needed.
+ *  */
+typedef struct ZMapFeatureContextMergeStatsStructType
+{
+  int features_added ;                                       /* Number of new features added to context. */
+
+} ZMapFeatureContextMergeStatsStruct, *ZMapFeatureContextMergeStats ;
+
+
+
 
 
 /*
@@ -716,7 +737,7 @@ typedef struct ZMapFeatureStructType
   ZMapFeatureID db_id ;                                    /* unique DB identifier, currently
                                                               unused but will be..... */
 
-  ZMapStyleMode type ;                                     /* Basic, transcript, alignment. */
+  ZMapStyleMode mode ;                                     /* Basic, transcript, alignment. */
 
 
 
@@ -989,15 +1010,14 @@ gboolean zMapFeatureSequenceIsPeptide(ZMapFeature feature) ;
 gboolean zMapFeatureAddAssemblyPathData(ZMapFeature feature,
 					int length, ZMapStrand strand, GArray *path) ;
 gboolean zMapFeatureAddSOaccession(ZMapFeature feature, GQuark SO_accession) ;
-gboolean zMapFeatureSetCoords(ZMapStrand strand, int *start, int *end,
-			      int *query_start, int *query_end) ;
+gboolean zMapFeatureSetCoords(ZMapStrand strand, int *start, int *end, int *query_start, int *query_end) ;
 void zMapFeature2MasterCoords(ZMapFeature feature, double *feature_x1, double *feature_x2) ;
 void zMapFeature2BlockCoords(ZMapFeatureBlock block, int *x1_inout, int *x2_inout) ;
 void zMapBlock2FeatureCoords(ZMapFeatureBlock block, int *x1_inout, int *x2_inout) ;
 
 void zMapFeatureContextReverseComplement(ZMapFeatureContext context, GHashTable *styles) ;
 void zMapFeatureReverseComplement(ZMapFeatureContext context, ZMapFeature feature) ;
-void zMapFeatureReverseComplementCoords(ZMapFeatureBlock block, int *start_inout, int *end_inout) ;
+void zMapFeatureReverseComplementCoords(ZMapFeatureContext context, int *start_inout, int *end_inout) ;
 
 ZMapFrame zMapFeatureFrame(ZMapFeature feature) ;
 ZMapFrame zMapFeatureFrameFromCoords(int block, int feature);
@@ -1006,9 +1026,9 @@ gboolean zMapFeatureAddVariationString(ZMapFeature feature, char *variation_stri
 gboolean zMapFeatureAddURL(ZMapFeature feature, char *url) ;
 gboolean zMapFeatureAddLocus(ZMapFeature feature, GQuark locus_id) ;
 gboolean zMapFeatureAddText(ZMapFeature feature, GQuark source_id, char *source_text, char *feature_text) ;
-void     zMapFeatureSortGaps(GArray *gaps) ;
-int      zMapFeatureLength(ZMapFeature feature, ZMapFeatureLengthType length_type) ;
-void     zMapFeatureDestroy(ZMapFeature feature) ;
+void zMapFeatureSortGaps(GArray *gaps) ;
+int zMapFeatureLength(ZMapFeature feature, ZMapFeatureLengthType length_type) ;
+void zMapFeatureDestroy(ZMapFeature feature) ;
 
 
 /* *******************
@@ -1068,6 +1088,7 @@ gboolean zMapFeatureBlockDNA(ZMapFeatureBlock block,
  */
 GQuark zMapFeatureAlignmentCreateID(char *align_sequence, gboolean master_alignment) ;
 ZMapFeatureAlignment zMapFeatureAlignmentCreate(char *align_name, gboolean master_alignment) ;
+char *zMapFeatureAlignmentGetChromosome(ZMapFeatureAlignment feature_align) ;
 gboolean zMapFeatureAlignmentAddBlock(ZMapFeatureAlignment feature_align,
 				      ZMapFeatureBlock     feature_block) ;
 gboolean zMapFeatureAlignmentFindBlock(ZMapFeatureAlignment feature_align,
@@ -1090,7 +1111,8 @@ ZMapFeatureContext zMapFeatureContextCopyWithParents(ZMapFeatureAny orig_feature
 ZMapFeatureContextMergeCode zMapFeatureContextMerge(ZMapFeatureContext *current_context_inout,
 						    ZMapFeatureContext *new_context_inout,
 						    ZMapFeatureContext *diff_context_out,
-                                        GList *featureset_names) ;
+                                                    ZMapFeatureContextMergeStats *merge_stats_out,
+						    GList *featureset_names) ;
 gboolean zMapFeatureContextErase(ZMapFeatureContext *current_context_inout,
 				 ZMapFeatureContext remove_context,
 				 ZMapFeatureContext *diff_context_out);

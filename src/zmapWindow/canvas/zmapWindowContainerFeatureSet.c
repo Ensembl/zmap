@@ -1,6 +1,6 @@
 /*  File: zmapWindowContainerFeatureSet.c
- *  Author: ed (edgrif@sanger.ac.uk)
- *  Copyright (c) 2013: Genome Research Ltd.
+ *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
+ *  Copyright (c) 2013-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -999,7 +999,6 @@ static ZMapWindowContainerGroup getChildById(ZMapWindowContainerGroup group,
 	}
       else
 	{
-	  zMapAssert(g->feature_any);
 	  if(g->feature_any->unique_id == id)
 	    return g;
 	}

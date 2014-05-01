@@ -1,6 +1,6 @@
 /*  File: zmapWindowMark.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -196,9 +196,10 @@ static char mark_bitmap_bits_G[] =
  */
 ZMapWindowMark zmapWindowMarkCreate(ZMapWindow window)
 {
-  ZMapWindowMark mark ;
+  ZMapWindowMark mark = NULL ;
 
-  zMapAssert(window) ;
+  if (!window)
+    return mark ;
 
   mark = g_new0(ZMapWindowMarkStruct, 1) ;
 
@@ -240,9 +241,10 @@ gboolean zMapWindowMarkIsSet(ZMapWindow window)
  */
 gboolean zmapWindowMarkIsSet(ZMapWindowMark mark)
 {
-  gboolean result;
+  gboolean result = FALSE ;
 
-  zMapAssert(mark && ZMAP_MAGIC_IS_VALID(mark_magic_G, mark->magic)) ;
+  if (!mark || !ZMAP_MAGIC_IS_VALID(mark_magic_G, mark->magic))
+    return result ;
 
   /* marking is 'asynchronous' during redraws for marks with no mark_src_item. */
   /* mark->block_container is only populated for non-SetItem marks when the blocks are drawn. */
@@ -267,7 +269,8 @@ gboolean zmapWindowMarkIsSet(ZMapWindowMark mark)
  */
 void zmapWindowMarkReset(ZMapWindowMark mark)
 {
-  zMapAssert(mark && ZMAP_MAGIC_IS_VALID(mark_magic_G, mark->magic)) ;
+  if (!mark || !ZMAP_MAGIC_IS_VALID(mark_magic_G, mark->magic))
+    return ;
 
   if (mark->mark_set)
     {
@@ -310,13 +313,11 @@ void zmapWindowToggleMark(ZMapWindow window, gboolean whole_feature)
 	  ZMapFeature feature ;
 
 	  feature = zMapWindowCanvasItemGetFeature(focus_item);
-	  zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
-
 	  /* If user presses 'M' we mark "whole feature", e.g. whole transcript,
 	   * all HSP's, otherwise we mark just the highlighted ones. */
 	  if (whole_feature)
 	    {
-	      if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
+	      if (feature->mode == ZMAPSTYLE_MODE_ALIGNMENT)
 		{
 		  GList *list = NULL;
 		  ZMapStrand set_strand ;
@@ -325,8 +326,6 @@ void zmapWindowToggleMark(ZMapWindow window, gboolean whole_feature)
 		  double rootx1, rooty1, rootx2, rooty2 ;
 
 		  result = zmapWindowItemGetStrandFrame(focus_item, &set_strand, &set_frame) ;
-		  zMapAssert(result) ;
-
 		  list = zmapWindowFToIFindSameNameItems(window,window->context_to_item,
 							 zMapFeatureStrand2Str(set_strand),
 							 zMapFeatureFrame2Str(set_frame),
@@ -442,7 +441,8 @@ void zmapWindowMarkShowMark(ZMapWindowMark mark)
  */
 void zmapWindowMarkSetColour(ZMapWindowMark mark, char *colour)
 {
-  zMapAssert(mark && ZMAP_MAGIC_IS_VALID(mark_magic_G, mark->magic)) ;
+  if (!mark || !ZMAP_MAGIC_IS_VALID(mark_magic_G, mark->magic))
+    return ;
 
   gdk_color_parse(colour, &(mark->colour)) ;
 
@@ -458,7 +458,8 @@ void zmapWindowMarkSetColour(ZMapWindowMark mark, char *colour)
  */
 GdkColor *zmapWindowMarkGetColour(ZMapWindowMark mark)
 {
-  zMapAssert(mark && ZMAP_MAGIC_IS_VALID(mark_magic_G, mark->magic)) ;
+  if (!mark || !ZMAP_MAGIC_IS_VALID(mark_magic_G, mark->magic))
+    return NULL ;
 
   return &(mark->colour) ;
 }
@@ -474,7 +475,8 @@ gboolean zmapWindowMarkSetItem(ZMapWindowMark mark, FooCanvasItem *item)
   gboolean result = FALSE ;
   ZMapFeature feature ;
 
-  zMapAssert(mark && ZMAP_MAGIC_IS_VALID(mark_magic_G, mark->magic) && FOO_IS_CANVAS_ITEM(item)) ;
+  if (!mark || !ZMAP_MAGIC_IS_VALID(mark_magic_G, mark->magic) || !FOO_IS_CANVAS_ITEM(item))
+    return result ;
 
   if (!(feature = zMapWindowCanvasItemGetFeature(item)))
     {
@@ -542,10 +544,10 @@ gboolean zmapWindowMarkSetWorldRange(ZMapWindowMark mark,
 				     double world_x2, double world_y2)
 {
   double scroll_x1, scroll_x2;
-  gboolean result ;
+  gboolean result = FALSE ;
 
-  zMapAssert(mark);
-  zMapAssert(ZMAP_MAGIC_IS_VALID(mark_magic_G, mark->magic)) ;
+  if (!mark || !ZMAP_MAGIC_IS_VALID(mark_magic_G, mark->magic))
+    return result ;
 
   zmapWindowMarkReset(mark) ;
 
@@ -613,7 +615,8 @@ gboolean zmapWindowMarkGetWorldRange(ZMapWindowMark mark,
 {
   gboolean result = FALSE ;
 
-  zMapAssert(mark && ZMAP_MAGIC_IS_VALID(mark_magic_G, mark->magic)) ;
+  if (!mark || !ZMAP_MAGIC_IS_VALID(mark_magic_G, mark->magic))
+    return result ;
 
   if (mark->mark_set)
     {
@@ -633,7 +636,7 @@ gboolean zmapWindowMarkGetWorldRange(ZMapWindowMark mark,
 /* Get the start/end coords of the marked region of a window, the coords
  * are returned in the original coord range the reference sequence, not
  * the displayed range which may have been remapped to start at "1".
- * 
+ *
  * Returns TRUE and the start/end if there is a mark set, FALSE otherwise.
  */
 gboolean zMapWindowGetMark(ZMapWindow window, int *start, int *end)
@@ -663,7 +666,8 @@ gboolean zMapWindowMarkGetSequenceSpan(ZMapWindow window, int *start, int *end)
   gboolean result = FALSE ;
   ZMapWindowMark mark = window->mark ;
 
-  zMapAssert(mark && ZMAP_MAGIC_IS_VALID(mark_magic_G, mark->magic)) ;
+  if (!mark || !ZMAP_MAGIC_IS_VALID(mark_magic_G, mark->magic))
+    return result ;
 
   if ((result = zmapWindowMarkGetSequenceRange(mark, start, end)))
     {
@@ -692,7 +696,8 @@ gboolean zmapWindowMarkGetSequenceRange(ZMapWindowMark mark, int *start, int *en
 {
   gboolean result = FALSE ;
 
-  zMapAssert(mark && ZMAP_MAGIC_IS_VALID(mark_magic_G, mark->magic)) ;
+  if (!mark || !ZMAP_MAGIC_IS_VALID(mark_magic_G, mark->magic))
+    return result ;
 
   if (mark->mark_set)
     {
@@ -825,7 +830,8 @@ void zmapWindowMarkPrint(ZMapWindow window, char *title)
  */
 void zmapWindowMarkDestroy(ZMapWindowMark mark)
 {
-  zMapAssert(mark && ZMAP_MAGIC_IS_VALID(mark_magic_G, mark->magic)) ;
+  if (!mark || !ZMAP_MAGIC_IS_VALID(mark_magic_G, mark->magic))
+    return ;
 
   zmapWindowMarkReset(mark) ;
 
@@ -894,9 +900,13 @@ static FooCanvasItem *set_mark_item(ZMapWindowMark mark, gboolean top)
 
   if(!foo)
     {
+      GtkAdjustment *v_adjust ;
+
+      v_adjust = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(mark->window->scrolled_window)) ;
+
       foo = (FooCanvasItem *)zMapWindowCanvasItemFeaturesetGetFeaturesetItem((FooCanvasGroup *)mark->block_container,
 									     id,
-									     mark->window->scrolled_window,
+									     v_adjust,
 									     y1, y2, style,
 									     ZMAPSTRAND_NONE, ZMAPFRAME_NONE,
 									     0, ZMAP_CANVAS_LAYER_BLOCK_MARK);

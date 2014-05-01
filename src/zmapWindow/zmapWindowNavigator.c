@@ -1,6 +1,6 @@
 /*  File: zmapWindowNavigator.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -214,7 +214,8 @@ ZMapWindowNavigator zMapWindowNavigatorCreate(GtkWidget *canvas_widget)
   ZMapWindowNavigator navigate = NULL ;
   FooCanvasGroup *root = NULL ;
 
-  zMapAssert(FOO_IS_CANVAS(canvas_widget)) ;
+  if (!FOO_IS_CANVAS(canvas_widget))
+    return navigate ;
 
   navigate = g_new0(ZMapWindowNavigatorStruct, 1) ;
 
@@ -365,17 +366,28 @@ void zMapWindowNavigatorFocus(ZMapWindowNavigator navigate,
 
 void zMapWindowNavigatorSetCurrentWindow(ZMapWindowNavigator navigate, ZMapWindow window)
 {
-  zMapAssert(navigate && window);
+  GtkAdjustment *v_adjust ;
+
+
+  if (!navigate || !window)
+    return ;
 
   /* We should be updating the locator here too.  In the case of
    * unlocked windows the locator becomes out of step on focusing
    * until the visibility change handler is called */
 
-//printf("nav set window %p -> %p\n", navigate, window);
  /* mh17: should also twiddle revcomped? but as revcomp applies to the view
      in violation of MVC then all the windows will follow
   */
   navigate->current_window = window ;
+
+  v_adjust = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window)) ;
+
+  if (navigate->locator)
+    zMapWindowCanvasItemFeaturesetSetVAdjust((ZMapWindowFeaturesetItem)(navigate->locator), v_adjust) ;
+
+  if (navigate->locator_drag)
+    zMapWindowCanvasItemFeaturesetSetVAdjust((ZMapWindowFeaturesetItem)(navigate->locator_drag), v_adjust) ;
 
   return ;
 }
@@ -466,7 +478,8 @@ void zMapWindowNavigatorDrawLocator(ZMapWindowNavigator navigate,
 {
   FooCanvasItem *root;
   GtkWidget *widget;
-  zMapAssert(navigate);
+  if (!navigate)
+    return ;
 
   root  = (FooCanvasItem *) navigate->container_root;
   if(!root)
@@ -481,7 +494,6 @@ void zMapWindowNavigatorDrawLocator(ZMapWindowNavigator navigate,
 
   navigate->width = root->x2 - root->x1 + 1;
   navigate->height = root->y2 - root->y1 + 1;
-//printf("DrawLocator %f\n",navigate->width);
 
   zmapWindowNavigatorSizeRequest(widget, navigate->width, navigate->height,
       (double) navigate->full_span.x1,
@@ -496,11 +508,7 @@ void zMapWindowNavigatorDrawLocator(ZMapWindowNavigator navigate,
 
 	  /* redraw all to ensure shrinking locator is wiped */
 	  foo_canvas_item_request_redraw(navigate->canvas->root);
-//	  zMapWindowCanvasFeaturesetExpose((ZMapWindowFeaturesetItem) navigate->locator);
   }
-
-//  if(navigate->draw_expose_handler_id == 0)	/* sets nav scroll region ?? */
-//	zmapWindowFullReposition(navigate->container_root,TRUE, "draw locator");
 
   return ;
 }
@@ -537,7 +545,8 @@ static FooCanvas *fetchCanvas(ZMapWindowNavigator navigate)
 
   g = (FooCanvasGroup *)(navigate->container_root);
 
-  zMapAssert(g);
+  if (!g)
+    return canvas ;
 
   canvas = FOO_CANVAS(FOO_CANVAS_ITEM(g)->canvas);
 
@@ -576,11 +585,12 @@ static gboolean nav_draw_expose_handler(GtkWidget *widget, GdkEventExpose *expos
 
 static void navigateDrawFunc(NavigateDraw nav_draw, GtkWidget *widget)
 {
-  ZMapWindowNavigator navigate = nav_draw->navigate;
+  ZMapWindowNavigator navigate = NULL;
   FooCanvasItem *root;
 
-  /* We need this! */
-  zMapAssert(navigate->current_window);
+  if (!nav_draw || !nav_draw->navigate || !nav_draw->navigate->current_window)
+    return ;
+  navigate = nav_draw->navigate;
 
 #if SIZE_INVALID
   zmapWindowNavigatorSizeRequest(widget, navigate->width, navigate->height,
@@ -694,7 +704,6 @@ static ZMapFeatureContextExecuteStatus drawContext(GQuark key_id,
 
             hash_status = zmapWindowFToIAddAlign(navigate->ftoi_hash, key_id, (FooCanvasGroup *)(navigate->container_align));
 
-            zMapAssert(hash_status);
           }
       }
       break;
@@ -731,7 +740,6 @@ static ZMapFeatureContextExecuteStatus drawContext(GQuark key_id,
 
         hash_status = zmapWindowFToIAddBlock(navigate->ftoi_hash, draw_data->current_align->unique_id,
                                              key_id, (FooCanvasGroup *)(draw_data->container_block));
-        zMapAssert(hash_status);
 
 	navigate->locator = zmapWindowDrawSetGroupBackground(navigate->current_window, navigate->container_block,
 							     block_start, block_end, 1.0,
@@ -801,7 +809,7 @@ static ZMapFeatureContextExecuteStatus drawContext(GQuark key_id,
     case ZMAPFEATURE_STRUCT_INVALID:
     default:
       status = ZMAP_CONTEXT_EXEC_STATUS_ERROR;
-      zMapAssertNotReached();
+      zMapWarnIfReached();
       break;
     }
 
@@ -874,7 +882,7 @@ static void drawScale(NavigateDraw draw_data)
       max = draw_data->context->master_align->sequence_span.x2;
       zoom_factor = item->canvas->pixels_per_unit_y;
 
-      zMapWindowDrawScaleBar(draw_data->navigate->current_window->scrolled_window,
+      zMapWindowDrawScaleBar(zmapWindowScaleCanvasGetScrolledWindow(draw_data->navigate->current_window->ruler),
 			     features, min, max, min, max, zoom_factor, draw_data->navigate->is_reversed, FALSE);
     }
 
@@ -1294,8 +1302,6 @@ static gboolean navCanvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpoin
 
 	/* Retrieve the feature item info from the canvas item. */
         feature = zmapWindowItemGetFeature(item);
-        zMapAssert(feature) ;
-
 
 	if(button->type == GDK_BUTTON_PRESS)
           {
@@ -1317,7 +1323,7 @@ static gboolean navCanvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpoin
         else
           {
             if (button->button == 1  /* && feature->feature.transcript.locus_id != 0) */
-		&& feature->type == ZMAPSTYLE_MODE_TEXT)
+		&& feature->mode == ZMAPSTYLE_MODE_TEXT)
               {
 		/*used to get a transcript feature? no idea how, but the locus feature is a text item */
                 zmapWindowNavigatorGoToLocusExtents(navigate, item);
@@ -1380,7 +1386,7 @@ static gboolean variantFeature(ZMapFeature feature, ZMapWindowNavigator navigate
         }
       else
         {
-          zMapAssertNotReached();
+          zMapWarnIfReached();
         }
     }
 
@@ -1441,7 +1447,9 @@ static LocusEntry zmapWindowNavigatorLDHInsert(GHashTable *hash,
                           (gpointer)hash_entry);
     }
   else
-    zMapAssertNotReached();
+    {
+      zMapWarnIfReached();
+    }
 
   return hash_entry;
 }
@@ -1451,7 +1459,8 @@ static LocusEntry zmapWindowNavigatorLDHInsert(GHashTable *hash,
  */
 static void zmapWindowNavigatorLDHDestroy(GHashTable **destroy_me)
 {
-  zMapAssert(destroy_me && *destroy_me);
+  if (!destroy_me || !*destroy_me)
+    return ;
 
   g_hash_table_destroy(*destroy_me);
 
@@ -1466,7 +1475,8 @@ static void destroyLocusEntry(gpointer data)
 {
   LocusEntry locus_entry = (LocusEntry)data;
 
-  zMapAssert(data);
+  if (!data)
+    return ;
 
   locus_entry->feature = NULL;
 

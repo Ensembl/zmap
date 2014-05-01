@@ -1,6 +1,6 @@
 /*  File: zmapXMLUtils.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -536,7 +536,7 @@ static void transfer(ZMapXMLUtilsEventStack source, ZMapXMLWriterEvent dest)
 	    dest->data.comp.value.quark = g_quark_from_string(source->value.s) ;
 	    break ;
 	  default:
-	    zMapAssertNotReached();
+            zMapWarnIfReached();
 	    break ;
 	  }
 

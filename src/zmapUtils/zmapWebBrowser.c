@@ -1,6 +1,6 @@
 /*  File: zmapWebBrowser.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -130,7 +130,9 @@ gboolean zMapLaunchWebBrowser(char *link, GError **error)
   BrowserConfig best_browser = NULL ;
   char *browser = NULL ;
 
-  zMapAssert(link && *link && error && !(*error)) ; 
+  /* zMapAssert(link && *link && error && !(*error)) ; */
+  if (!(link && *link && error && !(*error)) )
+    return result ; 
 
   if (!err_domain_G)
     err_domain_G = g_quark_from_string(domain_G) ;
@@ -267,7 +269,7 @@ static void makeBrowserCmd(GString *cmd, BrowserConfig best_browser, char *url)
 
   found = zMap_g_string_replace(cmd, BROWSER_PATTERN, url) ;
 
-  zMapAssert(found) ;					    /* Must find at least one pattern. */
+  /* zMapAssert(found) ;*/					    /* Must find at least one pattern. */
 
   return ;
 }

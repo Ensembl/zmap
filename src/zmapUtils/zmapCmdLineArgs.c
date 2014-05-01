@@ -1,6 +1,6 @@
 /*  File: zmapCmdLineArgs.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -79,13 +79,19 @@ void zMapCmdLineArgsCreate(int *argc, char *argv[])
 {
   ZMapCmdLineArgs arg_context = NULL ;
 
-  zMapAssert(!arg_context_G) ;
+  /* zMapAssert(!arg_context_G) ;*/ 
+  if (arg_context_G) 
+    return ; 
 
-  zMapAssert(argc && *argc >= 1 && argv) ;
+  /* zMapAssert(argc && *argc >= 1 && argv) ;*/ 
+  if (!argc || *argc < 1 || !argv ) 
+    return ; 
 
   makeContext(*argc, argv) ;
 
-  zMapAssert(arg_context_G) ;
+  /* zMapAssert(arg_context_G) ;*/ 
+  if (!arg_context_G) 
+    return ; 
 
   arg_context = arg_context_G;
 
@@ -96,9 +102,9 @@ void zMapCmdLineArgsCreate(int *argc, char *argv[])
 
 
 
-/* Retrieves the final commandline argument, if there is one. This is different
- * in that by unix convention it is not preceded with a "--". The string
- * must not be freed by the application.
+/* Retrieves the final commandline argument, if there is one, and returns a copy of it
+ * which should be free'd by the caller using g_free. This is different
+ * in that by unix convention it is not preceded with a "--".
  *
  * @return           A pointer to the string which is the final argument on the command line.
  *
@@ -109,12 +115,12 @@ char **zMapCmdLineFinalArg(void)
   char **final_arg = NULL ;
   ZMapCmdLineArgs arg_context ;
 
-  zMapAssert(arg_context_G) ;
+  zMapReturnValIfFail((arg_context_G), final_arg) ; 
+
   arg_context = arg_context_G ;
 
-  if (arg_context->files_arg &&
-      (arg_context->files_arg))
-    final_arg = (arg_context->files_arg) ;
+  if (arg_context->files_arg && arg_context->files_arg)
+    final_arg = arg_context->files_arg ;
 
   return final_arg ;
 }
@@ -139,7 +145,9 @@ gboolean zMapCmdLineArgsValue(char *arg_name, ZMapCmdLineArgsType *result)
   get_entries_func get_entries[GET_ENTRIES_COUNT] = { get_main_entries, get_config_entries };
   int i;
 
-  zMapAssert(arg_context_G) ;
+  zMapReturnValIfFail((arg_context_G), val_set) ; 
+
+
   arg_context = arg_context_G ;
 
   for(i = 0; i < GET_ENTRIES_COUNT; i++)
@@ -209,7 +217,9 @@ void zMapCmdLineArgsDestroy(void)
 {
   ZMapCmdLineArgs arg_context ;
 
-  zMapAssert(arg_context_G) ;
+  /* zMapAssert(arg_context_G) ;*/
+  if (!arg_context_G) 
+    return ; 
   arg_context = arg_context_G ;
 
   if(arg_context->opt_context)
@@ -245,6 +255,7 @@ static void makeContext(int argc, char *argv[])
   arg_context->end     = ZMAPARG_INVALID_INT ;
   arg_context->config_file_path = arg_context->config_dir = ZMAPARG_INVALID_STR;
   arg_context->window  = ZMAPARG_INVALID_STR;
+  arg_context->styles_file = ZMAPARG_INVALID_STR;
 
   makeOptionContext(arg_context);
 
@@ -336,6 +347,8 @@ static GOptionEntry *get_main_entries(ZMapCmdLineArgs arg_context)
 
     { ZMAPARG_SHRINK,  0, 0, G_OPTION_ARG_NONE, NULL, ZMAPARG_SHRINK_DESC,  ZMAPARG_NO_ARG },
 
+    { ZMAPARG_SINGLE_SCREEN, 0, 0, G_OPTION_ARG_NONE, NULL, ZMAPARG_SINGLE_SCREEN_DESC, ZMAPARG_NO_ARG },
+
     { ZMAPARG_SEQUENCE, 0, ARG_NO_FLAGS, G_OPTION_ARG_STRING, NULL, ZMAPARG_SEQUENCE_DESC, ZMAPARG_SEQUENCE_ARG },
 
 /* Must be the last entry. */
@@ -372,6 +385,8 @@ static GOptionEntry *get_main_entries(ZMapCmdLineArgs arg_context)
       i++ ;
       entries[i].arg_data = &(arg_context->shrink) ;
       i++ ;
+      entries[i].arg_data = &(arg_context->single_screen) ;
+      i++ ;
       entries[i].arg_data = &(arg_context->sequence_arg) ;
       i++ ;
       entries[i].arg_data = &(arg_context->files_arg) ;
@@ -401,6 +416,9 @@ static GOptionEntry *get_config_entries(ZMapCmdLineArgs arg_context)
     { ZMAPARG_PEER_CLIPBOARD, 0, 0, 
       G_OPTION_ARG_STRING, NULL,
       ZMAPARG_PEER_CLIPBOARD_DESC, ZMAPARG_PEER_CLIPBOARD_ARG },
+    { ZMAPARG_STYLES_FILE, 0, 0,
+      G_OPTION_ARG_STRING, NULL,
+      ZMAPARG_STYLES_FILE_DESC, ZMAPARG_STYLES_FILE_ARG },
     { NULL }
   };
 
@@ -412,6 +430,7 @@ static GOptionEntry *get_config_entries(ZMapCmdLineArgs arg_context)
       entries[3].arg_data = &(arg_context->remote_debug);
       entries[4].arg_data = &(arg_context->peer_name);
       entries[5].arg_data = &(arg_context->peer_clipboard);
+      entries[6].arg_data = &(arg_context->styles_file);
     }
 
   return &entries[0];

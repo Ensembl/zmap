@@ -1,6 +1,6 @@
 /*  File: zmapConfigStrings.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -179,6 +179,8 @@
 #define ZMAPSTANZA_APP_EXIT_TIMEOUT      "exit-timeout"
 #define ZMAPSTANZA_APP_SLEEP             "sleep"
 #define ZMAPSTANZA_APP_HELP_URL          "help-url"
+#define ZMAPSTANZA_APP_SESSION_COLOUR    "session-colour"
+
 
 #define ZMAPSTANZA_APP_DATASET           "dataset"
 #define ZMAPSTANZA_APP_SEQUENCE          "sequence"
@@ -684,6 +686,10 @@
 #define ZMAPSTANZA_WINDOW_F_SPACING    "feature-spacing"
 #define ZMAPSTANZA_WINDOW_LINE_WIDTH   "feature-line-width"
 #define ZMAPSTANZA_WINDOW_COLUMNS      "keep-empty-columns"
+
+/* I want this background colour to supplant all the others, we don't use them. */
+#define ZMAPSTANZA_WINDOW_BACKGROUND_COLOUR "background-colour"
+
 #define ZMAPSTANZA_WINDOW_ROOT         "colour-root"
 #define ZMAPSTANZA_WINDOW_ALIGNMENT    "colour-alignment"
 #define ZMAPSTANZA_WINDOW_BLOCK        "colour-block"

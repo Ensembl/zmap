@@ -1,6 +1,6 @@
 /*  File: zmapControl_P.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -90,9 +90,15 @@ typedef struct _ZMapStruct
 
   ZMapFeatureSequenceMap default_sequence;		    /* pointer to app_context default_sequence */
 
+  /* Set a colour for visual grouping of zmap with peer application windows. */
+  GdkColor session_colour ;
+  gboolean session_colour_set ;
+
 
   /* Widget stuff for the Zmap. */
   GtkWidget       *toplevel ;				    /* top level widget of zmap window. */
+
+  GtkWidget *menubar ;
 
   /* info panel tooltips to show meaning of info panel fields. */
   GtkTooltips     *tooltips ;

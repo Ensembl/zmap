@@ -29,8 +29,11 @@
  *
  *-------------------------------------------------------------------
  */
+#ifndef ZMAP_CANVAS_DRAW_H
+#define ZMAP_CANVAS_DRAW_H
 
-
+#include <glib.h>
+#include <zmapWindowCanvasFeatureset.h>
 
 
 /* X Windows has some limits that are part of the protocol, this means they cannot
@@ -57,13 +60,30 @@
 
 #define ZMAP_WINDOW_MAX_WINDOW 	30000			    /* Largest canvas window. */
 
-
 /* If this is zero why do we need it any more ??????? */
 #define ZMAP_WINDOW_TEXT_BORDER 	0				/* for DNA */
-
 
 
 /* As we zoom right in we can start to try to draw lines/boxes etc that are longer than
  * the XWindows protocol supports so we need to clamp them. */
 #define CANVAS_CLAMP_COORDS(COORD)                                             \
   ((COORD) < 0 ? 0 : ((COORD) > ZMAP_WINDOW_MAX_WINDOW ? ZMAP_WINDOW_MAX_WINDOW : (COORD)))
+
+
+
+gboolean zMapWindowCanvasCalcHorizCoords(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
+                                         double *x1_out, double *x2_out) ;
+int zMap_draw_line(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset,
+                   gint cx1, gint cy1, gint cx2, gint cy2) ;
+int zMap_draw_broken_line(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset,
+                          gint cx1, gint cy1, gint cx2, gint cy2) ;
+int zMap_draw_rect(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset,
+                   gint cx1, gint cy1, gint cx2, gint cy2, gboolean fill) ;
+gboolean zMapCanvasFeaturesetDrawBoxMacro(ZMapWindowFeaturesetItem featureset,
+                                          double x1, double x2, double y1, double y2,
+                                          GdkDrawable *drawable,
+                                          gboolean fill_set, gboolean outline_set, gulong fill, gulong outline) ;
+
+
+
+#endif /* !ZMAP_CANVAS_DRAW_H */

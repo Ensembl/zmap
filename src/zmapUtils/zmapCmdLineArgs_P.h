@@ -1,6 +1,6 @@
 /*  File: zmapCmdLineArgs_P.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -41,6 +41,8 @@
 #define ZMAPARG_SEQUENCE_END_DESC   "End coord in sequence, must be in range start -> seq_length, but end == 0 means show to end of sequence."
 #define ZMAPARG_CONFIG_FILE_DESC    "Relative or full path to configuration file."
 #define ZMAPARG_CONFIG_DIR_DESC     "Relative or full path to configuration directory."
+#define ZMAPARG_STYLES_FILE_DESC    "Relative or full path to styles file."
+#define ZMAPARG_SINGLE_SCREEN_DESC  "Force zmap to open tools like blixem on the same screen that it is running on."
 #define ZMAPARG_WINDOW_ID_DESC      "Window ID of the controlling application."
 #define ZMAPARG_REMOTE_DEBUG_DESC   "Set RemoteControl debug level."
 #define ZMAPARG_PEER_NAME_DESC      "Peer Remote Control app name."
@@ -55,6 +57,7 @@
 #define ZMAPARG_COORD_ARG           "coord"
 #define ZMAPARG_FILE_ARG            "file path"
 #define ZMAPARG_DIR_ARG             "directory"
+#define ZMAPARG_STYLES_FILE_ARG     "styles file path"
 #define ZMAPARG_WINID_ARG           "0x0000000"
 #define ZMAPARG_SEQUENCE_ARG        "<sequence name>"
 #define ZMAPARG_REMOTE_DEBUG_ARG    "debug level: off | normal | verbose"
@@ -87,6 +90,7 @@ typedef struct _ZMapCmdLineArgsStruct
   gboolean version ;
   gboolean serial ;
   gboolean timing ;
+  gboolean single_screen ;
 
   int sleep ;
 
@@ -95,6 +99,7 @@ typedef struct _ZMapCmdLineArgsStruct
   char *config_dir ;
   char *config_file_path ;
   char *window ;
+  char *styles_file ;
 
   char *remote_debug ;
   char *peer_name ;

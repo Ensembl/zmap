@@ -1,6 +1,6 @@
 /*  File: zmapWindowFeature.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -106,7 +106,7 @@ static void revcompTransChildCoordsCB(gpointer data, gpointer user_data) ;
 
 
 
-/* 
+/*
  *                        Globals
  */
 
@@ -131,7 +131,7 @@ gboolean zMapWindowFeatureSelect(ZMapWindow window, ZMapFeature feature)
     {
 
       zmapWindowUpdateInfoPanel(window, feature, NULL, feature_item, NULL, 0, 0,  0, 0,
-				NULL, TRUE, FALSE, FALSE) ;
+				NULL, TRUE, FALSE, FALSE, FALSE) ;
       result = TRUE ;
     }
 
@@ -230,8 +230,9 @@ gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_
   gboolean result = FALSE ;
   ZMapFeatureSet feature_set ;
 
-  //  feature = zmapWindowItemGetFeature(feature_item);
-  zMapAssert(feature && zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
+  if (!feature || !zMapFeatureIsValid((ZMapFeatureAny)feature))
+    return result ;
+
   feature_set = (ZMapFeatureSet)(feature->parent) ;
 
   column_group = zmapWindowContainerCanvasItemGetContainer(feature_item) ;
@@ -239,14 +240,14 @@ gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_
   if (ZMAP_IS_CONTAINER_FEATURESET(column_group))
     {
       container_set = (ZMapWindowContainerFeatureSet)column_group ;
-      
+
       /* Need to delete the feature from the feature set and from the hash and destroy the
        * canvas item....NOTE this is very order dependent. */
-      
+
       /* I'm still not sure this is all correct.
        * canvasItemDestroyCB has a FToIRemove!
        */
-      
+
       /* Firstly remove from the FToI hash... */
       if (zmapWindowFToIRemoveFeature(zmap_window->context_to_item,
                                       container_set->strand,
@@ -264,7 +265,7 @@ gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_
                   /* destroy the canvas item...this will invoke canvasItemDestroyCB() */
                   gtk_object_destroy(GTK_OBJECT(feature_item)) ;
                 }
-              
+
               /* I think we shouldn't need to do this probably....on the other hand showing
                * empty cols is configurable.... */
               if (!zmapWindowContainerHasFeatures(ZMAP_CONTAINER_GROUP(container_set)) &&
@@ -272,16 +273,16 @@ gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_
                 {
                   zmapWindowContainerSetVisibility(FOO_CANVAS_GROUP(container_set), FALSE) ;
                 }
-              
+
               /* destroy the feature... deletes record in the featureset. */
               if (destroy_feature)
                 zMapFeatureDestroy(feature);
-              
+
               result = TRUE ;
             }
         }
     }
-      
+
   return result ;
 }
 
@@ -365,13 +366,13 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow      window,
   if ((zMapStyleIsStrandSpecific(style)) &&
       ((feature->strand == ZMAPSTRAND_REVERSE) && (!zMapStyleIsShowReverseStrand(style))))
     {
-      zMapAssertNotReached();
+      zMapWarnIfReached();
       return NULL ;
     }
   if ((zMapStyleIsStrandSpecific(style)) && window->flags[ZMAPFLAG_REVCOMPED_FEATURES] &&
       ((feature->strand == ZMAPSTRAND_FORWARD) && (zMapStyleIsHideForwardStrand(style))))
     {
-      zMapAssertNotReached();
+      zMapWarnIfReached();
       return NULL ;
     }
 #endif
@@ -447,7 +448,8 @@ char *zmapWindowFeatureDescription(ZMapFeature feature)
 {
   char *description = NULL ;
 
-  zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
+  if (!zMapFeatureIsValid((ZMapFeatureAny)feature))
+    return description ;
 
 
   if (feature->description)
@@ -490,7 +492,7 @@ char *zmapWindowFeatureTranscriptFASTA(ZMapFeature feature, gboolean spliced, gb
   ZMapFeatureContext context ;
 
 
-  if((feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
+  if((feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
      && ((context = (ZMapFeatureContext)zMapFeatureGetParentGroup((ZMapFeatureAny)feature,
 								  ZMAPFEATURE_STRUCT_CONTEXT))))
     {
@@ -540,7 +542,6 @@ static gboolean canvasItemDestroyCB(FooCanvasItem *feature_item, gpointer data)
   gboolean event_handled = FALSE ;			    /* Make sure any other callbacks also get run. */
   ZMapWindow window = (ZMapWindowStruct*)data ;
 
-
   if (window->focus)
     zmapWindowFocusRemoveOnlyFocusItem(window->focus, feature_item) ;
 
@@ -552,7 +553,8 @@ static gboolean canvasItemDestroyCB(FooCanvasItem *feature_item, gpointer data)
 
 static void featureCopySelectedItem(ZMapFeature feature_in, ZMapFeature feature_out, FooCanvasItem *selected)
 {
-  zMapAssert(feature_in && feature_out) ;
+  if (!feature_in || !feature_out)
+    return ;
 
   if (feature_in && feature_out)
     memcpy(feature_out, feature_in, sizeof(ZMapFeatureStruct));
@@ -609,7 +611,7 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 	   * seems a bit more semantic to do this in zMapWindowCanvasItemGetInterval()
 	   * but that's called by handleButton which doesn't do double click
 	   */
-	  if(but_event->button == 1)
+	  if (but_event->button == 1 || but_event->button == 3)
 	    zMapWindowCanvasItemSetFeature((ZMapWindowCanvasItem) item, but_event->x, but_event->y);
 
 	  /* Get the feature attached to the item, checking that its type is valid */
@@ -655,13 +657,13 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 			{
                           /* For the scratch column, the feature doesn't exist in the peer.
                            * Ask the peer to create it. */
-                          /*! \todo We may wish to change this so that, rather than creating 
+                          /*! \todo We may wish to change this so that, rather than creating
                            * the feature immediately, it opens an intermediary dialog where the
                            * user can set some attributes locally in zmap instead. Then from
                            * that dialog, or another option in zmap, they could have the option
                            * to save the feature to the peer. */
                           const gchar *style_id = g_quark_to_string(zMapStyleGetID(*feature->style)) ;
-                          
+
                           if (feature && feature->style && strcmp(style_id, ZMAP_FIXED_STYLE_SCRATCH_NAME) == 0)
                             {
                               callXRemote(window, (ZMapFeatureAny)feature, ZACP_CREATE_FEATURE, highlight_item) ;
@@ -709,7 +711,8 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
   gboolean event_handled = FALSE ;
   GdkModifierType shift_mask = GDK_SHIFT_MASK,
     control_mask = GDK_CONTROL_MASK,
-    shift_control_mask = (GDK_SHIFT_MASK | GDK_CONTROL_MASK),
+    alt_mask = GDK_MOD1_MASK,
+    meta_mask = GDK_META_MASK,
     unwanted_masks = (GDK_LOCK_MASK | GDK_MOD2_MASK | GDK_MOD3_MASK | GDK_MOD4_MASK | GDK_MOD5_MASK
 		      | GDK_BUTTON1_MASK | GDK_BUTTON2_MASK | GDK_BUTTON3_MASK
 		      | GDK_BUTTON4_MASK | GDK_BUTTON5_MASK),
@@ -721,9 +724,10 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
    * GDK_SUPER_MASK, GDK_HYPER_MASK and GDK_META_MASK */
   if ((locks_mask = (but_event->state & unwanted_masks)))
     {
-      shift_mask         |= locks_mask;
-      control_mask       |= locks_mask;
-      shift_control_mask |= locks_mask;
+      shift_mask |= locks_mask ;
+      control_mask |= locks_mask ;
+      alt_mask |= locks_mask ;
+      meta_mask |= locks_mask ;
     }
 
   /* Button 1 and 3 are handled, 2 is left for a general handler which could be the root handler. */
@@ -736,13 +740,15 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
       ZMapFeatureStruct feature_copy = {};
       ZMapFeatureAny my_feature = (ZMapFeatureAny) feature ;
       gboolean control = FALSE;
+      ZMapWindowDisplayStyleStruct display_style = {ZMAPWINDOW_COORD_ONE_BASED, ZMAPWINDOW_PASTE_FORMAT_OTTERLACE,
+                                                    ZMAPWINDOW_PASTE_TYPE_ALLSUBPARTS} ;
 
       canvas_item = ZMAP_CANVAS_ITEM(item);
       highlight_item = item;
 
       sub_item = zMapWindowCanvasItemGetInterval(canvas_item, but_event->x, but_event->y, &sub_feature);
 
-      if (feature->type != ZMAPSTYLE_MODE_ALIGNMENT || zMapStyleIsUnique(*feature->style))
+      if (feature->mode != ZMAPSTYLE_MODE_ALIGNMENT || zMapStyleIsUnique(*feature->style))
 	highlight_same_names = FALSE ;
 
 
@@ -754,7 +760,7 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
 
 	  /* Annotators say they don't want subparts sub selections + multiple
 	   * selections for alignments. */
-	  if (feature->type != ZMAPSTYLE_MODE_ALIGNMENT)
+	  if (feature->mode != ZMAPSTYLE_MODE_ALIGNMENT)
 	    {
 	      highlight_item = sub_item ;
 
@@ -773,6 +779,14 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
 	    }
 	}
 
+      if (zMapGUITestModifiers(but_event, alt_mask) || zMapGUITestModifiers(but_event, meta_mask))
+	{
+          display_style.coord_frame = ZMAPWINDOW_COORD_NATURAL ;
+          display_style.paste_style = ZMAPWINDOW_PASTE_FORMAT_BROWSER ;
+          display_style.paste_feature = ZMAPWINDOW_PASTE_TYPE_EXTENT ;
+        }
+
+
       {
 	/* mh17 Foo sequence features have a diff interface, but we wish to avoid that, see sequenceSelectionCB() above */
 	/* using a CanvasFeatureset we get here, first off just pass a single coord through so it does not crash */
@@ -789,7 +803,7 @@ static gboolean handleButton(GdkEventButton *but_event, ZMapWindow window, FooCa
 
 	/* Pass information about the object clicked on back to the application. */
 	zmapWindowUpdateInfoPanel(window, feature, NULL, item, sub_feature, start, end, start, end,
-				    NULL, replace_highlight, highlight_same_names, control) ;
+                                  NULL, replace_highlight, highlight_same_names, control, &display_style) ;
 
 	/* if we have an active dialog update it: they have to click on a feature not the column */
 	zmapWindowSetStyleFeatureset(window, item, feature);
@@ -1004,7 +1018,7 @@ static gboolean factoryTopItemCreated(FooCanvasItem *top_item,
    *
    *  */
 
-  switch(feature_stack->feature->type)
+  switch(feature_stack->feature->mode)
     {
     case ZMAPSTYLE_MODE_ASSEMBLY_PATH:
     case ZMAPSTYLE_MODE_TRANSCRIPT:
@@ -1026,6 +1040,7 @@ static gboolean factoryTopItemCreated(FooCanvasItem *top_item,
       break;
     }
 
+  /* this is completely pointless as is this whole routine..... */
   zMapWindowCanvasItemSetConnected((ZMapWindowCanvasItem) top_item, TRUE);
 
 
@@ -1047,7 +1062,7 @@ static void callXRemote(ZMapWindow window, ZMapFeatureAny feature_any,
   ZMapFeature feature_copy ;
   int chr_bp ;
   RemoteData remote_data ;
-  
+
 
   /* We should only ever be called with a feature, not a set or anything else. */
   g_return_if_fail(feature_any && feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURE) ;
@@ -1081,7 +1096,7 @@ static void callXRemote(ZMapWindow window, ZMapFeatureAny feature_any,
 	feature_copy->strand = ZMAPSTRAND_REVERSE ;
       else
 	feature_copy->strand = ZMAPSTRAND_FORWARD ;
-	      
+
 
       if (ZMAPFEATURE_IS_TRANSCRIPT(feature_copy))
 	{
@@ -1205,7 +1220,7 @@ static void revcompTransChildCoordsCB(gpointer data, gpointer user_data)
   chr_bp = zmapWindowWorldToSequenceForward(window, chr_bp) ;
   child->x1 = chr_bp ;
 
- 
+
   chr_bp = child->x2 ;
   chr_bp = zmapWindowWorldToSequenceForward(window, chr_bp) ;
   child->x2 = chr_bp ;

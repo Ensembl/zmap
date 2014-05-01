@@ -1,6 +1,6 @@
 /*  File: zmapAppwindow.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -44,13 +44,14 @@
 
 #include <ZMap/zmap.h>
 #include <ZMap/zmapUtils.h>
+#include <ZMap/zmapUtilsGUI.h>
 #include <ZMap/zmapCmdLineArgs.h>
 #include <ZMap/zmapConfigDir.h>
 #include <ZMap/zmapConfigIni.h>
 #include <ZMap/zmapConfigStrings.h>
 #include <ZMap/zmapControl.h>
+#include <ZMap/zmapGFF.h>
 #include <zmapApp_P.h>
-
 
 
 
@@ -63,11 +64,11 @@
 
 static void checkForCmdLineVersionArg(int argc, char *argv[]) ;
 static int checkForCmdLineSleep(int argc, char *argv[]) ;
-static void checkForCmdLineSequenceArg(int argc, char *argv[], char **dataset_out, char **sequence_out) ;
-static void checkForCmdLineStartEndArg(int argc, char *argv[], int *start_inout, int *end_inout) ;
-static char *checkConfigDir(void) ;
+static void checkForCmdLineSequenceArg(int argc, char *argv[], char **dataset_out, char **sequence_out, GError **error) ;
+static void checkForCmdLineStartEndArg(int argc, char *argv[], int *start_inout, int *end_inout, GError **error) ;
+static void checkConfigDir(ZMapFeatureSequenceMap seq_map) ;
 static gboolean checkSequenceArgs(int argc, char *argv[],
-				  ZMapFeatureSequenceMap seq_map_inout, char **err_msg_out) ;
+                                  ZMapFeatureSequenceMap seq_map_inout, GError **error) ;
 static gboolean checkPeerID(ZMapAppContext app_context,
 			    char **peer_name_out, char **peer_clipboard_out, int *peer_retries, int *peer_timeout_ms) ;
 
@@ -100,15 +101,26 @@ static void doTheExit(int exit_code) ;
 static void setupSignalHandlers(void);
 
 static void remoteInstaller(GtkWidget *widget, GdkEvent *event, gpointer app_context_data) ;
+static gboolean remoteInactiveHandler(gpointer data) ;
 static gboolean pingHandler(gpointer data) ;
 
-static gboolean configureLog(char *config_file) ;
+static gboolean configureLog(char *config_file, GError **error) ;
 static void consoleMsg(gboolean err_msg, char *format, ...) ;
+
+static void hideMainWindow(ZMapAppContext app_context) ;
+
+
+
+
+/*
+ *                            Globals
+ */
 
 
 static ZMapManagerCallbacksStruct app_window_cbs_G = {addZMapCB, removeZMapCB, infoSetCB, quitReqCB, NULL} ;
 
 
+/* Why are these here ?? */
 #define ZMAPLOG_FILENAME "zmap.log"
 
 
@@ -116,6 +128,8 @@ char *ZMAP_X_PROGRAM_G  = "ZMap" ;
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+/* RESURRECT ?? */
+
 /* Place a copyright notice in the executable. */
 char *obj_copyright_G = ZMAP_OBJ_COPYRIGHT_STRING(ZMAP_TITLE,
 						  ZMAP_VERSION, ZMAP_RELEASE, ZMAP_UPDATE,
@@ -143,8 +157,8 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   int log_size ;
   int sleep_seconds = 0 ;
   ZMapFeatureSequenceMap seq_map;
-  char *err_msg = NULL ;
   gboolean remote_control = FALSE ;
+  GError *g_error = NULL ;
 
 
 
@@ -205,9 +219,8 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   seq_map = app_context->default_sequence =  g_new0(ZMapFeatureSequenceMapStruct, 1) ;
 
 
-  /* Set up configuration directory/files, this function exits if the directory/files can't be
-   * accessed.... */
-  seq_map->config_file = checkConfigDir() ;
+  /* Set up configuration directory/files */
+  checkConfigDir(seq_map) ;
 
 
   /* Set any global debug flags from config file. */
@@ -245,13 +258,18 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   app_context->zmap_manager = zMapManagerCreate((void *)app_context) ;
 
   /* Set up logging for application....NO LOGGING BEFORE THIS. */
-  if (!zMapLogCreate(NULL) || !configureLog(seq_map->config_file))
+  if (!zMapLogCreate(NULL) || !configureLog(seq_map->config_file, &g_error))
     {
-      consoleMsg(TRUE, "%s", "ZMap cannot create log file.") ;
+      consoleMsg(TRUE, "Error creating log file: %s", (g_error ? g_error->message : "<no error message>")) ;
       doTheExit(EXIT_FAILURE) ;
     }
   else
     {
+      if (g_error)
+        {
+          g_error_free(g_error) ;
+          g_error = NULL ;
+        }
       zMapWriteStartMsg() ;
     }
 
@@ -279,10 +297,21 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
   /* Check for sequence/start/end on command line or in config. file, must be
    * either completely correct or not specified. */
-  if (!checkSequenceArgs(argc, argv, seq_map, &err_msg))
+  if (!checkSequenceArgs(argc, argv, seq_map, &g_error))
     {
-      zMapLogCritical("%s", err_msg) ;
-      consoleMsg(TRUE, "%s", err_msg) ;
+      if (g_error)
+        {
+          zMapLogCritical("%s", g_error->message) ;
+          consoleMsg(TRUE, "%s", g_error->message) ;
+          g_error_free(g_error);
+          g_error = NULL;
+        }
+      else
+        {
+          zMapLogCritical("%s", "Fatal error: no error message given") ;
+          consoleMsg(TRUE, "%s", "Fatal error: no error message given") ;
+        }
+
       doTheExit(EXIT_FAILURE) ;
     }
 
@@ -301,24 +330,18 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   gtk_container_border_width(GTK_CONTAINER(toplevel), 0) ;
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* THIS IS THE OLD REMOTE HANDLER.... */
-  /* This ensures that the widget *really* has a X Window id when it
-   * comes to doing XChangeProperty.  Using realize doesn't and the
-   * expose_event means we can't hide the mainwindow. */
-  g_signal_connect(G_OBJECT(toplevel), "map-event",
-                   G_CALLBACK(zmapAppRemoteInstaller),
-                   (gpointer)app_context);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-  /* **NEW XREMOTE** THIS IS THE NEW HANDLER... */
+  /* If there is a peer program then set up xremote comms. */
   if (remote_control)
     {
       if (zmapAppRemoteControlCreate(app_context, peer_name, peer_clipboard, peer_retries, peer_timeout_ms))
 	{
 	  /* Rest of initialisation requires a window so code is in a map callback
 	   * where we are guaranteed to have a window. */
+
+          consoleMsg(TRUE, "ZMAP %s() - %s",
+                     __PRETTY_FUNCTION__,
+                     "Setting up remoteInstaller() as callback on \"map-event\"") ;
+
 	  app_context->mapCB_id = g_signal_connect(G_OBJECT(toplevel), "map-event",
 						   G_CALLBACK(remoteInstaller),
 						   (gpointer)app_context) ;
@@ -354,15 +377,19 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 		     GTK_SIGNAL_FUNC(quitCB), (gpointer)app_context) ;
   gtk_box_pack_start(GTK_BOX(vbox), quit_button, FALSE, FALSE, 0) ;
 
-
-
   /* Always create the widget. */
   gtk_widget_show_all(toplevel) ;
 
 
   /* We don't always want to show this window, for lace users it is useless.... */
   if (!(app_context->show_mainwindow) && !(app_context->defer_hiding))
-    gtk_widget_unmap(toplevel) ;
+    {
+      consoleMsg(TRUE,  "ZMAP %s() - %s",
+                 __PRETTY_FUNCTION__,
+                 "Hiding main window.") ;
+
+      hideMainWindow(app_context) ;
+    }
 
 
   /* Check that log file has not got too big... */
@@ -380,6 +407,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
       if (!zmapAppCreateZMap(app_context, seq_map, &zmap, &view, &err_msg))
 	zMapWarning("%s", err_msg) ;
     }
+
 
   app_context->state = ZMAPAPP_RUNNING ;
 
@@ -595,6 +623,7 @@ void removeZMapCB(void *app_data, void *zmap_data)
  *        callbacks that destroy the application
  */
 
+/* Called when user selects "quit2 button in main window. */
 static void quitCB(GtkWidget *widget, gpointer cb_data)
 {
   ZMapAppContext app_context = (ZMapAppContext)cb_data ;
@@ -667,7 +696,7 @@ static void appExit(void *user_data)
       guint timeout_func_id ;
       int interval = app_context->exit_timeout * 1000 ;	    /* glib needs time in milliseconds. */
 
-      zMapLogMessage("%s", "Issuing requests to all ZMaps to disconnect from servers and quit.") ;
+      consoleMsg(TRUE, "%s", "Issuing requests to all ZMaps to disconnect from servers and quit.") ;
 
       /* N.B. we block for 2 seconds here to make sure user can see message. */
       zMapGUIShowMsgFull(NULL, "ZMap is disconnecting from its servers and quitting, please wait.",
@@ -676,7 +705,6 @@ static void appExit(void *user_data)
 
       /* time out func makes sure that we exit if threads fail to report back. */
       timeout_func_id = g_timeout_add(interval, timeoutHandler, (gpointer)app_context) ;
-      zMapAssert(timeout_func_id) ;
 
       /* Tell all our zmaps to die, they will tell all their threads to die. */
       zMapManagerKillAllZMaps(app_context->zmap_manager) ;
@@ -744,7 +772,7 @@ static void finalCleanUp(ZMapAppContext app_context)
   if (exit_rc)
     zMapLogCritical("%s", exit_msg) ;
   else
-    zMapLogMessage("%s", exit_msg) ;
+    consoleMsg(TRUE, "%s", exit_msg) ;
 
   zMapWriteStopMsg() ;
   zMapLogDestroy() ;
@@ -799,7 +827,7 @@ static gboolean removeZMapRowForeachFunc(GtkTreeModel *model, GtkTreePath *path,
 }
 
 /* Did user specify seqence/start/end on command line? */
-static void checkForCmdLineSequenceArg(int argc, char *argv[], char **dataset_out, char **sequence_out)
+static void checkForCmdLineSequenceArg(int argc, char *argv[], char **dataset_out, char **sequence_out, GError **error)
 {
   ZMapCmdLineArgsType value ;
   char *sequence ;
@@ -829,36 +857,33 @@ static void checkForCmdLineSequenceArg(int argc, char *argv[], char **dataset_ou
 
 
 /* Did user specify seqence/start/end on command line. */
-static void checkForCmdLineStartEndArg(int argc, char *argv[], int *start_inout, int *end_inout)
+static void checkForCmdLineStartEndArg(int argc, char *argv[], int *start_inout, int *end_inout, GError **error)
 {
-  ZMapCmdLineArgsType value ;
+  GError *tmp_error = NULL ;
+  ZMapCmdLineArgsType start_value ;
+  ZMapCmdLineArgsType end_value ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  int start = *start_inout, end = *end_inout ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  gboolean got_start = zMapCmdLineArgsValue(ZMAPARG_SEQUENCE_START, &start_value) ;
+  gboolean got_end = zMapCmdLineArgsValue(ZMAPARG_SEQUENCE_END, &end_value) ;
 
-
-  if (zMapCmdLineArgsValue(ZMAPARG_SEQUENCE_START, &value))
-    *start_inout = value.i ;
-  if (zMapCmdLineArgsValue(ZMAPARG_SEQUENCE_END, &value))
-    *end_inout = value.i ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  if (start != *start_inout || end != *end_inout)
+  if (got_start && got_end)
     {
-      if (start < 1 || (end != 0 && end < start))
-	{
-	  fprintf(stderr, "Bad start/end values: start = %d, end = %d\n", start, end) ;
-	  doTheExit(EXIT_FAILURE) ;
-	}
-      else
-	{
-	  *start_inout = start ;
-	  *end_inout = end ;
-	}
+      *start_inout = start_value.i ;
+      *end_inout = end_value.i ;
     }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  else if (got_start)
+    {
+      g_set_error(&tmp_error, ZMAP_APP_ERROR, ZMAPAPP_ERROR_BAD_COORDS,
+                  "The start coord was specified on the command line but the end coord is missing: must specify both or none") ;
+    }
+  else if (got_end)
+    {
+      g_set_error(&tmp_error, ZMAP_APP_ERROR, ZMAPAPP_ERROR_BAD_COORDS,
+                  "The end coord was specified on the command line but the start coord is missing: must specify both or none") ;
+    }
+
+  if (tmp_error)
+    g_propagate_error(error, tmp_error) ;
 
   return ;
 }
@@ -920,30 +945,31 @@ static int checkForCmdLineSleep(int argc, char *argv[])
 
 
 
-/* Did user specify a config directory and/or config file within that directory on the command line. */
-static char *checkConfigDir(void)
+/* Did user specify a config directory and/or config file within that directory on the command
+ * line. Also check for the stylesfile on the command line or in the config dir. */
+static void checkConfigDir(ZMapFeatureSequenceMap seq_map)
 {
-  char *config_file = NULL ;
-  ZMapCmdLineArgsType dir = {FALSE}, file = {FALSE};
+  ZMapCmdLineArgsType dir = {FALSE}, file = {FALSE}, stylesfile = {FALSE} ;
 
   zMapCmdLineArgsValue(ZMAPARG_CONFIG_DIR, &dir) ;
   zMapCmdLineArgsValue(ZMAPARG_CONFIG_FILE, &file) ;
+  zMapCmdLineArgsValue(ZMAPARG_STYLES_FILE, &stylesfile) ;
 
-
-  if (!zMapConfigDirCreate(dir.s, file.s))
+  if (zMapConfigDirCreate(dir.s, file.s))
     {
-      fprintf(stderr, "Could not access either/both of configuration directory \"%s\" "
-              "or file \"%s\" within that directory.\n",
-              zMapConfigDirGetDir(), zMapConfigDirGetFile()) ;
-      doTheExit(EXIT_FAILURE) ;
+      seq_map->config_file = zMapConfigDirGetFile() ;
 
+      /* If the stylesfile is a relative path, look for it in the config dir. If it
+       * was not given on the command line, check if there's one with the default name */
+      if (stylesfile.s)
+        seq_map->stylesfile = zMapConfigDirFindFile(stylesfile.s) ;
+      else
+        seq_map->stylesfile = zMapConfigDirFindFile("styles.ini") ;
     }
-  else
+  else if (stylesfile.s)
     {
-      config_file = zMapConfigDirGetFile() ;
+      seq_map->stylesfile = stylesfile.s;
     }
-
-  return config_file ;
 }
 
 
@@ -966,7 +992,7 @@ static gboolean checkPeerID(ZMapAppContext app_context,
 	  *peer_clipboard_out = g_strdup(clipboard_value.s) ;
 	}
     }
-  
+
   if ((context = zMapConfigIniContextProvide(app_context->default_sequence->config_file)))
     {
       char *tmp_string  = NULL;
@@ -1074,7 +1100,7 @@ static gboolean getConfiguration(ZMapAppContext app_context)
 					 ZMAPSTANZA_APP_ABBREV_TITLE, &tmp_bool))
 	app_context->abbrev_title_prefix = tmp_bool ;
       zMapGUISetAbbrevTitlePrefix(app_context->abbrev_title_prefix) ;
-      
+
 
       /* How long to wait when closing, before timeout */
       if (zMapConfigIniContextGetInt(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
@@ -1089,6 +1115,14 @@ static gboolean getConfiguration(ZMapAppContext app_context)
       if (zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
 					ZMAPSTANZA_APP_HELP_URL, &tmp_string))
 	zMapGUISetHelpURL(tmp_string) ;
+
+      /* session colour for visual grouping of applications. */
+      if (zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+					ZMAPSTANZA_APP_SESSION_COLOUR, &tmp_string))
+        {
+          gdk_color_parse(tmp_string, &(app_context->session_colour)) ;
+          app_context->session_colour_set = TRUE ;
+        }
 
       /* locale to use */
       if (zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
@@ -1138,13 +1172,17 @@ static void setupSignalHandlers(void)
 
 
 
-/* **NEW XREMOTE** 
+/* **NEW XREMOTE**
  *
  * create the new xremote object.
  */
 static void remoteInstaller(GtkWidget *widget, GdkEvent *event, gpointer user_data)
 {
   ZMapAppContext app_context = (ZMapAppContext)user_data ;
+
+  consoleMsg(TRUE, "ZMAP %s() - %s",
+             __PRETTY_FUNCTION__,
+             "In remoteInstaller, about init RemoteControl.") ;
 
   /* Stop ourselves being called again. */
   g_signal_handler_disconnect(app_context->app_widg, app_context->mapCB_id) ;
@@ -1165,20 +1203,32 @@ static void remoteInstaller(GtkWidget *widget, GdkEvent *event, gpointer user_da
 
 
 
-
+  consoleMsg(TRUE, "ZMAP %s() - %s",
+             __PRETTY_FUNCTION__,
+             "In remoteInstaller, about to hide main window.") ;
 
   /* Hide main window if required. */
   if (!(app_context->show_mainwindow) && app_context->defer_hiding)
-    gtk_widget_unmap(app_context->app_widg) ;
+    hideMainWindow(app_context) ;
+
+  /* Set an inactivity timeout, so we can warn the user if nothing happens for a long time in case
+   * zmap has become disconnected from the peer. (note timeout is in milliseconds) */
+  app_context->remote_control->inactive_timeout_interval_s = ZMAP_APP_REMOTE_TIMEOUT_S ;
+  app_context->remote_control->inactive_func_id = g_timeout_add(ZMAP_APP_REMOTE_TIMEOUT_S * 1000,
+                                                                remoteInactiveHandler, (gpointer)app_context) ;
+
+  /* Now set the time of day we did this. */
+  app_context->remote_control->last_active_time_s = zMapUtilsGetRawTime() ;
 
   return ;
 }
 
 
 /* Read logging configuration from ZMap stanza and apply to log. */
-static gboolean configureLog(char *config_file)
+static gboolean configureLog(char *config_file, GError **error)
 {
   gboolean result = TRUE ;	/* if no config, we can't fail to configure */
+  GError *g_error = NULL ;
   ZMapConfigIniContext context ;
   gboolean logging, log_to_file, show_process, show_code, show_time, catch_glib, echo_glib ;
   char *full_dir, *log_name, *logfile_path ;
@@ -1192,7 +1242,7 @@ static gboolean configureLog(char *config_file)
   catch_glib = TRUE ;
   echo_glib = TRUE ;
   /* if we run config free we put the log file in the cwd */
-  full_dir = g_strdup("./") ;
+  full_dir = g_strdup_printf("%s/%s", g_get_home_dir(), ZMAP_USER_CONFIG_DIR) ;
   log_name = g_strdup(ZMAPLOG_FILENAME) ;
 
 
@@ -1271,16 +1321,236 @@ static gboolean configureLog(char *config_file)
 
     }
 
-  logfile_path = zMapGetFile(full_dir, log_name, TRUE) ;
+  logfile_path = zMapGetFile(full_dir, log_name, TRUE, &g_error) ;
 
   /* all our strings need freeing */
   g_free(log_name) ;
   g_free(full_dir) ;
 
-  result = zMapLogConfigure(logging, log_to_file,
-			    show_process, show_code, show_time,
-			    catch_glib, echo_glib,
-			    logfile_path) ;
+  if (!g_error)
+    {
+      result = zMapLogConfigure(logging, log_to_file,
+                                show_process, show_code, show_time,
+                                catch_glib, echo_glib,
+                                logfile_path, &g_error) ;
+    }
+
+  if (g_error)
+    {
+      result = FALSE ;
+      g_propagate_error(error, g_error) ;
+    }
+
+  return result ;
+}
+
+
+/* Check the given file to see if we can extract sequence details */
+static void checkInputFileForSequenceDetails(const char* const filename,
+                                             ZMapFeatureSequenceMap seq_map_inout,
+                                             const gboolean merge_details,
+                                             GError **error)
+{
+  zMapReturnIfFail(filename) ;
+
+  gboolean result = FALSE ;
+  GError *tmp_error = NULL ;
+  GError *gff_pipe_err = NULL ;
+  int gff_version = 0 ;
+  ZMapGFFParser parser = NULL ;
+  GString *gff_line = NULL ;
+  GIOStatus status = G_IO_STATUS_NORMAL ;
+  GIOChannel *gff_pipe = NULL ;
+
+  gff_line = g_string_sized_new(2000) ; /* Probably not many lines will be > 2k chars. */
+
+  /* Check for the special case "-" which means stdin */
+  if (!strcmp(filename, "-"))
+    gff_pipe = g_io_channel_unix_new(0) ; /* file descriptor for stdin is 0 */
+  else
+    gff_pipe = g_io_channel_new_file(filename, "r", &gff_pipe_err) ;
+
+  if (gff_pipe)
+    {
+      /* Get the GFF version; default returned is 2 */
+      zMapGFFGetVersionFromGIO(gff_pipe, &gff_version);
+
+      if (gff_version)
+        {
+          parser = zMapGFFCreateParser(gff_version, NULL, 0, 0) ;
+
+          if (parser)
+            {
+              gsize terminator_pos = 0 ;
+              gboolean done_header = FALSE ;
+              ZMapGFFHeaderState header_state = GFF_HEADER_NONE ; /* got all the ones we need ? */
+
+              zMapGFFParserSetSequenceFlag(parser);  // reset done flag for seq else skip the data
+
+              /* Read the header, needed for feature coord range. */
+              while ((status = g_io_channel_read_line_string(gff_pipe, gff_line,
+                                                         &terminator_pos,
+                                                             &gff_pipe_err)) == G_IO_STATUS_NORMAL)
+                {
+                  *(gff_line->str + terminator_pos) = '\0' ; /* Remove terminating newline. */
+
+                  if (zMapGFFParseHeader(parser, gff_line->str, &done_header, &header_state))
+                    {
+                      if (done_header)
+                        {
+                          result = TRUE ;
+                          break ;
+                        }
+                      else
+                        {
+                          gff_line = g_string_truncate(gff_line, 0) ;  /* Reset line to empty. */
+                        }
+                    }
+                  else
+                    {
+                      g_set_error(&tmp_error, ZMAP_APP_ERROR, ZMAPAPP_ERROR_GFF_HEADER,
+                                  "Error reading GFF header for file %s", filename) ;
+                      break ;
+                    }
+                }
+            }
+          else
+            {
+              g_set_error(&tmp_error, ZMAP_APP_ERROR, ZMAPAPP_ERROR_GFF_PARSER,
+                          "Error creating GFF parser for file %s", filename);
+            }
+        }
+      else
+        {
+          g_set_error(&tmp_error, ZMAP_APP_ERROR, ZMAPAPP_ERROR_GFF_VERSION,
+                      "Could not get gff-version from file %s", filename);
+        }
+    }
+  else
+    {
+      g_set_error(&tmp_error, ZMAP_APP_ERROR, ZMAPAPP_ERROR_OPENING_FILE,
+                  "Could not open file %s", filename);
+    }
+
+  if (result)
+    {
+      /* Cache the sequence details */
+      if (!tmp_error)
+        zMapAppMergeSequenceName(seq_map_inout, zMapGFFGetSequenceName(parser), merge_details, &tmp_error) ;
+
+      if (!tmp_error)
+        zMapAppMergeSequenceCoords(seq_map_inout, zMapGFFGetFeaturesStart(parser), zMapGFFGetFeaturesEnd(parser), FALSE, merge_details, &tmp_error) ;
+
+      /* Cache the parser state */
+      if (!tmp_error)
+        {
+          seq_map_inout->cached_parsers = g_hash_table_new(NULL, NULL) ;
+          ZMapFeatureParserCache parser_cache = g_new0(ZMapFeatureParserCacheStruct, 1) ;
+          parser_cache->parser = (gpointer)parser ;
+          parser_cache->line = gff_line ;
+          parser_cache->pipe = gff_pipe ;
+          parser_cache->pipe_status = status ;
+          g_hash_table_insert(seq_map_inout->cached_parsers, GINT_TO_POINTER(g_quark_from_string(filename)), parser_cache) ;
+        }
+    }
+  else if (!tmp_error)
+    {
+      /* If result is false then tmp_error should be set, but it's possible it might not be if we
+       * didn't find a full header in the GFF file. */
+      g_set_error(&tmp_error, ZMAP_APP_ERROR, ZMAPAPP_ERROR_CHECK_FILE,
+                  "Error reading GFF header information for file %s", filename);
+    }
+
+  if (tmp_error && parser)
+    zMapGFFDestroyParser(parser) ;
+
+  if (tmp_error)
+    g_propagate_error(error, tmp_error) ;
+}
+
+
+/* Check the input file(s) on the command line, if any. Checks the sequence details are valid and/or
+ * sets the sequence details if they are not already set. */
+static void checkInputFiles(ZMapFeatureSequenceMap seq_map_inout, GError **error)
+{
+  zMapReturnIfFailSafe(seq_map_inout) ;
+
+  GError *tmp_error = NULL ;
+  char **file_list = zMapCmdLineFinalArg() ;
+
+  if (file_list)
+    {
+      /* If details have been set by the command line or config file then take those as absolute
+       * and don't merge the ranges from the input files - just check that they are valid. If
+       * they are not already set, merge the ranges from the input files to get the full extent. */
+      const gboolean merge_details = (!seq_map_inout->sequence && !seq_map_inout->start && !seq_map_inout->end);
+
+      /* Loop through the input files */
+      char **file = file_list ;
+
+      for (; file && *file; ++file)
+        {
+          checkInputFileForSequenceDetails(*file, seq_map_inout, merge_details, &tmp_error) ;
+
+          if (tmp_error)
+            {
+              /* This is not a fatal error so just give a warning and continue */
+              zMapLogWarning("Cannot open file '%s': %s", *file, tmp_error->message) ;
+              consoleMsg(TRUE, "Cannot open file '%s': %s", *file, tmp_error->message) ;
+              g_error_free(tmp_error) ;
+              tmp_error = NULL ;
+            }
+          else
+            {
+              /* All ok so add the file to the cached list */
+              seq_map_inout->file_list = g_slist_append(seq_map_inout->file_list, g_strdup(*file)) ;
+            }
+        }
+
+      g_strfreev(file_list) ;
+    }
+
+  if (tmp_error)
+    g_propagate_error(error, tmp_error) ;
+}
+
+
+/* Validate the sequence details set in the sequence map. Sets the error if there is a problem. */
+static gboolean validateSequenceDetails(ZMapFeatureSequenceMap seq_map, GError **error)
+{
+  gboolean result = FALSE ;
+  GError *tmp_error = NULL ;
+
+  /* The sequence name, start and end must all be specified, or none of them. */
+  if ((seq_map->sequence && seq_map->start && seq_map->end)
+      || (!(seq_map->sequence) && !(seq_map->start) && !(seq_map->end)))
+    {
+      /* We must have a config file or some files on the command line (otherwise we have no
+       * sources) */
+      if (seq_map->config_file || seq_map->file_list)
+        {
+          result = TRUE ;
+        }
+      else
+        {
+          result = FALSE ;
+
+          g_set_error(&tmp_error, ZMAP_APP_ERROR, ZMAPAPP_ERROR_NO_SOURCES,
+                      "No data sources - you must specify a config file, or pass data in GFF files on the command line") ;
+        }
+    }
+  else
+    {
+      result = FALSE ;
+
+      g_set_error(&tmp_error, ZMAP_APP_ERROR, ZMAPAPP_ERROR_BAD_SEQUENCE_DETAILS,
+                  "Bad sequence args: must set all or none of sequence name, start and end. Got: %s, %d, %d",
+                  (!seq_map->sequence ? "<no sequence name>" : seq_map->sequence),
+                  seq_map->start, seq_map->end) ;
+    }
+
+  if (tmp_error)
+    g_propagate_error(error, tmp_error) ;
 
   return result ;
 }
@@ -1291,41 +1561,34 @@ static gboolean configureLog(char *config_file)
  * wrong. If FALSE an error message is returned in err_msg_out which should
  * be g_free'd by caller. */
 static gboolean checkSequenceArgs(int argc, char *argv[],
-				  ZMapFeatureSequenceMap seq_map_inout, char **err_msg_out)
+                                  ZMapFeatureSequenceMap seq_map_inout, GError **error)
 {
   gboolean result = FALSE ;
-  char *source = NULL ;
+  GError *tmp_error = NULL ;
 
-  /* Check command line first, calls will exit if there is a problem if flag is completely wrong. */
-  checkForCmdLineSequenceArg(argc, argv, &seq_map_inout->dataset, &seq_map_inout->sequence);
-  checkForCmdLineStartEndArg(argc, argv, &seq_map_inout->start, &seq_map_inout->end) ;
+  /* Check for sequence on command-line */
+  if (!tmp_error)
+    checkForCmdLineSequenceArg(argc, argv, &seq_map_inout->dataset, &seq_map_inout->sequence, &tmp_error) ;
 
-    /* Nothing specified on command line so check config file. */
-  if (!(seq_map_inout->sequence) && !(seq_map_inout->start) && !(seq_map_inout->end))
-    {
-      zMapAppGetSequenceConfig(seq_map_inout) ;
+  /* Check for coords on command-line */
+  if (!tmp_error)
+    checkForCmdLineStartEndArg(argc, argv, &seq_map_inout->start, &seq_map_inout->end, &tmp_error) ;
 
-      source = "in config file" ;
-    }
-  else
-    {
-      source = "on command line" ;
-    }
+  /* Check for sequence details in the config file, if one was given. If the sequence details
+   * are already set then this just validates the config file values against the existing ones. */
+  if (!tmp_error)
+    zMapAppGetSequenceConfig(seq_map_inout, &tmp_error) ;
 
-  /* Everything must be specified or nothing. */
-  if ((seq_map_inout->sequence && seq_map_inout->start && seq_map_inout->end)
-      || (!(seq_map_inout->sequence) && !(seq_map_inout->start) && !(seq_map_inout->end)))
-    {
-      result = TRUE ;
-    }
-  else
-    {
-      result = FALSE ;
-      *err_msg_out = g_strdup_printf("Bad sequence args %s: %s",
-				     source,
-				     (!seq_map_inout->sequence ? "no sequence name"
-				      : (seq_map_inout->start <= 1 ? "start less than 1" : "end less than start"))) ;
-    }
+  /* Next check any input file(s) */
+  if (!tmp_error)
+    checkInputFiles(seq_map_inout, &tmp_error) ;
+
+  /* If details were set, check that they are valid. */
+  if (!tmp_error)
+    result = validateSequenceDetails(seq_map_inout, &tmp_error) ;
+
+  if (tmp_error)
+    g_propagate_error(error, tmp_error) ;
 
   return result ;
 }
@@ -1346,10 +1609,79 @@ static void consoleMsg(gboolean err_msg, char *format, ...)
   else
     stream = stdout ;
 
+  /* show message and flush to make sure it appears in a timely way. */
   fprintf(stream, "%s\n", msg_string) ;
+  fflush(stream) ;
+
 
   g_free(msg_string) ;
 
   return ;
 }
+
+
+/* Hide the zmap main window, currently just a trivial cover function for unmap call. */
+static void hideMainWindow(ZMapAppContext app_context)
+{
+  gtk_widget_unmap(app_context->app_widg) ;
+
+  return ;
+}
+
+
+
+
+/* A GSourceFunc, only called when there is a peer program. If there is no currently
+ * displayed sequence and there has been no communication with the peer since before
+ * the timeout started then we warn the user. The user can elect to continue or to
+ * exit zmap. If the function returns FALSE it will not be called again.
+ */
+static gboolean remoteInactiveHandler(gpointer data)
+{
+  gboolean result = TRUE ;
+  ZMapAppContext app_context = (ZMapAppContext)data ;
+  guint zmap_num ;
+  time_t current_time_s ;
+
+  current_time_s = zMapUtilsGetRawTime() ;
+
+  /* Only do this if there are no displayed zmaps and inactivity has been longer than timeout. */
+  if (((current_time_s - app_context->remote_control->last_active_time_s) > ZMAP_APP_REMOTE_TIMEOUT_S)
+      && !(zmap_num = zMapManagerCount(app_context->zmap_manager)))
+    {
+      char *msg ;
+      long pid, ppid ;
+
+      pid = getpid() ;
+      ppid = getppid() ;
+
+      msg = g_strdup_printf("This zmap (PID = %ld) has been running for more than %d mins"
+                            " with no sequence displayed"
+                            " and without any interaction with its peer \"%s\" (PID = %ld)."
+                            " Do you want to continue ?",
+                            pid, (ZMAP_APP_REMOTE_TIMEOUT_S / 60),
+                            app_context->remote_control->peer_name, ppid) ;
+
+      /*
+       * (sm23) for debugging this must also be made available to logging and
+       * stderr (sent to otterlace log)
+       */
+      zMapLogWarning("%s", msg) ;
+      fprintf(stderr, "%s", msg) ;
+      fflush(stderr) ;
+
+      if (!zMapGUIMsgGetBoolFull((GtkWindow *)(app_context->app_widg), ZMAP_MSG_WARNING, msg,
+                                 "Continue", "Exit"))
+        {
+          zmapAppExit(app_context) ;
+
+          result = FALSE ;
+        }
+
+      g_free(msg) ;
+    }
+
+  return result ;
+}
+
 

@@ -1,6 +1,6 @@
 /*  File: zmapStyle.c
  *  Author: Malcolm Hinsley (mh17@sanger.ac.uk), Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -590,7 +590,8 @@ ZMapFeatureTypeStyle zMapStyleCreate(char *name, char *description)
   GParameter params[2] ;
   guint num_params ;
 
-  zMapAssert(name && *name && (!description || *description)) ;
+  if (!(name && *name && (!description || *description)) ) 
+    return style ;
 
   /* Reset params memory.... */
   memset(&params, 0, sizeof(params)) ;
@@ -950,7 +951,8 @@ gboolean zMapStyleNameCompare(ZMapFeatureTypeStyle style, char *name)
 {
   gboolean result = FALSE ;
 
-  zMapAssert(style && name && *name) ;
+  if (!style || !name || !*name) 
+    return result ;
 
   if (g_ascii_strcasecmp(g_quark_to_string(style->original_id), name) == 0)
     result = TRUE ;
@@ -1019,12 +1021,15 @@ gboolean zMapStyleHasDrawableMode(ZMapFeatureTypeStyle style)
  */
 gboolean zMapStyleIsDrawable(ZMapFeatureTypeStyle style, GError **error)
 {
-  gboolean valid = TRUE ;
+  gboolean valid = FALSE ; 
   GQuark domain ;
   gint code = 0 ;
   char *message ;
 
-  zMapAssert(style && error && !(*error)) ;
+  if (!(style && error && !(*error)) ) 
+    return valid ;
+
+  valid = TRUE ; 
 
   domain = g_quark_from_string("ZmapStyle") ;
 
@@ -1096,7 +1101,9 @@ gboolean zMapStyleIsDrawable(ZMapFeatureTypeStyle style, GError **error)
 	  }
 	default:
 	  {
-	    zMapAssertNotReached() ;
+            valid = FALSE ;
+            message = g_strdup("Invalid style mode.") ;
+            zMapWarnIfReached() ;
 	  }
 	}
     }
@@ -1179,7 +1186,9 @@ gboolean zMapStyleIsDrawable(ZMapFeatureTypeStyle style, GError **error)
 	  }
 	default:
 	  {
-	    zMapAssertNotReached() ;
+            valid = FALSE ;
+            message = g_strdup("Invalid style mode.") ;
+            zMapWarnIfReached() ;
 	  }
 	}
     }
@@ -1220,7 +1229,9 @@ gboolean zMapStyleIsDrawable(ZMapFeatureTypeStyle style, GError **error)
 	  }
 	default:
 	  {
-	    zMapAssertNotReached() ;
+            valid = FALSE ;
+            message = g_strdup("Invalid style mode.") ;
+            zMapWarnIfReached() ;
 	  }
 	}
     }
@@ -1241,7 +1252,8 @@ gboolean zMapStyleIsDrawable(ZMapFeatureTypeStyle style, GError **error)
 gboolean zMapStyleMakeDrawable(char *config_file, ZMapFeatureTypeStyle style)
 {
   gboolean result = FALSE ;
-  zMapAssert(style) ;
+  if (!style) 
+    return result ;
 
   if (style->displayable)
     {
@@ -1371,7 +1383,7 @@ gboolean zMapStyleIsSpliceStyle(ZMapFeatureTypeStyle style)
 
 ZMapStyleFullColour zmapStyleFullColour(ZMapFeatureTypeStyle style, ZMapStyleParamId id)
 {
-  ZMapStyleFullColour full_colour;
+  ZMapStyleFullColour full_colour = NULL ;
 
   switch (id)
     {
@@ -1443,7 +1455,7 @@ ZMapStyleFullColour zmapStyleFullColour(ZMapFeatureTypeStyle style, ZMapStylePar
       break;
 
     default:
-      zMapAssertNotReached() ;
+      zMapWarnIfReached() ;
       break;
     }
   return(full_colour);
@@ -1454,7 +1466,7 @@ ZMapStyleFullColour zmapStyleFullColour(ZMapFeatureTypeStyle style, ZMapStylePar
 
 ZMapStyleColour zmapStyleColour(ZMapStyleFullColour full_colour,ZMapStyleColourType type)
 {
-  ZMapStyleColour colour;
+  ZMapStyleColour colour = NULL ;
 
   switch (type)
     {
@@ -1465,7 +1477,7 @@ ZMapStyleColour zmapStyleColour(ZMapStyleFullColour full_colour,ZMapStyleColourT
       colour = &(full_colour->selected) ;
       break ;
     default:
-      zMapAssertNotReached() ;
+      zMapWarnIfReached() ;
       break ;
     }
   return(colour);
@@ -1481,7 +1493,8 @@ gboolean zMapStyleSetColoursStr(ZMapFeatureTypeStyle style, ZMapStyleParamId tar
   ZMapStyleFullColour full_colour = NULL ;
   ZMapStyleColour colour = NULL ;
 
-  zMapAssert(style) ;
+  if (!style) 
+    return result ;
 
   full_colour = zmapStyleFullColour(style, target);
   colour = zmapStyleColour(full_colour, type);
@@ -1548,7 +1561,8 @@ gboolean zMapStyleGetColours(ZMapFeatureTypeStyle style, ZMapStyleParamId target
   ZMapStyleFullColour full_colour = NULL ;
   ZMapStyleColour colour = NULL ;
 
-  zMapAssert(style && (fill || draw || border)) ;
+  if (!(style && (fill || draw || border)) ) 
+    return result ;
 
   if (! zMapStyleIsPropertySetId(style,target))
     return(result);
@@ -1605,7 +1619,8 @@ gboolean zMapStyleIsColour(ZMapFeatureTypeStyle style, ZMapStyleDrawContext colo
 {
   gboolean is_colour = FALSE ;
 
-  zMapAssert(style) ;
+  if (!style) 
+    return is_colour ;
 
   switch(colour_context)
     {
@@ -1619,7 +1634,7 @@ gboolean zMapStyleIsColour(ZMapFeatureTypeStyle style, ZMapStyleDrawContext colo
       is_colour = style->colours.normal.fields_set.border ;
       break ;
     default:
-      zMapAssertNotReached() ;
+      zMapWarnIfReached() ;
     }
 
   return is_colour ;
@@ -1629,7 +1644,8 @@ GdkColor *zMapStyleGetColour(ZMapFeatureTypeStyle style, ZMapStyleDrawContext co
 {
   GdkColor *colour = NULL ;
 
-  zMapAssert(style) ;
+  if (!style) 
+    return colour ;
 
   if (zMapStyleIsColour(style, colour_context))
     {
@@ -1645,7 +1661,7 @@ GdkColor *zMapStyleGetColour(ZMapFeatureTypeStyle style, ZMapStyleDrawContext co
 	  colour = &(style->colours.normal.fill) ;
 	  break ;
 	default:
-	  zMapAssertNotReached() ;
+          zMapWarnIfReached() ;
 	}
     }
 
@@ -1746,10 +1762,13 @@ static gboolean styleMergeParam( ZMapFeatureTypeStyle dest, ZMapFeatureTypeStyle
 
 static gboolean setColours(ZMapStyleColour colour, char *border, char *draw, char *fill)
 {
-  gboolean status = TRUE ;
+  gboolean status = FALSE ;
   ZMapStyleColourStruct tmp_colour = {{0}} ;
 
-  zMapAssert(colour) ;
+  if (!colour) 
+    return status ;
+
+  status = TRUE ; 
 
   if (status && border && *border)
     {
@@ -1785,7 +1804,7 @@ static gboolean setColours(ZMapStyleColour colour, char *border, char *draw, cha
 // store coordinate pairs in the struct and work out type
 ZMapStyleGlyphShape zMapStyleGetGlyphShape(gchar *shape, GQuark id)
 {
-  gchar **spec,**segments,**s,**points,**p,*q;
+  gchar **spec = NULL, **segments = NULL, **s = NULL, **points = NULL, **p = NULL, *q = NULL;
   gboolean syntax = FALSE;
   gint x,y,n;
   gint *cp;
@@ -2057,7 +2076,7 @@ guint zmapStyleParamSize(ZMapStyleParamType type)
 
     case STYLE_PARAM_TYPE_INVALID:
     default:
-      zMapAssertNotReached();
+      zMapWarnIfReached();
       break;
     }
   return(0);
@@ -2136,7 +2155,7 @@ void zmap_param_spec_init(ZMapStyleParam param)
       break;
 
     default:
-      zMapAssertNotReached();
+      zMapWarnIfReached();
       break;
     }
 
@@ -2297,8 +2316,8 @@ static void zmap_feature_type_style_set_property_full(ZMapFeatureTypeStyle style
 {
   gboolean result = TRUE ;
 
-  // if we are in a copy constructor then only set properties that have been set in the source
-  // (except for the is_set array of course, which must be copied first)
+  /* if we are in a copy constructor then only set properties that have been set in the source
+   * (except for the is_set array of course, which must be copied first) */ 
 
   /* will we ever be in a copy constructor?
    * we use zMapStyleCopy() rather than a g_object(big_complex_value)
@@ -2307,9 +2326,6 @@ static void zmap_feature_type_style_set_property_full(ZMapFeatureTypeStyle style
    */
   if (copy && param->id != STYLE_PROP_IS_SET)
     {
-      ZMapStyleParam isp = &zmapStyleParams_G[STYLE_PROP_IS_SET];
-
-      zMapAssert((style->is_set[isp->flag_ind] & isp->flag_bit));
       /* if not we are in deep doo doo
        * This relies on STYLE_PROP_IS_SET being the first installed or
        * lowest numbered one and therefore the first one copied
@@ -2317,8 +2333,8 @@ static void zmap_feature_type_style_set_property_full(ZMapFeatureTypeStyle style
        * implement a copy constructor that forces this
        */
 
-      // only copy paramters that have been set in the source
-      // as we copied the is_set array we can read our own copy of it
+      /* only copy paramters that have been set in the source
+       * as we copied the is_set array we can read our own copy of it */ 
       if(!(style->is_set[param->flag_ind] & param->flag_bit))
         return;
     }
@@ -2500,6 +2516,8 @@ static void zmap_feature_type_style_set_property_full(ZMapFeatureTypeStyle style
  * this function pays no attention to the field_set data...is this correct ???? */
 static void zmap_feature_type_style_get_property(GObject *gobject, guint param_id, GValue *value, GParamSpec *pspec)
 {
+  zMapReturnIfFail(ZMAP_IS_FEATURE_STYLE(gobject));
+
   ZMapFeatureTypeStyle style;
   gboolean result = TRUE ;
   gchar *colour = NULL;
@@ -2507,8 +2525,6 @@ static void zmap_feature_type_style_get_property(GObject *gobject, guint param_i
   gchar * flags;
   ZMapStyleParam param = &zmapStyleParams_G[param_id];
   gchar *shape = NULL;
-
-  g_return_if_fail(ZMAP_IS_FEATURE_STYLE(gobject));
 
   style = ZMAP_FEATURE_STYLE(gobject);
 
@@ -2624,7 +2640,8 @@ static void zmap_feature_type_style_get_property(GObject *gobject, guint param_i
       break;
 
     default:
-      zMapAssertNotReached();
+      result = FALSE ;
+      zMapWarnIfReached() ;
       break;
     }
 
@@ -2787,7 +2804,8 @@ static gboolean parseColours(ZMapFeatureTypeStyle style, guint param_id, GValue 
 		    result = FALSE ;
 		  break ;
 		default:
-		  zMapAssertNotReached() ;
+                  result = FALSE ;
+                  zMapWarnIfReached() ;
 		  break;
 		}
 	    }
@@ -2845,7 +2863,7 @@ static gboolean isColourSet(ZMapFeatureTypeStyle style, int param_id, char *subp
 	  is_set = type_colour->fields_set.border ;
 	  break ;
 	default:
-	  zMapAssertNotReached() ;
+          zMapWarnIfReached() ;
 	  break;
 	}
     }
@@ -2904,7 +2922,8 @@ static gboolean validSplit(char **strings,
 	  }
 	default:
 	  {
-	    zMapAssertNotReached() ;
+            valid = FALSE ;
+            zMapWarnIfReached() ;
 	    break ;
 	  }
 	}

@@ -1,6 +1,6 @@
 /*  File: zmapView.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -64,7 +64,6 @@
 #define ZMAP_NB_PAGE_DISPLAY  "Display"  /* preferences page relating to zmap display settings */
 
 
-
 /* Define thread debug messages, used in checkStateConnections() mostly. */
 #define THREAD_DEBUG_MSG_PREFIX " Reply from slave thread %s, "
 
@@ -108,17 +107,25 @@
 
 
 /* Struct describing features loaded. */
-typedef struct LoadFeaturesDataStructName
+typedef struct LoadFeaturesDataStructType
 {
-  char *err_msg;        // from the server mainly
+  char *err_msg;                                            /* from the server mainly */
   gchar *stderr_out;
   gint exit_code;
-  int num_features;
+
+  gboolean status;                                          /* load sucessful? */
+
+
+  /* why is this here ????? */
+  unsigned long xwid ;                                      /* X Window id for the xremote widg. */
 
   GList *feature_sets ;
-  int start,end;        // requested coords
-  gboolean status;      // load sucessful?
-  unsigned long xwid ;  // X Window id for the xremote widg. */
+  int start, end ;                                          /* requested coords */
+
+
+  ZMapFeatureContextMergeStatsStruct merge_stats ;          /* Stats from merge of features into existing
+                                                             * context. */
+
 
 } LoadFeaturesDataStruct, *LoadFeaturesData ;
 
@@ -139,20 +146,20 @@ typedef struct ConnectionDataStructType
   ZMapServerReqGetServerInfoStruct session ;
 
 
+  /* Why are start/end separate...are they not in sequence_map ??? */
   ZMapFeatureSequenceMap sequence_map;
   gint start,end;
 
+  /* Move into loaded_features ? */
   char *err_msg;					    // from the server mainly
   gchar *stderr_out;
   gint exit_code;
-
-  int num_features;
+  gboolean status;					    // load sucessful?
 
   GList *feature_sets ;
 
   GList *required_styles ;
   gboolean server_styles_have_mode ;
-  gboolean status;					    // load sucessful?
 
   GHashTable *column_2_styles ;				    /* Mapping of each column to all
 							       the styles it requires. */
@@ -166,6 +173,7 @@ typedef struct ConnectionDataStructType
   ZMapServerReqGetFeatures get_features;		    /* features got from the server, 
 							       save for display after checking status */
 
+  /* Oh gosh this is hokey....ugh....... */
   ZMapServerReqType display_after ;			    /* what step to display features after */
 
   LoadFeaturesData loaded_features ;			    /* List of feature sets loaded for this connection. */
@@ -194,6 +202,7 @@ typedef struct FindStylesStructType
 static void getIniData(ZMapView view, char *config_str, GList *sources) ;
 static void zmapViewCreateColumns(ZMapView view,GList *featuresets) ;
 static ZMapConfigSource zmapViewGetSourceFromFeatureset(GHashTable *hash,GQuark featurequark);
+static void zmapViewGetCmdLineSources(ZMapFeatureSequenceMap sequence_map, GList **settings_list_inout) ;
 static ZMapView createZMapView(char *view_name, GList *sequences, void *app_data) ;
 static void destroyZMapView(ZMapView *zmap) ;
 static void displayDataWindows(ZMapView zmap_view,
@@ -248,7 +257,7 @@ static void resetWindows(ZMapView zmap_view) ;
 static ZMapViewWindow createWindow(ZMapView zmap_view, ZMapWindow window) ;
 static void destroyWindow(ZMapView zmap_view, ZMapViewWindow view_window) ;
 
-static void getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature_req, ConnectionData styles) ;
+static gboolean getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature_req, ConnectionData styles) ;
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -256,9 +265,11 @@ static GList *string2StyleQuarks(char *feature_sets) ;
 static gboolean nextIsQuoted(char **text) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inout,
-				 GHashTable *styles, GList **masked,
-				 gboolean request_as_columns, gboolean revcomp_if_needed);
+static ZMapFeatureContextMergeCode justMergeContext(ZMapView view, ZMapFeatureContext *context_inout,
+                                                    ZMapFeatureContextMergeStats *merge_stats_out,
+                                                    GHashTable *styles, GList **masked,
+                                                    gboolean request_as_columns, gboolean revcomp_if_needed) ;
+
 static void justDrawContext(ZMapView view, ZMapFeatureContext diff_context,
 			    GHashTable *styles, GList *masked, ZMapFeature highlight_feature,
 			    ConnectionData connect_data);
@@ -382,16 +393,16 @@ static gboolean thread_debug_G = FALSE ;
  *  */
 void zMapViewInit(ZMapViewCallbacks callbacks)
 {
-  zMapAssert(!view_cbs_G) ;
-  /* We have to assert alot here... */
-  zMapAssert(callbacks);
-  zMapAssert(callbacks->enter);
-  zMapAssert(callbacks->leave);
-  zMapAssert(callbacks->load_data);
-  zMapAssert(callbacks->focus);
-  zMapAssert(callbacks->select);
-  zMapAssert(callbacks->visibility_change);
-  zMapAssert(callbacks->state_change && callbacks->destroy) ;
+
+  zMapReturnIfFail((callbacks
+                    && callbacks->enter
+                    && callbacks->leave
+                    && callbacks->load_data
+                    && callbacks->focus
+                    && callbacks->select
+                    && callbacks->visibility_change
+                    && callbacks->state_change
+                    && callbacks->destroy)) ;
 
   /* Now we can get on. */
   view_cbs_G = g_new0(ZMapViewCallbacksStruct, 1) ;
@@ -425,7 +436,7 @@ ZMapViewCallbacks zmapViewGetCallbacks(void)
 
   call_backs = view_cbs_G ;
 
-  return  call_backs ;
+  return call_backs ;
 }
 
 
@@ -451,14 +462,12 @@ ZMapViewWindow zMapViewCreate(GtkWidget *view_container, ZMapFeatureSequenceMap 
   ZMapFeatureSequenceMap sequence_fetch ;
   GList *sequences_list = NULL ;
   char *view_name ;
+  int curr_scr_num, num_screens ;
 
   /* No callbacks, then no view creation. */
-  zMapAssert(view_cbs_G);
-  zMapAssert(GTK_IS_WIDGET(view_container));
-  /*! \todo #warning need to assert dataset too */
-  zMapAssert(sequence_map->sequence);
-//  zMapAssert(start > 0);
-  zMapAssert((sequence_map->end == 0 || sequence_map->end >= sequence_map->start)) ;
+  zMapReturnValIfFail((GTK_IS_WIDGET(view_container)), view_window);
+  zMapReturnValIfFail((sequence_map->sequence
+                       && (sequence_map->start > 0 && sequence_map->start <= sequence_map->end)), view_window) ;
 
   /* Set up debugging for threads and servers, we do it here so that user can change setting
    * in config file and next time they create a view the debugging will go on/off */
@@ -472,15 +481,19 @@ ZMapViewWindow zMapViewCreate(GtkWidget *view_container, ZMapFeatureSequenceMap 
   /* Set up sequence to be fetched, in this case server defaults to whatever is set in config. file. */
   sequence_fetch = g_new0(ZMapFeatureSequenceMapStruct, 1) ;
   sequence_fetch->config_file = g_strdup(sequence_map->config_file) ;
+  sequence_fetch->stylesfile = g_strdup(sequence_map->stylesfile) ;
   sequence_fetch->dataset = g_strdup(sequence_map->dataset) ;
   sequence_fetch->sequence = g_strdup(sequence_map->sequence) ;
   sequence_fetch->start = sequence_map->start ;
   sequence_fetch->end = sequence_map->end ;
+  sequence_fetch->cached_parsers = sequence_map->cached_parsers ;
 
   sequences_list = g_list_append(sequences_list, sequence_fetch) ;
 
   view_name = sequence_map->sequence ;
 
+
+  /* UM....THIS IS RUBBISH...WE GET PASSED THIS ALWAYS....CHECK THAT THIS IS TRUE !! */
   if(!sequence_map->start)
     {
       /* this should use coords extracted from ACEDB/smap or provided by otterlace
@@ -510,6 +523,33 @@ ZMapViewWindow zMapViewCreate(GtkWidget *view_container, ZMapFeatureSequenceMap 
 
   zmap_view = createZMapView(view_name, sequences_list, app_data) ; /* N.B. this step can't fail. */
 
+  /* If we have multiple screens then work out where we should show blixem. */
+  if (zMapGUIGetScreenInfo(view_container, &curr_scr_num, &num_screens) && num_screens > 1)
+    {
+      ZMapCmdLineArgsType value ;
+
+      zmap_view->multi_screen = TRUE ;
+
+      /* Can be overridden by user from commandline. */
+      if ((zMapCmdLineArgsValue(ZMAPARG_SINGLE_SCREEN, &value)) && (value.b))
+        zmap_view->multi_screen = FALSE ;
+
+      if (zmap_view->multi_screen)
+        {
+          /* Crude but it will do for now. */
+          if (curr_scr_num == 0)
+            zmap_view->blixem_screen = 1 ;
+          else if (curr_scr_num > 0)
+            zmap_view->blixem_screen = 0 ;
+        }
+      else
+        {
+          zmap_view->blixem_screen = curr_scr_num ;
+        }
+    }
+
+
+
   if (view_cbs_G->remote_request_func)
     zmap_view->remote_control = TRUE ;
 
@@ -530,7 +570,7 @@ void zMapViewSetupNavigator(ZMapViewWindow view_window, GtkWidget *canvas_widget
 {
   ZMapView zmap_view ;
 
-  zMapAssert(view_window) ;
+  zMapReturnIfFail((view_window)) ;
 
   zmap_view = view_window->parent_view ;
 
@@ -585,8 +625,14 @@ gboolean zMapViewConnect(ZMapFeatureSequenceMap sequence_map, ZMapView zmap_view
 	  zmap_view->view_sequence->config_file = zMapConfigDirGetFile();
 	}
 
+      /* set the default stylesfile */
+      stylesfile = zmap_view->view_sequence->stylesfile;
+      
       // get the stanza structs from ZMap config
       settings_list = zmapViewGetIniSources(zmap_view->view_sequence->config_file, config_str, &stylesfile) ;
+
+      // create stanza structs for any URLs passed on command line
+      zmapViewGetCmdLineSources(sequence_map, &settings_list) ;
 
       /*
        * read styles from file
@@ -633,15 +679,16 @@ gboolean zMapViewConnect(ZMapFeatureSequenceMap sequence_map, ZMapView zmap_view
 	  /* add a strand separator featureset, we need it for the yellow stripe in the middle of the screen */
 	  /* it will cause a column of the same name to be created */
 	  /* real separator featuresets have diff names and will be added to the column */
-
 	  ZMapFeatureSet feature_set;
 	  GQuark style_id ;
 	  ZMapFeatureTypeStyle style ;
 	  ZMapSpan loaded;
 	  ZMapFeatureSequenceMap sequence = zmap_view->view_sequence;
 	  ZMapFeatureContext context;
+          ZMapFeatureContextMergeStats merge_stats ;
 	  GList *dummy = NULL;
 	  ZMapFeatureBlock block ;
+          ZMapFeatureContextMergeCode merge ;
 
 	  style_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_STRAND_SEPARATOR) ;
 
@@ -665,11 +712,22 @@ gboolean zMapViewConnect(ZMapFeatureSequenceMap sequence_map, ZMapView zmap_view
           zmapViewScratchInit(zmap_view, sequence_map, context, block) ;
 
 
-	  /* now draw it */
-
-	  if (justMergeContext(zmap_view, &context, zmap_view->context_map.styles, &dummy, FALSE, TRUE))
-	    justDrawContext(zmap_view, context, zmap_view->context_map.styles, dummy, NULL, NULL) ;
-
+	  /* now merge and draw it */
+	  if ((merge = justMergeContext(zmap_view, 
+                                        &context, &merge_stats,
+                                        zmap_view->context_map.styles, &dummy, FALSE, TRUE))
+              == ZMAPFEATURE_CONTEXT_OK)
+            {
+              justDrawContext(zmap_view, context, zmap_view->context_map.styles, dummy, NULL, NULL) ;
+            }
+          else if (merge == ZMAPFEATURE_CONTEXT_NONE)
+            {
+              zMapLogWarning("%s", "Context merge failed because no new features found in new context.") ;
+            }
+          else
+            {
+              zMapLogCritical("%s", "Context merge failed, serious error.") ;
+            }
 	}
 
 
@@ -832,43 +890,32 @@ ZMapViewWindow zMapViewCopyWindow(ZMapView zmap_view, GtkWidget *parent_widget,
 				  ZMapWindow copy_window, ZMapWindowLockType window_locking)
 {
   ZMapViewWindow view_window = NULL ;
+  GHashTable *copy_styles ;
 
+  zMapReturnValIfFail((zmap_view->state != ZMAPVIEW_DYING), view_window) ;
+  zMapReturnValIfFail((zmap_view && parent_widget && zmap_view->window_list), view_window) ;
 
-  if (zmap_view->state != ZMAPVIEW_DYING)
+  /* the view _must_ already have a window _and_ data. */
+  copy_styles = zmap_view->context_map.styles ;
+
+  view_window = createWindow(zmap_view, NULL) ;
+
+  if (!(view_window->window = zMapWindowCopy(parent_widget, zmap_view->view_sequence,
+                                             view_window, copy_window,
+                                             zmap_view->features,
+                                             zmap_view->context_map.styles, copy_styles,
+                                             window_locking)))
     {
-      GHashTable *copy_styles ;
+      /* should glog and/or gerror at this stage....really need g_errors.... */
+      /* should free view_window.... */
 
+      view_window = NULL ;
+    }
+  else
+    {
+      /* add to list of windows.... */
+      zmap_view->window_list = g_list_append(zmap_view->window_list, view_window) ;
 
-      /* the view _must_ already have a window _and_ data. */
-      zMapAssert(zmap_view);
-      zMapAssert(parent_widget);
-      zMapAssert(zmap_view->window_list);
-#if 0
-RT 227342
-now that we can use Zmap while data is loading this is a bit silly
-      zMapAssert(zmap_view->state == ZMAPVIEW_LOADED) ;
-#endif
-      copy_styles = zmap_view->context_map.styles ;
-
-      view_window = createWindow(zmap_view, NULL) ;
-
-      if (!(view_window->window = zMapWindowCopy(parent_widget, zmap_view->view_sequence,
-						 view_window, copy_window,
-						 zmap_view->features,
-						 zmap_view->context_map.styles, copy_styles,
-						 window_locking)))
-	{
-	  /* should glog and/or gerror at this stage....really need g_errors.... */
-	  /* should free view_window.... */
-
-	  view_window = NULL ;
-	}
-      else
-	{
-	  /* add to list of windows.... */
-	  zmap_view->window_list = g_list_append(zmap_view->window_list, view_window) ;
-
-	}
     }
 
   return view_window ;
@@ -881,7 +928,7 @@ int zMapViewNumWindows(ZMapViewWindow view_window)
   int num_windows = 0 ;
   ZMapView zmap_view ;
 
-  zMapAssert(view_window) ;
+  zMapReturnValIfFail((view_window), num_windows) ;
 
   zmap_view = view_window->parent_view ;
 
@@ -908,7 +955,7 @@ ZMapViewWindow zMapViewRemoveWindow(ZMapViewWindow view_window_in)
   ZMapViewWindow view_window = view_window_in ;
   ZMapView zmap_view ;
 
-  zMapAssert(view_window) ;
+  zMapReturnValIfFail((view_window), view_window_in) ;
 
   zmap_view = view_window->parent_view ;
 
@@ -974,16 +1021,28 @@ void zmapViewEraseFromContext(ZMapView replace_me, ZMapFeatureContext context_in
  *                       but needs destroying...
  * @return               The diff context.  This needs destroying.
  *************************************************** */
-ZMapFeatureContext zmapViewMergeInContext(ZMapView view, ZMapFeatureContext context)
+ZMapFeatureContext zmapViewMergeInContext(ZMapView view, ZMapFeatureContext context,
+                                          ZMapFeatureContextMergeStats *merge_stats_out)
 {
 
   /* called from zmapViewRemoteReceive.c, no styles are available. */
   /* we do not expect masked features to be affected and do not process these */
 
   if (view->state != ZMAPVIEW_DYING)
-    justMergeContext(view, &context, NULL, NULL, TRUE, FALSE) ;
+    {
+      ZMapFeatureContextMergeCode result = ZMAPFEATURE_CONTEXT_ERROR ;
 
-  return context;
+      result = justMergeContext(view, &context, merge_stats_out, NULL, NULL, TRUE, FALSE) ;
+
+      if (result == ZMAPFEATURE_CONTEXT_OK)
+        zMapLogMessage("%s", "Context merge successful.") ;
+      else if (result == ZMAPFEATURE_CONTEXT_NONE)
+        zMapLogWarning("%s", "Context merge failed because no new features found in new context.") ;
+      else
+        zMapLogCritical("%s", "Context merge failed, serious error.") ;
+    }
+
+  return context ;
 }
 
 /*!
@@ -1075,11 +1134,13 @@ static ZMapFeatureContextExecuteStatus mark_matching_invalid(GQuark key,
 }
 
 
-gboolean zmapViewMergeNewFeatures(ZMapView view, ZMapFeatureContext *context, GList **feature_list)
+gboolean zmapViewMergeNewFeatures(ZMapView view,
+                                  ZMapFeatureContext *context, ZMapFeatureContextMergeStats *merge_stats_out,
+                                  GList **feature_list)
 {
   gboolean result = FALSE ;
   
-  *context = zmapViewMergeInContext(view, *context) ;
+  *context = zmapViewMergeInContext(view, *context, merge_stats_out) ;
   
   if (*context)
     {
@@ -1111,7 +1172,7 @@ void zmapViewEraseFeatures(ZMapView view, ZMapFeatureContext context, GList **fe
   return ;
 }
 
-/* Force a redraw of all the windows in a view, may be reuqired if it looks like
+/* Force a redraw of all the windows in a view, may be required if it looks like
  * drawing has got out of whack due to an overloaded network etc etc. */
 void zMapViewRedraw(ZMapViewWindow view_window)
 {
@@ -1119,7 +1180,7 @@ void zMapViewRedraw(ZMapViewWindow view_window)
   GList* list_item ;
 
   view = zMapViewGetView(view_window) ;
-  zMapAssert(view) ;
+  zMapReturnIfFail(view) ;
 
   if (view->state == ZMAPVIEW_LOADED)
     {
@@ -1474,7 +1535,8 @@ ZMAP_ENUM_AS_NAME_STRING_FUNC(zMapView2Str, ZMapViewState, VIEW_STATE_LIST) ;
  * if loading_sources_out and/or failed_sources_out are non-NULL.
  * 
  *  */
-char *zMapViewGetLoadStatusStr(ZMapView view, char **loading_sources_out, char **failed_sources_out)
+char *zMapViewGetLoadStatusStr(ZMapView view,
+                               char **loading_sources_out, char **empty_sources_out, char **failed_sources_out)
 {
   char *load_state_str = NULL ;
   ZMapViewState state = view->state ;
@@ -1485,15 +1547,20 @@ char *zMapViewGetLoadStatusStr(ZMapView view, char **loading_sources_out, char *
   if (state == ZMAPVIEW_LOADING || state == ZMAPVIEW_UPDATING || state == ZMAPVIEW_LOADED)
     {
       if (state == ZMAPVIEW_LOADING || state == ZMAPVIEW_UPDATING)
-	load_state_str = g_strdup_printf("%s (%d to go) (%d failed)", state_str,
+	load_state_str = g_strdup_printf("%s (%d to go) (%d empty) (%d failed)", state_str,
 					 g_list_length(view->sources_loading),
+					 g_list_length(view->sources_empty),
 					 g_list_length(view->sources_failed)) ;
       else
-	load_state_str = g_strdup_printf("%s (%d failed)", state_str,
+	load_state_str = g_strdup_printf("%s (%d empty) (%d failed)", state_str,
+					 g_list_length(view->sources_empty),
 					 g_list_length(view->sources_failed)) ;
 
       if (loading_sources_out)
 	*loading_sources_out = zMap_g_list_quark_to_string(view->sources_loading, NULL) ;
+
+      if (empty_sources_out)
+	*empty_sources_out = zMap_g_list_quark_to_string(view->sources_empty, NULL) ;
 
       if (failed_sources_out)
 	*failed_sources_out = zMap_g_list_quark_to_string(view->sources_failed, NULL) ;
@@ -1512,7 +1579,7 @@ ZMapWindow zMapViewGetWindow(ZMapViewWindow view_window)
 {
   ZMapWindow window = NULL ;
 
-  zMapAssert(view_window) ;
+  zMapReturnValIfFail((view_window), window) ;
 
   if (view_window->parent_view->state != ZMAPVIEW_DYING)
     window = view_window->window ;
@@ -1524,7 +1591,7 @@ ZMapWindowNavigator zMapViewGetNavigator(ZMapView view)
 {
   ZMapWindowNavigator navigator = NULL ;
 
-  zMapAssert(view) ;
+  zMapReturnValIfFail((view), navigator) ;
 
   if (view->state != ZMAPVIEW_DYING)
     navigator = view->navigator_window ;
@@ -1535,16 +1602,19 @@ ZMapWindowNavigator zMapViewGetNavigator(ZMapView view)
 
 GList *zMapViewGetWindowList(ZMapViewWindow view_window)
 {
-  zMapAssert(view_window);
+  GList *window_list = NULL ;
 
-  return view_window->parent_view->window_list;
+  zMapReturnValIfFail((view_window), window_list) ;
+
+  window_list = view_window->parent_view->window_list ;
+
+  return window_list ;
 }
 
 
 void zMapViewSetWindowList(ZMapViewWindow view_window, GList *list)
 {
-  zMapAssert(view_window);
-  zMapAssert(list);
+  zMapReturnIfFail((view_window && list)) ;
 
   view_window->parent_view->window_list = list;
 
@@ -1636,24 +1706,6 @@ void zMapViewDestroy(ZMapView zmap_view)
  */
 
 
-char *zmapViewGetStatusAsStr(ZMapViewState state)
-{
-  /* Array must be kept in synch with ZmapState enum in ZMap.h */
-  static char *zmapStates[] = {"ZMAPVIEW_INIT","ZMAPVIEW_MAPPED",
-//			       "ZMAPVIEW_NOT_CONNECTED", "ZMAPVIEW_NO_WINDOW",
-			       "ZMAPVIEW_CONNECTING", "ZMAPVIEW_CONNECTED",
-			       "ZMAPVIEW_LOADING", "ZMAPVIEW_LOADED", "ZMAPVIEW_UPDATING",
-			       "ZMAPVIEW_RESETTING", "ZMAPVIEW_DYING"} ;
-  char *state_str ;
-
-  zMapAssert(state >= ZMAPVIEW_INIT);
-  zMapAssert(state <= ZMAPVIEW_DYING) ;
-
-  state_str = zmapStates[state] ;
-
-  return state_str ;
-}
-
 
 GList *zmapViewGetIniSources(char *config_file, char *config_str, char ** stylesfile)
 {
@@ -1679,6 +1731,26 @@ GList *zmapViewGetIniSources(char *config_file, char *config_str, char ** styles
     }
 
   return(settings_list);
+}
+
+
+static void zmapViewGetCmdLineSources(ZMapFeatureSequenceMap sequence_map, GList **settings_list_inout)
+{
+  zMapReturnIfFailSafe(sequence_map) ;
+
+  GSList *file_item = sequence_map->file_list ;
+
+  for ( ; file_item; file_item = file_item->next)
+    {
+      char *file = (char*)(file_item->data) ;
+
+      ZMapConfigSource src = g_new0(ZMapConfigSourceStruct, 1) ;
+      src->group = SOURCE_GROUP_START ;        // default_value
+      src->url = g_strdup_printf("file:///%s", file) ;
+      src->featuresets = g_strdup(ZMAP_DEFAULT_FEATURESETS) ;
+
+      *settings_list_inout = g_list_append(*settings_list_inout, (gpointer)src) ;
+    }
 }
 
 
@@ -2041,10 +2113,10 @@ gboolean zMapViewRequestServer(ZMapView view,
  * which cannot be delayed as there's no way to fit these into the columns dialog as it currrently exists
  */
 ZMapViewConnection zmapViewRequestServer(ZMapView view, ZMapViewConnection view_conn,
-					 ZMapFeatureBlock block_orig, GList *req_featuresets,
-					 gpointer _server, /* ZMapConfigSource */
-					 int req_start, int req_end,
-					 gboolean dna_requested, gboolean terminate, gboolean show_warning)
+                                         ZMapFeatureBlock block_orig, GList *req_featuresets,
+                                         gpointer _server, /* ZMapConfigSource */
+                                         int req_start, int req_end,
+                                         gboolean dna_requested, gboolean terminate, gboolean show_warning)
 {
   ZMapFeatureContext context ;
   ZMapFeatureBlock block ;
@@ -2070,17 +2142,17 @@ ZMapViewConnection zmapViewRequestServer(ZMapView view, ZMapViewConnection view_
       zMapFeatureBlockSetFeaturesCoords(block, req_start, req_end) ;
 
 
-		if (view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
-		{
-			/* revcomp our empty context to get external fwd strand coordinates */
-			zMapFeatureContextReverseComplement(context, view->context_map.styles);
-		}
-	}
-	else
-	{
-	/* Create data specific to this step list...and set it in the connection. */
-          context = zmapViewCreateContext(view, req_featuresets, NULL) ;
-	}
+      if (view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
+        {
+          /* revcomp our empty context to get external fwd strand coordinates */
+          zMapFeatureContextReverseComplement(context, view->context_map.styles);
+        }
+    }
+  else
+    {
+      /* Create data specific to this step list...and set it in the connection. */
+      context = zmapViewCreateContext(view, req_featuresets, NULL) ;
+    }
 
   //printf("request featureset %s from %s\n",g_quark_to_string(GPOINTER_TO_UINT(req_featuresets->data)),server->url);
   zMapStartTimer("LoadFeatureSet", g_quark_to_string(GPOINTER_TO_UINT(req_featuresets->data)));
@@ -2089,40 +2161,43 @@ ZMapViewConnection zmapViewRequestServer(ZMapView view, ZMapViewConnection view_
   is_pipe = g_str_has_prefix(server->url,"pipe://");
 
   if ((view_conn = createViewConnection(view, view_conn,
-					context, server->url,
-					(char *)server->format,
-					server->timeout,
-					(char *)server->version,
-					server->req_styles,
-					server->stylesfile,
-					req_featuresets,
-					dna_requested,
-					req_start,req_end,
-					terminate || is_pipe)))
+                                        context, server->url,
+                                        (char *)server->format,
+                                        server->timeout,
+                                        (char *)server->version,
+                                        server->req_styles,
+                                        server->stylesfile,
+                                        req_featuresets,
+                                        dna_requested,
+                                        req_start,req_end,
+                                        terminate || is_pipe)))
     {
       /* Why does this need reiniting ? */
       if (!view->sources_loading)
 	{
+	  g_list_free(view->sources_empty) ;
+	  view->sources_empty = NULL ;
+
 	  g_list_free(view->sources_failed) ;
 	  view->sources_failed = NULL ;
 	}
 
       view->sources_loading = zMap_g_list_insert_list_after(view->sources_loading, req_featuresets,
-							    g_list_length(view->sources_loading),
-							    TRUE) ;
+                                                            g_list_length(view->sources_loading),
+                                                            TRUE) ;
 
       view_conn->show_warning = show_warning ;
     }
   else
     {
       view->sources_failed = zMap_g_list_insert_list_after(view->sources_failed, req_featuresets,
-							   g_list_length(view->sources_failed),
-							   TRUE) ;
+                                                           g_list_length(view->sources_failed),
+                                                           TRUE) ;
 
       zMap_g_list_quark_print(req_featuresets, "req_featuresets", FALSE) ;
 
       zMapLogWarning("createViewConnection() failed, failed sources now %d",
-		     g_list_length(view->sources_failed)) ;
+                     g_list_length(view->sources_failed)) ;
     }
 
   return view_conn ;
@@ -2940,7 +3015,6 @@ static ZMapViewWindow addWindow(ZMapView zmap_view, GtkWidget *parent_widget)
 
   /* There are no steps where this can fail at the moment. */
   window = zMapWindowCreate(parent_widget, zmap_view->view_sequence, view_window, NULL, zmap_view->flags) ;
-  zMapAssert(window) ;
 
   view_window->window = window ;
 
@@ -3097,7 +3171,12 @@ static gboolean checkStateConnections(ZMapView zmap_view)
       list_item = g_list_first(zmap_view->connection_list) ;
 
 
-      /* GOSH THE STATE HAS BECOME EVER MORE COMPLEX HERE...NEEDS A GOOD CLEAN UP. */
+      /* GOSH THE STATE HAS BECOME EVER MORE COMPLEX HERE...NEEDS A GOOD CLEAN UP.
+       * 
+       * MALCOLM'S ATTEMPT TO CLEAN IT UP WITH A NEW THREAD STATE HAS JUST MADE IT
+       * EVEN MORE COMPLEX....
+       *  */
+
 
       do
 	{
@@ -3112,6 +3191,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 	  ZMapServerReqType request_type = ZMAP_SERVERREQ_INVALID ;
 	  gboolean is_continue = FALSE ;
 	  ConnectionData connect_data = NULL ;
+          gboolean is_empty = FALSE ;
 
 	  view_con = list_item->data ;
 	  thread = view_con->thread ;
@@ -3119,6 +3199,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
 	  data = NULL ;
 	  err_msg = NULL ;
+          is_empty = FALSE ;
 
 
 	  if (view_con->request_data)
@@ -3132,11 +3213,6 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 	  // need to copy this info in case of thread death which clears it up
 	  if (connect_data)
 	    {
-	      if (!(connect_data->loaded_features))
-		{
-		  connect_data->loaded_features = createLoadFeatures(NULL) ;
-		}
-
 	      /* Does this need to be separate....?? probably not.... */
 	      connect_data->loaded_features->feature_sets = g_list_copy(connect_data->feature_sets) ;
 	      connect_data->loaded_features->xwid = zmap_view->xwid ;
@@ -3155,12 +3231,12 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
 	      zMapLogCritical("Source \"%s\", cannot access reply from server thread,"
 			      " error was: %s", view_con->url, err_msg) ;
-
+              
 	      thread_has_died = TRUE ;
 	    }
 	  else
 	    {
-	      ZMapServerReqAny req_any ;
+	      ZMapServerReqAny req_any = NULL ;
 
 
 	      /* Recover the request from the thread data....is there always data ? check this... */
@@ -3168,9 +3244,15 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 		{
 		  req_any = (ZMapServerReqAny)data ;
 		  request_type = req_any->type ;
+
+                  /* hacky...tidy up... */
+                  if (req_any->response == ZMAP_SERVERRESPONSE_NODATA)
+                    is_empty = TRUE ;
+                  else
+                    is_empty = FALSE ;
 		}
 
-
+              
 	      switch (reply)
 		{
 		case ZMAPTHREAD_REPLY_WAIT:
@@ -3185,13 +3267,6 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 		    ZMapViewConnectionRequest request ;
 		    ZMapViewConnectionStep step = NULL ;
 		    gboolean kill_connection = FALSE ;
-
-
-
-                    if ((strstr(view_con->url, "Patch")))
-                      printf("found it\n") ;
-
-
 
 
                     /* this is not good and shows this function needs rewriting....
@@ -3251,7 +3326,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 			    if (zmap_view->state != ZMAPVIEW_LOADING && zmap_view->state != ZMAPVIEW_UPDATING)
 			      {
 				THREAD_DEBUG_MSG(thread, "got data but ZMap state is - %s",
-						 zmapViewGetStatusAsStr(zMapViewGetStatus(zmap_view))) ;
+						 zMapView2Str(zMapViewGetStatus(zmap_view))) ;
 			      }
 
 			    zmapViewStepListStepProcessRequest(view_con, request) ;
@@ -3270,6 +3345,12 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 			    else
 			      {
 				reply = ZMAPTHREAD_REPLY_REQERROR;    // ie there was an error
+
+
+                                /* TRY THIS HERE.... */
+                                err_msg = connect_data->err_msg ;
+                                
+                                this_step_finished = TRUE ;
 			      }
  			  }
 		      }
@@ -3301,12 +3382,18 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
 		    if (kill_connection)
 		      {
-
-                        zmap_view->sources_failed
-                          = zMap_g_list_insert_list_after(zmap_view->sources_failed,
-                                                          connect_data->loaded_features->feature_sets,
-                                                          g_list_length(zmap_view->sources_failed),
-                                                          TRUE) ;
+                        if (is_empty)
+                          zmap_view->sources_empty
+                            = zMap_g_list_insert_list_after(zmap_view->sources_empty,
+                                                            connect_data->loaded_features->feature_sets,
+                                                            g_list_length(zmap_view->sources_empty),
+                                                            TRUE) ;
+                        else
+                          zmap_view->sources_failed
+                            = zMap_g_list_insert_list_after(zmap_view->sources_failed,
+                                                            connect_data->loaded_features->feature_sets,
+                                                            g_list_length(zmap_view->sources_failed),
+                                                            TRUE) ;
 
 
 
@@ -3430,19 +3517,25 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
               /* TRY THIS HERE.... */
               /* Add any new sources that have failed. */
-              if (connect_data->loaded_features->feature_sets
-                  && reply == ZMAPTHREAD_REPLY_DIED)
+              if (connect_data->loaded_features->feature_sets && reply == ZMAPTHREAD_REPLY_DIED)
                 {
-                  zmap_view->sources_failed
-                    = zMap_g_list_insert_list_after(zmap_view->sources_failed,
-                                                    connect_data->loaded_features->feature_sets,
-                                                    g_list_length(zmap_view->sources_failed),
-                                                    TRUE) ;
+                  if (is_empty)
+                    zmap_view->sources_empty
+                      = zMap_g_list_insert_list_after(zmap_view->sources_empty,
+                                                      connect_data->loaded_features->feature_sets,
+                                                      g_list_length(zmap_view->sources_empty),
+                                                      TRUE) ;
+                  else
+                    zmap_view->sources_failed
+                      = zMap_g_list_insert_list_after(zmap_view->sources_failed,
+                                                      connect_data->loaded_features->feature_sets,
+                                                      g_list_length(zmap_view->sources_failed),
+                                                      TRUE) ;
                 }
-
+              
 
 	      is_continue = FALSE ;
-
+              
 	      if (view_con->step_list && 
                   view_con->step_list->current &&
                   view_con->step_list->current->data)
@@ -3450,7 +3543,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 		  step = (ZMapViewConnectionStep) view_con->step_list->current->data;
 		  is_continue = (step->on_fail == REQUEST_ONFAIL_CONTINUE);
 		}
-
+              
 	      /* We are going to remove an item from the list so better move on from
 	       * this item. */
 	      zmap_view->connection_list = g_list_remove(zmap_view->connection_list, view_con) ;
@@ -3553,25 +3646,10 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 				      connect_data->stderr_out) ;
 		        }
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-		      /* Add any new sources that have failed. */
-		      if (connect_data->loaded_features->feature_sets
-			  && reply == ZMAPTHREAD_REPLY_DIED)
-			{
-			  zmap_view->sources_failed
-			    = zMap_g_list_insert_list_after(zmap_view->sources_failed,
-							    connect_data->loaded_features->feature_sets,
-							    g_list_length(zmap_view->sources_failed),
-							    TRUE) ;
-			}
-
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-		      zMapLogWarning("Thread %p failed, request = %s, failed sources now %d",
+		      zMapLogWarning("Thread %p failed, request = %s, empty sources now %d, failed sources now %d",
 				     thread,
 				     request_type_str,
+                                     g_list_length(zmap_view->sources_empty),
 				     g_list_length(zmap_view->sources_failed)) ;
 		    }
 
@@ -3584,7 +3662,6 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 		      connect_data->loaded_features->err_msg = err_msg ;
 		      connect_data->loaded_features->start = connect_data->start;
 		      connect_data->loaded_features->end = connect_data->end;
-		      connect_data->loaded_features->num_features = connect_data->num_features ;
 		      connect_data->loaded_features->exit_code = connect_data->exit_code ;
 		      connect_data->loaded_features->stderr_out = connect_data->stderr_out ;
 
@@ -3593,13 +3670,15 @@ static gboolean checkStateConnections(ZMapView zmap_view)
                           /* Note that load_features is cleaned up by sendViewLoaded() */
                           LoadFeaturesData loaded_features ;
 
-                          /* Hack to support otterlace for this release.... */
-                          if (request_type == ZMAP_SERVERREQ_FEATURES)
+                          /* CAN WE GET RID OF THIS HACK NOW ??? */
+                          /* Hack to support otterlace for this release....otterlace is expecting
+                           * no features to mean "it's all ok"...not really true.... */
+                          if (is_empty)
                             connect_data->loaded_features->status = TRUE ;
 
                           loaded_features = copyLoadFeatures(connect_data->loaded_features) ;
 
-                          zMapLogWarning("VIEW LOADED FROM %s !!", "checkStateConnections()") ;
+                          zMapLogWarning("View loaded from %s !!", "checkStateConnections()") ;
 
                           sendViewLoaded(zmap_view, loaded_features) ;
                         }
@@ -3649,29 +3728,31 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
   /* Once a view is loaded there won't be any more column changes until the user elects
    * to load a new column. */
-  if (zmap_view->state != ZMAPVIEW_LOADED)
+  if (zmap_view->state != ZMAPVIEW_DYING)
     {
-      if (!has_step_list && reqs_finished)
-	{
-	  /*
-	   * rather than count up the number loaded we say 'LOADED' if there's no LOADING active
-	   * This accounts for failures as well as completed loads
-	   */
-	  zmap_view->state = ZMAPVIEW_LOADED ;
-	  g_list_free(zmap_view->sources_loading) ;
-	  zmap_view->sources_loading = NULL ;
+      if (zmap_view->state != ZMAPVIEW_LOADED)
+        {
+          if (!has_step_list && reqs_finished)
+            {
+              /*
+               * rather than count up the number loaded we say 'LOADED' if there's no LOADING active
+               * This accounts for failures as well as completed loads
+               */
+              zmap_view->state = ZMAPVIEW_LOADED ;
+              g_list_free(zmap_view->sources_loading) ;
+              zmap_view->sources_loading = NULL ;
 
-	  state_change = TRUE ;
-	}
-      else if (!(zmap_view->sources_loading))
-	{
-	  /* We shouldn't need to do this if reqs_finished and has_step_list were consistent. */
+              state_change = TRUE ;
+            }
+          else if (!(zmap_view->sources_loading))
+            {
+              /* We shouldn't need to do this if reqs_finished and has_step_list were consistent. */
 
-	  zmap_view->state = ZMAPVIEW_LOADED ;
-	  state_change = TRUE ;
-	}
+              zmap_view->state = ZMAPVIEW_LOADED ;
+              state_change = TRUE ;
+            }
+        }
     }
-
 
   /* Inform the layer about us that our state has changed. */
   if (state_change)
@@ -4253,9 +4334,6 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 	    /* Why is this needed....to cache for the getstatus call ???? */
 	    connect_data->get_features = get_features ;
 
-	    connect_data->num_features = get_features->num_features ;
-
-
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	    /* not ready for these yet.... */
@@ -4292,9 +4370,8 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 		  connect_data->feature_sets = g_list_copy(connect_data->get_features->context->src_feature_set_names) ;
 
 		/* Does the merge and issues the request to do the drawing. */
-		getFeatures(zmap_view, connect_data->get_features, connect_data) ;
+		result = getFeatures(zmap_view, connect_data->get_features, connect_data) ;
 	      }
-
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -4579,6 +4656,13 @@ static ZMapViewConnection createViewConnection(ZMapView zmap_view,
       /* likewise this has to get copied through a series of data structs */
       connect_data->sequence_map = zmap_view->view_sequence;
 
+      connect_data->display_after = ZMAP_SERVERREQ_FEATURES ;
+
+      /* This struct will needs to persist after the viewcon is gone so we can
+       * return information to the layer above us about feature loading. */
+      connect_data->loaded_features = createLoadFeatures(NULL) ;
+
+
       view_con->step_list = zmapViewConnectionStepListCreate(dispatchContextRequests,
 							     processDataRequests,
 							     freeDataRequest);
@@ -4586,8 +4670,6 @@ static ZMapViewConnection createViewConnection(ZMapView zmap_view,
       /* Record info. for this session. */
       zmapViewSessionAddServer(&(view_con->session), urlObj, format) ;
 
-
-      connect_data->display_after = ZMAP_SERVERREQ_FEATURES;
 
       /* Set up this connection in the step list. */
       if (!existing)
@@ -4903,14 +4985,14 @@ static void sendViewLoaded(ZMapView zmap_view, LoadFeaturesData loaded_features)
           /* THIS PART NEEDS FIXING UP TO RETURN THE TRUE ERROR MESSAGE AS PER rt 369227 */
           if (loaded_features->status)          /* see comment in zmapSlave.c/ RETURNCODE_QUIT, we are tied up in knots */
             {
-              ok_mess = g_strdup_printf("%d features loaded", loaded_features->num_features) ;
+              ok_mess = g_strdup_printf("%d features loaded", loaded_features->merge_stats.features_added) ;
               emsg = html_quote_string(ok_mess) ;                /* see comment about really free() below */
               g_free(ok_mess) ;
               
               {
                 static long total = 0;
 
-                total += loaded_features->num_features ;
+                total += loaded_features->merge_stats.features_added ;
 
                 zMapLogTime(TIMER_LOAD,TIMER_ELAPSED,total,""); /* how long is startup... */
               }
@@ -4931,15 +5013,18 @@ static void sendViewLoaded(ZMapView zmap_view, LoadFeaturesData loaded_features)
 
           i = 1 ;
           viewloaded[i].value.s = featurelist ;
+
           i++ ;
           viewloaded[i].value.i = loaded_features->start ;
+
           i++ ;
           viewloaded[i].value.i = loaded_features->end ;
 
           i += 3 ;
           viewloaded[i].value.i = (int)loaded_features->status ;
+
           i++ ;
-          viewloaded[i].value.i = loaded_features->num_features ;
+          viewloaded[i].value.i = loaded_features->merge_stats.features_added ;
 
           i += 2 ;
           viewloaded[i].value.s = emsg ;
@@ -4999,11 +5084,12 @@ static void destroyWindow(ZMapView zmap_view, ZMapViewWindow view_window)
 
 
 
-/* We have far too many function calls here...it's all confusing..... */
-static void getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature_req, ConnectionData connect_data)
+
+static gboolean getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature_req, ConnectionData connect_data)
 {
+  gboolean result = FALSE ;
   ZMapFeatureContext new_features = NULL ;
-  gboolean merge_results = FALSE ;
+  ZMapFeatureContextMergeCode merge_results = ZMAPFEATURE_CONTEXT_ERROR ;
   ZMapFeatureContext diff_context = NULL ;
   GList *masked;
 
@@ -5024,26 +5110,51 @@ static void getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature_req
    *  */
   if (feature_req->context)
     {
+      ZMapFeatureContextMergeStats merge_stats = NULL ;
+      
       new_features = feature_req->context ;
-      zMapAssert(!new_features->no_parent);
       
-      connect_data->num_features = feature_req->num_features ;
-      
-      if ((merge_results = justMergeContext(zmap_view,
-					    &new_features, connect_data->curr_styles,
-					    &masked, connect_data->session.request_as_columns, TRUE)))
+      merge_results = justMergeContext(zmap_view,
+                                       &new_features, &merge_stats,
+                                       connect_data->curr_styles,
+                                       &masked, connect_data->session.request_as_columns, TRUE) ;
+
+      connect_data->loaded_features->merge_stats = *merge_stats ;
+
+      g_free(merge_stats) ;
+
+
+
+      if (merge_results == ZMAPFEATURE_CONTEXT_OK)
         {
-	  diff_context = new_features;
+	  diff_context = new_features ;
+
 	  justDrawContext(zmap_view, diff_context, connect_data->curr_styles , masked, NULL, connect_data) ;
+
+          result = TRUE ;
         }
       else
         {
-	  feature_req->context = NULL;
+	  feature_req->context = NULL ;
+
+          if (merge_results == ZMAPFEATURE_CONTEXT_NONE)
+            {
+              connect_data->err_msg = g_strdup("Context merge failed because no new features found in new context.") ;
+
+              zMapLogWarning("%s", connect_data->err_msg) ;
+            }
+          else
+            {
+              connect_data->err_msg = g_strdup("Context merge failed, serious error.") ;
+
+              zMapLogCritical("%s", connect_data->err_msg) ;
+            }
+
+          result = FALSE ;
         }
     }
 
-  return ;
-  
+  return result ;
  }
 
 
@@ -5068,12 +5179,10 @@ static ZMapFeatureContextExecuteStatus add_default_styles(GQuark key,
   ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
   ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
   ZMapView view = (ZMapView) user_data;
-//  ZMapFeatureSource src2src;
   ZMapFeatureTypeStyle style;
   ZMapFeatureColumn f_col;
-//  ZMapFeatureSetDesc set_data ;
 
-  zMapAssert(feature_any && zMapFeatureIsValid(feature_any)) ;
+  zMapReturnValIfFail((feature_any && zMapFeatureIsValid(feature_any)), ZMAP_CONTEXT_EXEC_STATUS_ERROR) ;
 
   switch(feature_any->struct_type)
     {
@@ -5145,7 +5254,7 @@ static ZMapFeatureContextExecuteStatus add_default_styles(GQuark key,
     case ZMAPFEATURE_STRUCT_INVALID:
     default:
       {
-      zMapAssertNotReached();
+        zMapWarnIfReached() ;
       break;
       }
     }
@@ -5153,15 +5262,16 @@ static ZMapFeatureContextExecuteStatus add_default_styles(GQuark key,
   return status;
 }
 
-static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inout,
-				 GHashTable *styles, GList **masked,
-				 gboolean request_as_columns, gboolean revcomp_if_needed)
+static ZMapFeatureContextMergeCode justMergeContext(ZMapView view, ZMapFeatureContext *context_inout,
+                                                    ZMapFeatureContextMergeStats *merge_stats_out,
+                                                    GHashTable *styles, GList **masked,
+                                                    gboolean request_as_columns, gboolean revcomp_if_needed)
 {
-  gboolean merge_result = FALSE ;
+  ZMapFeatureContextMergeCode result = ZMAPFEATURE_CONTEXT_ERROR ;
   ZMapFeatureContext new_features, diff_context = NULL ;
-  ZMapFeatureContextMergeCode merge = ZMAPFEATURE_CONTEXT_ERROR ;
   GList *featureset_names = NULL;
   GList *l;
+
 
   new_features = *context_inout ;
 
@@ -5170,14 +5280,14 @@ static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inou
   zMapStartTimer("Merge Context","") ;
 
   if(!view->features)
-  {
-	/* we need a context with a master_align with a block, all with valid sequence coordinates */
-	/* this is all back to front, we only know what we requested when the answer comes back */
-	/* and we need to have asked the same qeusrtion 3 times */
-	ZMapFeatureBlock block = zMap_g_hash_table_nth(new_features->master_align->blocks, 0) ;
+    {
+      /* we need a context with a master_align with a block, all with valid sequence coordinates */
+      /* this is all back to front, we only know what we requested when the answer comes back */
+      /* and we need to have asked the same qeusrtion 3 times */
+      ZMapFeatureBlock block = zMap_g_hash_table_nth(new_features->master_align->blocks, 0) ;
 
-	view->features = zMapFeatureContextCopyWithParents((ZMapFeatureAny) block) ;
-  }
+      view->features = zMapFeatureContextCopyWithParents((ZMapFeatureAny) block) ;
+    }
 
 
   if(!view->view_sequence->end)
@@ -5199,7 +5309,7 @@ static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inou
    */
   //printf("justMerge req=%d, %d featuresets\n", request_as_columns,g_list_length(new_features->req_feature_set_names));
 
-  if(request_as_columns)      /* ie came from ACEDB */
+  if (request_as_columns)                                   /* ie came from ACEDB */
     {
 
       ZMapFeatureColumn column;
@@ -5222,9 +5332,6 @@ static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inou
 	      if ((set_desc = g_hash_table_lookup(view->context_map.featureset_2_column, GUINT_TO_POINTER(set_id))))
 		column = g_hash_table_lookup(view->context_map.columns,GUINT_TO_POINTER(set_desc->column_id)) ;
 	    }
-
-
-
 
 
 	  /* the column featureset lists have been assembled by this point,
@@ -5251,13 +5358,13 @@ static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inou
     }
   else
     {
-	/* not sure if these lists need copying, but a small memory leak is better than a crash due to a double free */
+      /* not sure if these lists need copying, but a small memory leak is better than a crash due to a double free */
       if(!new_features->req_feature_set_names)
-		new_features->req_feature_set_names = g_list_copy(new_features->src_feature_set_names);
+        new_features->req_feature_set_names = g_list_copy(new_features->src_feature_set_names);
 
-	featureset_names = new_features->req_feature_set_names;
+      featureset_names = new_features->req_feature_set_names;
 
-	/* need to add column_2_style and column style table; tediously we need the featureset structs to do this */
+      /* need to add column_2_style and column style table; tediously we need the featureset structs to do this */
       zMapFeatureContextExecute((ZMapFeatureAny) new_features,
 				ZMAPFEATURE_STRUCT_FEATURESET,
 				add_default_styles,
@@ -5274,12 +5381,15 @@ static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inou
 	  char *y = (char *) g_quark_to_string(GPOINTER_TO_UINT(l->data));
 	  x = g_strconcat(x," ",y,NULL);
 	}
-//      zMapLogWarning(x,"");
-	printf("%s\n",x);
+      //      zMapLogWarning(x,"");
+      printf("%s\n",x);
 
     }
 
-  merge = zMapFeatureContextMerge(&(view->features), &new_features, &diff_context, featureset_names) ;
+
+  /* Merge the new features !! */
+  result = zMapFeatureContextMerge(&(view->features), &new_features, &diff_context,
+                                   merge_stats_out, featureset_names) ;
 
 
   //  printf("just Merge view = %s\n",zMapFeatureContextGetDNAStatus(view->features) ? "yes" : "non");
@@ -5299,11 +5409,9 @@ static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inou
   }
 
 
-  if (merge == ZMAPFEATURE_CONTEXT_OK)
+  if (result == ZMAPFEATURE_CONTEXT_OK)
     {
       /*      zMapLogMessage("%s", "Context merge succeeded.") ;*/
-      merge_result = TRUE ;
-
       if(0)
 	{
 	  char *x = g_strdup_printf("justMerge req=%d, diff has %d featuresets after merging: ", request_as_columns,g_list_length(diff_context->src_feature_set_names));
@@ -5317,18 +5425,18 @@ static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inou
 	  printf("%s\n",x);
 	}
 
-	/* ensure transcripts have exons in fwd strand order
-	 * needed for CanvasTranscript... ACEDB did this but pipe scripts return exons in transcript (strand) order
-	 */
-	zMapViewSortExons(diff_context);
+      /* ensure transcripts have exons in fwd strand order
+       * needed for CanvasTranscript... ACEDB did this but pipe scripts return exons in transcript (strand) order
+       */
+      zMapViewSortExons(diff_context);
 
 
-	/* collpase short reads if configured
-	 * NOTE this is simpler than EST masking as we simply don't display the collapsed features
-	 * if it is thought necessary to change this then follow the example of EST masking code
-	 * you will need to head into window code via just DrawContext()
-	 */
-	zMapViewCollapseFeatureSets(view,diff_context);
+      /* collpase short reads if configured
+       * NOTE this is simpler than EST masking as we simply don't display the collapsed features
+       * if it is thought necessary to change this then follow the example of EST masking code
+       * you will need to head into window code via just DrawContext()
+       */
+      zMapViewCollapseFeatureSets(view,diff_context);
 
       // mask ESTs with mRNAs if configured
       l = zMapViewMaskFeatureSets(view, diff_context->src_feature_set_names);
@@ -5336,19 +5444,17 @@ static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inou
       if(masked)
 	*masked = l;
     }
-  else if (merge == ZMAPFEATURE_CONTEXT_NONE)
-    zMapLogWarning("%s", "Context merge failed because no new features found in new context.") ;
-  else
-    zMapLogCritical("%s", "Context merge failed, serious error.") ;
-
 
   zMapStopTimer("Merge Context","") ;
 
   /* Return the diff_context which is the just the new features (NULL if merge fails). */
   *context_inout = diff_context ;
 
-  return merge_result ;
+  return result ;
 }
+
+
+
 
 static void justDrawContext(ZMapView view, ZMapFeatureContext diff_context,
 			    GHashTable *new_styles, GList *masked, ZMapFeature highlight_feature,
@@ -5500,7 +5606,7 @@ static void commandCB(ZMapWindow window, void *caller_data, void *window_data)
       
     default:
       {
-	zMapAssertNotReached() ;
+        zMapWarnIfReached() ;
 	break ;
       }
     }
@@ -5596,11 +5702,6 @@ static void viewVisibilityChangeCB(ZMapWindow window, void *caller_data, void *w
 
   /* signal our caller that something has changed. */
   (*(view_cbs_G->visibility_change))(view_window, view_window->parent_view->app_data, window_data) ;
-
-//printf("view viz change\n");
-  /* view_window->window can be NULL (when window copying) so we use the passed in window... */
-  /* Yes it's a bit messy, but it's stopping it crashing. */
-  zMapWindowNavigatorSetCurrentWindow(view_window->parent_view->navigator_window, window);
 
   zMapWindowNavigatorDrawLocator(view_window->parent_view->navigator_window, vis->scrollable_top, vis->scrollable_bot);
 

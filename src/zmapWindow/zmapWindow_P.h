@@ -1,6 +1,6 @@
 /*  File: zmapWindow_P.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -100,6 +100,39 @@ typedef enum
 
 #define IS_3FRAME(FRAME_MODE) \
   ((FRAME_MODE) & DISPLAY_3FRAME_ON)
+
+
+
+
+/* Feature info/coord display, selection, paste data. */
+
+/* Coord frame for coordinate display, exporting, pasting (coords are held internally in their
+ * natural frame). */
+typedef enum
+  {
+    ZMAPWINDOW_COORD_ONE_BASED,                             /* Convert coords to one-based. */
+    ZMAPWINDOW_COORD_NATURAL                                /* Leave coords as they are, e.g. chromosome. */
+  } ZMapWindowCoordFrame ;
+
+/* Which part of feature should be pasted. */
+typedef enum
+  {
+    ZMAPWINDOW_PASTE_TYPE_ALLSUBPARTS,                     /* paste all subparts of feature. */
+    ZMAPWINDOW_PASTE_TYPE_SUBPART,                         /* paste single subpart clicked on. */
+    ZMAPWINDOW_PASTE_TYPE_EXTENT                           /* paste extent of feature. */
+  } ZMapWindowPasteFeatureType ;
+
+
+/* Use to specify how to paste, display, export features. */
+typedef struct ZMapWindowDisplayStyleStructName
+{
+  ZMapWindowCoordFrame coord_frame ;
+  ZMapWindowPasteStyleType paste_style ;
+  ZMapWindowPasteFeatureType paste_feature ;
+} ZMapWindowDisplayStyleStruct, *ZMapWindowDisplayStyle ;
+
+
+
 
 
 
@@ -399,6 +432,13 @@ enum
 
 
 
+typedef enum
+  {
+    ZMAPWINDOW_COPY,
+    ZMAPWINDOW_PASTE
+  } ZMapWindowCopyPasteType ;
+
+
 /* Controls column configuration menu actions. */
 typedef enum
   {
@@ -480,27 +520,36 @@ typedef enum
  *           Default colours.
  */
 
+
+
 #define ZMAP_WINDOW_BACKGROUND_COLOUR "white"		    /* main canvas background */
-#define ZMAP_WINDOW_BLOCK_BACKGROUND_COLOUR "white"	    /* main canvas background */
 
-#define ZMAP_WINDOW_STRAND_DIVIDE_COLOUR "yellow"	    /* Marks boundary of forward/reverse strands. */
 
+
+#define ZMAP_WINDOW_BLOCK_BACKGROUND_COLOUR ZMAP_WINDOW_BACKGROUND_COLOUR	    /* main canvas background */
+
+
+/* I think these can be removed now... */
 /* Colours for master alignment block (forward and reverse). */
-#define ZMAP_WINDOW_MBLOCK_F_BG "white"
-#define ZMAP_WINDOW_MBLOCK_R_BG "white"
+#define ZMAP_WINDOW_MBLOCK_F_BG ZMAP_WINDOW_BACKGROUND_COLOUR
+#define ZMAP_WINDOW_MBLOCK_R_BG ZMAP_WINDOW_BACKGROUND_COLOUR
 
 /* Colours for query alignment block (forward and reverse). */
 #define ZMAP_WINDOW_QBLOCK_F_BG "light pink"
 #define ZMAP_WINDOW_QBLOCK_R_BG "pink"
+
+
+
+#define ZMAP_WINDOW_STRAND_DIVIDE_COLOUR "yellow"	    /* Marks boundary of forward/reverse strands. */
 
 /* Colour for highlighting a whole columns background. */
 #define ZMAP_WINDOW_COLUMN_HIGHLIGHT "grey"
 #define ZMAP_WINDOW_ITEM_HIGHLIGHT "dark grey"
 
 /* Colours for highlighting 3 frame data */
-#define ZMAP_WINDOW_FRAME_0 "red"
-#define ZMAP_WINDOW_FRAME_1 "deep pink"
-#define ZMAP_WINDOW_FRAME_2 "light pink"
+#define ZMAP_WINDOW_FRAME_0 "#ffe6e6" /* pale pink */
+#define ZMAP_WINDOW_FRAME_1 "#e6ffe6" /* pale green */
+#define ZMAP_WINDOW_FRAME_2 "#e6e6ff" /* pale blue */
 
 
 /* Colour for "marked" item. */
@@ -632,8 +681,8 @@ typedef struct _ZMapWindowStruct
 
   /* We need to monitor changes to the size of the canvas window caused by user interactions
    * so we can adjust zoom and other controls appropriately. */
-  gint layout_alloc_width, layout_alloc_height ;
-  guint layout_actual_width, layout_actual_height ;
+  gint layout_window_width, layout_window_height ;          /* layout widget viewport size. */
+  gint layout_bin_window_width, layout_bin_window_height ;  /* layout widget main window size. */
 
 
   /* Windows can be locked together in their zooming/scrolling. */
@@ -769,6 +818,9 @@ typedef struct _ZMapWindowStruct
 
 
   ZMapWindowScaleCanvas ruler ;
+  gboolean ruler_previous_revcomp ;                               /* Ghastly hack to prevent unnecessary redraws... */
+
+
 
   /* Holds focus items/column for the zmap. */
   ZMapWindowFocus focus ;
@@ -1058,9 +1110,15 @@ void zmapWindowZoomToItem(ZMapWindow window, FooCanvasItem *item) ;
 void zmapWindowZoomToItems(ZMapWindow window, GList *items) ;
 void zmapWindowZoomToWorldPosition(ZMapWindow window, gboolean border,
 				   double rootx1, double rooty1, double rootx2, double rooty2) ;
+gboolean zmapWindowZoomFromClipboard(ZMapWindow window, double curr_world_x, double curr_world_y) ;
+
+char *zmapWindowMakeFeatureSelectionText(ZMapWindow window,
+                                         ZMapWindowDisplayStyle display_style, ZMapFeature selected_feature) ;
+char *zmapWindowMakeColumnSelectionText(ZMapWindow window, double wx, double wy, ZMapWindowDisplayStyle display_style,
+                                        ZMapWindowContainerFeatureSet selected_column) ;
+
 void zmapWindowGetMaxBoundsItems(ZMapWindow window, GList *items,
 				 double *rootx1, double *rooty1, double *rootx2, double *rooty2) ;
-
 gboolean zmapWindowItemIsCompound(FooCanvasItem *item) ;
 FooCanvasItem *zmapWindowItemGetTrueItem(FooCanvasItem *item) ;
 FooCanvasItem *zmapWindowItemGetNthChild(FooCanvasGroup *compound_item, int child_index) ;
@@ -1126,6 +1184,9 @@ void zmapWindowCoordPairToDisplay(ZMapWindow window,
 				  int *display_start_out, int *display_end_out) ;
 int zmapWindowCoordFromDisplay(ZMapWindow window, int coord) ;
 int zmapWindowCoordFromOriginRaw(int start,int end, int coord, gboolean revcomped) ;
+void zmapWindowParentCoordPairToDisplay(ZMapWindow window,
+                                        int start_in, int end_in,
+                                        int *display_start_out, int *display_end_out) ;
 ZMapStrand zmapWindowStrandToDisplay(ZMapWindow window, ZMapStrand strand_in) ;
 
 double zmapWindowExt(double start, double end) ;
@@ -1136,12 +1197,15 @@ void zmapWindowSeq2CanOffset(double *start_inout, double *end_inout, double offs
 
 gboolean zmapWindowSeqToWorldCoords(ZMapWindow window,
                                     int seq_start, int seq_end,
-                                    double *word_start, double *world_end) ;
+                                    double *world_start, double *world_end) ;
 int zmapWindowWorldToSequenceForward(ZMapWindow window, int coord);
 gboolean zmapWindowWorld2SeqCoords(ZMapWindow window, FooCanvasItem *foo,
 				   double wx1, double wy1, double wx2, double wy2,
 				   FooCanvasGroup **block_grp_out, int *y1_out, int *y2_out) ;
 gboolean zmapWindowItem2SeqCoords(FooCanvasItem *item, int *y1, int *y2) ;
+
+
+
 
 void zmapWindowItemGetVisibleWorld(ZMapWindow window, double *wx1, double *wy1, double *wx2, double *wy2);
 
@@ -1170,6 +1234,9 @@ void zmapWindowSetScrollableArea(ZMapWindow window,
 
 void zmapWindowSetScrolledRegion(ZMapWindow window, double x1, double x2, double y1, double y2) ;
 void zmapWindowSetPixelxy(ZMapWindow window, double pixels_per_unit_x, double pixels_per_unit_y) ;
+gboolean zmapWindowGetCanvasLayoutSize(FooCanvas *canvas, 
+                                       int *layout_win_width, int *layout_win_height,
+                                       int *layout_binwin_width, int *layout_binwin_height) ;
 
 
 ZMapGUIClampType zmapWindowClampSpan(ZMapWindow window,
@@ -1192,7 +1259,12 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature,
 			       int sub_item_dna_start, int sub_item_dna_end,
 			       int sub_item_coords_start, int sub_item_coords_end,
 			       char *alternative_clipboard_text,
-			       gboolean replace_highlight_item, gboolean highlight_same_names, gboolean sub_part) ;
+			       gboolean replace_highlight_item, gboolean highlight_same_names,
+
+                               /* Needs to be subsumed into display_style in due course. */
+                               gboolean sub_part,
+
+                               ZMapWindowDisplayStyle display_style) ;
 
 void zmapWindowDrawZoom(ZMapWindow window) ;
 void zmapWindowDrawManageWindowWidth(ZMapWindow window);
@@ -1381,6 +1453,7 @@ ZMapWindowZoomControl zmapWindowZoomControlCreate(ZMapWindow window) ;
 void zmapWindowZoomControlInitialise(ZMapWindow window) ;
 gboolean zmapWindowZoomControlZoomByFactor(ZMapWindow window, double factor);
 void zmapWindowZoomControlHandleResize(ZMapWindow window);
+void zmapWindowZoomControlRegisterResize(ZMapWindow window) ;
 double zmapWindowZoomControlLimitSpan(ZMapWindow window, double y1, double y2) ;
 void zmapWindowZoomControlCopyTo(ZMapWindowZoomControl orig, ZMapWindowZoomControl new) ;
 void zmapWindowZoomControlGetScrollRegion(ZMapWindow window,
@@ -1595,7 +1668,8 @@ gboolean zmapWindowScaleCanvasDraw(ZMapWindowScaleCanvas obj, int x, int y,int s
 void zmapWindowScaleCanvasSetVAdjustment(ZMapWindowScaleCanvas obj, GtkAdjustment *vadjustment);
 void zmapWindowScaleCanvasSetPixelsPerUnit(ZMapWindowScaleCanvas obj, double x, double y);
 void zmapWindowScaleCanvasSetLineHeight(ZMapWindowScaleCanvas obj, double border);
-//void zmapWindowScaleGroupDraw(FooCanvasGroup *parent, gboolean revcomped,double start, double end, double canvas_offset);
+GtkWidget *zmapWindowScaleCanvasGetScrolledWindow(ZMapWindowScaleCanvas obj) ;
+
 
 /* Stats functions. */
 ZMapWindowStats zmapWindowStatsCreate(ZMapFeatureAny feature_any ) ;

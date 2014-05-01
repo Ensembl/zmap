@@ -1,6 +1,6 @@
 /*  File: zmapControlImportFile.c
  *  Author: Malcolm Hinsley (mh17@sanger.ac.uk)
- *  Copyright (c) 2012: Genome Research Ltd.
+ *  Copyright (c) 2012-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -144,7 +144,9 @@ void zMapControlImportFile(ZMapControlImportFileCB user_func, gpointer user_data
   GtkWidget *toplevel, *container ;
   gpointer seq_data = NULL ;
 
-  zMapAssert(user_func) ;
+  /* if (!user_func) 
+    return ; */
+  zMapReturnIfFail(user_func && user_data) ; 
 
   ZMap zmap = (ZMap)user_data;
 
@@ -1059,7 +1061,7 @@ static void importFileCB(GtkWidget *widget, gpointer cb_data)
         case FILE_NONE:
           /* add in any that have data */
           if (source_txt)
-            *argp++ = g_strdup_printf("--gff_feature_source=%s", source_txt) ;
+            *argp++ = g_strdup_printf("--gff_source=%s", source_txt) ;
           if (strand)
             *argp++ = g_strdup_printf("--strand=%d", strand) ;
           break;
@@ -1072,7 +1074,7 @@ static void importFileCB(GtkWidget *widget, gpointer cb_data)
           /* fall through */
 
         case FILE_BAM:
-          *argp++ = g_strdup_printf("--gff_feature_source=%s", source_txt);
+          *argp++ = g_strdup_printf("--gff_source=%s", source_txt);
           break;
         }
 
@@ -1085,7 +1087,6 @@ static void importFileCB(GtkWidget *widget, gpointer cb_data)
                                    *script_txt == '/' ? "/" :"", script_txt, args_txt, and, opt_args_txt);
 
       servers = zmapViewGetIniSources(NULL, config_str, NULL) ;
-      zMapAssert(servers) ;
 
       server = (ZMapConfigSource) servers->data ;
 

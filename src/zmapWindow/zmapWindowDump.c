@@ -1,6 +1,6 @@
 /*  File: zmapWindowDump.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -858,7 +858,7 @@ static void dumpCB(ZMapWindowContainerGroup container_parent, FooCanvasPoints *p
           }
 
           default:
-            zMapAssertNotReached();
+            zMapWarnIfReached();
             break;
       }
 //printf("DumpCB ends %s\n",tstamp());
@@ -1046,8 +1046,8 @@ static void dumpFeatureCB(gpointer data, gpointer user_data)
 	}
       else
 	{
-        zMapLogMessage("Unexpected item [%s]", G_OBJECT_TYPE_NAME(item));
-	  zMapAssertNotReached() ;
+          zMapLogMessage("Unexpected item [%s]", G_OBJECT_TYPE_NAME(item));
+          zMapWarnIfReached() ;
 	}
     }
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */

@@ -1,6 +1,6 @@
 /*  File: zmapAppSequenceView.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2012: Genome Research Ltd.
+ *  Copyright (c) 2012-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -92,7 +92,9 @@ void zMapAppGetSequenceView(ZMapAppGetSequenceViewCB user_func, gpointer user_da
   GtkWidget *toplevel, *container ;
   gpointer seq_data = NULL ;
 
-  zMapAssert(user_func) ;
+  /* if (!user_func) 
+    return ; */
+  zMapReturnIfFail(user_func) ; 
 
   toplevel = zMapGUIToplevelNew(NULL, "Please specify sequence to be viewed.") ;
 
@@ -401,6 +403,7 @@ static void createViewCB(GtkWidget *widget, gpointer cb_data)
   char *err_msg = NULL ;
   char *sequence = "", *start_txt, *end_txt, *config_txt ;
   int start = 1, end = 0 ;
+  GError *tmp_error = NULL ;
 
 
   /* Note gtk_entry returns the empty string "" _not_ NULL when there is no text. */
@@ -475,9 +478,12 @@ static void createViewCB(GtkWidget *widget, gpointer cb_data)
 	}
       else
 	{
-	  if (!(sequence_ok = zMapAppGetSequenceConfig(seq_map)))
+          zMapAppGetSequenceConfig(seq_map, &tmp_error);
+          
+          if (tmp_error)
 	    {
-	      err_msg = "Cannot read config file, check config file." ;
+              sequence_ok = FALSE ;
+              err_msg = tmp_error->message ;
 	    }
 	  else if (!seq_map->sequence || !seq_map->start || !seq_map->end)
 	    {
@@ -497,6 +503,9 @@ static void createViewCB(GtkWidget *widget, gpointer cb_data)
 	  (main_data->user_func)(seq_map, main_data->user_data) ;
 	}
     }
+
+  if (tmp_error)
+    g_error_free(tmp_error) ;
 
   return ;
 }

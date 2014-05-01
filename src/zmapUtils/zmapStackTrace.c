@@ -1,6 +1,6 @@
 /*  File: zmapStackTrace.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2013: Genome Research Ltd.
+ *  Copyright (c) 2013-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -102,7 +102,9 @@ gboolean zMapStack2fd(unsigned int remove, int fd)
   size_t size, first = 0 ;
 
   /* zero on most machines... */
-  zMapAssert(fd != STDIN_FILENO) ;
+  /* zMapAssert(fd != STDIN_FILENO) ; */
+  if (fd == STDIN_FILENO) 
+    return traced ; 
 
   traced = TRUE ;
   size = backtrace(stack, ZMAPLOG_MAX_TRACE_SIZE) ;

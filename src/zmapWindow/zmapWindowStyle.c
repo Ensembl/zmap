@@ -1,6 +1,6 @@
 /*  File: zmapWindowStyle.c
  *  Author: Malcolm Hinsley (mh17@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -407,8 +407,6 @@ static void cancelCB(GtkWidget *widget, gpointer cb_data)
 
 	my_data->changed = FALSE;
 
-	zMapAssert(style);
-
 	/* update the column */
 	zmapWindowMenuSetStyleCB(style->unique_id, my_data->menu_data);
 
@@ -437,7 +435,6 @@ static void applyCB(GtkWidget *widget, gpointer cb_data)
 
 		if(style->unique_id == feature_set->unique_id)
 		{
-			zMapAssert(style->is_default);
 			name = g_strdup_printf("%s_",name);
 		}
 		description = name;
@@ -641,7 +638,7 @@ void zmapWindowMenuSetStyleCB(int menu_item_id, gpointer callback_data)
   for(set_strand = ZMAPSTRAND_NONE; set_strand <= ZMAPSTRAND_REVERSE; set_strand++)
   {
 	  /* yes really: frames are numbered 0,1,2 and have the values 1,2,3 */
-	for(set_frame = ZMAPSTRAND_NONE; set_frame <= ZMAPFRAME_2; set_frame++)
+    for(set_frame = ZMAPFRAME_NONE; set_frame <= ZMAPFRAME_2; set_frame++)
 	{
 		/* this is really frustrating:
 		 * every operation of the ftoi hash involves

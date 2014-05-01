@@ -1,6 +1,6 @@
 /*  File: zmapWindowCanvasFeaturesetBump.c
  *  Author: Malcolm Hinsley (mh17@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -492,16 +492,18 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowFeaturesetItem featureset, ZMa
 	  l = bump_col_range_delete(l,l,range);
 	}
 
-      /*  we need to post process the columns and adjust the width to be that of the widest feature */
-
+      /* We need to post process the columns and adjust the width to be that of the widest
+       * feature, note that we remove the extra spacing for the last feature. */
       /* get whole column width  and set column offsets */
       for(n = 0, featureset->bump_width = 0; (width = (double) GPOINTER_TO_UINT(g_hash_table_lookup(sub_col_width_G, GUINT_TO_POINTER(n)))) ;n++)
 	{
 	  g_hash_table_insert(sub_col_offset_G, GUINT_TO_POINTER(n), GUINT_TO_POINTER( (int) featureset->bump_width));
 	  featureset->bump_width += width + bump_data->spacing;
 	  //printf("bump: offset of %f = %f (%f)\n",featureset->bump_width, width, bump_data->spacing);
-
 	}
+      if (featureset->bump_width)
+        featureset->bump_width -= bump_data->spacing ;
+
 
       for(sl = zMapSkipListFirst(featureset->display_index); sl; sl = sl->next)
 	{
@@ -510,8 +512,11 @@ gboolean zMapWindowCanvasFeaturesetBump(ZMapWindowFeaturesetItem featureset, ZMa
 	  if(zmapWindowCanvasFeatureValid(feature) && !(feature->flags & FEATURE_HIDDEN))
 	    {
 	      width = (double) GPOINTER_TO_UINT( g_hash_table_lookup( sub_col_width_G, GUINT_TO_POINTER( feature->bump_col)));
+
 	      feature->bump_offset = (double) GPOINTER_TO_UINT( g_hash_table_lookup( sub_col_offset_G, GUINT_TO_POINTER( feature->bump_col))) ;
+
 	      //printf("offset feature %s @ %p %f,%f %d = %f\n",g_quark_to_string(feature->feature->unique_id),feature,feature->y1,feature->y2,(int) feature->bump_col, width);
+
 	      /*
 	       * features are displayed relative to the centre of the column when unbumped
 	       * so we have to offset the feature as if that is still the case

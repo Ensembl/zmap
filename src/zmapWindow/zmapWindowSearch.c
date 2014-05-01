@@ -1,6 +1,6 @@
 /*  File: zmapWindowSearch.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -191,7 +191,8 @@ void zmapWindowCreateSearchWindow(ZMapWindow window,
   SearchData search_data ;
 
   feature_any = zmapWindowItemGetFeatureAny(feature_item);
-  zMapAssert(feature_any) ;
+  if (!feature_any)
+    return ;
 
   search_data = g_new0(SearchDataStruct, 1) ;
 
@@ -877,7 +878,8 @@ static void printListDataCB(gpointer data, gpointer user_data_unused)
   ZMapFeature feature ;
 
   feature = zmapWindowItemGetFeature(item);
-  zMapAssert(feature) ;
+  if (!feature)
+    return ;
 
   printf("%s\n", g_quark_to_string(feature->unique_id)) ;
 
@@ -972,7 +974,7 @@ static void setFieldDefaults(SearchData search_data)
           break;
         case ZMAPFEATURE_STRUCT_INVALID:
         default:
-          zMapAssertNotReached();
+          zMapWarnIfReached();
           break;
 	}
 
@@ -1084,7 +1086,7 @@ static void setFilterDefaults(SearchData search_data)
           break;
         case ZMAPFEATURE_STRUCT_INVALID:
         default:
-          zMapAssertNotReached();
+          zMapWarnIfReached();
           break;
 	}
 
@@ -1155,7 +1157,7 @@ static ZMapFeatureContextExecuteStatus fillAllComboList(GQuark key, gpointer dat
     case ZMAPFEATURE_STRUCT_FEATURE:
     case ZMAPFEATURE_STRUCT_INVALID:
     default:
-      zMapAssertNotReached();
+      zMapWarnIfReached();
       break;
     }
 
@@ -1237,7 +1239,7 @@ gboolean searchPredCB(ZMapFeatureAny feature_any, gpointer user_data)
 	      result = TRUE ;
 	  }
 
-	if (search_pred->locus && feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
+	if (search_pred->locus && feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
 	  {
 	    if (feature->feature.transcript.locus_id)
 	      result = TRUE ;
@@ -1250,7 +1252,7 @@ gboolean searchPredCB(ZMapFeatureAny feature_any, gpointer user_data)
 
     case ZMAPFEATURE_STRUCT_INVALID:
     default:
-      zMapAssertNotReached();
+      zMapWarnIfReached();
       break;
 
     }

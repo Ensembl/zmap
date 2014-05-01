@@ -1,6 +1,6 @@
 /*  File: zmapGFF.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -51,9 +51,9 @@ typedef struct ZMapGFFParserStruct_ *ZMapGFFParser ;
  */
 typedef enum
 {
+  ZMAPGFF_VERSION_UNKNOWN = 0,
   ZMAPGFF_VERSION_2 = 2,
   ZMAPGFF_VERSION_3 = 3,
-  ZMAPGFF_VERSION_UNKNOWN
 }  ZMapGFFVersion ;
 
 
@@ -107,7 +107,7 @@ gboolean zMapGFFGetVersionFromGIO(GIOChannel * const pChannel, int * const piOut
 /*
  * Modified old interface.
  */
-gboolean zMapGFFIsValidVersion(const ZMapGFFParser const ) ;
+gboolean zMapGFFIsValidVersion(ZMapGFFParser) ;
 ZMapGFFParser zMapGFFCreateParser(int iGFFVersion, char *sequence, int features_start, int features_end) ;
 gboolean zMapGFFParserInitForFeatures(ZMapGFFParser parser, GHashTable *sources, gboolean parse_only) ;
 gboolean zMapGFFParseHeader(ZMapGFFParser parser, char *line, gboolean *header_finished, ZMapGFFHeaderState *header_state) ;
@@ -125,20 +125,26 @@ int zMapGFFParserGetNumFeatures(ZMapGFFParser parser);
 int zMapGFFGetVersion(ZMapGFFParser parser) ;
 GError *zMapGFFGetError(ZMapGFFParser parser) ;
 int zMapGFFGetLineNumber(ZMapGFFParser parser) ;
+int zMapGFFGetFeaturesStart(ZMapGFFParser parser) ;
+int zMapGFFGetFeaturesEnd(ZMapGFFParser parser) ;
+char* zMapGFFGetSequenceName(ZMapGFFParser parser) ;
 gboolean zMapGFFTerminated(ZMapGFFParser parser) ;
 void zMapGFFSetFreeOnDestroy(ZMapGFFParser parser, gboolean free_on_destroy) ;
 void zMapGFFDestroyParser(ZMapGFFParser parser) ;
+gboolean zMapGFFParsingHeader(ZMapGFFParser parser) ;
 
 /*
  * Unchanged old interface.
  */
 gboolean zMapGFFParserSetSequenceFlag(ZMapGFFParser parser);
-ZMapSequence zMapGFFGetSequence(ZMapGFFParser parser);
+ZMapSequence zMapGFFGetSequence(ZMapGFFParser parser, GQuark sequence_name);
+gboolean zMapGFFSequenceDestroy(ZMapSequence sequence) ;
 GHashTable *zMapGFFParserGetStyles(ZMapGFFParser parser);
 void zMapGFFSetStopOnError(ZMapGFFParser parser, gboolean stop_on_error) ;
 void zMapGFFSetParseOnly(ZMapGFFParser parser, gboolean parse_only) ;
 gboolean zMapGFFGetFeatures(ZMapGFFParser parser, ZMapFeatureBlock feature_block) ;
 
+gboolean zMapGFFDumpVersion(ZMapGFFVersion gff_version ) ;
 gboolean zMapGFFDump(ZMapFeatureAny dump_set, GHashTable *styles, GIOChannel *file, GError **error_out);
 gboolean zMapGFFDumpRegion(ZMapFeatureAny dump_set, GHashTable *styles,
 			   ZMapSpan region_span, GIOChannel *file, GError **error_out) ;

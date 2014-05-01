@@ -1,6 +1,6 @@
 /*  File: zmapFASTA.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -69,7 +69,9 @@ gboolean zMapFASTAFile(GIOChannel *file, ZMapFASTASeqType seq_type, char *seq_na
   char *cp = NULL ;
   int i ;
 
-  zMapAssert(file && seq_name && seq_len > 0 && dna && error_out) ;
+  /* zMapAssert(file && seq_name && seq_len > 0 && dna && error_out) ;*/
+  if (!file || !seq_name || seq_len<=0 || !dna || !error_out) 
+    return result ; 
 
   header = zMapFASTATitle(seq_type, seq_name, molecule_type, gene_name, seq_len) ;
 
@@ -127,7 +129,9 @@ char *zMapFASTATitle(ZMapFASTASeqType seq_type, char *seq_name, char *molecule_t
 {
   char *title = NULL ;
 
-  zMapAssert(seq_name && *seq_name && sequence_length > 0) ;
+  /* zMapAssert(seq_name && *seq_name && sequence_length > 0) ;*/
+  if (!seq_name || !*seq_name || sequence_length <= 0) 
+    return title ; 
 
   /* We should add more info. really.... */
   title = g_strdup_printf(">%s %s %s %d %s\n",
@@ -162,7 +166,9 @@ char *zMapFASTAString(ZMapFASTASeqType seq_type, char *seq_name, char *molecule_
   int i ;
   int true_sequence_length ;
 
-  zMapAssert(seq_name && sequence_length > 0 && sequence) ;
+  /* zMapAssert(seq_name && sequence_length > 0 && sequence) ;*/
+  if (!seq_name || sequence_length<=0 || !sequence) 
+    return fasta_string ; 
 
 
   /* We should add more info. really.... */

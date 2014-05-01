@@ -50,13 +50,14 @@ zmap_message_out "Start of build bootstrap, running in $PWD"
 #
 zmap_message_out "About to parse options: $*"
 
-usage="$0 -b <branch> -d -f <zmap feature dir> -g -r -s <seqtools directory> -t -u VARIABLE=VALUE"
-while getopts ":b:df:grs:tu" opt ; do
+usage="$0 -b <branch> -d -f <zmap feature dir> -g -p <build_prefix> -r -s <seqtools directory> -t -u VARIABLE=VALUE"
+while getopts ":b:df:gp:rs:tu" opt ; do
     case $opt in
 	b  ) BRANCH=$OPTARG ;;
 	d  ) ZMAP_MASTER_RT_RELEASE_NOTES="yes"   ;;
 	f  ) ZMAP_MASTER_BUILD_COPY_DIR=$OPTARG ;;
 	g  ) GIT_VERSION_INFO="yes" ;;
+	p  ) BUILD_PREFIX=$OPTARG ;;
 	r  ) ZMAP_MASTER_INC_REL_VERSION="yes"    ;;
 	s  ) ZMAP_SEQTOOLS_RELEASE_DIR=$OPTARG ;;
 	t  ) ZMAP_MASTER_TAG_CVS="yes"            ;;
@@ -538,7 +539,8 @@ tar_target=$(hostname):$ZMAP_BUILD_CONTAINER
 #fi
 
 
-
+# set the options to pass to zmap_compile_and_tar.sh
+options="-p $BUILD_PREFIX"
 
 
 HOSTS_OK=0

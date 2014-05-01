@@ -1,6 +1,6 @@
 /*  File: zmapFeatureAlignment.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -108,9 +108,12 @@ gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
 				     gboolean has_local_sequence, char *sequence)
 				     /* NOTE has_local mean in ACEBD, sequence is from GFF */
 {
-  gboolean result = TRUE ;
+  gboolean result = FALSE ;
 
-  zMapAssert(feature && feature->type == ZMAPSTYLE_MODE_ALIGNMENT) ;
+  if (!feature || (feature->mode != ZMAPSTYLE_MODE_ALIGNMENT))
+    return result ;
+
+  result = TRUE ;
 
   if (clone_id)
     {
@@ -162,9 +165,10 @@ gboolean zMapFeatureAlignmentIsGapped(ZMapFeature feature)
 {
   gboolean result = FALSE ;
 
-  zMapAssert(zMapFeatureIsValidFull((ZMapFeatureAny) feature, ZMAPFEATURE_STRUCT_FEATURE)) ;
+  if (!zMapFeatureIsValidFull((ZMapFeatureAny) feature, ZMAPFEATURE_STRUCT_FEATURE))
+    return result ;
 
-  if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
+  if (feature->mode == ZMAPSTYLE_MODE_ALIGNMENT)
     {
       int ref_length, match_length ;
 
@@ -318,7 +322,7 @@ static AlignStrCanonical alignStrMakeCanonical(char *match_str, ZMapFeatureAlign
       result = exonerateVulgar2Canon(match_str, canon) ;
       break ;
     default:
-      zMapAssertNotReached() ;
+      zMapWarnIfReached() ;
       break ;
     }
 
@@ -380,8 +384,8 @@ static gboolean alignStrCanon2Homol(AlignStrCanonical canon, ZMapStrand ref_stra
   for (i = 0, j = 0 ; i < align->len ; i++)
     {
       /* If you alter this code be sure to notice the += and -= which alter curr_ref and curr_match. */
-      AlignStrOp op ;
-      int curr_length ;
+      AlignStrOp op = NULL ;
+      int curr_length = 0 ;
       ZMapAlignBlockStruct gap = {0} ;
 
       op = &(g_array_index(align, AlignStrOpStruct, i)) ;
@@ -397,7 +401,7 @@ static gboolean alignStrCanon2Homol(AlignStrCanonical canon, ZMapStrand ref_stra
 	    else
 	      curr_ref -= curr_length ;
 
-            boundary_type = ALIGN_BLOCK_BOUNDARY_INTRON ;	    
+            boundary_type = ALIGN_BLOCK_BOUNDARY_INTRON ;
 	    break ;
 	  }
 	case 'D':					    /* Deletion in reference sequence. */
@@ -454,7 +458,8 @@ static gboolean alignStrCanon2Homol(AlignStrCanonical canon, ZMapStrand ref_stra
 	  }
 	default:
 	  {
-	    zMapAssertNotReached() ;
+            zMapWarning("Unrecognized operator '%c' in align string\n", op->op) ;
+            zMapWarnIfReached() ;
 
 	    break ;
 	  }
@@ -511,7 +516,7 @@ static gboolean alignStrVerifyStr(char *match_str, ZMapFeatureAlignFormat align_
       result = exonerateVerifyVulgar(match_str) ;
       break ;
     default:
-      zMapAssertNotReached() ;
+      zMapWarnIfReached() ;
       break ;
     }
 
@@ -820,12 +825,12 @@ static gboolean ensemblCigar2Canon(char *match_str, AlignStrCanonical canon)
 
 /* Blindly converts, assumes match_str is a valid BAM cigar string.
  * Currently we convert:
- * 
+ *
  * X -> M
  * P -> ignored
  * S -> ignored
  * H -> not handled
- * 
+ *
  */
 static gboolean bamCigar2Canon(char *match_str, AlignStrCanonical canon)
 {
@@ -852,7 +857,7 @@ static gboolean bamCigar2Canon(char *match_str, AlignStrCanonical canon)
         {
           /* Padding and soft-clipping: should be fine to ignore these */
         }
-      else 
+      else
         {
           if (*cp == 'X') /* Mismatch. Treat it like a match. */
             op.op = 'M' ;
@@ -861,7 +866,7 @@ static gboolean bamCigar2Canon(char *match_str, AlignStrCanonical canon)
 
           canon->align = g_array_append_val(canon->align, op) ;
         }
-      
+
       cp++ ;
     } while (*cp) ;
 

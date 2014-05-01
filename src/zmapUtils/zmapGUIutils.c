@@ -1,6 +1,6 @@
 /*  File: zmapGUIutils.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -39,6 +39,7 @@
 #include <math.h>
 
 #include <ZMap/zmapUtilsGUI.h>
+#include <ZMap/zmapUtilsDebug.h>
 #include <ZMap/zmapWebPages.h>
 #include <zmapUtils_P.h>
 
@@ -130,7 +131,8 @@ static char *zmapXRemoteErrorText = NULL;
 
 static gboolean modalFromMsgType(ZMapMsgType msg_type) ;
 static GtkResponseType messageFull(GtkWindow *parent, char *title_in, char *msg,
-				   gboolean modal, int display_timeout, gboolean close_button,
+				   gboolean modal, int display_timeout,
+                                   char *first_button, char *second_button, char *third_button,
 				   ZMapMsgType msg_type, GtkJustification justify,
 				   ZMapGUIMsgUserData user_data) ;
 static void printMessage(ZMapMsgType msg_type, char *message) ;
@@ -361,6 +363,31 @@ char *zMapGUIGetEventAsText(GdkEventMask exclude_mask, GdkEventAny *any_event)
 
 
 
+/* Retrieve the screen number the widget is displayed on and how many screens there are
+ * altogether on the display. */
+gboolean zMapGUIGetScreenInfo(GtkWidget *widget, int *curr_screen_out, int *num_screens_out)
+{
+  gboolean result = TRUE ;                                  /* func. can't fail at the moment. */
+  GdkDisplay *curr_display ;
+  gint num_screens ;
+  GdkScreen *curr_screen ;
+  int curr_screen_num ;
+
+  curr_display = gtk_widget_get_display(widget) ;
+  num_screens = gdk_display_get_n_screens(curr_display) ;
+
+  curr_screen = gtk_widget_get_screen(widget) ;
+  curr_screen_num = gdk_screen_get_number(curr_screen) ;
+
+  *curr_screen_out = curr_screen_num ;
+  *num_screens_out = num_screens ;
+
+  return result ;
+}
+
+
+
+
 gboolean zMapGUIGetMaxWindowSize(GtkWidget *toplevel, gint *width_out, gint *height_out)
 {
   gboolean result = TRUE ;
@@ -453,11 +480,11 @@ gboolean zMapGUIGetMaxWindowSize(GtkWidget *toplevel, gint *width_out, gint *hei
 	  memcpy(&right, (curr += field_size), field_size) ;
 	  memcpy(&bottom, (curr += field_size), field_size) ;
 	  g_free(data) ;
-	}
 
-      /* off by one ? */
-      window_height = bottom - top ;
-      window_width = right - left ;
+          /* off by one ? */
+          window_height = bottom - top ;
+          window_width = right - left ;
+        }
     }
   else
     {
@@ -714,7 +741,7 @@ static gboolean zmapGUIXWindowValid(Display *x_display, Window x_window, char *c
         }
       else
         {
-          zMapAssertNotReached();
+          zMapWarnIfReached();
         }
 
       if (property_data)
@@ -786,7 +813,9 @@ GtkWidget *zMapGUIFindTopLevel(GtkWidget *widget)
 {
   GtkWidget *toplevel = widget ;
 
-  zMapAssert(toplevel && GTK_IS_WIDGET(toplevel)) ;
+  /* zMapAssert(toplevel && GTK_IS_WIDGET(toplevel)) ; */
+  if (!toplevel || !GTK_IS_WIDGET(toplevel) ) 
+    return toplevel ; 
 
   while (toplevel && !GTK_IS_WINDOW(toplevel))
     {
@@ -818,7 +847,9 @@ gint my_gtk_run_dialog_nonmodal(GtkWidget *toplevel)
   gint result = 0 ;
   int *response_ptr ;
 
-  zMapAssert(GTK_IS_DIALOG(toplevel)) ;
+  /* zMapAssert(GTK_IS_DIALOG(toplevel)) ;*/
+  if (!GTK_IS_DIALOG(toplevel)) 
+    return result ;
 
   response_ptr = g_new0(gint, 1) ;
   *response_ptr = 0 ;
@@ -985,8 +1016,9 @@ GtkWidget *zMapGUIPopOutWidget(GtkWidget *popout, char *title)
 void zMapGUIShowAbout(void)
 {
   const gchar *authors[] = {"Ed Griffiths, Sanger Institute, UK <edgrif@sanger.ac.uk>",
-			    "Roy Storey Sanger Institute, UK <rds@sanger.ac.uk>",
+			    "Roy Storey, Sanger Institute, UK <rds@sanger.ac.uk>",
 			    "Malcolm Hinsley, Sanger Institute, UK <mh17@sanger.ac.uk>",
+			    "Steve Miller, Sanger Institute, UK <sm23@sanger.ac.uk>",
 			    NULL} ;
   char *comment_str ;
 
@@ -1051,7 +1083,9 @@ void zMapGUIShowAbout(void)
  *  */
 void zMapGUISetHelpURL(char *URL_base)
 {
-  zMapAssert(URL_base && *URL_base) ;
+  /* zMapAssert(URL_base && *URL_base) ; */
+  if (!URL_base || !*URL_base) 
+    return ; 
 
   if (help_URL_base_G)
     g_free(help_URL_base_G) ;
@@ -1061,6 +1095,33 @@ void zMapGUISetHelpURL(char *URL_base)
   return ;
 }
 
+
+/* Find the docs that are installed along with the zmap executable. Returns the path if
+ * found, which should be free'd by the caller with g_free. Returns NULL if not found. */
+static char* getLocalDocsDir()
+{
+  char *path = NULL ;
+
+  /* Find the executable's full path */
+  char *exe = g_find_program_in_path(g_get_prgname());
+
+  if (exe)
+    {
+      /* Get the bin directory */
+      char *dir = g_path_get_dirname(exe);
+      
+      if (dir)
+        {
+          /* Get the path to the docs directory */
+          path = g_strdup_printf("%s/%s", dir, ZMAP_LOCAL_DOC_PATH);
+          g_free(dir) ;
+        }
+
+      g_free(exe) ;
+    }
+
+  return path ;
+}
 
 
 /*!
@@ -1076,52 +1137,63 @@ void zMapGUIShowHelp(ZMapHelpType help_contents)
   GError *error = NULL ;
 
   if (!help_URL_base_G)
-    help_URL_base_G = ZMAPWEB_DOC_URL ;
+    help_URL_base_G = getLocalDocsDir() ;
 
-  switch(help_contents)
+  if (help_URL_base_G)
     {
-    case ZMAPGUI_HELP_GENERAL:
-      web_page = g_strdup_printf("%s/%s", help_URL_base_G, ZMAPWEB_HELP_DOC) ;
-      break ;
+      switch(help_contents)
+        {
+        case ZMAPGUI_HELP_GENERAL:
+          web_page = g_strdup_printf("%s/%s", help_URL_base_G, ZMAPWEB_HELP_DOC) ;
+          break ;
 
-    case ZMAPGUI_HELP_ALIGNMENT_DISPLAY:
-      web_page = g_strdup_printf("%s/%s#%s", help_URL_base_G, ZMAPWEB_HELP_DOC, ZMAPWEB_HELP_ALIGNMENT_SECTION) ;
-      break ;
+        case ZMAPGUI_HELP_QUICK_START:
+          web_page = g_strdup_printf("%s/%s", help_URL_base_G, ZMAPWEB_HELP_QUICK_START) ;
+          break ;
 
-    case ZMAPGUI_HELP_KEYBOARD:
-      web_page = g_strdup_printf("%s/%s", help_URL_base_G, ZMAPWEB_KEYBOARD_DOC) ;
-      break ;
+        case ZMAPGUI_HELP_ALIGNMENT_DISPLAY:
+          web_page = g_strdup_printf("%s/%s", help_URL_base_G, ZMAPWEB_HELP_ALIGNMENT_SECTION) ;
+          break ;
 
-    case ZMAPGUI_HELP_RELEASE_NOTES:
-      web_page = g_strdup_printf("%s/%s/%s", help_URL_base_G, ZMAPWEB_RELEASE_NOTES_DIR, ZMAPWEB_RELEASE_NOTES) ;
-      break ;
+        case ZMAPGUI_HELP_KEYBOARD:
+          web_page = g_strdup_printf("%s/%s", help_URL_base_G, ZMAPWEB_KEYBOARD_DOC) ;
+          break ;
 
-    case ZMAPGUI_HELP_WHATS_NEW:
-      web_page = g_strdup_printf("%s",ZMAP_INTERNAL_WEB_WHATSNEW);	/* a temporary fix via the internal wiki */
-	break;
+        case ZMAPGUI_HELP_RELEASE_NOTES:
+          web_page = g_strdup_printf("%s/%s", help_URL_base_G, ZMAPWEB_RELEASE_NOTES) ;
+          break ;
 
-    default:
-      zMapWarning("menu choice (%d) temporarily unavailable",help_contents);
-      /* this used to assert: why crash? */
-      /* NOTE gcc flags up switches with enums not handled, so doubly useless */
-      break ;
+        case ZMAPGUI_HELP_WHATS_NEW:
+          web_page = g_strdup_printf("%s",ZMAP_INTERNAL_WEB_WHATSNEW);	/* a temporary fix via the internal wiki */
+          break;
 
-    }
+        default:
+          zMapWarning("menu choice (%d) temporarily unavailable",help_contents);
+          /* this used to assert: why crash? */
+          /* NOTE gcc flags up switches with enums not handled, so doubly useless */
+          break ;
 
-  if (zMapLaunchWebBrowser(web_page, &error))
-    {
-      zMapGUIShowMsgFull(NULL, "Please wait, help page will be shown in your browser in a few seconds.",
-			 ZMAP_MSG_INFORMATION,
-			 GTK_JUSTIFY_CENTER, 5, TRUE) ;
+        }
+
+      if (zMapLaunchWebBrowser(web_page, &error))
+        {
+          zMapGUIShowMsgFull(NULL, "Please wait, help page will be shown in your browser in a few seconds.",
+                             ZMAP_MSG_INFORMATION,
+                             GTK_JUSTIFY_CENTER, 5, TRUE) ;
+        }
+      else
+        {
+          zMapWarning("Error: %s\n", error->message) ;
+
+          g_error_free(error) ;
+        }
+
+      g_free(web_page) ;
     }
   else
     {
-      zMapWarning("Error: %s\n", error->message) ;
-
-      g_error_free(error) ;
+      zMapWarning("%s", "Could not find the help pages; check that they are installed in the correct location\n") ;
     }
-
-  g_free(web_page) ;
 
   return ;
 }
@@ -1206,7 +1278,8 @@ void zMapGUIShowMsg(ZMapMsgType msg_type, char *msg)
 
   modal = modalFromMsgType(msg_type) ;
 
-  messageFull(NULL, NULL, msg, modal, 0, TRUE, msg_type, GTK_JUSTIFY_CENTER, NULL) ;
+  messageFull(NULL, NULL, msg, modal, 0,
+              GTK_STOCK_CLOSE, NULL, NULL, msg_type, GTK_JUSTIFY_CENTER, NULL) ;
 
   return ;
 }
@@ -1221,13 +1294,18 @@ void zMapGUIShowMsg(ZMapMsgType msg_type, char *msg)
  */
 void zMapGUIShowMsgFull(GtkWindow *parent, char *msg,
 			ZMapMsgType msg_type,
-			GtkJustification justify, int display_timeout, gboolean close_button)
+			GtkJustification justify, int display_timeout, gboolean close)
 {
   gboolean modal ;
+  char *first_button = NULL ;
 
   modal = modalFromMsgType(msg_type) ;
 
-  messageFull(parent, NULL, msg, modal, display_timeout, close_button, msg_type, justify, NULL) ;
+  if (close)
+    first_button = GTK_STOCK_CLOSE ;
+
+  messageFull(parent, NULL, msg, modal, display_timeout,
+              first_button, NULL, NULL, msg_type, justify, NULL) ;
 
   return ;
 }
@@ -1246,13 +1324,29 @@ void zMapGUIShowMsgFull(GtkWindow *parent, char *msg,
 gboolean zMapGUIMsgGetBool(GtkWindow *parent, ZMapMsgType msg_type, char *msg)
 {
   gboolean result = FALSE ;
+
+  result = zMapGUIMsgGetBoolFull(parent, msg_type, msg, GTK_STOCK_OK, GTK_STOCK_CANCEL) ;
+
+
+  return result ;
+}
+
+
+
+/* The first button is the text that represents TRUE and the second FALSE so be
+ * sure to word the button text accordingly ! */
+gboolean zMapGUIMsgGetBoolFull(GtkWindow *parent, ZMapMsgType msg_type, char *msg,
+                               char* first_button, char *second_button)
+{
+  gboolean result = FALSE ;
   ZMapGUIMsgUserDataStruct user_data = {ZMAPGUI_USERDATA_BOOL, FALSE, {FALSE}} ;
   gboolean modal ;
 
   modal = modalFromMsgType(msg_type) ;
 
   /* We ignore the return value, it's not needed, just pick up the boolean. */
-  messageFull(parent, NULL, msg, modal, 0, TRUE, msg_type, GTK_JUSTIFY_CENTER, &user_data) ;
+  messageFull(parent, NULL, msg, modal, 0,
+              first_button, second_button, NULL, msg_type, GTK_JUSTIFY_CENTER, &user_data) ;
 
   result = user_data.data.bool ;
 
@@ -1280,7 +1374,8 @@ GtkResponseType zMapGUIMsgGetText(GtkWindow *parent, ZMapMsgType msg_type, char 
 
   user_data.hide_input = hide_text ;
 
-  if ((result = messageFull(parent, NULL, msg, modal, 0, TRUE, msg_type, GTK_JUSTIFY_CENTER, &user_data))
+  if ((result = messageFull(parent, NULL, msg, modal, 0, 
+                            GTK_STOCK_CLOSE, NULL, NULL, msg_type, GTK_JUSTIFY_CENTER, &user_data))
       == GTK_RESPONSE_OK)
     *text_out = user_data.data.text ;
 
@@ -1328,7 +1423,7 @@ GtkWidget *zMapGUIShowTextFull(char *title, char *text, gboolean edittable, GLis
 {
   enum {TEXT_X_BORDERS = 32, TEXT_Y_BORDERS = 50} ;
   char *full_title ;
-  GtkWidget *dialog, *scrwin, *view ;
+  GtkWidget *dialog = NULL, *scrwin, *view ;
   GtkTextBuffer *buffer ;
   GList *fixed_font_list = NULL ;
   GtkDialogFlags flags = GTK_DIALOG_DESTROY_WITH_PARENT ;
@@ -1339,7 +1434,9 @@ GtkWidget *zMapGUIShowTextFull(char *title, char *text, gboolean edittable, GLis
   int text_width, text_height ;
 
 
-  zMapAssert(title && *title && text && *text) ;
+  /* zMapAssert(title && *title && text && *text) ;*/ 
+  if (!title || !*title || !text || !*text ) 
+    return dialog ; 
 
   full_title = zMapGUIMakeTitleString(NULL, title) ;
   dialog = gtk_dialog_new_with_buttons(full_title, NULL, flags,
@@ -1435,7 +1532,9 @@ char *zmapGUIFileChooserFull(GtkWidget *toplevel, char *title, char *directory_i
   char *file_path = NULL ;
   GtkWidget *dialog ;
 
-  zMapAssert(toplevel) ;
+  /* zMapAssert(toplevel) ;*/
+  if (!toplevel) 
+    return file_path ; 
 
   if (!title)
     title = "Please give a file name:" ;
@@ -1602,7 +1701,6 @@ gboolean zMapGUIGetFixedWidthFont(GtkWidget *widget,
       pango_font_description_set_weight(desc, weight) ;
 
       font = pango_context_load_font(context, desc) ;
-      zMapAssert(font) ;
 
       if (font_out)
 	*font_out = font ;
@@ -1633,7 +1731,8 @@ void zMapGUIGetFontWidth(PangoFont *font, int *width_out)
   language = pango_language_from_string("en-UK") ; /* Does not need to be free'd. */
 
   metrics = pango_font_get_metrics(font, language) ;
-  zMapAssert(metrics) ;
+  if (!metrics) 
+    return ; 
 
   width = pango_font_metrics_get_approximate_char_width(metrics) ;
   width = PANGO_PIXELS(width) ;				    /* PANGO_PIXELS confusingly converts
@@ -1824,24 +1923,53 @@ ZMapGUIClampType zMapGUICoordsClampSpanWithLimits(double  top_limit, double  bot
 }
 
 
-void zMapGUISetClipboard(GtkWidget *widget, char *text)
+
+/* Set/Get clipboard text, note that there are TWO clipboards in
+ * common use under X, the original Clipboard and the more recent
+ * Primary_selection. The code for both setting and getting uses
+ * both. In the case of zMapGUIGetClipboard() the contents of 
+ *  */
+
+/* Set both clipboards...not sure if it's a good idea or not. */
+gboolean zMapGUISetClipboard(GtkWidget *widget, GdkAtom clipboard_name, char *clipboard_text)
 {
-  if(text)
+  gboolean result = FALSE ;
+  GtkClipboard* clipboard ;
+
+  zMapReturnValIfFail((widget && clipboard_name && clipboard_text), FALSE) ;
+
+  if ((clipboard = gtk_widget_get_clipboard(widget, clipboard_name)) != NULL)
     {
-      GtkClipboard* clip = NULL;
-      if((clip = gtk_widget_get_clipboard(GTK_WIDGET(widget),
-                                          GDK_SELECTION_PRIMARY)) != NULL)
-        {
-          //printf("Setting clipboard to: '%s'\n", text);
-          gtk_clipboard_set_text(clip, text, -1);
-        }
-      else
-        zMapLogWarning("%s", "Failed to get clipboard (GDK_SELECTION_PRIMARY)");
+      gtk_clipboard_set_text(clipboard, clipboard_text, -1) ;
+
+      result = TRUE ;
     }
 
-
-  return ;
+  return result ;
 }
+
+
+/* Gets text from clipboard. Blocks waiting for clipboard text. */
+gboolean zMapGUIGetClipboard(GdkAtom clipboard_name, char **clipboard_text_out)
+{
+  gboolean result = FALSE ;
+  GtkClipboard *clipboard ;
+  char *clipboard_text ;
+
+  zMapReturnValIfFail((clipboard_name && clipboard_text_out), FALSE) ;
+
+  if ((clipboard = gtk_clipboard_get(clipboard_name))
+      && (clipboard_text = gtk_clipboard_wait_for_text(clipboard)))
+    {
+      *clipboard_text_out = clipboard_text ;
+      result = TRUE ;
+    }
+
+  return result ;
+}
+
+
+
 
 
 
@@ -1950,7 +2078,8 @@ static void responseCB(GtkDialog *toplevel, gint arg1, gpointer user_data)
 {
   int *response_ptr = (int *)user_data ;
 
-  zMapAssert(arg1 != 0) ;				    /* It will never exit if this is true... */
+  if (!arg1) 
+    return ; 
 
   *response_ptr = arg1 ;
 
@@ -2017,7 +2146,8 @@ static void printMessage(ZMapMsgType msg_type, char *message)
  * returns TRUE if user data not required or if user data returned, FALSE otherwise.
  *  */
 static GtkResponseType messageFull(GtkWindow *parent, char *title_in, char *msg,
-				   gboolean modal, int display_timeout, gboolean close_button,
+				   gboolean modal, int display_timeout,
+                                   char *first_button, char *second_button, char *third_button,
 				   ZMapMsgType msg_type, GtkJustification justify,
 				   ZMapGUIMsgUserData user_data)
 {
@@ -2028,13 +2158,8 @@ static GtkResponseType messageFull(GtkWindow *parent, char *title_in, char *msg,
   GtkDialogFlags flags = GTK_DIALOG_DESTROY_WITH_PARENT ;
   guint timeout_func_id ;
   int interval = display_timeout * 1000 ;		    /* glib needs time in milliseconds. */
+  GtkResponseType first_response = 0, second_response = 0, third_response = 0 ;
 
-  /* relies on order of ZMapMsgType enum.... */
-  zMapAssert((msg_type >= ZMAP_MSG_INFORMATION || msg_type <= ZMAP_MSG_CRASH)
-	     && (msg && *msg)
-	     && (!user_data
-		 || (user_data
-		     && (user_data->type > ZMAPGUI_USERDATA_INVALID && user_data->type <= ZMAPGUI_USERDATA_TEXT)))) ;
 
   /* Set up title. */
   if (title_in && *title_in)
@@ -2065,31 +2190,35 @@ static GtkResponseType messageFull(GtkWindow *parent, char *title_in, char *msg,
 
   full_title = zMapGUIMakeTitleString(NULL, title) ;
 
-  /* Set up the dialog, if user data is required we need all the buttons, otherwise
+  /* Set up the button responses, note that we just set the responses arbitrarily to be as 
+   * below. If we needed to we could allow the caller to set the responses but that seems
+   * overkill just now. */
+  if (first_button && *first_button)
+    first_response = GTK_RESPONSE_OK ;
+  if (second_button && *second_button)
+    second_response = GTK_RESPONSE_CANCEL ;
+  if (third_button && *third_button)
+    third_response = GTK_RESPONSE_CLOSE ;
+
+
+  /* Set up the dialog, if user data is required we need two buttons, otherwise
    * there will be a "close" or perhaps no buttons for messages that time out. */
   if (modal)
     flags |= GTK_DIALOG_MODAL ;
 
-  if (user_data)
     dialog = gtk_dialog_new_with_buttons(full_title, parent, flags,
-					 GTK_STOCK_OK,
-					 GTK_RESPONSE_OK,
-					 GTK_STOCK_CANCEL,
-					 GTK_RESPONSE_CANCEL,
-					 NULL) ;
-  else if (close_button)
-    dialog = gtk_dialog_new_with_buttons(full_title, parent, flags,
-					 "Close", GTK_RESPONSE_NONE,
-					 NULL) ;
-  else
-    dialog = gtk_dialog_new_with_buttons(full_title, parent, flags,
+					 first_button,
+					 first_response,
+					 second_button,
+					 second_response,
+					 third_button,
+					 third_response,
 					 NULL) ;
 
   g_free(full_title) ;
 
 
   gtk_container_set_border_width(GTK_CONTAINER(dialog), 5) ;
-
 
   /* Set up the message text in a button widget so that it can put in the primary
    * selection buffer for cut/paste when user clicks on it. */
@@ -2173,7 +2302,7 @@ static GtkResponseType messageFull(GtkWindow *parent, char *title_in, char *msg,
 		    }
 		  default:
 		    {
-		      zMapAssertNotReached() ;
+                      zMapWarnIfReached() ;
 
 		      break ;
 		    }

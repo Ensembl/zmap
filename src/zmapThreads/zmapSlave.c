@@ -1,6 +1,6 @@
 /*  File: zmapSlave.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -133,10 +133,6 @@ void *zmapNewThread(void *thread_args)
 	{
 	  void *reply ;
 	  char *slave_error = NULL ;
-
-
-	  /* Must have a request at this stage.... */
-	  zMapAssert(request) ;
 
 
 	  ZMAPTHREAD_DEBUG(thread, "%s", "calling server to service request....") ;
@@ -292,7 +288,7 @@ void *zmapNewThread(void *thread_args)
 
 	    default:
 	      {
-		zMapAssertNotReached() ;
+                zMapLogCritical("Data server code has returned an unhandled/bad slave response: %d", slave_response) ;
 
 		break ;
 	      }
@@ -357,7 +353,6 @@ static void cleanUpThread(void *thread_args)
   ZMapThreadReply reply ;
   gchar *error_msg = NULL ;
 
-  zMapAssert(thread_args) ;
 
   ZMAPTHREAD_DEBUG(thread, "%s", "thread clean-up routine: starting....") ;
 
@@ -368,7 +363,6 @@ static void cleanUpThread(void *thread_args)
 
   zMapThreadForkUnlock(); // not needed, but play safe. See zmapThread.c
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
 
   if (thread_cb->thread_died)

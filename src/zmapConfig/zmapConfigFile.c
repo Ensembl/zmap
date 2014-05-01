@@ -1,6 +1,6 @@
 /*  File: zmapConfigFile.c
  *  Author: Malcolm Hinsley (mh17@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -59,15 +59,19 @@ ZMapConfigIni zMapConfigIniNew(void)
 {
   ZMapConfigIni config = NULL;
 
-  if(!(config = g_new0(ZMapConfigIniStruct, 1)))
+  /* if(!(config = g_new0(ZMapConfigIniStruct, 1)))
     {
-      zMapAssertNotReached();
+      zMapWarnIfReached();
     }
   else
     {
       g_type_init();
-      //config->magic = config_magic_G;
-    }
+    } */
+
+  config = g_new0(ZMapConfigIniStruct, 1) ; 
+  zMapReturnValIfFail(config, config) ; 
+
+  g_type_init() ; 
 
   return config;
 }
@@ -77,33 +81,29 @@ ZMapConfigIni zMapConfigIniNew(void)
 gboolean zMapConfigIniReadAll(ZMapConfigIni config, char *config_file)
 {
   gboolean red = FALSE ;
-//  char *file_name ;
 
-  zMapAssert(config) ;
+  /* if (!config) 
+    return red ; */
+  zMapReturnValIfFail(config, red) ; 
 
-  // mh17: this assignment invalidates the 2nd if statement and subsequent statement, we'd read the same file twice
-  // testing shows that none of these files exist....
-  // file_name = (config_file ? config_file : zMapConfigDirGetZmapHomeFile()) ;
+  /* mh17: this assignment invalidates the 2nd if statement and subsequent statement, we'd read the same file twice
+    testing shows that none of these files exist....
+    file_name = (config_file ? config_file : zMapConfigDirGetZmapHomeFile()) ; */ 
 
   if (!system_file_loaded(config) && has_system_file(config))
     {
       config->sys_key_file = read_file(zMapConfigDirGetSysFile(), &(config->sys_key_error)) ;
     }
 
-//  if (!system_zmap_file_loaded(config) && (config_file || has_system_zmap_file(config)))
+/*  if (!system_zmap_file_loaded(config) && (config_file || has_system_zmap_file(config))) */ 
   if (!system_zmap_file_loaded(config) && has_system_zmap_file(config))
     {
       config->zmap_key_file = read_file(zMapConfigDirGetZmapHomeFile(), &(config->zmap_key_error)) ;
     }
 
-//printf("Read All: %s (%d), %s (%d), %s\n",zMapConfigDirGetSysFile(), has_system_file(config),  //zMapConfigDirGetZmapHomeFile(),has_system_zmap_file(config), config_file ? config_file : "");
-
-//  red = zMapConfigIniReadUser(config, file_name) ;
-
-//  if(config_file)
-	/* rather helpfully this function accepts a null arg and then chooses the config file specified on the command line */
-	/* which is much clearer than having that passed through to this function. Yeah right. */
-	red = zMapConfigIniReadUser(config, config_file) ;
+  /* rather helpfully this function accepts a null arg and then chooses the config file specified on the command line */
+  /* which is much clearer than having that passed through to this function. Yeah right. */
+  red = zMapConfigIniReadUser(config, config_file) ;
 
   return red ;
 }
@@ -114,7 +114,9 @@ gboolean zMapConfigIniReadUser(ZMapConfigIni config, char *config_file)
   gboolean red = FALSE ;
   char *file_name ;
 
-  zMapAssert(config) ;
+  /* if (!config) 
+    return red ; */
+  zMapReturnValIfFail(config, red) ;
 
   file_name = (config_file ? config_file : zMapConfigDirGetFile()) ;
 
@@ -131,7 +133,9 @@ gboolean zMapConfigIniReadUser(ZMapConfigIni config, char *config_file)
 gboolean zMapConfigIniReadBuffer(ZMapConfigIni config, char *buffer)
 {
   gboolean red = FALSE;
-  zMapAssert(config);
+  /* if (!config)
+    return red ; */ 
+  zMapReturnValIfFail(config, red) ; 
 
   if(buffer != NULL)
     {
@@ -162,7 +166,9 @@ gboolean zMapConfigIniReadFile(ZMapConfigIni config, char *file)
 {
   gboolean read = FALSE;
 
-  zMapAssert(config);
+  /* if (!config)
+    return read ; */ 
+  zMapReturnValIfFail(config, read ) ; 
 
 
   if ((g_path_is_absolute(file) || (file = zMapConfigDirFindFile(file)))

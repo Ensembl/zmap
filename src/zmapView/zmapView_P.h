@@ -1,6 +1,6 @@
 /*  File: zmapView_P.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -251,6 +251,11 @@ typedef struct _ZMapViewStruct
   gboolean remote_control ;
 
 
+  /* Multiple screen support. */
+  gboolean multi_screen ;
+  int blixem_screen ;
+
+
   /* THESE WILL NOT BE NEEDED ANY MORE.. */
   GtkWidget *xremote_widget ;				    /* Widget that receives xremote
 							       commands from external program
@@ -292,12 +297,13 @@ typedef struct _ZMapViewStruct
 
 
   /* Data recording which sources are loading and which failed. */
-  GList *sources_loading ;					    /* how many active/queued requests,
-								       this is not very neat as failures
-								       are dealt with in a complex way */
-  GList *sources_failed ;					    /* A count of the number that failed
-								       since the last data request, is
-								       reset on next load command */
+  GList *sources_loading ;                                  /* how many active/queued requests,
+                                                               this is not very neat as failures
+                                                               are dealt with in a complex way */
+  GList *sources_empty ;                                    /* How many sources are empty. */
+  GList *sources_failed ;                                   /* A count of the number that failed
+                                                               since the last data request, is
+                                                               reset on next load command */
 
   GList *connection_list ;				    /* Of ZMapViewConnection. */
   ZMapViewConnection sequence_server ;			    /* Which connection to get raw
@@ -384,7 +390,6 @@ void zmapViewBusyFull(ZMapView zmap_view, gboolean busy, const char *file, const
   zmapViewBusyFull((VIEW), (BUSY), __FILE__, __PRETTY_FUNCTION__)
 
 gboolean zmapAnyConnBusy(GList *connection_list) ;
-char *zmapViewGetStatusAsStr(ZMapViewState state) ;
 
 gboolean zmapViewBlixemLocalSequences(ZMapView view, ZMapFeatureBlock block, ZMapHomolType align_type,
 				      int offset, int position,
@@ -401,7 +406,8 @@ gboolean zmapViewCallBlixem(ZMapView view, ZMapFeatureBlock block,
 			    GList *source, GList *local_sequences,
 			    GPid *child_pid, gboolean *kill_on_exit) ;
 
-ZMapFeatureContext zmapViewMergeInContext(ZMapView view, ZMapFeatureContext context);
+ZMapFeatureContext zmapViewMergeInContext(ZMapView view,
+                                          ZMapFeatureContext context, ZMapFeatureContextMergeStats *merge_stats_out) ;
 gboolean zmapViewDrawDiffContext(ZMapView view, ZMapFeatureContext *diff_context, ZMapFeature highlight_feature) ;
 void zmapViewResetWindows(ZMapView zmap_view, gboolean revcomp);
 void zmapViewEraseFromContext(ZMapView replace_me, ZMapFeatureContext context_inout);
@@ -459,7 +465,9 @@ GList *zmapViewSrc2FSetGetList(GHashTable *source_2_featureset, GList *source_li
 
 ZMapFeatureContext zmapViewCreateContext(ZMapView view, GList *feature_set_names, ZMapFeatureSet feature_set);
 
-gboolean zmapViewMergeNewFeatures(ZMapView view, ZMapFeatureContext *context, GList **feature_list) ;
+gboolean zmapViewMergeNewFeatures(ZMapView view,
+                                  ZMapFeatureContext *context, ZMapFeatureContextMergeStats *merge_stats_out,
+                                  GList **feature_list) ;
 void zmapViewEraseFeatures(ZMapView view, ZMapFeatureContext context, GList **feature_list) ;
 
 /* zmapViewFeatureMask.c */

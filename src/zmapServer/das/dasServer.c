@@ -1,6 +1,6 @@
-/*  File: zmapServer.c
+/*  File: dasServer.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -622,7 +622,7 @@ static gint segmentsFindCurrent(gpointer data, gpointer user_data)
   listFindResult full_data = (listFindResult)user_data;
   gint found = 1;
 
-  if((segment->id == full_data->id_to_match))
+  if(segment->id == full_data->id_to_match)
     {
       full_data->segment = segment;
       full_data->matched = TRUE;
@@ -877,8 +877,6 @@ static gboolean requestAndParseOverHTTP(DasServer server,
   gboolean response = FALSE, result = TRUE;
   ZMapDAS1QueryType type;
   char *url = NULL;
-
-  zMapAssert(detail);
 
   if((url = detail->url) && !(*url))
     {
@@ -1389,7 +1387,7 @@ static void featureFilter(ZMapDAS1Feature feature, gpointer user_data)
   ZMapFeatureSet   feature_set = NULL;
   ZMapFeature      new_feature = NULL;
   ZMapStrand    feature_strand = ZMAPSTRAND_NONE;
-  ZMapStyleMode feature_type = ZMAPSTYLE_MODE_INVALID;
+  ZMapStyleMode feature_mode = ZMAPSTYLE_MODE_INVALID;
 
   /* gdouble        feature_score = 0.0; */
   gboolean has_score = TRUE;
@@ -1398,7 +1396,7 @@ static void featureFilter(ZMapDAS1Feature feature, gpointer user_data)
     *short_ft_name   = NULL,
     *type_name       = NULL,
     *method_name     = NULL;
-  GQuark feature_id, style_id, group_id;
+  GQuark feature_id, style_id, group_id = 0 ;
 
   block  = block_server->block;
   server = block_server->server;
@@ -1418,7 +1416,7 @@ static void featureFilter(ZMapDAS1Feature feature, gpointer user_data)
 
   /* make ZMapStrand, ZMapPhase, ZMapFeatureType and check for score */
   zMapFeatureFormatStrand((char *)g_quark_to_string(feature->orientation), &feature_strand);
-  if(!(zMapFeatureFormatType(FALSE, FALSE, method_name, &feature_type)))
+  if(!(zMapFeatureFormatType(FALSE, FALSE, method_name, &feature_mode)))
     {
       zMapLogWarning("Ignoring feature with type %s", method_name);
       return ;
@@ -1429,7 +1427,7 @@ static void featureFilter(ZMapDAS1Feature feature, gpointer user_data)
     {
       /* QUERY COORDS! */
       short_ft_name = (char *)g_quark_to_string(group_id);
-      feature_name  = zMapFeatureCreateName(feature_type, short_ft_name,
+      feature_name  = zMapFeatureCreateName(feature_mode, short_ft_name,
                                             feature_strand, feature->start, feature->end, 0, 0);
       feature_id = g_quark_from_string(feature_name);
 
@@ -1442,24 +1440,27 @@ static void featureFilter(ZMapDAS1Feature feature, gpointer user_data)
 
           zMapFeatureAddStandardData(new_feature, feature_name,
                                      short_ft_name, NULL, method_name,
-                                     feature_type,  &feature_set->style, // style,
+                                     feature_mode,  &feature_set->style, // style,
                                      feature->start, feature->end,
                                      has_score, feature->score,
                                      feature_strand) ;
         }
       else
-        mergeWithGroupFeature(new_feature, feature, feature_type, group_id);
+        mergeWithGroupFeature(new_feature, feature, feature_mode, group_id);
     }
   else
     {
       /* No group information for this feature */
+      /* gb10: group_id was uninitialised so I've initialised it at the top to 0 but
+       * I'm not sure what the intent was. */
+      #warning Code looks up a feature based on an uninitialised group_id - need to work out what was intended here
       if(!(new_feature = g_hash_table_lookup(feature_set->features, GINT_TO_POINTER(group_id))))
         {
           new_feature = zMapFeatureCreateEmpty();
 
           if(zMapFeatureAddStandardData(new_feature, feature_name,
                                         short_ft_name, NULL, method_name,
-                                        feature_type, &feature_set->style, // style,
+                                        feature_mode, &feature_set->style, // style,
                                         feature->start, feature->end,
                                         has_score, feature->score,
                                         feature_strand))
@@ -1519,9 +1520,6 @@ static void stylesheetFilter (ZMapDAS1Stylesheet style, gpointer user_data)
                (char *)g_quark_to_string(type->id),
                (char *)g_quark_to_string(category->id));
     }
-  else
-    zMapAssertNotReached();
-
 
   return ;
 }
@@ -1533,7 +1531,7 @@ static void stylesheetFilter (ZMapDAS1Stylesheet style, gpointer user_data)
  */
 static gboolean mergeWithGroupFeature(ZMapFeature grp_feature,
                                       ZMapDAS1Feature das_sub_feature,
-				      ZMapStyleMode feature_type,
+				      ZMapStyleMode feature_mode,
                                       GQuark group_id)
 {
   gboolean bad = FALSE;
@@ -1541,15 +1539,15 @@ static gboolean mergeWithGroupFeature(ZMapFeature grp_feature,
   /* A few sanity checks.
    * feature types are equal and not basic
    * group ids match */
-  if(!bad && grp_feature->type != feature_type)
+  if(!bad && grp_feature->mode != feature_mode)
     bad = TRUE;
-  if(!bad && feature_type == ZMAPSTYLE_MODE_BASIC)
+  if(!bad && feature_mode == ZMAPSTYLE_MODE_BASIC)
     bad = TRUE;
   if(!bad && group_id && grp_feature->original_id != group_id)
     bad = TRUE;
 
   /* if type looks like a gene we're ok and will believe it's a gene */
-  if(!bad && feature_type == ZMAPSTYLE_MODE_TRANSCRIPT)
+  if(!bad && feature_mode == ZMAPSTYLE_MODE_TRANSCRIPT)
     {
       ZMapSpanStruct   exon = {0};
 
@@ -1570,7 +1568,7 @@ static gboolean mergeWithGroupFeature(ZMapFeature grp_feature,
         }
     }
 
-  if(!bad && feature_type == ZMAPSTYLE_MODE_ALIGNMENT)
+  if(!bad && feature_mode == ZMAPSTYLE_MODE_ALIGNMENT)
     {
       zMapLogWarning("%s", "DAS server not managing alignments correctly.\n");
     }
@@ -1589,7 +1587,7 @@ static void fixFeatureCache(gpointer key, gpointer data, gpointer user_data)
   char *type_name = NULL;
   int exon_count  = 0, i = 0;
 
-  if(feature->type == ZMAPSTYLE_MODE_TRANSCRIPT &&
+  if(feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT &&
      (exons = feature->feature.transcript.exons))
     {
       ZMapSpanStruct
@@ -1620,7 +1618,7 @@ static void fixFeatureCache(gpointer key, gpointer data, gpointer user_data)
         }
 
       /* fix up feature->unique_id to reflect fixed x1 & x2 */
-      feature->unique_id = zMapFeatureCreateID(feature->type,
+      feature->unique_id = zMapFeatureCreateID(feature->mode,
                                                (char *)g_quark_to_string(feature->original_id),
                                                feature->strand,
                                                feature->x1,

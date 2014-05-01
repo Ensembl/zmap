@@ -1,6 +1,6 @@
 /*  File: zmapGFFAttribute.c
  *  Author: Steve Miller (sm23@sanger.ac.uk)
- *  Copyright (c) 2006-2013: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -31,11 +31,32 @@
 
 #include <ZMap/zmapSO.h>
 #include <ZMap/zmapGFF.h>
+
 #include "zmapGFF_P.h"
 #include "zmapGFF3_P.h"
+
+#define ATTRIBUTE_DEFINITIONS 1
 #include "zmapGFFAttribute.h"
+#undef ATTRIBUTE_DEFINITIONS
+
 #include "zmapGFFStringUtils.h"
 
+
+
+/*
+ * Escaped strings that need to be removed from attribute strings.
+ * These are the url-escaped sequences, and are the only ones allowed
+ * GFF3 attributes. Not all of these are used at the moment, but
+ * might well be in the future.
+ */
+static const char *sEscapedComma = "%2C" ;
+static const char *sEscapedEquals = "%3D" ;
+static const char *sEscapedSemicolon = "%3B" ;
+static const char *sEscapedSpace = "%20" ;
+static const char *sComma = "," ;
+static const char *sEquals = "=" ;
+static const char *sSemicolon = ";" ;
+static const char *sSpace = " " ;
 
 /*
  * Array of attribute info objects. Data are as given in the header file.
@@ -125,7 +146,7 @@ char * zMapGFFAttributeGetString(ZMapGFFAttributeName eName)
  * Return the name stored as a string (not necessarily the same as the
  * name from the above lookups).
  */
-char * zMapGFFAttributeGetNamestring(const ZMapGFFAttribute const pAttribute)
+char * zMapGFFAttributeGetNamestring(ZMapGFFAttribute pAttribute)
 {
   if (!pAttribute)
     return NULL ;
@@ -135,7 +156,7 @@ char * zMapGFFAttributeGetNamestring(const ZMapGFFAttribute const pAttribute)
 /*
  * Return the temp string stored internally.
  */
-char * zMapGFFAttributeGetTempstring(const ZMapGFFAttribute const pAttribute)
+char * zMapGFFAttributeGetTempstring(ZMapGFFAttribute pAttribute)
 {
   if (!pAttribute)
     return NULL ;
@@ -177,7 +198,7 @@ static gboolean zMapGFFAttributeIsV3Attribute(ZMapGFFAttributeName eTheName)
 /*
  * Return the name (as an enum element) of the attribute.
  */
-ZMapGFFAttributeName zMapGFFAttributeGetName(const ZMapGFFAttribute const pAttribute)
+ZMapGFFAttributeName zMapGFFAttributeGetName(ZMapGFFAttribute pAttribute)
 {
   if (!pAttribute)
     return ZMAPGFF_ATT_UNK ;
@@ -209,7 +230,7 @@ ZMapGFFAttribute zMapGFFCreateAttribute(ZMapGFFAttributeName eTheName)
 /*
  * Destroy an attribute object.
  */
-gboolean zMapGFFDestroyAttribute(ZMapGFFAttribute const pAttribute)
+gboolean zMapGFFDestroyAttribute(ZMapGFFAttribute pAttribute)
 {
   gboolean bResult = TRUE ;
 	 if (!pAttribute)
@@ -245,7 +266,7 @@ gboolean zMapGFFAttributeGetIsMultivalued(ZMapGFFAttributeName eTheName)
 /*
  * Test whether or not an attribute is valid.
  */
-gboolean zMapGFFAttributeIsValid(const ZMapGFFAttribute const pAttribute)
+gboolean zMapGFFAttributeIsValid(ZMapGFFAttribute pAttribute)
 {
   gboolean bResult = FALSE ;
   ZMapGFFAttributeName eTheName ;
@@ -276,7 +297,7 @@ gboolean zMapGFFAttributeIsValid(const ZMapGFFAttribute const pAttribute)
  * flag say whether or not to attempt to remove leading or trailing
  * quotes from the string that is parsed out.
  */
-ZMapGFFAttribute zMapGFFAttributeParse(const ZMapGFFParser const pParserBase, const char*  const sAttribute, gboolean bRemoveQuotes)
+ZMapGFFAttribute zMapGFFAttributeParse(ZMapGFFParser pParserBase, const char*  const sAttribute, gboolean bRemoveQuotes)
 {
   static const unsigned int iExpectedTokens = 2 ,
     iTokenLimit = 2 ;
@@ -370,7 +391,7 @@ ZMapGFFAttribute zMapGFFAttributeParse(const ZMapGFFParser const pParserBase, co
  *                 '"<string>'   or    '<s1> "<s2>" <s3>'
  * etc.
  */
-gboolean zMapGFFAttributeRemoveQuotes(const ZMapGFFAttribute const pAttribute )
+gboolean zMapGFFAttributeRemoveQuotes(ZMapGFFAttribute pAttribute )
 {
   static const char cQuote = '"';
   unsigned int iLength = strlen(pAttribute->sTemp) ;
@@ -394,7 +415,7 @@ gboolean zMapGFFAttributeRemoveQuotes(const ZMapGFFAttribute const pAttribute )
  * Parse multiple attributes from input string. Calls the above parse function
  * for each attribute found.
  */
-ZMapGFFAttribute* zMapGFFAttributeParseList(const ZMapGFFParser const pParserBase, const char * const sAttributes,
+ZMapGFFAttribute* zMapGFFAttributeParseList(ZMapGFFParser pParserBase, const char * const sAttributes,
                                             unsigned int * const pnAttributes, gboolean bRemoveQuotes)
 {
   unsigned int i = 0 ;
@@ -480,7 +501,7 @@ ZMapGFFAttribute* zMapGFFAttributeParseList(const ZMapGFFParser const pParserBas
 /*
  * Destroy a list of attributes as created above.
  */
-gboolean zMapGFFAttributeDestroyList(ZMapGFFAttribute* const pAttributes, unsigned int nAttributes)
+gboolean zMapGFFAttributeDestroyList(ZMapGFFAttribute* pAttributes, unsigned int nAttributes)
 {
   gboolean bResult = FALSE ;
   unsigned int iAtt;
@@ -499,7 +520,7 @@ gboolean zMapGFFAttributeDestroyList(ZMapGFFAttribute* const pAttributes, unsign
  * Queries a list of attributes to see if it contains one with the name passed in.
  * Returns a pointer to it or NULL if not found (or some other error).
  */
-ZMapGFFAttribute zMapGFFAttributeListContains(const ZMapGFFAttribute* const pAtt, unsigned int nAttributes, const char * const sName)
+ZMapGFFAttribute zMapGFFAttributeListContains( ZMapGFFAttribute* pAtt, unsigned int nAttributes, const char * const sName)
 {
   ZMapGFFAttribute pAttribute = NULL ;
   const ZMapGFFAttribute *pAttributes = pAtt ;
@@ -678,7 +699,7 @@ void attribute_test_parse(ZMapGFFParser pParser, char ** pAttributes, unsigned i
 /*
  * Inspect the "Class" attribute to convert to a homology type.
  */
-gboolean zMapAttParseClass(const ZMapGFFAttribute const pAttribute, ZMapHomolType * const pcReturnValue)
+gboolean zMapAttParseClass(ZMapGFFAttribute pAttribute, ZMapHomolType * const pcReturnValue)
 {
   static const char* sMyName = "zMapAttParseClass()" ;
   gboolean bResult = FALSE ;
@@ -688,7 +709,7 @@ gboolean zMapAttParseClass(const ZMapGFFAttribute const pAttribute, ZMapHomolTyp
       return bResult ;
     }
   const char * const sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
-  if (strcmp("Class", zMapGFFAttributeGetNamestring(pAttribute)))
+  if (strcmp(sAttributeName_Class, zMapGFFAttributeGetNamestring(pAttribute)))
     {
       zMapLogWarning("Attribute wrong type in %s: %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
       return bResult ;
@@ -716,7 +737,7 @@ gboolean zMapAttParseClass(const ZMapGFFAttribute const pAttribute, ZMapHomolTyp
 /*
  * Inspect the "percentID" attribute to convert to double.
  */
-gboolean zMapAttParsePID(const ZMapGFFAttribute const pAttribute, double * const pdReturnValue)
+gboolean zMapAttParsePID(ZMapGFFAttribute pAttribute, double * const pdReturnValue)
 {
   static const char* sMyName = "zMapAttParsePID()" ;
   static const unsigned int iExpectedFields = 1 ;
@@ -728,7 +749,7 @@ gboolean zMapAttParsePID(const ZMapGFFAttribute const pAttribute, double * const
       return bResult ;
     }
   const char* const sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
-  if (strcmp("percentID", zMapGFFAttributeGetNamestring(pAttribute)))
+  if (strcmp(sAttributeName_percentID, zMapGFFAttributeGetNamestring(pAttribute)))
     {
       zMapLogWarning("Attribute wrong type in %s: %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
       return bResult ;
@@ -750,7 +771,7 @@ gboolean zMapAttParsePID(const ZMapGFFAttribute const pAttribute, double * const
 /*
  * Inspect the "Align" attribute to convert to two integer values, and a char.
  */
-gboolean zMapAttParseAlign(const ZMapGFFAttribute const pAttribute, int * const piStart, int * const piEnd, ZMapStrand * const pStrand)
+gboolean zMapAttParseAlign(ZMapGFFAttribute pAttribute, int * const piStart, int * const piEnd, ZMapStrand * const pStrand)
 {
   static const char *sMyName = "zMapAttParseAlign()" ;
   static const unsigned int iExpectedFields = 3 ;
@@ -761,7 +782,7 @@ gboolean zMapAttParseAlign(const ZMapGFFAttribute const pAttribute, int * const 
   if (!pAttribute || !piStart || !piEnd || !pStrand )
     return bResult ;
   const char * const sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
-  if (strcmp("Align", zMapGFFAttributeGetNamestring(pAttribute)))
+  if (strcmp(sAttributeName_Align, zMapGFFAttributeGetNamestring(pAttribute)))
     {
       zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
       return bResult ;
@@ -804,7 +825,7 @@ gboolean zMapAttParseAlign(const ZMapGFFAttribute const pAttribute, int * const 
  * Parse the "start_not_found" attribute. We are just after an integer value; but it must be
  * within a certain numerical range.
  */
-gboolean zMapAttParseCDSStartNotFound(const ZMapGFFAttribute const pAttribute, gboolean * const pbOut, int * const piOut)
+gboolean zMapAttParseCDSStartNotFound(ZMapGFFAttribute pAttribute, gboolean * const pbOut, int * const piOut)
 {
   static const char *sMyName = "zMapAttParseCDSStartNotFound()" ;
   static const unsigned int iExpectedFields = 1;
@@ -814,7 +835,7 @@ gboolean zMapAttParseCDSStartNotFound(const ZMapGFFAttribute const pAttribute, g
   if (!pAttribute )
     return bResult ;
   const char * const sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
-  if (strcmp("start_not_found", zMapGFFAttributeGetNamestring(pAttribute)))
+  if (strcmp(sAttributeName_start_not_found, zMapGFFAttributeGetNamestring(pAttribute)))
     {
       zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
       return bResult ;
@@ -837,13 +858,13 @@ gboolean zMapAttParseCDSStartNotFound(const ZMapGFFAttribute const pAttribute, g
  * Parse the "end_not_found" attribute. All we have to do here is check that the type of the attribute
  * is correct.
  */
-gboolean zMapAttParseCDSEndNotFound(const ZMapGFFAttribute const pAttribute, gboolean * const pbOut)
+gboolean zMapAttParseCDSEndNotFound(ZMapGFFAttribute pAttribute, gboolean * const pbOut)
 {
   static const char *sMyName = "zMapAttParseCDSEndNotFound()" ;
   gboolean bResult = FALSE ;
   if (!pAttribute )
     return bResult ;
-  if (strcmp("end_not_found", zMapGFFAttributeGetNamestring(pAttribute)))
+  if (strcmp(sAttributeName_end_not_found, zMapGFFAttributeGetNamestring(pAttribute)))
     {
       zMapLogWarning("Attribute wrong type in %s, %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute)) ;
       return bResult ;
@@ -858,9 +879,10 @@ gboolean zMapAttParseCDSEndNotFound(const ZMapGFFAttribute const pAttribute, gbo
 
 
 /*
- * Inspect the "Length" attribute for a single integer variable.
+ * Inspect the "length" attribute for a single integer variable. This is for V3 only; the
+ * attribute name "length" was previous capitalised in our V2 code.
  */
-gboolean zMapAttParseLength(const ZMapGFFAttribute const pAttribute , int* const piLength )
+gboolean zMapAttParseLength(ZMapGFFAttribute pAttribute , int* const piLength )
 {
   static const char *sMyName = "zMapAttParseLength()" ;
   static const unsigned int iExpectedFields = 1;
@@ -870,7 +892,7 @@ gboolean zMapAttParseLength(const ZMapGFFAttribute const pAttribute , int* const
   if (!pAttribute || !piLength )
     return bResult ;
   const char * const sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
-  if (strcmp("Length", zMapGFFAttributeGetNamestring(pAttribute)))
+  if (strcmp(sAttributeName_length, zMapGFFAttributeGetNamestring(pAttribute)))
     {
       zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
       return bResult ;
@@ -895,7 +917,7 @@ gboolean zMapAttParseLength(const ZMapGFFAttribute const pAttribute , int* const
  * Parse a "Name" attribute for variation data. This was what we previously did in V2. There
  * is another version of ParseNameV3 for the new version.
  */
-gboolean zMapAttParseNameV2(const ZMapGFFAttribute const pAttribute, GQuark *const SO_acc_out, char ** const name_str_out, char ** const variation_str_out)
+gboolean zMapAttParseNameV2(ZMapGFFAttribute pAttribute, GQuark *const SO_acc_out, char ** const name_str_out, char ** const variation_str_out)
 {
   gboolean bResult = FALSE ;
   static const char *sMyName = "zMapAttParseNameV2()" ;
@@ -907,7 +929,7 @@ gboolean zMapAttParseNameV2(const ZMapGFFAttribute const pAttribute, GQuark *con
   if (!pAttribute)
     return bResult ;
   const char * const sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
-  if (strcmp("Name", zMapGFFAttributeGetNamestring(pAttribute)))
+  if (strcmp(sAttributeName_Name, zMapGFFAttributeGetNamestring(pAttribute)))
     {
       zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
       return bResult ;
@@ -930,26 +952,38 @@ gboolean zMapAttParseNameV2(const ZMapGFFAttribute const pAttribute, GQuark *con
 
 
 /*
- * V3 "Name" parser. This just returns a copy of the string.
+ * V3 "Name" parser. This just returns a copy of the string, having removed escaped equals and
+ * escaped commas if any are present.
  */
-gboolean zMapAttParseName(const ZMapGFFAttribute const pAttribute, char** const sOut)
+gboolean zMapAttParseName(ZMapGFFAttribute pAttribute, char** const psOut)
 {
-  gboolean bResult = FALSE ;
-  static const char *sMyName = "zMapAttParseNameV3()" ;
+  gboolean bReplaced = FALSE, bResult = FALSE ;
+  static const char *sMyName = "zMapAttParseName()" ;
+  char *sTemp = NULL ;
   if (!pAttribute)
     return bResult ;
   const char * const sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
-  if (strcmp("Name", zMapGFFAttributeGetNamestring(pAttribute)))
+  if (strcmp(sAttributeName_Name, zMapGFFAttributeGetNamestring(pAttribute)))
     {
       zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
       return bResult ;
     }
 
   if (strlen(sValue))
-    *sOut = g_strdup(sValue) ;
+    {
+      bReplaced = zMapGFFStr_substring_replace_n(sValue, sEscapedEquals, sEquals, &sTemp) ;
+      bReplaced = zMapGFFStr_substring_replace_n(sTemp, sEscapedComma, sComma, psOut) ;
+      bResult = TRUE ;
+    }
   else
-    *sOut = NULL ;
-  bResult = TRUE ;
+    {
+      *psOut = NULL ;
+    }
+
+  if (sTemp)
+    {
+      g_free(sTemp) ;
+    }
 
   return bResult ;
 }
@@ -957,14 +991,14 @@ gboolean zMapAttParseName(const ZMapGFFAttribute const pAttribute, char** const 
 /*
  * Parse the "Alias" attribute; just returns a copy of the string.
  */
-gboolean zMapAttParseAlias(const ZMapGFFAttribute const pAttribute, char ** const sOut)
+gboolean zMapAttParseAlias(ZMapGFFAttribute pAttribute, char ** const sOut)
 {
   gboolean bResult = FALSE ;
   static const char *sMyName = "zMapAttParseAlias()" ;
   if (!pAttribute)
     return bResult ;
   const char * const sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
-  if (strcmp("Alias", zMapGFFAttributeGetNamestring(pAttribute)))
+  if (strcmp(sAttributeName_Alias, zMapGFFAttributeGetNamestring(pAttribute)))
     {
       zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
       return bResult ;
@@ -992,7 +1026,7 @@ gboolean zMapAttParseAlias(const ZMapGFFAttribute const pAttribute, char ** cons
  * The 'start' and 'end' data are assumed to be unsigned. At least one
  * space is required between <end> and <strand> if the latter is present.
  */
-gboolean zMapAttParseTarget(const ZMapGFFAttribute const pAttribute, char ** const sOut, int * const piStart, int * const piEnd, ZMapStrand * const pStrand)
+gboolean zMapAttParseTarget(ZMapGFFAttribute pAttribute, GQuark * const pgqOut, int * const piStart, int * const piEnd, ZMapStrand * const pStrand)
 {
   gboolean bResult = FALSE ;
   static const char *sMyName = "zMapAttParseTarget()" ;
@@ -1005,7 +1039,7 @@ gboolean zMapAttParseTarget(const ZMapGFFAttribute const pAttribute, char ** con
   if (!pAttribute)
     return bResult ;
   const char * const sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
-  if (strcmp("Target", zMapGFFAttributeGetNamestring(pAttribute)))
+  if (strcmp(sAttributeName_Target, zMapGFFAttributeGetNamestring(pAttribute)))
     {
       zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
       return bResult ;
@@ -1041,7 +1075,7 @@ gboolean zMapAttParseTarget(const ZMapGFFAttribute const pAttribute, char ** con
 
           if (bResult)
             {
-              *sOut = g_strdup(sStringBuff) ;
+              *pgqOut = g_quark_from_string(sStringBuff) ;
               *piStart = iStart ;
               *piEnd = iEnd ;
             }
@@ -1059,7 +1093,7 @@ gboolean zMapAttParseTarget(const ZMapGFFAttribute const pAttribute, char ** con
  * may contain colons so we split on the first one encountered. If one is not encountered
  * at all, this is an error.
  */
-gboolean zMapAttParseDbxref(const ZMapGFFAttribute const pAttribute, char ** const sOut1, char ** const sOut2)
+gboolean zMapAttParseDbxref(ZMapGFFAttribute pAttribute, char ** const sOut1, char ** const sOut2)
 {
   gboolean bResult = FALSE,
     bFoundSplit = FALSE ;
@@ -1071,7 +1105,7 @@ gboolean zMapAttParseDbxref(const ZMapGFFAttribute const pAttribute, char ** con
   const char * const sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
   const char * const sEnd = sValue + strlen(sValue) ;
   const char * pC = sValue ;
-  if (strcmp("Dbxref", zMapGFFAttributeGetNamestring(pAttribute)))
+  if (strcmp(sAttributeName_Dbxref, zMapGFFAttributeGetNamestring(pAttribute)))
     {
       zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
       return bResult ;
@@ -1118,7 +1152,7 @@ gboolean zMapAttParseDbxref(const ZMapGFFAttribute const pAttribute, char ** con
 /*
  * This parses the "Ontology_term" attribute; is the same as Dbxref other than the name.
  */
-gboolean zMapAttParseOntology_term(const ZMapGFFAttribute const pAttribute , char ** const sOut1, char ** const sOut2 )
+gboolean zMapAttParseOntology_term(ZMapGFFAttribute pAttribute , char ** const sOut1, char ** const sOut2 )
 {
   gboolean bResult = FALSE,
     bFoundSplit = FALSE ;
@@ -1130,7 +1164,7 @@ gboolean zMapAttParseOntology_term(const ZMapGFFAttribute const pAttribute , cha
   const char * const sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
   const char * const sEnd = sValue + strlen(sValue) ;
   const char * pC = sValue ;
-  if (strcmp("Ontology_term", zMapGFFAttributeGetNamestring(pAttribute)))
+  if (strcmp(sAttributeName_Ontology_term, zMapGFFAttributeGetNamestring(pAttribute)))
     {
       zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
       return bResult ;
@@ -1176,7 +1210,7 @@ gboolean zMapAttParseOntology_term(const ZMapGFFAttribute const pAttribute , cha
  * Parse the "Is_circular" attribute. Allowed values are "true" and "false" and are taken
  * to be case sensitive.
  */
-gboolean zMapAttParseIs_circular(const ZMapGFFAttribute const pAttribute, gboolean * const pbOut)
+gboolean zMapAttParseIs_circular(ZMapGFFAttribute pAttribute, gboolean * const pbOut)
 {
   gboolean bResult = FALSE ;
   static const char *sMyName = "zMapAttParseIs_circular()" ;
@@ -1185,7 +1219,7 @@ gboolean zMapAttParseIs_circular(const ZMapGFFAttribute const pAttribute, gboole
   if (!pAttribute)
     return bResult ;
   const char * const sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
-  if (strcmp("Is_circular", zMapGFFAttributeGetNamestring(pAttribute)))
+  if (strcmp(sAttributeName_Is_circular, zMapGFFAttributeGetNamestring(pAttribute)))
     {
       zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
       return bResult ;
@@ -1213,14 +1247,14 @@ gboolean zMapAttParseIs_circular(const ZMapGFFAttribute const pAttribute, gboole
 /*
  * Parse the "Parent" attribute; just returns a copy of the string.
  */
-gboolean zMapAttParseParent(const ZMapGFFAttribute const pAttribute, char ** const sOut)
+gboolean zMapAttParseParent(ZMapGFFAttribute pAttribute, char ** const sOut)
 {
   gboolean bResult = FALSE ;
   static const char *sMyName = "zMapAttParseParent()" ;
   if (!pAttribute)
     return bResult ;
   const char * const sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
-  if (strcmp("Parent", zMapGFFAttributeGetNamestring(pAttribute)))
+  if (strcmp(sAttributeName_Parent, zMapGFFAttributeGetNamestring(pAttribute)))
     {
       zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
       return bResult ;
@@ -1244,39 +1278,104 @@ gboolean zMapAttParseParent(const ZMapGFFAttribute const pAttribute, char ** con
  * as long as its not empty. No attempt is made in the old code to see whether or
  * not the string is actually a valid URL or not.
  */
-gboolean zMapAttParseURL(const ZMapGFFAttribute const pAttribute, char** const sOut)
+gboolean zMapAttParseURL(ZMapGFFAttribute pAttribute, char** const sOut)
 {
-  gboolean bResult = FALSE ;
+  gboolean bResult = FALSE, bReplaced = FALSE ;
   static const char *sMyName = "zMapAttParseURL()" ;
   if (!pAttribute)
     return bResult ;
   const char * const sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
-  if (strcmp("URL", zMapGFFAttributeGetNamestring(pAttribute)))
+  if (strcmp(sAttributeName_url, zMapGFFAttributeGetNamestring(pAttribute)))
     {
       zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
       return bResult ;
     }
 
   if (strlen(sValue))
-    *sOut = g_strdup(sValue) ;
+    {
+      bReplaced = zMapGFFStr_substring_replace_n(sValue, sEscapedEquals, sEquals, sOut) ;
+      bResult = TRUE ;
+    }
   else
-    *sOut = NULL ;
+    {
+      *sOut = NULL ;
+    }
+
+  return bResult ;
+}
+
+
+
+
+
+
+/*
+ * Parse out the ensembl_variation attribute.
+ */
+gboolean zMapAttParseEnsemblVariation(ZMapGFFAttribute pAttribute, char ** const psOut)
+{
+  gboolean bResult = FALSE ;
+  static const char *sMyName = "zMapAttParseEnsembleVariation()" ;
+  if (!pAttribute)
+    return bResult ;
+  const char * const sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
+  if (strcmp(sAttributeName_ensembl_variation, zMapGFFAttributeGetNamestring(pAttribute)))
+    {
+      zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
+      return bResult ;
+    }
+
+  if (strlen(sValue))
+    *psOut = g_strdup(sValue) ;
+  else
+    *psOut = NULL ;
   bResult = TRUE ;
 
   return bResult ;
 }
 
 /*
+ * Parse out the allele_string attribute.
+ */
+gboolean zMapAttParseAlleleString(ZMapGFFAttribute pAttribute, char ** const psOut)
+{
+  gboolean bResult = FALSE ;
+  static const char *sMyName = "zMapAttParseAlleleString()" ;
+  if (!pAttribute)
+    return bResult ;
+  const char * const sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
+  if (strcmp(sAttributeName_allele_string, zMapGFFAttributeGetNamestring(pAttribute)))
+    {
+      zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
+      return bResult ;
+    }
+
+  if (strlen(sValue))
+    *psOut = g_strdup(sValue) ;
+  else
+    *psOut = NULL ;
+  bResult = TRUE ;
+
+  return bResult ;
+}
+
+
+
+
+
+
+
+/*
  * Parse "Note" attribute; this means just send back a copy of the value as a string.
  */
-gboolean zMapAttParseNote(const ZMapGFFAttribute const pAttribute, char ** const sOut)
+gboolean zMapAttParseNote(ZMapGFFAttribute pAttribute, char ** const sOut)
 {
   gboolean bResult = FALSE ;
   static const char *sMyName = "zMapAttParseNote()" ;
   if (!pAttribute)
     return bResult ;
   const char * const sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
-  if (strcmp("Note", zMapGFFAttributeGetNamestring(pAttribute)))
+  if (strcmp(sAttributeName_Note, zMapGFFAttributeGetNamestring(pAttribute)))
     {
       zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
       return bResult ;
@@ -1294,14 +1393,14 @@ gboolean zMapAttParseNote(const ZMapGFFAttribute const pAttribute, char ** const
 /*
  * Parse "Derives_from" attribute; this means just send back a copy of the value as a string.
  */
-gboolean zMapAttParseDerives_from(const ZMapGFFAttribute const pAttribute, char ** const sOut)
+gboolean zMapAttParseDerives_from(ZMapGFFAttribute pAttribute, char ** const sOut)
 {
   gboolean bResult = FALSE ;
   static const char *sMyName = "zMapAttParseDerives_from()" ;
   if (!pAttribute)
     return bResult ;
   const char * const sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
-  if (strcmp("Derives_from", zMapGFFAttributeGetNamestring(pAttribute)))
+  if (strcmp(sAttributeName_Derives_from, zMapGFFAttributeGetNamestring(pAttribute)))
     {
       zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
       return bResult ;
@@ -1321,14 +1420,14 @@ gboolean zMapAttParseDerives_from(const ZMapGFFAttribute const pAttribute, char 
 /*
  * Parse the "ID" attribute. Translate the associated string into a GQuark.
  */
-gboolean zMapAttParseID(const ZMapGFFAttribute const pAttribute, GQuark * const pgqOut )
+gboolean zMapAttParseID(ZMapGFFAttribute pAttribute, GQuark * const pgqOut )
 {
   gboolean bResult = FALSE ;
   static const char *sMyName = "zMapAttParseID()" ;
   if (!pAttribute)
     return bResult ;
   const char * const sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
-  if (strcmp("ID", zMapGFFAttributeGetNamestring(pAttribute)))
+  if (strcmp(sAttributeName_ID, zMapGFFAttributeGetNamestring(pAttribute)))
     {
       zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
       return bResult ;
@@ -1337,7 +1436,10 @@ gboolean zMapAttParseID(const ZMapGFFAttribute const pAttribute, GQuark * const 
   if (strlen(sValue))
     {
       *pgqOut = g_quark_from_string(sValue) ;
-      bResult = TRUE ;
+      if (*pgqOut)
+        {
+          bResult = TRUE ;
+        }
     }
 
   return bResult ;
@@ -1348,14 +1450,14 @@ gboolean zMapAttParseID(const ZMapGFFAttribute const pAttribute, GQuark * const 
 /*
  * Parse the "sequence" attribute; simply return a copy of the string data.
  */
-gboolean zMapAttParseSequence(const ZMapGFFAttribute const pAttribute, char ** const sOut)
+gboolean zMapAttParseSequence(ZMapGFFAttribute pAttribute, char ** const sOut)
 {
   gboolean bResult = FALSE ;
   static const char *sMyName = "zMapAttParseSequence()" ;
   if (!pAttribute)
     return bResult ;
   const char * const sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
-  if (strcmp("sequence", zMapGFFAttributeGetNamestring(pAttribute)))
+  if (strcmp(sAttributeName_sequence, zMapGFFAttributeGetNamestring(pAttribute)))
     {
       zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
       return bResult ;
@@ -1373,14 +1475,14 @@ gboolean zMapAttParseSequence(const ZMapGFFAttribute const pAttribute, char ** c
 /*
  * Parse "Source" attribute; this means just send back a copy of the value as a string.
  */
-gboolean zMapAttParseSource(const ZMapGFFAttribute const pAttribute , char ** const sOut )
+gboolean zMapAttParseSource(ZMapGFFAttribute pAttribute , char ** const sOut )
 {
   gboolean bResult = FALSE ;
   static const char *sMyName = "zMapAttParseSource()" ;
   if (!pAttribute)
     return bResult ;
   const char * const sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
-  if (strcmp("Note", zMapGFFAttributeGetNamestring(pAttribute)))
+  if (strcmp(sAttributeName_Source, zMapGFFAttributeGetNamestring(pAttribute)))
     {
       zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
       return bResult ;
@@ -1411,7 +1513,7 @@ gboolean zMapAttParseSource(const ZMapGFFAttribute const pAttribute , char ** co
  * Parse out a "Target" attribute. This is modified from the original version that was
  * in 'getFeatureName()' to read both of the strings that are present.
  */
-gboolean zMapAttParseTargetV2(const ZMapGFFAttribute const pAttribute, char ** const sOut01, char ** const sOut02)
+gboolean zMapAttParseTargetV2(ZMapGFFAttribute pAttribute, char ** const sOut01, char ** const sOut02)
 {
   static const char *sFormat = "%*[\"]%*[^:]%*[:]%50[^\"]%*[\"]%s" ;
   static const unsigned int iExpectedFields = 2 ;
@@ -1422,7 +1524,7 @@ gboolean zMapAttParseTargetV2(const ZMapGFFAttribute const pAttribute, char ** c
   if (!pAttribute)
     return bResult ;
   const char * const sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
-  if (strcmp("Target", zMapGFFAttributeGetNamestring(pAttribute)))
+  if (strcmp(sAttributeName_Target, zMapGFFAttributeGetNamestring(pAttribute)))
     {
       zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
       return bResult ;
@@ -1453,7 +1555,7 @@ gboolean zMapAttParseTargetV2(const ZMapGFFAttribute const pAttribute, char ** c
  * in 'getFeatureName()' to read both of the strings that are present. Basically the same as the
  * "Target" parser above but with different tag.
  */
-gboolean zMapAttParseAssemblySource(const ZMapGFFAttribute const pAttribute, char ** const sOut01, char ** const sOut02)
+gboolean zMapAttParseAssemblySource(ZMapGFFAttribute pAttribute, char ** const sOut01, char ** const sOut02)
 {
   static const char *sFormat = "%*[\"]%*[^:]%*[:]%50[^\"]%*[\"]%s" ;
   static const unsigned int iExpectedFields = 2 ;
@@ -1464,7 +1566,7 @@ gboolean zMapAttParseAssemblySource(const ZMapGFFAttribute const pAttribute, cha
   if (!pAttribute)
     return bResult ;
   const char * const sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
-  if (strcmp("Assembly_source", zMapGFFAttributeGetNamestring(pAttribute)))
+  if (strcmp(sAttributeName_Assembly_source, zMapGFFAttributeGetNamestring(pAttribute)))
     {
       zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
       return bResult ;
@@ -1483,7 +1585,7 @@ gboolean zMapAttParseAssemblySource(const ZMapGFFAttribute const pAttribute, cha
 /*
  * Parse out any attribute tag followed by two strings, the first of which is quoted.
  */
-gboolean zMapAttParseAnyTwoStrings(const ZMapGFFAttribute const pAttribute, char ** const sOut01, char ** const sOut02)
+gboolean zMapAttParseAnyTwoStrings(ZMapGFFAttribute pAttribute, char ** const sOut01, char ** const sOut02)
 {
   static const char *sFormat = "%*[\"]%50[^\"]%*[\"]%*s";
   static const unsigned int iExpectedFields = 2 ;
@@ -1512,9 +1614,9 @@ gboolean zMapAttParseAnyTwoStrings(const ZMapGFFAttribute const pAttribute, char
 
 
 /*
- * Parse the attribute as a "Locus" and return a GQuark computed from the string.
+ * Parse "locus" attribute and convert to GQuark.
  */
-gboolean zMapAttParseLocus(const ZMapGFFAttribute const pAttribute, GQuark * const pGQ)
+gboolean zMapAttParseLocus(ZMapGFFAttribute pAttribute, GQuark * const pGQ)
 {
   gboolean bResult = FALSE ;
   static const char *sMyName = "zMapAttParseLocus()" ;
@@ -1522,7 +1624,7 @@ gboolean zMapAttParseLocus(const ZMapGFFAttribute const pAttribute, GQuark * con
     return bResult ;
   const char * const sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
   GQuark cGQ = 0 ;
-  if (strcmp("Locus", zMapGFFAttributeGetNamestring(pAttribute)))
+  if (strcmp(sAttributeName_locus, zMapGFFAttributeGetNamestring(pAttribute)))
     {
       zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
       return bResult ;
@@ -1544,7 +1646,7 @@ gboolean zMapAttParseLocus(const ZMapGFFAttribute const pAttribute, GQuark * con
  * Parse data from the "Gaps" attribute; we expect to find zero or more comma-seperated groups of 4 integer values.
  * The value string of the attribute should be unquoted.
  */
-gboolean zMapAttParseGaps(const ZMapGFFAttribute const pAttribute, GArray ** const pGaps, ZMapStrand cRefStrand, ZMapStrand cMatchStrand)
+gboolean zMapAttParseGaps(ZMapGFFAttribute pAttribute, GArray ** const pGaps, ZMapStrand cRefStrand, ZMapStrand cMatchStrand)
 {
   gboolean bResult = FALSE ;
   static const char *sMyName = "zMapAttParseGaps()" ;
@@ -1554,7 +1656,7 @@ gboolean zMapAttParseGaps(const ZMapGFFAttribute const pAttribute, GArray ** con
     return bResult ;
   const char *sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
   ZMapAlignBlockStruct gap = { 0 };
-  if (strcmp("Gaps", zMapGFFAttributeGetNamestring(pAttribute)))
+  if (strcmp(sAttributeName_gaps, zMapGFFAttributeGetNamestring(pAttribute)))
     {
       zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
       return bResult ;
@@ -1613,7 +1715,7 @@ gboolean zMapAttParseGaps(const ZMapGFFAttribute const pAttribute, GArray ** con
  * The final one (vulgar exonerate) is not yet implemented and so will always
  * return false.
  */
-gboolean zMapAttParseCigarExonerate(const ZMapGFFAttribute const pAttribute , GArray ** const pGaps,
+gboolean zMapAttParseCigarExonerate(ZMapGFFAttribute pAttribute , GArray ** const pGaps,
   ZMapStrand cRefStrand, int iRefStart, int iRefEnd, ZMapStrand cMatchStrand, int iMatchStart, int iMatchEnd)
 {
   gboolean bResult = FALSE ;
@@ -1622,7 +1724,7 @@ gboolean zMapAttParseCigarExonerate(const ZMapGFFAttribute const pAttribute , GA
   if (!pAttribute)
     return bResult ;
   char *sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
-  if (strcmp("cigar_exonerate", zMapGFFAttributeGetNamestring(pAttribute)))
+  if (strcmp(sAttributeName_cigar_exonerate, zMapGFFAttributeGetNamestring(pAttribute)))
     {
       zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
       return bResult ;
@@ -1642,7 +1744,7 @@ gboolean zMapAttParseCigarExonerate(const ZMapGFFAttribute const pAttribute , GA
 /*
  * This parses the "cigar_ensemble" attribute.
  */
-gboolean zMapAttParseCigarEnsembl(const ZMapGFFAttribute const pAttribute, GArray ** const pGaps ,
+gboolean zMapAttParseCigarEnsembl(ZMapGFFAttribute pAttribute, GArray ** const pGaps ,
   ZMapStrand cRefStrand, int iRefStart, int iRefEnd, ZMapStrand cMatchStrand, int iMatchStart, int iMatchEnd)
 {
   gboolean bResult = FALSE ;
@@ -1651,7 +1753,7 @@ gboolean zMapAttParseCigarEnsembl(const ZMapGFFAttribute const pAttribute, GArra
   if (!pAttribute)
     return bResult ;
   char *sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
-    if (strcmp("cigar_ensembl", zMapGFFAttributeGetNamestring(pAttribute)))
+    if (strcmp(sAttributeName_cigar_ensembl, zMapGFFAttributeGetNamestring(pAttribute)))
     {
       zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
       return bResult ;
@@ -1670,7 +1772,7 @@ gboolean zMapAttParseCigarEnsembl(const ZMapGFFAttribute const pAttribute, GArra
 /*
  * This parses the "cigar_bam" attribute.
  */
-gboolean zMapAttParseCigarBam(const ZMapGFFAttribute const pAttribute , GArray ** const pGaps,
+gboolean zMapAttParseCigarBam(ZMapGFFAttribute pAttribute , GArray ** const pGaps,
   ZMapStrand cRefStrand, int iRefStart, int iRefEnd, ZMapStrand cMatchStrand, int iMatchStart, int iMatchEnd )
 {
   gboolean bResult = FALSE ;
@@ -1679,7 +1781,7 @@ gboolean zMapAttParseCigarBam(const ZMapGFFAttribute const pAttribute , GArray *
   if (!pAttribute)
     return bResult ;
   char *sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
-  if (strcmp("cigar_bam", zMapGFFAttributeGetNamestring(pAttribute)))
+  if (strcmp(sAttributeName_cigar_bam, zMapGFFAttributeGetNamestring(pAttribute)))
     {
       zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
       return bResult ;
@@ -1699,7 +1801,7 @@ gboolean zMapAttParseCigarBam(const ZMapGFFAttribute const pAttribute , GArray *
 /*
  * This parses the "vulgar_exonerate" attribute. This one is not yet implemented.
  */
-gboolean zMapAttParseVulgarExonerate(const ZMapGFFAttribute const pAttribute , GArray ** const pGaps ,
+gboolean zMapAttParseVulgarExonerate(ZMapGFFAttribute pAttribute , GArray ** const pGaps ,
   ZMapStrand cRefStrand, int iRefStart, int iRefEnd, ZMapStrand cMatchStrand, int iMatchStart, int iMatchEnd)
 {
   gboolean bResult = FALSE ;
@@ -1711,7 +1813,7 @@ gboolean zMapAttParseVulgarExonerate(const ZMapGFFAttribute const pAttribute , G
   if (!pAttribute)
     return bResult ;
   const char *sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
-  if (strcmp("vulgar_exonerate", zMapGFFAttributeGetNamestring(pAttribute)))
+  if (strcmp(sAttributeName_vulgar_exonerate, zMapGFFAttributeGetNamestring(pAttribute)))
     {
       zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
       return bResult ;
@@ -1736,14 +1838,14 @@ gboolean zMapAttParseVulgarExonerate(const ZMapGFFAttribute const pAttribute , G
 /*
  * Parse "Known_name" attribute; this means just send back a copy of the value as a string.
  */
-gboolean zMapAttParseKnownName(const ZMapGFFAttribute const pAttribute, char ** const sOut)
+gboolean zMapAttParseKnownName(ZMapGFFAttribute pAttribute, char ** const sOut)
 {
   gboolean bResult = FALSE ;
   static const char *sMyName = "zMapAttParseKnownName()" ;
   if (!pAttribute)
     return bResult ;
   const char * const sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
-  if (strcmp("Known_name", zMapGFFAttributeGetNamestring(pAttribute)))
+  if (strcmp(sAttributeName_Known_name, zMapGFFAttributeGetNamestring(pAttribute)))
     {
       zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
       return bResult ;
@@ -1760,3 +1862,164 @@ gboolean zMapAttParseKnownName(const ZMapGFFAttribute const pAttribute, char ** 
 
 
 
+
+/*
+ * Parse out assembly path data. Format of this attribute is:
+ * v2 data: Assembly_source "Sequence:B0250" ; Assembly_strand + ; Assembly_length 39216 ; Assembly_regions 1 39110 [, start end]+ ;
+ * v3 data: <ap_source>, <strand>, <length>, <rstart> <rend> [, <rstart>, <rend>]*
+ *
+ * Where <ap_source>               (unquoted) string
+ *       <strand>                  +,-
+ *       <length>                  non-negative integer value
+ *       <rstart>, <rend>          non-negative integer values, <rstart> <= <rend>
+ *
+ */
+gboolean zMapAttParseAssemblyPath(ZMapGFFAttribute pAttribute, char ** const psOut, ZMapStrand * const pcStrandOut,
+                                  int * const piOut, GArray ** const paOut)
+{
+  gboolean bResult = FALSE ;
+  static const char cComma = ',';
+  static const char *sMyName = "zMapAttParseAssemblyPath()",
+    *sEmpty = "",
+    *sStrandForward = "+",
+    *sStrandReverse = "-" ;
+  static const unsigned int iExpectedMinFields = 4 ;
+  static const unsigned int iExpectedFields1 = 1 ;
+  static const unsigned int iExpectedFields2 = 2 ;
+  unsigned int i, iTokens = 0, iTokenLimit = 1000 ;
+  int iLength = 0 ;
+  char **sTokens = NULL ;
+  gboolean bIncludeEmpty = TRUE ;
+  ZMapStrand cStrand = ZMAPSTRAND_NONE ;
+  GArray *pArray = NULL ;
+  if (!pAttribute)
+    return bResult ;
+  if (!psOut || *psOut || !pcStrandOut || !piOut || !paOut || *paOut )
+    return bResult ;
+  const char *sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
+  if (strcmp(sAttributeName_assembly_path, zMapGFFAttributeGetNamestring(pAttribute)))
+    {
+      zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
+      return bResult ;
+    }
+
+  /*
+   * Tokenize on commas; we must have a minimum of 4 fields
+   */
+  sTokens = zMapGFFStr_tokenizer(cComma, sValue, &iTokens, bIncludeEmpty, iTokenLimit, g_malloc, g_free) ;
+
+  for (i=0; i<iTokens; ++i)
+  {
+    printf("t%i = '%s'\n", i, sTokens[i]) ;
+    fflush(stdout) ;
+  }
+
+  /*
+   * Now extract data from each of these; must have been a minimum of iExpectedMinFields fields.
+   */
+  if ((iTokens >= iExpectedMinFields) && (iTokens <= iTokenLimit))
+  {
+    bResult = TRUE ;
+
+    /*
+     * Firstly test that none of the strings are empty.
+     */
+    for (i=0; i<iTokens; ++i)
+      if (!strcmp(sTokens[i], sEmpty))
+        bResult = FALSE ;
+
+    /* */
+    if (bResult)
+      {
+        /* ap source just has to be a non-empty string */
+
+        /* strand */
+        if (!strcmp(sTokens[1], sStrandForward))
+          cStrand = ZMAPSTRAND_FORWARD ;
+        else if (!strcmp(sTokens[1], sStrandReverse))
+          cStrand = ZMAPSTRAND_REVERSE ;
+        else
+          bResult = FALSE ;
+
+        /* length */
+        if (bResult && (sscanf(sTokens[2], "%i", &iLength) != iExpectedFields1))
+          bResult = FALSE ;
+
+        /* start,end pairs */
+        if (bResult)
+          {
+            pArray = g_array_new(FALSE, TRUE, sizeof(ZMapSpanStruct)) ;
+            for (i=3; i<iTokens; ++i)
+              {
+                ZMapSpanStruct cSpan = {0} ;
+                if ((sscanf(sTokens[i], "%i %i", &cSpan.x1, &cSpan.x2) == iExpectedFields2) && (cSpan.x1 <= cSpan.x2) )
+                  {
+                    pArray = g_array_append_val(pArray, cSpan) ;
+                  }
+                else
+                  {
+                    bResult = FALSE ;
+                  }
+              }
+          }
+
+      }
+
+    /*
+     * Copy data to output values, or delete temporary variables
+     * if there was an error.
+     */
+     if (bResult)
+       {
+         *psOut = g_strdup(sTokens[0]) ;
+         *pcStrandOut = cStrand ;
+         *piOut = iLength ;
+         *paOut = pArray ;
+       }
+     else
+       {
+         if (pArray)
+           g_array_free(pArray, TRUE) ;
+       }
+  }
+
+
+  /*
+   * Clean up tokens.
+   */
+  zMapGFFStr_array_delete(sTokens, iTokens, g_free) ;
+
+
+  return bResult ;
+}
+
+
+
+
+/*
+ * Parse the "read_pair_id" attribute. Translate the associated string into a GQuark.
+ */
+gboolean zMapAttParseReadPairID(ZMapGFFAttribute pAttribute, GQuark * const pgqOut )
+{
+  gboolean bResult = FALSE ;
+  static const char *sMyName = "zMapAttParseReadPairID()" ;
+  if (!pAttribute)
+    return bResult ;
+  const char * const sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
+  if (strcmp(sAttributeName_read_pair_id, zMapGFFAttributeGetNamestring(pAttribute)))
+    {
+      zMapLogWarning("Attribute wrong type in %s, %s %s", sMyName, zMapGFFAttributeGetNamestring(pAttribute), sValue) ;
+      return bResult ;
+    }
+
+  if (strlen(sValue))
+    {
+      *pgqOut = g_quark_from_string(sValue) ;
+      if (*pgqOut)
+        {
+          bResult = TRUE ;
+        }
+    }
+
+  return bResult ;
+}

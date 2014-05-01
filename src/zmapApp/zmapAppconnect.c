@@ -1,6 +1,6 @@
 /*  File: zmapAppconnect.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -81,16 +81,21 @@ gboolean zmapAppCreateZMap(ZMapAppContext app_context, ZMapFeatureSequenceMap se
   ZMap zmap = *zmap_out ;
   ZMapView view = NULL ;
   ZMapManagerAddResult add_result ;
+  GError *tmp_error = NULL ;
 
   /* Nothing specified on command line so check config file. */
   if (!(sequence_map->sequence) && !(sequence_map->start) && !(sequence_map->end))
-    zMapAppGetSequenceConfig(sequence_map) ;
+    zMapAppGetSequenceConfig(sequence_map, &tmp_error) ;
 
-
-  /* Everything must be specified or nothing otherwise it's an error. */
-  if (!((sequence_map->sequence && sequence_map->start && sequence_map->end)
+  if (tmp_error)
+    {
+      result = FALSE ;
+      zMapWarning("%s", tmp_error->message) ;
+    }
+  else if (!((sequence_map->sequence && sequence_map->start && sequence_map->end)
 	|| (!(sequence_map->sequence) && !(sequence_map->start) && !(sequence_map->end))))
     {
+      /* Everything must be specified or nothing otherwise it's an error. */
       result = FALSE ;
 
       zMapWarning("Sequence not specified properly: %s",

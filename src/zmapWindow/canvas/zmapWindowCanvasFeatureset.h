@@ -1,6 +1,6 @@
-/*  File: zmapWindowFeatureset.h
+/*  File: zmapWindowCanvasFeatureset.h
  *  Author: Malcolm Hinsley (mh17@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -221,11 +221,6 @@ gboolean zMapWindowCanvasIsFeatureSet(ZMapWindowFeaturesetItem) ;
 
 /* GDK wrappers to clip features */
 
-int zMap_draw_line(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, gint cx1, gint cy1, gint cx2, gint cy2);
-int zMap_draw_broken_line(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, gint cx1, gint cy1, gint cx2, gint cy2);
-int zMap_draw_rect(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, gint cx1, gint cy1, gint cx2, gint cy2, gboolean fill);
-
-
 void zmapWindowCanvasFeaturesetInitPango(GdkDrawable *drawable, ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasPango pango, char *family, int size, GdkColor *draw);
 
 void zmapWindowCanvasFeaturesetFreePango(ZMapWindowCanvasPango pango);
@@ -235,11 +230,12 @@ void zMapWindowCanvasFeaturesetRedraw(ZMapWindowFeaturesetItem fi, double zoom);
 
 
 ZMapWindowCanvasItem zMapWindowCanvasItemFeaturesetGetFeaturesetItem(FooCanvasGroup *parent, GQuark id,
-								     GtkWidget *parent_scrolled_window,
+								     GtkAdjustment *v_adjuster,
 								     int start, int end, ZMapFeatureTypeStyle style,
 								     ZMapStrand strand, ZMapFrame frame, int index, guint layer);
 
 guint zMapWindowCanvasFeaturesetGetId(ZMapWindowFeaturesetItem featureset);
+void zMapWindowCanvasItemFeaturesetSetVAdjust(ZMapWindowFeaturesetItem featureset, GtkAdjustment *v_adjuster) ;
 
 ZMapFeatureSubPartSpan zMapWindowCanvasFeaturesetGetSubPartSpan(FooCanvasItem *foo,ZMapFeature feature,double x,double y);
 
@@ -342,8 +338,6 @@ gboolean zmapWindowFeaturesetGetDefaultPixels(ZMapWindowFeaturesetItem feature_s
 void zMapWindowCanvasFeaturesetRequestReposition(FooCanvasItem *foo);
 
 int zMapWindowFeaturesetItemGetNFiltered(FooCanvasItem *item);
-
-void zMapCanvasFeaturesetDrawBoxMacro(ZMapWindowFeaturesetItem featureset, double x1,double x2, double y1,double y2,GdkDrawable * drawable,gboolean fill_set,gboolean outline_set,gulong fill,gulong outline);
 
 gboolean zMapCanvasFeaturesetSeq2World(ZMapWindowFeaturesetItem featureset,
                                        int seq_start, int seq_end, double *world_start_out, double *world_end_out) ;

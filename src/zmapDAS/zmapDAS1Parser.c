@@ -1,6 +1,6 @@
 /*  File: zmapDAS1Parser.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -374,7 +374,8 @@ void zMapDAS1ParserDestroy(ZMapDAS1Parser das)
  */
 static void prePrepareDASParser(ZMapDAS1Parser das, ZMapDAS1QueryType query)
 {
-  zMapAssert(das);
+  if (!das)
+    return ;
 
   das->callback_set  = FALSE;
   das->primed_for    = ZMAP_DAS_UNKNOWN;

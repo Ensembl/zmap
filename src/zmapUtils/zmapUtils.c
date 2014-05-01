@@ -1,6 +1,6 @@
 /*  File: zmapUtils.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -346,6 +346,28 @@ char *zMapGetTimeString(ZMapTimeFormat format, char *format_str_in)
     }
 
   return time_str ;
+}
+
+
+/* Get raw microseconds time......here's what is returned to us:
+ * 
+ * struct timeval
+ *   {
+ *     time_t      tv_sec;     seconds
+ *     suseconds_t tv_usec;    microseconds
+ *   };
+ *
+ * We just use seconds.
+ */
+guint zMapUtilsGetRawTime(void)
+{
+  guint rawtime = 0 ;
+  struct timeval tv = {0, 0} ;
+
+  if (!gettimeofday(&tv, NULL))
+    rawtime = tv.tv_sec ;
+
+  return rawtime ;
 }
 
 

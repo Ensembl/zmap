@@ -1,6 +1,6 @@
 /*  File: zmapWindowRemoteControl.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2012: Genome Research Ltd.
+ *  Copyright (c) 2012-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -229,7 +229,11 @@ void zmapWindowUpdateXRemoteDataFull(ZMapWindow window, ZMapFeatureAny feature_a
   int chr_bp ;
 
   /* We should only ever be called with a feature, not a set or anything else. */
-  zMapAssert(feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURE) ;
+  if (feature_any->struct_type != ZMAPFEATURE_STRUCT_FEATURE) 
+    return ;
+
+  if (!feature_any) 
+    return ; 
 
 
   /* OK...IN HERE IS THE PLACE FOR THE HACK FOR COORDS....NEED TO COPY FEATURE
@@ -434,7 +438,7 @@ static void processRequest(ZMapWindow window,
   gboolean cmd_debug = FALSE ;
   gboolean parse_ok = FALSE ;
   RequestDataStruct request_data = {0} ;
-  ZMapXMLObjTagFunctions starts, ends ;
+  ZMapXMLObjTagFunctions starts = NULL, ends = NULL ;
 
 
 
@@ -457,7 +461,6 @@ static void processRequest(ZMapWindow window,
       ends = mark_ends_G ;
     }
   zMapXMLParserSetMarkupObjectTagHandlers(parser, starts, ends) ;
-
   if (!(parse_ok = zMapXMLParserParseBuffer(parser, request, strlen(request))))
     {
       *command_rc_out = request_data.command_rc ;
@@ -586,20 +589,12 @@ static void getWindowMark(ZMapWindow window, RemoteCommandRCType *command_rc_out
       /* Need to check for revcomp..... */
       if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
 	{
-	  ZMapFeatureAlignment align ;
-	  ZMapFeatureBlock block ;
 	  int seq_start, seq_end ;
-
-
-	  /* default to master align. */
-	  align = window->feature_context->master_align ;
-	  block = zMap_g_hash_table_nth(align->blocks, 0) ;
-
 
 	  seq_start = start ;
 	  seq_end = end ;
 
-	  zMapFeatureReverseComplementCoords(block, &seq_start, &seq_end) ;
+	  zMapFeatureReverseComplementCoords(window->feature_context, &seq_start, &seq_end) ;
 
 	  /* NOTE, always return start < end so swop coords */
 	  start = seq_end ;

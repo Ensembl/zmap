@@ -1,6 +1,6 @@
 /*  File: zmapGUITreeView.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -253,9 +253,7 @@ gboolean zMapGUITreeViewPrepare(ZMapGUITreeView zmap_tv)
         gtk_tree_sortable_set_sort_column_id(sort_model,
                                      GTK_TREE_SORTABLE_UNSORTED_SORT_COLUMN_ID,
                                      GTK_SORT_ASCENDING);
-        {
-          zMapAssert(gtk_tree_view_get_model(tree_view) == NULL);
-        }
+        /*{ zMapAssert(gtk_tree_view_get_model(tree_view) == NULL); }*/
       }
 
       /* If we have a model, but it has never been attached prepared
@@ -1612,31 +1610,31 @@ static void update_tuple_data_list(ZMapGUITreeView zmap_tv,
         if(column_type == G_VALUE_TYPE(column_value))
           {
             if(column_type == G_TYPE_INT)
-            g_value_set_int(column_value, GPOINTER_TO_INT(tmp->data));
+              g_value_set_int(column_value, GPOINTER_TO_INT(tmp->data));
             else if(column_type == G_TYPE_STRING)
-            g_value_set_string(column_value, (char *)(tmp->data));
+              g_value_set_string(column_value, (char *)(tmp->data));
             else if(column_type == G_TYPE_BOOLEAN)
-            g_value_set_boolean(column_value, GPOINTER_TO_INT(tmp->data));
+              g_value_set_boolean(column_value, GPOINTER_TO_INT(tmp->data));
             else if(column_type == G_TYPE_FLOAT)
-            {
-              int fint = GPOINTER_TO_INT(tmp->data);
-              float ffloat;
+              {
+                int fint = GPOINTER_TO_INT(tmp->data);
+                float ffloat;
 
-              memcpy(&ffloat, &fint, 4); /* Let's hope float is 4  bytes */
+                memcpy(&ffloat, &fint, 4); /* Let's hope float is 4  bytes */
 
-              g_value_set_float(column_value, ffloat);
-            }
+                g_value_set_float(column_value, ffloat);
+              }
             else if(column_type == G_TYPE_POINTER)
-            {
-              GtkTreeViewColumn *hide_column = NULL;
-              hide_column = gtk_tree_view_get_column(zmap_tv->tree_view, index);
-              g_object_set(G_OBJECT(hide_column),
-                         "visible", FALSE,
-                         NULL);
-              g_value_set_pointer(column_value, tmp->data);
-            }
+              {
+                GtkTreeViewColumn *hide_column = NULL;
+                hide_column = gtk_tree_view_get_column(zmap_tv->tree_view, index);
+                g_object_set(G_OBJECT(hide_column),
+                             "visible", FALSE,
+                             NULL);
+                g_value_set_pointer(column_value, tmp->data);
+              }
             else
-            zMapAssertNotReached(); /* v. unexpected! */
+              zMapWarnIfReached(); /* v. unexpected! */
           }
         else
           g_warning("%s", "Bad column type");

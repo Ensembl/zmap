@@ -1,6 +1,6 @@
 /*  File: zmapGFFHeader.h
  *  Author: Steve Miller (sm23@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -74,15 +74,15 @@ typedef struct ZMapGFFHeaderStruct_
  * Header creation and destruction.
  */
 ZMapGFFHeader zMapGFFCreateHeader() ;
-void zMapGFFHeaderDestroy(ZMapGFFHeader const ) ;
-void zMapGFFHeaderMinimalTest(const ZMapGFFHeader const ) ;
+void zMapGFFHeaderDestroy(ZMapGFFHeader ) ;
+void zMapGFFHeaderMinimalTest(ZMapGFFHeader ) ;
 
 
 /*
  * Some data utilities
 */
-int zMapGFFGetDirectiveIntData(const ZMapGFFHeader const, ZMapGFFDirectiveName, unsigned int) ;
-char *zMapGFFGetDirectiveStringData(const ZMapGFFHeader const, ZMapGFFDirectiveName, unsigned int) ;
+int zMapGFFGetDirectiveIntData(ZMapGFFHeader, ZMapGFFDirectiveName, unsigned int) ;
+char *zMapGFFGetDirectiveStringData(ZMapGFFHeader, ZMapGFFDirectiveName, unsigned int) ;
 
 
 

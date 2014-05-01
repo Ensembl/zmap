@@ -1,6 +1,6 @@
 /*  File: zmapWindowDNAChoose.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -133,7 +133,8 @@ char *zmapWindowDNAChoose(ZMapWindow window, FooCanvasItem *feature_item, ZMapWi
   /* Need to check that there is any dna...n.b. we need the item that was clicked for us to check
    * the dna..... */
   feature = zmapWindowItemGetFeature(feature_item);
-  zMapAssert(feature) ;
+  if (!feature) 
+    return dna ;
   block = (ZMapFeatureBlock)zMapFeatureGetParentGroup((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_BLOCK) ;
 
   if (block->sequence.type == ZMAPSEQUENCE_NONE)

@@ -1,7 +1,6 @@
 /*  File: pipeServer_P.h
- *  Author: Malcolm Hinsley (mh17@sanger.ac.uk)
- *      derived from fileServer_p.h by Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Author: Malcolm Hinsley (mh17@sanger.ac.uk), Ed Griffiths (edgrif@sanger.ac.uk)
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -37,14 +36,6 @@
 
 #define PIPE_PROTOCOL_STR "GFF Pipe"			    /* For error messages. */
 #define FILE_PROTOCOL_STR "GFF File"
-
-
-
-/* Helpful to see script args in all error messages so add these to standard messages. */
-#define ZMAPPIPESERVER_LOG(LOGTYPE, PROTOCOL, HOST, ARGS, FORMAT, ...) \
-  ZMAPSERVER_LOG(LOGTYPE, PROTOCOL, HOST, ", script_args: \"%s\", " FORMAT, ARGS, __VA_ARGS__)
-
-
 
 
 /* Holds all the state we need to create and access the script output. */

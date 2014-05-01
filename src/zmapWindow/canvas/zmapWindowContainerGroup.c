@@ -1,6 +1,6 @@
-/*  File: zmapWindowOldItems.c
- *  Author: ed (edgrif@sanger.ac.uk)
- *  Copyright (c) 2013: Genome Research Ltd.
+/*  File: zmapWindowContainerGroup.c
+ *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
+ *  Copyright (c) 2013-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -234,9 +234,6 @@ static void zmap_window_container_group_class_init  (ZMapWindowContainerGroupCla
 
   item_parent_class_G  = (FooCanvasItemClass *)(g_type_class_peek_parent(container_class));
 
-  zMapAssert(item_parent_class_G);
-  zMapAssert(item_parent_class_G->update);
-
   item_class->draw     = zmap_window_container_group_draw;
   item_class->update   = zmap_window_container_group_update;
 
@@ -339,20 +336,8 @@ static void zmap_window_container_group_get_property(GObject               *obje
 static void zmap_window_container_group_draw (FooCanvasItem *item, GdkDrawable *drawable,
                                               GdkEventExpose *expose)
 {
-
-#if 0
-  // draw background if set
-  // not ideal no gc, need a window gc to share held in the container
-  zMap_draw_rect(drawable, ZMapWindowFeaturesetItem featureset, gint cx1, gint cy1, gint cx2, gint cy2, gboolean fill)
-    gdk_draw_rectangle (drawable, featureset->gc, fill, cx1, cy1, cx2 - cx1, cy2 - cy1);
-
-  this is only used for the strand separator...
-    instead let-s add a CanvasFeatureset with a fixed width and make that draw the background
-    do this in zmapWindowDrawFeatures and make hit markers find the feature set not add it
-#endif
-
-      if(item_parent_class_G->draw)
-        (item_parent_class_G->draw)(item, drawable, expose);
+  if(item_parent_class_G->draw)
+    (item_parent_class_G->draw)(item, drawable, expose) ;
 
   return ;
 }
@@ -1284,8 +1269,9 @@ void zmapWindowContainerUtilsExecuteFull(ZMapWindowContainerGroup   container_gr
   //  ZMapWindowCanvas zmap_canvas;
   FooCanvasItem *parent;
 
-  zMapAssert(stop_at_type >= ZMAPCONTAINER_LEVEL_ROOT &&
-             stop_at_type <= ZMAPCONTAINER_LEVEL_FEATURESET) ;
+  if (!(stop_at_type >= ZMAPCONTAINER_LEVEL_ROOT &&
+             stop_at_type <= ZMAPCONTAINER_LEVEL_FEATURESET))
+    return  ;
 
   parent = (FooCanvasItem *)container_group;
 
@@ -1351,7 +1337,6 @@ void zmapWindowCanvasItemGetColours(ZMapFeatureTypeStyle style, ZMapStrand stran
           colour_target = STYLE_PROP_FRAME2_COLOURS ;
           break ;
         default:
-          //            zMapAssertNotReached() ; no longer valid: frame specific style by eg for swissprot we display in one col on startup
           break ;
         }
 
@@ -1406,8 +1391,9 @@ static void eachContainer(gpointer data, gpointer user_data)
   level   = container->level;
   spacing = container->this_spacing;
 
-  zMapAssert(level >  ZMAPCONTAINER_LEVEL_INVALID &&
-             level <= ZMAPCONTAINER_LEVEL_FEATURESET);
+  if (!(level >  ZMAPCONTAINER_LEVEL_INVALID &&
+             level <= ZMAPCONTAINER_LEVEL_FEATURESET) )
+    return ;
 
   this_points   = &this_points_data;
   parent_points = &parent_points_data;

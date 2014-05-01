@@ -1,6 +1,6 @@
 /*  File: zmapHandle.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -146,8 +146,9 @@ void zMapMemoryHandleAdd(ZMapMemoryHandle memory_handle,
 {
   ZMapMemoryBlock block ;
 
-  zMapAssert(memory
-	     && (memory_free_func || (!memory_free_func && !user_data))) ;
+  /* zMapAssert(memory && (memory_free_func || (!memory_free_func && !user_data))) ;*/
+  if(!(memory && (memory_free_func || (!memory_free_func && !user_data))) )
+    return ;
 
   block = g_new0(ZMapMemoryBlockStruct, 1) ;
   block->memory = memory ;
@@ -201,7 +202,9 @@ gboolean zMapMemoryHandleRemove(ZMapMemoryHandle memory_handle, gpointer memory,
 void zMapMemoryHandleDestroy(ZMapMemoryHandle memory_handle)
 {
 
-  zMapAssert(memory_handle) ;
+  /* zMapAssert(memory_handle) ; */
+  if (!memory_handle)
+    return ; 
 
   handleDestroy((gpointer)memory_handle, NULL) ;
 
@@ -238,7 +241,9 @@ static void handleDestroy(gpointer memory, gpointer unused_user_data)
 {
   ZMapMemoryHandle memory_handle = (ZMapMemoryHandle)memory ;
 
-  zMapAssert(memory_handle) ;
+  /* zMapAssert(memory_handle) ;*/
+  if (!memory_handle) 
+    return ; 
 
   g_list_foreach(memory_handle->blocks, freeBlockCB, NULL) ;
 

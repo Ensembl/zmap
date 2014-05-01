@@ -1,6 +1,6 @@
 /*  File: zmapWindowZoomControl.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -279,7 +279,7 @@ void zmapWindowZoomControlInitialise(ZMapWindow window)
 }
 
 /* Should be called when either canvas height(size-allocate) or seq
- * length change. Does virtually the same as initialise... */
+ * length changes and an immediate zoom is needed. Does virtually the same as initialise... */
 void zmapWindowZoomControlHandleResize(ZMapWindow window)
 {
   ZMapWindowZoomControl control;
@@ -305,6 +305,30 @@ void zmapWindowZoomControlHandleResize(ZMapWindow window)
 
   return ;
 }
+
+/* Should be called when canvas window height decreases so no zoom operation is
+ * needed. */
+void zmapWindowZoomControlRegisterResize(ZMapWindow window)
+
+{
+  ZMapWindowZoomControl control;
+  double min;
+
+  control = controlFromWindow(window);
+
+  min = getMinZoom(window, control) ;
+
+  /* Always need to reset this. */
+  control->minZF = min;
+
+  setZoomStatus(control) ;
+
+  return ;
+}
+
+
+
+
 
 /* This just does the maths and sets zoom factor and status
  * (Might need to work with setZoomStatus??? also ZMAP_ZOOM_FIXED)
@@ -343,7 +367,8 @@ static void centeringLimitSpan2MaxOrDefaultAtZoom(double  max_pixels,
                                                   double *pointB)
 {
   double max_span, seq_span, new_span, canv_span, start, end, halfway;
-  zMapAssert(max_pixels && def && pointA && pointB);
+  if (!max_pixels || !def || !pointA || !pointB)
+    return ;
 
   start     = *pointA;
   end       = *pointB;
@@ -406,7 +431,7 @@ double zmapWindowZoomControlLimitSpan(ZMapWindow window,
                                       double y1_inout, double y2_inout)
 {
   ZMapWindowZoomControl control;
-  double max_span, seq_span, new_span, canv_span;
+  double max_span, seq_span, new_span, canv_span = 0 ;
   /* double x1, x2; */
   double y1, y2;
 
@@ -435,10 +460,15 @@ double zmapWindowZoomControlLimitSpan(ZMapWindow window,
 }
 
 
+/* Is this function really needed.....it's only called in one place...check the two
+ * objects, perhaps we can just do a bulk copy... */
 void zmapWindowZoomControlCopyTo(ZMapWindowZoomControl orig, ZMapWindowZoomControl new)
 {
-  new->zF     = orig->zF;
-  setZoomStatus(new);
+  new->zF = orig->zF ;
+  new->minZF = orig->minZF ;
+
+  setZoomStatus(new) ;
+
   return ;
 }
 
@@ -469,11 +499,10 @@ static ZMapWindowZoomControl controlFromWindow(ZMapWindow window)
 {
   ZMapWindowZoomControl control = NULL;
 
-  zMapAssert(window && window->zoom);
+  if (!window || !window->zoom)
+    return control ;
 
   control = window->zoom;
-
-  zMapAssert(control && ZMAP_MAGIC_IS_VALID(zoom_magic_G, control->magic)) ;
 
   return control;
 }
@@ -483,14 +512,14 @@ static ZMapWindowZoomControl controlFromWindow(ZMapWindow window)
 /* Exactly what it says */
 static double getMinZoom(ZMapWindow window, ZMapWindowZoomControl control)
 {
-  double canvas_height, border_height, zf ;
+  double canvas_height, border_height, zf = 0.0;
 
   /* These heights are in pixels */
   border_height = control->border * 2.0;
   canvas_height = GTK_WIDGET(window->canvas)->allocation.height;
 
-  zMapAssert(canvas_height > 0);
-  /* zMapAssert(canvas_height >= border_height); */
+  if (canvas_height <= 0)
+    return zf ;
   /* rearrangement of
    *              canvas height
    * zf = ------------------------------
@@ -584,7 +613,8 @@ static void textDimensionsOfFont(FooCanvasGroup *group,
 #ifdef BLAH_BLAH_BLAH
 static void printControl(ZMapWindowZoomControl control)
 {
-  zMapAssert(control && ZMAP_MAGIC_IS_VALID(zoom_magic_G, control->magic)) ;
+  if (!control || !ZMAP_MAGIC_IS_VALID(zoom_magic_G, control->magic)) 
+    return ;
 
   printf("Control:\n"
          " factor %f\n"

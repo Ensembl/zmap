@@ -1,6 +1,6 @@
 /*  File: zmapGFF3parser.c
  *  Author: Steve Miller (sm23@sanger.ac.uk)
- *  Copyright (c) 2006-2013: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -37,6 +37,7 @@
 #include <ZMap/zmapFeature.h>
 #include <ZMap/zmapFeatureLoadDisplay.h>
 #include <ZMap/zmapGLibUtils.h>
+#include <glib.h>
 #include "zmapGFFHeader.h"
 #include "zmapGFF_P.h"
 #include "zmapGFF3_P.h"
@@ -51,65 +52,87 @@
 static gboolean removeCommentFromLine( char* sLine ) ;
 static ZMapGFFLineType parserLineType(const char * const sLine) ;
 static ZMapGFFParserState parserFSM(ZMapGFFParserState eCurrentState, const char * const sNewLine) ;
-static gboolean resizeFormatStrs(ZMapGFFParser const pParser) ;
-static gboolean resizeBuffers(ZMapGFFParser const pParser, gsize iLineLength) ;
+static gboolean resizeFormatStrs(ZMapGFFParser pParser) ;
+static gboolean resizeBuffers(ZMapGFFParser pParser, gsize iLineLength) ;
 static gboolean isCommentLine(const char * const sLine) ;
 static gboolean isAcedbError(const char* const ) ;
 static gboolean parserStateChange(ZMapGFFParser pParser, ZMapGFFParserState eOldState, ZMapGFFParserState eNewState, const char * const sLine) ;
-static gboolean initializeSequenceRead(ZMapGFFParser const pParser, const char * const sLine) ;
-static gboolean finalizeSequenceRead(ZMapGFFParser const pParser , const char* const sLine) ;
-static gboolean initializeFastaRead(ZMapGFFParser const pParser, const char * const sLine) ;
-static gboolean actionUponClosure(ZMapGFFParser const pParser, const char* const sLine)  ;
+static gboolean initializeSequenceRead(ZMapGFFParser pParser, const char * const sLine) ;
+static gboolean finalizeSequenceRead(ZMapGFFParser pParser , const char* const sLine) ;
+static gboolean initializeFastaRead(ZMapGFFParser pParser, const char * const sLine) ;
+static gboolean actionUponClosure(ZMapGFFParser pParser, const char* const sLine)  ;
 /*static gboolean iterationFunctionID(GQuark gqID, GHashTable *pValueTable) ; */
 static gboolean initParserForSequenceRead(ZMapGFFParser pParser) ;
 static gboolean copySequenceData(ZMapSequence pSequence, GString *pData) ;
 
-static gboolean parseHeaderLine_V3(ZMapGFFParser const pParserBase, const char * const sLine) ;
-static gboolean parseFastaLine_V3(ZMapGFFParser const pParser, const char* const sLine) ;
-static gboolean parseBodyLine_V3(ZMapGFFParser const pParser, const char * const sLine) ;
-static gboolean parseSequenceLine_V3(ZMapGFFParser const pParser, const char * const sLine) ;
+static gboolean parseHeaderLine_V3(ZMapGFFParser pParserBase, const char * const sLine) ;
+static gboolean parseFastaLine_V3(ZMapGFFParser pParser, const char* const sLine) ;
+static gboolean parseBodyLine_V3(ZMapGFFParser pParser, const char * const sLine) ;
+static gboolean parseSequenceLine_V3(ZMapGFFParser pParser, const char * const sLine) ;
 
 static gboolean addNewSequenceRecord(ZMapGFFParser pParser);
 static gboolean appendToSequenceRecord(ZMapGFFParser pParser, const char * const sLine) ;
-static gboolean parseDirective_GFF_VERSION(ZMapGFFParser const pParser, const char * const line);
-static gboolean parseDirective_SEQUENCE_REGION(ZMapGFFParser const pParser, const char * const line);
-static gboolean parseDirective_FEATURE_ONTOLOGY(ZMapGFFParser const pParser, const char * const line);
-static gboolean parseDirective_ATTRIBUTE_ONTOLOGY(ZMapGFFParser const pParser, const char * const line);
-static gboolean parseDirective_SOURCE_ONTOLOGY(ZMapGFFParser const pParser, const char * const line);
-static gboolean parseDirective_SPECIES(ZMapGFFParser const pParser, const char * const line);
-static gboolean parseDirective_GENOME_BUILD(ZMapGFFParser const pParser, const char * const line);
+static gboolean parseDirective_GFF_VERSION(ZMapGFFParser pParser, const char * const line);
+static gboolean parseDirective_SEQUENCE_REGION(ZMapGFFParser pParser, const char * const line);
+static gboolean parseDirective_FEATURE_ONTOLOGY(ZMapGFFParser pParser, const char * const line);
+static gboolean parseDirective_ATTRIBUTE_ONTOLOGY(ZMapGFFParser pParser, const char * const line);
+static gboolean parseDirective_SOURCE_ONTOLOGY(ZMapGFFParser pParser, const char * const line);
+static gboolean parseDirective_SPECIES(ZMapGFFParser pParser, const char * const line);
+static gboolean parseDirective_GENOME_BUILD(ZMapGFFParser pParser, const char * const line);
 
-static gboolean makeNewFeature_V3(const ZMapGFFParser const pParser, char ** const err_text, const ZMapGFFFeatureData const pFeatureData ) ;
+static gboolean makeNewFeature_V3(ZMapGFFParser pParser, char ** const err_text, ZMapGFFFeatureData pFeatureData ) ;
 
 static ZMapGFFParserFeatureSet getParserFeatureSet(ZMapGFFParser pParser, char* sFeatureSetName ) ;
-static gboolean getFeatureName(const char * const sequence, const ZMapGFFAttribute * const pAttributes, unsigned int nAttributes,const char * const given_name, const char * const source, ZMapStyleMode feature_type,
+static gboolean getFeatureName(const char * const sequence, ZMapGFFAttribute *pAttributes, unsigned int nAttributes,const char * const given_name, const char * const source, ZMapStyleMode feature_type,
   ZMapStrand strand, int start, int end, int query_start, int query_end, char ** const feature_name, char ** const feature_name_id) ;
 static void destroyFeatureArray(gpointer data) ;
 
 /*
  * Functions to create, augment or find names for various types of features based upon ZMapStyleMode.
  */
-static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const, const ZMapFeatureSet const, gboolean *, char **) ;
-static ZMapFeature makeFeatureAlignment(const ZMapGFFFeatureData const, const ZMapFeatureSet const, const ZMapFeatureTypeStyle const, char ** ) ;
-static ZMapFeature makeFeatureBasic(const ZMapGFFFeatureData const, char **) ;
-static char * makeFeatureTranscriptName(const ZMapGFFFeatureData const) ;
-static char * makeFeatureAlignmentName(const ZMapGFFFeatureData const) ;
+static ZMapFeature makeFeatureTranscript(ZMapGFFFeatureData , ZMapFeatureSet , gboolean *, char **) ;
+static gboolean makeFeatureLocus(ZMapGFFParser , ZMapGFFFeatureData , char ** ) ;
+static ZMapFeature makeFeatureAlignment(ZMapGFFFeatureData , ZMapFeatureSet , char ** ) ;
+static ZMapFeature makeFeatureAssemblyPath(ZMapGFFFeatureData , ZMapFeatureSet , char ** ) ;
+static ZMapFeature makeFeatureDefault(ZMapGFFFeatureData, ZMapFeatureSet , char **) ;
+static char * makeFeatureTranscriptNamePublic(ZMapGFFFeatureData ) ;
+static char * makeFeatureAlignmentNamePrivate(ZMapGFFFeatureData) ;
+static gboolean clipFeatureLogic_General(ZMapGFF3Parser, ZMapGFFFeatureData) ;
+static gboolean clipFeatureLogic_Transcript(ZMapGFF3Parser, ZMapGFFFeatureData ) ;
+static gboolean clipFeatureLogic_Complete(ZMapGFF3Parser, ZMapGFFFeatureData) ;
+static gboolean requireLocusOperations(ZMapGFFParser , ZMapGFFFeatureData  ) ;
+static gboolean findFeatureset(ZMapGFFParser , ZMapGFFFeatureData  , ZMapFeatureSet *) ;
 
-/* #define LOCAL_DEBUG_CODE_WRITE_BODY_LINE 1 */
-/* #define LOCAL_DEBUG_CODE_ALIGNMENT 1 */
-/* #define LOCAL_DEBUG_CODE_TRANSCRIPT 1 */
-/* #define LOCAL_DEBUG_CODE_BASIC 1 */
+/*
+ * See comments with function.
+ */
+static gboolean hack_SpecialColumnToSOTerm(const char * const, char ** const ) ;
 
-#ifdef LOCAL_DEBUG_CODE_ALIGNMENT
-static unsigned int iCountAlignment = 0 ;
-#endif
+/*
+ * These alternatives are in place temporarily until we have
+ * settled down with the new behaviour (i.e. it has gone through
+ * user testing).
+ */
+/* #define OLD_CLIPPING_BEHAVIOUR 1 */
 
-#ifdef LOCAL_DEBUG_CODE_TRANSCRIPT
-static unsigned int iCountTranscript = 0 ;
-#endif
+#ifdef OLD_CLIPPING_BEHAVIOUR
+/*
+ * old clipping behaviour; clip alignments using the
+ * General function
+ */
+#define CLIP_TRANSCRIPT_ON_PARSE 1
+#define CLIP_ALIGNMENT_ON_PARSE_GENERAL 1
+#define CLIP_ASSEMBLYPATH_ON_PARSE 1
+#define CLIP_DEFAULT_ON_PARSE 1
+#define CLIP_LOCUS_ON_PARSE 1
 
-#ifdef LOCAL_DEBUG_CODE_BASIC
-static unsigned int iCountBasic = 0 ;
+#else
+/*
+ * new clipping behaviour
+ */
+#define CLIP_ALIGNMENT_ON_PARSE_GENERAL 1
+#define CLIP_LOCUS_ON_PARSE 1
+
 #endif
 
 /*
@@ -122,7 +145,7 @@ static const ZMapGFFParserState ZMAP_GFF_PARSER_TRANSITIONS[ZMAPGFF_NUMBER_PARSE
 /* BOD */{ZMAPGFF_PARSER_BOD, ZMAPGFF_PARSER_SEQ, ZMAPGFF_PARSER_ERR, ZMAPGFF_PARSER_DIR, ZMAPGFF_PARSER_BOD, ZMAPGFF_PARSER_BOD, ZMAPGFF_PARSER_FAS, ZMAPGFF_PARSER_CLO, ZMAPGFF_PARSER_ERR},
 /* SEQ */{ZMAPGFF_PARSER_ERR, ZMAPGFF_PARSER_ERR, ZMAPGFF_PARSER_NON, ZMAPGFF_PARSER_SEQ, ZMAPGFF_PARSER_ERR, ZMAPGFF_PARSER_ERR, ZMAPGFF_PARSER_ERR, ZMAPGFF_PARSER_ERR, ZMAPGFF_PARSER_ERR},
 /* FAS */{ZMAPGFF_PARSER_FAS, ZMAPGFF_PARSER_ERR, ZMAPGFF_PARSER_ERR, ZMAPGFF_PARSER_ERR, ZMAPGFF_PARSER_FAS, ZMAPGFF_PARSER_FAS, ZMAPGFF_PARSER_ERR, ZMAPGFF_PARSER_ERR, ZMAPGFF_PARSER_FAS},
-/* CLO */{ZMAPGFF_PARSER_NON, ZMAPGFF_PARSER_SEQ, ZMAPGFF_PARSER_ERR, ZMAPGFF_PARSER_DIR, ZMAPGFF_PARSER_CLO, ZMAPGFF_PARSER_BOD, ZMAPGFF_PARSER_FAS, ZMAPGFF_PARSER_ERR, ZMAPGFF_PARSER_NON},
+/* CLO */{ZMAPGFF_PARSER_NON, ZMAPGFF_PARSER_SEQ, ZMAPGFF_PARSER_ERR, ZMAPGFF_PARSER_DIR, ZMAPGFF_PARSER_CLO, ZMAPGFF_PARSER_BOD, ZMAPGFF_PARSER_FAS, ZMAPGFF_PARSER_CLO, ZMAPGFF_PARSER_NON},
 /* ERR */{ZMAPGFF_PARSER_ERR, ZMAPGFF_PARSER_ERR, ZMAPGFF_PARSER_ERR, ZMAPGFF_PARSER_ERR, ZMAPGFF_PARSER_ERR, ZMAPGFF_PARSER_ERR, ZMAPGFF_PARSER_ERR, ZMAPGFF_PARSER_ERR, ZMAPGFF_PARSER_ERR}
 } ;
 
@@ -133,78 +156,79 @@ static const ZMapGFFParserState ZMAP_GFF_PARSER_TRANSITIONS[ZMAPGFF_NUMBER_PARSE
 ZMapGFFParser zMapGFFCreateParser_V3(char *sequence, int features_start, int features_end)
 {
   ZMapGFF3Parser pParser = NULL ;
-  if (!sequence || !*sequence )
-    return NULL ;
 
-  if ((sequence && *sequence) && (features_start > 0 && features_end >= features_start))
+  /* If coords are given, check that they're sensible */
+  if ((!features_start && !features_end) || ((features_start > 0) && (features_end >= features_start)))
     {
       pParser                                   = g_new0(ZMapGFF3ParserStruct, 1) ;
-      if (!pParser)
-        return NULL ;
+      if (pParser)
+        {
 
-      pParser->gff_version                      = ZMAPGFF_VERSION_3 ;
-      pParser->pHeader                          = zMapGFFCreateHeader() ;
-      if (!pParser->pHeader)
-        return NULL ;
-      pParser->pHeader->flags.got_ver           = TRUE ;
-      pParser->state                            = ZMAPGFF_PARSER_NON ;
-      pParser->line_count                       = 0 ;
-      pParser->num_features                     = 0 ;
-      pParser->parse_only                       = FALSE ;
-      pParser->free_on_destroy                  = TRUE ;
-      pParser->bLogWarnings                     = FALSE ;
-      pParser->iNumWrongSequence                = 0 ;
+          pParser->gff_version                      = ZMAPGFF_VERSION_3 ;
+          pParser->pHeader                          = zMapGFFCreateHeader() ;
+          if (!pParser->pHeader)
+            return NULL ;
+          pParser->pHeader->flags.got_ver           = TRUE ;
+          pParser->state                            = ZMAPGFF_PARSER_NON ;
+          pParser->line_count                       = 0 ;
+          pParser->num_features                     = 0 ;
+          pParser->parse_only                       = FALSE ;
+          pParser->free_on_destroy                  = TRUE ;
+          pParser->bLogWarnings                     = FALSE ;
+          pParser->iNumWrongSequence                = 0 ;
 
 
-      pParser->bCheckSequenceLength             = FALSE ;
-      pParser->raw_line_data                    = NULL ;
-      pParser->nSequenceRecords                 = 0 ;
-      pParser->pSeqData                         = NULL ;
+          pParser->bCheckSequenceLength             = FALSE ;
+          pParser->raw_line_data                    = NULL ;
+          pParser->nSequenceRecords                 = 0 ;
+          pParser->pSeqData                         = NULL ;
 
-      pParser->error                            = NULL ;
-      pParser->error_domain                     = g_quark_from_string(ZMAP_GFF_ERROR) ;
-      pParser->stop_on_error                    = FALSE ;
+          pParser->error                            = NULL ;
+          pParser->error_domain                     = g_quark_from_string(ZMAP_GFF_ERROR) ;
+          pParser->stop_on_error                    = FALSE ;
 
-      pParser->SO_compliant                     = FALSE ;
-      pParser->cSOErrorLevel                    = ZMAPGFF_SOERRORLEVEL_ERR ;
-      pParser->default_to_basic                 = FALSE ;
+          pParser->SO_compliant                     = FALSE ;
+          pParser->cSOErrorLevel                    = ZMAPGFF_SOERRORLEVEL_ERR ;
+          pParser->default_to_basic                 = FALSE ;
 
-      pParser->clip_mode                        = GFF_CLIP_NONE ;
-      pParser->clip_end                         = 0 ;
-      pParser->clip_start                       = 0 ;
+          pParser->clip_mode                        = GFF_CLIP_NONE ;
+          pParser->clip_end                         = 0 ;
+          pParser->clip_start                       = 0 ;
 
-      /* pParser->pMLF                             = zMapMLFCreate() ; */
-      pParser->source_2_feature_set             = NULL ;
-      pParser->source_2_sourcedata              = NULL ;
-      pParser->excluded_features                = g_hash_table_new(NULL, NULL) ;
+          /* pParser->pMLF                             = zMapMLFCreate() ; */
+          pParser->source_2_feature_set             = NULL ;
+          pParser->source_2_sourcedata              = NULL ;
+          pParser->excluded_features                = g_hash_table_new(NULL, NULL) ;
 
-      pParser->sequence_name                    = g_strdup(sequence) ;
-      pParser->features_start                   = features_start ;
-      pParser->features_end                     = features_end ;
+          pParser->sequence_name                    = g_strdup(sequence) ;
+          pParser->features_start                   = features_start ;
+          pParser->features_end                     = features_end ;
 
-      pParser->locus_set_id                     = 0 ;
-      pParser->sources                          = NULL ;
-      pParser->feature_sets                     = NULL ;
-      pParser->src_feature_sets                 = NULL ;
+          pParser->locus_set_id                     = 0 ;
+          pParser->sources                          = NULL ;
+          pParser->feature_sets                     = NULL ;
+          pParser->src_feature_sets                 = NULL ;
 
-      /* Set initial buffer & format string size */
-      resizeBuffers((ZMapGFFParser) pParser, ZMAPGFF_BUF_INIT_SIZE) ;
-      pParser->format_str                       = NULL ;
-      pParser->cigar_string_format_str          = NULL ;
-      resizeFormatStrs((ZMapGFFParser) pParser) ;
+          /* Set initial buffer & format string size */
+          resizeBuffers((ZMapGFFParser) pParser, ZMAPGFF_BUF_INIT_SIZE) ;
+          pParser->format_str                       = NULL ;
+          pParser->cigar_string_format_str          = NULL ;
+          resizeFormatStrs((ZMapGFFParser) pParser) ;
 
-      /*
-       * Some format characters and delimiters.
-       */
-      pParser->cDelimBodyLine                   = '\t' ;
-      pParser->cDelimAttributes                 = ';' ;
-      pParser->cDelimAttValue                   = '=' ;
-      pParser->cDelimQuote                      = '"' ;
+          /*
+           * Some format characters and delimiters.
+           */
+          pParser->cDelimBodyLine                   = '\t' ;
+          pParser->cDelimAttributes                 = ';' ;
+          pParser->cDelimAttValue                   = '=' ;
+          pParser->cDelimQuote                      = '"' ;
 
-      /*
-       * Flag for SO term set in use.
-       */
-      pParser->cSOSetInUse                      = ZMAPSO_USE_SOXP ;
+          /*
+           * Flag for SO term set in use.
+           */
+          pParser->cSOSetInUse                      = ZMAPSO_USE_SOXP ;
+
+        }
     }
 
   return (ZMapGFFParser) pParser ;
@@ -215,11 +239,10 @@ ZMapGFFParser zMapGFFCreateParser_V3(char *sequence, int features_start, int fea
 /*
  * Function to destroy a parser.
  */
-void zMapGFFDestroyParser_V3(ZMapGFFParser const pParserBase)
+void zMapGFFDestroyParser_V3(ZMapGFFParser pParserBase)
 {
   unsigned int iValue ;
-  if (!pParserBase)
-    return ;
+  zMapReturnIfFail(pParserBase) ;
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
 
   if (pParser->error)
@@ -237,18 +260,17 @@ void zMapGFFDestroyParser_V3(ZMapGFFParser const pParserBase)
   if (pParser->sequence_name)
     g_free(pParser->sequence_name) ;
 
-  /*
   if (pParser->nSequenceRecords)
   {
     if (pParser->pSeqData)
     {
       for (iValue=0; iValue<pParser->nSequenceRecords; ++iValue)
       {
-        zMapSequenceDestroy(&pParser->pSeqData[iValue]) ;
+        zMapGFFSequenceDestroy(&pParser->pSeqData[iValue]) ;
       }
     }
+    g_free(pParser->pSeqData) ;
   }
-  */
 
   /*
    * The parser should not attempt to control the lifetime of the
@@ -279,12 +301,28 @@ void zMapGFFDestroyParser_V3(ZMapGFFParser const pParserBase)
  * Return the got_minimal_header flag. This style of header flags is only
  * used for version 3.
  */
-gboolean zMapGFFGetHeaderGotMinimal_V3(const ZMapGFFParser const pParserBase)
+gboolean zMapGFFGetHeaderGotMinimal_V3(ZMapGFFParser pParserBase)
 {
-  if (!pParserBase)
-    return FALSE ;
+  gboolean bResult = FALSE ;
+  zMapReturnValIfFail(pParserBase, FALSE );
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
-  return (gboolean) pParser->pHeader->flags.got_min ;
+
+  /*
+   *
+   */
+  if ( pParser->pHeader->flags.got_ver )
+    {
+      if (pParser->pHeader->flags.got_sqr )
+        {
+          bResult = TRUE ;
+        }
+      else if ( pParser->features_start && pParser->features_end )
+        {
+          bResult = TRUE ;
+        }
+    }
+
+  return bResult ; // (gboolean) pParser->pHeader->flags.got_min ;
 }
 
 
@@ -311,6 +349,7 @@ static gboolean removeCommentFromLine( char* sLine )
     cNull = '\0' ;
   gboolean bIsQuoted = FALSE,
     bResult = FALSE ;
+  zMapReturnValIfFail(sLine && *sLine, bResult) ;
 
 
   /*
@@ -448,15 +487,14 @@ static ZMapGFFParserState parserFSM(ZMapGFFParserState eCurrentState, const char
  * Note that we attempt to avoid frequent reallocation by making buffer twice as large as required
  * (not including the final null char....).
  */
-static gboolean resizeBuffers(ZMapGFFParser const pParser, gsize iLineLength)
+static gboolean resizeBuffers(ZMapGFFParser pParser, gsize iLineLength)
 {
   gboolean bNewAlloc = TRUE,
     bResized = FALSE ;
   char *sBuf[ZMAPGFF_NUMBER_PARSEBUF];
   unsigned int i, iNewLineLength ;
 
-  if (!pParser || !iLineLength )
-    return bResized ;
+  zMapReturnValIfFail(pParser && iLineLength, bResized) ;
 
   if (iLineLength > pParser->buffer_length)
     {
@@ -552,15 +590,14 @@ static gboolean resizeBuffers(ZMapGFFParser const pParser, gsize iLineLength)
  *
  * mh17 NOTE BAM data has # in its attributes
  */
-static gboolean resizeFormatStrs(ZMapGFFParser const pParser)
+static gboolean resizeFormatStrs(ZMapGFFParser pParser)
 {
   gboolean bResized = TRUE ;
   GString *format_str ;
   static const char *align_format_str = "%%*[\"]" "%%%d" "[^\"]%%*[\"]%%*s" ;
   gsize iLength ;
 
-  if (!pParser)
-    return bResized ;
+  zMapReturnValIfFail(pParser, bResized) ;
 
   /*
    * Max length of string we can parse using scanf(), the "- 1"
@@ -656,12 +693,12 @@ static gboolean isAcedbError(const char * const sLine)
  * Actions to initialize reading a sequence section. Current line must
  * be "##DNA" only.
  */
-static gboolean initializeSequenceRead(ZMapGFFParser const pParserBase, const char * const sLine)
+static gboolean initializeSequenceRead(ZMapGFFParser pParserBase, const char * const sLine)
 {
   gboolean bResult = TRUE ;
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
-  if (!pParser || !pParser->pHeader)
-    return FALSE ;
+
+  zMapReturnValIfFail(pParser && pParser->pHeader, FALSE) ;
 
   /*
    * We must have already made the transition into the
@@ -728,12 +765,12 @@ static gboolean initializeSequenceRead(ZMapGFFParser const pParserBase, const ch
  * Actions to initialize reading a fasta section. All this does is sets a flag if we
  * are seeing ##FASTA for the first time and returns an error otherwise.
  */
-static gboolean initializeFastaRead(ZMapGFFParser const pParserBase, const char * const sLine)
+static gboolean initializeFastaRead(ZMapGFFParser pParserBase, const char * const sLine)
 {
   gboolean bResult = TRUE ;
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
-  if (!pParser || !pParser->pHeader)
-    return FALSE ;
+
+  zMapReturnValIfFail(pParser && pParser->pHeader, FALSE) ;
 
   /*
    * We must have already made the transition into the
@@ -788,8 +825,8 @@ static gboolean initParserForSequenceRead(ZMapGFFParser pParserBase)
 {
   gboolean bResult = FALSE ;
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
-  if (!pParser || !pParser->pHeader )
-    return bResult ;
+
+  zMapReturnValIfFail(pParser && pParser->pHeader, FALSE ) ;
 
   bResult = TRUE ;
   if (pParser->raw_line_data != NULL )
@@ -845,32 +882,14 @@ static gboolean iterationFunctionID(GQuark gqID, GHashTable *pValueTable)
 
 /*
  * This is the semantic action to be performed upon encountering the
- * "###" directive. This should be doing something with the MLF data
- * stored in the parser. At the moment, just calls a dummy function.
+ * "###" directive. Right now this is just a dummy function.
  */
-static gboolean actionUponClosure(ZMapGFFParser const pParserBase, const char* const sLine)
+static gboolean actionUponClosure(ZMapGFFParser pParserBase, const char* const sLine)
 {
   gboolean bResult = TRUE ;
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
-  if (!pParser || !pParser->pHeader)
-    return FALSE ;
 
-  /* printf("actionUponClosure() called, nID = %i\n", zMapMLFNumID(pParser->pMLF)) ; */
-
-  /*
-   * Process datasets.
-   */
-  /*zMapMLFIDIteration(pParser->pMLF,  iterationFunctionID ) ;*/
-
-  /*
-   * When finished we empty the parser MLF structure.
-   */
-  /*if (!zMapMLFEmpty(pParser->pMLF))
-    {
-       pParser->error = g_error_new(pParser->error_domain, ZMAPGFF_ERROR_HEADER,
-                                    "Error in actionUponClosure(); line = %i",  pParser->line_count) ;
-    }
-  */
+  zMapReturnValIfFail(pParser && pParser->pHeader, FALSE) ;
 
   return bResult ;
 }
@@ -894,8 +913,9 @@ static gboolean parserStateChange(ZMapGFFParser pParserBase,
 {
   gboolean bResult = TRUE ;
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
-  if (!pParser || !pParser->pHeader)
-    return FALSE ;
+
+  zMapReturnValIfFail(pParser && pParser->pHeader, FALSE) ;
+
   if (eOldState == eNewState)
     return FALSE ;
 
@@ -951,13 +971,13 @@ static gboolean parserStateChange(ZMapGFFParser pParserBase,
  * Actions to finalize reading a sequence section. Current line must be
  * "##end-DNA" only.
  */
-static gboolean finalizeSequenceRead(ZMapGFFParser const pParserBase , const char* const sLine)
+static gboolean finalizeSequenceRead(ZMapGFFParser pParserBase , const char* const sLine)
 {
   gboolean bResult = TRUE,
     bCopyData = TRUE;
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
-  if (!pParser || !pParser->pHeader )
-    return FALSE ;
+
+  zMapReturnValIfFail(pParser && pParser->pHeader, FALSE ) ;
 
   if (!g_str_has_prefix(sLine, "##end-DNA"))
     {
@@ -1018,12 +1038,9 @@ static gboolean finalizeSequenceRead(ZMapGFFParser const pParserBase , const cha
  */
 static gboolean copySequenceData(ZMapSequence pSequence, GString *pData)
 {
-  gboolean bResult = TRUE ;
-  if (!pSequence || !pData)
-    {
-      bResult = FALSE ;
-      return bResult ;
-    }
+  gboolean bResult = FALSE ;
+  zMapReturnValIfFail(pSequence && pData, bResult ) ;
+  bResult = TRUE ;
 
   if (pSequence->sequence)
     {
@@ -1055,8 +1072,9 @@ static gboolean addNewSequenceRecord(ZMapGFFParser pParserBase)
   ZMapSequenceStruct *pSeqTemp = NULL ;
   unsigned int nSequenceRecords , iSeq ;
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
-  if (!pParser || !pParser->pHeader )
-    return bResult ;
+
+  zMapReturnValIfFail(pParser && pParser->pHeader, bResult) ;
+
   nSequenceRecords = pParser->nSequenceRecords ;
   bResult = TRUE ;
 
@@ -1110,8 +1128,7 @@ static gboolean appendToSequenceRecord(ZMapGFFParser pParserBase, const char * c
 
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
 
-  if (!pParser || !pParser->pHeader )
-    return bResult ;
+  zMapReturnValIfFail(pParser && pParser->pHeader, bResult) ;
 
   bResult = TRUE ;
 
@@ -1175,7 +1192,7 @@ static gboolean appendToSequenceRecord(ZMapGFFParser pParserBase, const char * c
  *
  * Note that we assume that the sequence is DNA. This is not tested.
  */
-static gboolean parseFastaLine_V3(ZMapGFFParser const pParserBase, const char* const sLine)
+static gboolean parseFastaLine_V3(ZMapGFFParser pParserBase, const char* const sLine)
 {
   unsigned int iFields ;
   gboolean bResult = FALSE ;
@@ -1188,8 +1205,7 @@ static gboolean parseFastaLine_V3(ZMapGFFParser const pParserBase, const char* c
   /*
    * Some basic error checking.
    */
-  if (!pParser || !pParser->pHeader)
-    return bResult ;
+  zMapReturnValIfFail(pParser && pParser->pHeader, bResult) ;
 
   /*
    * If we are given sLine = "##FASTA" then this is the start, and just return
@@ -1221,7 +1237,6 @@ static gboolean parseFastaLine_V3(ZMapGFFParser const pParserBase, const char* c
 
   if (g_str_has_prefix(sLine, ">"))
     {
-
       /*
        * Init for reading sequence data
        */
@@ -1257,17 +1272,14 @@ static gboolean parseFastaLine_V3(ZMapGFFParser const pParserBase, const char* c
       if ((iFields == 1) || (iFields == 2))
         {
           pTheSequence->name = g_quark_from_string(sBuf01) ;
+          bResult = TRUE ;
         }
       else
         {
-          /*
-          bResult = FALSE ;
-          pParser->error = g_error_new(pParser->error_domain, ZMAPGFF_ERROR_FASTA,
-                                       "Error set in parseFastaLine(); unable to parse fasta header with l = '%s'", sLine) ;
-          */
           pTheSequence->name = g_quark_from_string("ZMAPGFF_FASTA_NAME_NOT_FOUND") ;
         }
 
+      bResult = TRUE ;
     }
   else
     {
@@ -1280,7 +1292,12 @@ static gboolean parseFastaLine_V3(ZMapGFFParser const pParserBase, const char* c
                         "Error set in parseFastaLine(); unable to append to sequence record with l = '%s'", sLine) ;
           return bResult ;
         }
+      else
+        {
+          bResult = TRUE ;
+        }
 
+      bResult = TRUE ;
     }
 
   return bResult ;
@@ -1295,14 +1312,13 @@ static gboolean parseFastaLine_V3(ZMapGFFParser const pParserBase, const char* c
  *   ##ACTGACTGACTGACTGACTGAC...
  * No checking is done for validity of sequence.
  */
-static gboolean parseSequenceLine_V3(ZMapGFFParser const pParserBase, const char * const sLine)
+static gboolean parseSequenceLine_V3(ZMapGFFParser pParserBase, const char * const sLine)
 {
   gboolean bResult = FALSE ;
 
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
 
-  if (!pParser || !pParser->pHeader)
-    return bResult ;
+  zMapReturnValIfFail(pParser && pParser->pHeader, bResult) ;
 
   if (pParser->state != ZMAPGFF_PARSER_SEQ)
     return bResult ;
@@ -1352,7 +1368,7 @@ static gboolean parseSequenceLine_V3(ZMapGFFParser const pParserBase, const char
 /*
  * GFF Version requires a single non-negative integer value. We support only 2 or 3.
  */
-static gboolean parseDirective_GFF_VERSION(ZMapGFFParser const pParserBase, const char * const line)
+static gboolean parseDirective_GFF_VERSION(ZMapGFFParser pParserBase, const char * const line)
 {
   static const char *sFmt= "%*13s%d";
   static const unsigned int iExpectedFields = 1 ;
@@ -1362,8 +1378,7 @@ static gboolean parseDirective_GFF_VERSION(ZMapGFFParser const pParserBase, cons
 
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
 
-  if (!pParser || !pParser->pHeader)
-    return FALSE ;
+  zMapReturnValIfFail(pParser && pParser->pHeader, FALSE) ;
 
   /*
    * (sm23) I have removed this test to make sure that it's OK for
@@ -1418,9 +1433,6 @@ static gboolean parseDirective_GFF_VERSION(ZMapGFFParser const pParserBase, cons
 
       /* write data to parser */
       pParser->gff_version = (ZMapGFFVersion) iVersion ;
-
-      /* special operation for this directive */
-      zMapGFFHeaderMinimalTest(pParser->pHeader) ;
     }
 
   return bResult ;
@@ -1431,7 +1443,7 @@ static gboolean parseDirective_GFF_VERSION(ZMapGFFParser const pParserBase, cons
 /*
  * Sequence region is a string followed by two non-negative integers.
  */
-static gboolean parseDirective_SEQUENCE_REGION(ZMapGFFParser const pParserBase, const char * const line)
+static gboolean parseDirective_SEQUENCE_REGION(ZMapGFFParser pParserBase, const char * const line)
 {
   static const unsigned int iExpectedFields = 3 ;
   static const char *sFmt = "%*s%1000s%d%d" ;
@@ -1441,8 +1453,7 @@ static gboolean parseDirective_SEQUENCE_REGION(ZMapGFFParser const pParserBase, 
 
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
 
-  if (!pParser || !pParser->pHeader )
-    return FALSE ;
+  zMapReturnValIfFail(pParser && pParser->pHeader, FALSE ) ;
 
   /*
    * If we have already read a directive of this form, we do nothing else, but this is
@@ -1465,6 +1476,13 @@ static gboolean parseDirective_SEQUENCE_REGION(ZMapGFFParser const pParserBase, 
       return bResult ;
     }
 
+  /* If the parser sequence details are not set, then set them from the sequence-region */
+  if (!zMapGFFGetSequenceName((ZMapGFFParser)pParser))
+    {
+      pParser->sequence_name = g_strdup(sBuf) ;
+      pParser->features_start = iStart ;
+      pParser->features_end = iEnd ;
+    }
 
   /*
    * We require the names to match up here.
@@ -1501,9 +1519,6 @@ static gboolean parseDirective_SEQUENCE_REGION(ZMapGFFParser const pParserBase, 
           /* write specific info to parser */
           pParser->features_start = iStart ;
           pParser->features_end = iEnd ;
-
-          /* special operation for this directive */
-          zMapGFFHeaderMinimalTest(pParser->pHeader) ;
         }
 
     } /* sequence name matches */
@@ -1517,7 +1532,7 @@ static gboolean parseDirective_SEQUENCE_REGION(ZMapGFFParser const pParserBase, 
  * The feature ontology should be a URL/URI string. This is not checked for validity in
  * any way.
  */
-static gboolean parseDirective_FEATURE_ONTOLOGY(ZMapGFFParser const pParserBase , const char * const line)
+static gboolean parseDirective_FEATURE_ONTOLOGY(ZMapGFFParser pParserBase , const char * const line)
 {
   static const char* sFmt = "%*s%1000s" ;
   static const unsigned int iExpectedFields = 1 ;
@@ -1526,8 +1541,7 @@ static gboolean parseDirective_FEATURE_ONTOLOGY(ZMapGFFParser const pParserBase 
 
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
 
-  if (!pParser || !pParser->pHeader)
-    return FALSE ;
+  zMapReturnValIfFail(pParser && pParser->pHeader, FALSE) ;
 
   /*
    * If we have read this directive already, then set an error.
@@ -1582,7 +1596,7 @@ static gboolean parseDirective_FEATURE_ONTOLOGY(ZMapGFFParser const pParserBase 
 /*
  * Function for the attribute ontology directive. Again, just reads a string.
  */
-static gboolean parseDirective_ATTRIBUTE_ONTOLOGY(ZMapGFFParser const pParserBase, const char * const line)
+static gboolean parseDirective_ATTRIBUTE_ONTOLOGY(ZMapGFFParser pParserBase, const char * const line)
 {
   static const char* sFmt = "%*s%1000s" ;
   static const unsigned int iExpectedFields = 1 ;
@@ -1591,8 +1605,7 @@ static gboolean parseDirective_ATTRIBUTE_ONTOLOGY(ZMapGFFParser const pParserBas
 
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
 
-  if (!pParser || !pParser->pHeader)
-    return bResult ;
+  zMapReturnValIfFail(pParser && pParser->pHeader, bResult ) ;
 
   /*
    * If we have read this directive already, then set an error.
@@ -1647,7 +1660,7 @@ static gboolean parseDirective_ATTRIBUTE_ONTOLOGY(ZMapGFFParser const pParserBas
 /*
  * Function for the source ontology. Again, reads a single string.
  */
-static gboolean parseDirective_SOURCE_ONTOLOGY(ZMapGFFParser const pParserBase, const char * const line)
+static gboolean parseDirective_SOURCE_ONTOLOGY(ZMapGFFParser pParserBase, const char * const line)
 {
   static const char* sFmt = "%*s%1000s" ;
   static const unsigned int iExpectedFields = 1 ;
@@ -1656,8 +1669,7 @@ static gboolean parseDirective_SOURCE_ONTOLOGY(ZMapGFFParser const pParserBase, 
 
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
 
-  if (!pParser || !pParser->pHeader)
-    return bResult ;
+  zMapReturnValIfFail(pParser && pParser->pHeader, bResult ) ;
 
   /*
    * If we have read this directive already, then set an error.
@@ -1713,7 +1725,7 @@ static gboolean parseDirective_SOURCE_ONTOLOGY(ZMapGFFParser const pParserBase, 
 /*
  * Function for the ##species; one string only.
  */
-static gboolean parseDirective_SPECIES(ZMapGFFParser const pParserBase, const char * const line)
+static gboolean parseDirective_SPECIES(ZMapGFFParser pParserBase, const char * const line)
 {
   static const char* sFmt = "%*s%1000s" ;
   static const unsigned int iExpectedFields = 1 ;
@@ -1722,8 +1734,7 @@ static gboolean parseDirective_SPECIES(ZMapGFFParser const pParserBase, const ch
 
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
 
-  if (!pParser || !pParser->pHeader)
-    return bResult ;
+  zMapReturnValIfFail(pParser && pParser->pHeader, bResult) ;
 
   /*
    * If we have read this directive already, then set an error.
@@ -1781,7 +1792,7 @@ static gboolean parseDirective_SPECIES(ZMapGFFParser const pParserBase, const ch
 /*
  * Genome build; requires two strings for the name and source of assembly.
  */
-static gboolean parseDirective_GENOME_BUILD(ZMapGFFParser const pParserBase, const char * const line)
+static gboolean parseDirective_GENOME_BUILD(ZMapGFFParser pParserBase, const char * const line)
 {
   static const char* sFmt = "%*s%1000s%1000s" ;
   static const unsigned int iExpectedFields = 2 ;
@@ -1790,8 +1801,7 @@ static gboolean parseDirective_GENOME_BUILD(ZMapGFFParser const pParserBase, con
 
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
 
-  if (!pParser || !pParser->pHeader)
-    return bResult ;
+  zMapReturnValIfFail(pParser && pParser->pHeader, bResult) ;
 
   /*
    * If we have read this directive alre/ady, then set an error.
@@ -1857,15 +1867,14 @@ static gboolean parseDirective_GENOME_BUILD(ZMapGFFParser const pParserBase, con
  * Returns FALSE if passed a line that is not a header comment OR if there
  * was a parse error. In the latter case parser->error will have been set.
  */
-static gboolean parseHeaderLine_V3(ZMapGFFParser const pParserBase, const char * const sLine)
+static gboolean parseHeaderLine_V3(ZMapGFFParser pParserBase, const char * const sLine)
 {
   gboolean bResult = FALSE ;
   ZMapGFFDirectiveName eDirName ;
 
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
 
-  if (!pParser || !pParser->pHeader )
-    return bResult ;
+  zMapReturnValIfFail(pParser && pParser->pHeader, bResult ) ;
 
   if (!g_str_has_prefix(sLine, "##"))
     return bResult ;
@@ -1928,6 +1937,11 @@ static gboolean parseHeaderLine_V3(ZMapGFFParser const pParserBase, const char *
       bResult = FALSE ;
     }
 
+  /*
+   * To be tested for after read of every directive line.
+   */
+  zMapGFFHeaderMinimalTest(pParser->pHeader) ;
+
   return bResult ;
 }
 
@@ -1946,14 +1960,14 @@ static gboolean parseHeaderLine_V3(ZMapGFFParser const pParserBase, const char *
  * encountering a change of state; there are fewer actions (and indeed
  * fewer functions) of this second type.
  */
-gboolean zMapGFFParse_V3(ZMapGFFParser const pParserBase, char * const sLine)
+gboolean zMapGFFParse_V3(ZMapGFFParser pParserBase, char * const sLine)
 {
   gboolean bResult = TRUE, bCommentRemoved = FALSE ;
   ZMapGFFParserState eOldState = ZMAPGFF_PARSER_NON,
     eNewState = ZMAPGFF_PARSER_NON;
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
-  if (!pParser || !pParser->pHeader)
-    return FALSE ;
+
+  zMapReturnValIfFail(pParser && pParser->pHeader, FALSE) ;
 
   /*
    * Increment line count and skip over blank lines and comments.
@@ -1970,7 +1984,7 @@ gboolean zMapGFFParse_V3(ZMapGFFParser const pParserBase, char * const sLine)
    * Remove trailing comment from line. Should do nothing to
    * directive lines (i.e. ones that start with "##").
    */
-  bCommentRemoved = removeCommentFromLine( sLine ) ;
+  //bCommentRemoved = removeCommentFromLine( sLine ) ;
 
   /*
    * Parser FSM logic. Will be unaltered if we have a blank
@@ -2057,12 +2071,11 @@ gboolean zMapGFFParse_V3(ZMapGFFParser const pParserBase, char * const sLine)
 /*
  * Return the flag whether or not to log warnings.
  */
-gboolean zMapGFFGetLogWarnings(const ZMapGFFParser const pParserBase )
+gboolean zMapGFFGetLogWarnings(ZMapGFFParser pParserBase )
 {
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
 
-  if (!pParser || !pParser->pHeader )
-    return FALSE ;
+  zMapReturnValIfFail(pParser && pParser->pHeader, FALSE ) ;
 
   return pParser->bLogWarnings ;
 }
@@ -2077,10 +2090,7 @@ gboolean zMapGFFGetLogWarnings(const ZMapGFFParser const pParserBase )
  * Parse out a body line for data and then call functions to create
  * appropriate new features.
  */
-static gboolean parseBodyLine_V3(
-                        ZMapGFFParser const pParserBase,
-                        const char * const sLine
-                      )
+static gboolean parseBodyLine_V3(ZMapGFFParser pParserBase, const char * const sLine)
 {
   static const unsigned int
     iTokenLimit                       = 1000
@@ -2114,14 +2124,9 @@ static gboolean parseBodyLine_V3(
   gboolean
     bResult                           = TRUE,
     bHasScore                         = FALSE,
-    bIncludeFeature                   = TRUE,
     bIncludeEmpty                     = FALSE,
     bRemoveQuotes                     = FALSE,
     bIsValidSOID                      = FALSE
-  ;
-
-  GQuark
-    gqNameID                          = 0
   ;
 
   ZMapStyleMode
@@ -2137,8 +2142,7 @@ static gboolean parseBodyLine_V3(
     cPhase                            = ZMAPPHASE_NONE
   ;
   ZMapGFFAttribute
-    *pAttributes                      = NULL,
-    pAttribute                        = NULL
+    *pAttributes                      = NULL
   ;
   ZMapGFFFeatureData
     pFeatureData                      = NULL
@@ -2150,11 +2154,6 @@ static gboolean parseBodyLine_V3(
     pSOIDData                         = NULL
   ;
 
-#ifdef LOCAL_DEBUG_CODE_WRITE_BODY_LINE
-  printf("%s\n", sLine) ;
-  fflush (stdout) ;
-#endif
-
   /*
    * Cast to concrete type for GFFV3.
    */
@@ -2163,11 +2162,7 @@ static gboolean parseBodyLine_V3(
   /*
    * Initial error check.
    */
-  if (!pParser || !pParser->pHeader)
-    {
-      bResult = FALSE ;
-      goto return_point ;
-    };
+  zMapReturnValIfFail(pParser && pParser->pHeader && sLine && *sLine, FALSE) ;
 
   /*
    * If the line length is too large, then we exit with an error set.
@@ -2317,6 +2312,39 @@ static gboolean parseBodyLine_V3(
     sErrText = g_strdup_printf("phase format not recognised: %s", sPhase) ;
 
   /*
+   * A CDS feature _must_ have a phase which is _not_ ZMAPPHASE_NONE.
+   *
+   * All features other than CDS _must_ have cPhase = '.' (i.e. ZMAPPHASE_NONE).
+   * Anything else is an error.
+   */
+  if (!strcmp(sType, "CDS"))
+    {
+      if (cPhase == ZMAPPHASE_NONE)
+        {
+          bResult = FALSE ;
+          sErrText = g_strdup_printf("CDS feature must not have ZMAPPHASE_NONE; line %i, '%s'", pParser->line_count, sLine) ;
+          pParser->error = g_error_new(pParser->error_domain, ZMAPGFF_ERROR_BODY, "%s", sErrText) ;
+          goto return_point ;
+        }
+    }
+  else
+    {
+      if (cPhase != ZMAPPHASE_NONE)
+        {
+          bResult = FALSE ;
+          sErrText = g_strdup_printf("non-CDS feature must have ZMAPPHASE_NONE; line %i, '%s'", pParser->line_count, sLine) ;
+          pParser->error = g_error_new(pParser->error_domain, ZMAPGFF_ERROR_BODY, "%s", sErrText) ;
+          goto return_point ;
+        }
+    }
+
+
+  /*
+   * Deal with hack to source -> SO term mapping
+   */
+  hack_SpecialColumnToSOTerm(sSource, &sType ) ;
+
+  /*
    * sType must be either an accession number or a valid name from the
    * SO set that is currently is use.
    *
@@ -2433,99 +2461,32 @@ static gboolean parseBodyLine_V3(
 
 
   /*
-   * Clip start/end as specified in clip_mode, default is to exclude.
+   * Attempt to create the new feature object and add to the
+   * appropriate feature set.
    */
-  if (pParser->clip_mode != GFF_CLIP_NONE)
+  if ((bResult = makeNewFeature_V3(pParserBase,
+                                   &sErrText,
+                                   pFeatureData)))
     {
-
       /*
-       * Name is needed; if there is no "Name" then this will fail (but would have in v2 anyway).
+       * A new feature was successfully created and added to the
+       * feature set.
        */
-      gqNameID = 0 ;
-      pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "Name" );
-      if (pAttribute)
-        {
-          gqNameID = g_quark_from_string(zMapGFFAttributeGetTempstring(pAttribute)) ;
-        }
-
-
-      /* Anything outside always excluded. */
-      if (pParser->clip_mode == GFF_CLIP_ALL || pParser->clip_mode == GFF_CLIP_OVERLAP)
-        {
-          if (iStart > pParser->clip_end || iEnd < pParser->clip_start)
-            {
-              bIncludeFeature = FALSE ;
-            }
-        }
-
-      /* Exclude overlaps for CLIP_ALL */
-      if (bIncludeFeature && pParser->clip_mode == GFF_CLIP_ALL)
-        {
-          if (iStart < pParser->clip_start || iEnd > pParser->clip_end)
-            {
-              bIncludeFeature = FALSE ;
-            }
-        }
-
-      /* Clip overlaps for CLIP_OVERLAP */
-      if (bIncludeFeature && pParser->clip_mode == GFF_CLIP_OVERLAP)
-        {
-          if (iStart < pParser->clip_start)
-            iStart = pParser->clip_start ;
-          if (iEnd > pParser->clip_end)
-            iEnd = pParser->clip_end ;
-        }
-
-      /*
-       * Children of features to be excluded must also be excluded, so names of excluded features
-       * must be stored.
-       */
-      if (!bIncludeFeature)
-        {
-          g_hash_table_insert(pParser->excluded_features, GINT_TO_POINTER(gqNameID), GINT_TO_POINTER(gqNameID)) ;
-          bResult = TRUE ;
-        }
-      else if ((g_hash_table_lookup(pParser->excluded_features, GINT_TO_POINTER(gqNameID))))
-        {
-          bIncludeFeature = FALSE ;
-        }
-
-
-    } /* if (pParser->clip_mode != ZMAPGFF_CLIP_NONE) */
-
-
-    /*
-     * If the feature is to be included then create the new feature object
-     * and add to the appropriate feature set.
-     */
-    if (bIncludeFeature)
+    }
+  else
     {
-
-      if ((bResult = makeNewFeature_V3(pParserBase,
-                                    &sErrText,
-                                    pFeatureData)))
+      /*
+       * otherwise we have an error
+       */
+      if (pParser->error)
         {
-          /*
-           * A new feature was successfully created and added to the
-           * feature set.
-           */
+          g_error_free(pParser->error) ;
+          pParser->error = NULL ;
         }
-      else
-        {
-          /*
-           * otherwise we have an error
-           */
-          if (pParser->error)
-            {
-              g_error_free(pParser->error) ;
-              pParser->error = NULL ;
-            }
-          pParser->error = g_error_new(pParser->error_domain, ZMAPGFF_ERROR_BODY,
-                                       "GFF line %d (b) - %s (\"%s\")",  pParser->line_count, sErrText, sLine) ;
-          g_free(sErrText) ;
-          sErrText = NULL ;
-
-        }
+      pParser->error = g_error_new(pParser->error_domain, ZMAPGFF_ERROR_BODY,
+                                   "GFF line %d (b) - %s (\"%s\")",  pParser->line_count, sErrText, sLine) ;
+      g_free(sErrText) ;
+      sErrText = NULL ;
 
     }
 
@@ -2551,52 +2512,62 @@ return_point:
  * Create a name for a transcript feature only. This is the name to display to the user,
  * and is not used to create a feature->unique_id for the feature_set.
  *
- * The name is of the form "<name>_(<id>)", where
+ * The name is of the form "<name>", where
  *
  * (1) "Name = <name>"
- * (2) "ID = <id>" for top level object only
  *
  * This should only be called for the the top level object, rather than
  * components such as intron, exon, CDS, etc.
  *
  */
-static char * makeFeatureTranscriptName(const ZMapGFFFeatureData const pFeatureData)
+static char * makeFeatureTranscriptNamePublic( ZMapGFFFeatureData pFeatureData)
 {
   ZMapGFFAttribute *pAttributes = NULL,
-    pAttributeName = NULL,
-    pAttributeID = NULL ;
+    pAttributeName = NULL ;
   unsigned int nAttributes = 0 ;
-  char * sResult = NULL ;
+  char *sResult = NULL,
+    *sFeatureAttributeName = NULL ;
+  gboolean bParseValid = FALSE ;
+  static const char *sNoName = "no_name_given" ;
+  zMapReturnValIfFail(pFeatureData, sResult );
   pAttributes = zMapGFFFeatureDataGetAts(pFeatureData) ;
   nAttributes = zMapGFFFeatureDataGetNat(pFeatureData) ;
-  pAttributeName = zMapGFFAttributeListContains(pAttributes, nAttributes, "Name") ;
-  pAttributeID = zMapGFFAttributeListContains(pAttributes, nAttributes, "ID") ;
-  sResult = g_strdup_printf("%s_(%s)", zMapGFFAttributeGetTempstring(pAttributeName), zMapGFFAttributeGetTempstring(pAttributeID)) ;
+  pAttributeName = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_Name) ;
+  if (pAttributeName)
+    {
+      bParseValid = zMapAttParseName(pAttributeName, &sFeatureAttributeName) ;
+    }
+  sResult = pAttributeName ? g_strdup(sFeatureAttributeName) : g_strdup(sNoName) ;
+  if (sFeatureAttributeName)
+    {
+      g_free(sFeatureAttributeName) ;
+    }
   return sResult ;
 }
 
 
 /*
- * Create a name for an alignment feature only. This is also used to generate the
+ * Create a name for an alignment feature only. This is used to generate the
  * feature->unique_id for the feature_set.
  *
- * The name is of the form "[iStart, iEnd]_<TargetID>", where
+ * The name is of the form "[iStart, iEnd]_<TargetID> <i> <j> <p>", where
  *
  * (1) [iStart, iEnd] are the start and end of the feature in the reference sequence
  * (2) "Target=<TargetID> <i> <j> <p>", also referred to as the clone_id in the v2 code
  *
  *
  */
-static char * makeFeatureAlignmentName(const ZMapGFFFeatureData const pFeatureData)
+static char * makeFeatureAlignmentNamePrivate( ZMapGFFFeatureData pFeatureData)
 {
   ZMapGFFAttribute *pAttributes = NULL,
     pAttributeTarget = NULL ;
   unsigned int nAttributes = 0 ;
   int iStart = 0, iEnd = 0 ;
   char * sResult = NULL ;
+  zMapReturnValIfFail(pFeatureData, sResult) ;
   pAttributes = zMapGFFFeatureDataGetAts(pFeatureData) ;
   nAttributes = zMapGFFFeatureDataGetNat(pFeatureData) ;
-  pAttributeTarget = zMapGFFAttributeListContains(pAttributes, nAttributes, "Target") ;
+  pAttributeTarget = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_Target) ;
   iStart               = zMapGFFFeatureDataGetSta(pFeatureData) ;
   iEnd                 = zMapGFFFeatureDataGetEnd(pFeatureData) ;
   if (pAttributeTarget)
@@ -2610,22 +2581,38 @@ static char * makeFeatureAlignmentName(const ZMapGFFFeatureData const pFeatureDa
 
 /*
  * Create a feature of ZMapStyleMode = TRANSCRIPT only.
+ *
+ * First case:    A transcript object: must _have_ ID and _not_ be intron/exon/CDS.
+ *                Find ID from ID attribute.
+ *                We create a new object and add to featureset if possible.
+ *                Feature must _not_ be already present.
+ * Second case:   A component of a transcript: _must_ be intron, exon, or CDS, _and_ have Parent
+ *                Find ID from Parent attribute
+ *                We add data to an existing feature in the featureset. If it's not present already
+ *                this is not handled.
+ *                Feature _must_ be already present.
+ * Third case:    Construct a transcript feature and add a single exon with the same length to
+ *                it. A feature name is constructed from the Name attribute, start, end and strand
+ *                and this is used for the ID for these steps.
  */
-static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const pFeatureData,
-                                         const ZMapFeatureSet const pFeatureSet,
+static ZMapFeature makeFeatureTranscript(ZMapGFFFeatureData pFeatureData,
+                                         ZMapFeatureSet pFeatureSet,
                                          gboolean *pbNewFeatureCreated,
                                          char ** psError)
 {
-  typedef enum {NONE, FIRST, SECOND} CaseToTreat ;
+  typedef enum {NONE, FIRST, SECOND, THIRD} CaseToTreat ;
+  static const char *sNoName = "no_name_given" ;
   CaseToTreat cCase = NONE ;
   unsigned int iSOID = 0,
     nAttributes = 0 ;
   int iStart = 0,
     iEnd = 0 ;
   char * sSOType = NULL,
+    *sFeatureAttributeName = NULL,
     *sFeatureName = NULL,
     *sFeatureNameID = NULL,
-    *sSequence = NULL ;
+    *sSequence = NULL,
+    *sSource = NULL ;
   double dScore = 0.0 ;
   gboolean bHasAttributeID = FALSE,
     bHasAttributeParent = FALSE,
@@ -2636,28 +2623,27 @@ static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const pFeature
     bIsExon = FALSE,
     bIsIntron = FALSE,
     bIsCDS = FALSE,
-    bIsComponent = FALSE ;
-  GQuark gqThisID = 0 ;
+    bIsComponent = FALSE,
+    bParseValid = FALSE ;
+  GQuark gqThisID = 0 , gqLocusID = 0 ;
   ZMapFeature pFeature = NULL ;
   ZMapSOIDData pSOIDData = NULL ;
   ZMapStyleMode cFeatureStyleMode = ZMAPSTYLE_MODE_BASIC ;
   ZMapGFFAttribute *pAttributes = NULL,
     pAttributeParent = NULL,
-    pAttributeID = NULL ;
+    pAttributeID = NULL,
+    pAttributeName = NULL,
+    pAttributeLocus = NULL ;  ;
   ZMapSpanStruct cSpanItem = {0},
     *pSpanItem = NULL ;
   ZMapStrand cStrand = ZMAPSTRAND_NONE ;
   ZMapPhase cPhase = ZMAPPHASE_NONE ;
 
-  if (!psError || *psError)
-    return pFeature ;
-  if (!pFeatureData)
-    return pFeature ;
-  if (!pbNewFeatureCreated)
-    return pFeature ;
+  zMapReturnValIfFail(psError && pFeatureData && pbNewFeatureCreated, pFeature ) ;
   *pbNewFeatureCreated = FALSE ;
 
   sSequence            = zMapGFFFeatureDataGetSeq(pFeatureData) ;
+  sSource              = zMapGFFFeatureDataGetSou(pFeatureData) ;
   iStart               = zMapGFFFeatureDataGetSta(pFeatureData) ;
   iEnd                 = zMapGFFFeatureDataGetEnd(pFeatureData) ;
   pSOIDData            = zMapGFFFeatureDataGetSod(pFeatureData) ;
@@ -2694,25 +2680,16 @@ static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const pFeature
    */
   pAttributes = zMapGFFFeatureDataGetAts(pFeatureData) ;
   nAttributes = zMapGFFFeatureDataGetNat(pFeatureData) ;
-  pAttributeID = zMapGFFAttributeListContains(pAttributes, nAttributes, "ID") ;
+  pAttributeID = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_ID) ;
   if (pAttributeID)
     bHasAttributeID = TRUE ;
-  pAttributeParent = zMapGFFAttributeListContains(pAttributes, nAttributes, "Parent");
+  pAttributeParent = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_Parent);
   if (pAttributeParent)
     bHasAttributeParent = TRUE ;
 
   /*
    * Now the logic branches dependent upon what type of transcript we are dealing with.
-   *
-   * First case:    A transcript object: must _have_ ID and _not_ be intron/exon/CDS.
-   *                Find ID from ID attribute.
-   *                We create a new object and add to featureset if possible.
-   *                Feature must _not_ be already present.
-   * Second case:   A component of a transcript: _must_ be intron, exon, or CDS, _and_ have Parent
-   *                Find ID from Parent attribute
-   *                We add data to an existing feature in the featureset. If it's not present already
-   *                this is not handled.
-   *                Feature _must_ be already present.
+   * Cases treated are described above.
    */
   bIsExon = strstr(sSOType, "exon") != NULL ? TRUE : FALSE ;
   bIsIntron = strstr(sSOType, "intron") != NULL ? TRUE : FALSE ;
@@ -2727,6 +2704,19 @@ static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const pFeature
     {
       cCase = SECOND ;
       gqThisID = g_quark_from_string(zMapGFFAttributeGetTempstring(pAttributeParent)) ;
+    }
+  else if (!bHasAttributeID && !bIsComponent)
+    {
+      cCase = THIRD ;
+      pAttributeName = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_Name) ;
+      if (pAttributeName)
+        {
+          bParseValid = zMapAttParseName(pAttributeName, &sFeatureAttributeName) ;
+        }
+      sFeatureNameID = pAttributeName ?
+                       g_strdup_printf("%s_%i_%i_%s_%g", sFeatureAttributeName, iStart, iEnd, zMapFeatureStrand2Str(cStrand), dScore)
+                     : g_strdup_printf("%s_%i_%i_%s_%g", sNoName, iStart, iEnd, zMapFeatureStrand2Str(cStrand), dScore) ;
+      gqThisID = g_quark_from_string(sFeatureNameID) ;
     }
   else
     {
@@ -2752,12 +2742,15 @@ static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const pFeature
        * This is a new feature, so we must create from scratch and add standard data.
        */
       pFeature = zMapFeatureCreateEmpty() ;
-      *pbNewFeatureCreated = TRUE ;
+      if (pFeature)
+        *pbNewFeatureCreated = TRUE ;
+      else
+        return pFeature ;
 
       /*
-       * Name of feature is taken from ID attribute value.
+       * Name of feature is taken from attribute values.
        */
-      sFeatureName = makeFeatureTranscriptName(pFeatureData) ;
+      sFeatureName = makeFeatureTranscriptNamePublic(pFeatureData) ;
       sFeatureNameID = g_strdup(g_quark_to_string(gqThisID)) ;
       bDataAdded = zMapFeatureAddStandardData(pFeature, sFeatureNameID, sFeatureName, sSequence, sSOType,
                                               cFeatureStyleMode, &pFeatureSet->style,
@@ -2772,6 +2765,8 @@ static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const pFeature
           *psError = g_strdup_printf("makeFeatureTranscript(); feature with ID = %i and name = '%s' could not be added",
                                      (int)gqThisID, sFeatureName) ;
         }
+
+      zMapFeatureAddText(pFeature, zMapFeatureSetCreateID(sSource), sSource, NULL) ;
 
     }
   else if ((cCase == SECOND) && bFeaturePresent)
@@ -2805,15 +2800,61 @@ static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const pFeature
         }
 
     }
-
-#ifdef LOCAL_DEBUG_CODE_TRANSCRIPT
-  if (*pbNewFeatureCreated && bFeatureAdded)
+  else if ((cCase == THIRD) && !bFeaturePresent)
     {
-      ++iCountTranscript ;
-      printf("iCountTransript = %i\n", iCountTranscript) ;
-      fflush(stdout) ;
+      /*
+       * Firstly create the feature object as trasncript.
+       */
+      pFeature = zMapFeatureCreateEmpty() ;
+      if (pFeature)
+        *pbNewFeatureCreated = TRUE ;
+      else
+        return pFeature ;
+
+
+      sFeatureName = makeFeatureTranscriptNamePublic(pFeatureData) ;
+      /* sFeatureNameID = g_strdup(g_quark_to_string(gqThisID)) ; we have this already */
+      bDataAdded = zMapFeatureAddStandardData(pFeature, sFeatureNameID, sFeatureName, sSequence, sSOType,
+                                              cFeatureStyleMode, &pFeatureSet->style,
+                                              iStart, iEnd, bHasScore, dScore, cStrand) ;
+
+      bFeatureAdded = zMapFeatureSetAddFeature(pFeatureSet, pFeature) ;
+      if (!bFeatureAdded)
+        {
+          *psError = g_strdup_printf("makeFeatureTranscript(); feature with ID = %i and name = '%s' could not be added",
+                                     (int)gqThisID, sFeatureName) ;
+        }
+
+      zMapFeatureAddText(pFeature, zMapFeatureSetCreateID(sSource), sSource, NULL) ;
+
+      /*
+       * Now add an exon to it.
+       */
+      cSpanItem.x1 = iStart ;
+      cSpanItem.x2 = iEnd ;
+      pSpanItem = &cSpanItem;
+      bDataAdded = zMapFeatureAddTranscriptExonIntron(pFeature, pSpanItem, NULL) ;
+      if (!bDataAdded)
+        {
+          *psError = g_strdup_printf("makeFeatureTranscript(); unable to add ZMapSpan to feature with ID = %i and name = '%s'",
+                                     (int)gqThisID, sFeatureName) ;
+        }
+
     }
-#endif
+
+  /*
+   * Deal with "locus" attribute if present for a newly-created feature only.
+   */
+  if (*pbNewFeatureCreated)
+    {
+      if ((pAttributeLocus = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_locus)))
+        {
+          if (zMapAttParseLocus(pAttributeLocus, &gqLocusID))
+            {
+              zMapFeatureAddLocus(pFeature, gqLocusID) ;
+            }
+        }
+    }
 
   /*
    * If a new feature was created but not added to the feature set for some reason,
@@ -2825,18 +2866,159 @@ static ZMapFeature makeFeatureTranscript(const ZMapGFFFeatureData const pFeature
       pFeature = NULL ;
     }
 
+  if (sFeatureAttributeName)
+    g_free(sFeatureAttributeName) ;
+
   return pFeature ;
 }
+
+
+
+
+
+
+/*
+ * Make a locus feature with data for the current "real" transcript feature.
+ */
+gboolean makeFeatureLocus(ZMapGFFParser pParser, ZMapGFFFeatureData pFeatureData , char ** psError)
+{
+  static const char *sType = "Locus" ;
+  char *sLocusID = NULL, *sName = NULL, *sNameID = NULL ;
+  int iStart = 0, iEnd = 0, iTargetStart = 0, iTargetEnd = 0 ;
+  gboolean bResult = FALSE ;
+  ZMapFeature pFeature = NULL ;
+  ZMapGFFAttribute pAttribute = NULL, *pAttributes = NULL ;
+  ZMapGFFFeatureData pFeatureDataLocus = NULL ;
+  ZMapStrand cStrand = ZMAPSTRAND_NONE ;
+  ZMapPhase cPhase = ZMAPPHASE_NONE ;
+  ZMapHomolType cHomol = ZMAPHOMOL_NONE ;
+  ZMapStyleMode cStyleMode = ZMAPSTYLE_MODE_TEXT ;
+  ZMapSOIDData pSOIDData = NULL ;
+  ZMapFeatureSet pFeatureSet = NULL ;
+  GQuark gqLocusID = 0 ;
+  unsigned int nAttributes = 0, iSOID = 0 ;
+
+  zMapReturnValIfFail(pFeatureData && psError, bResult ) ;
+  bResult = TRUE ;
+
+  nAttributes          = zMapGFFFeatureDataGetNat(pFeatureData) ;
+  pAttributes          = zMapGFFFeatureDataGetAts(pFeatureData) ;
+
+  if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_locus) ) && bResult )
+    {
+      bResult = zMapAttParseLocus(pAttribute, &gqLocusID) ;
+      sLocusID = g_strdup(zMapGFFAttributeGetTempstring(pAttribute)) ;
+    }
+  else
+    {
+      bResult = FALSE ;
+    }
+
+  if (bResult)
+    {
+
+      /*
+       * Use the feature "Name" for the sequence
+       * Use "Locus" for the source
+       * Use "Locus" for ontology
+       * Use the StyleMode TEXT
+       * There is a faked SO accession for these.
+       */
+      pFeatureDataLocus = zMapGFFFeatureDataCC(pFeatureData) ;
+      zMapGFFFeatureDataSetSeq(pFeatureDataLocus, sLocusID ) ;
+      zMapGFFFeatureDataSetSou(pFeatureDataLocus, sType ) ;
+      zMapGFFFeatureDataSetFlagSco(pFeatureDataLocus, FALSE) ;
+      zMapGFFFeatureDataSetSco(pFeatureDataLocus, 0.0) ;
+      zMapGFFFeatureDataSetStr(pFeatureDataLocus, cStrand) ;
+      zMapGFFFeatureDataSetPha(pFeatureDataLocus, cPhase) ;
+      iStart = zMapGFFFeatureDataGetSta(pFeatureDataLocus) ;
+      iEnd = zMapGFFFeatureDataGetEnd(pFeatureDataLocus) ;
+
+      /*
+       * SOIDData must contain the hacked SO:000ijk number and map this
+       * to ZMAPSTYLE_MODE_TEXT. The homol type must be NONE.
+       */
+      if ((iSOID = zMapSOSetIsNamePresent(ZMAPSO_USE_NONE, sType)) != ZMAPSO_ID_UNK)
+        {
+          pSOIDData = zMapSOIDDataCreateFromData(iSOID, sType, cStyleMode, cHomol ) ;
+        }
+      zMapGFFFeatureDataSetSod(pFeatureDataLocus, pSOIDData) ;
+
+      /*
+       * Find featureset and other data.
+       */
+      findFeatureset(pParser, pFeatureDataLocus, &pFeatureSet) ;
+
+      /*
+       * Make a name and a name_id for the feature. The name comes from the locus ID and
+       * the name_id is created in the usual fashion.
+       */
+      sName = g_strdup(sLocusID) ;
+      sNameID = zMapFeatureCreateName(cStyleMode, sName, ZMAPSTRAND_NONE, iStart, iEnd, iTargetStart, iTargetEnd ) ;
+
+      /*
+       * Make the feature, add standard data to it and add it to featureset.
+       */
+      pFeature = zMapFeatureCreateEmpty() ;
+      if (!pFeature)
+        {
+          *psError = g_strdup_printf("makeFeatureLocus(); could not create feature with name_id = '%s' and name = '%s'",
+                                      sNameID, sName) ;
+          bResult = FALSE ;
+        }
+
+      if (bResult)
+        {
+          bResult = zMapFeatureAddStandardData(pFeature, sNameID, sName, sLocusID, (char*)sType,
+                                              cStyleMode, &pFeatureSet->style,
+                                              iStart, iEnd, FALSE, 0.0, cStrand) ;
+        }
+      else
+        {
+          zMapFeatureDestroy(pFeature) ;
+          *psError = g_strdup_printf("makeFeatureLocus(); could not add standard data to name_id = '%s' and name = '%s'",
+                                      sNameID, sName) ;
+        }
+
+      if (bResult)
+        {
+          bResult = zMapFeatureSetAddFeature(pFeatureSet, pFeature) ;
+          if (!bResult)
+            {
+              zMapFeatureDestroy(pFeature) ;
+              *psError = g_strdup_printf("makeFeatureLocus(); could not add feature with name_id = '%s' and name = '%s' to featureset",
+                                         sNameID, sName) ;
+            }
+        }
+
+
+    } /* if (bResult) */
+
+  /*
+   * Clean up
+   */
+  if (sLocusID)
+    g_free(sLocusID) ;
+  zMapGFFFeatureDataDestroy(pFeatureDataLocus) ;
+
+  return bResult ;
+}
+
+
+
+
 
 
 /*
  * Create a feature of ZMapStyleMode = ALIGNMENT only.
  */
-static ZMapFeature makeFeatureAlignment(const ZMapGFFFeatureData const pFeatureData,
-                                        const ZMapFeatureSet const pFeatureSet,
-                                        const ZMapFeatureTypeStyle const pFeatureStyle,
+static ZMapFeature makeFeatureAlignment(ZMapGFFFeatureData pFeatureData,
+                                        ZMapFeatureSet pFeatureSet,
                                         char ** psError)
 {
+  static const char * sReadPair = "read_pair" ;
+  typedef enum {NONE, FIRST, SECOND} CaseToTreat ;
+  CaseToTreat cCase = NONE ;
   unsigned int iSOID = 0,
     nAttributes = 0 ;
   int iStart = 0,
@@ -2845,11 +3027,11 @@ static ZMapFeature makeFeatureAlignment(const ZMapGFFFeatureData const pFeatureD
     iTargetEnd = 0,
     iLength = 0 ;
   char *sSequence = NULL,
+    *sSource = NULL,
     *sSOType = NULL,
-    *sTargetID = NULL,
     *sFeatureName = NULL,
-    *sFeatureNameID = NULL,
-    *sTargetValue = NULL ;
+    *sFeatureNameID = NULL ;
+  const char * sIdentifier = NULL ;
   double dScore = 0.0,
     dPercentID = 0.0 ;
   gboolean bHasScore = FALSE,
@@ -2870,12 +3052,10 @@ static ZMapFeature makeFeatureAlignment(const ZMapGFFFeatureData const pFeatureD
   ZMapStyleMode cFeatureStyleMode = ZMAPSTYLE_MODE_BASIC ;
   ZMapHomolType cHomolType = ZMAPHOMOL_NONE ;
 
-  if (!pFeatureData)
-    return pFeature ;
-  if (!psError || *psError)
-    return pFeature ;
+  zMapReturnValIfFail(pFeatureData && psError, pFeature) ;
 
   sSequence            = zMapGFFFeatureDataGetSeq(pFeatureData) ;
+  sSource              = zMapGFFFeatureDataGetSou(pFeatureData) ;
   iStart               = zMapGFFFeatureDataGetSta(pFeatureData) ;
   iEnd                 = zMapGFFFeatureDataGetEnd(pFeatureData) ;
   pSOIDData            = zMapGFFFeatureDataGetSod(pFeatureData) ;
@@ -2913,28 +3093,73 @@ static ZMapFeature makeFeatureAlignment(const ZMapGFFFeatureData const pFeatureD
       return pFeature ;
     }
 
+  /*
+   * Firstly get basic data for attributes.
+   */
   pAttributes = zMapGFFFeatureDataGetAts(pFeatureData) ;
   nAttributes = zMapGFFFeatureDataGetNat(pFeatureData) ;
-  pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "Target") ;
-  if (pAttribute)
-  {
-    bValidTarget = zMapAttParseTarget(pAttribute, &sTargetID, &iTargetStart, &iTargetEnd, &cTargetStrand) ;
-  }
 
-  if (bValidTarget)
+  /*
+   * We treat two cases:
+   * (a) First is an "ordinary" alignment where we are after the "Target" attribute.
+   * (b) Second is a read_pair, where we are interested in the "Target" and the "read_pair_id"
+   *     attributes
+   *
+   * This may change soon...
+   */
+
+  if  (         strcmp(sReadPair, sSOType)
+             && (pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_Target))
+             && zMapAttParseTarget(pAttribute, &gqTargetID, &iTargetStart, &iTargetEnd, &cTargetStrand)
+      )
     {
+      cCase = FIRST ;
+    }
+  else if (     !strcmp(sReadPair, sSOType)
+             && (pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_read_pair_id))
+             && zMapAttParseReadPairID(pAttribute, &gqTargetID)
+          )
+    {
+      cCase = SECOND ;
+    }
 
-      sTargetValue = zMapGFFAttributeGetTempstring((pAttribute)) ;
-      gqTargetID = g_quark_from_string(sTargetID) ;
+
+  /*
+   * Get case dependent information
+   */
+  if (cCase == FIRST)
+    {
+      sIdentifier = g_quark_to_string(gqTargetID) ;
+    }
+  else if (cCase == SECOND)
+    {
+      sIdentifier = g_quark_to_string(gqTargetID) ;
+    }
+
+  /*
+   * Create the feature with all appropriate data
+   */
+  if (
+         cCase != NONE
+     )
+    {
 
       /*
        * Create a new feature.
        */
       pFeature = zMapFeatureCreateEmpty() ;
-      bNewFeatureCreated = TRUE ;
+      if (pFeature)
+        {
+          bNewFeatureCreated = TRUE ;
+        }
+      else
+        {
+          *psError = g_strdup_printf("makeFeatureAlignment(); could not create new feature object ");
+          return pFeature ;
+        }
 
-      sFeatureName =  makeFeatureAlignmentName(pFeatureData) ;
-      sFeatureNameID = g_strdup_printf("%s", sFeatureName) ;
+      sFeatureName = g_strdup(sIdentifier) ;
+      sFeatureNameID = zMapFeatureCreateName(cFeatureStyleMode, sFeatureName, cStrand, iStart, iEnd, iTargetStart, iTargetEnd) ;
 
       bDataAdded = zMapFeatureAddStandardData(pFeature, sFeatureNameID, sFeatureName, sSequence, sSOType,
                                            cFeatureStyleMode, &pFeatureSet->style,
@@ -2943,7 +3168,7 @@ static ZMapFeature makeFeatureAlignment(const ZMapGFFFeatureData const pFeatureD
       /*
        * "percentID" attribute
        */
-      if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "percentID")))
+      if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_percentID)))
         {
           bParseAttribute = zMapAttParsePID(pAttribute, &dPercentID) ;
         }
@@ -2951,7 +3176,7 @@ static ZMapFeature makeFeatureAlignment(const ZMapGFFFeatureData const pFeatureD
       /*
        * "length" attribute
        */
-      if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "length")))
+      if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_length)))
         {
           bParseAttribute = zMapAttParseLength(pAttribute, &iLength) ;
         }
@@ -2959,19 +3184,19 @@ static ZMapFeature makeFeatureAlignment(const ZMapGFFFeatureData const pFeatureD
       /*
        * Now parse for gap data in various possible formats
        */
-      if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "Gap")))
+      if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_Gap)))
         {
           bParseAttribute = FALSE ; /* Not yet implemented. */
         }
-      else if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "cigar_ensembl")))
+      else if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_cigar_ensembl)))
         {
           bParseAttribute = zMapAttParseCigarEnsembl(pAttribute, &pGaps, cStrand, iStart, iEnd, cTargetStrand, iTargetStart, iTargetEnd) ;
         }
-      else if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "cigar_exonerate")))
+      else if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_cigar_exonerate)))
         {
           bParseAttribute = zMapAttParseCigarExonerate(pAttribute, &pGaps, cStrand, iStart, iEnd, cTargetStrand, iTargetStart, iTargetEnd);
         }
-      else if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "cigar_bam")))
+      else if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_cigar_bam)))
         {
           bParseAttribute = zMapAttParseCigarBam(pAttribute, &pGaps, cStrand, iStart, iEnd, cTargetStrand, iTargetStart, iTargetEnd);
         }
@@ -2986,8 +3211,8 @@ static ZMapFeature makeFeatureAlignment(const ZMapGFFFeatureData const pFeatureD
        */
       bDataAdded = zMapFeatureAddAlignmentData(pFeature, gqTargetID, dPercentID,
                                                iTargetStart, iTargetEnd, cHomolType,
-                                               iLength, cTargetStrand, cPhase, pGaps,
-                                               zMapStyleGetWithinAlignError(pFeatureStyle), FALSE, NULL )  ;
+                                               iLength, cTargetStrand, ZMAPPHASE_0, pGaps,
+                                               zMapStyleGetWithinAlignError(pFeatureSet->style), FALSE, NULL )  ;
       if (bDataAdded)
         {
           bFeatureAdded = zMapFeatureSetAddFeature(pFeatureSet, pFeature) ;
@@ -2998,16 +3223,9 @@ static ZMapFeature makeFeatureAlignment(const ZMapGFFFeatureData const pFeatureD
                                      (int)pFeature->unique_id, sFeatureName) ;
         }
 
-    }
+      zMapFeatureAddText(pFeature, zMapFeatureSetCreateID(sSource), sSource, NULL) ;
 
-#ifdef LOCAL_DEBUG_CODE_ALIGNMENT
-  if (bNewFeatureCreated && bFeatureAdded)
-    {
-      ++iCountAlignment ;
-      printf("created s = '%s', s = '%s', gq = %i\n", sFeatureName, sTargetValue, gqTargetID) ;
-      fflush(stdout) ;
     }
-#endif
 
   /*
    * If a new feature was created, but could not be added to the featureset,
@@ -3017,10 +3235,6 @@ static ZMapFeature makeFeatureAlignment(const ZMapGFFFeatureData const pFeatureD
     {
       zMapFeatureDestroy(pFeature) ;
       pFeature = NULL ;
-#ifdef LOCAL_DEBUG_CODE_ALIGNMENT
-      printf("destroyed s = '%s', s = '%s', gq = %i\n", sFeatureName, sTargetValue, gqTargetID) ;
-      fflush(stdout) ;
-#endif
     }
 
 
@@ -3029,130 +3243,63 @@ static ZMapFeature makeFeatureAlignment(const ZMapGFFFeatureData const pFeatureD
 
 
 /*
- * Create a feature of ZMapStyleMode BASIC
+ * Create a feature with ZMapStyleMode = ASSEMBLY_PATH; not yet implemented, although the
+ * code to parse the appropriate attribute value is in zmapGFFAttribute.c.
  */
-static ZMapFeature makeFeatureBasic(const ZMapGFFFeatureData const pFeatureData,
-                                    char **psError)
+static ZMapFeature makeFeatureAssemblyPath(ZMapGFFFeatureData pFeatureData,
+                                         ZMapFeatureSet pFeatureSet,
+                                         char ** psError)
 {
   ZMapFeature pFeature = NULL ;
-
-#ifdef LOCAL_DEBUG_CODE_BASIC
-  ++iCountBasic ;
-  printf("iCountBasic = %i\n", iCountBasic ) ;
-  fflush(stdout) ;
-#endif
 
   return pFeature ;
 }
 
 
-
-
-
-
 /*
- * Create a new feature and add it to the feature set.
- *
- *
+ * Default feature creation function.
  */
-static gboolean makeNewFeature_V3(
-                         const ZMapGFFParser const pParserBase,
-                         char ** const err_text,
-                         const ZMapGFFFeatureData const pFeatureData
-                       )
+static ZMapFeature makeFeatureDefault(ZMapGFFFeatureData pFeatureData,
+  const ZMapFeatureSet const pFeatureSet, char **psError)
 {
-  unsigned int
-    iStart                  = 0,
-    iEnd                    = 0,
-    nAttributes             = 0,
-    iSOID                   = 0
-  ;
+  char *sName = NULL,
+    *sFeatureName = NULL,
+    *sFeatureNameID = NULL,
+    *sSequence = NULL,
+    *sSource = NULL,
+    *sSOType = NULL,
+    *sAttributes = NULL ;
+  unsigned int nAttributes = 0 ;
+  int iStart = 0,
+    iEnd = 0,
+    iQueryStart = 0,
+    iQueryEnd = 0,
+    iSOID = 0 ;
+  double dScore = 0.0 ;
+  gboolean bFeatureHasName = FALSE,
+    bDataAdded = FALSE,
+    bFeatureAdded = FALSE,
+    bNewFeatureCreated = FALSE,
+    bHasScore = FALSE,
+    bParseValid = FALSE ;
+  ZMapFeature pFeature = NULL ;
+  ZMapGFFAttribute *pAttributes = NULL,
+    pAttribute = NULL ;
+  ZMapStyleMode cFeatureStyleMode = ZMAPSTYLE_MODE_BASIC ;
+  ZMapStrand cStrand = ZMAPSTRAND_NONE ;
+  ZMapPhase cPhase = ZMAPPHASE_NONE ;
+  ZMapSOIDData pSOIDData = NULL ;
 
-  int
-    iQueryStart             = 0,
-    iQueryEnd               = 0
-  ;
+  zMapReturnValIfFail(pFeatureData && pFeatureSet && psError, pFeature ) ;
 
-  double
-    dScore                  = 0.0
-  ;
-
-  char
-    *sFeatureNameID         = NULL,
-    *sFeatureName           = NULL,
-    *sSequence              = NULL,
-    *sSource                = NULL,
-    *sAttributes            = NULL,
-    *sSOType                = NULL,
-    *sName                  = NULL,
-    *sTargetID              = NULL,
-    *sMakeFeatureErrorText  = NULL
-  ;
-
-  gboolean
-    bResult                 = FALSE,
-    bFeatureAdded           = FALSE,
-    bFeatureHasName         = FALSE,
-    bHasScore               = FALSE,
-    bNewFeatureCreated      = FALSE
-  ;
-
-  GQuark
-    gqFeatureStyleID        = 0,
-    gqSourceID              = 0
-  ;
-
-  ZMapFeature
-    pFeature                = NULL
-  ;
-  ZMapFeatureSet
-    pFeatureSet             = NULL
-  ;
-  ZMapFeatureTypeStyle
-    pFeatureStyle           = NULL
-  ;
-  ZMapGFFParserFeatureSet
-    pParserFeatureSet       = NULL
-  ;
-  ZMapFeatureSource
-    pSourceData             = NULL
-  ;
-  ZMapStyleMode
-    cFeatureStyleMode       = ZMAPSTYLE_MODE_BASIC
-  ;
-  ZMapStrand
-    cStrand                 = ZMAPSTRAND_NONE
-  ;
-  ZMapPhase
-    cPhase                  = ZMAPPHASE_NONE
-  ;
-  ZMapSOIDData
-    pSOIDData               = NULL
-  ;
-  ZMapGFFAttribute
-    pAttribute              = NULL,
-    *pAttributes            = NULL
-  ;
-
-  ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
-
-  if (!pParser || !pParser->pHeader )
-  {
-    bResult = FALSE ;
-    goto return_point ;
-  }
-
-  /*
-   * Take some data from the ZMapGFFFeatureData object
-   */
   sSequence            = zMapGFFFeatureDataGetSeq(pFeatureData) ;
   sSource              = zMapGFFFeatureDataGetSou(pFeatureData) ;
   iStart               = zMapGFFFeatureDataGetSta(pFeatureData) ;
   iEnd                 = zMapGFFFeatureDataGetEnd(pFeatureData) ;
-  bHasScore            = zMapGFFFeatureDataGetFlagSco(pFeatureData) ;
-  dScore               = zMapGFFFeatureDataGetSco(pFeatureData) ;
   cStrand              = zMapGFFFeatureDataGetStr(pFeatureData) ;
   cPhase               = zMapGFFFeatureDataGetPha(pFeatureData) ;
+  bHasScore            = zMapGFFFeatureDataGetFlagSco(pFeatureData) ;
+  dScore               = zMapGFFFeatureDataGetSco(pFeatureData) ;
   sAttributes          = zMapGFFFeatureDataGetAtt(pFeatureData) ;
   nAttributes          = zMapGFFFeatureDataGetNat(pFeatureData) ;
   pAttributes          = zMapGFFFeatureDataGetAts(pFeatureData) ;
@@ -3163,36 +3310,674 @@ static gboolean makeNewFeature_V3(
   cFeatureStyleMode    = zMapSOIDDataGetStyleMode(pSOIDData) ;
 
   /*
-   * A CDS feature _must_ have a phase which is _not_ ZMAPPHASE_NONE.
-   *
-   * _MAY_ also require the following test at some point (but this is not in the
-   * standard). It is present for the moment...
-   *
-   * All features other than CDS _must_ have cPhase = '.' (i.e. ZMAPPHASE_NONE).
-   * Anything else is an error.
+   * Make sure that this function is _not_ being called with ZMapStyleMode is
+   * TRANSCRIPT or ALIGNMENT becasuse they should have been dealt with before
+   * this point.
    */
-  if (!strcmp(sSOType, "CDS"))
+  if (    (cFeatureStyleMode == ZMAPSTYLE_MODE_TRANSCRIPT)
+      ||  (cFeatureStyleMode == ZMAPSTYLE_MODE_ALIGNMENT)
+      ||  (cFeatureStyleMode == ZMAPSTYLE_MODE_ASSEMBLY_PATH)
+      )
     {
-      if (cPhase == ZMAPPHASE_NONE)
-        {
-          bResult = FALSE ;
-          goto return_point ;
-        }
+      *psError = g_strdup("makeFeatureDefault(); ZMapStyleMode must _not_ be TRANSCRIPT or ALIGNMENT or ASSEMBLY_PATH") ;
+      return pFeature ;
+    }
+
+  /*
+   * Get attributes.
+   */
+  pAttributes = zMapGFFFeatureDataGetAts(pFeatureData) ;
+  nAttributes = zMapGFFFeatureDataGetNat(pFeatureData) ;
+
+   /*
+    * Look for "Name" attribute
+    */
+  pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_Name );
+  if (pAttribute)
+    {
+      bParseValid = zMapAttParseName(pAttribute, &sName) ;
+    }
+
+  /*
+   * Get a name for the feature.
+   */
+  bFeatureHasName = getFeatureName(sSequence, pAttributes, nAttributes, sName, sSource,
+                                   cFeatureStyleMode, cStrand, iStart, iEnd, iQueryStart, iQueryEnd,
+                                   &sFeatureName, &sFeatureNameID) ;
+  if (!sFeatureNameID)
+    {
+      *psError = g_strdup_printf("makeFeatureDefault(); feature ignored as it has no name");
+      return pFeature ;
+    }
+
+  /*
+   * Create our new feature object
+   */
+  pFeature = zMapFeatureCreateEmpty() ;
+  if (pFeature)
+    bNewFeatureCreated = TRUE ;
+  else
+    {
+      *psError = g_strdup_printf("makeFeatureDefault(); could not create new feature object ");
+      return pFeature ;
+    }
+
+  /*
+   * Add standard data to the feature.
+   */
+  bDataAdded = zMapFeatureAddStandardData(pFeature, sFeatureNameID, sFeatureName, sSequence, sSOType,
+                                       cFeatureStyleMode, &pFeatureSet->style,
+                                       iStart, iEnd, bHasScore, dScore, cStrand);
+
+  /*
+   * Handle the case where we have a splice site of some kind. These were originally handled
+   * with the SO terms "splice3" and "splice5" in GFF2 output from AceDB.
+   */
+  if (bDataAdded)
+    {
+      if (!strcmp(sSOType, "five_prime_cis_splice_site"))
+        bDataAdded = zMapFeatureAddSplice(pFeature, ZMAPBOUNDARY_5_SPLICE) ;
+      else if (!strcmp(sSOType, "three_prime_cis_splice_site"))
+        bDataAdded = zMapFeatureAddSplice(pFeature, ZMAPBOUNDARY_3_SPLICE) ;
+    }
+
+  /*
+   * Add the feature to feature set
+   */
+  if (bDataAdded)
+    {
+      bFeatureAdded = zMapFeatureSetAddFeature(pFeatureSet, pFeature) ;
+    }
+  if (!bFeatureAdded)
+    {
+      *psError = g_strdup_printf("makeFeatureDefault(); feature with ID = %i and name = '%s' could not be added",
+                                     (int)pFeature->unique_id, sFeatureName) ;
+    }
+
+  zMapFeatureAddText(pFeature, zMapFeatureSetCreateID(sSource), sSource, NULL) ;
+
+  /*
+   * If a new feature was created, but could not be added to the featureset,
+   * it must be destroyed to prevent a memory leak.
+   */
+  if (bNewFeatureCreated && !bFeatureAdded)
+    {
+      zMapFeatureDestroy(pFeature) ;
+      pFeature = NULL ;
+    }
+
+  if (sName)
+    {
+      g_free(sName) ;
+    }
+
+  return pFeature ;
+}
+
+
+
+/*
+ * This clipping function ignores the clip mode of the parser, and clips everything
+ * that is completely outside of the [pParser->clip_start, pParser->clip_end] range;
+ * If the values of clip_start and clip_end are not set in the parser, then we
+ * include the feature.
+ */
+static gboolean clipFeatureLogic_Complete(ZMapGFF3Parser  pParser, ZMapGFFFeatureData pFeatureData )
+{
+  gboolean bIncludeFeature = TRUE ;
+  int iStart = 0,
+    iEnd = 0,
+    iClipStart = 0,
+    iClipEnd = 0 ;
+  gboolean bFeatureOutside = FALSE ;
+  ZMapGFFClipMode cClipMode = GFF_CLIP_NONE ;
+
+  zMapReturnValIfFail(pParser && pParser->pHeader && pFeatureData, bIncludeFeature) ;
+
+  cClipMode = pParser->clip_mode ;
+  iClipStart = pParser->clip_start ;
+  iClipEnd = pParser->clip_end ;
+  if (!iClipStart && !iClipEnd)
+    return bIncludeFeature ;
+
+  /*
+   * Get some data about the feature, and error check.
+   */
+  iStart               = zMapGFFFeatureDataGetSta(pFeatureData) ;
+  iEnd                 = zMapGFFFeatureDataGetEnd(pFeatureData) ;
+  zMapReturnValIfFail(iStart && iEnd, bIncludeFeature ) ;
+
+  /*
+   * Clipping logic.
+   */
+  if (cClipMode == GFF_CLIP_NONE)
+    {
+
     }
   else
     {
-      if (cPhase != ZMAPPHASE_NONE)
-        {
-          bResult = FALSE ;
-          goto return_point ;
-        }
+
+      /* Exclude feature completely outisde parser boundaries. */
+      bFeatureOutside = (iStart > iClipEnd) || (iEnd < iClipStart) ;
+      if (bFeatureOutside)
+          bIncludeFeature = FALSE ;
+
+
     }
 
 
+  return bIncludeFeature ;
+}
+
+
+
+/*
+ * See comment for clipFeatureLogic_General() function and note that this version also
+ * has a special hack to make the behaviour with transcript objects consistent with v2 code.
+ */
+static gboolean clipFeatureLogic_Transcript( ZMapGFF3Parser pParser, ZMapGFFFeatureData pFeatureData )
+{
+  gboolean bIncludeFeature = FALSE ;
+  int iStart = 0,
+    iEnd = 0,
+    iClipStart = 0,
+    iClipEnd = 0 ;
+  char *sSOType = NULL ;
+  gboolean bFeatureOutside = FALSE,
+    bFeatureOverlapStart = FALSE,
+    bFeatureOverlapEnd = FALSE,
+    bFeatureSpecialTranscript = FALSE ;
+  ZMapSOIDData pSOIDData = NULL ;
+  ZMapStyleMode cFeatureStyleMode = ZMAPSTYLE_MODE_INVALID ;
+  ZMapGFFClipMode cClipMode = GFF_CLIP_NONE ;
+  ZMapGFFAttribute *pAttributes = NULL ;
+  unsigned int nAttributes = 0 ;
+
+  zMapReturnValIfFail(pParser && pParser->pHeader && pFeatureData, bIncludeFeature) ;
+
+  cClipMode = pParser->clip_mode ;
+  iClipStart = pParser->clip_start ;
+  iClipEnd = pParser->clip_end ;
+  if (!iClipStart && !iClipEnd)
+    return TRUE ;
+
   /*
-   * If the parser was given a source -> data mapping then
-   * use that to get the style id and other
-   * data otherwise use the source itself.
+   * Get some data about the feature, and error check.
+   */
+  iStart               = zMapGFFFeatureDataGetSta(pFeatureData) ;
+  iEnd                 = zMapGFFFeatureDataGetEnd(pFeatureData) ;
+  pSOIDData            = zMapGFFFeatureDataGetSod(pFeatureData) ;
+  cFeatureStyleMode    = zMapSOIDDataGetStyleMode(pSOIDData) ;
+  sSOType              = zMapSOIDDataGetName(pSOIDData) ;
+  zMapReturnValIfFail(iStart && iEnd && (cFeatureStyleMode == ZMAPSTYLE_MODE_TRANSCRIPT), bIncludeFeature ) ;
+
+  /*
+   * Default behaviour is to include the feature.
+   */
+  bIncludeFeature = TRUE ;
+
+  /*
+   * Special treatment for a feature with ID attribute and transcript type; not to be
+   * clipped, since we want to see the exons that _are_ within the clip boundaries.
+   */
+  nAttributes          = zMapGFFFeatureDataGetNat(pFeatureData) ;
+  pAttributes          = zMapGFFFeatureDataGetAts(pFeatureData) ;
+  bFeatureSpecialTranscript = (!strcmp(sSOType, "transcript")
+                            && zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_ID)) ;
+
+  /*
+   * Clipping logic.
+   */
+  if (cClipMode == GFF_CLIP_NONE)
+    {
+
+    }
+  else
+    {
+
+      /* Exclude feature completely outisde parser boundaries. */
+      bFeatureOutside = (iStart > iClipEnd) || (iEnd < iClipStart) ;
+      if (bFeatureOutside)
+          bIncludeFeature = FALSE ;
+
+      /* Does the feature overlap the start and end of parser boundaries? */
+      bFeatureOverlapStart = (iStart < iClipStart) ;
+      bFeatureOverlapEnd = (iEnd > iClipEnd) ;
+
+      /* Exclude feature that overlaps the parser boundaries. */
+      if (bIncludeFeature && (cClipMode == GFF_CLIP_ALL) && !bFeatureSpecialTranscript)
+        {
+          if (bFeatureOverlapStart || bFeatureOverlapEnd )
+              bIncludeFeature = FALSE ;
+        }
+
+      /* Truncate a feature that overlaps the parser boundaries. */
+      if (bIncludeFeature && cClipMode == GFF_CLIP_OVERLAP)
+        {
+          if (bFeatureOverlapStart)
+            {
+              iStart = iClipStart ;
+              zMapGFFFeatureDataSetSta(pFeatureData, iStart) ;
+            }
+          if (bFeatureOverlapEnd)
+            {
+              iEnd = iClipEnd ;
+              zMapGFFFeatureDataSetEnd(pFeatureData, iEnd) ;
+            }
+        }
+
+    }
+
+
+  return bIncludeFeature ;
+}
+
+/*
+ * Encapsulation of clipping logic. This now has to take into account the StyleMode
+ * and other data concerning the feature of interest.
+ *
+ * Behaviour is dependent on the relationship between the parser clip boundaries, call them
+ * [clip_start, clip_end] and the feature start and end, call that [iStart, iEnd]. We may
+ * exclude a feature completely or truncate it.
+ *
+ * (1) CLIP_NONE          do nothing
+ * (2) CLIP_ALL          { exclude features _completely_ outside }   _and_   exclude features that overlap boundaries
+ * (3) CLIP_OVERLAP      { parser boundaries                     }   _and_   truncate features that overlap boundaries
+ *
+ */
+static gboolean clipFeatureLogic_General(ZMapGFF3Parser  pParser, ZMapGFFFeatureData pFeatureData )
+{
+  gboolean bIncludeFeature = FALSE ;
+  int iStart = 0,
+    iEnd = 0,
+    iClipStart = 0,
+    iClipEnd = 0 ;
+  char *sSOType = NULL ;
+  gboolean bFeatureOutside = FALSE,
+    bFeatureOverlapStart = FALSE,
+    bFeatureOverlapEnd = FALSE ;
+  ZMapSOIDData pSOIDData = NULL ;
+  ZMapStyleMode cFeatureStyleMode = ZMAPSTYLE_MODE_INVALID ;
+  ZMapGFFClipMode cClipMode = GFF_CLIP_NONE ;
+
+  zMapReturnValIfFail(pParser && pParser->pHeader && pFeatureData, bIncludeFeature) ;
+
+  cClipMode = pParser->clip_mode ;
+  iClipStart = pParser->clip_start ;
+  iClipEnd = pParser->clip_end ;
+  if (!iClipStart && !iClipEnd)
+    return TRUE ;
+
+  /*
+   * Get some data about the feature, and error check.
+   */
+  iStart               = zMapGFFFeatureDataGetSta(pFeatureData) ;
+  iEnd                 = zMapGFFFeatureDataGetEnd(pFeatureData) ;
+  pSOIDData            = zMapGFFFeatureDataGetSod(pFeatureData) ;
+  cFeatureStyleMode    = zMapSOIDDataGetStyleMode(pSOIDData) ;
+  sSOType              = zMapSOIDDataGetName(pSOIDData) ;
+  zMapReturnValIfFail(iStart && iEnd
+                  && (cFeatureStyleMode != ZMAPSTYLE_MODE_INVALID), bIncludeFeature ) ;
+
+  /*
+   * Default behaviour is to include the feature.
+   */
+  bIncludeFeature = TRUE ;
+
+  /*
+   * Clipping logic.
+   */
+  if (cClipMode == GFF_CLIP_NONE)
+    {
+
+    }
+  else
+    {
+
+      /* Exclude feature completely outisde parser boundaries. */
+      bFeatureOutside = (iStart > iClipEnd) || (iEnd < iClipStart) ;
+      if (bFeatureOutside)
+          bIncludeFeature = FALSE ;
+
+      /* Does the feature overlap the start and end of parser boundaries? */
+      bFeatureOverlapStart = (iStart < iClipStart) ;
+      bFeatureOverlapEnd = (iEnd > iClipEnd) ;
+
+      /* Exclude feature that overlaps the parser boundaries. */
+      if (bIncludeFeature && (cClipMode == GFF_CLIP_ALL))
+        {
+          if (bFeatureOverlapStart || bFeatureOverlapEnd )
+              bIncludeFeature = FALSE ;
+        }
+
+      /* Truncate a feature that overlaps the parser boundaries. */
+      if (bIncludeFeature && cClipMode == GFF_CLIP_OVERLAP)
+        {
+          if (bFeatureOverlapStart)
+            {
+              iStart = iClipStart ;
+              zMapGFFFeatureDataSetSta(pFeatureData, iStart) ;
+            }
+          if (bFeatureOverlapEnd)
+            {
+              iEnd = iClipEnd ;
+              zMapGFFFeatureDataSetEnd(pFeatureData, iEnd) ;
+            }
+        }
+
+    }
+
+
+  return bIncludeFeature ;
+}
+
+
+/*
+ * This function is a nasty hack to get around the following problem:
+ *
+ * In the old v2 code, there were many columns that were fed through with
+ * sType = "misc_feature"; these were then treated in a variety of fashions,
+ * with different StyleMode. The type "misc_feature" is currently (December
+ * 2013) translated into the "sequence_feature" SO term. However the mapping
+ * from SO term to StyleMode must be many-to-one, so cannot be used in the
+ * case of these columns.
+ *
+ * This function selects an appropriate SO term for the columns for which
+ * this special treatment is required, which is then used as part of the
+ * correct SO => StyleMode mapping that I've implemented for GFFv3. This
+ * seems a bit arbitrary, but is at least expident. Main advantage is that
+ * the style (in the ZMap written configuration) does not have to be altered
+ * for the affected columns.
+ *
+ */
+static gboolean hack_SpecialColumnToSOTerm(const char * const sSource, char ** const psType )
+{
+  /*
+   * List of special source names to be treated by this function.
+   */
+  static const char *sCol01 = "das_constrained_regions" ;
+  static const char *sCol02 = "das_phastCons" ;
+  static const char *sCol05 = "solexa_coverage" ;
+  static const char *sCol06 = "das_ChromSig" ;
+  gboolean bResult = FALSE ;
+
+  zMapReturnValIfFail(sSource && *sSource && psType && *psType, bResult ) ;
+
+  if (!strcmp(sSource, sCol01))
+    {
+      *psType = "transcript" ;
+      bResult = TRUE ;
+    }
+  else if (strstr(sSource, sCol02)) /* several sources start with the string "das_phastCons" */
+    {
+      *psType = "das_phastCons" ;
+      bResult = TRUE ;
+    }
+  else if (strstr(sSource, sCol05)) /* several sources start with the string "solexa_coverage" */
+    {
+      *psType = "solexa_coverage" ;
+      bResult = TRUE ;
+    }
+  else if (!strcmp(sSource, sCol06))
+    {
+      *psType = "transcript" ;
+    }
+
+  return bResult ;
+}
+
+
+
+/*
+ * Create a new feature and add it to the feature set.
+ *
+ *
+ */
+static gboolean makeNewFeature_V3( ZMapGFFParser pParserBase,
+                         char ** const err_text,
+                         ZMapGFFFeatureData pFeatureData
+                       )
+{
+  unsigned int nAttributes = 0 ;
+
+  char *sMakeFeatureErrorText = NULL,
+    *sURL = NULL,
+    *sVariation = NULL,
+    *sSOType = NULL ;
+
+  gboolean bResult = FALSE,
+    bNewFeatureCreated = FALSE,
+    bIncludeFeature = TRUE,
+    bFoundFeatureset = FALSE,
+    bLocusFeature = FALSE ;
+
+  ZMapFeature pFeature = NULL ;
+  ZMapFeatureSet pFeatureSet = NULL ;
+  ZMapStyleMode cFeatureStyleMode = ZMAPSTYLE_MODE_INVALID ;
+  ZMapSOIDData pSOIDData = NULL ;
+  ZMapGFFAttribute pAttribute = NULL,
+    *pAttributes = NULL ;
+
+  ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
+
+  zMapReturnValIfFail(pParser && pParser->pHeader && pFeatureData, bResult) ;
+
+  /*
+   * Take some data from the ZMapGFFFeatureData object
+   */
+  nAttributes          = zMapGFFFeatureDataGetNat(pFeatureData) ;
+  pAttributes          = zMapGFFFeatureDataGetAts(pFeatureData) ;
+  pSOIDData            = zMapGFFFeatureDataGetSod(pFeatureData) ;
+  sSOType              = zMapSOIDDataGetName(pSOIDData) ;
+  cFeatureStyleMode    = zMapSOIDDataGetStyleMode(pSOIDData) ;
+
+  /*
+   * This is doing some lookups to find styles for features (or at least for the
+   * feature set at once). If it fails then we exit doing nothing.
+   */
+  bFoundFeatureset = findFeatureset(pParserBase, pFeatureData, &pFeatureSet) ;
+
+  /*
+   * Test the StyleMode of the feature against that of the Style itself
+   */
+  if (bFoundFeatureset)
+    {
+      if (!(bResult = pFeatureSet->style->mode == cFeatureStyleMode ))
+        {
+          sMakeFeatureErrorText = g_strdup_printf("makeNewFeature_V3(); feature StyleMode did not match FeatureSet; not created") ;
+        }
+    }
+
+  /*
+   * Now branch on the ZMapStyleMode of the current GFF line.
+   */
+  if (bFoundFeatureset && bResult && (cFeatureStyleMode != ZMAPSTYLE_MODE_INVALID))
+    {
+
+      if (cFeatureStyleMode == ZMAPSTYLE_MODE_TRANSCRIPT)
+        {
+
+#ifdef CLIP_TRANSCRIPT_ON_PARSE
+          if ((bIncludeFeature = clipFeatureLogic_Transcript(pParser, pFeatureData )))
+            {
+#endif
+
+              pFeature = makeFeatureTranscript(pFeatureData, pFeatureSet, &bNewFeatureCreated, &sMakeFeatureErrorText) ;
+              if (pFeature)
+                {
+                  bResult = TRUE ;
+                }
+              if (bNewFeatureCreated)
+                ++pParser->num_features ;
+
+              if (requireLocusOperations(pParserBase, pFeatureData) && bNewFeatureCreated)
+                {
+#ifdef CLIP_LOCUS_ON_PARSE
+                  if (clipFeatureLogic_General(pParser, pFeatureData ))
+                    {
+#endif
+                      bLocusFeature = makeFeatureLocus(pParserBase, pFeatureData, &sMakeFeatureErrorText) ;
+#ifdef CLIP_LOCUS_ON_PARSE
+                    }
+#endif
+                }
+
+#ifdef CLIP_TRANSCRIPT_ON_PARSE
+            }
+#endif
+
+        }
+      else if (cFeatureStyleMode == ZMAPSTYLE_MODE_ALIGNMENT)
+        {
+
+#ifdef CLIP_ALIGNMENT_ON_PARSE_GENERAL
+          if ((bIncludeFeature = clipFeatureLogic_General(pParser, pFeatureData )))
+            {
+#else
+          if ((bIncludeFeature = clipFeatureLogic_Complete(pParser, pFeatureData )))
+            {
+#endif
+
+              pFeature = makeFeatureAlignment(pFeatureData, pFeatureSet, &sMakeFeatureErrorText) ;
+              if (pFeature)
+                {
+                  bResult = TRUE ;
+                  ++pParser->num_features ;
+                }
+
+            }
+
+        }
+      else if (cFeatureStyleMode == ZMAPSTYLE_MODE_ASSEMBLY_PATH)
+        {
+
+#ifdef CLIP_ASSEMBLYPATH_ON_PARSE
+          if ((bIncludeFeature = clipFeatureLogic_General(pParser, pFeatureData )))
+            {
+#else
+          if ((bIncludeFeature = clipFeatureLogic_Complete(pParser, pFeatureData )))
+            {
+#endif
+
+              pFeature = makeFeatureAssemblyPath(pFeatureData, pFeatureSet, &sMakeFeatureErrorText) ;
+              if (pFeature)
+                {
+                  bResult = TRUE ;
+                  ++pParser->num_features ;
+                }
+
+            }
+
+
+        }
+      else
+        {
+
+#ifdef CLIP_DEFAULT_ON_PARSE
+          if ((bIncludeFeature = clipFeatureLogic_General(pParser, pFeatureData )))
+            {
+#else
+          if ((bIncludeFeature = clipFeatureLogic_Complete(pParser, pFeatureData )))
+            {
+#endif
+
+              pFeature = makeFeatureDefault(pFeatureData, pFeatureSet, &sMakeFeatureErrorText) ;
+              if (pFeature)
+                {
+                  bResult = TRUE ;
+                  ++pParser->num_features ;
+                }
+
+            }
+
+
+        } /* final ZMapStyleMode clause */
+
+      /*
+       * Now we deal with some extra attributes used locally.
+       */
+      if (bIncludeFeature)
+        {
+
+          if(!zMapStyleGetGFFFeature(pFeatureSet->style))
+            zMapStyleSetGFF(pFeatureSet->style, NULL, sSOType);
+
+          /*
+           * URL attribute.
+           */
+          if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_url)))
+            {
+              if (zMapAttParseURL(pAttribute, &sURL))
+                {
+                  zMapFeatureAddURL(pFeature, sURL) ;
+                }
+            }
+
+          /*
+           * EnsEMBL variation data.
+           */
+          if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_ensembl_variation)))
+            {
+              if (zMapAttParseEnsemblVariation(pAttribute, &sVariation))
+                {
+                  zMapFeatureAddVariationString(pFeature, sVariation) ;
+                }
+            }
+
+          /*
+           * Insert handling of other attributes in here as necesary.
+           */
+
+        }
+
+
+    } /* if (bFoundFeatureset && bResult) */
+
+  /*
+   *  Clean up
+   */
+  if (sURL)
+    g_free(sURL) ;
+
+  return bResult ;
+}
+
+
+
+/*
+ * Perform all of the computations/lookups for dealing with source datasets and parser featuresets.
+ * We also generate identifiers for the source and feature style.
+ *
+ * Return a boolean to indicate success or failure.
+ */
+static gboolean findFeatureset(ZMapGFFParser pParser, ZMapGFFFeatureData pFeatureData,
+                                   ZMapFeatureSet *ppFeatureSet)
+{
+  gboolean bResult = TRUE ;
+  ZMapFeatureSource pSourceData = NULL ;
+  GQuark gqSourceID = 0, gqFeatureStyleID = 0 ;
+  char *sSource = NULL ;
+  unsigned int nAttributes = 0 ;
+  ZMapGFFAttribute *pAttributes = NULL ;
+  ZMapFeatureSet pFeatureSet = NULL ;
+  ZMapGFFParserFeatureSet pParserFeatureSet = NULL ;
+  ZMapFeatureTypeStyle pFeatureStyle = NULL ;
+  ZMapSOIDData pSOIDData = NULL ;
+  ZMapStyleMode cFeatureStyleMode = ZMAPSTYLE_MODE_INVALID ;
+
+  zMapReturnValIfFail(pParser && pFeatureData && ppFeatureSet, FALSE ) ;
+
+  /*
+   * Firstly get the attributes.
+   */
+  sSource              = zMapGFFFeatureDataGetSou(pFeatureData) ;
+  nAttributes          = zMapGFFFeatureDataGetNat(pFeatureData) ;
+  pAttributes          = zMapGFFFeatureDataGetAts(pFeatureData) ;
+  pSOIDData            = zMapGFFFeatureDataGetSod(pFeatureData) ;
+  cFeatureStyleMode    = zMapSOIDDataGetStyleMode(pSOIDData) ;
+
+  /*
+   * Now deal with the source -> data mapping referred to in the parser.
    */
   if (pParser->source_2_sourcedata)
     {
@@ -3200,12 +3985,10 @@ static gboolean makeNewFeature_V3(
 
       if (!(pSourceData = g_hash_table_lookup(pParser->source_2_sourcedata, GINT_TO_POINTER(gqSourceID))))
         {
-          /* need to invent this for autoconfigured servers */
           pSourceData = g_new0(ZMapFeatureSourceStruct,1);
           pSourceData->source_id = gqSourceID;
           pSourceData->source_text = gqSourceID;
 
-          /* this is the same hash owned by the view & window */
           g_hash_table_insert(pParser->source_2_sourcedata,GINT_TO_POINTER(gqSourceID), pSourceData);
         }
 
@@ -3222,189 +4005,83 @@ static gboolean makeNewFeature_V3(
       gqSourceID = gqFeatureStyleID = zMapStyleCreateID(sSource) ;
     }
 
-
-
   /*
    * Find the feature set from the parser associated with the source, and
    * create it if it does not already exist.
    */
-  if (!(pParserFeatureSet = getParserFeatureSet(pParserBase, sSource)))
+  if (!(pParserFeatureSet = getParserFeatureSet(pParser, sSource)))
     {
       bResult = FALSE ;
-      goto return_point ;
-    }
-
-
-  /*
-   * Now this is doing some lookups to find styles for features (or at least for the
-   * feature set at once).
-   */
-  if (!(pFeatureStyle = (ZMapFeatureTypeStyle)g_hash_table_lookup(pParserFeatureSet->feature_styles, GUINT_TO_POINTER(gqFeatureStyleID))))
-    {
-      if (!(pFeatureStyle = zMapFindFeatureStyle(pParser->sources, gqFeatureStyleID, cFeatureStyleMode)))
-        {
-          gqFeatureStyleID = g_quark_from_string(zmapStyleMode2ShortText(cFeatureStyleMode)) ;
-        }
-
-      if (!(pFeatureStyle = zMapFindFeatureStyle(pParser->sources, gqFeatureStyleID, cFeatureStyleMode)))
-        {
-          *err_text = g_strdup_printf("feature ignored, could not find style \"%s\" for feature set \"%s\".",
-                                      g_quark_to_string(gqFeatureStyleID), sSource) ;
-          bResult = FALSE ;
-          goto return_point ;
-        }
-
-      if (pSourceData)
-        pSourceData->style_id = gqFeatureStyleID;
-
-      g_hash_table_insert(pParserFeatureSet->feature_styles,GUINT_TO_POINTER(gqFeatureStyleID),(gpointer) pFeatureStyle);
-
-      if (pSourceData && pFeatureStyle->unique_id != gqFeatureStyleID)
-        pSourceData->style_id = pFeatureStyle->unique_id;
     }
 
   /*
-   * with one type of feature in a featureset this should be ok
+   * Now deal with the feature set and parser featureset.
    */
-  pParserFeatureSet->feature_set->style = pFeatureStyle;
-  pFeatureSet = pParserFeatureSet->feature_set ;
-
-  /*
-   * Now check that the ZMapStyleMode of the current style also has the same ZMapStyleMode.
-   * If it is not, then I treat this as an unrecoverable error for the current feature.
-   */
-  if (cFeatureStyleMode != pFeatureStyle->mode)
+  if (bResult)
     {
-      *err_text = g_strdup_printf("feature ignored, ZMapStyleMode for feature and Style do not match. Style = '%s', source = '%s'",
-                                  g_quark_to_string(gqFeatureStyleID), sSource) ;
-      bResult = FALSE ;
-      goto return_point ;
+
+      if (!(pFeatureStyle = (ZMapFeatureTypeStyle)g_hash_table_lookup(pParserFeatureSet->feature_styles, GUINT_TO_POINTER(gqFeatureStyleID))))
+        {
+          if (!(pFeatureStyle = zMapFindFeatureStyle(pParser->sources, gqFeatureStyleID, cFeatureStyleMode)))
+            {
+              gqFeatureStyleID = g_quark_from_string(zmapStyleMode2ShortText(cFeatureStyleMode)) ;
+            }
+
+          if (!(pFeatureStyle = zMapFindFeatureStyle(pParser->sources, gqFeatureStyleID, cFeatureStyleMode)))
+            bResult = FALSE ;
+
+          if (bResult)
+            {
+              if (pSourceData)
+                pSourceData->style_id = gqFeatureStyleID;
+
+              g_hash_table_insert(pParserFeatureSet->feature_styles,GUINT_TO_POINTER(gqFeatureStyleID),(gpointer) pFeatureStyle);
+
+              if (pSourceData && pFeatureStyle->unique_id != gqFeatureStyleID)
+                pSourceData->style_id = pFeatureStyle->unique_id;
+
+            }
+        }
+
     }
 
-
-  /*
-   * Now branch on the ZMapStyleMode of the current GFF line.
-   */
-  if (cFeatureStyleMode == ZMAPSTYLE_MODE_TRANSCRIPT)
+  if (bResult)
     {
-
-      bNewFeatureCreated = FALSE ;
-      pFeature = makeFeatureTranscript(pFeatureData, pFeatureSet, &bNewFeatureCreated, &sMakeFeatureErrorText) ;
-      if (pFeature)
-      {
-        bResult = TRUE ;
-      }
-      if (bNewFeatureCreated)
-        ++pParser->num_features ;
-
+      pParserFeatureSet->feature_set->style = pFeatureStyle;
+      pFeatureSet = pParserFeatureSet->feature_set ;
     }
-  else if (cFeatureStyleMode == ZMAPSTYLE_MODE_ALIGNMENT)
+
+  *ppFeatureSet = pFeatureSet ;
+
+  return bResult ;
+}
+
+
+
+
+
+/*
+ * Decide whether or not locus-based operations are required for
+ * the current feature.
+ */
+static gboolean requireLocusOperations(ZMapGFFParser pParser, ZMapGFFFeatureData pFeatureData)
+{
+  gboolean bResult = FALSE ;
+  ZMapGFFAttribute *pAttributes = NULL ;
+  unsigned int nAttributes = 0 ;
+
+  zMapReturnValIfFail(pParser && pFeatureData, bResult ) ;
+
+  nAttributes          = zMapGFFFeatureDataGetNat(pFeatureData) ;
+  pAttributes          = zMapGFFFeatureDataGetAts(pFeatureData) ;
+
+  if (pParser->locus_set_id                                                                           &&
+      zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_locus)                    &&
+      zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_ID)                       &&
+      !strcmp( zMapSOIDDataGetName(zMapGFFFeatureDataGetSod(pFeatureData)) , "transcript") )
     {
-
-      pFeature = makeFeatureAlignment(pFeatureData, pFeatureSet, pFeatureStyle, &sMakeFeatureErrorText) ;
-      if (pFeature)
-      {
-        bResult = TRUE ;
-        ++pParser->num_features ;
-      }
-
+      bResult = TRUE ;
     }
-  else
-    {
-
-
-      /*
-       * The following section creates a new feature from scratch and adds to the featureset.
-       * This is more or less a simplified version of what's in v2 code.
-       */
-
-      /*
-       * Look for "Name" attribute
-       */
-      pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "Name" );
-      if (pAttribute)
-        {
-          sName = zMapGFFAttributeGetTempstring(pAttribute) ;
-        }
-      /*
-       * Get the sFeatureName which may not be unique and sFeatureNameID which
-       * _must_ be unique.
-       */
-      bFeatureHasName = getFeatureName(sSequence, pAttributes, nAttributes, sName, sSource,
-                                       cFeatureStyleMode, cStrand, iStart, iEnd, iQueryStart, iQueryEnd,
-                                       &sFeatureName, &sFeatureNameID) ;
-      if (!sFeatureNameID)
-        {
-          *err_text = g_strdup_printf("feature ignored as it has no name");
-          bResult = FALSE ;
-          goto return_point ;
-        }
-
-      /*
-       * Create our new feature object
-       */
-      pFeature = zMapFeatureCreateEmpty() ;
-      ++pParser->num_features ;
-
-      /*
-       * Add standard data to the feature.
-       */
-      bResult = zMapFeatureAddStandardData(pFeature, sFeatureNameID, sFeatureName, sSequence, sSOType,
-                                           cFeatureStyleMode, &pParserFeatureSet->feature_set->style,
-                                           iStart, iEnd, bHasScore, dScore, cStrand);
-
-      if (!bResult)
-        {
-          goto return_point ;
-        }
-
-      /*
-       * Add the feature to feature set
-       */
-      bFeatureAdded = zMapFeatureSetAddFeature(pFeatureSet, pFeature) ;
-      if (!bFeatureAdded)
-        {
-          *err_text = g_strdup_printf("feature with name = '%s' could not be added", sFeatureName) ;
-          bResult = FALSE ;
-          goto return_point ;
-        }
-
-
-    } /* final ZMapStyleMode clause */
-
-
-  /*
-   * Add note?
-   */
-  //pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "Note") ;
-  //if (pAttribute)
-  //{
-  //  if (zMapAttParseNote(pAttribute, &sNote_v3A))
-  //  {
-  //    /* Do something with data here */
-  //  }
-  //}
-
-  /*
-   * Add URL?
-   */
-
-  /*
-   * Return point for the function.
-   */
-return_point:
-
-  /*
-   *  Clean up
-   */
-  //if (!bFeatureAdded && pFeature)
-  //  zMapFeatureDestroy(pFeature) ;
-  if (sFeatureName)
-    g_free(sFeatureName) ;
-  if (sFeatureNameID)
-    g_free(sFeatureNameID) ;
-  if (sTargetID)
-    g_free(sTargetID) ;
 
   return bResult ;
 }
@@ -3424,92 +4101,16 @@ return_point:
 
 
 
-
-
-    /*
-     * This is old stuff taken out of parseBodyLine_V3() that I'm not doing any more.
-     * Note in particular that "Locus" is not a valid attribute name in V3.
-     */
-
-    /* pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "Locus" );
-    if ( pParser->locus_set_id &&  pAttribute )
-    {
-
-      if (!zMapFeatureFormatType(pParser->SO_compliant, pParser->default_to_basic, ZMAP_FIXED_STYLE_LOCUS_NAME, &cType))
-        sErrText = g_strdup_printf("feature_type not recognised: %s", ZMAP_FIXED_STYLE_LOCUS_NAME) ;
-
-      pFeatureData02 = zMapGFFFeatureDataCreate() ;
-      zMapGFFFeatureDataSet(pFeatureData02,
-                            zMapGFFAttributeGetTempstring(pAttribute),
-                            ZMAP_FIXED_STYLE_LOCUS_NAME,
-                            ZMAP_FIXED_STYLE_LOCUS_NAME,
-                            cType,
-                            iStart,
-                            iEnd,
-                            FALSE,
-                            0.0,
-                            ZMAPSTRAND_NONE,
-                            ZMAPPHASE_NONE,
-                            sAttributes,
-                            pAttributes,
-                            nAttributes) ;
-
-      if ((bResult = makeNewFeature_V3((ZMapGFFParser) pParser,
-                                    ZMAPGFF_NAME_USE_SEQUENCE,
-                                    &sErrText,
-                                    pFeatureData02)))
-      {
-
-      }
-      else
-      {
-        if (pParser->error)
-        {
-          g_error_free(pParser->error) ;
-          pParser->error = NULL ;
-        }
-        pParser->error = g_error_new(pParser->error_domain, ZMAPGFF_ERROR_BODY,
-                                     "GFF line %d (c) - %s (\"%s\")", pParser->line_count, sErrText, sLine) ;
-        g_free(sErrText) ;
-        sErrText = NULL ;
-      }
-
-      zMapGFFFeatureDataDestroy(pFeatureData02) ;
-    }
-
-  */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /*
  * Sets the SO collection flag. TRUE means use SO, FALSE means use SOFA.
  */
-gboolean zMapGFFSetSOSetInUse(ZMapGFFParser const pParserBase, ZMapSOSetInUse cUse)
+gboolean zMapGFFSetSOSetInUse(ZMapGFFParser  pParserBase, ZMapSOSetInUse cUse)
 {
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
   gboolean bSet = FALSE ;
-  if (!pParser || !pParser->pHeader )
-    return bSet ;
+
+  zMapReturnValIfFail(pParser && pParser->pHeader, bSet) ;
+
   pParser->cSOSetInUse = cUse ;
   bSet = TRUE ;
   return bSet ;
@@ -3518,11 +4119,12 @@ gboolean zMapGFFSetSOSetInUse(ZMapGFFParser const pParserBase, ZMapSOSetInUse cU
 /*
  * Returns the SO collection flag.
  */
-ZMapSOSetInUse zMapGFFGetSOSetInUse(const ZMapGFFParser const pParserBase )
+ZMapSOSetInUse zMapGFFGetSOSetInUse(ZMapGFFParser pParserBase )
 {
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
-  if (!pParser || !pParser->pHeader )
-    return ZMAPSO_USE_NONE ;
+
+  zMapReturnValIfFail(pParser && pParser->pHeader, ZMAPSO_USE_NONE) ;
+
   return pParser->cSOSetInUse ;
 }
 
@@ -3532,12 +4134,13 @@ ZMapSOSetInUse zMapGFFGetSOSetInUse(const ZMapGFFParser const pParserBase )
 /*
  * Set the SO Error level within the parser.
  */
-gboolean zMapGFFSetSOErrorLevel(ZMapGFFParser const pParserBase, ZMapSOErrorLevel cErrorLevel)
+gboolean zMapGFFSetSOErrorLevel(ZMapGFFParser pParserBase, ZMapSOErrorLevel cErrorLevel)
 {
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
   gboolean bSet = FALSE ;
-  if (!pParser || !pParser->pHeader || cErrorLevel < ZMAPGFF_SOERRORLEVEL_UNK )
-    return bSet ;
+
+  zMapReturnValIfFail(pParser && pParser->pHeader, bSet) ;
+
   bSet = TRUE ;
   pParser->cSOErrorLevel = cErrorLevel ;
   return bSet ;
@@ -3547,11 +4150,10 @@ gboolean zMapGFFSetSOErrorLevel(ZMapGFFParser const pParserBase, ZMapSOErrorLeve
 /*
  * Return the error level setting within the parser.
  */
-ZMapSOErrorLevel zMapGFFGetSOErrorLevel(const ZMapGFFParser const pParserBase )
+ZMapSOErrorLevel zMapGFFGetSOErrorLevel(ZMapGFFParser pParserBase )
 {
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
-  if (!pParser || !pParser->pHeader)
-    return 0 ;
+  zMapReturnValIfFail(pParser && pParser->pHeader, 0);
   return pParser->cSOErrorLevel ;
 }
 
@@ -3566,13 +4168,14 @@ ZMapSOErrorLevel zMapGFFGetSOErrorLevel(const ZMapGFFParser const pParserBase )
 static void destroyFeatureArray(gpointer data)
 {
   ZMapGFFParserFeatureSet parser_feature_set = (ZMapGFFParserFeatureSet)data ;
+  zMapReturnIfFail(parser_feature_set) ;
 
   /* No data to free in this list, just clear it. */
   g_datalist_clear(&(parser_feature_set->multiline_features)) ;
   if(parser_feature_set->feature_set && parser_feature_set->feature_set->style)
       zMapStyleDestroy(parser_feature_set->feature_set->style);
 
-  g_hash_table_destroy(parser_feature_set->feature_styles);       // styles remain pointed at by features
+  g_hash_table_destroy(parser_feature_set->feature_styles);
 
   g_free(parser_feature_set) ;
 
@@ -3593,6 +4196,8 @@ static ZMapGFFParserFeatureSet getParserFeatureSet(ZMapGFFParser pParserBase, ch
   ZMapGFFParserFeatureSet pParserFeatureSet = NULL ;
   ZMapFeatureSet pFeatureSet = NULL ;
   ZMapSpan span;
+
+  zMapReturnValIfFail(pParser && pParser->pHeader && sFeatureSetName && *sFeatureSetName, pParserFeatureSet) ;
 
   pParserFeatureSet = (ZMapGFFParserFeatureSet)g_datalist_get_data(&(pParser->feature_sets), sFeatureSetName);
 
@@ -3689,7 +4294,7 @@ static ZMapGFFParserFeatureSet getParserFeatureSet(ZMapGFFParser pParserBase, ch
  *
  */
 static gboolean getFeatureName(const char * const sequence,
-  const ZMapGFFAttribute * const pAttributes,
+  ZMapGFFAttribute * pAttributes,
   unsigned int nAttributes,
   const char * const given_name,
   const char * const source,
@@ -3703,11 +4308,14 @@ static gboolean getFeatureName(const char * const sequence,
   char ** const feature_name_id)
 {
   NameFindType name_find = ZMAPGFF_NAME_FIND ;
-  gboolean bHasName = FALSE, bAttributeHit = FALSE ;
-  char *sValue = NULL ;
+  gboolean bHasName = FALSE,
+    bAttributeHit = FALSE,
+    bParseValid = FALSE ;
   char *sTempBuff01 = NULL,
   *sTempBuff02 = NULL ;
   unsigned int iAttribute = 0 ;
+
+  zMapReturnValIfFail(sequence && *sequence && source && *source, bHasName) ;
 
   ZMapGFFAttribute pAttribute = NULL ;
 
@@ -3732,17 +4340,12 @@ static gboolean getFeatureName(const char * const sequence,
       *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
                                                start, end, query_start, query_end) ;
     }
-  else if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "Name")))
+  else if (pAttributes && (pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "Name")))
     {
-
-      sValue = zMapGFFAttributeGetTempstring(pAttribute) ;
-      if (sValue && sValue[0])
-        {
-          *feature_name = g_strdup(zMapGFFAttributeGetTempstring(pAttribute)) ;
-          *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
-                                                   start, end, query_start, query_end) ;
-          bHasName = TRUE ;
-        }
+      bParseValid = zMapAttParseName(pAttribute, &*feature_name) ;
+      *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
+                                               start, end, query_start, query_end) ;
+      bHasName = TRUE ;
 
     }
   else if (name_find != ZMAPGFF_NAME_USE_GIVEN_OR_NAME)
@@ -3753,14 +4356,14 @@ static gboolean getFeatureName(const char * const sequence,
       if (feature_type == ZMAPSTYLE_MODE_ALIGNMENT)
         {
 
-          if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "Target")))
+          if (pAttributes && (pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "Target")))
             {
 
                 /* In acedb output at least, homologies all have the same format.
                * Strictly speaking this is V2 only, as target has a different meaning
                * in V3.
                */
-              if (zMapAttParseTargetV2(pAttribute, &sTempBuff01, &sTempBuff02))
+              if (pAttributes && zMapAttParseTargetV2(pAttribute, &sTempBuff01, &sTempBuff02))
                 {
                   bHasName = FALSE ;
                   *feature_name = g_strdup(sTempBuff01) ;
@@ -3778,8 +4381,8 @@ static gboolean getFeatureName(const char * const sequence,
            */
 
           /* if ((tag_pos = strstr(attributes, "Assembly_source"))) */
-          pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "Assembly_source") ;
-          if (pAttribute)
+           ;
+          if (pAttributes && (pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, "Assembly_source")) )
             {
               /* if (sscanf(tag_pos, attr_format_str02, name) == iExpectedFields1) */
               if (zMapAttParseAssemblySource(pAttribute, &sTempBuff01, &sTempBuff02))
@@ -3811,14 +4414,17 @@ static gboolean getFeatureName(const char * const sequence,
            * (sm23) Again, why are we only looking for the "Note" attribute at the beginning
            * of the attribute string?
            */
-          for (iAttribute=0; iAttribute<nAttributes; ++iAttribute)
+          if (pAttributes)
             {
-              pAttribute = pAttributes[iAttribute] ;
-              if (zMapAttParseAnyTwoStrings(pAttribute, &sTempBuff01, &sTempBuff02) )
-              {
-                bAttributeHit = TRUE;
-                break ;
-              }
+              for (iAttribute=0; iAttribute<nAttributes; ++iAttribute)
+                {
+                  pAttribute = pAttributes[iAttribute] ;
+                  if (zMapAttParseAnyTwoStrings(pAttribute, &sTempBuff01, &sTempBuff02) )
+                    {
+                      bAttributeHit = TRUE;
+                      break ;
+                    }
+                }
             }
 
           /* if (sscanf(attributes, attr_format_str03, sClass, name) == iExpectedFields2) */

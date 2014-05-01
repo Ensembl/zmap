@@ -1,6 +1,6 @@
 /*  File: zmapWebPages.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -31,29 +31,23 @@
 #define ZMAP_WEBPAGES_H
 
 
-/* Much of this is sadly redundant because of the Sanger web redesign. Need to find
- * out how to get our release notes on to the website....and some of our other help docs. */
-
-
-/* http://wwwdev.sanger.ac.uk/Software/analysis/ZMap/doc/user_interface.shtml */
-
-#define ZMAPWEB_URL "http://wwwdev.sanger.ac.uk/resources/software/zmap"
-
-#define ZMAPWEB_DOC_URL ZMAPWEB_URL
+/* The docs should be installed alongside the executable in the share directory.
+ * The share directory lives in the same parent directory as the bin directory
+ * where the executable is, so we need to find the bin directory and then use
+ * this relative path */
+#define ZMAP_LOCAL_DOC_PATH "../share/doc/zmap"
 
 /* Reorganising the zmap_update_web.sh and the directories, together
  * with inertia of the way the last release code works, means that the
  * Release_notes dir is no longer under the DOC_URL dir. */
 
 
-#define ZMAPWEB_RELEASE_NOTES_DIR "../Release_notes"
+#define ZMAPWEB_RELEASE_NOTES "release_notes.shtml"
 
-/* This line is parsed/updated by ZMap/scripts/zmapreleasenotes, do not alter its format without
- * updating that script as well. */
-#define ZMAPWEB_RELEASE_NOTES "release_notes.2011_06_17.09_47_31.shtml"
-
-#define ZMAPWEB_HELP_DOC  ""
-#define ZMAPWEB_HELP_ALIGNMENT_SECTION "alignment_display"
+#define ZMAPWEB_HELP_DOC  "index.shtml"
+#define ZMAPWEB_HELP_QUICK_START  "zmap_quick_start.shtml"
+#define ZMAPWEB_HELP_ALIGNMENT_SECTION "user_interface.shtml"
+/* gb10: for some reason the open command fails with this: user_interface.shtml#alignment_display */
 
 #define ZMAPWEB_KEYBOARD_DOC  "keyboard_mouse.shtml"
 

@@ -1,6 +1,6 @@
 /*  File: zmapWindowStats.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -111,8 +111,6 @@ ZMapWindowStatsAny zmapWindowStatsAddChild(ZMapWindowStats stats, ZMapFeatureAny
       GList *stats_list ;
       ZMapFeature feature = (ZMapFeature)feature_any ;
 
-      zMapAssert(zMapFeatureIsValidFull((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_FEATURE)) ;
-
       if ((stats_list = g_list_find_custom(stats->child_sets, (ZMapFeature)feature_any, feature2StyleCompare)))
 	{
 	  stats_any = (ZMapWindowStatsAny)(stats_list->data) ;
@@ -121,7 +119,7 @@ ZMapWindowStatsAny zmapWindowStatsAddChild(ZMapWindowStats stats, ZMapFeatureAny
 	{
 	  int num_bytes = 0 ;
 
-	  switch (feature->type)
+	  switch (feature->mode)
 	    {
 	    case ZMAPSTYLE_MODE_ASSEMBLY_PATH:
 
@@ -148,7 +146,7 @@ ZMapWindowStatsAny zmapWindowStatsAddChild(ZMapWindowStats stats, ZMapFeatureAny
 	  if (num_bytes)
 	    {
 	      stats_any = g_slice_alloc0(num_bytes) ;
-	      stats_any->feature_type = feature->type ;
+	      stats_any->feature_type = feature->mode ;
 	      stats_any->style_id = (*feature->style)->unique_id ;
 
 	      stats->child_sets = g_list_append(stats->child_sets, stats_any) ;
@@ -189,7 +187,8 @@ void zmapWindowStatsDestroy(ZMapWindowStats stats)
 {
   int nbytes = sizeof(ZMapWindowStatsStruct) ;
 
-  zMapAssert(stats) ;
+  if (!stats)
+    return ;
 
   g_slice_free1(nbytes, stats) ;
 
@@ -224,11 +223,12 @@ static void resetStats(gpointer data, gpointer user_data_unused)
       num_bytes = sizeof(ZMapWindowStatsTranscriptStruct) ;
       break ;
     default:
-      zMapAssertNotReached() ;
+      zMapWarnIfReached() ;
       break ;
     }
 
-  memset(any_stats, 0, num_bytes) ;
+  if (num_bytes)
+    memset(any_stats, 0, num_bytes) ;
 
   return ;
 }

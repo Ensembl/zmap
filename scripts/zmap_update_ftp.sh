@@ -37,10 +37,8 @@ repo_name=zmap                           		     # repository name
 website_svn_subdir=zmap_web                          # subdirectory of home_dir that contains the website svn repositories
 # NOTE the svn repository was initialised manually via the following commands. This should not need doing again.
 #   cd ~zmap/BUILD_CHECKOUT
-#   websvn co svn+ssh://www-sanger-ac-uk@web-wwwsvn.internal.sanger.ac.uk/repos/svn/sites/www-sanger-ac-uk/trunk/htdocs/resources/software/zmap zmap_web 
+#   svn co svn+ssh://www-sanger-ac-uk@web-wwwsvn.internal.sanger.ac.uk/repos/svn/sites/www-sanger-ac-uk/trunk/htdocs/resources/software/zmap zmap_web
 # We assume that files in the repository are not edited by hand and therefore we won't get merge conflicts
-
-alias websvn='SSH_AUTH_SOCK="" /usr/bin/svn --config-option config:tunnels:ssh=ssh\ -i\ ${HOME}/.ssh/pagesmith/svn-ssh'
 
 ########################### subroutines ###################################
 
@@ -108,7 +106,7 @@ function print_usage
   print "  -r  remove target directory if it exists."
   print
   print "  -t <type> OVERNIGHT | DEVELOPMENT | PRODUCTION  selects archive on ftp site (DEVELOPMENT is default),"
-  print "                     archive goes to ~ftp/pub4/resources/software/zmap/"
+  print "                     archive goes to ~ftp/pub/resources/software/zmap/"
   print
 
   exit 1
@@ -125,7 +123,7 @@ overnight='OVERNIGHT'
 development='DEVELOPMENT'
 production='PRODUCTION'
 
-ftp_root=/nfs/disk69/ftp/pub4/resources/software/zmap
+ftp_root=/nfs/disk69/ftp/pub/resources/software/zmap
 build_id=$development
 
 
@@ -250,15 +248,19 @@ compile_date=`date`
 cd $dist_dir
 
 echo "$msg_prefix Writing website include file: $inc_file"
-# Gemma had a script called from here but we have 4 files to tag, so it's eaiser to do it inline
+# Gemma had a script called from here but we have several files to tag, so it's eaiser to do it inline
 # $scripts_dir/zmap_update_website_version_file.sh $build_id $inc_file
 
-ftp_link="ftp://ftp.sanger.ac.uk/pub4/resources/software/$repo_name/$inc_file_name"
+ftp_link="ftp://ftp.sanger.ac.uk/pub/resources/software/$repo_name/$inc_file_name"
 
 echo "<p>The latest version is $version_string, created on $compile_date:" > $inc_file
+exclude_pattern="ACEDB*" # don't include acedb build in zmap downloads tab
 for i in `ls`
 do
-   echo "<br /><a href=\""$ftp_link/$i"\">" $i "</a>" >> $inc_file
+  if [[ $i != $exclude_pattern ]]
+  then
+    echo "<br /><a href=\""$ftp_link/$i"\">" $i "</a>" >> $inc_file
+  fi
 done
 echo "</p>" >> $inc_file
 
@@ -267,12 +269,12 @@ check_status "Error updating $inc_file"
 
 # Commit the changes to svn
 cd $website_svn_dir
-svn_status=`websvn up`
+svn_status=`svn up`
 echo "$msg_prefix SVN status: $svn_status"
 
-svn_status=`websvn st`
+svn_status=`svn st`
 
-result=`websvn ci -m "Updated link to $inc_file_name build." $inc_file`
+result=`svn ci -m "Updated link to $inc_file_name build." $inc_file`
 check_status "Error committing changes for $inc_file; website will not be updated"
 
 # Publish the changes

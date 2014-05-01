@@ -1,6 +1,6 @@
 /*  File: zmapWindowState.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -179,7 +179,8 @@ void zmapWindowStateRestore(ZMapWindowState state, ZMapWindow window)
 {
   ZMapWindowStateStruct state_copy = {NULL};
 
-  zMapAssert(state && ZMAP_MAGIC_IS_VALID(window_state_magic_G, state->magic)) ;
+  if (!state || !ZMAP_MAGIC_IS_VALID(window_state_magic_G, state->magic)) 
+    return ;
 
   state_copy = *state;		/* n.b. struct copy */
   state = &state_copy;
@@ -188,14 +189,6 @@ void zmapWindowStateRestore(ZMapWindowState state, ZMapWindow window)
    * not save whilst restoring... */
   mark_queue_updating(window->history, TRUE);
 
-  //  foo_canvas_busy(window->canvas, TRUE);	can't do this as zmapWindowZoom does */
-#if 0
-  if(state->zoom_set && state->position_set)
-    {
-      /* do a zoom to */
-    }
-  else
-#endif
     {
       if(state->zoom_set)
 	{
@@ -242,7 +235,8 @@ ZMapWindowState zmapWindowStateCopy(ZMapWindowState state)
 {
   ZMapWindowState new_state = NULL;
 
-  zMapAssert(state && ZMAP_MAGIC_IS_VALID(window_state_magic_G, state->magic)) ;
+  if (!state || !ZMAP_MAGIC_IS_VALID(window_state_magic_G, state->magic)) 
+    return new_state ;
 
   new_state = zmapWindowStateCreate();
 
@@ -253,12 +247,8 @@ ZMapWindowState zmapWindowStateCopy(ZMapWindowState state)
 
 ZMapWindowState zmapWindowStateDestroy(ZMapWindowState state)
 {
-  zMapAssert(state && ZMAP_MAGIC_IS_VALID(window_state_magic_G, state->magic)) ;
-
-
-
-  /* Anything that needs freeing */
-
+  if (!state || !ZMAP_MAGIC_IS_VALID(window_state_magic_G, state->magic)) 
+    return state ;
 
   /* Reset magic ptr to invalidate the block. */
   state->magic = NULL ;
@@ -311,7 +301,8 @@ gboolean zmapWindowStateSavePosition(ZMapWindowState state, ZMapWindow window)
 
 gboolean zmapWindowStateSaveZoom(ZMapWindowState state, double zoom_factor)
 {
-  zMapAssert(state && ZMAP_MAGIC_IS_VALID(window_state_magic_G, state->magic)) ;
+  if (!state || !ZMAP_MAGIC_IS_VALID(window_state_magic_G, state->magic)) 
+    return FALSE ;
 
   state->zoom_set    = 1;
   state->zoom_factor = zoom_factor;
@@ -322,8 +313,8 @@ gboolean zmapWindowStateSaveZoom(ZMapWindowState state, double zoom_factor)
 gboolean zmapWindowStateSaveMark(ZMapWindowState state, ZMapWindow window)
 {
   ZMapWindowMark mark = window->mark;
-
-  zMapAssert(state && ZMAP_MAGIC_IS_VALID(window_state_magic_G, state->magic)) ;
+  if (!state || !ZMAP_MAGIC_IS_VALID(window_state_magic_G, state->magic)) 
+    return FALSE ;
 
   if ((state->mark_set = zmapWindowMarkIsSet(mark)))
     {
@@ -345,8 +336,8 @@ gboolean zmapWindowStateSaveFocusItems(ZMapWindowState state, ZMapWindow window)
   gboolean result = FALSE ;
   FooCanvasItem *focus_item ;
 
-  zMapAssert(state && ZMAP_MAGIC_IS_VALID(window_state_magic_G, state->magic)) ;
-  zMapAssert(window) ;
+  if (!state || !ZMAP_MAGIC_IS_VALID(window_state_magic_G, state->magic) || !window) 
+    return result ;
 
   if ((window->focus) && (focus_item = zmapWindowFocusGetHotItem(window->focus)))
     {
@@ -497,33 +488,17 @@ static void state_mark_restore(ZMapWindow window, ZMapWindowMark mark, ZMapWindo
 
   restore = *serialized ;				    /* n.b. struct copy */
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES] != restore.rev_comp_state)
     {
-      zmapWindowStateRevCompRegion(window, &(restore.y1), &(restore.y2)) ;
-    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-  if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES] != restore.rev_comp_state)
-    {
-      ZMapFeatureAlignment align ;
-      ZMapFeatureBlock block ;
       int seq_start, seq_end ;
-
-
-      /* default to master align. */
-      align = window->feature_context->master_align ;
-      block = zMap_g_hash_table_nth(align->blocks, 0) ;
-
 
       seq_start = (int)(restore.y1) ;
       seq_end = (int)(restore.y2) ;
 
-      zMapFeatureReverseComplementCoords(block, &seq_start, &seq_end) ;
+      zMapFeatureReverseComplementCoords(window->feature_context, &seq_start, &seq_end) ;
 
       restore.y1 = (double)seq_start ;
       restore.y2 = (double)seq_end ;
-
     }
 
 
@@ -669,7 +644,7 @@ static void state_focus_items_restore(ZMapWindow window, ZMapWindowFocusSerialSt
 	     strand ?? or maybe not...actually we should be checking if something is visible !!!! */
 
 	  /* Blank the info panel if we can't find the feature. */
-	  zmapWindowUpdateInfoPanel(window, NULL, NULL, NULL, NULL, 0, 0, 0, 0, NULL, TRUE, FALSE, FALSE) ;
+	  zmapWindowUpdateInfoPanel(window, NULL, NULL, NULL, NULL, 0, 0, 0, 0, NULL, TRUE, FALSE, FALSE, FALSE) ;
 
 
 	  zMapLogWarning("%s", "Failed to find serialized focus item.");
@@ -686,7 +661,7 @@ static void state_focus_items_restore(ZMapWindow window, ZMapWindowFocusSerialSt
 
 	  /* Pass information about the object clicked on back to the application. */
 	  zmapWindowUpdateInfoPanel(window, feature, NULL, sub_item, NULL, 0, 0, 0, 0,
-				    NULL, replace_highlight, highlight_same_names, FALSE) ;
+				    NULL, replace_highlight, highlight_same_names, FALSE, FALSE) ;
 	}
     }
 
@@ -855,7 +830,7 @@ ZMapWindowStateQueue zmapWindowStateQueueCreate(void)
   ZMapWindowStateQueue queue = NULL;
 
   if(!(queue = g_queue_new()))
-    zMapAssertNotReached();
+    zMapWarnIfReached();
 
   if(queue)
     {
@@ -1008,7 +983,7 @@ static void mark_queue_updating(ZMapWindowStateQueue queue, gboolean update_flag
     {
       head_state->in_state_restore = update_flag;
       if(queue_doing_update(queue) != update_flag)
-	zMapAssertNotReached();
+        zMapWarnIfReached();
     }
 
   return ;

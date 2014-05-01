@@ -1,6 +1,6 @@
 /*  File: zmapUtilsSpawn.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -173,13 +173,21 @@ static gboolean example_stdout_io_func(GIOChannel *source, GIOCondition cond, gp
 	}
     }
   else if(cond & G_IO_HUP)	/* hung up, connection broken */
-    zMapShowMsg(ZMAP_MSG_INFORMATION, "%s", "G_IO_HUP");
+    {
+      zMapShowMsg(ZMAP_MSG_INFORMATION, "%s", "G_IO_HUP");
+    }
   else if(cond & G_IO_ERR)	/* error condition */
-    zMapShowMsg(ZMAP_MSG_INFORMATION, "%s", "G_IO_ERR");
+    {
+      zMapShowMsg(ZMAP_MSG_INFORMATION, "%s", "G_IO_ERR");
+    }
   else if(cond & G_IO_NVAL)	/* invalid request, file descriptor not open */
-    zMapShowMsg(ZMAP_MSG_INFORMATION, "%s", "G_IO_NVAL");      
+    {
+      zMapShowMsg(ZMAP_MSG_INFORMATION, "%s", "G_IO_NVAL");
+    }
   else
-    zMapAssertNotReached();
+    {
+      zMapWarnIfReached();
+    }
 
   return call_again;
 }

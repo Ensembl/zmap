@@ -1,6 +1,6 @@
 /*  File: zmapControlWindow.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -73,10 +73,12 @@ static gboolean zmap_shrink_G = FALSE;
 /* Makes the toplevel window and control panels for an individual zmap. */
 gboolean zmapControlWindowCreate(ZMap zmap)
 {
-  gboolean result = TRUE ;
+  gboolean result = FALSE ; 
   GtkWidget *toplevel, *vbox, *menubar, *frame, *controls_box, *button_box, *status_box,
     *info_panel_box, *info_box ;
   ZMapCmdLineArgsType shrink_arg = {FALSE} ;
+
+  zMapReturnValIfFail(zmap, result) ; 
 
 
   /* Make tooltips groups for the main zmap controls and the feature information. */
@@ -89,8 +91,6 @@ gboolean zmapControlWindowCreate(ZMap zmap)
   if (zMapCmdLineArgsValue(ZMAPARG_SHRINK, &shrink_arg))
     zmap_shrink_G = shrink_arg.b ;
   gtk_window_set_policy(GTK_WINDOW(toplevel), zmap_shrink_G, TRUE, FALSE ) ;
-
-  gtk_container_border_width(GTK_CONTAINER(toplevel), 5) ;
 
 #ifdef MAXIMIZE_ON_MAP_EVENT
   /* We can leave width to default sensibly but height does not because zmap is in a scrolled
@@ -106,11 +106,11 @@ gboolean zmapControlWindowCreate(ZMap zmap)
   vbox = gtk_vbox_new(FALSE, 0) ;
   gtk_container_add(GTK_CONTAINER(toplevel), vbox) ;
 
-  menubar = zmapControlWindowMakeMenuBar(zmap) ;
+
+  zmap->menubar = menubar = zmapControlWindowMakeMenuBar(zmap) ;
   gtk_box_pack_start(GTK_BOX(vbox), menubar, FALSE, TRUE, 0);
 
   frame = gtk_frame_new(NULL);
-  gtk_container_border_width(GTK_CONTAINER(frame), 5);
   gtk_box_pack_start(GTK_BOX(vbox), frame, FALSE, TRUE, 0);
 
   zmap->button_info_box = controls_box = gtk_vbox_new(FALSE, 0) ;
@@ -139,6 +139,8 @@ gboolean zmapControlWindowCreate(ZMap zmap)
   setTooltips(zmap) ;
   gtk_tooltips_enable(zmap->tooltips) ;
 
+  result = TRUE ; 
+
 
   return result ;
 }
@@ -147,6 +149,8 @@ gboolean zmapControlWindowCreate(ZMap zmap)
 
 void zmapControlWindowDestroy(ZMap zmap)
 {
+  zMapReturnIfFail(zmap) ; 
+
   /* We must disconnect the "destroy" callback otherwise we will enter toplevelDestroyCB()
    * below and that will try to call our callers destroy routine which has already
    * called this routine...i.e. a circularity which results in attempts to
@@ -176,7 +180,9 @@ void zmapControlWindowSetStatus(ZMap zmap)
   static int idle_handle = 0 ;
   enum {ROTATION_DELAY = 500} ;				    /* delay in microseconds for each text move. */
   ZMapViewState view_state = ZMAPVIEW_INIT ;
-  char *sources_loading = NULL, *sources_failing = NULL ;
+  char *sources_loading = NULL, *sources_empty = NULL, *sources_failing = NULL ;
+
+  zMapReturnIfFail(zmap) ; 
 
   switch(zmap->state)
     {
@@ -215,7 +221,7 @@ void zmapControlWindowSetStatus(ZMap zmap)
             g_free(coord_txt) ;
           }
 
-	tmp = zMapViewGetLoadStatusStr(view, &sources_loading, &sources_failing) ;
+	tmp = zMapViewGetLoadStatusStr(view, &sources_loading, &sources_empty, &sources_failing) ;
 	status_text = g_strdup_printf("%s.......", tmp) ;   /* Add spacing...better for rotating text. */
 	g_free(tmp) ;
 
@@ -245,8 +251,11 @@ void zmapControlWindowSetStatus(ZMap zmap)
 	      if (sources_loading)
 		g_string_append_printf(load_status_str, "Columns still loading:\n %s\n\n", sources_loading) ;
 
+	      if (sources_empty)
+		g_string_append_printf(load_status_str, "Columns empty:\n %s\n\n", sources_empty) ;
+
 	      if (sources_failing)
-		g_string_append_printf(load_status_str, "Columns failed to load:\n %s", sources_failing) ;
+		g_string_append_printf(load_status_str, "Columns failed to load:\n %s\n\n", sources_failing) ;
 
 	      gtk_tooltips_set_tip(zmap->tooltips, zmap->status_entry,
 				   load_status_str->str,
@@ -254,6 +263,7 @@ void zmapControlWindowSetStatus(ZMap zmap)
 
 	      g_string_free(load_status_str, TRUE) ;
 	      g_free(sources_loading) ;
+	      g_free(sources_empty) ;
 	      g_free(sources_failing) ;
 	    }
 	  else
@@ -323,7 +333,9 @@ void zmapControlWindowSetStatus(ZMap zmap)
  * is provided by the event box. */
 static GtkWidget *makeStatusPanel(ZMap zmap)
 {
-  GtkWidget *status_box, *frame, *event_box ;
+  GtkWidget *status_box = NULL , *frame, *event_box ;
+
+  zMapReturnValIfFail(zmap, status_box) ; 
 
   status_box = gtk_hbox_new(FALSE, 0) ;
 
@@ -356,7 +368,9 @@ static GtkWidget *makeStatusPanel(ZMap zmap)
  * code. */
 static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data)
 {
-  ZMap zmap = (ZMap)cb_data ;
+  ZMap zmap = NULL ; 
+  zMapReturnIfFail(cb_data) ; 
+  zmap = (ZMap)cb_data ;
   GList *destroyed_views = NULL ;
   
   /* This function is called when gtk has sent a destroy signal to our toplevel window,
@@ -393,6 +407,7 @@ static void setTooltips(ZMap zmap)
 
 static void makeStatusTooltips(ZMap zmap)
 {
+  zMapReturnIfFail(zmap) ; 
 
   gtk_tooltips_set_tip(zmap->tooltips, gtk_widget_get_parent(zmap->status_revcomp),
 		       "\"+\" = forward complement,\n \"-\"  = reverse complement",
@@ -460,7 +475,7 @@ void zmapControlWindowMaximize(GtkWidget *widget, ZMap zmap)
        * come back in 64 bits.
        *
        *  */
-      int window_width_guess = 300, window_height_guess ;
+      int window_width_guess = 300, window_height_guess = 300 ;
       gboolean result ;
       GdkWindow *root_window ;
       gulong offset, length ;
@@ -522,9 +537,9 @@ void zmapControlWindowMaximize(GtkWidget *widget, ZMap zmap)
 	  memcpy(&right, (curr += field_size), field_size) ;
 	  memcpy(&bottom, (curr += field_size), field_size) ;
 	  g_free(data) ;
-	}
 
-      window_height_guess = bottom - top ;
+          window_height_guess = bottom - top ;
+        }
 
       /* We now know the screen size and the work area size so we can set the window accordingly,
        * note how we set the width small knowing that gtk will make it only as big as it needs
@@ -612,7 +627,9 @@ gboolean myWindowMaximize(GtkWidget *widget, GdkEvent  *event, gpointer user_dat
 static gboolean rotateTextCB(gpointer user_data)
 {
   gboolean call_again = TRUE ;				    /* Keep calling us. */
-  ZMap zmap = (ZMap)user_data ;
+  ZMap zmap = NULL ; 
+  zMapReturnValIfFail(user_data, call_again) ; 
+  zmap = (ZMap)user_data ;
 
   if (zmap->state == ZMAP_DYING)
     {
@@ -630,19 +647,23 @@ static gboolean rotateTextCB(gpointer user_data)
 	buffer = g_string_sized_new(1000) ;
 
       view = zMapViewGetView(zmap->focus_viewwindow) ;
-      view_state = zMapViewGetStatus(view) ;
 
-      entry_widg = zmap->status_entry ;
-      if ((entry_text = (char *)gtk_entry_get_text(GTK_ENTRY(entry_widg))))
-	{
-	  buffer = g_string_assign(buffer, (entry_text + 1)) ;
-	  buffer = g_string_append_c(buffer, *entry_text) ;
+      if (view)
+        {
+          view_state = zMapViewGetStatus(view) ;
 
-	  gtk_entry_set_text(GTK_ENTRY(entry_widg), buffer->str) ;
-	}
+          entry_widg = zmap->status_entry ;
+          if ((entry_text = (char *)gtk_entry_get_text(GTK_ENTRY(entry_widg))))
+            {
+              buffer = g_string_assign(buffer, (entry_text + 1)) ;
+              buffer = g_string_append_c(buffer, *entry_text) ;
 
-      if (view_state == ZMAPVIEW_LOADED)
-	call_again = FALSE ;				    /* Stop calling us. */
+              gtk_entry_set_text(GTK_ENTRY(entry_widg), buffer->str) ;
+            }
+
+          if (view_state == ZMAPVIEW_LOADED)
+            call_again = FALSE ;				    /* Stop calling us. */
+        }
     }
 
   return call_again ;

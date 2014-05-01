@@ -1,0 +1,72 @@
+#
+# This is an optional configuration file to set up ZMap data sources and to customize
+# many other aspects of ZMap's behaviour.
+#
+# To use this config file, run zmap with the --conf_dir and/or --conf_file arguments
+# on the command line. Alternatively, name it ~/.ZMap/ZMap and zmap will use it by default.
+#
+# For a full list of configuration options see the documentation in the source code here:
+#   doc/user/configuration.shtml
+#
+
+
+#
+# ZMap stanza: this controls zmap-wide settings
+#
+[ZMap]
+default-sequence=chr6-18
+
+# Sequence name/start/end can be specified here or on the command-line
+sequence=chr6-18
+start=2696324
+end=2864370
+
+# Individual stanzas for particular sources can be specified for sources listed here
+sources=chr6-18
+stylesfile=styles.ini
+
+# Set data-dir to absolute path if not running from the examples directory; 
+# or use an absolute path in the url and get rid of data-dir;
+# or pass files on command line instead of using data-dir and url.
+#data-dir=./
+
+
+
+
+#
+# ZMapWindow stanza: controls general settings for the zmap display
+#
+[ZMapWindow]
+canvas-maxsize = 10000
+colour-column-highlight = cornsilk
+colour-filtered-column = pink
+colour-frame-0 = #ffe6e6
+colour-frame-1 = #e6ffe6
+colour-frame-2 = #e6e6ff
+colour-masked-feature-border = dark grey
+colour-masked-feature-fill = light grey
+cursor = zmap_thincross
+feature-line-width = 1
+feature-spacing = 4.0
+
+
+#
+# Blixem stanza: this determines how to start Blixem and which featuresets to send to it
+#
+[blixem]
+script = blixemh
+config-file = ./blixemrc
+dna-featuresets = EST_Human ; EST_Mouse ; EST_Other ; vertebrate_mRNA ; OTF_mRNA
+protein-featuresets = SwissProt ; TrEMBL
+featuresets = Coding ; Known_CDS ; Novel_CDS ; Putative_CDS ; Nonsense_mediated_decay ; Non_stop_decay ; polya_signal ; polya_site ; ensembl_variation
+homol-max = 0
+scope = 200000
+
+
+#
+# Source stanzas: these control individual settings for particular sources
+# They are not required if just passing GFF files on the command-line
+#
+#[chr6-18]
+#url=file:///features.gff
+#featuresets = DNA ; 3 Frame ; 3 Frame Translation ; Scratch 

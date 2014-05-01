@@ -1,0 +1,70 @@
+<head>
+  <title>ZMap - Release Notes</title>
+</head>
+
+
+<body>
+<h2>ZMap - Release Notes</h2>
+
+<h4>Version 0.22.0</h4>
+<ul>
+  <li>ZMap now supports GFF version 3
+  <li>ZMap can now run standalone on a GFF (v2 or v3) file without requiring any configuration files
+</ul>
+
+<h4>Version 0.21.0</h4>
+<p>The following bugs in ZMap have been fixed:</p>
+<ul>
+  <li>graph drawing broken in several ways, e.g. log/linear style config does not work, also need "fill" mode.
+  <li>incorrect coords are displayed when you select an alignment gap.
+  <li>introns were being changed to deletions when passed to Blixem.
+  <li>composite features are not selectable.
+  <li>import dialog: the file type was not being correctly identified, and in GFF files spaces were being replaced by tabs.
+  <li>off-by-one drawing/clicking errors.
+</ul>
+
+<h4>Version 0.20.0</h4>
+<ul>
+  <li>Information in the ZMap features window is reordered
+  <li>Several feature redrawing bugs have been fixed.
+</ul>
+
+<h4>Version 0.19.0</h4>
+<ul>
+  <li>Prototype Annotation column in ZMap.  To turn this on, open the Columns dialog and click "Show" next to "Annotation". This will enable an Annotation submenu which will be visible when you right click.
+  <li>ORF column in 3 frame translation
+</ul>
+
+<h4>Version 0.18.0</h4>
+<ul>
+  <li>Zmap no longer has problems redrawing when zooming with DNA shown
+  <li>Fix a bug with the printing of decimal values in zmap's coordinate bar
+  <li>Fix a bug where some features are too narrow
+  <li>Fix an off-by-one error drawing the outline for gapped alignments
+  <li>Fix crashing in Show Translation caused by pathological cases
+</ul>
+
+<h4>Version 0.17.0</h4>
+<ul>
+  <li>Better highlighting of zmap active window: when you split a zmap window several times it can be confusing to know which window is the 'focus' window, now the title (sequence name) for the focus window will be highlighted in red.
+</Ul>
+
+<H4>Version 0.16.0</h4>
+<ul>
+  <li>number of failed columns was over-reported
+</ul>
+
+<h4>Version 0.15.0</h4>
+<ul>
+  <li>Multiple sessions can now be opened within the same Zmap
+  <li>Memory management bugs fixed in zmap
+</ul>
+
+<h4>Version 0.14.0</h4>
+<ul>
+  <li>Filtered columns now highlighted
+  <li>Fix a bug where scroll to feature fails when zoomed in
+  <li>Fix a bug where the view shifts when performing a vertical split
+</ul>
+
+</body>

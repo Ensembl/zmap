@@ -1,6 +1,6 @@
 /*  File: zmapSO.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -132,7 +132,7 @@ GQuark zMapSOVariation2SO(char *variation_str)
   static GRegex *insertion_exp = NULL, *lots_insertion_exp, *deletion_exp, *lots_deletion_exp,
     *snp_exp, *substitution_exp, *alteration_exp ;
   /* GMatchInfo *match_info ; */
-  GQuark var_id ;
+  GQuark var_id = 0 ;
 
   if (!insertion_exp)
     {

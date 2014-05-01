@@ -1,8 +1,8 @@
 /*  File: zmapWindowCanvasSequence.c
  *  Author: Malcolm Hinsley (mh17@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
- * ZMap is free software; you can refeaturesetstribute it and/or
+ * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
@@ -113,7 +113,7 @@ static void zmapWindowCanvasSequenceGetPango(GdkDrawable *drawable, ZMapWindowFe
 
   if ((pango = (ZMapWindowCanvasPango)(featureset->opt)))
     {
-      if (pango->drawable && pango->drawable != drawable)
+      if (drawable && pango->drawable && pango->drawable != drawable)
 	zmapWindowCanvasFeaturesetFreePango(pango);
 
       if (!pango->renderer)
@@ -577,10 +577,15 @@ static void zmapWindowCanvasSequencePreZoom(ZMapWindowFeaturesetItem featureset)
 
 
 /* I don't know why drawable is passed in here....check other canvas types to see how it's used.... */
-static void zmapWindowCanvasSequenceZoomSet(ZMapWindowFeaturesetItem featureset, GdkDrawable *drawable_unused)
+static void zmapWindowCanvasSequenceZoomSet(ZMapWindowFeaturesetItem featureset, GdkDrawable *drawable)
 {
   ZMapWindowCanvasSequence seq ;
   ZMapSkipList sl ;
+  
+  ZMapWindowCanvasPango pango = (ZMapWindowCanvasPango) featureset->opt;
+
+  if (!pango)
+    return;
 
   /* calculate bases per line */
   //	zMapDebugPrintf("sequence zoom (%.5f)\n", featureset->zoom);	/* is pixels per unit y */
@@ -595,6 +600,8 @@ static void zmapWindowCanvasSequenceZoomSet(ZMapWindowFeaturesetItem featureset,
   for (sl = zMapSkipListFirst(featureset->display_index) ; sl ; sl = sl->next)
     {
       seq = (ZMapWindowCanvasSequence)(sl->data) ;
+
+      zmapWindowCanvasSequenceGetPango(drawable, featureset, seq);
 
 
 
@@ -713,7 +720,6 @@ static void zmapWindowCanvasSequenceSetColour(FooCanvasItem *foo,
 	  break;
 
 	case ZMAPSTYLE_COLOURTYPE_SELECTED:
-	  zMapAssert(sub_feature);
 
 	  /* zmapStyleSetColour() according to sub_part->subpart */
 	  colour_pixel = zMap_gdk_color_to_rgba(default_fill);
@@ -784,7 +790,7 @@ gboolean zMapWindowCanvasFeaturesetGetSeqCoord(ZMapWindowFeaturesetItem features
   /* get y coordinate as left hand base/ residue of current row */
   static ZMapWindowCanvasSequence seq = NULL;
   static long seq_origin;		/* is fixed once set */
-  ZMapSkipList sl;
+  ZMapSkipList sl = NULL ;
   long seq_y, seq_x;
   ZMapWindowCanvasPango pango = (ZMapWindowCanvasPango) featureset->opt;
 
@@ -803,8 +809,12 @@ gboolean zMapWindowCanvasFeaturesetGetSeqCoord(ZMapWindowFeaturesetItem features
       //		if(x >= featureset->x_off + featureset->dx && x <= featureset->x_off + featureset->dx + featureset->width)
       break;
     }
-  if(!sl || !seq)
-    return FALSE;	/* should not happen */
+
+  if(!seq)
+    {
+      zMapWarnIfReached() ;
+      return FALSE;	/* should not happen */
+    }
 
   /* get y coordinate as left hand base/ residue of current row */
 

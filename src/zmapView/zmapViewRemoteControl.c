@@ -1,17 +1,17 @@
 /*  File: zmapViewRemoteControl.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2012: Genome Research Ltd.
+ *  Copyright (c) 2012-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -29,7 +29,7 @@
  *              level to a remote peer.
  *
  * Exported functions: See ZMap/zmapView.h
- * 
+ *
  * Created: Mon Mar 26 13:35:27 2012 (edgrif)
  *-------------------------------------------------------------------
  */
@@ -270,7 +270,7 @@ static CommandDescriptorStruct command_table_G[] =
 
 
 /* xml parser callbacks */
-static ZMapXMLObjTagFunctionsStruct view_starts_G[] = 
+static ZMapXMLObjTagFunctionsStruct view_starts_G[] =
   {
     { "zmap",       xml_zmap_start_cb                  },
     { "request",    xml_request_start_cb               },
@@ -296,7 +296,7 @@ static ZMapXMLObjTagFunctionsStruct view_ends_G[] =
 
 
 
-/* 
+/*
  *                     External interface
  */
 
@@ -536,7 +536,7 @@ static ZMapFeature createLocusFeature(ZMapFeatureContext context, ZMapFeature fe
 
   old_feature = (ZMapFeature)zMapFeatureContextFindFeatureFromFeature(context, (ZMapFeatureAny)feature) ;
 
-  if ((old_feature) && (old_feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
+  if ((old_feature) && (old_feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
       && (old_feature->feature.transcript.locus_id != 0)
       && (old_feature->feature.transcript.locus_id != new_locus_id))
     {
@@ -777,8 +777,9 @@ static gboolean mergeNewFeatures(ZMapView view, RequestData request_data,
 				 ZMapFeatureContext *merge_context, GList **feature_list)
 {
   gboolean result = FALSE ;
+  ZMapFeatureContextMergeStats merge_stats = NULL  ;
 
-  result = zmapViewMergeNewFeatures(view, merge_context, feature_list) ;
+  result = zmapViewMergeNewFeatures(view, merge_context, &merge_stats, feature_list) ;
 
   if (!result)
     {
@@ -795,6 +796,10 @@ static gboolean mergeNewFeatures(ZMapView view, RequestData request_data,
 
       result = TRUE ;
     }
+
+  /* Add total features drawn. */
+  g_string_append_printf(request_data->err_msg, " Total features drawn: %d", merge_stats->features_added) ;
+  g_free(merge_stats) ;
 
   return result ;
 }
@@ -819,7 +824,7 @@ static void draw_failed_make_message(gpointer list_data, gpointer user_data)
     }
   else
     {
-      
+
 
       g_string_append_printf(request_data->err_msg,
 			     "Failed to draw feature '%s' [%s]. Unknown reason, check zmap log file.\n",
@@ -882,7 +887,9 @@ static void loadFeatures(ZMapView view, RequestData request_data)
   gboolean use_mark = FALSE ;
   int start = 0, end = 0 ;
 
+
   request_data->command_rc = REMOTE_COMMAND_RC_OK ;
+  request_data->msg = "Launched feature loading request !" ;
 
   /* If mark then get mark, otherwise get big start/end. */
   if (request_data->use_mark)
@@ -1039,58 +1046,71 @@ static gboolean xml_request_start_cb(gpointer user_data, ZMapXMLElement set_elem
   ZMapXMLAttribute attr = NULL;
   char *err_msg = NULL ;
 
-  request_data->cmd_desc = cmdGetDesc(request_data->command_id) ;
-
-  zMapAssert(request_data->cmd_desc) ;
-
-
-  request_data->orig_context = zMapViewGetFeatures(request_data->view_window->parent_view) ;
-
-
-  /* For actions that change the feature context create an "edit" context. */
-  if (request_data->cmd_desc->is_edit)
+  if (!(request_data->cmd_desc = cmdGetDesc(request_data->command_id)))
     {
-      request_data->edit_context
-	= (ZMapFeatureContext)zMapFeatureAnyCopy((ZMapFeatureAny)(request_data->orig_context)) ;
+      err_msg = g_strdup_printf("Could not find command description for command_id %s in xml request.",
+                                g_quark_to_string(request_data->command_id)) ;
 
-      if (request_data->command_id == g_quark_from_string(ZACP_REPLACE_FEATURE))
-	request_data->replace_context
-	  = (ZMapFeatureContext)zMapFeatureAnyCopy((ZMapFeatureAny)(request_data->orig_context)) ;
-    }
+      zMapLogCritical("%s", err_msg) ;
 
-
-  if (request_data->command_id == g_quark_from_string(ZACP_LOAD_FEATURES))
-    {
-      if ((attr = zMapXMLElementGetAttributeByName(set_element, "load")))
-	{
-	  GQuark load_id ;
-
-	  load_id = zMapXMLAttributeGetValue(attr) ;
-
-	  if (zMapLogQuarkIsStr(load_id, "mark"))
-	    {
-	      request_data->use_mark = TRUE ;
-	    }
-	  else if (zMapLogQuarkIsStr(load_id, "full"))
-	    {
-	      request_data->use_mark = FALSE ;
-	    }
-	  else
-	    {
-	      err_msg = g_strdup_printf("Value \"%s\" for \"load\" attr is unknown.", g_quark_to_string(load_id)) ;
-
-	      result = FALSE ;
-	    }
-	}
-    }
-
-  if (!result)
-    {
       request_data->command_rc = REMOTE_COMMAND_RC_BAD_XML ;
 
       zMapXMLParserRaiseParsingError(parser, err_msg) ;
 
       g_free(err_msg) ;
+
+      result = FALSE ;
+    }
+  else
+    {
+      request_data->orig_context = zMapViewGetFeatures(request_data->view_window->parent_view) ;
+
+
+      /* For actions that change the feature context create an "edit" context. */
+      if (request_data->cmd_desc->is_edit)
+        {
+          request_data->edit_context
+            = (ZMapFeatureContext)zMapFeatureAnyCopy((ZMapFeatureAny)(request_data->orig_context)) ;
+
+          if (request_data->command_id == g_quark_from_string(ZACP_REPLACE_FEATURE))
+            request_data->replace_context
+              = (ZMapFeatureContext)zMapFeatureAnyCopy((ZMapFeatureAny)(request_data->orig_context)) ;
+        }
+
+
+      if (request_data->command_id == g_quark_from_string(ZACP_LOAD_FEATURES))
+        {
+          if ((attr = zMapXMLElementGetAttributeByName(set_element, "load")))
+            {
+              GQuark load_id ;
+
+              load_id = zMapXMLAttributeGetValue(attr) ;
+
+              if (zMapLogQuarkIsStr(load_id, "mark"))
+                {
+                  request_data->use_mark = TRUE ;
+                }
+              else if (zMapLogQuarkIsStr(load_id, "full"))
+                {
+                  request_data->use_mark = FALSE ;
+                }
+              else
+                {
+                  err_msg = g_strdup_printf("Value \"%s\" for \"load\" attr is unknown.", g_quark_to_string(load_id)) ;
+
+                  result = FALSE ;
+                }
+            }
+        }
+
+      if (!result)
+        {
+          request_data->command_rc = REMOTE_COMMAND_RC_BAD_XML ;
+
+          zMapXMLParserRaiseParsingError(parser, err_msg) ;
+
+          g_free(err_msg) ;
+        }
     }
 
   return result ;
@@ -1342,7 +1362,7 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 				request_data->request) ;
       zMapXMLParserRaiseParsingError(parser, err_msg) ;
       g_free(err_msg) ;
-	      
+
       result = FALSE ;
     }
   else
@@ -1365,13 +1385,13 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 					request_data->request) ;
 	      zMapXMLParserRaiseParsingError(parser, err_msg) ;
 	      g_free(err_msg) ;
-	      
+
 	      result = FALSE ;
 	    }
 	}
-	  
+
       if (result)
-	{ 
+	{
 	  /* Record original name and unique names for feature set, all look-ups are via the latter. */
 	  featureset_id = zMapXMLAttributeGetValue(attr) ;
 	  featureset_name = (char *)g_quark_to_string(featureset_id) ;
@@ -1415,7 +1435,7 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 		}
 
 	      zMapFeatureBlockAddFeatureSet(request_data->edit_block, feature_set) ;
-	      
+
 	      request_data->edit_feature_set = feature_set ;
 
 	      result = TRUE ;
@@ -1499,8 +1519,8 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 	  // as load features processes a complete step list that inludes requesting the style
 	  // then if the style is not there then we'll drop the features
 	  ZMapFeatureTypeStyle style ;
-	  
-	  if ((style = zMapFindStyle(request_data->view_window->parent_view->context_map.styles, 
+
+	  if ((style = zMapFindStyle(request_data->view_window->parent_view->context_map.styles,
 				     request_data->style_id)))
 	    {
 	      /* Make sure style is correct for what might be a new column. */
@@ -1981,7 +2001,7 @@ static gboolean xml_subfeature_end_cb(gpointer user_data, ZMapXMLElement sub_ele
 
       ontology = zMapXMLAttributeGetValue(attr) ;
 
-      feature->type = ZMAPSTYLE_MODE_TRANSCRIPT;
+      feature->mode = ZMAPSTYLE_MODE_TRANSCRIPT;
 
       if (valid && (attr = zMapXMLElementGetAttributeByName(sub_element, "start")))
         {

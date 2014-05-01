@@ -1,0 +1,25 @@
+
+ZMap examples directory
+-----------------------
+
+This directory contains some sample data to try out ZMap with.
+
+You can run zmap in several ways depending on whether you want to use config files or not:
+
+- To run zmap on a simple GFF file without any config files:
+    zmap examples/features.gff
+
+- To run zmap on a GFF file using the styles file:
+    zmap --styles_file=examples/styles.ini examples/features.gff
+
+- To run zmap on a GFF file using the config and styles files:
+    zmap --conf_dir=examples examples/features.gff
+
+- To run zmap using data sources specified in the config file:
+    1. Edit examples/ZMap
+    2. Un-comment the "data-dir" and/or "url" values and set the paths to the directory/file
+       (or leave them as relative paths and cd to the examples directory)
+    3. Set the "script" and "config-file" paths in the [blixem] stanza if you will want to
+       call Blixem from zmap.
+    4. Run zmap as follows:
+          zmap --conf_dir=/path/to/examples/

@@ -1,6 +1,6 @@
 /*  File: zmapWindowCanvasGraphItem.c
  *  Author: Malcolm Hinsley (mh17@sanger.ac.uk)
- *  Copyright (c) 2006-2012 Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -85,7 +85,7 @@ static void graphPaintPrepare(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
 static void graphPaintFeature(ZMapWindowFeaturesetItem featureset, ZMapWindowCanvasFeature feature,
                               GdkDrawable *drawable, GdkEventExpose *expose) ;
 static void graphPreZoom(ZMapWindowFeaturesetItem featureset) ;
-static void graphZoomSet(ZMapWindowFeaturesetItem featureset, GdkDrawable *drawable) ;
+static void graphZoom(ZMapWindowFeaturesetItem featureset, GdkDrawable *drawable) ;
 static GList *densityCalcBins(ZMapWindowFeaturesetItem di) ;
 static void setColumnStyle(ZMapWindowFeaturesetItem featureset, ZMapFeatureTypeStyle feature_style) ;
 
@@ -117,7 +117,7 @@ void zMapWindowCanvasGraphInit(void)
   funcs[FUNC_PAINT] = graphPaintFeature ;
   funcs[FUNC_FLUSH] = graphPaintFlush ;
   funcs[FUNC_PRE_ZOOM] = graphPreZoom ;
-  funcs[FUNC_ZOOM] = graphZoomSet ;
+  funcs[FUNC_ZOOM] = graphZoom ;
 
   zMapWindowCanvasFeatureSetSetFuncs(FEATURE_GRAPH, funcs, 0, sizeof(ZMapWindowCanvasGraphStruct)) ;
 
@@ -147,10 +147,9 @@ static void graphInit(ZMapWindowFeaturesetItem featureset)
 }
 
 
-/* Called before any zooming, this column needs to be recalculated with every zoom and
- * we do this by resetting our zoom level to 0 which triggers the featureset zoom
- * code to call our zoom routine. This is required because we need special
- * processing on zoom not just box/line resizing. */
+/* Called before any zooming, this column needs to be recalculated with every zoom, this call sets
+ * a flag to make sure this happens.  This is required because we need special processing on zoom
+ * not just box/line resizing. */
 static void graphPreZoom(ZMapWindowFeaturesetItem featureset)
 {
   zMapWindowCanvasFeaturesetSetZoomRecalc(featureset, TRUE) ;
@@ -161,7 +160,7 @@ static void graphPreZoom(ZMapWindowFeaturesetItem featureset)
 
 
 /* Recalculate the bins if the zoom level changes */
-static void graphZoomSet(ZMapWindowFeaturesetItem featureset, GdkDrawable *drawable)
+static void graphZoom(ZMapWindowFeaturesetItem featureset, GdkDrawable *drawable)
 {
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* unused currently. */
@@ -227,7 +226,7 @@ static void graphPaintPrepare(ZMapWindowFeaturesetItem featureset, ZMapWindowCan
 {
   ZMapWindowCanvasGraph graph_set = (ZMapWindowCanvasGraph)(featureset->opt) ;
   int cx2 = 0, cy2 = 0 ;                                    /* initialised for LINE mode */
-  double x2, y2 ;
+  double x2 = 0, y2 = 0 ;
   FooCanvasItem *item = (FooCanvasItem *)featureset ;
 
 
@@ -1038,7 +1037,7 @@ static void setColumnStyle(ZMapWindowFeaturesetItem featureset, ZMapFeatureTypeS
   /* UM....WHAT ON EARTH WAS I DOING HERE...JUST TESTING...???? */
   if (zMapStyleIsPropertySetId(feature_style, STYLE_PROP_GRAPH_COLOURS))
     {
-      GdkColor *fill, *draw, *border ;
+      GdkColor *fill = NULL, *draw = NULL, *border  = NULL;
 
       if (zMapStyleGetColours(feature_style, STYLE_PROP_GRAPH_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
                               &fill, &draw, &border))

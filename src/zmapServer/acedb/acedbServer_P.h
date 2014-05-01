@@ -1,7 +1,6 @@
-/*  Last edited: Jul 23 14:58 2012 (edgrif) */
 /*  File: acedbServer_P.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -96,6 +95,10 @@ typedef struct _AcedbServerStruct
   ZMapFeatureContext current_context ;
 
   gint zmap_start, zmap_end ;				    /* request coordinates for our one block */
+
+
+  gint gff_version ;                                        /* Which version of gff to request from acedb. */
+
 
 } AcedbServerStruct, *AcedbServer ;
 

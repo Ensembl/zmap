@@ -1,6 +1,6 @@
 /*  File: zmapUtils.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -172,10 +172,10 @@ gboolean zMapLogCreate(char *logname) ;
 gboolean zMapLogConfigure(gboolean logging, gboolean log_to_file,
 			  gboolean show_process, gboolean show_code, gboolean show_time,
 			  gboolean catch_glib, gboolean echo_glib,
-			  char *logfile_path) ;
+                          char *logfile_path, GError **error) ;
 void zMapWriteStartMsg(void) ;
 void zMapWriteStopMsg(void) ;
-gboolean zMapLogStart(void) ;
+gboolean zMapLogStart(GError **error) ;
 int zMapLogFileSize(void) ;
 gboolean zMapLogStop(void) ;
 void zMapLogStack(void);
@@ -187,7 +187,7 @@ gboolean zMapStack2fd(unsigned int remove, int fd) ;
 void zMapSignalHandler(int sig_no) ;
 
 char *zMapGetDir(char *directory_in, gboolean home_relative, gboolean make_dir) ;
-char *zMapGetFile(char *directory, char *filename, gboolean make_file) ;
+char *zMapGetFile(char *directory, char *filename, gboolean make_file, GError **error) ;
 char *zMapGetPath(char *path_in) ;
 char *zMapGetBasename(char *path_in) ;
 char *zMapExpandFilePath(char *path_in) ;
@@ -210,6 +210,7 @@ gboolean zMapUtilsConfigDebug(char *config_file) ;
 
 char *zMapMakeUniqueID(char *prefix) ;
 
+guint zMapUtilsGetRawTime(void) ;
 char *zMapGetTimeString(ZMapTimeFormat format, char *format_str_in) ;
 
 const char *zMapUtilsPtr2Str(void *ptr) ;
@@ -260,5 +261,7 @@ void zMapCoordsToOffset(int base, int start_value, int *start_inout, int *end_in
 typedef guint ZMapRadixKeyFunc (gconstpointer thing,int digit);
 GList * zMapRadixSort(GList *list, ZMapRadixKeyFunc *key_func,int key_size);
 
+gboolean zMapUtilsBioParseChromLoc(char *location_str, char **chromsome_out, int *start_out, int *end_out) ;
+gboolean zMapUtilsBioParseChromNumber(char *chromosome_str, char **chromosome_out) ;
 
 #endif /* ZMAP_UTILS_H */

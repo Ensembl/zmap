@@ -1,6 +1,6 @@
 /*  File: zmapFeatureDNA.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -46,7 +46,8 @@ gboolean zMapFeatureBlockDNA(ZMapFeatureBlock block,
   gboolean result = FALSE;
   ZMapFeatureContext context = NULL;
 
-  zMapAssert( block ) ;
+  if ( !block ) 
+    return result ;
 
   if(block->sequence.sequence &&
      block->sequence.type != ZMAPSEQUENCE_NONE &&
@@ -149,9 +150,8 @@ ZMapFeature zMapFeatureDNACreateFeature(ZMapFeatureBlock     block,
   ZMapFeature dna_feature = NULL;
   GQuark dna_set_id = 0;
 
-  zMapAssert(block);
-  zMapAssert(dna_str);
-  zMapAssert(sequence_length != 0);
+  if (!block || !dna_str || !sequence_length)
+    return dna_feature ;
 
   dna_set_id      = zMapFeatureSetCreateID(ZMAP_FIXED_STYLE_DNA_NAME);
 
@@ -254,7 +254,7 @@ static ZMapFeatureContextExecuteStatus oneBlockHasDNA(GQuark key,
       break;
     case ZMAPFEATURE_STRUCT_INVALID:
     default:
-      zMapAssertNotReached();
+      zMapWarnIfReached();
       break;
 
     }

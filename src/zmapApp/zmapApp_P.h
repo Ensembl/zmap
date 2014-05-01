@@ -1,6 +1,6 @@
-/*  File: zmapApp.h
+/*  File: zmapApp_P.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -37,13 +37,26 @@
 #include <ZMap/zmapRemoteControl.h>
 #include <ZMap/zmapAppRemote.h>
 #include <ZMap/zmapManager.h>
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-#include <ZMap/zmapXRemote.h>
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 #include <ZMap/zmapAppServices.h>
+
+
+/*
+ * We follow glib convention in error domain naming:
+ *          "The error domain is called <NAMESPACE>_<MODULE>_ERROR"
+ */
+#define ZMAP_APP_ERROR g_quark_from_string("ZMAP_APP_ERROR")
+
+typedef enum
+{
+  ZMAPAPP_ERROR_BAD_SEQUENCE_DETAILS,
+  ZMAPAPP_ERROR_BAD_COORDS,
+  ZMAPAPP_ERROR_GFF_HEADER,
+  ZMAPAPP_ERROR_GFF_PARSER,
+  ZMAPAPP_ERROR_GFF_VERSION,
+  ZMAPAPP_ERROR_OPENING_FILE,
+  ZMAPAPP_ERROR_CHECK_FILE,
+  ZMAPAPP_ERROR_NO_SOURCES
+} ZMapUtilsError;
 
 
 /* Minimum GTK version supported. */
@@ -69,25 +82,40 @@ enum
 
     ZMAP_WINDOW_TIMEOUT_MS = 2000,			    /* Length of timeout in milliseconds.  */
 
-    ZMAP_WINDOW_RETRIES = 20				    /* How many retries of window id when
+    ZMAP_WINDOW_RETRIES = 20,				    /* How many retries of window id when
 							       we timeout for a command. */
 
+    ZMAP_APP_REMOTE_TIMEOUT_S = 3600,                       /* How long to wait before warning user that
+                                                               zmap has no sequence displayed and has
+                                                               had no interaction with its
+                                                               peer (seconds). */
+
+    ZMAP_DEFAULT_MAX_LOG_SIZE = 100                         /* Max size of log file before we
+                                                             * start warning user that log file is very
+                                                             * big (in megabytes). */
   } ;
 
 
-/* Max size of log file before we start warning user that log file is very big (in megabytes). */
-enum {ZMAP_DEFAULT_MAX_LOG_SIZE = 100} ;
+
+/* cols in connection list. */
+enum {ZMAP_NUM_COLS = 4} ;
+
+enum {
+  ZMAPID_COLUMN,
+  ZMAPSEQUENCE_COLUMN,
+  ZMAPSTATE_COLUMN,
+  ZMAPLASTREQUEST_COLUMN,
+  ZMAPDATA_COLUMN,
+  ZMAP_N_COLUMNS
+};
+
 
 
 /* General CB function typedef. */
 typedef void (*ZMapAppCBFunc)(void *cb_data) ;
 
 
-
-
-/*                   NEW XREMOTE                                  */
-
-
+/* Struct for zmap's remote control object. */
 typedef struct _ZMapAppRemoteStruct
 {
   /* Our names/text etc. */
@@ -109,6 +137,13 @@ typedef struct _ZMapAppRemoteStruct
   char *peer_window_str ;
   int window_retries_max ;
   int window_retries_left ;
+
+  /* When operating with a peer we have an overall timeout time, this allows us to
+   * warn the user if we have no view displayed and there has been no activity with
+   * the peer for a long time. */
+  guint inactive_timeout_interval_s ;                       /* Time out interval. */
+  guint inactive_func_id ;                                  /* glib timeout handler func. id. */
+  time_t last_active_time_s ;                               /* Last remote request, in or out. */
 
 
   /* There are some requests that can only be serviced _after_ we are sure the peer
@@ -183,6 +218,11 @@ typedef struct _ZMapAppContextStruct
   GtkTreeStore *tree_store_widg ;
 
 
+  /* Special colour to visually group zmap with it's peer window(s), colour is set by peer or user. */
+  gboolean session_colour_set ;
+  GdkColor session_colour ;
+
+
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* Is this needed any more ?? */
@@ -207,18 +247,6 @@ typedef struct _ZMapAppContextStruct
   ZMapAppRemote remote_control ;
 
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* old xremote stuff... */
-  gulong property_notify_event_id;
-  ZMapXRemoteObj xremote_client ;			    /* The external program we are sending
-							       commands to. */
-  gboolean sent_finalised ;				    /* ?????? */
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-
   gboolean show_mainwindow ;				    /* Should main window be displayed. */
   gboolean defer_hiding ;				    /* Should hide of main window be deferred ? */
 
@@ -236,19 +264,6 @@ typedef struct _ZMapAppContextStruct
 
 
 } ZMapAppContextStruct, *ZMapAppContext ;
-
-
-/* cols in connection list. */
-enum {ZMAP_NUM_COLS = 4} ;
-
-enum {
-  ZMAPID_COLUMN,
-  ZMAPSEQUENCE_COLUMN,
-  ZMAPSTATE_COLUMN,
-  ZMAPLASTREQUEST_COLUMN,
-  ZMAPDATA_COLUMN,
-  ZMAP_N_COLUMNS
-};
 
 
 int zmapMainMakeAppWindow(int argc, char *argv[]) ;

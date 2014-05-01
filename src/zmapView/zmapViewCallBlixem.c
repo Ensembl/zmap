@@ -1,6 +1,6 @@
 /*  File: zmapViewCallBlixem.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -33,13 +33,14 @@
  *-------------------------------------------------------------------
  */
 
+#include <ZMap/zmap.h>
+
 #include <unistd.h>					    /* for getlogin() */
 #include <string.h>					    /* for memcpy */
 #include <sys/types.h>					    /* for chmod() */
 #include <sys/stat.h>					    /* for chmod() */
 #include <glib.h>
 
-#include <ZMap/zmap.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapSO.h>
 #include <ZMap/zmapGLibUtils.h>
@@ -57,6 +58,7 @@ enum
     BLIX_DEFAULT_SCOPE = 40000				    /* default 'width' of blixem sequence/features. */
   } ;
 
+#define BLIX_DEFAULT_SCRIPT "blixemh"                       /* default executable name */
 
 #define ZMAP_BLIXEM_CONFIG "blixem"
 
@@ -73,6 +75,10 @@ enum
     BLX_ARGV_NETID_PORT_FLAG,   /* --fetch-server */
     BLX_ARGV_NETID_PORT,        /* [hostname:port] */
 
+    BLX_ARGV_SCREEN_FLAG,                                   /* --screen */
+    BLX_ARGV_SCREEN_NUM,                                    /* screen num as an int */
+
+    /* WHY HAVE YOU DONE THIS MALCOLM, EITHER DO ALL OF THEM OR NONE OF THEM...SIGH.... */
 //    BLX_ARGV_CONFIGFILE_FLAG = BLX_ARGV_NETID_PORT_FLAG,   /* -c */
 //    BLX_ARGV_CONFIGFILE = BLX_ARGV_NETID_PORT,             /* [filepath] */
 
@@ -693,14 +699,12 @@ static gboolean initBlixemData(ZMapView view, ZMapFeatureBlock block,
 
   blixem_data->align_set = align_set;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  blixem_data->feature = feature ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
   blixem_data->features = features ;
 
   blixem_data->feature_set = feature_set ;
 
   blixem_data->block = block ;
+
 
   /* ZMap uses the new blixem so default format is GFF by default. */
   blixem_data->file_format = BLX_FILE_FORMAT_GFF ;
@@ -854,33 +858,45 @@ static gboolean getUserPrefs(char *config_file, BlixemConfigData curr_prefs)
       zMapConfigIniContextDestroy(context);
     }
 
-  if ((file_prefs.script) && ((file_prefs.config_file) || (file_prefs.netid && file_prefs.port)))
+  /* If a config file is specified, check that it can be found */
+  if (file_prefs.config_file && !zMapFileAccess(file_prefs.config_file, "rw"))
+    {
+      zMapShowMsg(ZMAP_MSG_WARNING,
+                  "The Blixem config file \"%s\" cannot be found in your path or it is not read/writeable.",
+                  file_prefs.config_file) ;
+    }
+
+  /* We need a blixem script. If it wasn't given, set a default */
+  if (!file_prefs.script)
+    {
+      file_prefs.script = g_strdup(BLIX_DEFAULT_SCRIPT) ;
+    }
+
+  /* Check that script exists and is executable */
+  if (file_prefs.script)
     {
       char *tmp;
       tmp = file_prefs.script;
 
-      if (!(file_prefs.script = g_find_program_in_path(tmp)))
-  	    zMapShowMsg(ZMAP_MSG_WARNING,
-		    "Either can't locate \"%s\" in your path or it is not executable by you.",
-		    tmp) ;
-      g_free(tmp) ;
+      if ((file_prefs.script = g_find_program_in_path(tmp)))
+        {
+          status = TRUE ;
+        }
+      else
+        {
+          zMapShowMsg(ZMAP_MSG_WARNING,
+                      "Either can't locate \"%s\" in your path or it is not executable by you.",
+                      tmp) ;
+        }
 
-      if (file_prefs.config_file && !zMapFileAccess(file_prefs.config_file, "rw"))
-	    zMapShowMsg(ZMAP_MSG_WARNING,
-		    "Either can't locate \"%s\" in your path or it is not read/writeable.",
-		    file_prefs.config_file) ;
+      g_free(tmp) ;
     }
   else
     {
-      zMapShowMsg(ZMAP_MSG_WARNING, "Some or all of the compulsory blixem parameters "
-		  "(\"netid\", \"port\") or config_file or \"script\" are missing from your config file.");
+      zMapShowMsg(ZMAP_MSG_WARNING, "The blixem script is not specified.") ;
     }
 
-  if (file_prefs.script && file_prefs.config_file)
-     status = TRUE;
-
   file_prefs.init = TRUE;
-
 
   /* If curr_prefs is initialised then copy any curr prefs set by user into file prefs,
    * thus overriding file prefs with user prefs. Then copy file prefs into curr_prefs
@@ -1138,8 +1154,8 @@ static gboolean setBlixemScope(blixemData blixem_data)
 static gboolean makeTmpfiles(blixemData blixem_data)
 {
   gboolean    status = TRUE;
-  char       *path;
-  char       *login;
+  char       *path = NULL;
+  char       *login = NULL;
 
   if ((login = (char *)g_get_user_name()))
     {
@@ -1236,6 +1252,12 @@ static gboolean buildParamString(blixemData blixem_data, char **paramString)
   /* MH17 NOTE
      this code must operate in the same order as the enums at the top of the file
      better to recode without the 'missed flag' as this code is VERY error prone
+     
+     ************* IMPORTANT *************
+     YOU MUST: 
+      - subtract "missed" from the enum when indexing paramString
+      - if args are not available, increment "missing" by the number of args you
+        would have added if they were (noting that e.g. -c <file> is TWO arguments, not one)
   */
 
 
@@ -1243,23 +1265,34 @@ static gboolean buildParamString(blixemData blixem_data, char **paramString)
 
   if (blixem_data->config_file)
     {
-      paramString[BLX_ARGV_CONFIGFILE_FLAG] = g_strdup("-c");
-      paramString[BLX_ARGV_CONFIGFILE]      = g_strdup_printf("%s", blixem_data->config_file) ;
+      paramString[BLX_ARGV_CONFIGFILE_FLAG - missed] = g_strdup("-c");
+      paramString[BLX_ARGV_CONFIGFILE - missed]      = g_strdup_printf("%s", blixem_data->config_file) ;
     }
   else if (blixem_data->netid && blixem_data->port)
     {
-      paramString[BLX_ARGV_NETID_PORT_FLAG] = g_strdup("--fetch-server");
-      paramString[BLX_ARGV_NETID_PORT]      = g_strdup_printf("%s:%d", blixem_data->netid, blixem_data->port);
+      paramString[BLX_ARGV_NETID_PORT_FLAG - missed] = g_strdup("--fetch-server");
+      paramString[BLX_ARGV_NETID_PORT - missed]      = g_strdup_printf("%s:%d", blixem_data->netid, blixem_data->port);
     }
   else
     {
-      missed += 2;
+      missed += 2 ;
+    }
+
+  /* Might need to start blixem on a different screen. */
+  if (blixem_data->view->multi_screen)
+    {
+      paramString[BLX_ARGV_SCREEN_FLAG - missed] = g_strdup("--screen") ;
+      paramString[BLX_ARGV_SCREEN_NUM - missed] = g_strdup_printf("%d", blixem_data->view->blixem_screen) ;
+    }
+  else
+    {
+      missed += 2 ;
     }
 
   /* For testing purposes remove the "-r" flag to leave the temporary files.
    * (keep_tempfiles = true in blixem stanza of ZMap file) */
   if (!blixem_data->keep_tmpfiles)
-    paramString[BLX_ARGV_RM_TMP_FILES - missed] = g_strdup("--remove-input-files");
+    paramString[BLX_ARGV_RM_TMP_FILES - missed] = g_strdup("--remove-input-files") ;
   else
     missed += 1;
 
@@ -1277,7 +1310,7 @@ static gboolean buildParamString(blixemData blixem_data, char **paramString)
       start = end = blixem_data->position ;
 
       if (blixem_data->view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
-	zMapFeatureReverseComplementCoords(blixem_data->block, &start, &end) ;
+	zMapFeatureReverseComplementCoords(blixem_data->view->features, &start, &end) ;
 
       paramString[BLX_ARGV_START_FLAG - missed] = g_strdup("-s") ;
       paramString[BLX_ARGV_START - missed]      = g_strdup_printf("%d", start) ;
@@ -1292,16 +1325,9 @@ static gboolean buildParamString(blixemData blixem_data, char **paramString)
     {
       int offset, tmp1 ;
 
-
       offset = tmp1 = blixem_data->offset ;
 
       paramString[BLX_ARGV_OFFSET_FLAG - missed] = g_strdup("-m") ;
-#if MH17_WONT_WORK_POST_CHROMO_COORDS
-      /* NOTE this function swaps start and end and inverts them, you have to provide both */
-      if (blixem_data->view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
-	zMapFeatureReverseComplementCoords(blixem_data->block, &offset, &tmp1) ;
-#endif
-
 
       paramString[BLX_ARGV_OFFSET - missed]      = g_strdup_printf("%d", offset) ;
     }
@@ -1319,7 +1345,7 @@ static gboolean buildParamString(blixemData blixem_data, char **paramString)
     end = blixem_data->window_end ;
 
     if (blixem_data->view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
-      zMapFeatureReverseComplementCoords(blixem_data->block, &start, &end) ;
+      zMapFeatureReverseComplementCoords(blixem_data->view->features, &start, &end) ;
 
     paramString[BLX_ARGV_ZOOM_FLAG - missed] = g_strdup("-z") ;
     paramString[BLX_ARGV_ZOOM - missed] = g_strdup_printf("%d:%d", start, end) ;
@@ -1468,7 +1494,7 @@ static gboolean writeFeatureFiles(blixemData blixem_data)
       end = blixem_data->features_max ;
 
       if (blixem_data->view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
-	zMapFeatureReverseComplementCoords(blixem_data->block, &start, &end) ;
+	zMapFeatureReverseComplementCoords(blixem_data->view->features, &start, &end) ;
 
 
       header = g_strdup_printf("##gff-version 3\n##sequence-region %s %d %d\n",
@@ -1826,7 +1852,7 @@ static void writeFeatureLine(ZMapFeature feature, blixemData  blixem_data)
 
       if (include_feature)
 	{
-	  switch (feature->type)
+	  switch (feature->mode)
 	    {
 	    case ZMAPSTYLE_MODE_ALIGNMENT:
 	      {
@@ -2965,9 +2991,9 @@ static void getFeatureCB(gpointer key, gpointer data, gpointer user_data)
   /* Only process features we want to dump. We then filter those features according to the
    * following rules (inherited from acedb): alignment features must be wholly within the
    * blixem max/min to be included, for transcripts we include as many introns/exons as will fit. */
-  if (feature->type == blixem_data->required_feature_type)
+  if (feature->mode == blixem_data->required_feature_type)
     {
-      switch (feature->type)
+      switch (feature->mode)
 	{
 	case ZMAPSTYLE_MODE_ALIGNMENT:
 	  {
@@ -3063,7 +3089,7 @@ static gboolean writeFastAFile(blixemData blixem_data)
 	  end = blixem_data->scope_max ;
 
 	  if (blixem_data->view->flags[ZMAPFLAG_REVCOMPED_FEATURES])
-	    zMapFeatureReverseComplementCoords(blixem_data->block, &start, &end) ;
+	    zMapFeatureReverseComplementCoords(blixem_data->view->features, &start, &end) ;
 
 //zMapLogWarning("FastA %d,%d (scope is %d %d",start, end, blixem_data->scope_min, blixem_data->scope_max);
 
@@ -3205,9 +3231,9 @@ static void checkForLocalSequence(gpointer key, gpointer data, gpointer user_dat
       /* Only process features we want to dump. We then filter those features according to the
        * following rules (inherited from acedb): alignment features must be wholly within the
        * blixem max/min to be included, for transcripts we include as many introns/exons as will fit. */
-      if (feature->type == blixem_data->required_feature_type)
+      if (feature->mode == blixem_data->required_feature_type)
 	{
-	  if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT
+	  if (feature->mode == ZMAPSTYLE_MODE_ALIGNMENT
 	      && feature->feature.homol.flags.has_sequence)
 	    {
 	      GQuark align_id = feature->original_id ;
@@ -3271,8 +3297,6 @@ static int findFeature(gconstpointer a, gconstpointer b)
 static void freeSequences(gpointer data, gpointer user_data_unused)
 {
   ZMapSequence sequence = (ZMapSequence)data ;
-
-  zMapAssert(sequence && sequence->sequence) ;
 
   g_free(sequence->sequence) ;
   g_free(sequence) ;

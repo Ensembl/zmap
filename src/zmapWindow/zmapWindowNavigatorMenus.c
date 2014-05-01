@@ -1,6 +1,6 @@
 /*  File: zmapWindowNavigatorMenus.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -67,8 +67,12 @@ void zmapWindowNavigatorGoToLocusExtents(ZMapWindowNavigator navigate, FooCanvas
   GQuark locus_quark = 0;
   char *wild_card = "*";
 
+  if (!navigate || !navigate->current_window || !item) 
+    return ; 
+
   feature = zmapWindowItemGetFeature(item);
-  zMapAssert(feature);
+  if (!feature)
+    return ;
 
   window = navigate->current_window;
 
@@ -87,17 +91,15 @@ void zmapWindowNavigatorGoToLocusExtents(ZMapWindowNavigator navigate, FooCanvas
         {
           /* x coords are HACKED!!!! */
           if(zMapFeatureGetFeatureListExtent(feature_list, &start, &end))
-	    {
-            zmapWindowZoomToWorldPosition(window, TRUE, 0.0, start, 100.0, end);
-	    }
+            {
+              zmapWindowZoomToWorldPosition(window, TRUE, 0.0, start, 100.0, end);
+            }
           g_list_free(feature_list);
         }
     }
   else
     {
-#ifdef TEMPORARY_AVOID_ISSUE_HERE
-      zMapAssertNotReached();
-#endif /* TEMPORARY_AVOID_ISSUE_HERE */
+      zMapWarnIfReached();
     }
 
   return ;
@@ -118,8 +120,13 @@ void zmapWindowNavigatorShowSameNameList(ZMapWindowNavigator navigate, FooCanvas
 
   wild_card_id = g_quark_from_string(wild_card) ;
 
+
+  if (!navigate || !navigate->current_window || !item ) 
+    return ; 
+
   feature = zmapWindowItemGetFeature(item) ;
-  zMapAssert(feature) ;
+  if (!feature) 
+    return ;
 
   set_item = FOO_CANVAS_ITEM(zmapWindowContainerCanvasItemGetContainer(item));
   container = (ZMapWindowContainerFeatureSet)set_item;
@@ -417,7 +424,6 @@ static void navigatorColumnMenuCB(int menu_item_id, gpointer callback_data)
       break ;
 
     default:
-      zMapAssert("Coding error, unrecognised menu item number.") ;
       break ;
     }
 
@@ -479,7 +485,8 @@ static void filter_checkbox_toggled_cb(GtkWidget *checkbox, gpointer user_data)
   button_pressed = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(checkbox));
   filter = g_object_get_data(G_OBJECT(checkbox), FILTER_DATA_KEY);
 
-  zMapAssert(filter != NULL);
+  if (!filter)
+    return ;
 
   if((in_hide_list = g_list_find(navigator->hide_filter, filter)))
     {

@@ -1,6 +1,6 @@
 /*  File: zmapGFF2parser.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -82,7 +82,11 @@ static gboolean getCDSStartAttr(char *attributes, gboolean *start_not_found_out,
 static gboolean getCDSEndAttr(char *attributes, gboolean *end_not_found_out) ;
 static gboolean getVariationString(char *attributes,
 				   GQuark *SO_acc_out, char **name_str_out, char **variation_str_out) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void getFeatureArray(GQuark key_id, gpointer data, gpointer user_data) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 static void destroyFeatureArray(gpointer data) ;
 
 static gboolean loadGaps(char *currentPos, GArray *gaps,
@@ -92,15 +96,26 @@ static gboolean loadAlignString(ZMapGFFParser parser,
 				ZMapStrand ref_strand, int ref_start, int ref_end,
 				ZMapStrand match_strand, int match_start, int match_end) ;
 static void mungeFeatureType(char *source, ZMapStyleMode *type_inout);
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static gboolean getNameFromAttr(char *attributes, char **name) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 static gboolean getNameFromNote(char *attributes, char **name) ;
 static char *getNoteText(char *attributes) ;
 static gboolean resizeBuffers(ZMapGFFParser parser, gsize line_length) ;
 static gboolean resizeFormatStrs(ZMapGFFParser parser) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void normaliseFeatures(GData **feature_sets) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void checkFeatureSetCB(GQuark key_id, gpointer data, gpointer user_data_unused) ;
 static void checkFeatureCB(GQuark key_id, gpointer data, gpointer user_data_unused) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 static char *find_tag(char * str, char *tag) ;
 
@@ -127,47 +142,44 @@ ZMapGFFParser zMapGFFCreateParser_V2(char *sequence, int features_start, int fea
   ZMapGFF2Parser parser = NULL ;
   ZMapGFFParser parser_base = NULL ;
 
-  if ((sequence && *sequence) && (features_start > 0 && features_end >= features_start))
-    {
-      parser = g_new0(ZMapGFF2ParserStruct, 1) ;
-      parser_base = (ZMapGFFParser) parser ;
+  parser = g_new0(ZMapGFF2ParserStruct, 1) ;
+  parser_base = (ZMapGFFParser) parser ;
 
-      parser->gff_version = ZMAPGFF_VERSION_2 ;
+  parser->gff_version = ZMAPGFF_VERSION_2 ;
 
-      parser->state = ZMAPGFF_PARSER_DIR ;
-      parser->error = NULL ;
-      parser->error_domain = g_quark_from_string(ZMAP_GFF_ERROR) ;
-      parser->stop_on_error = FALSE ;
+  parser->state = ZMAPGFF_PARSER_DIR ;
+  parser->error = NULL ;
+  parser->error_domain = g_quark_from_string(ZMAP_GFF_ERROR) ;
+  parser->stop_on_error = FALSE ;
 
-      parser->line_count = 0 ;
-      parser->SO_compliant = FALSE ;
-      parser->default_to_basic = FALSE ;
+  parser->line_count = 0 ;
+  parser->SO_compliant = FALSE ;
+  parser->default_to_basic = FALSE ;
 
-      parser->clip_mode = GFF_CLIP_NONE ;
-      parser->clip_start = parser->clip_end = 0 ;
+  parser->clip_mode = GFF_CLIP_NONE ;
+  parser->clip_start = parser->clip_end = 0 ;
 
-      parser->excluded_features = g_hash_table_new(NULL, NULL) ;
+  parser->excluded_features = g_hash_table_new(NULL, NULL) ;
 
-      /* Some of these may also be derived from the file meta-data. */
-      parser->header_flags.done_header = FALSE ;
-      parser->header_flags.got_gff_version = FALSE ;
-      parser->header_flags.got_sequence_region = FALSE ;
-      parser->header_state = GFF_HEADER_NONE ;
+  /* Some of these may also be derived from the file meta-data. */
+  parser->header_flags.done_header = FALSE ;
+  parser->header_flags.got_gff_version = FALSE ;
+  parser->header_flags.got_sequence_region = FALSE ;
+  parser->header_state = GFF_HEADER_NONE ;
 
 
-      parser->sequence_name = g_strdup(sequence) ;
-      parser->features_start = features_start ;
-      parser->features_end = features_end ;
+  parser->sequence_name = g_strdup(sequence) ;
+  parser->features_start = features_start ;
+  parser->features_end = features_end ;
 
-      parser->raw_line_data = g_string_sized_new(2000) ;
+  parser->raw_line_data = g_string_sized_new(2000) ;
 
-      parser->sequence_flags.done_finished = TRUE ;	    /* default we don't parse the dna/protein */
+  parser->sequence_flags.done_finished = TRUE ;	    /* default we don't parse the dna/protein */
 
-      /* Set initial buffer & format string size to something that will probably be big enough. */
-      resizeBuffers(parser_base, ZMAPGFF_BUF_INIT_SIZE) ;
+  /* Set initial buffer & format string size to something that will probably be big enough. */
+  resizeBuffers(parser_base, ZMAPGFF_BUF_INIT_SIZE) ;
 
-      resizeFormatStrs(parser_base) ;
-    }
+  resizeFormatStrs(parser_base) ;
 
   return parser_base ;
 }
@@ -498,42 +510,13 @@ gboolean zMapGFFParserSetSequenceFlag(ZMapGFFParser parser_base)
   return set ;
 }
 
-ZMapSequence zMapGFFGetSequence(ZMapGFFParser parser_base)
-{
-  ZMapSequence sequence = NULL;
-
-  ZMapGFF2Parser parser = (ZMapGFF2Parser) parser_base ;
-
-  if (!parser)
-    return NULL ;
-  if (parser->gff_version != ZMAPGFF_VERSION_2)
-    return NULL ;
-
-  if (parser->header_flags.done_header)
-    {
-      if(parser->seq_data.type != ZMAPSEQUENCE_NONE
-	 && (parser->seq_data.sequence != NULL && parser->raw_line_data == NULL))
-	{
-	  sequence = g_new0(ZMapSequenceStruct, 1);
-	  *sequence = parser->seq_data;
-	  sequence->name = g_quark_from_string(parser->sequence_name);
-
-	  /* So we don't copy empty data */
-	  parser->seq_data.type     = ZMAPSEQUENCE_NONE;
-	  parser->seq_data.sequence = NULL; /* So it doesn't get free'd */
-	}
-    }
-
-  return sequence;
-}
 
 
-
-/* 
- * (sm23) This function was used previously for testing with gffparser.c but never 
- * used outside, so I've removed it. (November 2013). 
+/*
+ * (sm23) This function was used previously for testing with gffparser.c but never
+ * used outside, so I've removed it. (November 2013).
  *
- */ 
+ */
 /*
 void zMapGFFFreeHeader(ZMapGFFHeader header)
 {
@@ -598,7 +581,7 @@ static gboolean parseHeaderLine(ZMapGFFParser parser_base, char *line)
 
   if (parser->state == ZMAPGFF_PARSER_DIR)
     {
-      if (!g_str_has_prefix(line, "##"))
+      if (!g_str_has_prefix(line, "##") || g_str_has_prefix(line, "##DNA"))
 	{
 	  result = FALSE ;
 	}
@@ -688,6 +671,16 @@ static gboolean parseHeaderLine(ZMapGFFParser parser_base, char *line)
 		   * that overlap its start/end.....IMPLIES WE MAY NEED TO REMOVE FEATURES IF
 		   * PARSER MODE IS NOT TO HAVE OVERLAPPING FEATURES.....
 		   */
+
+                  /* If the sequence name wasn't specified on the command line or in a config
+                     file then take the sequence details from the first gff file we find */
+                  if (!zMapGFFGetSequenceName((ZMapGFFParser)parser))
+                    {
+                      parser->sequence_name = g_strdup(sequence_name) ;
+                      parser->features_start = start ;
+                      parser->features_end = end ;
+                    }
+
 		  if (g_ascii_strcasecmp(&sequence_name[0], parser->sequence_name) == 0)
 		    {
 		      if (parser->header_flags.got_sequence_region)
@@ -1084,7 +1077,7 @@ static gboolean parseBodyLine(ZMapGFFParser parser_base, char *line, gsize line_
 		    err_text = g_strdup_printf("feature_type not recognised: %s", ZMAP_FIXED_STYLE_LOCUS_NAME) ;
 
 
-		  if (!(result = makeNewFeature(parser_base, line, 
+		  if (!(result = makeNewFeature(parser_base, line,
                                                 ZMAPGFF_NAME_USE_SEQUENCE, (char *)g_quark_to_string(locus_id),
 						ZMAP_FIXED_STYLE_LOCUS_NAME, ZMAP_FIXED_STYLE_LOCUS_NAME, type,
 						start, end, FALSE, 0.0, ZMAPSTRAND_NONE, ZMAPPHASE_NONE,
@@ -1929,7 +1922,7 @@ static gboolean getFeatureName(NameFindType name_find, char *sequence, char *att
     {
       /* Parse out "Name <objname> ;" */
       /* Unfortunately the text "Name" appears also in the tag "DB_Name"
-       * and if that tag appears first then that's the one that's picked up. The 
+       * and if that tag appears first then that's the one that's picked up. The
        * real Name tag should only ever be preceeded by a space, semi-colon or tab
        * so we check for that. Once found, increment tag_pos so it's pointing
        * at the start of the text "Name...". */
@@ -2614,7 +2607,7 @@ static gboolean getVariationString(char *attributes,
       (target = strstr(attributes, "\tName")))
     {
       /* Unfortunately the text "Name" appears also in the tag "DB_Name"
-       * and if that tag appears first then that's the one that's picked up. The 
+       * and if that tag appears first then that's the one that's picked up. The
        * real Name tag should only ever be preceeded by a space, semi-colon or tab
        * so we check for that. Once found, increment target so it's pointing
        * at the start of the text "Name...". */
@@ -2644,6 +2637,8 @@ static gboolean getVariationString(char *attributes,
 }
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* This is a GDataForeachFunc() and is called for each element of a GData list as a result
  * of a call to zmapGFFGetFeatures(). The function adds the feature array returned
  * in the GData element to the GArray in user_data. */
@@ -2657,6 +2652,8 @@ static void getFeatureArray(GQuark key_id, gpointer data, gpointer user_data)
 
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 /* This is a GDestroyNotify() and is called for each element in a GData list when
@@ -2705,6 +2702,8 @@ static void mungeFeatureType(char *source, ZMapStyleMode *type_inout)
 
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* Parse out "Name <objname> ;"  */
 static gboolean getNameFromAttr(char *attributes, char **name_out)
 {
@@ -2716,7 +2715,7 @@ static gboolean getNameFromAttr(char *attributes, char **name_out)
       (tag_pos = strstr(attributes, "\tName")))
     {
       /* Unfortunately the text "Name" appears also in the tag "DB_Name"
-       * and if that tag appears first then that's the one that's picked up. The 
+       * and if that tag appears first then that's the one that's picked up. The
        * real Name tag should only ever be preceeded by a space, semi-colon or tab
        * so we check for that. Once found, increment tag_pos so it's pointing
        * at the start of the text "Name...". */
@@ -2741,6 +2740,8 @@ static gboolean getNameFromAttr(char *attributes, char **name_out)
 
   return result ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
@@ -2971,6 +2972,8 @@ static gboolean resizeFormatStrs(ZMapGFFParser parser_base)
 
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* Features may be created incomplete by 'faulty' GFF files, here we try
  * to make them valid. */
 static void normaliseFeatures(GData **feature_sets)
@@ -2980,8 +2983,12 @@ static void normaliseFeatures(GData **feature_sets)
 
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* A GDataForeachFunc() which checks to see if the dataset passed in has
  * mulitline features and if they are then checks each feature to make sure
  * it is complete/valid. Currently this is only transcripts...see checkFeatureCB().
@@ -2998,6 +3005,7 @@ static void checkFeatureSetCB(GQuark key_id, gpointer data, gpointer user_data_u
   return ;
 }
 
+
 /* A GDataForeachFunc() which checks to see if the feature passed in is
  * complete/valid. Currently just checks transcripts to make sure they
  * have at least one exon.
@@ -3006,7 +3014,7 @@ static void checkFeatureCB(GQuark key_id, gpointer data, gpointer user_data_unus
 {
   ZMapFeature feature = (ZMapFeature)data ;
 
-  switch (feature->type)
+  switch (feature->mode)
     {
     case ZMAPSTYLE_MODE_TRANSCRIPT:
       zMapFeatureTranscriptNormalise(feature) ;
@@ -3018,6 +3026,7 @@ static void checkFeatureCB(GQuark key_id, gpointer data, gpointer user_data_unus
 
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 /*

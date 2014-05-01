@@ -1,6 +1,6 @@
 /*  File: zmapControlViews.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -96,6 +96,8 @@ gpointer zMapControlFindView(ZMap zmap, gpointer view_id)
 {
   gpointer view = NULL ;
 
+  zMapReturnValIfFail(zmap, view) ; 
+
   if (zmap->view_list)
     {
       GList *list_view ;
@@ -135,6 +137,8 @@ ZMapViewWindow zmapControlNewWindow(ZMap zmap, ZMapFeatureSequenceMap sequence_m
   char *view_title ;
   GtkOrientation orientation = GTK_ORIENTATION_VERTICAL ;   /* arbitrary for first window. */
   GtkWidget *parent ;
+
+  zMapReturnValIfFail(zmap, view_window) ; 
 
   /* If there is a focus window then that will be the one we split and we need to find out
    * the container parent of that canvas. */
@@ -212,9 +216,11 @@ ZMapViewWindow zmapControlNewWidgetAndWindowForView(ZMap zmap,
 						    ZMapControlSplitOrder window_order,
                                                     char *view_title)
 {
-  GtkWidget *view_container;
-  ZMapViewWindow view_window;
+  GtkWidget *view_container = NULL ;
+  ZMapViewWindow view_window = NULL ;
   ZMapWindowLockType window_locking = ZMAP_WINLOCK_NONE ;
+
+  zMapReturnValIfFail(zmap, view_window) ; 
 
   /* Add a new container that will hold the new view window. */
   view_container = zmapControlAddWindow(zmap, curr_container, orientation, window_order, view_title) ;
@@ -243,6 +249,8 @@ void zmapControlSplitWindow(ZMap zmap, GtkOrientation orientation, ZMapControlSp
   ZMapWindow zmap_window ;
   char *view_title ;
 
+  zMapReturnIfFail(zmap) ; 
+
   /* If there is a focus window then that will be the one we split and we need to find out
    * the container parent of that canvas. */
   if (zmap->focus_viewwindow)
@@ -262,8 +270,6 @@ void zmapControlSplitWindow(ZMap zmap, GtkOrientation orientation, ZMapControlSp
     }
   else
     {
-      /* UGH, I don't like this, seems a bit addhoc to just grab the only view.... */
-      zMapAssert((g_list_length(zmap->view_list) == 1)) ;
       zmap_view = (ZMapView)(g_list_first(zmap->view_list)->data) ;
     }
 
@@ -310,6 +316,8 @@ int zmapControlNumViews(ZMap zmap)
 {
   int num_views = 0 ;
 
+  zMapReturnValIfFail(zmap, num_views) ; 
+
   if (zmap->view_list)
     num_views = g_list_length(zmap->view_list) ;
 
@@ -322,6 +330,8 @@ ZMapViewWindow zmapControlFindViewWindow(ZMap zmap, ZMapView view)
 {
   ZMapViewWindow view_window = NULL ;
   FindViewWindowStruct find_viewwindow = {NULL} ;
+
+  zMapReturnValIfFail(zmap, view_window) ; 
 
   /* Find the view_window for the view... */
   find_viewwindow.view = view ;
@@ -343,7 +353,9 @@ GtkWidget *zmapControlAddWindow(ZMap zmap, GtkWidget *curr_frame,
 				GtkOrientation orientation, ZMapControlSplitOrder window_order,
 				char *view_title)
 {
-  GtkWidget *new_frame ;
+  GtkWidget *new_frame = NULL ;
+
+  zMapReturnValIfFail(zmap, new_frame) ; 
 
   /* Supplying NULL will remove the title if its too big. */
   new_frame = gtk_frame_new(view_title) ;
@@ -386,10 +398,6 @@ void zmapControlRemoveWindow(ZMap zmap, ZMapViewWindow view_window, GList **dest
 
   view = zMapViewGetView(view_window) ;
 
-  /* We shouldn't get called if there are no views or if there is only a single view with one window left. */
-  zMapAssert(num_views && view_window && !(num_views == 1 && num_windows == 1)) ;
-
-
   close_container = g_hash_table_lookup(zmap->viewwindow_2_parent, view_window) ;
 
 
@@ -422,9 +430,8 @@ void zmapControlRemoveWindow(ZMap zmap, ZMapViewWindow view_window, GList **dest
 
   /* Remove from hash of viewwindows to frames */
   remove = g_hash_table_remove(zmap->viewwindow_2_parent, view_window) ;
-  zMapAssert(remove) ;
 
-  /* Having removed one window we nwublastx_humaneed to refocus on another, if there is one....... */
+  /* Having removed one window we need to refocus on another, if there is one....... */
   if (remaining_view)
     {
       zmapControlSetWindowFocus(zmap, remaining_view) ;
@@ -452,8 +459,10 @@ void zmapControlRemoveWindow(ZMap zmap, ZMapViewWindow view_window, GList **dest
  * last window, there is no viewWindow left over. */
 static ZMapViewWindow closeWindow(ZMap zmap, GtkWidget *close_container)
 {
-  ZMapViewWindow remaining_view ;
+  ZMapViewWindow remaining_view  = NULL ;
   GtkWidget *pane_parent ;
+
+  zMapReturnValIfFail(zmap, remaining_view) ; 
 
   /* If parent is a pane then we need to remove that pane, otherwise we simply destroy the
    * container. */
@@ -492,7 +501,9 @@ static ZMapViewWindow widget2ViewWindow(GHashTable* hash_table, GtkWidget *widge
 /* Test for value == user_data, i.e. have we found the widget given by user_data ? */
 static void findViewWindow(gpointer key, gpointer value, gpointer user_data)
 {
-  ZMapControlWidget2ViewwindowStruct *widg2View = (ZMapControlWidget2ViewwindowStruct *)user_data ;
+  ZMapControlWidget2ViewwindowStruct *widg2View = NULL ; 
+  zMapReturnIfFail(user_data) ; 
+  widg2View = (ZMapControlWidget2ViewwindowStruct *)user_data ;
 
   if (value == widg2View->widget)
     {
@@ -579,7 +590,9 @@ static GtkWidget *closePane(GtkWidget *close_frame)
   ZMapPaneChild close_child, parent_parent_child ;
 
   parent_pane = gtk_widget_get_parent(close_frame) ;
-  zMapAssert(GTK_IS_PANED(parent_pane)) ;
+  /* if (!GTK_IS_PANED(parent_pane)) 
+    return keep_frame ;*/
+  zMapReturnValIfFail(GTK_IS_PANED(parent_pane), keep_frame) ;  
 
   /* Find out which child of the pane the close_frame is and hence record the container
    * (n.b. might be another frame or might be a pane containing more panes/frames)
@@ -594,9 +607,6 @@ static GtkWidget *closePane(GtkWidget *close_frame)
   /* Remove the keep_container from its container, we will insert it into the place where
    * its parent was originally. */
   keep_container = gtk_widget_ref(keep_container) ;
-  zMapAssert(GTK_IS_PANED(keep_container) || GTK_IS_FRAME(keep_container) || GTK_IS_EVENT_BOX(keep_container)) ;
-
-
   gtk_container_remove(GTK_CONTAINER(parent_pane), keep_container) ;
 
 
@@ -647,15 +657,12 @@ static GtkWidget *closePane(GtkWidget *close_frame)
 	  GList *children ;
 
 	  children = gtk_container_get_children(GTK_CONTAINER(keep_container)) ;
-	  zMapAssert(g_list_length(children) == 1) ;
-
 	  keep_container = (GtkWidget *)(children->data) ;
 
 	  g_list_free(children) ;
 	}
     }
   keep_frame = keep_container ;
-  zMapAssert(GTK_IS_FRAME(keep_frame)) ;
 
   return keep_frame ;
 }
@@ -668,16 +675,18 @@ void zmapControlSetWindowFocus(ZMap zmap, ZMapViewWindow new_viewwindow)
   GtkWidget *viewwindow_frame ;
   ZMapView view ;
   ZMapWindow window ;
-  /* GdkColor color ; */
   double top, bottom ;
 
-  zMapAssert(new_viewwindow) ;
+  zMapReturnIfFail(zmap) ; 
+
+  if (!new_viewwindow) 
+    return ;
 
   if (new_viewwindow != zmap->focus_viewwindow)
     {
       GtkWidget *label ;
       char *label_txt ;
-
+      ZMapWindowNavigator navigator ;
 
       /* Unfocus the old window. */
       if (zmap->focus_viewwindow)
@@ -718,17 +727,10 @@ void zmapControlSetWindowFocus(ZMap zmap, ZMapViewWindow new_viewwindow)
       /* make sure zoom buttons etc. appropriately sensitised for this window. */
       zmapControlWindowSetGUIState(zmap) ;
 
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      /* not needed here I think.....see controlFocusCB()...may not be the best place...??  */
-
-      /* WRONG POINTER PASSED IN HERE !!!!! */
-      /* Set up navigator with new view. */
-      zMapWindowNavigatorSetCurrentWindow(zmap->navigator, window) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
+      /* set up navigator with new focus window. */
+      navigator = zMapViewGetNavigator(view) ;
+      zMapWindowNavigatorFocus(navigator, TRUE);
+      zMapWindowNavigatorSetCurrentWindow(navigator, window);
 
       zMapWindowGetVisible(window, &top, &bottom) ;
       zmapNavigatorSetView(zmap->navigator, zMapViewGetFeatures(view), top, bottom) ;
@@ -746,14 +748,16 @@ static ZMapPaneChild whichChildOfPane(GtkWidget *child)
   ZMapPaneChild pane_child = ZMAP_PANE_NONE ;
   GtkWidget *pane_parent ;
 
+  zMapReturnValIfFail(child, pane_child ) ;
+
   pane_parent = gtk_widget_get_parent(child) ;
-  zMapAssert(GTK_IS_PANED(pane_parent)) ;
+  if (!GTK_IS_PANED(pane_parent)) 
+    return pane_child ;
 
   if (myGetChild(pane_parent, 1) == child)
     pane_child = ZMAP_PANE_CHILD_1 ;
   else if (myGetChild(pane_parent, 2) == child)
     pane_child = ZMAP_PANE_CHILD_2 ;
-  zMapAssert(pane_child != ZMAP_PANE_NONE) ;		    /* Should never happen. */
 
   return pane_child ;
 }
@@ -764,7 +768,9 @@ static ZMapPaneChild whichChildOfPane(GtkWidget *child)
  *  */
 static void labelDestroyCB(GtkWidget *widget, gpointer cb_data)
 {
-  ZMapInfoPanelLabels labels = (ZMapInfoPanelLabels) cb_data ;
+  ZMapInfoPanelLabels labels = NULL ; 
+  zMapReturnIfFail(cb_data) ; 
+  labels = (ZMapInfoPanelLabels) cb_data ;
 
   labels->hbox = NULL ;
 
@@ -775,7 +781,9 @@ static void labelDestroyCB(GtkWidget *widget, gpointer cb_data)
 static void findViewWindowCB(gpointer key, gpointer value, gpointer user_data)
 {
   ZMapViewWindow view_window = key ;
-  FindViewWindow find_viewwindow = (FindViewWindow)user_data ;
+  FindViewWindow find_viewwindow = NULL ; 
+  zMapReturnIfFail(user_data) ; 
+  find_viewwindow = (FindViewWindow)user_data ;
 
   if (zMapViewGetView(view_window) == find_viewwindow->view)
     find_viewwindow->view_window = view_window ;

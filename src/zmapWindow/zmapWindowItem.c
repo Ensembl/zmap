@@ -1,6 +1,6 @@
 /*  File: zmapWindowItem.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -70,7 +70,8 @@ gboolean zmapWindowItemGetStrandFrame(FooCanvasItem *item, ZMapStrand *set_stran
 
   /* Retrieve the feature item info from the canvas item. */
   feature = zmapWindowItemGetFeature(item);
-  zMapAssert(feature && feature->struct_type == ZMAPFEATURE_STRUCT_FEATURE) ;
+  if (!feature || (feature->struct_type != ZMAPFEATURE_STRUCT_FEATURE))
+    return result ;
 
   container = (ZMapWindowContainerFeatureSet)zmapWindowContainerCanvasItemGetContainer(item) ;
 
@@ -208,12 +209,14 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
 
 
   canvas_item = zMapWindowCanvasItemIntervalGetObject(item) ;
-  zMapAssert(ZMAP_IS_CANVAS_ITEM(canvas_item)) ;
+  if (!ZMAP_IS_CANVAS_ITEM(canvas_item))
+    return ;
 
 
   /* Retrieve the feature item info from the canvas item. */
   feature = zmapWindowItemGetFeature((FooCanvasItem *)canvas_item);
-  zMapAssert(feature) ;
+  if (!feature)
+    return ;
 
 
   /* If any other feature(s) is currently in focus, revert it to its std colours */
@@ -222,7 +225,7 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
 
 
   /* For some types of feature we want to highlight all the ones with the same name in that column. */
-  switch (feature->type)
+  switch (feature->mode)
     {
     case ZMAPSTYLE_MODE_ALIGNMENT:
       {
@@ -490,14 +493,14 @@ FooCanvasItem *zMapWindowFindFeatureItemByItem(ZMapWindow window, FooCanvasItem 
   ZMapWindowContainerFeatureSet container;
 
   /* Retrieve the feature item info from the canvas item. */
-  feature = zMapWindowCanvasItemGetFeature(item) ;
-  zMapAssert(feature);
+  if ((feature = zMapWindowCanvasItemGetFeature(item)))
+    {
+      container = (ZMapWindowContainerFeatureSet)zmapWindowContainerCanvasItemGetContainer(item) ;
 
-  container = (ZMapWindowContainerFeatureSet)zmapWindowContainerCanvasItemGetContainer(item) ;
-
-  matching_item = zmapWindowFToIFindFeatureItem(window,window->context_to_item,
+      matching_item = zmapWindowFToIFindFeatureItem(window,window->context_to_item,
 						    container->strand, container->frame,
 						    feature) ;
+    }
 
   return matching_item ;
 }
@@ -513,18 +516,18 @@ FooCanvasItem *zMapWindowFindFeatureItemChildByItem(ZMapWindow window, FooCanvas
   ZMapFeature feature ;
   ZMapWindowContainerFeatureSet container;
 
-  zMapAssert(window && item && child_start > 0 && child_end > 0 && child_start <= child_end) ;
-
+  zMapReturnValIfFail((!window || !item || (child_start <= 0) || (child_end <= 0) || (child_start > child_end)),
+                      matching_item) ;
 
   /* Retrieve the feature item info from the canvas item. */
-  feature = zmapWindowItemGetFeature(item);
-  zMapAssert(feature) ;
+  if ((feature = zmapWindowItemGetFeature(item)))
+    {
+      container = (ZMapWindowContainerFeatureSet)zmapWindowContainerCanvasItemGetContainer(item) ;
 
-  container = (ZMapWindowContainerFeatureSet)zmapWindowContainerCanvasItemGetContainer(item) ;
-
-  /* Find the item that matches */
-  matching_item = zmapWindowFToIFindFeatureItem(window,window->context_to_item,
-						container->strand, container->frame, feature) ;
+      /* Find the item that matches */
+      matching_item = zmapWindowFToIFindFeatureItem(window,window->context_to_item,
+                                                    container->strand, container->frame, feature) ;
+    }
 
   return matching_item ;
 }
@@ -572,7 +575,8 @@ gboolean zmapWindowItemIsShown(FooCanvasItem *item)
 {
   gboolean visible = FALSE;
 
-  zMapAssert(FOO_IS_CANVAS_ITEM(item)) ;
+  if (!FOO_IS_CANVAS_ITEM(item))
+    return visible ;
 
   g_object_get(G_OBJECT(item),
                "visible", &visible,
@@ -619,46 +623,6 @@ gboolean zmapWindowItemIsOnScreen(ZMapWindow window, FooCanvasItem *item, gboole
 }
 
 
-#if 0
-only ever use by centre on sub_part below
-scroll down for alternate code (1 lines)
-/* if(!zmapWindowItemRegionIsVisible(window, item))
- *   zmapWindowItemCentreOnItem(window, item, changeRegionSize, boundarySize);
- */
-gboolean zmapWindowItemRegionIsVisible(ZMapWindow window, FooCanvasItem *item)
-{
-  gboolean visible = FALSE;
-  double wx1, wx2, wy1, wy2;
-  double ix1, ix2, iy1, iy2;
-  double dummy_x = 0.0;
-  double feature_x1 = 0.0, feature_x2 = 0.0 ;
-  ZMapFeature feature;
-
-  foo_canvas_item_get_bounds(item, &ix1, &iy1, &ix2, &iy2);
-  foo_canvas_item_i2w(item, &dummy_x, &iy1);
-  foo_canvas_item_i2w(item, &dummy_x, &iy2);
-
-  feature = (ZMapFeature) zmapWindowItemGetFeatureAnyType(item, -1) ;
-  zMapAssert(feature) ;
-
-  /* Get the features canvas coords (may be very different for align block features... */
-  zMapFeature2MasterCoords(feature, &feature_x1, &feature_x2);
-
-  /* Get scroll region (clamped to sequence coords) */
-  zmapWindowGetScrollableArea(window, &wx1, &wy1, &wx2, &wy2);
-
-  wx2 = feature_x2 + 1;
-  if(feature_x1 >= wx1 && feature_x2 <= wx2  &&
-     iy1 >= wy1 && iy2 <= wy2)
-    {
-      visible = TRUE;
-    }
-
-  return visible;
-}
-#endif
-
-
 /* Scroll to the specified item.
  * If necessary, recalculate the scroll region, then scroll to the item
  * and highlight it.
@@ -667,7 +631,8 @@ gboolean zMapWindowScrollToItem(ZMapWindow window, FooCanvasItem *item)
 {
   gboolean result = FALSE ;
 
-  zMapAssert(window && item) ;
+  if (!window || !item)
+    return result ;
 
   if ((result = zmapWindowItemIsShown(item)))
     {
@@ -710,7 +675,8 @@ void zmapWindowItemCentreOnItemSubPart(ZMapWindow window, FooCanvasItem *item,
 
 
   /* OH GOSH....THIS FUNCTION IS HARD TO FOLLOW, SOME COMMENTING WOULD HAVE HELPED. */
-  zMapAssert(window && item) ;
+  if (!window || !item)
+    return ;
 
   if (zmapWindowItemIsShown(item))
     {
@@ -748,10 +714,6 @@ void zmapWindowItemCentreOnItemSubPart(ZMapWindow window, FooCanvasItem *item,
       if (sub_start != 0.0 || sub_end != 0.0)
 	{
 #if USING_ITEM_COORDS
-		zMapAssert(sub_start <= sub_end
-		     && (sub_start >= iy1 && sub_start <= iy2)
-		     && (sub_end >= iy1 && sub_end <= iy2)) ;
-
 	  iy2 = iy1 ;
 	  iy1 = iy1 + sub_start ;
 	  iy2 = iy2 + sub_end ;
@@ -944,41 +906,6 @@ void zmapWindowScrollToItem(ZMapWindow window, FooCanvasItem *item)
 
 
 
-
-#if MH17_NOT_USED
-/* moves a feature to new coordinates */
-void zMapWindowMoveItem(ZMapWindow window, ZMapFeature origFeature,
-			ZMapFeature modFeature, FooCanvasItem *item)
-{
-  double top, bottom, offset;
-
-  if (FOO_IS_CANVAS_ITEM (item))
-    {
-      offset = ((ZMapFeatureBlock)(modFeature->parent->parent))->block_to_sequence.q1;
-      top = modFeature->x1;
-      bottom = modFeature->x2;
-      zmapWindowSeq2CanOffset(&top, &bottom, offset);
-
-      if (modFeature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
-	{
-	  zMapAssert(origFeature);
-
-	  foo_canvas_item_set(item->parent, "y", top, NULL);
-	}
-      else
-	{
-	  foo_canvas_item_set(item, "y1", top, "y2", bottom, NULL);
-	}
-
-      zmapWindowUpdateInfoPanel(window, modFeature, NULL, item, NULL, 0, 0, NULL, TRUE, TRUE) ;
-    }
-  return;
-}
-#endif
-
-
-
-
 /* Returns the sequence coords that correspond to the given _world_ foocanvas coords.
  *
  * NOTE that although we only return y coords, we need the world x coords as input
@@ -999,7 +926,8 @@ gboolean zmapWindowWorld2SeqCoords(ZMapWindow window, FooCanvasItem *foo,
   mid_y = (wy1 + wy2) / 2 ;
 
   item = foo;
-  zMapAssert(item);	/* focus item passed in, we always have focus if we get here */
+  if (!item)
+    return result ;
 #if 0
   if(!item)		/* should never be called: legacy code */
   	item = foo_canvas_get_item_at(window->canvas, mid_x, mid_y);
@@ -1098,7 +1026,7 @@ gboolean zmapWindowSeqToWorldCoords(ZMapWindow window,
       double world_start, world_end ;
 
       featureset = (ZMapWindowFeaturesetItem)set_item ;
-      
+
       if (zMapCanvasFeaturesetSeq2World(featureset,
                                         seq_start, seq_end, &world_start, &world_end))
         {

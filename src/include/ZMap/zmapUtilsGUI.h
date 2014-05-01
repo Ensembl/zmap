@@ -1,6 +1,6 @@
 /*  File: zmapUtilsGUI.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -121,7 +121,7 @@ typedef enum {ZMAPGUI_MENU_NONE, ZMAPGUI_MENU_BRANCH, ZMAPGUI_MENU_SEPARATOR,
 
 
 /*! Types of help page that can be displayed. */
-typedef enum {ZMAPGUI_HELP_GENERAL, ZMAPGUI_HELP_ALIGNMENT_DISPLAY,
+typedef enum {ZMAPGUI_HELP_GENERAL, ZMAPGUI_HELP_QUICK_START, ZMAPGUI_HELP_ALIGNMENT_DISPLAY,
 	      ZMAPGUI_HELP_RELEASE_NOTES, ZMAPGUI_HELP_KEYBOARD, ZMAPGUI_HELP_WHATS_NEW } ZMapHelpType ;
 
 
@@ -212,8 +212,6 @@ typedef struct
 
 #define zMapGUITestModifiersOnly(EVENT, MODS) \
   (((EVENT)->state | (MODS)) == ((EVENT)->state & (MODS)))
-
-
 
 
 
@@ -450,6 +448,7 @@ gboolean zMapGUIXWindowExists(Display *x_display, Window x_window, char *peer_cl
 
 char *zMapGUIGetEventAsText(GdkEventMask exclude_mask, GdkEventAny *any_event) ;
 
+gboolean zMapGUIGetScreenInfo(GtkWidget *widget, int *curr_screen_out, int *num_screens_out) ;
 gboolean zMapGUIGetMaxWindowSize(GtkWidget *toplevel, gint *width_out, gint *height_out) ;
 
 void zMapGUIMakeMenu(char *menu_title, GList *menu_sets, GdkEventButton *button_event) ;
@@ -481,6 +480,8 @@ void zMapGUIShowMsg(ZMapMsgType msg_type, char *msg) ;
 void zMapGUIShowMsgFull(GtkWindow *parent, char *msg,
 			ZMapMsgType msg_type, GtkJustification justify, int display_timeout, gboolean close_button) ;
 gboolean zMapGUIMsgGetBool(GtkWindow *parent, ZMapMsgType msg_type, char *msg) ;
+gboolean zMapGUIMsgGetBoolFull(GtkWindow *parent, ZMapMsgType msg_type, char *msg,
+                               char* first_button, char *second_button) ;
 GtkResponseType zMapGUIMsgGetText(GtkWindow *parent, ZMapMsgType msg_type, char *msg, gboolean hide_text,
 				  char **text_out) ;
 
@@ -508,7 +509,9 @@ ZMapGUIClampType zMapGUICoordsClampSpanWithLimits(double  top_limit, double  bot
 ZMapGUIClampType zMapGUICoordsClampToLimits(double  top_limit, double  bot_limit,
                                             double *top_inout, double *bot_inout);
 
-void zMapGUISetClipboard(GtkWidget *widget, char *contents);
+
+gboolean zMapGUISetClipboard(GtkWidget *widget, GdkAtom clipboard, char *clipboard_text) ;
+gboolean zMapGUIGetClipboard(GdkAtom clipboard, char **clipboard_text_out) ;
 
 void zMapGUIPanedSetMaxPositionHandler(GtkWidget *widget, GCallback callback, gpointer user_data);
 

@@ -1,6 +1,6 @@
 /*  File: zmapWindowFocus.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -840,7 +840,8 @@ void zmapWindowFocusDestroy(ZMapWindowFocus focus)
 {
   GList *l;
 
-  zMapAssert(focus) ;
+  if (!focus) 
+    return ;
 
   freeFocusItems(focus,WINDOW_FOCUS_GROUP_FOCUSSED) ;
 
@@ -913,7 +914,8 @@ static void hideFocusItemsCB(gpointer data, gpointer user_data)
   GList *user_hidden_items = *list_ptr ;
   ID2Canvas id2c;
 
-  zMapAssert(FOO_IS_CANVAS_ITEM(item));
+  if (!FOO_IS_CANVAS_ITEM(item))
+    return ;
 
   id2c = g_new0(ID2CanvasStruct,1);
   id2c->item = list_item->item;
@@ -984,11 +986,6 @@ static void highlightItem(ZMapWindow window, ZMapWindowFocusItem item)
 	  if(item->item_column == focus_item->item_column)      /* count includes self */
 	    n_focus++;
         }
-
-
-      zMapAssert(n_focus);
-      zMapAssert(item->item_column);
-
 
     }
 

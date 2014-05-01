@@ -1,6 +1,6 @@
 /*  File: zmapStyle.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -34,51 +34,10 @@
 #include <glib.h>
 #include <glib-object.h>
 #include <gtk/gtk.h>
+
 #include <ZMap/zmapEnum.h>
 #include <ZMap/zmapIO.h>
 
-
-
-// glyph shape definitions
-#define GLYPH_SHAPE_MAX_POINT       32          // max number of points ie 16 coordinates including breaks
-#define GLYPH_SHAPE_MAX_COORD       16
-#define GLYPH_COORD_INVALID         1000        // or maybe -128 and store them as char
-                                                // but we store arc start+end as degrees (0-360)
-#define GLYPH_CANVAS_COORD_INVALID  (0.0)       // for the translated points (values is irrelevant but 0 is tidy)
-
-typedef enum
-{
-  GLYPH_DRAW_INVALID,
-  GLYPH_DRAW_LINES,       // a series of connected lines
-  GLYPH_DRAW_BROKEN,      // connected lines with gaps
-  GLYPH_DRAW_POLYGON,     // a wiggly loop that can be filled
-  GLYPH_DRAW_ARC          // a circle ellipse or fraction of
-} ZMapStyleGlyphDrawType;
-
-/*
- * this could be made dynamic but really we don't want to have 100 points in a glyph
- * they are meant to be small and quick to draw
- * 16 points is plenty and we don't expect a huge number of shapes
- */
-typedef struct _ZMapStyleGlyphShapeStruct      // defined here so that config can use it
-  {
-    gint coords[GLYPH_SHAPE_MAX_POINT];        // defined in pairs (x,y)
-    gint n_coords;
-    gint width,height;
-    GQuark id;
-    /*
-     * break between lines flagged by GLYPH_COORD_INVALID
-     * for circles/ellipses we have two points and optionally two angles
-     * a break between lines takes up one corrdinate pair
-     */
-    ZMapStyleGlyphDrawType type;
-
-  } ZMapStyleGlyphShapeStruct;
-
-typedef ZMapStyleGlyphShapeStruct *ZMapStyleGlyphShape;
-
-// stuff for G_BOXED data type so we can use the above
-GType zMapStyleGlyphShapeGetType (void);
 
 
 
@@ -498,15 +457,6 @@ _(ZMAPSTYLE_SUB_FEATURE_MAX , ,"do-not-use" ,"" , "")
 ZMAP_DEFINE_ENUM(ZMapStyleSubFeature, ZMAP_STYLE_SUB_FEATURE_LIST);
 
 
-/* Splice markers replicate the acedb fmap display of splice sites found by the
- * Phil Green genefinder code. */
-#define ZMAPSTYLE_LEGACY_3FRAME     "gf_splice"
-
-#define ZMAPSTYLE_SPLICE_GLYPH_LEN 10
-#define ZMAPSTYLE_SPLICE_GLYPH_3   "<0,0 ; 8,0 ; 8,-8>"
-#define ZMAPSTYLE_SPLICE_GLYPH_5   "<0,0 ; 8,0 ; 8,8>"
-
-
 /*
  * specifies strand specific processing
  */
@@ -609,7 +559,7 @@ ZMAP_DEFINE_ENUM(ZMapStyleMergeMode, ZMAP_STYLE_MERGE_MODE_LIST) ;
  * All ZMap objects can potentially have a border colour, a fill colour and a draw colour
  * which can be used to "draw" over the fill colour. */
 
-typedef struct
+typedef struct ZMapStyleColourStructType
 {
   struct
   {
@@ -629,7 +579,7 @@ typedef struct
  *
  * All features in ZMap can be selected and hence must have both "normal" and "selected"
  * colours. */
-typedef struct
+typedef struct ZMapStyleFullColourStructType
 {
   ZMapStyleColourStruct normal ;
   ZMapStyleColourStruct selected ;
@@ -650,7 +600,7 @@ enum {ZMAPSTYLE_MAX_COLOUR_SPECS = 6} ;/* Instance */
  *  @brief Basic feature
  *
  * < currently this is empty > */
-typedef struct
+typedef struct ZMapStyleBasicStructType
 {
   char *dummy ;
 
@@ -659,7 +609,7 @@ typedef struct
 
 
 /* Sequence features - dna or peptide */
-typedef struct
+typedef struct ZMapStyleSequenceStructType
 {
 
   /* Colours for highlighting parts of sequence. */
@@ -679,7 +629,7 @@ typedef struct
  *  @brief Text feature
  *
  * (currently this is empty) */
-typedef struct
+typedef struct ZMapStyleTextStructType
 {
   char *font;
 
@@ -688,7 +638,7 @@ typedef struct
 
 
 /* For drawing a feature as a graph, the feature must contain graph points. */
-typedef struct
+typedef struct ZMapStyleGraphStructType
 {
   ZMapStyleGraphMode mode ;				    /* Graph style. */
 
@@ -715,7 +665,46 @@ typedef struct
  *  @brief Glyph feature
  *
  * Draws shapes of various kinds, e.g. splice site indicators etc. */
-typedef struct
+// glyph shape definitions
+#define GLYPH_SHAPE_MAX_POINT       32          // max number of points ie 16 coordinates including breaks
+#define GLYPH_SHAPE_MAX_COORD       16
+#define GLYPH_COORD_INVALID         1000        // or maybe -128 and store them as char
+                                                // but we store arc start+end as degrees (0-360)
+#define GLYPH_CANVAS_COORD_INVALID  (0.0)       // for the translated points (values is irrelevant but 0 is tidy)
+
+typedef enum
+{
+      GLYPH_DRAW_INVALID,
+      GLYPH_DRAW_LINES,       // a series of connected lines
+      GLYPH_DRAW_BROKEN,      // connected lines with gaps
+      GLYPH_DRAW_POLYGON,     // a wiggly loop that can be filled
+      GLYPH_DRAW_ARC          // a circle ellipse or fraction of
+
+} ZMapStyleGlyphDrawType;
+
+
+/*
+ * this could be made dynamic but really we don't want to have 100 points in a glyph
+ * they are meant to be small and quick to draw
+ * 16 points is plenty and we don't expect a huge number of shapes
+ */
+typedef struct _ZMapStyleGlyphShapeStruct      // defined here so that config can use it
+  {
+    gint coords[GLYPH_SHAPE_MAX_POINT];        // defined in pairs (x,y)
+    gint n_coords;
+    gint width,height;
+    GQuark id;
+    /*
+     * break between lines flagged by GLYPH_COORD_INVALID
+     * for circles/ellipses we have two points and optionally two angles
+     * a break between lines takes up one corrdinate pair
+     */
+    ZMapStyleGlyphDrawType type;
+
+} ZMapStyleGlyphShapeStruct, *ZMapStyleGlyphShape ;
+
+
+typedef struct ZMapStyleGlyphStructType
 {
       // sub feature glyphs or glyphs for glyph mode
   GQuark glyph_name,glyph_name_5,glyph_name_5_rev,glyph_name_3,glyph_name_3_rev;
@@ -733,6 +722,24 @@ typedef struct
 } ZMapStyleGlyphStruct, *ZMapStyleGlyph ;
 
 
+// stuff for G_BOXED data type so we can use the above
+GType zMapStyleGlyphShapeGetType (void);
+
+
+
+/* Splice markers replicate the acedb fmap display of splice sites found by the
+ * Phil Green genefinder code. */
+#define ZMAPSTYLE_LEGACY_3FRAME     "gf_splice"
+
+#define ZMAPSTYLE_SPLICE_MIN_LEN 5
+
+/* What is the relationship between this and the dn-hook/up-hook in zmapConfig dir ? */
+#define ZMAPSTYLE_SPLICE_GLYPH_5   "<0,0 ; 8,0 ; 8,8>"
+#define ZMAPSTYLE_SPLICE_GLYPH_3   "<0,0 ; 8,0 ; 8,-8>"
+
+
+
+
 
 /* ZMapStyleAlignment zmapStyle_P.h
  *
@@ -740,7 +747,7 @@ typedef struct
  * to indicate colinearity between adjacent blocks. */
 
 
-typedef struct
+typedef struct ZMapStyleAlignmentStructType
  {
    /* If set then blixem will be run with nucleotide or peptide sequences for the features. */
    ZMapStyleBlixemType blixem_type ;
@@ -792,7 +799,7 @@ typedef struct
  *  @brief Transcript feature
  *
  * Draws a transcript as a series of boxes joined by angled lines. */
-typedef struct
+typedef struct ZMapStyleTranscriptStructType
 {
   ZMapStyleFullColourStruct CDS_colours ;           /*!< Colour for CDS part of feature. */
 
@@ -805,7 +812,7 @@ typedef struct
  *  @brief AssemblyPath feature
  *
  * Draws an assembly path as a series of boxes placed alternately to form a tiling path. */
-typedef struct
+typedef struct ZMapStyleAssemblyPathStructType
 {
   ZMapStyleFullColourStruct non_path_colours ;            /*!< Colour for non-assembly part of feature. */
 

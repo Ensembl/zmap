@@ -1,6 +1,6 @@
 /*  File: zmapWindowDNA.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -140,8 +140,8 @@ void zmapWindowCreateSequenceSearchWindow(ZMapWindow window, FooCanvasItem *feat
     *buttonBox, *search_button, *forward_colour_button, *reverse_colour_button, *clear_button ;
   GdkColor colour = {0} ;
   DNASearchData search_data ;
-  ZMapFeatureAny feature_any ;
-  ZMapFeatureBlock block ;
+  ZMapFeatureAny feature_any = NULL ;
+  ZMapFeatureBlock block = NULL ;
   int max_errors, max_Ns ;
   char *text, *frame_label, *frame_text ;
   int screen_search_end, screen_search_start;
@@ -159,7 +159,7 @@ void zmapWindowCreateSequenceSearchWindow(ZMapWindow window, FooCanvasItem *feat
     }
   else
     {
-      zMapAssertNotReached();
+      zMapWarnIfReached();
     }
 
   if(feature_any == NULL)
@@ -172,7 +172,7 @@ void zmapWindowCreateSequenceSearchWindow(ZMapWindow window, FooCanvasItem *feat
     block = (ZMapFeatureBlock)zMapFeatureGetParentGroup(feature_any,
                                                         ZMAPFEATURE_STRUCT_BLOCK) ;
 
-  if (block->sequence.type == ZMAPSEQUENCE_NONE)
+  if (proceed && block->sequence.type == ZMAPSEQUENCE_NONE)
     {
       proceed = FALSE;
       zMapWarning("Cannot search DNA in this block \"%s\", "
@@ -730,7 +730,6 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 
       orig_style = zMapFindStyle(search_data->window->context_map->styles,
 				 zMapStyleCreateID(ZMAP_FIXED_STYLE_SEARCH_MARKERS_NAME)) ;
-      zMapAssert(orig_style) ;
 
       if (search_data->sequence_type == ZMAPSEQUENCE_DNA
 	  && (match_list = zMapDNAFindAllMatches(dna, query_txt, strand, start, end - start + 1,

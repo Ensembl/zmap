@@ -1,6 +1,6 @@
 /*  File: remotecontroltest.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2010: Genome Research Ltd.
+ *  Copyright (c) 2010-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -2129,7 +2129,7 @@ static void cmdCB(gpointer data, guint callback_action, GtkWidget *w)
       break;
 
     default:
-      zMapAssertNotReached();
+      zMapWarnIfReached();
       break;
     }
 

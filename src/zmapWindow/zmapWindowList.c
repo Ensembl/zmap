@@ -1,6 +1,6 @@
 /*  File: zmapWindowList.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -670,8 +670,6 @@ static gboolean selection_func_cb(GtkTreeSelection *selection,
         cfs = (ZMapWindowContainerFeatureSet)
             zmapWindowContainerUtilsItemGetParentLevel(item,ZMAPCONTAINER_LEVEL_FEATURESET);
 
-        zMapAssert(cfs);
-
 	  feature = zmapWindowItemGetFeature(item);
 
         gtk_tree_view_scroll_to_cell(treeView, path, NULL, FALSE, 0.0, 0.0);
@@ -767,7 +765,7 @@ static gboolean selection_func_cb(GtkTreeSelection *selection,
 
         zMapWindowHighlightObject(window, item, TRUE, TRUE, FALSE) ;
 
-        zmapWindowUpdateInfoPanel(window, feature, NULL, item, NULL, 0, 0, 0, 0, NULL, TRUE, TRUE, FALSE);
+        zmapWindowUpdateInfoPanel(window, feature, NULL, item, NULL, 0, 0, 0, 0, NULL, TRUE, TRUE, FALSE, FALSE);
     }
   }
 
@@ -787,7 +785,8 @@ static void destroyCB(GtkWidget *widget, gpointer user_data)
 {
   ZMapWindowList windowList = (ZMapWindowList)user_data ;
 
-  zMapAssert(windowList) ;
+  if (!windowList) 
+    return ;
 
   destroyList(windowList) ;
 

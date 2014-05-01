@@ -1064,6 +1064,46 @@ recognised then zmap creates and displays the feature.</p>
 
 
 <fieldset>
+<legend>"replace_feature"</legend>
+
+<p><b>Sender: peer</b></p>
+
+<p>Sent to zmap to request that it replaces the specified feature
+with the new version. The new feature may have any of its attributes changed
+including its parent featureset.</p>
+
+
+<pre class="request">
+&lt;zmap type="request" version="2.0" app_id="remotecontrol" clipboard_id="ZMap-31378-1339077671" request_id="6"&gt;
+  &lt;request command="replace_feature" view="NNNNN"&gt;
+    &lt;featureset name="history"&gt;
+      &lt;feature name="eds_feature" start="5000" end="6000" strand="+"&gt;
+        &lt;subfeature start="0" end="0" ontology="(null)"/&gt;
+      &lt;/feature&gt;
+    &lt;/featureset&gt;
+    &lt;featureset name="history"&gt;
+      &lt;feature name="eds_feature" start="6000" end="7000" strand="+"&gt;
+        &lt;subfeature start="0" end="0" ontology="(null)"/&gt;
+      &lt;/feature&gt;
+    &lt;/featureset&gt;
+  &lt;/request&gt;
+&lt;/zmap&gt;</pre>
+
+<p>If the existing featureset and feature can be found and the possibly new
+featureset exists and all the attributes are recognised then zmap replaces the
+existing feature with the new one.</p>
+
+<pre class="reply">
+&lt;zmap type="reply" version="2.0" app_id="ZMap" clipboard_id="ZMap-31378-1339077671" request_id="6"&gt;
+  &lt;reply command="replace_feature" return_code="ok"/&gt;
+&lt;/zmap&gt;</pre>
+
+</fieldset>
+<br />
+
+
+
+<fieldset>
 <legend>"find_feature"</legend>
 
 <p><b>Sender: peer</b></p>

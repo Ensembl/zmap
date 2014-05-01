@@ -1,6 +1,6 @@
 /*  File: zmapGFFFeatureData.h
  *  Author: Steve Miller (sm23@sanger.ac.uk)
- *  Copyright (c) 2006-2013: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -60,8 +60,8 @@ typedef struct ZMapGFFFeatureDataStruct_
   {
     char * sSequence ;
     char * sSource ;
-    unsigned int iStart ;
-    unsigned int iEnd ;
+    int iStart ;
+    int iEnd ;
     double dScore ;
     ZMapStrand cStrand ;
     ZMapPhase cPhase ;
@@ -93,54 +93,72 @@ typedef struct ZMapGFFFeatureDataStruct_
  * Creation and deletion of the objects
  */
 ZMapGFFFeatureData zMapGFFFeatureDataCreate() ;
-void zMapGFFFeatureDataDestroy(ZMapGFFFeatureData const ) ;
+void zMapGFFFeatureDataDestroy(ZMapGFFFeatureData) ;
 
 /*
  * Return flag values and data values.
  */
-gboolean zMapGFFFeatureDataGetFlagSeq(const ZMapGFFFeatureData const) ;
-gboolean zMapGFFFeatureDataGetFlagSou(const ZMapGFFFeatureData const) ;
-gboolean zMapGFFFeatureDataGetFlagSta(const ZMapGFFFeatureData const) ;
-gboolean zMapGFFFeatureDataGetFlagEnd(const ZMapGFFFeatureData const) ;
-gboolean zMapGFFFeatureDataGetFlagSco(const ZMapGFFFeatureData const) ;
-gboolean zMapGFFFeatureDataGetFlagStr(const ZMapGFFFeatureData const) ;
-gboolean zMapGFFFeatureDataGetFlagPha(const ZMapGFFFeatureData const) ;
-gboolean zMapGFFFeatureDataGetFlagAtt(const ZMapGFFFeatureData const) ;
-gboolean zMapGFFFeatureDataGetFlagPat(const ZMapGFFFeatureData const) ;
-gboolean zMapGFFFeatureDataGetFlagSod(const ZMapGFFFeatureData const) ;
+gboolean zMapGFFFeatureDataGetFlagSeq(ZMapGFFFeatureData) ;
+gboolean zMapGFFFeatureDataGetFlagSou(ZMapGFFFeatureData) ;
+gboolean zMapGFFFeatureDataGetFlagSta(ZMapGFFFeatureData) ;
+gboolean zMapGFFFeatureDataGetFlagEnd(ZMapGFFFeatureData) ;
+gboolean zMapGFFFeatureDataGetFlagSco(ZMapGFFFeatureData) ;
+gboolean zMapGFFFeatureDataGetFlagStr(ZMapGFFFeatureData) ;
+gboolean zMapGFFFeatureDataGetFlagPha(ZMapGFFFeatureData) ;
+gboolean zMapGFFFeatureDataGetFlagAtt(ZMapGFFFeatureData) ;
+gboolean zMapGFFFeatureDataGetFlagPat(ZMapGFFFeatureData) ;
+gboolean zMapGFFFeatureDataGetFlagSod(ZMapGFFFeatureData) ;
+
+/*
+ * Set some of the flag values
+ */
+gboolean zMapGFFFeatureDataSetFlagSco(ZMapGFFFeatureData, gboolean) ;
+
+/*
+ * Set some data members of the object.
+ */
+gboolean zMapGFFFeatureDataSetSeq(ZMapGFFFeatureData, const char * const ) ;
+gboolean zMapGFFFeatureDataSetSou(ZMapGFFFeatureData, const char * const ) ;
+gboolean zMapGFFFeatureDataSetSta(ZMapGFFFeatureData, int) ;
+gboolean zMapGFFFeatureDataSetEnd(ZMapGFFFeatureData, int) ;
+gboolean zMapGFFFeatureDataSetSco(ZMapGFFFeatureData, double ) ;
+gboolean zMapGFFFeatureDataSetSod(ZMapGFFFeatureData, ZMapSOIDData ) ;
+gboolean zMapGFFFeatureDataSetStr(ZMapGFFFeatureData, ZMapStrand) ;
+gboolean zMapGFFFeatureDataSetPha(ZMapGFFFeatureData, ZMapPhase) ;
 
 /*
  * Return various data elements of the object.
  */
-char*                      zMapGFFFeatureDataGetSeq(const ZMapGFFFeatureData const) ;
-char*                      zMapGFFFeatureDataGetSou(const ZMapGFFFeatureData const) ;
-unsigned int               zMapGFFFeatureDataGetSta(const ZMapGFFFeatureData const) ;
-unsigned int               zMapGFFFeatureDataGetEnd(const ZMapGFFFeatureData const) ;
-double                     zMapGFFFeatureDataGetSco(const ZMapGFFFeatureData const) ;
-ZMapStrand                 zMapGFFFeatureDataGetStr(const ZMapGFFFeatureData const) ;
-ZMapPhase                  zMapGFFFeatureDataGetPha(const ZMapGFFFeatureData const) ;
-char *                     zMapGFFFeatureDataGetAtt(const ZMapGFFFeatureData const) ;
-unsigned int               zMapGFFFeatureDataGetNat(const ZMapGFFFeatureData const) ;
-ZMapGFFAttribute *         zMapGFFFeatureDataGetAts(const ZMapGFFFeatureData const) ;
-const ZMapSOIDData         zMapGFFFeatureDataGetSod(const ZMapGFFFeatureData const) ;
+char*                      zMapGFFFeatureDataGetSeq(ZMapGFFFeatureData) ;
+char*                      zMapGFFFeatureDataGetSou(ZMapGFFFeatureData) ;
+int                        zMapGFFFeatureDataGetSta(ZMapGFFFeatureData) ;
+int                        zMapGFFFeatureDataGetEnd(ZMapGFFFeatureData) ;
+double                     zMapGFFFeatureDataGetSco(ZMapGFFFeatureData) ;
+ZMapStrand                 zMapGFFFeatureDataGetStr(ZMapGFFFeatureData) ;
+ZMapPhase                  zMapGFFFeatureDataGetPha(ZMapGFFFeatureData) ;
+char *                     zMapGFFFeatureDataGetAtt(ZMapGFFFeatureData) ;
+unsigned int               zMapGFFFeatureDataGetNat(ZMapGFFFeatureData) ;
+ZMapGFFAttribute *         zMapGFFFeatureDataGetAts(ZMapGFFFeatureData) ;
+const ZMapSOIDData         zMapGFFFeatureDataGetSod(ZMapGFFFeatureData) ;
 
 /*
  * Other manipulation functions.
  */
-gboolean zMapGFFFeatureDataSet(ZMapGFFFeatureData const,
+gboolean zMapGFFFeatureDataSet(ZMapGFFFeatureData,
                                const char * const,
                                const char * const,
-                               unsigned int,
-                               unsigned int,
+                               int,
+                               int,
                                gboolean,
                                double,
                                ZMapStrand,
                                ZMapPhase,
                                const char * const,
-                               const ZMapGFFAttribute * const,
+                               ZMapGFFAttribute *,
                                unsigned int,
-                               const ZMapSOIDData const) ;
-gboolean zMapGFFFeatureDataIsValid(const ZMapGFFFeatureData const ) ;
+                               ZMapSOIDData) ;
+gboolean zMapGFFFeatureDataIsValid(ZMapGFFFeatureData) ;
+ZMapGFFFeatureData zMapGFFFeatureDataCC(ZMapGFFFeatureData) ;
 
 
 

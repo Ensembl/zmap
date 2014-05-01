@@ -1,6 +1,6 @@
 /*  File: zmapConfigDir.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -86,7 +86,8 @@ gboolean zMapConfigDirCreate(char *config_dir_in, char *config_file_in)
   char *config_dir = NULL, *config_file = NULL ;
   char *zmap_home ;
 
-  g_return_val_if_fail(dir_context_G == NULL, FALSE) ;
+  /* g_return_val_if_fail(dir_context_G == NULL, FALSE) ;*/
+  zMapReturnValIfFail(dir_context_G == NULL, FALSE) ;
 
   dir_context_G = dir_context = g_new0(ZMapConfigDirStruct, 1) ;
 
@@ -128,11 +129,15 @@ gboolean zMapConfigDirCreate(char *config_dir_in, char *config_file_in)
       g_free(dirname) ;
     }
 
-  if (config_dir && config_file)
+  if (config_dir)
     {
-      if ((dir_context->config_dir = zMapGetDir(config_dir, FALSE, FALSE))
-	  && (dir_context->config_file = zMapGetFile(dir_context->config_dir, config_file, FALSE)))
+      if ((dir_context->config_dir = zMapGetDir(config_dir, FALSE, FALSE)))
 	result = TRUE ;
+    }
+
+  if (config_file)
+    {
+      dir_context->config_file = zMapGetFile(dir_context->config_dir, config_file, FALSE, NULL);
     }
 
   if ((zmap_home = getenv("ZMAP_HOME")))
@@ -140,7 +145,7 @@ gboolean zMapConfigDirCreate(char *config_dir_in, char *config_file_in)
       zmap_home = g_strdup_printf("%s/etc", zmap_home) ;
 
       if((dir_context->zmap_conf_dir  = zMapGetDir(zmap_home, FALSE, FALSE)))
-	dir_context->zmap_conf_file = zMapGetFile(dir_context->zmap_conf_dir, ZMAP_USER_CONFIG_FILE, FALSE) ;
+        dir_context->zmap_conf_file = zMapGetFile(dir_context->zmap_conf_dir, ZMAP_USER_CONFIG_FILE, FALSE, NULL) ;
 
       g_free(zmap_home) ;
     }
@@ -150,14 +155,14 @@ gboolean zMapConfigDirCreate(char *config_dir_in, char *config_file_in)
     }
 
   if (!((dir_context->sys_conf_dir  = zMapGetDir("/etc", FALSE, FALSE))
-	&& (dir_context->sys_conf_file = zMapGetFile(dir_context->sys_conf_dir, ZMAP_USER_CONFIG_FILE, FALSE))))
+        && (dir_context->sys_conf_file = zMapGetFile(dir_context->sys_conf_dir, ZMAP_USER_CONFIG_FILE, FALSE, NULL))))
     {
       dir_context->sys_conf_dir = dir_context->sys_conf_file = NULL;
     }
 
   if (!result)
     {
-      //  for error reporting  NOTE these may be NULL if we run config free
+      /*  for error reporting  NOTE these may be NULL if we run config free */
       dir_context->config_dir = config_dir;
       dir_context->config_file = config_file;
     }
@@ -180,10 +185,12 @@ const char *zMapConfigDirDefaultName(void)
 
 char *zMapConfigDirGetDir(void)
 {
-  char *config_dir ;
+  char *config_dir = NULL ;
   ZMapConfigDir dir_context = dir_context_G ;
 
-  zMapAssert(dir_context) ;
+  /* if (!dir_context) 
+    return config_dir ; */
+  zMapReturnValIfFail(dir_context, config_dir) ; 
 
   config_dir = dir_context->config_dir ;
 
@@ -193,10 +200,12 @@ char *zMapConfigDirGetDir(void)
 
 char *zMapConfigDirGetFile(void)
 {
-  char *config_file ;
+  char *config_file = NULL ;
   ZMapConfigDir dir_context = dir_context_G ;
 
-  zMapAssert(dir_context) ;
+  /* if (!dir_context) 
+    return config_file ; */
+  zMapReturnValIfFail(dir_context, config_file) ; 
 
   config_file = dir_context->config_file ;
 
@@ -209,9 +218,11 @@ char *zMapConfigDirFindFile(char *filename)
   char *file_path = NULL ;
   ZMapConfigDir dir_context = dir_context_G ;
 
-  zMapAssert(dir_context) ;
+  /* if (!dir_context) 
+    return file_path ; */
+  zMapReturnValIfFail(dir_context, file_path) ; 
 
-  file_path = zMapGetFile(dir_context->config_dir, filename, FALSE) ;
+  file_path = zMapGetFile(dir_context->config_dir, filename, FALSE, NULL) ;
 
   return file_path ;
 }
@@ -230,10 +241,12 @@ char *zMapConfigDirFindDir(char *directory_in)
 
 char *zMapConfigDirGetZmapHomeFile(void)
 {
-  char *config_file ;
+  char *config_file = NULL ;
   ZMapConfigDir dir_context = dir_context_G ;
 
-  zMapAssert(dir_context) ;
+  /* if (!dir_context) 
+    return config_file ; */
+  zMapReturnValIfFail(dir_context, config_file) ; 
 
   config_file = dir_context->zmap_conf_file ;
 
@@ -243,10 +256,12 @@ char *zMapConfigDirGetZmapHomeFile(void)
 
 char *zMapConfigDirGetSysFile(void)
 {
-  char *config_file ;
+  char *config_file = NULL ;
   ZMapConfigDir dir_context = dir_context_G ;
 
-  zMapAssert(dir_context) ;
+  /* if (!dir_context) 
+    return config_file ; */
+  zMapReturnValIfFail(dir_context, config_file) ; 
 
   config_file = dir_context->sys_conf_file ;
 
@@ -258,7 +273,9 @@ void zMapConfigDirDestroy(void)
 {
   ZMapConfigDir dir_context = dir_context_G ;
 
-  zMapAssert(dir_context) ;
+  /* if (!dir_context) 
+    return ; */
+  zMapReturnIfFail(dir_context) ; 
 
   g_free(dir_context) ;
 

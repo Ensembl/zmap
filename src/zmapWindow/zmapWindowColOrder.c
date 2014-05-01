@@ -1,7 +1,6 @@
 /*  File: zmapWindowColOrder.c
- *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006-2012: Genome Research Ltd.
- *  Re-factored by malcolm hinsley
+ *  Author: Roy Storey (rds@sanger.ac.uk), Malcolm Hinsley (mh17@sanger.ac.uk)
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -148,7 +147,6 @@ static void orderColumnsCB(ZMapWindowContainerGroup container, FooCanvasPoints *
     {
       /* Get Features */
       container_features = zmapWindowContainerGetFeatures(container);
-      zMapAssert(container_features);
       /* Cast to FooCanvasGroup */
       features_group = (FooCanvasGroup *) container_features;
 
