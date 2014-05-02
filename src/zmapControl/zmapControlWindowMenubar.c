@@ -80,54 +80,54 @@ GtkItemFactory *item_factory;
 
 
 static GtkItemFactoryEntry menu_items[] = {
- { "/_File",                        NULL,         NULL,                  0, "<Branch>" },
- { "/File/_New Sequence",           NULL,         newSequenceByConfigCB, 2, NULL },
- { "/File/sep1",     NULL,         NULL, 0, "<Separator>" },
- { "/File/_Import",  "<control>I", importCB, 0, NULL },		/* or Read ? */
+         { "/_File",                        NULL,         NULL,                  0, "<Branch>" },
+         { "/File/_New Sequence",           NULL,         newSequenceByConfigCB, 2, NULL },
+         { "/File/sep1",     NULL,         NULL, 0, "<Separator>" },
+         { "/File/_Import",  "<control>I", importCB, 0, NULL },/* or Read ? */
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-{ "/File/_Export",  "<control>E", exportCB, 0, NULL },
+        { "/File/_Export",  "<control>E", exportCB, 0, NULL },
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
- { "/File/sep1",                     NULL,         NULL, 0, "<Separator>" },
- { "/File/_Save screen shot",        NULL,         dumpCB, 0, NULL },
- { "/File/_Print screen shot",       "<control>P", printCB, 0, NULL },
- { "/File/sep1",                     NULL,           NULL, 0, "<Separator>" },
- { "/File/Close",                    "<control>W", closeCB, 0, NULL },
- { "/File/Quit",                     "<control>Q", quitCB, 0, NULL },
+         { "/File/sep1",                     NULL,         NULL, 0, "<Separator>" },
+         { "/File/_Save screen shot",        NULL,         dumpCB, 0, NULL },
+         { "/File/_Print screen shot",       "<control>P", printCB, 0, NULL },
+         { "/File/sep1",                     NULL,           NULL, 0, "<Separator>" },
+         { "/File/Close",                    "<control>W", closeCB, 0, NULL },
+         { "/File/Quit",                     "<control>Q", quitCB, 0, NULL },
 
- { "/_Edit",                         NULL,         NULL, 0, "<Branch>" },
+         { "/_Edit",                         NULL,         NULL, 0, "<Branch>" },
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
- { "/Edit/Cu_t",                     "<control>X", copyPasteCB, 0, NULL },
+         { "/Edit/Cu_t",                     "<control>X", copyPasteCB, 0, NULL },
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
- { "/Edit/_Copy",                    "<control>C", copyPasteCB, EDIT_COPY, NULL },
- { "/Edit/_Paste",   "<control>V", copyPasteCB, EDIT_PASTE, NULL },
+         { "/Edit/_Copy",                    "<control>C", copyPasteCB, EDIT_COPY, NULL },
+         { "/Edit/_Paste",   "<control>V", copyPasteCB, EDIT_PASTE, NULL },
 
- { "/Edit/_Redraw",  NULL,         redrawCB, 0, NULL },
- { "/Edit/sep1",     NULL,         NULL, 0, "<Separator>" },
- { "/Edit/P_references",  NULL,    preferencesCB, 0, NULL },
- { "/Edit/_Set Developer status",  NULL,    developerCB, 0, NULL },
+         { "/Edit/_Redraw",  NULL,         redrawCB, 0, NULL },
+         { "/Edit/sep1",     NULL,         NULL, 0, "<Separator>" },
+         { "/Edit/P_references",  NULL,    preferencesCB, 0, NULL },
+         { "/Edit/_Set Developer status",  NULL,    developerCB, 0, NULL },
 
- { "/_View",         NULL,         NULL, 0, "<Branch>" },
- { "/View/Session Details", NULL,  showSessionCB, 0, NULL },
-
+         { "/_View",         NULL,         NULL, 0, "<Branch>" },
+         { "/View/Session Details", NULL,  showSessionCB, 0, NULL },
+        
 #ifdef ALLOW_POPOUT_PANEL
- { "/View/'Pop Out' Control Info Panel", NULL, popout_panel, 0, NULL },
-#endif	/* ALLOW_POPOUT_PANEL */
+         { "/View/'Pop Out' Control Info Panel", NULL, popout_panel, 0, NULL },
+#endif/* ALLOW_POPOUT_PANEL */
 
- { "/_Raise ticket",  NULL,        NULL, 0, "<LastBranch>" },
- { "/Raise ticket/See ZMap tickets", NULL, rtTicket, RT_ZMAP_USER_TICKETS, NULL },
- { "/Raise ticket/ZMap ticket",       NULL, rtTicket, RT_ZMAP, NULL },
- { "/Raise ticket/Anacode ticket",    NULL, rtTicket, RT_ANACODE, NULL },
- { "/Raise ticket/Blixem, Dotter or Belvu ticket",      NULL, rtTicket, RT_SEQTOOLS, NULL },
- { "/Raise ticket/Acedb ticket",      NULL, rtTicket, RT_ACEDB, NULL },
+         { "/_Raise ticket",  NULL,        NULL, 0, "<LastBranch>" },
+         { "/Raise ticket/See ZMap tickets", NULL, rtTicket, RT_ZMAP_USER_TICKETS, NULL },
+         { "/Raise ticket/ZMap ticket",       NULL, rtTicket, RT_ZMAP, NULL },
+         { "/Raise ticket/Anacode ticket",    NULL, rtTicket, RT_ANACODE, NULL },
+         { "/Raise ticket/Blixem, Dotter or Belvu ticket",      NULL, rtTicket, RT_SEQTOOLS, NULL },
+         { "/Raise ticket/Acedb ticket",      NULL, rtTicket, RT_ACEDB, NULL },
 
- { "/_Help",         NULL,         NULL, 0, "<LastBranch>" },
- //{ "/Help/General Help", NULL,     allHelpCB, ZMAPGUI_HELP_GENERAL, NULL },
- { "/Help/Quick Start Guide", NULL,allHelpCB, ZMAPGUI_HELP_QUICK_START, NULL },
- { "/Help/Keyboard & Mouse", NULL, allHelpCB, ZMAPGUI_HELP_KEYBOARD, NULL },
- { "/Help/Alignment Display", NULL, allHelpCB, ZMAPGUI_HELP_ALIGNMENT_DISPLAY, NULL },
- { "/Help/Release Notes", NULL,    allHelpCB, ZMAPGUI_HELP_RELEASE_NOTES, NULL },
- //{ "/Help/What's New", NULL,    allHelpCB, ZMAPGUI_HELP_WHATS_NEW, NULL },
- { "/Help/About ZMap",    NULL,    aboutCB, 0, NULL }
+         { "/_Help",         NULL,         NULL, 0, "<LastBranch>" },
+         //{ "/Help/General Help", NULL,     allHelpCB, ZMAPGUI_HELP_GENERAL, NULL },
+         { "/Help/Quick Start Guide", NULL,allHelpCB, ZMAPGUI_HELP_QUICK_START, NULL },
+         { "/Help/Keyboard & Mouse", NULL, allHelpCB, ZMAPGUI_HELP_KEYBOARD, NULL },
+         { "/Help/Alignment Display", NULL, allHelpCB, ZMAPGUI_HELP_ALIGNMENT_DISPLAY, NULL },
+         { "/Help/Release Notes", NULL,    allHelpCB, ZMAPGUI_HELP_RELEASE_NOTES, NULL },
+         //{ "/Help/What's New", NULL,    allHelpCB, ZMAPGUI_HELP_WHATS_NEW, NULL },
+         { "/Help/About ZMap",    NULL,    aboutCB, 0, NULL }
 };
 
 
@@ -213,9 +213,9 @@ static void importCB(gpointer cb_data, guint callback_action, GtkWidget *window)
 
       /* NOTE we get -fwd coords from this function if revcomped */
       if(start < 0)
-	start = -start ;
+        start = -start ;
       if(end < 0)
-	end = -end ;
+        end = -end ;
 
       start += map->start ;
       end += map->start ;
@@ -297,13 +297,13 @@ static void developerCB(gpointer cb_data, guint callback_action, GtkWidget *wind
   GtkResponseType result ;
 
   result = zMapGUIMsgGetText(GTK_WINDOW(zmap->toplevel),
-			     ZMAP_MSG_INFORMATION, "Enter Developer Password:", TRUE,
-			     &passwd) ;
+     ZMAP_MSG_INFORMATION, "Enter Developer Password:", TRUE,
+     &passwd) ;
 
   if (result == GTK_RESPONSE_OK)
     {
       if (!passwd || !(*passwd) || !zMapUtilsUserSetDeveloper(passwd))
-	zMapGUIShowMsg(ZMAP_MSG_WARNING, "Password Verification Failed") ;
+        zMapGUIShowMsg(ZMAP_MSG_WARNING, "Password Verification Failed") ;
     }
 
   return ;
@@ -397,8 +397,8 @@ static void rtTicket(gpointer cb_data, guint callback_action, GtkWidget *window)
   else
     {
       zMapGUIShowMsgFull(NULL, "Please wait, ticket page will be shown in your browser in a few seconds.",
-			 ZMAP_MSG_INFORMATION,
-			 GTK_JUSTIFY_CENTER, 5, TRUE) ;
+                         ZMAP_MSG_INFORMATION,
+                         GTK_JUSTIFY_CENTER, 5, TRUE) ;
     }
 
   g_free(web_page) ;
@@ -482,10 +482,10 @@ static void handle_option( gpointer data, guint callback_action, GtkWidget *w )
 {
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	GtkCheckMenuItem *checkMenuItem = (GtkCheckMenuItem *) w;
+  GtkCheckMenuItem *checkMenuItem = (GtkCheckMenuItem *) w;
 
-	printf( "widget is %x data is %s\n", w, data );
-	g_message ("Hello, World!\n");
+  printf( "widget is %x data is %s\n", w, data );
+  g_message ("Hello, World!\n");
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 }

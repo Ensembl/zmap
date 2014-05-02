@@ -139,194 +139,194 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
   if (!feature_desc)
     {
       for (i = 0 ; i < TOTAL_LABELS ; i++)
-	{
-	  if (i == 0)
-	    text[i] = "" ;				    /* placeholder stops panel disappearing. */
-	  else
-	    text[i] = tooltip[i] = NULL ;
-	}
+        {
+          if (i == 0)
+            text[i] = "" ;    /* placeholder stops panel disappearing. */
+          else
+            text[i] = tooltip[i] = NULL ;
+        }
     }
   else
     {
       if (feature_desc->struct_type == ZMAPFEATURE_STRUCT_FEATURESET)
-	{
-	  text[0] = g_strdup(feature_desc->feature_set) ;
-	  if (feature_desc->feature_set_description)
-	    {
-	      tooltip[0] = g_strdup_printf("Description  -  \"%s\"",
-					   feature_desc->feature_set_description) ;
-	    }
-	  else
-            tooltip[0] = g_strdup_printf("Description  -  \"%s\"",text[0]);
-	}
+        {
+          text[0] = g_strdup(feature_desc->feature_set) ;
+          if (feature_desc->feature_set_description)
+            {
+              tooltip[0] = g_strdup_printf("Description  -  \"%s\"",
+           feature_desc->feature_set_description) ;
+            }
+          else
+                    tooltip[0] = g_strdup_printf("Description  -  \"%s\"",text[0]);
+        }
       else
-	{
-	  /* monkey with the text that goes in the labels. */
-	  if (feature_desc->feature_name)
-	    text[0] = g_strdup_printf("%s%s%s%s%s%s%s",
-				      feature_desc->feature_name,
-				      (feature_desc->feature_known_name ? "  (" : ""),
-				      (feature_desc->feature_known_name ? feature_desc->feature_known_name : ""),
-				      (feature_desc->feature_known_name ? ")" : ""),
-				      (feature_desc->feature_total_length ? "  (" : ""),
-				      (feature_desc->feature_total_length ? feature_desc->feature_total_length : ""),
-				      (feature_desc->feature_total_length ? ")" : "")) ;
+        {
+          /* monkey with the text that goes in the labels. */
+          if (feature_desc->feature_name)
+            text[0] = g_strdup_printf("%s%s%s%s%s%s%s",
+              feature_desc->feature_name,
+              (feature_desc->feature_known_name ? "  (" : ""),
+              (feature_desc->feature_known_name ? feature_desc->feature_known_name : ""),
+              (feature_desc->feature_known_name ? ")" : ""),
+              (feature_desc->feature_total_length ? "  (" : ""),
+              (feature_desc->feature_total_length ? feature_desc->feature_total_length : ""),
+              (feature_desc->feature_total_length ? ")" : "")) ;
 
-	  if (feature_desc->feature_strand)
-	    {
-	      if (feature_desc->type == ZMAPSTYLE_MODE_ALIGNMENT && feature_desc->feature_query_strand)
-		text[1] = g_strdup_printf("%s / %s",
-					  feature_desc->feature_strand, feature_desc->feature_query_strand) ;
-	      else
-		text[1] = g_strdup_printf("%s", feature_desc->feature_strand) ;
-	    }
+          if (feature_desc->feature_strand)
+            {
+              if (feature_desc->type == ZMAPSTYLE_MODE_ALIGNMENT && feature_desc->feature_query_strand)
+        text[1] = g_strdup_printf("%s / %s",
+          feature_desc->feature_strand, feature_desc->feature_query_strand) ;
+              else
+        text[1] = g_strdup_printf("%s", feature_desc->feature_strand) ;
+            }
+        
+          if (feature_desc->feature_start)
+            {
+              if (!(feature_desc->feature_query_start))
+                text[2] = g_strdup_printf("%s, %s%s%s%s",
+                                          feature_desc->feature_start,
+                                          feature_desc->feature_end,
+                                          (feature_desc->feature_length ? "  (" : ""),
+                                          (feature_desc->feature_length ? feature_desc->feature_length : ""),
+                                          (feature_desc->feature_length ? ")" : "")) ;
+              else
+                text[2] = g_strdup_printf("%s, %s%s%s%s%s%s%s%s",
+                                          feature_desc->feature_start,
+                                          feature_desc->feature_end,
+                                          (feature_desc->feature_query_start ? "  <-  " : ""),
+                                          (feature_desc->feature_query_start ? feature_desc->feature_query_start : ""),
+                                          (feature_desc->feature_query_start ? ", " : ""),
+                                          (feature_desc->feature_query_end ? feature_desc->feature_query_end : ""),
+                                          (feature_desc->feature_query_length ? "  (" : ""),
+                                          (feature_desc->feature_query_length ? feature_desc->feature_query_length : ""),
+                                          (feature_desc->feature_query_length ? ")" : "")) ;
+            }
 
-	  if (feature_desc->feature_start)
-	    {
-	      if (!(feature_desc->feature_query_start))
-		text[2] = g_strdup_printf("%s, %s%s%s%s",
-					  feature_desc->feature_start,
-					  feature_desc->feature_end,
-					  (feature_desc->feature_length ? "  (" : ""),
-					  (feature_desc->feature_length ? feature_desc->feature_length : ""),
-					  (feature_desc->feature_length ? ")" : "")) ;
-	      else
-		text[2] = g_strdup_printf("%s, %s%s%s%s%s%s%s%s",
-					  feature_desc->feature_start,
-					  feature_desc->feature_end,
-					  (feature_desc->feature_query_start ? "  <-  " : ""),
-					  (feature_desc->feature_query_start ? feature_desc->feature_query_start : ""),
-					  (feature_desc->feature_query_start ? ", " : ""),
-					  (feature_desc->feature_query_end ? feature_desc->feature_query_end : ""),
-					  (feature_desc->feature_query_length ? "  (" : ""),
-					  (feature_desc->feature_query_length ? feature_desc->feature_query_length : ""),
-					  (feature_desc->feature_query_length ? ")" : "")) ;
-	    }
+          if (feature_desc->sub_feature_start)
+            text[3] = g_strdup_printf("%s %s: %s, %s%s%s%s%s%s%s%s",
+                                      feature_desc->sub_feature_term,
+                                      feature_desc->sub_feature_index,
+                                      feature_desc->sub_feature_start,
+                                      feature_desc->sub_feature_end,
+                                      (feature_desc->sub_feature_query_start ? "  <-  " : ""),
+                                      (feature_desc->sub_feature_query_start ? feature_desc->sub_feature_query_start : ""),
+                                      (feature_desc->sub_feature_query_start ? ", " : ""),
+                                      (feature_desc->sub_feature_query_end ? feature_desc->sub_feature_query_end : ""),
+                                      (feature_desc->sub_feature_length ? "  (" : ""),
+                                      (feature_desc->sub_feature_length ? feature_desc->sub_feature_length : ""),
+                                      (feature_desc->sub_feature_length ? ")" : "")) ;
+          else if (feature_desc->type == ZMAPSTYLE_MODE_ALIGNMENT && feature_desc->sub_feature_none_txt)
+            text[3] = g_strdup(feature_desc->sub_feature_none_txt) ;
+          else if (feature_desc->type == ZMAPSTYLE_MODE_TRANSCRIPT && feature_desc->sub_feature_none_txt)
+            text[3] = g_strdup(feature_desc->sub_feature_none_txt) ;
+        
+          text[4] = feature_desc->feature_frame ; /* Frame */
+        
+          if(feature_desc->feature_population)
+            {
+              text[5] = g_strdup_printf("%s",feature_desc->feature_population);
+            }
 
-	  if (feature_desc->sub_feature_start)
-	    text[3] = g_strdup_printf("%s %s: %s, %s%s%s%s%s%s%s%s",
-				      feature_desc->sub_feature_term,
-				      feature_desc->sub_feature_index,
-				      feature_desc->sub_feature_start,
-				      feature_desc->sub_feature_end,
-				      (feature_desc->sub_feature_query_start ? "  <-  " : ""),
-				      (feature_desc->sub_feature_query_start ? feature_desc->sub_feature_query_start : ""),
-				      (feature_desc->sub_feature_query_start ? ", " : ""),
-				      (feature_desc->sub_feature_query_end ? feature_desc->sub_feature_query_end : ""),
-				      (feature_desc->sub_feature_length ? "  (" : ""),
-				      (feature_desc->sub_feature_length ? feature_desc->sub_feature_length : ""),
-				      (feature_desc->sub_feature_length ? ")" : "")) ;
-	  else if (feature_desc->type == ZMAPSTYLE_MODE_ALIGNMENT && feature_desc->sub_feature_none_txt)
-	    text[3] = g_strdup(feature_desc->sub_feature_none_txt) ;
-	  else if (feature_desc->type == ZMAPSTYLE_MODE_TRANSCRIPT && feature_desc->sub_feature_none_txt)
-	    text[3] = g_strdup(feature_desc->sub_feature_none_txt) ;
+          if (feature_desc->type == ZMAPSTYLE_MODE_ALIGNMENT)
+            {
+              text[6] = g_strdup_printf("%s%s%s",
+                                        feature_desc->feature_score ? feature_desc->feature_score : "",
+                                        ((feature_desc->feature_percent_id && feature_desc->feature_score) ? " / " : ""),
+                                        (feature_desc->feature_percent_id ? feature_desc->feature_percent_id : "")) ;
+            }
+          else if (feature_desc->feature_score)
+            {
+              text[6] = g_strdup_printf("%s", feature_desc->feature_score) ;
+            }
 
-	  text[4] = feature_desc->feature_frame ; /* Frame */
+        
+          text[7] = feature_desc->feature_term ; /* Style type */
+          text[8] = feature_desc->feature_set ;/* Feature set */
+          text[9] = feature_desc->feature_source ; /* Source */
 
-	  if(feature_desc->feature_population)
-	    {
-	      text[5] = g_strdup_printf("%s",feature_desc->feature_population);
-	    }
+          /* Now to the tooltips... */
 
-	  if (feature_desc->type == ZMAPSTYLE_MODE_ALIGNMENT)
-	    {
-	      text[6] = g_strdup_printf("%s%s%s",
-					feature_desc->feature_score ? feature_desc->feature_score : "",
-					((feature_desc->feature_percent_id && feature_desc->feature_score) ? " / " : ""),
-					(feature_desc->feature_percent_id ? feature_desc->feature_percent_id : "")) ;
-	    }
-	  else if (feature_desc->feature_score)
-	    {
-	      text[6] = g_strdup_printf("%s", feature_desc->feature_score) ;
-	    }
+          /* The first one needs building, as it contains quite a wealth of information */
+          desc_str = g_string_new("") ;
 
+          g_string_append(desc_str, "Feature Name") ;
 
-	  text[7] = feature_desc->feature_term ; /* Style type */
-	  text[8] = feature_desc->feature_set ;	/* Feature set */
-	  text[9] = feature_desc->feature_source ; /* Source */
+          if (feature_desc->feature_known_name)
+            {
+              g_string_append(desc_str, " (feature known name)") ;
+            }
 
-	  /* Now to the tooltips... */
+           if (feature_desc->feature_variation_string)
+             {
+               g_string_append(desc_str, g_strdup_printf("; allele =\n%s", feature_desc->feature_variation_string )) ;
+             }
 
-	  /* The first one needs building, as it contains quite a wealth of information */
-	  desc_str = g_string_new("") ;
+          if (feature_desc->feature_total_length)
+            {
+              g_string_append(desc_str, " (total feature length)") ;
+            }
 
-	  g_string_append(desc_str, "Feature Name") ;
+          if (feature_desc->feature_known_name || feature_desc->feature_description
+              || feature_desc->feature_locus)
+        
+            {
+              g_string_append(desc_str, "\n\nExtra Feature Information:") ;
+        
+              if (feature_desc->feature_known_name)
+                {
+                  g_string_append(desc_str, "\n\n") ;
+                
+                  g_string_append_printf(desc_str, "Feature Known Name  -  \"%s\"",
+                                         feature_desc->feature_known_name) ;
+                }
 
-	  if (feature_desc->feature_known_name)
-	    {
-	      g_string_append(desc_str, " (feature known name)") ;
-	    }
+              if (feature_desc->feature_description)
+                {
+                  g_string_append(desc_str, "\n\n") ;
+                
+                  g_string_append_printf(desc_str, "Notes  -  \"%s\"",
+                                         feature_desc->feature_description) ;
+                }
 
-   if (feature_desc->feature_variation_string)
-     {
-       g_string_append(desc_str, g_strdup_printf("; allele =\n%s", feature_desc->feature_variation_string )) ;
-     }
+              if (feature_desc->feature_locus)
+                {
+                  g_string_append(desc_str, "\n\n") ;
+                
+                  g_string_append_printf(desc_str, "Locus  -  \"%s\"",
+                                         feature_desc->feature_locus) ;
+                }
+            }
 
-	  if (feature_desc->feature_total_length)
-	    {
-	      g_string_append(desc_str, " (total feature length)") ;
-	    }
-
-	  if (feature_desc->feature_known_name || feature_desc->feature_description
-	      || feature_desc->feature_locus)
-
-	    {
-	      g_string_append(desc_str, "\n\nExtra Feature Information:") ;
-
-	      if (feature_desc->feature_known_name)
-		{
-		  g_string_append(desc_str, "\n\n") ;
-
-		  g_string_append_printf(desc_str, "Feature Known Name  -  \"%s\"",
-					 feature_desc->feature_known_name) ;
-		}
-
-	      if (feature_desc->feature_description)
-		{
-		  g_string_append(desc_str, "\n\n") ;
-
-		  g_string_append_printf(desc_str, "Notes  -  \"%s\"",
-					 feature_desc->feature_description) ;
-		}
-
-	      if (feature_desc->feature_locus)
-		{
-		  g_string_append(desc_str, "\n\n") ;
-
-		  g_string_append_printf(desc_str, "Locus  -  \"%s\"",
-					 feature_desc->feature_locus) ;
-		}
-	    }
-
-	  tooltip[0] = g_string_free(desc_str, FALSE) ;
+          tooltip[0] = g_string_free(desc_str, FALSE) ;
 
 
-	  if (feature_desc->type == ZMAPSTYLE_MODE_ALIGNMENT)
-	    tooltip[1] = "Strand match is aligned to / Strand match is aligned from" ;
-	  else
-	    tooltip[1] = "Strand feature is located on" ;
+          if (feature_desc->type == ZMAPSTYLE_MODE_ALIGNMENT)
+            tooltip[1] = "Strand match is aligned to / Strand match is aligned from" ;
+          else
+            tooltip[1] = "Strand feature is located on" ;
 
-	  if (feature_desc->type == ZMAPSTYLE_MODE_ALIGNMENT)
-	    tooltip[2] = "sequence start, end  <-  match start, end (match length)" ;
-	  else
-	    tooltip[2] = "Feature start, end (length)" ;
+          if (feature_desc->type == ZMAPSTYLE_MODE_ALIGNMENT)
+            tooltip[2] = "sequence start, end  <-  match start, end (match length)" ;
+          else
+            tooltip[2] = "Feature start, end (length)" ;
 
-	  if (feature_desc->sub_feature_term)
-	    tooltip[3] = g_strdup("sub_feature_type  index:   start, end  (length)") ;
+          if (feature_desc->sub_feature_term)
+            tooltip[3] = g_strdup("sub_feature_type  index:   start, end  (length)") ;
 
-	  tooltip[4] = "Frame" ;
+          tooltip[4] = "Frame" ;
 
-	  tooltip[5] = "Number of clustered features" ;
+          tooltip[5] = "Number of clustered features" ;
 
-	  if (feature_desc->type == ZMAPSTYLE_MODE_ALIGNMENT && feature_desc->feature_percent_id)
-	    tooltip[6] = g_strdup("Score / percent ID") ;
-	  else if (feature_desc->feature_score)
-	    tooltip[6] = g_strdup("Score") ;
+          if (feature_desc->type == ZMAPSTYLE_MODE_ALIGNMENT && feature_desc->feature_percent_id)
+            tooltip[6] = g_strdup("Score / percent ID") ;
+          else if (feature_desc->feature_score)
+            tooltip[6] = g_strdup("Score") ;
 
-	  tooltip[7] = "Feature Type" ;
-	  tooltip[8] = "Feature Set" ;
-	  tooltip[9] = "Feature Source" ;
-	}
+          tooltip[7] = "Feature Type" ;
+          tooltip[8] = "Feature Set" ;
+          tooltip[9] = "Feature Source" ;
+        }
     }
 
 
@@ -335,33 +335,33 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
       GtkWidget *frame_parent = gtk_widget_get_parent(gtk_widget_get_parent(label[i])) ;
 
       if (text[i])
-	{
-	  if (!GTK_WIDGET_MAPPED(frame_parent))
-	    gtk_widget_show_all(frame_parent) ;
+        {
+          if (!GTK_WIDGET_MAPPED(frame_parent))
+            gtk_widget_show_all(frame_parent) ;
+        
+          gtk_label_set_text(GTK_LABEL(label[i]), text[i]) ;
 
-	  gtk_label_set_text(GTK_LABEL(label[i]), text[i]) ;
-
-	  if (tooltip[i])
-	    gtk_tooltips_set_tip(zmap->feature_tooltips, gtk_widget_get_parent(label[i]),
-				 tooltip[i],
-				 "") ;
-	  switch(i)
-	    {
-	    case 0:
-	    case 3:
-	      /* some tooltips need freeing! */
-	      if (tooltip[i])
-		g_free(tooltip[i]);
-	      break;
-	    default:
-	      /* no freeing */
-	      break;
-	    }
-	}
+          if (tooltip[i])
+            gtk_tooltips_set_tip(zmap->feature_tooltips, gtk_widget_get_parent(label[i]),
+                                 tooltip[i],
+                                 "") ;
+          switch(i)
+            {
+            case 0:
+            case 3:
+              /* some tooltips need freeing! */
+              if (tooltip[i])
+                g_free(tooltip[i]);
+              break;
+            default:
+              /* no freeing */
+              break;
+            }
+        }
       else
-	{
-	  gtk_widget_hide_all(frame_parent) ;
-	}
+        {
+          gtk_widget_hide_all(frame_parent) ;
+        }
     }
 
   /* Do some clearing up.... */
