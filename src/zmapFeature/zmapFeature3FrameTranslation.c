@@ -44,21 +44,21 @@
 
 static void destroySequenceData(ZMapFeature feature) ;
 static gboolean feature3FrameTranslationPopulate(ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style,
-						 int block_start, int block_end) ;
+ int block_start, int block_end) ;
 static void translation_set_populate(ZMapFeatureBlock feature_block, ZMapFeatureSet feature_set,
-				     ZMapFeatureTypeStyle style,
-				     char *seq_name, char *seq, int block_start, int block_end) ;
+     ZMapFeatureTypeStyle style,
+     char *seq_name, char *seq, int block_start, int block_end) ;
 
 
 
 static gboolean showTranslationPopulate(ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style,
-					int block_start, int block_end) ;
+int block_start, int block_end) ;
 static void translationPopulate(ZMapFeatureBlock feature_block,
-				ZMapFeatureSet feature_set,
-				ZMapFeatureTypeStyle style,
-				char *seq_name,
-				char *dna,
-				int block_start, int block_end) ;
+ZMapFeatureSet feature_set,
+ZMapFeatureTypeStyle style,
+char *seq_name,
+char *dna,
+int block_start, int block_end) ;
 
 
 
@@ -96,21 +96,21 @@ gboolean zMapFeatureORFCreateSet(ZMapFeatureBlock block, ZMapFeatureSet *set_out
       frame_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_ORF_NAME);
 
       if (!(feature_set = zMapFeatureBlockGetSetByID(block, frame_id)))
-	{
-	  GQuark original_id = 0;
-	  GQuark unique_id   = frame_id;
+        {
+          GQuark original_id = 0;
+          GQuark unique_id   = frame_id;
 
-	  original_id = g_quark_from_string(ZMAP_FIXED_STYLE_ORF_NAME);
+          original_id = g_quark_from_string(ZMAP_FIXED_STYLE_ORF_NAME);
 
-	  feature_set = zMapFeatureSetIDCreate(original_id, unique_id, NULL, NULL) ;
+          feature_set = zMapFeatureSetIDCreate(original_id, unique_id, NULL, NULL) ;
 
-	  zMapFeatureBlockAddFeatureSet(block, feature_set);
+          zMapFeatureBlockAddFeatureSet(block, feature_set);
 
-	  created = TRUE;
-	}
+          created = TRUE;
+        }
 
       if (set_out)
-	*set_out = feature_set;
+        *set_out = feature_set;
     }
 
   return created ;
@@ -130,18 +130,18 @@ gboolean zMapFeature3FrameTranslationCreateSet(ZMapFeatureBlock block, ZMapFeatu
       frame_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME);
 
       if (!(feature_set = zMapFeatureBlockGetSetByID(block, frame_id)))
-	{
-	  GQuark original_id = 0;
-	  GQuark unique_id   = frame_id;
+        {
+          GQuark original_id = 0;
+          GQuark unique_id   = frame_id;
 
-	  original_id = g_quark_from_string(ZMAP_FIXED_STYLE_3FT_NAME);
-
-	  feature_set = zMapFeatureSetIDCreate(original_id, unique_id, NULL, NULL) ;
-
-	  zMapFeatureBlockAddFeatureSet(block, feature_set);
-
-	  created = TRUE;
-	}
+          original_id = g_quark_from_string(ZMAP_FIXED_STYLE_3FT_NAME);
+        
+          feature_set = zMapFeatureSetIDCreate(original_id, unique_id, NULL, NULL) ;
+        
+          zMapFeatureBlockAddFeatureSet(block, feature_set);
+        
+          created = TRUE;
+        }
 
       if (set_out)
         *set_out = feature_set;
@@ -161,12 +161,12 @@ void zMapFeatureORFSetCreateFeatures(ZMapFeatureSet feature_set, ZMapFeatureType
       for (frame = ZMAPFRAME_0 ; frame <= ZMAPFRAME_2; ++frame)
         {
           ZMapFeature translation ;
-          char *translation_name = NULL ;		/* Remember to free this */
+          char *translation_name = NULL ;/* Remember to free this */
           GQuark translation_id = 0 ;
           ZMapFrame curr_frame = ZMAPFRAME_NONE;
 
 
-          curr_frame = frame ; //   = zMapFeatureFrameFromCoords(translation_block->block_to_sequence.block.x1, block_position) ;	/* ref to zMapFeatureFrame(): these are block relative frames */
+          curr_frame = frame ; //   = zMapFeatureFrameFromCoords(translation_block->block_to_sequence.block.x1, block_position) ;/* ref to zMapFeatureFrame(): these are block relative frames */
 
           translation_name = zMapFeature3FrameTranslationFeatureName(translation_fs, curr_frame) ;
           translation_id   = g_quark_from_string(translation_name) ;
@@ -295,17 +295,17 @@ gboolean zMapFeatureShowTranslationCreateSet(ZMapFeatureBlock block, ZMapFeature
   if ((block->sequence.length))
     {
       if (!(feature_set = zMapFeatureBlockGetSetByID(block,
-						     zMapStyleCreateID(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME))))
-	{
-	  feature_set = zMapFeatureSetCreate(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME, NULL) ;
+     zMapStyleCreateID(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME))))
+        {
+          feature_set = zMapFeatureSetCreate(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME, NULL) ;
 
-	  zMapFeatureBlockAddFeatureSet(block, feature_set);
+          zMapFeatureBlockAddFeatureSet(block, feature_set);
 
-	  created = TRUE ;
-	}
+          created = TRUE ;
+        }
 
       if (set_out)
-	*set_out = feature_set ;
+        *set_out = feature_set ;
     }
 
   return created ;
@@ -338,7 +338,7 @@ void zMapFeatureShowTranslationSetCreateFeatures(ZMapFeatureSet feature_set, ZMa
  *
  *  */
 static gboolean feature3FrameTranslationPopulate(ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style,
-						 int block_start, int block_end)
+ int block_start, int block_end)
 {
   gboolean result = FALSE ;
   ZMapFeatureBlock feature_block;
@@ -352,11 +352,11 @@ static gboolean feature3FrameTranslationPopulate(ZMapFeatureSet feature_set, ZMa
       sequence_name = (char *)g_quark_to_string(feature_block->original_id);
 
       translation_set_populate(feature_block,
-			       feature_set,
-			       style,
-			       sequence_name,
-			       feature_block->sequence.sequence,
-			       block_start, block_end) ;
+                               feature_set,
+                               style,
+                               sequence_name,
+                               feature_block->sequence.sequence,
+                               block_start, block_end) ;
 
       result = TRUE ;
     }
@@ -367,11 +367,11 @@ static gboolean feature3FrameTranslationPopulate(ZMapFeatureSet feature_set, ZMa
 
 
 static void translation_set_populate(ZMapFeatureBlock feature_block,
-				     ZMapFeatureSet feature_set,
-				     ZMapFeatureTypeStyle style,
-				     char *seq_name,
-				     char *dna,
-				     int block_start, int block_end)
+     ZMapFeatureSet feature_set,
+     ZMapFeatureTypeStyle style,
+     char *seq_name,
+     char *dna,
+     int block_start, int block_end)
 {
   int i, block_position ;
 
@@ -389,14 +389,14 @@ static void translation_set_populate(ZMapFeatureBlock feature_block,
     {
       ZMapPeptide pep ;
       ZMapFeature translation ;
-      char *feature_name = NULL ;		/* Remember to free this */
+      char *feature_name = NULL ;/* Remember to free this */
       GQuark feature_id ;
       ZMapFrame curr_frame ;
       char *peptide_str ;
       int peptide_length ;
 
-	// curr_frame = (ZMapFrame) i;
-      curr_frame   = zMapFeatureFrameFromCoords(feature_block->block_to_sequence.block.x1, block_position) ;	/* ref to zMapFeatureFrame(): these are block relative frames */
+// curr_frame = (ZMapFrame) i;
+      curr_frame   = zMapFeatureFrameFromCoords(feature_block->block_to_sequence.block.x1, block_position) ;/* ref to zMapFeatureFrame(): these are block relative frames */
 
       feature_name = zMapFeature3FrameTranslationFeatureName(feature_set, curr_frame) ;
       feature_id   = g_quark_from_string(feature_name) ;
@@ -405,41 +405,41 @@ static void translation_set_populate(ZMapFeatureBlock feature_block,
 
       if ((translation = zMapFeatureSetGetFeatureByID(feature_set, feature_id)))
         {
-	  int start, end, x1, x2 ;
+          int start, end, x1, x2 ;
 
-	  destroySequenceData(translation) ;
+          destroySequenceData(translation) ;
 
-	  /* Arcane....we need features to be shifted so they are revcompd before recomping
-	   * otherwise the recomping puts them in the wrong position for showing the translation. */
-	  start = block_start ;
-	  end = block_end ;
-
-	  x1 = (translation->x1 - start) ;
-	  x1 = end - x1 ;
-
-	  x2 = (translation->x2 - start) ;
-	  x2 = end - x2 ;
-
-	  translation->x1 = x2 ;
-	  translation->x2 = x1 ;
-	}
+          /* Arcane....we need features to be shifted so they are revcompd before recomping
+           * otherwise the recomping puts them in the wrong position for showing the translation. */
+          start = block_start ;
+          end = block_end ;
+        
+          x1 = (translation->x1 - start) ;
+          x1 = end - x1 ;
+        
+          x2 = (translation->x2 - start) ;
+          x2 = end - x2 ;
+        
+          translation->x1 = x2 ;
+          translation->x2 = x1 ;
+        }
       else
         {
           int x1, x2 ;
 
-	    x1 = block_position ;
+          x1 = block_position ;
           x2 = x1 + zMapPeptideFullSourceCodonLength(pep) - 1 ;
 
           translation = zMapFeatureCreateEmpty() ;
-	    if(!feature_set->style)
-			feature_set->style = style;
+          if(!feature_set->style)
+            feature_set->style = style;
           zMapFeatureAddStandardData(translation, feature_name, feature_name,
                                      seq_name, "sequence",
                                      ZMAPSTYLE_MODE_SEQUENCE, &feature_set->style,
                                      x1, x2, FALSE, 0.0,
                                      ZMAPSTRAND_NONE) ;
 
-	    zMapFeatureSequenceSetType(translation, ZMAPSEQUENCE_PEPTIDE) ;
+          zMapFeatureSequenceSetType(translation, ZMAPSEQUENCE_PEPTIDE) ;
 
           zMapFeatureSetAddFeature(feature_set, translation) ;
         }
@@ -456,7 +456,7 @@ static void translation_set_populate(ZMapFeatureBlock feature_block,
       zMapPeptideDestroy(pep) ;
 
       if (feature_name)
-	g_free(feature_name) ;
+        g_free(feature_name) ;
     }
 
   return ;
@@ -484,7 +484,7 @@ static void destroySequenceData(ZMapFeature feature)
 
 
 static gboolean showTranslationPopulate(ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style,
-					int block_start, int block_end)
+                                        int block_start, int block_end)
 {
   gboolean result = FALSE ;
   ZMapFeatureBlock feature_block ;
@@ -498,11 +498,11 @@ static gboolean showTranslationPopulate(ZMapFeatureSet feature_set, ZMapFeatureT
       sequence_name = (char *)g_quark_to_string(feature_block->original_id);
 
       translationPopulate(feature_block,
-			  feature_set,
-			  style,
-			  sequence_name,
-			  feature_block->sequence.sequence,
-			  block_start, block_end) ;
+                          feature_set,
+                          style,
+                          sequence_name,
+                          feature_block->sequence.sequence,
+                          block_start, block_end) ;
 
       result = TRUE ;
     }
@@ -513,16 +513,16 @@ static gboolean showTranslationPopulate(ZMapFeatureSet feature_set, ZMapFeatureT
 
 
 static void translationPopulate(ZMapFeatureBlock feature_block,
-				ZMapFeatureSet feature_set,
-				ZMapFeatureTypeStyle style,
-				char *seq_name,
-				char *dna,
-				int block_start, int block_end)
+                                ZMapFeatureSet feature_set,
+                                ZMapFeatureTypeStyle style,
+                                char *seq_name,
+                                char *dna,
+                                int block_start, int block_end)
 {
   int block_position ;
   ZMapPeptide pep ;
   ZMapFeature translation ;
-  char *feature_name = NULL ;			    /* Remember to free this */
+  char *feature_name = NULL ;    /* Remember to free this */
   GQuark feature_id ;
   char *peptide_str ;
   int peptide_length ;
@@ -560,16 +560,16 @@ static void translationPopulate(ZMapFeatureBlock feature_block,
       x1 = block_start ;
       x2 = block_end ;
 
-	if(!feature_set->style)
-		feature_set->style = style;
+      if(!feature_set->style)
+        feature_set->style = style;
 
       translation = zMapFeatureCreateEmpty() ;
 
       zMapFeatureAddStandardData(translation, feature_name, feature_name,
-				 seq_name, "sequence",
-				 ZMAPSTYLE_MODE_SEQUENCE, &feature_set->style,
-				 x1, x2, FALSE, 0.0,
-				 ZMAPSTRAND_NONE) ;
+                                 seq_name, "sequence",
+                                 ZMAPSTYLE_MODE_SEQUENCE, &feature_set->style,
+                                 x1, x2, FALSE, 0.0,
+                                 ZMAPSTRAND_NONE) ;
 
       zMapFeatureSequenceSetType(translation, ZMAPSEQUENCE_PEPTIDE) ;
 
