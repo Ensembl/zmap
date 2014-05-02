@@ -98,9 +98,9 @@ gboolean zMapConfigDirCreate(char *config_dir_in, char *config_file_in)
   else
     {
       if (g_path_is_absolute(config_dir_in))
-	config_dir = g_strdup(config_dir_in) ;
+        config_dir = g_strdup(config_dir_in) ;
       else
-	config_dir = zMapExpandFilePath(config_dir_in) ;
+        config_dir = zMapExpandFilePath(config_dir_in) ;
     }
 
   if (!config_file_in || !(*config_file_in))
@@ -114,17 +114,17 @@ gboolean zMapConfigDirCreate(char *config_dir_in, char *config_file_in)
       dirname = g_path_get_dirname(config_file_in) ;
 
       if (g_ascii_strcasecmp(dirname, ".") == 0)
-	{
-	  config_file = g_strdup(config_file_in) ;
-	}
+        {
+          config_file = g_strdup(config_file_in) ;
+        }
       else
-	{
-	  g_free(config_dir) ;
+        {
+          g_free(config_dir) ;
 
-	  config_dir = zMapExpandFilePath(dirname) ;
+          config_dir = zMapExpandFilePath(dirname) ;
 
-	  config_file = g_path_get_basename(config_file_in) ; /* Allocates string. */
-	}
+          config_file = g_path_get_basename(config_file_in) ; /* Allocates string. */
+        }
 
       g_free(dirname) ;
     }
@@ -132,7 +132,7 @@ gboolean zMapConfigDirCreate(char *config_dir_in, char *config_file_in)
   if (config_dir)
     {
       if ((dir_context->config_dir = zMapGetDir(config_dir, FALSE, FALSE)))
-	result = TRUE ;
+        result = TRUE ;
     }
 
   if (config_file)

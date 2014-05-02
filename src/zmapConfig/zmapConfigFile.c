@@ -32,7 +32,7 @@
 
 #include <ZMap/zmap.h>
 
-#include <string.h>					    /* memset */
+#include <string.h>    /* memset */
 #include <glib.h>
 
 
@@ -142,16 +142,16 @@ gboolean zMapConfigIniReadBuffer(ZMapConfigIni config, char *buffer)
       config->buffer_key_file = g_key_file_new();
 
       if(!(g_key_file_load_from_data(config->buffer_key_file,
-				     buffer, strlen(buffer),
-				     G_KEY_FILE_KEEP_COMMENTS,
-				     &(config->buffer_key_error))))
-	{
-	  /* Do something with the error... */
-	  g_key_file_free(config->buffer_key_file);
-	  config->buffer_key_file = NULL;
-	}
+             buffer, strlen(buffer),
+             G_KEY_FILE_KEEP_COMMENTS,
+             &(config->buffer_key_error))))
+        {
+          /* Do something with the error... */
+          g_key_file_free(config->buffer_key_file);
+          config->buffer_key_file = NULL;
+        }
       else
-	red = TRUE;
+        red = TRUE;
     }
 
   return red;
@@ -192,67 +192,67 @@ gboolean zMapConfigIniSaveUser(ZMapConfigIni config)
       GError *key_error = NULL;
 
       file_contents = g_key_file_to_data(config->user_key_file,
-					 &file_size,
-					 &key_error);
+                                         &file_size,
+                                         &key_error);
 
       if((!file_contents) || key_error)
-	{
-	  /* There was an error */
-	}
+        {
+          /* There was an error */
+        }
       else
-	{
-	  /* Ok we can write the file contents to disk */
-	  char *filename = NULL;
+        {
+          /* Ok we can write the file contents to disk */
+          char *filename = NULL;
 
-	  if ((filename = zMapConfigDirGetFile()))
-	    {
-	      GIOChannel *output = NULL;
-	      GError *error = NULL;
-
-	      if((output = g_io_channel_new_file(filename, "w", &error)) && (!error))
-		{
-		  GIOStatus status;
-		  gsize bytes_written = 0;
-
-		  status = g_io_channel_write_chars(output, file_contents, file_size,
-						    &bytes_written, &error);
-
-		  if((status == G_IO_STATUS_NORMAL) && (!error) && bytes_written == file_size)
-		    {
-		      /* Everything was ok */
-		      /* need to flush file... */
-		    }
-		  else if(error)
-		    {
-		      /* Cry about the error */
-		      zMapLogCritical("%s", error->message);
-		      g_error_free(error);
-		      error = NULL;
-		    }
-		  else
-		    zMapLogCritical("g_io_channel_write_chars returned error status '%d', but no error.", status);
-
-		  status = g_io_channel_shutdown(output, TRUE, &error);
-
-		  if(status != G_IO_STATUS_NORMAL && error)
-		    {
-		      /* Cry about another error... */
-		      zMapLogCritical("%s", error->message);
-		      g_error_free(error);
-		      error = NULL;
-		    }
-		}
-	    }
-	  else
-	    {
-	      /* problem with your file */
-	    }
-	}
-
+          if ((filename = zMapConfigDirGetFile()))
+            {
+              GIOChannel *output = NULL;
+              GError *error = NULL;
+        
+              if((output = g_io_channel_new_file(filename, "w", &error)) && (!error))
+                {
+                  GIOStatus status;
+                  gsize bytes_written = 0;
+                
+                  status = g_io_channel_write_chars(output, file_contents, file_size,
+                    &bytes_written, &error);
+                
+                  if((status == G_IO_STATUS_NORMAL) && (!error) && bytes_written == file_size)
+                    {
+                      /* Everything was ok */
+                      /* need to flush file... */
+                    }
+                  else if(error)
+                    {
+                      /* Cry about the error */
+                      zMapLogCritical("%s", error->message);
+                      g_error_free(error);
+                      error = NULL;
+                    }
+                  else
+                    zMapLogCritical("g_io_channel_write_chars returned error status '%d', but no error.", status);
+        
+                  status = g_io_channel_shutdown(output, TRUE, &error);
+        
+                  if(status != G_IO_STATUS_NORMAL && error)
+                    {
+                      /* Cry about another error... */
+                      zMapLogCritical("%s", error->message);
+                      g_error_free(error);
+                      error = NULL;
+                    }
+                }
+            }
+          else
+            {
+              /* problem with your file */
+            }
+        }
+        
       if(file_contents)
-	{
-	  g_free(file_contents);
-	}
+        {
+          g_free(file_contents);
+        }
     }
 
 
