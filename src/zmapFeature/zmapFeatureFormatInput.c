@@ -58,14 +58,14 @@ gboolean zmapStr2Enum(ZMapFeatureStr2Enum type_table, char *type_str, int *type_
   while (type->type_str)
     {
       if (g_ascii_strcasecmp(type_str, type->type_str) == 0)
-	{
-	  *type_out = type->type_enum ;
-	  result = TRUE ;
+        {
+          *type_out = type->type_enum ;
+          result = TRUE ;
 
-	  break;
-	}
+          break;
+        }
       else
-	type++ ;
+        type++ ;
     }
 
   return result ;
@@ -106,54 +106,54 @@ gboolean zMapFeatureFormatType(gboolean SO_compliant, gboolean default_to_basic,
 
   /* There are usually many more alignments/exons than anything else in a GFF dump so do them first. */
   if (g_ascii_strcasecmp(feature_type, "nucleotide_match") == 0
-//      || g_ascii_strcasecmp(feature_type, "read_pair") == 0		/* is this an abuse of SO?? */
-      || g_ascii_strcasecmp(feature_type, "expressed_sequence_match") == 0
-      || g_ascii_strcasecmp(feature_type, "EST_match") == 0
-      || g_ascii_strcasecmp(feature_type, "cDNA_match") == 0
-      || g_ascii_strcasecmp(feature_type, "repeat_region") == 0
-      || g_ascii_strcasecmp(feature_type, "inverted_repeat") == 0
-      || g_ascii_strcasecmp(feature_type, "tandem_repeat") == 0
-      || g_ascii_strcasecmp(feature_type, "translated_nucleotide_match") == 0
-      || g_ascii_strcasecmp(feature_type, "protein_match") == 0
-      || g_ascii_strcasecmp(feature_type, "SAGE_tag") == 0)
+        //      || g_ascii_strcasecmp(feature_type, "read_pair") == 0/* is this an abuse of SO?? */
+              || g_ascii_strcasecmp(feature_type, "expressed_sequence_match") == 0
+              || g_ascii_strcasecmp(feature_type, "EST_match") == 0
+              || g_ascii_strcasecmp(feature_type, "cDNA_match") == 0
+              || g_ascii_strcasecmp(feature_type, "repeat_region") == 0
+              || g_ascii_strcasecmp(feature_type, "inverted_repeat") == 0
+              || g_ascii_strcasecmp(feature_type, "tandem_repeat") == 0
+              || g_ascii_strcasecmp(feature_type, "translated_nucleotide_match") == 0
+              || g_ascii_strcasecmp(feature_type, "protein_match") == 0
+              || g_ascii_strcasecmp(feature_type, "SAGE_tag") == 0)
     {
       type = ZMAPSTYLE_MODE_ALIGNMENT ;
     }
   else if (g_ascii_strcasecmp(feature_type, "exon") == 0
-	   || g_ascii_strcasecmp(feature_type, "intron") == 0
-	   ||g_ascii_strcasecmp(feature_type, "pseudogene") == 0
-	   || g_ascii_strcasecmp(feature_type, "transcript") == 0
-	   || g_ascii_strcasecmp(feature_type, "protein_coding_primary_transcript") == 0
-	   || g_ascii_strcasecmp(feature_type, "CDS") == 0
-	   || g_ascii_strcasecmp(feature_type, "mRNA") == 0
-	   || g_ascii_strcasecmp(feature_type, "nc_primary_transcript") == 0)
+           || g_ascii_strcasecmp(feature_type, "intron") == 0
+           ||g_ascii_strcasecmp(feature_type, "pseudogene") == 0
+           || g_ascii_strcasecmp(feature_type, "transcript") == 0
+           || g_ascii_strcasecmp(feature_type, "protein_coding_primary_transcript") == 0
+           || g_ascii_strcasecmp(feature_type, "CDS") == 0
+           || g_ascii_strcasecmp(feature_type, "mRNA") == 0
+           || g_ascii_strcasecmp(feature_type, "nc_primary_transcript") == 0)
     {
       type = ZMAPSTYLE_MODE_TRANSCRIPT ;
     }
   else if (g_ascii_strcasecmp(feature_type, "reagent") == 0
-	   || g_ascii_strcasecmp(feature_type, "assembly_path") == 0
-	   || g_ascii_strcasecmp(feature_type, "gene") == 0
-	   || g_ascii_strcasecmp(feature_type, "oligo") == 0
-	   || g_ascii_strcasecmp(feature_type, "PCR_product") == 0
-	   || g_ascii_strcasecmp(feature_type, "RNAi_reagent") == 0
-	   || g_ascii_strcasecmp(feature_type, "clone") == 0
-	   || g_ascii_strcasecmp(feature_type, "clone_end") == 0
-	   || g_ascii_strcasecmp(feature_type, "clone_end") == 0
-	   || g_ascii_strcasecmp(feature_type, "trans_splice_acceptor_site") == 0
-	   || g_ascii_strcasecmp(feature_type, "transposable_element_insertion_site") == 0
-	   || g_ascii_strcasecmp(feature_type, "deletion") == 0
-	   || g_ascii_strcasecmp(feature_type, "region") == 0
-	   || g_ascii_strcasecmp(feature_type, "UTR") == 0
-	   || g_ascii_strcasecmp(feature_type, "polyA_signal_sequence") == 0
-	   || g_ascii_strcasecmp(feature_type, "polyA_site") == 0
-	   || g_ascii_strcasecmp(feature_type, "operon") == 0
-	   || g_ascii_strcasecmp(feature_type, "experimental_result_region") == 0
-	   || g_ascii_strcasecmp(feature_type, "chromosomal_structural_element") == 0
-	   || g_ascii_strcasecmp(feature_type, "transposable_element") == 0
-	   || g_ascii_strcasecmp(feature_type, "SNP") == 0
-	   || g_ascii_strcasecmp(feature_type, "STS") == 0
-	   || g_ascii_strcasecmp(feature_type, "sequence_variant") == 0
-	   || g_ascii_strcasecmp(feature_type, "substitution") == 0
+           || g_ascii_strcasecmp(feature_type, "assembly_path") == 0
+           || g_ascii_strcasecmp(feature_type, "gene") == 0
+           || g_ascii_strcasecmp(feature_type, "oligo") == 0
+           || g_ascii_strcasecmp(feature_type, "PCR_product") == 0
+           || g_ascii_strcasecmp(feature_type, "RNAi_reagent") == 0
+           || g_ascii_strcasecmp(feature_type, "clone") == 0
+           || g_ascii_strcasecmp(feature_type, "clone_end") == 0
+           || g_ascii_strcasecmp(feature_type, "clone_end") == 0
+           || g_ascii_strcasecmp(feature_type, "trans_splice_acceptor_site") == 0
+           || g_ascii_strcasecmp(feature_type, "transposable_element_insertion_site") == 0
+           || g_ascii_strcasecmp(feature_type, "deletion") == 0
+           || g_ascii_strcasecmp(feature_type, "region") == 0
+           || g_ascii_strcasecmp(feature_type, "UTR") == 0
+           || g_ascii_strcasecmp(feature_type, "polyA_signal_sequence") == 0
+           || g_ascii_strcasecmp(feature_type, "polyA_site") == 0
+           || g_ascii_strcasecmp(feature_type, "operon") == 0
+           || g_ascii_strcasecmp(feature_type, "experimental_result_region") == 0
+           || g_ascii_strcasecmp(feature_type, "chromosomal_structural_element") == 0
+           || g_ascii_strcasecmp(feature_type, "transposable_element") == 0
+           || g_ascii_strcasecmp(feature_type, "SNP") == 0
+           || g_ascii_strcasecmp(feature_type, "STS") == 0
+           || g_ascii_strcasecmp(feature_type, "sequence_variant") == 0
+           || g_ascii_strcasecmp(feature_type, "substitution") == 0
            || g_ascii_strcasecmp(feature_type, "segmental_duplication") == 0
            || g_ascii_strcasecmp(feature_type, "three_prime_UTR") == 0
            || g_ascii_strcasecmp(feature_type, "TSS") == 0
@@ -167,69 +167,69 @@ gboolean zMapFeatureFormatType(gboolean SO_compliant, gboolean default_to_basic,
     {
       /* Currently there will be lots of non-SO terms in any GFFv2 dump. */
       if (g_ascii_strcasecmp(feature_type, "transcript") == 0
-	  || g_ascii_strcasecmp(feature_type, "protein-coding_primary_transcript") == 0
-	  /* N.B. "protein-coding_primary_transcript" is a typo in wormDB currently, should
-	   * be all underscores. */
+          || g_ascii_strcasecmp(feature_type, "protein-coding_primary_transcript") == 0
+          /* N.B. "protein-coding_primary_transcript" is a typo in wormDB currently, should
+           * be all underscores. */
 
-	  /* I'm trying this here because it is the first record for a transcript in acedb
-	   * output.... */
-	  || g_ascii_strcasecmp(feature_type, "Sequence") == 0
+          /* I'm trying this here because it is the first record for a transcript in acedb
+           * output.... */
+          || g_ascii_strcasecmp(feature_type, "Sequence") == 0
 
-	  || g_ascii_strcasecmp(feature_type, "protein_coding_primary_transcript") == 0
-	  || g_ascii_strcasecmp(feature_type, "miRNA_primary_transcript") == 0
-	  || g_ascii_strcasecmp(feature_type, "snRNA_primary_transcript") == 0
-	  || g_ascii_strcasecmp(feature_type, "snoRNA_primary_transcript") == 0
-	  || g_ascii_strcasecmp(feature_type, "tRNA_primary_transcript") == 0
-	  || g_ascii_strcasecmp(feature_type, "rRNA_primary_transcript") == 0
-	  || g_ascii_strcasecmp(feature_type, "Pseudogene") == 0
-	  || g_ascii_strcasecmp(feature_type, "coding_exon") == 0
-	  || g_ascii_strcasecmp(feature_type, "exon") == 0
-	  || g_ascii_strcasecmp(feature_type, "intron") == 0)
-	{
-	  type = ZMAPSTYLE_MODE_TRANSCRIPT ;
-	}
+          || g_ascii_strcasecmp(feature_type, "protein_coding_primary_transcript") == 0
+          || g_ascii_strcasecmp(feature_type, "miRNA_primary_transcript") == 0
+          || g_ascii_strcasecmp(feature_type, "snRNA_primary_transcript") == 0
+          || g_ascii_strcasecmp(feature_type, "snoRNA_primary_transcript") == 0
+          || g_ascii_strcasecmp(feature_type, "tRNA_primary_transcript") == 0
+          || g_ascii_strcasecmp(feature_type, "rRNA_primary_transcript") == 0
+          || g_ascii_strcasecmp(feature_type, "Pseudogene") == 0
+          || g_ascii_strcasecmp(feature_type, "coding_exon") == 0
+          || g_ascii_strcasecmp(feature_type, "exon") == 0
+          || g_ascii_strcasecmp(feature_type, "intron") == 0)
+        {
+          type = ZMAPSTYLE_MODE_TRANSCRIPT ;
+        }
       else if (g_ascii_strcasecmp(feature_type, "similarity") == 0
-	       || g_ascii_strcasecmp(feature_type, "transcription") == 0)
-	{
-	  type = ZMAPSTYLE_MODE_ALIGNMENT ;
-	}
+       || g_ascii_strcasecmp(feature_type, "transcription") == 0)
+        {
+          type = ZMAPSTYLE_MODE_ALIGNMENT ;
+        }
       else if (g_ascii_strcasecmp(feature_type, "Clone") == 0
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	       /* Problem here is that this is used for overall transcript record... */
-	       || g_ascii_strcasecmp(feature_type, "Sequence") == 0
+       /* Problem here is that this is used for overall transcript record... */
+       || g_ascii_strcasecmp(feature_type, "Sequence") == 0
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-	       || g_ascii_strcasecmp(feature_type, "repeat") == 0
+       || g_ascii_strcasecmp(feature_type, "repeat") == 0
 
-	       || g_ascii_strcasecmp(feature_type, "atg") == 0
-	       || g_ascii_strcasecmp(feature_type, "splice3") == 0
-	       || g_ascii_strcasecmp(feature_type, "splice5") == 0
-	       || g_ascii_strcasecmp(feature_type, "Clone_left_end") == 0
-	       || g_ascii_strcasecmp(feature_type, "Clone_right_end") == 0
-	       || g_ascii_strcasecmp(feature_type, ZMAP_FIXED_STYLE_LOCUS_NAME) == 0
-	       || g_ascii_strcasecmp(feature_type, "SL1_acceptor_site") == 0
-	       || g_ascii_strcasecmp(feature_type, "SL2_acceptor_site") == 0
-	       || g_ascii_strcasecmp(feature_type, "utr") == 0
-	       || g_ascii_strcasecmp(feature_type, "experimental") == 0
-	       || g_ascii_strcasecmp(feature_type, "reagent") == 0
-	       || g_ascii_strcasecmp(feature_type, "structural") == 0
-	       || g_ascii_strcasecmp(feature_type, "contig") == 0
-	       || g_ascii_strcasecmp(feature_type, "supercontig") == 0
-	       || g_ascii_strcasecmp(feature_type, "misc_feature") == 0
-	       || g_ascii_strcasecmp(feature_type, "SNP") == 0
-	       || g_ascii_strcasecmp(feature_type, "complex_change_in_nucleotide_sequence") == 0
-	       || g_ascii_strcasecmp(feature_type, "trans-splice_acceptor") == 0
-	       /* needed to read BAM files formatted as for Blixem */
-	       || g_ascii_strcasecmp(feature_type, "read") == 0)
-	{
-	  type = ZMAPSTYLE_MODE_BASIC ;
-	}
+       || g_ascii_strcasecmp(feature_type, "atg") == 0
+       || g_ascii_strcasecmp(feature_type, "splice3") == 0
+       || g_ascii_strcasecmp(feature_type, "splice5") == 0
+       || g_ascii_strcasecmp(feature_type, "Clone_left_end") == 0
+       || g_ascii_strcasecmp(feature_type, "Clone_right_end") == 0
+       || g_ascii_strcasecmp(feature_type, ZMAP_FIXED_STYLE_LOCUS_NAME) == 0
+       || g_ascii_strcasecmp(feature_type, "SL1_acceptor_site") == 0
+       || g_ascii_strcasecmp(feature_type, "SL2_acceptor_site") == 0
+       || g_ascii_strcasecmp(feature_type, "utr") == 0
+       || g_ascii_strcasecmp(feature_type, "experimental") == 0
+       || g_ascii_strcasecmp(feature_type, "reagent") == 0
+       || g_ascii_strcasecmp(feature_type, "structural") == 0
+       || g_ascii_strcasecmp(feature_type, "contig") == 0
+       || g_ascii_strcasecmp(feature_type, "supercontig") == 0
+       || g_ascii_strcasecmp(feature_type, "misc_feature") == 0
+       || g_ascii_strcasecmp(feature_type, "SNP") == 0
+       || g_ascii_strcasecmp(feature_type, "complex_change_in_nucleotide_sequence") == 0
+       || g_ascii_strcasecmp(feature_type, "trans-splice_acceptor") == 0
+       /* needed to read BAM files formatted as for Blixem */
+       || g_ascii_strcasecmp(feature_type, "read") == 0)
+        {
+          type = ZMAPSTYLE_MODE_BASIC ;
+        }
       else if (type == ZMAPSTYLE_MODE_INVALID && default_to_basic)
-	{
-	  /* If we allow defaulting of unrecognised features, the default is a "basic" feature. */
-	  type = ZMAPSTYLE_MODE_BASIC ;
-	}
+        {
+          /* If we allow defaulting of unrecognised features, the default is a "basic" feature. */
+          type = ZMAPSTYLE_MODE_BASIC ;
+        }
     }
 
 
@@ -307,17 +307,17 @@ gboolean zMapFeatureFormatStrand(char *strand_str, ZMapStrand *strand_out)
       result = TRUE ;
 
       switch (*strand_str)
-	{
-	case '+':
-	  *strand_out = ZMAPSTRAND_FORWARD ;
-	  break ;
-	case '-':
-	  *strand_out = ZMAPSTRAND_REVERSE ;
-	  break ;
-	default:
-	  *strand_out = ZMAPSTRAND_NONE ;
-	  break ;
-	}
+        {
+        case '+':
+          *strand_out = ZMAPSTRAND_FORWARD ;
+          break ;
+        case '-':
+          *strand_out = ZMAPSTRAND_REVERSE ;
+          break ;
+        default:
+          *strand_out = ZMAPSTRAND_NONE ;
+          break ;
+        }
     }
 
   return result ;
@@ -368,20 +368,20 @@ gboolean zMapFeatureFormatFrame(char *frame_str, ZMapFrame *frame_out)
       result = TRUE ;
 
       switch (*frame_str)
-	{
-	case '0':
-	  *frame_out = ZMAPFRAME_0 ;
-	  break ;
-	case '1':
-	  *frame_out = ZMAPFRAME_1 ;
-	  break ;
-	case '2':
-	  *frame_out = ZMAPFRAME_2 ;
-	  break ;
-	default:
-	  *frame_out = ZMAPFRAME_NONE ;
-	  break ;
-	}
+        {
+        case '0':
+          *frame_out = ZMAPFRAME_0 ;
+          break ;
+        case '1':
+          *frame_out = ZMAPFRAME_1 ;
+          break ;
+        case '2':
+          *frame_out = ZMAPFRAME_2 ;
+          break ;
+        default:
+          *frame_out = ZMAPFRAME_NONE ;
+          break ;
+        }
     }
 
   return result ;
@@ -429,30 +429,30 @@ gboolean zMapFeatureFormatPhase(char *phase_str, ZMapPhase *phase_out)
   if (strlen(phase_str) == 1)
 #ifdef RDS_DONT_INCLUDE
       && (*phase_str == '.' == 0
-	  || *phase_str == '0' == 0 || *phase_str == '1' == 0 || *phase_str == '2' == 0))
+  || *phase_str == '0' == 0 || *phase_str == '1' == 0 || *phase_str == '2' == 0))
 #endif
     {
       result = TRUE ;
 
       switch (*phase_str)
-	{
-	case '0':
-	  *phase_out = ZMAPPHASE_0 ;
-	  break ;
-	case '1':
-	  *phase_out = ZMAPPHASE_1 ;
-	  break ;
-	case '2':
-	  *phase_out = ZMAPPHASE_2 ;
-	  break ;
-	case '.':
-	  *phase_out = ZMAPPHASE_NONE ;
-	  break;
-	default:
-	  result = FALSE;
-	  *phase_out = ZMAPPHASE_NONE ;
-	  break ;
-	}
+        {
+        case '0':
+          *phase_out = ZMAPPHASE_0 ;
+          break ;
+        case '1':
+          *phase_out = ZMAPPHASE_1 ;
+          break ;
+        case '2':
+          *phase_out = ZMAPPHASE_2 ;
+          break ;
+        case '.':
+          *phase_out = ZMAPPHASE_NONE ;
+          break;
+        default:
+          result = FALSE;
+          *phase_out = ZMAPPHASE_NONE ;
+          break ;
+        }
     }
 
   return result ;
@@ -533,10 +533,10 @@ gboolean zMapFeatureFormatScore(char *score_str, gboolean *has_score, gdouble *s
       gdouble score ;
 
       if ((result = zMapStr2Double(score_str, &score)))
-	{
-	  *has_score = TRUE ;
-	  *score_out = score ;
-	}
+        {
+          *has_score = TRUE ;
+          *score_out = score ;
+        }
     }
 
   return result ;

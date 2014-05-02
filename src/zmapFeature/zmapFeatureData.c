@@ -121,18 +121,18 @@ static void zmap_feature_data_class_init (ZMapFeatureDataClass data_class);
 
 static char *gtype_to_message_string(GType feature_any_gtype);
 static gboolean alignment_get_sub_feature_info(gpointer user_data, guint param_spec_id,
-					       GValue *value, GParamSpec *pspec);
+       GValue *value, GParamSpec *pspec);
 static gboolean transcript_get_sub_feature_info(gpointer user_data, guint param_spec_id,
-						GValue *value, GParamSpec *pspec);
+GValue *value, GParamSpec *pspec);
 static gboolean basic_get_sub_feature_info(gpointer user_data, guint param_spec_id,
-					   GValue *value, GParamSpec *pspec);
+   GValue *value, GParamSpec *pspec);
 
 static gboolean invoke_get_func_valist(gpointer        user_data,
-				       GParamSpecPool *pspec_pool,
-				       GType           pool_member_type,
-				       GetFunc         get_func,
-				       const gchar    *first_property_name,
-				       va_list	        var_args);
+       GParamSpecPool *pspec_pool,
+       GType           pool_member_type,
+       GetFunc         get_func,
+       const gchar    *first_property_name,
+       va_list        var_args);
 
 static ZMAP_ENUM_AS_NAME_STRING_DEC(zmapFeatureDataPropertyName, ZMapFeatureDataProperty);
 static ZMAP_ENUM_TO_SHORT_TEXT_DEC(zmapFeatureDataPropertyNick, ZMapFeatureDataProperty);
@@ -160,22 +160,22 @@ GType zMapFeatureDataGetType(void)
   if(type == 0)
     {
       static const GTypeInfo info =
-	{
-	  sizeof (zmapFeatureDataClass),
-	  (GBaseInitFunc) NULL,
-	  (GBaseFinalizeFunc) NULL,
-	  (GClassInitFunc) zmap_feature_data_class_init,
-	  NULL,           /* class_finalize */
-	  NULL,           /* class_data */
-	  sizeof(zmapFeatureData),
-	  0,              /* n_preallocs */
-	  (GInstanceInitFunc)zmap_feature_data_init,
-	  NULL
-	};
+        {
+          sizeof (zmapFeatureDataClass),
+          (GBaseInitFunc) NULL,
+          (GBaseFinalizeFunc) NULL,
+          (GClassInitFunc) zmap_feature_data_class_init,
+          NULL,           /* class_finalize */
+          NULL,           /* class_data */
+          sizeof(zmapFeatureData),
+          0,              /* n_preallocs */
+          (GInstanceInitFunc)zmap_feature_data_init,
+          NULL
+        };
 
       type = g_type_register_static (G_TYPE_OBJECT,
-				     ZMAP_FEATURE_DATA_NAME,
-				     &info, 0);
+                                     ZMAP_FEATURE_DATA_NAME,
+                                     &info, 0);
     }
 
   return type;
@@ -183,8 +183,8 @@ GType zMapFeatureDataGetType(void)
 
 
 static void apply(GParamSpecPool *pool, const char *name,
-		  const char *nick, const char *blurb,
-		  DataTypeForFeatures children)
+  const char *nick, const char *blurb,
+  DataTypeForFeatures children)
 {
   GParamSpec *pspec;
   GType g_type;
@@ -197,26 +197,26 @@ static void apply(GParamSpecPool *pool, const char *name,
       g_type = children->g_type;
 
       for(i = 0; i < max; i++, apply_to++)
-	{
-	  if(g_type == G_TYPE_INT)
-	    {
-	      pspec = g_param_spec_int(name, nick, blurb, 0, G_MAXINT, 0, G_PARAM_READABLE);
-	    }
-	  else if(g_type == G_TYPE_STRING)
-	    {
-	      pspec = g_param_spec_string(name, nick, blurb, NULL, G_PARAM_READABLE);
-	    }
-	  else
-	    {
-	      pspec = NULL;
-	    }
+        {
+          if(g_type == G_TYPE_INT)
+            {
+              pspec = g_param_spec_int(name, nick, blurb, 0, G_MAXINT, 0, G_PARAM_READABLE);
+            }
+          else if(g_type == G_TYPE_STRING)
+            {
+              pspec = g_param_spec_string(name, nick, blurb, NULL, G_PARAM_READABLE);
+            }
+          else
+            {
+              pspec = NULL;
+            }
 
-	  if(pspec)
-	    {
-	      pspec->param_id = children->param_id;
-	      g_param_spec_pool_insert(pool, pspec, apply_to[0]);
-	    }
-	}
+          if(pspec)
+            {
+              pspec->param_id = children->param_id;
+              g_param_spec_pool_insert(pool, pspec, apply_to[0]);
+            }
+        }
     }
 
   return ;
@@ -236,20 +236,20 @@ static void zmap_feature_data_class_init (ZMapFeatureDataClass data_class)
   if((pspec_pool = pspec_pool_G) == NULL)
     {
       int apply_to_all[] = {
-	14,				/* how many?  */
-	FEATURE_DATA_TYPE_FEATURE_CONTEXT,
-	FEATURE_DATA_TYPE_FEATURE_ALIGNMENT,
-	FEATURE_DATA_TYPE_FEATURE_BLOCK,
-	FEATURE_DATA_TYPE_FEATURE_FEATURESET,
-	FEATURE_DATA_TYPE_FEATURE,
-	FEATURE_DATA_TYPE_BASIC,
-	FEATURE_DATA_TYPE_ALIGNMENT,
-	FEATURE_DATA_TYPE_TRANSCRIPT,
-	FEATURE_DATA_TYPE_SEQUENCE,
-	FEATURE_DATA_TYPE_ASSEMBLY_PATH,
-	FEATURE_DATA_TYPE_TEXT,
-	FEATURE_DATA_TYPE_GRAPH,
-	FEATURE_DATA_TYPE_GLYPH,
+        14,/* how many?  */
+        FEATURE_DATA_TYPE_FEATURE_CONTEXT,
+        FEATURE_DATA_TYPE_FEATURE_ALIGNMENT,
+        FEATURE_DATA_TYPE_FEATURE_BLOCK,
+        FEATURE_DATA_TYPE_FEATURE_FEATURESET,
+        FEATURE_DATA_TYPE_FEATURE,
+        FEATURE_DATA_TYPE_BASIC,
+        FEATURE_DATA_TYPE_ALIGNMENT,
+        FEATURE_DATA_TYPE_TRANSCRIPT,
+        FEATURE_DATA_TYPE_SEQUENCE,
+        FEATURE_DATA_TYPE_ASSEMBLY_PATH,
+        FEATURE_DATA_TYPE_TEXT,
+        FEATURE_DATA_TYPE_GRAPH,
+        FEATURE_DATA_TYPE_GLYPH,
       };
       int apply_to_alignments[]  = {1, FEATURE_DATA_TYPE_ALIGNMENT };
       int apply_to_transcripts[] = {1, FEATURE_DATA_TYPE_TRANSCRIPT };
@@ -275,13 +275,13 @@ static void zmap_feature_data_class_init (ZMapFeatureDataClass data_class)
       DataTypeForFeaturesStruct query_strand = { PROP_DATA_QUERY_STRAND, G_TYPE_INT, apply_to_alignments };
       /* now make the table */
       DataTypeForFeatures full_table[PROP_DATA_FINAL+1] =
-	{
-	  NULL,
-	  &fname, &term, &so_term,
-	  &total_length, &index, &start, &end, &length, &strand,
-	  &cds_length, &utr5_length, &utr3_length, &locus,
-	  &query_start, &query_end, &query_length, &query_strand,
-	  NULL
+        {
+          NULL,
+          &fname, &term, &so_term,
+          &total_length, &index, &start, &end, &length, &strand,
+          &cds_length, &utr5_length, &utr3_length, &locus,
+          &query_start, &query_end, &query_length, &query_strand,
+          NULL
       } ;
       DataTypeForFeatures *table; /* and a pointer */
       const char *name, *nick, *blurb = NULL;
@@ -292,17 +292,17 @@ static void zmap_feature_data_class_init (ZMapFeatureDataClass data_class)
       table = &full_table[0];
 
       for(i = PROP_DATA_ZERO; i < PROP_DATA_FINAL; i++, table++)
-	{
-	  name  = zmapFeatureDataPropertyName(i);
-	  nick  = zmapFeatureDataPropertyNick(i);
+        {
+          name  = zmapFeatureDataPropertyName(i);
+          nick  = zmapFeatureDataPropertyNick(i);
 #ifdef RDS_DONT_INCLUDE
-	  blurb = zmapFeatureDataPropertyBlurb(i);
+          blurb = zmapFeatureDataPropertyBlurb(i);
 #endif
-	  if (name && name[0] != '!' && table[0]->param_id == i) /* filter invalid names */
-	    {
-	      apply(pspec_pool, name, nick, blurb, table[0]);
-	    }
-	}
+          if (name && name[0] != '!' && table[0]->param_id == i) /* filter invalid names */
+            {
+              apply(pspec_pool, name, nick, blurb, table[0]);
+            }
+        }
 
       pspec_pool_G = data_class->pspec_pool = pspec_pool;
     }
@@ -328,10 +328,10 @@ static char *gtype_to_message_string(GType feature_any_gtype)
       string_array[FEATURE_DATA_TYPE_FEATURE]            = "ZMapFeature";
 
       for(i = ZMAPSTYLE_MODE_BASIC; i <= ZMAPSTYLE_MODE_GLYPH; i++)
-	{
-	  string_array[FEATURE_DATA_TYPE_FEATURE + (i << FEATURE_DATA_FEATURE_SHAPE_SHIFT)] =
-	    g_strdup_printf("ZMapFeature [%s]", zMapStyleMode2ExactStr(i));
-	}
+        {
+          string_array[FEATURE_DATA_TYPE_FEATURE + (i << FEATURE_DATA_FEATURE_SHAPE_SHIFT)] =
+            g_strdup_printf("ZMapFeature [%s]", zMapStyleMode2ExactStr(i));
+        }
     }
 
   message = string_array[feature_any_gtype];
@@ -343,7 +343,7 @@ static char *gtype_to_message_string(GType feature_any_gtype)
 
 
 static gboolean alignment_get_sub_feature_info(gpointer user_data, guint param_spec_id,
-					       GValue *value, GParamSpec *pspec)
+       GValue *value, GParamSpec *pspec)
 {
   gboolean result = FALSE ;
   FeatureSubFeature feature_data = (FeatureSubFeature)user_data ;
@@ -367,64 +367,64 @@ static gboolean alignment_get_sub_feature_info(gpointer user_data, guint param_s
 
     case PROP_DATA_TOTAL_LENGTH:
       if (feature->feature.homol.length)
-	{
-	  g_value_set_int(value, feature->feature.homol.length) ;
-	  result = TRUE ;
-	}
+        {
+          g_value_set_int(value, feature->feature.homol.length) ;
+          result = TRUE ;
+        }
       break;
 
     case PROP_DATA_QUERY_START:
     case PROP_DATA_QUERY_END:
     case PROP_DATA_QUERY_LENGTH:
       {
-	GArray *gaps_array ;
-	ZMapFeatureSubPartSpan sub_feature;
+        GArray *gaps_array ;
+        ZMapFeatureSubPartSpan sub_feature;
 
-	if ((sub_feature = feature_data->sub_feature) && (gaps_array  = feature->feature.homol.align))
-	  {
-	    if (sub_feature->subpart == ZMAPFEATURE_SUBPART_MATCH)
-	      {
-		ZMapAlignBlock align_block;
-		int i;
-		/* easy case, just look through the gaps array */
-		for(i = 0; i < gaps_array->len; i++)
-		  {
-		    align_block = &(g_array_index(gaps_array, ZMapAlignBlockStruct, i));
-		    if(align_block->t1 == sub_feature->start &&
-		       align_block->t2 == sub_feature->end)
-		      {
-			if(param_spec_id == PROP_DATA_QUERY_START)
-			  g_value_set_int(value, align_block->q1);
-			else if(param_spec_id == PROP_DATA_QUERY_END)
-			  g_value_set_int(value, align_block->q2);
-			else
-			  g_value_set_int(value, align_block->q2 - align_block->q1 + 1);
-		      }
-		  }
-		result = TRUE;
-	      }
-	    else if(sub_feature->subpart == ZMAPFEATURE_SUBPART_GAP)
-	      {
-		/* need to run through and find matching matches and calculate the gap... */
-	      }
-	  }
-	else
-	  {
-	    result = TRUE;
-	    if(param_spec_id == PROP_DATA_QUERY_START)
-	      g_value_set_int(value, feature->feature.homol.y1);
-	    else if(param_spec_id == PROP_DATA_QUERY_END)
-	      g_value_set_int(value, feature->feature.homol.y2);
-	    else
-	      g_value_set_int(value, feature->feature.homol.y2 - feature->feature.homol.y1 + 1);
-	  }
+        if ((sub_feature = feature_data->sub_feature) && (gaps_array  = feature->feature.homol.align))
+          {
+            if (sub_feature->subpart == ZMAPFEATURE_SUBPART_MATCH)
+              {
+                ZMapAlignBlock align_block;
+                int i;
+                /* easy case, just look through the gaps array */
+                for(i = 0; i < gaps_array->len; i++)
+                  {
+                    align_block = &(g_array_index(gaps_array, ZMapAlignBlockStruct, i));
+                    if(align_block->t1 == sub_feature->start &&
+                       align_block->t2 == sub_feature->end)
+                      {
+                        if(param_spec_id == PROP_DATA_QUERY_START)
+                          g_value_set_int(value, align_block->q1);
+                        else if(param_spec_id == PROP_DATA_QUERY_END)
+                          g_value_set_int(value, align_block->q2);
+                        else
+                          g_value_set_int(value, align_block->q2 - align_block->q1 + 1);
+                      }
+                  }
+                result = TRUE;
+              }
+            else if(sub_feature->subpart == ZMAPFEATURE_SUBPART_GAP)
+              {
+/* need to run through and find matching matches and calculate the gap... */
+              }
+          }
+        else
+          {
+            result = TRUE;
+            if(param_spec_id == PROP_DATA_QUERY_START)
+              g_value_set_int(value, feature->feature.homol.y1);
+            else if(param_spec_id == PROP_DATA_QUERY_END)
+              g_value_set_int(value, feature->feature.homol.y2);
+            else
+              g_value_set_int(value, feature->feature.homol.y2 - feature->feature.homol.y1 + 1);
+          }
       }
       break;
     case PROP_DATA_QUERY_STRAND:
       {
-	g_value_set_int(value, feature->feature.homol.strand);
+        g_value_set_int(value, feature->feature.homol.strand);
 
-	result = TRUE;
+        result = TRUE;
       }
       break;
     default:
@@ -436,7 +436,7 @@ static gboolean alignment_get_sub_feature_info(gpointer user_data, guint param_s
 }
 
 static gboolean transcript_get_sub_feature_info(gpointer user_data, guint param_spec_id,
-						GValue *value, GParamSpec *pspec)
+GValue *value, GParamSpec *pspec)
 {
   gboolean result = FALSE;
 
@@ -453,18 +453,18 @@ static gboolean transcript_get_sub_feature_info(gpointer user_data, guint param_
 
     case PROP_DATA_LOCUS:
       {
-	FeatureSubFeature feature_data = (FeatureSubFeature)user_data;
-	ZMapFeature feature;
+        FeatureSubFeature feature_data = (FeatureSubFeature)user_data;
+        ZMapFeature feature;
 
-	feature = (ZMapFeature)feature_data->feature_any;
+        feature = (ZMapFeature)feature_data->feature_any;
 
-	if (feature->feature.transcript.locus_id)
-	  g_value_set_static_string(value, g_quark_to_string(feature->feature.transcript.locus_id));
+        if (feature->feature.transcript.locus_id)
+          g_value_set_static_string(value, g_quark_to_string(feature->feature.transcript.locus_id));
 
 
-	result = TRUE;
+        result = TRUE;
 
-	break;
+        break;
       }
     default:
       result = FALSE;
@@ -475,7 +475,7 @@ static gboolean transcript_get_sub_feature_info(gpointer user_data, guint param_
 }
 
 static gboolean basic_get_sub_feature_info(gpointer user_data, guint param_spec_id,
-					   GValue *value, GParamSpec *pspec)
+   GValue *value, GParamSpec *pspec)
 {
   gboolean result;
 
@@ -486,121 +486,121 @@ static gboolean basic_get_sub_feature_info(gpointer user_data, guint param_spec_
     case PROP_DATA_END:
     case PROP_DATA_LENGTH:
       {
-	FeatureSubFeature feature_data = (FeatureSubFeature)user_data;
-	ZMapFeature feature;
+        FeatureSubFeature feature_data = (FeatureSubFeature)user_data;
+        ZMapFeature feature;
 
-	feature = (ZMapFeature)feature_data->feature_any;
+        feature = (ZMapFeature)feature_data->feature_any;
+        
+        if (feature_data->sub_feature == NULL)
+          {
+            if(param_spec_id == PROP_DATA_START)
+              g_value_set_int(value, feature->x1);
+            else if(param_spec_id == PROP_DATA_END)
+              g_value_set_int(value, feature->x2);
+            else
+              g_value_set_int(value, feature->x2 - feature->x1 + 1);
+          }
+        else
+          {
+            if (param_spec_id == PROP_DATA_INDEX)
+              g_value_set_int(value, feature_data->sub_feature->index) ;
+            else if (param_spec_id == PROP_DATA_START)
+              g_value_set_int(value, feature_data->sub_feature->start);
+            else if (param_spec_id == PROP_DATA_END)
+              g_value_set_int(value, feature_data->sub_feature->end);
+            else
+              g_value_set_int(value, feature_data->sub_feature->end - feature_data->sub_feature->start + 1);
+          }
 
-	if (feature_data->sub_feature == NULL)
-	  {
-	    if(param_spec_id == PROP_DATA_START)
-	      g_value_set_int(value, feature->x1);
-	    else if(param_spec_id == PROP_DATA_END)
-	      g_value_set_int(value, feature->x2);
-	    else
-	      g_value_set_int(value, feature->x2 - feature->x1 + 1);
-	  }
-	else
-	  {
-	    if (param_spec_id == PROP_DATA_INDEX)
-	      g_value_set_int(value, feature_data->sub_feature->index) ;
-	    else if (param_spec_id == PROP_DATA_START)
-	      g_value_set_int(value, feature_data->sub_feature->start);
-	    else if (param_spec_id == PROP_DATA_END)
-	      g_value_set_int(value, feature_data->sub_feature->end);
-	    else
-	      g_value_set_int(value, feature_data->sub_feature->end - feature_data->sub_feature->start + 1);
-	  }
-
-	result = TRUE;
+        result = TRUE;
       }
       break;
     case PROP_DATA_TERM:
     case PROP_DATA_SOFA_TERM:
       {
-	FeatureSubFeature feature_data = (FeatureSubFeature)user_data ;
-	ZMapFeature feature;
+        FeatureSubFeature feature_data = (FeatureSubFeature)user_data ;
+        ZMapFeature feature;
 
-	feature = (ZMapFeature)feature_data->feature_any ;
+        feature = (ZMapFeature)feature_data->feature_any ;
+        
+        if (feature_data->sub_feature == NULL)
+          {
+            GQuark term_id;
+        
+            if (feature->SO_accession)
+              {
+                term_id = zMapSOAcc2TermID(feature->SO_accession) ;
+              }
+            else
+              {
+                switch(feature->mode)
+                  {
+                  case ZMAPSTYLE_MODE_BASIC:
+                    term_id = g_quark_from_string("Basic") ;
+                    break ;
+                  case ZMAPSTYLE_MODE_TRANSCRIPT:
+                    term_id = g_quark_from_string("Transcript") ;
+                    break ;
+                  case ZMAPSTYLE_MODE_ASSEMBLY_PATH:
+                    term_id = g_quark_from_string("Assembly Path") ;
+                    break ;
+                  case ZMAPSTYLE_MODE_ALIGNMENT:
+                    term_id = g_quark_from_string("Alignment") ;
+                    break ;
+                  case ZMAPSTYLE_MODE_GRAPH:
+                    term_id = g_quark_from_string("Graph") ;
+                    break ;
+                  case ZMAPSTYLE_MODE_GLYPH:
+                    term_id = g_quark_from_string("Glyph") ;
+                    break ;
+                  case ZMAPSTYLE_MODE_TEXT:
+                    term_id = g_quark_from_string("Text") ;
+                    break ;
+                  case ZMAPSTYLE_MODE_SEQUENCE:
+                    term_id = g_quark_from_string("Sequence") ;
+                    break ;
+                  default:
+                    term_id = g_quark_from_string("<UNKNOWN>") ;
+                    break ;
+                  }
+              }
 
-	if (feature_data->sub_feature == NULL)
-	  {
-	    GQuark term_id;
+            g_value_set_static_string(value, g_quark_to_string(term_id)) ;
+          }
+        else
+          {
+            GQuark term_id;
+        
+            switch(feature_data->sub_feature->subpart)
+              {
+              case ZMAPFEATURE_SUBPART_GAP:
+                term_id = g_quark_from_string("Gap");
+                break;
+              case ZMAPFEATURE_SUBPART_MATCH:
+                term_id = g_quark_from_string("Match");
+                break;
+              case ZMAPFEATURE_SUBPART_EXON_CDS:
+                term_id = g_quark_from_string("Coding Exon");
+                break;
+              case ZMAPFEATURE_SUBPART_EXON:
+                if (feature->feature.transcript.flags.cds)
+                  term_id = g_quark_from_string("Non-coding Exon") ;
+                else
+                  term_id = g_quark_from_string("Exon") ;
+                break;
+              case ZMAPFEATURE_SUBPART_INTRON:
+              case ZMAPFEATURE_SUBPART_INTRON_CDS:
+                term_id = g_quark_from_string("Intron");
+                break;
+              default:
+                term_id = g_quark_from_string("<UNKNOWN>");
+                break;
+              }
+        
+            g_value_set_static_string(value, g_quark_to_string(term_id));
+          }
 
-	    if (feature->SO_accession)
-	      {
-		term_id = zMapSOAcc2TermID(feature->SO_accession) ;
-	      }
-	    else
-	      {
-		switch(feature->mode)
-		  {
-		  case ZMAPSTYLE_MODE_BASIC:
-		    term_id = g_quark_from_string("Basic") ;
-		    break ;
-		  case ZMAPSTYLE_MODE_TRANSCRIPT:
-		    term_id = g_quark_from_string("Transcript") ;
-		    break ;
-		  case ZMAPSTYLE_MODE_ASSEMBLY_PATH:
-		    term_id = g_quark_from_string("Assembly Path") ;
-		    break ;
-		  case ZMAPSTYLE_MODE_ALIGNMENT:
-		    term_id = g_quark_from_string("Alignment") ;
-		    break ;
-		  case ZMAPSTYLE_MODE_GRAPH:
-		    term_id = g_quark_from_string("Graph") ;
-		    break ;
-		  case ZMAPSTYLE_MODE_GLYPH:
-		    term_id = g_quark_from_string("Glyph") ;
-		    break ;
-		  case ZMAPSTYLE_MODE_TEXT:
-		    term_id = g_quark_from_string("Text") ;
-		    break ;
-		  case ZMAPSTYLE_MODE_SEQUENCE:
-		    term_id = g_quark_from_string("Sequence") ;
-		    break ;
-		  default:
-		    term_id = g_quark_from_string("<UNKNOWN>") ;
-		    break ;
-		  }
-	      }
-
-	    g_value_set_static_string(value, g_quark_to_string(term_id)) ;
-	  }
-	else
-	  {
-	    GQuark term_id;
-
-	    switch(feature_data->sub_feature->subpart)
-	      {
-	      case ZMAPFEATURE_SUBPART_GAP:
-		term_id = g_quark_from_string("Gap");
-		break;
-	      case ZMAPFEATURE_SUBPART_MATCH:
-		term_id = g_quark_from_string("Match");
-		break;
-	      case ZMAPFEATURE_SUBPART_EXON_CDS:
-		term_id = g_quark_from_string("Coding Exon");
-		break;
-	      case ZMAPFEATURE_SUBPART_EXON:
-		if (feature->feature.transcript.flags.cds)
-		  term_id = g_quark_from_string("Non-coding Exon") ;
-		else
-		  term_id = g_quark_from_string("Exon") ;
-		break;
-	      case ZMAPFEATURE_SUBPART_INTRON:
-	      case ZMAPFEATURE_SUBPART_INTRON_CDS:
-		term_id = g_quark_from_string("Intron");
-		break;
-	      default:
-		term_id = g_quark_from_string("<UNKNOWN>");
-		break;
-	      }
-
-	    g_value_set_static_string(value, g_quark_to_string(term_id));
-	  }
-
-	result = TRUE;
+        result = TRUE;
       }
       break;
     default:
@@ -632,9 +632,9 @@ static gboolean basic_get_sub_feature_info(gpointer user_data, guint param_spec_
  */
 
 gboolean zMapFeatureGetInfo(ZMapFeatureAny         feature_any,
-			    ZMapFeatureSubPartSpan sub_feature,
-			    const gchar           *first_property_name,
-			    ...)
+    ZMapFeatureSubPartSpan sub_feature,
+    const gchar           *first_property_name,
+    ...)
 {
   ZMapFeature feature;
   GType feature_type = 0;
@@ -648,20 +648,20 @@ gboolean zMapFeatureGetInfo(ZMapFeatureAny         feature_any,
     {
     case ZMAPFEATURE_STRUCT_FEATURE:
       {
-	feature = (ZMapFeature)feature_any;
-	switch(feature->mode)
-	  {
-	  case ZMAPSTYLE_MODE_ALIGNMENT:
-	    get_func_pointer = alignment_get_sub_feature_info;
-	    break;
-	  case ZMAPSTYLE_MODE_TRANSCRIPT:
-	    get_func_pointer = transcript_get_sub_feature_info;
-	    break;
-	  case ZMAPSTYLE_MODE_BASIC:
-	  default:
-	    get_func_pointer = basic_get_sub_feature_info;
-	    break;
-	  }
+        feature = (ZMapFeature)feature_any;
+        switch(feature->mode)
+          {
+          case ZMAPSTYLE_MODE_ALIGNMENT:
+            get_func_pointer = alignment_get_sub_feature_info;
+            break;
+          case ZMAPSTYLE_MODE_TRANSCRIPT:
+            get_func_pointer = transcript_get_sub_feature_info;
+            break;
+          case ZMAPSTYLE_MODE_BASIC:
+          default:
+            get_func_pointer = basic_get_sub_feature_info;
+            break;
+          }
       }
       break;
     default:
@@ -679,8 +679,8 @@ gboolean zMapFeatureGetInfo(ZMapFeatureAny         feature_any,
       va_start(var_args, first_property_name);
 
       if(result || (!fail_on_bad_requests_G))
-	result = invoke_get_func_valist(&get_info_data, pspec_pool_G, feature_type,
-					get_func_pointer, first_property_name, var_args);
+        result = invoke_get_func_valist(&get_info_data, pspec_pool_G, feature_type,
+                                        get_func_pointer, first_property_name, var_args);
 
       va_end(var_args);
     }
@@ -692,11 +692,11 @@ gboolean zMapFeatureGetInfo(ZMapFeatureAny         feature_any,
 
 /* like g_object_get_valist */
 static gboolean invoke_get_func_valist(gpointer        user_data,
-				       GParamSpecPool *pspec_pool,
-				       GType           pool_member_type,
-				       GetFunc         get_func,
-				       const gchar    *first_property_name,
-				       va_list	        var_args)
+       GParamSpecPool *pspec_pool,
+       GType           pool_member_type,
+       GetFunc         get_func,
+       const gchar    *first_property_name,
+       va_list        var_args)
 {
   const gchar *name;
   gboolean result = FALSE;
@@ -712,46 +712,46 @@ static gboolean invoke_get_func_valist(gpointer        user_data,
       result = FALSE;
 
       pspec = g_param_spec_pool_lookup (pspec_pool,
-					name,
-					pool_member_type,
-					TRUE);
+                                        name,
+                                        pool_member_type,
+                                        TRUE);
 
       if (fail_on_bad_requests_G && !pspec)
-	{
-	  g_warning ("%s: type `%s' has no property named `%s'",
-		     G_STRFUNC,
-		     gtype_to_message_string(pool_member_type),
-		     name);
-	  break;
-	}
+        {
+          g_warning ("%s: type `%s' has no property named `%s'",
+             G_STRFUNC,
+             gtype_to_message_string(pool_member_type),
+             name);
+          break;
+        }
       else if(pspec)
-	{
-	  if (fail_on_bad_requests_G && !(pspec->flags & G_PARAM_READABLE))
-	    {
-	      g_warning ("%s: property `%s' of object class `%s' is not readable",
-			 G_STRFUNC,
-			 pspec->name,
-			 gtype_to_message_string(pool_member_type));
-	      break;
-	    }
+        {
+          if (fail_on_bad_requests_G && !(pspec->flags & G_PARAM_READABLE))
+            {
+              g_warning ("%s: property `%s' of object class `%s' is not readable",
+                         G_STRFUNC,
+                         pspec->name,
+                         gtype_to_message_string(pool_member_type));
+              break;
+            }
 
-	  g_value_init (&value, G_PARAM_SPEC_VALUE_TYPE (pspec));
+          g_value_init (&value, G_PARAM_SPEC_VALUE_TYPE (pspec));
 
-	  if(get_func)
-	    result = (get_func)(user_data, pspec->param_id, &value, pspec);
+          if(get_func)
+            result = (get_func)(user_data, pspec->param_id, &value, pspec);
 
-	  G_VALUE_LCOPY (&value, var_args, 0, &error);
+          G_VALUE_LCOPY (&value, var_args, 0, &error);
+        
+          if (error)
+            {
+              g_warning ("%s: %s", G_STRFUNC, error);
+              g_free (error);
+              g_value_unset (&value);
+              break;
+            }
 
-	  if (error)
-	    {
-	      g_warning ("%s: %s", G_STRFUNC, error);
-	      g_free (error);
-	      g_value_unset (&value);
-	      break;
-	    }
-
-	  g_value_unset (&value);
-	}
+          g_value_unset (&value);
+        }
 
       name = va_arg (var_args, gchar*);
     }
@@ -770,11 +770,11 @@ static ZMAP_ENUM_TO_SHORT_TEXT_FUNC(zmapFeatureDataPropertyNick, ZMapFeatureData
 
 /* like g_object_new_valist */
 static gpointer invoke_create_func_valist(gpointer        user_data,
-					  GParamSpecPool *pspec_pool,
-					  GType           pool_member_type,
-					  CreateVFunc     create_func,
-					  const gchar    *first_property_name,
-					  va_list         var_args)
+  GParamSpecPool *pspec_pool,
+  GType           pool_member_type,
+  CreateVFunc     create_func,
+  const gchar    *first_property_name,
+  va_list         var_args)
 {
   gpointer return_pointer = NULL;
   GParameter *params;
@@ -793,48 +793,48 @@ static gpointer invoke_create_func_valist(gpointer        user_data,
       params = g_new (GParameter, n_alloced_params);
       name   = first_property_name;
       while (name)
-	{
-	  gchar *error = NULL;
-	  GParamSpec *pspec = g_param_spec_pool_lookup (pspec_pool,
-							name,
-							pool_member_type,
-							TRUE);
-	  if (!pspec)
-	    {
-	      g_warning ("%s: type `%s' has no property named `%s'",
-			 G_STRFUNC,
-			 g_type_name (pool_member_type),
-			 name);
-	      break;
-	    }
+        {
+          gchar *error = NULL;
+          GParamSpec *pspec = g_param_spec_pool_lookup (pspec_pool,
+                                                        name,
+                                                        pool_member_type,
+                                                        TRUE);
+          if (!pspec)
+            {
+              g_warning ("%s: type `%s' has no property named `%s'",
+                 G_STRFUNC,
+                 g_type_name (pool_member_type),
+                 name);
+              break;
+            }
 
-	  if (n_params >= n_alloced_params)
-	    {
-	      n_alloced_params += 16;
-	      params = g_renew (GParameter, params, n_alloced_params);
-	    }
+          if (n_params >= n_alloced_params)
+            {
+              n_alloced_params += 16;
+              params = g_renew (GParameter, params, n_alloced_params);
+            }
 
-	  params[n_params].name = name;
-	  params[n_params].value.g_type = 0;
-	  g_value_init (&params[n_params].value, G_PARAM_SPEC_VALUE_TYPE (pspec));
-	  G_VALUE_COLLECT (&params[n_params].value, var_args, 0, &error);
-	  if (error)
-	    {
-	      g_warning ("%s: %s", G_STRFUNC, error);
-	      g_free (error);
-	      g_value_unset (&params[n_params].value);
-	      break;
-	    }
-	  n_params++;
-	  name = va_arg (var_args, gchar*);
-	}
+          params[n_params].name = name;
+          params[n_params].value.g_type = 0;
+          g_value_init (&params[n_params].value, G_PARAM_SPEC_VALUE_TYPE (pspec));
+          G_VALUE_COLLECT (&params[n_params].value, var_args, 0, &error);
+          if (error)
+            {
+              g_warning ("%s: %s", G_STRFUNC, error);
+              g_free (error);
+              g_value_unset (&params[n_params].value);
+              break;
+            }
+          n_params++;
+          name = va_arg (var_args, gchar*);
+        }
 
       return_pointer = (create_func)(user_data, n_params, params);
 
       while (n_params--)
-	{
-	  g_value_unset (&params[n_params].value);
-	}
+        {
+          g_value_unset (&params[n_params].value);
+        }
       g_free (params);
 
     }

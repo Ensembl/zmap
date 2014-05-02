@@ -88,10 +88,10 @@ GQuark zMapFeatureDNAFeatureID(ZMapFeatureBlock block)
   if (dna_name)
     {
       dna_id = zMapFeatureCreateID(ZMAPSTYLE_MODE_SEQUENCE,
-				   dna_name, ZMAPSTRAND_FORWARD,
-				   block->block_to_sequence.block.x1,
-				   block->block_to_sequence.block.x2,
-				   0, 0) ;
+   dna_name, ZMAPSTRAND_FORWARD,
+   block->block_to_sequence.block.x1,
+   block->block_to_sequence.block.x2,
+   0, 0) ;
 
       g_free(dna_name) ;
     }
@@ -142,9 +142,9 @@ void zMapFeatureDNAAddSequenceData(ZMapFeature dna_feature, char *dna_str, int s
 }
 
 ZMapFeature zMapFeatureDNACreateFeature(ZMapFeatureBlock     block,
-					ZMapFeatureTypeStyle style,
-					char *dna_str,
-					int   sequence_length)
+ZMapFeatureTypeStyle style,
+char *dna_str,
+int   sequence_length)
 {
   ZMapFeatureSet dna_feature_set = NULL;
   ZMapFeature dna_feature = NULL;
@@ -171,48 +171,48 @@ ZMapFeature zMapFeatureDNACreateFeature(ZMapFeatureBlock     block,
       dna_id = zMapFeatureDNAFeatureID(block);;
 
       if (block->sequence.sequence)
-	{
-	  /* hmm, we've already got dna */
+        {
+          /* hmm, we've already got dna */
 
-	  /* We should be able to get the feature from the feature set, */
-	  /* but not before issuing a warning */
-	  zMapLogWarning("%s", "Block already has DNA");
+          /* We should be able to get the feature from the feature set, */
+          /* but not before issuing a warning */
+          zMapLogWarning("%s", "Block already has DNA");
 
-	  dna_feature = zMapFeatureSetGetFeatureByID(dna_feature_set, dna_id);
-	}
+          dna_feature = zMapFeatureSetGetFeatureByID(dna_feature_set, dna_id);
+        }
       else
-	{
-	  ZMapStrand strand = ZMAPSTRAND_FORWARD; /* DNA is forward */
+        {
+          ZMapStrand strand = ZMAPSTRAND_FORWARD; /* DNA is forward */
+        
+          /* check dna length == block length? */
+          sequence = ontology = NULL;
+          ontology = "dna";
+        
+          dna_feature_set->style = style;
+        
+          dna_feature = zMapFeatureCreateFromStandardData(feature_name,
+                                                          sequence,
+                                                          ontology,
+                                                          ZMAPSTYLE_MODE_SEQUENCE,
+                                                          &dna_feature_set->style,
+                                                          block_start,
+                                                          block_end,
+                                                          FALSE, 0.0,
+                                                          strand) ;
+        
+          zMapFeatureSequenceSetType(dna_feature, ZMAPSEQUENCE_DNA) ;
+          zMapFeatureDNAAddSequenceData(dna_feature, dna_str, sequence_length);
 
-	  /* check dna length == block length? */
-	  sequence = ontology = NULL;
-	  ontology = "dna";
+          zMapFeatureSetAddFeature(dna_feature_set, dna_feature);
 
-	  dna_feature_set->style = style;
+          block->sequence.sequence = dna_feature->feature.sequence.sequence;
+          block->sequence.type     = dna_feature->feature.sequence.type;
+          block->sequence.length   = dna_feature->feature.sequence.length;
 
-	  dna_feature = zMapFeatureCreateFromStandardData(feature_name,
-							  sequence,
-							  ontology,
-							  ZMAPSTYLE_MODE_SEQUENCE,
-							  &dna_feature_set->style,
-							  block_start,
-							  block_end,
-							  FALSE, 0.0,
-							  strand) ;
-
-	  zMapFeatureSequenceSetType(dna_feature, ZMAPSEQUENCE_DNA) ;
-	  zMapFeatureDNAAddSequenceData(dna_feature, dna_str, sequence_length);
-
-	  zMapFeatureSetAddFeature(dna_feature_set, dna_feature);
-
-	  block->sequence.sequence = dna_feature->feature.sequence.sequence;
-	  block->sequence.type     = dna_feature->feature.sequence.type;
-	  block->sequence.length   = dna_feature->feature.sequence.length;
-
-	}
+        }
 
       if(feature_name)
-	g_free(feature_name);
+        g_free(feature_name);
     }
 
 
