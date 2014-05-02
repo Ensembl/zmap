@@ -475,13 +475,11 @@ ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
 
 	break ;
       }
-
     case ZMAP_SERVERREQ_FEATURES:
       {
         ZMapServerReqGetFeatures features = (ZMapServerReqGetFeatures)request_in ;
 
-	if ((request->response = zMapServerGetFeatures(server, features->styles,
-						       features->context, &(features->num_features)))
+	if ((request->response = zMapServerGetFeatures(server, features->styles, features->context))
 	    != ZMAP_SERVERRESPONSE_OK)
 	  {
 	    *err_msg_out = g_strdup(zMapServerLastErrorMsg(server)) ;
@@ -491,7 +489,6 @@ ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
 
 	break ;
       }
-
     case ZMAP_SERVERREQ_SEQUENCE:
       {
         ZMapServerReqGetFeatures features = (ZMapServerReqGetFeatures)request_in ;
@@ -521,7 +518,6 @@ ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
 
 	break ;
       }
-
     case ZMAP_SERVERREQ_GETSTATUS:
       {
         ZMapServerReqGetStatus get_status = (ZMapServerReqGetStatus)request_in ;
@@ -530,7 +526,6 @@ ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
 
 	break ;
       }
-
     case ZMAP_SERVERREQ_GETCONNECT_STATE:
       {
         ZMapServerReqGetConnectState get_connect_state = (ZMapServerReqGetConnectState)request_in ;
@@ -539,7 +534,6 @@ ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
 
 	break ;
       }
-
     case ZMAP_SERVERREQ_TERMINATE:
       {
         request->response = zMapServerCloseConnection(server);
@@ -558,10 +552,9 @@ ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
 
         break ;
       }
-
     default:
       {
-	zMapCheck(1, "Coding error, unknown request type number: %d", request->type) ;
+	zMapWarnIfReached() ;
 	break ;
       }
     }
@@ -570,8 +563,9 @@ ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
   *slave_data = (void *)server ;
 
 #if  MH_NEVER_INCLUDE_THIS_CODE
-  /* ERRR....so was this ever fixed ???????? EG */
-
+  /* ERRR....so was this ever fixed ???????? EG AND SEE HOW CRAP THIS...ACTUALLY USING THE
+     NUMERICAL VALUE AND NOT THE ENUM...AGGGGGHHHHHHHHHHH
+  */
   // mysteriously falls over on terminate (request = 11)
   if(request->type != 11)
     {

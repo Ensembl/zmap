@@ -76,7 +76,7 @@ typedef ZMapFeatureContext (*ZMapServerCopyContextFunc)(void *server_conn) ;
 
 typedef ZMapServerResponseType (*ZMapServerGetFeatures)(void *server_conn,
 							GHashTable *styles,
-							ZMapFeatureContext feature_context, int *num_features_out) ;
+							ZMapFeatureContext feature_context) ;
 
 typedef ZMapServerResponseType (*ZMapServerGetContextSequences)(void *server_conn,
 								GHashTable *styles,

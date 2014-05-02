@@ -353,16 +353,14 @@ ZMapServerResponseType zMapServerSetContext(ZMapServer server, ZMapFeatureContex
 
 
 ZMapServerResponseType zMapServerGetFeatures(ZMapServer server,
-					     GHashTable *styles,
-					     ZMapFeatureContext feature_context, int *num_features)
+					     GHashTable *styles, ZMapFeatureContext feature_context)
 {
   ZMapServerResponseType result = server->last_response ;
 
   if (server->last_response != ZMAP_SERVERRESPONSE_SERVERDIED  && server->last_response != ZMAP_SERVERRESPONSE_REQFAIL)
     {
       result = server->last_response
-	= (server->funcs->get_features)(server->server_conn, styles, feature_context, num_features) ;
-
+	= (server->funcs->get_features)(server->server_conn, styles, feature_context) ;
 
       if (result != ZMAP_SERVERRESPONSE_OK)
 	zMapServerSetErrorMsg(server, ZMAPSERVER_MAKEMESSAGE(server->url->protocol,
