@@ -67,26 +67,26 @@ typedef struct ColourSpecStructName
   (BOOLEAN ? "TRUE" : "FALSE")
 
 #define PRINTFIELD(DEST, FLAG, FIELD, FIELD_STR, FORMAT_CONV, FIELD_TO_STR_FUNC) \
-  if (TEST || FLAG)					\
+  if (TEST || FLAG)\
     zMapOutWriteFormat((DEST), "%s" FIELD_STR ":\t\t%s\t\t" FORMAT_CONV "\n", \
            INDENT_STR,                                                      \
-	   (FLAG ? "<SET>" : "<UNSET>"),		\
-	   FIELD_TO_STR_FUNC(STYLE_PTR->FIELD))
+   (FLAG ? "<SET>" : "<UNSET>"),\
+   FIELD_TO_STR_FUNC(STYLE_PTR->FIELD))
 
-#define PRINTCOLOURTARGET(DEST, FIELD, FIELD_STR, TYPE, TARGET)			                    \
-  if (TEST || STYLE_PTR->FIELD.TYPE.fields_set.TARGET)						    \
+#define PRINTCOLOURTARGET(DEST, FIELD, FIELD_STR, TYPE, TARGET)                    \
+  if (TEST || STYLE_PTR->FIELD.TYPE.fields_set.TARGET)    \
     zMapOutWriteFormat((DEST), "%s" FIELD_STR " " #TYPE " " #TARGET ":\t\t%s\t\tpixel\t%d\tRGB\t%d,%d,%d\n", \
            INDENT_STR,                                                                               \
-	   (STYLE_PTR->FIELD.TYPE.fields_set.TARGET ? "<SET>" : "<UNSET>"),				    \
-	   STYLE_PTR->FIELD.TYPE.TARGET.pixel, STYLE_PTR->FIELD.TYPE.TARGET.red, STYLE_PTR->FIELD.TYPE.TARGET.green, STYLE_PTR->FIELD.TYPE.TARGET.blue)
+   (STYLE_PTR->FIELD.TYPE.fields_set.TARGET ? "<SET>" : "<UNSET>"),    \
+   STYLE_PTR->FIELD.TYPE.TARGET.pixel, STYLE_PTR->FIELD.TYPE.TARGET.red, STYLE_PTR->FIELD.TYPE.TARGET.green, STYLE_PTR->FIELD.TYPE.TARGET.blue)
 
-#define PRINTCOLOUR(DEST, FIELD, FIELD_STR, TYPE)		\
+#define PRINTCOLOUR(DEST, FIELD, FIELD_STR, TYPE)\
   PRINTCOLOURTARGET(DEST, FIELD, FIELD_STR, TYPE, fill) ;     \
   PRINTCOLOURTARGET(DEST, FIELD, FIELD_STR, TYPE, draw) ;     \
   PRINTCOLOURTARGET(DEST, FIELD, FIELD_STR, TYPE, border) ;
 
 #define PRINTFULLCOLOUR(DEST, FIELD, FIELD_STR)       \
-      PRINTCOLOUR(DEST, FIELD, FIELD_STR, normal) ;	\
+      PRINTCOLOUR(DEST, FIELD, FIELD_STR, normal) ;\
       PRINTCOLOUR(DEST, FIELD, FIELD_STR, selected) ;
 
 
@@ -199,39 +199,39 @@ ZMapStyleBumpMode zMapStylePatchBumpMode(ZMapStyleBumpMode curr_bump)
 
   switch(curr_bump)
     {
-    case ZMAPBUMP_UNBUMP:
-      valid_bump = curr_bump ;
-      break;
+      case ZMAPBUMP_UNBUMP:
+        valid_bump = curr_bump ;
+        break;
 
-    case ZMAPBUMP_NAME:
-    case ZMAPBUMP_NAME_INTERLEAVE:
-    case ZMAPBUMP_NAME_NO_INTERLEAVE:
-      /* patch both these to overlap, should just be no_interleave but I got it wrong last time round */
-      /* temporasry situation till i fix the menu to nbe simple */
-      valid_bump = ZMAPBUMP_OVERLAP;
-      break ;
+      case ZMAPBUMP_NAME:
+      case ZMAPBUMP_NAME_INTERLEAVE:
+      case ZMAPBUMP_NAME_NO_INTERLEAVE:
+        /* patch both these to overlap, should just be no_interleave but I got it wrong last time round */
+        /* temporasry situation till i fix the menu to nbe simple */
+        valid_bump = ZMAPBUMP_OVERLAP;
+        break ;
 
-    case ZMAPBUMP_START_POSITION:
-    case ZMAPBUMP_NAME_COLINEAR:
-    case ZMAPBUMP_NAME_BEST_ENDS:
-      /* for alignments these all map to overlap, the alignments code shows the decorations regardless */
-      /* but for historical accuray we use bump all which displays each composite feature in its own column */
-      valid_bump = ZMAPBUMP_ALL ;
-      break ;
+      case ZMAPBUMP_START_POSITION:
+      case ZMAPBUMP_NAME_COLINEAR:
+      case ZMAPBUMP_NAME_BEST_ENDS:
+        /* for alignments these all map to overlap, the alignments code shows the decorations regardless */
+        /* but for historical accuray we use bump all which displays each composite feature in its own column */
+        valid_bump = ZMAPBUMP_ALL ;
+        break ;
 
-    case ZMAPBUMP_ALTERNATING:
-    case ZMAPBUMP_OVERLAP:
-    case ZMAPBUMP_ALL:
-      valid_bump = curr_bump ;
-      break;
+      case ZMAPBUMP_ALTERNATING:
+      case ZMAPBUMP_OVERLAP:
+      case ZMAPBUMP_ALL:
+        valid_bump = curr_bump ;
+        break;
 
-    case ZMAPBUMP_STYLE:
-      valid_bump = curr_bump ;
-	break;
+      case ZMAPBUMP_STYLE:
+        valid_bump = curr_bump ;
+        break;
 
-    default:
-      zMapWarnIfReached() ;
-      break;
+      default:
+        zMapWarnIfReached() ;
+        break;
     }
 
 
@@ -261,13 +261,13 @@ ZMapStyleBumpMode zMapStylePatchBumpMode(ZMapStyleBumpMode curr_bump)
  *
  *  */
 char *zMapStyleMakeColourString(char *normal_fill, char *normal_draw, char *normal_border,
-				char *selected_fill, char *selected_draw, char *selected_border)
+                                char *selected_fill, char *selected_draw, char *selected_border)
 {
   char *colour = NULL ;
   GString *colour_str ;
   ColourSpecStruct colours[] = {{"normal fill", NULL}, {"normal draw", NULL}, {"normal border", NULL},
-				{"selected fill", NULL}, {"selected draw", NULL}, {"selected border", NULL},
-				{NULL, NULL}} ;
+                                {"selected fill", NULL}, {"selected draw", NULL}, {"selected border", NULL},
+                                {NULL, NULL}} ;
   ColourSpec curr_colour ;
 
   colour_str = g_string_sized_new(1024) ;
@@ -297,7 +297,7 @@ char *zMapStyleMakeColourString(char *normal_fill, char *normal_draw, char *norm
   while (curr_colour->colour_type)
     {
       if (curr_colour->colour)
-	g_string_append_printf(colour_str, "%s %s ; ", curr_colour->colour_type, curr_colour->colour ) ;
+        g_string_append_printf(colour_str, "%s %s ; ", curr_colour->colour_type, curr_colour->colour ) ;
 
       curr_colour++ ;
     }
@@ -448,20 +448,20 @@ void zMapStylePrint(ZMapIOOut dest, ZMapFeatureTypeStyle style, char *prefix, gb
     case ZMAPSTYLE_MODE_TEXT:
     case ZMAPSTYLE_MODE_META:
       {
-	break ;
+        break ;
       }
     case ZMAPSTYLE_MODE_GRAPH:
       {
-	zMapOutWriteFormat(dest, "%sGraph Mode -\n", indent) ;
+        zMapOutWriteFormat(dest, "%sGraph Mode -\n", indent) ;
 
-	indent = "\t\t" ;
-	PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_GRAPH_MODE), mode_data.graph.mode, "Mode", "%s", zmapStyleGraphMode2ExactStr) ;
-	PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_GRAPH_BASELINE), mode_data.graph.baseline, "Baseline", "%g", (double)) ;
+        indent = "\t\t" ;
+        PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_GRAPH_MODE), mode_data.graph.mode, "Mode", "%s", zmapStyleGraphMode2ExactStr) ;
+        PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_GRAPH_BASELINE), mode_data.graph.baseline, "Baseline", "%g", (double)) ;
         PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_GRAPH_SCALE), mode_data.graph.scale, "Scaling", "%s", zmapStyleScale2ExactStr) ;
-	PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_GRAPH_FILL), mode_data.graph.fill,  "Fill", "%s", PRINTBOOL) ;
-	PRINTFULLCOLOUR(dest, mode_data.graph.colours, "Colours") ;
+        PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_GRAPH_FILL), mode_data.graph.fill,  "Fill", "%s", PRINTBOOL) ;
+        PRINTFULLCOLOUR(dest, mode_data.graph.colours, "Colours") ;
 
-	break ;
+        break ;
       }
     case ZMAPSTYLE_MODE_GLYPH:
       {
@@ -469,50 +469,50 @@ void zMapStylePrint(ZMapIOOut dest, ZMapFeatureTypeStyle style, char *prefix, gb
       PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_GLYPH_NAME), mode_data.glyph.glyph_name,
                "Glyph name", "%s", g_quark_to_string) ;
 
-	break ;
+        break ;
       }
     case ZMAPSTYLE_MODE_ALIGNMENT:
       {
-	zMapOutWriteFormat(dest, "%sAlignment Mode -\n", indent) ;
+        zMapOutWriteFormat(dest, "%sAlignment Mode -\n", indent) ;
 
-	indent = "\t\t" ;
-	PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_ALIGNMENT_PARSE_GAPS), mode_data.alignment.parse_gaps,
-		   "Parse Gaps", "%s", PRINTBOOL) ;
-	PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_ALIGNMENT_SHOW_GAPS), mode_data.alignment.show_gaps,
-		   "Show Gaps", "%s", PRINTBOOL) ;
-	PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_ALIGNMENT_PFETCHABLE), mode_data.alignment.pfetchable,
-		   "Pfetchable", "%s", PRINTBOOL) ;
-	PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_ALIGNMENT_BETWEEN_ERROR), mode_data.alignment.between_align_error,
-		   "Join Aligns", "%d", (unsigned int)) ;
+        indent = "\t\t" ;
+        PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_ALIGNMENT_PARSE_GAPS), mode_data.alignment.parse_gaps,
+           "Parse Gaps", "%s", PRINTBOOL) ;
+        PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_ALIGNMENT_SHOW_GAPS), mode_data.alignment.show_gaps,
+           "Show Gaps", "%s", PRINTBOOL) ;
+        PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_ALIGNMENT_PFETCHABLE), mode_data.alignment.pfetchable,
+           "Pfetchable", "%s", PRINTBOOL) ;
+        PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_ALIGNMENT_BETWEEN_ERROR), mode_data.alignment.between_align_error,
+           "Join Aligns", "%d", (unsigned int)) ;
 
-	PRINTFULLCOLOUR(dest, mode_data.alignment.perfect, "Perfect") ;
-	PRINTFULLCOLOUR(dest, mode_data.alignment.colinear, "Colinear") ;
-	PRINTFULLCOLOUR(dest, mode_data.alignment.noncolinear, "Non-colinear") ;
-
-	break ;
+        PRINTFULLCOLOUR(dest, mode_data.alignment.perfect, "Perfect") ;
+        PRINTFULLCOLOUR(dest, mode_data.alignment.colinear, "Colinear") ;
+        PRINTFULLCOLOUR(dest, mode_data.alignment.noncolinear, "Non-colinear") ;
+        
+        break ;
       }
     case ZMAPSTYLE_MODE_TRANSCRIPT:
       {
-	zMapOutWriteFormat(dest, "%sTranscript Mode -\n", indent) ;
+        zMapOutWriteFormat(dest, "%sTranscript Mode -\n", indent) ;
 
-	indent = "\t\t" ;
-	PRINTFULLCOLOUR(dest, mode_data.transcript.CDS_colours, "CDS") ;
+        indent = "\t\t" ;
+        PRINTFULLCOLOUR(dest, mode_data.transcript.CDS_colours, "CDS") ;
 
-	break ;
+        break ;
       }
     case ZMAPSTYLE_MODE_ASSEMBLY_PATH:
       {
-	zMapOutWriteFormat(dest, "%sAssembly_path Mode -\n", indent) ;
+        zMapOutWriteFormat(dest, "%sAssembly_path Mode -\n", indent) ;
 
-	indent = "\t\t" ;
-	PRINTFULLCOLOUR(dest, mode_data.assembly_path.non_path_colours, "Non-assembly") ;
+        indent = "\t\t" ;
+        PRINTFULLCOLOUR(dest, mode_data.assembly_path.non_path_colours, "Non-assembly") ;
 
-	break ;
+        break ;
       }
     default:
       {
         zMapWarnIfReached() ;
-	break ;
+        break ;
       }
     }
 

@@ -47,7 +47,7 @@
 
 
 /* Think about defaults, how should they be set, should we force user to set them ? */
-#define ZMAPFEATURE_DEFAULT_WIDTH 10.0			    /* of features being displayed */
+#define ZMAPFEATURE_DEFAULT_WIDTH 10.0    /* of features being displayed */
 
 
 typedef struct
@@ -103,9 +103,9 @@ static gboolean destroyStyle(gpointer style_id, gpointer data, gpointer user_dat
 static void copySetCB(gpointer key_id, gpointer data, gpointer user_data) ;
 
 static void setStrandFrameAttrs(ZMapFeatureTypeStyle type,
-				gboolean *strand_specific_in,
-				gboolean *show_rev_strand_in,
-				ZMapStyle3FrameMode *frame_mode_in) ;
+gboolean *strand_specific_in,
+gboolean *show_rev_strand_in,
+ZMapStyle3FrameMode *frame_mode_in) ;
 static void mergeColours(ZMapStyleFullColour curr, ZMapStyleFullColour new) ;
 
 static ZMapFeatureTypeStyle inherit_parent(ZMapFeatureTypeStyle style, GHashTable *root_styles, int depth) ;
@@ -189,7 +189,7 @@ gboolean zMapStyleInheritAllStyles(GHashTable *style_set)
       /* recursively inherit parent while not already done */ 
       new = inherit_parent(old, style_set, 0) ;
       if(!new)
-	result = FALSE ;
+        result = FALSE ;
     }
 
   /* tidy up */
@@ -279,7 +279,7 @@ gboolean zMapStyleCopyAllStyles(GHashTable *style_set, GHashTable **copy_style_s
  *  */
 gboolean zMapStyleMerge(ZMapFeatureTypeStyle curr_style, ZMapFeatureTypeStyle new_style)
 {
-  gboolean result = FALSE ; 		    /* There is nothing to fail currently. */
+  gboolean result = FALSE ;     /* There is nothing to fail currently. */
   ZMapStyleParam param = zmapStyleParams_G;
   int i;
 
@@ -472,7 +472,7 @@ gboolean zMapStyleIsMinMag(ZMapFeatureTypeStyle style, double *min_mag)
       mag_set = TRUE ;
 
       if (min_mag)
-	*min_mag = style->min_mag ;
+        *min_mag = style->min_mag ;
     }
 
   return mag_set ;
@@ -488,7 +488,7 @@ gboolean zMapStyleIsMaxMag(ZMapFeatureTypeStyle style, double *max_mag)
       mag_set = TRUE ;
 
       if (max_mag)
-	*max_mag = style->max_mag ;
+        *max_mag = style->max_mag ;
     }
 
   return mag_set ;
@@ -757,7 +757,7 @@ static void setStrandFrameAttrs(ZMapFeatureTypeStyle type,
 }
 
 void zMapStyleGetStrandAttrs(ZMapFeatureTypeStyle type,
-			     gboolean *strand_specific, gboolean *show_rev_strand, ZMapStyle3FrameMode *frame_mode)
+     gboolean *strand_specific, gboolean *show_rev_strand, ZMapStyle3FrameMode *frame_mode)
 {
 
   if (strand_specific && zMapStyleIsPropertySetId(type,STYLE_PROP_STRAND_SPECIFIC))
@@ -813,10 +813,10 @@ void zMapStyleSetBumpMode(ZMapFeatureTypeStyle style, ZMapStyleBumpMode bump_mod
     {
       // MH17: this looked wrong, refer to old version
       if(!zMapStyleIsPropertySetId(style,STYLE_PROP_BUMP_DEFAULT))
-	{
-	  zmapStyleSetIsSet(style,STYLE_PROP_BUMP_DEFAULT);
-	  style->default_bump_mode = bump_mode ;
-	}
+{
+  zmapStyleSetIsSet(style,STYLE_PROP_BUMP_DEFAULT);
+  style->default_bump_mode = bump_mode ;
+}
 
       style->initial_bump_mode = bump_mode ;
       zmapStyleSetIsSet(style,STYLE_PROP_BUMP_MODE);
@@ -839,28 +839,28 @@ void zMapStyleSetBumpSpace(ZMapFeatureTypeStyle style, double bump_spacing)
 
 /* Re/init bump mode. */
 void zMapStyleInitBumpMode(ZMapFeatureTypeStyle style,
-			   ZMapStyleBumpMode default_bump_mode, ZMapStyleBumpMode curr_bump_mode)
+   ZMapStyleBumpMode default_bump_mode, ZMapStyleBumpMode curr_bump_mode)
 {
   if (!(style && (default_bump_mode ==  ZMAPBUMP_INVALID
-      || (default_bump_mode >= ZMAPBUMP_START && default_bump_mode <= ZMAPBUMP_END))
-      && (curr_bump_mode ==  ZMAPBUMP_INVALID
-      || (curr_bump_mode >= ZMAPBUMP_START && curr_bump_mode <= ZMAPBUMP_END)) ) )
+              || (default_bump_mode >= ZMAPBUMP_START && default_bump_mode <= ZMAPBUMP_END))
+              && (curr_bump_mode ==  ZMAPBUMP_INVALID
+              || (curr_bump_mode >= ZMAPBUMP_START && curr_bump_mode <= ZMAPBUMP_END)) ) )
     return ;
 
   if (!style->bump_fixed)
     {
 
       if (curr_bump_mode != ZMAPBUMP_INVALID)
-	{
-        zmapStyleSetIsSet(style,STYLE_PROP_BUMP_MODE);
-	  style->initial_bump_mode = curr_bump_mode ;
-	}
+        {
+          zmapStyleSetIsSet(style,STYLE_PROP_BUMP_MODE);
+          style->initial_bump_mode = curr_bump_mode ;
+        }
 
       if (default_bump_mode != ZMAPBUMP_INVALID)
-	{
-        zmapStyleSetIsSet(style,STYLE_PROP_BUMP_DEFAULT);
-	  style->default_bump_mode = default_bump_mode ;
-	}
+        {
+          zmapStyleSetIsSet(style,STYLE_PROP_BUMP_DEFAULT);
+          style->default_bump_mode = default_bump_mode ;
+        }
     }
 
   return ;
@@ -882,7 +882,7 @@ char *zMapStyleCreateName(char *style)
 
   style_name = unique_style_name->str ;
 
-  g_string_free(unique_style_name, FALSE) ;		    /* Do not free returned string. */
+  g_string_free(unique_style_name, FALSE) ;    /* Do not free returned string. */
 
   return style_name ;
 }
@@ -1012,49 +1012,49 @@ static void mergeStyle(gpointer style_id, gpointer data, gpointer user_data)
   if ((curr_style = g_hash_table_lookup(curr_styles, GUINT_TO_POINTER(new_style->unique_id))))
     {
       switch (merge_data->merge_mode)
-	{
-	case ZMAPSTYLE_MERGE_PRESERVE:
-	  {
-	    /* Leave the existing style untouched. */
-	    break ;
-	  }
-	case ZMAPSTYLE_MERGE_REPLACE:
-	  {
-	    /* Remove the existing style and put the new one in its place. */
-	    ZMapFeatureTypeStyle copied_style = NULL ;
+        {
+        case ZMAPSTYLE_MERGE_PRESERVE:
+          {
+            /* Leave the existing style untouched. */
+            break ;
+          }
+        case ZMAPSTYLE_MERGE_REPLACE:
+          {
+            /* Remove the existing style and put the new one in its place. */
+            ZMapFeatureTypeStyle copied_style = NULL ;
 
-          copied_style = zMapFeatureStyleCopy(new_style);
-          g_hash_table_replace(curr_styles,GUINT_TO_POINTER(new_style->unique_id),copied_style);
+            copied_style = zMapFeatureStyleCopy(new_style);
+            g_hash_table_replace(curr_styles,GUINT_TO_POINTER(new_style->unique_id),copied_style);
 
-	    zMapStyleDestroy(curr_style) ;
+            zMapStyleDestroy(curr_style) ;
 
-          merge_data->curr_styles = curr_styles ;
+            merge_data->curr_styles = curr_styles ;
 
-          break ;
-	  }
-	case ZMAPSTYLE_MERGE_MERGE:
-	  {
-	    /* Merge the existing and new styles. */
-	    zMapStyleMerge(curr_style, new_style) ;
+            break ;
+          }
+        case ZMAPSTYLE_MERGE_MERGE:
+          {
+            /* Merge the existing and new styles. */
+            zMapStyleMerge(curr_style, new_style) ;
+        
+            break ;
+          }
+        default:
+          {
+            zMapLogFatalLogicErr("switch(), unknown value: %d", merge_data->merge_mode) ;
 
-	    break ;
-	  }
-	default:
-	  {
-	    zMapLogFatalLogicErr("switch(), unknown value: %d", merge_data->merge_mode) ;
+            break ;
+          }
 
-	    break ;
-	  }
-
-	}
+        }
     }
   else
     {
       ZMapFeatureTypeStyle copied_style = NULL ;
 
       copied_style = zMapFeatureStyleCopy(new_style);
-	g_hash_table_insert(curr_styles, GUINT_TO_POINTER(new_style->unique_id), copied_style) ;
-	merge_data->curr_styles = curr_styles ;
+        g_hash_table_insert(curr_styles, GUINT_TO_POINTER(new_style->unique_id), copied_style) ;
+        merge_data->curr_styles = curr_styles ;
     }
 
   return ;
@@ -1113,7 +1113,7 @@ static ZMapFeatureTypeStyle inherit_parent(ZMapFeatureTypeStyle style, GHashTabl
   if (depth > 20)
     {
       zMapLogWarning("Style %s has more than 20 ancestors - suspected mutually recursive definition of parent style",
-		     g_quark_to_string(style->original_id));
+     g_quark_to_string(style->original_id));
 
       style->inherited = TRUE;      // prevent repeated messages
 
@@ -1124,23 +1124,23 @@ static ZMapFeatureTypeStyle inherit_parent(ZMapFeatureTypeStyle style, GHashTabl
     {
       if (style->parent_id == style->unique_id)
         {
-	  zMapLogWarning("Style %s is its own parent", g_quark_to_string(style->original_id)) ;
-	  style->inherited = TRUE ;
+          zMapLogWarning("Style %s is its own parent", g_quark_to_string(style->original_id)) ;
+          style->inherited = TRUE ;
 
-	  return(NULL) ;
+          return(NULL) ;
         }
 
       if (!(parent = (ZMapFeatureTypeStyle) g_hash_table_lookup(root_styles,GUINT_TO_POINTER(style->parent_id))))
         {
           zMapLogWarning("Style \"%s\" has the parent style \"%s\" "
-			 "but the latter cannot be found in the styles set so cannot be inherited.",
-			 g_quark_to_string(style->original_id), g_quark_to_string(style->parent_id)) ;
+                         "but the latter cannot be found in the styles set so cannot be inherited.",
+                         g_quark_to_string(style->original_id), g_quark_to_string(style->parent_id)) ;
 
           return(NULL);
         }
 
       if(!parent->inherited)
-	parent = inherit_parent(parent,root_styles,depth+1);
+        parent = inherit_parent(parent,root_styles,depth+1);
 
       if(parent)
         {
@@ -1151,23 +1151,23 @@ static ZMapFeatureTypeStyle inherit_parent(ZMapFeatureTypeStyle style, GHashTabl
               tmp_style->inherited = TRUE;
 
 #if MH17_CHECK_INHERITANCE
-	      printf("%s inherited  %s, (%d/%d -> %d)\n",
-		     g_quark_to_string(style->unique_id),
-		     g_quark_to_string(parent->unique_id),
-		     parent->default_bump_mode, style->default_bump_mode, tmp_style->default_bump_mode);
+      printf("%s inherited  %s, (%d/%d -> %d)\n",
+     g_quark_to_string(style->unique_id),
+     g_quark_to_string(parent->unique_id),
+     parent->default_bump_mode, style->default_bump_mode, tmp_style->default_bump_mode);
 #endif
-	      // keep this up to date
+      // keep this up to date
               g_hash_table_replace(root_styles,GUINT_TO_POINTER(style->unique_id),tmp_style);
               zMapStyleDestroy(style);
             }
           else
             {
               zMapLogWarning("Merge of style \"%s\" into style \"%s\" failed.",
-			     g_quark_to_string(parent->original_id),
-			     g_quark_to_string(style->original_id)) ;
-
-	      zMapStyleDestroy(tmp_style);
-	      tmp_style = style;
+             g_quark_to_string(parent->original_id),
+             g_quark_to_string(style->original_id)) ;
+        
+              zMapStyleDestroy(tmp_style);
+              tmp_style = style;
             }
         }
     }

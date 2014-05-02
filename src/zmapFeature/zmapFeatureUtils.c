@@ -67,7 +67,7 @@ static int span_compare (gconstpointer a, gconstpointer b) ;
 
 static int findExon(ZMapFeature feature, int exon_start, int exon_end) ;
 static gboolean calcExonPhase(ZMapFeature feature, int exon_index,
-			      int *exon_cds_start, int *exon_cds_end, int *phase_out) ;
+      int *exon_cds_start, int *exon_cds_end, int *phase_out) ;
 
 static void printChildCB(gpointer key, gpointer value, gpointer user_data_unused) ;
 
@@ -91,20 +91,20 @@ gboolean zMapFeatureIsValid(ZMapFeatureAny any_feature)
       && any_feature->original_id != ZMAPFEATURE_NULLQUARK)
     {
       switch (any_feature->struct_type)
-	{
-	case ZMAPFEATURE_STRUCT_CONTEXT:
-	case ZMAPFEATURE_STRUCT_ALIGN:
-	case ZMAPFEATURE_STRUCT_BLOCK:
-	case ZMAPFEATURE_STRUCT_FEATURESET:
-	  result = TRUE ;
-	  break ;
-	case ZMAPFEATURE_STRUCT_FEATURE:
-	  if (any_feature->children == NULL)
-	    result = TRUE ;
-	  break ;
-	default:
+        {
+        case ZMAPFEATURE_STRUCT_CONTEXT:
+        case ZMAPFEATURE_STRUCT_ALIGN:
+        case ZMAPFEATURE_STRUCT_BLOCK:
+        case ZMAPFEATURE_STRUCT_FEATURESET:
+          result = TRUE ;
+          break ;
+        case ZMAPFEATURE_STRUCT_FEATURE:
+          if (any_feature->children == NULL)
+            result = TRUE ;
+          break ;
+        default:
           zMapWarnIfReached() ;
-	}
+        }
     }
 
   return result ;
@@ -152,17 +152,17 @@ gboolean zMapFeatureIsDrawable(ZMapFeatureAny any_feature)
     {
     case ZMAPFEATURE_STRUCT_FEATURE:
       {
-	ZMapFeature feature;
-	int allowed = ZMAPFEATURE_TYPE_INVALID;
+        ZMapFeature feature;
+        int allowed = ZMAPFEATURE_TYPE_INVALID;
 
-	feature = (ZMapFeature)any_feature;
+        feature = (ZMapFeature)any_feature;
 
-	if(*feature->style)
-	  allowed = get_feature_allowed_types();
+        if(*feature->style)
+          allowed = get_feature_allowed_types();
 
-	if(allowed & feature->mode)
-	  result = TRUE;
-      }
+        if(allowed & feature->mode)
+          result = TRUE;
+              }
       break;
     default:
       break;
@@ -212,7 +212,7 @@ gboolean zMapFeatureIsSane(ZMapFeature feature, char **insanity_explained)
   if (sane)
     {
       if (feature->mode <= ZMAPSTYLE_MODE_INVALID ||
-	  feature->mode >  ZMAPSTYLE_MODE_META) /* Keep in step with zmapStyle.h */
+  feature->mode >  ZMAPSTYLE_MODE_META) /* Keep in step with zmapStyle.h */
         {
           insanity = g_strdup_printf("Feature '%s' [%s] has invalid type.", /* keep in step with zmapStyle.h */
                                      (char *)g_quark_to_string(feature->original_id),
@@ -286,13 +286,13 @@ gboolean zMapFeatureIsSane(ZMapFeature feature, char **insanity_explained)
         case ZMAPSTYLE_MODE_ALIGNMENT:
         case ZMAPSTYLE_MODE_BASIC:
         case ZMAPSTYLE_MODE_SEQUENCE:
-	case ZMAPSTYLE_MODE_TEXT:
-	case ZMAPSTYLE_MODE_GRAPH:
-	case ZMAPSTYLE_MODE_GLYPH:
+        case ZMAPSTYLE_MODE_TEXT:
+        case ZMAPSTYLE_MODE_GRAPH:
+        case ZMAPSTYLE_MODE_GLYPH:
           zMapLogWarning("%s", "This part of zMapFeatureIsSane() needs writing!");
           break;
-	case ZMAPSTYLE_MODE_META:
-	  break;
+        case ZMAPSTYLE_MODE_META:
+          break;
         default:
           zMapWarnIfReached();
           break;
@@ -319,9 +319,9 @@ gboolean zMapFeatureAnyIsSane(ZMapFeatureAny feature, char **insanity_explained)
       else if (feature->unique_id == ZMAPFEATURE_NULLQUARK)
         insanity = "Feature has bad identifier.";
       else
-	insanity = g_strdup_printf("Feature '%s' [%s] has bad type.",
-				   (char *)g_quark_to_string(feature->original_id),
-				   (char *)g_quark_to_string(feature->unique_id));
+        insanity = g_strdup_printf("Feature '%s' [%s] has bad type.",
+                                   (char *)g_quark_to_string(feature->original_id),
+                                   (char *)g_quark_to_string(feature->unique_id));
 
       sane = FALSE ;
     }
@@ -336,7 +336,7 @@ gboolean zMapFeatureAnyIsSane(ZMapFeatureAny feature, char **insanity_explained)
 
             sane = zMapFeatureIsSane(real_feature, &insanity);
 
-	    break;
+    break;
           }
         case ZMAPFEATURE_STRUCT_CONTEXT:
           zMapLogWarning("%s", "This part of zMapFeatureAnyIsSane() needs writing!");
@@ -360,7 +360,7 @@ gboolean zMapFeatureAnyIsSane(ZMapFeatureAny feature, char **insanity_explained)
   if (insanity)
     {
       if (insanity_explained)
-	*insanity_explained = g_strdup(insanity);
+        *insanity_explained = g_strdup(insanity);
 
       g_free(insanity);
     }
@@ -450,9 +450,9 @@ ZMapFeatureAny zMapFeatureGetParentGroup(ZMapFeatureAny any_feature, ZMapFeature
       ZMapFeatureAny group = any_feature ;
 
       while (group && group->struct_type > group_type)
-	{
-	  group = group->parent ;
-	}
+        {
+          group = group->parent ;
+        }
 
       result = group ;
     }
@@ -508,8 +508,8 @@ char *zMapFeatureCanonName(char *feature_name)
  *
  */
 char *zMapFeatureCreateName(ZMapStyleMode feature_type,
-			    char *feature,
-			    ZMapStrand strand, int start, int end, int query_start, int query_end)
+    char *feature,
+    ZMapStrand strand, int start, int end, int query_start, int query_end)
 {
   char *feature_unique_name = NULL ;
   char *strand_str, *ptr ;
@@ -522,7 +522,7 @@ char *zMapFeatureCreateName(ZMapStyleMode feature_type,
 
   if (feature_type == ZMAPSTYLE_MODE_ALIGNMENT)
     feature_unique_name = g_strdup_printf("%s_'%s'_%d.%d_%d.%d", feature,
-					  strand_str, start, end, query_start, query_end) ;
+  strand_str, start, end, query_start, query_end) ;
   else
     feature_unique_name = g_strdup_printf("%s_'%s'_%d.%d", feature, strand_str, start, end) ;
 
@@ -541,15 +541,15 @@ char *zMapFeatureCreateName(ZMapStyleMode feature_type,
 
 /* Like zMapFeatureCreateName() but returns a quark representing the feature name. */
 GQuark zMapFeatureCreateID(ZMapStyleMode feature_type,
-			   char *feature,
-			   ZMapStrand strand, int start, int end,
-			   int query_start, int query_end)
+   char *feature,
+   ZMapStrand strand, int start, int end,
+   int query_start, int query_end)
 {
   GQuark feature_id = 0 ;
   char *feature_name ;
 
   if ((feature_name = zMapFeatureCreateName(feature_type, feature, strand, start, end,
-					    query_start, query_end)))
+    query_start, query_end)))
     {
       feature_id = g_quark_from_string(feature_name) ;
       g_free(feature_name) ;
@@ -566,10 +566,10 @@ GQuark zMapFeatureBlockCreateID(int ref_start, int ref_end, ZMapStrand ref_stran
   char *id_base ;
 
   id_base = g_strdup_printf("%d.%d.%s_%d.%d.%s",
-			    ref_start, ref_end,
-			    (ref_strand == ZMAPSTRAND_FORWARD ? "+" : "-"),
-			    non_start, non_end,
-			    (non_strand == ZMAPSTRAND_FORWARD ? "+" : "-")) ;
+    ref_start, ref_end,
+    (ref_strand == ZMAPSTRAND_FORWARD ? "+" : "-"),
+    non_start, non_end,
+    (non_strand == ZMAPSTRAND_FORWARD ? "+" : "-")) ;
   block_id = g_quark_from_string(id_base) ;
   g_free(id_base) ;
 
@@ -590,8 +590,8 @@ gboolean zMapFeatureBlockDecodeID(GQuark id,
   block_id = (char *)g_quark_to_string(id) ;
 
   if ((fields = sscanf(block_id, format_str,
-		       ref_start, ref_end, &ref_strand_str[0],
-		       non_start, non_end, &non_strand_str[0])) != EXPECTED_FIELDS)
+       ref_start, ref_end, &ref_strand_str[0],
+       non_start, non_end, &non_strand_str[0])) != EXPECTED_FIELDS)
     {
       *ref_start = 0 ;
       *ref_end   = 0 ;
@@ -641,22 +641,22 @@ gboolean zMapFeatureSetCoords(ZMapStrand strand, int *start, int *end, int *quer
   if (strand == ZMAPSTRAND_REVERSE)
     {
       if ((start && end) && start > end)
-	{
-	  int tmp ;
+        {
+          int tmp ;
 
-	  tmp = *start ;
-	  *start = *end ;
-	  *end = tmp ;
+          tmp = *start ;
+          *start = *end ;
+          *end = tmp ;
 
-	  if (query_start && query_end)
-	    {
-	      tmp = *query_start ;
-	      *query_start = *query_end ;
-	      *query_end = tmp ;
-	    }
-
-	  result = TRUE ;
-	}
+          if (query_start && query_end)
+            {
+              tmp = *query_start ;
+              *query_start = *query_end ;
+              *query_end = tmp ;
+            }
+        
+          result = TRUE ;
+        }
     }
   else
     result = TRUE ;
@@ -695,13 +695,13 @@ ZMapFeatureTypeStyle zMapFindFeatureStyle(GHashTable *styles, GQuark style_id, Z
 
   if(!(feature_style = zMapFindStyle(styles, style_id)))
   {
-	/* feature_style_id is as configured or defaults to the same name as the featureset
-	   * if not defined try a style with the same name as the feature type
-	   */
+    /* feature_style_id is as configured or defaults to the same name as the featureset
+     * if not defined try a style with the same name as the feature type
+     */
 
-	   type = (char *) zMapStyleMode2ExactStr(feature_type);
-	   style_id = zMapStyleCreateID(type);
-	   feature_style = zMapFindStyle(styles, style_id);
+    type = (char *) zMapStyleMode2ExactStr(feature_type);
+    style_id = zMapStyleCreateID(type);
+    feature_style = zMapFindStyle(styles, style_id);
   }
   return feature_style;
 }
@@ -754,59 +754,59 @@ static void addTypeQuark(gpointer key, gpointer data, gpointer user_data)
 /* from column_id return whether if is configured from seq-data= featuresets (coverage side) */
 gboolean zMapFeatureIsCoverageColumn(ZMapFeatureContextMap map,GQuark column_id)
 {
-	ZMapFeatureSource src;
-      GList *fsets;
+  ZMapFeatureSource src;
+  GList *fsets;
 
-      fsets = zMapFeatureGetColumnFeatureSets(map, column_id, TRUE);
+  fsets = zMapFeatureGetColumnFeatureSets(map, column_id, TRUE);
 
-	for (; fsets ; fsets = fsets->next)
-	{
-		src = g_hash_table_lookup(map->source_2_sourcedata,fsets->data);
-		if(src && src->related_column)
-			return TRUE;
-	}
+  for (; fsets ; fsets = fsets->next)
+    {
+      src = g_hash_table_lookup(map->source_2_sourcedata,fsets->data);
+      if(src && src->related_column)
+      return TRUE;
+    }
 
-	return FALSE;
+  return FALSE;
 }
 
 /* from column_id return whether it is configured from seq-data= featuresets (data side) */
 gboolean zMapFeatureIsSeqColumn(ZMapFeatureContextMap map,GQuark column_id)
 {
-	ZMapFeatureSource src;
-      GList *fsets;
+  ZMapFeatureSource src;
+  GList *fsets;
 
-      fsets = zMapFeatureGetColumnFeatureSets(map, column_id, TRUE);
+  fsets = zMapFeatureGetColumnFeatureSets(map, column_id, TRUE);
 
-	for (; fsets ; fsets = fsets->next)
-	{
-		src = g_hash_table_lookup(map->source_2_sourcedata,fsets->data);
-		if(src && src->is_seq)
-			return TRUE;
-	}
+  for (; fsets ; fsets = fsets->next)
+    {
+      src = g_hash_table_lookup(map->source_2_sourcedata,fsets->data);
+      if(src && src->is_seq)
+      return TRUE;
+    }
 
-	return FALSE;
+  return FALSE;
 }
 
 gboolean zMapFeatureIsSeqFeatureSet(ZMapFeatureContextMap map,GQuark fset_id)
 {
-	ZMapFeatureSource src = g_hash_table_lookup(map->source_2_sourcedata,GUINT_TO_POINTER(fset_id));
-	//zMapLogWarning("feature is_seq: %s -> %p", g_quark_to_string(fset_id),src);
+  ZMapFeatureSource src = g_hash_table_lookup(map->source_2_sourcedata,GUINT_TO_POINTER(fset_id));
+  //zMapLogWarning("feature is_seq: %s -> %p", g_quark_to_string(fset_id),src);
 
-	if(src && src->is_seq)
-		return TRUE;
-	return FALSE;
+  if(src && src->is_seq)
+    return TRUE;
+  return FALSE;
 
 }
 
 
 /*
- *	for new columns that appear out of nowhere put them on the right
- *	this does not get reset on a new view, but with 100 columns it will take a very long time to wrap round
+ *for new columns that appear out of nowhere put them on the right
+ *this does not get reset on a new view, but with 100 columns it will take a very long time to wrap round
  */
 int zMapFeatureColumnOrderNext(void)
 {
-	static int which = 0;
-	return ++which;		/* 0 is invalid */
+  static int which = 0;
+  return ++which;/* 0 is invalid */
 }
 
 
@@ -819,11 +819,11 @@ ZMapFeatureColumn zMapFeatureGetSetColumn(ZMapFeatureContextMap map,GQuark set_i
 
       char *name = (char *) g_quark_to_string(set_id);
 
-	if(!map->featureset_2_column)
-	{
-		/* so that we can use autoconfigured servers */
-		map->featureset_2_column = g_hash_table_new(NULL,NULL);
-	}
+      if(!map->featureset_2_column)
+      {
+            /* so that we can use autoconfigured servers */
+            map->featureset_2_column = g_hash_table_new(NULL,NULL);
+      }
 
       /* get the column the featureset goes in */
       gff = g_hash_table_lookup(map->featureset_2_column,GUINT_TO_POINTER(set_id));
@@ -850,7 +850,7 @@ ZMapFeatureColumn zMapFeatureGetSetColumn(ZMapFeatureContextMap map,GQuark set_i
             column = g_hash_table_lookup(map->columns,GUINT_TO_POINTER(gff->column_id));
             if(!column)
             {
-	            ZMapFeatureSource gff_source;
+            ZMapFeatureSource gff_source;
 
 
                   column = g_new0(ZMapFeatureColumnStruct,1);
@@ -858,7 +858,7 @@ ZMapFeatureColumn zMapFeatureGetSetColumn(ZMapFeatureContextMap map,GQuark set_i
                   column->unique_id =
                   column->column_id = set_id;
 
-			column->order = zMapFeatureColumnOrderNext();
+                  column->order = zMapFeatureColumnOrderNext();
 
                   gff_source = g_hash_table_lookup(map->source_2_sourcedata,GUINT_TO_POINTER(set_id));
                   column->column_desc = name;
@@ -1028,11 +1028,11 @@ GArray *zMapFeatureWorld2TranscriptArray(ZMapFeature feature)
       exon_array = feature->feature.transcript.exons;
 
       for(i = 0; i < exon_array->len; i++)
-	{
-	  span = g_array_index(exon_array, ZMapSpanStruct, i);
-	  zMapFeatureWorld2Transcript(feature, span.x1, span.x2, &(span.x1), &(span.x2));
-	  t_array = g_array_append_val(t_array, span);
-	}
+      {
+        span = g_array_index(exon_array, ZMapSpanStruct, i);
+        zMapFeatureWorld2Transcript(feature, span.x1, span.x2, &(span.x1), &(span.x2));
+        t_array = g_array_append_val(t_array, span);
+      }
     }
 
   return t_array;
@@ -1040,36 +1040,36 @@ GArray *zMapFeatureWorld2TranscriptArray(ZMapFeature feature)
 
 
 gboolean zMapFeatureWorld2Transcript(ZMapFeature feature,
-				     int w1, int w2,
-				     int *t1, int *t2)
+     int w1, int w2,
+     int *t1, int *t2)
 {
   gboolean is_transcript = FALSE;
 
   if(feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
     {
       if(feature->x1 > w2 || feature->x2 < w1)
-	is_transcript = FALSE;
+            is_transcript = FALSE;
       else
-	{
-	  SimpleParent2ChildDataStruct parent_data = { NULL };
-	  ZMapMapBlockStruct map_data = { {0,0}, {0,0}, FALSE };
-	  map_data.parent.x1 = w1;
-	  map_data.parent.x2 = w2;
+          {
+          SimpleParent2ChildDataStruct parent_data = { NULL };
+          ZMapMapBlockStruct map_data = { {0,0}, {0,0}, FALSE };
+          map_data.parent.x1 = w1;
+          map_data.parent.x2 = w2;
+  
+          parent_data.map         = &map_data;
+          parent_data.limit_start = feature->x1;
+          parent_data.limit_end   = feature->x2;
+          parent_data.counter     = 0;
+  
+          zMapFeatureTranscriptExonForeach(feature, map_parent2child,
+                                           &parent_data);
+          if(t1)
+            *t1 = map_data.block.x1;
+          if(t2)
+            *t2 = map_data.block.x2;
 
-	  parent_data.map         = &map_data;
-	  parent_data.limit_start = feature->x1;
-	  parent_data.limit_end   = feature->x2;
-	  parent_data.counter     = 0;
-
-	  zMapFeatureTranscriptExonForeach(feature, map_parent2child,
-					   &parent_data);
-	  if(t1)
-	    *t1 = map_data.block.x1;
-	  if(t2)
-	    *t2 = map_data.block.x2;
-
-	  is_transcript = TRUE;
-	}
+          is_transcript = TRUE;
+        }
     }
   else
     is_transcript = FALSE;
@@ -1090,10 +1090,10 @@ gboolean zMapFeatureTranscriptSortExons(ZMapFeature feature)
       && (ZMAPFEATURE_HAS_EXONS(feature) || ZMAPFEATURE_HAS_INTRONS(feature)))
     {
       if (ZMAPFEATURE_HAS_EXONS(feature))
-	g_array_sort(feature->feature.transcript.exons, span_compare) ;
+        g_array_sort(feature->feature.transcript.exons, span_compare) ;
 
       if (ZMAPFEATURE_HAS_INTRONS(feature))
-	g_array_sort(feature->feature.transcript.introns, span_compare) ;
+        g_array_sort(feature->feature.transcript.introns, span_compare) ;
 
       result = TRUE ;
     }
@@ -1110,7 +1110,7 @@ gboolean zMapFeatureTranscriptExonForeach(ZMapFeature feature, GFunc function, g
   gboolean result = FALSE ;
 
   result = zMapFeatureTranscriptChildForeach(feature, ZMAPFEATURE_SUBPART_EXON,
-					     function, user_data) ;
+     function, user_data) ;
 
   return result ;
 }
@@ -1118,7 +1118,7 @@ gboolean zMapFeatureTranscriptExonForeach(ZMapFeature feature, GFunc function, g
 
 /* Returns FALSE if not a transcript feature or no exons/introns, TRUE otherwise. */
 gboolean zMapFeatureTranscriptChildForeach(ZMapFeature feature, ZMapFeatureSubpartType child_type,
-					   GFunc function, gpointer user_data)
+   GFunc function, gpointer user_data)
 {
   gboolean result = FALSE ;
 
@@ -1127,7 +1127,7 @@ gboolean zMapFeatureTranscriptChildForeach(ZMapFeature feature, ZMapFeatureSubpa
 
   if (ZMAPFEATURE_IS_TRANSCRIPT(feature)
       && ((child_type == ZMAPFEATURE_SUBPART_EXON && ZMAPFEATURE_HAS_EXONS(feature))
-	  || (child_type == ZMAPFEATURE_SUBPART_INTRON && ZMAPFEATURE_HAS_INTRONS(feature))))
+          || (child_type == ZMAPFEATURE_SUBPART_INTRON && ZMAPFEATURE_HAS_INTRONS(feature))))
     {
       GArray *children ;
       unsigned index ;
@@ -1135,44 +1135,44 @@ gboolean zMapFeatureTranscriptChildForeach(ZMapFeature feature, ZMapFeatureSubpa
       gboolean forward = TRUE ;
 
       if (child_type == ZMAPFEATURE_SUBPART_EXON)
-	children = feature->feature.transcript.exons ;
+        children = feature->feature.transcript.exons ;
       else
-	children = feature->feature.transcript.introns ;
+        children = feature->feature.transcript.introns ;
 
 
       /* Sort this out...should be a much simpler way of doing this..... */
       if (children->len > 1)
-	{
-	  ZMapSpan first, last ;
+        {
+          ZMapSpan first, last ;
 
-	  first = &(g_array_index(children, ZMapSpanStruct, 0));
-	  last  = &(g_array_index(children, ZMapSpanStruct, children->len - 1));
+          first = &(g_array_index(children, ZMapSpanStruct, 0));
+          last  = &(g_array_index(children, ZMapSpanStruct, children->len - 1));
 
-	  if (first->x1 > last->x1)
-	    forward = FALSE ;
-	}
-
+          if (first->x1 > last->x1)
+            forward = FALSE ;
+        }
+        
       if (forward)
-	{
-	  end = children->len ;
-	}
+        {
+          end = children->len ;
+        }
       else
-	{
-	  multiplier = -1 ;
-	  start = (children->len * multiplier) + 1 ;
-	  end = 1 ;
-	}
+        {
+          multiplier = -1 ;
+          start = (children->len * multiplier) + 1 ;
+          end = 1 ;
+        }
 
       for (i = start; i < end; i++)
-	{
-	  ZMapSpan child_span ;
-
-	  index = i * multiplier ;
-
-	  child_span = &(g_array_index(children, ZMapSpanStruct, index)) ;
-
-	  (function)(child_span, user_data) ;
-	}
+        {
+          ZMapSpan child_span ;
+        
+          index = i * multiplier ;
+        
+          child_span = &(g_array_index(children, ZMapSpanStruct, index)) ;
+        
+          (function)(child_span, user_data) ;
+        }
 
       result = TRUE ;
     }
@@ -1271,11 +1271,11 @@ GArray *zMapFeatureWorld2CDSArray(ZMapFeature feature)
       exon_array = feature->feature.transcript.exons;
 
       for(i = 0; i < exon_array->len; i++)
-	{
-	  span = g_array_index(exon_array, ZMapSpanStruct, i);
-	  zMapFeatureWorld2CDS(feature, span.x1, span.x2, &(span.x1), &(span.x2));
-	  cds_array = g_array_append_val(cds_array, span);
-	}
+        {
+          span = g_array_index(exon_array, ZMapSpanStruct, i);
+          zMapFeatureWorld2CDS(feature, span.x1, span.x2, &(span.x1), &(span.x2));
+          cds_array = g_array_append_val(cds_array, span);
+        }
     }
 
   return cds_array ;
@@ -1284,7 +1284,7 @@ GArray *zMapFeatureWorld2CDSArray(ZMapFeature feature)
 
 
 gboolean zMapFeatureWorld2CDS(ZMapFeature feature,
-			      int exon1, int exon2, int *cds1, int *cds2)
+      int exon1, int exon2, int *cds1, int *cds2)
 {
   gboolean cds_exon = FALSE;
 
@@ -1296,31 +1296,31 @@ gboolean zMapFeatureWorld2CDS(ZMapFeature feature,
       cds_end   = feature->feature.transcript.cds_end;
 
       if (cds_start > exon2 || cds_end < exon1)
-	{
-	  cds_exon = FALSE;
-	}
+        {
+          cds_exon = FALSE;
+        }
       else
-	{
-	  SimpleParent2ChildDataStruct exon_cds_data = { NULL };
-	  ZMapMapBlockStruct map_data = { {0,0}, {0,0}, FALSE } ;
+        {
+          SimpleParent2ChildDataStruct exon_cds_data = { NULL };
+          ZMapMapBlockStruct map_data = { {0,0}, {0,0}, FALSE } ;
 
-	  map_data.parent.x1 = exon1;
-	  map_data.parent.x2 = exon2;
+          map_data.parent.x1 = exon1;
+          map_data.parent.x2 = exon2;
 
-	  exon_cds_data.map         = &map_data;
-	  exon_cds_data.limit_start = cds_start;
-	  exon_cds_data.limit_end   = cds_end;
-	  exon_cds_data.counter     = 0;
+          exon_cds_data.map         = &map_data;
+          exon_cds_data.limit_start = cds_start;
+          exon_cds_data.limit_end   = cds_end;
+          exon_cds_data.counter     = 0;
 
-	  zMapFeatureTranscriptExonForeach(feature, map_parent2child,
-					   &exon_cds_data);
-	  if (cds1)
-	    *cds1 = map_data.block.x1;
-	  if (cds2)
-	    *cds2 = map_data.block.x2;
-
-	  cds_exon = TRUE;
-	}
+          zMapFeatureTranscriptExonForeach(feature, map_parent2child,
+           &exon_cds_data);
+          if (cds1)
+            *cds1 = map_data.block.x1;
+          if (cds2)
+            *cds2 = map_data.block.x2;
+        
+          cds_exon = TRUE;
+        }
     }
 
   return cds_exon;
@@ -1332,13 +1332,13 @@ gboolean zMapFeatureWorld2CDS(ZMapFeature feature,
  * of the exon and also it's phase. Returns FALSE if the exon is not in the transcript
  * or if the exon has no cds section. */
 gboolean zMapFeatureExon2CDS(ZMapFeature feature,
-			     int exon_start, int exon_end, int *exon_cds_start, int *exon_cds_end, int *phase_out)
+     int exon_start, int exon_end, int *exon_cds_start, int *exon_cds_end, int *phase_out)
 {
   gboolean is_cds_exon = FALSE ;
   int exon_index ;
 
   if (feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT && feature->feature.transcript.flags.cds
-      && (exon_index = findExon(feature, exon_start, exon_end)) > -1)
+              && (exon_index = findExon(feature, exon_start, exon_end)) > -1)
     {
       int cds_start, cds_end ;
 
@@ -1346,19 +1346,19 @@ gboolean zMapFeatureExon2CDS(ZMapFeature feature,
       cds_end = feature->feature.transcript.cds_end ;
 
       if (!(cds_start > exon_end || cds_end < exon_start))
-	{
-	  /* Exon has a cds section so calculate it and find the exons phase. */
-	  int start, end, phase ;
-
-	  if (calcExonPhase(feature, exon_index, &start, &end, &phase))
-	    {
-	      *exon_cds_start = start ;
-	      *exon_cds_end = end ;
-	      *phase_out = phase ;
-
-	      is_cds_exon = TRUE ;
-	    }
-	}
+        {
+          /* Exon has a cds section so calculate it and find the exons phase. */
+          int start, end, phase ;
+        
+          if (calcExonPhase(feature, exon_index, &start, &end, &phase))
+            {
+              *exon_cds_start = start ;
+              *exon_cds_end = end ;
+              *phase_out = phase ;
+        
+              is_cds_exon = TRUE ;
+            }
+        }
     }
 
   return is_cds_exon ;
@@ -1378,7 +1378,7 @@ ZMapFrame zMapFeatureFrame(ZMapFeature feature)
 
 ZMapFrame zMapFeatureFrameFromCoords(int block, int feature)
 {
-	return feature_frame_coords(block, feature);
+return feature_frame_coords(block, feature);
 }
 
 
@@ -1403,9 +1403,9 @@ ZMapFrame zMapFeatureTranscriptFrame(ZMapFeature feature)
     {
       int start;
       if(feature->feature.transcript.flags.cds)
-	start = feature->feature.transcript.cds_start;
+        start = feature->feature.transcript.cds_start;
       else
-	start = feature->x1;
+        start = feature->x1;
 
       frame = feature_frame(feature, start);
     }
@@ -1427,24 +1427,24 @@ char *zMapFeatureTranscriptTranslation(ZMapFeature feature, int *length)
   char *dna_str, *name, *free_me ;
 
   context = (ZMapFeatureContext)(zMapFeatureGetParentGroup((ZMapFeatureAny)feature,
-							   ZMAPFEATURE_STRUCT_CONTEXT));
+   ZMAPFEATURE_STRUCT_CONTEXT));
 
   if ((dna_str = zMapFeatureGetTranscriptDNA(feature, TRUE, feature->feature.transcript.flags.cds)))
     {
-      free_me = dna_str;					    /* as we potentially move ptr. */
+      free_me = dna_str;    /* as we potentially move ptr. */
       name    = (char *)g_quark_to_string(feature->original_id);
 
       if (feature->feature.transcript.flags.start_not_found)
-	dna_str += (feature->feature.transcript.start_not_found - 1) ;
+        dna_str += (feature->feature.transcript.start_not_found - 1) ;
 
       peptide = zMapPeptideCreate(name, NULL, dna_str, NULL, TRUE);
 
       if(length)
-	{
-	  *length = zMapPeptideLength(peptide);
-	  if (zMapPeptideHasStopCodon(peptide))
-	    *length = *length - 1;
-	}
+        {
+          *length = zMapPeptideLength(peptide);
+          if (zMapPeptideHasStopCodon(peptide))
+            *length = *length - 1;
+        }
 
       pep_str = zMapPeptideSequence(peptide);
       pep_str = g_strdup(pep_str);
@@ -1475,14 +1475,14 @@ char *zMapFeatureTranslation(ZMapFeature feature, int *length)
       rubbish = g_array_sized_new(TRUE, TRUE, sizeof(char), l);
 
       for(i = 0; i < l; i++)
-	{
-	  g_array_append_val(rubbish, c);
-	}
+        {
+          g_array_append_val(rubbish, c);
+        }
 
       seq = rubbish->data;
 
       if(length)
-	*length = l;
+        *length = l;
 
       g_array_free(rubbish, FALSE);
     }
@@ -1557,8 +1557,8 @@ static ZMapFrame feature_frame_coords( int offset, int start_coord)
   ZMapFrame frame;
 
   fval = ((start_coord - offset) % 3) + ZMAPFRAME_0 ;
-  if(fval < ZMAPFRAME_0) 	/* eg feature starts before the block */
-	  fval += 3;
+  if(fval < ZMAPFRAME_0) /* eg feature starts before the block */
+  fval += 3;
   frame  = (ZMapFrame) fval;
 
   return frame;
@@ -1593,7 +1593,7 @@ static gint findStyle(gconstpointer list_data, gconstpointer user_data)
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   printf("Looking for: %s   Found: %s\n",
-	 g_quark_to_string(style_quark), g_quark_to_string(style->unique_id)) ;
+ g_quark_to_string(style_quark), g_quark_to_string(style->unique_id)) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
   return result ;
@@ -1626,20 +1626,20 @@ static void map_parent2child(gpointer exon_data, gpointer user_data)
        p2c_data->limit_end   < exon_span->x1))
     {
       if(exon_span->x1 <= p2c_data->map->parent.x1 &&
-	 exon_span->x2 >= p2c_data->map->parent.x1)
-	{
-	  /* update the c1 coord*/
-	  p2c_data->map->block.x1  = (p2c_data->map->parent.x1 - p2c_data->limit_start + 1);
-	  p2c_data->map->block.x1 += p2c_data->counter;
-	}
+         exon_span->x2 >= p2c_data->map->parent.x1)
+        {
+          /* update the c1 coord*/
+          p2c_data->map->block.x1  = (p2c_data->map->parent.x1 - p2c_data->limit_start + 1);
+          p2c_data->map->block.x1 += p2c_data->counter;
+        }
 
       if(exon_span->x1 <= p2c_data->map->parent.x2 &&
-	 exon_span->x2 >= p2c_data->map->parent.x2)
-	{
-	  /* update the c2 coord */
-	  p2c_data->map->block.x2  = (p2c_data->map->parent.x2 - p2c_data->limit_start + 1);
-	  p2c_data->map->block.x2 += p2c_data->counter;
-	}
+         exon_span->x2 >= p2c_data->map->parent.x2)
+        {
+          /* update the c2 coord */
+          p2c_data->map->block.x2  = (p2c_data->map->parent.x2 - p2c_data->limit_start + 1);
+          p2c_data->map->block.x2 += p2c_data->counter;
+        }
 
       p2c_data->counter += (exon_span->x2 - exon_span->x1 + 1);
     }
@@ -1681,10 +1681,10 @@ static int findExon(ZMapFeature feature, int exon_start, int exon_end)
       next_exon = &(g_array_index(exons, ZMapSpanStruct, i)) ;
 
       if (next_exon->x1 == exon_start && next_exon->x2 == exon_end)
-	{
-	  exon_index = i ;
-	  break ;
-	}
+        {
+          exon_index = i ;
+          break ;
+        }
     }
 
   return exon_index ;
@@ -1694,7 +1694,7 @@ static int findExon(ZMapFeature feature, int exon_start, int exon_end)
 /* Returns the coords (in reference sequence coords) of the cds section of the given exon
  * and also it's phase. */
 static gboolean calcExonPhase(ZMapFeature feature, int exon_index,
-			      int *exon_cds_start_out, int *exon_cds_end_out, int *phase_out)
+      int *exon_cds_start_out, int *exon_cds_end_out, int *phase_out)
 {
   gboolean result = FALSE ;
   int cds_start, cds_end ;
@@ -1733,64 +1733,64 @@ static gboolean calcExonPhase(ZMapFeature feature, int exon_index,
       next_exon = &(g_array_index(exons, ZMapSpanStruct, i)) ;
 
       if (cds_start > next_exon->x2 || cds_end < next_exon->x1)
-	{
-	  continue ;
-	}
+        {
+          continue ;
+        }
       else
-	{
-	  int start, end, phase ;
+        {
+          int start, end, phase ;
 
-	  start = next_exon->x1 ;
-	  end = next_exon->x2 ;
+          start = next_exon->x1 ;
+          end = next_exon->x2 ;
 
-	  if (cds_start >= start && cds_start <= end)
-	    {
-	      start = cds_start ;
+          if (cds_start >= start && cds_start <= end)
+            {
+              start = cds_start ;
 
-	      if (feature->strand == ZMAPSTRAND_FORWARD)
-		first_exon = TRUE ;
-	    }
+              if (feature->strand == ZMAPSTRAND_FORWARD)
+                first_exon = TRUE ;
+            }
 
-	  if (cds_end >= start && cds_end <= end)
-	    {
-	      end = cds_end ;
+          if (cds_end >= start && cds_end <= end)
+            {
+              end = cds_end ;
 
-	      if (feature->strand == ZMAPSTRAND_REVERSE)
-		first_exon = TRUE ;
-	    }
+              if (feature->strand == ZMAPSTRAND_REVERSE)
+                first_exon = TRUE ;
+            }
 
-	  if (i == exon_index)
-	    {
-	      /* The first exon must have phase 0 unless it has been annotated as
-	       * starting with a different phase, all others are calculated from
-	       * CDS bases so far. */
+          if (i == exon_index)
+            {
+              /* The first exon must have phase 0 unless it has been annotated as
+               * starting with a different phase, all others are calculated from
+               * CDS bases so far. */
+        
+              if (first_exon)
+                {
+                  if (feature->feature.transcript.flags.start_not_found)
+                    phase = feature->feature.transcript.start_not_found ;
+                  else
+                    phase = 0 ;
+                }
+              else
+                {
+                  phase = (3 - (cds_bases % 3)) % 3 ;
+                }
+        
+              *exon_cds_start_out = start ;
+              *exon_cds_end_out = end ;
+              *phase_out = phase ;
+        
+              result = TRUE ;
+        
+              break ;
+            }
 
-	      if (first_exon)
-		{
-		  if (feature->feature.transcript.flags.start_not_found)
-		    phase = feature->feature.transcript.start_not_found ;
-		  else
-		    phase = 0 ;
-		}
-	      else
-		{
-		  phase = (3 - (cds_bases % 3)) % 3 ;
-		}
+          /* Keep a running count of bases so far, caculate phase of next exon from this. */
+          cds_bases += (end - start) + 1 ;
 
-	      *exon_cds_start_out = start ;
-	      *exon_cds_end_out = end ;
-	      *phase_out = phase ;
-
-	      result = TRUE ;
-
-	      break ;
-	    }
-
-	  /* Keep a running count of bases so far, caculate phase of next exon from this. */
-	  cds_bases += (end - start) + 1 ;
-
-	  first_exon = FALSE ;
-	}
+          first_exon = FALSE ;
+        }
 
     }
 
@@ -1828,9 +1828,9 @@ static void printChildCB(gpointer key, gpointer value, gpointer user_data_unused
   ZMapFeatureAny feature_any = (ZMapFeatureAny)value ;
 
   zMapDebugPrint(debug, "Feature %s - %s (%s)",
-		 zMapFeatureLevelType2Str(feature_any->struct_type),
-		 zMapFeatureName(feature_any),
-		 g_quark_to_string(feature_any->unique_id)) ;
+  zMapFeatureLevelType2Str(feature_any->struct_type),
+  zMapFeatureName(feature_any),
+  g_quark_to_string(feature_any->unique_id)) ;
 
   return ;
 }
