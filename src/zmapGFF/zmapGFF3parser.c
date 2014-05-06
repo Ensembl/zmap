@@ -2766,8 +2766,7 @@ static ZMapFeature makeFeatureTranscript(ZMapGFFFeatureData pFeatureData,
                                      (int)gqThisID, sFeatureName) ;
         }
 
-      zMapFeatureAddText(pFeature, zMapFeatureSetCreateID(sSource), sSource, NULL) ;
-
+      zMapFeatureAddText(pFeature, g_quark_from_string(sSource), sSource, NULL) ;
     }
   else if ((cCase == SECOND) && bFeaturePresent)
     {
@@ -2825,7 +2824,7 @@ static ZMapFeature makeFeatureTranscript(ZMapGFFFeatureData pFeatureData,
                                      (int)gqThisID, sFeatureName) ;
         }
 
-      zMapFeatureAddText(pFeature, zMapFeatureSetCreateID(sSource), sSource, NULL) ;
+      zMapFeatureAddText(pFeature, g_quark_from_string(sSource), sSource, NULL) ;
 
       /*
        * Now add an exon to it.
@@ -3223,8 +3222,7 @@ static ZMapFeature makeFeatureAlignment(ZMapGFFFeatureData pFeatureData,
                                      (int)pFeature->unique_id, sFeatureName) ;
         }
 
-      zMapFeatureAddText(pFeature, zMapFeatureSetCreateID(sSource), sSource, NULL) ;
-
+      zMapFeatureAddText(pFeature, g_quark_from_string(sSource), sSource, NULL) ;
     }
 
   /*
@@ -3394,7 +3392,7 @@ static ZMapFeature makeFeatureDefault(ZMapGFFFeatureData pFeatureData,
                                      (int)pFeature->unique_id, sFeatureName) ;
     }
 
-  zMapFeatureAddText(pFeature, zMapFeatureSetCreateID(sSource), sSource, NULL) ;
+  zMapFeatureAddText(pFeature, g_quark_from_string(sSource), sSource, NULL) ;
 
   /*
    * If a new feature was created, but could not be added to the featureset,
