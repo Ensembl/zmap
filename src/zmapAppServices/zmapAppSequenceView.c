@@ -260,6 +260,7 @@ static GtkWidget *makeButtonBox(MainFrame main_data)
      GTK_SIGNAL_FUNC(createViewCB), (gpointer)main_data) ;
   gtk_box_pack_start(GTK_BOX(button_box), create_button, FALSE, TRUE, 0) ;
 
+#ifndef __CYGWIN__
   /* N.B. we use the gtk "built-in" file chooser stuff. */
   main_data->chooser_widg = chooser_button = gtk_file_chooser_button_new("Choose A Config File",
          GTK_FILE_CHOOSER_ACTION_OPEN) ;
@@ -269,7 +270,9 @@ static GtkWidget *makeButtonBox(MainFrame main_data)
   home_dir = (char *)g_get_home_dir() ;
   gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(chooser_button), home_dir) ;
   gtk_file_chooser_set_show_hidden(GTK_FILE_CHOOSER(chooser_button), TRUE) ;
-
+#else
+  main_data->chooser_widg = chooser_button = NULL ;
+#endif
 
   /* If a sequence is provided then make a button to set it in the entries fields,
    * saves the user tedious typing. */
@@ -338,7 +341,9 @@ static void defaultsCB(GtkWidget *widget, gpointer cb_data)
 
   setSequenceEntries(main_data) ;
 
+#ifndef __CYGWIN__
   gtk_file_chooser_set_filename(GTK_FILE_CHOOSER(main_data->chooser_widg), main_data->sequence_map.config_file) ;
+#endif
 
   return ;
 }
@@ -348,13 +353,15 @@ static void defaultsCB(GtkWidget *widget, gpointer cb_data)
 static void chooseConfigCB(GtkFileChooserButton *widget, gpointer user_data)
 {
   MainFrame main_data = (MainFrame)user_data ;
-  char *filename ;
+  char *filename = NULL ;
 
+#ifndef __CYGWIN__
   filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(widget)) ;
 
   gtk_entry_set_text(GTK_ENTRY(main_data->config_widg), filename) ;
 
   g_free(filename) ;
+#endif
 
   return ;
 }
