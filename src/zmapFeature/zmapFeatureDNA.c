@@ -26,15 +26,215 @@
  *
  * Description:
  *
- * Exported functions: See XXXXXXXXXXXXX.h
+ * Exported functions: See <ZMap/zmapFeature.h>
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmap.h>
 
+#include <string.h>
 
+#include <ZMap/zmapDNA.h>
 #include <ZMap/zmapUtils.h>
 #include <zmapFeature_P.h>
+
+
+
+typedef struct FeatureSeqFetcherStructType
+{
+  /* Input dna string, note that start != 1 where we are looking at a sub-part of an assembly
+   * but start/end must be inside the assembly start/end. */
+  char *dna_in;
+  int dna_start ;
+  int start, end ;
+
+  /* Output dna string. */
+  GString *dna_out ;
+} FeatureSeqFetcherStruct, *FeatureSeqFetcher ;
+
+
+typedef struct BlockHasDNAStructType
+{
+  gboolean exists;
+} BlockHasDNAStruct, *BlockHasDNA;
+
+
+
+
+
+static gboolean hasFeatureBlockDNA(ZMapFeatureAny feature_any) ;
+static char *getFeatureBlockDNA(ZMapFeatureAny feature_any, int start_in, int end_in, gboolean revcomp) ;
+static void fetch_exon_sequence(gpointer exon_data, gpointer user_data);
+static char *fetchBlockDNAPtr(ZMapFeatureAny feature, ZMapFeatureBlock *block_out) ;
+static char *getDNA(char *dna, int start, int end, gboolean revcomp) ;
+static gboolean coordsInBlock(ZMapFeatureBlock block, int *start_out, int *end_out) ;
+static gboolean strupDNA(char *string, int length) ;
+
+
+
+/* 
+ *                    External routines
+ */
+
+
+gboolean zMapFeatureDNAExists(ZMapFeature feature)
+{
+  gboolean has_dna = FALSE ;
+
+  zMapReturnValIfFail(zMapFeatureIsValid((ZMapFeatureAny)feature), FALSE) ;
+
+  has_dna = hasFeatureBlockDNA((ZMapFeatureAny)feature) ;
+
+  return has_dna ;
+}
+
+
+
+
+/* Extracts DNA for the given start/end from a block, doing a reverse complement if required.
+ */
+char *zMapFeatureGetDNA(ZMapFeatureAny feature_any, int start, int end, gboolean revcomp)
+{
+  char *dna = NULL ;
+
+  if (zMapFeatureIsValid(feature_any) && (start > 0 && end >= start))
+    {
+      dna = getFeatureBlockDNA(feature_any, start, end, revcomp) ;
+    }
+
+  return dna ;
+}
+
+
+/* Trivial function which just uses the features start/end coords, could be more intelligent
+ * and deal with transcripts/alignments more intelligently. */
+char *zMapFeatureGetFeatureDNA(ZMapFeature feature)
+{
+  char *dna = NULL ;
+  gboolean revcomp = FALSE ;
+
+  if (zMapFeatureIsValid((ZMapFeatureAny)feature))
+    {
+      if (feature->strand == ZMAPSTRAND_REVERSE)
+        revcomp = TRUE ;
+
+      dna = getFeatureBlockDNA((ZMapFeatureAny)feature, feature->x1, feature->x2, revcomp) ;
+    }
+
+  return dna ;
+}
+
+
+/* Get a transcripts DNA, this is done by getting the unspliced DNA and then snipping
+ * out the exons, CDS.
+ *
+ * Returns unspliced/spliced/cds dna or NULL if there is no DNA in the feature context
+ * or if CDS is requested and transcript does not have one or feature is not a transcript.
+ *
+ */
+char *zMapFeatureGetTranscriptDNA(ZMapFeature transcript, gboolean spliced, gboolean cds_only)
+{
+  char *dna = NULL ;
+
+  if (zMapFeatureIsValidFull((ZMapFeatureAny)transcript, ZMAPFEATURE_STRUCT_FEATURE)
+      && ZMAPFEATURE_IS_TRANSCRIPT(transcript)
+      && (!cds_only || (cds_only && transcript->feature.transcript.flags.cds)))
+    {
+      char *tmp = NULL ;
+      GArray *exons ;
+      gboolean revcomp = FALSE ;
+      ZMapFeatureBlock block = NULL ;
+      int start = 0, end = 0 ;
+
+      start = transcript->x1 ;
+      end = transcript->x2 ;
+      exons = transcript->feature.transcript.exons ;
+
+      if (transcript->strand == ZMAPSTRAND_REVERSE)
+        revcomp = TRUE ;
+
+      if ((tmp = fetchBlockDNAPtr((ZMapFeatureAny)transcript, &block)) && coordsInBlock(block, &start, &end)
+                  && (dna = getFeatureBlockDNA((ZMapFeatureAny)transcript, start, end, revcomp)))
+        {
+          if (!spliced || !exons)
+            {
+              int i, offset, length;
+              gboolean upcase_exons = TRUE;
+        
+              /* Paint the exons in uppercase. */
+              if (upcase_exons)
+                {
+                  if (exons)
+                    {
+                      int exon_start, exon_end ;
+                
+                      tmp = dna ;
+                
+                      for (i = 0 ; i < exons->len ; i++)
+                        {
+                          ZMapSpan exon_span ;
+                        
+                          exon_span = &(g_array_index(exons, ZMapSpanStruct, i)) ;
+                        
+                          exon_start = exon_span->x1 ;
+                          exon_end   = exon_span->x2 ;
+                        
+                          if (zMapCoordsClamp(start, end, &exon_start, &exon_end))
+                            {
+                              offset  = dna - tmp ;
+                              offset += exon_start - transcript->x1 ;
+                              tmp    += offset ;
+                              length  = exon_end - exon_start + 1 ;
+                        
+                              strupDNA(tmp, length) ;
+                            }
+                        }
+                    }
+                  else
+                    {
+                      strupDNA(dna, strlen(dna)) ;
+                    }
+                }
+            }
+          else
+            {
+              GString *dna_str ;
+              FeatureSeqFetcherStruct seq_fetcher = {NULL} ;
+
+              /* If cds is requested and transcript has one then adjust start/end for cds. */
+              if (!cds_only
+                          || (cds_only && transcript->feature.transcript.flags.cds
+                              && zMapCoordsClamp(transcript->feature.transcript.cds_start,
+                                                 transcript->feature.transcript.cds_end, &start, &end)))
+                {
+                  int seq_length = 0 ;
+        
+                  seq_fetcher.dna_in  = tmp ;
+                  seq_fetcher.dna_start = block->block_to_sequence.block.x1 ;
+                  seq_fetcher.start = start ;
+                  seq_fetcher.end = end ;
+
+                  seq_fetcher.dna_out = dna_str = g_string_sized_new(1500) ; /* Average length of human proteins is
+                                                                                apparently around 500 amino acids. */
+
+                  zMapFeatureTranscriptExonForeach(transcript, fetch_exon_sequence, &seq_fetcher) ;
+
+                  if (dna_str->len)
+                    {
+                      seq_length = dna_str->len ;
+                      dna = g_string_free(dna_str, FALSE) ;
+                
+                      if (revcomp)
+                        zMapDNAReverseComplement(dna, seq_length) ;
+                    }
+                }
+            }
+        }
+    }
+
+  return dna ;
+}
+
 
 
 /*!
@@ -141,23 +341,18 @@ void zMapFeatureDNAAddSequenceData(ZMapFeature dna_feature, char *dna_str, int s
   return ;
 }
 
-ZMapFeature zMapFeatureDNACreateFeature(ZMapFeatureBlock     block,
-ZMapFeatureTypeStyle style,
-char *dna_str,
-int   sequence_length)
+ZMapFeature zMapFeatureDNACreateFeature(ZMapFeatureBlock block, ZMapFeatureTypeStyle style,
+                                        char *dna_str, int sequence_length)
 {
   ZMapFeatureSet dna_feature_set = NULL;
   ZMapFeature dna_feature = NULL;
   GQuark dna_set_id = 0;
 
-  if (!block || !dna_str || !sequence_length)
-    return dna_feature ;
+  zMapReturnValIfFail((block && dna_str && *dna_str && sequence_length), NULL) ;
 
-  dna_set_id      = zMapFeatureSetCreateID(ZMAP_FIXED_STYLE_DNA_NAME);
+  dna_set_id = zMapFeatureSetCreateID(ZMAP_FIXED_STYLE_DNA_NAME);
 
-  dna_feature_set = zMapFeatureBlockGetSetByID(block, dna_set_id);
-
-  if (dna_feature_set)
+  if ((dna_feature_set = zMapFeatureBlockGetSetByID(block, dna_set_id)))
     {
       char *feature_name, *sequence, *ontology;
       GQuark dna_id;
@@ -220,12 +415,6 @@ int   sequence_length)
 }
 
 
-
-typedef struct
-{
-  gboolean exists;
-}BlockHasDNAStruct, *BlockHasDNA;
-
 /* Function to check whether any of the blocks has dna */
 static ZMapFeatureContextExecuteStatus oneBlockHasDNA(GQuark key,
                                                       gpointer data,
@@ -287,4 +476,175 @@ gboolean zMapFeatureContextGetDNAStatus(ZMapFeatureContext context)
 
   return drawable;
 }
+
+
+
+
+
+/* 
+ *                      Internal functions
+ */
+
+
+static void fetch_exon_sequence(gpointer exon_data, gpointer user_data)
+{
+  ZMapSpan exon_span = (ZMapSpan)exon_data;
+  FeatureSeqFetcher seq_fetcher = (FeatureSeqFetcher)user_data;
+  int offset, length, start, end ;
+
+  start = exon_span->x1;
+  end = exon_span->x2;
+
+  /* Check the exon lies within the  */
+  if (zMapCoordsClamp(seq_fetcher->start, seq_fetcher->end, &start, &end))
+    {
+      offset = start - seq_fetcher->dna_start ;
+
+      length = end - start + 1 ;
+
+      seq_fetcher->dna_out = g_string_append_len(seq_fetcher->dna_out,
+                                                 (seq_fetcher->dna_in + offset),
+                                                 length) ;
+    }
+
+  return ;
+}
+
+
+
+static gboolean hasFeatureBlockDNA(ZMapFeatureAny feature_any)
+{
+  gboolean has_dna = FALSE ;
+  ZMapFeatureBlock block ;
+
+  if (fetchBlockDNAPtr(feature_any, &block))
+    has_dna = TRUE ;
+
+  return has_dna ;
+}
+
+
+
+static char *getFeatureBlockDNA(ZMapFeatureAny feature_any, int start_in, int end_in, gboolean revcomp)
+{
+  char *dna = NULL ;
+  ZMapFeatureBlock block ;
+  int start, end ;
+
+  start = start_in ;
+  end = end_in ;
+
+  /* Can only get dna if there is dna for the block and the coords lie within the block. */
+  if (fetchBlockDNAPtr(feature_any, &block) && coordsInBlock(block, &start, &end))
+    {
+      /* Transform block coords to 1-based for fetching sequence. */
+      zMapFeature2BlockCoords(block, &start, &end) ;
+      dna = getDNA(block->sequence.sequence, start, end, revcomp) ;
+    }
+
+  return dna ;
+}
+
+
+/* If we can get the block and it has dna then return a pointer to the dna and optionally to the block. */
+static char *fetchBlockDNAPtr(ZMapFeatureAny feature_any, ZMapFeatureBlock *block_out)
+{
+  char *dna = NULL ;
+  ZMapFeatureBlock block = NULL;
+
+  if ((block = (ZMapFeatureBlock)zMapFeatureGetParentGroup(feature_any, ZMAPFEATURE_STRUCT_BLOCK))
+      && block->sequence.sequence)
+    {
+      dna = block->sequence.sequence ;
+
+      if (block_out)
+        *block_out = block ;
+    }
+
+  return dna ;
+}
+
+
+
+static char *getDNA(char *dna_sequence, int start, int end, gboolean revcomp)
+{
+  char *dna = NULL ;
+  int length ;
+
+  length = end - start + 1 ;
+
+  dna = g_strndup((dna_sequence + start - 1), length) ;
+
+  if (revcomp)
+    zMapDNAReverseComplement(dna, length) ;
+
+  return dna ;
+}
+
+
+
+/* THESE SHOULD BE IN UTILS.... */
+
+/* Check whether coords overlap a block, returns TRUE for full or partial
+ * overlap, FALSE otherwise.
+ *
+ * Coords returned in start_inout/end_inout are:
+ *
+ * no overlap           <start/end set to zero >
+ * partial overlap      <start/end clipped to block>
+ * complete overlap     <start/end unchanged>
+ *
+ *  */
+static gboolean coordsInBlock(ZMapFeatureBlock block, int *start_inout, int *end_inout)
+{
+  gboolean result = FALSE ;
+
+  if (!(result = zMapCoordsClamp(block->block_to_sequence.block.x1, block->block_to_sequence.block.x2,
+                                 start_inout, end_inout)))
+    {
+      *start_inout = *end_inout = 0 ;
+    }
+  return result ;
+}
+
+/* should be in dna utils..... */
+static gboolean strupDNA(char *string, int length)
+{
+  gboolean good = TRUE;
+  char up;
+
+  while(length > 0 && good && string && *string)
+    {
+      switch(string[0])
+        {
+        case 'a':
+          up = 'A';
+          break;
+        case 't':
+          up = 'T';
+          break;
+        case 'g':
+          up = 'G';
+          break;
+        case 'c':
+          up = 'C';
+          break;
+        default:
+          good = FALSE;
+          break;
+        }
+
+      if(good)
+        {
+          string[0] = up;
+
+          string++;
+
+        }
+      length--;
+    }
+
+  return good;
+}
+
 
