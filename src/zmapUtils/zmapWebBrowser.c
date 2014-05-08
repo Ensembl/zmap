@@ -217,7 +217,7 @@ static char *findBrowser(BrowserConfig browsers_in, BrowserConfig *browser_out, 
   if (uname(&unamebuf) == -1)
     {
       *error = g_error_new_literal(err_domain_G, BROWSER_UNAME_FAILED,
-   "uname() call to find system name failed") ;
+                                   "uname() call to find system name failed") ;
     }
   else 
     {
