@@ -45,6 +45,7 @@ zmapUrl.c \
 zmapUrlUtils.c \
 zmapUtils.c \
 zmapUtilsSpawn.c \
+zmapUtilsSystem.c \
 zmapUtilsUsers.c \
 zmapUtils_P.h \
 zmapWebBrowser.c \
