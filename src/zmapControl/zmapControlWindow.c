@@ -449,14 +449,22 @@ static void makeStatusTooltips(ZMap zmap)
 void zmapControlWindowMaximize(GtkWidget *widget, ZMap zmap)
 {
   GtkWidget *toplevel = widget ;
-  GdkAtom geometry_atom, workarea_atom, max_atom_vert ;
+  GdkAtom geometry_atom, workarea_atom, max_atom_vert, max_atom_horiz ;
   GdkScreen *screen ;
+  gboolean on_the_mac = FALSE ;
+
+
+  /* This is a bit of a hack, trying to maximise the window in the vertical dimension
+   * only simply does not work on the mac so we fallback to guessing the size. */
+  if (g_ascii_strcasecmp("darwin", zMapUtilsSysGetSysName()) == 0)
+    on_the_mac = TRUE ;
 
 
   /* Get the atoms for _NET_* properties. */
   geometry_atom = gdk_atom_intern("_NET_DESKTOP_GEOMETRY", FALSE) ;
   workarea_atom = gdk_atom_intern("_NET_WORKAREA", FALSE) ;
   max_atom_vert = gdk_atom_intern("_NET_WM_STATE_MAXIMIZED_VERT", FALSE) ;
+  max_atom_horiz = gdk_atom_intern("_NET_WM_STATE_MAXIMIZED_HORIZ", FALSE) ;
 
   screen = gtk_widget_get_screen(toplevel) ;
 
@@ -546,10 +554,10 @@ void zmapControlWindowMaximize(GtkWidget *widget, ZMap zmap)
        * to be. */
       gtk_window_resize(GTK_WINDOW(toplevel), window_width_guess, window_height_guess) ;
     }
-  else if (gdk_x11_screen_supports_net_wm_hint(screen, max_atom_vert))
+  else if (!on_the_mac && gdk_x11_screen_supports_net_wm_hint(screen, max_atom_vert))
     {
       /* This code was taken from following the code through in gtk_maximise_window()
-       * to gdk_window_maximise() etc.
+       * to gdk_window_maximise() to gdk_wmspec_change_state().
        * We construct an event that the window manager will see that will cause it to correctly
        * maximise the window. */
       GtkWindow *gtk_window = GTK_WINDOW(toplevel) ;
@@ -597,6 +605,9 @@ void zmapControlWindowMaximize(GtkWidget *widget, ZMap zmap)
 
       gtk_window_resize(GTK_WINDOW(toplevel), window_width_guess, window_height_guess) ;
     }
+
+
+  return ;
 }
 
 
