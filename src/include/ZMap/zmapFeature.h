@@ -1293,6 +1293,8 @@ char *zMapFeatureHomol2Str(ZMapHomolType homol) ;
 gboolean zMapFeatureFormatScore(char *score_str, gboolean *has_score, gdouble *score_out);
 
 
+
+gboolean zMapFeatureDNAExists(ZMapFeature feature) ;
 char *zMapFeatureGetDNA(ZMapFeatureAny feature_any, int start, int end, gboolean revcomp) ;
 char *zMapFeatureGetFeatureDNA(ZMapFeature feature) ;
 char *zMapFeatureGetTranscriptDNA(ZMapFeature transcript, gboolean spliced, gboolean cds_only) ;

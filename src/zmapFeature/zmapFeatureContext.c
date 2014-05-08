@@ -112,6 +112,7 @@ static ZMapFeatureContextExecuteStatus revCompORFFeaturesCB(GQuark key,
                                                             char **error_out);
 static void revcompSpan(GArray *spans, int start_coord, int seq_end) ;
 
+static gboolean hasFeatureBlockDNA(ZMapFeatureAny feature_any) ;
 static char *getFeatureBlockDNA(ZMapFeatureAny feature_any, int start_in, int end_in, gboolean revcomp) ;
 static char *fetchBlockDNAPtr(ZMapFeatureAny feature, ZMapFeatureBlock *block_out) ;
 static char *getDNA(char *dna, int start, int end, gboolean revcomp) ;
@@ -267,6 +268,18 @@ gboolean zmapDNA_strup(char *string, int length)
     }
 
   return good;
+}
+
+
+gboolean zMapFeatureDNAExists(ZMapFeature feature)
+{
+  gboolean has_dna = FALSE ;
+
+  zMapReturnValIfFail(zMapFeatureIsValid((ZMapFeatureAny)feature), FALSE) ;
+
+  has_dna = hasFeatureBlockDNA((ZMapFeatureAny)feature) ;
+
+  return has_dna ;
 }
 
 
@@ -841,6 +854,19 @@ static char *fetchBlockDNAPtr(ZMapFeatureAny feature_any, ZMapFeatureBlock *bloc
   return dna ;
 }
 
+
+
+
+static gboolean hasFeatureBlockDNA(ZMapFeatureAny feature_any)
+{
+  gboolean has_dna = FALSE ;
+  ZMapFeatureBlock block ;
+
+  if (fetchBlockDNAPtr(feature_any, &block))
+    has_dna = TRUE ;
+
+  return has_dna ;
+}
 
 
 
