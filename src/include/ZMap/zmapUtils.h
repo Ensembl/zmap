@@ -241,6 +241,8 @@ gboolean zMapUtilsSpawnAsyncWithPipes(char *argv[], GIOFunc stdin_writer, GIOFun
 
 gboolean zMapLaunchWebBrowser(char *link, GError **error) ;
 
+char *zMapUtilsSysGetSysName(void) ;
+
 void zMapUtilsUserInit(void) ;
 gboolean zMapUtilsUserIsDeveloper(void) ;
 gboolean zMapUtilsUserSetDeveloper(char *passwd) ;
