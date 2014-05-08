@@ -80,11 +80,11 @@ typedef struct _zmapWindowCanvasAlignmentStruct
    * so we cache these in global hash table indexed by a glyph signature
    * zero means don't display a glyph
    */
+  ZMapWindowCanvasGlyph glyph5 ;
+  ZMapWindowCanvasGlyph glyph3 ;
 
-  ZMapWindowCanvasGlyph glyph5;
-  ZMapWindowCanvasGlyph glyph3;
-
-  gboolean bump_set;	/* has homology and gaps data (lazy evaluation) */
+  /* has homology and gaps data (lazy evaluation) */
+  gboolean bump_set ;
 
 
 } zmapWindowCanvasAlignmentStruct, *ZMapWindowCanvasAlignment;
