@@ -41,6 +41,8 @@
 #include <string.h>
 #include <errno.h>
 
+#include <zmq.h>
+
 
 #include <ZMap/zmap.h>
 #include <ZMap/zmapUtils.h>
@@ -109,6 +111,8 @@ static void consoleMsg(gboolean err_msg, char *format, ...) ;
 
 static void hideMainWindow(ZMapAppContext app_context) ;
 
+
+static void testZeroMQ(void) ;
 
 
 
@@ -192,6 +196,11 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   g_thread_init(NULL) ;
   if (!g_thread_supported())
     g_thread_init(NULL);
+
+
+  /* TEST OF COMPILATION FOR ZEROMQ.... */
+  testZeroMQ() ;
+
 
 
   /* Set up stack tracing for when we get killed by a signal. */
@@ -1689,3 +1698,17 @@ static gboolean remoteInactiveHandler(gpointer data)
 }
 
 
+static void testZeroMQ(void)
+{
+  void *context ;
+  void *responder ;
+  int rc ;
+
+  context = zmq_ctx_new() ;
+
+  responder = zmq_socket (context, ZMQ_REP) ;
+
+  rc = zmq_bind (responder, "tcp://*:5555") ;
+
+  return ;
+}
