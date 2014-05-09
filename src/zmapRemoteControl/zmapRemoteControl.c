@@ -239,6 +239,46 @@ static ZMapRemoteControlDebugLevelType remote_debug_G = ZMAP_REMOTECONTROL_DEBUG
  */
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+/* Here's the code for zeromq..... */
+
+
+#include <zmq.h>
+
+
+
+static void testZeroMQ(void) ;
+
+
+/* TEST OF COMPILATION FOR ZEROMQ.... */
+testZeroMQ() ;
+
+
+
+static void testZeroMQ(void)
+{
+  void *context ;
+  void *responder ;
+  int rc ;
+
+  context = zmq_ctx_new() ;
+
+  responder = zmq_socket (context, ZMQ_REP) ;
+
+  rc = zmq_bind (responder, "tcp://*:5555") ;
+
+  return ;
+}
+
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+
+
+
+
 /* Creates a remote control object.
  * 
  * NOTE that you must only call this function after you have displayed some windows (I'm not sure
