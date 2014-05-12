@@ -49,7 +49,7 @@
 /*
  * Functions for internal usage only.
  */
-static gboolean removeCommentFromLine( char* sLine ) ;
+/* static gboolean removeCommentFromLine( char* sLine ) ; */
 static ZMapGFFLineType parserLineType(const char * const sLine) ;
 static ZMapGFFParserState parserFSM(ZMapGFFParserState eCurrentState, const char * const sNewLine) ;
 static gboolean resizeFormatStrs(ZMapGFFParser pParser) ;
@@ -96,9 +96,9 @@ static ZMapFeature makeFeatureAlignment(ZMapGFFFeatureData , ZMapFeatureSet , ch
 static ZMapFeature makeFeatureAssemblyPath(ZMapGFFFeatureData , ZMapFeatureSet , char ** ) ;
 static ZMapFeature makeFeatureDefault(ZMapGFFFeatureData, ZMapFeatureSet , char **) ;
 static char * makeFeatureTranscriptNamePublic(ZMapGFFFeatureData ) ;
-static char * makeFeatureAlignmentNamePrivate(ZMapGFFFeatureData) ;
+/* static char * makeFeatureAlignmentNamePrivate(ZMapGFFFeatureData) ; */
 static gboolean clipFeatureLogic_General(ZMapGFF3Parser, ZMapGFFFeatureData) ;
-static gboolean clipFeatureLogic_Transcript(ZMapGFF3Parser, ZMapGFFFeatureData ) ;
+/* static gboolean clipFeatureLogic_Transcript(ZMapGFF3Parser, ZMapGFFFeatureData ) ; */
 static gboolean clipFeatureLogic_Complete(ZMapGFF3Parser, ZMapGFFFeatureData) ;
 static gboolean requireLocusOperations(ZMapGFFParser , ZMapGFFFeatureData  ) ;
 static gboolean findFeatureset(ZMapGFFParser , ZMapGFFFeatureData  , ZMapFeatureSet *) ;
@@ -342,6 +342,7 @@ gboolean zMapGFFGetHeaderGotMinimal_V3(ZMapGFFParser pParserBase)
  *
  * Returns TRUE if the operation was performed, FALSE otherwise.
  */
+/*
 static gboolean removeCommentFromLine( char* sLine )
 {
   static const char cQuote = '"',
@@ -352,15 +353,9 @@ static gboolean removeCommentFromLine( char* sLine )
   zMapReturnValIfFail(sLine && *sLine, bResult) ;
 
 
-  /*
-   * We want to skip directive lines.
-   */
   if (g_str_has_prefix(sLine, "##"))
     return FALSE ;
 
-  /*
-   * And operate upon the line.
-   */
   for ( ; *sLine ; ++sLine )
     {
       if(*sLine == cQuote)
@@ -375,7 +370,7 @@ static gboolean removeCommentFromLine( char* sLine )
 
   return bResult ;
 }
-
+*/
 
 
 
@@ -1962,7 +1957,7 @@ static gboolean parseHeaderLine_V3(ZMapGFFParser pParserBase, const char * const
  */
 gboolean zMapGFFParse_V3(ZMapGFFParser pParserBase, char * const sLine)
 {
-  gboolean bResult = TRUE, bCommentRemoved = FALSE ;
+  gboolean bResult = TRUE ;
   ZMapGFFParserState eOldState = ZMAPGFF_PARSER_NON,
     eNewState = ZMAPGFF_PARSER_NON;
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
@@ -1984,7 +1979,7 @@ gboolean zMapGFFParse_V3(ZMapGFFParser pParserBase, char * const sLine)
    * Remove trailing comment from line. Should do nothing to
    * directive lines (i.e. ones that start with "##").
    */
-  //bCommentRemoved = removeCommentFromLine( sLine ) ;
+  /* gboolean bCommentRemoved = removeCommentFromLine( sLine ) ; */
 
   /*
    * Parser FSM logic. Will be unaltered if we have a blank
@@ -2557,6 +2552,7 @@ static char * makeFeatureTranscriptNamePublic( ZMapGFFFeatureData pFeatureData)
  *
  *
  */
+/* 
 static char * makeFeatureAlignmentNamePrivate( ZMapGFFFeatureData pFeatureData)
 {
   ZMapGFFAttribute *pAttributes = NULL,
@@ -2576,7 +2572,7 @@ static char * makeFeatureAlignmentNamePrivate( ZMapGFFFeatureData pFeatureData)
     }
   return sResult ;
 }
-
+*/
 
 
 /*
@@ -3034,7 +3030,6 @@ static ZMapFeature makeFeatureAlignment(ZMapGFFFeatureData pFeatureData,
   double dScore = 0.0,
     dPercentID = 0.0 ;
   gboolean bHasScore = FALSE,
-    bValidTarget = FALSE,
     bNewFeatureCreated = FALSE,
     bFeatureAdded = FALSE,
     bParseAttribute = FALSE,
@@ -3473,6 +3468,7 @@ static gboolean clipFeatureLogic_Complete(ZMapGFF3Parser  pParser, ZMapGFFFeatur
  * See comment for clipFeatureLogic_General() function and note that this version also
  * has a special hack to make the behaviour with transcript objects consistent with v2 code.
  */
+/*
 static gboolean clipFeatureLogic_Transcript( ZMapGFF3Parser pParser, ZMapGFFFeatureData pFeatureData )
 {
   gboolean bIncludeFeature = FALSE ;
@@ -3499,9 +3495,6 @@ static gboolean clipFeatureLogic_Transcript( ZMapGFF3Parser pParser, ZMapGFFFeat
   if (!iClipStart && !iClipEnd)
     return TRUE ;
 
-  /*
-   * Get some data about the feature, and error check.
-   */
   iStart               = zMapGFFFeatureDataGetSta(pFeatureData) ;
   iEnd                 = zMapGFFFeatureDataGetEnd(pFeatureData) ;
   pSOIDData            = zMapGFFFeatureDataGetSod(pFeatureData) ;
@@ -3509,23 +3502,13 @@ static gboolean clipFeatureLogic_Transcript( ZMapGFF3Parser pParser, ZMapGFFFeat
   sSOType              = zMapSOIDDataGetName(pSOIDData) ;
   zMapReturnValIfFail(iStart && iEnd && (cFeatureStyleMode == ZMAPSTYLE_MODE_TRANSCRIPT), bIncludeFeature ) ;
 
-  /*
-   * Default behaviour is to include the feature.
-   */
   bIncludeFeature = TRUE ;
 
-  /*
-   * Special treatment for a feature with ID attribute and transcript type; not to be
-   * clipped, since we want to see the exons that _are_ within the clip boundaries.
-   */
   nAttributes          = zMapGFFFeatureDataGetNat(pFeatureData) ;
   pAttributes          = zMapGFFFeatureDataGetAts(pFeatureData) ;
   bFeatureSpecialTranscript = (!strcmp(sSOType, "transcript")
                             && zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_ID)) ;
 
-  /*
-   * Clipping logic.
-   */
   if (cClipMode == GFF_CLIP_NONE)
     {
 
@@ -3533,23 +3516,19 @@ static gboolean clipFeatureLogic_Transcript( ZMapGFF3Parser pParser, ZMapGFFFeat
   else
     {
 
-      /* Exclude feature completely outisde parser boundaries. */
       bFeatureOutside = (iStart > iClipEnd) || (iEnd < iClipStart) ;
       if (bFeatureOutside)
           bIncludeFeature = FALSE ;
 
-      /* Does the feature overlap the start and end of parser boundaries? */
       bFeatureOverlapStart = (iStart < iClipStart) ;
       bFeatureOverlapEnd = (iEnd > iClipEnd) ;
 
-      /* Exclude feature that overlaps the parser boundaries. */
       if (bIncludeFeature && (cClipMode == GFF_CLIP_ALL) && !bFeatureSpecialTranscript)
         {
           if (bFeatureOverlapStart || bFeatureOverlapEnd )
               bIncludeFeature = FALSE ;
         }
 
-      /* Truncate a feature that overlaps the parser boundaries. */
       if (bIncludeFeature && cClipMode == GFF_CLIP_OVERLAP)
         {
           if (bFeatureOverlapStart)
@@ -3569,6 +3548,7 @@ static gboolean clipFeatureLogic_Transcript( ZMapGFF3Parser pParser, ZMapGFFFeat
 
   return bIncludeFeature ;
 }
+*/
 
 /*
  * Encapsulation of clipping logic. This now has to take into account the StyleMode
