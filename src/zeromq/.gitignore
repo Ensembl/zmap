@@ -6,6 +6,7 @@ builds/msvc/Makefile
 builds/redhat/zeromq.spec
 config.log
 config.status
+config
 doc/Makefile
 foreign/openpgm/Makefile
 libtool
