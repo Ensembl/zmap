@@ -921,9 +921,11 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
       /* TRY DOING IT HERE FOR HAVANA REQUEST....SEE COMMENTS ABOVE... */
       if (feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
         {
-          /* Report cds, start/end not found if they are set. */
+          /* Report cds, start/end not found if they are set. If editable is true
+           * then show them so the user can set them */
           if (feature->feature.transcript.flags.cds
-              || feature->feature.transcript.flags.start_not_found || feature->feature.transcript.flags.end_not_found)
+              || feature->feature.transcript.flags.start_not_found || feature->feature.transcript.flags.end_not_found
+              || editable)
             {
               subsection = zMapGUINotebookCreateSubsection(page, "Properties") ;
 
@@ -2468,10 +2470,16 @@ static void saveChapter(ZMapGuiNotebookChapter chapter, ChapterFeature chapter_f
   gboolean overwrite = TRUE ;
 
   ZMapWindow window = show->zmapWindow ;
-  ZMapStrand strand = ZMAPSTRAND_FORWARD ; /*! \todo Get current Annotation column strand */
   ZMapFeatureSet feature_set = getFeaturesetFromName(window, chapter_feature->feature_set) ;
-  int offset = window->feature_context->parent_span.x1 - 1 ; /* need to convert user coords to chromosome coords */
   ZMapFeatureTypeStyle style = NULL ;
+  gboolean revcomp = FALSE ;
+  int offset = window->feature_context->parent_span.x1 - 1 ; /* need to convert user coords to chromosome coords */
+
+  if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
+    {
+      revcomp = TRUE ;
+      offset = window->feature_context->parent_span.x2 - offset + 1 ; /* inverts coords when revcomp'd */
+    }
 
   if (feature_set)
     style = feature_set->style ;
@@ -2486,7 +2494,7 @@ static void saveChapter(ZMapGuiNotebookChapter chapter, ChapterFeature chapter_f
                                                           0, /* end */
                                                           FALSE,
                                                           0.0,
-                                                          strand);
+                                                          ZMAPSTRAND_FORWARD);
 
   /*! \todo If the feature already exists, ask if the user wants to overwrite it (the code to
    * do this will probably need to delete the original feature first). If we wanted we could have
@@ -2511,7 +2519,11 @@ static void saveChapter(ZMapGuiNotebookChapter chapter, ChapterFeature chapter_f
           const int cds_start = atoi(chapter_feature->CDS) + offset ;
           char *cp = strchr(chapter_feature->CDS, ',') ;
       
-          if (cp && cp + 1)
+          if (strcmp(chapter_feature->CDS, NOT_SET_TEXT) == 0)
+            {
+              /* Not set - ignore */
+            }
+          else if (cp && cp + 1)
             {
               const int cds_end = atoi(cp + 1) + offset ;
               zMapFeatureAddTranscriptCDS(feature, TRUE, cds_start, cds_end) ;
@@ -2532,9 +2544,20 @@ static void saveChapter(ZMapGuiNotebookChapter chapter, ChapterFeature chapter_f
           if (g_list_length(compound) == 2)
             {
               ZMapSpan exon = g_new0(ZMapSpanStruct, 1) ;
-
-              exon->x1 = GPOINTER_TO_INT(compound->data) + offset ;
-              exon->x2 = GPOINTER_TO_INT(compound->next->data) + offset ;
+              const int start = GPOINTER_TO_INT(compound->data) ;
+              const int end = GPOINTER_TO_INT(compound->next->data) ;
+              
+              if (revcomp && start < 0 && end < 0)
+                {
+                  /* Coords are shown as negative when revcomp'd - need to un-negate them */
+                  exon->x1 = end + offset ;
+                  exon->x2 = start + offset ;
+                }
+              else
+                {
+                  exon->x1 = start + offset ;
+                  exon->x2 = end + offset ;
+                }
 
               zMapFeatureAddTranscriptExonIntron(feature, exon, NULL) ;
             }

@@ -6,6 +6,11 @@
 <body>
 <h2>ZMap - Release Notes</h2>
 
+<h4>Version 0.23.0</h4>
+<ul>
+  <li>Temporary features can now be edited and saved in standalone ZMap, and exported back to GFF.
+</ul>
+
 <h4>Version 0.22.0</h4>
 <ul>
   <li>ZMap now supports GFF version 3
