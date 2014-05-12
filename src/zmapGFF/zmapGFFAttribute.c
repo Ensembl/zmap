@@ -525,7 +525,9 @@ ZMapGFFAttribute zMapGFFAttributeListContains( ZMapGFFAttribute* pAtt, unsigned 
   ZMapGFFAttribute pAttribute = NULL ;
   const ZMapGFFAttribute *pAttributes = pAtt ;
   unsigned int iAtt ;
-  zMapReturnValIfFail(pAttributes && nAttributes && sName && *sName, pAttribute) ; 
+  if (!pAttributes || !nAttributes) 
+    return pAttribute ; 
+  zMapReturnValIfFail(sName && *sName, pAttribute) ; 
 
   for (iAtt=0; iAtt<nAttributes; ++iAtt)
     {
