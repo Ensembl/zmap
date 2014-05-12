@@ -20,7 +20,7 @@
  * This file is part of the ZMap genome database package
  * originally written by:
  *
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ * Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
@@ -255,7 +255,7 @@ static void errorHandler(ZMapRemoteControl remote_control,
 			 ZMapRemoteControlRCType error_rc, char *format_str, ...) ;
 static gboolean stderrOutputCB(gpointer user_data, char *err_msg) ;
 static void errorMsg(ZMapRemoteControl remote_control,
-		     const char *file_name, const char *func_name, char *format_str, ...) ;
+     const char *file_name, const char *func_name, char *format_str, ...) ;
 static void logMsg(ZMapRemoteControl remote_control,
 		   const char *file_name, const char *func_name, char *format_str, va_list args) ;
 
@@ -380,8 +380,8 @@ gboolean zMapRemoteControlReceiveInit(ZMapRemoteControl remote_control,
   if (remote_control->receive)
    {
      REMOTELOGMSG(remote_control,
-		  "%s",
-		  "Receive interface already initialised.") ;
+                  "%s",
+                  "Receive interface already initialised.") ;
 
      result = FALSE ;
    }
@@ -422,7 +422,7 @@ gboolean zMapRemoteControlReceiveInit(ZMapRemoteControl remote_control,
       result = TRUE ;
     }    
 
-  DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", EXIT_TXT) ;				   
+  DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", EXIT_TXT) ;   
 
   return result ;
 }
@@ -451,8 +451,8 @@ gboolean zMapRemoteControlSendInit(ZMapRemoteControl remote_control,
   if (remote_control->send)
    {
      REMOTELOGMSG(remote_control,
-		  "%s",
-		  "Send interface already initialised.") ;
+                  "%s",
+                  "Send interface already initialised.") ;
 
      result = FALSE ;
    }
@@ -658,7 +658,7 @@ gboolean zMapRemoteControlSetTimeoutList(ZMapRemoteControl remote_control, char 
  * to switch routines (e.g. from graphic to terminal or whatever).
  */
 gboolean zMapRemoteControlSetErrorCB(ZMapRemoteControl remote_control,
-				     ZMapRemoteControlErrorReportFunc err_report_func, gpointer err_report_data) 
+     ZMapRemoteControlErrorReportFunc err_report_func, gpointer err_report_data) 
 {
   gboolean result = FALSE ;
 
@@ -2377,8 +2377,8 @@ static gboolean zeroMQSocketClose(void *zmq_socket, char *endpoint, gboolean dis
 /* The send/receive code works asynchronously and if there are errors, state needs to be
  * reset so that the send or receive is aborted. */
 static void errorHandler(ZMapRemoteControl remote_control,
-			 const char *file_name, const char *func_name,
-			 ZMapRemoteControlRCType error_rc, char *format_str, ...)
+         const char *file_name, const char *func_name,
+         ZMapRemoteControlRCType error_rc, char *format_str, ...)
 {
   va_list args1, args2 ;
   int bytes_printed ;
@@ -2401,14 +2401,14 @@ static void errorHandler(ZMapRemoteControl remote_control,
 
 
   full_err_msg = g_strdup_printf("Error code: %s, error: %s", zMapRemoteControlRCType2ExactStr(error_rc),
-				 err_msg) ;
+                                 err_msg) ;
 
   REMOTELOGMSG(remote_control, "%s", "About to call apps ZMapRemoteControlErrorHandlerFunc().") ;
 
   /* we need to call the apps error handler func here..... */
   (remote_control->app_error_func)(remote_control,
-				   error_rc, full_err_msg,
-				   remote_control->app_error_func_data) ;
+                                   error_rc, full_err_msg,
+                                   remote_control->app_error_func_data) ;
 
   REMOTELOGMSG(remote_control, "%s", "Back from apps ZMapRemoteControlErrorHandlerFunc().") ;
 
@@ -2443,8 +2443,8 @@ static gboolean stderrOutputCB(gpointer user_data_unused, char *err_msg)
  * in a standard format.
  *  */
 static void errorMsg(ZMapRemoteControl remote_control,
-		     const char *file_name, const char *func_name, char *format_str, ...)
-{				
+     const char *file_name, const char *func_name, char *format_str, ...)
+{
   va_list args ;
 
   va_start(args, format_str) ;
@@ -2468,8 +2468,8 @@ static void errorMsg(ZMapRemoteControl remote_control,
  * 
  */
 static void logMsg(ZMapRemoteControl remote_control,
-		   const char *file_name, const char *func_name, char *format_str, va_list args)
-{				
+   const char *file_name, const char *func_name, char *format_str, va_list args)
+{
   GString *msg ;
   char *name ;
   gboolean add_time = TRUE ;
@@ -2481,7 +2481,7 @@ static void logMsg(ZMapRemoteControl remote_control,
   if (add_time)
     time_str = zMapGetTimeString(ZMAPTIME_LOG, NULL) ;
 
-  msg = g_string_sized_new(500) ;				
+  msg = g_string_sized_new(500) ;
 
   g_string_append_printf(msg, "%s%s%s: %s %s()\tState: %s -\tMessage: ",
 			 (add_time ? time_str : ""),
@@ -2754,7 +2754,6 @@ static void timeoutGetCurrTimeout(ZMapRemoteControl remote_control, int *timeout
 
   return ;
 }
-
 
 
 /* Creates the header for zeromq messages as a string in the form:
