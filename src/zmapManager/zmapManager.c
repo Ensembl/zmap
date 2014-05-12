@@ -80,13 +80,13 @@ static void destroyedCB(ZMap zmap, void *cb_data) ;
 static void quitReqCB(ZMap zmap, void *cb_data) ;
 
 static void localProcessRemoteRequest(ZMapManager manager,
-				      char *command_name, char *request,
-				      ZMap zmap, gpointer view_id,
-				      ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data) ;
+      char *command_name, char *request,
+      ZMap zmap, gpointer view_id,
+      ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data) ;
 static void processRequest(ZMapManager app_context,
-			   char *command_name, char *request,
-			   ZMap zmap, gpointer view_id,
-			   RemoteCommandRCType *command_rc_out, char **reason_out, ZMapXMLUtilsEventStack *reply_out) ;
+   char *command_name, char *request,
+   ZMap zmap, gpointer view_id,
+   RemoteCommandRCType *command_rc_out, char **reason_out, ZMapXMLUtilsEventStack *reply_out) ;
 
 static ZMapXMLUtilsEventStack makeMessageElement(char *message_text) ;
 static gboolean start(void *userData, ZMapXMLElement element, ZMapXMLParser parser);
@@ -95,12 +95,12 @@ static gboolean req_start(void *userData, ZMapXMLElement element, ZMapXMLParser 
 static gboolean req_end(void *userData, ZMapXMLElement element, ZMapXMLParser parser);
 
 static void createZMap(ZMapManager manager, ZMap zmap, gpointer view_id,
-		       GQuark sequence_id, int start, int end, GQuark config_file,
-		       RemoteCommandRCType *command_rc_out, char **reason_out, ZMapXMLUtilsEventStack *reply_out) ;
+       GQuark sequence_id, int start, int end, GQuark config_file,
+       RemoteCommandRCType *command_rc_out, char **reason_out, ZMapXMLUtilsEventStack *reply_out) ;
 static ZMapManagerAddResult addNewView(ZMapManager manager, ZMap zmap_in, ZMapFeatureSequenceMap sequence_map,
-				       ZMapView *view_out) ;
+       ZMapView *view_out) ;
 static void closeZMap(ZMapManager app, ZMap zmap, gpointer view_id,
-		      RemoteCommandRCType *command_rc_out, char **reason_out, ZMapXMLUtilsEventStack *reply_out) ;
+      RemoteCommandRCType *command_rc_out, char **reason_out, ZMapXMLUtilsEventStack *reply_out) ;
 
 static gboolean getSessionColourConfiguration(char *config_file, GdkColor *session_colour) ;
 
@@ -151,8 +151,8 @@ void zMapManagerInit(ZMapManagerCallbacks callbacks)
     return ; 
 
   if (!(callbacks
-	     && callbacks->zmap_added_func && callbacks->zmap_deleted_func && callbacks->zmap_set_info_func
-	     && callbacks->quit_req_func))
+     && callbacks->zmap_added_func && callbacks->zmap_deleted_func && callbacks->zmap_set_info_func
+     && callbacks->quit_req_func))
     return  ;
 
   manager_cbs_G = g_new0(ZMapManagerCallbacksStruct, 1) ;
@@ -160,7 +160,7 @@ void zMapManagerInit(ZMapManagerCallbacks callbacks)
   manager_cbs_G->zmap_added_func = callbacks->zmap_added_func ; /* called when a zmap is added. */
   manager_cbs_G->zmap_deleted_func = callbacks->zmap_deleted_func ; /* called when a zmap closes */
   manager_cbs_G->zmap_set_info_func = callbacks->zmap_set_info_func ;
-							    /* called when zmap does something that gui needs to know about (remote calls) */
+    /* called when zmap does something that gui needs to know about (remote calls) */
   manager_cbs_G->quit_req_func = callbacks->quit_req_func ; /* called when layer below requests that zmap app exits. */
 
   /* Called when a zmap component wants to make a remote request. */
@@ -215,7 +215,7 @@ OOPS...THIS ALL DOESN'T WORK LIKE THAT NOW....
  * 
  *  */
 ZMapManagerAddResult zMapManagerAdd(ZMapManager zmaps, ZMapFeatureSequenceMap sequence_map,
-				    ZMap *zmap_inout, ZMapView *view_out)
+    ZMap *zmap_inout, ZMapView *view_out)
 {
   ZMapManagerAddResult result = ZMAPMANAGER_ADD_FAIL ;
   ZMap zmap = *zmap_inout ;
@@ -235,15 +235,15 @@ ZMapManagerAddResult zMapManagerAdd(ZMapManager zmaps, ZMapFeatureSequenceMap se
 
       /* Try to load the sequence. */
       if ((view_window = zMapAddView(zmap, sequence_map)) && zMapConnectView(zmap, zMapViewGetView(view_window)))
-	{
-	  result = ZMAPMANAGER_ADD_OK ;
-	}
+        {
+          result = ZMAPMANAGER_ADD_OK ;
+        }
       else
-	{
-	  /* Remove zmap we just created. */
-	  zMapDestroy(zmap, NULL) ;
-	  result = ZMAPMANAGER_ADD_FAIL ;
-	}
+        {
+          /* Remove zmap we just created. */
+          zMapDestroy(zmap, NULL) ;
+          result = ZMAPMANAGER_ADD_FAIL ;
+        }
     }
 
   if (result == ZMAPMANAGER_ADD_OK)
@@ -253,7 +253,7 @@ ZMapManagerAddResult zMapManagerAdd(ZMapManager zmaps, ZMapFeatureSequenceMap se
 
       /* Only fill if there was a sequence and we created the view. */
       if (view)
-	*view_out = view ;
+        *view_out = view ;
 
       (*(manager_cbs_G->zmap_set_info_func))(zmaps->gui_data, zmap) ;
     }
@@ -277,18 +277,18 @@ ZMap zMapManagerFindZMap(ZMapManager manager, gpointer view_id, gpointer *view_p
       /* Try to find the view_id in the current zmaps. */
       list_zmap = g_list_first(manager->zmap_list) ;
       do
-	{
-	  ZMap next_zmap = (ZMap)(list_zmap->data) ;
+        {
+          ZMap next_zmap = (ZMap)(list_zmap->data) ;
+        
+          if ((view_ptr = zMapControlFindView(next_zmap, view_id)))
+            {
+              zmap = next_zmap ;    /* Found view so return this zmap. */
+              if (view_ptr_out)
+                *view_ptr_out = view_ptr ;
 
-	  if ((view_ptr = zMapControlFindView(next_zmap, view_id)))
-	    {
-	      zmap = next_zmap ;			    /* Found view so return this zmap. */
-	      if (view_ptr_out)
-		*view_ptr_out = view_ptr ;
-
-	      break ;
-	    }
-	}
+              break ;
+            }
+        }
       while ((list_zmap = g_list_next(list_zmap))) ;
     }
 
@@ -308,17 +308,17 @@ gpointer zMapManagerFindView(ZMapManager manager, gpointer view_id)
       /* Try to find the view_id in the current zmaps. */
       list_zmap = g_list_first(manager->zmap_list) ;
       do
-	{
-	  ZMap next_zmap = (ZMap)(list_zmap->data) ;
-	  gpointer tmp_view ;
-
-	  if ((tmp_view = zMapControlFindView(next_zmap, view_id)))
-	    {
-	      view = tmp_view ;
-
-	      break ;
-	    }
-	}
+        {
+          ZMap next_zmap = (ZMap)(list_zmap->data) ;
+          gpointer tmp_view ;
+        
+          if ((tmp_view = zMapControlFindView(next_zmap, view_id)))
+            {
+              view = tmp_view ;
+        
+              break ;
+            }
+        }
       while ((list_zmap = g_list_next(list_zmap))) ;
     }
 
@@ -380,9 +380,9 @@ gboolean zMapManagerRaise(ZMap zmap)
 }
 
 gboolean zMapManagerProcessRemoteRequest(ZMapManager manager,
-					 char *command_name, char *request,
-					 ZMap zmap, gpointer view_id,
-					 ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data)
+ char *command_name, char *request,
+ ZMap zmap, gpointer view_id,
+ ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data)
 {
   gboolean result = FALSE ;
 
@@ -392,9 +392,9 @@ gboolean zMapManagerProcessRemoteRequest(ZMapManager manager,
       || strcmp(command_name, ZACP_CLOSEVIEW) == 0)
     {
       localProcessRemoteRequest(manager,
-				command_name, request,
-				zmap, view_id,
-				app_reply_func, app_reply_data) ;
+                                command_name, request,
+                                zmap, view_id,
+                                app_reply_func, app_reply_data) ;
 
       result = TRUE ;
     }
@@ -406,33 +406,33 @@ gboolean zMapManagerProcessRemoteRequest(ZMapManager manager,
       /* Look for the right zmap. */
       list_zmap = g_list_first(manager->zmap_list) ;
       do
-	{
-	  ZMap next_zmap = (ZMap)(list_zmap->data) ;
-
-	  if (next_zmap == zmap)
-	    {
-	      zmap_found = TRUE ;
-	      result = zMapControlProcessRemoteRequest(zmap,
-						       command_name, request, view_id,
-						       app_reply_func, app_reply_data) ;
-	      break ;
-	    }
-	}
+        {
+          ZMap next_zmap = (ZMap)(list_zmap->data) ;
+        
+          if (next_zmap == zmap)
+            {
+              zmap_found = TRUE ;
+              result = zMapControlProcessRemoteRequest(zmap,
+               command_name, request, view_id,
+               app_reply_func, app_reply_data) ;
+              break ;
+            }
+        }
       while ((list_zmap = g_list_next(list_zmap))) ;
 
       /* If we were passed a zmap but did not find it this is an error... */
       if (!zmap_found)
-	{
-	  RemoteCommandRCType command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
-	  char *reason ;
-	  ZMapXMLUtilsEventStack reply = NULL ;
+        {
+          RemoteCommandRCType command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
+          char *reason ;
+          ZMapXMLUtilsEventStack reply = NULL ;
+        
+          reason = g_strdup_printf("view id %p not found.", view_id) ;
 
-	  reason = g_strdup_printf("view id %p not found.", view_id) ;
-
-	  (app_reply_func)(command_name, FALSE, command_rc, reason, reply, app_reply_data) ;
-
-	  result = TRUE ;				    /* Signals we have handled the request. */
-	}
+          (app_reply_func)(command_name, FALSE, command_rc, reason, reply, app_reply_data) ;
+        
+          result = TRUE ;    /* Signals we have handled the request. */
+        }
     }
 
   return result ;
@@ -459,9 +459,9 @@ gboolean zMapManagerKillAllZMaps(ZMapManager zmaps)
 
       next_zmap = g_list_first(zmaps->zmap_list) ;
       do
-	{
-	  zMapManagerKill(zmaps, (ZMap)(next_zmap->data)) ;
-	}
+        {
+          zMapManagerKill(zmaps, (ZMap)(next_zmap->data)) ;
+        }
       while ((next_zmap = g_list_next(next_zmap))) ;
     }
 
@@ -540,9 +540,9 @@ static void quitReqCB(ZMap zmap, void *cb_data)
 
 /* This is where we process a command. */
 static void localProcessRemoteRequest(ZMapManager manager,
-				      char *command_name, char *request,
-				      ZMap zmap, gpointer view_id,
-				      ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data)
+      char *command_name, char *request,
+      ZMap zmap, gpointer view_id,
+      ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data)
 {
   RemoteCommandRCType command_rc = REMOTE_COMMAND_RC_FAILED ;
   char *reason = NULL ;
@@ -559,10 +559,10 @@ static void localProcessRemoteRequest(ZMapManager manager,
 
 /* Commands by this routine need the xml to be parsed for arguments etc. */
 static void processRequest(ZMapManager manager,
-			   char *command_name, char *request,
-			   ZMap zmap, gpointer view_id,
-			   RemoteCommandRCType *command_rc_out, char **reason_out,
-			   ZMapXMLUtilsEventStack *reply_out)
+   char *command_name, char *request,
+   ZMap zmap, gpointer view_id,
+   RemoteCommandRCType *command_rc_out, char **reason_out,
+   ZMapXMLUtilsEventStack *reply_out)
 {
   ZMapXMLParser parser ;
   gboolean cmd_debug = FALSE ;
@@ -587,23 +587,23 @@ static void processRequest(ZMapManager manager,
   else
     {
       if (strcmp(command_name, ZACP_NEWVIEW) == 0)
-	{
-	  /* Note, view_id will be null here. */
+        {
+          /* Note, view_id will be null here. */
           createZMap(manager, zmap, view_id,
-		     request_data.sequence, request_data.start, request_data.end, request_data.config_file,
-		     command_rc_out, reason_out, reply_out) ;
-	}
+                     request_data.sequence, request_data.start, request_data.end, request_data.config_file,
+                     command_rc_out, reason_out, reply_out) ;
+        }
       else if (strcmp(command_name, ZACP_ADD_TO_VIEW) == 0)
-	{
-	  createZMap(manager, zmap, view_id,
-		     request_data.sequence, request_data.start, request_data.end, request_data.config_file,
-		     command_rc_out, reason_out, reply_out) ;
-	}
+        {
+          createZMap(manager, zmap, view_id,
+                     request_data.sequence, request_data.start, request_data.end, request_data.config_file,
+                     command_rc_out, reason_out, reply_out) ;
+        }
       else if (strcmp(command_name, ZACP_CLOSEVIEW) == 0)
-	{
-	  closeZMap(manager, zmap, view_id,
-		    command_rc_out, reason_out, reply_out) ;
-	}
+        {
+          closeZMap(manager, zmap, view_id,
+                    command_rc_out, reason_out, reply_out) ;
+        }
     }
 
   /* Free the parser!!! */
@@ -616,8 +616,8 @@ static void processRequest(ZMapManager manager,
 
 /* Make a new zmap window containing a view of the given sequence from start -> end. */
 static void createZMap(ZMapManager manager, ZMap zmap, gpointer view_id,
-		       GQuark sequence_id, int start, int end, GQuark config_file,
-		       RemoteCommandRCType *command_rc_out, char **reason_out, ZMapXMLUtilsEventStack *reply_out)
+       GQuark sequence_id, int start, int end, GQuark config_file,
+       RemoteCommandRCType *command_rc_out, char **reason_out, ZMapXMLUtilsEventStack *reply_out)
 {
   char *sequence = NULL ;
   ZMapFeatureSequenceMap sequence_map ;
@@ -644,7 +644,7 @@ static void createZMap(ZMapManager manager, ZMap zmap, gpointer view_id,
   if (sequence_map->sequence && (sequence_map->start < 1 || sequence_map->end < sequence_map->start))
     {
       *reason_out = zMapXMLUtilsEscapeStrPrintf("Bad start/end coords: %d, %d",
-						sequence_map->start, sequence_map->end) ;
+                                                sequence_map->start, sequence_map->end) ;
 
       zMapWarning("%s", *reason_out) ;
     }
@@ -656,33 +656,33 @@ static void createZMap(ZMapManager manager, ZMap zmap, gpointer view_id,
       add_result = addNewView(manager, zmap, sequence_map, &new_view) ;
 
       if (add_result == ZMAPMANAGER_ADD_DISASTER)
-	{
-	  *reason_out = zMapXMLUtilsEscapeStrPrintf("%s",
-						    "Failed to create ZMap and then failed to clean up properly,"
-						    " save your work and exit now !") ;
+        {
+          *reason_out = zMapXMLUtilsEscapeStrPrintf("%s",
+                                                    "Failed to create ZMap and then failed to clean up properly,"
+                                                    " save your work and exit now !") ;
 
-	  zMapWarning("%s", *reason_out) ;
-	}
+          zMapWarning("%s", *reason_out) ;
+        }
       else if (add_result == ZMAPMANAGER_ADD_FAIL)
-	{
-	  *reason_out = zMapXMLUtilsEscapeStrPrintf("%s", "Failed to create ZMap") ;
+        {
+          *reason_out = zMapXMLUtilsEscapeStrPrintf("%s", "Failed to create ZMap") ;
 
-	  zMapWarning("%s", *reason_out) ;
-	}
+          zMapWarning("%s", *reason_out) ;
+        }
       else
-	{
-	  char *id_str ;
+        {
+          char *id_str ;
 
-	  /* Make a string version of the view pointer to use as an ID. */
-	  zMapAppRemoteViewCreateIDStr(new_view, &id_str) ;
+          /* Make a string version of the view pointer to use as an ID. */
+          zMapAppRemoteViewCreateIDStr(new_view, &id_str) ;
+        
+          view_reply[1].value.q = g_quark_from_string(id_str) ;
+          *reply_out = &view_reply[0] ;
 
-	  view_reply[1].value.q = g_quark_from_string(id_str) ;
-	  *reply_out = &view_reply[0] ;
+          g_free(id_str) ;
 
-	  g_free(id_str) ;
-
-	  *command_rc_out = REMOTE_COMMAND_RC_OK ;
-	}
+          *command_rc_out = REMOTE_COMMAND_RC_OK ;
+        }
     }
 
   return ;
@@ -691,7 +691,7 @@ static void createZMap(ZMapManager manager, ZMap zmap, gpointer view_id,
 
 
 static void closeZMap(ZMapManager manager, ZMap zmap, gpointer view_id,
-		      RemoteCommandRCType *command_rc_out, char **reason_out, ZMapXMLUtilsEventStack *reply_out)
+      RemoteCommandRCType *command_rc_out, char **reason_out, ZMapXMLUtilsEventStack *reply_out)
 {
   ZMapView view = view_id ;
 
@@ -722,9 +722,9 @@ static void closeZMap(ZMapManager manager, ZMap zmap, gpointer view_id,
  * if sequence is NULL a blank zmap is created.
  *  */
 static ZMapManagerAddResult addNewView(ZMapManager zmaps,
-				       ZMap zmap_in,
-				       ZMapFeatureSequenceMap sequence_map,
-				       ZMapView *view_out)
+       ZMap zmap_in,
+       ZMapFeatureSequenceMap sequence_map,
+       ZMapView *view_out)
 {
   ZMapManagerAddResult result = ZMAPMANAGER_ADD_FAIL ;
   ZMap zmap ;
@@ -738,11 +738,11 @@ static ZMapManagerAddResult addNewView(ZMapManager zmaps,
     {
       /* Not adding to existing zmap so make a new one. */
       if (!(zmap = zMapCreate((void *)(zmaps->gui_data), sequence_map)))
-	{
-	  result = ZMAPMANAGER_ADD_FAIL ;
-	  
-	  zMapLogWarning("%s", "Cannot create zmap.") ;
-	}
+        {
+          result = ZMAPMANAGER_ADD_FAIL ;
+  
+          zMapLogWarning("%s", "Cannot create zmap.") ;
+        }
     }
 
   if (zmap)
@@ -763,37 +763,37 @@ static ZMapManagerAddResult addNewView(ZMapManager zmaps,
 
       /* NOT SURE THIS BIT WORKS PROPERLY NOW.... */
       if (!(zmaps->remote_control))
-	{
-	  /* No sequence so just add blank zmap. */
-	  result = ZMAPMANAGER_ADD_OK ;
-	}
+        {
+          /* No sequence so just add blank zmap. */
+          result = ZMAPMANAGER_ADD_OK ;
+        }
       else
-	{
-	  ZMapViewWindow view_window ;
+        {
+          ZMapViewWindow view_window ;
 
-	  /* Try to load the sequence. */
-	  if ((view_window = zMapAddView(zmap, sequence_map))
-	      && (view = zMapViewGetView(view_window))
-	      && zMapConnectView(zmap, view))
-	    {
-	      window = zMapViewGetWindow(view_window) ;
+          /* Try to load the sequence. */
+          if ((view_window = zMapAddView(zmap, sequence_map))
+                      && (view = zMapViewGetView(view_window))
+                      && zMapConnectView(zmap, view))
+            {
+              window = zMapViewGetWindow(view_window) ;
 
-	      result = ZMAPMANAGER_ADD_OK ;
-	    }
-	  else
-	    {
-	      /* Remove zmap we just created, if this fails then return disaster.... */
-	      zMapDestroy(zmap, NULL) ;
-	      result = ZMAPMANAGER_ADD_FAIL ;
-	    }
-	}
+              result = ZMAPMANAGER_ADD_OK ;
+            }
+          else
+            {
+              /* Remove zmap we just created, if this fails then return disaster.... */
+              zMapDestroy(zmap, NULL) ;
+              result = ZMAPMANAGER_ADD_FAIL ;
+            }
+        }
     }
 
   if (result == ZMAPMANAGER_ADD_OK)
     {
       /* Only add zmap to list if we made a new one. */
       if (!zmap_in)
-	zmaps->zmap_list = g_list_append(zmaps->zmap_list, zmap) ;
+        zmaps->zmap_list = g_list_append(zmaps->zmap_list, zmap) ;
 
       (*(manager_cbs_G->zmap_set_info_func))(zmaps->gui_data, zmap) ;
 
@@ -865,40 +865,40 @@ static gboolean req_end(void *user_data, ZMapXMLElement element, ZMapXMLParser p
       || strcmp(request_data->command_name, ZACP_ADD_TO_VIEW) == 0)
     {
       if (strcmp(request_data->command_name, ZACP_ADD_TO_VIEW) == 0)
-	{
-	  if (!err_msg && ((attr = zMapXMLElementGetAttributeByName(element, ZACP_VIEWID)) != NULL))
-	    request_data->add_to_view = zMapXMLAttributeGetValue(attr) ;
-	  else
-	    err_msg = g_strdup_printf("%s is a required tag.", ZACP_VIEWID) ;
-	}
-
+        {
+          if (!err_msg && ((attr = zMapXMLElementGetAttributeByName(element, ZACP_VIEWID)) != NULL))
+            request_data->add_to_view = zMapXMLAttributeGetValue(attr) ;
+          else
+            err_msg = g_strdup_printf("%s is a required tag.", ZACP_VIEWID) ;
+        }
+        
       if (!err_msg && ((child = zMapXMLElementGetChildByName(element, ZACP_SEQUENCE_TAG)) == NULL))
-	err_msg = g_strdup_printf("%s is a required element.", ZACP_SEQUENCE_TAG) ;
+        err_msg = g_strdup_printf("%s is a required element.", ZACP_SEQUENCE_TAG) ;
 
       if (!err_msg && ((attr = zMapXMLElementGetAttributeByName(child, ZACP_SEQUENCE_NAME)) != NULL))
-	request_data->sequence = zMapXMLAttributeGetValue(attr) ;
+        request_data->sequence = zMapXMLAttributeGetValue(attr) ;
       else
-	err_msg = g_strdup_printf("%s is a required tag.", ZACP_SEQUENCE_NAME) ;
+        err_msg = g_strdup_printf("%s is a required tag.", ZACP_SEQUENCE_NAME) ;
 
       if (!err_msg && ((attr = zMapXMLElementGetAttributeByName(child, ZACP_SEQUENCE_START)) != NULL))
-	request_data->start = strtol(g_quark_to_string(zMapXMLAttributeGetValue(attr)), (char **)NULL, 10) ;
+        request_data->start = strtol(g_quark_to_string(zMapXMLAttributeGetValue(attr)), (char **)NULL, 10) ;
       else
-	err_msg = g_strdup_printf("%s is a required tag.", ZACP_SEQUENCE_START) ;
+        err_msg = g_strdup_printf("%s is a required tag.", ZACP_SEQUENCE_START) ;
 
       if (!err_msg && ((attr = zMapXMLElementGetAttributeByName(child, ZACP_SEQUENCE_END)) != NULL))
-	request_data->end = strtol(g_quark_to_string(zMapXMLAttributeGetValue(attr)), (char **)NULL, 10) ;
+        request_data->end = strtol(g_quark_to_string(zMapXMLAttributeGetValue(attr)), (char **)NULL, 10) ;
       else
-	err_msg = g_strdup_printf("%s is a required tag.", ZACP_SEQUENCE_END) ;
+        err_msg = g_strdup_printf("%s is a required tag.", ZACP_SEQUENCE_END) ;
 
       if (!err_msg && ((attr = zMapXMLElementGetAttributeByName(child, ZACP_SEQUENCE_CONFIG)) != NULL))
-	request_data->config_file = zMapXMLAttributeGetValue(attr) ;
+        request_data->config_file = zMapXMLAttributeGetValue(attr) ;
     }
   else if (strcmp(request_data->command_name, ZACP_CLOSEVIEW) == 0)
     {
       if (!err_msg && ((attr = zMapXMLElementGetAttributeByName(element, ZACP_VIEWID)) != NULL))
-	request_data->view_id = zMapXMLAttributeGetValue(attr) ;
+        request_data->view_id = zMapXMLAttributeGetValue(attr) ;
       else
-	err_msg = g_strdup_printf("%s is a required tag.", ZACP_VIEWID) ;
+        err_msg = g_strdup_printf("%s is a required tag.", ZACP_VIEWID) ;
     }
 
 
@@ -928,7 +928,7 @@ static gboolean getSessionColourConfiguration(char *config_file, GdkColor *sessi
 
       /* session colour for visual grouping of applications. */
       if (zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
-					ZMAPSTANZA_APP_SESSION_COLOUR, &tmp_string))
+                                        ZMAPSTANZA_APP_SESSION_COLOUR, &tmp_string))
         {
           gdk_color_parse(tmp_string, session_colour) ;
           result = TRUE ;
