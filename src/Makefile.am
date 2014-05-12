@@ -46,6 +46,7 @@ dist_doc_DATA = $(srcdir)/doc/user/*
 
 # these are included in the distribution, but are not installed
 EXTRA_DIST = INSTALL \
+	INSTALL.windows \
 	README.zmap \
 	$(srcdir)/doc/* \
 	$(srcdir)/examples/* \
