@@ -85,15 +85,15 @@ typedef struct _GFFDumpDataStruct *GFFDumpData;
 
 /* annoyingly we need to use a gpointer for 2nd argument. */
 typedef gboolean (* DumpGFFAttrFunc)(ZMapFeature feature, gpointer feature_data,
-				     GString *gff_string, GError **error_out,
-				     GFFDumpData gff_data);
+     GString *gff_string, GError **error_out,
+     GFFDumpData gff_data);
 
 
 typedef struct
 {
-  GString *header_string;	/* string to use as buffer. */
-  const char *gff_sequence;	/* can be shared between header and dump data structs in case dumping list. */
-  gboolean status, cont;	/* simple status and continuation flags */
+  GString *header_string;/* string to use as buffer. */
+  const char *gff_sequence;/* can be shared between header and dump data structs in case dumping list. */
+  gboolean status, cont;/* simple status and continuation flags */
 } GFFHeaderDataStruct, *GFFHeaderData ;
 
 /* Fields are: <sequence> <source> <feature> <start> <end> <score> <strand> <frame> <attributes> */
@@ -101,12 +101,12 @@ typedef struct _GFFDumpDataStruct
 {
   GHashTable *styles ;
 
-  const char *gff_sequence;	/* The sequence name. e.g. 16.12345-23456 */
-  char *gff_source;		/* The source e.g. augustus, TrEMBL, trf, polya_site */
-  char *gff_feature;		/* The feature type e.g. Sequence, intron, exon, CDS, coding_exon, misc_feature */
+  const char *gff_sequence;/* The sequence name. e.g. 16.12345-23456 */
+  char *gff_source;/* The source e.g. augustus, TrEMBL, trf, polya_site */
+  char *gff_feature;/* The feature type e.g. Sequence, intron, exon, CDS, coding_exon, misc_feature */
 
-  const char *feature_name;	/* The feature name e.g. AC12345.1-001 */
-  char *link_term;		/* The attribute key for the parent feature name. e.g. Sequence in Sequence "AC12345.1-001" */
+  const char *feature_name;/* The feature name e.g. AC12345.1-001 */
+  char *link_term;/* The attribute key for the parent feature name. e.g. Sequence in Sequence "AC12345.1-001" */
 
   /* functions for doing attributes. */
   DumpGFFAttrFunc *basic;
@@ -215,23 +215,23 @@ static char phase2Char(ZMapPhase phase) ;
  */
 
 static DumpGFFAttrFunc basic_funcs_G_GFF2[] = {
-  dump_text_note,		/* Note "cpg island" */
+  dump_text_note,/* Note "cpg island" */
 /*  dump_known_name,*/
   NULL,
 };
 static DumpGFFAttrFunc transcript_funcs_G_GFF2[] = {
   dump_transcript_identifier, /* Sequence "AC12345.1-001" */
-  dump_transcript_locus,	/* RPC1-2 */
+  dump_transcript_locus,/* RPC1-2 */
 /*  dump_known_name,*/
   dump_transcript_subpart_lines, /* Not really attributes like alignment subparts are. */
   NULL
 };
 
 static DumpGFFAttrFunc homol_funcs_G_GFF2[] = {
-  dump_alignment_target,	/* Target "Sw:Q12345.1" 101 909 */
-  dump_alignment_clone,	/* Clone "AC12345.1" */
-  dump_alignment_gaps,	/* Gaps "1234 1245 4567 4578, 2345 2356 5678 5689" */
-  dump_alignment_length,	/* Length 789 */
+  dump_alignment_target,/* Target "Sw:Q12345.1" 101 909 */
+  dump_alignment_clone,/* Clone "AC12345.1" */
+  dump_alignment_gaps,/* Gaps "1234 1245 4567 4578, 2345 2356 5678 5689" */
+  dump_alignment_length,/* Length 789 */
   NULL
 };
 static DumpGFFAttrFunc text_funcs_G_GFF2[] = {
@@ -242,7 +242,7 @@ static DumpGFFAttrFunc text_funcs_G_GFF2[] = {
 
 
 static DumpGFFAttrFunc basic_funcs_G_GFF3[] = {
-  dump_text_note_v3, 	/* Note = <unquoted_string> */
+  dump_text_note_v3, /* Note = <unquoted_string> */
   dump_id_as_name_v3, /* Name = <unquoted_string> */
   NULL,
 };
@@ -253,8 +253,8 @@ static DumpGFFAttrFunc transcript_funcs_G_GFF3[] = {
   NULL
 };
 static DumpGFFAttrFunc homol_funcs_G_GFF3[] = {
-  dump_alignment_target_v3,	/* Target=<clone_id> <start> <end> <strand> */
-  dump_alignment_gaps_v3,	/* Gaps=(<int><int><int><int>)+ */
+  dump_alignment_target_v3,/* Target=<clone_id> <start> <end> <strand> */
+  dump_alignment_gaps_v3,/* Gaps=(<int><int><int><int>)+ */
   NULL
 };
 static DumpGFFAttrFunc text_funcs_G_GFF3[] = {
@@ -303,10 +303,10 @@ gboolean zMapGFFDumpRegion(ZMapFeatureAny dump_set, GHashTable *styles,
   if (!file || !dump_set || !error_out)
     return result ;
   if ((dump_set->struct_type != ZMAPFEATURE_STRUCT_CONTEXT)
-	     && (dump_set->struct_type != ZMAPFEATURE_STRUCT_ALIGN)
-	     && (dump_set->struct_type != ZMAPFEATURE_STRUCT_BLOCK)
-	     && (dump_set->struct_type != ZMAPFEATURE_STRUCT_FEATURESET)
-	     && (dump_set->struct_type != ZMAPFEATURE_STRUCT_FEATURE) )
+     && (dump_set->struct_type != ZMAPFEATURE_STRUCT_ALIGN)
+     && (dump_set->struct_type != ZMAPFEATURE_STRUCT_BLOCK)
+     && (dump_set->struct_type != ZMAPFEATURE_STRUCT_FEATURESET)
+     && (dump_set->struct_type != ZMAPFEATURE_STRUCT_FEATURE) )
     return result ;
 
   result = dump_full_header(dump_set, file, error_out, &sequence) ;
@@ -400,7 +400,7 @@ gboolean zMapGFFDumpList(GList *dump_list, GHashTable *styles, char *sequence, G
       gff_data.gff_sequence = int_sequence;
 
       result = zMapFeatureListDumpToFile(dump_list, styles, dump_gff_cb, &gff_data,
-					 file, error_out) ;
+ file, error_out) ;
     }
 
   return result ;
@@ -568,10 +568,10 @@ static ZMapFeatureContextExecuteStatus get_type_seq_header_cb(GQuark  key, gpoin
 }
 
 static gboolean dump_gff_cb(ZMapFeatureAny feature_any,
-			    GHashTable         *styles,
-			    GString       *gff_string,
-			    GError       **error,
-			    gpointer       user_data)
+    GHashTable         *styles,
+    GString       *gff_string,
+    GError       **error,
+    gpointer       user_data)
 {
   GFFDumpData gff_data = (GFFDumpData)user_data;
   gboolean result = TRUE;
