@@ -43,6 +43,10 @@
 #include <gtk/gtk.h>
 #include <glib/gprintf.h>
 
+
+/* TESTING LINKING OF ZEROMQ */
+#include <zmq.h>
+
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapCmdLineArgs.h>
 #include <zmapRemoteControl_P.h>
@@ -209,6 +213,8 @@ static void logMsg(ZMapRemoteControl remote_control,
 static gboolean stderrOutputCB(gpointer user_data, char *err_msg) ;
 
 
+/* TESTING LINKING OF ZEROMQ */
+static void testZeroMQ(void) ;
 
 
 /* 
@@ -240,45 +246,6 @@ static ZMapRemoteControlDebugLevelType remote_debug_G = ZMAP_REMOTECONTROL_DEBUG
 
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* Here's the code for zeromq..... */
-
-
-#include <zmq.h>
-
-
-
-static void testZeroMQ(void) ;
-
-
-/* TEST OF COMPILATION FOR ZEROMQ.... */
-testZeroMQ() ;
-
-
-
-static void testZeroMQ(void)
-{
-  void *context ;
-  void *responder ;
-  int rc ;
-
-  context = zmq_ctx_new() ;
-
-  responder = zmq_socket (context, ZMQ_REP) ;
-
-  rc = zmq_bind (responder, "tcp://*:5555") ;
-
-  return ;
-}
-
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-
-
-
-
 /* Creates a remote control object.
  * 
  * NOTE that you must only call this function after you have displayed some windows (I'm not sure
@@ -298,6 +265,12 @@ ZMapRemoteControl zMapRemoteControlCreate(char *app_id,
 					  ZMapRemoteControlErrorReportFunc err_report_func, gpointer err_report_data)
 {
   ZMapRemoteControl remote_control = NULL ;
+
+
+  /* TESTING LINKING OF ZEROMQ */
+  testZeroMQ() ;
+
+
 
   if (app_id && *app_id && error_func && error_func_data)
     {
@@ -2328,5 +2301,24 @@ static char *getClipboardData(GtkSelectionData *selection_data, char **err_msg_o
 
   return clipboard_str ;
 }
+
+
+
+/* TESTING LINKING OF ZEROMQ */
+static void testZeroMQ(void)
+{
+  void *context ;
+  void *responder ;
+  int rc ;
+
+  context = zmq_ctx_new() ;
+
+  responder = zmq_socket (context, ZMQ_REP) ;
+
+  rc = zmq_bind (responder, "tcp://*:5555") ;
+
+  return ;
+}
+
 
 
