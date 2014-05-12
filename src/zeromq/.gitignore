@@ -163,6 +163,7 @@ src/libzmq_la-zmq.lo
 src/libzmq_la-zmq.o
 src/libzmq_la-zmq_utils.lo
 src/libzmq_la-zmq_utils.o
+src/platform.hpp.in
 src/platform.hpp
 src/stamp-h1
 tests/.deps
