@@ -26,7 +26,7 @@ ZMap may also be used as a standalone browser taking data either from external s
 
 INSTALLATION
 ------------
-See the INSTALL file.
+Briefly, the shell commands `./configure; make; make install' should configure, build, and install this package on Linux and Mac OS X. See the INSTALL file for more details. For installation on Windows, see the file INSTALL.windows.
 
 
 USAGE
@@ -39,5 +39,7 @@ Run zmap with the --help argument to see further usage information.
 
 Help pages can also be accessed from within the programs using the 'Help' menu.
 
-Sample data and examples can be found in the 'examples' directory.
+Sample data and examples can be found in the 'examples' directory, e.g.
+
+   zmap --conf_dir=examples examples/features.gff
 
