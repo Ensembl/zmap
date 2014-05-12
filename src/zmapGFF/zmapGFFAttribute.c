@@ -51,12 +51,12 @@
  */
 static const char *sEscapedComma = "%2C" ;
 static const char *sEscapedEquals = "%3D" ;
-static const char *sEscapedSemicolon = "%3B" ;
-static const char *sEscapedSpace = "%20" ;
+/* static const char *sEscapedSemicolon = "%3B" ; */
+/* static const char *sEscapedSpace = "%20" ; */
 static const char *sComma = "," ;
 static const char *sEquals = "=" ;
-static const char *sSemicolon = ";" ;
-static const char *sSpace = " " ;
+/* static const char *sSemicolon = ";" ; */
+/* static const char *sSpace = " " ; */
 
 /*
  * Array of attribute info objects. Data are as given in the header file.
