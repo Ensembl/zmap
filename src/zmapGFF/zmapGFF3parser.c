@@ -261,16 +261,16 @@ void zMapGFFDestroyParser_V3(ZMapGFFParser pParserBase)
     g_free(pParser->sequence_name) ;
 
   if (pParser->nSequenceRecords)
-  {
-    if (pParser->pSeqData)
     {
-      for (iValue=0; iValue<pParser->nSequenceRecords; ++iValue)
-      {
-        zMapGFFSequenceDestroy(&pParser->pSeqData[iValue]) ;
-      }
+      if (pParser->pSeqData)
+        {
+          for (iValue=0; iValue<pParser->nSequenceRecords; ++iValue)
+          {
+            zMapGFFSequenceDestroy(&pParser->pSeqData[iValue]) ;
+          }
+        }
+      g_free(pParser->pSeqData) ;
     }
-    g_free(pParser->pSeqData) ;
-  }
 
   /*
    * The parser should not attempt to control the lifetime of the
@@ -617,9 +617,9 @@ static gboolean resizeFormatStrs(ZMapGFFParser pParser)
    * get attributes + comments together and split later
    */
   g_string_append_printf(format_str,
-    "%%%" G_GSSIZE_FORMAT "s%%%" G_GSSIZE_FORMAT "s%%%" G_GSSIZE_FORMAT "s%%d%%d%%%"
-    G_GSSIZE_FORMAT "s%%%" G_GSSIZE_FORMAT "s%%%" G_GSSIZE_FORMAT "s %%%"G_GSSIZE_FORMAT "[^\n]s",
-    iLength, iLength, iLength, iLength, iLength, iLength, iLength) ;
+                    "%%%" G_GSSIZE_FORMAT "s%%%" G_GSSIZE_FORMAT "s%%%" G_GSSIZE_FORMAT "s%%d%%d%%%"
+                    G_GSSIZE_FORMAT "s%%%" G_GSSIZE_FORMAT "s%%%" G_GSSIZE_FORMAT "s %%%"G_GSSIZE_FORMAT "[^\n]s",
+                    iLength, iLength, iLength, iLength, iLength, iLength, iLength) ;
 
   pParser->format_str = g_string_free(format_str, FALSE) ;
 
@@ -4217,7 +4217,7 @@ static ZMapGFFParserFeatureSet getParserFeatureSet(ZMapGFFParser pParserBase, ch
       span->x2 = pParser->features_end;
       pFeatureSet->loaded = g_list_append(NULL,span);
 
-      pParser->src_feature_sets =	g_list_prepend(pParser->src_feature_sets, GUINT_TO_POINTER(pFeatureSet->unique_id));
+      pParser->src_feature_sets =g_list_prepend(pParser->src_feature_sets, GUINT_TO_POINTER(pFeatureSet->unique_id));
 
       /*
        * we need to copy as these may be re-used. styles have already been
@@ -4270,8 +4270,8 @@ static ZMapGFFParserFeatureSet getParserFeatureSet(ZMapGFFParser pParserBase, ch
  *
  * For genefinder features they all have a source field that starts "GF_" so we use that.
  *
- *        B0250	GF_splice	splice3	106	107	0.233743	+	.
- *        B0250	GF_ATG	atg	38985	38987	1.8345	-	0
+ *        B0250GF_splicesplice31061070.233743+.
+ *        B0250GF_ATGatg38985389871.8345-0
  *        etc.
  *
  * Some features have their name given in the "Note" field appended to some GFF records.
