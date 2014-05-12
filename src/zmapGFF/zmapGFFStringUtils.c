@@ -251,7 +251,7 @@ char** zMapGFFStr_tokenizer(char cDelim, const char * const sTarg, unsigned int 
   unsigned int iLength = 0,
     iTokLen = 0,
     iNumTokens = 0 ;
-  char *sPosLast = sTarg,
+  char *sPosLast = (char *) sTarg,
     *sPos = NULL,
     **sTokens = NULL ;
   gboolean bInclude = TRUE ;
