@@ -66,7 +66,7 @@ typedef struct ZMapGFFFeatureDataStruct_
     ZMapStrand cStrand ;
     ZMapPhase cPhase ;
     char *sAttributes ;
-    const ZMapGFFAttribute *pAttributes ;
+    ZMapGFFAttribute *pAttributes ;
     unsigned int nAttributes ;
     ZMapSOIDData pSOIDData ;
 
