@@ -669,7 +669,7 @@ gboolean zMapUtilsSysCall(char *cmd_str, char **err_msg_out)
       /* Deal with special return codes when cmd is NULL. */
 
       if (sys_rc != 0)
-result = TRUE ;
+        result = TRUE ;
       else
         {
           result = FALSE ;
@@ -698,8 +698,7 @@ result = TRUE ;
             {
               result = FALSE ;
               if (err_msg_out)
-        *err_msg_out = g_strdup("Child process did not exit normally.") ;
-        
+                *err_msg_out = g_strdup("Child process did not exit normally.") ;
             }
           else
             {
@@ -728,86 +727,43 @@ result = TRUE ;
 
 
 /* Takes an integer that is the termination status of a process (e.g. as generated
- * by waitpid() etc) and returns what type of termination it was.
- * 
- * See ZMapProcessTerminationType in zmapUtils.h for meaning of value returned.
+ * by waitpid() etc) and returns the actual return code form the child and also
+ * the a termination type in termination_type_out. See ZMapProcessTerminationType
+ * in zmapUtils.h for meaning of value returned.
  *  */
-ZMapProcessTerminationType zMapUtilsProcessTerminationStatus(int status)
+int zMapUtilsProcessTerminationStatus(int status, ZMapProcessTerminationType *termination_type_out)
 {
+  int exit_rc = EXIT_FAILURE ;
   ZMapProcessTerminationType termination_type = ZMAP_PROCTERM_OK ;
 
   if (WIFEXITED(status))
     {
-      int exit_status ;
+      exit_rc = WEXITSTATUS(status) ;
 
-      exit_status = WEXITSTATUS(status) ;
-
-      if (exit_status)
-        termination_type = ZMAP_PROCTERM_ERROR ;
+      if (exit_rc)
+        *termination_type_out = ZMAP_PROCTERM_ERROR ;
       else
-        termination_type =  ZMAP_PROCTERM_OK ;
+        *termination_type_out =  ZMAP_PROCTERM_OK ;
     }
   else if (WIFSIGNALED(status))
     {
-      termination_type = ZMAP_PROCTERM_SIGNAL ;
+      *termination_type_out = ZMAP_PROCTERM_SIGNAL ;
     }
   else if (WIFSTOPPED(status))
     {
-      termination_type = ZMAP_PROCTERM_STOPPED ;
-    }
-
-  return termination_type ;
-}
-
-
-/* Takes an integer that is the termination status of a process (e.g. as generated
- * by waitpid() etc) and returns a string describing that status.
- * 
- * Returns TRUE without setting termination_str_out if the process terminated
- * normally with a zero return code otherwise returns FALSE and returns the
- * termination status as a string in termination_str_out, this string should
- * be g_free'd by the caller when no longer required.
- * 
- *  */
-gboolean zMapUtilsProcessHasTerminationError(int status, char **termination_str_out)
-{
-  gboolean has_termination_error = FALSE ;
-
-  if (WIFEXITED(status))
-    {
-      int exit_status ;
-
-      if ((exit_status = WEXITSTATUS(status)))
-        {
-          *termination_str_out = g_strdup_printf("Child exited normally but exit status was: %d", exit_status) ;
-        
-          has_termination_error = TRUE ;
-        }
-    }
-  else if (WIFSIGNALED(status))
-    {
-      *termination_str_out = g_strdup_printf("Child terminated by signal number %d - \"%s\".",
-             WTERMSIG(status), g_strsignal(WTERMSIG(status))) ;
-
-      has_termination_error = TRUE ;
-    }
-  else if (WIFSTOPPED(status))
-    {
-      *termination_str_out = g_strdup_printf("Child stopped by signal, signal number: %d", WSTOPSIG(status)) ;
-
-      has_termination_error = TRUE ;
+      *termination_type_out = ZMAP_PROCTERM_STOPPED ;
     }
   else
     {
-      *termination_str_out = g_strdup_printf("%s", "Child terminated but cause not known.") ;
-
-      has_termination_error = TRUE ;
+      /* No other child status should be returned for a normally executing zmap. */
+      zMapWarnIfReached() ;
     }
 
-  return has_termination_error ;
+  return exit_rc ;
 }
 
-
+/* auto define function to take a ZMapProcessTerminationType and return a short descriptive string. */
+ZMAP_ENUM_TO_SHORT_TEXT_FUNC(zmapProcTerm2ShortText, ZMapProcessTerminationType, ZMAP_PROCTERM_LIST) ;
 
 /* make printing from totalview evaluations a lot easier... */
 void zMapPrintQuark(GQuark quark)
