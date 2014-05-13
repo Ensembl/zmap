@@ -60,10 +60,6 @@
 #include <zmapView_P.h>
 
 
-#define ZMAP_NB_CHAPTER_GENERAL  "ZMap"  /* preferences chapter relating to general zmap settings */
-#define ZMAP_NB_PAGE_DISPLAY  "Display"  /* preferences page relating to zmap display settings */
-
-
 /* Define thread debug messages, used in checkStateConnections() mostly. */
 #define THREAD_DEBUG_MSG_PREFIX " Reply from slave thread %s, "
 
@@ -883,6 +879,28 @@ gboolean zMapViewConnect(ZMapFeatureSequenceMap sequence_map, ZMapView zmap_view
   return result ;
 }
 
+
+
+/*!
+ * \brief Returns true if filtered columns should be highlighted
+ */
+gboolean zMapViewGetHighlightFilteredColumns(ZMapView view)
+{
+  return view->flags[ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS];
+}
+
+
+char *zMapViewGetDataset(ZMapView zmap_view)
+{
+  char *dataset = NULL ;
+
+  if (zmap_view && zmap_view->view_sequence)
+  {
+    dataset = zmap_view->view_sequence->dataset ;
+  }
+
+  return dataset ;
+}
 
 
 
@@ -6397,109 +6415,6 @@ static void localProcessReplyFunc(gboolean reply_ok, char *reply_error,
 }
 
 
-static void readChapter(ZMapGuiNotebookChapter chapter, ZMapView view)
-{
-  ZMapGuiNotebookPage page ;
-  gboolean bool_value = FALSE ;
-
-  if ((page = zMapGUINotebookFindPage(chapter, ZMAP_NB_PAGE_DISPLAY)))
-    {
-      if (zMapGUINotebookGetTagValue(page, "Highlight filtered columns", "bool", &bool_value))
-	{
-	  if (view->flags[ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS] != bool_value)
-	    {
-              view->flags[ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS] = bool_value ;
-              zMapViewUpdateColumnBackground(view);
-	    }
-	}
-    }
-  
-  return ;
-}
-
-
-static void applyCB(ZMapGuiNotebookAny any_section, void *user_data)
-{
-  ZMapView view = (ZMapView)user_data;
-
-  readChapter((ZMapGuiNotebookChapter)any_section, view) ;
-
-  return ;
-}
-
-
-static void cancelCB(ZMapGuiNotebookAny any_section, void *user_data_unused)
-{
-  return ;
-}
-
-
-/*!
- * \brief Does the work to create a chapter in the preferences notebook for general zmap settings
- */
-static ZMapGuiNotebookChapter makeChapter(ZMapGuiNotebook note_book_parent, ZMapView view)
-{
-  ZMapGuiNotebookChapter chapter = NULL ;
-  ZMapGuiNotebookCBStruct user_CBs = {cancelCB, NULL, applyCB, view, NULL, NULL, NULL, NULL} ;
-  ZMapGuiNotebookPage page ;
-  ZMapGuiNotebookSubsection subsection ;
-  ZMapGuiNotebookParagraph paragraph ;
-  ZMapGuiNotebookTagValue tagvalue ;
-
-  chapter = zMapGUINotebookCreateChapter(note_book_parent, ZMAP_NB_CHAPTER_GENERAL, &user_CBs) ;
-
-
-  page = zMapGUINotebookCreatePage(chapter, ZMAP_NB_PAGE_DISPLAY) ;
-
-  subsection = zMapGUINotebookCreateSubsection(page, NULL) ;
-
-  paragraph = zMapGUINotebookCreateParagraph(subsection, NULL,
-					     ZMAPGUI_NOTEBOOK_PARAGRAPH_TAGVALUE_TABLE,
-					     NULL, NULL) ;
-
-  tagvalue = zMapGUINotebookCreateTagValue(paragraph, "Highlight filtered columns",
-					   ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX,
-					   "bool", view->flags[ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS]) ;
-
-  return chapter ;
-}
-
-
-/*!
- * \briefReturns a ZMapGuiNotebookChapter containing all general zmap preferences.
- */
-ZMapGuiNotebookChapter zMapViewGetPrefsChapter(ZMapView view, ZMapGuiNotebook note_book_parent)
-{
-  ZMapGuiNotebookChapter chapter = NULL ;
-
-  chapter = makeChapter(note_book_parent, view) ;
-
-  return chapter ;
-}
-
-
-/*!
- * \brief Returns true if filtered columns should be highlighted
- */
-gboolean zMapViewGetHighlightFilteredColumns(ZMapView view)
-{
-  return view->flags[ZMAPFLAG_HIGHLIGHT_FILTERED_COLUMNS];
-};
-
-
-char *zMapViewGetDataset(ZMapView zmap_view)
-{
-  char *dataset = NULL ;
-
-  if (zmap_view && zmap_view->view_sequence)
-  {
-    dataset = zmap_view->view_sequence->dataset ;
-  }
-
-  return dataset ;
-}
-
-
 /*! 
  * \brief Callback to update the column background for a given item
  *
@@ -6596,3 +6511,8 @@ static void destroyLoadFeatures(LoadFeaturesData loaded_features)
 
   return ;
 }
+
+
+
+
+
