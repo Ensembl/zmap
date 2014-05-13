@@ -72,7 +72,9 @@ static GtkWidget *makeButtonBox(MainFrame main_data) ;
 static void setSequenceEntries(MainFrame main_data) ;
 static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data) ;
 static void createViewCB(GtkWidget *widget, gpointer cb_data) ;
+#ifndef __CYGWIN__
 static void chooseConfigCB(GtkFileChooserButton *widget, gpointer user_data) ;
+#endif
 static void defaultsCB(GtkWidget *widget, gpointer cb_data) ;
 static void closeCB(GtkWidget *widget, gpointer cb_data) ;
 
@@ -349,22 +351,23 @@ static void defaultsCB(GtkWidget *widget, gpointer cb_data)
 }
 
 
+#ifndef __CYGWIN__
 /* Called when user chooses a file via the file dialog. */
 static void chooseConfigCB(GtkFileChooserButton *widget, gpointer user_data)
 {
   MainFrame main_data = (MainFrame)user_data ;
   char *filename = NULL ;
 
-#ifndef __CYGWIN__
   filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(widget)) ;
 
   gtk_entry_set_text(GTK_ENTRY(main_data->config_widg), filename) ;
 
   g_free(filename) ;
-#endif
 
   return ;
 }
+#endif
+
 
 /* Insert start/end etc. into entry fields for sequence to be displayed. */
 static void setSequenceEntries(MainFrame main_data)
