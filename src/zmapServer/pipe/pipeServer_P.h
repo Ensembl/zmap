@@ -53,16 +53,24 @@ typedef struct _PipeServerStruct
   gchar *data_dir ;					    /* default location for data files
 							       (when protocol is file://) */
 
+  /* Pipe process. */
+  GPid child_pid ;                                          /* pid of child process at other end
+                                                               of pipe. */
+
+  guint child_watch_id ;                                    /* callback routine id for child process exit. */
+  gboolean child_exited ;                                   /* TRUE if child has exited. */
+  gint child_exit_status ;                                  /* Exit status of child as per WEXITSTATUS(). */
+
   GIOChannel *gff_pipe ;				    /* the pipe we read the script's stdout from */
 
-  GPid child_pid ;
+  gint exit_code ;                                          /* Can only be EXIT_SUCCESS or EXIT_FAILURE. */
 
-  gint wait ;						    /* delay before getting data, mainly for testing */
 
+  /* Results of server requests. */
   ZMapServerResponseType result ;
   gboolean error ;					    /* TRUE if any error occurred. */
   char *last_err_msg ;
-  gint exit_code ;
+
 
   gboolean sequence_server ;
   gboolean is_otter ;

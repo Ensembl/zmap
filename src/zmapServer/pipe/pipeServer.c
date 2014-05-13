@@ -110,7 +110,11 @@ static ZMapServerResponseType closeConnection(void *server_in) ;
 static ZMapServerResponseType destroyConnection(void *server) ;
 
 static gboolean pipeSpawn(PipeServer server,GError **error);
-static void waitForChild(PipeServer server) ;
+static void childFullReapCB(GPid child_pid, gint child_status, gpointer user_data) ;
+static void childReapOnlyCB(GPid child_pid, gint child_status, gpointer user_data) ;
+
+
+
 
 static ZMapServerResponseType pipeGetHeader(PipeServer server);
 static ZMapServerResponseType pipeGetSequence(PipeServer server);
@@ -127,10 +131,6 @@ static void eachBlockSequence(gpointer key, gpointer data, gpointer user_data) ;
 
 static void setErrorMsgGError(PipeServer server, GError **gff_pipe_err_inout) ;
 static void setErrMsg(PipeServer server, char *new_msg) ;
-
-
-
-
 
 /*
  *                   Globals
@@ -737,12 +737,18 @@ static char *lastErrorMsg(void *server_in)
 
 static ZMapServerResponseType getStatus(void *server_conn, gint *exit_code)
 {
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   PipeServer server = (PipeServer)server_conn ;
 
-  waitForChild(server) ;
+  /* We can only set this if the server child process has exited. */
+  if (server->child_exited)
+    {
+      *exit_code = server->exit_code ;
+      result = ZMAP_SERVERRESPONSE_OK ;
+    }
 
-  *exit_code = server->exit_code ;
 
+  /* OK...THERE'S SOME PROBLEM WITH HANDLING FAILED GETSTATUS CALLS...NEEDS INVESTIGATING. */
   //can't do this or else it won't be read
   //            if (server->exit_code)
   //                  return ZMAP_SERVERRESPONSE_SERVERDIED;
@@ -806,6 +812,20 @@ static ZMapServerResponseType destroyConnection(void *server_in)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   PipeServer server = (PipeServer)server_in ;
+
+
+  /* temp logging.... */
+  zMapLogWarning("Child pid %d destroying server connection.", server->child_pid) ;
+
+  /* Slightly tricky here, we can be requested to destroy the connection _before_ the
+   * child has died so we need to replace the standard child watch routine with one that
+   * _only_ reaps the child and nothing else, this will be called sometime later when
+   * the child dies. (no point in recording watch id for reap callback
+   * as once we exit here this connection no longer exists. */
+  g_source_remove(server->child_watch_id) ;
+  server->child_watch_id = 0 ;
+  g_child_watch_add(server->child_pid, childReapOnlyCB, server) ;
+
 
   if (server->url)
     g_free(server->url) ;
@@ -918,11 +938,6 @@ static gboolean pipeSpawn(PipeServer server, GError **error)
   gint pipe_fd ;
   GError *pipe_error = NULL ;
   int i ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  gint err_fd;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
   PipeArg pipe_arg;
   char arg_done = 0;
   char *mm = "--";
@@ -1017,7 +1032,8 @@ static gboolean pipeSpawn(PipeServer server, GError **error)
   /* Seems that g_spawn_async_with_pipes() is not thread safe so lock round it. */
   zMapThreadForkLock();
 
-  /* After we spawn we need to control when child exits so set G_SPAWN_DO_NOT_REAP_CHILD. */
+  /* After we spawn we need access to the childs exit status so we set G_SPAWN_DO_NOT_REAP_CHILD
+   * so we can reap the child. */
   if ((result = g_spawn_async_with_pipes(NULL, argv, NULL,
 					 G_SPAWN_DO_NOT_REAP_CHILD, NULL, NULL, &server->child_pid,
 					 NULL, &pipe_fd, NULL,
@@ -1025,6 +1041,12 @@ static gboolean pipeSpawn(PipeServer server, GError **error)
     {
       /* Set up reading of stdout pipe. */
       server->gff_pipe = g_io_channel_unix_new(pipe_fd) ;
+
+      /* Set a callback to be called when child exits. */
+      server->child_watch_id = g_child_watch_add(server->child_pid, childFullReapCB, server) ;
+
+      /* temp logging.... */
+      zMapLogWarning("Child pid %d created.", server->child_pid) ;
     }
   else
     {
@@ -1041,58 +1063,13 @@ static gboolean pipeSpawn(PipeServer server, GError **error)
 
   /* Clear up */
   g_free(argv) ;
+
   if (q_args)
     g_strfreev(q_args) ;
 
 
   return result ;
 }
-
-
-
-static void waitForChild(PipeServer server)
-{
-  if (server->child_pid)
-    {
-      GIOStatus gio_status ;
-      GError *g_error = NULL ;
-      int status ;
-      char *termination_msg = NULL ;
-
-      /* Why not flush the channel (i.e. why FALSE) ?....check this out..... */
-      gio_status = g_io_channel_shutdown(server->gff_pipe, FALSE, &g_error) ; /* or else it may not exit */
-      server->gff_pipe = NULL ;
-      if (gio_status == G_IO_STATUS_ERROR || gio_status == G_IO_STATUS_AGAIN)
-	{
-	  setErrorMsgGError(server, &g_error) ;
-
-	  zMapLogWarning("%s", g_error->message) ;
-	}
-
-      /* Wait for child's exit status. */
-      waitpid(server->child_pid, &status, 0) ;
-      server->child_pid = 0 ;
-
-      /* Get the error if there was one. */
-      if (!zMapUtilsProcessHasTerminationError(status, &termination_msg))
-	{
-	  server->exit_code = EXIT_SUCCESS ;
-	}
-      else
-	{
-	  server->exit_code = EXIT_FAILURE ;
-
-	  setErrMsg(server, termination_msg) ;
-
-	  zMapLogWarning("%s", termination_msg) ;
-
-	  g_free(termination_msg) ;
-	}
-    }
-
-  return ;
-}
-
 
 
 /* read the header data and exit when we get DNA or features or anything else. */
@@ -1592,110 +1569,6 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
 
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* Get the features for a block. */
-static gboolean getFeatures(PipeServer server, ZMapGFFParser parser, GString* gff_line,
-			    ZMapFeatureBlock feature_block)
-{
-  gboolean result = FALSE ;
-  GIOStatus status ;
-  gsize terminator_pos = 0 ;
-  gboolean free_on_destroy = FALSE ;
-  GError *gff_pipe_err = NULL ;
-  gboolean first ;
-
-  /* Tempting to check that block is inside features_start/end, but it may be a different
-   * sequence....we don't really deal with this...  */
-
-
-  /* The caller may only want a small part of the features in the stream so we set the
-   * feature start/end from the block, not the gff stream start/end. */
-
-  if (server->zmap_end)
-    {
-      zMapGFFSetFeatureClipCoords(parser,
-				  server->zmap_start,
-				  server->zmap_end) ;
-      zMapGFFSetFeatureClip(parser,GFF_CLIP_ALL);       // mh17: needs config added to server stanza for clip type
-    }
-
-  first = TRUE ;
-  do
-    {
-      if (first)
-	first = FALSE ;
-      else
-	*(gff_line->str + terminator_pos) = '\0' ;	    /* Remove terminating newline. */
-
-      if (!zMapGFFParseLine(parser, gff_line->str))
-	{
-	  GError *error = zMapGFFGetError(parser) ;
-
-	  if (!error)
-	    {
-	      server->last_err_msg =
-		g_strdup_printf("zMapGFFParseLine() failed with no GError for line %d: %s",
-				zMapGFFGetLineNumber(parser), gff_line->str) ;
-	      ZMAPSERVER_LOG(Critical, server->protocol, server->script_path,server->script_args,
-				 "%s", server->last_err_msg) ;
-
-	      result = FALSE ;
-	    }
-	  else
-	    {
-	      /* If the error was serious we stop processing and return the error,
-	       * otherwise we just log the error. */
-	      if (zMapGFFTerminated(parser))
-		{
-		  result = FALSE ;
-		  setErrMsg(server, error->message) ;
-		}
-	      else
-		{
-		  ZMAPSERVER_LOG(Warning, server->protocol, server->script_path,server->script_args,
-				     "%s", error->message) ;
-		}
-	    }
-	}
-
-      gff_line = g_string_truncate(gff_line, 0) ;   /* Reset line to empty. */
-
-    } while ((status = g_io_channel_read_line_string(server->gff_pipe, gff_line, &terminator_pos,
-						     &gff_pipe_err)) == G_IO_STATUS_NORMAL) ;
-
-
-  /* If we reached the end of the stream then all is fine, so return features... */
-  free_on_destroy = TRUE ;
-  if (status == G_IO_STATUS_EOF)
-    {
-      if (zMapGFFGetFeatures(parser, feature_block))
-	{
-	  free_on_destroy = FALSE ;			    /* Make sure parser does _not_ free
-							       our data ! */
-
-	  result = TRUE ;
-	}
-    }
-  else
-    {
-      zMapLogWarning("Could not read GFF features from stream \"%s\"", server->script_path) ;
-
-      setErrorMsgGError(server, &gff_pipe_err) ;
-
-      result = FALSE ;
-    }
-
-  zMapGFFSetFreeOnDestroy(parser, free_on_destroy) ;
-
-  return result ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-
-
-
 
 static gboolean getServerInfo(PipeServer server, ZMapServerReqGetServerInfo info)
 {
@@ -1738,8 +1611,6 @@ static void setErrMsg(PipeServer server, char *new_msg)
 {
   char *error_msg ;
 
-  waitForChild(server) ;
-
   if (server->last_err_msg)
     g_free(server->last_err_msg) ;
 
@@ -1750,3 +1621,61 @@ static void setErrMsg(PipeServer server, char *new_msg)
   return ;
 }
 
+
+
+/* GChildWatchFunc() called when child process exits but while this server is still alive.
+ * Gets termination status of child to return to master thread. */
+static void childFullReapCB(GPid child_pid, gint child_status, gpointer user_data)
+{
+  PipeServer server = (PipeServer)user_data ;
+  char *exit_msg = NULL ;
+  ZMapProcessTerminationType termination_type ;
+
+  if (child_pid != server->child_pid)
+    zMapLogWarning("Child pid %d and server->child_pid %d do not match !!", child_pid, server->child_pid) ;
+
+  server->child_exited = TRUE ;
+
+  /* Get the error if there was one. */
+  if (!(server->child_exit_status = zMapUtilsProcessTerminationStatus(child_status, &termination_type)))
+    {
+      server->exit_code = EXIT_SUCCESS ;
+
+      exit_msg = g_strdup_printf("Child pid %d exited normally with status %d", child_pid, server->child_exit_status) ;
+    }
+  else
+    {
+      server->exit_code = EXIT_FAILURE ;
+
+      exit_msg = g_strdup_printf("Child pid %d exited with status %d because: \"%s\"",
+                                 child_pid, server->child_exit_status, 
+                                 zmapProcTerm2ShortText(termination_type)) ;
+
+      setErrMsg(server, exit_msg) ;
+    }
+
+  zMapLogWarning("Child pid %d in full-reap callback will now be reaped: \"%s\".",
+                 child_pid, exit_msg) ;
+
+  g_free(exit_msg) ;
+
+  /* Clean up the child process. */
+  g_spawn_close_pid(child_pid) ;
+
+  return ;
+}
+
+
+
+/* GChildWatchFunc() called when child process exits BUT only reaps the child, no other
+ * action is taken because this function is called _after_ this connection has been destroyed.
+ * so no result can be returned. */
+static void childReapOnlyCB(GPid child_pid, gint child_status, gpointer user_data)
+{
+  zMapLogWarning("Child pid %d in reap-only callback will now be reaped.", child_pid) ;
+
+  /* Clean up the child process. */
+  g_spawn_close_pid(child_pid) ;
+
+  return ;
+}
