@@ -30,6 +30,11 @@
 
 #include <glib.h>
 
+#include <ZMap/zmapEnum.h>
+
+
+
+
 /* The following defines deliberately come before the subsequent include files because
  * those files use these definitions. */
 
@@ -145,15 +150,13 @@ typedef enum
 
 
 /* Gives process termination type. */
-typedef enum
-  {
-    ZMAP_PROCTERM_OK,					    /* Process exited normally. */
-    ZMAP_PROCTERM_ERROR,				    /* Process exited normally but with
-							       non-zero return code. */
-    ZMAP_PROCTERM_SIGNAL,				    /* Unhandled signal terminated the process. */
-    ZMAP_PROCTERM_STOPPED				    /* Process was stopped by another process. */
-  } ZMapProcessTerminationType ;
+#define ZMAP_PROCTERM_LIST(_)                                           \
+  _(ZMAP_PROCTERM_OK,        , "ok"      , "process exited normally."      , "") \
+    _(ZMAP_PROCTERM_ERROR,   , "error"   , "process returned error code."  , "") \
+    _(ZMAP_PROCTERM_SIGNAL,  , "signal"  , "proces terminated by signal.", "") \
+    _(ZMAP_PROCTERM_STOPPED, , "stopped" , "process stopped by signal."    , "")
 
+ZMAP_DEFINE_ENUM(ZMapProcessTerminationType, ZMAP_PROCTERM_LIST) ;
 
 
 
@@ -229,10 +232,8 @@ gboolean zMapStr2Double(char *str, double *double_out) ;
   { TYPE tmp = (FIRST) ; (FIRST) = (SECOND) ; (SECOND) = tmp ; }
 
 
-ZMapProcessTerminationType zMapUtilsProcessTerminationStatus(int status) ;
-gboolean zMapUtilsProcessHasTerminationError(int status, char **termination_str_out) ;
-
-
+ZMAP_ENUM_TO_SHORT_TEXT_DEC(zmapProcTerm2ShortText, ZMapProcessTerminationType) ;
+int zMapUtilsProcessTerminationStatus(int status, ZMapProcessTerminationType *termination_type_out) ;
 
 gboolean zMapUtilsSysCall(char *cmd_str, char **err_msg_out) ;
 gboolean zMapUtilsSpawnAsyncWithPipes(char *argv[], GIOFunc stdin_writer, GIOFunc stdout_reader, GIOFunc stderr_reader,
