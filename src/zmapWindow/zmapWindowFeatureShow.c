@@ -2467,7 +2467,6 @@ static void saveChapter(ZMapGuiNotebookChapter chapter, ChapterFeature chapter_f
   zMapReturnIfFail(chapter_feature) ;
 
   GError *error = NULL ;
-  gboolean overwrite = TRUE ;
 
   ZMapWindow window = show->zmapWindow ;
   ZMapFeatureSet feature_set = getFeaturesetFromName(window, chapter_feature->feature_set) ;
