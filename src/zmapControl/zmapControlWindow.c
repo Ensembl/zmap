@@ -60,8 +60,6 @@ static gboolean rotateTextCB(gpointer user_data) ;
  *                  Globals
  */
 
-static gboolean zmap_shrink_G = FALSE;
-
 
 
 
@@ -89,8 +87,8 @@ gboolean zmapControlWindowCreate(ZMap zmap)
 
   /* allow shrink for charlie'ss RT 215415, ref to GTK help: it says 'don't allow shrink' */
   if (zMapCmdLineArgsValue(ZMAPARG_SHRINK, &shrink_arg))
-    zmap_shrink_G = shrink_arg.b ;
-  gtk_window_set_policy(GTK_WINDOW(toplevel), zmap_shrink_G, TRUE, FALSE ) ;
+    zmap->shrinkable = shrink_arg.b ;
+  gtk_window_set_policy(GTK_WINDOW(toplevel), zmap->shrinkable, TRUE, FALSE ) ;
 
 #ifdef MAXIMIZE_ON_MAP_EVENT
   /* We can leave width to default sensibly but height does not because zmap is in a scrolled
@@ -452,13 +450,21 @@ void zmapControlWindowMaximize(GtkWidget *widget, ZMap zmap)
   GdkAtom geometry_atom, workarea_atom, max_atom_vert, max_atom_horiz ;
   GdkScreen *screen ;
   gboolean on_the_mac = FALSE ;
+  int window_width_guess = 300, window_height_guess = 300 ;
 
+
+  screen = gtk_widget_get_screen(toplevel) ;
 
   /* This is a bit of a hack, trying to maximise the window in the vertical dimension
    * only simply does not work on the mac so we fallback to guessing the size. */
   if (g_ascii_strcasecmp("darwin", zMapUtilsSysGetSysName()) == 0)
     on_the_mac = TRUE ;
 
+  /* If user wants to be able to shrink the window we need to set an initial sensible
+   * guess, otherwise the window width is controlled by our button/info layout and
+   * comes out as a sensible size. */
+  if (zmap->shrinkable)
+    window_width_guess = (int)((float)(gdk_screen_get_width(screen)) * ZMAPWINDOW_HORIZ_PROP) ;
 
   /* Get the atoms for _NET_* properties. */
   geometry_atom = gdk_atom_intern("_NET_DESKTOP_GEOMETRY", FALSE) ;
@@ -466,7 +472,6 @@ void zmapControlWindowMaximize(GtkWidget *widget, ZMap zmap)
   max_atom_vert = gdk_atom_intern("_NET_WM_STATE_MAXIMIZED_VERT", FALSE) ;
   max_atom_horiz = gdk_atom_intern("_NET_WM_STATE_MAXIMIZED_HORIZ", FALSE) ;
 
-  screen = gtk_widget_get_screen(toplevel) ;
 
   if (gdk_x11_screen_supports_net_wm_hint(screen, geometry_atom)
       && gdk_x11_screen_supports_net_wm_hint(screen, workarea_atom))
@@ -483,7 +488,6 @@ void zmapControlWindowMaximize(GtkWidget *widget, ZMap zmap)
        * come back in 64 bits.
        *
        *  */
-      int window_width_guess = 300, window_height_guess = 300 ;
       gboolean result ;
       GdkWindow *root_window ;
       gulong offset, length ;
@@ -599,7 +603,6 @@ void zmapControlWindowMaximize(GtkWidget *widget, ZMap zmap)
        * of irrelevant, we just set it to be a bit less than it will finally be and the
        * widgets will resize it to the correct width. We don't use gtk_window_set_default_size()
        * because it doesn't seem to work. */
-      int window_width_guess = 300, window_height_guess ;
 
       window_height_guess = (int)((float)(gdk_screen_get_height(screen)) * ZMAPWINDOW_VERT_PROP) ;
 
@@ -639,7 +642,9 @@ static gboolean rotateTextCB(gpointer user_data)
 {
   gboolean call_again = TRUE ;    /* Keep calling us. */
   ZMap zmap = NULL ; 
+
   zMapReturnValIfFail(user_data, call_again) ; 
+
   zmap = (ZMap)user_data ;
 
   if (zmap->state == ZMAP_DYING)
