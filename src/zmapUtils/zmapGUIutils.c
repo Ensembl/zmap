@@ -1522,11 +1522,81 @@ GtkWidget *zMapGUIShowTextFull(char *title, char *text, gboolean edittable, GLis
 }
 
 
-/* Returns path of file chosen by user which can be used directly to open the file,
- * it is the callers responsibility to free the filepath using g_free().
- * Caller can optionally specify a default directory. */
-char *zmapGUIFileChooserFull(GtkWidget *toplevel, char *title, char *directory_in, char *file_suffix,
-     ZMapFileChooserContentAreaCB content_func, gpointer content_data)
+#ifdef __CYGWIN__
+/* Implementation of zmapGUIFileChooserFull for Cygwin(Windows) */
+static char *zmapGUIFileChooserFullCygwin(GtkWidget *toplevel, char *title, char *directory_in, char *file_suffix,
+                                          ZMapFileChooserContentAreaCB content_func, gpointer content_data)
+{
+  char *full_title ;
+  char *file_path = NULL ;
+  GtkWidget *dialog ;
+  char *text = NULL ;
+
+  /* zMapAssert(toplevel) ;*/
+  if (!toplevel) 
+    return file_path ; 
+
+  if (!title)
+    title = "Please give a file name:" ;
+
+  full_title = zMapGUIMakeTitleString(title, NULL) ;
+  
+  dialog = gtk_dialog_new_with_buttons(full_title,
+                                       GTK_WINDOW(toplevel),
+                                       GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
+                                       GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+                                       GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
+                                       NULL) ;
+
+  g_free(full_title) ;
+
+  gtk_dialog_set_default_response(GTK_DIALOG(dialog), GTK_RESPONSE_ACCEPT) ;
+
+  GtkWidget *content_vbox = GTK_WIDGET(GTK_DIALOG(dialog)->vbox);
+  const int padding = 10 ;
+  GtkWidget *label = gtk_label_new("Enter file name:") ;
+  gtk_misc_set_alignment(GTK_MISC(label), 0.0, 0.0) ;
+  gtk_box_pack_start(GTK_BOX(content_vbox), label, FALSE, FALSE, padding) ;
+      
+  GtkWidget *entry = gtk_entry_new() ;
+  gtk_box_pack_start(GTK_BOX(content_vbox), entry, FALSE, FALSE, padding) ;
+
+  if (directory_in && file_suffix)
+    text = g_strdup_printf("%s/.%s", directory_in, file_suffix) ;
+  else if (directory_in)
+    text = g_strdup(directory_in) ;
+  else if (file_suffix)
+    text = g_strdup(file_suffix) ;
+
+  if (text)
+    {
+      gtk_entry_set_text(GTK_ENTRY(entry), text) ;
+      g_free(text) ;
+      text = NULL ;
+    }
+
+  if(content_func)
+    (content_func)(content_vbox, content_data);
+
+  gtk_widget_show_all(content_vbox);
+
+  /* Wait for a response, we don't have to do anything with this new dialog....yipeeeee.... */
+  if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT)
+    {
+      const char *result = gtk_entry_get_text(GTK_ENTRY(entry)) ;
+
+      if (result)
+        file_path = g_strdup(result) ;
+    }
+
+  gtk_widget_destroy (dialog);
+
+  return file_path ;
+}
+#else
+/* Implementation of zmapGUIFileChooserFull for non-Windows */
+static char *zmapGUIFileChooserFullStandard(GtkWidget *toplevel, char *title, char *directory_in, char *file_suffix,
+                                            ZMapFileChooserContentAreaCB content_func, gpointer content_data)
 {
   char *full_title ;
   char *file_path = NULL ;
@@ -1579,6 +1649,26 @@ char *zmapGUIFileChooserFull(GtkWidget *toplevel, char *title, char *directory_i
 
   return file_path ;
 }
+#endif
+
+
+/* Returns path of file chosen by user which can be used directly to open the file,
+ * it is the callers responsibility to free the filepath using g_free().
+ * Caller can optionally specify a default directory. */
+char *zmapGUIFileChooserFull(GtkWidget *toplevel, char *title, char *directory_in, char *file_suffix,
+     ZMapFileChooserContentAreaCB content_func, gpointer content_data)
+{
+  char *result = NULL ;
+
+#ifdef __CYGWIN__
+  result = zmapGUIFileChooserFullCygwin(toplevel, title, directory_in, file_suffix, content_func, content_data) ;
+#else
+  result = zmapGUIFileChooserFullStandard(toplevel, title, directory_in, file_suffix, content_func, content_data) ;
+#endif
+  
+  return result ;
+}
+
 
 char *zmapGUIFileChooser(GtkWidget *toplevel,  char *title, char *directory_in, char *file_suffix)
 {

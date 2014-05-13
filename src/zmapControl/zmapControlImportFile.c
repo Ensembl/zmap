@@ -118,7 +118,9 @@ static GtkWidget *makeButtonBox(MainFrame main_frame) ;
 
 static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data) ;
 static void importFileCB(GtkWidget *widget, gpointer cb_data) ;
+#ifndef __CYGWIN__
 static void chooseConfigCB(GtkFileChooserButton *widget, gpointer user_data) ;
+#endif
 static void closeCB(GtkWidget *widget, gpointer cb_data) ;
 
 static void sequenceCB(GtkWidget *widget, gpointer cb_data) ;
@@ -436,9 +438,9 @@ static GtkWidget *makeMainFrame(MainFrame main_frame, ZMapFeatureSequenceMap seq
 /* Make the option buttons frame. */
 static GtkWidget *makeOptionsBox(MainFrame main_frame, char *req_sequence, int req_start, int req_end)
 {
-  GtkWidget *frame ;
-  GtkWidget *map_seq_button, *config_button;
-  GtkWidget *topbox, *hbox, *entrybox, *labelbox, *entry, *label ;
+  GtkWidget *frame = NULL ;
+  GtkWidget *map_seq_button = NULL , *config_button = NULL ;
+  GtkWidget *topbox = NULL, *hbox = NULL, *entrybox = NULL, *labelbox = NULL, *entry = NULL, *label = NULL ;
   char *sequence = "", *start = "", *end = "", *file = "" ;
   char *home_dir ;
 
@@ -467,7 +469,9 @@ static GtkWidget *makeOptionsBox(MainFrame main_frame, char *req_sequence, int r
   labelbox = gtk_vbox_new(TRUE, 0) ;
   gtk_box_pack_start(GTK_BOX(hbox), labelbox, FALSE, FALSE, 0) ;
 
-  /* N.B. we use the gtk "built-in" file chooser stuff. */
+#ifndef __CYGWIN__
+  /* N.B. we use the gtk "built-in" file chooser stuff. Create a file-chooser button instead of
+   * placing a label next to the file text-entry box */
   config_button = gtk_file_chooser_button_new("Choose a File to Import", GTK_FILE_CHOOSER_ACTION_OPEN) ;
   gtk_signal_connect(GTK_OBJECT(config_button), "file-set",
 		     GTK_SIGNAL_FUNC(chooseConfigCB), (gpointer)main_frame) ;
@@ -475,6 +479,14 @@ static GtkWidget *makeOptionsBox(MainFrame main_frame, char *req_sequence, int r
   home_dir = (char *)g_get_home_dir() ;
   gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(config_button), home_dir) ;
   gtk_file_chooser_set_show_hidden(GTK_FILE_CHOOSER(config_button), TRUE) ;
+#else
+  /* We can't have a file-chooser button, but we already have a text entry
+   * box for the filename anyway, so just create a label for that where the
+   * button would have been */
+  label = gtk_label_new("File ") ;
+  gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5);
+  gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
+#endif
 
   label = gtk_label_new( "Script " ) ;
   gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5);
@@ -698,11 +710,12 @@ static void sequenceCB(GtkWidget *widget, gpointer cb_data)
 }
 
 
+#ifndef __CYGWIN__
 /* Called when user chooses a file via the file dialog. */
 static void chooseConfigCB(GtkFileChooserButton *widget, gpointer user_data)
 {
   MainFrame main_frame = (MainFrame) user_data ;
-  char *filename ;
+  char *filename = NULL ;
 
   filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(widget)) ;
 
@@ -710,6 +723,7 @@ static void chooseConfigCB(GtkFileChooserButton *widget, gpointer user_data)
 
   fileChangedCB ( main_frame->file_widg, user_data);
 }
+#endif
 
 
 static void enable_widgets(MainFrame main_frame)
