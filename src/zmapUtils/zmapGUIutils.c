@@ -1532,17 +1532,13 @@ static char *zmapGUIFileChooserFullCygwin(GtkWidget *toplevel, char *title, char
   GtkWidget *dialog ;
   char *text = NULL ;
 
-  /* zMapAssert(toplevel) ;*/
-  if (!toplevel) 
-    return file_path ; 
-
   if (!title)
     title = "Please give a file name:" ;
 
   full_title = zMapGUIMakeTitleString(title, NULL) ;
   
   dialog = gtk_dialog_new_with_buttons(full_title,
-                                       GTK_WINDOW(toplevel),
+                                       toplevel ? GTK_WINDOW(toplevel) : NULL,
                                        GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
                                        GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
                                        GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
@@ -1602,10 +1598,6 @@ static char *zmapGUIFileChooserFullStandard(GtkWidget *toplevel, char *title, ch
   char *file_path = NULL ;
   GtkWidget *dialog ;
 
-  /* zMapAssert(toplevel) ;*/
-  if (!toplevel) 
-    return file_path ; 
-
   if (!title)
     title = "Please give a file name:" ;
 
@@ -1613,11 +1605,11 @@ static char *zmapGUIFileChooserFullStandard(GtkWidget *toplevel, char *title, ch
 
   /* Set up the dialog. */
   dialog = gtk_file_chooser_dialog_new(full_title,
-       GTK_WINDOW(toplevel),
-       GTK_FILE_CHOOSER_ACTION_SAVE,
-       GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-       GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
-       NULL) ;
+                                       toplevel ? GTK_WINDOW(toplevel) : NULL,
+                                       GTK_FILE_CHOOSER_ACTION_SAVE,
+                                       GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+                                       GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
+                                       NULL) ;
 
   g_free(full_title) ;
 

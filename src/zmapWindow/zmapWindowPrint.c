@@ -306,9 +306,9 @@ static gboolean printDialog(PrintCBData print_cb)
       if (text && *text)
 	{
 	  print_cb->selected_printer = g_strdup(text) ;
-      
-	  status = TRUE ;
 	}
+      
+      status = TRUE ;
     }
 
   gtk_widget_destroy (dialog) ;
