@@ -61,6 +61,9 @@
 #define ZOOM_SENSITIVITY 5.0
 
 
+/* Supported drag-and-drop target types */
+typedef enum {TARGET_STRING, TARGET_URL} DragDropTargetType;
+
 
 /* Local struct to hold current features and new_features obtained from a server and
  * relevant types. */
@@ -197,6 +200,13 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 //static gboolean pressCB(GtkWidget *widget, GdkEventButton *event, gpointer user_data) ;
 //static gboolean motionCB(GtkWidget *widget, GdkEventMotion *event, gpointer user_data) ;
 //static gboolean releaseCB(GtkWidget *widget, GdkEventButton *event, gpointer user_data) ;
+
+static void dragDataGetCB(GtkWidget *widget,
+                          GdkDragContext *drag_context,
+                          GtkSelectionData *selectionData,
+                          guint info,
+                          guint time,
+                          gpointer user_data) ;
 
 static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event) ;
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -2269,6 +2279,8 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
   gtk_signal_connect(GTK_OBJECT(window->toplevel), "client_event",
 		     GTK_SIGNAL_FUNC(dataEventCB), (gpointer)window) ;
 
+  g_signal_connect(parent_widget, "drag-data-get", G_CALLBACK(dragDataGetCB), window);
+
   /* always show scrollbars, however big the display */
   gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(window->scrolled_window),
 				 GTK_POLICY_ALWAYS, GTK_POLICY_ALWAYS) ;
@@ -3376,6 +3388,18 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
   zMapLogWarning("canvas event %d",  event->type);
 #endif
 
+  /* Set up targets for drag and drop */
+  static GtkTargetEntry targetentries[] =
+    {
+      { "STRING",        0, TARGET_STRING },
+      { "text/plain",    0, TARGET_STRING },
+      { "text/uri-list", 0, TARGET_URL },
+    };
+
+  static GtkTargetList *targetlist = NULL;
+
+  if (!targetlist)
+    targetlist= gtk_target_list_new(targetentries, 3);
 
   /* We record whether we are inside the window to enable user to cancel certain mouse related
    * actions by moving outside the window. */
@@ -3511,8 +3535,12 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 			  /* Show a rubber band for zooming/marking. */
 			  dragging = TRUE;
 
-			  if (!window->rubberband)
-			    window->rubberband = zMapDrawRubberbandCreate(window->canvas);
+                          gtk_drag_begin(window->toplevel, targetlist, 
+                                         GDK_ACTION_COPY|GDK_ACTION_MOVE|GDK_ACTION_LINK,
+                                         1, (GdkEvent*)event);
+
+                          //if (!window->rubberband)
+                          //  window->rubberband = zMapDrawRubberbandCreate(window->canvas);
 			}
 
 		      /* At this stage we don't know if we are rubber banding etc. so pass the
@@ -3651,9 +3679,9 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
                                       NULL, seq_item, NULL, seq_start, seq_end, seq_start, seq_end,
                                       NULL,  FALSE, FALSE, FALSE, NULL) ;
 	  }
-	else if (dragging || guide)
+        else if ((dragging && window->rubberband) || guide)
 	  {
-	    if (dragging)
+            if (dragging && window->rubberband)
 	      {
 		/* I wanted to change the cursor for this,
 		 * but foo_canvas_item_grab/ungrab specifically the ungrab didn't work */
@@ -3877,78 +3905,78 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 	  }
 	else if (dragging)
           {
-            foo_canvas_item_hide(window->rubberband);
+            if (window->rubberband)
+              {
+                foo_canvas_item_hide(window->rubberband);
 
-	    /* mouse must still be within window to zoom, outside means user is cancelling motion,
-	     * and motion must be more than 10 pixels in either direction to zoom. */
-	    if (in_window)
-	      {
-		if (fabs(but_event->x - window_x) > ZMAP_WINDOW_MIN_LASSO
-		    || fabs(but_event->y - window_y) > ZMAP_WINDOW_MIN_LASSO)
-		  {
-		    /* User has moved pointer quite a lot between press and release so do our
-		     * stuff. */
+                /* mouse must still be within window to zoom, outside means user is cancelling motion,
+                 * and motion must be more than 10 pixels in either direction to zoom. */
+                if (in_window)
+                  {
+                    if (fabs(but_event->x - window_x) > ZMAP_WINDOW_MIN_LASSO
+                        || fabs(but_event->y - window_y) > ZMAP_WINDOW_MIN_LASSO)
+                      {
+                        /* User has moved pointer quite a lot between press and release so do our
+                         * stuff. */
 
-		    if (!shift_on)
-		      {
-			zoomToRubberBandArea(window) ;
+                        if (!shift_on)
+                          {
+                            zoomToRubberBandArea(window) ;
 
-			event_handled = TRUE;		    /* We _ARE_ handling */
-		      }
-		    else
-		      {
-			/* make a list of the foo canvas items */
-			GList *feature_list;
-			FooCanvasItem *item;
-			double rootx1, rootx2, rooty1, rooty2 ;
-
-
-			/* Get size of item and convert to world coords, bounds are relative to item's parent */
-			foo_canvas_item_get_bounds(window->rubberband, &rootx1, &rooty1, &rootx2, &rooty2) ;
-			//		    foo_canvas_item_i2w(window->rubberband, &rootx1, &rooty1) ;
-			//		    foo_canvas_item_i2w(window->rubberband, &rootx2, &rooty2) ;
-
-			/* find the canvvas iten (a canvas featureset) at the centre of the lassoo */
-			// can-t do this as the canvas featureset point function returns n/a
-			// if there's no feature under the cursor no longer true....
-			if ((item = foo_canvas_get_item_at(window->canvas, (rootx2 + rootx1) / 2, (rooty2 + rooty1) / 2)))
-			  {
-			    /* only finds features in a canvas featureset, old foo gives nothing */
-			    feature_list = zMapWindowFeaturesetItemFindFeatures(&item, rooty1, rooty2, rootx1, rootx2);
-			  }
+                            event_handled = TRUE;		    /* We _ARE_ handling */
+                          }
+                        else
+                          {
+                            /* make a list of the foo canvas items */
+                            GList *feature_list;
+                            FooCanvasItem *item;
+                            double rootx1, rootx2, rooty1, rooty2 ;
 
 
-			/* this is how features get highlit */
-			if (item)
-			  zmapWindowUpdateInfoPanel(window, zMapWindowCanvasItemGetFeature(item),
-						    feature_list, item, NULL, 0, 0, 0, 0, NULL,
-                                                    !shift_on, FALSE, FALSE, NULL) ;
+                            /* Get size of item and convert to world coords, bounds are relative to item's parent */
+                            foo_canvas_item_get_bounds(window->rubberband, &rootx1, &rooty1, &rootx2, &rooty2) ;
+                            //		    foo_canvas_item_i2w(window->rubberband, &rootx1, &rooty1) ;
+                            //		    foo_canvas_item_i2w(window->rubberband, &rootx2, &rooty2) ;
 
-			event_handled = TRUE;		    /* We _ARE_ handling */
-		      }
-		  }
-		else
-		  {
-		    /* User hasn't really moved which means they meant to select a feature, not
-		     * lasso an area so pass event on and destroy rubberband object. */
+                            /* find the canvvas iten (a canvas featureset) at the centre of the lassoo */
+                            // can-t do this as the canvas featureset point function returns n/a
+                            // if there's no feature under the cursor no longer true....
+                            if ((item = foo_canvas_get_item_at(window->canvas, (rootx2 + rootx1) / 2, (rooty2 + rooty1) / 2)))
+                              {
+                                /* only finds features in a canvas featureset, old foo gives nothing */
+                                feature_list = zMapWindowFeaturesetItemFindFeatures(&item, rooty1, rooty2, rootx1, rootx2);
+                              }
 
-		    /* Must get rid of rubberband item as it is not needed. */
-		    // mh17: was this a memory leak from the other bits of the if ???
-		    //		    gtk_object_destroy(GTK_OBJECT(window->rubberband)) ;origin_
-		    //		    window->rubberband = NULL ;
 
-		    event_handled = FALSE ;
-		  }
-	      }
+                            /* this is how features get highlit */
+                            if (item)
+                              zmapWindowUpdateInfoPanel(window, zMapWindowCanvasItemGetFeature(item),
+                                                        feature_list, item, NULL, 0, 0, 0, 0, NULL,
+                                                        !shift_on, FALSE, FALSE, NULL) ;
 
-	    /* Must get rid of rubberband item as it is not needed. */
-	    if(window->rubberband)
-	      {
-		gtk_object_destroy(GTK_OBJECT(window->rubberband)) ;
-		window->rubberband = NULL ;
-	      }
+                            event_handled = TRUE;		    /* We _ARE_ handling */
+                          }
+                      }
+                    else
+                      {
+                        /* User hasn't really moved which means they meant to select a feature, not
+                         * lasso an area so pass event on and destroy rubberband object. */
 
-	    dragging = FALSE ;
+                        /* Must get rid of rubberband item as it is not needed. */
+                        // mh17: was this a memory leak from the other bits of the if ???
+                        //		    gtk_object_destroy(GTK_OBJECT(window->rubberband)) ;origin_
+                        //		    window->rubberband = NULL ;
+
+                        event_handled = FALSE ;
+                      }
+                  }
+
+                /* Must get rid of rubberband item as it is not needed. */
+                gtk_object_destroy(GTK_OBJECT(window->rubberband)) ;
+                window->rubberband = NULL ;
+              }
+
+            dragging = FALSE ;
           }
         else if (guide)
           {
@@ -4120,7 +4148,23 @@ static gboolean releaseCB(GtkWidget *widget, GdkEventButton *event, gpointer use
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
+/* Called when the destination of a drag from the grid calls us back to request the data.
+ * Fills in seletionData with data of the type indicated by info. */
+static void dragDataGetCB(GtkWidget *widget,
+                          GdkDragContext *drag_context,
+                          GtkSelectionData *selectionData,
+                          guint info,
+                          guint time,
+                          gpointer user_data)
+{
+  zMapReturnIfFail(selectionData);
 
+  if (info == TARGET_STRING)
+    {
+      char *str = g_strdup("##gff-version 3\nchr4-04	EST_Human	nucleotide_match	337110	337352	51.000000	+	.	Target=new1.1 366 622 +;percentID=65.3;Gap=M3 D1 M12 I1 M18 D1 M8 I1 M12 D1 M6 I1 M2 I1 M1 I2 M4 I1 M3 I1 M2 I1 M6 D1 M6 D1 M6 D1 M3 D1 M2 D1 M5 I1 M2 I1 M13 I1 M33 I1 M8 I1 M17 I1 M4 I1 M2 I1 M14 I1 M20 I1 M8 I1 M6 I1 M3 I1 M6 ;sequence=GTCGGTTAGGGCCTCACTTCCCTGCTTCCACACCTCAGGGAGGCCTCGGTGATTTTGCCAGAGCCTCAGCCTCCATCGCTCTGTAACCTGCGGGTATTGGATTGATTCGTAGCTAAGACTTCGCGACACCCTTGAAGCTGAGAAATGGAACCCTTAACATTCAGGGATGTGGCCATAGAATTCTCTCCAGAAGAGTGGAAATGCCTGGACCCTGCCCAGCAGAATTTGTATAGAGATGTGATGTTGGAGAACTACAGAAACCTGGTCTCCCTAGGTGAGGATAACTTTAATGCATAATTCCTAATACTCCCTCTGAGTTTTATTTTCTATTTTGTAGAATGTCTTTTGAGATATATCTATATAAAAATGTGTGTCTCACACACACAGCTATGTAAGTTATATATGTGTATAGTAAAATTCTTAACATTGTTGATAGATTCTCAGAAACTGTAAGTGAAGCACCATATCATTTACGGAAACAATGAACTTTAGGGCTGGGTGCAGTGGCTCACGCCTGTCATCCCAAGCCCTTTGGGGAGGCTGAGGTTGGCAGAATCCAGGAGGGTCGCGAGTTATGAGACCAGCTTGGCCAATATTGGTCAAAGCCCCTTGTTCTTACTAACACTGGCTATCACAACAAAACTCCACTCAACAAACATTTTCGGCCGTTCTGTCCTCTAAAAAAATTCTAAAACCACCGTTGCGCCGCGCCCCATCGCATTTACC\nchr4-04	EST_Human	nucleotide_match	337110	337352	51.000000	+	.	Target=new2.1 366 622 +;percentID=65.3;Gap=M3 D1 M12 I1 M18 D1 M8 I1 M12 D1 M6 I1 M2 I1 M1 I2 M4 I1 M3 I1 M2 I1 M6 D1 M6 D1 M6 D1 M3 D1 M2 D1 M5 I1 M2 I1 M13 I1 M33 I1 M8 I1 M17 I1 M4 I1 M2 I1 M14 I1 M20 I1 M8 I1 M6 I1 M3 I1 M6 ;sequence=GTCGGTTAGGGCCTCACTTCCCTGCTTCCACACCTCAGGGAGGCCTCGGTGATTTTGCCAGAGCCTCAGCCTCCATCGCTCTGTAACCTGCGGGTATTGGATTGATTCGTAGCTAAGACTTCGCGACACCCTTGAAGCTGAGAAATGGAACCCTTAACATTCAGGGATGTGGCCATAGAATTCTCTCCAGAAGAGTGGAAATGCCTGGACCCTGCCCAGCAGAATTTGTATAGAGATGTGATGTTGGAGAACTACAGAAACCTGGTCTCCCTAGGTGAGGATAACTTTAATGCATAATTCCTAATACTCCCTCTGAGTTTTATTTTCTATTTTGTAGAATGTCTTTTGAGATATATCTATATAAAAATGTGTGTCTCACACACACAGCTATGTAAGTTATATATGTGTATAGTAAAATTCTTAACATTGTTGATAGATTCTCAGAAACTGTAAGTGAAGCACCATATCATTTACGGAAACAATGAACTTTAGGGCTGGGTGCAGTGGCTCACGCCTGTCATCCCAAGCCCTTTGGGGAGGCTGAGGTTGGCAGAATCCAGGAGGGTCGCGAGTTATGAGACCAGCTTGGCCAATATTGGTCAAAGCCCCTTGTTCTTACTAACACTGGCTATCACAACAAAACTCCACTCAACAAACATTTTCGGCCGTTCTGTCCTCTAAAAAAATTCTAAAACCACCGTTGCGCCGCGCCCCATCGCATTTACC");
+      gtk_selection_data_set_text(selectionData, str, -1);
+    }
+}
 
 
 
