@@ -9,6 +9,7 @@
 <h4>Version 0.23.0</h4>
 <ul>
   <li>Temporary features can now be edited and saved in standalone ZMap, and exported back to GFF.
+  <li>ZMap now works on Windows under Cygwin.
 </ul>
 
 <h4>Version 0.22.0</h4>
