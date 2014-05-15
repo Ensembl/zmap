@@ -2552,7 +2552,7 @@ static char * makeFeatureTranscriptNamePublic( ZMapGFFFeatureData pFeatureData)
  *
  *
  */
-/* 
+/*
 static char * makeFeatureAlignmentNamePrivate( ZMapGFFFeatureData pFeatureData)
 {
   ZMapGFFAttribute *pAttributes = NULL,
@@ -3721,6 +3721,7 @@ static gboolean makeNewFeature_V3( ZMapGFFParser pParserBase,
   char *sMakeFeatureErrorText = NULL,
     *sURL = NULL,
     *sVariation = NULL,
+    *sNote = NULL,
     *sSOType = NULL ;
 
   gboolean bResult = FALSE,
@@ -3903,6 +3904,17 @@ static gboolean makeNewFeature_V3( ZMapGFFParser pParserBase,
             }
 
           /*
+           * Handle the Note attribute
+           */
+          if ((pAttribute = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_Note)))
+            {
+              if (zMapAttParseNote(pAttribute, &sNote))
+                {
+                  zMapFeatureAddDescription(pFeature, sNote) ;
+                }
+            }
+
+          /*
            * Insert handling of other attributes in here as necesary.
            */
 
@@ -3916,6 +3928,8 @@ static gboolean makeNewFeature_V3( ZMapGFFParser pParserBase,
    */
   if (sURL)
     g_free(sURL) ;
+  if (sNote)
+    g_free(sNote) ;
 
   return bResult ;
 }
