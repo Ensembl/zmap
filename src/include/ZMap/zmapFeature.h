@@ -295,9 +295,9 @@ typedef struct ZMapMapBlockStructType
  * doing merges of a context containing the features to be changed with an
  * existing feature context. For a number of reasons this turns out to be
  * the best way to do these operations.
- * 
+ *
  * This struct holds stats about such merges.
- * 
+ *
  * The struct is very bare bones and we can add stuff as needed.
  *  */
 typedef struct ZMapFeatureContextMergeStatsStructType
@@ -1026,6 +1026,7 @@ gboolean zMapFeatureAddVariationString(ZMapFeature feature, char *variation_stri
 gboolean zMapFeatureAddURL(ZMapFeature feature, char *url) ;
 gboolean zMapFeatureAddLocus(ZMapFeature feature, GQuark locus_id) ;
 gboolean zMapFeatureAddText(ZMapFeature feature, GQuark source_id, char *source_text, char *feature_text) ;
+gboolean zMapFeatureAddDescription(ZMapFeature feature, char *data ) ;
 void zMapFeatureSortGaps(GArray *gaps) ;
 int zMapFeatureLength(ZMapFeature feature, ZMapFeatureLengthType length_type) ;
 void zMapFeatureDestroy(ZMapFeature feature) ;

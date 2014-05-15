@@ -265,10 +265,10 @@ gboolean zMapFeatureAnyRemoveFeature(ZMapFeatureAny feature_parent, ZMapFeatureA
         case ZMAPFEATURE_STRUCT_ALIGN:
           {
             ZMapFeatureContext context = (ZMapFeatureContext)feature_parent ;
-        
+
             if (context->master_align == (ZMapFeatureAlignment)feature)
               context->master_align = NULL ;
-        
+
             break ;
           }
         case ZMAPFEATURE_STRUCT_BLOCK:
@@ -444,7 +444,7 @@ gboolean zMapFeatureAddStandardData(ZMapFeature feature, char *feature_name_id, 
         case ZMAPSTYLE_MODE_TRANSCRIPT:
           {
             result = zMapFeatureTranscriptInit(feature) ;
-        
+
             break ;
           }
         default:
@@ -665,6 +665,22 @@ gboolean zMapFeatureAddText(ZMapFeature feature, GQuark source_id, char *source_
   return result ;
 }
 
+/*
+ * Add text to the feature::description data member. If the data is set already
+ * then delete it first.
+ */
+gboolean zMapFeatureAddDescription(ZMapFeature feature, char *data )
+{
+  gboolean result = FALSE ;
+
+  zMapReturnValIfFail(feature && data && *data, result ) ;
+
+  if (feature->description)
+    g_free(feature->description) ;
+  feature->description = g_strdup(data) ;
+
+  return result ;
+}
 
 
 
@@ -707,41 +723,41 @@ int zMapFeatureLength(ZMapFeature feature, ZMapFeatureLengthType length_type)
           {
             length = feature->x2 - feature->x1 + 1 ;
           }
-        
+
         break ;
       }
     case ZMAPFEATURELENGTH_SPLICED:
       {
         /* We want the actual length of the feature blocks, only different for transcripts and alignments. */
-        
+
         if (feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT && feature->feature.transcript.exons)
           {
             int i ;
             ZMapSpan span ;
             GArray *exons = feature->feature.transcript.exons ;
-        
+
             length = 0 ;
-        
+
             for (i = 0 ; i < exons->len ; i++)
               {
         span = &g_array_index(exons, ZMapSpanStruct, i) ;
-        
+
         length += (span->x2 - span->x1 + 1) ;
               }
-        
+
           }
         else if (feature->mode == ZMAPSTYLE_MODE_ALIGNMENT && feature->feature.homol.align)
           {
             int i ;
             ZMapAlignBlock align ;
             GArray *gaps = feature->feature.homol.align ;
-        
+
             length = 0 ;
-        
+
             for (i = 0 ; i < gaps->len ; i++)
               {
                 align = &g_array_index(gaps, ZMapAlignBlockStruct, i) ;
-        
+
                 length += (align->q2 - align->q1 + 1) ;
               }
           }
@@ -749,7 +765,7 @@ int zMapFeatureLength(ZMapFeature feature, ZMapFeatureLengthType length_type)
           {
             length = (feature->x2 - feature->x1 + 1) ;
           }
-        
+
         break ;
       }
     default:
@@ -1380,13 +1396,13 @@ gboolean zMapFeatureContextRemoveAlignment(ZMapFeatureContext feature_context,
  * If all ok returns ZMAPFEATURE_CONTEXT_OK, merged context in merged_context_inout
  * and diff context in diff_context_out. Otherwise returns a code to show what went
  * wrong, unaltered original context in merged_context_inout and diff_context_out is NULL.
- * 
+ *
  * N.B. under new scheme, new_context_inout will be always be destroyed && NULL'd....
- * 
- * 
+ *
+ *
  * If merge_stats_out is non-NULL then a pointer to a struct containing stats about the merge is
  * returned in merge_stats_out, the struct should be g_free'd when no longer required.
- * 
+ *
  */
 ZMapFeatureContextMergeCode zMapFeatureContextMerge(ZMapFeatureContext *merged_context_inout,
     ZMapFeatureContext *new_context_inout,
@@ -1482,13 +1498,13 @@ ZMapFeatureContextMergeCode zMapFeatureContextMerge(ZMapFeatureContext *merged_c
 
           if (merge_data.new_features)
             {
-        
-        
+
+
               if (merge_debug_G)
                 {
                   /* Debug stuff... */
                   GError *err = NULL ;
-                
+
                   printf("(Merge) diff context:\n") ;
                   zMapFeatureDumpStdOutFeatures(diff_context, NULL, &err) ;
                 }
@@ -1498,7 +1514,7 @@ ZMapFeatureContextMergeCode zMapFeatureContextMerge(ZMapFeatureContext *merged_c
                 {
                   /* Debug stuff... */
                   GError *err = NULL ;
-                
+
                   printf("(Merge) full context:\n") ;
                   zMapFeatureDumpStdOutFeatures(current_context, NULL, &err) ;
                 }
@@ -1522,7 +1538,7 @@ ZMapFeatureContextMergeCode zMapFeatureContextMerge(ZMapFeatureContext *merged_c
               if (diff_context)
                 {
                   zMapFeatureContextDestroy(diff_context, TRUE);
-        
+
                   diff_context = NULL ;
                 }
 
@@ -1754,7 +1770,7 @@ static ZMapFeatureAny featureAnyCopy(ZMapFeatureAny orig_feature_any, GDestroyNo
         new_block->sequence.type = ZMAPSEQUENCE_NONE ;
         new_block->sequence.length = 0 ;
         new_block->sequence.sequence = NULL ;
-        
+
         break;
       }
     case ZMAPFEATURE_STRUCT_FEATURESET:
@@ -1794,7 +1810,7 @@ static ZMapFeatureAny featureAnyCopy(ZMapFeatureAny orig_feature_any, GDestroyNo
         if (new_feature->mode == ZMAPSTYLE_MODE_ALIGNMENT)
           {
             ZMapAlignBlockStruct align;
-        
+
             if (orig_feature->feature.homol.align != NULL
                                 && orig_feature->feature.homol.align->len > (guint)0)
               {
@@ -1825,7 +1841,7 @@ static ZMapFeatureAny featureAnyCopy(ZMapFeatureAny orig_feature_any, GDestroyNo
                   g_array_sized_new(FALSE, TRUE,
                     sizeof(ZMapSpanStruct),
                     orig_feature->feature.transcript.exons->len);
-        
+
                 for (i = 0; i < orig_feature->feature.transcript.exons->len; i++)
                   {
                     span = g_array_index(orig_feature->feature.transcript.exons, ZMapSpanStruct, i);
@@ -1840,7 +1856,7 @@ static ZMapFeatureAny featureAnyCopy(ZMapFeatureAny orig_feature_any, GDestroyNo
                   g_array_sized_new(FALSE, TRUE,
                     sizeof(ZMapSpanStruct),
                     orig_feature->feature.transcript.introns->len);
-                
+
                 for (i = 0; i < orig_feature->feature.transcript.introns->len; i++)
                   {
                     span = g_array_index(orig_feature->feature.transcript.introns, ZMapSpanStruct, i);
@@ -1949,7 +1965,7 @@ static void destroyFeatureAny(gpointer data)
         if(feature_set->masker_sorted_features)
           g_list_free(feature_set->masker_sorted_features);
         feature_set->masker_sorted_features = NULL;
-        
+
         if(feature_set->loaded)
           {
             for(l = feature_set->loaded;l;l = l->next)
@@ -1961,7 +1977,7 @@ static void destroyFeatureAny(gpointer data)
         feature_set->loaded = NULL;
 
         nbytes = sizeof(ZMapFeatureSetStruct) ;
-        
+
         break;
       }
     case ZMAPFEATURE_STRUCT_FEATURE:
@@ -2631,15 +2647,15 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
         if (feature_any->children)
           {
             ZMapFeatureAny diff_feature_any;
-        
+
             children = TRUE;/* We have children. */
-        
+
             /* This removes the link in the "from" feature to it's parent
              * and the status makes sure it gets removed from the parent's
              * hash on return. */
             feature_any->parent = NULL;
             status = ZMAP_CONTEXT_EXEC_STATUS_OK_DELETE;
-        
+
             if (!(*view_path_ptr = zMapFeatureAnyGetFeatureByID(*view_path_parent_ptr,
                                                                 feature_any->unique_id)))
               {
@@ -2663,7 +2679,7 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
                 diff_feature_any    = feature_any;
 
                 diff_feature_any->parent = *view_path_parent_ptr;
-        
+
                 status |= ZMAP_CONTEXT_EXEC_STATUS_DONT_DESCEND;
 
                 /* Not descending to feature level so need to record number of features. */
@@ -2677,7 +2693,7 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
                 /* If the feature is there we need to copy it and then recurse down until
                  * we get to the individual feature level. */
                 diff_feature_any = featureAnyCopy(feature_any, NULL);
-                
+
                 featureAnyAddToDestroyList(merge_data->diff_context, diff_feature_any);
               }
 
@@ -2786,9 +2802,9 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
             merge_data->feature_count++ ;
 
             featureAnyAddFeature(*diff_path_parent_ptr, feature_any) ;
-        
+
             featureAnyAddFeature(*view_path_parent_ptr, feature_any) ;
-        
+
 
             if (merge_debug_G)
               zMapLogWarning("feature(%p)->parent = %p. current_view_set = %p",
@@ -3070,7 +3086,7 @@ void zMapFeatureAddStyleMode(ZMapFeatureTypeStyle style, ZMapStyleMode f_type)
 
             /* Initially alignments should not be bumped. */
             zMapStyleInitBumpMode(style, ZMAPBUMP_NAME_COLINEAR, ZMAPBUMP_UNBUMP) ;
-        
+
             break ;
           }
         case ZMAPSTYLE_MODE_TRANSCRIPT:
@@ -3079,10 +3095,10 @@ void zMapFeatureAddStyleMode(ZMapFeatureTypeStyle style, ZMapStyleMode f_type)
 
             /* We simply never want transcripts to bump. */
             zMapStyleInitBumpMode(style, ZMAPBUMP_NAME_INTERLEAVE, ZMAPBUMP_NAME_INTERLEAVE) ;
-        
+
             /* We also never need them to be hidden when they don't bump the marked region. */
             zMapStyleSetDisplay(style, ZMAPSTYLE_COLDISPLAY_SHOW) ;
-        
+
             break ;
           }
         case ZMAPSTYLE_MODE_SEQUENCE:
