@@ -116,8 +116,8 @@ typedef struct _GFFDumpDataStruct
 } GFFDumpDataStruct;
 
 /* Functions to dump the header section of gff files */
-static gboolean dump_full_header(ZMapFeatureAny feature_any, GIOChannel *file, GError **error_out,
-  const char **sequence_in_out) ;
+static gboolean dump_full_header(ZMapFeatureAny feature_any, GIOChannel *file, 
+                                 const char **sequence_in_out, GString **header_string_out, GError **error_out) ;
 static ZMapFeatureContextExecuteStatus get_type_seq_header_cb(GQuark key, gpointer data,
   gpointer user_data, char **err_out) ;
 
@@ -309,7 +309,7 @@ gboolean zMapGFFDumpRegion(ZMapFeatureAny dump_set, GHashTable *styles,
      && (dump_set->struct_type != ZMAPFEATURE_STRUCT_FEATURE) )
     return result ;
 
-  result = dump_full_header(dump_set, file, error_out, &sequence) ;
+  result = dump_full_header(dump_set, file, &sequence, NULL, error_out) ;
 
   if (result)
     {
@@ -352,12 +352,13 @@ gboolean zMapGFFDumpRegion(ZMapFeatureAny dump_set, GHashTable *styles,
 }
 
 /*!
- * \brief Dump a list of ZMapFeatureAny. sequence can be NULL
+ * \brief Dump a list of ZMapFeatureAny to a file and/or text buffer. sequence can be NULL
  */
-gboolean zMapGFFDumpList(GList *dump_list, GHashTable *styles, char *sequence, GIOChannel *file, GError **error_out)
+gboolean zMapGFFDumpList(GList *dump_list, GHashTable *styles, char *sequence, GIOChannel *file, GString **text_out, GError **error_out)
 {
   const char *int_sequence = NULL;
   gboolean result = FALSE ;
+  GString *header_string = NULL ;
 
   if(dump_list && dump_list->data)
     {
@@ -366,7 +367,7 @@ gboolean zMapGFFDumpList(GList *dump_list, GHashTable *styles, char *sequence, G
       feature_any  = (ZMapFeatureAny)(dump_list->data);
       int_sequence = sequence;
 
-      result       = dump_full_header(feature_any, file, error_out, &int_sequence) ;
+      result       = dump_full_header(feature_any, file, &int_sequence, &header_string, error_out) ;
     }
 
   if (result)
@@ -399,8 +400,10 @@ gboolean zMapGFFDumpList(GList *dump_list, GHashTable *styles, char *sequence, G
        * Subset, there's a chance it wouldn't get set at all */
       gff_data.gff_sequence = int_sequence;
 
-      result = zMapFeatureListDumpToFile(dump_list, styles, dump_gff_cb, &gff_data,
- file, error_out) ;
+      result = zMapFeatureListDumpToFileOrBuffer(dump_list, styles, dump_gff_cb, &gff_data, file, text_out, error_out) ;
+
+      if (text_out && header_string && header_string->str)
+        g_string_prepend(*text_out, header_string->str) ;
     }
 
   return result ;
@@ -419,7 +422,7 @@ gboolean zMapGFFDumpForeachList(ZMapFeatureAny first_feature, GHashTable *styles
     {
       int_sequence = sequence;
 
-      if ((result = dump_full_header(first_feature, file, error_out, &int_sequence)))
+      if ((result = dump_full_header(first_feature, file, &int_sequence, NULL, error_out)))
         {
           GFFDumpData gff_data ;
 
@@ -462,7 +465,8 @@ gboolean zMapGFFDumpForeachList(ZMapFeatureAny first_feature, GHashTable *styles
 /* INTERNALS */
 
 static gboolean dump_full_header(ZMapFeatureAny feature_any, GIOChannel *file,
-                                 GError **error_out, const char **sequence_in_out)
+                                 const char **sequence_in_out, GString **header_string_out,
+                                 GError **error_out)
 {
   GFFHeaderDataStruct header_data = {NULL};
   char *time_string ;
@@ -493,20 +497,30 @@ static gboolean dump_full_header(ZMapFeatureAny feature_any, GIOChannel *file,
 
   if(header_data.status)
     {
-      GIOStatus write_status ;
-      gsize bytes_written ;
+      if (file)
+        {
+          GIOStatus write_status ;
+          gsize bytes_written ;
 
-      write_status = g_io_channel_write_chars(file, header_data.header_string->str, header_data.header_string->len, &bytes_written, error_out) ;
-      if (write_status != G_IO_STATUS_NORMAL)
-      {
-        header_data.status = FALSE;
-      }
+          write_status = g_io_channel_write_chars(file, header_data.header_string->str, header_data.header_string->len, &bytes_written, error_out) ;
+          if (write_status != G_IO_STATUS_NORMAL)
+            {
+              header_data.status = FALSE;
+            }
+        }
 
       if(sequence_in_out)
         *sequence_in_out = header_data.gff_sequence;
-    }
 
-  g_string_free(header_data.header_string, TRUE);
+      if (header_string_out)
+        *header_string_out = header_data.header_string ;
+      else
+        g_string_free(header_data.header_string, TRUE);
+    }
+  else
+    {
+      g_string_free(header_data.header_string, TRUE);
+    }
 
   return header_data.status;
 }

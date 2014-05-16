@@ -1589,6 +1589,8 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
 void zmapWindowFocusHighlightHotColumn(ZMapWindowFocus focus) ;
 void zmapWindowFocusUnHighlightHotColumn(ZMapWindowFocus focus) ;
 
+GList *zmapWindowFocusGetFeatureList(ZMapWindowFocus focus) ;
+
 void zmapWindowHighlightFocusItems(ZMapWindow window) ;
 void zmapWindowUnHighlightFocusItems(ZMapWindow window) ;
 
