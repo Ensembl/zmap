@@ -61,10 +61,6 @@
 #define ZOOM_SENSITIVITY 5.0
 
 
-/* Supported drag-and-drop target types */
-typedef enum {TARGET_STRING, TARGET_URL} DragDropTargetType;
-
-
 /* Local struct to hold current features and new_features obtained from a server and
  * relevant types. */
 typedef struct
@@ -2279,8 +2275,6 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
   gtk_signal_connect(GTK_OBJECT(window->toplevel), "client_event",
 		     GTK_SIGNAL_FUNC(dataEventCB), (gpointer)window) ;
 
-  g_signal_connect(parent_widget, "drag-data-get", G_CALLBACK(dragDataGetCB), window);
-
   /* always show scrollbars, however big the display */
   gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(window->scrolled_window),
 				 GTK_POLICY_ALWAYS, GTK_POLICY_ALWAYS) ;
@@ -2289,6 +2283,8 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
    * and set the background to be white. */
   canvas = foo_canvas_new();
   window->canvas = FOO_CANVAS(canvas);
+
+  g_signal_connect(canvas, "drag-data-get", G_CALLBACK(dragDataGetCB), window);
 
   foo_bug_set(canvas,"window");
 
@@ -3192,6 +3188,7 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
 	  /* On later versions of the mac I had to add this in to get motion events reported,
 	   * hopefully this won't mess up other platforms....need to check. */
 	  gtk_widget_add_events(GTK_WIDGET(window->toplevel), GDK_POINTER_MOTION_MASK) ;
+          gtk_widget_add_events(GTK_WIDGET(window->canvas), GDK_POINTER_MOTION_MASK) ;
 
 	  signal_id = g_signal_connect(GTK_OBJECT(window->canvas), g_quark_to_string(signal_detail),
 				       GTK_SIGNAL_FUNC(canvasWindowEventCB), (gpointer)window) ;
@@ -3332,7 +3329,6 @@ static gboolean windowGeneralEventCB(GtkWidget *wigdet, GdkEvent *event, gpointe
 }
 
 
-
 /* This gets run _BEFORE_ any of the canvas item handlers which is good because we can use it
  * to handle more general events such as "click to focus" etc., _BUT_ be careful when adding
  * event handlers here, you could override a canvas item event handler and stop something
@@ -3387,19 +3383,6 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 #if MOUSE_DEBUG
   zMapLogWarning("canvas event %d",  event->type);
 #endif
-
-  /* Set up targets for drag and drop */
-  static GtkTargetEntry targetentries[] =
-    {
-      { "STRING",        0, TARGET_STRING },
-      { "text/plain",    0, TARGET_STRING },
-      { "text/uri-list", 0, TARGET_URL },
-    };
-
-  static GtkTargetList *targetlist = NULL;
-
-  if (!targetlist)
-    targetlist= gtk_target_list_new(targetentries, 3);
 
   /* We record whether we are inside the window to enable user to cancel certain mouse related
    * actions by moving outside the window. */
@@ -3533,14 +3516,10 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 		      else
 			{
 			  /* Show a rubber band for zooming/marking. */
-			  dragging = TRUE;
+                          dragging = TRUE;
 
-                          gtk_drag_begin(window->toplevel, targetlist, 
-                                         GDK_ACTION_COPY|GDK_ACTION_MOVE|GDK_ACTION_LINK,
-                                         1, (GdkEvent*)event);
-
-                          //if (!window->rubberband)
-                          //  window->rubberband = zMapDrawRubberbandCreate(window->canvas);
+                          if (!window->rubberband)
+                            window->rubberband = zMapDrawRubberbandCreate(window->canvas);
 			}
 
 		      /* At this stage we don't know if we are rubber banding etc. so pass the
@@ -3687,7 +3666,13 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 		 * but foo_canvas_item_grab/ungrab specifically the ungrab didn't work */
 		zMapDrawRubberbandResize(window->rubberband, origin_x, origin_y, wx, wy);
 
-		event_handled = TRUE; /* We _ARE_ handling */
+                /* gb10: this is a bit messy but I'm not sure how to get around it. We need to 
+                 * pass this event on to canvasItemEventCB to see if we should initiate drag and
+                 * drop. But we don't know at this point whether we should be doing rubberbanding
+                 * or not. It works ok to start the rubberbanding but to return false here to let 
+                 * drag-and-drop start, which then stops us getting more motion notify events and 
+                 * therefore stops the rubberbanding. */
+                event_handled = FALSE;
 	      }
 	    else if (guide)
 	      {
@@ -3974,6 +3959,10 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
                 /* Must get rid of rubberband item as it is not needed. */
                 gtk_object_destroy(GTK_OBJECT(window->rubberband)) ;
                 window->rubberband = NULL ;
+              }
+            else
+              {
+                event_handled = FALSE ;
               }
 
             dragging = FALSE ;

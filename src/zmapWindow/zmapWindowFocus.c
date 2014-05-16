@@ -534,6 +534,31 @@ gboolean zmapWindowFocusIsItemInHotColumn(ZMapWindowFocus focus, FooCanvasItem *
 }
 
 
+gboolean zmapWindowFocusIsItemFocused(ZMapWindowFocus focus, FooCanvasItem *item)
+{
+  gboolean result = FALSE ;
+
+  if ((focus && focus->focus_item_set))
+    {
+      GList *set_item = focus->focus_item_set ;
+
+      for ( ; set_item ; set_item = set_item->next)
+        {
+          ZMapWindowFocusItem focus_item = (ZMapWindowFocusItem)(set_item->data) ;
+
+          if (focus_item->item == item)
+            {
+              result = TRUE ;
+              break ;
+            }
+        }
+    }
+
+  return result ;
+}
+
+
+
 
 // set the hot item, which is already in the focus set
 // NB: this is only called from this file
