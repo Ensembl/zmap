@@ -206,7 +206,7 @@ gboolean zMapFeatureDumpToFileName(ZMapFeatureContext feature_context,char *file
 
 
 /*!
- * \brief Similar to zMapFeatureListDumpToFile, but expose it's internals enough that
+ * \brief Similar to zMapFeatureListDumpToFileOrBuffer, but expose it's internals enough that
  *        users can call g_list_foreach() on their list using the returned pointers.
  *        The GFunc expects (ZMapFeatureAny feature, gpointer dumper_data_out)
  */
@@ -284,18 +284,22 @@ gboolean zMapFeatureListForeachDumperDestroy(gpointer dumper_data)
   return result;
 }
 
-gboolean zMapFeatureListDumpToFile(GList                     *feature_list,
-   GHashTable                 *styles,
-   ZMapFeatureDumpFeatureFunc dump_func,
-   gpointer                   dump_user_data,
-   GIOChannel                *dump_file,
-   GError                   **dump_error_out)
+
+/* This dumps to the given dump_file if that is non-null, and/or returns the result
+ * in text_out, if that is non-null */
+gboolean zMapFeatureListDumpToFileOrBuffer(GList                     *feature_list,
+                                           GHashTable                 *styles,
+                                           ZMapFeatureDumpFeatureFunc dump_func,
+                                           gpointer                   dump_user_data,
+                                           GIOChannel                *dump_file,
+                                           GString                   **text_out,
+                                           GError                   **dump_error_out)
 {
   gboolean result = FALSE;
   DumpFeaturesToFileStruct dump_data = {FALSE};
   DumpAnyStruct dump_any;
 
-  if (!dump_file || !dump_func || !dump_error_out) 
+  if (!(dump_file || text_out) || !dump_func || !dump_error_out) 
     return result ;
 
   dump_any.data_type = DUMP_DATA_ANY;
@@ -311,11 +315,15 @@ gboolean zMapFeatureListDumpToFile(GList                     *feature_list,
 
   g_list_foreach(feature_list, invoke_dump_features_cb, &dump_data);
 
-  g_string_free(dump_data.dump_string, TRUE);
+  /* If the caller has requested the text output, return the GString, otherwise free it */
+  if (text_out)
+    *text_out = dump_data.dump_string ;
+  else
+    g_string_free(dump_data.dump_string, TRUE);
 
   result = dump_data.status ;
 
-  if(result)
+  if(result && dump_file)
     {
       if (g_io_channel_flush(dump_file, dump_error_out) != G_IO_STATUS_NORMAL)
         result = FALSE;
@@ -494,41 +502,44 @@ char   **err_out)
 
   if(dump_data->status && dump_data->dump_string->len > 0)
     {
-      GError *io_error = NULL;
-      gsize bytes_written = 0;
-      gssize bytes_to_write = dump_data->dump_string->len;
-      GIOStatus write_status;
+      if (dump_data->channel)
+        {
+          GError *io_error = NULL;
+          gsize bytes_written = 0;
+          gssize bytes_to_write = dump_data->dump_string->len;
+          GIOStatus write_status;
 
-      /* we can now print dump_data->dump_string to file */
-      if((write_status = g_io_channel_write_chars(dump_data->channel,
-                                                  dump_data->dump_string->str,
-                                                  dump_data->dump_string->len,
-                                                  &bytes_written,
-                                                  &io_error)) == G_IO_STATUS_NORMAL)
-        {
-          if(bytes_written == bytes_to_write)
-            dump_data->dump_string = g_string_truncate(dump_data->dump_string, 0);
+          /* we can now print dump_data->dump_string to file */
+          if((write_status = g_io_channel_write_chars(dump_data->channel,
+                                                      dump_data->dump_string->str,
+                                                      dump_data->dump_string->len,
+                                                      &bytes_written,
+                                                      &io_error)) == G_IO_STATUS_NORMAL)
+            {
+              if(bytes_written == bytes_to_write)
+                dump_data->dump_string = g_string_truncate(dump_data->dump_string, 0);
+              else
+                dump_data->dump_string = g_string_erase(dump_data->dump_string, 0, bytes_written);
+            }
+          else if(write_status == G_IO_STATUS_ERROR)
+            {
+              /* error handling... */
+              dump_data->status = FALSE;
+              status = ZMAP_CONTEXT_EXEC_STATUS_ERROR;
+              /* we need to pass on the error... */
+            }
+          else if(write_status == G_IO_STATUS_AGAIN)
+            {
+              /* what does this mean?  We'll probably get round to the
+               * data again, do we need to g_string_erase? */
+              
+              if(bytes_written != 0)
+                dump_data->dump_string = g_string_erase(dump_data->dump_string, 0, bytes_written);
+            }
           else
-            dump_data->dump_string = g_string_erase(dump_data->dump_string, 0, bytes_written);
-        }
-      else if(write_status == G_IO_STATUS_ERROR)
-        {
-          /* error handling... */
-          dump_data->status = FALSE;
-          status = ZMAP_CONTEXT_EXEC_STATUS_ERROR;
-          /* we need to pass on the error... */
-        }
-      else if(write_status == G_IO_STATUS_AGAIN)
-        {
-          /* what does this mean?  We'll probably get round to the
-           * data again, do we need to g_string_erase? */
-        
-          if(bytes_written != 0)
-            dump_data->dump_string = g_string_erase(dump_data->dump_string, 0, bytes_written);
-        }
-      else
-        {
-          /* EOF? we're writing aren't we! */
+            {
+              /* EOF? we're writing aren't we! */
+            }
         }
     }
 

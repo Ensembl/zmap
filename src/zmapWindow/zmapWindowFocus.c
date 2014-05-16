@@ -649,6 +649,27 @@ void zmapWindowFocusUnHighlightHotColumn(ZMapWindowFocus focus)
 }
 
 
+/* Return the focused items as a GList of ZMapFeature's */
+GList *zmapWindowFocusGetFeatureList(ZMapWindowFocus focus)
+{
+  GList *result = NULL ;
+
+  if (focus && focus->focus_item_set)
+    {
+      GList *set_item = focus->focus_item_set ;
+
+      for ( ; set_item ; set_item = set_item->next)
+        {
+          ZMapWindowFocusItem focus_item = (ZMapWindowFocusItem)(set_item->data) ;
+          
+          if (focus_item->feature)
+            result = g_list_append(result, focus_item->feature) ;
+        }
+    }
+
+  return result ;
+}
+
 
 FooCanvasItem *zmapWindowFocusGetHotItem(ZMapWindowFocus focus)
 {

@@ -152,5 +152,6 @@ gboolean zMapGFFDumpForeachList(ZMapFeatureAny first_feature, GHashTable *styles
 				GIOChannel *file, GError **error_out,
 				char *sequence,
 				GFunc *list_func_out, gpointer *list_data_out) ;
+gboolean zMapGFFDumpList(GList *dump_list, GHashTable *styles, char *sequence, GIOChannel *file, GString **text_out, GError **error_out) ;
 
 #endif /* ZMAP_GFF_H */
