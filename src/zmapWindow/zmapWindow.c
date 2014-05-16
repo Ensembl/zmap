@@ -1579,7 +1579,7 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
 			       gboolean replace_highlight_item, gboolean highlight_same_names,
                                gboolean sub_part, ZMapWindowDisplayStyle display_style)
 {
-  static const int max_variation_str_len = 60 ;
+  static const int max_variation_str_len = 20 ;
   char *p = NULL ;
   GString *temp_string ;
   ZMapWindowCanvasItem top_canvas_item;
@@ -1792,11 +1792,8 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
 	    select.feature_desc.feature_length = g_strdup_printf("%d", feature_length) ;
 
           /* select.feature_desc.feature_term   = feature_term; */
-          const char * sSOAcc = g_quark_to_string(feature->SO_accession) ;
-          char * sSOAcc_id = zMapSOIDDataName2SOAcc(sSOAcc) ;
-          select.feature_desc.feature_term =  sSOAcc_id ? g_strdup_printf("%s (%s)", sSOAcc, sSOAcc_id) : g_strdup(sSOAcc) ;
-          if (sSOAcc_id)
-            g_free(sSOAcc_id) ;
+          const char * feature_term_string = g_quark_to_string(feature->SO_accession) ;
+          select.feature_desc.feature_term =  g_strdup(feature_term_string) ;
 	}
 
 
@@ -1884,7 +1881,7 @@ void zmapWindowUpdateInfoPanel(ZMapWindow window,
         {
           select.feature_desc.feature_name = g_strdup_printf("%s (%s)",
             (char *)g_quark_to_string(feature->original_id),
-							     (char *)(strlen(feature->feature.basic.variation_str) < max_variation_str_len ? feature->feature.basic.variation_str : "long allele string") ) ;
+            (char *)(strlen(feature->feature.basic.variation_str) < max_variation_str_len ? feature->feature.basic.variation_str : "allele str") ) ;
           if (strlen(feature->feature.basic.variation_str) >= max_variation_str_len)
             {
               /* select.feature_desc.feature_variation_string = g_strdup(feature->feature.basic.variation_str) ; */
