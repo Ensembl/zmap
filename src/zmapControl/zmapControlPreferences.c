@@ -70,8 +70,10 @@ static char *help_text_G =
   "\t\"Cancel\" to discard them and quit the resources dialog\n"
   "\t\"Ok\" to apply them and quit the resources dialog\n" ;
 
-/* WHAT IS THIS FOR ????? */
-static ZMapGuiNotebook note_book_G = NULL ;
+/* WHAT IS THIS FOR ????? 
+ * (sm23) I reomved this as it is not used.  
+ */
+/* static ZMapGuiNotebook note_book_G = NULL ; */
 
 
 
@@ -84,7 +86,7 @@ void zmapControlShowPreferences(ZMap zmap)
   ZMapGuiNotebook note_book ;
   char *notebook_title ;
   GtkWidget *notebook_dialog ;
-  ZMapGuiNotebookChapter chapter ;
+  /* ZMapGuiNotebookChapter chapter ; */
 
   zMapReturnIfFailSafe(!(zmap->preferences_note_book)) ;
 
