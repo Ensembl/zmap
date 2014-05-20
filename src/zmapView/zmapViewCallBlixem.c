@@ -858,14 +858,6 @@ static gboolean getUserPrefs(char *config_file, BlixemConfigData curr_prefs)
       zMapConfigIniContextDestroy(context);
     }
 
-  /* If a config file is specified, check that it can be found */
-  if (file_prefs.config_file && !zMapFileAccess(file_prefs.config_file, "rw"))
-    {
-      zMapShowMsg(ZMAP_MSG_WARNING,
-                  "The Blixem config file \"%s\" cannot be found in your path or it is not read/writeable.",
-                  file_prefs.config_file) ;
-    }
-
   /* We need a blixem script. If it wasn't given, set a default */
   if (!file_prefs.script)
     {
@@ -945,8 +937,15 @@ static gboolean getUserPrefs(char *config_file, BlixemConfigData curr_prefs)
 	file_prefs.kill_on_exit = curr_prefs->kill_on_exit ;
     }
 
-  *curr_prefs = file_prefs ;				    /* Struct copy. */
+  /* If a config file is specified, check that it can be found */
+  if (file_prefs.config_file && !zMapFileAccess(file_prefs.config_file, "rw"))
+    {
+      zMapShowMsg(ZMAP_MSG_WARNING,
+                  "The Blixem config file \"%s\" cannot be found in your path or it is not read/writeable.",
+                  file_prefs.config_file) ;
+    }
 
+  *curr_prefs = file_prefs ;				    /* Struct copy. */
 
   return status ;
 }
@@ -3492,8 +3491,9 @@ static void readChapter(ZMapGuiNotebookChapter chapter)
 
       if (zMapGUINotebookGetTagValue(page, "Host network id", "string", &string_value))
 	{
-	  if (string_value && *string_value
-	      && strcmp(string_value, blixem_config_curr_G.netid) != 0)
+          if (string_value && *string_value && 
+              (!blixem_config_curr_G.netid ||
+               strcmp(string_value, blixem_config_curr_G.netid) != 0))
 	    {
 	      g_free(blixem_config_curr_G.netid) ;
 
@@ -3520,8 +3520,9 @@ static void readChapter(ZMapGuiNotebookChapter chapter)
 
       if (zMapGUINotebookGetTagValue(page, "Config File", "string", &string_value))
 	{
-	  if (string_value && *string_value
-	      && strcmp(string_value, blixem_config_curr_G.config_file) != 0)
+          if (string_value && *string_value && 
+              (!blixem_config_curr_G.config_file ||
+               strcmp(string_value, blixem_config_curr_G.config_file) != 0))
 	    {
 	      g_free(blixem_config_curr_G.config_file) ;
 
@@ -3532,8 +3533,9 @@ static void readChapter(ZMapGuiNotebookChapter chapter)
 
       if (zMapGUINotebookGetTagValue(page, "Launch script", "string", &string_value))
 	{
-	  if (string_value && *string_value
-	      && strcmp(string_value, blixem_config_curr_G.script) != 0)
+          if (string_value && *string_value && 
+              (!blixem_config_curr_G.script ||
+               strcmp(string_value, blixem_config_curr_G.script) != 0))
 	    {
 	      g_free(blixem_config_curr_G.script) ;
 
