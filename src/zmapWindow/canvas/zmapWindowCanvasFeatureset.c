@@ -2409,8 +2409,16 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
   foo_canvas_item_i2w (item, &fi->dx, &fi->dy);
   /* ref to zMapCanvasFeaturesetDrawBoxMacro to see how seq coords map to world coords and then canvas coords */
 
-  foo_canvas_c2w(item->canvas,0,floor(expose->area.y - 1),NULL,&y1);
-  foo_canvas_c2w(item->canvas,0,ceil(expose->area.y + expose->area.height + 1),NULL,&y2);
+  /* 
+   * (sm23) The correction here extends the region that will be used to signal a redraw of 
+   * the feature in canvas coordinates. It is necessary because the glyphs are drawn
+   * as part of the feature paint functions, but are not within the features' coordinates. 
+   * The choice of value here is a little arbitrary as there is not hard limit on 
+   * glyph sizes and these quantities are not easily queried. 
+   */ 
+  int pixel_correction = 10 ; 
+  foo_canvas_c2w(item->canvas,0,floor(expose->area.y - 1 - pixel_correction),NULL,&y1);
+  foo_canvas_c2w(item->canvas,0,ceil(expose->area.y + expose->area.height + 1 + pixel_correction),NULL,&y2);
 
 #if 0
 
@@ -2471,11 +2479,15 @@ void  zmap_window_featureset_item_item_draw (FooCanvasItem *item, GdkDrawable *d
     {
       feat = (ZMapWindowCanvasFeature) sl->data;
 
-      //      if(debug && feat->feature) printf("feat: %s %lx %f %f\n",g_quark_to_string(feat->feature->unique_id), feat->flags, feat->y1,feat->y2);
-      if(!is_line && feat->y1 > y2)		/* for lines we have to do one more */
+      /* if(debug && feat->feature) printf("feat: %s %lx %f %f\n",g_quark_to_string(feat->feature->unique_id), feat->flags, feat->y1,feat->y2); */
+      if(!is_line && (feat->y1-y2 > 1.0)) //feat->y1 > y2)		/* for lines we have to do one more */
 	break;	/* finished */
 
-      if(feat->y2 < y1)
+      /* 
+       * This test is really to see if the coordinates differ by more than one base, BUT 
+       * this is only true if y2 - y1 > 1.0 since they are both double values. 
+       */
+      if ((y1-feat->y2) > 1.0 ) 
 	{
 	  /* if bumped and complex then the first feature does the join up lines */
 	  if(!fi->bumped || feat->left)
