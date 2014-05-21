@@ -54,12 +54,12 @@
 #include <zmapWindowCanvasItem.h>
 #include <zmapWindowCanvasFeatureset.h>
 #include <zmapWindow_P.h>
+#include <ZMap/zmapGFF.h>
 
 
 
 /* If zoom factor less than this then we don't do it. */
 #define ZOOM_SENSITIVITY 5.0
-
 
 
 /* Local struct to hold current features and new_features obtained from a server and
@@ -197,6 +197,13 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 //static gboolean pressCB(GtkWidget *widget, GdkEventButton *event, gpointer user_data) ;
 //static gboolean motionCB(GtkWidget *widget, GdkEventMotion *event, gpointer user_data) ;
 //static gboolean releaseCB(GtkWidget *widget, GdkEventButton *event, gpointer user_data) ;
+
+static void dragDataGetCB(GtkWidget *widget,
+                          GdkDragContext *drag_context,
+                          GtkSelectionData *selectionData,
+                          guint info,
+                          guint time,
+                          gpointer user_data) ;
 
 static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event) ;
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -2278,6 +2285,8 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
   canvas = foo_canvas_new();
   window->canvas = FOO_CANVAS(canvas);
 
+  g_signal_connect(canvas, "drag-data-get", G_CALLBACK(dragDataGetCB), window);
+
   foo_bug_set(canvas,"window");
 
   /* This will be removed when RT:1589 is resolved */
@@ -3180,6 +3189,7 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
 	  /* On later versions of the mac I had to add this in to get motion events reported,
 	   * hopefully this won't mess up other platforms....need to check. */
 	  gtk_widget_add_events(GTK_WIDGET(window->toplevel), GDK_POINTER_MOTION_MASK) ;
+          gtk_widget_add_events(GTK_WIDGET(window->canvas), GDK_POINTER_MOTION_MASK) ;
 
 	  signal_id = g_signal_connect(GTK_OBJECT(window->canvas), g_quark_to_string(signal_detail),
 				       GTK_SIGNAL_FUNC(canvasWindowEventCB), (gpointer)window) ;
@@ -3320,7 +3330,6 @@ static gboolean windowGeneralEventCB(GtkWidget *wigdet, GdkEvent *event, gpointe
 }
 
 
-
 /* This gets run _BEFORE_ any of the canvas item handlers which is good because we can use it
  * to handle more general events such as "click to focus" etc., _BUT_ be careful when adding
  * event handlers here, you could override a canvas item event handler and stop something
@@ -3375,7 +3384,6 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 #if MOUSE_DEBUG
   zMapLogWarning("canvas event %d",  event->type);
 #endif
-
 
   /* We record whether we are inside the window to enable user to cancel certain mouse related
    * actions by moving outside the window. */
@@ -3509,10 +3517,10 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 		      else
 			{
 			  /* Show a rubber band for zooming/marking. */
-			  dragging = TRUE;
+                          dragging = TRUE;
 
-			  if (!window->rubberband)
-			    window->rubberband = zMapDrawRubberbandCreate(window->canvas);
+                          if (!window->rubberband)
+                            window->rubberband = zMapDrawRubberbandCreate(window->canvas);
 			}
 
 		      /* At this stage we don't know if we are rubber banding etc. so pass the
@@ -3651,15 +3659,21 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
                                       NULL, seq_item, NULL, seq_start, seq_end, seq_start, seq_end,
                                       NULL,  FALSE, FALSE, FALSE, NULL) ;
 	  }
-	else if (dragging || guide)
+        else if ((dragging && window->rubberband) || guide)
 	  {
-	    if (dragging)
+            if (dragging && window->rubberband)
 	      {
 		/* I wanted to change the cursor for this,
 		 * but foo_canvas_item_grab/ungrab specifically the ungrab didn't work */
 		zMapDrawRubberbandResize(window->rubberband, origin_x, origin_y, wx, wy);
 
-		event_handled = TRUE; /* We _ARE_ handling */
+                /* gb10: this is a bit messy but I'm not sure how to get around it. We need to 
+                 * pass this event on to canvasItemEventCB to see if we should initiate drag and
+                 * drop. But we don't know at this point whether we should be doing rubberbanding
+                 * or not. It works ok to start the rubberbanding but to return false here to let 
+                 * drag-and-drop start, which then stops us getting more motion notify events and 
+                 * therefore stops the rubberbanding. */
+                event_handled = FALSE;
 	      }
 	    else if (guide)
 	      {
@@ -3877,78 +3891,82 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 	  }
 	else if (dragging)
           {
-            foo_canvas_item_hide(window->rubberband);
+            if (window->rubberband)
+              {
+                foo_canvas_item_hide(window->rubberband);
 
-	    /* mouse must still be within window to zoom, outside means user is cancelling motion,
-	     * and motion must be more than 10 pixels in either direction to zoom. */
-	    if (in_window)
-	      {
-		if (fabs(but_event->x - window_x) > ZMAP_WINDOW_MIN_LASSO
-		    || fabs(but_event->y - window_y) > ZMAP_WINDOW_MIN_LASSO)
-		  {
-		    /* User has moved pointer quite a lot between press and release so do our
-		     * stuff. */
+                /* mouse must still be within window to zoom, outside means user is cancelling motion,
+                 * and motion must be more than 10 pixels in either direction to zoom. */
+                if (in_window)
+                  {
+                    if (fabs(but_event->x - window_x) > ZMAP_WINDOW_MIN_LASSO
+                        || fabs(but_event->y - window_y) > ZMAP_WINDOW_MIN_LASSO)
+                      {
+                        /* User has moved pointer quite a lot between press and release so do our
+                         * stuff. */
 
-		    if (!shift_on)
-		      {
-			zoomToRubberBandArea(window) ;
+                        if (!shift_on)
+                          {
+                            zoomToRubberBandArea(window) ;
 
-			event_handled = TRUE;		    /* We _ARE_ handling */
-		      }
-		    else
-		      {
-			/* make a list of the foo canvas items */
-			GList *feature_list;
-			FooCanvasItem *item;
-			double rootx1, rootx2, rooty1, rooty2 ;
-
-
-			/* Get size of item and convert to world coords, bounds are relative to item's parent */
-			foo_canvas_item_get_bounds(window->rubberband, &rootx1, &rooty1, &rootx2, &rooty2) ;
-			//		    foo_canvas_item_i2w(window->rubberband, &rootx1, &rooty1) ;
-			//		    foo_canvas_item_i2w(window->rubberband, &rootx2, &rooty2) ;
-
-			/* find the canvvas iten (a canvas featureset) at the centre of the lassoo */
-			// can-t do this as the canvas featureset point function returns n/a
-			// if there's no feature under the cursor no longer true....
-			if ((item = foo_canvas_get_item_at(window->canvas, (rootx2 + rootx1) / 2, (rooty2 + rooty1) / 2)))
-			  {
-			    /* only finds features in a canvas featureset, old foo gives nothing */
-			    feature_list = zMapWindowFeaturesetItemFindFeatures(&item, rooty1, rooty2, rootx1, rootx2);
-			  }
+                            event_handled = TRUE;		    /* We _ARE_ handling */
+                          }
+                        else
+                          {
+                            /* make a list of the foo canvas items */
+                            GList *feature_list;
+                            FooCanvasItem *item;
+                            double rootx1, rootx2, rooty1, rooty2 ;
 
 
-			/* this is how features get highlit */
-			if (item)
-			  zmapWindowUpdateInfoPanel(window, zMapWindowCanvasItemGetFeature(item),
-						    feature_list, item, NULL, 0, 0, 0, 0, NULL,
-                                                    !shift_on, FALSE, FALSE, NULL) ;
+                            /* Get size of item and convert to world coords, bounds are relative to item's parent */
+                            foo_canvas_item_get_bounds(window->rubberband, &rootx1, &rooty1, &rootx2, &rooty2) ;
+                            //		    foo_canvas_item_i2w(window->rubberband, &rootx1, &rooty1) ;
+                            //		    foo_canvas_item_i2w(window->rubberband, &rootx2, &rooty2) ;
 
-			event_handled = TRUE;		    /* We _ARE_ handling */
-		      }
-		  }
-		else
-		  {
-		    /* User hasn't really moved which means they meant to select a feature, not
-		     * lasso an area so pass event on and destroy rubberband object. */
+                            /* find the canvvas iten (a canvas featureset) at the centre of the lassoo */
+                            // can-t do this as the canvas featureset point function returns n/a
+                            // if there's no feature under the cursor no longer true....
+                            if ((item = foo_canvas_get_item_at(window->canvas, (rootx2 + rootx1) / 2, (rooty2 + rooty1) / 2)))
+                              {
+                                /* only finds features in a canvas featureset, old foo gives nothing */
+                                feature_list = zMapWindowFeaturesetItemFindFeatures(&item, rooty1, rooty2, rootx1, rootx2);
+                              }
 
-		    /* Must get rid of rubberband item as it is not needed. */
-		    // mh17: was this a memory leak from the other bits of the if ???
-		    //		    gtk_object_destroy(GTK_OBJECT(window->rubberband)) ;origin_
-		    //		    window->rubberband = NULL ;
 
-		    event_handled = FALSE ;
-		  }
-	      }
+                            /* this is how features get highlit */
+                            if (item)
+                              zmapWindowUpdateInfoPanel(window, zMapWindowCanvasItemGetFeature(item),
+                                                        feature_list, item, NULL, 0, 0, 0, 0, NULL,
+                                                        !shift_on, FALSE, FALSE, NULL) ;
 
-	    /* Must get rid of rubberband item as it is not needed. */
-	    if(window->rubberband)
-	      {
-		gtk_object_destroy(GTK_OBJECT(window->rubberband)) ;
-		window->rubberband = NULL ;
-	      }
+                            event_handled = TRUE;		    /* We _ARE_ handling */
+                          }
+                      }
+                    else
+                      {
+                        /* User hasn't really moved which means they meant to select a feature, not
+                         * lasso an area so pass event on and destroy rubberband object. */
 
-	    dragging = FALSE ;
+                        /* Must get rid of rubberband item as it is not needed. */
+                        // mh17: was this a memory leak from the other bits of the if ???
+                        //		    gtk_object_destroy(GTK_OBJECT(window->rubberband)) ;origin_
+                        //		    window->rubberband = NULL ;
+
+                        event_handled = FALSE ;
+                      }
+                  }
+
+                /* Must get rid of rubberband item as it is not needed. */
+                gtk_object_destroy(GTK_OBJECT(window->rubberband)) ;
+                window->rubberband = NULL ;
+              }
+            else
+              {
+                event_handled = FALSE ;
+              }
+
+            dragging = FALSE ;
           }
         else if (guide)
           {
@@ -4120,7 +4138,38 @@ static gboolean releaseCB(GtkWidget *widget, GdkEventButton *event, gpointer use
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
+/* Called when the destination of a drag from the grid calls us back to request the data.
+ * Fills in seletionData with data of the type indicated by info. */
+static void dragDataGetCB(GtkWidget *widget,
+                          GdkDragContext *drag_context,
+                          GtkSelectionData *selectionData,
+                          guint info,
+                          guint time,
+                          gpointer user_data)
+{
+  zMapReturnIfFail(selectionData && user_data);
 
+  if (info == TARGET_STRING)
+    {
+      /* Get all of the focused items and send the features as gff */
+      ZMapWindow window = (ZMapWindow)user_data ;
+      GList *feature_list = NULL ;
+      GError *tmp_error = NULL ;
+      GString *result = NULL ;
+
+      if (window && window->focus)
+        feature_list = zmapWindowFocusGetFeatureList(window->focus) ;
+
+      if (feature_list)
+        zMapGFFDumpList(feature_list, window->context_map->styles, NULL, NULL, &result, &tmp_error) ;
+
+      if (result)
+        {
+          gtk_selection_data_set_text(selectionData, result->str, -1);
+          g_string_free(result, TRUE) ;
+        }
+    }
+}
 
 
 

@@ -516,6 +516,10 @@ typedef enum
   } ZMapWindowDialogType ;
 
 
+/* Supported drag-and-drop target types */
+typedef enum {TARGET_STRING, TARGET_URL} DragDropTargetType;
+
+
 /*
  *           Default colours.
  */
@@ -1556,6 +1560,7 @@ void zmapWindowFocusRemoveFocusItemType(ZMapWindowFocus focus,
 
 void zmapWindowFocusSetHotItem(ZMapWindowFocus focus, FooCanvasItem *item, ZMapFeature feature) ;
 FooCanvasItem *zmapWindowFocusGetHotItem(ZMapWindowFocus focus) ;
+gboolean zmapWindowFocusIsItemFocused(ZMapWindowFocus focus, FooCanvasItem *item) ;
 GList *zmapWindowFocusGetFocusItemsType(ZMapWindowFocus focus, ZMapWindowFocusType type) ;
 #define zmapWindowFocusGetFocusItems(focus) \
     zmapWindowFocusGetFocusItemsType(focus, WINDOW_FOCUS_GROUP_FOCUS)
@@ -1583,6 +1588,8 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
 			       gboolean replace_highlight_item, gboolean highlight_same_names, gboolean sub_part) ;
 void zmapWindowFocusHighlightHotColumn(ZMapWindowFocus focus) ;
 void zmapWindowFocusUnHighlightHotColumn(ZMapWindowFocus focus) ;
+
+GList *zmapWindowFocusGetFeatureList(ZMapWindowFocus focus) ;
 
 void zmapWindowHighlightFocusItems(ZMapWindow window) ;
 void zmapWindowUnHighlightFocusItems(ZMapWindow window) ;
