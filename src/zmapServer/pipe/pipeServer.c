@@ -352,6 +352,9 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
   else
     {
       gboolean status = FALSE ;
+      const char* filename = server->url + 8 ; /* remove file:/// prefix */
+      GQuark file_quark = g_quark_from_string(filename) ;
+      ZMapFeatureParserCache parser_cache = NULL ;
 
       server->zmap_start = req_open->zmap_start;
       server->zmap_end = req_open->zmap_end;
@@ -359,10 +362,6 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
       server->sequence_map = req_open->sequence_map;
 
       /* See if there's already a parser cached (i.e. parsing has already been started) */
-      const char* filename = server->url + 8 ; /* remove file:/// prefix */
-      GQuark file_quark = g_quark_from_string(filename) ;
-      ZMapFeatureParserCache parser_cache = NULL ;
-
       if (server->sequence_map && server->sequence_map->cached_parsers)
         {
           parser_cache = g_hash_table_lookup(server->sequence_map->cached_parsers, GINT_TO_POINTER(file_quark)) ;
@@ -403,39 +402,26 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
 	{
 	  server->sequence_server = req_open->sequence_server ; /* if not then drop any DNA data */
 
-          /* Get the GFF version */
-          int parser_version = zMapGFFGetVersion(server->parser) ;
-
-          if (!parser_version)
-            zMapGFFGetVersionFromGIO(server->gff_pipe, &(server->gff_version));
-          else
-            server->gff_version = parser_version ;
-
-          if (!server->parser)
-            {
-              server->parser = zMapGFFCreateParser(server->gff_version,
-                                                   server->sequence_map->sequence, server->zmap_start, server->zmap_end) ;
-            }
-
           if (!server->gff_line)
+            server->gff_line = g_string_sized_new(2000) ;	    /* Probably not many lines will be > 2k chars. */
+
+          /* Get the GFF version */
+          if (!(server->gff_version = zMapGFFGetVersion(server->parser)))
             {
-              gsize terminator_pos = 0 ;
-              server->gff_line = g_string_sized_new(2000) ;	    /* Probably not many lines
-                                                                       will be > 2k chars. */
-
-              pipe_status = g_io_channel_read_line_string(server->gff_pipe, server->gff_line, &terminator_pos, &gff_pipe_err) ;
-
-              if (pipe_status == G_IO_STATUS_NORMAL)
+              if (!zMapGFFGetVersionFromGIO(server->gff_pipe, server->gff_line,
+                                            &(server->gff_version),
+                                            &pipe_status, &gff_pipe_err))
                 {
-                  *(server->gff_line->str + terminator_pos) = '\0' ; /* Remove terminating
-                                                                        newline. */
-                }
-              else
-                {
+
+                  if (pipe_status == G_IO_STATUS_EOF)
+                    server->last_err_msg = g_strdup("No data returned from pipe") ;
+                  else
+                    server->last_err_msg = g_strdup("Serious GIO error returned from pipe") ;
+
                   result = ZMAP_SERVERRESPONSE_REQFAIL ;
-                  server->last_err_msg = g_strdup("No GFF file returned from pipe") ;
                 }
             }
+
 
 	  /* always read it: have to skip over if not wanted
 	   * need a flag here to say if this is a sequence server
@@ -444,6 +430,13 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
             {
               if (pipe_status == G_IO_STATUS_NORMAL)
                 {
+                  if (!server->parser)
+                    {
+                      server->parser = zMapGFFCreateParser(server->gff_version,
+                                                           server->sequence_map->sequence,
+                                                           server->zmap_start, server->zmap_end) ;
+                    }
+
                   /* First parse the header, if we need to (it might already have been done) */
                   if (zMapGFFParsingHeader(server->parser))
                     result = pipeGetHeader(server) ;
@@ -453,18 +446,6 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
                   /* Then parser the sequence */
                   if (result == ZMAP_SERVERRESPONSE_OK && server->gff_version == ZMAPGFF_VERSION_2)
                     pipeGetSequence(server);
-                }
-              else if (pipe_status == G_IO_STATUS_EOF)
-                {
-                  /* No features in the file */
-                  result = ZMAP_SERVERRESPONSE_REQFAIL ;
-                  server->last_err_msg = g_strdup("No features in GFF file") ;
-                }
-              else
-                {
-                  /* Pipe error */
-                  result = ZMAP_SERVERRESPONSE_REQFAIL ;
-                  server->last_err_msg = g_strdup_printf("Invalid pipe status: %d", pipe_status) ;
                 }
             }
 	}
