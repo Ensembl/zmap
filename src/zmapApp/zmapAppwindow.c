@@ -1409,8 +1409,6 @@ static void checkInputFileForSequenceDetails(const char* const filename,
                                              const gboolean merge_details,
                                              GError **error)
 {
-  zMapReturnIfFail(filename) ;
-
   gboolean result = FALSE ;
   GError *tmp_error = NULL ;
   GError *gff_pipe_err = NULL ;
@@ -1420,6 +1418,8 @@ static void checkInputFileForSequenceDetails(const char* const filename,
   GIOStatus status = G_IO_STATUS_NORMAL ;
   GIOChannel *gff_pipe = NULL ;
 
+  zMapReturnIfFail(filename) ;
+
   gff_line = g_string_sized_new(2000) ; /* Probably not many lines will be > 2k chars. */
 
   /* Check for the special case "-" which means stdin */
@@ -1428,12 +1428,30 @@ static void checkInputFileForSequenceDetails(const char* const filename,
   else
     gff_pipe = g_io_channel_new_file(filename, "r", &gff_pipe_err) ;
 
-  if (gff_pipe)
-    {
-      /* Get the GFF version; default returned is 2 */
-      zMapGFFGetVersionFromGIO(gff_pipe, &gff_version);
 
-      if (gff_version)
+  if (!gff_pipe)
+    {
+      g_set_error(&tmp_error, ZMAP_APP_ERROR, ZMAPAPP_ERROR_OPENING_FILE,
+                  "Could not open file %s", filename);
+    }
+  else
+    {
+      if (!zMapGFFGetVersionFromGIO(gff_pipe, gff_line,
+                                    &gff_version,
+                                    &status, &gff_pipe_err))
+        {
+          char *tmp ;
+
+          if (status == G_IO_STATUS_EOF)
+            tmp = "No data returned from pipe" ;
+          else
+            tmp = "Serious GIO error returned from file" ;
+
+          g_set_error(&tmp_error, ZMAP_APP_ERROR, ZMAPAPP_ERROR_GFF_VERSION,
+                      "Could not get gff-version from file %s: %s.",
+                      filename, tmp);
+        }
+      else
         {
           parser = zMapGFFCreateParser(gff_version, NULL, 0, 0) ;
 
@@ -1478,16 +1496,6 @@ static void checkInputFileForSequenceDetails(const char* const filename,
                           "Error creating GFF parser for file %s", filename);
             }
         }
-      else
-        {
-          g_set_error(&tmp_error, ZMAP_APP_ERROR, ZMAPAPP_ERROR_GFF_VERSION,
-                      "Could not get gff-version from file %s", filename);
-        }
-    }
-  else
-    {
-      g_set_error(&tmp_error, ZMAP_APP_ERROR, ZMAPAPP_ERROR_OPENING_FILE,
-                  "Could not open file %s", filename);
     }
 
   if (result)
