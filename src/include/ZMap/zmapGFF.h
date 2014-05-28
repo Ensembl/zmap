@@ -101,7 +101,8 @@ typedef enum
  * Some new GFF interface functions.
  */
 gboolean zMapGFFGetVersionFromString(const char* const sString, int * const piOut) ;
-gboolean zMapGFFGetVersionFromGIO(GIOChannel * const pChannel, int * const piOut ) ;
+gboolean zMapGFFGetVersionFromGIO(GIOChannel * const pChannel, GString *pString,
+                                  int * const piOut, GIOStatus *cStatusOut, GError **pError_out) ;
 
 
 /*

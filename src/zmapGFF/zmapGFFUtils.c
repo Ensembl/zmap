@@ -86,17 +86,17 @@ gboolean zMapGFFGetVersionFromString(const char* const sString, int * const piOu
  * we entered. Returns TRUE if this operation returns 2 or 3, FALSE otherwise.
  * If the line encountered is blank, we return with version 2 set as default,
  * and return TRUE. If an error associated with the GIOChannel occurrs, then we
- * return FALSE.
+ * return FALSE and return the status and Error from the GIOChannel call.
  */
-gboolean zMapGFFGetVersionFromGIO(GIOChannel * const pChannel, int * const piOut )
+gboolean zMapGFFGetVersionFromGIO(GIOChannel * const pChannel, GString *pString,
+                                  int * const piOut, GIOStatus *cStatusOut, GError **pError_out)
 {
+  gboolean bResult = FALSE ;
   static const char
     cNewline = '\n',
     cNull = '\0'
   ;
   char *pPos = NULL ;
-  gboolean bResult = TRUE ;
-  GString *pString ;
   gsize
     iTerminatorPos = 0
   ;
@@ -107,13 +107,6 @@ gboolean zMapGFFGetVersionFromGIO(GIOChannel * const pChannel, int * const piOut
    * Set the default version to be returned.
    */
   *piOut = GFF_DEFAULT_VERSION ;
-
-  /*
-   * Create string object to use as buffer.
-   */
-  pString = g_string_new(NULL) ;
-  if (!pString )
-    goto return_point ;
 
 #ifdef LOCAL_DEBUG_CODE
   if (pFile == NULL )
@@ -170,14 +163,7 @@ gboolean zMapGFFGetVersionFromGIO(GIOChannel * const pChannel, int * const piOut
     }
 #endif
 
-  /*
-   * Free the allocated string and other data.
-   */
-return_point:
-  if (pString)
-    g_string_free(pString, TRUE) ;
-  if (pError)
-    g_error_free(pError) ;
+ return_point:
 
   return bResult ;
 }

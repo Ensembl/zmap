@@ -142,10 +142,10 @@ gboolean zMapCompareVersionStings(char *reference_version, char *test_version)
   if ((result = getVersionNumbers(ref_str, &ref_vers, &ref_rel, &ref_upd))
       && (result = getVersionNumbers(test_str, &test_vers, &test_rel, &test_upd)))
     {
-      if (test_vers >= ref_vers && test_rel >= ref_rel && test_upd >= ref_upd)
-        result = TRUE ;
-      else
+      if (test_vers < ref_vers || test_rel < ref_rel || test_upd < ref_upd)
         result = FALSE ;
+      else
+        result = TRUE ;
     }
 
   g_free(ref_str) ;
