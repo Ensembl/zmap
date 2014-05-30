@@ -10,6 +10,9 @@ zmapServer.c \
 zmapServer_P.h \
 zmapServerProtocolHandler.c \
 zmapServerPrototype.h \
+zmapDataSource_P.h \
+zmapDataSource.h \
+zmapDataSource.c \
 $(NULL)
 libZMapServer_la_LIBADD  = 
 libZMapServer_la_CFLAGS  = $(INCLUDE_COMMON)
