@@ -429,6 +429,7 @@ zmapServer/Makefile
 zmapServer/acedb/Makefile
 zmapServer/das/Makefile
 zmapServer/pipe/Makefile
+zmapServer/file/Makefile
 zmapThreads/Makefile
 zmapUtils/Makefile
 zmapUtils/tests/Makefile

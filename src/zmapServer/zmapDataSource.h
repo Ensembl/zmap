@@ -1,0 +1,86 @@
+/*  File: zmapDataSource.h
+ *  Author: Steve Miller (sm23@sanger.ac.uk)
+ *  Copyright (c) 2006-2014: Genome Research Ltd.
+ *-------------------------------------------------------------------
+ * ZMap is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ * or see the on-line version at http://www.gnu.org/copyleft/gpl.txt
+ *-------------------------------------------------------------------
+ * This file is part of the ZMap genome database package
+ * and was written by
+ *      Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *         Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
+ *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
+ *      Steve Miller (Sanger Institute, UK) sm23@sanger.ac.uk
+ *
+ * Description:
+ * Exported functions:
+ *-------------------------------------------------------------------
+ */
+
+#ifndef DATA_SOURCE_H
+#define DATA_SOURCE_H
+
+/*
+ * Public header material.
+ */
+typedef struct ZMapDataSourceStruct_ *ZMapDataSource ;
+typedef struct ZMapDataSourceGIOStruct_ *ZMapDataSourceGIO ;
+typedef struct ZMapDataSourceHTSFileStruct_ *ZMapDataSourceHTSFile ;
+
+/*
+ * Enumeration to represent different source types.
+ */
+typedef enum
+  {
+    ZMAPDATASOURCE_TYPE_GIO,
+    ZMAPDATASOURCE_TYPE_HTS,
+    ZMAPDATASOURCE_TYPE_UNK
+  } ZMapDataSourceType ;
+#define ZMAPDATASOURCE_TYPE_NUMBER ZMAPDATASOURCE_TYPE_UNK
+
+
+
+
+typedef struct ZMapDataSourceStruct_
+  {
+    ZMapDataSourceType type ;
+  } ZMapDataSourceStruct ;
+
+
+
+/*
+ * The rationale for this is that previously we were reading GFF data
+ * only, always through a GIOChannel. Thus the abstraction of ZMapDataSource,
+ * which has two types
+ *
+ *            ZMapDataSourceGIO       GIOChannel, synchronous OR asynchronous
+ *            ZMapDataSourceHTS       HTS file, synchronous only
+ */
+ZMapDataSource zMapDataSourceCreate(const char * const file_name ) ;
+ZMapDataSource zMapDataSourceCreateFromGIO(GIOChannel * const io_channel) ;
+gboolean zMapDataSourceIsOpen(ZMapDataSource const source) ;
+gboolean zMapDataSourceDestroy( ZMapDataSource *data_pipe ) ;
+ZMapDataSourceType zMapDataSourceGetType(ZMapDataSource data_pipe ) ;
+gboolean zMapDataSourceReadLineGIO(GIOChannel * const gio_channel,  GString * const str ) ;
+gboolean zMapDataSourceReadLine (ZMapDataSource const data_pipe , GString * const str ) ;
+gboolean zMapDataSourceGetGFFVersion(ZMapDataSource const pipe, int * const out_val) ;
+ZMapDataSourceType zMapDataSourceTypeFromFilename(const char * const ) ;
+char * zMapHTSRecord2GFF3(const void * const ) ;
+
+
+
+
+#endif
+
