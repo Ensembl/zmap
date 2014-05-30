@@ -49,9 +49,9 @@ typedef struct FileServerStruct_
   ZMapFeatureSequenceMap sequence_map ;
 
   char *config_file ;
-  char *url ;              /* Full url string. */
-  char *path ;				     	   /* Filename out of the URL  */
-  char *data_dir ;					    /* default location for data files (using file://)) */
+  char *url ;                          /* Full url string. */
+  char *path ;                         /* Filename out of the URL  */
+  char *data_dir ;                     /* default location for data files (using file://)) */
   char *last_err_msg ;
   char *styles_file ;
 
