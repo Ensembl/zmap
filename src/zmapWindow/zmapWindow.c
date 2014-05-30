@@ -701,7 +701,7 @@ static ZMapFeatureContextExecuteStatus undisplayFeaturesCB(GQuark key,
 	  }
 	else
 	  {
-	    zMapLogWarning("Failed to find feature '%s'", g_quark_to_string(feature->original_id));
+	    zMapLogWarning("Failed to find feature \"%s\"", g_quark_to_string(feature->original_id));
 	    status = ZMAP_CONTEXT_EXEC_STATUS_ERROR ;
 	  }
 
@@ -2445,7 +2445,7 @@ static ZMapFeatureContextExecuteStatus undisplayFeaturesCB(GQuark key,
 	    status = ZMAP_CONTEXT_EXEC_STATUS_OK;
 	  }
 	else
-	  zMapLogWarning("Failed to find feature '%s'\n", g_quark_to_string(feature->original_id));
+	  zMapLogWarning("Failed to find feature \"%s\"", g_quark_to_string(feature->original_id));
 
 	break;
       }
