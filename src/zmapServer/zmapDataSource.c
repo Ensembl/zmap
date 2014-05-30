@@ -283,6 +283,11 @@ gboolean zMapDataSourceGetGFFVersion(ZMapDataSource const data_source, int * con
 /* gboolean zMapGFFGetVersionFromGIO(GIOChannel * const pChannel, GString *pString,
                                   int * const piOut, GIOStatus *cStatusOut, GError **pError_out) ; new */ 
 
+      /* 
+       * Temp until I revise the above commented out call 
+       */ 
+      *out_val = ZMAPGFF_VERSION_3 ; 
+
 
     }
   else if (data_source->type == ZMAPDATASOURCE_TYPE_HTS)
