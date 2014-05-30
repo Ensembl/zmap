@@ -39,21 +39,8 @@
 /*
  * HTS header. ATM we have different locations for 32 and 64 bit systems.
  */
-/* Intel only version...
-#if __x86_64__
-#endif
-*/
-
-
-
-#if UINTPTR_MAX == 0xffffffff
-#include "/nfs/vertres01/user/jm18/lucid-i686/samtools-exp-rc/include/htslib/hts.h"
-#include "/nfs/vertres01/user/jm18/lucid-i686/samtools-exp-rc/include/htslib/sam.h"
-#elif UINTPTR_MAX == 0xffffffffffffffff
-#include "/software/vertres/bin-external/samtools-0.2.0-rc7/include/htslib/hts.h"
-#include "/software/vertres/bin-external/samtools-0.2.0-rc7/include/htslib/sam.h"
-#endif
-
+#include "/nfs/users/nfs_s/sm23/Work/htslib-develop/htslib/hts.h"
+#include "/nfs/users/nfs_s/sm23/Work/htslib-develop/htslib/sam.h"
 
 
 /*
