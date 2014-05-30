@@ -1563,8 +1563,8 @@ ZMapFeatureContextMergeCode zMapFeatureContextMerge(ZMapFeatureContext *merged_c
 /* creates a context of features of matches between the remove and
  * current, removing from the current as it goes. */
 gboolean zMapFeatureContextErase(ZMapFeatureContext *current_context_inout,
- ZMapFeatureContext remove_context,
- ZMapFeatureContext *diff_context_out)
+                                 ZMapFeatureContext remove_context,
+                                 ZMapFeatureContext *diff_context_out)
 {
   gboolean erased = FALSE;
   /* Here we need to merge for all alignments and all blocks.... */
@@ -1606,7 +1606,7 @@ gboolean zMapFeatureContextErase(ZMapFeatureContext *current_context_inout,
   g_free(diff_context_string);
 
   zMapFeatureContextExecuteRemoveSafe((ZMapFeatureAny)remove_context, ZMAPFEATURE_STRUCT_FEATURE,
-      eraseContextCB, destroyIfEmptyContextCB, &merge_data);
+                                      eraseContextCB, destroyIfEmptyContextCB, &merge_data);
 
 
   if(merge_data.status == ZMAP_CONTEXT_EXEC_STATUS_OK)
@@ -2034,6 +2034,9 @@ static gboolean withdrawFeatureAny(gpointer key, gpointer value, gpointer user_d
 
 
 
+/* This erase function actually moves features from the current context to a diff context
+ * in preparation for removing the diff context. This is better because then we know
+ * what we have removed for redrawing purposes. */
 static ZMapFeatureContextExecuteStatus eraseContextCB(GQuark key,
                                                       gpointer data,
                                                       gpointer user_data,
@@ -2052,125 +2055,174 @@ static ZMapFeatureContextExecuteStatus eraseContextCB(GQuark key,
   switch(feature_any->struct_type)
     {
     case ZMAPFEATURE_STRUCT_CONTEXT:
-      break;
+      {
+        break;
+      }
     case ZMAPFEATURE_STRUCT_ALIGN:
-      merge_data->current_view_align =
-                        (ZMapFeatureAny)(zMapFeatureContextGetAlignmentByID(merge_data->view_context,
-                                                                            key));
-      break;
+      {
+        merge_data->current_view_align =
+          (ZMapFeatureAny)(zMapFeatureContextGetAlignmentByID(merge_data->view_context, key)) ;
+
+        break;
+      }
     case ZMAPFEATURE_STRUCT_BLOCK:
-      merge_data->current_view_block = zMapFeatureAnyGetFeatureByID(merge_data->current_view_align,
-                                                                    key);
-      break;
+      {
+        merge_data->current_view_block = zMapFeatureAnyGetFeatureByID(merge_data->current_view_align, key) ;
+
+        break;
+      }
     case ZMAPFEATURE_STRUCT_FEATURESET:
-      merge_data->current_view_set   = zMapFeatureAnyGetFeatureByID(merge_data->current_view_block,
-                                                                    key);
-      break;
+      {
+        merge_data->current_view_set = zMapFeatureAnyGetFeatureByID(merge_data->current_view_block, key) ;
+
+      /* NOTE THAT WE FALL THROUGH because caller may have specified just the feature set
+       * where we delete all features in the set but not the set itself as this is usually
+       * needed for later features. */
+      }
     case ZMAPFEATURE_STRUCT_FEATURE:
-      /* look up in the current */
+      {
+        ZMapFeatureAny lookup_parent ;
 
-      if (merge_data->current_view_set
-                 && (erased_feature_any = zMapFeatureAnyGetFeatureByID(merge_data->current_view_set, key)))
-        {
-          erased_feature = (ZMapFeature)erased_feature_any;
+        /* look up in the current */
+        if (feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURESET)
+          lookup_parent = merge_data->current_view_block ;
+        else
+          lookup_parent = merge_data->current_view_set ;
 
-          if (merge_debug_G)
-            zMapLogWarning("%s","\tFeature in erase and current contexts...");
+        if (!lookup_parent
+            || !(erased_feature_any = zMapFeatureAnyGetFeatureByID(lookup_parent, key)))
+          {
+            zMapLogWarning("Feature \"%s\" absent from current context, cannot delete.",
+                           g_quark_to_string(key)) ;
 
-          /* insert into the diff context.
-           * BUT, need to check if the parents exist in the diff context first.
-           */
-          if (!merge_data->current_diff_align)
-            {
-              if (merge_debug_G)
-                zMapLogWarning("%s","\tno parent align... creating align in diff");
 
-              merge_data->current_diff_align
-                = featureAnyCreateFeature(merge_data->current_view_align->struct_type,
-                                          NULL,
-                                          merge_data->current_view_align->original_id,
-                                          merge_data->current_view_align->unique_id,
-                                          NULL) ;
+            /* WHAT DOES THIS COMMENT MEAN !!! */
 
-              zMapFeatureContextAddAlignment(merge_data->diff_context,
-                                             (ZMapFeatureAlignment)merge_data->current_diff_align,
-                                             FALSE);
-            }
+            /* no ...
+             * leave in the erase context.
+             */
+          }
+        else
+          {
+            if (merge_debug_G)
+              zMapLogWarning("%s","\tFeature in erase and current contexts...");
 
-          if (!merge_data->current_diff_block)
-            {
-              if (merge_debug_G)
-                zMapLogWarning("%s","\tno parent block... creating block in diff");
+            /* insert into the diff context.
+             * BUT, need to check if the parents exist in the diff context first.
+             */
+            if (!merge_data->current_diff_align)
+              {
+                if (merge_debug_G)
+                  zMapLogWarning("%s","\tno parent align... creating align in diff");
 
-              merge_data->current_diff_block
-                = featureAnyCreateFeature(merge_data->current_view_block->struct_type,
-                                          NULL,
-                                          merge_data->current_view_block->original_id,
-                                          merge_data->current_view_block->unique_id,
-                                          NULL) ;
+                merge_data->current_diff_align
+                  = featureAnyCreateFeature(merge_data->current_view_align->struct_type,
+                                            NULL,
+                                            merge_data->current_view_align->original_id,
+                                            merge_data->current_view_align->unique_id,
+                                            NULL) ;
 
-              zMapFeatureAlignmentAddBlock((ZMapFeatureAlignment)merge_data->current_diff_align,
-                                           (ZMapFeatureBlock)merge_data->current_diff_block);
-            }
+                zMapFeatureContextAddAlignment(merge_data->diff_context,
+                                               (ZMapFeatureAlignment)merge_data->current_diff_align,
+                                               FALSE);
+              }
 
-          if (!merge_data->current_diff_set)
-            {
-              ZMapFeatureSet feature_set ;
+            if (!merge_data->current_diff_block)
+              {
+                if (merge_debug_G)
+                  zMapLogWarning("%s","\tno parent block... creating block in diff");
 
-              if (merge_debug_G)
-                zMapLogWarning("%s","\tno parent set... creating set in diff");
+                merge_data->current_diff_block
+                  = featureAnyCreateFeature(merge_data->current_view_block->struct_type,
+                                            NULL,
+                                            merge_data->current_view_block->original_id,
+                                            merge_data->current_view_block->unique_id,
+                                            NULL) ;
 
-              merge_data->current_diff_set
-                = featureAnyCreateFeature(merge_data->current_view_set->struct_type,
-                                          NULL,
-                                          merge_data->current_view_set->original_id,
-                                          merge_data->current_view_set->unique_id,
-                                          NULL) ;
+                zMapFeatureAlignmentAddBlock((ZMapFeatureAlignment)merge_data->current_diff_align,
+                                             (ZMapFeatureBlock)merge_data->current_diff_block);
+              }
 
-              feature_set = (ZMapFeatureSet)(merge_data->current_diff_set) ;
+            if (!merge_data->current_diff_set)
+              {
+                ZMapFeatureSet feature_set ;
 
-              /* YES....AND AGH.....COPY THE STYLE POINTER !!!!!!!!!!!!!! */
-              feature_set->style = ((ZMapFeatureSet)(merge_data->current_view_set))->style ;
+                if (merge_debug_G)
+                  zMapLogWarning("%s","\tno parent set... creating set in diff");
 
-              zMapFeatureBlockAddFeatureSet((ZMapFeatureBlock)merge_data->current_diff_block,
-                                    (ZMapFeatureSet)merge_data->current_diff_set);
-            }
+                merge_data->current_diff_set
+                  = featureAnyCreateFeature(merge_data->current_view_set->struct_type,
+                                            NULL,
+                                            merge_data->current_view_set->original_id,
+                                            merge_data->current_view_set->unique_id,
+                                            NULL) ;
 
-          if(merge_debug_G)
-            zMapLogWarning("%s","\tmoving feature from current to diff context ... removing ... and inserting.");
+                feature_set = (ZMapFeatureSet)(merge_data->current_diff_set) ;
 
-          /* remove from the current context.*/
-          remove_status = zMapFeatureSetRemoveFeature((ZMapFeatureSet)merge_data->current_view_set,
-                                                      erased_feature);
-          zMapFeatureSetAddFeature((ZMapFeatureSet)merge_data->current_diff_set,
-                                   erased_feature);
+                feature_set->style = ((ZMapFeatureSet)(merge_data->current_view_set))->style ;
 
-#ifdef MESSES_UP_HASH
-          /* destroy from the erase context.*/
-          if(merge_debug_G)
-            zMapLogWarning("%s","\tdestroying feature in erase context");
+                zMapFeatureBlockAddFeatureSet((ZMapFeatureBlock)merge_data->current_diff_block,
+                                              (ZMapFeatureSet)merge_data->current_diff_set);
+              }
 
-          zMapFeatureDestroy(feature);
-#endif /* MESSES_UP_HASH */
+            if(merge_debug_G)
+              zMapLogWarning("%s","\tmoving feature from current to diff context ... removing ... and inserting.");
 
-          status = ZMAP_CONTEXT_EXEC_STATUS_OK_DELETE;
-        }
-      else
-        {
-          if(merge_debug_G)
-            zMapLogWarning("%s","\tFeature absent from current context, nothing to do...");
-          /* no ...
-           * leave in the erase context.
-           */
-        }
-      break;
+            /* remove from the current context either a single feature or all features.*/
+            if (feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
+              {
+                erased_feature = (ZMapFeature)erased_feature_any ;
+
+                remove_status = zMapFeatureSetRemoveFeature((ZMapFeatureSet)merge_data->current_view_set,
+                                                            erased_feature);
+                zMapFeatureSetAddFeature((ZMapFeatureSet)merge_data->current_diff_set,
+                                         erased_feature) ;
+              }
+            else
+              {
+                ZMapFeatureSet set ;
+                GHashTableIter iter;
+                gpointer key, value;
+
+                set = (ZMapFeatureSet)(merge_data->current_view_set) ;
+
+                /* hash_table_iter is the safe way to iterate through a hash table while
+                 * removing members. */
+                g_hash_table_iter_init(&iter, set->features) ;
+
+                while (g_hash_table_iter_next(&iter, &key, &value))
+                  {
+                    ZMapFeature feature = (ZMapFeature)(value) ;
+
+                    g_hash_table_iter_steal(&iter) ;
+
+                    zMapFeatureSetAddFeature((ZMapFeatureSet)merge_data->current_diff_set,
+                                             feature);
+                  }
+              }
+
+            status = ZMAP_CONTEXT_EXEC_STATUS_OK_DELETE ;
+          }
+
+        break;
+      }
+
     default:
-      break;
+      {
+        zMapWarnIfReached() ;
+
+        break;
+      }
     }
 
   return status ;
 }
 
+
+
+
+
+/* What is the purpose of this function...why is it not documented....???????? */
 static ZMapFeatureContextExecuteStatus destroyIfEmptyContextCB(GQuark key,
                                                                gpointer data,
                                                                gpointer user_data,
