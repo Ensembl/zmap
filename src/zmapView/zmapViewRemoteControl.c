@@ -738,13 +738,16 @@ static void viewDumpContextToFile(ZMapView view, RequestData request_data)
 /* Remove a list of features from the context. */
 static void eraseFeatures(ZMapView view, RequestData request_data)
 {
+
+  /* Delete the feature and/or featureset. */
   zmapViewEraseFeatures(view, request_data->edit_context, &(request_data->edit_feature_list)) ;
 
   /* If anything failed then delete_failed_make_message() will set command_rc and err_msg. */
-  request_data->command_rc = REMOTE_COMMAND_RC_OK ;
+  request_data->command_rc = REMOTE_COMMAND_RC_OK ;         /* Set default rc/msg. */
   request_data->msg = "Feature deleted ok !" ;
+
   if (g_list_length(request_data->edit_feature_list))
-    g_list_foreach(request_data->edit_feature_list, delete_failed_make_message, request_data);
+    g_list_foreach(request_data->edit_feature_list, delete_failed_make_message, request_data) ;
 
   return ;
 }
