@@ -37,7 +37,7 @@
 #include <stdint.h>
 
 /*
- * HTS header. ATM we have different locations for 32 and 64 bit systems.
+ * HTS header. Temporary location.
  */
 #include "/nfs/users/nfs_s/sm23/Work/htslib-develop/htslib/hts.h"
 #include "/nfs/users/nfs_s/sm23/Work/htslib-develop/htslib/sam.h"
