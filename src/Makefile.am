@@ -119,7 +119,7 @@ libzmapfoocanvas_la_LIBADD  = libzmapfoocanvas/libzmapfoocanvas.la
 # Programs we're going to compile.
 
 #bin_PROGRAMS = zmap gffparser xml_writer xremote_gui remotecontrol
-bin_PROGRAMS = zmap gffparser xml_writer remotecontrol
+bin_PROGRAMS = zmap xml_writer remotecontrol
 
 
 # I am perturbed by the fact that the x libs are before the gtk libs....
@@ -178,11 +178,11 @@ zmap_DEPENDENCIES = $(noinst_LTLIBRARIES) @MACOSX_UNIVERSAL_FILE@
 
 
 # gffparser - program to parse gff...
-gffparser_SOURCES      = $(top_srcdir)/zmapGFF/gffparser.c
-gffparser_LDFLAGS      =
-gffparser_LDADD        = $(zmap_LDADD)
-gffparser_DEPENDENCIES = $(noinst_LTLIBRARIES)
-gffparser_CPPFLAGS     = $(AM_CPPFLAGS)
+#gffparser_SOURCES      = $(top_srcdir)/zmapGFF/gffparser.c
+#gffparser_LDFLAGS      =
+#gffparser_LDADD        = $(zmap_LDADD)
+#gffparser_DEPENDENCIES = $(noinst_LTLIBRARIES)
+#gffparser_CPPFLAGS     = $(AM_CPPFLAGS)
 
 # test program to write xml...
 xml_writer_SOURCES      = $(top_srcdir)/zmapXML/example_xml_writer.c

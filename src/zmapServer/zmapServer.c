@@ -77,13 +77,14 @@ gboolean zMapServerGlobalInit(ZMapURL url, void **server_global_data_out)
       dasGetServerFuncs(serverfuncs);
       break;
 
-    case SCHEME_FILE:     // DAS only: file gets handled by pipe
-      if(url->params)
+    case SCHEME_FILE:     // file only now...
+      /* if(url->params)
         {
           dasGetServerFuncs(serverfuncs);
           break;
-        }
-      // fall through for real files
+        } */
+      fileGetServerFuncs(serverfuncs) ;
+      break ;
 
     case SCHEME_PIPE:
       pipeGetServerFuncs(serverfuncs);
@@ -104,7 +105,7 @@ gboolean zMapServerGlobalInit(ZMapURL url, void **server_global_data_out)
        && serverfuncs->have_modes
        && serverfuncs->get_sequence
        && serverfuncs->set_context
-        && serverfuncs->get_features
+       && serverfuncs->get_features
        && serverfuncs->get_context_sequences
        && serverfuncs->errmsg
        && serverfuncs->get_status

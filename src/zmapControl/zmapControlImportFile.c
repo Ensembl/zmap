@@ -84,8 +84,10 @@ typedef struct MainFrameStruct_
   GtkWidget *mark_widg ;
 
   GtkWidget *file_widg ;
+  /*
   GtkWidget *script_widg;
   GtkWidget *args_widg;
+  */
   GtkWidget *req_sequence_widg ;
   GtkWidget *req_start_widg ;
   GtkWidget *req_end_widg ;
@@ -130,7 +132,7 @@ static void closeCB(GtkWidget *widget, gpointer cb_data) ;
 static void sequenceCB(GtkWidget *widget, gpointer cb_data) ;
 
 static void fileChangedCB(GtkWidget *widget, gpointer user_data);
-static void scriptChangedCB(GtkWidget *widget, gpointer user_data);
+/* static void scriptChangedCB(GtkWidget *widget, gpointer user_data); */
 
 
 
@@ -490,13 +492,17 @@ static GtkWidget *makeOptionsBox(MainFrame main_frame, char *req_sequence, int r
   gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
 #endif
 
+  /*
   label = gtk_label_new( "Script " ) ;
   gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5);
   gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
+  */
 
+  /*
   label = gtk_label_new( "Extra Parameters " ) ;
   gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5);
   gtk_box_pack_start(GTK_BOX(labelbox), label, FALSE, TRUE, 0) ;
+  */
 
   label = gtk_label_new( "Sequence " ) ;
   gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.5);
@@ -545,15 +551,19 @@ static GtkWidget *makeOptionsBox(MainFrame main_frame, char *req_sequence, int r
 		     GTK_SIGNAL_FUNC(fileChangedCB), (gpointer)main_frame) ;
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;
 
+  /*
   main_frame->script_widg = entry = gtk_entry_new() ;
   gtk_entry_set_text(GTK_ENTRY(entry), "") ;
   gtk_signal_connect(GTK_OBJECT(entry), "changed",
 		     GTK_SIGNAL_FUNC(scriptChangedCB), (gpointer)main_frame) ;
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, TRUE, 0) ;
+  */
 
+  /*
   main_frame->args_widg = entry = gtk_entry_new() ;
   gtk_entry_set_text(GTK_ENTRY(entry), "") ;
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, TRUE, 0) ;
+  */
 
   main_frame->req_sequence_widg = entry = gtk_entry_new() ;
   gtk_entry_set_text(GTK_ENTRY(entry), sequence) ;
@@ -737,7 +747,7 @@ static void enable_widgets(MainFrame main_frame)
   gtk_widget_set_sensitive(main_frame->source_widg, !is_gff);
   gtk_widget_set_sensitive(main_frame->style_widg,  !is_gff);
 
-  gtk_widget_set_sensitive(main_frame->args_widg, main_frame->file_type == FILE_NONE );
+  /*gtk_widget_set_sensitive(main_frame->args_widg, main_frame->file_type == FILE_NONE ); */
 
   gtk_widget_set_sensitive(main_frame->map_widg, !(is_bam && main_frame->is_otter));
   gtk_widget_set_sensitive(main_frame->offset_widg, !(is_bam && main_frame->is_otter));
@@ -752,15 +762,14 @@ static void enable_widgets(MainFrame main_frame)
  *
  * Callback for when the "script" text is changed.
  */
+/*
 static void scriptChangedCB(GtkWidget *widget, gpointer user_data)
 {
   MainFrame main_frame = (MainFrame) user_data ;
 
-  /* user defined script */
-  /* main_frame->file_type = FILE_NONE; */
-
   enable_widgets(main_frame);
 }
+*/
 
 /*
  * Callback for when the "file" text is changed.
@@ -777,8 +786,10 @@ static void fileChangedCB(GtkWidget *widget, gpointer user_data)
   ZMapView view;
   ZMap zmap = (ZMap) main_frame->user_data;
 
+  /*
   char *args_txt = "";
   ZMapImportScript scripts;
+  */
 
   /* Check that the zmap window has not been closed (currently
    * the import dialog isn't closed with it, which will cause
@@ -899,8 +910,19 @@ static void importFileCB(GtkWidget *widget, gpointer cb_data)
   gboolean status = TRUE ;
   MainFrame main_frame = (MainFrame)cb_data ;
   char *err_msg = NULL ;
-  char *sequence = "", *start_txt, *end_txt, *file_txt, *script_txt, *args_txt,
-    *req_start_txt, *req_end_txt, *offset_txt, *source_txt, *style_txt, *strand_txt, *assembly_txt ;
+  char *sequence = "",
+    *start_txt,
+    *end_txt,
+    *file_txt,
+    /* *script_txt, */
+    /* *args_txt, */
+    *req_start_txt,
+    *req_end_txt,
+    *offset_txt,
+    *source_txt,
+    *style_txt,
+    *strand_txt,
+    *assembly_txt ;
   int start = 1,
     end = 0,
     seq_offset = 0,
@@ -932,8 +954,10 @@ static void importFileCB(GtkWidget *widget, gpointer cb_data)
   end_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->end_widg)) ;
 
   file_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->file_widg)) ;
+  /*
   script_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->script_widg)) ;
   args_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->args_widg)) ;
+  */
   req_sequence = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->req_sequence_widg)) ;
   req_start_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->req_start_widg)) ;
   req_end_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->req_end_widg)) ;
@@ -1033,7 +1057,7 @@ static void importFileCB(GtkWidget *widget, gpointer cb_data)
       GList * servers;
       ZMapConfigSource server;
       GList *req_featuresets = NULL;
-      char *and = "";
+      /* char *and = ""; */
       /* gchar *args[N_ARGS]; */
       /* gchar **argp = args; */
       /* char * opt_args_txt = ""; */
@@ -1061,7 +1085,10 @@ static void importFileCB(GtkWidget *widget, gpointer cb_data)
           src->is_seq = TRUE;
         }
 
-      /* prep user defined args */
+      /*
+       * prep user defined args to the script
+       */
+      /*
       if (*args_txt)
         {
           gchar **vector ;
@@ -1076,6 +1103,7 @@ static void importFileCB(GtkWidget *widget, gpointer cb_data)
 
           and = "&" ;
         }
+      */
 
       /* prep dialog defined args according to file type and session */
       /* some are mandatory: */
@@ -1141,16 +1169,6 @@ static void importFileCB(GtkWidget *widget, gpointer cb_data)
 
       server = (ZMapConfigSource) servers->data ;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      /* SEEMS LIKE A BUG TO ME...THE req_start/end ARE IGNORED HERE ! */
-      /* Leave this here until it's tested..... */
-
-      if (zMapViewRequestServer(view, NULL, req_featuresets, (gpointer) server, start, end, FALSE, TRUE, TRUE))
-        zMapViewShowLoadStatus(view);
-      else
-        zMapWarning("could not request %s",file_txt);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
       if (zMapViewRequestServer(view, NULL, req_featuresets, (gpointer)server, req_start, req_end, FALSE, TRUE, TRUE))
         zMapViewShowLoadStatus(view);
       else
