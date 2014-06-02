@@ -79,7 +79,7 @@ static ZMapServerResponseType haveModes(void *server, gboolean *have_mode) ;
 static ZMapServerResponseType getSequences(void *server_in, GList *sequences_inout) ;
 static ZMapServerResponseType setContext(void *server,  ZMapFeatureContext feature_context) ;
 static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles,
-  ZMapFeatureContext feature_context_out, int *num_features_out) ;
+  ZMapFeatureContext feature_context_out) ;
 static ZMapServerResponseType getContextSequence(void *server_in,
  GHashTable *styles, ZMapFeatureContext feature_context_out) ;
 static char *lastErrorMsg(void *server) ;
@@ -486,7 +486,7 @@ static ZMapServerResponseType setContext(void *server_in, ZMapFeatureContext fea
  * there may be no more lines in the file, we handle that as this point
  * as it's only here that the caller has asked for the features. */
 static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles,
-  ZMapFeatureContext feature_context, int *num_features_out)
+  ZMapFeatureContext feature_context)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   FileServer server = (FileServer)server_in ;
@@ -534,8 +534,6 @@ static ZMapServerResponseType getFeatures(void *server_in, GHashTable *styles,
         {
           /* get the list of source featuresets */
           feature_context->src_feature_set_names = zMapGFFGetFeaturesets(server->parser);
-
-          *num_features_out = num_features ;
 
           result = server->result ;
         }
