@@ -412,9 +412,11 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
                                             &(server->gff_version),
                                             &pipe_status, &gff_pipe_err))
                 {
-
+                  /* If status is normal we can still get here if we read an empty string */
                   if (pipe_status == G_IO_STATUS_EOF)
                     server->last_err_msg = g_strdup("No data returned from pipe") ;
+                  else if (pipe_status == G_IO_STATUS_NORMAL)
+                    server->last_err_msg = g_strdup("Empty data returned from pipe") ;
                   else
                     server->last_err_msg = g_strdup("Serious GIO error returned from pipe") ;
 
