@@ -269,8 +269,8 @@ alternative scenarios:</p>
   problems.</p></li>
   <li><p>Peer 2 replies with its response.</p></li>
   <li><p>Unfortunately peer 2's processing has been too slow, so peer
-  1 has timed out. It tears down and recreates its ZeroMQ REQ/REP
-  connection to peer 1, and resends request 203.</p></li>
+  1 has timed out. Peer 1 tears down and recreates its ZeroMQ REQ/REP
+  connection to peer 2, and resends request 203.</p></li>
   <li><p>ZeroMQ discards the original reply.</p></li>
   <li><p>Peer 2 receives the repeat request 203.</p></li>
   <li><p>As it has kept a copy, there is no need to repeat the
