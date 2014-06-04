@@ -258,19 +258,19 @@ static gboolean read_line_hts(htsFile * const hts_file, GString * const str )
  *     that somehow to GFF. TBD.
  *
  */
-gboolean zMapDataSourceReadLine (ZMapDataSource const data_source , GString * const str )
+gboolean zMapDataSourceReadLine (ZMapDataSource const data_source , GString * const pStr )
 {
   gboolean result = FALSE ;
-  zMapReturnValIfFail(data_source && (data_source->type != ZMAPDATASOURCE_TYPE_UNK) && str, result ) ;
+  zMapReturnValIfFail(data_source && (data_source->type != ZMAPDATASOURCE_TYPE_UNK) && pStr, result ) ;
   if (data_source->type == ZMAPDATASOURCE_TYPE_GIO)
     {
       ZMapDataSourceGIO file = (ZMapDataSourceGIO) data_source ;
-      result = read_line_gio(file->io_channel, str ) ;
+      result = read_line_gio(file->io_channel, pStr ) ;
     }
   else if (data_source->type == ZMAPDATASOURCE_TYPE_HTS)
     {
       ZMapDataSourceHTSFile file = (ZMapDataSourceHTSFile) data_source ;
-      result = read_line_hts(file->hts_file, str) ;
+      result = read_line_hts(file->hts_file, pStr ) ;
     }
 
   return result ;

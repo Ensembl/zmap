@@ -60,6 +60,7 @@ typedef struct ZMapDataSourceStruct_
 
 
 
+
 /*
  * The rationale for this is that previously we were reading GFF data
  * only, always through a GIOChannel. Thus the abstraction of ZMapDataSource,
