@@ -63,7 +63,7 @@ ZMapDataSource zMapDataSourceCreate(const char * const file_name )
         {
           file->type = ZMAPDATASOURCE_TYPE_GIO ;
           file->io_channel = g_io_channel_new_file(file_name, open_mode, &error) ;
-          if (file->io_channel != NULL)
+          if (file->io_channel != NULL && !error)
             {
               data_source = (ZMapDataSource) file ;
             }
@@ -172,7 +172,7 @@ gboolean zMapDataSourceDestroy( ZMapDataSource *p_data_source )
         }
       else
         {
-          zMapLogCritical("Could not close GIOChannel %s", "") ;
+          zMapLogCritical("Could not close GIOChannel in zMapDataSourceDestroy(), %s", "") ;
         }
     }
   else if (data_source->type == ZMAPDATASOURCE_TYPE_HTS)
@@ -183,6 +183,7 @@ gboolean zMapDataSourceDestroy( ZMapDataSource *p_data_source )
        * close hts_file
        * set result = TRUE (if it worked that is...)
        */
+      result = TRUE ;
     }
 
   /*
@@ -278,15 +279,15 @@ gboolean zMapDataSourceGetGFFVersion(ZMapDataSource const data_source, int * con
   if (data_source->type == ZMAPDATASOURCE_TYPE_GIO)
     {
       ZMapDataSourceGIO file = (ZMapDataSourceGIO) data_source ;
-      /* zMapGFFGetVersionFromGIO(file->io_channel, out_val) ; old */ 
+      /* zMapGFFGetVersionFromGIO(file->io_channel, out_val) ; old */
 
 /* gboolean zMapGFFGetVersionFromGIO(GIOChannel * const pChannel, GString *pString,
-                                  int * const piOut, GIOStatus *cStatusOut, GError **pError_out) ; new */ 
+                                  int * const piOut, GIOStatus *cStatusOut, GError **pError_out) ; new */
 
-      /* 
-       * Temp until I revise the above commented out call 
-       */ 
-      *out_val = ZMAPGFF_VERSION_3 ; 
+      /*
+       * Temp until I revise the above commented out call
+       */
+      *out_val = ZMAPGFF_VERSION_3 ;
 
 
     }
@@ -310,34 +311,45 @@ ZMapDataSourceType zMapDataSourceTypeFromFilename(const char * const file_name )
 {
   static const char
     dot = '.',
-    *ext1 = ".gff",
-    *ext2 = ".sam",
-    *ext3 = ".bam",
-    *ext4 = ".cram" ;
-  gboolean result = FALSE ;
+    *ext01 = "gff",
+    *ext02 = "sam",
+    *ext03 = "bam",
+    *ext04 = "cram" ;
   ZMapDataSourceType type = ZMAPDATASOURCE_TYPE_UNK ;
-  char * pos = NULL ;
+  char * pos = NULL, *tmp = file_name ;
   zMapReturnValIfFail( file_name && *file_name, type ) ;
-  pos = strrchr( file_name, dot ) ;
-  if (!g_ascii_strcasecmp(pos, ext1))
+
+  /*
+   * Find last occurrance of 'dot' to get
+   * file extension.
+   */
+  while (tmp = strchr(tmp, dot) )
     {
-      type = ZMAPDATASOURCE_TYPE_GIO ;
-      result = TRUE ;
+      ++tmp ;
+      pos = tmp ;
     }
-  else if (!result && !g_ascii_strcasecmp(pos, ext2))
+
+  /*
+   * Now inspect the file extension.
+   */
+  if (pos)
     {
-      type = ZMAPDATASOURCE_TYPE_HTS ;
-      result = TRUE ;
-    }
-  else if (!result && !g_ascii_strcasecmp(pos, ext3))
-    {
-      type = ZMAPDATASOURCE_TYPE_HTS ;
-      result = TRUE ;
-    }
-  else if (!result && !g_ascii_strcasecmp(pos, ext4))
-    {
-      type = ZMAPDATASOURCE_TYPE_HTS ;
-      result = TRUE ;
+      if (!g_ascii_strcasecmp(pos, ext01))
+        {
+          type = ZMAPDATASOURCE_TYPE_GIO ;
+        }
+      else if (!g_ascii_strcasecmp(pos, ext02))
+        {
+          type = ZMAPDATASOURCE_TYPE_HTS ;
+        }
+      else if (!g_ascii_strcasecmp(pos, ext03))
+        {
+          type = ZMAPDATASOURCE_TYPE_HTS ;
+        }
+      else if (!g_ascii_strcasecmp(pos, ext04))
+        {
+          type = ZMAPDATASOURCE_TYPE_HTS ;
+        }
     }
 
   return type ;

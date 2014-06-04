@@ -34,7 +34,6 @@
 
 
 #include <zmapDataSource.h>
-#include <stdint.h>
 
 /*
  * HTS header. Temporary location.

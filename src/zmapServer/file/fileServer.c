@@ -306,8 +306,8 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
   if (!status)
     {
       /* If it was a file error or failure to exec then set up message. */
-        if (error)
-          setErrorMsgGError(server, &error) ;
+      if (error)
+        setErrorMsgGError(server, &error) ;
       result = ZMAP_SERVERRESPONSE_SERVERDIED ;
       server->result = result ;
       return result ;
