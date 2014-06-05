@@ -36,7 +36,9 @@
 
 #include <ZMap/zmapGFF.h>
 
-/* The main parser struct, this represents an instance of a parser. */
+/*
+ * The main parser struct, representing an instance of a parser.
+ */
 typedef struct ZMapGFF2ParserStruct_
 {
   /*
