@@ -90,7 +90,7 @@ static void destroyFeatureArray(gpointer data) ;
 /*
  * Functions to create, augment or find names for various types of features based upon ZMapStyleMode.
  */
-static ZMapFeature makeFeatureTranscript(ZMapGFFFeatureData , ZMapFeatureSet , gboolean *, char **) ;
+static ZMapFeature makeFeatureTranscript(ZMapGFF3Parser const, ZMapGFFFeatureData , ZMapFeatureSet , gboolean *, char **) ;
 static gboolean makeFeatureLocus(ZMapGFFParser , ZMapGFFFeatureData , char ** ) ;
 static ZMapFeature makeFeatureAlignment(ZMapGFFFeatureData , ZMapFeatureSet , char ** ) ;
 static ZMapFeature makeFeatureAssemblyPath(ZMapGFFFeatureData , ZMapFeatureSet , char ** ) ;
@@ -2526,7 +2526,8 @@ return_point:
  *
  * The name is of the form "<name>", where
  *
- * (1) "Name = <name>"
+ * (1) "Name = <name>", or
+ * (2) <name> = "no_name_given" if there is no Name attribute
  *
  * This should only be called for the the top level object, rather than
  * components such as intron, exon, CDS, etc.
@@ -2557,46 +2558,42 @@ static char * makeFeatureTranscriptNamePublic( ZMapGFFFeatureData pFeatureData)
   return sResult ;
 }
 
-
 /*
- * Create a name for an alignment feature only. This is used to generate the
- * feature->unique_id for the feature_set.
- *
- * The name is of the form "[iStart, iEnd]_<TargetID> <i> <j> <p>", where
- *
- * (1) [iStart, iEnd] are the start and end of the feature in the reference sequence
- * (2) "Target=<TargetID> <i> <j> <p>", also referred to as the clone_id in the v2 code
- *
- *
+ * This creates the name to be used for the feature->unique_id, and is simply
+ * a wrapper for a call to zMapFeatureCreateName().
  */
-/*
-static char * makeFeatureAlignmentNamePrivate( ZMapGFFFeatureData pFeatureData)
+static char * makeFeatureTranscriptNamePrivate(ZMapGFFFeatureData pFeatureData)
 {
   ZMapGFFAttribute *pAttributes = NULL,
-    pAttributeTarget = NULL ;
+    pAttributeName = NULL ;
+  int iStart, iEnd ;
   unsigned int nAttributes = 0 ;
-  int iStart = 0, iEnd = 0 ;
-  char * sResult = NULL ;
-  zMapReturnValIfFail(pFeatureData, sResult) ;
+  char *sResult = NULL,
+    *sFeatureName = NULL ;
+  ZMapStyleMode cStyleMode = ZMAPSTYLE_MODE_TRANSCRIPT ;
+  ZMapStrand cStrand ;
+
+  zMapReturnValIfFail(pFeatureData, sResult);
+
   pAttributes = zMapGFFFeatureDataGetAts(pFeatureData) ;
   nAttributes = zMapGFFFeatureDataGetNat(pFeatureData) ;
-  pAttributeTarget = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_Target) ;
-  iStart               = zMapGFFFeatureDataGetSta(pFeatureData) ;
-  iEnd                 = zMapGFFFeatureDataGetEnd(pFeatureData) ;
-  if (pAttributeTarget)
-    {
-      sResult = g_strdup_printf("[%i, %i]_%s",  iStart, iEnd, zMapGFFAttributeGetTempstring(pAttributeTarget)) ;
-    }
+  pAttributeName = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_Name) ;
+  sFeatureName = zMapGFFAttributeGetTempstring(pAttributeName) ;
+  cStrand = zMapGFFFeatureDataGetStr(pFeatureData) ;
+  iStart = zMapGFFFeatureDataGetSta(pFeatureData) ;
+  iEnd = zMapGFFFeatureDataGetEnd(pFeatureData) ;
+
+  sResult = zMapFeatureCreateName(cStyleMode, sFeatureName, cStrand, iStart, iEnd, 0, 0) ;
+
   return sResult ;
 }
-*/
+
 
 
 /*
  * Create a feature of ZMapStyleMode = TRANSCRIPT only.
  *
  * First case:    A transcript object: must _have_ ID and _not_ be intron/exon/CDS.
- *                Find ID from ID attribute.
  *                We create a new object and add to featureset if possible.
  *                Feature must _not_ be already present.
  * Second case:   A component of a transcript: _must_ be intron, exon, or CDS, _and_ have Parent
@@ -2608,20 +2605,19 @@ static char * makeFeatureAlignmentNamePrivate( ZMapGFFFeatureData pFeatureData)
  *                it. A feature name is constructed from the Name attribute, start, end and strand
  *                and this is used for the ID for these steps.
  */
-static ZMapFeature makeFeatureTranscript(ZMapGFFFeatureData pFeatureData,
+static ZMapFeature makeFeatureTranscript(ZMapGFF3Parser const pParser,
+                                         ZMapGFFFeatureData pFeatureData,
                                          ZMapFeatureSet pFeatureSet,
                                          gboolean *pbNewFeatureCreated,
                                          char ** psError)
 {
   typedef enum {NONE, FIRST, SECOND, THIRD} CaseToTreat ;
-  static const char *sNoName = "no_name_given" ;
   CaseToTreat cCase = NONE ;
   unsigned int iSOID = 0,
     nAttributes = 0 ;
   int iStart = 0,
     iEnd = 0 ;
   char * sSOType = NULL,
-    *sFeatureAttributeName = NULL,
     *sFeatureName = NULL,
     *sFeatureNameID = NULL,
     *sSequence = NULL,
@@ -2636,23 +2632,21 @@ static ZMapFeature makeFeatureTranscript(ZMapGFFFeatureData pFeatureData,
     bIsExon = FALSE,
     bIsIntron = FALSE,
     bIsCDS = FALSE,
-    bIsComponent = FALSE,
-    bParseValid = FALSE ;
-  GQuark gqThisID = 0 , gqLocusID = 0 ;
+    bIsComponent = FALSE ;
+  GQuark gqThisID = 0 , gqLocusID = 0, gqThisUniqueID = 0 ;
   ZMapFeature pFeature = NULL ;
   ZMapSOIDData pSOIDData = NULL ;
   ZMapStyleMode cFeatureStyleMode = ZMAPSTYLE_MODE_BASIC ;
   ZMapGFFAttribute *pAttributes = NULL,
     pAttributeParent = NULL,
     pAttributeID = NULL,
-    pAttributeName = NULL,
     pAttributeLocus = NULL ;  ;
   ZMapSpanStruct cSpanItem = {0},
     *pSpanItem = NULL ;
   ZMapStrand cStrand = ZMAPSTRAND_NONE ;
   ZMapPhase cPhase = ZMAPPHASE_NONE ;
 
-  zMapReturnValIfFail(psError && pFeatureData && pbNewFeatureCreated, pFeature ) ;
+  zMapReturnValIfFail(pParser && psError && pFeatureData && pbNewFeatureCreated, pFeature ) ;
   *pbNewFeatureCreated = FALSE ;
 
   sSequence            = zMapGFFFeatureDataGetSeq(pFeatureData) ;
@@ -2704,45 +2698,44 @@ static ZMapFeature makeFeatureTranscript(ZMapGFFFeatureData pFeatureData,
    * Now the logic branches dependent upon what type of transcript we are dealing with.
    * Cases treated are described above.
    */
-  bIsExon = strstr(sSOType, "exon") != NULL ? TRUE : FALSE ;
-  bIsIntron = strstr(sSOType, "intron") != NULL ? TRUE : FALSE ;
-  bIsCDS = strstr(sSOType, "CDS") != NULL ? TRUE : FALSE ;
+  bIsExon      = strstr(sSOType, "exon") != NULL ? TRUE : FALSE ;
+  bIsIntron    = strstr(sSOType, "intron") != NULL ? TRUE : FALSE ;
+  bIsCDS       = strstr(sSOType, "CDS") != NULL ? TRUE : FALSE ;
   bIsComponent = (bIsExon || bIsIntron || bIsCDS );
   if (bHasAttributeID && !bIsComponent)
     {
       cCase = FIRST ;
-      gqThisID = g_quark_from_string(zMapGFFAttributeGetTempstring(pAttributeID)) ;
+      sFeatureName = makeFeatureTranscriptNamePublic(pFeatureData) ;
+      sFeatureNameID = makeFeatureTranscriptNamePrivate(pFeatureData) ;
+      gqThisID = compositeFeaturesCreateID(pAttributes, nAttributes) ;
+      gqThisUniqueID = g_quark_from_string(sFeatureNameID) ;
     }
   else if (bHasAttributeParent && bIsComponent)
     {
       cCase = SECOND ;
       gqThisID = g_quark_from_string(zMapGFFAttributeGetTempstring(pAttributeParent)) ;
+      gqThisUniqueID = compositeFeaturesFind(pParser, gqThisID) ;
     }
   else if (!bHasAttributeID && !bIsComponent)
     {
       cCase = THIRD ;
-      pAttributeName = zMapGFFAttributeListContains(pAttributes, nAttributes, sAttributeName_Name) ;
-      if (pAttributeName)
-        {
-          bParseValid = zMapAttParseName(pAttributeName, &sFeatureAttributeName) ;
-        }
-      sFeatureNameID = pAttributeName ?
-                       g_strdup_printf("%s_%i_%i_%s_%g", sFeatureAttributeName, iStart, iEnd, zMapFeatureStrand2Str(cStrand), dScore)
-                     : g_strdup_printf("%s_%i_%i_%s_%g", sNoName, iStart, iEnd, zMapFeatureStrand2Str(cStrand), dScore) ;
-      gqThisID = g_quark_from_string(sFeatureNameID) ;
+      sFeatureName = makeFeatureTranscriptNamePublic(pFeatureData) ;
+      sFeatureNameID = makeFeatureTranscriptNamePrivate(pFeatureData) ;
+      gqThisID = 0 ;
+      gqThisUniqueID = g_quark_from_string(sFeatureNameID) ;
     }
   else
     {
       cCase = NONE ;
     }
-  if (gqThisID == 0)
+  if (gqThisUniqueID == 0)
     return pFeature ;
 
   /*
    * Lookup to see if a feature with this gqThisID is already in the
    * feature set.
    */
-  pFeature = g_hash_table_lookup(((ZMapFeatureAny)pFeatureSet)->children, GINT_TO_POINTER(gqThisID)) ;
+  pFeature = g_hash_table_lookup(((ZMapFeatureAny)pFeatureSet)->children, GINT_TO_POINTER(gqThisUniqueID)) ;
   if (pFeature)
     bFeaturePresent = TRUE ;
 
@@ -2761,13 +2754,22 @@ static ZMapFeature makeFeatureTranscript(ZMapGFFFeatureData pFeatureData,
         return pFeature ;
 
       /*
-       * Name of feature is taken from attribute values.
+       * We have created names already. First insert the ID_attribute -> feature->unique_id
+       * pair into the composite_features mapping, and then add standard data.
        */
-      sFeatureName = makeFeatureTranscriptNamePublic(pFeatureData) ;
-      sFeatureNameID = g_strdup(g_quark_to_string(gqThisID)) ;
-      bDataAdded = zMapFeatureAddStandardData(pFeature, sFeatureNameID, sFeatureName, sSequence, sSOType,
-                                              cFeatureStyleMode, &pFeatureSet->style,
-                                              iStart, iEnd, bHasScore, dScore, cStrand) ;
+      compositeFeaturesInsert(pParser, gqThisID, gqThisUniqueID) ;
+      bDataAdded = zMapFeatureAddStandardData(pFeature,
+                                              sFeatureNameID,
+                                              sFeatureName,
+                                              sSequence,
+                                              sSOType,
+                                              cFeatureStyleMode,
+                                              &pFeatureSet->style,
+                                              iStart,
+                                              iEnd,
+                                              bHasScore,
+                                              dScore,
+                                              cStrand) ;
 
       /*
        * Add feature to featureset
@@ -2823,9 +2825,9 @@ static ZMapFeature makeFeatureTranscript(ZMapGFFFeatureData pFeatureData,
       else
         return pFeature ;
 
-
-      sFeatureName = makeFeatureTranscriptNamePublic(pFeatureData) ;
-      /* sFeatureNameID = g_strdup(g_quark_to_string(gqThisID)) ; we have this already */
+      /*
+       * We have names already so can add standard data.
+       */
       bDataAdded = zMapFeatureAddStandardData(pFeature, sFeatureNameID, sFeatureName, sSequence, sSOType,
                                               cFeatureStyleMode, &pFeatureSet->style,
                                               iStart, iEnd, bHasScore, dScore, cStrand) ;
@@ -2877,9 +2879,6 @@ static ZMapFeature makeFeatureTranscript(ZMapGFFFeatureData pFeatureData,
       zMapFeatureDestroy(pFeature) ;
       pFeature = NULL ;
     }
-
-  if (sFeatureAttributeName)
-    g_free(sFeatureAttributeName) ;
 
   return pFeature ;
 }
@@ -3711,7 +3710,7 @@ static gboolean makeNewFeature_V3( ZMapGFFParser pParserBase,
             {
 #endif
 
-              pFeature = makeFeatureTranscript(pFeatureData, pFeatureSet, &bNewFeatureCreated, &sMakeFeatureErrorText) ;
+              pFeature = makeFeatureTranscript(pParser, pFeatureData, pFeatureSet, &bNewFeatureCreated, &sMakeFeatureErrorText) ;
               if (pFeature)
                 {
                   bResult = TRUE ;

@@ -154,9 +154,10 @@ typedef enum
     ZMAPGFF_LINE_BOD = 5,         /* body line                  */
     ZMAPGFF_LINE_FAS = 6,         /* fasta directive            */
     ZMAPGFF_LINE_CLO = 7,         /* closure                    */
-    ZMAPGFF_LINE_OTH = 8          /* anything else              */
+    ZMAPGFF_LINE_OTH = 8,         /* anything else              */
+    ZMAPGFF_LINE_NUM = 9
   } ZMapGFFLineType ;
-#define ZMAPGFF_NUMBER_LINE_TYPES 9
+#define ZMAPGFF_NUMBER_LINE_TYPES ZMAPGFF_LINE_NUM
 
 /*
  * Some forward declarations for types used by V3 only.
