@@ -387,7 +387,7 @@ static ZMapServerResponseType openConnection(void *server_in, ZMapServerReqOpen 
 	{
 	  result = ZMAP_SERVERRESPONSE_REQFAIL ;
 	  ZMAPSERVER_LOG(Warning, ACEDB_PROTOCOL_STR, server->host,
-			 "Could open connection because: %s", server->last_err_msg) ;
+                         "Could not open connection because: %s", server->last_err_msg) ;
 	}
     }
 
@@ -2056,6 +2056,7 @@ static gboolean checkServerVersion(AcedbServer server)
 	  char *reply_text = (char *)reply ;
 	  char *scan_text = reply_text ;
 	  char *next_line = NULL ;
+          gboolean found = FALSE ;
 
 	  /* Scan lines for "Version:" and then extract the version, release and update numbers. */
 	  while ((next_line = strtok(scan_text, "\n")))
@@ -2064,6 +2065,8 @@ static gboolean checkServerVersion(AcedbServer server)
 
 	      if (strstr(next_line, "Version:"))
 		{
+                  found = TRUE ;
+
 		  /* Parse this string: "//             Version: ACEDB 4.9.28" */
 		  char *next ;
 
@@ -2080,7 +2083,20 @@ static gboolean checkServerVersion(AcedbServer server)
 	    }
 
 	  g_free(reply) ;
+          
+          if (!found)
+            {
+              setErrMsg(server, g_strdup_printf("Could not get acedb version: 'Version:' text not found in output from command '%s'.", 
+                                                command)) ;
+            }
 	}
+      else
+        {
+          setErrMsg(server, g_strdup_printf("AceConn request '%s' failed with status '%d': %s",
+                                            acedb_request, 
+                                            server->last_err_status, 
+                                            AceConnGetLastErrMsg(server->connection))) ;
+        }
 
       g_free(acedb_request) ;
     }
@@ -2182,6 +2198,14 @@ static gboolean setQuietMode(AcedbServer server)
 	  g_free(reply) ;
 	}
     }
+  else
+    {
+      setErrMsg(server, g_strdup_printf("AceConn request '%s' failed with status '%d': %s",
+                                        acedb_request, 
+                                        server->last_err_status, 
+                                        AceConnGetLastErrMsg(server->connection)));
+    }
+
 
   g_free(acedb_request) ;
 
