@@ -171,6 +171,10 @@ typedef struct      ZMapGFFFeatureDataStruct_      *ZMapGFFFeatureData ;
 
 /*
  * V3 parser struct.
+ *
+ * NB composite_features table is used in construction of transcript features.
+ * It is a map of the (GQuark from) ID attribute to the (GQuark from) the
+ * feature_name_id, that is, the feature->unique_id data member.
  */
 typedef struct ZMapGFF3ParserStruct_
   {
@@ -193,6 +197,8 @@ typedef struct ZMapGFF3ParserStruct_
 
     gboolean bLogWarnings,
              bCheckSequenceLength;
+
+    GHashTable *composite_features ;
 
 } ZMapGFF3ParserStruct, *ZMapGFF3Parser ;
 
