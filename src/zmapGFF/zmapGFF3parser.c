@@ -901,7 +901,9 @@ static gboolean actionUponClosure(ZMapGFFParser pParserBase, const char* const s
   gboolean bResult = TRUE ;
   ZMapGFF3Parser pParser = (ZMapGFF3Parser) pParserBase ;
 
-  zMapReturnValIfFail(pParser && pParser->pHeader, FALSE) ;
+  zMapReturnValIfFail(pParser && pParser->pHeader && pParser->composite_features, FALSE) ;
+
+  g_hash_table_remove_all(pParser->composite_features) ;
 
   return bResult ;
 }
