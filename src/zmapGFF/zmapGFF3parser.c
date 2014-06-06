@@ -2759,7 +2759,12 @@ static ZMapFeature makeFeatureTranscript(ZMapGFF3Parser const pParser,
        * We have created names already. First insert the ID_attribute -> feature->unique_id
        * pair into the composite_features mapping, and then add standard data.
        */
-      compositeFeaturesInsert(pParser, gqThisID, gqThisUniqueID) ;
+      if (!compositeFeaturesInsert(pParser, gqThisID, gqThisUniqueID))
+        {
+          zMapLogWarning("makeFeatureTranscript(): could not register composite feature "
+                         "IDs (%i, %i), name = '%s', name_id = '%s'",
+                         gqThisID, gqThisUniqueID, sFeatureName, sFeatureNameID) ;
+        }
       bDataAdded = zMapFeatureAddStandardData(pFeature,
                                               sFeatureNameID,
                                               sFeatureName,
