@@ -919,6 +919,7 @@ ZMapFeatureAny zMapFeatureAnyGetFeatureByID(ZMapFeatureAny feature_set, GQuark f
 gboolean zMapFeatureAnyAddModesToStyles(ZMapFeatureAny feature_any, GHashTable *styles) ;
 gboolean zMapFeatureAnyRemoveFeature(ZMapFeatureAny feature_set, ZMapFeatureAny feature) ;
 void zMapFeatureAnyDestroy(ZMapFeatureAny feature) ;
+gboolean zMapFeatureAnyHasChildren(ZMapFeatureAny feature) ;
 gboolean zMapFeaturePrintChildNames(ZMapFeatureAny feature_any) ;
 
 
