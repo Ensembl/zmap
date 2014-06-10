@@ -4472,6 +4472,14 @@ void zmapWindowZoomToWorldPosition(ZMapWindow window, gboolean border,
   double wx1, wx2, wy1, wy2;
   int two_times, border_size = ZMAP_WINDOW_FEATURE_ZOOM_BORDER;
 
+  /*
+   * (sm23) Adjustment to y coordinates of region to which to zoom in order 
+   * to account for cases where the request is off the front or back of the 
+   * current view.   
+   */  
+  rooty1 = rooty1 < window->min_coord ? window->min_coord : rooty1 ; 
+  rooty2 = rooty2 > window->max_coord ? window->max_coord : rooty2 ; 
+
   v_adjuster = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window));
   win_height = v_adjuster->page_size;
 
