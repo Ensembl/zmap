@@ -326,6 +326,16 @@ gboolean zMapFeatureAnyAddModesToStyles(ZMapFeatureAny feature_any, GHashTable *
  */
 
 
+gboolean zMapFeatureAnyHasChildren(ZMapFeatureAny feature_any)
+{
+  gboolean has_children = FALSE ;
+
+  if ((g_hash_table_size(feature_any->children)))
+    has_children = TRUE ;
+
+  return has_children ;
+}
+
 
 void zMapFeatureAnyDestroy(ZMapFeatureAny feature_any)
 {
@@ -2064,6 +2074,8 @@ static ZMapFeatureContextExecuteStatus eraseContextCB(GQuark key,
   ZMapFeatureAny erased_feature_any;
   ZMapFeature erased_feature;
   gboolean remove_status = FALSE;
+  gboolean erase_feature_set = FALSE ;
+
 
   if(merge_debug_G)
     zMapLogWarning("checking %s", g_quark_to_string(feature_any->unique_id));
@@ -2091,9 +2103,14 @@ static ZMapFeatureContextExecuteStatus eraseContextCB(GQuark key,
       {
         merge_data->current_view_set = zMapFeatureAnyGetFeatureByID(merge_data->current_view_block, key) ;
 
-      /* NOTE THAT WE FALL THROUGH because caller may have specified just the feature set
-       * where we delete all features in the set but not the set itself as this is usually
-       * needed for later features. */
+      /* Note that we fall through _IF_ caller specified just a feature set with no children because
+       * then we delete all features in the set (but not the set itself as this is usually
+       * needed for later features). */
+        if (!zMapFeatureAnyHasChildren(feature_any))
+          erase_feature_set = TRUE ;
+        else
+          break ;
+
       }
     case ZMAPFEATURE_STRUCT_FEATURE:
       {
@@ -2185,7 +2202,7 @@ static ZMapFeatureContextExecuteStatus eraseContextCB(GQuark key,
               zMapLogWarning("%s","\tmoving feature from current to diff context ... removing ... and inserting.");
 
             /* remove from the current context either a single feature or all features.*/
-            if (feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
+            if (!erase_feature_set)
               {
                 erased_feature = (ZMapFeature)erased_feature_any ;
 

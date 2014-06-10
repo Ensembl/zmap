@@ -43,15 +43,6 @@ static void setTooltips(ZMap zmap) ;
 static void makeStatusTooltips(ZMap zmap) ;
 static GtkWidget *makeStatusPanel(ZMap zmap) ;
 static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data) ;
-
-#ifdef MAXIMIZE_ON_MAP_EVENT
-/*! \todo gb10: I'm not sure if we need to maximise on map-event. I've 
- * removed the code for now but left this here for reference in case we do
- * need it. I've added a call to maximise in zMapControlWindowCreate instead 
- * to fix RT340147 but not 100% sure if that's right. */
-gboolean myWindowMaximize(GtkWidget *widget, GdkEvent  *event, gpointer user_data) ;
-#endif 
-
 static gboolean rotateTextCB(gpointer user_data) ;
 
 
@@ -90,20 +81,11 @@ gboolean zmapControlWindowCreate(ZMap zmap)
     zmap->shrinkable = shrink_arg.b ;
   gtk_window_set_policy(GTK_WINDOW(toplevel), zmap->shrinkable, TRUE, FALSE ) ;
 
-#ifdef MAXIMIZE_ON_MAP_EVENT
-  /* We can leave width to default sensibly but height does not because zmap is in a scrolled
-   * window, we try to maximise it to the screen depth but have to do this after window is
-   * mapped. */
-  zmap->map_handler = g_signal_connect(G_OBJECT(toplevel), "map-event",
-       G_CALLBACK(myWindowMaximize), (gpointer)zmap) ;
-#endif 
-
   gtk_signal_connect(GTK_OBJECT(toplevel), "destroy",
      GTK_SIGNAL_FUNC(toplevelDestroyCB), (gpointer)zmap) ;
 
   vbox = gtk_vbox_new(FALSE, 0) ;
   gtk_container_add(GTK_CONTAINER(toplevel), vbox) ;
-
 
   zmap->menubar = menubar = zmapControlWindowMakeMenuBar(zmap) ;
   gtk_box_pack_start(GTK_BOX(vbox), menubar, FALSE, TRUE, 0);
@@ -449,16 +431,10 @@ void zmapControlWindowMaximize(GtkWidget *widget, ZMap zmap)
   GtkWidget *toplevel = widget ;
   GdkAtom geometry_atom, workarea_atom, max_atom_vert, max_atom_horiz ;
   GdkScreen *screen ;
-  gboolean on_the_mac = FALSE ;
   int window_width_guess = 300, window_height_guess = 300 ;
 
 
   screen = gtk_widget_get_screen(toplevel) ;
-
-  /* This is a bit of a hack, trying to maximise the window in the vertical dimension
-   * only simply does not work on the mac so we fallback to guessing the size. */
-  if (g_ascii_strcasecmp("darwin", zMapUtilsSysGetSysName()) == 0)
-    on_the_mac = TRUE ;
 
   /* If user wants to be able to shrink the window we need to set an initial sensible
    * guess, otherwise the window width is controlled by our button/info layout and
@@ -558,7 +534,19 @@ void zmapControlWindowMaximize(GtkWidget *widget, ZMap zmap)
        * to be. */
       gtk_window_resize(GTK_WINDOW(toplevel), window_width_guess, window_height_guess) ;
     }
-  else if (!on_the_mac && gdk_x11_screen_supports_net_wm_hint(screen, max_atom_vert))
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* I've chopped this out because on the mac this doesn't work cleanly, the window is maximised
+   * in height _and_ width even though we didn't ask for width. I thought detecting when we were
+   * _NOT_ on the mac and doing this would be good but that's doesn't work because
+   * the user may run on a linux box and display on the mac. There is no good way that
+   * I've found to tell what machine the X server is running on.
+   * 
+   * I'm leaving this code in because we may go back to it sometime.
+   *  */
+
+  else if (g_ascii_strcasecmp("darwin", zMapUtilsSysGetSysName()) != 0
+           && gdk_x11_screen_supports_net_wm_hint(screen, max_atom_vert))
     {
       /* This code was taken from following the code through in gtk_maximise_window()
        * to gdk_window_maximise() to gdk_wmspec_change_state().
@@ -597,6 +585,8 @@ void zmapControlWindowMaximize(GtkWidget *widget, ZMap zmap)
                  SubstructureRedirectMask | SubstructureNotifyMask,
                  &xev) ;
     }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
   else
     {
       /* OK, here we just guess some appropriate size, note that the window width is kind
@@ -612,24 +602,6 @@ void zmapControlWindowMaximize(GtkWidget *widget, ZMap zmap)
 
   return ;
 }
-
-
-#ifdef MAXIMIZE_ON_MAP_EVENT
-gboolean myWindowMaximize(GtkWidget *widget, GdkEvent  *event, gpointer user_data)
-{
-  ZMap zmap = (ZMap)user_data ;
-
-  zmapControlWindowMaximize(widget, zmap);
-  
-  /* I think we need to disconnect this now otherwise we reset the window height every time we
-   * are re-mapped. */
-  g_signal_handler_disconnect(zmap->toplevel, zmap->map_handler) ;
-
-
-  return FALSE;
-}
-#endif
-
 
 
 /* Called at intervals and rotates the text in the entry widget given by user_data
