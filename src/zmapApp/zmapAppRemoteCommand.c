@@ -102,7 +102,7 @@ static void processRequest(ZMapAppContext app_context,
    char *command_name, char *request,
    RemoteCommandRCType *command_rc_out, char **reason_out, ZMapXMLUtilsEventStack *reply_out) ;
 
-static ZMapXMLUtilsEventStack createPeerElement(char *app_id, char *app_unique_id, char *app_window_id) ;
+static ZMapXMLUtilsEventStack createPeerElement(char *socket_id) ;
 static gboolean deferredRequestHandler(gpointer data) ;
 
 
@@ -324,7 +324,7 @@ gboolean zmapAppRemoteControlConnect(ZMapAppContext app_context)
 
   request_func = zmapAppRemoteControlGetRequestCB() ;
 
-  request_body = createPeerElement(remote->app_id, remote->app_unique_id, remote->app_window_str) ;
+  request_body = createPeerElement(remote->app_socket) ;
 
   (request_func)(app_context,
          NULL,
@@ -428,29 +428,25 @@ void zmapAppRemoteControlTheirRequestEndedCB(void *user_data)
 
 /* Creates:
  * 
- *       <peer app_id="XXXX" unique_id="YYYY"/>
+ *       <peer socket_id="XXXX"/>
  * 
  * e.g.
- *       <peer app_id="ZMap" unique_id="ZMap-13385-1328020970"/>
+ *       <peer socket_id="tcp://127.0.0.1:9999"/>
  * 
  *  */
-static ZMapXMLUtilsEventStack createPeerElement(char *app_id, char *app_unique_id, char *app_window_id)
+static ZMapXMLUtilsEventStack createPeerElement(char *socket_id)
 {
   static ZMapXMLUtilsEventStackStruct
     peer[] =
     {
       {ZMAPXML_START_ELEMENT_EVENT, ZACP_PEER,      ZMAPXML_EVENT_DATA_NONE,  {0}},
-      {ZMAPXML_ATTRIBUTE_EVENT,     ZACP_APP_ID,    ZMAPXML_EVENT_DATA_QUARK, {0}},
-      {ZMAPXML_ATTRIBUTE_EVENT,     ZACP_UNIQUE_ID, ZMAPXML_EVENT_DATA_QUARK, {0}},
-      {ZMAPXML_ATTRIBUTE_EVENT,     ZACP_WINDOW_ID, ZMAPXML_EVENT_DATA_QUARK, {0}},
+      {ZMAPXML_ATTRIBUTE_EVENT,     ZACP_SOCKET_ID, ZMAPXML_EVENT_DATA_QUARK, {0}},
       {ZMAPXML_END_ELEMENT_EVENT,   ZACP_PEER,      ZMAPXML_EVENT_DATA_NONE,  {0}},
       {ZMAPXML_NULL_EVENT}
     } ;
 
   /* Fill in peer element attributes. */
-  peer[1].value.q = g_quark_from_string(app_id) ;
-  peer[2].value.q = g_quark_from_string(app_unique_id) ;
-  peer[3].value.q = g_quark_from_string(app_window_id) ;
+  peer[1].value.q = g_quark_from_string(socket_id) ;
 
   return &peer[0] ;
 }

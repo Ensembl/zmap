@@ -212,11 +212,20 @@
 
 
 
-#define ZMAPSTANZA_PEER_CONFIG       "Peer"
-#define ZMAPSTANZA_PEER_NAME         "name"
-#define ZMAPSTANZA_PEER_CLIPBOARD    "clipboard"
-#define ZMAPSTANZA_PEER_RETRIES      "timeout-retries"
-#define ZMAPSTANZA_PEER_TIMEOUT      "timeout-ms"
+#define ZMAPSTANZA_PEER_CONFIG           "Peer"
+#define ZMAPSTANZA_PEER_SOCKET           "socket"
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+#define ZMAPSTANZA_PEER_RETRIES          "timeout-retries"
+#define ZMAPSTANZA_PEER_TIMEOUT          "timeout-ms"
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+#define ZMAPSTANZA_PEER_TIMEOUT_LIST     "timeout-list"     /* e.g. timeout-list=333,1000,3000,9000 */
+
+
+
+
 
 
 

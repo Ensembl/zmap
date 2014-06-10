@@ -35,13 +35,30 @@
 #ifndef ZMAP_REMOTE_CONTROL__P_H
 #define ZMAP_REMOTE_CONTROL__P_H
 
+
+#include <zmq.h>
+
 #include <ZMap/zmapUtils.h>
-#include <ZMap/zmapEnum.h>
+#include <ZMap/zmapEnum.h>                                  /* for XXX_LIST macros. */
 #include <ZMap/zmapRemoteControl.h>
 
 
+/* Timeouts are now a list of values. Change as needed for debugging/production etc. */
+enum {TIMEOUT_LIST_INIT_SIZE = 20} ;                        /* Intial size of timeout array. */
+#define TIMEOUT_DEBUG_LIST "1000000"
+#define TIMEOUT_PRODUCTION_LIST "100,400,800,1600"
+#define TIMEOUT_DEFAULT_LIST TIMEOUT_DEBUG_LIST
 
-/* Using the XXX_LIST macros to declare enums means we get lots of enum functions for free (see zmapEnum.h). */
+
+#define TIMEOUT_TYPE_LIST(_)                                            \
+_(TIMEOUT_NONE,      , "none",      "Have not timed out."         , "") \
+_(TIMEOUT_NOT_FINAL, , "not-final", "Not the last/final timeout." , "") \
+_(TIMEOUT_FINAL,     , "final",     "Final timeout reached."      , "")
+
+ZMAP_DEFINE_ENUM(TimeoutType, TIMEOUT_TYPE_LIST) ;
+
+
+
 
 /* Is the remote object idle, a client or a server ? */
 #define REMOTE_TYPE_LIST(_)                                                  \
@@ -53,7 +70,24 @@ _(REMOTE_TYPE_SERVER,   , "server"   , "Remote is acting as server."   , "")
 ZMAP_DEFINE_ENUM(RemoteType, REMOTE_TYPE_LIST) ;
 
 
+/* unused stuff....
+
+_(REMOTE_STATE_SERVER_WAIT_REQ_SEND,  ,\
+  "server-waiting-for-request-send" , "Server - client has signalled they have a request, waiting for client to send it."  , "") \
+_(REMOTE_STATE_SERVER_WAIT_REQ_ACK,  ,\
+  "server-waiting-for-req-ack" , "Server - told client we have request, waiting for client to acknowledge."  , "") \
+_(REMOTE_STATE_SERVER_WAIT_GET,     ,\
+  "server-waiting-for-reply-get"    , "Server - signalled client we have reply, waiting for client to ask for it."    , "") \
+_(REMOTE_STATE_SERVER_WAIT_REPLY_ACK,     ,\
+  "server-waiting-for-reply-ack"    , "Server - sent reply, waiting for client to acknowledge they have it."    , "") \
+
+*/
+
+
 /* Remote Control state. */
+
+/* THIS IS THE OLD STATE...WE NEED NEW STUFF NOW....
+
 #define REMOTE_STATE_LIST(_)						\
 _(REMOTE_STATE_INVALID,            ,					\
   "invalid", "Invalid state !"                             , "") \
@@ -72,34 +106,128 @@ _(REMOTE_STATE_CLIENT_WAIT_SEND,  ,\
 _(REMOTE_STATE_CLIENT_WAIT_REPLY_ACK,  ,\
   "client-waiting-for-reply-ack" , "Client - told server we have reply, waiting for server to acknowledge." , "") \
 _(REMOTE_STATE_SERVER_WAIT_NEW_REQ,  ,\
-  "server-waiting" , "Server - waiting for client to signal they have a new request."  , "") \
-_(REMOTE_STATE_SERVER_WAIT_REQ_SEND,  ,\
-  "server-waiting-for-request-send" , "Server - client has signalled they have a request, waiting for client to send it."  , "") \
-_(REMOTE_STATE_SERVER_WAIT_REQ_ACK,  ,\
-  "server-waiting-for-req-ack" , "Server - told client we have request, waiting for client to acknowledge."  , "") \
+  "server-waiting" , "Server - waiting for client to send a new request."  , "") \
 _(REMOTE_STATE_SERVER_PROCESS_REQ,     ,\
-  "server-processing"    , "Server - client acknowledged we have received request, now processing it."    , "") \
-_(REMOTE_STATE_SERVER_WAIT_GET,     ,\
-  "server-waiting-for-reply-get"    , "Server - signalled client we have reply, waiting for client to ask for it."    , "") \
-_(REMOTE_STATE_SERVER_WAIT_REPLY_ACK,     ,\
-  "server-waiting-for-reply-ack"    , "Server - sent reply, waiting for client to acknowledge they have it."    , "") \
+  "server-processing"    , "Server - received request, forwarded it to app for processing."    , "")
+
+  .....END OF OLD STUFF */
+
+/* New stuff.... */
+#define REMOTE_STATE_LIST(_)						\
+_(REMOTE_STATE_INVALID,            ,					\
+  "invalid", "Invalid state !"                             , "") \
+_(REMOTE_STATE_IDLE,               ,				\
+  "idle", "Idle, no requests active."     , "") \
+_(REMOTE_STATE_DYING,              ,\
+  "dying"             , "Dying, no requests can be accepted."                        , "") \
+_(REMOTE_STATE_OUTGOING_REQUEST_TO_BE_SENT,     ,\
+  "outgoing-request-to-be-sent"    , "Have request to send to our peer."     , "") \
+_(REMOTE_STATE_OUTGOING_REQUEST_WAITING_FOR_THEIR_REPLY,     ,\
+  "outgoing-request-waiting-for-reply"    , "Sent request to peer, waiting for their reply."     , "") \
+_(REMOTE_STATE_INCOMING_REQUEST_TO_BE_RECEIVED,     ,\
+  "incoming-request-to-be-received"    , "Have received request from peer."     , "") \
+_(REMOTE_STATE_INCOMING_REQUEST_WAITING_FOR_OUR_REPLY,     ,\
+  "incoming-request-waiting-for-reply"    , "Received request from peer, waiting for our reply."     , "")
 
 ZMAP_DEFINE_ENUM(RemoteControlState, REMOTE_STATE_LIST) ;
 
 
 
 
+#define SOCKET_FETCH_RC_LIST(_)                                            \
+_(SOCKET_FETCH_OK,      , "ok",      "Socket fetch succeeded",     "") \
+_(SOCKET_FETCH_NOTHING, , "nothing", "Nothing to be fetched", "") \
+_(SOCKET_FETCH_FAILED,  , "failed",  "Serious error on socket",      "")
+
+ZMAP_DEFINE_ENUM(SocketFetchRC, SOCKET_FETCH_RC_LIST) ;
+
+
+
+
+
+/* Wild card address, used so the bind will "choose" a port for us. */
+#define TCP_WILD_CARD_ADDRESS "tcp://127.0.0.1:*"
+
+/* Must be long enough to hold a zmq style address (as in TCP_WILD_CARD_ADDRESS). */
+#define ZMQ_ADDR_LEN 256
+
+
+/* Data needed by timer functions monitoring request/reply zeromq sockets. */
+typedef struct TimerDataStructType
+{
+  ZMapRemoteControl remote_control ;                        /* Needed for debug messages etc. */
+
+  GSourceFunc timer_func_cb ;                               /* timer callback func. */
+  guint timer_id ;                                          /* timer callback id. */
+  gboolean remove_timer ;                                   /* If true then timer callback removes itself. */
+
+} TimerDataStruct, *TimerData ;
+
+
+
+/* This is the message struct that gets queued and dequeued.... */
+typedef struct RemoteZeroMQMessageStructType
+{
+  char *header ;
+  char *body ;
+} RemoteZeroMQMessageStruct, *RemoteZeroMQMessage ;
+
+
+
+
+
+#define REQUEST_TYPE_LIST(_)						\
+_(REQUEST_TYPE_INVALID,            ,					\
+  "invalid", "Invalid type !"                             , "") \
+_(REQUEST_TYPE_INCOMING,               ,				\
+  "incoming", "Incoming request from peer."     , "") \
+_(REQUEST_TYPE_OUTGOING,              ,\
+  "outgoing", "Outgoing request to peer.."                        , "")
+
+
+ZMAP_DEFINE_ENUM(RemoteControlRequestType, REQUEST_TYPE_LIST) ;
+
+
+
+/* Data required for each request/reply in a queue. Used to represent request/replies
+ * in the queues of requests/replies. */
+typedef struct ReqReplyStructType
+{
+  RemoteControlRequestType request_type ;
+
+  char *end_point ;
+
+  RemoteZeroMQMessage request ;
+
+  /* derived from "request" */
+  char *request_id ;
+  char *command ;
+
+  int req_time_s ;
+  int req_time_ms ;
+
+  RemoteZeroMQMessage reply ;
+
+
+  int num_retries;
+
+} ReqReplyStruct, *ReqReply ;
+
+
+
+
+
+/* Structs for Send/Receive interfaces */
+
 /* Usual common struct, all the below structs must have the same members as these first. */
-typedef struct RemoteAnyStructName
+typedef struct RemoteAnyStructType
 {
   RemoteType remote_type ;
 
-  GQuark any_app_name ;
+  GQuark any_app_name_id ;
 
-  GQuark any_unique_str ;
-  GdkAtom any_atom ;
-  char *any_atom_string ;				    /* Cached because it's a pain to get the string. */
-  GtkClipboard *any_clipboard ;
+  /* zeromq handle for requests/replies */
+  char *end_point ;
 
   /* Our record of the two way traffic. */
   char *any_request ;
@@ -108,46 +236,20 @@ typedef struct RemoteAnyStructName
 } RemoteAnyStruct, *RemoteAny ;
 
 
-/* Remote is idle, i.e. not acting as a server or a client. */
-typedef struct RemoteIdleStructName
-{
-  RemoteType remote_type ;
-
-  GQuark any_app_name ;
-
-  /* Their 'request' atom for receiving our requests and giving us responses, stays the same for
-   * the life of this control struct. */
-  GQuark any_unique_str ;
-  GdkAtom any_atom ;
-  char *any_atom_string ;				    /* Cached because it's a pain to get the string. */
-  GtkClipboard *any_clipboard ;
-
-  /* Our record of the two way traffic. */
-  char *any_request ;
-  char *any_reply ;
-
-} RemoteIdleStruct, *RemoteIdle ;
-
-
-
 /* Control block for when acting as a server, i.e. we have received a request from the peer. */
 typedef struct RemoteReceiveStructName
 {
   RemoteType remote_type ;
 
-  GQuark our_app_name ;
+  GQuark our_app_name_id ;
 
-  /* Our atom for receiving peer requests and returning a response, stays the same for
-   * the life of this control struct. */
-  GQuark our_unique_str ;
-  GdkAtom our_atom ;
-  char *our_atom_string ;				    /* Cached because it's a pain to get the string. */
-  GtkClipboard *our_clipboard ;
+  char *zmq_end_point ;                                     /* zeromq style address, e.g. "tcp://localhost:5555" */
 
-  /* Our record of the two way traffic. */
-  char *their_request ;
-  char *our_reply ;
+  /* zeromq handle and associated stuff to receive requests. */
+  void *zmq_socket ;                                        /* zeromq "socket". */
 
+  /* We use timers to monitor for zeromq socket activity, here's the data needed to control this. */
+  TimerData timer_data ;
 
   /* Callback functions specified by caller to receive requests and subsequent replies/errors. */
   ZMapRemoteControlRequestHandlerFunc process_request_func ;
@@ -166,18 +268,15 @@ typedef struct RemoteSendStructName
 {
   RemoteType remote_type ;
 
-  GQuark their_app_name ;
+  GQuark peer_app_name_id ;
 
-  /* Their 'request' atom for receiving our requests and giving us responses, stays the same for
-   * the life of this control struct. */
-  GQuark their_unique_str ;
-  GdkAtom their_atom ;
-  char *their_atom_string ;				    /* Cached because it's a pain to get the string. */
-  GtkClipboard *their_clipboard ;
+  char *zmq_end_point ;                                     /* zeromq style address, e.g. "tcp://localhost:5555" */
 
-  /* Our record of the two way traffic. */
-  char *our_request ;
-  char *their_reply ;
+  /* zeromq handle to send requests. */
+  void *zmq_socket ;                                        /* zeromq "socket". */
+
+  /* We use timers to monitor for zeromq socket activity, here's the data needed to control this. */
+  TimerData timer_data ;
 
   /* Call this app function to tell app that peer has received its request. */
   ZMapRemoteControlRequestSentFunc req_sent_func ;
@@ -193,7 +292,7 @@ typedef struct RemoteSendStructName
 
 
 /* The main remote control struct which contains the self and peer interfaces. */
-typedef struct ZMapRemoteControlStructName
+typedef struct ZMapRemoteControlStructType
 {
   /* We keep a magic pointer because these structs are handed to us by external callers
    * so we need to be able to check if they are valid. */
@@ -203,25 +302,54 @@ typedef struct ZMapRemoteControlStructName
 
   GQuark version ;					    /* Current protocol version. */
 
-  GdkAtom target_atom ;					    /* atom representation of target type for data. */
+  /* Used to provide a unique id for each request, N.B. kept here so we can construct requests
+   * even if "send" has not been initialised. The id is always > 0 */
+  int request_id ;
+
+  /* Request/replies we are currently dealing with or NULL. */
+  RemoteZeroMQMessage curr_req_raw ;                        /* Just the header and xml request string. */
+
+  ReqReply curr_req ;                                       /* Request/Reply being processed. */
+  ReqReply stalled_req ;                                    /* Request/Reply stalled as a result of a collision. */
+  ReqReply timedout_req ;                                   /* Last timedout request. */
 
   /* Our current state/interface. */
   RemoteControlState state ;
 
-  RemoteAny curr_remote ;				    /* Points to idle, self or peer. */
-  RemoteIdle idle ;					    /* When not doing anything. */
   RemoteReceive receive ;				    /* Active when acting as server. */
   RemoteSend send ;					    /* Active when acting as client. */
 
-  /* Used to provide a unique id for each request, N.B. kept here so we can construct requests
-   * even if "send" has not been initialised. */
-  int request_id_num ;
-  GString *request_id ;
+
+  /* zeroMQ context. */
+  void *zmq_context ;
+
+  /* I'M NOT COMPLETELY SURE OF THIS....MIGHT NOT BE THE BEST WAY TO ORGANISE THINGS...
+   * NOT SURE.... */
+  /* Queues of incoming requests/outgoing replies and outgoing requests/incoming replies. */
+  GQueue *incoming_requests ;
+  GQueue *outgoing_replies ;
+
+  GQueue *outgoing_requests ;
+  GQueue *incoming_replies ;
+
+  guint queuecb_id ;                                        /* queue monitor glib callback id. */
+  gboolean stop_monitoring ;                                /* If TRUE monitor callback will remove itself. */
 
 
   /* Timeouts, timer_source_id is cached so we can cancel the timeouts. */
+  GArray *timeout_list ;
+  int timeout_list_pos ;
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   guint timer_source_id ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  GTimer *timeout_timer ;
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   guint32 timeout_ms ;					    /* timeout in milliseconds. */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
   /* App function to call when there is an error, e.g. peer not responding. */
@@ -245,7 +373,7 @@ typedef struct ZMapRemoteControlStructName
 ZMAP_ENUM_AS_EXACT_STRING_DEC(remoteType2ExactStr, RemoteType) ;
 ZMAP_ENUM_AS_EXACT_STRING_DEC(remoteState2ExactStr, RemoteControlState) ;
 
-char *zmapRemoteControlMakeReqID(ZMapRemoteControl remote_control) ;
+unsigned int zmapRemoteControlGetNewReqID(ZMapRemoteControl remote_control) ;
 char *zmapRemoteControlGetCurrCommand(ZMapRemoteControl remote_control) ;
 
 

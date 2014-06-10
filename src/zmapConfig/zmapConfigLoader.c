@@ -1473,10 +1473,21 @@ static ZMapConfigIniContextKeyEntry get_app_group_data(char **stanza_name, char 
 static ZMapConfigIniContextKeyEntry get_peer_group_data(char **stanza_name, char **stanza_type)
 {
   static ZMapConfigIniContextKeyEntryStruct stanza_keys[] = {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     { ZMAPSTANZA_PEER_NAME,    G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_PEER_CLIPBOARD,    G_TYPE_STRING,  NULL, FALSE },
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+    { ZMAPSTANZA_PEER_SOCKET,    G_TYPE_STRING,  NULL, FALSE },
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     { ZMAPSTANZA_PEER_RETRIES, G_TYPE_INT,     NULL, FALSE },
     { ZMAPSTANZA_PEER_TIMEOUT, G_TYPE_INT,     NULL, FALSE },
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+    { ZMAPSTANZA_PEER_TIMEOUT_LIST, G_TYPE_STRING,     NULL, FALSE },
+
+
     {NULL}
   };
   static char *name = ZMAPSTANZA_PEER_CONFIG ;

@@ -80,10 +80,16 @@ enum
 							       zmap to wait to quit, if exceeded we crash out */
     ZMAP_DEFAULT_PING_TIMEOUT = 10,
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     ZMAP_WINDOW_TIMEOUT_MS = 2000,			    /* Length of timeout in milliseconds.  */
 
     ZMAP_WINDOW_RETRIES = 20,				    /* How many retries of window id when
 							       we timeout for a command. */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+    
+
 
     ZMAP_APP_REMOTE_TIMEOUT_S = 3600,                       /* How long to wait before warning user that
                                                                zmap has no sequence displayed and has
@@ -95,6 +101,7 @@ enum
                                                              * big (in megabytes). */
   } ;
 
+#define ZMAP_WINDOW_TIMEOUT_LIST "333,1000,3000,9000"
 
 
 /* cols in connection list. */
@@ -115,19 +122,34 @@ enum {
 typedef void (*ZMapAppCBFunc)(void *cb_data) ;
 
 
+
+/* Initially we don't know the remote programs name so default to this... */
+#define ZMAP_APP_REMOTE_PEER "Remote Peer"
+
 /* Struct for zmap's remote control object. */
 typedef struct _ZMapAppRemoteStruct
 {
   /* Our names/text etc. */
   char *app_id ;					    /* zmap app name. */
-  char *app_unique_id ;
+  char *app_socket ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* Is any of this needed ? */
+
+  char *app_unique_id ;
   Window app_window ;
   char *app_window_str ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   /* Peer's names/text etc. */
   char *peer_name ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   char *peer_clipboard ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  char *peer_socket ;
 
   /* If our peer gave us a window id in the handshake then we check that window
    * id to see if it is still there if we have timed out. 
@@ -280,7 +302,7 @@ void zmapAppPingStop(ZMapAppContext app_context) ;
 /* New remote control interface */
 ZMapRemoteAppMakeRequestFunc zmapAppRemoteControlGetRequestCB(void) ;
 gboolean zmapAppRemoteControlCreate(ZMapAppContext app_context,
-				    char *peer_name, char *peer_clipboard, int peer_retries, int peer_timeout_ms) ;
+				    char *peer_socket, char *peer_timeout_list) ;
 gboolean zmapAppRemoteControlInit(ZMapAppContext app_context) ;
 gboolean zmapAppRemoteControlConnect(ZMapAppContext app_context) ;
 gboolean zmapAppRemoteControlDisconnect(ZMapAppContext app_context, gboolean app_exit) ;
