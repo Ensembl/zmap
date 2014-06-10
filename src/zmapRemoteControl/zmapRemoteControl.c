@@ -343,11 +343,6 @@ ZMapRemoteControl zMapRemoteControlCreate(char *app_id,
       remote_control->app_error_func_data = error_func_data ;
 
       /* Set up apps timeout function which we call when we timeout. */
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      remote_control->timeout_ms = DEFAULT_TIMEOUT ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
       remote_control->app_timeout_func = timeout_func ;
       remote_control->app_timeout_func_data = timeout_data ;
 
@@ -364,7 +359,7 @@ ZMapRemoteControl zMapRemoteControlCreate(char *app_id,
 	}
 
       /* OK...TRY A TIME ROUTINE HERE TO MONITOR THE QUEUES.... */
-      remote_control->queuecb_id = g_timeout_add(QUEUE_WATCH_INTERVAL, queueMonitorCB, remote_control) ;
+      remote_control->queue_monitor_cb_id = g_timeout_add(QUEUE_WATCH_INTERVAL, queueMonitorCB, remote_control) ;
 
 
       /* can't be earlier as we need app_id and err_report_XX stuff. */
@@ -586,26 +581,6 @@ gboolean zMapRemoteControlSetDebug(ZMapRemoteControl remote_control, ZMapRemoteC
  }
 
 
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* Set timeout, if timeout_ms <= 0 then no timeouts are set,
- * good for testing, not for real life ! */
-gboolean zMapRemoteControlSetTimeout(ZMapRemoteControl remote_control, int timeout_ms)
-{
-  gboolean result = TRUE ;
-
-  zMapReturnValIfFail((ZMAP_MAGIC_IS_VALID(remote_control->magic, remote_control_magic_G)), result) ;
-
-  if (timeout_ms < 0)
-    remote_control->timeout_ms = 0 ;
-  else
-    remote_control->timeout_ms = timeout_ms ;
-
-  return result ;
- }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 /* Takes a comma-separated list of millisecond timeout values, e.g. "5,500,10000" and stores
  * them to be used in controlling timeout behaviour in waiting for peer to respond. */
 gboolean zMapRemoteControlSetTimeoutList(ZMapRemoteControl remote_control, char *peer_timeout_list)
@@ -699,25 +674,21 @@ gboolean zMapRemoteControlUnSetErrorCB(ZMapRemoteControl remote_control)
 */
 
 
-/* Free all resources and destroy the remote control block, returns
- * TRUE if the object was idle and could be destroyed and FALSE
- * otherwise.
- * 
- * It's unusual to return a value to indicate failure of a destroy
- * function but if the application calls this from the "wrong" callback
- * it's possible because of the inherent asynchronicity of X Windows
- * for one of the callbacks in this file to be called with an invalid
- * RemoteControl pointer. This function requires the remote control
- * object to be in the idle state.
+/* Free all resources and destroy the remote control block.
  * 
  *  */
 void zMapRemoteControlDestroy(ZMapRemoteControl remote_control)
 {
   char *err_msg = NULL ;
+  gboolean result ;
 
   zMapReturnIfFail((ZMAP_MAGIC_IS_VALID(remote_control->magic, remote_control_magic_G))) ;
 
   DEBUGLOGMSG(remote_control, ZMAP_REMOTECONTROL_DEBUG_VERBOSE, "%s", ENTER_TXT) ;
+
+  /* Stop all timer callbacks */
+  result = g_source_remove(remote_control->queue_monitor_cb_id) ;
+
 
   if (remote_control->state != REMOTE_STATE_IDLE)
     {
@@ -880,45 +851,6 @@ static gboolean waitForReplyCB(gpointer user_data)
   char *err_msg = NULL ;
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  result = zeroMQSocketFetchFrame(send->zmq_socket, &header, &err_msg) ;
-
-  if (!result)
-    {
-      REMOTELOGMSG(remote_control, "header read failed: %s", err_msg) ;
-      g_free(err_msg) ;
-
-      call_again = FALSE ;
-    }
-  else if (header)
-    {
-      if (!zeroMQSocketFetchFrame(send->zmq_socket, &reply, &err_msg))
-        {
-          REMOTELOGMSG(remote_control, "body read failed: %s", err_msg) ;
-          g_free(err_msg) ;
-
-          call_again = FALSE ;
-        }
-      else
-        {
-          if (!reply)
-            {
-              REMOTELOGMSG(remote_control, "%s", "Bad news...we didn't get the body") ;
-            }
-          else
-            {
-              RemoteZeroMQMessage incoming_reply ;
-
-              incoming_reply = zeroMQMessageCreate(header, reply) ;
-
-              queueAdd(remote_control->incoming_replies, incoming_reply) ;
-            }
-        }
-    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
   if ((result = zeroMQSocketFetchMessage(send->zmq_socket, &header, &reply, &err_msg)) == SOCKET_FETCH_FAILED)
     {
       REMOTELOGMSG(remote_control, "Error, could not fetch reply header and body: \"%s\".", err_msg) ;
@@ -942,12 +874,6 @@ static gboolean waitForReplyCB(gpointer user_data)
 
       queueAdd(remote_control->incoming_replies, incoming_reply) ;
     }
-
-
-
-
-
-
 
   return call_again ;
 }
@@ -1018,274 +944,119 @@ static gboolean queueMonitorCB(gpointer user_data)
 {
   gboolean result = TRUE ;                                  /* Usually want to be called back. */
   ZMapRemoteControl remote_control = (ZMapRemoteControl)user_data ;
+  gboolean done = FALSE ;
 
 
-  if (remote_control->stop_monitoring)
+  while (!done)
     {
-      /* We have been signalled to stop monitoring....returning FALSE causes glib to stop calling us. */
-
-      result = FALSE ;
-    }
-  else
-    {
-      gboolean done = FALSE ;
-
-
-      while (!done)
+      switch (remote_control->state)
         {
-          switch (remote_control->state)
-            {
-            case REMOTE_STATE_IDLE:
+        case REMOTE_STATE_IDLE:
+          {
+            REMOTELOGMSG(remote_control,
+                         "----> In %s state...........", remoteState2ExactStr(remote_control->state)) ;
+
+
+            /* We only need to do something if there is a previously stalled request
+             * or an incoming or outgoing request. */
+            if (remote_control->stalled_req)
               {
-                REMOTELOGMSG(remote_control,
-                             "----> In %s state...........", remoteState2ExactStr(remote_control->state)) ;
+                remote_control->curr_req = remote_control->stalled_req ;
 
-
-                /* We only need to do something if there is a previously stalled request
-                 * or an incoming or outgoing request. */
-                if (remote_control->stalled_req)
-                  {
-                    remote_control->curr_req = remote_control->stalled_req ;
-
-                    if (remote_control->curr_req->request_type == REQUEST_TYPE_INCOMING)
-                      remote_control->state = REMOTE_STATE_INCOMING_REQUEST_WAITING_FOR_OUR_REPLY ;
-                    else
-                      remote_control->state = REMOTE_STATE_OUTGOING_REQUEST_WAITING_FOR_THEIR_REPLY ;
-                  }
-                else if (!(queueIsEmpty(remote_control->incoming_requests)
-                           && queueIsEmpty(remote_control->outgoing_requests)))
-                  {
-                    /* Note, deliberate decision, we take the incoming request first. They haven't
-                     * received our request because we haven't sent it yet so there can't be a
-                     * collision. */
-                    if (!queueIsEmpty(remote_control->incoming_requests))
-                      {
-                        remote_control->state = REMOTE_STATE_INCOMING_REQUEST_TO_BE_RECEIVED ;
-                      }
-                    else
-                      {
-                        remote_control->state = REMOTE_STATE_OUTGOING_REQUEST_TO_BE_SENT ;
-                      }
-                  }
+                if (remote_control->curr_req->request_type == REQUEST_TYPE_INCOMING)
+                  remote_control->state = REMOTE_STATE_INCOMING_REQUEST_WAITING_FOR_OUR_REPLY ;
                 else
-                  {
-                    done = TRUE ;
-                  }
-
-                break ;
+                  remote_control->state = REMOTE_STATE_OUTGOING_REQUEST_WAITING_FOR_THEIR_REPLY ;
               }
-
-            case REMOTE_STATE_OUTGOING_REQUEST_TO_BE_SENT:
+            else if (!(queueIsEmpty(remote_control->incoming_requests)
+                       && queueIsEmpty(remote_control->outgoing_requests)))
               {
-                RemoteSend send = remote_control->send ;
-
-                REMOTELOGMSG(remote_control,
-                             "----> In %s state...........", remoteState2ExactStr(remote_control->state)) ;
-
-                remote_control->curr_req_raw = queueRemove(remote_control->outgoing_requests) ;
-
-                /* Now call request dispatcher */
-                if ((result = sendRequest(remote_control, remote_control->curr_req_raw)))
+                /* Note, deliberate decision, we take the incoming request first. They haven't
+                 * received our request because we haven't sent it yet so there can't be a
+                 * collision. */
+                if (!queueIsEmpty(remote_control->incoming_requests))
                   {
-                    remote_control->curr_req = reqReplyCreate(remote_control->curr_req_raw,
-                                                              REQUEST_TYPE_OUTGOING,
-                                                              send->zmq_end_point) ;
-                    timeoutStartTimer(remote_control) ;
-
-                    remote_control->state = REMOTE_STATE_OUTGOING_REQUEST_WAITING_FOR_THEIR_REPLY ;
+                    remote_control->state = REMOTE_STATE_INCOMING_REQUEST_TO_BE_RECEIVED ;
                   }
                 else
                   {
-                    REMOTELOGMSG(remote_control,
-                                 "%s", "Could not send outgoing request.") ;
-
-                    zeroMQMessageDestroy(remote_control->curr_req_raw) ;
-
-                    remote_control->state = REMOTE_STATE_IDLE ;
+                    remote_control->state = REMOTE_STATE_OUTGOING_REQUEST_TO_BE_SENT ;
                   }
-
-                remote_control->curr_req_raw = NULL ;
-
+              }
+            else
+              {
                 done = TRUE ;
-
-                break ;
               }
 
-            case REMOTE_STATE_OUTGOING_REQUEST_WAITING_FOR_THEIR_REPLY:
+            break ;
+          }
+
+        case REMOTE_STATE_OUTGOING_REQUEST_TO_BE_SENT:
+          {
+            RemoteSend send = remote_control->send ;
+
+            REMOTELOGMSG(remote_control,
+                         "----> In %s state...........", remoteState2ExactStr(remote_control->state)) ;
+
+            remote_control->curr_req_raw = queueRemove(remote_control->outgoing_requests) ;
+
+            /* Now call request dispatcher */
+            if ((result = sendRequest(remote_control, remote_control->curr_req_raw)))
               {
-                /* Servicing an outgoing request. */
+                remote_control->curr_req = reqReplyCreate(remote_control->curr_req_raw,
+                                                          REQUEST_TYPE_OUTGOING,
+                                                          send->zmq_end_point) ;
+                timeoutStartTimer(remote_control) ;
 
+                remote_control->state = REMOTE_STATE_OUTGOING_REQUEST_WAITING_FOR_THEIR_REPLY ;
+              }
+            else
+              {
                 REMOTELOGMSG(remote_control,
-                             "----> In %s state...........", remoteState2ExactStr(remote_control->state)) ;
+                             "%s", "Could not send outgoing request.") ;
+
+                zeroMQMessageDestroy(remote_control->curr_req_raw) ;
+
+                remote_control->state = REMOTE_STATE_IDLE ;
+              }
+
+            remote_control->curr_req_raw = NULL ;
+
+            done = TRUE ;
+
+            break ;
+          }
+
+        case REMOTE_STATE_OUTGOING_REQUEST_WAITING_FOR_THEIR_REPLY:
+          {
+            /* Servicing an outgoing request. */
+
+            REMOTELOGMSG(remote_control,
+                         "----> In %s state...........", remoteState2ExactStr(remote_control->state)) ;
 
 
-                if (queueIsEmpty(remote_control->incoming_replies) && !queueIsEmpty(remote_control->incoming_requests))
+            if (queueIsEmpty(remote_control->incoming_replies) && !queueIsEmpty(remote_control->incoming_requests))
+              {
+                /* We have sent a request but before we see the reply the peer has also sent
+                 * a request, i.e. the peer has launched request at same time as us....if their request
+                 * is earlier then we service theirs before going back to waiting for ours. */
+                RemoteZeroMQMessage peer_request ;
+
+                peer_request = queuePeek(remote_control->incoming_requests) ;
+
+                if (reqIsEarlier(peer_request->body, remote_control->curr_req->request->body) != 0
+                    || strcmp(remote_control->receive->zmq_end_point, remote_control->send->zmq_end_point) < 0)
                   {
-                    /* We have sent a request but before we see the reply the peer has also sent
-                     * a request, i.e. the peer has launched request at same time as us....if their request
-                     * is earlier then we service theirs before going back to waiting for ours. */
-                    RemoteZeroMQMessage peer_request ;
-
-                    peer_request = queuePeek(remote_control->incoming_requests) ;
-
-                    if (reqIsEarlier(peer_request->body, remote_control->curr_req->request->body) != 0
-                        || strcmp(remote_control->receive->zmq_end_point, remote_control->send->zmq_end_point) < 0)
-                      {
-                        remote_control->stalled_req = remote_control->curr_req ;
-                        remote_control->curr_req = NULL ;
+                    remote_control->stalled_req = remote_control->curr_req ;
+                    remote_control->curr_req = NULL ;
                                                
-                        remote_control->state = REMOTE_STATE_INCOMING_REQUEST_TO_BE_RECEIVED ;
-                      }
+                    remote_control->state = REMOTE_STATE_INCOMING_REQUEST_TO_BE_RECEIVED ;
                   }
-                else
-                  {
-                    if (queueIsEmpty(remote_control->incoming_replies))
-                      {
-                        /* Queue is empty, check we haven't timed out. */
-                        int timeout_num = 0 ;
-                        double timeout_s = 0.0 ;
-                        TimeoutType timeout_type ;
-
-                        timeoutGetCurrTimeout(remote_control, &timeout_num, &timeout_s) ;
-
-                        timeout_type = timeoutHasTimedOut(remote_control) ;
-
-                        if (timeout_type != TIMEOUT_NONE)
-                          {
-                            char *err_msg = NULL ;
-
-                            /* Keep timed out request so we can resend it if we need to. */
-                            remote_control->curr_req_raw = reqReplyStealRequest(remote_control->curr_req) ;
-
-                            reqReplyDestroy(remote_control->curr_req) ;
-                            remote_control->curr_req = NULL ;
-
-                            /* think we may need to redo our send socket....  */
-                            if (!recreateSend(remote_control, &err_msg))
-                              {
-                                REMOTELOGMSG(remote_control,
-                                             "Could not recreate send socket: \"%s\" !",
-                                             err_msg) ;
-
-                                zeroMQMessageDestroy(remote_control->curr_req_raw) ;
-                                remote_control->curr_req_raw = NULL ;
- 
-                                timeoutResetTimeouts(remote_control) ;
- 
-                                remote_control->state = REMOTE_STATE_IDLE ;
-                              }
-                            else
-                              {
-                                if (timeout_type == TIMEOUT_NOT_FINAL)
-                                  {
-                                    REMOTELOGMSG(remote_control,
-                                                 "Request %d%s timeout after %gs,"
-                                                 " resending request: \"%s\".",
-                                                 timeout_num,
-                                                 (timeout_num == 1 ? "st" : 
-                                                  (timeout_num == 2 ? "nd" :
-                                                   (timeout_num == 3 ? "rd" : "th"))),
-                                                 timeout_s,
-                                                 remote_control->curr_req_raw->body) ;
-
-                                    remote_control->state = REMOTE_STATE_OUTGOING_REQUEST_TO_BE_SENT ;
-                                  }
-                                else /* (timeout_type == TIMEOUT_FINAL) */
-                                  {
-                                    REMOTELOGMSG(remote_control,
-                                                 "Request final timeout after %gs and has been discarded: \"%s\"",
-                                                 timeout_s, remote_control->curr_req_raw->body) ;
-
-                                    zeroMQMessageDestroy(remote_control->curr_req_raw) ;
-                                    remote_control->curr_req_raw = NULL ;
- 
-                                    timeoutResetTimeouts(remote_control) ;
-
-                                    remote_control->state = REMOTE_STATE_IDLE ;
-                                   }
-                              }
-                          }
-                      }
-                    else
-                      {
-                        /* ok...this should be the reply. */
-                        RemoteZeroMQMessage reply ;
-                        char *err_msg = NULL ;
-
-                        reply = queueRemove(remote_control->incoming_replies) ;
-
-                        if (reqReplyMatch(remote_control, remote_control->curr_req, reply->body, &err_msg))
-                          {
-                            result = receiveReply(remote_control, reply) ;
-
-                            reqReplyDestroy(remote_control->curr_req) ;
-                            remote_control->curr_req = NULL ;
-
-                            timeoutResetTimeouts(remote_control) ;
-
-                            remote_control->state = REMOTE_STATE_IDLE ;
-                          }
-                        else
-                          {
-                            REMOTELOGMSG(remote_control,
-                                         "Reply could not be matched to request because: \"%s\"", err_msg) ;
-                            g_free(err_msg) ;
-
-                            zeroMQMessageDestroy(reply) ;
-
-                            remote_control->state = REMOTE_STATE_IDLE ;
-                          }
-                      }
-                  }
-
-                done = TRUE ;
-
-                break ;
               }
-
-            case REMOTE_STATE_INCOMING_REQUEST_TO_BE_RECEIVED:
+            else
               {
-                RemoteReceive receive  = remote_control->receive ;
-                RemoteZeroMQMessage request ;
-
-                REMOTELOGMSG(remote_control,
-                             "----> In %s state...........", remoteState2ExactStr(remote_control->state)) ;
-
-                request = queueRemove(remote_control->incoming_requests) ;
-
-                if ((result = receiveRequest(remote_control, request)))
+                if (queueIsEmpty(remote_control->incoming_replies))
                   {
-                    remote_control->curr_req = reqReplyCreate(request, REQUEST_TYPE_INCOMING,
-                                                              receive->zmq_end_point) ;
-
-                    timeoutStartTimer(remote_control) ;
-
-                    remote_control->state = REMOTE_STATE_INCOMING_REQUEST_WAITING_FOR_OUR_REPLY ;
-                  }
-                else
-                  {
-                    REMOTELOGMSG(remote_control,
-                                 "%s", "Could not receive incoming request.") ;
-
-                    remote_control->state = REMOTE_STATE_IDLE ;
-
-                    done = TRUE ;
-                  }
-
-                break ;
-              }
-
-
-            case REMOTE_STATE_INCOMING_REQUEST_WAITING_FOR_OUR_REPLY:
-              {
-                REMOTELOGMSG(remote_control,
-                             "----> In %s state...........", remoteState2ExactStr(remote_control->state)) ;
-
-
-                if (queueIsEmpty(remote_control->outgoing_replies))
-                  {
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
                     /* Queue is empty, check we haven't timed out. */
                     int timeout_num = 0 ;
                     double timeout_s = 0.0 ;
@@ -1295,60 +1066,78 @@ static gboolean queueMonitorCB(gpointer user_data)
 
                     timeout_type = timeoutHasTimedOut(remote_control) ;
 
-                    if (timeout_type == TIMEOUT_FINAL)
+                    if (timeout_type != TIMEOUT_NONE)
                       {
                         char *err_msg = NULL ;
 
-                        REMOTELOGMSG(remote_control,
-                                     "Request final timeout after %gs and has been discarded: \"%s\"",
-                                     timeout_s, remote_control->curr_req->request) ;
-
-                        /* Keep timed out request so we can detect if we get a reply to it. */
-                        remote_control->timedout_req = remote_control->curr_req ;
-                        remote_control->curr_req = NULL ;
-
-                        timeoutResetTimeouts(remote_control) ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-                        /* think we may need to redo our send socket....  */
-                        if (!recreateSend(remote_control, &err_msg))
-                          REMOTELOGMSG(remote_control,
-                                       "Could not recreate send socket: \"%s\" !",
-                                       err_msg) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-                        remote_control->state = REMOTE_STATE_IDLE ;
-                      }
-                    else if (timeout_type == TIMEOUT_NOT_FINAL)
-                      {
-
-                        REMOTELOGMSG(remote_control,
-                                     "Request %d%s timeout after %gs: \"%s\".",
-                                     timeout_num,
-                                     (timeout_num == 1 ? "st" : 
-                                      (timeout_num == 2 ? "nd" :
-                                       (timeout_num == 3 ? "rd" : "th"))),
-                                     timeout_s,
-                                     remote_control->curr_req->request) ;
-                      }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-                  }
-                else
-                  {
-                    RemoteZeroMQMessage reply ;
-                    char *err_msg = NULL ;
-
-                    reply = queueRemove(remote_control->outgoing_replies) ;
-
-                    if (reqReplyMatch(remote_control, remote_control->curr_req, reply->body, &err_msg))
-                      {
-                        result = sendReply(remote_control, reply) ;
+                        /* Keep timed out request so we can resend it if we need to. */
+                        remote_control->curr_req_raw = reqReplyStealRequest(remote_control->curr_req) ;
 
                         reqReplyDestroy(remote_control->curr_req) ;
                         remote_control->curr_req = NULL ;
+
+                        /* think we may need to redo our send socket....  */
+                        if (!recreateSend(remote_control, &err_msg))
+                          {
+                            REMOTELOGMSG(remote_control,
+                                         "Could not recreate send socket: \"%s\" !",
+                                         err_msg) ;
+
+                            zeroMQMessageDestroy(remote_control->curr_req_raw) ;
+                            remote_control->curr_req_raw = NULL ;
+ 
+                            timeoutResetTimeouts(remote_control) ;
+ 
+                            remote_control->state = REMOTE_STATE_IDLE ;
+                          }
+                        else
+                          {
+                            if (timeout_type == TIMEOUT_NOT_FINAL)
+                              {
+                                REMOTELOGMSG(remote_control,
+                                             "Request %d%s timeout after %gs,"
+                                             " resending request: \"%s\".",
+                                             timeout_num,
+                                             (timeout_num == 1 ? "st" : 
+                                              (timeout_num == 2 ? "nd" :
+                                               (timeout_num == 3 ? "rd" : "th"))),
+                                             timeout_s,
+                                             remote_control->curr_req_raw->body) ;
+
+                                remote_control->state = REMOTE_STATE_OUTGOING_REQUEST_TO_BE_SENT ;
+                              }
+                            else /* (timeout_type == TIMEOUT_FINAL) */
+                              {
+                                REMOTELOGMSG(remote_control,
+                                             "Request final timeout after %gs and has been discarded: \"%s\"",
+                                             timeout_s, remote_control->curr_req_raw->body) ;
+
+                                zeroMQMessageDestroy(remote_control->curr_req_raw) ;
+                                remote_control->curr_req_raw = NULL ;
+ 
+                                timeoutResetTimeouts(remote_control) ;
+
+                                remote_control->state = REMOTE_STATE_IDLE ;
+                              }
+                          }
+                      }
+                  }
+                else
+                  {
+                    /* ok...this should be the reply. */
+                    RemoteZeroMQMessage reply ;
+                    char *err_msg = NULL ;
+
+                    reply = queueRemove(remote_control->incoming_replies) ;
+
+                    if (reqReplyMatch(remote_control, remote_control->curr_req, reply->body, &err_msg))
+                      {
+                        result = receiveReply(remote_control, reply) ;
+
+                        reqReplyDestroy(remote_control->curr_req) ;
+                        remote_control->curr_req = NULL ;
+
+                        timeoutResetTimeouts(remote_control) ;
 
                         remote_control->state = REMOTE_STATE_IDLE ;
                       }
@@ -1363,24 +1152,148 @@ static gboolean queueMonitorCB(gpointer user_data)
                         remote_control->state = REMOTE_STATE_IDLE ;
                       }
                   }
+              }
+
+            done = TRUE ;
+
+            break ;
+          }
+
+        case REMOTE_STATE_INCOMING_REQUEST_TO_BE_RECEIVED:
+          {
+            RemoteReceive receive  = remote_control->receive ;
+            RemoteZeroMQMessage request ;
+
+            REMOTELOGMSG(remote_control,
+                         "----> In %s state...........", remoteState2ExactStr(remote_control->state)) ;
+
+            request = queueRemove(remote_control->incoming_requests) ;
+
+            if ((result = receiveRequest(remote_control, request)))
+              {
+                remote_control->curr_req = reqReplyCreate(request, REQUEST_TYPE_INCOMING,
+                                                          receive->zmq_end_point) ;
+
+                timeoutStartTimer(remote_control) ;
+
+                remote_control->state = REMOTE_STATE_INCOMING_REQUEST_WAITING_FOR_OUR_REPLY ;
+              }
+            else
+              {
+                REMOTELOGMSG(remote_control,
+                             "%s", "Could not receive incoming request.") ;
+
+                remote_control->state = REMOTE_STATE_IDLE ;
 
                 done = TRUE ;
-
-                break ;
               }
 
+            break ;
+          }
 
-            default:
+
+        case REMOTE_STATE_INCOMING_REQUEST_WAITING_FOR_OUR_REPLY:
+          {
+            REMOTELOGMSG(remote_control,
+                         "----> In %s state...........", remoteState2ExactStr(remote_control->state)) ;
+
+
+            if (queueIsEmpty(remote_control->outgoing_replies))
               {
-                zMapWarnIfReached() ;
 
-                break ;
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+                /* Queue is empty, check we haven't timed out. */
+                int timeout_num = 0 ;
+                double timeout_s = 0.0 ;
+                TimeoutType timeout_type ;
+
+                timeoutGetCurrTimeout(remote_control, &timeout_num, &timeout_s) ;
+
+                timeout_type = timeoutHasTimedOut(remote_control) ;
+
+                if (timeout_type == TIMEOUT_FINAL)
+                  {
+                    char *err_msg = NULL ;
+
+                    REMOTELOGMSG(remote_control,
+                                 "Request final timeout after %gs and has been discarded: \"%s\"",
+                                 timeout_s, remote_control->curr_req->request) ;
+
+                    /* Keep timed out request so we can detect if we get a reply to it. */
+                    remote_control->timedout_req = remote_control->curr_req ;
+                    remote_control->curr_req = NULL ;
+
+                    timeoutResetTimeouts(remote_control) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+                    /* think we may need to redo our send socket....  */
+                    if (!recreateSend(remote_control, &err_msg))
+                      REMOTELOGMSG(remote_control,
+                                   "Could not recreate send socket: \"%s\" !",
+                                   err_msg) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+                    remote_control->state = REMOTE_STATE_IDLE ;
+                  }
+                else if (timeout_type == TIMEOUT_NOT_FINAL)
+                  {
+
+                    REMOTELOGMSG(remote_control,
+                                 "Request %d%s timeout after %gs: \"%s\".",
+                                 timeout_num,
+                                 (timeout_num == 1 ? "st" : 
+                                  (timeout_num == 2 ? "nd" :
+                                   (timeout_num == 3 ? "rd" : "th"))),
+                                 timeout_s,
+                                 remote_control->curr_req->request) ;
+                  }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
               }
-            }
+            else
+              {
+                RemoteZeroMQMessage reply ;
+                char *err_msg = NULL ;
+
+                reply = queueRemove(remote_control->outgoing_replies) ;
+
+                if (reqReplyMatch(remote_control, remote_control->curr_req, reply->body, &err_msg))
+                  {
+                    result = sendReply(remote_control, reply) ;
+
+                    reqReplyDestroy(remote_control->curr_req) ;
+                    remote_control->curr_req = NULL ;
+
+                    remote_control->state = REMOTE_STATE_IDLE ;
+                  }
+                else
+                  {
+                    REMOTELOGMSG(remote_control,
+                                 "Reply could not be matched to request because: \"%s\"", err_msg) ;
+                    g_free(err_msg) ;
+
+                    zeroMQMessageDestroy(reply) ;
+
+                    remote_control->state = REMOTE_STATE_IDLE ;
+                  }
+              }
+
+            done = TRUE ;
+
+            break ;
+          }
+
+
+        default:
+          {
+            zMapWarnIfReached() ;
+
+            break ;
+          }
         }
     }
-
-
 
   return result ;
 }

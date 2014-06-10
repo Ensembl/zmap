@@ -332,7 +332,7 @@ typedef struct ZMapRemoteControlStructType
   GQueue *outgoing_requests ;
   GQueue *incoming_replies ;
 
-  guint queuecb_id ;                                        /* queue monitor glib callback id. */
+  guint queue_monitor_cb_id ;                                        /* queue monitor glib callback id. */
   gboolean stop_monitoring ;                                /* If TRUE monitor callback will remove itself. */
 
 
