@@ -953,8 +953,14 @@ static gboolean queueMonitorCB(gpointer user_data)
         {
         case REMOTE_STATE_IDLE:
           {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+            /* Too many debug msgs with this on.... */
+
             REMOTELOGMSG(remote_control,
                          "----> In %s state...........", remoteState2ExactStr(remote_control->state)) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
             /* We only need to do something if there is a previously stalled request
