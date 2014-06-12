@@ -162,8 +162,7 @@ enum
 #define REPORTMSG(REMOTE_CONTROL, MSG, PREFIX)                          \
   do                                                                    \
     {                                                                   \
-      REMOTELOGMSG((REMOTE_CONTROL), "%s (header): %s", (PREFIX), (MSG)->header) ; \
-      REMOTELOGMSG((REMOTE_CONTROL), "%s (body): %s", (PREFIX), (MSG)->body) ; \
+      REMOTELOGMSG((REMOTE_CONTROL), "%s:\n%s\n%s", (PREFIX), (MSG)->header, (MSG)->body) ; \
     } while (0)
 
 
@@ -199,6 +198,7 @@ static void zeroMQMessageDestroy(RemoteZeroMQMessage zeromq_msg) ;
 static gboolean queueMonitorCB(gpointer user_data) ;
 static GQueue *queueCreate(void) ;
 static void queueAdd(GQueue *queue, RemoteZeroMQMessage req_rep) ;
+static void queueAddFront(GQueue *queue, RemoteZeroMQMessage req_rep) ;
 static void queueAddInRequestPriority(GQueue *queue, RemoteZeroMQMessage req_rep, void *user_data) ;
 static gint higherPriorityCB(gconstpointer a, gconstpointer b, gpointer user_data_unused) ;
 static RemoteZeroMQMessage queueRemove(GQueue *queue) ;
@@ -214,9 +214,13 @@ static gboolean receiveRequest(ZMapRemoteControl remote_control, RemoteZeroMQMes
 static gboolean sendReply(ZMapRemoteControl remote_control, RemoteZeroMQMessage reply) ;
 
 static ReqReply reqReplyCreate(RemoteZeroMQMessage request, RemoteControlRequestType request_type, char *end_point) ;
+static void reqReplyAddReply(ReqReply req_reply, RemoteZeroMQMessage reply) ;
 static gboolean reqReplyMatch(ZMapRemoteControl remote_control, ReqReply req_reply, char *reply, char **err_msg_out) ;
 static RemoteZeroMQMessage reqReplyStealRequest(ReqReply req_rep) ;
+static RemoteZeroMQMessage reqReplyStealReply(ReqReply req_rep) ;
 gboolean reqReplyIsEarlier(ReqReply req_reply_1, ReqReply req_reply_2) ;
+static gboolean reqReplyRequestIsSame(ZMapRemoteControl remote_control,
+                                      char *request_1, char *request_2, char **err_msg_out) ;
 static void reqReplyDestroy(ReqReply req_reply) ;
 
 int reqIsEarlier(char *request_1_time, char *request_2_time) ;
@@ -358,7 +362,7 @@ ZMapRemoteControl zMapRemoteControlCreate(char *app_id,
 	  remote_control->app_err_report_data = NULL ;
 	}
 
-      /* OK...TRY A TIME ROUTINE HERE TO MONITOR THE QUEUES.... */
+      /* Set up timer routine to monitor our incoming/outgoing queues. */
       remote_control->queue_monitor_cb_id = g_timeout_add(QUEUE_WATCH_INTERVAL, queueMonitorCB, remote_control) ;
 
 
@@ -539,10 +543,6 @@ gboolean zMapRemoteControlSendRequest(ZMapRemoteControl remote_control, char *re
 
           outgoing_request = zeroMQMessageCreate(header, request) ;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-          queueAdd(remote_control->outgoing_requests, outgoing_request) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
           queueAddInRequestPriority(remote_control->outgoing_requests, outgoing_request, NULL) ;
 
           result = TRUE ;
@@ -902,8 +902,6 @@ static void receiveReplyFromAppCB(void *remote_data, gboolean abort, char *reply
       char *reply_id = NULL, *reply_time = NULL ;
       char *header ;
 
-      REMOTELOGMSG(remote_control, "App processing finished, reply is: \"%s\".", reply) ;
-
       if (!(reply_id = zMapRemoteCommandRequestGetEnvelopeAttr(reply, REMOTE_ENVELOPE_ATTR_REQUEST_ID))
           || !(reply_time = zMapRemoteCommandRequestGetEnvelopeAttr(reply, REMOTE_ENVELOPE_ATTR_TIMESTAMP)))
         {
@@ -920,6 +918,8 @@ static void receiveReplyFromAppCB(void *remote_data, gboolean abort, char *reply
           header = makeHeader(ZACP_REPLY, reply_id, (remote_control->timeout_list_pos + 1), reply_time) ;
 
           outgoing_reply = zeroMQMessageCreate(header, reply) ;
+
+          REPORTMSG(remote_control, outgoing_reply, "App processing finished") ;
 
           queueAdd(remote_control->outgoing_replies, outgoing_reply) ;
         }
@@ -955,13 +955,11 @@ static gboolean queueMonitorCB(gpointer user_data)
           {
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-            /* Too many debug msgs with this on.... */
+            /* produces mountains of debugging..... */
 
             REMOTELOGMSG(remote_control,
                          "----> In %s state...........", remoteState2ExactStr(remote_control->state)) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 
             /* We only need to do something if there is a previously stalled request
              * or an incoming or outgoing request. */
@@ -977,9 +975,9 @@ static gboolean queueMonitorCB(gpointer user_data)
             else if (!(queueIsEmpty(remote_control->incoming_requests)
                        && queueIsEmpty(remote_control->outgoing_requests)))
               {
-                /* Note, deliberate decision, we take the incoming request first. They haven't
-                 * received our request because we haven't sent it yet so there can't be a
-                 * collision. */
+                /* Note deliberate decision: we take the incoming request first. This is separate
+                 * from collision handling as we have not yet sent our request so if they have
+                 * sent a request we handle that first before sending our own. */
                 if (!queueIsEmpty(remote_control->incoming_requests))
                   {
                     remote_control->state = REMOTE_STATE_INCOMING_REQUEST_TO_BE_RECEIVED ;
@@ -1035,33 +1033,63 @@ static gboolean queueMonitorCB(gpointer user_data)
 
         case REMOTE_STATE_OUTGOING_REQUEST_WAITING_FOR_THEIR_REPLY:
           {
-            /* Servicing an outgoing request. */
+            /* Have sent a request to our peer, waiting for a reply. */
 
             REMOTELOGMSG(remote_control,
                          "----> In %s state...........", remoteState2ExactStr(remote_control->state)) ;
 
 
-            if (queueIsEmpty(remote_control->incoming_replies) && !queueIsEmpty(remote_control->incoming_requests))
+            if (!queueIsEmpty(remote_control->incoming_replies))
               {
-                /* We have sent a request but before we see the reply the peer has also sent
-                 * a request, i.e. the peer has launched request at same time as us....if their request
-                 * is earlier then we service theirs before going back to waiting for ours. */
-                RemoteZeroMQMessage peer_request ;
+                /* ok...we got a reply. */
+                RemoteZeroMQMessage reply ;
+                char *err_msg = NULL ;
 
-                peer_request = queuePeek(remote_control->incoming_requests) ;
+                reply = queueRemove(remote_control->incoming_replies) ;
 
-                if (reqIsEarlier(peer_request->body, remote_control->curr_req->request->body) != 0
-                    || strcmp(remote_control->receive->zmq_end_point, remote_control->send->zmq_end_point) < 0)
+                if (reqReplyMatch(remote_control, remote_control->curr_req, reply->body, &err_msg))
                   {
-                    remote_control->stalled_req = remote_control->curr_req ;
+                    result = receiveReply(remote_control, reply) ;
+
+                    reqReplyDestroy(remote_control->curr_req) ;
                     remote_control->curr_req = NULL ;
-                                               
-                    remote_control->state = REMOTE_STATE_INCOMING_REQUEST_TO_BE_RECEIVED ;
+
+                    timeoutResetTimeouts(remote_control) ;
+
+                    remote_control->state = REMOTE_STATE_IDLE ;
+                  }
+                else
+                  {
+                    REMOTELOGMSG(remote_control,
+                                 "Reply could not be matched to request because: \"%s\"", err_msg) ;
+                    g_free(err_msg) ;
+
+                    zeroMQMessageDestroy(reply) ;
+
+                    remote_control->state = REMOTE_STATE_IDLE ;
                   }
               }
             else
               {
-                if (queueIsEmpty(remote_control->incoming_replies))
+                if (!queueIsEmpty(remote_control->incoming_requests))
+                  {
+                    /* We have sent a request but before we see the reply the peer has also sent
+                     * a request, i.e. the peer has launched request at same time as us....if their request
+                     * is earlier then we service theirs before going back to waiting for ours. */
+                    RemoteZeroMQMessage peer_request ;
+
+                    peer_request = queuePeek(remote_control->incoming_requests) ;
+
+                    if (reqIsEarlier(peer_request->body, remote_control->curr_req->request->body) != 0
+                        || strcmp(remote_control->receive->zmq_end_point, remote_control->send->zmq_end_point) < 0)
+                      {
+                        remote_control->stalled_req = remote_control->curr_req ;
+                        remote_control->curr_req = NULL ;
+                                               
+                        remote_control->state = REMOTE_STATE_INCOMING_REQUEST_TO_BE_RECEIVED ;
+                      }
+                  }
+                else
                   {
                     /* Queue is empty, check we haven't timed out. */
                     int timeout_num = 0 ;
@@ -1070,10 +1098,10 @@ static gboolean queueMonitorCB(gpointer user_data)
 
                     timeoutGetCurrTimeout(remote_control, &timeout_num, &timeout_s) ;
 
-                    timeout_type = timeoutHasTimedOut(remote_control) ;
-
-                    if (timeout_type != TIMEOUT_NONE)
+                    if ((timeout_type = timeoutHasTimedOut(remote_control)) != TIMEOUT_NONE)
                       {
+                        /* TOO LONG...NEEDS TO BE IN A FUNC... */
+
                         char *err_msg = NULL ;
 
                         /* Keep timed out request so we can resend it if we need to. */
@@ -1085,6 +1113,9 @@ static gboolean queueMonitorCB(gpointer user_data)
                         /* think we may need to redo our send socket....  */
                         if (!recreateSend(remote_control, &err_msg))
                           {
+                            /* this is actually a disaster and we need to really clean up...
+                             * SORT OUT A FUNCTION TO DO THIS... */
+
                             REMOTELOGMSG(remote_control,
                                          "Could not recreate send socket: \"%s\" !",
                                          err_msg) ;
@@ -1102,13 +1133,18 @@ static gboolean queueMonitorCB(gpointer user_data)
                               {
                                 REMOTELOGMSG(remote_control,
                                              "Request %d%s timeout after %gs,"
-                                             " resending request: \"%s\".",
+                                             " resending request: \n%s\n\"%s\".",
                                              timeout_num,
                                              (timeout_num == 1 ? "st" : 
                                               (timeout_num == 2 ? "nd" :
                                                (timeout_num == 3 ? "rd" : "th"))),
                                              timeout_s,
+                                             remote_control->curr_req_raw->header,
                                              remote_control->curr_req_raw->body) ;
+
+
+                                /* must readd to our queue... */
+                                queueAddFront(remote_control->outgoing_requests, remote_control->curr_req_raw) ;
 
                                 remote_control->state = REMOTE_STATE_OUTGOING_REQUEST_TO_BE_SENT ;
                               }
@@ -1128,36 +1164,6 @@ static gboolean queueMonitorCB(gpointer user_data)
                           }
                       }
                   }
-                else
-                  {
-                    /* ok...this should be the reply. */
-                    RemoteZeroMQMessage reply ;
-                    char *err_msg = NULL ;
-
-                    reply = queueRemove(remote_control->incoming_replies) ;
-
-                    if (reqReplyMatch(remote_control, remote_control->curr_req, reply->body, &err_msg))
-                      {
-                        result = receiveReply(remote_control, reply) ;
-
-                        reqReplyDestroy(remote_control->curr_req) ;
-                        remote_control->curr_req = NULL ;
-
-                        timeoutResetTimeouts(remote_control) ;
-
-                        remote_control->state = REMOTE_STATE_IDLE ;
-                      }
-                    else
-                      {
-                        REMOTELOGMSG(remote_control,
-                                     "Reply could not be matched to request because: \"%s\"", err_msg) ;
-                        g_free(err_msg) ;
-
-                        zeroMQMessageDestroy(reply) ;
-
-                        remote_control->state = REMOTE_STATE_IDLE ;
-                      }
-                  }
               }
 
             done = TRUE ;
@@ -1169,29 +1175,59 @@ static gboolean queueMonitorCB(gpointer user_data)
           {
             RemoteReceive receive  = remote_control->receive ;
             RemoteZeroMQMessage request ;
+            char *err_msg = NULL ;
 
             REMOTELOGMSG(remote_control,
                          "----> In %s state...........", remoteState2ExactStr(remote_control->state)) ;
 
             request = queueRemove(remote_control->incoming_requests) ;
 
-            if ((result = receiveRequest(remote_control, request)))
+            if (remote_control->prev_incoming_req
+                && reqReplyRequestIsSame(remote_control,
+                                         remote_control->prev_incoming_req->request->body, request->body, &err_msg))
               {
-                remote_control->curr_req = reqReplyCreate(request, REQUEST_TYPE_INCOMING,
-                                                          receive->zmq_end_point) ;
+                RemoteZeroMQMessage raw_reply ;
 
-                timeoutStartTimer(remote_control) ;
+                /* OK, HERE WE NEED TO CHECK IF THE INCOMING REQEUST IS THE SAME AS remote_control->prev_incoming_req
+                   (IF THERE IS ONE !!) AND THEN JUST ENSURE WE RETURN THE REPLY FROM THIS....AND THROW AWAY
+                   THE INCOMING EVENT....
+
+                   IF REQUEST IS THE SAME WE NEED TO GET OUR REPLY OUT OF remote_control->prev_incoming_req,
+                   STICK IT BACK ON THE outgoing_replies QUEUE AND MOVE ON TO THE BELOW STATE.... */
+
+                raw_reply = reqReplyStealReply(remote_control->prev_incoming_req) ;
+
+                REPORTMSG(remote_control, raw_reply, "Repeat request, resending original reply") ;
+
+                
+                queueAddFront(remote_control->outgoing_replies, raw_reply) ;
+
+                remote_control->curr_req = remote_control->prev_incoming_req ;
+                remote_control->prev_incoming_req = NULL ;
+
 
                 remote_control->state = REMOTE_STATE_INCOMING_REQUEST_WAITING_FOR_OUR_REPLY ;
               }
             else
               {
-                REMOTELOGMSG(remote_control,
-                             "%s", "Could not receive incoming request.") ;
+                if ((result = receiveRequest(remote_control, request)))
+                  {
+                    remote_control->curr_req = reqReplyCreate(request, REQUEST_TYPE_INCOMING,
+                                                              receive->zmq_end_point) ;
 
-                remote_control->state = REMOTE_STATE_IDLE ;
+                    timeoutStartTimer(remote_control) ;
 
-                done = TRUE ;
+                    remote_control->state = REMOTE_STATE_INCOMING_REQUEST_WAITING_FOR_OUR_REPLY ;
+                  }
+                else
+                  {
+                    REMOTELOGMSG(remote_control,
+                                 "%s", "Could not receive incoming request.") ;
+
+                    remote_control->state = REMOTE_STATE_IDLE ;
+
+                    done = TRUE ;
+                  }
               }
 
             break ;
@@ -1206,56 +1242,8 @@ static gboolean queueMonitorCB(gpointer user_data)
 
             if (queueIsEmpty(remote_control->outgoing_replies))
               {
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-                /* Queue is empty, check we haven't timed out. */
-                int timeout_num = 0 ;
-                double timeout_s = 0.0 ;
-                TimeoutType timeout_type ;
-
-                timeoutGetCurrTimeout(remote_control, &timeout_num, &timeout_s) ;
-
-                timeout_type = timeoutHasTimedOut(remote_control) ;
-
-                if (timeout_type == TIMEOUT_FINAL)
-                  {
-                    char *err_msg = NULL ;
-
-                    REMOTELOGMSG(remote_control,
-                                 "Request final timeout after %gs and has been discarded: \"%s\"",
-                                 timeout_s, remote_control->curr_req->request) ;
-
-                    /* Keep timed out request so we can detect if we get a reply to it. */
-                    remote_control->timedout_req = remote_control->curr_req ;
-                    remote_control->curr_req = NULL ;
-
-                    timeoutResetTimeouts(remote_control) ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-                    /* think we may need to redo our send socket....  */
-                    if (!recreateSend(remote_control, &err_msg))
-                      REMOTELOGMSG(remote_control,
-                                   "Could not recreate send socket: \"%s\" !",
-                                   err_msg) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-                    remote_control->state = REMOTE_STATE_IDLE ;
-                  }
-                else if (timeout_type == TIMEOUT_NOT_FINAL)
-                  {
-
-                    REMOTELOGMSG(remote_control,
-                                 "Request %d%s timeout after %gs: \"%s\".",
-                                 timeout_num,
-                                 (timeout_num == 1 ? "st" : 
-                                  (timeout_num == 2 ? "nd" :
-                                   (timeout_num == 3 ? "rd" : "th"))),
-                                 timeout_s,
-                                 remote_control->curr_req->request) ;
-                  }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+                /* add timeout stuff ?? */
+                ;
 
               }
             else
@@ -1265,22 +1253,30 @@ static gboolean queueMonitorCB(gpointer user_data)
 
                 reply = queueRemove(remote_control->outgoing_replies) ;
 
-                if (reqReplyMatch(remote_control, remote_control->curr_req, reply->body, &err_msg))
-                  {
-                    result = sendReply(remote_control, reply) ;
-
-                    reqReplyDestroy(remote_control->curr_req) ;
-                    remote_control->curr_req = NULL ;
-
-                    remote_control->state = REMOTE_STATE_IDLE ;
-                  }
-                else
+                if (!reqReplyMatch(remote_control, remote_control->curr_req, reply->body, &err_msg))
                   {
                     REMOTELOGMSG(remote_control,
                                  "Reply could not be matched to request because: \"%s\"", err_msg) ;
                     g_free(err_msg) ;
 
                     zeroMQMessageDestroy(reply) ;
+
+                    remote_control->state = REMOTE_STATE_IDLE ;
+                  }
+                else if (!(result = sendReply(remote_control, reply)))
+                  {
+                    REPORTMSG(remote_control, reply, "Reply could not be sent to peer, discarding reply") ;
+
+                    zeroMQMessageDestroy(reply) ;
+
+                    remote_control->state = REMOTE_STATE_IDLE ;
+                  }
+                else
+                  {
+                    reqReplyAddReply(remote_control->curr_req, reply) ;
+
+                    remote_control->prev_incoming_req = remote_control->curr_req ;
+                    remote_control->curr_req = NULL ;
 
                     remote_control->state = REMOTE_STATE_IDLE ;
                   }
@@ -1477,16 +1473,36 @@ static ReqReply reqReplyCreate(RemoteZeroMQMessage request, RemoteControlRequest
 }
 
 
-static gboolean reqReplyMatch(ZMapRemoteControl remote_control, ReqReply req_reply, char *reply, char **err_msg_out)
+static void reqReplyAddReply(ReqReply req_reply, RemoteZeroMQMessage reply)
+{
+  req_reply->reply = reply ;
+
+  return ;
+}
+
+
+/* Are the two requests the same, especially same id. */
+static gboolean reqReplyRequestIsSame(ZMapRemoteControl remote_control,
+                                      char *request_1, char *request_2, char **err_msg_out)
 {
   gboolean result = FALSE ;
-  RemoteValidateRCType valid ;
 
-  if ((valid = zMapRemoteCommandValidateReply(remote_control, req_reply->request->body, reply, err_msg_out)))
-    result = TRUE ;
+  result = zMapRemoteCommandRequestsIdentical(remote_control, request_1, request_2, err_msg_out) ;
 
   return result ;
 }
+
+
+/* Does the reply match the request, e.g. request id, command etc. */
+static gboolean reqReplyMatch(ZMapRemoteControl remote_control, ReqReply req_reply, char *reply, char **err_msg_out)
+{
+  gboolean result = FALSE ;
+
+  result = zMapRemoteCommandValidateReply(remote_control, req_reply->request->body, reply, err_msg_out) ;
+
+  return result ;
+}
+
 
 
 static RemoteZeroMQMessage reqReplyStealRequest(ReqReply req_rep)
@@ -1498,6 +1514,20 @@ static RemoteZeroMQMessage reqReplyStealRequest(ReqReply req_rep)
 
   return request ;
 }
+
+
+static RemoteZeroMQMessage reqReplyStealReply(ReqReply req_rep)
+{
+  RemoteZeroMQMessage reply = NULL ;
+
+  reply = req_rep->reply ;
+  req_rep->reply = NULL ;                                   /* Prevent it being free'd on reqrep destroy. */
+
+  return reply ;
+}
+
+
+
 
 
 /* I'M NOT SURE THIS IS USED NOW....CHECK THIS...SEE FOLLOWING ROUTINE....DOH... */
@@ -1617,6 +1647,17 @@ static void queueAdd(GQueue *queue, RemoteZeroMQMessage req_rep)
 
   return ;
 }
+
+/* Put at front of queue. */
+static void queueAddFront(GQueue *queue, RemoteZeroMQMessage req_rep)
+{
+  g_queue_push_head(queue, req_rep) ;
+
+  return ;
+}
+
+
+
 
 /* Here high priority commands are shifted to the front of the queue, where two commands
  * have the same priority they are sorted by the time of the request (earliest first). */
@@ -2353,7 +2394,7 @@ static void logMsg(ZMapRemoteControl remote_control,
 
 
 
-
+/* UM NO....NEEDS COMPLETELY RECODING..... */
 /* Reset the state of the Remote Control object to idle, freeing all resources. */
 static void resetRemoteToIdle(ZMapRemoteControl remote_control)
 {
@@ -2460,27 +2501,6 @@ static void destroyReceive(ZMapRemoteControl remote_control, RemoteReceive recei
 
 
 /* Create send interface struct. */
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static RemoteSend createSend(ZMapRemoteControlRequestSentFunc req_sent_func, gpointer req_sent_func_data,
-			     ZMapRemoteControlReplyHandlerFunc process_reply_func, gpointer process_reply_func_data)
-{
-  RemoteSend send_request ;
-
-  send_request = g_new0(RemoteSendStruct, 1) ;
-  send_request->remote_type = REMOTE_TYPE_CLIENT ;
-
-  send_request->process_reply_func = process_reply_func ;
-  send_request->process_reply_func_data = process_reply_func_data ;
-
-  send_request->req_sent_func = req_sent_func ;
-  send_request->req_sent_func_data = req_sent_func_data ;
-
-  return send_request ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 static gboolean createSend(ZMapRemoteControl remote_control, char *socket_string,
                            ZMapRemoteControlRequestSentFunc req_sent_func, gpointer req_sent_func_data,
                            ZMapRemoteControlReplyHandlerFunc process_reply_func, gpointer process_reply_func_data,
@@ -2606,10 +2626,19 @@ static void timeoutStartTimer(ZMapRemoteControl remote_control)
   return ;
 }
 
-/* Returns whether we've timed out, whether it's an intermediate timeout
- * or whether it's the final timeout in the series. Note that after 
- * the final timeout further calls will use the final timeout time
- * unless the timer is explicitly reset and restarted. */
+/* Returns whether we've timed out or not.
+ * 
+ * If a timeout has occurred then the type of that timeout is returned.
+ * 
+ * If the timeout is not the last one in the list then TIMEOUT_NOT_FINAL
+ * is returned and the timer is moved on to the next timeout period in the list.
+ * 
+ * If the timeout is the final timeout then TIMEOUT_FINAL is returned,
+ * further calls continue to return this value until the timer
+ * is explicitly reset and restarted.
+ * 
+ * Otherwise TIMEOUT_NONE is returned.
+ *  */
 static TimeoutType timeoutHasTimedOut(ZMapRemoteControl remote_control)
 {
   TimeoutType timeout_type = TIMEOUT_NONE ;
@@ -2647,6 +2676,7 @@ static void timeoutResetTimeouts(ZMapRemoteControl remote_control)
   return ;
 }
 
+/* Returns how many timeouts have happened so far and how many seconds the current timeout is set to. */
 static void timeoutGetCurrTimeout(ZMapRemoteControl remote_control, int *timeout_num_out, double *timeout_s_out)
 {
   *timeout_num_out = (remote_control->timeout_list_pos + 1) ;

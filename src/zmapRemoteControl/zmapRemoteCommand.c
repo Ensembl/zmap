@@ -140,6 +140,8 @@ static gboolean getReplyAttrs(char *xml_request, GQuark *reply_version,
                               char **reply_command, char **error_out) ;
 static gboolean checkAttribute(ZMapXMLParser parser, ZMapXMLElement element,
 			       char *attribute, GQuark expected_value, char **error_out) ;
+static gboolean compareRequests(ZMapRemoteControl remote_control,
+				char *request_1, char *request_2, char **error_out) ;
 static gboolean checkReplyAttrs(ZMapRemoteControl remote_control,
 				char *original_request, char *reply, char **error_out) ;
 static gboolean getAttribute(ZMapXMLParser parser, ZMapXMLElement element,
@@ -692,12 +694,7 @@ RemoteValidateRCType zMapRemoteCommandValidateEnvelope(ZMapRemoteControl remote_
 			    g_quark_from_string(ZACP_REQUEST), validate_command,
 			    remote_control->version,
 			    (remote_control->send ? remote_control->send->peer_app_name_id : 0),
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-			    remote_control->receive->our_unique_str,
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
                             g_quark_from_string(remote_control->receive->zmq_end_point),
-
 			    xml_request, error_out) ;
 
   return result ;
@@ -723,27 +720,35 @@ RemoteValidateRCType zMapRemoteCommandValidateRequest(ZMapRemoteControl remote_c
 			    g_quark_from_string(ZACP_REQUEST), validate_command,
 			    remote_control->version,
 			    (remote_control->send ? remote_control->send->peer_app_name_id : 0),
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-			    remote_control->receive->our_unique_str,
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 			    g_quark_from_string(remote_control->receive->zmq_end_point),
-
 			    xml_request, error_out) ;
 
   return result ;
 }
 
 
-RemoteValidateRCType zMapRemoteCommandValidateReply(ZMapRemoteControl remote_control,
-						    char *original_request, char *reply, char **error_out)
+gboolean zMapRemoteCommandValidateReply(ZMapRemoteControl remote_control,
+                                        char *original_request, char *reply, char **error_out)
 {
-  RemoteValidateRCType result = REMOTE_VALIDATE_RC_OK ;
+  gboolean result = FALSE ;
 
   result = checkReplyAttrs(remote_control, original_request, reply, error_out) ;
 
   return result ;
 }
+
+
+gboolean zMapRemoteCommandRequestsIdentical(ZMapRemoteControl remote_control,
+                                            char *request_1, char *request_2, char **error_out)
+{
+  gboolean result = FALSE ;
+
+  result = compareRequests(remote_control, request_1, request_2, error_out) ;
+
+  return result ;
+}
+
+
 
 
 
@@ -1247,14 +1252,39 @@ static gboolean checkReplyAttrs(ZMapRemoteControl remote_control,
       /* check app_id ??? probably not....changes between request/reply always .... */
 
       if (req_version == reply_version
-	  && remote_control->send->peer_app_name_id == reply_app_id
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  && remote_control->send->their_unique_str == reply_socket_id
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
+          && req_socket_id == reply_socket_id
 	  && g_ascii_strcasecmp(req_request_id, reply_id) == 0
 	  && g_ascii_strcasecmp(req_command, reply_command) == 0)
+	result = TRUE ;
+    }
+
+  return result ;
+}
+
+
+
+static gboolean compareRequests(ZMapRemoteControl remote_control,
+				char *request_1, char *request_2, char **error_out)
+{
+  gboolean result = FALSE ;
+  GQuark request_1_version = 0, request_1_app_id = 0, request_1_socket_id = 0 ;
+  char *request_1_request_id = NULL, *request_1_request_time = NULL, *request_1_command = NULL ;
+  GQuark request_2_version = 0, request_2_app_id = 0, request_2_socket_id = 0 ;
+  char *request_2_id = NULL,  *request_2_time= NULL, *request_2_command = NULL ;
+
+  if ((result = getRequestAttrs(request_1,
+				&request_1_version, &request_1_app_id, &request_1_socket_id,
+                                &request_1_request_id, &request_1_request_time, &request_1_command,
+				error_out))
+      && (result = getRequestAttrs(request_2,
+                                   &request_2_version, &request_2_app_id, &request_2_socket_id,
+                                   &request_2_id, &request_2_time, &request_2_command,
+                                   error_out)))
+    {
+      if (request_1_version == request_2_version
+	  && request_1_app_id == request_2_app_id
+	  && g_ascii_strcasecmp(request_1_request_id, request_2_id) == 0
+	  && g_ascii_strcasecmp(request_1_command, request_2_command) == 0)
 	result = TRUE ;
     }
 

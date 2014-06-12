@@ -107,8 +107,10 @@ RemoteValidateRCType zMapRemoteCommandValidateEnvelope(ZMapRemoteControl remote_
 						       char *xml_request, char **error_out) ;
 RemoteValidateRCType zMapRemoteCommandValidateRequest(ZMapRemoteControl remote_control,
 						      char *request, char **error_out) ;
-RemoteValidateRCType zMapRemoteCommandValidateReply(ZMapRemoteControl remote_control,
-						    char *original_request, char *reply, char **error_out) ;
+gboolean zMapRemoteCommandValidateReply(ZMapRemoteControl remote_control,
+                                        char *original_request, char *reply, char **error_out) ;
+gboolean zMapRemoteCommandRequestsIdentical(ZMapRemoteControl remote_control,
+                                            char *request_1, char *request_2, char **error_out) ;
 gboolean zMapRemoteCommandRequestIsCommand(char *request, char *command) ;
 char *zMapRemoteCommandRequestGetCommand(char *request) ;
 int zMapRemoteCommandGetPriority(char *request) ;
