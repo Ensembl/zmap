@@ -57,7 +57,7 @@
 
 
 
-#define TIMEOUT_LIST "10,100,1000"
+#define TIMEOUT_LIST "100000,100000,1000000"
 
 
 
@@ -256,7 +256,7 @@ typedef struct RemoteDataStructName
   char *peer_socket_str ;
 
   ZMapRemoteControl remote_cntl ;
-
+  gboolean send_interface_init ;                            /* Have we init'd the send interface. */
 
 
   char *curr_request ;
@@ -1658,11 +1658,30 @@ static gboolean handleHandshake(char *command_text, RemoteData remote_data)
 	{
 	  char *message ;
 
-	  /* Need to init peer interface........ */
-	  if (zMapRemoteControlSendInit(remote_data->remote_cntl,
-					remote_data->peer_cbdata->socket_id,
-					requestSentCB, remote_data,
-					replyHandlerCB, remote_data))
+
+          if (!remote_data->send_interface_init)
+            {
+              /* Need to init peer interface........ */
+              if (zMapRemoteControlSendInit(remote_data->remote_cntl,
+                                            remote_data->peer_cbdata->socket_id,
+                                            requestSentCB, remote_data,
+                                            replyHandlerCB, remote_data))
+                {
+                  remote_data->send_interface_init = TRUE ;
+                }
+              else
+                {
+                  remote_data->error = g_strdup_printf("Disaster, could not init send interface during"
+                                                       " handshake for peer \"%s\", id \"%s\".",
+                                                       peer_data.app_id, peer_data.socket_id) ;
+
+                  zMapWarning("%s", remote_data->error) ;
+
+                  remote_data->reply_rc = REMOTE_COMMAND_RC_FAILED ;
+                }
+            }
+
+          if (remote_data->reply_rc != REMOTE_COMMAND_RC_FAILED)
 	    {
 	      GArray *reply_array ;
 	      char *error_text = NULL ;
@@ -1670,24 +1689,6 @@ static gboolean handleHandshake(char *command_text, RemoteData remote_data)
 	      remote_data->peer_app_name = g_strdup(peer_data.app_id) ;
 	      remote_data->peer_socket_str = g_strdup(peer_data.socket_id) ;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	      if (peer_data.window_id)
-		{
-		  char *rest_str = NULL ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-		  /* should error check here.... */
-		  errno = 0 ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-		  remote_data->peer_x_window_id = strtoul(peer_data.window_id, &rest_str, 16) ;
-
-		  remote_data->peer_x_window_id_str = g_strdup_printf(ZMAP_XWINDOW_FORMAT_STR,
-								      remote_data->peer_x_window_id) ;
-		}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 	      message = g_strdup_printf("Handshake successful with peer \"%s\", socket id \"%s\".",
 					peer_data.app_id, peer_data.socket_id) ;
@@ -1714,15 +1715,6 @@ static gboolean handleHandshake(char *command_text, RemoteData remote_data)
 	      remote_data->reply_rc = REMOTE_COMMAND_RC_OK ;
 
 	      gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(remote_data->send_init), TRUE) ;
-	    }
-	  else
-	    {
-	      remote_data->error = g_strdup_printf("Handshake failed for peer \"%s\", id \"%s\".",
-						   peer_data.app_id, peer_data.socket_id) ;
-
-	      zMapCritical("%s", remote_data->error) ;
-
-	      remote_data->reply_rc = REMOTE_COMMAND_RC_FAILED ;
 	    }
 	}
     }
