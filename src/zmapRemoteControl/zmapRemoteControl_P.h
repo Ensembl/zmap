@@ -298,6 +298,21 @@ typedef struct ZMapRemoteControlStructType
    * so we need to be able to check if they are valid. */
   ZMapMagic magic ;
 
+
+  /* Our current state/interface. */
+
+  RemoteControlState state ;
+
+  RemoteReceive receive ;				    /* Active when acting as server. */
+  RemoteSend send ;					    /* Active when acting as client. */
+
+  void *zmq_context ;                                       /* zeroMQ context. */
+
+
+
+
+  /* Used in constructing/validating etc. of requests/replies */
+
   GQuark app_id ;					    /* Applications "name", good for debug messages. */
 
   GQuark version ;					    /* Current protocol version. */
@@ -306,51 +321,45 @@ typedef struct ZMapRemoteControlStructType
    * even if "send" has not been initialised. The id is always > 0 */
   int request_id ;
 
-  /* Request/replies we are currently dealing with or NULL. */
-  RemoteZeroMQMessage curr_req_raw ;                        /* Just the header and xml request string. */
-
-  ReqReply curr_req ;                                       /* Request/Reply being processed. */
-  ReqReply stalled_req ;                                    /* Request/Reply stalled as a result of a collision. */
-  ReqReply timedout_req ;                                   /* Last timedout request. */
-
-  /* Our current state/interface. */
-  RemoteControlState state ;
-
-  RemoteReceive receive ;				    /* Active when acting as server. */
-  RemoteSend send ;					    /* Active when acting as client. */
 
 
-  /* zeroMQ context. */
-  void *zmq_context ;
+  /* Queues of incoming requests/outgoing replies and outgoing requests/incoming replies,
+   * these are queues of RemoteZeroMQMessage's, i.e. the queues hold messages to be received
+   * or sent. */
 
-  /* I'M NOT COMPLETELY SURE OF THIS....MIGHT NOT BE THE BEST WAY TO ORGANISE THINGS...
-   * NOT SURE.... */
-  /* Queues of incoming requests/outgoing replies and outgoing requests/incoming replies. */
   GQueue *incoming_requests ;
   GQueue *outgoing_replies ;
 
   GQueue *outgoing_requests ;
   GQueue *incoming_replies ;
 
-  guint queue_monitor_cb_id ;                                        /* queue monitor glib callback id. */
-  gboolean stop_monitoring ;                                /* If TRUE monitor callback will remove itself. */
+  guint queue_monitor_cb_id ;                               /* queue monitor glib callback id. */
 
 
-  /* Timeouts, timer_source_id is cached so we can cancel the timeouts. */
+
+  /* The current Request/reply taken from the above queues. */
+
+  RemoteZeroMQMessage curr_req_raw ;                        /* Just the header and xml request
+                                                               string. */
+
+  ReqReply curr_req ;                                       /* Request/Reply being processed,
+                                                               derived from curr_req_raw */
+
+  ReqReply prev_incoming_req ;                              /* Hold on to this in case our reply
+                                                               was too slow and peer timed us out. */
+
+  ReqReply stalled_req ;                                    /* Request/Reply stalled as a result of a collision. */
+
+
+  /* Do we even use this... */
+  ReqReply timedout_req ;                                   /* Last timedout request. */
+
+
+
+  /* Timeouts: timeout list and timer. */
   GArray *timeout_list ;
   int timeout_list_pos ;
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  guint timer_source_id ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
   GTimer *timeout_timer ;
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  guint32 timeout_ms ;					    /* timeout in milliseconds. */
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 
   /* App function to call when there is an error, e.g. peer not responding. */
   ZMapRemoteControlErrorHandlerFunc app_error_func ;
