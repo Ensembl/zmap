@@ -114,20 +114,24 @@ _(REMOTE_STATE_SERVER_PROCESS_REQ,     ,\
 
 /* New stuff.... */
 #define REMOTE_STATE_LIST(_)						\
-_(REMOTE_STATE_INVALID,            ,					\
-  "invalid", "Invalid state !"                             , "") \
-_(REMOTE_STATE_IDLE,               ,				\
-  "idle", "Idle, no requests active."     , "") \
-_(REMOTE_STATE_DYING,              ,\
-  "dying"             , "Dying, no requests can be accepted."                        , "") \
-_(REMOTE_STATE_OUTGOING_REQUEST_TO_BE_SENT,     ,\
-  "outgoing-request-to-be-sent"    , "Have request to send to our peer."     , "") \
-_(REMOTE_STATE_OUTGOING_REQUEST_WAITING_FOR_THEIR_REPLY,     ,\
-  "outgoing-request-waiting-for-reply"    , "Sent request to peer, waiting for their reply."     , "") \
-_(REMOTE_STATE_INCOMING_REQUEST_TO_BE_RECEIVED,     ,\
-  "incoming-request-to-be-received"    , "Have received request from peer."     , "") \
-_(REMOTE_STATE_INCOMING_REQUEST_WAITING_FOR_OUR_REPLY,     ,\
-  "incoming-request-waiting-for-reply"    , "Received request from peer, waiting for our reply."     , "")
+  _(REMOTE_STATE_INVALID,            ,					\
+    "invalid", "Invalid state !"                             , "")      \
+    _(REMOTE_STATE_IDLE,               ,				\
+      "idle", "Idle, no requests active."     , "")                     \
+    _(REMOTE_STATE_OUTGOING_REQUEST_TO_BE_SENT,     ,                   \
+      "outgoing-request-to-be-sent"    , "Have request to send to our peer."     , "") \
+    _(REMOTE_STATE_OUTGOING_REQUEST_WAITING_FOR_THEIR_REPLY,     ,      \
+      "outgoing-request-waiting-for-reply"    , "Sent request to peer, waiting for their reply."     , "") \
+    _(REMOTE_STATE_INCOMING_REQUEST_TO_BE_RECEIVED,     ,               \
+      "incoming-request-to-be-received"    , "Have received request from peer."     , "") \
+    _(REMOTE_STATE_INCOMING_REQUEST_WAITING_FOR_OUR_REPLY,     ,        \
+      "incoming-request-waiting-for-reply"    , "Received request from peer, waiting for our reply."     , "") \
+    _(REMOTE_STATE_FAILED,              ,                               \
+      "failed", "Communication with peer has failed and cannot be recovered.", "") \
+    _(REMOTE_STATE_DYING,              ,                                \
+      "dying", "Dying, no requests can be accepted.", "")
+
+
 
 ZMAP_DEFINE_ENUM(RemoteControlState, REMOTE_STATE_LIST) ;
 

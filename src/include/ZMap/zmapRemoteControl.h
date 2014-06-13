@@ -153,7 +153,12 @@ gboolean zMapRemoteControlSendInit(ZMapRemoteControl remote_control,
 gboolean zMapRemoteControlReceiveWaitForRequest(ZMapRemoteControl remote_control) ;
 gboolean zMapRemoteControlSendRequest(ZMapRemoteControl remote_control, char *peer_xml_request) ;
 
+
+/* Not too sure about this...this is actually quite complex...better to destroy and recreate. */
 void zMapRemoteControlReset(ZMapRemoteControl remote_control) ;
+
+gboolean zMapRemoteControlHasFailed(ZMapRemoteControl remote_control) ;
+
 gboolean zMapRemoteControlSetDebug(ZMapRemoteControl remote_control, ZMapRemoteControlDebugLevelType debug_level) ;
 gboolean zMapRemoteControlSetTimeoutList(ZMapRemoteControl remote_control, char *peer_timeout_list) ;
 gboolean zMapRemoteControlSetErrorCB(ZMapRemoteControl remote_control,
