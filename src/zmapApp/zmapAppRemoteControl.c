@@ -322,8 +322,12 @@ void zmapAppRemoteControlDestroy(ZMapAppContext app_context)
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
   g_free(remote->peer_socket) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* Reset the interface and then destroy it. */
   zMapRemoteControlReset(remote->remote_controller) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   zMapRemoteControlDestroy(remote->remote_controller) ;
 
@@ -1055,8 +1059,12 @@ static gboolean sendRequestCB(GQueue *request_queue)
   if (remote->curr_zmap_command)
     g_free(remote->curr_zmap_command) ;
   remote->curr_zmap_command = request_data->command ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* Crashes on double free... */
   if (remote->curr_zmap_request)
     g_free(remote->curr_zmap_request) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
   remote->curr_zmap_request = request_data->request ;
   
   /* Cache app function to be called when we receive a reply from the peer. */
