@@ -1248,14 +1248,13 @@ static gboolean checkReplyAttrs(ZMapRemoteControl remote_control,
                                  &reply_id, &reply_time, &reply_command,
 				 error_out)))
     {
-
-      /* check app_id ??? probably not....changes between request/reply always .... */
-
       if (req_version == reply_version
           && req_socket_id == reply_socket_id
 	  && g_ascii_strcasecmp(req_request_id, reply_id) == 0
 	  && g_ascii_strcasecmp(req_command, reply_command) == 0)
 	result = TRUE ;
+      else
+        result = FALSE ;
     }
 
   return result ;
@@ -1286,6 +1285,8 @@ static gboolean compareRequests(ZMapRemoteControl remote_control,
 	  && g_ascii_strcasecmp(request_1_request_id, request_2_id) == 0
 	  && g_ascii_strcasecmp(request_1_command, request_2_command) == 0)
 	result = TRUE ;
+      else
+        result = FALSE ;
     }
 
   return result ;
@@ -1923,12 +1924,10 @@ static gboolean checkAttribute(ZMapXMLParser parser, ZMapXMLElement element,
     {
       GQuark value ;
       char *value_str ;
-      char *exp_str ;
 
       value = zMapXMLAttributeGetValue(attr) ;
 
       value_str = (char *)g_quark_to_string(value) ;
-      exp_str = (char *)g_quark_to_string(expected_value) ;
 
       if (value != expected_value)
 	{
