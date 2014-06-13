@@ -62,7 +62,7 @@ static unsigned int iCount = 0 ;
 gboolean zMapGFFGetVersionFromString(const char* const sString, int * const piOut)
 {
   static const char *sFormat = "##gff-version %i" ;
-  static const char iExpectedFields = 1 ;
+  static const int iExpectedFields = 1 ;
   int iValue ;
   gboolean bResult = FALSE ;
 
