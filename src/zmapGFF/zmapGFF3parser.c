@@ -2634,7 +2634,8 @@ static ZMapFeature makeFeatureTranscript(ZMapGFF3Parser const pParser,
     bIsExon = FALSE,
     bIsIntron = FALSE,
     bIsCDS = FALSE,
-    bIsComponent = FALSE ;
+    bIsComponent = FALSE,
+    bWithinParent = FALSE ;
   GQuark gqThisID = 0 , gqLocusID = 0, gqThisUniqueID = 0 ;
   ZMapFeature pFeature = NULL ;
   ZMapSOIDData pSOIDData = NULL ;
@@ -2792,26 +2793,35 @@ static ZMapFeature makeFeatureTranscript(ZMapGFF3Parser const pParser,
     }
   else if ((cCase == SECOND) && bFeaturePresent)
     {
-      if (bIsExon)
+      /*
+       * Only add subfeature data if their start and end is within that
+       * of the parent object. This traps extremely rare errors (probably due
+       * to corrupted source data).
+       */
+      bWithinParent = (iStart >= pFeature->x1) && (iEnd <= pFeature->x2) ;
+      if (bWithinParent)
         {
-          cSpanItem.x1 = iStart ;
-          cSpanItem.x2 = iEnd ;
-          pSpanItem = &cSpanItem;
-          bDataAdded = zMapFeatureAddTranscriptExonIntron(pFeature, pSpanItem, NULL) ;
-        }
-      else if (bIsIntron)
-        {
-          cSpanItem.x1 = iStart ;
-          cSpanItem.x2 = iEnd ;
-          pSpanItem = &cSpanItem ;
-          bDataAdded = zMapFeatureAddTranscriptExonIntron(pFeature, NULL, pSpanItem) ;
-        }
-      else if (bIsCDS)
-        {
-          /*
-           * Should we also include start_not_found etc if present?
-           */
-          bDataAdded = zMapFeatureAddTranscriptCDSDynamic(pFeature, iStart, iEnd, cPhase) ;
+          if (bIsExon)
+            {
+              cSpanItem.x1 = iStart ;
+              cSpanItem.x2 = iEnd ;
+              pSpanItem = &cSpanItem;
+              bDataAdded = zMapFeatureAddTranscriptExonIntron(pFeature, pSpanItem, NULL) ;
+            }
+          else if (bIsIntron)
+            {
+              cSpanItem.x1 = iStart ;
+              cSpanItem.x2 = iEnd ;
+              pSpanItem = &cSpanItem ;
+              bDataAdded = zMapFeatureAddTranscriptExonIntron(pFeature, NULL, pSpanItem) ;
+            }
+          else if (bIsCDS)
+            {
+              /*
+               * Should we also include start_not_found, end_not_found if present?
+               */
+              bDataAdded = zMapFeatureAddTranscriptCDSDynamic(pFeature, iStart, iEnd, cPhase) ;
+            }
         }
 
       if (!bDataAdded)
