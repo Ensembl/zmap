@@ -20,7 +20,7 @@
  * This file is part of the ZMap genome database package
  * originally written by:
  *
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ * Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
@@ -92,10 +92,10 @@ static void zoomWindowToPosition(ZMapWindow window, RequestData request_data,
                                  RemoteCommandRCType *command_rc_out, char **reason_out,
                                  ZMapXMLUtilsEventStack *reply_out) ;
 static void zoomWindowToFeature(ZMapWindow window, RequestData input_data,
-				RemoteCommandRCType *command_rc_out, char **reason_out,
-				ZMapXMLUtilsEventStack *reply_out) ;
+RemoteCommandRCType *command_rc_out, char **reason_out,
+ZMapXMLUtilsEventStack *reply_out) ;
 static void getWindowMark(ZMapWindow window, RemoteCommandRCType *command_rc_out, char **reason_out,
-			  ZMapXMLUtilsEventStack *reply_out) ;
+  ZMapXMLUtilsEventStack *reply_out) ;
 
 static ZMapXMLUtilsEventStack makeMessageElement(char *message_text) ;
 
@@ -140,16 +140,16 @@ static ZMapXMLObjTagFunctionsStruct mark_ends_G[] =
 
 
 static void localProcessRemoteRequest(ZMapWindow window,
-				      char *command_name, char *request,
-				      ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data) ;
+      char *command_name, char *request,
+      ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data) ;
 #ifdef UNUSED
 static void localProcessReplyFunc(char *command, RemoteCommandRCType command_rc, char *reason, char *reply,
-				  gpointer reply_handler_func_data) ;
+  gpointer reply_handler_func_data) ;
 #endif 
 
 static void processRequest(ZMapWindow window,
-			   char *command_name, char *request,
-			   RemoteCommandRCType *command_rc_out, char **reason_out, ZMapXMLUtilsEventStack *reply_out) ;
+   char *command_name, char *request,
+   RemoteCommandRCType *command_rc_out, char **reason_out, ZMapXMLUtilsEventStack *reply_out) ;
 
 
 
@@ -168,8 +168,8 @@ static void processRequest(ZMapWindow window,
 /* Entry point to handle requests from a peer program, process the command if we recognise it,
  * otherwise return FALSE to indicate we don't know that command. */
 gboolean zMapWindowProcessRemoteRequest(ZMapWindow window,
-					char *command_name, char *request,
-					ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data)
+                                        char *command_name, char *request,
+                                        ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data)
 {
   gboolean result = FALSE ;
 
@@ -177,7 +177,7 @@ gboolean zMapWindowProcessRemoteRequest(ZMapWindow window,
       || strcmp(command_name, ZACP_GET_MARK) == 0)
     {
       localProcessRemoteRequest(window, command_name, request,
-				app_reply_func, app_reply_data) ;
+                                app_reply_func, app_reply_data) ;
 
       result = TRUE ;
     }
@@ -202,11 +202,11 @@ gboolean zMapWindowProcessRemoteRequest(ZMapWindow window,
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 void zmapWindowUpdateXRemoteData(ZMapWindow window, ZMapFeatureAny feature_any,
-				 char *action, FooCanvasItem *real_item)
+                                 char *action, FooCanvasItem *real_item)
 
 {
   zmapWindowUpdateXRemoteDataFull(window, feature_any,
-				  action, real_item, NULL, NULL, NULL) ;
+  action, real_item, NULL, NULL, NULL) ;
 
   return ;
 }
@@ -215,10 +215,10 @@ void zmapWindowUpdateXRemoteData(ZMapWindow window, ZMapFeatureAny feature_any,
 /* It is probably just about worth having this here as a unified place to handle requests but
  * that may need revisiting.... */
 void zmapWindowUpdateXRemoteDataFull(ZMapWindow window, ZMapFeatureAny feature_any,
-				     char *action, FooCanvasItem *real_item,
-				     ZMapXMLObjTagFunctions start_handlers,
-				     ZMapXMLObjTagFunctions end_handlers,
-				     gpointer handler_data)
+     char *action, FooCanvasItem *real_item,
+     ZMapXMLObjTagFunctions start_handlers,
+     ZMapXMLObjTagFunctions end_handlers,
+     gpointer handler_data)
 {
   ZMapWindowCallbacks window_cbs_G = zmapWindowGetCBs() ;
   ZMapXMLUtilsEventStack xml_elements ;
@@ -240,7 +240,7 @@ void zmapWindowUpdateXRemoteDataFull(ZMapWindow window, ZMapFeatureAny feature_a
    * AND INSERT NEW CHROMOSOME COORDS...IF WE CAN DO THIS FOR THIS THEN WE
    * CAN HANDLE VIEW FEATURE STUFF IN SAME WAY...... */
   feature_copy = (ZMapFeature)zMapFeatureAnyCopy(feature_any) ;
-  feature_copy->parent = feature_any->parent ;	    /* Copy does not do parents so we fill in. */
+  feature_copy->parent = feature_any->parent ;    /* Copy does not do parents so we fill in. */
 
 
   /* REVCOMP COORD HACK......THIS HACK IS BECAUSE OUR COORD SYSTEM IS MUCKED UP FOR
@@ -262,22 +262,22 @@ void zmapWindowUpdateXRemoteDataFull(ZMapWindow window, ZMapFeatureAny feature_a
       zMapUtilsSwop(int, feature_copy->x1, feature_copy->x2) ;
 
       if (feature_copy->strand == ZMAPSTRAND_FORWARD)
-	feature_copy->strand = ZMAPSTRAND_REVERSE ;
+        feature_copy->strand = ZMAPSTRAND_REVERSE ;
       else
-	feature_copy->strand = ZMAPSTRAND_FORWARD ;
-	      
+        feature_copy->strand = ZMAPSTRAND_FORWARD ;
+      
 
       if (ZMAPFEATURE_IS_TRANSCRIPT(feature_copy))
-	{
-	  if (!zMapFeatureTranscriptChildForeach(feature_copy, ZMAPFEATURE_SUBPART_EXON,
-						 revcompTransChildCoordsCB, window)
-	      || !zMapFeatureTranscriptChildForeach(feature_copy, ZMAPFEATURE_SUBPART_INTRON,
-						    revcompTransChildCoordsCB, window))
-	    zMapLogCritical("RemoteControl error revcomping coords for transcript %s",
-			    zMapFeatureName((ZMapFeatureAny)(feature_copy))) ;
-
-	  zMapFeatureTranscriptSortExons(feature_copy) ;
-	}
+        {
+          if (!zMapFeatureTranscriptChildForeach(feature_copy, ZMAPFEATURE_SUBPART_EXON,
+                                                 revcompTransChildCoordsCB, window)
+              || !zMapFeatureTranscriptChildForeach(feature_copy, ZMAPFEATURE_SUBPART_INTRON,
+                                                    revcompTransChildCoordsCB, window))
+            zMapLogCritical("RemoteControl error revcomping coords for transcript %s",
+            zMapFeatureName((ZMapFeatureAny)(feature_copy))) ;
+        
+          zMapFeatureTranscriptSortExons(feature_copy) ;
+        }
     }
 
   /* Streuth...why doesn't this use a 'creator' function...... */
@@ -341,9 +341,9 @@ void zmapWindowUpdateXRemoteDataFull(ZMapWindow window, ZMapFeatureAny feature_a
 
   /* Send request to peer program. */
   (*(window_cbs_G->remote_request_func))(window_cbs_G->remote_request_func_data,
-					 window,
-					 action, xml_elements,
-					 localProcessReplyFunc, window) ;
+                                         window,
+                                         action, xml_elements,
+                                         localProcessReplyFunc, window) ;
 
 
 
@@ -386,8 +386,8 @@ void zmapWindowUpdateXRemoteDataFull(ZMapWindow window, ZMapFeatureAny feature_a
 
 /* Process requests from remote programs and calls app_reply_func to return the result. */
 static void localProcessRemoteRequest(ZMapWindow window,
-				      char *command_name, char *request,
-				      ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data)
+      char *command_name, char *request,
+      ZMapRemoteAppReturnReplyFunc app_reply_func, gpointer app_reply_data)
 {
   RemoteCommandRCType command_rc = REMOTE_COMMAND_RC_FAILED ;
   char *reason = NULL ;
@@ -406,10 +406,10 @@ static void localProcessRemoteRequest(ZMapWindow window,
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* Handles replies from remote program to commands sent from this layer. */
 static void localProcessReplyFunc(char *command,
-				  RemoteCommandRCType command_rc,
-				  char *reason,
-				  char *reply,
-				  gpointer reply_handler_func_data)
+  RemoteCommandRCType command_rc,
+  char *reason,
+  char *reply,
+  gpointer reply_handler_func_data)
 {
   ZMapWindow window = (ZMapWindow)reply_handler_func_data ;
 
@@ -417,7 +417,7 @@ static void localProcessReplyFunc(char *command,
    * we don't .....this will change... */
   if (window->xremote_reply_handler)
     (window->xremote_reply_handler)(window, window->xremote_reply_data,
-				    command, command_rc, reason, reply) ;
+    command, command_rc, reason, reply) ;
 
 
   return ;
@@ -430,9 +430,9 @@ static void localProcessReplyFunc(char *command,
 
 /* Commands by this routine need the xml to be parsed for arguments etc. */
 static void processRequest(ZMapWindow window,
-			   char *command_name, char *request,
-			   RemoteCommandRCType *command_rc_out, char **reason_out,
-			   ZMapXMLUtilsEventStack *reply_out)
+   char *command_name, char *request,
+   RemoteCommandRCType *command_rc_out, char **reason_out,
+   ZMapXMLUtilsEventStack *reply_out)
 {
   ZMapXMLParser parser ;
   gboolean cmd_debug = FALSE ;
@@ -469,7 +469,7 @@ static void processRequest(ZMapWindow window,
   else
     {
       if (strcmp(command_name, ZACP_ZOOM_TO) == 0)
-	{
+        {
           if (request_data.zoom_to_pos)
             {
               zoomWindowToPosition(window, &request_data,
@@ -480,11 +480,11 @@ static void processRequest(ZMapWindow window,
               zoomWindowToFeature(window, &request_data,
                                   command_rc_out, reason_out, reply_out) ;
             }
-	}
+        }
       else if (strcmp(command_name, ZACP_GET_MARK) == 0)
-	{
-	  getWindowMark(window,	command_rc_out, reason_out, reply_out) ;
-	}
+        {
+          getWindowMark(window,command_rc_out, reason_out, reply_out) ;
+        }
     }
 
   /* Free the parser!!! */
@@ -507,7 +507,7 @@ static void zoomWindowToPosition(ZMapWindow window, RequestData request_data,
       *command_rc_out = REMOTE_COMMAND_RC_FAILED ;
 
       *reason_out = zMapXMLUtilsEscapeStrPrintf("Zoom to position failed, bad feature coords: %d, %d",
-						request_data->zoom_start, request_data->zoom_end) ;
+                                                request_data->zoom_start, request_data->zoom_end) ;
     }
   else
     {
@@ -528,8 +528,8 @@ static void zoomWindowToPosition(ZMapWindow window, RequestData request_data,
 
 
 static void zoomWindowToFeature(ZMapWindow window, RequestData request_data,
-				RemoteCommandRCType *command_rc_out, char **reason_out,
-				ZMapXMLUtilsEventStack *reply_out)
+                                RemoteCommandRCType *command_rc_out, char **reason_out,
+                                ZMapXMLUtilsEventStack *reply_out)
 {
   ZMapFeature feature = request_data->feature ;
 
@@ -538,26 +538,26 @@ static void zoomWindowToFeature(ZMapWindow window, RequestData request_data,
       *command_rc_out = REMOTE_COMMAND_RC_FAILED ;
 
       *reason_out = zMapXMLUtilsEscapeStrPrintf("Zoom feature %s failed",
-						(char *)g_quark_to_string(feature->original_id));
+                                                (char *)g_quark_to_string(feature->original_id));
     }
   else
     {
       if (!zMapWindowFeatureSelect(window, feature))
-	{
-	  *command_rc_out = REMOTE_COMMAND_RC_FAILED ;
+        {
+          *command_rc_out = REMOTE_COMMAND_RC_FAILED ;
 
-	  *reason_out = zMapXMLUtilsEscapeStrPrintf("Select feature %s failed",
-						    (char *)g_quark_to_string(feature->original_id)) ;
-	}
+          *reason_out = zMapXMLUtilsEscapeStrPrintf("Select feature %s failed",
+                                                    (char *)g_quark_to_string(feature->original_id)) ;
+        }
       else
-	{
-	  char *message ;
+        {
+          char *message ;
 
-	  message = g_strdup_printf("Zoom to feature %s ok",
-				    (char *)g_quark_to_string(feature->original_id)) ; 
-	  *reply_out = makeMessageElement(message) ;
-	  *command_rc_out = REMOTE_COMMAND_RC_OK ;
-	}
+          message = g_strdup_printf("Zoom to feature %s ok",
+                                    (char *)g_quark_to_string(feature->original_id)) ; 
+          *reply_out = makeMessageElement(message) ;
+          *command_rc_out = REMOTE_COMMAND_RC_OK ;
+        }
     }
 
   return ;
@@ -565,7 +565,7 @@ static void zoomWindowToFeature(ZMapWindow window, RequestData request_data,
 
 
 static void getWindowMark(ZMapWindow window, RemoteCommandRCType *command_rc_out, char **reason_out,
-			  ZMapXMLUtilsEventStack *reply_out)
+  ZMapXMLUtilsEventStack *reply_out)
 {
   int start = 0, end = 0 ;
   static ZMapXMLUtilsEventStackStruct mark_reply[] =
@@ -588,18 +588,18 @@ static void getWindowMark(ZMapWindow window, RemoteCommandRCType *command_rc_out
     {
       /* Need to check for revcomp..... */
       if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
-	{
-	  int seq_start, seq_end ;
+        {
+          int seq_start, seq_end ;
 
-	  seq_start = start ;
-	  seq_end = end ;
+          seq_start = start ;
+          seq_end = end ;
 
-	  zMapFeatureReverseComplementCoords(window->feature_context, &seq_start, &seq_end) ;
+          zMapFeatureReverseComplementCoords(window->feature_context, &seq_start, &seq_end) ;
 
-	  /* NOTE, always return start < end so swop coords */
-	  start = seq_end ;
-	  end = seq_start ;
-	}
+          /* NOTE, always return start < end so swop coords */
+          start = seq_end ;
+          end = seq_start ;
+        }
 
       mark_reply[1].value.i = start ;
       mark_reply[2].value.i = end ;
@@ -738,7 +738,7 @@ static gboolean xml_align_start_cb(gpointer user_data, ZMapXMLElement set_elemen
   if ((attr = zMapXMLElementGetAttributeByName(set_element, "name")))
     {
       if ((align_id = zMapXMLAttributeGetValue(attr)))
-	align_name = (char *)g_quark_to_string(align_id) ;
+        align_name = (char *)g_quark_to_string(align_id) ;
     }
 
   if (align_name)
@@ -748,30 +748,30 @@ static gboolean xml_align_start_cb(gpointer user_data, ZMapXMLElement set_elemen
       request_data->orig_align = NULL ;
 
       if ((request_data->orig_align
-	   = zMapFeatureContextGetAlignmentByID(request_data->orig_context,
-						zMapFeatureAlignmentCreateID(align_name, TRUE))))
-	master_align = TRUE ;
+           = zMapFeatureContextGetAlignmentByID(request_data->orig_context,
+                zMapFeatureAlignmentCreateID(align_name, TRUE))))
+        master_align = TRUE ;
       else if ((request_data->orig_align
-		= zMapFeatureContextGetAlignmentByID(request_data->orig_context,
-						     zMapFeatureAlignmentCreateID(align_name, FALSE))))
-	master_align = FALSE ;
+        = zMapFeatureContextGetAlignmentByID(request_data->orig_context,
+             zMapFeatureAlignmentCreateID(align_name, FALSE))))
+        master_align = FALSE ;
 
       if ((request_data->orig_align))
-	{
-	  result = TRUE ;
-	}
+        {
+          result = TRUE ;
+        }
       else
-	{
-	  /* If we can't find the align it's a serious error and we can't carry on. */
-	  char *err_msg ;
+        {
+          /* If we can't find the align it's a serious error and we can't carry on. */
+          char *err_msg ;
 
-	  err_msg = g_strdup_printf("Unknown Align \"%s\":  not found in original_context", align_name) ;
-	  zMapXMLParserRaiseParsingError(parser, err_msg) ;
-	  g_free(err_msg) ;
+          err_msg = g_strdup_printf("Unknown Align \"%s\":  not found in original_context", align_name) ;
+          zMapXMLParserRaiseParsingError(parser, err_msg) ;
+          g_free(err_msg) ;
 
-	  request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
-	  result = FALSE ;
-	}
+          request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
+          result = FALSE ;
+        }
     }
   else
     {
@@ -802,7 +802,7 @@ static gboolean xml_block_start_cb(gpointer user_data, ZMapXMLElement set_elemen
   if ((attr = zMapXMLElementGetAttributeByName(set_element, "name")))
     {
       if ((block_id = zMapXMLAttributeGetValue(attr)))
-	block_name = (char *)g_quark_to_string(block_id) ;
+        block_name = (char *)g_quark_to_string(block_id) ;
     }
 
   if (block_name)
@@ -811,35 +811,35 @@ static gboolean xml_block_start_cb(gpointer user_data, ZMapXMLElement set_elemen
       ZMapStrand ref_strand, non_strand;
 
       if (!zMapFeatureBlockDecodeID(block_id, &ref_start, &ref_end, &ref_strand,
-				    &non_start, &non_end, &non_strand))
-	{
-	  /* Bad format block name. */
-	  char *err_msg ;
+            &non_start, &non_end, &non_strand))
+        {
+          /* Bad format block name. */
+          char *err_msg ;
 
-	  err_msg = g_strdup_printf("Bad Format Block name: \"%s\"", block_name) ;
-	  zMapXMLParserRaiseParsingError(parser, err_msg) ;
-	  g_free(err_msg) ;
+          err_msg = g_strdup_printf("Bad Format Block name: \"%s\"", block_name) ;
+          zMapXMLParserRaiseParsingError(parser, err_msg) ;
+          g_free(err_msg) ;
 
-	  request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
-	  result = FALSE ;
-	}
+          request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
+          result = FALSE ;
+        }
       else if (!(request_data->orig_block
-		 = zMapFeatureAlignmentGetBlockByID(request_data->orig_align, block_id)))
-	{
-	  /* If we can't find the block it's a serious error and we can't carry on. */
-	  char *err_msg ;
+                 = zMapFeatureAlignmentGetBlockByID(request_data->orig_align, block_id)))
+        {
+          /* If we can't find the block it's a serious error and we can't carry on. */
+          char *err_msg ;
 
-	  err_msg = g_strdup_printf("Unknown Block \"%s\":  not found in original_context", block_name) ;
-	  zMapXMLParserRaiseParsingError(parser, err_msg) ;
-	  g_free(err_msg) ;
+          err_msg = g_strdup_printf("Unknown Block \"%s\":  not found in original_context", block_name) ;
+          zMapXMLParserRaiseParsingError(parser, err_msg) ;
+          g_free(err_msg) ;
 
-	  request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
-	  result = FALSE ;
-	}
+          request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
+          result = FALSE ;
+        }
       else
-	{
-	  result = TRUE ;
-	}
+        {
+          result = TRUE ;
+        }
     }
   else
     {
@@ -881,22 +881,22 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
       /* Look for the feature set in the current context, it's an error if it's supposed to exist. */
       request_data->orig_feature_set = zMapFeatureBlockGetSetByID(request_data->orig_block, unique_set_id) ;
       if (!(request_data->orig_feature_set))
-	{
-	  /* If we can't find the featureset but it's meant to exist then it's a serious error
-	   * and we can't carry on. */
-	  char *err_msg ;
+        {
+          /* If we can't find the featureset but it's meant to exist then it's a serious error
+           * and we can't carry on. */
+          char *err_msg ;
 
-	  err_msg = g_strdup_printf("Unknown Featureset \"%s\":  not found in original_block", featureset_name) ;
-	  zMapXMLParserRaiseParsingError(parser, err_msg) ;
-	  g_free(err_msg) ;
+          err_msg = g_strdup_printf("Unknown Featureset \"%s\":  not found in original_block", featureset_name) ;
+          zMapXMLParserRaiseParsingError(parser, err_msg) ;
+          g_free(err_msg) ;
 
-	  request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
-	  result = FALSE ;
-	}
+          request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
+          result = FALSE ;
+        }
       else
-	{
-	  result = TRUE ;
-	}
+        {
+          result = TRUE ;
+        }
     }
   else
     {
@@ -914,43 +914,43 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
       ZMapFeatureSource source_data ;
 
       if (!(source_data = g_hash_table_lookup(request_data->window->context_map->source_2_sourcedata,
-					      GINT_TO_POINTER(unique_set_id))))
-	{
-	  char *err_msg ;
+      GINT_TO_POINTER(unique_set_id))))
+        {
+          char *err_msg ;
 
-	  err_msg = g_strdup_printf("Source %s not found in window->context_map.source_2_sourcedata",
-				    g_quark_to_string(unique_set_id)) ;
-	  zMapXMLParserRaiseParsingError(parser, err_msg) ;
-	  g_free(err_msg) ;
+          err_msg = g_strdup_printf("Source %s not found in window->context_map.source_2_sourcedata",
+                                    g_quark_to_string(unique_set_id)) ;
+          zMapXMLParserRaiseParsingError(parser, err_msg) ;
+          g_free(err_msg) ;
 
-	  request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
-	  result = FALSE ;
-	}
+          request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
+          result = FALSE ;
+        }
       else
-	{
-	  request_data->style_id = source_data->style_id ;
-	}
+        {
+          request_data->style_id = source_data->style_id ;
+        }
 
       if (result)
-	{
-	  // check style for all command except load_features
-	  // as load features processes a complete step list that inludes requesting the style
-	  // then if the style is not there then we'll drop the features
+        {
+          // check style for all command except load_features
+          // as load features processes a complete step list that inludes requesting the style
+          // then if the style is not there then we'll drop the features
 
-	  if (!(request_data->style = zMapFindStyle(request_data->window->context_map->styles,
-						    request_data->style_id)))
-	    {
-	      char *err_msg ;
+          if (!(request_data->style = zMapFindStyle(request_data->window->context_map->styles,
+            request_data->style_id)))
+            {
+              char *err_msg ;
 
-	      err_msg = g_strdup_printf("Style %s not found in window->context_map.styles",
-					g_quark_to_string(request_data->style_id)) ;
-	      zMapXMLParserRaiseParsingError(parser, err_msg) ;
-	      g_free(err_msg) ;
+              err_msg = g_strdup_printf("Style %s not found in window->context_map.styles",
+                                        g_quark_to_string(request_data->style_id)) ;
+              zMapXMLParserRaiseParsingError(parser, err_msg) ;
+              g_free(err_msg) ;
 
-	      request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
-	      result = FALSE ;
-	    }
-	}
+              request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
+              result = FALSE ;
+            }
+        }
     }
 
   return result ;
@@ -982,116 +982,116 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
   if (strcmp(request_data->command_name, ZACP_ZOOM_TO) == 0)
     {
       if (result && (attr = zMapXMLElementGetAttributeByName(feature_element, "name")))
-	{
-	  feature_name_id = zMapXMLAttributeGetValue(attr) ;
-	  feature_name = (char *)g_quark_to_string(feature_name_id) ;
-	}
+        {
+          feature_name_id = zMapXMLAttributeGetValue(attr) ;
+          feature_name = (char *)g_quark_to_string(feature_name_id) ;
+        }
       else
-	{
-	  zMapXMLParserRaiseParsingError(parser, "\"name\" is a required attribute for feature.") ;
+        {
+          zMapXMLParserRaiseParsingError(parser, "\"name\" is a required attribute for feature.") ;
 
-	  request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
-	  result = FALSE ;
-	}
+          request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
+          result = FALSE ;
+        }
 
 
       if (result && (attr = zMapXMLElementGetAttributeByName(feature_element, "start")))
-	{
-	  start = strtol((char *)g_quark_to_string(zMapXMLAttributeGetValue(attr)),
-			 (char **)NULL, 10);
-	}
+        {
+          start = strtol((char *)g_quark_to_string(zMapXMLAttributeGetValue(attr)),
+                                                 (char **)NULL, 10);
+        }
       else
-	{
-	  zMapXMLParserRaiseParsingError(parser, "\"start\" is a required attribute for feature.");
+        {
+          zMapXMLParserRaiseParsingError(parser, "\"start\" is a required attribute for feature.");
 
-	  request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
-	  result = FALSE ;
-	}
+          request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
+          result = FALSE ;
+        }
 
       if (result && (attr = zMapXMLElementGetAttributeByName(feature_element, "end")))
-	{
-	  end = strtol((char *)g_quark_to_string(zMapXMLAttributeGetValue(attr)),
-		       (char **)NULL, 10);
-	}
+        {
+          end = strtol((char *)g_quark_to_string(zMapXMLAttributeGetValue(attr)),
+               (char **)NULL, 10);
+        }
       else
-	{
-	  zMapXMLParserRaiseParsingError(parser, "\"end\" is a required attribute for feature.");
+        {
+          zMapXMLParserRaiseParsingError(parser, "\"end\" is a required attribute for feature.");
 
-	  request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
-	  result = FALSE ;
-	}
+          request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
+          result = FALSE ;
+        }
 
       if (result && (attr = zMapXMLElementGetAttributeByName(feature_element, "strand")))
-	{
-	  zMapFeatureFormatStrand((char *)g_quark_to_string(zMapXMLAttributeGetValue(attr)),
-				  &(strand));
-	}
+        {
+          zMapFeatureFormatStrand((char *)g_quark_to_string(zMapXMLAttributeGetValue(attr)),
+                                                          &(strand));
+        }
       else
-	{
-	  zMapXMLParserRaiseParsingError(parser, "\"strand\" is a required attribute for feature.");
+        {
+          zMapXMLParserRaiseParsingError(parser, "\"strand\" is a required attribute for feature.");
 
-	  request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
-	  result = FALSE ;
-	}
+          request_data->command_rc = REMOTE_COMMAND_RC_BAD_ARGS ;
+          result = FALSE ;
+        }
 
 
       /* Check if feature exists, for some commands it must do, for others it must not. */
       if (result)
-	{
-	  /* Need the style to get hold of the feature mode, better would be for
-	   * xml to contain SO term ?? Maybe not....not sure. */
-	  mode = zMapStyleGetMode(request_data->style) ;
+        {
+          /* Need the style to get hold of the feature mode, better would be for
+           * xml to contain SO term ?? Maybe not....not sure. */
+          mode = zMapStyleGetMode(request_data->style) ;
+        
+          feature_unique_id = zMapFeatureCreateID(mode, feature_name, strand, start, end, 0, 0) ;
 
-	  feature_unique_id = zMapFeatureCreateID(mode, feature_name, strand, start, end, 0, 0) ;
 
+          feature = zMapFeatureSetGetFeatureByID(request_data->orig_feature_set, feature_unique_id) ;
 
-	  feature = zMapFeatureSetGetFeatureByID(request_data->orig_feature_set, feature_unique_id) ;
+          if (!feature)
+            {
+              /* If we _don't_ find the feature then it's a serious error for these commands. */
+              char *err_msg ;
 
-	  if (!feature)
-	    {
-	      /* If we _don't_ find the feature then it's a serious error for these commands. */
-	      char *err_msg ;
+              err_msg = g_strdup_printf("Feature \"%s\" with id \"%s\" could not be found in featureset \"%s\",",
+                                        feature_name, g_quark_to_string(feature_unique_id),
+                                        zMapFeatureName((ZMapFeatureAny)(request_data->orig_feature_set))) ;
+              zMapXMLParserRaiseParsingError(parser, err_msg) ;
+              g_free(err_msg) ;
 
-	      err_msg = g_strdup_printf("Feature \"%s\" with id \"%s\" could not be found in featureset \"%s\",",
-					feature_name, g_quark_to_string(feature_unique_id),
-					zMapFeatureName((ZMapFeatureAny)(request_data->orig_feature_set))) ;
-	      zMapXMLParserRaiseParsingError(parser, err_msg) ;
-	      g_free(err_msg) ;
-
-	      request_data->command_rc = REMOTE_COMMAND_RC_FAILED ;
-	      result = FALSE ;
-	    }
-	}
+              request_data->command_rc = REMOTE_COMMAND_RC_FAILED ;
+              result = FALSE ;
+            }
+        }
 
       /* Now do something... */
       if (result)
-	{
-	  ZMapFeature feature ;
-	  ZMapStyleMode mode ;
+        {
+          ZMapFeature feature ;
+          ZMapStyleMode mode ;
 
-	  /* Need the style to get hold of the feature mode, better would be for
-	   * xml to contain SO term ?? Maybe not....not sure. */
-	  mode = zMapStyleGetMode(request_data->style) ;
+          /* Need the style to get hold of the feature mode, better would be for
+           * xml to contain SO term ?? Maybe not....not sure. */
+          mode = zMapStyleGetMode(request_data->style) ;
 
-	  /* should be removed.... */
-	  feature_unique_id = zMapFeatureCreateID(mode,
-						  feature_name,
-						  strand,
-						  start, end, 0, 0) ;
+          /* should be removed.... */
+          feature_unique_id = zMapFeatureCreateID(mode,
+                                                  feature_name,
+                                                  strand,
+                                                  start, end, 0, 0) ;
       
-	  /* We don't need a list here...simplify this too.... */
-	  if ((feature = zMapFeatureSetGetFeatureByID(request_data->orig_feature_set, feature_unique_id)))
-	    {
-	      request_data->feature = feature ;
-	    }
-	  else
-	    {
-	      zMapXMLParserRaiseParsingError(parser, "Cannot find feature in zmap.") ;
-
-	      request_data->command_rc = REMOTE_COMMAND_RC_FAILED ;
-	      result = FALSE ;
-	    }
-	}
+          /* We don't need a list here...simplify this too.... */
+          if ((feature = zMapFeatureSetGetFeatureByID(request_data->orig_feature_set, feature_unique_id)))
+            {
+              request_data->feature = feature ;
+            }
+          else
+            {
+              zMapXMLParserRaiseParsingError(parser, "Cannot find feature in zmap.") ;
+        
+              request_data->command_rc = REMOTE_COMMAND_RC_FAILED ;
+              result = FALSE ;
+            }
+        }
     }
 
 
