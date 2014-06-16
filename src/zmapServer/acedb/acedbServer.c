@@ -315,7 +315,7 @@ static gboolean createConnection(void **server_out,
   /* We need a minimum server version but user can specify a higher one in the config file. */
   if (version_str)
     {
-      if (zMapCompareVersionStings(ACEDB_SERVER_MIN_VERSION, version_str, error))
+      if (zMapCompareVersionStings(ACEDB_SERVER_MIN_VERSION, version_str, &error))
 	{
 	  server->version_str = g_strdup(version_str) ;
 	}
@@ -327,7 +327,7 @@ static gboolean createConnection(void **server_out,
 	}
       
       if (error)
-        g_error_free(&error) ;
+        g_error_free(error) ;
     }
   else
     {
@@ -2085,7 +2085,7 @@ static gboolean checkServerVersion(AcedbServer server)
                     }
                   
                   if (error)
-                    g_error_free(&error) ;
+                    g_error_free(error) ;
 
 		  break ;
 		}
