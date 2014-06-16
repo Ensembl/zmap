@@ -118,9 +118,9 @@ static void orderPositionColumns(ZMapWindow window)
 
 
   zmapWindowContainerUtilsExecuteFull(window->feature_root_group,
-				      ZMAPCONTAINER_LEVEL_BLOCK,
-				      orderColumnsCB, &order_data,
-				      NULL, NULL);
+                                      ZMAPCONTAINER_LEVEL_BLOCK,
+                                      orderColumnsCB, &order_data,
+                                      NULL, NULL);
 
   /* If we've reversed the feature_set_names list, and left it like that, re-reverse. */
   if(order_data.strand == ZMAPSTRAND_REVERSE)
@@ -150,39 +150,39 @@ static void orderColumnsCB(ZMapWindowContainerGroup container, FooCanvasPoints *
       /* Cast to FooCanvasGroup */
       features_group = (FooCanvasGroup *) container_features;
 
-	zMapWindowContainerGroupSortByLayer((FooCanvasGroup *) container_features);
+        zMapWindowContainerGroupSortByLayer((FooCanvasGroup *) container_features);
 
 #if 1
-	/* hack: background appears at the front of the list and we don't implement overlay on block
-	   so trim the front, sort and put it back together
-	 */
-	{
-		GList *back, *feat;
+        /* hack: background appears at the front of the list and we don't implement overlay on block
+           so trim the front, sort and put it back together
+         */
+          {
+            GList *back, *feat;
 
-		back = feat = features_group->item_list;
-		while(feat && !ZMAP_IS_CONTAINER_GROUP(feat->data))
-		{
-			feat = feat->next;
-		}
+            back = feat = features_group->item_list;
+            while(feat && !ZMAP_IS_CONTAINER_GROUP(feat->data))
+              {
+                feat = feat->next;
+              }
 
-		if(back != feat && feat)
-		{
-			feat->prev->next = NULL;
-			feat->prev = NULL;
-		}
-		else
-		{
-			back = NULL;
-		}
+            if(back != feat && feat)
+              {
+                feat->prev->next = NULL;
+                feat->prev = NULL;
+              }
+            else
+              {
+                back = NULL;
+              }
 
             feat = g_list_sort_with_data(feat, qsortColumnsCB, order_data);
 
-		features_group->item_list = feat;;
-		if(back)
-			features_group->item_list = g_list_concat(back,feat);
-	}
+            features_group->item_list = feat;;
+            if(back)
+              features_group->item_list = g_list_concat(back,feat);
+        }
 #else
-	features_group->item_list = g_list_sort_with_data(features_group->item_list, qsortColumnsCB, order_data);
+        features_group->item_list = g_list_sort_with_data(features_group->item_list, qsortColumnsCB, order_data);
 #endif
 
 
@@ -250,10 +250,10 @@ static gint qsortColumnsCB(gconstpointer colA, gconstpointer colB, gpointer user
 
   strand_a = zmapWindowContainerFeatureSetGetStrand((ZMapWindowContainerFeatureSet) colA);
   strand_b = zmapWindowContainerFeatureSetGetStrand((ZMapWindowContainerFeatureSet) colB);
-  if(strand_a < strand_b)	/* these are right to left */
-	  return(1);
-  if(strand_a > strand_b)	/* these are right to left */
-	  return(-1);
+  if(strand_a < strand_b)/* these are right to left */
+  return(1);
+  if(strand_a > strand_b)/* these are right to left */
+  return(-1);
 
   idA = columnFSNid(colA);
   idB = columnFSNid(colB);

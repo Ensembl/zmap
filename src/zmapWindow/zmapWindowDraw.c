@@ -72,11 +72,11 @@ typedef struct execOnChildrenStructType
 
 typedef struct PositionColumnStructType
 {
-  double block_cur_x;					    /* x pos of current column */
-  double block_spacing_x;				    /* as set in current block */
+  double block_cur_x;    /* x pos of current column */
+  double block_spacing_x;    /* as set in current block */
   double x1,x2;
-  double left;						    /* left most coordinate of a column that has moved */
-  double last_left;					    /* previous column */
+  double left;    /* left most coordinate of a column that has moved */
+  double last_left;    /* previous column */
   double last_right;
 
 } PositionColumnStruct, *PositionColumn;
@@ -95,12 +95,12 @@ typedef struct VisCoordsStructType
 
 
 static void toggleColumnInMultipleBlocks(ZMapWindow window, char *name,
-					 GQuark align_id, GQuark block_id,
-					 gboolean force_to, gboolean force) ;
+ GQuark align_id, GQuark block_id,
+ gboolean force_to, gboolean force) ;
 static void preZoomCB(ZMapWindowContainerGroup container, FooCanvasPoints *points,
                       ZMapContainerLevelType level, gpointer user_data) ;
 static void positionColumnCB(ZMapWindowContainerGroup container, FooCanvasPoints *points,
-			     ZMapContainerLevelType level, gpointer user_data) ;
+     ZMapContainerLevelType level, gpointer user_data) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void printChild(gpointer data, gpointer user_data) ;
@@ -108,7 +108,7 @@ static void printQuarks(gpointer data, gpointer user_data) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 static void hideColsCB(ZMapWindowContainerGroup container, FooCanvasPoints *points,
-		       ZMapContainerLevelType level, gpointer user_data) ;
+       ZMapContainerLevelType level, gpointer user_data) ;
 static void featureInViewCB(void *data, void *user_data) ;
 static void showColsCB(void *data, void *user_data) ;
 static void rebumpColsCB(void *data, void *user_data) ;
@@ -160,15 +160,15 @@ void zMapWindowToggleDNAProteinColumns(ZMapWindow window,
 
   if (dna)
     toggleColumnInMultipleBlocks(window, ZMAP_FIXED_STYLE_DNA_NAME,
-				 align_id, block_id, force_to, force);
+                                 align_id, block_id, force_to, force);
 
   if (protein)
     toggleColumnInMultipleBlocks(window, ZMAP_FIXED_STYLE_3FT_NAME,
-				 align_id, block_id, force_to, force);
+                                 align_id, block_id, force_to, force);
 
   if (trans)
     toggleColumnInMultipleBlocks(window, ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME,
-				 align_id, block_id, force_to, force) ;
+                                 align_id, block_id, force_to, force) ;
 
   zmapWindowColOrderColumns(window);
 
@@ -260,12 +260,12 @@ gboolean zmapWindowGetColumnVisibility(ZMapWindow window,FooCanvasGroup *column_
       frame_visible = zmapWindowColumnIs3frameVisible(window, column_group) ;
 
       if (IS_3FRAME(window->display_3_frame) && frame_sensitive)
-	frame_displayed = zmapWindowColumnIs3frameDisplayed(window, column_group) ;
+        frame_displayed = zmapWindowColumnIs3frameDisplayed(window, column_group) ;
 
       /* Check mag, mark, compress etc. etc....probably need some funcs in compress/mark/mag
        * packages to return whether a column should be hidden.... */
       if (mag_visible && frame_visible && (!frame_sensitive || frame_displayed))
-	visible = TRUE;
+        visible = TRUE;
       break;
 
     case ZMAPSTYLE_COLDISPLAY_SHOW:
@@ -289,7 +289,7 @@ gboolean zmapWindowGetColumnVisibility(ZMapWindow window,FooCanvasGroup *column_
  * new_col_state = NULL if new (empty) column
  *  */
 void zmapWindowColumnSetState(ZMapWindow window, FooCanvasGroup *column_group,
-			      ZMapStyleColumnDisplayState new_col_state, gboolean redraw_if_needed)
+      ZMapStyleColumnDisplayState new_col_state, gboolean redraw_if_needed)
 {
   ZMapWindowContainerFeatureSet container;
   ZMapStyleColumnDisplayState curr_col_state ;
@@ -308,16 +308,16 @@ void zmapWindowColumnSetState(ZMapWindow window, FooCanvasGroup *column_group,
       gboolean redraw = FALSE ;
 
       if (!new_col_state)
-	{
+        {
           new_col_state = curr_col_state ;
           cur_visible = FALSE;
         }
       else
-	{
-	  ZMapWindowContainerGroup group = (ZMapWindowContainerGroup) column_group;
+        {
+          ZMapWindowContainerGroup group = (ZMapWindowContainerGroup) column_group;
 
-	  cur_visible = group->flags.visible; /* actual current state */
-	}
+          cur_visible = group->flags.visible; /* actual current state */
+        }
 
       zmapWindowContainerFeatureSetSetDisplay(container, new_col_state, window) ;
 
@@ -327,27 +327,27 @@ void zmapWindowColumnSetState(ZMapWindow window, FooCanvasGroup *column_group,
       //printf("set visible = %d -> %d\n",cur_visible, new_visible);
 
       if(new_visible)
-	{
-	  if(!cur_visible)
+        {
+          if(!cur_visible)
             {
-	      redraw = TRUE;
-	      zmapWindowContainerSetVisibility(column_group, TRUE) ;
+              redraw = TRUE;
+              zmapWindowContainerSetVisibility(column_group, TRUE) ;
             }
-	}
+        }
       else
-	{
-	  if(cur_visible)
+        {
+          if(cur_visible)
             {
-	      redraw = TRUE;
-	      zmapWindowContainerSetVisibility(column_group, FALSE) ;
+              redraw = TRUE;
+              zmapWindowContainerSetVisibility(column_group, FALSE) ;
             }
-	}
+        }
 
       /* Only do redraw if it was requested _and_ state change needs it. */
       if (redraw_if_needed && redraw)
-	{
-	  zmapWindowFullReposition(window->feature_root_group,TRUE, "set state") ;
-	}
+        {
+          zmapWindowFullReposition(window->feature_root_group,TRUE, "set state") ;
+        }
     }
   zMapLogTime(TIMER_SETVIS,TIMER_STOP,0,"");
 }
@@ -381,21 +381,21 @@ void zmapWindowColumnSetMagState(ZMapWindow window, FooCanvasGroup *col_group)
       visible_at_this_mag = zmapWindowColumnIsMagVisible(window, col_group);
 
       if(visible_at_this_mag)
-	{
+        {
 #ifdef DEBUG_COLUMN_MAG
-	  printf("Column '%s' being shown\n", g_quark_to_string(container->unique_id));
+          printf("Column '%s' being shown\n", g_quark_to_string(container->unique_id));
 #endif /* DEBUG_COLUMN_MAG */
 
-	  zmapWindowContainerSetVisibility(FOO_CANVAS_GROUP( container ), TRUE) ;
-	}
+          zmapWindowContainerSetVisibility(FOO_CANVAS_GROUP( container ), TRUE) ;
+        }
       else
-	{
+        {
 #ifdef DEBUG_COLUMN_MAG
-	  printf("Column '%s' being hidden\n", g_quark_to_string(container->unique_id));
+          printf("Column '%s' being hidden\n", g_quark_to_string(container->unique_id));
 #endif /* DEBUG_COLUMN_MAG */
 
-	  zmapWindowContainerSetVisibility(FOO_CANVAS_GROUP( container ), FALSE) ;
-	}
+          zmapWindowContainerSetVisibility(FOO_CANVAS_GROUP( container ), FALSE) ;
+        }
     }
 
   return ;
@@ -435,13 +435,13 @@ gboolean zmapWindowColumnIs3frameVisible(ZMapWindow window, FooCanvasGroup *col_
       show_on_reverse = window->show_3_frame_reverse ;
 
       /*
-	| WINDOW->...      | REVERSE STRAND | FORWARD STRAND |
-	| DISPLAY|SHOW REV |NONE| 0 | 1 | 2 |NONE| 0 | 1 | 2 |
-	------------------------------------------------------
-	| FALSE  | FALSE   | 1  | 0 | 0 | 0 | 1  | 0 | 0 | 0 |
-	| TRUE   | FALSE   | 1  | 0 | 0 | 0 | 0  | 1 | 1 | 1 |
-	| TRUE   | TRUE    | 0  | 1 | 1 | 1 | 0  | 1 | 1 | 1 |
-	| FALSE  | TRUE    | 1  | 0 | 0 | 0 | 1  | 0 | 0 | 0 |
+| WINDOW->...      | REVERSE STRAND | FORWARD STRAND |
+| DISPLAY|SHOW REV |NONE| 0 | 1 | 2 |NONE| 0 | 1 | 2 |
+------------------------------------------------------
+| FALSE  | FALSE   | 1  | 0 | 0 | 0 | 1  | 0 | 0 | 0 |
+| TRUE   | FALSE   | 1  | 0 | 0 | 0 | 0  | 1 | 1 | 1 |
+| TRUE   | TRUE    | 0  | 1 | 1 | 1 | 0  | 1 | 1 | 1 |
+| FALSE  | TRUE    | 1  | 0 | 0 | 0 | 1  | 0 | 0 | 0 |
       */
 
       frame_sens[ZMAPSTRAND_NONE]    = &none[0];
@@ -465,35 +465,35 @@ gboolean zmapWindowColumnIs3frameVisible(ZMapWindow window, FooCanvasGroup *col_
 
       /* frame mode too... */
       switch(frame_mode)
-	{
-	case ZMAPSTYLE_3_FRAME_AS_WELL:
-	case ZMAPSTYLE_3_FRAME_ONLY_3:
-	case ZMAPSTYLE_3_FRAME_ONLY_1:
-	  //	  set_strand = zmapWindowContainerFeatureSetGetStrand(container);
+        {
+        case ZMAPSTYLE_3_FRAME_AS_WELL:
+        case ZMAPSTYLE_3_FRAME_ONLY_3:
+        case ZMAPSTYLE_3_FRAME_ONLY_1:
+          //  set_strand = zmapWindowContainerFeatureSetGetStrand(container);
 
-	  visible = frame_sens[set_strand][set_frame];
-	  if(frame_mode == ZMAPSTYLE_3_FRAME_ONLY_1)
-	    {
-	      if(set_frame == ZMAPFRAME_NONE)
-		visible = !visible;
-	      else
-		visible = FALSE;
-	    }
-	  else if(frame_mode == ZMAPSTYLE_3_FRAME_ONLY_3 &&
-		  set_frame == ZMAPFRAME_NONE)
-	    {
-	      visible = FALSE;
-	    }
-	  break;
-	case ZMAPSTYLE_3_FRAME_INVALID:
-	case ZMAPSTYLE_3_FRAME_NEVER:
-	  visible = FALSE;
-	  break;
-	default:
-	  zMapLogWarning("%s", "Frame mode out of range");
-	  visible = FALSE;
-	  break;
-	}
+          visible = frame_sens[set_strand][set_frame];
+          if(frame_mode == ZMAPSTYLE_3_FRAME_ONLY_1)
+            {
+              if(set_frame == ZMAPFRAME_NONE)
+                visible = !visible;
+              else
+                visible = FALSE;
+            }
+          else if(frame_mode == ZMAPSTYLE_3_FRAME_ONLY_3 &&
+                  set_frame == ZMAPFRAME_NONE)
+            {
+              visible = FALSE;
+            }
+          break;
+        case ZMAPSTYLE_3_FRAME_INVALID:
+        case ZMAPSTYLE_3_FRAME_NEVER:
+          visible = FALSE;
+          break;
+        default:
+          zMapLogWarning("%s", "Frame mode out of range");
+          visible = FALSE;
+          break;
+        }
     }
   else if(set_frame == ZMAPFRAME_NONE)
     {
@@ -536,20 +536,20 @@ gboolean zmapWindowColumnIs3frameDisplayed(ZMapWindow window, FooCanvasGroup *co
 
 
       /* MH17: acedb only gives us lower cased names
-	 previously capitalised name came from req_featuresets ???
-	 if(container->unique_id == zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME))
-	 but we can patch up from the [ZMap] columns list
+ previously capitalised name came from req_featuresets ???
+ if(container->unique_id == zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME))
+ but we can patch up from the [ZMap] columns list
       */
       /* gb10: made this check use the lowercase unique id to fix the acedb bug */
       if(zmapWindowContainerFeatureSetGetColumnId(container) == zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME))
-	{
-	  if (IS_3FRAME_TRANS(window->display_3_frame))
-	    displayed = TRUE ;
-	}
+        {
+          if (IS_3FRAME_TRANS(window->display_3_frame))
+            displayed = TRUE ;
+        }
       else if (IS_3FRAME_COLS(window->display_3_frame))
-	{
-	  displayed = TRUE ;
-	}
+        {
+          displayed = TRUE ;
+        }
     }
 
   return displayed ;
@@ -645,16 +645,16 @@ void zmapWindowColumnsCompress(FooCanvasItem *column_item, ZMapWindow window, ZM
   if(compressed || bumped)
     {
       if(compressed)
-	{
-	  g_list_foreach(compressed, showColsCB, NULL) ;
-	  g_list_free(compressed) ;
-	}
+        {
+          g_list_foreach(compressed, showColsCB, NULL) ;
+          g_list_free(compressed) ;
+        }
 
       if(bumped)
-	{
-	  g_list_foreach(bumped, rebumpColsCB, GUINT_TO_POINTER(compress_mode));
-	  g_list_free(bumped);
-	}
+        {
+          g_list_foreach(bumped, rebumpColsCB, GUINT_TO_POINTER(compress_mode));
+          g_list_free(bumped);
+        }
 
       zmapWindowFullReposition(window->feature_root_group,TRUE, "compress 1") ;
     }
@@ -665,31 +665,31 @@ void zmapWindowColumnsCompress(FooCanvasItem *column_item, ZMapWindow window, ZM
 
       /* If there is no mark or user asked for visible area only then do that. */
       if (compress_mode == ZMAPWINDOW_COMPRESS_VISIBLE)
-	{
-	  zmapWindowItemGetVisibleWorld(window, &wx1, &wy1, &wx2, &wy2) ;
+        {
+          zmapWindowItemGetVisibleWorld(window, &wx1, &wy1, &wx2, &wy2) ;
 
-	  /* should really clamp to seq. start/end..... */
-	  coords.start = (int)wy1 ;
-	  coords.end = (int)wy2 ;
-	}
+          /* should really clamp to seq. start/end..... */
+          coords.start = (int)wy1 ;
+          coords.end = (int)wy2 ;
+        }
       else if (compress_mode == ZMAPWINDOW_COMPRESS_MARK)
-	{
-	  /* we know mark is set so no need to check result of range check. But should check
-	   * that col to be bumped and mark are in same block ! */
-	  zmapWindowMarkGetSequenceRange(window->mark, &coords.start, &coords.end) ;
-	}
+        {
+          /* we know mark is set so no need to check result of range check. But should check
+           * that col to be bumped and mark are in same block ! */
+          zmapWindowMarkGetSequenceRange(window->mark, &coords.start, &coords.end) ;
+        }
       else
-	{
-	  coords.start = window->min_coord ;
-	  coords.end = window->max_coord ;
-	}
+        {
+          coords.start = window->min_coord ;
+          coords.end = window->max_coord ;
+        }
 
       /* Note that curretly we need to start at the top of the tree or redraw does
        * not work properly. */
 
       zmapWindowContainerUtilsExecute(window->feature_root_group,
-				      ZMAPCONTAINER_LEVEL_FEATURESET,
-				      hideColsCB, &coords);
+      ZMAPCONTAINER_LEVEL_FEATURESET,
+      hideColsCB, &coords);
 
       zmapWindowFullReposition(window->feature_root_group,TRUE, "compress 2");
 
@@ -709,32 +709,32 @@ void zmapWindowFullReposition(ZMapWindowContainerGroup root, gboolean redraw, ch
   //printf("full repos %s %p %d\n", where, window, redraw);
 
   zmapWindowContainerUtilsExecuteFull(root,
-				      ZMAPCONTAINER_LEVEL_FEATURESET,
-				      positionColumnCB, poscol,
-				      NULL, NULL) ;
+                                      ZMAPCONTAINER_LEVEL_FEATURESET,
+                                      positionColumnCB, poscol,
+                                      NULL, NULL) ;
 
-  if(window)	/* if we get called from the navigator there is no window */
+  if(window)/* if we get called from the navigator there is no window */
     {
       zMapWindowResetWindowWidth(window,(FooCanvasItem *) root, poscol->x1, poscol->x2);
 
       if(redraw)
-	{
-	  /*
-	   * don-t refresh the whole screen for a column added on the right
-	   * this would be bad form and besides give a 10:1 performance hit or worse for 3FT toggle
-	   * and may cause horrid flickering on column load (there may be another cause of this... *.
-	   */
+        {
+          /*
+           * don-t refresh the whole screen for a column added on the right
+           * this would be bad form and besides give a 10:1 performance hit or worse for 3FT toggle
+           * and may cause horrid flickering on column load (there may be another cause of this... *.
+           */
 
-	  double x1,x2,y1,y2;
-	  int cx1,cx2,cy1,cy2;
+          double x1,x2,y1,y2;
+          int cx1,cx2,cy1,cy2;
 
-	  zmapWindowGetScrollableArea(window, &x1, &y1, &x2, &y2);
-	  foo_canvas_w2c(((FooCanvasItem *) root)->canvas, poscol->left, y1, &cx1, &cy1);
-	  foo_canvas_w2c(((FooCanvasItem *) root)->canvas, x2, y2, &cx2, &cy2);
-
-	  foo_canvas_request_redraw(((FooCanvasItem *) root)->canvas, cx1, cy1, cx2, cy2);
-	  //printf("full repos request redraw %d %d - %d %d\n",cx1, cy1, cx2, cy2);
-	}
+          zmapWindowGetScrollableArea(window, &x1, &y1, &x2, &y2);
+          foo_canvas_w2c(((FooCanvasItem *) root)->canvas, poscol->left, y1, &cx1, &cy1);
+          foo_canvas_w2c(((FooCanvasItem *) root)->canvas, x2, y2, &cx2, &cy2);
+        
+          foo_canvas_request_redraw(((FooCanvasItem *) root)->canvas, cx1, cy1, cx2, cy2);
+          //printf("full repos request redraw %d %d - %d %d\n",cx1, cy1, cx2, cy2);
+        }
     }
 
   g_free(poscol);
@@ -746,9 +746,9 @@ void zmapWindowFullReposition(ZMapWindowContainerGroup root, gboolean redraw, ch
 void zmapWindowDrawZoom(ZMapWindow window)
 {
   zmapWindowContainerUtilsExecute(window->feature_root_group,
-				  ZMAPCONTAINER_LEVEL_FEATURESET,
-				  preZoomCB,
-				  window) ;
+  ZMAPCONTAINER_LEVEL_FEATURESET,
+  preZoomCB,
+  window) ;
 
   zmapWindowFullReposition(window->feature_root_group,TRUE, "draw zoom") ;
 
@@ -759,9 +759,9 @@ void zmapWindowDrawZoom(ZMapWindow window)
 
 
 void zmapWindowDrawSeparatorFeatures(ZMapWindow           window,
-				     ZMapFeatureBlock     block,
-				     ZMapFeatureSet       feature_set,
-				     ZMapFeatureTypeStyle style)
+     ZMapFeatureBlock     block,
+     ZMapFeatureSet       feature_set,
+     ZMapFeatureTypeStyle style)
 {
   ZMapFeatureContext context_cp, context, diff;
   ZMapFeatureAlignment align_cp, align;
@@ -784,11 +784,11 @@ void zmapWindowDrawSeparatorFeatures(ZMapWindow           window,
       block_cp = (ZMapFeatureBlock)zMapFeatureAnyCopy((ZMapFeatureAny)block);
       /* ... the alignment ... */
       align    = (ZMapFeatureAlignment)zMapFeatureGetParentGroup((ZMapFeatureAny)block,
-								 ZMAPFEATURE_STRUCT_ALIGN) ;
+                                                                 ZMAPFEATURE_STRUCT_ALIGN) ;
       align_cp = (ZMapFeatureAlignment)zMapFeatureAnyCopy((ZMapFeatureAny)align);
       /* ... and the context ... */
       context  = (ZMapFeatureContext)zMapFeatureGetParentGroup((ZMapFeatureAny)align,
-							       ZMAPFEATURE_STRUCT_CONTEXT) ;
+                                                               ZMAPFEATURE_STRUCT_CONTEXT) ;
       context_cp = (ZMapFeatureContext)zMapFeatureAnyCopy((ZMapFeatureAny)context);
 
       /* Now make a tree */
@@ -798,7 +798,7 @@ void zmapWindowDrawSeparatorFeatures(ZMapWindow           window,
 
       /* Now we have a context to merge. */
       zMapFeatureContextMerge(&(window->strand_separator_context),
-			      &context_cp, &diff, NULL, NULL);
+      &context_cp, &diff, NULL, NULL);
 
       canvas_data.window = window;
       canvas_data.canvas = window->canvas;
@@ -808,10 +808,10 @@ void zmapWindowDrawSeparatorFeatures(ZMapWindow           window,
       zMapWindowDrawContext(&canvas_data, window->strand_separator_context, diff, NULL);
 
       foo = zmapWindowFToIFindSetItem(window,window->context_to_item,
-				      feature_set,
-				      ZMAPSTRAND_FORWARD, ZMAPFRAME_NONE);
+      feature_set,
+      ZMAPSTRAND_FORWARD, ZMAPFRAME_NONE);
 
-      foo_canvas_item_request_redraw(foo->parent);	/* will have been updated so coords work */
+      foo_canvas_item_request_redraw(foo->parent);/* will have been updated so coords work */
     }
 
   return;
@@ -889,7 +889,7 @@ static void myWindowSet3FrameMode(ZMapWindow window, ZMapWindow3FrameMode frame_
 }
 
 static void positionColumnCB(ZMapWindowContainerGroup container, FooCanvasPoints *points,
-			     ZMapContainerLevelType level, gpointer user_data)
+     ZMapContainerLevelType level, gpointer user_data)
 {
   PositionColumn pc = (PositionColumn) user_data;
   FooCanvasGroup *group = (FooCanvasGroup *) container;
@@ -928,61 +928,61 @@ static void positionColumnCB(ZMapWindowContainerGroup container, FooCanvasPoints
       foo = (FooCanvasItem *) container;
 
       if (!(foo->object.flags & FOO_CANVAS_ITEM_VISIBLE))
-	break;
+        break;
 
       featureset = (ZMapWindowContainerFeatureSet) container;
       col_width = 0.0;
       cfs = NULL;
 
-      pc->block_cur_x += pc->block_spacing_x;	/* spacer before column */
+      pc->block_cur_x += pc->block_spacing_x;/* spacer before column */
 
       for (l = group->item_list; l ; l = l->next)
-	{
-	  foo = (FooCanvasItem *) l->data;
+        {
+          foo = (FooCanvasItem *) l->data;
 
-	  if(!(foo->object.flags & FOO_CANVAS_ITEM_VISIBLE))
-	    {
-	      continue;
-	    }
+          if(!(foo->object.flags & FOO_CANVAS_ITEM_VISIBLE))
+            {
+              continue;
+            }
 
-	  if (ZMAP_IS_WINDOW_FEATURESET_ITEM(foo))
-	    {
-	      gint layer;
+          if (ZMAP_IS_WINDOW_FEATURESET_ITEM(foo))
+            {
+              gint layer;
+        
+              cfs = (ZMapWindowFeaturesetItem) foo;
+              layer = zMapWindowCanvasFeaturesetGetLayer(cfs);
+        
+              if( !(layer & ZMAP_CANVAS_LAYER_DECORATION) || !(layer & ZMAP_CANVAS_LAYER_STRETCH_X))
+                {
+                  width = zMapWindowCanvasFeaturesetGetWidth(cfs);
+                  width += zMapWindowCanvasFeaturesetGetOffset(cfs);
+                
+                  if(width > col_width)
+                    col_width = width;
+                }
+            }
+        }
 
-	      cfs = (ZMapWindowFeaturesetItem) foo;
-	      layer = zMapWindowCanvasFeaturesetGetLayer(cfs);
-
-	      if( !(layer & ZMAP_CANVAS_LAYER_DECORATION) || !(layer & ZMAP_CANVAS_LAYER_STRETCH_X))
-		{
-		  width = zMapWindowCanvasFeaturesetGetWidth(cfs);
-		  width += zMapWindowCanvasFeaturesetGetOffset(cfs);
-
-		  if(width > col_width)
-		    col_width = width;
-		}
-	    }
-	}
-
-      if (!pc->left && pc->last_right > group->xpos)	/* previous column got bigger, must refresh that one */
-	pc->left = pc->last_left ;
+      if (!pc->left && pc->last_right > group->xpos)/* previous column got bigger, must refresh that one */
+        pc->left = pc->last_left ;
 
       pc->last_left = pc->block_cur_x ;
 
-      if (group->xpos != pc->block_cur_x)	/* if new col xpos will be 0 */
-	{
-	  if(!pc->left)
-	    pc->left = pc->last_left;	//pc->block_cur_x;
+      if (group->xpos != pc->block_cur_x)/* if new col xpos will be 0 */
+        {
+          if(!pc->left)
+            pc->left = pc->last_left;//pc->block_cur_x;
 
-	  zMapDebugPrint(debug, "pos col %s %f %f %f\n", g_quark_to_string((container->feature_any->unique_id)),
-			 pc->block_cur_x, pc->block_spacing_x, width) ;
-	}
+          zMapDebugPrint(debug, "pos col %s %f %f %f\n", g_quark_to_string((container->feature_any->unique_id)),
+                         pc->block_cur_x, pc->block_spacing_x, width) ;
+        }
 
-      g_object_set(G_OBJECT(group), "x",pc->block_cur_x, NULL);	/* this sets deep update flags */
+      g_object_set(G_OBJECT(group), "x",pc->block_cur_x, NULL);/* this sets deep update flags */
 
       pc->block_cur_x += col_width;
       pc->last_right = pc->block_cur_x;
       zMapDebugPrint(debug, "pos col %s %f %f %f %f %f\n", g_quark_to_string((container->feature_any->unique_id)),
-		     pc->block_cur_x, pc->block_spacing_x, width, pc->last_left, pc->last_right) ;
+                     pc->block_cur_x, pc->block_spacing_x, width, pc->last_left, pc->last_right) ;
 
       break;
 
@@ -990,7 +990,7 @@ static void positionColumnCB(ZMapWindowContainerGroup container, FooCanvasPoints
       break;
     }
 
-  pc->x2 = pc->block_cur_x + pc->block_spacing_x - pc->x1; 	/* x1 is -ve, block x1 is 0 */
+  pc->x2 = pc->block_cur_x + pc->block_spacing_x - pc->x1; /* x1 is -ve, block x1 is 0 */
 
   return ;
 }
@@ -1008,32 +1008,32 @@ static void set3FrameState(ZMapWindow window, ZMapWindow3FrameMode frame_mode)
     {
     case ZMAP_WINDOW_3FRAME_INVALID:
       {
-	ZMAP_FLAG_OFF(window->display_3_frame, DISPLAY_3FRAME_TRANS) ;    /* comment out to remember selection */
-	ZMAP_FLAG_OFF(window->display_3_frame, DISPLAY_3FRAME_COLS) ;
+        ZMAP_FLAG_OFF(window->display_3_frame, DISPLAY_3FRAME_TRANS) ;    /* comment out to remember selection */
+        ZMAP_FLAG_OFF(window->display_3_frame, DISPLAY_3FRAME_COLS) ;
 
-	ZMAP_FLAG_OFF(window->display_3_frame, DISPLAY_3FRAME_ON) ;
-	break ;
+        ZMAP_FLAG_OFF(window->display_3_frame, DISPLAY_3FRAME_ON) ;
+        break ;
       }
     case ZMAP_WINDOW_3FRAME_TRANS:
       {
-	ZMAP_FLAG_OFF(window->display_3_frame, DISPLAY_3FRAME_COLS) ;
-	ZMAP_FLAG_ON(window->display_3_frame, DISPLAY_3FRAME_TRANS) ;
-	ZMAP_FLAG_ON(window->display_3_frame, DISPLAY_3FRAME_ON) ;
-	break ;
+        ZMAP_FLAG_OFF(window->display_3_frame, DISPLAY_3FRAME_COLS) ;
+        ZMAP_FLAG_ON(window->display_3_frame, DISPLAY_3FRAME_TRANS) ;
+        ZMAP_FLAG_ON(window->display_3_frame, DISPLAY_3FRAME_ON) ;
+        break ;
       }
     case ZMAP_WINDOW_3FRAME_COLS:
       {
-	ZMAP_FLAG_OFF(window->display_3_frame, DISPLAY_3FRAME_TRANS) ;
-	ZMAP_FLAG_ON(window->display_3_frame, DISPLAY_3FRAME_COLS) ;
-	ZMAP_FLAG_ON(window->display_3_frame, DISPLAY_3FRAME_ON) ;
-	break ;
+        ZMAP_FLAG_OFF(window->display_3_frame, DISPLAY_3FRAME_TRANS) ;
+        ZMAP_FLAG_ON(window->display_3_frame, DISPLAY_3FRAME_COLS) ;
+        ZMAP_FLAG_ON(window->display_3_frame, DISPLAY_3FRAME_ON) ;
+        break ;
       }
     case ZMAP_WINDOW_3FRAME_ALL:
       {
-	ZMAP_FLAG_ON(window->display_3_frame, DISPLAY_3FRAME_TRANS) ;
-	ZMAP_FLAG_ON(window->display_3_frame, DISPLAY_3FRAME_COLS) ;
-	ZMAP_FLAG_ON(window->display_3_frame, DISPLAY_3FRAME_ON) ;
-	break ;
+        ZMAP_FLAG_ON(window->display_3_frame, DISPLAY_3FRAME_TRANS) ;
+        ZMAP_FLAG_ON(window->display_3_frame, DISPLAY_3FRAME_COLS) ;
+        ZMAP_FLAG_ON(window->display_3_frame, DISPLAY_3FRAME_ON) ;
+        break ;
       }
     default:
       {
@@ -1076,24 +1076,24 @@ static void preZoomCB(ZMapWindowContainerGroup container, FooCanvasPoints *point
     {
     case ZMAPCONTAINER_LEVEL_FEATURESET:
       {
-	ZMapWindow window = (ZMapWindow)user_data;
-	ZMapWindowFeaturesetItem cfs = NULL ;
-	FooCanvasItem *item = (FooCanvasItem *)container ;
+        ZMapWindow window = (ZMapWindow)user_data;
+        ZMapWindowFeaturesetItem cfs = NULL ;
+        FooCanvasItem *item = (FooCanvasItem *)container ;
 
-	if (zmapWindowContainerFeatureSetGetDisplay((ZMapWindowContainerFeatureSet)container)
-	    == ZMAPSTYLE_COLDISPLAY_SHOW_HIDE)
-	  zmapWindowColumnSetMagState(window, (FooCanvasGroup *)container) ;
+        if (zmapWindowContainerFeatureSetGetDisplay((ZMapWindowContainerFeatureSet)container)
+            == ZMAPSTYLE_COLDISPLAY_SHOW_HIDE)
+          zmapWindowColumnSetMagState(window, (FooCanvasGroup *)container) ;
 
-	/* Get the feature set item and set the canvas zoom and call any col. functions
-	 * needed to prepare for zooming (e.g. to set text width etc. */
-	if ((cfs = ZMapWindowContainerGetFeatureSetItem(container)))
-	  {
-	    zMapWindowCanvasFeaturesetSetZoomY(cfs, item->canvas->pixels_per_unit_y) ;
+        /* Get the feature set item and set the canvas zoom and call any col. functions
+         * needed to prepare for zooming (e.g. to set text width etc. */
+        if ((cfs = ZMapWindowContainerGetFeatureSetItem(container)))
+          {
+            zMapWindowCanvasFeaturesetSetZoomY(cfs, item->canvas->pixels_per_unit_y) ;
+        
+            zMapWindowCanvasFeaturesetPreZoom(cfs) ;
+          }
 
-	    zMapWindowCanvasFeaturesetPreZoom(cfs) ;
-	  }
-
-	break ;
+        break ;
       }
 
     default:
@@ -1116,7 +1116,7 @@ static gboolean zMapWindowResetWindowWidth(ZMapWindow window, FooCanvasItem *ite
   /* Annoyingly the initial size of the canvas is an issue here on first draw */
   if(y2 == ZMAP_CANVAS_INIT_SIZE)
     {
-      y1 = window->min_coord;		/* rev comp changes both of these */
+      y1 = window->min_coord;/* rev comp changes both of these */
       y2 = window->max_coord;
     }
   zmapWindowSetScrollableArea(window, &x1, &y1, &x2, &y2,"resetWindowWidth") ;
@@ -1137,8 +1137,8 @@ static gboolean zMapWindowResetWindowWidth(ZMapWindow window, FooCanvasItem *ite
 
 
 static void toggleColumnInMultipleBlocks(ZMapWindow window, char *name,
-					 GQuark align_id, GQuark block_id,
-					 gboolean force_to, gboolean force)
+                                         GQuark align_id, GQuark block_id,
+                                         gboolean force_to, gboolean force)
 {
   GQuark featureset_unique ;
   const char *wildcard = "*" ;
@@ -1158,13 +1158,13 @@ static void toggleColumnInMultipleBlocks(ZMapWindow window, char *name,
 
   /* check we have the style... */
   if (!(zmapWindowFToIFindItemFull(window,window->context_to_item,
-				   align_id, block_id,
-				   featureset_unique,   /* this is column really but the name is the same */
-				   ZMAPSTRAND_FORWARD, ZMAPFRAME_NONE, 0)))
+                                   align_id, block_id,
+                                   featureset_unique,   /* this is column really but the name is the same */
+                                   ZMAPSTRAND_FORWARD, ZMAPFRAME_NONE, 0)))
     {
       zMapWarning("Column with name \"%s\" does not exist."
                   " Check that you specified \"%s\" in your ZMap config file.",
-		  name, name) ;
+                  name, name) ;
     }
   else
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
@@ -1173,56 +1173,56 @@ static void toggleColumnInMultipleBlocks(ZMapWindow window, char *name,
       GList *blocks ;
 
       blocks = zmapWindowFToIFindItemSetFull(window,window->context_to_item,
-					     align_id, block_id, 0, 0,
-					     NULL, NULL, 0, NULL, NULL) ;
+                                             align_id, block_id, 0, 0,
+                                             NULL, NULL, 0, NULL, NULL) ;
 
       /* Foreach of the blocks, toggle the display of the DNA */
       while (blocks)                 /* I cant bear to create ANOTHER struct! */
-	{
-	  ID2Canvas id2c;
-	  ZMapFeatureBlock feature_block ;
-	  int first, last, i ;
+        {
+          ID2Canvas id2c;
+          ZMapFeatureBlock feature_block ;
+          int first, last, i ;
 
-	  id2c = (ID2Canvas) blocks->data;
-	  feature_block = (ZMapFeatureBlock)(id2c->feature_any) ;
+          id2c = (ID2Canvas) blocks->data;
+          feature_block = (ZMapFeatureBlock)(id2c->feature_any) ;
 
-	  if (g_ascii_strcasecmp(name, ZMAP_FIXED_STYLE_3FT_NAME) == 0)
-	    {
-	      if (IS_3FRAME(window->display_3_frame))
-		{
-		  first = ZMAPFRAME_0 ;
-		  last = ZMAPFRAME_2 ;
-		}
-	      else
-		{
-		  first = last = ZMAPFRAME_NONE ;
-		}
-	    }
-	  else
-	    {
-	      first = last = ZMAPFRAME_NONE ;
-	    }
+          if (g_ascii_strcasecmp(name, ZMAP_FIXED_STYLE_3FT_NAME) == 0)
+            {
+              if (IS_3FRAME(window->display_3_frame))
+                {
+                  first = ZMAPFRAME_0 ;
+                  last = ZMAPFRAME_2 ;
+                }
+              else
+                {
+                  first = last = ZMAPFRAME_NONE ;
+                }
+            }
+          else
+            {
+              first = last = ZMAPFRAME_NONE ;
+            }
 
-	  for (i = first ; i <= last ; i++)
-	    {
-	      FooCanvasItem *frame_column ;
-	      ZMapFrame frame = (ZMapFrame)i ;
+          for (i = first ; i <= last ; i++)
+            {
+              FooCanvasItem *frame_column ;
+              ZMapFrame frame = (ZMapFrame)i ;
 
-	      frame_column = zmapWindowFToIFindItemColumn(window, window->context_to_item,
-							  feature_block->parent->unique_id,
-					  		  feature_block->unique_id,
-							  featureset_unique,
+              frame_column = zmapWindowFToIFindItemColumn(window, window->context_to_item,
+                                                          feature_block->parent->unique_id,
+                                                            feature_block->unique_id,
+                                                          featureset_unique,
                                                           // DNA is reverse but ST is fwd when revcomped
                                                           // this is very tedious
-                                                          //							window->flags[ZMAPFLAG_REVCOMPED_FEATURES] ? ZMAPSTRAND_REVERSE: ZMAPSTRAND_FORWARD,
-							  ZMAPSTRAND_FORWARD,
-							  frame) ;
+                                                          //window->flags[ZMAPFLAG_REVCOMPED_FEATURES] ? ZMAPSTRAND_REVERSE: ZMAPSTRAND_FORWARD,
+                                                          ZMAPSTRAND_FORWARD,
+                                                          frame) ;
 
 
-	      if (frame_column && ZMAP_IS_CONTAINER_FEATURESET(frame_column) &&
+              if (frame_column && ZMAP_IS_CONTAINER_FEATURESET(frame_column) &&
                   (zmapWindowContainerHasFeatures(ZMAP_CONTAINER_GROUP(frame_column)) ||
                    zmapWindowContainerFeatureSetShowWhenEmpty(ZMAP_CONTAINER_FEATURESET(frame_column))))
-		{
+                {
                   ZMapStyleColumnDisplayState show_hide_state ;
                   
                   if (force && force_to)
@@ -1238,11 +1238,11 @@ static void toggleColumnInMultipleBlocks(ZMapWindow window, char *name,
                                            FOO_CANVAS_GROUP(frame_column),
                                            show_hide_state,
                                            FALSE) ;
-		}
-	    }
+                }
+            }
 
-	  blocks = blocks->next ;
-	}
+          blocks = blocks->next ;
+        }
     }
 
   return ;
@@ -1301,7 +1301,7 @@ static void printQuarks(gpointer data, gpointer user_data)
 /* GFunc to call on potentially all container groups.
  */
 static void hideColsCB(ZMapWindowContainerGroup container, FooCanvasPoints *points,
-		       ZMapContainerLevelType level, gpointer user_data)
+       ZMapContainerLevelType level, gpointer user_data)
 {
   VisCoords coord_data = (VisCoords)user_data ;
 
@@ -1309,65 +1309,65 @@ static void hideColsCB(ZMapWindowContainerGroup container, FooCanvasPoints *poin
     {
     case ZMAPCONTAINER_LEVEL_FEATURESET:
       {
-	FooCanvasGroup *features ;
+        FooCanvasGroup *features ;
 
-	coord_data->in_view = FALSE ;
-	coord_data->left = 999999999 ;			    /* Must be bigger than any feature position. */
-	coord_data->right = 0 ;
+        coord_data->in_view = FALSE ;
+        coord_data->left = 999999999 ;    /* Must be bigger than any feature position. */
+        coord_data->right = 0 ;
 
-	features = (FooCanvasGroup *)zmapWindowContainerGetFeatures(container) ;
+        features = (FooCanvasGroup *)zmapWindowContainerGetFeatures(container) ;
 
-	g_list_foreach(features->item_list, featureInViewCB, coord_data) ;
+        g_list_foreach(features->item_list, featureInViewCB, coord_data) ;
 
-	if (zmapWindowItemIsShown(FOO_CANVAS_ITEM(container)))
-	  {
-	    if (!(coord_data->in_view)
-		&& (coord_data->compress_mode == ZMAPWINDOW_COMPRESS_VISIBLE
-		    || zmapWindowContainerFeatureSetGetDisplay((ZMapWindowContainerFeatureSet)container) != ZMAPSTYLE_COLDISPLAY_SHOW))
-	      {
-		/* No items overlap with given area so hide the column completely. */
-		zmapWindowContainerSetVisibility(FOO_CANVAS_GROUP( container ), FALSE) ;
+        if (zmapWindowItemIsShown(FOO_CANVAS_ITEM(container)))
+          {
+            if (!(coord_data->in_view)
+                && (coord_data->compress_mode == ZMAPWINDOW_COMPRESS_VISIBLE
+                    || zmapWindowContainerFeatureSetGetDisplay((ZMapWindowContainerFeatureSet)container) != ZMAPSTYLE_COLDISPLAY_SHOW))
+              {
+                /* No items overlap with given area so hide the column completely. */
+                zmapWindowContainerSetVisibility(FOO_CANVAS_GROUP( container ), FALSE) ;
 
-		zmapWindowContainerBlockAddCompressedColumn((ZMapWindowContainerBlock)(coord_data->block_group), (FooCanvasGroup *)container);
-	      }
-	    else
-	      {
-		/* There are some items showing but column may need to be rebumped if there only a few. */
-		double x1, y1, x2, y2, width_col, width_features ;
-		gboolean bump_col = FALSE ;
+                zmapWindowContainerBlockAddCompressedColumn((ZMapWindowContainerBlock)(coord_data->block_group), (FooCanvasGroup *)container);
+              }
+            else
+              {
+                /* There are some items showing but column may need to be rebumped if there only a few. */
+                double x1, y1, x2, y2, width_col, width_features ;
+                gboolean bump_col = FALSE ;
 
-		foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(container), &x1, &y1, &x2, &y2) ;
+                foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(container), &x1, &y1, &x2, &y2) ;
 
-		/* Compare width of column and total width of visible features, if difference is
-		 * greater than 10% then rebump. This stops us rebumping columns that are just
-		 * slightly different in size or have already been bumped to a mark for instance. */
-		width_col = (x2 - x1) ;
-		width_features = (coord_data->right - coord_data->left) ;
+                /* Compare width of column and total width of visible features, if difference is
+                 * greater than 10% then rebump. This stops us rebumping columns that are just
+                 * slightly different in size or have already been bumped to a mark for instance. */
+                width_col = (x2 - x1) ;
+                width_features = (coord_data->right - coord_data->left) ;
 
-		if (((fabs(width_col - width_features)) / width_features) > 0.1)
-		  bump_col = TRUE ;
+                if (((fabs(width_col - width_features)) / width_features) > 0.1)
+                  bump_col = TRUE ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-		printf("col %s %s: %f, %f (%f)\titems: %f, %f (%f)\n",
-		       g_quark_to_string(feature_set->original_id),
-		       (bump_col ? "Bumped" : "Not Bumped"),
-		       x1, x2, width_col,
-		       coord_data->left, coord_data->right, width_features) ;
+                printf("col %s %s: %f, %f (%f)\titems: %f, %f (%f)\n",
+                       g_quark_to_string(feature_set->original_id),
+                       (bump_col ? "Bumped" : "Not Bumped"),
+                       x1, x2, width_col,
+                       coord_data->left, coord_data->right, width_features) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-		if (bump_col)
-		  {
-		    zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(container),
-					      ZMAPBUMP_INVALID, coord_data->compress_mode) ;
+                if (bump_col)
+                  {
+                    zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(container),
+                                              ZMAPBUMP_INVALID, coord_data->compress_mode) ;
 
-		    zmapWindowContainerBlockAddBumpedColumn((ZMapWindowContainerBlock)(coord_data->block_group), (FooCanvasGroup *)container);
-		  }
-	      }
-	  }
+                    zmapWindowContainerBlockAddBumpedColumn((ZMapWindowContainerBlock)(coord_data->block_group), (FooCanvasGroup *)container);
+                  }
+              }
+          }
 
-	coord_data->in_view = FALSE ;
+        coord_data->in_view = FALSE ;
 
-	break ;
+        break ;
       }
     default:
       break ;
@@ -1388,18 +1388,18 @@ static void featureInViewCB(void *data, void *user_data)
   if ((feature = zmapWindowItemGetFeature(feature_item)))
     {
       if (!(feature->x1 > coord_data->end || feature->x2 < coord_data->start))
-	{
-	  double x1, y1, x2, y2 ;
+        {
+          double x1, y1, x2, y2 ;
 
-	  coord_data->in_view = TRUE ;
+          coord_data->in_view = TRUE ;
 
-	  foo_canvas_item_get_bounds(feature_item, &x1, &y1, &x2, &y2) ;
+          foo_canvas_item_get_bounds(feature_item, &x1, &y1, &x2, &y2) ;
 
-	  if (x1 < coord_data->left)
-	    coord_data->left = x1 ;
-	  if (x2 > coord_data->right)
-	    coord_data->right = x2 ;
-	}
+          if (x1 < coord_data->left)
+            coord_data->left = x1 ;
+          if (x2 > coord_data->right)
+            coord_data->right = x2 ;
+        }
     }
 
   return ;

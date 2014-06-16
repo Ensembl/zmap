@@ -20,7 +20,7 @@
  * This file is part of the ZMap genome database package
  * originally written by:
  *
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ * Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
@@ -286,7 +286,7 @@ char *zmapWindowMakeFeatureSelectionText(ZMapWindow window,
         {
           setUpFeatureOther(display_style, item_feature, feature_coords) ;
 
-	  makeSelectionString(window, display_style, text, feature_coords) ;
+          makeSelectionString(window, display_style, text, feature_coords) ;
         }
     }
   else if ((selected = zmapWindowFocusGetFocusItems(window->focus)) && (length = g_list_length(selected)))
@@ -301,9 +301,9 @@ char *zmapWindowMakeFeatureSelectionText(ZMapWindow window,
       item = FOO_CANVAS_ITEM(id2c->item) ;
 
       if (ZMAP_IS_CANVAS_ITEM(item))
-	canvas_item = ZMAP_CANVAS_ITEM( item );
+        canvas_item = ZMAP_CANVAS_ITEM( item );
       else
-	canvas_item = zMapWindowCanvasItemIntervalGetObject(item) ;
+        canvas_item = zMapWindowCanvasItemIntervalGetObject(item) ;
 
       item_feature = (ZMapFeature) id2c->feature_any ;
 
@@ -315,28 +315,28 @@ char *zmapWindowMakeFeatureSelectionText(ZMapWindow window,
           setUpFeatureTranscript(revcomped, display_style, item_feature, feature_coords) ;
 
           makeSelectionString(window, display_style, text, feature_coords) ;
-	}
+        }
       else
-	{
-	  while (selected)
-	    {
+        {
+          while (selected)
+            {
               id2c = (ID2Canvas)(selected->data) ;
               item = FOO_CANVAS_ITEM(id2c->item) ;
 
-	      if (ZMAP_IS_CANVAS_ITEM(item))
-		canvas_item = ZMAP_CANVAS_ITEM(item) ;
-	      else
-		canvas_item = zMapWindowCanvasItemIntervalGetObject(item) ;
+              if (ZMAP_IS_CANVAS_ITEM(item))
+                canvas_item = ZMAP_CANVAS_ITEM(item) ;
+              else
+                canvas_item = zMapWindowCanvasItemIntervalGetObject(item) ;
 
               item_feature = (ZMapFeature)(id2c->feature_any) ;
 
               setUpFeatureOther(display_style, item_feature, feature_coords) ;
 
               selected = selected->next ;
-	    }
+            }
 
-	  makeSelectionString(window, display_style, text, feature_coords) ;
-	}
+          makeSelectionString(window, display_style, text, feature_coords) ;
+        }
 
       selected = g_list_first(selected) ;
       g_list_free(selected) ;
@@ -461,7 +461,7 @@ static void makeSelectionString(ZMapWindow window, ZMapWindowDisplayStyle displa
 
 
       if (feature_coord->start > feature_coord->end)
-	zMapUtilsSwop(int, feature_coord->start, feature_coord->end) ;
+        zMapUtilsSwop(int, feature_coord->start, feature_coord->end) ;
     }
 
   g_array_sort(feature_coords, sortCoordsCB) ;
@@ -515,22 +515,22 @@ static gint sortCoordsCB(gconstpointer a, gconstpointer b)
   if ((result = g_ascii_strcasecmp(feature_coord1->name, feature_coord2->name)) == 0)
     {
       if (feature_coord1->start < feature_coord2->start)
-	{
-	  result = -1 ;
-	}
+        {
+          result = -1 ;
+        }
       else if (feature_coord1->start == feature_coord2->start)
-	{
-	  if (feature_coord1->end < feature_coord2->end)
-	    result = -1 ;
-	  else if (feature_coord1->end == feature_coord2->end)
-	    result = 0 ;
-	  else
-	    result = 1 ;
-	}
+        {
+          if (feature_coord1->end < feature_coord2->end)
+            result = -1 ;
+          else if (feature_coord1->end == feature_coord2->end)
+            result = 0 ;
+          else
+            result = 1 ;
+        }
       else
-	{
-	  result = 1 ;
-	}
+        {
+          result = 1 ;
+        }
     }
 
   return result ;
