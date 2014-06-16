@@ -467,11 +467,15 @@ static void copyPasteCB(gpointer cb_data, guint callback_action, GtkWidget *w)
         break ;
       }
     case EDIT_PASTE:
-
-      zMapWindowZoomFromClipboard(curr_window) ;
+      {
+        zMapWindowZoomFromClipboard(curr_window) ;
+        break ;
+      }
 
     default:
-      zMapWarnIfReached() ;
+      {
+        zMapWarnIfReached() ;
+      }
     }
 
   return ;
