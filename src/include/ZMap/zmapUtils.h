@@ -206,7 +206,7 @@ char *zMapGetCopyrightString(void) ;
 char *zMapGetWebSiteString(void) ;
 char *zMapGetCommentsString(void) ;
 char *zMapGetLicenseString(void) ;
-gboolean zMapCompareVersionStings(char *reference_version, char *test_version) ;
+gboolean zMapCompareVersionStings(char *reference_version, char *test_version, GError **error) ;
 char *zMapGetCompileString(void) ;
 
 gboolean zMapUtilsConfigDebug(char *config_file) ;
