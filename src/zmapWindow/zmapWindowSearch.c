@@ -96,9 +96,9 @@ typedef struct SearchDataStructType
   GQuark feature_original_id ;
 
   /* Filter data. */
-  char *strand_txt ;					    /* No need for ids for strand. */
-  char *frame_txt ;					    /* No need for ids for frame. */
-  char *start ;						    /* Coords range to limit search. */
+  char *strand_txt ;                                            /* No need for ids for strand. */
+  char *frame_txt ;                                            /* No need for ids for frame. */
+  char *start ;                                                    /* Coords range to limit search. */
   char *end ;
   gboolean locus ;
 
@@ -181,9 +181,9 @@ static GtkItemFactoryEntry menu_items_G[] = {
  */
 
 void zmapWindowCreateSearchWindow(ZMapWindow window,
-				  ZMapWindowListGetFToIHash get_hash_func, gpointer get_hash_data,
-				  ZMapFeatureContextMap context_map,
-				  FooCanvasItem *feature_item)
+                                  ZMapWindowListGetFToIHash get_hash_func, gpointer get_hash_data,
+                                  ZMapFeatureContextMap context_map,
+                                  FooCanvasItem *feature_item)
 {
   ZMapFeatureAny feature_any ;
   GtkWidget *toplevel, *vbox, *menubar, *hbox, *frame,
@@ -215,7 +215,7 @@ void zmapWindowCreateSearchWindow(ZMapWindow window,
   search_data->toplevel = toplevel = zMapGUIToplevelNew(NULL, "Feature Search") ;
 
   g_signal_connect(GTK_OBJECT(toplevel), "destroy",
-		   GTK_SIGNAL_FUNC(destroyCB), (gpointer)search_data) ;
+                   GTK_SIGNAL_FUNC(destroyCB), (gpointer)search_data) ;
   gtk_container_border_width(GTK_CONTAINER(toplevel), 5) ;
   gtk_window_set_default_size(GTK_WINDOW(toplevel), 500, -1) ;
 
@@ -255,7 +255,7 @@ void zmapWindowCreateSearchWindow(ZMapWindow window,
   search_button = gtk_button_new_with_label("Search") ;
   gtk_container_add(GTK_CONTAINER(buttonBox), search_button) ;
   gtk_signal_connect(GTK_OBJECT(search_button), "clicked",
-		     GTK_SIGNAL_FUNC(searchCB), (gpointer)search_data) ;
+                     GTK_SIGNAL_FUNC(searchCB), (gpointer)search_data) ;
   /* set search button as default. */
   GTK_WIDGET_SET_FLAGS(search_button, GTK_CAN_DEFAULT) ;
   gtk_window_set_default(GTK_WINDOW(toplevel), search_button) ;
@@ -292,11 +292,11 @@ static void onSearchColumnChanged(GtkWidget *col,gpointer user_data)
 
   if ((column_id = entry_get_text_quark(GTK_ENTRY(search_data->column_entry), wild_card_str)) != 0)
     {
-	if(column_id == wild_card_id)
-		column_id = 0;
-	else
-      	column_id = manage_quark_from_entry(column_id, search_data->column_original_id,
-					  search_data->column_id, wild_card_id);
+        if(column_id == wild_card_id)
+                column_id = 0;
+        else
+              column_id = manage_quark_from_entry(column_id, search_data->column_original_id,
+                                          search_data->column_id, wild_card_id);
     }
 
   search_data->set_txt = wild_card_str;
@@ -403,27 +403,27 @@ static GtkWidget *makeFieldsPanel(SearchData search_data)
 
     for (columnList = setList = NULL ; l ; l = l->next)
       {
-//	zMapPrintQuark(GPOINTER_TO_UINT(l->data)) ;
+//        zMapPrintQuark(GPOINTER_TO_UINT(l->data)) ;
 
 
-	if ((f2c = g_hash_table_lookup(search_data->window->context_map->featureset_2_column, l->data)))
+        if ((f2c = g_hash_table_lookup(search_data->window->context_map->featureset_2_column, l->data)))
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  /* I think I was trying to parameterise this.... */
-	if ((f2c = g_hash_table_lookup(search_data->context_map->featureset_2_column, l->data)))
+          /* I think I was trying to parameterise this.... */
+        if ((f2c = g_hash_table_lookup(search_data->context_map->featureset_2_column, l->data)))
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-	  {
-//	    zMapPrintQuark(f2c->column_ID) ;
+          {
+//            zMapPrintQuark(f2c->column_ID) ;
 
-	    if(!g_list_find(columnList, GUINT_TO_POINTER(f2c->column_ID)))
-	      columnList = g_list_append(columnList, GUINT_TO_POINTER(f2c->column_ID));
-	    /* this gets canonicalised on search by manage_quark_from_entry() */
+            if(!g_list_find(columnList, GUINT_TO_POINTER(f2c->column_ID)))
+              columnList = g_list_append(columnList, GUINT_TO_POINTER(f2c->column_ID));
+            /* this gets canonicalised on search by manage_quark_from_entry() */
 
-	  }
+          }
       }
 
     setList = zMapFeatureGetColumnFeatureSets(search_data->window->context_map,
-					      search_data->column_id, FALSE);
+                                              search_data->column_id, FALSE);
    }
 
 #endif
@@ -486,7 +486,7 @@ static GtkWidget *makeFiltersPanel(SearchData search_data)
   ZMapFeatureContext context ;
 
   context = (ZMapFeatureContext)zMapFeatureGetParentGroup(search_data->feature_any,
-							  ZMAPFEATURE_STRUCT_CONTEXT) ;
+                                                          ZMAPFEATURE_STRUCT_CONTEXT) ;
 
 
   setFilterDefaults(search_data) ;
@@ -574,7 +574,7 @@ static GtkWidget *makeFiltersPanel(SearchData search_data)
 
   search_data->locus_but = gtk_check_button_new() ;
   g_signal_connect(GTK_OBJECT(search_data->locus_but), "toggled",
-		   GTK_SIGNAL_FUNC(locusCB), (gpointer)search_data) ;
+                   GTK_SIGNAL_FUNC(locusCB), (gpointer)search_data) ;
   gtk_box_pack_start(GTK_BOX(entrybox), search_data->locus_but, FALSE, FALSE, 0) ;
 
 
@@ -665,7 +665,7 @@ static GQuark entry_get_text_quark(GtkEntry *entry, char *wildcard)
 
 /* return either usable, wildcard or canonicalized(user_set) */
 static GQuark manage_quark_from_entry(GQuark user_set, GQuark original,
-				      GQuark usable,   GQuark wildcard)
+                                      GQuark usable,   GQuark wildcard)
 {
   GQuark managed_quark = 0;
 
@@ -723,19 +723,19 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
     {
       /* fix up align_id */
       align_id = manage_quark_from_entry(align_id, search_data->align_original_id,
-					 search_data->align_id, wild_card_id);
+                                         search_data->align_id, wild_card_id);
 
       /* fix up block_id */
       if((block_id = entry_get_text_quark(GTK_ENTRY(search_data->block_entry), wild_card_str)) != 0)
-	{
-	  block_id = manage_quark_from_entry(block_id, search_data->block_original_id,
-					     search_data->block_id, wild_card_id);
+        {
+          block_id = manage_quark_from_entry(block_id, search_data->block_original_id,
+                                             search_data->block_id, wild_card_id);
 
-	  /* fix up column_id  */
-	  if((column_id = entry_get_text_quark(GTK_ENTRY(search_data->column_entry), wild_card_str)) != 0)
-	    {
-	      column_id = manage_quark_from_entry(column_id, search_data->column_original_id,
-					       search_data->column_id, wild_card_id);
+          /* fix up column_id  */
+          if((column_id = entry_get_text_quark(GTK_ENTRY(search_data->column_entry), wild_card_str)) != 0)
+            {
+              column_id = manage_quark_from_entry(column_id, search_data->column_original_id,
+                                               search_data->column_id, wild_card_id);
 
             if((set_id = entry_get_text_quark(GTK_ENTRY(search_data->set_entry), wild_card_str)) != 0)
             {
@@ -745,29 +745,29 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
                         set_id = 0;
             }
 
-	      /* fix up feature_id */
-	      if((feature_id = entry_get_text_quark(GTK_ENTRY(search_data->feature_entry), wild_card_str)) != 0)
-		{
-		  if(feature_id != wild_card_id)
-		    {
-		      int feature_len;
-		      char *tmp_txt = NULL;
+              /* fix up feature_id */
+              if((feature_id = entry_get_text_quark(GTK_ENTRY(search_data->feature_entry), wild_card_str)) != 0)
+                {
+                  if(feature_id != wild_card_id)
+                    {
+                      int feature_len;
+                      char *tmp_txt = NULL;
 
-		      feature_txt = (char *)g_quark_to_string(feature_id);
-		      feature_len = strlen(feature_txt);
+                      feature_txt = (char *)g_quark_to_string(feature_id);
+                      feature_len = strlen(feature_txt);
 
-		      if(strcmp(feature_txt + feature_len - 1, wild_card_str) == 0)
-			tmp_txt = g_strdup(feature_txt);
-		      else
-			tmp_txt = g_strdup_printf("%s*", feature_txt);
+                      if(strcmp(feature_txt + feature_len - 1, wild_card_str) == 0)
+                        tmp_txt = g_strdup(feature_txt);
+                      else
+                        tmp_txt = g_strdup_printf("%s*", feature_txt);
 
-		      feature_id = makeCanonID(tmp_txt);
+                      feature_id = makeCanonID(tmp_txt);
 
-		      g_free(tmp_txt);
-		    }
-		}
-	    }
-	}
+                      g_free(tmp_txt);
+                    }
+                }
+            }
+        }
     }
 
   /* For strand, "." is ZMAPSTRAND_NONE which means search forward strand columns,
@@ -817,7 +817,7 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* Left for debugging.... */
   printf("Search parameters -    align: %s   block: %s  strand: %s  frame: %s  column: %s  feature: %s\n",
-	 align_txt, block_txt, strand_spec, frame_spec, column_txt, feature_txt) ;
+         align_txt, block_txt, strand_spec, frame_spec, column_txt, feature_txt) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
@@ -830,30 +830,30 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
       title = g_strdup_printf("Results '%s'", feature_txt);
 
       if(callback && search_pred_ptr)
-	{
-	  search_pred_data        = g_new0(SearchPredCBDataStruct, 1);
-	  search_pred_data->start = search_pred_ptr->start;
-	  search_pred_data->end   = search_pred_ptr->end;
-	  search_pred_data->locus = search_pred_ptr->locus;
-	}
+        {
+          search_pred_data        = g_new0(SearchPredCBDataStruct, 1);
+          search_pred_data->start = search_pred_ptr->start;
+          search_pred_data->end   = search_pred_ptr->end;
+          search_pred_data->locus = search_pred_ptr->locus;
+        }
 
       search_set_data = zmapWindowFToISetSearchCreateFull(zmapWindowFToIFindItemSetFull, NULL,
-							  align_id, block_id, column_id, set_id, feature_id,
-							  strand_spec, frame_spec,
-							  callback, search_pred_data, g_free);
+                                                          align_id, block_id, column_id, set_id, feature_id,
+                                                          strand_spec, frame_spec,
+                                                          callback, search_pred_data, g_free);
 
 #ifndef REQUEST_TO_STOP_ZOOMING_IN_ON_SELECTION
       zoom_to_item = FALSE;
 #endif /* REQUEST_TO_STOP_ZOOMING_IN_ON_SELECTION */
 
       zmapWindowListWindow(search_data->window, NULL, title,
-			   search_data->get_hash_func,
-			   search_data->get_hash_data,
-			   search_data->context_map,
-			   (ZMapWindowListSearchHashFunc)zmapWindowFToISetSearchPerform,
-			   search_set_data,
-			   (GDestroyNotify)zmapWindowFToISetSearchDestroy,
-			   zoom_to_item);
+                           search_data->get_hash_func,
+                           search_data->get_hash_data,
+                           search_data->context_map,
+                           (ZMapWindowListSearchHashFunc)zmapWindowFToISetSearchPerform,
+                           search_set_data,
+                           (GDestroyNotify)zmapWindowFToISetSearchDestroy,
+                           zoom_to_item);
 
     }
 
@@ -909,25 +909,25 @@ static void setFieldDefaults(SearchData search_data)
   while (feature_any->parent)
     {
       switch (feature_any->struct_type)
-	{
-	case ZMAPFEATURE_STRUCT_FEATURE:
-	  {
-	    ZMapFeature feature = (ZMapFeature)feature_any ;
+        {
+        case ZMAPFEATURE_STRUCT_FEATURE:
+          {
+            ZMapFeature feature = (ZMapFeature)feature_any ;
 
-	    search_data->feature_txt = (char *)g_quark_to_string(feature->original_id) ;
-	    search_data->feature_id = feature->unique_id ;
-	    search_data->feature_original_id = feature->original_id ;
+            search_data->feature_txt = (char *)g_quark_to_string(feature->original_id) ;
+            search_data->feature_id = feature->unique_id ;
+            search_data->feature_original_id = feature->original_id ;
 
-	    break ;
-	  }
-	case ZMAPFEATURE_STRUCT_FEATURESET:
-	  {
-	    ZMapFeatureSet set = (ZMapFeatureSet)feature_any ;
+            break ;
+          }
+        case ZMAPFEATURE_STRUCT_FEATURESET:
+          {
+            ZMapFeatureSet set = (ZMapFeatureSet)feature_any ;
 
 #if MH17_COLUMN
-	    search_data->column_txt = (char *)g_quark_to_string(set->original_id) ;
-	    search_data->set_id = set->unique_id ;
-	    search_data->column_original_id = set->original_id ;
+            search_data->column_txt = (char *)g_quark_to_string(set->original_id) ;
+            search_data->set_id = set->unique_id ;
+            search_data->column_original_id = set->original_id ;
 #else
             /* need to get the column that the featureset is in
              * for when we search the hash
@@ -950,33 +950,33 @@ static void setFieldDefaults(SearchData search_data)
             search_data->set_original_id = set->original_id ;
           }
 #endif
-	    break ;
-	  }
-	case ZMAPFEATURE_STRUCT_BLOCK:
-	  {
-	    ZMapFeatureBlock block = (ZMapFeatureBlock)feature_any ;
+            break ;
+          }
+        case ZMAPFEATURE_STRUCT_BLOCK:
+          {
+            ZMapFeatureBlock block = (ZMapFeatureBlock)feature_any ;
 
-	    search_data->block_txt = (char *)g_quark_to_string(block->original_id) ;
-	    search_data->block_id = block->unique_id ;
-	    search_data->block_original_id = block->original_id ;
-	    break ;
-	  }
-	case ZMAPFEATURE_STRUCT_ALIGN:
-	  {
-	    ZMapFeatureAlignment align = (ZMapFeatureAlignment)feature_any ;
+            search_data->block_txt = (char *)g_quark_to_string(block->original_id) ;
+            search_data->block_id = block->unique_id ;
+            search_data->block_original_id = block->original_id ;
+            break ;
+          }
+        case ZMAPFEATURE_STRUCT_ALIGN:
+          {
+            ZMapFeatureAlignment align = (ZMapFeatureAlignment)feature_any ;
 
-	    search_data->align_txt = (char *)g_quark_to_string(align->original_id) ;
-	    search_data->align_id = align->unique_id ;
-	    search_data->align_original_id = align->original_id ;
-	    break ;
-	  }
+            search_data->align_txt = (char *)g_quark_to_string(align->original_id) ;
+            search_data->align_id = align->unique_id ;
+            search_data->align_original_id = align->original_id ;
+            break ;
+          }
         case ZMAPFEATURE_STRUCT_CONTEXT:
           break;
         case ZMAPFEATURE_STRUCT_INVALID:
         default:
           zMapWarnIfReached();
           break;
-	}
+        }
 
       feature_any = feature_any->parent ;
     }
@@ -1005,29 +1005,29 @@ static void setFilterDefaults(SearchData search_data)
       ZMapWindowContainerFeatureSet container;
 
       if (feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
-	{
-	  featureset_group = (FooCanvasGroup *)zmapWindowContainerCanvasItemGetContainer(search_data->feature_item) ;
-	}
+        {
+          featureset_group = (FooCanvasGroup *)zmapWindowContainerCanvasItemGetContainer(search_data->feature_item) ;
+        }
       else
-	featureset_group = FOO_CANVAS_GROUP(search_data->feature_item) ;
+        featureset_group = FOO_CANVAS_GROUP(search_data->feature_item) ;
 
       container = (ZMapWindowContainerFeatureSet)(featureset_group);
 
       if (container->strand == ZMAPSTRAND_FORWARD)
-	search_data->strand_txt = "+" ;
+        search_data->strand_txt = "+" ;
       else if (container->strand == ZMAPSTRAND_REVERSE)
-	search_data->strand_txt = "-" ;
+        search_data->strand_txt = "-" ;
       else
-	search_data->strand_txt = "." ;
+        search_data->strand_txt = "." ;
 
       if (container->frame == ZMAPFRAME_NONE)
-	search_data->frame_txt = "." ;
+        search_data->frame_txt = "." ;
       else if (container->frame == ZMAPFRAME_0)
-	search_data->frame_txt = "1" ;
+        search_data->frame_txt = "1" ;
       else if (container->frame == ZMAPFRAME_1)
-	search_data->frame_txt = "2" ;
+        search_data->frame_txt = "2" ;
       else if (container->frame == ZMAPFRAME_2)
-	search_data->frame_txt = "3" ;
+        search_data->frame_txt = "3" ;
     }
 
 
@@ -1036,59 +1036,59 @@ static void setFilterDefaults(SearchData search_data)
   while (feature_any->parent)
     {
       switch (feature_any->struct_type)
-	{
-	case ZMAPFEATURE_STRUCT_FEATURE:
-	  {
+        {
+        case ZMAPFEATURE_STRUCT_FEATURE:
+          {
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	    /* I'm commenting this out for now, its just kind of annoying in fact.... */
+            /* I'm commenting this out for now, its just kind of annoying in fact.... */
 
-	    ZMapFeature feature = (ZMapFeature)feature_any ;
-	    char *coord = NULL ;
+            ZMapFeature feature = (ZMapFeature)feature_any ;
+            char *coord = NULL ;
 
-	    if (zMapInt2Str(feature->x1, &coord))
-	      search_data->start = coord ;		    /* str needs to be freed... */
+            if (zMapInt2Str(feature->x1, &coord))
+              search_data->start = coord ;                    /* str needs to be freed... */
 
-	    if (zMapInt2Str(feature->x2, &coord))
-	      search_data->end = coord ;		    /* str needs to be freed... */
+            if (zMapInt2Str(feature->x2, &coord))
+              search_data->end = coord ;                    /* str needs to be freed... */
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 
-	    break ;
-	  }
-	case ZMAPFEATURE_STRUCT_FEATURESET:
-	  {
+            break ;
+          }
+        case ZMAPFEATURE_STRUCT_FEATURESET:
+          {
 #ifdef RDS_DONT_INCLUDE
-	    ZMapFeatureSet set = (ZMapFeatureSet)feature_any ;
+            ZMapFeatureSet set = (ZMapFeatureSet)feature_any ;
 #endif /* RDS_DONT_INCLUDE */
-	    /* We should be able to tell strand from this but we can't at the moment.... */
+            /* We should be able to tell strand from this but we can't at the moment.... */
 
-	    break ;
-	  }
-	case ZMAPFEATURE_STRUCT_BLOCK:
-	  {
+            break ;
+          }
+        case ZMAPFEATURE_STRUCT_BLOCK:
+          {
 #ifdef RDS_DONT_INCLUDE
-	    ZMapFeatureBlock block = (ZMapFeatureBlock)feature_any ;
-#endif /* RDS_DONT_INCLUDE */
-
-	    break ;
-	  }
-	case ZMAPFEATURE_STRUCT_ALIGN:
-	  {
-#ifdef RDS_DONT_INCLUDE
-	    ZMapFeatureAlignment align = (ZMapFeatureAlignment)feature_any ;
+            ZMapFeatureBlock block = (ZMapFeatureBlock)feature_any ;
 #endif /* RDS_DONT_INCLUDE */
 
-	    break ;
-	  }
+            break ;
+          }
+        case ZMAPFEATURE_STRUCT_ALIGN:
+          {
+#ifdef RDS_DONT_INCLUDE
+            ZMapFeatureAlignment align = (ZMapFeatureAlignment)feature_any ;
+#endif /* RDS_DONT_INCLUDE */
+
+            break ;
+          }
         case ZMAPFEATURE_STRUCT_CONTEXT:
           break;
         case ZMAPFEATURE_STRUCT_INVALID:
         default:
           zMapWarnIfReached();
           break;
-	}
+        }
 
       feature_any = feature_any->parent ;
     }
@@ -1227,27 +1227,27 @@ gboolean searchPredCB(ZMapFeatureAny feature_any, gpointer user_data)
 
     case ZMAPFEATURE_STRUCT_FEATURE:
       {
-	ZMapFeature feature = (ZMapFeature)feature_any ;
+        ZMapFeature feature = (ZMapFeature)feature_any ;
 
 
-	/* for features we apply various filters according to what has been set. */
-	if (search_pred->start || search_pred->end)
-	  {
-	    if (feature->x1 > search_pred->end || feature->x2 < search_pred->start)
-	      result = FALSE ;
-	    else
-	      result = TRUE ;
-	  }
+        /* for features we apply various filters according to what has been set. */
+        if (search_pred->start || search_pred->end)
+          {
+            if (feature->x1 > search_pred->end || feature->x2 < search_pred->start)
+              result = FALSE ;
+            else
+              result = TRUE ;
+          }
 
-	if (search_pred->locus && feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
-	  {
-	    if (feature->feature.transcript.locus_id)
-	      result = TRUE ;
-	    else
-	      result = FALSE ;
-	  }
+        if (search_pred->locus && feature->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
+          {
+            if (feature->feature.transcript.locus_id)
+              result = TRUE ;
+            else
+              result = FALSE ;
+          }
 
-	break;
+        break;
       }
 
     case ZMAPFEATURE_STRUCT_INVALID:

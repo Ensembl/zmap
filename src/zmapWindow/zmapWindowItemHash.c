@@ -42,9 +42,9 @@
 #include <ZMap/zmapGLibUtils.h>
 
 #if MH17_NOT_USED
-#define zmapWindowFToIFindAlignById(WINDOW,FTOI_HASH, ID)		\
+#define zmapWindowFToIFindAlignById(WINDOW,FTOI_HASH, ID)                \
   zmapWindowFToIFindItemFull(WINDOW.FTOI_HASH, ID, 0, 0, ZMAPSTRAND_NONE, ZMAPFRAME_NONE, 0)
-#define zmapWindowFToIFindBlockById(WINDOW,FTOI_HASH, ALIGN, BLOCK)	\
+#define zmapWindowFToIFindBlockById(WINDOW,FTOI_HASH, ALIGN, BLOCK)        \
   zmapWindowFToIFindItemFull(WINDOW.FTOI_HASH, ALIGN, BLOCK, 0, ZMAPSTRAND_NONE, ZMAPFRAME_NONE, 0)
 #endif
 
@@ -84,8 +84,8 @@ typedef struct ItemSearchStruct_ *ItemSearch ;
  * will test the item for validity (e.g. strand). */
 typedef struct ItemSearchStruct_
 {
-  GQuark search_quark ;					    /* Specifies search string. */
-  gboolean is_reg_exp ;					    /* Is the search quark a regexp ? */
+  GQuark search_quark ;                                            /* Specifies search string. */
+  gboolean is_reg_exp ;                                            /* Is the search quark a regexp ? */
 
   /* added to allow search of a list of featuresets: if NULL use the quark as normal
    * although in principle we could have lists at other levels
@@ -96,14 +96,14 @@ typedef struct ItemSearchStruct_
 
   /* Function to check the final results item for validity, only used when we reach the
    * terminating leaf of the search. */
-  ZMapWindowFToIPredFuncCB pred_func ;	          /* Function to check items for validity. */
-  gpointer user_data ;					    /* Passed to pred_func. */
+  ZMapWindowFToIPredFuncCB pred_func ;                  /* Function to check items for validity. */
+  gpointer user_data ;                                            /* Passed to pred_func. */
 
 
   /* Actually, I'm not sure why I'm unhappy with this...???? is it because it duplicates the
    * field in the itemliststruct ?? */
   /* UGH not happy with this, rework this when there is time... */
-  GList **results ;					    /* result of search. */
+  GList **results ;                                            /* result of search. */
 
 } ItemSearchStruct ;
 
@@ -112,11 +112,11 @@ typedef struct ItemSearchStruct_
 
 typedef struct
 {
-  ItemSearch curr_search ;				    /* Current search params. */
+  ItemSearch curr_search ;                                    /* Current search params. */
 
-  GList *search ;					    /* List of ItemSearch specifying search. */
+  GList *search ;                                            /* List of ItemSearch specifying search. */
 
-  GList **results ;					    /* result of search. */
+  GList **results ;                                            /* result of search. */
 
 } ItemListSearchStruct, *ItemListSearch ;
 
@@ -155,9 +155,9 @@ static gboolean window_ftoi_debug_G = FALSE;
 /* this one function is the remains of zmapWindowItemFactory.c */
 
 FooCanvasItem *zmapWindowFToIFactoryRunSingle(GHashTable *ftoi_hash,
-					      ZMapWindowContainerFeatureSet parent_container,
-					      ZMapWindowContainerFeatures features_container,
-					      FooCanvasItem * foo_featureset,
+                                              ZMapWindowContainerFeatureSet parent_container,
+                                              ZMapWindowContainerFeatures features_container,
+                                              FooCanvasItem * foo_featureset,
                                               ZMapWindowFeatureStack     feature_stack)
 {
   FooCanvasItem   *feature_item = NULL;
@@ -191,30 +191,30 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(GHashTable *ftoi_hash,
 
       /* as we process both strands together strand is per feature not per set */
       if(zMapStyleIsStrandSpecific(*feature->style))
-	{
-	  if(feature->strand == ZMAPSTRAND_REVERSE)
-	    strand = '-';
-	  feature_stack->strand = feature->strand;
-	}
+        {
+          if(feature->strand == ZMAPSTRAND_REVERSE)
+            strand = '-';
+          feature_stack->strand = feature->strand;
+        }
 
       if(feature_stack->frame != ZMAPFRAME_NONE)
-	{
-	  feature_stack->frame = zmapWindowFeatureFrame(feature);
-	  frame += feature_stack->frame;
-	}
+        {
+          feature_stack->frame = zmapWindowFeatureFrame(feature);
+          frame += feature_stack->frame;
+        }
 
       /* see comment by zMapWindowGraphDensityItemGetDensityItem() */
       if(feature_stack->maps_to)
-	{
-	  /* a virtual featureset for combing several source into one display item */
-	  fset_id = feature_stack->maps_to;
-	  x = g_strdup_printf("%p_%s_%s_%c%c", foo->canvas, g_quark_to_string(col_id), g_quark_to_string(fset_id),strand,frame);
-	}
+        {
+          /* a virtual featureset for combing several source into one display item */
+          fset_id = feature_stack->maps_to;
+          x = g_strdup_printf("%p_%s_%s_%c%c", foo->canvas, g_quark_to_string(col_id), g_quark_to_string(fset_id),strand,frame);
+        }
       else
-	{
-	  /* a display column for combing one or several sources into one display item */
-	  x = g_strdup_printf("%p_%s_%c%c", foo->canvas, g_quark_to_string(col_id), strand,frame);
-	}
+        {
+          /* a display column for combing one or several sources into one display item */
+          x = g_strdup_printf("%p_%s_%c%c", foo->canvas, g_quark_to_string(col_id), strand,frame);
+        }
 
       feature_stack->id = g_quark_from_string(x);
 
@@ -223,29 +223,29 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(GHashTable *ftoi_hash,
       v_adjust = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window)) ;
 
       canvas_item = zMapWindowCanvasItemFeaturesetGetFeaturesetItem((FooCanvasGroup *)features_container,
-								    feature_stack->id,
-								    v_adjust,
-								    block->block_to_sequence.block.x1,
-								    block->block_to_sequence.block.x2,
-								    *feature->style,
-								    feature_stack->strand,
-								    feature_stack->frame,
-								    feature_stack->set_index, 0);
+                                                                    feature_stack->id,
+                                                                    v_adjust,
+                                                                    block->block_to_sequence.block.x1,
+                                                                    block->block_to_sequence.block.x2,
+                                                                    *feature->style,
+                                                                    feature_stack->strand,
+                                                                    feature_stack->frame,
+                                                                    feature_stack->set_index, 0);
 
 #if !FEATURESET_AS_COLUMN
       zmapWindowFToIAddSet(ftoi_hash,
-			   feature_stack->align->unique_id, feature_stack->block->unique_id,
-			   feature_stack->set->unique_id, feature_stack->strand, feature_stack->frame, (FooCanvasItem *) canvas_item) ;
+                           feature_stack->align->unique_id, feature_stack->block->unique_id,
+                           feature_stack->set->unique_id, feature_stack->strand, feature_stack->frame, (FooCanvasItem *) canvas_item) ;
 
       //if(zMapStyleGetMode(feature_stack->set->style) == ZMAPSTYLE_MODE_SEQUENCE)
-      //	printf("added set %s (%s) to hash\n", g_quark_to_string(feature_stack->set->unique_id),x);
+      //        printf("added set %s (%s) to hash\n", g_quark_to_string(feature_stack->set->unique_id),x);
 #endif
       g_free(x);
     }
 
   feature_item = (FooCanvasItem *) canvas_item;
 
-  if(feature_item)	// will always work
+  if(feature_item)        // will always work
     {
       gboolean status = FALSE;
       ZMapFrame frame;
@@ -258,19 +258,19 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(GHashTable *ftoi_hash,
       zMapWindowCanvasItemSetFeaturePointer(canvas_item, feature);
 
       if(feature_stack->filter && (feature->flags.collapsed || feature->flags.squashed || feature->flags.joined))
-	{
-	  /* collapsed items are not displayed as they contain no new information
-	   * but they cam be searched for in the FToI hash
-	   * so return the item that they got collapsed into
-	   * if selected from the search they get assigned to the canvas item
-	   * and the population copied in.
-	   *
-	   * NOTE calling code will need to set the feature in the hash as the composite feature
-	   */
-	  /*! \todo #warning need to set composite feature in lookup code */
+        {
+          /* collapsed items are not displayed as they contain no new information
+           * but they cam be searched for in the FToI hash
+           * so return the item that they got collapsed into
+           * if selected from the search they get assigned to the canvas item
+           * and the population copied in.
+           *
+           * NOTE calling code will need to set the feature in the hash as the composite feature
+           */
+          /*! \todo #warning need to set composite feature in lookup code */
                   
-	  return (FooCanvasItem *) feature_item;
-	}
+          return (FooCanvasItem *) feature_item;
+        }
 
       zMapWindowCanvasFeaturesetAddFeature((ZMapWindowFeaturesetItem) canvas_item, feature, feature->x1, feature->x2);
 
@@ -280,23 +280,23 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(GHashTable *ftoi_hash,
       strand = zmapWindowContainerFeatureSetGetStrand(parent_container);
 
       if(ftoi_hash)
-	{
-	  if(!feature_stack->col_hash[strand])
-	    {
-	      feature_stack->col_hash[strand] = zmapWindowFToIGetSetHash(ftoi_hash,
+        {
+          if(!feature_stack->col_hash[strand])
+            {
+              feature_stack->col_hash[strand] = zmapWindowFToIGetSetHash(ftoi_hash,
                                                                          feature_stack->align->unique_id, feature_stack->block->unique_id,
                                                                          feature_stack->set->unique_id, strand, frame);
-	    }
+            }
 
-	  status = zmapWindowFToIAddSetFeature(feature_stack->col_hash[strand], feature->unique_id, feature_item, feature);
+          status = zmapWindowFToIAddSetFeature(feature_stack->col_hash[strand], feature->unique_id, feature_item, feature);
 
-	  //if(zMapStyleGetMode(feature_stack->set->style) == ZMAPSTYLE_MODE_SEQUENCE)
-	  //	printf("added feature %s to hash\n", g_quark_to_string(feature->unique_id));
+          //if(zMapStyleGetMode(feature_stack->set->style) == ZMAPSTYLE_MODE_SEQUENCE)
+          //        printf("added feature %s to hash\n", g_quark_to_string(feature->unique_id));
 
-	  //x = g_quark_to_string(feature->unique_id);
-	  //if(frame != ZMAPFRAME_NONE)
-	  //	printf("add to hash %p %s %s\n",feature_stack->col_hash[strand], x, g_quark_to_string(feature_stack->set->unique_id));
-	}
+          //x = g_quark_to_string(feature->unique_id);
+          //if(frame != ZMAPFRAME_NONE)
+          //        printf("add to hash %p %s %s\n",feature_stack->col_hash[strand], x, g_quark_to_string(feature_stack->set->unique_id));
+        }
     }
 
   return feature_item;
@@ -314,10 +314,10 @@ GHashTable *zmapWindowFToICreate(void)
 {
   GHashTable *feature_to_context ;
 
-  feature_to_context = g_hash_table_new_full(NULL,	    /* Uses direct hash of keys. */
-					     NULL,	    /* Uses direct comparison of key values. */
-					     NULL,	    /* Nothing to destroy for hash key. */
-					     destroyIDHash) ;
+  feature_to_context = g_hash_table_new_full(NULL,            /* Uses direct hash of keys. */
+                                             NULL,            /* Uses direct comparison of key values. */
+                                             NULL,            /* Nothing to destroy for hash key. */
+                                             destroyIDHash) ;
 
   return feature_to_context ;
 }
@@ -373,8 +373,8 @@ gboolean zmapWindowFToIRemoveRoot(GHashTable *feature_context_to_item)
  * all our existing feature hashes !
  * NOTE: always returns TRUE as either the align is already there or we add it. */
 gboolean zmapWindowFToIAddAlign(GHashTable *feature_context_to_item,
-				GQuark align_id,
-				FooCanvasGroup *align_group)
+                                GQuark align_id,
+                                FooCanvasGroup *align_group)
 {
   gboolean result = TRUE ;
 
@@ -398,7 +398,7 @@ gboolean zmapWindowFToIAddAlign(GHashTable *feature_context_to_item,
 
 
 gboolean zmapWindowFToIRemoveAlign(GHashTable *feature_context_to_item,
-				   GQuark align_id)
+                                   GQuark align_id)
 {
   gboolean result = TRUE ;
   ID2Canvas align ;
@@ -418,29 +418,29 @@ gboolean zmapWindowFToIRemoveAlign(GHashTable *feature_context_to_item,
  * Returns FALSE if the align_id cannot be found, otherwise it returns TRUE as the block_id hash
  * already exists or we add it. */
 gboolean zmapWindowFToIAddBlock(GHashTable *feature_context_to_item,
-				GQuark align_id, GQuark block_id,
-				FooCanvasGroup *block_group)
+                                GQuark align_id, GQuark block_id,
+                                FooCanvasGroup *block_group)
 {
   gboolean result = FALSE ;
   ID2Canvas align ;
 
   if ((align = (ID2Canvas)g_hash_table_lookup(feature_context_to_item,
-					      GUINT_TO_POINTER(align_id))))
+                                              GUINT_TO_POINTER(align_id))))
     {
       if (!(g_hash_table_lookup(align->hash_table, GUINT_TO_POINTER(block_id))))
-	{
-	  ID2Canvas block ;
-	  ZMapFeatureAny item_feature ;
+        {
+          ID2Canvas block ;
+          ZMapFeatureAny item_feature ;
 
-	  item_feature = zmapWindowItemGetFeatureAny((FooCanvasItem *) block_group) ;
+          item_feature = zmapWindowItemGetFeatureAny((FooCanvasItem *) block_group) ;
 
-	  block = g_new0(ID2CanvasStruct, 1) ;
-	  block->item = FOO_CANVAS_ITEM(block_group) ;
-	  block->hash_table = g_hash_table_new_full(NULL, NULL, NULL, destroyIDHash) ;
-	  block->feature_any = item_feature ;
+          block = g_new0(ID2CanvasStruct, 1) ;
+          block->item = FOO_CANVAS_ITEM(block_group) ;
+          block->hash_table = g_hash_table_new_full(NULL, NULL, NULL, destroyIDHash) ;
+          block->feature_any = item_feature ;
 
-	  g_hash_table_insert(align->hash_table, GUINT_TO_POINTER(block_id), block) ;
-	}
+          g_hash_table_insert(align->hash_table, GUINT_TO_POINTER(block_id), block) ;
+        }
 
       result = TRUE ;
     }
@@ -450,7 +450,7 @@ gboolean zmapWindowFToIAddBlock(GHashTable *feature_context_to_item,
 
 
 gboolean zmapWindowFToIRemoveBlock(GHashTable *feature_context_to_item,
-				   GQuark align_id, GQuark block_id)
+                                   GQuark align_id, GQuark block_id)
 {
   gboolean result = FALSE;
   ID2Canvas align, block;
@@ -473,10 +473,10 @@ gboolean zmapWindowFToIRemoveBlock(GHashTable *feature_context_to_item,
  * Returns FALSE if the align_id or block_id cannot be found, otherwise it returns TRUE
  * as the block_id hash already exists or we add it. */
 gboolean zmapWindowFToIAddSet(GHashTable *feature_context_to_item,
-			      GQuark align_id, GQuark block_id, GQuark set_id,
-			      ZMapStrand set_strand, ZMapFrame set_frame,
+                              GQuark align_id, GQuark block_id, GQuark set_id,
+                              ZMapStrand set_strand, ZMapFrame set_frame,
 #if FEATURESET_AS_COLUMN
-			      FooCanvasGroup *set_group)
+                              FooCanvasGroup *set_group)
 #else
   FooCanvasItem *set_item)
 #endif
@@ -490,24 +490,24 @@ gboolean zmapWindowFToIAddSet(GHashTable *feature_context_to_item,
   set_id = makeSetID(set_id, set_strand, set_frame) ;
 
   if ((align = (ID2Canvas)g_hash_table_lookup(feature_context_to_item,
-					      GUINT_TO_POINTER(align_id)))
+                                              GUINT_TO_POINTER(align_id)))
       && (block = (ID2Canvas)g_hash_table_lookup(align->hash_table,
-						 GUINT_TO_POINTER(block_id))))
+                                                 GUINT_TO_POINTER(block_id))))
     {
 
       if (!(g_hash_table_lookup(block->hash_table, GUINT_TO_POINTER(set_id))))
-	{
-	  ID2Canvas set ;
-	  ZMapFeatureAny item_feature ;
+        {
+          ID2Canvas set ;
+          ZMapFeatureAny item_feature ;
 
-	  item_feature = zmapWindowItemGetFeatureAny((FooCanvasItem *) set_item) ;
-	  set = g_new0(ID2CanvasStruct, 1) ;
-	  set->item = set_item ;
-	  set->hash_table = g_hash_table_new_full(NULL, NULL, NULL, destroyIDHash) ;
-	  set->feature_any = item_feature ;
+          item_feature = zmapWindowItemGetFeatureAny((FooCanvasItem *) set_item) ;
+          set = g_new0(ID2CanvasStruct, 1) ;
+          set->item = set_item ;
+          set->hash_table = g_hash_table_new_full(NULL, NULL, NULL, destroyIDHash) ;
+          set->feature_any = item_feature ;
 
-	  g_hash_table_insert(block->hash_table, GUINT_TO_POINTER(set_id), set) ;
-	}
+          g_hash_table_insert(block->hash_table, GUINT_TO_POINTER(set_id), set) ;
+        }
 
       result = TRUE ;
     }
@@ -518,8 +518,8 @@ gboolean zmapWindowFToIAddSet(GHashTable *feature_context_to_item,
 
 
 gboolean zmapWindowFToIRemoveSet(GHashTable *feature_context_to_item,
-				  GQuark align_id, GQuark block_id, GQuark set_id,
-				  ZMapStrand set_strand, ZMapFrame set_frame, gboolean remove_features)
+                                  GQuark align_id, GQuark block_id, GQuark set_id,
+                                  ZMapStrand set_strand, ZMapFrame set_frame, gboolean remove_features)
 {
   gboolean result = FALSE;
   ID2Canvas align, block, set;
@@ -532,16 +532,16 @@ gboolean zmapWindowFToIRemoveSet(GHashTable *feature_context_to_item,
       && (block = (ID2Canvas)g_hash_table_lookup(align->hash_table,
                                                  GUINT_TO_POINTER(block_id)))
       && (set = (ID2Canvas)g_hash_table_lookup(block->hash_table,
-					       GUINT_TO_POINTER(set_id))))
+                                               GUINT_TO_POINTER(set_id))))
     {
       if(remove_features)
         {
-	  g_hash_table_remove_all(set->hash_table);
-	  result = TRUE;
+          g_hash_table_remove_all(set->hash_table);
+          result = TRUE;
         }
       else
         {
-	  result = g_hash_table_remove(block->hash_table, GUINT_TO_POINTER(set_id)) ;
+          result = g_hash_table_remove(block->hash_table, GUINT_TO_POINTER(set_id)) ;
         }
     }
 
@@ -554,8 +554,8 @@ gboolean zmapWindowFToIRemoveSet(GHashTable *feature_context_to_item,
 
 /* return the hash table for a set to allow repeated inserts more quickly */
 GHashTable *zmapWindowFToIGetSetHash(GHashTable *feature_context_to_item,
-				  GQuark align_id, GQuark block_id,
-				  GQuark set_id, ZMapStrand set_strand, ZMapFrame set_frame)
+                                  GQuark align_id, GQuark block_id,
+                                  GQuark set_id, ZMapStrand set_strand, ZMapFrame set_frame)
 {
   GHashTable *hash_table = NULL ;
   ID2Canvas align = NULL ;
@@ -567,9 +567,9 @@ GHashTable *zmapWindowFToIGetSetHash(GHashTable *feature_context_to_item,
   GQuark tmp_set_id = makeSetID(set_id, set_strand, set_frame) ;
 
   if ((align = (ID2Canvas)g_hash_table_lookup(feature_context_to_item,
-					      GUINT_TO_POINTER(align_id)))
+                                              GUINT_TO_POINTER(align_id)))
       && (block = (ID2Canvas)g_hash_table_lookup(align->hash_table,
-						 GUINT_TO_POINTER(block_id)))
+                                                 GUINT_TO_POINTER(block_id)))
       && (set = (ID2Canvas)g_hash_table_lookup(block->hash_table,
                                                    GUINT_TO_POINTER(tmp_set_id))))
     {
@@ -581,7 +581,7 @@ GHashTable *zmapWindowFToIGetSetHash(GHashTable *feature_context_to_item,
 
 
 
-gboolean zmapWindowFToIAddSetFeature(GHashTable *set,	GQuark feature_id, FooCanvasItem *feature_item, ZMapFeature feature)
+gboolean zmapWindowFToIAddSetFeature(GHashTable *set,        GQuark feature_id, FooCanvasItem *feature_item, ZMapFeature feature)
 {
   ID2Canvas ID2C ;
   /* mh17: changed insert to replace to allow bumping of compressed features
@@ -623,10 +623,10 @@ gboolean zmapWindowFToIAddSetFeature(GHashTable *set,	GQuark feature_id, FooCanv
  * Returns FALSE if the align_id, block_id or set_id cannot be found, otherwise it returns TRUE
  * if the feature_id hash already exists or we add it. */
 gboolean zmapWindowFToIAddFeature(GHashTable *feature_context_to_item,
-				  GQuark align_id, GQuark block_id,
-				  GQuark set_id, ZMapStrand set_strand, ZMapFrame set_frame,
-				  GQuark feature_id,
-				  FooCanvasItem *feature_item, ZMapFeature feature)
+                                  GQuark align_id, GQuark block_id,
+                                  GQuark set_id, ZMapStrand set_strand, ZMapFrame set_frame,
+                                  GQuark feature_id,
+                                  FooCanvasItem *feature_item, ZMapFeature feature)
 {
   gboolean result = FALSE ;
   GHashTable *set = NULL ;
@@ -640,7 +640,7 @@ gboolean zmapWindowFToIAddFeature(GHashTable *feature_context_to_item,
 
   if((set = zmapWindowFToIGetSetHash(feature_context_to_item, align_id, block_id, set_id, set_strand, set_frame)))
     {
-	result = zmapWindowFToIAddSetFeature(set,	feature_id, feature_item, feature);
+        result = zmapWindowFToIAddSetFeature(set,        feature_id, feature_item, feature);
     }
   return result ;
 }
@@ -658,7 +658,7 @@ gboolean zmapWindowFToIAddFeature(GHashTable *feature_context_to_item,
  * Returns FALSE if the feature_id cannot be found, otherwise it returns TRUE and removes
  * the feature_id. */
 gboolean zmapWindowFToIRemoveFeature(GHashTable *feature_context_to_item,
-				     ZMapStrand set_strand, ZMapFrame set_frame, ZMapFeature feature_in)
+                                     ZMapStrand set_strand, ZMapFrame set_frame, ZMapFeature feature_in)
 {
   gboolean result = FALSE ;
   GQuark align_id = feature_in->parent->parent->parent->unique_id,
@@ -681,13 +681,13 @@ gboolean zmapWindowFToIRemoveFeature(GHashTable *feature_context_to_item,
 #endif /* RDS_DEBUG_ITEM_IN_HASH_DESTROY */
 
   if ((align = (ID2Canvas)g_hash_table_lookup(feature_context_to_item,
-					      GUINT_TO_POINTER(align_id)))
+                                              GUINT_TO_POINTER(align_id)))
       && (block = (ID2Canvas)g_hash_table_lookup(align->hash_table,
-						 GUINT_TO_POINTER(block_id)))
+                                                 GUINT_TO_POINTER(block_id)))
       && (set = (ID2Canvas)g_hash_table_lookup(block->hash_table,
-					       GUINT_TO_POINTER(set_id)))
+                                               GUINT_TO_POINTER(set_id)))
       && (feature = (ID2Canvas)g_hash_table_lookup(set->hash_table,
-						   GUINT_TO_POINTER(feature_id))))
+                                                   GUINT_TO_POINTER(feature_id))))
     {
       result = g_hash_table_remove(set->hash_table, GUINT_TO_POINTER(feature_id)) ;
     }
@@ -699,18 +699,18 @@ gboolean zmapWindowFToIRemoveFeature(GHashTable *feature_context_to_item,
 
 
 FooCanvasItem *zmapWindowFToIFindFeatureItem(ZMapWindow window, GHashTable *feature_context_to_item,
-					     ZMapStrand set_strand, ZMapFrame set_frame,
+                                             ZMapStrand set_strand, ZMapFrame set_frame,
                                              ZMapFeature feature)
 {
   FooCanvasItem *item = NULL ;
   ZMapFeatureSet fset = (ZMapFeatureSet) feature->parent;
 
   item = zmapWindowFToIFindItemFull(window,feature_context_to_item,
-				    feature->parent->parent->parent->unique_id,
-				    feature->parent->parent->unique_id,
-				    fset->unique_id,
-				    set_strand, set_frame,
-				    feature->unique_id) ;
+                                    feature->parent->parent->parent->unique_id,
+                                    feature->parent->parent->unique_id,
+                                    fset->unique_id,
+                                    set_strand, set_frame,
+                                    feature->unique_id) ;
 
   return item ;
 }
@@ -719,17 +719,17 @@ FooCanvasItem *zmapWindowFToIFindFeatureItem(ZMapWindow window, GHashTable *feat
 
 
 FooCanvasItem *zmapWindowFToIFindSetItem(ZMapWindow window,GHashTable *feature_context_to_item,
-     					 ZMapFeatureSet feature_set,
-					 ZMapStrand set_strand, ZMapFrame set_frame)
+                                              ZMapFeatureSet feature_set,
+                                         ZMapStrand set_strand, ZMapFrame set_frame)
 {
   FooCanvasItem *item = NULL ;
 
   item = zmapWindowFToIFindItemFull(window,feature_context_to_item,
-				    feature_set->parent->parent->unique_id,
-				    feature_set->parent->unique_id,
-				    feature_set->unique_id,
-				    set_strand, set_frame,
-				    0) ;
+                                    feature_set->parent->parent->unique_id,
+                                    feature_set->parent->unique_id,
+                                    feature_set->unique_id,
+                                    set_strand, set_frame,
+                                    0) ;
 
   return item ;
 }
@@ -760,10 +760,10 @@ FooCanvasItem *zmapWindowFToIFindSetItem(ZMapWindow window,GHashTable *feature_c
 
 
 ID2Canvas zmapWindowFToIFindID2CFull(ZMapWindow window, GHashTable *feature_context_to_item,
-				     GQuark align_id, GQuark block_id,
-				     GQuark set_id,
-				     ZMapStrand set_strand, ZMapFrame set_frame,
-				     GQuark feature_id)
+                                     GQuark align_id, GQuark block_id,
+                                     GQuark set_id,
+                                     ZMapStrand set_strand, ZMapFrame set_frame,
+                                     GQuark feature_id)
 {
   ID2Canvas root ;
   ID2Canvas align ;
@@ -781,39 +781,39 @@ ID2Canvas zmapWindowFToIFindID2CFull(ZMapWindow window, GHashTable *feature_cont
                                                           GUINT_TO_POINTER(align_id))))
     {
       if (!block_id)
-	{
-	  id2c = align;
-	}
+        {
+          id2c = align;
+        }
       else if ((block = (ID2Canvas)g_hash_table_lookup(align->hash_table,
-						       GUINT_TO_POINTER(block_id))))
-	{
-	  GQuark tmp_set_id = makeSetID(set_id, set_strand, set_frame) ;
+                                                       GUINT_TO_POINTER(block_id))))
+        {
+          GQuark tmp_set_id = makeSetID(set_id, set_strand, set_frame) ;
 
-	  if (!set_id)
-	    {
-	      id2c = block ;
-	    }
-	  else if ((set = (ID2Canvas)g_hash_table_lookup(block->hash_table,
-							 GUINT_TO_POINTER(tmp_set_id))))
-	    {
-	      if (!feature_id)
-		{
-		  id2c = set ;
-		}
-	      else
-		{
-		  if((feature = (ID2Canvas)g_hash_table_lookup(set->hash_table,
+          if (!set_id)
+            {
+              id2c = block ;
+            }
+          else if ((set = (ID2Canvas)g_hash_table_lookup(block->hash_table,
+                                                         GUINT_TO_POINTER(tmp_set_id))))
+            {
+              if (!feature_id)
+                {
+                  id2c = set ;
+                }
+              else
+                {
+                  if((feature = (ID2Canvas)g_hash_table_lookup(set->hash_table,
                                                                GUINT_TO_POINTER(feature_id))))
-		    {
-		      id2c = feature ;
-		    }
-		}
-	    }
+                    {
+                      id2c = feature ;
+                    }
+                }
+            }
 
-	  //printf("ftoi find feature: %p %p %s, %s\n", set, feature, g_quark_to_string(feature_id), g_quark_to_string(tmp_set_id));
+          //printf("ftoi find feature: %p %p %s, %s\n", set, feature, g_quark_to_string(feature_id), g_quark_to_string(tmp_set_id));
 
 
-	}
+        }
     }
   else if(!align_id)
     {
@@ -832,25 +832,25 @@ ID2Canvas zmapWindowFToIFindID2CFull(ZMapWindow window, GHashTable *feature_cont
 
 
 FooCanvasItem *zmapWindowFToIFindItemFull(ZMapWindow window, GHashTable *feature_context_to_item,
-					  GQuark align_id, GQuark block_id,
-					  GQuark set_id,
-					  ZMapStrand set_strand, ZMapFrame set_frame,
-					  GQuark feature_id)
+                                          GQuark align_id, GQuark block_id,
+                                          GQuark set_id,
+                                          ZMapStrand set_strand, ZMapFrame set_frame,
+                                          GQuark feature_id)
 {
   ID2Canvas id2c;
   FooCanvasItem *item = NULL ;
 
   id2c = zmapWindowFToIFindID2CFull(window, feature_context_to_item,
-				    align_id, block_id,set_id,
-				    set_strand, set_frame,
-				    feature_id);
+                                    align_id, block_id,set_id,
+                                    set_strand, set_frame,
+                                    feature_id);
 
   if(id2c)
     {
       item = id2c->item;
 
       if(feature_id)
-	zMapWindowCanvasItemSetFeaturePointer((ZMapWindowCanvasItem) item,(ZMapFeature) id2c->feature_any);
+        zMapWindowCanvasItemSetFeaturePointer((ZMapWindowCanvasItem) item,(ZMapFeature) id2c->feature_any);
     }
 
   return item;
@@ -858,25 +858,25 @@ FooCanvasItem *zmapWindowFToIFindItemFull(ZMapWindow window, GHashTable *feature
 
 
 FooCanvasItem *zmapWindowFToIFindItemColumn(ZMapWindow window, GHashTable *feature_context_to_item,
-					    GQuark align_id, GQuark block_id,
-					    GQuark set_id,
-					    ZMapStrand set_strand, ZMapFrame set_frame)
+                                            GQuark align_id, GQuark block_id,
+                                            GQuark set_id,
+                                            ZMapStrand set_strand, ZMapFrame set_frame)
 {
   ID2Canvas id2c;
   FooCanvasItem *item = NULL ;
 
   id2c = zmapWindowFToIFindID2CFull(window, feature_context_to_item,
-				    align_id, block_id,set_id,
-				    set_strand, set_frame, 0);
+                                    align_id, block_id,set_id,
+                                    set_strand, set_frame, 0);
 
   if(id2c)
     {
       item = id2c->item;
 
       if(!ZMAP_IS_WINDOW_FEATURESET_ITEM(item))
-	item = NULL;
+        item = NULL;
       else
-	item = item->parent;
+        item = item->parent;
     }
 
   return item;
@@ -929,10 +929,10 @@ FooCanvasItem *zmapWindowFToIFindItemColumn(ZMapWindow window, GHashTable *featu
  *
  *  */
 GList *zmapWindowFToIFindItemSetFull(ZMapWindow window,GHashTable *feature_context_to_item,
-				     GQuark align_id, GQuark block_id, GQuark column_id,
-				     GQuark set_id, char *strand_spec, char *frame_spec,
-				     GQuark feature_id,
-				     ZMapWindowFToIPredFuncCB pred_func, gpointer user_data)
+                                     GQuark align_id, GQuark block_id, GQuark column_id,
+                                     GQuark set_id, char *strand_spec, char *frame_spec,
+                                     GQuark feature_id,
+                                     ZMapWindowFToIPredFuncCB pred_func, gpointer user_data)
 {
   GList *result = NULL ;
   GQuark strand_id, strand_none, strand_forward, strand_reverse, strand_both ;
@@ -966,93 +966,93 @@ GList *zmapWindowFToIFindItemSetFull(ZMapWindow window,GHashTable *feature_conte
       /* convert strand spec to something useful. */
       strand_id = 0 ;
       if (strand_spec)
-	{
-	  strand_none = g_quark_from_string(".") ;
-	  strand_forward = g_quark_from_string("+") ;
-	  strand_reverse = g_quark_from_string("-") ;
-	  strand_both = g_quark_from_string("*") ;
+        {
+          strand_none = g_quark_from_string(".") ;
+          strand_forward = g_quark_from_string("+") ;
+          strand_reverse = g_quark_from_string("-") ;
+          strand_both = g_quark_from_string("*") ;
 
-	  strand_id = g_quark_from_string(strand_spec) ;
-	}
+          strand_id = g_quark_from_string(strand_spec) ;
+        }
 
       /* Convert frame_spec to something useful. */
       frame_id = 0 ;
       if (frame_spec)
-	{
-	  frame_none = g_quark_from_string(".") ;
-	  frame_0 = g_quark_from_string("1") ;
-	  frame_1 = g_quark_from_string("2") ;
-	  frame_2 = g_quark_from_string("3") ;
-	  frame_all = g_quark_from_string("*") ;
+        {
+          frame_none = g_quark_from_string(".") ;
+          frame_0 = g_quark_from_string("1") ;
+          frame_1 = g_quark_from_string("2") ;
+          frame_2 = g_quark_from_string("3") ;
+          frame_all = g_quark_from_string("*") ;
 
-	  frame_id = g_quark_from_string(frame_spec) ;
-	}
+          frame_id = g_quark_from_string(frame_spec) ;
+        }
 
       zMap_g_hash_table_iter_init(&iter,window->context_map->featureset_2_column);
       while(zMap_g_hash_table_iter_next(&iter,&key, &value))
-	{
-	  ItemSearchStruct filter_search;
-	  GQuark featureset_id = GPOINTER_TO_UINT(key);
-	  /*
-	   * As we search the context for featuresets when we request a column
-	   * we need to extract the featuresets in that column
-	   * If the column is spec'd with a wildcard then we need to process that here.
-	   */
+        {
+          ItemSearchStruct filter_search;
+          GQuark featureset_id = GPOINTER_TO_UINT(key);
+          /*
+           * As we search the context for featuresets when we request a column
+           * we need to extract the featuresets in that column
+           * If the column is spec'd with a wildcard then we need to process that here.
+           */
 
-	  f2c = (ZMapFeatureSetDesc) value;
-	  /* get exact match or pattern match for the column */
+          f2c = (ZMapFeatureSetDesc) value;
+          /* get exact match or pattern match for the column */
 
-	  filter_search.search_quark = column_id;
+          filter_search.search_quark = column_id;
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  /* I think this is broken, what if the column and set are wild cards ????? */
+          /* I think this is broken, what if the column and set are wild cards ????? */
 
-	  if((featureset_id == set_id) ||
-	     (!set_id && (f2c->column_id == column_id || (reg && filterOnRegExp(&filter_search, GUINT_TO_POINTER(f2c->column_id))))))
+          if((featureset_id == set_id) ||
+             (!set_id && (f2c->column_id == column_id || (reg && filterOnRegExp(&filter_search, GUINT_TO_POINTER(f2c->column_id))))))
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
           if ((featureset_id == set_id)
-	      || (!set_id && f2c->column_id == column_id)
-	      || (reg && filterOnRegExp(&filter_search, GUINT_TO_POINTER(f2c->column_id))))
-	      {
-		/* add this featureset as an exact string with strand and frame */
-		/* erm... no ... the context has plain featuresets but
-		 * the hash is split into tables for each canvas column
-		 */
+              || (!set_id && f2c->column_id == column_id)
+              || (reg && filterOnRegExp(&filter_search, GUINT_TO_POINTER(f2c->column_id))))
+              {
+                /* add this featureset as an exact string with strand and frame */
+                /* erm... no ... the context has plain featuresets but
+                 * the hash is split into tables for each canvas column
+                 */
 
-		/* Some care needed here as we may need to wild card the frame to ensure we search
-		 * enough columns.... */
-		if (strand_id == strand_none || strand_id == strand_forward || strand_id == strand_both)
-		  {
-		    forward_set_id = makeSetIDFromStr(featureset_id, ZMAPSTRAND_FORWARD, frame_id) ;
+                /* Some care needed here as we may need to wild card the frame to ensure we search
+                 * enough columns.... */
+                if (strand_id == strand_none || strand_id == strand_forward || strand_id == strand_both)
+                  {
+                    forward_set_id = makeSetIDFromStr(featureset_id, ZMAPSTRAND_FORWARD, frame_id) ;
 
-		    forward_set_search.search_quark = forward_set_id ;
+                    forward_set_search.search_quark = forward_set_id ;
 
-		    forward_set_search.search_list = g_list_prepend(forward_set_search.search_list, GUINT_TO_POINTER(forward_set_id));
+                    forward_set_search.search_list = g_list_prepend(forward_set_search.search_list, GUINT_TO_POINTER(forward_set_id));
 
 #if MH17_SEARCH_DEBUG > 1
-		    printf("Adding fwd set %s for column %s\n",g_quark_to_string(forward_set_id), g_quark_to_string(column_id));
+                    printf("Adding fwd set %s for column %s\n",g_quark_to_string(forward_set_id), g_quark_to_string(column_id));
 #endif
-		    if (isRegExp(forward_set_id))
-		      forward_set_search.is_reg_exp = TRUE ;
-		  }
+                    if (isRegExp(forward_set_id))
+                      forward_set_search.is_reg_exp = TRUE ;
+                  }
 
-		if (strand_id == strand_reverse || strand_id == strand_both)
-		  {
-		    reverse_set_id = makeSetIDFromStr(featureset_id, ZMAPSTRAND_REVERSE, frame_id) ;
+                if (strand_id == strand_reverse || strand_id == strand_both)
+                  {
+                    reverse_set_id = makeSetIDFromStr(featureset_id, ZMAPSTRAND_REVERSE, frame_id) ;
 
-		    reverse_set_search.search_quark = reverse_set_id ;
+                    reverse_set_search.search_quark = reverse_set_id ;
 
-		    reverse_set_search.search_list = g_list_prepend(reverse_set_search.search_list, GUINT_TO_POINTER(reverse_set_id));
+                    reverse_set_search.search_list = g_list_prepend(reverse_set_search.search_list, GUINT_TO_POINTER(reverse_set_id));
 #if MH17_SEARCH_DEBUG > 1
-		    printf("Adding rev set %s for column %s\n",g_quark_to_string(reverse_set_id), g_quark_to_string(column_id));
+                    printf("Adding rev set %s for column %s\n",g_quark_to_string(reverse_set_id), g_quark_to_string(column_id));
 #endif
 
-		    if (isRegExp(reverse_set_id))
-		      reverse_set_search.is_reg_exp = TRUE ;
-		  }
-	      }
-	}
+                    if (isRegExp(reverse_set_id))
+                      reverse_set_search.is_reg_exp = TRUE ;
+                  }
+              }
+        }
 
     }
 
@@ -1069,30 +1069,30 @@ GList *zmapWindowFToIFindItemSetFull(ZMapWindow window,GHashTable *feature_conte
 
       /* N.B. there is always an align id.... */
       if (!block_id)
-	last_search = &align_search ;
+        last_search = &align_search ;
       else if (!column_id)
-	last_search = &block_search ;
+        last_search = &block_search ;
       else if (!feature_id)
-	{
-	  if (forward_set_id)
-	    {
-	      forward_set_search.pred_func = pred_func ;
-	      forward_set_search.user_data = user_data ;
-	    }
-	  if (reverse_set_id)
-	    {
-	      reverse_set_search.pred_func = pred_func ;
-	      reverse_set_search.user_data = user_data ;
-	    }
-	}
+        {
+          if (forward_set_id)
+            {
+              forward_set_search.pred_func = pred_func ;
+              forward_set_search.user_data = user_data ;
+            }
+          if (reverse_set_id)
+            {
+              reverse_set_search.pred_func = pred_func ;
+              reverse_set_search.user_data = user_data ;
+            }
+        }
       else
-	last_search = &feature_search ;
+        last_search = &feature_search ;
 
       if (last_search)
-	{
-	  last_search->pred_func = pred_func ;
-	  last_search->user_data = user_data ;
-	}
+        {
+          last_search->pred_func = pred_func ;
+          last_search->user_data = user_data ;
+        }
     }
 
 
@@ -1107,7 +1107,7 @@ GList *zmapWindowFToIFindItemSetFull(ZMapWindow window,GHashTable *feature_conte
       search = g_list_append(search, &block_search) ;
       search = g_list_append(search, &forward_set_search) ;
       search = g_list_append(search, &feature_search) ;
-      search = g_list_append(search, &terminal_search) ;	    /* Terminal stop. */
+      search = g_list_append(search, &terminal_search) ;            /* Terminal stop. */
 
       /* Now do the recursive search */
       doHashSet(feature_context_to_item, search, &result) ;
@@ -1126,7 +1126,7 @@ GList *zmapWindowFToIFindItemSetFull(ZMapWindow window,GHashTable *feature_conte
       search = g_list_append(search, &block_search) ;
       search = g_list_append(search, &reverse_set_search) ;
       search = g_list_append(search, &feature_search) ;
-      search = g_list_append(search, &terminal_search) ;	    /* Terminal stop. */
+      search = g_list_append(search, &terminal_search) ;            /* Terminal stop. */
 
       /* Now do the recursive search */
       doHashSet(feature_context_to_item, search, &result) ;
@@ -1147,8 +1147,8 @@ GList *zmapWindowFToIFindItemSetFull(ZMapWindow window,GHashTable *feature_conte
  * as all features match at least themselves.
  *  */
 GList *zmapWindowFToIFindSameNameItems(ZMapWindow window,GHashTable *feature_context_to_item,
-				       char *set_strand, char *set_frame,
-				       ZMapFeature feature)
+                                       char *set_strand, char *set_frame,
+                                       ZMapFeature feature)
 {
   GList *item_list    = NULL ;
   GQuark same_name_id = 0;
@@ -1159,12 +1159,12 @@ GList *zmapWindowFToIFindSameNameItems(ZMapWindow window,GHashTable *feature_con
   column_id = zMapWindowGetFeaturesetContainerID(window,feature->parent->unique_id);
 
   item_list = zmapWindowFToIFindItemSetFull(window,feature_context_to_item,
-					    feature->parent->parent->parent->unique_id,
-					    feature->parent->parent->unique_id,
-					    column_id, 0,
-					    set_strand,
-					    set_frame,
-					    same_name_id, NULL, NULL) ;
+                                            feature->parent->parent->parent->unique_id,
+                                            feature->parent->parent->unique_id,
+                                            column_id, 0,
+                                            set_strand,
+                                            set_frame,
+                                            same_name_id, NULL, NULL) ;
 
   return item_list ;
 }
@@ -1178,10 +1178,10 @@ GList *zmapWindowFToIFindSameNameItems(ZMapWindow window,GHashTable *feature_con
     {
       ZMapWindowFToISetSearchData search;
       search = zmapWindowFToISetSearchCreate(zmapWindowFToIFindSameNameItems,
-					     feature, 0, 0, column_id, 0, "+", "*");
+                                             feature, 0, 0, column_id, 0, "+", "*");
       result = zmapWindowFToISetSearchPerform(window, search);
       if(search_cache_out)
-	*search_cache_out = search;
+        *search_cache_out = search;
     }
   else
     result = zmapWindowFToIFindSameNameItems(window, feature_context_to_item, "+", "*", feature);
@@ -1195,17 +1195,17 @@ GList *zmapWindowFToIFindSameNameItems(ZMapWindow window,GHashTable *feature_con
  *        to run the Set queries above.
  */
 ZMapWindowFToISetSearchData zmapWindowFToISetSearchCreateFull(gpointer    search_function,
-							      ZMapFeature feature,
-							      GQuark      align_id,
-							      GQuark      block_id,
-							      GQuark      column_id,
-							      GQuark      set_id,
-							      GQuark      feature_id,
-							      char       *strand_str,
-							      char       *frame_str,
-							      ZMapWindowFToIPredFuncCB predicate_func,
-							      gpointer                 predicate_data,
-							      GDestroyNotify           predicate_free)
+                                                              ZMapFeature feature,
+                                                              GQuark      align_id,
+                                                              GQuark      block_id,
+                                                              GQuark      column_id,
+                                                              GQuark      set_id,
+                                                              GQuark      feature_id,
+                                                              char       *strand_str,
+                                                              char       *frame_str,
+                                                              ZMapWindowFToIPredFuncCB predicate_func,
+                                                              gpointer                 predicate_data,
+                                                              GDestroyNotify           predicate_free)
 {
   ZMapWindowFToISetSearchData search_data = NULL;
   gboolean wrong_params = FALSE;
@@ -1226,50 +1226,50 @@ printf("ftoisetsearchcreate: %s\n",g_quark_to_string(column_id));
   if(search_function == zmapWindowFToIFindItemSetFull)
     {
       if(feature)
-	{
-	  search_data->align_id   = feature->parent->parent->parent->unique_id;
-	  search_data->block_id   = feature->parent->parent->unique_id;
-	  search_data->column_id  = column_id;
-	  search_data->set_id     = set_id;
-	  search_data->feature_id = feature->unique_id;
-	  search_data->strand_str = strand_str;
-	  search_data->frame_str  = frame_str;
-	}
+        {
+          search_data->align_id   = feature->parent->parent->parent->unique_id;
+          search_data->block_id   = feature->parent->parent->unique_id;
+          search_data->column_id  = column_id;
+          search_data->set_id     = set_id;
+          search_data->feature_id = feature->unique_id;
+          search_data->strand_str = strand_str;
+          search_data->frame_str  = frame_str;
+        }
       else if(align_id)
-	{
-	  search_data->align_id   = align_id;
-	  search_data->block_id   = block_id;
-	  search_data->column_id  = column_id;
-	  search_data->set_id     = set_id;
-	  search_data->feature_id = feature_id;
-	  search_data->strand_str = strand_str;
-	  search_data->frame_str  = frame_str;
-	}
+        {
+          search_data->align_id   = align_id;
+          search_data->block_id   = block_id;
+          search_data->column_id  = column_id;
+          search_data->set_id     = set_id;
+          search_data->feature_id = feature_id;
+          search_data->strand_str = strand_str;
+          search_data->frame_str  = frame_str;
+        }
       else
-	wrong_params = TRUE;
+        wrong_params = TRUE;
     }
   else if(search_function == zmapWindowFToIFindSameNameItems)
     {
       GQuark same_name_id = 0;
 
       if(feature && strand_str && frame_str)
-	{
-	  same_name_id            = feature_same_name_id(feature);
+        {
+          same_name_id            = feature_same_name_id(feature);
 
-	  search_data->align_id   = feature->parent->parent->parent->unique_id;
-	  search_data->block_id   = feature->parent->parent->unique_id;
-	  search_data->column_id  = column_id;
-	  search_data->set_id     = set_id;
-	  search_data->feature_id = same_name_id;
-	  search_data->strand_str = strand_str;
-	  search_data->frame_str  = frame_str;
+          search_data->align_id   = feature->parent->parent->parent->unique_id;
+          search_data->block_id   = feature->parent->parent->unique_id;
+          search_data->column_id  = column_id;
+          search_data->set_id     = set_id;
+          search_data->feature_id = same_name_id;
+          search_data->strand_str = strand_str;
+          search_data->frame_str  = frame_str;
 
-	  /* a predicate_func could cause trouble... unless we NULL it. */
-	  search_data->predicate_func = NULL;
-	  search_data->predicate_data = NULL;
-	}
+          /* a predicate_func could cause trouble... unless we NULL it. */
+          search_data->predicate_func = NULL;
+          search_data->predicate_data = NULL;
+        }
       else
-	wrong_params = TRUE;
+        wrong_params = TRUE;
     }
   else
     {
@@ -1290,21 +1290,21 @@ printf("ftoisetsearchcreate: %s\n",g_quark_to_string(column_id));
 }
 
 ZMapWindowFToISetSearchData zmapWindowFToISetSearchCreate(gpointer    search_function,
-							  ZMapFeature feature,
-							  GQuark      align_id,
-							  GQuark      block_id,
-							  GQuark      column_id,
-							  GQuark      set_id,
-							  GQuark      feature_id,
-							  char       *strand_str,
-							  char       *frame_str)
+                                                          ZMapFeature feature,
+                                                          GQuark      align_id,
+                                                          GQuark      block_id,
+                                                          GQuark      column_id,
+                                                          GQuark      set_id,
+                                                          GQuark      feature_id,
+                                                          char       *strand_str,
+                                                          char       *frame_str)
 {
   ZMapWindowFToISetSearchData search_data;
 
   search_data = zmapWindowFToISetSearchCreateFull(search_function, feature,
-						  align_id, block_id, column_id, set_id,
-						  feature_id, strand_str, frame_str,
-						  NULL, NULL, NULL);
+                                                  align_id, block_id, column_id, set_id,
+                                                  feature_id, strand_str, frame_str,
+                                                  NULL, NULL, NULL);
 
   return search_data;
 }
@@ -1313,34 +1313,34 @@ ZMapWindowFToISetSearchData zmapWindowFToISetSearchCreate(gpointer    search_fun
  * \brief Perform a search using cached data.  This is a Set search so returns a list.
  */
 GList *zmapWindowFToISetSearchPerform(ZMapWindow window,GHashTable *feature_context_to_item,
-				      ZMapWindowFToISetSearchData search_data)
+                                      ZMapWindowFToISetSearchData search_data)
 {
   GList *list = NULL;
 
   if (window_ftoi_debug_G)
     printf("Search:\t%s,\t%s,\t%s,\t%s,\t%s,\t%s,\t%s\n",
-	   g_quark_to_string(search_data->align_id),
-	   g_quark_to_string(search_data->block_id),
-	   g_quark_to_string(search_data->column_id),
-	   g_quark_to_string(search_data->set_id),
-	   search_data->strand_str,
-	   search_data->frame_str,
-	   g_quark_to_string(search_data->feature_id)) ;
+           g_quark_to_string(search_data->align_id),
+           g_quark_to_string(search_data->block_id),
+           g_quark_to_string(search_data->column_id),
+           g_quark_to_string(search_data->set_id),
+           search_data->strand_str,
+           search_data->frame_str,
+           g_quark_to_string(search_data->feature_id)) ;
 
 
   if(search_data->search_function == zmapWindowFToIFindItemSetFull
      || search_data->search_function == zmapWindowFToIFindSameNameItems)
     {
       list = zmapWindowFToIFindItemSetFull(window,feature_context_to_item,
-					   search_data->align_id,
-					   search_data->block_id,
-					   search_data->column_id,
-					   search_data->set_id,
-					   search_data->strand_str,
-					   search_data->frame_str,
-					   search_data->feature_id,
-					   search_data->predicate_func,
-					   search_data->predicate_data) ;
+                                           search_data->align_id,
+                                           search_data->block_id,
+                                           search_data->column_id,
+                                           search_data->set_id,
+                                           search_data->strand_str,
+                                           search_data->frame_str,
+                                           search_data->feature_id,
+                                           search_data->predicate_func,
+                                           search_data->predicate_data) ;
     }
 
   return list;
@@ -1418,8 +1418,8 @@ static GQuark makeSetID(GQuark set_id, ZMapStrand strand, ZMapFrame frame)
     }
 
   set_str = g_strdup_printf("%s_%s_%s%s", g_quark_to_string(set_id),
-			    strand_str,
-			    FRAME_PREFIX, frame_str) ;
+                            strand_str,
+                            FRAME_PREFIX, frame_str) ;
 
   full_set_id = g_quark_from_string(set_str) ;
 
@@ -1445,8 +1445,8 @@ static GQuark makeSetIDFromStr(GQuark set_id, ZMapStrand strand, GQuark frame_id
   frame_str = (char *)g_quark_to_string(frame_id) ;
 
   set_str = g_strdup_printf("%s_%s_%s%s", g_quark_to_string(set_id),
-			    strand_str,
-			    FRAME_PREFIX, frame_str) ;
+                            strand_str,
+                            FRAME_PREFIX, frame_str) ;
 
   full_set_id = g_quark_from_string(set_str) ;
 
@@ -1523,22 +1523,22 @@ printf("cur_search id = %s (%d) ... %s, %d\n", g_quark_to_string(curr_search_id)
       /* If the search id matches exactly then add it to the results, otherwise if its a wild card
        * or we need to validate on some criteria then look at all items in the hash. */
       if ((item_id = (ID2Canvas)g_hash_table_lookup(hash_table,
-						    GUINT_TO_POINTER(curr_search_id))))
-	{
-	  if (!curr_search->pred_func || curr_search->pred_func(item_id->feature_any, curr_search->user_data))
-	  {
+                                                    GUINT_TO_POINTER(curr_search_id))))
+        {
+          if (!curr_search->pred_func || curr_search->pred_func(item_id->feature_any, curr_search->user_data))
+          {
           results = g_list_append(results, item_id); //->item) ;
 #if MH17_SEARCH_DEBUG
       printf("added: exact %s, %p\n",g_quark_to_string(curr_search->search_quark), item_id->item);
 #endif
         }
-	}
+        }
       else if (curr_search_id == wild_card || curr_search->is_reg_exp)
-	{
-	  curr_search->results = &results ;
+        {
+          curr_search->results = &results ;
 
-	  g_hash_table_foreach(hash_table, addItem, (gpointer)curr_search) ;
-	}
+          g_hash_table_foreach(hash_table, addItem, (gpointer)curr_search) ;
+        }
     }
   else
     {
@@ -1584,14 +1584,14 @@ printf("do hash set list %s ,reg = %d\n",g_quark_to_string(curr_search->search_q
       /* If the search id matches exactly then do that hash set, otherwise if its a wild card
        * or we need to search on some validation criteria then do all the sets. */
       else if ((item_id = (ID2Canvas)g_hash_table_lookup(hash_table,
-						    GUINT_TO_POINTER(curr_search_id))))
-	{
-	  doHashSet(item_id->hash_table, search_data.search, search_data.results) ;
-	}
+                                                    GUINT_TO_POINTER(curr_search_id))))
+        {
+          doHashSet(item_id->hash_table, search_data.search, search_data.results) ;
+        }
       else if (curr_search_id == wild_card || curr_search->is_reg_exp)
-	{
-	  g_hash_table_foreach(hash_table, searchItemHash, (gpointer)&search_data) ;
-	}
+        {
+          g_hash_table_foreach(hash_table, searchItemHash, (gpointer)&search_data) ;
+        }
     }
 
   *results_inout = results ;
@@ -1612,8 +1612,8 @@ static void addItem(gpointer key, gpointer value, gpointer user_data)
 
   if (curr_search->is_reg_exp && filterOnRegExp(curr_search, key)
       && (!(curr_search->pred_func)
-	  || (curr_search->pred_func
-	      && curr_search->pred_func(hash_item->feature_any, curr_search->user_data))))
+          || (curr_search->pred_func
+              && curr_search->pred_func(hash_item->feature_any, curr_search->user_data))))
   {
       *results = g_list_append(*results, hash_item); // ->item) ;
 
@@ -1661,33 +1661,33 @@ static void printGlist(gpointer data, gpointer user_data)
   if ((feature_any = zmapWindowItemGetFeatureAny(item)))
     {
       switch (feature_any->struct_type)
-	{
-	case ZMAPFEATURE_STRUCT_ALIGN:
-	  feature_type = "Align" ;
-	  break ;
-	case ZMAPFEATURE_STRUCT_BLOCK:
-	  feature_type = "Block" ;
-	  break ;
-	case ZMAPFEATURE_STRUCT_FEATURESET:
-	  feature_type = "Set" ;
-	  break ;
-	case ZMAPFEATURE_STRUCT_FEATURE:
-	  feature_type = "Feature" ;
-	  break ;
-	default:
-	  {
-	    zMapLogFatal("Coding error, bad ZMapWindowItemFeatureType: %d", feature_any->struct_type) ;
-	    break ;
-	  }
-	}
+        {
+        case ZMAPFEATURE_STRUCT_ALIGN:
+          feature_type = "Align" ;
+          break ;
+        case ZMAPFEATURE_STRUCT_BLOCK:
+          feature_type = "Block" ;
+          break ;
+        case ZMAPFEATURE_STRUCT_FEATURESET:
+          feature_type = "Set" ;
+          break ;
+        case ZMAPFEATURE_STRUCT_FEATURE:
+          feature_type = "Feature" ;
+          break ;
+        default:
+          {
+            zMapLogFatal("Coding error, bad ZMapWindowItemFeatureType: %d", feature_any->struct_type) ;
+            break ;
+          }
+        }
 
       feature_id = feature_any->unique_id ;
     }
 
   if (window_ftoi_debug_G)
     printf("%s:  %s\n",
-	   (feature_type ? feature_type : "<no feature data attached>"),
-	   (feature_id ? g_quark_to_string(feature_id) : "")) ;
+           (feature_type ? feature_type : "<no feature data attached>"),
+           (feature_id ? g_quark_to_string(feature_id) : "")) ;
 
   return ;
 }

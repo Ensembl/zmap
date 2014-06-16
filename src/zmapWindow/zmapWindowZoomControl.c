@@ -212,12 +212,12 @@ ZMapWindowZoomControl zmapWindowZoomControlCreate(ZMapWindow window)
 
 
   if(!zMapGUIGetFixedWidthFont(GTK_WIDGET(window->toplevel),
-			       g_list_append(NULL, ZMAP_ZOOM_FONT_FAMILY),
-			       ZMAP_ZOOM_FONT_SIZE, PANGO_WEIGHT_NORMAL,
-			       &(tmp_font), &(tmp_font_desc)))
+                               g_list_append(NULL, ZMAP_ZOOM_FONT_FAMILY),
+                               ZMAP_ZOOM_FONT_SIZE, PANGO_WEIGHT_NORMAL,
+                               &(tmp_font), &(tmp_font_desc)))
     {
       zMapLogCritical("%s", "Zoom Control Create failed to get fixed width font for zoom calculation"
-		      " so zmap display is not possible.") ;
+                      " so zmap display is not possible.") ;
     }
   else
     {
@@ -234,9 +234,9 @@ ZMapWindowZoomControl zmapWindowZoomControlCreate(ZMapWindow window)
       zmapWindowSetPixelxy(window, 1.0, 1.0);
 
       textDimensionsOfFont(foo_canvas_root(window->canvas),
-			   num_cruncher->font_desc,
-			   &(num_cruncher->textWidth),
-			   &(num_cruncher->textHeight)) ;
+                           num_cruncher->font_desc,
+                           &(num_cruncher->textWidth),
+                           &(num_cruncher->textHeight)) ;
 
       num_cruncher->maxZF   = num_cruncher->textHeight + (double)(ZMAP_WINDOW_TEXT_BORDER);
       num_cruncher->border  = num_cruncher->maxZF; /* This should _NOT_ be changed */
@@ -581,18 +581,18 @@ static void textDimensionsOfFont(FooCanvasGroup *group,
   PangoLayout *playout;
 
   item = foo_canvas_item_new(group,
-			     FOO_TYPE_CANVAS_TEXT,
-			     "x",         0.0,
+                             FOO_TYPE_CANVAS_TEXT,
+                             "x",         0.0,
                              "y",         0.0,
                              "text",      "X",
                              "font_desc", font,
-			     NULL);
+                             NULL);
   playout = FOO_CANVAS_TEXT(item)->layout;
 
   g_object_get(GTK_OBJECT(item),
-	       "FooCanvasText::text_width", &width,
-	       "FooCanvasText::text_height", &height,
-	       NULL) ;
+               "FooCanvasText::text_width", &width,
+               "FooCanvasText::text_height", &height,
+               NULL) ;
 
   pango_layout_get_pixel_size( playout , &iwidth, &iheight );
 

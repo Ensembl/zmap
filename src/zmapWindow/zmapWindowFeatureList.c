@@ -1310,7 +1310,7 @@ static void feature_item_add_simple(ZMapGUITreeView zmap_tv,
 
   zmap_tv_feature = ZMAP_WINDOWFEATUREITEMLIST(zmap_tv);
 
-  if((feature))	// = zmapWindowItemGetFeature(item)))
+  if((feature))        // = zmapWindowItemGetFeature(item)))
     {
       if(zmap_tv_feature->feature_type == ZMAPSTYLE_MODE_INVALID &&
        feature->mode != ZMAPSTYLE_MODE_INVALID)
