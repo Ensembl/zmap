@@ -298,6 +298,7 @@ static gboolean createConnection(void **server_out,
                                  char *version_str, int timeout)
 {
   gboolean result = FALSE ;
+  GError *error = NULL ;
   gboolean use_methods = FALSE;
   AcedbServer server ;
 
@@ -314,17 +315,19 @@ static gboolean createConnection(void **server_out,
   /* We need a minimum server version but user can specify a higher one in the config file. */
   if (version_str)
     {
-      if (zMapCompareVersionStings(ACEDB_SERVER_MIN_VERSION, version_str))
+      if (zMapCompareVersionStings(ACEDB_SERVER_MIN_VERSION, version_str, error))
 	{
 	  server->version_str = g_strdup(version_str) ;
 	}
       else
 	{
-	  ZMAPSERVER_LOG(Warning, ACEDB_PROTOCOL_STR, server->host,
-			 "Requested server version was %s but minimum supported is %s.",
-			 version_str, ACEDB_SERVER_MIN_VERSION) ;
+          ZMAPSERVER_LOG(Warning, ACEDB_PROTOCOL_STR, server->host,
+                         "Server version error: %s.", (error ? error->message : "(null)")) ;
 	  server->version_str = g_strdup(ACEDB_SERVER_MIN_VERSION) ;
 	}
+      
+      if (error)
+        g_error_free(&error) ;
     }
   else
     {
@@ -2039,6 +2042,7 @@ static gboolean getSMapLength(AcedbServer server, char *obj_class, char *obj_nam
 static gboolean checkServerVersion(AcedbServer server)
 {
   gboolean result = FALSE ;
+  GError *error = NULL ;
   char *command = "status -code" ;
   char *acedb_request = NULL ;
   void *reply = NULL ;
@@ -2074,10 +2078,15 @@ static gboolean checkServerVersion(AcedbServer server)
 		  next = strtok(NULL, " ") ;
 		  next = strtok(NULL, " ") ;
 
-		  if (!(result = zMapCompareVersionStings(server->version_str, next)))
-		    setErrMsg(server,  g_strdup_printf("Server version must be at least %s "
-						       "but this server is %s.",
-						       server->version_str, next)) ;
+                  if (!(result = zMapCompareVersionStings(server->version_str, next, &error)))
+                    {
+                      setErrMsg(server,  g_strdup_printf("Server version error: %s ", 
+                                                         (error ? error->message : "(null)"))) ;
+                    }
+                  
+                  if (error)
+                    g_error_free(&error) ;
+
 		  break ;
 		}
 	    }
