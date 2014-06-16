@@ -20,7 +20,7 @@
  * This file is part of the ZMap genome database package
  * originally written by:
  *
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *         Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *        Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *   Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk
  *
@@ -53,9 +53,9 @@
  * source param is for short reads data
  *  */
 void zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item,
-			  ZMapWindowAlignSetType requested_homol_set,
-			  ZMapFeatureSet feature_set, GList *source,
-			  double x_pos, double y_pos)
+                          ZMapWindowAlignSetType requested_homol_set,
+                          ZMapFeatureSet feature_set, GList *source,
+                          double x_pos, double y_pos)
 {
   FooCanvasItem *focus_item = NULL, *focus_column = NULL ;
   int window_start, window_end ;
@@ -81,14 +81,14 @@ void zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item,
       level = zmapWindowContainerUtilsGetLevel(item) ;
 
       if (level != ZMAPCONTAINER_LEVEL_FEATURESET)
-	item_column = (FooCanvasItem *)zmapWindowContainerUtilsItemGetParentLevel(item,
-										  ZMAPCONTAINER_LEVEL_FEATURESET) ;
+        item_column = (FooCanvasItem *)zmapWindowContainerUtilsItemGetParentLevel(item,
+                                                                                  ZMAPCONTAINER_LEVEL_FEATURESET) ;
 
       if (item_column == focus_column)
-	{
-	  item_in_focus_col = TRUE ;
-	  selected_features = TRUE ;
-	}
+        {
+          item_in_focus_col = TRUE ;
+          selected_features = TRUE ;
+        }
     }
 
 
@@ -108,17 +108,17 @@ void zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item,
       zMapMessage("%s", msg) ;
     }
   else if ((requested_homol_set == ZMAPWINDOW_ALIGNCMD_FEATURES || requested_homol_set == ZMAPWINDOW_ALIGNCMD_EXPANDED)
-		&& !(item_in_focus_col && focus_item))
+                && !(item_in_focus_col && focus_item))
     {
       /* User wants to blixem "selected" features but there aren't any in the item's column. */
 
       zMapWarning("%s", "Could not launch blixem, no selected features in this column.") ;
     }
   else if (!(feature_any = zmapWindowItemGetFeatureAnyType(item, -1))
-	   || (feature_any->struct_type != ZMAPFEATURE_STRUCT_FEATURESET
-	       && feature_any->struct_type != ZMAPFEATURE_STRUCT_FEATURE)
-	   || (feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURESET
-	       && !(feature_any = zMap_g_hash_table_nth(((ZMapFeatureSet)feature_any)->features, 0))))
+           || (feature_any->struct_type != ZMAPFEATURE_STRUCT_FEATURESET
+               && feature_any->struct_type != ZMAPFEATURE_STRUCT_FEATURE)
+           || (feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURESET
+               && !(feature_any = zMap_g_hash_table_nth(((ZMapFeatureSet)feature_any)->features, 0))))
     {
       /* Cannot find feature from item. */
 
@@ -145,64 +145,64 @@ void zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item,
       /* Set up all the parameters blixem needs to do it's display. */
       /* may be null if (temporary) blixem BAM option selected */
       if (feature)
-	align->block = (ZMapFeatureBlock)zMapFeatureGetParentGroup((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_BLOCK) ;
+        align->block = (ZMapFeatureBlock)zMapFeatureGetParentGroup((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_BLOCK) ;
 
       align->offset = window->sequence->start ;
 
       /* Work out where we are.... */
       if (feature && y_pos == 0.0)
-		y_pos = (double)((feature->x1 + feature->x2) / 2) ;
-	zmapWindowWorld2SeqCoords(window, (item ? item : focus_column), 0, y_pos, 0,0, NULL, &y1,NULL) ;
-	align->cursor_position = y1 ;
+                y_pos = (double)((feature->x1 + feature->x2) / 2) ;
+        zmapWindowWorld2SeqCoords(window, (item ? item : focus_column), 0, y_pos, 0,0, NULL, &y1,NULL) ;
+        align->cursor_position = y1 ;
 
 
       align->window_start = window_start ;
       align->window_end = window_end ;
 
       if (zmapWindowMarkIsSet(window->mark))
-	zmapWindowMarkGetSequenceRange(window->mark, &(align->mark_start), &(align->mark_end)) ;
+        zmapWindowMarkGetSequenceRange(window->mark, &(align->mark_start), &(align->mark_end)) ;
 
       if (requested_homol_set == ZMAPWINDOW_ALIGNCMD_SEQ)
-	{
-	  align->homol_type = ZMAPHOMOL_N_HOMOL ;
+        {
+          align->homol_type = ZMAPHOMOL_N_HOMOL ;
 
-	  align->source = source ;
-	  align->homol_set = requested_homol_set ;
-	}
+          align->source = source ;
+          align->homol_set = requested_homol_set ;
+        }
       else
-	{
-	  if (feature->mode == ZMAPSTYLE_MODE_ALIGNMENT)
-	    {
-	      align->homol_type = feature->feature.homol.type ;
+        {
+          if (feature->mode == ZMAPSTYLE_MODE_ALIGNMENT)
+            {
+              align->homol_type = feature->feature.homol.type ;
 
-	      align->homol_set = requested_homol_set ;
-	    }
-	  else
-	    {
-	      /* User may click on non-homol feature if they want to see some other feature + dna in blixem. */
-	      align->homol_type = ZMAPHOMOL_N_HOMOL ;
+              align->homol_set = requested_homol_set ;
+            }
+          else
+            {
+              /* User may click on non-homol feature if they want to see some other feature + dna in blixem. */
+              align->homol_type = ZMAPHOMOL_N_HOMOL ;
 
-	      align->homol_set = ZMAPWINDOW_ALIGNCMD_NONE ;
-	    }
+              align->homol_set = ZMAPWINDOW_ALIGNCMD_NONE ;
+            }
 
-	  align->feature_set = (ZMapFeatureSet)(feature->parent) ;
+          align->feature_set = (ZMapFeatureSet)(feature->parent) ;
 
-	  align->isSeq = zMapFeatureIsSeqFeatureSet(window->context_map,align->feature_set->unique_id);
+          align->isSeq = zMapFeatureIsSeqFeatureSet(window->context_map,align->feature_set->unique_id);
 
-	  /* If user clicked on features then make a list of them (may only be one), otherwise
-	   * we need to use the feature set. */
-	  if (selected_features == TRUE)
-	    {
-	      GList *focus_items ;
+          /* If user clicked on features then make a list of them (may only be one), otherwise
+           * we need to use the feature set. */
+          if (selected_features == TRUE)
+            {
+              GList *focus_items ;
 
-	      focus_items = zmapWindowFocusGetFocusItemsType(window->focus, WINDOW_FOCUS_GROUP_FOCUS) ;
+              focus_items = zmapWindowFocusGetFocusItemsType(window->focus, WINDOW_FOCUS_GROUP_FOCUS) ;
 
-	      align->features = zmapWindowItemListToFeatureListExpanded(focus_items,
-									requested_homol_set == ZMAPWINDOW_ALIGNCMD_EXPANDED) ;
+              align->features = zmapWindowItemListToFeatureListExpanded(focus_items,
+                                                                        requested_homol_set == ZMAPWINDOW_ALIGNCMD_EXPANDED) ;
 
-	      g_list_free(focus_items) ;
-	    }
-	}
+              g_list_free(focus_items) ;
+            }
+        }
 
 
       (*(window_cbs_G->command))(window, window->app_data, align) ;

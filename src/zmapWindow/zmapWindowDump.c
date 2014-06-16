@@ -93,9 +93,9 @@ typedef enum {ASPECT_AS_IS, ASPECT_FITPAGE} DumpAspect ;
 typedef struct
 {
   int g2_id ;
-  GHashTable *ink_colours ;				    /* hash of printing colours. */
+  GHashTable *ink_colours ;                                    /* hash of printing colours. */
 
-  double x1, y1, x2, y2 ;				    /* Bounds of displayed objects. */
+  double x1, y1, x2, y2 ;                                    /* Bounds of displayed objects. */
 
   /* If filename == NULL then channel is used. */
   char *filename ;
@@ -160,7 +160,7 @@ typedef struct
 
 
 /* Trivial position invertor. */
-#define COORDINVERT(COORD, SEQ_END)	                           \
+#define COORDINVERT(COORD, SEQ_END)                                   \
   (COORD) = (SEQ_END) - (COORD) + 1
 
 
@@ -188,8 +188,8 @@ static void printCB(GtkButton *button, gpointer user_data) ;
 static int getInkColour(int g2_id, GHashTable *ink_colours, guint composite_colour) ;
 #endif
 static void scale2Canvas(DumpOptions dump_opts,
-			 double *width, double *height,
-			 double *x_origin, double *y_origin, double *x_mul, double *y_mul) ;
+                         double *width, double *height,
+                         double *x_origin, double *y_origin, double *x_mul, double *y_mul) ;
 
 
 
@@ -252,20 +252,20 @@ static gboolean dumpWindow(DumpOptions dump_opts)
       dump_opts->ink_colours = g_hash_table_new(NULL, NULL) ;
 
       if (dump_opts->extent == EXTENT_WHOLE)
-	{
-	  /* should I be getting the whole thing here including borders ???? */
+        {
+          /* should I be getting the whole thing here including borders ???? */
 
-	  zMapWindowMaxWindowPos(dump_opts->window, &dump_opts->x1, &dump_opts->y1, &dump_opts->x2, &dump_opts->y2) ;
+          zMapWindowMaxWindowPos(dump_opts->window, &dump_opts->x1, &dump_opts->y1, &dump_opts->x2, &dump_opts->y2) ;
 
-	}
+        }
       else
-	{
-	  zMapWindowCurrWindowPos(dump_opts->window, &dump_opts->x1, &dump_opts->y1, &dump_opts->x2, &dump_opts->y2) ;
+        {
+          zMapWindowCurrWindowPos(dump_opts->window, &dump_opts->x1, &dump_opts->y1, &dump_opts->x2, &dump_opts->y2) ;
 
 // this looks equivalent...
 //      void zmapWindowItemGetVisibleWorld(ZMapWindow window,double *wx1, double *wy1,double *wx2, double *wy2)
 
-	}
+        }
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 printf("dump exent: %d %f,%f %f,%f\n",dump_opts->extent,dump_opts->x1,dump_opts->y1,dump_opts->x2,dump_opts->y2);
 #endif
@@ -280,18 +280,18 @@ printf("dump exent: %d %f,%f %f,%f\n",dump_opts->extent,dump_opts->x1,dump_opts-
 
       /* Open the correct context. */
       switch (dump_opts->format)
-	{
-	case DUMP_PS:
-	  dump_opts->g2_id = openPS(dump_opts) ;
-	  break ;
-	case DUMP_EPSF:
-	  dump_opts->g2_id = openEPSF(dump_opts) ;
-	  break ;
-	case DUMP_PNG:
-	case DUMP_JPEG:
-	  dump_opts->g2_id = openGD(dump_opts) ;
-	  break ;
-	}
+        {
+        case DUMP_PS:
+          dump_opts->g2_id = openPS(dump_opts) ;
+          break ;
+        case DUMP_EPSF:
+          dump_opts->g2_id = openEPSF(dump_opts) ;
+          break ;
+        case DUMP_PNG:
+        case DUMP_JPEG:
+          dump_opts->g2_id = openGD(dump_opts) ;
+          break ;
+        }
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -632,9 +632,9 @@ static int setScalingPS(DumpOptions dump_opts)
   if (dump_opts->customise == CUSTOM_BEST_FIT)
     {
       if (canvas_width > canvas_height)
-	dump_opts->orientation = ORIENTATION_LANDSCAPE ;
+        dump_opts->orientation = ORIENTATION_LANDSCAPE ;
       else
-	dump_opts->orientation = ORIENTATION_PORTRAIT ;
+        dump_opts->orientation = ORIENTATION_PORTRAIT ;
 
       dump_opts->aspect = ASPECT_AS_IS ;
     }
@@ -661,9 +661,9 @@ static int setScalingPS(DumpOptions dump_opts)
     {
 
       if (canvas_width > canvas_height)
-	paper_mul = a4_width / canvas_width ;
+        paper_mul = a4_width / canvas_width ;
       else
-	paper_mul = a4_height / canvas_height ;
+        paper_mul = a4_height / canvas_height ;
 
 
 
@@ -904,104 +904,104 @@ static void dumpFeatureCB(gpointer data, gpointer user_data)
     {
 
       guint composite ;
-      int fill_colour = 0 ;				    /* default to white. */
-      int outline_colour = 1 ;			    /* default to black. */
+      int fill_colour = 0 ;                                    /* default to white. */
+      int outline_colour = 1 ;                            /* default to black. */
 
 
       if (FOO_IS_CANVAS_RE(item))
-	{
-	  dumpRectangle(cb_data, FOO_CANVAS_RE(item), TRUE) ;
-	}
+        {
+          dumpRectangle(cb_data, FOO_CANVAS_RE(item), TRUE) ;
+        }
       else if (FOO_IS_CANVAS_LINE(item))
-	{
-	  FooCanvasLine *line_item = FOO_CANVAS_LINE(item) ;
-	  int i ;
-	  double *line, *point_x, *point_y ;
-	  int bytes_to_copy ;
+        {
+          FooCanvasLine *line_item = FOO_CANVAS_LINE(item) ;
+          int i ;
+          double *line, *point_x, *point_y ;
+          int bytes_to_copy ;
 
-	  bytes_to_copy = line_item->num_points * 2 * sizeof(double) ;
-	  line = (double *)g_malloc(bytes_to_copy) ;
-	  memcpy(line, line_item->coords, bytes_to_copy) ;
+          bytes_to_copy = line_item->num_points * 2 * sizeof(double) ;
+          line = (double *)g_malloc(bytes_to_copy) ;
+          memcpy(line, line_item->coords, bytes_to_copy) ;
 
-	  for (i = 0, point_x = line, point_y = line + 1 ;
-	       i < line_item->num_points ;
-	       i++, point_x += 2, point_y += 2)
-	    {
-	      foo_canvas_item_i2w(item, point_x, point_y) ;
+          for (i = 0, point_x = line, point_y = line + 1 ;
+               i < line_item->num_points ;
+               i++, point_x += 2, point_y += 2)
+            {
+              foo_canvas_item_i2w(item, point_x, point_y) ;
             *point_x -= cb_data->x1;
 
-	      COORDINVERT(*point_y, cb_data->y2) ;
-	    }
+              COORDINVERT(*point_y, cb_data->y2) ;
+            }
 
-	  composite = line_item->fill_rgba ;
+          composite = line_item->fill_rgba ;
 
-	  fill_colour = getInkColour(cb_data->g2_id, cb_data->ink_colours, composite) ;
+          fill_colour = getInkColour(cb_data->g2_id, cb_data->ink_colours, composite) ;
 
-	  g2_pen(cb_data->g2_id, fill_colour) ;
-	  g2_poly_line(cb_data->g2_id, line_item->num_points, line) ;
+          g2_pen(cb_data->g2_id, fill_colour) ;
+          g2_poly_line(cb_data->g2_id, line_item->num_points, line) ;
 
-	  g_free(line) ;
-	}
+          g_free(line) ;
+        }
       else if (FOO_IS_CANVAS_POLYGON(item))
-	{
-	  FooCanvasPolygon *polygon_item = FOO_CANVAS_POLYGON(item) ;
-	  int i ;
-	  double *line, *point_x, *point_y ;
-	  int bytes_to_copy ;
-	  gboolean fill_set;
+        {
+          FooCanvasPolygon *polygon_item = FOO_CANVAS_POLYGON(item) ;
+          int i ;
+          double *line, *point_x, *point_y ;
+          int bytes_to_copy ;
+          gboolean fill_set;
 
-	  bytes_to_copy = polygon_item->num_points * 2 * sizeof(double) ;
-	  line = (double *)g_malloc(bytes_to_copy) ;
-	  memcpy(line, polygon_item->coords, bytes_to_copy) ;
+          bytes_to_copy = polygon_item->num_points * 2 * sizeof(double) ;
+          line = (double *)g_malloc(bytes_to_copy) ;
+          memcpy(line, polygon_item->coords, bytes_to_copy) ;
 
-	  for (i = 0, point_x = line, point_y = line + 1 ;
-	       i < polygon_item->num_points ;
-	       i++, point_x += 2, point_y += 2)
-	    {
-	      foo_canvas_item_i2w(item, point_x, point_y) ;
+          for (i = 0, point_x = line, point_y = line + 1 ;
+               i < polygon_item->num_points ;
+               i++, point_x += 2, point_y += 2)
+            {
+              foo_canvas_item_i2w(item, point_x, point_y) ;
             *point_x -= cb_data->x1;
 
-	      COORDINVERT(*point_y, cb_data->y2) ;
-	    }
+              COORDINVERT(*point_y, cb_data->y2) ;
+            }
 
-	  if(!(fill_set = polygon_item->fill_set))
-	    foo_canvas_item_set(FOO_CANVAS_ITEM(polygon_item),
-				"fill_color_gdk", cb_data->current_background_colour,
-				NULL);
+          if(!(fill_set = polygon_item->fill_set))
+            foo_canvas_item_set(FOO_CANVAS_ITEM(polygon_item),
+                                "fill_color_gdk", cb_data->current_background_colour,
+                                NULL);
 
-	  composite = polygon_item->fill_color ;
-	  fill_colour = getInkColour(cb_data->g2_id, cb_data->ink_colours, composite) ;
+          composite = polygon_item->fill_color ;
+          fill_colour = getInkColour(cb_data->g2_id, cb_data->ink_colours, composite) ;
 
-	  if(!fill_set)
-	      foo_canvas_item_set(FOO_CANVAS_ITEM(polygon_item),
-				  "fill_color_gdk", NULL,
-				  NULL);
+          if(!fill_set)
+              foo_canvas_item_set(FOO_CANVAS_ITEM(polygon_item),
+                                  "fill_color_gdk", NULL,
+                                  NULL);
 
-	  composite = polygon_item->outline_color ;
-	  outline_colour = getInkColour(cb_data->g2_id, cb_data->ink_colours, composite) ;
+          composite = polygon_item->outline_color ;
+          outline_colour = getInkColour(cb_data->g2_id, cb_data->ink_colours, composite) ;
 
-	  g2_pen(cb_data->g2_id, fill_colour) ;
-	  g2_filled_polygon(cb_data->g2_id, polygon_item->num_points, line) ;
+          g2_pen(cb_data->g2_id, fill_colour) ;
+          g2_filled_polygon(cb_data->g2_id, polygon_item->num_points, line) ;
 
-	  g2_pen(cb_data->g2_id, outline_colour) ;
-	  g2_polygon(cb_data->g2_id, polygon_item->num_points, line) ;
+          g2_pen(cb_data->g2_id, outline_colour) ;
+          g2_polygon(cb_data->g2_id, polygon_item->num_points, line) ;
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  printf("polygon: ") ;
-	  for (i = 0, point_x = line ; i < polygon_item->num_points ; i++, point_x += 2)
-	    {
-	      printf("%f %f ", *point_x, *(point_x + 1)) ;
-	    }
-	  printf("\n") ;
+          printf("polygon: ") ;
+          for (i = 0, point_x = line ; i < polygon_item->num_points ; i++, point_x += 2)
+            {
+              printf("%f %f ", *point_x, *(point_x + 1)) ;
+            }
+          printf("\n") ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-	  g_free(line) ;
-	}
+          g_free(line) ;
+        }
       else if (FOO_IS_CANVAS_TEXT(item))
-	{
-	  FooCanvasText *text_item = FOO_CANVAS_TEXT(item) ;
-	  double x, y ;
+        {
+          FooCanvasText *text_item = FOO_CANVAS_TEXT(item) ;
+          double x, y ;
 
 // so I can look at them in the debugger
 //ZMapWindowTextItem zwt = ZMAP_WINDOW_TEXT_ITEM(text_item);
@@ -1009,33 +1009,33 @@ static void dumpFeatureCB(gpointer data, gpointer user_data)
 //FooCanvasZMapText *fzt = FOO_CANVAS_ZMAP_TEXT(text_item);
 
 #ifdef MH17_XY_IS_ZERO
-	  x = text_item->x ;
-	  y = text_item->y ;
+          x = text_item->x ;
+          y = text_item->y ;
 #else
         x = text_item->item.x1;
         y = text_item->item.y1;
 #endif
-	  foo_canvas_item_i2w(item, &x, &y) ;
+          foo_canvas_item_i2w(item, &x, &y) ;
         x -= cb_data->x1;
 
-	  COORDINVERT(y, cb_data->y2) ;
+          COORDINVERT(y, cb_data->y2) ;
 
-	  y = y - (text_item->clip_height / 2) ;	    /* Correct for text placement... */
+          y = y - (text_item->clip_height / 2) ;            /* Correct for text placement... */
 
-	  composite = text_item->rgba ;
-	  fill_colour = getInkColour(cb_data->g2_id, cb_data->ink_colours, composite) ;
+          composite = text_item->rgba ;
+          fill_colour = getInkColour(cb_data->g2_id, cb_data->ink_colours, composite) ;
 
         //seem to have the whole dna seq here
 // printf("text <%.20s> @ %f,%f (%f,%f) rgba = %x\n",text_item->text,x,y,text_item->item.x1,text_item->item.y1,composite);
-	  g2_pen(cb_data->g2_id, fill_colour) ;
+          g2_pen(cb_data->g2_id, fill_colour) ;
         g2_set_font_size(cb_data->g2_id,20.0);
-	  g2_string(cb_data->g2_id, x, y, text_item->text) ;
-	}
+          g2_string(cb_data->g2_id, x, y, text_item->text) ;
+        }
       else
-	{
+        {
           zMapLogMessage("Unexpected item [%s]", G_OBJECT_TYPE_NAME(item));
           zMapWarnIfReached() ;
-	}
+        }
     }
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
@@ -1069,7 +1069,7 @@ static int getInkColour(int g2_id, GHashTable *ink_colours, guint composite_colo
       ink = g2_ink(g2_id, red, green, blue) ;
 
       g_hash_table_insert(ink_colours, GUINT_TO_POINTER(composite_colour),
-			  GUINT_TO_POINTER(ink)) ;
+                          GUINT_TO_POINTER(ink)) ;
 
     }
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
@@ -1081,8 +1081,8 @@ static int getInkColour(int g2_id, GHashTable *ink_colours, guint composite_colo
 
 
 static void scale2Canvas(DumpOptions dump_opts,
-			 double *canvas_width, double *canvas_height,
-			 double *x_origin, double *y_origin, double *x_mul, double *y_mul)
+                         double *canvas_width, double *canvas_height,
+                         double *x_origin, double *y_origin, double *x_mul, double *y_mul)
 {
   double pixels_per_unit_x;
   double pixels_per_unit_y;

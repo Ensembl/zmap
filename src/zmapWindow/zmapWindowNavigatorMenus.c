@@ -35,7 +35,7 @@
 
 #include <zmapWindowNavigator_P.h>
 #include <ZMap/zmapUtils.h>
-#include <zmapWindowContainerFeatureSet_I.h>		    /* agggggghhhhhhhhhhhh!!!!!!!!!!!!! */
+#include <zmapWindowContainerFeatureSet_I.h>                    /* agggggghhhhhhhhhhhh!!!!!!!!!!!!! */
 
 
 
@@ -162,7 +162,7 @@ void zmapWindowNavigatorShowSameNameList(ZMapWindowNavigator navigate, FooCanvas
       result = zmapWindowFToIFindItemSetFull(window,window->context_to_item,
                                              feature->parent->parent->parent->unique_id,
                                              feature->parent->parent->unique_id,
-					     locus_quark, /* feature->parent->unique_id,  */
+                                             locus_quark, /* feature->parent->unique_id,  */
                                              wild_card, wild_card, locus_quark,
                                              callback, GUINT_TO_POINTER(feature->original_id));
 
@@ -178,10 +178,10 @@ void zmapWindowNavigatorShowSameNameList(ZMapWindowNavigator navigate, FooCanvas
        * WindowList and it does that with a callback. It must
        * be the same window! */
       zmapWindowListWindowCreate(window, item,
-				 (char *)(g_quark_to_string(feature->original_id)),
-				 access_window_context_to_item, window,
-				 NULL, NULL,
-				 zoom_to_item);
+                                 (char *)(g_quark_to_string(feature->original_id)),
+                                 access_window_context_to_item, window,
+                                 NULL, NULL,
+                                 zoom_to_item);
       g_list_free(result);  /* clean up list. */
     }
 
@@ -201,24 +201,24 @@ void zmapWindowNavigatorShowSameNameList(ZMapWindowNavigator navigate, FooCanvas
 
 
     search_data = zmapWindowFToISetSearchCreateFull(zmapWindowFToIFindItemSetFull,
-						    NULL,
-						    feature->parent->parent->parent->unique_id,
-						    feature->parent->parent->unique_id,
-						    wild_card_id,
-						    wild_card_id,
-						    wild_card_id,
-						    wild_card, /* strand */
-						    wild_card, /* frame */
-						    searchLocusSetCB,
-						    GUINT_TO_POINTER(feature->original_id),
-						    NULL) ;
+                                                    NULL,
+                                                    feature->parent->parent->parent->unique_id,
+                                                    feature->parent->parent->unique_id,
+                                                    wild_card_id,
+                                                    wild_card_id,
+                                                    wild_card_id,
+                                                    wild_card, /* strand */
+                                                    wild_card, /* frame */
+                                                    searchLocusSetCB,
+                                                    GUINT_TO_POINTER(feature->original_id),
+                                                    NULL) ;
 
     zmapWindowListWindowCreate(window, item,
-			       (char *)(g_quark_to_string(feature->original_id)),
-			       access_window_context_to_item,  window,
-			       window->context_map,
-			       (ZMapWindowListSearchHashFunc)zmapWindowFToISetSearchPerform, search_data,
-			       (GDestroyNotify)zmapWindowFToISetSearchDestroy, zoom_to_item);
+                               (char *)(g_quark_to_string(feature->original_id)),
+                               access_window_context_to_item,  window,
+                               window->context_map,
+                               (ZMapWindowListSearchHashFunc)zmapWindowFToISetSearchPerform, search_data,
+                               (GDestroyNotify)zmapWindowFToISetSearchDestroy, zoom_to_item);
 
   }
 #endif /* USING_SET_SEARCH_DATA_METHOD */
@@ -271,8 +271,8 @@ ZMapGUIMenuItem zmapWindowNavigatorMakeMenuLocusOps(int *start_index_inout,
 }
 
 ZMapGUIMenuItem zmapWindowNavigatorMakeMenuLocusColumnOps(int *start_index_inout,
-							  ZMapGUIMenuItemCallbackFunc callback_func,
-							  gpointer callback_data)
+                                                          ZMapGUIMenuItemCallbackFunc callback_func,
+                                                          gpointer callback_data)
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
@@ -366,10 +366,10 @@ static void navigatorColumnMenuCB(int menu_item_id, gpointer callback_data)
     case 1:
       {
         ZMapFeatureAny feature ;
-	ZMapWindowContainerFeatureSet container;
-	ZMapWindowFToISetSearchData search_data;
+        ZMapWindowContainerFeatureSet container;
+        ZMapWindowFToISetSearchData search_data;
         FooCanvasItem *set_item = menu_data->item;
-	gboolean zoom_to_item = FALSE;
+        gboolean zoom_to_item = FALSE;
 
         feature = zmapWindowItemGetFeatureAny(menu_data->item);
 
@@ -380,37 +380,37 @@ static void navigatorColumnMenuCB(int menu_item_id, gpointer callback_data)
             feature = (ZMapFeatureAny)(feature->parent);
           }
 
-	container = (ZMapWindowContainerFeatureSet)set_item;
+        container = (ZMapWindowContainerFeatureSet)set_item;
 
-	search_data = zmapWindowFToISetSearchCreate(zmapWindowFToIFindItemSetFull, NULL,
-						    feature->parent->parent->unique_id,
-						    feature->parent->unique_id,
-						    container->unique_id,
-						    0,
-						    g_quark_from_string("*"),
-						    zMapFeatureStrand2Str(container->strand),
-						    zMapFeatureFrame2Str(container->frame));
+        search_data = zmapWindowFToISetSearchCreate(zmapWindowFToIFindItemSetFull, NULL,
+                                                    feature->parent->parent->unique_id,
+                                                    feature->parent->unique_id,
+                                                    container->unique_id,
+                                                    0,
+                                                    g_quark_from_string("*"),
+                                                    zMapFeatureStrand2Str(container->strand),
+                                                    zMapFeatureFrame2Str(container->frame));
 
         zmapWindowListWindowCreate(menu_data->navigate->current_window,
-				   NULL,
+                                   NULL,
                                    (char *)g_quark_to_string(feature->original_id),
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-				   access_navigator_context_to_item,
+                                   access_navigator_context_to_item,
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-				   access_window_context_to_item,
-				   menu_data->navigate->current_window,
-				   menu_data->navigate->current_window->context_map,
-				   (ZMapWindowListSearchHashFunc)zmapWindowFToISetSearchPerform, search_data,
-				   (GDestroyNotify)zmapWindowFToISetSearchDestroy, zoom_to_item) ;
+                                   access_window_context_to_item,
+                                   menu_data->navigate->current_window,
+                                   menu_data->navigate->current_window->context_map,
+                                   (ZMapWindowListSearchHashFunc)zmapWindowFToISetSearchPerform, search_data,
+                                   (GDestroyNotify)zmapWindowFToISetSearchDestroy, zoom_to_item) ;
 
-	break ;
+        break ;
       }
     case 2:
       zmapWindowCreateSearchWindow(menu_data->navigate->current_window,
-				   access_navigator_context_to_item,
-				   menu_data->navigate,
-				   menu_data->navigate->current_window->context_map,
-				   menu_data->item) ;
+                                   access_navigator_context_to_item,
+                                   menu_data->navigate,
+                                   menu_data->navigate->current_window->context_map,
+                                   menu_data->item) ;
       break ;
 
     case 5:
@@ -491,7 +491,7 @@ static void filter_checkbox_toggled_cb(GtkWidget *checkbox, gpointer user_data)
   if((in_hide_list = g_list_find(navigator->hide_filter, filter)))
     {
       if(!button_pressed)
-	navigator->hide_filter = g_list_remove_all(navigator->hide_filter, filter);
+        navigator->hide_filter = g_list_remove_all(navigator->hide_filter, filter);
     }
   else if(button_pressed)
     {
@@ -516,33 +516,33 @@ static void makeFilterPanel(ZMapWindowNavigator navigator, GtkWidget *parent)
       GList *tmp;
       tmp = navigator->available_filters;
       do
-	{
-	  GtkWidget *checkbox_with_label;
-	  GList *filter_list;
-	  char *filter;
-	  gboolean filter_active = FALSE;
+        {
+          GtkWidget *checkbox_with_label;
+          GList *filter_list;
+          char *filter;
+          gboolean filter_active = FALSE;
 
-	  filter = (char *)(tmp->data);
+          filter = (char *)(tmp->data);
 
-	  checkbox_with_label = gtk_check_button_new_with_label(filter);
+          checkbox_with_label = gtk_check_button_new_with_label(filter);
 
-	  g_object_set_data(G_OBJECT(checkbox_with_label), FILTER_DATA_KEY, filter);
+          g_object_set_data(G_OBJECT(checkbox_with_label), FILTER_DATA_KEY, filter);
 
-	  if((filter_list = g_list_find(navigator->hide_filter, filter)))
-	    filter_active = TRUE;
+          if((filter_list = g_list_find(navigator->hide_filter, filter)))
+            filter_active = TRUE;
 
-	  g_object_set(G_OBJECT(checkbox_with_label),
-		       "active", filter_active,
-		       NULL);
+          g_object_set(G_OBJECT(checkbox_with_label),
+                       "active", filter_active,
+                       NULL);
 
-	  g_signal_connect(G_OBJECT(checkbox_with_label), "toggled",
-			   G_CALLBACK(filter_checkbox_toggled_cb), navigator);
+          g_signal_connect(G_OBJECT(checkbox_with_label), "toggled",
+                           G_CALLBACK(filter_checkbox_toggled_cb), navigator);
 
-	  if(GTK_IS_BOX(parent))
-	    gtk_box_pack_start(GTK_BOX(parent), checkbox_with_label, FALSE, FALSE, 0);
-	  else
-	    gtk_container_add(GTK_CONTAINER(parent), checkbox_with_label);
-	}
+          if(GTK_IS_BOX(parent))
+            gtk_box_pack_start(GTK_BOX(parent), checkbox_with_label, FALSE, FALSE, 0);
+          else
+            gtk_container_add(GTK_CONTAINER(parent), checkbox_with_label);
+        }
       while((tmp = g_list_next(tmp)));
     }
 
@@ -616,14 +616,14 @@ static void zmapWindowNavigatorLocusFilterEditorCreate(ZMapWindowNavigator navig
   gtk_container_add(GTK_CONTAINER(frame), vbox_2);
 
   label    = gtk_label_new("This simple dialog controls the filtering\n"
-			   "system used when drawing the Loci in the\n"
-			   "navigator.");
+                           "system used when drawing the Loci in the\n"
+                           "navigator.");
   gtk_box_pack_start(GTK_BOX(vbox_2), label, FALSE, FALSE, 5);
 
   makeFilterPanel(navigator, vbox_2);
 
   label    = gtk_label_new("[Selected loci prefixes will not be shown\n"
-			   "in the navigator.]");
+                           "in the navigator.]");
   gtk_box_pack_start(GTK_BOX(vbox_2), label, FALSE, FALSE, 5);
 
   {
@@ -634,7 +634,7 @@ static void zmapWindowNavigatorLocusFilterEditorCreate(ZMapWindowNavigator navig
     g_object_set_data(G_OBJECT(toplevel), FILTER_CANCEL_DATA_KEY, copied_list);
 
     g_signal_connect(G_OBJECT(toplevel), "destroy",
-		     G_CALLBACK(destroyFilterCB), navigator);
+                     G_CALLBACK(destroyFilterCB), navigator);
   }
 
   button_box = gtk_hbutton_box_new();
@@ -642,12 +642,12 @@ static void zmapWindowNavigatorLocusFilterEditorCreate(ZMapWindowNavigator navig
   cancel_button = gtk_button_new_with_label("Cancel");
   gtk_box_pack_start(GTK_BOX(button_box), cancel_button, FALSE, FALSE, 5);
   g_signal_connect(G_OBJECT(cancel_button), "clicked",
-		   G_CALLBACK(cancel_destroy_cb), navigator);
+                   G_CALLBACK(cancel_destroy_cb), navigator);
 
   apply_button  = gtk_button_new_with_label("Apply");
   gtk_box_pack_end(GTK_BOX(button_box), apply_button, FALSE, FALSE, 5);
   g_signal_connect(G_OBJECT(apply_button), "clicked",
-		   G_CALLBACK(apply_destroy_cb), navigator);
+                   G_CALLBACK(apply_destroy_cb), navigator);
 
   gtk_box_pack_end(GTK_BOX(vbox_1), button_box, FALSE, FALSE, 0);
 
@@ -671,19 +671,19 @@ static gboolean searchLocusSetCB(ZMapFeatureAny feature_any, gpointer user_data)
 //        ZMapFeature feature = (ZMapFeature)feature_any;
 
 #ifdef THIS_LOCUS_STUFF_IS_A_PAIN
-	/* quick fix to zmapWindowNavigatorShowSameNameList...  */
-	if(locus_name == feature_any->original_id)
-	  match = TRUE;
+        /* quick fix to zmapWindowNavigatorShowSameNameList...  */
+        if(locus_name == feature_any->original_id)
+          match = TRUE;
 #endif /* THIS_LOCUS_STUFF_IS_A_PAIN */
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	/* SHOULDN'T NEED THIS ANYMORE AS LOCUS DOES NOT HAVE A LOCUS_ID */
+        /* SHOULDN'T NEED THIS ANYMORE AS LOCUS DOES NOT HAVE A LOCUS_ID */
 
-	/* Having just (locus_name == feature->locus_id) resulted in duplicates... */
-	/* Added (feature->locus_id != feature->original_id) to fix RT # 64287 */
+        /* Having just (locus_name == feature->locus_id) resulted in duplicates... */
+        /* Added (feature->locus_id != feature->original_id) to fix RT # 64287 */
         if((locus_name == feature->feature.transcript.locus_id)
-	   && (feature->feature.transcript.locus_id != feature->original_id))
+           && (feature->feature.transcript.locus_id != feature->original_id))
           match = TRUE ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
@@ -692,11 +692,11 @@ static gboolean searchLocusSetCB(ZMapFeatureAny feature_any, gpointer user_data)
         if (locus_name == feature->feature.transcript.locus_id)
           match = TRUE ;
 #else
-	if(locus_name == feature_any->original_id)
-	  match = TRUE;
+        if(locus_name == feature_any->original_id)
+          match = TRUE;
 #endif
 
-	break;
+        break;
       }
 
     default:

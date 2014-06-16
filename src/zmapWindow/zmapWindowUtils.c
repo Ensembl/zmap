@@ -192,9 +192,9 @@ ZMapStrand zmapWindowStrandToDisplay(ZMapWindow window, ZMapStrand strand_in)
   if (window->flags[ZMAPFLAG_REVCOMPED_FEATURES] && window->display_forward_coords)
     {
       if (strand_in == ZMAPSTRAND_FORWARD)
-	strand = ZMAPSTRAND_REVERSE ;
+        strand = ZMAPSTRAND_REVERSE ;
       else if (strand_in == ZMAPSTRAND_REVERSE)
-	strand = ZMAPSTRAND_FORWARD ;
+        strand = ZMAPSTRAND_FORWARD ;
     }
   else
     {
@@ -258,7 +258,7 @@ void zmapWindowExt2Zero(double *start_inout, double *end_inout)
   if (!start_inout || !end_inout || (*start_inout > *end_inout))
     return ;
 
-  *end_inout = *end_inout - *start_inout ;		    /* do this first before zeroing start ! */
+  *end_inout = *end_inout - *start_inout ;                    /* do this first before zeroing start ! */
 
   *start_inout = 0.0 ;
 
@@ -276,7 +276,7 @@ void zmapWindowSeq2CanExtZero(double *start_inout, double *end_inout)
   if (!start_inout || !end_inout || (*start_inout > *end_inout)) 
     return ;
 
-  *end_inout = *end_inout - *start_inout ;		    /* do this first before zeroing start ! */
+  *end_inout = *end_inout - *start_inout ;                    /* do this first before zeroing start ! */
 
   *start_inout = 0.0 ;
 
@@ -344,19 +344,19 @@ void zmapWindowFreeWindowArray(GPtrArray **window_array_inout, gboolean free_arr
        * from the array so the array shrinks by one, hence we just continue to access
        * the first element until all elements are gone. */
       while (window_array->len)
-	{
-	  GtkWidget *widget ;
+        {
+          GtkWidget *widget ;
 
-	  widget = g_ptr_array_index(window_array, 0) ;
+          widget = g_ptr_array_index(window_array, 0) ;
 
-	  gtk_widget_destroy(widget) ;
-	}
+          gtk_widget_destroy(widget) ;
+        }
 
       if (free_array)
-	{
-	  g_ptr_array_free(window_array, FALSE) ;
-	  *window_array_inout = NULL ;
-	}
+        {
+          g_ptr_array_free(window_array, FALSE) ;
+          *window_array_inout = NULL ;
+        }
     }
 
   return ;
@@ -390,7 +390,7 @@ gboolean zMapWindowGetVisibleSeq(ZMapWindow window, FooCanvasItem *focus, int *t
   zmapWindowItemGetVisibleWorld(window, &wx1, &wy1, &wx2, &wy2) ;
 
   if (zmapWindowWorld2SeqCoords(window, focus, wx1, wy1, wx2, wy2,
-				&block_grp, &y1, &y2))
+                                &block_grp, &y1, &y2))
     {
       *top_out = y1 ;
       *bottom_out = y2 ;
@@ -456,21 +456,21 @@ ZMapFeatureTypeStyle zmapWindowColumnMergeStyle(ZMapFeatureColumn column)
       mode = s->mode;
 
       for(iter = g_list_last(column->style_table);iter; iter = iter->prev)
-	{
-	  s = (ZMapFeatureTypeStyle) iter->data;
+        {
+          s = (ZMapFeatureTypeStyle) iter->data;
 
-	  if(!s->mode || s->mode == mode)
-	    {
-	      if(!style)
-		{
-		  style = zMapFeatureStyleCopy(s);
-		}
-	      else
-		{
-		  zMapStyleMerge(style, s);
-		}
-	    }
-	}
+          if(!s->mode || s->mode == mode)
+            {
+              if(!style)
+                {
+                  style = zMapFeatureStyleCopy(s);
+                }
+              else
+                {
+                  zMapStyleMerge(style, s);
+                }
+            }
+        }
       /*  read-only locations, need to use GObject, use last style as that's easy, not used for lookup anyway
        *            style->unique_id = column->unique_id;
        *            style->original_id = column->column_id;
@@ -508,19 +508,19 @@ void zmapWindowGenColumnStyle(ZMapWindow window,ZMapFeatureColumn column)
       column->style = zmapWindowColumnMergeStyle(column);
 
       if(column->style_id)
-	{
-	  ZMapFeatureTypeStyle s;
+        {
+          ZMapFeatureTypeStyle s;
 
-	  s = g_hash_table_lookup(window->context_map->styles,GUINT_TO_POINTER(column->style_id));
-	  if(column->style && s && (!s->mode || s->mode == column->style->mode))
-	    {
-	      zMapStyleMerge(column->style, s);
-	    }
-	  else
-	    {
-	      column->style = s;
-	    }
-	}
+          s = g_hash_table_lookup(window->context_map->styles,GUINT_TO_POINTER(column->style_id));
+          if(column->style && s && (!s->mode || s->mode == column->style->mode))
+            {
+              zMapStyleMerge(column->style, s);
+            }
+          else
+            {
+              column->style = s;
+            }
+        }
     }
 }
 
@@ -571,37 +571,37 @@ GList *zmapWindowFeatureColumnStyles(ZMapFeatureContextMap map, GQuark column_id
       GList *list;
 
       if((list = g_list_first(styles_quark_list)))
-	{
-	  do
-	    {
-	      GQuark style_id;
-	      ZMapFeatureTypeStyle style;
+        {
+          do
+            {
+              GQuark style_id;
+              ZMapFeatureTypeStyle style;
 
-	      style_id = GPOINTER_TO_UINT(list->data);
+              style_id = GPOINTER_TO_UINT(list->data);
 
-	      if((style = zMapFindStyle(map->styles, style_id)))    // add styles needed by featuresets
-		{
-		  styles_list = g_list_append(styles_list, (gpointer) style);
+              if((style = zMapFindStyle(map->styles, style_id)))    // add styles needed by featuresets
+                {
+                  styles_list = g_list_append(styles_list, (gpointer) style);
 
-		  for(i = 1;i < ZMAPSTYLE_SUB_FEATURE_MAX;i++)        // add styles needed by this style
-		    {
-		      ZMapFeatureTypeStyle sub;
+                  for(i = 1;i < ZMAPSTYLE_SUB_FEATURE_MAX;i++)        // add styles needed by this style
+                    {
+                      ZMapFeatureTypeStyle sub;
 
-		      if((sub = style->sub_style[i]))
-			{
-			  styles_list = g_list_append(styles_list, (gpointer) sub);
-			}
-		    }
-		}
-	      else
-		{
+                      if((sub = style->sub_style[i]))
+                        {
+                          styles_list = g_list_append(styles_list, (gpointer) sub);
+                        }
+                    }
+                }
+              else
+                {
                   zMapLogWarning("Could not find style %s for column \"%s\" in table of %d",
-				 g_quark_to_string(style_id),g_quark_to_string(column_id),
-				 g_hash_table_size(map->styles));
-		}
-	    }
-	  while((list = g_list_next(list)));
-	}
+                                 g_quark_to_string(style_id),g_quark_to_string(column_id),
+                                 g_hash_table_size(map->styles));
+                }
+            }
+          while((list = g_list_next(list)));
+        }
     }
 
   return styles_list;
@@ -682,30 +682,30 @@ static void window_apply_cb(ZMapGuiNotebookAny notebook_any, gpointer user_data)
     {
       char *string_value = NULL;
       if(zMapGUINotebookGetTagValue(page, "colour_separator", "string", &string_value))
-	{
-	  if(string_value && *string_value)
-	    {
-	      gdk_color_parse(string_value, &(window->colour_separator));
-	    }
-	}
+        {
+          if(string_value && *string_value)
+            {
+              gdk_color_parse(string_value, &(window->colour_separator));
+            }
+        }
 
       if(zMapGUINotebookGetTagValue(page, "colour_item_highlight", "string", &string_value))
-	{
-	  if(string_value && *string_value)
-	    {
-	      gdk_color_parse(string_value, &(window->colour_item_highlight));
-	      window->highlights_set.item = TRUE;
-	    }
-	}
+        {
+          if(string_value && *string_value)
+            {
+              gdk_color_parse(string_value, &(window->colour_item_highlight));
+              window->highlights_set.item = TRUE;
+            }
+        }
 
       if(zMapGUINotebookGetTagValue(page, "colour_column_highlight", "string", &string_value))
-	{
-	  if(string_value && *string_value)
-	    {
-	      gdk_color_parse(string_value, &(window->colour_column_highlight));
-	      window->highlights_set.column = TRUE;
-	    }
-	}
+        {
+          if(string_value && *string_value)
+            {
+              gdk_color_parse(string_value, &(window->colour_column_highlight));
+              window->highlights_set.column = TRUE;
+            }
+        }
 
     }
 
@@ -758,25 +758,25 @@ ZMapGuiNotebookChapter zMapWindowGetConfigChapter(ZMapWindow window, ZMapGuiNote
   subsection = zMapGUINotebookCreateSubsection(page, NULL);
 
   paragraph = zMapGUINotebookCreateParagraph(subsection, NULL,
-					     ZMAPGUI_NOTEBOOK_PARAGRAPH_TAGVALUE_TABLE,
-					     NULL, NULL);
+                                             ZMAPGUI_NOTEBOOK_PARAGRAPH_TAGVALUE_TABLE,
+                                             NULL, NULL);
 
   tagvalue = zMapGUINotebookCreateTagValue(paragraph, "canvas_maxbases",
-					   ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-					   "int", window->canvas_maxwin_bases);
+                                           ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+                                           "int", window->canvas_maxwin_bases);
 
   tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "column_spacing",
-					     ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-					     "float", window->config.column_spacing);
+                                             ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+                                             "float", window->config.column_spacing);
 #if USE_STRAND
   tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "strand_spacing",
-					     ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-					     "float", window->config.strand_spacing);
+                                             ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+                                             "float", window->config.strand_spacing);
 #endif
 
   tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "keep_empty_columns",
-					     ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX,
-					     "bool", window->keep_empty_cols);
+                                             ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX,
+                                             "bool", window->keep_empty_cols);
 
   /* Colours... */
   page       = zMapGUINotebookCreatePage(chapter, "Colours");
@@ -785,76 +785,76 @@ ZMapGuiNotebookChapter zMapWindowGetConfigChapter(ZMapWindow window, ZMapGuiNote
 
 
   paragraph  = zMapGUINotebookCreateParagraph(subsection, NULL,
-					      ZMAPGUI_NOTEBOOK_PARAGRAPH_TAGVALUE_TABLE,
-					      NULL, NULL);
+                                              ZMAPGUI_NOTEBOOK_PARAGRAPH_TAGVALUE_TABLE,
+                                              NULL, NULL);
 #ifdef I_DONT_THINK_SO
   tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_root",
-					     ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-					     "string", "red");
+                                             ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+                                             "string", "red");
 
   tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_alignment",
-					     ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-					     "string", "orange");
+                                             ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+                                             "string", "orange");
 
   tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_block",
-					     ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-					     "string", "yellow");
+                                             ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+                                             "string", "yellow");
 #endif /* I_DONT_THINK_SO */
 
   if(!zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
-				    ZMAPSTANZA_WINDOW_SEPARATOR, &colour))
+                                    ZMAPSTANZA_WINDOW_SEPARATOR, &colour))
     colour   = ZMAP_WINDOW_STRAND_DIVIDE_COLOUR;
 
   tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_separator",
-					     ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-					     "string", colour);
+                                             ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+                                             "string", colour);
 
 #ifdef I_DONT_THINK_SO
   tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_m_forward",
-					     ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-					     "string", "blue");
+                                             ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+                                             "string", "blue");
 
   tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_m_reverse",
-					     ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-					     "string", "indigo");
+                                             ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+                                             "string", "indigo");
 
   tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_q_forward",
-					     ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-					     "string", "violet");
+                                             ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+                                             "string", "violet");
 
   tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_q_reverse",
-					     ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-					     "string", "apple");
+                                             ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+                                             "string", "apple");
 
   tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_m_forwardcol",
-					     ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-					     "string", "pear");
+                                             ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+                                             "string", "pear");
   tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_m_reversecol",
-					     ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-					     "string", "banana");
+                                             ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+                                             "string", "banana");
   tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_q_forwardcol",
-					     ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-					     "string", "cherry");
+                                             ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+                                             "string", "cherry");
   tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_q_reversecol",
-					     ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-					     "string", "kiwi");
+                                             ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+                                             "string", "kiwi");
 #endif /* I_DONT_THINK_SO... */
 
   if(!zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
-				    ZMAPSTANZA_WINDOW_ITEM_HIGH, &colour))
+                                    ZMAPSTANZA_WINDOW_ITEM_HIGH, &colour))
     colour   = ZMAP_WINDOW_COLUMN_HIGHLIGHT;
 
   tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_item_highlight",
-					     ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-					     "string", colour);
+                                             ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+                                             "string", colour);
 
   if(!zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
-				    ZMAPSTANZA_WINDOW_COL_HIGH, &colour))
+                                    ZMAPSTANZA_WINDOW_COL_HIGH, &colour))
     colour   = ZMAP_WINDOW_COLUMN_HIGHLIGHT;
 
   tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_column_highlight",
-					     ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-					     "string", colour);
+                                             ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+                                             "string", colour);
 
   zMapConfigIniContextDestroy(context);
 

@@ -52,11 +52,11 @@
 typedef struct _ZMapWindowStatsStruct
 {
   /* The basic stats... */
-  int num_context_children ;				    /* e.g. how many blocks, feature sets etc. */
-  int num_canvas_children ;				    /* e.g. how many canvas items to
-							       represent context children. */
+  int num_context_children ;                                    /* e.g. how many blocks, feature sets etc. */
+  int num_canvas_children ;                                    /* e.g. how many canvas items to
+                                                               represent context children. */
 
-  GQuark feature_id ;					    /* i.e. name of block/align etc. */
+  GQuark feature_id ;                                            /* i.e. name of block/align etc. */
 
   /* List of ZMapWindowStatsXXX structs, this is NULL if there are no features.
    * Note that we need a list here if we are support multiple feature types in each column. */
@@ -112,46 +112,46 @@ ZMapWindowStatsAny zmapWindowStatsAddChild(ZMapWindowStats stats, ZMapFeatureAny
       ZMapFeature feature = (ZMapFeature)feature_any ;
 
       if ((stats_list = g_list_find_custom(stats->child_sets, (ZMapFeature)feature_any, feature2StyleCompare)))
-	{
-	  stats_any = (ZMapWindowStatsAny)(stats_list->data) ;
-	}
+        {
+          stats_any = (ZMapWindowStatsAny)(stats_list->data) ;
+        }
       else
-	{
-	  int num_bytes = 0 ;
+        {
+          int num_bytes = 0 ;
 
-	  switch (feature->mode)
-	    {
-	    case ZMAPSTYLE_MODE_ASSEMBLY_PATH:
+          switch (feature->mode)
+            {
+            case ZMAPSTYLE_MODE_ASSEMBLY_PATH:
 
-	    case ZMAPSTYLE_MODE_BASIC:
-	    case ZMAPSTYLE_MODE_SEQUENCE:
+            case ZMAPSTYLE_MODE_BASIC:
+            case ZMAPSTYLE_MODE_SEQUENCE:
           case ZMAPSTYLE_MODE_GRAPH:
-	    case ZMAPSTYLE_MODE_GLYPH:
-	    case ZMAPSTYLE_MODE_TEXT:
-	      num_bytes = sizeof(ZMapWindowStatsBasicStruct) ;
-	      break ;
-	    case ZMAPSTYLE_MODE_ALIGNMENT:
-	      num_bytes = sizeof(ZMapWindowStatsAlignStruct) ;
-	      break ;
-	    case ZMAPSTYLE_MODE_TRANSCRIPT:
-	      num_bytes = sizeof(ZMapWindowStatsTranscriptStruct) ;
-	      break ;
-	    case ZMAPSTYLE_MODE_META:
-	    default:
-	      break ;
-	    }
+            case ZMAPSTYLE_MODE_GLYPH:
+            case ZMAPSTYLE_MODE_TEXT:
+              num_bytes = sizeof(ZMapWindowStatsBasicStruct) ;
+              break ;
+            case ZMAPSTYLE_MODE_ALIGNMENT:
+              num_bytes = sizeof(ZMapWindowStatsAlignStruct) ;
+              break ;
+            case ZMAPSTYLE_MODE_TRANSCRIPT:
+              num_bytes = sizeof(ZMapWindowStatsTranscriptStruct) ;
+              break ;
+            case ZMAPSTYLE_MODE_META:
+            default:
+              break ;
+            }
 
-	  /* THE NUM_BYTES BIT IS A HACK UNTIL WE'VE SORTED OUT STATS FOR ALL ITEM TYPES. */
+          /* THE NUM_BYTES BIT IS A HACK UNTIL WE'VE SORTED OUT STATS FOR ALL ITEM TYPES. */
 
-	  if (num_bytes)
-	    {
-	      stats_any = g_slice_alloc0(num_bytes) ;
-	      stats_any->feature_type = feature->mode ;
-	      stats_any->style_id = (*feature->style)->unique_id ;
+          if (num_bytes)
+            {
+              stats_any = g_slice_alloc0(num_bytes) ;
+              stats_any->feature_type = feature->mode ;
+              stats_any->style_id = (*feature->style)->unique_id ;
 
-	      stats->child_sets = g_list_append(stats->child_sets, stats_any) ;
-	    }
-	}
+              stats->child_sets = g_list_append(stats->child_sets, stats_any) ;
+            }
+        }
     }
 
 
@@ -174,8 +174,8 @@ void zmapWindowStatsReset(ZMapWindowStats stats)
 void zmapWindowStatsPrint(GString *text, ZMapWindowStats stats)
 {
   g_string_append_printf(text, "%s:\tContext children: %d, canvas children: %d\n",
-			 g_quark_to_string(stats->feature_id),
-			 stats->num_context_children, stats->num_canvas_children);
+                         g_quark_to_string(stats->feature_id),
+                         stats->num_context_children, stats->num_canvas_children);
   g_list_foreach(stats->child_sets, printStats, text) ;
 
   return ;
@@ -250,32 +250,32 @@ static void printStats(gpointer data, gpointer user_data)
     case ZMAPSTYLE_MODE_GLYPH:
     case ZMAPSTYLE_MODE_TEXT:
       {
-	ZMapWindowStatsBasic basic = (ZMapWindowStatsBasic)any_stats ;
+        ZMapWindowStatsBasic basic = (ZMapWindowStatsBasic)any_stats ;
 
-	g_string_append_printf(text, "Basic\tfeatures:%d\t boxes:%d\n", basic->features, basic->items) ;
+        g_string_append_printf(text, "Basic\tfeatures:%d\t boxes:%d\n", basic->features, basic->items) ;
 
-	break ;
+        break ;
       }
     case ZMAPSTYLE_MODE_ALIGNMENT:
       {
-	ZMapWindowStatsAlign align = (ZMapWindowStatsAlign)any_stats ;
+        ZMapWindowStatsAlign align = (ZMapWindowStatsAlign)any_stats ;
 
-	g_string_append_printf(text, "Alignment\tfeatures:%d\tgapped:%d\tnot perfect gapped:%d\tungapped:%d\t"
-			   "boxes:%d\tgapped boxes:%d\tungapped boxes:%d\tgapped boxes not drawn:%d\n",
-			   align->total_matches, align->gapped_matches,
-			   align->not_perfect_gapped_matches, align->ungapped_matches,
-			   align->total_boxes, align->gapped_boxes, align->ungapped_boxes, align->imperfect_boxes) ;
-	break ;
+        g_string_append_printf(text, "Alignment\tfeatures:%d\tgapped:%d\tnot perfect gapped:%d\tungapped:%d\t"
+                           "boxes:%d\tgapped boxes:%d\tungapped boxes:%d\tgapped boxes not drawn:%d\n",
+                           align->total_matches, align->gapped_matches,
+                           align->not_perfect_gapped_matches, align->ungapped_matches,
+                           align->total_boxes, align->gapped_boxes, align->ungapped_boxes, align->imperfect_boxes) ;
+        break ;
       }
     case ZMAPSTYLE_MODE_TRANSCRIPT:
       {
-	ZMapWindowStatsTranscript transcript = (ZMapWindowStatsTranscript)any_stats ;
+        ZMapWindowStatsTranscript transcript = (ZMapWindowStatsTranscript)any_stats ;
 
-	g_string_append_printf(text, "Transcript\tfeatures:%d\texons:%d,\tintrons:%d,\tcds:%d\t"
-			   "boxes:%d\texon_boxes:%d\tintron_boxes:%d\tcds_boxes:%d\n",
-			   transcript->transcripts, transcript->exons, transcript->introns, transcript->cds,
-			   transcript->items, transcript->exon_boxes, transcript->intron_boxes, transcript->cds_boxes) ;
-	break ;
+        g_string_append_printf(text, "Transcript\tfeatures:%d\texons:%d,\tintrons:%d,\tcds:%d\t"
+                           "boxes:%d\texon_boxes:%d\tintron_boxes:%d\tcds_boxes:%d\n",
+                           transcript->transcripts, transcript->exons, transcript->introns, transcript->cds,
+                           transcript->items, transcript->exon_boxes, transcript->intron_boxes, transcript->cds_boxes) ;
+        break ;
       }
     default:
 
