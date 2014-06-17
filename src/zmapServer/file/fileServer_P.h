@@ -64,7 +64,7 @@ typedef struct FileServerStruct_
 
 } FileServerStruct, *FileServer ;
 
-#define ZMAPFILESERVER_READBUFFER_SIZE 2000
+#define ZMAPFILESERVER_READBUFFER_SIZE 2048
 
 
 #endif /* !FILE_SERVER_P_H */

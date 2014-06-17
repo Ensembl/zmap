@@ -907,30 +907,28 @@ static void fileChangedCB(GtkWidget *widget, gpointer user_data)
  *  */
 static void importFileCB(GtkWidget *widget, gpointer cb_data)
 {
-  gboolean status = TRUE ;
+  gboolean status = TRUE,
+    map_seq = FALSE ;
   MainFrame main_frame = (MainFrame)cb_data ;
-  char *err_msg = NULL ;
-  char *sequence = "",
-    *start_txt,
-    *end_txt,
-    *file_txt,
-    /* *script_txt, */
-    /* *args_txt, */
-    *req_start_txt,
-    *req_end_txt,
-    *offset_txt,
-    *source_txt,
-    *style_txt,
-    *strand_txt,
-    *assembly_txt ;
+  char *err_msg = NULL,
+    *sequence = "",
+    *start_txt = NULL,
+    *end_txt = NULL,
+    *file_txt = NULL,
+    *req_start_txt= NULL,
+    *req_end_txt = NULL,
+    *offset_txt = NULL,
+    *source_txt = NULL,
+    *style_txt = NULL,
+    *strand_txt = NULL,
+    *assembly_txt = NULL,
+    *req_sequence = NULL ;
   int start = 1,
     end = 0,
     seq_offset = 0,
     req_start = 0,
     req_end = 0,
     strand = 0 ;
-  gboolean map_seq = FALSE;
-  char *req_sequence;
   fileType file_type = FILE_NONE ;
   ZMapView view;
   ZMap zmap = NULL ;
@@ -954,10 +952,6 @@ static void importFileCB(GtkWidget *widget, gpointer cb_data)
   end_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->end_widg)) ;
 
   file_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->file_widg)) ;
-  /*
-  script_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->script_widg)) ;
-  args_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->args_widg)) ;
-  */
   req_sequence = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->req_sequence_widg)) ;
   req_start_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->req_start_widg)) ;
   req_end_txt = (char *)gtk_entry_get_text(GTK_ENTRY(main_frame->req_end_widg)) ;
@@ -1057,10 +1051,6 @@ static void importFileCB(GtkWidget *widget, gpointer cb_data)
       GList * servers;
       ZMapConfigSource server;
       GList *req_featuresets = NULL;
-      /* char *and = ""; */
-      /* gchar *args[N_ARGS]; */
-      /* gchar **argp = args; */
-      /* char * opt_args_txt = ""; */
 
       if (main_frame->sequence_map && (seq_offset || map_seq))
         seq_offset += main_frame->sequence_map->start;
@@ -1084,81 +1074,6 @@ static void importFileCB(GtkWidget *widget, gpointer cb_data)
           src->style_id = zMapStyleCreateID(style_txt);
           src->is_seq = TRUE;
         }
-
-      /*
-       * prep user defined args to the script
-       */
-      /*
-      if (*args_txt)
-        {
-          gchar **vector ;
-
-          args_txt = zMapStringCompress(args_txt) ;
-
-          vector = g_strsplit(args_txt, " ", 0) ;
-
-          args_txt = g_strjoinv("&", vector) ;
-
-          g_strfreev(vector) ;
-
-          and = "&" ;
-        }
-      */
-
-      /* prep dialog defined args according to file type and session */
-      /* some are mandatory: */
-      /* *argp++ = g_strdup_printf("--file=%s", file_txt);
-      *argp++ = g_strdup_printf("--gff_seqname=%s", sequence);
-      *argp++ = g_strdup_printf("--start=%d", req_start);
-      *argp++ = g_strdup_printf("--end=%d", req_end);
-
-      if ((seq_offset || map_seq) && !main_frame->is_otter)
-        *argp++ = g_strdup_printf("--mapto=%d", seq_offset);
-
-      if (main_frame->is_otter)
-        {
-          *argp++ = g_strdup_printf("--csver=%s", assembly_txt);
-          if (main_frame->chr)
-            *argp++ = g_strdup_printf("--chr=%s", main_frame->chr);
-        }
-
-      if (req_sequence && !main_frame->is_otter)
-        *argp++ = g_strdup_printf("--seq_id=%s", req_sequence); */
-
-      /* some depend on file type */
-      /* switch(file_type)
-        {
-        case FILE_NONE:
-          if (source_txt)
-            *argp++ = g_strdup_printf("--gff_source=%s", source_txt) ;
-          if (strand)
-            *argp++ = g_strdup_printf("--strand=%d", strand) ;
-          break;
-
-        case FILE_GFF:
-          break;
-
-        case FILE_BIGWIG:
-          *argp++ = g_strdup_printf("--strand=%d", strand) ;
-
-        case FILE_BAM:
-          *argp++ = g_strdup_printf("--gff_source=%s", source_txt);
-          break;
-        } */
-
-      /* *argp = NULL;
-      opt_args_txt = g_strjoinv("&", args);
-      while(argp > args)
-        g_free(*--argp); */
-
-      /*
-       * (sm23) This is the old config string that creates a pipe server for
-       * all types that are dealt with.
-       */
-      /*
-       config_str = g_strdup_printf("[ZMap]\nsources = temp\n\n[temp]\nfeaturesets=\nurl=pipe://%s/%s?%s%s%s",
-                                  *script_txt == '/' ? "/" :"", script_txt, args_txt, and, opt_args_txt);
-       */
 
       /*
        * This version creates file servers for all types instead.

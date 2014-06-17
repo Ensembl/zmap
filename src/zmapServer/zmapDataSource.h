@@ -33,11 +33,9 @@
 #define DATA_SOURCE_H
 
 /*
- * Public header material.
+ * Forward declaration of general source type.
  */
 typedef struct ZMapDataSourceStruct_ *ZMapDataSource ;
-typedef struct ZMapDataSourceGIOStruct_ *ZMapDataSourceGIO ;
-typedef struct ZMapDataSourceHTSFileStruct_ *ZMapDataSourceHTSFile ;
 
 /*
  * Enumeration to represent different source types.

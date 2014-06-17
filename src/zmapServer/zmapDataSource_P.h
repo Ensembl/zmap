@@ -50,13 +50,13 @@ typedef struct ZMapDataSourceGIOStruct_
   {
     ZMapDataSourceType type ;
     GIOChannel *io_channel ;
-  } ZMapDataSourceGIOStruct  ;
+  } ZMapDataSourceGIOStruct , *ZMapDataSourceGIO  ;
 
 typedef struct ZMapDataSourceHTSFileStruct_
   {
     ZMapDataSourceType type ;
     htsFile *hts_file ;
-  } ZMapDataSourceHTSFileStruct ;
+  } ZMapDataSourceHTSFileStruct , *ZMapDataSourceHTSFile;
 
 /*
  * This is for temporary data that need to be stored while
