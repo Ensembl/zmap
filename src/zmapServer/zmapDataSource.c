@@ -374,6 +374,22 @@ ZMapDataSourceType zMapDataSourceTypeFromFilename(const char * const file_name )
   return type ;
 }
 
+
+/*
+ * Read the HTS file header and look for the sequence name data.
+ */
+gboolean zMapDataSourceReadHTSHeader(ZMapDataSource source, char ** sequence )
+{
+  gboolean result = FALSE ;
+
+  *sequence = NULL ;
+
+  return result ;
+}
+
+
+
+
 /*
  * Convert a HTS record to GFF3 line.
  */

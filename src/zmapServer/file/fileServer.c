@@ -820,10 +820,24 @@ static ZMapServerResponseType fileGetHeader_GIO(FileServer server)
 static ZMapServerResponseType fileGetHeader_HTS(FileServer server)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
-
+  char * sequence = NULL ;
   zMapReturnValIfFail(server->data_source->type == ZMAPDATASOURCE_TYPE_HTS, result) ;
 
-  result = ZMAP_SERVERRESPONSE_OK ;
+  /*
+   * Attempt to read HTS header and then... er what?
+   */
+  if (zMapDataSourceReadHTSHeader(server->data_source, &sequence) )
+    {
+      if (sequence)
+        {
+          /*
+           * check that the sequence is the same...and, er, do what if it's not?
+           * set up a flag somewhere to require remapping?
+           */
+          result = ZMAP_SERVERRESPONSE_OK ;
+        }
+
+    }
 
   return result ;
 }
@@ -1127,9 +1141,7 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
       if (!zMapGFFParseLine(parser, server->buffer_line->str))
         {
           GError *error ;
-
           error = zMapGFFGetError(parser) ;
-
           ZMAPSERVER_LOG(Warning, PROTOCOL_NAME, server->path, "%s", error->message) ;
 
           if (zMapGFFTerminated(parser))
@@ -1140,9 +1152,7 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
 
               break ;
             }
-
         }
-
     } ;
 
 
