@@ -69,8 +69,8 @@ typedef struct
 
   /* We hold this string within the struct because mkstemp only needs a fixed length buffer
    * to write into. */
-  gboolean tmp_file_ok ;				    /* Flags that tmp file was created. */
-  char print_template[30] ;				    /* Keep in step with TMP_FILE_TMPLATE */
+  gboolean tmp_file_ok ;                                    /* Flags that tmp file was created. */
+  char print_template[30] ;                                    /* Keep in step with TMP_FILE_TMPLATE */
 
   PrintFileDestination sendto ;
   GtkWidget *print ;
@@ -110,7 +110,7 @@ static gboolean getConfiguration(PrintCBData print_cb) ;
 gboolean zMapWindowPrint(ZMapWindow window)
 {
   gboolean result = TRUE ;
-  char *sys_printers = SYSTEM_PRINT_FILE ;		    /* May require alternative names for porting. */
+  char *sys_printers = SYSTEM_PRINT_FILE ;                    /* May require alternative names for porting. */
   PrintCBDataStruct print_cb = {NULL} ;
 
 
@@ -162,17 +162,17 @@ static gboolean printFile(ZMapWindow window, PrintCBData print_cb)
   if (result)
     {
       if (!(result = getPrintFileName(print_cb, &(print_cb->print_file_err))))
-	{
-	  zMapWarning("%s", print_cb->print_file_err->message) ;
-	}
+        {
+          zMapWarning("%s", print_cb->print_file_err->message) ;
+        }
     }
 
   if (result)
     {
       if (!(result = zmapWindowDumpFile(window, print_cb->print_template)))
-	{
-	  zMapWarning("%s", "Could not dump window to temporary postscript file.") ;
-	}
+        {
+          zMapWarning("%s", "Could not dump window to temporary postscript file.") ;
+        }
     }
 
 
@@ -184,12 +184,12 @@ static gboolean printFile(ZMapWindow window, PrintCBData print_cb)
       char *print_command = NULL ;
 
       print_command = g_strdup_printf("lpr -P%s %s",
-				      print_cb->selected_printer, print_cb->print_template) ;
+                                      print_cb->selected_printer, print_cb->print_template) ;
 
       if (!(result = zMapUtilsSysCall(print_command, &err_msg)))
-	{
-	  zMapWarning("Could not print postscript file: %s.", print_cb->print_template) ;
-	}
+        {
+          zMapWarning("Could not print postscript file: %s.", print_cb->print_template) ;
+        }
 
       g_free(print_command) ;
     }
@@ -198,7 +198,7 @@ static gboolean printFile(ZMapWindow window, PrintCBData print_cb)
   if (print_cb->tmp_file_ok)
     {
       if (unlink(print_cb->print_template) != 0)
-	zMapWarning("Could not remove printer temporary file \"%s\".", print_cb->print_template) ;
+        zMapWarning("Could not remove printer temporary file \"%s\".", print_cb->print_template) ;
     }
 
 
@@ -227,12 +227,12 @@ static gboolean printDialog(PrintCBData print_cb)
 
   window_title = zMapGUIMakeTitleString("Print", "Please select printer") ;
   dialog = gtk_dialog_new_with_buttons (window_title,
-					NULL,
-					GTK_DIALOG_DESTROY_WITH_PARENT,
-					GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-					GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
-					GTK_STOCK_PRINT, GTK_RESPONSE_ACCEPT,
-					NULL);
+                                        NULL,
+                                        GTK_DIALOG_DESTROY_WITH_PARENT,
+                                        GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+                                        GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
+                                        GTK_STOCK_PRINT, GTK_RESPONSE_ACCEPT,
+                                        NULL);
   g_free(window_title) ;
 
 
@@ -304,9 +304,9 @@ static gboolean printDialog(PrintCBData print_cb)
 
       /* Note that the text box returns "", not NULL, when the user erases all the input. */
       if (text && *text)
-	{
-	  print_cb->selected_printer = g_strdup(text) ;
-	}
+        {
+          print_cb->selected_printer = g_strdup(text) ;
+        }
       
       status = TRUE ;
     }
@@ -377,16 +377,16 @@ static void setSensitive(GtkWidget *button, gpointer data, gboolean active)
  * 
  * 
  * # d204bw.dynamic.sanger.ac.uk
- * lp|d204bw:					      \				   
+ * lp|d204bw:                                              \                                   
  *  #alternate names
  *   |lp2|lp3
- *   :cm=D204BW - LaserWriter 16/600		      \				   
- *   :sd=/var/spool/lpd/d204bw			      \				   
- *   :lf=/var/spool/lpd/d204bw/log                    \				   
- *   :rm=printsrv2:rp=d204bw			      \				   
- *   :force_queuename=d204bw			      \				   
- *   :network_connect_grace#1			      \				   
- *   :mx#0:sh::lk		
+ *   :cm=D204BW - LaserWriter 16/600                      \                                   
+ *   :sd=/var/spool/lpd/d204bw                              \                                   
+ *   :lf=/var/spool/lpd/d204bw/log                    \                                   
+ *   :rm=printsrv2:rp=d204bw                              \                                   
+ *   :force_queuename=d204bw                              \                                   
+ *   :network_connect_grace#1                              \                                   
+ *   :mx#0:sh::lk                
  * 
  * The code should end up with printers "lp", "d204bw", "lp2", "lp3".
  * 
@@ -402,100 +402,100 @@ GList *getPrinters(char *sys_print_file, GError **print_file_err_inout)
       GIOStatus status ;
       gsize terminator_pos ;
 
-      curr_line = g_string_sized_new(200) ;		    /* Lines in /etc/printcap are short. */
+      curr_line = g_string_sized_new(200) ;                    /* Lines in /etc/printcap are short. */
 
       while ((status = g_io_channel_read_line_string(print_file, curr_line,
-						     &terminator_pos,
-						     print_file_err_inout)) == G_IO_STATUS_NORMAL)
-	{
-	  gboolean finished ;
-	  char *cp ;
+                                                     &terminator_pos,
+                                                     print_file_err_inout)) == G_IO_STATUS_NORMAL)
+        {
+          gboolean finished ;
+          char *cp ;
 
-	  cp = curr_line->str ;
+          cp = curr_line->str ;
 
-	  /* Read until not whitespace. */
-	  while (*cp == ' ' || *cp == '\t')
-	    {
-	      cp++ ;
-	    }
+          /* Read until not whitespace. */
+          while (*cp == ' ' || *cp == '\t')
+            {
+              cp++ ;
+            }
 
-	  /* Any of these means its not a printer name and we go to the next line. */
-	  switch (*cp)
-	    {
-	    case '#':
-	    case ':':
-	    case '\n':
-	    case '\\':
-	      continue ;
-	      break ;
-	    }
+          /* Any of these means its not a printer name and we go to the next line. */
+          switch (*cp)
+            {
+            case '#':
+            case ':':
+            case '\n':
+            case '\\':
+              continue ;
+              break ;
+            }
 
-	  /* Look for printer names. Could amalgamate two 'while' loops but watch out for subtle
-	   * errors... */
-	  finished = FALSE ;
-	  while (!finished)
-	    {
-	      char buffer[500] = {'\0'} ;			    /* Resets buffer */
-	      char *cq ;
+          /* Look for printer names. Could amalgamate two 'while' loops but watch out for subtle
+           * errors... */
+          finished = FALSE ;
+          while (!finished)
+            {
+              char buffer[500] = {'\0'} ;                            /* Resets buffer */
+              char *cq ;
 
-	      cq = &buffer[0] ;
+              cq = &buffer[0] ;
 
-	      /* Parse next printer name. */
-	      while (!finished)
-		{
-		  char *printer_name = NULL ;
+              /* Parse next printer name. */
+              while (!finished)
+                {
+                  char *printer_name = NULL ;
 
-		  /* I'm not sure if embedded blanks are allowed in printer names,
-		   * for now I assume not. */
-		  switch (*cp)
-		    {
-		    case ':':
-		    case '\n':
-		    case ' ':
-		    case '\t':
-		    case '\\':
-		      /* All these finish a printer name. */
-		      finished = TRUE ;
-		      /* N.B. deliberate fall through. */
-		    case '|':
-		      /* '|' can start a line after initial printer name, also
-		       * ignore the include keyword which includes another printer file. */
-		      if (buffer[0] != '\0' && strcmp(&buffer[0], "include") != 0)
-			{
-			  printer_name = g_strdup(&buffer[0]) ;
+                  /* I'm not sure if embedded blanks are allowed in printer names,
+                   * for now I assume not. */
+                  switch (*cp)
+                    {
+                    case ':':
+                    case '\n':
+                    case ' ':
+                    case '\t':
+                    case '\\':
+                      /* All these finish a printer name. */
+                      finished = TRUE ;
+                      /* N.B. deliberate fall through. */
+                    case '|':
+                      /* '|' can start a line after initial printer name, also
+                       * ignore the include keyword which includes another printer file. */
+                      if (buffer[0] != '\0' && strcmp(&buffer[0], "include") != 0)
+                        {
+                          printer_name = g_strdup(&buffer[0]) ;
 
-			  /* Sort printer names as we insert them as the list can be long. */
-			  printer_list = g_list_insert_sorted(printer_list, printer_name,
-							      mySortFunc) ;
+                          /* Sort printer names as we insert them as the list can be long. */
+                          printer_list = g_list_insert_sorted(printer_list, printer_name,
+                                                              mySortFunc) ;
 
-			  cq = &buffer[0] ;		    /* reset buffer for next name. */
-			}
-		      cp++ ;
-		      break ;
-		    default:
-		      /* Copy printer name to buffer. */
-		      *cq = *cp ;
-		      cq++ ;
-		      cp++ ;
-		      break ;
-		    }
-		}
-	    }
-	}
+                          cq = &buffer[0] ;                    /* reset buffer for next name. */
+                        }
+                      cp++ ;
+                      break ;
+                    default:
+                      /* Copy printer name to buffer. */
+                      *cq = *cp ;
+                      cq++ ;
+                      cp++ ;
+                      break ;
+                    }
+                }
+            }
+        }
 
 
       if (status != G_IO_STATUS_EOF)
-	zMapLogCritical("Could not close printers file \"%s\"", sys_print_file) ;
+        zMapLogCritical("Could not close printers file \"%s\"", sys_print_file) ;
 
       if (g_io_channel_shutdown(print_file, FALSE, print_file_err_inout) != G_IO_STATUS_NORMAL)
-	{
-	  zMapLogCritical("Could not close printers file \"%s\"", sys_print_file) ;
-	}
+        {
+          zMapLogCritical("Could not close printers file \"%s\"", sys_print_file) ;
+        }
       else
-	{
-	  /* this seems to be required to destroy the GIOChannel.... */
-	  g_io_channel_unref(print_file) ;
-	}
+        {
+          /* this seems to be required to destroy the GIOChannel.... */
+          g_io_channel_unref(print_file) ;
+        }
     }
 
 
@@ -549,20 +549,20 @@ static gboolean getPrintFileName(PrintCBData print_cb, GError **print_file_err_i
       status = FALSE ;
 
       g_set_error(print_file_err_inout, g_quark_from_string("ZMap"), 99,
-		  "%s", "ZMap print: g_mkstemp() failed.") ;
+                  "%s", "ZMap print: g_mkstemp() failed.") ;
     }
 
   if (status)
     {
       if ((print_file = close(print_file)) == -1)
-	{
-	  status = FALSE ;
+        {
+          status = FALSE ;
 
-	  g_set_error(print_file_err_inout, g_quark_from_string("ZMap"), 99,
-		      "%s", "ZMap print: close() failed.") ;
-	}
+          g_set_error(print_file_err_inout, g_quark_from_string("ZMap"), 99,
+                      "%s", "ZMap print: close() failed.") ;
+        }
       else
-	print_cb->tmp_file_ok = TRUE ;			    /* Record that file created ok. */
+        print_cb->tmp_file_ok = TRUE ;                            /* Record that file created ok. */
     }
 
 
@@ -582,18 +582,18 @@ static gboolean getConfiguration(PrintCBData print_cb)
       result = TRUE;
 
       if(zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
-				       ZMAPSTANZA_APP_PRINTER, &tmp_string))
-	print_cb->default_printer = tmp_string;
+                                       ZMAPSTANZA_APP_PRINTER, &tmp_string))
+        print_cb->default_printer = tmp_string;
       else if ((print_cb->default_printer = getenv("PRINTER"))
-	       || (print_cb->default_printer = getenv("XPRINTER")))
+               || (print_cb->default_printer = getenv("XPRINTER")))
         print_cb->default_printer = g_strdup_printf("%s", print_cb->default_printer) ;
       else
-	result = FALSE;
+        result = FALSE;
 
       zMapConfigIniContextDestroy(context);
     }
   else if ((print_cb->default_printer = getenv("PRINTER")) || 
-	   (print_cb->default_printer = getenv("XPRINTER")))
+           (print_cb->default_printer = getenv("XPRINTER")))
     {
       print_cb->default_printer = g_strdup_printf("%s", print_cb->default_printer);
       result = TRUE;

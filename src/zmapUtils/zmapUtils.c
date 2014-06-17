@@ -130,26 +130,52 @@ char *zMapGetAppTitle(void)
  * @param test_version           The version string to be tested.
  * @return                       TRUE or FALSE
  *  */
-gboolean zMapCompareVersionStings(char *reference_version, char *test_version)
+gboolean zMapCompareVersionStings(char *reference_version, char *test_version, GError **error)
 {
   gboolean result = FALSE ;
+  GError *tmp_error = NULL ;
   char *ref_str, *test_str ;
   int ref_vers, ref_rel, ref_upd, test_vers, test_rel, test_upd ;
 
   ref_str = g_strdup(reference_version) ;
   test_str = g_strdup(test_version) ;
 
-  if ((result = getVersionNumbers(ref_str, &ref_vers, &ref_rel, &ref_upd))
-      && (result = getVersionNumbers(test_str, &test_vers, &test_rel, &test_upd)))
+  if (getVersionNumbers(ref_str, &ref_vers, &ref_rel, &ref_upd))
     {
-      if (test_vers < ref_vers || test_rel < ref_rel || test_upd < ref_upd)
-        result = FALSE ;
+      if (getVersionNumbers(test_str, &test_vers, &test_rel, &test_upd))
+        {
+          if (test_vers < ref_vers ||
+              (test_vers == ref_vers && test_rel < ref_rel) ||
+              (test_vers == ref_vers && test_rel == ref_rel && test_upd < ref_upd))
+            {
+              g_set_error(&tmp_error, ZMAP_UTILS_ERROR, ZMAPUTILS_ERROR_VERSION_STRING,
+                          "Server version must be at least '%s' but this server is '%s'", 
+                          reference_version, test_version); 
+
+              result = FALSE ;
+            }
+          else
+            {
+              result = TRUE ;
+            }
+        }
       else
-        result = TRUE ;
+        {
+          g_set_error(&tmp_error, ZMAP_UTILS_ERROR, ZMAPUTILS_ERROR_VERSION_STRING,
+                      "Error getting version number from string '%s'", test_version); 
+        }
+    }
+  else
+    {
+      g_set_error(&tmp_error, ZMAP_UTILS_ERROR, ZMAPUTILS_ERROR_VERSION_STRING,
+                  "Error getting version number from string '%s'", reference_version); 
     }
 
   g_free(ref_str) ;
   g_free(test_str) ;
+
+  if (tmp_error)
+    g_propagate_error(error, tmp_error) ;
 
   return result ;
 }

@@ -73,7 +73,7 @@ typedef struct
 
 
 static void dnaMatchesToFeatures(ZMapWindow window, GList *match_list, ZMapFeatureTypeStyle orig_style,
-				 ZMapFeatureSet *feature_set_out, ZMapFeatureTypeStyle *style_out) ;
+ ZMapFeatureSet *feature_set_out, ZMapFeatureTypeStyle *style_out) ;
 static void requestDestroyCB(gpointer data, guint callback_action, GtkWidget *widget) ;
 static void destroyCB(GtkWidget *widget, gpointer cb_data) ;
 static void helpCB(gpointer data, guint callback_action, GtkWidget *w) ;
@@ -89,11 +89,11 @@ static void nSpinCB(GtkSpinButton *spinbutton, gpointer user_data) ;
 static GtkWidget *makeMenuBar(DNASearchData search_data) ;
 
 static GtkWidget *makeSpinPanel(DNASearchData search_data,
-				char *title,
-				char *strand_title,
-				char *frame_title,
-				char *spin_label, int min, int max, int init, GtkSignalFunc func,
-				char *spin_label2, int min2, int max2, int init2, GtkSignalFunc func2) ;
+char *title,
+char *strand_title,
+char *frame_title,
+char *spin_label, int min, int max, int init, GtkSignalFunc func,
+char *spin_label2, int min2, int max2, int init2, GtkSignalFunc func2) ;
 
 static void remapCoords(gpointer data, gpointer user_data) ;
 static void printCoords(gpointer data, gpointer user_data) ;
@@ -133,7 +133,7 @@ static int DNA_group_G = 0;
  */
 
 void zmapWindowCreateSequenceSearchWindow(ZMapWindow window, FooCanvasItem *feature_item,
-					  ZMapSequenceType sequence_type)
+  ZMapSequenceType sequence_type)
 {
   GtkWidget *toplevel, *vbox, *menubar, *topbox, *hbox, *frame, *entry, *label, *button,
     *start_end, *errors,
@@ -176,8 +176,8 @@ void zmapWindowCreateSequenceSearchWindow(ZMapWindow window, FooCanvasItem *feat
     {
       proceed = FALSE;
       zMapWarning("Cannot search DNA in this block \"%s\", "
-		  "either it has no DNA or the DNA was not fetched from the server.",
-		  g_quark_to_string(block->original_id)) ;
+  "either it has no DNA or the DNA was not fetched from the server.",
+  g_quark_to_string(block->original_id)) ;
 
     }
 
@@ -196,7 +196,7 @@ void zmapWindowCreateSequenceSearchWindow(ZMapWindow window, FooCanvasItem *feat
 
       /* Get block coords in screen coords, saving for min & max of spin buttons */
       zmapWindowCoordPairToDisplay(window, search_data->search_start, search_data->search_end,
-				   &screen_search_start, &screen_search_end) ;
+                                   &screen_search_start, &screen_search_end) ;
 
 
       /* Set the initial screen start & end based on no mark */
@@ -205,17 +205,17 @@ void zmapWindowCreateSequenceSearchWindow(ZMapWindow window, FooCanvasItem *feat
 
       /* Update the start & end according to the mark */
       if (zmapWindowMarkIsSet(search_data->window->mark))
-	{
-	  zmapWindowMarkGetSequenceRange(search_data->window->mark,
-					 &(search_data->screen_search_start),
-					 &(search_data->screen_search_end));
+        {
+          zmapWindowMarkGetSequenceRange(search_data->window->mark,
+                                         &(search_data->screen_search_start),
+                                         &(search_data->screen_search_end));
 
-	  zmapWindowCoordPairToDisplay(window,
-				       search_data->screen_search_start,
-				       search_data->screen_search_end,
-				       &(search_data->screen_search_start),
-				       &(search_data->screen_search_end)) ;
-	}
+          zmapWindowCoordPairToDisplay(window,
+                                       search_data->screen_search_start,
+                                       search_data->screen_search_end,
+                                       &(search_data->screen_search_start),
+                                       &(search_data->screen_search_end)) ;
+        }
 
       /* Clamp to length of sequence, useless to do that but possible.... */
       max_errors = max_Ns = block->block_to_sequence.block.x2 - block->block_to_sequence.block.x1 + 1 ;
@@ -223,13 +223,13 @@ void zmapWindowCreateSequenceSearchWindow(ZMapWindow window, FooCanvasItem *feat
 
       /* set up the top level window */
       if (sequence_type == ZMAPSEQUENCE_DNA)
-	text = "DNA Search" ;
+        text = "DNA Search" ;
       else
-	text = "Peptide Search" ;
+        text = "Peptide Search" ;
       search_data->toplevel = toplevel = zMapGUIToplevelNew(NULL, text) ;
 
       g_signal_connect(GTK_OBJECT(toplevel), "destroy",
-		       GTK_SIGNAL_FUNC(destroyCB), (gpointer)search_data) ;
+       GTK_SIGNAL_FUNC(destroyCB), (gpointer)search_data) ;
 
       gtk_container_set_focus_chain (GTK_CONTAINER(toplevel), NULL);
 
@@ -255,9 +255,9 @@ void zmapWindowCreateSequenceSearchWindow(ZMapWindow window, FooCanvasItem *feat
       gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0);
 
       if (sequence_type == ZMAPSEQUENCE_DNA)
-	text = "Enter DNA: " ;
+        text = "Enter DNA: " ;
       else
-	text = "Enter Peptide: " ;
+        text = "Enter Peptide: " ;
       frame = gtk_frame_new(text) ;
       gtk_frame_set_label_align(GTK_FRAME(frame), 0.0, 0.5);
       gtk_container_border_width(GTK_CONTAINER(frame), 5);
@@ -280,47 +280,47 @@ void zmapWindowCreateSequenceSearchWindow(ZMapWindow window, FooCanvasItem *feat
       gtk_container_set_focus_chain (GTK_CONTAINER(hbox), NULL);
       gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0);
       if (sequence_type == ZMAPSEQUENCE_PEPTIDE)
-	{
-	  frame_label = "Frame :" ;
-	  frame_text = "Set Strand/Frame/Start/End coords of search: " ;
-	}
+        {
+          frame_label = "Frame :" ;
+          frame_text = "Set Strand/Frame/Start/End coords of search: " ;
+        }
       else
-	{
-	  frame_label = NULL ;
-	  frame_text = "Set Strand/Start/End coords of search: " ;
-	}
+        {
+          frame_label = NULL ;
+          frame_text = "Set Strand/Start/End coords of search: " ;
+        }
 
       start_end = makeSpinPanel(search_data,
-				frame_text,
-				"Strand :",
-				frame_label,
-				"Start :", screen_search_start, screen_search_end,
-				search_data->screen_search_start, GTK_SIGNAL_FUNC(startSpinCB),
-				"End :", screen_search_start, screen_search_end,
-				search_data->screen_search_end, GTK_SIGNAL_FUNC(endSpinCB)) ;
+                                frame_text,
+                                "Strand :",
+                                frame_label,
+                                "Start :", screen_search_start, screen_search_end,
+                                search_data->screen_search_start, GTK_SIGNAL_FUNC(startSpinCB),
+                                "End :", screen_search_start, screen_search_end,
+                                search_data->screen_search_end, GTK_SIGNAL_FUNC(endSpinCB)) ;
       gtk_box_pack_start(GTK_BOX(hbox), start_end, TRUE, TRUE, 0) ;
       gtk_container_set_focus_chain (GTK_CONTAINER(hbox), NULL);
       gtk_container_set_focus_chain (GTK_CONTAINER(start_end), NULL);
 
       /* Make the error boxes for dna search. */
       if (sequence_type == ZMAPSEQUENCE_DNA)
-	{
-	  hbox = gtk_hbox_new(FALSE, 0) ;
-	  gtk_container_set_focus_chain (GTK_CONTAINER(hbox), NULL);
-	  gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0);
-	  errors = makeSpinPanel(search_data,
-				 "Set Maximum Acceptable Error Rates: ",
-				 NULL,
-				 NULL,
-				 "Mismatches :", 0, max_errors, 0, GTK_SIGNAL_FUNC(errorSpinCB),
-				 "N bases :", 0, max_Ns, 0, GTK_SIGNAL_FUNC(nSpinCB)) ;
-	  gtk_box_pack_start(GTK_BOX(hbox), errors, TRUE, TRUE, 0) ;
-	}
+        {
+          hbox = gtk_hbox_new(FALSE, 0) ;
+          gtk_container_set_focus_chain (GTK_CONTAINER(hbox), NULL);
+          gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0);
+          errors = makeSpinPanel(search_data,
+                                 "Set Maximum Acceptable Error Rates: ",
+                                 NULL,
+                                 NULL,
+                                 "Mismatches :", 0, max_errors, 0, GTK_SIGNAL_FUNC(errorSpinCB),
+                                 "N bases :", 0, max_Ns, 0, GTK_SIGNAL_FUNC(nSpinCB)) ;
+          gtk_box_pack_start(GTK_BOX(hbox), errors, TRUE, TRUE, 0) ;
+        }
 
       /* Make colour buttons. */
       frame = gtk_frame_new("Set Hit Properties:") ;
       gtk_container_set_border_width(GTK_CONTAINER(frame),
-				     ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
+                                     ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
       gtk_box_pack_start(GTK_BOX(vbox), frame, FALSE, FALSE, 0) ;
 
       hbox = gtk_hbox_new(FALSE, 0) ;
@@ -337,7 +337,7 @@ void zmapWindowCreateSequenceSearchWindow(ZMapWindow window, FooCanvasItem *feat
       gdk_color_parse(search_data->forward_colour_str, &colour) ;
       gtk_color_button_set_color(GTK_COLOR_BUTTON(forward_colour_button), &colour) ;
       g_signal_connect(G_OBJECT(forward_colour_button), "color-set",
-		       G_CALLBACK(colourSetCB), search_data) ;
+                       G_CALLBACK(colourSetCB), search_data) ;
       gtk_box_pack_start(GTK_BOX(hbox), forward_colour_button, FALSE, FALSE, 0) ;
 
       label = gtk_label_new("Reverse Strand\nColour:") ;
@@ -348,7 +348,7 @@ void zmapWindowCreateSequenceSearchWindow(ZMapWindow window, FooCanvasItem *feat
       gdk_color_parse(search_data->reverse_colour_str, &colour) ;
       gtk_color_button_set_color(GTK_COLOR_BUTTON(reverse_colour_button), &colour) ;
       g_signal_connect(G_OBJECT(reverse_colour_button), "color-set",
-		       G_CALLBACK(colourSetCB), search_data) ;
+                       G_CALLBACK(colourSetCB), search_data) ;
       gtk_box_pack_start(GTK_BOX(hbox), reverse_colour_button, FALSE, FALSE, 0) ;
 
       label = gtk_label_new("Keep Previous\nSearch:") ;
@@ -358,14 +358,14 @@ void zmapWindowCreateSequenceSearchWindow(ZMapWindow window, FooCanvasItem *feat
       button = gtk_check_button_new() ;
       gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, TRUE, 0) ;
       g_signal_connect(G_OBJECT(button), "toggled",
-		       G_CALLBACK(keepHitsCB), search_data) ;
+                       G_CALLBACK(keepHitsCB), search_data) ;
 
 
 
       /* Make control buttons along bottom of dialog. */
       frame = gtk_frame_new(NULL) ;
       gtk_container_set_border_width(GTK_CONTAINER(frame),
-				     ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
+                                     ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
       gtk_box_pack_start(GTK_BOX(vbox), frame, FALSE, FALSE, 0) ;
 
 
@@ -377,12 +377,12 @@ void zmapWindowCreateSequenceSearchWindow(ZMapWindow window, FooCanvasItem *feat
       clear_button = gtk_button_new_from_stock(GTK_STOCK_CLEAR);
       gtk_box_pack_start(GTK_BOX(buttonBox), clear_button, FALSE, FALSE, 0);
       g_signal_connect(G_OBJECT(clear_button), "clicked",
-		       G_CALLBACK(clearCB), search_data);
+                       G_CALLBACK(clearCB), search_data);
 
       search_button = gtk_button_new_from_stock(GTK_STOCK_FIND) ;
       gtk_box_pack_end(GTK_BOX(buttonBox), search_button, FALSE, FALSE, 0) ;
       gtk_signal_connect(GTK_OBJECT(search_button), "clicked",
-			 GTK_SIGNAL_FUNC(searchCB), (gpointer)search_data) ;
+                         GTK_SIGNAL_FUNC(searchCB), (gpointer)search_data) ;
       GTK_WIDGET_SET_FLAGS(search_button, GTK_CAN_DEFAULT) ; /* set search button as default. */
       gtk_window_set_default(GTK_WINDOW(toplevel), search_button) ;
 
@@ -398,7 +398,7 @@ void zmapWindowCreateSequenceSearchWindow(ZMapWindow window, FooCanvasItem *feat
  */
 
 static void dnaMatchesToFeatures(ZMapWindow window, GList *match_list, ZMapFeatureTypeStyle orig_style,
-				 ZMapFeatureSet *feature_set_out, ZMapFeatureTypeStyle *style_out)
+                                 ZMapFeatureSet *feature_set_out, ZMapFeatureTypeStyle *style_out)
 {
   ZMapFeatureSet separator_featureset = NULL ;
   ZMapFeatureTypeStyle style ;
@@ -419,7 +419,7 @@ static void dnaMatchesToFeatures(ZMapWindow window, GList *match_list, ZMapFeatu
   /* set up featureset2_column and anything else needed */
   f2c = g_hash_table_lookup(window->context_map->featureset_2_column,
                             GUINT_TO_POINTER(separator_featureset->unique_id));
-  if(!f2c)	/* these just accumulate  and should be removed from the hash table on clear */
+  if(!f2c)/* these just accumulate  and should be removed from the hash table on clear */
     {
       f2c = g_new0(ZMapFeatureSetDescStruct,1);
 
@@ -439,7 +439,7 @@ static void dnaMatchesToFeatures(ZMapWindow window, GList *match_list, ZMapFeatu
       src->source_id = f2c->feature_src_ID;
       src->source_text = g_quark_from_string(ZMAP_FIXED_STYLE_SEARCH_MARKERS_TEXT);
       src->style_id = style->unique_id;
-      //		src->maps_to = f2c->column_id;	maps_to is for a vitrtual featureset not a column
+      //src->maps_to = f2c->column_id;maps_to is for a vitrtual featureset not a column
       src->maps_to = zMapFeatureSetCreateID(ZMAP_FIXED_STYLE_SEARCH_MARKERS_NAME);
 
       g_hash_table_insert(window->context_map->source_2_sourcedata,
@@ -502,11 +502,11 @@ static GtkWidget *makeMenuBar(DNASearchData search_data)
 
 
 static GtkWidget *makeSpinPanel(DNASearchData search_data,
-				char *title,
-				char *combo_label,
-				char *combo_label2,
-				char *spin_label, int min, int max, int init, GtkSignalFunc func,
-				char *spin_label2, int min2, int max2, int init2, GtkSignalFunc func2)
+                                char *title,
+                                char *combo_label,
+                                char *combo_label2,
+                                char *spin_label, int min, int max, int init, GtkSignalFunc func,
+                                char *spin_label2, int min2, int max2, int init2, GtkSignalFunc func2)
 {
   GtkWidget *frame ;
   GtkWidget *topbox, *hbox, *label, *error_spinbox, *n_spinbox ;
@@ -580,7 +580,7 @@ static GtkWidget *makeSpinPanel(DNASearchData search_data,
   error_spinbox = gtk_spin_button_new_with_range(min, max, 1.0) ;
   gtk_spin_button_set_value(GTK_SPIN_BUTTON(error_spinbox), init) ;
   gtk_signal_connect(GTK_OBJECT(error_spinbox), "value-changed",
-		     GTK_SIGNAL_FUNC(func), (gpointer)search_data) ;
+                     GTK_SIGNAL_FUNC(func), (gpointer)search_data) ;
   gtk_box_pack_start(GTK_BOX(hbox), error_spinbox, FALSE, FALSE, 0) ;
 
   label = gtk_label_new(spin_label2) ;
@@ -594,7 +594,7 @@ static GtkWidget *makeSpinPanel(DNASearchData search_data,
   n_spinbox = gtk_spin_button_new_with_range(min2, max2, 1.0) ;
   gtk_spin_button_set_value(GTK_SPIN_BUTTON(n_spinbox), init2) ;
   gtk_signal_connect(GTK_OBJECT(n_spinbox), "value-changed",
-		     GTK_SIGNAL_FUNC(func2), (gpointer)search_data) ;
+                     GTK_SIGNAL_FUNC(func2), (gpointer)search_data) ;
   gtk_box_pack_start(GTK_BOX(hbox), n_spinbox, FALSE, FALSE, 0) ;
   gtk_container_set_focus_chain (GTK_CONTAINER(hbox), NULL);
 
@@ -625,33 +625,33 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
   if (search_data->strand_entry && (strand_str = (char *)gtk_entry_get_text(GTK_ENTRY(search_data->strand_entry))))
     {
       if (!(zMapFeatureFormatStrand(strand_str, &strand)))
-	{
-	  strand = ZMAPSTRAND_NONE ;
-	}
+        {
+          strand = ZMAPSTRAND_NONE ;
+        }
 
       if(search_data->window && search_data->window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
-	{
-	  /* switch the strand to fix rt bug # 77224 */
-	  switch(strand)
-	    {
-	    case ZMAPSTRAND_FORWARD:
-	      strand = ZMAPSTRAND_REVERSE;
-	      break;
-	    case ZMAPSTRAND_REVERSE:
-	      strand = ZMAPSTRAND_FORWARD;
-	      break;
-	    default:
-	      break;
-	    }
-	}
+        {
+          /* switch the strand to fix rt bug # 77224 */
+          switch(strand)
+            {
+            case ZMAPSTRAND_FORWARD:
+              strand = ZMAPSTRAND_REVERSE;
+              break;
+            case ZMAPSTRAND_REVERSE:
+              strand = ZMAPSTRAND_FORWARD;
+              break;
+            default:
+              break;
+            }
+        }
     }
 
   if (search_data->frame_entry && (frame_str = (char *)gtk_entry_get_text(GTK_ENTRY(search_data->frame_entry))))
     {
       if (!(zMapFeatureFormatFrame(frame_str, &frame)))
-	{
-	  frame = ZMAPFRAME_NONE ;
-	}
+        {
+          frame = ZMAPFRAME_NONE ;
+        }
     }
 
   /* Convert to relative coords.... */
@@ -664,9 +664,9 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
   /* Validate the query string, note that gtk_entry returns "" for no text, _not_ NULL. */
   query_txt = (char *)gtk_entry_get_text(GTK_ENTRY(search_data->dna_entry)) ;
   query_buf =  query_txt =  g_strdup(query_txt);
-  query_txt = zMapStringFlatten(query_txt);	/* take out the null/ newline characters */
+  query_txt = zMapStringFlatten(query_txt);/* take out the null/ newline characters */
 
-  if(*query_txt == '>')		/* we probably pasted a FASTA sequence */
+  if(*query_txt == '>')/* we probably pasted a FASTA sequence */
     {
 
       if (search_data->sequence_type == ZMAPSEQUENCE_DNA)
@@ -691,30 +691,30 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
   if (strlen(query_txt) == 0)
     {
       err_text = g_strdup_printf("no query %s supplied.", (search_data->sequence_type == ZMAPSEQUENCE_DNA
-							   ? "dna" : "peptide")) ;
+   ? "dna" : "peptide")) ;
     }
   else
     {
       /* canonicalise search string. */
       if (search_data->sequence_type == ZMAPSEQUENCE_DNA)
-	zMapDNACanonical(query_txt) ;
+        zMapDNACanonical(query_txt) ;
       else
-	zMapPeptideCanonical(query_txt) ;
+        zMapPeptideCanonical(query_txt) ;
 
       if ((search_data->sequence_type == ZMAPSEQUENCE_DNA && !zMapDNAValidate(query_txt))
-	  || (search_data->sequence_type == ZMAPSEQUENCE_PEPTIDE && !zMapPeptideValidate(query_txt)))
-	err_text = g_strdup_printf("query %s contains invalid %s.",
-				   (search_data->sequence_type == ZMAPSEQUENCE_DNA ? "dna" : "peptide"),
-				   (search_data->sequence_type == ZMAPSEQUENCE_DNA ? "bases" : "amino-acids")) ;
+          || (search_data->sequence_type == ZMAPSEQUENCE_PEPTIDE && !zMapPeptideValidate(query_txt)))
+        err_text = g_strdup_printf("query %s contains invalid %s.",
+                                   (search_data->sequence_type == ZMAPSEQUENCE_DNA ? "dna" : "peptide"),
+                                   (search_data->sequence_type == ZMAPSEQUENCE_DNA ? "bases" : "amino-acids")) ;
     }
 
   if (!err_text)
     {
       if ((start < 0 || start > dna_len) || (end < 0 || end > dna_len)
-	  || (search_data->max_errors < 0 || search_data->max_errors > dna_len)
-	  || (search_data->max_Ns < 0 || search_data->max_Ns > dna_len))
-	err_text = g_strdup_printf("start/end/max errors/max Ns\n must all be within range %d -> %d",
-				   search_data->block->block_to_sequence.block.x1,
+          || (search_data->max_errors < 0 || search_data->max_errors > dna_len)
+          || (search_data->max_Ns < 0 || search_data->max_Ns > dna_len))
+        err_text = g_strdup_printf("start/end/max errors/max Ns\n must all be within range %d -> %d",
+                                   search_data->block->block_to_sequence.block.x1,
                                    search_data->block->block_to_sequence.block.x2) ;
     }
 
@@ -729,105 +729,105 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
       GList *match_list ;
 
       orig_style = zMapFindStyle(search_data->window->context_map->styles,
-				 zMapStyleCreateID(ZMAP_FIXED_STYLE_SEARCH_MARKERS_NAME)) ;
+         zMapStyleCreateID(ZMAP_FIXED_STYLE_SEARCH_MARKERS_NAME)) ;
 
       if (search_data->sequence_type == ZMAPSEQUENCE_DNA
-	  && (match_list = zMapDNAFindAllMatches(dna, query_txt, strand, start, end - start + 1,
-						 search_data->max_errors, search_data->max_Ns, TRUE)))
-	{
-	  ZMapFeatureSet new_feature_set = NULL ;
-	  ZMapFeatureTypeStyle new_style = NULL ;
-	  ZMapDNAMatch match_data ;
-	  char *match_seq, *match_details ;
+          && (match_list = zMapDNAFindAllMatches(dna, query_txt, strand, start, end - start + 1,
+         search_data->max_errors, search_data->max_Ns, TRUE)))
+        {
+          ZMapFeatureSet new_feature_set = NULL ;
+          ZMapFeatureTypeStyle new_style = NULL ;
+          ZMapDNAMatch match_data ;
+          char *match_seq, *match_details ;
 
 
           if (window_dna_debug_G)
             g_list_foreach(match_list, printCoords, dna) ;
 
-	  match_data = (ZMapDNAMatch)(match_list->data) ;
-	  match_seq = match_data->match ;
+          match_data = (ZMapDNAMatch)(match_list->data) ;
+          match_seq = match_data->match ;
 
-	  match_details = g_strdup_printf("Matches for \"%s\", start = %d, end = %d, max errors = %d, max N's %d",
-					  g_quark_to_string(search_data->block->original_id),
-					  search_data->search_start, search_data->search_end,
-					  search_data->max_errors, search_data->max_Ns) ;
+          match_details = g_strdup_printf("Matches for \"%s\", start = %d, end = %d, max errors = %d, max N's %d",
+          g_quark_to_string(search_data->block->original_id),
+          search_data->search_start, search_data->search_end,
+          search_data->max_errors, search_data->max_Ns) ;
 
-	  /* Need to convert coords back to block coords here.... */
-	  g_list_foreach(match_list, remapCoords, search_data) ;
+          /* Need to convert coords back to block coords here.... */
+          g_list_foreach(match_list, remapCoords, search_data) ;
 
-	  if (!(search_data->keep_previous_hits))
-	    remove_current_matches_from_display(search_data);
+          if (!(search_data->keep_previous_hits))
+            remove_current_matches_from_display(search_data);
 
-	  dnaMatchesToFeatures(search_data->window, match_list, orig_style,
-			       &new_feature_set, &new_style) ;
+          dnaMatchesToFeatures(search_data->window, match_list, orig_style,
+               &new_feature_set, &new_style) ;
 
-	  setColoursInStyle(search_data, new_style) ;
+          setColoursInStyle(search_data, new_style) ;
 
-	  zmapWindowDrawSeparatorFeatures(search_data->window,
-					  search_data->block,
-					  new_feature_set,
-					  new_style) ;
+          zmapWindowDrawSeparatorFeatures(search_data->window,
+                                          search_data->block,
+                                          new_feature_set,
+                                          new_style) ;
 
-	  zmapWindowDNAListCreate(search_data->window, match_list,
-				  (char *)g_quark_to_string(search_data->block->original_id),
-				  match_seq,
-				  match_details,
-				  search_data->block, new_feature_set) ;
+          zmapWindowDNAListCreate(search_data->window, match_list,
+                                  (char *)g_quark_to_string(search_data->block->original_id),
+                                  match_seq,
+                                  match_details,
+                                  search_data->block, new_feature_set) ;
 
-	  g_free(match_details) ;
-	}
+          g_free(match_details) ;
+        }
       else if (search_data->sequence_type == ZMAPSEQUENCE_PEPTIDE
-	       && (match_list = zMapPeptideMatchFindAll(dna, query_txt,
-							search_data->window->flags[ZMAPFLAG_REVCOMPED_FEATURES],
-							strand, frame, start, end - start + 1,
-							search_data->max_errors, search_data->max_Ns, TRUE)))
-	{
-	  ZMapFeatureSet new_feature_set = NULL;
-	  ZMapFeatureTypeStyle new_style = NULL;
-	  ZMapDNAMatch match_data ;
-	  char *match_seq, *match_details ;
+               && (match_list = zMapPeptideMatchFindAll(dna, query_txt,
+                                                        search_data->window->flags[ZMAPFLAG_REVCOMPED_FEATURES],
+                                                        strand, frame, start, end - start + 1,
+                                                        search_data->max_errors, search_data->max_Ns, TRUE)))
+        {
+          ZMapFeatureSet new_feature_set = NULL;
+          ZMapFeatureTypeStyle new_style = NULL;
+          ZMapDNAMatch match_data ;
+          char *match_seq, *match_details ;
 
           if(window_dna_debug_G)
             g_list_foreach(match_list, printCoords, dna) ;
 
-	  match_data = (ZMapDNAMatch)(match_list->data) ;
-	  match_seq = match_data->match ;
+          match_data = (ZMapDNAMatch)(match_list->data) ;
+          match_seq = match_data->match ;
 
-	  match_details = g_strdup_printf("Reference: \"%s\", Match: \"%s\"\n"
-					  "Start = %d, End = %d, Max Errors = %d, Max N's %d",
-					  g_quark_to_string(search_data->block->original_id), match_seq,
-					  search_data->search_start, search_data->search_end,
-					  search_data->max_errors, search_data->max_Ns) ;
+          match_details = g_strdup_printf("Reference: \"%s\", Match: \"%s\"\n"
+                                          "Start = %d, End = %d, Max Errors = %d, Max N's %d",
+          g_quark_to_string(search_data->block->original_id), match_seq,
+          search_data->search_start, search_data->search_end,
+          search_data->max_errors, search_data->max_Ns) ;
 
 
-	  /* Need to convert coords back to block coords here.... */
-	  g_list_foreach(match_list, remapCoords, search_data) ;
+          /* Need to convert coords back to block coords here.... */
+          g_list_foreach(match_list, remapCoords, search_data) ;
 
-	  if (!(search_data->keep_previous_hits))
-	    remove_current_matches_from_display(search_data);
+          if (!(search_data->keep_previous_hits))
+            remove_current_matches_from_display(search_data);
 
-	  dnaMatchesToFeatures(search_data->window, match_list,  orig_style, &new_feature_set, &new_style) ;
+          dnaMatchesToFeatures(search_data->window, match_list,  orig_style, &new_feature_set, &new_style) ;
 
-	  setColoursInStyle(search_data, new_style) ;
+          setColoursInStyle(search_data, new_style) ;
 
-	  zmapWindowDrawSeparatorFeatures(search_data->window,
-					  search_data->block,
-					  new_feature_set,
-					  new_style);
+          zmapWindowDrawSeparatorFeatures(search_data->window,
+                                          search_data->block,
+                                          new_feature_set,
+                                          new_style);
 
-	  zmapWindowDNAListCreate(search_data->window, match_list,
-				  (char *)g_quark_to_string(search_data->block->original_id),
-				  match_seq,
-				  match_details,
-				  search_data->block, new_feature_set) ;
+          zmapWindowDNAListCreate(search_data->window, match_list,
+                                  (char *)g_quark_to_string(search_data->block->original_id),
+                                  match_seq,
+                                  match_details,
+                                  search_data->block, new_feature_set) ;
 
-	  g_free(match_details) ;
-	}
+          g_free(match_details) ;
+        }
       else
-	{
-	  zMapMessage("Sorry, no matches in sequence \"%s\" for query \"%s\"",
-		      g_quark_to_string(search_data->block->original_id), query_txt) ;
-	}
+        {
+          zMapMessage("Sorry, no matches in sequence \"%s\" for query \"%s\"",
+              g_quark_to_string(search_data->block->original_id), query_txt) ;
+        }
     }
 
   if (err_text)
@@ -982,21 +982,21 @@ static void remapCoords(gpointer data, gpointer user_data)
   zMapBlock2FeatureCoords(block, &(match_data->ref_start), &(match_data->ref_end)) ;
 
   zmapWindowCoordPairToDisplay(search_data->window, match_data->ref_start, match_data->ref_end,
-			       &(match_data->screen_start), &(match_data->screen_end)) ;
+       &(match_data->screen_start), &(match_data->screen_end)) ;
 
   if (search_data->window && search_data->window->flags[ZMAPFLAG_REVCOMPED_FEATURES])
     {
       /* switch the strand to fix rt bug # 77224 */
       switch(match_data->strand)
-	{
-	case ZMAPSTRAND_FORWARD:
-	  match_data->strand = ZMAPSTRAND_REVERSE;
-	  break;
-	case ZMAPSTRAND_REVERSE:
-	default:
-	  match_data->strand = ZMAPSTRAND_FORWARD;
-	  break;
-	}
+        {
+        case ZMAPSTRAND_FORWARD:
+          match_data->strand = ZMAPSTRAND_REVERSE;
+          break;
+        case ZMAPSTRAND_REVERSE:
+        default:
+          match_data->strand = ZMAPSTRAND_FORWARD;
+          break;
+        }
     }
 
   return ;
@@ -1012,13 +1012,13 @@ static void printCoords(gpointer data, gpointer user_data)
   match_str = g_string_new("") ;
 
   match_str = g_string_append_len(match_str,
-				  (dna + match_data->ref_start),
-				  (match_data->ref_end - match_data->ref_start + 1)) ;
+                                  (dna + match_data->ref_start),
+                                  (match_data->ref_end - match_data->ref_start + 1)) ;
 
   printf("Ref start,end  =  %d,%d  Match start,end = %d,%d    %s\n",
-	 match_data->ref_start, match_data->ref_end,
-	 match_data->start, match_data->end,
-	 match_str->str) ;
+         match_data->ref_start, match_data->ref_end,
+         match_data->start, match_data->end,
+         match_str->str) ;
 
 
   g_string_free(match_str, TRUE) ;
@@ -1050,13 +1050,13 @@ static void matches_to_features(gpointer list_data, gpointer user_data)
     feature_set->style = style;
 
   current_feature = zMapFeatureCreateFromStandardData(current_match->match,
-						      sequence,
-						      ontology,
-						      ZMAPSTYLE_MODE_BASIC,
-						      &feature_set->style,
-						      start, end,
-						      has_score, score,
-						      current_match->strand) ;
+      sequence,
+      ontology,
+      ZMAPSTYLE_MODE_BASIC,
+      &feature_set->style,
+      start, end,
+      has_score, score,
+      current_match->strand) ;
 
   zMapFeatureSetAddFeature(feature_set, current_feature);
 
@@ -1128,9 +1128,9 @@ void zMapWindowUnDisplaySearchFeatureSets(ZMapWindow window,
   stuff.window = window;
 
   zMapFeatureContextExecute((ZMapFeatureAny)new_features,
-			    ZMAPFEATURE_STRUCT_FEATURESET,
-			    undisplaySearchFeatureSetsCB,
-			    &stuff);
+    ZMAPFEATURE_STRUCT_FEATURESET,
+    undisplaySearchFeatureSetsCB,
+    &stuff);
 
   return ;
 }
@@ -1159,9 +1159,9 @@ static void remove_current_matches_from_display(DNASearchData search_data)
 
       /* Get the alignment from the current context by looking up using block's parent */
       align = (ZMapFeatureAlignment)zMapFeatureGetParentGroup((ZMapFeatureAny)search_data->block,
-							      ZMAPFEATURE_STRUCT_ALIGN) ;
+      ZMAPFEATURE_STRUCT_ALIGN) ;
       align = zMapFeatureContextGetAlignmentByID(search_data->window->strand_separator_context,
-						 align->unique_id);
+                                                 align->unique_id);
       /* Get the block matching the search_data->block */
       block = zMapFeatureAlignmentGetBlockByID(align, search_data->block->unique_id);
 
@@ -1183,7 +1183,7 @@ static void remove_current_matches_from_display(DNASearchData search_data)
 
 
       for( ; sets; sets = sets->next)
-	{
+        {
           feature_set = (ZMapFeatureSet) sets->data;
 
           /* its container, to hide it later */
@@ -1196,10 +1196,10 @@ static void remove_current_matches_from_display(DNASearchData search_data)
           feature_set = zMapFeatureSetCopy(feature_set);
 
           zMapFeatureBlockAddFeatureSet(block, feature_set);
-	}
+        }
 
       if(container)
-	{
+        {
           foo_canvas_item_request_redraw((FooCanvasItem *) container -> parent); /* that's the column */
 
           if(!zMapFeatureContextErase(&(search_data->window->strand_separator_context),
@@ -1214,13 +1214,13 @@ static void remove_current_matches_from_display(DNASearchData search_data)
               zMapWindowUnDisplaySearchFeatureSets(search_data->window, NULL, diff_context);
 
               /* this handles destroy of the (virtual) CanvasFeatureset */
-              //			zmapWindowContainerGroupDestroy((ZMapWindowContainerGroup)(container));
+              //zmapWindowContainerGroupDestroy((ZMapWindowContainerGroup)(container));
 
-              //			zmapWindowFullReposition(search_data->window->feature_root_group,TRUE);
+              //zmapWindowFullReposition(search_data->window->feature_root_group,TRUE);
 
               zMapFeatureContextDestroy(diff_context, TRUE);
             }
-	}
+        }
 
       zMapFeatureContextDestroy(erase_context, TRUE);
 
@@ -1237,10 +1237,10 @@ static void setColoursInStyle(DNASearchData search_data, ZMapFeatureTypeStyle st
   char *forward_colour_spec, *reverse_colour_spec ;
 
   forward_colour_spec = zMapStyleMakeColourString(search_data->forward_colour_str, "black", NULL,
-						  search_data->forward_colour_str, "black", NULL) ;
+  search_data->forward_colour_str, "black", NULL) ;
 
   reverse_colour_spec = zMapStyleMakeColourString(search_data->reverse_colour_str, "black", NULL,
-						  search_data->reverse_colour_str, "black", NULL) ;
+  search_data->reverse_colour_str, "black", NULL) ;
 
   g_object_set(G_OBJECT(style),
                ZMAPSTYLE_PROPERTY_COLOURS, forward_colour_spec,

@@ -111,8 +111,8 @@ static GtkItemFactoryEntry menu_items_G[] = {
  *
  */
 void zmapWindowDNAListCreate(ZMapWindow zmap_window, GList *dna_list,
-			     char *ref_seq_name, char *match_sequence, char *match_details,
-			     ZMapFeatureBlock block, ZMapFeatureSet match_feature_set)
+     char *ref_seq_name, char *match_sequence, char *match_details,
+     ZMapFeatureBlock block, ZMapFeatureSet match_feature_set)
 {
   DNAWindowListData window_list ;
   GString *title_str ;
@@ -298,48 +298,48 @@ static gboolean selectionFuncCB(GtkTreeSelection *selection,
 
       /* Get the column data */
       gtk_tree_model_get(model, &iter,
-			 start_index,    &start,
-			 end_index,      &end,
-			 seq_type_index, &seq_type,
-			 strand_index,   &strand,
-			 frame_index,    &frame,
+                         start_index,    &start,
+                         end_index,      &end,
+                         seq_type_index, &seq_type,
+                         strand_index,   &strand,
+                         frame_index,    &frame,
                          -1) ;
 
       if (!path_currently_selected)
         {
-	  GtkTreeView *tree_view = NULL;
-	  ZMapWindow window = window_list->window;
-	  ZMapFeatureBlock block = NULL ;
-	  FooCanvasItem *item ;
-	  ZMapFrame tmp_frame ;
-	  ZMapStrand tmp_strand ;
-	  block = window_list->block ;
+          GtkTreeView *tree_view = NULL;
+          ZMapWindow window = window_list->window;
+          ZMapFeatureBlock block = NULL ;
+          FooCanvasItem *item ;
+          ZMapFrame tmp_frame ;
+          ZMapStrand tmp_strand ;
+          block = window_list->block ;
 
-	  /* Scroll to treeview entry. */
-	  tree_view = gtk_tree_selection_get_tree_view(selection) ;
-	  gtk_tree_view_scroll_to_cell(tree_view, path, NULL, FALSE, 0.0, 0.0) ;
+          /* Scroll to treeview entry. */
+          tree_view = gtk_tree_selection_get_tree_view(selection) ;
+          gtk_tree_view_scroll_to_cell(tree_view, path, NULL, FALSE, 0.0, 0.0) ;
 
-	  /* Scroll to marker and highlight sequence (if its displayed). */
-	  tmp_strand = ZMAPSTRAND_NONE ;
-	  tmp_frame = ZMAPFRAME_NONE ;
+          /* Scroll to marker and highlight sequence (if its displayed). */
+          tmp_strand = ZMAPSTRAND_NONE ;
+          tmp_frame = ZMAPFRAME_NONE ;
 
-	  if ((item = zmapWindowFToIFindSetItem(window, window->context_to_item,
-						window_list->match_feature_set,
-						tmp_strand, tmp_frame)))
-	    {
-	      int dna_start, dna_end ;
+          if ((item = zmapWindowFToIFindSetItem(window, window->context_to_item,
+                                                window_list->match_feature_set,
+                                                tmp_strand, tmp_frame)))
+            {
+              int dna_start, dna_end ;
 
-	      dna_start = start ;
-	      dna_end = end ;
+              dna_start = start ;
+              dna_end = end ;
 
-	      /* Need to convert sequence coords to block for this call. */
-	      zMapFeature2BlockCoords(block, &dna_start, &dna_end) ;
+              /* Need to convert sequence coords to block for this call. */
+              zMapFeature2BlockCoords(block, &dna_start, &dna_end) ;
 
               /*! \todo #warning FTM need seq coords, fix when fixing canvas featureset group relative coords */
-	      zmapWindowItemCentreOnItemSubPart(window, item, FALSE, 0.0, start, end); // dna_start, dna_end) ;
+              zmapWindowItemCentreOnItemSubPart(window, item, FALSE, 0.0, start, end); // dna_start, dna_end) ;
 
-	      zmapWindowHighlightSequenceRegion(window, block, seq_type, frame, start, end, FALSE, 0) ;
-	    }
+              zmapWindowHighlightSequenceRegion(window, block, seq_type, frame, start, end, FALSE, 0) ;
+            }
         }
     }
 
@@ -503,14 +503,14 @@ ZMapWindowDNAList zMapWindowDNAListCreate(void)
 }
 
 void zMapWindowDNAListAddMatch(ZMapWindowDNAList dna_list,
-			       ZMapDNAMatch match)
+       ZMapDNAMatch match)
 {
   zMapGUITreeViewAddTuple(ZMAP_GUITREEVIEW(dna_list), match) ;
   return ;
 }
 
 void zMapWindowDNAListAddMatches(ZMapWindowDNAList dna_list,
-				 GList *list_of_matches)
+ GList *list_of_matches)
 {
   zMapGUITreeViewAddTuples(ZMAP_GUITREEVIEW(dna_list), list_of_matches) ;
   return ;

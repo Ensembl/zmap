@@ -40,7 +40,7 @@
 //#include <zmapWindowCanvas.h>
 #include <zmapWindowNavigator_P.h>
 
-#define MH17_DEBUG_NAV_FOOBAR	0
+#define MH17_DEBUG_NAV_FOOBAR        0
 
 #define NAVIGATOR_WIDTH 100.0
 
@@ -160,24 +160,24 @@ GtkWidget *zMapWindowNavigatorCreateCanvas(ZMapWindowNavigatorCallback callbacks
       class_data->original_colour = gtk_widget_get_style(canvas_widget)->bg[GTK_STATE_NORMAL];
 
       class_data->top_bg = foo_canvas_item_new(foo_canvas_root(canvas),
-					       FOO_TYPE_CANVAS_RECT,
-					       "x1",             0.0,
-					       "y1",             0.0,
-					       "x2",             10.0,
-					       "y2",             10.0,
-					       "width_pixels",   0,
-					       "fill_color_gdk", &(class_data->original_colour),
-					       NULL);
+                                               FOO_TYPE_CANVAS_RECT,
+                                               "x1",             0.0,
+                                               "y1",             0.0,
+                                               "x2",             10.0,
+                                               "y2",             10.0,
+                                               "width_pixels",   0,
+                                               "fill_color_gdk", &(class_data->original_colour),
+                                               NULL);
 
       class_data->bot_bg = foo_canvas_item_new(foo_canvas_root(canvas),
-					       FOO_TYPE_CANVAS_RECT,
-					       "x1",             0.0,
-					       "y1",             0.0,
-					       "x2",             10.0,
-					       "y2",             10.0,
-					       "width_pixels",   0,
-					       "fill_color_gdk", &(class_data->original_colour),
-					       NULL);
+                                               FOO_TYPE_CANVAS_RECT,
+                                               "x1",             0.0,
+                                               "y1",             0.0,
+                                               "x2",             10.0,
+                                               "y2",             10.0,
+                                               "width_pixels",   0,
+                                               "fill_color_gdk", &(class_data->original_colour),
+                                               NULL);
 
       foo_canvas_item_lower_to_bottom(class_data->top_bg);
       foo_canvas_item_lower_to_bottom(class_data->bot_bg);
@@ -328,21 +328,21 @@ void zmapWindowNavigatorFillWidget(GtkWidget *widget)
       /* use widget->allocation.width instead of x2 as that might not be full width. */
       x3 = widget->allocation.width + (0 - x1);
       if(x3 < x2)
-	x3 = x2;
+        x3 = x2;
 
       foo_canvas_item_set(class_data->top_bg,
-			  "x1", x1,
-			  "y1", y1,
-			  "x2", x3,
-			  "y2", 0.0,
-			  NULL);
+                          "x1", x1,
+                          "y1", y1,
+                          "x2", x3,
+                          "y2", 0.0,
+                          NULL);
       foo_canvas_item_lower_to_bottom(class_data->top_bg);
       foo_canvas_item_set(class_data->bot_bg,
-			  "x1", 0.0,
-			  "y1", class_data->span,	// (double)NAVIGATOR_SIZE,
-			  "x2", x3,
-			  "y2", y2,
-			  NULL);
+                          "x1", 0.0,
+                          "y1", class_data->span,        // (double)NAVIGATOR_SIZE,
+                          "x2", x3,
+                          "y2", y2,
+                          NULL);
       foo_canvas_item_lower_to_bottom(class_data->bot_bg);
 #endif
 
@@ -353,9 +353,9 @@ printf("fill widget %f %f, %f %f\n", x1, y1, x2, y2);
       zmapWindowNavigatorWidthChanged(widget, x1, x2);
 
 #if DONT_TRY_IT
-	/* forms an endless loop: */
-	if(class_data->window_navigator)
-		zmapWindowNavigatorPositioning(class_data->window_navigator);
+        /* forms an endless loop: */
+        if(class_data->window_navigator)
+                zmapWindowNavigatorPositioning(class_data->window_navigator);
 #endif
   }
 
@@ -458,7 +458,7 @@ static void fetchScrollCoords(ZMapNavigatorClassData class_data,
   zMapReturnIfFail((x1 && x2 && y1 && y2)) ;
 
   max_x = 32000.0;             /* only canvas limit */
-  max_y = class_data->span;	//(double)(NAVIGATOR_SIZE);
+  max_y = class_data->span;        //(double)(NAVIGATOR_SIZE);
 
   container_width  = class_data->container_width;
   container_height = class_data->container_height;

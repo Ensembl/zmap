@@ -38,7 +38,7 @@
 #include <math.h>
 
 #include <ZMap/zmapUtils.h>
-#include <zmapWindow_P.h>	/* ZMapWindow */
+#include <zmapWindow_P.h>        /* ZMapWindow */
 #include <zmapWindowMark.h>
 #include <zmapWindowCanvasItem.h>
 #include <zmapWindowContainerUtils.h>
@@ -68,25 +68,25 @@ typedef struct _ZMapWindowMarkStruct
 {
   ZMapMagic magic ;
 
-  ZMapWindow window ;					    /* Mark needs access to the ZMapWindow
-							       without having to pass it in. */
+  ZMapWindow window ;                                            /* Mark needs access to the ZMapWindow
+                                                               without having to pass it in. */
 
-  ZMapWindowContainerBlock block_container ;		    /* The group the mark is set
-							       on. ColConfig assumes this is a block */
+  ZMapWindowContainerBlock block_container ;                    /* The group the mark is set
+                                                               on. ColConfig assumes this is a block */
 
-  gboolean mark_set ;					    /* internal flag for whether mark is set.  */
+  gboolean mark_set ;                                            /* internal flag for whether mark is set.  */
 
-  double margin ;					    /* Sets a small margin so that the
-							       mark is drawn just outside a
-							       feature and not over the ends of it. */
+  double margin ;                                            /* Sets a small margin so that the
+                                                               mark is drawn just outside a
+                                                               feature and not over the ends of it. */
 
   /* Bases _wholly_ contained in mark, this is the definitive range of sequence coords that are
    * within the marked range. If set from an item then they are -/+ margin sequence coords
    * either side of the feature to ensure mark does not clip feature. */
-  int seq_start ;					    /* start of the mark in seq coords (of block)  */
-  int seq_end   ;					    /* end of the mark in seq coords (of block)  */
+  int seq_start ;                                            /* start of the mark in seq coords (of block)  */
+  int seq_end   ;                                            /* end of the mark in seq coords (of block)  */
 
-  int			prev_start, prev_end;		    /* where it used to be */
+  int                        prev_start, prev_end;                    /* where it used to be */
 
   /* World coords of the mark, these are used to draw the mark, they should be for graphical
    * use only, e.g. is an canvas item within the mark ? etc. They are ALWAYS derived
@@ -98,8 +98,8 @@ typedef struct _ZMapWindowMarkStruct
 
 
   /* The stippled areas above and below the mark. */
-  GdkColor colour ;					    /* colour */
-  GdkBitmap *stipple ;					    /* stipple pattern */
+  GdkColor colour ;                                            /* colour */
+  GdkBitmap *stipple ;                                            /* stipple pattern */
   FooCanvasItem *mark_top, *mark_bot ;
 
 
@@ -110,7 +110,7 @@ typedef struct _ZMapWindowMarkStruct
 static void markRange(ZMapWindowMark mark) ;
 static ZMapWindowContainerBlock getBlock(ZMapWindow window, double world_y1, double world_y2) ;
 static void get_block_cb(ZMapWindowContainerGroup container, FooCanvasPoints *points,
-			 ZMapContainerLevelType level, gpointer user_data) ;
+                         ZMapContainerLevelType level, gpointer user_data) ;
 static FooCanvasItem *set_mark_item(ZMapWindowMark mark, gboolean top) ;
 
 
@@ -277,10 +277,10 @@ void zmapWindowMarkReset(ZMapWindowMark mark)
       mark->mark_set = FALSE ;
 
       if(mark->mark_top)
-	gtk_object_destroy(GTK_OBJECT(mark->mark_top));
+        gtk_object_destroy(GTK_OBJECT(mark->mark_top));
       mark->mark_top = NULL;
       if(mark->mark_bot)
-	gtk_object_destroy(GTK_OBJECT(mark->mark_bot));
+        gtk_object_destroy(GTK_OBJECT(mark->mark_bot));
       mark->mark_bot = NULL;
 
       /* reset all the coords */
@@ -309,93 +309,93 @@ void zmapWindowToggleMark(ZMapWindow window, gboolean whole_feature)
       /* If there's a focus item we mark that, otherwise we check if the user set
        * a rubber band area and use that, otherwise we mark to the screen area. */
       if ((focus_item = zmapWindowFocusGetHotItem(window->focus)))
-	{
-	  ZMapFeature feature ;
+        {
+          ZMapFeature feature ;
 
-	  feature = zMapWindowCanvasItemGetFeature(focus_item);
-	  /* If user presses 'M' we mark "whole feature", e.g. whole transcript,
-	   * all HSP's, otherwise we mark just the highlighted ones. */
-	  if (whole_feature)
-	    {
-	      if (feature->mode == ZMAPSTYLE_MODE_ALIGNMENT)
-		{
-		  GList *list = NULL;
-		  ZMapStrand set_strand ;
-		  ZMapFrame set_frame ;
-		  gboolean result ;
-		  double rootx1, rooty1, rootx2, rooty2 ;
+          feature = zMapWindowCanvasItemGetFeature(focus_item);
+          /* If user presses 'M' we mark "whole feature", e.g. whole transcript,
+           * all HSP's, otherwise we mark just the highlighted ones. */
+          if (whole_feature)
+            {
+              if (feature->mode == ZMAPSTYLE_MODE_ALIGNMENT)
+                {
+                  GList *list = NULL;
+                  ZMapStrand set_strand ;
+                  ZMapFrame set_frame ;
+                  gboolean result ;
+                  double rootx1, rooty1, rootx2, rooty2 ;
 
-		  result = zmapWindowItemGetStrandFrame(focus_item, &set_strand, &set_frame) ;
-		  list = zmapWindowFToIFindSameNameItems(window,window->context_to_item,
-							 zMapFeatureStrand2Str(set_strand),
-							 zMapFeatureFrame2Str(set_frame),
-							 feature) ;
+                  result = zmapWindowItemGetStrandFrame(focus_item, &set_strand, &set_frame) ;
+                  list = zmapWindowFToIFindSameNameItems(window,window->context_to_item,
+                                                         zMapFeatureStrand2Str(set_strand),
+                                                         zMapFeatureFrame2Str(set_frame),
+                                                         feature) ;
 
-		  zmapWindowGetMaxBoundsItems(window, list, &rootx1, &rooty1, &rootx2, &rooty2) ;
+                  zmapWindowGetMaxBoundsItems(window, list, &rootx1, &rooty1, &rootx2, &rooty2) ;
 
-		  zmapWindowMarkSetWorldRange(window->mark, rootx1, rooty1, rootx2, rooty2) ;
+                  zmapWindowMarkSetWorldRange(window->mark, rootx1, rooty1, rootx2, rooty2) ;
 
-		  g_list_free(list) ;
-		}
-	      else
-		{
-		  zmapWindowMarkSetItem(window->mark, focus_item) ;
-		}
-	    }
-	  else
-	    {
-	      GList *focus_items ;
-	      double rootx1, rooty1, rootx2, rooty2 ;
+                  g_list_free(list) ;
+                }
+              else
+                {
+                  zmapWindowMarkSetItem(window->mark, focus_item) ;
+                }
+            }
+          else
+            {
+              GList *focus_items ;
+              double rootx1, rooty1, rootx2, rooty2 ;
 
-	      focus_items = zmapWindowFocusGetFocusItems(window->focus) ;
+              focus_items = zmapWindowFocusGetFocusItems(window->focus) ;
 
-	      if(g_list_length(focus_items) == 1)
-		{
-		  ID2Canvas id2c = (ID2Canvas) focus_items->data;
-		  zmapWindowMarkSetItem(window->mark, id2c->item);
-		}
-	      else
-		{
-		  zmapWindowGetMaxBoundsItems(window, focus_items, &rootx1, &rooty1, &rootx2, &rooty2) ;
+              if(g_list_length(focus_items) == 1)
+                {
+                  ID2Canvas id2c = (ID2Canvas) focus_items->data;
+                  zmapWindowMarkSetItem(window->mark, id2c->item);
+                }
+              else
+                {
+                  zmapWindowGetMaxBoundsItems(window, focus_items, &rootx1, &rooty1, &rootx2, &rooty2) ;
 
-		  zmapWindowMarkSetWorldRange(window->mark, rootx1, rooty1, rootx2, rooty2) ;
-		}
+                  zmapWindowMarkSetWorldRange(window->mark, rootx1, rooty1, rootx2, rooty2) ;
+                }
 
-	      g_list_free(focus_items) ;
-	    }
-	}
+              g_list_free(focus_items) ;
+            }
+        }
       else if (window->rubberband)
-	{
-	  double rootx1, rootx2, rooty1, rooty2 ;
+        {
+          double rootx1, rootx2, rooty1, rooty2 ;
 
-	  my_foo_canvas_item_get_world_bounds(window->rubberband, &rootx1, &rooty1, &rootx2, &rooty2);
+          my_foo_canvas_item_get_world_bounds(window->rubberband, &rootx1, &rooty1, &rootx2, &rooty2);
 
-	  zmapWindowClampedAtStartEnd(window, &rooty1, &rooty2);
-	  /* We ignore any failure, perhaps we should warn the user ? If we colour
-	   * the region it will be ok though.... */
-	  zmapWindowMarkSetWorldRange(window->mark, rootx1, rooty1, rootx2, rooty2) ;
-	}
+          zmapWindowClampedAtStartEnd(window, &rooty1, &rooty2);
+          /* We ignore any failure, perhaps we should warn the user ? If we colour
+           * the region it will be ok though.... */
+          zmapWindowMarkSetWorldRange(window->mark, rootx1, rooty1, rootx2, rooty2) ;
+        }
       else
-	{
-	  /* If there is no feature selected and no rubberband set then mark to the
-	   * visible screen. */
-	  double x1, x2, y1, y2;
-	  double margin ;
+        {
+          /* If there is no feature selected and no rubberband set then mark to the
+           * visible screen. */
+          double x1, x2, y1, y2;
+          double margin ;
 
-	  zmapWindowItemGetVisibleWorld(window, &x1, &y1, &x2, &y2) ;
+          zmapWindowItemGetVisibleWorld(window, &x1, &y1, &x2, &y2) ;
 
-	  zmapWindowClampedAtStartEnd(window, &y1, &y2) ;
+          zmapWindowClampedAtStartEnd(window, &y1, &y2) ;
 
-	  /* Make the mark visible to the user by making its extent slightly smaller
-	   * than the window. */
-	  margin = 15.0 * (1 / window->canvas->pixels_per_unit_y) ;
-	  y1 += margin ;
-	  y2 -= margin ;
-	  /* We only ever want the mark as wide as the scroll region */
-	  zmapWindowGetScrollableArea(window, NULL, NULL, &x2, NULL);
+          /* Make the mark visible to the user by making its extent slightly smaller
+           * than the window. */
+          margin = 15.0 * (1 / window->canvas->pixels_per_unit_y) ;
+          y1 += margin ;
+          y2 -= margin ;
+          /* We only ever want the mark as wide as the scroll region */
+          zmapWindowGetScrollableArea(window, NULL, NULL, &x2, NULL);
 
-	  zmapWindowMarkSetWorldRange(window->mark, x1, y1, x2, y2) ;
-	}
+          zmapWindowMarkSetWorldRange(window->mark, x1, y1, x2, y2) ;
+        }
     }
 
   return ;
@@ -409,10 +409,10 @@ void zmapWindowMarkShowMark(ZMapWindowMark mark)
   if(!mark->block_container)
     return;
 
-  if(mark->seq_start != mark->prev_start)		/* only display if changed */
+  if(mark->seq_start != mark->prev_start)                /* only display if changed */
     mark->mark_top = set_mark_item(mark, TRUE);
 
-  if(mark->seq_end != mark->prev_end)		/* only display if changed */
+  if(mark->seq_end != mark->prev_end)                /* only display if changed */
     mark->mark_bot = set_mark_item(mark, FALSE);
 
   mark->prev_start = mark->seq_start;
@@ -492,8 +492,8 @@ gboolean zmapWindowMarkSetItem(ZMapWindowMark mark, FooCanvasItem *item)
 
       /* Get hold of the block this item sits in. */
       mark->block_container =
-	(ZMapWindowContainerBlock)zmapWindowContainerUtilsItemGetParentLevel(item,
-									     ZMAPCONTAINER_LEVEL_BLOCK) ;
+        (ZMapWindowContainerBlock)zmapWindowContainerUtilsItemGetParentLevel(item,
+                                                                             ZMAPCONTAINER_LEVEL_BLOCK) ;
 
       zmapWindowContainerGetFeatureAny(ZMAP_CONTAINER_GROUP(mark->block_container), (ZMapFeatureAny *)&block) ;
 
@@ -540,8 +540,8 @@ gboolean zmapWindowMarkSetItem(ZMapWindowMark mark, FooCanvasItem *item)
  * \return boolean.
  */
 gboolean zmapWindowMarkSetWorldRange(ZMapWindowMark mark,
-				     double world_x1, double world_y1,
-				     double world_x2, double world_y2)
+                                     double world_x1, double world_y1,
+                                     double world_x2, double world_y2)
 {
   double scroll_x1, scroll_x2;
   gboolean result = FALSE ;
@@ -611,7 +611,7 @@ gboolean zmapWindowMarkSetWorldRange(ZMapWindowMark mark,
  * \return boolean.
  */
 gboolean zmapWindowMarkGetWorldRange(ZMapWindowMark mark,
-				     double *world_x1, double *world_y1, double *world_x2, double *world_y2)
+                                     double *world_x1, double *world_y1, double *world_x2, double *world_y2)
 {
   gboolean result = FALSE ;
 
@@ -674,9 +674,9 @@ gboolean zMapWindowMarkGetSequenceSpan(ZMapWindow window, int *start, int *end)
       /* TERRIBLE HACK...COORDS SHOULD BE DONE RIGHT.... */
 
       if (*start < window->sequence->start)
-	*start = window->sequence->start ;
+        *start = window->sequence->start ;
       if (*end > window->sequence->end)
-	*end = window->sequence->end ;
+        *end = window->sequence->end ;
     }
 
   return result ;
@@ -703,12 +703,12 @@ gboolean zmapWindowMarkGetSequenceRange(ZMapWindowMark mark, int *start, int *en
     {
 
       if (!mark->seq_start)    // ie it has never been set
-	{
-	  // fix for RT161721 bumped col diappears in hsplit/vsplit
-	  // start and end are 0 in mark so no features displayed
-	  mark->seq_start = (int) mark->world_y1 - 1 ;
-	  mark->seq_end   = (int) mark->world_y2 + 1 ;
-	}
+        {
+          // fix for RT161721 bumped col diappears in hsplit/vsplit
+          // start and end are 0 in mark so no features displayed
+          mark->seq_start = (int) mark->world_y1 - 1 ;
+          mark->seq_end   = (int) mark->world_y2 + 1 ;
+        }
 
       *start = mark->seq_start ;
       *end   = mark->seq_end ;
@@ -752,8 +752,8 @@ ZMapWindowContainerGroup zmapWindowMarkGetCurrentBlockContainer(ZMapWindowMark m
  *
  */
 gboolean zmapWindowMarkSetBlockContainer(ZMapWindowMark mark, ZMapWindowContainerGroup container,
-					 double sequence_start, double sequence_end,
-					 double x1, double y1, double x2, double y2)
+                                         double sequence_start, double sequence_end,
+                                         double x1, double y1, double x2, double y2)
 {
   ZMapWindowContainerBlock block_container;
   gboolean result = FALSE;
@@ -761,36 +761,36 @@ gboolean zmapWindowMarkSetBlockContainer(ZMapWindowMark mark, ZMapWindowContaine
   if (mark->mark_set)
     {
       if(ZMAP_IS_CONTAINER_BLOCK(container) && !mark->block_container)
-	{
-	  block_container       = (ZMapWindowContainerBlock)container;
-	  mark->block_container = block_container;
+        {
+          block_container       = (ZMapWindowContainerBlock)container;
+          mark->block_container = block_container;
           /*! \todo #warning Need to implement block relative coordinates for this to work */
-	  /* MH17: features are at absolute coordinates and we cannot have multiple blocks
-	   * we need to use world coordinates for the mark to be able to request external data
-	   * sequence_start and _end are block relative
-	   */
-	  /*
-	    mark->seq_start       = (int)sequence_start;
-	    mark->seq_end         = (int)sequence_end;
-	  */
+          /* MH17: features are at absolute coordinates and we cannot have multiple blocks
+           * we need to use world coordinates for the mark to be able to request external data
+           * sequence_start and _end are block relative
+           */
+          /*
+            mark->seq_start       = (int)sequence_start;
+            mark->seq_end         = (int)sequence_end;
+          */
 
-	  result = TRUE;
-	}
+          result = TRUE;
+        }
 
       /* This seems like a strange thing to do, but if we have set
        * an item the x coords might not be set. */
       if(mark->world_x1 != x1 && mark->world_x1 == 0.0)
-	mark->world_x1 = x1;
+        mark->world_x1 = x1;
 
       if(mark->world_x2 != x2 && mark->world_x2 == 0.0)
-	mark->world_x2 = x2;
+        mark->world_x2 = x2;
 
       /* I also want to check we have the correct y coords. */
       if(mark->world_y1 != y1)
-	zMapLogWarning("mark start coord (%f) does not match parameter (%f)", mark->world_y1, y1);
+        zMapLogWarning("mark start coord (%f) does not match parameter (%f)", mark->world_y1, y1);
 
       if(mark->world_y2 != y2)
-	zMapLogWarning("mark end coord (%f) does not match parameter (%f)", mark->world_y2, y2);
+        zMapLogWarning("mark end coord (%f) does not match parameter (%f)", mark->world_y2, y2);
     }
 
   return result;
@@ -803,13 +803,13 @@ void zmapWindowMarkPrint(ZMapWindow window, char *title)
   ZMapWindowMark mark = window->mark ;
 
   printf("%s -\n"
-	 "Block:\t%p\n"
-	 "World:\tx1=%g, y1=%g, x2=%g, y2=%g\n"
-	 "Sequence:\tstart=%d, end=%d\n",
-	 (title ? title : "Current mark"),
-	 mark->block_container,
-	 mark->world_x1, mark->world_y1, mark->world_x2, mark->world_y2,
-	 mark->seq_start, mark->seq_end) ;
+         "Block:\t%p\n"
+         "World:\tx1=%g, y1=%g, x2=%g, y2=%g\n"
+         "Sequence:\tstart=%d, end=%d\n",
+         (title ? title : "Current mark"),
+         mark->block_container,
+         mark->world_x1, mark->world_y1, mark->world_x2, mark->world_y2,
+         mark->seq_start, mark->seq_end) ;
 
   fflush(stdout) ;
 
@@ -835,8 +835,8 @@ void zmapWindowMarkDestroy(ZMapWindowMark mark)
 
   zmapWindowMarkReset(mark) ;
 
-  g_object_unref(G_OBJECT(mark->stipple)) ;		    /* This seems to be the only way to
-							       get rid of a drawable. */
+  g_object_unref(G_OBJECT(mark->stipple)) ;                    /* This seems to be the only way to
+                                                               get rid of a drawable. */
 
   g_free(mark) ;
 
@@ -875,10 +875,10 @@ static FooCanvasItem *set_mark_item(ZMapWindowMark mark, gboolean top)
       style = zMapStyleCreate("mark", "mark");
 
       g_object_set(G_OBJECT(style),
-		   ZMAPSTYLE_PROPERTY_MODE, ZMAPSTYLE_MODE_PLAIN,
-		   ZMAPSTYLE_PROPERTY_COLOURS, "normal draw cyan; normal border cyan",
-		   NULL);
-      zMapStyleSetDisplayable(style, TRUE);	/* (always drawable) */
+                   ZMAPSTYLE_PROPERTY_MODE, ZMAPSTYLE_MODE_PLAIN,
+                   ZMAPSTYLE_PROPERTY_COLOURS, "normal draw cyan; normal border cyan",
+                   NULL);
+      zMapStyleSetDisplayable(style, TRUE);        /* (always drawable) */
     }
 
   if(top)
@@ -886,7 +886,7 @@ static FooCanvasItem *set_mark_item(ZMapWindowMark mark, gboolean top)
       y1 = block->block_to_sequence.block.x1;
       y2 = mark->seq_start - 1;
       if(y2 < y1)
-	y2 = y1;
+        y2 = y1;
       id = id_top;
     }
   else
@@ -894,7 +894,7 @@ static FooCanvasItem *set_mark_item(ZMapWindowMark mark, gboolean top)
       y2 = block->block_to_sequence.block.x2;
       y1 = mark->seq_end + 1;
       if(y1 > y2)
-	y1 = y2;
+        y1 = y2;
       id = id_bot;
     }
 
@@ -905,11 +905,11 @@ static FooCanvasItem *set_mark_item(ZMapWindowMark mark, gboolean top)
       v_adjust = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(mark->window->scrolled_window)) ;
 
       foo = (FooCanvasItem *)zMapWindowCanvasItemFeaturesetGetFeaturesetItem((FooCanvasGroup *)mark->block_container,
-									     id,
-									     v_adjust,
-									     y1, y2, style,
-									     ZMAPSTRAND_NONE, ZMAPFRAME_NONE,
-									     0, ZMAP_CANVAS_LAYER_BLOCK_MARK);
+                                                                             id,
+                                                                             v_adjust,
+                                                                             y1, y2, style,
+                                                                             ZMAPSTRAND_NONE, ZMAPFRAME_NONE,
+                                                                             0, ZMAP_CANVAS_LAYER_BLOCK_MARK);
     }
 
   zMapWindowCanvasFeaturesetSetSequence((ZMapWindowFeaturesetItem) foo, y1, y2);
@@ -952,22 +952,22 @@ static void markRange(ZMapWindowMark mark)
        * lines and foocanvas does not pick this up. So by reversing coords we can calculate these
        * marks zones correctly at the very ends of the blocks. */
       if (tmp_y1 < block_y1)
-	{
-	  double tmp ;
+        {
+          double tmp ;
 
-	  tmp = tmp_y1 ;
-	  tmp_y1 = block_y1 ;
-	  block_y1 = tmp ;
-	}
+          tmp = tmp_y1 ;
+          tmp_y1 = block_y1 ;
+          block_y1 = tmp ;
+        }
 
       if (block_y2 < tmp_y2)
-	{
-	  double tmp ;
+        {
+          double tmp ;
 
-	  tmp = tmp_y2 ;
-	  tmp_y2 = block_y2 ;
-	  block_y2 = tmp ;
-	}
+          tmp = tmp_y2 ;
+          tmp_y2 = block_y2 ;
+          block_y2 = tmp ;
+        }
     }
   mark->world_y1 = tmp_y1;
   mark->world_y2 = tmp_y2;
@@ -998,9 +998,9 @@ static ZMapWindowContainerBlock getBlock(ZMapWindow window, double world_y1, dou
 #endif
 
   zmapWindowContainerUtilsExecute(window->feature_root_group,
-				  ZMAPCONTAINER_LEVEL_BLOCK,
-				  get_block_cb,
-				  &get_block_data) ;
+                                  ZMAPCONTAINER_LEVEL_BLOCK,
+                                  get_block_cb,
+                                  &get_block_data) ;
 
   block = get_block_data.block ;
 
@@ -1009,7 +1009,7 @@ static ZMapWindowContainerBlock getBlock(ZMapWindow window, double world_y1, dou
 
 
 static void get_block_cb(ZMapWindowContainerGroup container, FooCanvasPoints *points,
-			 ZMapContainerLevelType level, gpointer user_data)
+                         ZMapContainerLevelType level, gpointer user_data)
 {
   if (level == ZMAPCONTAINER_LEVEL_BLOCK)
     {
@@ -1028,7 +1028,7 @@ static void get_block_cb(ZMapWindowContainerGroup container, FooCanvasPoints *po
       if(get_block_data->world_x1 < block->block_to_sequence.block.x2 && get_block_data->world_x2 > block->block_to_sequence.block.x1)
 #endif
 
-	get_block_data->block = block ;
+        get_block_data->block = block ;
     }
 
   return ;
