@@ -933,6 +933,7 @@ void zmapWindowFocusHideFocusItems(ZMapWindowFocus focus, GList **hidden_items)
 
 
 
+
 /*
  *                           Internal routines.
  */
