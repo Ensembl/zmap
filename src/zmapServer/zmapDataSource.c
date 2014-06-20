@@ -43,8 +43,11 @@
 #include <zmapDataSource_P.h>
 
 static gboolean read_line_gio(GIOChannel * const gio_channel,  GString * const str ) ;
-static gboolean read_line_hts(htsFile * const hts_file, GString * const str ) ;
+static gboolean read_line_hts(ZMapDataSourceHTSFile const hts_file, GString * const str ) ;
 
+static const char * ZMAP_BAM_SO_TERM  = "short_read" ;
+static const char * ZMAP_BAM_SOURCE   = "zmap_bam2gff_conversion" ;
+#define ZMAP_CIGARSTRING_MAXLENGTH 2048
 
 /*
  * Create a ZMapDataSource object
@@ -86,12 +89,23 @@ ZMapDataSource zMapDataSourceCreate(const char * const file_name )
         {
           file->type = ZMAPDATASOURCE_TYPE_HTS ;
           file->hts_file = hts_open(file_name, open_mode);
-          if (file->hts_file != NULL)
+          file->hts_hdr = sam_hdr_read(file->hts_file) ;
+          file->hts_rec = bam_init1() ;
+          if (file->hts_file && file->hts_hdr && file->hts_rec)
             {
+              file->sequence = NULL ;
+              file->source = g_strdup(ZMAP_BAM_SOURCE) ;
+              file->so_type = g_strdup(ZMAP_BAM_SO_TERM) ;
               data_source = (ZMapDataSource) file ;
             }
           else
             {
+              if (file->hts_file)
+                hts_close(file->hts_file) ;
+              if (file->hts_hdr)
+                bam_hdr_destroy(file->hts_hdr) ;
+              if (file->hts_rec)
+                bam_destroy1(file->hts_rec) ;
               g_free(file) ;
             }
         }
@@ -172,6 +186,7 @@ gboolean zMapDataSourceDestroy( ZMapDataSource *p_data_source )
           g_io_channel_unref( file->io_channel ) ;
           file->io_channel = NULL ;
           result = TRUE ;
+          g_free(file) ;
         }
       else
         {
@@ -181,12 +196,23 @@ gboolean zMapDataSourceDestroy( ZMapDataSource *p_data_source )
   else if (data_source->type == ZMAPDATASOURCE_TYPE_HTS)
     {
       ZMapDataSourceHTSFile file = (ZMapDataSourceHTSFile) data_source ;
-      void * hts_file = file->hts_file ;
-      /*
-       * close hts_file
-       * set result = TRUE (if it worked that is...)
-       */
-      result = TRUE ;
+      if (file)
+        {
+          if (file->hts_file)
+            hts_close(file->hts_file) ;
+          if (file->hts_rec)
+            bam_destroy1(file->hts_rec) ;
+          if (file->hts_hdr)
+            bam_hdr_destroy(file->hts_hdr) ;
+          if (file->sequence)
+            g_free(file->sequence) ;
+          if (file->source)
+            g_free(file->source) ;
+          if (file->so_type)
+            g_free(file->so_type) ;
+          g_free(file) ;
+          result = TRUE ;
+        }
     }
 
   /*
@@ -196,7 +222,6 @@ gboolean zMapDataSourceDestroy( ZMapDataSource *p_data_source )
    */
   if (result)
     {
-      g_free(data_source) ;
       *p_data_source = NULL ;
     }
 
@@ -239,9 +264,74 @@ static gboolean read_line_gio(GIOChannel * const pChannel,  GString * const str 
 /*
  * Read a record from a HTS file and turn it into GFFv3.
  */
-static gboolean read_line_hts(htsFile * const hts_file, GString * const str )
+static gboolean read_line_hts(ZMapDataSourceHTSFile const hts_file, GString * const pStr )
 {
+  static const gssize string_start = 0 ;
   gboolean result = FALSE ;
+  char *gff_line = NULL,
+    *attributes = NULL ;
+  char strand = '\0',
+    phase = '.' ;
+  int start = 0,
+    end = 0,
+    i = 0,
+    n_cigar = 0;
+  uint32_t *pCigar = NULL ;
+  double score = 0.0 ;
+  GString *pString = NULL ;
+  zMapReturnValIfFail(hts_file && hts_file->hts_file && hts_file->hts_hdr && hts_file->hts_rec, result ) ;
+
+  /*
+   * Erase current buffer contents
+   */
+  g_string_erase(pStr, string_start, -1) ;
+
+  /*
+   * Read line from HTS file.
+   */
+  if ( sam_read1(hts_file->hts_file, hts_file->hts_hdr, hts_file->hts_rec) >= 0 )
+    {
+      start = hts_file->hts_rec->core.pos+1;
+      end   = start+hts_file->hts_rec->core.l_qseq-1;
+      score = (double) hts_file->hts_rec->core.qual ;
+      strand = '+' ;
+      n_cigar = hts_file->hts_rec->core.n_cigar ;
+      pCigar = bam_get_cigar(hts_file->hts_rec) ;
+      pString = g_string_new(NULL) ;
+      for (i=0; i<n_cigar; ++i)
+          g_string_append_printf(pString, "%i%c", bam_cigar_oplen(pCigar[i]), bam_cigar_opchr(pCigar[i])) ;
+      attributes = g_strdup_printf("ID=%s; Name=%s; bam_cigar=%s",
+                                   bam_get_qname(hts_file->hts_rec),
+                                   bam_get_qname(hts_file->hts_rec),
+                                   pString->str) ;
+
+      gff_line = g_strdup_printf("%s\t%s\t%s\t%i\t%i\t%f\t%c\t%c\t%s",
+                                 hts_file->sequence,
+                                 hts_file->source,
+                                 hts_file->so_type,
+                                 start, end,
+                                 score,
+                                 strand,
+                                 phase,
+                                 attributes) ;
+
+      /*
+       *  Convert HTS record to GFF.
+       */
+      g_string_insert(pStr, string_start, gff_line ) ;
+
+      if (gff_line)
+        g_free(gff_line) ;
+      if (attributes)
+        g_free(attributes) ;
+      if (pString)
+        g_string_free(pString, TRUE) ;
+
+      /*
+       * return value
+       */
+      result = TRUE ;
+    }
 
   return result ;
 }
@@ -255,7 +345,7 @@ static gboolean read_line_hts(htsFile * const hts_file, GString * const str )
  *     so we also have to remove the terminating newline.
  *
  * (b) HTSFile has to read a HTS record and then convert
- *     that somehow to GFF. TBD.
+ *     that to GFF.
  *
  */
 gboolean zMapDataSourceReadLine (ZMapDataSource const data_source , GString * const pStr )
@@ -270,7 +360,7 @@ gboolean zMapDataSourceReadLine (ZMapDataSource const data_source , GString * co
   else if (data_source->type == ZMAPDATASOURCE_TYPE_HTS)
     {
       ZMapDataSourceHTSFile file = (ZMapDataSourceHTSFile) data_source ;
-      result = read_line_hts(file->hts_file, pStr ) ;
+      result = read_line_hts(file, pStr ) ;
     }
 
   return result ;
@@ -286,8 +376,8 @@ gboolean zMapDataSourceGetGFFVersion(ZMapDataSource const data_source, int * con
   zMapReturnValIfFail(data_source && (data_source->type != ZMAPDATASOURCE_TYPE_UNK) && p_out_val, result ) ;
 
   /*
-   * We treat two cases. The HTS case cannot fail since we are converting
-   * HTS record data to GFF later on as it is read.
+   * We treat two cases. The HTS case must always return ZMAPGFF_VERSION_3
+   * since we are converting HTS record data to GFF later on as it is read.
    */
   if (data_source->type == ZMAPDATASOURCE_TYPE_GIO)
     {
@@ -377,29 +467,24 @@ ZMapDataSourceType zMapDataSourceTypeFromFilename(const char * const file_name )
 
 /*
  * Read the HTS file header and look for the sequence name data.
+ * This assumes that we have already opened the file and called
+ * hts_hdr = sam_hdr_read() ;
  */
-gboolean zMapDataSourceReadHTSHeader(ZMapDataSource source, char ** sequence )
+gboolean zMapDataSourceReadHTSHeader(ZMapDataSource source)
 {
   gboolean result = FALSE ;
-
-  *sequence = NULL ;
-
-  return result ;
-}
-
-
-
-
-/*
- * Convert a HTS record to GFF3 line.
- */
-char * zMapHTSRecord2GFF3(const void * const hts_record)
-{
-  char * gff_line = NULL ;
+  ZMapDataSourceHTSFile pHTS = (ZMapDataSourceHTSFile) source ;
+  zMapReturnValIfFail(source && zMapDataSourceIsOpen(source), result ) ;
+  zMapReturnValIfFail(pHTS && pHTS->hts_file, result ) ;
 
   /*
-   * Construct GFFv3 name from HTS record
+   * Read the HTS header and fish out the (first, possibly only) @SQ:<name> tag.
    */
+  if ( pHTS->hts_hdr && pHTS->hts_hdr->n_targets >= 1)
+    {
+      pHTS->sequence = g_strdup(pHTS->hts_hdr->target_name[0]) ;
+      result = TRUE ;
+    }
 
-  return gff_line ;
+  return result ;
 }

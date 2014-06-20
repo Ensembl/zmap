@@ -56,6 +56,16 @@ typedef struct ZMapDataSourceHTSFileStruct_
   {
     ZMapDataSourceType type ;
     htsFile *hts_file ;
+    /* bam header and record object */
+    bam_hdr_t *hts_hdr ;
+    bam1_t *hts_rec ;
+
+    /*
+     * Data that we need to store
+     */
+    char * sequence,
+         * source,
+         * so_type ;
   } ZMapDataSourceHTSFileStruct , *ZMapDataSourceHTSFile;
 
 /*

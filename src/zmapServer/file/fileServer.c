@@ -815,7 +815,10 @@ static ZMapServerResponseType fileGetHeader_GIO(FileServer server)
 
 
 /*
- * Header for a HTS file. May have to fake something.
+ * Header for a HTS file. The server calling code expects the server->buffer_line
+ * to contain a non-zero length string in order for it to decide that the source
+ * contains some data. In order to satisfy that, we have to give it a fake header
+ * line, as shown below.
  */
 static ZMapServerResponseType fileGetHeader_HTS(FileServer server)
 {
@@ -824,16 +827,21 @@ static ZMapServerResponseType fileGetHeader_HTS(FileServer server)
   zMapReturnValIfFail(server->data_source->type == ZMAPDATASOURCE_TYPE_HTS, result) ;
 
   /*
-   * Attempt to read HTS header and then... er what?
+   * Attempt to read HTS header and then...
    */
-  if (zMapDataSourceReadHTSHeader(server->data_source, &sequence) )
+  if (zMapDataSourceReadHTSHeader(server->data_source) )
     {
-      if (sequence)
+      if ( ( (ZMapDataSourceHTSFile) server->data_source)->sequence )
         {
           /*
-           * check that the sequence is the same...and, er, do what if it's not?
-           * set up a flag somewhere to require remapping?
+           *  (i) Put in a fake header line to make it look to ZMap like something
+           *      has really been read from a GFF stream.
+           * (ii) Then what? Possibly check that the sequence is the same as what's
+           *      held by the server, and maybe set up a flag somewhere to require
+           *      remapping if it is not?
            */
+          g_string_erase(server->buffer_line, 0, -1) ;
+          g_string_insert(server->buffer_line, 0, "##source-version ZMap-HTS-to-GFF-conversion") ;
           result = ZMAP_SERVERRESPONSE_OK ;
         }
 
@@ -1118,7 +1126,8 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
 
   FileServer server = get_features_data->server ;
   ZMapGFFParser parser = server->parser ;
-  GIOStatus status ;
+  zMapReturnIfFail(server && parser) ;
+  GIOStatus status = G_IO_STATUS_NORMAL ;
   gboolean free_on_destroy = FALSE ;
   GError *gff_file_err = NULL ;
 
@@ -1133,9 +1142,9 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
     }
 
   /*
-   * Read lines from the source.
+   * Read lines from the source. We assume that the first line has already been read.
    */
-  while ((status = zMapDataSourceReadLine(server->data_source, server->buffer_line) ? G_IO_STATUS_NORMAL : G_IO_STATUS_EOF ) == G_IO_STATUS_NORMAL)
+  do
     {
 
       if (!zMapGFFParseLine(parser, server->buffer_line->str))
@@ -1153,7 +1162,8 @@ static void eachBlockGetFeatures(gpointer key, gpointer data, gpointer user_data
               break ;
             }
         }
-    } ;
+    } while ((status = zMapDataSourceReadLine(server->data_source, server->buffer_line)
+                      ? G_IO_STATUS_NORMAL : G_IO_STATUS_EOF ) == G_IO_STATUS_NORMAL) ;
 
 
   /* If we reached the end of the stream then all is fine, so return features... */
