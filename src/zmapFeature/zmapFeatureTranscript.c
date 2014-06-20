@@ -569,6 +569,53 @@ int zMapFeatureTranscriptGetNumExons(ZMapFeature transcript)
 
 
 /*!
+ * \brief Merge a new intron into the given transcript.
+ *
+ * The given coords represent the start/end of the new intron to be
+ * created. If these coords overlap existing intron(s) then the existing
+ * introns(s) will be extended rather than a new intron being created.
+ */
+gboolean zMapFeatureTranscriptMergeIntron(ZMapFeature transcript, Coord x1, Coord x2)
+{
+  gboolean result = FALSE ;
+  GError *tmp_error = NULL ;
+
+  if (!transcript || transcript->mode != ZMAPSTYLE_MODE_TRANSCRIPT)
+    return result;
+
+  /* Disallow merging an intron that would leave us with no exon at the start/end */
+  if (x1 <= transcript->x1 || x2 >= transcript->x2)
+    {
+      zMapWarning("%s", "Cannot merge an intron whose start/end lies outside the transcript range.") ;
+      g_error_free(tmp_error) ;
+    }
+  else
+    {
+      /* Just merge each coord separately, the first as a 5' splice and the second as 3' */
+      ZMapBoundaryType boundary = ZMAPBOUNDARY_5_SPLICE ;
+      zMapFeatureTranscriptMergeCoord(transcript, x1, &boundary, &tmp_error) ;
+
+      if (!tmp_error)
+        {
+          boundary = ZMAPBOUNDARY_3_SPLICE ;
+          zMapFeatureTranscriptMergeCoord(transcript, x2, &boundary, &tmp_error) ;
+        }
+      
+      result = TRUE ;
+    }
+
+  if (tmp_error)
+    {
+      zMapWarning("%s", tmp_error->message) ;
+      g_error_free(tmp_error) ;
+      result = FALSE ;
+    }
+
+  return result ;
+}
+
+
+/*!
  * \brief Merge a new exon into the given transcript.
  *
  * The given coords represent the start/end of the new exon to be
