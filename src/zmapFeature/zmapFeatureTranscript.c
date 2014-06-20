@@ -749,6 +749,144 @@ static ZMapBoundaryType showTrimStartEndConfirmation()
 }
 
 
+/* special case: we only have one exon and x lies inside it */
+static gboolean mergeCoordInsideSoleExon(ZMapFeature transcript,
+                                         ZMapBoundaryType *boundary_inout, 
+                                         const int x, 
+                                         ZMapSpan exon,
+                                         GError **error)
+{
+  gboolean merged = FALSE ;
+
+  if (*boundary_inout == ZMAPBOUNDARY_NONE)
+    *boundary_inout = showTrimStartEndConfirmation();
+
+  if (*boundary_inout == ZMAPBOUNDARY_5_SPLICE)
+    {
+      /* extend the start of the next intron i.e. trim the end of this exon */
+      exon->x2 = x;
+      merged = TRUE;
+    }
+  else if (*boundary_inout == ZMAPBOUNDARY_3_SPLICE)
+    {
+      /* extend the end of prev intron i.e. trim the start of this exon */
+      exon->x1 = x;
+      merged = TRUE;
+    }
+
+  return merged ;
+}
+
+
+/* x lies inside or before the first exon: trim/extend its start
+ * check that the boundary type matches (i.e. modify 3' end of adjacent intron) */
+static gboolean mergeCoordInsideFirstExon(ZMapFeature transcript,
+                                          ZMapBoundaryType *boundary_inout, 
+                                          const int x, 
+                                          ZMapSpan exon,
+                                          GError **error)
+{
+  gboolean merged = FALSE ;
+
+  if (*boundary_inout == ZMAPBOUNDARY_NONE || *boundary_inout == ZMAPBOUNDARY_3_SPLICE)
+    {
+      exon->x1 = x;
+      transcript->x1 = x;
+      merged = TRUE;
+    }
+  else
+    {
+      g_set_error(error, g_quark_from_string("ZMap"), 99, "Invalid boundary type for this operation");
+    }
+  
+  return merged ;
+}
+
+
+/* x lies inside or after the last exon: trim/extend its end */
+static gboolean mergeCoordOutsideLastExon(ZMapFeature transcript,
+                                          ZMapBoundaryType *boundary_inout, 
+                                          const int x, 
+                                          ZMapSpan exon,
+                                          GError **error)
+{
+  gboolean merged = FALSE ;
+
+  if (*boundary_inout == ZMAPBOUNDARY_NONE || *boundary_inout == ZMAPBOUNDARY_5_SPLICE)
+    {
+      exon->x2 = x;
+      transcript->x2 = x;
+      merged = TRUE;
+    }
+  else
+    {
+      g_set_error(error, g_quark_from_string("ZMap"), 99, "Invalid boundary type for this operation");
+    }
+  
+  return merged ;
+}
+
+
+/* x lies in the intron before this exon: ask whether
+ * to trim the start or end of the intron */
+static gboolean mergeCoordInIntron(ZMapFeature transcript,
+                                   ZMapBoundaryType *boundary_inout, 
+                                   const int x, 
+                                   ZMapSpan prev_exon,
+                                   ZMapSpan exon,
+                                   GError **error)
+{
+  gboolean merged = FALSE ;
+
+  if (*boundary_inout == ZMAPBOUNDARY_NONE)
+    *boundary_inout = showTrimStartEndConfirmation();
+  
+  if (*boundary_inout == ZMAPBOUNDARY_5_SPLICE)
+    {
+      /* to trim the intron start, we extend the prev exon end */
+      prev_exon->x2 = x;
+      merged = TRUE;
+    }
+  else if (*boundary_inout == ZMAPBOUNDARY_3_SPLICE)
+    {
+      /* to trim the intron end, extend the current exon start */
+      exon->x1 = x;
+      merged = TRUE;
+    }
+  
+  return merged;
+}
+
+
+  /* x lies in this exon: ask whether to trim the start or end*/
+static gboolean mergeCoordInExon(ZMapFeature transcript,
+                                 ZMapBoundaryType *boundary_inout, 
+                                 const int x, 
+                                 ZMapSpan exon,
+                                 GError **error)
+{
+  gboolean merged = FALSE ;
+
+  if (*boundary_inout == ZMAPBOUNDARY_NONE)
+    *boundary_inout = showTrimStartEndConfirmation();
+
+  if (*boundary_inout == ZMAPBOUNDARY_5_SPLICE)
+    {
+      /* extend the start of the next intron i.e. trim the end of this exon */
+      exon->x2 = x;
+      merged = TRUE;
+    }
+  else if (*boundary_inout == ZMAPBOUNDARY_3_SPLICE)
+    {
+      /* extend the end of prev intron i.e. trim the start of this exon */
+      exon->x1 = x;
+      merged = TRUE;
+    }
+  
+  return merged ;
+}
+
+
 /*!
  * \brief Merge a single coordinate into the given transcript.
  *
@@ -785,99 +923,27 @@ gboolean zMapFeatureTranscriptMergeCoord(ZMapFeature transcript,
 
           if (!prev_exon && i == array->len && x >= exon->x1 && x <= exon->x2)
             {
-              /* special case: we only have one exon and x lies inside it */
-              if (*boundary_inout == ZMAPBOUNDARY_NONE)
-                *boundary_inout = showTrimStartEndConfirmation();
-
-              if (*boundary_inout == ZMAPBOUNDARY_5_SPLICE)
-                {
-                  /* extend the start of the next intron i.e. trim the end of this exon */
-                  exon->x2 = x;
-                  merged = TRUE;
-                }
-              else if (*boundary_inout == ZMAPBOUNDARY_3_SPLICE)
-                {
-                  /* extend the end of prev intron i.e. trim the start of this exon */
-                  exon->x1 = x;
-                  merged = TRUE;
-                }
-
+              merged = mergeCoordInsideSoleExon(transcript, boundary_inout, x, exon, &tmp_error) ;
               break;
             }
           else if (!prev_exon && x <= exon->x2)
             {
-              /* x lies inside or before the first exon: trim/extend its start
-               * check that the boundary type matches (i.e. modify 3' end of adjacent intron) */
-              if (*boundary_inout == ZMAPBOUNDARY_NONE || *boundary_inout == ZMAPBOUNDARY_3_SPLICE)
-                {
-                  exon->x1 = x;
-                  transcript->x1 = x;
-                  merged = TRUE;
-                }
-              else
-                {
-                  g_set_error(&tmp_error, g_quark_from_string("ZMap"), 99, "Invalid boundary type for this operation");
-                }
-
+              merged = mergeCoordInsideFirstExon(transcript, boundary_inout, x, exon, &tmp_error) ;
               break;
             }
           else if (i == array->len - 1 && x >= exon->x1)
             {
-              /* x lies inside or after the last exon: trim/extend its end */
-              if (*boundary_inout == ZMAPBOUNDARY_NONE || *boundary_inout == ZMAPBOUNDARY_5_SPLICE)
-                {
-                  exon->x2 = x;
-                  transcript->x2 = x;
-                  merged = TRUE;
-                }
-              else
-                {
-                  g_set_error(&tmp_error, g_quark_from_string("ZMap"), 99, "Invalid boundary type for this operation");
-                }
-
+              merged = mergeCoordOutsideLastExon(transcript, boundary_inout, x, exon, &tmp_error) ;              
               break;
             }
           else if (x < exon->x1)
             {
-              /* x lies in the intron before this exon: ask whether
-               * to trim the start or end of the intron */
-              if (*boundary_inout == ZMAPBOUNDARY_NONE)
-                *boundary_inout = showTrimStartEndConfirmation();
-
-              if (*boundary_inout == ZMAPBOUNDARY_5_SPLICE)
-                {
-                  /* to trim the intron start, we extend the prev exon end */
-                  prev_exon->x2 = x;
-                  merged = TRUE;
-                }
-              else if (*boundary_inout == ZMAPBOUNDARY_3_SPLICE)
-                {
-                  /* to trim the intron end, extend the current exon start */
-                  exon->x1 = x;
-                  merged = TRUE;
-                }
-
+              merged = mergeCoordInIntron(transcript, boundary_inout, x, prev_exon, exon, &tmp_error) ;
               break;
             }
           else if (x <= exon->x2)
             {
-              /* x lies in this exon: ask whether to trim the start or end*/
-              if (*boundary_inout == ZMAPBOUNDARY_NONE)
-                *boundary_inout = showTrimStartEndConfirmation();
-
-              if (*boundary_inout == ZMAPBOUNDARY_5_SPLICE)
-                {
-                  /* extend the start of the next intron i.e. trim the end of this exon */
-                  exon->x2 = x;
-                  merged = TRUE;
-                }
-              else if (*boundary_inout == ZMAPBOUNDARY_3_SPLICE)
-                {
-                  /* extend the end of prev intron i.e. trim the start of this exon */
-                  exon->x1 = x;
-                  merged = TRUE;
-                }
-
+              merged = mergeCoordInExon(transcript, boundary_inout, x, exon, &tmp_error) ;
               break;
             }
         }
