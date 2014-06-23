@@ -45,8 +45,35 @@
 static gboolean read_line_gio(GIOChannel * const gio_channel,  GString * const str ) ;
 static gboolean read_line_hts(ZMapDataSourceHTSFile const hts_file, GString * const str ) ;
 
-static const char * ZMAP_BAM_SO_TERM  = "short_read" ;
-static const char * ZMAP_BAM_SOURCE   = "zmap_bam2gff_conversion" ;
+/*
+ * The SO terms that contain the string "read" are as follows:
+ *
+ * read_pair
+ * read
+ * contig_read
+ * five_prime_open_reading_frame
+ * gene_with_stop_codon_read_through
+ * reading_frame
+ * blocked_reading_frame
+ * stop_codon_read_through
+ * dye_terminator_read
+ * pyrosequenced_read
+ * ligation_based_read
+ * polymerase_synthesis_read
+ * mRNA_read
+ * genomic_DNA_read
+ * BAC_read_contig
+ * mitochondrial_DNA_read
+ * chloroplast_DNA_read
+ *
+ * so I have chosen the more general parent term "read" (SO:0000150) to
+ * be found at:
+ *
+ * http://www.sequenceontology.org/browser/current_svn/term/SO:0000150
+ *
+ */
+static const char * const ZMAP_BAM_SO_TERM  = "read" ;
+static const char * const ZMAP_BAM_SOURCE   = "zmap_bam2gff_conversion" ;
 #define ZMAP_CIGARSTRING_MAXLENGTH 2048
 
 /*
@@ -267,18 +294,28 @@ static gboolean read_line_gio(GIOChannel * const pChannel,  GString * const str 
 static gboolean read_line_hts(ZMapDataSourceHTSFile const hts_file, GString * const pStr )
 {
   static const gssize string_start = 0 ;
-  gboolean result = FALSE ;
-  char *gff_line = NULL,
-    *attributes = NULL ;
-  char strand = '\0',
-    phase = '.' ;
-  int start = 0,
-    end = 0,
-    i = 0,
-    n_cigar = 0;
+  static const char * sFormatID = "ID=%s;",
+                    * sFormatName = "Name=%s;",
+                    * sFormatCig = "cigar_bam=%s;",
+                    * sFormatTarget = "Target=%s;";
+  gboolean result = FALSE,
+    bHasTargetStrand = FALSE ;
+  char *sGFFLine = NULL,
+    *sAttributes = NULL,
+    *sTargetID= NULL ;
+  char cStrand = '\0',
+    cPhase = '.',
+    cTargetStrand = '.' ;
+  int iStart = 0,
+    iEnd = 0,
+    iCigar = 0,
+    nCigar = 0,
+    iTargetStart = 0,
+    iTargetEnd = 0;
   uint32_t *pCigar = NULL ;
-  double score = 0.0 ;
-  GString *pString = NULL ;
+  double dScore = 0.0 ;
+  GString *pStringCigar = NULL,
+          *pStringTarget = NULL ;
   zMapReturnValIfFail(hts_file && hts_file->hts_file && hts_file->hts_hdr && hts_file->hts_rec, result ) ;
 
   /*
@@ -287,45 +324,75 @@ static gboolean read_line_hts(ZMapDataSourceHTSFile const hts_file, GString * co
   g_string_erase(pStr, string_start, -1) ;
 
   /*
-   * Read line from HTS file.
+   * Read line from HTS file and convert to GFF.
+   *
    */
   if ( sam_read1(hts_file->hts_file, hts_file->hts_hdr, hts_file->hts_rec) >= 0 )
     {
-      start = hts_file->hts_rec->core.pos+1;
-      end   = start+hts_file->hts_rec->core.l_qseq-1;
-      score = (double) hts_file->hts_rec->core.qual ;
-      strand = '+' ;
-      n_cigar = hts_file->hts_rec->core.n_cigar ;
-      pCigar = bam_get_cigar(hts_file->hts_rec) ;
-      pString = g_string_new(NULL) ;
-      for (i=0; i<n_cigar; ++i)
-          g_string_append_printf(pString, "%i%c", bam_cigar_oplen(pCigar[i]), bam_cigar_opchr(pCigar[i])) ;
-      attributes = g_strdup_printf("ID=%s; Name=%s; bam_cigar=%s",
-                                   bam_get_qname(hts_file->hts_rec),
-                                   bam_get_qname(hts_file->hts_rec),
-                                   pString->str) ;
+      /*
+       * start, end, score and strand
+       */
+      iStart = hts_file->hts_rec->core.pos+1;
+      iEnd   = iStart+hts_file->hts_rec->core.l_qseq-1;
+      dScore = (double) hts_file->hts_rec->core.qual ;
+      cStrand = '+' ;
 
-      gff_line = g_strdup_printf("%s\t%s\t%s\t%i\t%i\t%f\t%c\t%c\t%s",
+      /*
+       * "cigar_bam" attribute
+       */
+      nCigar = hts_file->hts_rec->core.n_cigar ;
+      pCigar = bam_get_cigar(hts_file->hts_rec) ;
+      pStringCigar = g_string_new(NULL) ;
+      for (iCigar=0; iCigar<nCigar; ++iCigar)
+          g_string_append_printf(pStringCigar, "%i%c", bam_cigar_oplen(pCigar[iCigar]), bam_cigar_opchr(pCigar[iCigar])) ;
+
+      /*
+       * "Target" attribute
+       */
+      pStringTarget = g_string_new(NULL) ;
+      g_string_append_printf(pStringTarget, "%s %i %i", sTargetID, iTargetStart, iTargetEnd ) ;
+      if (bHasTargetStrand)
+        g_string_append_printf(pStringTarget, " %c", cTargetStrand) ;
+
+      /*
+       * Construct attributes string.
+       */
+      sAttributes = g_strdup_printf(sFormatID,
+                                    sFormatName,
+                                    sFormatCig,
+                                    sFormatTarget,
+                                    bam_get_qname(hts_file->hts_rec),
+                                    bam_get_qname(hts_file->hts_rec),
+                                    pStringCigar->str,
+                                    pStringTarget->str) ;
+
+      /*
+       * Construct GFF line.
+       */
+      sGFFLine = g_strdup_printf("%s\t%s\t%s\t%i\t%i\t%f\t%c\t%c\t%s",
                                  hts_file->sequence,
                                  hts_file->source,
                                  hts_file->so_type,
-                                 start, end,
-                                 score,
-                                 strand,
-                                 phase,
-                                 attributes) ;
+                                 iStart, iEnd,
+                                 dScore,
+                                 cStrand,
+                                 cPhase,
+                                 sAttributes) ;
+      g_string_insert(pStr, string_start, sGFFLine ) ;
 
       /*
-       *  Convert HTS record to GFF.
+       * Clean up on finish
        */
-      g_string_insert(pStr, string_start, gff_line ) ;
-
-      if (gff_line)
-        g_free(gff_line) ;
-      if (attributes)
-        g_free(attributes) ;
-      if (pString)
-        g_string_free(pString, TRUE) ;
+      if (sGFFLine)
+        g_free(sGFFLine) ;
+      if (sAttributes)
+        g_free(sAttributes) ;
+      if (sTargetID)
+        g_free(sTargetID) ;
+      if (pStringCigar)
+        g_string_free(pStringCigar, TRUE) ;
+      if (pStringTarget)
+        g_string_free(pStringTarget, TRUE) ;
 
       /*
        * return value
