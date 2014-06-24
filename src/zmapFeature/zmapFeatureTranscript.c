@@ -860,7 +860,7 @@ static gboolean mergeCoordOutsideLastExon(ZMapFeature transcript,
   gboolean merged = FALSE ;
 
   if (*boundary_inout == ZMAPBOUNDARY_NONE || *boundary_inout == ZMAPBOUNDARY_5_SPLICE)
-    {
+   {
       exon->x2 = x;
       transcript->x2 = x;
       merged = TRUE;
@@ -973,12 +973,12 @@ gboolean zMapFeatureTranscriptMergeCoord(ZMapFeature transcript,
               merged = mergeCoordInsideSoleExon(transcript, boundary_inout, x, exon, &tmp_error) ;
               break;
             }
-          else if (!prev_exon && x <= exon->x2)
+          else if (!prev_exon && x <= exon->x1)
             {
               merged = mergeCoordInsideFirstExon(transcript, boundary_inout, x, exon, &tmp_error) ;
               break;
             }
-          else if (i == array->len - 1 && x >= exon->x1)
+          else if (i == array->len - 1 && x >= exon->x2)
             {
               merged = mergeCoordOutsideLastExon(transcript, boundary_inout, x, exon, &tmp_error) ;              
               break;
