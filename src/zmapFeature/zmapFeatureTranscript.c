@@ -643,10 +643,11 @@ gboolean zMapFeatureTranscriptMergeExon(ZMapFeature transcript, Coord x1, Coord 
 
   for ( ; i < array->len; ++i)
     {
-      /* Check if the new exon overlaps the existing one */
+      /* Check if the new exon overlaps the existing one. Include one base 
+       * beyond the end of the existing exon so that abutting exons get merged */
       ZMapSpan compare_exon = &(g_array_index(array, ZMapSpanStruct, i));
 
-      if (x2 >= compare_exon->x1 && x1 <= compare_exon->x2)
+      if (x2 >= compare_exon->x1 - 1 && x1 <= compare_exon->x2 + 1)
         {
           overlaps = TRUE;
 
@@ -986,6 +987,27 @@ gboolean zMapFeatureTranscriptMergeCoord(ZMapFeature transcript,
           else if (x < exon->x1)
             {
               merged = mergeCoordInIntron(transcript, boundary_inout, x, prev_exon, exon, &tmp_error) ;
+              
+              if (merged)
+                {
+                  /* Check if we've created abutting exons and if so merge them */
+                  if (prev_exon->x2 == exon->x1 - 1)
+                    {
+                      /* Prev exon was extended to abut to this one */
+                      prev_exon->x2 = exon->x2 ;
+                      g_array_remove_index(array, i) ;
+                    }
+                  else if (i < array->len - 1)
+                    {
+                      ZMapSpan next = &(g_array_index(array, ZMapSpanStruct, i+1)) ;
+                      if (exon->x2 == next->x1 - 1)
+                        {
+                          exon->x2 = next->x2 ;
+                          g_array_remove_index(array, i + 1) ;
+                        }
+                    }
+                }
+
               break;
             }
           else if (x <= exon->x2)
