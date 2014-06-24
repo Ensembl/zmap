@@ -463,7 +463,7 @@ gboolean zMapWindowCanvasFeaturesetGetFeatureExtent(ZMapWindowCanvasFeature feat
 
   void (*func) (ZMapWindowCanvasFeature feature, ZMapSpan span, double *width) = NULL;
 
-  if(!feature || feature->type < 0 || feature->type >= FEATURE_N_TYPE)
+  if(!feature || feature->type == FEATURE_INVALID || feature->type >= FEATURE_N_TYPE)
     return FALSE;
 
   func = _featureset_extent_G[feature->type];

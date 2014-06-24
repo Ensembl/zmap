@@ -357,7 +357,7 @@ static void handleZMapRequestsCB(gpointer caller_data,
   if (remote)
     {
       gboolean result = TRUE ;
-      GArray *request_stack ;
+      GArray *request_stack = NULL ;
       char *request ;
       char *view = NULL ;    /* to be filled in later..... */
       gpointer view_id = NULL ;
