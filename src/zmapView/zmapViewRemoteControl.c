@@ -1804,12 +1804,14 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 	  if ((attr = zMapXMLElementGetAttributeByName(feature_element, "start_not_found")))
 	    {
 	      /* I don't understand what this ghastliness is....how can phase be -ve ?? */
+              /* gb10: perhaps the strand and phase are mixed up together in this attribute?? It
+               * looks like the sign is ignored, anyway */
+              long int start_phase_int = strtol((char *)g_quark_to_string(zMapXMLAttributeGetValue(attr)),
+                                                (char **)NULL, 10);
 
-	      start_phase = strtol((char *)g_quark_to_string(zMapXMLAttributeGetValue(attr)),
-				   (char **)NULL, 10);
 	      start_not_found = TRUE;
 
-	      switch (start_phase)
+              switch (start_phase_int)
 		{
 		case 1:
 		case -1:
