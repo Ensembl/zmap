@@ -294,10 +294,10 @@ static gboolean read_line_gio(GIOChannel * const pChannel,  GString * const str 
 static gboolean read_line_hts(ZMapDataSourceHTSFile const hts_file, GString * const pStr )
 {
   static const gssize string_start = 0 ;
-  static const char * sFormatID = "ID=%s;",
-                    * sFormatName = "Name=%s;",
-                    * sFormatCigar = "cigar_bam=%s;",
-                    * sFormatTarget = "Target=%s;";
+  static const char *sFormatID = "ID=%s;",
+    *sFormatName = "Name=%s;",
+    *sFormatCigar = "cigar_bam=%s;",
+    *sFormatTarget = "Target=%s;";
   gboolean result = FALSE,
     bHasTargetStrand = FALSE ;
   char *sGFFLine = NULL,
@@ -314,8 +314,8 @@ static gboolean read_line_hts(ZMapDataSourceHTSFile const hts_file, GString * co
   uint32_t *pCigar = NULL ;
   double dScore = 0.0 ;
   GString *pStringCigar = NULL,
-          *pStringTarget = NULL,
-          *pStringAttributes = NULL ;
+    *pStringTarget = NULL,
+    *pStringAttributes = NULL ;
   zMapReturnValIfFail(hts_file && hts_file->hts_file && hts_file->hts_hdr && hts_file->hts_rec, result ) ;
 
   /*
@@ -325,7 +325,6 @@ static gboolean read_line_hts(ZMapDataSourceHTSFile const hts_file, GString * co
 
   /*
    * Read line from HTS file and convert to GFF.
-   *
    */
   if ( sam_read1(hts_file->hts_file, hts_file->hts_hdr, hts_file->hts_rec) >= 0 )
     {
@@ -350,7 +349,11 @@ static gboolean read_line_hts(ZMapDataSourceHTSFile const hts_file, GString * co
        * "Target" attribute
        */
       pStringTarget = g_string_new(NULL) ;
-      g_string_append_printf(pStringTarget, "%s %i %i", sTargetID, iTargetStart, iTargetEnd ) ;
+      iTargetStart = 1 ;
+      iTargetEnd = hts_file->hts_rec->core.l_qseq ;
+      g_string_append_printf(pStringTarget, "%s %i %i", bam_get_qname(hts_file->hts_rec), iTargetStart, iTargetEnd ) ;
+      bHasTargetStrand = TRUE ;
+      cTargetStrand = '+' ;
       if (bHasTargetStrand)
         g_string_append_printf(pStringTarget, " %c", cTargetStrand) ;
 
