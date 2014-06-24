@@ -294,14 +294,15 @@ static gboolean read_line_gio(GIOChannel * const pChannel,  GString * const str 
 static gboolean read_line_hts(ZMapDataSourceHTSFile const hts_file, GString * const pStr )
 {
   static const gssize string_start = 0 ;
-  static const char *sFormatID = "ID=%s;",
-    *sFormatName = "Name=%s;",
+  static const char *sFormatName = "Name=%s;",
     *sFormatCigar = "cigar_bam=%s;",
     *sFormatTarget = "Target=%s;";
   gboolean result = FALSE,
-    bHasTargetStrand = FALSE ;
-  char *sGFFLine = NULL,
-    *sTargetID= NULL ;
+    bHasTargetStrand = FALSE,
+    bHasNameAttribute = FALSE,
+    bHasCigarAttribute = FALSE,
+    bHasTargetAttribute = FALSE ;
+  char *sGFFLine = NULL ;
   char cStrand = '\0',
     cPhase = '.',
     cTargetStrand = '.' ;
@@ -316,6 +317,10 @@ static gboolean read_line_hts(ZMapDataSourceHTSFile const hts_file, GString * co
   GString *pStringCigar = NULL,
     *pStringTarget = NULL,
     *pStringAttributes = NULL ;
+
+  /*
+   * Initial error check.
+   */
   zMapReturnValIfFail(hts_file && hts_file->hts_file && hts_file->hts_hdr && hts_file->hts_rec, result ) ;
 
   /*
@@ -340,35 +345,51 @@ static gboolean read_line_hts(ZMapDataSourceHTSFile const hts_file, GString * co
        * "cigar_bam" attribute
        */
       nCigar = hts_file->hts_rec->core.n_cigar ;
-      pCigar = bam_get_cigar(hts_file->hts_rec) ;
-      pStringCigar = g_string_new(NULL) ;
-      for (iCigar=0; iCigar<nCigar; ++iCigar)
-          g_string_append_printf(pStringCigar, "%i%c", bam_cigar_oplen(pCigar[iCigar]), bam_cigar_opchr(pCigar[iCigar])) ;
+      if (nCigar)
+        {
+          bHasCigarAttribute = TRUE ;
+          pCigar = bam_get_cigar(hts_file->hts_rec) ;
+          pStringCigar = g_string_new(NULL) ;
+          for (iCigar=0; iCigar<nCigar; ++iCigar)
+              g_string_append_printf(pStringCigar, "%i%c", bam_cigar_oplen(pCigar[iCigar]), bam_cigar_opchr(pCigar[iCigar])) ;
+        }
 
       /*
-       * "Target" attribute
+       * "Target" (and "Name") attribute
        */
       pStringTarget = g_string_new(NULL) ;
       iTargetStart = 1 ;
       iTargetEnd = hts_file->hts_rec->core.l_qseq ;
-      g_string_append_printf(pStringTarget, "%s %i %i", bam_get_qname(hts_file->hts_rec), iTargetStart, iTargetEnd ) ;
-      bHasTargetStrand = TRUE ;
-      cTargetStrand = '+' ;
-      if (bHasTargetStrand)
-        g_string_append_printf(pStringTarget, " %c", cTargetStrand) ;
+      if (strlen(bam_get_qname(hts_file->hts_rec)))
+        {
+          bHasTargetAttribute = TRUE ;
+          bHasNameAttribute = TRUE ;
+          g_string_append_printf(pStringTarget, "%s %i %i", bam_get_qname(hts_file->hts_rec), iTargetStart, iTargetEnd ) ;
+          bHasTargetStrand = TRUE ;
+          cTargetStrand = '+' ;
+          if (bHasTargetStrand)
+            g_string_append_printf(pStringTarget, " %c", cTargetStrand) ;
+        }
 
       /*
        * Construct attributes string.
        */
       pStringAttributes = g_string_new(NULL) ;
-      g_string_append_printf(pStringAttributes,
-                             sFormatID, bam_get_qname(hts_file->hts_rec) ) ;
-      g_string_append_printf(pStringAttributes,
-                             sFormatName, bam_get_qname(hts_file->hts_rec) ) ;
-      g_string_append_printf(pStringAttributes,
-                             sFormatTarget, pStringTarget->str ) ;
-      g_string_append_printf(pStringAttributes,
-                             sFormatCigar, pStringCigar->str) ;
+      if (bHasNameAttribute)
+        {
+          g_string_append_printf(pStringAttributes,
+                                 sFormatName, bam_get_qname(hts_file->hts_rec) ) ;
+        }
+      if (bHasTargetAttribute)
+        {
+          g_string_append_printf(pStringAttributes,
+                                 sFormatTarget, pStringTarget->str ) ;
+        }
+      if (bHasCigarAttribute)
+        {
+          g_string_append_printf(pStringAttributes,
+                                 sFormatCigar, pStringCigar->str) ;
+        }
 
       /*
        * Construct GFF line.
@@ -389,8 +410,6 @@ static gboolean read_line_hts(ZMapDataSourceHTSFile const hts_file, GString * co
        */
       if (sGFFLine)
         g_free(sGFFLine) ;
-      if (sTargetID)
-        g_free(sTargetID) ;
       if (pStringCigar)
         g_string_free(pStringCigar, TRUE) ;
       if (pStringTarget)
