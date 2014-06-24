@@ -716,7 +716,7 @@ gboolean zMapUtilsSysCall(char *cmd_str, char **err_msg_out)
 int zMapUtilsProcessTerminationStatus(int status, ZMapProcessTerminationType *termination_type_out)
 {
   int exit_rc = EXIT_FAILURE ;
-  ZMapProcessTerminationType termination_type = ZMAP_PROCTERM_OK ;
+  /* ZMapProcessTerminationType termination_type = ZMAP_PROCTERM_OK ;*/
 
   if (WIFEXITED(status))
     {
@@ -843,15 +843,20 @@ void zMapUtilsDebugPrintf(FILE *stream, char *format, ...)
 
 
 
-
+/*
+ * (sm23) I have removed the use of strtok(), because it's not thread safe. 
+ * In addition, the previous version was assuming a certain order of evaluation inside
+ * the if() statement, and I'm not sure this is completely safe. 
+ */
 static gboolean getVersionNumbers(char *version_str,
   int *version_out, int *release_out, int *update_out)
 {
+  static const char cDot = '.' ; 
   gboolean result = FALSE ;
   char *next ;
   int version, release, update ;
 
-  if (((next = strtok(version_str, "."))
+  /* if (((next = strtok(version_str, "."))
        && (version = atoi(next)))
       && ((next = strtok(NULL, "."))
   && (release = atoi(next)))
@@ -862,7 +867,22 @@ static gboolean getVersionNumbers(char *version_str,
       *version_out = version ;
       *release_out = release ;
       *update_out = update ;
-    }
+    }*/ 
+
+    if ((version = atoi(version_str)))
+    {
+      if ((next=strchr(version_str, cDot)) && (release=atoi(++next)))
+        {
+          if ((next=strchr(next, cDot)) && (update=atoi(++next)))
+            {
+              *version_out = version ;
+              *release_out = release ;
+              *update_out  = update ;
+              result = TRUE ; 
+            }
+        }
+    } 
+
 
 
   return result ;
