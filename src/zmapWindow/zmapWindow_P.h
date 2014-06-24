@@ -1570,7 +1570,6 @@ FooCanvasGroup *zmapWindowFocusGetHotColumn(ZMapWindowFocus focus) ;
 void zmapWindowFocusDestroy(ZMapWindowFocus focus) ;
 
 
-
 void zmapWindowFocusHideFocusItems(ZMapWindowFocus focus, GList **hidden_items);
 void zmapWindowFocusRehighlightFocusItems(ZMapWindowFocus focus, ZMapWindow window);
 void zmapWindowFocusHighlightFocusItems(ZMapWindowFocus focus, ZMapWindow window);
