@@ -1161,7 +1161,7 @@ void zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item,
 ZMapFeatureBlock zmapWindowItemGetFeatureBlock(FooCanvasItem *item) ;
 ZMapFeature zmapWindowItemGetFeature(FooCanvasItem *item) ;
 ZMapFeatureAny zmapWindowItemGetFeatureAny(FooCanvasItem *item) ;
-ZMapFeatureAny zmapWindowItemGetFeatureAnyType(FooCanvasItem *item, ZMapFeatureLevelType expected_type) ;
+ZMapFeatureAny zmapWindowItemGetFeatureAnyType(FooCanvasItem *item, const int expected_type) ;
 
 FooCanvasItem *zmapWindowItemGetShowTranslationColumn(ZMapWindow window, FooCanvasItem *item) ;
 void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_translate) ;

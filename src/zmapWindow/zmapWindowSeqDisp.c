@@ -209,7 +209,7 @@ void zmapWindowItemHighlightTranslationRegions(ZMapWindow window, gboolean item_
                                                ZMapSequenceType coords_type,
                                                int region_start, int region_end, int flanking)
 {
-  ZMapFrame frame ;
+  int frame ;
 
   for (frame = ZMAPFRAME_0 ; frame < ZMAPFRAME_2 + 1 ; frame++)
     {
@@ -232,7 +232,7 @@ void zmapWindowItemHighlightTranslationRegions(ZMapWindow window, gboolean item_
 
 void zmapWindowItemUnHighlightTranslations(ZMapWindow window, FooCanvasItem *item)
 {
-  ZMapFrame frame ;
+  int frame ;
 
   for (frame = ZMAPFRAME_0 ; frame < ZMAPFRAME_2 + 1 ; frame++)
     {
