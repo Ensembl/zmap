@@ -5989,8 +5989,15 @@ static void addAlignments(ZMapFeatureContext context)
 
 #ifdef NOT_REQUIRED_ATM
 
-/* Read list of sequence to server mappings (i.e. which sequences must be fetched from which
- * servers) from the zmap config file. */
+/* 
+ * (sm23) Note: this function is not used at the moment (June 2014), but contains calls to 
+ * strtok() that render it not thread safe. I have commented out those calls just in case 
+ * the function comes back into use. A warning is logged and the function simply returns 
+ * instead. 
+ *
+ * Read list of sequence to server mappings (i.e. which sequences must be fetched from which
+ * servers) from the zmap config file. 
+ */
 static gboolean getSequenceServers(ZMapView zmap_view, char *config_str)
 {
   gboolean result = FALSE ;
@@ -6000,6 +6007,15 @@ static gboolean getSequenceServers(ZMapView zmap_view, char *config_str)
   char *zmap_stanza_name = ZMAPSTANZA_APP_CONFIG ;
   ZMapConfigStanzaElementStruct zmap_elements[] = {{ZMAPSTANZA_APP_SEQUENCE_SERVERS, ZMAPCONFIG_STRING, {NULL}},
 						   {NULL, -1, {NULL}}} ;
+
+
+  /********************************************************************************************/
+  zMapWarning("%s", "Call to zmapView::getSequenceServers() is not thread safe and is being aborted.") ;
+  zMapLogWarning("%s", "Call to zmapView::getSequenceServers() is not thread safe and is being aborted.") ;
+  return result ; 
+  /********************************************************************************************/
+
+
 
   if ((config = getConfigFromBufferOrFile(config_str)))
     {
@@ -6022,7 +6038,8 @@ static gboolean getSequenceServers(ZMapView zmap_view, char *config_str)
 		  char *search_str ;
 
 		  search_str = server_seq_str ;
-		  while ((sequence = strtok(search_str, " ")))
+		  /* 
+                  while ((sequence = strtok(search_str, " ")))
 		    {
 		      search_str = NULL ;
 		      server = strtok(NULL, " ") ;
@@ -6030,7 +6047,8 @@ static gboolean getSequenceServers(ZMapView zmap_view, char *config_str)
 		      seq_2_server = createSeq2Server(sequence, server) ;
 
 		      zmap_view->sequence_2_server = g_list_append(zmap_view->sequence_2_server, seq_2_server) ;
-		    }
+		    } 
+                  */
 		}
 	    }
 
