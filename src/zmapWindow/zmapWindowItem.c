@@ -407,7 +407,7 @@ ZMapFeatureAny zmapWindowItemGetFeatureAny(FooCanvasItem *item)
 }
 
 
-ZMapFeatureAny zmapWindowItemGetFeatureAnyType(FooCanvasItem *item, ZMapFeatureLevelType expected_type)
+ZMapFeatureAny zmapWindowItemGetFeatureAnyType(FooCanvasItem *item, const int expected_type)
 {
   ZMapFeatureAny feature_any = NULL ;
   ZMapWindowCanvasItem feature_item ;
@@ -429,7 +429,7 @@ ZMapFeatureAny zmapWindowItemGetFeatureAnyType(FooCanvasItem *item, ZMapFeatureL
       zMapLogMessage("Unexpected item [%s]", (item ? G_OBJECT_TYPE_NAME(item) : "null")) ;
     }
 
-  if (feature_any && expected_type != ZMAPFEATURE_STRUCT_INVALID)
+  if (feature_any && expected_type != -1)
     {
       if (feature_any->struct_type != expected_type)
         {
