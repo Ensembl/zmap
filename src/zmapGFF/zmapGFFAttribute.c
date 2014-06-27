@@ -525,9 +525,9 @@ ZMapGFFAttribute zMapGFFAttributeListContains( ZMapGFFAttribute* pAtt, unsigned 
   ZMapGFFAttribute pAttribute = NULL ;
   const ZMapGFFAttribute *pAttributes = pAtt ;
   unsigned int iAtt ;
-  if (!pAttributes || !nAttributes) 
-    return pAttribute ; 
-  zMapReturnValIfFail(sName && *sName, pAttribute) ; 
+  if (!pAttributes || !nAttributes)
+    return pAttribute ;
+  zMapReturnValIfFail(sName && *sName, pAttribute) ;
 
   for (iAtt=0; iAtt<nAttributes; ++iAtt)
     {
@@ -1367,7 +1367,7 @@ gboolean zMapAttParseAlleleString(ZMapGFFAttribute pAttribute, char ** const psO
  */
 gboolean zMapAttParseNote(ZMapGFFAttribute pAttribute, char ** const sOut)
 {
-  gboolean bResult = FALSE ;
+  gboolean bResult = FALSE, bReplaced = FALSE ;
   static const char *sMyName = "zMapAttParseNote()" ;
   if (!pAttribute)
     return bResult ;
@@ -1379,10 +1379,15 @@ gboolean zMapAttParseNote(ZMapGFFAttribute pAttribute, char ** const sOut)
     }
 
   if (strlen(sValue))
-    *sOut = g_strdup(sValue) ;
+    {
+      bReplaced = zMapGFFStr_substring_replace_n(sValue, sEscapedComma, sComma, sOut) ;
+      /* *sOut = g_strdup(sValue) ; */
+      bResult = TRUE ;
+    }
   else
-    *sOut = NULL ;
-  bResult = TRUE ;
+    {
+      *sOut = NULL ;
+    }
 
   return bResult ;
 }
